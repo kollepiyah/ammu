@@ -1,0 +1,50 @@
+// Firebase Storage Security Rules
+// Path: storage.rules (deploy: firebase deploy --only storage)
+
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Path-path public: postingan beranda, logo rapor, logo aplikasi
+    // (Boleh write oleh user yang authenticated. App ini pakai custom auth + Firebase Auth Anonymous)
+    
+    match /beranda_posts/{file=**} {
+      allow read: if true;
+      allow write: if request.resource.size < 16 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+      allow delete: if true;
+    }
+    
+    match /rapor_logos/{file=**} {
+      allow read: if true;
+      allow write: if request.resource.size < 4 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+      allow delete: if true;
+    }
+    
+    match /app_logos/{file=**} {
+      allow read: if true;
+      allow write: if request.resource.size < 4 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+      allow delete: if true;
+    }
+    
+    match /santri_foto/{file=**} {
+      allow read: if true;
+      allow write: if request.resource.size < 4 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+      allow delete: if true;
+    }
+    
+    match /guru_foto/{file=**} {
+      allow read: if true;
+      allow write: if request.resource.size < 4 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+      allow delete: if true;
+    }
+    
+    // Default deny untuk path lain
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

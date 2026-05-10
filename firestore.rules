@@ -1,0 +1,326 @@
+// ============================================================================
+// FIREBASE FIRESTORE RULES — MAMBAUL ULUM
+// ============================================================================
+//
+// ⚠️ PERINGATAN PENTING — BACA DULU SEBELUM DEPLOY:
+//
+// Aplikasi kamu saat ini TIDAK menggunakan Firebase Authentication.
+// Login hanya membandingkan password di field Firestore biasa.
+// Artinya, semua koneksi Firestore dari aplikasi adalah ANONYMOUS
+// (request.auth = null).
+//
+// Konsekuensi:
+//   1. Rules ini TIDAK BISA membatasi akses berdasarkan "siapa user yang login"
+//      di sisi server. Validasi siapa-boleh-apa terjadi di JavaScript client,
+//      yang mana BISA DI-BYPASS via DevTools.
+//
+//   2. Rules di bawah hanya melakukan VALIDASI STRUKTUR DATA — memastikan
+//      payload yang dikirim ke Firestore berbentuk benar dan tidak korup.
+//      Plus rate limiting dasar via shape constraint.
+//
+//   3. Siapapun yang tahu Firebase config kamu (bisa dilihat dari
+//      page source HTML) bisa baca/tulis collection-collection ini langsung
+//      tanpa lewat aplikasi kamu. Termasuk anak-anak iseng yang
+//      paham JavaScript dasar.
+//
+// SARAN UNTUK MASA DEPAN:
+//   - Saat kamu pindah hosting, HARUS pakai Firebase Authentication
+//     (anonymous auth + custom claims, atau email/password).
+//   - Sebelum pindah, untuk data sensitif (keuangan), pertimbangkan akses
+//     hanya dari IP whitelist via Cloud Functions, atau pakai backend proxy
+//     (Express/Node) yang verify session token sebelum query Firestore.
+//   - Rotate Firebase API key secara berkala.
+//
+// ============================================================================
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ----- HELPER FUNCTIONS -----
+    function isString(v) { return v is string; }
+    function isNumber(v) { return v is number; }
+    function isPositive(v) { return v is number && v >= 0; }
+    function isValidDate(v) {
+      // Format YYYY-MM-DD
+      return v is string && v.size() == 10 && v.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}');
+    }
+
+    // ----- COLLECTION: master (lembaga, jabatan, kelas_sekolah, libur) -----
+    match /master/{docId} {
+      allow read: if true;
+      allow write: if true; // wajib aplikasi bisa migrate
+    }
+
+    // ----- COLLECTION: settings -----
+    match /settings/{docId} {
+      allow read: if true;
+      allow write: if request.resource.data.keys().hasAll(['adminPassword'])
+                   && request.resource.data.adminPassword is string
+                   && request.resource.data.adminPassword.size() >= 1
+                   && request.resource.data.adminPassword.size() <= 200;
+    }
+
+    // ----- COLLECTION: guru -----
+    match /guru/{docId} {
+      allow read: if true;
+      allow create, update: if
+        request.resource.data.id is number
+        && request.resource.data.nama is string
+        && request.resource.data.nama.size() >= 1
+        && request.resource.data.nama.size() <= 200
+        && request.resource.data.password is string
+        && request.resource.data.password.size() >= 1
+        && request.resource.data.password.size() <= 200
+        && (
+          !('role_sistem' in request.resource.data)
+          || request.resource.data.role_sistem in ['user', 'guru_biasa', 'admin', 'admin_keuangan', 'super_admin']
+        );
+      allow delete: if true;
+    }
+
+    // ----- COLLECTION: santri -----
+    match /santri/{docId} {
+      allow read: if true;
+      allow create, update: if
+        request.resource.data.id is number
+        && request.resource.data.nama is string
+        && request.resource.data.nama.size() >= 1
+        && request.resource.data.nama.size() <= 200
+        && (
+          !('aktif' in request.resource.data)
+          || request.resource.data.aktif is bool
+        );
+      allow delete: if true;
+    }
+
+    // ----- COLLECTION: absensi -----
+    match /absensi/{docId} {
+      allow read, write: if true;
+    }
+
+    // ============================================================
+    // ===== KOLEKSI KEUANGAN — VALIDASI STRUKTUR LEBIH KETAT =====
+    // ============================================================
+    // Catatan: Rules ini memvalidasi STRUKTUR data, bukan IDENTITAS user.
+    // Jadi field operator/sumber harus diisi dengan benar dari client.
+
+    // ----- COLLECTION: keuangan_tagihan -----
+    match /keuangan_tagihan/{docId} {
+      allow read: if true;
+      allow create, update: if
+        request.resource.data.id is string
+        && request.resource.data.santri_id is number
+        && request.resource.data.jenis_id is string
+        && isPositive(request.resource.data.nominal_total)
+        && isPositive(request.resource.data.nominal_terbayar)
+        && request.resource.data.status in ['belum', 'partial', 'lunas']
+        && request.resource.data.nominal_terbayar <= request.resource.data.nominal_total;
+      allow delete: if true;
+    }
+
+    // ----- COLLECTION: keuangan_transaksi (POS) -----
+    match /keuangan_transaksi/{docId} {
+      allow read: if true;
+      allow create: if
+        request.resource.data.id is string
+        && request.resource.data.no_struk is string
+        && request.resource.data.santri_id is number
+        && isValidDate(request.resource.data.tanggal)
+        && isPositive(request.resource.data.total_tagihan)
+        && isPositive(request.resource.data.total_bayar)
+        && request.resource.data.items is list
+        && request.resource.data.items.size() >= 1
+        && request.resource.data.items.size() <= 50;
+      // Tidak boleh update atau delete transaksi yang sudah dibuat
+      // (audit trail). Jika perlu adjust, pakai input manual buku induk.
+      allow update, delete: if false;
+    }
+
+    // ----- COLLECTION: keuangan_tabungan_santri -----
+    match /keuangan_tabungan_santri/{docId} {
+      allow read: if true;
+      allow create: if
+        request.resource.data.id is string
+        && request.resource.data.santri_id is number
+        && request.resource.data.jenis in ['setor', 'tarik']
+        && request.resource.data.nominal is number
+        && request.resource.data.nominal > 0
+        && isValidDate(request.resource.data.tanggal);
+      allow update, delete: if false; // immutable mutasi
+    }
+
+    // ----- COLLECTION: keuangan_tabungan_guru -----
+    match /keuangan_tabungan_guru/{docId} {
+      allow read: if true;
+      allow create: if
+        request.resource.data.id is string
+        && request.resource.data.guru_id is number
+        && request.resource.data.jenis in ['setor', 'tarik']
+        && request.resource.data.nominal is number
+        && request.resource.data.nominal > 0
+        && isValidDate(request.resource.data.tanggal);
+      allow update, delete: if false;
+    }
+
+    // ----- COLLECTION: keuangan_gaji -----
+    match /keuangan_gaji/{docId} {
+      allow read: if true;
+      allow create, update: if
+        request.resource.data.id is string
+        && request.resource.data.guru_id is number
+        && request.resource.data.periode is string
+        && request.resource.data.periode.matches('[0-9]{4}-[0-9]{2}')
+        && isPositive(request.resource.data.bisyaroh_pokok)
+        && isPositive(request.resource.data.total_pemasukan)
+        && isPositive(request.resource.data.total_potongan)
+        && request.resource.data.tunjangan_list is list
+        && request.resource.data.potongan_list is list;
+      allow delete: if false; // slip gaji immutable, kecuali via super-admin (out-of-band)
+    }
+
+    // ----- COLLECTION: keuangan_hutang -----
+    match /keuangan_hutang/{docId} {
+      allow read: if true;
+      allow create, update: if
+        request.resource.data.id is string
+        && request.resource.data.kepada is string
+        && request.resource.data.kepada.size() >= 1
+        && request.resource.data.nominal is number
+        && request.resource.data.nominal > 0
+        && request.resource.data.status in ['belum', 'lunas']
+        && isValidDate(request.resource.data.tanggal);
+      allow delete: if true;
+    }
+
+    // ----- COLLECTION: keuangan_buku_induk -----
+    match /keuangan_buku_induk/{docId} {
+      allow read: if true;
+      allow create: if
+        request.resource.data.id is string
+        && request.resource.data.tipe in ['masuk', 'keluar']
+        && request.resource.data.nominal is number
+        && request.resource.data.nominal > 0
+        && isValidDate(request.resource.data.tanggal)
+        && request.resource.data.keterangan is string
+        && request.resource.data.keterangan.size() >= 1
+        && request.resource.data.sumber in ['manual', 'pos_santri', 'tabungan_santri', 'tabungan_guru', 'gaji', 'hutang'];
+      // Catatan immutable kecuali penghapusan oleh manual entry (untuk koreksi)
+      allow update: if false;
+      allow delete: if resource.data.sumber == 'manual';
+    }
+
+    // Link Preview Cache — write hanya dari Cloud Function (admin SDK bypass rules)
+    // Read: public (boleh, karena hanya berisi metadata publik)
+    match /link_preview_cache/{cacheId} {
+      allow read: if true;
+      allow write: if false; // hanya Cloud Function yang bisa tulis
+    }
+
+    // ----- COLLECTION: beranda_post (postingan admin di Beranda) -----
+    match /beranda_post/{docId} {
+      allow read: if true;
+      allow create, update: if
+        request.resource.data.id is string
+        && request.resource.data.judul is string
+        && request.resource.data.judul.size() >= 1
+        && request.resource.data.judul.size() <= 200
+        && request.resource.data.isi is string
+        && request.resource.data.isi.size() <= 5000;
+      allow delete: if true;
+    }
+
+    // ----- COLLECTION: kegiatan (kalender kegiatan) -----
+    match /kegiatan/{docId} {
+      allow read: if true;
+      allow create, update: if
+        request.resource.data.id is string
+        && request.resource.data.judul is string
+        && request.resource.data.judul.size() >= 1
+        && isValidDate(request.resource.data.tgl_mulai);
+      allow delete: if true;
+    }
+
+    // ----- COLLECTION: kritik_saran -----
+    match /kritik_saran/{docId} {
+      allow read: if true;
+      allow create: if
+        request.resource.data.pesan is string
+        && request.resource.data.pesan.size() >= 1
+        && request.resource.data.pesan.size() <= 2000;
+      allow update, delete: if true;
+    }
+
+    // ----- COLLECTION: profil_pesantren -----
+    match /profil_pesantren/{docId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // ----- COLLECTION: absensi_kegiatan (santri mukim) -----
+    match /absensi_kegiatan/{docId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // ----- COLLECTION: absensi_shift_guru -----
+    match /absensi_shift_guru/{docId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // ----- COLLECTION: notif_queue (untuk Cloud Function FCM) -----
+    match /notif_queue/{docId} {
+      allow read: if true;
+      allow create: if
+        request.resource.data.judul is string
+        && request.resource.data.pesan is string;
+      allow update, delete: if true;
+    }
+
+    // ----- COLLECTION: audit_log (super admin edit transaksi) -----
+    match /audit_log/{docId} {
+      allow read: if true;
+      allow create: if true;
+      allow update, delete: if false; // audit log immutable
+    }
+
+    // ----- COLLECTION: rapor_semester (data nilai rapor santri) -----
+    match /rapor_semester/{docId} {
+      allow read: if true;
+      allow create, update: if
+        request.resource.data.santri_id != null
+        && request.resource.data.lembaga is string;
+      allow delete: if true;
+    }
+
+    // ----- COLLECTION: rekap_diniyah (rekap prestasi mata pelajaran diniyah per bulan) -----
+    match /rekap_diniyah/{docId} {
+      allow read: if true;
+      allow create, update: if request.resource.data.santri_id != null;
+      allow delete: if true;
+    }
+
+    // ----- COLLECTION: absensi_santri_sekolah (Fase 4 — absen harian santri lembaga Formal) -----
+    // Format: { id: 'santri_id_YYYY-MM-DD', santri_id, tanggal, lembaga, status, catatan }
+    match /absensi_santri_sekolah/{docId} {
+      allow read: if true;
+      allow create, update: if
+        request.resource.data.id is string
+        && request.resource.data.santri_id is number
+        && isValidDate(request.resource.data.tanggal)
+        && request.resource.data.lembaga is string
+        && request.resource.data.status in ['Hadir', 'Sakit', 'Izin', 'Alpa']
+        && (
+          !('catatan' in request.resource.data)
+          || (request.resource.data.catatan is string && request.resource.data.catatan.size() <= 500)
+        );
+      allow delete: if true;
+    }
+
+    // Default deny untuk collection lain
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

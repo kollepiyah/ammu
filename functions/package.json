@@ -1,0 +1,29 @@
+{
+  "name": "functions",
+  "description": "Cloud Functions for Firebase",
+  "scripts": {
+    "serve": "firebase emulators:start --only functions",
+    "shell": "firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "deploy:notif": "firebase deploy --only functions:kirimNotifikasiMassal",
+    "deploy:linkpreview": "firebase deploy --only functions:getLinkPreview",
+    "deploy:cleanup": "firebase deploy --only functions:cleanupAuditLog",
+    "logs": "firebase functions:log",
+    "logs:cleanup": "firebase functions:log --only cleanupAuditLog --lines 50",
+    "list": "firebase functions:list"
+  },
+  "engines": {
+    "node": "24"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "cheerio": "^1.2.0",
+    "firebase-admin": "^13.6.0",
+    "firebase-functions": "^7.0.0"
+  },
+  "devDependencies": {
+    "firebase-functions-test": "^3.4.1"
+  },
+  "private": true
+}
