@@ -516,7 +516,7 @@
             </div>
         </div>
         <p class="mt-4 text-[9px] text-white opacity-90 font-bold tracking-widest uppercase relative z-10 drop-shadow-md">© 2026 Pondok Pesantren Mambaul Ulum</p>
-        <p class="mt-1 text-[9px] text-white opacity-70 font-bold tracking-widest relative z-10 drop-shadow-md" id="app-version-login">v.25.1026</p>
+        <p class="mt-1 text-[9px] text-white opacity-70 font-bold tracking-widest relative z-10 drop-shadow-md" id="app-version-login">v.26.1026</p>
     </div>
 
     <!-- VIEW 2: APLIKASI UTAMA -->
@@ -3743,7 +3743,7 @@
             window.addEventListener('load', async () => {
                 try {
                     // CLEANUP: unregister SW lama yang mungkin terdaftar dengan scope berbeda
-                    // (penyebab crash di mobile karena 2 SW paralel sebelum v.25.1026)
+                    // (penyebab crash di mobile karena 2 SW paralel sebelum v.26.1026)
                     const existingRegs = await navigator.serviceWorker.getRegistrations();
                     for(const r of existingRegs) {
                         // Hanya unregister SW yang BUKAN scope root (mis. './sw.js' yang lama)
@@ -3850,7 +3850,7 @@
             namaChannel: 'Al Manshur Channel'
         };
 
-        const APP_VERSION = 'v.25.1026';
+        const APP_VERSION = 'v.26.1026';
 
         function parseTanggalExcel(val) {
             if (!val) return '';
@@ -3959,6 +3959,27 @@
         }
 
         async function initApp() {
+            // DEFENSIVE: force tutup SEMUA modal saat app startup
+            // (mencegah modal stuck dari session sebelumnya / cache lama)
+            document.querySelectorAll('[id^="modal-"]').forEach(m => m.classList.add('hidden'));
+            
+            // GLOBAL HANDLERS: ESC key & click backdrop untuk tutup modal yang sedang open
+            if(!window._modalHandlersAttached) {
+                window._modalHandlersAttached = true;
+                // Tombol Esc → tutup modal yang sedang open
+                document.addEventListener('keydown', e => {
+                    if(e.key === 'Escape') {
+                        document.querySelectorAll('[id^="modal-"]:not(.hidden)').forEach(m => m.classList.add('hidden'));
+                    }
+                });
+                // Klik backdrop (di luar card) → tutup modal
+                document.querySelectorAll('[id^="modal-"]').forEach(m => {
+                    m.addEventListener('click', e => {
+                        if(e.target === m) m.classList.add('hidden');
+                    });
+                });
+            }
+            
             // Load dark mode setting (guest/last user)
             try { loadDarkMode(); } catch(e) {}
             // Setup mobile gestures (edge swipe sidebar + pull-to-refresh)
@@ -4213,6 +4234,10 @@
         }
 
         function masukKeAplikasi() {
+            // SAFETY: tutup SEMUA modal yang mungkin masih open dari halaman login
+            // (mis. modal Lupa Sandi yang tidak sengaja ke-trigger)
+            document.querySelectorAll('[id^="modal-"]').forEach(m => m.classList.add('hidden'));
+            
             sessionStorage.setItem('sesiAktif_v6', JSON.stringify(sesiAktif));
             // Cek "Ingat Saya" — kalau dicentang, simpan juga di localStorage (persistent)
             const ingat = document.getElementById('login-ingat-saya');
