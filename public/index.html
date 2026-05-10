@@ -323,8 +323,11 @@
         
         /* === Dark Mode FIXES untuk widget bentrok === */
         /* ============= LAYOUT GUARANTEE (jaga-jaga Tailwind CDN slow load) ============= */
+        /* GLOBAL HIDDEN: pastikan class .hidden BENAR-BENAR menyembunyikan, walaupun Tailwind CDN slow load */
+        .hidden { display: none !important; }
         /* Pastikan struktur layout app-view + sidebar + main wrapper tetap proper bahkan kalau Tailwind belum load */
-        #app-view {
+        /* Pakai :not(.hidden) supaya rules ini HANYA apply saat app-view aktif (tidak override class hidden) */
+        #app-view:not(.hidden) {
             display: flex !important;
             flex-direction: row !important;
             background: #f8fafc !important;
@@ -333,7 +336,7 @@
             flex-shrink: 0 !important;
             flex-direction: column !important;
         }
-        #app-view > div:not(#sidebar):not(#sidebar-overlay) {
+        #app-view:not(.hidden) > div:not(#sidebar):not(#sidebar-overlay) {
             flex: 1 1 0% !important;
             display: flex !important;
             flex-direction: column !important;
@@ -513,11 +516,11 @@
             </div>
         </div>
         <p class="mt-4 text-[9px] text-white opacity-90 font-bold tracking-widest uppercase relative z-10 drop-shadow-md">© 2026 Pondok Pesantren Mambaul Ulum</p>
-        <p class="mt-1 text-[9px] text-white opacity-70 font-bold tracking-widest relative z-10 drop-shadow-md" id="app-version-login">v.23.1026</p>
+        <p class="mt-1 text-[9px] text-white opacity-70 font-bold tracking-widest relative z-10 drop-shadow-md" id="app-version-login">v.24.1026</p>
     </div>
 
     <!-- VIEW 2: APLIKASI UTAMA -->
-    <div id="app-view" class="hidden fixed inset-0 z-40 flex overflow-hidden" style="position:fixed;top:0;right:0;bottom:0;left:0;display:flex;flex-direction:row;overflow:hidden;z-index:40;">
+    <div id="app-view" class="hidden fixed inset-0 z-40 flex overflow-hidden" style="position:fixed;top:0;right:0;bottom:0;left:0;flex-direction:row;overflow:hidden;z-index:40;">
         
         <!-- SIDEBAR -->
         <aside id="sidebar" class="bg-slate-900 text-white w-72 flex-shrink-0 flex flex-col absolute inset-y-0 left-0 transform -translate-x-full md:relative md:translate-x-0 transition-transform duration-300 z-50 shadow-2xl no-print border-r border-white/5" style="width:18rem;flex-shrink:0;display:flex;flex-direction:column;background:#0f172a;color:white;">
@@ -3847,7 +3850,7 @@
             namaChannel: 'Al Manshur Channel'
         };
 
-        const APP_VERSION = 'v.23.1026';
+        const APP_VERSION = 'v.24.1026';
 
         function parseTanggalExcel(val) {
             if (!val) return '';
