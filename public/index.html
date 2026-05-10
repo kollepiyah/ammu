@@ -516,7 +516,7 @@
             </div>
         </div>
         <p class="mt-4 text-[9px] text-white opacity-90 font-bold tracking-widest uppercase relative z-10 drop-shadow-md">© 2026 Pondok Pesantren Mambaul Ulum</p>
-        <p class="mt-1 text-[9px] text-white opacity-70 font-bold tracking-widest relative z-10 drop-shadow-md" id="app-version-login">v.24.1026</p>
+        <p class="mt-1 text-[9px] text-white opacity-70 font-bold tracking-widest relative z-10 drop-shadow-md" id="app-version-login">v.25.1026</p>
     </div>
 
     <!-- VIEW 2: APLIKASI UTAMA -->
@@ -3717,17 +3717,6 @@
         </div>
     </div>
 
-    <!-- SCRIPT PEMANGGIL PWA -->
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then((reg) => console.log('PWA Service Worker terdaftar!', reg.scope))
-                    .catch((err) => console.log('PWA gagal didaftarkan: ', err));
-            });
-        }
-    </script>
-
     <script>
         const firebaseConfig = {
             apiKey: "AIzaSyBdZexExhs-vCnAOXRK6DSj4uUUTMGWlEE",
@@ -3751,15 +3740,26 @@
         // SW ini terpisah dari firebase-messaging-sw.js (FCM SW)
         // Update SW akan dipakai saat user buka aplikasi berikutnya (TIDAK paksa reload).
         if('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js', { scope: '/' })
-                    .then(reg => {
-                        console.log('PWA SW registered:', reg.scope);
-                        // Cek update tiap 6 jam (jangan terlalu agresif)
-                        setInterval(() => reg.update().catch(()=>{}), 6 * 60 * 60 * 1000);
-                    })
-                    .catch(err => console.warn('PWA SW register fail:', err));
-                // ⚠️ TIDAK ADA auto-reload — penyebab refresh loop di iOS/Android
+            window.addEventListener('load', async () => {
+                try {
+                    // CLEANUP: unregister SW lama yang mungkin terdaftar dengan scope berbeda
+                    // (penyebab crash di mobile karena 2 SW paralel sebelum v.25.1026)
+                    const existingRegs = await navigator.serviceWorker.getRegistrations();
+                    for(const r of existingRegs) {
+                        // Hanya unregister SW yang BUKAN scope root (mis. './sw.js' yang lama)
+                        // dan BUKAN firebase-messaging-sw (FCM)
+                        if(!r.scope.endsWith('/') || r.scope.includes('./')) {
+                            try { await r.unregister(); console.log('SW lama dihapus:', r.scope); } catch(e){}
+                        }
+                    }
+                    // Register SW baru dengan scope root
+                    const reg = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+                    console.log('PWA SW registered:', reg.scope);
+                    // ⚠️ TIDAK ADA setInterval auto-update (penyebab memory leak di mobile)
+                    // ⚠️ TIDAK ADA auto-reload (penyebab refresh loop di iOS/Android)
+                } catch(err) {
+                    console.warn('PWA SW register fail:', err);
+                }
             });
         }
 
@@ -3850,7 +3850,7 @@
             namaChannel: 'Al Manshur Channel'
         };
 
-        const APP_VERSION = 'v.24.1026';
+        const APP_VERSION = 'v.25.1026';
 
         function parseTanggalExcel(val) {
             if (!val) return '';
