@@ -513,7 +513,7 @@
             </div>
         </div>
         <p class="mt-4 text-[9px] text-white opacity-90 font-bold tracking-widest uppercase relative z-10 drop-shadow-md">© 2026 Pondok Pesantren Mambaul Ulum</p>
-        <p class="mt-1 text-[9px] text-white opacity-70 font-bold tracking-widest relative z-10 drop-shadow-md" id="app-version-login">v.22.1026</p>
+        <p class="mt-1 text-[9px] text-white opacity-70 font-bold tracking-widest relative z-10 drop-shadow-md" id="app-version-login">v.23.1026</p>
     </div>
 
     <!-- VIEW 2: APLIKASI UTAMA -->
@@ -3847,7 +3847,7 @@
             namaChannel: 'Al Manshur Channel'
         };
 
-        const APP_VERSION = 'v.22.1026';
+        const APP_VERSION = 'v.23.1026';
 
         function parseTanggalExcel(val) {
             if (!val) return '';
@@ -8655,7 +8655,7 @@
             if(set.bgImage && set.bgImage.length > 5 && bgEl) { bgEl.style.backgroundImage = `url('${set.bgImage}')`; bgEl.style.opacity = '1'; if(overlayEl) overlayEl.className = 'fixed inset-0 bg-black bg-opacity-40 z-[-1] pointer-events-none'; } 
             else { if(bgEl) bgEl.style.backgroundImage = 'none'; if(overlayEl) overlayEl.className = 'fixed inset-0 bg-teal-900 bg-opacity-85 z-[-1] pointer-events-none backdrop-blur-md'; }
             
-            const finalLogo = set.logoUrl || `https://ui-avatars.com/api/?name=${set.txtAppName.charAt(0)}&background=${set.themeColor.replace('#','')}&color=fff`;
+            const finalLogo = set.logoUrl || 'logo.png';
             const elLoginLogo = document.getElementById('login-logo'); if(elLoginLogo) elLoginLogo.src = finalLogo;
             const elSidebarLogo = document.getElementById('sidebar-logo'); if(elSidebarLogo) elSidebarLogo.src = finalLogo;
             const elPrintLogo = document.getElementById('print-logo'); if(elPrintLogo) elPrintLogo.src = finalLogo;
