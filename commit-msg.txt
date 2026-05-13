@@ -1,33 +1,28 @@
-B0+B1+UX: Recovery + Firebase Auth migration + Toast UX
+B2 + Toast compact + lazy-init: Firestore Rules tightening + toast UX final
 
-B0 - Recovery hotfixes:
-- Restore truncated index.html (3x) via git HEAD stitching
-- sw.js missing closing parenthesis fix
-- Add _preCacheLogos helper (pre-cache logo URLs)
-- Add _imgUrlCache + _cacheImgUrl (dataURL cache for jsPDF)
-- Menu admin role_sistem support (admin biasa & super_admin)
+B2 - Firestore Rules tightening:
+- Migrate `allow write: if true` -> `if signedIn()` (request.auth != null)
+- READ tetap public untuk login lookup compatibility
+- kritik_saran CREATE tetap allow anonymous
+- Default deny untuk collection tidak tercantum
+- Backup rules lama: firestore.rules.bak.v.108.43
 
-B1 - Firebase Auth Hybrid Migration (5 phases):
-- P1: Lazy migration login flow (Auth-first, Firestore fallback)
-- P2: Auto-provision Auth on new user creation (secondary Firebase app)
-- P2.1: Client rate-limit 5/5min + 2s cooldown anti too-many-requests
-- P2.2: Internal password padding 'mu_auth_' bypass min-6-char Firebase rule
-- P3: Self-edit password sync ke Firebase Auth (admin/guru/santri)
+Toast notification v.108.51:
+- LAZY INIT _toastMixinInstance (Swal defer load fix)
+- Hapus mouseenter handler (penyebab timer stuck / not auto-dismiss)
+- Ukuran lebih KOMPAK: 220px min-width (was 280), padding 10px (was 14)
+- Font 12px, icon 26px (smaller untuk tidak mengganggu)
+- Timer progress bar 2px teal-emerald gradient
+- Hide #global-loader saat Swal active (anti shadow bocor)
+- Dark mode support
 
-UX Improvements:
-- Toast notification bottom-right mobile-style (194 popup -> silent toast)
-- Inline login button cooldown spinner (no popup)
-- Login page bocor fix (CSS ULTRA-NUKE + JS force hide app-view)
-- Defensive error path: force hide app-view + signOut on initApp catch
+Skipped (untuk versi mendatang):
+- B3 Palette teal-emerald (file truncation berulang, tunda)
+- Custom modal Swal styling (bikin OK button stuck, revert ke default)
 
-Security:
-- escapeHtml() di dropdown guru options (XSS prevention)
-- cekHakAkses() guards di 9 destructive functions
+Bugfix:
+- sw.js null bytes (332 byte) — penyebab husky prettier reject
+- gitignore: tambah pola *.bak.* + commit-msg.txt
 
-Infrastructure:
-- Husky pre-commit hook (block credentials commit)
-- Iframely API integration for social media link preview (Cloud Function)
-- Firebase Functions v2 + Secret Manager migration
-
-APP_VERSION: v.108.42.0513-toast-notif
-SW_VERSION:  v241-0513-toast-notif
+APP_VERSION: v.108.51.0513-toast-compact
+SW_VERSION:  v249-0513-toast-compact

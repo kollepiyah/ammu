@@ -453,32 +453,34 @@
 
       /* v.108.42 — Toast notification (bottom-right mobile-style) */
       .mu-toast-popup {
-        border-radius: 14px !important;
+        border-radius: 12px !important;
         box-shadow:
-          0 10px 25px rgba(0, 0, 0, 0.15),
-          0 4px 10px rgba(0, 0, 0, 0.08) !important;
+          0 6px 20px rgba(0, 0, 0, 0.12),
+          0 2px 6px rgba(0, 0, 0, 0.06) !important;
         font-family: inherit !important;
-        font-size: 13px !important;
-        padding: 14px 18px !important;
-        min-width: 280px !important;
-        max-width: 92vw !important;
-        margin: 0 16px 16px 0 !important;
-        backdrop-filter: blur(12px) !important;
-        -webkit-backdrop-filter: blur(12px) !important;
-        animation: muToastSlideUp 0.35s cubic-bezier(0.2, 0.8, 0.3, 1.2) !important;
+        font-size: 12px !important;
+        padding: 10px 14px !important;
+        min-width: 220px !important;
+        max-width: 360px !important;
+        margin: 0 12px 12px 0 !important;
+        backdrop-filter: blur(10px) !important;
+        -webkit-backdrop-filter: blur(10px) !important;
+        background: rgba(255, 255, 255, 0.96) !important;
+        animation: muToastSlideUp 0.3s cubic-bezier(0.2, 0.8, 0.3, 1.15) !important;
       }
       .mu-toast-popup .swal2-title {
-        font-size: 13px !important;
-        font-weight: 700 !important;
+        font-size: 12px !important;
+        font-weight: 600 !important;
         padding: 0 4px !important;
-        line-height: 1.45 !important;
+        line-height: 1.35 !important;
+        color: #1e293b !important;
       }
       .mu-toast-popup .swal2-icon {
-        width: 32px !important;
-        height: 32px !important;
-        margin: 0 12px 0 0 !important;
+        width: 26px !important;
+        height: 26px !important;
+        margin: 0 10px 0 0 !important;
         border-width: 2px !important;
-        font-size: 16px !important;
+        font-size: 13px !important;
       }
       .mu-toast-popup .swal2-icon.swal2-success {
         color: #059669 !important;
@@ -497,39 +499,47 @@
         border-color: #2563eb !important;
       }
       .mu-toast-popup .swal2-timer-progress-bar-container {
-        height: 3px !important;
-        border-radius: 0 0 14px 14px !important;
+        height: 2px !important;
+        border-radius: 0 0 12px 12px !important;
       }
       .mu-toast-popup .swal2-timer-progress-bar {
-        background: linear-gradient(90deg, #14b8a6, #0d9488) !important;
+        background: linear-gradient(90deg, #14b8a6, #10b981) !important;
       }
       @keyframes muToastSlideUp {
         0% {
           opacity: 0;
-          transform: translateY(40px) scale(0.95);
-        }
-        60% {
-          transform: translateY(-4px) scale(1.01);
+          transform: translateY(20px) scale(0.95);
         }
         100% {
           opacity: 1;
           transform: translateY(0) scale(1);
         }
       }
-      /* Mobile: pojok kanan-bawah dengan margin lebih kecil */
       @media (max-width: 640px) {
         .mu-toast-popup {
-          min-width: 240px !important;
-          font-size: 12px !important;
-          margin: 0 10px 10px 0 !important;
-          padding: 12px 14px !important;
+          min-width: 200px !important;
+          max-width: 90vw !important;
+          font-size: 11px !important;
+          padding: 8px 12px !important;
+          margin: 0 8px 8px 0 !important;
+        }
+        .mu-toast-popup .swal2-title {
+          font-size: 11px !important;
         }
       }
-      /* Dark mode toast */
       body.dark-mode .mu-toast-popup,
       html.dark-mode .mu-toast-popup {
-        background: rgba(30, 41, 59, 0.95) !important;
+        background: rgba(30, 41, 59, 0.96) !important;
+      }
+      body.dark-mode .mu-toast-popup .swal2-title,
+      html.dark-mode .mu-toast-popup .swal2-title {
         color: #e2e8f0 !important;
+      }
+      /* Hide #global-loader saat Swal active (anti shadow bocor) */
+      body.swal2-shown #global-loader,
+      body.swal2-toast-shown #global-loader {
+        display: none !important;
+        opacity: 0 !important;
       }
 
       /* v.108.6: Hide dashboard saat login-view visible (pakai :has() modern selector + fallback) */
@@ -13599,7 +13609,7 @@
         if (b) b.classList.add('hidden')
       }
 
-      const APP_VERSION = 'v.108.42.0513-toast-notif'
+      const APP_VERSION = 'v.108.51.0513-toast-compact'
 
       function parseTanggalExcel(val) {
         if (!val) return ''
@@ -13923,38 +13933,42 @@
       // v.108.42 — Toast notification helper (bottom-right mobile style)
       // Replace Swal.fire 3-arg popup yang mengganggu, jadi toast subtle yang auto-dismiss.
       // Confirmation modal (showCancelButton) TETAP modal — perlu user interaction.
-      const _ToastMixin = Swal.mixin({
-        toast: true,
-        position: 'bottom-end',
-        showConfirmButton: false,
-        timer: 3000,
-        timerProgressBar: true,
-        customClass: { popup: 'mu-toast-popup' },
-        didOpen: (toast) => {
-          toast.addEventListener('mouseenter', Swal.stopTimer)
-          toast.addEventListener('mouseleave', Swal.resumeTimer)
-        }
-      })
+      // v.108.51 — LAZY INIT toast mixin (Swal defer load + timer fix)
+      let _toastMixinInstance = null
+      function _getToastMixin() {
+        if (_toastMixinInstance) return _toastMixinInstance
+        if (typeof Swal === 'undefined') return null
+        _toastMixinInstance = Swal.mixin({
+          toast: true,
+          position: 'bottom-end',
+          showConfirmButton: false,
+          timer: 3000,
+          timerProgressBar: true,
+          customClass: { popup: 'mu-toast-popup' }
+        })
+        return _toastMixinInstance
+      }
       const _toast = {
         success: function (msg) {
-          return _ToastMixin.fire({ icon: 'success', title: String(msg || 'Berhasil') })
+          const m = _getToastMixin()
+          if (m) return m.fire({ icon: 'success', title: String(msg || 'Berhasil') })
+          console.log('[toast.success]', msg)
         },
         error: function (msg) {
-          return _ToastMixin.fire({
-            icon: 'error',
-            title: String(msg || 'Terjadi kesalahan'),
-            timer: 4500
-          })
+          const m = _getToastMixin()
+          if (m)
+            return m.fire({ icon: 'error', title: String(msg || 'Terjadi kesalahan'), timer: 4500 })
+          console.error('[toast.error]', msg)
         },
         warning: function (msg) {
-          return _ToastMixin.fire({
-            icon: 'warning',
-            title: String(msg || 'Peringatan'),
-            timer: 4000
-          })
+          const m = _getToastMixin()
+          if (m) return m.fire({ icon: 'warning', title: String(msg || 'Peringatan'), timer: 4000 })
+          console.warn('[toast.warning]', msg)
         },
         info: function (msg) {
-          return _ToastMixin.fire({ icon: 'info', title: String(msg || '') })
+          const m = _getToastMixin()
+          if (m) return m.fire({ icon: 'info', title: String(msg || '') })
+          console.info('[toast.info]', msg)
         }
       }
 
@@ -14953,8 +14967,9 @@
             })
             // v.108.16: Hide group keuangan (id baru: grup-keuangan-menu)
             const grupKeu = document.getElementById('grup-keuangan-menu')
-            if (grupKeu) grupKeu.classList.add('hidden')
-            // Hide menu Master Data + Pengaturan Web
+            if (grupKeu)
+              grupKeu.classList.add('hidden')
+              // Hide menu Master Data + Pengaturan Web
             ;[
               'menu-master-data',
               'menu-pengaturan-web',
@@ -30185,14 +30200,11 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
         if (!r.isConfirmed) return
         toggleLoader(true)
         try {
-          await db
-            .collection('guru')
-            .doc(String(gid))
-            .update({
-              password: baru,
-              password_reset_at: new Date().toISOString(),
-              password_reset_by: sesiAktif.nama
-            })
+          await db.collection('guru').doc(String(gid)).update({
+            password: baru,
+            password_reset_at: new Date().toISOString(),
+            password_reset_by: sesiAktif.nama
+          })
           const idx = db_guru.findIndex((x) => x.id == gid)
           if (idx >= 0) db_guru[idx].password = baru
           document.getElementById('modal-reset-sandi-guru').classList.add('hidden')
@@ -33053,7 +33065,6 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
             ke_kelas: m[2].trim()
           })
         })
-
         ;(schema.sections || []).forEach((sec) => {
           ;(sec.rows || []).forEach((row) => {
             sec.fields.forEach((f) => {
@@ -35159,8 +35170,9 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
         const fileInp = document.getElementById('bp-gambar-file')
         if (fileInp) fileInp.value = ''
         const prog = document.getElementById('bp-gambar-progress')
-        if (prog) prog.classList.add('hidden')
-        // Reset link preview
+        if (prog)
+          prog.classList.add('hidden')
+          // Reset link preview
         ;['bp-link-url', 'bp-link-title', 'bp-link-desc', 'bp-link-image'].forEach((id) => {
           const el = document.getElementById(id)
           if (el) el.value = ''
@@ -35188,8 +35200,9 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
         const fileInp = document.getElementById('bp-gambar-file')
         if (fileInp) fileInp.value = ''
         const prog = document.getElementById('bp-gambar-progress')
-        if (prog) prog.classList.add('hidden')
-        // Restore link preview kalau ada
+        if (prog)
+          prog.classList.add('hidden')
+          // Restore link preview kalau ada
         ;['bp-link-url', 'bp-link-title', 'bp-link-desc', 'bp-link-image'].forEach((id) => {
           const el = document.getElementById(id)
           if (el) el.value = ''

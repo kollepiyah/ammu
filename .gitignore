@@ -89,8 +89,10 @@ backups/
 
 # Cache & temp
 *.bak
+*.bak.*
 *.tmp
 _tmp_*
+commit-msg.txt
 
 # dataconnect generated files
 .dataconnect
