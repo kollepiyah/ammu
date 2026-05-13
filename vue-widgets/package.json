@@ -1,0 +1,20 @@
+{
+  "name": "ammu-widgets",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Vue 3 widget bundle untuk Portal Mambaul Ulum legacy app",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "vue": "^3.5.13"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.2.1",
+    "vite": "^6.0.7",
+    "vite-plugin-css-injected-by-js": "^3.5.2"
+  }
+}

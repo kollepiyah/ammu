@@ -64,6 +64,40 @@ node_modules/
 
 # dotenv environment variables file
 .env
+.env.local
+.env.*.local
+.env.development
+.env.production
+
+# v.108.31: Block sensitive credentials & signing keys (security hardening)
+*.keystore
+*.jks
+*.key
+*.pem
+service-account*.json
+google-services.json
+GoogleService-Info.plist
+firebase-adminsdk-*.json
+secrets/
+.secrets/
+
+# Obsolete folders (cleanup v.108.31)
+_archive-portal-mu-v2/
+backup\ v.*/
+backups/
+.lighthouseci/
+
+# Cache & temp
+*.bak
+*.tmp
+_tmp_*
 
 # dataconnect generated files
 .dataconnect
+
+# Capacitor
+node_modules/
+android/build/
+android/app/build/
+android/.gradle/
+android/local.properties

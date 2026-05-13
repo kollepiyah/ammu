@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ammu Widgets — Dev Preview</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    />
+  </head>
+  <body class="bg-slate-100 p-8">
+    <h1 class="text-2xl font-black mb-4">Ammu Widgets — Dev Preview</h1>
+    <div class="grid gap-4 max-w-2xl">
+      <div id="preview-postcard"></div>
+      <div id="preview-kalender"></div>
+      <div id="preview-jam"></div>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+    <script type="module">
+      // Auto-mount widget di dev (di production, legacy yang panggil)
+      import { mount } from '/src/main.js'
+      window.addEventListener('DOMContentLoaded', () => {
+        if (window.AmmuWidgets) {
+          window.AmmuWidgets.mount('PostCard', '#preview-postcard', {
+            judul: 'Dokumentasi Haul Muassis',
+            isi: 'Acara haul muassis berlangsung khidmat...',
+            tanggal: new Date().toISOString(),
+            gambar_urls: ['https://images.unsplash.com/photo-1564769625905-50e93615e769?w=800']
+          })
+          window.AmmuWidgets.mount('JamHijri', '#preview-jam', {})
+        }
+      })
+    </script>
+  </body>
+</html>

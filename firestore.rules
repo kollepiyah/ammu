@@ -74,7 +74,7 @@ service cloud.firestore {
         && request.resource.data.password.size() <= 200
         && (
           !('role_sistem' in request.resource.data)
-          || request.resource.data.role_sistem in ['user', 'guru_biasa', 'admin', 'admin_keuangan', 'super_admin']
+          || request.resource.data.role_sistem in ['guru_biasa', 'user', 'admin', 'admin_keuangan', 'super_admin']
         );
       allow delete: if true;
     }
@@ -207,7 +207,8 @@ service cloud.firestore {
         && request.resource.data.sumber in ['manual', 'pos_santri', 'tabungan_santri', 'tabungan_guru', 'gaji', 'hutang'];
       // Catatan immutable kecuali penghapusan oleh manual entry (untuk koreksi)
       allow update: if false;
-      allow delete: if resource.data.sumber == 'manual';
+      // v.98.0526: Allow delete utk semua sumber managed (gaji, tabungan, pos, hutang) supaya overwrite slip / koreksi bisa proceed
+      allow delete: if resource.data.sumber in ['manual', 'gaji', 'pos_santri', 'tabungan_santri', 'tabungan_guru', 'hutang'];
     }
 
     // Link Preview Cache — write hanya dari Cloud Function (admin SDK bypass rules)
@@ -301,20 +302,31 @@ service cloud.firestore {
       allow delete: if true;
     }
 
-    // ----- COLLECTION: absensi_santri_sekolah (Fase 4 — absen harian santri lembaga Formal) -----
-    // Format: { id: 'santri_id_YYYY-MM-DD', santri_id, tanggal, lembaga, status, catatan }
+    // ----- COLLECTION: absensi_santri_sekolah (DEPRECATED v.102.0526) -----
+    // Replaced by absensi_santri_sekolah_bulanan (input bulanan, bukan harian).
+    // Read tetap allowed untuk audit/migration, write disabled.
+    // Delete allowed untuk cleanup data lama.
     match /absensi_santri_sekolah/{docId} {
       allow read: if true;
+      allow create, update: if false;
+      allow delete: if true;
+    }
+
+    // ----- COLLECTION: absensi_santri_sekolah_bulanan (v.102.0526) -----
+    // Absen BULANAN per santri (1 santri × 1 bulan = 1 entry).
+    // Format: { id, santri_id, periode (YYYY-MM), sakit, izin, alpa, hadir, lembaga? }
+    // ID format: santri_id_YYYY-MM (mis: "12345_2026-05")
+    // Catatan: absen mukim (santri pondok) & absen guru tetap harian di collection terpisah.
+    match /absensi_santri_sekolah_bulanan/{docId} {
+      allow read: if true;
       allow create, update: if
-        request.resource.data.id is string
-        && request.resource.data.santri_id is number
-        && isValidDate(request.resource.data.tanggal)
-        && request.resource.data.lembaga is string
-        && request.resource.data.status in ['Hadir', 'Sakit', 'Izin', 'Alpa']
-        && (
-          !('catatan' in request.resource.data)
-          || (request.resource.data.catatan is string && request.resource.data.catatan.size() <= 500)
-        );
+        request.resource.data.santri_id != null
+        && request.resource.data.periode is string
+        && request.resource.data.periode.matches('^[0-9]{4}-(0[1-9]|1[0-2])$')
+        && request.resource.data.sakit is number && request.resource.data.sakit >= 0
+        && request.resource.data.izin is number && request.resource.data.izin >= 0
+        && request.resource.data.alpa is number && request.resource.data.alpa >= 0
+        && request.resource.data.hadir is number && request.resource.data.hadir >= 0;
       allow delete: if true;
     }
 

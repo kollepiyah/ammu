@@ -41,7 +41,31 @@ service firebase.storage {
                    && request.resource.contentType.matches('image/.*');
       allow delete: if true;
     }
-    
+
+    // BG Rapor (TPQ + Diniyah) — watermark transparan di belakang konten rapor
+    match /bg_rapor/{file=**} {
+      allow read: if true;
+      allow write: if request.resource.size < 4 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+      allow delete: if true;
+    }
+
+    // TTD digital per guru (Opsi B nanti — disiapkan)
+    match /ttd_guru/{file=**} {
+      allow read: if true;
+      allow write: if request.resource.size < 2 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+      allow delete: if true;
+    }
+
+    // BG aplikasi & assets umum (Opsi B nanti — disiapkan)
+    match /app_bg/{file=**} {
+      allow read: if true;
+      allow write: if request.resource.size < 8 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+      allow delete: if true;
+    }
+
     // Default deny untuk path lain
     match /{allPaths=**} {
       allow read, write: if false;

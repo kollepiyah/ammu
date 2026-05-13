@@ -1,11 +1,13 @@
 {
-  "name": "Mambaul Ulum",
+  "id": "/",
+  "name": "Ammu Online",
   "short_name": "Ammu",
-  "description": "Portal Prestasi Qiraati Mambaul Ulum - Sistem manajemen pondok pesantren digital",
+  "description": "Ammu Online - Sistem manajemen Pondok Pesantren Mambaul Ulum",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "orientation": "portrait",
+  "display_override": ["standalone", "minimal-ui", "browser"],
+  "orientation": "any",
   "theme_color": "#0f766e",
   "background_color": "#0f766e",
   "lang": "id",
@@ -49,14 +51,24 @@
       "short_name": "Beranda",
       "description": "Lihat postingan & kegiatan terbaru",
       "url": "/?page=dashboard",
-      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
+      "icons": [
+        {
+          "src": "icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
     },
     {
       "name": "Buat Postingan",
       "short_name": "Post Baru",
       "description": "Buat postingan baru di Beranda",
       "url": "/?action=new-post",
-      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
+      "icons": [
+        {
+          "src": "icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
     }
   ],
   "prefer_related_applications": false

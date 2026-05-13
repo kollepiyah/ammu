@@ -1,0 +1,13 @@
+{
+  "appId": "app.ammu.twa",
+  "appName": "Ammu App",
+  "webDir": "public",
+  "bundledWebRuntime": false,
+  "android": {
+    "buildOptions": {
+      "keystorePath": "../Portal MU/ammu-app.keystore",
+      "keystoreAlias": "ammu-app"
+    }
+  },
+  "server": { "androidScheme": "https" }
+}

@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "app.ammu.twa",
+      "sha256_cert_fingerprints": [
+        "5C:0C:27:BD:B6:FE:2B:71:13:9C:6B:13:91:18:82:C0:26:F2:9B:0C:52:C8:36:E4:87:FE:91:A0:28:B2:2C:60"
+      ]
+    }
+  }
+]

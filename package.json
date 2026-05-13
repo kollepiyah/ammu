@@ -1,0 +1,49 @@
+{
+  "name": "portal-mambaul-ulum",
+  "version": "0.12.0526",
+  "private": true,
+  "description": "Portal Mambaul Ulum — legacy HTML5 + Vue 3 widgets + Capacitor wrap",
+  "scripts": {
+    "build:widgets": "cd vue-widgets && npm run build",
+    "build:css": "tailwindcss -i ./src/tailwind-input.css -o ./public/dist/tailwind.css --minify",
+    "build:css:watch": "tailwindcss -i ./src/tailwind-input.css -o ./public/dist/tailwind.css --watch",
+    "build:html": "html-minifier-terser --collapse-whitespace --remove-comments --minify-css true --minify-js true --output public/index.min.html public/index.html",
+    "build:all": "npm run build:widgets && npm run build:css && npm run build:html",
+    "lint": "eslint . --fix --ext .js,.vue,.html",
+    "format": "prettier --write \"**/*.{js,vue,html,css,json}\"",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "lh:ci": "lhci autorun",
+    "firebase:emulator": "firebase emulators:start",
+    "firebase:deploy": "firebase deploy --only hosting",
+    "cap:sync": "npx cap sync android",
+    "cap:open": "npx cap open android",
+    "cap:run": "npx cap run android",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{js,vue,html,css,json}": "prettier --write"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.2.0",
+    "@lhci/cli": "^0.14.0",
+    "@vue/eslint-config-prettier": "^10.1.0",
+    "autoprefixer": "^10.4.20",
+    "esbuild": "^0.24.0",
+    "eslint": "^9.18.0",
+    "eslint-plugin-vue": "^9.32.0",
+    "html-minifier-terser": "^7.2.0",
+    "husky": "^9.1.7",
+    "jsdom": "^29.1.1",
+    "lint-staged": "^15.2.10",
+    "postcss": "^8.5.1",
+    "prettier": "^3.4.2",
+    "tailwindcss": "^3.4.17",
+    "vitest": "^2.1.8",
+    "workbox-cli": "^7.3.0"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.2.0",
+    "@capacitor/core": "^6.2.0"
+  }
+}
