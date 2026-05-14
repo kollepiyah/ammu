@@ -162,6 +162,8 @@
     ></script>
     <!-- ExcelJS (~700KB): export Excel rapi dengan kop, border, styling -->
     <script src="/exceljs.min.js" defer="" fetchpriority="low"></script>
+    <!-- v.108.65: Preload bg-pesantren supaya cepat tampil saat login -->
+    <link rel="preload" as="image" href="/bg-pesantren.jpg" />
     <!-- html2canvas (~120KB): dipakai untuk capture rapor PDF -->
     <script
       src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"
@@ -505,6 +507,56 @@
       .mu-toast-popup .swal2-timer-progress-bar {
         background: linear-gradient(90deg, #14b8a6, #10b981) !important;
       }
+      /* v.108.65: DOM Toast animations */
+      @keyframes muDomToastIn {
+        0% {
+          opacity: 0;
+          transform: translateY(20px) scale(0.95);
+        }
+        100% {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+      @keyframes muDomToastOut {
+        0% {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+        100% {
+          opacity: 0;
+          transform: translateY(15px) scale(0.95);
+        }
+      }
+      @keyframes muDomToastProgress {
+        0% {
+          width: 100%;
+        }
+        100% {
+          width: 0%;
+        }
+      }
+      @media (max-width: 640px) {
+        #mu-toast-stack {
+          right: 8px !important;
+          bottom: 8px !important;
+          left: 8px;
+          max-width: none;
+        }
+        .mu-toast-item {
+          min-width: 0 !important;
+        }
+      }
+      body.dark-mode .mu-toast-item,
+      html.dark-mode .mu-toast-item {
+        background: rgba(30, 41, 59, 0.97) !important;
+        color: #f1f5f9 !important;
+      }
+      body.dark-mode .mu-toast-item span,
+      html.dark-mode .mu-toast-item span {
+        color: #f1f5f9 !important;
+      }
+
       @keyframes muToastSlideUp {
         0% {
           opacity: 0;
@@ -3781,7 +3833,7 @@
     <!-- PENGATURAN BACKGROUND -->
     <div
       id="app-bg"
-      class="fixed inset-0 bg-cover bg-center z-[-2] transition-all duration-500 bg-gray-200"
+      class="fixed inset-0 bg-cover bg-center z-[-2] transition-all duration-500 bg-teal-900"
       style="background-image: url('/bg-pesantren.jpg?v=108.17'); opacity: 1"
     ></div>
     <div
@@ -3794,9 +3846,9 @@
       id="login-view"
       class="hidden fixed inset-0 z-50 flex flex-col items-center justify-center p-4 transition-all duration-500"
       style="
-        background: rgba(15, 23, 42, 0.35);
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
+        background: rgba(15, 23, 42, 0.3);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
       "
     >
       <div
@@ -14063,7 +14115,7 @@
         if (b) b.classList.add('hidden')
       }
 
-      const APP_VERSION = 'v.108.64.0514-toast-root-fix'
+      const APP_VERSION = 'v.108.65.0514-toast-dom'
 
       function parseTanggalExcel(val) {
         if (!val) return ''
@@ -14385,67 +14437,132 @@
       }
 
       // v.108.42 — Toast notification helper (bottom-right mobile style)
-      // Replace Swal.fire 3-arg popup yang mengganggu, jadi toast subtle yang auto-dismiss.
-      // Confirmation modal (showCancelButton) TETAP modal — perlu user interaction.
-      // v.108.51 — LAZY INIT toast mixin (Swal defer load + timer fix)
-      let _toastMixinInstance = null
-      function _getToastMixin() {
-        if (_toastMixinInstance) return _toastMixinInstance
-        if (typeof Swal === 'undefined') return null
-        _toastMixinInstance = Swal.mixin({
-          toast: true,
-          position: 'bottom-end',
-          showConfirmButton: false,
-          timer: 3000,
-          timerProgressBar: true,
-          backdrop: false,
-          customClass: { popup: 'mu-toast-popup', container: 'mu-toast-container' },
-          // v.108.63: ROOT FIX toast freeze — bypass Swal built-in timer entirely.
-          // Pakai pure setTimeout untuk auto-close, override Swal.stopTimer ke no-op.
-          didOpen: (toastEl) => {
-            try {
-              // Force-disable Swal pause-on-hover at the source
-              const origStop = Swal.stopTimer
-              Swal.stopTimer = function () {}
-              // Auto-close via independent setTimeout (immune to Swal pause)
-              const closeTimer = setTimeout(() => {
-                try {
-                  Swal.close()
-                } catch (e) {}
-                Swal.stopTimer = origStop // restore
-              }, 3100)
-              // Cleanup kalau toast di-close manual
-              toastEl.addEventListener('click', () => clearTimeout(closeTimer))
-            } catch (e) {
-              console.warn('[toast] didOpen fail:', e)
-            }
-          }
-        })
-        return _toastMixinInstance
+      // ====================================================================
+      // CUSTOM TOAST (v.108.65) — pure DOM implementation, NO Swal dependency
+      //
+      // Kenapa replace Swal toast:
+      // - Swal v11 punya internal pauseOnHover mechanism yang BYPASS event
+      //   listener overrides (race condition, internal state machine).
+      // - Sudah coba 3 approach (v.108.51 default, v.108.54 listeners,
+      //   v.108.62 6 listeners, v.108.64 stopTimer no-op) — semua tidak
+      //   reliable: toast kadang freeze, kadang dismiss double-fire, dll.
+      // - Pure DOM toast IMMUNE dari Swal internals. Auto-dismiss via
+      //   pure setTimeout — tidak ada pause behavior.
+      //
+      // API backward-compat dengan _toast.success/error/warning/info(msg).
+      // ====================================================================
+
+      function _muToastEnsureContainer() {
+        let c = document.getElementById('mu-toast-stack')
+        if (c) return c
+        c = document.createElement('div')
+        c.id = 'mu-toast-stack'
+        c.style.cssText =
+          'position:fixed;bottom:16px;right:16px;z-index:99999;display:flex;flex-direction:column-reverse;gap:8px;pointer-events:none;max-width:380px;'
+        document.body.appendChild(c)
+        return c
       }
-      const _toast = {
-        success: function (msg) {
-          const m = _getToastMixin()
-          if (m) return m.fire({ icon: 'success', title: String(msg || 'Berhasil') })
-          console.log('[toast.success]', msg)
-        },
-        error: function (msg) {
-          const m = _getToastMixin()
-          if (m)
-            return m.fire({ icon: 'error', title: String(msg || 'Terjadi kesalahan'), timer: 4500 })
-          console.error('[toast.error]', msg)
-        },
-        warning: function (msg) {
-          const m = _getToastMixin()
-          if (m) return m.fire({ icon: 'warning', title: String(msg || 'Peringatan'), timer: 4000 })
-          console.warn('[toast.warning]', msg)
-        },
-        info: function (msg) {
-          const m = _getToastMixin()
-          if (m) return m.fire({ icon: 'info', title: String(msg || '') })
-          console.info('[toast.info]', msg)
+
+      function _muToastShow(msg, icon, duration) {
+        try {
+          const container = _muToastEnsureContainer()
+          const toast = document.createElement('div')
+          toast.className = 'mu-toast-item mu-toast-' + icon
+          // Inline style — independent dari Tailwind/global CSS
+          const iconColors = {
+            success: '#059669',
+            error: '#dc2626',
+            warning: '#d97706',
+            info: '#0f766e'
+          }
+          const iconChar = {
+            success: '✓',
+            error: '✕',
+            warning: '!',
+            info: 'i'
+          }
+          const color = iconColors[icon] || '#0f766e'
+          toast.style.cssText =
+            'display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.97);' +
+            'border-radius:12px;padding:10px 14px;box-shadow:0 6px 20px rgba(0,0,0,0.15),0 2px 6px rgba(0,0,0,0.08);' +
+            'border-left:3px solid ' +
+            color +
+            ';font-family:inherit;font-size:12px;color:#1e293b;' +
+            'min-width:220px;max-width:360px;cursor:pointer;pointer-events:auto;' +
+            'animation:muDomToastIn 0.25s cubic-bezier(0.2,0.8,0.3,1.15);' +
+            'backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);'
+          // Icon badge
+          const iconEl = document.createElement('span')
+          iconEl.style.cssText =
+            'display:inline-flex;align-items:center;justify-content:center;' +
+            'width:24px;height:24px;border-radius:50%;border:2px solid ' +
+            color +
+            ';' +
+            'color:' +
+            color +
+            ';font-weight:700;font-size:13px;flex-shrink:0;'
+          iconEl.textContent = iconChar[icon] || 'i'
+          // Message
+          const txt = document.createElement('span')
+          txt.style.cssText = 'flex:1;line-height:1.4;font-weight:600;color:#1e293b;'
+          txt.textContent = String(msg || '')
+          // Progress bar
+          const bar = document.createElement('div')
+          bar.style.cssText =
+            'position:absolute;left:0;bottom:0;height:2px;background:linear-gradient(90deg,' +
+            color +
+            ',rgba(20,184,166,0.6));border-radius:0 0 12px 12px;' +
+            'animation:muDomToastProgress ' +
+            duration +
+            'ms linear forwards;width:100%;'
+          toast.style.position = 'relative'
+          toast.style.overflow = 'hidden'
+          toast.appendChild(iconEl)
+          toast.appendChild(txt)
+          toast.appendChild(bar)
+          container.appendChild(toast)
+
+          // Auto-dismiss — pure setTimeout, IMMUNE dari hover/focus/touch
+          const closeTimer = setTimeout(() => _muToastRemove(toast), duration)
+
+          // Click to dismiss
+          toast.addEventListener('click', () => {
+            clearTimeout(closeTimer)
+            _muToastRemove(toast)
+          })
+        } catch (err) {
+          console.warn('[muToast] show fail:', err, msg)
         }
       }
+
+      function _muToastRemove(toast) {
+        if (!toast || !toast.parentNode) return
+        toast.style.animation = 'muDomToastOut 0.2s ease forwards'
+        setTimeout(() => {
+          try {
+            toast.remove()
+          } catch (e) {}
+        }, 220)
+      }
+
+      // BACKWARD-COMPAT API — semua 200 call site _toast.* akan jalan
+      const _toast = {
+        success: function (msg) {
+          _muToastShow(String(msg || 'Berhasil'), 'success', 3000)
+        },
+        error: function (msg) {
+          _muToastShow(String(msg || 'Terjadi kesalahan'), 'error', 4500)
+        },
+        warning: function (msg) {
+          _muToastShow(String(msg || 'Peringatan'), 'warning', 4000)
+        },
+        info: function (msg) {
+          _muToastShow(String(msg || ''), 'info', 3000)
+        }
+      }
+      // ====================================================================
+      // /CUSTOM TOAST
+      // ====================================================================
 
       async function initApp() {
         // Load dark mode setting (guest/last user)
