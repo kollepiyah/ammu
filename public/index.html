@@ -16326,7 +16326,7 @@
         if (b) b.classList.add("hidden");
       }
 
-      const APP_VERSION = "v.109.1.0515-toast-redesign-kop-fix";
+      const APP_VERSION = "v.109.2.0515-swal-no-animation";
 
       // ====================================================================
       // Sentry error tracking init (B3). Gate guard: DSN placeholder = no-op.
@@ -16996,6 +16996,21 @@
       // ====================================================================
       // /CUSTOM TOAST
       // ====================================================================
+
+      // BUGFIX v.109.2: Disable Swal2 CSS animations globally untuk hindari
+      // freeze issue saat @keyframes Swal2 tidak load reliable.
+      try {
+        if (typeof Swal !== "undefined" && Swal.mixin) {
+          window.Swal = Swal.mixin({
+            showClass: { popup: "", backdrop: "", icon: "" },
+            hideClass: { popup: "", backdrop: "", icon: "" },
+            allowEscapeKey: true,
+            allowOutsideClick: function() { return !Swal.isLoading(); },
+          });
+        }
+      } catch (e) {
+        console.warn("[Swal mixin] init fail:", e);
+      }
 
       async function initApp() {
         // BUGFIX v.109.0: periodic toast cleanup defensive
@@ -21764,15 +21779,13 @@
             .collection("settings")
             .doc("general")
             .set({ softDeleteEnabled: enabled }, { merge: true });
-          Swal.fire({
-            icon: "success",
-            title: enabled ? "Soft Delete AKTIF" : "Soft Delete NONAKTIF",
-            text: enabled
-              ? "Data yang dihapus akan di-set aktif=false (tidak hilang permanen). Bisa di-restore manual."
-              : "Hapus akan permanen (data hilang dari Firestore).",
-            timer: 3000,
-            showConfirmButton: false,
-          });
+          // BUGFIX v.109.2: replace Swal timer dengan _toast (lebih reliable, no @keyframes)
+          _toast.success(
+            (enabled ? "Soft Delete AKTIF" : "Soft Delete NONAKTIF") + " — " +
+            (enabled
+              ? "Data hapus = aktif:false, bisa di-restore."
+              : "Hapus permanen.")
+          );
         } catch (err) {
           _toast.error("Error: " + (err.message || ""));
           checkbox.checked = !enabled;
@@ -35396,12 +35409,10 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
               target_count: tokens.length,
             });
           document.getElementById("modal-kirim-notif").classList.add("hidden");
-          Swal.fire({
-            icon: "success",
-            title: "Tersimpan ke Antrian",
-            html: `Pesan akan diteruskan ke <b>${tokens.length} penerima</b>(${targetLabel}).<br><br><small>Cloud Function akan otomatis mengirim dalam beberapa detik.</small>`,
-            timer: 4000,
-          });
+          // BUGFIX v.109.2: replace Swal timer dengan _toast (lebih reliable)
+          _toast.success(
+            `Tersimpan ke Antrian: ${tokens.length} penerima (${targetLabel}). Cloud Function akan kirim dalam beberapa detik.`
+          );
         } catch (err) {
           _toast.error("Error: " + (err.message || ""));
         }

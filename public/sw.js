@@ -5,7 +5,7 @@
 // ====================================================================
 
 // Bump versi setiap deploy update besar supaya cache di-refresh
-const SW_VERSION = 'v290-0515-restore-truncation'
+const SW_VERSION = 'v291-0515-swal-no-anim'
 const CACHE_SHELL = `mu-shell-${SW_VERSION}`
 const CACHE_RUNTIME = `mu-runtime-${SW_VERSION}`
 
