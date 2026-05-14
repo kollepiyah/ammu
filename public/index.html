@@ -164,6 +164,8 @@
     <script src="/exceljs.min.js" defer="" fetchpriority="low"></script>
     <!-- v.108.65: Preload bg-pesantren supaya cepat tampil saat login -->
     <link rel="preload" as="image" href="/bg-pesantren.jpg" />
+    <!-- v.108.67: DOMPurify (~22KB) for XSS sanitization -->
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js" defer=""></script>
     <!-- html2canvas (~120KB): dipakai untuk capture rapor PDF -->
     <script
       src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"
@@ -14131,7 +14133,7 @@
         if (b) b.classList.add('hidden')
       }
 
-      const APP_VERSION = 'v.108.66.0514-offline-persist'
+      const APP_VERSION = 'v.108.67.0514-dompurify'
 
       function parseTanggalExcel(val) {
         if (!val) return ''
@@ -30382,6 +30384,28 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
           /[&<>"']/g,
           (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[m]
         )
+      }
+
+      // v.108.67: safeHTML helper - sanitize HTML via DOMPurify
+      // Pakai untuk innerHTML dengan template literal inject data Firestore.
+      // Kalau DOMPurify belum loaded, fall back ke minimal escape.
+      function safeHTML(html) {
+        try {
+          if (typeof DOMPurify !== 'undefined' && DOMPurify.sanitize) {
+            return DOMPurify.sanitize(String(html || ''), {
+              USE_PROFILES: { html: true },
+              ALLOW_DATA_ATTR: true,
+              FORBID_TAGS: ['script', 'iframe', 'object', 'embed'],
+              FORBID_ATTR: ['onerror', 'onclick', 'onload', 'onmouseover', 'onfocus', 'onblur']
+            })
+          }
+        } catch (e) {
+          console.warn('[safeHTML] sanitize fail:', e)
+        }
+        // Fallback: minimal regex escape (sebelum DOMPurify load)
+        return String(html || '')
+          .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+          .replace(/on\w+\s*=\s*['"][^'"]*['"]/gi, '')
       }
 
       // linkifyText: escape HTML + ubah URL jadi clickable link
