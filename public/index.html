@@ -14139,7 +14139,7 @@
         if (b) b.classList.add('hidden')
       }
 
-      const APP_VERSION = 'v.108.72.0514-toast-mass-refactor'
+      const APP_VERSION = 'v.108.73.0514-dashboard-count'
 
       // ====================================================================
       // Sentry error tracking init (B3). Gate guard: DSN placeholder = no-op.
@@ -14792,6 +14792,15 @@
             if (s.aktif === undefined) {
               db_santri[idx].aktif = true
               santriMigrasi.push(s.id)
+            }
+          })
+          // v.108.73: Mirror pattern - guru tanpa field 'status' default 'Aktif'
+          // (Sebelumnya hanya santri yang di-migrate -> dashboard guru count discrepancy)
+          let guruStatusMigrasi = []
+          db_guru.forEach((g, idx) => {
+            if (!g.status) {
+              db_guru[idx].status = 'Aktif'
+              guruStatusMigrasi.push(g.id)
             }
           })
           // 4) Migration role_sistem: bila tidak ada → 'user'; bila masih 'guru_biasa' (legacy) → 'user'
@@ -36716,12 +36725,25 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
           setHide('stat-cards-pegawai', false)
           document.getElementById('title-stat-santri').innerText = 'Total Keseluruhan Santri'
           document.getElementById('title-stat-guru').innerText = 'Total Guru/Pegawai'
-          document.getElementById('stat-santri').innerText = db_santri.filter(
-            (s) => s.aktif !== false
-          ).length
-          document.getElementById('stat-guru').innerText = db_guru.filter(
-            (g) => g.status === 'Aktif'
-          ).length
+          // v.108.73: tampilkan TOTAL ALL (sesuai title 'Total Keseluruhan')
+          // Sebelumnya filter aktif menyebabkan count discrepancy (Kyai feedback)
+          const _totalSantri = db_santri.length
+          const _aktifSantri = db_santri.filter((s) => s.aktif !== false).length
+          const _nonaktifSantri = _totalSantri - _aktifSantri
+          document.getElementById('stat-santri').innerText = _totalSantri
+          // Update subtitle dengan breakdown
+          const _subSantri = document.getElementById('title-stat-santri')
+          if (_subSantri && _nonaktifSantri > 0) {
+            _subSantri.innerText = `Total Keseluruhan Santri (${_aktifSantri} aktif, ${_nonaktifSantri} non-aktif)`
+          }
+          const _totalGuru = db_guru.length
+          const _aktifGuru = db_guru.filter((g) => !g.status || g.status === 'Aktif').length
+          const _nonaktifGuru = _totalGuru - _aktifGuru
+          document.getElementById('stat-guru').innerText = _totalGuru
+          const _subGuru = document.getElementById('title-stat-guru')
+          if (_subGuru && _nonaktifGuru > 0) {
+            _subGuru.innerText = `Total Guru/Pegawai (${_aktifGuru} aktif, ${_nonaktifGuru} non-aktif)`
+          }
           if (adminBox && typeof renderStatistikAdmin === 'function') {
             setHide('admin-dashboard-stats', false)
             try {
