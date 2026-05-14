@@ -5,7 +5,7 @@
 // ====================================================================
 
 // Bump versi setiap deploy update besar supaya cache di-refresh
-const SW_VERSION = 'v288-0514-w5-kalender-pendidikan'
+const SW_VERSION = 'v289-0515-bug-batch'
 const CACHE_SHELL = `mu-shell-${SW_VERSION}`
 const CACHE_RUNTIME = `mu-runtime-${SW_VERSION}`
 
@@ -140,7 +140,4 @@ async function networkFirst(request) {
 }
 
 self.addEventListener('message', (event) => {
-  if (event.data && event.data.type === 'SKIP_WAITING') {
-    self.skipWaiting()
-  }
-})
+  if (event.data && event.data.type === 'SKIP_WAITING'

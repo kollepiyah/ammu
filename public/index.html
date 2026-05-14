@@ -1715,6 +1715,19 @@
       body.dark-mode .bg-blue-50 {
         background-color: rgba(59, 130, 246, 0.1) !important;
       }
+      /* BUGFIX v.109.0 (UI overlap): sticky thead dengan bg-blue-50 di dark mode harus SOLID
+         supaya text body row tidak bocor through. Apply ke semua sticky table header. */
+      body.dark-mode thead.bg-blue-50,
+      body.dark-mode thead.bg-blue-50.sticky,
+      body.dark-mode thead.sticky,
+      body.dark-mode thead.sticky tr {
+        background-color: #1e293b !important; /* slate-800 solid */
+      }
+      body.dark-mode thead.bg-blue-50 th,
+      body.dark-mode thead.sticky th {
+        background-color: #1e293b !important;
+        color: #e2e8f0 !important;
+      }
       body.dark-mode .bg-blue-100 {
         background-color: rgba(59, 130, 246, 0.18) !important;
       }
@@ -16313,7 +16326,7 @@
         if (b) b.classList.add("hidden");
       }
 
-      const APP_VERSION = "v.108.99.0514-w5-kalender-pendidikan";
+      const APP_VERSION = "v.109.0.0515-bug-batch-toast-kop-ttd";
 
       // ====================================================================
       // Sentry error tracking init (B3). Gate guard: DSN placeholder = no-op.
@@ -16855,8 +16868,20 @@
       function _muToastShow(msg, icon, duration) {
         try {
           const container = _muToastEnsureContainer();
+          // BUGFIX v.109.0 (toast freeze): safety cleanup — remove toast yang lebih dari 30s
+          // sebelum show toast baru. Workaround kalau setTimeout sebelumnya gagal fire.
+          try {
+            const _now = Date.now();
+            Array.from(container.children).forEach((t) => {
+              const _ts = Number(t.dataset.tShownAt || 0);
+              if (_ts && (_now - _ts) > 30000) {
+                try { t.remove(); } catch (e) {}
+              }
+            });
+          } catch (e) {}
           const toast = document.createElement("div");
           toast.className = "mu-toast-item mu-toast-" + icon;
+          toast.dataset.tShownAt = String(Date.now());
           // Inline style — independent dari Tailwind/global CSS
           const iconColors = {
             success: "#059669",
@@ -16913,11 +16938,19 @@
           container.appendChild(toast);
 
           // Auto-dismiss — pure setTimeout, IMMUNE dari hover/focus/touch
+          // BUGFIX v.109.0: dual-timer redundancy (primary + 5s safety net after target duration)
           const closeTimer = setTimeout(() => _muToastRemove(toast), duration);
+          const safetyTimer = setTimeout(() => {
+            // Force remove kalau primary timer somehow tidak fire
+            if (toast && toast.parentNode) {
+              try { toast.remove(); } catch (e) {}
+            }
+          }, duration + 5000);
 
           // Click to dismiss
           toast.addEventListener("click", () => {
             clearTimeout(closeTimer);
+            clearTimeout(safetyTimer);
             _muToastRemove(toast);
           });
         } catch (err) {
@@ -16955,6 +16988,21 @@
       // ====================================================================
 
       async function initApp() {
+        // BUGFIX v.109.0: periodic toast cleanup defensive
+        try {
+          setInterval(() => {
+            const _stack = document.getElementById("mu-toast-stack");
+            if (!_stack) return;
+            const _now = Date.now();
+            Array.from(_stack.children).forEach((t) => {
+              const _ts = Number(t.dataset.tShownAt || 0);
+              // Stale toast (lebih dari 15s) → force remove
+              if (_ts && (_now - _ts) > 15000) {
+                try { t.remove(); } catch (e) {}
+              }
+            });
+          }, 60000); // every 60s
+        } catch (e) {}
         // Load dark mode setting (guest/last user)
         try {
           loadDarkMode();
@@ -32631,7 +32679,9 @@
       // ----- CETAK STRUK POS A4 -----
       function buatKopHtml() {
         const set = savedSettings;
-        const logoUtama = set.logoKop || set.logoUrl || "";
+        // BUGFIX v.109.0 (#6): Default ke /KOP.png untuk SEMUA print non-rapor.
+        // Settings logoKop/logoUrl tetap di-honor kalau ada (user override).
+        const logoUtama = set.logoKop || set.logoUrl || "/KOP.png";
         const logoSrc =
           logoUtama && _imgUrlCache[logoUtama]
             ? _imgUrlCache[logoUtama]
@@ -39603,7 +39653,7 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
                        </tr>
                        <tr>
                            <td style="font-weight:bold;text-decoration:underline;">${escapeHtml(isDiniyah ? (s.guru_sekolah || []).join(", ") || ".............................." : s.guru || "..............................")}</td>
-                           <td style="font-weight:bold;text-decoration:underline;">..............................</td>
+                           <td style="font-weight:bold;text-decoration:underline;">${escapeHtml(s.wali || "..............................")}</td>
                            <td style="font-weight:bold;text-decoration:underline;">${escapeHtml(ttd.nama)}</td>
                        </tr>
                        <tr>
