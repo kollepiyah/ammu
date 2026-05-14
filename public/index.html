@@ -6903,9 +6903,17 @@
                   <div class="flex gap-2 flex-wrap">
                     <button
                       onclick="cetakRaporSantriIni()"
-                      class="bg-teal-600 hover:bg-teal-700 text-white font-bold px-4 py-2.5 rounded-xl text-sm shadow-md cursor-pointer"
+                      class="bg-slate-600 hover:bg-slate-700 text-white font-bold px-4 py-2.5 rounded-xl text-sm shadow-md cursor-pointer"
+                      title="Buka print dialog"
                     >
                       <i class="fas fa-print mr-1"></i>Cetak
+                    </button>
+                    <button
+                      onclick="eksporPDFRaporSantriIni()"
+                      class="bg-teal-600 hover:bg-teal-700 text-white font-bold px-4 py-2.5 rounded-xl text-sm shadow-md cursor-pointer"
+                      title="Download PDF langsung"
+                    >
+                      <i class="fas fa-file-pdf mr-1"></i>Ekspor PDF
                     </button>
                     <button
                       onclick="simpanRaporSantri()"
@@ -12124,8 +12132,17 @@
                     type="button"
                     onclick="cetakKartuKenaikan()"
                     class="bg-rose-600 hover:bg-rose-700 text-white font-bold px-3 py-1.5 rounded-lg text-xs cursor-pointer"
+                    title="Buka print dialog (bisa Save as PDF)"
                   >
-                    <i class="fas fa-print mr-1"></i>Cetak PDF
+                    <i class="fas fa-print mr-1"></i>Cetak
+                  </button>
+                  <button
+                    type="button"
+                    onclick="eksporPDFKartuKenaikan()"
+                    class="bg-teal-600 hover:bg-teal-700 text-white font-bold px-3 py-1.5 rounded-lg text-xs cursor-pointer"
+                    title="Download PDF langsung"
+                  >
+                    <i class="fas fa-file-pdf mr-1"></i>Ekspor PDF
                   </button>
                   <button
                     type="button"
@@ -14016,7 +14033,7 @@
         if (b) b.classList.add('hidden')
       }
 
-      const APP_VERSION = 'v.108.58.0514-modal-consolidation'
+      const APP_VERSION = 'v.108.59.0514-ekspor-pdf'
 
       function parseTanggalExcel(val) {
         if (!val) return ''
@@ -21564,6 +21581,185 @@
       window._getKopKartuLembaga = _getKopKartuLembaga
 
       // ============== Cetak Kartu PDF (portrait, 1 santri = 1 halaman) ==============
+
+      // ====================================================================
+      // EKSPOR PDF HELPER (v.108.58) — intercept window.open dari fungsi cetak
+      // existing, render HTML via html2canvas + jsPDF, auto-download.
+      // Pemakaian:
+      //   eksporPDFKartuKenaikan()  // wraps cetakKartuKenaikan
+      //   eksporPDFSlipGajiById(id) // wraps cetakSlipGajiById
+      //   dst.
+      // ====================================================================
+      async function _eksporCetakSebagaiPDF(cetakFnInvoke, filenameBase, orientation = 'p') {
+        // Tunggu library jsPDF + html2canvas
+        if (typeof window.jspdf === 'undefined' || typeof html2canvas === 'undefined') {
+          _toast.warning('Library PDF masih loading. Coba lagi sebentar.')
+          return
+        }
+
+        // Intercept window.open supaya tangkap HTML konten cetak (tanpa membuka tab)
+        const origOpen = window.open
+        let capturedHTML = ''
+        window.open = function () {
+          return {
+            document: {
+              write: (h) => {
+                capturedHTML += h
+              },
+              close: () => {}
+            },
+            focus: () => {},
+            print: () => {},
+            close: () => {}
+          }
+        }
+
+        try {
+          await Promise.resolve(cetakFnInvoke())
+        } catch (err) {
+          console.error('[eksporPDF] cetak function error:', err)
+        } finally {
+          window.open = origOpen
+        }
+
+        if (!capturedHTML || capturedHTML.length < 100) {
+          _toast.error('Gagal mengambil konten untuk PDF')
+          return
+        }
+
+        // Render HTML di hidden iframe (sandbox sehingga script tidak run)
+        const iframe = document.createElement('iframe')
+        iframe.style.cssText =
+          'position:fixed;left:-99999px;top:0;width:794px;height:1123px;border:0;visibility:hidden;'
+        iframe.setAttribute('aria-hidden', 'true')
+        document.body.appendChild(iframe)
+
+        // srcdoc bypass CORS untuk inline content
+        iframe.srcdoc = capturedHTML
+
+        // Tunggu iframe load + render
+        await new Promise((resolve) => {
+          let done = false
+          const finish = () => {
+            if (done) return
+            done = true
+            // Extra delay untuk image/font loading
+            setTimeout(resolve, 900)
+          }
+          iframe.onload = finish
+          // Safety timeout 6 detik
+          setTimeout(finish, 6000)
+        })
+
+        try {
+          const doc = iframe.contentDocument || iframe.contentWindow.document
+          const target = doc.body
+          if (!target) throw new Error('Iframe body kosong')
+
+          // Render via html2canvas
+          const canvas = await html2canvas(target, {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: '#ffffff',
+            logging: false,
+            width: target.scrollWidth,
+            height: target.scrollHeight,
+            windowWidth: target.scrollWidth,
+            windowHeight: target.scrollHeight
+          })
+
+          const imgData = canvas.toDataURL('image/jpeg', 0.92)
+          const { jsPDF } = window.jspdf
+          const pdf = new jsPDF(orientation, 'pt', 'a4')
+
+          const pageW = pdf.internal.pageSize.getWidth()
+          const pageH = pdf.internal.pageSize.getHeight()
+          const imgW = pageW
+          const imgH = (canvas.height * pageW) / canvas.width
+
+          // Multi-page kalau konten > 1 page
+          let heightLeft = imgH
+          let position = 0
+          pdf.addImage(imgData, 'JPEG', 0, position, imgW, imgH)
+          heightLeft -= pageH
+          while (heightLeft > 0) {
+            position = heightLeft - imgH
+            pdf.addPage()
+            pdf.addImage(imgData, 'JPEG', 0, position, imgW, imgH)
+            heightLeft -= pageH
+          }
+
+          const today = new Date().toISOString().slice(0, 10)
+          const filename = `${filenameBase}_${today}.pdf`.replace(/[^\w.-]/g, '_')
+          pdf.save(filename)
+          _toast.success('PDF terdownload: ' + filename)
+        } catch (err) {
+          console.error('[eksporPDF] render error:', err)
+          _toast.error('Gagal generate PDF: ' + (err.message || String(err)))
+        } finally {
+          try {
+            document.body.removeChild(iframe)
+          } catch (e) {}
+        }
+      }
+
+      // Wrapper 1: Kartu Kenaikan (santri rapor card)
+      async function eksporPDFKartuKenaikan() {
+        if (typeof _kkState === 'undefined' || !_kkState.santriId) {
+          _toast.warning('Buka modal Kartu Kenaikan dulu')
+          return
+        }
+        const s = db_santri.find((x) => Number(x.id) === Number(_kkState.santriId))
+        const nama = (s && s.nama ? s.nama : 'santri').replace(/\s+/g, '_')
+        await _eksporCetakSebagaiPDF(() => cetakKartuKenaikan(), `KartuKenaikan_${nama}`, 'p')
+      }
+
+      // Wrapper 2: Rapor Santri Ini (per-santri rapor PDF)
+      async function eksporPDFRaporSantriIni() {
+        let nama = 'rapor_santri'
+        try {
+          if (typeof _raporState !== 'undefined' && _raporState.santriId) {
+            const s = db_santri.find((x) => Number(x.id) === Number(_raporState.santriId))
+            if (s && s.nama) nama = 'Rapor_' + s.nama.replace(/\s+/g, '_')
+          }
+        } catch (e) {}
+        await _eksporCetakSebagaiPDF(() => cetakRaporSantriIni(), nama, 'p')
+      }
+
+      // Wrapper 3: Slip Gaji individual
+      async function eksporPDFSlipGajiById(id) {
+        const s = db_keuangan_gaji.find((x) => x.id === id)
+        if (!s) {
+          _toast.error('Slip gaji tidak ditemukan')
+          return
+        }
+        const nama = (s.guru_nama || 'guru').replace(/\s+/g, '_')
+        const periode = (s.periode || '').replace(/\s+/g, '_')
+        await _eksporCetakSebagaiPDF(
+          () => cetakSlipGajiById(id),
+          `SlipBisyaroh_${nama}_${periode}`,
+          'p'
+        )
+      }
+
+      // Wrapper 4: Laporan Tunggakan
+      async function eksporPDFLaporanTunggakan() {
+        await _eksporCetakSebagaiPDF(() => cetakLaporanTunggakan(), 'LaporanTunggakan', 'p')
+      }
+
+      // Wrapper 5: Bukti Tabungan
+      async function eksporPDFBuktiTabungan(mutasi, s, saldo) {
+        const nama = (s && s.nama ? s.nama : 'santri').replace(/\s+/g, '_')
+        await _eksporCetakSebagaiPDF(
+          () => cetakBuktiTabungan(mutasi, s, saldo),
+          `BuktiTabungan_${nama}`,
+          'p'
+        )
+      }
+      // ====================================================================
+      // /EKSPOR PDF HELPER
+      // ====================================================================
+
       function cetakKartuKenaikan() {
         const s = db_santri.find((x) => Number(x.id) === Number(_kkState.santriId))
         if (!s) return
