@@ -44,7 +44,7 @@ onUnmounted(() => {
     </svg>
     <div class="grid">
       <div class="col-l">
-        <!-- v.109.21: badge KAMIS dengan BG tipis + spacing breathable -->
+        <!-- v.109.22: font elegant — Manrope label + DM Serif tanggal + Noto Naskh Arabic hijri -->
         <p class="hari-top">{{ hari }}</p>
         <p :style="{ fontFamily: FONT_ARAB }" class="hijri" dir="rtl">{{ hijri }}</p>
         <p class="masehi">{{ masehi }}</p>
@@ -62,7 +62,7 @@ onUnmounted(() => {
 
 <style scoped>
 .ammu-jam {
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'Manrope', 'Inter', system-ui, sans-serif;
   position: relative;
   overflow: hidden;
   border-radius: 0.875rem;
@@ -104,15 +104,16 @@ onUnmounted(() => {
 }
 .label,
 .label-r {
+  font-family: 'Manrope', sans-serif;
   font-size: 8.5px;
   text-transform: uppercase;
-  letter-spacing: 0.18em;
-  font-weight: 900;
+  letter-spacing: 0.22em;
+  font-weight: 800;
   opacity: 0.95;
   margin: 0;
   display: flex;
   align-items: center;
-  gap: 0.25rem;
+  gap: 0.3rem;
 }
 .label-r {
   justify-content: flex-end;
@@ -121,21 +122,22 @@ onUnmounted(() => {
 .label-r i {
   font-size: 10px;
 }
-/* v.109.21: badge KAMIS dengan BG tipis */
+/* v.109.22: badge KAMIS — Manrope 800, BG tipis */
 .hari-top {
   display: inline-block;
+  font-family: 'Manrope', sans-serif;
   font-size: 9.5px;
-  font-weight: 900;
-  letter-spacing: 0.18em;
-  margin: 0 0 0.35rem 0;
-  padding: 3px 8px;
-  background: rgba(255, 255, 255, 0.15);
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  margin: 0 0 0.4rem 0;
+  padding: 3px 9px;
+  background: rgba(255, 255, 255, 0.16);
   border-radius: 6px;
   text-align: left;
   text-transform: uppercase;
   color: white;
 }
-/* v.109.21: tgl hijri Noto Naskh Arabic + spacing breathable */
+/* v.109.22: tgl hijri Noto Naskh Arabic */
 .hijri {
   font-size: 1.05rem;
   font-weight: 700;
@@ -150,35 +152,46 @@ onUnmounted(() => {
     font-size: 1.2rem;
   }
 }
+/* v.109.22: tanggal masehi — DM Serif Display elegant editorial */
 .masehi {
-  font-size: 0.7rem;
-  font-weight: 700;
+  font-family: 'DM Serif Display', 'Playfair Display', Georgia, serif;
+  font-size: 0.82rem;
+  font-weight: 400;
   margin-top: 0.3rem;
   line-height: 1.1;
   text-align: left;
-  opacity: 0.92;
+  opacity: 0.95;
+  letter-spacing: 0.01em;
+}
+@media (min-width: 768px) {
+  .masehi {
+    font-size: 0.92rem;
+  }
 }
 .jam-wrap {
   display: flex;
   align-items: baseline;
   justify-content: flex-end;
   margin-top: 0.25rem;
-  font-variant-numeric: tabular-nums;
 }
+/* v.109.22: jam digital — DM Serif Display besar dramatis */
 .jam {
-  font-size: 1.375rem;
-  font-weight: 900;
+  font-family: 'DM Serif Display', 'Playfair Display', Georgia, serif;
+  font-size: 1.7rem;
+  font-weight: 400;
   line-height: 1;
+  letter-spacing: -0.01em;
 }
 @media (min-width: 768px) {
   .jam {
-    font-size: 1.625rem;
+    font-size: 2rem;
   }
 }
 .detik {
-  font-size: 0.65rem;
-  font-weight: 700;
+  font-family: 'Manrope', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 500;
   opacity: 0.85;
-  margin-top: 0.15rem;
+  margin-top: 0.2rem;
 }
 </style>
