@@ -16311,7 +16311,7 @@
         if (b) b.classList.add("hidden");
       }
 
-      const APP_VERSION = "v.108.97.0514-w4-kalender-mini";
+      const APP_VERSION = "v.108.98.0514-w3-postcard";
 
       // ====================================================================
       // Sentry error tracking init (B3). Gate guard: DSN placeholder = no-op.
@@ -16396,7 +16396,16 @@
               });
             }
           }
-          // W3, W5, W6 mount logic ditambah saat widget masing-masing wire-up
+          if (window._useVuePostCard) {
+            // PostCard mount happens INSIDE renderBerandaFeed (line ~40656).
+            // Re-trigger render kalau dashboard sudah visible (defensive).
+            try {
+              if (typeof renderBerandaFeed === "function") renderBerandaFeed();
+            } catch (e) {
+              console.warn("[Phase 5 W3] renderBerandaFeed not ready yet:", e.message);
+            }
+          }
+          // W5, W6 mount logic ditambah saat widget masing-masing wire-up
         };
         s.onerror = function () {
           console.error("[Phase 5] Vue bundle load fail — vanilla stays");
@@ -40683,6 +40692,44 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
         if (sorted.length === 0) {
           feed.innerHTML =
             '<div class="bg-white p-12 rounded-2xl border border-slate-200 text-center"><i class="fas fa-newspaper text-slate-300 text-5xl mb-3"></i><p class="text-sm text-slate-500 italic">Belum ada postingan.</p></div>';
+          return;
+        }
+        // v.108.98 Phase 5 W3: Vue PostCard mount kalau flag ON
+        if (window._useVuePostCard && window.AmmuWidgets) {
+          feed.innerHTML = sorted
+            .map(
+              (p) =>
+                `<div id="vue-widget-post-${p.id}" data-vue-widget="PostCard"></div>`,
+            )
+            .join("");
+          sorted.forEach((p) => {
+            const imgs =
+              p.gambar_urls ||
+              (p.gambar_url ? [p.gambar_url] : p.gambar ? [p.gambar] : []);
+            window.AmmuWidgets.mount(
+              "PostCard",
+              "#vue-widget-post-" + p.id,
+              {
+                judul: p.judul || "",
+                isi: p.isi || "",
+                tanggal: p.tanggal || "",
+                author:
+                  savedSettings.txtSidebarTitle ||
+                  savedSettings.txtAppName ||
+                  "Admin",
+                gambar_urls: imgs,
+                postId: isAdmin ? p.id : "",
+                onEdit: function (id) {
+                  if (typeof window.editPostBeranda === "function")
+                    window.editPostBeranda(id);
+                },
+                onDelete: function (id) {
+                  if (typeof window.hapusPostBeranda === "function")
+                    window.hapusPostBeranda(id);
+                },
+              },
+            );
+          });
           return;
         }
         const myId = String(sesiAktif.id);
