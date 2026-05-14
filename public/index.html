@@ -13470,6 +13470,22 @@
 
       firebase.initializeApp(firebaseConfig)
       const db = firebase.firestore()
+      // v.108.66 (E2): Firestore offline persistence
+      // synchronizeTabs: true supaya multi-tab share cache
+      // Catch: persistence boleh fail (private mode, storage full) - non-fatal
+      try {
+        db.enablePersistence({ synchronizeTabs: true }).catch((err) => {
+          if (err && err.code === 'failed-precondition') {
+            console.warn('[Firestore] Persistence: multi-tab tanpa synchronizeTabs support')
+          } else if (err && err.code === 'unimplemented') {
+            console.warn('[Firestore] Persistence not supported (browser/mode)')
+          } else if (err) {
+            console.warn('[Firestore] Persistence error:', err.code || err.message)
+          }
+        })
+      } catch (e) {
+        console.warn('[Firestore] enablePersistence call fail:', e)
+      }
       // Firebase Auth (Hybrid mode)
       const fbAuth = firebase.auth()
       fbAuth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(() => {})
@@ -14115,7 +14131,7 @@
         if (b) b.classList.add('hidden')
       }
 
-      const APP_VERSION = 'v.108.65.0514-toast-dom'
+      const APP_VERSION = 'v.108.66.0514-offline-persist'
 
       function parseTanggalExcel(val) {
         if (!val) return ''
