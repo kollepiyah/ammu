@@ -738,11 +738,23 @@
         padding: 0.5rem 0.75rem !important;
       }
 
+      /* v.108.62: Toast container = NO backdrop, NO blur (force) */
+      .mu-toast-container,
+      .swal2-container.swal2-backdrop-hide {
+        background: transparent !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        pointer-events: none !important;
+      }
+      .mu-toast-container .swal2-popup,
+      .swal2-container.swal2-backdrop-hide .swal2-popup {
+        pointer-events: auto !important;
+      }
       /* Backdrop — softer + subtle blur */
       .swal2-container.swal2-backdrop-show {
-        background: rgba(15, 23, 42, 0.45) !important;
-        backdrop-filter: blur(4px) !important;
-        -webkit-backdrop-filter: blur(4px) !important;
+        background: rgba(15, 23, 42, 0.35) !important;
+        backdrop-filter: blur(1px) !important;
+        -webkit-backdrop-filter: blur(1px) !important;
       }
 
       /* Modal slide-in animation */
@@ -14051,7 +14063,7 @@
         if (b) b.classList.add('hidden')
       }
 
-      const APP_VERSION = 'v.108.60.0514-logout-sidebar-fix'
+      const APP_VERSION = 'v.108.62.0514-toast-blur-global'
 
       function parseTanggalExcel(val) {
         if (!val) return ''
@@ -14386,12 +14398,17 @@
           showConfirmButton: false,
           timer: 3000,
           timerProgressBar: true,
-          customClass: { popup: 'mu-toast-popup' },
-          // v.108.54: prevent pause-on-hover (penyebab toast stuck di mobile + desktop)
+          backdrop: false,
+          customClass: { popup: 'mu-toast-popup', container: 'mu-toast-container' },
+          // v.108.62: AGGRESSIVE anti-pause (Kyai feedback toast freeze)
           didOpen: (toastEl) => {
             try {
               toastEl.addEventListener('mouseenter', Swal.resumeTimer)
               toastEl.addEventListener('mouseleave', Swal.resumeTimer)
+              toastEl.addEventListener('focusin', Swal.resumeTimer)
+              toastEl.addEventListener('focusout', Swal.resumeTimer)
+              toastEl.addEventListener('touchstart', Swal.resumeTimer, { passive: true })
+              toastEl.addEventListener('touchend', Swal.resumeTimer, { passive: true })
             } catch (e) {}
           }
         })
@@ -18740,7 +18757,6 @@
         const r = await Swal.fire({
           title: `Fix ${items.length} item?`,
           text: `Auto-fix akan update ${items.length} record di Firestore. Lanjutkan?`,
-          icon: 'question',
           showCancelButton: true,
           confirmButtonText: 'Ya, Fix Semua',
           cancelButtonText: 'Batal'
@@ -19836,7 +19852,6 @@
         const r = await Swal.fire({
           title: 'Konfirmasi',
           text: confirmText,
-          icon: 'question',
           showCancelButton: true,
           confirmButtonText: 'Ya, Lanjutkan'
         })
@@ -27139,7 +27154,6 @@
         const r = await Swal.fire({
           title: 'Kirim Notifikasi?',
           html: `Akan mengirim ke <b>${validPenerima.length}</b>santri.${tanpaToken > 0 ? `<br><span class="text-xs text-amber-600">${tanpaToken} santri tidak punya akun login/izin notif → diabaikan.</span>` : ''}`,
-          icon: 'question',
           showCancelButton: true,
           confirmButtonText: 'Ya, Kirim',
           cancelButtonText: 'Batal',
@@ -28110,7 +28124,6 @@
         const r = await Swal.fire({
           title: 'Cetak Struk',
           text: 'Pilih format cetak struk:',
-          icon: 'question',
           showCancelButton: false,
           showDenyButton: true,
           confirmButtonText: '️ Epson LX-310 (Dot Matrix)',
@@ -28853,7 +28866,6 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
         const r = await Swal.fire({
           title: 'Lunaskan hutang?',
           text: `${h.kepada} - ${fmtRupiah(h.nominal)}`,
-          icon: 'question',
           showCancelButton: true,
           confirmButtonText: 'Ya, Lunaskan'
         })
@@ -29499,7 +29511,6 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
         const r = await Swal.fire({
           title: 'Generate Slip?',
           text: `Akan generate ${cbs.length} slip untuk periode ${namaBulanID(bulan)} ${tahun}. Slip yang sudah ada akan di-overwrite.`,
-          icon: 'question',
           showCancelButton: true,
           confirmButtonText: 'Ya, Generate'
         })
