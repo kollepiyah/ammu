@@ -772,6 +772,25 @@
 
       /* ============= /ELEGANT SWAL MODAL ============= */
 
+      /* ============= ELEGANT CUSTOM HTML MODAL (v.108.57) ============= */
+      /* Apply slide-up enter animation untuk modal HTML custom
+         (yang pakai pattern: fixed inset-0 + bg-slate-900/70). */
+      .fixed.inset-0[class*='bg-slate-900']:not(.hidden) > div:not([class*='absolute']):first-child,
+      [id^='modal-']:not(.hidden) > div:first-child {
+        animation: muHtmlModalIn 0.22s cubic-bezier(0.22, 1, 0.36, 1) !important;
+      }
+      @keyframes muHtmlModalIn {
+        0% {
+          opacity: 0;
+          transform: translateY(12px) scale(0.97);
+        }
+        100% {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+      /* ============= /ELEGANT CUSTOM HTML MODAL ============= */
+
       /* v.108.6: Hide dashboard saat login-view visible (pakai :has() modern selector + fallback) */
       /* Modern: kalau login-view tidak hidden → hide app-view */
       body:has(#login-view:not(.hidden)) #app-view {
@@ -8516,7 +8535,7 @@
             class="hidden fixed inset-0 bg-slate-900/70 flex justify-center items-center z-[110] p-4 backdrop-blur-sm no-print"
           >
             <div
-              class="bg-white p-6 rounded-2xl w-full max-w-sm shadow-2xl border-t-4 border-blue-500"
+              class="bg-white p-6 rounded-2xl w-full max-w-sm shadow-2xl border-t-4 border-teal-500"
             >
               <h3 class="font-black text-lg mb-4 text-slate-800">
                 <i class="fas fa-school text-blue-600 mr-2"></i>Ubah Kelas Sekolah
@@ -8567,7 +8586,7 @@
             class="hidden fixed inset-0 bg-slate-900/70 flex justify-center items-center z-[100] p-4 backdrop-blur-sm transition-opacity no-print"
           >
             <div
-              class="bg-white p-8 rounded-3xl shadow-2xl max-w-lg w-full border-t-8 border-blue-600 flex flex-col max-h-[90vh]"
+              class="bg-white p-8 rounded-3xl shadow-2xl max-w-lg w-full border-t-8 border-teal-600 flex flex-col max-h-[90vh]"
             >
               <div class="flex justify-between items-center border-b border-slate-100 pb-4 mb-5">
                 <h3 class="text-2xl font-black text-slate-800 tracking-tight">
@@ -9173,7 +9192,7 @@
             class="hidden fixed inset-0 bg-slate-900/80 flex justify-center items-center z-[200] p-4 backdrop-blur-sm no-print"
           >
             <div
-              class="bg-white p-6 rounded-3xl w-full max-w-md shadow-2xl border-t-8 border-blue-500 max-h-[90vh] overflow-y-auto"
+              class="bg-white p-6 rounded-3xl w-full max-w-md shadow-2xl border-t-8 border-teal-500 max-h-[90vh] overflow-y-auto"
             >
               <h3 class="font-black text-xl mb-2 text-slate-800">
                 <i class="fas fa-key text-blue-600 mr-2"></i>Lupa Sandi Santri
@@ -9369,7 +9388,7 @@
             class="hidden fixed inset-0 bg-slate-900/80 flex justify-center items-center z-[200] p-4 backdrop-blur-sm no-print"
           >
             <div
-              class="bg-white p-6 rounded-3xl w-full max-w-md shadow-2xl border-t-8 border-blue-500 max-h-[90vh] overflow-y-auto"
+              class="bg-white p-6 rounded-3xl w-full max-w-md shadow-2xl border-t-8 border-teal-500 max-h-[90vh] overflow-y-auto"
             >
               <div class="text-center mb-4">
                 <div
@@ -9542,7 +9561,7 @@
             class="hidden fixed inset-0 bg-slate-900/70 flex justify-center items-center z-[120] p-4 backdrop-blur-sm no-print"
           >
             <div
-              class="bg-white p-6 rounded-3xl w-full max-w-md shadow-2xl border-t-8 border-blue-500 max-h-[90vh] overflow-y-auto"
+              class="bg-white p-6 rounded-3xl w-full max-w-md shadow-2xl border-t-8 border-teal-500 max-h-[90vh] overflow-y-auto"
             >
               <h3 class="font-black text-xl mb-3 text-slate-800">
                 <i class="fas fa-bell text-blue-600 mr-2"></i>Kirim Notifikasi Massal
@@ -9825,7 +9844,7 @@
             class="hidden fixed inset-0 bg-slate-900/70 flex justify-center items-center z-[110] p-4 backdrop-blur-sm no-print"
           >
             <div
-              class="bg-white p-6 rounded-3xl w-full max-w-md shadow-2xl border-t-8 border-blue-500"
+              class="bg-white p-6 rounded-3xl w-full max-w-md shadow-2xl border-t-8 border-teal-500"
             >
               <h3 class="font-black text-xl mb-4 text-slate-800">
                 <i class="fas fa-piggy-bank text-blue-600 mr-2"></i>Mutasi Tabungan Santri
@@ -9908,7 +9927,7 @@
             class="hidden fixed inset-0 bg-slate-900/70 flex justify-center items-center z-[110] p-4 backdrop-blur-sm no-print"
           >
             <div
-              class="bg-white p-6 rounded-3xl w-full max-w-md shadow-2xl border-t-8 border-blue-500"
+              class="bg-white p-6 rounded-3xl w-full max-w-md shadow-2xl border-t-8 border-teal-500"
             >
               <h3 class="font-black text-xl mb-4 text-slate-800">
                 <i class="fas fa-piggy-bank text-blue-600 mr-2"></i>Mutasi Tabungan Guru/Pegawai
@@ -10218,7 +10237,7 @@
                 <p class="text-2xl font-black text-rose-700 mt-2" id="keu-dash-pengeluaran">Rp 0</p>
               </div>
               <div
-                class="bg-white p-5 rounded-2xl border-l-8 border-blue-500 shadow-sm hover:shadow-md transition"
+                class="bg-white p-5 rounded-2xl border-l-8 border-teal-500 shadow-sm hover:shadow-md transition"
               >
                 <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
                   Saldo Berjalan
@@ -11737,7 +11756,7 @@
             class="hidden fixed inset-0 bg-slate-900/70 flex justify-center items-center z-[110] p-4 backdrop-blur-sm no-print"
           >
             <div
-              class="bg-white p-6 rounded-3xl w-full max-w-lg shadow-2xl border-t-8 border-blue-500 max-h-[90vh] overflow-y-auto"
+              class="bg-white p-6 rounded-3xl w-full max-w-lg shadow-2xl border-t-8 border-teal-500 max-h-[90vh] overflow-y-auto"
             >
               <h3 class="font-black text-xl mb-4 text-slate-800 hidden" id="modal-beranda-title">
                 <i class="fas fa-edit text-blue-600 mr-2"></i>Buat Postingan
@@ -13997,7 +14016,7 @@
         if (b) b.classList.add('hidden')
       }
 
-      const APP_VERSION = 'v.108.56.0514-fix-btn-hapus'
+      const APP_VERSION = 'v.108.58.0514-modal-consolidation'
 
       function parseTanggalExcel(val) {
         if (!val) return ''
@@ -14416,11 +14435,18 @@
           db_profil_pesantren = []
           db_beranda_post = []
           db_kegiatan = []
-          try {
-            const resKritik = await db.collection('kritik_saran').get()
-            resKritik.forEach((doc) => db_kritik_saran.push(doc.data()))
-          } catch (e) {
-            console.warn('Kritik & Saran belum tersedia (rules?)', e.code || e.message)
+          // v.108.57: Skip kritik_saran load kalau user belum auth
+          // (rules require signedIn — anonymous bakal kena permission-denied)
+          if (fbAuth && fbAuth.currentUser) {
+            try {
+              const resKritik = await db.collection('kritik_saran').get()
+              resKritik.forEach((doc) => db_kritik_saran.push(doc.data()))
+            } catch (e) {
+              // permission-denied bisa tetap terjadi kalau rule strict — silent.
+              if (e.code !== 'permission-denied') {
+                console.warn('Kritik & Saran load fail:', e.code || e.message)
+              }
+            }
           }
           try {
             const resPP = await db.collection('profil_pesantren').get()
@@ -36341,7 +36367,7 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
         // Bagian dasar (prestasi)
         let html = `
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div class="bg-white p-5 rounded-2xl border-l-8 border-blue-500 shadow-sm">
+                    <div class="bg-white p-5 rounded-2xl border-l-8 border-teal-500 shadow-sm">
                         <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Prestasi Awal</p>
                         <p class="text-2xl font-black text-slate-800 mt-2">${s.prestasi_awal || '-'}</p>
                     </div>
