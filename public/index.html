@@ -16063,7 +16063,7 @@
         if (b) b.classList.add("hidden");
       }
 
-      const APP_VERSION = "v.108.78.0514-c4-occ-batch1";
+      const APP_VERSION = "v.108.79.0514-c4-occ-loads";
 
       // ====================================================================
       // Sentry error tracking init (B3). Gate guard: DSN placeholder = no-op.
@@ -25529,6 +25529,8 @@
       }
       function editAdminGuru(id) {
         const g = db_guru.find((x) => x.id == id);
+        // C4 — capture updatedAt for OCC pada save berikutnya
+        if (g && typeof _recordDocSnap === "function") _recordDocSnap("guru", id, g);
         document.getElementById("edit_id_guru").value = g.id;
         document.getElementById("nama_guru").value = g.nama;
         document.getElementById("jk_guru").value = g.jk || "P";
@@ -26011,6 +26013,8 @@
       }
       function editAdminSantri(id) {
         const s = db_santri.find((x) => x.id == id);
+        // C4 — capture updatedAt for OCC pada save berikutnya
+        if (s && typeof _recordDocSnap === "function") _recordDocSnap("santri", id, s);
         document.getElementById("edit_id_santri").value = s.id;
         document.getElementById("nis_santri").value = s.nis || "";
         document.getElementById("nama_santri").value = s.nama || "";
