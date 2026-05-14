@@ -22,22 +22,21 @@ export function toArabicDigit(num) {
   return String(num ?? '').replace(/\d/g, (d) => ARABIC_DIGITS[parseInt(d, 10)] || d)
 }
 
-// BUGFIX v.109.13: formatHijri pakai Arabic script + Arabic numerals
-// Sebelumnya Intl.DateTimeFormat('id-ID-u-ca-islamic') return Latin transliteration
-// ('28 Zulkaidah 1447 H'). Kyai expect Arabic native: '٢٨ ذُو ٱلْقَعْدَة ١٤٤٧'.
+// v.109.24: NAMA_BULAN_ARAB tanpa harokat (sesuai req kyai).
+// Output: '٢٨ ذو ٱلقعدة ١٤٤٧' (no diacritics).
 const NAMA_BULAN_ARAB = [
-  'ٱلْمُحَرَّم',
-  'صَفَر',
-  'رَبِيع ٱلْأَوَّل',
-  'رَبِيع ٱلثَّانِي',
-  'جُمَادَىٰ ٱلْأُولَىٰ',
-  'جُمَادَىٰ ٱلثَّانِيَة',
-  'رَجَب',
-  'شَعْبَان',
-  'رَمَضَان',
-  'شَوَّال',
-  'ذُو ٱلْقَعْدَة',
-  'ذُو ٱلْحِجَّة'
+  'ٱلمحرم',
+  'صفر',
+  'ربيع ٱلأول',
+  'ربيع ٱلثاني',
+  'جمادى ٱلأولى',
+  'جمادى ٱلثانية',
+  'رجب',
+  'شعبان',
+  'رمضان',
+  'شوال',
+  'ذو ٱلقعدة',
+  'ذو ٱلحجة'
 ]
 
 export function formatHijri(date = new Date()) {

@@ -5,7 +5,7 @@
 // ====================================================================
 
 // Bump versi setiap deploy update besar supaya cache di-refresh
-const SW_VERSION = 'v312-0515-elmessiri-spectral'
+const SW_VERSION = 'v313-0515-scheherazade-self-host'
 const CACHE_SHELL = `mu-shell-${SW_VERSION}`
 const CACHE_RUNTIME = `mu-runtime-${SW_VERSION}`
 
@@ -14,6 +14,7 @@ const SHELL_URLS = [
   '/index.html',
   '/styles.css',
   '/dist/widgets.js',
+  '/fonts/ScheherazadeNew-SemiBold.ttf',
   '/exceljs.min.js',
   '/bg-pesantren.jpg',
   '/manifest.json',

@@ -2,9 +2,9 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { formatHijri, formatMasehi } from '../utils/hijri'
 
-// v.109.23: El Messiri (naskh modern smooth) prioritas, fallback ke Noto Naskh Arabic & Amiri
+// v.109.24: Scheherazade New SemiBold (self-hosted) prioritas, fallback El Messiri & Amiri
 const FONT_ARAB =
-  "'El Messiri','Noto Naskh Arabic','Amiri','Scheherazade New','Traditional Arabic',serif"
+  "'Scheherazade New','El Messiri','Noto Naskh Arabic','Amiri','Traditional Arabic',serif"
 
 const jam = ref('')
 const menit = ref('')
@@ -45,7 +45,6 @@ onUnmounted(() => {
     </svg>
     <div class="grid">
       <div class="col-l">
-        <!-- v.109.23: Manrope 600 (less bold) + El Messiri hijri + Spectral italic masehi -->
         <p class="hari-top">{{ hari }}</p>
         <p :style="{ fontFamily: FONT_ARAB }" class="hijri" dir="rtl">{{ hijri }}</p>
         <p class="masehi">{{ masehi }}</p>
@@ -103,7 +102,6 @@ onUnmounted(() => {
   border-left: 1px solid rgba(255, 255, 255, 0.18);
   padding-left: 0.5rem;
 }
-/* v.109.23: label WIB Manrope 600 less bold */
 .label,
 .label-r {
   font-family: 'Manrope', sans-serif;
@@ -124,7 +122,6 @@ onUnmounted(() => {
 .label-r i {
   font-size: 10px;
 }
-/* v.109.23: badge KAMIS Manrope 600 (less bold, lebih elegant) */
 .hari-top {
   display: inline-block;
   font-family: 'Manrope', sans-serif;
@@ -139,22 +136,21 @@ onUnmounted(() => {
   text-transform: uppercase;
   color: white;
 }
-/* v.109.23: tgl hijri El Messiri naskh modern elegant */
+/* v.109.24: hijri pakai Scheherazade New SemiBold (self-hosted) — tanpa harokat */
 .hijri {
-  font-size: 1.1rem;
+  font-size: 1.15rem;
   font-weight: 600;
   margin-top: 0.4rem;
   margin-bottom: 0.15rem;
   line-height: 1.4;
   text-align: left;
-  letter-spacing: 0.01em;
+  letter-spacing: 0.02em;
 }
 @media (min-width: 768px) {
   .hijri {
-    font-size: 1.25rem;
+    font-size: 1.3rem;
   }
 }
-/* v.109.23: tanggal masehi Spectral italic refined */
 .masehi {
   font-family: 'Spectral', 'Playfair Display', Georgia, serif;
   font-size: 0.85rem;
@@ -177,7 +173,6 @@ onUnmounted(() => {
   justify-content: flex-end;
   margin-top: 0.25rem;
 }
-/* v.109.23: jam Spectral 500 (lebih ringan dari DM Serif Display) */
 .jam {
   font-family: 'Spectral', 'Playfair Display', Georgia, serif;
   font-size: 1.7rem;

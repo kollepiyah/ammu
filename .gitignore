@@ -127,3 +127,5 @@ preview-maskable-*.png
 _tmp_manifest.json
 A6-FIREBASE-RULES-CHECK.md
 AUTO-SESSION-REPORT.md
+deployed-firestore.rules.txt
+deployed-firestore.rules.tmp
