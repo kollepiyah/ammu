@@ -60,7 +60,7 @@ npm run cap:run       # Run di emulator/device
 ```
 Portal MU/
 ├── public/                    # Aplikasi web utama (deployed ke Firebase Hosting)
-│   ├── index.html             # Main SPA (single-file, ~1.79 MB / 37k LOC)
+│   ├── index.html             # Main SPA (single-file, ~1.85 MB / 43.5k LOC)
 │   ├── sw.js                  # Service Worker (PWA cache)
 │   ├── manifest.json          # PWA manifest
 │   ├── .well-known/
@@ -72,6 +72,7 @@ Portal MU/
 ├── src/                       # Tailwind CLI input
 ├── docs/                      # Dokumentasi
 │   └── archive/               # Handover & audit lama
+├── tools/                     # Helper scripts (regenerate-icons.py, dll)
 ├── backups/                   # Backup file index.html lama
 │   └── v24-broken-pre-restore/
 ├── _archive-portal-mu-v2/     # Vue 3 attempt (archived, jangan disentuh)

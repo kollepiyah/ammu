@@ -13,6 +13,9 @@
   "lang": "id",
   "dir": "ltr",
   "categories": ["education", "lifestyle", "productivity"],
+  "launch_handler": {
+    "client_mode": ["focus-existing", "auto"]
+  },
   "icons": [
     {
       "src": "/icon-192.png",

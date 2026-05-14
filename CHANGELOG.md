@@ -21,6 +21,85 @@ Versioning: `v.{nomor-urut}.{MMDDtahunmu}` (mis: `v.108.0527`)
 
 ---
 
+## [v.109.23.0515] — 2026-05-14 — Font Elegant + Icon Maskable Polish
+
+**SW_VERSION:** `v312-0515-elmessiri-spectral`
+
+Cycle besar v.109.1 → v.109.23, ringkas dari 23 micro-release jadi 1 entry README-friendly.
+
+### UX / Visual (JamHijri widget)
+
+- **v.109.13** — Fix tanggal Hijri: dari Latin transliteration (`28 Zulkaidah 1447 H`) → Arabic native (`٢٨ ذُو ٱلْقَعْدَة ١٤٤٧`) via `NAMA_BULAN_ARAB` array + `toArabicDigit()`
+- **v.109.14** — Restructure layout: hapus icon mosque + label "HARI INI", pindah hari (KAMIS) ke atas
+- **v.109.21** — Badge KAMIS dengan BG tipis transparent (pill style), spacing breathable
+- **v.109.23** — Font elegant:
+  - **El Messiri** untuk tanggal Hijri Arabic (modern naskh smooth)
+  - **Spectral italic** untuk tanggal Masehi + jam digital (serif transitional)
+  - **Manrope 600** untuk label/badge (less bold dari sebelumnya)
+
+### UI Profil & Header
+
+- **v.109.14** — Profile dropdown di pojok kanan atas (avatar bulat → menu "Pengaturan Profil" + "Logout")
+  - Click-outside auto-close + ESC keyboard handler
+  - ARIA `aria-haspopup`, `aria-expanded`, `role="menu"` accessibility
+
+### Bug Fixes (Critical)
+
+- **v.109.1 — v.109.4** — Swal modal freeze investigation & fix:
+  - LAZY INIT `_toastMixinInstance` + retry mechanism + CSS hard override
+  - Logout button replace Swal dengan custom DOM modal (zero Swal dependency)
+- **v.109.15** — Replace `cetakStrukPOS` Swal dengan custom DOM modal (sama pattern logout)
+- **v.109.16** — Fix logo KOP PDF cache race:
+  - `tambahKopPDF` → async function dengan `await _cacheImgUrl()` on-demand
+  - 9 caller PDF eksport function diubah jadi async + await
+
+### Performance / Console Clean
+
+- **v.109.15** — Console warnings cleanup:
+  - Hapus Sentry CDN script tag (fix 403 error)
+  - Hapus preload `bg-pesantren.jpg` (fix "preloaded-not-used" warning)
+
+### App Icon Overhaul
+
+- **v.109.17** — Logo app baru: generate 12 icon size dari `logo-baru.png` (2598×2598 transparent) via `tools/regenerate-icons.py`:
+  - favicon.ico multi-resolution (16+32+48)
+  - PWA standard: 192, 512 (transparent any-purpose)
+  - PWA maskable: 192, 512 (gradient teal + safe zone)
+  - Apple touch icon: 180
+  - TWA: 192, 512
+  - Logo splash: 512
+- **v.109.19** — Maskable icon gradient elegant teal (`#14b8a6` → `#0c4e49` diagonal)
+- **v.109.20** — Kaligrafi recolor putih untuk maskable (kontras tinggi dgn BG teal)
+
+### Tooling
+
+- **v.109.x** — `tools/regenerate-icons.py` — script Python untuk regenerate semua icon dari 1 source PNG (preserve aspect ratio, gradient maskable, white recolor opsional)
+- **v.108.x cont.** — `auto-deploy.ps1` improvements:
+  - Auto-detect Vue widget source changes → rebuild bundle
+  - Integrity gate index.html (size + tail `</html>`)
+  - CRLF warning suppression
+  - GitHub PAT + Firebase CI Token via `.agent-credentials.env`
+
+### Cumulative metrics (vs v.108.51)
+
+| Metric | v.108.51 | v.109.23 | Δ |
+|---|---|---|---|
+| index.html size | ~1.79 MB | ~1.85 MB | +60 KB |
+| LOC | ~37k | ~43.5k | +6.5k |
+| Function count | ~600 | 658 | +58 |
+| Custom DOM modals (Swal-free) | 0 | 2 | +2 (logout, cetakStrukPOS) |
+
+### Skipped (deferred ke v.110.x)
+
+- B3 Palette teal-emerald continuation (`bg-blue-*` 84 occurrences sisa)
+- Refactor monolith index.html (43k LOC) → Vue 3 + Vite (roadmap besar 5-6 bulan)
+- Phase 6 Capacitor Android wrapper (briefing siap di `AGENT-BRIEFING-PHASE-6.md`)
+- Phase 7 Tauri Desktop wrapper (briefing siap di `AGENT-BRIEFING-PHASE-7.md`)
+- W3/W4/W5 Vue widget default ON staged rollout
+- W6 ModalPOS Vue widget migration
+
+---
+
 ## [v.108.51.0513] — 2026-05-13 — B2 Tightening + Toast Compact
 
 **Commit:** `82ef813`
