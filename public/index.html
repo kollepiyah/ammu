@@ -8920,6 +8920,7 @@
                       onclick="hapusTTDProfil()"
                       id="btn-hapus-ttd-profil"
                       class="ml-3 text-[10px] text-rose-600 hover:text-rose-800 font-bold underline cursor-pointer hidden"
+                      data-linked="profil_ttd_base64"
                     >
                       <i class="fas fa-trash mr-1"></i>Hapus TTD
                     </button>
@@ -8928,6 +8929,7 @@
                       onclick="hapusFotoProfil()"
                       class="text-[10px] text-red-600 hover:text-red-800 font-bold mt-3 underline cursor-pointer hidden"
                       id="btn-hapus-foto-profil"
+                      data-linked="profil_foto_base64"
                     >
                       <i class="fas fa-trash mr-1"></i>Hapus Foto
                     </button>
@@ -13995,7 +13997,7 @@
         if (b) b.classList.add('hidden')
       }
 
-      const APP_VERSION = 'v.108.55.0514-compact-modal'
+      const APP_VERSION = 'v.108.56.0514-fix-btn-hapus'
 
       function parseTanggalExcel(val) {
         if (!val) return ''
