@@ -722,9 +722,9 @@
 
       /* Backdrop — softer + subtle blur */
       .swal2-container.swal2-backdrop-show {
-        background: rgba(15, 23, 42, 0.55) !important;
-        backdrop-filter: blur(6px) !important;
-        -webkit-backdrop-filter: blur(6px) !important;
+        background: rgba(15, 23, 42, 0.45) !important;
+        backdrop-filter: blur(2px) !important;
+        -webkit-backdrop-filter: blur(2px) !important;
       }
 
       /* Modal slide-in animation */
@@ -1826,8 +1826,9 @@
         color: #f1f5f9 !important;
       }
       /* Sidebar text putih */
+      /* v.108.60: TIDAK !important — user color (inline) menang */
       body.dark-mode #sidebar {
-        background-color: #020617 !important;
+        background-color: #020617;
       }
       body.dark-mode #sidebar .text-amber-100 {
         color: #fef3c7 !important;
@@ -3961,7 +3962,6 @@
       <aside
         id="sidebar"
         class="bg-slate-900 text-white w-72 flex-shrink-0 flex flex-col absolute inset-y-0 left-0 transform -translate-x-full md:relative md:translate-x-0 transition-transform duration-300 z-50 shadow-2xl no-print border-r border-white/5"
-        style="background-color: rgb(7, 70, 75)"
       >
         <div
           class="p-6 flex flex-col items-center gap-3 border-b border-white/10 bg-black/20 relative"
@@ -14033,7 +14033,7 @@
         if (b) b.classList.add('hidden')
       }
 
-      const APP_VERSION = 'v.108.59.0514-ekspor-pdf'
+      const APP_VERSION = 'v.108.60.0514-logout-sidebar-fix'
 
       function parseTanggalExcel(val) {
         if (!val) return ''
@@ -16032,15 +16032,15 @@
       }
 
       function logout() {
+        // v.108.60: hapus icon question + hapus inline cancelColor
         Swal.fire({
           title: 'Keluar dari aplikasi?',
           text: 'Anda akan dikeluarkan dari sesi saat ini.',
-          icon: 'question',
           showCancelButton: true,
           confirmButtonColor: '#dc2626',
-          cancelButtonColor: '#64748b',
           confirmButtonText: 'Ya, Keluar',
-          cancelButtonText: 'Tidak'
+          cancelButtonText: 'Tidak',
+          focusCancel: true
         }).then((result) => {
           if (result.isConfirmed) {
             detachRealtimeListeners()
@@ -16118,10 +16118,11 @@
               main.style.setProperty('background-color', '#0f172a', 'important')
             }
 
-            // Sidebar
-            if (sidebar) {
-              sidebar.style.setProperty('background-color', '#1e293b', 'important')
-            }
+            // Sidebar - v.108.60: preserve user sidebarBgColor
+            // (sidebarBgColor sudah set via applySettings dengan !important)
+            // if (sidebar) {
+            //   sidebar.style.setProperty('background-color', '#1e293b', 'important')
+            // }
 
             // Loop semua .bg-white di document, force inline dark
             document.querySelectorAll('.bg-white').forEach((el) => {
@@ -16144,7 +16145,8 @@
               })
             }
             if (main) main.style.removeProperty('background-color')
-            if (sidebar) sidebar.style.removeProperty('background-color')
+            // v.108.60: TIDAK remove sidebar bg saat exit dark (preserve user color)
+            // if (sidebar) sidebar.style.removeProperty('background-color')
             document.querySelectorAll('.bg-white, .bg-slate-50, .bg-slate-100').forEach((el) => {
               el.style.removeProperty('background-color')
             })
@@ -25200,7 +25202,11 @@
         }
         const elSidebar = document.getElementById('sidebar')
         if (elSidebar) {
-          elSidebar.style.backgroundColor = set.sidebarBgColor || '#0f172a'
+          elSidebar.style.setProperty(
+            'background-color',
+            set.sidebarBgColor || '#0f172a',
+            'important'
+          )
         }
         const elLoginDesc = document.getElementById('ui-login-desc')
         if (elLoginDesc) elLoginDesc.innerText = set.txtAppDesc
