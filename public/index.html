@@ -58,6 +58,10 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="mobile-web-app-capable" content="yes" />
+    <!-- B1.8 v.109.12: SEO meta description untuk Lighthouse SEO score -->
+    <meta name="description" content="Portal MU / Ammu Online — Sistem manajemen Pondok Pesantren Mambaul Ulum Sidoarjo. PWA untuk admin, guru, santri & wali. Fitur: absensi, rapor, POS keuangan, dashboard." />
+    <meta name="theme-color" content="#0f766e" />
+    <meta name="keywords" content="ponpes, pesantren, mambaul ulum, sidoarjo, portal santri, manajemen pondok, rapor digital, qiraati" />
 
     <!-- Browser tab icon: logo kaligrafi original (tighter crop) -->
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
@@ -9491,6 +9495,7 @@
             role="dialog"
 
             aria-modal="true"
+            aria-labelledby="modal-libur-title"
             class="hidden fixed inset-0 bg-slate-900/70 flex justify-center items-center z-[110] p-4 backdrop-blur-sm no-print"
           >
             <div
@@ -9499,7 +9504,7 @@
               <div
                 class="flex justify-between items-center mb-4 border-b border-slate-100 pb-3"
               >
-                <h3 class="font-black text-lg text-slate-800">
+                <h3 id="modal-libur-title" class="font-black text-lg text-slate-800">
                   <i class="fas fa-calendar-times text-amber-500 mr-2"></i
                   >Kelola Hari Libur
                 </h3>
@@ -9571,6 +9576,7 @@
             role="dialog"
 
             aria-modal="true"
+            aria-labelledby="modal-riwayat-title"
             class="hidden fixed inset-0 bg-slate-900/70 flex justify-center items-center z-[100] p-4 backdrop-blur-md no-print transition-opacity duration-300"
           >
             <div
@@ -9579,7 +9585,7 @@
               <div
                 class="flex justify-between items-center border-b border-slate-200 pb-3 mb-4"
               >
-                <h3 class="text-2xl font-black text-slate-800">
+                <h3 id="modal-riwayat-title" class="text-2xl font-black text-slate-800">
                   <i class="fas fa-history mr-2 text-custom"></i>Riwayat
                   Prestasi Qiraati
                 </h3>
@@ -9633,12 +9639,13 @@
             role="dialog"
 
             aria-modal="true"
+            aria-labelledby="modal-edit-kelas-sek-title"
             class="hidden fixed inset-0 bg-slate-900/70 flex justify-center items-center z-[110] p-4 backdrop-blur-sm no-print"
           >
             <div
               class="mu-modal-card bg-white p-6 rounded-2xl w-full max-w-sm shadow-2xl border-t-4 border-teal-500"
             >
-              <h3 class="font-black text-lg mb-4 text-slate-800">
+              <h3 id="modal-edit-kelas-sek-title" class="font-black text-lg mb-4 text-slate-800">
                 <i class="fas fa-school text-blue-600 mr-2"></i>Ubah Kelas
                 Sekolah
               </h3>
@@ -9693,6 +9700,7 @@
             role="dialog"
 
             aria-modal="true"
+            aria-labelledby="modal-mutasi-title"
             class="hidden fixed inset-0 bg-slate-900/70 flex justify-center items-center z-[100] p-4 backdrop-blur-sm transition-opacity no-print"
           >
             <div
@@ -9701,7 +9709,7 @@
               <div
                 class="flex justify-between items-center border-b border-slate-100 pb-4 mb-5"
               >
-                <h3 class="text-2xl font-black text-slate-800 tracking-tight">
+                <h3 id="modal-mutasi-title" class="text-2xl font-black text-slate-800 tracking-tight">
                   <i class="fas fa-arrow-up mr-2 text-blue-600"></i>Form
                   Kenaikan
                 </h3>
@@ -9899,6 +9907,7 @@
             role="dialog"
 
             aria-modal="true"
+            aria-labelledby="modal-assign-santri-title"
             class="hidden fixed inset-0 bg-slate-900/70 flex justify-center items-center z-[100] p-4 backdrop-blur-sm no-print"
           >
             <div
@@ -9907,7 +9916,7 @@
               <div
                 class="flex justify-between items-center border-b border-slate-100 pb-4 mb-5"
               >
-                <h3 class="text-2xl font-black text-slate-800">
+                <h3 id="modal-assign-santri-title" class="text-2xl font-black text-slate-800">
                   <i class="fas fa-users-cog mr-2 text-custom"></i>Tambah Santri
                   ke Kelas
                 </h3>
@@ -10009,12 +10018,13 @@
             role="dialog"
 
             aria-modal="true"
+            aria-labelledby="modal-edit-profil-title"
             class="hidden fixed inset-0 bg-slate-900/70 flex justify-center items-center z-[110] p-4 backdrop-blur-sm no-print"
           >
             <div
               class="mu-modal-card bg-white p-8 rounded-3xl w-full max-w-md shadow-2xl border-t-8 border-custom max-h-[90vh] overflow-y-auto custom-scrollbar"
             >
-              <h3 class="font-black text-xl mb-5 text-slate-800 text-center">
+              <h3 id="modal-edit-profil-title" class="font-black text-xl mb-5 text-slate-800 text-center">
                 <i class="fas fa-user-cog text-custom mr-2"></i>Pengaturan
                 Profil
               </h3>
@@ -10370,12 +10380,13 @@
             role="dialog"
 
             aria-modal="true"
+            aria-labelledby="modal-lupa-sandi-title"
             class="hidden fixed inset-0 bg-slate-900/80 flex justify-center items-center z-[200] p-4 backdrop-blur-sm no-print"
           >
             <div
               class="mu-modal-card bg-white p-6 rounded-3xl w-full max-w-md shadow-2xl border-t-8 border-teal-500 max-h-[90vh] overflow-y-auto"
             >
-              <h3 class="font-black text-xl mb-2 text-slate-800">
+              <h3 id="modal-lupa-sandi-title" class="font-black text-xl mb-2 text-slate-800">
                 <i class="fas fa-key text-blue-600 mr-2"></i>Lupa Sandi Santri
               </h3>
               <p class="text-xs text-slate-500 mb-4">
@@ -10527,12 +10538,13 @@
             role="dialog"
 
             aria-modal="true"
+            aria-labelledby="modal-reset-sandi-guru-title"
             class="hidden fixed inset-0 bg-slate-900/70 flex justify-center items-center z-[110] p-4 backdrop-blur-sm no-print"
           >
             <div
               class="mu-modal-card bg-white p-6 rounded-3xl w-full max-w-md shadow-2xl border-t-8 border-rose-500 max-h-[90vh] overflow-y-auto"
             >
-              <h3 class="font-black text-xl mb-4 text-slate-800">
+              <h3 id="modal-reset-sandi-guru-title" class="font-black text-xl mb-4 text-slate-800">
                 <i class="fas fa-key text-rose-600 mr-2"></i>Reset Sandi
                 Guru/Pegawai
               </h3>
@@ -10601,6 +10613,7 @@
             role="dialog"
 
             aria-modal="true"
+            aria-labelledby="modal-link-google-title"
             class="hidden fixed inset-0 bg-slate-900/80 flex justify-center items-center z-[200] p-4 backdrop-blur-sm no-print"
           >
             <div
@@ -10612,7 +10625,7 @@
                 >
                   <i class="fas fa-link text-blue-600 text-2xl"></i>
                 </div>
-                <h3 class="font-black text-xl text-slate-800">
+                <h3 id="modal-link-google-title" class="font-black text-xl text-slate-800">
                   Tautkan Akun Google
                 </h3>
                 <p class="text-xs text-slate-500 mt-1">
@@ -10700,6 +10713,7 @@
             role="dialog"
 
             aria-modal="true"
+            aria-labelledby="modal-audit-log-title"
             class="hidden fixed inset-0 bg-slate-900/70 flex justify-center items-center z-[120] p-4 backdrop-blur-sm no-print"
           >
             <div
@@ -10709,7 +10723,7 @@
                 class="flex items-center justify-between mb-4 border-b border-slate-200 pb-3"
               >
                 <div>
-                  <h3 class="font-black text-xl text-slate-800">
+                  <h3 id="modal-audit-log-title" class="font-black text-xl text-slate-800">
                     <i class="fas fa-history text-amber-600 mr-2"></i>Riwayat
                     Aksi (Audit Log)
                   </h3>
@@ -10810,12 +10824,13 @@
             role="dialog"
 
             aria-modal="true"
+            aria-labelledby="modal-kirim-notif-title"
             class="hidden fixed inset-0 bg-slate-900/70 flex justify-center items-center z-[120] p-4 backdrop-blur-sm no-print"
           >
             <div
               class="mu-modal-card bg-white p-6 rounded-3xl w-full max-w-md shadow-2xl border-t-8 border-teal-500 max-h-[90vh] overflow-y-auto"
             >
-              <h3 class="font-black text-xl mb-3 text-slate-800">
+              <h3 id="modal-kirim-notif-title" class="font-black text-xl mb-3 text-slate-800">
                 <i class="fas fa-bell text-blue-600 mr-2"></i>Kirim Notifikasi
                 Massal
               </h3>
@@ -10904,12 +10919,13 @@
             role="dialog"
 
             aria-modal="true"
+            aria-labelledby="modal-edit-transaksi-title"
             class="hidden fixed inset-0 bg-slate-900/70 flex justify-center items-center z-[120] p-4 backdrop-blur-sm no-print"
           >
             <div
               class="mu-modal-card bg-white p-6 rounded-3xl w-full max-w-md shadow-2xl border-t-8 border-purple-500 max-h-[90vh] overflow-y-auto"
             >
-              <h3 class="font-black text-xl mb-2 text-slate-800">
+              <h3 id="modal-edit-transaksi-title" class="font-black text-xl mb-2 text-slate-800">
                 <i class="fas fa-shield-halved text-purple-600 mr-2"></i>Edit
                 Transaksi
               </h3>
@@ -11033,12 +11049,13 @@
             role="dialog"
 
             aria-modal="true"
+            aria-labelledby="modal-input-bi-title"
             class="hidden fixed inset-0 bg-slate-900/70 flex justify-center items-center z-[110] p-4 backdrop-blur-sm no-print"
           >
             <div
               class="mu-modal-card bg-white p-6 rounded-3xl w-full max-w-md shadow-2xl border-t-8 border-rose-500"
             >
-              <h3 class="font-black text-xl mb-4 text-slate-800">
+              <h3 id="modal-input-bi-title" class="font-black text-xl mb-4 text-slate-800">
                 <i class="fas fa-book text-rose-600 mr-2"></i>Input Manual Buku
                 Induk
               </h3>
@@ -11133,12 +11150,13 @@
             role="dialog"
 
             aria-modal="true"
+            aria-labelledby="modal-mutasi-tab-santri-title"
             class="hidden fixed inset-0 bg-slate-900/70 flex justify-center items-center z-[110] p-4 backdrop-blur-sm no-print"
           >
             <div
               class="mu-modal-card bg-white p-6 rounded-3xl w-full max-w-md shadow-2xl border-t-8 border-teal-500"
             >
-              <h3 class="font-black text-xl mb-4 text-slate-800">
+              <h3 id="modal-mutasi-tab-santri-title" class="font-black text-xl mb-4 text-slate-800">
                 <i class="fas fa-piggy-bank text-blue-600 mr-2"></i>Mutasi
                 Tabungan Santri
               </h3>
@@ -11226,92 +11244,6 @@
             </div>
           </div>
 
-          <!-- MODAL: Mutasi Tabungan Guru -->
-          <div
-            id="modal-mutasi-tab-guru"
-
-            role="dialog"
-
-            aria-modal="true"
-            class="hidden fixed inset-0 bg-slate-900/70 flex justify-center items-center z-[110] p-4 backdrop-blur-sm no-print"
-          >
-            <div
-              class="mu-modal-card bg-white p-6 rounded-3xl w-full max-w-md shadow-2xl border-t-8 border-teal-500"
-            >
-              <h3 class="font-black text-xl mb-4 text-slate-800">
-                <i class="fas fa-piggy-bank text-blue-600 mr-2"></i>Mutasi
-                Tabungan Guru/Pegawai
-              </h3>
-              <form onsubmit="simpanMutasiTabGuru(event)" class="space-y-3">
-                <div>
-                  <label
-                    class="text-xs font-bold text-slate-500 uppercase mb-1 block"
-                    >Pilih Guru/Pegawai</label
-                  ><select
-                    id="mtg-guru-id"
-                    required=""
-                    class="input-modern py-2 text-sm bg-slate-50 cursor-pointer"
-                  ></select>
-                </div>
-                <div>
-                  <label
-                    class="text-xs font-bold text-slate-500 uppercase mb-1 block"
-                    >Jenis</label
-                  ><select
-                    id="mtg-jenis"
-                    required=""
-                    class="input-modern py-2 text-sm bg-slate-50 cursor-pointer"
-                  >
-                    <option value="setor">Setor (+)</option>
-                    <option value="tarik">Tarik (-)</option>
-                  </select>
-                </div>
-                <div>
-                  <label
-                    class="text-xs font-bold text-slate-500 uppercase mb-1 block"
-                    >Nominal (Rp)</label
-                  ><input
-                    type="text"
-                    id="mtg-nominal"
-                    oninput="formatAngkaInput(this)"
-                    inputmode="numeric"
-                    required=""
-                    min="1"
-                    class="input-modern py-2 text-sm bg-slate-50"
-                  />
-                </div>
-                <div>
-                  <label
-                    class="text-xs font-bold text-slate-500 uppercase mb-1 block"
-                    >Catatan</label
-                  ><input
-                    type="text"
-                    id="mtg-catatan"
-                    class="input-modern py-2 text-sm bg-slate-50"
-                    placeholder="Opsional..."
-                  />
-                </div>
-                <div
-                  class="flex gap-2 justify-end pt-2 border-t border-slate-100"
-                >
-                  <button
-                    type="button"
-                    onclick="document.getElementById(&#39;modal-mutasi-tab-guru&#39;).classList.add(&#39;hidden&#39;)"
-                    class="px-5 py-2 bg-slate-200 font-bold rounded-xl text-sm cursor-pointer"
-                  >
-                    Batal
-                  </button>
-                  <button
-                    type="submit"
-                    class="px-5 py-2 bg-teal-600 hover:bg-teal-700 text-white font-black rounded-xl text-sm shadow-md cursor-pointer"
-                  >
-                    <i class="fas fa-save mr-1"></i>Simpan
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-
           <!-- MODAL: Hutang Lembaga -->
           <div
             id="modal-hutang"
@@ -11319,12 +11251,13 @@
             role="dialog"
 
             aria-modal="true"
+            aria-labelledby="modal-hutang-title"
             class="hidden fixed inset-0 bg-slate-900/70 flex justify-center items-center z-[110] p-4 backdrop-blur-sm no-print"
           >
             <div
               class="mu-modal-card bg-white p-6 rounded-3xl w-full max-w-md shadow-2xl border-t-8 border-rose-500"
             >
-              <h3 class="font-black text-xl mb-4 text-slate-800">
+              <h3 id="modal-hutang-title" class="font-black text-xl mb-4 text-slate-800">
                 <i class="fas fa-handshake text-rose-600 mr-2"></i>Hutang
                 Lembaga
               </h3>
@@ -11417,6 +11350,7 @@
             role="dialog"
 
             aria-modal="true"
+            aria-labelledby="modal-master-tp-title"
             class="hidden fixed inset-0 bg-slate-900/70 flex justify-center items-center z-[110] p-4 backdrop-blur-sm no-print"
           >
             <div
@@ -11517,7 +11451,7 @@
                     <i class="fas fa-shield-halved mr-1"></i>Modul Keuangan
                     Terpadu
                   </p>
-                  <h2 class="text-3xl font-black mt-1">Dashboard Keuangan</h2>
+                  <h2 id="modal-master-tp-title" class="text-3xl font-black mt-1">Dashboard Keuangan</h2>
                   <p class="text-sm font-medium mt-2 opacity-90">
                     Selamat datang,
                     <span class="font-black" id="keu-dash-user">-</span>·
@@ -13519,6 +13453,7 @@
             role="dialog"
 
             aria-modal="true"
+            aria-labelledby="modal-post-beranda-title"
             class="hidden fixed inset-0 bg-slate-900/70 flex justify-center items-center z-[110] p-4 backdrop-blur-sm no-print"
           >
             <div
@@ -13531,6 +13466,7 @@
                 role="dialog"
 
                 aria-modal="true"
+                aria-labelledby="modal-beranda-title-title"
               >
                 <i class="fas fa-edit text-blue-600 mr-2"></i>Buat Postingan
               </h3>
@@ -13671,10 +13607,11 @@
             role="dialog"
 
             aria-modal="true"
+            aria-labelledby="modal-cetak-rapor-title"
             class="hidden fixed inset-0 bg-slate-900/70 flex justify-center items-center z-[140] p-4 backdrop-blur-sm no-print"
           >
             <div class="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl">
-              <h3 class="text-lg font-black text-slate-800 mb-4">
+              <h3 id="modal-cetak-rapor-title" class="text-lg font-black text-slate-800 mb-4">
                 <i class="fas fa-print text-blue-600 mr-2"></i>Cetak Rapor
               </h3>
               <div class="space-y-3 mb-4">
@@ -13751,10 +13688,11 @@
             role="dialog"
 
             aria-modal="true"
+            aria-labelledby="modal-import-rapor-title"
             class="hidden fixed inset-0 bg-slate-900/70 flex justify-center items-center z-[140] p-4 backdrop-blur-sm no-print"
           >
             <div class="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl">
-              <h3 class="text-lg font-black text-slate-800 mb-4">
+              <h3 id="modal-import-rapor-title" class="text-lg font-black text-slate-800 mb-4">
                 <i class="fas fa-file-import text-amber-600 mr-2"></i>Import
                 Data Rapor
               </h3>
@@ -13799,6 +13737,7 @@
             role="dialog"
 
             aria-modal="true"
+            aria-labelledby="modal-schema-rapor-title"
             class="hidden fixed inset-0 bg-slate-900/70 flex justify-center items-center z-[140] p-4 backdrop-blur-sm no-print"
           >
             <div
@@ -13807,7 +13746,7 @@
               <div
                 class="flex items-center justify-between mb-3 border-b border-slate-200 pb-3"
               >
-                <h3 class="text-xl font-black text-slate-800">
+                <h3 id="modal-schema-rapor-title" class="text-xl font-black text-slate-800">
                   <i class="fas fa-list-alt text-purple-600 mr-2"></i>Editor
                   Struktur —
                   <span id="schema-edit-lembaga">-</span>
@@ -13879,6 +13818,7 @@
             role="dialog"
 
             aria-modal="true"
+            aria-labelledby="modal-acf-fields-title"
             class="hidden fixed inset-0 bg-slate-900/70 flex justify-center items-center z-[140] p-4 backdrop-blur-sm no-print"
           >
             <div
@@ -13887,12 +13827,13 @@
               <div
                 class="flex items-center justify-between mb-3 border-b border-slate-200 pb-3"
               >
-                <h3 class="text-xl font-black text-slate-800">
+                <h3 id="modal-acf-fields-title" class="text-xl font-black text-slate-800">
                   <i class="fas fa-puzzle-piece text-purple-600 mr-2"></i>Kelola
                   Field —
                   <span id="modal-acf-title-entity"
  role="dialog"
  aria-modal="true" class="hidden">-</span>
+ aria-labelledby="modal-acf-title-entity-title"
                 </h3>
                 <button
                   type="button"
@@ -13944,6 +13885,7 @@
             role="dialog"
 
             aria-modal="true"
+            aria-labelledby="modal-kartu-kenaikan-title"
             class="hidden fixed inset-0 bg-slate-900/70 flex justify-center items-center z-[140] p-4 backdrop-blur-sm no-print"
           >
             <div
@@ -13952,7 +13894,7 @@
               <div
                 class="flex items-center justify-between mb-3 border-b border-slate-200 pb-3"
               >
-                <h3 class="text-xl font-black text-slate-800">
+                <h3 id="modal-kartu-kenaikan-title" class="text-xl font-black text-slate-800">
                   <i class="fas fa-id-card text-emerald-600 mr-2"></i>Kartu
                   Kenaikan —
                   <span id="kk-modal-nama">-</span>
@@ -14012,6 +13954,7 @@
             role="dialog"
 
             aria-modal="true"
+            aria-labelledby="modal-editor-kartu-title"
             class="hidden fixed inset-0 bg-slate-900/70 flex justify-center items-center z-[140] p-4 backdrop-blur-sm no-print"
           >
             <div
@@ -14020,7 +13963,7 @@
               <div
                 class="flex items-center justify-between mb-3 border-b border-slate-200 pb-3"
               >
-                <h3 class="text-xl font-black text-slate-800">
+                <h3 id="modal-editor-kartu-title" class="text-xl font-black text-slate-800">
                   <i class="fas fa-list-alt text-purple-600 mr-2"></i>Editor
                   Kartu Kenaikan —
                   <span id="ek-lembaga">-</span>
@@ -14080,6 +14023,7 @@
             role="dialog"
 
             aria-modal="true"
+            aria-labelledby="modal-cropper-title"
             class="hidden fixed inset-0 bg-slate-900/95 flex flex-col z-[150] p-4 backdrop-blur-sm no-print"
           >
             <div class="flex items-center justify-between mb-3 text-white">
@@ -14156,6 +14100,7 @@
             role="dialog"
 
             aria-modal="true"
+            aria-labelledby="modal-notif-tagihan-title"
             class="hidden fixed inset-0 bg-slate-900/70 flex justify-center items-center z-[120] p-4 backdrop-blur-sm no-print"
           >
             <div
@@ -14276,6 +14221,7 @@
             role="dialog"
 
             aria-modal="true"
+            aria-labelledby="modal-kegiatan-title"
             class="hidden fixed inset-0 bg-slate-900/70 flex justify-center items-center z-[110] p-4 backdrop-blur-sm no-print"
           >
             <div
@@ -14288,6 +14234,7 @@
                 role="dialog"
 
                 aria-modal="true"
+                aria-labelledby="modal-kegiatan-title-title"
               >
                 <i class="fas fa-calendar-plus text-cyan-600 mr-2"></i>Tambah
                 Kegiatan
@@ -14446,7 +14393,7 @@
               >
                 <i class="fas fa-calendar-check mr-1"></i>Kegiatan Pesantren
               </p>
-              <h2 class="text-2xl font-black mt-1">
+              <h2 id="modal-kegiatan-title-title" class="text-2xl font-black mt-1">
                 Master Kegiatan &amp; Absensi Santri Mukim
               </h2>
               <p class="text-sm font-medium mt-1 opacity-90">
@@ -14724,6 +14671,7 @@
             role="dialog"
 
             aria-modal="true"
+            aria-labelledby="modal-master-kegiatan-title"
             class="hidden fixed inset-0 bg-slate-900/70 flex justify-center items-center z-[110] p-4 backdrop-blur-sm no-print"
           >
             <div
@@ -14736,6 +14684,7 @@
                 role="dialog"
 
                 aria-modal="true"
+                aria-labelledby="modal-mk-title-title"
               >
                 <i class="fas fa-calendar-plus text-cyan-600 mr-2"></i>Tambah
                 Kegiatan
@@ -16353,7 +16302,7 @@
         if (b) b.classList.add("hidden");
       }
 
-      const APP_VERSION = "v.109.3.0515-swal-mixin-timing";
+      const APP_VERSION = "v.109.12.0515-b1-8-lighthouse-prep";
 
       // ====================================================================
       // Sentry error tracking init (B3). Gate guard: DSN placeholder = no-op.
@@ -16394,7 +16343,7 @@
       // PHASE 5 (W2-W6) — Vue Widget Feature Flags (ADDITIVE)
       // Default OFF. Toggle: window._useVueJamHijri = true; location.reload();
       // ====================================================================
-      window._useVueJamHijri = window._useVueJamHijri ?? false;
+      window._useVueJamHijri = window._useVueJamHijri ?? true;  // Default ON v.109.11 (Phase 5 staged rollout)
       window._useVuePostCard = window._useVuePostCard ?? false;
       window._useVueKalenderMini = window._useVueKalenderMini ?? false;
       window._useVueKalenderPendidikan = window._useVueKalenderPendidikan ?? false;
@@ -18981,34 +18930,98 @@
       }
 
       function logout() {
-        // v.108.94: improve cancel button clarity — tambah cancelButtonColor
-        // supaya "Tidak" tidak kelihatan disabled (sebelumnya washed out gray).
-        Swal.fire({
-          title: "Keluar dari aplikasi?",
-          text: "Anda akan dikeluarkan dari sesi saat ini.",
-          showCancelButton: true,
-          confirmButtonColor: "#dc2626",
-          cancelButtonColor: "#475569",
-          confirmButtonText: "Ya, Keluar",
-          cancelButtonText: "Tidak",
-          focusCancel: true,
-          allowOutsideClick: true,
-          allowEscapeKey: true,
-        }).then((result) => {
-          if (result.isConfirmed) {
-            detachRealtimeListeners();
-            lockBukuInduk();
-            try {
-              fbAuth.signOut();
-            } catch (e) {}
-            sessionStorage.removeItem("sesiAktif_v6");
-            try {
-              localStorage.removeItem("sesiAktif_persist_v6");
-            } catch (e) {}
-            sessionStorage.removeItem("currentPage_v6");
-            location.reload();
-          }
+        // BUGFIX v.109.4: Replace Swal dengan custom DOM modal — guaranteed
+        // tidak freeze (no Swal2 dependency, no @keyframes animation).
+        // Pure DOM creation dengan inline style + pure CSS transition.
+        const overlay = document.createElement("div");
+        overlay.id = "mu-logout-modal";
+        overlay.style.cssText =
+          "position:fixed;inset:0;z-index:100001;background:rgba(15,23,42,0.6);" +
+          "display:flex;align-items:center;justify-content:center;padding:16px;" +
+          "opacity:0;transition:opacity 0.18s ease-out;";
+        const card = document.createElement("div");
+        card.style.cssText =
+          "background:#ffffff;border-radius:18px;padding:24px;max-width:380px;width:100%;" +
+          "box-shadow:0 25px 50px -12px rgba(0,0,0,0.35);border-top:6px solid #dc2626;" +
+          "transform:scale(0.94);transition:transform 0.18s ease-out;";
+        // Dark mode adjustment
+        if (document.body.classList.contains("dark-mode")) {
+          card.style.background = "#1e293b";
+          card.style.color = "#f1f5f9";
+        }
+        const titleEl = document.createElement("h3");
+        titleEl.style.cssText = "font-size:18px;font-weight:800;margin:0 0 8px 0;color:inherit;";
+        titleEl.textContent = "Keluar dari aplikasi?";
+        const textEl = document.createElement("p");
+        textEl.style.cssText = "font-size:14px;margin:0 0 18px 0;color:inherit;opacity:0.85;";
+        textEl.textContent = "Anda akan dikeluarkan dari sesi saat ini.";
+        const btnRow = document.createElement("div");
+        btnRow.style.cssText = "display:flex;gap:8px;justify-content:flex-end;";
+        const cancelBtn = document.createElement("button");
+        cancelBtn.type = "button";
+        cancelBtn.style.cssText =
+          "background:#475569;color:white;border:none;border-radius:10px;" +
+          "padding:10px 20px;font-weight:700;font-size:14px;cursor:pointer;" +
+          "transition:background 0.15s;";
+        cancelBtn.onmouseover = () => (cancelBtn.style.background = "#334155");
+        cancelBtn.onmouseout = () => (cancelBtn.style.background = "#475569");
+        cancelBtn.textContent = "Tidak";
+        const confirmBtn = document.createElement("button");
+        confirmBtn.type = "button";
+        confirmBtn.style.cssText =
+          "background:#dc2626;color:white;border:none;border-radius:10px;" +
+          "padding:10px 20px;font-weight:700;font-size:14px;cursor:pointer;" +
+          "transition:background 0.15s;";
+        confirmBtn.onmouseover = () => (confirmBtn.style.background = "#b91c1c");
+        confirmBtn.onmouseout = () => (confirmBtn.style.background = "#dc2626");
+        confirmBtn.textContent = "Ya, Keluar";
+        btnRow.appendChild(cancelBtn);
+        btnRow.appendChild(confirmBtn);
+        card.appendChild(titleEl);
+        card.appendChild(textEl);
+        card.appendChild(btnRow);
+        overlay.appendChild(card);
+        document.body.appendChild(overlay);
+        // Trigger transition
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            overlay.style.opacity = "1";
+            card.style.transform = "scale(1)";
+          });
         });
+        // Close handler
+        const closeModal = (doLogout) => {
+          overlay.style.opacity = "0";
+          card.style.transform = "scale(0.94)";
+          setTimeout(() => {
+            try { overlay.remove(); } catch (e) {}
+            if (doLogout) {
+              detachRealtimeListeners();
+              lockBukuInduk();
+              try { fbAuth.signOut(); } catch (e) {}
+              sessionStorage.removeItem("sesiAktif_v6");
+              try { localStorage.removeItem("sesiAktif_persist_v6"); } catch (e) {}
+              sessionStorage.removeItem("currentPage_v6");
+              location.reload();
+            }
+          }, 200);
+        };
+        cancelBtn.addEventListener("click", () => closeModal(false));
+        confirmBtn.addEventListener("click", () => closeModal(true));
+        // Click outside to cancel
+        overlay.addEventListener("click", (e) => {
+          if (e.target === overlay) closeModal(false);
+        });
+        // ESC key to cancel
+        const escHandler = (e) => {
+          if (e.key === "Escape") {
+            document.removeEventListener("keydown", escHandler);
+            closeModal(false);
+          }
+        };
+        document.addEventListener("keydown", escHandler);
+        // Focus cancel button (safer default)
+        setTimeout(() => cancelBtn.focus(), 50);
       }
       // ===== DARK MODE TOGGLE (per-user, localStorage) =====
       function getDarkModeKey() {
@@ -26389,6 +26402,22 @@
           .classList.remove("hidden");
       }
       function renderListAssignSantri() {
+        // B1.1 wire skeleton — tampil saat db_santri kosong
+        const _container = document.getElementById("list-assign-santri");
+        if (db_santri.length === 0 && typeof _renderSkeleton === "function") {
+          if (_container) {
+            // Skeleton untuk list (div) — bukan tbody, jadi wrap manual
+            let h = '';
+            for (let i = 0; i < 5; i++) {
+              h += '<div class="flex items-center p-3 border-b border-slate-100">' +
+                   '<div class="w-5 h-5 bg-slate-200 rounded animate-pulse mr-3"></div>' +
+                   '<div class="flex-1"><div class="h-4 bg-slate-200 rounded animate-pulse w-3/4 mb-1"></div>' +
+                   '<div class="h-3 bg-slate-200 rounded animate-pulse w-1/2"></div></div></div>';
+            }
+            _container.innerHTML = h;
+          }
+          return;
+        }
         const kw = document
           .getElementById("cari-assign-santri")
           .value.toLowerCase();
@@ -28711,8 +28740,10 @@
 
         const div = document.getElementById("diniyah-rekap-content");
         if (list.length === 0) {
-          div.innerHTML =
-            '<p class="text-sm text-slate-400 italic text-center py-6">Tidak ada santri.</p>';
+          // B1.2 wire empty state
+          div.innerHTML = (typeof _renderEmptyState === "function")
+            ? _renderEmptyState({ icon: "fa-users-slash", title: "Tidak ada santri di lembaga ini", subtitle: "Pilih lembaga lain atau tambah santri dulu." })
+            : '<p class="text-sm text-slate-400 italic text-center py-6">Tidak ada santri.</p>';
           return;
         }
 
@@ -32356,6 +32387,12 @@
           );
       }
       function renderTabunganSantri() {
+        // B1.1 wire skeleton — tampil saat db_santri kosong (loading state)
+        const _tbody = document.getElementById("tbody-tab-santri");
+        if (db_santri.length === 0 && typeof _renderSkeleton === "function") {
+          if (_tbody) _tbody.innerHTML = _renderSkeleton(5, 4);
+          return;
+        }
         const cari = (
           document.getElementById("keu-cari-tabungan").value || ""
         ).toLowerCase();
@@ -32545,6 +32582,12 @@
           );
       }
       function renderTabunganGuru() {
+        // B1.1 wire skeleton — tampil saat db_guru kosong
+        const _tbody = document.getElementById("tbody-tab-guru");
+        if (db_guru.length === 0 && typeof _renderSkeleton === "function") {
+          if (_tbody) _tbody.innerHTML = _renderSkeleton(5, 4);
+          return;
+        }
         const cari = (
           document.getElementById("keu-cari-tab-guru").value || ""
         ).toLowerCase();
@@ -32569,62 +32612,6 @@
                </tr>`,
                 )
                 .join("");
-      }
-      async function simpanMutasiTabGuru(e) {
-        e.preventDefault();
-        const gid = document.getElementById("mtg-guru-id").value;
-        const jenis = document.getElementById("mtg-jenis").value;
-        const nominal = getNumValue("mtg-nominal");
-        const catatan = document.getElementById("mtg-catatan").value;
-        if (!gid || !nominal) return;
-        const g = db_guru.find((x) => x.id == gid);
-        if (!g) return;
-
-        if (jenis === "tarik") {
-          const saldo = getSaldoTabunganGuru(gid);
-          if (nominal > saldo)
-            return _toast.warning(
-              `Saldo tidak cukup: ${`Saldo: ${fmtRupiah(saldo)}`}`,
-            );
-        }
-        const tanggal = tglIso(new Date());
-        const id = `tabg_${Date.now()}`;
-        const data = {
-          id,
-          guru_id: Number(gid),
-          guru_nama: g.nama,
-          lembaga: g.lembaga,
-          tanggal,
-          jenis,
-          nominal,
-          catatan,
-          operator: sesiAktif.nama || "admin",
-        };
-        toggleLoader(true);
-        try {
-          await db.collection("keuangan_tabungan_guru").doc(id).set(data);
-          db_keuangan_tabungan_guru.push(data);
-          const biRec = {
-            id: `bi_tabg_${id}`,
-            tanggal,
-            tipe: jenis === "setor" ? "masuk" : "keluar",
-            kategori: "Tabungan Guru",
-            nominal,
-            keterangan: `Tabungan ${jenis}: ${g.nama}${catatan ? " - " + catatan : ""}`,
-            sumber: "tabungan_guru",
-            ref_id: id,
-            operator: sesiAktif.nama || "admin",
-          };
-          await pushKeBukuInduk(biRec);
-          document
-            .getElementById("modal-mutasi-tab-guru")
-            .classList.add("hidden");
-          _toast.success("Mutasi tabungan tersimpan");
-          renderTabunganGuru();
-        } catch (err) {
-          _toast.error("Error: " + (err.message || ""));
-        }
-        toggleLoader(false);
       }
       function lihatMutasiTabGuru(gid) {
         const mutasi = db_keuangan_tabungan_guru
@@ -34951,8 +34938,10 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
           document.getElementById("ks-count-badge").innerText = sorted.length;
           const div = document.getElementById("ks-list-admin");
           if (sorted.length === 0) {
-            div.innerHTML =
-              '<p class="text-sm text-slate-400 italic text-center py-6">Belum ada pesan masuk.</p>';
+            // B1.2 wire empty state
+            div.innerHTML = (typeof _renderEmptyState === "function")
+              ? _renderEmptyState({ icon: "fa-comment-slash", title: "Belum ada pesan masuk", subtitle: "Kritik & saran dari user akan muncul di sini." })
+              : '<p class="text-sm text-slate-400 italic text-center py-6">Belum ada pesan masuk.</p>';
           } else {
             div.innerHTML = sorted
               .map((k) => {
@@ -40165,8 +40154,10 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
           .sort((a, b) => a.tgl_mulai.localeCompare(b.tgl_mulai))
           .slice(0, 3);
         if (upcoming.length === 0) {
-          div.innerHTML =
-            '<p class="text-xs text-slate-400 italic text-center py-3">Tidak ada kegiatan terdekat.</p>';
+          // B1.2 wire empty state
+          div.innerHTML = (typeof _renderEmptyState === "function")
+            ? _renderEmptyState({ icon: "fa-calendar-times", title: "Tidak ada kegiatan terdekat", subtitle: "Agenda baru akan tampil di sini." })
+            : '<p class="text-xs text-slate-400 italic text-center py-3">Tidak ada kegiatan terdekat.</p>';
           return;
         }
         // Bulan singkat (3 huruf, uppercase)
@@ -40318,8 +40309,10 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
           a.tgl_mulai.localeCompare(b.tgl_mulai),
         );
         if (sorted.length === 0) {
-          listDiv.innerHTML =
-            '<p class="text-xs text-slate-400 italic text-center py-4">Tidak ada kegiatan bulan ini.</p>';
+          // B1.2 wire empty state
+          listDiv.innerHTML = (typeof _renderEmptyState === "function")
+            ? _renderEmptyState({ icon: "fa-calendar-times", title: "Tidak ada kegiatan bulan ini", subtitle: "Pilih bulan lain atau tambah kegiatan baru." })
+            : '<p class="text-xs text-slate-400 italic text-center py-4">Tidak ada kegiatan bulan ini.</p>';
         } else {
           listDiv.innerHTML = sorted
             .map((k) => {
@@ -40936,7 +40929,7 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
                      if (imgs.length === 0) return "";
                      // Pakai post ID untuk lookup di global cache (hindari escape quote ribet)
                      if (imgs.length === 1) {
-                       return `<img src="${escapeHtml(imgs[0])}" class="w-full max-h-96 object-cover cursor-pointer hover:opacity-95 transition" alt="${escapeHtml(p.judul)}" onclick="bukaLightboxPost('${p.id}', 0)">`;
+                       return `<img loading="lazy" src="${escapeHtml(imgs[0])}" class="w-full max-h-96 object-cover cursor-pointer hover:opacity-95 transition" alt="${escapeHtml(p.judul)}" onclick="bukaLightboxPost('${p.id}', 0)">`;
                      }
                      // Carousel swipeable (Instagram-like) + nav buttons untuk PC
                      const carouselId = `carousel-${p.id}`;
@@ -40947,7 +40940,7 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
                                  .map(
                                    (url, i) => `
                                     <div class="snap-center flex-shrink-0 w-full">
-                                       <img src="${escapeHtml(url)}" class="w-full max-h-96 object-cover cursor-pointer hover:opacity-95 transition" alt="${escapeHtml(p.judul)} ${i + 1}/${imgs.length}" onclick="bukaLightboxPost('${p.id}', ${i})">
+                                       <img loading="lazy" src="${escapeHtml(url)}" class="w-full max-h-96 object-cover cursor-pointer hover:opacity-95 transition" alt="${escapeHtml(p.judul)} ${i + 1}/${imgs.length}" onclick="bukaLightboxPost('${p.id}', ${i})">
                                    </div>
                                `,
                                  )
@@ -40982,7 +40975,7 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
                          p.link_preview && p.link_preview.url
                            ? `
                         <a href="${escapeHtml(p.link_preview.url)}" target="_blank" rel="noopener noreferrer" class="block mt-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl overflow-hidden transition cursor-pointer">
-                           ${p.link_preview.image ? `<img src="${escapeHtml(p.link_preview.image)}" class="w-full max-h-44 object-cover" onerror="this.style.display='none'" alt="">` : ""}
+                           ${p.link_preview.image ? `<img loading="lazy" src="${escapeHtml(p.link_preview.image)}" class="w-full max-h-44 object-cover" onerror="this.style.display='none'" alt="">` : ""}
                             <div class="p-3">
                                <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-0.5">${escapeHtml(
                                  (() => {
@@ -42052,7 +42045,7 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
                 </div>
                 <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
                     <h3 class="text-sm font-black text-slate-800 uppercase tracking-widest mb-3 border-b border-slate-100 pb-2"><i class="fas fa-trophy mr-2 text-amber-500"></i>Riwayat Kenaikan</h3>
-                    ${(s.riwayat || []).length === 0 ? '<p class="text-sm text-slate-400 italic text-center py-4">Belum ada riwayat.</p>' : '<ul class="space-y-2 text-sm">' + (s.riwayat || []).map((r) => `<li class="bg-slate-50 p-3 rounded-lg border border-slate-200"><b>${r.tanggal || "-"}</b>: ${escapeHtml(r.catatan || "-")}</li>`).join("") + "</ul>"}
+                    ${(s.riwayat || []).length === 0 ? ((typeof _renderEmptyState === "function") ? _renderEmptyState({ icon: "fa-scroll", title: "Belum ada riwayat", subtitle: "Catatan kenaikan/mutasi akan muncul di sini." }) : '<p class="text-sm text-slate-400 italic text-center py-4">Belum ada riwayat.</p>') : '<ul class="space-y-2 text-sm">' + (s.riwayat || []).map((r) => `<li class="bg-slate-50 p-3 rounded-lg border border-slate-200"><b>${r.tanggal || "-"}</b>: ${escapeHtml(r.catatan || "-")}</li>`).join("") + "</ul>"}
                 </div>
             `;
         // Section absensi kegiatan — hanya untuk santri MUKIM

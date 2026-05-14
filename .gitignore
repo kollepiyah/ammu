@@ -114,3 +114,6 @@ functions/cloud-functions-index.js
 # Phase 2 — minified build artifacts
 public/index.min.html
 public/index.html.deploy-bak
+
+# Agent autonomous credentials (DO NOT COMMIT)
+.agent-credentials.env

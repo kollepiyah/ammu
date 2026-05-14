@@ -158,4 +158,72 @@ Note: Skipped v.108.78 / v267 di filename (sudah dipakai untuk intermediate comm
 
 ## 🛠️ Pattern untuk Extend ke Form Lain (untuk Kyai/future agent)
 
-Untuk me
+Untuk menambah OCC ke form baru, copy pattern ini:
+
+### LOAD side (di function yang buka modal edit):
+
+```javascript
+function bukaEditX(id) {
+  const item = db_X.find((x) => x.id == id);
+  // === C4 OCC capture ===
+  if (item && typeof _recordDocSnap === "function") {
+    _recordDocSnap("X", id, item);
+  }
+  // ... existing form populate code ...
+}
+```
+
+### SAVE side (di simpanX function):
+
+```javascript
+async function simpanX(e) {
+  e.preventDefault();
+  // ... existing validation + payload prep ...
+  try {
+    await _safeSaveDoc("X", payload.id, payload, { merge: false, label: "Simpan X" });
+  } catch (occErr) {
+    if (occErr && occErr.code === "occ/conflict") {
+      const choice = await _occHandleConflict(occErr);
+      if (choice === "overwrite") {
+        await _safeSaveDoc("X", payload.id, payload, {
+          merge: false,
+          expectedUpdatedAt: null,
+          label: "Overwrite X",
+        });
+      } else if (choice === "refresh") {
+        _toast.info("Refresh halaman untuk lihat versi terbaru.");
+        return;
+      } else {
+        return;
+      }
+    } else {
+      throw occErr;
+    }
+  }
+  // ... existing post-save code ...
+}
+```
+
+---
+
+## ⚠️ Edge Cases / Limitations
+
+1. **OCC bergantung pada `updatedAt` field** di Firestore doc. Doc lama yang belum punya field ini akan **selalu pass-through** (no conflict detection). Auto-fix: `_safeSaveDoc` set `updatedAt` setiap save, jadi gradual semua doc punya field.
+
+2. **onSnapshot listener** auto-update local cache (`db_santri`, `db_guru`). Artinya: `_recordDocSnap` snapshot harus di-call PADA SAAT user click Edit, BUKAN saat listener update. Pattern sekarang sudah benar (di dalam `editAdminSantri`/`editAdminGuru`).
+
+3. **Multi-tab sama user same account:** kalau user buka 2 tab dan edit sendiri di kedua tab, OCC tetap kena — karena perspektif Firestore, kedua tab terlihat sebagai 2 "user" yang menulis.
+
+4. **Network delay edge case:** kalau save Tab A masih in-flight saat Tab B save, kedua-duanya bisa lolos OCC check (race). Mitigasi: bisa pakai Firestore transaction dengan retry — sudah implemented di `_safeSaveDoc`.
+
+---
+
+## 📁 Files Modified
+
+```
+M  public/index.html  (+6,756 bytes — helpers + 3 wraps + 2 load captures)
+M  public/sw.js       (SW_VERSION bump)
+A  C4-REPORT.md       (this file)
+```
+
+— end of report —
