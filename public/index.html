@@ -14063,7 +14063,7 @@
         if (b) b.classList.add('hidden')
       }
 
-      const APP_VERSION = 'v.108.63.0514-wali-autofill'
+      const APP_VERSION = 'v.108.64.0514-toast-root-fix'
 
       function parseTanggalExcel(val) {
         if (!val) return ''
@@ -14400,16 +14400,25 @@
           timerProgressBar: true,
           backdrop: false,
           customClass: { popup: 'mu-toast-popup', container: 'mu-toast-container' },
-          // v.108.62: AGGRESSIVE anti-pause (Kyai feedback toast freeze)
+          // v.108.63: ROOT FIX toast freeze — bypass Swal built-in timer entirely.
+          // Pakai pure setTimeout untuk auto-close, override Swal.stopTimer ke no-op.
           didOpen: (toastEl) => {
             try {
-              toastEl.addEventListener('mouseenter', Swal.resumeTimer)
-              toastEl.addEventListener('mouseleave', Swal.resumeTimer)
-              toastEl.addEventListener('focusin', Swal.resumeTimer)
-              toastEl.addEventListener('focusout', Swal.resumeTimer)
-              toastEl.addEventListener('touchstart', Swal.resumeTimer, { passive: true })
-              toastEl.addEventListener('touchend', Swal.resumeTimer, { passive: true })
-            } catch (e) {}
+              // Force-disable Swal pause-on-hover at the source
+              const origStop = Swal.stopTimer
+              Swal.stopTimer = function () {}
+              // Auto-close via independent setTimeout (immune to Swal pause)
+              const closeTimer = setTimeout(() => {
+                try {
+                  Swal.close()
+                } catch (e) {}
+                Swal.stopTimer = origStop // restore
+              }, 3100)
+              // Cleanup kalau toast di-close manual
+              toastEl.addEventListener('click', () => clearTimeout(closeTimer))
+            } catch (e) {
+              console.warn('[toast] didOpen fail:', e)
+            }
           }
         })
         return _toastMixinInstance
@@ -27445,6 +27454,7 @@
           tanggal,
           santri_id: s.id,
           santri_nama: s.nama,
+          wali: s.wali || '',
           lembaga: s.lembaga,
           kelas: s.kelas,
           items: keuPosCart.items.map((it) => ({
@@ -28140,7 +28150,9 @@
         // Fallback: ambil wali dari db_santri kalau trx.wali kosong
         const _sFb =
           typeof db_santri !== 'undefined'
-            ? db_santri.find((x) => x.nama === trx.santri_nama || x.id === trx.santri_id)
+            ? db_santri.find(
+                (x) => x.nama === trx.santri_nama || Number(x.id) === Number(trx.santri_id)
+              )
             : null
         const _waliName = trx.wali || (_sFb && _sFb.wali) || (_sFb && _sFb.nama) || '-'
         body += `<table style="width:100%;font-size:11px;margin-bottom:8px;"><tr><td style="width:120px;">No. Struk</td><td style="width:10px;">:</td><td><b>${trx.no_struk}</b></td><td style="text-align:right;">${formatTanggal(trx.tanggal)}</td></tr><tr><td>Nama Santri</td><td>:</td><td><b>${trx.santri_nama}</b></td><td></td></tr><tr><td>Wali Santri</td><td>:</td><td><b>${_waliName}</b></td><td></td></tr><tr><td>Lembaga/Kelas</td><td>:</td><td>${trx.lembaga}/${trx.kelas}</td><td></td></tr></table>`
