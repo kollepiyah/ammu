@@ -117,3 +117,7 @@ public/index.html.deploy-bak
 
 # Agent autonomous credentials (DO NOT COMMIT)
 .agent-credentials.env
+
+# Icon backup folder (auto-generated saat regenerate-icons.py)
+public/icon-backup-*/
+logo-baru.png
