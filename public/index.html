@@ -14063,7 +14063,7 @@
         if (b) b.classList.add('hidden')
       }
 
-      const APP_VERSION = 'v.108.62.0514-toast-blur-global'
+      const APP_VERSION = 'v.108.63.0514-wali-autofill'
 
       function parseTanggalExcel(val) {
         if (!val) return ''
@@ -28288,7 +28288,7 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
         if (mutasi.catatan)
           body += `<tr><td style="padding:5px;">Catatan</td><td style="padding:5px;">${mutasi.catatan}</td></tr>`
         body += `</table>`
-        body += `<div style="margin-top:40px;display:flex;justify-content:space-between;font-size:11px;"><div style="text-align:center;width:40%;"><p>Petugas,</p><br><br><br><p>(<b>${mutasi.operator}</b>)</p></div><div style="text-align:center;width:40%;"><p>Wali/Santri,</p><br><br><br><p>(.....................)</p></div></div>`
+        body += `<div style="margin-top:40px;display:flex;justify-content:space-between;font-size:11px;"><div style="text-align:center;width:40%;"><p>Petugas,</p><br><br><br><p>(<b>${mutasi.operator}</b>)</p></div><div style="text-align:center;width:40%;"><p>Wali/Santri,</p><br><br><br><p>(<b>${s.wali || s.nama || '.....................'}</b>)</p></div></div>`
         const html = `<html><head><title>Bukti Tabungan</title><style>body{font-family:Arial,sans-serif;padding:20px;} @page{size:A4;}</style></head><body>${buatKopHtml()}${body}</body></html>`
         cetakHtmlSebagaiPDF(html)
       }
