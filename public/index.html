@@ -2125,6 +2125,19 @@
       body.dark-mode #login-section .bg-white {
         background-color: #1e293b !important;
       }
+      /* G8: Modal card utility class — semantic anchor untuk modal style */
+      /* Default match: p-6 rounded-2xl max-w-md shadow-2xl border-t-4 border-teal-500 */
+      /* Used as additive marker class; existing Tailwind classes preserved untuk visual identik */
+      .mu-modal-card {
+        background: white;
+        position: relative;
+      }
+      /* Variant: amber border (warning context) */
+      .mu-modal-card.mu-modal-amber { border-top-color: #f59e0b; }
+      /* Variant: rose border (danger context) */
+      .mu-modal-card.mu-modal-rose { border-top-color: #f43f5e; }
+      /* Variant: emerald border (success context) */
+      .mu-modal-card.mu-modal-emerald { border-top-color: #10b981; }
       /* G4: Touch Target Accessibility (Apple HIG 44pt, WCAG 2.5.5) */
       /* Default: respects existing button size on desktop, ensures tap-friendly on mobile */
       @media (max-width: 768px) {
@@ -9350,7 +9363,7 @@
             class="hidden fixed inset-0 bg-slate-900/70 flex justify-center items-center z-[110] p-4 backdrop-blur-sm no-print"
           >
             <div
-              class="bg-white p-6 rounded-2xl w-full max-w-md shadow-2xl border-t-4 border-amber-500"
+              class="mu-modal-card bg-white p-6 rounded-2xl w-full max-w-md shadow-2xl border-t-4 border-amber-500"
             >
               <div
                 class="flex justify-between items-center mb-4 border-b border-slate-100 pb-3"
@@ -9492,7 +9505,7 @@
             class="hidden fixed inset-0 bg-slate-900/70 flex justify-center items-center z-[110] p-4 backdrop-blur-sm no-print"
           >
             <div
-              class="bg-white p-6 rounded-2xl w-full max-w-sm shadow-2xl border-t-4 border-teal-500"
+              class="mu-modal-card bg-white p-6 rounded-2xl w-full max-w-sm shadow-2xl border-t-4 border-teal-500"
             >
               <h3 class="font-black text-lg mb-4 text-slate-800">
                 <i class="fas fa-school text-blue-600 mr-2"></i>Ubah Kelas
@@ -9868,7 +9881,7 @@
             class="hidden fixed inset-0 bg-slate-900/70 flex justify-center items-center z-[110] p-4 backdrop-blur-sm no-print"
           >
             <div
-              class="bg-white p-8 rounded-3xl w-full max-w-md shadow-2xl border-t-8 border-custom max-h-[90vh] overflow-y-auto custom-scrollbar"
+              class="mu-modal-card bg-white p-8 rounded-3xl w-full max-w-md shadow-2xl border-t-8 border-custom max-h-[90vh] overflow-y-auto custom-scrollbar"
             >
               <h3 class="font-black text-xl mb-5 text-slate-800 text-center">
                 <i class="fas fa-user-cog text-custom mr-2"></i>Pengaturan
@@ -10229,7 +10242,7 @@
             class="hidden fixed inset-0 bg-slate-900/80 flex justify-center items-center z-[200] p-4 backdrop-blur-sm no-print"
           >
             <div
-              class="bg-white p-6 rounded-3xl w-full max-w-md shadow-2xl border-t-8 border-teal-500 max-h-[90vh] overflow-y-auto"
+              class="mu-modal-card bg-white p-6 rounded-3xl w-full max-w-md shadow-2xl border-t-8 border-teal-500 max-h-[90vh] overflow-y-auto"
             >
               <h3 class="font-black text-xl mb-2 text-slate-800">
                 <i class="fas fa-key text-blue-600 mr-2"></i>Lupa Sandi Santri
@@ -10386,7 +10399,7 @@
             class="hidden fixed inset-0 bg-slate-900/70 flex justify-center items-center z-[110] p-4 backdrop-blur-sm no-print"
           >
             <div
-              class="bg-white p-6 rounded-3xl w-full max-w-md shadow-2xl border-t-8 border-rose-500 max-h-[90vh] overflow-y-auto"
+              class="mu-modal-card bg-white p-6 rounded-3xl w-full max-w-md shadow-2xl border-t-8 border-rose-500 max-h-[90vh] overflow-y-auto"
             >
               <h3 class="font-black text-xl mb-4 text-slate-800">
                 <i class="fas fa-key text-rose-600 mr-2"></i>Reset Sandi
@@ -10460,7 +10473,7 @@
             class="hidden fixed inset-0 bg-slate-900/80 flex justify-center items-center z-[200] p-4 backdrop-blur-sm no-print"
           >
             <div
-              class="bg-white p-6 rounded-3xl w-full max-w-md shadow-2xl border-t-8 border-teal-500 max-h-[90vh] overflow-y-auto"
+              class="mu-modal-card bg-white p-6 rounded-3xl w-full max-w-md shadow-2xl border-t-8 border-teal-500 max-h-[90vh] overflow-y-auto"
             >
               <div class="text-center mb-4">
                 <div
@@ -10559,7 +10572,7 @@
             class="hidden fixed inset-0 bg-slate-900/70 flex justify-center items-center z-[120] p-4 backdrop-blur-sm no-print"
           >
             <div
-              class="bg-white p-6 rounded-3xl w-full max-w-3xl shadow-2xl border-t-8 border-amber-500 max-h-[90vh] overflow-y-auto"
+              class="mu-modal-card bg-white p-6 rounded-3xl w-full max-w-3xl shadow-2xl border-t-8 border-amber-500 max-h-[90vh] overflow-y-auto"
             >
               <div
                 class="flex items-center justify-between mb-4 border-b border-slate-200 pb-3"
@@ -10669,7 +10682,7 @@
             class="hidden fixed inset-0 bg-slate-900/70 flex justify-center items-center z-[120] p-4 backdrop-blur-sm no-print"
           >
             <div
-              class="bg-white p-6 rounded-3xl w-full max-w-md shadow-2xl border-t-8 border-teal-500 max-h-[90vh] overflow-y-auto"
+              class="mu-modal-card bg-white p-6 rounded-3xl w-full max-w-md shadow-2xl border-t-8 border-teal-500 max-h-[90vh] overflow-y-auto"
             >
               <h3 class="font-black text-xl mb-3 text-slate-800">
                 <i class="fas fa-bell text-blue-600 mr-2"></i>Kirim Notifikasi
@@ -10763,7 +10776,7 @@
             class="hidden fixed inset-0 bg-slate-900/70 flex justify-center items-center z-[120] p-4 backdrop-blur-sm no-print"
           >
             <div
-              class="bg-white p-6 rounded-3xl w-full max-w-md shadow-2xl border-t-8 border-purple-500 max-h-[90vh] overflow-y-auto"
+              class="mu-modal-card bg-white p-6 rounded-3xl w-full max-w-md shadow-2xl border-t-8 border-purple-500 max-h-[90vh] overflow-y-auto"
             >
               <h3 class="font-black text-xl mb-2 text-slate-800">
                 <i class="fas fa-shield-halved text-purple-600 mr-2"></i>Edit
@@ -10892,7 +10905,7 @@
             class="hidden fixed inset-0 bg-slate-900/70 flex justify-center items-center z-[110] p-4 backdrop-blur-sm no-print"
           >
             <div
-              class="bg-white p-6 rounded-3xl w-full max-w-md shadow-2xl border-t-8 border-rose-500"
+              class="mu-modal-card bg-white p-6 rounded-3xl w-full max-w-md shadow-2xl border-t-8 border-rose-500"
             >
               <h3 class="font-black text-xl mb-4 text-slate-800">
                 <i class="fas fa-book text-rose-600 mr-2"></i>Input Manual Buku
@@ -10992,7 +11005,7 @@
             class="hidden fixed inset-0 bg-slate-900/70 flex justify-center items-center z-[110] p-4 backdrop-blur-sm no-print"
           >
             <div
-              class="bg-white p-6 rounded-3xl w-full max-w-md shadow-2xl border-t-8 border-teal-500"
+              class="mu-modal-card bg-white p-6 rounded-3xl w-full max-w-md shadow-2xl border-t-8 border-teal-500"
             >
               <h3 class="font-black text-xl mb-4 text-slate-800">
                 <i class="fas fa-piggy-bank text-blue-600 mr-2"></i>Mutasi
@@ -11092,7 +11105,7 @@
             class="hidden fixed inset-0 bg-slate-900/70 flex justify-center items-center z-[110] p-4 backdrop-blur-sm no-print"
           >
             <div
-              class="bg-white p-6 rounded-3xl w-full max-w-md shadow-2xl border-t-8 border-teal-500"
+              class="mu-modal-card bg-white p-6 rounded-3xl w-full max-w-md shadow-2xl border-t-8 border-teal-500"
             >
               <h3 class="font-black text-xl mb-4 text-slate-800">
                 <i class="fas fa-piggy-bank text-blue-600 mr-2"></i>Mutasi
@@ -11178,7 +11191,7 @@
             class="hidden fixed inset-0 bg-slate-900/70 flex justify-center items-center z-[110] p-4 backdrop-blur-sm no-print"
           >
             <div
-              class="bg-white p-6 rounded-3xl w-full max-w-md shadow-2xl border-t-8 border-rose-500"
+              class="mu-modal-card bg-white p-6 rounded-3xl w-full max-w-md shadow-2xl border-t-8 border-rose-500"
             >
               <h3 class="font-black text-xl mb-4 text-slate-800">
                 <i class="fas fa-handshake text-rose-600 mr-2"></i>Hutang
@@ -11276,7 +11289,7 @@
             class="hidden fixed inset-0 bg-slate-900/70 flex justify-center items-center z-[110] p-4 backdrop-blur-sm no-print"
           >
             <div
-              class="bg-white p-6 rounded-3xl w-full max-w-md shadow-2xl border-t-8 border-emerald-500 max-h-[90vh] overflow-y-auto"
+              class="mu-modal-card bg-white p-6 rounded-3xl w-full max-w-md shadow-2xl border-t-8 border-emerald-500 max-h-[90vh] overflow-y-auto"
             >
               <h3 class="font-black text-xl mb-4 text-slate-800" id="mtp-title">
                 Tambah Tunjangan/Potongan
@@ -13378,7 +13391,7 @@
             class="hidden fixed inset-0 bg-slate-900/70 flex justify-center items-center z-[110] p-4 backdrop-blur-sm no-print"
           >
             <div
-              class="bg-white p-6 rounded-3xl w-full max-w-lg shadow-2xl border-t-8 border-teal-500 max-h-[90vh] overflow-y-auto"
+              class="mu-modal-card bg-white p-6 rounded-3xl w-full max-w-lg shadow-2xl border-t-8 border-teal-500 max-h-[90vh] overflow-y-auto"
             >
               <h3
                 class="font-black text-xl mb-4 text-slate-800 hidden"
@@ -14135,7 +14148,7 @@
             class="hidden fixed inset-0 bg-slate-900/70 flex justify-center items-center z-[110] p-4 backdrop-blur-sm no-print"
           >
             <div
-              class="bg-white p-6 rounded-3xl w-full max-w-md shadow-2xl border-t-8 border-cyan-500 max-h-[90vh] overflow-y-auto"
+              class="mu-modal-card bg-white p-6 rounded-3xl w-full max-w-md shadow-2xl border-t-8 border-cyan-500 max-h-[90vh] overflow-y-auto"
             >
               <h3
                 class="font-black text-xl mb-4 text-slate-800 hidden"
@@ -14583,7 +14596,7 @@
             class="hidden fixed inset-0 bg-slate-900/70 flex justify-center items-center z-[110] p-4 backdrop-blur-sm no-print"
           >
             <div
-              class="bg-white p-6 rounded-3xl w-full max-w-md shadow-2xl border-t-8 border-cyan-500 max-h-[90vh] overflow-y-auto"
+              class="mu-modal-card bg-white p-6 rounded-3xl w-full max-w-md shadow-2xl border-t-8 border-cyan-500 max-h-[90vh] overflow-y-auto"
             >
               <h3
                 class="font-black text-xl mb-4 text-slate-800 hidden"
@@ -16209,7 +16222,7 @@
         if (b) b.classList.add("hidden");
       }
 
-      const APP_VERSION = "v.108.90.0514-g2-empty-state";
+      const APP_VERSION = "v.108.91.0514-g8-modal-migration";
 
       // ====================================================================
       // Sentry error tracking init (B3). Gate guard: DSN placeholder = no-op.
