@@ -30,6 +30,7 @@
 
 const { onDocumentCreated } = require('firebase-functions/v2/firestore')
 const { onRequest } = require('firebase-functions/v2/https')
+const { onSchedule } = require('firebase-functions/v2/scheduler')
 const { defineSecret } = require('firebase-functions/params')
 const { initializeApp } = require('firebase-admin/app')
 const { getMessaging } = require('firebase-admin/messaging')
@@ -385,5 +386,68 @@ exports.getLinkPreview = onRequest(
 
     logger.info(`Cache MISS, fetched: ${targetUrl}`)
     return res.json(result)
+  }
+)
+
+// ====================================================================
+// FUNCTION 3: AUTO-CLEANUP AUDIT_LOG (jadwal harian)
+// Hapus record audit_log lebih dari 90 hari untuk cegah collection bloat
+//
+// (v.108.66) Restored dari legacy cloud-functions-index.js.
+// Sebelumnya hilang saat migration ke functions/index.js -> audit_log
+// collection bisa bloat tanpa cleanup. Re-include + deploy.
+//
+// CARA DEPLOY:
+//   firebase deploy --only functions:cleanupAuditLog
+//
+// CARA VERIFIKASI:
+//   Firebase Console -> Cloud Scheduler
+//   Job: firebase-schedule-cleanupAuditLog-asia-southeast2
+//
+// CARA TEST MANUAL: di Cloud Scheduler console, klik RUN NOW
+//
+// CARA UBAH RETENSI: edit konstanta RETENSI_HARI di bawah
+// ====================================================================
+exports.cleanupAuditLog = onSchedule(
+  {
+    schedule: 'every day 02:00', // jam 2 pagi setiap hari
+    timeZone: 'Asia/Jakarta',
+    region: 'asia-southeast2',
+    timeoutSeconds: 540, // max 9 menit
+    memory: '256MiB'
+  },
+  async (event) => {
+    const RETENSI_HARI = 90
+    const cutoffISO = new Date(Date.now() - RETENSI_HARI * 24 * 60 * 60 * 1000).toISOString()
+    logger.info(`[cleanupAuditLog] Hapus audit_log < ${cutoffISO}`)
+
+    let totalDeleted = 0
+    let hasMore = true
+
+    // Loop batch sampai habis (max 500 per batch Firestore)
+    while (hasMore) {
+      const snap = await db
+        .collection('audit_log')
+        .where('timestamp', '<', cutoffISO)
+        .limit(450)
+        .get()
+      if (snap.empty) {
+        hasMore = false
+        break
+      }
+
+      const batch = db.batch()
+      snap.forEach((doc) => batch.delete(doc.ref))
+      await batch.commit()
+      totalDeleted += snap.size
+      logger.info(`[cleanupAuditLog] Batch hapus ${snap.size} record (total: ${totalDeleted})`)
+
+      if (snap.size < 450) hasMore = false
+    }
+
+    logger.info(
+      `[cleanupAuditLog] SELESAI. Total ${totalDeleted} record dihapus (>${RETENSI_HARI} hari).`
+    )
+    return null
   }
 )
