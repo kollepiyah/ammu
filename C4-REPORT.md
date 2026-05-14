@@ -2,7 +2,7 @@
 
 **Tanggal:** 14 Mei 2026
 **Task:** C4 dari `CONSOLIDATED-TODO.md` (Opsi B — OCC pattern)
-**Status:** Infrastructure DONE, integration PARTIAL (3 dari ~17 form)
+**Status:** Infrastructure DONE, integration EXTENDED (7 dari ~17 form: 3 inti + 1 jabatan + 3 lembaga writers)
 
 ---
 
@@ -20,13 +20,17 @@ async function _safeSaveDoc(coll, id, payload, opts)   // transaction OCC save
 async function _occHandleConflict(err, opts)           // modal pilih action
 ```
 
-### 2. Form Wraps — 3 form (HIGH risk)
+### 2. Form Wraps — 7 form (sesi extend)
 
 | Form | Save wrap | Load capture | Status fungsional |
 |---|---|---|---|
 | `simpanSantri` (line ~25950) | ✅ `_safeSaveDoc("santri", ...)` | ✅ `_recordDocSnap` di `editAdminSantri` | **OCC AKTIF** |
 | `simpanGuru` (line ~25460) | ✅ `_safeSaveDoc("guru", ...)` | ✅ `_recordDocSnap` di `editAdminGuru` | **OCC AKTIF** |
 | `simpanRaporSantri` (line ~37220) | ✅ `_safeSaveDoc("rapor_semester", ...)` | ❌ Belum (load flow kompleks via `_raporState`) | **Save wrap only — OCC pass-through** |
+| `simpanMasterJabatan` | ✅ `_safeSaveDoc("master", "jabatan", ...)` | — | **OCC AKTIF** (doc-level updatedAt) |
+| `simpanMasterLembaga` | ✅ `_safeSaveDoc("master", "lembaga", ...)` | — | **OCC AKTIF** |
+| `simpanPengaturanLembagaFormal` | ✅ `_safeSaveDoc("master", "lembaga", ...)` | — | **OCC AKTIF** (shares with masterLembaga) |
+| `simpanPengaturanLembagaQiraati` | ✅ master part wrapped | — | **Partial OCC** (master/lembaga OCC, settings/general skip) |
 
 ### 3. Conflict UX
 
@@ -36,6 +40,29 @@ Saat conflict terdeteksi (data berubah server-side sejak load), modal Swal muncu
 - ⚫ **Batal** — tutup modal, perubahan local masih di form
 
 ---
+
+## ✅ Update 14 Mei 2026 — Batch 2+3 Extension
+
+Setelah commit `04a2c9e`, Phase 3 ditargetkan "selesai full". Strategi:
+
+### Pragmatic scoping (decision per Kyai approval):
+
+| Form | Save target | Status | Reasoning |
+|---|---|---|---|
+| `simpanMasterJabatan` | `master/jabatan` (dedicated) | ✅ WRAP | Dedicated doc, hanya 1 writer |
+| `simpanMasterLembaga` | `master/lembaga` | ✅ WRAP | Primary writer |
+| `simpanPengaturanLembagaFormal` | `master/lembaga` (shared) | ✅ WRAP | Konsisten dengan masterLembaga |
+| `simpanPengaturanLembagaQiraati` | `master/lembaga` + settings | ✅ WRAP master part | Settings part di-skip (shared 10+ writers) |
+| `simpanPengaturan` | `settings/general` | ⏸️ SKIP | 16+ entry points ke settings, akan false-positive conflict |
+| `simpanPengaturanRaporMaster` | `settings/general` | ⏸️ SKIP | Same reason |
+| `simpanPengaturanKeuangan` | `settings/general` | ⏸️ SKIP | Same reason |
+| `simpanMasterTP` | `settings/general` | ⏸️ SKIP | Same reason |
+| `simpanMasterKegiatan` | `settings/general` | ⏸️ SKIP | Same reason |
+| `simpanRekap` | batch Promise.all | ⏸️ SKIP | Tidak compatible dengan transaction-based OCC |
+
+**Rationale skip settings/general:** Doc ini di-tulis dari 10+ entry points (banyak partial updates lewat berbagai sub-form). Wrapping selektif akan break symmetry — admin yang edit field A di sub-form 1 dan field B di sub-form 2 akan trigger conflict modal padahal sebenarnya tidak conflict (mereka edit field berbeda). Solusi yang benar: real-time sync (Opsi D) atau redesign settings ke per-field collection.
+
+**Skip simpanRekap:** Pakai `Promise.all(batch_of_updates)` untuk write banyak santri sekaligus. Transaction-based OCC tidak cocok untuk batch operation. Butuh special pattern (batch OCC dengan re-fetch tiap doc).
 
 ## ⏸️ Yang Belum (Documented for Follow-up)
 
@@ -131,72 +158,4 @@ Note: Skipped v.108.78 / v267 di filename (sudah dipakai untuk intermediate comm
 
 ## 🛠️ Pattern untuk Extend ke Form Lain (untuk Kyai/future agent)
 
-Untuk menambah OCC ke form baru, copy pattern ini:
-
-### LOAD side (di function yang buka modal edit):
-
-```javascript
-function bukaEditX(id) {
-  const item = db_X.find((x) => x.id == id);
-  // === C4 OCC capture ===
-  if (item && typeof _recordDocSnap === "function") {
-    _recordDocSnap("X", id, item);
-  }
-  // ... existing form populate code ...
-}
-```
-
-### SAVE side (di simpanX function):
-
-```javascript
-async function simpanX(e) {
-  e.preventDefault();
-  // ... existing validation + payload prep ...
-  try {
-    await _safeSaveDoc("X", payload.id, payload, { merge: false, label: "Simpan X" });
-  } catch (occErr) {
-    if (occErr && occErr.code === "occ/conflict") {
-      const choice = await _occHandleConflict(occErr);
-      if (choice === "overwrite") {
-        await _safeSaveDoc("X", payload.id, payload, {
-          merge: false,
-          expectedUpdatedAt: null,
-          label: "Overwrite X",
-        });
-      } else if (choice === "refresh") {
-        _toast.info("Refresh halaman untuk lihat versi terbaru.");
-        return;
-      } else {
-        return;
-      }
-    } else {
-      throw occErr;
-    }
-  }
-  // ... existing post-save code ...
-}
-```
-
----
-
-## ⚠️ Edge Cases / Limitations
-
-1. **OCC bergantung pada `updatedAt` field** di Firestore doc. Doc lama yang belum punya field ini akan **selalu pass-through** (no conflict detection). Auto-fix: `_safeSaveDoc` set `updatedAt` setiap save, jadi gradual semua doc punya field.
-
-2. **onSnapshot listener** auto-update local cache (`db_santri`, `db_guru`). Artinya: `_recordDocSnap` snapshot harus di-call PADA SAAT user click Edit, BUKAN saat listener update. Pattern sekarang sudah benar (di dalam `editAdminSantri`/`editAdminGuru`).
-
-3. **Multi-tab sama user same account:** kalau user buka 2 tab dan edit sendiri di kedua tab, OCC tetap kena — karena perspektif Firestore, kedua tab terlihat sebagai 2 "user" yang menulis.
-
-4. **Network delay edge case:** kalau save Tab A masih in-flight saat Tab B save, kedua-duanya bisa lolos OCC check (race). Mitigasi: bisa pakai Firestore transaction dengan retry — sudah implemented di `_safeSaveDoc`.
-
----
-
-## 📁 Files Modified
-
-```
-M  public/index.html  (+6,756 bytes — helpers + 3 wraps + 2 load captures)
-M  public/sw.js       (SW_VERSION bump)
-A  C4-REPORT.md       (this file)
-```
-
-— end of report —
+Untuk me

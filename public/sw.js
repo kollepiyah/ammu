@@ -5,7 +5,7 @@
 // ====================================================================
 
 // Bump versi setiap deploy update besar supaya cache di-refresh
-const SW_VERSION = 'v273-0514-fix-badge-status'
+const SW_VERSION = 'v274-0514-g6-colorblind'
 const CACHE_SHELL = `mu-shell-${SW_VERSION}`
 const CACHE_RUNTIME = `mu-runtime-${SW_VERSION}`
 
