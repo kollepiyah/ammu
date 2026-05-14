@@ -16063,7 +16063,7 @@
         if (b) b.classList.add("hidden");
       }
 
-      const APP_VERSION = "v.108.80.0514-fix-guru-dropdown";
+      const APP_VERSION = "v.108.81.0514-c4-batch23-lembaga-jabatan";
 
       // ====================================================================
       // Sentry error tracking init (B3). Gate guard: DSN placeholder = no-op.
@@ -22454,10 +22454,19 @@
         const logoQ = get("lembaga-logo-qiraati");
         if (logoQ) savedSettings.logoQiraati = logoQ;
         try {
-          await db
-            .collection("master")
-            .doc("lembaga")
-            .set({ list: db_lembaga });
+          // C4 OCC — wrap master/lembaga save (settings/general dibiarkan karena shared)
+          try {
+            await _safeSaveDoc("master", "lembaga", { list: db_lembaga }, { merge: false, label: "Simpan pengaturan lembaga qiraati" });
+          } catch (occErr) {
+            if (occErr && occErr.code === "occ/conflict") {
+              const choice = await _occHandleConflict(occErr);
+              if (choice === "overwrite") {
+                await _safeSaveDoc("master", "lembaga", { list: db_lembaga }, { merge: false, expectedUpdatedAt: null, label: "Overwrite lembaga qiraati" });
+              } else if (choice === "refresh") {
+                _toast.info("Refresh halaman untuk lihat versi terbaru."); toggleLoader(false); return;
+              } else { toggleLoader(false); return; }
+            } else { throw occErr; }
+          }
           if (logoQ)
             await db
               .collection("settings")
@@ -22647,10 +22656,19 @@
         db_lembaga[idx].kop_line4 = get("formal-kop-line4");
         db_lembaga[idx].kop_logo = get("formal-kop-logo");
         try {
-          await db
-            .collection("master")
-            .doc("lembaga")
-            .set({ list: db_lembaga });
+          // C4 OCC — wrap save
+          try {
+            await _safeSaveDoc("master", "lembaga", { list: db_lembaga }, { merge: false, label: "Simpan pengaturan lembaga formal" });
+          } catch (occErr) {
+            if (occErr && occErr.code === "occ/conflict") {
+              const choice = await _occHandleConflict(occErr);
+              if (choice === "overwrite") {
+                await _safeSaveDoc("master", "lembaga", { list: db_lembaga }, { merge: false, expectedUpdatedAt: null, label: "Overwrite lembaga formal" });
+              } else if (choice === "refresh") {
+                _toast.info("Refresh halaman untuk lihat versi terbaru."); toggleLoader(false); return;
+              } else { toggleLoader(false); return; }
+            } else { throw occErr; }
+          }
           _toast.success("Tersimpan");
         } catch (err) {
           _toast.error("Error: " + (err.message || ""));
@@ -25264,7 +25282,19 @@
         }
         if (idx !== "") db_lembaga[idx] = obj;
         else db_lembaga.push(obj);
-        await db.collection("master").doc("lembaga").set({ list: db_lembaga });
+        // C4 OCC — wrap save dengan conflict detection
+        try {
+          await _safeSaveDoc("master", "lembaga", { list: db_lembaga }, { merge: false, label: "Simpan master lembaga" });
+        } catch (occErr) {
+          if (occErr && occErr.code === "occ/conflict") {
+            const choice = await _occHandleConflict(occErr);
+            if (choice === "overwrite") {
+              await _safeSaveDoc("master", "lembaga", { list: db_lembaga }, { merge: false, expectedUpdatedAt: null, label: "Overwrite master lembaga" });
+            } else if (choice === "refresh") {
+              _toast.info("Refresh halaman untuk lihat versi terbaru."); toggleLoader(false); return;
+            } else { toggleLoader(false); return; }
+          } else { throw occErr; }
+        }
         // Reset form
         e.target.reset();
         document.getElementById("edit_index_lembaga").value = "";
@@ -25350,10 +25380,19 @@
           const upperVal = String(val).trim().toUpperCase();
           if (idx !== "") db_jabatan[idx] = upperVal;
           else db_jabatan.push(upperVal);
-          await db
-            .collection("master")
-            .doc("jabatan")
-            .set({ list: db_jabatan });
+          // C4 OCC — wrap save dengan conflict detection
+          try {
+            await _safeSaveDoc("master", "jabatan", { list: db_jabatan }, { merge: false, label: "Simpan master jabatan" });
+          } catch (occErr) {
+            if (occErr && occErr.code === "occ/conflict") {
+              const choice = await _occHandleConflict(occErr);
+              if (choice === "overwrite") {
+                await _safeSaveDoc("master", "jabatan", { list: db_jabatan }, { merge: false, expectedUpdatedAt: null, label: "Overwrite master jabatan" });
+              } else if (choice === "refresh") {
+                _toast.info("Refresh halaman untuk lihat versi terbaru."); toggleLoader(false); return;
+              } else { toggleLoader(false); return; }
+            } else { throw occErr; }
+          }
           e.target.reset();
           document.getElementById("edit_index_jabatan").value = "";
           document.getElementById("btn_submit_jabatan").innerHTML = "Simpan";
