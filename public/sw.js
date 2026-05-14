@@ -5,7 +5,7 @@
 // ====================================================================
 
 // Bump versi setiap deploy update besar supaya cache di-refresh
-const SW_VERSION = 'v276-0514-g7-tokens'
+const SW_VERSION = 'v277-0514-g3-aria'
 const CACHE_SHELL = `mu-shell-${SW_VERSION}`
 const CACHE_RUNTIME = `mu-runtime-${SW_VERSION}`
 
