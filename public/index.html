@@ -205,18 +205,13 @@
     <!-- ExcelJS (~700KB): export Excel rapi dengan kop, border, styling -->
     <script src="/exceljs.min.js" defer="" fetchpriority="low"></script>
     <!-- v.108.65: Preload bg-pesantren supaya cepat tampil saat login -->
-    <link rel="preload" as="image" href="/bg-pesantren.jpg" />
+    <!-- v.109.15: preload bg-pesantren dihapus (warning preloaded-not-used; bg dashboard tidak critical LCP) -->
     <!-- v.108.67: DOMPurify (~22KB) for XSS sanitization -->
     <script
       src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"
       defer=""
     ></script>
-    <!-- v.108.70: Sentry error tracking -- DSN replace by Kyai, see SENTRY-SETUP.md -->
-    <script
-      src="https://browser.sentry-cdn.com/8/bundle.min.js"
-      defer=""
-      fetchpriority="low"
-    ></script>
+    <!-- v.109.15: Sentry script tag removed (Kyai defer Sentry). Was causing 403 di console. -->
     <!-- html2canvas (~120KB): dipakai untuk capture rapor PDF -->
     <script
       src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"
@@ -16328,7 +16323,7 @@
         if (b) b.classList.add("hidden");
       }
 
-      const APP_VERSION = "v.109.14.0515-profile-dropdown";
+      const APP_VERSION = "v.109.15.0515-console-clean-print-fix";
 
       // ====================================================================
       // Sentry error tracking init (B3). Gate guard: DSN placeholder = no-op.
@@ -32847,20 +32842,95 @@
         kopHtml += `</td></tr></table><hr style="border:0;border-top:2.5px solid #0f172a;margin:4px 0 1px 0;"><hr style="border:0;border-top:0.7px solid #0f172a;margin:0 0 14px 0;">`;
         return kopHtml;
       }
-      // Wrapper: tanya format cetak setelah pembayaran sukses
-      async function cetakStrukPOS(trx) {
-        const r = await Swal.fire({
-          title: "Cetak Struk",
-          text: "Pilih format cetak struk:",
-          showCancelButton: false,
-          showDenyButton: true,
-          confirmButtonText: "️ Epson LX-310 (Dot Matrix)",
-          denyButtonText: " Format PDF Berwarna",
-          confirmButtonColor: "#0ea5e9",
-          denyButtonColor: "#475569",
+      // v.109.15: Wrapper: tanya format cetak setelah pembayaran sukses.
+      // REPLACED Swal dengan custom DOM modal (zero Swal dependency, no freeze).
+      // Pattern sama dengan logout v.109.4.
+      function cetakStrukPOS(trx) {
+        const overlay = document.createElement("div");
+        overlay.id = "mu-cetak-struk-modal";
+        overlay.style.cssText =
+          "position:fixed;inset:0;z-index:100002;background:rgba(15,23,42,0.6);" +
+          "display:flex;align-items:center;justify-content:center;padding:16px;" +
+          "opacity:0;transition:opacity 0.18s ease-out;";
+        const card = document.createElement("div");
+        card.style.cssText =
+          "background:#ffffff;border-radius:18px;padding:24px;max-width:420px;width:100%;" +
+          "box-shadow:0 25px 50px -12px rgba(0,0,0,0.35);border-top:6px solid #0ea5e9;" +
+          "transform:scale(0.94);transition:transform 0.18s ease-out;";
+        if (document.body.classList.contains("dark-mode")) {
+          card.style.background = "#1e293b";
+          card.style.color = "#f1f5f9";
+        }
+        const titleEl = document.createElement("h3");
+        titleEl.style.cssText = "font-size:18px;font-weight:800;margin:0 0 6px 0;color:inherit;";
+        titleEl.textContent = "Cetak Struk";
+        const textEl = document.createElement("p");
+        textEl.style.cssText = "font-size:13px;margin:0 0 18px 0;color:inherit;opacity:0.85;";
+        textEl.textContent = "Pilih format cetak struk:";
+        const btnRow = document.createElement("div");
+        btnRow.style.cssText = "display:flex;flex-direction:column;gap:8px;";
+        const btnLX = document.createElement("button");
+        btnLX.type = "button";
+        btnLX.style.cssText =
+          "background:#0ea5e9;color:white;border:none;border-radius:10px;" +
+          "padding:11px 16px;font-weight:700;font-size:14px;cursor:pointer;" +
+          "transition:background 0.15s;text-align:left;";
+        btnLX.onmouseover = () => (btnLX.style.background = "#0284c7");
+        btnLX.onmouseout = () => (btnLX.style.background = "#0ea5e9");
+        btnLX.innerHTML = '<i class="fas fa-print" style="margin-right:8px;"></i>Epson LX-310 (Dot Matrix)';
+        const btnPdf = document.createElement("button");
+        btnPdf.type = "button";
+        btnPdf.style.cssText =
+          "background:#475569;color:white;border:none;border-radius:10px;" +
+          "padding:11px 16px;font-weight:700;font-size:14px;cursor:pointer;" +
+          "transition:background 0.15s;text-align:left;";
+        btnPdf.onmouseover = () => (btnPdf.style.background = "#334155");
+        btnPdf.onmouseout = () => (btnPdf.style.background = "#475569");
+        btnPdf.innerHTML = '<i class="fas fa-file-pdf" style="margin-right:8px;"></i>Format PDF Berwarna';
+        const btnCancel = document.createElement("button");
+        btnCancel.type = "button";
+        btnCancel.style.cssText =
+          "background:transparent;color:inherit;border:1px solid rgba(148,163,184,0.4);" +
+          "border-radius:10px;padding:9px 16px;font-weight:600;font-size:13px;cursor:pointer;" +
+          "transition:background 0.15s;margin-top:4px;";
+        btnCancel.onmouseover = () => (btnCancel.style.background = "rgba(148,163,184,0.15)");
+        btnCancel.onmouseout = () => (btnCancel.style.background = "transparent");
+        btnCancel.textContent = "Batal";
+        btnRow.appendChild(btnLX);
+        btnRow.appendChild(btnPdf);
+        btnRow.appendChild(btnCancel);
+        card.appendChild(titleEl);
+        card.appendChild(textEl);
+        card.appendChild(btnRow);
+        overlay.appendChild(card);
+        document.body.appendChild(overlay);
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            overlay.style.opacity = "1";
+            card.style.transform = "scale(1)";
+          });
         });
-        if (r.isConfirmed) cetakStrukPOSLX310(trx);
-        else if (r.isDenied) cetakStrukPOSPdf(trx);
+        const closeModal = (action) => {
+          overlay.style.opacity = "0";
+          card.style.transform = "scale(0.94)";
+          document.removeEventListener("keydown", escHandler);
+          setTimeout(() => {
+            try { overlay.remove(); } catch (e) {}
+            if (action === "lx") cetakStrukPOSLX310(trx);
+            else if (action === "pdf") cetakStrukPOSPdf(trx);
+          }, 200);
+        };
+        btnLX.addEventListener("click", () => closeModal("lx"));
+        btnPdf.addEventListener("click", () => closeModal("pdf"));
+        btnCancel.addEventListener("click", () => closeModal(null));
+        overlay.addEventListener("click", (e) => {
+          if (e.target === overlay) closeModal(null);
+        });
+        const escHandler = (e) => {
+          if (e.key === "Escape") closeModal(null);
+        };
+        document.addEventListener("keydown", escHandler);
+        setTimeout(() => btnLX.focus(), 50);
       }
       // FORMAT LAMA: Cetak struk PDF berwarna (A4)
       function cetakStrukPOSPdf(trx) {
