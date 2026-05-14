@@ -16307,7 +16307,7 @@
         if (b) b.classList.add("hidden");
       }
 
-      const APP_VERSION = "v.108.94.0514-fix-csp-print-logout";
+      const APP_VERSION = "v.108.95.0514-g1-g2-wire-up";
 
       // ====================================================================
       // Sentry error tracking init (B3). Gate guard: DSN placeholder = no-op.
@@ -26018,6 +26018,12 @@
       }
 
       function renderAdminGuru() {
+        // G1 wire-up (v.108.95): skeleton kalau db_guru belum loaded
+        const _tbodyG = document.getElementById("tbody-admin-guru");
+        if (db_guru.length === 0 && typeof _renderSkeleton === "function") {
+          if (_tbodyG) _tbodyG.innerHTML = _renderSkeleton(5, 4);
+          return;
+        }
         // Populate dropdown filter lembaga (sekali, kalau belum)
         const selLmbg = document.getElementById("filter-lembaga-guru");
         if (selLmbg && selLmbg.options.length <= 1) {
@@ -26529,13 +26535,28 @@
       }
 
       function renderAdminSantri() {
+        // G1 wire-up (v.108.95): skeleton kalau db_santri belum loaded
+        const _tbody = document.getElementById("tbody-admin-santri");
+        if (db_santri.length === 0 && typeof _renderSkeleton === "function") {
+          _tbody.innerHTML = _renderSkeleton(5, 5);
+          return;
+        }
         const kw = document
           .getElementById("cari-admin-santri")
           .value.toLowerCase();
         let data = sortSantriGeneral(
           db_santri.filter((s) => String(s.nama).toLowerCase().includes(kw)),
         );
-        document.getElementById("tbody-admin-santri").innerHTML = data
+        // G2 wire-up: empty state kalau filter result kosong
+        if (data.length === 0 && typeof _renderEmptyState === "function") {
+          _tbody.innerHTML = '<tr><td colspan="5" class="p-0">' + _renderEmptyState({
+            icon: 'fa-users-slash',
+            title: kw ? 'Tidak ada santri cocok pencarian "' + kw + '"' : 'Belum ada santri',
+            subtitle: kw ? 'Coba kata kunci lain' : 'Tambah santri pertama untuk mulai'
+          }) + '</td></tr>';
+          return;
+        }
+        _tbody.innerHTML = data
           .map((s) => {
             // Tampilkan kedua guru pagi & sore dengan badge shift
             let gpData = s.guru_pagi
