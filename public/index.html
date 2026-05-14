@@ -16063,7 +16063,7 @@
         if (b) b.classList.add("hidden");
       }
 
-      const APP_VERSION = "v.108.81.0514-c4-batch23-lembaga-jabatan";
+      const APP_VERSION = "v.108.82.0514-fix-status-template";
 
       // ====================================================================
       // Sentry error tracking init (B3). Gate guard: DSN placeholder = no-op.
@@ -20181,7 +20181,7 @@
         }
         const guruSekolah = db_guru.filter(
           (g) =>
-            g.status === "Aktif" &&
+            _isStatusAktif(g.status) &&
             ((g.tipe_pegawai === "sekolah" && g.lembaga === lmbgSek) ||
               (g.tipe_pegawai === "ngaji_sekolah" &&
                 (g.lembaga === lmbgSek || g.lembaga_sekolah === lmbgSek))),
@@ -20232,7 +20232,7 @@
         const target = document.getElementById(idGuru);
         if (!target) return;
         const match = db_guru.filter(
-          (g) => g.lembaga === val && g.status === "Aktif",
+          (g) => g.lembaga === val && _isStatusAktif(g.status),
         );
         let sortedMatch = sortGuruGeneral(match);
         let opts = allowEmpty ? '<option value="">- Tidak ada -</option>' : "";
@@ -20247,6 +20247,17 @@
             ? ""
             : '<option value="">- Kosong -</option>';
         target.innerHTML = opts;
+      }
+
+      // === Helper status guru/santri — case-insensitive aktif check (BUGFIX v.108.82)
+      // Excel import bisa save "Aktif" / "AKTIF" / "aktif" / "Active" / "1" / true. Normalize.
+      function _isStatusAktif(status) {
+        if (status === true) return true;
+        if (status === false) return false;
+        if (status === undefined || status === null) return true; // default aktif kalau kosong
+        const s = String(status).trim().toLowerCase();
+        if (s === "aktif" || s === "active" || s === "1" || s === "true" || s === "ya" || s === "yes") return true;
+        return false;
       }
 
       // ===== GURU CHECKBOX (DUAL GURU PAGI/SORE/PAGI+SORE) =====
@@ -20267,7 +20278,7 @@
           db_guru.filter(
             (g) =>
               g.lembaga === lmbg &&
-              g.status === "Aktif" &&
+              _isStatusAktif(g.status) &&
               (g.tipe_pegawai === "ngaji" ||
                 g.tipe_pegawai === "ngaji_sekolah" ||
                 !g.tipe_pegawai),
@@ -20275,7 +20286,7 @@
         );
         if (guruList.length === 0) {
           // BUGFIX: debug info untuk admin kalau data mismatch
-          console.warn("[guru-santri] Lembaga '" + lmbg + "' tidak match di db_guru. Total guru aktif: " + db_guru.filter(g => g.status === "Aktif").length + ". Cek master data atau lembaga santri.");
+          console.warn("[guru-santri] Lembaga '" + lmbg + "' tidak match di db_guru. Total guru aktif: " + db_guru.filter(g => _isStatusAktif(g.status)).length + ". Cek master data atau lembaga santri.");
           target.innerHTML =
             '<p class="text-xs text-slate-400 italic text-center py-2">Tidak ada guru aktif di lembaga "' + lmbg + '". Cek master data guru/lembaga.</p>';
           return;
@@ -22702,7 +22713,7 @@
         const list = sortGuruGeneral(
           db_guru.filter(
             (g) =>
-              g.status === "Aktif" &&
+              _isStatusAktif(g.status) &&
               (g.tipe_pegawai === "sekolah" ||
                 g.tipe_pegawai === "ngaji_sekolah") &&
               (g.lembaga === lembaga || g.lembaga_sekolah === lembaga),
@@ -22744,7 +22755,7 @@
         const candidates = sortGuruGeneral(
           db_guru.filter(
             (g) =>
-              g.status === "Aktif" &&
+              _isStatusAktif(g.status) &&
               !(g.lembaga === lembaga || g.lembaga_sekolah === lembaga),
           ),
         );
@@ -26311,8 +26322,10 @@
         document.body.removeChild(link);
       }
       function downloadTemplateGuru() {
-        let aoa = [
-          [
+        // BUGFIX v.108.82 — extend template dengan custom fields dari savedSettings
+        const customFieldsSchema = (savedSettings && savedSettings.customFieldsSchema && savedSettings.customFieldsSchema.guru) || [];
+        const customFieldLabels = (customFieldsSchema || []).map((f) => "Custom: " + (f.label || f.key || ""));
+        const baseHeaders = [
             "Nama Guru (Dengan Gelar)",
             "L/P",
             "Jabatan",
@@ -26327,7 +26340,9 @@
             "ID Fingerprint",
             "Role Sistem (user/admin/admin_keuangan/super_admin)",
             "Username (opsional, kosong = pakai WA)",
-          ],
+        ];
+        let aoa = [
+          baseHeaders.concat(customFieldLabels),
         ];
         let ws = XLSX.utils.aoa_to_sheet(aoa);
         ws["!cols"] = [
@@ -27010,8 +27025,10 @@
       }
 
       function downloadTemplateSantri() {
-        let aoa = [
-          [
+        // BUGFIX v.108.82 — extend template dengan custom fields dari savedSettings
+        const customFieldsSchema = (savedSettings && savedSettings.customFieldsSchema && savedSettings.customFieldsSchema.santri) || [];
+        const customFieldLabels = (customFieldsSchema || []).map((f) => "Custom: " + (f.label || f.key || ""));
+        const baseHeaders = [
             "NIS",
             "Nama Santri",
             "L/P",
@@ -27030,7 +27047,9 @@
             "Status Aktif (true/false)",
             "Mukim (true/false)",
             "Username (opsional, kosong = pakai WA)",
-          ],
+        ];
+        let aoa = [
+          baseHeaders.concat(customFieldLabels),
         ];
         let ws = XLSX.utils.aoa_to_sheet(aoa);
         ws["!cols"] = [
@@ -33376,7 +33395,7 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
         const aoa = [
           ["ID Guru", "Nama Guru (Tanpa Gelar)", "Nominal Bisyaroh Pokok"],
         ];
-        sortGuruGeneral(db_guru.filter((g) => g.status === "Aktif")).forEach(
+        sortGuruGeneral(db_guru.filter((g) => _isStatusAktif(g.status))).forEach(
           (g) => {
             aoa.push([
               g.id,
@@ -34782,7 +34801,7 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
         const target = document.getElementById("kn-target").value;
         let count = 0;
         const guruWithToken = db_guru.filter(
-          (g) => g.fcm_token && g.status === "Aktif",
+          (g) => g.fcm_token && _isStatusAktif(g.status),
         );
         const santriWithToken = db_santri.filter(
           (s) => s.fcm_token && s.aktif !== false,
@@ -34809,7 +34828,7 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
             if (
               g.fcm_token &&
               g.fcm_token.length > 50 &&
-              g.status === "Aktif"
+              _isStatusAktif(g.status)
             ) {
               tokens.push(g.fcm_token);
             }
@@ -41316,7 +41335,7 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
           }
           const _totalGuru = db_guru.length;
           const _aktifGuru = db_guru.filter(
-            (g) => !g.status || g.status === "Aktif",
+            (g) => _isStatusAktif(g.status),
           ).length;
           const _nonaktifGuru = _totalGuru - _aktifGuru;
           document.getElementById("stat-guru").innerText = _totalGuru;
