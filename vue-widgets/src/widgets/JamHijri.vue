@@ -2,8 +2,9 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { formatHijri, formatMasehi } from '../utils/hijri'
 
+// v.109.23: El Messiri (naskh modern smooth) prioritas, fallback ke Noto Naskh Arabic & Amiri
 const FONT_ARAB =
-  "'Noto Naskh Arabic','Droid Arabic Naskh','Scheherazade New','Amiri','Traditional Arabic',serif"
+  "'El Messiri','Noto Naskh Arabic','Amiri','Scheherazade New','Traditional Arabic',serif"
 
 const jam = ref('')
 const menit = ref('')
@@ -44,7 +45,7 @@ onUnmounted(() => {
     </svg>
     <div class="grid">
       <div class="col-l">
-        <!-- v.109.22: font elegant — Manrope label + DM Serif tanggal + Noto Naskh Arabic hijri -->
+        <!-- v.109.23: Manrope 600 (less bold) + El Messiri hijri + Spectral italic masehi -->
         <p class="hari-top">{{ hari }}</p>
         <p :style="{ fontFamily: FONT_ARAB }" class="hijri" dir="rtl">{{ hijri }}</p>
         <p class="masehi">{{ masehi }}</p>
@@ -102,14 +103,15 @@ onUnmounted(() => {
   border-left: 1px solid rgba(255, 255, 255, 0.18);
   padding-left: 0.5rem;
 }
+/* v.109.23: label WIB Manrope 600 less bold */
 .label,
 .label-r {
   font-family: 'Manrope', sans-serif;
   font-size: 8.5px;
   text-transform: uppercase;
   letter-spacing: 0.22em;
-  font-weight: 800;
-  opacity: 0.95;
+  font-weight: 600;
+  opacity: 0.92;
   margin: 0;
   display: flex;
   align-items: center;
@@ -122,12 +124,12 @@ onUnmounted(() => {
 .label-r i {
   font-size: 10px;
 }
-/* v.109.22: badge KAMIS — Manrope 800, BG tipis */
+/* v.109.23: badge KAMIS Manrope 600 (less bold, lebih elegant) */
 .hari-top {
   display: inline-block;
   font-family: 'Manrope', sans-serif;
   font-size: 9.5px;
-  font-weight: 800;
+  font-weight: 600;
   letter-spacing: 0.22em;
   margin: 0 0 0.4rem 0;
   padding: 3px 9px;
@@ -137,26 +139,27 @@ onUnmounted(() => {
   text-transform: uppercase;
   color: white;
 }
-/* v.109.22: tgl hijri Noto Naskh Arabic */
+/* v.109.23: tgl hijri El Messiri naskh modern elegant */
 .hijri {
-  font-size: 1.05rem;
-  font-weight: 700;
+  font-size: 1.1rem;
+  font-weight: 600;
   margin-top: 0.4rem;
   margin-bottom: 0.15rem;
-  line-height: 1.35;
+  line-height: 1.4;
   text-align: left;
   letter-spacing: 0.01em;
 }
 @media (min-width: 768px) {
   .hijri {
-    font-size: 1.2rem;
+    font-size: 1.25rem;
   }
 }
-/* v.109.22: tanggal masehi — DM Serif Display elegant editorial */
+/* v.109.23: tanggal masehi Spectral italic refined */
 .masehi {
-  font-family: 'DM Serif Display', 'Playfair Display', Georgia, serif;
-  font-size: 0.82rem;
-  font-weight: 400;
+  font-family: 'Spectral', 'Playfair Display', Georgia, serif;
+  font-size: 0.85rem;
+  font-style: italic;
+  font-weight: 500;
   margin-top: 0.3rem;
   line-height: 1.1;
   text-align: left;
@@ -165,7 +168,7 @@ onUnmounted(() => {
 }
 @media (min-width: 768px) {
   .masehi {
-    font-size: 0.92rem;
+    font-size: 0.95rem;
   }
 }
 .jam-wrap {
@@ -174,11 +177,11 @@ onUnmounted(() => {
   justify-content: flex-end;
   margin-top: 0.25rem;
 }
-/* v.109.22: jam digital — DM Serif Display besar dramatis */
+/* v.109.23: jam Spectral 500 (lebih ringan dari DM Serif Display) */
 .jam {
-  font-family: 'DM Serif Display', 'Playfair Display', Georgia, serif;
+  font-family: 'Spectral', 'Playfair Display', Georgia, serif;
   font-size: 1.7rem;
-  font-weight: 400;
+  font-weight: 500;
   line-height: 1;
   letter-spacing: -0.01em;
 }
