@@ -103,3 +103,9 @@ android/build/
 android/app/build/
 android/.gradle/
 android/local.properties
+
+# v.108.66: cleanup obsolete files
+# Root duplicate (kept in public/)
+bg-pesantren.jpg
+# Obsolete cleanup script (Windows-only, target sudah dihapus)
+cleanup-batch-a1.ps1
