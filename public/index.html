@@ -16063,7 +16063,7 @@
         if (b) b.classList.add("hidden");
       }
 
-      const APP_VERSION = "v.108.82.0514-fix-status-template";
+      const APP_VERSION = "v.108.83.0514-fix-rapor-layout";
 
       // ====================================================================
       // Sentry error tracking init (B3). Gate guard: DSN placeholder = no-op.
@@ -38903,7 +38903,7 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
             let sectionsHtml = "";
             if (schema.perLevel) {
               const fields = schema.fieldsNilai || [];
-              sectionsHtml = `<table style="width:100%;border-collapse:collapse;font-size:9px;margin-top:6px;">
+              sectionsHtml = `<div style="page-break-inside:avoid;margin-top:14px;"><table style="width:100%;border-collapse:collapse;font-size:9px;">
                         <thead><tr style="background:#e2e8f0;">
                             <th style="border:1px solid #000;padding:3px;width:30px;">Kelas</th>
                             <th style="border:1px solid #000;padding:3px;width:55px;">Level Baca</th>
@@ -38985,7 +38985,7 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
                             <td colspan="${fields.length + 3}" style="border:1px solid #000;padding:4px;font-weight:bold;text-align:left;">Total Rata-rata</td>
                             <td style="border:1px solid #000;padding:4px;text-align:center;font-weight:bold;">${totalAvgStr}</td>
                         </tr>
-                    </tfoot></table>`;
+                    </tfoot></table></div>`;
             } else if (schema.perKelas) {
               const kelasSantri = s.kelas_sekolah || "";
               const jenjang = (schema.jenjang || []).find(
@@ -39023,8 +39023,9 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
               sectionsHtml = (schema.sections || [])
                 .map((sec) => {
                   if (sec.rows && sec.rows.length > 0) {
-                    // Table
-                    let h = `<div style="margin-top:8px;font-weight:bold;text-align:center;background:#f1f5f9;padding:3px;border:1px solid #999;font-size:11px;text-transform:uppercase;">${escapeHtml(sec.title)}</div>
+                    // Table — BUGFIX v.108.83: wrap dengan page-break-inside:avoid + spacing lebih lega
+                    let h = `<div style="page-break-inside:avoid;margin-top:14px;">
+                       <div style="font-weight:bold;text-align:center;background:#f1f5f9;padding:4px;border:1px solid #999;font-size:11px;text-transform:uppercase;">${escapeHtml(sec.title)}</div>
                        <table style="width:100%;border-collapse:collapse;font-size:10px;">
                            <thead><tr style="background:#f1f5f9;">
                                <th style="border:1px solid #999;padding:3px;width:50px;">Item</th>
@@ -39044,11 +39045,12 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
                       });
                       h += "</tr>";
                     });
-                    h += "</tbody></table>";
+                    h += "</tbody></table></div>";
                     return h;
                   } else {
-                    // Single row
-                    let h = `<div style="margin-top:8px;font-weight:bold;text-align:center;background:#f1f5f9;padding:3px;border:1px solid #999;font-size:11px;text-transform:uppercase;">${escapeHtml(sec.title)}</div>
+                    // Single row — BUGFIX v.108.83: wrap + spacing
+                    let h = `<div style="page-break-inside:avoid;margin-top:14px;">
+                       <div style="font-weight:bold;text-align:center;background:#f1f5f9;padding:4px;border:1px solid #999;font-size:11px;text-transform:uppercase;">${escapeHtml(sec.title)}</div>
                        <table style="width:100%;border-collapse:collapse;font-size:10px;">
                            <thead><tr style="background:#f1f5f9;">${sec.fields.map((f) => `<th style="border:1px solid #999;padding:3px;">${escapeHtml(f.label)}</th>`).join("")}</tr></thead>
                            <tbody><tr>`;
@@ -39062,7 +39064,7 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
                       }
                       h += `<td style="border:1px solid #999;padding:4px;text-align:center;">${escapeHtml(String(v))}</td>`;
                     });
-                    h += "</tr></tbody></table>";
+                    h += "</tr></tbody></table></div>";
                     return h;
                   }
                 })
