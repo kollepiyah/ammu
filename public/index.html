@@ -16063,7 +16063,7 @@
         if (b) b.classList.add("hidden");
       }
 
-      const APP_VERSION = "v.108.79.0514-c4-occ-loads";
+      const APP_VERSION = "v.108.80.0514-fix-guru-dropdown";
 
       // ====================================================================
       // Sentry error tracking init (B3). Gate guard: DSN placeholder = no-op.
@@ -20251,10 +20251,18 @@
 
       // ===== GURU CHECKBOX (DUAL GURU PAGI/SORE/PAGI+SORE) =====
       // Render daftar guru sesuai lembaga, dengan checkbox + radio shift Pagi/Sore/Pagi+Sore
-      function renderOpsiGuruCheckboxSantri(prefilledPagi, prefilledSore) {
-        const lmbg = document.getElementById("lembaga_santri").value;
+      function renderOpsiGuruCheckboxSantri(prefilledPagi, prefilledSore, overrideLembaga) {
+        // BUGFIX v.108.80: pakai overrideLembaga kalau ada (untuk edit santri),
+        // fallback ke dropdown value (untuk onchange handler new santri).
+        const lmbg = overrideLembaga || document.getElementById("lembaga_santri").value;
         const target = document.getElementById("guru_checkbox_santri");
         if (!target) return;
+        // BUGFIX: kalau lembaga belum dipilih, message konsisten dengan placeholder HTML.
+        if (!lmbg) {
+          target.innerHTML =
+            '<p class="text-xs text-slate-400 italic text-center py-2">Pilih lembaga dulu...</p>';
+          return;
+        }
         const guruList = sortGuruGeneral(
           db_guru.filter(
             (g) =>
@@ -20266,8 +20274,10 @@
           ),
         );
         if (guruList.length === 0) {
+          // BUGFIX: debug info untuk admin kalau data mismatch
+          console.warn("[guru-santri] Lembaga '" + lmbg + "' tidak match di db_guru. Total guru aktif: " + db_guru.filter(g => g.status === "Aktif").length + ". Cek master data atau lembaga santri.");
           target.innerHTML =
-            '<p class="text-xs text-slate-400 italic text-center py-2">Tidak ada guru aktif di lembaga ini.</p>';
+            '<p class="text-xs text-slate-400 italic text-center py-2">Tidak ada guru aktif di lembaga "' + lmbg + '". Cek master data guru/lembaga.</p>';
           return;
         }
         // Deteksi mode "pagi_sore" (1 guru di kedua shift)
@@ -25531,6 +25541,22 @@
         const g = db_guru.find((x) => x.id == id);
         // C4 — capture updatedAt for OCC pada save berikutnya
         if (g && typeof _recordDocSnap === "function") _recordDocSnap("guru", id, g);
+        // BUGFIX v.108.80: ad-hoc option fallback untuk lembaga_guru kalau data mismatch
+        try {
+          const _lmbgSel = document.getElementById("lembaga_guru");
+          if (_lmbgSel && g && g.lembaga) {
+            const _exists = Array.from(_lmbgSel.options).some((o) => o.value === g.lembaga);
+            if (!_exists) {
+              const _opt = document.createElement("option");
+              _opt.value = g.lembaga;
+              _opt.textContent = g.lembaga + " (legacy)";
+              _lmbgSel.appendChild(_opt);
+              console.warn("[edit-guru] Lembaga '" + g.lembaga + "' tidak ada di dropdown, ditambah option ad-hoc.");
+            }
+          }
+        } catch (e) {
+          console.warn("[edit-guru] ad-hoc lembaga option error:", e);
+        }
         document.getElementById("edit_id_guru").value = g.id;
         document.getElementById("nama_guru").value = g.nama;
         document.getElementById("jk_guru").value = g.jk || "P";
@@ -26028,6 +26054,23 @@
         renderKelasSekolahByLembaga();
         document.getElementById("kelas_sekolah").value = s.kelas_sekolah || "";
         renderOpsiGuruSekolahCheckbox(s.guru_sekolah || []);
+        // BUGFIX v.108.80: kalau s.lembaga tidak ada di dropdown options (data mismatch),
+        // tambah option ad-hoc supaya .value bisa di-set + dropdown menampilkan value yang benar.
+        try {
+          const _lmbgSelect = document.getElementById("lembaga_santri");
+          if (_lmbgSelect && s.lembaga) {
+            const _exists = Array.from(_lmbgSelect.options).some((o) => o.value === s.lembaga);
+            if (!_exists) {
+              const _opt = document.createElement("option");
+              _opt.value = s.lembaga;
+              _opt.textContent = s.lembaga + " (legacy)";
+              _lmbgSelect.appendChild(_opt);
+              console.warn("[edit-santri] Lembaga '" + s.lembaga + "' tidak ada di dropdown, ditambah option ad-hoc. Cek master data lembaga.");
+            }
+          }
+        } catch (e) {
+          console.warn("[edit-santri] ad-hoc lembaga option error:", e);
+        }
         document.getElementById("lembaga_santri").value = s.lembaga || "";
         document.getElementById("nama_wali").value = s.wali || "";
         document.getElementById("wa_wali").value = s.wa || "";
@@ -26040,9 +26083,12 @@
             : "false";
         renderOpsiKelas("lembaga_santri", "kelas_santri", "div_juz");
         // Render checkbox dengan prefilled
+        // BUGFIX v.108.80: pass s.lembaga sebagai override supaya guru list render
+        // walau dropdown value gagal set karena data mismatch.
         renderOpsiGuruCheckboxSantri(
           s.guru_pagi || s.guru || "",
           s.guru_sore || "",
+          s.lembaga || "",
         );
         document.getElementById("kelas_santri").value = s.kelas;
         if (s.lembaga === "PTPT")
