@@ -16209,7 +16209,7 @@
         if (b) b.classList.add("hidden");
       }
 
-      const APP_VERSION = "v.108.89.0514-g1-skeleton";
+      const APP_VERSION = "v.108.90.0514-g2-empty-state";
 
       // ====================================================================
       // Sentry error tracking init (B3). Gate guard: DSN placeholder = no-op.
@@ -22126,7 +22126,11 @@
         });
 
         if (tampilkan.length === 0) {
-          grid.innerHTML = `<div class="col-span-full text-center p-8 text-slate-400 italic text-sm"><i class="fas fa-inbox mr-1"></i>Belum ada lembaga. Klik <b>Tambah Lembaga/Divisi</b>di atas.</div>`;
+          grid.innerHTML = '<div class="col-span-full">' + _renderEmptyState({
+            icon: "fa-inbox",
+            title: "Belum ada lembaga / divisi",
+            subtitle: "Klik Tambah Lembaga/Divisi di atas untuk mulai."
+          }) + '</div>';
           return;
         }
         grid.innerHTML = tampilkan
