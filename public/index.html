@@ -16323,7 +16323,7 @@
         if (b) b.classList.add("hidden");
       }
 
-      const APP_VERSION = "v.109.15.0515-console-clean-print-fix";
+      const APP_VERSION = "v.109.16.0515-kop-logo-async-fix";
 
       // ====================================================================
       // Sentry error tracking init (B3). Gate guard: DSN placeholder = no-op.
@@ -24010,7 +24010,7 @@
         const html = `<html><head><title>Absen ${namaBulan}</title><style>@page{size:landscape;}body{font-family:Arial;padding:15px;font-size:11px;}h2{text-align:center;text-decoration:underline;margin:8px 0;font-size:13px;}table{width:100%;border-collapse:collapse;font-size:10px;}th{background:#cbd5e1;padding:3px;border:1px solid #000;font-weight:bold;}</style></head><body>${kop}<h2>${judul}</h2><p style="font-size:9px;text-align:right;">Dicetak: ${new Date().toLocaleString("id-ID")}</p><table><thead><tr><th>No</th><th style="min-width:120px;">Nama</th><th>Kelas</th>${thDays}<th style="background:#86efac;">H</th><th style="background:#fde68a;">S</th><th style="background:#93c5fd;">I</th><th style="background:#fca5a5;">A</th></tr></thead><tbody>${rows}</tbody></table><p style="font-size:9px;margin-top:10px;"><b>Keterangan:</b>H=Hadir, S=Sakit, I=Izin, A=Alpa</p></body></html>`;
         cetakHtmlSebagaiPDF(html);
       }
-      function _eksporPDFAbsenSantriBulanan() {
+      async function _eksporPDFAbsenSantriBulanan() {
         const {
           lembaga,
           listSantri,
@@ -24024,7 +24024,7 @@
           return _toast.warning("Tidak Ada Data: Tidak ada santri.");
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF("l", "pt", "a4");
-        let yStart = tambahKopPDF(doc, "l");
+        let yStart = await tambahKopPDF(doc, "l");
         doc.setFont("helvetica", "bold");
         doc.setFontSize(12);
         const judul = `REKAP ABSENSI SANTRI ${lembaga.toUpperCase()}${filterKls ? " - KELAS " + filterKls.toUpperCase() : ""} - ${namaBulan.toUpperCase()} ${year}`;
@@ -27085,7 +27085,7 @@
         cetakHtmlSebagaiPDF(html);
       }
       // PDF Master Guru (full kolom)
-      function eksporPDFAdminGuru() {
+      async function eksporPDFAdminGuru() {
         const data = sortGuruGeneral([...db_guru]);
         if (data.length === 0)
           return _toast.warning("Tidak Ada Data: Data guru kosong.");
@@ -27096,7 +27096,7 @@
         };
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF("l", "pt", "a4");
-        let yStart = tambahKopPDF(doc, "l");
+        let yStart = await tambahKopPDF(doc, "l");
         doc.setFont("helvetica", "bold");
         doc.setFontSize(13);
         doc.text(
@@ -27365,7 +27365,7 @@
       }
       window.eksporCSVSantri = eksporCSVSantri;
       // PDF Master Santri
-      function eksporPDFAdminSantri() {
+      async function eksporPDFAdminSantri() {
         const data = sortSantriGeneral(
           db_santri.filter((s) => s.aktif !== false),
         );
@@ -27373,7 +27373,7 @@
           return _toast.warning("Tidak Ada Data: Data santri kosong.");
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF("l", "pt", "a4");
-        let yStart = tambahKopPDF(doc, "l");
+        let yStart = await tambahKopPDF(doc, "l");
         doc.setFont("helvetica", "bold");
         doc.setFontSize(13);
         doc.text("DATA SANTRI", doc.internal.pageSize.width / 2, yStart, {
@@ -28099,10 +28099,10 @@
           ],
         });
       }
-      function eksporPDFViewSantri() {
+      async function eksporPDFViewSantri() {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF("l", "pt", "a4");
-        let yStart = tambahKopPDF(doc, "l");
+        let yStart = await tambahKopPDF(doc, "l");
         doc.setFont("helvetica", "bold");
         doc.setFontSize(13);
         doc.text("DATA SANTRI AKTIF", doc.internal.pageSize.width / 2, yStart, {
@@ -28245,10 +28245,10 @@
           ],
         });
       }
-      function eksporPDFViewGuru() {
+      async function eksporPDFViewGuru() {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF("l", "pt", "a4");
-        let yStart = tambahKopPDF(doc, "l");
+        let yStart = await tambahKopPDF(doc, "l");
         doc.setFont("helvetica", "bold");
         doc.setFontSize(13);
         doc.text("DATA GURU/PEGAWAI", doc.internal.pageSize.width / 2, yStart, {
@@ -28339,12 +28339,12 @@
           colWidths: [15, 80],
         });
       }
-      function eksporRiwayatPDF() {
+      async function eksporRiwayatPDF() {
         if (!currentRiwayatId) return;
         const s = db_santri.find((x) => x.id == currentRiwayatId);
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF("p", "pt", "a4");
-        let yStart = tambahKopPDF(doc, "p");
+        let yStart = await tambahKopPDF(doc, "p");
         doc.setFont("helvetica", "bold");
         doc.setFontSize(12);
         doc.text(
@@ -28971,14 +28971,14 @@
         const html = `<html><head><title>Rekap Diniyah</title><style>body{font-family:Arial;padding:20px;}h2{text-align:center;text-decoration:underline;margin:10px 0;}</style></head><body>${kopHtml}<h2>REKAP PRESTASI DINIYAH BULAN ${namaBulan.toUpperCase()} ${thn}</h2>${tableHtml}</body></html>`;
         cetakHtmlSebagaiPDF(html);
       }
-      function eksporPDFRekapDiniyah() {
+      async function eksporPDFRekapDiniyah() {
         const { list, fields, periodKey, namaBulan, thn } =
           _getDataRekapDiniyahForExport();
         if (list.length === 0)
           return _toast.warning("Tidak Ada Data: Tidak ada santri.");
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF("l", "pt", "a4");
-        let yStart = tambahKopPDF(doc, "l");
+        let yStart = await tambahKopPDF(doc, "l");
         doc.setFont("helvetica", "bold");
         doc.setFontSize(13);
         doc.text(
@@ -29347,14 +29347,14 @@
         cetakHtmlSebagaiPDF(htmlPrint);
       }
 
-      function eksporPDFSesuaiFormat() {
+      async function eksporPDFSesuaiFormat() {
         let selectedBulan = document
           .getElementById("rekap_bulan")
           .value.toUpperCase();
         let selectedTahun = document.getElementById("rekap_tahun").value;
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF("l", "pt", "a4");
-        let yStart = tambahKopPDF(doc, "l"); // v.67: kop umum
+        let yStart = await tambahKopPDF(doc, "l"); // v.67: kop umum
         doc.setFont("helvetica", "bold");
         doc.setFontSize(13);
         doc.text(
@@ -30309,8 +30309,9 @@
       }
 
       // --- KOP HELPER UNTUK EKSPOR PDF ---
+      // v.109.16: Async — on-demand fetch logo dataURL kalau cache miss (no race condition).
       // Memberikan kop di atas dokumen PDF lalu mengembalikan posisi Y baru untuk konten dibawahnya
-      function tambahKopPDF(doc, orientation = "l") {
+      async function tambahKopPDF(doc, orientation = "l") {
         const set = savedSettings;
         const pageWidth = doc.internal.pageSize.width;
 
@@ -30329,6 +30330,22 @@
         ) {
           logoKiri = _imgUrlCache[logoKiri];
         }
+        // v.109.16: kalau masih URL (cache miss), on-demand fetch sekarang.
+        // _cacheImgUrl sudah memoized (return cached dataURL kalau ada), aman dipanggil ulang.
+        if (
+          logoKiri &&
+          logoKiri.startsWith("http") &&
+          typeof _cacheImgUrl === "function"
+        ) {
+          try {
+            const fetched = await _cacheImgUrl(logoKiri);
+            if (fetched && fetched.startsWith("data:image")) {
+              logoKiri = fetched;
+            }
+          } catch (e) {
+            console.warn("[tambahKopPDF] on-demand fetch fail:", e && e.message);
+          }
+        }
         if (
           logoKiri &&
           logoKiri.startsWith("data:image") &&
@@ -30341,7 +30358,7 @@
           }
         } else if (logoKiri && logoKiri.startsWith("http")) {
           console.warn(
-            "[tambahKopPDF] Logo URL not yet cached as dataURL. Refresh halaman dulu sampai pre-cache selesai.",
+            "[tambahKopPDF] Logo masih URL setelah on-demand fetch — kemungkinan CORS / URL invalid. Skip logo.",
           );
         }
 
@@ -30530,7 +30547,7 @@
         document.getElementById("tbody-rekap-absen").innerHTML = tbody;
       }
 
-      function eksporRekapAbsenPDF() {
+      async function eksporRekapAbsenPDF() {
         const blnIndex = parseInt(
           document.getElementById("rekap_absen_bulan").value,
         );
@@ -30555,7 +30572,7 @@
         const namaBulan = monthNames[blnIndex];
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF("l", "pt", "a4");
-        let yStart = tambahKopPDF(doc, "l");
+        let yStart = await tambahKopPDF(doc, "l");
         doc.setFont("helvetica", "bold");
         doc.setFontSize(13);
         doc.text(
