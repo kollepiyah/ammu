@@ -4824,18 +4824,6 @@
                 ADMIN
               </p>
             </div>
-            <!-- Avatar (preserved untuk backward compat, hidden visual) -->
-            <div
-              class="w-9 h-9 bg-teal-100 text-teal-700 border border-teal-200 rounded-full hidden items-center justify-center font-bold text-lg shadow-sm overflow-hidden"
-              id="topbar-avatar-wrap"
-            >
-              <i class="fas fa-user" id="topbar-avatar-icon"></i>
-              <img
-                id="topbar-avatar-img"
-                class="w-full h-full object-cover hidden"
-                src="/logo.png"
-              />
-            </div>
             <!-- Mobile name (preserved) -->
             <span class="hidden" id="topbar-nama-mobile"></span>
             <span class="hidden" id="topbar-role-mobile"></span>
@@ -4850,16 +4838,54 @@
               <i class="fas fa-moon" id="icon-darkmode"></i>
             </button>
 
-            <!-- LOGOUT (langsung, tanpa dropdown) -->
-            <button
-              onclick="logout()"
-              class="w-9 h-9 flex items-center justify-center rounded-full bg-red-50 hover:bg-red-100 text-red-600 transition cursor-pointer"
-              title="Keluar / Logout"
-            >
-              <i class="fas fa-sign-out-alt"></i>
-            </button>
+            <!-- v.109.14: PROFILE DROPDOWN (avatar pojok kanan atas, menu: Pengaturan Profil + Logout) -->
+            <div class="relative" id="profile-dropdown-wrap">
+              <button
+                type="button"
+                onclick="toggleProfileDropdown(event)"
+                class="w-9 h-9 bg-teal-100 text-teal-700 border border-teal-200 rounded-full flex items-center justify-center font-bold text-lg shadow-sm overflow-hidden cursor-pointer hover:ring-2 hover:ring-teal-300 transition"
+                id="topbar-avatar-wrap"
+                title="Menu Profil"
+                aria-haspopup="menu"
+                aria-expanded="false"
+              >
+                <i class="fas fa-user" id="topbar-avatar-icon"></i>
+                <img
+                  id="topbar-avatar-img"
+                  class="w-full h-full object-cover hidden"
+                  src="/logo.png"
+                  alt="Foto Profil"
+                />
+              </button>
+              <div
+                id="profile-dropdown-menu"
+                class="hidden absolute right-0 top-11 z-50 w-52 bg-white rounded-xl shadow-lg border border-slate-200 py-1.5"
+                role="menu"
+                aria-labelledby="topbar-avatar-wrap"
+              >
+                <button
+                  type="button"
+                  onclick="closeProfileDropdown();showPage('user-profil')"
+                  class="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-3 cursor-pointer"
+                  role="menuitem"
+                >
+                  <i class="fas fa-user-cog text-purple-500 w-4"></i>
+                  Pengaturan Profil
+                </button>
+                <div class="h-px bg-slate-200 mx-2 my-1"></div>
+                <button
+                  type="button"
+                  onclick="closeProfileDropdown();logout()"
+                  class="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 cursor-pointer"
+                  role="menuitem"
+                >
+                  <i class="fas fa-sign-out-alt w-4"></i>
+                  Logout
+                </button>
+              </div>
+            </div>
 
-            <!-- Hidden dropdown profil (preserved untuk backward compat) -->
+            <!-- Hidden dropdown profil legacy (preserved untuk backward compat) -->
             <div class="hidden" id="profile-container">
               <div id="dropdown-profile" class="hidden"></div>
             </div>
@@ -16302,7 +16328,7 @@
         if (b) b.classList.add("hidden");
       }
 
-      const APP_VERSION = "v.109.13.0515-hijri-arabic-fix";
+      const APP_VERSION = "v.109.14.0515-profile-dropdown";
 
       // ====================================================================
       // Sentry error tracking init (B3). Gate guard: DSN placeholder = no-op.
@@ -19170,6 +19196,40 @@
           applyDarkMode(false);
         }
       }
+      /* v.109.14: PROFILE DROPDOWN - toggle/close + click-outside + ESC */
+      function toggleProfileDropdown(ev) {
+        if (ev) ev.stopPropagation();
+        const menu = document.getElementById("profile-dropdown-menu");
+        const btn = document.getElementById("topbar-avatar-wrap");
+        if (!menu) return;
+        const isHidden = menu.classList.contains("hidden");
+        if (isHidden) {
+          menu.classList.remove("hidden");
+          if (btn) btn.setAttribute("aria-expanded", "true");
+        } else {
+          menu.classList.add("hidden");
+          if (btn) btn.setAttribute("aria-expanded", "false");
+        }
+      }
+      function closeProfileDropdown() {
+        const menu = document.getElementById("profile-dropdown-menu");
+        const btn = document.getElementById("topbar-avatar-wrap");
+        if (menu && !menu.classList.contains("hidden")) {
+          menu.classList.add("hidden");
+        }
+        if (btn) btn.setAttribute("aria-expanded", "false");
+      }
+      document.addEventListener("DOMContentLoaded", function () {
+        document.addEventListener("click", function (e) {
+          const wrap = document.getElementById("profile-dropdown-wrap");
+          const menu = document.getElementById("profile-dropdown-menu");
+          if (!wrap || !menu || menu.classList.contains("hidden")) return;
+          if (!wrap.contains(e.target)) closeProfileDropdown();
+        });
+        document.addEventListener("keydown", function (e) {
+          if (e.key === "Escape") closeProfileDropdown();
+        });
+      });
       /**
 
        * Toggle mobile sidebar visibility (swipe / hamburger menu).

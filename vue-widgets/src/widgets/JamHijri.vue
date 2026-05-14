@@ -44,10 +44,10 @@ onUnmounted(() => {
     </svg>
     <div class="grid">
       <div class="col-l">
-        <p class="label"><i class="fas fa-mosque"></i>HARI INI</p>
+        <!-- v.109.14: hapus icon mosque + label HARI INI, pindah hari (JUMAT) ke atas -->
+        <p class="hari-top">{{ hari }}</p>
         <p :style="{ fontFamily: FONT_ARAB }" class="hijri" dir="rtl">{{ hijri }}</p>
         <p class="masehi">{{ masehi }}</p>
-        <p class="hari">{{ hari }}</p>
       </div>
       <div class="col-r">
         <p class="label-r"><i class="far fa-clock"></i>WIB</p>
@@ -147,6 +147,16 @@ onUnmounted(() => {
   letter-spacing: 0.05em;
   margin-top: 0.1rem;
   text-align: left;
+}
+/* v.109.14: hari di posisi atas (replace label HARI INI) */
+.hari-top {
+  font-size: 9.5px;
+  font-weight: 900;
+  letter-spacing: 0.22em;
+  opacity: 0.95;
+  margin: 0 0 0.2rem 0;
+  text-align: left;
+  text-transform: uppercase;
 }
 .jam-wrap {
   display: flex;
