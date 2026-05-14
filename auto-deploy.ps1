@@ -50,18 +50,54 @@ Remove-Item .git\index.lock -Force -ErrorAction SilentlyContinue
 Get-ChildItem .git -Recurse -Filter "*.lock" -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue
 Write-Host "Lock cleared" -ForegroundColor Green
 
+# Step 2.5: Rebuild Vue widget bundle kalau ada perubahan di vue-widgets/src
+Write-Host ""
+Write-Host "[2.5/5] Check Vue widget rebuild..." -ForegroundColor Cyan
+$vueSrcChanged = $false
+if (Test-Path "vue-widgets/src") {
+    # Bandingkan timestamp src vs dist
+    $srcLatest = (Get-ChildItem -Path "vue-widgets/src" -Recurse -File -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending | Select-Object -First 1).LastWriteTime
+    $distFile = "public/dist/widgets.js"
+    if (Test-Path $distFile) {
+        $distTime = (Get-Item $distFile).LastWriteTime
+        if ($srcLatest -gt $distTime) { $vueSrcChanged = $true }
+    } else {
+        $vueSrcChanged = $true
+    }
+}
+if ($vueSrcChanged) {
+    Write-Host "Vue source changed, rebuilding bundle..." -ForegroundColor Yellow
+    Push-Location vue-widgets
+    if (-not (Test-Path "node_modules")) {
+        Write-Host "Running npm install (first time)..." -ForegroundColor Yellow
+        npm install 2>&1 | Out-Host
+    }
+    npm run build 2>&1 | Out-Host
+    $buildExit = $LASTEXITCODE
+    Pop-Location
+    if ($buildExit -ne 0) {
+        Write-Host "[FAIL] Vue widget build failed" -ForegroundColor Red
+        exit 1
+    }
+    Write-Host "Vue bundle rebuilt: public/dist/widgets.js" -ForegroundColor Green
+} else {
+    Write-Host "Vue bundle up-to-date, skip rebuild" -ForegroundColor Green
+}
+
 # Step 3: Commit kalau ada changes
 Write-Host ""
 Write-Host "[3/5] Commit changes..." -ForegroundColor Cyan
 $status = git status --short
 if ($status) {
     git add public/index.html public/sw.js .gitignore 2>&1 | Out-Null
+    git add public/dist/widgets.js 2>&1 | Out-Null
+    git add vue-widgets/src 2>&1 | Out-Null
     # Tambah semua .md + script (kalau ada)
     Get-ChildItem -Path . -Filter "*.md" -File -ErrorAction SilentlyContinue | ForEach-Object {
         git add $_.Name 2>&1 | Out-Null
     }
     if (Test-Path "auto-deploy.ps1") { git add auto-deploy.ps1 2>&1 | Out-Null }
-    git commit --no-verify -m "auto-deploy: bug fixes + Batch 1 polish (v.109.12)" 2>&1 | Out-Host
+    git commit --no-verify -m "auto-deploy: changes + Vue rebuild (v.109.13)" 2>&1 | Out-Host
     if ($LASTEXITCODE -eq 0) {
         Write-Host "Committed" -ForegroundColor Green
     } else {
