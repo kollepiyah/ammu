@@ -5,7 +5,7 @@
 // ====================================================================
 
 // Bump versi setiap deploy update besar supaya cache di-refresh
-const SW_VERSION = 'v284-0514-g1-g2-wire'
+const SW_VERSION = 'v285-0514-w2-jamhijri-wire'
 const CACHE_SHELL = `mu-shell-${SW_VERSION}`
 const CACHE_RUNTIME = `mu-runtime-${SW_VERSION}`
 
@@ -13,6 +13,7 @@ const SHELL_URLS = [
   '/',
   '/index.html',
   '/styles.css',
+  '/dist/widgets.js',
   '/exceljs.min.js',
   '/bg-pesantren.jpg',
   '/manifest.json',

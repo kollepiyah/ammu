@@ -4902,6 +4902,8 @@
                     </p>
                   </div>
                 </div>
+                <!-- v.108.96 Phase 5 W2: Vue widget mount target (toggle window._useVueJamHijri) -->
+                <div id="vue-widget-jam-hijri" data-vue-widget="JamHijri" style="display:none"></div>
               </div>
               <!-- Kanan: Kalender Pendidikan — tinggi = welcome-card via JS sync, overflow scroll -->
               <div
@@ -16307,7 +16309,7 @@
         if (b) b.classList.add("hidden");
       }
 
-      const APP_VERSION = "v.108.95.0514-g1-g2-wire-up";
+      const APP_VERSION = "v.108.96.0514-w2-jamhijri-wire";
 
       // ====================================================================
       // Sentry error tracking init (B3). Gate guard: DSN placeholder = no-op.
@@ -16343,6 +16345,48 @@
           sentryInitErr && sentryInitErr.message,
         );
       }
+
+      // ====================================================================
+      // PHASE 5 (W2-W6) — Vue Widget Feature Flags (ADDITIVE)
+      // Default OFF. Toggle: window._useVueJamHijri = true; location.reload();
+      // ====================================================================
+      window._useVueJamHijri = window._useVueJamHijri ?? false;
+      window._useVuePostCard = window._useVuePostCard ?? false;
+      window._useVueKalenderMini = window._useVueKalenderMini ?? false;
+      window._useVueKalenderPendidikan = window._useVueKalenderPendidikan ?? false;
+      window._useVueModalPOS = window._useVueModalPOS ?? false;
+
+      (function loadVueWidgetsConditional() {
+        var anyFlag = window._useVueJamHijri || window._useVuePostCard ||
+                      window._useVueKalenderMini || window._useVueKalenderPendidikan ||
+                      window._useVueModalPOS;
+        if (!anyFlag) return;
+        var s = document.createElement("script");
+        s.src = "/dist/widgets.js";
+        s.defer = true;
+        s.onload = function () {
+          if (!window.AmmuWidgets) {
+            console.error("[Phase 5] AmmuWidgets global missing");
+            return;
+          }
+          if (window._useVueJamHijri) {
+            var vanilla = document.getElementById("widget-hari-hijriyah");
+            var vue = document.getElementById("vue-widget-jam-hijri");
+            if (vanilla) vanilla.style.display = "none";
+            if (vue) {
+              vue.style.display = "";
+              window.AmmuWidgets.mount("JamHijri", "#vue-widget-jam-hijri");
+            }
+          }
+          // W3-W6 mount logic ditambah saat widget masing-masing wire-up
+        };
+        s.onerror = function () {
+          console.error("[Phase 5] Vue bundle load fail — vanilla stays");
+          var vanilla = document.getElementById("widget-hari-hijriyah");
+          if (vanilla) vanilla.style.display = "";
+        };
+        document.head.appendChild(s);
+      })();
 
       // Wrapper aman: panggil Sentry.captureException kalau SDK siap, else no-op.
       /**
