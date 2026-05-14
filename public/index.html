@@ -16326,7 +16326,7 @@
         if (b) b.classList.add("hidden");
       }
 
-      const APP_VERSION = "v.109.0.0515-bug-batch-toast-kop-ttd";
+      const APP_VERSION = "v.109.1.0515-toast-redesign-kop-fix";
 
       // ====================================================================
       // Sentry error tracking init (B3). Gate guard: DSN placeholder = no-op.
@@ -16866,10 +16866,12 @@
        */
 
       function _muToastShow(msg, icon, duration) {
+        // ULTIMATE REDESIGN v.109.1 — pure CSS transition (no @keyframes dependency)
+        // Modern flat design, robust against CSS bundle issue. Tetap pakai setTimeout primary
+        // + safety cleanup, plus CSS transition opacity untuk smooth fade.
         try {
           const container = _muToastEnsureContainer();
-          // BUGFIX v.109.0 (toast freeze): safety cleanup — remove toast yang lebih dari 30s
-          // sebelum show toast baru. Workaround kalau setTimeout sebelumnya gagal fire.
+          // Safety cleanup: remove toast yang lebih dari 30s sebelum show toast baru
           try {
             const _now = Date.now();
             Array.from(container.children).forEach((t) => {
@@ -16882,66 +16884,74 @@
           const toast = document.createElement("div");
           toast.className = "mu-toast-item mu-toast-" + icon;
           toast.dataset.tShownAt = String(Date.now());
-          // Inline style — independent dari Tailwind/global CSS
+
           const iconColors = {
             success: "#059669",
             error: "#dc2626",
             warning: "#d97706",
             info: "#0f766e",
           };
-          const iconChar = {
-            success: "✓",
-            error: "✕",
-            warning: "!",
-            info: "i",
+          const iconBg = {
+            success: "#ecfdf5",
+            error: "#fef2f2",
+            warning: "#fffbeb",
+            info: "#f0fdfa",
+          };
+          const iconSvg = {
+            success: '<svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18"><path d="M16.7 5.3a1 1 0 0 1 0 1.4l-8 8a1 1 0 0 1-1.4 0l-4-4a1 1 0 1 1 1.4-1.4L8 12.6l7.3-7.3a1 1 0 0 1 1.4 0z"/></svg>',
+            error: '<svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18"><path d="M14.7 5.3a1 1 0 0 0-1.4 0L10 8.6 6.7 5.3a1 1 0 0 0-1.4 1.4L8.6 10l-3.3 3.3a1 1 0 1 0 1.4 1.4L10 11.4l3.3 3.3a1 1 0 0 0 1.4-1.4L11.4 10l3.3-3.3a1 1 0 0 0 0-1.4z"/></svg>',
+            warning: '<svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18"><path d="M10 1a9 9 0 1 0 0 18 9 9 0 0 0 0-18zm1 13a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm-.2-3.6a.8.8 0 0 1-1.6 0V6a.8.8 0 0 1 1.6 0v4.4z"/></svg>',
+            info: '<svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18"><path d="M10 1a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM9 6a1 1 0 1 1 2 0 1 1 0 0 1-2 0zm1.8 8a.8.8 0 0 1-1.6 0V9.6a.8.8 0 0 1 1.6 0V14z"/></svg>',
           };
           const color = iconColors[icon] || "#0f766e";
+          const bg = iconBg[icon] || "#f0fdfa";
+
+          // Container card — flat modern design
           toast.style.cssText =
-            "display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.97);" +
-            "border-radius:12px;padding:10px 14px;box-shadow:0 6px 20px rgba(0,0,0,0.15),0 2px 6px rgba(0,0,0,0.08);" +
-            "border-left:3px solid " +
-            color +
-            ";font-family:inherit;font-size:12px;color:#1e293b;" +
-            "min-width:220px;max-width:360px;cursor:pointer;pointer-events:auto;" +
-            "animation:muDomToastIn 0.25s cubic-bezier(0.2,0.8,0.3,1.15);" +
-            "backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);";
-          // Icon badge
+            "display:flex;align-items:center;gap:12px;background:#ffffff;" +
+            "border-radius:14px;padding:12px 16px;" +
+            "box-shadow:0 10px 30px rgba(15,23,42,0.12),0 4px 8px rgba(15,23,42,0.06);" +
+            "border:1px solid #e2e8f0;" +
+            "font-family:inherit;font-size:13px;color:#0f172a;font-weight:500;" +
+            "min-width:240px;max-width:380px;cursor:pointer;pointer-events:auto;" +
+            "opacity:0;transform:translateX(20px);" +
+            "transition:opacity 0.2s ease-out, transform 0.2s ease-out;";
+
+          // Dark mode adjustment via class detection
+          if (document.body.classList.contains("dark-mode")) {
+            toast.style.background = "#1e293b";
+            toast.style.color = "#f1f5f9";
+            toast.style.borderColor = "#334155";
+          }
+
+          // Icon container — colored circle dengan SVG inside
           const iconEl = document.createElement("span");
           iconEl.style.cssText =
             "display:inline-flex;align-items:center;justify-content:center;" +
-            "width:24px;height:24px;border-radius:50%;border:2px solid " +
-            color +
-            ";" +
-            "color:" +
-            color +
-            ";font-weight:700;font-size:13px;flex-shrink:0;";
-          iconEl.textContent = iconChar[icon] || "i";
-          // Message
+            "width:32px;height:32px;border-radius:50%;background:" + bg + ";" +
+            "color:" + color + ";flex-shrink:0;";
+          iconEl.innerHTML = iconSvg[icon] || iconSvg.info;
+
+          // Message text
           const txt = document.createElement("span");
-          txt.style.cssText =
-            "flex:1;line-height:1.4;font-weight:600;color:#1e293b;";
+          txt.style.cssText = "flex:1;line-height:1.4;font-weight:500;";
           txt.textContent = String(msg || "");
-          // Progress bar
-          const bar = document.createElement("div");
-          bar.style.cssText =
-            "position:absolute;left:0;bottom:0;height:2px;background:linear-gradient(90deg," +
-            color +
-            ",rgba(20,184,166,0.6));border-radius:0 0 12px 12px;" +
-            "animation:muDomToastProgress " +
-            duration +
-            "ms linear forwards;width:100%;";
-          toast.style.position = "relative";
-          toast.style.overflow = "hidden";
+
           toast.appendChild(iconEl);
           toast.appendChild(txt);
-          toast.appendChild(bar);
           container.appendChild(toast);
 
-          // Auto-dismiss — pure setTimeout, IMMUNE dari hover/focus/touch
-          // BUGFIX v.109.0: dual-timer redundancy (primary + 5s safety net after target duration)
+          // Trigger CSS transition via requestAnimationFrame (force reflow + animate)
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              toast.style.opacity = "1";
+              toast.style.transform = "translateX(0)";
+            });
+          });
+
+          // Auto-dismiss primary + safety
           const closeTimer = setTimeout(() => _muToastRemove(toast), duration);
           const safetyTimer = setTimeout(() => {
-            // Force remove kalau primary timer somehow tidak fire
             if (toast && toast.parentNode) {
               try { toast.remove(); } catch (e) {}
             }
@@ -16959,12 +16969,12 @@
       }
 
       function _muToastRemove(toast) {
+        // ULTIMATE v.109.1 — pure CSS transition fade out, no @keyframes
         if (!toast || !toast.parentNode) return;
-        toast.style.animation = "muDomToastOut 0.2s ease forwards";
+        toast.style.opacity = "0";
+        toast.style.transform = "translateX(20px)";
         setTimeout(() => {
-          try {
-            toast.remove();
-          } catch (e) {}
+          try { toast.remove(); } catch (e) {}
         }, 220);
       }
 
@@ -29105,10 +29115,14 @@
             lembagaLogoCustom = lemb.kop_logo;
           }
         }
+        // BUGFIX v.109.1 (#6): fallback ke /KOP.png supaya semua print non-rapor
+        // selalu tampil logo (sebelumnya empty kalau settings tidak set).
         const logoKiri = isQiraatiKop
           ? set.logoQiraati || ""
-          : set.logoKop || set.logoUrl || "";
+          : set.logoKop || set.logoUrl || "/KOP.png";
         // v.108.14: logo kanan: prioritas → kop_logo per lembaga > set.logoKop global > set.logoUrl
+        // v.109.1: untuk Qiraati kop tetap pakai existing (logoKanan kosong kalau settings empty);
+        // untuk non-Qiraati (pakaiLogoQiraati: false), tidak butuh logo kanan extra (KOP.png udah di kiri).
         const logoKanan =
           lembagaLogoCustom ||
           (isQiraatiKop ? set.logoKop || set.logoUrl || "" : "");
@@ -40108,8 +40122,8 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
             // v.108.25: icon tanggal dikecilkan (w-10 h-10) supaya muat di kolom kalender yg ramping
             return `<div class="flex items-center gap-2 p-2 bg-cyan-50 rounded-lg border border-cyan-100 min-w-0">
                    <div class="w-10 h-10 bg-white rounded-lg overflow-hidden flex-shrink-0 shadow-sm border border-slate-200 flex flex-col">
-                       <div class="bg-rose-600 text-white text-center" style="height: 12px; line-height: 12px;">
-                           <span class="text-[7px] font-black tracking-wider">${blnText.substring(0, 3)}</span>
+                       <div class="bg-rose-600 text-white" style="height: 14px; display: flex; align-items: center; justify-content: center; padding-bottom: 1px;">
+                           <span class="text-[8px] font-black tracking-wider leading-none">${blnText.substring(0, 3)}</span>
                        </div>
                        <div class="flex-1 flex items-center justify-center bg-white">
                            <span class="text-base font-black text-slate-800 leading-none">${tglAngka}</span>
