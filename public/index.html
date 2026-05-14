@@ -167,7 +167,11 @@
     <!-- v.108.67: DOMPurify (~22KB) for XSS sanitization -->
     <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js" defer=""></script>
     <!-- v.108.70: Sentry error tracking -- DSN replace by Kyai, see SENTRY-SETUP.md -->
-    <script src="https://browser.sentry-cdn.com/8/bundle.min.js" defer="" fetchpriority="low"></script>
+    <script
+      src="https://browser.sentry-cdn.com/8/bundle.min.js"
+      defer=""
+      fetchpriority="low"
+    ></script>
     <!-- html2canvas (~120KB): dipakai untuk capture rapor PDF -->
     <script
       src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"
@@ -13518,7 +13522,7 @@
               _handleGoogleAuthResult(user).catch((err) => {
                 console.error('[Google Redirect] handle error:', err)
                 try {
-                  Swal.fire('Error', err.message || 'Gagal proses login Google.', 'error')
+                  _toast.error('Error: ' + (err.message || 'Gagal proses login Google.' || ''))
                 } catch (e) {}
               })
             }
@@ -14135,7 +14139,7 @@
         if (b) b.classList.add('hidden')
       }
 
-      const APP_VERSION = 'v.108.71.0514-lighthouse'
+      const APP_VERSION = 'v.108.72.0514-toast-mass-refactor'
 
       // ====================================================================
       // Sentry error tracking init (B3). Gate guard: DSN placeholder = no-op.
@@ -14155,7 +14159,11 @@
             environment: 'production',
             tracesSampleRate: 0.1,
             beforeSend(event) {
-              if (event.request && event.request.url && event.request.url.indexOf('localhost') !== -1)
+              if (
+                event.request &&
+                event.request.url &&
+                event.request.url.indexOf('localhost') !== -1
+              )
                 return null
               return event
             }
@@ -16628,9 +16636,9 @@
               }
             }
             renderStatusGoogleProfil()
-            Swal.fire({ icon: 'success', title: 'Tautan dilepas', timer: 1500 })
+            _toast.success('Tautan dilepas')
           } catch (err) {
-            Swal.fire('Error', err.message, 'error')
+            _toast.error('Error: ' + (err.message || ''))
           }
           toggleLoader(false)
         } else {
@@ -16684,7 +16692,7 @@
             Swal.close()
             if (err.code !== 'auth/popup-closed-by-user') {
               captureToSentry(err, { where: 'auth.linkGoogle', code: err && err.code })
-              Swal.fire('Gagal Tautkan', err.message, 'error')
+              _toast.error('Gagal Tautkan: ' + (err.message || ''))
             }
           }
         }
@@ -16961,7 +16969,7 @@
             renderDataSantriSelf()
           }
         } catch (err) {
-          Swal.fire('Error', err.message, 'error')
+          _toast.error('Error: ' + (err.message || ''))
         }
         toggleLoader(false)
       }
@@ -17909,7 +17917,7 @@
               'Slot Pagi dan Sore sudah penuh. "Pagi & Sore" hanya bisa dipilih kalau tidak ada guru lain.'
           else if (slot.pagi > 1) msg = 'Slot Pagi sudah dipakai guru lain.'
           else msg = 'Slot Sore sudah dipakai guru lain.'
-          Swal.fire('Shift Bentrok', msg, 'warning')
+          _toast.warning('Shift Bentrok: ' + (msg || ''))
           _refreshShiftLabels()
           return
         }
@@ -18034,9 +18042,9 @@
             .doc('general')
             .set({ rekapSchemaDiniyah: savedSettings.rekapSchemaDiniyah }, { merge: true })
           localStorage.setItem('app_settings_v6', JSON.stringify(savedSettings))
-          Swal.fire({ icon: 'success', title: 'Tersimpan', timer: 1500 })
+          _toast.success('Tersimpan')
         } catch (e) {
-          Swal.fire('Error', e.message, 'error')
+          _toast.error('Error: ' + (e.message || ''))
         }
       }
 
@@ -18496,7 +18504,7 @@
           await db.collection('settings').doc('general').set(conf, { merge: true })
           Object.assign(savedSettings, conf)
           localStorage.setItem('app_settings_v6', JSON.stringify(savedSettings))
-          Swal.fire({ icon: 'success', title: 'Tersimpan', timer: 1500 })
+          _toast.success('Tersimpan')
         } catch (e) {
           console.error('[simpanPengaturanRaporMaster]', e)
           _toast.error(`Save gagal: ${e.message}`)
@@ -18730,7 +18738,7 @@
             showConfirmButton: false
           })
         } catch (err) {
-          Swal.fire('Error', err.message, 'error')
+          _toast.error('Error: ' + (err.message || ''))
           checkbox.checked = !enabled
         }
       }
@@ -19503,7 +19511,7 @@
           _renderListKelasLembaga()
           renderSemuaDropdown()
         } catch (err) {
-          Swal.fire('Error', err.message, 'error')
+          _toast.error('Error: ' + (err.message || ''))
         }
         toggleLoader(false)
       }
@@ -19529,7 +19537,7 @@
           _renderListKelasLembaga()
           renderSemuaDropdown()
         } catch (err) {
-          Swal.fire('Error', err.message, 'error')
+          _toast.error('Error: ' + (err.message || ''))
         }
         toggleLoader(false)
       }
@@ -19554,7 +19562,7 @@
           _renderListKelasLembaga()
           renderSemuaDropdown()
         } catch (err) {
-          Swal.fire('Error', err.message, 'error')
+          _toast.error('Error: ' + (err.message || ''))
         }
         toggleLoader(false)
       }
@@ -19663,7 +19671,7 @@
             prev.classList.remove('hidden')
           }
         } catch (err) {
-          Swal.fire('Error', err.message, 'error')
+          _toast.error('Error: ' + (err.message || ''))
         }
         toggleLoader(false)
         e.target.value = ''
@@ -19707,7 +19715,7 @@
             setPrev.classList.remove('hidden')
           }
         } catch (err) {
-          Swal.fire('Error', err.message, 'error')
+          _toast.error('Error: ' + (err.message || ''))
         }
         toggleLoader(false)
         e.target.value = ''
@@ -19734,9 +19742,9 @@
               .collection('settings')
               .doc('general')
               .set({ logoQiraati: logoQ }, { merge: true })
-          Swal.fire({ icon: 'success', title: 'Tersimpan', timer: 1500, showConfirmButton: false })
+          _toast.success('Tersimpan')
         } catch (err) {
-          Swal.fire('Error', err.message, 'error')
+          _toast.error('Error: ' + (err.message || ''))
         }
         toggleLoader(false)
       }
@@ -19894,7 +19902,7 @@
             prev.classList.remove('hidden')
           }
         } catch (err) {
-          Swal.fire('Error', err.message, 'error')
+          _toast.error('Error: ' + (err.message || ''))
         }
         toggleLoader(false)
         e.target.value = ''
@@ -19919,9 +19927,9 @@
         db_lembaga[idx].kop_logo = get('formal-kop-logo')
         try {
           await db.collection('master').doc('lembaga').set({ list: db_lembaga })
-          Swal.fire({ icon: 'success', title: 'Tersimpan', timer: 1500, showConfirmButton: false })
+          _toast.success('Tersimpan')
         } catch (err) {
-          Swal.fire('Error', err.message, 'error')
+          _toast.error('Error: ' + (err.message || ''))
         }
         toggleLoader(false)
       }
@@ -20051,7 +20059,7 @@
           _renderListGuruFormal()
           renderSemuaDropdown()
         } catch (err) {
-          Swal.fire('Error', err.message, 'error')
+          _toast.error('Error: ' + (err.message || ''))
         }
         toggleLoader(false)
       }
@@ -20091,7 +20099,7 @@
           _renderListGuruFormal()
           renderSemuaDropdown()
         } catch (err) {
-          Swal.fire('Error', err.message, 'error')
+          _toast.error('Error: ' + (err.message || ''))
         }
         toggleLoader(false)
       }
@@ -20195,7 +20203,7 @@
             .update({ lembaga_sekolah: '', kelas_sekolah: '' })
           _renderListSantriFormal()
         } catch (err) {
-          Swal.fire('Error', err.message, 'error')
+          _toast.error('Error: ' + (err.message || ''))
         }
         toggleLoader(false)
       }
@@ -20235,9 +20243,9 @@
             .collection('settings')
             .doc('general')
             .set({ rekapSchemaDiniyah: arr }, { merge: true })
-          Swal.fire({ icon: 'success', title: 'Tersimpan', timer: 1500, showConfirmButton: false })
+          _toast.success('Tersimpan')
         } catch (err) {
-          Swal.fire('Error', err.message, 'error')
+          _toast.error('Error: ' + (err.message || ''))
         }
       }
 
@@ -20471,7 +20479,7 @@
             showConfirmButton: false
           })
         } catch (err) {
-          Swal.fire('Error', err.message, 'error')
+          _toast.error('Error: ' + (err.message || ''))
         }
         toggleLoader(false)
       }
@@ -20905,7 +20913,7 @@
           })
           _renderTabelAbsenBulanan()
         } catch (err) {
-          Swal.fire('Error', err.message, 'error')
+          _toast.error('Error: ' + (err.message || ''))
         }
         toggleLoader(false)
       }
@@ -21037,7 +21045,7 @@
             timer: 3000
           })
         } catch (e) {
-          Swal.fire('Error Import', e.message, 'error')
+          _toast.error('Error Import: ' + (e.message || ''))
         }
         toggleLoader(false)
       }
@@ -21178,7 +21186,7 @@
             timer: 2500
           })
         } catch (e) {
-          Swal.fire('Error', e.message, 'error')
+          _toast.error('Error: ' + (e.message || ''))
         }
         toggleLoader(false)
       }
@@ -21206,7 +21214,7 @@
             timer: 2500
           })
         } catch (e) {
-          Swal.fire('Error', e.message, 'error')
+          _toast.error('Error: ' + (e.message || ''))
         }
       }
       window._resetLembagaKopLogo = _resetLembagaKopLogo
@@ -21577,9 +21585,9 @@
             .collection('santri')
             .doc(String(sId))
             .update({ kartu_kenaikan: db_santri[idx].kartu_kenaikan })
-          Swal.fire({ icon: 'success', title: 'Tersimpan', timer: 1500 })
+          _toast.success('Tersimpan')
         } catch (e) {
-          Swal.fire('Error', e.message, 'error')
+          _toast.error('Error: ' + (e.message || ''))
         }
       }
       window.simpanKartuKenaikan = simpanKartuKenaikan
@@ -21685,9 +21693,9 @@
           await db.collection('settings').doc('general').set(savedSettings, { merge: true })
           localStorage.setItem('app_settings_v6', JSON.stringify(savedSettings))
           document.getElementById('modal-editor-kartu').classList.add('hidden')
-          Swal.fire({ icon: 'success', title: 'Schema Tersimpan', timer: 1500 })
+          _toast.success('Schema Tersimpan')
         } catch (e) {
-          Swal.fire('Error', e.message, 'error')
+          _toast.error('Error: ' + (e.message || ''))
         }
       }
       window.simpanEditorKartu = simpanEditorKartu
@@ -21772,9 +21780,9 @@
           }
           await db.collection('settings').doc('general').set(savedSettings, { merge: true })
           localStorage.setItem('app_settings_v6', JSON.stringify(savedSettings))
-          Swal.fire({ icon: 'success', title: `KOP "${lemb}" tersimpan`, timer: 1500 })
+          _toast.success(`KOP "${lemb}" tersimpan`)
         } catch (e) {
-          Swal.fire('Error', e.message, 'error')
+          _toast.error('Error: ' + (e.message || ''))
         }
       }
       window.simpanKopKartuKenaikan = simpanKopKartuKenaikan
@@ -22198,7 +22206,7 @@
             prev.classList.remove('hidden')
           }
         } catch (err) {
-          Swal.fire('Gagal', err.message, 'error')
+          _toast.error('Gagal: ' + (err.message || ''))
         }
         e.target.value = ''
       }
@@ -22466,7 +22474,7 @@
           _toast.success('Guru tersimpan')
         } catch (err) {
           captureToSentry(err, { where: 'simpanGuru' })
-          Swal.fire('Error', err.message, 'error')
+          _toast.error('Error: ' + (err.message || ''))
         }
         toggleLoader(false)
       }
@@ -22592,7 +22600,7 @@
               document.getElementById('cb-all-guru').checked = false
               _toast.success('Dihapus.')
             } catch (e) {
-              Swal.fire('Error', e.message, 'error')
+              _toast.error('Error: ' + (e.message || ''))
             }
             toggleLoader(false)
           }
@@ -22781,7 +22789,7 @@
           renderAdminSantri()
           _toast.success(`${updatedCount} Santri masuk kelas ${guruTitel}.`)
         } catch (e) {
-          Swal.fire('Error', e.message, 'error')
+          _toast.error('Error: ' + (e.message || ''))
         }
         toggleLoader(false)
       }
@@ -22884,7 +22892,7 @@
           renderAdminSantri()
         } catch (err) {
           captureToSentry(err, { where: 'simpanSantri' })
-          Swal.fire('Error', err.message, 'error')
+          _toast.error('Error: ' + (err.message || ''))
         }
         toggleLoader(false)
       }
@@ -23000,7 +23008,7 @@
               document.getElementById('cb-all-santri').checked = false
               _toast.success('Dihapus.')
             } catch (e) {
-              Swal.fire('Error', e.message, 'error')
+              _toast.error('Error: ' + (e.message || ''))
             }
             toggleLoader(false)
           }
@@ -23636,7 +23644,7 @@
               `Berhasil! ${newlyImported.length} Guru baru ditambahkan, ${updatedCount} data diperbarui.`
             )
           } catch (err) {
-            Swal.fire('Error', err.message, 'error')
+            _toast.error('Error: ' + (err.message || ''))
           }
           toggleLoader(false)
           e.target.value = ''
@@ -23825,7 +23833,7 @@
               `Berhasil! ${newlyImported.length} santri baru ditambahkan, ${updatedCount} data santri diperbarui.`
             )
           } catch (err) {
-            Swal.fire('Error', err.message, 'error')
+            _toast.error('Error: ' + (err.message || ''))
           }
           toggleLoader(false)
         }
@@ -23934,7 +23942,7 @@
           renderViewSantri()
           _toast.success('Kelas Sekolah diperbarui')
         } catch (e) {
-          Swal.fire('Error', e.message, 'error')
+          _toast.error('Error: ' + (e.message || ''))
         }
         toggleLoader(false)
       }
@@ -24519,7 +24527,7 @@
           renderTabelMutasi()
           _toast.success('Berhasil!: Santri dimutasi di Cloud. Riwayat naik kelas tercatat.')
         } catch (e) {
-          Swal.fire('Error', e.message, 'error')
+          _toast.error('Error: ' + (e.message || ''))
         }
         toggleLoader(false)
       }
@@ -24722,7 +24730,7 @@
         } catch (e) {
           console.error('[Rekap Diniyah ] Save fail:', e, 'recId:', recId, 'fkey:', fkey)
           input.style.background = '#fee2e2'
-          Swal.fire({ icon: 'error', title: 'Gagal Simpan Nilai', text: e.message, timer: 3000 })
+          _toast.error('Gagal Simpan Nilai: ' + (e.message || ''))
         }
       }
 
@@ -25038,7 +25046,7 @@
           await Promise.all(promises)
           _toast.success('Data rekapitulasi nilai dan kelas berhasil diamankan ke Cloud Server.')
         } catch (e) {
-          Swal.fire('Error', e.message, 'error')
+          _toast.error('Error: ' + (e.message || ''))
         }
         toggleLoader(false)
       }
@@ -25800,7 +25808,7 @@
           localStorage.setItem('app_settings_v6', JSON.stringify(savedSettings))
           _toast.success('Disimpan: Aplikasi dimuat ulang...').then(() => location.reload())
         } catch (e) {
-          Swal.fire('Error', e.message, 'error')
+          _toast.error('Error: ' + (e.message || ''))
         }
         toggleLoader(false)
       }
@@ -26352,7 +26360,7 @@
             renderRekapAbsensi()
             _toast.success('Hari libur ditambahkan.')
           } catch (err) {
-            Swal.fire('Error', err.message, 'error')
+            _toast.error('Error: ' + (err.message || ''))
           }
           toggleLoader(false)
         }
@@ -26366,7 +26374,7 @@
           renderListLibur()
           renderRekapAbsensi()
         } catch (err) {
-          Swal.fire('Error', err.message, 'error')
+          _toast.error('Error: ' + (err.message || ''))
         }
         toggleLoader(false)
       }
@@ -26431,7 +26439,7 @@
             _toast.info('Tidak ada data absensi yang diisi.')
           }
         } catch (e) {
-          Swal.fire('Error', e.message, 'error')
+          _toast.error('Error: ' + (e.message || ''))
         }
         toggleLoader(false)
       }
@@ -26670,7 +26678,7 @@
           await autoGenerateSyahriyahBulanan(false)
           renderJenisTagihan()
         } catch (e) {
-          Swal.fire('Error', e.message, 'error')
+          _toast.error('Error: ' + (e.message || ''))
         }
         toggleLoader(false)
       }
@@ -27079,7 +27087,7 @@
           renderBukuInduk()
           _toast.success('Transaksi manual ditambahkan ke Buku Induk.')
         } catch (err) {
-          Swal.fire('Error', err.message, 'error')
+          _toast.error('Error: ' + (err.message || ''))
         }
         toggleLoader(false)
       }
@@ -27103,7 +27111,7 @@
           db_keuangan_buku_induk = db_keuangan_buku_induk.filter((x) => x.id !== id)
           renderBukuInduk()
         } catch (e) {
-          Swal.fire('Error', e.message, 'error')
+          _toast.error('Error: ' + (e.message || ''))
         }
         toggleLoader(false)
       }
@@ -27317,7 +27325,7 @@
             timer: 1500
           })
         } catch (e) {
-          Swal.fire('Error', e.message, 'error')
+          _toast.error('Error: ' + (e.message || ''))
         }
       }
 
@@ -27400,7 +27408,7 @@
           })
         } catch (e) {
           toggleLoader(false)
-          Swal.fire('Error', 'Gagal kirim notif: ' + e.message, 'error')
+          _toast.error('Error: ' + ('Gagal kirim notif: ' + e.message || ''))
         }
       }
 
@@ -27726,7 +27734,7 @@
           cetakStrukPOS(transaksi)
           return
         } catch (err) {
-          Swal.fire('Error', err.message, 'error')
+          _toast.error('Error: ' + (err.message || ''))
         }
         toggleLoader(false)
       }
@@ -28041,7 +28049,7 @@
           _toast.success('Mutasi tabungan tersimpan')
           renderTabunganSantri()
         } catch (err) {
-          Swal.fire('Error', err.message, 'error')
+          _toast.error('Error: ' + (err.message || ''))
         }
         toggleLoader(false)
       }
@@ -28155,7 +28163,7 @@
           _toast.success('Mutasi tabungan tersimpan')
           renderTabunganGuru()
         } catch (err) {
-          Swal.fire('Error', err.message, 'error')
+          _toast.error('Error: ' + (err.message || ''))
         }
         toggleLoader(false)
       }
@@ -28276,9 +28284,9 @@
               await db.collection('keuangan_buku_induk').doc(bi.id).delete()
             } catch (e) {}
           }
-          Swal.fire({ icon: 'success', title: 'Terhapus', timer: 1500 })
+          _toast.success('Terhapus')
         } catch (e) {
-          Swal.fire('Error', e.message, 'error')
+          _toast.error('Error: ' + (e.message || ''))
         }
         toggleLoader(false)
       }
@@ -28883,7 +28891,7 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
           cetakSlipGaji(data)
           _toast.success('Slip gaji tersimpan & dicetak.')
         } catch (e) {
-          Swal.fire('Error', e.message, 'error')
+          _toast.error('Error: ' + (e.message || ''))
         }
         toggleLoader(false)
       }
@@ -29049,7 +29057,7 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
           renderHutang()
           _toast.success('Hutang tercatat')
         } catch (err) {
-          Swal.fire('Error', err.message, 'error')
+          _toast.error('Error: ' + (err.message || ''))
         }
         toggleLoader(false)
       }
@@ -29090,7 +29098,7 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
           renderHutang()
           _toast.success('Lunas: Hutang ditandai lunas & dicatat di Buku Induk')
         } catch (e) {
-          Swal.fire('Error', e.message, 'error')
+          _toast.error('Error: ' + (e.message || ''))
         }
         toggleLoader(false)
       }
@@ -29114,7 +29122,7 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
           }
           renderHutang()
         } catch (e) {
-          Swal.fire('Error', e.message, 'error')
+          _toast.error('Error: ' + (e.message || ''))
         }
         toggleLoader(false)
       }
@@ -29235,9 +29243,9 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
           await db.collection('settings').doc('general').set(savedSettings, { merge: true })
           document.getElementById('modal-master-tp').classList.add('hidden')
           renderMasterTP(tipe)
-          Swal.fire('Tersimpan', 'Master ' + tipe + ' tersimpan.', 'success')
+          _toast.success('Tersimpan: ' + ('Master ' + tipe + ' tersimpan.' || ''))
         } catch (err) {
-          Swal.fire('Error', err.message, 'error')
+          _toast.error('Error: ' + (err.message || ''))
         }
         toggleLoader(false)
       }
@@ -29259,7 +29267,7 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
           await db.collection('settings').doc('general').set(savedSettings, { merge: true })
           renderMasterTP(tipe)
         } catch (e) {
-          Swal.fire('Error', e.message, 'error')
+          _toast.error('Error: ' + (e.message || ''))
         }
         toggleLoader(false)
       }
@@ -29331,7 +29339,7 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
             renderMasterTP(tipe)
             _toast.success(`${added} master ${tipe} ditambahkan.`)
           } catch (err) {
-            Swal.fire('Error', err.message, 'error')
+            _toast.error('Error: ' + (err.message || ''))
           }
           toggleLoader(false)
           e.target.value = ''
@@ -29375,7 +29383,7 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
             if (typeof renderBisyarohGrid === 'function') renderBisyarohGrid()
             _toast.success(`${updated} bisyaroh pokok diperbarui.`)
           } catch (err) {
-            Swal.fire('Error', err.message, 'error')
+            _toast.error('Error: ' + (err.message || ''))
           }
           toggleLoader(false)
           e.target.value = ''
@@ -29423,7 +29431,7 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
             if (typeof renderNominalSyahriyahGrid === 'function') renderNominalSyahriyahGrid()
             _toast.success(`${updated} nominal Syahriyah diperbarui.`)
           } catch (err) {
-            Swal.fire('Error', err.message, 'error')
+            _toast.error('Error: ' + (err.message || ''))
           }
           toggleLoader(false)
           e.target.value = ''
@@ -29517,7 +29525,7 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
               'success'
             )
           } catch (err) {
-            Swal.fire('Error', err.message, 'error')
+            _toast.error('Error: ' + (err.message || ''))
           }
           toggleLoader(false)
           e.target.value = ''
@@ -29616,7 +29624,7 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
               'success'
             )
           } catch (err) {
-            Swal.fire('Error', err.message, 'error')
+            _toast.error('Error: ' + (err.message || ''))
           }
           toggleLoader(false)
           e.target.value = ''
@@ -30006,7 +30014,7 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
           await db.collection('settings').doc('general').set(savedSettings, { merge: true })
           _toast.success('Pengaturan keuangan tersimpan')
         } catch (e) {
-          Swal.fire('Error', e.message, 'error')
+          _toast.error('Error: ' + (e.message || ''))
         }
         toggleLoader(false)
       }
@@ -30110,7 +30118,7 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
             _keuanganLoaded = true
           } catch (e) {
             console.error('Lazy load keuangan error:', e)
-            Swal.fire('Error', 'Gagal memuat data keuangan: ' + e.message, 'error')
+            _toast.error('Error: ' + ('Gagal memuat data keuangan: ' + e.message || ''))
           } finally {
             toggleLoader(false)
             _keuanganLoadingPromise = null
@@ -30331,7 +30339,7 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
           })
           renderKritikSaran()
         } catch (err) {
-          Swal.fire('Gagal', err.message, 'error')
+          _toast.error('Gagal: ' + (err.message || ''))
         }
         toggleLoader(false)
       }
@@ -30421,7 +30429,7 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
           db_kritik_saran = db_kritik_saran.filter((k) => k.id !== id)
           renderKritikSaran()
         } catch (e) {
-          Swal.fire('Error', e.message, 'error')
+          _toast.error('Error: ' + (e.message || ''))
         }
         toggleLoader(false)
       }
@@ -30584,7 +30592,7 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
           return true
         } catch (e) {
           console.error('FCM permission error:', e)
-          Swal.fire('Error', e.message, 'error')
+          _toast.error('Error: ' + (e.message || ''))
           return false
         }
       }
@@ -30783,7 +30791,7 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
             timer: 4000
           })
         } catch (err) {
-          Swal.fire('Error', err.message, 'error')
+          _toast.error('Error: ' + (err.message || ''))
         }
         toggleLoader(false)
       }
@@ -30880,7 +30888,7 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
             timer: 1800
           })
         } catch (err) {
-          Swal.fire('Error', err.message, 'error')
+          _toast.error('Error: ' + (err.message || ''))
         }
         toggleLoader(false)
       }
@@ -31021,7 +31029,7 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
           })
         } catch (err) {
           toggleLoader(false)
-          Swal.fire('Error', err.message, 'error')
+          _toast.error('Error: ' + (err.message || ''))
         }
       }
 
@@ -31079,7 +31087,7 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
             timer: 6000
           })
         } catch (err) {
-          Swal.fire('Error', err.message, 'error')
+          _toast.error('Error: ' + (err.message || ''))
         }
         toggleLoader(false)
       }
@@ -31248,10 +31256,8 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
             // user batalkan, abaikan
             return
           }
-          Swal.fire(
-            'Login Google Gagal',
-            err.message || 'Tidak dapat masuk dengan Google.',
-            'error'
+          _toast.error(
+            'Login Google Gagal: ' + (err.message || 'Tidak dapat masuk dengan Google.' || '')
           )
         }
       }
@@ -31374,7 +31380,7 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
           masukKeAplikasi()
         } catch (err) {
           toggleLoader(false)
-          Swal.fire('Error', err.message, 'error')
+          _toast.error('Error: ' + (err.message || ''))
         }
       }
 
@@ -31524,9 +31530,9 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
             .set({ masterKegiatan: arr }, { merge: true })
           document.getElementById('modal-master-kegiatan').classList.add('hidden')
           renderMasterKegiatan()
-          Swal.fire({ icon: 'success', title: editId ? 'Diperbarui' : 'Tersimpan', timer: 1500 })
+          _toast.success(editId ? 'Diperbarui' : 'Tersimpan')
         } catch (err) {
-          Swal.fire('Error', err.message, 'error')
+          _toast.error('Error: ' + (err.message || ''))
         }
         toggleLoader(false)
       }
@@ -31553,7 +31559,7 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
           document.getElementById('modal-master-kegiatan').classList.add('hidden')
           renderMasterKegiatan()
         } catch (e) {
-          Swal.fire('Error', e.message, 'error')
+          _toast.error('Error: ' + (e.message || ''))
         }
         toggleLoader(false)
       }
@@ -31821,7 +31827,7 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
               `${Object.keys(seenSantri).length} absensi santri & ${Object.keys(seenGuru).length} absensi shift guru tersimpan.`
             )
           } catch (err) {
-            Swal.fire('Error', err.message, 'error')
+            _toast.error('Error: ' + (err.message || ''))
           }
           toggleLoader(false)
           e.target.value = ''
@@ -32964,9 +32970,9 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
             if (!window.db_rapor_semester) window.db_rapor_semester = []
             db_rapor_semester.push(doc)
           }
-          Swal.fire({ icon: 'success', title: 'Tersimpan', timer: 1500 })
+          _toast.success('Tersimpan')
         } catch (e) {
-          Swal.fire('Error', e.message, 'error')
+          _toast.error('Error: ' + (e.message || ''))
         }
         toggleLoader(false)
       }
@@ -33021,7 +33027,7 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
             showConfirmButton: false
           })
         } catch (e) {
-          Swal.fire('Error', e.message, 'error')
+          _toast.error('Error: ' + (e.message || ''))
         }
         toggleLoader(false)
       }
@@ -33227,9 +33233,9 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
           await db.collection('settings').doc('general').set(savedSettings, { merge: true })
           localStorage.setItem('app_settings_v6', JSON.stringify(savedSettings))
           document.getElementById('modal-acf-fields').classList.add('hidden')
-          Swal.fire({ icon: 'success', title: 'Field Tambahan Disimpan', timer: 1500 })
+          _toast.success('Field Tambahan Disimpan')
         } catch (e) {
-          Swal.fire('Error', e.message, 'error')
+          _toast.error('Error: ' + (e.message || ''))
         }
       }
       window.bukaEditorAcfFields = bukaEditorAcfFields
@@ -33730,9 +33736,9 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
           await db.collection('settings').doc('general').set(savedSettings, { merge: true })
           localStorage.setItem('app_settings_v6', JSON.stringify(savedSettings))
           document.getElementById('modal-schema-rapor').classList.add('hidden')
-          Swal.fire({ icon: 'success', title: 'Schema Tersimpan', timer: 1500 })
+          _toast.success('Schema Tersimpan')
         } catch (e) {
-          Swal.fire('Error', e.message, 'error')
+          _toast.error('Error: ' + (e.message || ''))
         }
       }
 
@@ -34912,7 +34918,7 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
           renderListSantriRapor()
         } catch (e) {
           toggleLoader(false)
-          Swal.fire('Error', e.message, 'error')
+          _toast.error('Error: ' + (e.message || ''))
         }
       }
 
@@ -34943,9 +34949,9 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
           savedSettings.logoQiraati = result.url
           await db.collection('settings').doc('general').set(savedSettings, { merge: true })
           localStorage.setItem('app_settings_v6', JSON.stringify(savedSettings))
-          Swal.fire({ icon: 'success', title: 'Logo Qiraati Tersimpan', timer: 1500 })
+          _toast.success('Logo Qiraati Tersimpan')
         } catch (err) {
-          Swal.fire('Gagal', err.message, 'error')
+          _toast.error('Gagal: ' + (err.message || ''))
         }
         e.target.value = ''
       }
@@ -34974,7 +34980,7 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
             prev.classList.remove('hidden')
           }
         } catch (err) {
-          Swal.fire('Gagal', err.message, 'error')
+          _toast.error('Gagal: ' + (err.message || ''))
         }
         e.target.value = ''
       }
@@ -35384,9 +35390,9 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
           }
           document.getElementById('modal-kegiatan').classList.add('hidden')
           renderKalenderKegiatan()
-          Swal.fire({ icon: 'success', title: editId ? 'Diperbarui' : 'Tersimpan', timer: 1500 })
+          _toast.success(editId ? 'Diperbarui' : 'Tersimpan')
         } catch (err) {
-          Swal.fire('Error', err.message, 'error')
+          _toast.error('Error: ' + (err.message || ''))
         }
         toggleLoader(false)
       }
@@ -35407,7 +35413,7 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
           document.getElementById('modal-kegiatan').classList.add('hidden')
           renderKalenderKegiatan()
         } catch (e) {
-          Swal.fire('Error', e.message, 'error')
+          _toast.error('Error: ' + (e.message || ''))
         }
         toggleLoader(false)
       }
@@ -35569,7 +35575,7 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
             })
           } catch (err) {
             toggleLoader(false)
-            Swal.fire('Gagal', 'File tidak valid: ' + err.message, 'error')
+            _toast.error('Gagal: ' + ('File tidak valid: ' + err.message || ''))
             e.target.value = ''
           }
         }
@@ -35708,7 +35714,7 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
             })
           } catch (err) {
             toggleLoader(false)
-            Swal.fire('Gagal', 'File tidak valid: ' + err.message, 'error')
+            _toast.error('Gagal: ' + ('File tidak valid: ' + err.message || ''))
             e.target.value = ''
           }
         }
@@ -36329,7 +36335,9 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
         } catch (err) {
           console.error('Upload gambar error:', err)
           if (prog) prog.classList.add('hidden')
-          Swal.fire('Gagal Upload', err.message || 'Gagal upload ke Firebase Storage.', 'error')
+          _toast.error(
+            'Gagal Upload: ' + (err.message || 'Gagal upload ke Firebase Storage.' || '')
+          )
         }
       }
 
@@ -36575,13 +36583,9 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
               renderBerandaFeed()
             } catch (e) {}
           }, 300)
-          Swal.fire({
-            icon: 'success',
-            title: editId ? 'Diperbarui' : 'Dipublikasikan',
-            timer: 1500
-          })
+          _toast.success(editId ? 'Diperbarui' : 'Dipublikasikan')
         } catch (err) {
-          Swal.fire('Error', err.message, 'error')
+          _toast.error('Error: ' + (err.message || ''))
         }
         toggleLoader(false)
       }
@@ -36611,7 +36615,7 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
           db_beranda_post = db_beranda_post.filter((x) => x.id !== id)
           renderBerandaFeed()
         } catch (e) {
-          Swal.fire('Error', e.message, 'error')
+          _toast.error('Error: ' + (e.message || ''))
         }
         toggleLoader(false)
       }
@@ -36684,9 +36688,9 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
           localStorage.setItem('app_settings_v6', JSON.stringify(savedSettings))
           document.getElementById('modal-edit-tentang').classList.add('hidden')
           renderTentangKami()
-          Swal.fire({ icon: 'success', title: 'Tersimpan', timer: 1500 })
+          _toast.success('Tersimpan')
         } catch (err) {
-          Swal.fire('Error', err.message, 'error')
+          _toast.error('Error: ' + (err.message || ''))
         }
         toggleLoader(false)
       }
