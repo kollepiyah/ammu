@@ -574,6 +574,33 @@
       .mu-toast-popup .swal2-timer-progress-bar {
         background: linear-gradient(90deg, #14b8a6, #10b981) !important;
       }
+      /* BUGFIX v.109.3: Force disable Swal2 animations via CSS specificity */
+      .swal2-show {
+        animation: none !important;
+        -webkit-animation: none !important;
+      }
+      .swal2-hide {
+        animation: none !important;
+        -webkit-animation: none !important;
+        opacity: 0 !important;
+        display: none !important;
+      }
+      .swal2-backdrop-show,
+      .swal2-backdrop-hide {
+        animation: none !important;
+        -webkit-animation: none !important;
+        transition: none !important;
+      }
+      /* Force Swal timer progress bar visible (kalau timer Swal masih dipakai) */
+      .swal2-timer-progress-bar {
+        animation: none !important;
+        -webkit-animation: none !important;
+        transition: width linear !important;
+      }
+      /* Ensure Swal container z-index above toast container (1060 default vs toast 99999) */
+      .swal2-container {
+        z-index: 100000 !important;
+      }
       /* v.108.65: DOM Toast animations */
       @keyframes muDomToastIn {
         0% {
@@ -16326,7 +16353,7 @@
         if (b) b.classList.add("hidden");
       }
 
-      const APP_VERSION = "v.109.2.0515-swal-no-animation";
+      const APP_VERSION = "v.109.3.0515-swal-mixin-timing";
 
       // ====================================================================
       // Sentry error tracking init (B3). Gate guard: DSN placeholder = no-op.
@@ -16997,19 +17024,57 @@
       // /CUSTOM TOAST
       // ====================================================================
 
-      // BUGFIX v.109.2: Disable Swal2 CSS animations globally untuk hindari
-      // freeze issue saat @keyframes Swal2 tidak load reliable.
-      try {
-        if (typeof Swal !== "undefined" && Swal.mixin) {
-          window.Swal = Swal.mixin({
-            showClass: { popup: "", backdrop: "", icon: "" },
-            hideClass: { popup: "", backdrop: "", icon: "" },
-            allowEscapeKey: true,
-            allowOutsideClick: function() { return !Swal.isLoading(); },
-          });
+      // BUGFIX v.109.3: Swal2 loaded dengan defer="" → belum exist saat top-level script execute.
+      // SOLUSI: Apply mixin di DOMContentLoaded (saat Swal sudah load).
+      // Plus retry mechanism kalau Swal masih undefined.
+      function _applySwalMixin() {
+        try {
+          if (typeof Swal === "undefined" || !Swal.mixin) {
+            // Swal belum load, retry 200ms
+            return setTimeout(_applySwalMixin, 200);
+          }
+          // Wrap original Swal.fire untuk force disable animations + safety close
+          const _origFire = Swal.fire.bind(Swal);
+          window.Swal.fire = function(...args) {
+            // Merge config: force showClass/hideClass empty + add safety timeout
+            let config = args[0];
+            if (typeof config === "object" && config !== null) {
+              config = Object.assign({}, config, {
+                showClass: Object.assign({}, config.showClass || {}, {
+                  popup: "", backdrop: "", icon: ""
+                }),
+                hideClass: Object.assign({}, config.hideClass || {}, {
+                  popup: "", backdrop: "", icon: ""
+                }),
+                allowEscapeKey: config.allowEscapeKey !== false,
+                allowOutsideClick: config.allowOutsideClick !== false && (
+                  typeof config.allowOutsideClick === "function"
+                    ? config.allowOutsideClick
+                    : function() { return !Swal.isLoading(); }
+                ),
+              });
+            }
+            const promise = _origFire(config);
+            // Safety: kalau timer set tapi modal tidak close dalam timer+5s, force close
+            if (config && typeof config.timer === "number" && config.timer > 0) {
+              setTimeout(() => {
+                try {
+                  if (Swal.isVisible()) Swal.close();
+                } catch (e) {}
+              }, config.timer + 5000);
+            }
+            return promise;
+          };
+          console.log("[Swal v.109.3] global animation disable applied");
+        } catch (e) {
+          console.warn("[Swal mixin v.109.3] init fail:", e);
         }
-      } catch (e) {
-        console.warn("[Swal mixin] init fail:", e);
+      }
+      // Apply pas DOMContentLoaded (Swal defer script sudah loaded)
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", _applySwalMixin);
+      } else {
+        _applySwalMixin();
       }
 
       async function initApp() {
