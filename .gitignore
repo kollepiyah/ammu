@@ -109,3 +109,4 @@ android/local.properties
 bg-pesantren.jpg
 # Obsolete cleanup script (Windows-only, target sudah dihapus)
 cleanup-batch-a1.ps1
+functions/cloud-functions-index.js
