@@ -1,5 +1,18 @@
 // Firebase Storage Security Rules
 // Path: storage.rules (deploy: firebase deploy --only storage)
+//
+// v.108.53 -- B2.5 Tightening (2026-05-14): Storage rules harden
+// CHANGELOG:
+// - v.108.53 (2026-05-14): Tambah `request.auth != null` ke semua
+//   `allow write` (sebelumnya hanya size + content-type check) dan
+//   `allow delete` (sebelumnya `if true` -- anonymous bisa delete file
+//   apapun di Storage). Konsisten dengan B2 Firestore Rules tightening
+//   pasca-B1 Firebase Auth migration.
+// - READ tetap public (untuk display image di app, cetak rapor, dll).
+//
+// CARA BYPASS YANG SAH (untuk Admin SDK / Cloud Function):
+//   - Cloud Function via Admin SDK bypass rules secara native.
+//   - Backend service account bypass rules juga.
 
 rules_version = '2';
 service firebase.storage {
@@ -9,61 +22,69 @@ service firebase.storage {
     
     match /beranda_posts/{file=**} {
       allow read: if true;
-      allow write: if request.resource.size < 16 * 1024 * 1024
+      allow write: if request.auth != null
+                   && request.resource.size < 16 * 1024 * 1024
                    && request.resource.contentType.matches('image/.*');
-      allow delete: if true;
+      allow delete: if request.auth != null;
     }
     
     match /rapor_logos/{file=**} {
       allow read: if true;
-      allow write: if request.resource.size < 4 * 1024 * 1024
+      allow write: if request.auth != null
+                   && request.resource.size < 4 * 1024 * 1024
                    && request.resource.contentType.matches('image/.*');
-      allow delete: if true;
+      allow delete: if request.auth != null;
     }
     
     match /app_logos/{file=**} {
       allow read: if true;
-      allow write: if request.resource.size < 4 * 1024 * 1024
+      allow write: if request.auth != null
+                   && request.resource.size < 4 * 1024 * 1024
                    && request.resource.contentType.matches('image/.*');
-      allow delete: if true;
+      allow delete: if request.auth != null;
     }
     
     match /santri_foto/{file=**} {
       allow read: if true;
-      allow write: if request.resource.size < 4 * 1024 * 1024
+      allow write: if request.auth != null
+                   && request.resource.size < 4 * 1024 * 1024
                    && request.resource.contentType.matches('image/.*');
-      allow delete: if true;
+      allow delete: if request.auth != null;
     }
     
     match /guru_foto/{file=**} {
       allow read: if true;
-      allow write: if request.resource.size < 4 * 1024 * 1024
+      allow write: if request.auth != null
+                   && request.resource.size < 4 * 1024 * 1024
                    && request.resource.contentType.matches('image/.*');
-      allow delete: if true;
+      allow delete: if request.auth != null;
     }
 
     // BG Rapor (TPQ + Diniyah) — watermark transparan di belakang konten rapor
     match /bg_rapor/{file=**} {
       allow read: if true;
-      allow write: if request.resource.size < 4 * 1024 * 1024
+      allow write: if request.auth != null
+                   && request.resource.size < 4 * 1024 * 1024
                    && request.resource.contentType.matches('image/.*');
-      allow delete: if true;
+      allow delete: if request.auth != null;
     }
 
     // TTD digital per guru (Opsi B nanti — disiapkan)
     match /ttd_guru/{file=**} {
       allow read: if true;
-      allow write: if request.resource.size < 2 * 1024 * 1024
+      allow write: if request.auth != null
+                   && request.resource.size < 2 * 1024 * 1024
                    && request.resource.contentType.matches('image/.*');
-      allow delete: if true;
+      allow delete: if request.auth != null;
     }
 
     // BG aplikasi & assets umum (Opsi B nanti — disiapkan)
     match /app_bg/{file=**} {
       allow read: if true;
-      allow write: if request.resource.size < 8 * 1024 * 1024
+      allow write: if request.auth != null
+                   && request.resource.size < 8 * 1024 * 1024
                    && request.resource.contentType.matches('image/.*');
-      allow delete: if true;
+      allow delete: if request.auth != null;
     }
 
     // Default deny untuk path lain
