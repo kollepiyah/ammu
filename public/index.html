@@ -547,22 +547,31 @@
       /* Brand-consistent teal, soft shadow, refined typography */
 
       .swal2-popup:not(.mu-toast-popup) {
-        border-radius: 20px !important;
-        padding: 1.75rem 1.5rem !important;
+        border-radius: 18px !important;
+        padding: 1.5rem 1.25rem !important;
+        max-width: 26rem !important;
+        width: auto !important;
         box-shadow:
-          0 25px 50px -12px rgba(0, 0, 0, 0.25),
-          0 8px 16px rgba(0, 0, 0, 0.08) !important;
+          0 20px 40px -10px rgba(0, 0, 0, 0.22),
+          0 6px 14px rgba(0, 0, 0, 0.07) !important;
         font-family: inherit !important;
         border: 1px solid rgba(15, 118, 110, 0.08) !important;
-        animation: muModalSlideIn 0.25s cubic-bezier(0.22, 1, 0.36, 1) !important;
+        animation: muModalSlideIn 0.22s cubic-bezier(0.22, 1, 0.36, 1) !important;
+      }
+      /* v.108.55: Modal dengan input/form (auto wider) atau width explicit override */
+      .swal2-popup:not(.mu-toast-popup):has(.swal2-input),
+      .swal2-popup:not(.mu-toast-popup):has(.swal2-textarea),
+      .swal2-popup:not(.mu-toast-popup):has(.swal2-select),
+      .swal2-popup:not(.mu-toast-popup):has(table) {
+        max-width: 32rem !important;
       }
 
       .swal2-popup:not(.mu-toast-popup) .swal2-title {
-        font-size: 1.2rem !important;
+        font-size: 1.05rem !important;
         font-weight: 800 !important;
         color: #1e293b !important;
         padding: 0 !important;
-        margin-top: 0.75rem !important;
+        margin-top: 0.5rem !important;
         line-height: 1.35 !important;
       }
 
@@ -576,11 +585,11 @@
 
       /* Icon — circular, refined */
       .swal2-popup:not(.mu-toast-popup) .swal2-icon {
-        width: 4rem !important;
-        height: 4rem !important;
+        width: 3rem !important;
+        height: 3rem !important;
         margin: 0.25rem auto 0 !important;
-        border-width: 3px !important;
-        font-size: 1.5rem !important;
+        border-width: 2.5px !important;
+        font-size: 1.2rem !important;
       }
 
       .swal2-popup:not(.mu-toast-popup) .swal2-icon.swal2-question {
@@ -606,17 +615,17 @@
 
       /* Actions row */
       .swal2-popup:not(.mu-toast-popup) .swal2-actions {
-        margin-top: 1.5rem !important;
+        margin-top: 1.25rem !important;
         gap: 0.5rem !important;
         padding: 0 !important;
       }
 
       /* Buttons — rounded, refined */
       .swal2-popup:not(.mu-toast-popup) .swal2-styled {
-        padding: 0.625rem 1.5rem !important;
-        border-radius: 0.75rem !important;
+        padding: 0.5rem 1.25rem !important;
+        border-radius: 0.625rem !important;
         font-weight: 700 !important;
-        font-size: 0.875rem !important;
+        font-size: 0.8125rem !important;
         letter-spacing: 0.01em !important;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08) !important;
         transition:
@@ -13986,7 +13995,7 @@
         if (b) b.classList.add('hidden')
       }
 
-      const APP_VERSION = 'v.108.54.0514-elegant-modal'
+      const APP_VERSION = 'v.108.55.0514-compact-modal'
 
       function parseTanggalExcel(val) {
         if (!val) return ''
@@ -18089,13 +18098,9 @@
         w.document.write(fullHtml)
         w.document.close()
         setTimeout(() => {
-          Swal.fire({
-            icon: 'info',
-            title: 'Tips Cetak Bersih',
-            html: 'Di dialog Print Chrome:<br>1. Klik <b>More settings</b><br>2. <b>Uncheck "Headers and footers"</b><br>Supaya hilang teks <i>about:blank, 1/1</i>di output.',
-            timer: 5000,
-            showConfirmButton: true
-          })
+          // v.108.55: Convert ke toast (was Swal modal yang freeze post-OK karena race
+          // window.open print preview). Toast non-blocking, auto-dismiss 6s.
+          _toast.info('Tips cetak: Uncheck "Headers and footers" di Print > More settings.')
         }, 1500)
       }
 
@@ -34237,13 +34242,8 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
         try {
           generatePrintHTML(listSantri)
           setTimeout(() => {
-            Swal.fire({
-              icon: 'info',
-              title: 'Tips Cetak Bersih',
-              html: 'Di dialog Print Chrome:<br>1. Klik <b>More settings</b><br>2. <b>Uncheck "Headers and footers"</b><br>Supaya hilang teks <i>about:blank, 1/1</i>di output.',
-              timer: 5000,
-              showConfirmButton: true
-            })
+            // v.108.55: Convert ke toast (was Swal modal yang freeze post-OK)
+            _toast.info('Tips cetak: Uncheck "Headers and footers" di Print > More settings.')
           }, 1500)
         } catch (e) {
           console.error('cetakRaporPDF:', e)
