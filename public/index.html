@@ -4931,6 +4931,8 @@
                 ></div>
                 <!-- v.108.97 Phase 5 W4: Vue mount target (toggle window._useVueKalenderMini) -->
                 <div id="vue-widget-kalender-mini" data-vue-widget="KalenderMini" style="display:none"></div>
+                <!-- v.108.99 Phase 5 W5: Vue mount target (toggle window._useVueKalenderPendidikan) -->
+                <div id="vue-widget-kalender-pendidikan" data-vue-widget="KalenderPendidikan" style="display:none"></div>
               </div>
             </div>
 
@@ -16311,7 +16313,7 @@
         if (b) b.classList.add("hidden");
       }
 
-      const APP_VERSION = "v.108.98.0514-w3-postcard";
+      const APP_VERSION = "v.108.99.0514-w5-kalender-pendidikan";
 
       // ====================================================================
       // Sentry error tracking init (B3). Gate guard: DSN placeholder = no-op.
@@ -16396,6 +16398,26 @@
               });
             }
           }
+          if (window._useVueKalenderPendidikan && !window._useVueKalenderMini) {
+            var card2 = document.getElementById("kalender-card");
+            var vList2 = document.getElementById("widget-kegiatan-terdekat");
+            var vKP = document.getElementById("vue-widget-kalender-pendidikan");
+            if (card2) {
+              card2.onclick = null;
+              card2.style.cursor = "default";
+            }
+            if (vList2) vList2.style.display = "none";
+            if (vKP) {
+              vKP.style.display = "";
+              window.AmmuWidgets.mount("KalenderPendidikan", "#vue-widget-kalender-pendidikan", {
+                kegiatan: window.db_kegiatan || [],
+                limit: 3,
+                onLihatSemua: function () {
+                  if (typeof window.showPage === "function") window.showPage("kalender-kegiatan");
+                }
+              });
+            }
+          }
           if (window._useVuePostCard) {
             // PostCard mount happens INSIDE renderBerandaFeed (line ~40656).
             // Re-trigger render kalau dashboard sudah visible (defensive).
@@ -16405,7 +16427,7 @@
               console.warn("[Phase 5 W3] renderBerandaFeed not ready yet:", e.message);
             }
           }
-          // W5, W6 mount logic ditambah saat widget masing-masing wire-up
+          // W6 mount logic ditambah saat widget wire-up
         };
         s.onerror = function () {
           console.error("[Phase 5] Vue bundle load fail — vanilla stays");
