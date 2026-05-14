@@ -669,3 +669,104 @@ Setelah baca rules ini, **selalu refer ke dokumen ini** sebelum melakukan peruba
 
 **Maintained by:** Kyai + AI Assistant
 **Last updated:** v.08.0526 — 12 Mei 2026
+
+---
+
+## ADDENDUM — Phase 4 Sesi A+B (14 Mei 2026)
+
+Section ini di-generate auto oleh Claude session Phase 4. Update token spec sesuai patch baru:
+
+### G6 — Color Blind Status Badge (WCAG 1.4.1)
+
+**Rule:** Status badge TIDAK BOLEH hanya bergantung warna. WAJIB pakai ikon + teks.
+
+```html
+<!-- AKTIF (green badge) -->
+<span class="text-green-700 bg-green-50 border-green-200 border px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wider inline-block">
+  <i class="fas fa-check mr-0.5" aria-hidden="true"></i>AKTIF
+</span>
+
+<!-- NON-AKTIF (red badge) -->
+<span class="text-red-700 bg-red-50 border-red-200 border px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wider inline-block">
+  <i class="fas fa-times mr-0.5" aria-hidden="true"></i>NON-AKTIF
+</span>
+```
+
+Lokasi yang sudah di-patch: list guru table 1 (line ~25814), list guru table 2 (line ~27399).
+
+### G4 — Touch Target ≥44px (WCAG 2.5.5 / Apple HIG)
+
+**Rule:** Button + interaktif WAJIB min tap area 44×44px di mobile.
+
+**Implementasi:** CSS media query auto-applies di mobile breakpoint:
+
+```css
+@media (max-width: 768px) {
+  button:not(.swal2-close):not(.swal2-confirm):not(.swal2-cancel):not(.swal2-deny):not([aria-hidden="true"]),
+  [role="button"]:not([aria-hidden="true"]),
+  .mu-tap {
+    min-height: 44px;
+  }
+  button.mu-icon-btn,
+  button[data-icon-only="true"] {
+    min-width: 44px;
+  }
+}
+.mu-tap-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+```
+
+Pakai class `.mu-tap-target` untuk explicit enforcement.
+
+### G3 — ARIA Labels Accessibility
+
+**Rule:** Setiap interactive element WAJIB punya nama yang dibaca screen reader.
+
+| Element | Rule |
+|---|---|
+| Modal container | `role="dialog"` + `aria-modal="true"` + `aria-labelledby="<id>"` |
+| Button icon-only | `aria-label="..."` |
+| Input tanpa visible label | `aria-label="..."` |
+| Toast container | `role="status"` + `aria-live="polite"` |
+| Nav | `<nav aria-label="...">` |
+
+### G1 — Loading Skeleton
+
+**Rule:** List view loading → skeleton, BUKAN blank.
+
+Helper: `_renderSkeleton(rows = 3, cols = 4)` → return `<tr>` placeholder dengan `animate-pulse`.
+
+### G2 — Empty State Konsisten
+
+**Rule:** Result kosong → illustrasi (icon FA) + pesan + CTA opsional.
+
+Helper: `_renderEmptyState({icon, title, subtitle, action})`.
+
+Icon convention:
+- `fa-folder-open` — generic empty
+- `fa-users-slash` — santri/guru list kosong
+- `fa-search` — filter no result
+- `fa-calendar-times` — kegiatan/agenda kosong
+
+### G8 — Modal Style `.mu-modal-card`
+
+```css
+.mu-modal-card {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 1rem;
+  width: 100%;
+  max-width: 28rem;
+  box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+  border-top: 4px solid #14b8a6;
+}
+```
+
+Override max-width: tambah utility class di samping (e.g., `class="mu-modal-card max-w-2xl"`).
+
+---
+
+**Phase 4 Sesi A+B by:** Claude autonomous session
+**Last updated:** 14 Mei 2026
