@@ -660,6 +660,24 @@
         filter: brightness(0.95);
       }
 
+      /* v.108.61: Strong contrast cancel button (Kyai feedback) */
+      .swal2-popup:not(.mu-toast-popup) .mu-btn-cancel-strong {
+        background: #e2e8f0 !important;
+        color: #1e293b !important;
+        border: 1px solid #cbd5e1 !important;
+        font-weight: 700 !important;
+      }
+      .swal2-popup:not(.mu-toast-popup) .mu-btn-cancel-strong:hover {
+        background: #cbd5e1 !important;
+        color: #0f172a !important;
+        transform: translateY(-1px);
+      }
+      body.dark-mode .swal2-popup:not(.mu-toast-popup) .mu-btn-cancel-strong,
+      html.dark-mode .swal2-popup:not(.mu-toast-popup) .mu-btn-cancel-strong {
+        background: #475569 !important;
+        color: #f1f5f9 !important;
+        border-color: #64748b !important;
+      }
       /* Cancel button — soft neutral */
       .swal2-popup:not(.mu-toast-popup) .swal2-cancel:not([style*='background']) {
         background: #f1f5f9 !important;
@@ -723,8 +741,8 @@
       /* Backdrop — softer + subtle blur */
       .swal2-container.swal2-backdrop-show {
         background: rgba(15, 23, 42, 0.45) !important;
-        backdrop-filter: blur(2px) !important;
-        -webkit-backdrop-filter: blur(2px) !important;
+        backdrop-filter: blur(4px) !important;
+        -webkit-backdrop-filter: blur(4px) !important;
       }
 
       /* Modal slide-in animation */
