@@ -16209,7 +16209,7 @@
         if (b) b.classList.add("hidden");
       }
 
-      const APP_VERSION = "v.108.88.0514-g3-aria-labels";
+      const APP_VERSION = "v.108.89.0514-g1-skeleton";
 
       // ====================================================================
       // Sentry error tracking init (B3). Gate guard: DSN placeholder = no-op.
@@ -20404,6 +20404,44 @@
         const s = String(status).trim().toLowerCase();
         if (s === "aktif" || s === "active" || s === "1" || s === "true" || s === "ya" || s === "yes") return true;
         return false;
+      }
+
+      // === G1: Loading skeleton placeholder untuk list view ===
+      // Pakai saat data sedang load (sebelum onSnapshot return) atau saat re-render
+      function _renderSkeleton(rows, cols) {
+        rows = rows || 3;
+        cols = cols || 4;
+        var h = "";
+        for (var i = 0; i < rows; i++) {
+          h += '<tr aria-hidden="true">';
+          for (var j = 0; j < cols; j++) {
+            h += '<td class="p-4 border-b border-slate-100"><div class="h-4 bg-slate-200 rounded animate-pulse"></div></td>';
+          }
+          h += "</tr>";
+        }
+        return h;
+      }
+
+      // === G2: Empty state design konsisten ===
+      // Pakai saat filter no result / collection empty
+      // opts = { icon: "fa-folder-open", title: "...", subtitle: "...", action: { label: "...", onclick: "..." } }
+      function _renderEmptyState(opts) {
+        opts = opts || {};
+        var icon = opts.icon || "fa-folder-open";
+        var title = opts.title || "Belum ada data";
+        var subtitle = opts.subtitle || "";
+        var action = opts.action || null;
+        var html = '<div class="flex flex-col items-center justify-center py-12 text-center" role="status">';
+        html += '<i class="fas ' + icon + ' text-slate-300 text-5xl mb-3" aria-hidden="true"></i>';
+        html += '<p class="text-slate-500 font-medium">' + title + '</p>';
+        if (subtitle) {
+          html += '<p class="text-slate-400 text-sm mb-4">' + subtitle + '</p>';
+        }
+        if (action) {
+          html += '<button onclick="' + action.onclick + '" class="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg mt-2 transition">' + action.label + '</button>';
+        }
+        html += '</div>';
+        return html;
       }
 
       // ===== GURU CHECKBOX (DUAL GURU PAGI/SORE/PAGI+SORE) =====
