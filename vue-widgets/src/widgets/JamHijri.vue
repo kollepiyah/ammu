@@ -3,7 +3,7 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { formatHijri, formatMasehi } from '../utils/hijri'
 
 const FONT_ARAB =
-  "'Droid Arabic Naskh','Noto Naskh Arabic','Scheherazade New','Amiri','Traditional Arabic',serif"
+  "'Noto Naskh Arabic','Droid Arabic Naskh','Scheherazade New','Amiri','Traditional Arabic',serif"
 
 const jam = ref('')
 const menit = ref('')
@@ -44,7 +44,7 @@ onUnmounted(() => {
     </svg>
     <div class="grid">
       <div class="col-l">
-        <!-- v.109.14: hapus icon mosque + label HARI INI, pindah hari (JUMAT) ke atas -->
+        <!-- v.109.21: badge KAMIS dengan BG tipis + spacing breathable -->
         <p class="hari-top">{{ hari }}</p>
         <p :style="{ fontFamily: FONT_ARAB }" class="hijri" dir="rtl">{{ hijri }}</p>
         <p class="masehi">{{ masehi }}</p>
@@ -121,42 +121,42 @@ onUnmounted(() => {
 .label-r i {
   font-size: 10px;
 }
-.hijri {
-  font-size: 1.125rem;
-  font-weight: 700;
-  margin-top: 0.25rem;
-  line-height: 1;
+/* v.109.21: badge KAMIS dengan BG tipis */
+.hari-top {
+  display: inline-block;
+  font-size: 9.5px;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  margin: 0 0 0.35rem 0;
+  padding: 3px 8px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
   text-align: left;
+  text-transform: uppercase;
+  color: white;
+}
+/* v.109.21: tgl hijri Noto Naskh Arabic + spacing breathable */
+.hijri {
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin-top: 0.4rem;
+  margin-bottom: 0.15rem;
+  line-height: 1.35;
+  text-align: left;
+  letter-spacing: 0.01em;
 }
 @media (min-width: 768px) {
   .hijri {
-    font-size: 1.25rem;
+    font-size: 1.2rem;
   }
 }
 .masehi {
   font-size: 0.7rem;
   font-weight: 700;
-  margin-top: 0.25rem;
+  margin-top: 0.3rem;
   line-height: 1.1;
   text-align: left;
-}
-.hari {
-  font-size: 9px;
-  opacity: 0.9;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  margin-top: 0.1rem;
-  text-align: left;
-}
-/* v.109.14: hari di posisi atas (replace label HARI INI) */
-.hari-top {
-  font-size: 9.5px;
-  font-weight: 900;
-  letter-spacing: 0.22em;
-  opacity: 0.95;
-  margin: 0 0 0.2rem 0;
-  text-align: left;
-  text-transform: uppercase;
+  opacity: 0.92;
 }
 .jam-wrap {
   display: flex;
