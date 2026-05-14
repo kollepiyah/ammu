@@ -11,12 +11,14 @@ Aplikasi internal manajemen Pondok Pesantren Mambaul Ulum — Sidoarjo, Jawa Tim
 ## Quick Start
 
 ### Prasyarat
+
 - **Node.js** ≥ 18 LTS
 - **Java JDK 17** (untuk Android build)
 - **Firebase CLI**: `npm install -g firebase-tools`
 - **Rust + Cargo** (untuk Tauri Desktop nanti)
 
 ### Setup awal
+
 ```bash
 git clone <repo>
 cd "Portal MU"
@@ -27,6 +29,7 @@ firebase use portal-mambaul-ulum
 ```
 
 ### Dev workflow
+
 ```bash
 # Watch CSS (Tailwind)
 npm run build:css:watch
@@ -43,6 +46,7 @@ npm run firebase:deploy
 ```
 
 ### Build & Sync Android (Capacitor)
+
 ```bash
 npm run cap:sync      # Sync web → android folder
 npm run cap:open      # Buka di Android Studio
@@ -56,7 +60,7 @@ npm run cap:run       # Run di emulator/device
 ```
 Portal MU/
 ├── public/                    # Aplikasi web utama (deployed ke Firebase Hosting)
-│   ├── index.html             # Main SPA (single-file, ~1.6 MB)
+│   ├── index.html             # Main SPA (single-file, ~1.79 MB / 37k LOC)
 │   ├── sw.js                  # Service Worker (PWA cache)
 │   ├── manifest.json          # PWA manifest
 │   ├── .well-known/
@@ -99,26 +103,33 @@ Riwayat versi lengkap: lihat [CHANGELOG.md](./CHANGELOG.md).
 ## Deployment
 
 ### PWA / Web (production)
+
 ```bash
 npm run firebase:deploy
 ```
+
 Live di: https://portal-mambaul-ulum.web.app
 
 ### Rollback (kalau ada bug)
+
 1. Firebase Console → Hosting → Releases tab
 2. Pilih release lama → klik ⋮ → Rollback
 
 ### TWA / Android (Sideload)
+
 Lihat [TWA-INTERNAL-SIDELOAD.md](./TWA-INTERNAL-SIDELOAD.md) untuk panduan lengkap.
+
 - Generate keystore (sudah ada: `ammu-app.keystore`)
 - Update `public/.well-known/assetlinks.json` dengan SHA256 fingerprint
 - Build APK via PWABuilder atau Bubblewrap
 - Distribusi APK via Google Drive / WhatsApp group
 
-### iOS (Sideload via Capacitor) — *belum implement*
+### iOS (Sideload via Capacitor) — _belum implement_
+
 Roadmap: butuh Mac + Xcode untuk build IPA.
 
-### Desktop (Tauri) — *belum implement*
+### Desktop (Tauri) — _belum implement_
+
 Roadmap: Tauri akan generate installer `.msi` (Windows), `.dmg` (macOS), `.AppImage` (Linux).
 
 ---
@@ -139,21 +150,30 @@ Roadmap: Tauri akan generate installer `.msi` (Windows), `.dmg` (macOS), `.AppIm
 
 ## Roadmap
 
-### v.108 (current — Clean Restore)
+### v.108 (current)
+
 - [x] Restore baseline dari v.107.1.0526
 - [x] Project structure cleanup
 - [x] README + CHANGELOG
-- [ ] Pre-commit hook (lint + format)
+- [x] Pre-commit hook (Husky — block credentials + lint-staged prettier)
+- [x] **B0 — Recovery hotfixes** (truncated `index.html` restore, sw.js fix, logo cache)
+- [x] **B1 — Firebase Auth hybrid migration** (5 phases, lazy migration + auto-provision)
+- [x] **B2 — Firestore Rules tightening** (write/delete require `request.auth != null`)
+- [x] Toast notification UX (silent bottom-right, lazy init, compact)
 - [ ] Initial unit tests (helpers)
+- [ ] B3 — Palette migration finalization (`bg-blue-*` → `bg-teal-*` selectively)
+- [ ] DOMPurify integration untuk inject-user-data `innerHTML`
+- [ ] Console.log cleanup (37 occurrences)
 
 ### v.109-v.110 (next 1-2 minggu)
+
 - [ ] Capacitor Android setup + first APK build
 - [ ] Capacitor iOS setup (butuh akses Mac)
 - [ ] Tauri Desktop scaffold
 
 ### v.111+ (long-term)
+
 - [ ] Modularization: extract CSS/JS dari monolith index.html
-- [ ] Firebase Auth migration (replace password-in-Firestore)
 - [ ] Unit test coverage ≥ 60%
 - [ ] Lighthouse score ≥ 90
 - [ ] Vue 3 + Vite migration (gradual, per widget)
@@ -162,16 +182,44 @@ Roadmap: Tauri akan generate installer `.msi` (Windows), `.dmg` (macOS), `.AppIm
 
 ## Security
 
-⚠️ **Penting untuk diketahui:**
-- Aplikasi saat ini **tidak pakai Firebase Auth** — login cuma compare password di Firestore field
-- Firestore rules hanya validasi struktur data, tidak enforce identity per user
-- Konsekuensi: data bisa di-akses via DevTools dengan Firebase config dari page source
-- **Rekomendasi:** migrasi ke Firebase Auth dengan custom claims (planned v.111+)
+### Authentication (sejak v.108.42 — B1)
 
-Jangan commit file ini ke public repo:
+- ✅ **Firebase Auth aktif** — semua login via `signInWithEmailAndPassword`. Username/WA di-sanitize ke email internal `<sanitized>@portal-mu.local`.
+- ✅ Lazy migration: user lama (yang belum diprovision di Firebase Auth) di-migrate silently saat login pertama.
+- ✅ Password padding `mu_auth_` prefix untuk bypass min-6-char Firebase rule (legacy user pakai password 4 char tetap bisa login).
+- ✅ Client rate-limit 5 attempts / 5 menit + 2s cooldown anti `auth/too-many-requests`.
+- ✅ Self-edit password sync ke Firebase Auth (admin/guru/santri profile edit).
+
+**Helper functions baru:**
+
+| Function                              | Lokasi (index.html) | Fungsi                                                      |
+| ------------------------------------- | ------------------- | ----------------------------------------------------------- |
+| `buildAuthEmail(input)`               | ~L14454             | Sanitize username/WA → `<sanitized>@portal-mu.local`        |
+| `_toAuthPassword(pass)`               | ~L14428             | Padding helper Firebase Auth (handle legacy short password) |
+| `_provisionAuthForUser(user, source)` | ~L14517             | Silent migration handler, idempotent                        |
+| `_signInWithLegacy(...)`              | inline login flow   | Fallback path saat Auth user belum exist                    |
+
+### Firestore Rules (sejak v.108.44 — B2)
+
+- ✅ `read: if true` — tetap public untuk login lookup (lazy migration butuh anonymous read sebelum signIn)
+- ✅ `write/delete: if request.auth != null` — semua koleksi require signed-in Firebase Auth user
+- ✅ Validasi tipe field per-koleksi (string/number/length bounds)
+- ⚠️ READ masih public — data bisa di-read via DevTools dengan Firebase config dari page source. Tidak ada `request.auth` per-document filter saat ini (planned untuk migrasi multi-tenant phase berikut).
+
+### XSS surface (perlu hardening lebih lanjut)
+
+- 230 `innerHTML =` usages — sebagian inject data Firestore. Rekomendasi: integrasi DOMPurify untuk template literal yang menerima user data.
+- 0 `eval()`, 0 `new Function()` — clean.
+- `escapeHtml()` sudah dipakai di dropdown guru options.
+
+### Yang JANGAN di-commit ke public repo:
+
 - `ammu-app.keystore` (signing key Android)
-- `.env` (kalau dipakai)
-- Service account keys
+- `.env` / `.env.*` (semua varian)
+- Service account keys (`service-account*.json`, `firebase-adminsdk-*.json`)
+- `google-services.json` / `GoogleService-Info.plist`
+
+Husky pre-commit hook akan **block commit** untuk pattern di atas (lihat `.husky/pre-commit`).
 
 ---
 
