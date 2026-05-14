@@ -16063,7 +16063,7 @@
         if (b) b.classList.add("hidden");
       }
 
-      const APP_VERSION = "v.108.77.0514-c5-upload-retry";
+      const APP_VERSION = "v.108.78.0514-c4-occ-batch1";
 
       // ====================================================================
       // Sentry error tracking init (B3). Gate guard: DSN placeholder = no-op.
@@ -25456,7 +25456,18 @@
         };
         toggleLoader(true);
         try {
-          await db.collection("guru").doc(String(data.id)).set(data);
+          try {
+            await _safeSaveDoc("guru", data.id, data, { merge: false, label: "Simpan guru" });
+          } catch (occErr) {
+            if (occErr && occErr.code === "occ/conflict") {
+              const choice = await _occHandleConflict(occErr);
+              if (choice === "overwrite") {
+                await _safeSaveDoc("guru", data.id, data, { merge: false, expectedUpdatedAt: null, label: "Overwrite guru" });
+              } else if (choice === "refresh") {
+                _toast.info("Refresh halaman untuk lihat versi terbaru."); return;
+              } else { return; }
+            } else { throw occErr; }
+          }
           if (id) {
             db_guru[db_guru.findIndex((x) => x.id == id)] = data;
           } else {
@@ -25946,7 +25957,18 @@
           } else {
             db_santri.push(s);
           }
-          await db.collection("santri").doc(String(s.id)).set(s);
+          try {
+            await _safeSaveDoc("santri", s.id, s, { merge: false, label: "Simpan santri" });
+          } catch (occErr) {
+            if (occErr && occErr.code === "occ/conflict") {
+              const choice = await _occHandleConflict(occErr);
+              if (choice === "overwrite") {
+                await _safeSaveDoc("santri", s.id, s, { merge: false, expectedUpdatedAt: null, label: "Overwrite santri" });
+              } else if (choice === "refresh") {
+                _toast.info("Refresh halaman untuk lihat versi terbaru."); return;
+              } else { return; }
+            } else { throw occErr; }
+          }
           // v.108.36 B1-P2: auto-provision Firebase Auth untuk santri BARU
           if (!id) {
             _provisionAuthForUser(s, "santri")
@@ -37216,7 +37238,18 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
 
         toggleLoader(true);
         try {
-          await db.collection("rapor_semester").doc(raporId).set(doc);
+          try {
+            await _safeSaveDoc("rapor_semester", raporId, doc, { merge: false, label: "Simpan rapor" });
+          } catch (occErr) {
+            if (occErr && occErr.code === "occ/conflict") {
+              const choice = await _occHandleConflict(occErr);
+              if (choice === "overwrite") {
+                await _safeSaveDoc("rapor_semester", raporId, doc, { merge: false, expectedUpdatedAt: null, label: "Overwrite rapor" });
+              } else if (choice === "refresh") {
+                _toast.info("Refresh halaman untuk lihat versi terbaru."); return;
+              } else { return; }
+            } else { throw occErr; }
+          }
           // Update local cache
           const idx = (db_rapor_semester || []).findIndex(
             (r) => r.id === raporId,
@@ -42138,6 +42171,92 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
       // ===================================================================
       // Upload file ke Firebase Storage (path: beranda_posts/<timestamp>_<filename>)
       // Returns: download URL
+      // === C4 (v.108.78) — Optimistic Concurrency Control (OCC) helpers
+      // Pattern: store doc.updatedAt at LOAD time, compare at SAVE time.
+      // Storage: window._docSnaps[coll + '/' + id] = updatedAt timestamp.
+      // Untuk extend ke form lain: panggil _recordDocSnap(coll, id, snap.data()) di load,
+      // dan ganti .set/.update di save dengan _safeSaveDoc(coll, id, payload, opts).
+      window._docSnaps = window._docSnaps || {};
+
+      function _recordDocSnap(coll, id, data) {
+        if (!data) return;
+        const key = String(coll) + '/' + String(id);
+        window._docSnaps[key] = data.updatedAt || null;
+      }
+
+      function _getDocSnap(coll, id) {
+        const key = String(coll) + '/' + String(id);
+        return window._docSnaps[key] || null;
+      }
+
+      // Universal save dengan transaction-based OCC.
+      // opts: { merge: bool, expectedUpdatedAt: timestamp|null, label: str }
+      async function _safeSaveDoc(coll, id, payload, opts) {
+        opts = opts || {};
+        const merge = opts.merge !== false;
+        const label = opts.label || 'Simpan';
+        const expected = (opts.expectedUpdatedAt !== undefined)
+          ? opts.expectedUpdatedAt
+          : _getDocSnap(coll, id);
+        const fb = firebase.firestore;
+        return db.runTransaction(async (txn) => {
+          const ref = db.collection(coll).doc(String(id));
+          const snap = await txn.get(ref);
+          if (snap.exists && expected && snap.data().updatedAt) {
+            const same = snap.data().updatedAt.isEqual && snap.data().updatedAt.isEqual(expected);
+            if (!same) {
+              const err = new Error(label + ' dibatalkan: data sudah diubah user lain. Refresh dulu.');
+              err.code = 'occ/conflict';
+              err.serverData = snap.data();
+              throw err;
+            }
+          }
+          const payloadWithTs = Object.assign({}, payload, {
+            updatedAt: fb.FieldValue.serverTimestamp(),
+          });
+          if (!snap.exists) {
+            payloadWithTs.createdAt = fb.FieldValue.serverTimestamp();
+            txn.set(ref, payloadWithTs);
+          } else if (merge) {
+            txn.set(ref, payloadWithTs, { merge: true });
+          } else {
+            txn.set(ref, payloadWithTs);
+          }
+          // Update local snap cache for subsequent saves in same session
+          return { saved: true };
+        });
+      }
+
+      // Handle conflict error from _safeSaveDoc. Show modal, return user choice.
+      // Returns: 'refresh' (user mau refresh), 'overwrite' (user mau tetap overwrite),
+      // atau null (user batal).
+      async function _occHandleConflict(err, opts) {
+        if (!err || err.code !== 'occ/conflict') throw err;
+        opts = opts || {};
+        try {
+          const r = await Swal.fire({
+            icon: 'warning',
+            title: 'Data Sudah Diubah User Lain',
+            html: '<div class="text-left text-sm">Saat Anda mengisi form, data ini sudah diubah oleh user lain.<br/><br/>Untuk mencegah perubahan Anda hilang atau merusak data terbaru:</div>',
+            showCancelButton: true,
+            showDenyButton: true,
+            confirmButtonText: 'Refresh & Buang Perubahan Saya',
+            denyButtonText: 'Tetap Simpan (Overwrite)',
+            cancelButtonText: 'Batal',
+            confirmButtonColor: '#0f766e',
+            denyButtonColor: '#dc2626',
+            cancelButtonColor: '#64748b',
+            reverseButtons: true,
+          });
+          if (r.isConfirmed) return 'refresh';
+          if (r.isDenied) return 'overwrite';
+          return null;
+        } catch (e) {
+          console.error('_occHandleConflict modal error:', e);
+          return null;
+        }
+      }
+
       // === C5 (v.108.77) — retry helper untuk operasi async yang sering gagal di network flaky
       // Pakai: await _retryAsync(() => somePromise, { maxRetry: 3, baseDelay: 1000, label: 'Upload' })
       async function _retryAsync(fn, opts) {
