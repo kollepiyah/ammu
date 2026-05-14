@@ -16063,7 +16063,7 @@
         if (b) b.classList.add("hidden");
       }
 
-      const APP_VERSION = "v.108.76.0514-c2-dead-code";
+      const APP_VERSION = "v.108.77.0514-c5-upload-retry";
 
       // ====================================================================
       // Sentry error tracking init (B3). Gate guard: DSN placeholder = no-op.
@@ -42138,6 +42138,57 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
       // ===================================================================
       // Upload file ke Firebase Storage (path: beranda_posts/<timestamp>_<filename>)
       // Returns: download URL
+      // === C5 (v.108.77) — retry helper untuk operasi async yang sering gagal di network flaky
+      // Pakai: await _retryAsync(() => somePromise, { maxRetry: 3, baseDelay: 1000, label: 'Upload' })
+      async function _retryAsync(fn, opts) {
+        opts = opts || {};
+        const maxRetry = opts.maxRetry || 3;
+        const baseDelay = opts.baseDelay || 1000;
+        const label = opts.label || 'Operasi';
+        const onAttempt = opts.onAttempt || null;
+        const shouldRetry = opts.shouldRetry || null;
+        let attempt = 0;
+        let lastErr = null;
+        while (attempt <= maxRetry) {
+          try {
+            return await fn();
+          } catch (err) {
+            lastErr = err;
+            attempt++;
+            const retriable = shouldRetry ? shouldRetry(err) : true;
+            if (!retriable || attempt > maxRetry) throw err;
+            const delay = baseDelay * Math.pow(2, attempt - 1);
+            if (onAttempt) {
+              try { onAttempt(attempt, maxRetry, delay, err); } catch (e) {}
+            }
+            console.warn('[_retryAsync ' + label + '] attempt ' + attempt + '/' + maxRetry + ', delay ' + delay + 'ms, err:', (err && err.message) || err);
+            await new Promise((r) => setTimeout(r, delay));
+          }
+        }
+        throw lastErr;
+      }
+
+      // Klasifikasi error Firebase Storage: retriable (network) atau permanent (auth/quota).
+      function _isStorageRetriable(err) {
+        if (!err) return false;
+        const code = err.code || '';
+        if (code === 'storage/canceled') return false;
+        if (code === 'storage/unauthenticated') return false;
+        if (code === 'storage/unauthorized') return false;
+        if (code === 'storage/quota-exceeded') return false;
+        if (code === 'storage/invalid-argument') return false;
+        if (code === 'storage/object-not-found') return false;
+        if (code === 'storage/retry-limit-exceeded') return true;
+        if (code === 'storage/server-file-wrong-size') return true;
+        if (code === 'storage/unknown') return true;
+        const msg = String(err.message || '').toLowerCase();
+        if (msg.includes('network')) return true;
+        if (msg.includes('timeout')) return true;
+        if (msg.includes('failed to fetch')) return true;
+        if (msg.includes('connection')) return true;
+        return true;
+      }
+
       async function uploadGambarKeStorage(file, folder = "beranda_posts") {
         if (!file) throw new Error("File kosong");
         if (file.size > 4 * 1024 * 1024)
@@ -42153,7 +42204,23 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
           .substring(0, 80);
         const path = `${folder}/${timestamp}_${cleanName}`;
         const storageRef = storage.ref(path);
-        const snapshot = await storageRef.put(file);
+        // C5 — retry 3x exponential backoff (1s/2s/4s) untuk network flaky.
+        const snapshot = await _retryAsync(
+          () => storageRef.put(file),
+          {
+            maxRetry: 3,
+            baseDelay: 1000,
+            label: 'Upload gambar',
+            shouldRetry: _isStorageRetriable,
+            onAttempt: (attempt, max, delay) => {
+              try {
+                if (typeof _toast !== 'undefined' && _toast.info) {
+                  _toast.info('Upload gagal, mencoba lagi... (' + attempt + '/' + max + ')');
+                }
+              } catch (e) {}
+            },
+          },
+        );
         const url = await snapshot.ref.getDownloadURL();
         return { url, path, size: file.size };
       }
