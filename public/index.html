@@ -166,6 +166,8 @@
     <link rel="preload" as="image" href="/bg-pesantren.jpg" />
     <!-- v.108.67: DOMPurify (~22KB) for XSS sanitization -->
     <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js" defer=""></script>
+    <!-- v.108.70: Sentry error tracking -- DSN replace by Kyai, see SENTRY-SETUP.md -->
+    <script src="https://browser.sentry-cdn.com/8/bundle.min.js" defer="" fetchpriority="low"></script>
     <!-- html2canvas (~120KB): dipakai untuk capture rapor PDF -->
     <script
       src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"
@@ -14133,7 +14135,46 @@
         if (b) b.classList.add('hidden')
       }
 
-      const APP_VERSION = 'v.108.69.0514-tests'
+      const APP_VERSION = 'v.108.70.0514-sentry'
+
+      // ====================================================================
+      // Sentry error tracking init (B3). Gate guard: DSN placeholder = no-op.
+      // Replace placeholder DSN per SENTRY-SETUP.md to activate.
+      // ====================================================================
+      const SENTRY_DSN = 'PLACEHOLDER_DSN_KYAI_REPLACE'
+      try {
+        if (
+          typeof Sentry !== 'undefined' &&
+          typeof Sentry.init === 'function' &&
+          SENTRY_DSN &&
+          SENTRY_DSN.indexOf('PLACEHOLDER') === -1
+        ) {
+          Sentry.init({
+            dsn: SENTRY_DSN,
+            release: APP_VERSION,
+            environment: 'production',
+            tracesSampleRate: 0.1,
+            beforeSend(event) {
+              if (event.request && event.request.url && event.request.url.indexOf('localhost') !== -1)
+                return null
+              return event
+            }
+          })
+        }
+      } catch (sentryInitErr) {
+        console.warn('[Sentry] init failed:', sentryInitErr && sentryInitErr.message)
+      }
+
+      // Wrapper aman: panggil Sentry.captureException kalau SDK siap, else no-op.
+      function captureToSentry(err, ctx) {
+        try {
+          if (typeof Sentry !== 'undefined' && typeof Sentry.captureException === 'function') {
+            Sentry.captureException(err, ctx ? { extra: ctx } : undefined)
+          }
+        } catch (_) {
+          /* swallow */
+        }
+      }
 
       function parseTanggalExcel(val) {
         if (!val) return ''
@@ -14943,6 +14984,7 @@
           }
         } catch (error) {
           console.error('initApp error:', error)
+          captureToSentry(error, { where: 'initApp' })
           let errMsg = 'Gagal memuat data dari Cloud Server.'
           if (error.code === 'permission-denied')
             errMsg = 'Akses ke Firestore ditolak. Periksa Firestore Rules di Firebase Console.'
@@ -15351,6 +15393,7 @@
           masukKeAplikasi()
           return
         } catch (authErr) {
+          captureToSentry(authErr, { where: 'auth.signIn', code: authErr && authErr.code })
           const code = (authErr && authErr.code) || ''
           // Specific case: too-many-requests dari Firebase — block sementara
           if (code === 'auth/too-many-requests' || code === 'auth/network-request-failed') {
@@ -16640,6 +16683,7 @@
           } catch (err) {
             Swal.close()
             if (err.code !== 'auth/popup-closed-by-user') {
+              captureToSentry(err, { where: 'auth.linkGoogle', code: err && err.code })
               Swal.fire('Gagal Tautkan', err.message, 'error')
             }
           }
@@ -22421,6 +22465,7 @@
           renderSemuaDropdown()
           _toast.success('Guru tersimpan')
         } catch (err) {
+          captureToSentry(err, { where: 'simpanGuru' })
           Swal.fire('Error', err.message, 'error')
         }
         toggleLoader(false)
@@ -22838,6 +22883,7 @@
           resetFormSantri()
           renderAdminSantri()
         } catch (err) {
+          captureToSentry(err, { where: 'simpanSantri' })
           Swal.fire('Error', err.message, 'error')
         }
         toggleLoader(false)
@@ -32878,6 +32924,7 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
           })
         } catch (e) {
           console.warn('[simpanRaporSantri] Recompute predikat fail:', e)
+          captureToSentry(e, { where: 'simpanRaporSantri.predikat' })
         }
 
         // Hitung rata-rata semua field number
