@@ -16307,7 +16307,7 @@
         if (b) b.classList.add("hidden");
       }
 
-      const APP_VERSION = "v.108.93.0514-g9-print-bw";
+      const APP_VERSION = "v.108.94.0514-fix-csp-print-logout";
 
       // ====================================================================
       // Sentry error tracking init (B3). Gate guard: DSN placeholder = no-op.
@@ -18750,15 +18750,19 @@
       }
 
       function logout() {
-        // v.108.60: hapus icon question + hapus inline cancelColor
+        // v.108.94: improve cancel button clarity — tambah cancelButtonColor
+        // supaya "Tidak" tidak kelihatan disabled (sebelumnya washed out gray).
         Swal.fire({
           title: "Keluar dari aplikasi?",
           text: "Anda akan dikeluarkan dari sesi saat ini.",
           showCancelButton: true,
           confirmButtonColor: "#dc2626",
+          cancelButtonColor: "#475569",
           confirmButtonText: "Ya, Keluar",
           cancelButtonText: "Tidak",
           focusCancel: true,
+          allowOutsideClick: true,
+          allowEscapeKey: true,
         }).then((result) => {
           if (result.isConfirmed) {
             detachRealtimeListeners();
@@ -32702,8 +32706,8 @@
         // Render ke window cetak dengan font monospace
         const html = `<!DOCTYPE html><html><head><title>Struk ${trx.no_struk}</title>
 <style>
-@page { size: ${pageWidthIn} auto; margin: 0.2in; }
-body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-height: 1.2; margin: 0; padding: 6px; white-space: pre; }
+@page { size: ${pageWidthIn} auto; margin: 0; }
+body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-height: 1.2; margin: 0; padding: 0; white-space: pre; }
 @media print {
     body { font-size: 10pt; }
 }
