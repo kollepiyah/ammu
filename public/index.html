@@ -4929,6 +4929,8 @@
                   id="widget-kegiatan-terdekat"
                   class="space-y-2 overflow-y-auto custom-scrollbar flex-1 min-h-0"
                 ></div>
+                <!-- v.108.97 Phase 5 W4: Vue mount target (toggle window._useVueKalenderMini) -->
+                <div id="vue-widget-kalender-mini" data-vue-widget="KalenderMini" style="display:none"></div>
               </div>
             </div>
 
@@ -16309,7 +16311,7 @@
         if (b) b.classList.add("hidden");
       }
 
-      const APP_VERSION = "v.108.96.0514-w2-jamhijri-wire";
+      const APP_VERSION = "v.108.97.0514-w4-kalender-mini";
 
       // ====================================================================
       // Sentry error tracking init (B3). Gate guard: DSN placeholder = no-op.
@@ -16378,7 +16380,23 @@
               window.AmmuWidgets.mount("JamHijri", "#vue-widget-jam-hijri");
             }
           }
-          // W3-W6 mount logic ditambah saat widget masing-masing wire-up
+          if (window._useVueKalenderMini) {
+            var card = document.getElementById("kalender-card");
+            var vList = document.getElementById("widget-kegiatan-terdekat");
+            var vKal = document.getElementById("vue-widget-kalender-mini");
+            if (card) {
+              card.onclick = null;
+              card.style.cursor = "default";
+            }
+            if (vList) vList.style.display = "none";
+            if (vKal) {
+              vKal.style.display = "";
+              window.AmmuWidgets.mount("KalenderMini", "#vue-widget-kalender-mini", {
+                kegiatan: window.db_kegiatan || []
+              });
+            }
+          }
+          // W3, W5, W6 mount logic ditambah saat widget masing-masing wire-up
         };
         s.onerror = function () {
           console.error("[Phase 5] Vue bundle load fail — vanilla stays");
