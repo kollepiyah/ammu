@@ -13510,7 +13510,7 @@
         .then(async (result) => {
           if (!result || !result.user) return // No pending redirect
           const user = result.user
-          console.log('[Google Redirect] Detected returning user:', user.email)
+          _log('[Google Redirect] Detected returning user:', user.email)
           // Tunggu db_guru / db_santri terload, lalu trigger same logic as loginDenganGoogle popup branch
           const waitForDb = setInterval(() => {
             if (
@@ -13549,13 +13549,13 @@
               if (!r.scope.endsWith('/') || r.scope.includes('./')) {
                 try {
                   await r.unregister()
-                  console.log('SW lama dihapus:', r.scope)
+                  _log('SW lama dihapus:', r.scope)
                 } catch (e) {}
               }
             }
             // Register SW baru dengan scope root (single registration)
             const reg = await navigator.serviceWorker.register('/sw.js', { scope: '/' })
-            console.log('PWA SW registered:', reg.scope)
+            _log('PWA SW registered:', reg.scope)
 
             // v.108.53: AUTO-UPDATE dengan safeguard anti-loop
             //
@@ -13602,13 +13602,13 @@
             // GUARD 1: Already auto-reloaded this session?
             const reloadCount = parseInt(sessionStorage.getItem('autoReloadCount') || '0', 10)
             if (reloadCount >= 1) {
-              console.log('[SW update] Sudah auto-reload sekali di session ini, skip.')
+              _log('[SW update] Sudah auto-reload sekali di session ini, skip.')
               return _showManualUpdateToast(newWorker)
             }
             // GUARD 2: Last reload < 5 menit ago?
             const lastReload = parseInt(sessionStorage.getItem('lastAutoReload') || '0', 10)
             if (lastReload && Date.now() - lastReload < 5 * 60 * 1000) {
-              console.log('[SW update] Last reload < 5 menit, skip auto-reload.')
+              _log('[SW update] Last reload < 5 menit, skip auto-reload.')
               return _showManualUpdateToast(newWorker)
             }
             // GUARD 3: Ada form input yang terisi? (user lagi ngetik)
@@ -13620,7 +13620,7 @@
               if (val && val !== el.defaultValue) hasFilledInput = true
             })
             if (hasFilledInput) {
-              console.log('[SW update] Ada form terisi, fallback ke manual toast.')
+              _log('[SW update] Ada form terisi, fallback ke manual toast.')
               return _showManualUpdateToast(newWorker)
             }
             // All guards passed — schedule auto-reload 5 detik
@@ -13661,7 +13661,7 @@
                     toast.addEventListener('click', (e) => {
                       if (e.target.classList.contains('swal2-confirm')) {
                         cancelled = true
-                        console.log('[SW update] User batal auto-reload.')
+                        _log('[SW update] User batal auto-reload.')
                       }
                     })
                   }
@@ -13670,7 +13670,7 @@
                   if (!cancelled) setTimeout(tick, 0)
                 })
               } else {
-                console.log('[SW update] Auto-reload dalam ' + remaining + 's (Swal not ready)...')
+                _log('[SW update] Auto-reload dalam ' + remaining + 's (Swal not ready)...')
                 remaining -= 1
                 setTimeout(tick, 1000)
               }
@@ -13687,7 +13687,7 @@
         function _showManualUpdateToast(newWorker) {
           try {
             if (typeof Swal === 'undefined') {
-              console.log('[SW update] Swal belum ready, log only.')
+              _log('[SW update] Swal belum ready, log only.')
               return
             }
             Swal.fire({
@@ -13715,7 +13715,7 @@
         navigator.serviceWorker.addEventListener('controllerchange', () => {
           if (_refreshing) return
           _refreshing = true
-          console.log('[SW update] Controller changed, reloading page...')
+          _log('[SW update] Controller changed, reloading page...')
           window.location.reload()
         })
       }
@@ -13961,7 +13961,7 @@
         if (!logoKiri || logoKiri.length < 100) logoKiri = (await fetchAsB64('/logo.png')) || ''
         const imgLeftId = addB64(logoKiri)
         const imgRightId = addB64(logoKanan)
-        console.log('[Excel Logo]', {
+        _log('[Excel Logo]', {
           kiriId: imgLeftId,
           kananId: imgRightId,
           kiriLen: logoKiri.length,
@@ -14139,7 +14139,7 @@
         if (b) b.classList.add('hidden')
       }
 
-      const APP_VERSION = 'v.108.73.0514-dashboard-count'
+      const APP_VERSION = 'v.108.75.0514-jsdoc'
 
       // ====================================================================
       // Sentry error tracking init (B3). Gate guard: DSN placeholder = no-op.
@@ -14174,6 +14174,12 @@
       }
 
       // Wrapper aman: panggil Sentry.captureException kalau SDK siap, else no-op.
+      /**
+       * Safe Sentry exception capture. No-op kalau Sentry SDK belum loaded.
+       *
+       * @param {Error} err - Exception object
+       * @param {Object} [ctx] - Context tambahan (mis. { where: 'simpanSantri' })
+       */
       function captureToSentry(err, ctx) {
         try {
           if (typeof Sentry !== 'undefined' && typeof Sentry.captureException === 'function') {
@@ -14491,7 +14497,7 @@
             Promise.race([_cacheImgUrl(url), new Promise((r) => setTimeout(() => r(null), 8000))])
           )
           await Promise.all(promises)
-          console.log(
+          _log(
             '[_preCacheLogos] cached',
             Object.keys(_imgUrlCache).length,
             'of',
@@ -14529,6 +14535,21 @@
         document.body.appendChild(c)
         return c
       }
+      /**
+
+       * Show DOM toast (pure DOM, bypass Swal). Auto-dismiss via setTimeout.
+
+       * IMMUNE dari pause-on-hover/focus/touch (vs Swal toast yang freeze).
+
+       *
+
+       * @param {string} msg - Pesan toast
+
+       * @param {'success'|'error'|'warning'|'info'} icon - Tipe toast
+
+       * @param {number} duration - Auto-dismiss ms (default per _toast.success=3000)
+
+       */
 
       function _muToastShow(msg, icon, duration) {
         try {
@@ -14943,7 +14964,7 @@
             const _ehm = document.getElementById('header-mobile-title')
             if (_ehm)
               _ehm.innerText = savedSettings.txtHeaderBar || savedSettings.txtSidebarTitle || 'Menu'
-            console.log(
+            _log(
               '[topbar] txtHeaderBar:',
               savedSettings.txtHeaderBar,
               'visible:',
@@ -15101,6 +15122,15 @@
       // Firebase Auth WAJIB password >= 6 karakter. User pakai "1234" (4 char) tertolak.
       // Solusinya: prefix "mu_auth_" — deterministic, internal, user tidak tahu.
       // "1234" → "mu_auth_1234" (12 char), aman lewat Firebase Auth min length.
+      /**
+       * Padding password legacy (4 char) ke Firebase Auth (min 6 char) via prefix.
+       *
+       * @param {string} pass - Password user (boleh kosong/null)
+       * @returns {string} Password dengan prefix 'mu_auth_' (min 8 char)
+       *
+       * @example
+       * _toAuthPassword("1234") // → "mu_auth_1234"
+       */
       function _toAuthPassword(pass) {
         return 'mu_auth_' + String(pass || '')
       }
@@ -15127,6 +15157,17 @@
       }
 
       // Build internal Auth email dari input (username/WA/NIS)
+      /**
+       * Sanitize username/WA → email Firebase Auth internal.
+       * Strip karakter non-alphanumeric, force lowercase, append @portal-mu.local.
+       *
+       * @param {string} input - Username atau nomor WA
+       * @returns {string|null} Email format `<sanitized>@portal-mu.local`, atau null kalau input invalid
+       *
+       * @example
+       * buildAuthEmail("Pak Manshur") // → "pakmanshur@portal-mu.local"
+       * buildAuthEmail("081234567890") // → "081234567890@portal-mu.local"
+       */
       function buildAuthEmail(input) {
         const clean = String(input || '')
           .toLowerCase()
@@ -15190,6 +15231,14 @@
       // - source: 'guru' | 'santri' (collection name)
       // - user: object dengan id, wa, username, nis, password (optional)
       // Return: { success, uid, email, reason, error }
+      /**
+       * Silent auto-provision Firebase Auth account untuk legacy user.
+       * Pakai secondary Firebase app supaya tidak mengganggu session admin.
+       *
+       * @param {Object} user - User doc dari Firestore (guru/santri/admin)
+       * @param {string} source - Source: 'guru' | 'santri' | 'admin'
+       * @returns {Promise<Object>} { success: boolean, reason?: string }
+       */
       async function _provisionAuthForUser(user, source) {
         try {
           if (!user || user.id === undefined || user.id === null) {
@@ -15391,7 +15440,7 @@
                 // Sukses dengan raw → silently upgrade Auth password ke padded
                 try {
                   await signInCred.user.updatePassword(_toAuthPassword(pass))
-                  console.log('[Auth] Upgraded legacy raw password to padded format')
+                  _log('[Auth] Upgraded legacy raw password to padded format')
                 } catch (updErr) {
                   console.warn('[Auth] Password upgrade fail:', updErr && updErr.message)
                 }
@@ -15463,7 +15512,7 @@
             }
             sesiAktif = _buildSesiFromUser(userInfo)
             _clearAuthAttempts(username)
-            console.log('[Auth] Migrated to Firebase Auth:', authEmail)
+            _log('[Auth] Migrated to Firebase Auth:', authEmail)
             toggleLoader(false)
             masukKeAplikasi()
           } catch (createErr) {
@@ -16301,8 +16350,14 @@
         const uid = sesiAktif && sesiAktif.id ? sesiAktif.id : 'guest'
         return `darkMode_${uid}`
       }
+      /**
+       * Toggle dark mode + force inline style ke critical elements.
+       * Per-user persisted di localStorage.
+       *
+       * @param {boolean} isDark - true = dark mode, false = light mode
+       */
       function applyDarkMode(isDark) {
-        console.log('[applyDarkMode v.108.10] isDark =', isDark)
+        _log('[applyDarkMode v.108.10] isDark =', isDark)
         const body = document.body
         const html = document.documentElement
         const icon = document.getElementById('icon-darkmode')
@@ -16390,7 +16445,7 @@
               el.style.removeProperty('background-color')
             })
           }
-          console.log(
+          _log(
             '[applyDarkMode v.108.10] inline style applied. Topbar bg:',
             topbar ? getComputedStyle(topbar).backgroundColor : 'N/A'
           )
@@ -16413,6 +16468,13 @@
           applyDarkMode(false)
         }
       }
+      /**
+
+       * Toggle mobile sidebar visibility (swipe / hamburger menu).
+
+       * No-op di desktop (sidebar always visible md+).
+
+       */
 
       function toggleSidebar() {
         const sb = document.getElementById('sidebar')
@@ -16853,7 +16915,7 @@
               // v.108.39: sync ke Firebase Auth
               const syncR = await _syncAuthPasswordSelf(passBaru)
               if (!syncR.success) console.warn('[Auth] Password sync admin gagal:', syncR.reason)
-              else console.log('[Auth] Password admin synced to Firebase Auth')
+              else _log('[Auth] Password admin synced to Firebase Auth')
             }
             if (fotoBaru === '__HAPUS__') {
               savedSettings.adminFoto = ''
@@ -16917,7 +16979,7 @@
             if (passBaru) {
               const syncR = await _syncAuthPasswordSelf(passBaru)
               if (!syncR.success) console.warn('[Auth] Password sync guru gagal:', syncR.reason)
-              else console.log('[Auth] Password guru synced to Firebase Auth')
+              else _log('[Auth] Password guru synced to Firebase Auth')
             }
             let idx = db_guru.findIndex((g) => g.id == sesiAktif.id)
             db_guru[idx] = { ...db_guru[idx], ...updateData }
@@ -16962,7 +17024,7 @@
             if (passBaru) {
               const syncR = await _syncAuthPasswordSelf(passBaru)
               if (!syncR.success) console.warn('[Auth] Password sync santri gagal:', syncR.reason)
-              else console.log('[Auth] Password santri synced to Firebase Auth')
+              else _log('[Auth] Password santri synced to Firebase Auth')
             }
           }
           // v.108.54: Close modal DULU sebelum toast, plus force-clear backdrop
@@ -18187,7 +18249,7 @@
             try {
               localStorage.setItem('app_settings_v6', JSON.stringify(savedSettings))
             } catch (e) {}
-            console.log(`[uploadBgRapor] auto-saved ${fieldKey} → ${url.substring(0, 80)}...`)
+            _log(`[uploadBgRapor] auto-saved ${fieldKey} → ${url.substring(0, 80)}...`)
             Swal.fire({
               icon: 'success',
               title: 'BG Tersimpan',
@@ -18288,9 +18350,7 @@
             isURL: typeof v === 'string' && v.startsWith('http')
           })
         }
-        console.log(
-          `Total: ${total} bytes (${(total / 1024).toFixed(1)} KB) | Limit: 1,048,576 bytes`
-        )
+        _log(`Total: ${total} bytes (${(total / 1024).toFixed(1)} KB) | Limit: 1,048,576 bytes`)
         console.table(fields.sort((a, b) => b.size_bytes - a.size_bytes).slice(0, 20))
         return { total, fields }
       }
@@ -18315,7 +18375,7 @@
             data.kop_logo.length > 5000
           ) {
             await db.collection('lembaga').doc(doc.id).update({ kop_logo: '' })
-            console.log(`[cleanup] Cleared kop_logo for: ${doc.id}`)
+            _log(`[cleanup] Cleared kop_logo for: ${doc.id}`)
             cleared++
           }
         }
@@ -18338,7 +18398,7 @@
         for (const [k, v] of Object.entries(data)) {
           if (typeof v === 'string' && v.startsWith('data:image') && v.length > 5000) {
             updates[k] = ''
-            console.log(`[cleanup] Clearing ${k} (${v.length} bytes)`)
+            _log(`[cleanup] Clearing ${k} (${v.length} bytes)`)
           }
         }
         if (Object.keys(updates).length === 0) {
@@ -18405,7 +18465,7 @@
                 file.size < 2 * 1024 * 1024 &&
                 img.width <= maxWidth
               ) {
-                console.log('[compress] Skip re-encode PNG (sudah optimal):', file.name)
+                _log('[compress] Skip re-encode PNG (sudah optimal):', file.name)
                 return resolve(file)
               }
               let w = img.width,
@@ -18496,7 +18556,7 @@
                 !conf.hasOwnProperty(f)
               ) {
                 conf[f] = ''
-                console.log(`[cleanup] ${f} base64 (${v.length}b) cleared`)
+                _log(`[cleanup] ${f} base64 (${v.length}b) cleared`)
               }
             }
           }
@@ -18506,7 +18566,7 @@
 
         // Diagnostic log
         try {
-          console.log(`[simpanRapor] conf size: ${JSON.stringify(conf).length} bytes`)
+          _log(`[simpanRapor] conf size: ${JSON.stringify(conf).length} bytes`)
         } catch (e) {}
 
         try {
@@ -21830,6 +21890,15 @@
       //   eksporPDFSlipGajiById(id) // wraps cetakSlipGajiById
       //   dst.
       // ====================================================================
+      /**
+       * Generic helper: intercept window.open dari cetak function, capture HTML,
+       * render via html2canvas + jsPDF, auto-download.
+       *
+       * @param {Function} cetakFnInvoke - Function yang panggil cetak (mis. () => cetakKartuKenaikan())
+       * @param {string} filenameBase - Base filename (akan di-append _YYYY-MM-DD.pdf)
+       * @param {'p'|'l'} orientation - Portrait atau landscape (default 'p')
+       * @returns {Promise<void>}
+       */
       async function _eksporCetakSebagaiPDF(cetakFnInvoke, filenameBase, orientation = 'p') {
         // Tunggu library jsPDF + html2canvas
         if (typeof window.jspdf === 'undefined' || typeof html2canvas === 'undefined') {
@@ -22472,7 +22541,7 @@
             // v.108.36 B1-P2: auto-provision Firebase Auth untuk guru BARU
             _provisionAuthForUser(data, 'guru')
               .then((r) => {
-                if (r.success) console.log('[Auth] Auto-provisioned guru:', r.email)
+                if (r.success) _log('[Auth] Auto-provisioned guru:', r.email)
                 else console.warn('[Auth] Guru provision skip:', r.reason)
               })
               .catch((e) => console.warn('[Auth] Guru provision err:', e && e.message))
@@ -22891,7 +22960,7 @@
           if (!id) {
             _provisionAuthForUser(s, 'santri')
               .then((r) => {
-                if (r.success) console.log('[Auth] Auto-provisioned santri:', r.email)
+                if (r.success) _log('[Auth] Auto-provisioned santri:', r.email)
                 else console.warn('[Auth] Santri provision skip:', r.reason)
               })
               .catch((e) => console.warn('[Auth] Santri provision err:', e && e.message))
@@ -23880,7 +23949,7 @@
               (Array.isArray(s.guru_sekolah) && s.guru_sekolah.includes(myNama))
           )
         }
-        console.log('[renderViewSantri]', {
+        _log('[renderViewSantri]', {
           totalSantri: db_santri.length,
           ditampilkan: data.length,
           isFullAccess,
@@ -24327,7 +24396,7 @@
           )
         }
         data = sortSantriGeneral(data)
-        console.log('[renderTabelMutasi]', {
+        _log('[renderTabelMutasi]', {
           totalSantri: db_santri.length,
           ditampilkan: data.length,
           isFullAccess,
@@ -24370,7 +24439,7 @@
             )
             selLemb.value = match ? match.lembaga : ''
           }
-          console.log('[bukaModalMutasi]', {
+          _log('[bukaModalMutasi]', {
             santri_lembaga: s.lembaga,
             set_value: selLemb.value,
             options: lmbgList.length
@@ -24733,9 +24802,7 @@
             input.style.background = ''
           }, 800)
 
-          console.log(
-            `[Rekap Diniyah ] ${recId} → ${fkey}="${val}" (cache=${JSON.stringify(rec.data)})`
-          )
+          _log(`[Rekap Diniyah ] ${recId} → ${fkey}="${val}" (cache=${JSON.stringify(rec.data)})`)
         } catch (e) {
           console.error('[Rekap Diniyah ] Save fail:', e, 'recId:', recId, 'fkey:', fkey)
           input.style.background = '#fee2e2'
@@ -25792,12 +25859,12 @@
                 if (!conf.hasOwnProperty(f)) {
                   conf[f] = ''
                   cleanedCount++
-                  console.log(`[cleanup] Field "${f}" base64 (${v.length} bytes) → CLEARED`)
+                  _log(`[cleanup] Field "${f}" base64 (${v.length} bytes) → CLEARED`)
                 }
               }
             }
             if (cleanedCount > 0)
-              console.log(`[cleanup] Cleared ${cleanedCount} old base64 fields untuk free doc size`)
+              _log(`[cleanup] Cleared ${cleanedCount} old base64 fields untuk free doc size`)
           }
         } catch (e) {
           console.warn('[cleanup] gagal cek existing doc:', e.message)
@@ -25806,7 +25873,7 @@
         // Diagnostic: log size sebelum save
         try {
           const _sz = JSON.stringify(conf).length
-          console.log(`[simpanPengaturan] conf size = ${_sz} bytes (${(_sz / 1024).toFixed(1)} KB)`)
+          _log(`[simpanPengaturan] conf size = ${_sz} bytes (${(_sz / 1024).toFixed(1)} KB)`)
         } catch (e) {}
 
         try {
@@ -29889,7 +29956,7 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
             return st === 'aktif'
           })
         )
-        console.log('[renderBisyarohGrid]', {
+        _log('[renderBisyarohGrid]', {
           totalGuru: (db_guru || []).length,
           aktifTerdeteksi: guruAktif.length
         })
@@ -30452,6 +30519,46 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
       // v.108.67: safeHTML helper - sanitize HTML via DOMPurify
       // Pakai untuk innerHTML dengan template literal inject data Firestore.
       // Kalau DOMPurify belum loaded, fall back ke minimal escape.
+      // v.108.74 (C1): __DEV__ flag + _log() helper untuk production hygiene.
+      // console.log production = pollution. _log() silent di production,
+      // active di localhost/192.168.* untuk debugging.
+      // console.warn (87) dan console.error (16) TIDAK di-wrap (legit diagnostics).
+      const __DEV__ = (function () {
+        try {
+          const h = window.location.hostname || ''
+          return (
+            h === 'localhost' ||
+            h === '127.0.0.1' ||
+            h.startsWith('192.168.') ||
+            h.endsWith('.local')
+          )
+        } catch (e) {
+          return false
+        }
+      })()
+      function _log(...args) {
+        if (__DEV__) _log(...args)
+      }
+      /**
+
+       * Sanitize HTML string sebelum di-inject ke innerHTML.
+
+       * Pakai DOMPurify (loaded via CDN) kalau tersedia, fall back ke regex strip.
+
+       *
+
+       * @param {string} html - HTML string yang akan disanitize
+
+       * @returns {string} HTML yang aman dari XSS (script tags + on* attributes stripped)
+
+       *
+
+       * @example
+
+       * el.innerHTML = safeHTML(`<div>${userInput}</div>`)
+
+       */
+
       function safeHTML(html) {
         try {
           if (typeof DOMPurify !== 'undefined' && DOMPurify.sanitize) {
@@ -30503,7 +30610,7 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
             !('Notification' in window) ||
             !firebase.messaging.isSupported()
           ) {
-            console.log('FCM not supported in this browser/context')
+            _log('FCM not supported in this browser/context')
             return
           }
           _fcmMessaging = firebase.messaging()
@@ -30695,7 +30802,7 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
         try {
           // Cek setting toggle
           if (savedSettings.autoNotifPostingan === false) {
-            console.log('Auto-notif postingan dimatikan di Pengaturan')
+            _log('Auto-notif postingan dimatikan di Pengaturan')
             return
           }
 
@@ -30713,7 +30820,7 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
           })
 
           if (tokens.length === 0) {
-            console.log('Auto-notif: tidak ada user yang aktivasi notifikasi')
+            _log('Auto-notif: tidak ada user yang aktivasi notifikasi')
             return
           }
 
@@ -30742,7 +30849,7 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
               target_count: tokens.length,
               kategori: 'auto_postingan'
             })
-          console.log(`Auto-notif terkirim ke ${tokens.length} penerima`)
+          _log(`Auto-notif terkirim ke ${tokens.length} penerima`)
         } catch (e) {
           console.warn('Auto-notif gagal:', e)
         }
@@ -30903,6 +31010,14 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
       }
 
       // Cek apakah session aktif punya hak akses untuk fitur tertentu
+      /**
+       * Access control guard. Throw error kalau user tidak punya hak akses.
+       * Dipakai di 9 destructive functions (delete santri, edit settings, dll).
+       *
+       * @param {string} fitur - Nama fitur (mis. 'edit-santri', 'delete-guru')
+       * @param {Array<string>} [allowedRoles] - Role yang allowed (default: admin + super_admin)
+       * @throws {Error} kalau sesiAktif.role tidak match
+       */
       function cekHakAkses(fitur) {
         if (!sesiAktif || !sesiAktif.role) return false
         const r = sesiAktif.role
@@ -32511,7 +32626,7 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
                   .trim() === lembagaLower && s.aktif !== false
             )
           }
-          console.log('[renderListSantriRapor]', {
+          _log('[renderListSantriRapor]', {
             lembaga,
             totalSantri: db_santri.length,
             terfilter: list.length,
@@ -33917,7 +34032,7 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
             })
           })
           if (typeof console !== 'undefined') {
-            console.log(
+            _log(
               `[autoFillTglKhotam Pra PTPT] santri ${santriId}: ${_filledCount} field auto-filled. Sources: ${sources.length} (riwayat_kenaikan=${(santri.riwayat_kenaikan || []).length}, legacy parsed=${sources.length - (santri.riwayat_kenaikan || []).length})`
             )
           }

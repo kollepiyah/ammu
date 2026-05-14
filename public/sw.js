@@ -5,7 +5,7 @@
 // ====================================================================
 
 // Bump versi setiap deploy update besar supaya cache di-refresh
-const SW_VERSION = 'v263-0514-dashboard-count'
+const SW_VERSION = 'v264-0514-phase3-simple'
 const CACHE_SHELL = `mu-shell-${SW_VERSION}`
 const CACHE_RUNTIME = `mu-runtime-${SW_VERSION}`
 
