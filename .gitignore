@@ -110,3 +110,7 @@ bg-pesantren.jpg
 # Obsolete cleanup script (Windows-only, target sudah dihapus)
 cleanup-batch-a1.ps1
 functions/cloud-functions-index.js
+
+# Phase 2 — minified build artifacts
+public/index.min.html
+public/index.html.deploy-bak
