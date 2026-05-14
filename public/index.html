@@ -1775,27 +1775,33 @@
       }
       /* Specific text colors */
       body.dark-mode .text-emerald-900,
-      body.dark-mode .text-emerald-800 {
+      body.dark-mode .text-emerald-800,
+      body.dark-mode .text-emerald-700 {
         color: #6ee7b7 !important;
       }
       body.dark-mode .text-amber-900,
-      body.dark-mode .text-amber-800 {
+      body.dark-mode .text-amber-800,
+      body.dark-mode .text-amber-700 {
         color: #fcd34d !important;
       }
       body.dark-mode .text-cyan-900,
-      body.dark-mode .text-cyan-800 {
+      body.dark-mode .text-cyan-800,
+      body.dark-mode .text-cyan-700 {
         color: #67e8f9 !important;
       }
       body.dark-mode .text-blue-900,
-      body.dark-mode .text-blue-800 {
+      body.dark-mode .text-blue-800,
+      body.dark-mode .text-blue-700 {
         color: #93c5fd !important;
       }
       body.dark-mode .text-purple-900,
-      body.dark-mode .text-purple-800 {
+      body.dark-mode .text-purple-800,
+      body.dark-mode .text-purple-700 {
         color: #d8b4fe !important;
       }
       body.dark-mode .text-rose-900,
-      body.dark-mode .text-rose-800 {
+      body.dark-mode .text-rose-800,
+      body.dark-mode .text-rose-700 {
         color: #fda4af !important;
       }
       body.dark-mode .text-red-900,
@@ -1804,12 +1810,40 @@
         color: #fca5a5 !important;
       }
       body.dark-mode .text-indigo-900,
-      body.dark-mode .text-indigo-800 {
+      body.dark-mode .text-indigo-800,
+      body.dark-mode .text-indigo-700 {
         color: #a5b4fc !important;
       }
       body.dark-mode .text-teal-900,
-      body.dark-mode .text-teal-800 {
+      body.dark-mode .text-teal-800,
+      body.dark-mode .text-teal-700 {
         color: #5eead4 !important;
+      }
+      /* G5 (v.108.92): WCAG AA contrast — text color 700 mapping untuk badge ringan */
+      body.dark-mode .text-green-900,
+      body.dark-mode .text-green-800,
+      body.dark-mode .text-green-700 {
+        color: #86efac !important;
+      }
+      body.dark-mode .text-yellow-900,
+      body.dark-mode .text-yellow-800,
+      body.dark-mode .text-yellow-700 {
+        color: #fde047 !important;
+      }
+      body.dark-mode .text-pink-900,
+      body.dark-mode .text-pink-800,
+      body.dark-mode .text-pink-700 {
+        color: #f9a8d4 !important;
+      }
+      body.dark-mode .text-orange-900,
+      body.dark-mode .text-orange-800,
+      body.dark-mode .text-orange-700 {
+        color: #fdba74 !important;
+      }
+      body.dark-mode .text-slate-700,
+      body.dark-mode .text-slate-800,
+      body.dark-mode .text-slate-900 {
+        color: #e2e8f0 !important;
       }
       /* Dark mode kontras fix — gradient *-50 (light pastel) cards jadi solid dark */
       body.dark-mode .from-blue-50,
@@ -16222,7 +16256,7 @@
         if (b) b.classList.add("hidden");
       }
 
-      const APP_VERSION = "v.108.91.0514-g8-modal-migration";
+      const APP_VERSION = "v.108.92.0514-g5-dark-mode-contrast";
 
       // ====================================================================
       // Sentry error tracking init (B3). Gate guard: DSN placeholder = no-op.
