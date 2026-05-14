@@ -121,3 +121,6 @@ public/index.html.deploy-bak
 # Icon backup folder (auto-generated saat regenerate-icons.py)
 public/icon-backup-*/
 logo-baru.png
+preview-maskable-variants.png
+public/icon-backup-maskable-*/
+preview-maskable-*.png
