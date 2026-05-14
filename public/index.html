@@ -2125,6 +2125,25 @@
       body.dark-mode #login-section .bg-white {
         background-color: #1e293b !important;
       }
+      /* G4: Touch Target Accessibility (Apple HIG 44pt, WCAG 2.5.5) */
+      /* Default: respects existing button size on desktop, ensures tap-friendly on mobile */
+      @media (max-width: 768px) {
+        button:not(.swal2-close):not(.swal2-confirm):not(.swal2-cancel):not(.swal2-deny):not([aria-hidden="true"]),
+        [role="button"]:not([aria-hidden="true"]),
+        .mu-tap {
+          min-height: 44px;
+        }
+        /* Icon-only buttons should also have min-width 44px */
+        button.mu-icon-btn,
+        button[data-icon-only="true"] {
+          min-width: 44px;
+        }
+      }
+      /* Utility class for explicit tap target enforcement (use anywhere) */
+      .mu-tap-target {
+        min-height: 44px;
+        min-width: 44px;
+      }
     </style>
     <style>
       :root {
@@ -16063,7 +16082,7 @@
         if (b) b.classList.add("hidden");
       }
 
-      const APP_VERSION = "v.108.85.0514-g6-colorblind-badge";
+      const APP_VERSION = "v.108.86.0514-g4-touch-target";
 
       // ====================================================================
       // Sentry error tracking init (B3). Gate guard: DSN placeholder = no-op.
