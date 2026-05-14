@@ -13182,11 +13182,167 @@
             // Register SW baru dengan scope root (single registration)
             const reg = await navigator.serviceWorker.register('/sw.js', { scope: '/' })
             console.log('PWA SW registered:', reg.scope)
-            // ️ TIDAK ADA setInterval auto-update (penyebab memory leak di mobile)
-            // ️ TIDAK ADA auto-reload (penyebab refresh loop di iOS/Android)
+
+            // v.108.53: AUTO-UPDATE dengan safeguard anti-loop
+            //
+            // History: setInterval + auto-reload pernah cause memory leak di mobile
+            //          + refresh loop di iOS/Android. Implementasi baru pakai:
+            //   1. NO setInterval — pakai visibilitychange event (light, no leak)
+            //   2. Triple-guard anti-loop:
+            //      - sessionStorage.lastAutoReload timestamp (>5 menit between reload)
+            //      - sessionStorage.autoReloadCount per session (max 1x)
+            //      - Cancel button di toast (user override)
+            //   3. 5-detik countdown toast sebelum reload (kasih user awareness)
+
+            // Trigger update check saat tab kembali visible (user buka tab lagi)
+            document.addEventListener('visibilitychange', () => {
+              if (document.visibilityState === 'visible') {
+                reg.update().catch(() => {})
+              }
+            })
+
+            // Handler: SW baru jadi 'waiting' (installed, ready to activate)
+            const onWaiting = () => {
+              const newWorker = reg.waiting
+              if (!newWorker) return
+              _trySafeAutoReload(newWorker)
+            }
+            if (reg.waiting) onWaiting()
+            reg.addEventListener('updatefound', () => {
+              const newWorker = reg.installing
+              if (!newWorker) return
+              newWorker.addEventListener('statechange', () => {
+                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  onWaiting()
+                }
+              })
+            })
           } catch (err) {
             console.warn('PWA SW register fail:', err)
           }
+        })
+
+        // SAFE auto-reload helper with triple-guard
+        function _trySafeAutoReload(newWorker) {
+          try {
+            // GUARD 1: Already auto-reloaded this session?
+            const reloadCount = parseInt(sessionStorage.getItem('autoReloadCount') || '0', 10)
+            if (reloadCount >= 1) {
+              console.log('[SW update] Sudah auto-reload sekali di session ini, skip.')
+              return _showManualUpdateToast(newWorker)
+            }
+            // GUARD 2: Last reload < 5 menit ago?
+            const lastReload = parseInt(sessionStorage.getItem('lastAutoReload') || '0', 10)
+            if (lastReload && Date.now() - lastReload < 5 * 60 * 1000) {
+              console.log('[SW update] Last reload < 5 menit, skip auto-reload.')
+              return _showManualUpdateToast(newWorker)
+            }
+            // GUARD 3: Ada form input yang terisi? (user lagi ngetik)
+            const formInputs = document.querySelectorAll('input, textarea, select')
+            let hasFilledInput = false
+            formInputs.forEach((el) => {
+              if (el.type === 'hidden' || el.type === 'button' || el.type === 'submit') return
+              const val = (el.value || '').trim()
+              if (val && val !== el.defaultValue) hasFilledInput = true
+            })
+            if (hasFilledInput) {
+              console.log('[SW update] Ada form terisi, fallback ke manual toast.')
+              return _showManualUpdateToast(newWorker)
+            }
+            // All guards passed — schedule auto-reload 5 detik
+            _showCountdownToast(newWorker, 5)
+          } catch (err) {
+            console.warn('[SW update] guard error, fallback manual:', err)
+            _showManualUpdateToast(newWorker)
+          }
+        }
+
+        function _showCountdownToast(newWorker, seconds) {
+          let cancelled = false
+          let remaining = seconds
+          const tick = () => {
+            if (cancelled) return
+            if (remaining <= 0) {
+              sessionStorage.setItem('lastAutoReload', String(Date.now()))
+              sessionStorage.setItem(
+                'autoReloadCount',
+                String(parseInt(sessionStorage.getItem('autoReloadCount') || '0', 10) + 1)
+              )
+              newWorker.postMessage({ type: 'SKIP_WAITING' })
+              // controllerchange listener akan trigger reload
+              return
+            }
+            try {
+              if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                  toast: true,
+                  position: 'bottom-end',
+                  icon: 'info',
+                  title: 'Update tersedia. Refresh dalam ' + remaining + 's...',
+                  showConfirmButton: true,
+                  confirmButtonText: 'Batal',
+                  timer: 1100,
+                  timerProgressBar: true,
+                  didOpen: (toast) => {
+                    toast.addEventListener('click', (e) => {
+                      if (e.target.classList.contains('swal2-confirm')) {
+                        cancelled = true
+                        console.log('[SW update] User batal auto-reload.')
+                      }
+                    })
+                  }
+                }).then(() => {
+                  remaining -= 1
+                  if (!cancelled) setTimeout(tick, 0)
+                })
+              } else {
+                console.log('[SW update] Auto-reload dalam ' + remaining + 's (Swal not ready)...')
+                remaining -= 1
+                setTimeout(tick, 1000)
+              }
+            } catch (e) {
+              console.warn('[SW update] toast error, plain reload:', e)
+              setTimeout(() => {
+                newWorker.postMessage({ type: 'SKIP_WAITING' })
+              }, remaining * 1000)
+            }
+          }
+          tick()
+        }
+
+        function _showManualUpdateToast(newWorker) {
+          try {
+            if (typeof Swal === 'undefined') {
+              console.log('[SW update] Swal belum ready, log only.')
+              return
+            }
+            Swal.fire({
+              toast: true,
+              position: 'bottom-end',
+              icon: 'info',
+              title: 'Versi baru tersedia',
+              text: 'Klik untuk refresh sekarang',
+              showConfirmButton: true,
+              confirmButtonText: 'Refresh',
+              timer: 30000,
+              timerProgressBar: true
+            }).then((result) => {
+              if (result.isConfirmed) {
+                newWorker.postMessage({ type: 'SKIP_WAITING' })
+              }
+            })
+          } catch (e) {
+            console.warn('[SW update] manual toast error:', e)
+          }
+        }
+
+        // Reload page saat SW baru ambil alih (after skipWaiting + clientsClaim)
+        let _refreshing = false
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (_refreshing) return
+          _refreshing = true
+          console.log('[SW update] Controller changed, reloading page...')
+          window.location.reload()
         })
       }
 
@@ -13609,7 +13765,7 @@
         if (b) b.classList.add('hidden')
       }
 
-      const APP_VERSION = 'v.108.52.0514-palette-phase1'
+      const APP_VERSION = 'v.108.53.0514-auto-update'
 
       function parseTanggalExcel(val) {
         if (!val) return ''
