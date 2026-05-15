@@ -12,12 +12,20 @@ const props = defineProps({
 
 defineEmits(['lihat-semua'])
 
-const sorted = computed(() =>
-  [...props.kegiatan]
+const sorted = computed(() => {
+  // v.109.42: filter hari ini & akan datang only
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const todayStr = today.toISOString().split('T')[0]
+  return [...props.kegiatan]
     .filter((k) => k && k.tgl_mulai)
+    .filter((k) => {
+      const endTgl = k.tgl_akhir || k.tgl_mulai
+      return endTgl >= todayStr
+    })
     .sort((a, b) => (a.tgl_mulai || '').localeCompare(b.tgl_mulai || ''))
     .slice(0, props.limit)
-)
+})
 
 const NAMA_BULAN_ARAB = [
   'ٱلْمُحَرَّم',

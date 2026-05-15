@@ -14555,7 +14555,7 @@
         if (b) b.classList.add('hidden')
       }
 
-      const APP_VERSION = 'v.109.41.0515-sidebar-text-kalender-2'
+      const APP_VERSION = 'v.109.42.0515-sidebar-force-notif-toast-kalfilter'
 
       // ====================================================================
       // Sentry error tracking init (B3). Gate guard: DSN placeholder = no-op.
@@ -17369,11 +17369,11 @@
               main.style.setProperty('background-color', '#0f172a', 'important')
             }
 
-            // Sidebar - v.108.60: preserve user sidebarBgColor
-            // (sidebarBgColor sudah set via applySettings dengan !important)
-            // if (sidebar) {
-            //   sidebar.style.setProperty('background-color', '#1e293b', 'important')
-            // }
+            // v.109.42: Sidebar — force dark mode bg
+            if (sidebar) {
+              sidebar.style.setProperty('background-color', '#0f172a', 'important')
+              sidebar.style.setProperty('color', '#e2e8f0', 'important')
+            }
 
             // Loop semua .bg-white di document, force inline dark
             document.querySelectorAll('.bg-white').forEach((el) => {
@@ -17396,8 +17396,33 @@
               })
             }
             if (main) main.style.removeProperty('background-color')
-            // v.108.60: TIDAK remove sidebar bg saat exit dark (preserve user color)
-            // if (sidebar) sidebar.style.removeProperty('background-color')
+            // v.109.42: Sidebar light mode — force white BG + dark text
+            if (sidebar) {
+              sidebar.style.setProperty('background-color', '#ffffff', 'important')
+              sidebar.style.setProperty('color', '#1e293b', 'important')
+              // Force child text colors via JS supaya match light mode
+              sidebar.querySelectorAll('.text-white').forEach((el) => {
+                el.style.setProperty('color', '#334155', 'important')
+              })
+              sidebar.querySelectorAll('#ui-sidebar-title').forEach((el) => {
+                el.style.setProperty('color', 'var(--theme-color)', 'important')
+              })
+              sidebar.querySelectorAll('.text-slate-300, .text-slate-400').forEach((el) => {
+                el.style.setProperty('color', '#475569', 'important')
+              })
+              sidebar
+                .querySelectorAll(
+                  '.text-cyan-400, .text-purple-400, .text-blue-400, .text-emerald-400, .text-amber-400, .text-rose-400'
+                )
+                .forEach((el) => {
+                  el.style.setProperty('color', 'var(--theme-color)', 'important')
+                })
+              sidebar.querySelectorAll('.menu-item span').forEach((el) => {
+                if (!el.closest('.bg-teal-700, .bg-emerald-700, .active')) {
+                  el.style.setProperty('color', '#334155', 'important')
+                }
+              })
+            }
             document.querySelectorAll('.bg-white, .bg-slate-50, .bg-slate-100').forEach((el) => {
               el.style.removeProperty('background-color')
             })
@@ -32151,12 +32176,9 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
           }
           // Simpan token ke doc user
           await simpanTokenFCM(token)
-          Swal.fire({
-            icon: 'success',
-            title: 'Notifikasi Aktif!',
-            text: 'Anda akan menerima pemberitahuan dari pondok.',
-            timer: 2500
-          })
+          if (typeof _toast !== 'undefined' && _toast.success) {
+            _toast.success('Notifikasi Aktif: Anda akan menerima pemberitahuan dari pondok.')
+          }
           return true
         } catch (e) {
           console.error('FCM permission error:', e)
