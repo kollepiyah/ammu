@@ -2064,46 +2064,79 @@
       }
       /* Sidebar text putih */
       /* v.108.60: TIDAK !important — user color (inline) menang */
-      /* v.109.40: SIDEBAR LIGHT MODE — putih dengan teal accent (cerah) */
-      body:not(.dark-mode) #sidebar {
+      /* v.109.41: SIDEBAR LIGHT MODE — ultra specific + cover semua child element */
+      html body:not(.dark-mode) aside#sidebar {
         background: #ffffff !important;
         color: #1e293b !important;
-        border-right: 1px solid #e2e8f0;
+        border-right: 1px solid #e2e8f0 !important;
       }
-      body:not(.dark-mode) #sidebar .text-white {
-        color: #1e293b !important;
+      html body:not(.dark-mode) aside#sidebar * {
+        color: inherit;
       }
-      body:not(.dark-mode) #sidebar .text-amber-100,
-      body:not(.dark-mode) #sidebar h1 {
+      /* Title pondok pesantren — teal cerah */
+      html body:not(.dark-mode) aside#sidebar #ui-sidebar-title,
+      html body:not(.dark-mode) aside#sidebar h1.text-white {
+        color: var(--theme-color) !important;
+        text-shadow: none !important;
+      }
+      /* Periode pill — teal background tinted */
+      html body:not(.dark-mode) aside#sidebar #ui-sidebar-periode {
+        background: rgba(20, 184, 166, 0.12) !important;
+        color: var(--theme-color) !important;
+        text-shadow: none !important;
+      }
+      /* General text white di sidebar (eg copyright, footer) */
+      html body:not(.dark-mode) aside#sidebar .text-white,
+      html body:not(.dark-mode) aside#sidebar p.text-white,
+      html body:not(.dark-mode) aside#sidebar span.text-white {
+        color: #334155 !important;
+      }
+      /* Menu items - slate text */
+      html body:not(.dark-mode) aside#sidebar .menu-item,
+      html body:not(.dark-mode) aside#sidebar .menu-item span,
+      html body:not(.dark-mode) aside#sidebar .text-slate-300,
+      html body:not(.dark-mode) aside#sidebar .text-slate-400 {
+        color: #334155 !important;
+      }
+      /* Section labels (PENDIDIKAN, MENU, dll) */
+      html body:not(.dark-mode) aside#sidebar p.uppercase,
+      html body:not(.dark-mode) aside#sidebar .text-slate-400.uppercase {
+        color: #64748b !important;
+      }
+      /* Icon colors — pakai teal cerah */
+      html body:not(.dark-mode) aside#sidebar .text-cyan-400,
+      html body:not(.dark-mode) aside#sidebar .text-purple-400,
+      html body:not(.dark-mode) aside#sidebar .text-blue-400,
+      html body:not(.dark-mode) aside#sidebar .text-emerald-400,
+      html body:not(.dark-mode) aside#sidebar .text-amber-400,
+      html body:not(.dark-mode) aside#sidebar .text-rose-400 {
         color: var(--theme-color) !important;
       }
-      body:not(.dark-mode) #sidebar .text-slate-300,
-      body:not(.dark-mode) #sidebar .text-slate-400 {
-        color: #475569 !important;
-      }
-      body:not(.dark-mode) #sidebar .border-white\/10,
-      body:not(.dark-mode) #sidebar .border-white\/5 {
+      /* Border + background overrides */
+      html body:not(.dark-mode) aside#sidebar .border-white\/10,
+      html body:not(.dark-mode) aside#sidebar .border-white\/5 {
         border-color: #e2e8f0 !important;
       }
-      body:not(.dark-mode) #sidebar .bg-black\/20 {
-        background: rgba(20, 184, 166, 0.06) !important;
+      html body:not(.dark-mode) aside#sidebar .bg-black\/20 {
+        background: rgba(20, 184, 166, 0.05) !important;
       }
-      body:not(.dark-mode) #sidebar .bg-white\/10 {
+      html body:not(.dark-mode) aside#sidebar .bg-white\/10 {
         background: rgba(20, 184, 166, 0.08) !important;
       }
-      body:not(.dark-mode) #sidebar .menu-item:hover {
+      /* Hover state */
+      html body:not(.dark-mode) aside#sidebar .menu-item:hover {
         background: rgba(20, 184, 166, 0.12) !important;
         color: var(--theme-color) !important;
       }
-      body:not(.dark-mode) #sidebar .menu-item.bg-teal-700,
-      body:not(.dark-mode) #sidebar .menu-item.bg-emerald-700,
-      body:not(.dark-mode) #sidebar .menu-item.active {
-        background: rgba(20, 184, 166, 0.15) !important;
+      html body:not(.dark-mode) aside#sidebar .menu-item:hover span,
+      html body:not(.dark-mode) aside#sidebar .menu-item:hover i {
         color: var(--theme-color) !important;
       }
-      body:not(.dark-mode) #sidebar .text-cyan-400,
-      body:not(.dark-mode) #sidebar .text-purple-400,
-      body:not(.dark-mode) #sidebar .text-blue-400 {
+      /* Active state */
+      html body:not(.dark-mode) aside#sidebar .menu-item.active,
+      html body:not(.dark-mode) aside#sidebar .menu-item.bg-teal-700,
+      html body:not(.dark-mode) aside#sidebar .menu-item.bg-emerald-700 {
+        background: rgba(20, 184, 166, 0.15) !important;
         color: var(--theme-color) !important;
       }
       body.dark-mode #sidebar {
@@ -14522,7 +14555,7 @@
         if (b) b.classList.add('hidden')
       }
 
-      const APP_VERSION = 'v.109.40.0515-kalender-scroll-theme-cerah-sidebar-light'
+      const APP_VERSION = 'v.109.41.0515-sidebar-text-kalender-2'
 
       // ====================================================================
       // Sentry error tracking init (B3). Gate guard: DSN placeholder = no-op.
@@ -14619,7 +14652,7 @@
               vKP.style.display = ''
               window.AmmuWidgets.mount('KalenderPendidikan', '#vue-widget-kalender-pendidikan', {
                 kegiatan: window.db_kegiatan || [],
-                limit: 3,
+                limit: 2,
                 onLihatSemua: function () {
                   if (typeof window.showPage === 'function') window.showPage('kalender-kegiatan')
                 }
@@ -14634,7 +14667,7 @@
             try {
               window.AmmuWidgets.mount('KalenderPendidikan', '#vue-widget-kalender-pendidikan', {
                 kegiatan: window.db_kegiatan || [],
-                limit: 3,
+                limit: 2,
                 onLihatSemua: function () {
                   if (typeof window.showPage === 'function') window.showPage('kalender-kegiatan')
                 }
