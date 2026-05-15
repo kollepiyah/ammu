@@ -14472,7 +14472,7 @@
         if (b) b.classList.add('hidden')
       }
 
-      const APP_VERSION = 'v.109.26.0515-jamhijri-bigger-icon-transparent'
+      const APP_VERSION = 'v.109.27.0515-stats-kritik-excel-fixes'
 
       // ====================================================================
       // Sentry error tracking init (B3). Gate guard: DSN placeholder = no-op.
@@ -14515,7 +14515,6 @@
       window._useVueKalenderMini = window._useVueKalenderMini ?? false
       window._useVueKalenderPendidikan = window._useVueKalenderPendidikan ?? false
       window._useVueModalPOS = window._useVueModalPOS ?? false
-
       ;(function loadVueWidgetsConditional() {
         var anyFlag =
           window._useVueJamHijri ||
@@ -15259,17 +15258,21 @@
           db_profil_pesantren = []
           db_beranda_post = []
           db_kegiatan = []
-          // v.108.57: Skip kritik_saran load kalau user belum auth
-          // (rules require signedIn — anonymous bakal kena permission-denied)
-          if (fbAuth && fbAuth.currentUser) {
-            try {
-              const resKritik = await db.collection('kritik_saran').get()
-              resKritik.forEach((doc) => db_kritik_saran.push(doc.data()))
-            } catch (e) {
-              // permission-denied bisa tetap terjadi kalau rule strict — silent.
-              if (e.code !== 'permission-denied') {
-                console.warn('Kritik & Saran load fail:', e.code || e.message)
-              }
+          // v.109.27: Drop fbAuth.currentUser guard. Try load; gracefully handle permission-denied.
+          // Trigger render setelah load sukses kalau page sedang ada di kritik-saran.
+          try {
+            const resKritik = await db.collection('kritik_saran').get()
+            resKritik.forEach((doc) => db_kritik_saran.push(doc.data()))
+            // Auto-render kalau current page = kritik-saran (admin baru login langsung lihat data)
+            const _cur = sessionStorage.getItem('currentPage_v6')
+            if (_cur === 'kritik-saran' && typeof renderKritikSaran === 'function') {
+              try {
+                renderKritikSaran()
+              } catch (e) {}
+            }
+          } catch (e) {
+            if (e.code !== 'permission-denied') {
+              console.warn('Kritik & Saran load fail:', e.code || e.message)
             }
           }
           try {
@@ -16274,8 +16277,9 @@
             })
             // v.108.16: Hide group keuangan (id baru: grup-keuangan-menu)
             const grupKeu = document.getElementById('grup-keuangan-menu')
-            if (grupKeu) grupKeu.classList.add('hidden')
-            // Hide menu Master Data + Pengaturan Web
+            if (grupKeu)
+              grupKeu.classList.add('hidden')
+              // Hide menu Master Data + Pengaturan Web
             ;[
               'menu-master-data',
               'menu-pengaturan-web',
@@ -16833,15 +16837,12 @@
           )
         }
         // Listener Kritik & Saran (semua role) — non-blocking
-        let initFlagsKS = { ks: false, pp: false }
+        // v.109.27: Drop skip-first pattern. Listener jadi source of truth — every snapshot updates.
+        let initFlagsKS = { pp: false }
         try {
           _realtimeListeners.push(
             db.collection('kritik_saran').onSnapshot(
               (snap) => {
-                if (!initFlagsKS.ks) {
-                  initFlagsKS.ks = true
-                  return
-                }
                 db_kritik_saran = []
                 snap.forEach((d) => db_kritik_saran.push(d.data()))
                 showLiveBadge('ks')
@@ -18029,10 +18030,14 @@
           '<div><h3 class="text-lg font-black text-slate-800 mb-4"><i class="fas fa-chart-pie mr-2 text-custom"></i>Statistik Lembaga</h3>'
         html += '<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">'
         lembagaPendidikan.forEach((l) => {
-          const santriLmbg = db_santri.filter((s) => s.lembaga === l.lembaga)
-          const jmlKelas = [...new Set(santriLmbg.map((s) => s.guru))].length
+          // v.109.27: filter santri aktif untuk count kelas+santri, filter guru aktif untuk count guru
+          const santriLmbg = db_santri.filter((s) => s.lembaga === l.lembaga && s.aktif !== false)
+          // Kelas = jumlah unique guru yang punya santri aktif (guru tanpa santri tidak dihitung)
+          const jmlKelas = [...new Set(santriLmbg.map((s) => s.guru).filter((g) => g))].length
           const jmlSantri = santriLmbg.length
-          const jmlGuru = db_guru.filter((g) => g.lembaga === l.lembaga).length
+          const jmlGuru = db_guru.filter(
+            (g) => g.lembaga === l.lembaga && _isStatusAktif(g.status)
+          ).length
           html += `<div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm border-l-4 border-teal-500 hover:shadow-md transition"><h4 class="font-black text-slate-800 text-sm uppercase tracking-wider mb-3">${l.lembaga}</h4><div class="grid grid-cols-3 gap-2 text-center"><div class="bg-teal-50 rounded-lg py-2 border border-teal-100"><p class="text-[9px] text-teal-700 font-bold uppercase">Kelas</p><p class="text-lg font-black text-teal-800">${jmlKelas}</p></div><div class="bg-blue-50 rounded-lg py-2 border border-blue-100"><p class="text-[9px] text-blue-700 font-bold uppercase">Santri</p><p class="text-lg font-black text-blue-800">${jmlSantri}</p></div><div class="bg-amber-50 rounded-lg py-2 border border-amber-100"><p class="text-[9px] text-amber-700 font-bold uppercase">Guru</p><p class="text-lg font-black text-amber-800">${jmlGuru}</p></div></div></div>`
         })
         html += '</div></div>'
@@ -27334,12 +27339,23 @@
       // --- KOP HELPER UNTUK EKSPOR EXCEL ---
       // Mengembalikan array of rows untuk diawali pada AOA (Array of Array)
       function buatKopExcel() {
+        // v.109.27: match PDF tambahKopPDF layout
+        // Row 1: kopLine1 (UPPERCASE normal, 11pt)
+        // Row 2: kopLine2 (UPPERCASE bold, 14pt — biggest)
+        // Row 3: kopLine3 (Title Case)
+        // Row 4: kopLine4 (Title Case)
+        // Row 5: garis pembatas tebal
+        // Row 6: blank
         const set = savedSettings
+        const _toTitleCase = (s) =>
+          String(s)
+            .toLowerCase()
+            .replace(/\b\w/g, (c) => c.toUpperCase())
         let rows = []
         rows.push([String(set.kopLine1 || set.txtAppName || 'PONDOK PESANTREN').toUpperCase()])
         if (set.kopLine2) rows.push([String(set.kopLine2).toUpperCase()])
-        if (set.kopLine3) rows.push([String(set.kopLine3)])
-        if (set.kopLine4) rows.push([String(set.kopLine4)])
+        if (set.kopLine3) rows.push([_toTitleCase(set.kopLine3)])
+        if (set.kopLine4) rows.push([_toTitleCase(set.kopLine4)])
         rows.push([''.padStart(80, '=')]) // garis pembatas
         rows.push([''])
         return rows
@@ -37314,8 +37330,9 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
         const fileInp = document.getElementById('bp-gambar-file')
         if (fileInp) fileInp.value = ''
         const prog = document.getElementById('bp-gambar-progress')
-        if (prog) prog.classList.add('hidden')
-        // Reset link preview
+        if (prog)
+          prog.classList.add('hidden')
+          // Reset link preview
         ;['bp-link-url', 'bp-link-title', 'bp-link-desc', 'bp-link-image'].forEach((id) => {
           const el = document.getElementById(id)
           if (el) el.value = ''
@@ -37343,8 +37360,9 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
         const fileInp = document.getElementById('bp-gambar-file')
         if (fileInp) fileInp.value = ''
         const prog = document.getElementById('bp-gambar-progress')
-        if (prog) prog.classList.add('hidden')
-        // Restore link preview kalau ada
+        if (prog)
+          prog.classList.add('hidden')
+          // Restore link preview kalau ada
         ;['bp-link-url', 'bp-link-title', 'bp-link-desc', 'bp-link-image'].forEach((id) => {
           const el = document.getElementById(id)
           if (el) el.value = ''
