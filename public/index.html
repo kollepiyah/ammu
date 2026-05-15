@@ -217,7 +217,7 @@
 
       /* ============= GLOBAL UI/UX RULES (iOS/Android compatibility) ============= */
       :root {
-        --theme-color: #0f766e;
+        --theme-color: #14b8a6; /* v.109.40: lebih cerah (teal-400) */
       }
       * {
         -webkit-tap-highlight-color: transparent;
@@ -2064,6 +2064,48 @@
       }
       /* Sidebar text putih */
       /* v.108.60: TIDAK !important — user color (inline) menang */
+      /* v.109.40: SIDEBAR LIGHT MODE — putih dengan teal accent (cerah) */
+      body:not(.dark-mode) #sidebar {
+        background: #ffffff !important;
+        color: #1e293b !important;
+        border-right: 1px solid #e2e8f0;
+      }
+      body:not(.dark-mode) #sidebar .text-white {
+        color: #1e293b !important;
+      }
+      body:not(.dark-mode) #sidebar .text-amber-100,
+      body:not(.dark-mode) #sidebar h1 {
+        color: var(--theme-color) !important;
+      }
+      body:not(.dark-mode) #sidebar .text-slate-300,
+      body:not(.dark-mode) #sidebar .text-slate-400 {
+        color: #475569 !important;
+      }
+      body:not(.dark-mode) #sidebar .border-white\/10,
+      body:not(.dark-mode) #sidebar .border-white\/5 {
+        border-color: #e2e8f0 !important;
+      }
+      body:not(.dark-mode) #sidebar .bg-black\/20 {
+        background: rgba(20, 184, 166, 0.06) !important;
+      }
+      body:not(.dark-mode) #sidebar .bg-white\/10 {
+        background: rgba(20, 184, 166, 0.08) !important;
+      }
+      body:not(.dark-mode) #sidebar .menu-item:hover {
+        background: rgba(20, 184, 166, 0.12) !important;
+        color: var(--theme-color) !important;
+      }
+      body:not(.dark-mode) #sidebar .menu-item.bg-teal-700,
+      body:not(.dark-mode) #sidebar .menu-item.bg-emerald-700,
+      body:not(.dark-mode) #sidebar .menu-item.active {
+        background: rgba(20, 184, 166, 0.15) !important;
+        color: var(--theme-color) !important;
+      }
+      body:not(.dark-mode) #sidebar .text-cyan-400,
+      body:not(.dark-mode) #sidebar .text-purple-400,
+      body:not(.dark-mode) #sidebar .text-blue-400 {
+        color: var(--theme-color) !important;
+      }
       body.dark-mode #sidebar {
         background-color: #020617;
       }
@@ -14480,7 +14522,7 @@
         if (b) b.classList.add('hidden')
       }
 
-      const APP_VERSION = 'v.109.39.0515-kalender-teal-postcard-jakarta'
+      const APP_VERSION = 'v.109.40.0515-kalender-scroll-theme-cerah-sidebar-light'
 
       // ====================================================================
       // Sentry error tracking init (B3). Gate guard: DSN placeholder = no-op.
@@ -14661,8 +14703,23 @@
                 this._app = null
               }
             }
+            // v.109.40: testPOSVue() helper — auto pick santri pertama untuk testing
+            window.testPOSVue = function () {
+              if (!window.db_santri || window.db_santri.length === 0) {
+                if (typeof _toast !== 'undefined') _toast.warning('db_santri kosong, login dulu')
+                else console.warn('db_santri kosong')
+                return
+              }
+              const firstSantri =
+                window.db_santri.find((s) => s.aktif !== false) || window.db_santri[0]
+              if (typeof window.bukaPOSVue === 'function') {
+                window.bukaPOSVue(firstSantri.id)
+              } else {
+                console.warn('bukaPOSVue belum siap')
+              }
+            }
             console.log(
-              '[AmmuPOS] ready - window.AmmuPOS.open({ santri, operator, onSimpan, onClose })'
+              '[AmmuPOS] ready - bukaPOSVue(<id>) atau testPOSVue() untuk auto pick santri pertama'
             )
           }
         }

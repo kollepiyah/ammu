@@ -170,6 +170,17 @@ function rangeText(k) {
   flex-direction: column;
   gap: 0.375rem;
   flex: 1;
+  max-height: 220px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+}
+.list::-webkit-scrollbar {
+  width: 5px;
+}
+.list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 999px;
 }
 .agenda {
   display: flex;
