@@ -14480,7 +14480,7 @@
         if (b) b.classList.add('hidden')
       }
 
-      const APP_VERSION = 'v.109.37.0515-fix-kalender-postcard'
+      const APP_VERSION = 'v.109.38.0515-kalender-listener-judul'
 
       // ====================================================================
       // Sentry error tracking init (B3). Gate guard: DSN placeholder = no-op.
@@ -16980,23 +16980,21 @@
           _realtimeListeners.push(
             db.collection('kegiatan').onSnapshot(
               (snap) => {
-                if (!initFlagsBP.kg) {
-                  initFlagsBP.kg = true
-                  return
-                }
+                // v.109.38: Drop skip-first - listener jadi source of truth (fix kalender empty)
                 db_kegiatan = []
                 snap.forEach((d) => db_kegiatan.push(d.data()))
                 showLiveBadge('kg')
                 window.db_kegiatan = db_kegiatan
-                // v.109.37: trigger remount Vue KalenderPendidikan dengan data baru
                 if (typeof window.refreshKalenderPendidikan === 'function') {
                   try {
                     window.refreshKalenderPendidikan()
                   } catch (e) {}
                 }
                 const cur = sessionStorage.getItem('currentPage_v6')
-                if (cur === 'kalender-kegiatan') renderKalenderKegiatan()
-                else if (cur === 'dashboard') renderWidgetKegiatanTerdekat()
+                if (cur === 'kalender-kegiatan' && typeof renderKalenderKegiatan === 'function')
+                  renderKalenderKegiatan()
+                else if (cur === 'dashboard' && typeof renderWidgetKegiatanTerdekat === 'function')
+                  renderWidgetKegiatanTerdekat()
               },
               (err) => console.warn('Kegiatan listener:', err.code)
             )

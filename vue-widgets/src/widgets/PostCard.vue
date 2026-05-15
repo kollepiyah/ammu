@@ -181,14 +181,15 @@ const formatted = computed(() => {
 }
 .judul {
   padding: 0 1rem 0.75rem;
-  font-size: 1.125rem;
-  font-weight: 700;
-  line-height: 1.3;
+  font-size: 1.05rem;
+  font-weight: 600;
+  line-height: 1.35;
   margin: 0;
+  color: #0f172a;
 }
 @media (min-width: 768px) {
   .judul {
-    font-size: 1.25rem;
+    font-size: 1.15rem;
   }
 }
 .gal {
