@@ -57,7 +57,7 @@
 
     <!-- SELF-HOSTED Tailwind compiled CSS (eliminate CDN race condition + production warning) -->
     <link rel="stylesheet" href="./styles.css" />
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/dist/tailwind.css" />
     <!-- MODAL FORCE-HIDE: jalan setelah DOM siap. Fix bug auto-show. -->
     <script>
       document.addEventListener('DOMContentLoaded', function () {
@@ -966,6 +966,11 @@
       body.ptr-refreshing #global-loader,
       body.ptr-refreshing #splash-screen {
         display: none !important;
+      }
+      /* v.109.45: Show bg-pesantren hanya saat login-view visible */
+      body:has(#login-view:not(.hidden)) #app-bg,
+      body:has(#login-view:not(.hidden)) #bg-overlay {
+        display: block !important;
       }
       body:has(#login-view:not(.hidden)) #global-loader {
         display: none !important;
@@ -4126,7 +4131,7 @@
     <div
       id="app-bg"
       class="fixed inset-0 bg-cover bg-center z-[-2] transition-all duration-500 bg-teal-900"
-      style="background-image: url('/bg-pesantren.jpg?v=108.17'); opacity: 1"
+      style="background-image: url('/bg-pesantren.webp?v=109.45'); opacity: 1; display: none"
     ></div>
     <div
       id="bg-overlay"
@@ -14578,7 +14583,7 @@
         if (b) b.classList.add('hidden')
       }
 
-      const APP_VERSION = 'v.109.44.0515-sidebar-dark-splash-refresh-fix'
+      const APP_VERSION = 'v.109.46.0515-tailwind-compiled'
 
       // ====================================================================
       // Sentry error tracking init (B3). Gate guard: DSN placeholder = no-op.
@@ -17403,10 +17408,18 @@
               main.style.setProperty('background-color', '#0f172a', 'important')
             }
 
-            // v.109.42: Sidebar — force dark mode bg
+            // v.109.45: Sidebar dark mode — force bg + clear inline style children (reset light mode)
             if (sidebar) {
               sidebar.style.setProperty('background-color', '#0f172a', 'important')
               sidebar.style.setProperty('color', '#e2e8f0', 'important')
+              // Clear inline color overrides yang di-set saat light mode (#0f172a / #475569 dll)
+              sidebar
+                .querySelectorAll(
+                  '#ui-sidebar-title, .text-white, .text-slate-300, .text-slate-400, .text-cyan-400, .text-purple-400, .text-blue-400, .text-emerald-400, .text-amber-400, .text-rose-400, .menu-item span'
+                )
+                .forEach((el) => {
+                  el.style.removeProperty('color')
+                })
             }
 
             // Loop semua .bg-white di document, force inline dark

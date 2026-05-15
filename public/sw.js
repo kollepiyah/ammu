@@ -5,7 +5,7 @@
 // ====================================================================
 
 // Bump versi setiap deploy update besar supaya cache di-refresh
-const SW_VERSION = 'v334-0515-sidebar-dark-splash-refresh'
+const SW_VERSION = 'v336-0515-tailwind-compiled'
 const CACHE_SHELL = `mu-shell-${SW_VERSION}`
 const CACHE_RUNTIME = `mu-runtime-${SW_VERSION}`
 
@@ -14,9 +14,10 @@ const SHELL_URLS = [
   '/index.html',
   '/styles.css',
   '/dist/widgets.js',
+  '/dist/tailwind.css',
   '/fonts/ScheherazadeNew-SemiBold.ttf',
   '/exceljs.min.js',
-  '/bg-pesantren.jpg',
+  '/bg-pesantren.webp',
   '/manifest.json',
   '/logo.png',
   '/favicon.ico',
