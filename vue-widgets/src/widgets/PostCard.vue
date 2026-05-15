@@ -46,7 +46,7 @@ const formatted = computed(() => {
   <article class="ammu-post">
     <header class="post-hdr">
       <div class="hdr-l">
-        <div class="ava"><img src="/logo.png" alt="Logo" class="ava-img" /></div>
+        <div class="ava"><img :src="'/logo.png'" alt="Logo" class="ava-img" /></div>
         <div>
           <p class="nama">Pondok Pesantren Mambaul Ulum</p>
           <p class="meta">
