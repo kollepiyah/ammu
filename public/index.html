@@ -14480,7 +14480,7 @@
         if (b) b.classList.add('hidden')
       }
 
-      const APP_VERSION = 'v.109.31.0515-rapor-padding-crud-icon'
+      const APP_VERSION = 'v.109.32.0515-rapor-colspan-thead-excel-absen'
 
       // ====================================================================
       // Sentry error tracking init (B3). Gate guard: DSN placeholder = no-op.
@@ -27590,7 +27590,8 @@
         doc.save(`Rekap_Absensi_${namaBulan}_${thn}.pdf`)
       }
 
-      function eksporRekapAbsen() {
+      async function eksporRekapAbsen() {
+        // v.109.32: migrate ke exportToExcelStyled (logo + KOP rapi seperti PDF)
         const blnIndex = parseInt(document.getElementById('rekap_absen_bulan').value)
         const thn = parseInt(document.getElementById('rekap_absen_tahun').value)
         const daysInMonth = new Date(thn, blnIndex + 1, 0).getDate()
@@ -27609,16 +27610,10 @@
           'Desember'
         ]
         const namaBulan = monthNames[blnIndex]
-        let theadArr = ['No', 'Nama Guru', 'Lembaga']
-        for (let d = 1; d <= daysInMonth; d++) {
-          theadArr.push(String(d))
-        }
-        theadArr.push('Tepat (H)', 'Telat (T)', 'Izin/Sakit', 'Alpha')
-        let aoa = buatKopExcel()
-        aoa.push([`REKAP ABSENSI GURU - ${namaBulan.toUpperCase()} ${thn}`])
-        aoa.push([`Dicetak: ${new Date().toLocaleString('id-ID')}`])
-        aoa.push([])
-        aoa.push(theadArr)
+        let header = ['No', 'Nama Guru', 'Lembaga']
+        for (let d = 1; d <= daysInMonth; d++) header.push(String(d))
+        header.push('Tepat (H)', 'Telat (T)', 'Izin/Sakit', 'Alpha')
+        const rows = []
         let sortedGuru = sortGuruGeneral([...db_guru])
         let no = 1
         sortedGuru.forEach((g) => {
@@ -27660,12 +27655,31 @@
             }
           }
           row.push(tHadir, tTelat, tIzinSakit, tAlpha)
-          aoa.push(row)
+          rows.push(row)
         })
-        let ws = XLSX.utils.aoa_to_sheet(aoa)
-        let wb = XLSX.utils.book_new()
-        XLSX.utils.book_append_sheet(wb, ws, 'Rekap_Absensi')
-        XLSX.writeFile(wb, `Rekap_Absensi_${namaBulan}_${thn}.xlsx`)
+        const colWidths = [4, 25, 14, ...Array(daysInMonth).fill(3), 6, 6, 7, 6]
+        const ok = await exportToExcelStyled({
+          filename: `Rekap_Absensi_${namaBulan}_${thn}.xlsx`,
+          sheetName: 'Rekap Absensi',
+          title: `REKAP ABSENSI GURU - ${namaBulan.toUpperCase()} ${thn}`,
+          subtitle: `Dicetak: ${new Date().toLocaleString('id-ID')} | Total: ${sortedGuru.length} guru`,
+          header: header,
+          rows: rows,
+          colWidths: colWidths
+        })
+        if (ok === false) {
+          // Fallback XLSX basic kalau ExcelJS gagal
+          let aoa = buatKopExcel()
+          aoa.push([`REKAP ABSENSI GURU - ${namaBulan.toUpperCase()} ${thn}`])
+          aoa.push([`Dicetak: ${new Date().toLocaleString('id-ID')}`])
+          aoa.push([])
+          aoa.push(header)
+          rows.forEach((r) => aoa.push(r))
+          const ws = XLSX.utils.aoa_to_sheet(aoa)
+          const wb = XLSX.utils.book_new()
+          XLSX.utils.book_append_sheet(wb, ws, 'Rekap_Absensi')
+          XLSX.writeFile(wb, `Rekap_Absensi_${namaBulan}_${thn}.xlsx`)
+        }
       }
 
       function bukaModalLibur() {
@@ -35813,7 +35827,7 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
                             <td colspan="${fields.length + 2}" style="border:1px solid #000;padding:4px;text-align:center;font-weight:bold;">${jumlahKhotam} Khotam</td>
                         </tr>
                         <tr style="background:#fffbeb;">
-                            <td colspan="${fields.length + 3}" style="border:1px solid #000;padding:4px;font-weight:bold;text-align:left;">Total Rata-rata</td>
+                            <td colspan="${fields.length + 4}" style="border:1px solid #000;padding:4px;font-weight:bold;text-align:left;">Total Rata-rata</td>
                             <td style="border:1px solid #000;padding:4px;text-align:center;font-weight:bold;">${totalAvgStr}</td>
                         </tr>
                     </tfoot></table></div>`
@@ -35917,7 +35931,7 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
             const guruKelasData = (db_guru || []).find((g) => g.nama === namaGuruKelas)
             const ekgqGuruKelas = guruKelasData ? guruKelasData.ekgq || '' : ''
 
-            return `<div class="page" style="page-break-after:always;padding:15mm 15mm 65mm 15mm;position:relative;min-height:267mm;box-sizing:border-box;"><style>.page tr{page-break-inside:avoid;}</style>
+            return `<div class="page" style="page-break-after:always;padding:15mm 15mm 65mm 15mm;position:relative;min-height:267mm;box-sizing:border-box;"><style>.page thead{display:table-header-group;}.page tfoot{display:table-footer-group;}.page tr{page-break-inside:avoid;}</style>
                    ${bgLayerHtml}
                     <div style="position:relative;z-index:1;">
                    <!-- KOP -->
