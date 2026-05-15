@@ -2,7 +2,6 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { formatHijri, formatMasehi } from '../utils/hijri'
 
-// v.109.24: Scheherazade New SemiBold (self-hosted) prioritas, fallback El Messiri & Amiri
 const FONT_ARAB =
   "'Scheherazade New','El Messiri','Noto Naskh Arabic','Amiri','Traditional Arabic',serif"
 
@@ -128,7 +127,7 @@ onUnmounted(() => {
   font-size: 9.5px;
   font-weight: 600;
   letter-spacing: 0.22em;
-  margin: 0 0 0.4rem 0;
+  margin: 0 0 0.3rem 0;
   padding: 3px 9px;
   background: rgba(255, 255, 255, 0.16);
   border-radius: 6px;
@@ -136,11 +135,11 @@ onUnmounted(() => {
   text-transform: uppercase;
   color: white;
 }
-/* v.109.24: hijri pakai Scheherazade New SemiBold (self-hosted) — tanpa harokat */
+/* v.109.26: tgl hijri geser atas + perbesar */
 .hijri {
-  font-size: 1.15rem;
+  font-size: 1.3rem;
   font-weight: 600;
-  margin-top: 0.4rem;
+  margin-top: 0.2rem;
   margin-bottom: 0.15rem;
   line-height: 1.4;
   text-align: left;
@@ -148,7 +147,7 @@ onUnmounted(() => {
 }
 @media (min-width: 768px) {
   .hijri {
-    font-size: 1.3rem;
+    font-size: 1.45rem;
   }
 }
 .masehi {
