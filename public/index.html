@@ -14480,7 +14480,7 @@
         if (b) b.classList.add('hidden')
       }
 
-      const APP_VERSION = 'v.109.36.0515-wire-pos-w3-w5'
+      const APP_VERSION = 'v.109.37.0515-fix-kalender-postcard'
 
       // ====================================================================
       // Sentry error tracking init (B3). Gate guard: DSN placeholder = no-op.
@@ -14582,6 +14582,23 @@
                   if (typeof window.showPage === 'function') window.showPage('kalender-kegiatan')
                 }
               })
+            }
+          }
+          // v.109.37: Helper untuk remount KalenderPendidikan saat data update
+          window.refreshKalenderPendidikan = function () {
+            if (!window._useVueKalenderPendidikan || window._useVueKalenderMini) return
+            const vKP = document.getElementById('vue-widget-kalender-pendidikan')
+            if (!vKP || !window.AmmuWidgets) return
+            try {
+              window.AmmuWidgets.mount('KalenderPendidikan', '#vue-widget-kalender-pendidikan', {
+                kegiatan: window.db_kegiatan || [],
+                limit: 3,
+                onLihatSemua: function () {
+                  if (typeof window.showPage === 'function') window.showPage('kalender-kegiatan')
+                }
+              })
+            } catch (e) {
+              console.warn('[refreshKalenderPendidikan]', e)
             }
           }
           if (window._useVuePostCard) {
@@ -16970,6 +16987,13 @@
                 db_kegiatan = []
                 snap.forEach((d) => db_kegiatan.push(d.data()))
                 showLiveBadge('kg')
+                window.db_kegiatan = db_kegiatan
+                // v.109.37: trigger remount Vue KalenderPendidikan dengan data baru
+                if (typeof window.refreshKalenderPendidikan === 'function') {
+                  try {
+                    window.refreshKalenderPendidikan()
+                  } catch (e) {}
+                }
                 const cur = sessionStorage.getItem('currentPage_v6')
                 if (cur === 'kalender-kegiatan') renderKalenderKegiatan()
                 else if (cur === 'dashboard') renderWidgetKegiatanTerdekat()

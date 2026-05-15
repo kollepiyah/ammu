@@ -46,7 +46,7 @@ const formatted = computed(() => {
   <article class="ammu-post">
     <header class="post-hdr">
       <div class="hdr-l">
-        <div class="ava"><i class="fas fa-mosque"></i></div>
+        <div class="ava"><img src="/logo.png" alt="Logo" class="ava-img" /></div>
         <div>
           <p class="nama">Pondok Pesantren Mambaul Ulum</p>
           <p class="meta">
@@ -126,6 +126,12 @@ const formatted = computed(() => {
   background: rgba(15, 118, 110, 0.2);
   border-color: rgba(15, 118, 110, 0.4);
 }
+.ava-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 4px;
+}
 .nama {
   font-weight: 900;
   font-size: 0.875rem;
@@ -176,8 +182,8 @@ const formatted = computed(() => {
 .judul {
   padding: 0 1rem 0.75rem;
   font-size: 1.125rem;
-  font-weight: 900;
-  line-height: 1.25;
+  font-weight: 700;
+  line-height: 1.3;
   margin: 0;
 }
 @media (min-width: 768px) {
