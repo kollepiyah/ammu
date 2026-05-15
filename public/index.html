@@ -4136,6 +4136,7 @@
     <div
       id="bg-overlay"
       class="fixed inset-0 bg-black bg-opacity-40 z-[-1] pointer-events-none"
+      style="display: none"
     ></div>
 
     <!-- VIEW 1: HALAMAN LOGIN -->
@@ -7775,57 +7776,7 @@
                   >
                     Visual &amp; Media
                   </h3>
-                  <div>
-                    <label
-                      class="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wide"
-                      >Warna Tema UI Utama</label
-                    >
-                    <div class="flex items-center gap-3">
-                      <input
-                        type="color"
-                        id="set-themeColor"
-                        class="w-16 h-10 border-2 border-slate-300 rounded-lg cursor-pointer p-0 shadow-sm bg-white"
-                      />
-                      <span
-                        class="text-[10px] font-bold text-slate-500 uppercase tracking-widest bg-slate-100 px-2 py-1 rounded border shadow-sm"
-                        >Solid Color</span
-                      >
-                    </div>
-                  </div>
-                  <div>
-                    <label
-                      class="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wide"
-                      >Warna Teks Judul App</label
-                    >
-                    <div class="flex items-center gap-3">
-                      <input
-                        type="color"
-                        id="set-themeTextColor"
-                        class="w-16 h-10 border-2 border-slate-300 rounded-lg cursor-pointer p-0 shadow-sm bg-white"
-                      />
-                      <span
-                        class="text-[10px] font-bold text-slate-500 uppercase tracking-widest bg-slate-100 px-2 py-1 rounded border shadow-sm"
-                        >Text Color</span
-                      >
-                    </div>
-                  </div>
-                  <div>
-                    <label
-                      class="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wide"
-                      >Warna Latar Sidebar</label
-                    >
-                    <div class="flex items-center gap-3">
-                      <input
-                        type="color"
-                        id="set-sidebarBgColor"
-                        class="w-16 h-10 border-2 border-slate-300 rounded-lg cursor-pointer p-0 shadow-sm bg-white"
-                      />
-                      <span
-                        class="text-[10px] font-bold text-slate-500 uppercase tracking-widest bg-slate-100 px-2 py-1 rounded border shadow-sm"
-                        >Sidebar Color</span
-                      >
-                    </div>
-                  </div>
+                  <!-- v.109.47: 3 color picker (Tema/Teks/Sidebar) DIHAPUS — pakai dark/light mode toggle saja -->
                   <div
                     class="border-2 border-dashed border-slate-300 p-5 rounded-2xl bg-slate-50 hover:bg-slate-100 transition shadow-inner"
                   >
@@ -14323,9 +14274,6 @@
         const wb = new ExcelJS.Workbook()
         wb.creator = 'Ammu Online'
         wb.created = new Date()
-        const ws = wb.addWorksheet(opts.sheetName || 'Sheet1')
-
-        const ncol = opts.header ? opts.header.length : 1
 
         // === LOGO embedding (kiri + kanan) — fetch /logo.png fallback ===
         const fetchAsB64 = async (url) => {
@@ -14384,175 +14332,188 @@
           String(s)
             .toLowerCase()
             .replace(/\b\w/g, (c) => c.toUpperCase())
-        // === KOP (rows 1-4) — kop teks MULAI dari kolom C supaya tidak overlap dengan logo di A-B
-        // Logo Excel akan di col A-B, kop teks dari col C (col 3) sampai ncol
-        const kopStartCol = 3 // kolom C — setelah area logo (A-B)
-        const kopLines = [
-          String(set.kopLine1 || set.txtAppName || 'PONDOK PESANTREN').toUpperCase(),
-          String(set.kopLine2 || 'PORTAL PRESTASI QIRAATI').toUpperCase(),
-          set.kopLine3 ? _titleCase(set.kopLine3) : '',
-          set.kopLine4 ? _titleCase(set.kopLine4) : ''
-        ]
-        kopLines.forEach((line, i) => {
-          if (!line) return
-          const r = ws.addRow([])
-          r.getCell(kopStartCol).value = line
-          if (ncol > kopStartCol) ws.mergeCells(i + 1, kopStartCol, i + 1, ncol)
-          const cell = r.getCell(kopStartCol)
-          cell.alignment = { horizontal: 'left', vertical: 'middle' }
-          cell.font = {
-            name: 'Times New Roman',
-            bold: i === 1,
-            size: i === 0 ? 11 : i === 1 ? 16 : 10,
-            color: { argb: 'FF1E293B' }
-          }
-          r.height = 19 // sedikit jauhkan supaya tidak mepet
-        })
 
-        // Set row heights untuk kop supaya muat logo
-        for (let i = 1; i <= 4; i++) ws.getRow(i).height = 22
+        // === buildSheet — bangun 1 worksheet lengkap dengan KOP + logo + header + rows
+        // v.109.48: extract jadi helper supaya support multi-sheet (opts.sheets[])
+        const buildSheet = (spec) => {
+          const sheetNameSafe = String(spec.sheetName || opts.sheetName || 'Sheet1').substring(
+            0,
+            31
+          )
+          const ws = wb.addWorksheet(sheetNameSafe || 'Sheet1')
+          const header = spec.header || opts.header
+          const rows = spec.rows || opts.rows
+          const title = spec.title != null ? spec.title : opts.title
+          const subtitle = spec.subtitle != null ? spec.subtitle : opts.subtitle
+          const colWidths = spec.colWidths || opts.colWidths
+          const ncol = header ? header.length : 1
 
-        // Place logos: PRESERVE ASPECT RATIO (no gepeng) — pakai ext fixed 1:1
-        try {
-          if (imgLeftId !== null) {
-            ws.getColumn(1).width = 10
-            ws.getColumn(2).width = 2 // spacer
-            for (let r = 1; r <= 4; r++) ws.getRow(r).height = 19
-            ws.addImage(imgLeftId, {
-              tl: { col: 0.1, row: 0.1 },
-              ext: { width: 70, height: 70 }
-            })
-          }
-          if (imgRightId !== null) {
-            if (ncol > 1) {
-              ws.getColumn(ncol).width = 14
-              ws.getColumn(ncol - 1).width = 3
+          // === KOP (rows 1-4) — kop teks MULAI dari kolom C supaya tidak overlap dengan logo di A-B
+          const kopStartCol = 3 // kolom C — setelah area logo (A-B)
+          const kopLines = [
+            String(set.kopLine1 || set.txtAppName || 'PONDOK PESANTREN').toUpperCase(),
+            String(set.kopLine2 || 'PORTAL PRESTASI QIRAATI').toUpperCase(),
+            set.kopLine3 ? _titleCase(set.kopLine3) : '',
+            set.kopLine4 ? _titleCase(set.kopLine4) : ''
+          ]
+          kopLines.forEach((line, i) => {
+            if (!line) return
+            const r = ws.addRow([])
+            r.getCell(kopStartCol).value = line
+            if (ncol > kopStartCol) ws.mergeCells(i + 1, kopStartCol, i + 1, ncol)
+            const cell = r.getCell(kopStartCol)
+            cell.alignment = { horizontal: 'left', vertical: 'middle' }
+            cell.font = {
+              name: 'Times New Roman',
+              bold: i === 1,
+              size: i === 0 ? 11 : i === 1 ? 16 : 10,
+              color: { argb: 'FF1E293B' }
             }
-            ws.addImage(imgRightId, {
-              tl: { col: ncol - 0.9, row: 0.2 },
-              ext: { width: 90, height: 90 } // square 1:1
-            })
-          }
-        } catch (e) {
-          console.warn('Logo place fail:', e)
-        }
+            r.height = 19
+          })
 
-        // === Title section ===
-        if (opts.title) {
-          const tr = ws.addRow([opts.title])
-          ws.mergeCells(tr.number, 1, tr.number, ncol)
-          tr.getCell(1).alignment = {
-            horizontal: 'center',
-            vertical: 'middle'
-          }
-          tr.getCell(1).font = {
-            name: 'Arial',
-            bold: true,
-            size: 14,
-            underline: true
-          }
-          tr.getCell(1).fill = {
-            type: 'pattern',
-            pattern: 'solid',
-            fgColor: { argb: 'FF0F766E' }
-          }
-          tr.getCell(1).font.color = { argb: 'FFFFFFFF' }
-        }
-        if (opts.subtitle) {
-          const sr = ws.addRow([opts.subtitle])
-          ws.mergeCells(sr.number, 1, sr.number, ncol)
-          sr.getCell(1).alignment = {
-            horizontal: 'center',
-            vertical: 'middle'
-          }
-          sr.getCell(1).font = { name: 'Arial', italic: true, size: 10 }
-        }
+          // Set row heights untuk kop supaya muat logo
+          for (let i = 1; i <= 4; i++) ws.getRow(i).height = 22
 
-        // (NO spacer — banner langsung setelah kop supaya garis hijau rapi)
+          // Place logos: PRESERVE ASPECT RATIO (no gepeng) — pakai ext fixed 1:1
+          try {
+            if (imgLeftId !== null) {
+              ws.getColumn(1).width = 10
+              ws.getColumn(2).width = 2 // spacer
+              for (let r = 1; r <= 4; r++) ws.getRow(r).height = 19
+              ws.addImage(imgLeftId, {
+                tl: { col: 0.1, row: 0.1 },
+                ext: { width: 70, height: 70 }
+              })
+            }
+            if (imgRightId !== null) {
+              if (ncol > 1) {
+                ws.getColumn(ncol).width = 14
+                ws.getColumn(ncol - 1).width = 3
+              }
+              ws.addImage(imgRightId, {
+                tl: { col: ncol - 0.9, row: 0.2 },
+                ext: { width: 90, height: 90 }
+              })
+            }
+          } catch (e) {
+            console.warn('Logo place fail:', e)
+          }
 
-        // === Header tabel ===
-        if (opts.header) {
-          const hr = ws.addRow(opts.header)
-          hr.eachCell((c) => {
-            c.fill = {
+          // === Title section ===
+          if (title) {
+            const tr = ws.addRow([title])
+            ws.mergeCells(tr.number, 1, tr.number, ncol)
+            tr.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' }
+            tr.getCell(1).font = {
+              name: 'Arial',
+              bold: true,
+              size: 14,
+              underline: true,
+              color: { argb: 'FFFFFFFF' }
+            }
+            tr.getCell(1).fill = {
               type: 'pattern',
               pattern: 'solid',
               fgColor: { argb: 'FF0F766E' }
             }
-            c.font = {
-              name: 'Arial',
-              bold: true,
-              color: { argb: 'FFFFFFFF' },
-              size: 11
-            }
-            c.alignment = { horizontal: 'center', vertical: 'middle' }
-            c.border = {
-              top: { style: 'thin' },
-              left: { style: 'thin' },
-              bottom: { style: 'thin' },
-              right: { style: 'thin' }
-            }
-          })
-          hr.height = 25
-        }
+          }
+          if (subtitle) {
+            const sr = ws.addRow([subtitle])
+            ws.mergeCells(sr.number, 1, sr.number, ncol)
+            sr.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' }
+            sr.getCell(1).font = { name: 'Arial', italic: true, size: 10 }
+          }
 
-        // === Data rows ===
-        if (opts.rows && opts.rows.length) {
-          opts.rows.forEach((row, idx) => {
-            const r = ws.addRow(row)
-            r.eachCell((c) => {
-              c.border = {
-                top: { style: 'thin', color: { argb: 'FFCBD5E1' } },
-                left: { style: 'thin', color: { argb: 'FFCBD5E1' } },
-                bottom: { style: 'thin', color: { argb: 'FFCBD5E1' } },
-                right: { style: 'thin', color: { argb: 'FFCBD5E1' } }
+          // === Header tabel ===
+          if (header) {
+            const hr = ws.addRow(header)
+            hr.eachCell((c) => {
+              c.fill = {
+                type: 'pattern',
+                pattern: 'solid',
+                fgColor: { argb: 'FF0F766E' }
               }
-              c.alignment = { vertical: 'middle', wrapText: true }
-              c.font = { name: 'Arial', size: 10 }
+              c.font = {
+                name: 'Arial',
+                bold: true,
+                color: { argb: 'FFFFFFFF' },
+                size: 11
+              }
+              c.alignment = { horizontal: 'center', vertical: 'middle' }
+              c.border = {
+                top: { style: 'thin' },
+                left: { style: 'thin' },
+                bottom: { style: 'thin' },
+                right: { style: 'thin' }
+              }
             })
-            // Alternate row color
-            if (idx % 2 === 1) {
+            hr.height = 25
+          }
+
+          // === Data rows ===
+          if (rows && rows.length) {
+            rows.forEach((row, idx) => {
+              const r = ws.addRow(row)
               r.eachCell((c) => {
-                c.fill = {
-                  type: 'pattern',
-                  pattern: 'solid',
-                  fgColor: { argb: 'FFF8FAFC' }
+                c.border = {
+                  top: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+                  left: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+                  bottom: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+                  right: { style: 'thin', color: { argb: 'FFCBD5E1' } }
                 }
+                c.alignment = { vertical: 'middle', wrapText: true }
+                c.font = { name: 'Arial', size: 10 }
               })
-            }
-          })
+              if (idx % 2 === 1) {
+                r.eachCell((c) => {
+                  c.fill = {
+                    type: 'pattern',
+                    pattern: 'solid',
+                    fgColor: { argb: 'FFF8FAFC' }
+                  }
+                })
+              }
+            })
+          }
+
+          // Auto column width
+          if (colWidths) {
+            colWidths.forEach((w, i) => {
+              ws.getColumn(i + 1).width = w
+            })
+          } else {
+            ws.columns.forEach((col, i) => {
+              let max = header && header[i] ? String(header[i]).length : 10
+              if (rows)
+                rows.forEach((r) => {
+                  const v = r[i] != null ? String(r[i]) : ''
+                  if (v.length > max) max = v.length
+                })
+              col.width = Math.min(Math.max(max + 2, 10), 40)
+            })
+          }
+
+          // === Footer: Dicetak ===
+          ws.addRow([])
+          const fr = ws.addRow([
+            `Dicetak: ${new Date().toLocaleString('id-ID')} | Oleh: ${sesiAktif?.nama || 'Pengurus'}`
+          ])
+          ws.mergeCells(fr.number, 1, fr.number, ncol)
+          fr.getCell(1).alignment = { horizontal: 'right' }
+          fr.getCell(1).font = {
+            name: 'Arial',
+            italic: true,
+            size: 9,
+            color: { argb: 'FF64748B' }
+          }
         }
 
-        // Auto column width
-        if (opts.colWidths) {
-          opts.colWidths.forEach((w, i) => {
-            ws.getColumn(i + 1).width = w
-          })
+        // Build sheets: multi-sheet jika opts.sheets[] disediakan, else single sheet legacy
+        if (Array.isArray(opts.sheets) && opts.sheets.length > 0) {
+          opts.sheets.forEach((s) => buildSheet(s))
         } else {
-          // Auto-size based on content
-          ws.columns.forEach((col, i) => {
-            let max = opts.header && opts.header[i] ? String(opts.header[i]).length : 10
-            if (opts.rows)
-              opts.rows.forEach((r) => {
-                const v = r[i] != null ? String(r[i]) : ''
-                if (v.length > max) max = v.length
-              })
-            col.width = Math.min(Math.max(max + 2, 10), 40)
-          })
-        }
-
-        // === Footer: Dicetak ===
-        ws.addRow([])
-        const fr = ws.addRow([
-          `Dicetak: ${new Date().toLocaleString('id-ID')} | Oleh: ${sesiAktif?.nama || 'Pengurus'}`
-        ])
-        ws.mergeCells(fr.number, 1, fr.number, ncol)
-        fr.getCell(1).alignment = { horizontal: 'right' }
-        fr.getCell(1).font = {
-          name: 'Arial',
-          italic: true,
-          size: 9,
-          color: { argb: 'FF64748B' }
+          buildSheet(opts)
         }
 
         // Write file
@@ -14583,7 +14544,7 @@
         if (b) b.classList.add('hidden')
       }
 
-      const APP_VERSION = 'v.109.46.0515-tailwind-compiled'
+      const APP_VERSION = 'v.109.48.0515-excel-multisheet-migrate'
 
       // ====================================================================
       // Sentry error tracking init (B3). Gate guard: DSN placeholder = no-op.
@@ -26937,158 +26898,100 @@
         return ''
       }
 
-      function eksporExcelSesuaiFormat() {
-        let wb = XLSX.utils.book_new()
+      async function eksporExcelSesuaiFormat() {
+        // v.109.48: migrate ke exportToExcelStyled (logo + KOP rapi seperti PDF)
         const ts = new Date().toLocaleString('id-ID')
-        let selectedBulan = document.getElementById('rekap_bulan').value.toUpperCase()
-        let selectedTahun = document.getElementById('rekap_tahun').value
-        let judulExcel = `REKAPITULASI PRESTASI QIRAATI BULAN ${selectedBulan} ${selectedTahun}`
+        const selectedBulan = document.getElementById('rekap_bulan').value.toUpperCase()
+        const selectedTahun = document.getElementById('rekap_tahun').value
+        const judulExcel = `REKAPITULASI PRESTASI QIRAATI BULAN ${selectedBulan} ${selectedTahun}`
+
+        const header = [
+          'Timestamp',
+          'No',
+          'Lembaga',
+          'Kelas',
+          'Guru Kelas',
+          'Nama Santri',
+          'L/P',
+          'Kelas Sekolah',
+          'Juz (PTPT)',
+          'Capaian Awal',
+          'Capaian Akhir',
+          'Total',
+          'Keterangan'
+        ]
+        const colWidths = [20, 5, 15, 15, 30, 30, 5, 20, 15, 15, 15, 15, 25]
+
+        const rowFromSantri = (s, no) => {
+          const gData = db_guru.find((g) => g.nama === s.guru)
+          const gNama = gData ? getNamaGuruGelar(gData.nama, gData.jk) : s.guru
+          const aw = document.getElementById(`awal-${s.id}`)?.value || s.prestasi_awal || ''
+          const ak = document.getElementById(`akhir-${s.id}`)?.value || s.prestasi_akhir || ''
+          const tot = document.getElementById(`tot-${s.id}`)?.value || s.prestasi_total || ''
+          const kls = document.getElementById(`kelas-${s.id}`)?.value || s.kelas || ''
+          const jz = document.getElementById(`juz-${s.id}`)?.value || s.juz || '-'
+          const kSek = document.getElementById(`ks-${s.id}`)?.value || s.kelas_sekolah || '-'
+          const ket = s.lembaga === 'PTPT' ? ketKategoriPTPT(extractNumber(tot)) : ''
+          return [
+            ts,
+            no,
+            s.lembaga,
+            kls,
+            gNama,
+            s.nama,
+            s.jk,
+            kSek,
+            s.lembaga === 'PTPT' ? jz : '-',
+            aw,
+            ak,
+            tot,
+            ket
+          ]
+        }
 
         if (sesiAktif.role === 'admin') {
-          let filterLembaga = document.getElementById('filter_lembaga_rekap').value
-          let filteredData =
+          // Admin: multi-sheet (1 sheet per lembaga)
+          const filterLembaga = document.getElementById('filter_lembaga_rekap').value
+          const filteredData =
             filterLembaga === 'Semua'
               ? db_santri
               : db_santri.filter((s) => s.lembaga === filterLembaga)
-          let daftarLembaga = [...new Set(filteredData.map((s) => s.lembaga))]
-          daftarLembaga.forEach((lmbg) => {
-            let dataLembaga = sortSantriGeneral(filteredData.filter((s) => s.lembaga === lmbg))
-            let aoa = buatKopExcel()
-            aoa.push([judulExcel])
-            aoa.push([`Lembaga: ${lmbg} | Dicetak: ${ts}`])
-            aoa.push([''])
-            aoa.push([
-              'Timestamp',
-              'No',
-              'Lembaga',
-              'Kelas',
-              'Guru Kelas',
-              'Nama Santri',
-              'L/P',
-              'Kelas Sekolah',
-              'Juz (PTPT)',
-              'Capaian Awal',
-              'Capaian Akhir',
-              'Total',
-              'Keterangan'
-            ])
-            let no = 1
-            dataLembaga.forEach((s) => {
-              let gData = db_guru.find((g) => g.nama === s.guru)
-              let gNama = gData ? getNamaGuruGelar(gData.nama, gData.jk) : s.guru
-              let aw = document.getElementById(`awal-${s.id}`)?.value || s.prestasi_awal || ''
-              let ak = document.getElementById(`akhir-${s.id}`)?.value || s.prestasi_akhir || ''
-              let tot = document.getElementById(`tot-${s.id}`)?.value || s.prestasi_total || ''
-              let kls = document.getElementById(`kelas-${s.id}`)?.value || s.kelas || ''
-              let jz = document.getElementById(`juz-${s.id}`)?.value || s.juz || '-'
-              let kSek = document.getElementById(`ks-${s.id}`)?.value || s.kelas_sekolah || '-'
-              let ket = s.lembaga === 'PTPT' ? ketKategoriPTPT(extractNumber(tot)) : ''
-              aoa.push([
-                ts,
-                no++,
-                s.lembaga,
-                kls,
-                gNama,
-                s.nama,
-                s.jk,
-                kSek,
-                s.lembaga === 'PTPT' ? jz : '-',
-                aw,
-                ak,
-                tot,
-                ket
-              ])
-            })
-            let ws = XLSX.utils.aoa_to_sheet(aoa)
-            ws['!cols'] = [
-              { wch: 20 },
-              { wch: 5 },
-              { wch: 15 },
-              { wch: 15 },
-              { wch: 30 },
-              { wch: 30 },
-              { wch: 5 },
-              { wch: 20 },
-              { wch: 15 },
-              { wch: 15 },
-              { wch: 15 },
-              { wch: 15 },
-              { wch: 25 }
-            ]
-            XLSX.utils.book_append_sheet(wb, ws, String(lmbg).substring(0, 31) || 'Data')
+          const daftarLembaga = [...new Set(filteredData.map((s) => s.lembaga))]
+          const sheets = daftarLembaga.map((lmbg) => {
+            const dataLembaga = sortSantriGeneral(filteredData.filter((s) => s.lembaga === lmbg))
+            const rows = dataLembaga.map((s, i) => rowFromSantri(s, i + 1))
+            return {
+              sheetName: String(lmbg).substring(0, 31) || 'Data',
+              title: judulExcel,
+              subtitle: `Lembaga: ${lmbg} | Dicetak: ${ts}`,
+              header,
+              rows,
+              colWidths
+            }
           })
-          XLSX.writeFile(wb, `REKAP_PRESTASI_${selectedBulan}_${selectedTahun}_ADMIN.xlsx`)
+          const ok = await exportToExcelStyled({
+            filename: `REKAP_PRESTASI_${selectedBulan}_${selectedTahun}_ADMIN.xlsx`,
+            pakaiLogoQiraati: true,
+            sheets
+          })
+          if (!ok && typeof _toast !== 'undefined') _toast.error('Ekspor Excel gagal')
         } else {
-          let dataGuru = sortSantriGeneral(
+          // Non-admin guru: single sheet
+          const dataGuru = sortSantriGeneral(
             santriDariGuru(sesiAktif.guru).filter((s) => s.lembaga === sesiAktif.lembaga)
           )
-          let aoa = buatKopExcel()
-          aoa.push([judulExcel])
-          aoa.push([`Guru: ${getNamaGuruGelar(sesiAktif.guru, sesiAktif.jk)} | Dicetak: ${ts}`])
-          aoa.push([''])
-          aoa.push([
-            'Timestamp',
-            'No',
-            'Lembaga',
-            'Kelas',
-            'Guru Kelas',
-            'Nama Santri',
-            'L/P',
-            'Kelas Sekolah',
-            'Juz (PTPT)',
-            'Capaian Awal',
-            'Capaian Akhir',
-            'Total',
-            'Keterangan'
-          ])
-          let no = 1
-          dataGuru.forEach((s) => {
-            let gData = db_guru.find((g) => g.nama === s.guru)
-            let gNama = gData ? getNamaGuruGelar(gData.nama, gData.jk) : s.guru
-            let aw = document.getElementById(`awal-${s.id}`)?.value || s.prestasi_awal || ''
-            let ak = document.getElementById(`akhir-${s.id}`)?.value || s.prestasi_akhir || ''
-            let tot = document.getElementById(`tot-${s.id}`)?.value || s.prestasi_total || ''
-            let kls = document.getElementById(`kelas-${s.id}`)?.value || s.kelas || ''
-            let jz = document.getElementById(`juz-${s.id}`)?.value || s.juz || '-'
-            let kSek = document.getElementById(`ks-${s.id}`)?.value || s.kelas_sekolah || '-'
-            let ket = s.lembaga === 'PTPT' ? ketKategoriPTPT(extractNumber(tot)) : ''
-            aoa.push([
-              ts,
-              no++,
-              s.lembaga,
-              kls,
-              gNama,
-              s.nama,
-              s.jk,
-              kSek,
-              s.lembaga === 'PTPT' ? jz : '-',
-              aw,
-              ak,
-              tot,
-              ket
-            ])
+          const rows = dataGuru.map((s, i) => rowFromSantri(s, i + 1))
+          const ok = await exportToExcelStyled({
+            filename: `REKAP_PRESTASI_${selectedBulan}_${selectedTahun}_${String(sesiAktif.guru).replace(/\s+/g, '_')}.xlsx`,
+            sheetName: 'Data Santri',
+            title: judulExcel,
+            subtitle: `Guru: ${getNamaGuruGelar(sesiAktif.guru, sesiAktif.jk)} | Dicetak: ${ts}`,
+            pakaiLogoQiraati: true,
+            header,
+            rows,
+            colWidths
           })
-          let ws = XLSX.utils.aoa_to_sheet(aoa)
-          ws['!cols'] = [
-            { wch: 20 },
-            { wch: 5 },
-            { wch: 15 },
-            { wch: 15 },
-            { wch: 30 },
-            { wch: 30 },
-            { wch: 5 },
-            { wch: 20 },
-            { wch: 15 },
-            { wch: 15 },
-            { wch: 15 },
-            { wch: 15 },
-            { wch: 25 }
-          ]
-          XLSX.utils.book_append_sheet(wb, ws, 'Data Santri')
-          XLSX.writeFile(
-            wb,
-            `REKAP_PRESTASI_${selectedBulan}_${selectedTahun}_${String(sesiAktif.guru).replace(/\s+/g, '_')}.xlsx`
-          )
+          if (!ok && typeof _toast !== 'undefined') _toast.error('Ekspor Excel gagal')
         }
       }
 
@@ -27202,9 +27105,18 @@
           if (elWelcome) elWelcome.value = set.txtWelcome || 'Ahlan'
           const elNamaCh = document.getElementById('set-namaChannel')
           if (elNamaCh) elNamaCh.value = set.namaChannel || 'Al Manshur Channel'
-          document.getElementById('set-themeColor').value = set.themeColor
-          document.getElementById('set-themeTextColor').value = set.themeTextColor || '#1e293b'
-          document.getElementById('set-sidebarBgColor').value = set.sidebarBgColor || '#0f172a'
+          {
+            const _el = document.getElementById('set-themeColor')
+            if (_el) _el.value = set.themeColor
+          }
+          {
+            const _el = document.getElementById('set-themeTextColor')
+            if (_el) _el.value = set.themeTextColor || '#1e293b'
+          }
+          {
+            const _el = document.getElementById('set-sidebarBgColor')
+            if (_el) _el.value = set.sidebarBgColor || '#0f172a'
+          }
           menus.forEach((m) => {
             const el = document.getElementById(`set-${m}`)
             if (el) el.value = set[m.replace('m', 'menu')]
@@ -27323,9 +27235,18 @@
         let conf = {
           adminPassword: savedSettings.adminPassword,
           adminUsername: savedSettings.adminUsername || 'adminmu',
-          themeColor: document.getElementById('set-themeColor').value,
-          themeTextColor: document.getElementById('set-themeTextColor').value,
-          sidebarBgColor: document.getElementById('set-sidebarBgColor').value,
+          themeColor:
+            (document.getElementById('set-themeColor') || {}).value ||
+            savedSettings.themeColor ||
+            '#0f766e',
+          themeTextColor:
+            (document.getElementById('set-themeTextColor') || {}).value ||
+            savedSettings.themeTextColor ||
+            '#1e293b',
+          sidebarBgColor:
+            (document.getElementById('set-sidebarBgColor') || {}).value ||
+            savedSettings.sidebarBgColor ||
+            '#0f172a',
           txtAppName: document.getElementById('set-appName').value,
           txtAppDesc: document.getElementById('set-appDesc').value,
           txtSidebarTitle: document.getElementById('set-sidebarTitle').value,

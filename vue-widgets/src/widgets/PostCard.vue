@@ -86,8 +86,8 @@ const formatted = computed(() => {
 <style scoped>
 .ammu-post {
   font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
-  background: white;
-  border: 1px solid #e2e8f0;
+  background: #f0ffff;
+  border: 1px solid #cbd5e1;
   border-radius: 1rem;
   overflow: hidden;
   box-shadow: 0 1px 2px rgb(0 0 0 / 0.05);
@@ -95,8 +95,8 @@ const formatted = computed(() => {
 }
 :global(.dark) .ammu-post,
 .dark-mode .ammu-post {
-  background: #18181b;
-  border-color: #27272a;
+  background: #1e293b;
+  border-color: #334155;
   color: #fafafa;
 }
 .post-hdr {
