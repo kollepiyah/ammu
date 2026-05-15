@@ -14480,7 +14480,7 @@
         if (b) b.classList.add('hidden')
       }
 
-      const APP_VERSION = 'v.109.32.0515-rapor-colspan-thead-excel-absen'
+      const APP_VERSION = 'v.109.34.0515-swal-shortcuts-tidy'
 
       // ====================================================================
       // Sentry error tracking init (B3). Gate guard: DSN placeholder = no-op.
@@ -15188,7 +15188,7 @@
             }
             return promise
           }
-          console.log('[Swal v.109.3] global animation disable applied')
+          _log('[Swal v.109.3] global animation disable applied')
         } catch (e) {
           console.warn('[Swal mixin v.109.3] init fail:', e)
         }
@@ -16071,7 +16071,8 @@
           if (!isMigratable) {
             toggleLoader(false)
             _setLoginBtnLoading(false)
-            return Swal.fire('Error', 'Login error: ' + (authErr.message || code), 'error')
+            _toast.error('Login error: ' + (authErr.message || code))
+            return
           }
           // 5) LAZY MIGRATION: validate old Firestore password
           const oldPass =
@@ -19188,7 +19189,7 @@
           }
         } catch (e) {
           console.error('uploadBgRapor:', e)
-          Swal.fire('Gagal Upload', e.message || String(e), 'error')
+          _toast.error('Gagal Upload: ' + (e.message || String(e)))
           event.target.value = ''
         }
       }
@@ -19252,7 +19253,7 @@
           })
         } catch (e) {
           console.error('uploadImgKeStorage:', e)
-          Swal.fire('Gagal Upload', e.message || String(e), 'error')
+          _toast.error('Gagal Upload: ' + (e.message || String(e)))
           event.target.value = ''
         }
       }
@@ -28456,28 +28457,26 @@
         toggleLoader(false)
       }
       async function hapusInputManualBI(id) {
-        // Guard: hanya super admin yang bisa hapus
         if (!cekHakAkses('edit_transaksi_keuangan')) {
           _toast.error('Akses Ditolak: Hanya Super Admin yang dapat menghapus transaksi.')
           return
         }
-        const r = await Swal.fire({
-          title: 'Hapus transaksi?',
-          icon: 'warning',
-          showCancelButton: true,
-          confirmButtonText: 'Hapus',
-          cancelButtonText: 'Batal'
+        _konfirmasiHapus({
+          title: 'Hapus Transaksi?',
+          text: 'Transaksi akan dihapus permanen dari Buku Induk.',
+          confirmText: 'Hapus',
+          onConfirm: async () => {
+            toggleLoader(true)
+            try {
+              await db.collection('keuangan_buku_induk').doc(id).delete()
+              db_keuangan_buku_induk = db_keuangan_buku_induk.filter((x) => x.id !== id)
+              renderBukuInduk()
+            } catch (e) {
+              _toast.error('Error: ' + (e.message || ''))
+            }
+            toggleLoader(false)
+          }
         })
-        if (!r.isConfirmed) return
-        toggleLoader(true)
-        try {
-          await db.collection('keuangan_buku_induk').doc(id).delete()
-          db_keuangan_buku_induk = db_keuangan_buku_induk.filter((x) => x.id !== id)
-          renderBukuInduk()
-        } catch (e) {
-          _toast.error('Error: ' + (e.message || ''))
-        }
-        toggleLoader(false)
       }
       // Cetak ulang 1 transaksi (admin keuangan & super admin) — buka jendela print baru
       function cetakUlangTransaksi(id) {
@@ -30462,28 +30461,27 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
         toggleLoader(false)
       }
       async function hapusHutang(id) {
-        const r = await Swal.fire({
-          title: 'Hapus catatan hutang?',
-          icon: 'warning',
-          showCancelButton: true,
-          confirmButtonText: 'Hapus'
-        })
-        if (!r.isConfirmed) return
-        toggleLoader(true)
-        try {
-          await db.collection('keuangan_hutang').doc(id).delete()
-          db_keuangan_hutang = db_keuangan_hutang.filter((x) => x.id !== id)
-          // Hapus juga BI record terkait jika ada
-          const oldBI = db_keuangan_buku_induk.find((b) => b.ref_id === id)
-          if (oldBI) {
-            await db.collection('keuangan_buku_induk').doc(oldBI.id).delete()
-            db_keuangan_buku_induk = db_keuangan_buku_induk.filter((b) => b.id !== oldBI.id)
+        _konfirmasiHapus({
+          title: 'Hapus Catatan Hutang?',
+          text: 'Hutang dan record buku induk terkait akan dihapus permanen.',
+          confirmText: 'Hapus',
+          onConfirm: async () => {
+            toggleLoader(true)
+            try {
+              await db.collection('keuangan_hutang').doc(id).delete()
+              db_keuangan_hutang = db_keuangan_hutang.filter((x) => x.id !== id)
+              const oldBI = db_keuangan_buku_induk.find((b) => b.ref_id === id)
+              if (oldBI) {
+                await db.collection('keuangan_buku_induk').doc(oldBI.id).delete()
+                db_keuangan_buku_induk = db_keuangan_buku_induk.filter((b) => b.id !== oldBI.id)
+              }
+              renderHutang()
+            } catch (e) {
+              _toast.error('Error: ' + (e.message || ''))
+            }
+            toggleLoader(false)
           }
-          renderHutang()
-        } catch (e) {
-          _toast.error('Error: ' + (e.message || ''))
-        }
-        toggleLoader(false)
+        })
       }
 
       // ----- PENGATURAN KEUANGAN -----
@@ -30612,23 +30610,23 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
         bukaModalMasterTP(tipe, idx)
       }
       async function hapusMasterTP(tipe, idx) {
-        const r = await Swal.fire({
-          title: 'Hapus?',
-          icon: 'warning',
-          showCancelButton: true,
-          confirmButtonText: 'Hapus'
+        _konfirmasiHapus({
+          title: 'Hapus Master?',
+          text: `Master ${tipe} akan dihapus permanen.`,
+          confirmText: 'Hapus',
+          onConfirm: async () => {
+            const arr = getMasterTPArr(tipe)
+            arr.splice(idx, 1)
+            toggleLoader(true)
+            try {
+              await db.collection('settings').doc('general').set(savedSettings, { merge: true })
+              renderMasterTP(tipe)
+            } catch (e) {
+              _toast.error('Error: ' + (e.message || ''))
+            }
+            toggleLoader(false)
+          }
         })
-        if (!r.isConfirmed) return
-        const arr = getMasterTPArr(tipe)
-        arr.splice(idx, 1)
-        toggleLoader(true)
-        try {
-          await db.collection('settings').doc('general').set(savedSettings, { merge: true })
-          renderMasterTP(tipe)
-        } catch (e) {
-          _toast.error('Error: ' + (e.message || ''))
-        }
-        toggleLoader(false)
       }
       // Helper: ambil daftar TP yang berlaku untuk guru tertentu
       function ambilMasterTPBerlaku(tipe, guruId) {
@@ -32848,29 +32846,28 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
       async function hapusMasterKegiatanCurrent() {
         const id = document.getElementById('mk-edit-id').value
         if (!id) return
-        const r = await Swal.fire({
-          title: 'Hapus kegiatan ini?',
-          text: 'Riwayat absensi tidak akan ikut terhapus.',
-          icon: 'warning',
-          showCancelButton: true,
-          confirmButtonText: 'Hapus'
+        _konfirmasiHapus({
+          title: 'Hapus Kegiatan Ini?',
+          text: 'Master kegiatan dihapus. Riwayat absensi tidak akan ikut terhapus.',
+          confirmText: 'Hapus',
+          onConfirm: async () => {
+            toggleLoader(true)
+            try {
+              savedSettings.masterKegiatan = (savedSettings.masterKegiatan || []).filter(
+                (x) => x.id !== id
+              )
+              await db
+                .collection('settings')
+                .doc('general')
+                .set({ masterKegiatan: savedSettings.masterKegiatan }, { merge: true })
+              document.getElementById('modal-master-kegiatan').classList.add('hidden')
+              renderMasterKegiatan()
+            } catch (e) {
+              _toast.error('Error: ' + (e.message || ''))
+            }
+            toggleLoader(false)
+          }
         })
-        if (!r.isConfirmed) return
-        toggleLoader(true)
-        try {
-          savedSettings.masterKegiatan = (savedSettings.masterKegiatan || []).filter(
-            (x) => x.id !== id
-          )
-          await db
-            .collection('settings')
-            .doc('general')
-            .set({ masterKegiatan: savedSettings.masterKegiatan }, { merge: true })
-          document.getElementById('modal-master-kegiatan').classList.add('hidden')
-          renderMasterKegiatan()
-        } catch (e) {
-          _toast.error('Error: ' + (e.message || ''))
-        }
-        toggleLoader(false)
       }
       // ===== REKAP ABSENSI KEGIATAN =====
       function renderRekapKegiatan() {
@@ -36082,7 +36079,7 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
           }, 1500)
         } catch (e) {
           console.error('cetakRaporPDF:', e)
-          Swal.fire('Error', e.message || String(e), 'error')
+          _toast.error('Error: ' + (e.message || String(e)))
         }
       }
 
@@ -36710,23 +36707,23 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
       async function hapusKegiatanCurrent() {
         const id = document.getElementById('kg-edit-id').value
         if (!id) return
-        const r = await Swal.fire({
-          title: 'Hapus kegiatan?',
-          icon: 'warning',
-          showCancelButton: true,
-          confirmButtonText: 'Hapus'
+        _konfirmasiHapus({
+          title: 'Hapus Kegiatan?',
+          text: 'Kegiatan akan dihapus dari kalender.',
+          confirmText: 'Hapus',
+          onConfirm: async () => {
+            toggleLoader(true)
+            try {
+              await db.collection('kegiatan').doc(id).delete()
+              db_kegiatan = db_kegiatan.filter((x) => x.id !== id)
+              document.getElementById('modal-kegiatan').classList.add('hidden')
+              renderKalenderKegiatan()
+            } catch (e) {
+              _toast.error('Error: ' + (e.message || ''))
+            }
+            toggleLoader(false)
+          }
         })
-        if (!r.isConfirmed) return
-        toggleLoader(true)
-        try {
-          await db.collection('kegiatan').doc(id).delete()
-          db_kegiatan = db_kegiatan.filter((x) => x.id !== id)
-          document.getElementById('modal-kegiatan').classList.add('hidden')
-          renderKalenderKegiatan()
-        } catch (e) {
-          _toast.error('Error: ' + (e.message || ''))
-        }
-        toggleLoader(false)
       }
 
       // ====== TEMPLATE & IMPOR KEGIATAN (KALENDER) ======
@@ -38894,7 +38891,7 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
         } catch (err) {
           Swal.close()
           console.error('Sheets API error:', err)
-          Swal.fire('Gagal', 'Tidak bisa buka di Google Sheets: ' + (err.message || err), 'error')
+          _toast.error('Tidak bisa buka di Google Sheets: ' + (err.message || err))
         }
       }
 
