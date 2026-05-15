@@ -5241,7 +5241,7 @@
                     id="btn-crud-santri"
                     class="menu-admin bg-custom hover:bg-teal-700 text-white font-black py-2.5 px-5 rounded-xl shadow-md transition flex items-center relative z-10 cursor-pointer"
                   >
-                    <i class="fas fa-cog mr-2"></i>Kelola CRUD
+                    <i class="fas fa-cog"></i>
                   </button>
                   <button
                     onclick="eksporExcelViewSantri()"
@@ -5336,7 +5336,7 @@
                     id="btn-crud-guru"
                     class="menu-admin bg-custom hover:bg-teal-700 text-white font-black py-2.5 px-5 rounded-xl shadow-md transition flex items-center relative z-10 cursor-pointer"
                   >
-                    <i class="fas fa-cog mr-2"></i>Kelola CRUD
+                    <i class="fas fa-cog"></i>
                   </button>
                   <button
                     onclick="bukaModalResetSandiGuru()"
@@ -14480,7 +14480,7 @@
         if (b) b.classList.add('hidden')
       }
 
-      const APP_VERSION = 'v.109.30.0515-ptr-hide-overlay-5swal-migrate'
+      const APP_VERSION = 'v.109.31.0515-rapor-padding-crud-icon'
 
       // ====================================================================
       // Sentry error tracking init (B3). Gate guard: DSN placeholder = no-op.
@@ -21708,14 +21708,14 @@
               cells += `<td style="border:1px solid #000;padding:2px;text-align:center;font-size:9px;background:${bg};">${c}</td>`
             }
             return `<tr>
-                   <td style="border:1px solid #000;padding:3px;text-align:center;">${i + 1}</td>
-                   <td style="border:1px solid #000;padding:3px;font-size:10px;">${escapeHtml(s.nama)}</td>
-                   <td style="border:1px solid #000;padding:3px;text-align:center;font-size:9px;">${escapeHtml(s.kelas_sekolah || '-')}</td>
+                   <td style="border:1px solid #000;padding:5px 3px;vertical-align:middle;text-align:center;">${i + 1}</td>
+                   <td style="border:1px solid #000;padding:5px 3px;vertical-align:middle;font-size:10px;">${escapeHtml(s.nama)}</td>
+                   <td style="border:1px solid #000;padding:5px 3px;vertical-align:middle;text-align:center;font-size:9px;">${escapeHtml(s.kelas_sekolah || '-')}</td>
                    ${cells}
-                    <td style="border:1px solid #000;padding:3px;text-align:center;background:#dcfce7;font-weight:bold;">${H}</td>
-                   <td style="border:1px solid #000;padding:3px;text-align:center;background:#fef3c7;font-weight:bold;">${S}</td>
-                   <td style="border:1px solid #000;padding:3px;text-align:center;background:#dbeafe;font-weight:bold;">${I}</td>
-                   <td style="border:1px solid #000;padding:3px;text-align:center;background:#fecaca;font-weight:bold;">${A}</td>
+                    <td style="border:1px solid #000;padding:5px 3px;vertical-align:middle;text-align:center;background:#dcfce7;font-weight:bold;">${H}</td>
+                   <td style="border:1px solid #000;padding:5px 3px;vertical-align:middle;text-align:center;background:#fef3c7;font-weight:bold;">${S}</td>
+                   <td style="border:1px solid #000;padding:5px 3px;vertical-align:middle;text-align:center;background:#dbeafe;font-weight:bold;">${I}</td>
+                   <td style="border:1px solid #000;padding:5px 3px;vertical-align:middle;text-align:center;background:#fecaca;font-weight:bold;">${A}</td>
                </tr>`
           })
           .join('')
@@ -33165,7 +33165,7 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
         body += `<th rowspan="2" style="border:1px solid #000;padding:4px;">Total</th></tr><tr style="background:#cffafe;">`
         masterKeg.forEach(
           () =>
-            (body += `<th style="border:1px solid #000;padding:3px;">H</th><th style="border:1px solid #000;padding:3px;">T</th><th style="border:1px solid #000;padding:3px;">A</th>`)
+            (body += `<th style="border:1px solid #000;padding:5px 3px;vertical-align:middle;">H</th><th style="border:1px solid #000;padding:5px 3px;vertical-align:middle;">T</th><th style="border:1px solid #000;padding:5px 3px;vertical-align:middle;">A</th>`)
         )
         body += `</tr></thead><tbody>`
         santriMukim.forEach((s) => {
@@ -33186,9 +33186,9 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
             tH += h
             tT += t
             tA += a
-            body += `<td style="border:1px solid #000;padding:3px;text-align:center;">${h || '-'}</td><td style="border:1px solid #000;padding:3px;text-align:center;">${t || '-'}</td><td style="border:1px solid #000;padding:3px;text-align:center;">${a || '-'}</td>`
+            body += `<td style="border:1px solid #000;padding:5px 3px;vertical-align:middle;text-align:center;">${h || '-'}</td><td style="border:1px solid #000;padding:5px 3px;vertical-align:middle;text-align:center;">${t || '-'}</td><td style="border:1px solid #000;padding:5px 3px;vertical-align:middle;text-align:center;">${a || '-'}</td>`
           })
-          body += `<td style="border:1px solid #000;padding:3px;text-align:center;font-weight:bold;">${tH + tT}/${tH + tT + tA}</td></tr>`
+          body += `<td style="border:1px solid #000;padding:5px 3px;vertical-align:middle;text-align:center;font-weight:bold;">${tH + tT}/${tH + tT + tA}</td></tr>`
         })
         body += `</tbody></table>`
         const html = `<html><head><title>Rekap Kegiatan ${namaBulan} ${tahun}</title><style>body{font-family:Arial;padding:15px;} @page{size:A4 landscape;}</style></head><body>${buatKopHtml()}${body}</body></html>`
@@ -35741,14 +35741,14 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
             let sectionsHtml = ''
             if (schema.perLevel) {
               const fields = schema.fieldsNilai || []
-              sectionsHtml = `<div style="page-break-inside:avoid;margin-top:14px;"><table style="width:100%;border-collapse:collapse;font-size:9px;">
+              sectionsHtml = `<div style="page-break-inside:avoid;margin-top:14px;"><table style="width:100%;border-collapse:collapse;font-size:9px;line-height:1.4;">
                         <thead><tr style="background:#e2e8f0;">
-                            <th style="border:1px solid #000;padding:3px;width:30px;">Kelas</th>
-                            <th style="border:1px solid #000;padding:3px;width:55px;">Level Baca</th>
-                            <th style="border:1px solid #000;padding:3px;text-align:left;">Target Khotam</th>
-                            <th style="border:1px solid #000;padding:3px;width:65px;">Tgl Khotam</th>
-                            ${fields.map((f) => `<th style="border:1px solid #000;padding:3px;">${escapeHtml(f.label)}</th>`).join('')}
-                            <th style="border:1px solid #000;padding:3px;width:55px;">Rata-rata</th>
+                            <th style="border:1px solid #000;padding:5px 3px;width:30px;vertical-align:middle;">Kelas</th>
+                            <th style="border:1px solid #000;padding:5px 3px;width:55px;vertical-align:middle;">Level Baca</th>
+                            <th style="border:1px solid #000;padding:5px 3px;text-align:left;vertical-align:middle;">Target Khotam</th>
+                            <th style="border:1px solid #000;padding:5px 3px;width:65px;vertical-align:middle;">Tgl Khotam</th>
+                            ${fields.map((f) => `<th style="border:1px solid #000;padding:5px 3px;vertical-align:middle;">${escapeHtml(f.label)}</th>`).join('')}
+                            <th style="border:1px solid #000;padding:5px 3px;vertical-align:middle;width:55px;">Rata-rata</th>
                         </tr></thead><tbody>`
               ;(schema.levels || []).forEach((lvl, lvlIdx) => {
                 const khotamList = lvl.khotamList || []
@@ -35776,16 +35776,16 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
                       : null
                   sectionsHtml += `<tr>`
                   if (isFirst) {
-                    sectionsHtml += `<td rowspan="${rowspan}" style="border:1px solid #000;padding:3px;text-align:center;font-weight:bold;">${lvlIdx + 1}</td>`
-                    sectionsHtml += `<td rowspan="${rowspan}" style="border:1px solid #000;padding:3px;text-align:center;">${escapeHtml(lvl.levelBaca || lvl.label || '')}</td>`
+                    sectionsHtml += `<td rowspan="${rowspan}" style="border:1px solid #000;padding:5px 3px;vertical-align:middle;text-align:center;font-weight:bold;">${lvlIdx + 1}</td>`
+                    sectionsHtml += `<td rowspan="${rowspan}" style="border:1px solid #000;padding:5px 3px;vertical-align:middle;text-align:center;">${escapeHtml(lvl.levelBaca || lvl.label || '')}</td>`
                   }
-                  sectionsHtml += `<td style="border:1px solid #000;padding:3px;">${escapeHtml(kh.labelKhotam || kh.id)} (${kh.multiplier || 2}x)</td>`
-                  sectionsHtml += `<td style="border:1px solid #000;padding:3px;text-align:center;">${escapeHtml(valTgl || '')}</td>`
+                  sectionsHtml += `<td style="border:1px solid #000;padding:5px 3px;vertical-align:middle;">${escapeHtml(kh.labelKhotam || kh.id)} (${kh.multiplier || 2}x)</td>`
+                  sectionsHtml += `<td style="border:1px solid #000;padding:5px 3px;vertical-align:middle;text-align:center;">${escapeHtml(valTgl || '')}</td>`
                   fields.forEach((f) => {
                     const k = `pra__${lvl.id}__${kh.id}__${f.id}`
                     const v = data[k]
                     const display = v === undefined || v === '' || v === null ? '' : String(v)
-                    sectionsHtml += `<td style="border:1px solid #000;padding:3px;text-align:center;">${escapeHtml(display)}</td>`
+                    sectionsHtml += `<td style="border:1px solid #000;padding:5px 3px;vertical-align:middle;text-align:center;">${escapeHtml(display)}</td>`
                   })
                   const avgStr =
                     typeof _fmtAvg === 'function'
@@ -35793,7 +35793,7 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
                       : avg !== null
                         ? avg.toFixed(2).replace('.', ',')
                         : '-'
-                  sectionsHtml += `<td style="border:1px solid #000;padding:3px;text-align:center;font-weight:bold;">${avgStr}</td>`
+                  sectionsHtml += `<td style="border:1px solid #000;padding:5px 3px;vertical-align:middle;text-align:center;font-weight:bold;">${avgStr}</td>`
                   sectionsHtml += `</tr>`
                 })
               })
@@ -35917,7 +35917,7 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
             const guruKelasData = (db_guru || []).find((g) => g.nama === namaGuruKelas)
             const ekgqGuruKelas = guruKelasData ? guruKelasData.ekgq || '' : ''
 
-            return `<div class="page" style="page-break-after:always;padding:15mm 15mm 65mm 15mm;position:relative;min-height:267mm;box-sizing:border-box;">
+            return `<div class="page" style="page-break-after:always;padding:15mm 15mm 65mm 15mm;position:relative;min-height:267mm;box-sizing:border-box;"><style>.page tr{page-break-inside:avoid;}</style>
                    ${bgLayerHtml}
                     <div style="position:relative;z-index:1;">
                    <!-- KOP -->
