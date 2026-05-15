@@ -14480,7 +14480,7 @@
         if (b) b.classList.add('hidden')
       }
 
-      const APP_VERSION = 'v.109.35.0515-w6-modalpos-mount-api'
+      const APP_VERSION = 'v.109.36.0515-wire-pos-w3-w5'
 
       // ====================================================================
       // Sentry error tracking init (B3). Gate guard: DSN placeholder = no-op.
@@ -14519,9 +14519,9 @@
       // Default OFF. Toggle: window._useVueJamHijri = true; location.reload();
       // ====================================================================
       window._useVueJamHijri = window._useVueJamHijri ?? true // Default ON v.109.11 (Phase 5 staged rollout)
-      window._useVuePostCard = window._useVuePostCard ?? false
+      window._useVuePostCard = window._useVuePostCard ?? true // v.109.36: default ON
       window._useVueKalenderMini = window._useVueKalenderMini ?? false
-      window._useVueKalenderPendidikan = window._useVueKalenderPendidikan ?? false
+      window._useVueKalenderPendidikan = window._useVueKalenderPendidikan ?? true // v.109.36: default ON
       window._useVueModalPOS = window._useVueModalPOS ?? true // v.109.35: default ON
       ;(function loadVueWidgetsConditional() {
         var anyFlag =
@@ -29160,6 +29160,81 @@
           _toast.error('Error: ' + (err.message || ''))
         }
         toggleLoader(false)
+      }
+
+      // v.109.36: Wire AmmuPOS (Vue) -> Firestore + cetakStrukPOS
+      // Usage: window.AmmuPOS.open({ onSimpan: simpanTransaksiPOSViaVue, santri, operator })
+      async function simpanTransaksiPOSViaVue(data) {
+        if (!data || !data.items || data.items.length === 0) {
+          return _toast.warning('Tidak ada item untuk diproses')
+        }
+        const santri = db_santri.find((x) => x.id == data.santri_id)
+        if (!santri) return _toast.error('Santri tidak ditemukan')
+        const noStruk =
+          typeof buatNomorStruk === 'function' ? buatNomorStruk() : `STR-${Date.now()}`
+        const transaksi = {
+          id: `trx_${Date.now()}`,
+          no_struk: noStruk,
+          tanggal: data.tanggal || new Date().toISOString().split('T')[0],
+          santri_id: santri.id,
+          santri_nama: santri.nama,
+          wali: santri.wali || '',
+          lembaga: santri.lembaga,
+          kelas: santri.kelas,
+          items: data.items.map((it) => ({
+            type: 'manual',
+            tagihan_id: null,
+            jenis_id: (it.jenis || '').toLowerCase().replace(/\s+/g, '_'),
+            label: it.jenis,
+            nominal: Number(it.nominal),
+            dibayar: Number(it.nominal),
+            catatan: it.keterangan || ''
+          })),
+          total_tagihan: Number(data.total_tagihan),
+          total_bayar: Number(data.total_bayar),
+          kembalian: Number(data.kembalian),
+          metode_bayar: 'cash',
+          operator: data.operator || sesiAktif.nama || 'admin'
+        }
+        toggleLoader(true, 'Menyimpan transaksi...')
+        try {
+          await db.collection('keuangan_transaksi').doc(transaksi.id).set(transaksi)
+          const bi = {
+            id: `bi_${transaksi.id}`,
+            ref_id: transaksi.id,
+            ref_type: 'transaksi_pos',
+            tanggal: transaksi.tanggal,
+            tipe: 'masuk',
+            kategori: 'POS Pembayaran',
+            keterangan: `POS via Vue - ${santri.nama}`,
+            nominal: transaksi.total_bayar,
+            metode_bayar: 'cash',
+            operator: transaksi.operator
+          }
+          await db.collection('keuangan_buku_induk').doc(bi.id).set(bi)
+          db_keuangan_transaksi.push(transaksi)
+          db_keuangan_buku_induk.push(bi)
+          toggleLoader(false)
+          _toast.success('Transaksi tersimpan')
+          if (typeof cetakStrukPOS === 'function') cetakStrukPOS(transaksi)
+        } catch (err) {
+          toggleLoader(false)
+          _toast.error('Gagal simpan: ' + (err.message || ''))
+        }
+      }
+      window.simpanTransaksiPOSViaVue = simpanTransaksiPOSViaVue
+      // Helper buka Vue POS dengan santri ID — auto-wire onSimpan
+      window.bukaPOSVue = function (santriId) {
+        const s = db_santri.find((x) => x.id == santriId)
+        if (!s) return _toast.error('Santri tidak ditemukan')
+        if (!window.AmmuPOS || typeof window.AmmuPOS.open !== 'function') {
+          return _toast.warning('Vue POS belum siap, refresh dulu')
+        }
+        window.AmmuPOS.open({
+          santri: { id: s.id, nama: s.nama, nis: s.nis || '', lembaga: s.lembaga, kelas: s.kelas },
+          operator: sesiAktif.nama || 'admin',
+          onSimpan: simpanTransaksiPOSViaVue
+        })
       }
 
       // ----- TUNGGAKAN -----
