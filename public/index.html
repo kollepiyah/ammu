@@ -958,6 +958,11 @@
       }
       /* v.108.22: HAPUS rule yg buat splash hide saat global-loader muncul (penyebab bocor) */
       /* v.108.22: Force hide global-loader saat login-view visible (tidak ada fetch saat login screen) */
+      /* v.109.30: Hide global-loader saat PTR soft refresh — no fullscreen overlay */
+      body.ptr-refreshing #global-loader,
+      body.ptr-refreshing #splash-screen {
+        display: none !important;
+      }
       body:has(#login-view:not(.hidden)) #global-loader {
         display: none !important;
         visibility: hidden !important;
@@ -14475,7 +14480,7 @@
         if (b) b.classList.add('hidden')
       }
 
-      const APP_VERSION = 'v.109.29.0515-ptr-soft-uppercase'
+      const APP_VERSION = 'v.109.30.0515-ptr-hide-overlay-5swal-migrate'
 
       // ====================================================================
       // Sentry error tracking init (B3). Gate guard: DSN placeholder = no-op.
@@ -23467,14 +23472,11 @@
       }
       async function hapusMasterLembaga(i) {
         if (!cekHakAkses('kelola_master')) return _toast.error('Akses Ditolak: Hanya Admin.')
-        Swal.fire({
+        _konfirmasiHapus({
           title: 'Hapus Lembaga/Devisi?',
-          icon: 'warning',
-          showCancelButton: true,
-          confirmButtonText: 'Ya, Hapus',
-          cancelButtonText: 'Batal'
-        }).then(async (r) => {
-          if (r.isConfirmed) {
+          text: 'Data lembaga akan dihapus permanen.',
+          confirmText: 'Ya, Hapus',
+          onConfirm: async () => {
             toggleLoader(true)
             db_lembaga.splice(i, 1)
             await db.collection('master').doc('lembaga').set({ list: db_lembaga })
@@ -23568,12 +23570,11 @@
       }
       async function hapusMasterJabatan(i) {
         if (!cekHakAkses('kelola_master')) return _toast.error('Akses Ditolak: Hanya Admin.')
-        Swal.fire({
+        _konfirmasiHapus({
           title: 'Hapus Jabatan?',
-          icon: 'warning',
-          showCancelButton: true
-        }).then(async (r) => {
-          if (r.isConfirmed) {
+          text: 'Data jabatan akan dihapus permanen.',
+          confirmText: 'Ya, Hapus',
+          onConfirm: async () => {
             toggleLoader(true)
             db_jabatan.splice(i, 1)
             await db.collection('master').doc('jabatan').set({ list: db_jabatan })
@@ -23784,15 +23785,13 @@
       async function hapusAdminGuru(id) {
         if (!cekHakAkses('kelola_guru'))
           return _toast.error('Akses Ditolak: Hanya Admin yang bisa hapus guru.')
-        Swal.fire({
-          title: 'Hapus?',
+        _konfirmasiHapus({
+          title: 'Hapus Guru?',
           text: savedSettings.softDeleteEnabled
             ? 'Soft delete: data akan disembunyikan (status=Tidak Aktif)'
             : 'Data akan terhapus permanen',
-          icon: 'warning',
-          showCancelButton: true
-        }).then(async (r) => {
-          if (r.isConfirmed) {
+          confirmText: 'Ya, Hapus',
+          onConfirm: async () => {
             toggleLoader(true)
             const gSnap = db_guru.find((x) => x.id == id)
             if (gSnap) await _backupSebelumHapus('guru', id, gSnap, 'Hapus guru manual')
@@ -31682,23 +31681,22 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
                 .join('')
       }
       async function hapusKritikSaran(id) {
-        const r = await Swal.fire({
-          title: 'Hapus pesan?',
-          icon: 'warning',
-          showCancelButton: true,
-          confirmButtonText: 'Hapus',
-          cancelButtonText: 'Batal'
+        _konfirmasiHapus({
+          title: 'Hapus Pesan?',
+          text: 'Pesan kritik/saran akan dihapus permanen.',
+          confirmText: 'Hapus',
+          onConfirm: async () => {
+            toggleLoader(true)
+            try {
+              await db.collection('kritik_saran').doc(id).delete()
+              db_kritik_saran = db_kritik_saran.filter((k) => k.id !== id)
+              renderKritikSaran()
+            } catch (e) {
+              _toast.error('Error: ' + (e.message || ''))
+            }
+            toggleLoader(false)
+          }
         })
-        if (!r.isConfirmed) return
-        toggleLoader(true)
-        try {
-          await db.collection('kritik_saran').doc(id).delete()
-          db_kritik_saran = db_kritik_saran.filter((k) => k.id !== id)
-          renderKritikSaran()
-        } catch (e) {
-          _toast.error('Error: ' + (e.message || ''))
-        }
-        toggleLoader(false)
       }
       function escapeHtml(str) {
         return String(str || '').replace(
@@ -37913,34 +37911,32 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
         toggleLoader(false)
       }
       async function hapusPostBeranda(id) {
-        const r = await Swal.fire({
-          title: 'Hapus post?',
-          icon: 'warning',
-          showCancelButton: true,
-          confirmButtonText: 'Hapus'
-        })
-        if (!r.isConfirmed) return
-        toggleLoader(true)
-        try {
-          // Hapus semua gambar di Storage (multi + backward compat single)
-          const post = db_beranda_post.find((x) => x.id === id)
-          if (post) {
-            // Backup ke audit_log
-            await _backupSebelumHapus('beranda_post', id, post, 'Hapus postingan')
-            const urls = post.gambar_urls || (post.gambar_url ? [post.gambar_url] : [])
-            for (const url of urls) {
-              try {
-                await hapusGambarDariStorage(url)
-              } catch (e) {}
+        _konfirmasiHapus({
+          title: 'Hapus Post?',
+          text: 'Postingan dan semua gambarnya akan dihapus permanen.',
+          confirmText: 'Hapus',
+          onConfirm: async () => {
+            toggleLoader(true)
+            try {
+              const post = db_beranda_post.find((x) => x.id === id)
+              if (post) {
+                await _backupSebelumHapus('beranda_post', id, post, 'Hapus postingan')
+                const urls = post.gambar_urls || (post.gambar_url ? [post.gambar_url] : [])
+                for (const url of urls) {
+                  try {
+                    await hapusGambarDariStorage(url)
+                  } catch (e) {}
+                }
+              }
+              await db.collection('beranda_post').doc(id).delete()
+              db_beranda_post = db_beranda_post.filter((x) => x.id !== id)
+              renderBerandaFeed()
+            } catch (e) {
+              _toast.error('Error: ' + (e.message || ''))
             }
+            toggleLoader(false)
           }
-          await db.collection('beranda_post').doc(id).delete()
-          db_beranda_post = db_beranda_post.filter((x) => x.id !== id)
-          renderBerandaFeed()
-        } catch (e) {
-          _toast.error('Error: ' + (e.message || ''))
-        }
-        toggleLoader(false)
+        })
       }
       async function toggleLikeBeranda(id) {
         const myId = String(sesiAktif.id)
@@ -39400,7 +39396,7 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
             const currentDistance = match ? parseFloat(match[1]) + 50 : 0
 
             if (currentDistance >= PTR_THRESHOLD) {
-              // v.109.29: SOFT REFRESH - re-render currentpage tanpa full page reload (no overlay)
+              // v.109.30: SOFT REFRESH dengan body.ptr-refreshing class (hide global-loader overlay)
               const icon = document.getElementById('ptr-icon')
               const text = document.getElementById('ptr-text')
               if (icon) {
@@ -39409,6 +39405,7 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
               }
               if (text) text.innerText = 'Memperbarui...'
               ind.style.transform = 'translate(-50%, 20px)'
+              document.body.classList.add('ptr-refreshing')
               setTimeout(() => {
                 try {
                   const cur = sessionStorage.getItem('currentPage_v6')
@@ -39420,6 +39417,7 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
                 }
                 setTimeout(() => {
                   ind.style.transform = 'translate(-50%, -100%)'
+                  document.body.classList.remove('ptr-refreshing')
                 }, 400)
               }, 300)
             } else {

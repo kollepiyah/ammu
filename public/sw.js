@@ -5,7 +5,7 @@
 // ====================================================================
 
 // Bump versi setiap deploy update besar supaya cache di-refresh
-const SW_VERSION = 'v319-0515-ptr-soft-uppercase'
+const SW_VERSION = 'v320-0515-ptr-hide-overlay-5swal'
 const CACHE_SHELL = `mu-shell-${SW_VERSION}`
 const CACHE_RUNTIME = `mu-runtime-${SW_VERSION}`
 
