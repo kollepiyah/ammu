@@ -85,7 +85,7 @@ const formatted = computed(() => {
 
 <style scoped>
 .ammu-post {
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
   background: white;
   border: 1px solid #e2e8f0;
   border-radius: 1rem;
@@ -133,9 +133,14 @@ const formatted = computed(() => {
   padding: 4px;
 }
 .nama {
-  font-weight: 900;
+  font-weight: 600;
   font-size: 0.875rem;
   margin: 0;
+  color: #0f172a;
+}
+:global(.dark) .nama,
+.dark-mode .nama {
+  color: #fafafa;
 }
 .meta {
   font-size: 11px;

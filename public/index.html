@@ -14480,7 +14480,7 @@
         if (b) b.classList.add('hidden')
       }
 
-      const APP_VERSION = 'v.109.38.0515-kalender-listener-judul'
+      const APP_VERSION = 'v.109.39.0515-kalender-teal-postcard-jakarta'
 
       // ====================================================================
       // Sentry error tracking init (B3). Gate guard: DSN placeholder = no-op.
@@ -28925,12 +28925,15 @@
                       ? 'border-amber-300 bg-amber-50'
                       : 'border-slate-200 bg-white hover:bg-slate-50'
                   const aktif = keuPosCart.santriId == s.id ? 'ring-2 ring-amber-500' : ''
-                  return `<div onclick="pilihSantriPOS(${s.id})" class="cursor-pointer p-3 rounded-xl border ${cls} ${aktif} transition flex justify-between items-center">
-                       <div class="min-w-0 flex-1">
+                  return `<div class="p-3 rounded-xl border ${cls} ${aktif} transition flex justify-between items-center gap-2">
+                       <div onclick="pilihSantriPOS(${s.id})" class="cursor-pointer min-w-0 flex-1">
                            <p class="text-sm font-black text-slate-800 truncate">${s.nama}</p>
                            <p class="text-[10px] font-bold text-slate-500">${s.lembaga} · ${s.kelas} · NIS: ${s.nis || '-'}</p>
                        </div>
-                       ${tunggakan > 0 ? `<span class="text-[10px] font-black text-amber-700 bg-amber-100 px-2 py-1 rounded-full whitespace-nowrap ml-2">${fmtRupiah(tunggakan)}</span>` : '<span class="text-[10px] font-bold text-emerald-600 ml-2"><i class="fas fa-check-circle"></i></span>'}
+                       <div class="flex items-center gap-1.5 flex-shrink-0">
+                         ${tunggakan > 0 ? `<span class="text-[10px] font-black text-amber-700 bg-amber-100 px-2 py-1 rounded-full whitespace-nowrap">${fmtRupiah(tunggakan)}</span>` : '<span class="text-[10px] font-bold text-emerald-600"><i class="fas fa-check-circle"></i></span>'}
+                         <button onclick="event.stopPropagation();bukaPOSVue(${s.id})" title="Quick POS (Vue)" class="text-[10px] font-bold text-white bg-teal-600 hover:bg-teal-700 px-2 py-1 rounded-lg cursor-pointer shadow-sm transition"><i class="fas fa-bolt"></i></button>
+                       </div>
                     </div>`
                 })
                 .join('')

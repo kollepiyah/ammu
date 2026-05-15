@@ -100,15 +100,19 @@ function rangeText(k) {
 
 <style scoped>
 .ammu-kal {
-  font-family: 'Inter', system-ui, sans-serif;
-  background: #18181b;
-  border: 1px solid #27272a;
+  font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+  background: linear-gradient(135deg, #0f766e 0%, #115e59 100%);
   border-radius: 0.875rem;
   padding: 0.625rem 0.75rem;
   color: white;
   height: 100%;
   display: flex;
   flex-direction: column;
+  box-shadow: 0 2px 4px rgb(0 0 0 / 0.08);
+}
+:global(.dark) .ammu-kal,
+.dark-mode .ammu-kal {
+  background: linear-gradient(135deg, #042f2e 0%, #064e3b 100%);
 }
 .hdr {
   display: flex;
