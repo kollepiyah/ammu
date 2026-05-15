@@ -471,6 +471,10 @@
 
       /* Hide splash & global-loader saat app sudah running */
       body.app-running #splash-screen,
+      body.app-running #app-bg,
+      body.app-running #bg-overlay {
+        display: none !important;
+      }
       body.app-running #global-loader {
         display: none !important;
         visibility: hidden !important;
@@ -2091,16 +2095,16 @@
       html body:not(.dark-mode) aside#sidebar * {
         color: inherit;
       }
-      /* Title pondok pesantren — teal cerah */
+      /* v.109.44: Title pondok pesantren — DARK SLATE di light mode (kontras Azure BG) */
       html body:not(.dark-mode) aside#sidebar #ui-sidebar-title,
       html body:not(.dark-mode) aside#sidebar h1.text-white {
-        color: var(--theme-color) !important;
+        color: #0f172a !important;
         text-shadow: none !important;
       }
-      /* Periode pill — teal background tinted */
+      /* Periode pill — teal tint with darker text */
       html body:not(.dark-mode) aside#sidebar #ui-sidebar-periode {
-        background: rgba(20, 184, 166, 0.12) !important;
-        color: var(--theme-color) !important;
+        background: rgba(15, 118, 110, 0.15) !important;
+        color: #0f766e !important;
         text-shadow: none !important;
       }
       /* General text white di sidebar (eg copyright, footer) */
@@ -14574,7 +14578,7 @@
         if (b) b.classList.add('hidden')
       }
 
-      const APP_VERSION = 'v.109.43.0515-azure-loader-toast-ahlan-teal'
+      const APP_VERSION = 'v.109.44.0515-sidebar-dark-splash-refresh-fix'
 
       // ====================================================================
       // Sentry error tracking init (B3). Gate guard: DSN placeholder = no-op.
@@ -15015,12 +15019,17 @@
         setTimeout(() => sp.remove(), 700)
       }
       function setSplashLogo() {
-        // Cek apakah splash sudah pernah ditampilkan di session ini
-        // Kalau sudah, langsung hide (tidak tampil splash saat refresh)
-        const splashAlreadyShown = sessionStorage.getItem('splash_shown_v1') === '1'
+        // v.109.44: Splash hide saat REFRESH (pakai localStorage instead of sessionStorage)
+        // sessionStorage cleared at refresh — splash flash. localStorage persist — only show once per device.
+        const splashAlreadyShown = localStorage.getItem('splash_shown_v1') === '1'
         if (splashAlreadyShown) {
           const sp = document.getElementById('splash-screen')
           if (sp) sp.style.display = 'none'
+          // Hide bg-pesantren juga supaya tidak flash saat refresh
+          const appBg = document.getElementById('app-bg')
+          const bgOv = document.getElementById('bg-overlay')
+          if (appBg) appBg.style.display = 'none'
+          if (bgOv) bgOv.style.display = 'none'
           try {
             restoreSidebarState()
           } catch (e) {}
@@ -15420,7 +15429,7 @@
         const splashAlreadyShown = sessionStorage.getItem('splash_shown_v1') === '1'
         const splashStart = Date.now()
         const minSplashMs = splashAlreadyShown ? 0 : 2000
-        sessionStorage.setItem('splash_shown_v1', '1')
+        localStorage.setItem('splash_shown_v1', '1')
         const finishSplash = () => {
           const elapsed = Date.now() - splashStart
           const remaining = Math.max(0, minSplashMs - elapsed)
@@ -17430,7 +17439,7 @@
                 el.style.setProperty('color', '#334155', 'important')
               })
               sidebar.querySelectorAll('#ui-sidebar-title').forEach((el) => {
-                el.style.setProperty('color', 'var(--theme-color)', 'important')
+                el.style.setProperty('color', '#0f172a', 'important')
               })
               sidebar.querySelectorAll('.text-slate-300, .text-slate-400').forEach((el) => {
                 el.style.setProperty('color', '#475569', 'important')
