@@ -14480,7 +14480,7 @@
         if (b) b.classList.add('hidden')
       }
 
-      const APP_VERSION = 'v.109.34.0515-swal-shortcuts-tidy'
+      const APP_VERSION = 'v.109.35.0515-w6-modalpos-mount-api'
 
       // ====================================================================
       // Sentry error tracking init (B3). Gate guard: DSN placeholder = no-op.
@@ -14522,7 +14522,7 @@
       window._useVuePostCard = window._useVuePostCard ?? false
       window._useVueKalenderMini = window._useVueKalenderMini ?? false
       window._useVueKalenderPendidikan = window._useVueKalenderPendidikan ?? false
-      window._useVueModalPOS = window._useVueModalPOS ?? false
+      window._useVueModalPOS = window._useVueModalPOS ?? true // v.109.35: default ON
       ;(function loadVueWidgetsConditional() {
         var anyFlag =
           window._useVueJamHijri ||
@@ -14593,7 +14593,61 @@
               console.warn('[Phase 5 W3] renderBerandaFeed not ready yet:', e.message)
             }
           }
-          // W6 mount logic ditambah saat widget wire-up
+          // v.109.35: W6 ModalPOS mount + AmmuPOS global API
+          if (window._useVueModalPOS) {
+            var posAnchor = document.getElementById('vue-widget-modal-pos')
+            if (!posAnchor) {
+              posAnchor = document.createElement('div')
+              posAnchor.id = 'vue-widget-modal-pos'
+              document.body.appendChild(posAnchor)
+            }
+            window.AmmuPOS = {
+              _app: null,
+              open: function (payload) {
+                payload = payload || {}
+                var self = this
+                if (!window.AmmuWidgets) {
+                  console.warn('[AmmuPOS] AmmuWidgets not loaded')
+                  return
+                }
+                try {
+                  window.AmmuWidgets.unmount('#vue-widget-modal-pos')
+                } catch (e) {}
+                self._app = window.AmmuWidgets.mount('ModalPOS', '#vue-widget-modal-pos', {
+                  open: true,
+                  santri: payload.santri || null,
+                  operator: payload.operator || '',
+                  onClose: function () {
+                    if (typeof payload.onClose === 'function') {
+                      try {
+                        payload.onClose()
+                      } catch (e) {}
+                    }
+                    self.close()
+                  },
+                  onSimpan: function (data) {
+                    if (typeof payload.onSimpan === 'function') {
+                      try {
+                        payload.onSimpan(data)
+                      } catch (e) {
+                        console.warn('[AmmuPOS] onSimpan err:', e)
+                      }
+                    }
+                    self.close()
+                  }
+                })
+              },
+              close: function () {
+                try {
+                  window.AmmuWidgets.unmount('#vue-widget-modal-pos')
+                } catch (e) {}
+                this._app = null
+              }
+            }
+            console.log(
+              '[AmmuPOS] ready - window.AmmuPOS.open({ santri, operator, onSimpan, onClose })'
+            )
+          }
         }
         s.onerror = function () {
           console.error('[Phase 5] Vue bundle load fail — vanilla stays')
