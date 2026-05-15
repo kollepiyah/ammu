@@ -278,10 +278,11 @@
         pointer-events: none;
       }
       .splash-logo-main {
-        max-height: 180px;
-        max-width: 40vw;
+        max-height: 140px;
+        max-width: 32vw;
         width: auto;
         height: auto;
+        margin-top: -10vh;
         object-fit: contain;
         animation: splashLogoIn 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) both;
         filter: drop-shadow(0 8px 24px rgba(15, 118, 110, 0.15));
@@ -352,7 +353,7 @@
         font-family:
           'Scheherazade New', 'Droid Arabic Naskh', 'Noto Naskh Arabic', 'Amiri',
           'Traditional Arabic', serif !important;
-        font-weight: 600;
+        font-weight: 600 !important;
       }
 
       /* ============= LAYOUT GUARANTEE (jaga-jaga Tailwind CDN slow load) ============= */
@@ -4245,7 +4246,7 @@
           <img
             id="sidebar-logo"
             src="/logo.png"
-            class="w-20 h-20 object-contain drop-shadow-md hover:scale-105 transition-transform"
+            class="w-20 h-20 object-contain drop-shadow-md hover:scale-105 transition-transform mt-2"
           />
           <div class="text-center w-full">
             <h1
@@ -14472,7 +14473,7 @@
         if (b) b.classList.add('hidden')
       }
 
-      const APP_VERSION = 'v.109.27.0515-stats-kritik-excel-fixes'
+      const APP_VERSION = 'v.109.28.0515-kalender-excel-splash-fixes'
 
       // ====================================================================
       // Sentry error tracking init (B3). Gate guard: DSN placeholder = no-op.
@@ -25487,67 +25488,77 @@
         doc.save('Data_Santri.pdf')
       }
       async function eksporExcelViewGuru() {
-        const shiftLabels = {
-          pagi: 'Pagi Saja',
-          sore: 'Sore Saja',
-          pagi_sore: 'Pagi & Sore'
+        // v.109.28: defensive try-catch supaya error tampil di toast (debug aid)
+        try {
+          const shiftLabels = {
+            pagi: 'Pagi Saja',
+            sore: 'Sore Saja',
+            pagi_sore: 'Pagi & Sore'
+          }
+          const tipeLabels = {
+            ngaji: 'Guru Ngaji',
+            sekolah: 'Guru Sekolah',
+            ngaji_sekolah: 'Ngaji + Sekolah'
+          }
+          const rows = []
+          let no = 1
+          const list = sortGuruGeneral([...db_guru])
+          list.forEach((g) => {
+            let lama = hitungLamaMengajar(g.tanggal_tugas)
+            let tglFormat = formatTanggal(g.tanggal_tugas)
+            const tipe = tipeLabels[g.tipe_pegawai] || 'Guru Ngaji'
+            const shft = shiftLabels[g.shift || 'pagi_sore']
+            rows.push([
+              no++,
+              getNamaGuruGelar(g.nama, g.jk),
+              g.jabatan || '-',
+              g.jabatan_tambahan || '-',
+              g.lembaga,
+              g.lembaga_sekolah || '-',
+              tipe,
+              shft,
+              g.id_fingerprint || '-',
+              tglFormat,
+              lama,
+              g.wa || '-',
+              g.ekgq || '-',
+              g.role_sistem || 'user',
+              g.status
+            ])
+          })
+          await exportToExcelStyled({
+            filename: 'Data_Guru_Tabel.xlsx',
+            sheetName: 'Data Guru',
+            title: 'DATA GURU/PEGAWAI',
+            subtitle: `Total: ${list.length} guru/pegawai`,
+            header: [
+              'No',
+              'Nama Guru',
+              'Jabatan',
+              'Jabatan Tambahan',
+              'Lembaga',
+              'Lembaga Sekolah',
+              'Tipe Pegawai',
+              'Shift',
+              'ID Fingerprint',
+              'Tanggal Tugas',
+              'Lama Mengajar',
+              'Kontak WA',
+              'EKGQ',
+              'Role Sistem',
+              'Status'
+            ],
+            rows: rows,
+            colWidths: [5, 35, 25, 22, 18, 18, 16, 14, 14, 14, 18, 16, 12, 18, 12]
+          })
+        } catch (err) {
+          console.error('[eksporExcelViewGuru] error:', err)
+          if (typeof _toast !== 'undefined' && _toast.error) {
+            _toast.error('Gagal ekspor Excel: ' + (err?.message || 'unknown error'))
+          } else {
+            alert('Gagal ekspor Excel: ' + (err?.message || 'unknown error'))
+          }
         }
-        const tipeLabels = {
-          ngaji: 'Guru Ngaji',
-          sekolah: 'Guru Sekolah',
-          ngaji_sekolah: 'Ngaji + Sekolah'
-        }
-        const rows = []
-        let no = 1
-        const list = sortGuruGeneral([...db_guru])
-        list.forEach((g) => {
-          let lama = hitungLamaMengajar(g.tanggal_tugas)
-          let tglFormat = formatTanggal(g.tanggal_tugas)
-          const tipe = tipeLabels[g.tipe_pegawai] || 'Guru Ngaji'
-          const shft = shiftLabels[g.shift || 'pagi_sore']
-          rows.push([
-            no++,
-            getNamaGuruGelar(g.nama, g.jk),
-            g.jabatan || '-',
-            g.jabatan_tambahan || '-',
-            g.lembaga,
-            g.lembaga_sekolah || '-',
-            tipe,
-            shft,
-            g.id_fingerprint || '-',
-            tglFormat,
-            lama,
-            g.wa || '-',
-            g.ekgq || '-',
-            g.role_sistem || 'user',
-            g.status
-          ])
-        })
-        await exportToExcelStyled({
-          filename: 'Data_Guru_Tabel.xlsx',
-          sheetName: 'Data Guru',
-          title: 'DATA GURU/PEGAWAI',
-          subtitle: `Total: ${list.length} guru/pegawai`,
-          header: [
-            'No',
-            'Nama Guru',
-            'Jabatan',
-            'Jabatan Tambahan',
-            'Lembaga',
-            'Lembaga Sekolah',
-            'Tipe Pegawai',
-            'Shift',
-            'ID Fingerprint',
-            'Tanggal Tugas',
-            'Lama Mengajar',
-            'Kontak WA',
-            'EKGQ',
-            'Role Sistem',
-            'Status'
-          ],
-          rows: rows,
-          colWidths: [5, 35, 25, 22, 18, 18, 16, 14, 14, 14, 18, 16, 12, 18, 12]
-        })
       }
       async function eksporPDFViewGuru() {
         const { jsPDF } = window.jspdf
@@ -26237,14 +26248,11 @@
         })
         doc.save(`Rekap_Diniyah_${namaBulan}_${thn}.pdf`)
       }
-      function eksporExcelRekapDiniyah() {
+      async function eksporExcelRekapDiniyah() {
+        // v.109.28: migrate ke exportToExcelStyled (logo + KOP rapi + format match PDF)
         const { list, fields, periodKey, namaBulan, thn } = _getDataRekapDiniyahForExport()
         if (list.length === 0) return _toast.warning('Tidak Ada Data: Tidak ada santri.')
-        let aoa = buatKopExcel()
-        aoa.push([`REKAP PRESTASI DINIYAH BULAN ${namaBulan.toUpperCase()} ${thn}`])
-        aoa.push([`Dicetak: ${new Date().toLocaleString('id-ID')}`])
-        aoa.push([])
-        aoa.push(['No', 'Nama', 'Lembaga', 'Kelas', ...fields])
+        const rows = []
         list.forEach((s, i) => {
           const recId = `diniyah_${s.id}_${periodKey}`
           const rec = db_rekap_diniyah.find((r) => r.id === recId)
@@ -26254,12 +26262,30 @@
             const fkey = f.toLowerCase().replace(/[^a-z0-9]/g, '_')
             row.push(String(data[fkey] || '-'))
           })
-          aoa.push(row)
+          rows.push(row)
         })
-        const ws = XLSX.utils.aoa_to_sheet(aoa)
-        const wb = XLSX.utils.book_new()
-        XLSX.utils.book_append_sheet(wb, ws, 'Rekap Diniyah')
-        XLSX.writeFile(wb, `Rekap_Diniyah_${namaBulan}_${thn}.xlsx`)
+        const colWidths = [5, 28, 20, 14, ...fields.map(() => 14)]
+        const ok = await exportToExcelStyled({
+          filename: `Rekap_Diniyah_${namaBulan}_${thn}.xlsx`,
+          sheetName: 'Rekap Diniyah',
+          title: `REKAP PRESTASI DINIYAH BULAN ${namaBulan.toUpperCase()} ${thn}`,
+          subtitle: `Dicetak: ${new Date().toLocaleString('id-ID')} | Total: ${list.length} santri`,
+          header: ['No', 'Nama', 'Lembaga', 'Kelas', ...fields],
+          rows: rows,
+          colWidths: colWidths
+        })
+        if (ok === false) {
+          let aoa = buatKopExcel()
+          aoa.push([`REKAP PRESTASI DINIYAH BULAN ${namaBulan.toUpperCase()} ${thn}`])
+          aoa.push([`Dicetak: ${new Date().toLocaleString('id-ID')}`])
+          aoa.push([])
+          aoa.push(['No', 'Nama', 'Lembaga', 'Kelas', ...fields])
+          rows.forEach((r) => aoa.push(r))
+          const ws = XLSX.utils.aoa_to_sheet(aoa)
+          const wb = XLSX.utils.book_new()
+          XLSX.utils.book_append_sheet(wb, ws, 'Rekap Diniyah')
+          XLSX.writeFile(wb, `Rekap_Diniyah_${namaBulan}_${thn}.xlsx`)
+        }
       }
 
       function renderTabelBulanan() {
@@ -36530,7 +36556,7 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
               : 'text-slate-700'
           html += `<div class="${cls}" onclick="kalKlikTanggal('${dateStr}')">
                    <p class="text-[10px] font-bold ${isMinggu ? 'text-rose-600' : 'text-slate-500'} leading-none">${d} ${namaBulanM.substring(0, 3)}</p>
-                   <p class="text-xl sm:text-2xl font-black text-center flex-1 flex items-center justify-center font-arabic ${arabClass}">${toArabicDigit(hijri.day)}</p>
+                   <p class="text-xl sm:text-2xl font-bold text-center flex-1 flex items-center justify-center font-arabic ${arabClass}">${toArabicDigit(hijri.day)}</p>
                    <p class="text-[9px] text-slate-500 text-center font-medium leading-none">${pasaran}</p>
                    ${hasEvent ? '<div class="w-1.5 h-1.5 bg-cyan-500 rounded-full self-center mt-0.5"></div>' : ''}
                 </div>`
