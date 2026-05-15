@@ -1344,6 +1344,15 @@
       .text-custom {
         color: var(--theme-color);
       }
+      /* v.109.43: 'Ahlan' welcome text — match JamHijri widget teal (#0f766e darker) */
+      #ui-dash-welcome,
+      #ui-dash-welcome.text-custom {
+        color: #0f766e !important;
+      }
+      body.dark-mode #ui-dash-welcome,
+      body.dark-mode #ui-dash-welcome.text-custom {
+        color: #14b8a6 !important;
+      }
       .border-custom {
         border-color: var(--theme-color);
       }
@@ -2064,6 +2073,15 @@
       }
       /* Sidebar text putih */
       /* v.108.60: TIDAK !important — user color (inline) menang */
+      /* v.109.43: WHITE → AZURE (#F0FFFF) di light mode (root override, scope ke .bg-white utility) */
+      body:not(.dark-mode) .bg-white {
+        background-color: #f0ffff !important;
+      }
+      /* Plus sidebar light mode pakai Azure juga (instead of pure white) */
+      html body:not(.dark-mode) aside#sidebar {
+        background-color: #f0ffff !important;
+      }
+
       /* v.109.41: SIDEBAR LIGHT MODE — ultra specific + cover semua child element */
       html body:not(.dark-mode) aside#sidebar {
         background: #ffffff !important;
@@ -4087,6 +4105,7 @@
     <div
       id="global-loader"
       class="fixed inset-0 bg-slate-900 z-[9999] flex flex-col justify-center items-center text-white px-6 text-center hidden"
+      style="display: none !important"
     >
       <i class="fas fa-circle-notch fa-spin text-5xl mb-4 text-teal-400"></i>
       <h2
@@ -14555,7 +14574,7 @@
         if (b) b.classList.add('hidden')
       }
 
-      const APP_VERSION = 'v.109.42.0515-sidebar-force-notif-toast-kalfilter'
+      const APP_VERSION = 'v.109.43.0515-azure-loader-toast-ahlan-teal'
 
       // ====================================================================
       // Sentry error tracking init (B3). Gate guard: DSN placeholder = no-op.
@@ -14956,10 +14975,16 @@
         })
       }
 
-      function toggleLoader(show, text = 'Marah sekali otak mati, ceria sekali menghidupkan hati') {
-        document.getElementById('loader-text').innerText = text
-        if (show) document.getElementById('global-loader').classList.remove('hidden')
-        else document.getElementById('global-loader').classList.add('hidden')
+      function toggleLoader(show, text = 'Memuat...') {
+        // v.109.43: ROOT FIX - replace fullscreen overlay dengan toast notification
+        // No more 'mohon bersabar' fullscreen — pakai toast kecil yang auto-dismiss
+        if (show) {
+          if (typeof _toast !== 'undefined' && _toast.info) {
+            _toast.info(text || 'Memuat...')
+          }
+        }
+        // show=false: no-op (toast auto-dismiss after timer)
+        // Legacy #global-loader element disembunyikan permanent via CSS rule.
       }
 
       // Toggle visibility password input (eye icon)
@@ -17398,7 +17423,7 @@
             if (main) main.style.removeProperty('background-color')
             // v.109.42: Sidebar light mode — force white BG + dark text
             if (sidebar) {
-              sidebar.style.setProperty('background-color', '#ffffff', 'important')
+              sidebar.style.setProperty('background-color', '#F0FFFF', 'important')
               sidebar.style.setProperty('color', '#1e293b', 'important')
               // Force child text colors via JS supaya match light mode
               sidebar.querySelectorAll('.text-white').forEach((el) => {
