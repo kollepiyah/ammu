@@ -129,17 +129,30 @@ export function useGuruForm() {
       .filter((j) => j.nama)
   }
 
-  // v.21.28.0526: Kumpulkan jabatan dari lembaga yang dipilih + umbrella umum (Yayasan/Sarana)
-  // Tujuan: admin yayasan/keamanan/kebersihan tetap muncul walau guru pilih lembaga pendidikan spesifik
+  // v.21.28.0526 / v.21.29.0526: Kumpulkan jabatan dari lembaga.
+  // Strategi: kalau lembaga BELUM dipilih ATAU tipe_pegawai='pegawai_guru' (dual role),
+  // UNION SEMUA jabatan dari semua lembaga supaya dropdown tidak kosong.
+  // Kalau lembaga dipilih + tipe single role, fokus ke lembaga itu + Yayasan/Sarana umbrella.
   const jabatanFromLembaga = computed(() => {
     const list = []
-    if (form.value.lembaga) list.push(..._getLembagaJabatan(form.value.lembaga))
-    if (form.value.lembaga_sekolah && form.value.lembaga_sekolah !== form.value.lembaga) {
-      list.push(..._getLembagaJabatan(form.value.lembaga_sekolah))
+    const noLembagaSelected = !form.value.lembaga && !form.value.lembaga_sekolah
+    const isDualRole = form.value.tipe_pegawai === 'pegawai_guru'
+    if (noLembagaSelected || isDualRole) {
+      // Union ALL jabatan dari semua lembaga
+      for (const l of lembagaRaw.value) {
+        if (Array.isArray(l.jabatan)) {
+          list.push(..._getLembagaJabatan(l.lembaga))
+        }
+      }
+    } else {
+      if (form.value.lembaga) list.push(..._getLembagaJabatan(form.value.lembaga))
+      if (form.value.lembaga_sekolah && form.value.lembaga_sekolah !== form.value.lembaga) {
+        list.push(..._getLembagaJabatan(form.value.lembaga_sekolah))
+      }
+      // Tambah jabatan umbrella umum (Yayasan + Sarana Prasarana) supaya admin/keamanan/kebersihan tersedia
+      list.push(..._getLembagaJabatan('Yayasan'))
+      list.push(..._getLembagaJabatan('Sarana Prasarana'))
     }
-    // Tambah jabatan umbrella umum (Yayasan + Sarana Prasarana) supaya admin/keamanan/kebersihan tersedia
-    list.push(..._getLembagaJabatan('Yayasan'))
-    list.push(..._getLembagaJabatan('Sarana Prasarana'))
     // Dedupe by nama (case-insensitive)
     const seen = new Set()
     return list.filter((j) => {
@@ -336,28 +349,12 @@ export function useGuruForm() {
   })
 
   return {
-    form,
-    lembagaRaw,
-    jabatanFromMaster,
-    isLoading,
-    isSaving,
-    errorMsg,
-    editingId,
-    JABATAN_OPTIONS,
-    TIPE_PEGAWAI_OPTIONS,
-    SHIFT_OPTIONS,
-    ROLE_SISTEM_OPTIONS,
-    JABATAN_GURU_GROUP,
-    JABATAN_PEGAWAI_GROUP,
-    lembagaPondokOptions,
-    lembagaSekolahOptions,
-    jabatanOptionsDynamic,
-    jabatanOptionsFiltered,
-    showLembagaSekolah,
-    isSuperAdmin,
-    resetForm,
-    loadGuru,
-    validate,
-    save
+    form, lembagaRaw, jabatanFromMaster, isLoading, isSaving, errorMsg, editingId,
+    JABATAN_OPTIONS, TIPE_PEGAWAI_OPTIONS, SHIFT_OPTIONS, ROLE_SISTEM_OPTIONS,
+    JABATAN_GURU_GROUP, JABATAN_PEGAWAI_GROUP,
+    lembagaPondokOptions, lembagaSekolahOptions,
+    jabatanOptionsDynamic, jabatanOptionsFiltered,
+    showLembagaSekolah, isSuperAdmin,
+    resetForm, loadGuru, validate, save
   }
 }
