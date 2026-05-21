@@ -116,30 +116,36 @@ export function useGuruForm() {
   const jabatanFromMaster = ref([])
   let _unsubJabatan = null
 
-  // v.21.24c.0526: Jabatan SEKARANG dari master/lembaga.list[i].jabatan PER-LEMBAGA
-  // Sumber utama: jabatan dari lembaga yang dipilih guru.
-  // Fallback ke master/jabatan lama atau JABATAN_OPTIONS hard-coded kalau lembaga belum punya jabatan.
+  // v.21.28.0526: Jabatan dari master/lembaga.list[i].jabatan PER-LEMBAGA.
+  // Case-INSENSITIVE match lembaga nama (handle 'TPQ Pagi' vs 'TPQ PAGI' inconsistency).
+  // Plus include lembaga Yayasan + Sarana Prasarana untuk jabatan administratif umum.
   function _getLembagaJabatan(lembagaName) {
     if (!lembagaName) return []
-    const l = lembagaRaw.value.find((x) => x.lembaga === lembagaName)
+    const target = String(lembagaName).trim().toLowerCase()
+    const l = lembagaRaw.value.find((x) => String(x.lembaga || '').trim().toLowerCase() === target)
     if (!l || !Array.isArray(l.jabatan)) return []
     return l.jabatan
       .map((j) => (typeof j === 'string' ? { nama: j, tipe: 'guru' } : { nama: j.nama || '', tipe: j.tipe || 'guru' }))
       .filter((j) => j.nama)
   }
 
-  // Kumpulkan jabatan dari lembaga yang dipilih (Qiraati + Sekolah kalau dual)
+  // v.21.28.0526: Kumpulkan jabatan dari lembaga yang dipilih + umbrella umum (Yayasan/Sarana)
+  // Tujuan: admin yayasan/keamanan/kebersihan tetap muncul walau guru pilih lembaga pendidikan spesifik
   const jabatanFromLembaga = computed(() => {
     const list = []
     if (form.value.lembaga) list.push(..._getLembagaJabatan(form.value.lembaga))
     if (form.value.lembaga_sekolah && form.value.lembaga_sekolah !== form.value.lembaga) {
       list.push(..._getLembagaJabatan(form.value.lembaga_sekolah))
     }
-    // Dedupe by nama (case-sensitive)
+    // Tambah jabatan umbrella umum (Yayasan + Sarana Prasarana) supaya admin/keamanan/kebersihan tersedia
+    list.push(..._getLembagaJabatan('Yayasan'))
+    list.push(..._getLembagaJabatan('Sarana Prasarana'))
+    // Dedupe by nama (case-insensitive)
     const seen = new Set()
     return list.filter((j) => {
-      if (seen.has(j.nama)) return false
-      seen.add(j.nama)
+      const key = String(j.nama || '').toLowerCase()
+      if (seen.has(key)) return false
+      seen.add(key)
       return true
     })
   })
@@ -322,6 +328,11 @@ export function useGuruForm() {
     _unsubJabatan = subscribeDoc('master', 'jabatan', (docData) => {
       jabatanFromMaster.value = Array.isArray(docData?.list) ? docData.list : []
     })
+  })
+
+  onUnmounted(() => {
+    if (unsubLembaga) { try { unsubLembaga() } catch (e) {} ; unsubLembaga = null }
+    if (_unsubJabatan) { try { _unsubJabatan() } catch (e) {} ; _unsubJabatan = null }
   })
 
   return {

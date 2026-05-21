@@ -208,6 +208,13 @@ import { useConfirm } from '@/composables/useConfirm'
 const auth = useAuthStore()
 const toast = useToast()
 
+// v.21.27.0526: isAdmin computed — admin builtin + super_admin/admin/admin_keuangan role_sistem boleh akses PSB
+const isAdmin = computed(() => {
+  const s = auth.sesiAktif
+  if (!s) return false
+  return s.role === 'admin' || s.id === 'admin' || ['super_admin', 'admin', 'admin_keuangan'].includes(s.role_sistem)
+})
+
 // v.21.25.0526: PSB Assets per-lembaga upload (issue #50)
 const psbAssetsAll = ref({})
 const psbAssetLembaga = ref('')
@@ -259,11 +266,10 @@ async function savePsbAssets() {
     const merged = { ...(psbAssetsAll.value || {}) }
     merged[psbAssetLembaga.value] = {
       syarat: psbAssetSyarat.value || '',
-      pembayaran: psbAssetPembayaran.value || '',
-      acf: merged[psbAssetLembaga.value]?.acf || []
+      pembayaran: psbAssetPembayaran.value || ''
     }
     await setOne('settings', 'psb_assets', merged)
-    toast.success('Asset ' + psbAssetLembaga.value + ' tersimpan')
+    toast.success('Berhasil simpan asset PSB lembaga ' + psbAssetLembaga.value)
   } catch (e) {
     toast.error('Gagal: ' + (e?.message || e))
   } finally {
