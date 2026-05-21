@@ -1,0 +1,895 @@
+<template>
+  <div class="p-3 md:p-5 max-w-6xl mx-auto space-y-4">
+    <!-- Access denied (non-admin) -->
+    <div
+      v-if="!isFullAccess"
+      class="bg-white dark:bg-slate-800 rounded-2xl p-10 border border-dashed border-rose-300 text-center"
+    >
+      <i class="fas fa-lock text-rose-300 text-4xl mb-3"></i>
+      <p class="text-sm font-bold text-slate-700 dark:text-slate-300">Akses terbatas</p>
+      <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+        Halaman Data Guru hanya dapat diakses oleh admin pondok.
+      </p>
+    </div>
+
+    <template v-else>
+      <!-- v.21.14.0526: Header refactor — title inline subtitle, stats+buttons wrap -->
+      <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-200 dark:border-slate-700 shadow-sm">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+          <div class="flex items-baseline gap-2 flex-wrap">
+            <h1 class="text-base md:text-lg font-black text-slate-800 dark:text-white whitespace-nowrap">
+              <i class="fas fa-chalkboard-teacher text-teal-500 mr-1"></i>Data Guru / Pegawai
+            </h1>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400">— Master data guru &amp; pegawai pondok</p>
+          </div>
+          <!-- Stats badges + tombol tambah -->
+          <div class="flex flex-wrap gap-2 items-center">
+            <div class="px-3 py-1.5 rounded-full bg-teal-50 dark:bg-teal-900/30 border border-teal-200 dark:border-teal-700 text-xs">
+              <span class="text-teal-700 dark:text-teal-300 font-bold">{{ stats.total }}</span>
+              <span class="text-slate-500 dark:text-slate-400 ml-1">total</span>
+            </div>
+            <div class="px-3 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-700 text-xs">
+              <span class="text-emerald-700 dark:text-emerald-300 font-bold">{{ stats.aktif }}</span>
+              <span class="text-slate-500 dark:text-slate-400 ml-1">aktif</span>
+            </div>
+            <div class="px-3 py-1.5 rounded-full bg-rose-50 dark:bg-rose-900/30 border border-rose-200 dark:border-rose-700 text-xs">
+              <span class="text-rose-700 dark:text-rose-300 font-bold">{{ stats.tidakAktif }}</span>
+              <span class="text-slate-500 dark:text-slate-400 ml-1">non-aktif</span>
+            </div>
+            <!-- v.21.17c.0526: View vs Master mode actions -->
+            <button @click="printPage" class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold transition cursor-pointer no-print">
+              <i class="fas fa-print"></i>Cetak PDF
+            </button>
+            <button @click="exportGuruExcel" :disabled="exporting" class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer">
+              <i :class="['fas', exporting ? 'fa-spinner fa-spin' : 'fa-file-excel']"></i>{{ exporting ? 'Ekspor...' : 'Ekspor Excel' }}
+            </button>
+            <router-link v-if="!isMasterMode" to="/master-data?tab=guru" class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold transition" title="CRUD guru di Master Data">
+              <i class="fas fa-edit"></i>Kelola
+            </router-link>
+            <template v-if="isMasterMode">
+              <button @click="downloadTemplateGuru" class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition cursor-pointer">
+                <i class="fas fa-download"></i>Template
+              </button>
+              <label class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition cursor-pointer">
+                <i :class="['fas', importingGuru ? 'fa-spinner fa-spin' : 'fa-upload']"></i>{{ importingGuru ? 'Impor...' : 'Impor XLSX' }}
+                <input type="file" accept=".xlsx,.xls" class="hidden" @change="onImportGuru" :disabled="importingGuru" />
+              </label>
+              <router-link to="/guru/new?from=master" class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold transition">
+                <i class="fas fa-plus"></i>Tambah Guru
+              </router-link>
+            </template>
+          </div>
+        </div>
+      </div>
+
+      <!-- v.21.11.0526: Import preview modal -->
+      <div v-if="importPreviewGuru" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[85vh] flex flex-col">
+          <div class="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+            <h3 class="text-base font-black text-slate-800 dark:text-white">
+              <i class="fas fa-file-import text-blue-600 mr-2"></i>Preview Impor Guru — {{ importPreviewGuru.rows.length }} baris
+            </h3>
+            <button @click="importPreviewGuru = null" class="text-slate-400 hover:text-rose-600 text-xl"><i class="fas fa-times"></i></button>
+          </div>
+          <div class="p-4 overflow-auto flex-1 text-xs">
+            <div class="grid grid-cols-3 gap-2 mb-3">
+              <div class="bg-emerald-50 rounded p-2 border border-emerald-200">
+                <p class="text-[10px] text-emerald-700 font-bold uppercase">Baru</p>
+                <p class="text-2xl font-black text-emerald-700">{{ importPreviewGuru.newCount }}</p>
+              </div>
+              <div class="bg-amber-50 rounded p-2 border border-amber-200">
+                <p class="text-[10px] text-amber-700 font-bold uppercase">Update</p>
+                <p class="text-2xl font-black text-amber-700">{{ importPreviewGuru.updateCount }}</p>
+              </div>
+              <div class="bg-rose-50 rounded p-2 border border-rose-200">
+                <p class="text-[10px] text-rose-700 font-bold uppercase">Skip</p>
+                <p class="text-2xl font-black text-rose-700">{{ importPreviewGuru.skipCount }}</p>
+              </div>
+            </div>
+            <table class="w-full border border-slate-200">
+              <thead class="bg-slate-100">
+                <tr>
+                  <th class="px-2 py-1 text-left">#</th>
+                  <th class="px-2 py-1 text-left">Aksi</th>
+                  <th class="px-2 py-1 text-left">Nama</th>
+                  <th class="px-2 py-1 text-left">Jabatan</th>
+                  <th class="px-2 py-1 text-left">Lembaga</th>
+                  <th class="px-2 py-1 text-left">WA</th>
+                  <th class="px-2 py-1 text-left">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(r, i) in importPreviewGuru.preview" :key="i" class="border-t border-slate-100">
+                  <td class="px-2 py-1">{{ i + 1 }}</td>
+                  <td class="px-2 py-1"><span :class="r.action === 'new' ? 'text-emerald-700' : 'text-amber-700'" class="font-bold">{{ r.action.toUpperCase() }}</span></td>
+                  <td class="px-2 py-1">{{ r.nama }}</td>
+                  <td class="px-2 py-1">{{ r.jabatan }}</td>
+                  <td class="px-2 py-1">{{ r.lembaga }}</td>
+                  <td class="px-2 py-1">{{ r.wa }}</td>
+                  <td class="px-2 py-1">{{ r.status }}</td>
+                </tr>
+              </tbody>
+            </table>
+            <p v-if="importPreviewGuru.rows.length > importPreviewGuru.preview.length" class="text-[10px] italic text-slate-500 mt-2">
+              ...dan {{ importPreviewGuru.rows.length - importPreviewGuru.preview.length }} baris lagi
+            </p>
+          </div>
+          <div class="p-4 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-2">
+            <button @click="importPreviewGuru = null" class="px-4 py-2 text-xs font-bold rounded-lg bg-slate-200 hover:bg-slate-300">Batal</button>
+            <button @click="confirmImportGuru" :disabled="importingGuru" class="px-4 py-2 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-50">
+              <i :class="['fas', importingGuru ? 'fa-spinner fa-spin' : 'fa-check', 'mr-1']"></i>{{ importingGuru ? 'Importing...' : `Konfirmasi (${importPreviewGuru.newCount + importPreviewGuru.updateCount})` }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Search + filter bar -->
+      <div class="bg-white dark:bg-slate-800 rounded-2xl p-3 md:p-4 border border-slate-200 dark:border-slate-700 shadow-sm">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
+          <!-- Search -->
+          <div class="md:col-span-2 relative">
+            <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+            <input
+              v-model="search"
+              type="text"
+              placeholder="Cari nama, WA, jabatan, atau username..."
+              class="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition"
+            />
+          </div>
+          <!-- Filter lembaga -->
+          <select
+            v-model="filterLembaga"
+            class="px-3 py-2.5 text-sm rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none"
+          >
+            <option value="">Semua lembaga</option>
+            <option v-for="l in uniqueLembaga" :key="l" :value="l">{{ l }}</option>
+          </select>
+          <!-- Filter status -->
+          <select
+            v-model="filterStatus"
+            class="px-3 py-2.5 text-sm rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none"
+          >
+            <option value="aktif">Hanya yang aktif</option>
+            <option value="">Semua status</option>
+            <option value="tidak_aktif">Tidak aktif saja</option>
+          </select>
+        </div>
+        <!-- v.20.16.0526: Filter LEMBAGA chips (replace jabatan, kyai req) -->
+        <div v-if="uniqueLembaga.length > 0" class="flex flex-wrap gap-1.5 mt-2">
+          <button
+            type="button"
+            @click="filterLembaga = ''"
+            :class="[
+              'px-2.5 py-1 text-[11px] rounded-full border font-bold transition',
+              filterLembaga === ''
+                ? 'bg-teal-600 text-white border-teal-600'
+                : 'bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-600 hover:bg-teal-50'
+            ]"
+          >
+            Semua lembaga
+          </button>
+          <button
+            v-for="l in uniqueLembaga"
+            :key="l"
+            type="button"
+            @click="filterLembaga = filterLembaga === l ? '' : l"
+            :class="[
+              'px-2.5 py-1 text-[11px] rounded-full border font-bold transition',
+              filterLembaga === l
+                ? 'bg-teal-600 text-white border-teal-600'
+                : 'bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-600 hover:bg-teal-50'
+            ]"
+          >
+            {{ l }}
+          </button>
+        </div>
+      </div>
+
+      <!-- v.21.22c.0526: Bulk action bar (Master mode only) -->
+      <div v-if="isMasterMode && selectedCount > 0" class="bg-gradient-to-r from-teal-50 to-emerald-50 dark:from-teal-900/30 dark:to-emerald-900/30 rounded-2xl p-3 border border-teal-300 dark:border-teal-700 shadow-sm flex flex-wrap items-center gap-2 mb-3">
+        <span class="text-xs font-black text-teal-800 dark:text-teal-200"><i class="fas fa-check-square mr-1"></i>{{ selectedCount }} terpilih</span>
+        <button @click="bulkSetStatus('Aktif')" :disabled="bulkSaving" class="h-8 px-3 inline-flex items-center gap-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-[11px] font-bold transition cursor-pointer"><i class="fas fa-check"></i>Set Aktif</button>
+        <button @click="bulkSetStatus('Non-aktif')" :disabled="bulkSaving" class="h-8 px-3 inline-flex items-center gap-1 rounded-lg bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white text-[11px] font-bold transition cursor-pointer"><i class="fas fa-user-slash"></i>Set Non-aktif</button>
+        <button @click="bulkDeleteGuru" :disabled="bulkSaving" class="h-8 px-3 inline-flex items-center gap-1 rounded-lg bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white text-[11px] font-bold transition cursor-pointer"><i class="fas fa-trash"></i>Hapus</button>
+        <label class="h-8 px-2 inline-flex items-center gap-1 rounded-lg bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 text-[11px]">
+          <select v-model="bulkRoleSistem" class="bg-transparent text-[11px] font-bold text-slate-700 dark:text-slate-200 outline-none cursor-pointer">
+            <option value="user">user</option>
+            <option value="admin">admin</option>
+            <option value="admin_keuangan">admin_keuangan</option>
+            <option value="super_admin">super_admin</option>
+          </select>
+          <button @click="bulkSetRole" :disabled="bulkSaving" class="ml-1 px-2 py-0.5 rounded bg-fuchsia-600 hover:bg-fuchsia-700 disabled:opacity-50 text-white text-[10px] font-bold cursor-pointer">Set Role</button>
+        </label>
+        <button @click="clearSelection" class="h-8 px-3 inline-flex items-center gap-1 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 text-[11px] font-bold transition cursor-pointer ml-auto"><i class="fas fa-times"></i>Batal</button>
+      </div>
+
+      <!-- v.21.22c.0526: Select-all (Master mode only) -->
+      <div v-if="isMasterMode && guru.length > 0" class="bg-white dark:bg-slate-800 rounded-2xl px-4 py-2 border border-slate-200 dark:border-slate-700 shadow-sm flex items-center gap-2 mb-2">
+        <label class="inline-flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" :checked="isAllVisibleSelected" :indeterminate.prop="isSomeVisibleSelected" @change="toggleSelectAllVisible" class="w-4 h-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500 cursor-pointer" />
+          <span class="text-[11px] font-bold text-slate-600 dark:text-slate-300">Pilih semua ({{ guru.length }})</span>
+        </label>
+        <span v-if="selectedCount > 0" class="text-[10px] text-teal-700 dark:text-teal-300 font-bold">— {{ selectedCount }} terpilih</span>
+      </div>
+
+
+      <!-- Loading -->
+      <div v-if="loading" class="bg-white dark:bg-slate-800 rounded-2xl p-10 border border-slate-200 dark:border-slate-700 text-center">
+        <i class="fas fa-spinner fa-spin text-teal-500 text-3xl mb-3"></i>
+        <p class="text-sm text-slate-500 font-bold">Memuat data guru...</p>
+      </div>
+
+      <!-- Empty -->
+      <div
+        v-else-if="guru.length === 0"
+        class="bg-white dark:bg-slate-800 rounded-2xl p-10 border border-dashed border-slate-300 dark:border-slate-600 text-center"
+      >
+        <i class="fas fa-user-slash text-slate-300 dark:text-slate-600 text-4xl mb-3"></i>
+        <p class="text-sm font-bold text-slate-700 dark:text-slate-300">
+          {{ hasFilter ? 'Tidak ada guru yang cocok' : 'Belum ada data guru' }}
+        </p>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+          {{ hasFilter ? 'Coba ubah filter atau kata kunci pencarian' : 'Tambah guru pertama di Master Data legacy.' }}
+        </p>
+      </div>
+
+      <!-- v.21.17b.0526: List view-only -->
+      <template v-else>
+
+        <div class="space-y-2">
+          <div
+            v-for="g in guru"
+            :key="g.id"
+            :class="[
+              'bg-white dark:bg-slate-800 rounded-xl p-3 md:p-4 border shadow-sm hover:shadow-md transition',
+              selected.has(String(g.id)) ? 'border-fuchsia-400 ring-2 ring-fuchsia-100 dark:ring-fuchsia-900/40' : 'border-slate-200 dark:border-slate-700'
+            ]"
+          >
+            <div class="flex items-start gap-3">
+              <!-- v.21.22c.0526: Checkbox (Master mode only) -->
+              <input v-if="isMasterMode" type="checkbox" :checked="selected.has(String(g.id))" @change="toggleSelect(g.id)" class="flex-shrink-0 mt-2 w-4 h-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500 cursor-pointer" />
+              <!-- Avatar -->
+              <div
+                class="flex-shrink-0 w-12 h-12 md:w-14 md:h-14 rounded-full bg-gradient-to-br from-teal-100 to-emerald-100 dark:from-teal-700 dark:to-emerald-700 border-2 border-white dark:border-slate-700 flex items-center justify-center overflow-hidden"
+              >
+                <img v-if="g.foto" :src="g.foto" alt="Foto" class="w-full h-full object-cover" />
+                <i v-else class="fas fa-chalkboard-teacher text-teal-500 dark:text-teal-200"></i>
+              </div>
+              <!-- Info -->
+              <div class="flex-1 min-w-0">
+                <div class="flex items-start justify-between gap-2">
+                  <div class="flex-1 min-w-0">
+                    <h3 class="text-sm md:text-base font-black text-slate-800 dark:text-white truncate">
+                      {{ getNamaGuruGelar(g.nama, g.jk) }}
+                    </h3>
+                    <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                      {{ g.jabatan || '—' }}{{ g.jabatan_tambahan ? ` · ${g.jabatan_tambahan}` : '' }}
+                      <span v-if="g.jk"> · {{ g.jk === 'L' ? 'L' : 'P' }}</span>
+                    </p>
+                  </div>
+                  <span
+                    v-if="isAktif(g)"
+                    class="text-[9px] bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700 px-2 py-0.5 rounded font-black uppercase tracking-wider flex-shrink-0"
+                  >
+                    Aktif
+                  </span>
+                  <span
+                    v-else
+                    class="text-[9px] bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-300 dark:border-slate-600 px-2 py-0.5 rounded font-bold uppercase tracking-wider flex-shrink-0"
+                  >
+                    Non-aktif
+                  </span>
+                </div>
+                <!-- Tags row -->
+                <div class="flex flex-wrap gap-1 mt-1.5">
+                  <span
+                    v-if="g.lembaga"
+                    class="text-[10px] bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-700 px-2 py-0.5 rounded font-bold"
+                  >
+                    {{ g.lembaga }}
+                  </span>
+                  <span
+                    v-if="g.lembaga_sekolah"
+                    class="text-[10px] bg-cyan-50 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-700 px-2 py-0.5 rounded font-bold"
+                  >
+                    Sekolah: {{ g.lembaga_sekolah }}
+                  </span>
+                  <span
+                    v-if="g.shift"
+                    class="text-[10px] bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-700 px-2 py-0.5 rounded font-bold uppercase"
+                  >
+                    Shift: {{ g.shift.replace('_', '+') }}
+                  </span>
+                  <span
+                    v-if="g.role_sistem && g.role_sistem !== 'user'"
+                    class="text-[10px] bg-fuchsia-50 dark:bg-fuchsia-900/30 text-fuchsia-700 dark:text-fuchsia-300 border border-fuchsia-200 dark:border-fuchsia-700 px-2 py-0.5 rounded font-bold uppercase"
+                  >
+                    {{ g.role_sistem }}
+                  </span>
+                </div>
+                <!-- Tugas duration -->
+                <p
+                  v-if="g.tanggal_tugas"
+                  class="text-[10px] text-slate-500 dark:text-slate-400 mt-1.5"
+                >
+                  <i class="fas fa-clock mr-1"></i>{{ hitungLamaMengajar(g.tanggal_tugas) }}
+                  <span class="text-slate-400">· sejak {{ formatTanggal(g.tanggal_tugas) }}</span>
+                </p>
+                <!-- WA + username -->
+                <div class="flex items-center gap-2 mt-1.5 text-[11px] text-slate-500 dark:text-slate-400">
+                  <span v-if="g.username" class="text-slate-600 dark:text-slate-300">
+                    <i class="fas fa-at mr-1"></i>{{ g.username }}
+                  </span>
+                  <a
+                    v-if="g.wa"
+                    :href="`https://wa.me/${cleanWa(g.wa)}`"
+                    target="_blank"
+                    class="ml-auto text-green-600 dark:text-green-400 hover:text-green-700 flex items-center gap-1 flex-shrink-0"
+                  >
+                    <i class="fab fa-whatsapp"></i>{{ g.wa }}
+                  </a>
+                </div>
+                <!-- v.21.22c.0526: Edit/Toggle Aktif/Delete (Master mode only) -->
+                <div v-if="isMasterMode" class="mt-2 flex justify-end gap-2 flex-wrap">
+                  <!-- v.21.24.0526: Reset Sandi tombol -->
+                  <button @click="resetSandiGuru(g)" class="text-[10px] text-blue-700 dark:text-blue-300 hover:underline font-bold" title="Reset sandi ke 1234">
+                    <i class="fas fa-key mr-1"></i>Reset Sandi
+                  </button>
+                  <button @click="toggleAktifGuru(g)" :class="['text-[10px] font-bold hover:underline', isAktif(g) ? 'text-amber-700 dark:text-amber-300' : 'text-emerald-700 dark:text-emerald-300']">
+                    <i :class="['fas', isAktif(g) ? 'fa-toggle-off' : 'fa-toggle-on', 'mr-1']"></i>{{ isAktif(g) ? 'Non-aktifkan' : 'Aktifkan' }}
+                  </button>
+                  <router-link :to="`/guru/${g.id}/edit?from=master`" class="text-[10px] text-teal-700 dark:text-teal-300 hover:underline font-bold">
+                    <i class="fas fa-edit mr-1"></i>Edit
+                  </router-link>
+                  <button @click="deleteGuru(g)" class="text-[10px] text-rose-700 dark:text-rose-300 hover:underline font-bold">
+                    <i class="fas fa-trash mr-1"></i>Hapus
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </template>
+
+      <!-- Footer -->
+      <p class="text-center text-[10px] text-slate-400 dark:text-slate-600 pt-2">
+        <i class="fas fa-circle-info mr-1"></i>Menampilkan {{ guru.length }} guru ·
+        Vue 3 · Phase 5.6
+      </p>
+    </template>
+  </div>
+</template>
+
+<script setup>
+import { ref, computed } from 'vue'
+// v.21.17c.0526: mode prop — 'view' (sidebar, default) atau 'master' (Master Data, full CRUD)
+const props = defineProps({ mode: { type: String, default: 'view' } })
+const isMasterMode = computed(() => props.mode === 'master')
+import { useExcel } from '@/composables/useExcel'
+import { useSettingsStore } from '@/stores/settings'
+import { useToast as _useToastGuruExp } from '@/composables/useToast'
+import { buildListPdf } from '@/utils/pdfBuilder'
+import { useGuru } from '@/composables/useGuru'
+// v.21.10.0526: import canSee untuk visibility scoping
+import { canSee } from '@/composables/useLembaga'
+import { useConfirm } from '@/composables/useConfirm'
+// v.21.11.0526: + deleteOne untuk delete & bulk delete
+import { updateOne, deleteOne } from '@/services/firestore'
+// v.21.13b.0526: + toTitleCase + normalizeWA + parseMultipleWA (dual WA)
+import { getNamaGuruGelar, formatTanggal, hitungLamaMengajar, toTitleCase, normalizeWA, parseMultipleWA } from '@/utils/format'
+
+const {
+  guru,
+  guruRaw,
+  loading,
+  search,
+  filterLembaga,
+  filterJabatan,
+  filterStatus,
+  stats,
+  isFullAccess
+} = useGuru()
+
+// v.21.24d.0526: Dedupe lembaga case-insensitive — "TPQ Pagi" / "TPQ PAGI" / "TPQ pagi" → 1 entry
+// Prefer canonical capitalization (Title Case match master/lembaga)
+const uniqueLembaga = computed(() => {
+  const map = new Map() // key=lowercase, value=canonical (first occurrence dengan format proper)
+  for (const g of guruRaw.value) {
+    const raw = String(g?.lembaga || '').trim()
+    if (!raw) continue
+    const key = raw.toLowerCase()
+    if (!map.has(key)) {
+      // Pakai Title Case kalau yang ada all-caps, else as-is
+      const canonical = raw === raw.toUpperCase()
+        ? raw.split(' ').map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ')
+        : raw
+      map.set(key, canonical)
+    }
+  }
+  return [...map.values()].sort()
+})
+
+const uniqueJabatan = computed(() => {
+  const set = new Set()
+  for (const g of guruRaw.value) {
+    if (g?.jabatan) set.add(g.jabatan)
+  }
+  return [...set].sort()
+})
+
+const hasFilter = computed(
+  () =>
+    !!search.value ||
+    !!filterLembaga.value ||
+    !!filterJabatan.value ||
+    filterStatus.value !== 'aktif'
+)
+
+function isAktif(g) {
+  return String(g.status || 'Aktif').toLowerCase().trim() === 'aktif'
+}
+function cleanWa(wa) {
+  return String(wa || '').replace(/[^0-9]/g, '').replace(/^0/, '62')
+}
+// v.21.25.0526: Cetak PDF code-based jsPDF + autoTable
+async function printPage() {
+  try {
+    const settingsObj = _settingsExp?.settings || {}
+    const kop = {
+      logoUrl: settingsObj.kop_logo || settingsObj.kopLogo || '',
+      line1: settingsObj.kopLine1 || 'YAYASAN MAMBAUL ULUM',
+      line2: settingsObj.kopLine2 || '',
+      line3: settingsObj.kopLine3 || '',
+      line4: settingsObj.kopLine4 || '',
+      line5: settingsObj.kopLine5 || ''
+    }
+    const rows = (guru.value || []).map((g, i) => ({
+      no: i + 1,
+      nama: getNamaGuruGelar ? getNamaGuruGelar(g) : (g.nama || ''),
+      jk: g.jk || '',
+      jabatan: g.jabatan || '',
+      lembaga: [g.lembaga, g.lembaga_sekolah].filter(Boolean).join(' / '),
+      shift: g.shift || '',
+      wa: g.wa || '',
+      status: g.status || 'Aktif'
+    }))
+    await buildListPdf({
+      kind: 'umum',
+      orientation: 'l',
+      format: 'a4',
+      kop,
+      title: 'DAFTAR GURU / PEGAWAI',
+      columns: [
+        { key: 'no', header: 'No', width: 12 },
+        { key: 'nama', header: 'Nama', width: 55 },
+        { key: 'jk', header: 'JK', width: 10 },
+        { key: 'jabatan', header: 'Jabatan', width: 35 },
+        { key: 'lembaga', header: 'Lembaga', width: 50 },
+        { key: 'shift', header: 'Shift', width: 20 },
+        { key: 'wa', header: 'No. WA', width: 32 },
+        { key: 'status', header: 'Status', width: 20 }
+      ],
+      rows,
+      filename: `daftar-guru-${new Date().toISOString().slice(0, 10)}.pdf`
+    })
+  } catch (e) {
+    if (_toastExp) _toastExp.error('Gagal cetak PDF: ' + (e?.message || e))
+  }
+}
+// v.20.41.0526: Export Excel
+const exporting = ref(false)
+// v.21.11.0526: + importFile untuk Impor XLSX
+const { exportStyled, importFile } = useExcel()
+const importingGuru = ref(false)
+const importPreviewGuru = ref(null)
+const _settingsExp = useSettingsStore()
+const _toastExp = _useToastGuruExp()
+
+function _buildExcelRows(list) {
+  return list.map((g, i) => ({
+    no: i + 1,
+    nama: g.nama || '',
+    nik: g.nik || '',
+    jk: g.jk || '',
+    tgl_lahir: g.tgl_lahir || '',
+    lembaga: g.lembaga || '',
+    lembaga_sekolah: g.lembaga_sekolah || '',
+    jabatan: g.jabatan || '',
+    pendidikan: g.pendidikan_terakhir || '',
+    tgl_masuk: g.tgl_masuk || '',
+    alamat: g.alamat || '',
+    wa: g.wa || g.no_wa || '',
+    status: g.status || 'Aktif'
+  }))
+}
+const _excelColumns = [
+  { key: 'no', header: 'No', width: 5 },
+  { key: 'nama', header: 'Nama', width: 28 },
+  { key: 'nik', header: 'NIK', width: 18 },
+  { key: 'jk', header: 'L/P', width: 5 },
+  { key: 'tgl_lahir', header: 'Tgl Lahir', width: 12 },
+  { key: 'lembaga', header: 'Lembaga', width: 14 },
+  { key: 'lembaga_sekolah', header: 'Sekolah', width: 16 },
+  { key: 'jabatan', header: 'Jabatan', width: 20 },
+  { key: 'pendidikan', header: 'Pendidikan', width: 14 },
+  { key: 'tgl_masuk', header: 'Tgl Masuk', width: 12 },
+  { key: 'wa', header: 'WA', width: 14 },
+  { key: 'alamat', header: 'Alamat', width: 30 },
+  { key: 'status', header: 'Status', width: 10 }
+]
+
+async function exportGuruExcel() {
+  if (exporting.value) return
+  exporting.value = true
+  try {
+    const list = (typeof guruRaw !== 'undefined' && guruRaw.value) || []
+    const rows = _buildExcelRows(list)
+    const ss = _settingsExp.settings || {}
+    await exportStyled(rows, {
+      filename: `data_guru_${new Date().toISOString().slice(0, 10)}.xlsx`,
+      sheetName: 'Data Guru',
+      kop: [ss.kopLine1 || '', ss.kopLine2 || 'PONDOK PESANTREN MAMBAUL ULUM', ss.kopLine3 || '', ss.kopLine4 || ''],
+      subtitle: `Data Guru/Pegawai — ${rows.length} orang`,
+      columns: _excelColumns
+    })
+    _toastExp.success(`Ekspor ${rows.length} guru ke Excel`)
+  } catch (e) {
+    _toastExp.error('Gagal: ' + (e.message || e))
+  } finally {
+    exporting.value = false
+  }
+}
+
+// === v.20.80.0526 M8: Bulk Guru actions ===
+const selected = ref(new Set())
+const bulkRoleSistem = ref('user')
+const bulkSaving = ref(false)
+const confirmDialog = useConfirm()
+
+const selectedCount = computed(() => selected.value.size)
+
+const isAllVisibleSelected = computed(() => {
+  if (guru.value.length === 0) return false
+  return guru.value.every((g) => selected.value.has(String(g.id)))
+})
+
+const isSomeVisibleSelected = computed(() => {
+  if (guru.value.length === 0) return false
+  const c = guru.value.filter((g) => selected.value.has(String(g.id))).length
+  return c > 0 && c < guru.value.length
+})
+
+function toggleSelect(id) {
+  const s = String(id)
+  const next = new Set(selected.value)
+  if (next.has(s)) next.delete(s)
+  else next.add(s)
+  selected.value = next
+}
+
+function toggleSelectAllVisible() {
+  if (isAllVisibleSelected.value) {
+    const next = new Set(selected.value)
+    for (const g of guru.value) next.delete(String(g.id))
+    selected.value = next
+  } else {
+    const next = new Set(selected.value)
+    for (const g of guru.value) next.add(String(g.id))
+    selected.value = next
+  }
+}
+
+function clearSelection() {
+  selected.value = new Set()
+}
+
+async function bulkSetStatus(status) {
+  const ids = [...selected.value]
+  if (ids.length === 0) return
+  const ok = await confirmDialog({
+    title: `Ubah status jadi "${status}"?`,
+    message: `${ids.length} guru akan di-set status = "${status}".`,
+    confirmText: 'Terapkan',
+    danger: status !== 'Aktif'
+  })
+  if (!ok) return
+  bulkSaving.value = true
+  let okCount = 0
+  let failCount = 0
+  for (const id of ids) {
+    try {
+      await updateOne('guru', id, { status })
+      okCount++
+    } catch (e) {
+      failCount++
+      console.warn(`[bulkSetStatus] guru ${id} gagal:`, e.message)
+    }
+  }
+  bulkSaving.value = false
+  if (failCount > 0) {
+    _toastExp.warning(`Selesai: ${okCount} ok, ${failCount} gagal`)
+  } else {
+    _toastExp.success(`${okCount} guru di-set "${status}"`)
+  }
+  clearSelection()
+}
+
+async function bulkSetRole() {
+  const ids = [...selected.value]
+  if (ids.length === 0) return
+  const role = bulkRoleSistem.value
+  const ok = await confirmDialog({
+    title: `Ubah role_sistem jadi "${role}"?`,
+    message: `${ids.length} guru akan di-set role_sistem = "${role}". Akses sistem mereka akan berubah.`,
+    confirmText: 'Terapkan',
+    danger: role === 'super_admin' || role === 'admin_keuangan'
+  })
+  if (!ok) return
+  bulkSaving.value = true
+  let okCount = 0
+  let failCount = 0
+  for (const id of ids) {
+    try {
+      await updateOne('guru', id, { role_sistem: role })
+      okCount++
+    } catch (e) {
+      failCount++
+      console.warn(`[bulkSetRole] guru ${id} gagal:`, e.message)
+    }
+  }
+  bulkSaving.value = false
+  if (failCount > 0) {
+    _toastExp.warning(`Selesai: ${okCount} ok, ${failCount} gagal`)
+  } else {
+    _toastExp.success(`${okCount} guru di-set role "${role}"`)
+  }
+  clearSelection()
+}
+
+// v.21.11.0526: Delete single + Bulk Delete
+async function deleteGuru(g) {
+  const ok = await confirmDialog({
+    title: `Hapus ${g.nama}?`,
+    message: `Guru "${g.nama}" (${g.jabatan || '-'}) akan dihapus permanen dari Firestore. Aksi ini tidak bisa di-undo.`,
+    confirmText: 'Hapus',
+    danger: true
+  })
+  if (!ok) return
+  try {
+    await deleteOne('guru', String(g.id))
+    _toastExp.success(`Guru "${g.nama}" dihapus`)
+  } catch (e) {
+    _toastExp.error('Gagal hapus: ' + (e.message || e))
+  }
+}
+
+async function resetSandiGuru(g) {
+  const ok = await confirmDialog({
+    title: `Reset sandi ${g.nama}?`,
+    message: `Sandi guru "${g.nama}" akan direset ke default: 1234. Guru perlu ganti sandi sendiri setelah login.`,
+    confirmText: 'Reset',
+    danger: true
+  })
+  if (!ok) return
+  try {
+    await updateOne('guru', String(g.id), { password: '1234' })
+    _toastExp.success(`Sandi ${g.nama} direset ke 1234`)
+  } catch (e) {
+    _toastExp.error('Gagal reset: ' + (e.message || e))
+  }
+}
+
+async function toggleAktifGuru(g) {
+  const wasAktif = isAktif(g)
+  const newStatus = wasAktif ? 'Non-aktif' : 'Aktif'
+  const ok = await confirmDialog({
+    title: `${wasAktif ? 'Non-aktifkan' : 'Aktifkan'} ${g.nama}?`,
+    message: `Status guru "${g.nama}" akan di-set "${newStatus}".`,
+    confirmText: wasAktif ? 'Non-aktifkan' : 'Aktifkan',
+    danger: wasAktif
+  })
+  if (!ok) return
+  try {
+    await updateOne('guru', String(g.id), { status: newStatus })
+    _toastExp.success(`${g.nama} di-set ${newStatus}`)
+  } catch (e) {
+    _toastExp.error('Gagal: ' + (e.message || e))
+  }
+}
+
+async function bulkDeleteGuru() {
+  const ids = [...selected.value]
+  if (ids.length === 0) return
+  const ok = await confirmDialog({
+    title: `Hapus ${ids.length} guru?`,
+    message: `${ids.length} guru akan dihapus PERMANEN dari Firestore. Aksi ini tidak bisa di-undo. Lanjutkan?`,
+    confirmText: 'Hapus Semua',
+    danger: true
+  })
+  if (!ok) return
+  bulkSaving.value = true
+  let okCount = 0, failCount = 0
+  for (const id of ids) {
+    try {
+      await deleteOne('guru', String(id))
+      okCount++
+    } catch (e) {
+      failCount++
+      console.warn(`[bulkDeleteGuru] guru ${id} gagal:`, e.message)
+    }
+  }
+  bulkSaving.value = false
+  if (failCount > 0) {
+    _toastExp.warning(`Selesai: ${okCount} hapus, ${failCount} gagal`)
+  } else {
+    _toastExp.success(`${okCount} guru dihapus`)
+  }
+  clearSelection()
+}
+
+async function bulkExportSelected() {
+  const ids = [...selected.value].map(String)
+  if (ids.length === 0) return
+  if (exporting.value) return
+  exporting.value = true
+  try {
+    const list = (guruRaw.value || []).filter((g) => ids.includes(String(g.id)))
+    const rows = _buildExcelRows(list)
+    const ss = _settingsExp.settings || {}
+    await exportStyled(rows, {
+      filename: `data_guru_pilihan_${new Date().toISOString().slice(0, 10)}.xlsx`,
+      sheetName: 'Data Guru Pilihan',
+      kop: [ss.kopLine1 || '', ss.kopLine2 || 'PONDOK PESANTREN MAMBAUL ULUM', ss.kopLine3 || '', ss.kopLine4 || ''],
+      subtitle: `Data Guru Terpilih — ${rows.length} orang`,
+      columns: _excelColumns
+    })
+    _toastExp.success(`Ekspor ${rows.length} guru terpilih`)
+  } catch (e) {
+    _toastExp.error('Gagal: ' + (e.message || e))
+  } finally {
+    exporting.value = false
+  }
+}
+
+// v.21.13b.0526: Template TANPA KOP — headers di row 1 langsung supaya importFile auto-detect benar
+async function downloadTemplateGuru() {
+  try {
+    const headers = [
+      'Nama Guru (Dengan Gelar)', 'L/P', 'Jabatan', 'Lembaga', 'Lembaga Sekolah',
+      'Tanggal Tugas (DD/MM/YYYY)', 'EKGQ', 'WA', 'Status',
+      'Tipe Pegawai (ngaji/sekolah/ngaji_sekolah)', 'Shift (pagi/sore/pagi_sore)',
+      'ID Fingerprint', 'Role Sistem (user/admin/admin_keuangan/super_admin)',
+      'Username (opsional)'
+    ]
+    await exportStyled([], {
+      filename: 'Template_Data_Guru.xlsx',
+      sheetName: 'Template_Guru',
+      // No kop+subtitle — keep headers at row 1
+      columns: headers.map((h) => ({ key: h, header: h, width: Math.max(14, h.length + 2) }))
+    })
+    _toastExp.success('Template guru ter-download. Nama=TitleCase, Jabatan/Lembaga=UPPERCASE saat impor.')
+  } catch (e) {
+    _toastExp.error('Gagal: ' + (e.message || e))
+  }
+}
+
+function _parseTglGuru(v) {
+  if (!v) return ''
+  if (v instanceof Date) return v.toISOString().slice(0, 10)
+  const s = String(v).trim()
+  const m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/)
+  if (m) return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`
+  return s
+}
+
+async function onImportGuru(e) {
+  const file = e.target?.files?.[0]
+  if (!file) return
+  importingGuru.value = true
+  try {
+    const rows = await importFile(file)
+    if (!rows.length) {
+      _toastExp.warning('File kosong atau format tidak sesuai')
+      importingGuru.value = false
+      e.target.value = ''
+      return
+    }
+    const existing = guruRaw.value || []
+    let newCount = 0, updateCount = 0, skipCount = 0
+    const allMapped = []
+    function _pick(row, ...aliases) {
+      for (const alias of aliases) {
+        if (row[alias] !== undefined && row[alias] !== null && row[alias] !== '') return row[alias]
+      }
+      const lowerMap = {}
+      for (const k of Object.keys(row)) lowerMap[k.toLowerCase().trim()] = row[k]
+      for (const alias of aliases) {
+        const v = lowerMap[String(alias).toLowerCase().trim()]
+        if (v !== undefined && v !== null && v !== '') return v
+      }
+      return ''
+    }
+    for (const r of rows) {
+      const namaRaw = String(_pick(r, 'Nama Guru', 'Nama', 'NAMA', 'nama') || '').trim()
+      if (!namaRaw) { skipCount++; continue }
+      const nama = toTitleCase(namaRaw)
+      const waList = parseMultipleWA(_pick(r, 'No WA', 'WA', 'wa'))
+      const wa = waList[0] || ''
+      const idx = existing.findIndex((g) =>
+        (wa && String(g.wa || '').replace(/\D/g, '') === wa) ||
+        String(g.nama || '').toLowerCase().trim() === nama.toLowerCase()
+      )
+      const action = idx >= 0 ? 'update' : 'new'
+      if (action === 'new') newCount++; else updateCount++
+      const jabatan = String(_pick(r, 'Jabatan', 'jabatan') || 'Guru').trim()
+      const lembaga = String(_pick(r, 'Lembaga', 'lembaga') || '').trim()
+      const statusVal = String(_pick(r, 'Status', 'status') || 'Aktif').trim()
+      allMapped.push({
+        existingId: idx >= 0 ? existing[idx].id : null,
+        action,
+        nama, jabatan, lembaga, wa,
+        status: statusVal,
+        data: {
+          nama,
+          jk: String(_pick(r, 'L/P', 'JK', 'Jenis Kelamin', 'jk') || 'P').trim().toUpperCase().charAt(0),
+          nik: String(_pick(r, 'NIK', 'nik') || '').trim(),
+          tgl_lahir: parseTglDDMMYYYY(_pick(r, 'Tgl Lahir', 'Tanggal Lahir', 'tgl_lahir')),
+          jabatan,
+          jabatan_tambahan: String(_pick(r, 'Jabatan Tambahan', 'jabatan_tambahan') || '').trim(),
+          lembaga,
+          lembaga_sekolah: String(_pick(r, 'Lembaga Sekolah', 'lembaga_sekolah') || '').trim(),
+          tanggal_tugas: parseTglDDMMYYYY(_pick(r, 'Tgl Tugas', 'Tanggal Tugas', 'tanggal_tugas')),
+          ekgq: String(_pick(r, 'No Syahadah', 'EKGQ', 'ekgq') || '').trim(),
+          wa,
+          wa_2: waList[1] || '',
+          username: wa || String(_pick(r, 'Username', 'username') || '').trim(),
+          status: statusVal,
+          tipe_pegawai: String(_pick(r, 'Tipe Pegawai', 'tipe_pegawai') || 'guru').trim().toLowerCase(),
+          shift: String(_pick(r, 'Shift', 'shift') || 'pagi_sore').trim().toLowerCase(),
+          role_sistem: String(_pick(r, 'Role Sistem', 'role_sistem') || 'user').trim().toLowerCase(),
+          custom_fields: {}
+        }
+      })
+    }
+    importPreviewGuru.value = { rows: allMapped, preview: allMapped.slice(0, 50), newCount, updateCount, skipCount }
+  } catch (e) {
+    _toastExp.error('Gagal baca file: ' + (e.message || e))
+  } finally {
+    importingGuru.value = false
+    e.target.value = ''
+  }
+}
+
+async function confirmImportGuru() {
+  if (!importPreviewGuru.value) return
+  importingGuru.value = true
+  let ok = 0, fail = 0
+  try {
+    const { setDoc: _setDoc, doc: _doc, serverTimestamp: _stamp } = await import('firebase/firestore')
+    const { db: _db } = await import('@/services/firebase')
+    for (const item of importPreviewGuru.value.rows) {
+      try {
+        const numId = item.existingId
+          ? (Number(item.existingId) || Number(String(item.existingId).replace(/\D/g, '')) || Date.now() + ok)
+          : (Date.now() + ok)
+        await _setDoc(_doc(_db, 'guru', String(numId)), {
+          id: numId,
+          password: '1234',
+          ...item.data,
+          _imported_v21_26_at: _stamp()
+        }, { merge: true })
+        ok++
+      } catch (e) {
+        fail++
+        console.error('Import guru row failed:', e)
+      }
+    }
+    _toastExp.success(`Impor selesai: ${ok} OK, ${fail} gagal`)
+    importPreviewGuru.value = null
+  } catch (e) {
+    _toastExp.error('Gagal: ' + (e.message || e))
+  } finally {
+    importingGuru.value = false
+  }
+}
+</script>

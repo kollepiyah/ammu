@@ -1,0 +1,123 @@
+<template>
+  <router-view v-slot="{ Component }">
+    <transition name="fade" mode="out-in">
+      <component :is="Component" />
+    </transition>
+  </router-view>
+</template>
+
+<script setup>
+import { watch } from 'vue'
+import { useSettingsStore } from '@/stores/settings'
+
+// v.20.74.1.0526: BUGFIX — App.vue jangan panggil ui.initDarkFromStorage/auth.bindLiveSesi/settings.bindSettings.
+// main.js sudah handle init. App.vue cuma watch theme color + appTitle.
+const settings = useSettingsStore()
+
+watch(() => settings.settings, (s) => {
+  if (!s) return
+  const root = document.documentElement
+  if (s.themeColor) root.style.setProperty('--theme-color', s.themeColor)
+  if (s.appTitle) document.title = s.appTitle
+}, { deep: true, immediate: true })
+</script>
+
+<style>
+/* v.20.74.0526: Scheherazade WOFF2 first (148KB, 75% smaller than TTF) + TTF fallback */
+@font-face {
+  font-family: 'Scheherazade New';
+  src: url('/fonts/ScheherazadeNew-SemiBold.woff2') format('woff2'),
+       url('/fonts/ScheherazadeNew-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
+  --bg-cream: #F9F6EE;
+  --theme-color: #0f766e;
+}
+
+body { background-color: var(--bg-cream); }
+body.dark-mode { background-color: #0f172a; }
+
+.font-arabic {
+  font-family: 'Scheherazade New', 'Droid Arabic Naskh', 'Noto Naskh Arabic', 'Amiri', 'Traditional Arabic', serif !important;
+  font-weight: 600 !important;
+}
+
+/* v.20.74.0526 A11Y: focus indicator (WCAG 2.4.7) */
+:focus-visible {
+  outline: 2px solid var(--theme-color, #0f766e) !important;
+  outline-offset: 2px !important;
+  border-radius: 4px;
+}
+button:focus-visible, a:focus-visible, [role="button"]:focus-visible,
+input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: 2px solid var(--theme-color, #0f766e) !important;
+  outline-offset: 2px !important;
+}
+
+/* v.20.74.0526 A11Y: prefers-reduced-motion (WCAG 2.3.3) */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+.fade-enter-active, .fade-leave-active { transition: opacity 0.18s ease; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
+
+/* v.20.75.0526: @media print — pakai window.print() native untuk cetak Rapor (drop pdfmake) */
+@media print {
+  @page { size: A4; margin: 12mm; }
+  html, body {
+    background: #fff !important;
+    color: #000 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  aside,
+  header,
+  .no-print,
+  [data-no-print],
+  .ToastStack,
+  .toast-stack,
+  .splash-screen,
+  .modal-overlay,
+  .confirm-dialog-overlay,
+  nav.app-bottom-nav {
+    display: none !important;
+  }
+  .h-screen, .overflow-hidden {
+    height: auto !important;
+    overflow: visible !important;
+  }
+  main, .flex-1 {
+    overflow: visible !important;
+    padding: 0 !important;
+  }
+  #rapor-print-area, .print-area {
+    background: #fff !important;
+    box-shadow: none !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  table, tr, td, th {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+  .ttd-block, .signature-block {
+    page-break-inside: avoid !important;
+  }
+  .font-arabic {
+    font-family: 'Scheherazade New', 'Droid Arabic Naskh', serif !important;
+  }
+}
+</style>
