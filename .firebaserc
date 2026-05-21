@@ -1,5 +1,14 @@
 {
   "projects": {
     "default": "portal-mambaul-ulum"
+  },
+  "targets": {
+    "portal-mambaul-ulum": {
+      "hosting": {
+        "main": ["ammuonline"],
+        "legacy": ["portal-mambaul-ulum"],
+        "psb": ["ammuonline-psb"]
+      }
+    }
   }
 }

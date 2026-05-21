@@ -1,8 +1,8 @@
 {
   "name": "portal-mambaul-ulum",
-  "version": "0.12.0526",
+  "version": "20.0526",
   "private": true,
-  "description": "Portal Mambaul Ulum — legacy HTML5 + Vue 3 widgets + Capacitor wrap",
+  "description": "Portal Mambaul Ulum - legacy HTML5 + Vue 3 widgets + Capacitor wrap",
   "scripts": {
     "build:widgets": "cd vue-widgets && npm run build",
     "build:css": "tailwindcss -i ./src/tailwind-input.css -o ./public/dist/tailwind.css --minify",
@@ -22,6 +22,8 @@
     "cap:sync": "npx cap sync android",
     "cap:open": "npx cap open android",
     "cap:run": "npx cap run android",
+    "build:aab": "node scripts/build-aab.cjs",
+    "deploy:full": "npm run firebase:deploy && npm run build:aab",
     "prepare": "husky"
   },
   "lint-staged": {
@@ -47,6 +49,12 @@
   },
   "dependencies": {
     "@capacitor/android": "^6.2.0",
-    "@capacitor/core": "^6.2.0"
+    "@capacitor/app": "^6.0.2",
+    "@capacitor/core": "^6.2.0",
+    "@capacitor/push-notifications": "^6.0.4",
+    "@capacitor/share": "^6.0.3",
+    "@capacitor/splash-screen": "^6.0.3",
+    "@capacitor/status-bar": "^6.0.2",
+    "@capacitor/filesystem": "^6.0.1"
   }
 }

@@ -87,6 +87,31 @@ service firebase.storage {
       allow delete: if request.auth != null;
     }
 
+    match /lembaga_logos/{file=**} {
+      allow read: if true;
+      allow write: if request.auth != null
+                   && request.resource.size < 4 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+      allow delete: if request.auth != null;
+    }
+
+    // v.20.70.0526: Lembaga documents (Info Pembayaran + Syarat Ketentuan PDF)
+    match /lembaga/{lembagaId}/{file=**} {
+      allow read: if true;
+      allow write: if request.auth != null
+                   && request.resource.size < 5 * 1024 * 1024
+                   && request.resource.contentType == 'application/pdf';
+      allow delete: if request.auth != null;
+    }
+
+    // v.20.70.0526: PSB documents upload (akta, KK calon santri)
+    match /psb/{file=**} {
+      allow read: if true;
+      allow create: if request.resource.size < 5 * 1024 * 1024
+                   && (request.resource.contentType == 'application/pdf' || request.resource.contentType.matches('image/.*'));
+      allow update, delete: if request.auth != null;
+    }
+
     // Default deny untuk path lain
     match /{allPaths=**} {
       allow read, write: if false;

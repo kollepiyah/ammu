@@ -84,7 +84,8 @@ const routes = [
       { path: 'guru', name: 'guru', component: GuruView, meta: { admin: true } },
       { path: 'guru/new', name: 'guru-new', component: GuruFormView, meta: { admin: true } },
       { path: 'guru/:id/edit', name: 'guru-edit', component: GuruFormView, meta: { admin: true } },
-      { path: 'lembaga', name: 'lembaga', component: LembagaView, meta: { admin: true } },
+      // v.21.27.0526: /lembaga redirect ke /master-data?tab=lembaga (konsolidasi single source)
+      { path: 'lembaga', name: 'lembaga', redirect: { path: '/master-data', query: { tab: 'lembaga' } } },
       { path: 'lembaga/new', name: 'lembaga-new', component: LembagaFormView, meta: { admin: true } },
       { path: 'lembaga/:id/edit', name: 'lembaga-edit', component: LembagaFormView, meta: { admin: true } },
       { path: 'lembaga/:id', name: 'lembaga-detail', component: LembagaDetailView, meta: { admin: true } },
@@ -182,10 +183,11 @@ router.afterEach(() => {
     allRoutes.forEach((r) => {
       const comp = r.components?.default
       if (typeof comp === 'function') {
-        try { comp().catch(() => {}) } catch (e) { /* ignore */ }
+        // Lazy import — trigger prefetch
+        try { comp() } catch (e) { /* ignore */ }
       }
     })
-  }, 2500)
+  }, 800)
 })
 
 export default router

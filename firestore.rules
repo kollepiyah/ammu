@@ -50,16 +50,14 @@ service cloud.firestore {
                    && request.resource.data.adminPassword.size() <= 200;
     }
 
+    // v.21.22.0526: Relax id strict number → legacy data mix string/number
     match /guru/{docId} {
       allow read: if true;
       allow create, update: if signedIn()
-        && request.resource.data.id is number
+        && (request.resource.data.id is number || request.resource.data.id is string)
         && request.resource.data.nama is string
         && request.resource.data.nama.size() >= 1
         && request.resource.data.nama.size() <= 200
-        && request.resource.data.password is string
-        && request.resource.data.password.size() >= 1
-        && request.resource.data.password.size() <= 200
         && (
           !('role_sistem' in request.resource.data)
           || request.resource.data.role_sistem in ['guru_biasa', 'user', 'admin', 'admin_keuangan', 'super_admin']
@@ -70,7 +68,7 @@ service cloud.firestore {
     match /santri/{docId} {
       allow read: if true;
       allow create, update: if signedIn()
-        && request.resource.data.id is number
+        && (request.resource.data.id is number || request.resource.data.id is string)
         && request.resource.data.nama is string
         && request.resource.data.nama.size() >= 1
         && request.resource.data.nama.size() <= 200
@@ -261,6 +259,36 @@ service cloud.firestore {
       allow delete: if signedIn();
     }
 
+    // v.20.15.0526: Rekap prestasi Qiraati per santri/bulan (Vue subscribe)
+    match /rekap_prestasi/{docId} {
+      allow read: if true;
+      allow create, update: if signedIn();
+      allow delete: if signedIn();
+    }
+
+    // v.20.15.0526: PSB Pendaftaran Santri Baru (Vue PsbFormView + PpdbAdminView)
+    match /psb_pendaftaran/{docId} {
+      allow read: if true;
+      // CREATE: allow anonymous (formulir publik bisa diisi tanpa login)
+      allow create: if request.resource.data.nama is string
+        && request.resource.data.nama.size() >= 1
+        && request.resource.data.nama.size() <= 200;
+      // UPDATE/DELETE: hanya admin (signedIn)
+      allow update, delete: if signedIn();
+    }
+
+    // v.20.15.0526: Lembaga collection (fallback kalau Vue subscribe `lembaga`, legacy pakai master/lembaga)
+    match /lembaga/{docId} {
+      allow read: if true;
+      allow write: if signedIn();
+    }
+
+    // v.20.15.0526: Tabungan mutasi (Vue subscribe — kompat sama keuangan_tabungan_santri)
+    match /tabungan_mutasi/{docId} {
+      allow read: if true;
+      allow write: if signedIn();
+    }
+
     match /absensi_santri_sekolah/{docId} {
       allow read: if true;
       allow create, update: if false;
@@ -290,6 +318,33 @@ service cloud.firestore {
       allow read: if signedIn();
       allow create: if signedIn();
       allow update, delete: if false;
+    }
+
+    // v.21.22.0526: Absensi guru (fingerprint + manual entry)
+    match /absensi_guru/{docId} {
+      allow read: if true;
+      allow write: if signedIn();
+    }
+
+    // v.21.22.0526: Kegiatan pesantren (admin kelola, semua user lihat)
+    match /kegiatan_pesantren/{docId} {
+      allow read: if true;
+      allow write: if signedIn();
+    }
+
+    // v.21.16.0526: Pembayaran konfirmasi (wali upload bukti, admin verify)
+    match /pembayaran_konfirmasi/{docId} {
+      allow read: if signedIn();
+      // CREATE: wali boleh kirim konfirmasi (signedIn cukup)
+      allow create: if signedIn()
+        && request.resource.data.santri_id is number
+        && request.resource.data.nominal is number
+        && request.resource.data.nominal > 0
+        && request.resource.data.status in ['pending']
+        && request.resource.data.tanggal_transfer is string;
+      // UPDATE: hanya admin (status verifikasi) — allow any signedIn untuk simplicity
+      allow update: if signedIn();
+      allow delete: if signedIn();
     }
 
     // Default deny untuk collection lain

@@ -233,5 +233,5 @@ export function useExcel() {
     return rows
   }
 
-  return { exportSimple, exportStyled, importFile, loadExcelJS }
+  return { exportSimple, exportStyled, importFile }
 }
