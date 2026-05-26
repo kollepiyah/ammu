@@ -1,0 +1,1915 @@
+import {
+  ab as H,
+  ae as ne,
+  L as d,
+  h as u,
+  e,
+  j as _,
+  F as ie,
+  U as de,
+  E as q,
+  a4 as c,
+  f as V,
+  at as ue,
+  ar as N,
+  ak as L,
+  g as D,
+  ag as ce,
+  T as be,
+  d as P,
+  Q as h,
+  $ as M,
+  O as ge,
+  a6 as xe,
+  B as me,
+  Z as pe,
+  q as fe,
+  l as ke,
+  i as ve,
+  k as K,
+  I as he,
+  an as ye,
+  v as Q
+} from './index-DlQzz-jb.js'
+import { _ as F } from './logo-CxXS7KxG.js'
+import { uploadBase64 as J } from './storage-CIeP5A2b.js'
+import { u as Z } from './useToast-DlBPYiJY.js'
+import { u as X } from './useConfirm-DiDVgre1.js'
+import { g as we, c as _e, h as $e } from './format-CpwY2Om2.js'
+const Se = {
+    class:
+      'bg-white dark:bg-slate-800 rounded-2xl p-5 md:p-6 shadow-sm border border-slate-200 dark:border-slate-700'
+  },
+  je = { class: 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3' },
+  Pe = ['onClick'],
+  Ae = { class: 'text-[11px] text-slate-500 dark:text-slate-400 mt-1 truncate' },
+  Be = { class: 'bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md p-5' },
+  Ge = { key: 0 },
+  Ue = { class: 'space-y-2' },
+  Ne = { key: 1 },
+  Te = ['disabled'],
+  Ce = { key: 2 },
+  Ie = { key: 0, class: 'text-xs text-slate-500 dark:text-slate-400 mt-2' },
+  Le = { key: 1, class: 'text-xs text-emerald-600 mt-2' },
+  Me = { key: 2, class: 'text-xs text-rose-600 mt-2' },
+  De = { key: 3 },
+  Fe = { key: 4 },
+  Ve = { key: 5 },
+  We = ['disabled'],
+  qe = { key: 6 },
+  Ke = { key: 0, class: 'mb-3 p-3 bg-emerald-50 border border-emerald-200 rounded-lg' },
+  Ee = { class: 'text-sm font-bold text-emerald-700' },
+  Oe = { key: 1, class: 'text-sm text-slate-700 dark:text-slate-200' },
+  Re = ['disabled'],
+  ze = ['disabled'],
+  Qe = { key: 7 },
+  Je = {
+    class: 'flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-900/40 rounded-lg cursor-pointer'
+  },
+  He = { key: 8 },
+  Ze = {
+    class: 'flex justify-end gap-2 mt-5 pt-3 border-t border-slate-200 dark:border-slate-700'
+  },
+  Xe = ['disabled'],
+  Ye = ['disabled'],
+  et = ['disabled'],
+  tt = ['disabled'],
+  at = ['disabled'],
+  E = {
+    __name: 'ProfilPengaturanSaya',
+    props: {
+      role: { type: String, default: 'admin' },
+      entityId: { type: [String, Number], default: null },
+      entity: { type: Object, default: () => ({}) }
+    },
+    emits: ['updated'],
+    setup(i, { emit: k }) {
+      const a = i,
+        f = k
+      H()
+      const $ = ne(),
+        n = Z(),
+        y = X(),
+        x = h(null),
+        g = h(!1),
+        A = P(() => {
+          var o, t, v, m, r, U, z
+          return [
+            {
+              id: 'sandi',
+              icon: 'fa-key',
+              color: 'blue',
+              title: 'Ganti Kata Sandi',
+              desc: 'Update password login',
+              roles: ['admin', 'guru', 'santri']
+            },
+            {
+              id: 'foto',
+              icon: 'fa-camera',
+              color: 'emerald',
+              title: 'Ganti Foto Profil',
+              desc: 'Upload foto baru',
+              roles: ['admin', 'guru', 'santri']
+            },
+            {
+              id: 'username',
+              icon: 'fa-at',
+              color: 'purple',
+              title: 'Username',
+              desc: ((o = a.entity) == null ? void 0 : o.username) || '-',
+              roles: ['admin', 'guru', 'santri']
+            },
+            {
+              id: 'wa',
+              icon: 'fa-whatsapp',
+              iconClass: 'fab',
+              color: 'green',
+              title: 'No. WhatsApp',
+              desc: ((t = a.entity) == null ? void 0 : t.wa) || 'Belum diisi',
+              roles: ['admin', 'guru']
+            },
+            {
+              id: 'wa_wali',
+              icon: 'fa-whatsapp',
+              iconClass: 'fab',
+              color: 'green',
+              title: 'No. WhatsApp Wali',
+              desc: ((v = a.entity) == null ? void 0 : v.wa) || 'Belum diisi',
+              roles: ['santri']
+            },
+            {
+              id: 'ttd',
+              icon: 'fa-signature',
+              color: 'rose',
+              title: 'Tanda Tangan Digital',
+              desc: 'Upload PNG transparan untuk rapor',
+              roles: ['guru']
+            },
+            {
+              id: 'ekgq',
+              icon: 'fa-id-card',
+              color: 'cyan',
+              title: 'No. Syahadah Qiraati',
+              desc:
+                ((m = a.entity) == null ? void 0 : m.ekgq) ||
+                ((r = a.entity) == null ? void 0 : r.no_syahadah) ||
+                'Belum diisi',
+              roles: ['guru']
+            },
+            {
+              id: 'google',
+              icon: 'fa-google',
+              iconClass: 'fab',
+              color: 'red',
+              title: 'Tautkan Akun Google',
+              desc:
+                ((U = a.entity) == null ? void 0 : U.linked_email) ||
+                ((z = a.entity) == null ? void 0 : z.google_email) ||
+                'Belum tertaut',
+              roles: ['admin', 'guru', 'santri']
+            },
+            {
+              id: 'notif',
+              icon: 'fa-bell',
+              color: 'amber',
+              title: 'Notifikasi',
+              desc: 'Aktifkan push notification',
+              roles: ['admin', 'guru', 'santri']
+            }
+          ].filter((re) => re.roles.includes(a.role))
+        }),
+        s = h({ lama: '', baru: '', konfirmasi: '' }),
+        l = h({ uploading: !1, dataUrl: '' }),
+        b = h({ value: '', checking: !1, available: null }),
+        w = h({ value: '' }),
+        S = h({ uploading: !1, dataUrl: '' }),
+        j = h({ enabled: !0 }),
+        B = h({ value: '' })
+      function T(o) {
+        var t, v, m, r, U
+        ;((x.value = o),
+          o === 'username' &&
+            (b.value.value = ((t = a.entity) == null ? void 0 : t.username) || ''),
+          (o === 'wa' || o === 'wa_wali') &&
+            (w.value.value = ((v = a.entity) == null ? void 0 : v.wa) || ''),
+          o === 'ekgq' &&
+            (B.value.value =
+              ((m = a.entity) == null ? void 0 : m.ekgq) ||
+              ((r = a.entity) == null ? void 0 : r.no_syahadah) ||
+              ''),
+          o === 'notif' &&
+            (j.value.enabled = ((U = a.entity) == null ? void 0 : U.notifEnabled) !== !1))
+      }
+      function p() {
+        ;((x.value = null),
+          (s.value = { lama: '', baru: '', konfirmasi: '' }),
+          (l.value = { uploading: !1, dataUrl: '' }),
+          (S.value = { uploading: !1, dataUrl: '' }))
+      }
+      async function C() {
+        var o
+        if (s.value.baru.length < 4) return n.error('Password minimal 4 karakter')
+        if (s.value.baru !== s.value.konfirmasi) return n.error('Konfirmasi tidak cocok')
+        g.value = !0
+        try {
+          if (a.role === 'admin') {
+            const t = $.settings.adminPassword || '1234'
+            if (s.value.lama !== t) {
+              n.error('Password lama salah')
+              return
+            }
+            ;(await pe(
+              fe(ke, 'settings', 'general'),
+              { ...$.settings, adminPassword: s.value.baru },
+              { merge: !0 }
+            ),
+              ($.settings.adminPassword = s.value.baru))
+          } else {
+            if ((o = a.entity) != null && o.password && s.value.lama !== a.entity.password) {
+              n.error('Password lama salah')
+              return
+            }
+            const t = a.role === 'guru' ? 'guru' : 'santri'
+            await M(t, String(a.entityId), { password: s.value.baru })
+          }
+          ;(n.success('Password berhasil diganti'), p(), f('updated'))
+        } catch (t) {
+          n.error('Gagal: ' + (t.message || t))
+        } finally {
+          g.value = !1
+        }
+      }
+      async function I(o) {
+        var v
+        const t = (v = o.target.files) == null ? void 0 : v[0]
+        if (t) {
+          if (t.size > 2 * 1024 * 1024) return n.error('Maks 2MB')
+          l.value.uploading = !0
+          try {
+            const m = new FileReader()
+            ;((m.onload = async () => {
+              try {
+                const r = await J(
+                    `profil_foto/${a.role}_${a.entityId}_${Date.now()}.jpg`,
+                    m.result,
+                    t.type
+                  ),
+                  U = a.role === 'guru' ? 'guru' : 'santri'
+                ;(await M(U, String(a.entityId), { foto: r }),
+                  n.success('Foto profil diupdate'),
+                  p(),
+                  f('updated'))
+              } catch (r) {
+                n.error('Upload gagal: ' + (r.message || r))
+              } finally {
+                l.value.uploading = !1
+              }
+            }),
+              m.readAsDataURL(t))
+          } catch (m) {
+            ;((l.value.uploading = !1), n.error('Error: ' + (m.message || m)))
+          }
+        }
+      }
+      async function O() {
+        const o = b.value.value.trim()
+        if (!o || o.length < 3) {
+          b.value.available = !1
+          return
+        }
+        b.value.checking = !0
+        try {
+          const t = a.role === 'guru' ? 'guru' : 'santri',
+            m = (await ge(t, [['username', '==', o]], [], 5)).find(
+              (r) => String(r.id) !== String(a.entityId)
+            )
+          b.value.available = !m
+        } catch {
+          b.value.available = null
+        } finally {
+          b.value.checking = !1
+        }
+      }
+      async function Y() {
+        if (!b.value.value.trim()) return n.error('Username kosong')
+        if ((await O(), !b.value.available)) return n.error('Username sudah dipakai')
+        g.value = !0
+        try {
+          const o = a.role === 'guru' ? 'guru' : 'santri'
+          ;(await M(o, String(a.entityId), { username: b.value.value.trim() }),
+            n.success('Username updated'),
+            p(),
+            f('updated'))
+        } catch (o) {
+          n.error('Gagal: ' + (o.message || o))
+        } finally {
+          g.value = !1
+        }
+      }
+      async function ee() {
+        const o = w.value.value.replace(/\D/g, '')
+        if (o && (o.length < 8 || o.length > 15))
+          return n.error('Format WA tidak valid (8-15 digit)')
+        g.value = !0
+        try {
+          const t = a.role === 'guru' ? 'guru' : 'santri'
+          ;(await M(t, String(a.entityId), { wa: o }),
+            n.success('No WA diupdate'),
+            p(),
+            f('updated'))
+        } catch (t) {
+          n.error('Gagal: ' + (t.message || t))
+        } finally {
+          g.value = !1
+        }
+      }
+      async function te(o) {
+        var v
+        const t = (v = o.target.files) == null ? void 0 : v[0]
+        if (t) {
+          if (t.size > 1 * 1024 * 1024) return n.error('Maks 1MB')
+          S.value.uploading = !0
+          try {
+            const m = new FileReader()
+            ;((m.onload = async () => {
+              try {
+                const r = await J(
+                  `tanda_tangan/${a.role}_${a.entityId}_${Date.now()}.png`,
+                  m.result,
+                  t.type
+                )
+                ;(await M('guru', String(a.entityId), { tanda_tangan: r }),
+                  n.success('Tanda tangan diupdate'),
+                  p(),
+                  f('updated'))
+              } catch (r) {
+                n.error('Upload gagal: ' + (r.message || r))
+              } finally {
+                S.value.uploading = !1
+              }
+            }),
+              m.readAsDataURL(t))
+          } catch {
+            S.value.uploading = !1
+          }
+        }
+      }
+      async function ae() {
+        g.value = !0
+        try {
+          if (a.role === 'admin') n.info('Admin notif diatur di Pengaturan Web')
+          else {
+            const o = a.role === 'guru' ? 'guru' : 'santri'
+            await M(o, String(a.entityId), { notifEnabled: j.value.enabled })
+          }
+          ;(n.success(j.value.enabled ? 'Notif AKTIF' : 'Notif NONAKTIF'), p(), f('updated'))
+        } catch (o) {
+          n.error('Gagal: ' + (o.message || o))
+        } finally {
+          g.value = !1
+        }
+      }
+      async function se() {
+        g.value = !0
+        try {
+          ;(await M('guru', String(a.entityId), { ekgq: B.value.value.trim() }),
+            n.success('No. Syahadah Qiraati disimpan'),
+            p(),
+            f('updated'))
+        } catch (o) {
+          n.error('Gagal: ' + (o.message || o))
+        } finally {
+          g.value = !1
+        }
+      }
+      const G = h(!1)
+      function R() {
+        return a.role === 'santri' ? 'santri' : 'guru'
+      }
+      async function le() {
+        if (!G.value) {
+          if (!a.entityId) {
+            n.error('Entity ID kosong, tidak bisa link.')
+            return
+          }
+          G.value = !0
+          try {
+            const o = R(),
+              t = await me(o, String(a.entityId))
+            ;(n.success('Akun Google terhubung: ' + (t.email || t.uid)), p(), f('updated'))
+          } catch (o) {
+            const t = String((o == null ? void 0 : o.message) || o || '')
+            if (t.includes('popup-closed-by-user') || t.includes('cancelled-popup')) return
+            t.includes('sudah dipakai') ? n.warning(t) : n.error('Gagal connect Google: ' + t)
+          } finally {
+            G.value = !1
+          }
+        }
+      }
+      async function oe() {
+        if (
+          !(
+            G.value ||
+            !(await y({
+              title: 'Putuskan tautan?',
+              message: 'Putuskan tautan akun Google?',
+              confirmText: 'Putuskan',
+              danger: !0
+            }))
+          )
+        ) {
+          G.value = !0
+          try {
+            const t = R()
+            ;(await xe(t, String(a.entityId)),
+              n.success('Akun Google diputuskan.'),
+              p(),
+              f('updated'))
+          } catch (t) {
+            n.error('Gagal: ' + ((t == null ? void 0 : t.message) || t))
+          } finally {
+            G.value = !1
+          }
+        }
+      }
+      const W = {
+        amber: {
+          iconBg: 'text-amber-500',
+          hoverBg: 'hover:bg-amber-50 hover:border-amber-300',
+          hoverText: 'group-hover:text-amber-700'
+        },
+        purple: {
+          iconBg: 'text-purple-500',
+          hoverBg: 'hover:bg-purple-50 hover:border-purple-300',
+          hoverText: 'group-hover:text-purple-700'
+        },
+        blue: {
+          iconBg: 'text-blue-500',
+          hoverBg: 'hover:bg-blue-50 hover:border-blue-300',
+          hoverText: 'group-hover:text-blue-700'
+        },
+        green: {
+          iconBg: 'text-emerald-600',
+          hoverBg: 'hover:bg-emerald-50 hover:border-emerald-300',
+          hoverText: 'group-hover:text-emerald-700'
+        },
+        slate: {
+          iconBg: 'text-slate-500',
+          hoverBg: 'hover:bg-slate-50 hover:border-slate-300',
+          hoverText: 'group-hover:text-slate-700'
+        },
+        red: {
+          iconBg: 'text-red-500',
+          hoverBg: 'hover:bg-red-50 hover:border-red-300',
+          hoverText: 'group-hover:text-red-700'
+        },
+        rose: {
+          iconBg: 'text-rose-500',
+          hoverBg: 'hover:bg-rose-50 hover:border-rose-300',
+          hoverText: 'group-hover:text-rose-700'
+        },
+        cyan: {
+          iconBg: 'text-cyan-500',
+          hoverBg: 'hover:bg-cyan-50 hover:border-cyan-300',
+          hoverText: 'group-hover:text-cyan-700'
+        },
+        emerald: {
+          iconBg: 'text-emerald-500',
+          hoverBg: 'hover:bg-emerald-50 hover:border-emerald-300',
+          hoverText: 'group-hover:text-emerald-700'
+        }
+      }
+      return (o, t) => {
+        var v, m
+        return (
+          d(),
+          u('div', Se, [
+            t[30] ||
+              (t[30] = e(
+                'h3',
+                {
+                  class:
+                    'font-black text-slate-800 dark:text-slate-100 text-base mb-4 flex items-center gap-2'
+                },
+                [e('i', { class: 'fas fa-cog text-teal-600' }), _(' Pengaturan Profil ')],
+                -1
+              )),
+            e('div', je, [
+              (d(!0),
+              u(
+                ie,
+                null,
+                de(
+                  A.value,
+                  (r) => (
+                    d(),
+                    u(
+                      'button',
+                      {
+                        key: r.id,
+                        onClick: (U) => T(r.id),
+                        class: q([
+                          'group bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 text-left transition cursor-pointer',
+                          W[r.color].hoverBg
+                        ])
+                      },
+                      [
+                        e(
+                          'i',
+                          {
+                            class: q([
+                              r.iconClass || 'fas',
+                              r.icon,
+                              'text-2xl mb-2 block',
+                              W[r.color].iconBg
+                            ])
+                          },
+                          null,
+                          2
+                        ),
+                        e(
+                          'p',
+                          {
+                            class: q([
+                              'text-sm font-black text-slate-800 dark:text-slate-100',
+                              W[r.color].hoverText
+                            ])
+                          },
+                          c(r.title),
+                          3
+                        ),
+                        e('p', Ae, c(r.desc), 1)
+                      ],
+                      10,
+                      Pe
+                    )
+                  )
+                ),
+                128
+              ))
+            ]),
+            (d(),
+            V(be, { to: 'body' }, [
+              x.value
+                ? (d(),
+                  u(
+                    'div',
+                    {
+                      key: 0,
+                      class:
+                        'fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4',
+                      onClick: ue(p, ['self'])
+                    },
+                    [
+                      e('div', Be, [
+                        x.value === 'sandi'
+                          ? (d(),
+                            u('div', Ge, [
+                              t[11] ||
+                                (t[11] = e(
+                                  'h3',
+                                  { class: 'text-lg font-black mb-3' },
+                                  'Ganti Sandi',
+                                  -1
+                                )),
+                              e('div', Ue, [
+                                e('div', null, [
+                                  t[8] ||
+                                    (t[8] = e(
+                                      'label',
+                                      {
+                                        class:
+                                          'text-xs font-bold text-slate-500 dark:text-slate-400'
+                                      },
+                                      'Password Lama',
+                                      -1
+                                    )),
+                                  N(
+                                    e(
+                                      'input',
+                                      {
+                                        'onUpdate:modelValue':
+                                          t[0] || (t[0] = (r) => (s.value.lama = r)),
+                                        type: 'password',
+                                        class:
+                                          'w-full px-3 py-2 border border-slate-300 rounded-lg text-sm'
+                                      },
+                                      null,
+                                      512
+                                    ),
+                                    [[L, s.value.lama]]
+                                  )
+                                ]),
+                                e('div', null, [
+                                  t[9] ||
+                                    (t[9] = e(
+                                      'label',
+                                      {
+                                        class:
+                                          'text-xs font-bold text-slate-500 dark:text-slate-400'
+                                      },
+                                      'Password Baru',
+                                      -1
+                                    )),
+                                  N(
+                                    e(
+                                      'input',
+                                      {
+                                        'onUpdate:modelValue':
+                                          t[1] || (t[1] = (r) => (s.value.baru = r)),
+                                        type: 'password',
+                                        class:
+                                          'w-full px-3 py-2 border border-slate-300 rounded-lg text-sm'
+                                      },
+                                      null,
+                                      512
+                                    ),
+                                    [[L, s.value.baru]]
+                                  )
+                                ]),
+                                e('div', null, [
+                                  t[10] ||
+                                    (t[10] = e(
+                                      'label',
+                                      {
+                                        class:
+                                          'text-xs font-bold text-slate-500 dark:text-slate-400'
+                                      },
+                                      'Konfirmasi',
+                                      -1
+                                    )),
+                                  N(
+                                    e(
+                                      'input',
+                                      {
+                                        'onUpdate:modelValue':
+                                          t[2] || (t[2] = (r) => (s.value.konfirmasi = r)),
+                                        type: 'password',
+                                        class:
+                                          'w-full px-3 py-2 border border-slate-300 rounded-lg text-sm'
+                                      },
+                                      null,
+                                      512
+                                    ),
+                                    [[L, s.value.konfirmasi]]
+                                  )
+                                ])
+                              ])
+                            ]))
+                          : x.value === 'foto'
+                            ? (d(),
+                              u('div', Ne, [
+                                t[12] ||
+                                  (t[12] = e(
+                                    'h3',
+                                    { class: 'text-lg font-black mb-3' },
+                                    'Ganti Foto Profil',
+                                    -1
+                                  )),
+                                e(
+                                  'input',
+                                  {
+                                    type: 'file',
+                                    accept: 'image/*',
+                                    onChange: I,
+                                    disabled: l.value.uploading,
+                                    class: 'w-full text-sm'
+                                  },
+                                  null,
+                                  40,
+                                  Te
+                                ),
+                                t[13] ||
+                                  (t[13] = e(
+                                    'p',
+                                    {
+                                      class:
+                                        'text-[10px] text-slate-500 dark:text-slate-400 italic mt-2'
+                                    },
+                                    'JPG/PNG, maks 2MB',
+                                    -1
+                                  ))
+                              ]))
+                            : x.value === 'username'
+                              ? (d(),
+                                u('div', Ce, [
+                                  t[14] ||
+                                    (t[14] = e(
+                                      'h3',
+                                      { class: 'text-lg font-black mb-3' },
+                                      'Ganti Username',
+                                      -1
+                                    )),
+                                  N(
+                                    e(
+                                      'input',
+                                      {
+                                        'onUpdate:modelValue':
+                                          t[3] || (t[3] = (r) => (b.value.value = r)),
+                                        onBlur: O,
+                                        type: 'text',
+                                        class:
+                                          'w-full px-3 py-2 border border-slate-300 rounded-lg text-sm',
+                                        placeholder: 'username unik'
+                                      },
+                                      null,
+                                      544
+                                    ),
+                                    [[L, b.value.value]]
+                                  ),
+                                  b.value.checking
+                                    ? (d(), u('p', Ie, 'Cek...'))
+                                    : b.value.available === !0
+                                      ? (d(), u('p', Le, 'Username tersedia'))
+                                      : b.value.available === !1
+                                        ? (d(), u('p', Me, 'Sudah dipakai'))
+                                        : D('', !0)
+                                ]))
+                              : x.value === 'wa'
+                                ? (d(),
+                                  u('div', De, [
+                                    t[15] ||
+                                      (t[15] = e(
+                                        'h3',
+                                        { class: 'text-lg font-black mb-3' },
+                                        'No WhatsApp',
+                                        -1
+                                      )),
+                                    N(
+                                      e(
+                                        'input',
+                                        {
+                                          'onUpdate:modelValue':
+                                            t[4] || (t[4] = (r) => (w.value.value = r)),
+                                          type: 'tel',
+                                          class:
+                                            'w-full px-3 py-2 border border-slate-300 rounded-lg text-sm',
+                                          placeholder: '08xxxxxxxxxx'
+                                        },
+                                        null,
+                                        512
+                                      ),
+                                      [[L, w.value.value]]
+                                    ),
+                                    t[16] ||
+                                      (t[16] = e(
+                                        'p',
+                                        {
+                                          class:
+                                            'text-[10px] text-slate-500 dark:text-slate-400 italic mt-2'
+                                        },
+                                        'Format Indonesia, akan dibersihkan dari simbol',
+                                        -1
+                                      ))
+                                  ]))
+                                : x.value === 'wa_wali'
+                                  ? (d(),
+                                    u('div', Fe, [
+                                      t[17] ||
+                                        (t[17] = e(
+                                          'h3',
+                                          { class: 'text-lg font-black mb-3' },
+                                          'No WhatsApp Wali',
+                                          -1
+                                        )),
+                                      N(
+                                        e(
+                                          'input',
+                                          {
+                                            'onUpdate:modelValue':
+                                              t[5] || (t[5] = (r) => (w.value.value = r)),
+                                            type: 'tel',
+                                            class:
+                                              'w-full px-3 py-2 border border-slate-300 rounded-lg text-sm',
+                                            placeholder: '08xxxxxxxxxx'
+                                          },
+                                          null,
+                                          512
+                                        ),
+                                        [[L, w.value.value]]
+                                      ),
+                                      t[18] ||
+                                        (t[18] = e(
+                                          'p',
+                                          {
+                                            class:
+                                              'text-[10px] text-slate-500 dark:text-slate-400 italic mt-2'
+                                          },
+                                          'Nomor wali (orang tua) untuk terima notifikasi pondok.',
+                                          -1
+                                        ))
+                                    ]))
+                                  : x.value === 'ttd'
+                                    ? (d(),
+                                      u('div', Ve, [
+                                        t[19] ||
+                                          (t[19] = e(
+                                            'h3',
+                                            { class: 'text-lg font-black mb-3' },
+                                            'Upload Tanda Tangan',
+                                            -1
+                                          )),
+                                        e(
+                                          'input',
+                                          {
+                                            type: 'file',
+                                            accept: 'image/*',
+                                            onChange: te,
+                                            disabled: S.value.uploading,
+                                            class: 'w-full text-sm'
+                                          },
+                                          null,
+                                          40,
+                                          We
+                                        ),
+                                        t[20] ||
+                                          (t[20] = e(
+                                            'p',
+                                            {
+                                              class:
+                                                'text-[10px] text-slate-500 dark:text-slate-400 italic mt-2'
+                                            },
+                                            'PNG transparan disarankan, maks 1MB',
+                                            -1
+                                          ))
+                                      ]))
+                                    : x.value === 'google'
+                                      ? (d(),
+                                        u('div', qe, [
+                                          t[25] ||
+                                            (t[25] = e(
+                                              'h3',
+                                              { class: 'text-lg font-black mb-3' },
+                                              'Tautkan Akun Google',
+                                              -1
+                                            )),
+                                          (v = i.entity) != null && v.linked_email
+                                            ? (d(),
+                                              u('div', Ke, [
+                                                t[22] ||
+                                                  (t[22] = e(
+                                                    'p',
+                                                    { class: 'text-xs text-slate-600' },
+                                                    'Sudah tertaut ke:',
+                                                    -1
+                                                  )),
+                                                e('p', Ee, [
+                                                  t[21] ||
+                                                    (t[21] = e(
+                                                      'i',
+                                                      { class: 'fab fa-google mr-1' },
+                                                      null,
+                                                      -1
+                                                    )),
+                                                  _(c(i.entity.linked_email), 1)
+                                                ])
+                                              ]))
+                                            : (d(),
+                                              u(
+                                                'p',
+                                                Oe,
+                                                'Login lewat akun Google supaya bisa skip password.'
+                                              )),
+                                          (m = i.entity) != null && m.linked_email
+                                            ? (d(),
+                                              u(
+                                                'button',
+                                                {
+                                                  key: 2,
+                                                  onClick: oe,
+                                                  disabled: G.value,
+                                                  class:
+                                                    'mt-3 w-full bg-slate-600 text-white py-2 rounded-lg font-bold text-sm disabled:opacity-50'
+                                                },
+                                                [
+                                                  t[23] ||
+                                                    (t[23] = e(
+                                                      'i',
+                                                      { class: 'fas fa-unlink mr-2' },
+                                                      null,
+                                                      -1
+                                                    )),
+                                                  _(
+                                                    c(G.value ? 'Memutus...' : 'Putuskan Tautan'),
+                                                    1
+                                                  )
+                                                ],
+                                                8,
+                                                Re
+                                              ))
+                                            : (d(),
+                                              u(
+                                                'button',
+                                                {
+                                                  key: 3,
+                                                  onClick: le,
+                                                  disabled: G.value,
+                                                  class:
+                                                    'mt-3 w-full bg-rose-600 text-white py-2 rounded-lg font-bold text-sm disabled:opacity-50'
+                                                },
+                                                [
+                                                  t[24] ||
+                                                    (t[24] = e(
+                                                      'i',
+                                                      { class: 'fab fa-google mr-2' },
+                                                      null,
+                                                      -1
+                                                    )),
+                                                  _(
+                                                    c(
+                                                      G.value
+                                                        ? 'Menghubungkan...'
+                                                        : 'Connect dengan Google'
+                                                    ),
+                                                    1
+                                                  )
+                                                ],
+                                                8,
+                                                ze
+                                              ))
+                                        ]))
+                                      : x.value === 'notif'
+                                        ? (d(),
+                                          u('div', Qe, [
+                                            t[27] ||
+                                              (t[27] = e(
+                                                'h3',
+                                                { class: 'text-lg font-black mb-3' },
+                                                'Setting Notifikasi',
+                                                -1
+                                              )),
+                                            e('label', Je, [
+                                              N(
+                                                e(
+                                                  'input',
+                                                  {
+                                                    'onUpdate:modelValue':
+                                                      t[6] || (t[6] = (r) => (j.value.enabled = r)),
+                                                    type: 'checkbox',
+                                                    class: 'w-5 h-5 accent-cyan-600'
+                                                  },
+                                                  null,
+                                                  512
+                                                ),
+                                                [[ce, j.value.enabled]]
+                                              ),
+                                              t[26] ||
+                                                (t[26] = e(
+                                                  'div',
+                                                  null,
+                                                  [
+                                                    e(
+                                                      'p',
+                                                      { class: 'text-sm font-bold' },
+                                                      'Aktifkan Push Notification'
+                                                    ),
+                                                    e(
+                                                      'p',
+                                                      {
+                                                        class:
+                                                          'text-xs text-slate-500 dark:text-slate-400'
+                                                      },
+                                                      'FCM untuk pengumuman & event penting'
+                                                    )
+                                                  ],
+                                                  -1
+                                                ))
+                                            ])
+                                          ]))
+                                        : x.value === 'ekgq'
+                                          ? (d(),
+                                            u('div', He, [
+                                              t[28] ||
+                                                (t[28] = e(
+                                                  'h3',
+                                                  { class: 'text-lg font-black mb-3' },
+                                                  'No. Syahadah Qiraati (EKGQ)',
+                                                  -1
+                                                )),
+                                              N(
+                                                e(
+                                                  'input',
+                                                  {
+                                                    'onUpdate:modelValue':
+                                                      t[7] || (t[7] = (r) => (B.value.value = r)),
+                                                    type: 'text',
+                                                    class:
+                                                      'w-full px-3 py-2 border border-slate-300 rounded-lg text-sm',
+                                                    placeholder: 'EKGQ-2023-001'
+                                                  },
+                                                  null,
+                                                  512
+                                                ),
+                                                [[L, B.value.value]]
+                                              ),
+                                              t[29] ||
+                                                (t[29] = e(
+                                                  'p',
+                                                  {
+                                                    class:
+                                                      'text-[10px] text-slate-500 dark:text-slate-400 italic mt-2'
+                                                  },
+                                                  'Nomor syahadah resmi dari Pusat Qiraati',
+                                                  -1
+                                                ))
+                                            ]))
+                                          : D('', !0),
+                        e('div', Ze, [
+                          e(
+                            'button',
+                            {
+                              onClick: p,
+                              class:
+                                'px-4 py-2 text-sm font-bold text-slate-600 hover:bg-slate-100 rounded-lg'
+                            },
+                            'Batal'
+                          ),
+                          x.value === 'sandi'
+                            ? (d(),
+                              u(
+                                'button',
+                                {
+                                  key: 0,
+                                  onClick: C,
+                                  disabled: g.value,
+                                  class:
+                                    'px-4 py-2 text-sm font-bold bg-amber-600 hover:bg-amber-700 text-white rounded-lg disabled:opacity-50'
+                                },
+                                'Simpan',
+                                8,
+                                Xe
+                              ))
+                            : x.value === 'username'
+                              ? (d(),
+                                u(
+                                  'button',
+                                  {
+                                    key: 1,
+                                    onClick: Y,
+                                    disabled: g.value,
+                                    class:
+                                      'px-4 py-2 text-sm font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-50'
+                                  },
+                                  'Simpan',
+                                  8,
+                                  Ye
+                                ))
+                              : x.value === 'wa' || x.value === 'wa_wali'
+                                ? (d(),
+                                  u(
+                                    'button',
+                                    {
+                                      key: 2,
+                                      onClick: ee,
+                                      disabled: g.value,
+                                      class:
+                                        'px-4 py-2 text-sm font-bold bg-green-600 hover:bg-green-700 text-white rounded-lg disabled:opacity-50'
+                                    },
+                                    'Simpan',
+                                    8,
+                                    et
+                                  ))
+                                : x.value === 'notif'
+                                  ? (d(),
+                                    u(
+                                      'button',
+                                      {
+                                        key: 3,
+                                        onClick: ae,
+                                        disabled: g.value,
+                                        class:
+                                          'px-4 py-2 text-sm font-bold bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg disabled:opacity-50'
+                                      },
+                                      'Simpan',
+                                      8,
+                                      tt
+                                    ))
+                                  : x.value === 'ekgq'
+                                    ? (d(),
+                                      u(
+                                        'button',
+                                        {
+                                          key: 4,
+                                          onClick: se,
+                                          disabled: g.value,
+                                          class:
+                                            'px-4 py-2 text-sm font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg disabled:opacity-50'
+                                        },
+                                        'Simpan',
+                                        8,
+                                        at
+                                      ))
+                                    : D('', !0)
+                        ])
+                      ])
+                    ]
+                  ))
+                : D('', !0)
+            ]))
+          ])
+        )
+      }
+    }
+  },
+  st = { class: 'space-y-4' },
+  lt = {
+    __name: 'ProfilAdmin',
+    setup(i) {
+      return (k, a) => (
+        d(),
+        u('div', st, [
+          a[0] ||
+            (a[0] = ve(
+              '<div class="bg-white dark:bg-slate-800 rounded-[2rem] shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden"><div class="relative bg-gradient-to-br from-emerald-500 via-teal-600 to-teal-700 px-6 md:px-8 py-6 md:py-7 overflow-hidden"><img src="' +
+                F +
+                '" alt="" aria-hidden="true" class="absolute -right-4 -top-6 w-44 h-44 object-contain opacity-10 pointer-events-none select-none"><img src="' +
+                F +
+                '" alt="" aria-hidden="true" class="absolute -right-12 -bottom-12 w-32 h-32 object-contain opacity-[0.07] pointer-events-none select-none rotate-12"><div class="relative flex flex-col md:flex-row items-center md:items-center gap-5"><div class="w-28 h-28 md:w-32 md:h-32 bg-white dark:bg-slate-800/20 border-4 border-white/80 rounded-full flex items-center justify-center overflow-hidden shadow-2xl flex-shrink-0 backdrop-blur-sm"><i class="fas fa-user-shield text-white/80 text-5xl"></i></div><div class="flex-1 text-center md:text-left text-white min-w-0"><h2 class="text-2xl md:text-3xl font-black leading-tight drop-shadow-sm"> Administrator </h2><p class="text-xs md:text-sm font-bold text-emerald-50/90 uppercase tracking-wider mt-1.5"> Built-in Super Admin · Pondok </p><span class="inline-block mt-3 text-[11px] bg-white dark:bg-slate-800/25 backdrop-blur-sm text-white font-black px-4 py-1.5 rounded-full uppercase tracking-widest shadow-md"> Super Admin </span></div></div></div><div class="p-6 md:p-8"><div class="grid grid-cols-1 md:grid-cols-2 gap-6"><div class="bg-slate-50 dark:bg-slate-900/40 p-5 rounded-2xl border border-slate-200 dark:border-slate-700"><h3 class="font-black text-slate-700 dark:text-slate-200 text-sm uppercase tracking-widest border-b border-slate-200 dark:border-slate-700 pb-2 mb-4"><i class="fas fa-user mr-2"></i>Identitas </h3><ul class="space-y-3 text-sm"><li class="flex justify-between gap-2"><span class="text-slate-700 dark:text-slate-300 font-bold">Username:</span><span class="font-black text-slate-800 dark:text-slate-100 text-right">admin</span></li><li class="flex justify-between gap-2"><span class="text-slate-700 dark:text-slate-300 font-bold">Role:</span><span class="font-black text-slate-800 dark:text-slate-100 text-right">Administrator Utama</span></li><li class="flex justify-between gap-2"><span class="text-slate-700 dark:text-slate-300 font-bold">Hak Akses:</span><span class="font-black text-emerald-700 text-right">Penuh (semua fitur)</span></li></ul></div><div class="bg-emerald-50 dark:bg-emerald-900/20 p-5 rounded-2xl border border-emerald-100"><h3 class="font-black text-emerald-800 text-sm uppercase tracking-widest border-b border-emerald-200 pb-2 mb-4"><i class="fas fa-info-circle mr-2"></i>Informasi </h3><p class="text-xs text-slate-700 dark:text-slate-200 leading-relaxed"> Akun ini adalah <b>Administrator utama</b> Ammu Online. Hanya satu akun ini yang memiliki akses penuh ke semua modul, termasuk Master Data, Keuangan, dan Audit Log. </p><p class="text-[11px] text-amber-700 italic mt-3 bg-amber-50 dark:bg-amber-900/20 p-2 rounded border border-amber-100 dark:border-amber-800"><i class="fas fa-exclamation-triangle mr-1"></i>Demi keamanan, segera ganti kata sandi default di Pengaturan → Profil. </p></div></div><p class="text-[10px] text-slate-400 italic mt-4 text-center"><i class="fas fa-info-circle mr-1"></i>Untuk mengubah kata sandi, klik avatar di kanan atas → Edit Profil → Ganti Sandi. </p></div></div>',
+              1
+            )),
+          K(E, { role: 'admin', 'entity-id': 'admin', entity: { username: 'adminmu' } })
+        ])
+      )
+    }
+  },
+  ot = { class: 'space-y-4' },
+  rt = {
+    class:
+      'bg-white dark:bg-slate-800 rounded-[2rem] shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden'
+  },
+  nt = {
+    class:
+      'relative bg-gradient-to-br from-emerald-500 via-teal-600 to-teal-700 px-6 md:px-8 py-6 md:py-7 overflow-hidden'
+  },
+  it = { class: 'relative flex flex-col md:flex-row items-center md:items-center gap-5' },
+  dt = {
+    class:
+      'w-28 h-28 md:w-32 md:h-32 bg-white dark:bg-slate-800/20 border-4 border-white/80 rounded-full flex items-center justify-center overflow-hidden shadow-2xl flex-shrink-0 backdrop-blur-sm'
+  },
+  ut = ['src'],
+  ct = { key: 1, class: 'fas fa-user-tie text-white/60 text-5xl' },
+  bt = { class: 'flex-1 text-center md:text-left text-white min-w-0' },
+  gt = { class: 'text-2xl md:text-3xl font-black leading-tight drop-shadow-sm' },
+  xt = { class: 'text-xs md:text-sm font-bold text-emerald-50/90 uppercase tracking-wider mt-1.5' },
+  mt = {
+    class:
+      'inline-block mt-3 text-[11px] bg-white/25 dark:bg-slate-800/25 backdrop-blur-sm text-white font-black px-4 py-1.5 rounded-full uppercase tracking-widest shadow-md border border-white/30'
+  },
+  pt = { class: 'grid grid-cols-1 md:grid-cols-2 gap-6' },
+  ft = {
+    class:
+      'bg-slate-50 dark:bg-slate-900/40 p-5 rounded-2xl border border-slate-200 dark:border-slate-700'
+  },
+  kt = { class: 'space-y-3 text-sm' },
+  vt = { class: 'flex justify-between gap-2' },
+  ht = { class: 'font-black text-slate-800 dark:text-slate-100 text-right' },
+  yt = { class: 'flex justify-between gap-2' },
+  wt = { class: 'font-black text-slate-800 dark:text-slate-100 text-right' },
+  _t = { class: 'flex justify-between gap-2' },
+  $t = { class: 'font-black text-slate-800 dark:text-slate-100 text-right' },
+  St = { class: 'flex justify-between gap-2' },
+  jt = { class: 'font-black text-slate-800 dark:text-slate-100 text-right' },
+  Pt = { class: 'bg-blue-50 dark:bg-blue-900/20 p-5 rounded-2xl border border-blue-100' },
+  At = { class: 'space-y-3 text-sm' },
+  Bt = { class: 'flex justify-between gap-2' },
+  Gt = { class: 'font-black text-slate-800 dark:text-slate-100 text-right' },
+  Ut = { class: 'flex justify-between gap-2' },
+  Nt = { class: 'font-black text-slate-800 dark:text-slate-100 text-right' },
+  Tt = { class: 'flex justify-between gap-2' },
+  Ct = { class: 'font-black text-slate-800 dark:text-slate-100 text-right' },
+  It = { class: 'flex justify-between gap-2' },
+  Lt = { class: 'font-black text-slate-800 dark:text-slate-100 text-right' },
+  Mt = { class: 'flex justify-between gap-2' },
+  Dt = { class: 'font-black text-slate-800 dark:text-slate-100 text-right' },
+  Ft = {
+    class:
+      'bg-purple-50 dark:bg-purple-900/20 p-5 rounded-2xl border border-purple-100 md:col-span-2'
+  },
+  Vt = { class: 'grid grid-cols-1 md:grid-cols-3 gap-3 text-sm' },
+  Wt = { class: 'bg-white dark:bg-slate-800 p-3 rounded-xl border border-purple-100' },
+  qt = { class: 'font-black text-slate-800 dark:text-slate-100 mt-1' },
+  Kt = { class: 'bg-white dark:bg-slate-800 p-3 rounded-xl border border-purple-100' },
+  Et = { class: 'font-black text-slate-800 dark:text-slate-100 mt-1' },
+  Ot = { class: 'bg-white dark:bg-slate-800 p-3 rounded-xl border border-purple-100' },
+  Rt = { class: 'font-black text-slate-800 dark:text-slate-100 mt-1' },
+  zt = {
+    __name: 'ProfilGuru',
+    props: { guru: { type: Object, required: !0 } },
+    setup(i) {
+      const k = i
+      ;(Z(), X())
+      const a = P(() => {
+          var s, l
+          return we((s = k.guru) == null ? void 0 : s.nama, (l = k.guru) == null ? void 0 : l.jk)
+        }),
+        f = P(() => {
+          var s, l
+          return `${((s = k.guru) == null ? void 0 : s.jabatan) || 'Pegawai'} - ${((l = k.guru) == null ? void 0 : l.lembaga) || '-'}`
+        }),
+        $ = P(() => {
+          var s
+          return ((s = k.guru) == null ? void 0 : s.jk) === 'L' ? 'Laki-laki' : 'Perempuan'
+        }),
+        n = P(() => {
+          var s
+          return _e((s = k.guru) == null ? void 0 : s.tanggal_tugas)
+        }),
+        y = P(() => {
+          var s
+          return $e((s = k.guru) == null ? void 0 : s.tanggal_tugas)
+        }),
+        x = {
+          user: 'User',
+          admin: 'Admin',
+          admin_keuangan: 'Admin Keuangan',
+          super_admin: 'Super Admin'
+        },
+        g = P(() => {
+          var s
+          return x[((s = k.guru) == null ? void 0 : s.role_sistem) || 'user'] || 'Guru'
+        }),
+        A = P(() => {
+          var s
+          return (((s = k.guru) == null ? void 0 : s.role_sistem) || 'user')
+            .replace('_', ' ')
+            .toUpperCase()
+        })
+      return (s, l) => {
+        var b, w, S, j, B, T, p, C, I
+        return (
+          d(),
+          u('div', ot, [
+            e('div', rt, [
+              e('div', nt, [
+                l[0] ||
+                  (l[0] = e(
+                    'img',
+                    {
+                      src: F,
+                      alt: '',
+                      'aria-hidden': 'true',
+                      class:
+                        'absolute -right-4 -top-6 w-44 h-44 object-contain opacity-10 pointer-events-none select-none'
+                    },
+                    null,
+                    -1
+                  )),
+                l[1] ||
+                  (l[1] = e(
+                    'img',
+                    {
+                      src: F,
+                      alt: '',
+                      'aria-hidden': 'true',
+                      class:
+                        'absolute -right-12 -bottom-12 w-32 h-32 object-contain opacity-[0.07] pointer-events-none select-none rotate-12'
+                    },
+                    null,
+                    -1
+                  )),
+                e('div', it, [
+                  e('div', dt, [
+                    (b = i.guru) != null && b.foto
+                      ? (d(),
+                        u(
+                          'img',
+                          {
+                            key: 0,
+                            src: i.guru.foto,
+                            class: 'w-full h-full object-cover',
+                            alt: 'Foto Profil'
+                          },
+                          null,
+                          8,
+                          ut
+                        ))
+                      : (d(), u('i', ct))
+                  ]),
+                  e('div', bt, [
+                    e('h2', gt, c(a.value), 1),
+                    e('p', xt, c(f.value), 1),
+                    e('span', mt, c(g.value), 1)
+                  ])
+                ])
+              ]),
+              e('div', pt, [
+                e('div', ft, [
+                  l[6] ||
+                    (l[6] = e(
+                      'h3',
+                      {
+                        class:
+                          'font-black text-slate-700 dark:text-slate-200 text-sm uppercase tracking-widest border-b border-slate-200 dark:border-slate-700 pb-2 mb-4'
+                      },
+                      [e('i', { class: 'fas fa-user mr-2' }), _('Identitas ')],
+                      -1
+                    )),
+                  e('ul', kt, [
+                    e('li', vt, [
+                      l[2] ||
+                        (l[2] = e(
+                          'span',
+                          { class: 'text-slate-700 dark:text-slate-300 font-bold' },
+                          'Nama:',
+                          -1
+                        )),
+                      e('span', ht, c(a.value), 1)
+                    ]),
+                    e('li', yt, [
+                      l[3] ||
+                        (l[3] = e(
+                          'span',
+                          { class: 'text-slate-700 dark:text-slate-300 font-bold' },
+                          'Username:',
+                          -1
+                        )),
+                      e('span', wt, c(((w = i.guru) == null ? void 0 : w.username) || '-'), 1)
+                    ]),
+                    e('li', _t, [
+                      l[4] ||
+                        (l[4] = e(
+                          'span',
+                          { class: 'text-slate-700 dark:text-slate-300 font-bold' },
+                          'Jenis Kelamin:',
+                          -1
+                        )),
+                      e('span', $t, c($.value), 1)
+                    ]),
+                    e('li', St, [
+                      l[5] ||
+                        (l[5] = e(
+                          'span',
+                          { class: 'text-slate-700 dark:text-slate-300 font-bold' },
+                          'No WhatsApp:',
+                          -1
+                        )),
+                      e('span', jt, c(((S = i.guru) == null ? void 0 : S.wa) || '-'), 1)
+                    ])
+                  ])
+                ]),
+                e('div', Pt, [
+                  l[12] ||
+                    (l[12] = e(
+                      'h3',
+                      {
+                        class:
+                          'font-black text-blue-800 text-sm uppercase tracking-widest border-b border-blue-200 pb-2 mb-4'
+                      },
+                      [e('i', { class: 'fas fa-briefcase mr-2' }), _('Tugas & Lembaga ')],
+                      -1
+                    )),
+                  e('ul', At, [
+                    e('li', Bt, [
+                      l[7] ||
+                        (l[7] = e('span', { class: 'text-blue-700 font-bold' }, 'Jabatan:', -1)),
+                      e('span', Gt, c(((j = i.guru) == null ? void 0 : j.jabatan) || '-'), 1)
+                    ]),
+                    e('li', Ut, [
+                      l[8] ||
+                        (l[8] = e(
+                          'span',
+                          { class: 'text-blue-700 font-bold' },
+                          'Lembaga/Devisi:',
+                          -1
+                        )),
+                      e('span', Nt, c(((B = i.guru) == null ? void 0 : B.lembaga) || '-'), 1)
+                    ]),
+                    e('li', Tt, [
+                      l[9] ||
+                        (l[9] = e(
+                          'span',
+                          { class: 'text-blue-700 font-bold' },
+                          'Tanggal Tugas:',
+                          -1
+                        )),
+                      e('span', Ct, c(n.value), 1)
+                    ]),
+                    e('li', It, [
+                      l[10] ||
+                        (l[10] = e(
+                          'span',
+                          { class: 'text-blue-700 font-bold' },
+                          'Lama Mengajar:',
+                          -1
+                        )),
+                      e('span', Lt, c(y.value), 1)
+                    ]),
+                    e('li', Mt, [
+                      l[11] ||
+                        (l[11] = e('span', { class: 'text-blue-700 font-bold' }, 'Status:', -1)),
+                      e('span', Dt, c(((T = i.guru) == null ? void 0 : T.status) || 'Aktif'), 1)
+                    ])
+                  ])
+                ]),
+                e('div', Ft, [
+                  l[16] ||
+                    (l[16] = e(
+                      'h3',
+                      {
+                        class:
+                          'font-black text-purple-800 text-sm uppercase tracking-widest border-b border-purple-200 pb-2 mb-4'
+                      },
+                      [e('i', { class: 'fas fa-shield-halved mr-2' }), _('Sistem & Akses ')],
+                      -1
+                    )),
+                  e('div', Vt, [
+                    e('div', Wt, [
+                      l[13] ||
+                        (l[13] = e(
+                          'p',
+                          { class: 'text-[10px] text-purple-600 font-bold uppercase' },
+                          'Role Sistem',
+                          -1
+                        )),
+                      e('p', qt, c(A.value), 1)
+                    ]),
+                    e('div', Kt, [
+                      l[14] ||
+                        (l[14] = e(
+                          'p',
+                          { class: 'text-[10px] text-purple-600 font-bold uppercase' },
+                          'No. Syahadah',
+                          -1
+                        )),
+                      e('p', Et, c(((p = i.guru) == null ? void 0 : p.ekgq) || '-'), 1)
+                    ]),
+                    e('div', Ot, [
+                      l[15] ||
+                        (l[15] = e(
+                          'p',
+                          { class: 'text-[10px] text-purple-600 font-bold uppercase' },
+                          'ID Fingerprint',
+                          -1
+                        )),
+                      e('p', Rt, c(((C = i.guru) == null ? void 0 : C.id_fingerprint) || '-'), 1)
+                    ])
+                  ])
+                ])
+              ]),
+              l[17] ||
+                (l[17] = e(
+                  'p',
+                  { class: 'text-[10px] text-slate-400 italic mt-4 text-center' },
+                  [
+                    e('i', { class: 'fas fa-info-circle mr-1' }),
+                    _(
+                      'Untuk mengubah foto, sandi, atau no WA, klik avatar di kanan atas → Edit Profil. '
+                    )
+                  ],
+                  -1
+                ))
+            ]),
+            K(
+              E,
+              { role: 'guru', 'entity-id': (I = i.guru) == null ? void 0 : I.id, entity: i.guru },
+              null,
+              8,
+              ['entity-id', 'entity']
+            )
+          ])
+        )
+      }
+    }
+  },
+  Qt = { class: 'space-y-4' },
+  Jt = {
+    class:
+      'bg-white dark:bg-slate-800 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 shadow-sm'
+  },
+  Ht = { class: 'relative bg-gradient-to-br from-cyan-500 via-blue-600 to-indigo-700 px-6 py-7' },
+  Zt = { class: 'relative flex flex-col md:flex-row items-center gap-5' },
+  Xt = {
+    class:
+      'w-24 h-24 md:w-28 md:h-28 bg-white/20 border-4 border-white/80 rounded-full flex items-center justify-center overflow-hidden shadow-2xl flex-shrink-0'
+  },
+  Yt = ['src'],
+  ea = { key: 1, class: 'fas fa-user-graduate text-white/70 text-4xl' },
+  ta = { class: 'flex-1 text-center md:text-left text-white' },
+  aa = { class: 'text-xl md:text-2xl font-black drop-shadow' },
+  sa = { class: 'text-xs font-bold text-blue-50/90 uppercase tracking-wider mt-1' },
+  la = {
+    class:
+      'inline-block mt-2 text-[11px] bg-white/25 border border-white/30 text-white font-black px-3 py-1 rounded-full uppercase tracking-widest'
+  },
+  oa = { class: 'p-4 grid grid-cols-1 md:grid-cols-2 gap-4' },
+  ra = { class: 'bg-slate-50 p-4 rounded-2xl border border-slate-200' },
+  na = { class: 'space-y-2 text-sm' },
+  ia = { class: 'flex justify-between' },
+  da = { class: 'font-black' },
+  ua = { class: 'flex justify-between' },
+  ca = { class: 'font-black' },
+  ba = { class: 'flex justify-between' },
+  ga = { class: 'font-black' },
+  xa = { class: 'flex justify-between' },
+  ma = { class: 'font-black' },
+  pa = { class: 'bg-blue-50 p-4 rounded-2xl border border-blue-200' },
+  fa = { class: 'space-y-2 text-sm' },
+  ka = { class: 'flex justify-between' },
+  va = { class: 'font-black' },
+  ha = { class: 'flex justify-between' },
+  ya = { class: 'font-black' },
+  wa = { key: 0, class: 'flex justify-between' },
+  _a = { class: 'font-black' },
+  $a = { class: 'flex justify-between' },
+  Sa = { class: 'font-black' },
+  ja = { class: 'flex justify-between' },
+  Pa = { class: 'font-black' },
+  Aa = { class: 'bg-emerald-50 p-4 rounded-2xl border border-emerald-200 md:col-span-2' },
+  Ba = { class: 'space-y-2 text-sm' },
+  Ga = { class: 'flex justify-between' },
+  Ua = { class: 'font-black' },
+  Na = { class: 'flex justify-between' },
+  Ta = { class: 'font-black' },
+  Ca = {
+    __name: 'ProfilSantri',
+    props: { santri: { type: Object, required: !0 } },
+    setup(i) {
+      return (k, a) => {
+        var f, $, n, y, x, g, A, s, l, b, w, S, j, B, T, p, C, I
+        return (
+          d(),
+          u('div', Qt, [
+            e('div', Jt, [
+              e('div', Ht, [
+                a[0] ||
+                  (a[0] = e(
+                    'img',
+                    {
+                      src: F,
+                      alt: '',
+                      class:
+                        'absolute -right-6 -top-6 w-36 h-36 object-contain opacity-10 pointer-events-none'
+                    },
+                    null,
+                    -1
+                  )),
+                e('div', Zt, [
+                  e('div', Xt, [
+                    (f = i.santri) != null && f.foto
+                      ? (d(),
+                        u(
+                          'img',
+                          { key: 0, src: i.santri.foto, class: 'w-full h-full object-cover' },
+                          null,
+                          8,
+                          Yt
+                        ))
+                      : (d(), u('i', ea))
+                  ]),
+                  e('div', ta, [
+                    e('h2', aa, c((($ = i.santri) == null ? void 0 : $.nama) || '-'), 1),
+                    e(
+                      'p',
+                      sa,
+                      c(((n = i.santri) == null ? void 0 : n.lembaga) || '-') +
+                        ' · Kelas ' +
+                        c(((y = i.santri) == null ? void 0 : y.kelas) || '-'),
+                      1
+                    ),
+                    e(
+                      'span',
+                      la,
+                      c(
+                        (x = i.santri) != null && x.is_mukim
+                          ? "Ma'had"
+                          : (g = i.santri) != null && g.is_fullday
+                            ? 'Fullday'
+                            : 'Pulang Pergi'
+                      ),
+                      1
+                    )
+                  ])
+                ])
+              ]),
+              e('div', oa, [
+                e('div', ra, [
+                  a[5] ||
+                    (a[5] = e(
+                      'h3',
+                      { class: 'text-xs font-black uppercase text-slate-700 mb-3 border-b pb-2' },
+                      [e('i', { class: 'fas fa-id-card mr-1' }), _('Identitas')],
+                      -1
+                    )),
+                  e('ul', na, [
+                    e('li', ia, [
+                      a[1] || (a[1] = e('span', { class: 'text-slate-600 font-bold' }, 'NIS:', -1)),
+                      e('span', da, c(((A = i.santri) == null ? void 0 : A.nis) || '-'), 1)
+                    ]),
+                    e('li', ua, [
+                      a[2] ||
+                        (a[2] = e(
+                          'span',
+                          { class: 'text-slate-600 font-bold' },
+                          'Jenis Kelamin:',
+                          -1
+                        )),
+                      e(
+                        'span',
+                        ca,
+                        c(
+                          ((s = i.santri) == null ? void 0 : s.jk) === 'L'
+                            ? 'Laki-laki'
+                            : 'Perempuan'
+                        ),
+                        1
+                      )
+                    ]),
+                    e('li', ba, [
+                      a[3] ||
+                        (a[3] = e('span', { class: 'text-slate-600 font-bold' }, 'Tgl Lahir:', -1)),
+                      e('span', ga, c(((l = i.santri) == null ? void 0 : l.tgl_lahir) || '-'), 1)
+                    ]),
+                    e('li', xa, [
+                      a[4] ||
+                        (a[4] = e('span', { class: 'text-slate-600 font-bold' }, 'Tgl Masuk:', -1)),
+                      e('span', ma, c(((b = i.santri) == null ? void 0 : b.tgl_masuk) || '-'), 1)
+                    ])
+                  ])
+                ]),
+                e('div', pa, [
+                  a[11] ||
+                    (a[11] = e(
+                      'h3',
+                      {
+                        class:
+                          'text-xs font-black uppercase text-blue-700 mb-3 border-b border-blue-200 pb-2'
+                      },
+                      [e('i', { class: 'fas fa-school mr-1' }), _('Pendidikan')],
+                      -1
+                    )),
+                  e('ul', fa, [
+                    e('li', ka, [
+                      a[6] ||
+                        (a[6] = e('span', { class: 'text-blue-700 font-bold' }, 'Lembaga:', -1)),
+                      e('span', va, c(((w = i.santri) == null ? void 0 : w.lembaga) || '-'), 1)
+                    ]),
+                    e('li', ha, [
+                      a[7] ||
+                        (a[7] = e('span', { class: 'text-blue-700 font-bold' }, 'Kelas:', -1)),
+                      e('span', ya, c(((S = i.santri) == null ? void 0 : S.kelas) || '-'), 1)
+                    ]),
+                    (j = i.santri) != null && j.juz
+                      ? (d(),
+                        u('li', wa, [
+                          a[8] ||
+                            (a[8] = e('span', { class: 'text-blue-700 font-bold' }, 'Juz:', -1)),
+                          e('span', _a, c(i.santri.juz), 1)
+                        ]))
+                      : D('', !0),
+                    e('li', $a, [
+                      a[9] ||
+                        (a[9] = e(
+                          'span',
+                          { class: 'text-blue-700 font-bold' },
+                          'Lembaga Sekolah:',
+                          -1
+                        )),
+                      e(
+                        'span',
+                        Sa,
+                        c(((B = i.santri) == null ? void 0 : B.lembaga_sekolah) || '-'),
+                        1
+                      )
+                    ]),
+                    e('li', ja, [
+                      a[10] ||
+                        (a[10] = e(
+                          'span',
+                          { class: 'text-blue-700 font-bold' },
+                          'Kelas Sekolah:',
+                          -1
+                        )),
+                      e(
+                        'span',
+                        Pa,
+                        c(((T = i.santri) == null ? void 0 : T.kelas_sekolah) || '-'),
+                        1
+                      )
+                    ])
+                  ])
+                ]),
+                e('div', Aa, [
+                  a[14] ||
+                    (a[14] = e(
+                      'h3',
+                      {
+                        class:
+                          'text-xs font-black uppercase text-emerald-700 mb-3 border-b border-emerald-200 pb-2'
+                      },
+                      [e('i', { class: 'fas fa-users mr-1' }), _('Wali')],
+                      -1
+                    )),
+                  e('ul', Ba, [
+                    e('li', Ga, [
+                      a[12] ||
+                        (a[12] = e(
+                          'span',
+                          { class: 'text-emerald-700 font-bold' },
+                          'Nama Wali:',
+                          -1
+                        )),
+                      e('span', Ua, c(((p = i.santri) == null ? void 0 : p.wali) || '-'), 1)
+                    ]),
+                    e('li', Na, [
+                      a[13] ||
+                        (a[13] = e(
+                          'span',
+                          { class: 'text-emerald-700 font-bold' },
+                          'No WhatsApp:',
+                          -1
+                        )),
+                      e('span', Ta, c(((C = i.santri) == null ? void 0 : C.wa) || '-'), 1)
+                    ])
+                  ])
+                ])
+              ])
+            ]),
+            K(
+              E,
+              {
+                role: 'santri',
+                'entity-id': (I = i.santri) == null ? void 0 : I.id,
+                entity: i.santri
+              },
+              null,
+              8,
+              ['entity-id', 'entity']
+            )
+          ])
+        )
+      }
+    }
+  },
+  Ia = { class: 'p-4 md:p-6 max-w-6xl mx-auto' },
+  La = { key: 0, class: 'flex items-center justify-center py-20' },
+  Ma = {
+    key: 1,
+    class: 'bg-rose-50 border-2 border-dashed border-rose-300 p-6 rounded-2xl text-center'
+  },
+  Da = { class: 'text-xs text-rose-600' },
+  Fa = {
+    key: 5,
+    class: 'bg-slate-50 border-2 border-dashed border-slate-300 p-6 rounded-2xl text-center'
+  },
+  Va = { class: 'text-xs text-slate-500 mt-1' },
+  za = {
+    __name: 'ProfilView',
+    setup(i) {
+      const k = H(),
+        a = P(() => k.sesiAktif),
+        f = P(() => {
+          var s
+          return ((s = a.value) == null ? void 0 : s.role) || null
+        }),
+        $ = P(() => {
+          var s, l
+          return (
+            ((s = a.value) == null ? void 0 : s.id) === 'admin' ||
+            ((l = a.value) == null ? void 0 : l.auth_method) === 'admin-builtin'
+          )
+        }),
+        n = h(null),
+        y = h(null),
+        x = h(!0),
+        g = h(null)
+      async function A() {
+        ;((x.value = !0), (g.value = null), (n.value = null), (y.value = null))
+        try {
+          const s = a.value
+          if (!(s != null && s.id)) {
+            g.value = 'Sesi tidak valid'
+            return
+          }
+          if ($.value) return
+          if (
+            s.role === 'guru' ||
+            s.guru ||
+            s.jabatan ||
+            s.role_sistem === 'super_admin' ||
+            s.role_sistem === 'admin' ||
+            s.role_sistem === 'admin_keuangan'
+          ) {
+            const b = await Q('guru', String(s.id))
+            b ? (n.value = b) : (g.value = `Data guru ID ${s.id} tidak ditemukan`)
+            return
+          }
+          if (s.role === 'santri') {
+            const b = await Q('santri', String(s.id))
+            b ? (y.value = b) : (g.value = `Data santri ID ${s.id} tidak ditemukan`)
+            return
+          }
+          g.value = `Role "${s.role}" belum didukung di halaman profil`
+        } catch (s) {
+          ;((g.value = s.message || String(s)), console.error('[ProfilView] load error:', s))
+        } finally {
+          x.value = !1
+        }
+      }
+      return (
+        he(A),
+        ye(
+          () => {
+            var s
+            return (s = a.value) == null ? void 0 : s.id
+          },
+          (s, l) => {
+            s && s !== l && A()
+          }
+        ),
+        (s, l) => {
+          var b
+          return (
+            d(),
+            u('div', Ia, [
+              x.value
+                ? (d(),
+                  u('div', La, [
+                    ...(l[0] ||
+                      (l[0] = [
+                        e(
+                          'div',
+                          { class: 'text-center' },
+                          [
+                            e('i', { class: 'fas fa-spinner fa-spin text-4xl text-teal-500 mb-3' }),
+                            e(
+                              'p',
+                              { class: 'text-sm text-slate-500 font-bold' },
+                              'Memuat profil...'
+                            )
+                          ],
+                          -1
+                        )
+                      ]))
+                  ]))
+                : g.value
+                  ? (d(),
+                    u('div', Ma, [
+                      l[2] ||
+                        (l[2] = e(
+                          'i',
+                          { class: 'fas fa-exclamation-triangle text-rose-500 text-3xl mb-2' },
+                          null,
+                          -1
+                        )),
+                      l[3] ||
+                        (l[3] = e(
+                          'p',
+                          { class: 'text-sm font-bold text-rose-800 mb-2' },
+                          'Gagal memuat profil',
+                          -1
+                        )),
+                      e('p', Da, c(g.value), 1),
+                      e(
+                        'button',
+                        {
+                          onClick: A,
+                          class:
+                            'mt-3 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-lg cursor-pointer'
+                        },
+                        [
+                          ...(l[1] ||
+                            (l[1] = [
+                              e('i', { class: 'fas fa-redo mr-1' }, null, -1),
+                              _('Coba Lagi ', -1)
+                            ]))
+                        ]
+                      )
+                    ]))
+                  : $.value && !n.value && !y.value
+                    ? (d(), V(lt, { key: 2 }))
+                    : n.value
+                      ? (d(), V(zt, { key: 3, guru: n.value }, null, 8, ['guru']))
+                      : f.value === 'santri' && y.value
+                        ? (d(), V(Ca, { key: 4, santri: y.value }, null, 8, ['santri']))
+                        : (d(),
+                          u('div', Fa, [
+                            l[4] ||
+                              (l[4] = e(
+                                'i',
+                                { class: 'fas fa-user-slash text-slate-400 text-3xl mb-2' },
+                                null,
+                                -1
+                              )),
+                            l[5] ||
+                              (l[5] = e(
+                                'p',
+                                { class: 'text-sm font-bold text-slate-700' },
+                                'Data profil tidak ditemukan',
+                                -1
+                              )),
+                            e(
+                              'p',
+                              Va,
+                              ' Akun ini (' +
+                                c(((b = a.value) == null ? void 0 : b.role) || '?') +
+                                ') belum terkonfigurasi penuh. Hubungi admin pondok. ',
+                              1
+                            )
+                          ]))
+            ])
+          )
+        }
+      )
+    }
+  }
+export { za as default }

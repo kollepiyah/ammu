@@ -53,7 +53,10 @@
     <script>
       ;(function () {
         try {
-          var isCapacitor = window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform()
+          var isCapacitor =
+            window.Capacitor &&
+            typeof window.Capacitor.isNativePlatform === 'function' &&
+            window.Capacitor.isNativePlatform()
           if (isCapacitor) {
             document.documentElement.classList.add('capacitor-native-early')
           }
@@ -107,7 +110,7 @@
         const SPLASH_TS_KEY = 'ammu_splash_ts'
         const lastSplash = Number(sessionStorage.getItem(SPLASH_TS_KEY)) || 0
         const now = Date.now()
-        const recentlyShown = lastSplash && (now - lastSplash) < 2000 // 2 detik throttle
+        const recentlyShown = lastSplash && now - lastSplash < 2000 // 2 detik throttle
         if (recentlyShown) {
           // SKIP splash — internal navigation <2s, remove immediately
           document.addEventListener('DOMContentLoaded', function () {
@@ -256,12 +259,12 @@
         gap: 8px;
         font-weight: 800;
         font-size: 15px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
       }
       .mu-form-page-header button.back {
-        background: rgba(255,255,255,0.2);
+        background: rgba(255, 255, 255, 0.2);
         color: white;
-        border: 1px solid rgba(255,255,255,0.3);
+        border: 1px solid rgba(255, 255, 255, 0.3);
         padding: 6px 14px;
         border-radius: 8px;
         font-size: 12px;
@@ -269,7 +272,7 @@
         cursor: pointer;
       }
       .mu-form-page-header button.back:hover {
-        background: rgba(255,255,255,0.3);
+        background: rgba(255, 255, 255, 0.3);
       }
 
       /* v.36.0526: Form Master Data grid — fix tinggi row tidak overflow.
@@ -301,16 +304,24 @@
         margin-top: 2px !important;
       }
       /* v.09.0526: Profil section filter — only show active section in modal */
-      #modal-edit-profil[data-active-section] .profil-section { display: none !important; }
+      #modal-edit-profil[data-active-section] .profil-section {
+        display: none !important;
+      }
       #modal-edit-profil[data-active-section='foto'] .profil-section[data-section='foto'],
       #modal-edit-profil[data-active-section='ttd'] .profil-section[data-section='ttd'],
       #modal-edit-profil[data-active-section='wa'] .profil-section[data-section='wa'],
-      #modal-edit-profil[data-active-section='username'] .profil-section[data-section='username-admin'],
-      #modal-edit-profil[data-active-section='username'] .profil-section[data-section='username-guru'],
-      #modal-edit-profil[data-active-section='username'] .profil-section[data-section='username-santri'],
-      #modal-edit-profil[data-active-section='username-admin'] .profil-section[data-section='username-admin'],
-      #modal-edit-profil[data-active-section='username-guru'] .profil-section[data-section='username-guru'],
-      #modal-edit-profil[data-active-section='username-santri'] .profil-section[data-section='username-santri'],
+      #modal-edit-profil[data-active-section='username']
+        .profil-section[data-section='username-admin'],
+      #modal-edit-profil[data-active-section='username']
+        .profil-section[data-section='username-guru'],
+      #modal-edit-profil[data-active-section='username']
+        .profil-section[data-section='username-santri'],
+      #modal-edit-profil[data-active-section='username-admin']
+        .profil-section[data-section='username-admin'],
+      #modal-edit-profil[data-active-section='username-guru']
+        .profil-section[data-section='username-guru'],
+      #modal-edit-profil[data-active-section='username-santri']
+        .profil-section[data-section='username-santri'],
       #modal-edit-profil[data-active-section='sandi'] .profil-section[data-section='sandi'],
       #modal-edit-profil[data-active-section='wa_wali'] .profil-section[data-section='wa_wali'],
       #modal-edit-profil[data-active-section='google'] .profil-section[data-section='google'],
@@ -354,7 +365,7 @@
       body {
         font-family: 'Plus Jakarta Sans', sans-serif;
         /* v.31.0526: cream warm bg per request kyai (ganti dari #f8fafc slate-50) */
-        background-color: #F9F6EE;
+        background-color: #f9f6ee;
         overflow: hidden;
         -webkit-text-size-adjust: 100%;
       }
@@ -362,7 +373,7 @@
       #main-content-area,
       #app-view > main,
       #app-view .flex-1.flex.flex-col {
-        background-color: #F9F6EE !important;
+        background-color: #f9f6ee !important;
       }
       input,
       textarea,
@@ -745,8 +756,8 @@
         }
         /* Toast Vue widget (KalenderPendidikan etc) — same stack, naikkan z-index biar tidak ke-cover */
         .mu-toast-container,
-        [class*="ammu-toast"],
-        [class*="kalender-toast"] {
+        [class*='ammu-toast'],
+        [class*='kalender-toast'] {
           z-index: 100000 !important;
           max-width: calc(100vw - 16px) !important;
         }
@@ -2232,11 +2243,11 @@
       /* v.108.60: TIDAK !important — user color (inline) menang */
       /* v.109.43: WHITE → AZURE (#F0FFFF) di light mode (root override, scope ke .bg-white utility) */
       body:not(.dark-mode) .bg-white {
-        background-color: #F0FFFF !important;
+        background-color: #f0ffff !important;
       }
       /* Plus sidebar light mode pakai Azure juga (instead of pure white) */
       html body:not(.dark-mode) aside#sidebar {
-        background-color: #F0FFFF !important;
+        background-color: #f0ffff !important;
       }
 
       /* v.109.41: SIDEBAR LIGHT MODE — ultra specific + cover semua child element */
@@ -6047,7 +6058,9 @@
             <!-- TAB 3: MASTER GURU -->
             <div id="tab-guru" class="master-tab-content hidden space-y-6">
               <!-- v.25.0526: Form section guru — di-hide saat list mode -->
-              <div class="mu-form-section bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+              <div
+                class="mu-form-section bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200"
+              >
                 <div
                   class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 border-b border-slate-100 pb-4 gap-3"
                 >
@@ -6300,7 +6313,9 @@
                 </form>
               </div>
               <!-- v.25.0526: List section guru terpisah dari form -->
-              <div class="mu-list-section bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+              <div
+                class="mu-list-section bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200"
+              >
                 <!-- Tombol Tambah Baru -->
                 <div class="mb-4">
                   <button
@@ -6400,7 +6415,9 @@
             <!-- TAB 4: MASTER SANTRI -->
             <div id="tab-santri" class="master-tab-content hidden space-y-6">
               <!-- v.25.0526: Form section (wrapped) — di-hide saat list mode, di-show saat edit mode -->
-              <div class="mu-form-section bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+              <div
+                class="mu-form-section bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200"
+              >
                 <div
                   class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 border-b border-slate-100 pb-4 gap-3"
                 >
@@ -6809,9 +6826,13 @@
                 </form>
               </div>
               <!-- v.25.0526: List section terpisah dari form section -->
-              <div class="mu-list-section bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+              <div
+                class="mu-list-section bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200"
+              >
                 <!-- Toolbar list: tombol Tambah Baru + Search -->
-                <div class="flex flex-col md:flex-row gap-3 mb-5 justify-between items-stretch md:items-center">
+                <div
+                  class="flex flex-col md:flex-row gap-3 mb-5 justify-between items-stretch md:items-center"
+                >
                   <button
                     type="button"
                     onclick="enterEditMode('form-santri', 'Tambah Santri Baru')"
@@ -6924,220 +6945,221 @@
             </div>
             <!-- v.27.0526: Wrap section Pengaturan Rapor dengan tab wrapper supaya tidak tampil di semua tab -->
             <div id="tab-rapor" class="master-tab-content hidden space-y-6">
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-              <h3
-                class="font-black text-emerald-800 mb-4 uppercase tracking-wider text-sm bg-emerald-50 inline-block px-3 py-1.5 rounded-lg border border-emerald-100"
-              >
-                <i class="fas fa-graduation-cap mr-1 text-emerald-600"></i>Pengaturan Rapor Semester
-              </h3>
-
-              <!-- Info Kop Rapor (struktur baru: kop pindah ke per-lembaga + logo qiraati di Pengaturan Web) -->
-              <div class="bg-emerald-50 rounded-xl p-4 border border-emerald-200 mb-4">
-                <h5 class="text-xs font-black text-slate-700 uppercase mb-2">
-                  <i class="fas fa-heading mr-1"></i>Pengaturan Kop Rapor
-                </h5>
-                <p class="text-[11px] text-slate-700 leading-relaxed mb-2">
-                  Sistem kop rapor sekarang otomatis pakai logika ini:
-                </p>
-                <ul class="text-[11px] text-slate-700 leading-relaxed list-disc ml-5 space-y-1">
-                  <li>
-                    <strong>Rapor Qiraati</strong>(TPQ/Pra PTPT/PTPT/P3H): kiri =
-                    <em>Logo Qiraati</em>, tengah = <em>Kop Utama Aplikasi</em>, kanan =
-                    <em>Logo Sekolah Santri</em>
-                  </li>
-                  <li>
-                    <strong>Rapor Diniyah</strong>: kiri = <em>Logo Aplikasi</em>, tengah =
-                    <em>Kop Sekolah Santri</em>, kanan =
-                    <em>Logo Sekolah Santri</em>
-                  </li>
-                </ul>
-                <p class="text-[11px] text-slate-700 mt-3">
-                  <strong>Setup:</strong>
-                </p>
-                <ul class="text-[11px] text-slate-700 list-disc ml-5 space-y-0.5">
-                  <li>
-                    Logo Qiraati &amp; Kop Utama Aplikasi: di
-                    <strong>Pengaturan Web</strong>(sidebar)
-                  </li>
-                  <li>
-                    Kop &amp; Logo Sekolah: di tab
-                    <strong>Lembaga/Devisi</strong>(pilih tipe = Formal, isi 4 baris kop + upload
-                    logo)
-                  </li>
-                </ul>
-              </div>
-
-              <!-- Predikat Rules -->
-              <div class="bg-blue-50 rounded-xl p-4 border border-blue-200 mb-4">
-                <h5 class="text-xs font-black text-slate-700 uppercase mb-3">
-                  <i class="fas fa-star mr-1"></i>Aturan Predikat
-                </h5>
-                <div id="rapor-predikat-list" class="space-y-2"></div>
-                <button
-                  type="button"
-                  onclick="tambahPredikatRule()"
-                  class="text-xs text-blue-600 hover:text-blue-800 font-bold cursor-pointer mt-2"
+              <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                <h3
+                  class="font-black text-emerald-800 mb-4 uppercase tracking-wider text-sm bg-emerald-50 inline-block px-3 py-1.5 rounded-lg border border-emerald-100"
                 >
-                  <i class="fas fa-plus mr-1"></i>Tambah Aturan
+                  <i class="fas fa-graduation-cap mr-1 text-emerald-600"></i>Pengaturan Rapor
+                  Semester
+                </h3>
+
+                <!-- Info Kop Rapor (struktur baru: kop pindah ke per-lembaga + logo qiraati di Pengaturan Web) -->
+                <div class="bg-emerald-50 rounded-xl p-4 border border-emerald-200 mb-4">
+                  <h5 class="text-xs font-black text-slate-700 uppercase mb-2">
+                    <i class="fas fa-heading mr-1"></i>Pengaturan Kop Rapor
+                  </h5>
+                  <p class="text-[11px] text-slate-700 leading-relaxed mb-2">
+                    Sistem kop rapor sekarang otomatis pakai logika ini:
+                  </p>
+                  <ul class="text-[11px] text-slate-700 leading-relaxed list-disc ml-5 space-y-1">
+                    <li>
+                      <strong>Rapor Qiraati</strong>(TPQ/Pra PTPT/PTPT/P3H): kiri =
+                      <em>Logo Qiraati</em>, tengah = <em>Kop Utama Aplikasi</em>, kanan =
+                      <em>Logo Sekolah Santri</em>
+                    </li>
+                    <li>
+                      <strong>Rapor Diniyah</strong>: kiri = <em>Logo Aplikasi</em>, tengah =
+                      <em>Kop Sekolah Santri</em>, kanan =
+                      <em>Logo Sekolah Santri</em>
+                    </li>
+                  </ul>
+                  <p class="text-[11px] text-slate-700 mt-3">
+                    <strong>Setup:</strong>
+                  </p>
+                  <ul class="text-[11px] text-slate-700 list-disc ml-5 space-y-0.5">
+                    <li>
+                      Logo Qiraati &amp; Kop Utama Aplikasi: di
+                      <strong>Pengaturan Web</strong>(sidebar)
+                    </li>
+                    <li>
+                      Kop &amp; Logo Sekolah: di tab
+                      <strong>Lembaga/Devisi</strong>(pilih tipe = Formal, isi 4 baris kop + upload
+                      logo)
+                    </li>
+                  </ul>
+                </div>
+
+                <!-- Predikat Rules -->
+                <div class="bg-blue-50 rounded-xl p-4 border border-blue-200 mb-4">
+                  <h5 class="text-xs font-black text-slate-700 uppercase mb-3">
+                    <i class="fas fa-star mr-1"></i>Aturan Predikat
+                  </h5>
+                  <div id="rapor-predikat-list" class="space-y-2"></div>
+                  <button
+                    type="button"
+                    onclick="tambahPredikatRule()"
+                    class="text-xs text-blue-600 hover:text-blue-800 font-bold cursor-pointer mt-2"
+                  >
+                    <i class="fas fa-plus mr-1"></i>Tambah Aturan
+                  </button>
+                </div>
+
+                <!-- Editor Schema per Lembaga -->
+                <div class="bg-purple-50 rounded-xl p-4 border border-purple-200 mb-4">
+                  <h5 class="text-xs font-black text-slate-700 uppercase mb-3">
+                    <i class="fas fa-list-alt mr-1"></i>Struktur Field Rapor (Per Lembaga)
+                  </h5>
+                  <div class="flex gap-2 mb-3 flex-wrap">
+                    <button
+                      type="button"
+                      onclick="bukaEditorSchema(&#39;TPQ&#39;)"
+                      class="bg-white hover:bg-emerald-50 border border-emerald-300 text-emerald-700 font-bold px-3 py-1.5 rounded-lg text-xs cursor-pointer"
+                    >
+                      Edit TPQ
+                    </button>
+                    <button
+                      type="button"
+                      onclick="bukaEditorSchema(&#39;Pra PTPT&#39;)"
+                      class="bg-white hover:bg-blue-50 border border-blue-300 text-blue-700 font-bold px-3 py-1.5 rounded-lg text-xs cursor-pointer"
+                    >
+                      Edit Pra PTPT
+                    </button>
+                    <button
+                      type="button"
+                      onclick="bukaEditorSchema(&#39;PTPT&#39;)"
+                      class="bg-white hover:bg-purple-50 border border-purple-300 text-purple-700 font-bold px-3 py-1.5 rounded-lg text-xs cursor-pointer"
+                    >
+                      Edit PTPT
+                    </button>
+                    <button
+                      type="button"
+                      onclick="bukaEditorSchema(&#39;P3H&#39;)"
+                      class="bg-white hover:bg-amber-50 border border-amber-300 text-amber-700 font-bold px-3 py-1.5 rounded-lg text-xs cursor-pointer"
+                    >
+                      Edit P3H
+                    </button>
+                  </div>
+                </div>
+                <!-- v.106.0526: ACF Lite — Field Tambahan per Entity -->
+                <div class="bg-fuchsia-50 rounded-xl p-4 border border-fuchsia-200 mb-4">
+                  <h5 class="text-xs font-black text-slate-700 uppercase mb-3">
+                    <i class="fas fa-puzzle-piece mr-1 text-fuchsia-600"></i>Field Tambahan (ACF —
+                    Tanpa Koding)
+                  </h5>
+                  <p class="text-[11px] text-slate-600 mb-3">
+                    Tambah field custom yang akan muncul di form edit entity. Mis: untuk Santri
+                    tambah "Nomor Akta Kelahiran", "Hobi", "Catatan Khusus".
+                  </p>
+                  <div class="flex gap-2 flex-wrap">
+                    <button
+                      type="button"
+                      onclick="bukaEditorAcfFields(&#39;santri&#39;)"
+                      class="bg-white hover:bg-fuchsia-100 border border-fuchsia-300 text-fuchsia-700 font-bold px-3 py-1.5 rounded-lg text-xs cursor-pointer"
+                    >
+                      <i class="fas fa-user-graduate mr-1"></i>Kelola Field Santri
+                    </button>
+                    <button
+                      type="button"
+                      onclick="bukaEditorAcfFields(&#39;guru&#39;)"
+                      class="bg-white hover:bg-fuchsia-100 border border-fuchsia-300 text-fuchsia-700 font-bold px-3 py-1.5 rounded-lg text-xs cursor-pointer"
+                    >
+                      <i class="fas fa-user-tie mr-1"></i>Kelola Field Guru
+                    </button>
+                    <button
+                      type="button"
+                      onclick="bukaEditorAcfFields(&#39;lembaga&#39;)"
+                      class="bg-white hover:bg-fuchsia-100 border border-fuchsia-300 text-fuchsia-700 font-bold px-3 py-1.5 rounded-lg text-xs cursor-pointer"
+                    >
+                      <i class="fas fa-school mr-1"></i>Kelola Field Lembaga
+                    </button>
+                    <button
+                      type="button"
+                      onclick="bukaEditorAcfFields(&#39;kartuKenaikan&#39;)"
+                      class="bg-white hover:bg-fuchsia-100 border border-fuchsia-300 text-fuchsia-700 font-bold px-3 py-1.5 rounded-lg text-xs cursor-pointer"
+                    >
+                      <i class="fas fa-id-card mr-1"></i>Kelola Field Kartu Kenaikan
+                    </button>
+                  </div>
+                </div>
+
+                <!-- BG Rapor Upload (TPQ + Diniyah + Opacity) -->
+                <div class="bg-amber-50 rounded-xl p-4 border border-amber-200 mb-4">
+                  <h5 class="text-xs font-black text-slate-700 uppercase mb-3">
+                    <i class="fas fa-image mr-1 text-amber-600"></i>Background Rapor (Watermark
+                    Transparan)
+                  </h5>
+                  <p class="text-[11px] text-slate-600 mb-1">
+                    PNG transparent direkomendasikan, max 4 MB. Akan tampil di belakang konten rapor
+                    saat dicetak.
+                  </p>
+                  <p class="text-[10px] text-emerald-700 mb-3">
+                    <i class="fas fa-cloud-upload-alt mr-1"></i>Upload otomatis ke Firebase Storage
+                    (tidak makan kuota Firestore).
+                  </p>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                      <label class="text-xs font-bold text-slate-600 mb-1 block"
+                        >BG Rapor TPQ / PTPT / P3H</label
+                      >
+                      <input
+                        type="file"
+                        id="bg-rapor-tpq-file"
+                        accept="image/png,image/jpeg"
+                        onchange="uploadBgRapor(event, &#39;tpq&#39;);"
+                        class="block w-full text-xs"
+                      />
+                      <input type="hidden" id="set-bg-rapor-tpq" />
+                      <img
+                        id="prev-bg-rapor-tpq"
+                        class="h-20 w-auto rounded object-contain hidden mt-2 border border-slate-200 bg-white"
+                      />
+                      <button
+                        type="button"
+                        onclick="hapusBgRapor(&#39;tpq&#39;)"
+                        id="btn-hapus-bg-tpq"
+                        class="hidden text-[10px] text-red-600 hover:text-red-800 mt-1 cursor-pointer"
+                      >
+                        <i class="fas fa-trash mr-1"></i>Hapus
+                      </button>
+                    </div>
+                    <div>
+                      <label class="text-xs font-bold text-slate-600 mb-1 block"
+                        >BG Rapor Diniyah</label
+                      >
+                      <input
+                        type="file"
+                        id="bg-rapor-diniyah-file"
+                        accept="image/png,image/jpeg"
+                        onchange="uploadBgRapor(event, &#39;diniyah&#39;);"
+                        class="block w-full text-xs"
+                      />
+                      <input type="hidden" id="set-bg-rapor-diniyah" />
+                      <img
+                        id="prev-bg-rapor-diniyah"
+                        class="h-20 w-auto rounded object-contain hidden mt-2 border border-slate-200 bg-white"
+                      />
+                      <button
+                        type="button"
+                        onclick="hapusBgRapor(&#39;diniyah&#39;)"
+                        id="btn-hapus-bg-diniyah"
+                        class="hidden text-[10px] text-red-600 hover:text-red-800 mt-1 cursor-pointer"
+                      >
+                        <i class="fas fa-trash mr-1"></i>Hapus
+                      </button>
+                    </div>
+                  </div>
+                  <p class="text-[10px] text-slate-500 mt-3">
+                    Opacity BG di-set permanen 10% (paling optimal supaya teks rapor jelas terbaca).
+                  </p>
+                </div>
+
+                <button
+                  onclick="simpanPengaturanRaporMaster()"
+                  class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black py-3 rounded-xl shadow-md cursor-pointer mt-4"
+                >
+                  <i class="fas fa-save mr-2"></i>SIMPAN PENGATURAN RAPOR
                 </button>
               </div>
-
-              <!-- Editor Schema per Lembaga -->
-              <div class="bg-purple-50 rounded-xl p-4 border border-purple-200 mb-4">
-                <h5 class="text-xs font-black text-slate-700 uppercase mb-3">
-                  <i class="fas fa-list-alt mr-1"></i>Struktur Field Rapor (Per Lembaga)
-                </h5>
-                <div class="flex gap-2 mb-3 flex-wrap">
-                  <button
-                    type="button"
-                    onclick="bukaEditorSchema(&#39;TPQ&#39;)"
-                    class="bg-white hover:bg-emerald-50 border border-emerald-300 text-emerald-700 font-bold px-3 py-1.5 rounded-lg text-xs cursor-pointer"
-                  >
-                    Edit TPQ
-                  </button>
-                  <button
-                    type="button"
-                    onclick="bukaEditorSchema(&#39;Pra PTPT&#39;)"
-                    class="bg-white hover:bg-blue-50 border border-blue-300 text-blue-700 font-bold px-3 py-1.5 rounded-lg text-xs cursor-pointer"
-                  >
-                    Edit Pra PTPT
-                  </button>
-                  <button
-                    type="button"
-                    onclick="bukaEditorSchema(&#39;PTPT&#39;)"
-                    class="bg-white hover:bg-purple-50 border border-purple-300 text-purple-700 font-bold px-3 py-1.5 rounded-lg text-xs cursor-pointer"
-                  >
-                    Edit PTPT
-                  </button>
-                  <button
-                    type="button"
-                    onclick="bukaEditorSchema(&#39;P3H&#39;)"
-                    class="bg-white hover:bg-amber-50 border border-amber-300 text-amber-700 font-bold px-3 py-1.5 rounded-lg text-xs cursor-pointer"
-                  >
-                    Edit P3H
-                  </button>
-                </div>
-              </div>
-              <!-- v.106.0526: ACF Lite — Field Tambahan per Entity -->
-              <div class="bg-fuchsia-50 rounded-xl p-4 border border-fuchsia-200 mb-4">
-                <h5 class="text-xs font-black text-slate-700 uppercase mb-3">
-                  <i class="fas fa-puzzle-piece mr-1 text-fuchsia-600"></i>Field Tambahan (ACF —
-                  Tanpa Koding)
-                </h5>
-                <p class="text-[11px] text-slate-600 mb-3">
-                  Tambah field custom yang akan muncul di form edit entity. Mis: untuk Santri tambah
-                  "Nomor Akta Kelahiran", "Hobi", "Catatan Khusus".
-                </p>
-                <div class="flex gap-2 flex-wrap">
-                  <button
-                    type="button"
-                    onclick="bukaEditorAcfFields(&#39;santri&#39;)"
-                    class="bg-white hover:bg-fuchsia-100 border border-fuchsia-300 text-fuchsia-700 font-bold px-3 py-1.5 rounded-lg text-xs cursor-pointer"
-                  >
-                    <i class="fas fa-user-graduate mr-1"></i>Kelola Field Santri
-                  </button>
-                  <button
-                    type="button"
-                    onclick="bukaEditorAcfFields(&#39;guru&#39;)"
-                    class="bg-white hover:bg-fuchsia-100 border border-fuchsia-300 text-fuchsia-700 font-bold px-3 py-1.5 rounded-lg text-xs cursor-pointer"
-                  >
-                    <i class="fas fa-user-tie mr-1"></i>Kelola Field Guru
-                  </button>
-                  <button
-                    type="button"
-                    onclick="bukaEditorAcfFields(&#39;lembaga&#39;)"
-                    class="bg-white hover:bg-fuchsia-100 border border-fuchsia-300 text-fuchsia-700 font-bold px-3 py-1.5 rounded-lg text-xs cursor-pointer"
-                  >
-                    <i class="fas fa-school mr-1"></i>Kelola Field Lembaga
-                  </button>
-                  <button
-                    type="button"
-                    onclick="bukaEditorAcfFields(&#39;kartuKenaikan&#39;)"
-                    class="bg-white hover:bg-fuchsia-100 border border-fuchsia-300 text-fuchsia-700 font-bold px-3 py-1.5 rounded-lg text-xs cursor-pointer"
-                  >
-                    <i class="fas fa-id-card mr-1"></i>Kelola Field Kartu Kenaikan
-                  </button>
-                </div>
-              </div>
-
-              <!-- BG Rapor Upload (TPQ + Diniyah + Opacity) -->
-              <div class="bg-amber-50 rounded-xl p-4 border border-amber-200 mb-4">
-                <h5 class="text-xs font-black text-slate-700 uppercase mb-3">
-                  <i class="fas fa-image mr-1 text-amber-600"></i>Background Rapor (Watermark
-                  Transparan)
-                </h5>
-                <p class="text-[11px] text-slate-600 mb-1">
-                  PNG transparent direkomendasikan, max 4 MB. Akan tampil di belakang konten rapor
-                  saat dicetak.
-                </p>
-                <p class="text-[10px] text-emerald-700 mb-3">
-                  <i class="fas fa-cloud-upload-alt mr-1"></i>Upload otomatis ke Firebase Storage
-                  (tidak makan kuota Firestore).
-                </p>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div>
-                    <label class="text-xs font-bold text-slate-600 mb-1 block"
-                      >BG Rapor TPQ / PTPT / P3H</label
-                    >
-                    <input
-                      type="file"
-                      id="bg-rapor-tpq-file"
-                      accept="image/png,image/jpeg"
-                      onchange="uploadBgRapor(event, &#39;tpq&#39;);"
-                      class="block w-full text-xs"
-                    />
-                    <input type="hidden" id="set-bg-rapor-tpq" />
-                    <img
-                      id="prev-bg-rapor-tpq"
-                      class="h-20 w-auto rounded object-contain hidden mt-2 border border-slate-200 bg-white"
-                    />
-                    <button
-                      type="button"
-                      onclick="hapusBgRapor(&#39;tpq&#39;)"
-                      id="btn-hapus-bg-tpq"
-                      class="hidden text-[10px] text-red-600 hover:text-red-800 mt-1 cursor-pointer"
-                    >
-                      <i class="fas fa-trash mr-1"></i>Hapus
-                    </button>
-                  </div>
-                  <div>
-                    <label class="text-xs font-bold text-slate-600 mb-1 block"
-                      >BG Rapor Diniyah</label
-                    >
-                    <input
-                      type="file"
-                      id="bg-rapor-diniyah-file"
-                      accept="image/png,image/jpeg"
-                      onchange="uploadBgRapor(event, &#39;diniyah&#39;);"
-                      class="block w-full text-xs"
-                    />
-                    <input type="hidden" id="set-bg-rapor-diniyah" />
-                    <img
-                      id="prev-bg-rapor-diniyah"
-                      class="h-20 w-auto rounded object-contain hidden mt-2 border border-slate-200 bg-white"
-                    />
-                    <button
-                      type="button"
-                      onclick="hapusBgRapor(&#39;diniyah&#39;)"
-                      id="btn-hapus-bg-diniyah"
-                      class="hidden text-[10px] text-red-600 hover:text-red-800 mt-1 cursor-pointer"
-                    >
-                      <i class="fas fa-trash mr-1"></i>Hapus
-                    </button>
-                  </div>
-                </div>
-                <p class="text-[10px] text-slate-500 mt-3">
-                  Opacity BG di-set permanen 10% (paling optimal supaya teks rapor jelas terbaca).
-                </p>
-              </div>
-
-              <button
-                onclick="simpanPengaturanRaporMaster()"
-                class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black py-3 rounded-xl shadow-md cursor-pointer mt-4"
-              >
-                <i class="fas fa-save mr-2"></i>SIMPAN PENGATURAN RAPOR
-              </button>
-            </div>
             </div>
           </div>
           <!-- /v.27.0526 close tab-rapor -->
@@ -9565,7 +9587,10 @@
               <form id="form-edit-profil" onsubmit="simpanProfil(event)">
                 <div class="space-y-4 mb-6">
                   <!-- FOTO PROFIL — BULAT BESAR DI TENGAH ATAS -->
-                  <div class="flex flex-col items-center pt-2 pb-4 border-b border-slate-100 profil-section" data-section="foto">
+                  <div
+                    class="flex flex-col items-center pt-2 pb-4 border-b border-slate-100 profil-section"
+                    data-section="foto"
+                  >
                     <div class="relative">
                       <div
                         class="w-32 h-32 bg-gradient-to-br from-slate-100 to-slate-200 border-4 border-white ring-2 ring-slate-200 rounded-full flex items-center justify-center overflow-hidden shadow-lg"
@@ -9595,7 +9620,11 @@
                     <input type="hidden" id="profil_foto_base64" />
                   </div>
                   <!-- TTD UPLOAD (v.67) — untuk rapor & dokumen resmi -->
-                  <div class="border-t border-slate-200 pt-3 mt-3 profil-section" data-section="ttd" id="div-ttd-upload">
+                  <div
+                    class="border-t border-slate-200 pt-3 mt-3 profil-section"
+                    data-section="ttd"
+                    id="div-ttd-upload"
+                  >
                     <label
                       class="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wide"
                       ><i class="fas fa-signature mr-1 text-amber-600"></i>Tanda Tangan
@@ -9654,7 +9683,11 @@
                       placeholder="08..."
                     />
                   </div>
-                  <div id="profil-div-username-guru" class="hidden profil-section" data-section="username-guru">
+                  <div
+                    id="profil-div-username-guru"
+                    class="hidden profil-section"
+                    data-section="username-guru"
+                  >
                     <label
                       class="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wide"
                       >Username Login</label
@@ -9670,7 +9703,11 @@
                     </p>
                   </div>
                   <!-- FIELD KHUSUS ADMIN UTAMA -->
-                  <div id="profil-div-username-admin" class="hidden profil-section" data-section="username-admin">
+                  <div
+                    id="profil-div-username-admin"
+                    class="hidden profil-section"
+                    data-section="username-admin"
+                  >
                     <label
                       class="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wide"
                       >Username Login</label
@@ -9684,7 +9721,11 @@
                   </div>
 
                   <!-- FIELD KHUSUS SANTRI -->
-                  <div id="profil-div-username-santri" class="hidden profil-section" data-section="username-santri">
+                  <div
+                    id="profil-div-username-santri"
+                    class="hidden profil-section"
+                    data-section="username-santri"
+                  >
                     <label
                       class="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wide"
                       >Username Login</label
@@ -9788,7 +9829,10 @@
                   </div>
 
                   <!-- SECTION: TAUTKAN AKUN GOOGLE -->
-                  <div class="border-t border-slate-100 pt-4 mt-4 profil-section" data-section="google">
+                  <div
+                    class="border-t border-slate-100 pt-4 mt-4 profil-section"
+                    data-section="google"
+                  >
                     <h4 class="text-xs font-black text-slate-700 uppercase tracking-widest mb-2">
                       <i class="fab fa-google text-red-500 mr-1"></i>Akun Google
                     </h4>
@@ -9818,7 +9862,10 @@
                   </div>
 
                   <!-- SECTION: NOTIFIKASI -->
-                  <div class="border-t border-slate-100 pt-4 mt-4 profil-section" data-section="notif">
+                  <div
+                    class="border-t border-slate-100 pt-4 mt-4 profil-section"
+                    data-section="notif"
+                  >
                     <h4 class="text-xs font-black text-slate-700 uppercase tracking-widest mb-2">
                       <i class="fas fa-bell text-amber-500 mr-1"></i>Notifikasi
                     </h4>
@@ -12375,13 +12422,41 @@
                 </p>
                 <!-- v.22.0526: Header pakai grid-cols-7 yg sama persis dengan cell grid di bawah (presisi alignment) -->
                 <div class="grid grid-cols-7 gap-1 mb-2">
-                  <div class="text-[10px] font-black text-rose-500 uppercase py-1 text-center min-w-0">Min</div>
-                  <div class="text-[10px] font-black text-slate-500 uppercase py-1 text-center min-w-0">Sen</div>
-                  <div class="text-[10px] font-black text-slate-500 uppercase py-1 text-center min-w-0">Sel</div>
-                  <div class="text-[10px] font-black text-slate-500 uppercase py-1 text-center min-w-0">Rab</div>
-                  <div class="text-[10px] font-black text-slate-500 uppercase py-1 text-center min-w-0">Kam</div>
-                  <div class="text-[10px] font-black text-slate-500 uppercase py-1 text-center min-w-0">Jum</div>
-                  <div class="text-[10px] font-black text-slate-500 uppercase py-1 text-center min-w-0">Sab</div>
+                  <div
+                    class="text-[10px] font-black text-rose-500 uppercase py-1 text-center min-w-0"
+                  >
+                    Min
+                  </div>
+                  <div
+                    class="text-[10px] font-black text-slate-500 uppercase py-1 text-center min-w-0"
+                  >
+                    Sen
+                  </div>
+                  <div
+                    class="text-[10px] font-black text-slate-500 uppercase py-1 text-center min-w-0"
+                  >
+                    Sel
+                  </div>
+                  <div
+                    class="text-[10px] font-black text-slate-500 uppercase py-1 text-center min-w-0"
+                  >
+                    Rab
+                  </div>
+                  <div
+                    class="text-[10px] font-black text-slate-500 uppercase py-1 text-center min-w-0"
+                  >
+                    Kam
+                  </div>
+                  <div
+                    class="text-[10px] font-black text-slate-500 uppercase py-1 text-center min-w-0"
+                  >
+                    Jum
+                  </div>
+                  <div
+                    class="text-[10px] font-black text-slate-500 uppercase py-1 text-center min-w-0"
+                  >
+                    Sab
+                  </div>
                 </div>
                 <div id="kal-grid" class="grid grid-cols-7 gap-1"></div>
               </div>
@@ -13834,7 +13909,9 @@
                   </div>
                   <div class="flex-1 text-center md:text-left">
                     <h2 class="text-2xl md:text-3xl font-black mb-1" id="up-nama">User</h2>
-                    <p class="text-sm opacity-90 mb-2 uppercase tracking-wide" id="up-role-label">PENGGUNA SISTEM</p>
+                    <p class="text-sm opacity-90 mb-2 uppercase tracking-wide" id="up-role-label">
+                      PENGGUNA SISTEM
+                    </p>
                     <span
                       class="inline-block bg-white/20 backdrop-blur-sm border border-white/30 text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full"
                       id="up-role-badge"
@@ -14153,11 +14230,18 @@
       // SW ini terpisah dari firebase-messaging-sw.js (FCM SW)
       // PATCH v.17.1026-fix: hapus duplicate registration + cleanup SW lama (penyebab crash mobile)
       // v.109.52: SKIP SW di Capacitor — assets bundled, SW cache lama redirect production URL
-      const _isCapacitorNative = !!(window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform())
+      const _isCapacitorNative = !!(
+        window.Capacitor &&
+        typeof window.Capacitor.isNativePlatform === 'function' &&
+        window.Capacitor.isNativePlatform()
+      )
       if (_isCapacitorNative && 'serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then((regs) => {
-          regs.forEach((r) => r.unregister().catch(() => {}))
-        }).catch(() => {})
+        navigator.serviceWorker
+          .getRegistrations()
+          .then((regs) => {
+            regs.forEach((r) => r.unregister().catch(() => {}))
+          })
+          .catch(() => {})
       }
       if ('serviceWorker' in navigator && !_isCapacitorNative) {
         window.addEventListener('load', async () => {
@@ -14615,7 +14699,8 @@
         // v.05.0526: Track used names untuk hindari duplicate worksheet name
         const _usedSheetNames = new Set()
         const buildSheet = (spec) => {
-          let sheetNameSafe = String(spec.sheetName || opts.sheetName || 'Sheet1').substring(0, 31) || 'Sheet1'
+          let sheetNameSafe =
+            String(spec.sheetName || opts.sheetName || 'Sheet1').substring(0, 31) || 'Sheet1'
           // Append _N kalau duplicate
           let baseSafeName = sheetNameSafe
           let dup = 2
@@ -14835,7 +14920,8 @@
       // Sentry error tracking init (B3). Gate guard: DSN placeholder = no-op.
       // Replace placeholder DSN per SENTRY-SETUP.md to activate.
       // ====================================================================
-      const SENTRY_DSN = 'https://1bd853a93f9f5d495dcf3e0db5cfe635@o4511390323834880.ingest.us.sentry.io/4511398644088832'
+      const SENTRY_DSN =
+        'https://1bd853a93f9f5d495dcf3e0db5cfe635@o4511390323834880.ingest.us.sentry.io/4511398644088832'
       try {
         if (
           typeof Sentry !== 'undefined' &&
@@ -14863,11 +14949,18 @@
               // User offline / unstable network → Firestore client retry otomatis, tidak perlu Sentry alert
               try {
                 const ex = event.exception?.values?.[0]
-                if (ex && ex.type === 'FirebaseError' && /offline|unavailable|Failed to get document/i.test(ex.value || '')) {
+                if (
+                  ex &&
+                  ex.type === 'FirebaseError' &&
+                  /offline|unavailable|Failed to get document/i.test(ex.value || '')
+                ) {
                   return null
                 }
                 // Drop "initApp error" yang root cause network unavailable (sama issue)
-                if (event.message && /initApp error.*unavailable|FirebaseError.*offline/i.test(event.message)) {
+                if (
+                  event.message &&
+                  /initApp error.*unavailable|FirebaseError.*offline/i.test(event.message)
+                ) {
                   return null
                 }
               } catch (e) {
@@ -14896,7 +14989,6 @@
       window._useVueKalenderMini = window._useVueKalenderMini ?? false
       window._useVueKalenderPendidikan = window._useVueKalenderPendidikan ?? true // v.109.36: default ON
       window._useVueModalPOS = window._useVueModalPOS ?? true // v.109.35: default ON
-
       ;(function loadVueWidgetsConditional() {
         var anyFlag =
           window._useVueJamHijri ||
@@ -14997,27 +15089,37 @@
                   console.warn('[AmmuPOS] AmmuWidgets not loaded')
                   return
                 }
-                try { window.AmmuWidgets.unmount('#vue-widget-modal-pos') } catch (e) {}
+                try {
+                  window.AmmuWidgets.unmount('#vue-widget-modal-pos')
+                } catch (e) {}
                 self._app = window.AmmuWidgets.mount('ModalPOS', '#vue-widget-modal-pos', {
                   open: true,
                   santri: payload.santri || null,
                   operator: payload.operator || '',
                   onClose: function () {
                     if (typeof payload.onClose === 'function') {
-                      try { payload.onClose() } catch (e) {}
+                      try {
+                        payload.onClose()
+                      } catch (e) {}
                     }
                     self.close()
                   },
                   onSimpan: function (data) {
                     if (typeof payload.onSimpan === 'function') {
-                      try { payload.onSimpan(data) } catch (e) { console.warn('[AmmuPOS] onSimpan err:', e) }
+                      try {
+                        payload.onSimpan(data)
+                      } catch (e) {
+                        console.warn('[AmmuPOS] onSimpan err:', e)
+                      }
                     }
                     self.close()
                   }
                 })
               },
               close: function () {
-                try { window.AmmuWidgets.unmount('#vue-widget-modal-pos') } catch (e) {}
+                try {
+                  window.AmmuWidgets.unmount('#vue-widget-modal-pos')
+                } catch (e) {}
                 this._app = null
               }
             }
@@ -15028,14 +15130,17 @@
                 else console.warn('db_santri kosong')
                 return
               }
-              const firstSantri = window.db_santri.find((s) => s.aktif !== false) || window.db_santri[0]
+              const firstSantri =
+                window.db_santri.find((s) => s.aktif !== false) || window.db_santri[0]
               if (typeof window.bukaPOSVue === 'function') {
                 window.bukaPOSVue(firstSantri.id)
               } else {
                 console.warn('bukaPOSVue belum siap')
               }
             }
-            console.log('[AmmuPOS] ready - bukaPOSVue(<id>) atau testPOSVue() untuk auto pick santri pertama')
+            console.log(
+              '[AmmuPOS] ready - bukaPOSVue(<id>) atau testPOSVue() untuk auto pick santri pertama'
+            )
           }
         }
         s.onerror = function () {
@@ -15281,7 +15386,9 @@
         // v.18.0526: Splash SELALU show 2.5s setiap awal buka aplikasi (req kyai, mirip Instagram).
         // Skip optimization splash_shown_v1 dihapus — splash konsisten tampil tiap reload.
         // bg-pesantren element sudah dihapus, tidak perlu hide manual lagi.
-        try { restoreSidebarState() } catch (e) {}
+        try {
+          restoreSidebarState()
+        } catch (e) {}
         // Load logo aplikasi dari savedSettings (kalau sudah dimuat); fallback ke logo.png
         try {
           const cached = localStorage.getItem('app_settings_v6')
@@ -15719,7 +15826,9 @@
             // Auto-render kalau current page = kritik-saran (admin baru login langsung lihat data)
             const _cur = sessionStorage.getItem('currentPage_v6')
             if (_cur === 'kritik-saran' && typeof renderKritikSaran === 'function') {
-              try { renderKritikSaran() } catch (e) {}
+              try {
+                renderKritikSaran()
+              } catch (e) {}
             }
           } catch (e) {
             if (e.code !== 'permission-denied') {
@@ -15993,7 +16102,11 @@
 
           // v.02.0526: Di Capacitor native, sessionStorage cleared saat app di-close.
           // Always cek localStorage SEKALIGUS sessionStorage supaya sesi tidak hilang antar-launch.
-          const _isNativeRestore = !!(window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform())
+          const _isNativeRestore = !!(
+            window.Capacitor &&
+            typeof window.Capacitor.isNativePlatform === 'function' &&
+            window.Capacitor.isNativePlatform()
+          )
           let savedSesi = sessionStorage.getItem('sesiAktif_v6')
           if (!savedSesi || _isNativeRestore) {
             try {
@@ -16061,7 +16174,9 @@
             '<div style="background:#fff;border-radius:18px;padding:28px;max-width:380px;width:100%;text-align:center;box-shadow:0 25px 50px -12px rgba(0,0,0,0.35);border-top:6px solid #ef4444;">' +
             '<div style="font-size:48px;color:#ef4444;margin-bottom:12px;"><i class="fas fa-circle-exclamation"></i></div>' +
             '<h3 style="font-size:18px;font-weight:800;margin:0 0 8px;color:#0f172a;">Gagal Memuat</h3>' +
-            '<p style="font-size:13px;color:#475569;margin:0 0 8px;line-height:1.5;">' + (errMsg || '') + '</p>' +
+            '<p style="font-size:13px;color:#475569;margin:0 0 8px;line-height:1.5;">' +
+            (errMsg || '') +
+            '</p>' +
             '<p style="font-size:11px;color:#94a3b8;margin:0 0 18px;">Pastikan koneksi internet aktif.</p>' +
             '<div style="display:flex;gap:8px;justify-content:center;">' +
             '<button type="button" id="mu-initerr-close" style="background:#e2e8f0;color:#0f172a;border:none;border-radius:10px;padding:10px 22px;font-weight:700;font-size:14px;cursor:pointer;">Tutup</button>' +
@@ -16074,7 +16189,9 @@
           if (_btnRetry)
             _btnRetry.addEventListener('click', () => {
               _eovr.remove()
-              try { window.location.reload() } catch (e) {}
+              try {
+                window.location.reload()
+              } catch (e) {}
             })
           // v.108.40: force show login + nuke app-view supaya tidak bocor saat error path
           document.getElementById('login-view').classList.remove('hidden')
@@ -16085,7 +16202,9 @@
           }
           document.body.classList.remove('app-running')
           // v.19.0526: Error path → show bg login juga
-          try { document.body.classList.add('show-bg-login') } catch (e) {}
+          try {
+            document.body.classList.add('show-bg-login')
+          } catch (e) {}
           // Kalau Auth masih signed in tapi initApp gagal — sign out supaya state konsisten
           try {
             if (fbAuth.currentUser) fbAuth.signOut()
@@ -16615,14 +16734,25 @@
             })
             Sentry.setTag('role', sesiAktif?.role || 'unknown')
             Sentry.setTag('lembaga', sesiAktif?.lembaga || 'unknown')
-            Sentry.setTag('platform', (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) ? 'native' : 'web')
+            Sentry.setTag(
+              'platform',
+              window.Capacitor &&
+                window.Capacitor.isNativePlatform &&
+                window.Capacitor.isNativePlatform()
+                ? 'native'
+                : 'web'
+            )
           }
         } catch (sentryErr) {
           // Silent — Sentry tagging non-critical
         }
         // v.02.0526: Di Capacitor native, ALWAYS persist (native app behavior — user expect login tetap)
         // Web: hormati checkbox "Ingat Saya"
-        const _isNativeSave = !!(window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform())
+        const _isNativeSave = !!(
+          window.Capacitor &&
+          typeof window.Capacitor.isNativePlatform === 'function' &&
+          window.Capacitor.isNativePlatform()
+        )
         const ingat = document.getElementById('login-ingat-saya')
         if (_isNativeSave || (ingat && ingat.checked)) {
           try {
@@ -16782,8 +16912,9 @@
             })
             // v.108.16: Hide group keuangan (id baru: grup-keuangan-menu)
             const grupKeu = document.getElementById('grup-keuangan-menu')
-            if (grupKeu) grupKeu.classList.add('hidden')
-            // Hide menu Master Data + Pengaturan Web
+            if (grupKeu)
+              grupKeu.classList.add('hidden')
+              // Hide menu Master Data + Pengaturan Web
             ;[
               'menu-master-data',
               'menu-pengaturan-web',
@@ -16969,7 +17100,8 @@
             // Guru / pengurus dari db_guru
             userData = (db_guru || []).find((g) => g.id == sesiAktif.id) || {}
             if (elNama) elNama.innerText = userData.nama || sesiAktif.nama || 'Guru'
-            if (elRoleLabel) elRoleLabel.innerText = (userData.jabatan || 'Guru/Pegawai').toUpperCase()
+            if (elRoleLabel)
+              elRoleLabel.innerText = (userData.jabatan || 'Guru/Pegawai').toUpperCase()
             const roleSistem = (
               userData.role_sistem ||
               sesiAktif.role_sistem ||
@@ -17160,10 +17292,14 @@
               // v.13.0526: master-data page punya beberapa tab (Lembaga, Jabatan, Guru, Santri).
               // Re-render semua kalau listener fires untuk label "santri" atau "guru".
               if (label === 'santri') {
-                try { renderAdminSantri && renderAdminSantri() } catch (e) {}
+                try {
+                  renderAdminSantri && renderAdminSantri()
+                } catch (e) {}
               }
               if (label === 'guru') {
-                try { renderAdminGuru && renderAdminGuru() } catch (e) {}
+                try {
+                  renderAdminGuru && renderAdminGuru()
+                } catch (e) {}
               }
             } else if (currentId === 'santri-tabungan') {
               try {
@@ -17418,11 +17554,15 @@
                 showLiveBadge('kg')
                 window.db_kegiatan = db_kegiatan
                 if (typeof window.refreshKalenderPendidikan === 'function') {
-                  try { window.refreshKalenderPendidikan() } catch (e) {}
+                  try {
+                    window.refreshKalenderPendidikan()
+                  } catch (e) {}
                 }
                 const cur = sessionStorage.getItem('currentPage_v6')
-                if (cur === 'kalender-kegiatan' && typeof renderKalenderKegiatan === 'function') renderKalenderKegiatan()
-                else if (cur === 'dashboard' && typeof renderWidgetKegiatanTerdekat === 'function') renderWidgetKegiatanTerdekat()
+                if (cur === 'kalender-kegiatan' && typeof renderKalenderKegiatan === 'function')
+                  renderKalenderKegiatan()
+                else if (cur === 'dashboard' && typeof renderWidgetKegiatanTerdekat === 'function')
+                  renderWidgetKegiatanTerdekat()
               },
               (err) => console.warn('Kegiatan listener:', err.code)
             )
@@ -17712,9 +17852,13 @@
               sidebar.style.setProperty('background-color', '#0f172a', 'important')
               sidebar.style.setProperty('color', '#e2e8f0', 'important')
               // Clear inline color overrides yang di-set saat light mode (#0f172a / #475569 dll)
-              sidebar.querySelectorAll('#ui-sidebar-title, .text-white, .text-slate-300, .text-slate-400, .text-cyan-400, .text-purple-400, .text-blue-400, .text-emerald-400, .text-amber-400, .text-rose-400, .menu-item span').forEach((el) => {
-                el.style.removeProperty('color')
-              })
+              sidebar
+                .querySelectorAll(
+                  '#ui-sidebar-title, .text-white, .text-slate-300, .text-slate-400, .text-cyan-400, .text-purple-400, .text-blue-400, .text-emerald-400, .text-amber-400, .text-rose-400, .menu-item span'
+                )
+                .forEach((el) => {
+                  el.style.removeProperty('color')
+                })
             }
 
             // Loop semua .bg-white di document, force inline dark
@@ -17752,9 +17896,13 @@
               sidebar.querySelectorAll('.text-slate-300, .text-slate-400').forEach((el) => {
                 el.style.setProperty('color', '#475569', 'important')
               })
-              sidebar.querySelectorAll('.text-cyan-400, .text-purple-400, .text-blue-400, .text-emerald-400, .text-amber-400, .text-rose-400').forEach((el) => {
-                el.style.setProperty('color', 'var(--theme-color)', 'important')
-              })
+              sidebar
+                .querySelectorAll(
+                  '.text-cyan-400, .text-purple-400, .text-blue-400, .text-emerald-400, .text-amber-400, .text-rose-400'
+                )
+                .forEach((el) => {
+                  el.style.setProperty('color', 'var(--theme-color)', 'important')
+                })
               sidebar.querySelectorAll('.menu-item span').forEach((el) => {
                 if (!el.closest('.bg-teal-700, .bg-emerald-700, .active')) {
                   el.style.setProperty('color', '#334155', 'important')
@@ -17881,14 +18029,14 @@
         // Stamp data-section ke setiap container section dalam modal (one-time)
         if (!modal._sectionsStamped) {
           const sectionMap = {
-            'profil_foto_file': 'foto',
-            'profil_ttd_file': 'ttd',
-            'profil_wa': 'wa',
-            'profil_wa_wali': 'wa_wali',
-            'profil_username_admin': 'username',
-            'profil_username_guru': 'username',
-            'profil_username_santri': 'username',
-            'profil_sandi_baru': 'sandi'
+            profil_foto_file: 'foto',
+            profil_ttd_file: 'ttd',
+            profil_wa: 'wa',
+            profil_wa_wali: 'wa_wali',
+            profil_username_admin: 'username',
+            profil_username_guru: 'username',
+            profil_username_santri: 'username',
+            profil_sandi_baru: 'sandi'
           }
           Object.entries(sectionMap).forEach(([fieldId, key]) => {
             const el = document.getElementById(fieldId)
@@ -17908,33 +18056,44 @@
           modal._sectionsStamped = true
         }
         const titles = {
-          'foto': 'Ganti Foto Profil',
-          'ttd': 'Tanda Tangan Digital',
-          'wa': 'Ubah No. WhatsApp',
-          'wa_wali': 'Ubah WA Wali Santri',
-          'username': 'Ubah Username',
+          foto: 'Ganti Foto Profil',
+          ttd: 'Tanda Tangan Digital',
+          wa: 'Ubah No. WhatsApp',
+          wa_wali: 'Ubah WA Wali Santri',
+          username: 'Ubah Username',
           // v.33.0526: tambah 3 variant role-specific supaya remap di atas
           // (username → username-admin/guru/santri) tetap lolos titles[] check.
           'username-admin': 'Ubah Username',
           'username-guru': 'Ubah Username',
           'username-santri': 'Ubah Username',
-          'sandi': 'Ganti Kata Sandi',
-          'ekgq': 'No. Syahadah Qiraati',
-          'google': 'Tautkan Akun Google',
-          'notif': 'Pengaturan Notifikasi'
+          sandi: 'Ganti Kata Sandi',
+          ekgq: 'No. Syahadah Qiraati',
+          google: 'Tautkan Akun Google',
+          notif: 'Pengaturan Notifikasi'
         }
         if (sectionKey && titles[sectionKey]) {
           modal.setAttribute('data-active-section', sectionKey)
           const titleEl = document.getElementById('modal-edit-profil-title')
           if (titleEl) {
             const icons = {
-              foto: 'fa-camera', ttd: 'fa-signature', wa: 'fa-mobile-alt',
-              wa_wali: 'fa-mobile-alt', username: 'fa-at',
-              'username-admin': 'fa-at', 'username-guru': 'fa-at', 'username-santri': 'fa-at',
+              foto: 'fa-camera',
+              ttd: 'fa-signature',
+              wa: 'fa-mobile-alt',
+              wa_wali: 'fa-mobile-alt',
+              username: 'fa-at',
+              'username-admin': 'fa-at',
+              'username-guru': 'fa-at',
+              'username-santri': 'fa-at',
               sandi: 'fa-key',
-              ekgq: 'fa-id-card', google: 'fa-google', notif: 'fa-bell'
+              ekgq: 'fa-id-card',
+              google: 'fa-google',
+              notif: 'fa-bell'
             }
-            titleEl.innerHTML = '<i class="fas ' + (icons[sectionKey] || 'fa-user-cog') + ' text-custom mr-2"></i>' + titles[sectionKey]
+            titleEl.innerHTML =
+              '<i class="fas ' +
+              (icons[sectionKey] || 'fa-user-cog') +
+              ' text-custom mr-2"></i>' +
+              titles[sectionKey]
           }
           window._profilSection = sectionKey
         } else {
@@ -18566,18 +18725,30 @@
         // (sebelumnya hanya keu-* yang trigger load, jadi santri-tabungan/tunggakan/riwayat
         //  dan guru-slip-saya selalu empty di akun santri/guru karena data belum di-fetch)
         if (id === 'santri-tabungan') {
-          loadKeuanganLazy().then(() => { try { renderSantriTabungan() } catch (e) {} })
-        }
-        else if (id === 'santri-tunggakan') {
-          loadKeuanganLazy().then(() => { try { renderSantriTunggakan() } catch (e) {} })
-        }
-        else if (id === 'santri-riwayat') {
-          loadKeuanganLazy().then(() => { try { renderSantriRiwayat() } catch (e) {} })
-        }
-        else if (id === 'guru-slip-saya') {
-          loadKeuanganLazy().then(() => { try { renderGuruSlipSaya() } catch (e) {} })
-        }
-        else if (id === 'guru-profil') renderGuruProfil()
+          loadKeuanganLazy().then(() => {
+            try {
+              renderSantriTabungan()
+            } catch (e) {}
+          })
+        } else if (id === 'santri-tunggakan') {
+          loadKeuanganLazy().then(() => {
+            try {
+              renderSantriTunggakan()
+            } catch (e) {}
+          })
+        } else if (id === 'santri-riwayat') {
+          loadKeuanganLazy().then(() => {
+            try {
+              renderSantriRiwayat()
+            } catch (e) {}
+          })
+        } else if (id === 'guru-slip-saya') {
+          loadKeuanganLazy().then(() => {
+            try {
+              renderGuruSlipSaya()
+            } catch (e) {}
+          })
+        } else if (id === 'guru-profil') renderGuruProfil()
         else if (id === 'kritik-saran') renderKritikSaran()
         else if (id === 'profil-pesantren') renderTentangKami()
         else if (id === 'kalender-kegiatan') renderKalenderKegiatan()
@@ -18618,8 +18789,14 @@
             document.getElementById('info-lembaga').classList.add('hidden')
             let filterEl = document.getElementById('filter_lembaga_rekap')
             filterEl.classList.remove('hidden')
+            // v.21.38: tambah opsi "TPQ" umbrella di atas (gabung TPQ Pagi + TPQ Sore)
+            const hasTpqMembers = db_lembaga.some(
+              (l) => l.lembaga === 'TPQ Pagi' || l.lembaga === 'TPQ Sore'
+            )
+            let umbrellaOpts = hasTpqMembers ? '<option value="TPQ">TPQ (Pagi+Sore)</option>' : ''
             filterEl.innerHTML =
               '<option value="Semua">Semua Lembaga</option>' +
+              umbrellaOpts +
               db_lembaga
                 .filter((l) => (l.tipe_lembaga || 'Qiraati') !== 'Non Lembaga')
                 .map((l) => `<option value="${l.lembaga}">${l.lembaga}</option>`)
@@ -18669,13 +18846,15 @@
         lembagaPendidikan.forEach((l) => {
           // v.18.0526: filter santri OR lembaga (Qiraati) OR lembaga_sekolah (SDI/MI/TK/dll)
           // supaya statistik lembaga sekolah seperti SDI ikut terhitung
-          const santriLmbg = db_santri.filter((s) =>
-            (s.lembaga === l.lembaga || s.lembaga_sekolah === l.lembaga) && s.aktif !== false
+          const santriLmbg = db_santri.filter(
+            (s) => (s.lembaga === l.lembaga || s.lembaga_sekolah === l.lembaga) && s.aktif !== false
           )
           // Kelas = jumlah unique guru yang punya santri aktif (guru tanpa santri tidak dihitung)
           const jmlKelas = [...new Set(santriLmbg.map((s) => s.guru).filter((g) => g))].length
           const jmlSantri = santriLmbg.length
-          const jmlGuru = db_guru.filter((g) => g.lembaga === l.lembaga && _isStatusAktif(g.status)).length
+          const jmlGuru = db_guru.filter(
+            (g) => g.lembaga === l.lembaga && _isStatusAktif(g.status)
+          ).length
           html += `<div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm border-l-4 border-teal-500 hover:shadow-md transition"><h4 class="font-black text-slate-800 text-sm uppercase tracking-wider mb-3">${l.lembaga}</h4><div class="grid grid-cols-3 gap-2 text-center"><div class="bg-teal-50 rounded-lg py-2 border border-teal-100"><p class="text-[9px] text-teal-700 font-bold uppercase">Kelas</p><p class="text-lg font-black text-teal-800">${jmlKelas}</p></div><div class="bg-blue-50 rounded-lg py-2 border border-blue-100"><p class="text-[9px] text-blue-700 font-bold uppercase">Santri</p><p class="text-lg font-black text-blue-800">${jmlSantri}</p></div><div class="bg-amber-50 rounded-lg py-2 border border-amber-100"><p class="text-[9px] text-amber-700 font-bold uppercase">Guru</p><p class="text-lg font-black text-amber-800">${jmlGuru}</p></div></div></div>`
         })
         html += '</div></div>'
@@ -19421,7 +19600,9 @@
       function filterMsList(containerId, kw) {
         const cont = document.getElementById(containerId)
         if (!cont) return
-        const q = String(kw || '').toLowerCase().trim()
+        const q = String(kw || '')
+          .toLowerCase()
+          .trim()
         cont.querySelectorAll('[data-guru-row], label').forEach((el) => {
           const txt = (el.textContent || '').toLowerCase()
           el.style.display = !q || txt.includes(q) ? '' : 'none'
@@ -19444,7 +19625,14 @@
             const row = cb.closest('[data-guru-row]')
             const shiftRadio = row?.querySelector('.rd-shift-santri:checked')
             const shift = shiftRadio?.value
-            const shiftLabel = shift === 'pagi_sore' ? ' (P+S)' : shift === 'pagi' ? ' (Pagi)' : shift === 'sore' ? ' (Sore)' : ''
+            const shiftLabel =
+              shift === 'pagi_sore'
+                ? ' (P+S)'
+                : shift === 'pagi'
+                  ? ' (Pagi)'
+                  : shift === 'sore'
+                    ? ' (Sore)'
+                    : ''
             names.push((cb.dataset.nama || '') + shiftLabel)
           })
           sum.textContent = names.join(' · ')
@@ -19457,7 +19645,9 @@
       function updateMsSekolahSummary() {
         const sum = document.getElementById('ms-sekolah-summary')
         if (!sum) return
-        const checked = document.querySelectorAll('#cb_guru_sekolah_santri .cb-guru-sekolah:checked')
+        const checked = document.querySelectorAll(
+          '#cb_guru_sekolah_santri .cb-guru-sekolah:checked'
+        )
         if (checked.length === 0) {
           sum.textContent = 'Pilih guru sekolah...'
           sum.classList.add('text-slate-400')
@@ -19474,7 +19664,9 @@
       // Click outside untuk close ms-dropdown
       document.addEventListener('click', (e) => {
         if (!e.target.closest('.ms-dropdown-wrapper')) {
-          document.querySelectorAll('[id^="ms-"][id$="-panel"]').forEach((p) => p.classList.add('hidden'))
+          document
+            .querySelectorAll('[id^="ms-"][id$="-panel"]')
+            .forEach((p) => p.classList.add('hidden'))
         }
       })
 
@@ -19877,7 +20069,9 @@
             dragKey = item.getAttribute('data-key')
             item.style.opacity = '0.4'
             e.dataTransfer.effectAllowed = 'move'
-            try { e.dataTransfer.setData('text/plain', dragKey) } catch (_) {}
+            try {
+              e.dataTransfer.setData('text/plain', dragKey)
+            } catch (_) {}
           })
           item.addEventListener('dragend', () => {
             item.style.opacity = ''
@@ -19933,7 +20127,8 @@
         const showToast = !!opts.toast
         // v.25.0526: Combine default + custom fields order
         const schema = DEFAULT_FIELDS_SCHEMA[formKey] || []
-        const customs = (savedSettings.customFieldsSchema && savedSettings.customFieldsSchema[formKey]) || []
+        const customs =
+          (savedSettings.customFieldsSchema && savedSettings.customFieldsSchema[formKey]) || []
         const customKeys = customs.map((c) => c.id).filter(Boolean)
         const allKeys = [...schema.map((s) => s.key), ...customKeys]
         const savedOrder = (savedSettings.fieldOrder && savedSettings.fieldOrder[formKey]) || []
@@ -19951,7 +20146,9 @@
         let missingCount = 0
         const missingKeys = []
         // Form parent grid — direct child wrappers harus dapat style.order
-        const formId = { santri: 'form-santri', guru: 'form-guru', lembaga: 'form-lembaga' }[formKey]
+        const formId = { santri: 'form-santri', guru: 'form-guru', lembaga: 'form-lembaga' }[
+          formKey
+        ]
         const formEl = formId ? document.getElementById(formId) : null
         const gridParent = formEl ? formEl.querySelector('.grid') : null
         if (!gridParent) {
@@ -20005,7 +20202,10 @@
           gridParentClass: gridParent.className
         })
         if (showToast && typeof _toast?.success === 'function') {
-          _toast.success(`Urutan diterapkan: ${appliedCount} / ${order.length} fields${missingCount > 0 ? ` (${missingCount} skip)` : ''}`, 4000)
+          _toast.success(
+            `Urutan diterapkan: ${appliedCount} / ${order.length} fields${missingCount > 0 ? ` (${missingCount} skip)` : ''}`,
+            4000
+          )
         }
       }
       window.applyFieldOrderToForm = applyFieldOrderToForm
@@ -20082,14 +20282,26 @@
         if (tabId === 'tab-santri') {
           renderAdminSantri()
           // v.22.0526: Apply field order user ke form-santri (CSS order property)
-          try { applyFieldOrderToForm('santri') } catch (e) { console.warn('[FieldOrder]', e) }
+          try {
+            applyFieldOrderToForm('santri')
+          } catch (e) {
+            console.warn('[FieldOrder]', e)
+          }
         }
         if (tabId === 'tab-guru') {
           // (sudah ada renderAdminGuru di atas) — tambah apply order
-          try { applyFieldOrderToForm('guru') } catch (e) { console.warn('[FieldOrder]', e) }
+          try {
+            applyFieldOrderToForm('guru')
+          } catch (e) {
+            console.warn('[FieldOrder]', e)
+          }
         }
         if (tabId === 'tab-lembaga') {
-          try { applyFieldOrderToForm('lembaga') } catch (e) { console.warn('[FieldOrder]', e) }
+          try {
+            applyFieldOrderToForm('lembaga')
+          } catch (e) {
+            console.warn('[FieldOrder]', e)
+          }
         }
         if (tabId === 'tab-rapor') renderRaporSettingsUI()
         if (tabId === 'tab-rekap') renderRekapSettingsUI()
@@ -20456,14 +20668,19 @@
         }
 
         // v.01.0526: Di Capacitor mode, pakai iframe overlay (window.open tidak work di WebView)
-        const _isNative = !!(window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform())
+        const _isNative = !!(
+          window.Capacitor &&
+          typeof window.Capacitor.isNativePlatform === 'function' &&
+          window.Capacitor.isNativePlatform()
+        )
         if (_isNative) {
           // Render PDF preview di-page sebagai full-screen overlay
           const existing = document.getElementById('pdf-preview-overlay')
           if (existing) existing.remove()
           const overlay = document.createElement('div')
           overlay.id = 'pdf-preview-overlay'
-          overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:#fff;display:flex;flex-direction:column'
+          overlay.style.cssText =
+            'position:fixed;inset:0;z-index:99999;background:#fff;display:flex;flex-direction:column'
           overlay.innerHTML = `
             <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:#0f766e;color:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.15)">
               <button id="pdf-preview-close" type="button" aria-label="Tutup" style="background:transparent;border:none;color:#fff;font-size:24px;cursor:pointer;padding:4px 8px">✕</button>
@@ -20477,7 +20694,9 @@
           // Inject HTML ke iframe (tanpa auto-print script supaya tidak otomatis trigger)
           const htmlNoPrint = fullHtml.replace(/<script>setTimeout[\s\S]*?<\/scr.+?ipt>/g, '')
           iframe.srcdoc = htmlNoPrint
-          overlay.querySelector('#pdf-preview-close').addEventListener('click', () => overlay.remove())
+          overlay
+            .querySelector('#pdf-preview-close')
+            .addEventListener('click', () => overlay.remove())
           overlay.querySelector('#pdf-preview-print').addEventListener('click', () => {
             try {
               iframe.contentWindow.focus()
@@ -21137,7 +21356,16 @@
           sheetName: 'Audit Data',
           title: 'LAPORAN AUDIT DATA LEGACY',
           subtitle: `Dicetak: ${new Date().toLocaleString('id-ID')} • Total Issue: ${_auditIssues.length}`,
-          header: ['No', 'Severity', 'Kategori', 'Collection', 'ID', 'Nama', 'Deskripsi', 'Auto Fix'],
+          header: [
+            'No',
+            'Severity',
+            'Kategori',
+            'Collection',
+            'ID',
+            'Nama',
+            'Deskripsi',
+            'Auto Fix'
+          ],
           rows: rows,
           colWidths: [5, 10, 30, 12, 18, 30, 60, 25]
         })
@@ -22697,7 +22925,10 @@
         header.push('H', 'S', 'I', 'A')
         const rows = listSantri.map((s, i) => {
           const row = [i + 1, s.nama, s.nis || '-', s.kelas_sekolah || '-']
-          let H = 0, S = 0, I = 0, A = 0
+          let H = 0,
+            S = 0,
+            I = 0,
+            A = 0
           for (let dd = 1; dd <= daysInMonth; dd++) {
             const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(dd).padStart(2, '0')}`
             const a = db_absensi_santri_sekolah.find(
@@ -23653,14 +23884,24 @@
           return
         }
         let list
-        if (lemb === 'TPQ') {
+        // v.21.38: case-insensitive trim match + TPQ umbrella robust
+        const lembNorm = String(lemb || '')
+          .toLowerCase()
+          .trim()
+        if (lembNorm === 'tpq') {
+          list = db_santri.filter((s) => {
+            const sl = String(s.lembaga || '')
+              .toLowerCase()
+              .trim()
+            return (sl === 'tpq pagi' || sl === 'tpq sore' || sl === 'tpq') && s.aktif !== false
+          })
+        } else {
           list = db_santri.filter(
             (s) =>
-              (s.lembaga === 'TPQ Pagi' || s.lembaga === 'TPQ Sore' || s.lembaga === 'TPQ') &&
-              s.aktif !== false
+              String(s.lembaga || '')
+                .toLowerCase()
+                .trim() === lembNorm && s.aktif !== false
           )
-        } else {
-          list = db_santri.filter((s) => s.lembaga === lemb && s.aktif !== false)
         }
         // Filter berdasarkan akses guru (kalau bukan admin, hanya santri yang dia ajar)
         if (
@@ -24757,9 +24998,7 @@
           foto: existingFoto,
           // v.29.0526: simpan custom field values
           custom_fields:
-            typeof _collectCustomFieldsForm === 'function'
-              ? _collectCustomFieldsForm('guru')
-              : {}
+            typeof _collectCustomFieldsForm === 'function' ? _collectCustomFieldsForm('guru') : {}
         }
         toggleLoader(true)
         try {
@@ -24858,7 +25097,8 @@
         const g = db_guru.find((x) => x.id == id)
         if (!g) return
         // v.24.0526: Buka form full-screen edit mode
-        if (typeof enterEditMode === 'function') enterEditMode('form-guru', `Edit Guru: ${g.nama || ''}`)
+        if (typeof enterEditMode === 'function')
+          enterEditMode('form-guru', `Edit Guru: ${g.nama || ''}`)
         // C4 — capture updatedAt for OCC pada save berikutnya
         if (g && typeof _recordDocSnap === 'function') _recordDocSnap('guru', id, g)
         // BUGFIX v.108.80: ad-hoc option fallback untuk lembaga_guru kalau data mismatch
@@ -25269,9 +25509,7 @@
           foto: '',
           // v.29.0526: simpan custom field values
           custom_fields:
-            typeof _collectCustomFieldsForm === 'function'
-              ? _collectCustomFieldsForm('santri')
-              : {}
+            typeof _collectCustomFieldsForm === 'function' ? _collectCustomFieldsForm('santri') : {}
         }
         toggleLoader(true)
         try {
@@ -25348,14 +25586,19 @@
           formSection.prepend(hdr)
           hdr.querySelector('button').addEventListener('click', () => exitEditMode(formId))
         } else {
-          hdr.querySelector('span').innerHTML = `<i class="fas fa-edit mr-2"></i>${title || 'Edit Data'}`
+          hdr.querySelector('span').innerHTML =
+            `<i class="fas fa-edit mr-2"></i>${title || 'Edit Data'}`
         }
         // v.36.0526: render custom fields inline saat form pertama dibuka via Tambah baru.
         // Bug sebelumnya: NISN (atau custom field lain) tidak render karena
         // _renderCustomFieldsInline cuma dipanggil dari resetForm/editForm, tidak dari
         // enterEditMode. Saat user klik "+Tambah Baru", form open tanpa custom field.
         try {
-          const entityKey = { 'form-santri': 'santri', 'form-guru': 'guru', 'form-lembaga': 'lembaga' }[formId]
+          const entityKey = {
+            'form-santri': 'santri',
+            'form-guru': 'guru',
+            'form-lembaga': 'lembaga'
+          }[formId]
           if (entityKey && typeof _renderCustomFieldsInline === 'function') {
             _renderCustomFieldsInline(entityKey, {})
             if (typeof applyFieldOrderToForm === 'function') applyFieldOrderToForm(entityKey)
@@ -25896,14 +26139,24 @@
         const lemb = document.getElementById('rk-filter-lembaga')?.value || ''
         if (!lemb) return _toast.info('Pilih Lembaga: Pilih lembaga Qiraati di filter dulu.')
         let list
-        if (lemb === 'TPQ') {
+        // v.21.38: case-insensitive trim match + TPQ umbrella robust
+        const lembNorm = String(lemb || '')
+          .toLowerCase()
+          .trim()
+        if (lembNorm === 'tpq') {
+          list = db_santri.filter((s) => {
+            const sl = String(s.lembaga || '')
+              .toLowerCase()
+              .trim()
+            return (sl === 'tpq pagi' || sl === 'tpq sore' || sl === 'tpq') && s.aktif !== false
+          })
+        } else {
           list = db_santri.filter(
             (s) =>
-              (s.lembaga === 'TPQ Pagi' || s.lembaga === 'TPQ Sore' || s.lembaga === 'TPQ') &&
-              s.aktif !== false
+              String(s.lembaga || '')
+                .toLowerCase()
+                .trim() === lembNorm && s.aktif !== false
           )
-        } else {
-          list = db_santri.filter((s) => s.lembaga === lemb && s.aktif !== false)
         }
         if (
           sesiAktif.role === 'guru' &&
@@ -26130,7 +26383,11 @@
                     lembaga: row['Lembaga'] || g.lembaga,
                     lembaga_sekolah: lembagaSekolahRow,
                     tanggal_tugas: tglFormat || g.tanggal_tugas,
-                    ekgq: row['No. Syahadah Qiraati'] || row['Syahadah Qiraati'] || row['EKGQ'] || g.ekgq,
+                    ekgq:
+                      row['No. Syahadah Qiraati'] ||
+                      row['Syahadah Qiraati'] ||
+                      row['EKGQ'] ||
+                      g.ekgq,
                     wa: waRow,
                     username: usernameRow,
                     role_sistem: roleRow,
@@ -26190,7 +26447,8 @@
                     lembaga: row['Lembaga'] || 'TPQ Pagi',
                     lembaga_sekolah: lembagaSekolahNew,
                     tanggal_tugas: tglFormat || '',
-                    ekgq: row['No. Syahadah Qiraati'] || row['Syahadah Qiraati'] || row['EKGQ'] || '',
+                    ekgq:
+                      row['No. Syahadah Qiraati'] || row['Syahadah Qiraati'] || row['EKGQ'] || '',
                     wa: waNew,
                     username: usernameNew,
                     role_sistem: roleNew,
@@ -26441,12 +26699,26 @@
         if (!isFullAccess) {
           const myNama = sesiAktif.guru || sesiAktif.nama
           // v.13.0526: Trim + case-insensitive comparison untuk hindari mismatch whitespace/case
-          const myNamaTrim = String(myNama || '').trim().toLowerCase()
+          const myNamaTrim = String(myNama || '')
+            .trim()
+            .toLowerCase()
           data = data.filter((s) => {
-            const gp = String(s.guru_pagi || '').trim().toLowerCase()
-            const gs = String(s.guru_sore || '').trim().toLowerCase()
-            const gOld = String(s.guru || '').trim().toLowerCase()
-            const gsek = Array.isArray(s.guru_sekolah) ? s.guru_sekolah.map((x) => String(x || '').trim().toLowerCase()) : []
+            const gp = String(s.guru_pagi || '')
+              .trim()
+              .toLowerCase()
+            const gs = String(s.guru_sore || '')
+              .trim()
+              .toLowerCase()
+            const gOld = String(s.guru || '')
+              .trim()
+              .toLowerCase()
+            const gsek = Array.isArray(s.guru_sekolah)
+              ? s.guru_sekolah.map((x) =>
+                  String(x || '')
+                    .trim()
+                    .toLowerCase()
+                )
+              : []
             return (
               gp === myNamaTrim ||
               gs === myNamaTrim ||
@@ -26475,7 +26747,10 @@
                 level: 'warning',
                 data: { myNama, totalSantri: db_santri.length, sampleSantri: sample }
               })
-              Sentry.captureMessage(`renderViewSantri filter 0 match for guru "${myNama}"`, 'warning')
+              Sentry.captureMessage(
+                `renderViewSantri filter 0 match for guru "${myNama}"`,
+                'warning'
+              )
             }
           }
         }
@@ -26483,7 +26758,7 @@
           totalSantri: db_santri.length,
           ditampilkan: data.length,
           isFullAccess,
-          myNama: !isFullAccess ? (sesiAktif.guru || sesiAktif.nama) : '(full access)',
+          myNama: !isFullAccess ? sesiAktif.guru || sesiAktif.nama : '(full access)',
           mukim: db_santri.filter((x) => x.is_mukim).length,
           pp: db_santri.filter((x) => !x.is_mukim).length
         })
@@ -26731,67 +27006,67 @@
       async function eksporExcelViewGuru() {
         // v.109.28: defensive try-catch supaya error tampil di toast (debug aid)
         try {
-        const shiftLabels = {
-          pagi: 'Pagi Saja',
-          sore: 'Sore Saja',
-          pagi_sore: 'Pagi & Sore'
-        }
-        const tipeLabels = {
-          ngaji: 'Guru Ngaji',
-          sekolah: 'Guru Sekolah',
-          ngaji_sekolah: 'Ngaji + Sekolah'
-        }
-        const rows = []
-        let no = 1
-        const list = sortGuruGeneral([...db_guru])
-        list.forEach((g) => {
-          let lama = hitungLamaMengajar(g.tanggal_tugas)
-          let tglFormat = formatTanggal(g.tanggal_tugas)
-          const tipe = tipeLabels[g.tipe_pegawai] || 'Guru Ngaji'
-          const shft = shiftLabels[g.shift || 'pagi_sore']
-          rows.push([
-            no++,
-            getNamaGuruGelar(g.nama, g.jk),
-            g.jabatan || '-',
-            g.jabatan_tambahan || '-',
-            g.lembaga,
-            g.lembaga_sekolah || '-',
-            tipe,
-            shft,
-            g.id_fingerprint || '-',
-            tglFormat,
-            lama,
-            g.wa || '-',
-            g.ekgq || '-',
-            g.role_sistem || 'user',
-            g.status
-          ])
-        })
-        await exportToExcelStyled({
-          filename: 'Data_Guru_Tabel.xlsx',
-          sheetName: 'Data Guru',
-          title: 'DATA GURU/PEGAWAI',
-          subtitle: `Total: ${list.length} guru/pegawai`,
-          header: [
-            'No',
-            'Nama Guru',
-            'Jabatan',
-            'Jabatan Tambahan',
-            'Lembaga',
-            'Lembaga Sekolah',
-            'Tipe Pegawai',
-            'Shift',
-            'ID Fingerprint',
-            'Tanggal Tugas',
-            'Lama Mengajar',
-            'Kontak WA',
-            'No. Syahadah Qiraati',
-            'Role Sistem',
-            'Status'
-          ],
-          rows: rows,
-          colWidths: [5, 35, 25, 22, 18, 18, 16, 14, 14, 14, 18, 16, 12, 18, 12]
-        })
+          const shiftLabels = {
+            pagi: 'Pagi Saja',
+            sore: 'Sore Saja',
+            pagi_sore: 'Pagi & Sore'
+          }
+          const tipeLabels = {
+            ngaji: 'Guru Ngaji',
+            sekolah: 'Guru Sekolah',
+            ngaji_sekolah: 'Ngaji + Sekolah'
+          }
+          const rows = []
+          let no = 1
+          const list = sortGuruGeneral([...db_guru])
+          list.forEach((g) => {
+            let lama = hitungLamaMengajar(g.tanggal_tugas)
+            let tglFormat = formatTanggal(g.tanggal_tugas)
+            const tipe = tipeLabels[g.tipe_pegawai] || 'Guru Ngaji'
+            const shft = shiftLabels[g.shift || 'pagi_sore']
+            rows.push([
+              no++,
+              getNamaGuruGelar(g.nama, g.jk),
+              g.jabatan || '-',
+              g.jabatan_tambahan || '-',
+              g.lembaga,
+              g.lembaga_sekolah || '-',
+              tipe,
+              shft,
+              g.id_fingerprint || '-',
+              tglFormat,
+              lama,
+              g.wa || '-',
+              g.ekgq || '-',
+              g.role_sistem || 'user',
+              g.status
+            ])
+          })
+          await exportToExcelStyled({
+            filename: 'Data_Guru_Tabel.xlsx',
+            sheetName: 'Data Guru',
+            title: 'DATA GURU/PEGAWAI',
+            subtitle: `Total: ${list.length} guru/pegawai`,
+            header: [
+              'No',
+              'Nama Guru',
+              'Jabatan',
+              'Jabatan Tambahan',
+              'Lembaga',
+              'Lembaga Sekolah',
+              'Tipe Pegawai',
+              'Shift',
+              'ID Fingerprint',
+              'Tanggal Tugas',
+              'Lama Mengajar',
+              'Kontak WA',
+              'No. Syahadah Qiraati',
+              'Role Sistem',
+              'Status'
+            ],
+            rows: rows,
+            colWidths: [5, 35, 25, 22, 18, 18, 16, 14, 14, 14, 18, 16, 12, 18, 12]
+          })
         } catch (err) {
           console.error('[eksporExcelViewGuru] error:', err)
           if (typeof _toast !== 'undefined' && _toast.error) {
@@ -27531,15 +27806,49 @@
 
       function renderTabelBulanan() {
         let data = [...db_santri]
-        if (sesiAktif.role === 'admin') {
+        // v.21.38b: admin role check inclusive (super_admin / admin_keuangan / sesiAktif.id==='admin')
+        const _isAdminAccess =
+          sesiAktif.role === 'admin' ||
+          sesiAktif.role_sistem === 'super_admin' ||
+          sesiAktif.role_sistem === 'admin' ||
+          sesiAktif.role_sistem === 'admin_keuangan' ||
+          sesiAktif.id === 'admin'
+        if (_isAdminAccess) {
           let filterLembaga = document.getElementById('filter_lembaga_rekap').value
-          if (filterLembaga !== 'Semua') data = data.filter((s) => s.lembaga === filterLembaga)
+          if (filterLembaga !== 'Semua') {
+            // v.21.38: robust TPQ umbrella + case-insensitive match
+            const fLower = String(filterLembaga).toLowerCase().trim()
+            const grp =
+              (typeof _VIRTUAL_GROUPS !== 'undefined' && _VIRTUAL_GROUPS[filterLembaga]) || null
+            if (grp) {
+              const memberLower = grp.members.map((m) => String(m).toLowerCase().trim())
+              data = data.filter((s) =>
+                memberLower.includes(
+                  String(s.lembaga || '')
+                    .toLowerCase()
+                    .trim()
+                )
+              )
+            } else {
+              data = data.filter(
+                (s) =>
+                  String(s.lembaga || '')
+                    .toLowerCase()
+                    .trim() === fLower
+              )
+            }
+          }
           data = sortSantriGeneral(data)
         } else {
           data = sortSantriGeneral(
             data.filter(
               (s) =>
-                s.lembaga === sesiAktif.lembaga &&
+                String(s.lembaga || '')
+                  .toLowerCase()
+                  .trim() ===
+                  String(sesiAktif.lembaga || '')
+                    .toLowerCase()
+                    .trim() &&
                 (s.guru_pagi === sesiAktif.guru ||
                   s.guru_sore === sesiAktif.guru ||
                   (s.guru === sesiAktif.guru && !s.guru_pagi && !s.guru_sore))
@@ -27558,7 +27867,7 @@
         data.forEach((s) => {
           let gData = db_guru.find((g) => g.nama === s.guru)
           let namaGuruStr = gData ? getNamaGuruGelar(gData.nama, gData.jk) : s.guru
-          if (sesiAktif.role === 'admin') {
+          if (_isAdminAccess) {
             if (
               currentLembaga !== s.lembaga ||
               currentKelas !== s.kelas ||
@@ -28154,9 +28463,18 @@
           if (elWelcome) elWelcome.value = set.txtWelcome || 'Ahlan'
           const elNamaCh = document.getElementById('set-namaChannel')
           if (elNamaCh) elNamaCh.value = set.namaChannel || 'Al Manshur Channel'
-          { const _el = document.getElementById('set-themeColor'); if (_el) _el.value = set.themeColor }
-          { const _el = document.getElementById('set-themeTextColor'); if (_el) _el.value = set.themeTextColor || '#1e293b' }
-          { const _el = document.getElementById('set-sidebarBgColor'); if (_el) _el.value = set.sidebarBgColor || '#0f172a' }
+          {
+            const _el = document.getElementById('set-themeColor')
+            if (_el) _el.value = set.themeColor
+          }
+          {
+            const _el = document.getElementById('set-themeTextColor')
+            if (_el) _el.value = set.themeTextColor || '#1e293b'
+          }
+          {
+            const _el = document.getElementById('set-sidebarBgColor')
+            if (_el) _el.value = set.sidebarBgColor || '#0f172a'
+          }
           menus.forEach((m) => {
             const el = document.getElementById(`set-${m}`)
             if (el) el.value = set[m.replace('m', 'menu')]
@@ -28275,9 +28593,18 @@
         let conf = {
           adminPassword: savedSettings.adminPassword,
           adminUsername: savedSettings.adminUsername || 'adminmu',
-          themeColor: (document.getElementById('set-themeColor') || {}).value || savedSettings.themeColor || '#0f766e',
-          themeTextColor: (document.getElementById('set-themeTextColor') || {}).value || savedSettings.themeTextColor || '#1e293b',
-          sidebarBgColor: (document.getElementById('set-sidebarBgColor') || {}).value || savedSettings.sidebarBgColor || '#0f172a',
+          themeColor:
+            (document.getElementById('set-themeColor') || {}).value ||
+            savedSettings.themeColor ||
+            '#0f766e',
+          themeTextColor:
+            (document.getElementById('set-themeTextColor') || {}).value ||
+            savedSettings.themeTextColor ||
+            '#1e293b',
+          sidebarBgColor:
+            (document.getElementById('set-sidebarBgColor') || {}).value ||
+            savedSettings.sidebarBgColor ||
+            '#0f172a',
           txtAppName: document.getElementById('set-appName').value,
           txtAppDesc: document.getElementById('set-appDesc').value,
           txtSidebarTitle: document.getElementById('set-sidebarTitle').value,
@@ -28568,7 +28895,10 @@
         // Row 5: garis pembatas tebal
         // Row 6: blank
         const set = savedSettings
-        const _toTitleCase = (s) => String(s).toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase())
+        const _toTitleCase = (s) =>
+          String(s)
+            .toLowerCase()
+            .replace(/\b\w/g, (c) => c.toUpperCase())
         let rows = []
         rows.push([String(set.kopLine1 || set.txtAppName || 'PONDOK PESANTREN').toUpperCase()])
         if (set.kopLine2) rows.push([String(set.kopLine2).toUpperCase()])
@@ -28786,8 +29116,18 @@
         const thn = parseInt(document.getElementById('rekap_absen_tahun').value)
         const daysInMonth = new Date(thn, blnIndex + 1, 0).getDate()
         const monthNames = [
-          'Januari','Februari','Maret','April','Mei','Juni',
-          'Juli','Agustus','September','Oktober','November','Desember'
+          'Januari',
+          'Februari',
+          'Maret',
+          'April',
+          'Mei',
+          'Juni',
+          'Juli',
+          'Agustus',
+          'September',
+          'Oktober',
+          'November',
+          'Desember'
         ]
         const namaBulan = monthNames[blnIndex]
         let header = ['No', 'Nama Guru', 'Lembaga']
@@ -28798,7 +29138,10 @@
         let no = 1
         sortedGuru.forEach((g) => {
           let row = [no++, getNamaGuruGelar(g.nama, g.jk), g.lembaga]
-          let tHadir = 0, tTelat = 0, tIzinSakit = 0, tAlpha = 0
+          let tHadir = 0,
+            tTelat = 0,
+            tIzinSakit = 0,
+            tAlpha = 0
           for (let d = 1; d <= daysInMonth; d++) {
             let currentTglStr = `${thn}-${String(blnIndex + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
             let isLibur = new Date(thn, blnIndex, d).getDay() === 0 || db_libur[currentTglStr]
@@ -28807,7 +29150,11 @@
               row.push('L')
             } else if (
               !a ||
-              (a.keterangan !== 'Hadir' && a.keterangan !== 'Sakit' && a.keterangan !== 'Izin' && !a.jam_pagi && !a.jam_sore) ||
+              (a.keterangan !== 'Hadir' &&
+                a.keterangan !== 'Sakit' &&
+                a.keterangan !== 'Izin' &&
+                !a.jam_pagi &&
+                !a.jam_sore) ||
               a.keterangan === 'Alpha'
             ) {
               row.push('A')
@@ -28818,8 +29165,13 @@
             } else {
               let stPagi = evalWaktu(a.jam_pagi, 'pagi')
               let stSore = evalWaktu(a.jam_sore, 'sore')
-              if (stPagi === 'Telat' || stSore === 'Telat') { row.push('T'); tTelat++ }
-              else { row.push('H'); tHadir++ }
+              if (stPagi === 'Telat' || stSore === 'Telat') {
+                row.push('T')
+                tTelat++
+              } else {
+                row.push('H')
+                tHadir++
+              }
             }
           }
           row.push(tHadir, tTelat, tIzinSakit, tAlpha)
@@ -30286,7 +30638,8 @@
         }
         const santri = db_santri.find((x) => x.id == data.santri_id)
         if (!santri) return _toast.error('Santri tidak ditemukan')
-        const noStruk = (typeof buatNomorStruk === 'function') ? buatNomorStruk() : `STR-${Date.now()}`
+        const noStruk =
+          typeof buatNomorStruk === 'function' ? buatNomorStruk() : `STR-${Date.now()}`
         const transaksi = {
           id: `trx_${Date.now()}`,
           no_struk: noStruk,
@@ -30309,7 +30662,7 @@
           total_bayar: Number(data.total_bayar),
           kembalian: Number(data.kembalian),
           metode_bayar: 'cash',
-          operator: data.operator || (sesiAktif.nama || 'admin')
+          operator: data.operator || sesiAktif.nama || 'admin'
         }
         toggleLoader(true, 'Menyimpan transaksi...')
         try {
@@ -31755,7 +32108,11 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
         renderMasterTP('potongan')
         // v.29.0526: re-render bisyaroh setelah 500ms supaya kalau db_guru masih loading bisa catch up
         setTimeout(() => {
-          try { renderBisyarohGrid() } catch (e) { console.warn('[delayed bisyaroh]', e) }
+          try {
+            renderBisyarohGrid()
+          } catch (e) {
+            console.warn('[delayed bisyaroh]', e)
+          }
         }, 500)
       }
 
@@ -32406,7 +32763,8 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
             <p class="text-rose-700 font-mono text-[10px]">${escapeHtml(String(err.message || err))}</p>
             <p class="text-slate-500 mt-2">db_guru count: ${(db_guru || []).length} · savedSettings: ${typeof savedSettings}</p>
           </div>`
-          if (typeof captureToSentry === 'function') captureToSentry(err, { where: 'renderBisyarohGrid' })
+          if (typeof captureToSentry === 'function')
+            captureToSentry(err, { where: 'renderBisyarohGrid' })
         }
       }
       function _renderBisyarohGridImpl(div) {
@@ -32436,12 +32794,16 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
           })
         }
         // v.28.0526: ambil filter search nama + lembaga
-        const kw = (document.getElementById('bisyaroh-search-nama')?.value || '').toLowerCase().trim()
+        const kw = (document.getElementById('bisyaroh-search-nama')?.value || '')
+          .toLowerCase()
+          .trim()
         const filterLmbg = document.getElementById('bisyaroh-filter-lembaga')?.value || ''
         // v.29.0526: hitung total semua status untuk diagnosis
         const totalGuru = db_guru.length
         const aktifByStatus = db_guru.filter((g) => {
-          const st = String(g.status || 'Aktif').toLowerCase().trim()
+          const st = String(g.status || 'Aktif')
+            .toLowerCase()
+            .trim()
           return st === 'aktif'
         })
         // v.29.0526: kalau status filter terlalu ketat sampai 0 sementara db_guru ada isi,
@@ -32450,7 +32812,11 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
         let guruAktif = sortGuruGeneral(useAll ? db_guru.slice() : aktifByStatus)
         // Apply filter search + lembaga
         if (kw) {
-          guruAktif = guruAktif.filter((g) => String(g.nama || '').toLowerCase().includes(kw))
+          guruAktif = guruAktif.filter((g) =>
+            String(g.nama || '')
+              .toLowerCase()
+              .includes(kw)
+          )
         }
         if (filterLmbg) {
           guruAktif = guruAktif.filter((g) => g.lembaga === filterLmbg)
@@ -32502,7 +32868,9 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
         }
         // v.108.14: filter case-insensitive + v.29.0526: fallback useAll
         const aktifByStatus = db_guru.filter((g) => {
-          const st = String(g.status || 'Aktif').toLowerCase().trim()
+          const st = String(g.status || 'Aktif')
+            .toLowerCase()
+            .trim()
           return st === 'aktif'
         })
         const guruAktif = sortGuruGeneral(
@@ -33069,8 +33437,7 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
       async function balasKritikSaran(id) {
         const k = db_kritik_saran.find((x) => x.id === id)
         if (!k) return _toast.error('Pesan tidak ditemukan')
-        const isAdmin =
-          sesiAktif.role === 'admin' || sesiAktif.role_sistem === 'super_admin'
+        const isAdmin = sesiAktif.role === 'admin' || sesiAktif.role_sistem === 'super_admin'
         if (!isAdmin) return _toast.error('Hanya admin yang bisa membalas')
         const r = await Swal.fire({
           title: `Balas Pesan dari ${k.pengirim_nama || 'User'}`,
@@ -33100,11 +33467,7 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
           const updateData = {
             reply: replyText,
             reply_at: new Date().toISOString(),
-            reply_by:
-              sesiAktif.nama_lengkap ||
-              sesiAktif.nama ||
-              sesiAktif.username ||
-              'Admin'
+            reply_by: sesiAktif.nama_lengkap || sesiAktif.nama || sesiAktif.username || 'Admin'
           }
           await db.collection('kritik_saran').doc(id).set(updateData, { merge: true })
           // Update local cache
@@ -33359,7 +33722,11 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
         try {
           // v.16.0526: SKIP auto-prompt di Capacitor mode — native plugin (PushNotifications)
           // sudah handle permission via dialog Android native. Swal web FCM ini bisa freeze di WebView.
-          if (window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform()) {
+          if (
+            window.Capacitor &&
+            typeof window.Capacitor.isNativePlatform === 'function' &&
+            window.Capacitor.isNativePlatform()
+          ) {
             return
           }
           if (!('Notification' in window)) return
@@ -35886,7 +36253,9 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
         if (!fields.length) return
         const values = existingValues || {}
         // Insert sebelum submit button row (cari [type="submit"] terdekat)
-        const submitBtn = gridParent.parentElement.querySelector('[type="submit"], [id^="btn-submit-"], [id^="btn_submit_"]')
+        const submitBtn = gridParent.parentElement.querySelector(
+          '[type="submit"], [id^="btn-submit-"], [id^="btn_submit_"]'
+        )
         const insertBeforeNode = (submitBtn && submitBtn.closest('.grid > *')) || null
         fields.forEach((f) => {
           const wrapper = document.createElement('div')
@@ -35974,7 +36343,8 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
         _acfEditState.fields = ordered
         window._acfEditState = _acfEditState
         const labelEntity =
-          { santri: 'Santri', guru: 'Guru/Pegawai', lembaga: 'Lembaga', kelas: 'Kelas' }[entity] || entity
+          { santri: 'Santri', guru: 'Guru/Pegawai', lembaga: 'Lembaga', kelas: 'Kelas' }[entity] ||
+          entity
         const titleEl = document.getElementById('modal-acf-title-entity')
         if (titleEl) titleEl.innerText = labelEntity
         document.getElementById('modal-acf-fields').classList.remove('hidden')
@@ -35992,7 +36362,9 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
                 <span class="text-slate-600">— ${totalDefault} default + ${totalCustom} custom. Tarik (drag-drop) untuk reorder. Klik Simpan saat selesai.</span>
             </div>`
         if (fields.length === 0) {
-          div.innerHTML = headerHtml + '<p class="text-xs text-slate-400 italic text-center py-4">Belum ada field. Klik tombol Tambah Field Baru di bawah.</p>'
+          div.innerHTML =
+            headerHtml +
+            '<p class="text-xs text-slate-400 italic text-center py-4">Belum ada field. Klik tombol Tambah Field Baru di bawah.</p>'
           return
         }
         const fieldsHtml = fields
@@ -36073,7 +36445,9 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
           row.addEventListener('dragstart', (e) => {
             dragIdx = Number(row.getAttribute('data-acf-idx'))
             row.style.opacity = '0.4'
-            try { e.dataTransfer.setData('text/plain', String(dragIdx)) } catch (_) {}
+            try {
+              e.dataTransfer.setData('text/plain', String(dragIdx))
+            } catch (_) {}
             e.dataTransfer.effectAllowed = 'move'
           })
           row.addEventListener('dragend', () => {
@@ -36158,10 +36532,16 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
             if (typeof _renderCustomFieldsInline === 'function') {
               _renderCustomFieldsInline(entity, {})
             }
-          } catch (e) { console.warn('[acf re-render]', e) }
+          } catch (e) {
+            console.warn('[acf re-render]', e)
+          }
           // Auto-apply order ke form yang aktif (delay sedikit supaya DOM ready) + show toast result
           setTimeout(() => {
-            try { applyFieldOrderToForm(entity, { toast: true }) } catch (e) { console.warn('[applyFieldOrder]', e) }
+            try {
+              applyFieldOrderToForm(entity, { toast: true })
+            } catch (e) {
+              console.warn('[applyFieldOrder]', e)
+            }
           }, 150)
         } catch (e) {
           _toast.error('Error: ' + (e.message || ''))
@@ -38966,8 +39346,9 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
         const fileInp = document.getElementById('bp-gambar-file')
         if (fileInp) fileInp.value = ''
         const prog = document.getElementById('bp-gambar-progress')
-        if (prog) prog.classList.add('hidden')
-        // Reset link preview
+        if (prog)
+          prog.classList.add('hidden')
+          // Reset link preview
         ;['bp-link-url', 'bp-link-title', 'bp-link-desc', 'bp-link-image'].forEach((id) => {
           const el = document.getElementById(id)
           if (el) el.value = ''
@@ -38995,8 +39376,9 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
         const fileInp = document.getElementById('bp-gambar-file')
         if (fileInp) fileInp.value = ''
         const prog = document.getElementById('bp-gambar-progress')
-        if (prog) prog.classList.add('hidden')
-        // Restore link preview kalau ada
+        if (prog)
+          prog.classList.add('hidden')
+          // Restore link preview kalau ada
         ;['bp-link-url', 'bp-link-title', 'bp-link-desc', 'bp-link-image'].forEach((id) => {
           const el = document.getElementById(id)
           if (el) el.value = ''
@@ -40738,7 +41120,12 @@ body { font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-hei
       function showInstallBannerIfNeeded() {
         try {
           // v.07.0526: Skip di Capacitor native — app sudah ter-install via Play Store
-          if (window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform()) return
+          if (
+            window.Capacitor &&
+            typeof window.Capacitor.isNativePlatform === 'function' &&
+            window.Capacitor.isNativePlatform()
+          )
+            return
           // Tidak tampil jika user sudah dismiss atau sudah install
           if (localStorage.getItem('pwaInstallDismissed_v1') === '1') return
 

@@ -1,0 +1,1378 @@
+import {
+  ae as Z,
+  I as X,
+  h as i,
+  e as a,
+  j as b,
+  ar as n,
+  ak as u,
+  a4 as y,
+  F as x,
+  U as _,
+  g as J,
+  as as C,
+  aj as ee,
+  P as te,
+  Q as g,
+  d as G,
+  Z as D,
+  q as $,
+  l as R,
+  L as d,
+  ag as ae
+} from './index-CPbTnm_Q.js'
+import { u as se } from './useGuru-BEk_ofri.js'
+import { u as re } from './useLembaga-8ypq4SFU.js'
+import { u as le } from './useToast-BjwjYk11.js'
+const oe = { class: 'p-4 md:p-6 max-w-5xl mx-auto space-y-4' },
+  ne = {
+    class:
+      'bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-5 border border-slate-200 dark:border-slate-700 shadow-sm'
+  },
+  ie = { class: 'grid grid-cols-1 md:grid-cols-2 gap-3' },
+  de = ['disabled'],
+  ue = { class: 'mt-4' },
+  be = { class: 'space-y-1.5 mb-2' },
+  pe = ['onUpdate:modelValue'],
+  me = ['onUpdate:modelValue'],
+  ke = {
+    class:
+      'col-span-2 flex items-center gap-1 text-[10px] font-bold text-slate-600 dark:text-slate-400'
+  },
+  ge = ['onUpdate:modelValue'],
+  xe = ['onClick', 'disabled', 'title'],
+  _e = { key: 0, class: 'text-xs text-slate-400 italic text-center py-2' },
+  fe = { class: 'flex gap-2' },
+  ce = {
+    class:
+      'bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-5 border border-slate-200 dark:border-slate-700 shadow-sm'
+  },
+  he = {
+    class:
+      'grid grid-cols-1 md:grid-cols-2 gap-3 mb-4 pb-4 border-b border-slate-100 dark:border-slate-700'
+  },
+  ye = { class: 'grid grid-cols-1 md:grid-cols-[1fr_140px] gap-2 mb-3' },
+  ve = ['value'],
+  we = { class: 'space-y-1.5 max-h-96 overflow-y-auto custom-scrollbar' },
+  Se = { class: 'min-w-0' },
+  Ve = { class: 'text-xs font-bold text-slate-800 dark:text-white truncate' },
+  Ue = { class: 'text-[10px] text-slate-500 dark:text-slate-400 truncate' },
+  Pe = ['onUpdate:modelValue', 'onInput'],
+  je = ['onUpdate:modelValue', 'onInput'],
+  Ce = { key: 0, class: 'text-xs text-slate-400 italic text-center py-4' },
+  Te = {
+    class:
+      'bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-5 border border-slate-200 dark:border-slate-700 shadow-sm'
+  },
+  Ie = { class: 'grid grid-cols-1 md:grid-cols-2 gap-4' },
+  Ae = { class: 'space-y-1.5 mb-2' },
+  Be = ['onUpdate:modelValue'],
+  Ke = ['onClick'],
+  Ne = { class: 'flex gap-2' },
+  Me = { class: 'space-y-1.5 mb-2' },
+  Fe = ['onUpdate:modelValue'],
+  Le = ['onClick'],
+  Je = { class: 'flex gap-2' },
+  Ge = {
+    class:
+      'bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-5 border border-slate-200 dark:border-slate-700 shadow-sm'
+  },
+  De = {
+    class:
+      'flex items-center justify-between border-b border-slate-100 dark:border-slate-700 pb-2 mb-3'
+  },
+  $e = { key: 0, class: 'text-xs text-slate-400 italic text-center py-3' },
+  Re = { key: 1, class: 'space-y-1.5' },
+  Oe = ['onUpdate:modelValue'],
+  qe = ['onUpdate:modelValue', 'onInput'],
+  ze = ['onClick'],
+  Ee = {
+    class:
+      'bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-5 border border-slate-200 dark:border-slate-700 shadow-sm'
+  },
+  He = {
+    class:
+      'flex items-center justify-between border-b border-slate-100 dark:border-slate-700 pb-2 mb-3'
+  },
+  Qe = { key: 0, class: 'text-xs text-slate-400 italic text-center py-3' },
+  We = { key: 1, class: 'space-y-1.5' },
+  Ye = ['onUpdate:modelValue'],
+  Ze = ['onUpdate:modelValue', 'onInput'],
+  Xe = ['onClick'],
+  et = {
+    class:
+      'bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-5 border border-slate-200 dark:border-slate-700 shadow-sm'
+  },
+  tt = { class: 'grid grid-cols-1 md:grid-cols-3 gap-3' },
+  at = {
+    class:
+      'sticky bottom-4 z-20 flex justify-end gap-2 bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm rounded-2xl p-3 border border-slate-200 dark:border-slate-700 shadow-lg'
+  },
+  st = ['disabled'],
+  rt = ['disabled'],
+  ut = {
+    __name: 'PengaturanKeuanganView',
+    setup(lt) {
+      const O = Z(),
+        { guruRaw: q } = se(),
+        { lembagaRaw: z } = re(),
+        p = le(),
+        v = g(''),
+        P = g(''),
+        j = g(''),
+        w = g(''),
+        c = g(''),
+        S = g(!1),
+        h = g(!1),
+        m = g([]),
+        r = te({
+          keu_jatuh_tempo: 10,
+          keu_jenis_tagihan: [],
+          keu_bisyaroh_pagi: '',
+          keu_bisyaroh_sore: '',
+          keu_bisyaroh_pokok: {},
+          keu_bisyaroh_sekolah: {},
+          keu_kategori_masuk: [],
+          keu_kategori_keluar: [],
+          master_tunjangan: [],
+          master_potongan: [],
+          bank_nama: '',
+          bank_nomor: '',
+          bank_atasnama: ''
+        })
+      function f(s) {
+        return (
+          String(s || '')
+            .toLowerCase()
+            .replace(/\s+/g, '_')
+            .replace(/[^a-z0-9_]/g, '') || 'jenis'
+        )
+      }
+      function T() {
+        const s = O.settings || {}
+        r.keu_jatuh_tempo = s.keu_jatuh_tempo || 10
+        let e = []
+        ;(Array.isArray(s.keuTagihanJenis) && s.keuTagihanJenis.length > 0
+          ? (e = s.keuTagihanJenis.map((t) =>
+              typeof t == 'object' && t !== null
+                ? {
+                    id: t.id || f(t.label || t.nama || ''),
+                    label: t.label || t.nama || '',
+                    nominal_default: Number(t.nominal_default || t.nominal || 0) || 0,
+                    auto_generate: !!t.auto_generate
+                  }
+                : { id: f(t), label: String(t || ''), nominal_default: 0, auto_generate: !1 }
+            ))
+          : Array.isArray(s.keu_jenis_tagihan) && s.keu_jenis_tagihan.length > 0
+            ? (e = s.keu_jenis_tagihan.map((t) => ({
+                id: f(t),
+                label: String(t || ''),
+                nominal_default: 0,
+                auto_generate: f(t) === 'syahriyah'
+              })))
+            : (e = [
+                { id: 'syahriyah', label: 'Syahriyah', nominal_default: 0, auto_generate: !0 },
+                { id: 'spp_sekolah', label: 'SPP Sekolah', nominal_default: 0, auto_generate: !1 },
+                { id: 'kebersihan', label: 'Kebersihan', nominal_default: 0, auto_generate: !1 }
+              ]),
+          e.find((t) => t.id === 'syahriyah') ||
+            e.unshift({
+              id: 'syahriyah',
+              label: 'Syahriyah',
+              nominal_default: 0,
+              auto_generate: !0
+            }),
+          (m.value = e),
+          (r.keu_jenis_tagihan = e.map((t) => t.label)),
+          (r.keu_bisyaroh_pagi = k(s.keu_bisyaroh_pagi || 0)),
+          (r.keu_bisyaroh_sore = k(s.keu_bisyaroh_sore || 0)),
+          (r.keu_bisyaroh_pokok = { ...(s.keu_bisyaroh_pokok || {}) }),
+          (r.keu_bisyaroh_sekolah = { ...(s.keu_bisyaroh_sekolah || {}) }))
+        for (const t of Object.keys(r.keu_bisyaroh_pokok))
+          r.keu_bisyaroh_pokok[t] = k(r.keu_bisyaroh_pokok[t] || 0)
+        for (const t of Object.keys(r.keu_bisyaroh_sekolah))
+          r.keu_bisyaroh_sekolah[t] = k(r.keu_bisyaroh_sekolah[t] || 0)
+        ;((r.keu_kategori_masuk = Array.isArray(s.keu_kategori_masuk)
+          ? [...s.keu_kategori_masuk]
+          : ['Donasi', 'Wakaf', 'Lainnya']),
+          (r.keu_kategori_keluar = Array.isArray(s.keu_kategori_keluar)
+            ? [...s.keu_kategori_keluar]
+            : ['Operasional', 'Konsumsi', 'Listrik/Air', 'Perbaikan']),
+          (r.master_tunjangan = Array.isArray(s.master_tunjangan)
+            ? s.master_tunjangan.map((t) => ({
+                nama: t.nama || '',
+                nominal: t.nominal || 0,
+                nominalFmt: k(t.nominal || 0)
+              }))
+            : []),
+          (r.master_potongan = Array.isArray(s.master_potongan)
+            ? s.master_potongan.map((t) => ({
+                nama: t.nama || '',
+                nominal: t.nominal || 0,
+                nominalFmt: k(t.nominal || 0)
+              }))
+            : []),
+          (r.bank_nama = s.bank_nama || ''),
+          (r.bank_nomor = s.bank_nomor || ''),
+          (r.bank_atasnama = s.bank_atasnama || ''))
+      }
+      X(T)
+      function k(s) {
+        const e = parseInt(String(s).replace(/\D/g, '')) || 0
+        return e === 0 ? '' : e.toLocaleString('id-ID')
+      }
+      function V(s) {
+        return parseInt(String(s).replace(/\D/g, '')) || 0
+      }
+      function I(s, e) {
+        r[e] = k(s.target.value)
+      }
+      function A(s, e, t) {
+        r[e][t] = k(s.target.value)
+      }
+      function B() {
+        const s = v.value.trim()
+        if (!s) return
+        const e = f(s)
+        if (m.value.find((t) => t.id === e || t.label === s)) {
+          p.warning('Jenis tagihan sudah ada')
+          return
+        }
+        ;(m.value.push({ id: e, label: s, nominal_default: 0, auto_generate: !1 }), (v.value = ''))
+      }
+      function E(s) {
+        const e = m.value[s]
+        if ((e == null ? void 0 : e.id) === 'syahriyah') {
+          p.warning('Jenis Syahriyah protected, tidak bisa dihapus')
+          return
+        }
+        m.value.splice(s, 1)
+      }
+      function U(s) {
+        const e = s === 'masuk' ? P : j,
+          t = s === 'masuk' ? r.keu_kategori_masuk : r.keu_kategori_keluar,
+          l = e.value.trim()
+        if (l) {
+          if (t.includes(l)) {
+            p.warning('Kategori sudah ada')
+            return
+          }
+          ;(t.push(l), (e.value = ''))
+        }
+      }
+      function K(s, e) {
+        ;(s === 'masuk' ? r.keu_kategori_masuk : r.keu_kategori_keluar).splice(e, 1)
+      }
+      function N(s) {
+        ;(s === 'tunjangan' ? r.master_tunjangan : r.master_potongan).push({
+          nama: '',
+          nominal: 0,
+          nominalFmt: ''
+        })
+      }
+      function M(s, e) {
+        ;(s === 'tunjangan' ? r.master_tunjangan : r.master_potongan).splice(e, 1)
+      }
+      function F(s, e) {
+        const t = parseInt(String(e.target.value).replace(/\D/g, '')) || 0
+        ;((s.nominal = t), (s.nominalFmt = t === 0 ? '' : t.toLocaleString('id-ID')))
+      }
+      const H = G(() => (z.value || []).map((s) => s.lembaga).filter(Boolean)),
+        L = G(() => {
+          let s = (q.value || []).filter(
+            (e) => String(e.status || 'Aktif').toLowerCase() === 'aktif'
+          )
+          if (
+            (c.value &&
+              (s = s.filter((e) => e.lembaga === c.value || e.lembaga_sekolah === c.value)),
+            w.value.trim())
+          ) {
+            const e = w.value.trim().toLowerCase()
+            s = s.filter((t) =>
+              String(t.nama || '')
+                .toLowerCase()
+                .includes(e)
+            )
+          }
+          return s.sort((e, t) => String(e.nama || '').localeCompare(String(t.nama || '')))
+        })
+      async function Q() {
+        h.value = !0
+        try {
+          const s = m.value
+              .filter((t) => String(t.label || '').trim())
+              .map((t) => ({
+                id: t.id || f(t.label),
+                label: String(t.label || '').trim(),
+                nominal_default: Number(t.nominal_default || 0) || 0,
+                auto_generate: !!t.auto_generate
+              })),
+            e = {
+              keu_jatuh_tempo: r.keu_jatuh_tempo,
+              keuTagihanJenis: s,
+              keu_jenis_tagihan: s.map((t) => t.label),
+              keu_bisyaroh_pagi: V(r.keu_bisyaroh_pagi),
+              keu_bisyaroh_sore: V(r.keu_bisyaroh_sore),
+              keu_bisyaroh_pokok: {},
+              keu_bisyaroh_sekolah: {},
+              keu_kategori_masuk: r.keu_kategori_masuk.filter((t) => t.trim()),
+              keu_kategori_keluar: r.keu_kategori_keluar.filter((t) => t.trim()),
+              master_tunjangan: r.master_tunjangan
+                .filter((t) => t.nama.trim())
+                .map((t) => ({ nama: t.nama.trim(), nominal: t.nominal || 0 })),
+              master_potongan: r.master_potongan
+                .filter((t) => t.nama.trim())
+                .map((t) => ({ nama: t.nama.trim(), nominal: t.nominal || 0 })),
+              bank_nama: r.bank_nama.trim(),
+              bank_nomor: r.bank_nomor.trim(),
+              bank_atasnama: r.bank_atasnama.trim()
+            }
+          for (const [t, l] of Object.entries(r.keu_bisyaroh_pokok)) {
+            const o = V(l)
+            o > 0 && (e.keu_bisyaroh_pokok[t] = o)
+          }
+          for (const [t, l] of Object.entries(r.keu_bisyaroh_sekolah)) {
+            const o = V(l)
+            o > 0 && (e.keu_bisyaroh_sekolah[t] = o)
+          }
+          ;(await D($(R, 'settings', 'general'), e, { merge: !0 }),
+            await D($(R, 'settings', 'web'), e, { merge: !0 }),
+            p.success('Pengaturan keuangan tersimpan'))
+        } catch (s) {
+          p.error('Gagal simpan: ' + (s.message || s))
+        } finally {
+          h.value = !1
+        }
+      }
+      function W() {
+        ;(T(), p.info('Form direset'))
+      }
+      async function Y() {
+        S.value = !0
+        try {
+          typeof window.autoGenerateSyahriyahManual == 'function'
+            ? (await window.autoGenerateSyahriyahManual(), p.success('Auto-generate selesai'))
+            : p.warning(
+                'Fitur auto-generate akan migrate di batch berikutnya. Gunakan menu Tagihan untuk generate manual.'
+              )
+        } catch (s) {
+          p.error('Error: ' + (s.message || s))
+        } finally {
+          S.value = !1
+        }
+      }
+      return (s, e) => (
+        d(),
+        i('div', oe, [
+          e[57] ||
+            (e[57] = a(
+              'div',
+              {
+                class:
+                  'bg-white dark:bg-slate-800 rounded-2xl p-5 md:p-6 border border-slate-200 dark:border-slate-700 shadow-sm'
+              },
+              [
+                a('h2', { class: 'text-lg md:text-xl font-black text-slate-800 dark:text-white' }, [
+                  a('i', { class: 'fas fa-sliders-h text-amber-600 mr-2' }),
+                  b('Pengaturan Keuangan ')
+                ]),
+                a(
+                  'p',
+                  { class: 'text-xs text-slate-500 dark:text-slate-400 mt-1' },
+                  ' Atur tanggal jatuh tempo, jenis tagihan, bisyaroh shift & bisyaroh pokok. '
+                )
+              ],
+              -1
+            )),
+          a('div', ne, [
+            e[27] ||
+              (e[27] = a(
+                'h3',
+                {
+                  class:
+                    'text-xs md:text-sm font-black text-slate-800 dark:text-white uppercase tracking-widest mb-3 border-b border-slate-100 dark:border-slate-700 pb-2'
+                },
+                [
+                  a('i', { class: 'fas fa-calendar-day text-teal-600 mr-1' }),
+                  b('Pembayaran & Jatuh Tempo ')
+                ],
+                -1
+              )),
+            a('div', ie, [
+              a('div', null, [
+                e[19] ||
+                  (e[19] = a(
+                    'label',
+                    {
+                      class:
+                        'text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 block'
+                    },
+                    ' Tanggal Jatuh Tempo Default Syahriyah Bulanan (1-28) ',
+                    -1
+                  )),
+                n(
+                  a(
+                    'input',
+                    {
+                      'onUpdate:modelValue': e[0] || (e[0] = (t) => (r.keu_jatuh_tempo = t)),
+                      type: 'number',
+                      min: '1',
+                      max: '28',
+                      class:
+                        'w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white'
+                    },
+                    null,
+                    512
+                  ),
+                  [[u, r.keu_jatuh_tempo, void 0, { number: !0 }]]
+                )
+              ]),
+              a('div', null, [
+                e[21] ||
+                  (e[21] = a(
+                    'label',
+                    {
+                      class:
+                        'text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 block'
+                    },
+                    ' Auto-Generate Pembayaran ',
+                    -1
+                  )),
+                a(
+                  'button',
+                  {
+                    onClick: Y,
+                    disabled: S.value,
+                    class:
+                      'w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 rounded-lg text-sm transition cursor-pointer disabled:opacity-50'
+                  },
+                  [
+                    e[20] || (e[20] = a('i', { class: 'fas fa-sync mr-1' }, null, -1)),
+                    b(y(S.value ? 'Generating...' : 'Generate Bulan Ini'), 1)
+                  ],
+                  8,
+                  de
+                )
+              ])
+            ]),
+            a('div', ue, [
+              e[25] ||
+                (e[25] = a(
+                  'h4',
+                  {
+                    class:
+                      'font-black text-slate-700 dark:text-slate-300 text-[11px] uppercase tracking-wider mb-2'
+                  },
+                  ' Daftar Jenis Pembayaran (label + nominal default — match legacy) ',
+                  -1
+                )),
+              e[26] ||
+                (e[26] = a(
+                  'p',
+                  { class: 'text-[10px] text-slate-500 mb-2 italic' },
+                  [
+                    a('i', { class: 'fas fa-info-circle mr-1' }),
+                    b(
+                      'Nominal default akan auto-isi di ModalPOS saat klik preset jenis. Set 0 kalau nominal variabel. '
+                    )
+                  ],
+                  -1
+                )),
+              a('div', be, [
+                (d(!0),
+                i(
+                  x,
+                  null,
+                  _(
+                    m.value,
+                    (t, l) => (
+                      d(),
+                      i(
+                        'div',
+                        {
+                          key: l,
+                          class:
+                            'grid grid-cols-12 gap-2 items-center bg-slate-50 dark:bg-slate-700/30 px-3 py-2 rounded-lg'
+                        },
+                        [
+                          n(
+                            a(
+                              'input',
+                              {
+                                'onUpdate:modelValue': (o) => (t.label = o),
+                                type: 'text',
+                                placeholder: 'Label (Syahriyah, Infaq, ...)',
+                                class:
+                                  'col-span-5 bg-transparent text-sm font-bold text-slate-800 dark:text-white outline-none border-b border-slate-300 dark:border-slate-600 pb-1'
+                              },
+                              null,
+                              8,
+                              pe
+                            ),
+                            [[u, t.label]]
+                          ),
+                          n(
+                            a(
+                              'input',
+                              {
+                                'onUpdate:modelValue': (o) => (t.nominal_default = o),
+                                type: 'number',
+                                min: '0',
+                                placeholder: 'Nominal default',
+                                class:
+                                  'col-span-4 bg-white dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-white outline-none border border-slate-300 dark:border-slate-600 rounded px-2 py-1'
+                              },
+                              null,
+                              8,
+                              me
+                            ),
+                            [[u, t.nominal_default, void 0, { number: !0 }]]
+                          ),
+                          a('label', ke, [
+                            n(
+                              a(
+                                'input',
+                                {
+                                  'onUpdate:modelValue': (o) => (t.auto_generate = o),
+                                  type: 'checkbox',
+                                  class: 'w-3 h-3'
+                                },
+                                null,
+                                8,
+                                ge
+                              ),
+                              [[ae, t.auto_generate]]
+                            ),
+                            e[22] || (e[22] = b(' Auto ', -1))
+                          ]),
+                          a(
+                            'button',
+                            {
+                              onClick: (o) => E(l),
+                              disabled: t.id === 'syahriyah',
+                              class:
+                                'col-span-1 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 px-2 py-1 rounded text-xs disabled:opacity-30 disabled:cursor-not-allowed',
+                              title: t.id === 'syahriyah' ? 'Protected - jenis dasar' : 'Hapus'
+                            },
+                            [...(e[23] || (e[23] = [a('i', { class: 'fas fa-trash' }, null, -1)]))],
+                            8,
+                            xe
+                          )
+                        ]
+                      )
+                    )
+                  ),
+                  128
+                )),
+                m.value.length === 0
+                  ? (d(), i('p', _e, ' Belum ada jenis tagihan. Tambah di bawah. '))
+                  : J('', !0)
+              ]),
+              a('div', fe, [
+                n(
+                  a(
+                    'input',
+                    {
+                      'onUpdate:modelValue': e[1] || (e[1] = (t) => (v.value = t)),
+                      onKeyup: C(B, ['enter']),
+                      type: 'text',
+                      placeholder: 'Nama jenis tagihan baru...',
+                      class:
+                        'flex-1 px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white'
+                    },
+                    null,
+                    544
+                  ),
+                  [[u, v.value]]
+                ),
+                a(
+                  'button',
+                  {
+                    onClick: B,
+                    class:
+                      'bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-lg text-xs whitespace-nowrap'
+                  },
+                  [
+                    ...(e[24] ||
+                      (e[24] = [a('i', { class: 'fas fa-plus mr-1' }, null, -1), b('Tambah ', -1)]))
+                  ]
+                )
+              ])
+            ])
+          ]),
+          a('div', ce, [
+            e[34] ||
+              (e[34] = a(
+                'h3',
+                {
+                  class:
+                    'text-xs md:text-sm font-black text-slate-800 dark:text-white uppercase tracking-widest mb-3 border-b border-slate-100 dark:border-slate-700 pb-2'
+                },
+                [
+                  a('i', { class: 'fas fa-hand-holding-usd text-amber-600 mr-1' }),
+                  b('Bisyaroh Guru/Pegawai ')
+                ],
+                -1
+              )),
+            a('div', he, [
+              a('div', null, [
+                e[28] ||
+                  (e[28] = a(
+                    'label',
+                    {
+                      class:
+                        'text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 block'
+                    },
+                    ' Bisyaroh per Shift Pagi (otomatis dari absensi) ',
+                    -1
+                  )),
+                n(
+                  a(
+                    'input',
+                    {
+                      'onUpdate:modelValue': e[2] || (e[2] = (t) => (r.keu_bisyaroh_pagi = t)),
+                      onInput: e[3] || (e[3] = (t) => I(t, 'keu_bisyaroh_pagi')),
+                      type: 'text',
+                      inputmode: 'numeric',
+                      placeholder: 'Nominal per kehadiran...',
+                      class:
+                        'w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white font-bold'
+                    },
+                    null,
+                    544
+                  ),
+                  [[u, r.keu_bisyaroh_pagi]]
+                )
+              ]),
+              a('div', null, [
+                e[29] ||
+                  (e[29] = a(
+                    'label',
+                    {
+                      class:
+                        'text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 block'
+                    },
+                    ' Bisyaroh per Shift Sore (otomatis dari absensi) ',
+                    -1
+                  )),
+                n(
+                  a(
+                    'input',
+                    {
+                      'onUpdate:modelValue': e[4] || (e[4] = (t) => (r.keu_bisyaroh_sore = t)),
+                      onInput: e[5] || (e[5] = (t) => I(t, 'keu_bisyaroh_sore')),
+                      type: 'text',
+                      inputmode: 'numeric',
+                      placeholder: 'Nominal per kehadiran...',
+                      class:
+                        'w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white font-bold'
+                    },
+                    null,
+                    544
+                  ),
+                  [[u, r.keu_bisyaroh_sore]]
+                )
+              ])
+            ]),
+            a('div', null, [
+              e[31] ||
+                (e[31] = a(
+                  'div',
+                  { class: 'flex justify-between items-start mb-2' },
+                  [
+                    a(
+                      'h4',
+                      {
+                        class:
+                          'font-black text-slate-700 dark:text-slate-300 text-[11px] uppercase tracking-wider'
+                      },
+                      ' Bisyaroh Pokok Per Guru/Pegawai (Flat Bulanan) '
+                    )
+                  ],
+                  -1
+                )),
+              e[32] ||
+                (e[32] = a(
+                  'p',
+                  { class: 'text-[10px] text-slate-400 italic mb-2' },
+                  ' Pokok = bayar tetap. Tambahan dari shift = otomatis dari absensi. ',
+                  -1
+                )),
+              a('div', ye, [
+                n(
+                  a(
+                    'input',
+                    {
+                      'onUpdate:modelValue': e[6] || (e[6] = (t) => (w.value = t)),
+                      type: 'text',
+                      placeholder: 'Cari nama guru...',
+                      class:
+                        'px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white'
+                    },
+                    null,
+                    512
+                  ),
+                  [[u, w.value]]
+                ),
+                n(
+                  a(
+                    'select',
+                    {
+                      'onUpdate:modelValue': e[7] || (e[7] = (t) => (c.value = t)),
+                      class:
+                        'px-3 py-2 text-xs border border-slate-300 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white'
+                    },
+                    [
+                      e[30] || (e[30] = a('option', { value: '' }, 'Semua Lembaga', -1)),
+                      (d(!0),
+                      i(
+                        x,
+                        null,
+                        _(H.value, (t) => (d(), i('option', { key: t, value: t }, y(t), 9, ve))),
+                        128
+                      ))
+                    ],
+                    512
+                  ),
+                  [[ee, c.value]]
+                )
+              ]),
+              a('div', we, [
+                (d(!0),
+                i(
+                  x,
+                  null,
+                  _(
+                    L.value,
+                    (t) => (
+                      d(),
+                      i(
+                        'div',
+                        {
+                          key: t.id,
+                          class:
+                            'grid grid-cols-[1fr_120px_120px] gap-2 items-center bg-slate-50 dark:bg-slate-700/30 px-3 py-2 rounded-lg'
+                        },
+                        [
+                          a('div', Se, [
+                            a('p', Ve, y(t.nama), 1),
+                            a('p', Ue, y(t.lembaga || '-'), 1)
+                          ]),
+                          n(
+                            a(
+                              'input',
+                              {
+                                'onUpdate:modelValue': (l) => (r.keu_bisyaroh_pokok[t.id] = l),
+                                onInput: (l) => A(l, 'keu_bisyaroh_pokok', t.id),
+                                type: 'text',
+                                inputmode: 'numeric',
+                                placeholder: '0',
+                                class:
+                                  'px-2 py-1.5 text-xs text-right font-bold border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-900 text-slate-800 dark:text-white',
+                                title: 'Pokok Pondok'
+                              },
+                              null,
+                              40,
+                              Pe
+                            ),
+                            [[u, r.keu_bisyaroh_pokok[t.id]]]
+                          ),
+                          n(
+                            a(
+                              'input',
+                              {
+                                'onUpdate:modelValue': (l) => (r.keu_bisyaroh_sekolah[t.id] = l),
+                                onInput: (l) => A(l, 'keu_bisyaroh_sekolah', t.id),
+                                type: 'text',
+                                inputmode: 'numeric',
+                                placeholder: '0',
+                                class:
+                                  'px-2 py-1.5 text-xs text-right font-bold border border-emerald-300 dark:border-emerald-700 rounded bg-emerald-50 dark:bg-emerald-900/20 text-emerald-800 dark:text-emerald-200',
+                                title: 'Pokok Sekolah (terpisah)'
+                              },
+                              null,
+                              40,
+                              je
+                            ),
+                            [[u, r.keu_bisyaroh_sekolah[t.id]]]
+                          )
+                        ]
+                      )
+                    )
+                  ),
+                  128
+                )),
+                L.value.length === 0
+                  ? (d(), i('p', Ce, ' Tidak ada guru cocok filter. '))
+                  : J('', !0)
+              ]),
+              e[33] ||
+                (e[33] = a(
+                  'p',
+                  { class: 'text-[10px] text-slate-400 italic mt-2' },
+                  ' Kolom kiri = Pokok Pondok · Kolom kanan emerald = Pokok Sekolah (flat per guru per bulan) ',
+                  -1
+                ))
+            ])
+          ]),
+          a('div', Te, [
+            e[41] ||
+              (e[41] = a(
+                'h3',
+                {
+                  class:
+                    'text-xs md:text-sm font-black text-slate-800 dark:text-white uppercase tracking-widest mb-3 border-b border-slate-100 dark:border-slate-700 pb-2'
+                },
+                [
+                  a('i', { class: 'fas fa-tags text-teal-600 mr-1' }),
+                  b('Kategori Transaksi Manual (Buku Induk) ')
+                ],
+                -1
+              )),
+            a('div', Ie, [
+              a('div', null, [
+                e[37] ||
+                  (e[37] = a(
+                    'h4',
+                    {
+                      class:
+                        'font-black text-emerald-700 dark:text-emerald-300 text-[11px] uppercase tracking-wider mb-2'
+                    },
+                    [a('i', { class: 'fas fa-arrow-down mr-1' }), b('Kategori Pemasukan ')],
+                    -1
+                  )),
+                a('div', Ae, [
+                  (d(!0),
+                  i(
+                    x,
+                    null,
+                    _(
+                      r.keu_kategori_masuk,
+                      (t, l) => (
+                        d(),
+                        i(
+                          'div',
+                          {
+                            key: l,
+                            class:
+                              'flex items-center gap-2 bg-emerald-50 dark:bg-emerald-900/20 px-3 py-2 rounded-lg'
+                          },
+                          [
+                            n(
+                              a(
+                                'input',
+                                {
+                                  'onUpdate:modelValue': (o) => (r.keu_kategori_masuk[l] = o),
+                                  type: 'text',
+                                  class:
+                                    'flex-1 bg-transparent text-xs font-bold text-slate-800 dark:text-white outline-none'
+                                },
+                                null,
+                                8,
+                                Be
+                              ),
+                              [[u, r.keu_kategori_masuk[l]]]
+                            ),
+                            a(
+                              'button',
+                              {
+                                onClick: (o) => K('masuk', l),
+                                class: 'text-rose-600 hover:bg-rose-50 px-2 rounded text-xs'
+                              },
+                              [
+                                ...(e[35] ||
+                                  (e[35] = [a('i', { class: 'fas fa-trash' }, null, -1)]))
+                              ],
+                              8,
+                              Ke
+                            )
+                          ]
+                        )
+                      )
+                    ),
+                    128
+                  ))
+                ]),
+                a('div', Ne, [
+                  n(
+                    a(
+                      'input',
+                      {
+                        'onUpdate:modelValue': e[8] || (e[8] = (t) => (P.value = t)),
+                        onKeyup: e[9] || (e[9] = C((t) => U('masuk'), ['enter'])),
+                        type: 'text',
+                        placeholder: 'Kategori baru...',
+                        class:
+                          'flex-1 px-3 py-2 text-xs border border-slate-300 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white'
+                      },
+                      null,
+                      544
+                    ),
+                    [[u, P.value]]
+                  ),
+                  a(
+                    'button',
+                    {
+                      onClick: e[10] || (e[10] = (t) => U('masuk')),
+                      class:
+                        'bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-2 rounded-lg text-xs'
+                    },
+                    [...(e[36] || (e[36] = [a('i', { class: 'fas fa-plus' }, null, -1)]))]
+                  )
+                ])
+              ]),
+              a('div', null, [
+                e[40] ||
+                  (e[40] = a(
+                    'h4',
+                    {
+                      class:
+                        'font-black text-rose-700 dark:text-rose-300 text-[11px] uppercase tracking-wider mb-2'
+                    },
+                    [a('i', { class: 'fas fa-arrow-up mr-1' }), b('Kategori Pengeluaran ')],
+                    -1
+                  )),
+                a('div', Me, [
+                  (d(!0),
+                  i(
+                    x,
+                    null,
+                    _(
+                      r.keu_kategori_keluar,
+                      (t, l) => (
+                        d(),
+                        i(
+                          'div',
+                          {
+                            key: l,
+                            class:
+                              'flex items-center gap-2 bg-rose-50 dark:bg-rose-900/20 px-3 py-2 rounded-lg'
+                          },
+                          [
+                            n(
+                              a(
+                                'input',
+                                {
+                                  'onUpdate:modelValue': (o) => (r.keu_kategori_keluar[l] = o),
+                                  type: 'text',
+                                  class:
+                                    'flex-1 bg-transparent text-xs font-bold text-slate-800 dark:text-white outline-none'
+                                },
+                                null,
+                                8,
+                                Fe
+                              ),
+                              [[u, r.keu_kategori_keluar[l]]]
+                            ),
+                            a(
+                              'button',
+                              {
+                                onClick: (o) => K('keluar', l),
+                                class: 'text-rose-600 hover:bg-rose-50 px-2 rounded text-xs'
+                              },
+                              [
+                                ...(e[38] ||
+                                  (e[38] = [a('i', { class: 'fas fa-trash' }, null, -1)]))
+                              ],
+                              8,
+                              Le
+                            )
+                          ]
+                        )
+                      )
+                    ),
+                    128
+                  ))
+                ]),
+                a('div', Je, [
+                  n(
+                    a(
+                      'input',
+                      {
+                        'onUpdate:modelValue': e[11] || (e[11] = (t) => (j.value = t)),
+                        onKeyup: e[12] || (e[12] = C((t) => U('keluar'), ['enter'])),
+                        type: 'text',
+                        placeholder: 'Kategori baru...',
+                        class:
+                          'flex-1 px-3 py-2 text-xs border border-slate-300 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white'
+                      },
+                      null,
+                      544
+                    ),
+                    [[u, j.value]]
+                  ),
+                  a(
+                    'button',
+                    {
+                      onClick: e[13] || (e[13] = (t) => U('keluar')),
+                      class:
+                        'bg-rose-600 hover:bg-rose-700 text-white font-bold px-3 py-2 rounded-lg text-xs'
+                    },
+                    [...(e[39] || (e[39] = [a('i', { class: 'fas fa-plus' }, null, -1)]))]
+                  )
+                ])
+              ])
+            ])
+          ]),
+          a('div', Ge, [
+            a('div', De, [
+              e[43] ||
+                (e[43] = a(
+                  'h3',
+                  {
+                    class:
+                      'text-xs md:text-sm font-black text-slate-800 dark:text-white uppercase tracking-widest'
+                  },
+                  [
+                    a('i', { class: 'fas fa-plus-circle text-emerald-600 mr-1' }),
+                    b('Master Tunjangan ')
+                  ],
+                  -1
+                )),
+              a(
+                'button',
+                {
+                  onClick: e[14] || (e[14] = (t) => N('tunjangan')),
+                  class:
+                    'bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-1.5 rounded-lg text-xs'
+                },
+                [
+                  ...(e[42] ||
+                    (e[42] = [a('i', { class: 'fas fa-plus mr-1' }, null, -1), b('Tambah ', -1)]))
+                ]
+              )
+            ]),
+            e[45] ||
+              (e[45] = a(
+                'p',
+                { class: 'text-[10px] text-slate-400 italic mb-2' },
+                'Tunjangan otomatis terisi di slip gaji guru sesuai scope.',
+                -1
+              )),
+            r.master_tunjangan.length === 0
+              ? (d(), i('div', $e, 'Belum ada master tunjangan.'))
+              : (d(),
+                i('div', Re, [
+                  (d(!0),
+                  i(
+                    x,
+                    null,
+                    _(
+                      r.master_tunjangan,
+                      (t, l) => (
+                        d(),
+                        i(
+                          'div',
+                          {
+                            key: l,
+                            class:
+                              'grid grid-cols-[1fr_140px_60px] gap-2 items-center bg-emerald-50 dark:bg-emerald-900/20 px-3 py-2 rounded-lg'
+                          },
+                          [
+                            n(
+                              a(
+                                'input',
+                                {
+                                  'onUpdate:modelValue': (o) => (t.nama = o),
+                                  type: 'text',
+                                  placeholder: 'Nama tunjangan',
+                                  class:
+                                    'bg-transparent text-xs font-bold text-slate-800 dark:text-white outline-none'
+                                },
+                                null,
+                                8,
+                                Oe
+                              ),
+                              [[u, t.nama]]
+                            ),
+                            n(
+                              a(
+                                'input',
+                                {
+                                  'onUpdate:modelValue': (o) => (t.nominalFmt = o),
+                                  onInput: (o) => F(t, o),
+                                  type: 'text',
+                                  inputmode: 'numeric',
+                                  placeholder: 'Rp 0',
+                                  class:
+                                    'bg-transparent text-xs text-right font-bold text-emerald-800 dark:text-emerald-200 outline-none border border-emerald-300 dark:border-emerald-700 rounded px-2 py-1'
+                                },
+                                null,
+                                40,
+                                qe
+                              ),
+                              [[u, t.nominalFmt]]
+                            ),
+                            a(
+                              'button',
+                              {
+                                onClick: (o) => M('tunjangan', l),
+                                class: 'text-rose-600 hover:bg-rose-50 px-2 py-1 rounded text-xs'
+                              },
+                              [
+                                ...(e[44] ||
+                                  (e[44] = [a('i', { class: 'fas fa-trash' }, null, -1)]))
+                              ],
+                              8,
+                              ze
+                            )
+                          ]
+                        )
+                      )
+                    ),
+                    128
+                  ))
+                ]))
+          ]),
+          a('div', Ee, [
+            a('div', He, [
+              e[47] ||
+                (e[47] = a(
+                  'h3',
+                  {
+                    class:
+                      'text-xs md:text-sm font-black text-slate-800 dark:text-white uppercase tracking-widest'
+                  },
+                  [
+                    a('i', { class: 'fas fa-minus-circle text-rose-600 mr-1' }),
+                    b('Master Potongan ')
+                  ],
+                  -1
+                )),
+              a(
+                'button',
+                {
+                  onClick: e[15] || (e[15] = (t) => N('potongan')),
+                  class:
+                    'bg-rose-600 hover:bg-rose-700 text-white font-bold px-3 py-1.5 rounded-lg text-xs'
+                },
+                [
+                  ...(e[46] ||
+                    (e[46] = [a('i', { class: 'fas fa-plus mr-1' }, null, -1), b('Tambah ', -1)]))
+                ]
+              )
+            ]),
+            e[49] ||
+              (e[49] = a(
+                'p',
+                { class: 'text-[10px] text-slate-400 italic mb-2' },
+                'Potongan otomatis terisi di slip gaji guru sesuai scope.',
+                -1
+              )),
+            r.master_potongan.length === 0
+              ? (d(), i('div', Qe, 'Belum ada master potongan.'))
+              : (d(),
+                i('div', We, [
+                  (d(!0),
+                  i(
+                    x,
+                    null,
+                    _(
+                      r.master_potongan,
+                      (t, l) => (
+                        d(),
+                        i(
+                          'div',
+                          {
+                            key: l,
+                            class:
+                              'grid grid-cols-[1fr_140px_60px] gap-2 items-center bg-rose-50 dark:bg-rose-900/20 px-3 py-2 rounded-lg'
+                          },
+                          [
+                            n(
+                              a(
+                                'input',
+                                {
+                                  'onUpdate:modelValue': (o) => (t.nama = o),
+                                  type: 'text',
+                                  placeholder: 'Nama potongan',
+                                  class:
+                                    'bg-transparent text-xs font-bold text-slate-800 dark:text-white outline-none'
+                                },
+                                null,
+                                8,
+                                Ye
+                              ),
+                              [[u, t.nama]]
+                            ),
+                            n(
+                              a(
+                                'input',
+                                {
+                                  'onUpdate:modelValue': (o) => (t.nominalFmt = o),
+                                  onInput: (o) => F(t, o),
+                                  type: 'text',
+                                  inputmode: 'numeric',
+                                  placeholder: 'Rp 0',
+                                  class:
+                                    'bg-transparent text-xs text-right font-bold text-rose-800 dark:text-rose-200 outline-none border border-rose-300 dark:border-rose-700 rounded px-2 py-1'
+                                },
+                                null,
+                                40,
+                                Ze
+                              ),
+                              [[u, t.nominalFmt]]
+                            ),
+                            a(
+                              'button',
+                              {
+                                onClick: (o) => M('potongan', l),
+                                class: 'text-rose-600 hover:bg-rose-50 px-2 py-1 rounded text-xs'
+                              },
+                              [
+                                ...(e[48] ||
+                                  (e[48] = [a('i', { class: 'fas fa-trash' }, null, -1)]))
+                              ],
+                              8,
+                              Xe
+                            )
+                          ]
+                        )
+                      )
+                    ),
+                    128
+                  ))
+                ]))
+          ]),
+          a('div', et, [
+            e[53] ||
+              (e[53] = a(
+                'h3',
+                {
+                  class:
+                    'text-xs md:text-sm font-black text-slate-800 dark:text-white uppercase tracking-widest mb-3 border-b border-slate-100 dark:border-slate-700 pb-2'
+                },
+                [
+                  a('i', { class: 'fas fa-university text-blue-600 mr-1' }),
+                  b('Rekening Bank Pondok ')
+                ],
+                -1
+              )),
+            e[54] ||
+              (e[54] = a(
+                'p',
+                { class: 'text-[10px] text-slate-400 italic mb-3' },
+                'Akan tampil di struk POS jika metode bayar = transfer.',
+                -1
+              )),
+            a('div', tt, [
+              a('div', null, [
+                e[50] ||
+                  (e[50] = a(
+                    'label',
+                    {
+                      class:
+                        'text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 block'
+                    },
+                    'Nama Bank',
+                    -1
+                  )),
+                n(
+                  a(
+                    'input',
+                    {
+                      'onUpdate:modelValue': e[16] || (e[16] = (t) => (r.bank_nama = t)),
+                      type: 'text',
+                      placeholder: 'BSI / BCA / BRI...',
+                      class:
+                        'w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white'
+                    },
+                    null,
+                    512
+                  ),
+                  [[u, r.bank_nama]]
+                )
+              ]),
+              a('div', null, [
+                e[51] ||
+                  (e[51] = a(
+                    'label',
+                    {
+                      class:
+                        'text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 block'
+                    },
+                    'Nomor Rekening',
+                    -1
+                  )),
+                n(
+                  a(
+                    'input',
+                    {
+                      'onUpdate:modelValue': e[17] || (e[17] = (t) => (r.bank_nomor = t)),
+                      type: 'text',
+                      placeholder: '1234567890',
+                      class:
+                        'w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white'
+                    },
+                    null,
+                    512
+                  ),
+                  [[u, r.bank_nomor]]
+                )
+              ]),
+              a('div', null, [
+                e[52] ||
+                  (e[52] = a(
+                    'label',
+                    {
+                      class:
+                        'text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 block'
+                    },
+                    'Atas Nama',
+                    -1
+                  )),
+                n(
+                  a(
+                    'input',
+                    {
+                      'onUpdate:modelValue': e[18] || (e[18] = (t) => (r.bank_atasnama = t)),
+                      type: 'text',
+                      placeholder: 'Yayasan Mambaul Ulum',
+                      class:
+                        'w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white'
+                    },
+                    null,
+                    512
+                  ),
+                  [[u, r.bank_atasnama]]
+                )
+              ])
+            ])
+          ]),
+          a('div', at, [
+            a(
+              'button',
+              {
+                onClick: W,
+                disabled: h.value,
+                class:
+                  'text-xs font-bold px-4 py-2 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200 transition cursor-pointer disabled:opacity-50'
+              },
+              [
+                ...(e[55] ||
+                  (e[55] = [a('i', { class: 'fas fa-undo mr-1' }, null, -1), b('Reset ', -1)]))
+              ],
+              8,
+              st
+            ),
+            a(
+              'button',
+              {
+                onClick: Q,
+                disabled: h.value,
+                class:
+                  'text-xs font-bold px-4 py-2 rounded-lg bg-teal-600 hover:bg-teal-700 text-white transition cursor-pointer disabled:opacity-50'
+              },
+              [
+                e[56] || (e[56] = a('i', { class: 'fas fa-save mr-1' }, null, -1)),
+                b(y(h.value ? 'Menyimpan...' : 'Simpan Semua'), 1)
+              ],
+              8,
+              rt
+            )
+          ])
+        ])
+      )
+    }
+  }
+export { ut as default }

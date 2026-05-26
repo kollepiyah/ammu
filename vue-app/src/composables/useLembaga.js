@@ -8,18 +8,26 @@ import { useAuthStore } from '@/stores/auth'
 // v.21.10.0526: Lembaga hierarchy — group → variants (kyai spec final)
 export const LEMBAGA_GROUPS = {
   // Qiraati group
-  TPQ: { kepala_jabatan: 'Kepala TPQ', variants: ['TPQ Pagi', 'TPQ Sore', 'Pra PTPT'], group: 'qiraati' },
+  TPQ: {
+    kepala_jabatan: 'Kepala TPQ',
+    variants: ['TPQ Pagi', 'TPQ Sore', 'Pra PTPT'],
+    group: 'qiraati'
+  },
   PTPT: { kepala_jabatan: 'PJ PTPT', variants: ['PTPT'], group: 'qiraati' },
   PPPH: { kepala_jabatan: 'PJ PPPH', variants: ['PPPH'], group: 'qiraati' },
   // Sekolah group
-  TK: { kepala_jabatan: 'Kepala TK', variants: ['TK A', 'TK B'], group: 'sekolah' },
+  TK: { kepala_jabatan: 'Kepala TK', variants: ['TK'], group: 'sekolah' },
   SDI: { kepala_jabatan: 'Kepala SDI', variants: ['SDI'], group: 'sekolah' },
   PKBM: { kepala_jabatan: 'Kepala PKBM', variants: ['PKBM'], group: 'sekolah' },
   // Mahad (asrama)
   "Ma'had": { kepala_jabatan: "Kepala Ma'had", variants: ["Ma'had"], group: 'mahad' },
   // Non-lembaga (pegawai non-guru)
   Yayasan: { kepala_jabatan: 'PJ Administrasi', variants: ['Yayasan'], group: 'non-lembaga' },
-  'Sarana Prasarana': { kepala_jabatan: 'Koordinator Sarana', variants: ['Sarana Prasarana'], group: 'non-lembaga' }
+  'Sarana Prasarana': {
+    kepala_jabatan: 'Koordinator Sarana',
+    variants: ['Sarana Prasarana'],
+    group: 'non-lembaga'
+  }
 }
 
 // Reverse lookup: nama variant → group key
@@ -36,6 +44,36 @@ export function getLembagaGroup(namaLembaga) {
   return VARIANT_TO_GROUP[namaLembaga] || null
 }
 
+// v.21.71.0526: PKBM sub-tier helper — SMP (VII-IX) + SMA (X-XII)
+export const PKBM_SUB_TIERS = {
+  SMP: ['VII', 'VIII', 'IX'],
+  SMA: ['X', 'XI', 'XII']
+}
+
+// Get sub-tier (SMP/SMA) dari nama kelas PKBM
+export function getPkbmSubTier(kelas) {
+  if (!kelas) return null
+  if (PKBM_SUB_TIERS.SMP.includes(kelas)) return 'SMP'
+  if (PKBM_SUB_TIERS.SMA.includes(kelas)) return 'SMA'
+  return null
+}
+
+// Label kelas PKBM dengan prefix sub-tier (e.g. "SMP - Kelas VII")
+export function formatPkbmKelas(kelas) {
+  const tier = getPkbmSubTier(kelas)
+  return tier ? tier + ' - Kelas ' + kelas : 'Kelas ' + kelas
+}
+
+// Smart label kelas — auto-detect PKBM context. Returns formatted label per lembaga:
+//   PKBM + kelas VII-XII → "SMP - Kelas VII" / "SMA - Kelas X"
+//   PKBM + kelas lain → "Kelas {x}"
+//   Lembaga lain → kelas as-is (e.g. "Jilid 1A", "I", "TK A")
+export function formatKelasLabel(lembaga, kelas) {
+  if (!kelas) return ''
+  if (String(lembaga || '').toUpperCase() === 'PKBM') return formatPkbmKelas(kelas)
+  return String(kelas)
+}
+
 // Helper: visibility scoping — admin/super_admin bypass, kepala lembaga see all, guru see kelas dia
 export function canSee(user, target_lembaga, target_kelas = null) {
   if (!user) return false
@@ -45,7 +83,10 @@ export function canSee(user, target_lembaga, target_kelas = null) {
   // Kepala Lembaga: semua data di lembaga-nya
   const refs = user.lembaga_refs || []
   for (const ref of refs) {
-    if (ref.jabatan === 'Kepala Lembaga' && (ref.lembaga === target_lembaga || ref.group === getLembagaGroup(target_lembaga))) {
+    if (
+      ref.jabatan === 'Kepala Lembaga' &&
+      (ref.lembaga === target_lembaga || ref.group === getLembagaGroup(target_lembaga))
+    ) {
       return true
     }
     // Guru biasa: hanya kelas yang dia ajar
@@ -63,14 +104,62 @@ export function canSee(user, target_lembaga, target_kelas = null) {
 export const DEFAULT_LEMBAGA_SEED = [
   { lembaga: 'Yayasan', group: 'non-lembaga', kelas: [] },
   { lembaga: 'Sarana Prasarana', group: 'non-lembaga', kelas: [] },
-  { lembaga: 'TPQ Pagi', group: 'qiraati', tpq_group: 'TPQ', shift: 'pagi', kelas: ['Jilid 1', 'Jilid 2', 'Jilid 3', 'Jilid 4', 'Jilid 5', 'KPI', 'Persiapan Khotaman'] },
-  { lembaga: 'TPQ Sore', group: 'qiraati', tpq_group: 'TPQ', shift: 'sore', kelas: ['Jilid 1', 'Jilid 2', 'Jilid 3', 'Jilid 4', 'Jilid 5', 'KPI', 'Persiapan Khotaman'] },
-  { lembaga: 'Pra PTPT', group: 'qiraati', tpq_group: 'TPQ', kelas: ['Level 1', 'Level 2', 'Level 3', 'Level 4', 'Level 5'] },
-  { lembaga: 'PTPT', group: 'qiraati', kelas: ['Kelas 1', 'Kelas 2', 'Kelas 3', 'Kelas 4', 'Kelas 5', 'Kelas 6'] },
-  { lembaga: 'PPPH', group: 'qiraati', kelas: [] },
+  {
+    lembaga: 'TPQ Pagi',
+    group: 'qiraati',
+    tpq_group: 'TPQ',
+    shift: 'pagi',
+    kelas: [
+      'Jilid 1A',
+      'Jilid 1B',
+      'Jilid 1C',
+      'Jilid 2A',
+      'Jilid 2B',
+      'Jilid 3A',
+      'Jilid 3B',
+      'Jilid 4A',
+      'Jilid 4B',
+      'Jilid 5A',
+      'Jilid 5B',
+      'KPI',
+      'Persiapan Khotaman'
+    ]
+  },
+  {
+    lembaga: 'TPQ Sore',
+    group: 'qiraati',
+    tpq_group: 'TPQ',
+    shift: 'sore',
+    kelas: [
+      'Jilid 1A',
+      'Jilid 1B',
+      'Jilid 1C',
+      'Jilid 2A',
+      'Jilid 2B',
+      'Jilid 3A',
+      'Jilid 3B',
+      'Jilid 4A',
+      'Jilid 4B',
+      'Jilid 5A',
+      'Jilid 5B',
+      'KPI',
+      'Persiapan Khotaman'
+    ]
+  },
+  {
+    lembaga: 'Pra PTPT',
+    group: 'qiraati',
+    tpq_group: 'TPQ',
+    kelas: ['Level 1', 'Level 2', 'Level 3', 'Level 4', 'Level 5']
+  },
+  {
+    lembaga: 'PTPT',
+    group: 'qiraati',
+    kelas: ['Kelas 1', 'Kelas 2', 'Kelas 3', 'Kelas 4', 'Kelas 5', 'Kelas 6']
+  },
+  { lembaga: 'PPPH', group: 'qiraati', kelas: ['Level 1', 'Level 2', 'Level 3', 'Level 4'] },
   { lembaga: "Ma'had", group: 'mahad', kelas: [] },
-  { lembaga: 'TK A', group: 'sekolah', tk_group: 'TK', kelas: [] },
-  { lembaga: 'TK B', group: 'sekolah', tk_group: 'TK', kelas: [] },
+  { lembaga: 'TK', group: 'sekolah', kelas: ['TK A', 'TK B'] },
   { lembaga: 'SDI', group: 'sekolah', kelas: ['I', 'II', 'III', 'IV', 'V', 'VI'] },
   { lembaga: 'PKBM', group: 'sekolah', kelas: ['VII', 'VIII', 'IX', 'X', 'XI', 'XII'] }
 ]
@@ -124,8 +213,12 @@ export function useLembaga() {
     if (kw) {
       list = list.filter(
         (l) =>
-          String(l.lembaga || '').toLowerCase().includes(kw) ||
-          String(l.tipe || '').toLowerCase().includes(kw)
+          String(l.lembaga || '')
+            .toLowerCase()
+            .includes(kw) ||
+          String(l.tipe || '')
+            .toLowerCase()
+            .includes(kw)
       )
     }
     // Tipe filter (Qiraati / Formal)
@@ -145,7 +238,10 @@ export function useLembaga() {
   // Count guru/santri per-lembaga
   function getCounts(namaLembaga) {
     const guruCount = guruRaw.value.filter((g) => {
-      const aktif = String(g.status || 'Aktif').toLowerCase().trim() === 'aktif'
+      const aktif =
+        String(g.status || 'Aktif')
+          .toLowerCase()
+          .trim() === 'aktif'
       return aktif && (g.lembaga === namaLembaga || g.lembaga_sekolah === namaLembaga)
     }).length
     const santriCount = santriRaw.value.filter(
@@ -177,7 +273,11 @@ export function useLembaga() {
 
   onUnmounted(() => {
     for (const u of [unsubLembaga, unsubGuru, unsubSantri]) {
-      if (u) { try { u() } catch (e) {} }
+      if (u) {
+        try {
+          u()
+        } catch (e) {}
+      }
     }
   })
 

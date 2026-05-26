@@ -1,0 +1,328 @@
+<script setup>
+import { ref, computed, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
+import { useSettingsStore } from '@/stores/settings'
+import { useToast } from '@/composables/useToast'
+import * as authService from '@/services/auth'
+
+// v.20.2.0526: full match legacy login — Google + Ingat Saya + Lupa Sandi + Copyright luar card
+const router = useRouter()
+const route = useRoute()
+const auth = useAuthStore()
+const settings = useSettingsStore()
+const toast = useToast()
+
+// v.20.7.0526: BG login dari settings (Pengaturan Web → Background Layar).
+// Force load settings di mount supaya BG image tersedia sebelum render (App.vue load async)
+onMounted(() => {
+  if (!settings.settings?.bgImage) {
+    settings.load().catch(() => {})
+  }
+})
+// Field name fallback: bgImage (Vue settings), bg_login (legacy), bg_img, bgUrl
+const bgStyle = computed(() => {
+  const s = settings.settings || {}
+  const bg = s.bgImage || s.bg_login || s.bg_img || s.bgUrl || '/bg-pesantren.webp'
+  return `background: linear-gradient(135deg, rgba(15,118,110,0.85) 0%, rgba(13,92,85,0.85) 100%), url('${bg}') center/cover no-repeat;`
+})
+
+const username = ref('')
+const password = ref('')
+const isSubmitting = ref(false)
+const showPassword = ref(false)
+const ingatSaya = ref(true) // default tetap login di perangkat ini
+
+async function handleLogin() {
+  if (!username.value || !password.value) {
+    toast.error('Username dan kata sandi wajib diisi')
+    return
+  }
+  isSubmitting.value = true
+  try {
+    await auth.login(username.value.trim(), password.value, ingatSaya.value)
+    toast.success('Login berhasil')
+    const redirect = route.query.redirect || '/dashboard'
+    router.push(redirect)
+  } catch (e) {
+    toast.error(e.message || 'Login gagal')
+  } finally {
+    isSubmitting.value = false
+  }
+}
+
+async function handleGoogleLogin() {
+  if (isSubmitting.value) return
+  isSubmitting.value = true
+  try {
+    const cred = await authService.loginWithGoogle()
+    if (cred?.user) {
+      await auth.loadSesiFromUser(cred.user)
+      toast.success('Login Google berhasil')
+      const redirect = route.query.redirect || '/dashboard'
+      router.push(redirect)
+    }
+  } catch (e) {
+    const msg = e?.message || 'Login Google gagal'
+    if (e?.code === 'auth/popup-closed-by-user' || e?.code === 'auth/cancelled-popup-request') {
+      // Silently ignore — user closed popup
+    } else {
+      toast.error(msg)
+    }
+  } finally {
+    isSubmitting.value = false
+  }
+}
+
+// v.21.24b.0526: Lupa Sandi proper modal (legacy parity)
+const showLupaSandi = ref(false)
+function handleLupaSandi() {
+  showLupaSandi.value = true
+}
+// Ambil nomor WA admin dari settings (fallback ke contact umum kalau belum di-setup)
+const adminWaPondok = computed(() => {
+  const s = settings.settings || {}
+  return s.adminWa || s.contactWa || s.waAdmin || ''
+})
+function bukaWaAdmin() {
+  const wa = String(adminWaPondok.value || '')
+    .replace(/[^0-9]/g, '')
+    .replace(/^0/, '62')
+  if (!wa) {
+    toast.warning('Nomor WA Admin belum di-setup di Pengaturan Web')
+    return
+  }
+  const msg = encodeURIComponent(
+    "Assalamu'alaikum Admin Pondok, saya lupa sandi akun Portal Ammu Online. Mohon bantu reset sandi. Terima kasih."
+  )
+  window.open(`https://wa.me/${wa}?text=${msg}`, '_blank')
+}
+</script>
+
+<template>
+  <div class="min-h-screen flex flex-col items-center justify-center p-4 relative" :style="bgStyle">
+    <!-- CARD LOGIN -->
+    <div
+      class="w-full max-w-sm bg-[#F9F6EE] rounded-3xl shadow-2xl border-t-8 border-teal-600 overflow-hidden relative z-10"
+    >
+      <!-- Header (logo + nama) -->
+      <div class="px-6 pt-7 pb-4 text-center">
+        <img
+          src="/logo.png"
+          alt="Logo Mambaul Ulum"
+          class="w-20 h-20 mx-auto mb-2 object-contain drop-shadow-xl"
+        />
+        <h2 class="text-xl font-extrabold text-slate-800 tracking-tight">Portal Mambaul Ulum</h2>
+        <p class="text-[10px] text-teal-700 mt-0.5 font-bold uppercase tracking-widest">
+          Generasi Qurani Pewaris Negeri
+        </p>
+      </div>
+
+      <!-- Form -->
+      <div class="px-6 pb-2 space-y-3">
+        <!-- Login dengan Google -->
+        <button
+          type="button"
+          @click="handleGoogleLogin"
+          :disabled="isSubmitting"
+          class="w-full bg-white border border-slate-300 hover:bg-slate-50 disabled:opacity-50 text-slate-700 font-bold py-2.5 rounded-xl shadow-sm cursor-pointer flex justify-center items-center gap-2 transition text-sm"
+        >
+          <svg class="w-4 h-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path
+              fill="#4285F4"
+              d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+            />
+            <path
+              fill="#34A853"
+              d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+            />
+            <path
+              fill="#FBBC05"
+              d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+            />
+            <path
+              fill="#EA4335"
+              d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+            />
+          </svg>
+          <span>Login dengan Google</span>
+        </button>
+
+        <!-- Divider ATAU -->
+        <div class="flex items-center gap-2 my-1">
+          <div class="flex-1 h-px bg-slate-300"></div>
+          <span class="text-[9px] text-slate-400 font-bold uppercase tracking-widest">atau</span>
+          <div class="flex-1 h-px bg-slate-300"></div>
+        </div>
+
+        <form @submit.prevent="handleLogin" class="space-y-3" autocomplete="on">
+          <!-- Username -->
+          <div>
+            <label class="block text-[9px] font-bold text-slate-700 mb-1 uppercase tracking-wide">
+              Username
+            </label>
+            <div class="relative">
+              <i
+                class="fas fa-user absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"
+              ></i>
+              <input
+                v-model="username"
+                type="text"
+                placeholder="Masukkan username"
+                autocomplete="username"
+                required
+                class="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition"
+              />
+            </div>
+          </div>
+
+          <!-- Password + eye toggle -->
+          <div>
+            <label class="block text-[9px] font-bold text-slate-700 mb-1 uppercase tracking-wide">
+              Kata Sandi
+            </label>
+            <div class="relative">
+              <i
+                class="fas fa-lock absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"
+              ></i>
+              <input
+                v-model="password"
+                :type="showPassword ? 'text' : 'password'"
+                placeholder="Masukkan sandi..."
+                autocomplete="current-password"
+                required
+                class="w-full pl-9 pr-10 py-2.5 text-sm rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition"
+              />
+              <button
+                type="button"
+                @click="showPassword = !showPassword"
+                class="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 flex items-center justify-center text-slate-400 hover:text-slate-700 transition cursor-pointer"
+                :aria-label="showPassword ? 'Sembunyikan sandi' : 'Tampilkan sandi'"
+                tabindex="-1"
+              >
+                <i :class="['fas', showPassword ? 'fa-eye-slash' : 'fa-eye', 'text-xs']"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Ingat Saya checkbox -->
+          <div class="flex items-center gap-2 mt-1">
+            <input
+              id="login-ingat-saya"
+              v-model="ingatSaya"
+              type="checkbox"
+              class="w-4 h-4 cursor-pointer accent-teal-600"
+            />
+            <label
+              for="login-ingat-saya"
+              class="text-[10px] font-bold text-slate-700 cursor-pointer"
+            >
+              Ingat Saya (tetap login di perangkat ini)
+            </label>
+          </div>
+
+          <!-- Tombol MASUK -->
+          <button
+            type="submit"
+            :disabled="isSubmitting"
+            class="w-full mt-2 px-4 py-3 bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white font-black rounded-xl text-sm shadow-lg transition tracking-widest cursor-pointer flex justify-center items-center gap-2"
+          >
+            <i class="fas fa-sign-in-alt"></i>
+            <span>{{ isSubmitting ? 'MEMPROSES...' : 'MASUK' }}</span>
+          </button>
+        </form>
+
+        <!-- Lupa Sandi link -->
+        <div class="flex justify-end items-center text-[10px]">
+          <button
+            type="button"
+            @click="handleLupaSandi"
+            class="text-blue-600 hover:text-blue-800 font-bold cursor-pointer underline"
+          >
+            Lupa Sandi?
+          </button>
+        </div>
+      </div>
+
+      <!-- Footer Bakafrawi (dalam card) — v.20.4: ukuran match legacy (h-7 ≈ 28px) -->
+      <div class="px-6 py-4 mt-2 border-t border-slate-200 text-center bg-white/40">
+        <p class="text-[9px] text-slate-500 uppercase tracking-widest font-bold mb-1.5">
+          Powered By
+        </p>
+        <img
+          src="/bakafrawi-logo.png"
+          alt="Bakafrawi Project"
+          class="h-7 w-auto max-w-[140px] mx-auto opacity-95 object-contain"
+          onerror="
+            this.style.display = 'none'
+            this.nextElementSibling.style.display = 'block'
+          "
+        />
+        <p class="text-xs font-black text-teal-700 tracking-wide mt-0.5" style="display: none">
+          Bakafrawi Project
+        </p>
+      </div>
+    </div>
+
+    <!-- v.21.24b.0526: Modal Lupa Sandi -->
+    <div
+      v-if="showLupaSandi"
+      class="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4"
+      @click.self="showLupaSandi = false"
+    >
+      <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 relative">
+        <button
+          @click="showLupaSandi = false"
+          class="absolute top-3 right-3 text-slate-400 hover:text-rose-600 text-lg cursor-pointer"
+        >
+          <i class="fas fa-times"></i>
+        </button>
+        <div class="text-center">
+          <div
+            class="w-16 h-16 mx-auto mb-3 rounded-full bg-amber-100 flex items-center justify-center"
+          >
+            <i class="fas fa-key text-amber-600 text-2xl"></i>
+          </div>
+          <h3 class="text-lg font-black text-slate-800 mb-1">Lupa Sandi?</h3>
+          <p class="text-xs text-slate-500 mb-4">Sandi hanya dapat di-reset oleh Admin Pondok.</p>
+        </div>
+        <div
+          class="bg-amber-50 border-2 border-amber-200 rounded-xl p-3 text-xs text-slate-700 space-y-1.5"
+        >
+          <p><i class="fas fa-info-circle text-amber-600 mr-1"></i><b>Langkah:</b></p>
+          <ol class="list-decimal ml-5 space-y-1">
+            <li>Hubungi Admin Pondok via WhatsApp/langsung</li>
+            <li>Sebutkan nama lengkap + lembaga + status (santri/guru/pegawai)</li>
+            <li>Admin akan reset sandi ke <b>1234</b></li>
+            <li>Login dengan sandi baru, lalu ganti sandi di menu Profil</li>
+          </ol>
+        </div>
+        <div class="mt-4 flex gap-2">
+          <button
+            v-if="adminWaPondok"
+            @click="bukaWaAdmin"
+            class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl text-sm cursor-pointer transition"
+          >
+            <i class="fab fa-whatsapp mr-1"></i>Hubungi Admin via WA
+          </button>
+          <button
+            @click="showLupaSandi = false"
+            class="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-2.5 rounded-xl text-sm cursor-pointer transition"
+          >
+            <i class="fas fa-check mr-1"></i>Mengerti
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Copyright + versi DI LUAR CARD (match legacy) -->
+    <div class="relative z-10 mt-5 text-center px-4">
+      <p class="text-[11px] text-white/90 font-bold uppercase tracking-wider drop-shadow">
+        © {{ new Date().getFullYear() }} Pondok Pesantren Mambaul Ulum
+      </p>
+      <p class="text-[11px] text-white/80 font-bold tracking-widest mt-1 drop-shadow">
+        v.21.24b.0526
+      </p>
+    </div>
+  </div>
+</template>

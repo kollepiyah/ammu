@@ -320,6 +320,24 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // v.21.56: posts (Ammu Channel) - allow read public for all users
+    match /posts/{docId} {
+      allow read: if true;
+      allow create, update, delete: if signedIn();
+    }
+
+    // v.21.56: keuangan_hutang_piutang
+    match /keuangan_hutang_piutang/{docId} {
+      allow read: if true;
+      allow create, update, delete: if signedIn();
+    }
+
+    // v.21.56: keuangan_pembayaran (POS transactions)
+    match /keuangan_pembayaran/{docId} {
+      allow read: if true;
+      allow create, update, delete: if signedIn();
+    }
+
     // v.21.22.0526: Absensi guru (fingerprint + manual entry)
     match /absensi_guru/{docId} {
       allow read: if true;
@@ -328,6 +346,12 @@ service cloud.firestore {
 
     // v.21.22.0526: Kegiatan pesantren (admin kelola, semua user lihat)
     match /kegiatan_pesantren/{docId} {
+      allow read: if true;
+      allow write: if signedIn();
+    }
+
+    // v.21.61.2.0526: kegiatan_master (master template kegiatan harian — admin kelola via Kegiatan Pesantren tab)
+    match /kegiatan_master/{docId} {
       allow read: if true;
       allow write: if signedIn();
     }

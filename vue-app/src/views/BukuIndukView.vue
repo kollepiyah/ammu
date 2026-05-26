@@ -1,20 +1,35 @@
 <template>
   <div class="p-3 md:p-5 max-w-6xl mx-auto space-y-4">
-    <div v-if="!isFullAccess" class="bg-white dark:bg-slate-800 rounded-2xl p-10 border border-dashed border-rose-300 text-center">
+    <div
+      v-if="!isFullAccess"
+      class="bg-white dark:bg-slate-800 rounded-2xl p-10 border border-dashed border-rose-300 text-center"
+    >
       <i class="fas fa-lock text-rose-300 text-4xl mb-3"></i>
       <p class="text-sm font-bold text-slate-700 dark:text-slate-300">Akses Keuangan terbatas</p>
     </div>
 
     <template v-else>
       <!-- Header + stats + actions -->
-      <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-5 border border-slate-200 dark:border-slate-700 shadow-sm">
+      <div
+        class="bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-5 border border-slate-200 dark:border-slate-700 shadow-sm"
+      >
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           <div>
             <h1 class="text-xl md:text-2xl font-black text-slate-800 dark:text-white">
               <i class="fas fa-book text-indigo-500 mr-2"></i>Buku Induk (General Ledger)
             </h1>
-      <button @click="exportBukuIndukExcel" :disabled="exportingBI" class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold cursor-pointer"><i :class="['fas', exportingBI ? 'fa-spinner fa-spin' : 'fa-file-excel', 'mr-1']"></i>{{ exportingBI ? '...' : 'Ekspor Excel' }}</button>
-            <p class="text-xs text-slate-500 mt-0.5">Pusat data arus kas keluar/masuk seluruh lembaga · {{ getBulanLabel(selectedMonth) }} {{ selectedYear }}</p>
+            <button
+              @click="exportBukuIndukExcel"
+              :disabled="exportingBI"
+              class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold cursor-pointer"
+            >
+              <i :class="['fas', exportingBI ? 'fa-spinner fa-spin' : 'fa-file-excel', 'mr-1']"></i
+              >{{ exportingBI ? '...' : 'Ekspor Excel' }}
+            </button>
+            <p class="text-xs text-slate-500 mt-0.5">
+              Pusat data arus kas keluar/masuk seluruh lembaga · {{ getBulanLabel(selectedMonth) }}
+              {{ selectedYear }}
+            </p>
           </div>
           <!-- v.72.16.0526: Input Manual + Cetak Laporan match legacy -->
           <div class="flex gap-2 flex-wrap">
@@ -36,22 +51,49 @@
         <div class="grid grid-cols-3 gap-2 md:gap-3 mt-3">
           <div class="bg-emerald-50 border-l-4 border-emerald-500 p-3 rounded-xl">
             <p class="text-[10px] font-bold text-emerald-700 uppercase">Total Masuk</p>
-            <p class="text-base md:text-lg font-black text-emerald-800 mt-1">{{ fmtRp(stats.pemasukan) }}</p>
+            <p class="text-base md:text-lg font-black text-emerald-800 mt-1">
+              {{ fmtRp(stats.pemasukan) }}
+            </p>
           </div>
           <div class="bg-rose-50 border-l-4 border-rose-500 p-3 rounded-xl">
             <p class="text-[10px] font-bold text-rose-700 uppercase">Total Keluar</p>
-            <p class="text-base md:text-lg font-black text-rose-800 mt-1">{{ fmtRp(stats.pengeluaran) }}</p>
+            <p class="text-base md:text-lg font-black text-rose-800 mt-1">
+              {{ fmtRp(stats.pengeluaran) }}
+            </p>
           </div>
-          <div :class="['p-3 rounded-xl border-l-4', stats.saldo >= 0 ? 'bg-blue-50 border-blue-500' : 'bg-amber-50 border-amber-500']">
-            <p :class="['text-[10px] font-bold uppercase', stats.saldo >= 0 ? 'text-blue-700' : 'text-amber-700']">Saldo Akhir</p>
-            <p :class="['text-base md:text-lg font-black mt-1', stats.saldo >= 0 ? 'text-blue-800' : 'text-amber-800']">{{ fmtRp(stats.saldo) }}</p>
+          <div
+            :class="[
+              'p-3 rounded-xl border-l-4',
+              stats.saldo >= 0 ? 'bg-blue-50 border-blue-500' : 'bg-amber-50 border-amber-500'
+            ]"
+          >
+            <p
+              :class="[
+                'text-[10px] font-bold uppercase',
+                stats.saldo >= 0 ? 'text-blue-700' : 'text-amber-700'
+              ]"
+            >
+              Saldo Akhir
+            </p>
+            <p
+              :class="[
+                'text-base md:text-lg font-black mt-1',
+                stats.saldo >= 0 ? 'text-blue-800' : 'text-amber-800'
+              ]"
+            >
+              {{ fmtRp(stats.saldo) }}
+            </p>
           </div>
         </div>
       </div>
 
       <!-- v.72.16.0526: Input Manual Modal -->
       <Teleport to="body">
-        <div v-if="modalInputOpen" @click.self="modalInputOpen = false" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div
+          v-if="modalInputOpen"
+          @click.self="modalInputOpen = false"
+          class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4"
+        >
           <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md">
             <form @submit.prevent="simpanInputManual" class="p-5">
               <h3 class="text-base font-black text-slate-800 dark:text-white mb-4">
@@ -60,35 +102,85 @@
               <div class="space-y-3">
                 <div>
                   <label class="block text-xs font-bold text-slate-600 mb-1">Tanggal *</label>
-                  <input v-model="inputForm.tanggal" type="date" required class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white text-slate-800" />
+                  <input
+                    v-model="inputForm.tanggal"
+                    type="date"
+                    required
+                    class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white text-slate-800"
+                  />
                 </div>
                 <div>
                   <label class="block text-xs font-bold text-slate-600 mb-1">Tipe *</label>
                   <div class="grid grid-cols-2 gap-2">
-                    <button type="button" @click="inputForm.tipe = 'masuk'" :class="['px-3 py-2 text-xs font-black rounded-lg border-2', inputForm.tipe === 'masuk' ? 'bg-emerald-600 text-white border-emerald-700' : 'bg-white text-emerald-700 border-emerald-300']">
+                    <button
+                      type="button"
+                      @click="inputForm.tipe = 'masuk'"
+                      :class="[
+                        'px-3 py-2 text-xs font-black rounded-lg border-2',
+                        inputForm.tipe === 'masuk'
+                          ? 'bg-emerald-600 text-white border-emerald-700'
+                          : 'bg-white text-emerald-700 border-emerald-300'
+                      ]"
+                    >
                       <i class="fas fa-arrow-down mr-1"></i>Pemasukan
                     </button>
-                    <button type="button" @click="inputForm.tipe = 'keluar'" :class="['px-3 py-2 text-xs font-black rounded-lg border-2', inputForm.tipe === 'keluar' ? 'bg-rose-600 text-white border-rose-700' : 'bg-white text-rose-700 border-rose-300']">
+                    <button
+                      type="button"
+                      @click="inputForm.tipe = 'keluar'"
+                      :class="[
+                        'px-3 py-2 text-xs font-black rounded-lg border-2',
+                        inputForm.tipe === 'keluar'
+                          ? 'bg-rose-600 text-white border-rose-700'
+                          : 'bg-white text-rose-700 border-rose-300'
+                      ]"
+                    >
                       <i class="fas fa-arrow-up mr-1"></i>Pengeluaran
                     </button>
                   </div>
                 </div>
                 <div>
                   <label class="block text-xs font-bold text-slate-600 mb-1">Kategori</label>
-                  <input v-model="inputForm.kategori" type="text" placeholder="Contoh: Operasional, Donasi, Bantuan..." class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white text-slate-800" />
+                  <input
+                    v-model="inputForm.kategori"
+                    type="text"
+                    placeholder="Contoh: Operasional, Donasi, Bantuan..."
+                    class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white text-slate-800"
+                  />
                 </div>
                 <div>
                   <label class="block text-xs font-bold text-slate-600 mb-1">Keterangan *</label>
-                  <textarea v-model="inputForm.keterangan" required rows="2" placeholder="Deskripsi transaksi..." class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white text-slate-800 resize-none"></textarea>
+                  <textarea
+                    v-model="inputForm.keterangan"
+                    required
+                    rows="2"
+                    placeholder="Deskripsi transaksi..."
+                    class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white text-slate-800 resize-none"
+                  ></textarea>
                 </div>
                 <div>
                   <label class="block text-xs font-bold text-slate-600 mb-1">Nominal (Rp) *</label>
-                  <input v-model.number="inputForm.nominal" type="number" min="0" required class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white text-slate-800" />
+                  <input
+                    v-model.number="inputForm.nominal"
+                    type="number"
+                    min="0"
+                    required
+                    class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white text-slate-800"
+                  />
                 </div>
               </div>
               <div class="flex items-center justify-end gap-2 mt-5 pt-4 border-t border-slate-100">
-                <button type="button" @click="modalInputOpen = false" class="text-xs font-bold px-4 py-2 rounded-lg bg-slate-100 text-slate-600">Batal</button>
-                <button type="submit" :disabled="savingInput" class="text-xs font-bold px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-50">
+                <button
+                  type="button"
+                  @click="modalInputOpen = false"
+                  class="text-xs font-bold px-4 py-2 rounded-lg bg-slate-100 text-slate-600"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  :disabled="savingInput"
+                  class="text-xs font-bold px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-50"
+                >
                   <i :class="['fas', savingInput ? 'fa-spinner fa-spin' : 'fa-save', 'mr-1']"></i>
                   {{ savingInput ? 'Menyimpan...' : 'Simpan' }}
                 </button>
@@ -99,16 +191,27 @@
       </Teleport>
 
       <!-- Filter -->
-      <div class="bg-white dark:bg-slate-800 rounded-2xl p-3 md:p-4 border border-slate-200 dark:border-slate-700 shadow-sm">
+      <div
+        class="bg-white dark:bg-slate-800 rounded-2xl p-3 md:p-4 border border-slate-200 dark:border-slate-700 shadow-sm"
+      >
         <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
-          <select v-model.number="selectedYear" class="px-3 py-2.5 text-sm rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-indigo-500 outline-none">
+          <select
+            v-model.number="selectedYear"
+            class="px-3 py-2.5 text-sm rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-indigo-500 outline-none"
+          >
             <option v-for="y in years" :key="y" :value="y">{{ y }}</option>
           </select>
-          <select v-model.number="selectedMonth" class="px-3 py-2.5 text-sm rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-indigo-500 outline-none">
+          <select
+            v-model.number="selectedMonth"
+            class="px-3 py-2.5 text-sm rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-indigo-500 outline-none"
+          >
             <option :value="0">Semua bulan</option>
             <option v-for="(b, i) in BULAN" :key="b" :value="i + 1">{{ b }}</option>
           </select>
-          <select v-model="filterTipe" class="px-3 py-2.5 text-sm rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-indigo-500 outline-none">
+          <select
+            v-model="filterTipe"
+            class="px-3 py-2.5 text-sm rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-indigo-500 outline-none"
+          >
             <option value="">Semua tipe</option>
             <option value="masuk">Pemasukan</option>
             <option value="keluar">Pengeluaran</option>
@@ -129,15 +232,23 @@
       </div>
 
       <!-- Empty -->
-      <div v-else-if="filteredBuku.length === 0" class="bg-white dark:bg-slate-800 rounded-2xl p-10 border border-dashed border-slate-300 text-center">
+      <div
+        v-else-if="filteredBuku.length === 0"
+        class="bg-white dark:bg-slate-800 rounded-2xl p-10 border border-dashed border-slate-300 text-center"
+      >
         <i class="fas fa-book-open text-slate-300 text-4xl mb-3"></i>
         <p class="text-sm font-bold text-slate-700">Tidak ada transaksi</p>
       </div>
 
       <!-- List -->
-      <div v-else class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+      <div
+        v-else
+        class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden"
+      >
         <!-- Table header (desktop) -->
-        <div class="hidden md:grid md:grid-cols-[100px_1fr_120px_120px] gap-2 px-4 py-2 bg-slate-50 dark:bg-slate-700 text-[10px] uppercase font-bold text-slate-600 tracking-wider border-b border-slate-200">
+        <div
+          class="hidden md:grid md:grid-cols-[100px_1fr_120px_120px] gap-2 px-4 py-2 bg-slate-50 dark:bg-slate-700 text-[10px] uppercase font-bold text-slate-600 tracking-wider border-b border-slate-200"
+        >
           <span>Tanggal</span>
           <span>Keterangan</span>
           <span class="text-right">Masuk</span>
@@ -153,22 +264,33 @@
               {{ formatTgl(b.tanggal) }}
             </span>
             <div class="md:inline">
-              <p class="text-sm font-bold text-slate-800 dark:text-white truncate">{{ b.keterangan || '-' }}</p>
+              <p class="text-sm font-bold text-slate-800 dark:text-white truncate">
+                {{ b.keterangan || '-' }}
+              </p>
               <p class="text-[10px] text-slate-500 mt-0.5">
-                <span v-if="b.kategori" class="bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 px-1.5 py-0.5 rounded font-bold">
+                <span
+                  v-if="b.kategori"
+                  class="bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 px-1.5 py-0.5 rounded font-bold"
+                >
                   {{ b.kategori }}
                 </span>
                 <span v-if="b.ref_id" class="ml-1 text-slate-400">· #{{ b.ref_id }}</span>
               </p>
             </div>
             <div class="mt-1 md:mt-0 md:text-right">
-              <span v-if="b.tipe === 'masuk' || Number(b.masuk) > 0" class="text-sm font-black text-emerald-700">
+              <span
+                v-if="b.tipe === 'masuk' || Number(b.masuk) > 0"
+                class="text-sm font-black text-emerald-700"
+              >
                 {{ fmtRp(b.masuk || b.nominal) }}
               </span>
               <span v-else class="text-slate-300">—</span>
             </div>
             <div class="md:text-right">
-              <span v-if="b.tipe === 'keluar' || Number(b.keluar) > 0" class="text-sm font-black text-rose-700">
+              <span
+                v-if="b.tipe === 'keluar' || Number(b.keluar) > 0"
+                class="text-sm font-black text-rose-700"
+              >
                 {{ fmtRp(b.keluar || b.nominal) }}
               </span>
               <span v-else class="text-slate-300">—</span>
@@ -178,33 +300,45 @@
       </div>
 
       <p class="text-center text-[10px] text-slate-400 pt-2">
-        <i class="fas fa-circle-info mr-1"></i>{{ filteredBuku.length }} transaksi · Vue 3 · Phase 5.14
+        <i class="fas fa-circle-info mr-1"></i>{{ filteredBuku.length }} transaksi · Vue 3 · Phase
+        5.14
       </p>
     </template>
   </div>
 </template>
 
 <script setup>
-import { useExcel as _useExcelBI } from '@/composables/useExcel'
-import { useSettingsStore as _useSettingsBI } from '@/stores/settings'
-import { buildListPdf } from '@/utils/pdfBuilder'
-
 import { ref, computed, onMounted, onUnmounted, reactive } from 'vue'
 import { subscribeColl } from '@/services/firestore'
 import { useAuthStore } from '@/stores/auth'
+import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
+import { useExcel } from '@/composables/useExcel'
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/services/firebase'
 import { fmtRp, formatTanggal as formatTgl } from '@/utils/format'
+import { buildListPdf } from '@/utils/pdfBuilder'
 
 const toast = useToast()
+const auth = useAuthStore()
+const settingsStore = useSettingsStore()
+const { exportStyled } = useExcel()
 
 const BULAN = [
-  'Januari','Februari','Maret','April','Mei','Juni',
-  'Juli','Agustus','September','Oktober','November','Desember'
+  'Januari',
+  'Februari',
+  'Maret',
+  'April',
+  'Mei',
+  'Juni',
+  'Juli',
+  'Agustus',
+  'September',
+  'Oktober',
+  'November',
+  'Desember'
 ]
 
-const auth = useAuthStore()
 const bukuRaw = ref([])
 const loading = ref(true)
 let unsub = null
@@ -272,8 +406,7 @@ async function simpanInputManual() {
 async function cetakLaporan() {
   // v.21.25.0526: jsPDF + autoTable (drop window.print)
   try {
-    const settingsBI = _useSettingsBI()
-    const settingsObj = settingsBI?.settings || {}
+    const settingsObj = settingsStore?.settings || {}
     const kop = {
       logoUrl: settingsObj.kop_logo || settingsObj.kopLogo || '',
       line1: settingsObj.kopLine1 || 'YAYASAN MAMBAUL ULUM',
@@ -290,9 +423,10 @@ async function cetakLaporan() {
       masuk: b.masuk ? fmtRp(b.masuk) : '',
       keluar: b.keluar ? fmtRp(b.keluar) : ''
     }))
-    const periode = selectedMonth.value > 0
-      ? `${BULAN[selectedMonth.value]} ${selectedYear.value}`
-      : `Tahun ${selectedYear.value}`
+    const periode =
+      selectedMonth.value > 0
+        ? `${BULAN[selectedMonth.value - 1]} ${selectedYear.value}`
+        : `Tahun ${selectedYear.value}`
     await buildListPdf({
       kind: 'umum',
       orientation: 'l',
@@ -346,17 +480,28 @@ const filteredBuku = computed(() => {
   // Search
   const kw = search.value.trim().toLowerCase()
   if (kw) {
-    list = list.filter((b) =>
-      String(b.keterangan || '').toLowerCase().includes(kw) ||
-      String(b.kategori || '').toLowerCase().includes(kw) ||
-      String(b.ref_id || '').toLowerCase().includes(kw)
+    list = list.filter(
+      (b) =>
+        String(b.keterangan || '')
+          .toLowerCase()
+          .includes(kw) ||
+        String(b.kategori || '')
+          .toLowerCase()
+          .includes(kw) ||
+        String(b.ref_id || '')
+          .toLowerCase()
+          .includes(kw)
     )
   }
-  return list.sort((a, b) => (b.tanggal || '').localeCompare(a.tanggal || '') || (b.id || '').localeCompare(a.id || ''))
+  return list.sort(
+    (a, b) =>
+      (b.tanggal || '').localeCompare(a.tanggal || '') || (b.id || '').localeCompare(a.id || '')
+  )
 })
 
 const stats = computed(() => {
-  let masuk = 0, keluar = 0
+  let masuk = 0,
+    keluar = 0
   for (const b of filteredBuku.value) {
     if (b.tipe === 'masuk' || Number(b.masuk) > 0) {
       masuk += Number(b.masuk || b.nominal) || 0
@@ -385,31 +530,54 @@ onMounted(() => {
   })
 })
 onUnmounted(() => {
-  if (unsub) { try { unsub() } catch (e) {} }
+  if (unsub) {
+    try {
+      unsub()
+    } catch (e) {}
+  }
 })
-// v.20.42.0526: Export Excel Buku Induk
+
+// v.21+: Export Excel Buku Induk Keuangan (kolom: no, tanggal, no_struk, keterangan, kategori, tipe, masuk, keluar, saldo)
 const exportingBI = ref(false)
-const { exportStyled: _exportStyledBI } = _useExcelBI()
-const _settingsBIExp = _useSettingsBI()
 async function exportBukuIndukExcel() {
   if (exportingBI.value) return
   exportingBI.value = true
   try {
-    const list = (typeof filteredBuku !== 'undefined' && filteredBuku.value) || []
-    const rows = list.map((s, i) => ({ no: i + 1, nama: s.nama || '', nis: s.nis || '', lembaga: s.lembaga || '', kelas: s.kelas || '' }))
+    const list = filteredBuku.value || bukuRaw.value || []
+    const rows = list.map((b, i) => ({
+      no: i + 1,
+      tanggal: b.tanggal || '',
+      no_struk: b.no_struk || '',
+      keterangan: b.keterangan || b.deskripsi || '',
+      kategori: b.kategori || '',
+      tipe: b.tipe || (Number(b.masuk) > 0 ? 'Masuk' : 'Keluar'),
+      masuk: b.masuk || (b.tipe === 'masuk' ? b.nominal : 0) || 0,
+      keluar: b.keluar || (b.tipe === 'keluar' ? b.nominal : 0) || 0,
+      saldo: b.saldo || 0
+    }))
+    const s = settingsStore.settings || {}
     await exportStyled(rows, {
       filename: `buku_induk_${new Date().toISOString().slice(0, 10)}.xlsx`,
       sheetName: 'Buku Induk',
-      subtitle: `Buku Induk Santri — ${rows.length} santri`,
+      kop: [
+        s.kopLine1 || '',
+        s.kopLine2 || 'PONDOK PESANTREN MAMBAUL ULUM',
+        s.kopLine3 || '',
+        s.kopLine4 || ''
+      ],
+      subtitle: `Buku Induk Keuangan — ${rows.length} transaksi`,
       columns: [
         { key: 'no', header: 'No', width: 5 },
-        { key: 'nama', header: 'Nama', width: 28 },
-        { key: 'nis', header: 'NIS', width: 12 },
-        { key: 'lembaga', header: 'Lembaga', width: 14 },
-        { key: 'kelas', header: 'Kelas', width: 10 }
+        { key: 'tanggal', header: 'Tanggal', width: 12 },
+        { key: 'no_struk', header: 'No Struk', width: 14 },
+        { key: 'keterangan', header: 'Keterangan', width: 32 },
+        { key: 'kategori', header: 'Kategori', width: 16 },
+        { key: 'tipe', header: 'Tipe', width: 10 },
+        { key: 'masuk', header: 'Masuk', width: 14 },
+        { key: 'keluar', header: 'Keluar', width: 14 },
+        { key: 'saldo', header: 'Saldo', width: 14 }
       ]
     })
-    toast.success(`Ekspor ${rows.length} santri ke Excel`)
   } catch (e) {
     toast.error('Gagal: ' + (e.message || e))
   } finally {
