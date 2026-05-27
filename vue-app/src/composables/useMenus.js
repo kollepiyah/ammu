@@ -18,7 +18,7 @@ const ALL_MENUS = [
   { group: 'Menu', name: 'Capaian Prestasi', path: '/capaian-prestasi', icon: 'fa-trophy', roles: ['santri'], available: true },
   { group: 'Menu', name: 'Profil', path: '/profil', icon: 'fa-user-circle', roles: ['admin', 'guru', 'santri'], available: true },
   // v.20.18.0526: Personal page admin/superadmin/admin_keuangan — statistik kehadiran + slip bisyaroh personal
-  { group: 'Menu', name: 'Personal', path: '/personal', icon: 'fa-id-badge', roles: ['admin'], available: true },
+  { group: 'Menu', name: 'Personal', path: '/personal', icon: 'fa-id-badge', roles: ['admin', 'guru'], available: true },
 
   // GROUP: PENDIDIKAN
   // ADMIN/GURU menu

@@ -1,6 +1,6 @@
 <template>
   <!-- v.21.84.0527: Kritik & Saran — match legacy (form sesi + admin reply + self-list) -->
-  <div class="p-3 md:p-5 max-w-3xl mx-auto space-y-4">
+  <div class="p-3 md:p-5 space-y-4">
     <!-- Header -->
     <div class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm">
       <h1 class="text-xl md:text-2xl font-black">

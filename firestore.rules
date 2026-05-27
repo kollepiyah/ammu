@@ -319,6 +319,20 @@ service cloud.firestore {
       allow delete: if signedIn();
     }
 
+    // v.21.84.0527: Absensi ngaji bulanan (Qiraati — input manual guru)
+    match /absensi_santri_ngaji_bulanan/{docId} {
+      allow read: if true;
+      allow create, update: if signedIn()
+        && request.resource.data.santri_id != null
+        && request.resource.data.periode is string
+        && request.resource.data.periode.matches('^[0-9]{4}-(0[1-9]|1[0-2])$')
+        && request.resource.data.sakit is number && request.resource.data.sakit >= 0
+        && request.resource.data.izin is number && request.resource.data.izin >= 0
+        && request.resource.data.alpa is number && request.resource.data.alpa >= 0
+        && request.resource.data.hadir is number && request.resource.data.hadir >= 0;
+      allow delete: if signedIn();
+    }
+
     match /riwayat_kenaikan/{docId} {
       allow read: if true;
       allow create, update: if signedIn();

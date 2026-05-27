@@ -1,482 +1,361 @@
 <template>
-  <div class="p-3 md:p-5 max-w-6xl mx-auto space-y-4">
-    <!-- Access guard -->
-    <div
-      v-if="!isFullAccess"
-      class="bg-[var(--bg-card)] rounded-2xl p-10 border border-dashed border-rose-300 text-center"
-    >
-      <i class="fas fa-lock text-rose-300 text-4xl mb-3"></i>
-      <p class="text-sm font-bold text-slate-700 dark:text-[var(--text-tertiary)]">Akses terbatas</p>
+  <!-- v.21.84.0527: Absensi Santri — input manual bulanan, 2 kategori (Ngaji/Sekolah), autofill rapor -->
+  <div class="p-3 md:p-5 space-y-4">
+    <!-- LAYER 1: LANDING -->
+    <div v-if="step === 'landing'" class="bg-white dark:bg-slate-800 rounded-2xl p-5 md:p-6 border border-emerald-100 dark:border-slate-700 shadow-sm">
+      <div class="flex items-start gap-3 mb-4">
+        <i class="fas fa-clipboard-check text-emerald-600 text-2xl"></i>
+        <div>
+          <h2 class="text-lg md:text-xl font-black text-slate-800 dark:text-white leading-tight">Absensi Santri</h2>
+          <p class="text-xs md:text-sm text-slate-500 dark:text-slate-400 mt-0.5">Input absensi bulanan santri. Pilih kategori.</p>
+        </div>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <button @click="pilihKategori('ngaji')" class="group relative overflow-hidden bg-gradient-to-br from-emerald-500 to-teal-700 hover:from-emerald-600 hover:to-teal-800 rounded-2xl p-5 text-left text-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer">
+          <i class="fas fa-mosque text-2xl drop-shadow mb-2"></i>
+          <h3 class="text-base md:text-lg font-black leading-tight drop-shadow-sm !text-white">Absen Ngaji</h3>
+          <p class="text-[11px] text-white/85 font-medium mt-0.5">TPQ Pagi/Sore · Pra PTPT · PTPT · PPPH</p>
+        </button>
+        <button @click="pilihKategori('sekolah')" class="group relative overflow-hidden bg-gradient-to-br from-cyan-500 to-cyan-700 hover:from-cyan-600 hover:to-cyan-800 rounded-2xl p-5 text-left text-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer">
+          <i class="fas fa-school text-2xl drop-shadow mb-2"></i>
+          <h3 class="text-base md:text-lg font-black leading-tight drop-shadow-sm !text-white">Absen Sekolah</h3>
+          <p class="text-[11px] text-white/85 font-medium mt-0.5">SDI · SMP · SMA (PKBM)</p>
+        </button>
+      </div>
     </div>
 
-    <template v-else>
-      <!-- Header + rekap totals -->
-      <div
-        class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
-      >
-        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-          <div>
-            <h1 class="text-xl md:text-2xl font-black text-[var(--text-primary)]">
-              <i class="fas fa-clipboard-check text-cyan-500 mr-2"></i>Rekap Absensi Santri
-            </h1>
-            <p class="text-xs text-[var(--text-secondary)] mt-0.5">
-              {{ getBulanLabel(selectedMonth) }} {{ selectedYear }}
-            </p>
-          </div>
-          <div class="flex flex-wrap gap-2">
-            <div
-              class="px-3 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 text-xs"
-            >
-              <span class="text-emerald-700 dark:text-emerald-300 font-bold">{{
-                stats.hadir
-              }}</span>
-              <span class="text-[var(--text-secondary)] ml-1">hadir</span>
-            </div>
-            <div
-              class="px-3 py-1.5 rounded-full bg-rose-50 dark:bg-rose-900/30 border border-rose-200 text-xs"
-            >
-              <span class="text-rose-700 dark:text-rose-300 font-bold">{{ stats.alfa }}</span>
-              <span class="text-[var(--text-secondary)] ml-1">alfa</span>
-            </div>
-            <div
-              class="px-3 py-1.5 rounded-full bg-cyan-50 dark:bg-cyan-900/30 border border-cyan-200 text-xs"
-            >
-              <span class="text-cyan-700 dark:text-cyan-300 font-bold">{{ stats.sakit }}</span>
-              <span class="text-[var(--text-secondary)] ml-1">sakit</span>
-            </div>
-            <div
-              class="px-3 py-1.5 rounded-full bg-teal-50 dark:bg-teal-900/30 border border-teal-200 text-xs"
-            >
-              <span class="text-teal-700 dark:text-teal-300 font-bold">{{ stats.izin }}</span>
-              <span class="text-[var(--text-secondary)] ml-1">izin</span>
-            </div>
-          </div>
+    <!-- LAYER 2-NGAJI -->
+    <div v-else-if="step === 'sub-ngaji'" class="bg-white dark:bg-slate-800 rounded-2xl p-5 md:p-6 border border-emerald-100 dark:border-slate-700 shadow-sm">
+      <div class="flex items-center gap-3 mb-4">
+        <button @click="backToLanding" class="text-xs font-bold px-2 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 transition cursor-pointer"><i class="fas fa-arrow-left text-slate-600 dark:text-slate-300"></i></button>
+        <div>
+          <h2 class="text-lg md:text-xl font-black text-slate-800 dark:text-white leading-tight"><i class="fas fa-mosque text-emerald-600 mr-2"></i>Absen Ngaji</h2>
+          <p class="text-xs md:text-sm text-slate-500 dark:text-slate-400 mt-0.5">Pilih lembaga untuk input absensi.</p>
         </div>
       </div>
+      <div class="grid grid-cols-2 md:grid-cols-5 gap-2 md:gap-3">
+        <button @click="pilihLembaga('TPQ Pagi')" class="bg-gradient-to-br from-emerald-500 to-emerald-700 hover:shadow-md hover:-translate-y-0.5 rounded-xl p-3 text-left text-white shadow-sm transition-all cursor-pointer">
+          <i class="fas fa-sun text-base drop-shadow"></i><h3 class="text-xs md:text-sm font-black leading-tight drop-shadow-sm !text-white mt-1">TPQ Pagi</h3>
+        </button>
+        <button @click="pilihLembaga('TPQ Sore')" class="bg-gradient-to-br from-teal-500 to-teal-700 hover:shadow-md hover:-translate-y-0.5 rounded-xl p-3 text-left text-white shadow-sm transition-all cursor-pointer">
+          <i class="fas fa-cloud-sun text-base drop-shadow"></i><h3 class="text-xs md:text-sm font-black leading-tight drop-shadow-sm !text-white mt-1">TPQ Sore</h3>
+        </button>
+        <button @click="pilihLembaga('Pra PTPT')" class="bg-gradient-to-br from-teal-600 to-teal-800 hover:shadow-md hover:-translate-y-0.5 rounded-xl p-3 text-left text-white shadow-sm transition-all cursor-pointer">
+          <i class="fas fa-book text-base drop-shadow"></i><h3 class="text-xs md:text-sm font-black leading-tight drop-shadow-sm !text-white mt-1">Pra PTPT</h3>
+        </button>
+        <button @click="pilihLembaga('PTPT')" class="bg-gradient-to-br from-emerald-500 to-emerald-700 hover:shadow-md hover:-translate-y-0.5 rounded-xl p-3 text-left text-white shadow-sm transition-all cursor-pointer">
+          <i class="fas fa-quran text-base drop-shadow"></i><h3 class="text-xs md:text-sm font-black leading-tight drop-shadow-sm !text-white mt-1">PTPT</h3>
+        </button>
+        <button @click="pilihLembaga('PPPH')" class="bg-gradient-to-br from-cyan-600 to-cyan-800 hover:shadow-md hover:-translate-y-0.5 rounded-xl p-3 text-left text-white shadow-sm transition-all cursor-pointer">
+          <i class="fas fa-scroll text-base drop-shadow"></i><h3 class="text-xs md:text-sm font-black leading-tight drop-shadow-sm !text-white mt-1">PPPH</h3>
+        </button>
+      </div>
+    </div>
 
-      <!-- Filters -->
-      <div
-        class="bg-[var(--bg-card)] rounded-2xl p-3 md:p-4 border border-[var(--border-subtle)] shadow-sm"
-      >
-        <div class="grid grid-cols-2 md:grid-cols-5 gap-2">
-          <select
-            v-model.number="selectedYear"
-            class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-cyan-500 outline-none"
-          >
-            <option v-for="y in yearOptions" :key="y" :value="y">{{ y }}</option>
-          </select>
-          <select
-            v-model.number="selectedMonth"
-            class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-cyan-500 outline-none"
-          >
-            <option v-for="(b, i) in BULAN" :key="b" :value="i + 1">{{ b }}</option>
-          </select>
-          <select
-            v-model="filterLembaga"
-            class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-cyan-500 outline-none"
-          >
-            <option value="">Semua lembaga</option>
-            <option v-for="l in uniqueLembaga" :key="l" :value="l">{{ l }}</option>
-          </select>
-          <select
-            v-model="filterKelas"
-            class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-cyan-500 outline-none"
-          >
-            <option value="">Semua kelas</option>
-            <option v-for="k in uniqueKelas" :key="k" :value="k">{{ k }}</option>
-          </select>
-          <select
-            v-model="filterStatus"
-            class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-cyan-500 outline-none"
-          >
-            <option value="">Semua status</option>
-            <option value="hadir">Hadir</option>
-            <option value="alfa">Alfa</option>
-            <option value="sakit">Sakit</option>
-            <option value="izin">Izin</option>
-          </select>
+    <!-- LAYER 2-SEKOLAH -->
+    <div v-else-if="step === 'sub-sekolah'" class="bg-white dark:bg-slate-800 rounded-2xl p-5 md:p-6 border border-cyan-100 dark:border-slate-700 shadow-sm">
+      <div class="flex items-center gap-3 mb-4">
+        <button @click="backToLanding" class="text-xs font-bold px-2 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 transition cursor-pointer"><i class="fas fa-arrow-left text-slate-600 dark:text-slate-300"></i></button>
+        <div>
+          <h2 class="text-lg md:text-xl font-black text-slate-800 dark:text-white leading-tight"><i class="fas fa-school text-cyan-600 mr-2"></i>Absen Sekolah</h2>
+          <p class="text-xs md:text-sm text-slate-500 dark:text-slate-400 mt-0.5">Pilih jenjang untuk input absensi.</p>
         </div>
       </div>
-
-      <!-- Tabs -->
-      <div
-        class="bg-[var(--bg-card)] rounded-2xl p-2 border border-[var(--border-subtle)] shadow-sm flex gap-1"
-      >
-        <button
-          @click="activeTab = 'rekap'"
-          :class="[
-            'flex-1 px-3 py-2 text-sm rounded-xl font-bold transition',
-            activeTab === 'rekap'
-              ? 'bg-cyan-600 text-white shadow'
-              : 'text-[var(--text-secondary)] hover:bg-cyan-50'
-          ]"
-        >
-          Rekap per Santri
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-2 md:gap-3">
+        <button @click="pilihLembaga('SDI')" class="bg-gradient-to-br from-cyan-500 to-cyan-700 hover:shadow-md hover:-translate-y-0.5 rounded-xl p-4 text-left text-white shadow-sm transition-all cursor-pointer">
+          <i class="fas fa-school text-xl drop-shadow"></i><h3 class="text-base font-black leading-tight drop-shadow-sm !text-white mt-1">SDI</h3><p class="text-[11px] text-white/85 mt-0.5">Kelas I–VI</p>
         </button>
-        <button
-          @click="activeTab = 'detail'"
-          :class="[
-            'flex-1 px-3 py-2 text-sm rounded-xl font-bold transition',
-            activeTab === 'detail'
-              ? 'bg-cyan-600 text-white shadow'
-              : 'text-[var(--text-secondary)] hover:bg-cyan-50'
-          ]"
-        >
-          Detail per Hari
+        <button @click="pilihLembaga('SMP')" class="bg-gradient-to-br from-cyan-600 to-cyan-800 hover:shadow-md hover:-translate-y-0.5 rounded-xl p-4 text-left text-white shadow-sm transition-all cursor-pointer">
+          <i class="fas fa-school-flag text-xl drop-shadow"></i><h3 class="text-base font-black leading-tight drop-shadow-sm !text-white mt-1">SMP</h3><p class="text-[11px] text-white/85 mt-0.5">PKBM · Kelas VII–IX</p>
+        </button>
+        <button @click="pilihLembaga('SMA')" class="bg-gradient-to-br from-teal-600 to-teal-800 hover:shadow-md hover:-translate-y-0.5 rounded-xl p-4 text-left text-white shadow-sm transition-all cursor-pointer">
+          <i class="fas fa-graduation-cap text-xl drop-shadow"></i><h3 class="text-base font-black leading-tight drop-shadow-sm !text-white mt-1">SMA</h3><p class="text-[11px] text-white/85 mt-0.5">PKBM · Kelas X–XII</p>
         </button>
       </div>
+    </div>
 
-      <!-- Action buttons -->
-      <div
-        class="bg-[var(--bg-card)] rounded-2xl p-3 border border-[var(--border-subtle)] shadow-sm flex flex-wrap gap-2"
-      >
-        <button
-          @click="generateKeRapor"
-          :disabled="generating"
-          class="px-3 py-2 text-xs font-bold rounded-lg bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white disabled:opacity-50 inline-flex items-center gap-1"
-        >
-          <i class="fas fa-file-export"></i>
-          {{ generating ? 'Memproses...' : 'Generate ke Rapor' }}
-        </button>
-        <button
-          @click="exportExcel"
-          :disabled="exporting"
-          class="px-3 py-2 text-xs font-bold rounded-lg bg-cyan-600 hover:bg-cyan-700 text-white disabled:opacity-50 inline-flex items-center gap-1"
-        >
-          <i class="fas fa-file-excel"></i>Export Excel
-        </button>
-        <button
-          @click="exportPdf"
-          :disabled="exporting"
-          class="px-3 py-2 text-xs font-bold rounded-lg bg-rose-600 hover:bg-rose-700 text-white disabled:opacity-50 inline-flex items-center gap-1"
-        >
-          <i class="fas fa-file-pdf"></i>Export PDF
-        </button>
-        <span class="text-[10px] text-[var(--text-tertiary)] italic ml-auto self-center">
-          <i class="fas fa-info-circle mr-1"></i>Filter santri: non-mukim (PP/Fullday) only
-        </span>
+    <!-- LAYER 3: INPUT BULANAN -->
+    <template v-else-if="step === 'input'">
+      <button v-if="showBackBtn" @click="backToSub" class="inline-flex items-center gap-2 text-xs font-bold px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 transition cursor-pointer text-slate-700 dark:text-slate-200">
+        <i class="fas fa-arrow-left"></i> {{ isGuru ? 'Pilih Kategori Lain' : 'Pilih Lembaga Lain' }}
+      </button>
+
+      <!-- Header -->
+      <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-200 dark:border-slate-700 shadow-sm">
+        <h1 class="text-base md:text-lg font-black text-slate-800 dark:text-white">
+          <i :class="['fas mr-1', kategori === 'ngaji' ? 'fa-mosque text-emerald-600' : 'fa-school text-cyan-600']"></i>
+          <template v-if="isGuru">Absensi {{ kategori === 'ngaji' ? 'Ngaji' : 'Sekolah' }} Saya</template>
+          <template v-else>Absensi {{ kategori === 'ngaji' ? 'Ngaji' : 'Sekolah' }} — {{ selectedLembaga }}</template>
+        </h1>
+        <p class="text-[11px] text-slate-500 dark:text-slate-400">
+          Total: {{ filteredSantri.length }} santri · Periode: <b class="text-teal-700 dark:text-teal-300">{{ BULAN[selectedMonth - 1] }} {{ selectedYear }}</b>
+        </p>
+      </div>
+
+      <!-- Filters + Hari Efektif -->
+      <div class="bg-white dark:bg-slate-800 rounded-2xl p-3 md:p-4 border border-slate-200 dark:border-slate-700 shadow-sm grid grid-cols-2 md:grid-cols-4 gap-2">
+        <select v-model.number="selectedMonth" class="px-3 py-2 text-sm rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none">
+          <option v-for="(b, i) in BULAN" :key="b" :value="i + 1">{{ b }}</option>
+        </select>
+        <select v-model.number="selectedYear" class="px-3 py-2 text-sm rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none">
+          <option v-for="y in TAHUN_LIST" :key="y" :value="y">{{ y }}</option>
+        </select>
+        <div class="flex items-center gap-2 px-3 py-2 text-sm rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900">
+          <span class="text-[11px] font-bold text-slate-500 whitespace-nowrap">Hari Efektif</span>
+          <input v-model.number="hariEfektif" type="number" min="0" max="31" class="w-full text-center font-bold bg-transparent outline-none text-slate-800 dark:text-white" />
+        </div>
+        <input v-model="search" type="text" placeholder="Cari nama..." class="px-3 py-2 text-sm rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none" />
+      </div>
+
+      <!-- Action bar -->
+      <div class="bg-white dark:bg-slate-800 rounded-2xl p-3 md:p-4 border border-slate-200 dark:border-slate-700 shadow-sm flex flex-wrap items-center justify-between gap-2">
+        <div class="text-[11px] text-slate-500 dark:text-slate-400">
+          <i class="fas fa-info-circle mr-1 text-teal-500"></i>
+          Isi <b>Sakit</b>/<b>Izin</b>/<b>Alfa</b>. Hadir auto = Hari Efektif − (S+I+A).
+        </div>
+        <div class="flex gap-2">
+          <button @click="simpanSemua" :disabled="saving" class="px-4 py-2 text-sm font-bold rounded-lg bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white inline-flex items-center gap-1.5 transition cursor-pointer">
+            <i :class="saving ? 'fas fa-spinner fa-spin' : 'fas fa-save'"></i>{{ saving ? 'Menyimpan...' : 'Simpan' }}
+          </button>
+          <button @click="generateKeRapor" :disabled="generating" class="px-4 py-2 text-sm font-bold rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white inline-flex items-center gap-1.5 transition cursor-pointer">
+            <i :class="generating ? 'fas fa-spinner fa-spin' : 'fas fa-file-export'"></i>{{ generating ? 'Memproses...' : 'Generate ke Rapor' }}
+          </button>
+        </div>
       </div>
 
       <!-- Loading -->
-      <div v-if="loading" class="bg-[var(--bg-card)] rounded-2xl p-10 text-center">
-        <i class="fas fa-spinner fa-spin text-cyan-500 text-3xl mb-3"></i>
-        <p class="text-sm text-[var(--text-secondary)] font-bold">Memuat absensi...</p>
+      <div v-if="loading" class="bg-white dark:bg-slate-800 rounded-2xl p-10 text-center border border-slate-200 dark:border-slate-700">
+        <i class="fas fa-spinner fa-spin text-teal-500 text-3xl"></i>
+      </div>
+      <div v-else-if="filteredSantri.length === 0" class="bg-white dark:bg-slate-800 rounded-2xl p-10 border border-dashed border-slate-300 dark:border-slate-600 text-center">
+        <i class="fas fa-calendar-times text-slate-300 text-4xl mb-2"></i>
+        <p class="text-sm text-slate-500 italic">Tidak ada santri di lembaga {{ selectedLembaga }}.</p>
       </div>
 
-      <!-- Tab: Rekap per Santri -->
-      <div v-else-if="activeTab === 'rekap'" class="space-y-2">
-        <div
-          v-if="rekapPerSantri.length === 0"
-          class="bg-[var(--bg-card)] rounded-2xl p-10 border border-dashed border-[var(--border-default)] text-center"
-        >
-          <i class="fas fa-calendar-times text-[var(--text-tertiary)] text-4xl mb-3"></i>
-          <p class="text-sm font-bold text-slate-700 dark:text-[var(--text-tertiary)]">Tidak ada absensi</p>
-        </div>
-        <div
-          v-for="r in rekapPerSantri"
-          :key="r.santri_id"
-          class="bg-[var(--bg-card)] rounded-xl p-3 border border-[var(--border-subtle)] shadow-sm"
-        >
-          <div class="flex items-center gap-3">
-            <div
-              class="flex-shrink-0 w-12 h-12 rounded-full bg-cyan-100 text-cyan-600 flex items-center justify-center"
-            >
-              <i class="fas fa-user-graduate"></i>
-            </div>
-            <div class="flex-1 min-w-0">
-              <h3 class="text-sm font-black text-[var(--text-primary)] truncate">
-                {{ getNamaSantri(r.santri_id) }}
-              </h3>
-              <div class="flex gap-1.5 mt-1 text-[10px]">
-                <span class="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded font-bold">
-                  H: {{ r.hadir }}
-                </span>
-                <span class="bg-rose-100 text-rose-700 px-2 py-0.5 rounded font-bold">
-                  A: {{ r.alfa }}
-                </span>
-                <span class="bg-cyan-100 text-cyan-700 px-2 py-0.5 rounded font-bold">
-                  S: {{ r.sakit }}
-                </span>
-                <span class="bg-teal-100 text-teal-700 px-2 py-0.5 rounded font-bold">
-                  I: {{ r.izin }}
-                </span>
-              </div>
-            </div>
-            <div class="text-right flex-shrink-0">
-              <p class="text-2xl font-black text-cyan-700">{{ r.hadir }}</p>
-              <button
-                @click="hapusAbsensiSantri(r.santri_id)"
-                class="text-[10px] text-rose-600 hover:text-rose-800 font-bold mt-1"
-                title="Hapus semua absensi santri ini"
-              >
-                <i class="fas fa-trash mr-1"></i>Hapus
-              </button>
-              <p class="text-[10px] text-[var(--text-secondary)] uppercase font-bold">hari hadir</p>
-            </div>
-          </div>
+      <!-- Tabel input -->
+      <div v-else class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="bg-slate-50 dark:bg-slate-900/40 text-[11px] uppercase tracking-wider text-slate-500">
+                <th class="text-left px-4 py-3 font-bold">Nama Santri</th>
+                <th class="text-center px-2 py-3 font-bold">Kelas</th>
+                <th class="text-center px-2 py-3 font-bold w-20">Sakit</th>
+                <th class="text-center px-2 py-3 font-bold w-20">Izin</th>
+                <th class="text-center px-2 py-3 font-bold w-20">Alfa</th>
+                <th class="text-center px-2 py-3 font-bold w-20 bg-emerald-50 dark:bg-emerald-900/20">Hadir</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
+              <tr v-for="s in filteredSantri" :key="s.id" class="hover:bg-teal-50 dark:hover:bg-teal-900/10 transition">
+                <td class="px-4 py-2 font-bold text-slate-800 dark:text-white">{{ s.nama }}</td>
+                <td class="text-center px-2 py-2 text-slate-500">{{ kelasOf(s) || '-' }}</td>
+                <td class="px-2 py-2"><input v-model.number="getRow(s.id).sakit" type="number" min="0" class="w-full text-center bg-cyan-50 dark:bg-cyan-900/20 text-cyan-900 dark:text-cyan-200 rounded p-1 text-xs font-bold border border-cyan-200 dark:border-cyan-700 outline-none focus:ring-2 focus:ring-cyan-400" /></td>
+                <td class="px-2 py-2"><input v-model.number="getRow(s.id).izin" type="number" min="0" class="w-full text-center bg-teal-50 dark:bg-teal-900/20 text-teal-900 dark:text-teal-200 rounded p-1 text-xs font-bold border border-teal-200 dark:border-teal-700 outline-none focus:ring-2 focus:ring-teal-400" /></td>
+                <td class="px-2 py-2"><input v-model.number="getRow(s.id).alfa" type="number" min="0" class="w-full text-center bg-rose-50 dark:bg-rose-900/20 text-rose-900 dark:text-rose-200 rounded p-1 text-xs font-bold border border-rose-200 dark:border-rose-700 outline-none focus:ring-2 focus:ring-rose-400" /></td>
+                <td class="text-center px-2 py-2 font-black text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/20">{{ hadirOf(s.id) }}</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
-
-      <!-- Tab: Detail per Hari -->
-      <div v-else class="space-y-1.5">
-        <div
-          v-if="filteredAbsensi.length === 0"
-          class="bg-[var(--bg-card)] rounded-2xl p-10 border border-dashed border-[var(--border-default)] text-center"
-        >
-          <i class="fas fa-calendar-times text-[var(--text-tertiary)] text-4xl mb-3"></i>
-          <p class="text-sm font-bold text-[var(--text-primary)]">Tidak ada absensi</p>
-        </div>
-        <div
-          v-for="a in filteredAbsensi"
-          :key="a.id"
-          class="bg-[var(--bg-card)] rounded-xl p-2.5 border border-[var(--border-subtle)] shadow-sm"
-        >
-          <div class="flex items-center gap-3">
-            <div
-              :class="[
-                'flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-white font-bold text-xs',
-                statusBg(a.status)
-              ]"
-            >
-              {{ statusLabel(a.status) }}
-            </div>
-            <div class="flex-1 min-w-0">
-              <p class="text-sm font-bold text-[var(--text-primary)] truncate">
-                {{ getNamaSantri(a.santri_id || a.santriId) }}
-              </p>
-              <p class="text-[11px] text-[var(--text-secondary)]">
-                {{ a.tanggal }} ·
-                <span class="capitalize">{{ a.status }}</span>
-                <span v-if="a.keterangan" class="ml-1">· {{ a.keterangan }}</span>
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <p class="text-center text-[10px] text-[var(--text-tertiary)] pt-2">
-        <i class="fas fa-circle-info mr-1"></i>
-        {{ filteredAbsensi.length }} absensi · Vue 3 · Phase 5.17
-      </p>
     </template>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
-import {
-  doc,
-  collection,
-  query as fbQuery,
-  where,
-  getDocs,
-  setDoc,
-  deleteDoc
-} from 'firebase/firestore'
-import { useAuthStore } from '@/stores/auth'
-import { useSettingsStore } from '@/stores/settings'
+import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue'
 import { subscribeColl } from '@/services/firestore'
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/services/firebase'
-import { useExcel } from '@/composables/useExcel'
 import { useToast } from '@/composables/useToast'
-import { useConfirm } from '@/composables/useConfirm'
-import { buildListPdf } from '@/utils/pdfBuilder'
+import { useAuthStore } from '@/stores/auth'
 
-const BULAN = [
-  'Januari',
-  'Februari',
-  'Maret',
-  'April',
-  'Mei',
-  'Juni',
-  'Juli',
-  'Agustus',
-  'September',
-  'Oktober',
-  'November',
-  'Desember'
-]
-
-// --- Internal data state ---
-const auth = useAuthStore()
-const settingsStore = useSettingsStore()
 const toast = useToast()
-const confirmDlg = useConfirm()
-const { exportStyled } = useExcel()
+const auth = useAuthStore()
 
-const absensi = ref([])
-const santriRaw = ref([])
-const loading = ref(true)
-const unsubs = []
-
-const selectedYear = ref(new Date().getFullYear())
-const selectedMonth = ref(new Date().getMonth() + 1)
-const filterLembaga = ref('')
-const filterKelas = ref('')
-const filterStatus = ref('')
-
-const isFullAccess = computed(() => {
+const isAdmin = computed(() => {
   const u = auth.sesiAktif
   if (!u) return false
-  return (
-    u.role === 'admin' ||
-    u.id === 'admin' ||
-    ['super_admin', 'admin', 'admin_keuangan'].includes(u.role_sistem) ||
-    u.role === 'guru'
-  )
+  return u.role === 'admin' || u.id === 'admin' || ['super_admin', 'admin', 'admin_keuangan'].includes(u.role_sistem)
 })
+const isGuru = computed(() => !isAdmin.value && (auth.sesiAktif?.role === 'guru'))
+const guruName = computed(() => String(auth.sesiAktif?.guru || auth.sesiAktif?.nama || '').toLowerCase().trim())
 
-const santriNonMukim = computed(() =>
-  santriRaw.value.filter((s) => s.is_mukim === false || s.is_fullday === true)
-)
-
-const filteredAbsensi = computed(() => {
-  const periode = `${selectedYear.value}-${String(selectedMonth.value).padStart(2, '0')}`
-  let rows = absensi.value.filter((r) => String(r.tanggal || '').substring(0, 7) === periode)
-  if (filterStatus.value) {
-    rows = rows.filter(
-      (r) => String(r.status || '').toLowerCase() === filterStatus.value.toLowerCase()
-    )
-  }
-  rows = rows.filter((r) => {
-    const s = santriRaw.value.find((x) => String(x.id) === String(r.santri_id || r.santriId))
-    if (!s) return false
-    // Skip mukim non-fullday
-    if (s.is_mukim === true && s.is_fullday !== true) return false
-    if (
-      filterLembaga.value &&
-      s.lembaga_sekolah !== filterLembaga.value &&
-      s.lembaga !== filterLembaga.value
-    )
-      return false
-    if (filterKelas.value && s.kelas_sekolah !== filterKelas.value && s.kelas !== filterKelas.value)
-      return false
-    return true
-  })
-  rows.sort((a, b) => (b.tanggal || '').localeCompare(a.tanggal || ''))
-  return rows
-})
-
-const stats = computed(() => {
-  const acc = { hadir: 0, alfa: 0, sakit: 0, izin: 0, total: 0 }
-  for (const r of filteredAbsensi.value) {
-    const s = String(r.status || '').toLowerCase()
-    if (s === 'hadir' || s === 'h') acc.hadir++
-    else if (s === 'alfa' || s === 'a') acc.alfa++
-    else if (s === 'sakit' || s === 's') acc.sakit++
-    else if (s === 'izin' || s === 'i') acc.izin++
-    acc.total++
-  }
-  return acc
-})
-
-const rekapPerSantri = computed(() => {
-  const map = {}
-  for (const r of filteredAbsensi.value) {
-    const sid = String(r.santri_id || r.santriId || '')
-    if (!map[sid]) {
-      map[sid] = { santri_id: sid, hadir: 0, alfa: 0, sakit: 0, izin: 0, total: 0 }
-    }
-    const s = String(r.status || '').toLowerCase()
-    if (s === 'hadir' || s === 'h') map[sid].hadir++
-    else if (s === 'alfa' || s === 'a') map[sid].alfa++
-    else if (s === 'sakit' || s === 's') map[sid].sakit++
-    else if (s === 'izin' || s === 'i') map[sid].izin++
-    map[sid].total++
-  }
-  return Object.values(map).sort((a, b) => b.hadir - a.hadir)
-})
-
-function getNamaSantri(id) {
-  const s = santriRaw.value.find((x) => String(x.id) === String(id))
-  return s ? s.nama : '(unknown)'
+function _low(v) { return String(v || '').toLowerCase().trim() }
+// Guru ownership
+function ownNgaji(s) {
+  const gn = guruName.value
+  if (!gn) return false
+  return _low(s.guru_pagi) === gn || _low(s.guru_sore) === gn || _low(s.guru) === gn
 }
-
-function getSantriInfo(id) {
-  return santriRaw.value.find((x) => String(x.id) === String(id))
+function ownSekolah(s) {
+  const gn = guruName.value
+  if (!gn) return false
+  const arr = Array.isArray(s.guru_sekolah) ? s.guru_sekolah.map(_low) : []
+  return arr.includes(gn)
 }
-
-function getBulanLabel(m) {
-  return BULAN[m - 1] || '-'
+// Inclusive lembaga matcher (handle TPQ split/single + PPPH/P3H legacy)
+function matchNgajiLembaga(s, lmb) {
+  const sl = _low(s.lembaga)
+  const sh = _low(s.shift_qiraati || s.shift)
+  const L = _low(lmb)
+  if (L === 'tpq pagi') return sl === 'tpq pagi' || (sl === 'tpq' && (sh === 'pagi' || sh === ''))
+  if (L === 'tpq sore') return sl === 'tpq sore' || (sl === 'tpq' && sh === 'sore')
+  if (L === 'ppph') return sl === 'ppph' || sl === 'p3h'
+  return sl === L
 }
+// Apakah guru punya santri ngaji / sekolah
+const hasNgaji = computed(() => isGuru.value && santriRaw.value.some((s) => s.aktif !== false && ownNgaji(s)))
+const hasSekolah = computed(() => isGuru.value && santriRaw.value.some((s) => s.aktif !== false && ownSekolah(s)))
+const showBackBtn = computed(() => !isGuru.value || (hasNgaji.value && hasSekolah.value))
 
-onMounted(() => {
-  unsubs.push(
-    subscribeColl('absensi_santri_sekolah', (docs) => {
-      absensi.value = docs
-      loading.value = false
-    }),
-    subscribeColl('santri', (docs) => {
-      santriRaw.value = docs
-    })
-  )
-})
+const BULAN = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember']
+const _now = new Date()
+const TAHUN_LIST = [2024, 2025, 2026, 2027, 2028]
 
-onUnmounted(() => {
-  for (const u of unsubs) {
-    if (u) {
-      try {
-        u()
-      } catch (e) {
-        // noop
-      }
-    }
-  }
-})
+// State machine
+const step = ref('landing') // 'landing' | 'sub-ngaji' | 'sub-sekolah' | 'input'
+const kategori = ref('') // 'ngaji' | 'sekolah'
+const selectedLembaga = ref('')
+const selectedYear = ref(_now.getFullYear())
+const selectedMonth = ref(_now.getMonth() + 1)
+const hariEfektif = ref(24)
+const search = ref('')
 
-// --- UI state ---
-const activeTab = ref('rekap')
+const santriRaw = ref([])
+const absRaw = ref([]) // dokumen absensi periode terpilih
+const loading = ref(true)
+const saving = ref(false)
 const generating = ref(false)
-const exporting = ref(false)
 
-const yearOptions = computed(() => {
-  const y = new Date().getFullYear()
-  return [y - 1, y, y + 1]
-})
+const COLL = computed(() => (kategori.value === 'ngaji' ? 'absensi_santri_ngaji_bulanan' : 'absensi_santri_sekolah_bulanan'))
+const periode = computed(() => `${selectedYear.value}-${String(selectedMonth.value).padStart(2, '0')}`)
 
-const uniqueLembaga = computed(() => {
-  const set = new Set()
-  for (const s of santriRaw.value) {
-    if (s?.lembaga_sekolah) set.add(s.lembaga_sekolah)
-    if (s?.lembaga) set.add(s.lembaga)
+function pilihKategori(k) {
+  kategori.value = k
+  // Guru langsung ke input (santri yang diampu, tanpa pilih lembaga). Admin pilih lembaga dulu.
+  if (isGuru.value) {
+    selectedLembaga.value = k === 'ngaji' ? 'Ngaji Saya' : 'Sekolah Saya'
+    step.value = 'input'
+  } else {
+    step.value = k === 'ngaji' ? 'sub-ngaji' : 'sub-sekolah'
   }
-  return [...set].sort()
-})
-
-const uniqueKelas = computed(() => {
-  const set = new Set()
-  for (const s of santriRaw.value) {
-    if (s?.kelas) set.add(s.kelas)
-    if (s?.kelas_sekolah) set.add(s.kelas_sekolah)
+}
+function pilihLembaga(l) {
+  selectedLembaga.value = l
+  step.value = 'input'
+}
+function backToLanding() {
+  step.value = 'landing'
+  selectedLembaga.value = ''
+}
+function backToSub() {
+  if (isGuru.value) {
+    // guru kembali ke landing (kalau punya 2 kategori) — kalau cuma 1 tetap di input
+    step.value = 'landing'
+  } else {
+    step.value = kategori.value === 'ngaji' ? 'sub-ngaji' : 'sub-sekolah'
   }
-  return [...set].sort()
-})
-
-function statusLabel(status) {
-  const s = String(status || '').toLowerCase()
-  if (s === 'hadir' || s === 'h') return 'H'
-  if (s === 'alfa' || s === 'a') return 'A'
-  if (s === 'sakit' || s === 's') return 'S'
-  if (s === 'izin' || s === 'i') return 'I'
-  return '?'
+  selectedLembaga.value = ''
 }
 
-function statusBg(status) {
-  const s = String(status || '').toLowerCase()
-  if (s === 'hadir' || s === 'h') return 'bg-emerald-500'
-  if (s === 'alfa' || s === 'a') return 'bg-rose-500'
-  if (s === 'sakit' || s === 's') return 'bg-[var(--color-accent)]'
-  if (s === 'izin' || s === 'i') return 'bg-teal-500'
-  return 'bg-slate-400'
+// Filter santri sesuai kategori + lembaga
+function kelasOf(s) {
+  return kategori.value === 'ngaji' ? (s.kelas || '') : (s.kelas_sekolah || s.kelas || '')
+}
+const ROMAWI_SMP = ['VII', 'VIII', 'IX']
+const ROMAWI_SMA = ['X', 'XI', 'XII']
+
+const filteredSantri = computed(() => {
+  const lmb = selectedLembaga.value
+  let list = santriRaw.value.filter((s) => {
+    if (s.aktif === false) return false
+    if (kategori.value === 'ngaji') {
+      // Guru: santri ngaji yang diampu (tanpa filter lembaga). Admin: filter per lembaga.
+      if (isGuru.value) return ownNgaji(s)
+      return matchNgajiLembaga(s, lmb)
+    } else {
+      // sekolah
+      if (isGuru.value) return ownSekolah(s)
+      const ls = String(s.lembaga_sekolah || '')
+      if (lmb === 'SDI') return ls === 'SDI'
+      if (lmb === 'SMP') return ls === 'PKBM' && ROMAWI_SMP.includes(String(s.kelas_sekolah || s.kelas || '').toUpperCase())
+      if (lmb === 'SMA') return ls === 'PKBM' && ROMAWI_SMA.includes(String(s.kelas_sekolah || s.kelas || '').toUpperCase())
+      return false
+    }
+  })
+  if (search.value) {
+    const kw = search.value.toLowerCase()
+    list = list.filter((s) => String(s.nama || '').toLowerCase().includes(kw))
+  }
+  return list.sort((a, b) => String(a.nama || '').localeCompare(String(b.nama || '')))
+})
+
+// Input rows state (santriId → {sakit, izin, alfa})
+const rows = reactive({})
+function getRow(id) {
+  if (!rows[id]) rows[id] = { sakit: 0, izin: 0, alfa: 0 }
+  return rows[id]
+}
+function hadirOf(id) {
+  const r = getRow(id)
+  const h = (Number(hariEfektif.value) || 0) - ((Number(r.sakit) || 0) + (Number(r.izin) || 0) + (Number(r.alfa) || 0))
+  return Math.max(0, h)
 }
 
-// --- Actions ---
+// Load existing absensi untuk periode + isi rows
+function loadRows() {
+  // reset
+  for (const k in rows) delete rows[k]
+  const pfx = periode.value
+  for (const a of absRaw.value) {
+    if (String(a.periode) !== pfx) continue
+    rows[String(a.santri_id)] = {
+      sakit: Number(a.sakit) || 0,
+      izin: Number(a.izin) || 0,
+      alfa: Number(a.alpa) || 0
+    }
+  }
+}
+watch([periode, () => absRaw.value.length, step], loadRows)
+
+async function simpanSemua() {
+  if (saving.value) return
+  saving.value = true
+  try {
+    let count = 0
+    for (const s of filteredSantri.value) {
+      const r = getRow(s.id)
+      const sakit = Number(r.sakit) || 0
+      const izin = Number(r.izin) || 0
+      const alpa = Number(r.alfa) || 0
+      const hadir = hadirOf(s.id)
+      const docId = `${s.id}_${periode.value}`
+      await setDoc(doc(db, COLL.value, docId), {
+        id: docId,
+        santri_id: String(s.id),
+        santri_nama: s.nama || '',
+        kategori: kategori.value,
+        lembaga: kategori.value === 'ngaji' ? (s.lembaga || '') : (s.lembaga_sekolah || ''),
+        kelas: kelasOf(s),
+        periode: periode.value,
+        hari_efektif: Number(hariEfektif.value) || 0,
+        sakit, izin, alpa, hadir,
+        updated_at: serverTimestamp()
+      }, { merge: true })
+      count++
+    }
+    toast.success(`Absensi ${count} santri tersimpan (${BULAN[selectedMonth.value - 1]} ${selectedYear.value})`)
+  } catch (e) {
+    toast.error('Gagal simpan: ' + (e?.message || e))
+  } finally {
+    saving.value = false
+  }
+}
+
 async function generateKeRapor() {
   if (generating.value) return
-  if (!filteredAbsensi.value.length) {
-    toast.error('Tidak ada absensi di filter saat ini')
-    return
-  }
   generating.value = true
   try {
     const m = selectedMonth.value
@@ -485,29 +364,28 @@ async function generateKeRapor() {
     const tahunAjaran = m >= 7 ? `${y}-${y + 1}` : `${y - 1}-${y}`
     const periodKey = `${tahunAjaran}_${semester}`.replace(/[^a-zA-Z0-9_]/g, '_')
     let count = 0
-    for (const rek of rekapPerSantri.value) {
-      const info = getSantriInfo(rek.santri_id)
-      if (!info) continue
-      const lembaga = info.lembaga || ''
-      const docId = `rapor_${rek.santri_id}_${lembaga}_${periodKey}`
-      const payload = {
-        santri_id: rek.santri_id,
-        santri_nama: info.nama || '',
-        lembaga,
+    for (const s of filteredSantri.value) {
+      const r = getRow(s.id)
+      const sakit = Number(r.sakit) || 0
+      const izin = Number(r.izin) || 0
+      const alpa = Number(r.alfa) || 0
+      const hadir = hadirOf(s.id)
+      const lembagaRapor = kategori.value === 'ngaji' ? (s.lembaga || '') : (s.lembaga_sekolah || '')
+      const docId = `rapor_${s.id}_${lembagaRapor}_${periodKey}`
+      await setDoc(doc(db, 'rapor_semester', docId), {
+        santri_id: String(s.id),
+        santri_nama: s.nama || '',
+        lembaga: lembagaRapor,
         tahunAjaran,
         semester,
         absensi: {
-          sakit: rek.sakit,
-          izin: rek.izin,
-          alpa: rek.alfa,
-          hadir: rek.hadir,
-          total: rek.total,
-          _generatedFrom: 'absensi_santri_sekolah',
+          sakit, izin, alpa, hadir,
+          total: sakit + izin + alpa + hadir,
+          _generatedFrom: COLL.value,
           _generatedAt: new Date().toISOString(),
           _periodGenerated: `${BULAN[m - 1]} ${y}`
         }
-      }
-      await setDoc(doc(db, 'rapor_semester', docId), payload, { merge: true })
+      }, { merge: true })
       count++
     }
     toast.success(`Absensi ${count} santri ter-generate ke rapor (${semester} ${tahunAjaran})`)
@@ -518,120 +396,44 @@ async function generateKeRapor() {
   }
 }
 
-async function exportExcel() {
-  if (exporting.value) return
-  exporting.value = true
-  try {
-    const rows = rekapPerSantri.value.map((r, i) => {
-      const info = getSantriInfo(r.santri_id) || {}
-      return {
-        no: i + 1,
-        nama: info.nama || '(unknown)',
-        lembaga: info.lembaga || info.lembaga_sekolah || '',
-        kelas: info.kelas || info.kelas_sekolah || '',
-        hadir: r.hadir,
-        alfa: r.alfa,
-        sakit: r.sakit,
-        izin: r.izin,
-        total: r.total
-      }
-    })
-    await exportStyled(rows, {
-      filename: `absensi-santri-${BULAN[selectedMonth.value - 1]}-${selectedYear.value}.xlsx`,
-      sheetName: 'Absensi',
-      title: `REKAP ABSENSI ${BULAN[selectedMonth.value - 1].toUpperCase()} ${selectedYear.value}`,
-      columns: [
-        { key: 'no', header: 'No', width: 6 },
-        { key: 'nama', header: 'Nama Santri', width: 28 },
-        { key: 'lembaga', header: 'Lembaga', width: 18 },
-        { key: 'kelas', header: 'Kelas', width: 10 },
-        { key: 'hadir', header: 'Hadir', width: 8 },
-        { key: 'alfa', header: 'Alfa', width: 8 },
-        { key: 'sakit', header: 'Sakit', width: 8 },
-        { key: 'izin', header: 'Izin', width: 8 },
-        { key: 'total', header: 'Total', width: 8 }
-      ]
-    })
-  } catch (e) {
-    toast.error('Gagal export Excel: ' + (e?.message || e))
-  } finally {
-    exporting.value = false
-  }
-}
-
-async function exportPdf() {
-  if (exporting.value) return
-  exporting.value = true
-  try {
-    const s = settingsStore?.settings || {}
-    const kop = {
-      logoUrl: s.kop_logo || '',
-      line1: s.kopLine1 || 'YAYASAN MAMBAUL ULUM',
-      line2: s.kopLine2 || '',
-      line3: s.kopLine3 || ''
-    }
-    const rows = rekapPerSantri.value.map((r, i) => {
-      const info = getSantriInfo(r.santri_id) || {}
-      return {
-        no: i + 1,
-        nama: info.nama || '(unknown)',
-        lembaga: info.lembaga || info.lembaga_sekolah || '',
-        kelas: info.kelas || info.kelas_sekolah || '',
-        hadir: r.hadir,
-        alfa: r.alfa,
-        sakit: r.sakit,
-        izin: r.izin,
-        total: r.total
-      }
-    })
-    await buildListPdf({
-      kind: 'umum',
-      orientation: 'l',
-      format: 'a4',
-      kop,
-      title: `REKAP ABSENSI ${BULAN[selectedMonth.value - 1].toUpperCase()} ${selectedYear.value}`,
-      columns: [
-        { key: 'no', header: 'No', width: 10 },
-        { key: 'nama', header: 'Nama', width: 60 },
-        { key: 'lembaga', header: 'Lembaga', width: 32 },
-        { key: 'kelas', header: 'Kelas', width: 18 },
-        { key: 'hadir', header: 'H', width: 15 },
-        { key: 'alfa', header: 'A', width: 15 },
-        { key: 'sakit', header: 'S', width: 15 },
-        { key: 'izin', header: 'I', width: 15 },
-        { key: 'total', header: 'Total', width: 18 }
-      ],
-      rows,
-      filename: `absensi-santri-${BULAN[selectedMonth.value - 1]}-${selectedYear.value}.pdf`
-    })
-  } catch (e) {
-    toast.error('Gagal export PDF: ' + (e?.message || e))
-  } finally {
-    exporting.value = false
-  }
-}
-
-async function hapusAbsensiSantri(santriId) {
-  if (!santriId) return
-  const nama = getNamaSantri(santriId)
-  const ok = await confirmDlg({
-    title: 'Hapus semua absensi santri ini?',
-    message: `Akan hapus SEMUA record absensi untuk "${nama}". Tidak bisa di-undo.`,
-    confirmText: 'Hapus',
-    danger: true
+let unsubSantri = null
+let unsubAbs = null
+function resubAbs() {
+  if (unsubAbs) { try { unsubAbs() } catch (e) {} }
+  if (!kategori.value) return
+  unsubAbs = subscribeColl(COLL.value, (docs) => {
+    absRaw.value = docs || []
+    loadRows()
   })
-  if (!ok) return
-  try {
-    const q = fbQuery(collection(db, 'absensi_santri'), where('santri_id', '==', String(santriId)))
-    const snap = await getDocs(q)
-    let count = 0
-    for (const d of snap.docs) {
-      await deleteDoc(doc(db, 'absensi_santri', d.id))
-      count++
-    }
-    toast.success(`${count} record absensi dihapus untuk ${nama}`)
-  } catch (e) {
-    toast.error('Gagal hapus: ' + (e.message || e))
+}
+watch(kategori, resubAbs)
+
+function initGuruFlow() {
+  if (!isGuru.value) return
+  const ng = hasNgaji.value
+  const sk = hasSekolah.value
+  if (ng && sk) {
+    step.value = 'landing' // pilih ngaji/sekolah dulu
+  } else if (ng) {
+    kategori.value = 'ngaji'
+    selectedLembaga.value = 'Ngaji Saya'
+    step.value = 'input'
+  } else if (sk) {
+    kategori.value = 'sekolah'
+    selectedLembaga.value = 'Sekolah Saya'
+    step.value = 'input'
   }
 }
+
+onMounted(() => {
+  unsubSantri = subscribeColl('santri', (docs) => {
+    santriRaw.value = docs || []
+    loading.value = false
+    initGuruFlow()
+  })
+})
+onUnmounted(() => {
+  if (unsubSantri) { try { unsubSantri() } catch (e) {} }
+  if (unsubAbs) { try { unsubAbs() } catch (e) {} }
+})
 </script>

@@ -678,98 +678,86 @@
          GURU: Statistik Pengajaran + Kehadiran + Kelas Saya
          ============================================================ -->
     <template v-if="role === 'guru'">
-      <!-- Statistik Pengajaran Saya -->
-      <div
-        class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
-      >
-        <h3
-          class="text-xs md:text-sm font-black text-[var(--text-primary)] uppercase tracking-widest mb-3 border-b border-[var(--border-subtle)] pb-2"
-        >
-          <i class="fas fa-user-tie text-teal-600 mr-2"></i>Statistik Pengajaran Saya
+      <!-- Statistik Santri Saya (agregat santri yang diampu) -->
+      <div class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm">
+        <h3 class="text-xs md:text-sm font-black text-[var(--text-primary)] uppercase tracking-widest mb-3 border-b border-[var(--border-subtle)] pb-2">
+          <i class="fas fa-user-graduate text-teal-600 mr-2"></i>Statistik Santri Saya
         </h3>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
           <div class="bg-teal-50 dark:bg-teal-900/20 p-3 rounded-lg">
-            <p class="text-[10px] font-bold text-teal-700 uppercase">Santri Diampu</p>
-            <p class="text-2xl font-black text-[var(--text-primary)]">
-              {{ totalSantriDisplay }}
-            </p>
+            <p class="text-[10px] font-bold text-teal-700 dark:text-teal-300 uppercase">Total Santri Diampu</p>
+            <p class="text-2xl font-black text-[var(--text-primary)]">{{ totalSantriDisplay }}</p>
+          </div>
+          <div v-if="adaQiraati" class="bg-emerald-50 dark:bg-emerald-900/20 p-3 rounded-lg">
+            <p class="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 uppercase">Santri Ngaji (Qiraati)</p>
+            <p class="text-2xl font-black text-[var(--text-primary)]">{{ santriQiraatiSaya.length }}</p>
+          </div>
+          <div v-if="adaSekolah" class="bg-cyan-50 dark:bg-cyan-900/20 p-3 rounded-lg">
+            <p class="text-[10px] font-bold text-cyan-700 dark:text-cyan-300 uppercase">Santri Sekolah</p>
+            <p class="text-2xl font-black text-[var(--text-primary)]">{{ santriSekolahSaya.length }}</p>
           </div>
           <div class="bg-cyan-50 dark:bg-cyan-900/20 p-3 rounded-lg">
-            <p class="text-[10px] font-bold text-cyan-700 uppercase">Kelas Diampu</p>
+            <p class="text-[10px] font-bold text-cyan-700 dark:text-cyan-300 uppercase">Kelas Diampu</p>
             <p class="text-2xl font-black text-[var(--text-primary)]">{{ kelasSaya.length }}</p>
-          </div>
-          <div class="bg-cyan-50 dark:bg-cyan-900/20 p-3 rounded-lg">
-            <p class="text-[10px] font-bold text-cyan-700 uppercase">Lembaga</p>
-            <p class="text-sm font-black text-[var(--text-primary)] truncate">
-              {{ guruLembaga }}
-            </p>
-          </div>
-          <div class="bg-emerald-50 dark:bg-emerald-900/20 p-3 rounded-lg">
-            <p class="text-[10px] font-bold text-emerald-700 uppercase">Jabatan</p>
-            <p class="text-xs font-black text-[var(--text-primary)] truncate">
-              {{ guruJabatan }}
-            </p>
           </div>
         </div>
       </div>
 
-      <!-- Kehadiran Saya Bulan Ini -->
-      <div
-        class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
-      >
-        <h3
-          class="text-xs md:text-sm font-black text-[var(--text-primary)] uppercase tracking-widest mb-3 border-b border-[var(--border-subtle)] pb-2"
-        >
-          <i class="fas fa-clipboard-check text-emerald-600 mr-2"></i>Kehadiran Saya Bulan Ini
+      <!-- Breakdown Qiraati (kalau guru ngaji) -->
+      <div v-if="adaQiraati && qiraatiPrestasi.length > 0" class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm">
+        <h3 class="text-xs md:text-sm font-black text-[var(--text-primary)] uppercase tracking-widest mb-3 border-b border-[var(--border-subtle)] pb-2">
+          <i class="fas fa-trophy text-teal-600 mr-2"></i>Santri Ngaji Berprestasi
         </h3>
-        <div class="grid grid-cols-4 gap-2 text-center">
-          <div
-            class="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl py-3 border border-emerald-100"
-          >
-            <p class="text-[9px] font-black text-emerald-700 uppercase tracking-wider">Hadir</p>
-            <p class="text-2xl font-black text-emerald-700 mt-1">{{ kehadiranGuru.hadir }}</p>
-          </div>
-          <div class="bg-cyan-50 dark:bg-cyan-900/20 rounded-xl py-3 border border-cyan-100">
-            <p class="text-[9px] font-black text-cyan-700 uppercase tracking-wider">Sakit</p>
-            <p class="text-2xl font-black text-cyan-700 mt-1">{{ kehadiranGuru.sakit }}</p>
-          </div>
-          <div class="bg-cyan-50 dark:bg-cyan-900/20 rounded-xl py-3 border border-cyan-100">
-            <p class="text-[9px] font-black text-cyan-700 uppercase tracking-wider">Izin</p>
-            <p class="text-2xl font-black text-cyan-700 mt-1">{{ kehadiranGuru.izin }}</p>
-          </div>
-          <div class="bg-rose-50 dark:bg-rose-900/20 rounded-xl py-3 border border-rose-100">
-            <p class="text-[9px] font-black text-rose-700 uppercase tracking-wider">Alpa</p>
-            <p class="text-2xl font-black text-rose-700 mt-1">{{ kehadiranGuru.alpa }}</p>
-          </div>
-        </div>
+        <ol class="space-y-2">
+          <li v-for="(s, i) in qiraatiPrestasi" :key="s.id" class="flex items-center gap-3 bg-[var(--bg-card-elevated)] rounded-xl p-2.5 border border-[var(--border-subtle)]">
+            <span :class="['w-7 h-7 rounded-full flex items-center justify-center text-xs font-black flex-shrink-0', i === 0 ? 'bg-teal-600 text-white' : i === 1 ? 'bg-slate-300 text-slate-700' : i === 2 ? 'bg-emerald-500 text-emerald-900' : 'bg-slate-200 text-slate-600']">{{ i + 1 }}</span>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-bold text-[var(--text-primary)] truncate">{{ s.nama }}</p>
+              <p class="text-[10px] text-[var(--text-secondary)]">{{ s.lembaga }} · Kelas {{ s.kelas || '-' }}</p>
+            </div>
+            <p class="text-sm font-black text-teal-700 dark:text-teal-300">{{ prestasiNum(s) }}</p>
+          </li>
+        </ol>
+      </div>
+
+      <!-- Breakdown Sekolah (kalau guru sekolah) -->
+      <div v-if="adaSekolah && sekolahPrestasi.length > 0" class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm">
+        <h3 class="text-xs md:text-sm font-black text-[var(--text-primary)] uppercase tracking-widest mb-3 border-b border-[var(--border-subtle)] pb-2">
+          <i class="fas fa-trophy text-cyan-600 mr-2"></i>Santri Sekolah Berprestasi
+        </h3>
+        <ol class="space-y-2">
+          <li v-for="(s, i) in sekolahPrestasi" :key="s.id" class="flex items-center gap-3 bg-[var(--bg-card-elevated)] rounded-xl p-2.5 border border-[var(--border-subtle)]">
+            <span :class="['w-7 h-7 rounded-full flex items-center justify-center text-xs font-black flex-shrink-0', i === 0 ? 'bg-cyan-600 text-white' : i === 1 ? 'bg-slate-300 text-slate-700' : i === 2 ? 'bg-emerald-500 text-emerald-900' : 'bg-slate-200 text-slate-600']">{{ i + 1 }}</span>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-bold text-[var(--text-primary)] truncate">{{ s.nama }}</p>
+              <p class="text-[10px] text-[var(--text-secondary)]">{{ s.lembaga_sekolah || s.lembaga }} · Kelas {{ s.kelas_sekolah || s.kelas || '-' }}</p>
+            </div>
+            <p class="text-sm font-black text-cyan-700 dark:text-cyan-300">{{ prestasiNum(s) }}</p>
+          </li>
+        </ol>
       </div>
 
       <!-- Kelas Saya -->
-      <div
-        v-if="kelasSaya.length > 0"
-        class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
-      >
-        <h3
-          class="text-xs md:text-sm font-black text-[var(--text-primary)] uppercase tracking-widest mb-3 border-b border-[var(--border-subtle)] pb-2"
-        >
+      <div v-if="kelasSaya.length > 0" class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm">
+        <h3 class="text-xs md:text-sm font-black text-[var(--text-primary)] uppercase tracking-widest mb-3 border-b border-[var(--border-subtle)] pb-2">
           <i class="fas fa-chalkboard-teacher text-cyan-600 mr-2"></i>Kelas Saya
         </h3>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
-          <div
-            v-for="k in kelasSaya"
-            :key="k.lembaga + '_' + k.kelas"
-            class="flex items-center justify-between gap-3 bg-cyan-50 dark:bg-cyan-900/20 rounded-xl p-3 border border-cyan-100"
-          >
+          <div v-for="k in kelasSaya" :key="k.lembaga + '_' + k.kelas" class="flex items-center justify-between gap-3 bg-cyan-50 dark:bg-cyan-900/20 rounded-xl p-3 border border-cyan-100 dark:border-cyan-800">
             <div class="flex-1 min-w-0">
-              <p class="text-sm font-black text-[var(--text-primary)] truncate">
-                {{ k.lembaga }} · Kelas {{ k.kelas }}
-              </p>
-              <p class="text-[10px] text-[var(--text-secondary)]">
-                <i class="fas fa-users mr-1"></i>{{ k.santriCount }} santri
-              </p>
+              <p class="text-sm font-black text-[var(--text-primary)] truncate">{{ k.lembaga }} · Kelas {{ k.kelas }}</p>
+              <p class="text-[10px] text-[var(--text-secondary)]"><i class="fas fa-users mr-1"></i>{{ k.santriCount }} santri</p>
             </div>
           </div>
         </div>
+      </div>
+
+      <!-- Info: kehadiran & bisyaroh pribadi pindah ke menu Personal -->
+      <div class="bg-teal-50 dark:bg-teal-900/20 rounded-2xl p-3 border border-teal-100 dark:border-teal-800 text-center">
+        <p class="text-[11px] text-teal-700 dark:text-teal-300">
+          <i class="fas fa-info-circle mr-1"></i>Data kehadiran &amp; slip bisyaroh pribadi Anda ada di menu
+          <button @click="$router.push('/personal')" class="font-black underline cursor-pointer">Personal</button>.
+        </p>
       </div>
     </template>
 
@@ -1187,6 +1175,61 @@ const kelasSaya = computed(() => {
       String(a.kelas).localeCompare(String(b.kelas))
   )
 })
+
+// v.21.84.0527: Breakdown Qiraati vs Sekolah santri yang diampu guru
+function _guruNameLower() {
+  return String(auth.sesiAktif?.guru || auth.sesiAktif?.nama || '').toLowerCase().trim()
+}
+function prestasiNum(s) {
+  const v = s.prestasi_total ?? s.prestasi_akhir ?? 0
+  const n = parseFloat(String(v).replace(/[^0-9.]/g, ''))
+  return isNaN(n) ? 0 : n
+}
+
+// Santri diampu via guru_pagi/guru_sore = Qiraati (ngaji)
+const santriQiraatiSaya = computed(() => {
+  if (role.value !== 'guru') return []
+  const gn = _guruNameLower()
+  if (!gn) return []
+  return santriRaw.value.filter((s) => {
+    if (s.aktif === false) return false
+    const gp = String(s.guru_pagi || '').toLowerCase().trim()
+    const gs = String(s.guru_sore || '').toLowerCase().trim()
+    const g = String(s.guru || '').toLowerCase().trim()
+    return gp === gn || gs === gn || g === gn
+  })
+})
+
+// Santri diampu via guru_sekolah[] = Sekolah
+const santriSekolahSaya = computed(() => {
+  if (role.value !== 'guru') return []
+  const gn = _guruNameLower()
+  if (!gn) return []
+  return santriRaw.value.filter((s) => {
+    if (s.aktif === false) return false
+    const gsek = Array.isArray(s.guru_sekolah)
+      ? s.guru_sekolah.map((x) => String(x || '').toLowerCase().trim())
+      : []
+    return gsek.includes(gn)
+  })
+})
+
+const adaQiraati = computed(() => santriQiraatiSaya.value.length > 0)
+const adaSekolah = computed(() => santriSekolahSaya.value.length > 0)
+
+// Santri berprestasi (top 5 by prestasi_total) — Qiraati & Sekolah terpisah
+const qiraatiPrestasi = computed(() =>
+  [...santriQiraatiSaya.value]
+    .filter((s) => prestasiNum(s) > 0)
+    .sort((a, b) => prestasiNum(b) - prestasiNum(a))
+    .slice(0, 5)
+)
+const sekolahPrestasi = computed(() =>
+  [...santriSekolahSaya.value]
+    .filter((s) => prestasiNum(s) > 0)
+    .sort((a, b) => prestasiNum(b) - prestasiNum(a))
+    .slice(0, 5)
+)
 
 // Kehadiran guru bulan ini (subscribe absensi_shift_guru)
 const absensiShiftGuru = ref([])

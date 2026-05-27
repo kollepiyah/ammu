@@ -138,7 +138,7 @@ const routes = [
       // v.20.13.0526: Capaian Prestasi (santri only — merged Dashboard + Pendidikan menu)
       { path: 'capaian-prestasi', name: 'capaian-prestasi', component: CapaianPrestasiView },
       // v.20.18.0526: Personal page admin (statistik kehadiran + slip bisyaroh personal)
-      { path: 'personal', name: 'personal', component: PersonalView, meta: { admin: true } }
+      { path: 'personal', name: 'personal', component: PersonalView }
     ]
   },
   // catch-all
