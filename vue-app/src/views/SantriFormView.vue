@@ -1,67 +1,67 @@
 <template>
   <div class="p-3 md:p-5 max-w-4xl mx-auto space-y-4">
     <!-- Header -->
-    <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-5 border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-between gap-3">
+    <div class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm flex items-center justify-between gap-3">
       <div>
-        <h1 class="text-lg md:text-xl font-black text-slate-800 dark:text-white">
-          <i :class="editingId ? 'fas fa-edit text-amber-500' : 'fas fa-user-plus text-teal-500'" class="mr-2"></i>
+        <h1 class="text-lg md:text-xl font-black text-[var(--text-primary)]">
+          <i :class="editingId ? 'fas fa-edit text-cyan-500' : 'fas fa-user-plus text-teal-500'" class="mr-2"></i>
           {{ editingId ? `Edit Santri: ${form.nama}` : 'Tambah Santri Baru' }}
         </h1>
-        <p class="text-xs text-slate-500 mt-0.5">Form lengkap CRUD santri</p>
+        <p class="text-xs text-[var(--text-secondary)] mt-0.5">Form lengkap CRUD santri</p>
       </div>
-      <router-link to="/santri" class="px-3 py-2 text-sm bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-700 dark:text-slate-300 font-bold rounded-xl transition">
+      <router-link to="/santri" class="px-3 py-2 text-sm bg-[var(--bg-muted)] hover:bg-slate-200 text-slate-700 dark:text-[var(--text-tertiary)] font-bold rounded-xl transition">
         <i class="fas fa-arrow-left mr-1"></i>Kembali
       </router-link>
     </div>
 
     <!-- Loading state -->
-    <div v-if="isLoading" class="bg-white dark:bg-slate-800 rounded-2xl p-10 text-center">
+    <div v-if="isLoading" class="bg-[var(--bg-card)] rounded-2xl p-10 text-center">
       <i class="fas fa-spinner fa-spin text-teal-500 text-3xl mb-3"></i>
-      <p class="text-sm text-slate-500 font-bold">Memuat data santri...</p>
+      <p class="text-sm text-[var(--text-secondary)] font-bold">Memuat data santri...</p>
     </div>
 
     <form v-else @submit.prevent="onSubmit" class="space-y-4">
       <!-- Identitas Section -->
-      <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-5 border border-slate-200 dark:border-slate-700 shadow-sm">
-        <h3 class="text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wide mb-3">
+      <div class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm">
+        <h3 class="text-xs font-black text-slate-700 dark:text-[var(--text-tertiary)] uppercase tracking-wide mb-3">
           <i class="fas fa-id-card text-teal-500 mr-1"></i>Identitas Santri
         </h3>
         <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
           <div>
-            <label class="block text-xs font-bold text-slate-500 mb-1 uppercase">NIS</label>
-            <input v-model="form.nis" type="text" placeholder="Opsional" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none" />
+            <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase">NIS</label>
+            <input v-model="form.nis" type="text" placeholder="Opsional" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none" />
           </div>
           <div class="md:col-span-2">
-            <label class="block text-xs font-bold text-slate-500 mb-1 uppercase">Nama Lengkap *</label>
-            <input v-model="form.nama" type="text" required placeholder="Nama santri lengkap" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none" />
+            <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase">Nama Lengkap *</label>
+            <input v-model="form.nama" type="text" required placeholder="Nama santri lengkap" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none" />
           </div>
           <div>
-            <label class="block text-xs font-bold text-slate-500 mb-1 uppercase">Jenis Kelamin *</label>
-            <select v-model="form.jk" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none">
+            <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase">Jenis Kelamin *</label>
+            <select v-model="form.jk" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none">
               <option value="L">Laki-laki</option>
               <option value="P">Perempuan</option>
             </select>
           </div>
           <div>
-            <label class="block text-xs font-bold text-slate-500 mb-1 uppercase">Tanggal Lahir *</label>
-            <input v-model="form.tgl_lahir" type="date" required class="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none cursor-pointer" />
+            <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase">Tanggal Lahir *</label>
+            <input v-model="form.tgl_lahir" type="date" required class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none cursor-pointer" />
           </div>
           <div>
-            <label class="block text-xs font-bold text-slate-500 mb-1 uppercase">Usia (auto)</label>
-            <input :value="usia" type="text" readonly class="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 bg-slate-100 text-slate-500 font-bold" />
+            <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase">Usia (auto)</label>
+            <input :value="usia" type="text" readonly class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-muted)] text-[var(--text-secondary)] font-bold" />
           </div>
           <div>
-            <label class="block text-xs font-bold text-slate-500 mb-1 uppercase">Tanggal Masuk</label>
-            <input v-model="form.tgl_masuk" type="date" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none cursor-pointer" />
+            <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase">Tanggal Masuk</label>
+            <input v-model="form.tgl_masuk" type="date" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none cursor-pointer" />
           </div>
           <div>
-            <label class="block text-xs font-bold text-slate-500 mb-1 uppercase">Usia Masuk (auto)</label>
-            <input :value="usiaMasuk" type="text" readonly class="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 bg-slate-100 text-slate-500 font-bold" />
+            <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase">Usia Masuk (auto)</label>
+            <input :value="usiaMasuk" type="text" readonly class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-muted)] text-[var(--text-secondary)] font-bold" />
           </div>
           <!-- v.21.13.0526: Status Tinggal — Pulang Pergi / Fullday / Ma'had (kyai req) -->
           <div>
-            <label class="block text-xs font-bold text-slate-500 mb-1 uppercase">Status Tinggal *</label>
-            <select v-model="statusTinggal" class="w-full px-3 py-2 text-sm rounded-xl border border-purple-300 bg-purple-50 cursor-pointer focus:ring-2 focus:ring-purple-500 outline-none">
+            <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase">Status Tinggal *</label>
+            <select v-model="statusTinggal" class="w-full px-3 py-2 text-sm rounded-xl border border-teal-300 bg-teal-50 cursor-pointer focus:ring-2 focus:ring-teal-500 outline-none">
               <option value="pp">Pulang Pergi</option>
               <option value="fullday">Fullday</option>
               <option value="mahad">Ma'had (Mukim)</option>
@@ -70,36 +70,36 @@
         </div>
         <!-- Catatan Riwayat Pribadi — hanya untuk Ma'had -->
         <div v-if="form.is_mukim" class="mt-3">
-          <label class="block text-xs font-bold text-purple-700 mb-1 uppercase">
-            <i class="fas fa-mosque mr-1"></i>Catatan Riwayat Pribadi (Ma'had) <span class="text-[9px] text-slate-400 normal-case">(opsional)</span>
+          <label class="block text-xs font-bold text-teal-700 mb-1 uppercase">
+            <i class="fas fa-mosque mr-1"></i>Catatan Riwayat Pribadi (Ma'had) <span class="text-[9px] text-[var(--text-tertiary)] normal-case">(opsional)</span>
           </label>
-          <textarea v-model="form.catatan_riwayat_pribadi" rows="2" placeholder="Cth: latar belakang keluarga, kesehatan khusus, kebiasaan, dll." class="w-full px-3 py-2 text-sm rounded-xl border border-purple-300 bg-purple-50/30 focus:ring-2 focus:ring-purple-500 outline-none resize-none"></textarea>
+          <textarea v-model="form.catatan_riwayat_pribadi" rows="2" placeholder="Cth: latar belakang keluarga, kesehatan khusus, kebiasaan, dll." class="w-full px-3 py-2 text-sm rounded-xl border border-teal-300 bg-teal-50/30 focus:ring-2 focus:ring-teal-500 outline-none resize-none"></textarea>
         </div>
       </div>
 
       <!-- Sekolah Section -->
-      <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-5 border border-slate-200 dark:border-slate-700 shadow-sm">
-        <h3 class="text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wide mb-3">
+      <div class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm">
+        <h3 class="text-xs font-black text-slate-700 dark:text-[var(--text-tertiary)] uppercase tracking-wide mb-3">
           <i class="fas fa-school text-cyan-500 mr-1"></i>Pendidikan Sekolah
         </h3>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div>
-            <label class="block text-xs font-bold text-slate-500 mb-1 uppercase">Lembaga Sekolah</label>
-            <select v-model="form.lembaga_sekolah" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 bg-slate-50 cursor-pointer focus:ring-2 focus:ring-cyan-500 outline-none">
+            <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase">Lembaga Sekolah</label>
+            <select v-model="form.lembaga_sekolah" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] cursor-pointer focus:ring-2 focus:ring-cyan-500 outline-none">
               <option value="">-- Tidak Sekolah --</option>
               <option v-for="l in lembagaSekolahOptions" :key="l" :value="l">{{ l }}</option>
             </select>
           </div>
           <div>
-            <label class="block text-xs font-bold text-slate-500 mb-1 uppercase">Kelas Sekolah</label>
-            <select v-model="form.kelas_sekolah" :disabled="!form.lembaga_sekolah" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 bg-slate-50 cursor-pointer disabled:opacity-50 focus:ring-2 focus:ring-cyan-500 outline-none">
+            <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase">Kelas Sekolah</label>
+            <select v-model="form.kelas_sekolah" :disabled="!form.lembaga_sekolah" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] cursor-pointer disabled:opacity-50 focus:ring-2 focus:ring-cyan-500 outline-none">
               <option value="">-- Pilih --</option>
               <option v-for="k in kelasSekolahOptions" :key="k" :value="k">{{ k }}</option>
             </select>
           </div>
           <div>
-            <label class="block text-xs font-bold text-slate-500 mb-1 uppercase">
-              Guru Sekolah <span class="text-[9px] text-slate-400 normal-case">(max 2)</span>
+            <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase">
+              Guru Sekolah <span class="text-[9px] text-[var(--text-tertiary)] normal-case">(max 2)</span>
             </label>
             <MultiSelectGuruSekolah v-model="form.guru_sekolah" :guruList="guruByLembagaSekolah" />
           </div>
@@ -132,7 +132,7 @@
           </div>
         </div>
         <div class="mt-3">
-          <label class="block text-xs font-black text-teal-700 mb-1 uppercase">Guru Pengajar * <span class="text-[9px] text-slate-400 normal-case">(max 2 guru + shift)</span></label>
+          <label class="block text-xs font-black text-teal-700 mb-1 uppercase">Guru Pengajar * <span class="text-[9px] text-[var(--text-tertiary)] normal-case">(max 2 guru + shift)</span></label>
           <MultiSelectGuruPengajar
             v-model:guruPagi="form.guru_pagi"
             v-model:guruSore="form.guru_sore"
@@ -142,25 +142,25 @@
       </div>
 
       <!-- Wali Section -->
-      <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-5 border border-slate-200 dark:border-slate-700 shadow-sm">
-        <h3 class="text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wide mb-3">
-          <i class="fas fa-user-friends text-purple-500 mr-1"></i>Data Wali
+      <div class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm">
+        <h3 class="text-xs font-black text-slate-700 dark:text-[var(--text-tertiary)] uppercase tracking-wide mb-3">
+          <i class="fas fa-user-friends text-teal-500 mr-1"></i>Data Wali
         </h3>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs font-bold text-slate-500 mb-1 uppercase">Nama Wali *</label>
-            <input v-model="form.nama_wali" type="text" required class="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 bg-slate-50 focus:ring-2 focus:ring-purple-500 outline-none" />
+            <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase">Nama Wali *</label>
+            <input v-model="form.nama_wali" type="text" required class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none" />
           </div>
           <div>
-            <label class="block text-xs font-bold text-slate-500 mb-1 uppercase">No WA Wali *</label>
-            <input v-model="form.wa_wali" type="tel" required placeholder="08..." class="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 bg-slate-50 focus:ring-2 focus:ring-purple-500 outline-none" />
+            <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase">No WA Wali *</label>
+            <input v-model="form.wa_wali" type="tel" required placeholder="08..." class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none" />
           </div>
         </div>
       </div>
 
       <!-- v.21.13.0526: Status Section + Alasan Keluar -->
-      <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-5 border border-slate-200 dark:border-slate-700 shadow-sm">
-        <h3 class="text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wide mb-3">
+      <div class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm">
+        <h3 class="text-xs font-black text-slate-700 dark:text-[var(--text-tertiary)] uppercase tracking-wide mb-3">
           <i class="fas fa-toggle-on text-emerald-500 mr-1"></i>Status Santri
         </h3>
         <div class="flex gap-4">
@@ -187,18 +187,18 @@
       </div>
 
       <!-- Actions sticky -->
-      <div class="bg-white dark:bg-slate-800 rounded-2xl p-3 border border-slate-200 dark:border-slate-700 shadow-sm sticky bottom-3 flex gap-2">
+      <div class="bg-[var(--bg-card)] rounded-2xl p-3 border border-[var(--border-subtle)] shadow-sm sticky bottom-3 flex gap-2">
         <!-- v.21.23.0526: Batal pakai cancelTarget biar konsisten dgn redirect setelah Update -->
-        <router-link :to="cancelTarget" class="flex-1 text-center px-4 py-3 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-700 dark:text-slate-300 font-bold rounded-xl text-sm shadow-md transition">
+        <router-link :to="cancelTarget" class="flex-1 text-center px-4 py-3 bg-[var(--bg-muted)] hover:bg-slate-200 text-slate-700 dark:text-[var(--text-tertiary)] font-bold rounded-xl text-sm shadow-md transition">
           <i class="fas fa-times mr-1"></i>Batal
         </router-link>
-        <button type="submit" :disabled="isSaving" class="flex-1 px-4 py-3 bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white font-bold transition">
+        <button type="submit" :disabled="isSaving" class="flex-1 px-4 py-3 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] disabled:opacity-50 text-white font-bold transition">
           <i class="fas fa-save mr-1"></i>{{ isSaving ? 'Menyimpan...' : (editingId ? 'Update Santri' : 'Simpan Santri') }}
         </button>
       </div>
     </form>
 
-    <p class="text-center text-[10px] text-slate-400 pt-2">
+    <p class="text-center text-[10px] text-[var(--text-tertiary)] pt-2">
       <i class="fas fa-circle-info mr-1"></i>Vue 3 · v.21.13.0526 — Full CRUD Santri + PSB sync
     </p>
   </div>

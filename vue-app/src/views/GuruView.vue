@@ -3,58 +3,58 @@
     <!-- Access denied (non-admin) -->
     <div
       v-if="!isFullAccess"
-      class="bg-white dark:bg-slate-800 rounded-2xl p-10 border border-dashed border-rose-300 text-center"
+      class="bg-[var(--bg-card)] rounded-2xl p-10 border border-dashed border-rose-300 text-center"
     >
       <i class="fas fa-lock text-rose-300 text-4xl mb-3"></i>
-      <p class="text-sm font-bold text-slate-700 dark:text-slate-300">Akses terbatas</p>
-      <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+      <p class="text-sm font-bold text-slate-700 dark:text-[var(--text-tertiary)]">Akses terbatas</p>
+      <p class="text-xs text-[var(--text-secondary)] mt-1">
         Halaman Data Guru hanya dapat diakses oleh admin pondok.
       </p>
     </div>
 
     <template v-else>
       <!-- v.21.14.0526: Header refactor — title inline subtitle, stats+buttons wrap -->
-      <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-200 dark:border-slate-700 shadow-sm">
+      <div class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm">
         <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
           <div class="flex items-baseline gap-2 flex-wrap">
-            <h1 class="text-base md:text-lg font-black text-slate-800 dark:text-white whitespace-nowrap">
+            <h1 class="text-base md:text-lg font-black text-[var(--text-primary)] whitespace-nowrap">
               <i class="fas fa-chalkboard-teacher text-teal-500 mr-1"></i>Data Guru / Pegawai
             </h1>
-            <p class="text-[11px] text-slate-500 dark:text-slate-400">— Master data guru &amp; pegawai pondok</p>
+            <p class="text-[11px] text-[var(--text-secondary)]">— Master data guru &amp; pegawai pondok</p>
           </div>
           <!-- Stats badges + tombol tambah -->
           <div class="flex flex-wrap gap-2 items-center">
             <div class="px-3 py-1.5 rounded-full bg-teal-50 dark:bg-teal-900/30 border border-teal-200 dark:border-teal-700 text-xs">
               <span class="text-teal-700 dark:text-teal-300 font-bold">{{ stats.total }}</span>
-              <span class="text-slate-500 dark:text-slate-400 ml-1">total</span>
+              <span class="text-[var(--text-secondary)] ml-1">total</span>
             </div>
             <div class="px-3 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-700 text-xs">
               <span class="text-emerald-700 dark:text-emerald-300 font-bold">{{ stats.aktif }}</span>
-              <span class="text-slate-500 dark:text-slate-400 ml-1">aktif</span>
+              <span class="text-[var(--text-secondary)] ml-1">aktif</span>
             </div>
             <div class="px-3 py-1.5 rounded-full bg-rose-50 dark:bg-rose-900/30 border border-rose-200 dark:border-rose-700 text-xs">
               <span class="text-rose-700 dark:text-rose-300 font-bold">{{ stats.tidakAktif }}</span>
-              <span class="text-slate-500 dark:text-slate-400 ml-1">non-aktif</span>
+              <span class="text-[var(--text-secondary)] ml-1">non-aktif</span>
             </div>
             <!-- v.21.17c.0526: View vs Master mode actions -->
             <button @click="printPage" class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold transition cursor-pointer no-print">
               <i class="fas fa-print"></i>Cetak PDF
             </button>
-            <button @click="exportGuruExcel" :disabled="exporting" class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer">
+            <button @click="exportGuruExcel" :disabled="exporting" class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer">
               <i :class="['fas', exporting ? 'fa-spinner fa-spin' : 'fa-file-excel']"></i>{{ exporting ? 'Ekspor...' : 'Ekspor Excel' }}
             </button>
-            <router-link v-if="!isMasterMode" to="/master-data?tab=guru" class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold transition" title="CRUD guru di Master Data">
+            <router-link v-if="!isMasterMode" to="/master-data?tab=guru" class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-slate-200 hover:bg-slate-300 text-[var(--text-primary)] text-xs font-bold transition" title="CRUD guru di Master Data">
               <i class="fas fa-edit"></i>Kelola
             </router-link>
             <template v-if="isMasterMode">
-              <button @click="downloadTemplateGuru" class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition cursor-pointer">
+              <button @click="downloadTemplateGuru" class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold transition cursor-pointer">
                 <i class="fas fa-download"></i>Template
               </button>
-              <label class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition cursor-pointer">
+              <label class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold transition cursor-pointer">
                 <i :class="['fas', importingGuru ? 'fa-spinner fa-spin' : 'fa-upload']"></i>{{ importingGuru ? 'Impor...' : 'Impor XLSX' }}
                 <input type="file" accept=".xlsx,.xls" class="hidden" @change="onImportGuru" :disabled="importingGuru" />
               </label>
-              <router-link to="/guru/new?from=master" class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold transition">
+              <router-link to="/guru/new?from=master" class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-xs font-bold transition">
                 <i class="fas fa-plus"></i>Tambah Guru
               </router-link>
             </template>
@@ -64,12 +64,12 @@
 
       <!-- v.21.11.0526: Import preview modal -->
       <div v-if="importPreviewGuru" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[85vh] flex flex-col">
-          <div class="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
-            <h3 class="text-base font-black text-slate-800 dark:text-white">
-              <i class="fas fa-file-import text-blue-600 mr-2"></i>Preview Impor Guru — {{ importPreviewGuru.rows.length }} baris
+        <div class="bg-[var(--bg-card)] rounded-2xl shadow-2xl max-w-4xl w-full max-h-[85vh] flex flex-col">
+          <div class="p-4 border-b border-[var(--border-subtle)] flex items-center justify-between">
+            <h3 class="text-base font-black text-[var(--text-primary)]">
+              <i class="fas fa-file-import text-cyan-600 mr-2"></i>Preview Impor Guru — {{ importPreviewGuru.rows.length }} baris
             </h3>
-            <button @click="importPreviewGuru = null" class="text-slate-400 hover:text-rose-600 text-xl"><i class="fas fa-times"></i></button>
+            <button @click="importPreviewGuru = null" class="text-[var(--text-tertiary)] hover:text-rose-600 text-xl"><i class="fas fa-times"></i></button>
           </div>
           <div class="p-4 overflow-auto flex-1 text-xs">
             <div class="grid grid-cols-3 gap-2 mb-3">
@@ -77,17 +77,17 @@
                 <p class="text-[10px] text-emerald-700 font-bold uppercase">Baru</p>
                 <p class="text-2xl font-black text-emerald-700">{{ importPreviewGuru.newCount }}</p>
               </div>
-              <div class="bg-amber-50 rounded p-2 border border-amber-200">
-                <p class="text-[10px] text-amber-700 font-bold uppercase">Update</p>
-                <p class="text-2xl font-black text-amber-700">{{ importPreviewGuru.updateCount }}</p>
+              <div class="bg-cyan-50 rounded p-2 border border-cyan-200">
+                <p class="text-[10px] text-cyan-700 font-bold uppercase">Update</p>
+                <p class="text-2xl font-black text-cyan-700">{{ importPreviewGuru.updateCount }}</p>
               </div>
               <div class="bg-rose-50 rounded p-2 border border-rose-200">
                 <p class="text-[10px] text-rose-700 font-bold uppercase">Skip</p>
                 <p class="text-2xl font-black text-rose-700">{{ importPreviewGuru.skipCount }}</p>
               </div>
             </div>
-            <table class="w-full border border-slate-200">
-              <thead class="bg-slate-100">
+            <table class="w-full border border-[var(--border-subtle)]">
+              <thead class="bg-[var(--bg-muted)]">
                 <tr>
                   <th class="px-2 py-1 text-left">#</th>
                   <th class="px-2 py-1 text-left">Aksi</th>
@@ -99,9 +99,9 @@
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="(r, i) in importPreviewGuru.preview" :key="i" class="border-t border-slate-100">
+                <tr v-for="(r, i) in importPreviewGuru.preview" :key="i" class="border-t border-[var(--border-subtle)]">
                   <td class="px-2 py-1">{{ i + 1 }}</td>
-                  <td class="px-2 py-1"><span :class="r.action === 'new' ? 'text-emerald-700' : 'text-amber-700'" class="font-bold">{{ r.action.toUpperCase() }}</span></td>
+                  <td class="px-2 py-1"><span :class="r.action === 'new' ? 'text-emerald-700' : 'text-cyan-700'" class="font-bold">{{ r.action.toUpperCase() }}</span></td>
                   <td class="px-2 py-1">{{ r.nama }}</td>
                   <td class="px-2 py-1">{{ r.jabatan }}</td>
                   <td class="px-2 py-1">{{ r.lembaga }}</td>
@@ -110,13 +110,13 @@
                 </tr>
               </tbody>
             </table>
-            <p v-if="importPreviewGuru.rows.length > importPreviewGuru.preview.length" class="text-[10px] italic text-slate-500 mt-2">
+            <p v-if="importPreviewGuru.rows.length > importPreviewGuru.preview.length" class="text-[10px] italic text-[var(--text-secondary)] mt-2">
               ...dan {{ importPreviewGuru.rows.length - importPreviewGuru.preview.length }} baris lagi
             </p>
           </div>
-          <div class="p-4 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-2">
+          <div class="p-4 border-t border-[var(--border-subtle)] flex justify-end gap-2">
             <button @click="importPreviewGuru = null" class="px-4 py-2 text-xs font-bold rounded-lg bg-slate-200 hover:bg-slate-300">Batal</button>
-            <button @click="confirmImportGuru" :disabled="importingGuru" class="px-4 py-2 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-50">
+            <button @click="confirmImportGuru" :disabled="importingGuru" class="px-4 py-2 text-xs font-bold rounded-lg bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white disabled:opacity-50">
               <i :class="['fas', importingGuru ? 'fa-spinner fa-spin' : 'fa-check', 'mr-1']"></i>{{ importingGuru ? 'Importing...' : `Konfirmasi (${importPreviewGuru.newCount + importPreviewGuru.updateCount})` }}
             </button>
           </div>
@@ -124,22 +124,22 @@
       </div>
 
       <!-- Search + filter bar -->
-      <div class="bg-white dark:bg-slate-800 rounded-2xl p-3 md:p-4 border border-slate-200 dark:border-slate-700 shadow-sm">
+      <div class="bg-[var(--bg-card)] rounded-2xl p-3 md:p-4 border border-[var(--border-subtle)] shadow-sm">
         <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
           <!-- Search -->
           <div class="md:col-span-2 relative">
-            <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+            <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] text-sm"></i>
             <input
               v-model="search"
               type="text"
               placeholder="Cari nama, WA, jabatan, atau username..."
-              class="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition"
+              class="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition"
             />
           </div>
           <!-- Filter lembaga -->
           <select
             v-model="filterLembaga"
-            class="px-3 py-2.5 text-sm rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none"
+            class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none"
           >
             <option value="">Semua lembaga</option>
             <option v-for="l in uniqueLembaga" :key="l" :value="l">{{ l }}</option>
@@ -147,7 +147,7 @@
           <!-- Filter status -->
           <select
             v-model="filterStatus"
-            class="px-3 py-2.5 text-sm rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none"
+            class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none"
           >
             <option value="aktif">Hanya yang aktif</option>
             <option value="">Semua status</option>
@@ -163,7 +163,7 @@
               'px-2.5 py-1 text-[11px] rounded-full border font-bold transition',
               filterLembaga === ''
                 ? 'bg-teal-600 text-white border-teal-600'
-                : 'bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-600 hover:bg-teal-50'
+                : 'bg-white dark:bg-slate-700 text-[var(--text-secondary)] border-[var(--border-default)] hover:bg-teal-50'
             ]"
           >
             Semua lembaga
@@ -177,7 +177,7 @@
               'px-2.5 py-1 text-[11px] rounded-full border font-bold transition',
               filterLembaga === l
                 ? 'bg-teal-600 text-white border-teal-600'
-                : 'bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-600 hover:bg-teal-50'
+                : 'bg-white dark:bg-slate-700 text-[var(--text-secondary)] border-[var(--border-default)] hover:bg-teal-50'
             ]"
           >
             {{ l }}
@@ -188,47 +188,47 @@
       <!-- v.21.22c.0526: Bulk action bar (Master mode only) -->
       <div v-if="isMasterMode && selectedCount > 0" class="bg-gradient-to-r from-teal-50 to-emerald-50 dark:from-teal-900/30 dark:to-emerald-900/30 rounded-2xl p-3 border border-teal-300 dark:border-teal-700 shadow-sm flex flex-wrap items-center gap-2 mb-3">
         <span class="text-xs font-black text-teal-800 dark:text-teal-200"><i class="fas fa-check-square mr-1"></i>{{ selectedCount }} terpilih</span>
-        <button @click="bulkSetStatus('Aktif')" :disabled="bulkSaving" class="h-8 px-3 inline-flex items-center gap-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-[11px] font-bold transition cursor-pointer"><i class="fas fa-check"></i>Set Aktif</button>
-        <button @click="bulkSetStatus('Non-aktif')" :disabled="bulkSaving" class="h-8 px-3 inline-flex items-center gap-1 rounded-lg bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white text-[11px] font-bold transition cursor-pointer"><i class="fas fa-user-slash"></i>Set Non-aktif</button>
+        <button @click="bulkSetStatus('Aktif')" :disabled="bulkSaving" class="h-8 px-3 inline-flex items-center gap-1 rounded-lg bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] disabled:opacity-50 text-white text-[11px] font-bold transition cursor-pointer"><i class="fas fa-check"></i>Set Aktif</button>
+        <button @click="bulkSetStatus('Non-aktif')" :disabled="bulkSaving" class="h-8 px-3 inline-flex items-center gap-1 rounded-lg bg-cyan-600 hover:bg-cyan-700 disabled:opacity-50 text-white text-[11px] font-bold transition cursor-pointer"><i class="fas fa-user-slash"></i>Set Non-aktif</button>
         <button @click="bulkDeleteGuru" :disabled="bulkSaving" class="h-8 px-3 inline-flex items-center gap-1 rounded-lg bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white text-[11px] font-bold transition cursor-pointer"><i class="fas fa-trash"></i>Hapus</button>
-        <label class="h-8 px-2 inline-flex items-center gap-1 rounded-lg bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 text-[11px]">
-          <select v-model="bulkRoleSistem" class="bg-transparent text-[11px] font-bold text-slate-700 dark:text-slate-200 outline-none cursor-pointer">
+        <label class="h-8 px-2 inline-flex items-center gap-1 rounded-lg bg-white dark:bg-slate-700 border border-[var(--border-default)] text-[11px]">
+          <select v-model="bulkRoleSistem" class="bg-transparent text-[11px] font-bold text-[var(--text-primary)] outline-none cursor-pointer">
             <option value="user">user</option>
             <option value="admin">admin</option>
             <option value="admin_keuangan">admin_keuangan</option>
             <option value="super_admin">super_admin</option>
           </select>
-          <button @click="bulkSetRole" :disabled="bulkSaving" class="ml-1 px-2 py-0.5 rounded bg-fuchsia-600 hover:bg-fuchsia-700 disabled:opacity-50 text-white text-[10px] font-bold cursor-pointer">Set Role</button>
+          <button @click="bulkSetRole" :disabled="bulkSaving" class="ml-1 px-2 py-0.5 rounded bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white text-[10px] font-bold cursor-pointer">Set Role</button>
         </label>
-        <button @click="clearSelection" class="h-8 px-3 inline-flex items-center gap-1 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 text-[11px] font-bold transition cursor-pointer ml-auto"><i class="fas fa-times"></i>Batal</button>
+        <button @click="clearSelection" class="h-8 px-3 inline-flex items-center gap-1 rounded-lg bg-slate-200 hover:bg-slate-300 text-[var(--text-primary)] text-[11px] font-bold transition cursor-pointer ml-auto"><i class="fas fa-times"></i>Batal</button>
       </div>
 
       <!-- v.21.22c.0526: Select-all (Master mode only) -->
-      <div v-if="isMasterMode && guru.length > 0" class="bg-white dark:bg-slate-800 rounded-2xl px-4 py-2 border border-slate-200 dark:border-slate-700 shadow-sm flex items-center gap-2 mb-2">
+      <div v-if="isMasterMode && guru.length > 0" class="bg-[var(--bg-card)] rounded-2xl px-4 py-2 border border-[var(--border-subtle)] shadow-sm flex items-center gap-2 mb-2">
         <label class="inline-flex items-center gap-2 cursor-pointer">
-          <input type="checkbox" :checked="isAllVisibleSelected" :indeterminate.prop="isSomeVisibleSelected" @change="toggleSelectAllVisible" class="w-4 h-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500 cursor-pointer" />
-          <span class="text-[11px] font-bold text-slate-600 dark:text-slate-300">Pilih semua ({{ guru.length }})</span>
+          <input type="checkbox" :checked="isAllVisibleSelected" :indeterminate.prop="isSomeVisibleSelected" @change="toggleSelectAllVisible" class="w-4 h-4 rounded border-[var(--border-default)] text-teal-600 focus:ring-teal-500 cursor-pointer" />
+          <span class="text-[11px] font-bold text-[var(--text-secondary)]">Pilih semua ({{ guru.length }})</span>
         </label>
         <span v-if="selectedCount > 0" class="text-[10px] text-teal-700 dark:text-teal-300 font-bold">— {{ selectedCount }} terpilih</span>
       </div>
 
 
       <!-- Loading -->
-      <div v-if="loading" class="bg-white dark:bg-slate-800 rounded-2xl p-10 border border-slate-200 dark:border-slate-700 text-center">
+      <div v-if="loading" class="bg-[var(--bg-card)] rounded-2xl p-10 border border-[var(--border-subtle)] text-center">
         <i class="fas fa-spinner fa-spin text-teal-500 text-3xl mb-3"></i>
-        <p class="text-sm text-slate-500 font-bold">Memuat data guru...</p>
+        <p class="text-sm text-[var(--text-secondary)] font-bold">Memuat data guru...</p>
       </div>
 
       <!-- Empty -->
       <div
         v-else-if="guru.length === 0"
-        class="bg-white dark:bg-slate-800 rounded-2xl p-10 border border-dashed border-slate-300 dark:border-slate-600 text-center"
+        class="bg-[var(--bg-card)] rounded-2xl p-10 border border-dashed border-[var(--border-default)] text-center"
       >
-        <i class="fas fa-user-slash text-slate-300 dark:text-slate-600 text-4xl mb-3"></i>
-        <p class="text-sm font-bold text-slate-700 dark:text-slate-300">
+        <i class="fas fa-user-slash text-slate-300 dark:text-[var(--text-secondary)] text-4xl mb-3"></i>
+        <p class="text-sm font-bold text-slate-700 dark:text-[var(--text-tertiary)]">
           {{ hasFilter ? 'Tidak ada guru yang cocok' : 'Belum ada data guru' }}
         </p>
-        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+        <p class="text-xs text-[var(--text-secondary)] mt-1">
           {{ hasFilter ? 'Coba ubah filter atau kata kunci pencarian' : 'Tambah guru pertama di Master Data legacy.' }}
         </p>
       </div>
@@ -241,13 +241,13 @@
             v-for="g in guru"
             :key="g.id"
             :class="[
-              'bg-white dark:bg-slate-800 rounded-xl p-3 md:p-4 border shadow-sm hover:shadow-md transition',
-              selected.has(String(g.id)) ? 'border-fuchsia-400 ring-2 ring-fuchsia-100 dark:ring-fuchsia-900/40' : 'border-slate-200 dark:border-slate-700'
+              'bg-[var(--bg-card)] rounded-xl p-3 md:p-4 border shadow-sm hover:shadow-md transition',
+              selected.has(String(g.id)) ? 'border-teal-400 ring-2 ring-teal-100 dark:ring-teal-900/40' : 'border-[var(--border-subtle)]'
             ]"
           >
             <div class="flex items-start gap-3">
               <!-- v.21.22c.0526: Checkbox (Master mode only) -->
-              <input v-if="isMasterMode" type="checkbox" :checked="selected.has(String(g.id))" @change="toggleSelect(g.id)" class="flex-shrink-0 mt-2 w-4 h-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500 cursor-pointer" />
+              <input v-if="isMasterMode" type="checkbox" :checked="selected.has(String(g.id))" @change="toggleSelect(g.id)" class="flex-shrink-0 mt-2 w-4 h-4 rounded border-[var(--border-default)] text-teal-600 focus:ring-teal-500 cursor-pointer" />
               <!-- Avatar -->
               <div
                 class="flex-shrink-0 w-12 h-12 md:w-14 md:h-14 rounded-full bg-gradient-to-br from-teal-100 to-emerald-100 dark:from-teal-700 dark:to-emerald-700 border-2 border-white dark:border-slate-700 flex items-center justify-center overflow-hidden"
@@ -259,10 +259,10 @@
               <div class="flex-1 min-w-0">
                 <div class="flex items-start justify-between gap-2">
                   <div class="flex-1 min-w-0">
-                    <h3 class="text-sm md:text-base font-black text-slate-800 dark:text-white truncate">
+                    <h3 class="text-sm md:text-base font-black text-[var(--text-primary)] truncate">
                       {{ getNamaGuruGelar(g.nama, g.jk) }}
                     </h3>
-                    <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                    <p class="text-[11px] text-[var(--text-secondary)] mt-0.5">
                       {{ g.jabatan || '—' }}{{ g.jabatan_tambahan ? ` · ${g.jabatan_tambahan}` : '' }}
                       <span v-if="g.jk"> · {{ g.jk === 'L' ? 'L' : 'P' }}</span>
                     </p>
@@ -275,7 +275,7 @@
                   </span>
                   <span
                     v-else
-                    class="text-[9px] bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-300 dark:border-slate-600 px-2 py-0.5 rounded font-bold uppercase tracking-wider flex-shrink-0"
+                    class="text-[9px] bg-slate-200 dark:bg-slate-700 text-[var(--text-secondary)] border border-[var(--border-default)] px-2 py-0.5 rounded font-bold uppercase tracking-wider flex-shrink-0"
                   >
                     Non-aktif
                   </span>
@@ -296,13 +296,13 @@
                   </span>
                   <span
                     v-if="g.shift"
-                    class="text-[10px] bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-700 px-2 py-0.5 rounded font-bold uppercase"
+                    class="text-[10px] bg-cyan-50 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-700 px-2 py-0.5 rounded font-bold uppercase"
                   >
                     Shift: {{ g.shift.replace('_', '+') }}
                   </span>
                   <span
                     v-if="g.role_sistem && g.role_sistem !== 'user'"
-                    class="text-[10px] bg-fuchsia-50 dark:bg-fuchsia-900/30 text-fuchsia-700 dark:text-fuchsia-300 border border-fuchsia-200 dark:border-fuchsia-700 px-2 py-0.5 rounded font-bold uppercase"
+                    class="text-[10px] bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-700 px-2 py-0.5 rounded font-bold uppercase"
                   >
                     {{ g.role_sistem }}
                   </span>
@@ -310,14 +310,14 @@
                 <!-- Tugas duration -->
                 <p
                   v-if="g.tanggal_tugas"
-                  class="text-[10px] text-slate-500 dark:text-slate-400 mt-1.5"
+                  class="text-[10px] text-[var(--text-secondary)] mt-1.5"
                 >
                   <i class="fas fa-clock mr-1"></i>{{ hitungLamaMengajar(g.tanggal_tugas) }}
-                  <span class="text-slate-400">· sejak {{ formatTanggal(g.tanggal_tugas) }}</span>
+                  <span class="text-[var(--text-tertiary)]">· sejak {{ formatTanggal(g.tanggal_tugas) }}</span>
                 </p>
                 <!-- WA + username -->
-                <div class="flex items-center gap-2 mt-1.5 text-[11px] text-slate-500 dark:text-slate-400">
-                  <span v-if="g.username" class="text-slate-600 dark:text-slate-300">
+                <div class="flex items-center gap-2 mt-1.5 text-[11px] text-[var(--text-secondary)]">
+                  <span v-if="g.username" class="text-[var(--text-secondary)]">
                     <i class="fas fa-at mr-1"></i>{{ g.username }}
                   </span>
                   <a
@@ -332,10 +332,10 @@
                 <!-- v.21.22c.0526: Edit/Toggle Aktif/Delete (Master mode only) -->
                 <div v-if="isMasterMode" class="mt-2 flex justify-end gap-2 flex-wrap">
                   <!-- v.21.24.0526: Reset Sandi tombol -->
-                  <button @click="resetSandiGuru(g)" class="text-[10px] text-blue-700 dark:text-blue-300 hover:underline font-bold" title="Reset sandi ke 1234">
+                  <button @click="resetSandiGuru(g)" class="text-[10px] text-cyan-700 dark:text-cyan-300 hover:underline font-bold" title="Reset sandi ke 1234">
                     <i class="fas fa-key mr-1"></i>Reset Sandi
                   </button>
-                  <button @click="toggleAktifGuru(g)" :class="['text-[10px] font-bold hover:underline', isAktif(g) ? 'text-amber-700 dark:text-amber-300' : 'text-emerald-700 dark:text-emerald-300']">
+                  <button @click="toggleAktifGuru(g)" :class="['text-[10px] font-bold hover:underline', isAktif(g) ? 'text-cyan-700 dark:text-cyan-300' : 'text-emerald-700 dark:text-emerald-300']">
                     <i :class="['fas', isAktif(g) ? 'fa-toggle-off' : 'fa-toggle-on', 'mr-1']"></i>{{ isAktif(g) ? 'Non-aktifkan' : 'Aktifkan' }}
                   </button>
                   <router-link :to="`/guru/${g.id}/edit?from=master`" class="text-[10px] text-teal-700 dark:text-teal-300 hover:underline font-bold">
@@ -352,7 +352,7 @@
       </template>
 
       <!-- Footer -->
-      <p class="text-center text-[10px] text-slate-400 dark:text-slate-600 pt-2">
+      <p class="text-center text-[10px] text-slate-400 dark:text-[var(--text-secondary)] pt-2">
         <i class="fas fa-circle-info mr-1"></i>Menampilkan {{ guru.length }} guru ·
         Vue 3 · Phase 5.6
       </p>

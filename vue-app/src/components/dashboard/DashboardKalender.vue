@@ -1,5 +1,5 @@
 <template>
-  <!-- v.72.7: whole widget clickable → /kalender (kyai request) -->
+  <!-- v.21.84.0527: whole widget clickable → /kalender (kyai request) -->
   <div
     @click="$emit('see-all')"
     class="bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-5 border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md hover:border-cyan-300 dark:hover:border-cyan-700 transition cursor-pointer"

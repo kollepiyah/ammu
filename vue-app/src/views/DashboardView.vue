@@ -41,7 +41,7 @@ const isAdmin = computed(() => auth.isAdmin || auth.sesiAktif?.role === 'admin')
     <button
       v-if="isAdmin"
       @click="goPosts"
-      class="w-full bg-gradient-to-br from-teal-600 to-emerald-700 rounded-xl px-4 py-2.5 text-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition flex items-center justify-between gap-3 cursor-pointer"
+      class="w-full bg-gradient-to-br from-teal-600 dark:from-teal-800 to-emerald-700 dark:to-emerald-900 rounded-xl px-4 py-2.5 text-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition flex items-center justify-between gap-3 cursor-pointer"
     >
       <span class="flex items-center gap-2 text-sm font-bold">
         <i class="fas fa-bullhorn text-white/90"></i>Buat Postingan
@@ -52,7 +52,7 @@ const isAdmin = computed(() => auth.isAdmin || auth.sesiAktif?.role === 'admin')
     <!-- Ammu Channel: Postingan terbaru -->
     <DashboardPosts />
 
-    <p class="text-center text-[10px] text-slate-400 dark:text-slate-600 pt-2">
+    <p class="text-center text-[10px] text-slate-400 dark:text-[var(--text-secondary)] pt-2">
       <i class="fas fa-circle-info mr-1"></i>Portal MU · Vue 3 SPA · v.21.15.0526
     </p>
   </div>

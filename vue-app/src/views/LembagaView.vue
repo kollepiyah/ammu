@@ -1,36 +1,36 @@
 <template>
   <div class="p-3 md:p-5 max-w-6xl mx-auto space-y-4">
-    <div v-if="!isFullAccess" class="bg-white dark:bg-slate-800 rounded-2xl p-10 border border-dashed border-rose-300 text-center">
+    <div v-if="!isFullAccess" class="bg-[var(--bg-card)] rounded-2xl p-10 border border-dashed border-rose-300 text-center">
       <i class="fas fa-lock text-rose-300 text-4xl mb-3"></i>
-      <p class="text-sm font-bold text-slate-700 dark:text-slate-300">Akses terbatas</p>
-      <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Halaman Data Lembaga hanya untuk admin.</p>
+      <p class="text-sm font-bold text-slate-700 dark:text-[var(--text-tertiary)]">Akses terbatas</p>
+      <p class="text-xs text-[var(--text-secondary)] mt-1">Halaman Data Lembaga hanya untuk admin.</p>
     </div>
     <template v-else>
       <!-- v.21.14.0526: Header refactor inline -->
-      <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-200 dark:border-slate-700 shadow-sm">
+      <div class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm">
         <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
           <div class="flex items-baseline gap-2 flex-wrap">
-            <h1 class="text-base md:text-lg font-black text-slate-800 dark:text-white whitespace-nowrap">
+            <h1 class="text-base md:text-lg font-black text-[var(--text-primary)] whitespace-nowrap">
               <i class="fas fa-building text-teal-500 mr-1"></i>Data Lembaga
             </h1>
-            <p class="text-[11px] text-slate-500 dark:text-slate-400">— Master data lembaga pendidikan</p>
+            <p class="text-[11px] text-[var(--text-secondary)]">— Master data lembaga pendidikan</p>
           </div>
           <div class="flex flex-wrap gap-2">
             <div class="px-3 py-1.5 rounded-full bg-teal-50 dark:bg-teal-900/30 border border-teal-200 dark:border-teal-700 text-xs">
               <span class="text-teal-700 dark:text-teal-300 font-bold">{{ stats.total }}</span>
-              <span class="text-slate-500 dark:text-slate-400 ml-1">total</span>
+              <span class="text-[var(--text-secondary)] ml-1">total</span>
             </div>
             <div class="px-3 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-700 text-xs">
               <span class="text-emerald-700 dark:text-emerald-300 font-bold">{{ stats.qiraati }}</span>
-              <span class="text-slate-500 dark:text-slate-400 ml-1">qiraati</span>
+              <span class="text-[var(--text-secondary)] ml-1">qiraati</span>
             </div>
             <div class="px-3 py-1.5 rounded-full bg-cyan-50 dark:bg-cyan-900/30 border border-cyan-200 dark:border-cyan-700 text-xs">
               <span class="text-cyan-700 dark:text-cyan-300 font-bold">{{ stats.formal }}</span>
-              <span class="text-slate-500 dark:text-slate-400 ml-1">formal</span>
+              <span class="text-[var(--text-secondary)] ml-1">formal</span>
             </div>
             <router-link
               to="/lembaga/new"
-              class="px-3 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold transition"
+              class="px-3 py-1.5 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-xs font-bold transition"
             >
               <i class="fas fa-plus mr-1"></i>Tambah Lembaga
             </router-link>
@@ -38,20 +38,20 @@
         </div>
       </div>
 
-      <div class="bg-white dark:bg-slate-800 rounded-2xl p-3 md:p-4 border border-slate-200 dark:border-slate-700 shadow-sm">
+      <div class="bg-[var(--bg-card)] rounded-2xl p-3 md:p-4 border border-[var(--border-subtle)] shadow-sm">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
           <div class="md:col-span-2 relative">
-            <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+            <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] text-sm"></i>
             <input
               v-model="search"
               type="text"
               placeholder="Cari nama lembaga..."
-              class="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none transition"
+              class="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none transition"
             />
           </div>
           <select
             v-model="filterTipe"
-            class="px-3 py-2.5 text-sm rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none"
+            class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none"
           >
             <option value="">Semua tipe</option>
             <option value="Qiraati">Qiraati</option>
@@ -60,18 +60,18 @@
         </div>
       </div>
 
-      <div v-if="loading" class="bg-white dark:bg-slate-800 rounded-2xl p-10 text-center border border-slate-200 dark:border-slate-700">
+      <div v-if="loading" class="bg-[var(--bg-card)] rounded-2xl p-10 text-center border border-[var(--border-subtle)]">
         <i class="fas fa-spinner fa-spin text-teal-500 text-3xl mb-3"></i>
-        <p class="text-sm text-slate-500 font-bold">Memuat data lembaga...</p>
+        <p class="text-sm text-[var(--text-secondary)] font-bold">Memuat data lembaga...</p>
       </div>
-      <div v-else-if="lembaga.length === 0" class="bg-white dark:bg-slate-800 rounded-2xl p-10 border border-dashed border-slate-300 text-center">
-        <i class="fas fa-building text-slate-300 text-4xl mb-3"></i>
-        <p class="text-sm font-bold text-slate-700 dark:text-slate-300">Belum ada lembaga</p>
+      <div v-else-if="lembaga.length === 0" class="bg-[var(--bg-card)] rounded-2xl p-10 border border-dashed border-[var(--border-default)] text-center">
+        <i class="fas fa-building text-[var(--text-tertiary)] text-4xl mb-3"></i>
+        <p class="text-sm font-bold text-slate-700 dark:text-[var(--text-tertiary)]">Belum ada lembaga</p>
       </div>
       <!-- v.21.24d.0526: Nested by group umbrella (TPQ Pagi/Sore/Pra PTPT → TPQ; TK A/B → TK) -->
       <div v-else class="space-y-5">
         <!-- Render setiap group section -->
-        <div v-for="grp in groupedLembaga" :key="grp.groupName" :class="grp.isUmbrella ? 'bg-white dark:bg-slate-800 rounded-2xl p-3 md:p-4 border-2 border-slate-200 dark:border-slate-700 shadow-sm' : ''">
+        <div v-for="grp in groupedLembaga" :key="grp.groupName" :class="grp.isUmbrella ? 'bg-[var(--bg-card)] rounded-2xl p-3 md:p-4 border-2 border-[var(--border-subtle)] shadow-sm' : ''">
           <!-- Header umbrella -->
           <div v-if="grp.isUmbrella" class="flex items-center justify-between mb-3 px-2">
             <div class="flex items-center gap-2">
@@ -79,11 +79,11 @@
                 <i :class="['fas text-white text-base drop-shadow', grp.icon]"></i>
               </div>
               <div>
-                <h3 class="text-sm md:text-base font-black text-slate-800 dark:text-white">{{ grp.groupName }}</h3>
-                <p class="text-[10px] text-slate-500 dark:text-slate-400">Group {{ grp.items.length }} sub-lembaga</p>
+                <h3 class="text-sm md:text-base font-black text-[var(--text-primary)]">{{ grp.groupName }}</h3>
+                <p class="text-[10px] text-[var(--text-secondary)]">Group {{ grp.items.length }} sub-lembaga</p>
               </div>
             </div>
-            <span class="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300">{{ grp.badge }}</span>
+            <span class="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-[var(--bg-muted)] text-slate-700 dark:text-[var(--text-tertiary)]">{{ grp.badge }}</span>
           </div>
           <!-- Grid sub-lembaga -->
           <div :class="['grid grid-cols-1 gap-3', grp.isUmbrella ? 'sm:grid-cols-2 md:grid-cols-3' : 'md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4']">
@@ -93,15 +93,15 @@
               :to="{ path: `/lembaga/${l.id || l.lembaga}`, query: ($route.path.startsWith('/master-data') || $route.query.from === 'master-data') ? { from: 'master-data' } : {} }"
               :class="['rounded-2xl p-4 md:p-5 text-white shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 cursor-pointer bg-gradient-to-br relative overflow-hidden block', cardGradient(l)]"
             >
-              <span class="absolute top-3 right-3 text-[9px] px-2 py-0.5 rounded-full font-black uppercase tracking-wider bg-white/25 text-white backdrop-blur-sm">
+              <span class="absolute top-3 right-3 text-[9px] px-2 py-0.5 rounded-full font-black uppercase tracking-wider bg-[var(--bg-card)]/25 text-white backdrop-blur-sm">
                 {{ tipeLabel(l) }}
               </span>
-              <div class="w-12 h-12 rounded-xl bg-white/15 flex items-center justify-center mb-3 backdrop-blur-sm">
+              <div class="w-12 h-12 rounded-xl bg-[var(--bg-card)]/15 flex items-center justify-center mb-3 backdrop-blur-sm">
                 <i :class="['fas text-white text-2xl drop-shadow', cardIcon(l)]"></i>
               </div>
               <h3 class="text-lg md:text-xl font-black text-white drop-shadow-sm leading-tight">{{ l.lembaga }}</h3>
               <p class="text-xs text-white/85 mt-1">{{ subInfo(l) }}</p>
-              <span v-if="l.group" class="inline-block text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-white/20 text-white mb-1.5 mt-2">
+              <span v-if="l.group" class="inline-block text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-[var(--bg-card)]/20 text-white mb-1.5 mt-2">
                 {{ l.tpq_group || l.tk_group || (l.group === 'mahad' ? "Ma'had" : l.group === 'qiraati' ? 'Qiraati' : l.group === 'sekolah' ? 'Sekolah' : l.group === 'non-lembaga' ? 'Non Lembaga' : l.group) }}
               </span>
               <div v-if="getCounts(l.lembaga).guru || getCounts(l.lembaga).santri" class="flex gap-3 mt-3 text-[10px] text-white/80">
@@ -113,7 +113,7 @@
         </div>
       </div>
 
-      <p class="text-center text-[10px] text-slate-400 pt-2">
+      <p class="text-center text-[10px] text-[var(--text-tertiary)] pt-2">
         <i class="fas fa-circle-info mr-1"></i>{{ lembaga.length }} lembaga · Vue 3 · Phase 5.7
       </p>
     </template>
@@ -140,7 +140,7 @@ const groupedLembaga = computed(() => {
     out.push({
       groupName: 'TPQ (Qiraati)',
       isUmbrella: true,
-      gradient: 'from-emerald-500 to-emerald-700',
+      gradient: 'from-emerald-500 dark:from-emerald-700 to-emerald-700 dark:to-emerald-900',
       icon: 'fa-mosque',
       badge: 'Group',
       items: tpqItems
@@ -150,7 +150,7 @@ const groupedLembaga = computed(() => {
     out.push({
       groupName: 'TK (Taman Kanak-Kanak)',
       isUmbrella: true,
-      gradient: 'from-pink-500 to-rose-700',
+      gradient: 'from-rose-500 dark:from-rose-700 to-rose-700 dark:to-rose-900',
       icon: 'fa-child',
       badge: 'Group',
       items: tkItems
@@ -182,18 +182,18 @@ function cardGradient(l) {
   const nm = String(l.lembaga || '').toUpperCase()
   if (nm === 'YAYASAN') return 'from-slate-600 to-slate-800'
   if (nm.includes('SARANA') || nm.includes('PRASARANA')) return 'from-slate-600 to-slate-800'
-  if (nm === 'TPQ' || nm === 'TPQ PAGI' || nm === 'TPQ SORE') return 'from-emerald-500 to-emerald-700'
-  if (nm === 'PRA PTPT') return 'from-blue-500 to-blue-700'
-  if (nm === 'PTPT') return 'from-purple-500 to-purple-700'
-  if (nm === 'PPPH' || nm === 'P3H') return 'from-amber-500 to-amber-700'
-  if (nm === 'SDI') return 'from-sky-500 to-sky-700'
-  if (nm === 'PKBM') return 'from-indigo-500 to-indigo-700'
-  if (nm === 'TK' || nm === 'TK A' || nm === 'TK B') return 'from-pink-500 to-rose-700'
-  if (nm === 'MA' || nm.includes('ALIYAH')) return 'from-rose-500 to-rose-700'
-  if (nm === 'MTS' || nm.includes('TSANAWIYAH')) return 'from-orange-500 to-orange-700'
+  if (nm === 'TPQ' || nm === 'TPQ PAGI' || nm === 'TPQ SORE') return 'from-emerald-500 dark:from-emerald-700 to-emerald-700 dark:to-emerald-900'
+  if (nm === 'PRA PTPT') return 'from-cyan-500 dark:from-cyan-700 to-cyan-700 dark:to-cyan-900'
+  if (nm === 'PTPT') return 'from-teal-500 dark:from-teal-700 to-teal-700 dark:to-teal-900'
+  if (nm === 'PPPH' || nm === 'P3H') return 'from-cyan-500 dark:from-cyan-700 to-cyan-700 dark:to-cyan-900'
+  if (nm === 'SDI') return 'from-cyan-500 dark:from-cyan-700 to-cyan-700 dark:to-cyan-900'
+  if (nm === 'PKBM') return 'from-cyan-500 dark:from-cyan-700 to-cyan-700 dark:to-cyan-900'
+  if (nm === 'TK' || nm === 'TK A' || nm === 'TK B') return 'from-rose-500 dark:from-rose-700 to-rose-700 dark:to-rose-900'
+  if (nm === 'MA' || nm.includes('ALIYAH')) return 'from-rose-500 dark:from-rose-700 to-rose-700 dark:to-rose-900'
+  if (nm === 'MTS' || nm.includes('TSANAWIYAH')) return 'from-cyan-500 dark:from-cyan-700 to-cyan-700 dark:to-cyan-900'
   const tp = String(l.tipe || '').toLowerCase()
-  if (tp === 'formal') return 'from-cyan-500 to-cyan-700'
-  return 'from-teal-500 to-teal-700'
+  if (tp === 'formal') return 'from-cyan-500 dark:from-cyan-700 to-cyan-700 dark:to-cyan-900'
+  return 'from-teal-500 dark:from-teal-700 to-teal-700 dark:to-teal-900'
 }
 
 function cardIcon(l) {

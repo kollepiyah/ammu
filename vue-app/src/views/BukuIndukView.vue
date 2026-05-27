@@ -2,31 +2,31 @@
   <div class="p-3 md:p-5 max-w-6xl mx-auto space-y-4">
     <div
       v-if="!isFullAccess"
-      class="bg-white dark:bg-slate-800 rounded-2xl p-10 border border-dashed border-rose-300 text-center"
+      class="bg-[var(--bg-card)] rounded-2xl p-10 border border-dashed border-rose-300 text-center"
     >
       <i class="fas fa-lock text-rose-300 text-4xl mb-3"></i>
-      <p class="text-sm font-bold text-slate-700 dark:text-slate-300">Akses Keuangan terbatas</p>
+      <p class="text-sm font-bold text-slate-700 dark:text-[var(--text-tertiary)]">Akses Keuangan terbatas</p>
     </div>
 
     <template v-else>
       <!-- Header + stats + actions -->
       <div
-        class="bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-5 border border-slate-200 dark:border-slate-700 shadow-sm"
+        class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
       >
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           <div>
-            <h1 class="text-xl md:text-2xl font-black text-slate-800 dark:text-white">
-              <i class="fas fa-book text-indigo-500 mr-2"></i>Buku Induk (General Ledger)
+            <h1 class="text-xl md:text-2xl font-black text-[var(--text-primary)]">
+              <i class="fas fa-book text-cyan-500 mr-2"></i>Buku Induk (General Ledger)
             </h1>
             <button
               @click="exportBukuIndukExcel"
               :disabled="exportingBI"
-              class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold cursor-pointer"
+              class="px-3 py-1.5 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] disabled:opacity-50 text-white text-xs font-bold cursor-pointer"
             >
               <i :class="['fas', exportingBI ? 'fa-spinner fa-spin' : 'fa-file-excel', 'mr-1']"></i
               >{{ exportingBI ? '...' : 'Ekspor Excel' }}
             </button>
-            <p class="text-xs text-slate-500 mt-0.5">
+            <p class="text-xs text-[var(--text-secondary)] mt-0.5">
               Pusat data arus kas keluar/masuk seluruh lembaga · {{ getBulanLabel(selectedMonth) }}
               {{ selectedYear }}
             </p>
@@ -35,7 +35,7 @@
           <div class="flex gap-2 flex-wrap">
             <button
               @click="bukaModalInput()"
-              class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-2 rounded-xl text-xs shadow-md flex items-center gap-1.5 cursor-pointer"
+              class="bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-bold px-3 py-2 rounded-xl text-xs shadow-md flex items-center gap-1.5 cursor-pointer"
             >
               <i class="fas fa-plus-circle"></i>Input Manual
             </button>
@@ -64,13 +64,13 @@
           <div
             :class="[
               'p-3 rounded-xl border-l-4',
-              stats.saldo >= 0 ? 'bg-blue-50 border-blue-500' : 'bg-amber-50 border-amber-500'
+              stats.saldo >= 0 ? 'bg-cyan-50 border-cyan-500' : 'bg-cyan-50 border-cyan-500'
             ]"
           >
             <p
               :class="[
                 'text-[10px] font-bold uppercase',
-                stats.saldo >= 0 ? 'text-blue-700' : 'text-amber-700'
+                stats.saldo >= 0 ? 'text-cyan-700' : 'text-cyan-700'
               ]"
             >
               Saldo Akhir
@@ -78,7 +78,7 @@
             <p
               :class="[
                 'text-base md:text-lg font-black mt-1',
-                stats.saldo >= 0 ? 'text-blue-800' : 'text-amber-800'
+                stats.saldo >= 0 ? 'text-cyan-800' : 'text-cyan-800'
               ]"
             >
               {{ fmtRp(stats.saldo) }}
@@ -94,23 +94,23 @@
           @click.self="modalInputOpen = false"
           class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4"
         >
-          <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md">
+          <div class="bg-[var(--bg-card)] rounded-2xl shadow-2xl w-full max-w-md">
             <form @submit.prevent="simpanInputManual" class="p-5">
-              <h3 class="text-base font-black text-slate-800 dark:text-white mb-4">
+              <h3 class="text-base font-black text-[var(--text-primary)] mb-4">
                 <i class="fas fa-plus-circle text-emerald-600 mr-2"></i>Input Transaksi Manual
               </h3>
               <div class="space-y-3">
                 <div>
-                  <label class="block text-xs font-bold text-slate-600 mb-1">Tanggal *</label>
+                  <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1">Tanggal *</label>
                   <input
                     v-model="inputForm.tanggal"
                     type="date"
                     required
-                    class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white text-slate-800"
+                    class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)]"
                   />
                 </div>
                 <div>
-                  <label class="block text-xs font-bold text-slate-600 mb-1">Tipe *</label>
+                  <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1">Tipe *</label>
                   <div class="grid grid-cols-2 gap-2">
                     <button
                       type="button"
@@ -119,7 +119,7 @@
                         'px-3 py-2 text-xs font-black rounded-lg border-2',
                         inputForm.tipe === 'masuk'
                           ? 'bg-emerald-600 text-white border-emerald-700'
-                          : 'bg-white text-emerald-700 border-emerald-300'
+                          : 'bg-[var(--bg-card)] text-emerald-700 border-emerald-300'
                       ]"
                     >
                       <i class="fas fa-arrow-down mr-1"></i>Pemasukan
@@ -131,7 +131,7 @@
                         'px-3 py-2 text-xs font-black rounded-lg border-2',
                         inputForm.tipe === 'keluar'
                           ? 'bg-rose-600 text-white border-rose-700'
-                          : 'bg-white text-rose-700 border-rose-300'
+                          : 'bg-[var(--bg-card)] text-rose-700 border-rose-300'
                       ]"
                     >
                       <i class="fas fa-arrow-up mr-1"></i>Pengeluaran
@@ -139,47 +139,47 @@
                   </div>
                 </div>
                 <div>
-                  <label class="block text-xs font-bold text-slate-600 mb-1">Kategori</label>
+                  <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1">Kategori</label>
                   <input
                     v-model="inputForm.kategori"
                     type="text"
                     placeholder="Contoh: Operasional, Donasi, Bantuan..."
-                    class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white text-slate-800"
+                    class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)]"
                   />
                 </div>
                 <div>
-                  <label class="block text-xs font-bold text-slate-600 mb-1">Keterangan *</label>
+                  <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1">Keterangan *</label>
                   <textarea
                     v-model="inputForm.keterangan"
                     required
                     rows="2"
                     placeholder="Deskripsi transaksi..."
-                    class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white text-slate-800 resize-none"
+                    class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)] resize-none"
                   ></textarea>
                 </div>
                 <div>
-                  <label class="block text-xs font-bold text-slate-600 mb-1">Nominal (Rp) *</label>
+                  <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1">Nominal (Rp) *</label>
                   <input
                     v-model.number="inputForm.nominal"
                     type="number"
                     min="0"
                     required
-                    class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white text-slate-800"
+                    class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)]"
                   />
                 </div>
               </div>
-              <div class="flex items-center justify-end gap-2 mt-5 pt-4 border-t border-slate-100">
+              <div class="flex items-center justify-end gap-2 mt-5 pt-4 border-t border-[var(--border-subtle)]">
                 <button
                   type="button"
                   @click="modalInputOpen = false"
-                  class="text-xs font-bold px-4 py-2 rounded-lg bg-slate-100 text-slate-600"
+                  class="text-xs font-bold px-4 py-2 rounded-lg bg-[var(--bg-muted)] text-[var(--text-secondary)]"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
                   :disabled="savingInput"
-                  class="text-xs font-bold px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-50"
+                  class="text-xs font-bold px-4 py-2 rounded-lg bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white disabled:opacity-50"
                 >
                   <i :class="['fas', savingInput ? 'fa-spinner fa-spin' : 'fa-save', 'mr-1']"></i>
                   {{ savingInput ? 'Menyimpan...' : 'Simpan' }}
@@ -192,25 +192,25 @@
 
       <!-- Filter -->
       <div
-        class="bg-white dark:bg-slate-800 rounded-2xl p-3 md:p-4 border border-slate-200 dark:border-slate-700 shadow-sm"
+        class="bg-[var(--bg-card)] rounded-2xl p-3 md:p-4 border border-[var(--border-subtle)] shadow-sm"
       >
         <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
           <select
             v-model.number="selectedYear"
-            class="px-3 py-2.5 text-sm rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-indigo-500 outline-none"
+            class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-cyan-500 outline-none"
           >
             <option v-for="y in years" :key="y" :value="y">{{ y }}</option>
           </select>
           <select
             v-model.number="selectedMonth"
-            class="px-3 py-2.5 text-sm rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-indigo-500 outline-none"
+            class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-cyan-500 outline-none"
           >
             <option :value="0">Semua bulan</option>
             <option v-for="(b, i) in BULAN" :key="b" :value="i + 1">{{ b }}</option>
           </select>
           <select
             v-model="filterTipe"
-            class="px-3 py-2.5 text-sm rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-indigo-500 outline-none"
+            class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-cyan-500 outline-none"
           >
             <option value="">Semua tipe</option>
             <option value="masuk">Pemasukan</option>
@@ -220,34 +220,34 @@
             v-model="search"
             type="text"
             placeholder="Cari keterangan..."
-            class="px-3 py-2.5 text-sm rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-indigo-500 outline-none"
+            class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-cyan-500 outline-none"
           />
         </div>
       </div>
 
       <!-- Loading -->
-      <div v-if="loading" class="bg-white dark:bg-slate-800 rounded-2xl p-10 text-center">
-        <i class="fas fa-spinner fa-spin text-indigo-500 text-3xl mb-3"></i>
-        <p class="text-sm text-slate-500 font-bold">Memuat buku induk...</p>
+      <div v-if="loading" class="bg-[var(--bg-card)] rounded-2xl p-10 text-center">
+        <i class="fas fa-spinner fa-spin text-cyan-500 text-3xl mb-3"></i>
+        <p class="text-sm text-[var(--text-secondary)] font-bold">Memuat buku induk...</p>
       </div>
 
       <!-- Empty -->
       <div
         v-else-if="filteredBuku.length === 0"
-        class="bg-white dark:bg-slate-800 rounded-2xl p-10 border border-dashed border-slate-300 text-center"
+        class="bg-[var(--bg-card)] rounded-2xl p-10 border border-dashed border-[var(--border-default)] text-center"
       >
-        <i class="fas fa-book-open text-slate-300 text-4xl mb-3"></i>
-        <p class="text-sm font-bold text-slate-700">Tidak ada transaksi</p>
+        <i class="fas fa-book-open text-[var(--text-tertiary)] text-4xl mb-3"></i>
+        <p class="text-sm font-bold text-[var(--text-primary)]">Tidak ada transaksi</p>
       </div>
 
       <!-- List -->
       <div
         v-else
-        class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden"
+        class="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)] shadow-sm overflow-hidden"
       >
         <!-- Table header (desktop) -->
         <div
-          class="hidden md:grid md:grid-cols-[100px_1fr_120px_120px] gap-2 px-4 py-2 bg-slate-50 dark:bg-slate-700 text-[10px] uppercase font-bold text-slate-600 tracking-wider border-b border-slate-200"
+          class="hidden md:grid md:grid-cols-[100px_1fr_120px_120px] gap-2 px-4 py-2 bg-slate-50 dark:bg-slate-700 text-[10px] uppercase font-bold text-[var(--text-secondary)] tracking-wider border-b border-[var(--border-subtle)]"
         >
           <span>Tanggal</span>
           <span>Keterangan</span>
@@ -260,21 +260,21 @@
             :key="b.id"
             class="px-4 py-2.5 md:grid md:grid-cols-[100px_1fr_120px_120px] gap-2 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition"
           >
-            <span class="text-[11px] text-slate-500 font-bold whitespace-nowrap block md:inline">
+            <span class="text-[11px] text-[var(--text-secondary)] font-bold whitespace-nowrap block md:inline">
               {{ formatTgl(b.tanggal) }}
             </span>
             <div class="md:inline">
-              <p class="text-sm font-bold text-slate-800 dark:text-white truncate">
+              <p class="text-sm font-bold text-[var(--text-primary)] truncate">
                 {{ b.keterangan || '-' }}
               </p>
-              <p class="text-[10px] text-slate-500 mt-0.5">
+              <p class="text-[10px] text-[var(--text-secondary)] mt-0.5">
                 <span
                   v-if="b.kategori"
-                  class="bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 px-1.5 py-0.5 rounded font-bold"
+                  class="bg-[var(--bg-muted)] text-slate-700 dark:text-[var(--text-tertiary)] px-1.5 py-0.5 rounded font-bold"
                 >
                   {{ b.kategori }}
                 </span>
-                <span v-if="b.ref_id" class="ml-1 text-slate-400">· #{{ b.ref_id }}</span>
+                <span v-if="b.ref_id" class="ml-1 text-[var(--text-tertiary)]">· #{{ b.ref_id }}</span>
               </p>
             </div>
             <div class="mt-1 md:mt-0 md:text-right">
@@ -284,7 +284,7 @@
               >
                 {{ fmtRp(b.masuk || b.nominal) }}
               </span>
-              <span v-else class="text-slate-300">—</span>
+              <span v-else class="text-[var(--text-tertiary)]">—</span>
             </div>
             <div class="md:text-right">
               <span
@@ -293,13 +293,13 @@
               >
                 {{ fmtRp(b.keluar || b.nominal) }}
               </span>
-              <span v-else class="text-slate-300">—</span>
+              <span v-else class="text-[var(--text-tertiary)]">—</span>
             </div>
           </div>
         </div>
       </div>
 
-      <p class="text-center text-[10px] text-slate-400 pt-2">
+      <p class="text-center text-[10px] text-[var(--text-tertiary)] pt-2">
         <i class="fas fa-circle-info mr-1"></i>{{ filteredBuku.length }} transaksi · Vue 3 · Phase
         5.14
       </p>

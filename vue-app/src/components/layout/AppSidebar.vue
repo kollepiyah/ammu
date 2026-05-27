@@ -1,5 +1,5 @@
 <template>
-  <!-- v.65.3.0526: Sidebar match legacy - cream mint bg, flat menu, left accent active -->
+  <!-- v.21.84.0527: Sidebar match legacy - cream mint bg, flat menu, left accent active -->
   <aside :class="['bg-white dark:bg-slate-900 text-slate-700 dark:text-white flex-shrink-0 flex flex-col absolute inset-y-0 left-0 transform transition-all duration-300 z-50 shadow-xl border-r border-emerald-100 dark:border-white/5 md:relative overflow-hidden', ui.sidebarOpen ? 'translate-x-0 w-72' : '-translate-x-full w-72 md:translate-x-0 md:w-0 md:border-0 md:shadow-none']" aria-label="Sidebar navigasi">
     <div class="px-6 pt-8 pb-6 flex flex-col items-center gap-3 relative bg-emerald-50/60 dark:bg-black/20">
       <button @click="ui.closeSidebar()" class="md:hidden absolute top-4 right-4 text-slate-500 hover:text-slate-700 dark:text-white/70 dark:hover:text-white text-xl" aria-label="Tutup sidebar">
@@ -19,21 +19,21 @@
 
     <nav class="flex-1 overflow-y-auto py-4 px-3 custom-scrollbar border-t border-emerald-100 dark:border-white/10" aria-label="Menu utama">
       <template v-for="(items, group) in groupedMenus" :key="group">
-        <p :class="['text-[10px] font-bold uppercase tracking-widest pl-2 mb-1 mt-4 first:mt-1 flex items-center gap-1.5', group === 'Keuangan' ? 'text-amber-700 dark:text-amber-300' : 'text-slate-500 dark:text-slate-400']">
+        <p :class="['text-[10px] font-bold uppercase tracking-widest pl-2 mb-1 mt-4 first:mt-1 flex items-center gap-1.5', group === 'Keuangan' ? 'text-cyan-700 dark:text-cyan-300' : 'text-slate-500 dark:text-slate-400']">
           <i :class="['fas', groupIcon(group), 'text-[11px] opacity-80']"></i>{{ group }}
         </p>
         <button v-for="m in items" :key="m.path" @click="handleClick(m)" :class="[
           'menu-item w-full text-left px-3 py-2.5 rounded-lg transition-colors flex items-center gap-3 font-semibold text-[14px] border-l-[3px]',
           isActive(m.path)
             ? group === 'Keuangan'
-              ? 'border-amber-600 text-amber-800 bg-amber-50 dark:border-amber-400 dark:text-amber-100 dark:bg-amber-700/20'
+              ? 'border-cyan-600 text-cyan-800 bg-cyan-50 dark:border-cyan-400 dark:text-cyan-100 dark:bg-cyan-700/20'
               : 'border-teal-600 text-teal-800 bg-teal-50 dark:border-teal-400 dark:text-white dark:bg-teal-700/30'
             : group === 'Keuangan'
-              ? 'border-transparent text-amber-800 hover:bg-amber-50 dark:text-amber-100 dark:hover:bg-amber-900/20'
+              ? 'border-transparent text-cyan-800 hover:bg-cyan-50 dark:text-cyan-100 dark:hover:bg-cyan-900/20'
               : 'border-transparent text-slate-700 hover:bg-emerald-100/50 dark:text-slate-300 dark:hover:bg-white/5',
           !m.available ? 'opacity-55' : ''
         ]" :title="m.available ? '' : 'Halaman ini masih di versi lama, akan dimigrasi'">
-          <i :class="['fas', m.icon, 'w-5 text-center text-[15px]', isActive(m.path) ? (group === 'Keuangan' ? 'text-amber-600 dark:text-amber-300' : 'text-teal-600 dark:text-teal-300') : 'text-slate-500 dark:text-slate-400']"></i>
+          <i :class="['fas', m.icon, 'w-5 text-center text-[15px]', isActive(m.path) ? (group === 'Keuangan' ? 'text-cyan-600 dark:text-cyan-300' : 'text-teal-600 dark:text-teal-300') : 'text-slate-500 dark:text-slate-400']"></i>
           <span class="flex-1">{{ m.name }}</span>
           <span v-if="!m.available" class="text-[8px] bg-slate-200 text-slate-600 dark:bg-white/10 dark:text-white/60 px-1.5 py-0.5 rounded uppercase tracking-wider">Legacy</span>
         </button>
@@ -45,7 +45,7 @@
         © 2026 Mambaul Ulum
       </p>
       <p class="text-[9px] text-teal-600 dark:text-teal-400 font-bold tracking-widest mt-0.5">
-        v.21.10.0526
+        v.21.84.0527
       </p>
     </div>
   </aside>
@@ -149,7 +149,7 @@ function handleClick(menu) {
   }
   const { pathOnly, query } = _parseMenuPath(menu.path)
   router.push({ path: pathOnly, query }).catch(() => {})
-  // v.21.10.0526: kyai req — hanya close sidebar di MOBILE setelah klik menu.
+  // v.21.84.0527: kyai req — hanya close sidebar di MOBILE setelah klik menu.
   // Desktop tetap open kecuali user explicit klik hamburger.
   if (typeof window !== 'undefined' && window.innerWidth < 768) {
     ui.closeSidebar()

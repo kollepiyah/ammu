@@ -1,43 +1,43 @@
 <template>
   <div class="p-3 md:p-5 max-w-6xl mx-auto space-y-4">
-    <div v-if="!isFullAccess" class="bg-white dark:bg-slate-800 rounded-2xl p-10 border border-dashed border-rose-300 text-center">
+    <div v-if="!isFullAccess" class="bg-[var(--bg-card)] rounded-2xl p-10 border border-dashed border-rose-300 text-center">
       <i class="fas fa-lock text-rose-300 text-4xl mb-3"></i>
-      <p class="text-sm font-bold text-slate-700 dark:text-slate-300">Akses Keuangan terbatas</p>
-      <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Hanya admin keuangan atau super admin.</p>
+      <p class="text-sm font-bold text-slate-700 dark:text-[var(--text-tertiary)]">Akses Keuangan terbatas</p>
+      <p class="text-xs text-[var(--text-secondary)] mt-1">Hanya admin keuangan atau super admin.</p>
     </div>
 
     <template v-else>
       <!-- Header -->
-      <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-5 border border-slate-200 dark:border-slate-700 shadow-sm">
-        <h1 class="text-xl md:text-2xl font-black text-slate-800 dark:text-white">
+      <div class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm">
+        <h1 class="text-xl md:text-2xl font-black text-[var(--text-primary)]">
           <i class="fas fa-chart-line text-teal-500 mr-2"></i>Dashboard Keuangan
         </h1>
-        <p class="text-xs text-slate-500 mt-0.5">Overview keuangan pondok realtime + tren 12 bulan</p>
+        <p class="text-xs text-[var(--text-secondary)] mt-0.5">Overview keuangan pondok realtime + tren 12 bulan</p>
       </div>
 
       <!-- v.72.15.0526: 7 Quick Actions (+ Hutang Piutang baru) -->
       <div class="grid grid-cols-4 md:grid-cols-7 gap-2 md:gap-3">
-        <router-link to="/pos-santri" class="group relative overflow-hidden bg-gradient-to-br from-rose-500 to-rose-700 rounded-xl p-2.5 md:p-3 text-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col items-center justify-center gap-1 text-center">
+        <router-link to="/pos-santri" class="group relative overflow-hidden bg-gradient-to-br from-rose-500 dark:from-rose-700 to-rose-700 dark:to-rose-900 rounded-xl p-2.5 md:p-3 text-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col items-center justify-center gap-1 text-center">
           <i class="fas fa-cash-register text-base md:text-lg drop-shadow"></i>
           <p class="text-[10px] md:text-xs font-black leading-tight drop-shadow-sm">POS Santri</p>
         </router-link>
-        <router-link to="/tabungan" class="group relative overflow-hidden bg-gradient-to-br from-emerald-500 to-emerald-700 rounded-xl p-2.5 md:p-3 text-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col items-center justify-center gap-1 text-center">
+        <router-link to="/tabungan" class="group relative overflow-hidden bg-gradient-to-br from-emerald-500 dark:from-emerald-700 to-emerald-700 dark:to-emerald-900 rounded-xl p-2.5 md:p-3 text-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col items-center justify-center gap-1 text-center">
           <i class="fas fa-piggy-bank text-base md:text-lg drop-shadow"></i>
           <p class="text-[10px] md:text-xs font-black leading-tight drop-shadow-sm">Tabungan</p>
         </router-link>
-        <router-link to="/bisyaroh" class="group relative overflow-hidden bg-gradient-to-br from-amber-500 to-amber-700 rounded-xl p-2.5 md:p-3 text-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col items-center justify-center gap-1 text-center">
+        <router-link to="/bisyaroh" class="group relative overflow-hidden bg-gradient-to-br from-cyan-500 dark:from-cyan-700 to-cyan-700 dark:to-cyan-900 rounded-xl p-2.5 md:p-3 text-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col items-center justify-center gap-1 text-center">
           <i class="fas fa-hand-holding-usd text-base md:text-lg drop-shadow"></i>
           <p class="text-[10px] md:text-xs font-black leading-tight drop-shadow-sm">Bisyaroh Guru</p>
         </router-link>
-        <router-link to="/buku-induk" class="group relative overflow-hidden bg-gradient-to-br from-indigo-500 to-indigo-700 rounded-xl p-2.5 md:p-3 text-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col items-center justify-center gap-1 text-center">
+        <router-link to="/buku-induk" class="group relative overflow-hidden bg-gradient-to-br from-cyan-500 dark:from-cyan-700 to-cyan-700 dark:to-cyan-900 rounded-xl p-2.5 md:p-3 text-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col items-center justify-center gap-1 text-center">
           <i class="fas fa-book text-base md:text-lg drop-shadow"></i>
           <p class="text-[10px] md:text-xs font-black leading-tight drop-shadow-sm">Buku Induk</p>
         </router-link>
-        <router-link to="/laporan-keuangan" class="group relative overflow-hidden bg-gradient-to-br from-purple-500 to-purple-700 rounded-xl p-2.5 md:p-3 text-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col items-center justify-center gap-1 text-center">
+        <router-link to="/laporan-keuangan" class="group relative overflow-hidden bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-hover)] rounded-xl p-2.5 md:p-3 text-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col items-center justify-center gap-1 text-center">
           <i class="fas fa-chart-bar text-base md:text-lg drop-shadow"></i>
           <p class="text-[10px] md:text-xs font-black leading-tight drop-shadow-sm">Laporan & Chart</p>
         </router-link>
-        <router-link to="/hutang-piutang" class="group relative overflow-hidden bg-gradient-to-br from-pink-500 to-rose-700 rounded-xl p-2.5 md:p-3 text-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col items-center justify-center gap-1 text-center">
+        <router-link to="/hutang-piutang" class="group relative overflow-hidden bg-gradient-to-br from-rose-500 dark:from-rose-700 to-rose-700 dark:to-rose-900 rounded-xl p-2.5 md:p-3 text-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col items-center justify-center gap-1 text-center">
           <i class="fas fa-handshake text-base md:text-lg drop-shadow"></i>
           <p class="text-[10px] md:text-xs font-black leading-tight drop-shadow-sm">Hutang Piutang</p>
         </router-link>
@@ -49,33 +49,33 @@
 
       <!-- KPI Cards -->
       <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <router-link to="/tagihan" class="block bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition">
-          <p class="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Tagihan Aktif</p>
+        <router-link to="/tagihan" class="block bg-[var(--bg-card)] p-4 rounded-2xl border border-[var(--border-subtle)] shadow-sm hover:shadow-md transition">
+          <p class="text-[10px] uppercase font-bold text-[var(--text-secondary)] tracking-wider">Tagihan Aktif</p>
           <p class="text-2xl font-black text-rose-600 dark:text-rose-400 mt-1">{{ stats.tagihanCount }}</p>
-          <p class="text-[11px] text-slate-500 mt-1 font-bold">{{ fmtRp(stats.totalTagihan) }}</p>
+          <p class="text-[11px] text-[var(--text-secondary)] mt-1 font-bold">{{ fmtRp(stats.totalTagihan) }}</p>
         </router-link>
-        <router-link to="/tabungan" class="block bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition">
-          <p class="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Tabungan Santri</p>
+        <router-link to="/tabungan" class="block bg-[var(--bg-card)] p-4 rounded-2xl border border-[var(--border-subtle)] shadow-sm hover:shadow-md transition">
+          <p class="text-[10px] uppercase font-bold text-[var(--text-secondary)] tracking-wider">Tabungan Santri</p>
           <p class="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1">{{ tabunganSantri.length }}</p>
-          <p class="text-[11px] text-slate-500 mt-1 font-bold">{{ fmtRp(stats.totalTabunganSantri) }}</p>
+          <p class="text-[11px] text-[var(--text-secondary)] mt-1 font-bold">{{ fmtRp(stats.totalTabunganSantri) }}</p>
         </router-link>
-        <router-link to="/bisyaroh" class="block bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition">
-          <p class="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Slip Bisyaroh</p>
-          <p class="text-2xl font-black text-amber-600 dark:text-amber-400 mt-1">{{ gaji.length }}</p>
-          <p class="text-[11px] text-slate-500 mt-1 font-bold">{{ fmtRp(stats.totalBisyarohBulan) }}</p>
+        <router-link to="/bisyaroh" class="block bg-[var(--bg-card)] p-4 rounded-2xl border border-[var(--border-subtle)] shadow-sm hover:shadow-md transition">
+          <p class="text-[10px] uppercase font-bold text-[var(--text-secondary)] tracking-wider">Slip Bisyaroh</p>
+          <p class="text-2xl font-black text-cyan-600 dark:text-cyan-400 mt-1">{{ gaji.length }}</p>
+          <p class="text-[11px] text-[var(--text-secondary)] mt-1 font-bold">{{ fmtRp(stats.totalBisyarohBulan) }}</p>
         </router-link>
-        <router-link to="/buku-induk" class="block bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition">
-          <p class="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Buku Induk</p>
-          <p class="text-2xl font-black text-indigo-600 dark:text-indigo-400 mt-1">{{ bukuInduk.length }}</p>
-          <p class="text-[11px] text-slate-500 mt-1 font-bold">entries</p>
+        <router-link to="/buku-induk" class="block bg-[var(--bg-card)] p-4 rounded-2xl border border-[var(--border-subtle)] shadow-sm hover:shadow-md transition">
+          <p class="text-[10px] uppercase font-bold text-[var(--text-secondary)] tracking-wider">Buku Induk</p>
+          <p class="text-2xl font-black text-cyan-600 dark:text-cyan-400 mt-1">{{ bukuInduk.length }}</p>
+          <p class="text-[11px] text-[var(--text-secondary)] mt-1 font-bold">entries</p>
         </router-link>
       </div>
 
       <!-- v.72.5: Charts row — Pemasukan vs Pengeluaran 12 bulan + Saldo Berjalan -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <!-- Bar chart Pemasukan vs Pengeluaran 12 bulan -->
-        <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-5 border border-slate-200 dark:border-slate-700 shadow-sm">
-          <h3 class="text-sm font-black text-slate-700 dark:text-slate-300 uppercase tracking-wide mb-2">
+        <div class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm">
+          <h3 class="text-sm font-black text-slate-700 dark:text-[var(--text-tertiary)] uppercase tracking-wide mb-2">
             <i class="fas fa-chart-column text-emerald-500 mr-1"></i>Pemasukan vs Pengeluaran (12 Bulan)
           </h3>
           <div class="flex gap-3 text-[10px] font-bold mb-1">
@@ -96,11 +96,11 @@
         </div>
 
         <!-- Line chart Saldo Berjalan -->
-        <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-5 border border-slate-200 dark:border-slate-700 shadow-sm">
-          <h3 class="text-sm font-black text-slate-700 dark:text-slate-300 uppercase tracking-wide mb-2">
-            <i class="fas fa-chart-line text-blue-500 mr-1"></i>Saldo Berjalan Bulanan
+        <div class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm">
+          <h3 class="text-sm font-black text-slate-700 dark:text-[var(--text-tertiary)] uppercase tracking-wide mb-2">
+            <i class="fas fa-chart-line text-cyan-500 mr-1"></i>Saldo Berjalan Bulanan
           </h3>
-          <p class="text-[10px] text-slate-500 mb-1">Saldo: {{ fmtRp(saldoData.last) }}</p>
+          <p class="text-[10px] text-[var(--text-secondary)] mb-1">Saldo: {{ fmtRp(saldoData.last) }}</p>
           <svg width="100%" height="220" viewBox="0 0 600 220" preserveAspectRatio="none" class="block">
             <g v-for="(line, i) in saldoGrid" :key="`sg-${i}`">
               <line :x1="50" :y1="line.y" x2="595" :y2="line.y" stroke="#e2e8f0" stroke-dasharray="3,3" />
@@ -117,11 +117,11 @@
       </div>
 
       <!-- v.72.5: Breakdown Kategori Pengeluaran (Bulan Ini) -->
-      <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-5 border border-slate-200 dark:border-slate-700 shadow-sm">
-        <h3 class="text-sm font-black text-slate-700 dark:text-slate-300 uppercase tracking-wide mb-3">
+      <div class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm">
+        <h3 class="text-sm font-black text-slate-700 dark:text-[var(--text-tertiary)] uppercase tracking-wide mb-3">
           <i class="fas fa-chart-pie text-rose-500 mr-1"></i>Breakdown Kategori Pengeluaran (Bulan Ini)
         </h3>
-        <div v-if="kategoriBulanIni.length === 0" class="text-center py-6 text-xs text-slate-400 italic">
+        <div v-if="kategoriBulanIni.length === 0" class="text-center py-6 text-xs text-[var(--text-tertiary)] italic">
           Belum ada pengeluaran bulan ini.
         </div>
         <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
@@ -140,9 +140,9 @@
           <div class="space-y-1.5">
             <div v-for="(k, i) in kategoriBulanIni" :key="k.nama" class="flex items-center gap-2">
               <span :style="{ background: PALETTE[i % PALETTE.length] }" class="w-3 h-3 rounded inline-block flex-shrink-0"></span>
-              <p class="text-xs font-bold text-slate-700 dark:text-slate-200 flex-1 truncate">{{ k.nama }}</p>
-              <p class="text-xs font-black text-slate-800 dark:text-white">{{ fmtRp(k.total) }}</p>
-              <p class="text-[10px] text-slate-500 w-10 text-right">{{ k.pct }}%</p>
+              <p class="text-xs font-bold text-[var(--text-primary)] flex-1 truncate">{{ k.nama }}</p>
+              <p class="text-xs font-black text-[var(--text-primary)]">{{ fmtRp(k.total) }}</p>
+              <p class="text-[10px] text-[var(--text-secondary)] w-10 text-right">{{ k.pct }}%</p>
             </div>
           </div>
         </div>

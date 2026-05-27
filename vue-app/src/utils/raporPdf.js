@@ -449,7 +449,7 @@ async function generateTpqPdf(doc, y, santri, schema, raporState, settings) {
       startY: y,
       head: heads,
       body,
-      styles: { font: doc._fontMU, fontSize: 8, cellPadding: 1.5, halign: 'center' },
+      styles: { font: doc._fontMU, fontSize: 7.5, cellPadding: 1.0, halign: 'center', valign: 'middle', overflow: 'linebreak', lineColor: [80,80,80], lineWidth: 0.15 },
       headStyles: { fillColor: [255, 255, 255], textColor: 0, lineWidth: 0.15 },
       alternateRowStyles: { fillColor: [255, 255, 255] } // v.21.51: no zebra
     })
@@ -460,7 +460,7 @@ async function generateTpqPdf(doc, y, santri, schema, raporState, settings) {
   drawTable(doc, {
     startY: y,
     body: [['Nilai Rata-rata', fmtNilai(avg)]],
-    styles: { font: doc._fontMU, fontSize: 9, fontStyle: 'bold', halign: 'center' },
+    styles: { font: doc._fontMU, fontSize: 8.5, fontStyle: 'bold', halign: 'center', cellPadding: 1.2 },
     columnStyles: { 0: { cellWidth: 100 }, 1: { cellWidth: 'auto' } }
   })
   return doc.lastAutoTable?.finalY || y
@@ -534,8 +534,8 @@ async function generatePraPtptPdf(doc, y, santri, schema, raporState, settings) 
     tableWidth: 185,
     styles: {
       font: doc._fontMU,
-      fontSize: 7.5,
-      cellPadding: 1.6,
+      fontSize: 7,
+      cellPadding: 0.9,
       halign: 'center',
       valign: 'middle',
       lineWidth: 0.15,
@@ -548,8 +548,8 @@ async function generatePraPtptPdf(doc, y, santri, schema, raporState, settings) 
       fontStyle: 'bold',
       halign: 'center',
       valign: 'middle',
-      fontSize: 7.2,
-      cellPadding: 1.8
+      fontSize: 6.8,
+      cellPadding: 1.0
     },
     alternateRowStyles: { fillColor: [255, 255, 255] },
     columnStyles: {
@@ -668,54 +668,64 @@ async function generatePtptPdf(doc, y, santri, schema, raporState, settings) {
 
   // PTPT auto-compact threshold (kyai spec v.21.43) — 5 step density
   // Kelas 1 → 5 rows spacious; Kelas 5-6 → 25-30 rows compact untuk muat 1 halaman
+  // v.21.86: lebih compact + Predikat width lebih lebar untuk teks "Sangat Baik"
   let fSize, cPad
   const n = body.length
   if (n <= 5) {
-    fSize = 10
-    cPad = 3.0
-  } // Kelas 1: spacious
-  else if (n <= 10) {
     fSize = 9
-    cPad = 2.2
-  } // Kelas 2: medium
-  else if (n <= 20) {
+    cPad = 1.8
+  } else if (n <= 10) {
+    fSize = 8.5
+    cPad = 1.4
+  } else if (n <= 20) {
     fSize = 8
-    cPad = 1.5
-  } // Kelas 3-4: standard
-  else if (n <= 30) {
-    fSize = 6.5
+    cPad = 1.0
+  } else if (n <= 30) {
+    fSize = 7
     cPad = 0.6
-  } // Kelas 5-6: compact
-  else {
-    fSize = 5.5
+  } else {
+    fSize = 6
     cPad = 0.4
-  } // overflow: ultra compact
+  }
 
   drawTable(doc, {
     startY: y,
     head,
     body,
+    theme: 'grid',
     styles: {
       font: doc._fontMU,
       fontSize: fSize,
       cellPadding: cPad,
       halign: 'center',
-      overflow: 'linebreak'
+      valign: 'middle',
+      overflow: 'linebreak',
+      lineColor: [80, 80, 80],
+      lineWidth: 0.15
     },
-    headStyles: { fillColor: [255, 255, 255], textColor: 0, lineWidth: 0.15, valign: 'middle' },
-    alternateRowStyles: { fillColor: [255, 255, 255] }, // v.21.51: no zebra
-    // v.21.56: fixed columnStyles supaya tidak overflow F4 (215mm width, usable 187mm)
+    headStyles: {
+      fillColor: [255, 255, 255],
+      textColor: 0,
+      fontStyle: 'bold',
+      lineWidth: 0.2,
+      lineColor: [60, 60, 60],
+      valign: 'middle',
+      halign: 'center'
+    },
+    alternateRowStyles: { fillColor: [255, 255, 255] },
+    // F4 width 215mm - margin 14*2 = 187mm usable. Total: 14+12+28+22+22+22+22+16+24 = 182mm
     columnStyles: {
-      0: { cellWidth: 16 }, // Kelas
-      1: { cellWidth: 12 }, // Juz
-      2: { cellWidth: 30 }, // v.21.59: Tanggal Khotam lebih lebar (28 hijack)
-      3: { cellWidth: 22 }, // Fashohah
-      4: { cellWidth: 22 }, // Tartil
-      5: { cellWidth: 22 }, // Istimror
-      6: { cellWidth: 22 }, // Kelancaran
-      7: { cellWidth: 18 }, // Adab
-      8: { cellWidth: 16 } // v.21.59: Predikat kecilkan (28 → 16)
-    }
+      0: { cellWidth: 14 },  // Kelas
+      1: { cellWidth: 12 },  // Juz
+      2: { cellWidth: 28 },  // Tanggal Khotam
+      3: { cellWidth: 22 },  // Fashohah
+      4: { cellWidth: 22 },  // Tartil
+      5: { cellWidth: 22 },  // Istimror
+      6: { cellWidth: 22 },  // Kelancaran
+      7: { cellWidth: 16 },  // Adab
+      8: { cellWidth: 24 }   // Predikat lebih lebar
+    },
+    margin: { left: 14, right: 14 }
   })
 
   y = doc.lastAutoTable.finalY + 2
@@ -723,7 +733,7 @@ async function generatePtptPdf(doc, y, santri, schema, raporState, settings) {
   drawTable(doc, {
     startY: y,
     body: [['Nilai Rata-rata', fmtNilai(avg)]],
-    styles: { font: doc._fontMU, fontSize: 9, fontStyle: 'bold', halign: 'center' },
+    styles: { font: doc._fontMU, fontSize: 8.5, fontStyle: 'bold', halign: 'center', cellPadding: 1.2 },
     columnStyles: { 0: { cellWidth: 100 } }
   })
   return doc.lastAutoTable.finalY || y
@@ -750,7 +760,7 @@ async function generateDiniyahPdf(doc, y, santri, schema, raporState, settings) 
     startY: y,
     head,
     body,
-    styles: { font: doc._fontMU, fontSize: 9, cellPadding: 2, halign: 'center' },
+    styles: { font: doc._fontMU, fontSize: 8, cellPadding: 1.2, halign: 'center', valign: 'middle', overflow: 'linebreak', lineColor: [80,80,80], lineWidth: 0.15 },
     headStyles: { fillColor: [255, 255, 255], textColor: 0, lineWidth: 0.15 },
     alternateRowStyles: { fillColor: [255, 255, 255] }, // v.21.51: no zebra
     columnStyles: { 1: { halign: 'left', fontStyle: 'bold' } }
@@ -786,7 +796,7 @@ export async function generateRaporPdf({
   } else if (lembaga === 'PTPT') {
     y = await generatePtptPdf(doc, y, santri, schema, raporState, settings)
   } else {
-    y = await generatePdf(doc, y, santri, schema, raporState, settings)
+    y = await generateTpqPdf(doc, y, santri, schema, raporState, settings)
   }
 
   y = drawAbsensiKepribadian(doc, y + 4, raporState.absensi, raporState.kepribadian)

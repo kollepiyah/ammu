@@ -3,26 +3,26 @@
     <!-- No access -->
     <div
       v-if="!isAdminKeu && !isGuru"
-      class="bg-white dark:bg-slate-800 rounded-2xl p-10 border border-dashed border-rose-300 text-center"
+      class="bg-[var(--bg-card)] rounded-2xl p-10 border border-dashed border-rose-300 text-center"
     >
       <i class="fas fa-lock text-rose-300 text-4xl mb-3"></i>
-      <p class="text-sm font-bold text-slate-700 dark:text-slate-300">Akses Keuangan terbatas</p>
+      <p class="text-sm font-bold text-slate-700 dark:text-[var(--text-tertiary)]">Akses Keuangan terbatas</p>
     </div>
 
     <!-- ADMIN KEUANGAN -->
     <template v-else-if="isAdminKeu">
       <!-- Header + Tabs -->
       <div
-        class="bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-5 border border-slate-200 dark:border-slate-700 shadow-sm"
+        class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
       >
-        <h2 class="text-base md:text-lg font-black text-slate-800 dark:text-white">
+        <h2 class="text-base md:text-lg font-black text-[var(--text-primary)]">
           <i class="fas fa-money-check-alt text-emerald-600 mr-2"></i>Bisyaroh Guru/Pegawai
         </h2>
-        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+        <p class="text-xs text-[var(--text-secondary)] mt-1">
           Generate slip bisyaroh bulanan, terhubung dengan absensi &amp; bisyaroh pokok.
         </p>
         <div
-          class="flex gap-2 border-b border-slate-200 dark:border-slate-700 mt-4 overflow-x-auto"
+          class="flex gap-2 border-b border-[var(--border-subtle)] mt-4 overflow-x-auto"
         >
           <button
             @click="mainTab = 'generate'"
@@ -30,7 +30,7 @@
               'px-4 py-2.5 text-xs font-black uppercase tracking-wider border-b-2 whitespace-nowrap cursor-pointer transition',
               mainTab === 'generate'
                 ? 'border-emerald-500 text-emerald-700'
-                : 'border-transparent text-slate-500 hover:text-emerald-700'
+                : 'border-transparent text-[var(--text-secondary)] hover:text-emerald-700'
             ]"
           >
             <i class="fas fa-file-invoice-dollar mr-1"></i>Generate Slip Bisyaroh
@@ -41,7 +41,7 @@
               'px-4 py-2.5 text-xs font-black uppercase tracking-wider border-b-2 whitespace-nowrap cursor-pointer transition',
               mainTab === 'riwayat'
                 ? 'border-emerald-500 text-emerald-700'
-                : 'border-transparent text-slate-500 hover:text-emerald-700'
+                : 'border-transparent text-[var(--text-secondary)] hover:text-emerald-700'
             ]"
           >
             <i class="fas fa-history mr-1"></i>Riwayat Slip
@@ -53,7 +53,7 @@
       <div v-if="mainTab === 'generate'" class="space-y-4">
         <!-- Sub-tab switcher -->
         <div
-          class="bg-white dark:bg-slate-800 rounded-2xl p-2 border border-slate-200 dark:border-slate-700 shadow-sm flex gap-1"
+          class="bg-[var(--bg-card)] rounded-2xl p-2 border border-[var(--border-subtle)] shadow-sm flex gap-1"
         >
           <button
             @click="subTab = 'single'"
@@ -61,7 +61,7 @@
               'flex-1 px-4 py-2 text-xs font-black uppercase tracking-wider rounded-lg transition cursor-pointer',
               subTab === 'single'
                 ? 'bg-emerald-600 text-white'
-                : 'text-slate-500 hover:bg-emerald-50'
+                : 'text-[var(--text-secondary)] hover:bg-emerald-50'
             ]"
           >
             <i class="fas fa-user mr-1"></i>Per Guru
@@ -70,7 +70,7 @@
             @click="subTab = 'bulk'"
             :class="[
               'flex-1 px-4 py-2 text-xs font-black uppercase tracking-wider rounded-lg transition cursor-pointer',
-              subTab === 'bulk' ? 'bg-emerald-600 text-white' : 'text-slate-500 hover:bg-emerald-50'
+              subTab === 'bulk' ? 'bg-emerald-600 text-white' : 'text-[var(--text-secondary)] hover:bg-emerald-50'
             ]"
           >
             <i class="fas fa-users mr-1"></i>Bulk Generate
@@ -80,11 +80,11 @@
         <!-- SUB-TAB: SINGLE (Per Guru) -->
         <div
           v-if="subTab === 'single'"
-          class="bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-5 border border-slate-200 dark:border-slate-700 shadow-sm space-y-4"
+          class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm space-y-4"
         >
           <!-- Filter Tipe -->
           <div>
-            <p class="text-[10px] font-bold text-slate-500 uppercase mb-2 tracking-wider">
+            <p class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-2 tracking-wider">
               Filter Tipe Pegawai
             </p>
             <div class="flex gap-2 flex-wrap">
@@ -96,7 +96,7 @@
                   'px-3 py-1.5 text-xs font-bold rounded-lg cursor-pointer transition',
                   filterTipe === t.value
                     ? 'bg-emerald-600 text-white'
-                    : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
+                    : 'bg-slate-200 text-[var(--text-primary)] hover:bg-slate-300'
                 ]"
               >
                 {{ t.label }}
@@ -108,24 +108,24 @@
           <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div>
               <label
-                class="text-[10px] font-bold text-slate-500 uppercase mb-1 block tracking-wider"
+                class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block tracking-wider"
                 >Pilih Guru/Pegawai</label
               >
               <input
                 v-model="searchGuru"
                 type="text"
                 placeholder="Ketik nama guru..."
-                class="w-full text-sm px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white"
+                class="w-full text-sm px-3 py-2 border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
               />
             </div>
             <div>
               <label
-                class="text-[10px] font-bold text-slate-500 uppercase mb-1 block tracking-wider"
+                class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block tracking-wider"
                 >Bulan</label
               >
               <select
                 v-model.number="bulan"
-                class="w-full text-sm px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white"
+                class="w-full text-sm px-3 py-2 border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
               >
                 <option v-for="(m, idx) in BULAN_NAMES" :key="m" :value="idx + 1">
                   {{ m }}
@@ -134,7 +134,7 @@
             </div>
             <div>
               <label
-                class="text-[10px] font-bold text-slate-500 uppercase mb-1 block tracking-wider"
+                class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block tracking-wider"
                 >Tahun</label
               >
               <input
@@ -142,19 +142,19 @@
                 type="number"
                 min="2024"
                 max="2030"
-                class="w-full text-sm px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white"
+                class="w-full text-sm px-3 py-2 border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
               />
             </div>
           </div>
 
           <!-- Daftar guru -->
           <div>
-            <p class="text-[10px] font-bold text-slate-500 uppercase mb-2 tracking-wider">
+            <p class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-2 tracking-wider">
               Daftar Guru — {{ filteredGuru.length }} pegawai
             </p>
             <div
               v-if="filteredGuru.length === 0"
-              class="py-6 text-center text-xs text-slate-400 italic"
+              class="py-6 text-center text-xs text-[var(--text-tertiary)] italic"
             >
               Tidak ada guru sesuai filter.
             </div>
@@ -171,7 +171,7 @@
                 ]"
               >
                 <p class="font-bold text-sm">{{ g.nama }}</p>
-                <p class="text-[10px] text-slate-500">
+                <p class="text-[10px] text-[var(--text-secondary)]">
                   {{ g.lembaga || '-' }} · {{ guruTipeLabel(g) }}
                 </p>
               </button>
@@ -197,11 +197,11 @@
               <div
                 v-for="(li, idx) in form.line_items"
                 :key="idx"
-                class="grid grid-cols-[1fr_140px_30px] gap-2 items-center bg-white rounded-lg px-3 py-2 border border-emerald-200"
+                class="grid grid-cols-[1fr_140px_30px] gap-2 items-center bg-[var(--bg-card)] rounded-lg px-3 py-2 border border-emerald-200"
               >
                 <div>
-                  <p class="text-xs font-bold text-slate-800">{{ li.label }}</p>
-                  <p class="text-[10px] text-slate-500">
+                  <p class="text-xs font-bold text-[var(--text-primary)]">{{ li.label }}</p>
+                  <p class="text-[10px] text-[var(--text-secondary)]">
                     {{ li.lembaga || '—' }} ·
                     <span class="font-bold uppercase">{{ li.kategori }}</span>
                   </p>
@@ -210,7 +210,7 @@
                   v-model.number="li.nominal"
                   type="number"
                   min="0"
-                  class="text-sm px-2 py-1.5 border border-slate-300 rounded-lg bg-white text-right"
+                  class="text-sm px-2 py-1.5 border border-[var(--border-default)] rounded-lg bg-[var(--bg-card)] text-right"
                 />
                 <button
                   @click="form.line_items.splice(idx, 1)"
@@ -237,7 +237,7 @@
                   v-model.number="form.total_potongan"
                   type="number"
                   min="0"
-                  class="text-sm px-2 py-1.5 border border-rose-300 rounded-lg bg-white text-right"
+                  class="text-sm px-2 py-1.5 border border-rose-300 rounded-lg bg-[var(--bg-card)] text-right"
                 />
                 <span></span>
               </div>
@@ -250,7 +250,7 @@
               <button
                 @click="saveSlipSingle"
                 :disabled="saving"
-                class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black px-5 py-2 rounded-lg shadow disabled:opacity-50 cursor-pointer"
+                class="bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-xs font-black px-5 py-2 rounded-lg shadow disabled:opacity-50 cursor-pointer"
               >
                 <i class="fas fa-save mr-1"></i>
                 {{ saving ? 'Menyimpan...' : 'Simpan Slip' }}
@@ -262,17 +262,17 @@
         <!-- SUB-TAB: BULK -->
         <div
           v-else
-          class="bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-5 border border-slate-200 dark:border-slate-700 shadow-sm space-y-3"
+          class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm space-y-3"
         >
-          <p class="text-sm font-black text-slate-800 dark:text-white">
+          <p class="text-sm font-black text-[var(--text-primary)]">
             <i class="fas fa-users text-emerald-600 mr-2"></i>Bulk Generate Slip Bisyaroh
           </p>
-          <p class="text-xs text-slate-500">
+          <p class="text-xs text-[var(--text-secondary)]">
             Generate slip untuk SEMUA guru aktif sekaligus berdasar bisyaroh pokok di Pengaturan
             Keuangan ({{ BULAN_NAMES[bulan - 1] }} {{ tahun }}).
           </p>
           <div>
-            <p class="text-[10px] font-bold text-slate-500 uppercase mb-1 tracking-wider">
+            <p class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 tracking-wider">
               Generate untuk:
             </p>
             <div class="flex gap-2 flex-wrap">
@@ -284,7 +284,7 @@
                   'px-3 py-1.5 text-xs font-bold rounded-lg cursor-pointer transition',
                   bulkTipe === t.value
                     ? 'bg-emerald-600 text-white'
-                    : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
+                    : 'bg-slate-200 text-[var(--text-primary)] hover:bg-slate-300'
                 ]"
               >
                 {{ t.label }}
@@ -293,10 +293,10 @@
           </div>
           <div class="grid grid-cols-2 gap-2">
             <div>
-              <label class="text-[10px] font-bold text-slate-500 uppercase mb-1 block">Bulan</label>
+              <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block">Bulan</label>
               <select
                 v-model.number="bulan"
-                class="w-full text-sm px-3 py-2 border border-slate-300 rounded-lg bg-slate-50"
+                class="w-full text-sm px-3 py-2 border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)]"
               >
                 <option v-for="(m, idx) in BULAN_NAMES" :key="'bbulk-' + m" :value="idx + 1">
                   {{ m }}
@@ -304,13 +304,13 @@
               </select>
             </div>
             <div>
-              <label class="text-[10px] font-bold text-slate-500 uppercase mb-1 block">Tahun</label>
+              <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block">Tahun</label>
               <input
                 v-model.number="tahun"
                 type="number"
                 min="2024"
                 max="2030"
-                class="w-full text-sm px-3 py-2 border border-slate-300 rounded-lg bg-slate-50"
+                class="w-full text-sm px-3 py-2 border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)]"
               />
             </div>
           </div>
@@ -327,7 +327,7 @@
           <button
             @click="bulkGenerate"
             :disabled="bulkRunning || bulkTargets.length === 0"
-            class="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-sm font-black py-3 rounded-xl shadow-md disabled:opacity-50 cursor-pointer transition"
+            class="w-full bg-gradient-to-r from-emerald-600 dark:from-emerald-800 to-teal-600 dark:to-teal-800 hover:from-emerald-700 dark:from-emerald-900 hover:to-teal-700 dark:to-teal-900 text-white text-sm font-black py-3 rounded-xl shadow-md disabled:opacity-50 cursor-pointer transition"
           >
             <i :class="['fas', bulkRunning ? 'fa-spinner fa-spin' : 'fa-bolt', 'mr-2']"></i>
             {{
@@ -338,7 +338,7 @@
           </button>
           <div
             v-if="bulkLog.length > 0"
-            class="mt-3 max-h-40 overflow-y-auto bg-slate-50 dark:bg-slate-900/40 rounded-lg p-2 text-[10px] font-mono space-y-0.5"
+            class="mt-3 max-h-40 overflow-y-auto bg-[var(--bg-card-elevated)] rounded-lg p-2 text-[10px] font-mono space-y-0.5"
           >
             <p
               v-for="(line, idx) in bulkLog"
@@ -348,7 +348,7 @@
                   ? 'text-emerald-700'
                   : line.startsWith('ER')
                     ? 'text-rose-700'
-                    : 'text-slate-600'
+                    : 'text-[var(--text-secondary)]'
               "
             >
               {{ line }}
@@ -360,12 +360,12 @@
       <!-- TAB: RIWAYAT -->
       <div
         v-else
-        class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden"
+        class="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)] shadow-sm overflow-hidden"
       >
         <div
-          class="px-4 md:px-5 py-3 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between flex-wrap gap-2"
+          class="px-4 md:px-5 py-3 border-b border-[var(--border-subtle)] flex items-center justify-between flex-wrap gap-2"
         >
-          <h3 class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-widest">
+          <h3 class="text-sm font-black text-[var(--text-primary)] uppercase tracking-widest">
             <i class="fas fa-history text-emerald-600 mr-2"></i>Riwayat Slip Bisyaroh
           </h3>
           <div class="flex gap-2 items-center">
@@ -373,18 +373,18 @@
               v-model="searchRiwayat"
               type="text"
               placeholder="Cari nama..."
-              class="text-xs px-3 py-1.5 border border-slate-300 rounded-lg"
+              class="text-xs px-3 py-1.5 border border-[var(--border-default)] rounded-lg"
             />
             <select
               v-model="filterPeriode"
-              class="text-xs px-3 py-1.5 border border-slate-300 rounded-lg"
+              class="text-xs px-3 py-1.5 border border-[var(--border-default)] rounded-lg"
             >
               <option value="">Semua periode</option>
               <option v-for="p in uniquePeriode" :key="p" :value="p">
                 {{ p }}
               </option>
             </select>
-            <span class="text-[10px] text-slate-400 font-bold"
+            <span class="text-[10px] text-[var(--text-tertiary)] font-bold"
               >{{ filteredSlips.length }} slip · {{ totalTakeFmt }}</span
             >
           </div>
@@ -393,8 +393,8 @@
           <i class="fas fa-spinner fa-spin text-emerald-500 text-2xl"></i>
         </div>
         <div v-else-if="filteredSlips.length === 0" class="p-10 text-center">
-          <i class="fas fa-inbox text-slate-300 text-3xl mb-2"></i>
-          <p class="text-sm text-slate-500 italic">Belum ada slip.</p>
+          <i class="fas fa-inbox text-[var(--text-tertiary)] text-3xl mb-2"></i>
+          <p class="text-sm text-[var(--text-secondary)] italic">Belum ada slip.</p>
         </div>
         <div v-else class="divide-y divide-slate-100 dark:divide-slate-700">
           <div
@@ -404,19 +404,19 @@
           >
             <div class="flex items-center gap-3 flex-wrap">
               <div
-                class="flex-shrink-0 w-10 h-10 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center"
+                class="flex-shrink-0 w-10 h-10 rounded-full bg-cyan-100 text-cyan-700 flex items-center justify-center"
               >
                 <i class="fas fa-receipt"></i>
               </div>
               <div class="flex-1 min-w-0">
-                <p class="text-sm font-bold text-slate-800 dark:text-white truncate">
+                <p class="text-sm font-bold text-[var(--text-primary)] truncate">
                   {{ getNamaGuruGelar(slip.guru_nama || guruNamaById(slip.guru_id)) }}
                 </p>
-                <p class="text-[10px] text-slate-500">
+                <p class="text-[10px] text-[var(--text-secondary)]">
                   {{ slip.lembaga || '-' }} · {{ slip.jabatan || 'Guru' }}
                 </p>
               </div>
-              <span class="text-[10px] bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded">{{
+              <span class="text-[10px] bg-cyan-100 text-cyan-800 font-bold px-2 py-0.5 rounded">{{
                 slip.periode
               }}</span>
               <button
@@ -428,16 +428,16 @@
               </button>
             </div>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2 text-xs">
-              <div class="bg-slate-50 dark:bg-slate-900/40 rounded-lg p-2">
-                <p class="text-[9px] text-slate-500">Pokok</p>
+              <div class="bg-[var(--bg-card-elevated)] rounded-lg p-2">
+                <p class="text-[9px] text-[var(--text-secondary)]">Pokok</p>
                 <p class="font-black">{{ fmtRp(slip.bisyaroh_pokok) }}</p>
               </div>
-              <div class="bg-slate-50 dark:bg-slate-900/40 rounded-lg p-2">
-                <p class="text-[9px] text-slate-500">Sekolah</p>
+              <div class="bg-[var(--bg-card-elevated)] rounded-lg p-2">
+                <p class="text-[9px] text-[var(--text-secondary)]">Sekolah</p>
                 <p class="font-black">{{ fmtRp(slip.bisyaroh_sekolah) }}</p>
               </div>
-              <div class="bg-slate-50 dark:bg-slate-900/40 rounded-lg p-2">
-                <p class="text-[9px] text-slate-500">Tambahan</p>
+              <div class="bg-[var(--bg-card-elevated)] rounded-lg p-2">
+                <p class="text-[9px] text-[var(--text-secondary)]">Tambahan</p>
                 <p class="font-black">{{ fmtRp(slip.bisyaroh_tambahan) }}</p>
               </div>
               <div
@@ -465,12 +465,12 @@
     <!-- GURU VIEW (read-only) -->
     <template v-else>
       <div
-        class="bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-5 border border-slate-200 dark:border-slate-700 shadow-sm"
+        class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
       >
-        <h2 class="text-base md:text-lg font-black text-slate-800 dark:text-white">
-          <i class="fas fa-receipt text-amber-600 mr-2"></i>Slip Bisyaroh Saya
+        <h2 class="text-base md:text-lg font-black text-[var(--text-primary)]">
+          <i class="fas fa-receipt text-cyan-600 mr-2"></i>Slip Bisyaroh Saya
         </h2>
-        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+        <p class="text-xs text-[var(--text-secondary)] mt-1">
           Slip bisyaroh per bulan (read-only).
         </p>
       </div>
@@ -479,19 +479,19 @@
       </div>
       <div
         v-else-if="filteredSlips.length === 0"
-        class="bg-white dark:bg-slate-800 rounded-2xl p-10 border border-dashed border-slate-300 text-center"
+        class="bg-[var(--bg-card)] rounded-2xl p-10 border border-dashed border-[var(--border-default)] text-center"
       >
-        <i class="fas fa-inbox text-slate-300 text-3xl mb-2"></i>
-        <p class="text-sm text-slate-500 italic">Belum ada slip untuk Anda.</p>
+        <i class="fas fa-inbox text-[var(--text-tertiary)] text-3xl mb-2"></i>
+        <p class="text-sm text-[var(--text-secondary)] italic">Belum ada slip untuk Anda.</p>
       </div>
       <div v-else class="space-y-2">
         <div
           v-for="slip in filteredSlips"
           :key="slip.id"
-          class="bg-white dark:bg-slate-800 rounded-xl p-3 border border-slate-200 dark:border-slate-700 shadow-sm"
+          class="bg-[var(--bg-card)] rounded-xl p-3 border border-[var(--border-subtle)] shadow-sm"
         >
           <div class="flex items-center justify-between gap-2 mb-2">
-            <p class="text-sm font-bold text-slate-800 dark:text-white">
+            <p class="text-sm font-bold text-[var(--text-primary)]">
               Periode {{ slip.periode }}
             </p>
             <span
@@ -501,15 +501,15 @@
           </div>
           <div class="grid grid-cols-3 gap-2 text-xs">
             <div>
-              <p class="text-[9px] text-slate-500">Pokok</p>
+              <p class="text-[9px] text-[var(--text-secondary)]">Pokok</p>
               <p class="font-bold">{{ fmtRp(slip.bisyaroh_pokok) }}</p>
             </div>
             <div>
-              <p class="text-[9px] text-slate-500">Sekolah</p>
+              <p class="text-[9px] text-[var(--text-secondary)]">Sekolah</p>
               <p class="font-bold">{{ fmtRp(slip.bisyaroh_sekolah) }}</p>
             </div>
             <div>
-              <p class="text-[9px] text-slate-500">Tambahan</p>
+              <p class="text-[9px] text-[var(--text-secondary)]">Tambahan</p>
               <p class="font-bold">{{ fmtRp(slip.bisyaroh_tambahan) }}</p>
             </div>
           </div>

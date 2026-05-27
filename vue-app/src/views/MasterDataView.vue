@@ -249,16 +249,16 @@ const TABS = [
 
 const COLOR_CLASSES = {
   blue: {
-    active: 'bg-blue-600 text-white shadow-md',
-    inactive: 'text-slate-600 hover:bg-blue-50 hover:text-blue-700'
+    active: 'bg-cyan-600 text-white shadow-md',
+    inactive: 'text-slate-600 hover:bg-cyan-50 hover:text-cyan-700'
   },
   cyan: {
     active: 'bg-cyan-600 text-white shadow-md',
     inactive: 'text-slate-600 hover:bg-cyan-50 hover:text-cyan-700'
   },
   purple: {
-    active: 'bg-purple-600 text-white shadow-md',
-    inactive: 'text-slate-600 hover:bg-purple-50 hover:text-purple-700'
+    active: 'bg-teal-600 text-white shadow-md',
+    inactive: 'text-slate-600 hover:bg-teal-50 hover:text-teal-700'
   },
   teal: {
     active: 'bg-teal-600 text-white shadow-md',
@@ -269,8 +269,8 @@ const COLOR_CLASSES = {
     inactive: 'text-slate-600 hover:bg-emerald-50 hover:text-emerald-700'
   },
   amber: {
-    active: 'bg-amber-600 text-white shadow-md',
-    inactive: 'text-slate-600 hover:bg-amber-50 hover:text-amber-700'
+    active: 'bg-cyan-600 text-white shadow-md',
+    inactive: 'text-slate-600 hover:bg-cyan-50 hover:text-cyan-700'
   },
   rose: {
     active: 'bg-rose-600 text-white shadow-md',
@@ -635,7 +635,7 @@ async function simpanPengaturanRekap() {
         <h1
           class="text-base md:text-lg font-black text-slate-800 dark:text-white whitespace-nowrap"
         >
-          <i class="fas fa-database text-purple-600 mr-1"></i>Pusat Master Data
+          <i class="fas fa-database text-teal-600 mr-1"></i>Pusat Master Data
         </h1>
         <p class="text-[11px] text-slate-500 dark:text-slate-400">
           — Pilih kategori untuk mengelola data.
@@ -673,8 +673,8 @@ async function simpanPengaturanRekap() {
           :class="[
             'px-3 py-1.5 text-xs font-bold rounded-lg border transition cursor-pointer',
             lembagaSubTab === 'lembaga'
-              ? 'bg-blue-500 text-white border-blue-600'
-              : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-blue-50'
+              ? 'bg-cyan-500 text-white border-cyan-600'
+              : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-cyan-50'
           ]"
         >
           <i class="fas fa-building mr-1"></i>Daftar Lembaga
@@ -751,7 +751,7 @@ async function simpanPengaturanRekap() {
           <span class="flex-1 text-sm font-bold text-slate-800 dark:text-white">{{ j }}</span>
           <button
             @click="editJabatan(idx)"
-            class="text-[10px] text-blue-600 hover:underline font-bold"
+            class="text-[10px] text-cyan-600 hover:underline font-bold"
           >
             edit
           </button>
@@ -821,15 +821,15 @@ async function simpanPengaturanRekap() {
       </div>
 
       <div
-        class="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 border border-blue-200 dark:border-blue-700"
+        class="bg-cyan-50 dark:bg-cyan-900/20 rounded-xl p-4 border border-cyan-200 dark:border-cyan-700"
       >
         <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
           <h5 class="text-xs font-black text-slate-700 dark:text-slate-200 uppercase">
-            <i class="fas fa-star mr-1 text-blue-600"></i>Aturan Predikat Nilai
+            <i class="fas fa-star mr-1 text-cyan-600"></i>Aturan Predikat Nilai
           </h5>
           <button
             @click="tambahPredikat"
-            class="text-[11px] font-bold text-blue-600 hover:text-blue-800 cursor-pointer"
+            class="text-[11px] font-bold text-cyan-600 hover:text-cyan-800 cursor-pointer"
           >
             <i class="fas fa-plus mr-1"></i>Tambah Aturan
           </button>
@@ -838,7 +838,7 @@ async function simpanPengaturanRekap() {
           <div
             v-for="(p, idx) in predikatRules"
             :key="idx"
-            class="bg-white dark:bg-slate-800 rounded-lg p-2 md:p-3 border border-blue-100 dark:border-blue-700/50 grid grid-cols-12 gap-2 items-center"
+            class="bg-white dark:bg-slate-800 rounded-lg p-2 md:p-3 border border-cyan-100 dark:border-cyan-700/50 grid grid-cols-12 gap-2 items-center"
           >
             <input
               v-model.number="p.min"
@@ -878,10 +878,10 @@ async function simpanPengaturanRekap() {
       </div>
 
       <div
-        class="bg-purple-50 dark:bg-purple-900/20 rounded-xl p-4 border border-purple-200 dark:border-purple-700"
+        class="bg-teal-50 dark:bg-teal-900/20 rounded-xl p-4 border border-teal-200 dark:border-teal-700"
       >
         <h5 class="text-xs font-black text-slate-700 dark:text-slate-200 uppercase mb-2">
-          <i class="fas fa-list-alt mr-1 text-purple-600"></i>Struktur Field Rapor (Per Lembaga)
+          <i class="fas fa-list-alt mr-1 text-teal-600"></i>Struktur Field Rapor (Per Lembaga)
         </h5>
         <p class="text-[11px] text-slate-600 dark:text-slate-400 mb-3">
           Editor schema per lembaga (TPQ/Pra PTPT/PTPT/PPPH).
@@ -892,7 +892,7 @@ async function simpanPengaturanRekap() {
             v-for="lemb in ['TPQ Sore', 'Pra PTPT', 'PTPT', 'PPPH']"
             :key="lemb"
             :to="{ path: '/lembaga' }"
-            class="bg-white hover:bg-purple-100 dark:bg-slate-800 border border-purple-300 dark:border-purple-700 text-purple-700 dark:text-purple-300 font-bold px-3 py-1.5 rounded-lg text-xs cursor-pointer inline-flex items-center"
+            class="bg-white hover:bg-teal-100 dark:bg-slate-800 border border-teal-300 dark:border-teal-700 text-teal-700 dark:text-teal-300 font-bold px-3 py-1.5 rounded-lg text-xs cursor-pointer inline-flex items-center"
           >
             <i class="fas fa-edit mr-1"></i>Edit {{ lemb }}
           </router-link>
@@ -904,31 +904,28 @@ async function simpanPengaturanRekap() {
       </div>
 
       <div
-        class="bg-fuchsia-50 dark:bg-fuchsia-900/20 rounded-xl p-4 border border-fuchsia-200 dark:border-fuchsia-700"
+        class="bg-teal-50 dark:bg-teal-900/20 rounded-xl p-4 border border-teal-200 dark:border-teal-700"
       >
         <h5 class="text-xs font-black text-slate-700 dark:text-slate-200 uppercase mb-2">
-          <i class="fas fa-puzzle-piece mr-1 text-fuchsia-600"></i>Field Tambahan (ACF - Tanpa
+          <i class="fas fa-puzzle-piece mr-1 text-teal-600"></i>Field Tambahan (ACF - Tanpa
           Koding)
         </h5>
         <p class="text-[11px] text-slate-600 dark:text-slate-400 mb-3">
           Tambah field custom di form Santri/Guru/Lembaga.
         </p>
         <button
-          @click="
-            activeTab = 'lembaga'
-            lembagaSubTab = 'field-schema'
-          "
-          class="bg-fuchsia-600 hover:bg-fuchsia-700 text-white font-bold px-3 py-1.5 rounded-lg text-xs cursor-pointer"
+          @click="activeTab = 'lembaga'; lembagaSubTab = 'field-schema'"
+          class="bg-teal-600 hover:bg-teal-700 text-white font-bold px-3 py-1.5 rounded-lg text-xs cursor-pointer"
         >
           <i class="fas fa-external-link-alt mr-1"></i>Buka Field Schema Editor
         </button>
       </div>
 
       <div
-        class="bg-amber-50 dark:bg-amber-900/20 rounded-xl p-4 border border-amber-200 dark:border-amber-700"
+        class="bg-cyan-50 dark:bg-cyan-900/20 rounded-xl p-4 border border-cyan-200 dark:border-cyan-700"
       >
         <h5 class="text-xs font-black text-slate-700 dark:text-slate-200 uppercase mb-2">
-          <i class="fas fa-image mr-1 text-amber-600"></i>Background Rapor (Watermark)
+          <i class="fas fa-image mr-1 text-cyan-600"></i>Background Rapor (Watermark)
         </h5>
         <p class="text-[11px] text-slate-600 dark:text-slate-400 mb-3">
           PNG transparent direkomendasikan, max 4 MB. Tampil di belakang konten rapor saat cetak
@@ -936,7 +933,7 @@ async function simpanPengaturanRekap() {
         </p>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div
-            class="bg-white dark:bg-slate-800 rounded-lg p-3 border border-amber-100 dark:border-amber-700/50"
+            class="bg-white dark:bg-slate-800 rounded-lg p-3 border border-cyan-100 dark:border-cyan-700/50"
           >
             <label class="text-xs font-bold text-slate-600 dark:text-slate-300 mb-1 block"
               >BG Rapor Qiraati (TPQ / PTPT / PPPH)</label
@@ -961,7 +958,7 @@ async function simpanPengaturanRekap() {
             </button>
           </div>
           <div
-            class="bg-white dark:bg-slate-800 rounded-lg p-3 border border-amber-100 dark:border-amber-700/50"
+            class="bg-white dark:bg-slate-800 rounded-lg p-3 border border-cyan-100 dark:border-cyan-700/50"
           >
             <label class="text-xs font-bold text-slate-600 dark:text-slate-300 mb-1 block"
               >BG Rapor Diniyah</label
@@ -1012,7 +1009,7 @@ async function simpanPengaturanRekap() {
         class="bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-5 border border-slate-200 dark:border-slate-700 shadow-sm"
       >
         <h3 class="text-base md:text-lg font-black text-slate-800 dark:text-white">
-          <i class="fas fa-book-open text-amber-600 mr-2"></i>Pengaturan Rekap Prestasi
+          <i class="fas fa-book-open text-cyan-600 mr-2"></i>Pengaturan Rekap Prestasi
         </h3>
         <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
           Atur struktur kolom rekap prestasi per lembaga.
@@ -1025,7 +1022,7 @@ async function simpanPengaturanRekap() {
         <h4
           class="text-sm font-black text-slate-700 dark:text-slate-200 uppercase tracking-widest mb-2 flex items-center gap-2"
         >
-          <i class="fas fa-list-ul text-amber-600"></i>Mata Pelajaran Rekap Diniyah (Per Lembaga)
+          <i class="fas fa-list-ul text-cyan-600"></i>Mata Pelajaran Rekap Diniyah (Per Lembaga)
         </h4>
         <p class="text-xs text-slate-500 dark:text-slate-400 mb-4 italic">
           Daftar kolom mata pelajaran yang tampil di Rekap Prestasi Diniyah untuk tiap lembaga
@@ -1049,7 +1046,7 @@ async function simpanPengaturanRekap() {
             <label
               class="flex items-center gap-2 text-sm font-black text-slate-700 dark:text-slate-200 mb-2"
             >
-              <i class="fas fa-school text-blue-500"></i>{{ lemb }}
+              <i class="fas fa-school text-cyan-500"></i>{{ lemb }}
             </label>
             <textarea
               :value="getMapelDiniyah(lemb)"
@@ -1082,7 +1079,7 @@ async function simpanPengaturanRekap() {
       <button
         @click="simpanPengaturanRekap"
         :disabled="savingRekap || lembagaDiniyah.length === 0"
-        class="w-full bg-amber-600 hover:bg-amber-700 text-white font-black py-3 rounded-xl shadow-md disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
+        class="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-black py-3 rounded-xl shadow-md disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
       >
         <i :class="['fas', savingRekap ? 'fa-spinner fa-spin' : 'fa-save']"></i>
         {{ savingRekap ? 'Menyimpan...' : 'SIMPAN PENGATURAN REKAP' }}
@@ -1090,7 +1087,7 @@ async function simpanPengaturanRekap() {
 
       <p class="text-[11px] text-slate-500 italic text-center pt-2">
         <i class="fas fa-info-circle mr-1"></i>Input nilai per santri tersedia di
-        <router-link to="/rekap-prestasi" class="underline font-bold text-purple-700"
+        <router-link to="/rekap-prestasi" class="underline font-bold text-teal-700"
           >menu Rekap Prestasi</router-link
         >.
       </p>
@@ -1101,8 +1098,8 @@ async function simpanPengaturanRekap() {
       v-else-if="activeTab === 'tp'"
       class="bg-white dark:bg-slate-800 rounded-2xl p-5 md:p-6 border border-slate-200 dark:border-slate-700 shadow-sm"
     >
-      <p class="text-sm font-black text-orange-700 dark:text-orange-300 mb-1">
-        <i class="fas fa-plus-circle text-orange-600 mr-1"></i>Kelola Tahun Pelajaran
+      <p class="text-sm font-black text-cyan-700 dark:text-cyan-300 mb-1">
+        <i class="fas fa-plus-circle text-cyan-600 mr-1"></i>Kelola Tahun Pelajaran
       </p>
       <p class="text-xs text-slate-700 dark:text-slate-300 mb-3">
         Daftar TP untuk dropdown Rapor / Naik Kelas / Statistik. Pilih satu sebagai TP Aktif.
@@ -1112,12 +1109,12 @@ async function simpanPengaturanRekap() {
           v-model="tpForm.value"
           type="text"
           placeholder="cth: 2025/2026"
-          class="flex-1 px-3 py-2 text-sm rounded-lg border border-orange-300 bg-white dark:bg-slate-900 text-slate-800 dark:text-white"
+          class="flex-1 px-3 py-2 text-sm rounded-lg border border-cyan-300 bg-white dark:bg-slate-900 text-slate-800 dark:text-white"
         />
         <button
           @click="simpanTp"
           :disabled="savingTp"
-          class="bg-orange-600 hover:bg-orange-700 text-white text-sm font-bold px-4 py-2 rounded-lg disabled:opacity-50"
+          class="bg-cyan-600 hover:bg-cyan-700 text-white text-sm font-bold px-4 py-2 rounded-lg disabled:opacity-50"
         >
           <i class="fas fa-save mr-1"></i>{{ tpForm.idx !== null ? 'Update' : 'Tambah' }}
         </button>
@@ -1142,7 +1139,7 @@ async function simpanPengaturanRekap() {
           class="flex justify-between items-center bg-slate-50 dark:bg-slate-900 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700"
         >
           <span class="text-sm font-bold text-slate-800 dark:text-white">
-            <i class="fas fa-calendar text-orange-500 mr-2"></i>{{ tp }}
+            <i class="fas fa-calendar text-cyan-500 mr-2"></i>{{ tp }}
             <span
               v-if="tp === tpAktif"
               class="ml-2 text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded uppercase font-black"
@@ -1160,7 +1157,7 @@ async function simpanPengaturanRekap() {
             </button>
             <button
               @click="editTp(idx)"
-              class="text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 px-2 py-1 rounded text-xs"
+              class="text-cyan-600 hover:bg-cyan-50 dark:hover:bg-cyan-900/30 px-2 py-1 rounded text-xs"
             >
               <i class="fas fa-edit"></i>
             </button>
@@ -1179,11 +1176,11 @@ async function simpanPengaturanRekap() {
     <div v-else-if="activeTab === 'audit'" class="space-y-4">
       <!-- v.21.10.0526: Tools Migrasi v.21.10 Schema (lembaga_refs + group hierarchy) -->
       <div
-        class="bg-white dark:bg-slate-800 rounded-2xl p-5 md:p-6 border-2 border-purple-300 dark:border-purple-700 shadow-sm"
+        class="bg-white dark:bg-slate-800 rounded-2xl p-5 md:p-6 border-2 border-teal-300 dark:border-teal-700 shadow-sm"
       >
         <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
           <div>
-            <p class="text-sm font-black text-purple-700 dark:text-purple-300">
+            <p class="text-sm font-black text-teal-700 dark:text-teal-300">
               <i class="fas fa-layer-group mr-1"></i>Migrasi v.21.10 Schema
             </p>
             <p class="text-xs text-slate-600 dark:text-slate-300 mt-1">
@@ -1194,7 +1191,7 @@ async function simpanPengaturanRekap() {
             </p>
           </div>
           <span
-            class="text-[10px] bg-purple-100 text-purple-800 font-bold px-2 py-0.5 rounded uppercase"
+            class="text-[10px] bg-teal-100 text-teal-800 font-bold px-2 py-0.5 rounded uppercase"
             >v.21.10</span
           >
         </div>
@@ -1202,19 +1199,19 @@ async function simpanPengaturanRekap() {
           <button
             @click="v21MigDryRun"
             :disabled="v21MigRunning"
-            class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-black rounded-lg disabled:opacity-50"
+            class="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-black rounded-lg disabled:opacity-50"
           >
             <i class="fas fa-search mr-1"></i>Dry-Run (Scan)
           </button>
           <button
             @click="v21MigExecute"
             :disabled="v21MigRunning || !v21MigScan || v21MigScan.totalDocs === 0"
-            class="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-xs font-black rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            class="px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white text-xs font-black rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <i class="fas fa-database mr-1"></i>Execute Migrasi
           </button>
         </div>
-        <div v-if="v21MigRunning" class="mt-3 text-xs font-bold text-purple-700">
+        <div v-if="v21MigRunning" class="mt-3 text-xs font-bold text-teal-700">
           <i class="fas fa-spinner fa-spin mr-1"></i>{{ v21MigProgress.phase || 'Migrasi' }}...
           {{ v21MigProgress.i }}/{{ v21MigProgress.total }}
         </div>
@@ -1227,7 +1224,7 @@ async function simpanPengaturanRekap() {
               class="bg-white dark:bg-slate-800 rounded p-2 border border-slate-200 dark:border-slate-700"
             >
               <p class="text-[10px] text-slate-500 uppercase font-bold">Santri</p>
-              <p class="text-xl font-black text-purple-700">
+              <p class="text-xl font-black text-teal-700">
                 {{ v21MigScan.santri.toMigrate }}/{{ v21MigScan.santri.total }}
               </p>
               <p class="text-[9px] text-slate-400">skip: {{ v21MigScan.santri.skipped }}</p>
@@ -1236,7 +1233,7 @@ async function simpanPengaturanRekap() {
               class="bg-white dark:bg-slate-800 rounded p-2 border border-slate-200 dark:border-slate-700"
             >
               <p class="text-[10px] text-slate-500 uppercase font-bold">Guru</p>
-              <p class="text-xl font-black text-blue-700">
+              <p class="text-xl font-black text-cyan-700">
                 {{ v21MigScan.guru.toMigrate }}/{{ v21MigScan.guru.total }}
               </p>
               <p class="text-[9px] text-slate-400">skip: {{ v21MigScan.guru.skipped }}</p>
@@ -1362,7 +1359,7 @@ async function simpanPengaturanRekap() {
           <button
             @click="v21_70MigDryRun"
             :disabled="v21_70MigRunning"
-            class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-black rounded-lg disabled:opacity-50"
+            class="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-black rounded-lg disabled:opacity-50"
           >
             <i class="fas fa-search mr-1"></i>Dry-Run (Scan)
           </button>
@@ -1393,7 +1390,7 @@ async function simpanPengaturanRekap() {
               class="bg-white dark:bg-slate-800 rounded p-2 border border-slate-200 dark:border-slate-700"
             >
               <p class="text-[10px] text-slate-500 uppercase font-bold">Guru TK A/B</p>
-              <p class="text-xl font-black text-blue-700">{{ v21_70MigScan.guruCount }}</p>
+              <p class="text-xl font-black text-cyan-700">{{ v21_70MigScan.guruCount }}</p>
             </div>
             <div
               class="bg-white dark:bg-slate-800 rounded p-2 border border-slate-200 dark:border-slate-700"
@@ -1475,11 +1472,11 @@ async function simpanPengaturanRekap() {
 
       <!-- v.20.80.0526 M16: Tools Migrasi TPQ Shift -->
       <div
-        class="bg-white dark:bg-slate-800 rounded-2xl p-5 md:p-6 border-2 border-amber-300 dark:border-amber-700 shadow-sm"
+        class="bg-white dark:bg-slate-800 rounded-2xl p-5 md:p-6 border-2 border-cyan-300 dark:border-cyan-700 shadow-sm"
       >
         <div class="flex items-center justify-between mb-3">
           <div>
-            <p class="text-sm font-black text-amber-700 dark:text-amber-300">
+            <p class="text-sm font-black text-cyan-700 dark:text-cyan-300">
               <i class="fas fa-tools mr-1"></i>Migrasi TPQ Shift
             </p>
             <p class="text-xs text-slate-600 dark:text-slate-300 mt-1">
@@ -1492,7 +1489,7 @@ async function simpanPengaturanRekap() {
           <button
             @click="tpqMigDryRun"
             :disabled="tpqMigRunning"
-            class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-black rounded-lg disabled:opacity-50"
+            class="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-black rounded-lg disabled:opacity-50"
           >
             <i class="fas fa-search mr-1"></i>Dry-Run (Scan)
           </button>
@@ -1504,7 +1501,7 @@ async function simpanPengaturanRekap() {
             <i class="fas fa-database mr-1"></i>Execute Migrasi
           </button>
         </div>
-        <div v-if="tpqMigRunning" class="mt-3 text-xs font-bold text-amber-700">
+        <div v-if="tpqMigRunning" class="mt-3 text-xs font-bold text-cyan-700">
           <i class="fas fa-spinner fa-spin mr-1"></i>Migrasi berjalan... {{ tpqMigProgress.i }}/{{
             tpqMigProgress.total
           }}
@@ -1524,13 +1521,13 @@ async function simpanPengaturanRekap() {
               class="bg-white dark:bg-slate-800 rounded p-2 border border-slate-200 dark:border-slate-700"
             >
               <p class="text-[10px] text-slate-500 uppercase font-bold">TPQ Pagi</p>
-              <p class="text-xl font-black text-blue-700">{{ tpqMigScan.pagi }}</p>
+              <p class="text-xl font-black text-cyan-700">{{ tpqMigScan.pagi }}</p>
             </div>
             <div
               class="bg-white dark:bg-slate-800 rounded p-2 border border-slate-200 dark:border-slate-700"
             >
               <p class="text-[10px] text-slate-500 uppercase font-bold">TPQ Sore</p>
-              <p class="text-xl font-black text-purple-700">{{ tpqMigScan.sore }}</p>
+              <p class="text-xl font-black text-teal-700">{{ tpqMigScan.sore }}</p>
             </div>
             <div
               class="bg-white dark:bg-slate-800 rounded p-2 border border-slate-200 dark:border-slate-700"
@@ -1616,7 +1613,7 @@ async function simpanPengaturanRekap() {
                 </td>
                 <td class="p-2">
                   <span
-                    class="bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200 px-2 py-0.5 rounded font-bold text-[10px]"
+                    class="bg-cyan-100 dark:bg-cyan-900/40 text-cyan-800 dark:text-cyan-200 px-2 py-0.5 rounded font-bold text-[10px]"
                     >{{ log.aksi || log.action || '-' }}</span
                   >
                 </td>

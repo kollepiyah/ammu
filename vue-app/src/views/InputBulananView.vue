@@ -2,20 +2,20 @@
   <div class="p-4 md:p-6 max-w-7xl mx-auto space-y-4">
     <!-- Header + filter card -->
     <div
-      class="bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-5 border border-slate-200 dark:border-slate-700 shadow-sm"
+      class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
     >
       <div class="flex items-center justify-between gap-3 flex-wrap mb-3">
-        <h2 class="text-base md:text-lg font-black text-slate-800 dark:text-white">
+        <h2 class="text-base md:text-lg font-black text-[var(--text-primary)]">
           <i class="fas fa-pen-fancy text-teal-600 mr-2"></i>Input Prestasi Bulanan
         </h2>
         <div class="flex items-center gap-2">
-          <span class="text-[10px] text-slate-500 dark:text-slate-400 hidden md:inline">
+          <span class="text-[10px] text-[var(--text-secondary)] hidden md:inline">
             {{ filteredSantri.length }} santri
           </span>
           <button
             @click="simpanBatch"
             :disabled="saving || dirtyCount === 0"
-            class="text-xs font-bold px-3 py-2 rounded-lg bg-teal-600 hover:bg-teal-700 text-white transition cursor-pointer disabled:opacity-50"
+            class="text-xs font-bold px-3 py-2 rounded-lg bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white transition cursor-pointer disabled:opacity-50"
           >
             <i class="fas fa-save mr-1"></i>
             {{ saving ? 'Menyimpan...' : `Simpan${dirtyCount ? ` (${dirtyCount})` : ''}` }}
@@ -26,7 +26,7 @@
       <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
         <select
           v-model="filterLembaga"
-          class="text-xs px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-800 dark:text-white"
+          class="text-xs px-3 py-2 border border-[var(--border-default)] rounded-lg bg-white dark:bg-slate-900 text-[var(--text-primary)]"
         >
           <option value="">Semua Lembaga</option>
           <option v-for="l in lembagaOptions" :key="l" :value="l">{{ l }}</option>
@@ -34,14 +34,14 @@
 
         <select
           v-model.number="bulan"
-          class="text-xs px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-800 dark:text-white"
+          class="text-xs px-3 py-2 border border-[var(--border-default)] rounded-lg bg-white dark:bg-slate-900 text-[var(--text-primary)]"
         >
           <option v-for="(name, idx) in NAMA_BULAN" :key="idx" :value="idx">{{ name }}</option>
         </select>
 
         <select
           v-model.number="tahun"
-          class="text-xs px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-800 dark:text-white"
+          class="text-xs px-3 py-2 border border-[var(--border-default)] rounded-lg bg-white dark:bg-slate-900 text-[var(--text-primary)]"
         >
           <option v-for="y in tahunOptions" :key="y" :value="y">{{ y }}</option>
         </select>
@@ -50,11 +50,11 @@
           v-model="search"
           type="search"
           placeholder="Cari santri..."
-          class="text-xs px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-800 dark:text-white"
+          class="text-xs px-3 py-2 border border-[var(--border-default)] rounded-lg bg-white dark:bg-slate-900 text-[var(--text-primary)]"
         />
       </div>
 
-      <p class="text-[10px] text-slate-400 italic mt-2">
+      <p class="text-[10px] text-[var(--text-tertiary)] italic mt-2">
         <i class="fas fa-info-circle mr-1"></i>
         Total: <b>TPQ Pagi/Sore + PPPH</b> manual, <b>Pra PTPT</b> auto dari khotam (Lvl
         &le;1&frac12; Juz: 2x, Lvl 2-3 Juz: 3x), <b>PTPT</b> auto = Akhir - Awal Hal.
@@ -63,29 +63,29 @@
 
     <!-- Table card -->
     <div
-      class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden"
+      class="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)] shadow-sm overflow-hidden"
     >
       <div class="overflow-x-auto">
         <table class="w-full text-xs">
-          <thead class="bg-slate-100 dark:bg-slate-700 sticky top-0">
+          <thead class="bg-[var(--bg-muted)] sticky top-0">
             <tr>
               <th
-                class="p-2 text-left font-black text-slate-700 dark:text-slate-200 uppercase text-[10px] tracking-widest border-b border-slate-200 dark:border-slate-600"
+                class="p-2 text-left font-black text-[var(--text-primary)] uppercase text-[10px] tracking-widest border-b border-slate-200 dark:border-slate-600"
               >
                 Nama
               </th>
               <th
-                class="p-2 text-center font-black text-slate-700 dark:text-slate-200 uppercase text-[10px] tracking-widest border-b border-slate-200 dark:border-slate-600 w-10"
+                class="p-2 text-center font-black text-[var(--text-primary)] uppercase text-[10px] tracking-widest border-b border-slate-200 dark:border-slate-600 w-10"
               >
                 L/P
               </th>
               <th
-                class="p-2 text-center font-black text-slate-700 dark:text-slate-200 uppercase text-[10px] tracking-widest border-b border-slate-200 dark:border-slate-600 w-24"
+                class="p-2 text-center font-black text-[var(--text-primary)] uppercase text-[10px] tracking-widest border-b border-slate-200 dark:border-slate-600 w-24"
               >
                 Kls Sekolah
               </th>
               <th
-                class="p-2 text-center font-black text-slate-700 dark:text-slate-200 uppercase text-[10px] tracking-widest border-b border-slate-200 dark:border-slate-600 w-24"
+                class="p-2 text-center font-black text-[var(--text-primary)] uppercase text-[10px] tracking-widest border-b border-slate-200 dark:border-slate-600 w-24"
               >
                 Qiraati
               </th>
@@ -106,12 +106,12 @@
                 Akhir Bln
               </th>
               <th
-                class="p-2 text-center font-black text-blue-700 dark:text-blue-300 uppercase text-[10px] tracking-widest border-b border-slate-200 dark:border-slate-600 bg-blue-50/50 dark:bg-blue-900/20 w-24"
+                class="p-2 text-center font-black text-cyan-700 dark:text-cyan-300 uppercase text-[10px] tracking-widest border-b border-slate-200 dark:border-slate-600 bg-cyan-50/50 dark:bg-cyan-900/20 w-24"
               >
                 Total
               </th>
               <th
-                class="p-2 text-center font-black text-amber-700 dark:text-amber-300 uppercase text-[10px] tracking-widest border-b border-slate-200 dark:border-slate-600 bg-amber-50/50 dark:bg-amber-900/20 w-24"
+                class="p-2 text-center font-black text-cyan-700 dark:text-cyan-300 uppercase text-[10px] tracking-widest border-b border-slate-200 dark:border-slate-600 bg-cyan-50/50 dark:bg-cyan-900/20 w-24"
               >
                 Catatan
               </th>
@@ -119,8 +119,8 @@
           </thead>
           <tbody>
             <tr v-if="filteredSantri.length === 0">
-              <td :colspan="hasPtpt ? 9 : 8" class="text-center text-slate-400 italic py-8">
-                <i class="fas fa-inbox text-2xl block mb-2 text-slate-300 dark:text-slate-600"></i>
+              <td :colspan="hasPtpt ? 9 : 8" class="text-center text-[var(--text-tertiary)] italic py-8">
+                <i class="fas fa-inbox text-2xl block mb-2 text-slate-300 dark:text-[var(--text-secondary)]"></i>
                 Tidak ada santri yang cocok dengan filter.
               </td>
             </tr>
@@ -128,7 +128,7 @@
               <tr class="bg-slate-200 dark:bg-slate-700/50">
                 <td
                   :colspan="hasPtpt ? 9 : 8"
-                  class="p-2 font-black text-slate-700 dark:text-slate-200 uppercase text-[11px] tracking-widest"
+                  class="p-2 font-black text-[var(--text-primary)] uppercase text-[11px] tracking-widest"
                 >
                   <i class="fas fa-layer-group mr-2 text-teal-600"></i>{{ grp.label }}
                 </td>
@@ -139,29 +139,29 @@
                 class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition"
               >
                 <td
-                  class="p-2 font-bold text-slate-800 dark:text-white border-b border-slate-100 dark:border-slate-700 whitespace-nowrap leading-tight"
+                  class="p-2 font-bold text-[var(--text-primary)] border-b border-[var(--border-subtle)] whitespace-nowrap leading-tight"
                 >
                   {{ s.nama }}
                   <span
                     v-if="s.usia"
-                    class="block text-[9px] font-bold text-slate-500 bg-slate-100 dark:bg-slate-700 px-1 rounded mt-0.5 w-fit"
+                    class="block text-[9px] font-bold text-[var(--text-secondary)] bg-[var(--bg-muted)] px-1 rounded mt-0.5 w-fit"
                     >{{ s.usia }}</span
                   >
                 </td>
                 <td
-                  class="p-2 text-center font-bold border-b border-slate-100 dark:border-slate-700"
+                  class="p-2 text-center font-bold border-b border-[var(--border-subtle)]"
                 >
                   {{ s.jk }}
                 </td>
 
                 <!-- Kelas sekolah -->
                 <td
-                  class="p-1 border-b border-slate-100 dark:border-slate-700 bg-slate-50/30 dark:bg-slate-700/20"
+                  class="p-1 border-b border-[var(--border-subtle)] bg-[var(--bg-card-elevated)]/30 dark:bg-slate-700/20"
                 >
                   <select
                     v-model="formMap[s.id].kelas_sekolah"
                     @change="markDirty(s.id)"
-                    class="w-full text-center text-[10px] font-bold p-1 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-800 dark:text-white cursor-pointer"
+                    class="w-full text-center text-[10px] font-bold p-1 rounded border border-[var(--border-default)] bg-white dark:bg-slate-900 text-[var(--text-primary)] cursor-pointer"
                   >
                     <option value="">-</option>
                     <option v-for="k in kelasSekolahOptions" :key="k" :value="k">{{ k }}</option>
@@ -170,12 +170,12 @@
 
                 <!-- Kelas qiraati -->
                 <td
-                  class="p-1 border-b border-slate-100 dark:border-slate-700 bg-slate-50/30 dark:bg-slate-700/20"
+                  class="p-1 border-b border-[var(--border-subtle)] bg-[var(--bg-card-elevated)]/30 dark:bg-slate-700/20"
                 >
                   <select
                     v-model="formMap[s.id].kelas"
                     @change="markDirty(s.id)"
-                    class="w-full text-center text-[10px] font-bold p-1 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-800 dark:text-white cursor-pointer"
+                    class="w-full text-center text-[10px] font-bold p-1 rounded border border-[var(--border-default)] bg-white dark:bg-slate-900 text-[var(--text-primary)] cursor-pointer"
                   >
                     <option value="">-</option>
                     <option v-for="k in kelasOptions(s.lembaga)" :key="k" :value="k">
@@ -187,7 +187,7 @@
                 <!-- Juz (PTPT only) -->
                 <td
                   v-if="hasPtpt"
-                  class="p-1 border-b border-slate-100 dark:border-slate-700 bg-rose-50/30 dark:bg-rose-900/10"
+                  class="p-1 border-b border-[var(--border-subtle)] bg-rose-50/30 dark:bg-rose-900/10"
                 >
                   <div v-if="lembagaKey(s) === 'ptpt'" class="flex items-center gap-1">
                     <input
@@ -208,34 +208,34 @@
                   >
                     {{ ptptJuzHint(s.kelas) }}
                   </p>
-                  <span v-else class="text-[10px] text-slate-400">-</span>
+                  <span v-else class="text-[10px] text-[var(--text-tertiary)]">-</span>
                 </td>
 
                 <!-- Awal bulan -->
-                <td class="p-1 border-b border-slate-100 dark:border-slate-700">
+                <td class="p-1 border-b border-[var(--border-subtle)]">
                   <input
                     v-model="formMap[s.id].prestasi_awal"
                     @input="markDirty(s.id)"
                     type="text"
                     placeholder="-"
-                    class="w-full text-center font-black text-[11px] p-1.5 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-800 dark:text-white"
+                    class="w-full text-center font-black text-[11px] p-1.5 rounded border border-[var(--border-default)] bg-white dark:bg-slate-900 text-[var(--text-primary)]"
                   />
                 </td>
 
                 <!-- Akhir bulan -->
-                <td class="p-1 border-b border-slate-100 dark:border-slate-700">
+                <td class="p-1 border-b border-[var(--border-subtle)]">
                   <input
                     v-model="formMap[s.id].prestasi_akhir"
                     @input="markDirty(s.id)"
                     type="text"
                     placeholder="-"
-                    class="w-full text-center font-black text-[11px] p-1.5 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-800 dark:text-white"
+                    class="w-full text-center font-black text-[11px] p-1.5 rounded border border-[var(--border-default)] bg-white dark:bg-slate-900 text-[var(--text-primary)]"
                   />
                 </td>
 
                 <!-- Total -->
                 <td
-                  class="p-1 border-b border-slate-100 dark:border-slate-700 bg-blue-50/30 dark:bg-blue-900/10"
+                  class="p-1 border-b border-[var(--border-subtle)] bg-cyan-50/30 dark:bg-cyan-900/10"
                 >
                   <input
                     v-if="isAutoCompute(s)"
@@ -253,22 +253,22 @@
                     @input="markDirty(s.id)"
                     type="text"
                     placeholder="manual"
-                    class="w-full text-center font-black text-[11px] p-1.5 rounded border border-blue-300 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/30 text-blue-900 dark:text-blue-200"
+                    class="w-full text-center font-black text-[11px] p-1.5 rounded border border-cyan-300 dark:border-cyan-700 bg-cyan-50 dark:bg-cyan-900/30 text-cyan-900 dark:text-cyan-200"
                     title="Manual input"
                   />
                 </td>
 
                 <!-- Catatan -->
                 <td
-                  class="p-1 border-b border-slate-100 dark:border-slate-700 bg-amber-50/30 dark:bg-amber-900/10 text-center"
+                  class="p-1 border-b border-[var(--border-subtle)] bg-cyan-50/30 dark:bg-cyan-900/10 text-center"
                 >
                   <button
                     @click="openCatatan(s)"
                     :class="[
                       'inline-flex items-center justify-center w-8 h-7 rounded transition cursor-pointer',
                       formMap[s.id]?.catatan
-                        ? 'bg-amber-200 dark:bg-amber-700 text-amber-900 dark:text-amber-100'
-                        : 'bg-slate-100 dark:bg-slate-700 text-slate-400 hover:bg-amber-100 hover:text-amber-700'
+                        ? 'bg-cyan-200 dark:bg-cyan-700 text-[var(--text-on-accent)] dark:text-cyan-100'
+                        : 'bg-[var(--bg-muted)] text-[var(--text-tertiary)] hover:bg-cyan-100 hover:text-cyan-700'
                     ]"
                     :title="
                       formMap[s.id]?.catatan
@@ -295,34 +295,34 @@
           @click.self="showCatatan = false"
         >
           <div
-            class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full border-t-8 border-amber-500"
+            class="bg-[var(--bg-card)] rounded-2xl shadow-2xl max-w-md w-full border-t-8 border-cyan-500"
           >
             <header
-              class="flex justify-between items-center border-b border-slate-100 dark:border-slate-700 px-5 py-4"
+              class="flex justify-between items-center border-b border-[var(--border-subtle)] px-5 py-4"
             >
-              <h3 class="text-base font-black text-slate-800 dark:text-white">
-                <i class="fas fa-comment-dots mr-2 text-amber-600"></i>Catatan Bulanan
+              <h3 class="text-base font-black text-[var(--text-primary)]">
+                <i class="fas fa-comment-dots mr-2 text-cyan-600"></i>Catatan Bulanan
               </h3>
               <button
                 @click="showCatatan = false"
-                class="text-slate-400 hover:text-red-500 text-2xl font-bold w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center cursor-pointer"
+                class="text-[var(--text-tertiary)] hover:text-rose-500 text-2xl font-bold w-8 h-8 rounded-full bg-[var(--bg-muted)] flex items-center justify-center cursor-pointer"
               >
                 &times;
               </button>
             </header>
             <div class="p-5 space-y-3">
               <div
-                class="bg-amber-50 dark:bg-amber-900/20 p-3 rounded-xl border border-amber-200 dark:border-amber-700"
+                class="bg-cyan-50 dark:bg-cyan-900/20 p-3 rounded-xl border border-cyan-200 dark:border-cyan-700"
               >
                 <p
-                  class="text-[10px] text-amber-700 dark:text-amber-300 font-black uppercase tracking-widest mb-1"
+                  class="text-[10px] text-cyan-700 dark:text-cyan-300 font-black uppercase tracking-widest mb-1"
                 >
                   Santri
                 </p>
-                <strong class="text-slate-800 dark:text-white text-base font-black">{{
+                <strong class="text-[var(--text-primary)] text-base font-black">{{
                   catatanTarget?.nama || '-'
                 }}</strong>
-                <p class="text-[11px] text-slate-500 mt-0.5">
+                <p class="text-[11px] text-[var(--text-secondary)] mt-0.5">
                   {{ catatanTarget?.lembaga || '-' }} &middot; {{ NAMA_BULAN[bulan] }} {{ tahun }}
                 </p>
               </div>
@@ -330,25 +330,25 @@
                 v-model="catatanDraft"
                 rows="6"
                 placeholder="Tulis catatan bulan ini untuk santri (mis: progress, perilaku, hal yg perlu diperhatikan, rekomendasi)..."
-                class="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white resize-none"
+                class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)] resize-none"
               ></textarea>
-              <p class="text-[10px] text-slate-400 italic">
+              <p class="text-[10px] text-[var(--text-tertiary)] italic">
                 <i class="fas fa-info-circle mr-1"></i>Catatan tampil di Capaian Prestasi santri.
                 Akun santri bisa lihat langsung.
               </p>
             </div>
             <footer
-              class="px-5 py-4 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 flex justify-end gap-2 rounded-b-2xl"
+              class="px-5 py-4 border-t border-[var(--border-subtle)] bg-[var(--bg-card-elevated)] flex justify-end gap-2 rounded-b-2xl"
             >
               <button
                 @click="showCatatan = false"
-                class="px-4 py-2 text-sm font-bold rounded-xl bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200"
+                class="px-4 py-2 text-sm font-bold rounded-xl bg-slate-200 dark:bg-slate-700 text-[var(--text-primary)]"
               >
                 Batal
               </button>
               <button
                 @click="simpanCatatan"
-                class="px-5 py-2 text-sm font-black rounded-xl bg-amber-600 hover:bg-amber-700 text-white shadow-md cursor-pointer"
+                class="px-5 py-2 text-sm font-black rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white shadow-md cursor-pointer"
               >
                 <i class="fas fa-save mr-1"></i>Simpan Catatan
               </button>
@@ -642,16 +642,16 @@ function hitungTotal(s, form) {
 }
 
 function totalClass(s, form) {
-  const fallback = 'text-blue-800 dark:text-blue-300 bg-transparent'
+  const fallback = 'text-cyan-800 dark:text-cyan-300 bg-transparent'
   const k = lembagaKey(s)
   if (k === 'ptpt') {
     const n = parseAngka(hitungTotal(s, form))
     if (n >= 100)
       return 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-900 dark:text-emerald-200 border border-emerald-300'
     if (n >= 70)
-      return 'bg-blue-100 dark:bg-blue-900/40 text-blue-900 dark:text-blue-200 border border-blue-300'
+      return 'bg-cyan-100 dark:bg-cyan-900/40 text-cyan-900 dark:text-cyan-200 border border-cyan-300'
     if (n >= 40)
-      return 'bg-amber-100 dark:bg-amber-900/40 text-amber-900 dark:text-amber-200 border border-amber-300'
+      return 'bg-cyan-100 dark:bg-cyan-900/40 text-[var(--text-on-accent)] dark:text-cyan-200 border border-cyan-300'
     if (n > 0)
       return 'bg-rose-100 dark:bg-rose-900/40 text-rose-900 dark:text-rose-200 border border-rose-300'
   }
@@ -660,9 +660,9 @@ function totalClass(s, form) {
     if (n >= 6)
       return 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-900 dark:text-emerald-200 border border-emerald-300'
     if (n >= 3)
-      return 'bg-blue-100 dark:bg-blue-900/40 text-blue-900 dark:text-blue-200 border border-blue-300'
+      return 'bg-cyan-100 dark:bg-cyan-900/40 text-cyan-900 dark:text-cyan-200 border border-cyan-300'
     if (n > 0)
-      return 'bg-amber-100 dark:bg-amber-900/40 text-amber-900 dark:text-amber-200 border border-amber-300'
+      return 'bg-cyan-100 dark:bg-cyan-900/40 text-[var(--text-on-accent)] dark:text-cyan-200 border border-cyan-300'
   }
   return fallback
 }

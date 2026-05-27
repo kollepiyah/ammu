@@ -1,40 +1,40 @@
 <template>
   <div class="p-3 md:p-5 max-w-5xl mx-auto space-y-4">
-    <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-200 dark:border-slate-700 shadow-sm">
+    <div class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm">
       <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
         <div>
-          <h1 class="text-xl md:text-2xl font-black"><i class="fas fa-money-check-alt text-blue-500 mr-2"></i>Pembayaran</h1>
-          <p class="text-xs text-slate-500 mt-0.5">{{ isSantriOnly ? 'Riwayat pembayaran Anda' : 'Log pembayaran semua santri' }}</p>
+          <h1 class="text-xl md:text-2xl font-black"><i class="fas fa-money-check-alt text-cyan-500 mr-2"></i>Pembayaran</h1>
+          <p class="text-xs text-[var(--text-secondary)] mt-0.5">{{ isSantriOnly ? 'Riwayat pembayaran Anda' : 'Log pembayaran semua santri' }}</p>
         </div>
-        <div class="px-3 py-1.5 rounded-full bg-blue-50 border border-blue-200 text-xs">
-          <span class="text-blue-700 font-bold">{{ fmtRp(totalPembayaran) }}</span>
-          <span class="text-slate-500 ml-1">total</span>
+        <div class="px-3 py-1.5 rounded-full bg-cyan-50 border border-cyan-200 text-xs">
+          <span class="text-cyan-700 font-bold">{{ fmtRp(totalPembayaran) }}</span>
+          <span class="text-[var(--text-secondary)] ml-1">total</span>
         </div>
       </div>
     </div>
 
     <!-- Filter (admin) -->
-    <div v-if="!isSantriOnly" class="bg-white dark:bg-slate-800 rounded-2xl p-3 border border-slate-200 dark:border-slate-700 shadow-sm grid grid-cols-1 md:grid-cols-3 gap-2">
-      <input v-model="search" type="text" placeholder="Cari nama santri..." class="px-3 py-2 text-sm rounded-xl border border-slate-300 bg-white" />
-      <select v-model.number="filterBulan" class="px-3 py-2 text-sm rounded-xl border border-slate-300 bg-white">
+    <div v-if="!isSantriOnly" class="bg-[var(--bg-card)] rounded-2xl p-3 border border-[var(--border-subtle)] shadow-sm grid grid-cols-1 md:grid-cols-3 gap-2">
+      <input v-model="search" type="text" placeholder="Cari nama santri..." class="px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)]" />
+      <select v-model.number="filterBulan" class="px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)]">
         <option :value="0">Semua bulan</option>
         <option v-for="(b, i) in NAMA_BULAN" :key="b" :value="i+1">{{ b }}</option>
       </select>
-      <select v-model.number="filterTahun" class="px-3 py-2 text-sm rounded-xl border border-slate-300 bg-white">
+      <select v-model.number="filterTahun" class="px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)]">
         <option v-for="y in [2024,2025,2026,2027]" :key="y" :value="y">{{ y }}</option>
       </select>
     </div>
 
     <!-- List -->
-    <div v-if="loading" class="bg-white rounded-2xl p-10 text-center"><i class="fas fa-spinner fa-spin text-blue-500 text-3xl"></i></div>
-    <div v-else-if="filteredItems.length === 0" class="bg-white rounded-2xl p-10 border border-dashed border-slate-300 text-center"><i class="fas fa-inbox text-slate-300 text-3xl mb-2"></i><p class="text-sm text-slate-500 italic">Belum ada pembayaran.</p></div>
+    <div v-if="loading" class="bg-[var(--bg-card)] rounded-2xl p-10 text-center"><i class="fas fa-spinner fa-spin text-cyan-500 text-3xl"></i></div>
+    <div v-else-if="filteredItems.length === 0" class="bg-[var(--bg-card)] rounded-2xl p-10 border border-dashed border-[var(--border-default)] text-center"><i class="fas fa-inbox text-[var(--text-tertiary)] text-3xl mb-2"></i><p class="text-sm text-[var(--text-secondary)] italic">Belum ada pembayaran.</p></div>
     <div v-else class="space-y-2">
-      <div v-for="p in filteredItems" :key="p.id" class="bg-white dark:bg-slate-800 rounded-xl p-3 border border-slate-200 shadow-sm">
+      <div v-for="p in filteredItems" :key="p.id" class="bg-[var(--bg-card)] rounded-xl p-3 border border-[var(--border-subtle)] shadow-sm">
         <div class="flex items-center gap-3">
           <div class="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center flex-shrink-0"><i class="fas fa-check"></i></div>
           <div class="flex-1 min-w-0">
             <p class="text-sm font-bold truncate">{{ p.santri_nama || getNamaSantri(p.santri_id) }}</p>
-            <p class="text-[10px] text-slate-500">{{ fmtTgl(p.tanggal) }} · {{ p.catatan || '-' }}</p>
+            <p class="text-[10px] text-[var(--text-secondary)]">{{ fmtTgl(p.tanggal) }} · {{ p.catatan || '-' }}</p>
           </div>
           <div class="text-right">
             <p class="text-sm font-black text-emerald-700">{{ fmtRp(p.nominal) }}</p>

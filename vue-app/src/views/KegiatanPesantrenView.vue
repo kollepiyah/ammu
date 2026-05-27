@@ -2,7 +2,7 @@
   <div class="p-4 md:p-6 max-w-6xl mx-auto space-y-4">
     <!-- Hero banner -->
     <div
-      class="bg-gradient-to-br from-cyan-600 to-blue-700 rounded-2xl p-5 md:p-6 text-white shadow-lg"
+      class="bg-gradient-to-br from-cyan-600 dark:from-cyan-800 to-cyan-700 dark:to-cyan-900 rounded-2xl p-5 md:p-6 text-white shadow-lg"
     >
       <p class="text-[10px] font-black uppercase tracking-widest opacity-90">
         <i class="fas fa-calendar-check mr-1"></i>Kegiatan Pesantren
@@ -24,7 +24,7 @@
         :class="[
           'group relative overflow-hidden bg-gradient-to-br rounded-xl p-2.5 md:p-3 text-left text-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 ease-out cursor-pointer flex flex-col gap-1',
           tab.gradient,
-          activeTab === tab.id ? 'ring-2 ring-white/70 ring-offset-1 ring-offset-amber-50' : ''
+          activeTab === tab.id ? 'ring-2 ring-white/70 ring-offset-1 ring-offset-cyan-50' : ''
         ]"
       >
         <i :class="['fas', tab.icon, 'text-base md:text-lg drop-shadow']"></i>
@@ -40,14 +40,14 @@
     <!-- TAB: Master Kegiatan -->
     <div v-if="activeTab === 'master'" class="space-y-4">
       <div
-        class="bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-5 border border-slate-200 dark:border-slate-700 shadow-sm"
+        class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
       >
         <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
           <div>
-            <h3 class="text-sm md:text-base font-black text-slate-800 dark:text-white">
+            <h3 class="text-sm md:text-base font-black text-[var(--text-primary)]">
               <i class="fas fa-list-ul text-cyan-600 mr-2"></i>Master Kegiatan Harian
             </h3>
-            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            <p class="text-xs text-[var(--text-secondary)] mt-0.5">
               Daftar kegiatan rutin santri mukim. Atur nama &amp; jam pelaksanaan.
             </p>
           </div>
@@ -60,9 +60,9 @@
         </div>
         <div
           v-if="masterKegiatan.length === 0"
-          class="text-xs text-slate-400 italic text-center py-8"
+          class="text-xs text-[var(--text-tertiary)] italic text-center py-8"
         >
-          <i class="fas fa-inbox text-3xl text-slate-300 dark:text-slate-600 block mb-2"></i>
+          <i class="fas fa-inbox text-3xl text-slate-300 dark:text-[var(--text-secondary)] block mb-2"></i>
           Belum ada master kegiatan. Tambah kegiatan pertama via tombol di atas.
         </div>
         <div v-else class="space-y-2">
@@ -73,15 +73,15 @@
           >
             <i class="fas fa-bell text-cyan-600 dark:text-cyan-400"></i>
             <div class="flex-1 min-w-0">
-              <p class="text-sm font-black text-slate-800 dark:text-white truncate">{{ k.nama }}</p>
-              <p class="text-[11px] text-slate-500 dark:text-slate-400">
+              <p class="text-sm font-black text-[var(--text-primary)] truncate">{{ k.nama }}</p>
+              <p class="text-[11px] text-[var(--text-secondary)]">
                 <i class="far fa-clock mr-1"></i>{{ k.jam || '—' }}
                 <span v-if="k.deskripsi" class="ml-2">· {{ k.deskripsi }}</span>
               </p>
             </div>
             <button
               @click="openModal(k, idx)"
-              class="text-[10px] text-blue-600 hover:underline font-bold"
+              class="text-[10px] text-cyan-600 hover:underline font-bold"
             >
               edit
             </button>
@@ -99,47 +99,47 @@
     <!-- TAB: Rekap Absensi -->
     <div v-else-if="activeTab === 'absen'" class="space-y-4">
       <div
-        class="bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-5 border border-slate-200 dark:border-slate-700 shadow-sm"
+        class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
       >
         <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
-          <h3 class="text-sm md:text-base font-black text-slate-800 dark:text-white">
-            <i class="fas fa-fingerprint text-purple-600 mr-2"></i>Rekap Absensi Bulanan
+          <h3 class="text-sm md:text-base font-black text-[var(--text-primary)]">
+            <i class="fas fa-fingerprint text-teal-600 mr-2"></i>Rekap Absensi Bulanan
           </h3>
           <div class="flex gap-2">
             <select
               v-model.number="bulanFilter"
-              class="text-xs px-3 py-1.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-800 dark:text-white"
+              class="text-xs px-3 py-1.5 border border-[var(--border-default)] rounded-lg bg-white dark:bg-slate-900 text-[var(--text-primary)]"
             >
               <option v-for="(b, i) in NAMA_BULAN" :key="i" :value="i">{{ b }}</option>
             </select>
             <select
               v-model.number="tahunFilter"
-              class="text-xs px-3 py-1.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-800 dark:text-white"
+              class="text-xs px-3 py-1.5 border border-[var(--border-default)] rounded-lg bg-white dark:bg-slate-900 text-[var(--text-primary)]"
             >
               <option v-for="y in tahunOptions" :key="y" :value="y">{{ y }}</option>
             </select>
           </div>
         </div>
-        <p class="text-[11px] text-slate-500 dark:text-slate-400 italic mb-3">
+        <p class="text-[11px] text-[var(--text-secondary)] italic mb-3">
           Rekap kehadiran santri mukim per kegiatan untuk periode {{ NAMA_BULAN[bulanFilter] }}
           {{ tahunFilter }}. Data absensi terhubung dengan fingerprint device yang di-impor pada tab
           Impor Fingerprint.
         </p>
-        <div v-if="santriMukim.length === 0" class="text-xs text-slate-400 italic text-center py-8">
-          <i class="fas fa-users text-3xl text-slate-300 dark:text-slate-600 block mb-2"></i>
+        <div v-if="santriMukim.length === 0" class="text-xs text-[var(--text-tertiary)] italic text-center py-8">
+          <i class="fas fa-users text-3xl text-slate-300 dark:text-[var(--text-secondary)] block mb-2"></i>
           Belum ada santri mukim terdaftar. Daftarkan santri sebagai mukim via Data Santri.
         </div>
         <div v-else class="overflow-x-auto">
           <table class="w-full text-xs">
-            <thead class="bg-slate-100 dark:bg-slate-700">
+            <thead class="bg-[var(--bg-muted)]">
               <tr>
                 <th
-                  class="p-2 text-left font-black text-slate-700 dark:text-slate-200 uppercase text-[10px] tracking-widest"
+                  class="p-2 text-left font-black text-[var(--text-primary)] uppercase text-[10px] tracking-widest"
                 >
                   Nama Santri
                 </th>
                 <th
-                  class="p-2 text-center font-black text-slate-700 dark:text-slate-200 uppercase text-[10px] tracking-widest w-24"
+                  class="p-2 text-center font-black text-[var(--text-primary)] uppercase text-[10px] tracking-widest w-24"
                 >
                   Lembaga
                 </th>
@@ -161,14 +161,14 @@
               <tr
                 v-for="s in santriMukim"
                 :key="s.id"
-                class="hover:bg-slate-50 dark:hover:bg-slate-700/30 border-b border-slate-100 dark:border-slate-700"
+                class="hover:bg-slate-50 dark:hover:bg-slate-700/30 border-b border-[var(--border-subtle)]"
               >
-                <td class="p-2 font-bold text-slate-800 dark:text-white">{{ s.nama }}</td>
-                <td class="p-2 text-center text-slate-600 dark:text-slate-300">{{ s.lembaga }}</td>
+                <td class="p-2 font-bold text-[var(--text-primary)]">{{ s.nama }}</td>
+                <td class="p-2 text-center text-[var(--text-secondary)]">{{ s.lembaga }}</td>
                 <td
                   v-for="k in masterKegiatan"
                   :key="k.nama"
-                  class="p-2 text-center text-slate-400"
+                  class="p-2 text-center text-[var(--text-tertiary)]"
                 >
                   —
                 </td>
@@ -177,7 +177,7 @@
             </tbody>
           </table>
         </div>
-        <p class="text-[10px] text-slate-400 italic mt-3 text-center">
+        <p class="text-[10px] text-[var(--text-tertiary)] italic mt-3 text-center">
           <i class="fas fa-info-circle mr-1"></i>
           Detail per-tanggal &amp; sinkronisasi fingerprint memerlukan integrasi device — coming
           v.73.
@@ -188,23 +188,23 @@
     <!-- TAB: Impor Fingerprint -->
     <div v-else-if="activeTab === 'impor'" class="space-y-4">
       <div
-        class="bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-5 border border-slate-200 dark:border-slate-700 shadow-sm"
+        class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
       >
-        <h3 class="text-sm md:text-base font-black text-slate-800 dark:text-white mb-3">
-          <i class="fas fa-file-import text-blue-600 mr-2"></i>Impor Fingerprint
+        <h3 class="text-sm md:text-base font-black text-[var(--text-primary)] mb-3">
+          <i class="fas fa-file-import text-cyan-600 mr-2"></i>Impor Fingerprint
         </h3>
-        <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">
+        <p class="text-xs text-[var(--text-secondary)] mb-4">
           Upload file rekap fingerprint device (.xlsx atau .csv) untuk mengimpor data kehadiran
           santri mukim.
         </p>
         <div
-          class="bg-slate-50 dark:bg-slate-700/30 rounded-xl p-4 border-2 border-dashed border-slate-300 dark:border-slate-600 text-center"
+          class="bg-slate-50 dark:bg-slate-700/30 rounded-xl p-4 border-2 border-dashed border-[var(--border-default)] text-center"
         >
-          <i class="fas fa-cloud-upload-alt text-4xl text-slate-400 dark:text-slate-500 mb-3"></i>
-          <p class="text-sm font-bold text-slate-700 dark:text-slate-200 mb-1">
+          <i class="fas fa-cloud-upload-alt text-4xl text-[var(--text-tertiary)] mb-3"></i>
+          <p class="text-sm font-bold text-[var(--text-primary)] mb-1">
             Drag &amp; drop file di sini
           </p>
-          <p class="text-xs text-slate-500 dark:text-slate-400 mb-3">atau klik untuk pilih file</p>
+          <p class="text-xs text-[var(--text-secondary)] mb-3">atau klik untuk pilih file</p>
           <input
             ref="fileInput"
             type="file"
@@ -214,7 +214,7 @@
           />
           <button
             @click="$refs.fileInput.click()"
-            class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2 rounded-lg text-xs"
+            class="bg-cyan-600 hover:bg-cyan-700 text-white font-bold px-4 py-2 rounded-lg text-xs"
           >
             <i class="fas fa-folder-open mr-1"></i>Pilih File
           </button>
@@ -223,13 +223,13 @@
             class="text-[11px] text-emerald-600 dark:text-emerald-400 mt-3 font-bold"
           >
             <i class="fas fa-check-circle mr-1"></i>{{ fileName }}
-            <span v-if="isProcessing" class="ml-2 text-blue-600">
+            <span v-if="isProcessing" class="ml-2 text-cyan-600">
               <i class="fas fa-spinner fa-spin"></i> Parsing…
             </span>
           </p>
           <div
             v-if="!isProcessing && (imporResult.ok > 0 || imporResult.error > 0)"
-            class="mt-3 text-left text-[11px] bg-white dark:bg-slate-800 rounded-lg p-2 border border-slate-200 dark:border-slate-700"
+            class="mt-3 text-left text-[11px] bg-[var(--bg-card)] rounded-lg p-2 border border-[var(--border-subtle)]"
           >
             <div class="font-bold mb-1">
               <span class="text-emerald-600">OK: {{ imporResult.ok }}</span>
@@ -242,7 +242,7 @@
               <li v-for="(err, i) in imporResult.errors" :key="i">{{ err }}</li>
               <li
                 v-if="imporResult.error > imporResult.errors.length"
-                class="italic text-slate-500"
+                class="italic text-[var(--text-secondary)]"
               >
                 … (+{{ imporResult.error - imporResult.errors.length }} lainnya)
               </li>
@@ -250,9 +250,9 @@
           </div>
         </div>
         <div
-          class="mt-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl p-3"
+          class="mt-4 bg-cyan-50 dark:bg-cyan-900/20 border border-cyan-200 dark:border-cyan-700 rounded-xl p-3"
         >
-          <p class="text-[11px] text-amber-800 dark:text-amber-200">
+          <p class="text-[11px] text-cyan-800 dark:text-cyan-200">
             <i class="fas fa-exclamation-triangle mr-1"></i>
             <strong>Format CSV/XLSX:</strong> kolom
             <code>tanggal, jam, fingerprint_id (atau nama), kegiatan</code>. Tanggal:
@@ -270,9 +270,9 @@
       @click.self="modalOpen = false"
       class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4"
     >
-      <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md">
+      <div class="bg-[var(--bg-card)] rounded-2xl shadow-2xl w-full max-w-md">
         <form @submit.prevent="simpanKegiatan" class="p-5">
-          <h3 class="text-base font-black text-slate-800 dark:text-white mb-4">
+          <h3 class="text-base font-black text-[var(--text-primary)] mb-4">
             <i
               :class="[
                 'fas',
@@ -284,7 +284,7 @@
           </h3>
           <div class="space-y-3">
             <div>
-              <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1"
+              <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1"
                 >Nama Kegiatan *</label
               >
               <input
@@ -292,38 +292,38 @@
                 required
                 type="text"
                 placeholder="Contoh: Sholat Shubuh Jamaah"
-                class="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-800 dark:text-white"
+                class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-white dark:bg-slate-900 text-[var(--text-primary)]"
               />
             </div>
             <div>
-              <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1"
+              <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1"
                 >Jam Pelaksanaan</label
               >
               <input
                 v-model="form.jam"
                 type="text"
                 placeholder="04:00 - 04:30"
-                class="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-800 dark:text-white"
+                class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-white dark:bg-slate-900 text-[var(--text-primary)]"
               />
             </div>
             <div>
-              <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1"
+              <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1"
                 >Deskripsi (opsional)</label
               >
               <textarea
                 v-model="form.deskripsi"
                 rows="2"
-                class="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-800 dark:text-white resize-none"
+                class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-white dark:bg-slate-900 text-[var(--text-primary)] resize-none"
               ></textarea>
             </div>
           </div>
           <div
-            class="flex items-center justify-end gap-2 mt-5 pt-4 border-t border-slate-100 dark:border-slate-700"
+            class="flex items-center justify-end gap-2 mt-5 pt-4 border-t border-[var(--border-subtle)]"
           >
             <button
               type="button"
               @click="modalOpen = false"
-              class="text-xs font-bold px-4 py-2 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-200"
+              class="text-xs font-bold px-4 py-2 rounded-lg bg-[var(--bg-muted)] text-slate-600 dark:text-slate-200"
             >
               Batal
             </button>
@@ -361,21 +361,21 @@ const TABS = [
     name: 'Master Kegiatan',
     subtitle: 'Atur daftar kegiatan harian',
     icon: 'fa-list-ul',
-    gradient: 'from-cyan-500 to-cyan-700'
+    gradient: 'from-cyan-500 dark:from-cyan-700 to-cyan-700 dark:to-cyan-900'
   },
   {
     id: 'absen',
     name: 'Rekap Absensi',
     subtitle: 'Lihat kehadiran santri mukim',
     icon: 'fa-fingerprint',
-    gradient: 'from-purple-500 to-purple-700'
+    gradient: 'from-teal-500 dark:from-teal-700 to-teal-700 dark:to-teal-900'
   },
   {
     id: 'impor',
     name: 'Impor Fingerprint',
     subtitle: 'Upload data device .xlsx/.csv',
     icon: 'fa-file-import',
-    gradient: 'from-blue-500 to-blue-700'
+    gradient: 'from-cyan-500 dark:from-cyan-700 to-cyan-700 dark:to-cyan-900'
   }
 ]
 const activeTab = ref('master')

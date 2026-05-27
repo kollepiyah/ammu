@@ -1,90 +1,85 @@
 <script setup>
-// v.20.8.0526: Quick Actions = SEMUA menu sidebar yang accessible role (icon-only).
-// Desktop: row penuh (no empty space), mobile: scroll horizontal.
+// v.21.84.0527: Quick Actions — gradient warna-warni per icon (match live v.21.10).
+// Static class strings agar Tailwind JIT bisa scan & compile.
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMenus } from '@/composables/useMenus'
 
 const router = useRouter()
 const { menus } = useMenus()
-
-// Mapping path → gradient (kalau path tidak ada di map, fallback ke teal)
-const PATH_GRADIENT = {
-  '/dashboard': 'from-slate-500 to-slate-700',
-  '/statistik': 'from-violet-500 to-violet-700',
-  '/kalender': 'from-orange-500 to-orange-700',
-  '/profil': 'from-fuchsia-500 to-fuchsia-700',
-  '/santri': 'from-cyan-500 to-cyan-700',
-  '/guru': 'from-purple-500 to-purple-700',
-  '/naik-kelas': 'from-teal-500 to-teal-700',
-  '/rekap-prestasi': 'from-emerald-500 to-emerald-700',
-  '/rapor': 'from-amber-500 to-amber-700',
-  '/absensi-guru': 'from-blue-500 to-blue-700',
-  '/kegiatan-pesantren': 'from-rose-500 to-rose-700',
-  '/master-data': 'from-indigo-500 to-indigo-700',
-  '/psb': 'from-pink-500 to-fuchsia-700',
-  '/keuangan': 'from-emerald-500 to-emerald-700',
-  '/pos-santri': 'from-teal-500 to-teal-700',
-  '/bisyaroh': 'from-amber-500 to-amber-700',
-  '/tabungan': 'from-pink-500 to-pink-700',
-  '/tagihan': 'from-red-500 to-red-700',
-  '/buku-induk': 'from-indigo-500 to-indigo-700',
-  '/hutang-piutang': 'from-yellow-500 to-yellow-700',
-  '/keu-pengaturan': 'from-slate-500 to-slate-700',
-  '/posts': 'from-sky-500 to-sky-700',
-  '/kritik-saran': 'from-lime-500 to-lime-700',
-  '/pengaturan-web': 'from-gray-500 to-gray-700'
-}
-
-// Tailwind safelist hint untuk JIT compiler:
-// from-indigo-500 to-indigo-700 from-teal-500 to-teal-700 from-cyan-500 to-cyan-700
-// from-emerald-500 to-emerald-700 from-amber-500 to-amber-700 from-purple-500 to-purple-700
-// from-blue-500 to-blue-700 from-rose-500 to-rose-700 from-pink-500 to-fuchsia-700
-// from-slate-500 to-slate-700 from-violet-500 to-violet-700 from-orange-500 to-orange-700
-// from-fuchsia-500 to-fuchsia-700 from-red-500 to-red-700 from-yellow-500 to-yellow-700
-// from-sky-500 to-sky-700 from-lime-500 to-lime-700 from-gray-500 to-gray-700 from-pink-500 to-pink-700
-
-// Skip Beranda (sudah dilihat sekarang) + Profil (di dropdown header)
 const SKIP_PATHS = ['/dashboard', '/profil']
+
+// Mapping warna gradient per FA icon — extracted from live ammuonline.web.app v.21.10
+// Format: full Tailwind class string (static literal supaya JIT bisa pickup)
+const COLOR_BY_ICON = {
+  'fa-chart-pie':           'from-teal-500 dark:from-teal-700 to-teal-700 dark:to-teal-900',
+  'fa-calendar-alt':        'from-cyan-500 dark:from-cyan-700 to-cyan-700 dark:to-cyan-900',
+  'fa-id-badge':            'from-teal-500 dark:from-teal-700 to-teal-700 dark:to-teal-900',
+  'fa-users':               'from-cyan-500 dark:from-cyan-700 to-cyan-700 dark:to-cyan-900',
+  'fa-chalkboard-teacher':  'from-teal-600 dark:from-teal-800 to-teal-800',
+  'fa-level-up-alt':        'from-teal-500 dark:from-teal-700 to-teal-700 dark:to-teal-900',
+  'fa-book-open':           'from-emerald-500 dark:from-emerald-700 to-emerald-700 dark:to-emerald-900',
+  'fa-graduation-cap':      'from-emerald-500 dark:from-emerald-700 to-emerald-700 dark:to-emerald-900',
+  'fa-fingerprint':         'from-cyan-600 dark:from-cyan-800 to-cyan-800',
+  'fa-clipboard-user':      'from-teal-500 dark:from-teal-700 to-teal-700 dark:to-teal-900',
+  'fa-calendar-check':      'from-cyan-500 dark:from-cyan-700 to-teal-700 dark:to-teal-900',
+  'fa-database':            'from-teal-700 dark:from-teal-900 to-teal-900',
+  'fa-clipboard-list':      'from-emerald-600 dark:from-emerald-800 to-emerald-800',
+  'fa-chart-line':          'from-emerald-500 dark:from-emerald-700 to-emerald-700 dark:to-emerald-900',
+  'fa-cash-register':       'from-teal-500 dark:from-teal-700 to-teal-700 dark:to-teal-900',
+  'fa-hand-holding-usd':    'from-emerald-500 dark:from-emerald-700 to-emerald-700 dark:to-emerald-900',
+  'fa-piggy-bank':          'from-emerald-600 dark:from-emerald-800 to-emerald-800',
+  'fa-book':                'from-teal-700 dark:from-teal-900 to-teal-900',
+  'fa-handshake':           'from-cyan-400 dark:from-cyan-700 to-cyan-600 dark:to-cyan-800',
+  'fa-sliders-h':           'from-slate-500 to-slate-700',
+  'fa-bullhorn':            'from-cyan-500 dark:from-cyan-700 to-cyan-700 dark:to-cyan-900',
+  'fa-comment-dots':        'from-emerald-500 dark:from-emerald-700 to-emerald-700 dark:to-emerald-900',
+  'fa-cog':                 'from-slate-500 to-slate-700'
+}
+const DEFAULT_GRAD = 'from-teal-500 dark:from-teal-700 to-teal-700 dark:to-teal-900'
+
+function colorFor(iconClass) {
+  // iconClass datang dari menu config (mis. 'fa-users'). Cari di map, default teal.
+  if (!iconClass) return DEFAULT_GRAD
+  const key = String(iconClass).trim()
+  return COLOR_BY_ICON[key] || DEFAULT_GRAD
+}
 
 const actions = computed(() => {
   return menus.value
     .filter((m) => m.available && !SKIP_PATHS.includes(m.path))
-    .map((m) => ({
-      icon: m.icon,
-      label: m.name,
-      gradient: PATH_GRADIENT[m.path] || 'from-teal-500 to-teal-700',
-      to: m.path
-    }))
+    .map((m) => ({ icon: m.icon, label: m.name, to: m.path }))
 })
 
 function go(to) {
-  if (to.startsWith('/legacy/')) {
-    window.location.href = to
-    return
-  }
+  if (to.startsWith('/legacy/')) { window.location.href = to; return }
   router.push(to)
 }
 </script>
 
 <template>
-  <!-- v.20.62.0526: Quick Actions slider horizontal (no wrap) — kyai req: gak nampil sampai 3 baris di desktop -->
-  <div class="flex gap-2 md:gap-2.5 overflow-x-auto pb-1 justify-start snap-x snap-mandatory scrollbar-thin">
+  <div class="qa-scroll flex gap-2 md:gap-2.5 overflow-x-auto pb-1 justify-start snap-x">
     <button
       v-for="act in actions"
       :key="act.to"
       @click="go(act.to)"
       :class="[
-        'group flex items-center justify-center snap-start',
-        'w-10 h-10 md:w-11 md:h-11',
-        'bg-gradient-to-br', act.gradient,
-        'rounded-full shadow-sm hover:shadow-md hover:-translate-y-0.5 hover:scale-105 active:translate-y-0',
+        'snap-start group flex items-center justify-center',
+        'w-11 h-11 md:w-12 md:h-12',
+        'bg-gradient-to-br', colorFor(act.icon),
+        'rounded-[var(--radius-full)] shadow-[var(--shadow-sm)]',
+        'hover:shadow-[var(--shadow-md)] hover:scale-110',
         'transition-all duration-200 ease-out cursor-pointer flex-shrink-0'
       ]"
       :title="act.label"
       :aria-label="act.label"
     >
-      <i :class="['fas', act.icon, 'text-sm text-white drop-shadow']"></i>
+      <i :class="['fas', act.icon, 'text-base text-white drop-shadow-sm']"></i>
     </button>
   </div>
 </template>
+
+<style scoped>
+.qa-scroll::-webkit-scrollbar { display: none; }
+.qa-scroll { scrollbar-width: none; -ms-overflow-style: none; }
+</style>

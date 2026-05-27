@@ -2,21 +2,21 @@
   <div class="p-3 md:p-5 max-w-5xl mx-auto space-y-4">
     <!-- Header + Status / Actions -->
     <div
-      class="bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-5 border border-slate-200 dark:border-slate-700 shadow-sm"
+      class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
     >
       <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
         <div>
           <RouterLink to="/psb" class="text-[11px] text-teal-600 hover:underline font-bold">
             <i class="fas fa-arrow-left mr-1"></i>Kembali ke Daftar PSB
           </RouterLink>
-          <h1 class="text-xl md:text-2xl font-black text-slate-800 dark:text-white mt-1">
+          <h1 class="text-xl md:text-2xl font-black text-[var(--text-primary)] mt-1">
             <i class="fas fa-user-graduate text-teal-500 mr-2"></i>{{ pendaftar.nama || '...' }}
           </h1>
-          <p class="text-xs text-slate-500 mt-0.5">
+          <p class="text-xs text-[var(--text-secondary)] mt-0.5">
             No. Pendaftaran:
-            <span class="font-bold text-slate-700">{{ pendaftar.no_pendaftaran || '—' }}</span>
+            <span class="font-bold text-[var(--text-primary)]">{{ pendaftar.no_pendaftaran || '—' }}</span>
             &middot; Tgl Daftar:
-            <span class="font-bold text-slate-700">{{
+            <span class="font-bold text-[var(--text-primary)]">{{
               fmtTgl(pendaftar.tanggal_daftar || pendaftar.tgl_daftar)
             }}</span>
           </p>
@@ -33,7 +33,7 @@
           <button
             v-if="pendaftar.status !== 'approved'"
             @click="updateStatus('approved')"
-            class="text-xs px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg transition"
+            class="text-xs px-3 py-1.5 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-bold rounded-lg transition"
           >
             <i class="fas fa-check mr-1"></i>Approve
           </button>
@@ -47,7 +47,7 @@
           <button
             v-if="pendaftar.status === 'approved' && pendaftar.status !== 'enrolled'"
             @click="updateStatus('enrolled')"
-            class="text-xs px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-lg transition"
+            class="text-xs px-3 py-1.5 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-bold rounded-lg transition"
           >
             <i class="fas fa-user-plus mr-1"></i>Tandai Enrolled
           </button>
@@ -56,9 +56,9 @@
     </div>
 
     <!-- Loading -->
-    <div v-if="loading" class="bg-white dark:bg-slate-800 rounded-2xl p-10 text-center">
+    <div v-if="loading" class="bg-[var(--bg-card)] rounded-2xl p-10 text-center">
       <i class="fas fa-spinner fa-spin text-teal-500 text-3xl mb-3"></i>
-      <p class="text-sm text-slate-500 font-bold">Memuat data pendaftar…</p>
+      <p class="text-sm text-[var(--text-secondary)] font-bold">Memuat data pendaftar…</p>
     </div>
 
     <template v-else>
@@ -122,14 +122,14 @@
       <!-- Field Tambahan (ACF) -->
       <Section title="Field Tambahan (ACF)" icon="fas fa-list-check">
         <div v-if="acfList.length === 0" class="text-center py-4">
-          <i class="fas fa-circle-info text-slate-300 text-2xl mb-2"></i>
-          <p class="text-xs text-slate-500 italic">Belum ada field tambahan</p>
+          <i class="fas fa-circle-info text-[var(--text-tertiary)] text-2xl mb-2"></i>
+          <p class="text-xs text-[var(--text-secondary)] italic">Belum ada field tambahan</p>
         </div>
         <div v-else class="space-y-2">
           <div
             v-for="item in acfList"
             :key="item.key"
-            class="bg-slate-50 dark:bg-slate-900/40 rounded-lg p-2.5 flex items-start gap-2"
+            class="bg-[var(--bg-card-elevated)] rounded-lg p-2.5 flex items-start gap-2"
           >
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-1.5 mb-0.5">
@@ -138,7 +138,7 @@
                 >
                   {{ item.type || 'text' }}
                 </span>
-                <p class="text-[11px] font-bold text-slate-600 uppercase tracking-wide">
+                <p class="text-[11px] font-bold text-[var(--text-secondary)] uppercase tracking-wide">
                   {{ item.label || item.key }}
                 </p>
               </div>
@@ -149,7 +149,7 @@
             <div class="flex flex-col gap-1">
               <button
                 @click="openEditAcf(item)"
-                class="text-[10px] px-2 py-0.5 bg-amber-100 hover:bg-amber-200 text-amber-700 font-bold rounded transition"
+                class="text-[10px] px-2 py-0.5 bg-cyan-100 hover:bg-cyan-200 text-cyan-700 font-bold rounded transition"
               >
                 <i class="fas fa-pen"></i>
               </button>
@@ -162,7 +162,7 @@
             </div>
           </div>
         </div>
-        <div class="mt-3 pt-3 border-t border-dashed border-slate-200">
+        <div class="mt-3 pt-3 border-t border-dashed border-[var(--border-subtle)]">
           <button
             @click="openAddAcf"
             class="w-full text-xs px-3 py-2 bg-teal-50 hover:bg-teal-100 text-teal-700 font-bold rounded-lg border border-dashed border-teal-300 transition"
@@ -175,21 +175,21 @@
       <!-- Convert ke Santri -->
       <div
         v-if="pendaftar.status === 'approved' || pendaftar.status === 'enrolled'"
-        class="bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-5 border border-teal-200 shadow-sm"
+        class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-teal-200 shadow-sm"
       >
         <div class="flex items-center justify-between gap-3 flex-wrap">
           <div>
             <h3 class="text-sm font-black text-teal-700">
               <i class="fas fa-user-plus mr-1"></i>Konversi ke Santri
             </h3>
-            <p class="text-[11px] text-slate-500 mt-0.5">
+            <p class="text-[11px] text-[var(--text-secondary)] mt-0.5">
               Buat dokumen santri/ baru dari data pendaftaran ini.
             </p>
           </div>
           <button
             @click="convertToSantri"
             :disabled="converting"
-            class="text-xs px-4 py-2 bg-teal-600 hover:bg-teal-700 disabled:bg-slate-300 text-white font-bold rounded-lg transition"
+            class="text-xs px-4 py-2 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] disabled:bg-slate-300 text-white font-bold rounded-lg transition"
           >
             <i class="fas fa-arrow-right-to-bracket mr-1"></i
             >{{ converting ? 'Memproses…' : 'Buat Santri' }}
@@ -204,15 +204,15 @@
       class="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
       @click.self="acfModal.open = false"
     >
-      <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 max-w-md w-full space-y-3">
-        <h3 class="text-base font-black text-slate-800">
+      <div class="bg-[var(--bg-card)] rounded-2xl p-5 max-w-md w-full space-y-3">
+        <h3 class="text-base font-black text-[var(--text-primary)]">
           {{ acfModal.editing ? 'Edit Field' : 'Tambah Field' }}
         </h3>
         <div>
-          <label class="text-[11px] font-bold uppercase text-slate-500">Type</label>
+          <label class="text-[11px] font-bold uppercase text-[var(--text-secondary)]">Type</label>
           <select
             v-model="acfModal.type"
-            class="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 mt-1"
+            class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] mt-1"
           >
             <option value="text">Text</option>
             <option value="textarea">Textarea</option>
@@ -221,16 +221,16 @@
           </select>
         </div>
         <div>
-          <label class="text-[11px] font-bold uppercase text-slate-500">Label</label>
+          <label class="text-[11px] font-bold uppercase text-[var(--text-secondary)]">Label</label>
           <input
             v-model="acfModal.label"
             type="text"
             placeholder="Misal: Hafalan Saat Ini"
-            class="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 mt-1"
+            class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] mt-1"
           />
         </div>
         <div>
-          <label class="text-[11px] font-bold uppercase text-slate-500"
+          <label class="text-[11px] font-bold uppercase text-[var(--text-secondary)]"
             >Key (auto kalau kosong)</label
           >
           <input
@@ -238,16 +238,16 @@
             type="text"
             :disabled="acfModal.editing"
             placeholder="kebab_case_key"
-            class="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 mt-1 disabled:bg-slate-100"
+            class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] mt-1 disabled:bg-[var(--bg-muted)]"
           />
         </div>
         <div>
-          <label class="text-[11px] font-bold uppercase text-slate-500">Value</label>
+          <label class="text-[11px] font-bold uppercase text-[var(--text-secondary)]">Value</label>
           <textarea
             v-if="acfModal.type === 'textarea'"
             v-model="acfModal.value"
             rows="3"
-            class="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 mt-1"
+            class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] mt-1"
           ></textarea>
           <input
             v-else
@@ -255,19 +255,19 @@
             :type="
               acfModal.type === 'number' ? 'number' : acfModal.type === 'date' ? 'date' : 'text'
             "
-            class="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 mt-1"
+            class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] mt-1"
           />
         </div>
         <div class="flex justify-end gap-2 pt-2">
           <button
             @click="acfModal.open = false"
-            class="text-xs px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg"
+            class="text-xs px-3 py-1.5 bg-[var(--bg-muted)] hover:bg-slate-200 text-[var(--text-primary)] font-bold rounded-lg"
           >
             Batal
           </button>
           <button
             @click="saveAcf"
-            class="text-xs px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-lg"
+            class="text-xs px-3 py-1.5 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-bold rounded-lg"
           >
             Simpan
           </button>
@@ -307,7 +307,7 @@ const Section = defineComponent({
         'div',
         {
           class:
-            'bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-5 border border-slate-200 dark:border-slate-700 shadow-sm'
+            'bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm'
         },
         [
           h('h3', { class: 'text-xs font-black text-teal-700 uppercase tracking-wide mb-3' }, [
@@ -327,12 +327,12 @@ const InfoRow = defineComponent({
     return () =>
       h(
         'div',
-        { class: 'flex items-baseline gap-2 py-1 border-b border-slate-100 dark:border-slate-700' },
+        { class: 'flex items-baseline gap-2 py-1 border-b border-[var(--border-subtle)]' },
         [
           h(
             'span',
             {
-              class: 'text-[11px] font-bold text-slate-500 uppercase tracking-wide min-w-[120px]'
+              class: 'text-[11px] font-bold text-[var(--text-secondary)] uppercase tracking-wide min-w-[120px]'
             },
             props.label + ':'
           ),
@@ -351,20 +351,20 @@ const DocPreview = defineComponent({
   setup(props) {
     return () => {
       const isImg = props.url && /\.(png|jpe?g|webp|gif)$/i.test(props.url)
-      return h('div', { class: 'bg-slate-50 rounded-xl p-3 border border-slate-200' }, [
-        h('p', { class: 'text-[11px] font-bold uppercase text-slate-500 mb-2' }, props.label),
+      return h('div', { class: 'bg-[var(--bg-card-elevated)] rounded-xl p-3 border border-[var(--border-subtle)]' }, [
+        h('p', { class: 'text-[11px] font-bold uppercase text-[var(--text-secondary)] mb-2' }, props.label),
         props.url
           ? h('a', { href: props.url, target: '_blank', class: 'block' }, [
               isImg
                 ? h('img', {
                     src: props.url,
-                    class: 'w-full h-40 object-contain bg-white rounded-lg'
+                    class: 'w-full h-40 object-contain bg-[var(--bg-card)] rounded-lg'
                   })
                 : h(
                     'div',
                     {
                       class:
-                        'w-full h-40 flex items-center justify-center bg-white rounded-lg text-teal-600'
+                        'w-full h-40 flex items-center justify-center bg-[var(--bg-card)] rounded-lg text-teal-600'
                     },
                     [h('i', { class: 'fas fa-file-pdf text-4xl' })]
                   ),
@@ -374,7 +374,7 @@ const DocPreview = defineComponent({
                 'Klik untuk lihat full'
               )
             ])
-          : h('p', { class: 'text-xs text-slate-400 italic text-center py-8' }, 'Tidak ada file')
+          : h('p', { class: 'text-xs text-[var(--text-tertiary)] italic text-center py-8' }, 'Tidak ada file')
       ])
     }
   }
@@ -544,7 +544,7 @@ function statusBg(s) {
   if (st === 'approved') return 'bg-emerald-100 text-emerald-700'
   if (st === 'rejected') return 'bg-rose-100 text-rose-700'
   if (st === 'enrolled') return 'bg-teal-100 text-teal-700'
-  return 'bg-amber-100 text-amber-700'
+  return 'bg-cyan-100 text-cyan-700'
 }
 
 function fmtTgl(v) {

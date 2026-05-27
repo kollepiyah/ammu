@@ -1,10 +1,10 @@
 <template>
   <!-- v.20.2.0526: Banner hijau gradient match legacy + logo app watermark efek (seperti widget Ahlan) -->
   <div class="space-y-4">
-    <div class="bg-white dark:bg-slate-800 rounded-[2rem] shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+    <div class="bg-[var(--bg-card)] rounded-[2rem] shadow-sm border border-[var(--border-subtle)] overflow-hidden">
       <!-- HEADER BANNER — gradient teal/emerald dengan logo app sebagai watermark -->
       <div
-        class="relative bg-gradient-to-br from-emerald-500 via-teal-600 to-teal-700 px-6 md:px-8 py-6 md:py-7 overflow-hidden"
+        class="relative bg-gradient-to-br from-[var(--color-primary)] via-[var(--color-primary-hover)] to-[var(--color-primary-hover)] px-6 md:px-8 py-6 md:py-7 overflow-hidden"
       >
         <!-- Logo app watermark (efek mirip Ahlan widget) -->
         <img
@@ -23,7 +23,7 @@
         <div class="relative flex flex-col md:flex-row items-center md:items-center gap-5">
           <!-- Foto profil bulat -->
           <div
-            class="w-28 h-28 md:w-32 md:h-32 bg-white dark:bg-slate-800/20 border-4 border-white/80 rounded-full flex items-center justify-center overflow-hidden shadow-2xl flex-shrink-0 backdrop-blur-sm"
+            class="w-28 h-28 md:w-32 md:h-32 bg-[var(--bg-card)]/20 border-4 border-white/80 rounded-full flex items-center justify-center overflow-hidden shadow-2xl flex-shrink-0 backdrop-blur-sm"
           >
             <img
               v-if="guru?.foto"
@@ -42,9 +42,9 @@
             <p class="text-xs md:text-sm font-bold text-emerald-50/90 uppercase tracking-wider mt-1.5">
               {{ jabatanHeader }}
             </p>
-            <!-- v.21.26.0526: Fix kontras — sebelumnya bg-white text-white = badge invisible -->
+            <!-- v.21.26.0526: Fix kontras — sebelumnya bg-[var(--bg-card)] text-white = badge invisible -->
             <span
-              class="inline-block mt-3 text-[11px] bg-white/25 dark:bg-slate-800/25 backdrop-blur-sm text-white font-black px-4 py-1.5 rounded-full uppercase tracking-widest shadow-md border border-white/30"
+              class="inline-block mt-3 text-[11px] bg-[var(--bg-card)]/25 dark:bg-slate-800/25 backdrop-blur-sm text-white font-black px-4 py-1.5 rounded-full uppercase tracking-widest shadow-md border border-white/30"
             >
               {{ roleLabel }}
             </span>
@@ -55,88 +55,88 @@
       <!-- GRID DETAIL -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <!-- Identitas -->
-        <div class="bg-slate-50 dark:bg-slate-900/40 p-5 rounded-2xl border border-slate-200 dark:border-slate-700">
+        <div class="bg-[var(--bg-card-elevated)] p-5 rounded-2xl border border-[var(--border-subtle)]">
           <h3
-            class="font-black text-slate-700 dark:text-slate-200 text-sm uppercase tracking-widest border-b border-slate-200 dark:border-slate-700 pb-2 mb-4"
+            class="font-black text-[var(--text-primary)] text-sm uppercase tracking-widest border-b border-[var(--border-subtle)] pb-2 mb-4"
           >
             <i class="fas fa-user mr-2"></i>Identitas
           </h3>
           <ul class="space-y-3 text-sm">
             <li class="flex justify-between gap-2">
-              <span class="text-slate-700 dark:text-slate-300 font-bold">Nama:</span>
+              <span class="text-slate-700 dark:text-[var(--text-tertiary)] font-bold">Nama:</span>
               <span class="font-black text-slate-800 dark:text-slate-100 text-right">{{ namaGelar }}</span>
             </li>
             <li class="flex justify-between gap-2">
-              <span class="text-slate-700 dark:text-slate-300 font-bold">Username:</span>
+              <span class="text-slate-700 dark:text-[var(--text-tertiary)] font-bold">Username:</span>
               <span class="font-black text-slate-800 dark:text-slate-100 text-right">{{ guru?.username || '-' }}</span>
             </li>
             <li class="flex justify-between gap-2">
-              <span class="text-slate-700 dark:text-slate-300 font-bold">Jenis Kelamin:</span>
+              <span class="text-slate-700 dark:text-[var(--text-tertiary)] font-bold">Jenis Kelamin:</span>
               <span class="font-black text-slate-800 dark:text-slate-100 text-right">{{ jkLabel }}</span>
             </li>
             <li class="flex justify-between gap-2">
-              <span class="text-slate-700 dark:text-slate-300 font-bold">No WhatsApp:</span>
+              <span class="text-slate-700 dark:text-[var(--text-tertiary)] font-bold">No WhatsApp:</span>
               <span class="font-black text-slate-800 dark:text-slate-100 text-right">{{ guru?.wa || '-' }}</span>
             </li>
           </ul>
         </div>
 
         <!-- Tugas & Lembaga -->
-        <div class="bg-blue-50 dark:bg-blue-900/20 p-5 rounded-2xl border border-blue-100">
+        <div class="bg-cyan-50 dark:bg-cyan-900/20 p-5 rounded-2xl border border-cyan-100">
           <h3
-            class="font-black text-blue-800 text-sm uppercase tracking-widest border-b border-blue-200 pb-2 mb-4"
+            class="font-black text-cyan-800 text-sm uppercase tracking-widest border-b border-cyan-200 pb-2 mb-4"
           >
             <i class="fas fa-briefcase mr-2"></i>Tugas &amp; Lembaga
           </h3>
           <ul class="space-y-3 text-sm">
             <li class="flex justify-between gap-2">
-              <span class="text-blue-700 font-bold">Jabatan:</span>
+              <span class="text-cyan-700 font-bold">Jabatan:</span>
               <span class="font-black text-slate-800 dark:text-slate-100 text-right">{{ guru?.jabatan || '-' }}</span>
             </li>
             <li class="flex justify-between gap-2">
-              <span class="text-blue-700 font-bold">Lembaga/Devisi:</span>
+              <span class="text-cyan-700 font-bold">Lembaga/Devisi:</span>
               <span class="font-black text-slate-800 dark:text-slate-100 text-right">{{ guru?.lembaga || '-' }}</span>
             </li>
             <li class="flex justify-between gap-2">
-              <span class="text-blue-700 font-bold">Tanggal Tugas:</span>
+              <span class="text-cyan-700 font-bold">Tanggal Tugas:</span>
               <span class="font-black text-slate-800 dark:text-slate-100 text-right">{{ tglTugasFmt }}</span>
             </li>
             <li class="flex justify-between gap-2">
-              <span class="text-blue-700 font-bold">Lama Mengajar:</span>
+              <span class="text-cyan-700 font-bold">Lama Mengajar:</span>
               <span class="font-black text-slate-800 dark:text-slate-100 text-right">{{ lamaMengajar }}</span>
             </li>
             <li class="flex justify-between gap-2">
-              <span class="text-blue-700 font-bold">Status:</span>
+              <span class="text-cyan-700 font-bold">Status:</span>
               <span class="font-black text-slate-800 dark:text-slate-100 text-right">{{ guru?.status || 'Aktif' }}</span>
             </li>
           </ul>
         </div>
 
         <!-- Sistem & Akses (full width on md) -->
-        <div class="bg-purple-50 dark:bg-purple-900/20 p-5 rounded-2xl border border-purple-100 md:col-span-2">
+        <div class="bg-teal-50 dark:bg-teal-900/20 p-5 rounded-2xl border border-teal-100 md:col-span-2">
           <h3
-            class="font-black text-purple-800 text-sm uppercase tracking-widest border-b border-purple-200 pb-2 mb-4"
+            class="font-black text-teal-800 text-sm uppercase tracking-widest border-b border-teal-200 pb-2 mb-4"
           >
             <i class="fas fa-shield-halved mr-2"></i>Sistem &amp; Akses
           </h3>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
-            <div class="bg-white dark:bg-slate-800 p-3 rounded-xl border border-purple-100">
-              <p class="text-[10px] text-purple-600 font-bold uppercase">Role Sistem</p>
+            <div class="bg-[var(--bg-card)] p-3 rounded-xl border border-teal-100">
+              <p class="text-[10px] text-teal-600 font-bold uppercase">Role Sistem</p>
               <p class="font-black text-slate-800 dark:text-slate-100 mt-1">{{ roleSistem }}</p>
             </div>
-            <div class="bg-white dark:bg-slate-800 p-3 rounded-xl border border-purple-100">
-              <p class="text-[10px] text-purple-600 font-bold uppercase">No. Syahadah</p>
+            <div class="bg-[var(--bg-card)] p-3 rounded-xl border border-teal-100">
+              <p class="text-[10px] text-teal-600 font-bold uppercase">No. Syahadah</p>
               <p class="font-black text-slate-800 dark:text-slate-100 mt-1">{{ guru?.ekgq || '-' }}</p>
             </div>
-            <div class="bg-white dark:bg-slate-800 p-3 rounded-xl border border-purple-100">
-              <p class="text-[10px] text-purple-600 font-bold uppercase">ID Fingerprint</p>
+            <div class="bg-[var(--bg-card)] p-3 rounded-xl border border-teal-100">
+              <p class="text-[10px] text-teal-600 font-bold uppercase">ID Fingerprint</p>
               <p class="font-black text-slate-800 dark:text-slate-100 mt-1">{{ guru?.id_fingerprint || '-' }}</p>
             </div>
           </div>
         </div>
       </div>
 
-      <p class="text-[10px] text-slate-400 italic mt-4 text-center">
+      <p class="text-[10px] text-[var(--text-tertiary)] italic mt-4 text-center">
         <i class="fas fa-info-circle mr-1"></i>Untuk mengubah foto, sandi, atau no WA, klik avatar di
         kanan atas → Edit Profil.
       </p>

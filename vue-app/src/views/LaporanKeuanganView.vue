@@ -1,16 +1,16 @@
 <template>
   <div class="p-3 md:p-5 max-w-5xl mx-auto space-y-4">
-    <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-200 dark:border-slate-700 shadow-sm">
-      <h1 class="text-xl md:text-2xl font-black"><i class="fas fa-chart-line text-indigo-500 mr-2"></i>Laporan Keuangan</h1>
-      <p class="text-xs text-slate-500 mt-0.5">Ringkasan pemasukan + pengeluaran per periode</p>
+    <div class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm">
+      <h1 class="text-xl md:text-2xl font-black"><i class="fas fa-chart-line text-cyan-500 mr-2"></i>Laporan Keuangan</h1>
+      <p class="text-xs text-[var(--text-secondary)] mt-0.5">Ringkasan pemasukan + pengeluaran per periode</p>
     </div>
 
-    <div class="bg-white dark:bg-slate-800 rounded-2xl p-3 border border-slate-200 dark:border-slate-700 shadow-sm grid grid-cols-2 gap-2">
-      <select v-model.number="filterBulan" class="px-3 py-2 text-sm rounded-xl border border-slate-300 bg-white">
+    <div class="bg-[var(--bg-card)] rounded-2xl p-3 border border-[var(--border-subtle)] shadow-sm grid grid-cols-2 gap-2">
+      <select v-model.number="filterBulan" class="px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)]">
         <option :value="0">Setahun</option>
         <option v-for="(b, i) in NAMA_BULAN" :key="b" :value="i+1">{{ b }}</option>
       </select>
-      <select v-model.number="filterTahun" class="px-3 py-2 text-sm rounded-xl border border-slate-300 bg-white">
+      <select v-model.number="filterTahun" class="px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)]">
         <option v-for="y in [2024,2025,2026,2027]" :key="y" :value="y">{{ y }}</option>
       </select>
     </div>
@@ -26,16 +26,16 @@
         <p class="text-2xl font-black text-rose-800 mt-1">{{ fmtRp(totalPengeluaran) }}</p>
         <p class="text-[10px] text-rose-600 mt-1">{{ bisyarohList.length }} slip bisyaroh + {{ tarikList.length }} tarik tabungan</p>
       </div>
-      <div :class="['rounded-2xl p-4 border-2', saldoBersih >= 0 ? 'bg-blue-50 border-blue-200' : 'bg-amber-50 border-amber-200']">
-        <p class="text-[10px] uppercase font-black" :class="saldoBersih >= 0 ? 'text-blue-700' : 'text-amber-700'">Saldo Bersih</p>
-        <p class="text-2xl font-black mt-1" :class="saldoBersih >= 0 ? 'text-blue-800' : 'text-amber-800'">{{ fmtRp(saldoBersih) }}</p>
-        <p class="text-[10px] mt-1" :class="saldoBersih >= 0 ? 'text-blue-600' : 'text-amber-600'">{{ saldoBersih >= 0 ? 'Surplus' : 'Defisit' }} periode ini</p>
+      <div :class="['rounded-2xl p-4 border-2', saldoBersih >= 0 ? 'bg-cyan-50 border-cyan-200' : 'bg-cyan-50 border-cyan-200']">
+        <p class="text-[10px] uppercase font-black" :class="saldoBersih >= 0 ? 'text-cyan-700' : 'text-cyan-700'">Saldo Bersih</p>
+        <p class="text-2xl font-black mt-1" :class="saldoBersih >= 0 ? 'text-cyan-800' : 'text-cyan-800'">{{ fmtRp(saldoBersih) }}</p>
+        <p class="text-[10px] mt-1" :class="saldoBersih >= 0 ? 'text-cyan-600' : 'text-cyan-600'">{{ saldoBersih >= 0 ? 'Surplus' : 'Defisit' }} periode ini</p>
       </div>
     </div>
 
     <!-- Detail breakdown -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-      <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm">
+      <div class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm">
         <h3 class="text-xs font-black uppercase mb-2 text-emerald-700"><i class="fas fa-arrow-down mr-1"></i>Pemasukan</h3>
         <div class="space-y-1 text-xs">
           <div class="flex justify-between"><span>Pembayaran Tagihan</span><b class="text-emerald-700">{{ fmtRp(sumPembayaran) }}</b></div>
@@ -43,7 +43,7 @@
           <div class="border-t pt-1 flex justify-between font-black"><span>Total</span><span class="text-emerald-800">{{ fmtRp(totalPemasukan) }}</span></div>
         </div>
       </div>
-      <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm">
+      <div class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm">
         <h3 class="text-xs font-black uppercase mb-2 text-rose-700"><i class="fas fa-arrow-up mr-1"></i>Pengeluaran</h3>
         <div class="space-y-1 text-xs">
           <div class="flex justify-between"><span>Slip Bisyaroh Guru</span><b class="text-rose-700">{{ fmtRp(sumBisyaroh) }}</b></div>

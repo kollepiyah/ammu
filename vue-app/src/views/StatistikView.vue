@@ -5,7 +5,7 @@
          ============================================================ -->
     <div
       v-if="role !== 'santri'"
-      class="bg-gradient-to-br from-purple-600 to-indigo-700 rounded-2xl p-5 md:p-6 text-white shadow-lg"
+      class="bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-accent)] rounded-2xl p-5 md:p-6 text-white shadow-lg"
     >
       <p class="text-[10px] font-black uppercase tracking-widest opacity-90">
         <i class="fas fa-chart-pie mr-1"></i>Dashboard Statistik
@@ -19,7 +19,7 @@
          ============================================================ -->
     <div
       v-if="role === 'santri' && santriProfile"
-      class="bg-gradient-to-br from-emerald-500 via-teal-600 to-teal-700 rounded-2xl p-5 md:p-6 text-white shadow-lg relative overflow-hidden"
+      class="bg-gradient-to-br from-[var(--color-primary)] via-[var(--color-primary-hover)] to-[var(--color-primary-hover)] rounded-2xl p-5 md:p-6 text-white shadow-lg relative overflow-hidden"
     >
       <img
         :src="logoSrc"
@@ -36,12 +36,12 @@
         </p>
         <span
           v-if="santriProfile.nis"
-          class="inline-block mt-3 bg-white/20 backdrop-blur-sm text-white text-xs font-black px-3 py-1 rounded-full"
+          class="inline-block mt-3 bg-[var(--bg-card)]/20 backdrop-blur-sm text-white text-xs font-black px-3 py-1 rounded-full"
           >NIS: {{ santriProfile.nis }}</span
         >
         <button
           @click="gotoProfil"
-          class="ml-2 mt-3 inline-flex items-center gap-1.5 bg-white/15 hover:bg-white/25 backdrop-blur-sm text-white text-xs font-bold px-3 py-1.5 rounded-lg transition cursor-pointer"
+          class="ml-2 mt-3 inline-flex items-center gap-1.5 bg-[var(--bg-card)]/15 hover:bg-[var(--bg-card)]/25 backdrop-blur-sm text-white text-xs font-bold px-3 py-1.5 rounded-lg transition cursor-pointer"
         >
           <i class="fas fa-id-card"></i>Lihat Data Diri
         </button>
@@ -54,21 +54,21 @@
     <div v-if="role === 'santri' && santriProfile" class="grid grid-cols-1 md:grid-cols-2 gap-3">
       <!-- Data Saat Ini -->
       <div
-        class="bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-5 border border-slate-200 dark:border-slate-700 shadow-sm"
+        class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
       >
         <h3
-          class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-widest mb-3 pb-2 border-b border-slate-100 dark:border-slate-700 flex items-center gap-2"
+          class="text-sm font-black text-[var(--text-primary)] uppercase tracking-widest mb-3 pb-2 border-b border-[var(--border-subtle)] flex items-center gap-2"
         >
           <i class="fas fa-id-card text-teal-600"></i>Data Saat Ini
         </h3>
         <div class="space-y-3">
           <div>
             <p
-              class="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest"
+              class="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-widest"
             >
               Kelas Sekolah
             </p>
-            <p class="text-sm font-black text-slate-800 dark:text-white mt-0.5">
+            <p class="text-sm font-black text-[var(--text-primary)] mt-0.5">
               {{
                 santriProfile.kelas_sekolah
                   ? formatKelasLabel(santriProfile.lembaga_sekolah, santriProfile.kelas_sekolah)
@@ -78,7 +78,7 @@
           </div>
           <div>
             <p
-              class="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest"
+              class="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-widest"
             >
               Lembaga Qiraati
             </p>
@@ -88,11 +88,11 @@
           </div>
           <div>
             <p
-              class="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest"
+              class="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-widest"
             >
               Jilid / Kelas
             </p>
-            <p class="text-sm font-black text-slate-800 dark:text-white mt-0.5">
+            <p class="text-sm font-black text-[var(--text-primary)] mt-0.5">
               {{ santriProfile.kelas || '-'
               }}{{
                 santriProfile.juz && santriProfile.juz !== '-'
@@ -103,11 +103,11 @@
           </div>
           <div>
             <p
-              class="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest"
+              class="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-widest"
             >
               Guru Kelas
             </p>
-            <p class="text-sm font-black text-slate-800 dark:text-white mt-0.5">
+            <p class="text-sm font-black text-[var(--text-primary)] mt-0.5">
               {{ santriProfile.guru || santriProfile.guru_pagi || santriProfile.guru_sore || '-' }}
             </p>
           </div>
@@ -116,18 +116,18 @@
 
       <!-- Capaian Prestasi -->
       <div
-        class="bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-5 border border-slate-200 dark:border-slate-700 shadow-sm"
+        class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
       >
         <div
-          class="flex items-center justify-between mb-3 pb-2 border-b border-slate-100 dark:border-slate-700"
+          class="flex items-center justify-between mb-3 pb-2 border-b border-[var(--border-subtle)]"
         >
           <h3
-            class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-widest flex items-center gap-2"
+            class="text-sm font-black text-[var(--text-primary)] uppercase tracking-widest flex items-center gap-2"
           >
-            <i class="fas fa-trophy text-amber-600"></i>Capaian Prestasi
+            <i class="fas fa-trophy text-cyan-700"></i>Capaian Prestasi
           </h3>
           <span
-            class="text-[10px] font-black bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200 px-2 py-0.5 rounded-full uppercase tracking-wider"
+            class="text-[10px] font-black bg-cyan-100 dark:bg-cyan-900/30 text-cyan-800 dark:text-cyan-200 px-2 py-0.5 rounded-full uppercase tracking-wider"
           >
             Periode: {{ periodeAktif }}
           </span>
@@ -141,7 +141,7 @@
             >
               Awal Bulan
             </p>
-            <p class="text-lg md:text-xl font-black text-slate-800 dark:text-white mt-1">
+            <p class="text-lg md:text-xl font-black text-[var(--text-primary)] mt-1">
               {{ santriProfile.prestasi_awal || '-' }}
             </p>
           </div>
@@ -153,19 +153,19 @@
             >
               Akhir Bulan
             </p>
-            <p class="text-lg md:text-xl font-black text-slate-800 dark:text-white mt-1">
+            <p class="text-lg md:text-xl font-black text-[var(--text-primary)] mt-1">
               {{ santriProfile.prestasi_akhir || '-' }}
             </p>
           </div>
           <div
-            class="bg-amber-50 dark:bg-amber-900/20 rounded-xl py-3 px-2 text-center border border-amber-100 dark:border-amber-700"
+            class="bg-cyan-50 dark:bg-cyan-900/20 rounded-xl py-3 px-2 text-center border border-cyan-100 dark:border-cyan-700"
           >
             <p
-              class="text-[9px] font-black text-amber-700 dark:text-amber-300 uppercase tracking-wider"
+              class="text-[9px] font-black text-cyan-700 dark:text-cyan-300 uppercase tracking-wider"
             >
               Total Prestasi
             </p>
-            <p class="text-lg md:text-xl font-black text-slate-800 dark:text-white mt-1">
+            <p class="text-lg md:text-xl font-black text-[var(--text-primary)] mt-1">
               {{ santriProfile.prestasi_total || '-' }}
             </p>
           </div>
@@ -178,17 +178,17 @@
          ============================================================ -->
     <div
       v-if="role === 'santri' && santriProfile && catatanBulanIni"
-      class="bg-amber-50 dark:bg-amber-900/20 rounded-2xl p-4 md:p-5 border border-amber-200 dark:border-amber-700 shadow-sm"
+      class="bg-cyan-50 dark:bg-cyan-900/20 rounded-2xl p-4 md:p-5 border border-cyan-200 dark:border-cyan-700 shadow-sm"
     >
       <div class="flex items-start gap-3">
-        <i class="fas fa-comment-dots text-amber-600 text-xl mt-1 flex-shrink-0"></i>
+        <i class="fas fa-comment-dots text-cyan-700 text-xl mt-1 flex-shrink-0"></i>
         <div class="flex-1 min-w-0">
           <p
-            class="text-xs font-black text-amber-800 dark:text-amber-300 uppercase tracking-wider mb-1"
+            class="text-xs font-black text-cyan-800 dark:text-cyan-300 uppercase tracking-wider mb-1"
           >
             Catatan Bulan Ini ({{ namaBulan[bulanIdx] }} {{ tahunIni }})
           </p>
-          <p class="text-sm text-slate-800 dark:text-white whitespace-pre-line leading-relaxed">
+          <p class="text-sm text-[var(--text-primary)] whitespace-pre-line leading-relaxed">
             {{ catatanBulanIni }}
           </p>
         </div>
@@ -201,7 +201,7 @@
     <div v-if="role === 'santri' && santriProfile" class="space-y-3">
       <!-- Rekap Prestasi Bulanan -->
       <div
-        class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden"
+        class="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)] shadow-sm overflow-hidden"
       >
         <button
           @click="toggleSection('rekap')"
@@ -209,36 +209,36 @@
         >
           <div class="flex items-center gap-3 min-w-0">
             <div
-              class="w-10 h-10 md:w-11 md:h-11 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-700 flex items-center justify-center shadow-md flex-shrink-0"
+              class="w-10 h-10 md:w-11 md:h-11 rounded-full bg-gradient-to-br from-emerald-500 dark:from-emerald-700 to-emerald-700 dark:to-emerald-900 flex items-center justify-center shadow-md flex-shrink-0"
             >
               <i class="fas fa-book-open text-white"></i>
             </div>
             <div class="text-left min-w-0">
-              <p class="text-sm md:text-base font-black text-slate-800 dark:text-white">
+              <p class="text-sm md:text-base font-black text-[var(--text-primary)]">
                 Rekap Prestasi Bulanan
               </p>
-              <p class="text-[11px] text-slate-500 dark:text-slate-400">
+              <p class="text-[11px] text-[var(--text-secondary)]">
                 Nilai Qiraati &amp; Diniyah per bulan
               </p>
             </div>
           </div>
           <i
             :class="[
-              'fas text-slate-400 transition-transform',
+              'fas text-[var(--text-tertiary)] transition-transform',
               sections.rekap ? 'fa-chevron-up' : 'fa-chevron-down'
             ]"
           ></i>
         </button>
         <div
           v-if="sections.rekap"
-          class="border-t border-slate-100 dark:border-slate-700 p-4 md:p-5 bg-slate-50/50 dark:bg-slate-900/20"
+          class="border-t border-[var(--border-subtle)] p-4 md:p-5 bg-[var(--bg-card-elevated)]/50 dark:bg-slate-900/20"
         >
-          <p class="text-xs text-slate-500 dark:text-slate-400 italic mb-3">
+          <p class="text-xs text-[var(--text-secondary)] italic mb-3">
             <i class="fas fa-info-circle mr-1"></i>Detail nilai bulanan &amp; history capaian.
           </p>
           <router-link
             to="/rekap-prestasi"
-            class="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2 rounded-lg transition cursor-pointer shadow-sm"
+            class="inline-flex items-center gap-1.5 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-xs font-bold px-4 py-2 rounded-lg transition cursor-pointer shadow-sm"
           >
             <i class="fas fa-external-link-alt"></i>Buka Rekap Lengkap
           </router-link>
@@ -247,7 +247,7 @@
 
       <!-- Statistik Prestasi -->
       <div
-        class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden"
+        class="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)] shadow-sm overflow-hidden"
       >
         <button
           @click="toggleSection('statistik')"
@@ -255,29 +255,29 @@
         >
           <div class="flex items-center gap-3 min-w-0">
             <div
-              class="w-10 h-10 md:w-11 md:h-11 rounded-full bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center shadow-md flex-shrink-0"
+              class="w-10 h-10 md:w-11 md:h-11 rounded-full bg-gradient-to-br from-cyan-500 dark:from-cyan-700 to-cyan-700 dark:to-cyan-900 flex items-center justify-center shadow-md flex-shrink-0"
             >
               <i class="fas fa-chart-line text-white"></i>
             </div>
             <div class="text-left min-w-0">
-              <p class="text-sm md:text-base font-black text-slate-800 dark:text-white">
+              <p class="text-sm md:text-base font-black text-[var(--text-primary)]">
                 Statistik Prestasi
               </p>
-              <p class="text-[11px] text-slate-500 dark:text-slate-400">
+              <p class="text-[11px] text-[var(--text-secondary)]">
                 Selisih, total halaman, mutasi, status
               </p>
             </div>
           </div>
           <i
             :class="[
-              'fas text-slate-400 transition-transform',
+              'fas text-[var(--text-tertiary)] transition-transform',
               sections.statistik ? 'fa-chevron-up' : 'fa-chevron-down'
             ]"
           ></i>
         </button>
         <div
           v-if="sections.statistik"
-          class="border-t border-slate-100 dark:border-slate-700 p-4 md:p-5 bg-slate-50/50 dark:bg-slate-900/20"
+          class="border-t border-[var(--border-subtle)] p-4 md:p-5 bg-[var(--bg-card-elevated)]/50 dark:bg-slate-900/20"
         >
           <div class="grid grid-cols-2 md:grid-cols-4 gap-2.5 md:gap-3">
             <div
@@ -293,47 +293,47 @@
               >
                 {{ selisihCapaian }}
               </p>
-              <p class="text-[8px] text-slate-500 mt-0.5">halaman</p>
+              <p class="text-[8px] text-[var(--text-secondary)] mt-0.5">halaman</p>
             </div>
             <div
-              class="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-3 text-center border border-blue-100 dark:border-blue-700"
+              class="bg-cyan-50 dark:bg-cyan-900/20 rounded-xl p-3 text-center border border-cyan-100 dark:border-cyan-700"
             >
               <p
-                class="text-[9px] font-black text-blue-700 dark:text-blue-300 uppercase tracking-wider"
+                class="text-[9px] font-black text-cyan-700 dark:text-cyan-300 uppercase tracking-wider"
               >
                 Total Hal/Bulan
               </p>
-              <p class="text-2xl md:text-3xl font-black text-blue-800 dark:text-blue-200 mt-1">
+              <p class="text-2xl md:text-3xl font-black text-cyan-800 dark:text-cyan-200 mt-1">
                 {{ santriProfile.prestasi_total || '-' }}
               </p>
-              <p class="text-[8px] text-slate-500 mt-0.5">{{ statusPrestasi }}</p>
+              <p class="text-[8px] text-[var(--text-secondary)] mt-0.5">{{ statusPrestasi }}</p>
             </div>
             <div
-              class="bg-purple-50 dark:bg-purple-900/20 rounded-xl p-3 text-center border border-purple-100 dark:border-purple-700"
+              class="bg-teal-50 dark:bg-teal-900/20 rounded-xl p-3 text-center border border-teal-100 dark:border-teal-700"
             >
               <p
-                class="text-[9px] font-black text-purple-700 dark:text-purple-300 uppercase tracking-wider"
+                class="text-[9px] font-black text-teal-700 dark:text-teal-300 uppercase tracking-wider"
               >
                 Riwayat Mutasi
               </p>
-              <p class="text-2xl md:text-3xl font-black text-purple-800 dark:text-purple-200 mt-1">
+              <p class="text-2xl md:text-3xl font-black text-teal-800 dark:text-teal-200 mt-1">
                 {{ totalKartuKenaikan }}
               </p>
             </div>
             <div
-              class="bg-amber-50 dark:bg-amber-900/20 rounded-xl p-3 text-center border border-amber-100 dark:border-amber-700"
+              class="bg-cyan-50 dark:bg-cyan-900/20 rounded-xl p-3 text-center border border-cyan-100 dark:border-cyan-700"
             >
               <p
-                class="text-[9px] font-black text-amber-700 dark:text-amber-300 uppercase tracking-wider"
+                class="text-[9px] font-black text-cyan-700 dark:text-cyan-300 uppercase tracking-wider"
               >
                 Lembaga/Kelas
               </p>
               <p
-                class="text-sm md:text-base font-black text-amber-800 dark:text-amber-200 mt-1 truncate"
+                class="text-sm md:text-base font-black text-cyan-800 dark:text-cyan-200 mt-1 truncate"
               >
                 {{ santriProfile.lembaga || '-' }}
               </p>
-              <p class="text-[10px] font-bold text-slate-600 dark:text-slate-300 mt-0.5">
+              <p class="text-[10px] font-bold text-[var(--text-secondary)] mt-0.5">
                 {{ santriProfile.kelas || '-' }}
               </p>
             </div>
@@ -343,7 +343,7 @@
 
       <!-- Kartu Kenaikan -->
       <div
-        class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden"
+        class="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)] shadow-sm overflow-hidden"
       >
         <button
           @click="toggleSection('kartu')"
@@ -351,38 +351,38 @@
         >
           <div class="flex items-center gap-3 min-w-0">
             <div
-              class="w-10 h-10 md:w-11 md:h-11 rounded-full bg-gradient-to-br from-teal-500 to-teal-700 flex items-center justify-center shadow-md flex-shrink-0"
+              class="w-10 h-10 md:w-11 md:h-11 rounded-full bg-gradient-to-br from-teal-500 dark:from-teal-700 to-teal-700 dark:to-teal-900 flex items-center justify-center shadow-md flex-shrink-0"
             >
               <i class="fas fa-id-card text-white"></i>
             </div>
             <div class="text-left min-w-0">
-              <p class="text-sm md:text-base font-black text-slate-800 dark:text-white">
+              <p class="text-sm md:text-base font-black text-[var(--text-primary)]">
                 Kartu Kenaikan
               </p>
-              <p class="text-[11px] text-slate-500 dark:text-slate-400">
+              <p class="text-[11px] text-[var(--text-secondary)]">
                 Tanggal naik jilid &amp; catatan guru
               </p>
             </div>
           </div>
           <i
             :class="[
-              'fas text-slate-400 transition-transform',
+              'fas text-[var(--text-tertiary)] transition-transform',
               sections.kartu ? 'fa-chevron-up' : 'fa-chevron-down'
             ]"
           ></i>
         </button>
         <div
           v-if="sections.kartu"
-          class="border-t border-slate-100 dark:border-slate-700 p-4 md:p-5 bg-slate-50/50 dark:bg-slate-900/20"
+          class="border-t border-[var(--border-subtle)] p-4 md:p-5 bg-[var(--bg-card-elevated)]/50 dark:bg-slate-900/20"
         >
           <div v-if="totalKartuKenaikan === 0" class="text-center py-6">
-            <i class="fas fa-inbox text-slate-300 text-2xl mb-2"></i>
-            <p class="text-xs text-slate-500 italic">Belum ada riwayat kenaikan jilid.</p>
+            <i class="fas fa-inbox text-[var(--text-tertiary)] text-2xl mb-2"></i>
+            <p class="text-xs text-[var(--text-secondary)] italic">Belum ada riwayat kenaikan jilid.</p>
           </div>
           <div v-else class="space-y-2">
-            <div class="text-xs text-slate-700 dark:text-slate-300">
+            <div class="text-xs text-slate-700 dark:text-[var(--text-tertiary)]">
               <p class="mb-2"><strong>Total Riwayat:</strong> {{ totalKartuKenaikan }} entry</p>
-              <p class="text-slate-500">
+              <p class="text-[var(--text-secondary)]">
                 Klik tombol di bawah untuk lihat kartu kenaikan lengkap dengan catatan &amp;
                 rekomendasi guru.
               </p>
@@ -390,7 +390,7 @@
           </div>
           <router-link
             to="/naik-kelas"
-            class="mt-3 inline-flex items-center gap-1.5 bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold px-4 py-2 rounded-lg transition cursor-pointer shadow-sm"
+            class="mt-3 inline-flex items-center gap-1.5 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-xs font-bold px-4 py-2 rounded-lg transition cursor-pointer shadow-sm"
           >
             <i class="fas fa-external-link-alt"></i>Buka Kartu Kenaikan
           </router-link>
@@ -399,7 +399,7 @@
 
       <!-- Rapor Semester -->
       <div
-        class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden"
+        class="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)] shadow-sm overflow-hidden"
       >
         <button
           @click="toggleSection('rapor')"
@@ -407,37 +407,37 @@
         >
           <div class="flex items-center gap-3 min-w-0">
             <div
-              class="w-10 h-10 md:w-11 md:h-11 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center shadow-md flex-shrink-0"
+              class="w-10 h-10 md:w-11 md:h-11 rounded-full bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-hover)] flex items-center justify-center shadow-md flex-shrink-0"
             >
               <i class="fas fa-graduation-cap text-white"></i>
             </div>
             <div class="text-left min-w-0">
-              <p class="text-sm md:text-base font-black text-slate-800 dark:text-white">
+              <p class="text-sm md:text-base font-black text-[var(--text-primary)]">
                 Rapor Semester
               </p>
-              <p class="text-[11px] text-slate-500 dark:text-slate-400">
+              <p class="text-[11px] text-[var(--text-secondary)]">
                 Nilai rapor lengkap (PDF print)
               </p>
             </div>
           </div>
           <i
             :class="[
-              'fas text-slate-400 transition-transform',
+              'fas text-[var(--text-tertiary)] transition-transform',
               sections.rapor ? 'fa-chevron-up' : 'fa-chevron-down'
             ]"
           ></i>
         </button>
         <div
           v-if="sections.rapor"
-          class="border-t border-slate-100 dark:border-slate-700 p-4 md:p-5 bg-slate-50/50 dark:bg-slate-900/20"
+          class="border-t border-[var(--border-subtle)] p-4 md:p-5 bg-[var(--bg-card-elevated)]/50 dark:bg-slate-900/20"
         >
-          <p class="text-xs text-slate-500 dark:text-slate-400 italic mb-3">
+          <p class="text-xs text-[var(--text-secondary)] italic mb-3">
             <i class="fas fa-info-circle mr-1"></i>Rapor semester (Qiraati &amp; Diniyah) dengan
             opsi cetak / Save as PDF.
           </p>
           <router-link
             to="/rapor"
-            class="inline-flex items-center gap-1.5 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold px-4 py-2 rounded-lg transition cursor-pointer shadow-sm"
+            class="inline-flex items-center gap-1.5 bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold px-4 py-2 rounded-lg transition cursor-pointer shadow-sm"
           >
             <i class="fas fa-external-link-alt"></i>Buka Rapor Semester
           </router-link>
@@ -450,7 +450,7 @@
          ============================================================ -->
     <div v-if="role === 'admin' || role === 'guru'" class="grid grid-cols-2 md:grid-cols-4 gap-3">
       <div
-        class="bg-gradient-to-br from-teal-500 to-teal-700 rounded-xl p-3 md:p-4 shadow-sm text-white"
+        class="bg-gradient-to-br from-teal-500 dark:from-teal-700 to-teal-700 dark:to-teal-900 rounded-xl p-3 md:p-4 shadow-sm text-white"
       >
         <i class="fas fa-users text-lg md:text-xl text-white/90"></i>
         <p class="text-2xl md:text-3xl font-black mt-1">{{ totalSantriDisplay }}</p>
@@ -459,7 +459,7 @@
         </p>
       </div>
       <div
-        class="bg-gradient-to-br from-purple-500 to-purple-700 rounded-xl p-3 md:p-4 shadow-sm text-white"
+        class="bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-hover)] rounded-xl p-3 md:p-4 shadow-sm text-white"
       >
         <i class="fas fa-chalkboard-teacher text-lg md:text-xl text-white/90"></i>
         <p class="text-2xl md:text-3xl font-black mt-1">{{ totalGuruDisplay }}</p>
@@ -469,7 +469,7 @@
       </div>
       <div
         v-if="role === 'admin'"
-        class="bg-gradient-to-br from-amber-500 to-amber-700 rounded-xl p-3 md:p-4 shadow-sm text-white"
+        class="bg-gradient-to-br from-cyan-500 dark:from-cyan-700 to-cyan-700 dark:to-cyan-900 rounded-xl p-3 md:p-4 shadow-sm text-white"
       >
         <i class="fas fa-building text-lg md:text-xl text-white/90"></i>
         <p class="text-2xl md:text-3xl font-black mt-1">{{ lembagaCount }}</p>
@@ -479,7 +479,7 @@
       </div>
       <div
         v-if="role === 'admin'"
-        class="bg-gradient-to-br from-cyan-500 to-cyan-700 rounded-xl p-3 md:p-4 shadow-sm text-white"
+        class="bg-gradient-to-br from-cyan-500 dark:from-cyan-700 to-cyan-700 dark:to-cyan-900 rounded-xl p-3 md:p-4 shadow-sm text-white"
       >
         <i class="fas fa-door-open text-lg md:text-xl text-white/90"></i>
         <p class="text-2xl md:text-3xl font-black mt-1">{{ kelasCount }}</p>
@@ -499,17 +499,17 @@
       <div
         v-for="lem in lembagaPrestasi"
         :key="lem.nama"
-        class="bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-5 border border-slate-200 dark:border-slate-700 shadow-sm"
+        class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
       >
         <div
-          class="flex items-center justify-between border-b border-slate-100 dark:border-slate-700 pb-2 mb-3"
+          class="flex items-center justify-between border-b border-[var(--border-subtle)] pb-2 mb-3"
         >
           <h3
-            class="text-sm md:text-base font-black text-slate-800 dark:text-white uppercase tracking-wider"
+            class="text-sm md:text-base font-black text-[var(--text-primary)] uppercase tracking-wider"
           >
             {{ lem.nama }}
           </h3>
-          <p class="text-[10px] text-slate-500 dark:text-slate-400 font-bold">
+          <p class="text-[10px] text-[var(--text-secondary)] font-bold">
             {{ lem.dinilai }}/{{ lem.total }} dinilai
           </p>
         </div>
@@ -530,17 +530,17 @@
             <p class="text-[8px] text-rose-600 dark:text-rose-400 mt-0.5">&lt;5 hal</p>
           </div>
           <div
-            class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg p-2 text-center"
+            class="bg-cyan-50 dark:bg-cyan-900/20 border border-cyan-200 dark:border-cyan-700 rounded-lg p-2 text-center"
           >
             <p
-              class="text-[10px] font-black text-amber-700 dark:text-amber-300 uppercase tracking-wider"
+              class="text-[10px] font-black text-cyan-700 dark:text-cyan-300 uppercase tracking-wider"
             >
               Cukup
             </p>
-            <p class="text-xl font-black text-amber-700 dark:text-amber-300 mt-0.5">
+            <p class="text-xl font-black text-cyan-700 dark:text-cyan-300 mt-0.5">
               {{ lem.cukup }}
             </p>
-            <p class="text-[8px] text-amber-600 dark:text-amber-400 mt-0.5">5-9 hal</p>
+            <p class="text-[8px] text-cyan-700 dark:text-cyan-400 mt-0.5">5-9 hal</p>
           </div>
           <div
             class="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700 rounded-lg p-2 text-center"
@@ -558,11 +558,11 @@
         </div>
 
         <p
-          class="text-xs font-black text-slate-700 dark:text-slate-200 uppercase tracking-wider mb-2"
+          class="text-xs font-black text-[var(--text-primary)] uppercase tracking-wider mb-2"
         >
-          <i class="fas fa-trophy text-amber-500 mr-1"></i>Top 5 Santri Prestasi Tertinggi
+          <i class="fas fa-trophy text-cyan-600 mr-1"></i>Top 5 Santri Prestasi Tertinggi
         </p>
-        <div v-if="lem.top5.length === 0" class="text-xs text-slate-400 italic text-center py-3">
+        <div v-if="lem.top5.length === 0" class="text-xs text-[var(--text-tertiary)] italic text-center py-3">
           Belum ada data prestasi pada periode ini.
         </div>
         <ol v-else class="space-y-1.5">
@@ -575,19 +575,19 @@
               :class="[
                 'w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black flex-shrink-0',
                 idx === 0
-                  ? 'bg-amber-400 text-amber-900'
+                  ? 'bg-[var(--color-accent)] text-[var(--text-on-accent)]'
                   : idx === 1
-                    ? 'bg-slate-300 text-slate-700'
+                    ? 'bg-slate-300 text-[var(--text-primary)]'
                     : idx === 2
-                      ? 'bg-orange-400 text-orange-900'
-                      : 'bg-slate-200 text-slate-600'
+                      ? 'bg-emerald-500 text-emerald-900'
+                      : 'bg-slate-200 text-[var(--text-secondary)]'
               ]"
               >{{ idx + 1 }}</span
             >
-            <p class="flex-1 text-xs font-bold text-slate-800 dark:text-white truncate">
+            <p class="flex-1 text-xs font-bold text-[var(--text-primary)] truncate">
               {{ s.nama }}
             </p>
-            <p class="text-xs font-black text-blue-700 dark:text-blue-300">{{ s.totalDisplay }}</p>
+            <p class="text-xs font-black text-cyan-700 dark:text-cyan-300">{{ s.totalDisplay }}</p>
           </li>
         </ol>
       </div>
@@ -598,19 +598,19 @@
          ============================================================ -->
     <div
       v-if="role === 'admin' && statistikLembaga.length > 0"
-      class="bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-5 border border-slate-200 dark:border-slate-700 shadow-sm"
+      class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
     >
-      <h3 class="text-sm md:text-base font-black text-slate-800 dark:text-white mb-3">
-        <i class="fas fa-chart-pie text-purple-600 mr-2"></i>Statistik Lembaga
+      <h3 class="text-sm md:text-base font-black text-[var(--text-primary)] mb-3">
+        <i class="fas fa-chart-pie text-teal-600 mr-2"></i>Statistik Lembaga
       </h3>
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         <div
           v-for="lem in statistikLembaga"
           :key="lem.nama"
-          class="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm border-l-4 border-l-teal-500 hover:shadow-md transition"
+          class="bg-[var(--bg-card)] p-4 rounded-2xl border border-[var(--border-subtle)] shadow-sm border-l-4 border-l-teal-500 hover:shadow-md transition"
         >
           <h4
-            class="font-black text-slate-800 dark:text-white text-sm uppercase tracking-wider mb-3"
+            class="font-black text-[var(--text-primary)] text-sm uppercase tracking-wider mb-3"
           >
             {{ lem.nama }}
           </h4>
@@ -622,16 +622,16 @@
               <p class="text-lg font-black text-teal-800 dark:text-teal-200">{{ lem.kelas }}</p>
             </div>
             <div
-              class="bg-blue-50 dark:bg-blue-900/20 rounded-lg py-2 border border-blue-100 dark:border-blue-800"
+              class="bg-cyan-50 dark:bg-cyan-900/20 rounded-lg py-2 border border-cyan-100 dark:border-cyan-800"
             >
-              <p class="text-[9px] text-blue-700 dark:text-blue-300 font-bold uppercase">Santri</p>
-              <p class="text-lg font-black text-blue-800 dark:text-blue-200">{{ lem.santri }}</p>
+              <p class="text-[9px] text-cyan-700 dark:text-cyan-300 font-bold uppercase">Santri</p>
+              <p class="text-lg font-black text-cyan-800 dark:text-cyan-200">{{ lem.santri }}</p>
             </div>
             <div
-              class="bg-amber-50 dark:bg-amber-900/20 rounded-lg py-2 border border-amber-100 dark:border-amber-800"
+              class="bg-cyan-50 dark:bg-cyan-900/20 rounded-lg py-2 border border-cyan-100 dark:border-cyan-800"
             >
-              <p class="text-[9px] text-amber-700 dark:text-amber-300 font-bold uppercase">Guru</p>
-              <p class="text-lg font-black text-amber-800 dark:text-amber-200">{{ lem.guru }}</p>
+              <p class="text-[9px] text-cyan-700 dark:text-cyan-300 font-bold uppercase">Guru</p>
+              <p class="text-lg font-black text-cyan-800 dark:text-cyan-200">{{ lem.guru }}</p>
             </div>
           </div>
         </div>
@@ -643,23 +643,23 @@
          ============================================================ -->
     <div
       v-if="role === 'admin' && distribusiLembaga.length > 0"
-      class="bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-5 border border-slate-200 dark:border-slate-700 shadow-sm"
+      class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
     >
       <h3
-        class="text-xs md:text-sm font-black text-slate-800 dark:text-white uppercase tracking-widest mb-3 border-b border-slate-100 dark:border-slate-700 pb-2"
+        class="text-xs md:text-sm font-black text-[var(--text-primary)] uppercase tracking-widest mb-3 border-b border-[var(--border-subtle)] pb-2"
       >
         <i class="fas fa-chart-bar text-emerald-600 mr-2"></i>Distribusi Santri per Lembaga
       </h3>
       <div class="space-y-2">
         <div v-for="dist in distribusiLembaga" :key="dist.nama" class="flex items-center gap-3">
           <p
-            class="text-xs font-bold text-slate-700 dark:text-slate-200 w-32 truncate flex-shrink-0"
+            class="text-xs font-bold text-[var(--text-primary)] w-32 truncate flex-shrink-0"
           >
             {{ dist.nama }}
           </p>
-          <div class="flex-1 bg-slate-100 dark:bg-slate-700 rounded-full h-5 overflow-hidden">
+          <div class="flex-1 bg-[var(--bg-muted)] rounded-full h-5 overflow-hidden">
             <div
-              class="h-full bg-gradient-to-r from-emerald-400 to-emerald-600 flex items-center justify-end px-2 text-[10px] font-black text-white transition-all"
+              class="h-full bg-gradient-to-r from-emerald-400 dark:from-emerald-700 to-emerald-600 dark:to-emerald-800 flex items-center justify-end px-2 text-[10px] font-black text-white transition-all"
               :style="{ width: dist.pct + '%' }"
             >
               {{ dist.count }}
@@ -680,33 +680,33 @@
     <template v-if="role === 'guru'">
       <!-- Statistik Pengajaran Saya -->
       <div
-        class="bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-5 border border-slate-200 dark:border-slate-700 shadow-sm"
+        class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
       >
         <h3
-          class="text-xs md:text-sm font-black text-slate-800 dark:text-white uppercase tracking-widest mb-3 border-b border-slate-100 dark:border-slate-700 pb-2"
+          class="text-xs md:text-sm font-black text-[var(--text-primary)] uppercase tracking-widest mb-3 border-b border-[var(--border-subtle)] pb-2"
         >
-          <i class="fas fa-user-tie text-purple-600 mr-2"></i>Statistik Pengajaran Saya
+          <i class="fas fa-user-tie text-teal-600 mr-2"></i>Statistik Pengajaran Saya
         </h3>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-          <div class="bg-purple-50 dark:bg-purple-900/20 p-3 rounded-lg">
-            <p class="text-[10px] font-bold text-purple-700 uppercase">Santri Diampu</p>
-            <p class="text-2xl font-black text-slate-800 dark:text-white">
+          <div class="bg-teal-50 dark:bg-teal-900/20 p-3 rounded-lg">
+            <p class="text-[10px] font-bold text-teal-700 uppercase">Santri Diampu</p>
+            <p class="text-2xl font-black text-[var(--text-primary)]">
               {{ totalSantriDisplay }}
             </p>
           </div>
-          <div class="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
-            <p class="text-[10px] font-bold text-blue-700 uppercase">Kelas Diampu</p>
-            <p class="text-2xl font-black text-slate-800 dark:text-white">{{ kelasSaya.length }}</p>
+          <div class="bg-cyan-50 dark:bg-cyan-900/20 p-3 rounded-lg">
+            <p class="text-[10px] font-bold text-cyan-700 uppercase">Kelas Diampu</p>
+            <p class="text-2xl font-black text-[var(--text-primary)]">{{ kelasSaya.length }}</p>
           </div>
-          <div class="bg-amber-50 dark:bg-amber-900/20 p-3 rounded-lg">
-            <p class="text-[10px] font-bold text-amber-700 uppercase">Lembaga</p>
-            <p class="text-sm font-black text-slate-800 dark:text-white truncate">
+          <div class="bg-cyan-50 dark:bg-cyan-900/20 p-3 rounded-lg">
+            <p class="text-[10px] font-bold text-cyan-700 uppercase">Lembaga</p>
+            <p class="text-sm font-black text-[var(--text-primary)] truncate">
               {{ guruLembaga }}
             </p>
           </div>
           <div class="bg-emerald-50 dark:bg-emerald-900/20 p-3 rounded-lg">
             <p class="text-[10px] font-bold text-emerald-700 uppercase">Jabatan</p>
-            <p class="text-xs font-black text-slate-800 dark:text-white truncate">
+            <p class="text-xs font-black text-[var(--text-primary)] truncate">
               {{ guruJabatan }}
             </p>
           </div>
@@ -715,10 +715,10 @@
 
       <!-- Kehadiran Saya Bulan Ini -->
       <div
-        class="bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-5 border border-slate-200 dark:border-slate-700 shadow-sm"
+        class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
       >
         <h3
-          class="text-xs md:text-sm font-black text-slate-800 dark:text-white uppercase tracking-widest mb-3 border-b border-slate-100 dark:border-slate-700 pb-2"
+          class="text-xs md:text-sm font-black text-[var(--text-primary)] uppercase tracking-widest mb-3 border-b border-[var(--border-subtle)] pb-2"
         >
           <i class="fas fa-clipboard-check text-emerald-600 mr-2"></i>Kehadiran Saya Bulan Ini
         </h3>
@@ -729,13 +729,13 @@
             <p class="text-[9px] font-black text-emerald-700 uppercase tracking-wider">Hadir</p>
             <p class="text-2xl font-black text-emerald-700 mt-1">{{ kehadiranGuru.hadir }}</p>
           </div>
-          <div class="bg-amber-50 dark:bg-amber-900/20 rounded-xl py-3 border border-amber-100">
-            <p class="text-[9px] font-black text-amber-700 uppercase tracking-wider">Sakit</p>
-            <p class="text-2xl font-black text-amber-700 mt-1">{{ kehadiranGuru.sakit }}</p>
+          <div class="bg-cyan-50 dark:bg-cyan-900/20 rounded-xl py-3 border border-cyan-100">
+            <p class="text-[9px] font-black text-cyan-700 uppercase tracking-wider">Sakit</p>
+            <p class="text-2xl font-black text-cyan-700 mt-1">{{ kehadiranGuru.sakit }}</p>
           </div>
-          <div class="bg-blue-50 dark:bg-blue-900/20 rounded-xl py-3 border border-blue-100">
-            <p class="text-[9px] font-black text-blue-700 uppercase tracking-wider">Izin</p>
-            <p class="text-2xl font-black text-blue-700 mt-1">{{ kehadiranGuru.izin }}</p>
+          <div class="bg-cyan-50 dark:bg-cyan-900/20 rounded-xl py-3 border border-cyan-100">
+            <p class="text-[9px] font-black text-cyan-700 uppercase tracking-wider">Izin</p>
+            <p class="text-2xl font-black text-cyan-700 mt-1">{{ kehadiranGuru.izin }}</p>
           </div>
           <div class="bg-rose-50 dark:bg-rose-900/20 rounded-xl py-3 border border-rose-100">
             <p class="text-[9px] font-black text-rose-700 uppercase tracking-wider">Alpa</p>
@@ -747,24 +747,24 @@
       <!-- Kelas Saya -->
       <div
         v-if="kelasSaya.length > 0"
-        class="bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-5 border border-slate-200 dark:border-slate-700 shadow-sm"
+        class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
       >
         <h3
-          class="text-xs md:text-sm font-black text-slate-800 dark:text-white uppercase tracking-widest mb-3 border-b border-slate-100 dark:border-slate-700 pb-2"
+          class="text-xs md:text-sm font-black text-[var(--text-primary)] uppercase tracking-widest mb-3 border-b border-[var(--border-subtle)] pb-2"
         >
-          <i class="fas fa-chalkboard-teacher text-blue-600 mr-2"></i>Kelas Saya
+          <i class="fas fa-chalkboard-teacher text-cyan-600 mr-2"></i>Kelas Saya
         </h3>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
           <div
             v-for="k in kelasSaya"
             :key="k.lembaga + '_' + k.kelas"
-            class="flex items-center justify-between gap-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl p-3 border border-blue-100"
+            class="flex items-center justify-between gap-3 bg-cyan-50 dark:bg-cyan-900/20 rounded-xl p-3 border border-cyan-100"
           >
             <div class="flex-1 min-w-0">
-              <p class="text-sm font-black text-slate-800 dark:text-white truncate">
+              <p class="text-sm font-black text-[var(--text-primary)] truncate">
                 {{ k.lembaga }} · Kelas {{ k.kelas }}
               </p>
-              <p class="text-[10px] text-slate-500">
+              <p class="text-[10px] text-[var(--text-secondary)]">
                 <i class="fas fa-users mr-1"></i>{{ k.santriCount }} santri
               </p>
             </div>
@@ -778,17 +778,17 @@
          ============================================================ -->
     <div
       v-if="role === 'santri' && santriProfile?.tanggal_masuk"
-      class="bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-5 border border-slate-200 dark:border-slate-700 shadow-sm"
+      class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
     >
       <h3
-        class="text-xs md:text-sm font-black text-slate-800 dark:text-white uppercase tracking-widest mb-3 border-b border-slate-100 dark:border-slate-700 pb-2"
+        class="text-xs md:text-sm font-black text-[var(--text-primary)] uppercase tracking-widest mb-3 border-b border-[var(--border-subtle)] pb-2"
       >
         <i class="fas fa-history text-emerald-600 mr-2"></i>Riwayat Mondok
       </h3>
-      <p class="text-sm text-slate-600 dark:text-slate-300">
+      <p class="text-sm text-[var(--text-secondary)]">
         <i class="fas fa-calendar-day text-emerald-500 mr-1.5"></i>
-        <span class="text-slate-500 font-bold">Mondok sejak:</span>
-        <span class="font-black text-slate-800 dark:text-white ml-1.5">{{
+        <span class="text-[var(--text-secondary)] font-bold">Mondok sejak:</span>
+        <span class="font-black text-[var(--text-primary)] ml-1.5">{{
           santriProfile.tanggal_masuk
         }}</span>
       </p>
@@ -799,10 +799,10 @@
          ============================================================ -->
     <div
       v-if="loadingAny"
-      class="bg-white dark:bg-slate-800 rounded-2xl p-8 border border-slate-200 dark:border-slate-700 shadow-sm text-center"
+      class="bg-[var(--bg-card)] rounded-2xl p-8 border border-[var(--border-subtle)] shadow-sm text-center"
     >
-      <i class="fas fa-spinner fa-spin text-2xl text-slate-300 dark:text-slate-600"></i>
-      <p class="text-xs text-slate-400 mt-2">Memuat data statistik...</p>
+      <i class="fas fa-spinner fa-spin text-2xl text-slate-300 dark:text-[var(--text-secondary)]"></i>
+      <p class="text-xs text-[var(--text-tertiary)] mt-2">Memuat data statistik...</p>
     </div>
   </div>
 </template>

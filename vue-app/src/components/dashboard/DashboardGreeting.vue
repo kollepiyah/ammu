@@ -1,5 +1,5 @@
 <template>
-  <!-- v.67.0526: Ahlan card + logo app terpotong di kanan (variant A, lebih masuk ke kiri) -->
+  <!-- v.21.84.0527: Ahlan card + logo app terpotong di kanan (variant A, lebih masuk ke kiri) -->
   <div
     class="relative overflow-hidden bg-white dark:bg-slate-800 rounded-xl px-3 py-2.5 md:px-4 md:py-3 border border-slate-200 dark:border-slate-700 shadow-sm flex items-center gap-3"
   >
@@ -84,7 +84,7 @@ const roleLabel = computed(() => ROLE_LABELS[auth.sesiAktif?.role] || '—')
 
 const ROLE_STYLES = {
   admin: 'bg-teal-50 text-teal-700 border-teal-300 dark:bg-teal-900/30 dark:text-teal-300 dark:border-teal-700',
-  guru: 'bg-purple-50 text-purple-700 border-purple-300 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-700',
+  guru: 'bg-teal-50 text-teal-700 border-teal-300 dark:bg-teal-900/30 dark:text-teal-300 dark:border-teal-700',
   santri: 'bg-cyan-50 text-cyan-700 border-cyan-300 dark:bg-cyan-900/30 dark:text-cyan-300 dark:border-cyan-700'
 }
 const roleStyle = computed(() => ROLE_STYLES[auth.sesiAktif?.role] || ROLE_STYLES[auth.sesiAktif?.role] || ROLE_STYLES.santri)

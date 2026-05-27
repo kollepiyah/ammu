@@ -8,24 +8,24 @@
         @click.self="kk.tutupKartu()"
       >
         <div
-          class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-4xl w-full my-4 max-h-[90vh] flex flex-col"
+          class="bg-[var(--bg-card)] rounded-2xl shadow-2xl max-w-4xl w-full my-4 max-h-[90vh] flex flex-col"
         >
           <!-- Header KOP -->
           <div
             id="kk-print-area"
             class="px-4 md:px-6 pt-5 pb-3 border-b-2 border-slate-700 text-center"
           >
-            <p class="text-sm md:text-base font-black uppercase text-slate-800 dark:text-white">
+            <p class="text-sm md:text-base font-black uppercase text-[var(--text-primary)]">
               {{ kk.currentKop.value.judul || 'KONTROL KENAIKAN KELAS' }}
             </p>
             <p
-              class="text-base md:text-lg font-black uppercase text-slate-800 dark:text-white mt-0.5"
+              class="text-base md:text-lg font-black uppercase text-[var(--text-primary)] mt-0.5"
             >
               {{ kk.currentKop.value.subjudul || '' }}
             </p>
             <p
               v-if="kk.currentKop.value.alamat"
-              class="text-[10px] text-slate-600 dark:text-slate-400 mt-1"
+              class="text-[10px] text-[var(--text-secondary)] mt-1"
             >
               {{ kk.currentKop.value.alamat }}
             </p>
@@ -35,23 +35,23 @@
           <div class="flex-1 overflow-y-auto p-4 md:p-6">
             <!-- Identitas Santri -->
             <div
-              class="bg-slate-50 dark:bg-slate-900/50 rounded-xl p-3 mb-3 border border-slate-200 dark:border-slate-700 text-xs"
+              class="bg-[var(--bg-card-elevated)] rounded-xl p-3 mb-3 border border-[var(--border-subtle)] text-xs"
             >
               <div class="grid grid-cols-1 md:grid-cols-2 gap-1.5">
                 <div>
-                  <span class="font-bold text-slate-500 inline-block w-32">No. Induk</span>:
+                  <span class="font-bold text-[var(--text-secondary)] inline-block w-32">No. Induk</span>:
                   {{ kk.currentSantri.value?.nis || '-' }}
                 </div>
                 <div>
-                  <span class="font-bold text-slate-500 inline-block w-32">Tanggal Masuk</span>:
+                  <span class="font-bold text-[var(--text-secondary)] inline-block w-32">Tanggal Masuk</span>:
                   {{ kk.currentSantri.value?.tgl_masuk || '-' }}
                 </div>
                 <div>
-                  <span class="font-bold text-slate-500 inline-block w-32">Nama</span>:
+                  <span class="font-bold text-[var(--text-secondary)] inline-block w-32">Nama</span>:
                   {{ kk.currentSantri.value?.nama || '-' }}
                 </div>
                 <div>
-                  <span class="font-bold text-slate-500 inline-block w-32">Alamat</span>:
+                  <span class="font-bold text-[var(--text-secondary)] inline-block w-32">Alamat</span>:
                   {{ kk.currentSantri.value?.alamat || '-' }}
                 </div>
               </div>
@@ -67,39 +67,39 @@
                 <div
                   v-for="kelas in rowGroup"
                   :key="kelas.id"
-                  class="border border-slate-300 dark:border-slate-600 rounded-lg overflow-hidden"
+                  class="border border-[var(--border-default)] rounded-lg overflow-hidden"
                 >
                   <!-- Header kelas -->
                   <div
-                    class="bg-slate-200 dark:bg-slate-700 text-center font-black text-xs py-1.5 border-b border-slate-300 dark:border-slate-600 text-slate-800 dark:text-white"
+                    class="bg-slate-200 dark:bg-slate-700 text-center font-black text-xs py-1.5 border-b border-[var(--border-default)] text-[var(--text-primary)]"
                   >
                     {{ kelas.label }}
                   </div>
                   <!-- Item header label -->
                   <div
-                    class="bg-slate-50 dark:bg-slate-900/50 text-center text-[10px] font-bold border-b border-slate-300 dark:border-slate-600 py-1 text-slate-700 dark:text-slate-300"
+                    class="bg-[var(--bg-card-elevated)] text-center text-[10px] font-bold border-b border-[var(--border-default)] py-1 text-slate-700 dark:text-[var(--text-tertiary)]"
                   >
                     {{ kk.currentSchema.value.itemHeader || 'Item' }}
                   </div>
                   <!-- Matrix table -->
                   <table class="w-full text-[10px]">
                     <thead>
-                      <tr class="bg-white dark:bg-slate-800">
+                      <tr class="bg-[var(--bg-card)]">
                         <th
                           v-for="item in kelas.items || []"
                           :key="item.id"
-                          class="border border-slate-300 dark:border-slate-600 px-1 py-1 font-bold text-center text-slate-700 dark:text-slate-200"
+                          class="border border-[var(--border-default)] px-1 py-1 font-bold text-center text-[var(--text-primary)]"
                         >
                           {{ item.label }}
                         </th>
                       </tr>
                     </thead>
                     <tbody>
-                      <tr class="bg-white dark:bg-slate-800">
+                      <tr class="bg-[var(--bg-card)]">
                         <td
                           v-for="item in kelas.items || []"
                           :key="item.id"
-                          class="border border-slate-300 dark:border-slate-600 px-1 py-1"
+                          class="border border-[var(--border-default)] px-1 py-1"
                         >
                           <input
                             type="date"
@@ -114,31 +114,31 @@
                   <!-- Ceremonial date (kalau enabled) -->
                   <div
                     v-if="kelas.ceremonial"
-                    class="bg-amber-50 dark:bg-amber-900/20 border-t border-slate-300 dark:border-slate-600 px-2 py-1.5 flex items-center gap-2 text-[10px]"
+                    class="bg-cyan-50 dark:bg-cyan-900/20 border-t border-[var(--border-default)] px-2 py-1.5 flex items-center gap-2 text-[10px]"
                   >
-                    <span class="font-bold text-amber-800 dark:text-amber-300">Ceremonial:</span>
+                    <span class="font-bold text-cyan-800 dark:text-cyan-300">Ceremonial:</span>
                     <input
                       type="date"
                       :value="kk.getCeremonial(kelas.id)"
                       @input="(e) => kk.setCeremonial(kelas.id, e.target.value)"
-                      class="flex-1 py-0.5 px-1 text-[10px] border border-amber-200 dark:border-amber-700 rounded bg-white dark:bg-slate-800"
+                      class="flex-1 py-0.5 px-1 text-[10px] border border-cyan-200 dark:border-cyan-700 rounded bg-[var(--bg-card)]"
                     />
                   </div>
                 </div>
               </div>
             </div>
-            <div v-else class="text-center text-slate-400 py-6 text-sm italic">
+            <div v-else class="text-center text-[var(--text-tertiary)] py-6 text-sm italic">
               Schema untuk lembaga {{ kk.currentLembaga.value }} belum dikonfigurasi.
             </div>
           </div>
 
           <!-- Footer Actions -->
           <div
-            class="px-4 md:px-6 py-3 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 flex items-center justify-end gap-2 rounded-b-2xl"
+            class="px-4 md:px-6 py-3 border-t border-[var(--border-subtle)] bg-[var(--bg-card-elevated)] flex items-center justify-end gap-2 rounded-b-2xl"
           >
             <button
               @click="kk.tutupKartu()"
-              class="px-4 py-2 text-sm font-bold rounded-xl bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600 cursor-pointer"
+              class="px-4 py-2 text-sm font-bold rounded-xl bg-slate-200 dark:bg-slate-700 text-[var(--text-primary)] hover:bg-slate-300 dark:hover:bg-slate-600 cursor-pointer"
             >
               Batal
             </button>
@@ -151,7 +151,7 @@
             <button
               @click="kk.simpanKartu()"
               :disabled="kk.saving.value"
-              class="px-4 py-2 text-sm font-black rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
+              class="px-4 py-2 text-sm font-black rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
             >
               <i :class="['fas', kk.saving.value ? 'fa-spinner fa-spin' : 'fa-save']"></i>
               {{ kk.saving.value ? 'Menyimpan...' : 'Simpan Kartu' }}
@@ -187,7 +187,7 @@ const matrixRows = computed(() => {
 // v.21.60.0526: Cetak kartu — inject KOP letterhead (logo + nama yayasan) sesuai kyai req
 function cetakKartu() {
   setTimeout(() => {
-    const target = document.querySelector('.fixed.z-\\[140\\] .bg-white.rounded-2xl')
+    const target = document.querySelector('.fixed.z-\\[140\\] .bg-[var(--bg-card)].rounded-2xl')
     if (!target) {
       window.print()
       return

@@ -111,7 +111,7 @@ function bukaWaAdmin() {
           alt="Logo Mambaul Ulum"
           class="w-20 h-20 mx-auto mb-2 object-contain drop-shadow-xl"
         />
-        <h2 class="text-xl font-extrabold text-slate-800 tracking-tight">
+        <h2 class="text-xl font-extrabold text-[var(--text-primary)] tracking-tight">
           Portal Mambaul Ulum
         </h2>
         <p class="text-[10px] text-teal-700 mt-0.5 font-bold uppercase tracking-widest">
@@ -126,7 +126,7 @@ function bukaWaAdmin() {
           type="button"
           @click="handleGoogleLogin"
           :disabled="isSubmitting"
-          class="w-full bg-white border border-slate-300 hover:bg-slate-50 disabled:opacity-50 text-slate-700 font-bold py-2.5 rounded-xl shadow-sm cursor-pointer flex justify-center items-center gap-2 transition text-sm"
+          class="w-full bg-[var(--bg-card)] border border-[var(--border-default)] hover:bg-[var(--bg-card-elevated)] disabled:opacity-50 text-[var(--text-primary)] font-bold py-2.5 rounded-xl shadow-sm cursor-pointer flex justify-center items-center gap-2 transition text-sm"
         >
           <svg class="w-4 h-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -140,48 +140,48 @@ function bukaWaAdmin() {
         <!-- Divider ATAU -->
         <div class="flex items-center gap-2 my-1">
           <div class="flex-1 h-px bg-slate-300"></div>
-          <span class="text-[9px] text-slate-400 font-bold uppercase tracking-widest">atau</span>
+          <span class="text-[9px] text-[var(--text-tertiary)] font-bold uppercase tracking-widest">atau</span>
           <div class="flex-1 h-px bg-slate-300"></div>
         </div>
 
         <form @submit.prevent="handleLogin" class="space-y-3" autocomplete="on">
           <!-- Username -->
           <div>
-            <label class="block text-[9px] font-bold text-slate-700 mb-1 uppercase tracking-wide">
+            <label class="block text-[9px] font-bold text-[var(--text-primary)] mb-1 uppercase tracking-wide">
               Username
             </label>
             <div class="relative">
-              <i class="fas fa-user absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+              <i class="fas fa-user absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] text-sm"></i>
               <input
                 v-model="username"
                 type="text"
                 placeholder="Masukkan username"
                 autocomplete="username"
                 required
-                class="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition"
+                class="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition"
               />
             </div>
           </div>
 
           <!-- Password + eye toggle -->
           <div>
-            <label class="block text-[9px] font-bold text-slate-700 mb-1 uppercase tracking-wide">
+            <label class="block text-[9px] font-bold text-[var(--text-primary)] mb-1 uppercase tracking-wide">
               Kata Sandi
             </label>
             <div class="relative">
-              <i class="fas fa-lock absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+              <i class="fas fa-lock absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] text-sm"></i>
               <input
                 v-model="password"
                 :type="showPassword ? 'text' : 'password'"
                 placeholder="Masukkan sandi..."
                 autocomplete="current-password"
                 required
-                class="w-full pl-9 pr-10 py-2.5 text-sm rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition"
+                class="w-full pl-9 pr-10 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition"
               />
               <button
                 type="button"
                 @click="showPassword = !showPassword"
-                class="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 flex items-center justify-center text-slate-400 hover:text-slate-700 transition cursor-pointer"
+                class="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition cursor-pointer"
                 :aria-label="showPassword ? 'Sembunyikan sandi' : 'Tampilkan sandi'"
                 tabindex="-1"
               >
@@ -198,7 +198,7 @@ function bukaWaAdmin() {
               type="checkbox"
               class="w-4 h-4 cursor-pointer accent-teal-600"
             />
-            <label for="login-ingat-saya" class="text-[10px] font-bold text-slate-700 cursor-pointer">
+            <label for="login-ingat-saya" class="text-[10px] font-bold text-[var(--text-primary)] cursor-pointer">
               Ingat Saya (tetap login di perangkat ini)
             </label>
           </div>
@@ -207,7 +207,7 @@ function bukaWaAdmin() {
           <button
             type="submit"
             :disabled="isSubmitting"
-            class="w-full mt-2 px-4 py-3 bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white font-black rounded-xl text-sm shadow-lg transition tracking-widest cursor-pointer flex justify-center items-center gap-2"
+            class="w-full mt-2 px-4 py-3 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] disabled:opacity-50 text-white font-black rounded-xl text-sm shadow-lg transition tracking-widest cursor-pointer flex justify-center items-center gap-2"
           >
             <i class="fas fa-sign-in-alt"></i>
             <span>{{ isSubmitting ? 'MEMPROSES...' : 'MASUK' }}</span>
@@ -219,7 +219,7 @@ function bukaWaAdmin() {
           <button
             type="button"
             @click="handleLupaSandi"
-            class="text-blue-600 hover:text-blue-800 font-bold cursor-pointer underline"
+            class="text-cyan-600 hover:text-cyan-800 font-bold cursor-pointer underline"
           >
             Lupa Sandi?
           </button>
@@ -227,8 +227,8 @@ function bukaWaAdmin() {
       </div>
 
       <!-- Footer Bakafrawi (dalam card) — v.20.4: ukuran match legacy (h-7 ≈ 28px) -->
-      <div class="px-6 py-4 mt-2 border-t border-slate-200 text-center bg-white/40">
-        <p class="text-[9px] text-slate-500 uppercase tracking-widest font-bold mb-1.5">
+      <div class="px-6 py-4 mt-2 border-t border-[var(--border-subtle)] text-center bg-[var(--bg-card)]/40">
+        <p class="text-[9px] text-[var(--text-secondary)] uppercase tracking-widest font-bold mb-1.5">
           Powered By
         </p>
         <img
@@ -245,19 +245,19 @@ function bukaWaAdmin() {
 
     <!-- v.21.24b.0526: Modal Lupa Sandi -->
     <div v-if="showLupaSandi" class="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4" @click.self="showLupaSandi = false">
-      <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 relative">
-        <button @click="showLupaSandi = false" class="absolute top-3 right-3 text-slate-400 hover:text-rose-600 text-lg cursor-pointer">
+      <div class="bg-[var(--bg-card)] rounded-2xl shadow-2xl max-w-md w-full p-6 relative">
+        <button @click="showLupaSandi = false" class="absolute top-3 right-3 text-[var(--text-tertiary)] hover:text-rose-600 text-lg cursor-pointer">
           <i class="fas fa-times"></i>
         </button>
         <div class="text-center">
-          <div class="w-16 h-16 mx-auto mb-3 rounded-full bg-amber-100 flex items-center justify-center">
-            <i class="fas fa-key text-amber-600 text-2xl"></i>
+          <div class="w-16 h-16 mx-auto mb-3 rounded-full bg-cyan-100 flex items-center justify-center">
+            <i class="fas fa-key text-cyan-600 text-2xl"></i>
           </div>
-          <h3 class="text-lg font-black text-slate-800 mb-1">Lupa Sandi?</h3>
-          <p class="text-xs text-slate-500 mb-4">Sandi hanya dapat di-reset oleh Admin Pondok.</p>
+          <h3 class="text-lg font-black text-[var(--text-primary)] mb-1">Lupa Sandi?</h3>
+          <p class="text-xs text-[var(--text-secondary)] mb-4">Sandi hanya dapat di-reset oleh Admin Pondok.</p>
         </div>
-        <div class="bg-amber-50 border-2 border-amber-200 rounded-xl p-3 text-xs text-slate-700 space-y-1.5">
-          <p><i class="fas fa-info-circle text-amber-600 mr-1"></i><b>Langkah:</b></p>
+        <div class="bg-cyan-50 border-2 border-cyan-200 rounded-xl p-3 text-xs text-[var(--text-primary)] space-y-1.5">
+          <p><i class="fas fa-info-circle text-cyan-600 mr-1"></i><b>Langkah:</b></p>
           <ol class="list-decimal ml-5 space-y-1">
             <li>Hubungi Admin Pondok via WhatsApp/langsung</li>
             <li>Sebutkan nama lengkap + lembaga + status (santri/guru/pegawai)</li>
@@ -266,10 +266,10 @@ function bukaWaAdmin() {
           </ol>
         </div>
         <div class="mt-4 flex gap-2">
-          <button v-if="adminWaPondok" @click="bukaWaAdmin" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl text-sm cursor-pointer transition">
+          <button v-if="adminWaPondok" @click="bukaWaAdmin" class="flex-1 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-bold py-2.5 rounded-xl text-sm cursor-pointer transition">
             <i class="fab fa-whatsapp mr-1"></i>Hubungi Admin via WA
           </button>
-          <button @click="showLupaSandi = false" class="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-2.5 rounded-xl text-sm cursor-pointer transition">
+          <button @click="showLupaSandi = false" class="flex-1 bg-slate-200 hover:bg-slate-300 text-[var(--text-primary)] font-bold py-2.5 rounded-xl text-sm cursor-pointer transition">
             <i class="fas fa-check mr-1"></i>Mengerti
           </button>
         </div>

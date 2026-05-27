@@ -43,6 +43,17 @@ export async function jsPDFWithAutoTable() {
   return jsPDF
 }
 
+// v.21.86: html2pdf.bundle untuk capture HTML view → PDF (zero drift dengan render Vue)
+let _html2pdfLoaded = null
+export async function html2pdfFromCDN(timeoutMs = 8000) {
+  if (window.html2pdf) return window.html2pdf
+  if (!_html2pdfLoaded) {
+    _html2pdfLoaded = _injectScript('https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js')
+  }
+  await _html2pdfLoaded
+  return _waitFor(() => window.html2pdf, timeoutMs)
+}
+
 let _pdfMakeLoaded = null
 export async function pdfMakeFromCDN(timeoutMs = 8000) {
   if (window.pdfMake && window.pdfMake.createPdf) return window.pdfMake

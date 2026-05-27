@@ -2,16 +2,16 @@
   <div class="p-3 md:p-5 max-w-4xl mx-auto space-y-4">
     <!-- Header -->
     <div
-      class="bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-5 border border-slate-200 dark:border-slate-700 shadow-sm"
+      class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
     >
       <div class="flex items-center justify-between gap-2">
         <div>
           <h2
-            class="text-lg md:text-xl font-black text-slate-800 dark:text-white flex items-center gap-2"
+            class="text-lg md:text-xl font-black text-[var(--text-primary)] flex items-center gap-2"
           >
             <i class="fas fa-cash-register text-teal-600"></i>POS Santri
           </h2>
-          <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+          <p class="text-xs text-[var(--text-secondary)] mt-0.5">
             Pembayaran tagihan, syahriyah, tabungan, dll
           </p>
         </div>
@@ -38,23 +38,23 @@
     <!-- Filter bar -->
     <div
       v-if="isAdminKeu"
-      class="bg-white dark:bg-slate-800 rounded-2xl p-3 md:p-4 border border-slate-200 dark:border-slate-700 shadow-sm"
+      class="bg-[var(--bg-card)] rounded-2xl p-3 md:p-4 border border-[var(--border-subtle)] shadow-sm"
     >
       <div class="flex flex-col md:flex-row gap-2">
         <div class="relative flex-1">
           <i
-            class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"
+            class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] text-sm"
           ></i>
           <input
             v-model="search"
             type="search"
             placeholder="Cari nama, NIS, atau WA wali..."
-            class="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none"
+            class="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none"
           />
         </div>
         <select
           v-model="filterLembaga"
-          class="px-3 py-2.5 text-sm rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none"
+          class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none"
         >
           <option value="">Semua Lembaga</option>
           <option v-for="lb in lembagaList" :key="lb" :value="lb">{{ lb }}</option>
@@ -71,18 +71,18 @@
     <!-- Loading -->
     <div
       v-if="isAdminKeu && loading"
-      class="bg-white dark:bg-slate-800 rounded-2xl p-10 border border-slate-200 dark:border-slate-700 text-center"
+      class="bg-[var(--bg-card)] rounded-2xl p-10 border border-[var(--border-subtle)] text-center"
     >
       <i class="fas fa-spinner fa-spin text-2xl text-teal-600 mb-2"></i>
-      <p class="text-sm text-slate-500">Memuat data santri...</p>
+      <p class="text-sm text-[var(--text-secondary)]">Memuat data santri...</p>
     </div>
 
     <!-- Santri grid -->
     <div
       v-if="isAdminKeu && !loading"
-      class="bg-white dark:bg-slate-800 rounded-2xl p-3 md:p-4 border border-slate-200 dark:border-slate-700 shadow-sm"
+      class="bg-[var(--bg-card)] rounded-2xl p-3 md:p-4 border border-[var(--border-subtle)] shadow-sm"
     >
-      <p v-if="filteredSantri.length === 0" class="text-center text-slate-400 py-6 text-sm">
+      <p v-if="filteredSantri.length === 0" class="text-center text-[var(--text-tertiary)] py-6 text-sm">
         Tidak ada santri yang cocok.
       </p>
       <div v-else class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
@@ -90,7 +90,7 @@
           v-for="s in filteredSantri"
           :key="s.id"
           @click="openModal(s)"
-          class="text-left p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-teal-50 dark:hover:bg-teal-900/20 hover:border-teal-300 transition cursor-pointer flex items-center gap-2.5"
+          class="text-left p-3 rounded-xl border border-[var(--border-subtle)] hover:bg-teal-50 dark:hover:bg-teal-900/20 hover:border-teal-300 transition cursor-pointer flex items-center gap-2.5"
         >
           <div
             class="w-9 h-9 rounded-full bg-gradient-to-br from-teal-100 to-cyan-100 dark:from-teal-700 dark:to-cyan-700 flex items-center justify-center font-black text-teal-700 dark:text-teal-200 flex-shrink-0"
@@ -98,8 +98,8 @@
             {{ (s.nama || '?').charAt(0).toUpperCase() }}
           </div>
           <div class="flex-1 min-w-0">
-            <p class="text-sm font-bold text-slate-800 dark:text-white truncate">{{ s.nama }}</p>
-            <p class="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+            <p class="text-sm font-bold text-[var(--text-primary)] truncate">{{ s.nama }}</p>
+            <p class="text-[10px] text-[var(--text-secondary)] truncate">
               {{ s.nis || '—' }}{{ s.lembaga ? ' · ' + s.lembaga : ''
               }}{{ s.kelas ? ' · ' + s.kelas : '' }}
             </p>
@@ -111,10 +111,10 @@
               {{ tunggakanMap[s.id].count }} tagihan · {{ fmtRp(tunggakanMap[s.id].total) }}
             </p>
           </div>
-          <i class="fas fa-chevron-right text-slate-300 text-xs"></i>
+          <i class="fas fa-chevron-right text-[var(--text-tertiary)] text-xs"></i>
         </button>
       </div>
-      <p v-if="filteredSantri.length === 50" class="text-center text-[10px] text-slate-400 mt-3">
+      <p v-if="filteredSantri.length === 50" class="text-center text-[10px] text-[var(--text-tertiary)] mt-3">
         Menampilkan 50 santri pertama — refine pencarian untuk lihat lainnya
       </p>
     </div>
@@ -122,20 +122,20 @@
     <!-- Histori transaksi terakhir -->
     <div
       v-if="isAdminKeu && histori.length > 0"
-      class="bg-white dark:bg-slate-800 rounded-2xl p-3 md:p-4 border border-slate-200 dark:border-slate-700 shadow-sm"
+      class="bg-[var(--bg-card)] rounded-2xl p-3 md:p-4 border border-[var(--border-subtle)] shadow-sm"
     >
-      <h3 class="text-xs font-black text-slate-800 dark:text-white uppercase tracking-widest mb-2">
+      <h3 class="text-xs font-black text-[var(--text-primary)] uppercase tracking-widest mb-2">
         <i class="fas fa-history text-cyan-600 mr-1"></i>Transaksi Terakhir
       </h3>
       <div class="space-y-1.5">
         <div
           v-for="t in histori"
           :key="t.id"
-          class="flex items-center justify-between p-2 rounded-lg bg-slate-50 dark:bg-slate-900/50 text-xs"
+          class="flex items-center justify-between p-2 rounded-lg bg-[var(--bg-card-elevated)] text-xs"
         >
           <div class="flex-1 min-w-0">
-            <p class="font-bold truncate text-slate-700 dark:text-slate-200">{{ t.santri_nama }}</p>
-            <p class="text-[10px] text-slate-500 truncate">
+            <p class="font-bold truncate text-[var(--text-primary)]">{{ t.santri_nama }}</p>
+            <p class="text-[10px] text-[var(--text-secondary)] truncate">
               {{ t.kategori }} · {{ fmtTgl(t.tanggal) }}
             </p>
           </div>

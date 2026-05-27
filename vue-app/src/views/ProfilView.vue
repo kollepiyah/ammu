@@ -4,7 +4,7 @@
     <div v-if="loading" class="flex items-center justify-center py-20">
       <div class="text-center">
         <i class="fas fa-spinner fa-spin text-4xl text-teal-500 mb-3"></i>
-        <p class="text-sm text-slate-500 font-bold">Memuat profil...</p>
+        <p class="text-sm text-[var(--text-secondary)] font-bold">Memuat profil...</p>
       </div>
     </div>
 
@@ -36,11 +36,11 @@
     <!-- Fallback: no data found for this user -->
     <div
       v-else
-      class="bg-slate-50 border-2 border-dashed border-slate-300 p-6 rounded-2xl text-center"
+      class="bg-[var(--bg-card-elevated)] border-2 border-dashed border-[var(--border-default)] p-6 rounded-2xl text-center"
     >
-      <i class="fas fa-user-slash text-slate-400 text-3xl mb-2"></i>
-      <p class="text-sm font-bold text-slate-700">Data profil tidak ditemukan</p>
-      <p class="text-xs text-slate-500 mt-1">
+      <i class="fas fa-user-slash text-[var(--text-tertiary)] text-3xl mb-2"></i>
+      <p class="text-sm font-bold text-[var(--text-primary)]">Data profil tidak ditemukan</p>
+      <p class="text-xs text-[var(--text-secondary)] mt-1">
         Akun ini ({{ sesi?.role || '?' }}) belum terkonfigurasi penuh. Hubungi admin pondok.
       </p>
     </div>

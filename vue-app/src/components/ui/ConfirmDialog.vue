@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { useUiStore } from '@/stores/ui'
 import { AlertTriangle } from 'lucide-vue-next'
+import UiButton from './UiButton.vue'
 
 const ui = useUiStore()
 const state = computed(() => ui.confirmState)
@@ -20,36 +21,42 @@ function onBackdrop(e) {
     <Transition name="fade">
       <div
         v-if="state.open"
-        class="fixed inset-0 z-[9998] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+        class="fixed inset-0 z-[9998] bg-[var(--bg-overlay)] backdrop-blur-sm flex items-center justify-center p-4"
         @click="onBackdrop"
       >
-        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-xl max-w-md w-full p-5">
+        <div
+          class="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-[var(--radius-xl)] shadow-[var(--shadow-lg)] max-w-md w-full p-6"
+        >
           <div class="flex items-center gap-3 mb-3">
             <div
               v-if="state.danger"
-              class="w-10 h-10 rounded-full bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center text-rose-600"
+              class="w-10 h-10 rounded-[var(--radius-full)] bg-[var(--color-danger-soft)] flex items-center justify-center text-[var(--color-danger-text)] shrink-0"
             >
               <AlertTriangle class="w-5 h-5" />
             </div>
-            <h3 class="text-lg font-bold">{{ state.title }}</h3>
+            <h3 class="text-lg font-bold text-[var(--text-primary)] leading-tight">
+              {{ state.title }}
+            </h3>
           </div>
-          <div class="text-sm text-slate-600 dark:text-slate-300 mb-5" v-html="state.message"></div>
+          <div
+            class="text-sm text-[var(--text-secondary)] mb-5 leading-relaxed"
+            v-html="state.message"
+          ></div>
           <div class="flex justify-end gap-2">
-            <button
-              type="button"
-              class="px-4 py-2 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium text-sm hover:bg-slate-300 dark:hover:bg-slate-600"
+            <UiButton
+              variant="ghost"
+              size="md"
               @click="close(false)"
             >
               {{ state.cancelText }}
-            </button>
-            <button
-              type="button"
-              class="px-4 py-2 rounded-lg text-white font-medium text-sm"
-              :class="state.danger ? 'bg-rose-600 hover:bg-rose-700' : 'bg-teal-600 hover:bg-teal-700'"
+            </UiButton>
+            <UiButton
+              :variant="state.danger ? 'danger' : 'primary'"
+              size="md"
               @click="close(true)"
             >
               {{ state.confirmText }}
-            </button>
+            </UiButton>
           </div>
         </div>
       </div>

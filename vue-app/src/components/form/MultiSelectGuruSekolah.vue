@@ -3,32 +3,32 @@
     <button
       type="button"
       @click="isOpen = !isOpen"
-      class="w-full px-3 py-2.5 text-sm rounded-xl border border-slate-300 bg-slate-50 text-left flex items-center justify-between transition hover:bg-slate-100"
+      class="w-full px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-left flex items-center justify-between transition hover:bg-[var(--bg-muted)]"
     >
-      <span class="text-slate-700 truncate">{{ summary }}</span>
-      <i :class="['fas text-slate-500 text-xs', isOpen ? 'fa-chevron-up' : 'fa-chevron-down']"></i>
+      <span class="text-[var(--text-primary)] truncate">{{ summary }}</span>
+      <i :class="['fas text-[var(--text-secondary)] text-xs', isOpen ? 'fa-chevron-up' : 'fa-chevron-down']"></i>
     </button>
 
     <div
       v-if="isOpen"
-      class="absolute z-20 mt-1 w-full bg-white dark:bg-slate-800 border-2 border-slate-300 rounded-xl shadow-lg max-h-72 overflow-hidden flex flex-col"
+      class="absolute z-20 mt-1 w-full bg-[var(--bg-card)] border-2 border-[var(--border-default)] rounded-xl shadow-lg max-h-72 overflow-hidden flex flex-col"
     >
-      <div class="p-2 border-b border-slate-200">
+      <div class="p-2 border-b border-[var(--border-subtle)]">
         <input
           v-model="search"
           type="text"
           placeholder="🔍 Cari nama guru sekolah..."
-          class="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 bg-slate-50 focus:ring-2 focus:ring-cyan-500 outline-none"
+          class="w-full px-3 py-1.5 text-xs rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-cyan-500 outline-none"
         />
       </div>
       <div class="flex-1 overflow-y-auto p-2 space-y-1">
-        <p v-if="filteredGurus.length === 0" class="text-xs text-slate-400 italic text-center py-3">
+        <p v-if="filteredGurus.length === 0" class="text-xs text-[var(--text-tertiary)] italic text-center py-3">
           {{ search ? 'Tidak ada cocok' : 'Pilih lembaga sekolah dulu' }}
         </p>
         <label
           v-for="g in filteredGurus"
           :key="g.nama"
-          class="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-blue-50 cursor-pointer"
+          class="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-cyan-50 cursor-pointer"
         >
           <input
             type="checkbox"
@@ -36,10 +36,10 @@
             @change="onToggle(g.nama, $event.target.checked)"
             class="w-4 h-4 accent-cyan-600"
           />
-          <span class="text-sm text-slate-700">{{ g.nama }}</span>
+          <span class="text-sm text-[var(--text-primary)]">{{ g.nama }}</span>
         </label>
       </div>
-      <div class="p-2 border-t border-slate-200 bg-slate-50">
+      <div class="p-2 border-t border-[var(--border-subtle)] bg-[var(--bg-card-elevated)]">
         <button
           type="button"
           @click="isOpen = false"

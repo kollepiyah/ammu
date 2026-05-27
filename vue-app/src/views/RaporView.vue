@@ -8,10 +8,10 @@
       <div class="flex items-start gap-3 mb-4">
         <i class="fas fa-graduation-cap text-emerald-700 dark:text-emerald-300 text-2xl"></i>
         <div>
-          <h2 class="text-lg md:text-xl font-black text-slate-800 dark:text-white leading-tight">
+          <h2 class="text-lg md:text-xl font-black text-[var(--text-primary)] leading-tight">
             Rapor Semester
           </h2>
-          <p class="text-xs md:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+          <p class="text-xs md:text-sm text-[var(--text-secondary)] mt-0.5">
             Pilih lembaga untuk mengelola data rapor santri.
           </p>
         </div>
@@ -20,13 +20,13 @@
       <div class="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3 mb-4">
         <select
           v-model="tahunAjaran"
-          class="px-4 py-3 text-sm font-bold border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-white"
+          class="px-4 py-3 text-sm font-bold border border-[var(--border-default)] rounded-xl bg-white dark:bg-slate-900 text-[var(--text-primary)]"
         >
           <option v-for="t in TAHUN_AJARAN_OPTS" :key="t" :value="t">{{ t }}</option>
         </select>
         <select
           v-model="semester"
-          class="px-4 py-3 text-sm font-bold border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-white"
+          class="px-4 py-3 text-sm font-bold border border-[var(--border-default)] rounded-xl bg-white dark:bg-slate-900 text-[var(--text-primary)]"
         >
           <option value="Ganjil">Ganjil</option>
           <option value="Genap">Genap</option>
@@ -38,14 +38,14 @@
           icon="fas fa-mosque"
           title="Rapor Qiraati"
           subtitle="TPQ Sore · Pra PTPT · PTPT · PPPH"
-          gradient="from-emerald-500 to-emerald-700"
+          gradient="from-emerald-500 dark:from-emerald-700 to-emerald-700 dark:to-emerald-900"
           @click="pilihKategori('qiraati')"
         />
         <UiActionCard
           icon="fas fa-book-open"
           title="Rapor Diniyah"
           subtitle="Mata pelajaran agama"
-          gradient="from-blue-500 to-indigo-700"
+          gradient="from-cyan-500 dark:from-cyan-700 to-cyan-700 dark:to-cyan-900"
           @click="pilihKategori('diniyah')"
         />
       </div>
@@ -59,22 +59,22 @@
       <div class="flex items-center gap-3 mb-4">
         <button
           @click="view = 'picker'"
-          class="text-xs font-bold px-2 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 transition cursor-pointer"
+          class="text-xs font-bold px-2 py-1.5 rounded-lg bg-[var(--bg-muted)] hover:bg-slate-200 transition cursor-pointer"
           title="Kembali"
         >
           <i class="fas fa-arrow-left"></i>
         </button>
         <div>
-          <h2 class="text-lg md:text-xl font-black text-slate-800 dark:text-white leading-tight">
+          <h2 class="text-lg md:text-xl font-black text-[var(--text-primary)] leading-tight">
             <i
               :class="[
                 'fas mr-2',
-                kategori === 'qiraati' ? 'fa-mosque text-emerald-700' : 'fa-book-open text-blue-700'
+                kategori === 'qiraati' ? 'fa-mosque text-emerald-700' : 'fa-book-open text-cyan-700'
               ]"
             ></i>
             Rapor {{ kategori === 'qiraati' ? 'Qiraati' : 'Diniyah' }}
           </h2>
-          <p class="text-xs md:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+          <p class="text-xs md:text-sm text-[var(--text-secondary)] mt-0.5">
             Pilih {{ kategori === 'qiraati' ? 'lembaga Qiraati' : 'sekolah formal' }}.
           </p>
         </div>
@@ -103,9 +103,9 @@
       <div v-else-if="kategori === 'diniyah'">
         <div
           v-if="diniyahLembaga.length === 0"
-          class="text-center py-8 text-xs text-slate-400 italic"
+          class="text-center py-8 text-xs text-[var(--text-tertiary)] italic"
         >
-          <i class="fas fa-school text-3xl text-slate-300 dark:text-slate-600 block mb-2"></i>
+          <i class="fas fa-school text-3xl text-slate-300 dark:text-[var(--text-secondary)] block mb-2"></i>
           Belum ada sekolah formal terdaftar. Tambah lembaga tipe "Formal" di Master Data &gt;
           Lembaga.
         </div>
@@ -132,31 +132,31 @@
     <!-- ===== STEP 3: List Santri ===== -->
     <div v-else-if="view === 'santri'" class="space-y-4">
       <div
-        class="bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-5 border border-slate-200 dark:border-slate-700 shadow-sm"
+        class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
       >
         <div class="flex items-center justify-between gap-3 flex-wrap mb-3">
           <div class="flex items-center gap-2">
             <button
               @click="view = 'lembaga'"
-              class="text-xs font-bold px-2 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition cursor-pointer"
+              class="text-xs font-bold px-2 py-1.5 rounded-lg bg-[var(--bg-muted)] hover:bg-slate-200 dark:hover:bg-slate-600 transition cursor-pointer"
               title="Kembali"
             >
               <i class="fas fa-arrow-left"></i>
             </button>
-            <h2 class="text-base md:text-lg font-black text-slate-800 dark:text-white">
+            <h2 class="text-base md:text-lg font-black text-[var(--text-primary)]">
               <i
                 :class="[
                   'fas',
                   kategori === 'qiraati'
                     ? 'fa-mosque text-emerald-600'
-                    : 'fa-book-open text-blue-600',
+                    : 'fa-book-open text-cyan-600',
                   'mr-1'
                 ]"
               ></i>
               {{ lembaga }} · {{ tahunAjaran }} {{ semester }}
             </h2>
           </div>
-          <span class="text-[10px] text-slate-400 font-bold">{{ santriList.length }} santri</span>
+          <span class="text-[10px] text-[var(--text-tertiary)] font-bold">{{ santriList.length }} santri</span>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -164,11 +164,11 @@
             v-model="search"
             type="search"
             placeholder="Cari nama santri..."
-            class="text-xs px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white"
+            class="text-xs px-3 py-2 border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
           />
           <select
             v-model="filterKelas"
-            class="text-xs px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-800 dark:text-white"
+            class="text-xs px-3 py-2 border border-[var(--border-default)] rounded-lg bg-white dark:bg-slate-900 text-[var(--text-primary)]"
           >
             <option value="">Semua Kelas</option>
             <option v-for="k in kelasOptions" :key="k" :value="k">Kelas {{ k }}</option>
@@ -178,73 +178,119 @@
 
       <div
         v-if="santriList.length === 0"
-        class="bg-white dark:bg-slate-800 rounded-2xl p-10 border border-dashed border-slate-300 text-center"
+        class="bg-[var(--bg-card)] rounded-2xl p-10 border border-dashed border-[var(--border-default)] text-center"
       >
-        <i class="fas fa-users-slash text-slate-300 text-4xl block mb-2"></i>
-        <p class="text-sm font-bold text-slate-700 dark:text-slate-300">
+        <i class="fas fa-users-slash text-[var(--text-tertiary)] text-4xl block mb-2"></i>
+        <p class="text-sm font-bold text-slate-700 dark:text-[var(--text-tertiary)]">
           Belum ada santri di {{ lembaga }}
         </p>
-        <p class="text-xs text-slate-500 mt-1">
+        <p class="text-xs text-[var(--text-secondary)] mt-1">
           Tambah santri lewat Master Data &gt; Data Santri dengan lembaga "{{ lembaga }}".
         </p>
       </div>
-      <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-3">
+      <!-- v.21.85: Toolbar multi-select PDF batch -->
+      <div
+        v-if="!isSantri && santriList.length > 0"
+        class="bg-[var(--bg-card)] rounded-2xl p-3 md:p-4 border border-[var(--border-subtle)] shadow-sm flex items-center justify-between gap-2 flex-wrap"
+      >
+        <div class="flex items-center gap-2 flex-wrap">
+          <button
+            @click="toggleSelectAll"
+            class="text-xs font-bold px-3 py-1.5 rounded-lg bg-[var(--bg-muted)] hover:bg-[var(--color-primary-soft)] transition cursor-pointer text-[var(--text-primary)]"
+          >
+            <i :class="['fas', selectedSantriIds.size === santriList.length && santriList.length > 0 ? 'fa-check-square' : 'fa-square', 'mr-1']"></i>
+            {{ selectedSantriIds.size === santriList.length && santriList.length > 0 ? 'Hapus Semua Pilihan' : 'Pilih Semua' }}
+          </button>
+          <span v-if="selectedSantriIds.size > 0" class="text-xs text-[var(--text-secondary)]">
+            <b class="text-[var(--color-primary)]">{{ selectedSantriIds.size }}</b> santri dipilih
+          </span>
+        </div>
         <button
+          v-if="selectedSantriIds.size > 0"
+          @click="exportPdfBatch"
+          :disabled="exportingBatch"
+          class="text-xs font-bold px-3 py-2 rounded-lg bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] disabled:opacity-50 text-white transition cursor-pointer flex items-center gap-1.5"
+        >
+          <i :class="['fas', exportingBatch ? 'fa-spinner fa-spin' : 'fa-file-pdf']"></i>
+          {{ exportingBatch ? 'Mengekspor...' : `Ekspor PDF (${selectedSantriIds.size})` }}
+        </button>
+      </div>
+
+      <div v-if="santriList.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-3">
+        <div
           v-for="s in santriList"
           :key="s.id"
-          @click="pilihSantri(s)"
-          class="bg-white dark:bg-slate-800 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 border border-slate-200 dark:border-slate-700 rounded-xl p-3 md:p-4 text-left transition cursor-pointer flex items-center gap-3"
+          :class="[
+            'bg-[var(--bg-card)] border rounded-xl p-3 md:p-4 transition flex items-center gap-3',
+            selectedSantriIds.has(String(s.id))
+              ? 'border-[var(--color-primary)] ring-2 ring-[var(--color-accent)]/30'
+              : 'border-[var(--border-subtle)] hover:bg-[var(--color-primary-soft)]/30'
+          ]"
         >
+          <!-- Checkbox multi-select (admin/guru only) -->
+          <input
+            v-if="!isSantri"
+            type="checkbox"
+            :checked="selectedSantriIds.has(String(s.id))"
+            @click.stop="toggleSelect(s)"
+            class="w-5 h-5 accent-[var(--color-primary)] cursor-pointer flex-shrink-0"
+            :title="`Pilih ${s.nama} untuk ekspor batch`"
+          />
+          <button
+            @click="pilihSantri(s)"
+            class="flex-1 min-w-0 text-left flex items-center gap-3 cursor-pointer"
+          >
           <div
-            class="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white font-bold text-sm"
+            class="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 dark:from-emerald-700 to-emerald-600 dark:to-emerald-800 flex items-center justify-center text-white font-bold text-sm"
           >
             {{ (s.nama || '?').charAt(0).toUpperCase() }}
           </div>
           <div class="flex-1 min-w-0">
-            <p class="text-sm font-bold text-slate-800 dark:text-white truncate">
+            <p class="text-sm font-bold text-[var(--text-primary)] truncate">
               {{ s.nama }}
               <span
                 v-if="getRapors(s).length > 1"
-                class="ml-1 text-[9px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-bold align-middle"
+                class="ml-1 text-[9px] bg-cyan-100 text-cyan-800 px-1.5 py-0.5 rounded font-bold align-middle"
                 :title="`Santri ini punya ${getRapors(s).length} rapor`"
               >
                 <i class="fas fa-layer-group mr-0.5"></i>
                 {{ getRapors(s).length }} rapor
               </span>
             </p>
-            <p class="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+            <p class="text-[10px] text-[var(--text-secondary)] truncate">
               <span class="font-bold">{{ s.lembaga || '-' }}</span>
               · Kelas {{ s.kelas || '-' }}
               <span v-if="s.nis" class="ml-1">· NIS {{ s.nis }}</span>
-              <span v-if="s.is_mukim" class="ml-1 text-purple-600 font-bold">· MUKIM</span>
+              <span v-if="s.is_mukim" class="ml-1 text-teal-600 font-bold">· MUKIM</span>
             </p>
           </div>
-          <i class="fas fa-chevron-right text-slate-400 text-xs"></i>
-        </button>
+          <i class="fas fa-chevron-right text-[var(--text-tertiary)] text-xs"></i>
+          </button>
+        </div>
       </div>
     </div>
 
     <!-- ===== STEP 4: Detail Rapor (printable) ===== -->
     <div v-else-if="view === 'detail'" class="space-y-4">
       <div
-        class="no-print bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-5 border border-slate-200 dark:border-slate-700 shadow-sm"
+        class="no-print bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
       >
         <div class="flex items-center justify-between gap-3 flex-wrap">
           <div class="flex items-center gap-2">
             <button
               @click="kembaliSantri"
-              class="text-xs font-bold px-2 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition cursor-pointer"
+              class="text-xs font-bold px-2 py-1.5 rounded-lg bg-[var(--bg-muted)] hover:bg-slate-200 dark:hover:bg-slate-600 transition cursor-pointer"
               title="Kembali"
             >
               <i class="fas fa-arrow-left"></i>
             </button>
-            <h2 class="text-base md:text-lg font-black text-slate-800 dark:text-white">
+            <h2 class="text-base md:text-lg font-black text-[var(--text-primary)]">
               <i
                 :class="[
                   'fas',
                   kategori === 'qiraati'
                     ? 'fa-mosque text-emerald-600'
-                    : 'fa-book-open text-blue-600',
+                    : 'fa-book-open text-cyan-600',
                   'mr-1'
                 ]"
               ></i>
@@ -253,26 +299,26 @@
           </div>
           <button
             v-if="santriAktif && !isSantri"
-            @click="cetak"
-            class="text-xs font-bold px-3 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white transition cursor-pointer"
+            @click="exportPdfSingle()"
+            class="text-xs font-bold px-3 py-2 rounded-lg bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white transition cursor-pointer"
           >
-            <i class="fas fa-print mr-1"></i>Cetak / Simpan PDF
+            <i class="fas fa-file-pdf mr-1"></i>Ekspor PDF
           </button>
         </div>
 
         <!-- Rapor lain (kumulatif lintas lembaga) -->
         <div
           v-if="santriAktif && raporLain.length > 0"
-          class="mt-2 pt-2 border-t border-slate-100 dark:border-slate-700 flex items-center gap-2 flex-wrap"
+          class="mt-2 pt-2 border-t border-[var(--border-subtle)] flex items-center gap-2 flex-wrap"
         >
-          <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-            <i class="fas fa-layer-group mr-1 text-amber-600"></i>Rapor lain:
+          <span class="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-wider">
+            <i class="fas fa-layer-group mr-1 text-cyan-600"></i>Rapor lain:
           </span>
           <button
             v-for="r in raporLain"
             :key="r.lembaga"
             @click="switchRapor(r)"
-            class="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 transition cursor-pointer"
+            class="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-cyan-50 hover:bg-cyan-100 text-cyan-800 border border-cyan-200 transition cursor-pointer"
           >
             <i :class="['fas', r.jenis === 'qiraati' ? 'fa-mosque' : 'fa-book-open', 'mr-1']"></i>
             {{ r.lembaga }} ({{ r.jenis === 'qiraati' ? 'Qiraati' : 'Diniyah' }})
@@ -284,7 +330,7 @@
       <div
         v-if="santriAktif"
         id="rapor-print-area"
-        class="bg-white text-slate-900 rounded-2xl border border-slate-200 shadow-sm p-8 print:shadow-none print:border-0 print:rounded-none print:p-6 relative overflow-hidden"
+        class="bg-[var(--bg-card)] text-slate-900 rounded-2xl border border-[var(--border-subtle)] shadow-sm p-8 print:shadow-none print:border-0 print:rounded-none print:p-6 relative overflow-hidden"
         style="font-family: 'Times New Roman', Times, serif"
       >
         <!-- Background watermark (per lembaga) -->
@@ -327,10 +373,10 @@
                 <div v-if="kop.line2" class="text-[22px] font-bold uppercase leading-tight">
                   {{ kop.line2 }}
                 </div>
-                <div v-if="kop.line3" class="text-[12px] font-normal leading-tight text-slate-700">
+                <div v-if="kop.line3" class="text-[12px] font-normal leading-tight text-[var(--text-primary)]">
                   {{ titleCase(kop.line3) }}
                 </div>
-                <div v-if="kop.line4" class="text-[12px] font-normal leading-tight text-slate-700">
+                <div v-if="kop.line4" class="text-[12px] font-normal leading-tight text-[var(--text-primary)]">
                   {{ titleCase(kop.line4) }}
                 </div>
               </td>
@@ -469,7 +515,7 @@
                 </template>
               </tbody>
               <tfoot>
-                <tr class="bg-slate-100">
+                <tr class="bg-[var(--bg-muted)]">
                   <td colspan="3" class="border border-black px-1 py-1 font-bold text-left">
                     Jumlah Khotam
                   </td>
@@ -480,7 +526,7 @@
                     {{ totalKhotam }} Khotam
                   </td>
                 </tr>
-                <tr class="bg-amber-50">
+                <tr class="bg-cyan-50">
                   <td
                     :colspan="fieldsNilai.length + 4"
                     class="border border-black px-1 py-1 font-bold text-left"
@@ -499,12 +545,12 @@
           <div v-else-if="schema.perKelas" class="mt-3">
             <div
               v-if="!jenjangAktif"
-              class="text-[11px] italic text-slate-500 border border-dashed border-slate-300 rounded p-3 text-center"
+              class="text-[11px] italic text-[var(--text-secondary)] border border-dashed border-[var(--border-default)] rounded p-3 text-center"
             >
               Jenjang "{{ santriAktif.kelas_sekolah || '-' }}" belum dikonfigurasi schema-nya.
             </div>
             <table v-else class="w-full border-collapse text-[11px]">
-              <thead class="bg-blue-100">
+              <thead class="bg-cyan-100">
                 <tr>
                   <th class="border border-black px-2 py-1.5 w-[40px]">NO</th>
                   <th class="border border-black px-2 py-1.5 text-left">MATA PELAJARAN</th>
@@ -544,15 +590,15 @@
             v-else-if="schema.tableLayout === 'kelasJuz' && (schema.rows || []).length"
             class="overflow-x-auto"
           >
-            <div class="text-[11px] font-bold text-slate-600 mb-1 px-1">
-              <i class="fas fa-info-circle text-blue-500 mr-1"></i>
+            <div class="text-[11px] font-bold text-[var(--text-secondary)] mb-1 px-1">
+              <i class="fas fa-info-circle text-cyan-500 mr-1"></i>
               <span class="text-emerald-700">KUMULATIF</span>
               — {{ kelasJuzRows.length }} baris (Kelas 1 s/d {{ santriAktif?.kelas || '—' }})
             </div>
             <table
               class="border-collapse text-[10px] md:text-[11px] w-full min-w-[600px] table-fixed"
             >
-              <thead class="bg-slate-100">
+              <thead class="bg-[var(--bg-muted)]">
                 <tr>
                   <th rowspan="2" class="border border-slate-500 px-1.5 py-1 align-middle">
                     Kelas
@@ -586,7 +632,7 @@
                   <td
                     v-if="isKelasFirst(rIdx)"
                     :rowspan="kelasRowspan(rIdx)"
-                    class="border border-slate-500 px-1.5 py-1 text-center font-black bg-slate-50 align-middle"
+                    class="border border-slate-500 px-1.5 py-1 text-center font-black bg-[var(--bg-card-elevated)] align-middle"
                   >
                     {{ row.kelas }}
                   </td>
@@ -604,7 +650,7 @@
                 <tr v-if="kelasJuzRows.length === 0">
                   <td
                     :colspan="2 + (schema.fields || []).length"
-                    class="border border-slate-300 px-2 py-3 text-center text-slate-400 italic text-[11px]"
+                    class="border border-[var(--border-default)] px-2 py-3 text-center text-[var(--text-tertiary)] italic text-[11px]"
                   >
                     Tidak ada baris untuk kelas santri ini. Cek field <code>kelas</code> di data
                     santri.
@@ -618,7 +664,7 @@
           <div v-else-if="(schema.sections || []).length > 0">
             <div v-for="sec in schema.sections || []" :key="sec.id" class="mt-3">
               <div
-                class="text-center font-bold bg-slate-100 border border-slate-500 px-2 py-1 text-[11px] uppercase"
+                class="text-center font-bold bg-[var(--bg-muted)] border border-slate-500 px-2 py-1 text-[11px] uppercase"
               >
                 {{ sec.title }}
               </div>
@@ -626,7 +672,7 @@
                 v-if="sec.rows && sec.rows.length > 0"
                 class="w-full border-collapse text-[10px]"
               >
-                <thead class="bg-slate-100">
+                <thead class="bg-[var(--bg-muted)]">
                   <tr v-if="hasGroup(sec)">
                     <th rowspan="2" class="border border-slate-500 px-1 py-1 w-[50px] align-middle">
                       {{ rowLabel(sec) }}
@@ -678,7 +724,7 @@
                 </tbody>
               </table>
               <table v-else class="w-full border-collapse text-[10px]">
-                <thead class="bg-slate-100">
+                <thead class="bg-[var(--bg-muted)]">
                   <tr>
                     <th
                       v-for="f in sec.fields"
@@ -707,7 +753,7 @@
           <!-- Fallback: schema belum dikonfigurasi -->
           <div
             v-else
-            class="text-[11px] italic text-slate-500 my-3 border border-dashed border-slate-300 rounded p-3 text-center"
+            class="text-[11px] italic text-[var(--text-secondary)] my-3 border border-dashed border-[var(--border-default)] rounded p-3 text-center"
           >
             Schema rapor untuk lembaga "{{ santriAktif.lembaga }}" belum dikonfigurasi. Setup di
             Pengaturan Web &gt; Schema Rapor.
@@ -717,7 +763,7 @@
           <table class="w-full border-collapse text-[11px] mt-3">
             <tr>
               <td
-                class="border border-slate-500 px-1.5 py-1 bg-slate-100 font-bold text-center"
+                class="border border-slate-500 px-1.5 py-1 bg-[var(--bg-muted)] font-bold text-center"
                 style="width: 60%"
               >
                 Rata-rata Nilai
@@ -809,7 +855,7 @@
                   }}</span>
                 </td>
               </tr>
-              <tr class="text-[9px] text-slate-600">
+              <tr class="text-[9px] text-[var(--text-secondary)]">
                 <td></td>
                 <td>{{ ekgqGuru ? 'EKGQ: ' + ekgqGuru : '' }}</td>
                 <td>{{ ekgqKepala ? 'EKGQ: ' + ekgqKepala : '' }}</td>
@@ -833,6 +879,7 @@ import { useToast } from '@/composables/useToast'
 import { useSettingsStore } from '@/stores/settings'
 import { useAuthStore } from '@/stores/auth'
 import UiActionCard from '@/components/ui/UiActionCard.vue'
+import { generateRaporPdf } from '@/utils/raporPdf'
 
 const toast = useToast()
 const route = useRoute()
@@ -886,35 +933,35 @@ const QIRAATI_LEMBAGA = [
     label: 'TPQ Pagi',
     subtitle: "Taman Pendidikan Al-Qur'an",
     icon: 'fa-mosque',
-    gradient: 'from-emerald-500 to-emerald-700'
+    gradient: 'from-emerald-500 dark:from-emerald-700 to-emerald-700 dark:to-emerald-900'
   },
   {
     id: 'TPQ Sore',
     label: 'TPQ Sore',
     subtitle: "Taman Pendidikan Al-Qur'an",
     icon: 'fa-mosque',
-    gradient: 'from-teal-500 to-teal-700'
+    gradient: 'from-teal-500 dark:from-teal-700 to-teal-700 dark:to-teal-900'
   },
   {
     id: 'Pra PTPT',
     label: 'Pra PTPT',
     subtitle: 'Pra Tahfizh',
     icon: 'fa-book-quran',
-    gradient: 'from-blue-500 to-blue-700'
+    gradient: 'from-cyan-500 dark:from-cyan-700 to-cyan-700 dark:to-cyan-900'
   },
   {
     id: 'PTPT',
     label: 'PTPT',
     subtitle: 'Pasca TPQ Program Tahfizh',
     icon: 'fa-book-quran',
-    gradient: 'from-purple-500 to-purple-700'
+    gradient: 'from-teal-500 dark:from-teal-700 to-teal-700 dark:to-teal-900'
   },
   {
     id: 'PPPH',
     label: 'PPPH',
     subtitle: 'Pasca PTPT Program Hadits',
     icon: 'fa-book-bookmark',
-    gradient: 'from-amber-500 to-amber-700'
+    gradient: 'from-cyan-500 dark:from-cyan-700 to-cyan-700 dark:to-cyan-900'
   }
 ]
 
@@ -1036,6 +1083,10 @@ const kelasOptions = computed(() => {
   })
   return [...set].sort()
 })
+
+// v.21.85: Multi-select state untuk batch PDF
+const selectedSantriIds = ref(new Set())
+const exportingBatch = ref(false)
 
 const santriAktif = computed(
   () => santriRaw.value.find((s) => String(s.id) === String(santriId.value)) || null
@@ -1843,13 +1894,13 @@ const diniyahLembaga = computed(() => {
     allowed.forEach((a) => all.push({ lembaga: a.toUpperCase(), id: a.toUpperCase() }))
   }
   const gradients = [
-    'from-blue-500 to-blue-700',
-    'from-indigo-500 to-indigo-700',
-    'from-violet-500 to-violet-700',
-    'from-purple-500 to-purple-700',
-    'from-pink-500 to-fuchsia-700',
-    'from-rose-500 to-rose-700',
-    'from-cyan-500 to-cyan-700'
+    'from-cyan-500 dark:from-cyan-700 to-cyan-700 dark:to-cyan-900',
+    'from-cyan-500 dark:from-cyan-700 to-cyan-700 dark:to-cyan-900',
+    'from-teal-500 dark:from-teal-700 to-teal-700 dark:to-teal-900',
+    'from-teal-500 dark:from-teal-700 to-teal-700 dark:to-teal-900',
+    'from-rose-500 dark:from-rose-700 to-teal-700 dark:to-teal-900',
+    'from-rose-500 dark:from-rose-700 to-rose-700 dark:to-rose-900',
+    'from-cyan-500 dark:from-cyan-700 to-cyan-700 dark:to-cyan-900'
   ]
   return all.map((l, idx) => ({
     id: l.lembaga || l.nama,
@@ -1878,15 +1929,105 @@ function kembaliSantri() {
   santriId.value = ''
 }
 
-async function cetak() {
-  if (!santriAktif.value) return
-  try {
-    await new Promise((r) => setTimeout(r, 50))
-    window.print()
-    toast?.success?.('Dialog cetak dibuka — pilih "Save as PDF" untuk simpan PDF')
-  } catch (e) {
-    toast?.error?.('Gagal cetak: ' + (e.message || e))
+// v.21.85: Build raporState object dari computed values utk pass ke generateRaporPdf
+function buildRaporStateFor(s, raporDocObj) {
+  return {
+    lembaga: kategori.value === 'diniyah' ? 'Diniyah' : (s.lembaga || ''),
+    tahun_ajaran: tahunAjaran.value,
+    semester: semester.value,
+    data_nilai: raporDocObj?.data_nilai || {},
+    absensi: raporDocObj?.absensi || { sakit: 0, izin: 0, alpa: 0 },
+    kepribadian: raporDocObj?.kepribadian || { kelakuan: 'Baik', kerajinan: 'Baik', kebersihan: 'Baik' },
+    catatan: raporDocObj?.catatan || '',
+    catatan_wali_kelas: raporDocObj?.catatan || '',
+    rata_rata: raporDocObj?.rata_rata || rataRata.value || 0
   }
+}
+
+function findRaporDocFor(s) {
+  const periodKey = `${tahunAjaran.value}_${semester.value}`.replace(/[^a-zA-Z0-9_]/g, '_')
+  const lmbKey = kategori.value === 'diniyah' ? 'Diniyah' : (s.lembaga || '')
+  const docId = `rapor_${s.id}_${lmbKey}_${periodKey}`
+  return raporDocs.value.find((r) => r.id === docId) || null
+}
+
+// v.21.85: cari lembaga doc Firestore (untuk override KOP per-lembaga)
+function findLembagaObjFor(s) {
+  if (!s) return null
+  const lnorm = String(s.lembaga || '').toLowerCase().trim()
+  return (lembagaRaw.value || []).find(
+    (l) => String(l.lembaga || '').toLowerCase().trim() === lnorm
+  ) || null
+}
+
+async function exportPdfSingle(santri = null) {
+  const s = santri || santriAktif.value
+  if (!s) {
+    toast?.warning?.('Pilih santri dulu')
+    return
+  }
+  try {
+    const raporDocObj = findRaporDocFor(s)
+    const raporState = buildRaporStateFor(s, raporDocObj)
+    const lembagaObj = findLembagaObjFor(s)
+    const filename = `Rapor_${(s.nama || 'santri').replace(/\s+/g, '_')}_${kategori.value}_${tahunAjaran.value}_${semester.value}.pdf`
+    await generateRaporPdf({
+      santri: s,
+      schema: schema.value,
+      raporState,
+      settings: settingsStore.settings || {},
+      dbGuru: guruRaw.value || [],
+      filename,
+      lembagaOverride: lembagaObj
+    })
+    toast?.success?.(`PDF ${s.nama} berhasil diunduh`)
+  } catch (e) {
+    toast?.error?.('Gagal ekspor PDF: ' + (e.message || e))
+  }
+}
+
+async function exportPdfBatch() {
+  const ids = Array.from(selectedSantriIds.value)
+  if (ids.length === 0) {
+    toast?.warning?.('Pilih minimal 1 santri')
+    return
+  }
+  exportingBatch.value = true
+  let ok = 0, fail = 0
+  for (const id of ids) {
+    const s = santriRaw.value.find((x) => String(x.id) === String(id))
+    if (!s) { fail++; continue }
+    try {
+      await exportPdfSingle(s)
+      ok++
+      await new Promise((r) => setTimeout(r, 200))
+    } catch (e) {
+      fail++
+    }
+  }
+  exportingBatch.value = false
+  selectedSantriIds.value = new Set()
+  toast?.success?.(`Selesai ekspor: ${ok} sukses, ${fail} gagal`)
+}
+
+function toggleSelect(s) {
+  const id = String(s.id)
+  const set = new Set(selectedSantriIds.value)
+  if (set.has(id)) set.delete(id)
+  else set.add(id)
+  selectedSantriIds.value = set
+}
+
+function toggleSelectAll() {
+  if (selectedSantriIds.value.size === santriList.value.length) {
+    selectedSantriIds.value = new Set()
+  } else {
+    selectedSantriIds.value = new Set(santriList.value.map((s) => String(s.id)))
+  }
+}
+
+function clearSelection() {
+  selectedSantriIds.value = new Set()
 }
 
 // ===== Auto-route from query (?kategori=...) + role-based shortcut =====

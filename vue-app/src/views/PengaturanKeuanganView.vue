@@ -2,29 +2,29 @@
   <div class="p-4 md:p-6 max-w-5xl mx-auto space-y-4">
     <!-- Header -->
     <div
-      class="bg-white dark:bg-slate-800 rounded-2xl p-5 md:p-6 border border-slate-200 dark:border-slate-700 shadow-sm"
+      class="bg-[var(--bg-card)] rounded-2xl p-5 md:p-6 border border-[var(--border-subtle)] shadow-sm"
     >
-      <h2 class="text-lg md:text-xl font-black text-slate-800 dark:text-white">
-        <i class="fas fa-sliders-h text-amber-600 mr-2"></i>Pengaturan Keuangan
+      <h2 class="text-lg md:text-xl font-black text-[var(--text-primary)]">
+        <i class="fas fa-sliders-h text-cyan-600 mr-2"></i>Pengaturan Keuangan
       </h2>
-      <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+      <p class="text-xs text-[var(--text-secondary)] mt-1">
         Atur tanggal jatuh tempo, jenis tagihan, bisyaroh shift &amp; bisyaroh pokok.
       </p>
     </div>
 
     <!-- Pembayaran & Jatuh Tempo -->
     <div
-      class="bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-5 border border-slate-200 dark:border-slate-700 shadow-sm"
+      class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
     >
       <h3
-        class="text-xs md:text-sm font-black text-slate-800 dark:text-white uppercase tracking-widest mb-3 border-b border-slate-100 dark:border-slate-700 pb-2"
+        class="text-xs md:text-sm font-black text-[var(--text-primary)] uppercase tracking-widest mb-3 border-b border-[var(--border-subtle)] pb-2"
       >
         <i class="fas fa-calendar-day text-teal-600 mr-1"></i>Pembayaran &amp; Jatuh Tempo
       </h3>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div>
           <label
-            class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 block"
+            class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
           >
             Tanggal Jatuh Tempo Default Syahriyah Bulanan (1-28)
           </label>
@@ -33,19 +33,19 @@
             type="number"
             min="1"
             max="28"
-            class="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white"
+            class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
           />
         </div>
         <div>
           <label
-            class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 block"
+            class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
           >
             Auto-Generate Pembayaran
           </label>
           <button
             @click="autoGenerate"
             :disabled="generating"
-            class="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 rounded-lg text-sm transition cursor-pointer disabled:opacity-50"
+            class="w-full bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-bold py-2 rounded-lg text-sm transition cursor-pointer disabled:opacity-50"
           >
             <i class="fas fa-sync mr-1"></i
             >{{ generating ? 'Generating...' : 'Generate Bulan Ini' }}
@@ -55,11 +55,11 @@
 
       <div class="mt-4">
         <h4
-          class="font-black text-slate-700 dark:text-slate-300 text-[11px] uppercase tracking-wider mb-2"
+          class="font-black text-slate-700 dark:text-[var(--text-tertiary)] text-[11px] uppercase tracking-wider mb-2"
         >
           Daftar Jenis Pembayaran (label + nominal default — match legacy)
         </h4>
-        <p class="text-[10px] text-slate-500 mb-2 italic">
+        <p class="text-[10px] text-[var(--text-secondary)] mb-2 italic">
           <i class="fas fa-info-circle mr-1"></i>Nominal default akan auto-isi di ModalPOS saat klik
           preset jenis. Set 0 kalau nominal variabel.
         </p>
@@ -73,17 +73,17 @@
               v-model="jenis.label"
               type="text"
               placeholder="Label (Syahriyah, Infaq, ...)"
-              class="col-span-5 bg-transparent text-sm font-bold text-slate-800 dark:text-white outline-none border-b border-slate-300 dark:border-slate-600 pb-1"
+              class="col-span-5 bg-transparent text-sm font-bold text-[var(--text-primary)] outline-none border-b border-[var(--border-default)] pb-1"
             />
             <input
               v-model.number="jenis.nominal_default"
               type="number"
               min="0"
               placeholder="Nominal default"
-              class="col-span-4 bg-white dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-white outline-none border border-slate-300 dark:border-slate-600 rounded px-2 py-1"
+              class="col-span-4 bg-[var(--bg-card)] text-xs font-bold text-[var(--text-primary)] outline-none border border-[var(--border-default)] rounded px-2 py-1"
             />
             <label
-              class="col-span-2 flex items-center gap-1 text-[10px] font-bold text-slate-600 dark:text-slate-400"
+              class="col-span-2 flex items-center gap-1 text-[10px] font-bold text-[var(--text-secondary)]"
             >
               <input v-model="jenis.auto_generate" type="checkbox" class="w-3 h-3" />
               Auto
@@ -97,7 +97,7 @@
               <i class="fas fa-trash"></i>
             </button>
           </div>
-          <p v-if="jenisList.length === 0" class="text-xs text-slate-400 italic text-center py-2">
+          <p v-if="jenisList.length === 0" class="text-xs text-[var(--text-tertiary)] italic text-center py-2">
             Belum ada jenis tagihan. Tambah di bawah.
           </p>
         </div>
@@ -107,11 +107,11 @@
             @keyup.enter="addJenis"
             type="text"
             placeholder="Nama jenis tagihan baru..."
-            class="flex-1 px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white"
+            class="flex-1 px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
           />
           <button
             @click="addJenis"
-            class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-lg text-xs whitespace-nowrap"
+            class="bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-bold px-4 py-2 rounded-lg text-xs whitespace-nowrap"
           >
             <i class="fas fa-plus mr-1"></i>Tambah
           </button>
@@ -121,19 +121,19 @@
 
     <!-- Bisyaroh -->
     <div
-      class="bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-5 border border-slate-200 dark:border-slate-700 shadow-sm"
+      class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
     >
       <h3
-        class="text-xs md:text-sm font-black text-slate-800 dark:text-white uppercase tracking-widest mb-3 border-b border-slate-100 dark:border-slate-700 pb-2"
+        class="text-xs md:text-sm font-black text-[var(--text-primary)] uppercase tracking-widest mb-3 border-b border-[var(--border-subtle)] pb-2"
       >
-        <i class="fas fa-hand-holding-usd text-amber-600 mr-1"></i>Bisyaroh Guru/Pegawai
+        <i class="fas fa-hand-holding-usd text-cyan-600 mr-1"></i>Bisyaroh Guru/Pegawai
       </h3>
       <div
-        class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4 pb-4 border-b border-slate-100 dark:border-slate-700"
+        class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4 pb-4 border-b border-[var(--border-subtle)]"
       >
         <div>
           <label
-            class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 block"
+            class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
           >
             Bisyaroh per Shift Pagi (otomatis dari absensi)
           </label>
@@ -143,12 +143,12 @@
             type="text"
             inputmode="numeric"
             placeholder="Nominal per kehadiran..."
-            class="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white font-bold"
+            class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)] font-bold"
           />
         </div>
         <div>
           <label
-            class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 block"
+            class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
           >
             Bisyaroh per Shift Sore (otomatis dari absensi)
           </label>
@@ -158,7 +158,7 @@
             type="text"
             inputmode="numeric"
             placeholder="Nominal per kehadiran..."
-            class="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white font-bold"
+            class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)] font-bold"
           />
         </div>
       </div>
@@ -166,12 +166,12 @@
       <div>
         <div class="flex justify-between items-start mb-2">
           <h4
-            class="font-black text-slate-700 dark:text-slate-300 text-[11px] uppercase tracking-wider"
+            class="font-black text-slate-700 dark:text-[var(--text-tertiary)] text-[11px] uppercase tracking-wider"
           >
             Bisyaroh Pokok Per Guru/Pegawai (Flat Bulanan)
           </h4>
         </div>
-        <p class="text-[10px] text-slate-400 italic mb-2">
+        <p class="text-[10px] text-[var(--text-tertiary)] italic mb-2">
           Pokok = bayar tetap. Tambahan dari shift = otomatis dari absensi.
         </p>
         <div class="grid grid-cols-1 md:grid-cols-[1fr_140px] gap-2 mb-3">
@@ -179,11 +179,11 @@
             v-model="searchGuru"
             type="text"
             placeholder="Cari nama guru..."
-            class="px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white"
+            class="px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
           />
           <select
             v-model="filterLembaga"
-            class="px-3 py-2 text-xs border border-slate-300 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white"
+            class="px-3 py-2 text-xs border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
           >
             <option value="">Semua Lembaga</option>
             <option v-for="l in lembagaOptions" :key="l" :value="l">{{ l }}</option>
@@ -196,8 +196,8 @@
             class="grid grid-cols-[1fr_120px_120px] gap-2 items-center bg-slate-50 dark:bg-slate-700/30 px-3 py-2 rounded-lg"
           >
             <div class="min-w-0">
-              <p class="text-xs font-bold text-slate-800 dark:text-white truncate">{{ g.nama }}</p>
-              <p class="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+              <p class="text-xs font-bold text-[var(--text-primary)] truncate">{{ g.nama }}</p>
+              <p class="text-[10px] text-[var(--text-secondary)] truncate">
                 {{ g.lembaga || '-' }}
               </p>
             </div>
@@ -208,7 +208,7 @@
               inputmode="numeric"
               placeholder="0"
               title="Pokok Pondok"
-              class="px-2 py-1.5 text-xs text-right font-bold border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-900 text-slate-800 dark:text-white"
+              class="px-2 py-1.5 text-xs text-right font-bold border border-[var(--border-default)] rounded bg-white dark:bg-slate-900 text-[var(--text-primary)]"
             />
             <input
               v-model="form.keu_bisyaroh_sekolah[g.id]"
@@ -222,12 +222,12 @@
           </div>
           <p
             v-if="filteredGuru.length === 0"
-            class="text-xs text-slate-400 italic text-center py-4"
+            class="text-xs text-[var(--text-tertiary)] italic text-center py-4"
           >
             Tidak ada guru cocok filter.
           </p>
         </div>
-        <p class="text-[10px] text-slate-400 italic mt-2">
+        <p class="text-[10px] text-[var(--text-tertiary)] italic mt-2">
           Kolom kiri = Pokok Pondok &middot; Kolom kanan emerald = Pokok Sekolah (flat per guru per
           bulan)
         </p>
@@ -236,10 +236,10 @@
 
     <!-- Kategori Transaksi -->
     <div
-      class="bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-5 border border-slate-200 dark:border-slate-700 shadow-sm"
+      class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
     >
       <h3
-        class="text-xs md:text-sm font-black text-slate-800 dark:text-white uppercase tracking-widest mb-3 border-b border-slate-100 dark:border-slate-700 pb-2"
+        class="text-xs md:text-sm font-black text-[var(--text-primary)] uppercase tracking-widest mb-3 border-b border-[var(--border-subtle)] pb-2"
       >
         <i class="fas fa-tags text-teal-600 mr-1"></i>Kategori Transaksi Manual (Buku Induk)
       </h3>
@@ -260,7 +260,7 @@
               <input
                 v-model="form.keu_kategori_masuk[idx]"
                 type="text"
-                class="flex-1 bg-transparent text-xs font-bold text-slate-800 dark:text-white outline-none"
+                class="flex-1 bg-transparent text-xs font-bold text-[var(--text-primary)] outline-none"
               />
               <button
                 @click="removeKategori('masuk', idx)"
@@ -276,11 +276,11 @@
               @keyup.enter="addKategori('masuk')"
               type="text"
               placeholder="Kategori baru..."
-              class="flex-1 px-3 py-2 text-xs border border-slate-300 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white"
+              class="flex-1 px-3 py-2 text-xs border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
             />
             <button
               @click="addKategori('masuk')"
-              class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-2 rounded-lg text-xs"
+              class="bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-bold px-3 py-2 rounded-lg text-xs"
             >
               <i class="fas fa-plus"></i>
             </button>
@@ -302,7 +302,7 @@
               <input
                 v-model="form.keu_kategori_keluar[idx]"
                 type="text"
-                class="flex-1 bg-transparent text-xs font-bold text-slate-800 dark:text-white outline-none"
+                class="flex-1 bg-transparent text-xs font-bold text-[var(--text-primary)] outline-none"
               />
               <button
                 @click="removeKategori('keluar', idx)"
@@ -318,7 +318,7 @@
               @keyup.enter="addKategori('keluar')"
               type="text"
               placeholder="Kategori baru..."
-              class="flex-1 px-3 py-2 text-xs border border-slate-300 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white"
+              class="flex-1 px-3 py-2 text-xs border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
             />
             <button
               @click="addKategori('keluar')"
@@ -333,29 +333,29 @@
 
     <!-- Master Tunjangan -->
     <div
-      class="bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-5 border border-slate-200 dark:border-slate-700 shadow-sm"
+      class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
     >
       <div
-        class="flex items-center justify-between border-b border-slate-100 dark:border-slate-700 pb-2 mb-3"
+        class="flex items-center justify-between border-b border-[var(--border-subtle)] pb-2 mb-3"
       >
         <h3
-          class="text-xs md:text-sm font-black text-slate-800 dark:text-white uppercase tracking-widest"
+          class="text-xs md:text-sm font-black text-[var(--text-primary)] uppercase tracking-widest"
         >
           <i class="fas fa-plus-circle text-emerald-600 mr-1"></i>Master Tunjangan
         </h3>
         <button
           @click="addMaster('tunjangan')"
-          class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-1.5 rounded-lg text-xs"
+          class="bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-bold px-3 py-1.5 rounded-lg text-xs"
         >
           <i class="fas fa-plus mr-1"></i>Tambah
         </button>
       </div>
-      <p class="text-[10px] text-slate-400 italic mb-2">
+      <p class="text-[10px] text-[var(--text-tertiary)] italic mb-2">
         Tunjangan otomatis terisi di slip gaji guru sesuai scope.
       </p>
       <div
         v-if="form.master_tunjangan.length === 0"
-        class="text-xs text-slate-400 italic text-center py-3"
+        class="text-xs text-[var(--text-tertiary)] italic text-center py-3"
       >
         Belum ada master tunjangan.
       </div>
@@ -369,7 +369,7 @@
             v-model="item.nama"
             type="text"
             placeholder="Nama tunjangan"
-            class="bg-transparent text-xs font-bold text-slate-800 dark:text-white outline-none"
+            class="bg-transparent text-xs font-bold text-[var(--text-primary)] outline-none"
           />
           <input
             v-model="item.nominalFmt"
@@ -391,13 +391,13 @@
 
     <!-- Master Potongan -->
     <div
-      class="bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-5 border border-slate-200 dark:border-slate-700 shadow-sm"
+      class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
     >
       <div
-        class="flex items-center justify-between border-b border-slate-100 dark:border-slate-700 pb-2 mb-3"
+        class="flex items-center justify-between border-b border-[var(--border-subtle)] pb-2 mb-3"
       >
         <h3
-          class="text-xs md:text-sm font-black text-slate-800 dark:text-white uppercase tracking-widest"
+          class="text-xs md:text-sm font-black text-[var(--text-primary)] uppercase tracking-widest"
         >
           <i class="fas fa-minus-circle text-rose-600 mr-1"></i>Master Potongan
         </h3>
@@ -408,12 +408,12 @@
           <i class="fas fa-plus mr-1"></i>Tambah
         </button>
       </div>
-      <p class="text-[10px] text-slate-400 italic mb-2">
+      <p class="text-[10px] text-[var(--text-tertiary)] italic mb-2">
         Potongan otomatis terisi di slip gaji guru sesuai scope.
       </p>
       <div
         v-if="form.master_potongan.length === 0"
-        class="text-xs text-slate-400 italic text-center py-3"
+        class="text-xs text-[var(--text-tertiary)] italic text-center py-3"
       >
         Belum ada master potongan.
       </div>
@@ -427,7 +427,7 @@
             v-model="item.nama"
             type="text"
             placeholder="Nama potongan"
-            class="bg-transparent text-xs font-bold text-slate-800 dark:text-white outline-none"
+            class="bg-transparent text-xs font-bold text-[var(--text-primary)] outline-none"
           />
           <input
             v-model="item.nominalFmt"
@@ -449,51 +449,51 @@
 
     <!-- Bank -->
     <div
-      class="bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-5 border border-slate-200 dark:border-slate-700 shadow-sm"
+      class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
     >
       <h3
-        class="text-xs md:text-sm font-black text-slate-800 dark:text-white uppercase tracking-widest mb-3 border-b border-slate-100 dark:border-slate-700 pb-2"
+        class="text-xs md:text-sm font-black text-[var(--text-primary)] uppercase tracking-widest mb-3 border-b border-[var(--border-subtle)] pb-2"
       >
-        <i class="fas fa-university text-blue-600 mr-1"></i>Rekening Bank Pondok
+        <i class="fas fa-university text-cyan-600 mr-1"></i>Rekening Bank Pondok
       </h3>
-      <p class="text-[10px] text-slate-400 italic mb-3">
+      <p class="text-[10px] text-[var(--text-tertiary)] italic mb-3">
         Akan tampil di struk POS jika metode bayar = transfer.
       </p>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
         <div>
           <label
-            class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 block"
+            class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
             >Nama Bank</label
           >
           <input
             v-model="form.bank_nama"
             type="text"
             placeholder="BSI / BCA / BRI..."
-            class="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white"
+            class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
           />
         </div>
         <div>
           <label
-            class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 block"
+            class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
             >Nomor Rekening</label
           >
           <input
             v-model="form.bank_nomor"
             type="text"
             placeholder="1234567890"
-            class="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white"
+            class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
           />
         </div>
         <div>
           <label
-            class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 block"
+            class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
             >Atas Nama</label
           >
           <input
             v-model="form.bank_atasnama"
             type="text"
             placeholder="Yayasan Mambaul Ulum"
-            class="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white"
+            class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
           />
         </div>
       </div>
@@ -501,19 +501,19 @@
 
     <!-- Sticky save bar -->
     <div
-      class="sticky bottom-4 z-20 flex justify-end gap-2 bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm rounded-2xl p-3 border border-slate-200 dark:border-slate-700 shadow-lg"
+      class="sticky bottom-4 z-20 flex justify-end gap-2 bg-[var(--bg-card)]/95 dark:bg-slate-800/95 backdrop-blur-sm rounded-2xl p-3 border border-[var(--border-subtle)] shadow-lg"
     >
       <button
         @click="reset"
         :disabled="saving"
-        class="text-xs font-bold px-4 py-2 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200 transition cursor-pointer disabled:opacity-50"
+        class="text-xs font-bold px-4 py-2 rounded-lg bg-[var(--bg-muted)] text-[var(--text-primary)] hover:bg-slate-200 transition cursor-pointer disabled:opacity-50"
       >
         <i class="fas fa-undo mr-1"></i>Reset
       </button>
       <button
         @click="simpan"
         :disabled="saving"
-        class="text-xs font-bold px-4 py-2 rounded-lg bg-teal-600 hover:bg-teal-700 text-white transition cursor-pointer disabled:opacity-50"
+        class="text-xs font-bold px-4 py-2 rounded-lg bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white transition cursor-pointer disabled:opacity-50"
       >
         <i class="fas fa-save mr-1"></i>{{ saving ? 'Menyimpan...' : 'Simpan Semua' }}
       </button>

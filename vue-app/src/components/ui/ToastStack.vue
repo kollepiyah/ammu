@@ -13,26 +13,30 @@ const iconFor = (type) => ({
   warning: AlertTriangle
 }[type] || Info)
 
-const colorFor = (type) => ({
-  info: 'bg-sky-500',
-  success: 'bg-emerald-500',
-  error: 'bg-rose-500',
-  warning: 'bg-amber-500'
-}[type] || 'bg-slate-500')
+// Map toast type to CSS-var semantic palette (soft bg + semantic text)
+const styleFor = (type) => ({
+  info: 'bg-[var(--color-info-soft)] text-[var(--color-info-text)] border-[var(--color-info)]',
+  success: 'bg-[var(--color-success-soft)] text-[var(--color-success-text)] border-[var(--color-success)]',
+  error: 'bg-[var(--color-danger-soft)] text-[var(--color-danger-text)] border-[var(--color-danger)]',
+  warning: 'bg-[var(--color-warning-soft)] text-[var(--color-warning-text)] border-[var(--color-warning)]'
+}[type] || 'bg-[var(--bg-card)] text-[var(--text-primary)] border-[var(--border-default)]')
 </script>
 
 <template>
   <Teleport to="body">
-    <div class="fixed top-4 right-4 z-[9999] flex flex-col gap-2 pointer-events-none">
+    <div class="fixed bottom-4 right-4 z-[9999] flex flex-col gap-2 pointer-events-none">
       <transition-group name="toast">
         <div
           v-for="t in toasts"
           :key="t.id"
-          class="pointer-events-auto rounded-lg shadow-lg text-white px-4 py-2.5 flex items-center gap-2 max-w-sm text-sm font-medium"
-          :class="colorFor(t.type)"
+          class="pointer-events-auto rounded-[var(--radius-md)] shadow-[var(--shadow-md)] border px-4 py-2.5 flex items-center gap-2 max-w-sm text-sm font-medium backdrop-blur-sm"
+          :class="styleFor(t.type)"
         >
-          <component :is="iconFor(t.type)" class="w-4 h-4 shrink-0" />
-          <span class="flex-1">{{ t.msg }}</span>
+          <component
+            :is="iconFor(t.type)"
+            class="w-4 h-4 shrink-0"
+          />
+          <span class="flex-1 leading-snug">{{ t.msg }}</span>
         </div>
       </transition-group>
     </div>
@@ -42,7 +46,7 @@ const colorFor = (type) => ({
 <style scoped>
 .toast-enter-active,
 .toast-leave-active {
-  transition: all 200ms ease;
+  transition: all 220ms ease;
 }
 .toast-enter-from {
   opacity: 0;

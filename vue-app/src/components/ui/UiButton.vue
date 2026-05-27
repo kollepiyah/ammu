@@ -1,6 +1,6 @@
 <script setup>
 defineProps({
-  variant: { type: String, default: 'primary' }, // primary, secondary, danger, ghost
+  variant: { type: String, default: 'primary' }, // primary, ghost, accent, danger, success
   size: { type: String, default: 'md' }, // sm, md, lg
   loading: { type: Boolean, default: false },
   disabled: { type: Boolean, default: false },
@@ -8,11 +8,13 @@ defineProps({
 })
 
 const variantClass = {
-  primary: 'bg-teal-600 hover:bg-teal-700 text-white',
-  secondary: 'bg-slate-200 hover:bg-slate-300 text-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-slate-200',
-  danger: 'bg-rose-600 hover:bg-rose-700 text-white',
-  ghost: 'bg-transparent hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200'
+  primary: 'bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-[var(--text-on-primary)] border border-[var(--color-primary)]',
+  ghost: 'bg-transparent hover:bg-[var(--bg-hover)] text-[var(--text-primary)] border border-[var(--border-default)]',
+  accent: 'bg-[var(--color-accent)] hover:bg-[var(--color-primary-hover)] text-[var(--text-on-accent)] border border-[var(--color-accent)]',
+  danger: 'bg-[var(--color-danger-soft)] hover:bg-[var(--color-danger)] hover:text-white text-[var(--color-danger-text)] border border-[var(--color-danger)]',
+  success: 'bg-[var(--color-success-soft)] hover:bg-[var(--color-success)] hover:text-white text-[var(--color-success-text)] border border-[var(--color-success)]'
 }
+
 const sizeClass = {
   sm: 'px-3 py-1.5 text-xs',
   md: 'px-4 py-2 text-sm',
@@ -24,10 +26,13 @@ const sizeClass = {
   <button
     :type="type"
     :disabled="disabled || loading"
-    class="rounded-lg font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
+    class="rounded-[var(--radius-md)] font-semibold transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2 shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-page)]"
     :class="[variantClass[variant], sizeClass[size]]"
   >
-    <span v-if="loading" class="inline-block w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
+    <span
+      v-if="loading"
+      class="inline-block w-3 h-3 border-2 border-current border-t-transparent rounded-[var(--radius-full)] animate-spin"
+    ></span>
     <slot />
   </button>
 </template>

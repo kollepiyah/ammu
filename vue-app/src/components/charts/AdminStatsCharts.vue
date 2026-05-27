@@ -1,71 +1,71 @@
 <template>
   <!-- v.20.80.0526 M9: 4 Charts admin (chart.js + vue-chartjs) -->
   <div class="space-y-3">
-    <h3 class="text-sm md:text-base font-black text-slate-800 dark:text-white mb-1">
-      <i class="fas fa-chart-line text-purple-600 mr-2"></i>Grafik Statistik
-      <span class="text-[10px] font-bold text-slate-500 ml-2 normal-case">12 bulan terakhir</span>
+    <h3 class="text-sm md:text-base font-black text-[var(--text-primary)] mb-1">
+      <i class="fas fa-chart-line text-teal-600 mr-2"></i>Grafik Statistik
+      <span class="text-[10px] font-bold text-[var(--text-secondary)] ml-2 normal-case">12 bulan terakhir</span>
     </h3>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
       <!-- M9.a: Stat Guru Kehadiran -->
-      <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-200 dark:border-slate-700 shadow-sm">
+      <div class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm">
         <div class="flex items-center justify-between mb-2">
-          <h4 class="text-xs font-black text-slate-700 dark:text-slate-200 uppercase tracking-wider">
+          <h4 class="text-xs font-black text-[var(--text-primary)] uppercase tracking-wider">
             <i class="fas fa-user-check text-emerald-600 mr-1"></i>Kehadiran Guru
           </h4>
-          <span class="text-[10px] text-slate-400 font-bold">{{ absensiGuru.length }} record</span>
+          <span class="text-[10px] text-[var(--text-tertiary)] font-bold">{{ absensiGuru.length }} record</span>
         </div>
         <div class="relative h-64">
           <Bar v-if="chartGuruKehadiran" :data="chartGuruKehadiran" :options="chartOptionsStacked" />
-          <div v-else class="absolute inset-0 flex items-center justify-center text-xs text-slate-400 italic">
+          <div v-else class="absolute inset-0 flex items-center justify-center text-xs text-[var(--text-tertiary)] italic">
             <i class="fas fa-spinner fa-spin mr-2"></i>Belum ada data absensi
           </div>
         </div>
       </div>
 
       <!-- M9.b: Stat Santri Prestasi -->
-      <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-200 dark:border-slate-700 shadow-sm">
+      <div class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm">
         <div class="flex items-center justify-between mb-2">
-          <h4 class="text-xs font-black text-slate-700 dark:text-slate-200 uppercase tracking-wider">
-            <i class="fas fa-trophy text-amber-600 mr-1"></i>Prestasi Santri (per lembaga)
+          <h4 class="text-xs font-black text-[var(--text-primary)] uppercase tracking-wider">
+            <i class="fas fa-trophy text-cyan-600 mr-1"></i>Prestasi Santri (per lembaga)
           </h4>
-          <span class="text-[10px] text-slate-400 font-bold">{{ santriList.length || 0 }} santri</span>
+          <span class="text-[10px] text-[var(--text-tertiary)] font-bold">{{ santriList.length || 0 }} santri</span>
         </div>
         <div class="relative h-64">
           <Pie v-if="chartSantriPrestasi" :data="chartSantriPrestasi" :options="chartOptionsPie" />
-          <div v-else class="absolute inset-0 flex items-center justify-center text-xs text-slate-400 italic">
+          <div v-else class="absolute inset-0 flex items-center justify-center text-xs text-[var(--text-tertiary)] italic">
             Belum ada data prestasi
           </div>
         </div>
       </div>
 
       <!-- M9.c: Chart Keuangan -->
-      <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-200 dark:border-slate-700 shadow-sm">
+      <div class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm">
         <div class="flex items-center justify-between mb-2">
-          <h4 class="text-xs font-black text-slate-700 dark:text-slate-200 uppercase tracking-wider">
-            <i class="fas fa-coins text-amber-600 mr-1"></i>Arus Kas (Buku Induk)
+          <h4 class="text-xs font-black text-[var(--text-primary)] uppercase tracking-wider">
+            <i class="fas fa-coins text-cyan-600 mr-1"></i>Arus Kas (Buku Induk)
           </h4>
-          <span class="text-[10px] text-slate-400 font-bold">{{ bukuInduk.length }} entri</span>
+          <span class="text-[10px] text-[var(--text-tertiary)] font-bold">{{ bukuInduk.length }} entri</span>
         </div>
         <div class="relative h-64">
           <Line v-if="chartKeuangan" :data="chartKeuangan" :options="chartOptionsCurrency" />
-          <div v-else class="absolute inset-0 flex items-center justify-center text-xs text-slate-400 italic">
+          <div v-else class="absolute inset-0 flex items-center justify-center text-xs text-[var(--text-tertiary)] italic">
             Belum ada data keuangan
           </div>
         </div>
       </div>
 
       <!-- M9.d: Rekap Kegiatan -->
-      <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-200 dark:border-slate-700 shadow-sm">
+      <div class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm">
         <div class="flex items-center justify-between mb-2">
-          <h4 class="text-xs font-black text-slate-700 dark:text-slate-200 uppercase tracking-wider">
-            <i class="fas fa-calendar-check text-blue-600 mr-1"></i>Rekap Kegiatan
+          <h4 class="text-xs font-black text-[var(--text-primary)] uppercase tracking-wider">
+            <i class="fas fa-calendar-check text-cyan-600 mr-1"></i>Rekap Kegiatan
           </h4>
-          <span class="text-[10px] text-slate-400 font-bold">{{ kegiatanList.length }} kegiatan</span>
+          <span class="text-[10px] text-[var(--text-tertiary)] font-bold">{{ kegiatanList.length }} kegiatan</span>
         </div>
         <div class="relative h-64">
           <Bar v-if="chartKegiatan" :data="chartKegiatan" :options="chartOptionsSimple" />
-          <div v-else class="absolute inset-0 flex items-center justify-center text-xs text-slate-400 italic">
+          <div v-else class="absolute inset-0 flex items-center justify-center text-xs text-[var(--text-tertiary)] italic">
             Belum ada data kegiatan
           </div>
         </div>

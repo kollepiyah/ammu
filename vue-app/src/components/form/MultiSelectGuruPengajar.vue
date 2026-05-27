@@ -6,33 +6,33 @@
       @click="isOpen = !isOpen"
       class="w-full px-3 py-2.5 text-sm rounded-xl border-2 border-teal-300 bg-teal-50 text-left flex items-center justify-between transition hover:bg-teal-100"
     >
-      <span class="text-slate-700 truncate">{{ summary }}</span>
+      <span class="text-[var(--text-primary)] truncate">{{ summary }}</span>
       <i :class="['fas text-teal-600 text-xs', isOpen ? 'fa-chevron-up' : 'fa-chevron-down']"></i>
     </button>
 
     <!-- Dropdown panel -->
     <div
       v-if="isOpen"
-      class="absolute z-20 mt-1 w-full bg-white dark:bg-slate-800 border-2 border-teal-300 rounded-xl shadow-lg max-h-72 overflow-hidden flex flex-col"
+      class="absolute z-20 mt-1 w-full bg-[var(--bg-card)] border-2 border-teal-300 rounded-xl shadow-lg max-h-72 overflow-hidden flex flex-col"
     >
       <!-- Search -->
-      <div class="p-2 border-b border-slate-200">
+      <div class="p-2 border-b border-[var(--border-subtle)]">
         <input
           v-model="search"
           type="text"
           placeholder="🔍 Cari nama guru..."
-          class="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 bg-slate-50 focus:ring-2 focus:ring-teal-500 outline-none"
+          class="w-full px-3 py-1.5 text-xs rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none"
         />
       </div>
       <!-- List -->
       <div class="flex-1 overflow-y-auto p-2 space-y-1.5">
-        <p v-if="filteredGurus.length === 0" class="text-xs text-slate-400 italic text-center py-3">
+        <p v-if="filteredGurus.length === 0" class="text-xs text-[var(--text-tertiary)] italic text-center py-3">
           {{ search ? 'Tidak ada cocok' : 'Pilih lembaga dulu' }}
         </p>
         <div
           v-for="g in filteredGurus"
           :key="g.nama"
-          class="bg-white border border-teal-100 rounded-lg p-2 hover:bg-teal-50"
+          class="bg-[var(--bg-card)] border border-teal-100 rounded-lg p-2 hover:bg-teal-50"
         >
           <div class="flex items-start justify-between gap-2">
             <label class="flex items-center gap-2 cursor-pointer flex-1 min-w-0">
@@ -42,7 +42,7 @@
                 @change="onToggle(g.nama, $event.target.checked)"
                 class="w-4 h-4 accent-teal-600"
               />
-              <span class="text-sm font-bold text-slate-700 truncate">{{ g.nama }}</span>
+              <span class="text-sm font-bold text-[var(--text-primary)] truncate">{{ g.nama }}</span>
             </label>
             <div v-if="isSelected(g.nama)" class="flex gap-1 flex-shrink-0">
               <button
@@ -54,7 +54,7 @@
                   'text-[10px] font-bold px-2 py-1 rounded border-2 transition',
                   getShift(g.nama) === s.value
                     ? s.activeClass
-                    : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'
+                    : 'bg-[var(--bg-card)] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:border-[var(--border-default)]'
                 ]"
               >
                 {{ s.label }}
@@ -64,7 +64,7 @@
         </div>
       </div>
       <!-- Footer -->
-      <div class="p-2 border-t border-slate-200 bg-slate-50">
+      <div class="p-2 border-t border-[var(--border-subtle)] bg-[var(--bg-card-elevated)]">
         <button
           type="button"
           @click="isOpen = false"
@@ -75,7 +75,7 @@
       </div>
     </div>
 
-    <p class="text-[10px] text-slate-500 mt-1">
+    <p class="text-[10px] text-[var(--text-secondary)] mt-1">
       <i class="fas fa-info-circle mr-1"></i>Max 2 guru. Klik guru → pilih shift Pagi / Sore / Pagi+Sore.
     </p>
   </div>
@@ -97,8 +97,8 @@ const isOpen = ref(false)
 const search = ref('')
 
 const shiftOptions = [
-  { value: 'pagi', label: 'Pagi', activeClass: 'bg-amber-100 text-amber-800 border-amber-400' },
-  { value: 'sore', label: 'Sore', activeClass: 'bg-purple-100 text-purple-800 border-purple-400' },
+  { value: 'pagi', label: 'Pagi', activeClass: 'bg-cyan-100 text-cyan-800 border-cyan-400' },
+  { value: 'sore', label: 'Sore', activeClass: 'bg-teal-100 text-teal-800 border-teal-400' },
   { value: 'pagi_sore', label: 'P+S', activeClass: 'bg-teal-100 text-teal-800 border-teal-400' }
 ]
 

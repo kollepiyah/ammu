@@ -1,12 +1,12 @@
 <template>
   <div class="p-3 md:p-5 max-w-5xl mx-auto space-y-4">
     <div
-      class="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-200 dark:border-slate-700 shadow-sm"
+      class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm"
     >
       <h1 class="text-xl md:text-2xl font-black">
         <i class="fas fa-door-open text-teal-500 mr-2"></i>Daftar Kelas per Lembaga
       </h1>
-      <p class="text-xs text-slate-500 mt-0.5">
+      <p class="text-xs text-[var(--text-secondary)] mt-0.5">
         Kelola kelas/jilid via Master Lembaga → klik card lembaga → Kelas/Jilid
       </p>
     </div>
@@ -14,17 +14,17 @@
       <div
         v-for="l in lembagaList"
         :key="l.lembaga"
-        class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm"
+        class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm"
       >
         <div class="flex items-center justify-between mb-2">
           <h3 class="text-sm font-black">{{ l.lembaga }}</h3>
-          <router-link :to="`/lembaga/${l.lembaga}`" class="text-xs text-blue-600 hover:underline"
+          <router-link :to="`/lembaga/${l.lembaga}`" class="text-xs text-cyan-600 hover:underline"
             >Edit →</router-link
           >
         </div>
         <div
           v-if="!Array.isArray(l.kelas) || l.kelas.length === 0"
-          class="text-xs text-slate-400 italic"
+          class="text-xs text-[var(--text-tertiary)] italic"
         >
           Belum ada kelas
         </div>

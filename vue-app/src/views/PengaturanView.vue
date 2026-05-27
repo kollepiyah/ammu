@@ -10,11 +10,11 @@
         </UiButton>
         <div>
           <h1 class="text-xl font-bold">Pengaturan Web</h1>
-          <p class="text-xs text-slate-500">
+          <p class="text-xs text-[var(--text-secondary)]">
             Setting global aplikasi (match legacy)
             <span
               v-if="dirty"
-              class="ml-1 px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 text-[10px] font-bold"
+              class="ml-1 px-1.5 py-0.5 rounded bg-cyan-100 text-cyan-700 text-[10px] font-bold"
               >UNSAVED</span
             >
           </p>
@@ -33,7 +33,7 @@
         :class="[
           'group relative overflow-hidden bg-gradient-to-br rounded-xl p-2.5 md:p-3 text-left text-white shadow-md hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 ease-out cursor-pointer flex items-center gap-2',
           t.gradient,
-          section === t.id ? 'ring-2 ring-white/70 ring-offset-1 ring-offset-amber-50' : ''
+          section === t.id ? 'ring-2 ring-white/70 ring-offset-1 ring-offset-cyan-50' : ''
         ]"
       >
         <i :class="['fas', t.icon, 'text-base md:text-lg drop-shadow flex-shrink-0']"></i>
@@ -83,13 +83,13 @@
         <UiInput v-model="form.kopLine3" label="Baris 3 (alamat / opsional)" />
         <UiInput v-model="form.kopLine4" label="Baris 4 (telp / opsional)" />
       </div>
-      <div class="mt-4 p-3 bg-slate-50 border border-slate-200 rounded-lg text-center">
-        <p class="text-xs uppercase tracking-widest font-black text-slate-700">
+      <div class="mt-4 p-3 bg-[var(--bg-card-elevated)] border border-[var(--border-subtle)] rounded-lg text-center">
+        <p class="text-xs uppercase tracking-widest font-black text-[var(--text-primary)]">
           {{ form.kopLine1 || '— Baris 1 —' }}
         </p>
-        <p class="text-lg font-black text-slate-800">{{ form.kopLine2 || '— Baris 2 —' }}</p>
-        <p v-if="form.kopLine3" class="text-xs text-slate-600">{{ form.kopLine3 }}</p>
-        <p v-if="form.kopLine4" class="text-xs text-slate-600">{{ form.kopLine4 }}</p>
+        <p class="text-lg font-black text-[var(--text-primary)]">{{ form.kopLine2 || '— Baris 2 —' }}</p>
+        <p v-if="form.kopLine3" class="text-xs text-[var(--text-secondary)]">{{ form.kopLine3 }}</p>
+        <p v-if="form.kopLine4" class="text-xs text-[var(--text-secondary)]">{{ form.kopLine4 }}</p>
       </div>
     </UiCard>
 
@@ -111,7 +111,7 @@
           <div class="flex items-center gap-3 mb-2">
             <img
               :src="form.logoUrl || '/logo.png'"
-              class="w-16 h-16 rounded object-contain bg-white p-1 border"
+              class="w-16 h-16 rounded object-contain bg-[var(--bg-card)] p-1 border"
             />
             <input
               type="file"
@@ -125,14 +125,14 @@
         </div>
 
         <!-- Logo KOP Surat -->
-        <div class="border-2 border-dashed border-amber-300 p-4 rounded-2xl bg-amber-50">
-          <label class="block text-xs font-black text-amber-900 mb-2 uppercase"
+        <div class="border-2 border-dashed border-cyan-300 p-4 rounded-2xl bg-cyan-50">
+          <label class="block text-xs font-black text-[var(--text-on-accent)] mb-2 uppercase"
             >Logo KOP Surat</label
           >
           <div class="flex items-center gap-3 mb-2">
             <img
               :src="form.logoKop || form.logoUrl || '/logo.png'"
-              class="w-16 h-16 rounded object-contain bg-white p-1 border"
+              class="w-16 h-16 rounded object-contain bg-[var(--bg-card)] p-1 border"
             />
             <input
               type="file"
@@ -142,7 +142,7 @@
               class="text-xs flex-1"
             />
           </div>
-          <p class="text-[10px] text-amber-700 italic">
+          <p class="text-[10px] text-cyan-700 italic">
             Untuk header PDF/Excel cetak. Kosong = pakai Logo Aplikasi.
           </p>
         </div>
@@ -155,7 +155,7 @@
           <div class="flex items-center gap-3 mb-2">
             <img
               :src="form.logoQiraati || '/logo.png'"
-              class="w-16 h-16 rounded object-contain bg-white p-1 border"
+              class="w-16 h-16 rounded object-contain bg-[var(--bg-card)] p-1 border"
             />
             <input
               type="file"
@@ -169,16 +169,16 @@
         </div>
 
         <!-- Background Layar -->
-        <div class="border-2 border-dashed border-slate-300 p-4 rounded-2xl bg-slate-50">
-          <label class="block text-xs font-black text-slate-700 mb-2 uppercase"
+        <div class="border-2 border-dashed border-[var(--border-default)] p-4 rounded-2xl bg-[var(--bg-card-elevated)]">
+          <label class="block text-xs font-black text-[var(--text-primary)] mb-2 uppercase"
             >Background Layar</label
           >
           <div class="flex items-center gap-3 mb-2">
             <div
-              class="w-16 h-16 rounded bg-white border flex items-center justify-center overflow-hidden"
+              class="w-16 h-16 rounded bg-[var(--bg-card)] border flex items-center justify-center overflow-hidden"
             >
               <img v-if="form.bgImage" :src="form.bgImage" class="w-full h-full object-cover" />
-              <ImageIcon v-else class="w-6 h-6 text-slate-400" />
+              <ImageIcon v-else class="w-6 h-6 text-[var(--text-tertiary)]" />
             </div>
             <input
               type="file"
@@ -204,7 +204,7 @@
           >
           <div class="flex items-center gap-3 mb-2">
             <div
-              class="w-16 h-16 rounded bg-white border flex items-center justify-center overflow-hidden"
+              class="w-16 h-16 rounded bg-[var(--bg-card)] border flex items-center justify-center overflow-hidden"
             >
               <img
                 v-if="form.bgRaporTPQ"
@@ -234,20 +234,20 @@
         </div>
 
         <!-- BG Rapor Diniyah -->
-        <div class="border-2 border-dashed border-purple-300 p-4 rounded-2xl bg-purple-50">
-          <label class="block text-xs font-black text-purple-900 mb-2 uppercase"
+        <div class="border-2 border-dashed border-teal-300 p-4 rounded-2xl bg-teal-50">
+          <label class="block text-xs font-black text-teal-900 mb-2 uppercase"
             >BG Rapor Diniyah</label
           >
           <div class="flex items-center gap-3 mb-2">
             <div
-              class="w-16 h-16 rounded bg-white border flex items-center justify-center overflow-hidden"
+              class="w-16 h-16 rounded bg-[var(--bg-card)] border flex items-center justify-center overflow-hidden"
             >
               <img
                 v-if="form.bgRaporDiniyah"
                 :src="form.bgRaporDiniyah"
                 class="w-full h-full object-cover"
               />
-              <ImageIcon v-else class="w-6 h-6 text-purple-400" />
+              <ImageIcon v-else class="w-6 h-6 text-teal-400" />
             </div>
             <input
               type="file"
@@ -257,7 +257,7 @@
               class="text-xs flex-1"
             />
           </div>
-          <p class="text-[10px] text-purple-700 italic">
+          <p class="text-[10px] text-teal-700 italic">
             Watermark 10% di tengah rapor Diniyah cetak.
           </p>
           <button
@@ -269,7 +269,7 @@
           </button>
         </div>
       </div>
-      <p class="text-[10px] text-slate-400 italic mt-3">
+      <p class="text-[10px] text-[var(--text-tertiary)] italic mt-3">
         <i class="fas fa-info-circle mr-1"></i>TTD (tanda tangan) guru/kepala diatur PERSONAL di
         Pengaturan Profil &rarr; setiap guru upload TTD-nya sendiri.
       </p>
@@ -318,14 +318,14 @@
       class="mb-4"
     >
       <div class="mb-3 flex justify-between items-center">
-        <p class="text-xs text-slate-500">{{ form.masterKegiatan.length }} kegiatan terdaftar</p>
+        <p class="text-xs text-[var(--text-secondary)]">{{ form.masterKegiatan.length }} kegiatan terdaftar</p>
         <UiButton size="sm" variant="primary" @click="addKegiatan">
           <PlusIcon class="w-3.5 h-3.5" />Tambah
         </UiButton>
       </div>
       <div
         v-if="form.masterKegiatan.length === 0"
-        class="text-center text-xs text-slate-400 italic py-6 border-2 border-dashed border-slate-200 rounded-lg"
+        class="text-center text-xs text-[var(--text-tertiary)] italic py-6 border-2 border-dashed border-[var(--border-subtle)] rounded-lg"
       >
         Belum ada kegiatan. Klik <b>Tambah</b> untuk mulai.
       </div>
@@ -333,38 +333,38 @@
         <div
           v-for="(k, idx) in form.masterKegiatan"
           :key="k.id"
-          class="bg-slate-50 border border-slate-200 rounded-lg p-3"
+          class="bg-[var(--bg-card-elevated)] border border-[var(--border-subtle)] rounded-lg p-3"
         >
           <div class="grid md:grid-cols-6 gap-2">
             <UiInput v-model="k.nama" label="Nama Kegiatan" class="md:col-span-2" />
             <div>
-              <label class="text-[10px] font-bold text-slate-500 uppercase mb-1 block"
+              <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
                 >Jam Mulai</label
               >
               <input
                 v-model="k.jam_mulai"
                 type="time"
-                class="w-full px-2 py-1.5 text-xs border border-slate-300 rounded"
+                class="w-full px-2 py-1.5 text-xs border border-[var(--border-default)] rounded"
               />
             </div>
             <div>
-              <label class="text-[10px] font-bold text-slate-500 uppercase mb-1 block"
+              <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
                 >Terlambat</label
               >
               <input
                 v-model="k.jam_terlambat"
                 type="time"
-                class="w-full px-2 py-1.5 text-xs border border-slate-300 rounded"
+                class="w-full px-2 py-1.5 text-xs border border-[var(--border-default)] rounded"
               />
             </div>
             <div>
-              <label class="text-[10px] font-bold text-slate-500 uppercase mb-1 block">Skor</label>
+              <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block">Skor</label>
               <input
                 v-model.number="k.skor"
                 type="number"
                 min="0"
                 max="100"
-                class="w-full px-2 py-1.5 text-xs border border-slate-300 rounded"
+                class="w-full px-2 py-1.5 text-xs border border-[var(--border-default)] rounded"
               />
             </div>
             <div class="flex items-end">
@@ -395,9 +395,9 @@
       </div>
       <form
         @submit.prevent="changeAdminPassword"
-        class="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg"
+        class="mt-4 p-3 bg-cyan-50 border border-cyan-200 rounded-lg"
       >
-        <p class="text-xs font-black text-amber-800 mb-2 uppercase">Ganti Password Admin</p>
+        <p class="text-xs font-black text-cyan-800 mb-2 uppercase">Ganti Password Admin</p>
         <input
           type="text"
           name="username"
@@ -423,7 +423,7 @@
             <UiButton size="sm" variant="primary" type="submit" :disabled="!pwdNew">Apply</UiButton>
           </div>
         </div>
-        <p class="text-[10px] text-amber-700 italic mt-2">
+        <p class="text-[10px] text-cyan-700 italic mt-2">
           Password disimpan di settings/general saat klik Simpan.
         </p>
       </form>
@@ -440,52 +440,52 @@
     >
       <div class="grid md:grid-cols-3 gap-4">
         <div>
-          <label class="text-xs font-bold text-slate-700 mb-2 block">Warna Accent</label>
+          <label class="text-xs font-bold text-[var(--text-primary)] mb-2 block">Warna Accent</label>
           <div class="flex items-center gap-2">
             <input
               v-model="form.themeColor"
               type="color"
-              class="w-12 h-10 border border-slate-300 rounded cursor-pointer"
+              class="w-12 h-10 border border-[var(--border-default)] rounded cursor-pointer"
             />
             <input
               v-model="form.themeColor"
               type="text"
-              class="flex-1 px-2 py-1.5 text-xs border border-slate-300 rounded font-mono"
+              class="flex-1 px-2 py-1.5 text-xs border border-[var(--border-default)] rounded font-mono"
             />
           </div>
         </div>
         <div>
-          <label class="text-xs font-bold text-slate-700 mb-2 block">Warna Teks</label>
+          <label class="text-xs font-bold text-[var(--text-primary)] mb-2 block">Warna Teks</label>
           <div class="flex items-center gap-2">
             <input
               v-model="form.themeTextColor"
               type="color"
-              class="w-12 h-10 border border-slate-300 rounded cursor-pointer"
+              class="w-12 h-10 border border-[var(--border-default)] rounded cursor-pointer"
             />
             <input
               v-model="form.themeTextColor"
               type="text"
-              class="flex-1 px-2 py-1.5 text-xs border border-slate-300 rounded font-mono"
+              class="flex-1 px-2 py-1.5 text-xs border border-[var(--border-default)] rounded font-mono"
             />
           </div>
         </div>
         <div>
-          <label class="text-xs font-bold text-slate-700 mb-2 block">Sidebar BG (legacy)</label>
+          <label class="text-xs font-bold text-[var(--text-primary)] mb-2 block">Sidebar BG (legacy)</label>
           <div class="flex items-center gap-2">
             <input
               v-model="form.sidebarBgColor"
               type="color"
-              class="w-12 h-10 border border-slate-300 rounded cursor-pointer"
+              class="w-12 h-10 border border-[var(--border-default)] rounded cursor-pointer"
             />
             <input
               v-model="form.sidebarBgColor"
               type="text"
-              class="flex-1 px-2 py-1.5 text-xs border border-slate-300 rounded font-mono"
+              class="flex-1 px-2 py-1.5 text-xs border border-[var(--border-default)] rounded font-mono"
             />
           </div>
         </div>
       </div>
-      <p class="text-[10px] text-slate-500 italic mt-3">
+      <p class="text-[10px] text-[var(--text-secondary)] italic mt-3">
         Note: Vue sidebar sekarang pakai cream/mint preset. Color picker disimpan untuk kompat
         legacy.
       </p>
@@ -502,7 +502,7 @@
     >
       <div
         v-if="formalLembaga.length === 0"
-        class="text-xs text-slate-400 italic text-center py-6 border-2 border-dashed border-slate-200 rounded"
+        class="text-xs text-[var(--text-tertiary)] italic text-center py-6 border-2 border-dashed border-[var(--border-subtle)] rounded"
       >
         Belum ada lembaga formal terdaftar. Tambah di Master Data &rarr; Lembaga.
       </div>
@@ -510,15 +510,15 @@
         <details
           v-for="lem in formalLembaga"
           :key="lem.id"
-          class="bg-slate-50 border border-slate-200 rounded-lg"
+          class="bg-[var(--bg-card-elevated)] border border-[var(--border-subtle)] rounded-lg"
         >
           <summary
-            class="cursor-pointer p-3 font-black text-sm text-slate-700 flex justify-between items-center"
+            class="cursor-pointer p-3 font-black text-sm text-[var(--text-primary)] flex justify-between items-center"
           >
-            <span><i class="fas fa-school mr-2 text-blue-600"></i>{{ lem.nama }}</span>
+            <span><i class="fas fa-school mr-2 text-cyan-600"></i>{{ lem.nama }}</span>
             <i class="fas fa-chevron-down text-xs"></i>
           </summary>
-          <div class="p-3 border-t border-slate-200 grid gap-2">
+          <div class="p-3 border-t border-[var(--border-subtle)] grid gap-2">
             <UiInput
               :model-value="getFormal(lem.nama).kopLine1"
               @update:modelValue="(v) => (form.submenuFormal[lem.nama].kopLine1 = v)"
@@ -542,38 +542,31 @@
             <div class="flex items-center gap-3">
               <img
                 :src="form.submenuFormal[lem.nama]?.logoSekolah || '/logo.png'"
-                class="w-12 h-12 rounded object-contain bg-white p-1 border"
+                class="w-12 h-12 rounded object-contain bg-[var(--bg-card)] p-1 border"
               />
               <input
                 type="file"
                 accept="image/*"
-                @change="
-                  (ev) => handleUpload(ev, `submenuFormal.${lem.nama}.logoSekolah`, 'lembaga_logos')
-                "
+                @change="(ev) => handleUpload(ev, `submenuFormal.${lem.nama}.logoSekolah`, 'lembaga_logos')"
                 class="text-xs flex-1"
               />
             </div>
             <div>
-              <label class="text-[10px] font-bold text-slate-500 uppercase mb-1 block"
+              <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
                 >Tarif SPP Default (Rp)</label
               >
               <input
                 :value="form.submenuFormal[lem.nama]?.tarifSPP || 0"
-                @input="
-                  (ev) => {
-                    getFormal(lem.nama)
-                    form.submenuFormal[lem.nama].tarifSPP = Number(ev.target.value)
-                  }
-                "
+                @input="(ev) => {; getFormal(lem.nama); form.submenuFormal[lem.nama].tarifSPP = Number(ev.target.value); }"
                 type="number"
                 min="0"
-                class="w-full px-2 py-1.5 text-xs border border-slate-300 rounded"
+                class="w-full px-2 py-1.5 text-xs border border-[var(--border-default)] rounded"
               />
             </div>
           </div>
         </details>
       </div>
-      <p class="text-[10px] text-slate-400 italic mt-3">
+      <p class="text-[10px] text-[var(--text-tertiary)] italic mt-3">
         <i class="fas fa-info-circle mr-1"></i>TTD (tanda tangan) guru/kepala diatur PERSONAL di
         Pengaturan Profil &rarr; setiap guru upload TTD-nya sendiri.
       </p>
@@ -590,7 +583,7 @@
     >
       <div
         v-if="qiraatiLembaga.length === 0"
-        class="text-xs text-slate-400 italic text-center py-6 border-2 border-dashed border-slate-200 rounded"
+        class="text-xs text-[var(--text-tertiary)] italic text-center py-6 border-2 border-dashed border-[var(--border-subtle)] rounded"
       >
         Belum ada lembaga Qiraati/PTPT terdaftar.
       </div>
@@ -613,18 +606,13 @@
               label="Target Kelas (contoh: Pra-TK, A, B, C, D, E, Tahsin, Tahfidz)"
             />
             <div>
-              <label class="text-[10px] font-bold text-slate-500 uppercase mb-1 block"
+              <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
                 >Format Rekap</label
               >
               <select
                 :value="form.submenuQiraati[lem.nama]?.formatRekap || 'standard'"
-                @change="
-                  (ev) => {
-                    getQiraati(lem.nama)
-                    form.submenuQiraati[lem.nama].formatRekap = ev.target.value
-                  }
-                "
-                class="w-full px-2 py-1.5 text-xs border border-slate-300 rounded"
+                @change="(ev) => {; getQiraati(lem.nama); form.submenuQiraati[lem.nama].formatRekap = ev.target.value; }"
+                class="w-full px-2 py-1.5 text-xs border border-[var(--border-default)] rounded"
               >
                 <option value="standard">Standard (per-kelas)</option>
                 <option value="khotam">Per-Khotam (Pra PTPT style)</option>
@@ -645,23 +633,23 @@
       class="mb-4"
     >
       <div class="grid md:grid-cols-2 gap-2">
-        <label class="flex items-center gap-2 cursor-pointer p-2 hover:bg-slate-50 rounded">
+        <label class="flex items-center gap-2 cursor-pointer p-2 hover:bg-[var(--bg-card-elevated)] rounded">
           <input v-model="form.fiturBeranda" type="checkbox" class="w-4 h-4 accent-teal-600" />
           Beranda (Mading + Quick Action)
         </label>
-        <label class="flex items-center gap-2 cursor-pointer p-2 hover:bg-slate-50 rounded">
+        <label class="flex items-center gap-2 cursor-pointer p-2 hover:bg-[var(--bg-card-elevated)] rounded">
           <input v-model="form.fiturKalender" type="checkbox" class="w-4 h-4 accent-teal-600" />
           Kalender Pendidikan
         </label>
-        <label class="flex items-center gap-2 cursor-pointer p-2 hover:bg-slate-50 rounded">
+        <label class="flex items-center gap-2 cursor-pointer p-2 hover:bg-[var(--bg-card-elevated)] rounded">
           <input v-model="form.fiturKritikSaran" type="checkbox" class="w-4 h-4 accent-teal-600" />
           Kritik &amp; Saran
         </label>
-        <label class="flex items-center gap-2 cursor-pointer p-2 hover:bg-slate-50 rounded">
+        <label class="flex items-center gap-2 cursor-pointer p-2 hover:bg-[var(--bg-card-elevated)] rounded">
           <input v-model="form.fiturNotifikasi" type="checkbox" class="w-4 h-4 accent-teal-600" />
           Notifikasi FCM
         </label>
-        <label class="flex items-center gap-2 cursor-pointer p-2 hover:bg-slate-50 rounded">
+        <label class="flex items-center gap-2 cursor-pointer p-2 hover:bg-[var(--bg-card-elevated)] rounded">
           <input
             v-model="form.autoNotifPostingan"
             type="checkbox"
@@ -669,20 +657,20 @@
           />
           Auto-Notif setiap Postingan
         </label>
-        <label class="flex items-center gap-2 cursor-pointer p-2 hover:bg-slate-50 rounded">
+        <label class="flex items-center gap-2 cursor-pointer p-2 hover:bg-[var(--bg-card-elevated)] rounded">
           <input v-model="form.softDelete" type="checkbox" class="w-4 h-4 accent-rose-600" />
           Soft Delete (recoverable)
         </label>
       </div>
-      <div class="p-3 bg-purple-50 border border-purple-200 rounded-lg mt-3">
-        <p class="text-xs font-black text-purple-800 mb-2 uppercase">Mode Capacitor / PWA</p>
+      <div class="p-3 bg-teal-50 border border-teal-200 rounded-lg mt-3">
+        <p class="text-xs font-black text-teal-800 mb-2 uppercase">Mode Capacitor / PWA</p>
         <div class="flex gap-3 flex-wrap">
           <label class="flex items-center gap-2 cursor-pointer text-sm">
             <input
               v-model="form.capacitorMode"
               type="radio"
               value="remote"
-              class="w-4 h-4 accent-purple-600"
+              class="w-4 h-4 accent-teal-600"
             />
             <span><b>Remote (Opsi B)</b> &mdash; server.url ke Firebase Hosting</span>
           </label>
@@ -691,7 +679,7 @@
               v-model="form.capacitorMode"
               type="radio"
               value="local"
-              class="w-4 h-4 accent-purple-600"
+              class="w-4 h-4 accent-teal-600"
             />
             <span>Local (bundled)</span>
           </label>
@@ -710,74 +698,74 @@
     >
       <div class="grid md:grid-cols-3 gap-4">
         <!-- Shift Pagi -->
-        <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl">
-          <p class="text-xs font-black text-amber-800 uppercase mb-2">
+        <div class="p-3 bg-cyan-50 border border-cyan-200 rounded-xl">
+          <p class="text-xs font-black text-cyan-800 uppercase mb-2">
             <i class="fas fa-sun mr-1"></i>SHIFT PAGI
           </p>
           <div class="grid grid-cols-3 gap-2">
             <div>
-              <label class="text-[10px] font-bold text-slate-500 uppercase block mb-1">Mulai</label>
+              <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase block mb-1">Mulai</label>
               <input
                 v-model="form.shiftPagiMulai"
                 type="time"
-                class="w-full px-2 py-1.5 text-sm border border-amber-300 rounded bg-white"
+                class="w-full px-2 py-1.5 text-sm border border-cyan-300 rounded bg-[var(--bg-card)]"
               />
             </div>
             <div>
-              <label class="text-[10px] font-bold text-slate-500 uppercase block mb-1"
+              <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase block mb-1"
                 >Terlambat</label
               >
               <input
                 v-model="form.shiftPagiTerlambat"
                 type="time"
-                class="w-full px-2 py-1.5 text-sm border border-rose-300 rounded bg-white"
+                class="w-full px-2 py-1.5 text-sm border border-rose-300 rounded bg-[var(--bg-card)]"
               />
             </div>
             <div>
-              <label class="text-[10px] font-bold text-slate-500 uppercase block mb-1"
+              <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase block mb-1"
                 >Selesai</label
               >
               <input
                 v-model="form.shiftPagiSelesai"
                 type="time"
-                class="w-full px-2 py-1.5 text-sm border border-amber-300 rounded bg-white"
+                class="w-full px-2 py-1.5 text-sm border border-cyan-300 rounded bg-[var(--bg-card)]"
               />
             </div>
           </div>
         </div>
 
         <!-- Shift Sore -->
-        <div class="p-3 bg-indigo-50 border border-indigo-200 rounded-xl">
-          <p class="text-xs font-black text-indigo-800 uppercase mb-2">
+        <div class="p-3 bg-cyan-50 border border-cyan-200 rounded-xl">
+          <p class="text-xs font-black text-cyan-800 uppercase mb-2">
             <i class="fas fa-moon mr-1"></i>SHIFT SORE
           </p>
           <div class="grid grid-cols-3 gap-2">
             <div>
-              <label class="text-[10px] font-bold text-slate-500 uppercase block mb-1">Mulai</label>
+              <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase block mb-1">Mulai</label>
               <input
                 v-model="form.shiftSoreMulai"
                 type="time"
-                class="w-full px-2 py-1.5 text-sm border border-indigo-300 rounded bg-white"
+                class="w-full px-2 py-1.5 text-sm border border-cyan-300 rounded bg-[var(--bg-card)]"
               />
             </div>
             <div>
-              <label class="text-[10px] font-bold text-slate-500 uppercase block mb-1"
+              <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase block mb-1"
                 >Terlambat</label
               >
               <input
                 v-model="form.shiftSoreTerlambat"
                 type="time"
-                class="w-full px-2 py-1.5 text-sm border border-rose-300 rounded bg-white"
+                class="w-full px-2 py-1.5 text-sm border border-rose-300 rounded bg-[var(--bg-card)]"
               />
             </div>
             <div>
-              <label class="text-[10px] font-bold text-slate-500 uppercase block mb-1"
+              <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase block mb-1"
                 >Selesai</label
               >
               <input
                 v-model="form.shiftSoreSelesai"
                 type="time"
-                class="w-full px-2 py-1.5 text-sm border border-indigo-300 rounded bg-white"
+                class="w-full px-2 py-1.5 text-sm border border-cyan-300 rounded bg-[var(--bg-card)]"
               />
             </div>
           </div>
@@ -790,37 +778,37 @@
           </p>
           <div class="grid grid-cols-3 gap-2">
             <div>
-              <label class="text-[10px] font-bold text-slate-500 uppercase block mb-1">Mulai</label>
+              <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase block mb-1">Mulai</label>
               <input
                 v-model="form.shiftSekolahMulai"
                 type="time"
-                class="w-full px-2 py-1.5 text-sm border border-teal-300 rounded bg-white"
+                class="w-full px-2 py-1.5 text-sm border border-teal-300 rounded bg-[var(--bg-card)]"
               />
             </div>
             <div>
-              <label class="text-[10px] font-bold text-slate-500 uppercase block mb-1"
+              <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase block mb-1"
                 >Terlambat</label
               >
               <input
                 v-model="form.shiftSekolahTerlambat"
                 type="time"
-                class="w-full px-2 py-1.5 text-sm border border-rose-300 rounded bg-white"
+                class="w-full px-2 py-1.5 text-sm border border-rose-300 rounded bg-[var(--bg-card)]"
               />
             </div>
             <div>
-              <label class="text-[10px] font-bold text-slate-500 uppercase block mb-1"
+              <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase block mb-1"
                 >Selesai</label
               >
               <input
                 v-model="form.shiftSekolahSelesai"
                 type="time"
-                class="w-full px-2 py-1.5 text-sm border border-teal-300 rounded bg-white"
+                class="w-full px-2 py-1.5 text-sm border border-teal-300 rounded bg-[var(--bg-card)]"
               />
             </div>
           </div>
         </div>
       </div>
-      <p class="text-[10px] text-slate-500 italic mt-3">
+      <p class="text-[10px] text-[var(--text-secondary)] italic mt-3">
         <i class="fas fa-info-circle mr-1"></i>Jam <b>Terlambat</b> = batas waktu kehadiran masih
         dianggap "Hadir"; lewat dari ini &rarr; status auto "Terlambat" saat impor fingerprint.
       </p>
@@ -837,23 +825,23 @@
     >
       <div class="grid md:grid-cols-2 gap-3">
         <div class="md:col-span-2">
-          <label class="text-[10px] font-bold text-slate-500 uppercase block mb-1"
+          <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase block mb-1"
             >Nama Printer Default</label
           >
           <input
             v-model="form.printerNama"
             type="text"
             placeholder="Mis: EPSON L3110 / TM-T82II"
-            class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white text-slate-800"
+            class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)]"
           />
         </div>
         <div>
-          <label class="text-[10px] font-bold text-slate-500 uppercase block mb-1"
+          <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase block mb-1"
             >Ukuran Kertas</label
           >
           <select
             v-model="form.printerKertas"
-            class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white text-slate-800"
+            class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)]"
           >
             <option value="A4">A4 (210x297mm)</option>
             <option value="F4">F4 / Folio (210x330mm)</option>
@@ -864,17 +852,17 @@
           </select>
         </div>
         <div>
-          <label class="text-[10px] font-bold text-slate-500 uppercase block mb-1">Orientasi</label>
+          <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase block mb-1">Orientasi</label>
           <select
             v-model="form.printerOrientasi"
-            class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white text-slate-800"
+            class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)]"
           >
             <option value="portrait">Portrait (Tegak)</option>
             <option value="landscape">Landscape (Lebar)</option>
           </select>
         </div>
         <div>
-          <label class="text-[10px] font-bold text-slate-500 uppercase block mb-1"
+          <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase block mb-1"
             >Margin (mm)</label
           >
           <input
@@ -882,16 +870,16 @@
             type="number"
             min="0"
             max="50"
-            class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white text-slate-800"
+            class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)]"
           />
         </div>
         <label
-          class="md:col-span-2 flex items-center gap-3 p-3 bg-slate-50 rounded-lg cursor-pointer border border-slate-200"
+          class="md:col-span-2 flex items-center gap-3 p-3 bg-[var(--bg-card-elevated)] rounded-lg cursor-pointer border border-[var(--border-subtle)]"
         >
           <input v-model="form.printerAutoPrint" type="checkbox" class="w-5 h-5 accent-teal-600" />
           <div>
             <p class="text-sm font-bold">Auto-Print (Tauri Desktop)</p>
-            <p class="text-[11px] text-slate-500">
+            <p class="text-[11px] text-[var(--text-secondary)]">
               Langsung kirim ke printer tanpa preview dialog. Hanya aktif di Tauri Desktop.
             </p>
           </div>
@@ -912,12 +900,12 @@
         <div
           v-for="(mapel, idx) in form.rekapSchemaDiniyah"
           :key="idx"
-          class="flex items-center gap-2 bg-violet-50 border border-violet-200 rounded-lg p-2"
+          class="flex items-center gap-2 bg-teal-50 border border-teal-200 rounded-lg p-2"
         >
           <input
             v-model="form.rekapSchemaDiniyah[idx]"
             type="text"
-            class="flex-1 bg-transparent text-sm font-bold text-slate-800 outline-none"
+            class="flex-1 bg-transparent text-sm font-bold text-[var(--text-primary)] outline-none"
           />
           <button
             @click="form.rekapSchemaDiniyah.splice(idx, 1)"
@@ -928,7 +916,7 @@
         </div>
         <p
           v-if="form.rekapSchemaDiniyah.length === 0"
-          class="text-xs text-slate-400 italic text-center py-2"
+          class="text-xs text-[var(--text-tertiary)] italic text-center py-2"
         >
           Belum ada mata pelajaran. Tambah di bawah.
         </p>
@@ -939,28 +927,28 @@
           @keyup.enter="addMapel"
           type="text"
           placeholder="Nama mata pelajaran baru..."
-          class="flex-1 px-3 py-2 text-sm border border-slate-300 rounded-lg bg-slate-50"
+          class="flex-1 px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)]"
         />
         <button
           @click="addMapel"
-          class="bg-violet-600 hover:bg-violet-700 text-white font-bold px-4 py-2 rounded-lg text-xs whitespace-nowrap cursor-pointer"
+          class="bg-teal-600 hover:bg-teal-700 text-white font-bold px-4 py-2 rounded-lg text-xs whitespace-nowrap cursor-pointer"
         >
           <i class="fas fa-plus mr-1"></i>Tambah
         </button>
       </div>
       <div
-        class="mt-3 p-3 bg-violet-50 border border-violet-200 rounded-xl text-[11px] text-violet-800"
+        class="mt-3 p-3 bg-teal-50 border border-teal-200 rounded-xl text-[11px] text-teal-800"
       >
         <i class="fas fa-info-circle mr-1"></i>Mata pelajaran <b>default</b> (semua kelas). Untuk
         override per-kelas, edit di bawah.
       </div>
 
       <!-- Override per kelas -->
-      <div class="mt-5 border-t border-violet-200 pt-4">
-        <h4 class="text-xs font-black text-violet-900 uppercase mb-2">
+      <div class="mt-5 border-t border-teal-200 pt-4">
+        <h4 class="text-xs font-black text-teal-900 uppercase mb-2">
           <i class="fas fa-layer-group mr-1"></i>Override Mapel per Kelas
         </h4>
-        <p class="text-[11px] text-slate-500 italic mb-3">
+        <p class="text-[11px] text-[var(--text-secondary)] italic mb-3">
           Kalau kelas tertentu butuh daftar mapel berbeda dari default. Kalau kelas tidak di-set,
           pakai default di atas.
         </p>
@@ -968,10 +956,10 @@
           <div
             v-for="(mapelList, kelas) in form.rekapSchemaDiniyahPerKelas"
             :key="kelas"
-            class="bg-white border border-violet-200 rounded-xl p-3"
+            class="bg-[var(--bg-card)] border border-teal-200 rounded-xl p-3"
           >
             <div class="flex items-center justify-between mb-2">
-              <p class="text-xs font-black text-violet-800 uppercase">
+              <p class="text-xs font-black text-teal-800 uppercase">
                 &#x1F4DA; Kelas {{ kelas }}
               </p>
               <button
@@ -985,7 +973,7 @@
               <span
                 v-for="(mapel, mi) in mapelList"
                 :key="mi"
-                class="inline-flex items-center gap-1 bg-violet-50 border border-violet-200 px-2 py-0.5 rounded text-[11px]"
+                class="inline-flex items-center gap-1 bg-teal-50 border border-teal-200 px-2 py-0.5 rounded text-[11px]"
               >
                 <input
                   v-model="form.rekapSchemaDiniyahPerKelas[kelas][mi]"
@@ -1000,7 +988,7 @@
               </span>
               <button
                 @click="form.rekapSchemaDiniyahPerKelas[kelas].push('Mapel Baru')"
-                class="bg-violet-200 hover:bg-violet-300 text-violet-800 text-[10px] font-bold px-2 py-0.5 rounded"
+                class="bg-teal-200 hover:bg-teal-300 text-teal-800 text-[10px] font-bold px-2 py-0.5 rounded"
               >
                 + Mapel
               </button>
@@ -1012,11 +1000,11 @@
             v-model="newKelas"
             type="text"
             placeholder="Nama kelas (mis: TK A, I, II, III)"
-            class="flex-1 px-3 py-2 text-sm border border-slate-300 rounded-lg bg-slate-50"
+            class="flex-1 px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)]"
           />
           <button
             @click="addKelasOverride"
-            class="bg-violet-600 hover:bg-violet-700 text-white font-bold px-4 py-2 rounded-lg text-xs cursor-pointer"
+            class="bg-teal-600 hover:bg-teal-700 text-white font-bold px-4 py-2 rounded-lg text-xs cursor-pointer"
           >
             <i class="fas fa-plus mr-1"></i>Tambah Kelas
           </button>
@@ -1035,40 +1023,40 @@
     >
       <div class="space-y-3">
         <label
-          class="flex items-start gap-3 p-3 bg-fuchsia-50 border border-fuchsia-200 rounded-lg cursor-pointer"
+          class="flex items-start gap-3 p-3 bg-teal-50 border border-teal-200 rounded-lg cursor-pointer"
         >
           <input
             v-model="form.postinganHanyaAdmin"
             type="checkbox"
-            class="w-5 h-5 accent-fuchsia-600 mt-0.5"
+            class="w-5 h-5 accent-teal-600 mt-0.5"
           />
           <div>
-            <p class="text-sm font-bold text-slate-800">
+            <p class="text-sm font-bold text-[var(--text-primary)]">
               Hanya Admin &amp; Super Admin yang bisa buat post
             </p>
-            <p class="text-[11px] text-slate-500">
+            <p class="text-[11px] text-[var(--text-secondary)]">
               Kalau off: guru juga bisa buat post. Santri tidak pernah bisa post.
             </p>
           </div>
         </label>
         <label
-          class="flex items-start gap-3 p-3 bg-fuchsia-50 border border-fuchsia-200 rounded-lg cursor-pointer"
+          class="flex items-start gap-3 p-3 bg-teal-50 border border-teal-200 rounded-lg cursor-pointer"
         >
           <input
             v-model="form.postinganAutoApprove"
             type="checkbox"
-            class="w-5 h-5 accent-fuchsia-600 mt-0.5"
+            class="w-5 h-5 accent-teal-600 mt-0.5"
           />
           <div>
-            <p class="text-sm font-bold text-slate-800">Auto-approve post baru</p>
-            <p class="text-[11px] text-slate-500">
+            <p class="text-sm font-bold text-[var(--text-primary)]">Auto-approve post baru</p>
+            <p class="text-[11px] text-[var(--text-secondary)]">
               Kalau off: post baru moderation queue dulu sampai admin approve.
             </p>
           </div>
         </label>
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="text-[10px] font-bold text-slate-500 uppercase mb-1 block"
+            <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
               >Max Gambar per Post</label
             >
             <input
@@ -1076,11 +1064,11 @@
               type="number"
               min="1"
               max="10"
-              class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-slate-50"
+              class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)]"
             />
           </div>
           <div>
-            <label class="text-[10px] font-bold text-slate-500 uppercase mb-1 block"
+            <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
               >Max Size per Gambar (KB)</label
             >
             <input
@@ -1089,7 +1077,7 @@
               min="50"
               max="5000"
               step="50"
-              class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-slate-50"
+              class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)]"
             />
           </div>
         </div>
@@ -1107,12 +1095,12 @@
     >
       <div class="space-y-3">
         <div>
-          <label class="text-[10px] font-bold text-slate-500 uppercase block mb-1 tracking-wider"
+          <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase block mb-1 tracking-wider"
             >Pilih Lembaga</label
           >
           <select
             v-model="raporLembaga"
-            class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-slate-50"
+            class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)]"
           >
             <option value="">-- Pilih lembaga --</option>
             <option v-for="l in lembagaRaw" :key="l.lembaga" :value="l.lembaga">
@@ -1124,14 +1112,14 @@
 
         <div
           v-if="raporLembaga"
-          class="bg-purple-50 border border-purple-200 rounded-xl p-4 space-y-3"
+          class="bg-teal-50 border border-teal-200 rounded-xl p-4 space-y-3"
         >
-          <p class="text-xs font-black text-purple-900 uppercase">
+          <p class="text-xs font-black text-teal-900 uppercase">
             Schema untuk: {{ raporLembaga }}
           </p>
 
-          <div class="bg-blue-50 border border-blue-300 rounded-lg p-3 text-[11px] text-blue-900">
-            <p class="font-black uppercase tracking-wider mb-1 text-blue-700">
+          <div class="bg-cyan-50 border border-cyan-300 rounded-lg p-3 text-[11px] text-cyan-900">
+            <p class="font-black uppercase tracking-wider mb-1 text-cyan-700">
               <i class="fas fa-info-circle mr-1"></i>Bagaimana Rapor Tampil?
             </p>
             <p class="leading-relaxed">
@@ -1147,20 +1135,20 @@
             </p>
             <button
               @click="resetSchemaTemplate"
-              class="mt-2 text-[10px] font-black px-3 py-1.5 rounded bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
+              class="mt-2 text-[10px] font-black px-3 py-1.5 rounded bg-cyan-600 hover:bg-cyan-700 text-white cursor-pointer"
             >
               <i class="fas fa-undo mr-1"></i>Reset Ke Template Default
             </button>
           </div>
 
           <div>
-            <label class="text-[10px] font-bold text-slate-500 uppercase block mb-1"
+            <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase block mb-1"
               >Tipe Schema (Customize)</label
             >
             <select
               :value="schemaType()"
               @change="(ev) => initSchemaType(ev.target.value)"
-              class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white"
+              class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card)]"
             >
               <option value="sections">
                 TPQ — Matrix Jilid (Pra-TK, A/B/C/D/E, Tahsin, Tahfidz)
@@ -1175,12 +1163,12 @@
 
           <!-- perLevel: Level x Khotam matrix -->
           <div v-if="schemaType() === 'perLevel'" class="space-y-2">
-            <p class="text-[11px] font-bold text-purple-800">Field Nilai (kolom angka):</p>
+            <p class="text-[11px] font-bold text-teal-800">Field Nilai (kolom angka):</p>
             <div class="flex flex-wrap gap-2">
               <span
                 v-for="(f, fi) in form.raporSchemas[raporLembaga]?.fieldsNilai || []"
                 :key="fi"
-                class="bg-white border border-purple-200 px-2 py-1 rounded text-xs flex items-center gap-1"
+                class="bg-[var(--bg-card)] border border-teal-200 px-2 py-1 rounded text-xs flex items-center gap-1"
               >
                 {{ f.label }}
                 <button @click="removeFieldNilai(fi)" class="text-rose-500 hover:text-rose-700">
@@ -1194,33 +1182,33 @@
                 @keyup.enter="addFieldNilai"
                 type="text"
                 placeholder="Tambah field nilai (Fashohah, Tartil, ...)"
-                class="flex-1 px-2 py-1 text-xs border border-slate-300 rounded bg-white"
+                class="flex-1 px-2 py-1 text-xs border border-[var(--border-default)] rounded bg-[var(--bg-card)]"
               />
               <button
                 @click="addFieldNilai"
-                class="bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold px-3 py-1 rounded cursor-pointer"
+                class="bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold px-3 py-1 rounded cursor-pointer"
               >
                 + Tambah
               </button>
             </div>
 
-            <p class="text-[11px] font-bold text-purple-800 mt-3">Level x Khotam:</p>
+            <p class="text-[11px] font-bold text-teal-800 mt-3">Level x Khotam:</p>
             <div class="space-y-2">
               <div
                 v-for="(level, li) in form.raporSchemas[raporLembaga]?.levels || []"
                 :key="level.id"
-                class="bg-white p-2 rounded border border-purple-100"
+                class="bg-[var(--bg-card)] p-2 rounded border border-teal-100"
               >
                 <div class="grid grid-cols-3 gap-2 mb-2">
                   <input
                     v-model="level.label"
                     placeholder="Label (Level 1)"
-                    class="text-xs px-2 py-1 border border-slate-300 rounded"
+                    class="text-xs px-2 py-1 border border-[var(--border-default)] rounded"
                   />
                   <input
                     v-model="level.levelBaca"
                     placeholder="Baca (½ Juz)"
-                    class="text-xs px-2 py-1 border border-slate-300 rounded"
+                    class="text-xs px-2 py-1 border border-[var(--border-default)] rounded"
                   />
                   <button
                     @click="form.raporSchemas[raporLembaga].levels.splice(li, 1)"
@@ -1230,25 +1218,25 @@
                   </button>
                 </div>
                 <div class="space-y-1">
-                  <p class="text-[10px] font-black text-purple-700 uppercase tracking-wider">
+                  <p class="text-[10px] font-black text-teal-700 uppercase tracking-wider">
                     Khotam:
                   </p>
                   <div
                     v-for="(kh, ki) in level.khotamList || []"
                     :key="kh.id"
-                    class="grid grid-cols-[1fr_60px_30px] gap-1 items-center bg-purple-50/60 rounded px-2 py-1"
+                    class="grid grid-cols-[1fr_60px_30px] gap-1 items-center bg-teal-50/60 rounded px-2 py-1"
                   >
                     <input
                       v-model="kh.labelKhotam"
                       placeholder="Khotam I"
-                      class="text-[11px] px-1.5 py-0.5 border border-slate-300 rounded bg-white"
+                      class="text-[11px] px-1.5 py-0.5 border border-[var(--border-default)] rounded bg-[var(--bg-card)]"
                     />
                     <input
                       v-model.number="kh.multiplier"
                       type="number"
                       min="1"
                       max="10"
-                      class="text-[11px] px-1.5 py-0.5 border border-slate-300 rounded bg-white text-center"
+                      class="text-[11px] px-1.5 py-0.5 border border-[var(--border-default)] rounded bg-[var(--bg-card)] text-center"
                       title="Multiplier (2x/3x/...)"
                     />
                     <button
@@ -1261,7 +1249,7 @@
                   </div>
                   <button
                     @click="addKhotam(level)"
-                    class="text-[10px] bg-purple-200 hover:bg-purple-300 text-purple-800 font-bold px-2 py-0.5 rounded"
+                    class="text-[10px] bg-teal-200 hover:bg-teal-300 text-teal-800 font-bold px-2 py-0.5 rounded"
                   >
                     <i class="fas fa-plus mr-0.5"></i>Tambah Khotam
                   </button>
@@ -1269,7 +1257,7 @@
               </div>
               <button
                 @click="addLevel"
-                class="text-xs bg-purple-100 hover:bg-purple-200 text-purple-700 font-bold px-3 py-1 rounded"
+                class="text-xs bg-teal-100 hover:bg-teal-200 text-teal-700 font-bold px-3 py-1 rounded"
               >
                 + Tambah Level
               </button>
@@ -1278,16 +1266,16 @@
 
           <!-- perKelas: Jenjang x Mapel -->
           <div v-else-if="schemaType() === 'perKelas'" class="space-y-2">
-            <p class="text-[11px] font-bold text-purple-800">Jenjang Kelas x Mata Pelajaran:</p>
+            <p class="text-[11px] font-bold text-teal-800">Jenjang Kelas x Mata Pelajaran:</p>
             <div
               v-for="(jen, ji) in form.raporSchemas[raporLembaga]?.jenjang || []"
               :key="jen.kelas"
-              class="bg-white p-2 rounded border border-purple-100"
+              class="bg-[var(--bg-card)] p-2 rounded border border-teal-100"
             >
               <div class="flex items-center justify-between mb-1">
                 <input
                   v-model="jen.kelas"
-                  class="text-xs font-bold px-2 py-1 border border-slate-300 rounded w-32"
+                  class="text-xs font-bold px-2 py-1 border border-[var(--border-default)] rounded w-32"
                   placeholder="Kelas (TK A)"
                 />
                 <button
@@ -1301,7 +1289,7 @@
                 <div
                   v-for="(m, mi) in jen.mapel || []"
                   :key="mi"
-                  class="flex items-center gap-1 bg-slate-50 p-1 rounded"
+                  class="flex items-center gap-1 bg-[var(--bg-card-elevated)] p-1 rounded"
                 >
                   <input
                     v-model="m.nama"
@@ -1313,7 +1301,7 @@
                     type="number"
                     min="0"
                     max="100"
-                    class="w-12 text-[11px] px-1 py-0.5 border border-slate-300 rounded bg-white"
+                    class="w-12 text-[11px] px-1 py-0.5 border border-[var(--border-default)] rounded bg-[var(--bg-card)]"
                     title="KKM"
                   />
                   <button @click="jen.mapel.splice(mi, 1)" class="text-rose-400 text-[10px]">
@@ -1322,20 +1310,15 @@
                 </div>
               </div>
               <button
-                @click="
-                  () => {
-                    jen.mapel = jen.mapel || []
-                    jen.mapel.push({ id: 'mapel_' + Date.now(), nama: '', kkm: 80 })
-                  }
-                "
-                class="text-[10px] text-purple-700 font-bold mt-1"
+                @click="() => {; jen.mapel = jen.mapel || []; jen.mapel.push({ id: 'mapel_' + Date.now(), nama: '', kkm: 80 }); }"
+                class="text-[10px] text-teal-700 font-bold mt-1"
               >
                 + Tambah Mapel
               </button>
             </div>
             <button
               @click="addJenjang"
-              class="text-xs bg-purple-100 hover:bg-purple-200 text-purple-700 font-bold px-3 py-1 rounded"
+              class="text-xs bg-teal-100 hover:bg-teal-200 text-teal-700 font-bold px-3 py-1 rounded"
             >
               + Tambah Jenjang
             </button>
@@ -1343,16 +1326,16 @@
 
           <!-- sections: Matrix Jilid -->
           <div v-else-if="schemaType() === 'sections'" class="space-y-2">
-            <p class="text-[11px] font-bold text-purple-800">Sections (per kelas/jilid):</p>
+            <p class="text-[11px] font-bold text-teal-800">Sections (per kelas/jilid):</p>
             <div
               v-for="(sec, si) in form.raporSchemas[raporLembaga]?.sections || []"
               :key="sec.id"
-              class="bg-white p-2 rounded border border-purple-100 space-y-2"
+              class="bg-[var(--bg-card)] p-2 rounded border border-teal-100 space-y-2"
             >
               <div class="flex items-center justify-between gap-2">
                 <input
                   v-model="sec.title"
-                  class="text-xs font-bold px-2 py-1 border border-slate-300 rounded flex-1"
+                  class="text-xs font-bold px-2 py-1 border border-[var(--border-default)] rounded flex-1"
                   placeholder="Title section (Jilid)"
                 />
                 <button
@@ -1363,14 +1346,14 @@
                 </button>
               </div>
               <div class="space-y-1">
-                <p class="text-[10px] font-black text-purple-700 uppercase tracking-wider">
+                <p class="text-[10px] font-black text-teal-700 uppercase tracking-wider">
                   Rows (Jilid/Kelas):
                 </p>
                 <div class="flex flex-wrap gap-1">
                   <span
                     v-for="(row, ri) in sec.rows || []"
                     :key="ri"
-                    class="bg-purple-50 border border-purple-200 px-2 py-0.5 rounded text-[11px] flex items-center gap-1"
+                    class="bg-teal-50 border border-teal-200 px-2 py-0.5 rounded text-[11px] flex items-center gap-1"
                   >
                     <input
                       v-model="sec.rows[ri]"
@@ -1381,35 +1364,30 @@
                     </button>
                   </span>
                   <button
-                    @click="
-                      () => {
-                        sec.rows = sec.rows || []
-                        sec.rows.push('Baru')
-                      }
-                    "
-                    class="bg-purple-200 hover:bg-purple-300 text-purple-800 text-[10px] font-bold px-2 py-0.5 rounded"
+                    @click="() => {; sec.rows = sec.rows || []; sec.rows.push('Baru'); }"
+                    class="bg-teal-200 hover:bg-teal-300 text-teal-800 text-[10px] font-bold px-2 py-0.5 rounded"
                   >
                     + Row
                   </button>
                 </div>
               </div>
               <div class="space-y-1">
-                <p class="text-[10px] font-black text-purple-700 uppercase tracking-wider">
+                <p class="text-[10px] font-black text-teal-700 uppercase tracking-wider">
                   Fields (Kolom Nilai):
                 </p>
                 <div
                   v-for="(field, fi) in sec.fields || []"
                   :key="fi"
-                  class="grid grid-cols-[1fr_90px_30px] gap-1 items-center bg-purple-50/60 rounded px-2 py-1"
+                  class="grid grid-cols-[1fr_90px_30px] gap-1 items-center bg-teal-50/60 rounded px-2 py-1"
                 >
                   <input
                     v-model="field.label"
                     placeholder="Label"
-                    class="text-[11px] px-1.5 py-0.5 border border-slate-300 rounded bg-white"
+                    class="text-[11px] px-1.5 py-0.5 border border-[var(--border-default)] rounded bg-[var(--bg-card)]"
                   />
                   <select
                     v-model="field.type"
-                    class="text-[11px] px-1 py-0.5 border border-slate-300 rounded bg-white"
+                    class="text-[11px] px-1 py-0.5 border border-[var(--border-default)] rounded bg-[var(--bg-card)]"
                   >
                     <option value="number">Angka</option>
                     <option value="text">Teks</option>
@@ -1421,13 +1399,8 @@
                   </button>
                 </div>
                 <button
-                  @click="
-                    () => {
-                      sec.fields = sec.fields || []
-                      sec.fields.push({ id: 'f_' + Date.now(), label: 'Baru', type: 'number' })
-                    }
-                  "
-                  class="bg-purple-200 hover:bg-purple-300 text-[10px] font-bold px-2 py-0.5 rounded"
+                  @click="() => {; sec.fields = sec.fields || []; sec.fields.push({ id: 'f_' + Date.now(), label: 'Baru', type: 'number' }); }"
+                  class="bg-teal-200 hover:bg-teal-300 text-[10px] font-bold px-2 py-0.5 rounded"
                 >
                   + Field
                 </button>
@@ -1436,7 +1409,7 @@
           </div>
         </div>
 
-        <p class="text-[11px] text-slate-500 italic">
+        <p class="text-[11px] text-[var(--text-secondary)] italic">
           <i class="fas fa-info-circle mr-1"></i>Schema ini dipakai di Rapor Semester
           (perLevel/perKelas/sections) + Predikat auto-compute. Save semua via tombol Simpan di
           bawah.
@@ -1448,7 +1421,7 @@
          FOOTER FLOATING: Reset + Simpan Semua
          ============================================================ -->
     <div
-      class="fixed bottom-4 left-1/2 -translate-x-1/2 bg-white border border-slate-200 rounded-2xl shadow-2xl p-3 flex gap-2 z-20"
+      class="fixed bottom-4 left-1/2 -translate-x-1/2 bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-2xl shadow-2xl p-3 flex gap-2 z-20"
     >
       <UiButton variant="secondary" size="sm" @click="resetForm">
         <i class="fas fa-undo mr-1"></i>Reset
@@ -1582,54 +1555,54 @@ const tabs = [
     id: 'identitas',
     label: 'Identitas',
     icon: 'fa-id-card',
-    gradient: 'from-teal-500 to-teal-700'
+    gradient: 'from-teal-500 dark:from-teal-700 to-teal-700 dark:to-teal-900'
   },
-  { id: 'kop', label: 'KOP Surat', icon: 'fa-file-alt', gradient: 'from-blue-500 to-blue-700' },
-  { id: 'logo', label: 'Logo & BG', icon: 'fa-image', gradient: 'from-cyan-500 to-cyan-700' },
+  { id: 'kop', label: 'KOP Surat', icon: 'fa-file-alt', gradient: 'from-cyan-500 dark:from-cyan-700 to-cyan-700 dark:to-cyan-900' },
+  { id: 'logo', label: 'Logo & BG', icon: 'fa-image', gradient: 'from-cyan-500 dark:from-cyan-700 to-cyan-700 dark:to-cyan-900' },
   {
     id: 'hijri',
     label: 'Kalibrasi Hijri',
     icon: 'fa-moon',
-    gradient: 'from-indigo-500 to-indigo-700'
+    gradient: 'from-cyan-500 dark:from-cyan-700 to-cyan-700 dark:to-cyan-900'
   },
   {
     id: 'kegiatan',
     label: 'Master Kegiatan',
     icon: 'fa-tasks',
-    gradient: 'from-emerald-500 to-emerald-700'
+    gradient: 'from-emerald-500 dark:from-emerald-700 to-emerald-700 dark:to-emerald-900'
   },
-  { id: 'admin', label: 'Admin Password', icon: 'fa-lock', gradient: 'from-rose-500 to-rose-700' },
+  { id: 'admin', label: 'Admin Password', icon: 'fa-lock', gradient: 'from-rose-500 dark:from-rose-700 to-rose-700 dark:to-rose-900' },
   {
     id: 'theme',
     label: 'Tema Warna',
     icon: 'fa-palette',
-    gradient: 'from-pink-500 to-fuchsia-700'
+    gradient: 'from-rose-500 dark:from-rose-700 to-teal-700 dark:to-teal-900'
   },
   {
     id: 'formal',
     label: 'Submenu Formal',
     icon: 'fa-school',
-    gradient: 'from-amber-500 to-amber-700'
+    gradient: 'from-cyan-500 dark:from-cyan-700 to-cyan-700 dark:to-cyan-900'
   },
   {
     id: 'qiraati',
     label: 'Submenu Qiraati',
     icon: 'fa-star',
-    gradient: 'from-orange-500 to-orange-700'
+    gradient: 'from-cyan-500 dark:from-cyan-700 to-cyan-700 dark:to-cyan-900'
   },
   {
     id: 'fitur',
     label: 'Fitur & Mode',
     icon: 'fa-toggle-on',
-    gradient: 'from-purple-500 to-purple-700'
+    gradient: 'from-teal-500 dark:from-teal-700 to-teal-700 dark:to-teal-900'
   },
-  { id: 'shift', label: 'Jam Shift', icon: 'fa-clock', gradient: 'from-yellow-500 to-yellow-700' },
+  { id: 'shift', label: 'Jam Shift', icon: 'fa-clock', gradient: 'from-cyan-500 dark:from-cyan-700 to-cyan-700 dark:to-cyan-900' },
   { id: 'printer', label: 'Printer', icon: 'fa-print', gradient: 'from-slate-500 to-slate-700' },
   {
     id: 'postingan',
     label: 'Pengaturan Postingan',
     icon: 'fa-bullhorn',
-    gradient: 'from-fuchsia-500 to-fuchsia-700'
+    gradient: 'from-teal-500 dark:from-teal-700 to-teal-700 dark:to-teal-900'
   }
   // Note: section "rekapDiniyah" & "raporSchema" tetap render dari kartu di template
   // (akses via routing /pengaturan?section=rekapDiniyah / ?section=raporSchema)

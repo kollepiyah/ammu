@@ -37,7 +37,7 @@
         :title="ui.isDark ? 'Mode Terang' : 'Mode Gelap'"
         aria-label="Toggle dark mode"
       >
-        <i :class="['fas', ui.isDark ? 'fa-sun text-amber-400' : 'fa-moon text-slate-600']"></i>
+        <i :class="['fas', ui.isDark ? 'fa-sun text-cyan-400' : 'fa-moon text-slate-600']"></i>
       </button>
 
       <!-- Profil avatar dropdown -->
@@ -75,7 +75,7 @@
               @click="goProfil"
               class="w-full text-left px-4 py-2.5 text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-2 transition cursor-pointer"
             >
-              <i class="fas fa-user-circle text-purple-500 w-5"></i>Profil Saya
+              <i class="fas fa-user-circle text-teal-500 w-5"></i>Profil Saya
             </button>
             <button
               @click="goPengaturan"

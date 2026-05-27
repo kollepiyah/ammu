@@ -3,23 +3,23 @@
     <!-- Access guard -->
     <div
       v-if="!isFullAccess"
-      class="bg-white dark:bg-slate-800 rounded-2xl p-10 border border-dashed border-rose-300 text-center"
+      class="bg-[var(--bg-card)] rounded-2xl p-10 border border-dashed border-rose-300 text-center"
     >
       <i class="fas fa-lock text-rose-300 text-4xl mb-3"></i>
-      <p class="text-sm font-bold text-slate-700 dark:text-slate-300">Akses terbatas</p>
+      <p class="text-sm font-bold text-slate-700 dark:text-[var(--text-tertiary)]">Akses terbatas</p>
     </div>
 
     <template v-else>
       <!-- Header + rekap totals -->
       <div
-        class="bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-5 border border-slate-200 dark:border-slate-700 shadow-sm"
+        class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
       >
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           <div>
-            <h1 class="text-xl md:text-2xl font-black text-slate-800 dark:text-white">
+            <h1 class="text-xl md:text-2xl font-black text-[var(--text-primary)]">
               <i class="fas fa-clipboard-check text-cyan-500 mr-2"></i>Rekap Absensi Santri
             </h1>
-            <p class="text-xs text-slate-500 mt-0.5">
+            <p class="text-xs text-[var(--text-secondary)] mt-0.5">
               {{ getBulanLabel(selectedMonth) }} {{ selectedYear }}
             </p>
           </div>
@@ -30,25 +30,25 @@
               <span class="text-emerald-700 dark:text-emerald-300 font-bold">{{
                 stats.hadir
               }}</span>
-              <span class="text-slate-500 ml-1">hadir</span>
+              <span class="text-[var(--text-secondary)] ml-1">hadir</span>
             </div>
             <div
               class="px-3 py-1.5 rounded-full bg-rose-50 dark:bg-rose-900/30 border border-rose-200 text-xs"
             >
               <span class="text-rose-700 dark:text-rose-300 font-bold">{{ stats.alfa }}</span>
-              <span class="text-slate-500 ml-1">alfa</span>
+              <span class="text-[var(--text-secondary)] ml-1">alfa</span>
             </div>
             <div
-              class="px-3 py-1.5 rounded-full bg-amber-50 dark:bg-amber-900/30 border border-amber-200 text-xs"
+              class="px-3 py-1.5 rounded-full bg-cyan-50 dark:bg-cyan-900/30 border border-cyan-200 text-xs"
             >
-              <span class="text-amber-700 dark:text-amber-300 font-bold">{{ stats.sakit }}</span>
-              <span class="text-slate-500 ml-1">sakit</span>
+              <span class="text-cyan-700 dark:text-cyan-300 font-bold">{{ stats.sakit }}</span>
+              <span class="text-[var(--text-secondary)] ml-1">sakit</span>
             </div>
             <div
-              class="px-3 py-1.5 rounded-full bg-purple-50 dark:bg-purple-900/30 border border-purple-200 text-xs"
+              class="px-3 py-1.5 rounded-full bg-teal-50 dark:bg-teal-900/30 border border-teal-200 text-xs"
             >
-              <span class="text-purple-700 dark:text-purple-300 font-bold">{{ stats.izin }}</span>
-              <span class="text-slate-500 ml-1">izin</span>
+              <span class="text-teal-700 dark:text-teal-300 font-bold">{{ stats.izin }}</span>
+              <span class="text-[var(--text-secondary)] ml-1">izin</span>
             </div>
           </div>
         </div>
@@ -56,38 +56,38 @@
 
       <!-- Filters -->
       <div
-        class="bg-white dark:bg-slate-800 rounded-2xl p-3 md:p-4 border border-slate-200 dark:border-slate-700 shadow-sm"
+        class="bg-[var(--bg-card)] rounded-2xl p-3 md:p-4 border border-[var(--border-subtle)] shadow-sm"
       >
         <div class="grid grid-cols-2 md:grid-cols-5 gap-2">
           <select
             v-model.number="selectedYear"
-            class="px-3 py-2.5 text-sm rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-cyan-500 outline-none"
+            class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-cyan-500 outline-none"
           >
             <option v-for="y in yearOptions" :key="y" :value="y">{{ y }}</option>
           </select>
           <select
             v-model.number="selectedMonth"
-            class="px-3 py-2.5 text-sm rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-cyan-500 outline-none"
+            class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-cyan-500 outline-none"
           >
             <option v-for="(b, i) in BULAN" :key="b" :value="i + 1">{{ b }}</option>
           </select>
           <select
             v-model="filterLembaga"
-            class="px-3 py-2.5 text-sm rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-cyan-500 outline-none"
+            class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-cyan-500 outline-none"
           >
             <option value="">Semua lembaga</option>
             <option v-for="l in uniqueLembaga" :key="l" :value="l">{{ l }}</option>
           </select>
           <select
             v-model="filterKelas"
-            class="px-3 py-2.5 text-sm rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-cyan-500 outline-none"
+            class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-cyan-500 outline-none"
           >
             <option value="">Semua kelas</option>
             <option v-for="k in uniqueKelas" :key="k" :value="k">{{ k }}</option>
           </select>
           <select
             v-model="filterStatus"
-            class="px-3 py-2.5 text-sm rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-cyan-500 outline-none"
+            class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-cyan-500 outline-none"
           >
             <option value="">Semua status</option>
             <option value="hadir">Hadir</option>
@@ -100,7 +100,7 @@
 
       <!-- Tabs -->
       <div
-        class="bg-white dark:bg-slate-800 rounded-2xl p-2 border border-slate-200 shadow-sm flex gap-1"
+        class="bg-[var(--bg-card)] rounded-2xl p-2 border border-[var(--border-subtle)] shadow-sm flex gap-1"
       >
         <button
           @click="activeTab = 'rekap'"
@@ -108,7 +108,7 @@
             'flex-1 px-3 py-2 text-sm rounded-xl font-bold transition',
             activeTab === 'rekap'
               ? 'bg-cyan-600 text-white shadow'
-              : 'text-slate-600 hover:bg-cyan-50'
+              : 'text-[var(--text-secondary)] hover:bg-cyan-50'
           ]"
         >
           Rekap per Santri
@@ -119,7 +119,7 @@
             'flex-1 px-3 py-2 text-sm rounded-xl font-bold transition',
             activeTab === 'detail'
               ? 'bg-cyan-600 text-white shadow'
-              : 'text-slate-600 hover:bg-cyan-50'
+              : 'text-[var(--text-secondary)] hover:bg-cyan-50'
           ]"
         >
           Detail per Hari
@@ -128,12 +128,12 @@
 
       <!-- Action buttons -->
       <div
-        class="bg-white dark:bg-slate-800 rounded-2xl p-3 border border-slate-200 shadow-sm flex flex-wrap gap-2"
+        class="bg-[var(--bg-card)] rounded-2xl p-3 border border-[var(--border-subtle)] shadow-sm flex flex-wrap gap-2"
       >
         <button
           @click="generateKeRapor"
           :disabled="generating"
-          class="px-3 py-2 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-50 inline-flex items-center gap-1"
+          class="px-3 py-2 text-xs font-bold rounded-lg bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white disabled:opacity-50 inline-flex items-center gap-1"
         >
           <i class="fas fa-file-export"></i>
           {{ generating ? 'Memproses...' : 'Generate ke Rapor' }}
@@ -141,7 +141,7 @@
         <button
           @click="exportExcel"
           :disabled="exporting"
-          class="px-3 py-2 text-xs font-bold rounded-lg bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 inline-flex items-center gap-1"
+          class="px-3 py-2 text-xs font-bold rounded-lg bg-cyan-600 hover:bg-cyan-700 text-white disabled:opacity-50 inline-flex items-center gap-1"
         >
           <i class="fas fa-file-excel"></i>Export Excel
         </button>
@@ -152,30 +152,30 @@
         >
           <i class="fas fa-file-pdf"></i>Export PDF
         </button>
-        <span class="text-[10px] text-slate-400 italic ml-auto self-center">
+        <span class="text-[10px] text-[var(--text-tertiary)] italic ml-auto self-center">
           <i class="fas fa-info-circle mr-1"></i>Filter santri: non-mukim (PP/Fullday) only
         </span>
       </div>
 
       <!-- Loading -->
-      <div v-if="loading" class="bg-white dark:bg-slate-800 rounded-2xl p-10 text-center">
+      <div v-if="loading" class="bg-[var(--bg-card)] rounded-2xl p-10 text-center">
         <i class="fas fa-spinner fa-spin text-cyan-500 text-3xl mb-3"></i>
-        <p class="text-sm text-slate-500 font-bold">Memuat absensi...</p>
+        <p class="text-sm text-[var(--text-secondary)] font-bold">Memuat absensi...</p>
       </div>
 
       <!-- Tab: Rekap per Santri -->
       <div v-else-if="activeTab === 'rekap'" class="space-y-2">
         <div
           v-if="rekapPerSantri.length === 0"
-          class="bg-white dark:bg-slate-800 rounded-2xl p-10 border border-dashed border-slate-300 text-center"
+          class="bg-[var(--bg-card)] rounded-2xl p-10 border border-dashed border-[var(--border-default)] text-center"
         >
-          <i class="fas fa-calendar-times text-slate-300 text-4xl mb-3"></i>
-          <p class="text-sm font-bold text-slate-700 dark:text-slate-300">Tidak ada absensi</p>
+          <i class="fas fa-calendar-times text-[var(--text-tertiary)] text-4xl mb-3"></i>
+          <p class="text-sm font-bold text-slate-700 dark:text-[var(--text-tertiary)]">Tidak ada absensi</p>
         </div>
         <div
           v-for="r in rekapPerSantri"
           :key="r.santri_id"
-          class="bg-white dark:bg-slate-800 rounded-xl p-3 border border-slate-200 shadow-sm"
+          class="bg-[var(--bg-card)] rounded-xl p-3 border border-[var(--border-subtle)] shadow-sm"
         >
           <div class="flex items-center gap-3">
             <div
@@ -184,7 +184,7 @@
               <i class="fas fa-user-graduate"></i>
             </div>
             <div class="flex-1 min-w-0">
-              <h3 class="text-sm font-black text-slate-800 truncate">
+              <h3 class="text-sm font-black text-[var(--text-primary)] truncate">
                 {{ getNamaSantri(r.santri_id) }}
               </h3>
               <div class="flex gap-1.5 mt-1 text-[10px]">
@@ -194,10 +194,10 @@
                 <span class="bg-rose-100 text-rose-700 px-2 py-0.5 rounded font-bold">
                   A: {{ r.alfa }}
                 </span>
-                <span class="bg-amber-100 text-amber-700 px-2 py-0.5 rounded font-bold">
+                <span class="bg-cyan-100 text-cyan-700 px-2 py-0.5 rounded font-bold">
                   S: {{ r.sakit }}
                 </span>
-                <span class="bg-purple-100 text-purple-700 px-2 py-0.5 rounded font-bold">
+                <span class="bg-teal-100 text-teal-700 px-2 py-0.5 rounded font-bold">
                   I: {{ r.izin }}
                 </span>
               </div>
@@ -211,7 +211,7 @@
               >
                 <i class="fas fa-trash mr-1"></i>Hapus
               </button>
-              <p class="text-[10px] text-slate-500 uppercase font-bold">hari hadir</p>
+              <p class="text-[10px] text-[var(--text-secondary)] uppercase font-bold">hari hadir</p>
             </div>
           </div>
         </div>
@@ -221,15 +221,15 @@
       <div v-else class="space-y-1.5">
         <div
           v-if="filteredAbsensi.length === 0"
-          class="bg-white dark:bg-slate-800 rounded-2xl p-10 border border-dashed border-slate-300 text-center"
+          class="bg-[var(--bg-card)] rounded-2xl p-10 border border-dashed border-[var(--border-default)] text-center"
         >
-          <i class="fas fa-calendar-times text-slate-300 text-4xl mb-3"></i>
-          <p class="text-sm font-bold text-slate-700">Tidak ada absensi</p>
+          <i class="fas fa-calendar-times text-[var(--text-tertiary)] text-4xl mb-3"></i>
+          <p class="text-sm font-bold text-[var(--text-primary)]">Tidak ada absensi</p>
         </div>
         <div
           v-for="a in filteredAbsensi"
           :key="a.id"
-          class="bg-white dark:bg-slate-800 rounded-xl p-2.5 border border-slate-200 shadow-sm"
+          class="bg-[var(--bg-card)] rounded-xl p-2.5 border border-[var(--border-subtle)] shadow-sm"
         >
           <div class="flex items-center gap-3">
             <div
@@ -241,10 +241,10 @@
               {{ statusLabel(a.status) }}
             </div>
             <div class="flex-1 min-w-0">
-              <p class="text-sm font-bold text-slate-800 truncate">
+              <p class="text-sm font-bold text-[var(--text-primary)] truncate">
                 {{ getNamaSantri(a.santri_id || a.santriId) }}
               </p>
-              <p class="text-[11px] text-slate-500">
+              <p class="text-[11px] text-[var(--text-secondary)]">
                 {{ a.tanggal }} ·
                 <span class="capitalize">{{ a.status }}</span>
                 <span v-if="a.keterangan" class="ml-1">· {{ a.keterangan }}</span>
@@ -254,7 +254,7 @@
         </div>
       </div>
 
-      <p class="text-center text-[10px] text-slate-400 pt-2">
+      <p class="text-center text-[10px] text-[var(--text-tertiary)] pt-2">
         <i class="fas fa-circle-info mr-1"></i>
         {{ filteredAbsensi.length }} absensi · Vue 3 · Phase 5.17
       </p>
@@ -465,8 +465,8 @@ function statusBg(status) {
   const s = String(status || '').toLowerCase()
   if (s === 'hadir' || s === 'h') return 'bg-emerald-500'
   if (s === 'alfa' || s === 'a') return 'bg-rose-500'
-  if (s === 'sakit' || s === 's') return 'bg-amber-500'
-  if (s === 'izin' || s === 'i') return 'bg-purple-500'
+  if (s === 'sakit' || s === 's') return 'bg-[var(--color-accent)]'
+  if (s === 'izin' || s === 'i') return 'bg-teal-500'
   return 'bg-slate-400'
 }
 

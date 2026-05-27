@@ -1,6 +1,6 @@
 <template>
   <!-- v.20.72.0526: Reactions bar — 5 emoji like (kyai: gak perlu comments, cukup like) -->
-  <div class="flex items-center gap-1.5 mt-2 pt-2 border-t border-slate-100 dark:border-slate-700">
+  <div class="flex items-center gap-1.5 mt-2 pt-2 border-t border-[var(--border-subtle)]">
     <button
       v-for="r in REACTIONS"
       :key="r.emoji"
@@ -9,7 +9,7 @@
         'flex items-center gap-1 px-2 py-1 rounded-full text-xs transition-all',
         myReaction === r.emoji
           ? 'bg-teal-100 dark:bg-teal-900/40 text-teal-800 dark:text-teal-200 ring-1 ring-teal-300'
-          : 'bg-slate-100 dark:bg-slate-700/40 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600/40'
+          : 'bg-[var(--bg-muted)] text-[var(--text-secondary)] hover:bg-slate-200 dark:hover:bg-slate-600/40'
       ]"
       :title="r.label"
     >
@@ -26,7 +26,8 @@ import { db } from '@/services/firebase'
 import { useAuthStore } from '@/stores/auth'
 
 const props = defineProps({
-  postId: { type: String, required: true }
+  postId: { type: String, required: true },
+  collection: { type: String, default: 'beranda_post' }
 })
 
 const auth = useAuthStore()
@@ -59,7 +60,7 @@ const myReaction = computed(() => {
 function subscribe() {
   if (unsub) try { unsub() } catch {}
   if (!props.postId) return
-  const col = collection(db, 'posts', props.postId, 'reactions')
+  const col = collection(db, props.collection, props.postId, 'reactions')
   unsub = onSnapshot(col, (snap) => {
     reactions.value = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
   })
@@ -67,7 +68,7 @@ function subscribe() {
 
 async function toggleReaction(emoji) {
   if (!props.postId || !myUid.value || myUid.value === 'anon') return
-  const ref = doc(db, 'posts', props.postId, 'reactions', myUid.value)
+  const ref = doc(db, props.collection, props.postId, 'reactions', myUid.value)
   if (myReaction.value === emoji) {
     // toggle off
     try { await deleteDoc(ref) } catch (e) { /* silent */ }

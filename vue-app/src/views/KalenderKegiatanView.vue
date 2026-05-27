@@ -2,11 +2,11 @@
   <div class="p-4 md:p-6 max-w-6xl mx-auto space-y-4">
     <!-- Header: bulan/tahun + navigasi -->
     <div
-      class="bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-5 border border-slate-200 dark:border-slate-700 shadow-sm"
+      class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
     >
       <div class="flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <h2 class="text-base md:text-lg font-black text-slate-800 dark:text-white">
+          <h2 class="text-base md:text-lg font-black text-[var(--text-primary)]">
             <i class="fas fa-calendar-alt text-cyan-600 mr-2"></i>
             {{ namaBulan }} {{ tahun }}
           </h2>
@@ -17,10 +17,10 @@
         <div class="flex items-center gap-2">
           <button
             @click="prevMonth"
-            class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 flex items-center justify-center transition cursor-pointer"
+            class="w-8 h-8 rounded-full bg-[var(--bg-muted)] hover:bg-slate-200 dark:hover:bg-slate-600 flex items-center justify-center transition cursor-pointer"
             title="Bulan sebelumnya"
           >
-            <i class="fas fa-chevron-left text-slate-600 dark:text-slate-300 text-xs"></i>
+            <i class="fas fa-chevron-left text-[var(--text-secondary)] text-xs"></i>
           </button>
           <button
             @click="goToday"
@@ -31,10 +31,10 @@
           </button>
           <button
             @click="nextMonth"
-            class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 flex items-center justify-center transition cursor-pointer"
+            class="w-8 h-8 rounded-full bg-[var(--bg-muted)] hover:bg-slate-200 dark:hover:bg-slate-600 flex items-center justify-center transition cursor-pointer"
             title="Bulan berikutnya"
           >
-            <i class="fas fa-chevron-right text-slate-600 dark:text-slate-300 text-xs"></i>
+            <i class="fas fa-chevron-right text-[var(--text-secondary)] text-xs"></i>
           </button>
           <button
             v-if="bisaEdit"
@@ -50,7 +50,7 @@
 
     <!-- Grid kalender -->
     <div
-      class="bg-white dark:bg-slate-800 rounded-2xl p-3 md:p-4 border border-slate-200 dark:border-slate-700 shadow-sm"
+      class="bg-[var(--bg-card)] rounded-2xl p-3 md:p-4 border border-[var(--border-subtle)] shadow-sm"
     >
       <div class="grid grid-cols-7 gap-1.5 mb-2">
         <div
@@ -62,7 +62,7 @@
               ? 'text-rose-600'
               : idx === 5
                 ? 'text-emerald-600'
-                : 'text-slate-500 dark:text-slate-400'
+                : 'text-[var(--text-secondary)]'
           ]"
         >
           {{ hari }}
@@ -78,13 +78,13 @@
             'aspect-[3/4] sm:aspect-square p-1.5 rounded-lg border transition cursor-pointer flex flex-col items-center justify-start min-w-0 overflow-hidden text-center',
             cell.isToday
               ? 'bg-cyan-100 border-cyan-500 ring-2 ring-cyan-400 dark:bg-cyan-900/40'
-              : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50'
+              : 'bg-[var(--bg-card)] border-[var(--border-subtle)] hover:bg-slate-50 dark:hover:bg-slate-700/50'
           ]"
         >
           <p
             :class="[
               'text-[10px] font-bold leading-none text-center w-full',
-              cell.isMinggu ? 'text-rose-600' : 'text-slate-500 dark:text-slate-400'
+              cell.isMinggu ? 'text-rose-600' : 'text-[var(--text-secondary)]'
             ]"
           >
             {{ cell.day }} {{ namaBulan.substring(0, 3) }}
@@ -96,13 +96,13 @@
                 ? 'text-rose-600'
                 : cell.isJumat
                   ? 'text-emerald-600'
-                  : 'text-slate-700 dark:text-slate-200'
+                  : 'text-[var(--text-primary)]'
             ]"
           >
             {{ cell.hijriDay }}
           </p>
           <p
-            class="text-[9px] text-slate-500 dark:text-slate-400 text-center font-medium leading-none w-full"
+            class="text-[9px] text-[var(--text-secondary)] text-center font-medium leading-none w-full"
           >
             {{ cell.pasaran }}
           </p>
@@ -116,15 +116,15 @@
 
     <!-- Daftar kegiatan bulan ini -->
     <div
-      class="bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-5 border border-slate-200 dark:border-slate-700 shadow-sm"
+      class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
     >
       <h3
-        class="text-xs md:text-sm font-black text-slate-800 dark:text-white uppercase tracking-widest mb-3 border-b border-slate-100 dark:border-slate-700 pb-2"
+        class="text-xs md:text-sm font-black text-[var(--text-primary)] uppercase tracking-widest mb-3 border-b border-[var(--border-subtle)] pb-2"
       >
         <i class="fas fa-list-ul text-cyan-600 mr-2"></i>Kegiatan Bulan Ini
       </h3>
-      <div v-if="kegiatanBulan.length === 0" class="text-xs text-slate-400 italic text-center py-4">
-        <i class="fas fa-calendar-times text-2xl text-slate-300 dark:text-slate-600 block mb-2"></i>
+      <div v-if="kegiatanBulan.length === 0" class="text-xs text-[var(--text-tertiary)] italic text-center py-4">
+        <i class="fas fa-calendar-times text-2xl text-slate-300 dark:text-[var(--text-secondary)] block mb-2"></i>
         Tidak ada kegiatan bulan ini.
       </div>
       <div v-else class="space-y-2">
@@ -136,11 +136,11 @@
         >
           <div class="flex items-start justify-between gap-2">
             <div class="flex-1 min-w-0">
-              <p class="text-xs font-black text-slate-800 dark:text-white">{{ k.judul }}</p>
-              <p class="text-[10px] text-slate-600 dark:text-slate-300 mt-0.5">
+              <p class="text-xs font-black text-[var(--text-primary)]">{{ k.judul }}</p>
+              <p class="text-[10px] text-[var(--text-secondary)] mt-0.5">
                 {{ formatRangeTanggal(k.tgl_mulai, k.tgl_akhir) }}
               </p>
-              <p class="text-[10px] text-slate-500 dark:text-slate-400 italic mt-0.5">
+              <p class="text-[10px] text-[var(--text-secondary)] italic mt-0.5">
                 {{ labelAudience(k.audience)
                 }}{{ k.deskripsi ? ' · ' + k.deskripsi.substring(0, 80) : '' }}
               </p>
@@ -148,7 +148,7 @@
             <button
               v-if="bisaEdit"
               @click.stop="openModal(k)"
-              class="text-[10px] text-blue-600 dark:text-blue-400 hover:underline font-bold flex-shrink-0"
+              class="text-[10px] text-cyan-600 dark:text-cyan-400 hover:underline font-bold flex-shrink-0"
             >
               edit
             </button>
@@ -164,56 +164,56 @@
       class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4"
     >
       <div
-        class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto"
+        class="bg-[var(--bg-card)] rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto"
       >
         <form @submit.prevent="simpan" class="p-5">
-          <h3 class="text-base font-black text-slate-800 dark:text-white mb-4">
+          <h3 class="text-base font-black text-[var(--text-primary)] mb-4">
             <i :class="['fas', form.id ? 'fa-edit' : 'fa-calendar-plus', 'text-cyan-600 mr-2']"></i>
             {{ form.id ? 'Edit Kegiatan' : 'Tambah Kegiatan' }}
           </h3>
           <div class="space-y-3">
             <div>
-              <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1"
+              <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1"
                 >Judul *</label
               >
               <input
                 v-model="form.judul"
                 required
                 type="text"
-                class="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-800 dark:text-white focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none"
+                class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-white dark:bg-slate-900 text-[var(--text-primary)] focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none"
                 placeholder="Contoh: Upacara Bendera"
               />
             </div>
             <div class="grid grid-cols-2 gap-3">
               <div>
-                <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1"
+                <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1"
                   >Tgl Mulai *</label
                 >
                 <input
                   v-model="form.tgl_mulai"
                   required
                   type="date"
-                  class="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-800 dark:text-white"
+                  class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-white dark:bg-slate-900 text-[var(--text-primary)]"
                 />
               </div>
               <div>
-                <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1"
+                <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1"
                   >Tgl Akhir</label
                 >
                 <input
                   v-model="form.tgl_akhir"
                   type="date"
-                  class="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-800 dark:text-white"
+                  class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-white dark:bg-slate-900 text-[var(--text-primary)]"
                 />
               </div>
             </div>
             <div>
-              <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1"
+              <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1"
                 >Audience</label
               >
               <select
                 v-model="form.audience"
-                class="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-800 dark:text-white"
+                class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-white dark:bg-slate-900 text-[var(--text-primary)]"
               >
                 <option value="semua">Semua</option>
                 <option value="guru">Guru/Pegawai</option>
@@ -221,19 +221,19 @@
               </select>
             </div>
             <div>
-              <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1"
+              <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1"
                 >Deskripsi</label
               >
               <textarea
                 v-model="form.deskripsi"
                 rows="3"
-                class="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-800 dark:text-white resize-none"
+                class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-white dark:bg-slate-900 text-[var(--text-primary)] resize-none"
                 placeholder="Catatan tambahan (opsional)"
               ></textarea>
             </div>
           </div>
           <div
-            class="flex items-center justify-between gap-2 mt-5 pt-4 border-t border-slate-100 dark:border-slate-700"
+            class="flex items-center justify-between gap-2 mt-5 pt-4 border-t border-[var(--border-subtle)]"
           >
             <button
               v-if="form.id"
@@ -247,7 +247,7 @@
             <button
               type="button"
               @click="modalOpen = false"
-              class="text-xs font-bold px-4 py-2 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-200 transition cursor-pointer"
+              class="text-xs font-bold px-4 py-2 rounded-lg bg-[var(--bg-muted)] text-[var(--text-secondary)] hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-200 transition cursor-pointer"
             >
               Batal
             </button>

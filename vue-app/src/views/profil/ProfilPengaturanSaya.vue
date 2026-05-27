@@ -1,6 +1,6 @@
 <template>
   <div
-    class="bg-white dark:bg-slate-800 rounded-2xl p-5 md:p-6 shadow-sm border border-slate-200 dark:border-slate-700"
+    class="bg-[var(--bg-card)] rounded-2xl p-5 md:p-6 shadow-sm border border-[var(--border-subtle)]"
   >
     <h3
       class="font-black text-slate-800 dark:text-slate-100 text-base mb-4 flex items-center gap-2"
@@ -15,7 +15,7 @@
         :key="item.id"
         @click="openModal(item.id)"
         :class="[
-          'group bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 text-left transition cursor-pointer',
+          'group bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-2xl p-4 text-left transition cursor-pointer',
           colorMap[item.color].hoverBg
         ]"
       >
@@ -35,7 +35,7 @@
         >
           {{ item.title }}
         </p>
-        <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1 truncate">{{ item.desc }}</p>
+        <p class="text-[11px] text-[var(--text-secondary)] mt-1 truncate">{{ item.desc }}</p>
       </button>
     </div>
 
@@ -45,39 +45,39 @@
         class="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4"
         @click.self="closeModal"
       >
-        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md p-5">
+        <div class="bg-[var(--bg-card)] rounded-2xl shadow-2xl w-full max-w-md p-5">
           <!-- Ganti Sandi -->
           <div v-if="activeModal === 'sandi'">
             <h3 class="text-lg font-black mb-3">Ganti Sandi</h3>
             <div class="space-y-2">
               <div>
-                <label class="text-xs font-bold text-slate-500 dark:text-slate-400"
+                <label class="text-xs font-bold text-[var(--text-secondary)]"
                   >Password Lama</label
                 >
                 <input
                   v-model="formSandi.lama"
                   type="password"
-                  class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
+                  class="w-full px-3 py-2 border border-[var(--border-default)] rounded-lg text-sm"
                 />
               </div>
               <div>
-                <label class="text-xs font-bold text-slate-500 dark:text-slate-400"
+                <label class="text-xs font-bold text-[var(--text-secondary)]"
                   >Password Baru</label
                 >
                 <input
                   v-model="formSandi.baru"
                   type="password"
-                  class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
+                  class="w-full px-3 py-2 border border-[var(--border-default)] rounded-lg text-sm"
                 />
               </div>
               <div>
-                <label class="text-xs font-bold text-slate-500 dark:text-slate-400"
+                <label class="text-xs font-bold text-[var(--text-secondary)]"
                   >Konfirmasi</label
                 >
                 <input
                   v-model="formSandi.konfirmasi"
                   type="password"
-                  class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
+                  class="w-full px-3 py-2 border border-[var(--border-default)] rounded-lg text-sm"
                 />
               </div>
             </div>
@@ -93,7 +93,7 @@
               :disabled="fotoState.uploading"
               class="w-full text-sm"
             />
-            <p class="text-[10px] text-slate-500 dark:text-slate-400 italic mt-2">
+            <p class="text-[10px] text-[var(--text-secondary)] italic mt-2">
               JPG/PNG, maks 2MB
             </p>
           </div>
@@ -105,12 +105,12 @@
               v-model="usernameState.value"
               @blur="cekUsername"
               type="text"
-              class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
+              class="w-full px-3 py-2 border border-[var(--border-default)] rounded-lg text-sm"
               placeholder="username unik"
             />
             <p
               v-if="usernameState.checking"
-              class="text-xs text-slate-500 dark:text-slate-400 mt-2"
+              class="text-xs text-[var(--text-secondary)] mt-2"
             >
               Cek...
             </p>
@@ -128,10 +128,10 @@
             <input
               v-model="waState.value"
               type="tel"
-              class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
+              class="w-full px-3 py-2 border border-[var(--border-default)] rounded-lg text-sm"
               placeholder="08xxxxxxxxxx"
             />
-            <p class="text-[10px] text-slate-500 dark:text-slate-400 italic mt-2">
+            <p class="text-[10px] text-[var(--text-secondary)] italic mt-2">
               Format Indonesia, akan dibersihkan dari simbol
             </p>
           </div>
@@ -142,10 +142,10 @@
             <input
               v-model="waState.value"
               type="tel"
-              class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
+              class="w-full px-3 py-2 border border-[var(--border-default)] rounded-lg text-sm"
               placeholder="08xxxxxxxxxx"
             />
-            <p class="text-[10px] text-slate-500 dark:text-slate-400 italic mt-2">
+            <p class="text-[10px] text-[var(--text-secondary)] italic mt-2">
               Nomor wali (orang tua) untuk terima notifikasi pondok.
             </p>
           </div>
@@ -160,7 +160,7 @@
               :disabled="ttdState.uploading"
               class="w-full text-sm"
             />
-            <p class="text-[10px] text-slate-500 dark:text-slate-400 italic mt-2">
+            <p class="text-[10px] text-[var(--text-secondary)] italic mt-2">
               PNG transparan disarankan, maks 1MB
             </p>
           </div>
@@ -172,12 +172,12 @@
               v-if="entity?.linked_email"
               class="mb-3 p-3 bg-emerald-50 border border-emerald-200 rounded-lg"
             >
-              <p class="text-xs text-slate-600">Sudah tertaut ke:</p>
+              <p class="text-xs text-[var(--text-secondary)]">Sudah tertaut ke:</p>
               <p class="text-sm font-bold text-emerald-700">
                 <i class="fab fa-google mr-1"></i>{{ entity.linked_email }}
               </p>
             </div>
-            <p v-else class="text-sm text-slate-700 dark:text-slate-200">
+            <p v-else class="text-sm text-[var(--text-primary)]">
               Login lewat akun Google supaya bisa skip password.
             </p>
             <button
@@ -203,12 +203,12 @@
           <div v-else-if="activeModal === 'notif'">
             <h3 class="text-lg font-black mb-3">Setting Notifikasi</h3>
             <label
-              class="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-900/40 rounded-lg cursor-pointer"
+              class="flex items-center gap-3 p-3 bg-[var(--bg-card-elevated)] rounded-lg cursor-pointer"
             >
               <input v-model="notifState.enabled" type="checkbox" class="w-5 h-5 accent-cyan-600" />
               <div>
                 <p class="text-sm font-bold">Aktifkan Push Notification</p>
-                <p class="text-xs text-slate-500 dark:text-slate-400">
+                <p class="text-xs text-[var(--text-secondary)]">
                   FCM untuk pengumuman & event penting
                 </p>
               </div>
@@ -221,20 +221,20 @@
             <input
               v-model="ekgqState.value"
               type="text"
-              class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
+              class="w-full px-3 py-2 border border-[var(--border-default)] rounded-lg text-sm"
               placeholder="EKGQ-2023-001"
             />
-            <p class="text-[10px] text-slate-500 dark:text-slate-400 italic mt-2">
+            <p class="text-[10px] text-[var(--text-secondary)] italic mt-2">
               Nomor syahadah resmi dari Pusat Qiraati
             </p>
           </div>
 
           <div
-            class="flex justify-end gap-2 mt-5 pt-3 border-t border-slate-200 dark:border-slate-700"
+            class="flex justify-end gap-2 mt-5 pt-3 border-t border-[var(--border-subtle)]"
           >
             <button
               @click="closeModal"
-              class="px-4 py-2 text-sm font-bold text-slate-600 hover:bg-slate-100 rounded-lg"
+              class="px-4 py-2 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--bg-muted)] rounded-lg"
             >
               Batal
             </button>
@@ -242,7 +242,7 @@
               v-if="activeModal === 'sandi'"
               @click="simpanSandi"
               :disabled="busy"
-              class="px-4 py-2 text-sm font-bold bg-amber-600 hover:bg-amber-700 text-white rounded-lg disabled:opacity-50"
+              class="px-4 py-2 text-sm font-bold bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg disabled:opacity-50"
             >
               Simpan
             </button>
@@ -250,7 +250,7 @@
               v-else-if="activeModal === 'username'"
               @click="simpanUsername"
               :disabled="busy"
-              class="px-4 py-2 text-sm font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-50"
+              class="px-4 py-2 text-sm font-bold bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg disabled:opacity-50"
             >
               Simpan
             </button>
@@ -274,7 +274,7 @@
               v-else-if="activeModal === 'ekgq'"
               @click="simpanEkgq"
               :disabled="busy"
-              class="px-4 py-2 text-sm font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg disabled:opacity-50"
+              class="px-4 py-2 text-sm font-bold bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white rounded-lg disabled:opacity-50"
             >
               Simpan
             </button>
@@ -659,19 +659,19 @@ async function onUnlinkGoogle() {
 
 const colorMap = {
   amber: {
-    iconBg: 'text-amber-500',
-    hoverBg: 'hover:bg-amber-50 hover:border-amber-300',
-    hoverText: 'group-hover:text-amber-700'
+    iconBg: 'text-cyan-500',
+    hoverBg: 'hover:bg-cyan-50 hover:border-cyan-300',
+    hoverText: 'group-hover:text-cyan-700'
   },
   purple: {
-    iconBg: 'text-purple-500',
-    hoverBg: 'hover:bg-purple-50 hover:border-purple-300',
-    hoverText: 'group-hover:text-purple-700'
+    iconBg: 'text-teal-500',
+    hoverBg: 'hover:bg-teal-50 hover:border-teal-300',
+    hoverText: 'group-hover:text-teal-700'
   },
   blue: {
-    iconBg: 'text-blue-500',
-    hoverBg: 'hover:bg-blue-50 hover:border-blue-300',
-    hoverText: 'group-hover:text-blue-700'
+    iconBg: 'text-cyan-500',
+    hoverBg: 'hover:bg-cyan-50 hover:border-cyan-300',
+    hoverText: 'group-hover:text-cyan-700'
   },
   green: {
     iconBg: 'text-emerald-600',
@@ -679,14 +679,14 @@ const colorMap = {
     hoverText: 'group-hover:text-emerald-700'
   },
   slate: {
-    iconBg: 'text-slate-500',
-    hoverBg: 'hover:bg-slate-50 hover:border-slate-300',
-    hoverText: 'group-hover:text-slate-700'
+    iconBg: 'text-[var(--text-secondary)]',
+    hoverBg: 'hover:bg-[var(--bg-card-elevated)] hover:border-[var(--border-default)]',
+    hoverText: 'group-hover:text-[var(--text-primary)]'
   },
   red: {
-    iconBg: 'text-red-500',
-    hoverBg: 'hover:bg-red-50 hover:border-red-300',
-    hoverText: 'group-hover:text-red-700'
+    iconBg: 'text-rose-500',
+    hoverBg: 'hover:bg-rose-50 hover:border-rose-300',
+    hoverText: 'group-hover:text-rose-700'
   },
   rose: {
     iconBg: 'text-rose-500',

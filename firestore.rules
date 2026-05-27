@@ -186,14 +186,25 @@ service cloud.firestore {
 
     match /beranda_post/{docId} {
       allow read: if true;
+      // v.21.84.0527: relax judul (allow empty for IG-style image-only post)
+      // judul + isi salah satu boleh kosong, total content tetap dibatasi
       allow create, update: if signedIn()
         && request.resource.data.id is string
-        && request.resource.data.judul is string
-        && request.resource.data.judul.size() >= 1
-        && request.resource.data.judul.size() <= 200
-        && request.resource.data.isi is string
-        && request.resource.data.isi.size() <= 5000;
+        && (
+          !('judul' in request.resource.data)
+          || (request.resource.data.judul is string && request.resource.data.judul.size() <= 200)
+        )
+        && (
+          !('isi' in request.resource.data)
+          || (request.resource.data.isi is string && request.resource.data.isi.size() <= 5000)
+        );
       allow delete: if signedIn();
+
+      // v.21.84.0527: reactions sub-collection (Instagram-like likes)
+      match /reactions/{userId} {
+        allow read: if true;
+        allow write: if signedIn();
+      }
     }
 
     match /kegiatan/{docId} {
@@ -324,6 +335,12 @@ service cloud.firestore {
     match /posts/{docId} {
       allow read: if true;
       allow create, update, delete: if signedIn();
+
+      // v.21.84.0527: reactions sub-collection
+      match /reactions/{userId} {
+        allow read: if true;
+        allow write: if signedIn();
+      }
     }
 
     // v.21.56: keuangan_hutang_piutang

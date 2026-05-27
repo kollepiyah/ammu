@@ -3,17 +3,17 @@
     <!-- Akses ditolak (selain santri & full-access) -->
     <div
       v-if="!isFullAccess && !isSantri"
-      class="bg-white dark:bg-slate-800 rounded-2xl p-10 border border-dashed border-rose-300 text-center"
+      class="bg-[var(--bg-card)] rounded-2xl p-10 border border-dashed border-rose-300 text-center"
     >
       <i class="fas fa-lock text-rose-300 text-4xl mb-3"></i>
-      <p class="text-sm font-bold text-slate-700 dark:text-slate-300">Akses Keuangan terbatas</p>
+      <p class="text-sm font-bold text-slate-700 dark:text-[var(--text-tertiary)]">Akses Keuangan terbatas</p>
     </div>
 
     <!-- =================== MODE SANTRI =================== -->
     <template v-else-if="isSantri">
       <!-- Card saldo santri -->
       <div
-        class="bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-700 rounded-2xl p-5 md:p-6 text-white shadow-lg relative overflow-hidden"
+        class="bg-gradient-to-br from-[var(--color-info)] to-[var(--color-info)] rounded-2xl p-5 md:p-6 text-white shadow-lg relative overflow-hidden"
       >
         <img
           src="/logo.png"
@@ -35,34 +35,34 @@
 
       <!-- Riwayat mutasi santri -->
       <div
-        class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden"
+        class="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)] shadow-sm overflow-hidden"
       >
         <div
-          class="px-4 md:px-5 py-3 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between"
+          class="px-4 md:px-5 py-3 border-b border-[var(--border-subtle)] flex items-center justify-between"
         >
-          <h3 class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-widest">
+          <h3 class="text-sm font-black text-[var(--text-primary)] uppercase tracking-widest">
             <i class="fas fa-history text-emerald-600 mr-2"></i>Riwayat Mutasi
           </h3>
-          <span class="text-[10px] text-slate-400 font-bold">
+          <span class="text-[10px] text-[var(--text-tertiary)] font-bold">
             {{ mutasiSantri.length }} transaksi
           </span>
         </div>
 
         <div v-if="loading" class="p-10 text-center">
           <i class="fas fa-spinner fa-spin text-emerald-500 text-2xl mb-2"></i>
-          <p class="text-xs text-slate-500 font-bold">Memuat...</p>
+          <p class="text-xs text-[var(--text-secondary)] font-bold">Memuat...</p>
         </div>
         <div
           v-else-if="mutasiSantri.length === 0"
-          class="p-10 border-t-2 border-dashed border-slate-200 text-center"
+          class="p-10 border-t-2 border-dashed border-[var(--border-subtle)] text-center"
         >
-          <i class="fas fa-inbox text-slate-300 text-3xl mb-2"></i>
-          <p class="text-sm text-slate-500 italic">Belum ada mutasi tabungan.</p>
+          <i class="fas fa-inbox text-[var(--text-tertiary)] text-3xl mb-2"></i>
+          <p class="text-sm text-[var(--text-secondary)] italic">Belum ada mutasi tabungan.</p>
         </div>
         <div v-else class="overflow-x-auto">
           <table class="w-full text-sm">
             <thead
-              class="bg-slate-50 dark:bg-slate-900/40 text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest"
+              class="bg-[var(--bg-card-elevated)] text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-widest"
             >
               <tr>
                 <th class="px-4 py-2.5 text-left">Tanggal</th>
@@ -76,10 +76,10 @@
               <tr
                 v-for="m in mutasiSantri"
                 :key="m.id"
-                class="border-t border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900/30"
+                class="border-t border-[var(--border-subtle)] hover:bg-slate-50 dark:hover:bg-slate-900/30"
               >
                 <td
-                  class="px-4 py-2.5 text-xs text-slate-700 dark:text-slate-300 whitespace-nowrap"
+                  class="px-4 py-2.5 text-xs text-slate-700 dark:text-[var(--text-tertiary)] whitespace-nowrap"
                 >
                   {{ fmtTgl(m.tanggal) }}
                 </td>
@@ -104,12 +104,12 @@
                   {{ fmtRp(m.nominal) }}
                 </td>
                 <td
-                  class="px-4 py-2.5 text-right text-xs font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap"
+                  class="px-4 py-2.5 text-right text-xs font-bold text-slate-700 dark:text-[var(--text-tertiary)] whitespace-nowrap"
                 >
                   {{ fmtRp(m.saldo_after || m.saldo) }}
                 </td>
                 <td
-                  class="px-4 py-2.5 text-xs text-slate-500 dark:text-slate-400 truncate max-w-[200px]"
+                  class="px-4 py-2.5 text-xs text-[var(--text-secondary)] truncate max-w-[200px]"
                 >
                   {{ m.catatan || '-' }}
                 </td>
@@ -124,14 +124,14 @@
     <template v-else>
       <!-- Header -->
       <div
-        class="bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-5 border border-slate-200 dark:border-slate-700 shadow-sm"
+        class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
       >
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           <div>
-            <h1 class="text-xl md:text-2xl font-black text-slate-800 dark:text-white">
+            <h1 class="text-xl md:text-2xl font-black text-[var(--text-primary)]">
               <i class="fas fa-piggy-bank text-emerald-500 mr-2"></i>Tabungan
             </h1>
-            <p class="text-xs text-slate-500 mt-0.5">Saldo tabungan santri</p>
+            <p class="text-xs text-[var(--text-secondary)] mt-0.5">Saldo tabungan santri</p>
           </div>
           <div class="flex flex-wrap gap-2 items-center">
             <div
@@ -143,7 +143,7 @@
             </div>
             <button
               @click="openModal()"
-              class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black px-3 py-1.5 rounded-full shadow"
+              class="bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-xs font-black px-3 py-1.5 rounded-full shadow"
             >
               <i class="fas fa-plus mr-1"></i>Input Mutasi
             </button>
@@ -153,32 +153,32 @@
 
       <!-- Search -->
       <div
-        class="bg-white dark:bg-slate-800 rounded-2xl p-3 md:p-4 border border-slate-200 dark:border-slate-700 shadow-sm"
+        class="bg-[var(--bg-card)] rounded-2xl p-3 md:p-4 border border-[var(--border-subtle)] shadow-sm"
       >
         <div class="relative">
           <i
-            class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"
+            class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] text-sm"
           ></i>
           <input
             v-model="search"
             type="text"
             placeholder="Cari nama..."
-            class="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-emerald-500 outline-none"
+            class="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-emerald-500 outline-none"
           />
         </div>
       </div>
 
       <!-- Empty / loading states -->
-      <div v-if="loading" class="bg-white dark:bg-slate-800 rounded-2xl p-10 text-center">
+      <div v-if="loading" class="bg-[var(--bg-card)] rounded-2xl p-10 text-center">
         <i class="fas fa-spinner fa-spin text-emerald-500 text-3xl mb-3"></i>
-        <p class="text-sm text-slate-500 font-bold">Memuat...</p>
+        <p class="text-sm text-[var(--text-secondary)] font-bold">Memuat...</p>
       </div>
       <div
         v-else-if="filteredItems.length === 0"
-        class="bg-white dark:bg-slate-800 rounded-2xl p-10 border border-dashed border-slate-300 text-center"
+        class="bg-[var(--bg-card)] rounded-2xl p-10 border border-dashed border-[var(--border-default)] text-center"
       >
-        <i class="fas fa-wallet text-slate-300 text-4xl mb-3"></i>
-        <p class="text-sm font-bold text-slate-700 dark:text-slate-300">Tidak ada tabungan</p>
+        <i class="fas fa-wallet text-[var(--text-tertiary)] text-4xl mb-3"></i>
+        <p class="text-sm font-bold text-slate-700 dark:text-[var(--text-tertiary)]">Tidak ada tabungan</p>
       </div>
 
       <!-- Orphan banner -->
@@ -195,7 +195,7 @@
           <div class="flex gap-1.5 flex-wrap">
             <button
               @click="dumpOrphan"
-              class="text-[11px] font-bold text-rose-700 bg-white border border-rose-300 px-2 py-1 rounded hover:bg-rose-100 cursor-pointer"
+              class="text-[11px] font-bold text-rose-700 bg-[var(--bg-card)] border border-rose-300 px-2 py-1 rounded hover:bg-rose-100 cursor-pointer"
             >
               <i class="fas fa-terminal mr-1"></i>Dump console
             </button>
@@ -223,7 +223,7 @@
         <div
           v-for="t in filteredItems"
           :key="t.santri_id"
-          class="bg-white dark:bg-slate-800 rounded-xl p-3 border border-emerald-200 dark:border-emerald-700 shadow-sm"
+          class="bg-[var(--bg-card)] rounded-xl p-3 border border-emerald-200 dark:border-emerald-700 shadow-sm"
         >
           <div class="flex items-center gap-3">
             <div
@@ -232,14 +232,14 @@
               <i class="fas fa-user-graduate"></i>
             </div>
             <div class="flex-1 min-w-0">
-              <p class="text-sm font-bold text-slate-800 dark:text-white truncate">
+              <p class="text-sm font-bold text-[var(--text-primary)] truncate">
                 {{
                   getNamaSantri(t.santri_id) !== '(unknown)'
                     ? getNamaSantri(t.santri_id)
                     : t.nama_cache || `(orphan ID: ${t.santri_id})`
                 }}
               </p>
-              <p class="text-[10px] text-slate-500">
+              <p class="text-[10px] text-[var(--text-secondary)]">
                 {{ t.terakhir_update ? `Update: ${fmtTgl(t.terakhir_update)}` : '' }}
               </p>
             </div>
@@ -274,15 +274,15 @@
       @click.self="closeModal"
     >
       <div
-        class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto"
+        class="bg-[var(--bg-card)] rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto"
       >
         <div
-          class="px-5 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between sticky top-0 bg-white dark:bg-slate-800 z-10"
+          class="px-5 py-4 border-b border-[var(--border-subtle)] flex items-center justify-between sticky top-0 bg-[var(--bg-card)] z-10"
         >
-          <h3 class="text-base font-black text-slate-800 dark:text-white">
+          <h3 class="text-base font-black text-[var(--text-primary)]">
             <i class="fas fa-piggy-bank text-emerald-500 mr-2"></i>Input Mutasi Tabungan
           </h3>
-          <button @click="closeModal" class="text-slate-400 hover:text-slate-700">
+          <button @click="closeModal" class="text-[var(--text-tertiary)] hover:text-[var(--text-primary)]">
             <i class="fas fa-times text-lg"></i>
           </button>
         </div>
@@ -291,7 +291,7 @@
           <!-- Santri (datalist autocomplete) -->
           <div>
             <label
-              class="text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-400"
+              class="text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)]"
             >
               Santri
             </label>
@@ -299,7 +299,7 @@
               v-model="modalSantriLabel"
               list="tabungan-santri-list"
               placeholder="Ketik nama santri..."
-              class="w-full mt-1 px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-emerald-500 outline-none"
+              class="w-full mt-1 px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-emerald-500 outline-none"
               @input="onSantriInput"
               required
             />
@@ -325,13 +325,13 @@
           <div class="grid grid-cols-2 gap-2">
             <div>
               <label
-                class="text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-400"
+                class="text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)]"
               >
                 Jenis
               </label>
               <select
                 v-model="modalJenis"
-                class="w-full mt-1 px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-emerald-500 outline-none"
+                class="w-full mt-1 px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-emerald-500 outline-none"
               >
                 <option value="setor">Setor</option>
                 <option value="tarik">Tarik</option>
@@ -339,14 +339,14 @@
             </div>
             <div>
               <label
-                class="text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-400"
+                class="text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)]"
               >
                 Kategori
               </label>
               <select
                 v-model="modalKategori"
                 @change="onKategoriChange"
-                class="w-full mt-1 px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-emerald-500 outline-none"
+                class="w-full mt-1 px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-emerald-500 outline-none"
               >
                 <option v-for="k in kategoriOptions" :key="k.id" :value="k.id">
                   {{ k.label }}
@@ -358,7 +358,7 @@
           <!-- Nominal -->
           <div>
             <label
-              class="text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-400"
+              class="text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)]"
             >
               Nominal
               <span v-if="autoFilled" class="text-emerald-600 normal-case font-bold ml-1">
@@ -370,16 +370,16 @@
               type="number"
               min="0"
               placeholder="Rp 0"
-              class="w-full mt-1 px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-emerald-500 outline-none font-black text-lg text-emerald-700"
+              class="w-full mt-1 px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-emerald-500 outline-none font-black text-lg text-emerald-700"
               required
             />
-            <p class="text-[10px] mt-1 text-slate-500">{{ fmtRp(modalNominal) }}</p>
+            <p class="text-[10px] mt-1 text-[var(--text-secondary)]">{{ fmtRp(modalNominal) }}</p>
           </div>
 
           <!-- Catatan -->
           <div>
             <label
-              class="text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-400"
+              class="text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)]"
             >
               Catatan (opsional)
             </label>
@@ -387,25 +387,25 @@
               v-model="modalCatatan"
               type="text"
               placeholder="Misal: angsuran bulan Mei"
-              class="w-full mt-1 px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-emerald-500 outline-none"
+              class="w-full mt-1 px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-emerald-500 outline-none"
             />
           </div>
 
           <!-- Actions -->
           <div
-            class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-700"
+            class="flex items-center justify-end gap-2 pt-3 border-t border-[var(--border-subtle)]"
           >
             <button
               type="button"
               @click="closeModal"
-              class="px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700 rounded-lg"
+              class="px-4 py-2 text-xs font-bold text-[var(--text-primary)] hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700 rounded-lg"
             >
               Batal
             </button>
             <button
               type="submit"
               :disabled="saving || !modalSantriId || !modalNominal"
-              class="px-5 py-2 text-xs font-black bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              class="px-5 py-2 text-xs font-black bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <i class="fas fa-save mr-1"></i>{{ saving ? 'Menyimpan...' : 'Simpan' }}
             </button>

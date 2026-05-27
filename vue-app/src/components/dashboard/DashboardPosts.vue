@@ -1,28 +1,28 @@
 <template>
-  <!-- v.20.9.0526: Beranda preview only — thumbnail kiri + caption 2 line. Klik = ke /posts -->
-  <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-5 border border-slate-200 dark:border-slate-700 shadow-sm">
+  <!-- v.21.80.0526: Posts feed Pesantren Modern — olive title + gold count badge -->
+  <div class="bg-[var(--bg-card)] rounded-[var(--radius-lg)] p-4 md:p-5 border border-[var(--border-subtle)] shadow-[var(--shadow-sm)]">
     <div class="flex items-center justify-between mb-3">
-      <h3 class="text-sm font-black text-slate-700 dark:text-slate-200 uppercase tracking-widest">
-        <i class="fas fa-bullhorn text-teal-500 mr-2"></i>{{ channelName }}
+      <h3 class="text-sm font-black text-[var(--text-primary)] uppercase tracking-widest">
+        <i class="fas fa-bullhorn text-[var(--color-primary)] mr-2"></i>{{ channelName }}
       </h3>
-      <span v-if="posts.length > 0" class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+      <span v-if="posts.length > 0" class="text-[10px] text-[var(--color-accent)] font-bold uppercase tracking-wider">
         {{ posts.length }} POSTINGAN
       </span>
     </div>
 
     <!-- Loading -->
     <div v-if="loading" class="py-6 text-center">
-      <i class="fas fa-spinner fa-spin text-teal-500 text-2xl mb-2"></i>
-      <p class="text-xs text-slate-500 font-bold">Memuat postingan...</p>
+      <i class="fas fa-spinner fa-spin text-[var(--color-primary)] text-2xl mb-2"></i>
+      <p class="text-xs text-[var(--text-secondary)] font-bold">Memuat postingan...</p>
     </div>
 
     <!-- Empty -->
     <div
       v-else-if="posts.length === 0"
-      class="py-6 text-center bg-slate-50 dark:bg-slate-900/40 rounded-xl border border-dashed border-slate-300 dark:border-slate-600"
+      class="py-6 text-center bg-[var(--bg-muted)] rounded-[var(--radius-md)] border border-dashed border-[var(--border-default)]"
     >
-      <i class="fas fa-inbox text-slate-300 dark:text-slate-600 text-3xl mb-2"></i>
-      <p class="text-xs text-slate-500 dark:text-slate-400 font-bold">
+      <i class="fas fa-inbox text-[var(--text-tertiary)] text-3xl mb-2"></i>
+      <p class="text-xs text-[var(--text-secondary)] font-bold">
         Belum ada postingan baru
       </p>
     </div>
@@ -33,12 +33,12 @@
         v-for="p in posts.slice(0, 5)"
         :key="p.id"
         @click="goToPosts(p.id)"
-        class="p-3 bg-slate-50 dark:bg-slate-900/40 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer hover:border-teal-400 hover:shadow-md transition flex gap-3 items-start"
+        class="p-3 bg-[var(--bg-card-elevated)] rounded-[var(--radius-md)] border border-[var(--border-subtle)] cursor-pointer hover:border-[var(--color-accent)] hover:shadow-[var(--shadow-md)] transition flex gap-3 items-start"
       >
         <!-- Thumbnail (kalau ada gambar) -->
         <div
           v-if="firstImage(p)"
-          class="w-16 h-16 md:w-20 md:h-20 flex-shrink-0 rounded-lg overflow-hidden bg-slate-200 dark:bg-slate-700 relative"
+          class="w-16 h-16 md:w-20 md:h-20 flex-shrink-0 rounded-[var(--radius-sm)] overflow-hidden bg-[var(--bg-muted)] relative"
         >
           <img
             :src="firstImage(p)"
@@ -50,20 +50,20 @@
           <!-- Indicator multi-gambar (IG-style stack icon) -->
           <span
             v-if="imageCount(p) > 1"
-            class="absolute top-1 right-1 bg-black/60 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md flex items-center gap-0.5"
+            class="absolute top-1 right-1 bg-[var(--bg-overlay)] text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md flex items-center gap-0.5"
           >
             <i class="fas fa-images text-[8px]"></i>{{ imageCount(p) }}
           </span>
         </div>
         <!-- Caption + meta -->
         <div class="flex-1 min-w-0">
-          <h4 v-if="p.judul" class="text-sm font-black text-slate-800 dark:text-slate-100 leading-snug truncate">
+          <h4 v-if="p.judul" class="text-sm font-black text-[var(--text-primary)] leading-snug truncate">
             {{ p.judul }}
           </h4>
-          <p class="text-xs text-slate-600 dark:text-slate-300 mt-1 line-clamp-2 whitespace-pre-line">
+          <p class="text-xs text-[var(--text-secondary)] mt-1 line-clamp-2 whitespace-pre-line">
             {{ p.isi }}
           </p>
-          <div class="flex items-center gap-2 mt-1.5 text-[10px] text-slate-400 dark:text-slate-500">
+          <div class="flex items-center gap-2 mt-1.5 text-[10px] text-[var(--text-tertiary)]">
             <i class="fas fa-clock"></i>
             <span>{{ formatTanggalPost(p.tanggal || p.createdAt) }}</span>
             <span v-if="p.pengirim_nama" class="ml-2 truncate">
@@ -78,7 +78,7 @@
     <button
       v-if="posts.length > 0"
       @click="goToPosts()"
-      class="w-full mt-3 text-[11px] font-bold text-teal-600 hover:text-teal-700 hover:bg-teal-50 dark:hover:bg-teal-900/20 py-2 rounded-lg transition cursor-pointer"
+      class="w-full mt-3 text-[11px] font-bold text-[var(--color-primary)] hover:text-[var(--color-primary-hover)] hover:bg-[var(--color-primary-soft)] py-2 rounded-[var(--radius-md)] transition cursor-pointer"
     >
       <i class="fas fa-arrow-right mr-1"></i>Lihat semua di {{ channelName }}
     </button>
@@ -100,7 +100,6 @@ let unsubscribe = null
 
 const channelName = computed(() => settings.settings?.namaChannel || 'Ammu Channel')
 
-// v.20.9.0526: pick first image — handle gambar_urls (array), gambar_url, gambar (legacy), foto
 function firstImage(p) {
   if (Array.isArray(p.gambar_urls) && p.gambar_urls.length > 0) {
     const first = p.gambar_urls.find(Boolean)
@@ -118,7 +117,6 @@ function imageCount(p) {
 }
 
 function goToPosts(postId) {
-  // Klik post → ke /posts page. PostId optional (untuk scroll/highlight nanti)
   if (postId) {
     router.push({ path: '/posts', query: { id: postId } })
   } else {

@@ -20,11 +20,11 @@ function bukaLegacy() {
 <template>
   <div class="p-3 md:p-5 max-w-3xl mx-auto space-y-4">
     <!-- Header -->
-    <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-5 border border-slate-200 dark:border-slate-700 shadow-sm">
-      <h2 class="text-lg md:text-xl font-black text-slate-800 dark:text-white flex items-center gap-2">
-        <i class="fas fa-graduation-cap text-amber-600"></i>Naik Kelas / Kenaikan Jilid
+    <div class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm">
+      <h2 class="text-lg md:text-xl font-black text-[var(--text-primary)] flex items-center gap-2">
+        <i class="fas fa-graduation-cap text-cyan-600"></i>Naik Kelas / Kenaikan Jilid
       </h2>
-      <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+      <p class="text-xs text-[var(--text-secondary)] mt-0.5">
         Kontrol kenaikan kelas, jilid, dan mutasi santri per lembaga
       </p>
     </div>
@@ -39,20 +39,20 @@ function bukaLegacy() {
     </div>
 
     <!-- Bridge card to legacy -->
-    <div v-if="isAdmin" class="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 rounded-2xl p-5 md:p-6 border-2 border-amber-200 dark:border-amber-700 shadow-sm">
+    <div v-if="isAdmin" class="bg-gradient-to-br from-cyan-50 to-cyan-50 dark:from-cyan-900/20 dark:to-cyan-900/20 rounded-2xl p-5 md:p-6 border-2 border-cyan-200 dark:border-cyan-700 shadow-sm">
       <div class="flex items-start gap-3 mb-4">
-        <div class="flex-shrink-0 w-12 h-12 rounded-2xl bg-amber-100 dark:bg-amber-800 flex items-center justify-center">
-          <i class="fas fa-info-circle text-2xl text-amber-700 dark:text-amber-300"></i>
+        <div class="flex-shrink-0 w-12 h-12 rounded-2xl bg-cyan-100 dark:bg-cyan-800 flex items-center justify-center">
+          <i class="fas fa-info-circle text-2xl text-cyan-700 dark:text-cyan-300"></i>
         </div>
         <div class="flex-1">
-          <h3 class="text-base md:text-lg font-black text-slate-800 dark:text-white">Fitur Lengkap di Versi Lama</h3>
-          <p class="text-xs md:text-sm text-slate-600 dark:text-slate-300 mt-1 leading-relaxed">
+          <h3 class="text-base md:text-lg font-black text-[var(--text-primary)]">Fitur Lengkap di Versi Lama</h3>
+          <p class="text-xs md:text-sm text-[var(--text-secondary)] mt-1 leading-relaxed">
             Kartu Kenaikan dengan matrix kelas × items × ceremonial dates masih live di sistem lama. Vue migration di-defer karena schema kompleks (Qiraati: jilid 1-6 + Al-Qur'an, Sekolah: kelas 1-6 + cawu, dll).
           </p>
         </div>
       </div>
 
-      <ul class="text-xs md:text-sm text-slate-700 dark:text-slate-300 space-y-1.5 ml-1 mb-5">
+      <ul class="text-xs md:text-sm text-slate-700 dark:text-[var(--text-tertiary)] space-y-1.5 ml-1 mb-5">
         <li class="flex items-start gap-2">
           <i class="fas fa-check text-emerald-600 mt-0.5"></i>
           <span>Kartu Kenaikan per santri (matrix kelas)</span>
@@ -73,12 +73,12 @@ function bukaLegacy() {
 
       <button
         @click="bukaLegacy"
-        class="w-full bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-black py-3 rounded-xl shadow-md cursor-pointer flex items-center justify-center gap-2 transition"
+        class="w-full bg-gradient-to-r from-cyan-500 dark:from-cyan-700 to-cyan-600 dark:to-cyan-800 hover:from-cyan-600 dark:from-cyan-800 hover:to-cyan-700 dark:to-cyan-900 text-white font-black py-3 rounded-xl shadow-md cursor-pointer flex items-center justify-center gap-2 transition"
       >
         <i class="fas fa-external-link-alt"></i>
         <span>Buka di Sistem Lama</span>
       </button>
-      <p class="text-center text-[10px] text-slate-500 dark:text-slate-400 mt-3">
+      <p class="text-center text-[10px] text-[var(--text-secondary)] mt-3">
         Vue 3 · Phase 5.22 bridge — full migration v.65+
       </p>
     </div>

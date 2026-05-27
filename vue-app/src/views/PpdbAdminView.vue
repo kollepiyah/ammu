@@ -2,38 +2,38 @@
   <div class="p-3 md:p-5 max-w-6xl mx-auto space-y-4">
     <div
       v-if="!isAdmin"
-      class="bg-white dark:bg-slate-800 rounded-2xl p-10 border border-dashed border-rose-300 text-center"
+      class="bg-[var(--bg-card)] rounded-2xl p-10 border border-dashed border-rose-300 text-center"
     >
       <i class="fas fa-lock text-rose-300 text-4xl mb-3"></i>
-      <p class="text-sm font-bold text-slate-700 dark:text-slate-300">Akses Admin only</p>
+      <p class="text-sm font-bold text-slate-700 dark:text-[var(--text-tertiary)]">Akses Admin only</p>
     </div>
 
     <template v-else>
       <!-- Header -->
       <div
-        class="bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-5 border border-slate-200 dark:border-slate-700 shadow-sm"
+        class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
       >
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           <div>
-            <h1 class="text-xl md:text-2xl font-black text-slate-800 dark:text-white">
+            <h1 class="text-xl md:text-2xl font-black text-[var(--text-primary)]">
               <i class="fas fa-clipboard-list text-teal-500 mr-2"></i>PSB — Pendaftaran Santri Baru
             </h1>
-            <p class="text-xs text-slate-500 mt-0.5">
+            <p class="text-xs text-[var(--text-secondary)] mt-0.5">
               Daftar calon santri yang sudah submit formulir online
             </p>
           </div>
           <div class="flex flex-wrap gap-2">
-            <div class="px-3 py-1.5 rounded-full bg-amber-50 border border-amber-200 text-xs">
-              <span class="text-amber-700 font-bold">{{ stats.pending }}</span>
-              <span class="text-slate-500 ml-1">pending</span>
+            <div class="px-3 py-1.5 rounded-full bg-cyan-50 border border-cyan-200 text-xs">
+              <span class="text-cyan-700 font-bold">{{ stats.pending }}</span>
+              <span class="text-[var(--text-secondary)] ml-1">pending</span>
             </div>
             <div class="px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-xs">
               <span class="text-emerald-700 font-bold">{{ stats.approved }}</span>
-              <span class="text-slate-500 ml-1">approved</span>
+              <span class="text-[var(--text-secondary)] ml-1">approved</span>
             </div>
             <div class="px-3 py-1.5 rounded-full bg-rose-50 border border-rose-200 text-xs">
               <span class="text-rose-700 font-bold">{{ stats.rejected }}</span>
-              <span class="text-slate-500 ml-1">rejected</span>
+              <span class="text-[var(--text-secondary)] ml-1">rejected</span>
             </div>
           </div>
         </div>
@@ -46,13 +46,13 @@
             <p class="text-[11px] font-bold text-teal-700 dark:text-teal-300 uppercase">
               Link Formulir Public
             </p>
-            <code class="text-xs text-slate-700 dark:text-slate-300 break-all">{{
+            <code class="text-xs text-slate-700 dark:text-[var(--text-tertiary)] break-all">{{
               publicFormUrl
             }}</code>
           </div>
           <button
             @click="copyLink"
-            class="px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold rounded-lg transition"
+            class="px-3 py-1.5 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-xs font-bold rounded-lg transition"
           >
             <i class="fas fa-copy mr-1"></i>Salin
           </button>
@@ -61,16 +61,16 @@
 
       <!-- v.21.25.0526: PSB Assets — Upload Syarat + Info Pembayaran + ACF per-lembaga (issue #50) -->
       <details
-        class="bg-white dark:bg-slate-800 rounded-2xl p-3 md:p-4 border border-slate-200 dark:border-slate-700 shadow-sm"
+        class="bg-[var(--bg-card)] rounded-2xl p-3 md:p-4 border border-[var(--border-subtle)] shadow-sm"
       >
-        <summary class="cursor-pointer text-sm font-black text-slate-800 dark:text-white">
-          <i class="fas fa-paperclip text-amber-500 mr-1"></i>Upload Syarat & Info Pembayaran per
+        <summary class="cursor-pointer text-sm font-black text-[var(--text-primary)]">
+          <i class="fas fa-paperclip text-cyan-500 mr-1"></i>Upload Syarat & Info Pembayaran per
           Lembaga
         </summary>
         <div class="mt-3 space-y-3">
           <select
             v-model="psbAssetLembaga"
-            class="px-3 py-2 text-sm rounded-lg border border-slate-300 bg-white"
+            class="px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)]"
           >
             <option value="">-- Pilih lembaga --</option>
             <option
@@ -93,14 +93,14 @@
           </select>
           <div v-if="psbAssetLembaga" class="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
-              <label class="block text-xs font-bold text-slate-500 mb-1"
+              <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1"
                 >Syarat & Ketentuan (URL atau base64)</label
               >
               <input
                 v-model="psbAssetSyarat"
                 type="text"
                 placeholder="https://... atau data:image/png;base64,..."
-                class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 bg-white"
+                class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)]"
               />
               <input
                 type="file"
@@ -110,14 +110,14 @@
               />
             </div>
             <div>
-              <label class="block text-xs font-bold text-slate-500 mb-1"
+              <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1"
                 >Info Pembayaran (URL atau base64)</label
               >
               <input
                 v-model="psbAssetPembayaran"
                 type="text"
                 placeholder="https://... atau data:image/png;base64,..."
-                class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 bg-white"
+                class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)]"
               />
               <input
                 type="file"
@@ -131,7 +131,7 @@
             v-if="psbAssetLembaga"
             @click="savePsbAssets"
             :disabled="savingAssets"
-            class="px-3 py-2 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-50"
+            class="px-3 py-2 text-xs font-bold rounded-lg bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white disabled:opacity-50"
           >
             <i class="fas fa-save mr-1"></i
             >{{ savingAssets ? 'Menyimpan...' : 'Simpan Asset Lembaga' }}
@@ -141,23 +141,23 @@
 
       <!-- Filter -->
       <div
-        class="bg-white dark:bg-slate-800 rounded-2xl p-3 md:p-4 border border-slate-200 dark:border-slate-700 shadow-sm"
+        class="bg-[var(--bg-card)] rounded-2xl p-3 md:p-4 border border-[var(--border-subtle)] shadow-sm"
       >
         <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
           <div class="md:col-span-2 relative">
             <i
-              class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"
+              class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] text-sm"
             ></i>
             <input
               v-model="search"
               type="text"
               placeholder="Cari nama / wali / WA / No. Pendaftaran..."
-              class="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-teal-500 outline-none"
+              class="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-teal-500 outline-none"
             />
           </div>
           <select
             v-model="filterStatus"
-            class="px-3 py-2.5 text-sm rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-teal-500 outline-none"
+            class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-teal-500 outline-none"
           >
             <option value="">Semua status</option>
             <option value="pending">Pending</option>
@@ -167,7 +167,7 @@
           </select>
           <select
             v-model="filterLembaga"
-            class="px-3 py-2.5 text-sm rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-teal-500 outline-none"
+            class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-teal-500 outline-none"
           >
             <option value="">Semua lembaga</option>
             <option v-for="l in lembagaOptions" :key="l" :value="l">{{ l }}</option>
@@ -176,7 +176,7 @@
         <div class="grid grid-cols-1 md:grid-cols-4 gap-2 mt-2">
           <select
             v-model="filterTahun"
-            class="px-3 py-2.5 text-sm rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-teal-500 outline-none md:col-span-2"
+            class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-teal-500 outline-none md:col-span-2"
           >
             <option value="">Semua tahun ajaran</option>
             <option v-for="t in tahunOptions" :key="t" :value="t">{{ t }}</option>
@@ -185,16 +185,16 @@
       </div>
 
       <!-- Loading / Empty -->
-      <div v-if="loading" class="bg-white dark:bg-slate-800 rounded-2xl p-10 text-center">
+      <div v-if="loading" class="bg-[var(--bg-card)] rounded-2xl p-10 text-center">
         <i class="fas fa-spinner fa-spin text-teal-500 text-3xl mb-3"></i>
-        <p class="text-sm text-slate-500 font-bold">Memuat pendaftar...</p>
+        <p class="text-sm text-[var(--text-secondary)] font-bold">Memuat pendaftar...</p>
       </div>
       <div
         v-else-if="filteredPpdb.length === 0"
-        class="bg-white dark:bg-slate-800 rounded-2xl p-10 border border-dashed border-slate-300 text-center"
+        class="bg-[var(--bg-card)] rounded-2xl p-10 border border-dashed border-[var(--border-default)] text-center"
       >
-        <i class="fas fa-inbox text-slate-300 text-4xl mb-3"></i>
-        <p class="text-sm font-bold text-slate-700">
+        <i class="fas fa-inbox text-[var(--text-tertiary)] text-4xl mb-3"></i>
+        <p class="text-sm font-bold text-[var(--text-primary)]">
           {{ search ? 'Tidak ada cocok' : 'Belum ada pendaftar' }}
         </p>
       </div>
@@ -210,7 +210,7 @@
             <div
               :class="[
                 'flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center text-white text-lg font-bold',
-                p.jk === 'L' ? 'bg-cyan-500' : 'bg-pink-500'
+                p.jk === 'L' ? 'bg-cyan-500' : 'bg-rose-500'
               ]"
             >
               {{ p.jk === 'L' ? 'L' : 'P' }}
@@ -218,7 +218,7 @@
             <div class="flex-1 min-w-0">
               <div class="flex items-start justify-between gap-2">
                 <div class="flex-1 min-w-0">
-                  <h3 class="text-sm font-black text-slate-800 truncate">
+                  <h3 class="text-sm font-black text-[var(--text-primary)] truncate">
                     <span
                       v-if="p.no_pendaftaran"
                       class="text-[10px] text-teal-600 bg-teal-50 px-1.5 py-0.5 rounded mr-1"
@@ -226,7 +226,7 @@
                     >
                     {{ p.nama }}
                   </h3>
-                  <p class="text-[11px] text-slate-500 mt-0.5">
+                  <p class="text-[11px] text-[var(--text-secondary)] mt-0.5">
                     {{ p.tempat_lahir || '-' }}, {{ p.tgl_lahir }} · Daftar:
                     {{ fmtDate(p.tanggal_daftar || p.tgl_daftar) }}
                   </p>
@@ -242,17 +242,17 @@
               </div>
               <!-- Detail rows -->
               <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2 text-[11px]">
-                <div class="bg-white/60 p-2 rounded">
-                  <p class="text-slate-500"><i class="fas fa-school mr-1"></i>Lembaga Tujuan:</p>
-                  <p class="font-bold text-slate-800">
+                <div class="bg-[var(--bg-card)]/60 p-2 rounded">
+                  <p class="text-[var(--text-secondary)]"><i class="fas fa-school mr-1"></i>Lembaga Tujuan:</p>
+                  <p class="font-bold text-[var(--text-primary)]">
                     {{ p.lembaga_tujuan }} {{ p.is_mukim ? '(Mukim)' : '' }}
                   </p>
                 </div>
-                <div class="bg-white/60 p-2 rounded">
-                  <p class="text-slate-500">
+                <div class="bg-[var(--bg-card)]/60 p-2 rounded">
+                  <p class="text-[var(--text-secondary)]">
                     <i class="fas fa-user-friends mr-1"></i>Wali / Yang Mendaftarkan:
                   </p>
-                  <p class="font-bold text-slate-800 truncate">
+                  <p class="font-bold text-[var(--text-primary)] truncate">
                     {{ p.yang_mendaftarkan || p.nama_wali || '—' }}
                   </p>
                   <a
@@ -265,14 +265,14 @@
                   </a>
                 </div>
               </div>
-              <p v-if="p.catatan" class="text-[11px] text-slate-600 mt-2 italic">
+              <p v-if="p.catatan" class="text-[11px] text-[var(--text-secondary)] mt-2 italic">
                 <i class="fas fa-comment mr-1"></i>{{ p.catatan }}
               </p>
               <!-- Actions -->
               <div class="flex gap-1.5 mt-3 justify-end flex-wrap">
                 <RouterLink
                   :to="`/psb/${p.id}`"
-                  class="text-[10px] px-2.5 py-1 bg-sky-100 hover:bg-sky-200 text-sky-700 font-bold rounded transition"
+                  class="text-[10px] px-2.5 py-1 bg-cyan-100 hover:bg-cyan-200 text-cyan-700 font-bold rounded transition"
                 >
                   <i class="fas fa-eye mr-1"></i>Lihat
                 </RouterLink>
@@ -292,7 +292,7 @@
                 </button>
                 <button
                   @click="onDelete(p)"
-                  class="text-[10px] px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded transition"
+                  class="text-[10px] px-2.5 py-1 bg-[var(--bg-muted)] hover:bg-slate-200 text-[var(--text-primary)] font-bold rounded transition"
                 >
                   <i class="fas fa-trash mr-1"></i>Hapus
                 </button>
@@ -302,7 +302,7 @@
         </div>
       </div>
 
-      <p class="text-center text-[10px] text-slate-400 pt-2">
+      <p class="text-center text-[10px] text-[var(--text-tertiary)] pt-2">
         <i class="fas fa-circle-info mr-1"></i>{{ filteredPpdb.length }} pendaftar · Vue 3 ·
         v.20.59.0526
       </p>
@@ -404,8 +404,8 @@ function statusBg(s) {
   const st = String(s || 'pending').toLowerCase()
   if (st === 'approved') return 'bg-emerald-50 border-emerald-200'
   if (st === 'rejected') return 'bg-rose-50 border-rose-200'
-  if (st === 'enrolled') return 'bg-purple-50 border-purple-200'
-  return 'bg-amber-50 border-amber-200'
+  if (st === 'enrolled') return 'bg-teal-50 border-teal-200'
+  return 'bg-cyan-50 border-cyan-200'
 }
 
 // v.21.25.0526: PSB Assets per-lembaga upload (issue #50)
@@ -420,7 +420,7 @@ onMounted(() => {
   _unsubAssets = subscribeDoc('settings', 'psb_assets', (data) => {
     psbAssetsAll.value = data || {}
   })
-  _unsubPpdb = subscribeColl('ppdb_pendaftar', (docs) => {
+  _unsubPpdb = subscribeColl('psb_pendaftaran', (docs) => {
     ppdbRaw.value = docs
     loading.value = false
   })
