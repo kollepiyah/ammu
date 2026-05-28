@@ -37,7 +37,12 @@ const presetList = computed(() => {
       })
       .map((j) => ({
         label: j.label || j.nama || j.id || '-',
-        nominal_default: Number(j.nominal_default || j.nominal || 0) || 0
+        nominal_default: Number(j.nominal_default || j.nominal || 0) || 0,
+        // v.21.97.0527: bawa nominal_per_lembaga supaya addExtra bisa lookup override
+        nominal_per_lembaga:
+          j.nominal_per_lembaga && typeof j.nominal_per_lembaga === 'object'
+            ? j.nominal_per_lembaga
+            : {}
       }))
   }
   return DEFAULT_PRESET
@@ -87,10 +92,19 @@ function addExtra() {
   const label = newPreset.value
   if (!label) return
   const match = presetList.value.find((p) => p.label === label)
+  // v.21.97.0527: prefer nominal override per lembaga santri; fallback ke default
+  let nominal = 0
+  if (match) {
+    const lembagaKey = props.santri?.lembaga || ''
+    const lembagaSekolahKey = props.santri?.lembaga_sekolah || ''
+    const perL = match.nominal_per_lembaga || {}
+    const override = Number(perL[lembagaKey] || perL[lembagaSekolahKey] || 0)
+    nominal = override > 0 ? override : Number(match.nominal_default || 0)
+  }
   extraItems.value.push({
     id: Date.now() + Math.random(),
     jenis: label,
-    nominal: match ? Number(match.nominal_default || 0) : 0,
+    nominal,
     keterangan: ''
   })
   newPreset.value = ''

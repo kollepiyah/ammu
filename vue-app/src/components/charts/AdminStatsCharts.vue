@@ -206,6 +206,10 @@ const chartKeuangan = computed(() => {
   const masuk = new Array(12).fill(0)
   const keluar = new Array(12).fill(0)
   for (const b of bukuInduk.value) {
+    // v.21.96.0527: Skip residu tabungan supaya tidak ke-hitung di chart keuangan
+    const kat = String(b.kategori || '').toLowerCase()
+    const sumber = String(b.sumber || '').toLowerCase()
+    if (kat === 'tabungan' || sumber === 'tabungan' || sumber.includes('tabungan')) continue
     const mk = monthKey(b.tanggal)
     const idx = months.findIndex((m) => m.key === mk)
     if (idx < 0) continue

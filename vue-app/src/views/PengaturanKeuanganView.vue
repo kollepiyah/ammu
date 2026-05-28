@@ -88,35 +88,65 @@
           <div
             v-for="(jenis, idx) in jenisList"
             :key="idx"
-            class="grid grid-cols-12 gap-2 items-center bg-slate-50 dark:bg-slate-700/30 px-3 py-2 rounded-lg"
+            class="bg-slate-50 dark:bg-slate-700/30 px-3 py-2 rounded-lg"
           >
-            <input
-              v-model="jenis.label"
-              type="text"
-              placeholder="Label (Syahriyah, Infaq, ...)"
-              class="col-span-5 bg-transparent text-sm font-bold text-[var(--text-primary)] outline-none border-b border-[var(--border-default)] pb-1"
-            />
-            <input
-              v-model.number="jenis.nominal_default"
-              type="number"
-              min="0"
-              placeholder="Nominal default"
-              class="col-span-4 bg-[var(--bg-card)] text-xs font-bold text-[var(--text-primary)] outline-none border border-[var(--border-default)] rounded px-2 py-1"
-            />
-            <label
-              class="col-span-2 flex items-center gap-1 text-[10px] font-bold text-[var(--text-secondary)]"
-            >
-              <input v-model="jenis.auto_generate" type="checkbox" class="w-3 h-3" />
-              Auto
-            </label>
-            <button
-              @click="removeJenis(idx)"
-              :disabled="jenis.id === 'syahriyah'"
-              :title="jenis.id === 'syahriyah' ? 'Protected - jenis dasar' : 'Hapus'"
-              class="col-span-1 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 px-2 py-1 rounded text-xs disabled:opacity-30 disabled:cursor-not-allowed"
-            >
-              <i class="fas fa-trash"></i>
-            </button>
+            <div class="grid grid-cols-12 gap-2 items-center">
+              <input
+                v-model="jenis.label"
+                type="text"
+                placeholder="Label (Syahriyah, Infaq, ...)"
+                class="col-span-5 bg-transparent text-sm font-bold text-[var(--text-primary)] outline-none border-b border-[var(--border-default)] pb-1"
+              />
+              <input
+                v-model.number="jenis.nominal_default"
+                type="number"
+                min="0"
+                placeholder="Nominal default"
+                class="col-span-3 bg-[var(--bg-card)] text-xs font-bold text-[var(--text-primary)] outline-none border border-[var(--border-default)] rounded px-2 py-1"
+              />
+              <label class="col-span-2 flex items-center gap-1 text-[10px] font-bold text-[var(--text-secondary)]">
+                <input v-model="jenis.auto_generate" type="checkbox" class="w-3 h-3" />
+                Auto
+              </label>
+              <button
+                @click="jenis._expanded = !jenis._expanded"
+                :title="jenis._expanded ? 'Tutup override' : 'Atur nominal per lembaga'"
+                class="col-span-1 text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/30 px-2 py-1 rounded text-xs"
+              >
+                <i :class="['fas', jenis._expanded ? 'fa-chevron-up' : 'fa-building']"></i>
+              </button>
+              <button
+                @click="removeJenis(idx)"
+                :disabled="jenis.id === 'syahriyah'"
+                :title="jenis.id === 'syahriyah' ? 'Protected - jenis dasar' : 'Hapus'"
+                class="col-span-1 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 px-2 py-1 rounded text-xs disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+            <!-- v.21.97.0527: Grid override nominal per-lembaga -->
+            <div v-if="jenis._expanded" class="mt-2 pt-2 border-t border-[var(--border-subtle)]">
+              <p class="text-[10px] text-[var(--text-secondary)] italic mb-1.5">
+                <i class="fas fa-info-circle mr-1"></i>Isi nominal untuk lembaga tertentu (override default). Kosong / 0 = pakai default.
+              </p>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                <div
+                  v-for="lemb in (lembagaRaw || [])"
+                  :key="`${jenis.id}_${lemb.lembaga}`"
+                  class="flex items-center gap-2 bg-[var(--bg-card)] rounded px-2 py-1"
+                >
+                  <span class="text-[10px] font-bold text-[var(--text-secondary)] flex-1 truncate">{{ lemb.lembaga }}</span>
+                  <input
+                    :value="jenis.nominal_per_lembaga?.[lemb.lembaga] || ''"
+                    @input="jenis.nominal_per_lembaga = { ...(jenis.nominal_per_lembaga || {}), [lemb.lembaga]: Number($event.target.value) || 0 }"
+                    type="number"
+                    min="0"
+                    :placeholder="String(jenis.nominal_default || 0)"
+                    class="w-28 text-xs font-bold text-[var(--text-primary)] outline-none border border-[var(--border-default)] rounded px-2 py-1 text-right"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
           <p v-if="jenisList.length === 0" class="text-xs text-[var(--text-tertiary)] italic text-center py-2">
             Belum ada jenis tagihan. Tambah di bawah.
@@ -597,6 +627,8 @@ function loadFromSettings() {
   form.keu_jatuh_tempo = s.keu_jatuh_tempo || 10
   form.posStrukPaper = s.posStrukPaper || '9.5'
 
+  // v.21.97.0527: + nominal_per_lembaga (override per lembaga)
+  const _emptyMap = () => ({})
   let arr = []
   if (Array.isArray(s.keuTagihanJenis) && s.keuTagihanJenis.length > 0) {
     arr = s.keuTagihanJenis.map((t) =>
@@ -605,26 +637,40 @@ function loadFromSettings() {
             id: t.id || slugId(t.label || t.nama || ''),
             label: t.label || t.nama || '',
             nominal_default: Number(t.nominal_default || t.nominal || 0) || 0,
-            auto_generate: !!t.auto_generate
+            nominal_per_lembaga:
+              t.nominal_per_lembaga && typeof t.nominal_per_lembaga === 'object'
+                ? { ...t.nominal_per_lembaga }
+                : _emptyMap(),
+            auto_generate: !!t.auto_generate,
+            _expanded: false
           }
-        : { id: slugId(t), label: String(t || ''), nominal_default: 0, auto_generate: false }
+        : {
+            id: slugId(t),
+            label: String(t || ''),
+            nominal_default: 0,
+            nominal_per_lembaga: _emptyMap(),
+            auto_generate: false,
+            _expanded: false
+          }
     )
   } else if (Array.isArray(s.keu_jenis_tagihan) && s.keu_jenis_tagihan.length > 0) {
     arr = s.keu_jenis_tagihan.map((t) => ({
       id: slugId(t),
       label: String(t || ''),
       nominal_default: 0,
-      auto_generate: slugId(t) === 'syahriyah'
+      nominal_per_lembaga: _emptyMap(),
+      auto_generate: slugId(t) === 'syahriyah',
+      _expanded: false
     }))
   } else {
     arr = [
-      { id: 'syahriyah', label: 'Syahriyah', nominal_default: 0, auto_generate: true },
-      { id: 'spp_sekolah', label: 'SPP Sekolah', nominal_default: 0, auto_generate: false },
-      { id: 'kebersihan', label: 'Kebersihan', nominal_default: 0, auto_generate: false }
+      { id: 'syahriyah', label: 'Syahriyah', nominal_default: 0, nominal_per_lembaga: _emptyMap(), auto_generate: true, _expanded: false },
+      { id: 'spp_sekolah', label: 'SPP Sekolah', nominal_default: 0, nominal_per_lembaga: _emptyMap(), auto_generate: false, _expanded: false },
+      { id: 'kebersihan', label: 'Kebersihan', nominal_default: 0, nominal_per_lembaga: _emptyMap(), auto_generate: false, _expanded: false }
     ]
   }
   if (!arr.find((t) => t.id === 'syahriyah')) {
-    arr.unshift({ id: 'syahriyah', label: 'Syahriyah', nominal_default: 0, auto_generate: true })
+    arr.unshift({ id: 'syahriyah', label: 'Syahriyah', nominal_default: 0, nominal_per_lembaga: _emptyMap(), auto_generate: true, _expanded: false })
   }
   jenisList.value = arr
   form.keu_jenis_tagihan = arr.map((t) => t.label)
@@ -692,7 +738,7 @@ function addJenis() {
     toast.warning('Jenis tagihan sudah ada')
     return
   }
-  jenisList.value.push({ id, label: s, nominal_default: 0, auto_generate: false })
+  jenisList.value.push({ id, label: s, nominal_default: 0, nominal_per_lembaga: {}, auto_generate: false, _expanded: false })
   newJenis.value = ''
 }
 
@@ -769,12 +815,23 @@ async function simpan() {
   try {
     const jenis = jenisList.value
       .filter((t) => String(t.label || '').trim())
-      .map((t) => ({
-        id: t.id || slugId(t.label),
-        label: String(t.label || '').trim(),
-        nominal_default: Number(t.nominal_default || 0) || 0,
-        auto_generate: !!t.auto_generate
-      }))
+      .map((t) => {
+        // v.21.97.0527: simpan nominal_per_lembaga (override per lembaga).
+        const perL = {}
+        if (t.nominal_per_lembaga && typeof t.nominal_per_lembaga === 'object') {
+          for (const [k, v] of Object.entries(t.nominal_per_lembaga)) {
+            const n = Number(v) || 0
+            if (n > 0) perL[k] = n
+          }
+        }
+        return {
+          id: t.id || slugId(t.label),
+          label: String(t.label || '').trim(),
+          nominal_default: Number(t.nominal_default || 0) || 0,
+          nominal_per_lembaga: perL,
+          auto_generate: !!t.auto_generate
+        }
+      })
     const payload = {
       keu_jatuh_tempo: form.keu_jatuh_tempo,
       posStrukPaper: form.posStrukPaper || '9.5',

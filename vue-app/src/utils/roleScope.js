@@ -8,3 +8,9 @@ export function isFullFilterRole(sesi) {
   if (['super_admin', 'admin'].includes(sesi.role_sistem)) return true
   return false
 }
+
+// v.21.98.0527: cek role super_admin (utk gating CRUD record keuangan).
+export function isSuperAdmin(sesi) {
+  if (!sesi) return false
+  return sesi.role_sistem === 'super_admin' || sesi.role === 'admin' || sesi.id === 'admin'
+}

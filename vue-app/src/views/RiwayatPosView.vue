@@ -3,12 +3,13 @@
 // cetak ulang struk (PDF ber-KOP + dot-matrix).
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore'
+import { collection, query, orderBy, limit, getDocs, doc, deleteDoc, updateDoc } from 'firebase/firestore'
 import { db } from '@/services/firebase'
 import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
 import { cetakStrukPdf, cetakStrukDotMatrix, fmtRpStruk } from '@/utils/strukBuilder'
+import { isSuperAdmin } from '@/utils/roleScope'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -19,6 +20,32 @@ const isAdminKeu = computed(() => {
   const rs = auth.sesiAktif?.role_sistem || ''
   return auth.sesiAktif?.role === 'admin' || ['admin', 'admin_keuangan', 'super_admin'].includes(rs)
 })
+// v.21.98.0527: super_admin only — bisa hapus transaksi POS (cascade)
+const isAdmin = computed(() => isSuperAdmin(auth.sesiAktif))
+
+async function hapusTrx(t) {
+  if (!isAdmin.value) return
+  if (
+    !confirm(
+      `Hapus PERMANEN seluruh transaksi POS ini?\n\nNo: ${t.trx_id}\nSantri: ${t.santri_nama}\nTotal: ${fmtRpStruk(t.total)}\n\nSemua ${t.items.length} record di buku induk akan dihapus. Tagihan yg ter-lunaskan TIDAK otomatis di-revert.`
+    )
+  )
+    return
+  try {
+    const tgts = entries.value.filter((e) => e.trx_id === t.trx_id)
+    for (const e of tgts) {
+      try {
+        await deleteDoc(doc(db, 'keuangan_buku_induk', String(e.id)))
+      } catch (er) {
+        console.warn('[hapusTrx] fail', e.id, er.message)
+      }
+    }
+    entries.value = entries.value.filter((e) => e.trx_id !== t.trx_id)
+    toast.success(`Transaksi ${t.trx_id} dihapus (${tgts.length} record)`)
+  } catch (e) {
+    toast.error('Gagal hapus: ' + (e.message || e))
+  }
+}
 
 const loading = ref(true)
 const entries = ref([]) // raw buku_induk pos rows
@@ -267,6 +294,15 @@ function fmtTgl(t) {
                     title="Cetak struk dot-matrix"
                   >
                     <i class="fas fa-print mr-1"></i>Struk
+                  </button>
+                  <button
+                    v-if="isAdmin"
+                    type="button"
+                    @click="hapusTrx(t)"
+                    class="text-[10px] font-bold text-rose-600 bg-rose-50 dark:bg-rose-900/30 px-2 py-1 rounded-lg hover:bg-rose-100"
+                    title="Hapus transaksi (super admin)"
+                  >
+                    <i class="fas fa-trash"></i>
                   </button>
                 </div>
               </div>
