@@ -1035,6 +1035,10 @@ const santriList = computed(() => {
       )
     }
   } else {
+    // v.21.112.0527: TK tidak menerbitkan rapor (kebijakan kyai)
+    if (lmb === 'tk') {
+      return []
+    }
     // diniyah: prefer lembaga_sekolah, fallback to lembaga
     list = list.filter((s) => {
       const ls = String(s.lembaga_sekolah || '')

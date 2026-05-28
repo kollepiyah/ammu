@@ -24,7 +24,7 @@
           <button v-if="isFullAccess" @click="cetakPdf" aria-label="Cetak daftar santri PDF" class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold transition cursor-pointer">
             <i class="fas fa-file-pdf"></i>Cetak PDF
           </button>
-          <button v-if="isFullAccess" @click="exportSantriExcel" :disabled="exporting" class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer">
+          <button v-if="isFullAccess" @click="exportSantriExcel" :disabled="exporting" aria-label="Ekspor daftar santri Excel" class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer">
             <i :class="['fas', exporting ? 'fa-spinner fa-spin' : 'fa-file-excel']"></i>{{ exporting ? 'Ekspor...' : 'Ekspor Excel' }}
           </button>
           <!-- View mode: tombol Kelola -->

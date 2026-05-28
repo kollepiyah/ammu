@@ -190,11 +190,13 @@ export function useSantri() {
     // v.21.10.0526: lembaga_refs + rapor list per santri
     deriveSantriLembagaRefs,
     getRapors: (s) => {
+      // v.21.112.0527: TPQ Pagi & TK tidak menerbitkan rapor (kebijakan kyai)
+      const NO_RAPOR_LEMBAGA = new Set(['tpq pagi', 'tk'])
       const refs = deriveSantriLembagaRefs(s)
       const rapors = []
-      const qiraati = refs.find((r) => r.group === 'qiraati' && r.lembaga !== 'TPQ Pagi')
+      const qiraati = refs.find((r) => r.group === 'qiraati' && !NO_RAPOR_LEMBAGA.has(String(r.lembaga || '').toLowerCase()))
       if (qiraati) rapors.push({ jenis: 'qiraati', lembaga: qiraati.lembaga })
-      const sekolah = refs.find((r) => r.group === 'sekolah')
+      const sekolah = refs.find((r) => r.group === 'sekolah' && !NO_RAPOR_LEMBAGA.has(String(r.lembaga || '').toLowerCase()))
       if (sekolah) rapors.push({ jenis: 'diniyah', lembaga: sekolah.lembaga })
       return rapors
     }

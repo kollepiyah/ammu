@@ -13,37 +13,40 @@
       <div
         class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
       >
-        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-          <div>
-            <h1 class="text-xl md:text-2xl font-black text-[var(--text-primary)]">
-              <i class="fas fa-book text-cyan-500 mr-2"></i>Buku Induk (General Ledger)
+        <!-- v.21.113.0528: Header restructure — title + subtitle kiri, semua tombol aksi rapi di kanan (Ekspor/Input/Cetak), warna cyan konsisten -->
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+          <div class="min-w-0">
+            <h1 class="text-base md:text-lg font-black text-[var(--text-primary)] whitespace-nowrap">
+              <i class="fas fa-book text-cyan-500 mr-1"></i>Buku Induk (General Ledger)
             </h1>
-            <button
-              @click="exportBukuIndukExcel"
-              :disabled="exportingBI"
-              class="px-3 py-1.5 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] disabled:opacity-50 text-white text-xs font-bold cursor-pointer"
-            >
-              <i :class="['fas', exportingBI ? 'fa-spinner fa-spin' : 'fa-file-excel', 'mr-1']"></i
-              >{{ exportingBI ? '...' : 'Ekspor Excel' }}
-            </button>
-            <p class="text-xs text-[var(--text-secondary)] mt-0.5">
+            <p class="text-[11px] text-[var(--text-secondary)] mt-0.5">
               Pusat data arus kas keluar/masuk seluruh lembaga · {{ getBulanLabel(selectedMonth) }}
               {{ selectedYear }}
             </p>
           </div>
-          <!-- v.72.16.0526: Input Manual + Cetak Laporan match legacy -->
-          <div class="flex gap-2 flex-wrap">
+          <!-- v.21.113.0528: tombol aksi grup kanan — Ekspor/Input/Cetak konsisten h-9 px-3 rounded-xl -->
+          <div class="flex gap-2 flex-wrap items-center">
+            <button
+              @click="exportBukuIndukExcel"
+              :disabled="exportingBI"
+              aria-label="Ekspor Buku Induk ke Excel"
+              class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer"
+            >
+              <i :class="['fas', exportingBI ? 'fa-spinner fa-spin' : 'fa-file-excel']"></i>{{ exportingBI ? 'Ekspor...' : 'Ekspor Excel' }}
+            </button>
             <button
               @click="bukaModalInput()"
-              class="bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-bold px-3 py-2 rounded-xl text-xs shadow-md flex items-center gap-1.5 cursor-pointer"
+              aria-label="Input transaksi manual"
+              class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-xs font-bold transition cursor-pointer"
             >
               <i class="fas fa-plus-circle"></i>Input Manual
             </button>
             <button
               @click="cetakLaporan"
-              class="bg-rose-600 hover:bg-rose-700 text-white font-bold px-3 py-2 rounded-xl text-xs shadow-md flex items-center gap-1.5 cursor-pointer"
+              aria-label="Cetak laporan buku induk PDF"
+              class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold transition cursor-pointer"
             >
-              <i class="fas fa-print"></i>Cetak Laporan
+              <i class="fas fa-file-pdf"></i>Cetak Laporan
             </button>
           </div>
         </div>
