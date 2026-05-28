@@ -16,11 +16,20 @@
           </p>
         </div>
         <div class="flex flex-col items-end gap-1">
-          <span
-            class="text-[10px] font-bold text-teal-700 bg-teal-50 dark:bg-teal-900/30 dark:text-teal-300 px-2 py-1 rounded-full"
-          >
-            {{ santriList.length }} santri aktif
-          </span>
+          <div class="flex items-center gap-1.5">
+            <router-link
+              v-if="isAdminKeu"
+              to="/pos-riwayat"
+              class="text-[11px] font-bold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-900/30 px-2.5 py-1 rounded-full hover:bg-teal-100"
+            >
+              <i class="fas fa-receipt mr-1"></i>Riwayat
+            </router-link>
+            <span
+              class="text-[10px] font-bold text-teal-700 bg-teal-50 dark:bg-teal-900/30 dark:text-teal-300 px-2 py-1 rounded-full"
+            >
+              {{ santriList.length }} santri aktif
+            </span>
+          </div>
           <span
             v-if="isAdminKeu"
             class="text-[10px] font-bold text-emerald-700 bg-emerald-50 dark:bg-emerald-900/30 dark:text-emerald-300 px-2 py-1 rounded-full whitespace-nowrap"
@@ -29,6 +38,45 @@
             <i class="fas fa-receipt mr-1"></i>Hari ini: {{ todayStats.count }} · {{ fmtRp(todayStats.total) }}
           </span>
         </div>
+      </div>
+    </div>
+
+    <!-- v.21.88.0527: Banner sukses + tombol cetak struk transaksi terakhir -->
+    <div
+      v-if="isAdminKeu && lastTrx"
+      class="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700 rounded-2xl p-3 md:p-4 flex items-center justify-between gap-3 flex-wrap"
+    >
+      <div class="min-w-0">
+        <p class="text-sm font-black text-emerald-800 dark:text-emerald-200">
+          <i class="fas fa-check-circle mr-1"></i>Transaksi tersimpan
+        </p>
+        <p class="text-xs text-emerald-700 dark:text-emerald-300 truncate">
+          {{ lastTrx.santri_nama }} · {{ fmtRp(lastTrx.total) }}
+        </p>
+      </div>
+      <div class="flex items-center gap-1.5">
+        <button
+          type="button"
+          @click="cetakLastPdf"
+          class="text-xs font-bold text-rose-700 bg-rose-100 dark:bg-rose-900/40 dark:text-rose-300 px-3 py-2 rounded-lg hover:bg-rose-200"
+        >
+          <i class="fas fa-file-pdf mr-1"></i>Struk PDF
+        </button>
+        <button
+          type="button"
+          @click="cetakLastDot"
+          class="text-xs font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"
+        >
+          <i class="fas fa-print mr-1"></i>Struk Dot-matrix
+        </button>
+        <button
+          type="button"
+          @click="lastTrx = null"
+          class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 px-2"
+          aria-label="Tutup"
+        >
+          <i class="fas fa-times"></i>
+        </button>
       </div>
     </div>
 
@@ -185,10 +233,13 @@ import {
 } from 'firebase/firestore'
 import { db } from '@/services/firebase'
 import { sortSantri } from '@/utils/santriSort'
+import { cetakStrukPdf, cetakStrukDotMatrix } from '@/utils/strukBuilder'
+import { useSettingsStore } from '@/stores/settings'
 import ModalPOS from '@/components/pos/ModalPOS.vue'
 
 const auth = useAuthStore()
 const toast = useToast()
+const settingsStore = useSettingsStore()
 
 const santriList = ref([])
 const loading = ref(true)
@@ -203,6 +254,8 @@ const pendingTagihan = ref([])
 const loadingCart = ref(false)
 // v.21.87.0527: ringkasan transaksi POS hari ini
 const todayStats = ref({ count: 0, total: 0 })
+// v.21.88.0527: transaksi terakhir (utk tombol cetak struk setelah simpan)
+const lastTrx = ref(null)
 
 const operatorName = computed(() => {
   return auth.sesiAktif?.nama || auth.sesiAktif?.guru || 'Admin'
@@ -335,6 +388,8 @@ async function handleSimpan(payload) {
   try {
     const tanggal = payload.tanggal
     const op = payload.operator || operatorName.value
+    const trxId = 'trx_' + Date.now() + '_' + Math.floor(Math.random() * 1000)
+    const santriRef = selectedSantri.value
     const writes = []
     let lunasCount = 0
     let partialCount = 0
@@ -349,6 +404,7 @@ async function handleSimpan(payload) {
         nominal: item.nominal,
         keterangan: `${item.jenis} — ${payload.santri_nama} (${payload.santri_nis || payload.santri_id})${item.keterangan ? ' — ' + item.keterangan : ''}`,
         sumber: 'pos_santri',
+        trx_id: trxId,
         santri_id: payload.santri_id,
         santri_nama: payload.santri_nama,
         operator: op,
@@ -395,6 +451,24 @@ async function handleSimpan(payload) {
     toast.success(
       `Sukses! ${payload.items.length} transaksi tersimpan untuk ${payload.santri_nama}${extra}`
     )
+    // v.21.88.0527: simpan transaksi terakhir utk tombol cetak struk
+    lastTrx.value = {
+      no_struk: trxId,
+      tanggal,
+      santri_nama: payload.santri_nama,
+      santri_nis: payload.santri_nis || santriRef?.nis || '',
+      lembaga: santriRef?.lembaga || '',
+      kelas: santriRef?.kelas || '',
+      operator: op,
+      items: payload.items.map((i) => ({
+        jenis: i.jenis,
+        nominal: Number(i.nominal),
+        keterangan: i.keterangan || ''
+      })),
+      total: Number(payload.total_tagihan || 0),
+      bayar: Number(payload.total_bayar || 0),
+      kembali: Number(payload.kembalian || 0)
+    }
     modalOpen.value = false
     selectedSantri.value = null
     pendingTagihan.value = []
@@ -405,6 +479,19 @@ async function handleSimpan(payload) {
 
 function fmtRp(n) {
   return 'Rp ' + new Intl.NumberFormat('id-ID').format(Math.round(n || 0))
+}
+
+// v.21.88.0527: cetak struk transaksi terakhir
+async function cetakLastPdf() {
+  if (!lastTrx.value) return
+  try {
+    await cetakStrukPdf(lastTrx.value, settingsStore.settings || {}, { preview: true })
+  } catch (e) {
+    toast.error('Gagal cetak PDF: ' + (e.message || e))
+  }
+}
+function cetakLastDot() {
+  if (lastTrx.value) cetakStrukDotMatrix(lastTrx.value, settingsStore.settings || {})
 }
 
 function fmtTgl(t) {

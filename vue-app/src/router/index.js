@@ -36,6 +36,8 @@ const PsbAdminView = () => import('@/views/PpdbAdminView.vue')
 const PsbDetailView = () => import('@/views/PpdbDetailView.vue')
 // v.55.0526: POS Santri full integration
 const PosSantriView = () => import('@/views/PosSantriView.vue')
+// v.21.88.0527: Riwayat transaksi POS
+const RiwayatPosView = () => import('@/views/RiwayatPosView.vue')
 // v.64.0526: Naik Kelas full Vue (replace bridge view v.63)
 const NaikKelasView = () => import('@/views/NaikKelasView.vue')
 // v.66.0526: Kalender Kegiatan + Dashboard Statistik full Vue (Batch B)
@@ -102,6 +104,7 @@ const routes = [
       { path: 'pembayaran', name: 'pembayaran', component: PembayaranView },
       // v.55.0526: POS Santri page — wire ModalPOS untuk transaksi cepat
       { path: 'pos-santri', name: 'pos-santri', component: PosSantriView, meta: { admin: true } },
+      { path: 'pos-riwayat', name: 'pos-riwayat', component: RiwayatPosView, meta: { admin: true } },
       // v.20.6.0526: Tabungan — santri boleh lihat tabungannya sendiri
       { path: 'tabungan', name: 'tabungan', component: TabunganView },
       // v.20.6.0526: Bisyaroh — guru BOLEH lihat slip bisyarohnya sendiri
