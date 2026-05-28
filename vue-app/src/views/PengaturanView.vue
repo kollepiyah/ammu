@@ -1260,6 +1260,8 @@ import {
 import UiCard from '@/components/ui/UiCard.vue'
 import UiInput from '@/components/ui/UiInput.vue'
 import UiButton from '@/components/ui/UiButton.vue'
+// v.21.105.0527: pakai shared masehiToHijri supaya preview match dgn kalender + widget
+import { masehiToHijri } from '@/utils/hijri'
 
 // ============================================================
 // Setup: stores, composables, route
@@ -1450,28 +1452,12 @@ const hijriMonths = [
   'Dzulhijjah'
 ]
 
-function gregorianToHijri(date, offset = 0) {
-  const d = new Date(date.getTime() + offset * 86400000)
-  const jd = Math.floor(d.getTime() / 86400000) + 2440588 - 1948440 + 10632
-  const n = Math.floor((jd - 1) / 10631)
-  const j = jd - 10631 * n + 354
-  const k =
-    Math.floor((10985 - j) / 5316) * Math.floor((50 * j) / 17719) +
-    Math.floor(j / 5670) * Math.floor((43 * j) / 15238)
-  const m =
-    j -
-    Math.floor((30 - k) / 15) * Math.floor((17719 * k) / 50) -
-    Math.floor(k / 16) * Math.floor((15238 * k) / 43) +
-    29
-  const month = Math.floor((24 * m) / 709)
-  const day = m - Math.floor((709 * month) / 24)
-  const year = 30 * n + k - 30
-  return { day, month, year }
-}
-
+// v.21.105.0527: hijriPreview pakai masehiToHijri (Intl islamic) — match
+// dgn kalender + widget. Sebelumnya pakai Julian-date manual yg hasilnya beda.
 const hijriPreview = computed(() => {
   try {
-    const h = gregorianToHijri(new Date(), Number(form.value.kalibrasiHijri || 0))
+    const h = masehiToHijri(new Date(), Number(form.value.kalibrasiHijri || 0))
+    if (!h.day || !h.month || !h.year) return '—'
     return `${h.day} ${hijriMonths[h.month - 1] || '?'} ${h.year} H`
   } catch {
     return '—'
