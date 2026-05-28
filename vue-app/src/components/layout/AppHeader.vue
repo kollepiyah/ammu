@@ -30,6 +30,9 @@
         </p>
       </div>
 
+      <!-- v.21.111.0527: Notif Center -->
+      <AppNotifBell />
+
       <!-- Dark mode toggle -->
       <button
         @click="ui.toggleDark()"
@@ -109,6 +112,8 @@ import { useSettingsStore } from '@/stores/settings'
 import { useConfirm } from '@/composables/useConfirm'
 import { useToast } from '@/composables/useToast'
 import { getNamaGuruGelar } from '@/utils/format'
+// v.21.111.0527: Notif Center bell
+import AppNotifBell from '@/components/layout/AppNotifBell.vue'
 
 const auth = useAuthStore()
 const ui = useUiStore()
