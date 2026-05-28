@@ -872,18 +872,24 @@ const lembagaCount = computed(() => {
   return set.size
 })
 
+// v.21.108.0527: kelas dihitung dari assignment Kelas & Guru
+// (jumlah unique kombinasi lembaga + guru pengampu yg punya santri ter-assign).
+// Sebelumnya pakai master kelas_list (statis), tidak match realita.
 const kelasCount = computed(() => {
-  if (lembagaRaw.value.length > 0) {
-    const sum = lembagaRaw.value.reduce(
-      (acc, l) => acc + (Array.isArray(l.kelas_list) ? l.kelas_list.length : 0),
-      0
-    )
-    if (sum > 0) return sum
-  }
   const set = new Set()
   for (const s of santriRaw.value) {
-    if (s.aktif !== false && s.lembaga && s.kelas) {
-      set.add(`${String(s.lembaga).toUpperCase().trim()}|${String(s.kelas).toUpperCase().trim()}`)
+    if (s.aktif === false) continue
+    const lembagaNgaji = String(s.lembaga || '').trim()
+    const lembagaSekolah = String(s.lembaga_sekolah || '').trim()
+    const gp = String(s.guru_pagi || '').trim().toLowerCase()
+    const gs = String(s.guru_sore || '').trim().toLowerCase()
+    if (lembagaNgaji && gp) set.add(`${lembagaNgaji.toLowerCase()}|pagi|${gp}`)
+    if (lembagaNgaji && gs) set.add(`${lembagaNgaji.toLowerCase()}|sore|${gs}`)
+    if (lembagaSekolah && Array.isArray(s.guru_sekolah)) {
+      for (const g of s.guru_sekolah) {
+        const t = String(g || '').trim().toLowerCase()
+        if (t) set.add(`${lembagaSekolah.toLowerCase()}|sekolah|${t}`)
+      }
     }
   }
   return set.size
@@ -978,28 +984,50 @@ const URUTAN_LEMBAGA = [
   'TPQ Pagi', 'TPQ Sore', 'Pra PTPT', 'PTPT', 'PPPH', 'P3H', 'TPQ',
   'TK', 'SDI', 'MI', 'MTs', 'MA', 'SMP', 'SMA', 'PKBM'
 ]
+// v.21.108.0527: Kelas dihitung dari assignment santri ↔ guru di "Kelas & Guru"
+// (Master Data). Untuk tiap lembaga:
+//   - ngaji (TPQ Pagi/Sore, Pra PTPT, PTPT, PPPH): unique guru_pagi+guru_sore
+//     dari santri yg lembaga match
+//   - sekolah (TK, SDI, MI, MTs, MA, SMP, SMA, PKBM): unique guru di
+//     guru_sekolah[] dari santri yg lembaga_sekolah match
+// Santri yg belum di-assign ke guru → tidak menambah hitungan kelas.
+function isSekolahLembaga(nama) {
+  const n = String(nama || '').toUpperCase()
+  return ['TK', 'SDI', 'MI', 'MTS', 'MA', 'SMP', 'SMA', 'PKBM'].some((s) => n.includes(s))
+}
 const statistikLembaga = computed(() => {
   if (!isAdminMode.value) return []
   const lembList = (lembagaRaw.value || []).filter((l) => Array.isArray(l.kelas) && l.kelas.length > 0)
   return lembList
     .map((l) => {
       const nama = l.lembaga || l.nama
+      const isSekolah = isSekolahLembaga(nama)
       const santriList = santriRaw.value.filter(
         (s) => (s.lembaga === nama || s.lembaga_sekolah === nama) && s.aktif !== false
       )
-      // v.21.107.0527: kelas count dari master (jumlah kelas terdaftar),
-      // bukan dari guru pengampu (typo lama).
-      const kelasMaster = Array.isArray(l.kelas) ? l.kelas.length : 0
-      const kelasFromSantri = new Set(
-        santriList.map((s) => s.kelas || s.kelas_sekolah).filter(Boolean)
-      ).size
-      const kelasSet = kelasMaster || kelasFromSantri
+      // v.21.108.0527: kelas = jumlah unique guru pengampu yg punya santri
+      // ter-assign di lembaga ini. Santri tanpa assignment tidak terhitung.
+      const kelasGuruSet = new Set()
+      for (const s of santriList) {
+        if (isSekolah) {
+          const arr = Array.isArray(s.guru_sekolah) ? s.guru_sekolah : []
+          for (const g of arr) {
+            const t = String(g || '').trim()
+            if (t) kelasGuruSet.add(t.toLowerCase())
+          }
+        } else {
+          const gp = String(s.guru_pagi || '').trim()
+          const gs = String(s.guru_sore || '').trim()
+          if (gp) kelasGuruSet.add(gp.toLowerCase())
+          if (gs) kelasGuruSet.add(gs.toLowerCase())
+        }
+      }
       const santriCount = santriList.length
       const guruCount = guruRaw.value.filter(
         (g) =>
           (g.lembaga === nama || g.lembaga_sekolah === nama) && isGuruAktif(g.status)
       ).length
-      return { nama, kelas: kelasSet, santri: santriCount, guru: guruCount }
+      return { nama, kelas: kelasGuruSet.size, santri: santriCount, guru: guruCount }
     })
     .sort((a, b) => {
       const ia = URUTAN_LEMBAGA.indexOf(a.nama)

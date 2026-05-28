@@ -130,11 +130,29 @@ function matchSekolah(s, lembaga) {
 }
 
 // ── Guru list ──
+// v.21.108.0527: filter guru sesuai lembaga terpilih + shift.
 const guruList = computed(() => {
   let list = (guruRaw.value || []).filter((g) => {
     const st = String(g.status || 'Aktif').toLowerCase().trim()
     return st === 'aktif'
   })
+  if (selectedLembaga.value) {
+    const target = String(selectedLembaga.value || '').toLowerCase().trim()
+    list = list.filter((g) => {
+      const gl = String(g.lembaga || '').toLowerCase().trim()
+      const gls = String(g.lembaga_sekolah || '').toLowerCase().trim()
+      if (kategori.value === 'ngaji') return gl === target
+      if (kategori.value === 'sekolah') return gls === target || gl === target
+      return false
+    })
+    if (kategori.value === 'ngaji' && effShift.value) {
+      const sh = String(effShift.value).toLowerCase()
+      list = list.filter((g) => {
+        const gShift = String(g.shift || '').toLowerCase()
+        return !gShift || gShift === 'pagi_sore' || gShift === sh || gShift.includes(sh)
+      })
+    }
+  }
   const kw = guruSearch.value.trim().toLowerCase()
   if (kw) list = list.filter((g) => String(g.nama || '').toLowerCase().includes(kw))
   return list.sort((a, b) => String(a.nama || '').localeCompare(String(b.nama || ''), 'id'))
