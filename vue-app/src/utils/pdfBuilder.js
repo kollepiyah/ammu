@@ -62,23 +62,31 @@ export async function drawKopLetterhead(doc, kop = {}, opts = {}) {
     } catch { /* ignore */ }
   }
 
-  // Lines (center)
-  doc.setFont(font, 'bold')
+  // v.21.92.0527: Hierarki KOP samakan dgn contoh struk Yayasan —
+  // L1 kecil (Yayasan), L2 BESAR bold (Pondok Pesantren), L3 alamat, L4-L5 telp/email.
+  // Berlaku utk semua PDF (kecuali rapor / kartu kenaikan / rekap prestasi yg pakai KOP lembaga sendiri).
   const lines = [kop.line1, kop.line2, kop.line3].filter(Boolean)
   const subLines = [kop.line4, kop.line5].filter(Boolean)
-  doc.setFontSize(14)
-  if (lines[0]) { doc.text(String(lines[0]), pageW / 2, y + 5, { align: 'center' }); }
+  doc.setFont(font, 'bold')
   doc.setFontSize(11)
-  if (lines[1]) { doc.text(String(lines[1]), pageW / 2, y + 11, { align: 'center' }); }
-  if (lines[2]) { doc.text(String(lines[2]), pageW / 2, y + 16, { align: 'center' }); }
+  if (lines[0]) {
+    doc.text(String(lines[0]), pageW / 2, y + 5, { align: 'center' })
+  }
+  doc.setFontSize(16)
+  if (lines[1]) {
+    doc.text(String(lines[1]), pageW / 2, y + 13, { align: 'center' })
+  }
   doc.setFont(font, 'normal')
   doc.setFontSize(9)
-  let yy = y + 21
+  if (lines[2]) {
+    doc.text(String(lines[2]), pageW / 2, y + 19, { align: 'center' })
+  }
+  let yy = y + 23
   for (const sl of subLines) {
     doc.text(String(sl), pageW / 2, yy, { align: 'center' })
     yy += 4
   }
-  y = Math.max(yy, y + 23)
+  y = Math.max(yy, y + 25)
   // Garis pemisah
   if (opts.withLine !== false) {
     doc.setLineWidth(0.4)
