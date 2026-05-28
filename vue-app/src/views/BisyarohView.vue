@@ -387,6 +387,22 @@
             <span class="text-[10px] text-[var(--text-tertiary)] font-bold"
               >{{ filteredSlips.length }} slip · {{ totalTakeFmt }}</span
             >
+            <!-- v.21.100.0527: bulk select hapus -->
+            <label v-if="isAdmin && filteredSlips.length > 0" class="flex items-center gap-1 text-[10px] font-bold cursor-pointer">
+              <input
+                type="checkbox"
+                :checked="selectedSlip.size === filteredSlips.length && filteredSlips.length > 0"
+                @change="toggleSemuaSlip"
+                class="w-4 h-4 accent-rose-600"
+              />Pilih semua
+            </label>
+            <button
+              v-if="isAdmin && selectedSlip.size > 0"
+              @click="hapusSlipTerpilih"
+              class="text-[10px] font-black bg-rose-600 hover:bg-rose-700 text-white px-2.5 py-1 rounded-lg"
+            >
+              <i class="fas fa-trash mr-1"></i>Hapus Terpilih ({{ selectedSlip.size }})
+            </button>
           </div>
         </div>
         <div v-if="loading" class="p-10 text-center">
@@ -403,6 +419,14 @@
             class="p-3 md:p-4 hover:bg-slate-50 dark:hover:bg-slate-900/30"
           >
             <div class="flex items-center gap-3 flex-wrap">
+              <input
+                v-if="isAdmin"
+                type="checkbox"
+                :checked="selectedSlip.has(String(slip.id))"
+                @change="toggleSlipSel(slip.id)"
+                class="w-4 h-4 accent-rose-600 flex-shrink-0"
+                title="Pilih slip"
+              />
               <div
                 class="flex-shrink-0 w-10 h-10 rounded-full bg-cyan-100 text-cyan-700 flex items-center justify-center"
               >
@@ -558,6 +582,42 @@ async function hapusSlip(slip) {
   } catch (e) {
     toast.error('Gagal hapus: ' + (e.message || e))
   }
+}
+
+// v.21.100.0527: bulk select hapus slip (super_admin)
+const selectedSlip = ref(new Set())
+function toggleSlipSel(id) {
+  const ns = new Set(selectedSlip.value)
+  const sid = String(id)
+  if (ns.has(sid)) ns.delete(sid)
+  else ns.add(sid)
+  selectedSlip.value = ns
+}
+function toggleSemuaSlip() {
+  if (selectedSlip.value.size === filteredSlips.value.length && filteredSlips.value.length > 0) {
+    selectedSlip.value = new Set()
+  } else {
+    selectedSlip.value = new Set(filteredSlips.value.map((x) => String(x.id)))
+  }
+}
+async function hapusSlipTerpilih() {
+  if (!isAdmin.value) return
+  const ids = Array.from(selectedSlip.value)
+  if (ids.length === 0) return
+  if (!confirm(`Hapus ${ids.length} slip bisyaroh terpilih?\n\nTidak bisa di-undo.`)) return
+  let ok = 0, fail = 0
+  for (const id of ids) {
+    try {
+      await deleteDoc(doc(db, 'keuangan_gaji', String(id)))
+      ok++
+    } catch (e) {
+      fail++
+      console.warn('[bulkHapusSlip]', id, e.message)
+    }
+  }
+  selectedSlip.value = new Set()
+  if (fail > 0) toast.warning(`${ok} dihapus, ${fail} gagal — cek console`)
+  else toast.success(`${ok} slip dihapus`)
 }
 const toast = useToast()
 

@@ -28,11 +28,41 @@
       </select>
     </div>
 
+    <!-- v.21.100.0527: bulk action bar (super_admin) -->
+    <div
+      v-if="isAdmin && filteredItems.length > 0"
+      class="bg-[var(--bg-card)] rounded-2xl p-2 border border-[var(--border-subtle)] shadow-sm flex items-center justify-between gap-2"
+    >
+      <label class="flex items-center gap-2 text-[11px] font-bold text-[var(--text-secondary)] cursor-pointer">
+        <input
+          type="checkbox"
+          :checked="selectedTagihan.size === filteredItems.length && filteredItems.length > 0"
+          @change="toggleSemuaTagihan"
+          class="w-4 h-4 accent-rose-600"
+        />Pilih semua ({{ filteredItems.length }})
+      </label>
+      <button
+        v-if="selectedTagihan.size > 0"
+        @click="hapusTagihanTerpilih"
+        class="text-[11px] font-black bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-lg"
+      >
+        <i class="fas fa-trash mr-1"></i>Hapus Terpilih ({{ selectedTagihan.size }})
+      </button>
+    </div>
+
     <div v-if="loading" class="bg-[var(--bg-card)] rounded-2xl p-10 text-center"><i class="fas fa-spinner fa-spin text-cyan-500 text-3xl"></i></div>
     <div v-else-if="filteredItems.length === 0" class="bg-[var(--bg-card)] rounded-2xl p-10 border border-dashed border-[var(--border-default)] text-center"><i class="fas fa-inbox text-[var(--text-tertiary)] text-3xl mb-2"></i><p class="text-sm text-[var(--text-secondary)] italic">Belum ada tagihan.</p></div>
     <div v-else class="space-y-2">
       <div v-for="t in filteredItems" :key="t.id" class="bg-[var(--bg-card)] rounded-xl p-3 border border-[var(--border-subtle)] shadow-sm">
         <div class="flex items-center gap-3">
+          <input
+            v-if="isAdmin"
+            type="checkbox"
+            :checked="selectedTagihan.has(String(t.id))"
+            @change="toggleTagihanSel(t.id)"
+            class="w-4 h-4 accent-rose-600 flex-shrink-0"
+            title="Pilih tagihan"
+          />
           <div :class="['w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0', statusBg(t)]"><i class="fas fa-file-invoice text-white"></i></div>
           <div class="flex-1 min-w-0">
             <p class="text-sm font-bold truncate">{{ t.santri_nama || getNamaSantri(t.santri_id) }}</p>
@@ -86,6 +116,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
 import { fmtRp, fmtTgl } from '@/utils/format'
+import { isSuperAdmin } from '@/utils/roleScope'
 
 const auth = useAuthStore()
 const toast = useToast()
@@ -104,6 +135,42 @@ const isFullAccess = computed(() => {
   if (!s) return false
   return s.role === 'admin' || s.id === 'admin' || ['super_admin', 'admin', 'admin_keuangan'].includes(s.role_sistem)
 })
+// v.21.100.0527: super_admin only — bulk hapus tagihan
+const isAdmin = computed(() => isSuperAdmin(auth.sesiAktif))
+const selectedTagihan = ref(new Set())
+function toggleTagihanSel(id) {
+  const ns = new Set(selectedTagihan.value)
+  const sid = String(id)
+  if (ns.has(sid)) ns.delete(sid)
+  else ns.add(sid)
+  selectedTagihan.value = ns
+}
+function toggleSemuaTagihan() {
+  if (selectedTagihan.value.size === filteredItems.value.length && filteredItems.value.length > 0) {
+    selectedTagihan.value = new Set()
+  } else {
+    selectedTagihan.value = new Set(filteredItems.value.map((t) => String(t.id)))
+  }
+}
+async function hapusTagihanTerpilih() {
+  if (!isAdmin.value) return
+  const ids = Array.from(selectedTagihan.value)
+  if (ids.length === 0) return
+  if (!confirm(`Hapus ${ids.length} tagihan terpilih?\n\nTidak bisa di-undo.`)) return
+  let ok = 0, fail = 0
+  for (const id of ids) {
+    try {
+      await deleteDoc(doc(db, 'keuangan_tagihan', String(id)))
+      ok++
+    } catch (e) {
+      fail++
+      console.warn('[bulkHapusTagihan]', id, e.message)
+    }
+  }
+  selectedTagihan.value = new Set()
+  if (fail > 0) toast.warning(`${ok} dihapus, ${fail} gagal — cek console`)
+  else toast.success(`${ok} tagihan dihapus`)
+}
 
 function getNamaSantri(id) {
   const s = santriList.value.find((x) => String(x.id) === String(id))
