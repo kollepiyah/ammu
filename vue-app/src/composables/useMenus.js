@@ -51,6 +51,8 @@ const ALL_MENUS = [
   // v.20.12.0526: Tabungan untuk admin (label tanpa "Saya")
   { group: 'Keuangan', name: 'Tabungan', path: '/tabungan', icon: 'fa-piggy-bank', roles: ['admin'], available: true },
   { group: 'Keuangan', name: 'Buku Induk', path: '/buku-induk', icon: 'fa-book', roles: ['admin'], available: true, perm: 'akses_keuangan' },
+  // v.21.101.0527: Ekspor riwayat per santri (tagihan+pembayaran+tabungan 1 tahun)
+  { group: 'Keuangan', name: 'Riwayat Santri', path: '/riwayat-santri', icon: 'fa-file-export', roles: ['admin'], available: true, perm: 'akses_keuangan' },
   { group: 'Keuangan', name: 'Hutang Piutang', path: '/hutang-piutang', icon: 'fa-handshake', roles: ['admin'], available: true, perm: 'akses_keuangan' },
   { group: 'Keuangan', name: 'Pengaturan Keuangan', path: '/keu-pengaturan', icon: 'fa-sliders-h', roles: ['admin'], available: true, perm: 'akses_keuangan' },
   // v.69.0526: "Laporan & Chart" digabung ke Dashboard Keuangan (akses via link di dalam page Dashboard Keuangan). Tidak perlu menu sidebar terpisah.
