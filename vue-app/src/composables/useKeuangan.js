@@ -10,7 +10,7 @@ export function useKeuangan() {
   const tagihan = ref([])
   const tabunganSantri = ref([])
   // v.21.94.0527: tabungan_guru DIHAPUS — tabungan hanya untuk santri (kyai req)
-  const transaksi = ref([])
+  // v.21.104.0527: keuangan_transaksi dihapus (dead code, koleksi tidak pernah ditulis)
   const bisyaroh = ref([])
   const gaji = ref([])
   const bukuInduk = ref([])
@@ -68,13 +68,10 @@ export function useKeuangan() {
     unsubs.push(
       subscribeColl('keuangan_tagihan', (docs) => {
         tagihan.value = docs
+        loading.value = false
       }),
       subscribeColl('keuangan_tabungan_santri', (docs) => {
         tabunganSantri.value = docs
-      }),
-      subscribeColl('keuangan_transaksi', (docs) => {
-        transaksi.value = docs
-        loading.value = false
       }),
       subscribeColl('keuangan_gaji', (docs) => {
         gaji.value = docs
@@ -98,7 +95,6 @@ export function useKeuangan() {
   return {
     tagihan,
     tabunganSantri,
-    transaksi,
     bisyaroh,
     gaji,
     bukuInduk,

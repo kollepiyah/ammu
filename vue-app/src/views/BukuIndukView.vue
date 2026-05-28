@@ -395,6 +395,7 @@ import { db } from '@/services/firebase'
 import { fmtRp, formatTanggal as formatTgl } from '@/utils/format'
 import { buildListPdf, buildKopFromSettings } from '@/utils/pdfBuilder'
 import { isSuperAdmin } from '@/utils/roleScope'
+import { writeAuditLog } from '@/utils/auditLog'
 // v.21.103.0527: reprint struk dari BukuInduk untuk record sumber pos_santri
 import { cetakStrukPdf, cetakStrukDotMatrix } from '@/utils/strukBuilder'
 import { collection as fbCollection, query as fbQuery, where as fbWhere, getDocs as fbGetDocs } from 'firebase/firestore'
@@ -524,6 +525,14 @@ async function hapusBukuTerpilih() {
     }
   }
   selectedBuku.value = new Set()
+  // v.21.104.0527: audit log bulk delete
+  await writeAuditLog({
+    operator: auth.sesiAktif?.nama || auth.sesiAktif?.guru || 'Admin',
+    action: 'bulk_delete',
+    target: 'keuangan_buku_induk',
+    ids,
+    detail: { ok, fail }
+  })
   if (fail > 0) toast.warning(`${ok} dihapus, ${fail} gagal — cek console`)
   else toast.success(`${ok} record dihapus`)
 }

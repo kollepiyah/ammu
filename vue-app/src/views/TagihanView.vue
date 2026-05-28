@@ -117,6 +117,7 @@ import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
 import { fmtRp, fmtTgl } from '@/utils/format'
 import { isSuperAdmin } from '@/utils/roleScope'
+import { writeAuditLog } from '@/utils/auditLog'
 
 const auth = useAuthStore()
 const toast = useToast()
@@ -168,6 +169,14 @@ async function hapusTagihanTerpilih() {
     }
   }
   selectedTagihan.value = new Set()
+  // v.21.104.0527: audit log
+  await writeAuditLog({
+    operator: auth.sesiAktif?.nama || auth.sesiAktif?.guru || 'Admin',
+    action: 'bulk_delete',
+    target: 'keuangan_tagihan',
+    ids,
+    detail: { ok, fail }
+  })
   if (fail > 0) toast.warning(`${ok} dihapus, ${fail} gagal — cek console`)
   else toast.success(`${ok} tagihan dihapus`)
 }
@@ -257,6 +266,8 @@ async function simpanModal() {
         id, santri_id: modalSantriId.value, santri_nama: santri?.nama || '',
         kategori: modalKategori.value, periode: modalPeriode.value,
         nominal: Number(modalNominal.value), bayar: 0,
+        // v.21.104.0527: set status supaya POS deteksi sbg tunggakan
+        status: 'belum',
         jatuh_tempo: modalJatuhTempo.value,
         created_at: serverTimestamp()
       })
@@ -264,7 +275,15 @@ async function simpanModal() {
     } else {
       const t = modalTagihan.value
       const newBayar = Number(t.bayar || 0) + Number(modalBayarNominal.value || 0)
-      await setDoc(doc(db, 'keuangan_tagihan', String(t.id)), { bayar: newBayar, _last_bayar_at: serverTimestamp() }, { merge: true })
+      // v.21.104.0527: update status sesuai sisa supaya POS akurat
+      const totalT = Number(t.nominal || 0)
+      const sisa = Math.max(0, totalT - newBayar)
+      const statusBaru = sisa === 0 && totalT > 0 ? 'lunas' : (newBayar > 0 ? 'partial' : 'belum')
+      await setDoc(doc(db, 'keuangan_tagihan', String(t.id)), {
+        bayar: newBayar,
+        status: statusBaru,
+        _last_bayar_at: serverTimestamp()
+      }, { merge: true })
       // Tulis ke keuangan_pembayaran log
       await setDoc(doc(db, 'keuangan_pembayaran', `pay_${t.id}_${Date.now()}`), {
         tagihan_id: t.id, santri_id: t.santri_id, santri_nama: t.santri_nama,

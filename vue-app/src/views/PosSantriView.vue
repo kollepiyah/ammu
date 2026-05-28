@@ -335,7 +335,8 @@ onMounted(async () => {
         if (!sid) continue
         if (!map[sid]) map[sid] = { count: 0, total: 0 }
         map[sid].count++
-        map[sid].total += Number(data.nominal || 0) - Number(data.dibayar || 0)
+        // v.21.104.0527: pakai field 'bayar' (selaras TagihanView), fallback 'dibayar' utk legacy
+        map[sid].total += Number(data.nominal || 0) - Number(data.bayar || data.dibayar || 0)
       }
       tunggakanMap.value = map
     } catch (e) {
@@ -390,7 +391,8 @@ async function openModal(s) {
     // v.21.87.0527: kirim sisa (remaining) + meta utk pembayaran sebagian (partial)
     pendingTagihan.value = pending.map((t) => {
       const penuh = Number(t.nominal || 0)
-      const dibayar = Number(t.dibayar || 0)
+      // v.21.104.0527: pakai 'bayar' fallback 'dibayar'
+      const dibayar = Number(t.bayar || t.dibayar || 0)
       return {
         tagihan_id: t.id,
         jenis: t.jenis_label || t.jenis_id || 'Tagihan',
@@ -456,12 +458,13 @@ async function handleSimpan(payload) {
         const upd = isLunas
           ? {
               status: 'lunas',
+              bayar: penuh || newDibayar,
               dibayar: penuh || newDibayar,
               tanggal_lunas: tanggal,
               dibayar_via: 'pos_santri',
               operator_pelunasan: op
             }
-          : { status: 'partial', dibayar: newDibayar, dibayar_via: 'pos_santri', operator_pelunasan: op }
+          : { status: 'partial', bayar: newDibayar, dibayar: newDibayar, dibayar_via: 'pos_santri', operator_pelunasan: op }
         if (isLunas) lunasCount++
         else partialCount++
         writes.push(

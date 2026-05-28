@@ -501,6 +501,7 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { subscribeColl } from '@/services/firestore'
 import { doc, setDoc, deleteDoc, updateDoc, serverTimestamp } from 'firebase/firestore'
 import { isSuperAdmin } from '@/utils/roleScope'
+import { writeAuditLog } from '@/utils/auditLog'
 import { db } from '@/services/firebase'
 import { sortSantri } from '@/utils/santriSort'
 import { useAuthStore } from '@/stores/auth'
@@ -667,7 +668,7 @@ const modalOpen = ref(false)
 const modalSantriId = ref('')
 const modalSantriLabel = ref('')
 const modalJenis = ref('setor')
-const modalKategori = ref('syahriyah')
+const modalKategori = ref('umum')
 const modalNominal = ref(0)
 const modalCatatan = ref('')
 const saving = ref(false)
@@ -676,9 +677,17 @@ const autoFilled = ref(false)
 const editingMutasiId = ref(null)
 const selectedMutasi = ref(new Set())
 
-// Kategori dari settings.keuTagihanJenis (fallback syahriyah default 0)
+// v.21.104.0527: Kategori tabungan terpisah dari jenis tagihan.
+// Sumber utama: settings.keuTabunganKategori (array of {id, label, nominal_default}).
+// Fallback default: 4 kategori umum tabungan santri.
+const KATEGORI_TABUNGAN_DEFAULT = [
+  { id: 'umum', label: 'Tabungan Umum', nominal_default: 0 },
+  { id: 'sukarela', label: 'Tabungan Sukarela', nominal_default: 0 },
+  { id: 'wisuda', label: 'Tabungan Wisuda', nominal_default: 0 },
+  { id: 'rihlah', label: 'Tabungan Rihlah', nominal_default: 0 }
+]
 const kategoriOptions = computed(() => {
-  const raw = settings.settings?.keuTagihanJenis
+  const raw = settings.settings?.keuTabunganKategori
   if (Array.isArray(raw) && raw.length > 0) {
     return raw.map((k) => ({
       id:
@@ -690,7 +699,7 @@ const kategoriOptions = computed(() => {
       nominal_default: Number(k.nominal_default || k.nominal || 0) || 0
     }))
   }
-  return [{ id: 'syahriyah', label: 'Syahriyah', nominal_default: 0 }]
+  return KATEGORI_TABUNGAN_DEFAULT
 })
 
 function getKategoriLabel(id) {
@@ -717,7 +726,7 @@ function openModal(santriId = '', jenis = 'setor') {
   modalOpen.value = true
   editingMutasiId.value = null
   modalJenis.value = jenis
-  modalKategori.value = 'syahriyah'
+  modalKategori.value = 'umum'
   modalCatatan.value = ''
   const def = kategoriOptions.value.find((k) => k.id === 'syahriyah')
   modalNominal.value = def?.nominal_default || 0
@@ -748,7 +757,7 @@ function openEditMutasi(m) {
   const sx = (santriRaw.value || []).find((x) => String(x.id) === modalSantriId.value)
   modalSantriLabel.value = sx ? `${sx.nama} (${sx.lembaga || ''} - ${sx.kelas || ''})` : (m.nama_cache || '')
   modalJenis.value = m.jenis || 'setor'
-  modalKategori.value = m.kategori || 'syahriyah'
+  modalKategori.value = m.kategori || 'umum'
   modalNominal.value = Number(m.nominal || 0)
   modalCatatan.value = m.catatan || ''
   autoFilled.value = false
@@ -783,6 +792,14 @@ async function hapusMutasiTerpilih() {
     }
   }
   selectedMutasi.value = new Set()
+  // v.21.104.0527: audit log
+  await writeAuditLog({
+    operator: auth.sesiAktif?.nama || auth.sesiAktif?.guru || 'Admin',
+    action: 'bulk_delete',
+    target: 'keuangan_tabungan_santri',
+    ids,
+    detail: { ok, fail }
+  })
   if (fail > 0) toast.warning(`${ok} dihapus, ${fail} gagal — cek console`)
   else toast.success(`${ok} mutasi dihapus`)
 }

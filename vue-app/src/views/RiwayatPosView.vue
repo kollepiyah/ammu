@@ -10,6 +10,7 @@ import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
 import { cetakStrukPdf, cetakStrukDotMatrix, fmtRpStruk } from '@/utils/strukBuilder'
 import { isSuperAdmin } from '@/utils/roleScope'
+import { writeAuditLog } from '@/utils/auditLog'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -84,6 +85,14 @@ async function hapusTrxTerpilih() {
   }
   entries.value = entries.value.filter((e) => !trxIds.includes(e.trx_id))
   selectedTrx.value = new Set()
+  // v.21.104.0527: audit log bulk delete transaksi POS
+  await writeAuditLog({
+    operator: auth.sesiAktif?.nama || auth.sesiAktif?.guru || 'Admin',
+    action: 'bulk_delete_trx',
+    target: 'keuangan_buku_induk',
+    ids: recIds.map(String),
+    detail: { trx_ids: trxIds, transaksi_count: tgt.length, record_ok: ok, record_fail: fail }
+  })
   if (fail > 0) toast.warning(`${ok} record dihapus, ${fail} gagal — cek console`)
   else toast.success(`${tgt.length} transaksi dihapus (${ok} record)`)
 }

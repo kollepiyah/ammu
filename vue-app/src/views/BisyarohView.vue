@@ -575,6 +575,7 @@ import { doc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/services/firebase'
 import { useAuthStore } from '@/stores/auth'
 import { isSuperAdmin } from '@/utils/roleScope'
+import { writeAuditLog } from '@/utils/auditLog'
 import { useSettingsStore } from '@/stores/settings'
 import { useKeuangan } from '@/composables/useKeuangan'
 import { useGuru } from '@/composables/useGuru'
@@ -641,6 +642,14 @@ async function hapusSlipTerpilih() {
     }
   }
   selectedSlip.value = new Set()
+  // v.21.104.0527: audit log
+  await writeAuditLog({
+    operator: auth.sesiAktif?.nama || auth.sesiAktif?.guru || 'Admin',
+    action: 'bulk_delete',
+    target: 'keuangan_gaji',
+    ids,
+    detail: { ok, fail }
+  })
   if (fail > 0) toast.warning(`${ok} dihapus, ${fail} gagal — cek console`)
   else toast.success(`${ok} slip dihapus`)
 }
@@ -1016,12 +1025,42 @@ async function bulkGenerate() {
   const mapPokok = settings.keu_bisyaroh_pokok || {}
   const mapSekolah = settings.keu_bisyaroh_sekolah || {}
   try {
+    // v.21.104.0527: hitung bonus kehadiran per guru dari absensi_shift_guru
+    // (selaras dgn single-mode supaya take_home konsisten)
+    const tarifPagi = Number(settings.keu_bisyaroh_pagi || 0) || 0
+    const tarifSore = Number(settings.keu_bisyaroh_sore || 0) || 0
+    const tarifSekolah = Number(settings.keu_bisyaroh_sekolah_shift || 0) || 0
+    function hitungBonusGuru(guruId) {
+      let hp = 0, hs = 0, hsk = 0
+      const gid = String(guruId)
+      for (const a of absensiShift.value || []) {
+        if (String(a.guru_id) !== gid) continue
+        const tgl = String(a.tanggal || '')
+        if (!tgl.startsWith(periode)) continue
+        const st = String(a.status || '').toLowerCase()
+        if (st !== 'hadir' && st !== 'terlambat') continue
+        const sh = String(a.shift || '').toLowerCase()
+        if (sh === 'pagi') hp++
+        else if (sh === 'sore') hs++
+        else if (sh === 'sekolah') hsk++
+      }
+      const tp = hp * tarifPagi
+      const ts = hs * tarifSore
+      const tsk = hsk * tarifSekolah
+      return {
+        hadir_pagi: hp, hadir_sore: hs, hadir_sekolah: hsk,
+        tarif_pagi: tarifPagi, tarif_sore: tarifSore, tarif_sekolah: tarifSekolah,
+        total: tp + ts + tsk
+      }
+    }
     for (const g of bulkTargets.value) {
       try {
         const slipId = `gaji_${g.id}_${periode}`
         const pokok = Number(mapPokok[g.id] || 0)
         const sekolah = Number(mapSekolah[g.id] || 0)
-        const total = pokok + sekolah
+        const bonus = hitungBonusGuru(g.id)
+        const totalIn = pokok + sekolah
+        const totalSlip = totalIn + Number(bonus.total || 0)
         await setDoc(doc(db, 'keuangan_gaji', slipId), {
           id: slipId,
           guru_id: Number(g.id) || g.id,
@@ -1032,15 +1071,16 @@ async function bulkGenerate() {
           bisyaroh_pokok: pokok,
           bisyaroh_sekolah: sekolah,
           bisyaroh_tambahan: 0,
-          total_pemasukan: total,
+          bonus_kehadiran: bonus,
+          total_pemasukan: totalSlip,
           total_potongan: 0,
-          take_home: total,
+          take_home: totalSlip,
           tunjangan_list: [],
           potongan_list: [],
           generated_via: 'bulk',
           updated_at: serverTimestamp()
         })
-        bulkLog.value.push(`OK ${g.nama} -> ${fmtRp(total)}`)
+        bulkLog.value.push(`OK ${g.nama} -> ${fmtRp(totalSlip)} (bonus ${fmtRp(bonus.total)})`)
       } catch (e) {
         bulkLog.value.push(`ER ${g.nama} -> ${e.message}`)
       }

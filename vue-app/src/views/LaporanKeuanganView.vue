@@ -19,12 +19,12 @@
       <div class="bg-emerald-50 rounded-2xl p-4 border-2 border-emerald-200">
         <p class="text-[10px] uppercase font-black text-emerald-700">Pemasukan</p>
         <p class="text-2xl font-black text-emerald-800 mt-1">{{ fmtRp(totalPemasukan) }}</p>
-        <p class="text-[10px] text-emerald-600 mt-1">{{ pembayaranList.length }} pembayaran + {{ setorList.length }} setor tabungan</p>
+        <p class="text-[10px] text-emerald-600 mt-1">{{ pembayaranList.length }} pembayaran POS</p>
       </div>
       <div class="bg-rose-50 rounded-2xl p-4 border-2 border-rose-200">
         <p class="text-[10px] uppercase font-black text-rose-700">Pengeluaran</p>
         <p class="text-2xl font-black text-rose-800 mt-1">{{ fmtRp(totalPengeluaran) }}</p>
-        <p class="text-[10px] text-rose-600 mt-1">{{ bisyarohList.length }} slip bisyaroh + {{ tarikList.length }} tarik tabungan</p>
+        <p class="text-[10px] text-rose-600 mt-1">{{ bisyarohList.length }} slip bisyaroh</p>
       </div>
       <div :class="['rounded-2xl p-4 border-2', saldoBersih >= 0 ? 'bg-cyan-50 border-cyan-200' : 'bg-cyan-50 border-cyan-200']">
         <p class="text-[10px] uppercase font-black" :class="saldoBersih >= 0 ? 'text-cyan-700' : 'text-cyan-700'">Saldo Bersih</p>
@@ -39,7 +39,8 @@
         <h3 class="text-xs font-black uppercase mb-2 text-emerald-700"><i class="fas fa-arrow-down mr-1"></i>Pemasukan</h3>
         <div class="space-y-1 text-xs">
           <div class="flex justify-between"><span>Pembayaran Tagihan</span><b class="text-emerald-700">{{ fmtRp(sumPembayaran) }}</b></div>
-          <div class="flex justify-between"><span>Setor Tabungan</span><b class="text-emerald-700">{{ fmtRp(sumSetor) }}</b></div>
+          <!-- v.21.104.0527: tabungan tidak masuk pemasukan (selaras Buku Induk) -->
+          <div class="flex justify-between text-[10px] text-[var(--text-tertiary)] italic"><span>Setor tabungan</span><span>tidak dihitung</span></div>
           <div class="border-t pt-1 flex justify-between font-black"><span>Total</span><span class="text-emerald-800">{{ fmtRp(totalPemasukan) }}</span></div>
         </div>
       </div>
@@ -47,7 +48,8 @@
         <h3 class="text-xs font-black uppercase mb-2 text-rose-700"><i class="fas fa-arrow-up mr-1"></i>Pengeluaran</h3>
         <div class="space-y-1 text-xs">
           <div class="flex justify-between"><span>Slip Bisyaroh Guru</span><b class="text-rose-700">{{ fmtRp(sumBisyaroh) }}</b></div>
-          <div class="flex justify-between"><span>Tarik Tabungan</span><b class="text-rose-700">{{ fmtRp(sumTarik) }}</b></div>
+          <!-- v.21.104.0527: tabungan tidak masuk pengeluaran (selaras Buku Induk) -->
+          <div class="flex justify-between text-[10px] text-[var(--text-tertiary)] italic"><span>Tarik tabungan</span><span>tidak dihitung</span></div>
           <div class="border-t pt-1 flex justify-between font-black"><span>Total</span><span class="text-rose-800">{{ fmtRp(totalPengeluaran) }}</span></div>
         </div>
       </div>
@@ -92,8 +94,9 @@ const sumSetor = computed(() => setorList.value.reduce((s, m) => s + (Number(m.n
 const sumTarik = computed(() => tarikList.value.reduce((s, m) => s + (Number(m.nominal) || 0), 0))
 const sumBisyaroh = computed(() => bisyarohList.value.reduce((s, g) => s + (Number(g.take_home) || 0), 0))
 
-const totalPemasukan = computed(() => sumPembayaran.value + sumSetor.value)
-const totalPengeluaran = computed(() => sumBisyaroh.value + sumTarik.value)
+// v.21.104.0527: tabungan dikeluarkan dari pemasukan/pengeluaran (selaras Buku Induk).
+const totalPemasukan = computed(() => sumPembayaran.value)
+const totalPengeluaran = computed(() => sumBisyaroh.value)
 const saldoBersih = computed(() => totalPemasukan.value - totalPengeluaran.value)
 
 onMounted(() => {
