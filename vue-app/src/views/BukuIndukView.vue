@@ -335,6 +335,24 @@
               </span>
               <span v-else class="text-[var(--text-tertiary)]">—</span>
               <button
+                v-if="b.sumber === 'pos_santri' && b.trx_id"
+                type="button"
+                @click="cetakUlangStruk(b, 'pdf')"
+                class="text-[10px] text-rose-600 hover:bg-rose-100 dark:hover:bg-rose-900/30 px-1.5 py-1 rounded"
+                title="Cetak ulang struk PDF"
+              >
+                <i class="fas fa-file-pdf"></i>
+              </button>
+              <button
+                v-if="b.sumber === 'pos_santri' && b.trx_id"
+                type="button"
+                @click="cetakUlangStruk(b, 'dot')"
+                class="text-[10px] text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-600 px-1.5 py-1 rounded"
+                title="Cetak ulang struk dot-matrix"
+              >
+                <i class="fas fa-print"></i>
+              </button>
+              <button
                 v-if="isAdmin"
                 type="button"
                 @click="bukaEditBuku(b)"
@@ -377,6 +395,9 @@ import { db } from '@/services/firebase'
 import { fmtRp, formatTanggal as formatTgl } from '@/utils/format'
 import { buildListPdf, buildKopFromSettings } from '@/utils/pdfBuilder'
 import { isSuperAdmin } from '@/utils/roleScope'
+// v.21.103.0527: reprint struk dari BukuInduk untuk record sumber pos_santri
+import { cetakStrukPdf, cetakStrukDotMatrix } from '@/utils/strukBuilder'
+import { collection as fbCollection, query as fbQuery, where as fbWhere, getDocs as fbGetDocs } from 'firebase/firestore'
 
 const toast = useToast()
 const auth = useAuthStore()
@@ -384,6 +405,51 @@ const settingsStore = useSettingsStore()
 const { exportStyled } = useExcel()
 // v.21.98.0527: super_admin only — bisa hapus record buku induk
 const isAdmin = computed(() => isSuperAdmin(auth.sesiAktif))
+
+// v.21.103.0527: reprint struk untuk record POS — group by trx_id
+async function cetakUlangStruk(b, mode = 'pdf') {
+  const trxId = b.trx_id || ''
+  if (!trxId) {
+    toast.warning('Record tidak punya trx_id — bukan dari POS Santri')
+    return
+  }
+  try {
+    // Fetch semua record dengan trx_id sama
+    const snap = await fbGetDocs(
+      fbQuery(fbCollection(db, 'keuangan_buku_induk'), fbWhere('trx_id', '==', trxId))
+    )
+    const items = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+    if (items.length === 0) {
+      toast.warning('Data transaksi tidak ditemukan')
+      return
+    }
+    // Bangun struktur trx
+    const first = items[0]
+    const trx = {
+      trx_id: trxId,
+      no_struk: first.no_struk || trxId,
+      tanggal: first.tanggal || '',
+      santri_nama: first.santri_nama || '-',
+      santri_nis: '',
+      lembaga: '',
+      kelas: '',
+      operator: first.operator || '-',
+      items: items.map((e) => ({
+        jenis: e.kategori || 'Pembayaran',
+        nominal: Number(e.nominal || 0),
+        keterangan: ''
+      })),
+      total: items.reduce((sum, e) => sum + Number(e.nominal || 0), 0)
+    }
+    const sset = settingsStore.settings || {}
+    const fn = mode === 'dot' ? cetakStrukDotMatrix : cetakStrukPdf
+    await fn(trx, sset)
+    toast.success('Struk dicetak ulang')
+  } catch (e) {
+    console.error('[cetakUlangStruk]', e)
+    toast.error('Gagal cetak ulang: ' + (e.message || e))
+  }
+}
 
 async function hapusBuku(b) {
   if (!isAdmin.value) return
