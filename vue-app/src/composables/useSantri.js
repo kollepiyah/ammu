@@ -4,6 +4,8 @@ import { subscribeColl } from '@/services/firestore'
 import { useAuthStore } from '@/stores/auth'
 // v.21.10.0526: Import LEMBAGA_GROUPS helpers untuk lembaga_refs derivation + canSee scoping
 import { getLembagaGroup, canSee } from './useLembaga'
+// v.21.86.0527: Sort konsisten lembaga→kelas→nama (berlaku di semua halaman via composable)
+import { sortSantri } from '@/utils/santriSort'
 
 // Helper: derive santri.lembaga_refs dari legacy fields
 // Santri reguler: 1 ref. Santri mukim: 3 refs (Ma'had + Qiraati + Sekolah).
@@ -116,10 +118,8 @@ export function useSantri() {
     if (filterStatus.value === 'aktif') list = list.filter((s) => s.aktif !== false)
     else if (filterStatus.value === 'tidak_aktif') list = list.filter((s) => s.aktif === false)
 
-    // Sort: nama asc
-    return list.sort((a, b) =>
-      String(a.nama || '').localeCompare(String(b.nama || ''), 'id')
-    )
+    // v.21.86.0527: Sort lembaga→kelas→nama (konsisten di semua halaman)
+    return sortSantri(list)
   })
 
   // Stats

@@ -347,6 +347,7 @@ import { doc, setDoc, writeBatch } from 'firebase/firestore'
 import { db } from '@/services/firebase'
 import { useSettingsStore } from '@/stores/settings'
 import { useSantri } from '@/composables/useSantri'
+import { sortSantri } from '@/utils/santriSort'
 import { useToast } from '@/composables/useToast'
 import { useExcel } from '@/composables/useExcel'
 
@@ -405,9 +406,7 @@ const masterKegiatan = computed(() => {
 })
 
 const santriMukim = computed(() =>
-  santriRaw.value
-    .filter((s) => s.aktif !== false && s.is_mukim === true)
-    .sort((a, b) => String(a.nama || '').localeCompare(String(b.nama || '')))
+  sortSantri(santriRaw.value.filter((s) => s.aktif !== false && s.is_mukim === true))
 )
 
 const modalOpen = ref(false)
@@ -588,3 +587,4 @@ async function onFileChange(ev) {
   }
 }
 </script>
+                       

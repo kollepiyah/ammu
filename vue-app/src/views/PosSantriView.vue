@@ -175,6 +175,7 @@ import {
   serverTimestamp
 } from 'firebase/firestore'
 import { db } from '@/services/firebase'
+import { sortSantri } from '@/utils/santriSort'
 import ModalPOS from '@/components/pos/ModalPOS.vue'
 
 const auth = useAuthStore()
@@ -210,10 +211,9 @@ onMounted(async () => {
   try {
     // Load santri
     const snap = await getDocs(collection(db, 'santri'))
-    santriList.value = snap.docs
-      .map((d) => ({ id: d.id, ...d.data() }))
-      .filter((s) => s.aktif !== false)
-      .sort((a, b) => (a.nama || '').localeCompare(b.nama || ''))
+    santriList.value = sortSantri(
+      snap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((s) => s.aktif !== false)
+    )
 
     // Load 5 transaksi terakhir POS Santri
     const histSnap = await getDocs(
@@ -376,3 +376,4 @@ function fmtTgl(t) {
   }
 }
 </script>
+        

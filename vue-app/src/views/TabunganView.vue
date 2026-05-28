@@ -421,6 +421,7 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { subscribeColl } from '@/services/firestore'
 import { doc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/services/firebase'
+import { sortSantri } from '@/utils/santriSort'
 import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
@@ -613,11 +614,11 @@ const modalSaldoSantri = computed(() => {
 
 // Santri options buat datalist
 const santriOptions = computed(() =>
-  (santriRaw.value || [])
-    .filter((s) => s.aktif !== false)
-    .map((s) => ({ id: s.id, nama: s.nama, lembaga: s.lembaga, kelas: s.kelas }))
-    .sort((a, b) => (a.nama || '').localeCompare(b.nama || ''))
-    .slice(0, 200)
+  sortSantri(
+    (santriRaw.value || [])
+      .filter((s) => s.aktif !== false)
+      .map((s) => ({ id: s.id, nama: s.nama, lembaga: s.lembaga, kelas: s.kelas }))
+  ).slice(0, 200)
 )
 
 function openModal(santriId = '', jenis = 'setor') {

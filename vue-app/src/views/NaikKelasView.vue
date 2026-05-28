@@ -1018,6 +1018,7 @@ import { useToast } from '@/composables/useToast'
 import { useGuru } from '@/composables/useGuru'
 import { useExcel } from '@/composables/useExcel'
 import { useLembaga } from '@/composables/useLembaga'
+import { sortSantri } from '@/utils/santriSort'
 import { LEMBAGA_KENAIKAN_LIST, getKartuKenaikanSchema, getKopKartuLembaga } from '@/utils/kenaikan'
 import { buildListPdf, createPdf, drawTable, savePdf } from '@/utils/pdfBuilder'
 import { imageToDataURL } from '@/services/pdf'
@@ -1102,7 +1103,7 @@ const filteredFormSantri = computed(() => {
           .includes(kw)
       )
     }
-    return list.sort((a, b) => (a.nama || '').localeCompare(b.nama || ''))
+    return sortSantri(list, { lembagaField: 'lembaga', kelasField: 'kelas' })
   }
   if (!filterLembaga.value) return []
   let list
@@ -1165,7 +1166,7 @@ const filteredFormSantri = computed(() => {
         .includes(kw)
     )
   }
-  return list.sort((a, b) => (a.nama || '').localeCompare(b.nama || ''))
+  return sortSantri(list, { lembagaField: 'lembaga', kelasField: 'kelas' })
 })
 
 // ────────── Riwayat tab ──────────
@@ -1210,7 +1211,7 @@ const riwayatList = computed(() => {
         .includes(kw)
     )
   }
-  return list.sort((a, b) => (a.nama || '').localeCompare(b.nama || ''))
+  return sortSantri(list, { lembagaField: 'lembaga', kelasField: 'kelas' })
 })
 
 function countTanggalTerisi(s, lembaga) {

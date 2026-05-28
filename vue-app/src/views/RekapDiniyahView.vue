@@ -179,6 +179,7 @@ import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
 import { useSantri } from '@/composables/useSantri'
 import { useLembaga } from '@/composables/useLembaga'
+import { sortSantri } from '@/utils/santriSort'
 import { watch } from 'vue'
 // v.21.76: Diniyah lembaga (SDI + PKBM only per spec canonical kyai)
 const LEMBAGA_DINIYAH = ['SDI', 'PKBM']
@@ -318,12 +319,7 @@ const filteredSantri = computed(() => {
         .toLowerCase()
         .includes(kw)
     )
-  return list.sort(
-    (a, b) =>
-      String(a.lembaga_sekolah).localeCompare(String(b.lembaga_sekolah)) ||
-      String(a.kelas_sekolah).localeCompare(String(b.kelas_sekolah)) ||
-      String(a.nama).localeCompare(String(b.nama))
-  )
+  return sortSantri(list, { lembagaField: 'lembaga_sekolah', kelasField: 'kelas_sekolah' })
 })
 
 // Period key: "YYYY_MM"
@@ -393,3 +389,4 @@ async function saveCell(santriId, mapel, value) {
   }
 }
 </script>
+                                                                                                 

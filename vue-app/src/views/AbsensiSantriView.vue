@@ -170,16 +170,17 @@ import { doc, setDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/services/firebase'
 import { useToast } from '@/composables/useToast'
 import { useAuthStore } from '@/stores/auth'
+import { isFullFilterRole } from '@/utils/roleScope'
+import { sortSantri } from '@/utils/santriSort'
 
 const toast = useToast()
 const auth = useAuthStore()
 
-const isAdmin = computed(() => {
-  const u = auth.sesiAktif
-  if (!u) return false
-  return u.role === 'admin' || u.id === 'admin' || ['super_admin', 'admin', 'admin_keuangan'].includes(u.role_sistem)
-})
-const isGuru = computed(() => !isAdmin.value && (auth.sesiAktif?.role === 'guru'))
+// Full filter (pilih lembaga) hanya admin/super_admin. admin_keuangan + guru/user = guru mode.
+const isFullFilter = computed(() => isFullFilterRole(auth.sesiAktif))
+const isGuruMode = computed(() => !isFullFilter.value)
+// alias lama supaya template tetap jalan
+const isGuru = isGuruMode
 const guruName = computed(() => String(auth.sesiAktif?.guru || auth.sesiAktif?.nama || '').toLowerCase().trim())
 
 function _low(v) { return String(v || '').toLowerCase().trim() }
@@ -289,7 +290,10 @@ const filteredSantri = computed(() => {
     const kw = search.value.toLowerCase()
     list = list.filter((s) => String(s.nama || '').toLowerCase().includes(kw))
   }
-  return list.sort((a, b) => String(a.nama || '').localeCompare(String(b.nama || '')))
+  // urut per lembaga lalu kelas lalu nama
+  const lf = kategori.value === 'ngaji' ? 'lembaga' : 'lembaga_sekolah'
+  const kf = kategori.value === 'ngaji' ? 'kelas' : 'kelas_sekolah'
+  return sortSantri(list, { lembagaField: lf, kelasField: kf })
 })
 
 // Input rows state (santriId → {sakit, izin, alfa})

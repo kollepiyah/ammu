@@ -137,7 +137,7 @@
         <div class="flex items-center justify-between gap-3 flex-wrap mb-3">
           <div class="flex items-center gap-2">
             <button
-              @click="view = 'lembaga'"
+              @click="view = isFullFilter ? 'lembaga' : 'picker'"
               class="text-xs font-bold px-2 py-1.5 rounded-lg bg-[var(--bg-muted)] hover:bg-slate-200 dark:hover:bg-slate-600 transition cursor-pointer"
               title="Kembali"
             >
@@ -153,7 +153,7 @@
                   'mr-1'
                 ]"
               ></i>
-              {{ lembaga }} · {{ tahunAjaran }} {{ semester }}
+              {{ lembaga || (kategori === 'qiraati' ? 'Ngaji Saya' : 'Sekolah Saya') }} · {{ tahunAjaran }} {{ semester }}
             </h2>
           </div>
           <span class="text-[10px] text-[var(--text-tertiary)] font-bold">{{ santriList.length }} santri</span>
@@ -903,18 +903,18 @@ onUnmounted(() => {
 const { santriRaw, getRapors } = useSantri()
 const { lembagaRaw } = useLembaga()
 const { guruRaw } = useGuru()
+import { isFullFilterRole } from '@/utils/roleScope'
+import { sortSantri } from '@/utils/santriSort'
 const settingsStore = useSettingsStore()
 const authStore = useAuthStore()
 
 // Role-based view restrictions
+// Full filter (pilih lembaga) = admin/super_admin. admin_keuangan + guru/user = guru mode.
+const isFullFilter = computed(() => isFullFilterRole(authStore.sesiAktif))
 const isGuruOnly = computed(() => {
   const s = authStore.sesiAktif
-  return (
-    s?.role === 'guru' &&
-    s?.role_sistem !== 'super_admin' &&
-    s?.role_sistem !== 'admin' &&
-    s?.role_sistem !== 'admin_keuangan'
-  )
+  if (!s || s.role === 'santri') return false
+  return !isFullFilter.value
 })
 const isSantri = computed(() => authStore.sesiAktif?.role === 'santri')
 
@@ -979,8 +979,32 @@ const santriList = computed(() => {
   const lmb = String(lembaga.value || '')
     .toLowerCase()
     .trim()
-  if (!lmb) return []
+  // Guru mode: tampilkan santri yang diampu (tanpa wajib pilih lembaga)
+  const guruMode = isGuruOnly.value
+  if (!lmb && !guruMode) return []
   let list = santriRaw.value.filter((s) => s.aktif !== false)
+  if (guruMode && !lmb) {
+    // filter berdasarkan kepemilikan sesuai kategori
+    const sesiNama = String(authStore.sesiAktif?.nama || '').toLowerCase().trim()
+    const sesiGuru = String(authStore.sesiAktif?.guru || '').toLowerCase().trim()
+    list = list.filter((s) => {
+      if (kategori.value === 'qiraati') {
+        const names = [s.guru, s.guru_pagi, s.guru_sore].filter(Boolean).map((g) => String(g).toLowerCase().trim())
+        return names.includes(sesiNama) || names.includes(sesiGuru)
+      } else {
+        const arr = Array.isArray(s.guru_sekolah) ? s.guru_sekolah.map((g) => String(g || '').toLowerCase().trim()) : []
+        return arr.includes(sesiNama) || arr.includes(sesiGuru)
+      }
+    })
+    if (filterKelas.value) list = list.filter((s) => String(s.kelas || s.kelas_sekolah || '') === filterKelas.value)
+    if (search.value.trim()) {
+      const kw = search.value.trim().toLowerCase()
+      list = list.filter((s) => String(s.nama || '').toLowerCase().includes(kw))
+    }
+    const lf = kategori.value === 'qiraati' ? 'lembaga' : 'lembaga_sekolah'
+    const kf = kategori.value === 'qiraati' ? 'kelas' : 'kelas_sekolah'
+    return sortSantri(list, { lembagaField: lf, kelasField: kf })
+  }
 
   if (kategori.value === 'qiraati') {
     if (lmb === 'tpq pagi' || lmb === 'tpq sore') {
@@ -1059,11 +1083,9 @@ const santriList = computed(() => {
     )
   }
 
-  return list.sort(
-    (a, b) =>
-      String(a.kelas || '').localeCompare(String(b.kelas || '')) ||
-      String(a.nama || '').localeCompare(String(b.nama || ''))
-  )
+  const lf = kategori.value === 'qiraati' ? 'lembaga' : 'lembaga_sekolah'
+  const kf = kategori.value === 'qiraati' ? 'kelas' : 'kelas_sekolah'
+  return sortSantri(list, { lembagaField: lf, kelasField: kf })
 })
 
 const kelasOptions = computed(() => {
@@ -1874,10 +1896,12 @@ const ekgqKepala = computed(() => {
 // ===== Navigation actions =====
 function pilihKategori(k) {
   kategori.value = k
-  view.value = 'lembaga'
   filterKelas.value = ''
   search.value = ''
   santriId.value = ''
+  // Guru mode: skip pilih lembaga, langsung list santri diampu
+  view.value = isGuruOnly.value ? 'santri' : 'lembaga'
+  if (isGuruOnly.value) lembaga.value = ''
 }
 
 // Diniyah lembaga filter (SDI + PKBM only — formal sekolah)

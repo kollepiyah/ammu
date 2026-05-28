@@ -368,6 +368,7 @@ import { db } from '@/services/firebase'
 import { useAuthStore } from '@/stores/auth'
 import { useSantri } from '@/composables/useSantri'
 import { useLembaga } from '@/composables/useLembaga'
+import { sortSantri } from '@/utils/santriSort'
 import { useGuru } from '@/composables/useGuru'
 import { useToast } from '@/composables/useToast'
 
@@ -502,16 +503,8 @@ const filteredSantri = computed(() => {
     )
   }
 
-  // Sort: lembaga → kelas → guru → nama
-  return list.sort((a, b) => {
-    const byLem = String(a.lembaga || '').localeCompare(String(b.lembaga || ''))
-    if (byLem !== 0) return byLem
-    const byKls = String(a.kelas || '').localeCompare(String(b.kelas || ''))
-    if (byKls !== 0) return byKls
-    const byGuru = String(a.guru || '').localeCompare(String(b.guru || ''))
-    if (byGuru !== 0) return byGuru
-    return String(a.nama || '').localeCompare(String(b.nama || ''))
-  })
+  // v.21.86.0527: Sort konsisten lembaga→kelas→nama (natural order via sortSantri)
+  return sortSantri(list, { lembagaField: 'lembaga', kelasField: 'kelas' })
 })
 
 // --- Group by lembaga + kelas + guru ---
@@ -767,3 +760,4 @@ function ptptJuzHint(kelas) {
   opacity: 0;
 }
 </style>
+                                                                                                                                                                                                                                                                                     

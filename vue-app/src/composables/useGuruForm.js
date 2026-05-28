@@ -141,6 +141,8 @@ export function useGuruForm() {
 
   // v.21.17b.0526: Jabatan dinamis dari master/jabatan Firestore doc (legacy fallback)
   const jabatanFromMaster = ref([])
+  // v.21.85.0527: items[] {nama, tipe_pegawai, tipe_lembaga} dari JabatanKelolaView (ACF)
+  const jabatanItemsFromMaster = ref([])
   let _unsubJabatan = null
 
   // v.21.28.0526: Jabatan dari master/lembaga.list[i].jabatan PER-LEMBAGA.
@@ -222,7 +224,12 @@ export function useGuruForm() {
     for (const n of jabatanFromMaster.value) {
       if (typeof n === 'string' && !allNames.has(n.toLowerCase())) {
         allNames.add(n.toLowerCase())
-        allWithTipe.push({ nama: n, tipe: JABATAN_GURU_GROUP.includes(n) ? 'guru' : 'pegawai' })
+        // v.21.85.0527: prefer tipe_pegawai dari items[] ACF, fallback infer dari group hardcoded
+        const item = jabatanItemsFromMaster.value.find(
+          (it) => it && it.nama && String(it.nama).toLowerCase() === n.toLowerCase()
+        )
+        const tipe = item?.tipe_pegawai || (JABATAN_GURU_GROUP.includes(n) ? 'guru' : 'pegawai')
+        allWithTipe.push({ nama: n, tipe })
       }
     }
     for (const n of JABATAN_OPTIONS) {
@@ -404,6 +411,7 @@ export function useGuruForm() {
     })
     _unsubJabatan = subscribeDoc('master', 'jabatan', (docData) => {
       jabatanFromMaster.value = Array.isArray(docData?.list) ? docData.list : []
+      jabatanItemsFromMaster.value = Array.isArray(docData?.items) ? docData.items : []
     })
   })
 

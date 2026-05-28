@@ -9,7 +9,9 @@ import { useToast } from '@/composables/useToast'
 import { doc, setDoc } from 'firebase/firestore'
 import { db } from '@/services/firebase'
 import LembagaView from './LembagaView.vue'
-import KelasView from './KelasView.vue'
+// v.21.85.0527: KelasView read-only diganti KelasGuruView (assign santri↔guru) + JabatanKelolaView (ACF)
+import KelasGuruView from './KelasGuruView.vue'
+import JabatanKelolaView from './JabatanKelolaView.vue'
 import FieldSchemaView from './FieldSchemaView.vue'
 import GuruView from './GuruView.vue'
 import SantriView from './SantriView.vue'
@@ -375,94 +377,7 @@ async function setTpAktif(tp) {
   }
 }
 
-// v.21.12.0526: JABATAN CRUD — read dari master/jabatan doc (match legacy schema)
-// v.21.12.0526 jabatan loader
-// v.21.17.0526: Kepala per-lembaga (kyai req — bukan global "Kepala Lembaga")
-const DEFAULT_JABATAN = [
-  'Guru',
-  'Pegawai',
-  'Kepala TPQ',
-  'PJ PTPT',
-  'PJ PPPH',
-  'Kepala TK',
-  'Kepala SDI',
-  'Kepala PKBM',
-  'PJ Administrasi',
-  'Bendahara',
-  'Sekretaris',
-  'Admin',
-  'Admin Yayasan',
-  'Pengasuh',
-  'Keamanan',
-  'Kebersihan'
-]
-const jabatanRaw = ref([])
-let _unsubJabatan = null
-onMounted(() => {
-  _unsubJabatan = subscribeDoc('master', 'jabatan', (data) => {
-    const list = data?.list
-    if (Array.isArray(list) && list.length > 0) {
-      jabatanRaw.value = list
-    } else {
-      // Seed default kalau Firestore kosong (idempotent — hanya seed sekali)
-      jabatanRaw.value = [...DEFAULT_JABATAN]
-      setDoc(doc(db, 'master', 'jabatan'), { list: DEFAULT_JABATAN }, { merge: true }).catch(
-        () => {}
-      )
-    }
-  })
-})
-const jabatanList = computed(() => jabatanRaw.value)
-const jabatanForm = reactive({ value: '', idx: null })
-const savingJabatan = ref(false)
-
-function editJabatan(idx) {
-  jabatanForm.value = jabatanList.value[idx] || ''
-  jabatanForm.idx = idx
-}
-function resetJabatan() {
-  jabatanForm.value = ''
-  jabatanForm.idx = null
-}
-async function simpanJabatan() {
-  if (!jabatanForm.value.trim()) {
-    toast.warning('Nama jabatan wajib diisi')
-    return
-  }
-  savingJabatan.value = true
-  try {
-    const arr = [...jabatanList.value]
-    if (jabatanForm.idx !== null) {
-      arr[jabatanForm.idx] = jabatanForm.value.trim()
-    } else {
-      if (arr.includes(jabatanForm.value.trim())) {
-        toast.warning('Jabatan sudah ada')
-        return
-      }
-      arr.push(jabatanForm.value.trim())
-    }
-    // v.21.12.0526: write to master/jabatan (match legacy)
-    await setDoc(doc(db, 'master', 'jabatan'), { list: arr })
-    toast.success(jabatanForm.idx !== null ? 'Diperbarui' : 'Tersimpan')
-    resetJabatan()
-  } catch (e) {
-    toast.error('Gagal: ' + (e.message || e))
-  } finally {
-    savingJabatan.value = false
-  }
-}
-async function hapusJabatan(idx) {
-  if (!confirm(`Hapus jabatan "${jabatanList.value[idx]}"?`)) return
-  try {
-    const arr = [...jabatanList.value]
-    arr.splice(idx, 1)
-    // v.21.12.0526: write to master/jabatan
-    await setDoc(doc(db, 'master', 'jabatan'), { list: arr })
-    toast.success('Dihapus')
-  } catch (e) {
-    toast.error('Gagal: ' + (e.message || e))
-  }
-}
+// v.21.85.0527: Jabatan CRUD dipindah ke JabatanKelolaView (sub-menu Lembaga > Jabatan)
 
 // PENGATURAN RAPOR
 const DEFAULT_PREDIKAT = [
@@ -679,91 +594,48 @@ async function simpanPengaturanRekap() {
         >
           <i class="fas fa-building mr-1"></i>Daftar Lembaga
         </button>
+        <!-- v.21.85.0527: Kelas & Guru -->
         <button
-          @click="lembagaSubTab = 'kelas'"
+          @click="lembagaSubTab = 'kelas-guru'"
           :class="[
             'px-3 py-1.5 text-xs font-bold rounded-lg border transition cursor-pointer',
-            lembagaSubTab === 'kelas'
+            lembagaSubTab === 'kelas-guru'
               ? 'bg-cyan-500 text-white border-cyan-600'
               : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-cyan-50'
           ]"
         >
-          <i class="fas fa-door-open mr-1"></i>Kelas
+          <i class="fas fa-user-friends mr-1"></i>Kelas &amp; Guru
         </button>
-        <!-- v.21.12.0526: Field Schema sub-tab DROPPED — sudah per-lembaga di LembagaDetail (kyai req) -->
+        <!-- v.21.85.0527: Jabatan ACF -->
+        <button
+          @click="lembagaSubTab = 'jabatan'"
+          :class="[
+            'px-3 py-1.5 text-xs font-bold rounded-lg border transition cursor-pointer',
+            lembagaSubTab === 'jabatan'
+              ? 'bg-cyan-500 text-white border-cyan-600'
+              : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-cyan-50'
+          ]"
+        >
+          <i class="fas fa-id-badge mr-1"></i>Jabatan
+        </button>
       </div>
       <div
         class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden"
       >
-        <component :is="lembagaSubTab === 'kelas' ? KelasView : LembagaView" :key="lembagaSubTab" />
-      </div>
-    </div>
-
-    <!-- TAB 2: JABATAN -->
-    <div
-      v-else-if="activeTab === 'jabatan'"
-      class="bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-5 border border-slate-200 dark:border-slate-700 shadow-sm space-y-4"
-    >
-      <div>
-        <h3 class="text-sm md:text-base font-black text-slate-800 dark:text-white mb-1">
-          <i class="fas fa-plus-circle text-teal-600 mr-1"></i>Kelola Jabatan Guru
-        </h3>
-        <p class="text-xs text-slate-500 dark:text-slate-400">
-          Master jabatan untuk dropdown di Data Guru/Pegawai.
-        </p>
-      </div>
-      <form @submit.prevent="simpanJabatan" class="flex flex-wrap gap-2">
-        <input
-          v-model="jabatanForm.value"
-          type="text"
-          placeholder="Nama Jabatan Baru (Mis: Wakasek Kurikulum)"
-          class="flex-1 min-w-[200px] px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-800 dark:text-white"
+        <component
+          :is="
+            lembagaSubTab === 'kelas-guru'
+              ? KelasGuruView
+              : lembagaSubTab === 'jabatan'
+                ? JabatanKelolaView
+                : LembagaView
+          "
+          :key="lembagaSubTab"
         />
-        <button
-          type="submit"
-          :disabled="savingJabatan"
-          class="bg-teal-600 hover:bg-teal-700 text-white font-bold px-4 py-2 rounded-lg text-xs disabled:opacity-50"
-        >
-          <i :class="['fas', jabatanForm.idx !== null ? 'fa-save' : 'fa-plus', 'mr-1']"></i>
-          {{ jabatanForm.idx !== null ? 'Update' : 'Tambah' }}
-        </button>
-        <button
-          v-if="jabatanForm.idx !== null"
-          type="button"
-          @click="resetJabatan"
-          class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-3 py-2 rounded-lg text-xs"
-        >
-          Batal
-        </button>
-      </form>
-
-      <div v-if="jabatanList.length === 0" class="text-center text-slate-400 italic text-xs py-6">
-        <i class="fas fa-inbox text-3xl text-slate-300 dark:text-slate-600 block mb-2"></i>
-        Belum ada jabatan terdaftar. Tambah jabatan pertama via form di atas.
       </div>
-      <ul v-else class="space-y-1">
-        <li
-          v-for="(j, idx) in jabatanList"
-          :key="idx"
-          class="flex items-center gap-2 bg-slate-50 dark:bg-slate-900/30 border-l-4 border-teal-500 px-3 py-2 rounded-r-lg"
-        >
-          <i class="fas fa-id-badge text-teal-600"></i>
-          <span class="flex-1 text-sm font-bold text-slate-800 dark:text-white">{{ j }}</span>
-          <button
-            @click="editJabatan(idx)"
-            class="text-[10px] text-cyan-600 hover:underline font-bold"
-          >
-            edit
-          </button>
-          <button
-            @click="hapusJabatan(idx)"
-            class="text-[10px] text-rose-600 hover:underline font-bold"
-          >
-            hapus
-          </button>
-        </li>
-      </ul>
     </div>
+
+    <!-- v.21.85.0527: TAB Jabatan dihapus — kini sub-menu Lembaga > Jabatan -->
 
     <!-- TAB 3: GURU/PEGAWAI — v.21.17c.0526: mode=master untuk CRUD lengkap -->
     <div

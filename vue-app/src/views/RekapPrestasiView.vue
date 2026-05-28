@@ -147,10 +147,11 @@
 
     <!-- ===== LAYER 3: INPUT BULANAN (existing — wrapped) ===== -->
     <template v-else-if="viewStep === 'input'">
-      <!-- HEADER WITH BACK -->
+      <!-- HEADER WITH BACK (admin/super only) -->
       <button
+        v-if="isFullFilter"
         @click="backToSub"
-        class="inline-flex items-center gap-2 text-xs font-bold px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 transition cursor-pointer text-slate-700"
+        class="inline-flex items-center gap-2 text-xs font-bold px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 transition cursor-pointer text-slate-700 dark:text-slate-200"
         title="Pilih lembaga lain"
       >
         <i class="fas fa-arrow-left"></i> Pilih Lembaga Lain
@@ -191,7 +192,7 @@
       <select v-model="tahun" class="px-3 py-2 text-sm rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-teal-500 outline-none">
         <option v-for="t in TAHUN_LIST" :key="t" :value="t">{{ t }}</option>
       </select>
-      <select v-model="filterLembaga" class="px-3 py-2 text-sm rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-teal-500 outline-none">
+      <select v-if="isFullFilter" v-model="filterLembaga" class="px-3 py-2 text-sm rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-teal-500 outline-none">
         <option value="">Semua lembaga</option>
         <option v-for="l in LEMBAGA_QIRAATI" :key="l" :value="l">{{ l }}</option>
       </select>
@@ -409,6 +410,9 @@ import { useExcel } from '@/composables/useExcel'
 import { useSettingsStore } from '@/stores/settings'
 import { extractNumber, getNamaGuruGelar } from '@/utils/format'
 import { buildListPdf } from '@/utils/pdfBuilder'
+import { useAuthStore } from '@/stores/auth'
+import { isFullFilterRole } from '@/utils/roleScope'
+import { sortSantri } from '@/utils/santriSort'
 
 const LEMBAGA_QIRAATI = ['TPQ Pagi', 'TPQ Sore', 'Pra PTPT', 'PTPT', 'PPPH']
 const BULAN_LIST = [
@@ -434,6 +438,15 @@ const loading = ref(true)
 const busy = ref(false)
 const search = ref('')
 const filterLembaga = ref('')
+const auth = useAuthStore()
+const isFullFilter = computed(() => isFullFilterRole(auth.sesiAktif))
+const isGuruMode = computed(() => !isFullFilter.value)
+function _lowS(v) { return String(v || '').toLowerCase().trim() }
+function ownNgaji(s) {
+  const gn = _lowS(auth.sesiAktif?.guru || auth.sesiAktif?.nama)
+  if (!gn) return false
+  return _lowS(s.guru_pagi) === gn || _lowS(s.guru_sore) === gn || _lowS(s.guru) === gn
+}
 const filterKelas = ref('')
 const expandedId = ref(null)
 const mode = ref('bulanan')
@@ -444,6 +457,17 @@ const tahun = ref(_now.getFullYear())
 const viewStep = ref('landing') // 'landing' | 'sub-qiraati' | 'sub-diniyah' | 'input'
 const LEMBAGA_DINIYAH = ['SDI', 'PKBM']
 function pilihKategori(cat) {
+  if (isGuruMode.value) {
+    // Guru: langsung input (santri diampu, tanpa pilih lembaga)
+    if (cat === 'qiraati') {
+      filterLembaga.value = ''
+      viewStep.value = 'input'
+    } else {
+      // Diniyah → ke RekapDiniyahView (guru mode di-handle di sana)
+      router.push('/rekap-diniyah')
+    }
+    return
+  }
   viewStep.value = cat === 'qiraati' ? 'sub-qiraati' : 'sub-diniyah'
 }
 function pilihLembagaInput(lmb) {
@@ -485,17 +509,13 @@ function lembagaMatch(s, filter) {
 
 const filteredSantri = computed(() => {
   let list = santriQiraati.value
+  // Guru mode: hanya santri ngaji yang diampu
+  if (isGuruMode.value) list = list.filter((s) => ownNgaji(s))
   if (filterLembaga.value) list = list.filter((s) => lembagaMatch(s, filterLembaga.value))
   if (filterKelas.value) list = list.filter((s) => String(s.kelas || '') === filterKelas.value)
   const kw = search.value.trim().toLowerCase()
   if (kw) list = list.filter((s) => String(s.nama || '').toLowerCase().includes(kw))
-  return list.sort((a, b) => {
-    const la = String(a.lembaga || '').localeCompare(String(b.lembaga || ''), 'id')
-    if (la !== 0) return la
-    const ka = String(a.kelas || '').localeCompare(String(b.kelas || ''), 'id')
-    if (ka !== 0) return ka
-    return String(a.nama || '').localeCompare(String(b.nama || ''), 'id')
-  })
+  return sortSantri(list, { lembagaField: 'lembaga', kelasField: 'kelas' })
 })
 
 const uniqueKelas = computed(() => {
@@ -835,13 +855,38 @@ function cetakHTML() {
 }
 
 // SUBSCRIBE
+// Auto-init untuk guru mode: ngaji-only langsung input, sekolah-only ke Diniyah
+let _guruInited = false
+function initGuruFlow() {
+  if (_guruInited || !isGuruMode.value || !santriRaw.value.length) return
+  _guruInited = true
+  const hasNgaji = santriRaw.value.some((s) => s.aktif !== false && ownNgaji(s))
+  const lmbList = santriQiraati.value // ngaji list (sudah filter qiraati lembaga)
+  // hasSekolah: santri yg guru ampu di sekolah
+  const gn = _lowS(auth.sesiAktif?.guru || auth.sesiAktif?.nama)
+  const hasSekolah = santriRaw.value.some((s) => {
+    if (s.aktif === false) return false
+    const arr = Array.isArray(s.guru_sekolah) ? s.guru_sekolah.map(_lowS) : []
+    return arr.includes(gn)
+  })
+  if (hasNgaji && !hasSekolah) {
+    filterLembaga.value = ''
+    viewStep.value = 'input'
+  } else if (!hasNgaji && hasSekolah) {
+    router.push('/rekap-diniyah')
+  }
+  // both → tetap landing
+}
+
 onMounted(() => {
   // v.21.84.0527: reset ke landing setiap fresh mount supaya gak stuck di step=input
   viewStep.value = 'landing'
   filterLembaga.value = ''
+  _guruInited = false
   unsubSantri = subscribeColl('santri', (docs) => {
     santriRaw.value = docs
     loading.value = false
+    initGuruFlow()
   })
   unsubGuru = subscribeColl('guru', (docs) => {
     guruRaw.value = docs
