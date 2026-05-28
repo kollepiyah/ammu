@@ -60,6 +60,8 @@ export function useKegiatan() {
       tgl_akhir: data.tgl_akhir || data.tgl_mulai,
       audience: data.audience || 'semua',
       deskripsi: data.deskripsi || '',
+      // v.21.114.0528: tipe untuk bedakan kegiatan/libur/libur_nasional
+      tipe: data.tipe || 'kegiatan',
       dibuat_oleh: auth.sesiAktif?.nama || 'Admin',
       timestamp: new Date().toISOString()
     }

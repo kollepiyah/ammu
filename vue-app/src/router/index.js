@@ -139,9 +139,10 @@ const routes = [
       { path: 'kalender', name: 'kalender', component: KalenderKegiatanView, alias: '/kalender-kegiatan' },
       { path: 'statistik', name: 'statistik', component: StatistikView },
       // v.20.6.0526: Input Bulanan + Rekap Prestasi/Diniyah — guru boleh akses (input nilai santri kelasnya)
-      { path: 'input-bulanan', name: 'input-bulanan', component: InputBulananView },
-      { path: 'rekap-prestasi', name: 'rekap-prestasi', component: RekapPrestasiView },
-      { path: 'rekap-diniyah', name: 'rekap-diniyah', component: RekapDiniyahView },
+      // v.21.114.0528: Input Bulanan + Rekap Prestasi/Diniyah — block santri access (kyai req — santri cukup lihat data dirinya di Capaian Prestasi)
+      { path: 'input-bulanan', name: 'input-bulanan', component: InputBulananView, meta: { noSantri: true } },
+      { path: 'rekap-prestasi', name: 'rekap-prestasi', component: RekapPrestasiView, meta: { noSantri: true } },
+      { path: 'rekap-diniyah', name: 'rekap-diniyah', component: RekapDiniyahView, meta: { noSantri: true } },
       // v.21.19.0526: Master Data HANYA super_admin (kyai req)
       { path: 'master-data', name: 'master-data', component: MasterDataView, meta: { admin: true, roleSistem: 'super_admin' } },
       // v.20.13.0526: Capaian Prestasi (santri only — merged Dashboard + Pendidikan menu)
@@ -177,6 +178,10 @@ router.beforeEach(async (to, from, next) => {
   // v.21.19.0526: roleSistem gate — kalau route butuh super_admin tapi user bukan, redirect
   if (to.meta?.roleSistem && auth.sesiAktif?.role_sistem !== to.meta.roleSistem) {
     return next({ name: 'dashboard' })
+  }
+  // v.21.114.0528: noSantri gate — block santri (capaian prestasi adalah versi santri-friendly)
+  if (to.meta?.noSantri && auth.sesiAktif?.role === 'santri') {
+    return next({ name: 'capaian-prestasi' })
   }
   next()
 })

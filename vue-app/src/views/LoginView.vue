@@ -21,10 +21,11 @@ onMounted(() => {
   }
 })
 // Field name fallback: bgImage (Vue settings), bg_login (legacy), bg_img, bgUrl
+// v.21.114.0528: drop teal solid overlay → bg image full visible + backdrop-blur overlay separate
 const bgStyle = computed(() => {
   const s = settings.settings || {}
   const bg = s.bgImage || s.bg_login || s.bg_img || s.bgUrl || '/bg-pesantren.webp'
-  return `background: linear-gradient(135deg, rgba(15,118,110,0.85) 0%, rgba(13,92,85,0.85) 100%), url('${bg}') center/cover no-repeat;`
+  return `background: url('${bg}') center/cover no-repeat;`
 })
 
 const username = ref('')
@@ -100,6 +101,9 @@ function bukaWaAdmin() {
     class="min-h-screen flex flex-col items-center justify-center p-4 relative"
     :style="bgStyle"
   >
+    <!-- v.21.114.0528: backdrop-blur overlay (bukan mask solid) supaya bg image custom tetap terlihat -->
+    <div class="absolute inset-0 backdrop-blur-md bg-teal-900/30 pointer-events-none z-0" aria-hidden="true"></div>
+
     <!-- CARD LOGIN -->
     <div
       class="w-full max-w-sm bg-[#F9F6EE] rounded-3xl shadow-2xl border-t-8 border-teal-600 overflow-hidden relative z-10"

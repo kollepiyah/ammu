@@ -36,6 +36,15 @@
           >
             <i class="fas fa-chevron-right text-[var(--text-secondary)] text-xs"></i>
           </button>
+          <!-- v.21.114.0528: Seed libur nasional Indonesia untuk tahun yg ditampilkan -->
+          <button
+            v-if="bisaEdit"
+            @click="seedLiburNasional"
+            class="text-xs font-bold px-3 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 transition cursor-pointer flex items-center gap-1.5"
+            title="Tambahkan libur nasional Indonesia untuk tahun ini"
+          >
+            <i class="fas fa-flag text-[10px]"></i>Libur Nasional
+          </button>
           <button
             v-if="bisaEdit"
             @click="openModal()"
@@ -78,7 +87,9 @@
             'aspect-[3/4] sm:aspect-square p-1.5 rounded-lg border transition cursor-pointer flex flex-col items-center justify-start min-w-0 overflow-hidden text-center',
             cell.isToday
               ? 'bg-cyan-100 border-cyan-500 ring-2 ring-cyan-400 dark:bg-cyan-900/40'
-              : 'bg-[var(--bg-card)] border-[var(--border-subtle)] hover:bg-slate-50 dark:hover:bg-slate-700/50'
+              : cell.isLibur
+                ? 'bg-rose-50 border-rose-300 hover:bg-rose-100 dark:bg-rose-900/30 dark:border-rose-700'
+                : 'bg-[var(--bg-card)] border-[var(--border-subtle)] hover:bg-slate-50 dark:hover:bg-slate-700/50'
           ]"
         >
           <p
@@ -131,12 +142,23 @@
         <div
           v-for="k in kegiatanBulan"
           :key="k.id"
-          class="bg-cyan-50 dark:bg-cyan-900/20 border-l-4 border-cyan-500 p-3 rounded-r-lg cursor-pointer hover:bg-cyan-100 dark:hover:bg-cyan-900/30 transition"
+          :class="[
+            'border-l-4 p-3 rounded-r-lg cursor-pointer transition',
+            k.tipe === 'libur_nasional'
+              ? 'bg-rose-50 dark:bg-rose-900/20 border-rose-500 hover:bg-rose-100 dark:hover:bg-rose-900/30'
+              : k.tipe === 'libur'
+                ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-500 hover:bg-amber-100 dark:hover:bg-amber-900/30'
+                : 'bg-cyan-50 dark:bg-cyan-900/20 border-cyan-500 hover:bg-cyan-100 dark:hover:bg-cyan-900/30'
+          ]"
           @click="onClickCell(k.tgl_mulai)"
         >
           <div class="flex items-start justify-between gap-2">
             <div class="flex-1 min-w-0">
-              <p class="text-xs font-black text-[var(--text-primary)]">{{ k.judul }}</p>
+              <p class="text-xs font-black text-[var(--text-primary)] flex items-center gap-1.5 flex-wrap">
+                {{ k.judul }}
+                <span v-if="k.tipe === 'libur_nasional'" class="text-[9px] font-black bg-rose-200 text-rose-700 px-1.5 py-0.5 rounded uppercase tracking-wider">Libur Nasional</span>
+                <span v-else-if="k.tipe === 'libur'" class="text-[9px] font-black bg-amber-200 text-amber-700 px-1.5 py-0.5 rounded uppercase tracking-wider">Libur</span>
+              </p>
               <p class="text-[10px] text-[var(--text-secondary)] mt-0.5">
                 {{ formatRangeTanggal(k.tgl_mulai, k.tgl_akhir) }}
               </p>
@@ -207,18 +229,33 @@
                 />
               </div>
             </div>
-            <div>
-              <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1"
-                >Audience</label
-              >
-              <select
-                v-model="form.audience"
-                class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-white dark:bg-slate-900 text-[var(--text-primary)]"
-              >
-                <option value="semua">Semua</option>
-                <option value="guru">Guru/Pegawai</option>
-                <option value="santri">Santri/Wali</option>
-              </select>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1"
+                  >Tipe</label
+                >
+                <select
+                  v-model="form.tipe"
+                  class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-white dark:bg-slate-900 text-[var(--text-primary)]"
+                >
+                  <option value="kegiatan">Kegiatan</option>
+                  <option value="libur">Libur</option>
+                  <option value="libur_nasional">Libur Nasional</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1"
+                  >Audience</label
+                >
+                <select
+                  v-model="form.audience"
+                  class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-white dark:bg-slate-900 text-[var(--text-primary)]"
+                >
+                  <option value="semua">Semua</option>
+                  <option value="guru">Guru/Pegawai</option>
+                  <option value="santri">Santri/Wali</option>
+                </select>
+              </div>
             </div>
             <div>
               <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1"
@@ -274,6 +311,8 @@ import { useConfirm } from '@/composables/useConfirm'
 import { useKegiatan } from '@/composables/useKegiatan'
 import { formatMasehi, formatHijri, masehiToHijri, toArabicDigit } from '@/utils/hijri'
 import { hitungPasaran } from '@/utils/pasaran'
+// v.21.114.0528: libur nasional seed util
+import { getLiburNasional } from '@/utils/liburNasional'
 
 const auth = useAuthStore()
 const settings = useSettingsStore()
@@ -344,18 +383,21 @@ const cells = computed(() => {
     const dateObj = new Date(tahun.value, bulan.value, d)
     const dateStr = toDateStr(dateObj)
     const hijri = masehiToHijri(dateObj, kalibrasiHijri.value)
-    const hasEvent = kegiatanBulan.value.some(
+    const eventsHere = kegiatanBulan.value.filter(
       (k) => dateStr >= k.tgl_mulai && dateStr <= (k.tgl_akhir || k.tgl_mulai)
     )
+    // v.21.114.0528: deteksi libur (manual atau nasional) di cell ini
+    const isLibur = eventsHere.some((k) => k.tipe === 'libur' || k.tipe === 'libur_nasional')
     arr.push({
       day: d,
       dateStr,
       isToday: dateStr === todayStr,
       isMinggu: dateObj.getDay() === 0,
       isJumat: dateObj.getDay() === 5,
+      isLibur,
       hijriDay: toArabicDigit(hijri.day),
       pasaran: hitungPasaran(dateObj),
-      hasEvent
+      hasEvent: eventsHere.length > 0
     })
   }
   return arr
@@ -423,7 +465,8 @@ const form = reactive({
   tgl_mulai: todayStr,
   tgl_akhir: '',
   audience: 'semua',
-  deskripsi: ''
+  deskripsi: '',
+  tipe: 'kegiatan'
 })
 
 function openModal(k = null) {
@@ -434,6 +477,7 @@ function openModal(k = null) {
     form.tgl_akhir = k.tgl_akhir || ''
     form.audience = k.audience || 'semua'
     form.deskripsi = k.deskripsi || ''
+    form.tipe = k.tipe || 'kegiatan'
   } else {
     form.id = ''
     form.judul = ''
@@ -441,8 +485,37 @@ function openModal(k = null) {
     form.tgl_akhir = ''
     form.audience = 'semua'
     form.deskripsi = ''
+    form.tipe = 'kegiatan'
   }
   modalOpen.value = true
+}
+
+// v.21.114.0528: Seed libur nasional Indonesia untuk tahun yang sedang ditampilkan
+async function seedLiburNasional() {
+  const list = getLiburNasional(tahun.value)
+  const ok = await confirmDlg.ask({
+    title: `Tambahkan ${list.length} libur nasional ${tahun.value}?`,
+    text: 'Akan men-duplikat jika sudah ada — Anda bisa hapus manual setelahnya. Tanggal Hijriyah-based merupakan estimasi, mohon verifikasi dengan SKB 3 Menteri resmi.',
+    icon: 'info'
+  })
+  if (!ok) return
+  let count = 0
+  for (const l of list) {
+    try {
+      await simpanKegiatan({
+        judul: l.judul,
+        tgl_mulai: l.tgl_mulai,
+        tgl_akhir: l.tgl_akhir,
+        audience: l.audience,
+        deskripsi: l.deskripsi,
+        tipe: l.tipe
+      })
+      count++
+    } catch (e) {
+      console.warn('Seed libur gagal:', l.judul, e?.message || e)
+    }
+  }
+  toast.success(`${count} libur nasional ditambahkan`)
 }
 
 async function simpan() {

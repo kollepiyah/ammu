@@ -446,9 +446,11 @@
     </div>
 
     <!-- ============================================================
-         ADMIN/GURU: Top Stats Grid (Santri / Guru / Lembaga / Kelas)
+         ADMIN: Top Stats Grid (Santri / Guru / Lembaga / Kelas)
+         v.21.114.0528: hide 2 gradient cards (Santri Saya/Guru) untuk guru — kyai req,
+         guru sudah lihat angka real di Statistik Santri Saya breakdown bawah
          ============================================================ -->
-    <div v-if="isAdminMode || role === 'guru'" class="grid grid-cols-2 md:grid-cols-4 gap-3">
+    <div v-if="isAdminMode" class="grid grid-cols-2 md:grid-cols-4 gap-3">
       <div
         class="bg-gradient-to-br from-teal-500 dark:from-teal-700 to-teal-700 dark:to-teal-900 rounded-xl p-3 md:p-4 shadow-sm text-white"
       >

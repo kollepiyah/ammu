@@ -184,9 +184,14 @@
           <div v-for="r in rekapFiltered" :key="r.id" class="p-3 md:p-4">
             <div class="flex items-start justify-between gap-2">
               <div class="flex-1 min-w-0">
-                <p class="text-sm font-black">{{ r.judul }}</p>
+                <p class="text-sm font-black flex items-center gap-1.5 flex-wrap">
+                  {{ r.judul }}
+                  <span v-if="r.source === 'naik_kelas'" class="text-[9px] font-black bg-teal-100 text-teal-700 px-1.5 py-0.5 rounded uppercase tracking-wider">Naik Kelas</span>
+                  <span v-else-if="r.source === 'mutasi'" class="text-[9px] font-black bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded uppercase tracking-wider">Mutasi</span>
+                </p>
                 <p class="text-[10px] text-[var(--text-secondary)] mt-0.5">
-                  <i :class="['fas mr-1', r.target_type === 'guru' ? 'fa-user' : 'fa-school']"></i>{{ r.target_nama }}
+                  <i :class="['fas mr-1', r.target_type === 'guru' ? 'fa-user' : r.target_type === 'santri' ? 'fa-user-graduate' : 'fa-school']"></i>{{ r.target_nama }}
+                  <span v-if="r.target_lembaga" class="text-[var(--text-tertiary)]"> · {{ r.target_lembaga }}</span>
                   <span class="text-[var(--text-tertiary)] ml-1.5">· oleh {{ r.created_by_nama }} · {{ fmtTgl(r.createdAt) }}</span>
                 </p>
               </div>
@@ -229,7 +234,9 @@ const activeTab = ref('buat')
 const guruRaw = ref([])
 const lembagaRaw = ref([])
 const catatanRaw = ref([])
-let unsubGuru = null, unsubLembaga = null, unsubCatatan = null
+// v.21.114.0528: santri raw untuk ekstrak catatan naik kelas / mutasi → ikut tampil di Rekap
+const santriRaw = ref([])
+let unsubGuru = null, unsubLembaga = null, unsubCatatan = null, unsubSantri = null
 
 onMounted(() => {
   if (!isAllowed.value) return
@@ -238,11 +245,48 @@ onMounted(() => {
     lembagaRaw.value = Array.isArray(d?.list) ? d.list : []
   })
   unsubCatatan = subscribeColl('supervisi_catatan', (docs) => { catatanRaw.value = docs })
+  unsubSantri = subscribeColl('santri', (docs) => { santriRaw.value = docs || [] })
 })
 onUnmounted(() => {
-  for (const u of [unsubGuru, unsubLembaga, unsubCatatan]) {
+  for (const u of [unsubGuru, unsubLembaga, unsubCatatan, unsubSantri]) {
     if (u) try { u() } catch { /* ignore */ }
   }
+})
+
+// v.21.114.0528: ekstrak catatan dari riwayat naik kelas/mutasi tiap santri
+const naikKelasCatatan = computed(() => {
+  const arr = []
+  for (const s of santriRaw.value) {
+    const riwayat = Array.isArray(s.riwayat) ? s.riwayat : []
+    for (const r of riwayat) {
+      const cat = String(r.catatan || '').trim()
+      if (!cat) continue
+      const tglStr = r.tgl_naik || r.tanggal || ''
+      let ts = null
+      if (tglStr) {
+        const d = new Date(tglStr)
+        if (!isNaN(d.getTime())) ts = { seconds: d.getTime() / 1000 }
+      }
+      const isMutasi = String(r.keterangan || '').toLowerCase().includes('dipindah')
+      arr.push({
+        id: `naik_${s.id}_${tglStr}_${Math.random().toString(36).slice(2, 6)}`,
+        target_type: 'santri',
+        target_id: String(s.id),
+        target_nama: s.nama,
+        target_lembaga: r.lembaga || s.lembaga || '',
+        judul: r.keterangan || (isMutasi ? 'Mutasi santri' : 'Kenaikan kelas'),
+        catatan: cat,
+        rekomendasi: '',
+        prioritas: 'sedang',
+        status: 'selesai',
+        source: isMutasi ? 'mutasi' : 'naik_kelas',
+        created_by: '',
+        created_by_nama: r.guru || '—',
+        createdAt: ts
+      })
+    }
+  }
+  return arr
 })
 
 // Form
@@ -325,10 +369,12 @@ const filterStatusRekap = ref('')
 const searchRekap = ref('')
 
 const rekapFiltered = computed(() => {
-  let list = [...catatanRaw.value]
+  // v.21.114.0528: merge catatan supervisi + naik kelas/mutasi
+  let list = [...catatanRaw.value, ...naikKelasCatatan.value]
   if (filterLembagaRekap.value) {
     list = list.filter((c) => {
       if (c.target_type === 'lembaga') return c.target_nama === filterLembagaRekap.value
+      if (c.target_type === 'santri') return String(c.target_lembaga || '').toLowerCase() === String(filterLembagaRekap.value).toLowerCase()
       // Untuk catatan guru, cek lembaga guru-nya
       const g = guruRaw.value.find((x) => String(x.id) === String(c.target_id))
       return g && (g.lembaga === filterLembagaRekap.value || g.lembaga_sekolah === filterLembagaRekap.value)
