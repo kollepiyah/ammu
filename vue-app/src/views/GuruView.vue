@@ -37,8 +37,9 @@
               <span class="text-[var(--text-secondary)] ml-1">non-aktif</span>
             </div>
             <!-- v.21.17c.0526: View vs Master mode actions -->
-            <button @click="printPage" class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold transition cursor-pointer no-print">
-              <i class="fas fa-print"></i>Cetak PDF
+            <!-- v.21.109.0527: warna cyan (action) bukan rose (danger) -->
+            <button @click="printPage" aria-label="Cetak daftar guru PDF" class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold transition cursor-pointer no-print">
+              <i class="fas fa-file-pdf"></i>Cetak PDF
             </button>
             <button @click="exportGuruExcel" :disabled="exporting" class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer">
               <i :class="['fas', exporting ? 'fa-spinner fa-spin' : 'fa-file-excel']"></i>{{ exporting ? 'Ekspor...' : 'Ekspor Excel' }}
@@ -828,12 +829,12 @@ async function onImportGuru(e) {
           nama,
           jk: String(_pick(r, 'L/P', 'JK', 'Jenis Kelamin', 'jk') || 'P').trim().toUpperCase().charAt(0),
           nik: String(_pick(r, 'NIK', 'nik') || '').trim(),
-          tgl_lahir: parseTglDDMMYYYY(_pick(r, 'Tgl Lahir', 'Tanggal Lahir', 'tgl_lahir')),
+          tgl_lahir: _parseTglGuru(_pick(r, 'Tgl Lahir', 'Tanggal Lahir', 'tgl_lahir')),
           jabatan,
           jabatan_tambahan: String(_pick(r, 'Jabatan Tambahan', 'jabatan_tambahan') || '').trim(),
           lembaga,
           lembaga_sekolah: String(_pick(r, 'Lembaga Sekolah', 'lembaga_sekolah') || '').trim(),
-          tanggal_tugas: parseTglDDMMYYYY(_pick(r, 'Tgl Tugas', 'Tanggal Tugas', 'tanggal_tugas')),
+          tanggal_tugas: _parseTglGuru(_pick(r, 'Tgl Tugas', 'Tanggal Tugas', 'tanggal_tugas')),
           ekgq: String(_pick(r, 'No Syahadah', 'EKGQ', 'ekgq') || '').trim(),
           wa,
           wa_2: waList[1] || '',

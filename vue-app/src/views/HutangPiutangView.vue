@@ -3,21 +3,22 @@
     <div class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm">
       <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
         <div>
-          <h1 class="text-xl md:text-2xl font-black"><i class="fas fa-balance-scale text-rose-500 mr-2"></i>Hutang Piutang</h1>
+          <h1 class="text-xl md:text-2xl font-black"><i class="fas fa-balance-scale text-cyan-500 mr-2"></i>Hutang Piutang</h1>
           <p class="text-xs text-[var(--text-secondary)] mt-0.5">Catatan hutang + piutang pesantren</p>
         </div>
-        <button @click="openModal()" class="bg-rose-600 hover:bg-rose-700 text-white text-xs font-black px-3 py-1.5 rounded-full shadow"><i class="fas fa-plus mr-1"></i>Tambah</button>
+        <button @click="openModal()" class="bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-black px-3 py-1.5 rounded-full shadow"><i class="fas fa-plus mr-1"></i>Tambah</button>
       </div>
     </div>
 
+    <!-- v.21.109.0527: bedakan warna Hutang (rose=kewajiban) vs Piutang (emerald=klaim) -->
     <div class="grid grid-cols-2 gap-3">
-      <div class="bg-cyan-50 rounded-2xl p-4 border-2 border-cyan-200">
-        <p class="text-[10px] uppercase font-black text-cyan-700">Hutang (kewajiban)</p>
-        <p class="text-2xl font-black text-cyan-800 mt-1">{{ fmtRp(totalHutang) }}</p>
+      <div class="bg-rose-50 rounded-2xl p-4 border-2 border-rose-200">
+        <p class="text-[10px] uppercase font-black text-rose-700"><i class="fas fa-arrow-down mr-1"></i>Hutang (kewajiban)</p>
+        <p class="text-2xl font-black text-rose-800 mt-1">{{ fmtRp(totalHutang) }}</p>
       </div>
-      <div class="bg-cyan-50 rounded-2xl p-4 border-2 border-cyan-200">
-        <p class="text-[10px] uppercase font-black text-cyan-700">Piutang (klaim)</p>
-        <p class="text-2xl font-black text-cyan-800 mt-1">{{ fmtRp(totalPiutang) }}</p>
+      <div class="bg-emerald-50 rounded-2xl p-4 border-2 border-emerald-200">
+        <p class="text-[10px] uppercase font-black text-emerald-700"><i class="fas fa-arrow-up mr-1"></i>Piutang (klaim)</p>
+        <p class="text-2xl font-black text-emerald-800 mt-1">{{ fmtRp(totalPiutang) }}</p>
       </div>
     </div>
 

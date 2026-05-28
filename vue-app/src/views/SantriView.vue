@@ -20,8 +20,9 @@
             <span class="text-[var(--text-secondary)] ml-1">Ma'had</span>
           </div>
           <!-- v.21.17c.0526: View mode actions (sidebar) vs Master mode actions (Master Data) -->
-          <button v-if="isFullAccess" @click="cetakPdf" class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold transition cursor-pointer">
-            <i class="fas fa-print"></i>Cetak PDF
+          <!-- v.21.109.0527: warna cyan (action) bukan rose (danger) -->
+          <button v-if="isFullAccess" @click="cetakPdf" aria-label="Cetak daftar santri PDF" class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold transition cursor-pointer">
+            <i class="fas fa-file-pdf"></i>Cetak PDF
           </button>
           <button v-if="isFullAccess" @click="exportSantriExcel" :disabled="exporting" class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer">
             <i :class="['fas', exporting ? 'fa-spinner fa-spin' : 'fa-file-excel']"></i>{{ exporting ? 'Ekspor...' : 'Ekspor Excel' }}
