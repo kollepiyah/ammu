@@ -17,22 +17,28 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'simpan'])
 
+// v.21.94.0527: 'Tabungan' DIBUANG dari POS — transaksi tabungan masuk ke menu
+// Tabungan (keuangan terpisah), tidak boleh lewat POS supaya tidak nyangkut di buku induk.
 const DEFAULT_PRESET = [
   { label: 'Syahriyah', nominal_default: 0 },
   { label: 'Infaq', nominal_default: 0 },
   { label: 'SPP', nominal_default: 0 },
   { label: 'Daftar Ulang', nominal_default: 0 },
   { label: 'Sumbangan Wajib', nominal_default: 0 },
-  { label: 'Tabungan', nominal_default: 0 },
   { label: 'Lainnya', nominal_default: 0 }
 ]
 const presetList = computed(() => {
   const fromSetting = settings.settings?.keuTagihanJenis
   if (Array.isArray(fromSetting) && fromSetting.length > 0) {
-    return fromSetting.map((j) => ({
-      label: j.label || j.nama || j.id || '-',
-      nominal_default: Number(j.nominal_default || j.nominal || 0) || 0
-    }))
+    return fromSetting
+      .filter((j) => {
+        const lbl = String(j.label || j.nama || j.id || '').toLowerCase().trim()
+        return lbl && lbl !== 'tabungan'
+      })
+      .map((j) => ({
+        label: j.label || j.nama || j.id || '-',
+        nominal_default: Number(j.nominal_default || j.nominal || 0) || 0
+      }))
   }
   return DEFAULT_PRESET
 })

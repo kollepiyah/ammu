@@ -9,7 +9,7 @@ export function useKeuangan() {
   const auth = useAuthStore()
   const tagihan = ref([])
   const tabunganSantri = ref([])
-  const tabunganGuru = ref([])
+  // v.21.94.0527: tabungan_guru DIHAPUS — tabungan hanya untuk santri (kyai req)
   const transaksi = ref([])
   const bisyaroh = ref([])
   const gaji = ref([])
@@ -72,9 +72,6 @@ export function useKeuangan() {
       subscribeColl('keuangan_tabungan_santri', (docs) => {
         tabunganSantri.value = docs
       }),
-      subscribeColl('keuangan_tabungan_guru', (docs) => {
-        tabunganGuru.value = docs
-      }),
       subscribeColl('keuangan_transaksi', (docs) => {
         transaksi.value = docs
         loading.value = false
@@ -101,7 +98,6 @@ export function useKeuangan() {
   return {
     tagihan,
     tabunganSantri,
-    tabunganGuru,
     transaksi,
     bisyaroh,
     gaji,
