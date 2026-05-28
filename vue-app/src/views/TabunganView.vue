@@ -540,7 +540,13 @@ async function cleanupOrphan() {
   let ok = 0
   let fail = 0
   try {
-    const targets = tabunganSantri.value.filter((m) => ids.includes(m.santri_id))
+    // v.21.95.0527: Fix — orphan filter harus cek kedua varian field santri_id/santriId
+    // (legacy data pakai santriId), dan compare sebagai string supaya match dgn ids list.
+    const targets = tabunganSantri.value.filter((m) => {
+      const sid = String(m.santri_id || m.santriId || '')
+      return ids.includes(sid)
+    })
+    console.log('[cleanupOrphan] targets:', targets.length, 'ids:', ids)
     for (const m of targets) {
       try {
         await deleteDoc(doc(db, 'keuangan_tabungan_santri', String(m.id)))
