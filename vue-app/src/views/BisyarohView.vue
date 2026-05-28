@@ -220,6 +220,21 @@
                   <i class="fas fa-times"></i>
                 </button>
               </div>
+              <!-- v.21.103.0527: Bonus Kehadiran auto (pagi/sore/sekolah) -->
+              <div class="bg-cyan-50 dark:bg-cyan-900/20 rounded-lg px-3 py-2 border border-cyan-200">
+                <div class="flex items-center justify-between gap-2 flex-wrap mb-1.5">
+                  <p class="text-xs font-black text-cyan-800"><i class="fas fa-bolt mr-1"></i>Bonus Kehadiran (otomatis dari absensi)</p>
+                  <p class="text-base font-black text-cyan-900">{{ fmtRp(bonusKehadiran.total) }}</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-1.5 text-[10px] text-cyan-700">
+                  <div>Pagi: <b>{{ bonusKehadiran.hadir_pagi }}x</b> × Rp{{ Number(bonusKehadiran.tarif_pagi).toLocaleString('id-ID') }} = {{ fmtRp(bonusKehadiran.total_pagi) }}</div>
+                  <div>Sore: <b>{{ bonusKehadiran.hadir_sore }}x</b> × Rp{{ Number(bonusKehadiran.tarif_sore).toLocaleString('id-ID') }} = {{ fmtRp(bonusKehadiran.total_sore) }}</div>
+                  <div>Sekolah: <b>{{ bonusKehadiran.hadir_sekolah }}x</b> × Rp{{ Number(bonusKehadiran.tarif_sekolah).toLocaleString('id-ID') }} = {{ fmtRp(bonusKehadiran.total_sekolah) }}</div>
+                </div>
+                <p class="text-[9px] text-cyan-600 italic mt-1">
+                  Tidak hadir = tidak dapat bonus (bukan dipotong). Atur tarif di Pengaturan Keuangan.
+                </p>
+              </div>
               <button
                 @click="addLineItem"
                 class="text-[10px] font-bold text-emerald-700 hover:text-emerald-900 px-2 py-1"
@@ -230,8 +245,8 @@
                 class="grid grid-cols-[1fr_140px_30px] gap-2 items-center bg-rose-50 rounded-lg px-3 py-2 border border-rose-200"
               >
                 <div>
-                  <p class="text-xs font-bold text-rose-700">Potongan (Sakit/Izin/Alpa)</p>
-                  <p class="text-[10px] text-rose-500">Slip-level (dikurangi dari total)</p>
+                  <p class="text-xs font-bold text-rose-700">Potongan Lain (manual)</p>
+                  <p class="text-[10px] text-rose-500">Opsional — bukan dari absen. Tidak hadir tidak otomatis dipotong.</p>
                 </div>
                 <input
                   v-model.number="form.total_potongan"
@@ -554,7 +569,8 @@
 <script setup>
 // BisyarohView — slip bisyaroh guru/pegawai
 // v.21.10+ line_items system, bulk generate dari settings, kirim WA slip
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { subscribeColl } from '@/services/firestore'
 import { doc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/services/firebase'
 import { useAuthStore } from '@/stores/auth'
@@ -567,6 +583,15 @@ import { fmtRp, getNamaGuruGelar } from '@/utils/format'
 
 const { gaji, loading } = useKeuangan()
 const { guruRaw, deriveGuruLembagaRefs } = useGuru()
+// v.21.103.0527: absensi shift guru utk hitung bonus kehadiran otomatis (pagi/sore/sekolah)
+const absensiShift = ref([])
+let unsubAbsensi = null
+onMounted(() => {
+  unsubAbsensi = subscribeColl('absensi_shift_guru', (docs) => { absensiShift.value = docs || [] })
+})
+onUnmounted(() => {
+  if (unsubAbsensi) { try { unsubAbsensi() } catch { /* ignore */ } }
+})
 const auth = useAuthStore()
 const settingsStore = useSettingsStore()
 // v.21.99.0527: super_admin only — hapus slip bisyaroh (koreksi data)
@@ -797,13 +822,49 @@ function addLineItem() {
   })
 }
 
+// v.21.103.0527: hitung bonus kehadiran otomatis dari absensi_shift_guru
+// 3 shift: pagi, sore, sekolah. hadir = status in [hadir, terlambat].
+const bonusKehadiran = computed(() => {
+  const out = {
+    hadir_pagi: 0, hadir_sore: 0, hadir_sekolah: 0,
+    tarif_pagi: 0, tarif_sore: 0, tarif_sekolah: 0,
+    total_pagi: 0, total_sore: 0, total_sekolah: 0,
+    total: 0
+  }
+  if (!selectedGuru.value) return out
+  const periode = `${tahun.value}-${String(bulan.value).padStart(2, '0')}`
+  const gid = String(selectedGuru.value.id)
+  for (const a of absensiShift.value) {
+    if (String(a.guru_id) !== gid) continue
+    const tgl = String(a.tanggal || '')
+    if (!tgl.startsWith(periode)) continue
+    const status = String(a.status || '').toLowerCase()
+    if (status !== 'hadir' && status !== 'terlambat') continue
+    const sh = String(a.shift || '').toLowerCase()
+    if (sh === 'pagi') out.hadir_pagi += 1
+    else if (sh === 'sore') out.hadir_sore += 1
+    else if (sh === 'sekolah') out.hadir_sekolah += 1
+  }
+  const sset = settingsStore.settings || {}
+  out.tarif_pagi = Number(sset.keu_bisyaroh_pagi || 0) || 0
+  out.tarif_sore = Number(sset.keu_bisyaroh_sore || 0) || 0
+  out.tarif_sekolah = Number(sset.keu_bisyaroh_sekolah_shift || 0) || 0
+  out.total_pagi = out.hadir_pagi * out.tarif_pagi
+  out.total_sore = out.hadir_sore * out.tarif_sore
+  out.total_sekolah = out.hadir_sekolah * out.tarif_sekolah
+  out.total = out.total_pagi + out.total_sore + out.total_sekolah
+  return out
+})
+
 const takeHome = computed(() => {
   const totalIn = (form.value.line_items || []).reduce(
     (sum, li) => sum + (Number(li.nominal) || 0),
     0
   )
+  // v.21.103.0527: bonus kehadiran (auto dari absen) + potongan manual
+  const bonus = bonusKehadiran.value.total
   const totalOut = Number(form.value.total_potongan) || 0
-  return totalIn - totalOut
+  return totalIn + bonus - totalOut
 })
 
 const saving = ref(false)
@@ -813,6 +874,8 @@ async function saveSlipSingle() {
   try {
     const periode = `${tahun.value}-${String(bulan.value).padStart(2, '0')}`
     const slipId = `gaji_${selectedGuru.value.id}_${periode}`
+    // v.21.103.0527: snapshot bonus kehadiran saat save
+    const bonus = bonusKehadiran.value
     const lineItems = (form.value.line_items || []).map((li) => ({
       kategori: li.kategori || 'ngaji',
       lembaga: li.lembaga || '-',
@@ -841,9 +904,19 @@ async function saveSlipSingle() {
       bisyaroh_pokok: pokok,
       bisyaroh_sekolah: sekolah,
       bisyaroh_tambahan: tambahan,
-      total_pemasukan: totalIn,
+      // v.21.103.0527: snapshot bonus kehadiran (auto dari absensi_shift_guru)
+      bonus_kehadiran: {
+        hadir_pagi: Number(bonus.hadir_pagi || 0),
+        hadir_sore: Number(bonus.hadir_sore || 0),
+        hadir_sekolah: Number(bonus.hadir_sekolah || 0),
+        tarif_pagi: Number(bonus.tarif_pagi || 0),
+        tarif_sore: Number(bonus.tarif_sore || 0),
+        tarif_sekolah: Number(bonus.tarif_sekolah || 0),
+        total: Number(bonus.total || 0)
+      },
+      total_pemasukan: totalIn + Number(bonus.total || 0),
       total_potongan: potongan,
-      take_home: totalIn - potongan,
+      take_home: totalIn + Number(bonus.total || 0) - potongan,
       tunjangan_list: [],
       potongan_list: [],
       updated_at: serverTimestamp()
