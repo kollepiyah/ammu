@@ -308,74 +308,6 @@
       </div>
     </UiCard>
 
-    <!-- ============================================================
-         SECTION: Master Kegiatan
-         ============================================================ -->
-    <UiCard
-      v-show="section === 'kegiatan'"
-      title="Master Kegiatan Pondok"
-      subtitle="Kegiatan untuk absensi mukim santri (nama + skor + jam)"
-      class="mb-4"
-    >
-      <div class="mb-3 flex justify-between items-center">
-        <p class="text-xs text-[var(--text-secondary)]">{{ form.masterKegiatan.length }} kegiatan terdaftar</p>
-        <UiButton size="sm" variant="primary" @click="addKegiatan">
-          <PlusIcon class="w-3.5 h-3.5" />Tambah
-        </UiButton>
-      </div>
-      <div
-        v-if="form.masterKegiatan.length === 0"
-        class="text-center text-xs text-[var(--text-tertiary)] italic py-6 border-2 border-dashed border-[var(--border-subtle)] rounded-lg"
-      >
-        Belum ada kegiatan. Klik <b>Tambah</b> untuk mulai.
-      </div>
-      <div v-else class="space-y-2">
-        <div
-          v-for="(k, idx) in form.masterKegiatan"
-          :key="k.id"
-          class="bg-[var(--bg-card-elevated)] border border-[var(--border-subtle)] rounded-lg p-3"
-        >
-          <div class="grid md:grid-cols-6 gap-2">
-            <UiInput v-model="k.nama" label="Nama Kegiatan" class="md:col-span-2" />
-            <div>
-              <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
-                >Jam Mulai</label
-              >
-              <input
-                v-model="k.jam_mulai"
-                type="time"
-                class="w-full px-2 py-1.5 text-xs border border-[var(--border-default)] rounded"
-              />
-            </div>
-            <div>
-              <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
-                >Terlambat</label
-              >
-              <input
-                v-model="k.jam_terlambat"
-                type="time"
-                class="w-full px-2 py-1.5 text-xs border border-[var(--border-default)] rounded"
-              />
-            </div>
-            <div>
-              <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block">Skor</label>
-              <input
-                v-model.number="k.skor"
-                type="number"
-                min="0"
-                max="100"
-                class="w-full px-2 py-1.5 text-xs border border-[var(--border-default)] rounded"
-              />
-            </div>
-            <div class="flex items-end">
-              <button @click="removeKegiatan(idx)" class="text-rose-600 hover:text-rose-800 p-1.5">
-                <Trash2Icon class="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </UiCard>
 
     <!-- ============================================================
          SECTION: Default Admin Built-in
@@ -491,137 +423,7 @@
       </p>
     </UiCard>
 
-    <!-- ============================================================
-         SECTION: Submenu Formal per-Lembaga
-         ============================================================ -->
-    <UiCard
-      v-show="section === 'formal'"
-      title="Submenu Formal per-Lembaga"
-      subtitle="KOP sekolah, logo, tarif SPP"
-      class="mb-4"
-    >
-      <div
-        v-if="formalLembaga.length === 0"
-        class="text-xs text-[var(--text-tertiary)] italic text-center py-6 border-2 border-dashed border-[var(--border-subtle)] rounded"
-      >
-        Belum ada lembaga formal terdaftar. Tambah di Master Data &rarr; Lembaga.
-      </div>
-      <div v-else class="space-y-3">
-        <details
-          v-for="lem in formalLembaga"
-          :key="lem.id"
-          class="bg-[var(--bg-card-elevated)] border border-[var(--border-subtle)] rounded-lg"
-        >
-          <summary
-            class="cursor-pointer p-3 font-black text-sm text-[var(--text-primary)] flex justify-between items-center"
-          >
-            <span><i class="fas fa-school mr-2 text-cyan-600"></i>{{ lem.nama }}</span>
-            <i class="fas fa-chevron-down text-xs"></i>
-          </summary>
-          <div class="p-3 border-t border-[var(--border-subtle)] grid gap-2">
-            <UiInput
-              :model-value="getFormal(lem.nama).kopLine1"
-              @update:modelValue="(v) => (form.submenuFormal[lem.nama].kopLine1 = v)"
-              label="KOP Baris 1 (Yayasan/Kementerian)"
-            />
-            <UiInput
-              :model-value="getFormal(lem.nama).kopLine2"
-              @update:modelValue="(v) => (form.submenuFormal[lem.nama].kopLine2 = v)"
-              label="KOP Baris 2 (Nama Sekolah)"
-            />
-            <UiInput
-              :model-value="getFormal(lem.nama).kopLine3"
-              @update:modelValue="(v) => (form.submenuFormal[lem.nama].kopLine3 = v)"
-              label="KOP Baris 3 (Alamat)"
-            />
-            <UiInput
-              :model-value="getFormal(lem.nama).kopLine4"
-              @update:modelValue="(v) => (form.submenuFormal[lem.nama].kopLine4 = v)"
-              label="KOP Baris 4 (Telp/NSS)"
-            />
-            <div class="flex items-center gap-3">
-              <img
-                :src="form.submenuFormal[lem.nama]?.logoSekolah || '/logo.png'"
-                class="w-12 h-12 rounded object-contain bg-[var(--bg-card)] p-1 border"
-              />
-              <input
-                type="file"
-                accept="image/*"
-                @change="(ev) => handleUpload(ev, `submenuFormal.${lem.nama}.logoSekolah`, 'lembaga_logos')"
-                class="text-xs flex-1"
-              />
-            </div>
-            <div>
-              <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
-                >Tarif SPP Default (Rp)</label
-              >
-              <input
-                :value="form.submenuFormal[lem.nama]?.tarifSPP || 0"
-                @input="(ev) => {; getFormal(lem.nama); form.submenuFormal[lem.nama].tarifSPP = Number(ev.target.value); }"
-                type="number"
-                min="0"
-                class="w-full px-2 py-1.5 text-xs border border-[var(--border-default)] rounded"
-              />
-            </div>
-          </div>
-        </details>
-      </div>
-      <p class="text-[10px] text-[var(--text-tertiary)] italic mt-3">
-        <i class="fas fa-info-circle mr-1"></i>TTD (tanda tangan) guru/kepala diatur PERSONAL di
-        Pengaturan Profil &rarr; setiap guru upload TTD-nya sendiri.
-      </p>
-    </UiCard>
 
-    <!-- ============================================================
-         SECTION: Submenu Qiraati per-Lembaga
-         ============================================================ -->
-    <UiCard
-      v-show="section === 'qiraati'"
-      title="Submenu Qiraati per-Lembaga"
-      subtitle="Target kelas + format rekap"
-      class="mb-4"
-    >
-      <div
-        v-if="qiraatiLembaga.length === 0"
-        class="text-xs text-[var(--text-tertiary)] italic text-center py-6 border-2 border-dashed border-[var(--border-subtle)] rounded"
-      >
-        Belum ada lembaga Qiraati/PTPT terdaftar.
-      </div>
-      <div v-else class="space-y-3">
-        <details
-          v-for="lem in qiraatiLembaga"
-          :key="lem.id"
-          class="bg-emerald-50 border border-emerald-200 rounded-lg"
-        >
-          <summary
-            class="cursor-pointer p-3 font-black text-sm text-emerald-800 flex justify-between items-center"
-          >
-            <span><i class="fas fa-star mr-2 text-emerald-600"></i>{{ lem.nama }}</span>
-            <i class="fas fa-chevron-down text-xs"></i>
-          </summary>
-          <div class="p-3 border-t border-emerald-200 grid gap-2">
-            <UiInput
-              :model-value="getQiraati(lem.nama).targetKelas"
-              @update:modelValue="(v) => (form.submenuQiraati[lem.nama].targetKelas = v)"
-              label="Target Kelas (contoh: Pra-TK, A, B, C, D, E, Tahsin, Tahfidz)"
-            />
-            <div>
-              <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
-                >Format Rekap</label
-              >
-              <select
-                :value="form.submenuQiraati[lem.nama]?.formatRekap || 'standard'"
-                @change="(ev) => {; getQiraati(lem.nama); form.submenuQiraati[lem.nama].formatRekap = ev.target.value; }"
-                class="w-full px-2 py-1.5 text-xs border border-[var(--border-default)] rounded"
-              >
-                <option value="standard">Standard (per-kelas)</option>
-                <option value="khotam">Per-Khotam (Pra PTPT style)</option>
-              </select>
-            </div>
-          </div>
-        </details>
-      </div>
-    </UiCard>
 
     <!-- ============================================================
          SECTION: Fitur & Mode Aplikasi
@@ -1511,7 +1313,6 @@ function defaultForm() {
     themeTextColor: '#1e293b',
     sidebarBgColor: '#0f172a',
     kalibrasiHijri: 0,
-    masterKegiatan: [],
     adminUsername: 'adminmu',
     adminPassword: '1234',
     fiturBeranda: true,
@@ -1521,8 +1322,6 @@ function defaultForm() {
     autoNotifPostingan: true,
     softDelete: false,
     capacitorMode: 'remote',
-    submenuFormal: {},
-    submenuQiraati: {},
     shiftPagiMulai: '06:00',
     shiftPagiSelesai: '12:00',
     shiftPagiTerlambat: '06:15',
@@ -1565,30 +1364,12 @@ const tabs = [
     icon: 'fa-moon',
     gradient: 'from-cyan-500 dark:from-cyan-700 to-cyan-700 dark:to-cyan-900'
   },
-  {
-    id: 'kegiatan',
-    label: 'Master Kegiatan',
-    icon: 'fa-tasks',
-    gradient: 'from-emerald-500 dark:from-emerald-700 to-emerald-700 dark:to-emerald-900'
-  },
   { id: 'admin', label: 'Admin Password', icon: 'fa-lock', gradient: 'from-rose-500 dark:from-rose-700 to-rose-700 dark:to-rose-900' },
   {
     id: 'theme',
     label: 'Tema Warna',
     icon: 'fa-palette',
     gradient: 'from-rose-500 dark:from-rose-700 to-teal-700 dark:to-teal-900'
-  },
-  {
-    id: 'formal',
-    label: 'Submenu Formal',
-    icon: 'fa-school',
-    gradient: 'from-cyan-500 dark:from-cyan-700 to-cyan-700 dark:to-cyan-900'
-  },
-  {
-    id: 'qiraati',
-    label: 'Submenu Qiraati',
-    icon: 'fa-star',
-    gradient: 'from-cyan-500 dark:from-cyan-700 to-cyan-700 dark:to-cyan-900'
   },
   {
     id: 'fitur',
@@ -1616,13 +1397,6 @@ function hydrateForm() {
   form.value = {
     ...defaultForm(),
     ...Object.fromEntries(Object.keys(defaultForm()).map((k) => [k, s[k] ?? defaultForm()[k]]))
-  }
-  if (!Array.isArray(form.value.masterKegiatan)) form.value.masterKegiatan = []
-  if (!form.value.submenuFormal || typeof form.value.submenuFormal !== 'object') {
-    form.value.submenuFormal = {}
-  }
-  if (!form.value.submenuQiraati || typeof form.value.submenuQiraati !== 'object') {
-    form.value.submenuQiraati = {}
   }
   dirty.value = false
 }
@@ -1703,116 +1477,6 @@ const hijriPreview = computed(() => {
     return '—'
   }
 })
-
-// ============================================================
-// Master Kegiatan helpers
-// ============================================================
-function addKegiatan() {
-  form.value.masterKegiatan.push({
-    id: 'keg_' + Date.now(),
-    nama: '',
-    jam_mulai: '06:00',
-    jam_terlambat: '06:15',
-    range_start: '04:00',
-    range_end: '08:00',
-    skor: 10,
-    hari: [0, 1, 2, 3, 4, 5, 6]
-  })
-}
-
-async function removeKegiatan(idx) {
-  const ok = await confirm({
-    title: 'Hapus kegiatan?',
-    message: `Hapus "${form.value.masterKegiatan[idx]?.nama || 'item'}" dari master?`,
-    danger: true
-  })
-  if (ok) form.value.masterKegiatan.splice(idx, 1)
-}
-
-// ============================================================
-// Lembaga filter helpers (formal vs qiraati)
-// ============================================================
-function namaOf(l) {
-  return String(l?.lembaga || l?.nama || '').trim()
-}
-function tipeOf(l) {
-  return String(l?.tipe || l?.tipe_lembaga || '')
-    .toLowerCase()
-    .trim()
-}
-
-const QIRAATI_KEYWORDS = ['tpq', 'tpq pagi', 'tpq sore', 'pra ptpt', 'ptpt', 'ppph', 'p3h']
-const NON_LEMBAGA_TYPES = [
-  'non-lembaga',
-  'non_lembaga',
-  'non lembaga',
-  'yayasan',
-  'pondok',
-  'kantor',
-  'admin',
-  'divisi',
-  'unit'
-]
-const NON_LEMBAGA_NAME_PATTERN =
-  /^(yayasan|pondok pesantren|pondok|kantor|admin|sarana|sarana\s*&\s*prasarana|prasarana)/i
-
-const formalLembaga = computed(() =>
-  lembagaRaw.value
-    .filter((l) => {
-      const nama = namaOf(l)
-      const tipe = tipeOf(l)
-      if (NON_LEMBAGA_TYPES.includes(tipe) || NON_LEMBAGA_NAME_PATTERN.test(nama)) return false
-      const formalTypes = [
-        'formal',
-        'sekolah',
-        'diniyah',
-        'sd',
-        'smp',
-        'sma',
-        'mi',
-        'mts',
-        'ma',
-        'pkbm'
-      ]
-      return !!(
-        formalTypes.includes(tipe) ||
-        /formal|MI|MTs|MA|SD|SMP|SMA|PKBM/i.test(nama) ||
-        (!tipe && !QIRAATI_KEYWORDS.includes(nama.toLowerCase()))
-      )
-    })
-    .map((l) => ({ id: l.id || namaOf(l), nama: namaOf(l) }))
-)
-
-const qiraatiLembaga = computed(() =>
-  lembagaRaw.value
-    .filter((l) => {
-      const nama = namaOf(l).toLowerCase()
-      const tipe = tipeOf(l)
-      return tipe === 'qiraati' || tipe === 'tahfizh' || QIRAATI_KEYWORDS.includes(nama)
-    })
-    .map((l) => ({ id: l.id || namaOf(l), nama: namaOf(l) }))
-)
-
-function getFormal(nama) {
-  if (!form.value.submenuFormal[nama]) {
-    form.value.submenuFormal[nama] = {
-      kopLine1: '',
-      kopLine2: '',
-      kopLine3: '',
-      kopLine4: '',
-      logoSekolah: '',
-      tarifSPP: 0
-    }
-  }
-  return form.value.submenuFormal[nama]
-}
-
-function getQiraati(nama) {
-  if (!form.value.submenuQiraati[nama]) {
-    form.value.submenuQiraati[nama] = { targetKelas: '', formatRekap: 'standard' }
-  }
-  return form.value.submenuQiraati[nama]
-}
 
 // ============================================================
 // Upload handler (logo, bg, lembaga-logo) via Firebase Storage
