@@ -1,16 +1,28 @@
-// v.21.88.0527: Struk pembayaran bersama (dipakai POS Santri + fitur keuangan lain).
-// Dua jenis:
-//   1) cetakStrukPdf       — PDF A5 berwarna ber-KOP (untuk cetak/arsip dari riwayat)
-//   2) cetakStrukDotMatrix — struk teks fixed-width (32 kolom) via print window browser.
-//      Cetak ke printer dot-matrix/thermal lewat dialog print. Hook ESC/POS Tauri menyusul.
-//
-// trx shape:
-//   { no_struk, tanggal, santri_nama, santri_nis, lembaga, kelas, operator,
-//     items: [{ jenis, nominal, keterangan }], total, bayar, kembali }
+// v.21.90.0527: Struk pembayaran POS — PDF A5 ber-KOP + dot-matrix teks fixed-width.
+// Wide (80 col, 9.5" continuous form Epson LX-310): mirror struk Yayasan. Narrow (32/42) kompak.
 import { createPdf, drawKopLetterhead, drawTitle, drawTable, savePdf } from './pdfBuilder'
+import { terbilangRupiah } from './terbilang'
 
 export function fmtRpStruk(n) {
   return 'Rp ' + new Intl.NumberFormat('id-ID').format(Math.round(n || 0))
+}
+function fmtNum(n) {
+  return new Intl.NumberFormat('id-ID').format(Math.round(Number(n) || 0))
+}
+function formatTglDdMmYyyy(t) {
+  if (!t) return '-'
+  const m = String(t).match(/^(\d{4})-(\d{2})-(\d{2})/)
+  if (m) return m[3] + '-' + m[2] + '-' + m[1]
+  try {
+    const d = new Date(t)
+    if (!isNaN(d))
+      return (
+        String(d.getDate()).padStart(2, '0') + '-' +
+        String(d.getMonth() + 1).padStart(2, '0') + '-' +
+        d.getFullYear()
+      )
+  } catch (e) {}
+  return t
 }
 
 export function buildKopFromSettings(s = {}) {
@@ -30,42 +42,63 @@ export async function cetakStrukPdf(trx, settings = {}, { preview = true } = {})
   const doc = await createPdf({ kind: 'umum', orientation: 'p', format: 'a5' })
   const font = doc._fontMU || 'helvetica'
   let y = await drawKopLetterhead(doc, kop, { y: 10 })
-  drawTitle(doc, 'STRUK PEMBAYARAN', { y: y + 7, size: 13 })
+  drawTitle(doc, 'BUKTI PEMBAYARAN', { y: y + 7, size: 13 })
   y += 11
 
   doc.setFontSize(9)
+  const pageW = doc.internal.pageSize.getWidth()
   const left = 12
-  const info = [
-    ['No', trx.no_struk || '-'],
-    ['Tanggal', trx.tanggal || '-'],
-    ['Santri', trx.santri_nama || '-'],
-    ['NIS', trx.santri_nis || '-'],
-    ['Lembaga', [trx.lembaga, trx.kelas].filter(Boolean).join(' · ') || '-'],
-    ['Kasir', trx.operator || '-']
+  const colMid = pageW / 2 + 4
+  const terb = trx.terbilang || terbilangRupiah(trx.total)
+  const tglFmt = formatTglDdMmYyyy(trx.tanggal)
+  const leftRows = [
+    ['Diterima dari', trx.santri_nama || '-'],
+    ['Nomor Induk', trx.santri_nis || '-'],
+    ['Kelas', [trx.lembaga, trx.kelas].filter(Boolean).join(' ') || '-'],
+    ['Terbilang', terb]
   ]
-  for (const [k, v] of info) {
+  const rightRows = [
+    ['Tgl. Bayar', tglFmt],
+    ['No. Bukti', trx.no_struk || '-'],
+    ['Metode', trx.metode || 'TUNAI'],
+    ['Petugas', trx.operator || '-'],
+    ['Status Siswa', trx.status_siswa || 'Aktif']
+  ]
+  const yStart = y
+  const rowH = 5
+  for (let i = 0; i < leftRows.length; i++) {
     doc.setFont(font, 'normal')
-    doc.text(String(k), left, y)
-    doc.text(': ' + String(v), left + 22, y)
-    y += 5
+    doc.text(leftRows[i][0], left, yStart + i * rowH)
+    doc.text(': ' + String(leftRows[i][1]), left + 24, yStart + i * rowH)
   }
-  y += 2
+  for (let i = 0; i < rightRows.length; i++) {
+    doc.setFont(font, 'normal')
+    doc.text(rightRows[i][0], colMid, yStart + i * rowH)
+    doc.text(': ' + String(rightRows[i][1]), colMid + 22, yStart + i * rowH)
+  }
+  y = yStart + Math.max(leftRows.length, rightRows.length) * rowH + 4
+
+  doc.setFont(font, 'normal')
+  doc.text('Dengan rincian pembayaran sebagai berikut :', left, y)
+  y += 3
 
   drawTable(doc, {
     startY: y,
-    head: [['Jenis', 'Keterangan', 'Nominal']],
-    body: (trx.items || []).map((it) => [
-      it.jenis || '-',
-      it.keterangan || '',
+    head: [['No', 'Jenis Pembayaran', 'Nominal']],
+    body: (trx.items || []).map((it, idx) => [
+      String(idx + 1),
+      (it.jenis || '-') + (it.keterangan ? ' (' + it.keterangan + ')' : ''),
       fmtRpStruk(it.nominal)
     ]),
-    columnStyles: { 2: { halign: 'right', cellWidth: 30 } },
+    columnStyles: {
+      0: { halign: 'center', cellWidth: 10 },
+      2: { halign: 'right', cellWidth: 30 }
+    },
     styles: { fontSize: 9 }
   })
 
   let ty = doc.lastAutoTable ? doc.lastAutoTable.finalY : y
-  ty += 7
-  const pageW = doc.internal.pageSize.getWidth()
+  ty += 6
   const rightX = pageW - 12
   doc.setFontSize(10)
   const rowR = (label, val, bold) => {
@@ -74,115 +107,219 @@ export async function cetakStrukPdf(trx, settings = {}, { preview = true } = {})
     doc.text(val, rightX, ty, { align: 'right' })
     ty += 5.5
   }
-  rowR('Total', fmtRpStruk(trx.total), true)
-  rowR('Uang diterima', fmtRpStruk(trx.bayar))
-  rowR('Kembalian', fmtRpStruk(trx.kembali))
+  rowR('Jumlah Rp.', fmtNum(trx.total), true)
+  rowR('Pembayaran Rp.', fmtNum(trx.bayar))
+  rowR('Kembali Rp.', fmtNum(trx.kembali))
 
-  ty += 8
-  doc.setFont(font, 'italic')
+  ty += 10
   doc.setFontSize(9)
-  doc.text('Terima kasih — simpan struk ini sebagai bukti pembayaran.', pageW / 2, ty, {
-    align: 'center'
-  })
+  doc.setFont(font, 'normal')
+  doc.text('Penyetor,', left + 8, ty)
+  doc.text('Penerima,', pageW / 2 + 12, ty)
+  ty += 18
+  doc.text('( .................. )', left + 4, ty)
+  doc.text('( ' + (trx.operator || '').padEnd(16) + ' )', pageW / 2 + 8, ty)
 
   const safe = String(trx.santri_nama || 'santri').replace(/\s+/g, '_')
-  savePdf(doc, `struk_${safe}_${trx.tanggal || ''}.pdf`, { preview })
+  savePdf(doc, 'struk_' + safe + '_' + (trx.tanggal || '') + '.pdf', { preview })
   return doc
 }
 
-// ── 2) Dot-matrix / thermal (teks fixed-width) ──
-// v.21.89.0527: lebar kertas konfigurabel via settings.posStrukPaper.
-//   '9.5'        → 80 kolom (Epson LX-310 continuous form, 10 cpi) — DEFAULT
-//   'thermal80'  → 42 kolom (printer thermal 80mm)
-//   'thermal58'  → 32 kolom (printer thermal 58mm)
+// ── 2) Dot-matrix / thermal (teks fixed-width, paper-aware) ──
 const PAPER = {
   '9.5': { cols: 80, pageCss: '@page { size: 241mm auto; margin: 4mm; } body { font-size: 11px; }' },
   thermal80: { cols: 42, pageCss: '@page { size: 80mm auto; margin: 2mm; } body { font-size: 11px; }' },
   thermal58: { cols: 32, pageCss: '@page { size: 58mm auto; margin: 2mm; } body { font-size: 10px; }' }
 }
 function paperFromSettings(settings = {}) {
-  const code = String(settings?.posStrukPaper || '9.5')
+  const code = String(settings && settings.posStrukPaper || '9.5')
   return PAPER[code] || PAPER['9.5']
 }
 
-function lineCh(ch, width) {
-  return String(ch || '-').repeat(width)
+function repCh(ch, n) {
+  return String(ch || '-').repeat(Math.max(0, n))
 }
-function lr(left, right, width) {
+function padR(s, n) {
+  s = String(s)
+  if (s.length >= n) return s.slice(0, n)
+  return s + ' '.repeat(n - s.length)
+}
+function clip(s, n) {
+  s = String(s)
+  return s.length > n ? s.slice(0, n) : s
+}
+function lr(left, right, w) {
   left = String(left)
   right = String(right)
-  if (left.length + right.length >= width) return (left + ' ' + right).slice(0, width)
-  return left + ' '.repeat(width - left.length - right.length) + right
+  if (left.length + right.length >= w) return (left + ' ' + right).slice(0, w)
+  return left + ' '.repeat(w - left.length - right.length) + right
 }
-function center(t, width) {
+function center(t, w) {
   t = String(t)
-  if (t.length >= width) return t.slice(0, width)
-  return ' '.repeat(Math.floor((width - t.length) / 2)) + t
+  if (t.length >= w) return t.slice(0, w)
+  return ' '.repeat(Math.floor((w - t.length) / 2)) + t
+}
+function col2(left, right, w, halfW) {
+  const h = halfW || Math.floor(w / 2)
+  const l = clip(left, h - 1)
+  const r = clip(right, w - h)
+  return l + ' '.repeat(h - l.length) + r
+}
+function metaLine(label, val, labelW) {
+  return padR(label, labelW) + ': ' + String(val)
+}
+function dotted(label, val, w) {
+  const lab = String(label || '')
+  const v = String(val || '')
+  const minDots = 3
+  if (lab.length + v.length + 2 + minDots >= w) return clip(lab + ' ' + v, w)
+  return lab + ' ' + '.'.repeat(w - lab.length - v.length - 2) + ' ' + v
 }
 
-export function buildStrukText(trx, settings = {}) {
+function buildStrukWide(trx, settings) {
+  const W = 80
+  const HALF = Math.floor(W * 0.55)
   const s = settings || {}
-  const w = paperFromSettings(s).cols
+  const out = []
+  const kopL = [
+    String(s.kopLine1 || 'YAYASAN MAMBAUL ULUM').toUpperCase(),
+    String(s.kopLine2 || ''),
+    String(s.kopLine3 || ''),
+    String(s.kopLine4 || ''),
+    String(s.kopLine5 || '')
+  ].filter(function (l) { return l })
+
+  out.push(col2(kopL[0] || '', 'BUKTI PEMBAYARAN', W, HALF))
+  out.push(col2(kopL[1] || '', '================', W, HALF))
+  for (let i = 2; i < kopL.length; i++) out.push(kopL[i])
+  out.push(repCh('=', W))
+
+  const tglFmt = formatTglDdMmYyyy(trx.tanggal)
+  const terb = trx.terbilang || terbilangRupiah(trx.total)
+  const ml = [
+    ['Diterima dari', trx.santri_nama || '-'],
+    ['Nomor Induk', trx.santri_nis || '-'],
+    ['Kelas', [trx.lembaga, trx.kelas].filter(Boolean).join(' ') || '-'],
+    ['Terbilang', terb]
+  ]
+  const mr = [
+    ['Tgl. Bayar', tglFmt],
+    ['No. Bukti', trx.no_struk || '-'],
+    ['Metode', trx.metode || 'TUNAI'],
+    ['Petugas', trx.operator || '-'],
+    ['Status Siswa', trx.status_siswa || 'Aktif']
+  ]
+  const rows = Math.max(ml.length, mr.length)
+  const LW = 13
+  for (let i = 0; i < rows; i++) {
+    const l = ml[i] ? metaLine(ml[i][0], ml[i][1], LW) : ''
+    const r = mr[i] ? metaLine(mr[i][0], mr[i][1], LW) : ''
+    out.push(col2(l, r, W, HALF))
+  }
+  out.push('')
+  out.push('Dengan rincian pembayaran sebagai berikut :')
+  out.push('')
+
+  let i = 0
+  for (const it of trx.items || []) {
+    i++
+    const label =
+      ' ' + String(i).padStart(2, ' ') + '. ' +
+      (it.jenis || '-') +
+      (it.keterangan ? ' (' + it.keterangan + ')' : '')
+    const val = 'Rp. ' + fmtNum(it.nominal)
+    out.push(dotted(label, val, W))
+  }
+  out.push('')
+
+  const tWidth = 36
+  const tStart = W - tWidth
+  const tLine = function (label, val) {
+    return ' '.repeat(tStart) + dotted(label, 'Rp. ' + fmtNum(val), tWidth)
+  }
+  out.push(tLine('Jumlah', trx.total))
+  out.push(tLine('Pembayaran', trx.bayar))
+  out.push(tLine('Kembali', trx.kembali))
+  out.push('')
+  out.push('')
+
+  out.push(col2('  Penyetor,', '  Penerima,', W, HALF))
+  out.push('')
+  out.push('')
+  out.push(col2(
+    '  ( .................. )',
+    '  ( ' + padR(String(trx.operator || ''), 16) + ' )',
+    W, HALF
+  ))
+  out.push('')
+  return out.join('\n')
+}
+
+function buildStrukNarrow(trx, settings, w) {
+  const s = settings || {}
   const out = []
   out.push(center(String(s.kopLine2 || s.kopLine1 || 'MAMBAUL ULUM').toUpperCase(), w))
   if (s.kopLine3) out.push(center(String(s.kopLine3), w))
   if (s.kopLine4) out.push(center(String(s.kopLine4), w))
-  out.push(lineCh('=', w))
-  out.push(center('STRUK PEMBAYARAN', w))
-  out.push(lineCh('=', w))
+  out.push(repCh('=', w))
+  out.push(center('BUKTI PEMBAYARAN', w))
+  out.push(repCh('=', w))
   out.push('No    : ' + (trx.no_struk || '-'))
-  out.push('Tgl   : ' + (trx.tanggal || '-'))
+  out.push('Tgl   : ' + formatTglDdMmYyyy(trx.tanggal))
   out.push('Nama  : ' + (trx.santri_nama || '-'))
   if (trx.santri_nis) out.push('NIS   : ' + trx.santri_nis)
   const lk = [trx.lembaga, trx.kelas].filter(Boolean).join(' ')
   if (lk) out.push('Kelas : ' + lk)
   out.push('Kasir : ' + (trx.operator || '-'))
-  out.push(lineCh('-', w))
+  out.push(repCh('-', w))
   for (const it of trx.items || []) {
     out.push(String(it.jenis || '-'))
-    out.push(lr('  ' + (it.keterangan || ''), fmtRpStruk(it.nominal), w))
+    out.push(lr('  ' + (it.keterangan || ''), 'Rp ' + fmtNum(it.nominal), w))
   }
-  out.push(lineCh('-', w))
-  out.push(lr('TOTAL', fmtRpStruk(trx.total), w))
-  out.push(lr('BAYAR', fmtRpStruk(trx.bayar), w))
-  out.push(lr('KEMBALI', fmtRpStruk(trx.kembali), w))
-  out.push(lineCh('=', w))
+  out.push(repCh('-', w))
+  out.push(lr('TOTAL', 'Rp ' + fmtNum(trx.total), w))
+  out.push(lr('BAYAR', 'Rp ' + fmtNum(trx.bayar), w))
+  out.push(lr('KEMBALI', 'Rp ' + fmtNum(trx.kembali), w))
+  out.push(repCh('=', w))
+  const terb = trx.terbilang || terbilangRupiah(trx.total)
+  out.push('Terbilang:')
+  let cur = ''
+  for (const word of terb.split(' ')) {
+    if ((cur + ' ' + word).trim().length > w) { out.push(cur); cur = word }
+    else { cur = (cur ? cur + ' ' : '') + word }
+  }
+  if (cur) out.push(cur)
   out.push(center('Terima kasih', w))
   out.push('')
   out.push('')
   return out.join('\n')
 }
 
+export function buildStrukText(trx, settings = {}) {
+  const paper = paperFromSettings(settings)
+  if (paper.cols >= 60) return buildStrukWide(trx, settings)
+  return buildStrukNarrow(trx, settings, paper.cols)
+}
+
 function escapeHtml(t) {
-  return String(t).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]))
+  return String(t).replace(/[&<>]/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]
+  })
 }
 
 export function cetakStrukDotMatrix(trx, settings = {}) {
   const paper = paperFromSettings(settings)
   const text = buildStrukText(trx, settings)
-  const winW = paper.cols >= 80 ? 720 : 380
+  const winW = paper.cols >= 60 ? 760 : 380
   const w = window.open('', '_blank', 'width=' + winW + ',height=640')
-  if (!w) {
-    alert('Popup diblokir — izinkan popup untuk mencetak struk.')
-    return
-  }
-  const css =
-    paper.pageCss +
+  if (!w) { alert('Popup diblokir — izinkan popup untuk mencetak struk.'); return }
+  const css = paper.pageCss +
     ' body { font-family: "Courier New", monospace; white-space: pre; line-height: 1.35; margin: 0; padding: 4px; }'
   w.document.write(
-    '<!DOCTYPE html><html><head><title>Struk</title><style>' +
-      css +
-      '</style></head><body>' +
-      escapeHtml(text) +
-      '</body></html>'
+    '<!DOCTYPE html><html><head><title>Struk</title><style>' + css +
+    '</style></head><body>' + escapeHtml(text) + '</body></html>'
   )
   w.document.close()
   w.focus()
-  setTimeout(() => {
-    try {
-      w.print()
-    } catch (e) {
-      /* ignore */
-    }
-  }, 350)
+  setTimeout(function () { try { w.print() } catch (e) {} }, 350)
 }

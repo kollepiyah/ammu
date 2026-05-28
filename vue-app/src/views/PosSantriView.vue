@@ -234,6 +234,7 @@ import {
 import { db } from '@/services/firebase'
 import { sortSantri } from '@/utils/santriSort'
 import { cetakStrukPdf, cetakStrukDotMatrix } from '@/utils/strukBuilder'
+import { terbilangRupiah } from '@/utils/terbilang'
 import { useSettingsStore } from '@/stores/settings'
 import ModalPOS from '@/components/pos/ModalPOS.vue'
 
@@ -254,6 +255,8 @@ const pendingTagihan = ref([])
 const loadingCart = ref(false)
 // v.21.87.0527: ringkasan transaksi POS hari ini
 const todayStats = ref({ count: 0, total: 0 })
+// v.21.90.0527: counter transaksi unik hari ini (utk nomor struk MU-NNNddmmyy)
+const todayTrxCount = ref(0)
 // v.21.88.0527: transaksi terakhir (utk tombol cetak struk setelah simpan)
 const lastTrx = ref(null)
 
@@ -293,6 +296,9 @@ onMounted(async () => {
       count: txToday.length,
       total: txToday.reduce((s, t) => s + Number(t.nominal || 0), 0)
     }
+    // v.21.90.0527: hitung jumlah TRANSAKSI unik (trx_id) hari ini utk seq nomor struk
+    const trxIdsToday = new Set(txToday.map((t) => t.trx_id).filter(Boolean))
+    todayTrxCount.value = trxIdsToday.size
 
     // Load tunggakan map (count + total per santri_id)
     try {
@@ -388,7 +394,12 @@ async function handleSimpan(payload) {
   try {
     const tanggal = payload.tanggal
     const op = payload.operator || operatorName.value
-    const trxId = 'trx_' + Date.now() + '_' + Math.floor(Math.random() * 1000)
+    // v.21.90.0527: format nomor struk MU-NNNddmmyy (seq harian + tgl)
+    todayTrxCount.value += 1
+    const seq = String(todayTrxCount.value).padStart(3, '0')
+    const dt = String(tanggal || '').split('-')
+    const ddmmyy = (dt[2] || '') + (dt[1] || '') + String(dt[0] || '').slice(-2)
+    const trxId = 'MU-' + seq + ddmmyy
     const santriRef = selectedSantri.value
     const writes = []
     let lunasCount = 0
@@ -452,6 +463,7 @@ async function handleSimpan(payload) {
       `Sukses! ${payload.items.length} transaksi tersimpan untuk ${payload.santri_nama}${extra}`
     )
     // v.21.88.0527: simpan transaksi terakhir utk tombol cetak struk
+    const _total = Number(payload.total_tagihan || 0)
     lastTrx.value = {
       no_struk: trxId,
       tanggal,
@@ -460,12 +472,16 @@ async function handleSimpan(payload) {
       lembaga: santriRef?.lembaga || '',
       kelas: santriRef?.kelas || '',
       operator: op,
+      // v.21.90.0527: field tambahan utk struk Yayasan-style
+      metode: 'TUNAI',
+      status_siswa: santriRef?.aktif === false ? 'Tidak Aktif' : 'Aktif',
+      terbilang: terbilangRupiah(_total),
       items: payload.items.map((i) => ({
         jenis: i.jenis,
         nominal: Number(i.nominal),
         keterangan: i.keterangan || ''
       })),
-      total: Number(payload.total_tagihan || 0),
+      total: _total,
       bayar: Number(payload.total_bayar || 0),
       kembali: Number(payload.kembalian || 0)
     }
