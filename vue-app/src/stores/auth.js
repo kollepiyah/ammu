@@ -68,6 +68,12 @@ export const useAuthStore = defineStore('auth', () => {
     if (s.role_sistem === 'admin_keuangan' && perm === 'akses_keuangan') return true
     // Admin biasa: most non-finance perms
     if (s.role_sistem === 'admin' && perm !== 'akses_keuangan') return true
+    // v.21.110.0527: akses_supervisi via jabatan/jabatan_tambahan Direktur/Supervisor
+    if (perm === 'akses_supervisi') {
+      const a = String(s.jabatan || '').toLowerCase()
+      const b = String(s.jabatan_tambahan || '').toLowerCase()
+      if (a.includes('direktur') || a.includes('supervisor') || b.includes('direktur') || b.includes('supervisor')) return true
+    }
     // Granular per-user akses map
     return s.akses?.[perm] === true
   }

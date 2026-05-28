@@ -19,6 +19,8 @@ const ALL_MENUS = [
   { group: 'Menu', name: 'Profil', path: '/profil', icon: 'fa-user-circle', roles: ['admin', 'guru', 'santri'], available: true },
   // v.20.18.0526: Personal page admin/superadmin/admin_keuangan — statistik kehadiran + slip bisyaroh personal
   { group: 'Menu', name: 'Personal', path: '/personal', icon: 'fa-id-badge', roles: ['admin', 'guru'], available: true },
+  // v.21.110.0527: Data Supervisi (Direktur/Supervisor + admin)
+  { group: 'Menu', name: 'Data Supervisi', path: '/supervisi', icon: 'fa-clipboard-check', roles: ['admin', 'guru'], available: true, perm: 'akses_supervisi' },
 
   // GROUP: PENDIDIKAN
   // ADMIN/GURU menu

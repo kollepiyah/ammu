@@ -65,6 +65,8 @@ const PembayaranView = () => import('@/views/PembayaranView.vue')
 const CapaianPrestasiView = () => import('@/views/CapaianPrestasiView.vue')
 // v.20.18.0526: Personal page admin/super_admin/admin_keuangan — statistik kehadiran + slip bisyaroh
 const PersonalView = () => import('@/views/PersonalView.vue')
+// v.21.110.0527: Data Supervisi (Direktur/Supervisor)
+const SupervisiView = () => import('@/views/SupervisiView.vue')
 const AppLayout = () => import('@/components/layout/AppLayout.vue')
 
 const routes = [
@@ -145,7 +147,9 @@ const routes = [
       // v.20.13.0526: Capaian Prestasi (santri only — merged Dashboard + Pendidikan menu)
       { path: 'capaian-prestasi', name: 'capaian-prestasi', component: CapaianPrestasiView },
       // v.20.18.0526: Personal page admin (statistik kehadiran + slip bisyaroh personal)
-      { path: 'personal', name: 'personal', component: PersonalView }
+      { path: 'personal', name: 'personal', component: PersonalView },
+      // v.21.110.0527: Data Supervisi — gating Direktur/Supervisor di view-level
+      { path: 'supervisi', name: 'supervisi', component: SupervisiView }
     ]
   },
   // catch-all

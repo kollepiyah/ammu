@@ -1,1 +1,0 @@
-function n(r){return r?!!(r.role==="admin"||r.id==="admin"||["super_admin","admin"].includes(r.role_sistem)):!1}function e(r){return r?r.role_sistem==="super_admin"||r.role==="admin"||r.id==="admin":!1}export{e as a,n as i};
