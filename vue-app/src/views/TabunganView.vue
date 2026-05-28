@@ -543,8 +543,8 @@ const mutasiSantri = computed(() =>
   mutasiRaw.value
     .filter((m) => String(m.santri_id || m.santriId) === myId.value)
     .sort((a, b) => {
-      const ta = new Date(a.tanggal || a.created_at || 0).getTime()
-      const tb = new Date(b.tanggal || b.created_at || 0).getTime()
+      const ta = new Date(a.tanggal || a.createdAt || a.created_at || 0).getTime()
+      const tb = new Date(b.tanggal || b.createdAt || b.created_at || 0).getTime()
       return tb - ta
     })
 )
@@ -863,7 +863,7 @@ async function simpanMutasi() {
         nominal: Number(modalNominal.value),
         catatan: modalCatatan.value,
         tanggal: new Date().toISOString().slice(0, 10),
-        created_at: serverTimestamp()
+        createdAt: serverTimestamp()
       })
       toast.success('Mutasi tersimpan')
     }

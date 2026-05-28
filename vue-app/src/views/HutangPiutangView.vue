@@ -45,7 +45,7 @@
             <p class="text-[9px] uppercase" :class="h.lunas ? 'text-emerald-600' : 'text-rose-600'">{{ h.lunas ? 'Lunas' : 'Open' }}</p>
           </div>
           <button @click="toggleLunas(h)" class="text-emerald-500 hover:bg-emerald-50 p-2 rounded" :title="h.lunas ? 'Tandai Open' : 'Tandai Lunas'"><i class="fas fa-check"></i></button>
-          <button @click="deleteItem(h)" class="text-rose-500 hover:bg-rose-50 p-2 rounded"><i class="fas fa-trash"></i></button>
+          <button v-if="isAdmin" @click="deleteItem(h)" class="text-rose-500 hover:bg-rose-50 p-2 rounded" title="Hapus (super admin)"><i class="fas fa-trash"></i></button>
         </div>
       </div>
     </div>
@@ -78,6 +78,11 @@ import { db } from '@/services/firebase'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
 import { fmtRp } from '@/utils/format'
+// v.21.104.0527: gating super_admin utk hapus record hutang/piutang
+import { useAuthStore } from '@/stores/auth'
+import { isSuperAdmin } from '@/utils/roleScope'
+const auth = useAuthStore()
+const isAdmin = computed(() => isSuperAdmin(auth.sesiAktif))
 
 const toast = useToast()
 const confirmDlg = useConfirm()
@@ -118,7 +123,7 @@ async function simpan() {
     await setDoc(doc(db, 'keuangan_hutang_piutang', id), {
       id, jenis: modalJenis.value, pihak: modalPihak.value,
       nominal: Number(modalNominal.value), tanggal: modalTanggal.value, catatan: modalCatatan.value,
-      lunas: false, created_at: serverTimestamp()
+      lunas: false, createdAt: serverTimestamp()
     })
     toast.success('Tersimpan')
     modalOpen.value = false
@@ -130,6 +135,7 @@ async function toggleLunas(h) {
 }
 
 async function deleteItem(h) {
+  if (!isAdmin.value) return
   const ok = await confirmDlg({ title: 'Hapus?', message: `Hapus ${h.jenis} dari ${h.pihak}?`, confirmText: 'Hapus', danger: true })
   if (!ok) return
   try { await deleteDoc(doc(db, 'keuangan_hutang_piutang', String(h.id))); toast.success('Dihapus') } catch (e) { toast.error('Gagal: ' + (e?.message || e)) }

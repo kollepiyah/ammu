@@ -269,7 +269,7 @@ async function simpanModal() {
         // v.21.104.0527: set status supaya POS deteksi sbg tunggakan
         status: 'belum',
         jatuh_tempo: modalJatuhTempo.value,
-        created_at: serverTimestamp()
+        createdAt: serverTimestamp()
       })
       toast.success('Tagihan tersimpan')
     } else {
@@ -289,7 +289,7 @@ async function simpanModal() {
         tagihan_id: t.id, santri_id: t.santri_id, santri_nama: t.santri_nama,
         nominal: Number(modalBayarNominal.value), catatan: modalCatatan.value,
         tanggal: new Date().toISOString().slice(0, 10),
-        created_at: serverTimestamp()
+        createdAt: serverTimestamp()
       })
       toast.success('Pembayaran tersimpan')
     }

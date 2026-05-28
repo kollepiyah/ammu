@@ -78,9 +78,9 @@ function matchPeriode(dateStr) {
   return true
 }
 
-const pembayaranList = computed(() => pembayaranRaw.value.filter((p) => matchPeriode(p.tanggal || p.created_at)))
-const setorList = computed(() => tabunganRaw.value.filter((m) => (String(m.jenis).includes('setor') || String(m.jenis).includes('bayar')) && matchPeriode(m.tanggal || m.created_at)))
-const tarikList = computed(() => tabunganRaw.value.filter((m) => String(m.jenis).includes('tarik') && matchPeriode(m.tanggal || m.created_at)))
+const pembayaranList = computed(() => pembayaranRaw.value.filter((p) => matchPeriode(p.tanggal || p.createdAt || p.created_at)))
+const setorList = computed(() => tabunganRaw.value.filter((m) => (String(m.jenis).includes('setor') || String(m.jenis).includes('bayar')) && matchPeriode(m.tanggal || m.createdAt || m.created_at)))
+const tarikList = computed(() => tabunganRaw.value.filter((m) => String(m.jenis).includes('tarik') && matchPeriode(m.tanggal || m.createdAt || m.created_at)))
 const bisyarohList = computed(() => bisyarohRaw.value.filter((g) => {
   const [y, m] = String(g.periode || '').split('-')
   if (!y) return false
@@ -100,7 +100,12 @@ const totalPengeluaran = computed(() => sumBisyaroh.value)
 const saldoBersih = computed(() => totalPemasukan.value - totalPengeluaran.value)
 
 onMounted(() => {
-  unsubP = subscribeColl('keuangan_pembayaran', (docs) => { pembayaranRaw.value = docs })
+  // v.21.104.0527: SSOT = keuangan_buku_induk filter sumber=pos_santri.
+  // Sebelumnya baca keuangan_pembayaran yang hanya ditulis TagihanView, sehingga
+  // tagihan yg dibayar lewat POS tidak ikut terhitung.
+  unsubP = subscribeColl('keuangan_buku_induk', (docs) => {
+    pembayaranRaw.value = (docs || []).filter((r) => r.sumber === 'pos_santri')
+  })
   unsubT = subscribeColl('keuangan_tabungan_santri', (docs) => { tabunganRaw.value = docs })
   unsubB = subscribeColl('keuangan_gaji', (docs) => { bisyarohRaw.value = docs })
 })

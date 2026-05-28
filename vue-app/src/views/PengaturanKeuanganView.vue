@@ -1021,17 +1021,87 @@ function reset() {
   toast.info('Form direset')
 }
 
+// v.21.104.0527: implementasi Vue (gantikan legacy window.autoGenerateSyahriyahManual).
+// Generate tagihan utk jenis ber-auto_generate=true (default: Syahriyah)
+// utk semua santri aktif, nominal pakai 3-lapis lookup
+// (nominal_per_kelas → nominal_per_lembaga → nominal_default).
 async function autoGenerate() {
+  if (generating.value) return
+  if (!confirm('Generate tagihan otomatis bulan ini untuk semua santri aktif?\n\nJenis ber-flag auto_generate akan di-create. Tagihan duplikat (periode sama) akan di-skip.')) return
   generating.value = true
   try {
-    if (typeof window.autoGenerateSyahriyahManual === 'function') {
-      await window.autoGenerateSyahriyahManual()
-      toast.success('Auto-generate selesai')
-    } else {
-      toast.warning(
-        'Fitur auto-generate akan migrate di batch berikutnya. Gunakan menu Tagihan untuk generate manual.'
-      )
+    const { collection, getDocs, setDoc, doc, serverTimestamp } = await import('firebase/firestore')
+    const { db } = await import('@/services/firebase')
+    const jenisAuto = (jenisList.value || []).filter((j) => j.auto_generate && String(j.label || '').trim())
+    if (jenisAuto.length === 0) {
+      toast.warning('Tidak ada jenis tagihan dengan flag auto_generate.')
+      generating.value = false
+      return
     }
+    // Fetch santri aktif
+    const sSnap = await getDocs(collection(db, 'santri'))
+    const santriAktif = sSnap.docs
+      .map((d) => ({ id: d.id, ...d.data() }))
+      .filter((x) => x.aktif !== false)
+    // Fetch tagihan existing utk skip duplikat
+    const tSnap = await getDocs(collection(db, 'keuangan_tagihan'))
+    const existing = new Set()
+    for (const d of tSnap.docs) {
+      const t = d.data()
+      const key = `${String(t.santri_id)}__${(t.kategori || t.jenis || '').toLowerCase()}__${t.periode || ''}`
+      existing.add(key)
+    }
+    const now = new Date()
+    const BULAN_NM = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember']
+    const periode = `${BULAN_NM[now.getMonth()]} ${now.getFullYear()}`
+    const jt = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(form.keu_jatuh_tempo || 10).padStart(2, '0')}`
+    let created = 0, skipped = 0, errCount = 0
+    for (const j of jenisAuto) {
+      const wl = Array.isArray(j.lembaga_only) ? j.lembaga_only.filter(Boolean) : []
+      for (const sx of santriAktif) {
+        // whitelist gating
+        if (wl.length > 0) {
+          if (!(wl.includes(sx.lembaga) || wl.includes(sx.lembaga_sekolah))) continue
+        }
+        const dupKey = `${String(sx.id)}__${(j.label || '').toLowerCase()}__${periode}`
+        if (existing.has(dupKey)) { skipped++; continue }
+        // 3-lapis lookup
+        let nominal = 0
+        const perK = j.nominal_per_kelas || {}
+        for (const [lemb, ks] of [[sx.lembaga, sx.kelas], [sx.lembaga_sekolah, sx.kelas_sekolah]]) {
+          if (!lemb) continue
+          const inner = perK[lemb] || {}
+          const v = Number(inner[ks] || 0)
+          if (v > 0) { nominal = v; break }
+        }
+        if (nominal === 0) {
+          const perL = j.nominal_per_lembaga || {}
+          nominal = Number(perL[sx.lembaga] || perL[sx.lembaga_sekolah] || 0) || Number(j.nominal_default || 0)
+        }
+        if (nominal <= 0) { skipped++; continue }
+        try {
+          const id = `tagihan_${sx.id}_${j.id}_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}`
+          await setDoc(doc(db, 'keuangan_tagihan', id), {
+            id,
+            santri_id: String(sx.id),
+            santri_nama: sx.nama || '',
+            kategori: j.label || j.id || 'Tagihan',
+            periode,
+            nominal,
+            bayar: 0,
+            status: 'belum',
+            jatuh_tempo: jt,
+            sumber: 'auto_generate',
+            created_at: serverTimestamp()
+          })
+          created++
+        } catch (e) {
+          errCount++
+          console.warn('[autoGenerate]', sx.nama, e.message)
+        }
+      }
+    }
+    toast.success(`Auto-generate: ${created} dibuat, ${skipped} skip${errCount ? `, ${errCount} gagal` : ''}`)
   } catch (e) {
     toast.error('Error: ' + (e.message || e))
   } finally {
