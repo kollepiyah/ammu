@@ -1,6 +1,5 @@
 <template>
   <div class="p-3 md:p-5 max-w-4xl mx-auto space-y-4">
-    <!-- Header -->
     <div class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm">
       <div class="flex items-start justify-between gap-3 flex-wrap">
         <div>
@@ -8,13 +7,12 @@
             <i class="fas fa-file-export text-cyan-500 mr-2"></i>Ekspor Riwayat Santri
           </h1>
           <p class="text-xs text-[var(--text-secondary)] mt-0.5">
-            Cetak PDF riwayat 1 tahun (Tagihan + Pembayaran + Tabungan)
+            Cetak PDF rentang bulan: Tagihan + Pembayaran + Tabungan
           </p>
         </div>
       </div>
     </div>
 
-    <!-- Guard -->
     <div
       v-if="!isFullAccess"
       class="bg-[var(--bg-card)] rounded-2xl p-10 text-center border border-dashed border-[var(--border-default)]"
@@ -27,91 +25,103 @@
     </div>
 
     <template v-else>
-      <!-- Filter -->
       <div class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm space-y-3">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
-          <select
-            v-model="selectedLembaga"
-            class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-cyan-500 outline-none"
-          >
-            <option value="">Semua lembaga</option>
-            <option v-for="l in lembagaOptions" :key="l" :value="l">{{ l }}</option>
-          </select>
-          <select
-            v-model.number="selectedTahun"
-            class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-cyan-500 outline-none"
-          >
-            <option v-for="y in tahunOptions" :key="y" :value="y">Tahun {{ y }}</option>
-          </select>
-          <input
-            v-model="search"
-            type="text"
-            placeholder="Cari nama santri..."
-            class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-cyan-500 outline-none"
-          />
+        <div>
+          <p class="text-[10px] uppercase font-black text-[var(--text-secondary)] mb-1.5 tracking-wider">
+            <i class="fas fa-calendar-alt mr-1"></i>Rentang Periode
+          </p>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+            <select
+              v-model.number="bulanDari"
+              class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-cyan-500 outline-none"
+            >
+              <option v-for="(b, i) in BULAN" :key="`d-${i}`" :value="i + 1">{{ b }}</option>
+            </select>
+            <select
+              v-model.number="tahunDari"
+              class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-cyan-500 outline-none"
+            >
+              <option v-for="y in tahunOptions" :key="`yd-${y}`" :value="y">{{ y }}</option>
+            </select>
+            <select
+              v-model.number="bulanSampai"
+              class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-cyan-500 outline-none"
+            >
+              <option v-for="(b, i) in BULAN" :key="`s-${i}`" :value="i + 1">{{ b }}</option>
+            </select>
+            <select
+              v-model.number="tahunSampai"
+              class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-cyan-500 outline-none"
+            >
+              <option v-for="y in tahunOptions" :key="`ys-${y}`" :value="y">{{ y }}</option>
+            </select>
+          </div>
+          <div class="flex items-center gap-2 mt-2 flex-wrap">
+            <button type="button" @click="setPresetBulanIni" class="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-cyan-50 text-cyan-700 hover:bg-cyan-100 border border-cyan-200">Bulan ini</button>
+            <button type="button" @click="setPresetSemester" class="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-cyan-50 text-cyan-700 hover:bg-cyan-100 border border-cyan-200">Semester ini</button>
+            <button type="button" @click="setPresetSetahun" class="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-cyan-50 text-cyan-700 hover:bg-cyan-100 border border-cyan-200">1 tahun ({{ tahunSampai }})</button>
+            <span class="text-[10px] text-[var(--text-tertiary)] font-bold ml-auto">{{ rangeLabel }}</span>
+          </div>
         </div>
-        <div class="flex items-center justify-between gap-2 flex-wrap">
-          <span class="text-[10px] text-[var(--text-tertiary)] font-bold">
-            {{ filteredSantri.length }} santri ditemukan
-          </span>
+
+        <div class="pt-3 border-t border-[var(--border-subtle)]">
+          <p class="text-[10px] uppercase font-black text-[var(--text-secondary)] mb-1.5 tracking-wider">
+            <i class="fas fa-user mr-1"></i>Filter Santri
+          </p>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+            <select v-model="selectedLembaga" class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-cyan-500 outline-none">
+              <option value="">Semua lembaga</option>
+              <option v-for="l in lembagaOptions" :key="l" :value="l">{{ l }}</option>
+            </select>
+            <input v-model="search" type="text" placeholder="Cari nama / NIS..." class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-cyan-500 outline-none" />
+          </div>
+          <p class="text-[10px] text-[var(--text-tertiary)] font-bold mt-1.5">{{ filteredSantri.length }} santri ditemukan</p>
         </div>
       </div>
 
-      <!-- List santri -->
       <div v-if="loading" class="bg-[var(--bg-card)] rounded-2xl p-10 text-center">
         <i class="fas fa-spinner fa-spin text-cyan-500 text-3xl mb-2"></i>
         <p class="text-xs text-[var(--text-secondary)] font-bold">Memuat data...</p>
       </div>
-      <div
-        v-else-if="filteredSantri.length === 0"
-        class="bg-[var(--bg-card)] rounded-2xl p-10 border border-dashed border-[var(--border-default)] text-center"
-      >
+      <div v-else-if="filteredSantri.length === 0" class="bg-[var(--bg-card)] rounded-2xl p-10 border border-dashed border-[var(--border-default)] text-center">
         <i class="fas fa-search text-[var(--text-tertiary)] text-3xl mb-2"></i>
         <p class="text-sm text-[var(--text-secondary)] italic">Tidak ada santri yang cocok</p>
       </div>
-      <div
-        v-else
-        class="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)] shadow-sm overflow-hidden"
-      >
+      <div v-else class="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)] shadow-sm overflow-hidden">
         <div class="max-h-[60vh] overflow-y-auto divide-y divide-slate-100 dark:divide-slate-700">
-          <div
-            v-for="s in filteredSantri"
-            :key="s.id"
-            class="p-3 md:p-4 hover:bg-slate-50 dark:hover:bg-slate-900/30 flex items-center gap-3"
-          >
-            <div
-              class="flex-shrink-0 w-10 h-10 rounded-full bg-cyan-100 text-cyan-700 flex items-center justify-center"
-            >
+          <div v-for="s in filteredSantri" :key="s.id" class="p-3 md:p-4 hover:bg-slate-50 dark:hover:bg-slate-900/30 flex items-center gap-3">
+            <div class="flex-shrink-0 w-10 h-10 rounded-full bg-cyan-100 text-cyan-700 flex items-center justify-center">
               <i class="fas fa-user"></i>
             </div>
             <div class="flex-1 min-w-0">
               <p class="text-sm font-bold text-[var(--text-primary)] truncate">{{ s.nama }}</p>
-              <p class="text-[10px] text-[var(--text-secondary)] truncate">
-                NIS {{ s.nis || s.id }} · {{ s.lembaga || '-' }} · {{ s.kelas || '-' }}
-              </p>
+              <p class="text-[10px] text-[var(--text-secondary)] truncate">NIS {{ s.nis || s.id }} · {{ s.lembaga || '-' }} · {{ s.kelas || '-' }}</p>
             </div>
-            <button
-              type="button"
-              :disabled="busyId === s.id"
-              @click="cetakRiwayat(s)"
-              class="text-[11px] font-black bg-rose-500 hover:bg-rose-600 disabled:opacity-50 text-white px-3 py-1.5 rounded-lg"
-            >
-              <i
-                :class="['fas mr-1', busyId === s.id ? 'fa-spinner fa-spin' : 'fa-file-pdf']"
-              ></i>
+            <button type="button" :disabled="busyId === s.id" @click="cetakRiwayat(s)" class="text-[11px] font-black bg-rose-500 hover:bg-rose-600 disabled:opacity-50 text-white px-3 py-1.5 rounded-lg">
+              <i :class="['fas mr-1', busyId === s.id ? 'fa-spinner fa-spin' : 'fa-file-pdf']"></i>
               {{ busyId === s.id ? 'Memproses...' : 'Cetak PDF' }}
             </button>
           </div>
         </div>
+      </div>
+
+      <div v-if="lastDebug" class="bg-[var(--bg-card-elevated)] rounded-xl p-3 text-[10px] text-[var(--text-secondary)] border border-[var(--border-subtle)]">
+        <p class="font-black mb-1"><i class="fas fa-info-circle mr-1"></i>Hasil ekspor terakhir:</p>
+        <p>Tagihan: <b>{{ lastDebug.tagihan }}</b> · POS: <b>{{ lastDebug.pembayaran }}</b> · Tabungan: <b>{{ lastDebug.tabungan }}</b></p>
+        <p v-if="lastDebug.tagihan === 0 && lastDebug.pembayaran === 0 && lastDebug.tabungan === 0" class="text-rose-600 mt-1">
+          Tidak ada data di rentang ini. Cek tanggal record atau coba periode lebih lebar (klik "1 tahun").
+        </p>
       </div>
     </template>
   </div>
 </template>
 
 <script setup>
-// v.21.101.0527 — Ekspor riwayat per santri 1 tahun: Tagihan + Pembayaran + Tabungan
+// v.21.102.0527 — Ekspor riwayat per santri rentang bulan-tahun.
+// Tidak pakai Firestore where() — fetch semua + filter di client supaya
+// kompat dgn santri_id (bisa string atau number di data lama).
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { collection, query, where, getDocs } from 'firebase/firestore'
+import { collection, getDocs } from 'firebase/firestore'
 import { db } from '@/services/firebase'
 import { subscribeColl } from '@/services/firestore'
 import { useAuthStore } from '@/stores/auth'
@@ -120,6 +130,8 @@ import { useToast } from '@/composables/useToast'
 import { sortSantri } from '@/utils/santriSort'
 import { cetakRiwayatSantriPdf, buildKopFromSettings } from '@/utils/riwayatSantriPdf'
 
+const BULAN = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember']
+
 const auth = useAuthStore()
 const settings = useSettingsStore()
 const toast = useToast()
@@ -127,21 +139,23 @@ const toast = useToast()
 const isFullAccess = computed(() => {
   const s = auth.sesiAktif
   if (!s) return false
-  return (
-    s.role === 'admin' ||
-    s.id === 'admin' ||
-    ['super_admin', 'admin', 'admin_keuangan'].includes(s.role_sistem)
-  )
+  return s.role === 'admin' || s.id === 'admin' || ['super_admin','admin','admin_keuangan'].includes(s.role_sistem)
 })
 
 const santriRaw = ref([])
 const loading = ref(true)
 let unsubSantri = null
 
+const now = new Date()
+const tahunDari = ref(now.getFullYear())
+const tahunSampai = ref(now.getFullYear())
+const bulanDari = ref(1)
+const bulanSampai = ref(12)
+
 const selectedLembaga = ref('')
-const selectedTahun = ref(new Date().getFullYear())
 const search = ref('')
 const busyId = ref('')
+const lastDebug = ref(null)
 
 const lembagaOptions = computed(() => {
   const set = new Set()
@@ -153,74 +167,92 @@ const lembagaOptions = computed(() => {
 })
 
 const tahunOptions = computed(() => {
-  const now = new Date().getFullYear()
+  const cur = new Date().getFullYear()
   const out = []
-  for (let y = now + 1; y >= now - 5; y--) out.push(y)
+  for (let y = cur + 1; y >= cur - 5; y--) out.push(y)
   return out
 })
 
 const filteredSantri = computed(() => {
   let list = santriRaw.value.filter((s) => s.aktif !== false)
   if (selectedLembaga.value) {
-    list = list.filter(
-      (s) => s.lembaga === selectedLembaga.value || s.lembaga_sekolah === selectedLembaga.value
-    )
+    list = list.filter((s) => s.lembaga === selectedLembaga.value || s.lembaga_sekolah === selectedLembaga.value)
   }
   const kw = search.value.trim().toLowerCase()
   if (kw) {
-    list = list.filter(
-      (s) =>
-        String(s.nama || '').toLowerCase().includes(kw) ||
-        String(s.nis || '').toLowerCase().includes(kw)
-    )
+    list = list.filter((s) => String(s.nama || '').toLowerCase().includes(kw) || String(s.nis || '').toLowerCase().includes(kw))
   }
   return sortSantri(list)
 })
 
+function pad2(n) { return String(n).padStart(2, '0') }
+function lastDayOfMonth(y, m) { return new Date(y, m, 0).getDate() }
+
+const dariStr = computed(() => `${tahunDari.value}-${pad2(bulanDari.value)}-01`)
+const sampaiStr = computed(() => `${tahunSampai.value}-${pad2(bulanSampai.value)}-${pad2(lastDayOfMonth(tahunSampai.value, bulanSampai.value))}`)
+
+const rangeLabel = computed(() => `${BULAN[bulanDari.value - 1]} ${tahunDari.value} → ${BULAN[bulanSampai.value - 1]} ${tahunSampai.value}`)
+
+function setPresetBulanIni() {
+  const d = new Date()
+  tahunDari.value = d.getFullYear()
+  tahunSampai.value = d.getFullYear()
+  bulanDari.value = d.getMonth() + 1
+  bulanSampai.value = d.getMonth() + 1
+}
+function setPresetSemester() {
+  const d = new Date()
+  tahunDari.value = d.getFullYear()
+  tahunSampai.value = d.getFullYear()
+  if (d.getMonth() + 1 <= 6) { bulanDari.value = 1; bulanSampai.value = 6 }
+  else { bulanDari.value = 7; bulanSampai.value = 12 }
+}
+function setPresetSetahun() {
+  bulanDari.value = 1
+  bulanSampai.value = 12
+  tahunDari.value = tahunSampai.value
+}
+
 onMounted(() => {
-  unsubSantri = subscribeColl('santri', (docs) => {
-    santriRaw.value = docs
-    loading.value = false
-  })
+  unsubSantri = subscribeColl('santri', (docs) => { santriRaw.value = docs; loading.value = false })
+})
+onUnmounted(() => {
+  if (unsubSantri) { try { unsubSantri() } catch { /* ignore */ } }
 })
 
-onUnmounted(() => {
-  if (unsubSantri) {
-    try {
-      unsubSantri()
-    } catch {
-      /* ignore */
-    }
-  }
-})
+function validateRange() {
+  const a = new Date(dariStr.value)
+  const b = new Date(sampaiStr.value)
+  if (a > b) { toast.warning('Rentang tidak valid: "Dari" lebih besar dari "Sampai"'); return false }
+  return true
+}
 
 async function cetakRiwayat(s) {
   if (!s || busyId.value) return
+  if (!validateRange()) return
   busyId.value = s.id
+  lastDebug.value = null
   try {
-    const sid = String(s.id)
-    // Fetch tagihan + pembayaran (buku_induk sumber pos_santri) + tabungan
     const [tgSnap, biSnap, tbSnap] = await Promise.all([
-      getDocs(query(collection(db, 'keuangan_tagihan'), where('santri_id', '==', sid))),
-      getDocs(query(collection(db, 'keuangan_buku_induk'), where('santri_id', '==', sid))),
-      getDocs(query(collection(db, 'keuangan_tabungan_santri'), where('santri_id', '==', sid)))
+      getDocs(collection(db, 'keuangan_tagihan')),
+      getDocs(collection(db, 'keuangan_buku_induk')),
+      getDocs(collection(db, 'keuangan_tabungan_santri'))
     ])
     const tagihan = tgSnap.docs.map((d) => ({ id: d.id, ...d.data() }))
-    const pembayaran = biSnap.docs
-      .map((d) => ({ id: d.id, ...d.data() }))
-      .filter((r) => r.sumber === 'pos_santri')
+    const pembayaran = biSnap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((r) => r.sumber === 'pos_santri')
     const tabungan = tbSnap.docs.map((d) => ({ id: d.id, ...d.data() }))
-
+    console.log('[RiwayatSantri] fetched', { santri_id: s.id, tagihan: tagihan.length, pembayaran: pembayaran.length, tabungan: tabungan.length })
     const kop = buildKopFromSettings(settings.settings || {})
-    await cetakRiwayatSantriPdf({
-      santri: s,
-      tahun: Number(selectedTahun.value) || new Date().getFullYear(),
-      tagihan,
-      pembayaran,
-      tabungan,
-      kop
+    const { stats } = await cetakRiwayatSantriPdf({
+      santri: s, dari: dariStr.value, sampai: sampaiStr.value,
+      tagihan, pembayaran, tabungan, kop
     })
-    toast.success(`PDF riwayat ${s.nama} (${selectedTahun.value}) berhasil dibuat`)
+    lastDebug.value = stats
+    if (stats.tagihan + stats.pembayaran + stats.tabungan === 0) {
+      toast.warning(`PDF dibuat tapi kosong — tidak ada data untuk ${s.nama} di periode ini`)
+    } else {
+      toast.success(`PDF ${s.nama} — ${stats.tagihan} tagihan, ${stats.pembayaran} POS, ${stats.tabungan} mutasi`)
+    }
   } catch (e) {
     console.error('[cetakRiwayatSantri]', e)
     toast.error('Gagal: ' + (e?.message || e))
