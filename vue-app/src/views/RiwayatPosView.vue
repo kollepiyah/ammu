@@ -47,6 +47,47 @@ async function hapusTrx(t) {
   }
 }
 
+// v.21.100.0527: bulk select hapus transaksi POS (super_admin)
+const selectedTrx = ref(new Set())
+function toggleTrxSel(key) {
+  const ns = new Set(selectedTrx.value)
+  const k = String(key)
+  if (ns.has(k)) ns.delete(k)
+  else ns.add(k)
+  selectedTrx.value = ns
+}
+function toggleSemuaTrx() {
+  if (selectedTrx.value.size === transaksi.value.length && transaksi.value.length > 0) {
+    selectedTrx.value = new Set()
+  } else {
+    selectedTrx.value = new Set(transaksi.value.map((t) => String(t.key)))
+  }
+}
+async function hapusTrxTerpilih() {
+  if (!isAdmin.value) return
+  const keys = Array.from(selectedTrx.value)
+  if (keys.length === 0) return
+  const tgt = transaksi.value.filter((t) => keys.includes(String(t.key)))
+  const totalRec = tgt.reduce((a, t) => a + t.items.length, 0)
+  if (!confirm(`Hapus ${tgt.length} transaksi POS terpilih (${totalRec} record di buku induk)?\n\nTidak bisa di-undo. Tagihan TIDAK auto-revert.`)) return
+  let ok = 0, fail = 0
+  const trxIds = tgt.map((t) => t.trx_id)
+  const recIds = entries.value.filter((e) => trxIds.includes(e.trx_id)).map((e) => e.id)
+  for (const id of recIds) {
+    try {
+      await deleteDoc(doc(db, 'keuangan_buku_induk', String(id)))
+      ok++
+    } catch (e) {
+      fail++
+      console.warn('[bulkHapusTrx]', id, e.message)
+    }
+  }
+  entries.value = entries.value.filter((e) => !trxIds.includes(e.trx_id))
+  selectedTrx.value = new Set()
+  if (fail > 0) toast.warning(`${ok} record dihapus, ${fail} gagal — cek console`)
+  else toast.success(`${tgt.length} transaksi dihapus (${ok} record)`)
+}
+
 const loading = ref(true)
 const entries = ref([]) // raw buku_induk pos rows
 const santriMap = ref({}) // id -> {lembaga, kelas, nis}
@@ -253,13 +294,45 @@ function fmtTgl(t) {
           Tidak ada transaksi.
         </p>
 
-        <ul v-else class="space-y-2">
+        <!-- v.21.100.0527: bulk action bar + select-all -->
+        <div
+          v-if="isAdmin && transaksi.length > 0"
+          class="flex items-center justify-between gap-2 mb-2 px-2"
+        >
+          <label class="flex items-center gap-2 text-[11px] font-bold text-[var(--text-secondary)] cursor-pointer">
+            <input
+              type="checkbox"
+              :checked="selectedTrx.size === transaksi.length && transaksi.length > 0"
+              @change="toggleSemuaTrx"
+              class="w-4 h-4 accent-rose-600"
+            />
+            Pilih semua ({{ transaksi.length }})
+          </label>
+          <button
+            v-if="selectedTrx.size > 0"
+            type="button"
+            @click="hapusTrxTerpilih"
+            class="text-[11px] font-black bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-lg"
+          >
+            <i class="fas fa-trash mr-1"></i>Hapus Terpilih ({{ selectedTrx.size }})
+          </button>
+        </div>
+
+        <ul v-if="transaksi.length > 0" class="space-y-2">
           <li
             v-for="t in transaksi"
             :key="t.key"
             class="p-3 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-card-elevated)]"
           >
             <div class="flex items-start justify-between gap-2">
+              <input
+                v-if="isAdmin"
+                type="checkbox"
+                :checked="selectedTrx.has(String(t.key))"
+                @change="toggleTrxSel(t.key)"
+                class="w-4 h-4 mt-1 accent-rose-600 flex-shrink-0"
+                title="Pilih transaksi"
+              />
               <div class="min-w-0 flex-1">
                 <p class="text-sm font-bold text-[var(--text-primary)] truncate">{{ t.santri_nama }}</p>
                 <p class="text-[10px] text-[var(--text-secondary)] truncate">

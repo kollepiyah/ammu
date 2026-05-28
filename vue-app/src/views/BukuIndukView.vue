@@ -245,10 +245,42 @@
         v-else
         class="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)] shadow-sm overflow-hidden"
       >
+        <!-- v.21.100.0527: bulk action bar -->
+        <div
+          v-if="isAdmin && selectedBuku.size > 0"
+          class="px-4 py-2 bg-rose-50 dark:bg-rose-900/20 border-b border-rose-200 dark:border-rose-800 flex items-center justify-between gap-2"
+        >
+          <span class="text-[11px] font-bold text-rose-700 dark:text-rose-300">
+            {{ selectedBuku.size }} record dipilih
+          </span>
+          <div class="flex gap-2">
+            <button
+              type="button"
+              @click="selectedBuku = new Set()"
+              class="text-[10px] font-bold px-3 py-1.5 rounded-lg bg-[var(--bg-muted)] text-[var(--text-secondary)]"
+            >Batal</button>
+            <button
+              type="button"
+              @click="hapusBukuTerpilih"
+              class="text-[11px] font-black bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-lg"
+            >
+              <i class="fas fa-trash mr-1"></i>Hapus Terpilih ({{ selectedBuku.size }})
+            </button>
+          </div>
+        </div>
         <!-- Table header (desktop) -->
         <div
-          class="hidden md:grid md:grid-cols-[100px_1fr_120px_120px] gap-2 px-4 py-2 bg-slate-50 dark:bg-slate-700 text-[10px] uppercase font-bold text-[var(--text-secondary)] tracking-wider border-b border-[var(--border-subtle)]"
+          :class="['hidden md:grid gap-2 px-4 py-2 bg-slate-50 dark:bg-slate-700 text-[10px] uppercase font-bold text-[var(--text-secondary)] tracking-wider border-b border-[var(--border-subtle)]', isAdmin ? 'md:grid-cols-[36px_100px_1fr_120px_120px]' : 'md:grid-cols-[100px_1fr_120px_120px]']"
         >
+          <span v-if="isAdmin" class="text-center">
+            <input
+              type="checkbox"
+              :checked="selectedBuku.size === filteredBuku.length && filteredBuku.length > 0"
+              @change="toggleSemuaBuku"
+              class="w-4 h-4 accent-rose-600"
+              title="Pilih semua"
+            />
+          </span>
           <span>Tanggal</span>
           <span>Keterangan</span>
           <span class="text-right">Masuk</span>
@@ -258,8 +290,16 @@
           <div
             v-for="b in filteredBuku"
             :key="b.id"
-            class="px-4 py-2.5 md:grid md:grid-cols-[100px_1fr_120px_120px] gap-2 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition"
+            :class="['px-4 py-2.5 md:grid gap-2 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition', isAdmin ? 'md:grid-cols-[36px_100px_1fr_120px_120px]' : 'md:grid-cols-[100px_1fr_120px_120px]']"
           >
+            <span v-if="isAdmin" class="md:text-center hidden md:inline-flex md:items-center md:justify-center">
+              <input
+                type="checkbox"
+                :checked="selectedBuku.has(String(b.id))"
+                @change="toggleBukuSel(b.id)"
+                class="w-4 h-4 accent-rose-600"
+              />
+            </span>
             <span class="text-[11px] text-[var(--text-secondary)] font-bold whitespace-nowrap block md:inline">
               {{ formatTgl(b.tanggal) }}
             </span>
@@ -386,6 +426,41 @@ const modalInputOpen = ref(false)
 const savingInput = ref(false)
 // v.21.99.0527: editingId untuk mode edit (super_admin koreksi nominal/keterangan)
 const editingId = ref(null)
+// v.21.100.0527: multi-select bulk delete (super_admin)
+const selectedBuku = ref(new Set())
+function toggleBukuSel(id) {
+  const ns = new Set(selectedBuku.value)
+  const sid = String(id)
+  if (ns.has(sid)) ns.delete(sid)
+  else ns.add(sid)
+  selectedBuku.value = ns
+}
+function toggleSemuaBuku() {
+  if (selectedBuku.value.size === filteredBuku.value.length && filteredBuku.value.length > 0) {
+    selectedBuku.value = new Set()
+  } else {
+    selectedBuku.value = new Set(filteredBuku.value.map((b) => String(b.id)))
+  }
+}
+async function hapusBukuTerpilih() {
+  if (!isAdmin.value) return
+  const ids = Array.from(selectedBuku.value)
+  if (ids.length === 0) return
+  if (!confirm(`Hapus ${ids.length} record buku induk terpilih?\n\nTidak bisa di-undo.`)) return
+  let ok = 0, fail = 0
+  for (const id of ids) {
+    try {
+      await deleteDoc(doc(db, 'keuangan_buku_induk', String(id)))
+      ok++
+    } catch (e) {
+      fail++
+      console.warn('[bulkHapusBuku]', id, e.message)
+    }
+  }
+  selectedBuku.value = new Set()
+  if (fail > 0) toast.warning(`${ok} dihapus, ${fail} gagal — cek console`)
+  else toast.success(`${ok} record dihapus`)
+}
 const inputForm = reactive({
   tanggal: new Date().toISOString().slice(0, 10),
   tipe: 'masuk',
