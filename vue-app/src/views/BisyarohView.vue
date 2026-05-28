@@ -426,6 +426,14 @@
               >
                 <i class="fab fa-whatsapp mr-1"></i>Kirim
               </button>
+              <button
+                v-if="isAdmin"
+                @click="hapusSlip(slip)"
+                title="Hapus slip (super admin)"
+                class="text-[10px] font-bold px-2 py-1 rounded bg-rose-100 text-rose-600 hover:bg-rose-200 transition cursor-pointer"
+              >
+                <i class="fas fa-trash"></i>
+              </button>
             </div>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2 text-xs">
               <div class="bg-[var(--bg-card-elevated)] rounded-lg p-2">
@@ -523,9 +531,10 @@
 // BisyarohView — slip bisyaroh guru/pegawai
 // v.21.10+ line_items system, bulk generate dari settings, kirim WA slip
 import { ref, computed } from 'vue'
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore'
+import { doc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/services/firebase'
 import { useAuthStore } from '@/stores/auth'
+import { isSuperAdmin } from '@/utils/roleScope'
 import { useSettingsStore } from '@/stores/settings'
 import { useKeuangan } from '@/composables/useKeuangan'
 import { useGuru } from '@/composables/useGuru'
@@ -536,6 +545,20 @@ const { gaji, loading } = useKeuangan()
 const { guruRaw, deriveGuruLembagaRefs } = useGuru()
 const auth = useAuthStore()
 const settingsStore = useSettingsStore()
+// v.21.99.0527: super_admin only — hapus slip bisyaroh (koreksi data)
+const isAdmin = computed(() => isSuperAdmin(auth.sesiAktif))
+
+async function hapusSlip(slip) {
+  if (!isAdmin.value) return
+  const label = getNamaGuruGelar(slip.guru_nama || guruNamaById(slip.guru_id)) + ' / ' + slip.periode
+  if (!confirm(`Hapus PERMANEN slip bisyaroh:\n${label}\nTotal: ${fmtRp(slip.take_home || 0)}\n\nTidak bisa di-undo.`)) return
+  try {
+    await deleteDoc(doc(db, 'keuangan_gaji', String(slip.id)))
+    toast.success('Slip dihapus')
+  } catch (e) {
+    toast.error('Gagal hapus: ' + (e.message || e))
+  }
+}
 const toast = useToast()
 
 // ─── Role guards ──────────────────────────────────────────────────────────

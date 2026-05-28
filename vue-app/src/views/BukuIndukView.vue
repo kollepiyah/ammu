@@ -297,6 +297,15 @@
               <button
                 v-if="isAdmin"
                 type="button"
+                @click="bukaEditBuku(b)"
+                class="text-[10px] text-cyan-600 hover:bg-cyan-100 dark:hover:bg-cyan-900/30 px-1.5 py-1 rounded"
+                title="Edit record (super admin)"
+              >
+                <i class="fas fa-edit"></i>
+              </button>
+              <button
+                v-if="isAdmin"
+                type="button"
                 @click="hapusBuku(b)"
                 class="text-[10px] text-rose-600 hover:bg-rose-100 dark:hover:bg-rose-900/30 px-1.5 py-1 rounded"
                 title="Hapus record (super admin)"
@@ -323,7 +332,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
 import { useExcel } from '@/composables/useExcel'
-import { doc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore'
+import { doc, setDoc, deleteDoc, updateDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/services/firebase'
 import { fmtRp, formatTanggal as formatTgl } from '@/utils/format'
 import { buildListPdf, buildKopFromSettings } from '@/utils/pdfBuilder'
@@ -375,6 +384,8 @@ const search = ref('')
 // v.72.16.0526: Input Manual modal
 const modalInputOpen = ref(false)
 const savingInput = ref(false)
+// v.21.99.0527: editingId untuk mode edit (super_admin koreksi nominal/keterangan)
+const editingId = ref(null)
 const inputForm = reactive({
   tanggal: new Date().toISOString().slice(0, 10),
   tipe: 'masuk',
@@ -384,11 +395,24 @@ const inputForm = reactive({
 })
 
 function bukaModalInput() {
+  editingId.value = null
   inputForm.tanggal = new Date().toISOString().slice(0, 10)
   inputForm.tipe = 'masuk'
   inputForm.kategori = ''
   inputForm.keterangan = ''
   inputForm.nominal = 0
+  modalInputOpen.value = true
+}
+
+// v.21.99.0527: super_admin only — buka modal edit, prefill dari record
+function bukaEditBuku(b) {
+  if (!isAdmin.value) return
+  editingId.value = String(b.id)
+  inputForm.tanggal = b.tanggal || new Date().toISOString().slice(0, 10)
+  inputForm.tipe = b.tipe || (Number(b.masuk) > 0 ? 'masuk' : 'keluar')
+  inputForm.kategori = b.kategori || ''
+  inputForm.keterangan = b.keterangan || ''
+  inputForm.nominal = Number(b.nominal || b.masuk || b.keluar || 0)
   modalInputOpen.value = true
 }
 
@@ -403,23 +427,39 @@ async function simpanInputManual() {
   }
   savingInput.value = true
   try {
-    const id = `bi_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`
-    const payload = {
-      id,
-      tanggal: inputForm.tanggal,
-      tipe: inputForm.tipe,
-      kategori: inputForm.kategori.trim() || 'Manual',
-      keterangan: inputForm.keterangan.trim(),
-      nominal: Number(inputForm.nominal) || 0,
-      sumber: 'manual',
-      operator: auth.sesiAktif?.nama || auth.sesiAktif?.guru || 'Admin',
-      createdAt: serverTimestamp()
+    // v.21.99.0527: mode edit (super_admin) vs create
+    if (editingId.value) {
+      const upd = {
+        tanggal: inputForm.tanggal,
+        tipe: inputForm.tipe,
+        kategori: inputForm.kategori.trim() || 'Manual',
+        keterangan: inputForm.keterangan.trim(),
+        nominal: Number(inputForm.nominal) || 0
+      }
+      upd.masuk = upd.tipe === 'masuk' ? upd.nominal : 0
+      upd.keluar = upd.tipe === 'keluar' ? upd.nominal : 0
+      await updateDoc(doc(db, 'keuangan_buku_induk', editingId.value), upd)
+      toast.success('Transaksi diperbarui')
+    } else {
+      const id = `bi_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`
+      const payload = {
+        id,
+        tanggal: inputForm.tanggal,
+        tipe: inputForm.tipe,
+        kategori: inputForm.kategori.trim() || 'Manual',
+        keterangan: inputForm.keterangan.trim(),
+        nominal: Number(inputForm.nominal) || 0,
+        sumber: 'manual',
+        operator: auth.sesiAktif?.nama || auth.sesiAktif?.guru || 'Admin',
+        createdAt: serverTimestamp()
+      }
+      if (inputForm.tipe === 'masuk') payload.masuk = payload.nominal
+      else payload.keluar = payload.nominal
+      await setDoc(doc(db, 'keuangan_buku_induk', id), payload)
+      toast.success('Transaksi tersimpan')
     }
-    if (inputForm.tipe === 'masuk') payload.masuk = payload.nominal
-    else payload.keluar = payload.nominal
-    await setDoc(doc(db, 'keuangan_buku_induk', id), payload)
-    toast.success('Transaksi tersimpan')
     modalInputOpen.value = false
+    editingId.value = null
   } catch (e) {
     toast.error('Gagal: ' + (e.message || e))
   } finally {
