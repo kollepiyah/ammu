@@ -15,6 +15,21 @@
 
 import { jsPDFFromCDN, imageToDataURL } from '@/services/pdf'
 
+/**
+ * v.21.92.0527: Helper kanonik bangun kop dari settings.
+ * Priority logo: logoKop > kop_logo > kopLogo > logoUrl (selaras Pengaturan Web).
+ */
+export function buildKopFromSettings(s = {}) {
+  return {
+    logoUrl: s.logoKop || s.kop_logo || s.kopLogo || s.logoUrl || '',
+    line1: s.kopLine1 || 'YAYASAN MAMBAUL ULUM',
+    line2: s.kopLine2 || 'PONDOK PESANTREN MAMBAUL ULUM',
+    line3: s.kopLine3 || '',
+    line4: s.kopLine4 || '',
+    line5: s.kopLine5 || ''
+  }
+}
+
 const FONT_MAP = {
   rapor: 'times',
   umum: 'helvetica',
@@ -41,6 +56,9 @@ export async function createPdf({ kind = 'umum', orientation = 'p', format = 'a4
 
 /**
  * Letterhead/KOP block. Optional logo (URL or data URL).
+ * v.21.92.0527: KOP rata kiri — logo kiri, teks judul mulai di sebelah kanan logo,
+ * sesuai contoh struk Yayasan. Berlaku utk semua PDF kecuali rapor/kartu kenaikan/
+ * rekap prestasi (yg pakai KOP per-lembaga sendiri).
  * @param {any} doc
  * @param {object} kop  { logoUrl, line1, line2, line3, line4, line5 }
  * @param {object} [opts] { y, withLine }
@@ -51,42 +69,46 @@ export async function drawKopLetterhead(doc, kop = {}, opts = {}) {
   const startY = opts.y ?? 10
   const pageW = doc.internal.pageSize.getWidth()
   let y = startY
+  const LOGO_SIZE = 22
+  let hasLogo = false
 
   // Logo (left)
   if (kop.logoUrl) {
     try {
       const dataUrl = kop.logoUrl.startsWith('data:') ? kop.logoUrl : await imageToDataURL(kop.logoUrl)
       if (dataUrl) {
-        doc.addImage(dataUrl, 'PNG', 12, y, 20, 20, undefined, 'FAST')
+        doc.addImage(dataUrl, 'PNG', 12, y, LOGO_SIZE, LOGO_SIZE, undefined, 'FAST')
+        hasLogo = true
       }
     } catch { /* ignore */ }
   }
 
-  // v.21.92.0527: Hierarki KOP samakan dgn contoh struk Yayasan —
-  // L1 kecil (Yayasan), L2 BESAR bold (Pondok Pesantren), L3 alamat, L4-L5 telp/email.
-  // Berlaku utk semua PDF (kecuali rapor / kartu kenaikan / rekap prestasi yg pakai KOP lembaga sendiri).
+  // v.21.92.0527: KOP rata kiri — judul mulai di sebelah kanan logo.
+  // Hierarki: L1 kecil (Yayasan), L2 BESAR bold (Pondok Pesantren), L3 alamat, L4-L5 telp/email.
   const lines = [kop.line1, kop.line2, kop.line3].filter(Boolean)
   const subLines = [kop.line4, kop.line5].filter(Boolean)
+  const textX = hasLogo ? 12 + LOGO_SIZE + 6 : 12
   doc.setFont(font, 'bold')
   doc.setFontSize(11)
   if (lines[0]) {
-    doc.text(String(lines[0]), pageW / 2, y + 5, { align: 'center' })
+    doc.text(String(lines[0]), textX, y + 5)
   }
   doc.setFontSize(16)
   if (lines[1]) {
-    doc.text(String(lines[1]), pageW / 2, y + 13, { align: 'center' })
+    doc.text(String(lines[1]), textX, y + 13)
   }
   doc.setFont(font, 'normal')
   doc.setFontSize(9)
   if (lines[2]) {
-    doc.text(String(lines[2]), pageW / 2, y + 19, { align: 'center' })
+    doc.text(String(lines[2]), textX, y + 19)
   }
   let yy = y + 23
   for (const sl of subLines) {
-    doc.text(String(sl), pageW / 2, yy, { align: 'center' })
+    doc.text(String(sl), textX, yy)
     yy += 4
   }
-  y = Math.max(yy, y + 25)
+  // Pastikan KOP setidaknya setinggi logo
+  y = Math.max(yy, y + (hasLogo ? LOGO_SIZE + 2 : 25))
   // Garis pemisah
   if (opts.withLine !== false) {
     doc.setLineWidth(0.4)

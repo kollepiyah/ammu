@@ -27,8 +27,9 @@ function formatTglDdMmYyyy(t) {
 }
 
 export function buildKopFromSettings(s = {}) {
+  // v.21.92.0527: prioritas logo selaras Pengaturan Web (logoKop = field utama)
   return {
-    logoUrl: s.kop_logo || s.kopLogo || s.logoKop || '',
+    logoUrl: s.logoKop || s.kop_logo || s.kopLogo || s.logoUrl || '',
     line1: s.kopLine1 || 'YAYASAN MAMBAUL ULUM',
     line2: s.kopLine2 || 'PONDOK PESANTREN MAMBAUL ULUM',
     line3: s.kopLine3 || '',
