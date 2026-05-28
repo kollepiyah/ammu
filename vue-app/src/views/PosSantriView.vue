@@ -15,11 +15,20 @@
             Pembayaran tagihan, syahriyah, tabungan, dll
           </p>
         </div>
-        <span
-          class="text-[10px] font-bold text-teal-700 bg-teal-50 dark:bg-teal-900/30 dark:text-teal-300 px-2 py-1 rounded-full"
-        >
-          {{ santriList.length }} santri aktif
-        </span>
+        <div class="flex flex-col items-end gap-1">
+          <span
+            class="text-[10px] font-bold text-teal-700 bg-teal-50 dark:bg-teal-900/30 dark:text-teal-300 px-2 py-1 rounded-full"
+          >
+            {{ santriList.length }} santri aktif
+          </span>
+          <span
+            v-if="isAdminKeu"
+            class="text-[10px] font-bold text-emerald-700 bg-emerald-50 dark:bg-emerald-900/30 dark:text-emerald-300 px-2 py-1 rounded-full whitespace-nowrap"
+            title="Transaksi POS hari ini"
+          >
+            <i class="fas fa-receipt mr-1"></i>Hari ini: {{ todayStats.count }} · {{ fmtRp(todayStats.total) }}
+          </span>
+        </div>
       </div>
     </div>
 
@@ -149,7 +158,7 @@
       :open="modalOpen"
       :santri="selectedSantri"
       :operator="operatorName"
-      :initial-cart="initialCart"
+      :pending-tagihan="pendingTagihan"
       @close="closeModal"
       @simpan="handleSimpan"
     />
@@ -190,8 +199,10 @@ const modalOpen = ref(false)
 const histori = ref([])
 const tunggakanMap = ref({})
 const filterTunggakan = ref(false)
-const initialCart = ref([])
+const pendingTagihan = ref([])
 const loadingCart = ref(false)
+// v.21.87.0527: ringkasan transaksi POS hari ini
+const todayStats = ref({ count: 0, total: 0 })
 
 const operatorName = computed(() => {
   return auth.sesiAktif?.nama || auth.sesiAktif?.guru || 'Admin'
@@ -215,13 +226,20 @@ onMounted(async () => {
       snap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((s) => s.aktif !== false)
     )
 
-    // Load 5 transaksi terakhir POS Santri
+    // Load transaksi terakhir POS Santri (utk histori + ringkasan harian)
     const histSnap = await getDocs(
-      query(collection(db, 'keuangan_buku_induk'), orderBy('createdAt', 'desc'), limit(5))
+      query(collection(db, 'keuangan_buku_induk'), orderBy('createdAt', 'desc'), limit(80))
     )
-    histori.value = histSnap.docs
+    const posTx = histSnap.docs
       .map((d) => ({ id: d.id, ...d.data() }))
       .filter((t) => t.sumber === 'pos_santri')
+    histori.value = posTx.slice(0, 5)
+    const hariIni = new Date().toISOString().split('T')[0]
+    const txToday = posTx.filter((t) => t.tanggal === hariIni)
+    todayStats.value = {
+      count: txToday.length,
+      total: txToday.reduce((s, t) => s + Number(t.nominal || 0), 0)
+    }
 
     // Load tunggakan map (count + total per santri_id)
     try {
@@ -279,7 +297,7 @@ const filteredSantri = computed(() => {
 async function openModal(s) {
   selectedSantri.value = s
   loadingCart.value = true
-  initialCart.value = []
+  pendingTagihan.value = []
   try {
     const tagCol = collection(db, 'keuangan_tagihan')
     const snap = await getDocs(query(tagCol, where('santri_id', '==', s.id), limit(50)))
@@ -287,15 +305,19 @@ async function openModal(s) {
       .map((d) => ({ id: d.id, ...d.data() }))
       .filter((t) => t.status === 'belum' || t.status === 'partial')
       .sort((a, b) => (a.jatuh_tempo || '').localeCompare(b.jatuh_tempo || ''))
-    if (pending.length > 0) {
-      initialCart.value = pending.map((t) => ({
+    // v.21.87.0527: kirim sisa (remaining) + meta utk pembayaran sebagian (partial)
+    pendingTagihan.value = pending.map((t) => {
+      const penuh = Number(t.nominal || 0)
+      const dibayar = Number(t.dibayar || 0)
+      return {
+        tagihan_id: t.id,
         jenis: t.jenis_label || t.jenis_id || 'Tagihan',
-        nominal: Number(t.nominal || 0),
-        keterangan: t.keterangan || (t.bulan ? `Bulan ${t.bulan}` : ''),
-        tagihan_id: t.id
-      }))
-      toast.info(`${pending.length} tagihan pending dimuat ke cart`)
-    }
+        nominal: Math.max(0, penuh - dibayar),
+        nominal_penuh: penuh,
+        dibayar_lama: dibayar,
+        keterangan: t.keterangan || (t.bulan ? `Bulan ${t.bulan}` : '')
+      }
+    })
   } catch (e) {
     console.warn('[pos] load tagihan fail:', e.message)
   } finally {
@@ -306,14 +328,17 @@ async function openModal(s) {
 
 function closeModal() {
   modalOpen.value = false
-  initialCart.value = []
+  pendingTagihan.value = []
 }
 
 async function handleSimpan(payload) {
   try {
     const tanggal = payload.tanggal
+    const op = payload.operator || operatorName.value
     const writes = []
-    const tagihanIdsToLunas = []
+    let lunasCount = 0
+    let partialCount = 0
+    let totalMasuk = 0
     for (const item of payload.items) {
       const id = `pos_${Date.now()}_${Math.floor(Math.random() * 1000)}`
       const docData = {
@@ -326,34 +351,53 @@ async function handleSimpan(payload) {
         sumber: 'pos_santri',
         santri_id: payload.santri_id,
         santri_nama: payload.santri_nama,
-        operator: payload.operator || operatorName.value,
+        operator: op,
         wali: '',
         createdAt: serverTimestamp()
       }
       writes.push(setDoc(doc(db, 'keuangan_buku_induk', id), docData))
       histori.value.unshift(docData)
-      if (item.tagihan_id) tagihanIdsToLunas.push(item.tagihan_id)
-    }
-    for (const tid of tagihanIdsToLunas) {
-      writes.push(
-        updateDoc(doc(db, 'keuangan_tagihan', tid), {
-          status: 'lunas',
-          tanggal_lunas: tanggal,
-          dibayar_via: 'pos_santri',
-          operator_pelunasan: payload.operator || operatorName.value
-        }).catch((e) => console.warn('[pos] update tagihan fail:', tid, e.message))
-      )
+      totalMasuk += Number(item.nominal || 0)
+      // v.21.87.0527: tagihan → lunas penuh atau partial (bayar sebagian)
+      if (item.tagihan_id) {
+        const penuh = Number(item.nominal_penuh || 0)
+        const newDibayar = Number(item.dibayar_lama || 0) + Number(item.nominal || 0)
+        const isLunas = penuh <= 0 || newDibayar >= penuh - 0.5
+        const upd = isLunas
+          ? {
+              status: 'lunas',
+              dibayar: penuh || newDibayar,
+              tanggal_lunas: tanggal,
+              dibayar_via: 'pos_santri',
+              operator_pelunasan: op
+            }
+          : { status: 'partial', dibayar: newDibayar, dibayar_via: 'pos_santri', operator_pelunasan: op }
+        if (isLunas) lunasCount++
+        else partialCount++
+        writes.push(
+          updateDoc(doc(db, 'keuangan_tagihan', item.tagihan_id), upd).catch((e) =>
+            console.warn('[pos] update tagihan fail:', item.tagihan_id, e.message)
+          )
+        )
+      }
     }
     await Promise.all(writes)
     if (histori.value.length > 5) histori.value = histori.value.slice(0, 5)
-    const extra =
-      tagihanIdsToLunas.length > 0 ? ` (${tagihanIdsToLunas.length} tagihan dilunasi)` : ''
+    // Update ringkasan harian
+    todayStats.value = {
+      count: todayStats.value.count + payload.items.length,
+      total: todayStats.value.total + totalMasuk
+    }
+    const parts = []
+    if (lunasCount > 0) parts.push(`${lunasCount} tagihan lunas`)
+    if (partialCount > 0) parts.push(`${partialCount} bayar sebagian`)
+    const extra = parts.length > 0 ? ` (${parts.join(', ')})` : ''
     toast.success(
       `Sukses! ${payload.items.length} transaksi tersimpan untuk ${payload.santri_nama}${extra}`
     )
     modalOpen.value = false
     selectedSantri.value = null
-    initialCart.value = []
+    pendingTagihan.value = []
   } catch (e) {
     toast.error('Gagal simpan: ' + e.message)
   }
