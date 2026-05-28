@@ -44,9 +44,14 @@ const FONT_MAP = {
  * @param {string} [opts.format]  e.g. 'a4', 'letter', 'a5', [w,h] mm
  * @returns {Promise<any>} jsPDF instance
  */
-export async function createPdf({ kind = 'umum', orientation = 'p', format = 'a4' } = {}) {
+export async function createPdf({ kind = 'umum', orientation = 'p', format = 'F4' } = {}) {
   const jsPDF = await jsPDFFromCDN()
-  const doc = new jsPDF({ orientation, unit: 'mm', format })
+  // v.21.93.0527: alias F4/Folio (215x330mm) — bukan preset bawaan jsPDF
+  let fmt = format
+  if (typeof format === 'string' && /^(f4|folio)$/i.test(format)) {
+    fmt = [215, 330]
+  }
+  const doc = new jsPDF({ orientation, unit: 'mm', format: fmt })
   const font = FONT_MAP[kind] || 'helvetica'
   doc.setFont(font, 'normal')
   doc._kindMU = kind
@@ -218,7 +223,7 @@ export function savePdf(doc, filename = 'document.pdf', { preview = false } = {}
 export async function buildListPdf({
   kind = 'umum',
   orientation = 'l',
-  format = 'a4',
+  format = 'F4',
   kop = null,
   title = '',
   columns = [],
