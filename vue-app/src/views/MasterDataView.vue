@@ -399,7 +399,7 @@ function loadRaporSettings() {
     Array.isArray(stored) && stored.length > 0
       ? JSON.parse(JSON.stringify(stored))
       : JSON.parse(JSON.stringify(DEFAULT_PREDIKAT))
-  bgRaporTPQ.value = s.bgRaporTpq || ''
+  bgRaporTPQ.value = s.bgRaporTPQ || ''
   bgRaporDiniyah.value = s.bgRaporDiniyah || ''
 }
 
@@ -429,9 +429,9 @@ async function uploadBgRapor(event, target) {
         )
         if (target === 'tpq') {
           bgRaporTPQ.value = url
-          await setDoc(doc(db, 'settings', 'general'), { bgRaporTpq: url }, { merge: true })
-          await setDoc(doc(db, 'settings', 'web'), { bgRaporTpq: url }, { merge: true })
-          settings.settings.bgRaporTpq = url
+          await setDoc(doc(db, 'settings', 'general'), { bgRaporTPQ: url }, { merge: true })
+          await setDoc(doc(db, 'settings', 'web'), { bgRaporTPQ: url }, { merge: true })
+          settings.settings.bgRaporTPQ = url
         } else {
           bgRaporDiniyah.value = url
           await setDoc(doc(db, 'settings', 'general'), { bgRaporDiniyah: url }, { merge: true })
@@ -454,9 +454,9 @@ async function hapusBgRapor(target) {
   try {
     if (target === 'tpq') {
       bgRaporTPQ.value = ''
-      await setDoc(doc(db, 'settings', 'general'), { bgRaporTpq: '' }, { merge: true })
-      await setDoc(doc(db, 'settings', 'web'), { bgRaporTpq: '' }, { merge: true })
-      settings.settings.bgRaporTpq = ''
+      await setDoc(doc(db, 'settings', 'general'), { bgRaporTPQ: '' }, { merge: true })
+      await setDoc(doc(db, 'settings', 'web'), { bgRaporTPQ: '' }, { merge: true })
+      settings.settings.bgRaporTPQ = ''
     } else {
       bgRaporDiniyah.value = ''
       await setDoc(doc(db, 'settings', 'general'), { bgRaporDiniyah: '' }, { merge: true })

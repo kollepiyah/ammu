@@ -122,10 +122,16 @@ export const useSettingsStore = defineStore('settings', () => {
     error.value = null
     try {
       const merged = { ...settings.value, ...patch }
-      // v.61.0526: save ke settings/web (Vue PoC). Kalibrasi Hijri + kop dari user
-      // sebaiknya ke settings/general supaya legacy juga update.
-      // Untuk sekarang Vue Pengaturan tetap save ke /web; field shared akan di-handle nanti.
-      await setOne('settings', SETTINGS_DOC_ID_VUE, merged)
+      // v.21.105.0527: save ke KEDUA doc.
+      // settings/general (legacy, source of truth) supaya semua consumer
+      // termasuk legacy Pengaturan Web v0 ikut update.
+      // settings/web (Vue PoC) tetap sbg backup/audit.
+      // Sebelumnya hanya save ke /web → legacy /general overwrite di subscribe
+      // → kalibrasiHijri, kop, dll tampak "tidak tersimpan" padahal sudah.
+      await Promise.all([
+        setOne('settings', SETTINGS_DOC_ID_LEGACY, merged),
+        setOne('settings', SETTINGS_DOC_ID_VUE, merged)
+      ])
       settings.value = merged
     } catch (e) {
       error.value = e.message || String(e)

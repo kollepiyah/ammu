@@ -616,78 +616,6 @@
       </p>
     </UiCard>
 
-    <!-- ============================================================
-         SECTION: Printer
-         ============================================================ -->
-    <UiCard
-      v-show="section === 'printer'"
-      title="Pengaturan Printer"
-      subtitle="Default printer + ukuran kertas + orientasi untuk cetak rapor/slip"
-      class="mb-4"
-    >
-      <div class="grid md:grid-cols-2 gap-3">
-        <div class="md:col-span-2">
-          <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase block mb-1"
-            >Nama Printer Default</label
-          >
-          <input
-            v-model="form.printerNama"
-            type="text"
-            placeholder="Mis: EPSON L3110 / TM-T82II"
-            class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)]"
-          />
-        </div>
-        <div>
-          <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase block mb-1"
-            >Ukuran Kertas</label
-          >
-          <select
-            v-model="form.printerKertas"
-            class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)]"
-          >
-            <option value="A4">A4 (210x297mm)</option>
-            <option value="F4">F4 / Folio (210x330mm)</option>
-            <option value="Legal">Legal (216x356mm)</option>
-            <option value="Letter">Letter (216x279mm)</option>
-            <option value="Struk58">Struk 58mm</option>
-            <option value="Struk80">Struk 80mm</option>
-          </select>
-        </div>
-        <div>
-          <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase block mb-1">Orientasi</label>
-          <select
-            v-model="form.printerOrientasi"
-            class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)]"
-          >
-            <option value="portrait">Portrait (Tegak)</option>
-            <option value="landscape">Landscape (Lebar)</option>
-          </select>
-        </div>
-        <div>
-          <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase block mb-1"
-            >Margin (mm)</label
-          >
-          <input
-            v-model.number="form.printerMarginMM"
-            type="number"
-            min="0"
-            max="50"
-            class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)]"
-          />
-        </div>
-        <label
-          class="md:col-span-2 flex items-center gap-3 p-3 bg-[var(--bg-card-elevated)] rounded-lg cursor-pointer border border-[var(--border-subtle)]"
-        >
-          <input v-model="form.printerAutoPrint" type="checkbox" class="w-5 h-5 accent-teal-600" />
-          <div>
-            <p class="text-sm font-bold">Auto-Print (Tauri Desktop)</p>
-            <p class="text-[11px] text-[var(--text-secondary)]">
-              Langsung kirim ke printer tanpa preview dialog. Hanya aktif di Tauri Desktop.
-            </p>
-          </div>
-        </label>
-      </div>
-    </UiCard>
 
     <!-- ============================================================
          SECTION: Schema Rekap Diniyah (default + override per kelas)
@@ -1332,12 +1260,7 @@ function defaultForm() {
     shiftSoreTerlambat: '14:15',
     shiftSekolahMulai: '07:00',
     shiftSekolahSelesai: '13:00',
-    shiftSekolahTerlambat: '07:15',
-    printerNama: '',
-    printerKertas: 'A4',
-    printerOrientasi: 'portrait',
-    printerMarginMM: 10,
-    printerAutoPrint: false
+    shiftSekolahTerlambat: '07:15'
   }
 }
 
@@ -1380,7 +1303,6 @@ const tabs = [
     gradient: 'from-teal-500 dark:from-teal-700 to-teal-700 dark:to-teal-900'
   },
   { id: 'shift', label: 'Jam Shift', icon: 'fa-clock', gradient: 'from-cyan-500 dark:from-cyan-700 to-cyan-700 dark:to-cyan-900' },
-  { id: 'printer', label: 'Printer', icon: 'fa-print', gradient: 'from-slate-500 to-slate-700' },
   {
     id: 'postingan',
     label: 'Pengaturan Postingan',
@@ -1848,3 +1770,4 @@ async function simpanSemua() {
   }
 }
 </script>
+                             
