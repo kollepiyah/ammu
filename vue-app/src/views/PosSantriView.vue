@@ -257,6 +257,8 @@ const loadingCart = ref(false)
 const todayStats = ref({ count: 0, total: 0 })
 // v.21.90.0527: counter transaksi unik hari ini (utk nomor struk MU-NNNddmmyy)
 const todayTrxCount = ref(0)
+// v.21.91.0527: TTD operator (kasir) — auto dari guru.tanda_tangan
+const operatorTtdUrl = ref('')
 // v.21.88.0527: transaksi terakhir (utk tombol cetak struk setelah simpan)
 const lastTrx = ref(null)
 
@@ -299,6 +301,27 @@ onMounted(async () => {
     // v.21.90.0527: hitung jumlah TRANSAKSI unik (trx_id) hari ini utk seq nomor struk
     const trxIdsToday = new Set(txToday.map((t) => t.trx_id).filter(Boolean))
     todayTrxCount.value = trxIdsToday.size
+    // v.21.91.0527: ambil TTD operator dari guru.tanda_tangan utk auto-isi struk PDF
+    try {
+      const myId = auth.sesiAktif?.id
+      if (myId) {
+        const gSnap = await getDocs(
+          query(collection(db, 'guru'), where('id', '==', String(myId)), limit(1))
+        )
+        let ttd = ''
+        if (!gSnap.empty) ttd = gSnap.docs[0].data().tanda_tangan || ''
+        if (!ttd) {
+          const all = await getDocs(query(collection(db, 'guru'), limit(500)))
+          const me = all.docs.find(
+            (d) => String(d.data().id) === String(myId) || d.data().nama === operatorName.value
+          )
+          ttd = me?.data().tanda_tangan || ''
+        }
+        operatorTtdUrl.value = ttd || ''
+      }
+    } catch (e) {
+      console.warn('[pos] load ttd operator fail:', e.message)
+    }
 
     // Load tunggakan map (count + total per santri_id)
     try {
@@ -476,6 +499,7 @@ async function handleSimpan(payload) {
       metode: 'TUNAI',
       status_siswa: santriRef?.aktif === false ? 'Tidak Aktif' : 'Aktif',
       terbilang: terbilangRupiah(_total),
+      operator_ttd_url: operatorTtdUrl.value || '',
       items: payload.items.map((i) => ({
         jenis: i.jenis,
         nominal: Number(i.nominal),

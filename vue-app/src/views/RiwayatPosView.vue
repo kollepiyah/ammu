@@ -23,6 +23,7 @@ const isAdminKeu = computed(() => {
 const loading = ref(true)
 const entries = ref([]) // raw buku_induk pos rows
 const santriMap = ref({}) // id -> {lembaga, kelas, nis}
+const guruTtdMap = ref({}) // nama -> tanda_tangan URL (utk auto-isi TTD Penerima di struk PDF)
 const search = ref('')
 const filterTanggal = ref('') // '' = semua
 
@@ -46,6 +47,18 @@ onMounted(async () => {
       m[d.id] = { lembaga: s.lembaga || '', kelas: s.kelas || '', nis: s.nis || '' }
     }
     santriMap.value = m
+    // v.21.91.0527: guruTtdMap (nama -> tanda_tangan) utk auto-TTD di reprint struk PDF
+    try {
+      const gSnap = await getDocs(collection(db, 'guru'))
+      const gm = {}
+      for (const d of gSnap.docs) {
+        const g = d.data()
+        if (g.nama && g.tanda_tangan) gm[g.nama] = g.tanda_tangan
+      }
+      guruTtdMap.value = gm
+    } catch (e) {
+      /* ignore — fallback tanpa TTD */
+    }
   } catch (e) {
     toast.error('Gagal memuat riwayat: ' + (e.message || e))
   } finally {
@@ -108,6 +121,8 @@ function toTrx(t) {
     lembaga: t.lembaga,
     kelas: t.kelas,
     operator: t.operator,
+    // v.21.91.0527: TTD operator dari guru.tanda_tangan (untuk reprint struk PDF)
+    operator_ttd_url: guruTtdMap.value[t.operator] || '',
     items: t.items,
     total: t.total,
     bayar: t.total,

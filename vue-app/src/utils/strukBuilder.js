@@ -1,6 +1,7 @@
 // v.21.90.0527: Struk pembayaran POS — PDF A5 ber-KOP + dot-matrix teks fixed-width.
 // Wide (80 col, 9.5" continuous form Epson LX-310): mirror struk Yayasan. Narrow (32/42) kompak.
 import { createPdf, drawKopLetterhead, drawTitle, drawTable, savePdf } from './pdfBuilder'
+import { imageToDataURL } from '@/services/pdf'
 import { terbilangRupiah } from './terbilang'
 
 export function fmtRpStruk(n) {
@@ -111,12 +112,23 @@ export async function cetakStrukPdf(trx, settings = {}, { preview = true } = {})
   rowR('Pembayaran Rp.', fmtNum(trx.bayar))
   rowR('Kembali Rp.', fmtNum(trx.kembali))
 
-  ty += 10
+  ty += 8
   doc.setFontSize(9)
   doc.setFont(font, 'normal')
   doc.text('Penyetor,', left + 8, ty)
   doc.text('Penerima,', pageW / 2 + 12, ty)
-  ty += 18
+  // v.21.91.0527: TTD operator (kasir) auto dari guru.tanda_tangan bila ada
+  if (trx.operator_ttd_url) {
+    try {
+      const dataUrl = String(trx.operator_ttd_url).startsWith('data:')
+        ? trx.operator_ttd_url
+        : await imageToDataURL(trx.operator_ttd_url)
+      if (dataUrl) doc.addImage(dataUrl, 'PNG', pageW / 2 + 14, ty + 2, 28, 14, undefined, 'FAST')
+    } catch (e) {
+      /* ignore — fallback nama saja */
+    }
+  }
+  ty += 20
   doc.text('( .................. )', left + 4, ty)
   doc.text('( ' + (trx.operator || '').padEnd(16) + ' )', pageW / 2 + 8, ty)
 
