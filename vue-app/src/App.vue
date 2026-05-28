@@ -18,6 +18,9 @@ watch(() => settings.settings, (s) => {
   if (!s) return
   const root = document.documentElement
   if (s.themeColor) root.style.setProperty('--theme-color', s.themeColor)
+  // v.21.106.0527: apply themeTextColor + sidebarBgColor (picker dulu tanpa efek)
+  if (s.themeTextColor) root.style.setProperty('--theme-text-color', s.themeTextColor)
+  if (s.sidebarBgColor) root.style.setProperty('--sidebar-bg', s.sidebarBgColor)
   if (s.appTitle) document.title = s.appTitle
 }, { deep: true, immediate: true })
 </script>

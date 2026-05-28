@@ -96,7 +96,7 @@
           <!-- GAMBAR -->
           <div>
             <label class="block text-[11px] font-black text-[var(--text-primary)] uppercase tracking-wider mb-2">
-              Gambar (opsional, max 5 gambar, total max 16 MB)
+              Gambar (opsional, max {{ MAX_IMAGES }} gambar, total max {{ Math.round(MAX_TOTAL_BYTES / 1024 / 1024) }} MB)
             </label>
             <div class="flex items-center gap-3">
               <label class="bg-teal-100 hover:bg-teal-200 dark:bg-teal-900/40 dark:hover:bg-teal-900/60 text-teal-700 dark:text-teal-300 font-bold px-4 py-2 rounded-lg text-sm cursor-pointer transition border border-teal-200 dark:border-teal-700">
@@ -115,7 +115,7 @@
             </div>
             <p class="text-[11px] text-[var(--text-secondary)] italic mt-1.5 flex items-start gap-1.5">
               <i class="fas fa-info-circle text-cyan-500 mt-0.5"></i>
-              <span>Pilih sampai 5 gambar sekaligus. Gambar besar (&gt;1MB) otomatis dikompres.</span>
+              <span>Pilih sampai {{ MAX_IMAGES }} gambar sekaligus. Gambar besar (&gt;1MB) otomatis dikompres.</span>
             </p>
 
             <!-- Thumbnail previews -->
@@ -244,9 +244,11 @@ function closeModal() {
   modalOpen.value = false
 }
 
-const MAX_IMAGES = 5
-const MAX_TOTAL_BYTES = 16 * 1024 * 1024 // 16 MB
-const COMPRESS_THRESHOLD = 1024 * 1024   // 1 MB
+// v.21.106.0527: wire Pengaturan Web > Postingan settings.
+// postinganMaxImages (default 5), postinganMaxSizeKb (default 16384 KB = 16MB).
+const MAX_IMAGES = computed(() => Number(settings.settings?.postinganMaxImages) || 5)
+const MAX_TOTAL_BYTES = computed(() => (Number(settings.settings?.postinganMaxSizeKb) || 16384) * 1024)
+const COMPRESS_THRESHOLD = 1024 * 1024   // 1 MB (compress per-file > 1MB, hardcoded)
 
 async function compressImage(file) {
   // Kompres pakai canvas, target ~1MB, max dimension 1600px
@@ -291,8 +293,8 @@ async function onFileSelect(e) {
   e.target.value = ''
   for (let file of files) {
     if (!file.type.startsWith('image/')) continue
-    if (modalImages.value.length >= MAX_IMAGES) {
-      toast.warning(`Maksimal ${MAX_IMAGES} gambar.`)
+    if (modalImages.value.length >= MAX_IMAGES.value) {
+      toast.warning(`Maksimal ${MAX_IMAGES.value} gambar.`)
       break
     }
     // Compress kalau >1MB
@@ -305,8 +307,8 @@ async function onFileSelect(e) {
     }
     // Check total size
     const currentTotal = modalImages.value.reduce((s, it) => s + (it.file?.size || 0), 0)
-    if (currentTotal + file.size > MAX_TOTAL_BYTES) {
-      toast.warning('Total ukuran gambar melebihi 16 MB.')
+    if (currentTotal + file.size > MAX_TOTAL_BYTES.value) {
+      toast.warning(`Total ukuran gambar melebihi ${Math.round(MAX_TOTAL_BYTES.value / 1024 / 1024)} MB.`)
       break
     }
     // Read preview

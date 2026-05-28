@@ -62,6 +62,7 @@
         <UiInput v-model="form.alamat" label="Alamat Pondok" />
         <UiInput v-model="form.noTelp" label="No. Telepon" />
         <UiInput v-model="form.namaChannel" label="Nama Channel Pesan" />
+        <UiInput v-model="form.namaPengasuh" label="Nama Pengasuh" placeholder="(muncul di rapor/PDF resmi)" />
       </div>
     </UiCard>
 
@@ -82,6 +83,7 @@
         />
         <UiInput v-model="form.kopLine3" label="Baris 3 (alamat / opsional)" />
         <UiInput v-model="form.kopLine4" label="Baris 4 (telp / opsional)" />
+        <UiInput v-model="form.kopLine5" label="Baris 5 (email / NPSN / opsional)" />
       </div>
       <div class="mt-4 p-3 bg-[var(--bg-card-elevated)] border border-[var(--border-subtle)] rounded-lg text-center">
         <p class="text-xs uppercase tracking-widest font-black text-[var(--text-primary)]">
@@ -90,6 +92,7 @@
         <p class="text-lg font-black text-[var(--text-primary)]">{{ form.kopLine2 || '— Baris 2 —' }}</p>
         <p v-if="form.kopLine3" class="text-xs text-[var(--text-secondary)]">{{ form.kopLine3 }}</p>
         <p v-if="form.kopLine4" class="text-xs text-[var(--text-secondary)]">{{ form.kopLine4 }}</p>
+        <p v-if="form.kopLine5" class="text-xs text-[var(--text-secondary)]">{{ form.kopLine5 }}</p>
       </div>
     </UiCard>
 
@@ -449,7 +452,7 @@
         </label>
         <label class="flex items-center gap-2 cursor-pointer p-2 hover:bg-[var(--bg-card-elevated)] rounded">
           <input v-model="form.fiturNotifikasi" type="checkbox" class="w-4 h-4 accent-teal-600" />
-          Notifikasi FCM
+          Notifikasi FCM <span class="text-[10px] text-[var(--text-tertiary)] italic">(belum aktif — perlu setup FCM)</span>
         </label>
         <label class="flex items-center gap-2 cursor-pointer p-2 hover:bg-[var(--bg-card-elevated)] rounded">
           <input
@@ -457,15 +460,15 @@
             type="checkbox"
             class="w-4 h-4 accent-teal-600"
           />
-          Auto-Notif setiap Postingan
+          Auto-Notif setiap Postingan <span class="text-[10px] text-[var(--text-tertiary)] italic">(belum aktif — depend FCM)</span>
         </label>
         <label class="flex items-center gap-2 cursor-pointer p-2 hover:bg-[var(--bg-card-elevated)] rounded">
           <input v-model="form.softDelete" type="checkbox" class="w-4 h-4 accent-rose-600" />
-          Soft Delete (recoverable)
+          Soft Delete (recoverable) <span class="text-[10px] text-[var(--text-tertiary)] italic">(belum aktif — placeholder)</span>
         </label>
       </div>
       <div class="p-3 bg-teal-50 border border-teal-200 rounded-lg mt-3">
-        <p class="text-xs font-black text-teal-800 mb-2 uppercase">Mode Capacitor / PWA</p>
+        <p class="text-xs font-black text-teal-800 mb-2 uppercase">Mode Capacitor / PWA <span class="text-[9px] text-teal-600 font-normal italic normal-case ml-1">(hanya untuk build desktop/mobile)</span></p>
         <div class="flex gap-3 flex-wrap">
           <label class="flex items-center gap-2 cursor-pointer text-sm">
             <input
@@ -1219,6 +1222,7 @@ function defaultForm() {
     kopLine2: '',
     kopLine3: '',
     kopLine4: '',
+    kopLine5: '',
     logoUrl: '',
     logoKop: '',
     logoQiraati: '',
