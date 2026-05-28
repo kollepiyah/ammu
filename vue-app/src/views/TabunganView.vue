@@ -267,6 +267,86 @@
       </div>
     </template>
 
+    <!-- v.21.100.0527: SEMUA MUTASI panel — super_admin edit/hapus + bulk -->
+    <div
+      v-if="isFullAccess && isAdmin"
+      class="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)] shadow-sm overflow-hidden"
+    >
+      <div class="px-4 md:px-5 py-3 border-b border-[var(--border-subtle)] flex items-center justify-between flex-wrap gap-2">
+        <h3 class="text-sm font-black text-[var(--text-primary)] uppercase tracking-widest">
+          <i class="fas fa-list-check text-emerald-600 mr-2"></i>Semua Mutasi
+          <span class="text-[10px] text-[var(--text-tertiary)] font-bold ml-1">(super admin)</span>
+        </h3>
+        <div class="flex items-center gap-2">
+          <span class="text-[10px] text-[var(--text-tertiary)] font-bold">
+            {{ tabunganSantri.length }} mutasi
+          </span>
+          <button
+            v-if="selectedMutasi.size > 0"
+            @click="hapusMutasiTerpilih"
+            class="text-[11px] font-black bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-lg"
+          >
+            <i class="fas fa-trash mr-1"></i>Hapus Terpilih ({{ selectedMutasi.size }})
+          </button>
+        </div>
+      </div>
+      <div v-if="tabunganSantri.length === 0" class="p-6 text-center text-xs text-[var(--text-tertiary)] italic">
+        Belum ada mutasi.
+      </div>
+      <div v-else class="max-h-[480px] overflow-y-auto">
+        <table class="w-full text-xs">
+          <thead class="bg-[var(--bg-card-elevated)] sticky top-0">
+            <tr class="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-wider">
+              <th class="px-3 py-2 w-8"></th>
+              <th class="px-3 py-2 text-left">Tanggal</th>
+              <th class="px-3 py-2 text-left">Santri</th>
+              <th class="px-3 py-2 text-left">Jenis</th>
+              <th class="px-3 py-2 text-right">Nominal</th>
+              <th class="px-3 py-2 text-left">Catatan</th>
+              <th class="px-3 py-2 w-20"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              v-for="m in tabunganSantri.slice().sort((a,b)=>String(b.tanggal||'').localeCompare(String(a.tanggal||'')))"
+              :key="m.id"
+              class="border-t border-[var(--border-subtle)] hover:bg-slate-50 dark:hover:bg-slate-900/30"
+            >
+              <td class="px-3 py-2 text-center">
+                <input
+                  type="checkbox"
+                  :checked="selectedMutasi.has(String(m.id))"
+                  @change="toggleMutasi(m.id)"
+                  class="w-4 h-4 accent-emerald-600"
+                />
+              </td>
+              <td class="px-3 py-2 whitespace-nowrap text-[11px] text-[var(--text-secondary)]">{{ fmtTgl(m.tanggal) }}</td>
+              <td class="px-3 py-2 font-bold text-[var(--text-primary)] truncate max-w-[200px]">
+                {{ m.nama_cache || getNamaSantri(m.santri_id) }}
+              </td>
+              <td class="px-3 py-2">
+                <span :class="['inline-block text-[10px] font-black uppercase px-2 py-0.5 rounded', m.jenis === 'setor' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700']">{{ m.jenis }}</span>
+              </td>
+              <td :class="['px-3 py-2 text-right font-black whitespace-nowrap', m.jenis === 'setor' ? 'text-emerald-700' : 'text-rose-700']">{{ fmtRp(m.nominal) }}</td>
+              <td class="px-3 py-2 text-[11px] text-[var(--text-secondary)] truncate max-w-[200px]">{{ m.catatan || '-' }}</td>
+              <td class="px-3 py-2 text-right whitespace-nowrap">
+                <button
+                  @click="openEditMutasi(m)"
+                  class="text-[10px] text-cyan-600 hover:bg-cyan-50 px-1.5 py-1 rounded mr-1"
+                  title="Edit"
+                ><i class="fas fa-edit"></i></button>
+                <button
+                  @click="hapusMutasi(m)"
+                  class="text-[10px] text-rose-600 hover:bg-rose-50 px-1.5 py-1 rounded"
+                  title="Hapus"
+                ><i class="fas fa-trash"></i></button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
     <!-- =================== MODAL INPUT MUTASI =================== -->
     <div
       v-if="modalOpen"
@@ -419,7 +499,8 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { subscribeColl } from '@/services/firestore'
-import { doc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore'
+import { doc, setDoc, deleteDoc, updateDoc, serverTimestamp } from 'firebase/firestore'
+import { isSuperAdmin } from '@/utils/roleScope'
 import { db } from '@/services/firebase'
 import { sortSantri } from '@/utils/santriSort'
 import { useAuthStore } from '@/stores/auth'
@@ -432,6 +513,8 @@ const { tabunganSantri, loading, isFullAccess, getNamaSantri, santriRaw } = useK
 const auth = useAuthStore()
 const settings = useSettingsStore()
 const toast = useToast()
+// v.21.100.0527: super_admin only — edit/hapus mutasi tabungan
+const isAdmin = computed(() => isSuperAdmin(auth.sesiAktif))
 
 // Role flags
 const isSantri = computed(() => auth.sesiAktif?.role === 'santri')
@@ -589,6 +672,9 @@ const modalNominal = ref(0)
 const modalCatatan = ref('')
 const saving = ref(false)
 const autoFilled = ref(false)
+// v.21.100.0527: edit-mode + multi-select bulk delete
+const editingMutasiId = ref(null)
+const selectedMutasi = ref(new Set())
 
 // Kategori dari settings.keuTagihanJenis (fallback syahriyah default 0)
 const kategoriOptions = computed(() => {
@@ -629,6 +715,7 @@ const santriOptions = computed(() =>
 
 function openModal(santriId = '', jenis = 'setor') {
   modalOpen.value = true
+  editingMutasiId.value = null
   modalJenis.value = jenis
   modalKategori.value = 'syahriyah'
   modalCatatan.value = ''
@@ -649,6 +736,63 @@ function openModal(santriId = '', jenis = 'setor') {
 
 function closeModal() {
   modalOpen.value = false
+  editingMutasiId.value = null
+}
+
+// v.21.100.0527: super_admin only — buka modal edit dari mutasi existing
+function openEditMutasi(m) {
+  if (!isAdmin.value) return
+  modalOpen.value = true
+  editingMutasiId.value = String(m.id)
+  modalSantriId.value = String(m.santri_id || m.santriId || '')
+  const sx = (santriRaw.value || []).find((x) => String(x.id) === modalSantriId.value)
+  modalSantriLabel.value = sx ? `${sx.nama} (${sx.lembaga || ''} - ${sx.kelas || ''})` : (m.nama_cache || '')
+  modalJenis.value = m.jenis || 'setor'
+  modalKategori.value = m.kategori || 'syahriyah'
+  modalNominal.value = Number(m.nominal || 0)
+  modalCatatan.value = m.catatan || ''
+  autoFilled.value = false
+}
+
+// v.21.100.0527: hapus mutasi individual (super_admin)
+async function hapusMutasi(m) {
+  if (!isAdmin.value) return
+  if (!confirm(`Hapus mutasi tabungan?\nSantri: ${m.nama_cache || getNamaSantri(m.santri_id)}\n${m.jenis} ${fmtRp(m.nominal)}\n\nTidak bisa di-undo.`)) return
+  try {
+    await deleteDoc(doc(db, 'keuangan_tabungan_santri', String(m.id)))
+    toast.success('Mutasi dihapus')
+  } catch (e) {
+    toast.error('Gagal: ' + (e.message || e))
+  }
+}
+
+// v.21.100.0527: bulk hapus mutasi terpilih (super_admin)
+async function hapusMutasiTerpilih() {
+  if (!isAdmin.value) return
+  const ids = Array.from(selectedMutasi.value)
+  if (ids.length === 0) return
+  if (!confirm(`Hapus ${ids.length} mutasi tabungan terpilih?\n\nTidak bisa di-undo.`)) return
+  let ok = 0, fail = 0
+  for (const id of ids) {
+    try {
+      await deleteDoc(doc(db, 'keuangan_tabungan_santri', String(id)))
+      ok++
+    } catch (e) {
+      fail++
+      console.warn('[bulkHapusMutasi] gagal', id, e.message)
+    }
+  }
+  selectedMutasi.value = new Set()
+  if (fail > 0) toast.warning(`${ok} dihapus, ${fail} gagal — cek console`)
+  else toast.success(`${ok} mutasi dihapus`)
+}
+
+function toggleMutasi(id) {
+  const ns = new Set(selectedMutasi.value)
+  const sid = String(id)
+  if (ns.has(sid)) ns.delete(sid)
+  else ns.add(sid)
+  selectedMutasi.value = ns
 }
 
 // Resolve santri id ketika user mengetik di datalist
@@ -679,20 +823,33 @@ async function simpanMutasi() {
   if (!modalSantriId.value || !modalNominal.value || saving.value) return
   saving.value = true
   try {
-    const id = `mutasi_${modalSantriId.value}_${Date.now()}`
     const santri = (santriRaw.value || []).find((s) => String(s.id) === String(modalSantriId.value))
-    await setDoc(doc(db, 'keuangan_tabungan_santri', id), {
-      id,
-      santri_id: modalSantriId.value,
-      nama_cache: santri?.nama || '',
-      jenis: modalJenis.value,
-      kategori: modalKategori.value,
-      nominal: Number(modalNominal.value),
-      catatan: modalCatatan.value,
-      tanggal: new Date().toISOString().slice(0, 10),
-      created_at: serverTimestamp()
-    })
-    toast.success('Mutasi tersimpan')
+    if (editingMutasiId.value) {
+      // v.21.100.0527: mode edit — update mutasi existing
+      await updateDoc(doc(db, 'keuangan_tabungan_santri', editingMutasiId.value), {
+        santri_id: modalSantriId.value,
+        nama_cache: santri?.nama || '',
+        jenis: modalJenis.value,
+        kategori: modalKategori.value,
+        nominal: Number(modalNominal.value),
+        catatan: modalCatatan.value
+      })
+      toast.success('Mutasi diperbarui')
+    } else {
+      const id = `mutasi_${modalSantriId.value}_${Date.now()}`
+      await setDoc(doc(db, 'keuangan_tabungan_santri', id), {
+        id,
+        santri_id: modalSantriId.value,
+        nama_cache: santri?.nama || '',
+        jenis: modalJenis.value,
+        kategori: modalKategori.value,
+        nominal: Number(modalNominal.value),
+        catatan: modalCatatan.value,
+        tanggal: new Date().toISOString().slice(0, 10),
+        created_at: serverTimestamp()
+      })
+      toast.success('Mutasi tersimpan')
+    }
     closeModal()
   } catch (e) {
     toast.error('Gagal: ' + (e?.message || e))
