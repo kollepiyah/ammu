@@ -53,6 +53,27 @@
         </div>
       </div>
 
+      <!-- v.21.89.0527: Lebar kertas struk POS (dot-matrix) -->
+      <div class="mt-4">
+        <label
+          class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
+        >
+          Lebar Kertas Struk POS (Dot-matrix)
+        </label>
+        <select
+          v-model="form.posStrukPaper"
+          class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
+        >
+          <option value="9.5">9.5 inci (continuous form, ±24 cm — Epson LX-310)</option>
+          <option value="thermal80">80 mm thermal (~42 kolom)</option>
+          <option value="thermal58">58 mm thermal (~32 kolom)</option>
+        </select>
+        <p class="text-[10px] text-[var(--text-secondary)] mt-1 italic">
+          <i class="fas fa-info-circle mr-1"></i>Untuk cetak struk POS ke printer dot-matrix
+          Epson LX-310 atau thermal. Pencetakan langsung via Tauri menyusul.
+        </p>
+      </div>
+
       <div class="mt-4">
         <h4
           class="font-black text-slate-700 dark:text-[var(--text-tertiary)] text-[11px] uppercase tracking-wider mb-2"
@@ -546,6 +567,8 @@ const jenisList = ref([])
 
 const form = reactive({
   keu_jatuh_tempo: 10,
+  // v.21.89.0527: Lebar kertas struk POS (dot-matrix). '9.5' = Epson LX-310 continuous form (default).
+  posStrukPaper: '9.5',
   keu_jenis_tagihan: [],
   keu_bisyaroh_pagi: '',
   keu_bisyaroh_sore: '',
@@ -572,6 +595,7 @@ function slugId(s) {
 function loadFromSettings() {
   const s = settingsStore.settings || {}
   form.keu_jatuh_tempo = s.keu_jatuh_tempo || 10
+  form.posStrukPaper = s.posStrukPaper || '9.5'
 
   let arr = []
   if (Array.isArray(s.keuTagihanJenis) && s.keuTagihanJenis.length > 0) {
@@ -753,6 +777,7 @@ async function simpan() {
       }))
     const payload = {
       keu_jatuh_tempo: form.keu_jatuh_tempo,
+      posStrukPaper: form.posStrukPaper || '9.5',
       keuTagihanJenis: jenis,
       keu_jenis_tagihan: jenis.map((t) => t.label),
       keu_bisyaroh_pagi: parseRp(form.keu_bisyaroh_pagi),
