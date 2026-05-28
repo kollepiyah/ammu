@@ -124,26 +124,90 @@
                 <i class="fas fa-trash"></i>
               </button>
             </div>
-            <!-- v.21.97.0527: Grid override nominal per-lembaga -->
-            <div v-if="jenis._expanded" class="mt-2 pt-2 border-t border-[var(--border-subtle)]">
-              <p class="text-[10px] text-[var(--text-secondary)] italic mb-1.5">
-                <i class="fas fa-info-circle mr-1"></i>Isi nominal untuk lembaga tertentu (override default). Kosong / 0 = pakai default.
-              </p>
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                <div
-                  v-for="lemb in (lembagaRaw || [])"
-                  :key="`${jenis.id}_${lemb.lembaga}`"
-                  class="flex items-center gap-2 bg-[var(--bg-card)] rounded px-2 py-1"
-                >
-                  <span class="text-[10px] font-bold text-[var(--text-secondary)] flex-1 truncate">{{ lemb.lembaga }}</span>
-                  <input
-                    :value="jenis.nominal_per_lembaga?.[lemb.lembaga] || ''"
-                    @input="jenis.nominal_per_lembaga = { ...(jenis.nominal_per_lembaga || {}), [lemb.lembaga]: Number($event.target.value) || 0 }"
-                    type="number"
-                    min="0"
-                    :placeholder="String(jenis.nominal_default || 0)"
-                    class="w-28 text-xs font-bold text-[var(--text-primary)] outline-none border border-[var(--border-default)] rounded px-2 py-1 text-right"
-                  />
+            <!-- v.21.100.0527: Whitelist + override per-lembaga + per-kelas -->
+            <div v-if="jenis._expanded" class="mt-2 pt-2 border-t border-[var(--border-subtle)] space-y-3">
+              <!-- 1) Whitelist lembaga -->
+              <div>
+                <p class="text-[10px] text-[var(--text-secondary)] italic mb-1">
+                  <i class="fas fa-filter mr-1"></i>Hanya untuk lembaga ini (kosong = semua lembaga):
+                </p>
+                <div class="flex flex-wrap gap-1.5">
+                  <label
+                    v-for="lemb in (lembagaRaw || [])"
+                    :key="`${jenis.id}_wl_${lemb.lembaga}`"
+                    class="inline-flex items-center gap-1 text-[10px] font-bold cursor-pointer bg-[var(--bg-card)] px-2 py-1 rounded border border-[var(--border-default)]"
+                  >
+                    <input
+                      type="checkbox"
+                      :checked="Array.isArray(jenis.lembaga_only) && jenis.lembaga_only.includes(lemb.lembaga)"
+                      @change="toggleLembagaOnly(jenis, lemb.lembaga)"
+                      class="w-3 h-3 accent-teal-600"
+                    />
+                    {{ lemb.lembaga }}
+                  </label>
+                </div>
+                <p v-if="Array.isArray(jenis.lembaga_only) && jenis.lembaga_only.length > 0" class="text-[9px] text-teal-600 mt-1">
+                  <i class="fas fa-check-circle"></i> Hanya muncul di POS untuk: {{ jenis.lembaga_only.join(', ') }}
+                </p>
+              </div>
+
+              <!-- 2) Override per-lembaga -->
+              <div>
+                <p class="text-[10px] text-[var(--text-secondary)] italic mb-1.5">
+                  <i class="fas fa-building mr-1"></i>Nominal per lembaga (override default). Kosong / 0 = pakai default.
+                </p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                  <div
+                    v-for="lemb in lembagaScope(jenis)"
+                    :key="`${jenis.id}_pl_${lemb.lembaga}`"
+                    class="flex items-center gap-2 bg-[var(--bg-card)] rounded px-2 py-1"
+                  >
+                    <span class="text-[10px] font-bold text-[var(--text-secondary)] flex-1 truncate">{{ lemb.lembaga }}</span>
+                    <input
+                      :value="jenis.nominal_per_lembaga?.[lemb.lembaga] || ''"
+                      @input="jenis.nominal_per_lembaga = { ...(jenis.nominal_per_lembaga || {}), [lemb.lembaga]: Number($event.target.value) || 0 }"
+                      type="number"
+                      min="0"
+                      :placeholder="String(jenis.nominal_default || 0)"
+                      class="w-28 text-xs font-bold text-[var(--text-primary)] outline-none border border-[var(--border-default)] rounded px-2 py-1 text-right"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <!-- 3) Override per-kelas (paling spesifik) -->
+              <div>
+                <p class="text-[10px] text-[var(--text-secondary)] italic mb-1.5">
+                  <i class="fas fa-layer-group mr-1"></i>Nominal per kelas (paling spesifik, mengalahkan per-lembaga). Kosong = pakai per-lembaga / default.
+                </p>
+                <div class="space-y-2">
+                  <div
+                    v-for="lemb in lembagaScope(jenis)"
+                    :key="`${jenis.id}_pk_${lemb.lembaga}`"
+                    class="bg-[var(--bg-card)] rounded p-2 border border-[var(--border-subtle)]"
+                  >
+                    <p class="text-[10px] font-black text-[var(--text-secondary)] mb-1">{{ lemb.lembaga }}</p>
+                    <div v-if="kelasOfLembaga(lemb).length === 0" class="text-[9px] text-[var(--text-tertiary)] italic">
+                      Lembaga ini belum punya kelas
+                    </div>
+                    <div v-else class="grid grid-cols-2 md:grid-cols-3 gap-1.5">
+                      <div
+                        v-for="kls in kelasOfLembaga(lemb)"
+                        :key="`${jenis.id}_pk_${lemb.lembaga}_${kls}`"
+                        class="flex items-center gap-1.5"
+                      >
+                        <span class="text-[9px] font-bold text-[var(--text-secondary)] w-12 truncate">{{ kls }}</span>
+                        <input
+                          :value="(jenis.nominal_per_kelas?.[lemb.lembaga] || {})[kls] || ''"
+                          @input="setNominalKelas(jenis, lemb.lembaga, kls, $event.target.value)"
+                          type="number"
+                          min="0"
+                          :placeholder="String((jenis.nominal_per_lembaga || {})[lemb.lembaga] || jenis.nominal_default || 0)"
+                          class="flex-1 text-[10px] font-bold text-[var(--text-primary)] outline-none border border-[var(--border-default)] rounded px-1.5 py-0.5 text-right"
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -641,6 +705,12 @@ function loadFromSettings() {
               t.nominal_per_lembaga && typeof t.nominal_per_lembaga === 'object'
                 ? { ...t.nominal_per_lembaga }
                 : _emptyMap(),
+            // v.21.100.0527: whitelist lembaga + nominal per kelas
+            lembaga_only: Array.isArray(t.lembaga_only) ? [...t.lembaga_only] : [],
+            nominal_per_kelas:
+              t.nominal_per_kelas && typeof t.nominal_per_kelas === 'object'
+                ? JSON.parse(JSON.stringify(t.nominal_per_kelas))
+                : _emptyMap(),
             auto_generate: !!t.auto_generate,
             _expanded: false
           }
@@ -649,6 +719,8 @@ function loadFromSettings() {
             label: String(t || ''),
             nominal_default: 0,
             nominal_per_lembaga: _emptyMap(),
+            lembaga_only: [],
+            nominal_per_kelas: _emptyMap(),
             auto_generate: false,
             _expanded: false
           }
@@ -659,18 +731,20 @@ function loadFromSettings() {
       label: String(t || ''),
       nominal_default: 0,
       nominal_per_lembaga: _emptyMap(),
+      lembaga_only: [],
+      nominal_per_kelas: _emptyMap(),
       auto_generate: slugId(t) === 'syahriyah',
       _expanded: false
     }))
   } else {
     arr = [
-      { id: 'syahriyah', label: 'Syahriyah', nominal_default: 0, nominal_per_lembaga: _emptyMap(), auto_generate: true, _expanded: false },
-      { id: 'spp_sekolah', label: 'SPP Sekolah', nominal_default: 0, nominal_per_lembaga: _emptyMap(), auto_generate: false, _expanded: false },
-      { id: 'kebersihan', label: 'Kebersihan', nominal_default: 0, nominal_per_lembaga: _emptyMap(), auto_generate: false, _expanded: false }
+      { id: 'syahriyah', label: 'Syahriyah', nominal_default: 0, nominal_per_lembaga: _emptyMap(), lembaga_only: [], nominal_per_kelas: _emptyMap(), auto_generate: true, _expanded: false },
+      { id: 'spp_sekolah', label: 'SPP Sekolah', nominal_default: 0, nominal_per_lembaga: _emptyMap(), lembaga_only: [], nominal_per_kelas: _emptyMap(), auto_generate: false, _expanded: false },
+      { id: 'kebersihan', label: 'Kebersihan', nominal_default: 0, nominal_per_lembaga: _emptyMap(), lembaga_only: [], nominal_per_kelas: _emptyMap(), auto_generate: false, _expanded: false }
     ]
   }
   if (!arr.find((t) => t.id === 'syahriyah')) {
-    arr.unshift({ id: 'syahriyah', label: 'Syahriyah', nominal_default: 0, nominal_per_lembaga: _emptyMap(), auto_generate: true, _expanded: false })
+    arr.unshift({ id: 'syahriyah', label: 'Syahriyah', nominal_default: 0, nominal_per_lembaga: _emptyMap(), lembaga_only: [], nominal_per_kelas: _emptyMap(), auto_generate: true, _expanded: false })
   }
   jenisList.value = arr
   form.keu_jenis_tagihan = arr.map((t) => t.label)
@@ -738,7 +812,7 @@ function addJenis() {
     toast.warning('Jenis tagihan sudah ada')
     return
   }
-  jenisList.value.push({ id, label: s, nominal_default: 0, nominal_per_lembaga: {}, auto_generate: false, _expanded: false })
+  jenisList.value.push({ id, label: s, nominal_default: 0, nominal_per_lembaga: {}, lembaga_only: [], nominal_per_kelas: {}, auto_generate: false, _expanded: false })
   newJenis.value = ''
 }
 
@@ -749,6 +823,42 @@ function removeJenis(idx) {
     return
   }
   jenisList.value.splice(idx, 1)
+}
+
+// v.21.100.0527: toggle lembaga di whitelist
+function toggleLembagaOnly(jenis, lembagaName) {
+  if (!Array.isArray(jenis.lembaga_only)) jenis.lembaga_only = []
+  const i = jenis.lembaga_only.indexOf(lembagaName)
+  if (i >= 0) jenis.lembaga_only.splice(i, 1)
+  else jenis.lembaga_only.push(lembagaName)
+}
+
+// v.21.100.0527: scope lembaga sesuai whitelist (jika kosong = semua)
+function lembagaScope(jenis) {
+  const all = lembagaRaw.value || []
+  const wl = Array.isArray(jenis.lembaga_only) ? jenis.lembaga_only : []
+  if (wl.length === 0) return all
+  return all.filter((l) => wl.includes(l.lembaga))
+}
+
+function kelasOfLembaga(lemb) {
+  if (!lemb) return []
+  if (Array.isArray(lemb.kelas)) return lemb.kelas.filter(Boolean)
+  if (Array.isArray(lemb.kelas_list)) return lemb.kelas_list.filter(Boolean)
+  return []
+}
+
+function setNominalKelas(jenis, lembagaName, kelas, val) {
+  const n = Number(val) || 0
+  const cur = jenis.nominal_per_kelas && typeof jenis.nominal_per_kelas === 'object'
+    ? { ...jenis.nominal_per_kelas }
+    : {}
+  const inner = { ...(cur[lembagaName] || {}) }
+  if (n > 0) inner[kelas] = n
+  else delete inner[kelas]
+  if (Object.keys(inner).length > 0) cur[lembagaName] = inner
+  else delete cur[lembagaName]
+  jenis.nominal_per_kelas = cur
 }
 
 function addKategori(kind) {
@@ -824,11 +934,29 @@ async function simpan() {
             if (n > 0) perL[k] = n
           }
         }
+        // v.21.100.0527: serialize nominal_per_kelas — buang yg 0
+        const perK = {}
+        if (t.nominal_per_kelas && typeof t.nominal_per_kelas === 'object') {
+          for (const [lemb, kelasMap] of Object.entries(t.nominal_per_kelas)) {
+            if (!kelasMap || typeof kelasMap !== 'object') continue
+            const inner = {}
+            for (const [kls, val] of Object.entries(kelasMap)) {
+              const n = Number(val) || 0
+              if (n > 0) inner[kls] = n
+            }
+            if (Object.keys(inner).length > 0) perK[lemb] = inner
+          }
+        }
+        const wl = Array.isArray(t.lembaga_only)
+          ? t.lembaga_only.filter((x) => String(x || '').trim())
+          : []
         return {
           id: t.id || slugId(t.label),
           label: String(t.label || '').trim(),
           nominal_default: Number(t.nominal_default || 0) || 0,
           nominal_per_lembaga: perL,
+          nominal_per_kelas: perK,
+          lembaga_only: wl,
           auto_generate: !!t.auto_generate
         }
       })

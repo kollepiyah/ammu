@@ -29,19 +29,29 @@ const DEFAULT_PRESET = [
 ]
 const presetList = computed(() => {
   const fromSetting = settings.settings?.keuTagihanJenis
+  // v.21.100.0527: filter pakai lembaga_only (whitelist) + bawa nominal_per_kelas
+  const santriLemb = String(props.santri?.lembaga || '').trim()
+  const santriLembSekolah = String(props.santri?.lembaga_sekolah || '').trim()
   if (Array.isArray(fromSetting) && fromSetting.length > 0) {
     return fromSetting
       .filter((j) => {
         const lbl = String(j.label || j.nama || j.id || '').toLowerCase().trim()
-        return lbl && lbl !== 'tabungan'
+        if (!lbl || lbl === 'tabungan') return false
+        // whitelist gating: kosong = semua, kalau ada → santri harus match
+        const wl = Array.isArray(j.lembaga_only) ? j.lembaga_only.filter(Boolean) : []
+        if (wl.length === 0) return true
+        return wl.includes(santriLemb) || wl.includes(santriLembSekolah)
       })
       .map((j) => ({
         label: j.label || j.nama || j.id || '-',
         nominal_default: Number(j.nominal_default || j.nominal || 0) || 0,
-        // v.21.97.0527: bawa nominal_per_lembaga supaya addExtra bisa lookup override
         nominal_per_lembaga:
           j.nominal_per_lembaga && typeof j.nominal_per_lembaga === 'object'
             ? j.nominal_per_lembaga
+            : {},
+        nominal_per_kelas:
+          j.nominal_per_kelas && typeof j.nominal_per_kelas === 'object'
+            ? j.nominal_per_kelas
             : {}
       }))
   }
@@ -92,14 +102,34 @@ function addExtra() {
   const label = newPreset.value
   if (!label) return
   const match = presetList.value.find((p) => p.label === label)
-  // v.21.97.0527: prefer nominal override per lembaga santri; fallback ke default
+  // v.21.100.0527: 3-lapis lookup nominal — per_kelas → per_lembaga → default
   let nominal = 0
   if (match) {
     const lembagaKey = props.santri?.lembaga || ''
     const lembagaSekolahKey = props.santri?.lembaga_sekolah || ''
-    const perL = match.nominal_per_lembaga || {}
-    const override = Number(perL[lembagaKey] || perL[lembagaSekolahKey] || 0)
-    nominal = override > 0 ? override : Number(match.nominal_default || 0)
+    const kelasKey = String(props.santri?.kelas || '')
+    const kelasSekolahKey = String(props.santri?.kelas_sekolah || '')
+    // 1) per_kelas[lembaga][kelas] paling spesifik
+    const perK = match.nominal_per_kelas || {}
+    let lookup = 0
+    for (const [lemb, kelasKey1, kelasKey2] of [
+      [lembagaKey, kelasKey, kelasSekolahKey],
+      [lembagaSekolahKey, kelasSekolahKey, kelasKey]
+    ]) {
+      if (!lemb) continue
+      const inner = perK[lemb] || {}
+      const v = Number(inner[kelasKey1] || inner[kelasKey2] || 0)
+      if (v > 0) { lookup = v; break }
+    }
+    if (lookup > 0) {
+      nominal = lookup
+    } else {
+      // 2) per_lembaga
+      const perL = match.nominal_per_lembaga || {}
+      const override = Number(perL[lembagaKey] || perL[lembagaSekolahKey] || 0)
+      // 3) default
+      nominal = override > 0 ? override : Number(match.nominal_default || 0)
+    }
   }
   extraItems.value.push({
     id: Date.now() + Math.random(),
