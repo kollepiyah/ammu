@@ -435,7 +435,8 @@ function cleanWa(wa) {
 // v.21.25.0526: Cetak PDF code-based jsPDF + autoTable (font helvetica untuk umum)
 async function cetakPdf() {
   try {
-    const settingsObj = settings.settings || {}
+    // v.21.109.0527: fix BUG — `settings` tidak terdefinisi; pakai `settingsStore`
+    const settingsObj = settingsStore.settings || {}
     // v.21.92.0527: helper kanonik — baca logoKop/kopLine* dari Pengaturan Web
     const kop = buildKopFromSettings(settingsObj)
     const rows = (santri.value || []).map((s, i) => ({

@@ -926,15 +926,9 @@ const santriId = ref(isSantri.value ? String(authStore.sesiAktif?.id || '') : ''
 const filterKelas = ref('')
 const search = ref('')
 
-// Qiraati: 5 lembaga (TPQ Pagi+Sore SPLIT untuk picker tapi same shift-variant data)
+// v.21.109.0527: TPQ Pagi DIHAPUS dari rapor — kebijakan: TPQ Pagi tidak
+// menerbitkan rapor. Sisa 4 lembaga Qiraati: TPQ Sore, Pra PTPT, PTPT, PPPH.
 const QIRAATI_LEMBAGA = [
-  {
-    id: 'TPQ Pagi',
-    label: 'TPQ Pagi',
-    subtitle: "Taman Pendidikan Al-Qur'an",
-    icon: 'fa-mosque',
-    gradient: 'from-emerald-500 dark:from-emerald-700 to-emerald-700 dark:to-emerald-900'
-  },
   {
     id: 'TPQ Sore',
     label: 'TPQ Sore',
@@ -1007,17 +1001,15 @@ const santriList = computed(() => {
   }
 
   if (kategori.value === 'qiraati') {
-    if (lmb === 'tpq pagi' || lmb === 'tpq sore') {
-      // TPQ Pagi/Sore = same lembaga "TPQ" with shift variant
-      const shift = lmb === 'tpq pagi' ? 'pagi' : 'sore'
+    // v.21.109.0527: TPQ Pagi tidak punya rapor — return kosong defensif
+    if (lmb === 'tpq pagi') {
+      return []
+    }
+    if (lmb === 'tpq sore') {
       list = list.filter((s) => {
-        const l = String(s.lembaga || '')
-          .toLowerCase()
-          .trim()
-        const sh = String(s.shift || '')
-          .toLowerCase()
-          .trim()
-        return (l === 'tpq' && sh === shift) || l === lmb
+        const l = String(s.lembaga || '').toLowerCase().trim()
+        const sh = String(s.shift || '').toLowerCase().trim()
+        return (l === 'tpq' && sh === 'sore') || l === lmb
       })
     } else if (lmb === 'pra ptpt') {
       list = list.filter((s) => {
@@ -2061,12 +2053,17 @@ onMounted(() => {
     kategori.value = q
     const lmb = String(authStore.sesiAktif?.lembaga || '').trim()
     if (q === 'qiraati') {
-      const match = QIRAATI_LEMBAGA.find((l) => l.id.toLowerCase() === lmb.toLowerCase())
-      if (match) {
-        lembaga.value = match.id
-        view.value = 'detail'
+      // v.21.109.0527: TPQ Pagi tidak punya rapor — stay di picker
+      if (lmb.toLowerCase() === 'tpq pagi') {
+        view.value = 'picker'
       } else {
-        view.value = 'lembaga'
+        const match = QIRAATI_LEMBAGA.find((l) => l.id.toLowerCase() === lmb.toLowerCase())
+        if (match) {
+          lembaga.value = match.id
+          view.value = 'detail'
+        } else {
+          view.value = 'lembaga'
+        }
       }
     } else {
       lembaga.value = 'Diniyah'
@@ -2076,15 +2073,20 @@ onMounted(() => {
   // Guru-only: auto-jump to their lembaga's santri list
   if (isGuruOnly.value && view.value === 'picker') {
     const lmb = String(authStore.sesiAktif?.lembaga || '').trim()
-    const match = QIRAATI_LEMBAGA.find((l) => l.id.toLowerCase() === lmb.toLowerCase())
-    if (match) {
-      kategori.value = 'qiraati'
-      lembaga.value = match.id
-      view.value = 'santri'
-    } else if (lmb) {
-      kategori.value = 'diniyah'
-      lembaga.value = lmb
-      view.value = 'santri'
+    // v.21.109.0527: guru TPQ Pagi tidak menerbitkan rapor — skip auto-route
+    if (lmb.toLowerCase() === 'tpq pagi') {
+      view.value = 'picker'
+    } else {
+      const match = QIRAATI_LEMBAGA.find((l) => l.id.toLowerCase() === lmb.toLowerCase())
+      if (match) {
+        kategori.value = 'qiraati'
+        lembaga.value = match.id
+        view.value = 'santri'
+      } else if (lmb) {
+        kategori.value = 'diniyah'
+        lembaga.value = lmb
+        view.value = 'santri'
+      }
     }
   }
 })
