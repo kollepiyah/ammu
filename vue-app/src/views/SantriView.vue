@@ -245,7 +245,7 @@ const isMasterMode = computed(() => props.mode === 'master')
 // v.21.13b.0526: + toTitleCase + normalizeWA + parseMultipleWA (v.21.22b dual WA)
 import { getNamaGuruGelar, toTitleCase, normalizeWA, parseMultipleWA } from '@/utils/format'
 import { useExcel } from '@/composables/useExcel'
-import { buildListPdf } from '@/utils/pdfBuilder'
+import { buildListPdf, buildKopFromSettings } from '@/utils/pdfBuilder'
 import { useToast } from '@/composables/useToast'
 import { useSettingsStore } from '@/stores/settings'
 import { useConfirm } from '@/composables/useConfirm'
@@ -436,14 +436,8 @@ function cleanWa(wa) {
 async function cetakPdf() {
   try {
     const settingsObj = settings.settings || {}
-    const kop = {
-      logoUrl: settingsObj.kop_logo || settingsObj.kopLogo || '',
-      line1: settingsObj.kopLine1 || 'YAYASAN MAMBAUL ULUM',
-      line2: settingsObj.kopLine2 || '',
-      line3: settingsObj.kopLine3 || '',
-      line4: settingsObj.kopLine4 || '',
-      line5: settingsObj.kopLine5 || ''
-    }
+    // v.21.92.0527: helper kanonik — baca logoKop/kopLine* dari Pengaturan Web
+    const kop = buildKopFromSettings(settingsObj)
     const rows = (santri.value || []).map((s, i) => ({
       no: i + 1,
       nama: s.nama || '',

@@ -448,7 +448,7 @@
     <!-- ============================================================
          ADMIN/GURU: Top Stats Grid (Santri / Guru / Lembaga / Kelas)
          ============================================================ -->
-    <div v-if="role === 'admin' || role === 'guru'" class="grid grid-cols-2 md:grid-cols-4 gap-3">
+    <div v-if="isAdminMode || role === 'guru'" class="grid grid-cols-2 md:grid-cols-4 gap-3">
       <div
         class="bg-gradient-to-br from-teal-500 dark:from-teal-700 to-teal-700 dark:to-teal-900 rounded-xl p-3 md:p-4 shadow-sm text-white"
       >
@@ -468,7 +468,7 @@
         </p>
       </div>
       <div
-        v-if="role === 'admin'"
+        v-if="isAdminMode"
         class="bg-gradient-to-br from-cyan-500 dark:from-cyan-700 to-cyan-700 dark:to-cyan-900 rounded-xl p-3 md:p-4 shadow-sm text-white"
       >
         <i class="fas fa-building text-lg md:text-xl text-white/90"></i>
@@ -478,7 +478,7 @@
         </p>
       </div>
       <div
-        v-if="role === 'admin'"
+        v-if="isAdminMode"
         class="bg-gradient-to-br from-cyan-500 dark:from-cyan-700 to-cyan-700 dark:to-cyan-900 rounded-xl p-3 md:p-4 shadow-sm text-white"
       >
         <i class="fas fa-door-open text-lg md:text-xl text-white/90"></i>
@@ -493,7 +493,7 @@
          ADMIN: Lembaga Prestasi Cards (top5, PTPT distribusi)
          ============================================================ -->
     <div
-      v-if="role === 'admin' && lembagaPrestasi.length > 0"
+      v-if="isAdminMode && lembagaPrestasi.length > 0"
       class="grid grid-cols-1 md:grid-cols-2 gap-3"
     >
       <div
@@ -597,7 +597,7 @@
          ADMIN: Statistik Lembaga grid (per-lembaga kelas/santri/guru)
          ============================================================ -->
     <div
-      v-if="role === 'admin' && statistikLembaga.length > 0"
+      v-if="isAdminMode && statistikLembaga.length > 0"
       class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
     >
       <h3 class="text-sm md:text-base font-black text-[var(--text-primary)] mb-3">
@@ -642,7 +642,7 @@
          ADMIN: Distribusi Santri per Lembaga (bar chart)
          ============================================================ -->
     <div
-      v-if="role === 'admin' && distribusiLembaga.length > 0"
+      v-if="isAdminMode && distribusiLembaga.length > 0"
       class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
     >
       <h3
@@ -672,7 +672,7 @@
     <!-- ============================================================
          ADMIN: AdminStatsCharts (chart.js 12-bulan)
          ============================================================ -->
-    <AdminStatsCharts v-if="role === 'admin'" :santri-list="santriRaw" />
+    <AdminStatsCharts v-if="isAdminMode" :santri-list="santriRaw" />
 
     <!-- ============================================================
          GURU: Statistik Pengajaran + Kehadiran + Kelas Saya
@@ -820,6 +820,8 @@ import { useGuru } from '@/composables/useGuru'
 import { useLembaga, formatKelasLabel } from '@/composables/useLembaga'
 import { subscribeColl } from '@/services/firestore'
 import AdminStatsCharts from '@/components/charts/AdminStatsCharts.vue'
+// v.21.107.0527: gating role konsisten (admin/super_admin/admin_keuangan)
+import { isFullFilterRole } from '@/utils/roleScope'
 
 // Logo dipakai sebagai watermark di greeting santri (dari public/)
 const logoSrc = '/logo.png'
@@ -845,6 +847,8 @@ const { lembagaRaw } = useLembaga()
 
 // ---- Role / loading --------------------------------------------------------
 const role = computed(() => auth.sesiAktif?.role || 'guest')
+// v.21.107.0527: isAdminMode true utk admin, super_admin, admin_keuangan
+const isAdminMode = computed(() => isFullFilterRole(auth.sesiAktif))
 const loadingAny = computed(() => loadingSantri.value || loadingGuru.value)
 
 const isGuruAktif = (status) =>
@@ -900,13 +904,13 @@ function totalDisplay(s) {
 }
 
 // ---- ADMIN: Per-lembaga prestasi (top5 + PTPT distribusi) ------------------
+// v.21.107.0527: pakai isAdminMode + URUTAN_LEMBAGA expanded
 const lembagaPrestasi = computed(() => {
-  if (role.value !== 'admin') return []
-  const URUTAN = ['TPQ Pagi', 'TPQ Sore', 'Pra PTPT', 'PTPT', 'PPPH', 'SDI', 'PKBM']
+  if (!isAdminMode.value) return []
   const fromMaster = lembagaRaw.value.map((l) => l.lembaga).filter(Boolean)
   const ordered = [
-    ...URUTAN.filter((n) => fromMaster.includes(n)),
-    ...fromMaster.filter((n) => !URUTAN.includes(n))
+    ...URUTAN_LEMBAGA.filter((n) => fromMaster.includes(n)),
+    ...fromMaster.filter((n) => !URUTAN_LEMBAGA.includes(n))
   ]
   return ordered.map((nama) => {
     const list = santriRaw.value.filter((s) => s.aktif !== false && s.lembaga === nama)
@@ -965,47 +969,66 @@ const distribusiLembaga = computed(() => {
 })
 
 // ---- ADMIN: Statistik per lembaga (kelas + santri + guru) ------------------
+// v.21.107.0527:
+// - Role gating pakai isAdminMode (admin/super_admin/admin_keuangan).
+// - kelasSet di-hitung dari master kelas (l.kelas length), fallback unique
+//   kelas santri (s.kelas || s.kelas_sekolah). Sebelumnya s.guru (BUG).
+// - URUTAN diperluas (TK, MI, MTs, MA, SDI, SMP, SMA, PKBM, Yayasan)
+const URUTAN_LEMBAGA = [
+  'TPQ Pagi', 'TPQ Sore', 'Pra PTPT', 'PTPT', 'PPPH', 'P3H', 'TPQ',
+  'TK', 'SDI', 'MI', 'MTs', 'MA', 'SMP', 'SMA', 'PKBM'
+]
 const statistikLembaga = computed(() => {
-  if (role.value !== 'admin') return []
-  const lembList = (lembagaRaw.value || []).filter((l) => l.kelas && l.kelas.length > 0)
-  const URUTAN = ['TPQ Pagi', 'TPQ Sore', 'Pra PTPT', 'PTPT', 'PPPH', 'TPQ', 'P3H']
+  if (!isAdminMode.value) return []
+  const lembList = (lembagaRaw.value || []).filter((l) => Array.isArray(l.kelas) && l.kelas.length > 0)
   return lembList
     .map((l) => {
       const nama = l.lembaga || l.nama
       const santriList = santriRaw.value.filter(
         (s) => (s.lembaga === nama || s.lembaga_sekolah === nama) && s.aktif !== false
       )
-      const kelasSet = new Set(santriList.map((s) => s.guru).filter(Boolean)).size
+      // v.21.107.0527: kelas count dari master (jumlah kelas terdaftar),
+      // bukan dari guru pengampu (typo lama).
+      const kelasMaster = Array.isArray(l.kelas) ? l.kelas.length : 0
+      const kelasFromSantri = new Set(
+        santriList.map((s) => s.kelas || s.kelas_sekolah).filter(Boolean)
+      ).size
+      const kelasSet = kelasMaster || kelasFromSantri
       const santriCount = santriList.length
       const guruCount = guruRaw.value.filter(
-        (g) => g.lembaga === nama && isGuruAktif(g.status)
+        (g) =>
+          (g.lembaga === nama || g.lembaga_sekolah === nama) && isGuruAktif(g.status)
       ).length
       return { nama, kelas: kelasSet, santri: santriCount, guru: guruCount }
     })
     .sort((a, b) => {
-      const ia = URUTAN.indexOf(a.nama)
-      const ib = URUTAN.indexOf(b.nama)
+      const ia = URUTAN_LEMBAGA.indexOf(a.nama)
+      const ib = URUTAN_LEMBAGA.indexOf(b.nama)
       return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib)
     })
 })
 
 // ---- Header label (role-aware) --------------------------------------------
+// v.21.107.0527: admin/super_admin/admin_keuangan semua dapat label "Lengkap"
 const headerTitle = computed(() => {
-  if (role.value === 'admin') return 'Statistik Lengkap'
+  if (isAdminMode.value) return 'Statistik Lengkap'
   if (role.value === 'guru') return 'Statistik Kelas Saya'
   if (role.value === 'santri') return 'Statistik Saya'
   return 'Statistik'
 })
 const headerSubtitle = computed(() => {
-  if (role.value === 'admin') return 'Data ringkas seluruh pondok.'
+  if (isAdminMode.value) return 'Data ringkas seluruh pondok.'
   if (role.value === 'guru') return 'Santri yang Anda ajar & data kehadiran Anda.'
   if (role.value === 'santri') return 'Pencapaian & prestasi Anda di pondok.'
   return ''
 })
 
 // ---- Display counters per role --------------------------------------------
+// v.21.107.0527: admin display = santri AKTIF (selaras dgn labelSantri yg
+// breakdown aktif/non). Sebelumnya totalSantri menghitung semua, bisa
+// menyesatkan.
 const totalSantriDisplay = computed(() => {
-  if (role.value === 'admin') return totalSantri.value
+  if (isAdminMode.value) return santriAktif.value
   if (role.value === 'guru') {
     const guruName = String(auth.sesiAktif?.guru || auth.sesiAktif?.nama || '')
       .toLowerCase()
@@ -1036,7 +1059,7 @@ const totalSantriDisplay = computed(() => {
 })
 
 const labelSantri = computed(() => {
-  if (role.value === 'admin') {
+  if (isAdminMode.value) {
     return santriNonAktif.value > 0
       ? `Total (${santriAktif.value} aktif / ${santriNonAktif.value} non)`
       : 'Total Santri'
@@ -1045,10 +1068,11 @@ const labelSantri = computed(() => {
   return 'Santri'
 })
 
-const totalGuruDisplay = computed(() => (role.value === 'admin' ? totalGuru.value : 0))
+// v.21.107.0527: tampilkan guru AKTIF, label sudah pisah aktif/non
+const totalGuruDisplay = computed(() => (isAdminMode.value ? guruAktif.value : 0))
 
 const labelGuru = computed(() => {
-  if (role.value === 'admin') {
+  if (isAdminMode.value) {
     return guruNonAktif.value > 0
       ? `Total (${guruAktif.value} aktif / ${guruNonAktif.value} non)`
       : 'Total Guru/Pegawai'
@@ -1119,7 +1143,8 @@ const totalKartuKenaikan = computed(() => {
   return count
 })
 
-const periodeAktif = computed(() => settings.settings?.periodeAktif || "Dzulqo'dah 1447")
+// v.21.107.0527: jangan hardcode periode Hijriah (cepat kadaluarsa)
+const periodeAktif = computed(() => settings.settings?.periodeAktif || settings.settings?.txtPeriode || '-')
 
 function gotoProfil() {
   router.push('/profil')
@@ -1235,6 +1260,8 @@ const sekolahPrestasi = computed(() =>
 const absensiShiftGuru = ref([])
 let unsubAbsensi = null
 onMounted(() => {
+  // v.21.107.0527: hemat reads — subscribe hanya kalau role 'guru'
+  if (role.value !== 'guru') return
   unsubAbsensi = subscribeColl('absensi_shift_guru', (docs) => {
     absensiShiftGuru.value = docs || []
   })
@@ -1247,24 +1274,33 @@ onUnmounted(() => {
   }
 })
 
+// v.21.107.0527:
+// - 'terlambat' dianggap hadir (selaras Bisyaroh bonus + AbsensiGuruView)
+// - hitung UNIQUE tanggal (jangan double-count 3 shift dlm 1 hari)
 const kehadiranGuru = computed(() => {
   const g = guruProfile.value
   if (!g) return { hadir: 0, sakit: 0, izin: 0, alpa: 0 }
   const d = new Date()
   const prefix = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-`
-  let hadir = 0,
-    sakit = 0,
-    izin = 0,
-    alpa = 0
+  const hadirSet = new Set()
+  const sakitSet = new Set()
+  const izinSet = new Set()
+  const alpaSet = new Set()
   for (const row of absensiShiftGuru.value) {
-    if (!String(row.tanggal || '').startsWith(prefix)) continue
+    const tgl = String(row.tanggal || '')
+    if (!tgl.startsWith(prefix)) continue
     if (String(row.guru_id || row.guruId || '') !== String(g.id)) continue
     const st = String(row.status || '').toLowerCase()
-    if (st === 'hadir' || st === 'masuk') hadir++
-    else if (st === 'sakit') sakit++
-    else if (st === 'izin') izin++
-    else if (st === 'alpa' || st === 'alpha') alpa++
+    if (st === 'hadir' || st === 'masuk' || st === 'terlambat') hadirSet.add(tgl)
+    else if (st === 'sakit') sakitSet.add(tgl)
+    else if (st === 'izin') izinSet.add(tgl)
+    else if (st === 'alpa' || st === 'alpha') alpaSet.add(tgl)
   }
-  return { hadir, sakit, izin, alpa }
+  return {
+    hadir: hadirSet.size,
+    sakit: sakitSet.size,
+    izin: izinSet.size,
+    alpa: alpaSet.size
+  }
 })
 </script>

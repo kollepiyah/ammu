@@ -118,90 +118,9 @@
         </div>
       </div>
 
-      <!-- v.21.23.0526: Daftar Jabatan (kyai edit manual per-lembaga) -->
-      <div class="bg-teal-50/40 dark:bg-teal-900/20 rounded-2xl p-4 md:p-5 border-2 border-teal-300 dark:border-teal-700 shadow-sm">
-        <div class="flex items-center justify-between mb-3">
-          <h3 class="text-xs font-black text-teal-800 dark:text-teal-300 uppercase tracking-wide">
-            <i class="fas fa-user-tie text-teal-600 mr-1"></i>Daftar Jabatan
-            <span class="ml-1 text-[10px] bg-teal-100 text-teal-700 px-1.5 py-0.5 rounded">{{ form.jabatan.length }}</span>
-          </h3>
-        </div>
-        <p class="text-[10px] text-[var(--text-secondary)] mb-2"><i class="fas fa-info-circle mr-1"></i>Jabatan yang tersedia di lembaga ini (contoh: Kepala TPQ, Wali Kelas, PJ Administrasi). Pilih <b>tipe</b> untuk filter di Form Guru.</p>
+      <!-- v.21.93.0527: Daftar Jabatan dipindah ke Master Data → Jabatan (ACF CRUD).
+           Bagian ini sengaja dihapus dari edit lembaga supaya tidak duplikat. -->
 
-        <!-- Add new jabatan + tipe -->
-        <div class="grid grid-cols-[1fr_140px_auto] gap-2 mb-3">
-          <input
-            v-model="newJabatanInput"
-            @keydown.enter.prevent="onAddJabatan"
-            type="text"
-            placeholder="Ketik nama jabatan, lalu Enter (cth: Kepala TPQ, Wali Kelas...)"
-            class="px-3 py-2 text-sm rounded-xl border border-teal-300 bg-[var(--bg-card)] focus:ring-2 focus:ring-teal-500 outline-none"
-          />
-          <select v-model="newJabatanTipe" class="px-2 py-2 text-sm rounded-xl border border-teal-300 bg-[var(--bg-card)] cursor-pointer focus:ring-2 focus:ring-teal-500 outline-none">
-            <option value="guru">Guru</option>
-            <option value="pegawai">Pegawai</option>
-            <option value="guru_pegawai">Guru + Pegawai</option>
-          </select>
-          <button
-            type="button"
-            @click="onAddJabatan"
-            class="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl text-sm transition whitespace-nowrap"
-          >
-            <i class="fas fa-plus mr-1"></i>Tambah
-          </button>
-        </div>
-
-        <!-- Jabatan list -->
-        <div v-if="form.jabatan.length === 0" class="text-center text-xs text-[var(--text-tertiary)] italic py-6 bg-[var(--bg-card)]/40 rounded-xl border border-dashed border-teal-300">
-          Belum ada jabatan. Ketik di atas + pilih tipe + Enter/Tambah.
-        </div>
-        <div v-else class="space-y-1.5">
-          <div
-            v-for="(j, idx) in form.jabatan"
-            :key="`jab-${idx}`"
-            class="flex items-center gap-2 bg-[var(--bg-card)] border border-teal-200 rounded-lg p-2"
-          >
-            <span class="text-[10px] bg-teal-100 text-teal-700 font-black px-2 py-0.5 rounded">#{{ idx + 1 }}</span>
-            <span class="flex-1 text-sm font-bold text-[var(--text-primary)]">{{ typeof j === 'string' ? j : j.nama }}</span>
-            <select
-              :value="(typeof j === 'object' && j.tipe) || 'guru'"
-              @change="updateJabatanTipe(idx, $event.target.value)"
-              class="text-[11px] font-bold px-2 py-1 rounded-lg border border-teal-200 bg-teal-50 cursor-pointer focus:ring-2 focus:ring-teal-500 outline-none"
-              title="Tipe jabatan"
-            >
-              <option value="guru">Guru</option>
-              <option value="pegawai">Pegawai</option>
-              <option value="guru_pegawai">Guru+Peg</option>
-            </select>
-            <button
-              type="button"
-              :disabled="idx === 0"
-              @click="moveJabatan(idx, idx - 1)"
-              class="w-7 h-7 rounded-lg bg-[var(--bg-muted)] hover:bg-slate-200 disabled:opacity-30 text-[var(--text-secondary)] text-xs transition"
-              title="Naik"
-            >
-              <i class="fas fa-chevron-up"></i>
-            </button>
-            <button
-              type="button"
-              :disabled="idx === form.jabatan.length - 1"
-              @click="moveJabatan(idx, idx + 1)"
-              class="w-7 h-7 rounded-lg bg-[var(--bg-muted)] hover:bg-slate-200 disabled:opacity-30 text-[var(--text-secondary)] text-xs transition"
-              title="Turun"
-            >
-              <i class="fas fa-chevron-down"></i>
-            </button>
-            <button
-              type="button"
-              @click="removeJabatan(idx)"
-              class="w-7 h-7 rounded-lg bg-rose-100 hover:bg-rose-200 text-rose-600 text-xs transition"
-              title="Hapus jabatan"
-            >
-              <i class="fas fa-trash"></i>
-            </button>
-          </div>
-        </div>
-      </div>
 
       <!-- KOP Section (Formal only) -->
       <div v-if="showKop" class="bg-cyan-50/40 dark:bg-cyan-900/20 rounded-2xl p-4 md:p-5 border-2 border-cyan-300 dark:border-cyan-700 shadow-sm">

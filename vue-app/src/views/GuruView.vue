@@ -368,7 +368,7 @@ const isMasterMode = computed(() => props.mode === 'master')
 import { useExcel } from '@/composables/useExcel'
 import { useSettingsStore } from '@/stores/settings'
 import { useToast as _useToastGuruExp } from '@/composables/useToast'
-import { buildListPdf } from '@/utils/pdfBuilder'
+import { buildListPdf, buildKopFromSettings } from '@/utils/pdfBuilder'
 import { useGuru } from '@/composables/useGuru'
 // v.21.10.0526: import canSee untuk visibility scoping
 import { canSee } from '@/composables/useLembaga'
@@ -435,17 +435,12 @@ function cleanWa(wa) {
 async function printPage() {
   try {
     const settingsObj = _settingsExp?.settings || {}
-    const kop = {
-      logoUrl: settingsObj.kop_logo || settingsObj.kopLogo || '',
-      line1: settingsObj.kopLine1 || 'YAYASAN MAMBAUL ULUM',
-      line2: settingsObj.kopLine2 || '',
-      line3: settingsObj.kopLine3 || '',
-      line4: settingsObj.kopLine4 || '',
-      line5: settingsObj.kopLine5 || ''
-    }
+    // v.21.92.0527: helper kanonik — baca logoKop/kopLine* dari Pengaturan Web
+    const kop = buildKopFromSettings(settingsObj)
     const rows = (guru.value || []).map((g, i) => ({
       no: i + 1,
-      nama: getNamaGuruGelar ? getNamaGuruGelar(g) : (g.nama || ''),
+      // v.21.93.0527: kirim string nama (+jk), bukan seluruh objek (sebelumnya jadi [object Object])
+      nama: getNamaGuruGelar ? getNamaGuruGelar(g.nama, g.jk) : (g.nama || ''),
       jk: g.jk || '',
       jabatan: g.jabatan || '',
       lembaga: [g.lembaga, g.lembaga_sekolah].filter(Boolean).join(' / '),

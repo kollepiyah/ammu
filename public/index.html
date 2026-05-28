@@ -15914,12 +15914,15 @@
           db_keuangan_buku_induk = []
 
           // Auto-migration v6.5 → v7: Pusat → Yayasan
+          // v.21.93.0527: DISABLED auto-add 'Yayasan' — kyai sudah memutuskan menghapus lembaga
+          // Yayasan; legacy migration ini yang bikin "selalu balik". Migrasi guru Pusat→Yayasan
+          // di bawah tetap jalan supaya data lama tidak orphan kalau Yayasan masih ada di list.
           let migrationNeeded = false
-          // 1) Pastikan db_lembaga punya 'Yayasan'
-          if (!db_lembaga.find((l) => l.lembaga === 'Yayasan')) {
-            db_lembaga.unshift({ lembaga: 'Yayasan', kelas: [] })
-            migrationNeeded = true
-          }
+          // 1) [DISABLED] Pastikan db_lembaga punya 'Yayasan'
+          // if (!db_lembaga.find((l) => l.lembaga === 'Yayasan')) {
+          //   db_lembaga.unshift({ lembaga: 'Yayasan', kelas: [] })
+          //   migrationNeeded = true
+          // }
           // 2) Update guru yang lembaga lama 'Pusat' → 'Yayasan'
           let guruMigrasi = []
           db_guru.forEach((g, idx) => {

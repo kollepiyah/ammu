@@ -41,7 +41,7 @@ export function buildKopFromSettings(s = {}) {
 // ── 1) PDF berwarna ber-KOP (A5 portrait) ──
 export async function cetakStrukPdf(trx, settings = {}, { preview = true } = {}) {
   const kop = buildKopFromSettings(settings)
-  const doc = await createPdf({ kind: 'umum', orientation: 'p', format: 'a5' })
+  const doc = await createPdf({ kind: 'umum', orientation: 'p', format: 'F4' })
   const font = doc._fontMU || 'helvetica'
   let y = await drawKopLetterhead(doc, kop, { y: 10 })
   drawTitle(doc, 'BUKTI PEMBAYARAN', { y: y + 7, size: 13 })

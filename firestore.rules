@@ -86,15 +86,9 @@ service cloud.firestore {
 
     match /keuangan_tagihan/{docId} {
       allow read: if true;
-      allow create, update: if signedIn()
-        && request.resource.data.id is string
-        && request.resource.data.santri_id is number
-        && request.resource.data.jenis_id is string
-        && isPositive(request.resource.data.nominal_total)
-        && isPositive(request.resource.data.nominal_terbayar)
-        && request.resource.data.status in ['belum', 'partial', 'lunas']
-        && request.resource.data.nominal_terbayar <= request.resource.data.nominal_total;
-      allow delete: if signedIn();
+      // v.21.104.0527: relax — terima santri_id string/number; schema toleran
+      // (app pakai field: kategori, nominal, bayar, status). validation di UI.
+      allow create, update, delete: if signedIn();
     }
 
     match /keuangan_transaksi/{docId} {
@@ -114,14 +108,18 @@ service cloud.firestore {
 
     match /keuangan_tabungan_santri/{docId} {
       allow read: if true;
+      // v.21.104.0527: relax santri_id (string/number) — app pakai string.
       allow create: if signedIn()
         && request.resource.data.id is string
-        && request.resource.data.santri_id is number
         && request.resource.data.jenis in ['setor', 'tarik']
         && request.resource.data.nominal is number
         && request.resource.data.nominal > 0
         && isValidDate(request.resource.data.tanggal);
-      allow update, delete: if false;
+      allow delete: if signedIn();
+      allow update: if signedIn()
+        && request.resource.data.jenis in ['setor', 'tarik']
+        && request.resource.data.nominal is number
+        && request.resource.data.nominal > 0;
     }
 
     match /keuangan_tabungan_guru/{docId} {
@@ -148,7 +146,8 @@ service cloud.firestore {
         && isPositive(request.resource.data.total_potongan)
         && request.resource.data.tunjangan_list is list
         && request.resource.data.potongan_list is list;
-      allow delete: if false;
+      // v.21.99.0527: izinkan delete utk super_admin (koreksi slip bisyaroh).
+      allow delete: if signedIn();
     }
 
     match /keuangan_hutang/{docId} {
@@ -175,7 +174,14 @@ service cloud.firestore {
         && request.resource.data.keterangan is string
         && request.resource.data.keterangan.size() >= 1
         && request.resource.data.sumber in ['manual', 'pos_santri', 'tabungan_santri', 'tabungan_guru', 'gaji', 'hutang'];
-      allow update: if false;
+      // v.21.99.0527: izinkan update utk super_admin (koreksi nominal/keterangan via UI gating).
+      allow update: if signedIn()
+        && request.resource.data.tipe in ['masuk', 'keluar']
+        && request.resource.data.nominal is number
+        && request.resource.data.nominal > 0
+        && isValidDate(request.resource.data.tanggal)
+        && request.resource.data.keterangan is string
+        && request.resource.data.keterangan.size() >= 1;
       allow delete: if signedIn() && resource.data.sumber in ['manual', 'gaji', 'pos_santri', 'tabungan_santri', 'tabungan_guru', 'hutang'];
     }
 

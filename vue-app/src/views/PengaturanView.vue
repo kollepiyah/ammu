@@ -62,7 +62,6 @@
         <UiInput v-model="form.alamat" label="Alamat Pondok" />
         <UiInput v-model="form.noTelp" label="No. Telepon" />
         <UiInput v-model="form.namaChannel" label="Nama Channel Pesan" />
-        <UiInput v-model="form.namaPengasuh" label="Nama Pengasuh" placeholder="(muncul di rapor/PDF resmi)" />
       </div>
     </UiCard>
 
@@ -83,7 +82,6 @@
         />
         <UiInput v-model="form.kopLine3" label="Baris 3 (alamat / opsional)" />
         <UiInput v-model="form.kopLine4" label="Baris 4 (telp / opsional)" />
-        <UiInput v-model="form.kopLine5" label="Baris 5 (email / NPSN / opsional)" />
       </div>
       <div class="mt-4 p-3 bg-[var(--bg-card-elevated)] border border-[var(--border-subtle)] rounded-lg text-center">
         <p class="text-xs uppercase tracking-widest font-black text-[var(--text-primary)]">
@@ -92,7 +90,6 @@
         <p class="text-lg font-black text-[var(--text-primary)]">{{ form.kopLine2 || '— Baris 2 —' }}</p>
         <p v-if="form.kopLine3" class="text-xs text-[var(--text-secondary)]">{{ form.kopLine3 }}</p>
         <p v-if="form.kopLine4" class="text-xs text-[var(--text-secondary)]">{{ form.kopLine4 }}</p>
-        <p v-if="form.kopLine5" class="text-xs text-[var(--text-secondary)]">{{ form.kopLine5 }}</p>
       </div>
     </UiCard>
 
@@ -1222,7 +1219,6 @@ function defaultForm() {
     kopLine2: '',
     kopLine3: '',
     kopLine4: '',
-    kopLine5: '',
     logoUrl: '',
     logoKop: '',
     logoQiraati: '',
