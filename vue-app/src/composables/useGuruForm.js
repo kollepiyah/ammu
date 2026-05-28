@@ -46,6 +46,8 @@ export const JABATAN_OPTIONS = [
   'Sekretaris',
   'Admin',
   'Admin Yayasan',
+  // v.21.109.0527: Direktur/Supervisor — akses menu Data Supervisi
+  'Direktur/Supervisor',
   'Pengasuh',
   'Keamanan',
   'Kebersihan'
@@ -55,6 +57,8 @@ export const JABATAN_OPTIONS = [
 export const JABATAN_NO_LEMBAGA = [
   'Admin',
   'Admin Yayasan',
+  // v.21.109.0527: Direktur/Supervisor lintas lembaga (no-lembaga)
+  'Direktur/Supervisor',
   'Pengasuh',
   'Keamanan',
   'Kebersihan',

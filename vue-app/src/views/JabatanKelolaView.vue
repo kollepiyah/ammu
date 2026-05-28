@@ -36,6 +36,8 @@ const DEFAULT_ITEMS = [
   { nama: 'Sekretaris', tipe_pegawai: 'pegawai', tipe_lembaga: 'non-lembaga' },
   { nama: 'Admin', tipe_pegawai: 'pegawai', tipe_lembaga: 'non-lembaga' },
   { nama: 'Admin Yayasan', tipe_pegawai: 'pegawai', tipe_lembaga: 'non-lembaga' },
+  // v.21.109.0527: Direktur/Supervisor untuk fitur Data Supervisi (Batch 2)
+  { nama: 'Direktur/Supervisor', tipe_pegawai: 'pegawai', tipe_lembaga: 'non-lembaga' },
   { nama: 'Pengasuh', tipe_pegawai: 'guru_pegawai', tipe_lembaga: 'non-lembaga' },
   { nama: 'Keamanan', tipe_pegawai: 'pegawai', tipe_lembaga: 'non-lembaga' },
   { nama: 'Kebersihan', tipe_pegawai: 'pegawai', tipe_lembaga: 'non-lembaga' }
