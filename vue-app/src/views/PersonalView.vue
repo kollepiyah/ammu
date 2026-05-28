@@ -136,16 +136,70 @@
         </div>
       </div>
     </div>
+
+    <!-- v.21.110.0527: Catatan Supervisi -->
+    <div
+      v-if="supervisiList.length > 0"
+      class="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)] shadow-sm overflow-hidden"
+    >
+      <div class="px-4 py-3 border-b border-[var(--border-subtle)] flex items-center justify-between">
+        <h3 class="text-sm font-black"><i class="fas fa-clipboard-check text-cyan-600 mr-1.5"></i>Catatan Supervisi</h3>
+        <span class="text-[10px] text-[var(--text-tertiary)] font-bold">{{ supervisiList.length }} catatan</span>
+      </div>
+      <div class="divide-y divide-slate-100 dark:divide-slate-700 max-h-[60vh] overflow-y-auto">
+        <div v-for="s in supervisiList" :key="s.id" class="p-3 md:p-4">
+          <div class="flex items-start justify-between gap-2 flex-wrap">
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-black">{{ s.judul }}</p>
+              <p class="text-[10px] text-[var(--text-secondary)] mt-0.5">
+                <i :class="['fas mr-1', s.target_type === 'guru' ? 'fa-user' : 'fa-school']"></i>
+                {{ s.target_type === 'guru' ? 'Untuk saya' : `Lembaga ${s.target_nama}` }}
+                <span class="text-[var(--text-tertiary)] ml-1.5">· dari {{ s.created_by_nama }} · {{ fmtTglSup(s.createdAt) }}</span>
+              </p>
+            </div>
+            <div class="flex flex-col items-end gap-1">
+              <span :class="['text-[9px] font-black uppercase px-2 py-0.5 rounded', supPrioritasClass(s.prioritas)]">{{ s.prioritas || 'sedang' }}</span>
+              <span :class="['text-[9px] font-black uppercase px-2 py-0.5 rounded', supStatusClass(s.status)]">{{ s.status || 'open' }}</span>
+            </div>
+          </div>
+          <p class="text-xs mt-2 whitespace-pre-line">{{ s.catatan }}</p>
+          <p v-if="s.rekomendasi" class="text-xs text-cyan-700 dark:text-cyan-300 mt-1 italic whitespace-pre-line">
+            <i class="fas fa-lightbulb mr-1"></i>{{ s.rekomendasi }}
+          </p>
+          <div v-if="s.respon_target" class="bg-[var(--bg-card-elevated)] rounded-lg p-2 mt-2 border-l-4 border-emerald-400">
+            <p class="text-[9px] font-bold text-emerald-700 uppercase">Tanggapan ({{ fmtTglSup(s.responded_at) }})</p>
+            <p class="text-xs whitespace-pre-line">{{ s.respon_target }}</p>
+          </div>
+          <div v-if="s.status !== 'selesai'" class="mt-2 space-y-2">
+            <textarea v-model="responText[s.id]" rows="2" placeholder="Tulis tanggapan..." class="w-full px-2 py-1.5 text-xs rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] outline-none focus:ring-2 focus:ring-cyan-500 resize-none"></textarea>
+            <div class="flex gap-2 flex-wrap">
+              <button v-if="(s.status || 'open') === 'open'" @click="updateSupervisiStatus(s, 'in_progress')" class="text-[10px] font-bold bg-cyan-100 text-cyan-700 px-2.5 py-1 rounded-lg hover:bg-cyan-200">
+                <i class="fas fa-play mr-1"></i>Tandai Diproses
+              </button>
+              <button @click="updateSupervisiStatus(s, 'selesai')" class="text-[10px] font-bold bg-emerald-100 text-emerald-700 px-2.5 py-1 rounded-lg hover:bg-emerald-200">
+                <i class="fas fa-check mr-1"></i>Tandai Selesai
+              </button>
+              <button v-if="(responText[s.id] || '').trim()" @click="kirimRespon(s)" class="text-[10px] font-bold bg-cyan-600 text-white px-2.5 py-1 rounded-lg hover:bg-cyan-700">
+                <i class="fas fa-paper-plane mr-1"></i>Kirim Tanggapan
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, reactive } from 'vue'
 import { subscribeColl } from '@/services/firestore'
-import { doc, getDoc } from 'firebase/firestore'
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/services/firebase'
 import { useAuthStore } from '@/stores/auth'
 import { fmtRp, hitungLamaMengajar } from '@/utils/format'
+// v.21.110.0527: catatan supervisi
+import { useToast } from '@/composables/useToast'
+import { isKepalaLembaga } from '@/utils/roleScope'
 
 const auth = useAuthStore()
 const guru = ref(null)
@@ -153,6 +207,11 @@ const slipRaw = ref([])
 const absensiGuru = ref([])
 let unsubSlip = null
 let unsubAbsensi = null
+// v.21.110.0527
+const toast = useToast()
+const supervisiRaw = ref([])
+const responText = reactive({})
+let unsubSupervisi = null
 
 const now = new Date()
 const tahunIni = now.getFullYear()
@@ -206,6 +265,8 @@ function openSlip(g) {
 onMounted(async () => {
   unsubSlip = subscribeColl('keuangan_gaji', (docs) => { slipRaw.value = docs || [] })
   unsubAbsensi = subscribeColl('absensi_shift_guru', (docs) => { absensiGuru.value = docs || [] })
+  // v.21.110.0527: subscribe supervisi
+  unsubSupervisi = subscribeColl('supervisi_catatan', (docs) => { supervisiRaw.value = docs || [] })
   try {
     const snap = await getDoc(doc(db, 'guru', String(auth.sesiAktif?.id)))
     guru.value = snap.exists() ? snap.data() : null
@@ -216,5 +277,79 @@ onMounted(async () => {
 onUnmounted(() => {
   if (unsubSlip) { try { unsubSlip() } catch (e) {} }
   if (unsubAbsensi) { try { unsubAbsensi() } catch (e) {} }
+  if (unsubSupervisi) { try { unsubSupervisi() } catch (e) {} }
 })
+
+// v.21.110.0527: catatan supervisi yg dialamatkan ke saya
+const supervisiList = computed(() => {
+  const me = String(auth.sesiAktif?.id || '')
+  const myLembaga = String(guru.value?.lembaga || auth.sesiAktif?.lembaga || '').toLowerCase()
+  const myLembagaSekolah = String(guru.value?.lembaga_sekolah || auth.sesiAktif?.lembaga_sekolah || '').toLowerCase()
+  const isKepala = isKepalaLembaga({ ...(guru.value || {}), ...(auth.sesiAktif || {}) })
+  return [...(supervisiRaw.value || [])]
+    .filter((c) => {
+      if (!c) return false
+      // Catatan langsung ke guru saya
+      if (c.target_type === 'guru' && String(c.target_id || '') === me) return true
+      // Catatan ke lembaga & saya kepala/PJ lembaga itu
+      if (c.target_type === 'lembaga' && isKepala) {
+        const tname = String(c.target_nama || '').toLowerCase()
+        return tname === myLembaga || tname === myLembagaSekolah
+      }
+      return false
+    })
+    .sort((a, b) => {
+      const ta = a.createdAt?.seconds || 0
+      const tb = b.createdAt?.seconds || 0
+      return tb - ta
+    })
+})
+
+function fmtTglSup(ts) {
+  if (!ts) return '-'
+  try {
+    const d = ts.toDate ? ts.toDate() : new Date(ts.seconds * 1000 || ts)
+    if (isNaN(d.getTime())) return '-'
+    return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
+  } catch { return '-' }
+}
+function supPrioritasClass(p) {
+  if (p === 'tinggi') return 'bg-rose-100 text-rose-700'
+  if (p === 'rendah') return 'bg-slate-100 text-slate-600'
+  return 'bg-amber-100 text-amber-700'
+}
+function supStatusClass(s) {
+  if (s === 'selesai') return 'bg-emerald-100 text-emerald-700'
+  if (s === 'in_progress') return 'bg-cyan-100 text-cyan-700'
+  return 'bg-rose-100 text-rose-700'
+}
+
+async function updateSupervisiStatus(s, newStatus) {
+  try {
+    await setDoc(doc(db, 'supervisi_catatan', String(s.id)), {
+      status: newStatus,
+      updatedAt: serverTimestamp()
+    }, { merge: true })
+    toast.success(newStatus === 'selesai' ? 'Catatan ditandai selesai' : 'Status diperbarui')
+  } catch (e) {
+    toast.error('Gagal: ' + (e.message || e))
+  }
+}
+
+async function kirimRespon(s) {
+  const txt = String(responText[s.id] || '').trim()
+  if (!txt) return
+  try {
+    await setDoc(doc(db, 'supervisi_catatan', String(s.id)), {
+      respon_target: txt,
+      responded_at: serverTimestamp(),
+      status: (s.status === 'selesai') ? 'selesai' : 'in_progress',
+      updatedAt: serverTimestamp()
+    }, { merge: true })
+    responText[s.id] = ''
+    toast.success('Tanggapan terkirim')
+  } catch (e) {
+    toast.error('Gagal: ' + (e.message || e))
+  }
+}
 </script>
