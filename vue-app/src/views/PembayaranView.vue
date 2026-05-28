@@ -87,7 +87,12 @@ const filteredItems = computed(() => {
 const totalPembayaran = computed(() => filteredItems.value.reduce((s, p) => s + (Number(p.nominal) || 0), 0))
 
 onMounted(() => {
-  unsubBayar = subscribeColl('keuangan_pembayaran', (docs) => { pembayaranRaw.value = docs; loading.value = false })
+  // v.21.104.0527: source of truth = keuangan_buku_induk sumber=pos_santri.
+  // Sebelumnya baca keuangan_pembayaran yg tidak ditulis POS → selalu kosong.
+  unsubBayar = subscribeColl('keuangan_buku_induk', (docs) => {
+    pembayaranRaw.value = (docs || []).filter((r) => r.sumber === 'pos_santri')
+    loading.value = false
+  })
   unsubSantri = subscribeColl('santri', (docs) => { santriList.value = docs })
 })
 onUnmounted(() => {
