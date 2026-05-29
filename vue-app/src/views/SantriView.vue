@@ -251,7 +251,7 @@
     </div>
 
     <p class="text-center text-[10px] text-slate-400 dark:text-[var(--text-secondary)] pt-2">
-      <i class="fas fa-circle-info mr-1"></i>Menampilkan {{ santri.length }} santri · v.21.11.0526
+      <i class="fas fa-circle-info mr-1"></i>Menampilkan {{ santri.length }} santri · v.71.0526
     </p>
   </div>
 </template>

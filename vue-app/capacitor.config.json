@@ -1,5 +1,5 @@
 {
-  "appId": "id.web.ammuonline",
+  "appId": "app.ammu.id",
   "appName": "Ammu Online",
   "webDir": "../public/vue",
   "bundledWebRuntime": false,

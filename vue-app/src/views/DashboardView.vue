@@ -53,7 +53,7 @@ const isAdmin = computed(() => auth.isAdmin || auth.sesiAktif?.role === 'admin')
     <DashboardPosts />
 
     <p class="text-center text-[10px] text-slate-400 dark:text-[var(--text-secondary)] pt-2">
-      <i class="fas fa-circle-info mr-1"></i>Portal MU · Vue 3 SPA · v.21.15.0526
+      <i class="fas fa-circle-info mr-1"></i>Portal MU · Vue 3 SPA · v.71.0526
     </p>
   </div>
 </template>
