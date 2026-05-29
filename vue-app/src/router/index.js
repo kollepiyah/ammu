@@ -195,22 +195,38 @@ router.beforeEach(async (to, from, next) => {
 
 // v.20.20.0526: PRELOAD all lazy route chunks in background AFTER initial route loaded
 // → solve jeda navigation (kyai req). Setiap route lazy, click pertama harus fetch chunk → lambat.
-// Solution: trigger import semua component dynamic 2 detik setelah app load,
-// chunks akan cached di browser, click berikutnya instant.
+// v.71.0526: Aggressive prefetch dengan requestIdleCallback (atau microtask fallback).
+//   - Prefetch dimulai SEGERA setelah first navigation, pakai idle time.
+//   - Chunks akan cached di browser, click berikutnya instant.
 let _preloadDone = false
-router.afterEach(() => {
+function _prefetchAllChunks() {
   if (_preloadDone) return
   _preloadDone = true
-  setTimeout(() => {
-    const allRoutes = router.getRoutes()
-    allRoutes.forEach((r) => {
+  const allRoutes = router.getRoutes()
+  // Prefetch dalam batch 3 sekaligus per idle cycle supaya tidak block UI
+  let i = 0
+  function prefetchNextBatch() {
+    if (i >= allRoutes.length) return
+    const batch = allRoutes.slice(i, i + 3)
+    i += 3
+    batch.forEach((r) => {
       const comp = r.components?.default
       if (typeof comp === 'function') {
-        // Lazy import — trigger prefetch
         try { comp() } catch (e) { /* ignore */ }
       }
     })
-  }, 800)
+    // Jadwalkan batch berikutnya saat idle (atau microtask kalau idle callback tidak tersedia)
+    if (typeof window !== 'undefined' && window.requestIdleCallback) {
+      window.requestIdleCallback(prefetchNextBatch, { timeout: 500 })
+    } else {
+      setTimeout(prefetchNextBatch, 50)
+    }
+  }
+  prefetchNextBatch()
+}
+router.afterEach(() => {
+  // Mulai prefetch 200ms setelah first navigation (kasih waktu paint dulu)
+  setTimeout(_prefetchAllChunks, 200)
 })
 
 export default router

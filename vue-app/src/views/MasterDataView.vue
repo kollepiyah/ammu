@@ -1508,4 +1508,8 @@ async function simpanPengaturanRekap() {
               </tr>
             </tbody>
           </table>
-        </div
+        </div>
+      </div>
+    </div>
+  </div>
+</template>

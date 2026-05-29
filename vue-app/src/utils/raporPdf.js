@@ -808,5 +808,7 @@ export async function generateRaporPdf({
   const fn =
     filename ||
     `rapor_${santri.nama || 'santri'}_${raporState.semester || ''}_${raporState.tahun_ajaran || ''}.pdf`
-  doc.save(fn.replace(/\s+/g, '_'))
+  // v.71.0526: pakai saveBlob (native Capacitor save + share di Android/iOS, browser download di web)
+  const { saveBlob } = await import('@/composables/useNativeDownload')
+  await saveBlob(doc.output('blob'), fn.replace(/\s+/g, '_'))
 }

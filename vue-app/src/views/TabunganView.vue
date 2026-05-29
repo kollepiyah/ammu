@@ -880,4 +880,8 @@ async function simpanMutasi() {
     closeModal()
   } catch (e) {
     toast.error('Gagal: ' + (e?.message || e))
-  } fina
+  } finally {
+    saving.value = false
+  }
+}
+</script>

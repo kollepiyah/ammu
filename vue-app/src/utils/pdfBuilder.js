@@ -205,15 +205,17 @@ export function drawTitle(doc, text, opts = {}) {
 
 /**
  * Save & download. Returns blob URL for preview if requested.
+ * v.71.0526: Async — pakai saveBlob (native Filesystem + share di Capacitor, browser download di web).
  */
-export function savePdf(doc, filename = 'document.pdf', { preview = false } = {}) {
+export async function savePdf(doc, filename = 'document.pdf', { preview = false } = {}) {
   if (preview) {
     const blob = doc.output('blob')
     const url = URL.createObjectURL(blob)
     window.open(url, '_blank')
     return url
   }
-  doc.save(filename)
+  const { saveBlob } = await import('@/composables/useNativeDownload')
+  await saveBlob(doc.output('blob'), filename)
 }
 
 /**

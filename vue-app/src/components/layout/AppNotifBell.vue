@@ -68,10 +68,19 @@
               @click="bukaItem(it)"
               class="w-full text-left p-3 hover:bg-slate-50 dark:hover:bg-slate-900/30 transition flex items-start gap-3"
             >
+              <!-- v.71.0526: thumbnail image untuk notif post, fallback ke icon round -->
+              <img
+                v-if="it.thumbnail"
+                :src="it.thumbnail"
+                alt=""
+                class="flex-shrink-0 w-10 h-10 rounded-lg object-cover border border-slate-200 dark:border-slate-700"
+                @error="$event.target.style.display='none'"
+              />
               <div
-                :class="['flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center', colorBg(it.color)]"
+                v-else
+                :class="['flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center', colorBg(it.color)]"
               >
-                <i :class="['fas text-xs', it.icon || 'fa-bell', colorText(it.color)]"></i>
+                <i :class="['fas text-sm', it.icon || 'fa-bell', colorText(it.color)]"></i>
               </div>
               <div class="flex-1 min-w-0">
                 <p class="text-xs font-black text-[var(--text-primary)] truncate">{{ it.judul }}</p>

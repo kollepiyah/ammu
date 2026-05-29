@@ -551,4 +551,15 @@ async function hapus() {
     danger: true
   })
   if (!ok) return
-  savin
+  saving.value = true
+  try {
+    await hapusKegiatan(form.id)
+    toast.success('Dihapus')
+    modalOpen.value = false
+  } catch (e) {
+    toast.error('Error: ' + (e.message || e))
+  } finally {
+    saving.value = false
+  }
+}
+</script>

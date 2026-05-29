@@ -99,7 +99,11 @@ export function useNotifications() {
       ts: tsMs(p.createdAt || p.created_at),
       link: '/posts',
       icon: 'fa-bullhorn',
-      color: 'teal'
+      color: 'teal',
+      // v.71.0526: thumbnail image untuk notif post (1 image pertama kalau ada)
+      thumbnail: Array.isArray(p.gambar_urls) && p.gambar_urls.length > 0
+        ? p.gambar_urls[0]
+        : (p.thumbnail || p.image_url || '')
     }))
   }
 

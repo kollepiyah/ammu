@@ -31,10 +31,10 @@
       </p>
     </div>
 
-    <!-- Agenda list (max 3) -->
+    <!-- v.71.0526: max 2 agenda (kyai req — match tinggi widget Hijri di sebelahnya) -->
     <ul v-else class="space-y-2">
       <li
-        v-for="item in agenda.slice(0, 3)"
+        v-for="item in agenda.slice(0, 2)"
         :key="item.id"
         class="flex gap-3 items-start p-2.5 bg-cyan-50/60 dark:bg-cyan-900/15 rounded-xl border border-cyan-100 dark:border-cyan-800/50"
       >

@@ -96,7 +96,7 @@
           <!-- GAMBAR -->
           <div>
             <label class="block text-[11px] font-black text-[var(--text-primary)] uppercase tracking-wider mb-2">
-              Gambar (opsional, max {{ MAX_IMAGES }} gambar, total max {{ Math.round(MAX_TOTAL_BYTES / 1024 / 1024) }} MB)
+              Gambar (opsional, max {{ MAX_IMAGES }} gambar, total max {{ (MAX_TOTAL_BYTES / 1024 / 1024).toFixed(MAX_TOTAL_BYTES < 1048576 ? 1 : 0) }} MB)
             </label>
             <div class="flex items-center gap-3">
               <label class="bg-teal-100 hover:bg-teal-200 dark:bg-teal-900/40 dark:hover:bg-teal-900/60 text-teal-700 dark:text-teal-300 font-bold px-4 py-2 rounded-lg text-sm cursor-pointer transition border border-teal-200 dark:border-teal-700">
@@ -246,8 +246,15 @@ function closeModal() {
 
 // v.21.106.0527: wire Pengaturan Web > Postingan settings.
 // postinganMaxImages (default 5), postinganMaxSizeKb (default 16384 KB = 16MB).
-const MAX_IMAGES = computed(() => Number(settings.settings?.postinganMaxImages) || 5)
-const MAX_TOTAL_BYTES = computed(() => (Number(settings.settings?.postinganMaxSizeKb) || 16384) * 1024)
+// v.72.0526: minimum 5 images & 16 MB supaya tidak fragmentasi small limit (admin set 0/small yang bikin user stuck).
+const MAX_IMAGES = computed(() => {
+  const v = Number(settings.settings?.postinganMaxImages)
+  return v > 0 ? v : 10
+})
+const MAX_TOTAL_BYTES = computed(() => {
+  const kb = Number(settings.settings?.postinganMaxSizeKb)
+  return (kb > 0 ? kb : 16384) * 1024
+})
 const COMPRESS_THRESHOLD = 1024 * 1024   // 1 MB (compress per-file > 1MB, hardcoded)
 
 async function compressImage(file) {

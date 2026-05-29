@@ -38,17 +38,10 @@ function loadExcelJS() {
 }
 
 /** Util: trigger download blob. */
-function downloadBlob(blob, filename) {
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = filename
-  document.body.appendChild(a)
-  a.click()
-  setTimeout(() => {
-    URL.revokeObjectURL(url)
-    document.body.removeChild(a)
-  }, 100)
+// v.71.0526: downloadBlob via useNativeDownload (native Filesystem + share di Capacitor, browser download di web).
+async function downloadBlob(blob, filename) {
+  const { saveBlob } = await import('@/composables/useNativeDownload')
+  await saveBlob(blob, filename)
 }
 
 export function useExcel() {
@@ -107,7 +100,7 @@ export function useExcel() {
 
     const buffer = await wb.xlsx.writeBuffer()
     const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
-    downloadBlob(blob, opts.filename || `export_${Date.now()}.xlsx`)
+    await downloadBlob(blob, opts.filename || `export_${Date.now()}.xlsx`)
   }
 
   /**
@@ -178,7 +171,7 @@ export function useExcel() {
 
     const buffer = await wb.xlsx.writeBuffer()
     const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
-    downloadBlob(blob, opts.filename || `export_${Date.now()}.xlsx`)
+    await downloadBlob(blob, opts.filename || `export_${Date.now()}.xlsx`)
   }
 
   /**

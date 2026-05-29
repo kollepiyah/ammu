@@ -944,7 +944,10 @@ async function exportRekapPdf() {
       },
       headStyles: { fillColor: [16, 185, 129], textColor: 255, fontStyle: 'bold' }
     })
-    doc.save(
+    // v.71.0526: native save di Android/iOS via Capacitor, web download di browser
+    const { saveBlob } = await import('@/composables/useNativeDownload')
+    await saveBlob(
+      doc.output('blob'),
       `Rekap_Absensi_Guru_${selectedYear.value}_${String(selectedMonth.value).padStart(2, '0')}.pdf`
     )
     toast.success('PDF berhasil di-ekspor')

@@ -20,6 +20,27 @@ const prev = () => {
   idx.value = (idx.value - 1 + props.gambar_urls.length) % props.gambar_urls.length
 }
 
+// v.72.0526: Touch swipe gesture untuk carousel — Instagram/native feel
+let touchStartX = 0
+let touchEndX = 0
+const SWIPE_THRESHOLD = 40 // px minimum untuk count as swipe
+function onTouchStart(e) {
+  touchStartX = e.changedTouches[0].screenX
+}
+function onTouchEnd(e) {
+  touchEndX = e.changedTouches[0].screenX
+  const delta = touchEndX - touchStartX
+  if (Math.abs(delta) < SWIPE_THRESHOLD) return
+  if (props.gambar_urls.length < 2) return
+  if (delta < 0) {
+    // swipe kiri → next
+    next()
+  } else {
+    // swipe kanan → prev
+    prev()
+  }
+}
+
 const formatted = computed(() => {
   if (!props.tanggal) return ''
   const d = new Date(props.tanggal)
@@ -64,7 +85,12 @@ const formatted = computed(() => {
       </div>
     </header>
     <h2 class="judul">{{ judul }}</h2>
-    <div v-if="gambar_urls && gambar_urls.length > 0" class="gal">
+    <div
+      v-if="gambar_urls && gambar_urls.length > 0"
+      class="gal"
+      @touchstart.passive="onTouchStart"
+      @touchend.passive="onTouchEnd"
+    >
       <img :src="gambar_urls[idx]" :alt="judul" class="gal-img" />
       <div v-if="gambar_urls.length > 1" class="cnt">{{ idx + 1 }}/{{ gambar_urls.length }}</div>
       <button v-if="gambar_urls.length > 1" type="button" class="nav nav-l" @click="prev">

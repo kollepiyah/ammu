@@ -18,6 +18,10 @@ const pinia = createPinia()
 app.use(pinia)
 app.use(router)
 
+// v.71.0526: register v-haptic directive globally untuk tombol native feel
+import { vHaptic } from './composables/useHaptic'
+app.directive('haptic', vHaptic)
+
 // Init dark mode dari storage SEBELUM mount supaya tidak flash
 const ui = useUiStore(pinia)
 ui.initDarkFromStorage()
