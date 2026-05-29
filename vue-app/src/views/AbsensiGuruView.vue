@@ -16,7 +16,7 @@
       >
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           <div>
-            <h1 class="text-xl md:text-2xl font-black text-[var(--text-primary)]">
+            <h1 class="text-base md:text-lg font-black text-[var(--text-primary)]">
               <i class="fas fa-fingerprint text-teal-500 mr-2"></i>Rekap Absensi Guru
             </h1>
             <p class="text-xs text-[var(--text-secondary)] mt-0.5">
@@ -219,24 +219,29 @@
               >&#9632; Libur</span
             >
           </div>
-          <div class="flex gap-2">
-            <button
-              @click="showLiburModal = true"
-              class="bg-rose-500 hover:bg-rose-600 text-white text-xs font-black px-3 py-1.5 rounded-lg flex items-center gap-1.5"
+          <div class="flex gap-2 flex-wrap">
+            <!-- v.21.114.0528: Kelola libur pindah ke Kalender Kegiatan (kyai req) — tombol link sekedarnya -->
+            <router-link
+              to="/kalender"
+              class="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-black px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition"
+              title="Atur libur (manual & nasional) di menu Kalender Kegiatan"
             >
-              <i class="fas fa-calendar-plus"></i> Kelola Libur
-            </button>
+              <i class="fas fa-calendar-plus"></i> Atur Libur di Kalender
+            </router-link>
+            <!-- v.21.115.0528: standardize per design-tokens — h-9 px-3 rounded-xl -->
             <button
               @click="exportRekapExcel"
-              class="bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-xs font-black px-3 py-1.5 rounded-lg flex items-center gap-1.5"
+              aria-label="Ekspor rekap absensi guru Excel"
+              class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition cursor-pointer"
             >
-              <i class="fas fa-file-excel"></i> Excel
+              <i class="fas fa-file-excel"></i>Excel
             </button>
             <button
               @click="exportRekapPdf"
-              class="bg-rose-600 hover:bg-rose-700 text-white text-xs font-black px-3 py-1.5 rounded-lg flex items-center gap-1.5"
+              aria-label="Cetak rekap absensi guru PDF"
+              class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold transition cursor-pointer"
             >
-              <i class="fas fa-file-pdf"></i> PDF
+              <i class="fas fa-file-pdf"></i>PDF
             </button>
           </div>
         </div>
@@ -337,60 +342,7 @@
         </div>
       </div>
 
-      <!-- Modal Kelola Hari Libur -->
-      <div
-        v-if="showLiburModal"
-        class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-3"
-        @click.self="showLiburModal = false"
-      >
-        <div
-          class="bg-[var(--bg-card)] rounded-2xl p-5 max-w-md w-full max-h-[80vh] overflow-y-auto"
-        >
-          <div class="flex items-center justify-between mb-3">
-            <h3 class="text-sm font-black text-[var(--text-primary)]">
-              <i class="fas fa-calendar-plus text-rose-500 mr-2"></i>
-              Kelola Hari Libur &mdash; {{ getBulanLabel(selectedMonth) }} {{ selectedYear }}
-            </h3>
-            <button @click="showLiburModal = false" class="text-[var(--text-tertiary)] hover:text-[var(--text-primary)]">
-              <i class="fas fa-times"></i>
-            </button>
-          </div>
-          <p class="text-xs text-[var(--text-secondary)] mb-3">
-            Klik tanggal untuk toggle libur. Tersimpan di Pengaturan global.
-          </p>
-          <div class="grid grid-cols-7 gap-1.5">
-            <button
-              v-for="d in daysInMonth"
-              :key="'l' + d"
-              @click="toggleHariLibur(d)"
-              :class="[
-                'p-2 rounded-lg text-xs font-bold border',
-                isHariLibur(d)
-                  ? 'bg-rose-500 text-white border-rose-600'
-                  : 'bg-[var(--bg-card)] border-[var(--border-default)] text-[var(--text-primary)] hover:bg-rose-50'
-              ]"
-            >
-              {{ d }}
-            </button>
-          </div>
-          <div class="flex justify-end gap-2 mt-4 pt-3 border-t border-[var(--border-subtle)]">
-            <button
-              @click="showLiburModal = false"
-              class="px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--bg-muted)] rounded-lg"
-            >
-              Tutup
-            </button>
-            <button
-              @click="saveHariLibur"
-              :disabled="savingLibur"
-              class="bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white text-xs font-black px-3 py-1.5 rounded-lg"
-            >
-              <i :class="['fas', savingLibur ? 'fa-spinner fa-spin' : 'fa-save', 'mr-1']"></i>
-              {{ savingLibur ? 'Menyimpan...' : 'Simpan' }}
-            </button>
-          </div>
-        </div>
-      </div>
+      <!-- v.21.114.0528: Modal Kelola Hari Libur dihapus — pindah ke Kalender Kegiatan (kyai req) -->
 
       <!-- TAB: Input Harian -->
       <div
@@ -567,6 +519,8 @@ import { useExcel } from '@/composables/useExcel'
 import { useToast } from '@/composables/useToast'
 import { useSettingsStore } from '@/stores/settings'
 import { jsPDFFromCDN } from '@/services/pdf'
+// v.21.114.0528: pakai kegiatan composable utk derive hari libur dari event multi-day
+import { useKegiatan } from '@/composables/useKegiatan'
 
 const {
   filteredAbsensi,
@@ -586,6 +540,8 @@ const {
 const { importFile, exportSimple } = useExcel()
 const settingsStore = useSettingsStore()
 const toast = useToast()
+// v.21.114.0528: kegiatan composable utk derive hari libur dari event multi-day
+const { kegiatanRaw } = useKegiatan()
 
 const tabMode = ref('harian')
 const lastImportFileName = ref('')
@@ -780,10 +736,11 @@ async function saveHarian() {
 }
 
 // =====================================================
-// HARI LIBUR
+// HARI LIBUR — v.21.114.0528: kelola pindah ke Kalender Kegiatan
+// Sumber: (a) settings.hariLibur (legacy backward-compat single-day toggles)
+//         (b) kegiatan_kalender events dengan tipe='libur'|'libur_nasional' (multi-day)
+// Mahari libur Jumat tetap honor settings.liburJumat default true
 // =====================================================
-const showLiburModal = ref(false)
-const savingLibur = ref(false)
 const hariLibur = ref([])
 
 watch(
@@ -793,6 +750,29 @@ watch(
   },
   { immediate: true }
 )
+
+// v.21.114.0528: ekspansi event libur (multi-day) → Set of YYYY-MM-DD strings
+const liburEventDates = computed(() => {
+  const set = new Set()
+  for (const k of kegiatanRaw.value || []) {
+    if (k.tipe !== 'libur' && k.tipe !== 'libur_nasional') continue
+    const start = k.tgl_mulai
+    const end = k.tgl_akhir || k.tgl_mulai
+    if (!start) continue
+    const sd = new Date(start)
+    const ed = new Date(end)
+    if (isNaN(sd.getTime()) || isNaN(ed.getTime())) continue
+    const cur = new Date(sd)
+    while (cur <= ed) {
+      const y = cur.getFullYear()
+      const m = String(cur.getMonth() + 1).padStart(2, '0')
+      const d = String(cur.getDate()).padStart(2, '0')
+      set.add(`${y}-${m}-${d}`)
+      cur.setDate(cur.getDate() + 1)
+    }
+  }
+  return set
+})
 
 const daysInMonth = computed(() => {
   const y = selectedYear.value
@@ -810,28 +790,8 @@ function isHariLibur(d) {
   const iso = isoDateOf(d)
   const dow = new Date(selectedYear.value, selectedMonth.value - 1, d).getDay()
   if (dow === 5 && settingsStore.settings?.liburJumat !== false) return true
-  return hariLibur.value.includes(iso)
-}
-
-function toggleHariLibur(d) {
-  const iso = isoDateOf(d)
-  const idx = hariLibur.value.indexOf(iso)
-  if (idx >= 0) hariLibur.value.splice(idx, 1)
-  else hariLibur.value.push(iso)
-}
-
-async function saveHariLibur() {
-  savingLibur.value = true
-  try {
-    const merged = { ...settingsStore.settings, hariLibur: [...hariLibur.value] }
-    await setOne('settings', 'general', merged, true)
-    toast.success('Hari libur tersimpan')
-    showLiburModal.value = false
-  } catch (e) {
-    toast.error('Gagal simpan: ' + (e.message || e))
-  } finally {
-    savingLibur.value = false
-  }
+  if (hariLibur.value.includes(iso)) return true
+  return liburEventDates.value.has(iso)
 }
 
 // =====================================================

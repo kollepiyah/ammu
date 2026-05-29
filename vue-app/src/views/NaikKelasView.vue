@@ -216,23 +216,26 @@
           placeholder="Cari nama santri..."
           class="flex-1 min-w-[180px] text-xs px-3 py-1.5 border border-[var(--border-default)] rounded-lg bg-white dark:bg-slate-900 text-[var(--text-primary)]"
         />
+        <!-- v.21.115.0528: standardize per design-tokens — Excel emerald, PDF cyan -->
         <button
           v-if="riwayatLembaga && riwayatList.length > 0"
           @click="exportRiwayatExcel"
           :disabled="exportingExcel"
-          class="text-xs font-black px-3 py-1.5 rounded-lg bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white disabled:opacity-50 flex items-center gap-1.5"
+          aria-label="Ekspor riwayat naik kelas ke Excel"
+          class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold disabled:opacity-50 transition cursor-pointer"
         >
-          <i class="fas fa-file-excel"></i>
+          <i :class="['fas', exportingExcel ? 'fa-spinner fa-spin' : 'fa-file-excel']"></i>
           {{ exportingExcel ? 'Mengeksport…' : 'Excel' }}
         </button>
         <button
           v-if="riwayatLembaga && riwayatList.length > 0"
           @click="exportRiwayatPdf"
           :disabled="exportingPdf"
-          class="text-xs font-black px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white disabled:opacity-50 flex items-center gap-1.5"
+          aria-label="Cetak riwayat naik kelas PDF"
           title="Cetak PDF Daftar Riwayat"
+          class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold disabled:opacity-50 transition cursor-pointer"
         >
-          <i class="fas fa-file-pdf"></i>
+          <i :class="['fas', exportingPdf ? 'fa-spinner fa-spin' : 'fa-file-pdf']"></i>
           {{ exportingPdf ? 'Mencetak…' : 'PDF' }}
         </button>
       </div>
@@ -799,11 +802,13 @@
               >
                 Batal
               </button>
-<button
+              <!-- v.21.115.0528: standardize per design-tokens — Ekspor PDF cyan -->
+              <button
                 @click="eksporKartuPdf"
                 :disabled="exportingKartuPdf"
-                class="px-4 py-2 text-sm font-bold rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white cursor-pointer flex items-center gap-1.5 no-print disabled:opacity-50"
+                aria-label="Ekspor kartu kenaikan PDF A4"
                 title="Download Kartu Kenaikan sebagai PDF (A4 portrait)"
+                class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer no-print"
               >
                 <i :class="['fas', exportingKartuPdf ? 'fa-spinner fa-spin' : 'fa-file-pdf']"></i>
                 {{ exportingKartuPdf ? 'Mengekspor…' : 'Ekspor PDF' }}

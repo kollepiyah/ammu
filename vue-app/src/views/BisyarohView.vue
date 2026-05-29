@@ -656,14 +656,10 @@ async function hapusSlipTerpilih() {
 const toast = useToast()
 
 // ─── Role guards ──────────────────────────────────────────────────────────
+// v.21.115.0528: gunakan cekHakAkses('akses_keuangan') untuk konsisten dengan menu gate.
+// Admin biasa tidak masuk (per spec kyai — admin tanpa akses keuangan = tidak boleh lihat bisyaroh).
 const isAdminKeu = computed(() => {
-  const role = auth.sesiAktif?.role_sistem
-  return (
-    role === 'admin' ||
-    role === 'super_admin' ||
-    role === 'admin_keuangan' ||
-    auth.sesiAktif?.id === 'admin'
-  )
+  return auth.cekHakAkses('akses_keuangan')
 })
 const isGuru = computed(() => {
   return !isAdminKeu.value && auth.sesiAktif?.role === 'guru'

@@ -354,7 +354,13 @@ async function simpanTp() {
   }
 }
 async function hapusTp(idx) {
-  if (!window.confirm(`Hapus TP "${tpList.value[idx]}"?`)) return
+  // v.21.115.0528: pakai useConfirm bukan native window.confirm
+  const ok = await confirmDlg.ask({
+    title: 'Hapus Tahun Pelajaran?',
+    text: `TP "${tpList.value[idx]}" akan dihapus permanen.`,
+    icon: 'warning'
+  })
+  if (!ok) return
   try {
     const arr = [...tpList.value]
     arr.splice(idx, 1)
@@ -1022,19 +1028,24 @@ async function simpanPengaturanRekap() {
             <button
               v-if="tp !== tpAktif"
               @click="setTpAktif(tp)"
-              class="text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 px-2 py-1 rounded text-xs font-bold"
+              aria-label="Set sebagai TP Aktif"
               title="Set sebagai TP Aktif"
+              class="text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 px-2 py-1 rounded text-xs font-bold"
             >
               <i class="fas fa-check"></i>
             </button>
             <button
               @click="editTp(idx)"
+              aria-label="Edit Tahun Pelajaran"
+              title="Edit Tahun Pelajaran"
               class="text-cyan-600 hover:bg-cyan-50 dark:hover:bg-cyan-900/30 px-2 py-1 rounded text-xs"
             >
               <i class="fas fa-edit"></i>
             </button>
             <button
               @click="hapusTp(idx)"
+              aria-label="Hapus Tahun Pelajaran"
+              title="Hapus Tahun Pelajaran"
               class="text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 px-2 py-1 rounded text-xs"
             >
               <i class="fas fa-times"></i>

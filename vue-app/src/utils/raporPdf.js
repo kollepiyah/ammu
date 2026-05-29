@@ -793,7 +793,9 @@ export async function generateRaporPdf({
     y = await generatePraPtptPdf(doc, y, santri, schema, raporState, settings)
   } else if (schema?.perKelas) {
     y = await generateDiniyahPdf(doc, y, santri, schema, raporState, settings)
-  } else if (lembaga === 'PTPT') {
+  } else if (lembaga === 'PTPT' || lembaga === 'PPPH') {
+    // v.21.115.0528: PPPH (Pasca PTPT Program Hadits) ikut format PTPT, bukan TPQ.
+    // Sebelum fix: PPPH falls through ke generateTpqPdf yang format-nya beda lembaga.
     y = await generatePtptPdf(doc, y, santri, schema, raporState, settings)
   } else {
     y = await generateTpqPdf(doc, y, santri, schema, raporState, settings)

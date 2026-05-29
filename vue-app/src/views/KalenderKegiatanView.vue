@@ -17,8 +17,9 @@
         <div class="flex items-center gap-2">
           <button
             @click="prevMonth"
-            class="w-8 h-8 rounded-full bg-[var(--bg-muted)] hover:bg-slate-200 dark:hover:bg-slate-600 flex items-center justify-center transition cursor-pointer"
+            aria-label="Bulan sebelumnya"
             title="Bulan sebelumnya"
+            class="w-8 h-8 rounded-full bg-[var(--bg-muted)] hover:bg-slate-200 dark:hover:bg-slate-600 flex items-center justify-center transition cursor-pointer"
           >
             <i class="fas fa-chevron-left text-[var(--text-secondary)] text-xs"></i>
           </button>
@@ -31,8 +32,9 @@
           </button>
           <button
             @click="nextMonth"
-            class="w-8 h-8 rounded-full bg-[var(--bg-muted)] hover:bg-slate-200 dark:hover:bg-slate-600 flex items-center justify-center transition cursor-pointer"
+            aria-label="Bulan berikutnya"
             title="Bulan berikutnya"
+            class="w-8 h-8 rounded-full bg-[var(--bg-muted)] hover:bg-slate-200 dark:hover:bg-slate-600 flex items-center justify-center transition cursor-pointer"
           >
             <i class="fas fa-chevron-right text-[var(--text-secondary)] text-xs"></i>
           </button>

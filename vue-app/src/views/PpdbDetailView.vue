@@ -9,7 +9,7 @@
           <RouterLink to="/psb" class="text-[11px] text-teal-600 hover:underline font-bold">
             <i class="fas fa-arrow-left mr-1"></i>Kembali ke Daftar PSB
           </RouterLink>
-          <h1 class="text-xl md:text-2xl font-black text-[var(--text-primary)] mt-1">
+          <h1 class="text-base md:text-lg font-black text-[var(--text-primary)] mt-1">
             <i class="fas fa-user-graduate text-teal-500 mr-2"></i>{{ pendaftar.nama || '...' }}
           </h1>
           <p class="text-xs text-[var(--text-secondary)] mt-0.5">

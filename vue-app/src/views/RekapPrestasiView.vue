@@ -237,18 +237,19 @@
         <i class="fas fa-info-circle mr-1 text-cyan-500"></i>
         Edit kolom <b>Awal</b> & <b>Akhir</b>, lalu klik <b>Simpan</b>. Total auto-compute untuk PTPT.
       </div>
+      <!-- v.21.115.0528: standardize per design-tokens — Cetak cyan, PDF cyan, Excel emerald, Simpan primary -->
       <div class="flex flex-wrap gap-2">
-        <button @click="cetakHTML()" class="bg-slate-700 hover:bg-slate-800 text-white text-xs font-bold py-2 px-3 rounded-lg shadow-sm">
-          <i class="fas fa-print mr-1"></i>Cetak
+        <button @click="cetakHTML()" aria-label="Cetak rekap HTML" class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold transition cursor-pointer">
+          <i class="fas fa-print"></i>Cetak
         </button>
-        <button @click="exportPdf()" class="bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold py-2 px-3 rounded-lg shadow-sm" :disabled="busy">
-          <i class="fas fa-file-pdf mr-1"></i>PDF
+        <button @click="exportPdf()" :disabled="busy" aria-label="Ekspor rekap PDF" class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer">
+          <i class="fas fa-file-pdf"></i>PDF
         </button>
-        <button @click="exportExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-2 px-3 rounded-lg shadow-sm" :disabled="busy">
-          <i class="fas fa-file-excel mr-1"></i>Excel
+        <button @click="exportExcel()" :disabled="busy" aria-label="Ekspor rekap Excel" class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer">
+          <i class="fas fa-file-excel"></i>Excel
         </button>
-        <button @click="simpanRekap()" class="bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-black py-2 px-4 rounded-lg shadow-md" :disabled="busy">
-          <i class="fas fa-save mr-1"></i>{{ busy ? 'Menyimpan...' : 'SIMPAN' }}
+        <button @click="simpanRekap()" :disabled="busy" aria-label="Simpan rekap" class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] disabled:opacity-50 text-white text-xs font-black transition cursor-pointer">
+          <i :class="['fas', busy ? 'fa-spinner fa-spin' : 'fa-save']"></i>{{ busy ? 'Menyimpan...' : 'SIMPAN' }}
         </button>
       </div>
     </div>
@@ -303,9 +304,10 @@
     <!-- ============= MODE 2: BULANAN (editable input table) ============= -->
     <div v-else-if="mode === 'bulanan'" class="bg-white dark:bg-slate-800 rounded-2xl p-2 md:p-3 border border-slate-200 dark:border-slate-700 shadow-sm overflow-x-auto">
       <table class="min-w-full text-xs border-collapse">
-        <thead class="bg-slate-100 sticky top-0">
+        <thead class="bg-slate-100 sticky top-0 z-10">
           <tr>
-            <th class="py-2 px-2 border border-slate-300 font-black text-left text-[10px] uppercase text-slate-700">Nama Santri</th>
+            <!-- v.21.115.0528: Nama Santri sticky kiri supaya tetap visible saat scroll horizontal mobile -->
+            <th class="py-2 px-2 border border-slate-300 font-black text-left text-[10px] uppercase text-slate-700 sticky left-0 bg-slate-100 z-20 min-w-[140px]">Nama Santri</th>
             <th class="py-2 px-2 border border-slate-300 font-black text-center text-[10px] text-slate-700">L/P</th>
             <th class="py-2 px-2 border border-slate-300 font-black text-center text-[10px] text-slate-700">Lembaga/Kelas</th>
             <th v-if="hasPTPT" class="py-2 px-2 border border-slate-300 font-black text-center text-[10px] bg-rose-50 text-rose-900">Juz</th>
@@ -322,7 +324,8 @@
               </td>
             </tr>
             <tr v-for="s in grp.santri" :key="s.id" class="hover:bg-cyan-50/30">
-              <td class="p-2 border border-slate-300 font-bold text-slate-800 whitespace-nowrap">{{ s.nama }}</td>
+              <!-- v.21.115.0528: nama santri body sticky kiri -->
+              <td class="p-2 border border-slate-300 font-bold text-slate-800 whitespace-nowrap sticky left-0 bg-white dark:bg-slate-800 z-[1]">{{ s.nama }}</td>
               <td class="p-2 border border-slate-300 text-center font-bold">{{ s.jk || '-' }}</td>
               <td class="p-2 border border-slate-300 text-center text-[10px]">{{ s.lembaga }} - {{ s.kelas || '-' }}</td>
               <td v-if="hasPTPT" class="p-1 border border-slate-300 bg-rose-50/40">

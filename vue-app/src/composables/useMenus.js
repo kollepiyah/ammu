@@ -42,7 +42,8 @@ const ALL_MENUS = [
   { group: 'Keuangan', name: 'Dashboard Keuangan', path: '/keuangan', icon: 'fa-chart-line', roles: ['admin'], available: true, perm: 'akses_keuangan' },
   { group: 'Keuangan', name: 'POS Santri', path: '/pos-santri', icon: 'fa-cash-register', roles: ['admin'], available: true, perm: 'akses_keuangan' },
   // v.20.18.0526: Admin = "Bisyaroh Guru/Pegawai" (mengatur), guru = "Slip Bisyaroh" (lihat slip-nya). Per-role label split.
-  { group: 'Keuangan', name: 'Bisyaroh Guru/Pegawai', path: '/bisyaroh', icon: 'fa-hand-holding-usd', roles: ['admin'], available: true },
+  // v.21.115.0528: Bisyaroh kelola butuh akses_keuangan (super_admin / admin_keuangan), bukan admin biasa.
+  { group: 'Keuangan', name: 'Bisyaroh Guru/Pegawai', path: '/bisyaroh', icon: 'fa-hand-holding-usd', roles: ['admin'], available: true, perm: 'akses_keuangan' },
   { group: 'Keuangan', name: 'Slip Bisyaroh', path: '/bisyaroh', icon: 'fa-hand-holding-usd', roles: ['guru'], available: true },
   // v.20.14.0526: Pembayaran PALING ATAS di group Keuangan santri (kyai req)
   { group: 'Keuangan', name: 'Pembayaran', path: '/pembayaran', icon: 'fa-credit-card', roles: ['santri'], available: true },
@@ -51,7 +52,8 @@ const ALL_MENUS = [
   // v.20.14.0526: Tunggakan & Riwayat digabung jadi 1 menu (sudah ada tab filter Belum Lunas / Lunas di dalam page)
   { group: 'Keuangan', name: 'Tagihan Saya', path: '/tagihan', icon: 'fa-receipt', roles: ['santri'], available: true },
   // v.20.12.0526: Tabungan untuk admin (label tanpa "Saya")
-  { group: 'Keuangan', name: 'Tabungan', path: '/tabungan', icon: 'fa-piggy-bank', roles: ['admin'], available: true },
+  // v.21.115.0528: Tabungan admin butuh akses_keuangan (super_admin / admin_keuangan), bukan admin biasa.
+  { group: 'Keuangan', name: 'Tabungan', path: '/tabungan', icon: 'fa-piggy-bank', roles: ['admin'], available: true, perm: 'akses_keuangan' },
   { group: 'Keuangan', name: 'Buku Induk', path: '/buku-induk', icon: 'fa-book', roles: ['admin'], available: true, perm: 'akses_keuangan' },
   // v.21.101.0527: Ekspor riwayat per santri (tagihan+pembayaran+tabungan 1 tahun)
   { group: 'Keuangan', name: 'Riwayat Santri', path: '/riwayat-santri', icon: 'fa-file-export', roles: ['admin'], available: true, perm: 'akses_keuangan' },

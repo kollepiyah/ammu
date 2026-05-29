@@ -101,19 +101,20 @@ const routes = [
       // Phase 5.10 + 5.11: Field Order + ACF Custom Field schema editor
       { path: 'field-schema', name: 'field-schema', component: FieldSchemaView, meta: { admin: true } },
       // Batch 3 Phase 5.12-5.18: Keuangan + Rapor + Kritik
-      { path: 'keuangan', name: 'keuangan', component: KeuanganDashboardView, meta: { admin: true } },
+      // v.21.115.0528: meta.keuangan = perlu cekHakAkses('akses_keuangan') — admin biasa diblok per kyai spec.
+      { path: 'keuangan', name: 'keuangan', component: KeuanganDashboardView, meta: { keuangan: true } },
       // v.20.6.0526: Tagihan accessible santri (lihat tunggakan + riwayat pembayaran)
       { path: 'tagihan', name: 'tagihan', component: TagihanView },
       // v.20.12.0526: Pembayaran santri/wali — placeholder fitur 2-jalur
       { path: 'pembayaran', name: 'pembayaran', component: PembayaranView },
       // v.55.0526: POS Santri page — wire ModalPOS untuk transaksi cepat
-      { path: 'pos-santri', name: 'pos-santri', component: PosSantriView, meta: { admin: true } },
-      { path: 'pos-riwayat', name: 'pos-riwayat', component: RiwayatPosView, meta: { admin: true } },
+      { path: 'pos-santri', name: 'pos-santri', component: PosSantriView, meta: { keuangan: true } },
+      { path: 'pos-riwayat', name: 'pos-riwayat', component: RiwayatPosView, meta: { keuangan: true } },
       // v.21.101.0527: Ekspor riwayat per santri (Tagihan + Pembayaran + Tabungan)
-      { path: 'riwayat-santri', name: 'riwayat-santri', component: RiwayatSantriView, meta: { admin: true } },
-      // v.20.6.0526: Tabungan — santri boleh lihat tabungannya sendiri
+      { path: 'riwayat-santri', name: 'riwayat-santri', component: RiwayatSantriView, meta: { keuangan: true } },
+      // v.20.6.0526: Tabungan — santri boleh lihat tabungannya sendiri (no meta gate, view-level filter scope ke santri_id sendiri)
       { path: 'tabungan', name: 'tabungan', component: TabunganView },
-      // v.20.6.0526: Bisyaroh — guru BOLEH lihat slip bisyarohnya sendiri
+      // v.20.6.0526: Bisyaroh — guru BOLEH lihat slip bisyarohnya sendiri (no meta gate, BisyarohView gating by role)
       { path: 'bisyaroh', name: 'bisyaroh', component: BisyarohView },
       // v.68.0526: Rapor full Vue (window.print → Save as PDF)
       { path: 'rapor', name: 'rapor', component: RaporView },
@@ -123,16 +124,18 @@ const routes = [
       { path: 'absensi-santri', name: 'absensi-santri', component: AbsensiSantriView },
       { path: 'posts', name: 'posts', component: PostsView, alias: '/mading' },
       // Phase 5.14: Buku Induk + Phase 5.20: PSB admin
-      { path: 'buku-induk', name: 'buku-induk', component: BukuIndukView, meta: { admin: true } },
+      // v.21.115.0528: keuangan-related routes pakai meta.keuangan (per kyai role spec)
+      { path: 'buku-induk', name: 'buku-induk', component: BukuIndukView, meta: { keuangan: true } },
       // v.72.15.0526: Hutang Piutang
-      { path: 'hutang-piutang', name: 'hutang-piutang', component: HutangPiutangView, meta: { admin: true } },
-      { path: 'laporan-keuangan', name: 'laporan-keuangan', component: LaporanKeuanganView, meta: { admin: true } },
+      { path: 'hutang-piutang', name: 'hutang-piutang', component: HutangPiutangView, meta: { keuangan: true } },
+      { path: 'laporan-keuangan', name: 'laporan-keuangan', component: LaporanKeuanganView, meta: { keuangan: true } },
       { path: 'psb', name: 'psb', component: PsbAdminView, meta: { admin: true } },
       { path: 'psb/:id', name: 'psb-detail', component: PsbDetailView, meta: { admin: true } },
       { path: 'kritik-saran', name: 'kritik-saran', component: KritikSaranView },
       { path: 'pengaturan-web', name: 'pengaturan-web', component: PengaturanView, meta: { admin: true } },
       // v.70.0526: Pengaturan Keuangan full Vue
-      { path: 'keu-pengaturan', name: 'keu-pengaturan', component: PengaturanKeuanganView, meta: { admin: true }, alias: '/pengaturan-keuangan' },
+      // v.21.115.0528: keuangan meta gate
+      { path: 'keu-pengaturan', name: 'keu-pengaturan', component: PengaturanKeuanganView, meta: { keuangan: true }, alias: '/pengaturan-keuangan' },
       // v.72.1.0526: Kegiatan Pesantren full Vue
       { path: 'kegiatan-pesantren', name: 'kegiatan-pesantren', component: KegiatanPesantrenView, meta: { admin: true } },
       // v.66.0526: Batch B — Kalender Kegiatan + Statistik full Vue
@@ -182,6 +185,10 @@ router.beforeEach(async (to, from, next) => {
   // v.21.114.0528: noSantri gate — block santri (capaian prestasi adalah versi santri-friendly)
   if (to.meta?.noSantri && auth.sesiAktif?.role === 'santri') {
     return next({ name: 'capaian-prestasi' })
+  }
+  // v.21.115.0528: keuangan gate — perlu cekHakAkses('akses_keuangan') (super_admin / admin_keuangan / akses map)
+  if (to.meta?.keuangan && !auth.cekHakAkses('akses_keuangan')) {
+    return next({ name: 'dashboard' })
   }
   next()
 })

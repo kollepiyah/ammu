@@ -3,7 +3,7 @@
   <div class="p-3 md:p-5 space-y-4">
     <!-- Header -->
     <div class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm">
-      <h1 class="text-xl md:text-2xl font-black">
+      <h1 class="text-base md:text-lg font-black">
         <i class="fas fa-comment-dots text-teal-600 mr-2"></i>Kritik &amp; Saran
       </h1>
       <p class="text-xs text-[var(--text-secondary)] mt-0.5">

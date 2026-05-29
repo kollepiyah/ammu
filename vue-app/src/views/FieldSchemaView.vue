@@ -1,7 +1,7 @@
 <template>
   <div class="p-3 md:p-5 max-w-5xl mx-auto space-y-4">
     <div class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm">
-      <h1 class="text-xl md:text-2xl font-black"><i class="fas fa-list-alt text-teal-500 mr-2"></i>Field Schema (ACF)</h1>
+      <h1 class="text-base md:text-lg font-black"><i class="fas fa-list-alt text-teal-500 mr-2"></i>Field Schema (ACF)</h1>
       <p class="text-xs text-[var(--text-secondary)] mt-0.5">Custom field per lembaga — kelola via Master Lembaga → Pengaturan</p>
     </div>
     <div class="bg-cyan-50 border border-cyan-200 rounded-2xl p-4">

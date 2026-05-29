@@ -3,7 +3,7 @@
     <div class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm">
       <div class="flex items-start justify-between gap-3 flex-wrap">
         <div>
-          <h1 class="text-xl md:text-2xl font-black">
+          <h1 class="text-base md:text-lg font-black">
             <i class="fas fa-file-export text-cyan-500 mr-2"></i>Ekspor Riwayat Santri
           </h1>
           <p class="text-xs text-[var(--text-secondary)] mt-0.5">
@@ -97,8 +97,9 @@
               <p class="text-sm font-bold text-[var(--text-primary)] truncate">{{ s.nama }}</p>
               <p class="text-[10px] text-[var(--text-secondary)] truncate">NIS {{ s.nis || s.id }} · {{ s.lembaga || '-' }} · {{ s.kelas || '-' }}</p>
             </div>
-            <button type="button" :disabled="busyId === s.id" @click="cetakRiwayat(s)" class="text-[11px] font-black bg-rose-500 hover:bg-rose-600 disabled:opacity-50 text-white px-3 py-1.5 rounded-lg">
-              <i :class="['fas mr-1', busyId === s.id ? 'fa-spinner fa-spin' : 'fa-file-pdf']"></i>
+            <!-- v.21.115.0528: standardize per design-tokens — Cetak PDF cyan -->
+            <button type="button" :disabled="busyId === s.id" @click="cetakRiwayat(s)" aria-label="Cetak PDF riwayat santri" class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer">
+              <i :class="['fas', busyId === s.id ? 'fa-spinner fa-spin' : 'fa-file-pdf']"></i>
               {{ busyId === s.id ? 'Memproses...' : 'Cetak PDF' }}
             </button>
           </div>

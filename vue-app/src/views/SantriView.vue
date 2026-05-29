@@ -126,11 +126,7 @@
           <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] text-sm"></i>
           <input v-model="search" type="text" placeholder="Cari nama, NIS, atau wali..." class="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition" />
         </div>
-        <select v-model="filterLembaga" class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none">
-          <option value="">Semua lembaga</option>
-          <option v-for="l in uniqueLembaga" :key="l" :value="l">{{ l }}</option>
-        </select>
-        <!-- v.21.12.0526: label Ma'had/Pulang Pergi/Fullday -->
+        <!-- v.21.115.0528: filter lembaga dropdown dihapus (redundan dengan chip shortcuts) -->
         <select v-model="filterMukim" class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none">
           <option value="">Semua status tempat</option>
           <option value="mukim">Ma'had</option>
@@ -143,6 +139,35 @@
           <option value="tidak_aktif">Tidak aktif / Keluar</option>
         </select>
       </div>
+      <!-- v.21.115.0528: Lembaga chip shortcuts (konsisten dengan GuruView) -->
+      <div v-if="uniqueLembaga.length > 0" class="flex flex-wrap gap-1.5 mt-2">
+        <button
+          type="button"
+          @click="filterLembaga = ''"
+          :class="[
+            'px-2.5 py-1 text-[11px] rounded-full border font-bold transition cursor-pointer',
+            filterLembaga === ''
+              ? 'bg-teal-600 text-white border-teal-600'
+              : 'bg-white dark:bg-slate-700 text-[var(--text-secondary)] border-[var(--border-default)] hover:bg-teal-50 dark:hover:bg-slate-600'
+          ]"
+        >
+          Semua lembaga
+        </button>
+        <button
+          v-for="l in uniqueLembaga"
+          :key="l"
+          type="button"
+          @click="filterLembaga = filterLembaga === l ? '' : l"
+          :class="[
+            'px-2.5 py-1 text-[11px] rounded-full border font-bold transition cursor-pointer',
+            filterLembaga === l
+              ? 'bg-teal-600 text-white border-teal-600'
+              : 'bg-white dark:bg-slate-700 text-[var(--text-secondary)] border-[var(--border-default)] hover:bg-teal-50 dark:hover:bg-slate-600'
+          ]"
+        >
+          {{ l }}
+        </button>
+      </div>
       <!-- v.21.22c.0526: Select-all (Master mode only) -->
       <div v-if="isMasterMode && isFullAccess && santri.length > 0" class="mt-2 pt-2 border-t border-[var(--border-subtle)] flex items-center gap-2">
         <label class="inline-flex items-center gap-2 cursor-pointer">
@@ -153,11 +178,8 @@
       </div>
     </div>
 
-    <!-- Loading state -->
-    <div v-if="loading" class="bg-[var(--bg-card)] rounded-2xl p-10 border border-[var(--border-subtle)] text-center">
-      <i class="fas fa-spinner fa-spin text-teal-500 text-3xl mb-3"></i>
-      <p class="text-sm text-[var(--text-secondary)] font-bold">Memuat data santri...</p>
-    </div>
+    <!-- v.21.115.0528: skeleton loader replace spinner -->
+    <SkeletonCard v-if="loading" :count="5" variant="list" />
 
     <!-- Empty state -->
     <div v-else-if="santri.length === 0" class="bg-[var(--bg-card)] rounded-2xl p-10 border border-dashed border-[var(--border-default)] text-center">
@@ -250,6 +272,8 @@ import { buildListPdf, buildKopFromSettings } from '@/utils/pdfBuilder'
 import { useToast } from '@/composables/useToast'
 import { useSettingsStore } from '@/stores/settings'
 import { useConfirm } from '@/composables/useConfirm'
+// v.21.115.0528: skeleton loader
+import SkeletonCard from '@/components/layout/SkeletonCard.vue'
 import { setDoc, doc, serverTimestamp, deleteDoc } from 'firebase/firestore'
 import { db } from '@/services/firebase'
 

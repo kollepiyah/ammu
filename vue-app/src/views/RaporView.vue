@@ -209,7 +209,8 @@
           v-if="selectedSantriIds.size > 0"
           @click="exportPdfBatch"
           :disabled="exportingBatch"
-          class="text-xs font-bold px-3 py-2 rounded-lg bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] disabled:opacity-50 text-white transition cursor-pointer flex items-center gap-1.5"
+          aria-label="Ekspor batch rapor PDF"
+          class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer"
         >
           <i :class="['fas', exportingBatch ? 'fa-spinner fa-spin' : 'fa-file-pdf']"></i>
           {{ exportingBatch ? 'Mengekspor...' : `Ekspor PDF (${selectedSantriIds.size})` }}
@@ -300,9 +301,10 @@
           <button
             v-if="santriAktif && !isSantri"
             @click="exportPdfSingle()"
-            class="text-xs font-bold px-3 py-2 rounded-lg bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white transition cursor-pointer"
+            aria-label="Ekspor rapor PDF santri ini"
+            class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold transition cursor-pointer"
           >
-            <i class="fas fa-file-pdf mr-1"></i>Ekspor PDF
+            <i class="fas fa-file-pdf"></i>Ekspor PDF
           </button>
         </div>
 

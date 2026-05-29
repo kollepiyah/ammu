@@ -3,7 +3,7 @@
     <div
       class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm"
     >
-      <h1 class="text-xl md:text-2xl font-black">
+      <h1 class="text-base md:text-lg font-black">
         <i class="fas fa-door-open text-teal-500 mr-2"></i>Daftar Kelas per Lembaga
       </h1>
       <p class="text-xs text-[var(--text-secondary)] mt-0.5">

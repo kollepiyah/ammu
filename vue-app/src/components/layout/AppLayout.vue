@@ -5,6 +5,10 @@
     <div class="flex-1 flex flex-col overflow-hidden">
       <AppHeader />
       <main class="flex-1 overflow-y-auto custom-scrollbar bg-[var(--bg-page)]">
+        <!-- v.21.115.0528: Breadcrumb auto di top main, hide di dashboard -->
+        <div class="px-3 md:px-5 pt-2 max-w-6xl mx-auto">
+          <AppBreadcrumb />
+        </div>
         <router-view />
       </main>
     </div>
@@ -15,6 +19,7 @@
 <script setup>
 import AppSidebar from './AppSidebar.vue'
 import AppHeader from './AppHeader.vue'
+import AppBreadcrumb from './AppBreadcrumb.vue'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 </script>
 

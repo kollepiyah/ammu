@@ -20,7 +20,24 @@ service firebase.storage {
     // Path-path public: postingan beranda, logo rapor, logo aplikasi
     // (Boleh write oleh user yang authenticated. App ini pakai custom auth + Firebase Auth Anonymous)
     
+    // v.21.115.0528: dukung path 'beranda_posts' (plural, legacy) DAN 'beranda_post' (singular, current PostsView upload).
+    // Sebelum fix: upload masuk ke 'beranda_post/' yang tidak match rule → default deny → 403.
     match /beranda_posts/{file=**} {
+      allow read: if true;
+      allow write: if request.auth != null
+                   && request.resource.size < 16 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+      allow delete: if request.auth != null;
+    }
+    match /beranda_post/{file=**} {
+      allow read: if true;
+      allow write: if request.auth != null
+                   && request.resource.size < 16 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+      allow delete: if request.auth != null;
+    }
+    // v.21.115.0528: posts collection (Ammu Channel) — aligned dengan firestore.rules
+    match /posts/{file=**} {
       allow read: if true;
       allow write: if request.auth != null
                    && request.resource.size < 16 * 1024 * 1024

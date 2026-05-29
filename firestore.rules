@@ -408,6 +408,37 @@ service cloud.firestore {
       allow delete: if signedIn();
     }
 
+    // v.21.110.0527: Catatan supervisi (Direktur/Supervisor → guru/lembaga)
+    match /supervisi_catatan/{docId} {
+      allow read: if signedIn();
+      allow create, update: if signedIn()
+        && request.resource.data.id is string
+        && request.resource.data.target_type in ['guru', 'lembaga']
+        && request.resource.data.target_id is string
+        && request.resource.data.judul is string
+        && request.resource.data.catatan is string;
+      allow delete: if signedIn();
+    }
+
+    // v.21.110.0527: Per-user notif state (last_seen per kategori)
+    // v.21.115.0528: duplicate rule dihapus — userId tidak match auth.uid karena app pakai custom auth + Firebase Anonymous.
+    // Tetap signedIn-only sebagai gate, tapi tidak strict per-uid karena userId di sini adalah ID custom (guru/santri/admin).
+    match /user_notif_state/{userId} {
+      allow read, write: if signedIn();
+    }
+
+    // v.21.115.0528: Pengaturan Keuangan (admin keuangan settings)
+    match /pengaturan_keuangan/{docId} {
+      allow read: if true;
+      allow write: if signedIn();
+    }
+
+    // v.21.115.0528: Per-user scheduled job state (kalau ada feature recurring task)
+    match /scheduled_jobs/{docId} {
+      allow read: if signedIn();
+      allow write: if signedIn();
+    }
+
     // Default deny untuk collection lain
     match /{document=**} {
       allow read, write: if false;

@@ -1,10 +1,11 @@
 <template>
   <div class="relative" data-notif-bell>
+    <!-- v.21.115.0528: tap target w-9 → w-10 (40px) — mobile-friendly per design-tokens -->
     <button
       type="button"
       @click="toggle"
       aria-label="Notifikasi"
-      class="relative w-9 h-9 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center transition cursor-pointer"
+      class="relative w-10 h-10 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center transition cursor-pointer"
     >
       <i class="fas fa-bell text-[var(--text-secondary)] text-base"></i>
       <span

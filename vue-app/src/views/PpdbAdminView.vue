@@ -15,7 +15,7 @@
       >
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           <div>
-            <h1 class="text-xl md:text-2xl font-black text-[var(--text-primary)]">
+            <h1 class="text-base md:text-lg font-black text-[var(--text-primary)]">
               <i class="fas fa-clipboard-list text-teal-500 mr-2"></i>PSB — Pendaftaran Santri Baru
             </h1>
             <p class="text-xs text-[var(--text-secondary)] mt-0.5">

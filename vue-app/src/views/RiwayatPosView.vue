@@ -360,20 +360,23 @@ function fmtTgl(t) {
               </div>
               <div class="text-right flex-shrink-0">
                 <p class="text-sm font-black text-emerald-600">{{ fmtRpStruk(t.total) }}</p>
+                <!-- v.21.115.0528: standardize per design-tokens — PDF cyan (info action), struk dot neutral -->
                 <div class="flex gap-1 mt-1.5 justify-end">
                   <button
                     type="button"
                     @click="cetakPdf(t)"
-                    class="text-[10px] font-bold text-rose-600 bg-rose-50 dark:bg-rose-900/30 px-2 py-1 rounded-lg hover:bg-rose-100"
+                    aria-label="Cetak struk PDF ber-KOP"
                     title="Cetak struk PDF ber-KOP"
+                    class="text-[10px] font-bold text-cyan-700 dark:text-cyan-300 bg-cyan-50 dark:bg-cyan-900/30 px-2 py-1 rounded-lg hover:bg-cyan-100 dark:hover:bg-cyan-900/50 transition"
                   >
                     <i class="fas fa-file-pdf mr-1"></i>PDF
                   </button>
                   <button
                     type="button"
                     @click="cetakDot(t)"
-                    class="text-[10px] font-bold text-slate-700 dark:text-slate-200 bg-[var(--bg-muted)] px-2 py-1 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600"
+                    aria-label="Cetak struk dot-matrix"
                     title="Cetak struk dot-matrix"
+                    class="text-[10px] font-bold text-slate-700 dark:text-slate-200 bg-[var(--bg-muted)] px-2 py-1 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition"
                   >
                     <i class="fas fa-print mr-1"></i>Struk
                   </button>

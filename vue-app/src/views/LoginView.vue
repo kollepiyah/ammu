@@ -28,6 +28,22 @@ const bgStyle = computed(() => {
   return `background: url('${bg}') center/cover no-repeat;`
 })
 
+// v.21.115.0528: URL download app native (Android/iOS/Desktop)
+// Bisa di-override dari Pengaturan Web (settings.downloadAndroid, downloadIos, downloadDesktop)
+// Default ke GitHub Releases latest — admin tinggal ganti owner/repo
+const downloadAndroidUrl = computed(() =>
+  settings.settings?.downloadAndroid ||
+  'https://github.com/lexanoisgroup3/ammuonline/releases/latest/download/AmmuOnline.apk'
+)
+const downloadIosUrl = computed(() =>
+  settings.settings?.downloadIos ||
+  'https://github.com/lexanoisgroup3/ammuonline/releases/latest/download/AmmuOnline.ipa'
+)
+const downloadDesktopUrl = computed(() =>
+  settings.settings?.downloadDesktop ||
+  'https://github.com/lexanoisgroup3/ammuonline/releases/latest/download/AmmuOnline-Setup.exe'
+)
+
 const username = ref('')
 const password = ref('')
 const isSubmitting = ref(false)
@@ -280,13 +296,54 @@ function bukaWaAdmin() {
       </div>
     </div>
 
+    <!-- v.21.115.0528: Download section app native (Android/iOS/Desktop) -->
+    <div class="relative z-10 mt-5 max-w-sm w-full">
+      <div class="bg-white/10 backdrop-blur-md rounded-xl px-4 py-3 border border-white/20">
+        <p class="text-[10px] text-white/90 font-black uppercase tracking-widest text-center mb-2">
+          <i class="fas fa-download mr-1"></i>Unduh Aplikasi
+        </p>
+        <div class="grid grid-cols-3 gap-2">
+          <a
+            :href="downloadAndroidUrl"
+            target="_blank"
+            rel="noopener"
+            aria-label="Unduh APK Android"
+            class="flex flex-col items-center gap-1 py-2 rounded-lg bg-white/15 hover:bg-white/25 transition cursor-pointer"
+          >
+            <i class="fab fa-android text-emerald-300 text-lg"></i>
+            <span class="text-[9px] text-white font-bold">Android</span>
+          </a>
+          <a
+            :href="downloadIosUrl"
+            target="_blank"
+            rel="noopener"
+            aria-label="Unduh IPA iOS"
+            class="flex flex-col items-center gap-1 py-2 rounded-lg bg-white/15 hover:bg-white/25 transition cursor-pointer"
+          >
+            <i class="fab fa-apple text-white text-lg"></i>
+            <span class="text-[9px] text-white font-bold">iOS</span>
+          </a>
+          <a
+            :href="downloadDesktopUrl"
+            target="_blank"
+            rel="noopener"
+            aria-label="Unduh installer Desktop"
+            class="flex flex-col items-center gap-1 py-2 rounded-lg bg-white/15 hover:bg-white/25 transition cursor-pointer"
+          >
+            <i class="fas fa-desktop text-cyan-300 text-lg"></i>
+            <span class="text-[9px] text-white font-bold">Desktop</span>
+          </a>
+        </div>
+      </div>
+    </div>
+
     <!-- Copyright + versi DI LUAR CARD (match legacy) -->
-    <div class="relative z-10 mt-5 text-center px-4">
+    <div class="relative z-10 mt-3 text-center px-4">
       <p class="text-[11px] text-white/90 font-bold uppercase tracking-wider drop-shadow">
         © {{ new Date().getFullYear() }} Pondok Pesantren Mambaul Ulum
       </p>
       <p class="text-[11px] text-white/80 font-bold tracking-widest mt-1 drop-shadow">
-        v.21.24b.0526
+        v.21.115.0528
       </p>
     </div>
   </div>

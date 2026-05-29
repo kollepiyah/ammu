@@ -3,7 +3,7 @@
     <div class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm">
       <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
         <div>
-          <h1 class="text-xl md:text-2xl font-black"><i class="fas fa-money-check-alt text-cyan-500 mr-2"></i>Pembayaran</h1>
+          <h1 class="text-base md:text-lg font-black"><i class="fas fa-money-check-alt text-cyan-500 mr-2"></i>Pembayaran</h1>
           <p class="text-xs text-[var(--text-secondary)] mt-0.5">{{ isSantriOnly ? 'Riwayat pembayaran Anda' : 'Log pembayaran semua santri' }}</p>
         </div>
         <div class="px-3 py-1.5 rounded-full bg-cyan-50 border border-cyan-200 text-xs">

@@ -128,7 +128,7 @@
       >
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           <div>
-            <h1 class="text-xl md:text-2xl font-black text-[var(--text-primary)]">
+            <h1 class="text-base md:text-lg font-black text-[var(--text-primary)]">
               <i class="fas fa-piggy-bank text-emerald-500 mr-2"></i>Tabungan
             </h1>
             <p class="text-xs text-[var(--text-secondary)] mt-0.5">Saldo tabungan santri</p>
@@ -507,6 +507,8 @@ import { sortSantri } from '@/utils/santriSort'
 import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
+// v.21.115.0528: useConfirm utk replace window.confirm native
+import { useConfirm } from '@/composables/useConfirm'
 import { useKeuangan } from '@/composables/useKeuangan'
 import { fmtRp, fmtTgl } from '@/utils/format'
 
@@ -514,6 +516,7 @@ const { tabunganSantri, loading, isFullAccess, getNamaSantri, santriRaw } = useK
 const auth = useAuthStore()
 const settings = useSettingsStore()
 const toast = useToast()
+const confirmDlg = useConfirm()
 // v.21.100.0527: super_admin only — edit/hapus mutasi tabungan
 const isAdmin = computed(() => isSuperAdmin(auth.sesiAktif))
 
@@ -618,8 +621,13 @@ const orphanCleaning = ref(false)
 async function cleanupOrphan() {
   const ids = orphanStats.value.ids
   if (ids.length === 0) return
-  const msg = `Hapus PERMANEN ${orphanStats.value.count} mutasi orphan?\n\nsantri_id: ${ids.join(', ')}\nTotal saldo: ${fmtRp(orphanStats.value.totalSaldo)}\n\nMutasi ini akan hilang dari database. Tidak bisa di-undo.`
-  if (!window.confirm(msg)) return
+  // v.21.115.0528: pakai useConfirm bukan native window.confirm
+  const confirmed = await confirmDlg.ask({
+    title: `Hapus PERMANEN ${orphanStats.value.count} mutasi orphan?`,
+    text: `santri_id: ${ids.join(', ')}\nTotal saldo: ${fmtRp(orphanStats.value.totalSaldo)}\n\nMutasi ini akan hilang dari database. Tidak bisa di-undo.`,
+    icon: 'warning'
+  })
+  if (!confirmed) return
   orphanCleaning.value = true
   let ok = 0
   let fail = 0

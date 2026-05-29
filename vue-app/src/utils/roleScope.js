@@ -4,15 +4,31 @@
 
 export function isFullFilterRole(sesi) {
   if (!sesi) return false
-  if (sesi.role === 'admin' || sesi.id === 'admin') return true
+  if (sesi.id === 'admin') return true
   if (['super_admin', 'admin'].includes(sesi.role_sistem)) return true
+  // v.21.115.0528: Kepala Lembaga / PJ / Pengasuh juga full filter scope di lembaganya (kyai req)
+  if (isKepalaLembaga(sesi)) return true
   return false
 }
 
 // v.21.98.0527: cek role super_admin (utk gating CRUD record keuangan).
+// v.21.115.0528: drop `sesi.role === 'admin'` — promoted guru ke role_sistem='admin'
+// (admin biasa) tidak boleh super power. Only built-in id='admin' atau role_sistem='super_admin'.
 export function isSuperAdmin(sesi) {
   if (!sesi) return false
-  return sesi.role_sistem === 'super_admin' || sesi.role === 'admin' || sesi.id === 'admin'
+  return sesi.role_sistem === 'super_admin' || sesi.id === 'admin'
+}
+
+// v.21.115.0528: cek admin biasa (admin role_sistem, akses everything except master & keuangan)
+export function isAdminBiasa(sesi) {
+  if (!sesi) return false
+  return sesi.role_sistem === 'admin' && sesi.id !== 'admin'
+}
+
+// v.21.115.0528: cek admin keuangan (akses fitur keuangan + data guru)
+export function isAdminKeuangan(sesi) {
+  if (!sesi) return false
+  return sesi.role_sistem === 'admin_keuangan'
 }
 
 // v.21.110.0527: cek apakah guru/pegawai punya jabatan "Direktur/Supervisor"

@@ -25,7 +25,7 @@
       </p>
       <div class="flex items-start justify-between gap-3 flex-wrap">
         <div>
-          <h1 class="text-xl md:text-2xl font-black text-[var(--text-primary)]">
+          <h1 class="text-base md:text-lg font-black text-[var(--text-primary)]">
             <i class="fas fa-building text-teal-600 mr-1"></i>{{ lembagaId }}
           </h1>
           <span

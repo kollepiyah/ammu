@@ -9,7 +9,7 @@
     <template v-else>
       <!-- Header -->
       <div class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm">
-        <h1 class="text-xl md:text-2xl font-black text-[var(--text-primary)]">
+        <h1 class="text-base md:text-lg font-black text-[var(--text-primary)]">
           <i class="fas fa-chart-line text-teal-500 mr-2"></i>Dashboard Keuangan
         </h1>
         <p class="text-xs text-[var(--text-secondary)] mt-0.5">Overview keuangan pondok realtime + tren 12 bulan</p>

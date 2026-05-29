@@ -3,7 +3,7 @@
     <div class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm">
       <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
         <div>
-          <h1 class="text-xl md:text-2xl font-black"><i class="fas fa-balance-scale text-cyan-500 mr-2"></i>Hutang Piutang</h1>
+          <h1 class="text-base md:text-lg font-black"><i class="fas fa-balance-scale text-cyan-500 mr-2"></i>Hutang Piutang</h1>
           <p class="text-xs text-[var(--text-secondary)] mt-0.5">Catatan hutang + piutang pesantren</p>
         </div>
         <button @click="openModal()" class="bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-black px-3 py-1.5 rounded-full shadow"><i class="fas fa-plus mr-1"></i>Tambah</button>

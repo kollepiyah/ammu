@@ -137,18 +137,11 @@
               class="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition"
             />
           </div>
-          <!-- Filter lembaga -->
-          <select
-            v-model="filterLembaga"
-            class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none"
-          >
-            <option value="">Semua lembaga</option>
-            <option v-for="l in uniqueLembaga" :key="l" :value="l">{{ l }}</option>
-          </select>
+          <!-- v.21.115.0528: filter lembaga dropdown dihapus (redundan dengan chip shortcuts di baris bawah) -->
           <!-- Filter status -->
           <select
             v-model="filterStatus"
-            class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none"
+            class="md:col-span-2 px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none"
           >
             <option value="aktif">Hanya yang aktif</option>
             <option value="">Semua status</option>
@@ -214,11 +207,8 @@
       </div>
 
 
-      <!-- Loading -->
-      <div v-if="loading" class="bg-[var(--bg-card)] rounded-2xl p-10 border border-[var(--border-subtle)] text-center">
-        <i class="fas fa-spinner fa-spin text-teal-500 text-3xl mb-3"></i>
-        <p class="text-sm text-[var(--text-secondary)] font-bold">Memuat data guru...</p>
-      </div>
+      <!-- v.21.115.0528: skeleton loader replace spinner -->
+      <SkeletonCard v-if="loading" :count="5" variant="list" />
 
       <!-- Empty -->
       <div
@@ -374,6 +364,8 @@ import { useGuru } from '@/composables/useGuru'
 // v.21.10.0526: import canSee untuk visibility scoping
 import { canSee } from '@/composables/useLembaga'
 import { useConfirm } from '@/composables/useConfirm'
+// v.21.115.0528: skeleton loader
+import SkeletonCard from '@/components/layout/SkeletonCard.vue'
 // v.21.11.0526: + deleteOne untuk delete & bulk delete
 import { updateOne, deleteOne } from '@/services/firestore'
 // v.21.13b.0526: + toTitleCase + normalizeWA + parseMultipleWA (dual WA)

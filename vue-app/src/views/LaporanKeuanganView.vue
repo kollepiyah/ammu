@@ -1,7 +1,7 @@
 <template>
   <div class="p-3 md:p-5 max-w-5xl mx-auto space-y-4">
     <div class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm">
-      <h1 class="text-xl md:text-2xl font-black"><i class="fas fa-chart-line text-cyan-500 mr-2"></i>Laporan Keuangan</h1>
+      <h1 class="text-base md:text-lg font-black"><i class="fas fa-chart-line text-cyan-500 mr-2"></i>Laporan Keuangan</h1>
       <p class="text-xs text-[var(--text-secondary)] mt-0.5">Ringkasan pemasukan + pengeluaran per periode</p>
     </div>
 

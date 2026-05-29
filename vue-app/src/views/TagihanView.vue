@@ -3,7 +3,7 @@
     <div class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm">
       <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
         <div>
-          <h1 class="text-xl md:text-2xl font-black"><i class="fas fa-file-invoice-dollar text-cyan-500 mr-2"></i>Tagihan Santri</h1>
+          <h1 class="text-base md:text-lg font-black"><i class="fas fa-file-invoice-dollar text-cyan-500 mr-2"></i>Tagihan Santri</h1>
           <p class="text-xs text-[var(--text-secondary)] mt-0.5">Daftar tagihan + status bayar</p>
         </div>
         <div class="flex gap-2">
@@ -72,8 +72,9 @@
             <p class="text-sm font-black" :class="statusText(t)">{{ fmtRp(getSisa(t)) }}</p>
             <p class="text-[9px] uppercase text-[var(--text-secondary)]">{{ statusLabel(t) }}</p>
           </div>
-          <button v-if="isFullAccess" @click="openBayar(t)" class="text-emerald-500 hover:bg-emerald-50 p-2 rounded" title="Bayar"><i class="fas fa-money-bill-wave"></i></button>
-          <button v-if="isFullAccess" @click="deleteTagihan(t)" class="text-rose-500 hover:bg-rose-50 p-2 rounded" title="Hapus"><i class="fas fa-trash"></i></button>
+          <!-- v.21.115.0528: bayar=isFullAccess (admin keuangan boleh), delete=isAdmin saja (super_admin) — konsisten dengan bulk delete -->
+          <button v-if="isFullAccess" @click="openBayar(t)" aria-label="Bayar tagihan" title="Bayar" class="text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 p-2 rounded transition"><i class="fas fa-money-bill-wave"></i></button>
+          <button v-if="isAdmin" @click="deleteTagihan(t)" aria-label="Hapus tagihan" title="Hapus (super admin only)" class="text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/30 p-2 rounded transition"><i class="fas fa-trash"></i></button>
         </div>
       </div>
     </div>
