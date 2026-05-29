@@ -1,0 +1,44 @@
+{
+  "appId": "id.web.ammuonline",
+  "appName": "Ammu Online",
+  "webDir": "../public/vue",
+  "bundledWebRuntime": false,
+  "android": {
+    "backgroundColor": "#0F766E",
+    "allowMixedContent": false,
+    "captureInput": true
+  },
+  "ios": {
+    "backgroundColor": "#0F766E",
+    "contentInset": "always",
+    "scrollEnabled": true
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 1500,
+      "launchAutoHide": true,
+      "backgroundColor": "#0F766E",
+      "androidSplashResourceName": "splash",
+      "androidScaleType": "CENTER_CROP",
+      "showSpinner": true,
+      "androidSpinnerStyle": "large",
+      "iosSpinnerStyle": "small",
+      "spinnerColor": "#FFFFFF"
+    },
+    "StatusBar": {
+      "style": "DARK",
+      "backgroundColor": "#0F766E",
+      "overlay": false
+    },
+    "Keyboard": {
+      "resize": "body",
+      "style": "DARK",
+      "resizeOnFullScreen": true
+    }
+  },
+  "server": {
+    "androidScheme": "https",
+    "iosScheme": "capacitor",
+    "cleartext": false
+  }
+}

@@ -493,12 +493,15 @@ function openModal(k = null) {
 }
 
 // v.21.114.0528: Seed libur nasional Indonesia untuk tahun yang sedang ditampilkan
+// v.21.115.0528: useConfirm API = function call, bukan .ask()
 async function seedLiburNasional() {
   const list = getLiburNasional(tahun.value)
-  const ok = await confirmDlg.ask({
+  const ok = await confirmDlg({
     title: `Tambahkan ${list.length} libur nasional ${tahun.value}?`,
-    text: 'Akan men-duplikat jika sudah ada — Anda bisa hapus manual setelahnya. Tanggal Hijriyah-based merupakan estimasi, mohon verifikasi dengan SKB 3 Menteri resmi.',
-    icon: 'info'
+    message: 'Akan men-duplikat jika sudah ada — Anda bisa hapus manual setelahnya. Tanggal Hijriyah-based merupakan estimasi, mohon verifikasi dengan SKB 3 Menteri resmi.',
+    confirmText: 'Tambahkan',
+    cancelText: 'Batal',
+    danger: false
   })
   if (!ok) return
   let count = 0
@@ -539,21 +542,13 @@ async function simpan() {
 
 async function hapus() {
   if (!form.id) return
-  const ok = await confirmDlg.ask({
+  // v.21.115.0528: useConfirm API = function call, bukan .ask()
+  const ok = await confirmDlg({
     title: 'Hapus kegiatan?',
-    text: `"${form.judul}" akan dihapus permanen.`,
-    icon: 'warning'
+    message: `"${form.judul}" akan dihapus permanen.`,
+    confirmText: 'Hapus',
+    cancelText: 'Batal',
+    danger: true
   })
   if (!ok) return
-  saving.value = true
-  try {
-    await hapusKegiatan(form.id)
-    toast.success('Dihapus')
-    modalOpen.value = false
-  } catch (e) {
-    toast.error('Error: ' + (e.message || e))
-  } finally {
-    saving.value = false
-  }
-}
-</script>
+  savin

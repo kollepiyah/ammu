@@ -621,11 +621,13 @@ const orphanCleaning = ref(false)
 async function cleanupOrphan() {
   const ids = orphanStats.value.ids
   if (ids.length === 0) return
-  // v.21.115.0528: pakai useConfirm bukan native window.confirm
-  const confirmed = await confirmDlg.ask({
+  // v.21.115.0528: useConfirm API = function call, bukan .ask()
+  const confirmed = await confirmDlg({
     title: `Hapus PERMANEN ${orphanStats.value.count} mutasi orphan?`,
-    text: `santri_id: ${ids.join(', ')}\nTotal saldo: ${fmtRp(orphanStats.value.totalSaldo)}\n\nMutasi ini akan hilang dari database. Tidak bisa di-undo.`,
-    icon: 'warning'
+    message: `santri_id: ${ids.join(', ')}\nTotal saldo: ${fmtRp(orphanStats.value.totalSaldo)}\n\nMutasi ini akan hilang dari database. Tidak bisa di-undo.`,
+    confirmText: 'Hapus',
+    cancelText: 'Batal',
+    danger: true
   })
   if (!confirmed) return
   orphanCleaning.value = true
@@ -878,8 +880,4 @@ async function simpanMutasi() {
     closeModal()
   } catch (e) {
     toast.error('Gagal: ' + (e?.message || e))
-  } finally {
-    saving.value = false
-  }
-}
-</script>
+  } fina

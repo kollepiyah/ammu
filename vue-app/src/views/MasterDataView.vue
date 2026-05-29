@@ -354,11 +354,13 @@ async function simpanTp() {
   }
 }
 async function hapusTp(idx) {
-  // v.21.115.0528: pakai useConfirm bukan native window.confirm
-  const ok = await confirmDlg.ask({
+  // v.21.115.0528: useConfirm API = function call, bukan .ask()
+  const ok = await confirmDlg({
     title: 'Hapus Tahun Pelajaran?',
-    text: `TP "${tpList.value[idx]}" akan dihapus permanen.`,
-    icon: 'warning'
+    message: `TP "${tpList.value[idx]}" akan dihapus permanen.`,
+    confirmText: 'Hapus',
+    cancelText: 'Batal',
+    danger: true
   })
   if (!ok) return
   try {
@@ -1506,8 +1508,4 @@ async function simpanPengaturanRekap() {
               </tr>
             </tbody>
           </table>
-        </div>
-      </div>
-    </div>
-  </div>
-</template>
+        </div
