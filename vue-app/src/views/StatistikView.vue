@@ -877,22 +877,19 @@ const lembagaCount = computed(() => {
 // v.21.108.0527: kelas dihitung dari assignment Kelas & Guru
 // (jumlah unique kombinasi lembaga + guru pengampu yg punya santri ter-assign).
 // Sebelumnya pakai master kelas_list (statis), tidak match realita.
+// v.73.0526: Kelas count = unique kombinasi (lembaga+kelas) yang ada santri-nya.
+// Sebelumnya hitung (lembaga+shift+guru) yang menghasilkan jumlah aneh (mirror jumlah lembaga).
+// Sekarang lebih intuitif: 1 lembaga × N kelas yang ada santri-nya.
 const kelasCount = computed(() => {
   const set = new Set()
   for (const s of santriRaw.value) {
     if (s.aktif === false) continue
-    const lembagaNgaji = String(s.lembaga || '').trim()
-    const lembagaSekolah = String(s.lembaga_sekolah || '').trim()
-    const gp = String(s.guru_pagi || '').trim().toLowerCase()
-    const gs = String(s.guru_sore || '').trim().toLowerCase()
-    if (lembagaNgaji && gp) set.add(`${lembagaNgaji.toLowerCase()}|pagi|${gp}`)
-    if (lembagaNgaji && gs) set.add(`${lembagaNgaji.toLowerCase()}|sore|${gs}`)
-    if (lembagaSekolah && Array.isArray(s.guru_sekolah)) {
-      for (const g of s.guru_sekolah) {
-        const t = String(g || '').trim().toLowerCase()
-        if (t) set.add(`${lembagaSekolah.toLowerCase()}|sekolah|${t}`)
-      }
-    }
+    const lembNgaji = String(s.lembaga || '').trim().toLowerCase()
+    const kelasNgaji = String(s.kelas || '').trim().toLowerCase()
+    if (lembNgaji && kelasNgaji) set.add(`${lembNgaji}|${kelasNgaji}`)
+    const lembSek = String(s.lembaga_sekolah || '').trim().toLowerCase()
+    const kelasSek = String(s.kelas_sekolah || '').trim().toLowerCase()
+    if (lembSek && kelasSek) set.add(`${lembSek}|${kelasSek}`)
   }
   return set.size
 })

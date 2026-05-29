@@ -141,6 +141,10 @@ export function useNotifications() {
       }))
   }
 
+  // v.73.0526: cleared_at = timestamp setelah user klik "Bersihkan semua".
+  // Notif dengan ts <= cleared_at di-hide dari list (per-user state).
+  const clearedAt = computed(() => Number(notifState.value?.cleared_at || 0))
+
   // === Aggregated list ===
   const items = computed(() => {
     const all = [
@@ -150,8 +154,9 @@ export function useNotifications() {
       ...getPembayaran(),
       ...getBisyaroh()
     ]
+    const clearTs = clearedAt.value
     return all
-      .filter((x) => x.id && x.ts > 0)
+      .filter((x) => x.id && x.ts > 0 && x.ts > clearTs)
       .sort((a, b) => b.ts - a.ts)
       .slice(0, 30)
   })
@@ -188,6 +193,26 @@ export function useNotifications() {
     }
   }
 
+  // v.73.0526: Bersihkan semua notif — set cleared_at = now, semua notif lama di-hide.
+  async function clearAll() {
+    if (!userId.value) return
+    const now = Date.now()
+    try {
+      await setDoc(
+        doc(db, 'user_notif_state', userId.value),
+        {
+          cleared_at: now,
+          last_seen_per_jenis: { supervisi: now, kritik: now, post: now, pembayaran: now, bisyaroh: now },
+          updated_at: new Date()
+        },
+        { merge: true }
+      )
+      notifState.value = { ...notifState.value, cleared_at: now }
+    } catch (e) {
+      console.warn('[useNotifications] clearAll gagal:', e?.message || e)
+    }
+  }
+
   onMounted(() => {
     if (!auth.sesiAktif) return
     unsubs.push(subscribeColl('supervisi_catatan', (docs) => { supervisiRaw.value = docs || [] }))
@@ -212,6 +237,7 @@ export function useNotifications() {
     items,
     itemsUnread,
     unreadCount,
-    markAllRead
+    markAllRead,
+    clearAll
   }
 }

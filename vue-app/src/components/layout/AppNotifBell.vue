@@ -29,15 +29,26 @@
         v-if="open"
         class="absolute right-0 mt-2 w-80 md:w-96 bg-[var(--bg-card)] rounded-2xl shadow-2xl border border-[var(--border-subtle)] z-50 overflow-hidden origin-top-right"
       >
-        <div class="px-4 py-3 border-b border-[var(--border-subtle)] flex items-center justify-between">
+        <div class="px-4 py-3 border-b border-[var(--border-subtle)] flex items-center justify-between gap-2">
           <h3 class="text-sm font-black"><i class="fas fa-bell mr-1.5 text-cyan-600"></i>Notifikasi</h3>
-          <button
-            v-if="unreadCount > 0"
-            @click="markAndClose"
-            class="text-[10px] font-bold text-cyan-600 hover:underline"
-          >
-            Tandai semua dibaca
-          </button>
+          <!-- v.73.0526: tombol mark + clear -->
+          <div class="flex gap-3">
+            <button
+              v-if="unreadCount > 0"
+              @click="markAndClose"
+              class="text-[10px] font-bold text-cyan-600 hover:underline"
+            >
+              <i class="fas fa-check mr-0.5"></i>Tandai dibaca
+            </button>
+            <button
+              v-if="items.length > 0"
+              @click="clearAndClose"
+              class="text-[10px] font-bold text-rose-600 hover:underline"
+              title="Sembunyikan semua notifikasi saat ini"
+            >
+              <i class="fas fa-broom mr-0.5"></i>Bersihkan
+            </button>
+          </div>
         </div>
 
         <div class="flex gap-1 px-3 py-2 border-b border-[var(--border-subtle)]">
@@ -101,7 +112,7 @@ import { useRouter } from 'vue-router'
 import { useNotifications } from '@/composables/useNotifications'
 
 const router = useRouter()
-const { items, itemsUnread, unreadCount, markAllRead } = useNotifications()
+const { items, itemsUnread, unreadCount, markAllRead, clearAll } = useNotifications()
 
 const open = ref(false)
 const activeTab = ref('unread')
@@ -121,6 +132,12 @@ function bukaItem(it) {
 
 function markAndClose() {
   markAllRead()
+}
+
+// v.73.0526: bersihkan semua notif + tutup dropdown
+async function clearAndClose() {
+  await clearAll()
+  open.value = false
 }
 
 function colorBg(c) {
