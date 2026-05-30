@@ -129,6 +129,16 @@ service firebase.storage {
       allow update, delete: if request.auth != null;
     }
 
+    // v.86.0526: Bukti transfer pembayaran (wali upload). Lebih privat dari foto —
+    //   READ butuh auth (bukan public), supaya bukti transfer tidak bisa diintip anonim.
+    match /pembayaran_transfer/{file=**} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+                    && request.resource.size < 5 * 1024 * 1024
+                    && (request.resource.contentType.matches('image/.*') || request.resource.contentType == 'application/pdf');
+      allow update, delete: if request.auth != null;
+    }
+
     // Default deny untuk path lain
     match /{allPaths=**} {
       allow read, write: if false;

@@ -61,6 +61,8 @@ const KegiatanPesantrenView = () => import('@/views/KegiatanPesantrenView.vue')
 const HutangPiutangView = () => import('@/views/HutangPiutangView.vue')
 // v.20.12.0526: Pembayaran (santri/wali) — placeholder fitur 2-jalur (kyai will finalize)
 const PembayaranView = () => import('@/views/PembayaranView.vue')
+// v.86.0526: Pembayaran Pending (konfirmasi menunggu verifikasi) — wali/santri scope
+const PembayaranPendingView = () => import('@/views/PembayaranPendingView.vue')
 // v.20.13.0526: Capaian Prestasi (santri) — merged single page: rekap + statistik + kartu kenaikan + rapor
 const CapaianPrestasiView = () => import('@/views/CapaianPrestasiView.vue')
 // v.20.18.0526: Personal page admin/super_admin/admin_keuangan — statistik kehadiran + slip bisyaroh
@@ -107,6 +109,8 @@ const routes = [
       { path: 'tagihan', name: 'tagihan', component: TagihanView },
       // v.20.12.0526: Pembayaran santri/wali — placeholder fitur 2-jalur
       { path: 'pembayaran', name: 'pembayaran', component: PembayaranView },
+      // v.86.0526: daftar pembayaran pending (status=pending di pembayaran_konfirmasi)
+      { path: 'pembayaran-pending', name: 'pembayaran-pending', component: PembayaranPendingView },
       // v.55.0526: POS Santri page — wire ModalPOS untuk transaksi cepat
       { path: 'pos-santri', name: 'pos-santri', component: PosSantriView, meta: { keuangan: true } },
       { path: 'pos-riwayat', name: 'pos-riwayat', component: RiwayatPosView, meta: { keuangan: true } },

@@ -24,6 +24,19 @@ export default defineConfig({
     outDir: 'dist',
     emptyOutDir: true,
     sourcemap: false,
-    chunkSizeWarningLimit: 1000
+    chunkSizeWarningLimit: 1000,
+    rollupOptions: {
+      output: {
+        // v.86.0526: pisah vendor besar dari index (sebelumnya index ~825KB / gzip 216KB).
+        //   firebase + chart.js jadi chunk sendiri supaya initial load lebih ringan & cache-friendly.
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('firebase') || id.includes('@firebase')) return 'vendor-firebase'
+            if (id.includes('chart.js') || id.includes('vue-chartjs')) return 'vendor-charts'
+            return 'vendor'
+          }
+        }
+      }
+    }
   }
 })

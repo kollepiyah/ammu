@@ -1,0 +1,84 @@
+{
+  "name": "ammu-online-desktop",
+  "version": "84.0.526",
+  "description": "Ammu Online — Pondok Pesantren Mambaul Ulum (Desktop)",
+  "author": "Pondok Pesantren Mambaul Ulum",
+  "main": "build/index.js",
+  "license": "UNLICENSED",
+  "scripts": {
+    "build": "tsc",
+    "electron:start-live": "node ./live-runner.js",
+    "electron:start": "npm run build && electron .",
+    "electron:pack": "npm run build && electron-builder build --dir",
+    "electron:make": "npm run build && electron-builder build --win nsis",
+    "electron:publish": "npm run build && electron-builder build --win nsis --publish always"
+  },
+  "build": {
+    "appId": "app.ammu.id.desktop",
+    "productName": "Ammu Online",
+    "directories": {
+      "buildResources": "resources",
+      "output": "dist"
+    },
+    "files": [
+      "build/**/*",
+      "app/**/*",
+      "assets/**/*",
+      "package.json"
+    ],
+    "publish": {
+      "provider": "github",
+      "owner": "lexanoisgroup3",
+      "repo": "portal-mu",
+      "releaseType": "release"
+    },
+    "win": {
+      "target": [
+        { "target": "nsis", "arch": ["x64"] }
+      ],
+      "icon": "assets/appIcon.ico",
+      "publisherName": "Pondok Pesantren Mambaul Ulum"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowElevation": true,
+      "allowToChangeInstallationDirectory": true,
+      "deleteAppDataOnUninstall": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Ammu Online",
+      "installerIcon": "assets/appIcon.ico",
+      "uninstallerIcon": "assets/appIcon.ico"
+    },
+    "mac": {
+      "target": [
+        { "target": "dmg", "arch": ["arm64", "x64"] }
+      ],
+      "icon": "assets/appIcon.png",
+      "category": "public.app-category.education"
+    },
+    "linux": {
+      "target": [
+        { "target": "AppImage", "arch": ["x64"] }
+      ],
+      "icon": "assets/appIcon.png",
+      "category": "Education"
+    }
+  },
+  "dependencies": {
+    "electron-unhandled": "^4.0.1",
+    "electron-updater": "^6.1.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "electron": "^27.0.0",
+    "electron-builder": "^24.6.4",
+    "typescript": "^5.2.0"
+  },
+  "keywords": [
+    "ammu",
+    "pondok",
+    "mambaul-ulum"
+  ]
+}
