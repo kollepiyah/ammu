@@ -144,7 +144,8 @@ const routes = [
       { path: 'kegiatan-pesantren', name: 'kegiatan-pesantren', component: KegiatanPesantrenView, meta: { admin: true } },
       // v.66.0526: Batch B — Kalender Kegiatan + Statistik full Vue
       { path: 'kalender', name: 'kalender', component: KalenderKegiatanView, alias: '/kalender-kegiatan' },
-      { path: 'statistik', name: 'statistik', component: StatistikView },
+      // v.86.0526: santri diblok dari statistik agregat -> redirect ke Capaian Prestasi (statistik pribadi digabung di sana)
+      { path: 'statistik', name: 'statistik', component: StatistikView, meta: { noSantri: true } },
       // v.20.6.0526: Input Bulanan + Rekap Prestasi/Diniyah — guru boleh akses (input nilai santri kelasnya)
       // v.21.114.0528: Input Bulanan + Rekap Prestasi/Diniyah — block santri access (kyai req — santri cukup lihat data dirinya di Capaian Prestasi)
       { path: 'input-bulanan', name: 'input-bulanan', component: InputBulananView, meta: { noSantri: true } },

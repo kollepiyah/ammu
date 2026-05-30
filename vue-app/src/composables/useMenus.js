@@ -11,8 +11,8 @@ const ALL_MENUS = [
   // GROUP: MENU UTAMA
   // v.20.55.0526: featureFlag → hide kalau settings.fiturX=false
   { group: 'Menu', name: 'Beranda', path: '/dashboard', icon: 'fa-home', roles: ['admin', 'guru', 'santri'], available: true, featureFlag: 'fiturBeranda' },
-  // v.21.19.0526: Dashboard Statistik tersedia untuk semua role — santri lihat statistik prestasinya, guru lihat statistik kelasnya, admin full
-  { group: 'Menu', name: 'Dashboard Statistik', path: '/statistik', icon: 'fa-chart-pie', roles: ['admin', 'guru', 'santri'], available: true },
+  // v.86.0526: Dashboard Statistik HANYA admin/guru. Santri: statistik prestasi pribadi digabung ke Capaian Prestasi (kyai req).
+  { group: 'Menu', name: 'Dashboard Statistik', path: '/statistik', icon: 'fa-chart-pie', roles: ['admin', 'guru'], available: true },
   { group: 'Menu', name: 'Kalender Kegiatan', path: '/kalender', icon: 'fa-calendar-alt', roles: ['admin', 'guru', 'santri'], available: true, featureFlag: 'fiturKalender' },
   // v.20.14.0526: Capaian Prestasi santri — pindah ke group Menu (di bawah Kalender, tanpa label Pendidikan)
   { group: 'Menu', name: 'Capaian Prestasi', path: '/capaian-prestasi', icon: 'fa-trophy', roles: ['santri'], available: true },
