@@ -136,19 +136,26 @@
           <div
             class="px-4 md:px-6 py-3 border-t border-[var(--border-subtle)] bg-[var(--bg-card-elevated)] flex items-center justify-end gap-2 rounded-b-2xl"
           >
+            <!-- v.86.0526: santri view-only indicator -->
+            <span v-if="isSantri" class="mr-auto text-xs font-bold text-[var(--text-tertiary)] flex items-center gap-1.5">
+              <i class="fas fa-eye"></i>Hanya lihat
+            </span>
             <button
               @click="kk.tutupKartu()"
               class="px-4 py-2 text-sm font-bold rounded-xl bg-slate-200 dark:bg-slate-700 text-[var(--text-primary)] hover:bg-slate-300 dark:hover:bg-slate-600 cursor-pointer"
             >
-              Batal
+              {{ isSantri ? 'Tutup' : 'Batal' }}
             </button>
+            <!-- v.86.0526: Cetak + Simpan disembunyikan untuk santri (view-only) -->
             <button
+              v-if="!isSantri"
               @click="cetakKartu"
               class="px-4 py-2 text-sm font-bold rounded-xl bg-rose-600 hover:bg-rose-700 text-white cursor-pointer flex items-center gap-1.5"
             >
               <i class="fas fa-print"></i>Cetak
             </button>
             <button
+              v-if="!isSantri"
               @click="kk.simpanKartu()"
               :disabled="kk.saving.value"
               class="px-4 py-2 text-sm font-black rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
@@ -167,12 +174,16 @@
 import { computed } from 'vue'
 import { useKartuKenaikan } from '@/composables/useKartuKenaikan'
 import { useSettingsStore } from '@/stores/settings'
+import { useAuthStore } from '@/stores/auth'
 
 const props = defineProps({
   kk: { type: Object, required: true }
 })
 
 const settings = useSettingsStore()
+// v.86.0526: santri = view-only (tanpa Cetak/Simpan kartu kenaikan)
+const auth = useAuthStore()
+const isSantri = computed(() => auth.sesiAktif?.role === 'santri')
 
 // Group kelas list jadi pairs (2 per row)
 const matrixRows = computed(() => {

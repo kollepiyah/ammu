@@ -306,6 +306,13 @@
           >
             <i class="fas fa-file-pdf"></i>Ekspor PDF
           </button>
+          <!-- v.86.0526: santri = view-only (tanpa ekspor PDF) -->
+          <span
+            v-else-if="santriAktif && isSantri"
+            class="h-9 px-3 inline-flex items-center gap-1.5 text-xs font-bold text-[var(--text-tertiary)]"
+          >
+            <i class="fas fa-eye"></i>Hanya lihat
+          </span>
         </div>
 
         <!-- Rapor lain (kumulatif lintas lembaga) -->
