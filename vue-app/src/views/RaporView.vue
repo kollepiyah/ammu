@@ -972,6 +972,12 @@ const TAHUN_AJARAN_OPTS = computed(() => {
 
 // ===== Santri filtered for current lembaga + shift =====
 const santriList = computed(() => {
+  // v.86.0526 FIX PRIVACY: role santri/wali HANYA boleh lihat dirinya sendiri.
+  //   Sebelumnya santri melihat seluruh roster lembaga (bocor data semua santri).
+  if (isSantri.value) {
+    const myId = String(authStore.sesiAktif?.id || '')
+    return santriRaw.value.filter((s) => String(s.id) === myId)
+  }
   const lmb = String(lembaga.value || '')
     .toLowerCase()
     .trim()
