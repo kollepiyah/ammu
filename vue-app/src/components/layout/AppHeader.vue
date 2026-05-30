@@ -21,8 +21,52 @@
 
     <!-- Kanan: dark toggle + dropdown profil -->
     <div class="flex items-center gap-2">
-      <!-- Info nama + role (desktop) -->
-      <div class="text-right hidden md:block mr-2">
+      <!-- v.86.0526: Wali multi-anak -> dropdown pilih anak; selain itu nama statis -->
+      <div v-if="isSantriRole && hasMultiple" class="relative mr-1" ref="childRef">
+        <button
+          @click="childOpen = !childOpen"
+          class="flex items-center gap-1.5 px-2 py-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700/50 transition cursor-pointer"
+          aria-label="Pilih anak"
+        >
+          <span class="text-right leading-tight hidden sm:block">
+            <span class="block text-xs font-black text-slate-800 dark:text-white truncate max-w-[130px]">{{ namaUser }}</span>
+            <span class="block text-[9px] font-bold text-teal-500 uppercase tracking-wider">{{ children.length }} anak · ganti</span>
+          </span>
+          <i class="fas fa-child text-teal-500 sm:hidden"></i>
+          <i class="fas fa-chevron-down text-[10px] text-slate-400"></i>
+        </button>
+        <transition
+          enter-active-class="transition duration-150"
+          enter-from-class="opacity-0 scale-95"
+          enter-to-class="opacity-100 scale-100"
+          leave-active-class="transition duration-100"
+          leave-from-class="opacity-100 scale-100"
+          leave-to-class="opacity-0 scale-95"
+        >
+          <div
+            v-if="childOpen"
+            class="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 py-2 z-50"
+          >
+            <p class="px-4 py-1.5 text-[10px] font-bold uppercase text-slate-400 tracking-wider">Pilih Anak</p>
+            <button
+              v-for="c in children"
+              :key="c.id"
+              @click="pickChild(c)"
+              class="w-full text-left px-4 py-2.5 text-sm font-bold flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-700 transition cursor-pointer"
+              :class="String(c.id) === activeId ? 'text-teal-600 dark:text-teal-300' : 'text-slate-700 dark:text-slate-200'"
+            >
+              <span class="w-7 h-7 rounded-full bg-teal-100 dark:bg-teal-700 text-teal-600 dark:text-teal-200 flex items-center justify-center text-xs font-black flex-shrink-0">{{ (c.nama || '?').charAt(0) }}</span>
+              <span class="flex-1 min-w-0">
+                <span class="block truncate">{{ c.nama }}</span>
+                <span class="block text-[10px] text-slate-400 font-medium">{{ c.lembaga }}{{ c.kelas ? ' · ' + c.kelas : '' }}</span>
+              </span>
+              <i v-if="String(c.id) === activeId" class="fas fa-check text-teal-500"></i>
+            </button>
+          </div>
+        </transition>
+      </div>
+      <!-- Info nama + role (desktop) — non multi-anak -->
+      <div v-else class="text-right hidden md:block mr-2">
         <p class="text-xs font-black text-slate-800 dark:text-white leading-tight">
           {{ namaUser }}
         </p>
@@ -115,6 +159,8 @@ import { useToast } from '@/composables/useToast'
 import { getNamaGuruGelar } from '@/utils/format'
 // v.21.111.0527: Notif Center bell
 import AppNotifBell from '@/components/layout/AppNotifBell.vue'
+// v.86.0526: Wali multi-anak picker
+import { useWaliChildren } from '@/composables/useWaliChildren'
 
 const auth = useAuthStore()
 const ui = useUiStore()
@@ -129,6 +175,16 @@ const appName = computed(() => settings.settings?.txtHeaderBar || settings.setti
 
 const dropdownOpen = ref(false)
 const dropdownRef = ref(null)
+
+// v.86.0526: Wali multi-anak picker — beralih konteks antar anak
+const { isSantriRole, children, hasMultiple, activeId, switchTo } = useWaliChildren()
+const childOpen = ref(false)
+const childRef = ref(null)
+function pickChild(c) {
+  switchTo(c)
+  childOpen.value = false
+  toast.success('Beralih ke ' + (c?.nama || 'anak'))
+}
 
 const ROLE_LABELS = {
   admin: 'Administrator',
@@ -184,6 +240,9 @@ async function onLogout() {
 function handleClickOutside(e) {
   if (dropdownRef.value && !dropdownRef.value.contains(e.target)) {
     dropdownOpen.value = false
+  }
+  if (childRef.value && !childRef.value.contains(e.target)) {
+    childOpen.value = false
   }
 }
 onMounted(() => document.addEventListener('click', handleClickOutside))
