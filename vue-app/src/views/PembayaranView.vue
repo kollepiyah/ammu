@@ -13,6 +13,31 @@
       </div>
     </div>
 
+    <!-- v.86.0526: Cara Pembayaran (2 jalur) — hanya santri/wali -->
+    <div v-if="isSantriOnly" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm">
+        <div class="flex items-center gap-2 mb-1.5">
+          <span class="w-9 h-9 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center flex-shrink-0"><i class="fas fa-hand-holding-usd"></i></span>
+          <h3 class="font-black text-sm flex-1">Bayar Manual (Kantor)</h3>
+          <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">Tersedia</span>
+        </div>
+        <p class="text-xs text-[var(--text-secondary)]">Pembayaran tunai langsung di kantor admin pondok. Admin mencatat &amp; memberi bukti pembayaran.</p>
+      </div>
+      <div class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm">
+        <div class="flex items-center gap-2 mb-1.5">
+          <span class="w-9 h-9 rounded-full bg-cyan-100 text-cyan-600 flex items-center justify-center flex-shrink-0"><i class="fas fa-building-columns"></i></span>
+          <h3 class="font-black text-sm flex-1">Transfer / VA</h3>
+          <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">Segera</span>
+        </div>
+        <p class="text-xs text-[var(--text-secondary)]">Transfer ke rekening pondok; pembayaran dibaca otomatis lewat KSPP BMT PETA lalu diverifikasi admin. <span class="italic">(dalam pengembangan)</span></p>
+        <div class="mt-2 p-2.5 rounded-lg bg-[var(--bg-card-elevated)] border border-[var(--border-subtle)] text-xs">
+          <p class="font-bold text-[var(--text-primary)] mb-0.5"><i class="fas fa-university mr-1 text-cyan-500"></i>Rekening Pondok</p>
+          <p class="text-[var(--text-secondary)] whitespace-pre-line">{{ rekeningInfo }}</p>
+        </div>
+        <p class="text-[10px] text-[var(--text-tertiary)] mt-1.5">Alur: Transfer &rarr; dibaca KSPP &rarr; dibaca aplikasi &rarr; admin verifikasi &rarr; lunas.</p>
+      </div>
+    </div>
+
     <!-- Filter (admin) -->
     <div v-if="!isSantriOnly" class="bg-[var(--bg-card)] rounded-2xl p-3 border border-[var(--border-subtle)] shadow-sm grid grid-cols-1 md:grid-cols-3 gap-2">
       <input v-model="search" type="text" placeholder="Cari nama santri..." class="px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)]" />
@@ -49,10 +74,17 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { subscribeColl } from '@/services/firestore'
 import { useAuthStore } from '@/stores/auth'
+import { useSettingsStore } from '@/stores/settings'
 import { fmtRp, fmtTgl } from '@/utils/format'
 
 const NAMA_BULAN = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember']
 const auth = useAuthStore()
+const settingsStore = useSettingsStore()
+// v.86.0526: info rekening pondok utk jalur Transfer/VA (coming soon — kerjasama KSPP BMT PETA)
+const rekeningInfo = computed(() => {
+  const s = settingsStore.settings || {}
+  return s.rekeningPondok || s.noRekening || s.rekening || 'Akan diumumkan (menyusul kerja sama KSPP BMT PETA).'
+})
 const pembayaranRaw = ref([])
 const santriList = ref([])
 const loading = ref(true)
