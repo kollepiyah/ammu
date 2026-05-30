@@ -439,6 +439,17 @@ service cloud.firestore {
       allow write: if signedIn();
     }
 
+    // v.86.0526: Bukti transfer pembayaran (wali upload -> admin verifikasi).
+    //   CREATE: signedIn + nominal valid + status pending. UPDATE/DELETE: signedIn (admin verify).
+    match /pembayaran_transfer_pending/{docId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.nominal is number
+        && request.resource.data.nominal > 0
+        && request.resource.data.status == 'pending';
+      allow update, delete: if signedIn();
+    }
+
     // Default deny untuk collection lain
     match /{document=**} {
       allow read, write: if false;
