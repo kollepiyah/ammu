@@ -884,12 +884,20 @@ const kelasCount = computed(() => {
   const set = new Set()
   for (const s of santriRaw.value) {
     if (s.aktif === false) continue
-    const lembNgaji = String(s.lembaga || '').trim().toLowerCase()
-    const kelasNgaji = String(s.kelas || '').trim().toLowerCase()
-    if (lembNgaji && kelasNgaji) set.add(`${lembNgaji}|${kelasNgaji}`)
-    const lembSek = String(s.lembaga_sekolah || '').trim().toLowerCase()
-    const kelasSek = String(s.kelas_sekolah || '').trim().toLowerCase()
-    if (lembSek && kelasSek) set.add(`${lembSek}|${kelasSek}`)
+    // v.86.0526 FIX: hanya hitung kelas dari santri yang SUDAH punya guru (master Kelas & Guru).
+    //   Sebelumnya semua santri aktif dihitung -> kelas tetap muncul (34) walau belum ada guru di-assign.
+    const punyaGuruNgaji = !!(s.guru || s.guru_pagi || s.guru_sore)
+    const guruSekolahArr = Array.isArray(s.guru_sekolah) ? s.guru_sekolah.filter(Boolean) : []
+    if (punyaGuruNgaji) {
+      const lembNgaji = String(s.lembaga || '').trim().toLowerCase()
+      const kelasNgaji = String(s.kelas || '').trim().toLowerCase()
+      if (lembNgaji && kelasNgaji) set.add(`${lembNgaji}|${kelasNgaji}`)
+    }
+    if (guruSekolahArr.length > 0) {
+      const lembSek = String(s.lembaga_sekolah || '').trim().toLowerCase()
+      const kelasSek = String(s.kelas_sekolah || '').trim().toLowerCase()
+      if (lembSek && kelasSek) set.add(`${lembSek}|${kelasSek}`)
+    }
   }
   return set.size
 })

@@ -83,7 +83,15 @@ const settingsStore = useSettingsStore()
 // v.86.0526: info rekening pondok utk jalur Transfer/VA (coming soon — kerjasama KSPP BMT PETA)
 const rekeningInfo = computed(() => {
   const s = settingsStore.settings || {}
-  return s.rekeningPondok || s.noRekening || s.rekening || 'Akan diumumkan (menyusul kerja sama KSPP BMT PETA).'
+  // v.86.0526: rekening dari Pengaturan Keuangan (settings/general: bank_nama/bank_nomor/bank_atasnama)
+  if (s.bank_nomor || s.bank_nama) {
+    const baris = []
+    if (s.bank_nama) baris.push(s.bank_nama)
+    if (s.bank_nomor) baris.push('No. ' + s.bank_nomor)
+    if (s.bank_atasnama) baris.push('a.n. ' + s.bank_atasnama)
+    return baris.join('\n')
+  }
+  return 'Akan diumumkan (menyusul kerja sama KSPP BMT PETA).'
 })
 const pembayaranRaw = ref([])
 const santriList = ref([])
