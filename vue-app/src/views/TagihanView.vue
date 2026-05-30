@@ -212,8 +212,18 @@ function statusLabel(t) {
   return 'Belum bayar'
 }
 
+// v.86.0526 FIX PRIVACY: santri/wali hanya lihat tagihan dirinya sendiri (anak terpilih), bukan semua santri.
+const baseTagihan = computed(() => {
+  let arr = tagihanRaw.value.filter(Boolean)
+  if (auth.sesiAktif?.role === 'santri') {
+    const myId = String(auth.sesiAktif?.id || '')
+    arr = arr.filter((t) => String(t.santri_id) === myId)
+  }
+  return arr
+})
+
 const filteredItems = computed(() => {
-  let list = tagihanRaw.value.filter(Boolean)
+  let list = [...baseTagihan.value]
   if (filterStatus.value === 'lunas') list = list.filter((t) => getSisa(t) === 0)
   else if (filterStatus.value === 'belum') list = list.filter((t) => getSisa(t) > 0 && Number(t.bayar || 0) === 0)
   else if (filterStatus.value === 'cicil') list = list.filter((t) => Number(t.bayar || 0) > 0 && getSisa(t) > 0)
@@ -223,11 +233,11 @@ const filteredItems = computed(() => {
   return list.sort((a, b) => String(b.jatuh_tempo || '').localeCompare(String(a.jatuh_tempo || '')))
 })
 
-const uniqueKategori = computed(() => [...new Set(tagihanRaw.value.map((t) => t.kategori).filter(Boolean))].sort())
+const uniqueKategori = computed(() => [...new Set(baseTagihan.value.map((t) => t.kategori).filter(Boolean))].sort())
 
 const stats = computed(() => ({
-  totalTagihan: tagihanRaw.value.length,
-  totalTunggakan: tagihanRaw.value.reduce((s, t) => s + getSisa(t), 0)
+  totalTagihan: baseTagihan.value.length,
+  totalTunggakan: baseTagihan.value.reduce((s, t) => s + getSisa(t), 0)
 }))
 
 const modalOpen = ref(false)
