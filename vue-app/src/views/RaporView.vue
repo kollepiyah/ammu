@@ -878,7 +878,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, unref } from 'vue'
+import { ref, computed, onMounted, onUnmounted, unref, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import { subscribeColl } from '@/services/firestore'
 import { useSantri } from '@/composables/useSantri'
@@ -1910,9 +1910,35 @@ function pilihKategori(k) {
   filterKelas.value = ''
   search.value = ''
   santriId.value = ''
+  // v.86.0526: santri/wali -> langsung ekspor PDF rapornya (tanpa list/preview di app)
+  if (isSantri.value) {
+    exportSantriRapor(k)
+    return
+  }
   // Guru mode: skip pilih lembaga, langsung list santri diampu
   view.value = isGuruOnly.value ? 'santri' : 'lembaga'
   if (isGuruOnly.value) lembaga.value = ''
+}
+
+// v.86.0526: Santri/wali — ekspor rapor sendiri jadi PDF langsung; kalau nilai belum
+//   diinput, tampilkan notif "Rapor belum diinput" (kyai req: tanpa preview di app).
+async function exportSantriRapor(k) {
+  const myId = String(authStore.sesiAktif?.id || '')
+  const s = santriRaw.value.find((x) => String(x.id) === myId)
+  if (!s) {
+    toast?.warning?.('Data santri tidak ditemukan')
+    return
+  }
+  santriId.value = String(s.id)
+  lembaga.value = k === 'diniyah' ? String(s.lembaga_sekolah || '') : String(s.lembaga || '')
+  await nextTick()
+  const doc = findRaporDocFor(s)
+  const adaNilai = !!doc && doc.data_nilai && Object.keys(doc.data_nilai).length > 0
+  if (!adaNilai) {
+    toast?.info?.('Rapor belum diinput')
+    return
+  }
+  await exportPdfSingle(s)
 }
 
 // Diniyah lembaga filter (SDI + PKBM only — formal sekolah)
