@@ -162,7 +162,7 @@ try {
   log('   (legacy portal-mambaul-ulum di-SKIP — sudah tidak dipakai)')
   log('')
   log('💡 Untuk rebuild AAB (Play Store): npm run build:aab')
-  log('   AAB versionCode 20, versionName "20.0526" — match web version')
+  log('   AAB versionCode/Name ikut vue-app/android/app/build.gradle (cek sebelum rilis)')
 } catch (err) {
   console.error('[deploy-minified] FAILED:', err.message)
   restore()
