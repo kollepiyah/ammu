@@ -50,9 +50,8 @@ export function useSantri() {
     if (!s) return false
     if (s.role === 'admin' || s.id === 'admin') return true
     if (['super_admin', 'admin', 'admin_keuangan'].includes(s.role_sistem)) return true
-    // Kepala lembaga / PJ / Pengasuh = full access ke santri lembaganya (tapi ini global → kita allow semua untuk simplicity, atau bisa filter lembaga)
-    const jab = String(s.jabatan || '').toLowerCase()
-    if (jab.includes('kepala') || jab.includes('pj ') || jab.startsWith('pj') || jab.includes('pengasuh')) return true
+    // v.86.0526: Kepala Lembaga/PJ/Pengasuh TIDAK lagi full-access global (kyai: "Kepala = lembaganya").
+    //   Discope ke SE-GROUP lembaganya di branch scoping (isKepala) di bawah.
     return false
   })
 
@@ -67,11 +66,16 @@ export function useSantri() {
       const myNama = String(user?.guru || user?.nama || '').trim().toLowerCase()
       if (!myNama) return []
       // Kepala Lembaga: filter santri yang lembaga-nya = lembaga kepala-nya (via canSee)
-      const isKepala = /kepala/i.test(String(user?.jabatan || ''))
+      const jabL = String(user?.jabatan || '').toLowerCase()
+      const isKepala = jabL.includes('kepala') || jabL.includes('pj') || jabL.includes('pengasuh')
+      const myFamily = getLembagaGroup(user?.lembaga) // 'TPQ' | 'SDI' | ... (keluarga lembaga)
       list = list.filter((s) => {
-        // Kepala lembaga: lihat semua santri di lembaga-nya (via canSee)
+        // v.86.0526: Kepala/PJ = SE-GROUP lembaganya (kyai). exact-lembaga via canSee +
+        //   match keluarga lembaga (getLembagaGroup: TPQ Pagi/Sore/Pra PTPT → 'TPQ').
         if (isKepala) {
-          return canSee(user, s.lembaga) || canSee(user, s.lembaga_sekolah)
+          if (canSee(user, s.lembaga) || canSee(user, s.lembaga_sekolah)) return true
+          if (myFamily && (getLembagaGroup(s.lembaga) === myFamily || getLembagaGroup(s.lembaga_sekolah) === myFamily)) return true
+          return false
         }
         const gp = String(s.guru_pagi || '').trim().toLowerCase()
         const gs = String(s.guru_sore || '').trim().toLowerCase()
