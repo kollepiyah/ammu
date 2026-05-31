@@ -109,3 +109,30 @@ Dari `git diff --numstat HEAD a7ded60 -- vue-app/src` (a7ded60 = tip v.84 yang h
 - **Splashscreen Electron** (kyai kirim screenshot): titlebar+menu native (Berkas/Edit/Tampilan/Bantuan) sudah benar & app jalan, TAPI splash awal = kotak biru-tua gelap solid TANPA logo. Perlu perbaiki splash window Electron (kemungkinan `splash.html`/asset logo tidak ke-load di `electron/app` — cek path logo relatif & robocopy dist→app, atau `index.ts` splash BrowserWindow loadFile). Belum dikerjakan.
 
 **HEAD `feature/vue-migration` = `002aa13`. Build OK (VITE_EXITCODE=0). Belum push. AAB belum rebuild (tunggu komando + bump versi). Web belum deploy (perlu `npm run firebase:deploy`).**
+
+
+---
+## UPDATE (sesi "splash + RBAC scoping investigation")
+**SUDAH: fix splash Electron** (`7a3cad9`) — embed PNG base64 (lihat di atas).
+
+**TEMUAN AUDIT RBAC SCOPING PER JABATAN (akar masalah — perlu keputusan kyai sebelum implementasi):**
+
+Scoping saat ini dijalankan oleh DUA mekanisme paralel:
+1. `roleScope.isFullFilterRole` (biner): super_admin/admin = full; **Kepala Lembaga/PJ = full juga** (via match string `jabatan`); selain itu = "guru-mode". Dipakai di view akademik: **Rapor, RekapPrestasi, AbsensiSantri, Statistik**. Guru-mode menyaring santri via nama guru (ownNgaji: `guru_pagi`/`guru_sore`) → kelas yang dia ajar.
+2. `useLembaga.canSee(user, lembaga, kelas)` (granular): admin/super = all; Kepala Lembaga (via `user.lembaga_refs[].jabatan==='Kepala Lembaga'`) = se-lembaga/se-group; guru = `kelas_diajar` saja. Dipakai di master list: **SantriView, GuruView** (via composable useSantri/useGuru).
+
+**AKAR MASALAH:** `auth.js` saat membangun `sesiAktif` (login & loadSesiFromUser) **TIDAK mengisi `lembaga_refs`**. Akibatnya cabang granular `canSee` (kelas-level guru + Kepala Lembaga + group) **dormant**; `canSee` jatuh ke fallback legacy `user.lembaga === target_lembaga` → **guru melihat SE-LEMBAGA, bukan kelasnya saja**.
+
+**Selisih vs spec kyai:**
+- guru/user (spec: "data kelasnya") → di **SantriView/GuruView** sekarang lihat **se-lembaga** (terlalu luas); di view akademik sudah ke-kelas (ownNgaji). → tidak konsisten.
+- Kepala Lembaga/PJ (spec: "lembaganya") → di view akademik `isFullFilterRole=true` = **lihat SEMUA lembaga** (terlalu luas, setara super_admin). Mestinya dikunci ke lembaga/group-nya.
+- admin_keuangan (spec: "data kelasnya") → `isFullFilterRole=false` (guru-mode) tapi tak punya assignment guru → view akademik kemungkinan kosong; keuangan global (perlu utk billing). Frasa "data kelasnya" ambigu utk staf keuangan.
+- Direktur/Supervisor → guru-mode + menu Supervisi ✓ (sesuai).
+- santri/wali → sudah terkunci (sesi sebelumnya) ✓.
+
+**OPSI PERBAIKAN (butuh keputusan):**
+- (A) Root-cause: isi `lembaga_refs` di sesi (derive dari `guru_pagi`/`guru_sore`/`guru_sekolah`/`jabatan` di doc guru), lalu seragamkan SEMUA view pakai `canSee`. Paling benar, tapi refactor + WAJIB tes multi-akun di device (tak bisa diverif via build).
+- (B) Surgical minimal: (1) kunci lembaga picker ke lembaga/group sendiri utk Kepala Lembaga di 4 view akademik; (2) sempitkan SantriView/GuruView guru ke kelas (pakai ownNgaji), bukan se-lembaga. Lebih kecil, tetap perlu tes device.
+- Keputusan produk: apakah "data kelasnya" utk guru = **kelas yang diajar saja** (ketat) atau **se-lembaga** (sekarang)? Ini menentukan A/B.
+
+**Belum diimplementasi — menunggu arahan kyai (granularity + A/B). Tidak diedit blind karena menyangkut visibilitas data santri di produksi & tak bisa diverif tanpa akun multi-role.**
