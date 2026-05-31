@@ -55,8 +55,25 @@ function createSplashWindow() {
   // v.85.0526: Splash pakai design Bakafrawi (landscape 1920x1080) sebagai full bg-image.
   //   Logo + Powered by sudah inline di image, tidak perlu DOM element terpisah.
   //   Theme-aware via @prefers-color-scheme (auto switch light/dark).
-  const splashLightPath = path.join(__dirname, '..', 'assets', 'splash-light.png').replace(/\\/g, '/')
-  const splashDarkPath = path.join(__dirname, '..', 'assets', 'splash-dark.png').replace(/\\/g, '/')
+  // v.86.0526 FIX: splash di-load via data:text/html (opaque origin) → Chromium BLOKIR
+  //   subresource file:// (webSecurity) → dulu gambar gagal load, hanya tampil bg-color gelap.
+  //   Solusi: baca PNG → embed sebagai base64 data-URI langsung di CSS (tak perlu akses file://).
+  const splashLightFs = path.join(__dirname, '..', 'assets', 'splash-light.png')
+  const splashDarkFs = path.join(__dirname, '..', 'assets', 'splash-dark.png')
+  let lightBgRule = ''
+  let darkBgRule = ''
+  try {
+    const b64 = fs.readFileSync(splashLightFs).toString('base64')
+    lightBgRule = `background-image: url('data:image/png;base64,${b64}');`
+  } catch (e) {
+    console.error('[splash] gagal baca splash-light.png:', splashLightFs, e)
+  }
+  try {
+    const b64 = fs.readFileSync(splashDarkFs).toString('base64')
+    darkBgRule = `background-image: url('data:image/png;base64,${b64}');`
+  } catch (e) {
+    console.error('[splash] gagal baca splash-dark.png:', splashDarkFs, e)
+  }
   const splashHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html, body {
@@ -66,7 +83,7 @@ function createSplashWindow() {
     }
     body {
       background-color: #F2FEF9;
-      background-image: url('file:///${splashLightPath}');
+      ${lightBgRule}
       background-size: cover;
       background-position: center center;
       background-repeat: no-repeat;
@@ -75,7 +92,7 @@ function createSplashWindow() {
     @media (prefers-color-scheme: dark) {
       body {
         background-color: #0F172A;
-        background-image: url('file:///${splashDarkPath}');
+        ${darkBgRule}
       }
     }
     @keyframes bodyIn { from { opacity: 0; } to { opacity: 1; } }
