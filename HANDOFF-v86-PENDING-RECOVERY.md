@@ -183,3 +183,26 @@ Scoping saat ini dijalankan oleh DUA mekanisme paralel:
 - Splash Electron: native splash (logo) tampil ~1.8s, main muncul setelah splash tutup (tidak dobel lagi).
 
 **SISA pending:** T41 scope Kepala di StatistikView (agregat, minor) ; backfill santri lama dari PSB (opsional, belum dibuat).
+
+
+---
+## BATCH BARU (kyai, belum dikerjakan — sesi berikutnya). Widget Jam Hijri SUDAH recovered (commit f63651a).
+
+1. **Dashboard Statistik belum sesuai** — sebelumnya sudah fix kelasCount (santri ber-guru). Kyai bilang MASIH salah tapi belum sebut angka mana. AKSI: minta kyai sebut metrik spesifik (total santri? guru? kelas? per-lembaga?). File: `StatistikView.vue` pakai `santriRaw` langsung di banyak computed (totalSantri/santriAktif/lembagaCount/kelasCount L859+). Cek apakah hitung termasuk non-aktif / duplikat lembaga.
+
+2. **Dashboard Keuangan belum sesuai** — sudah fix tabungan-exclude + bisyaroh bulan ini + net. Masih salah. AKSI: minta kyai sebut angka mana (pemasukan/pengeluaran/saldo/breakdown). Cek `KeuanganDashboardView.monthlyData` (L182+) & `useKeuangan.stats` vs isi `bukuInduk` real.
+
+3. **Splash 3 platform:**
+   - Web: tambah animasi FADE pada splash in-app (cek splash di `vue-app/index.html` atau komponen splash Vue — kasih `@keyframes fade` + opacity transition).
+   - Desktop: SUDAH native light/dark (electron base64). ✓
+   - Android: native light/dark per tema. "gk muncul" → cek `vue-app/android/app/src/main/res` splash drawable (`drawable/splash.xml`, `drawable-night/`) + `values/styles.xml` (Theme `AppTheme.NoActionBarLaunch` windowBackground / Android 12 `windowSplashScreenBackground` + `windowSplashScreenAnimatedIcon`) + capacitor.config `SplashScreen.androidSplashResourceName=splash`. Kemungkinan drawable `splash` tidak ada / tidak ke-generate → pakai @cap/assets atau buat drawable splash + night variant.
+
+4. **Cek gambar + compatibility semua device** — uji layout responsif mobile/tablet/desktop. Vague; minta contoh kasus yang rusak. (Screenshot mobile terlihat OK.)
+
+5. **Android runtime permissions** (storage/notif/camera) — manifest deklarasi sudah ada (INTERNET, storage, READ_MEDIA_*, CAMERA) TAPI **POST_NOTIFICATIONS belum ada** (Android 13+) → tambah. Runtime REQUEST: Capacitor Camera/Filesystem minta saat dipakai; notif Android 13+ perlu request eksplisit. AKSI: tambah `POST_NOTIFICATIONS` di manifest + request izin notif saat app start (plugin LocalNotifications/PushNotifications). Cek `useLocalNotif.js`.
+
+6. **Pembayaran + Tagihan jadi SATU menu (wali)** — hilangkan pilih kategori; wali: pilih TAGIHAN (yg belum lunas) → pilih METODE (transfer/VA) → upload bukti → verifikasi. AKSI: `useMenus.js` hapus menu "Pembayaran" untuk santri (Tagihan jadi entry tunggal, atau rename). `TagihanView` tombol Bayar → modal/route metode (tanpa kategori). `PembayaranView` simplify: terima konteks tagihan (id+nominal+nama via query, sudah ada `goBayar`), skip pilih kategori, langsung metode + upload. Hapus tab Manual untuk wali (manual = admin kantor saja).
+
+7. **Performa semua device** — sudah: manualChunks (firebase/charts split), route lazy, pdf lazy, font woff2. Lanjut: lazy-load Firebase Storage (cuma dipakai upload), kurangi initial paint, image lazy + ukuran tepat, audit re-render. vendor-firebase 683KB = core (sulit dikecilkan).
+
+**HEAD = `f63651a` (feature/vue-migration), belum push. Widget native = WAJIB rebuild AAB (Android Studio) utk muncul + verifikasi compile.**
