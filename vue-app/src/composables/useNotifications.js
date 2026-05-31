@@ -37,6 +37,7 @@ export function useNotifications() {
   const tagihanRaw = ref([])
   const liburRaw = ref([])     // dari koleksi `kegiatan` (filter tipe === 'libur')
   const kenaikanRaw = ref([])  // dari koleksi `riwayat_kenaikan` (event ditulis saat PROSES NAIK)
+  const prestasiRaw = ref([])  // dari koleksi `notif_prestasi` (event ditulis saat input nilai prestasi)
   const notifState = ref({})
 
   // unsub list
@@ -210,6 +211,24 @@ export function useNotifications() {
       }))
   }
 
+  // v.87.0526: Rekap prestasi baru/diperbarui → wali/santri (anaknya). Sumber: koleksi `notif_prestasi`.
+  function getPrestasi() {
+    if (role.value !== 'santri') return []
+    const me = userId.value
+    return prestasiRaw.value
+      .filter((p) => String(p.santri_id) === me)
+      .map((p) => ({
+        id: p.id || p._id,
+        jenis: 'prestasi',
+        judul: 'Prestasi diperbarui',
+        body: p.total ? `Nilai: ${p.total}` : 'Rekap prestasi bulan ini sudah dinilai',
+        ts: tsMs(p.createdAt || p.created_at),
+        link: '/capaian-prestasi',
+        icon: 'fa-trophy',
+        color: 'amber'
+      }))
+  }
+
   // v.73.0526: cleared_at = timestamp setelah user klik "Bersihkan semua".
   // Notif dengan ts <= cleared_at di-hide dari list (per-user state).
   const clearedAt = computed(() => Number(notifState.value?.cleared_at || 0))
@@ -224,7 +243,8 @@ export function useNotifications() {
       ...getBisyaroh(),
       ...getTagihan(),
       ...getLibur(),
-      ...getKenaikan()
+      ...getKenaikan(),
+      ...getPrestasi()
     ]
     const clearTs = clearedAt.value
     return all
@@ -251,7 +271,7 @@ export function useNotifications() {
   function allSeenNow(now) {
     return {
       supervisi: now, kritik: now, post: now, pembayaran: now, bisyaroh: now,
-      tagihan: now, libur: now, kenaikan: now
+      tagihan: now, libur: now, kenaikan: now, prestasi: now
     }
   }
 
@@ -301,6 +321,7 @@ export function useNotifications() {
       // v.87.0526: tagihan baru + event kenaikan (untuk wali/santri; admin lihat semua)
       unsubs.push(subscribeColl('keuangan_tagihan', (docs) => { tagihanRaw.value = docs || [] }))
       unsubs.push(subscribeColl('riwayat_kenaikan', (docs) => { kenaikanRaw.value = docs || [] }))
+      unsubs.push(subscribeColl('notif_prestasi', (docs) => { prestasiRaw.value = docs || [] }))
     }
     if (role.value === 'guru' || role.value === 'admin') {
       unsubs.push(subscribeColl('keuangan_gaji', (docs) => { slipRaw.value = docs || [] }))

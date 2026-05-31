@@ -450,6 +450,13 @@ service cloud.firestore {
       allow update, delete: if signedIn();
     }
 
+    // v.87.0526: Notif prestasi (event ditulis saat input nilai prestasi) — sumber Notif Center.
+    match /notif_prestasi/{docId} {
+      allow read: if true;
+      allow create, update: if signedIn();
+      allow delete: if signedIn();
+    }
+
     // Default deny untuk collection lain
     match /{document=**} {
       allow read, write: if false;

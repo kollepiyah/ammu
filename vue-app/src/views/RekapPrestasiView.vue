@@ -407,7 +407,7 @@
 import { ref, computed, onMounted, onUnmounted, reactive, watch } from 'vue'
 import { subscribeColl } from '@/services/firestore'
 import { db } from '@/services/firebase'
-import { doc, updateDoc } from 'firebase/firestore'
+import { doc, setDoc, updateDoc } from 'firebase/firestore'
 import { useToast } from '@/composables/useToast'
 import { useExcel } from '@/composables/useExcel'
 import { useSettingsStore } from '@/stores/settings'
@@ -689,6 +689,17 @@ async function simpanRekap() {
       }
       if (Object.keys(payload).length === 0) continue
       promises.push(updateDoc(doc(db, 'santri', String(id)), payload))
+      // v.87.0526: event notif prestasi (1 per santri / bulan berjalan) -> Notif Center wali.
+      const _periode = new Date().toISOString().slice(0, 7)
+      const _npId = `np_${id}_${_periode}`
+      promises.push(setDoc(doc(db, 'notif_prestasi', _npId), {
+        id: _npId,
+        santri_id: String(id),
+        santri_nama: s.nama || '',
+        total: String(payload.prestasi_total ?? e.total ?? ''),
+        periode: _periode,
+        createdAt: new Date().toISOString()
+      }, { merge: true }))
     }
     await Promise.all(promises)
     // clear local edits (snapshot will refresh)
