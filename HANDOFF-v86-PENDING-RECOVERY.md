@@ -206,3 +206,37 @@ Scoping saat ini dijalankan oleh DUA mekanisme paralel:
 7. **Performa semua device** — sudah: manualChunks (firebase/charts split), route lazy, pdf lazy, font woff2. Lanjut: lazy-load Firebase Storage (cuma dipakai upload), kurangi initial paint, image lazy + ukuran tepat, audit re-render. vendor-firebase 683KB = core (sulit dikecilkan).
 
 **HEAD = `f63651a` (feature/vue-migration), belum push. Widget native = WAJIB rebuild AAB (Android Studio) utk muncul + verifikasi compile.**
+
+
+---
+## SESI v.87.0526 — 31 Mei 2026 (lanjutan, agent)
+**HEAD `feature/vue-migration` = `e3d9551` (5 commit sesi ini, BELUM push).** Tiap commit: build vite/tsc OK, stage PER-FILE (JANGAN `git add -A` — masih ada WIP kyai).
+
+### SUDAH (commit sesi ini)
+- `8f0c654` **Pembayaran+Tagihan = 1 alur berlangkah (wali)** [batch lama #6]: menu "Pembayaran" santri DIHAPUS, "Tagihan Saya" → **"Tagihan & Pembayaran"** (1 pintu). TagihanView: tombol Bayar per-tagihan (kategori terkunci) + "Setoran Lain" (kategori bebas) + ikon Riwayat. PembayaranView wali: 3-tab → **alur berlangkah** (Pilih Metode: Transfer aktif / VA coming-soon → Bayar+upload). Riwayat via `mode`. Route `/pembayaran` tetap via deep-link.
+- `d21cec9` **Splash 3-platform** [#3]: Web fix fade-out (`@keyframes splashFadeOut` forwards — root cause: `splashFadeIn ... both` nahan opacity). Electron splash ikut **TEMA APP** (persist `userData/ammu-theme.json` via IPC `theme:set`). Android `res/values-night/colors.xml` (splashBg `#0F172A`). **+ Deploy: hapus `hosting:legacy`.**
+- `bc7fb90` **Notif Center diperluas** [#5 + req kyai]: `useNotifications` tambah **tagihan**, **libur** (kegiatan `tipe==='libur'`, KECUALI `libur_nasional`), **kenaikan** (event ditulis ke koleksi `riwayat_kenaikan` saat NaikKelasView PROSES NAIK), extend **pembayaran** (`transfer_verified`). OS-notif: `AppNotifBell` mirror `pushFromItems` + `setupLocalNotif` (izin). `AndroidManifest` + `POST_NOTIFICATIONS`.
+- `fb1eb51` **Deploy 2 site**: `firebase:deploy` = `hosting:main` (ammuonline) + `hosting:psb` + `firestore:rules` (+ Step build `vue-app-psb` → sync `public/psb`). Legacy SKIP.
+- `e3d9551` **Notif prestasi**: koleksi `notif_prestasi` (rule baru) + event di `RekapPrestasiView.simpanRekap` (1/santri/bulan, id `np_<id>_<YYYY-MM>`) + `getPrestasi`.
+
+### PERLU DIJALANKAN KYAI
+- **Web+PSB+rules:** `npm run firebase:deploy` (include firestore:rules — WAJIB krn rule `notif_prestasi` baru).
+- **Notif HP (status bar):** plugin `@capacitor/local-notifications` BELUM ke-install di vue-app → wiring siap (no-op sampai plugin ada). `npm install @capacitor/local-notifications@^8 --prefix vue-app` → `npx cap sync android` → `npm run build:aab`.
+- **AAB rebuild** juga utk: splash native Android (values-night), `POST_NOTIFICATIONS`, widget Jam Hijri.
+- **Desktop installer** (splash tema app): `npm run build:electron --prefix vue-app` → robocopy dist→app → `electron:make`.
+
+### CATATAN PENTING (sesi baru)
+- Working tree masih ada **WIP KYAI belum commit**: `App.vue`, `stores/auth.js`, `assets/main.css`, `composables/useNativeDownload.js`, `utils/strukBuilder.js` + aset splash Android + build artifacts. **JANGAN `git add -A`** — stage per-file.
+- Notif prestasi: nilai prestasi tetap di doc santri (`prestasi_awal/akhir/total`); `notif_prestasi` cuma event ringan.
+- Notif kenaikan: koleksi `riwayat_kenaikan` (top-level) dipakai sbg event (rule sudah ada); beda dari field array `santri.riwayat_kenaikan`.
+
+### BATCH BARU (kyai, 31 Mei — BELUM dikerjakan)
+1. **Audit master lembaga + SEMUA data** — pastikan semua berfungsi: rules, function, skema, pengaturan, dll. (rujuk §6/§10 KB + memory `portal_mu_lembaga_schema_canonical`).
+2. **Hapus tombol kembali (←) di RaporView santri** (mode "Hanya lihat"). File `vue-app/src/views/RaporView.vue` — hapus panah back utk role santri.
+3. **Dashboard jumlah kelas SALAH** → kelas dihitung dari **GURU yang SUDAH punya santri** (bukan cara sekarang). File `StatistikView.vue` (`kelasCount`). [refine batch lama #1]
+4. **Cek menyeluruh**: (a) dead code, (b) code ada tapi tak terpakai (fitur dibuat tapi HILANG — kyai lupa beberapa), (c) code miss/bug. (Ingat: git reset bersejarah membuang v.82/83/84 — lihat §C atas, sebagian fitur belum di-redo.)
+
+### SISA batch lama (masih open)
+- Dashboard Keuangan "masih salah" (perlu kyai sebut angka). Performa semua device (#7). Cek gambar + compatibility (#4).
+
+**— END SESI v.87 —**

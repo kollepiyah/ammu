@@ -1,12 +1,12 @@
 # PROJECT KNOWLEDGE BASE — Ammu Online (Portal MU)
-> Dokumen onboarding untuk sesi Claude baru. Baca ini DULU sebelum mulai. Update terakhir: 31 Mei 2026 (v.87.0526).
+> Dokumen onboarding untuk sesi Claude baru. Baca ini DULU sebelum mulai. Update terakhir: 31 Mei 2026 (v.87.0526 — sesi lanjutan, HEAD `e3d9551`).
 
 ---
 
 ## 1. IDENTITAS & STACK
 - **Aplikasi:** Ammu Online — sistem manajemen Pondok Pesantren Mambaul Ulum.
 - **Root project:** `D:\Aplikasi Project\Portal MU`
-- **Branch aktif:** `feature/vue-migration` (HEAD terakhir `01bf799`, BELUM di-push).
+- **Branch aktif:** `feature/vue-migration` (HEAD terakhir `e3d9551`, BELUM di-push). v.87 sesi: 5 commit `8f0c654`→`e3d9551`.
 - **Stack inti:** Vue 3 (`<script setup>`) + Vite + Pinia + Vue Router (hash mode `createWebHashHistory`).
 - **Backend:** Firebase v10 modular (Hosting + Firestore + Auth + Storage). Auth custom + Firebase Anonymous (TIDAK pakai role claims di request.auth → rules longgar, scoping di sisi app).
 - **Android:** Capacitor 8, **mode NATIVE/bundle** (`vue-app/capacitor.config.json`: `webDir:"dist"`, TANPA `server.url`). Web di-bundle ke AAB.
@@ -66,10 +66,10 @@ Format `v.<versionCode>.<MMYY>` (MM=bulan, YY=2 digit tahun). Saat ini **v.87.05
 - **Direktur/Supervisor:** + menu Supervisi. **santri/wali:** data pribadi + prestasi saja (sudah dikunci).
 - Bucket `role` (admin/guru/santri) ditentukan di `auth.js`: pengurus (super_admin/admin/admin_keuangan)→'admin'; lainnya→'guru'/'santri'. Menu di `useMenus.js` filter by role + `roleSistem` + `perm` + `featureFlag`.
 
-## 8. SPLASH (status per platform)
-- **Desktop (Electron):** ✓ native, logo base64 embed (data: origin tak bisa load file://), light/dark via prefers-color-scheme, main window ditahan hidden sampai splash tutup (anti-dobel).
-- **Web:** belum ada animasi fade (PENDING — kyai minta fade).
-- **Android:** native splash "gk muncul" (PENDING — kyai minta native light/dark per tema; cek drawable `splash` + styles.xml Android 12 splash API + capacitor SplashScreen config).
+## 8. SPLASH (status per platform — v.87 DONE)
+- **Desktop (Electron):** ✓ native logo base64; light/dark ikut **TEMA APP** (persist `userData/ammu-theme.json` via IPC `theme:set`, BUKAN prefers-color-scheme/OS); anti-dobel.
+- **Web:** ✓ fade-out FIX — animation `splashFadeOut` forwards (menang atas fill-mode `both` `splashFadeIn` yang dulu nahan opacity). Tema ikut localStorage (`portalMu_darkMode`).
+- **Android:** ✓ aset light + `drawable-night` lengkap + `values-night/colors.xml` (splashBg dark `#0F172A` utk Android-12 system splash). Splash native ikut tema **SISTEM HP** (tak bisa baca toggle in-app krn render sebelum JS). Verifikasi via rebuild AAB.
 
 ## 9. GAYA KERJA KYAI (WAJIB DIIKUTI)
 - Bahasa **Indonesia**, panggil user **"kyai"**.
@@ -85,18 +85,25 @@ Format `v.<versionCode>.<MMYY>` (MM=bulan, YY=2 digit tahun). Saat ini **v.87.05
 - **Capacitor:** NATIVE (bundle), bukan remote. AAB mengecil setelah build bersih = wajar (assets stale dibuang).
 - **isFullFilterRole vs canSee vs useSantri.isFullAccess** — beberapa mekanisme scoping paralel; hati-hati saat ubah (bisa over/under-expose). `lembaga_refs` di sesi auth TIDAK diisi → cabang granular canSee dormant (pakai fallback legacy lembaga match).
 
-## 11. STATE & PENDING (per 31 Mei 2026)
-**SUDAH (commit di feature/vue-migration, belum push):** dashboard keuangan calc fix, splash Electron (logo + anti-dobel), RBAC Kepala scope (Data Santri+Rapor+Rekap+Absensi), Edit Data Saya persist (guru+santri), PSB convert copy biodata lengkap, bump v.87, widget Jam Hijri recovered.
+## 11. STATE & PENDING (per 31 Mei 2026 — sesi lanjutan v.87)
+HEAD `feature/vue-migration` = `e3d9551` (BELUM push). Detail commit + perintah build/deploy di HANDOFF bagian "SESI v.87.0526".
 
-**PENDING (batch baru kyai — detail lengkap di HANDOFF-v86-PENDING-RECOVERY.md bagian "BATCH BARU"):**
-1. Dashboard Statistik belum sesuai → minta kyai angka spesifik.
-2. Dashboard Keuangan belum sesuai → minta kyai angka spesifik.
-3. Splash: web fade + Android native light/dark.
-4. Cek gambar + compatibility semua device.
-5. Android runtime permissions (tambah POST_NOTIFICATIONS + request notif; storage/camera via plugin).
-6. **Pembayaran + Tagihan = 1 menu (wali):** tanpa pilih kategori; pilih tagihan → metode (transfer/VA) → upload → verifikasi.
-7. Performa semua device (lazy Firebase Storage, image lazy, re-render audit).
-- Minor: T41 scope Kepala di StatistikView; backfill santri lama dari PSB (opsional).
+**SUDAH sesi ini (commit, belum push):**
+- Pembayaran+Tagihan = 1 alur berlangkah wali (`8f0c654`) [batch lama #6]
+- Splash 3-platform: web fade FIX, electron ikut TEMA APP, android values-night (`d21cec9`) [#3] + deploy hapus legacy
+- Notif Center diperluas: tagihan, pembayaran (transfer terverifikasi), libur (non-nasional), kenaikan, prestasi + wiring OS-notif + POST_NOTIFICATIONS (`bc7fb90`, `e3d9551`) [#5 + req kyai]
+- Deploy 2 site: main (ammuonline) + psb, legacy dibuang (`fb1eb51`)
+- (sesi sebelumnya: dashboard keuangan calc, splash Electron, RBAC Kepala scope, Edit Data Saya, PSB convert, bump v.87, widget Jam Hijri)
+
+**WAJIB kyai jalankan:** `npm run firebase:deploy` (main+psb+rules — WAJIB krn rule `notif_prestasi` baru). Notif HP: `npm i @capacitor/local-notifications@^8 --prefix vue-app` + `npx cap sync android` + `npm run build:aab`.
+
+**PENDING — BATCH BARU kyai (31 Mei, belum dikerjakan; detail di HANDOFF):**
+1. **Audit master lembaga + SEMUA data** — pastikan semua berfungsi: rules, function, skema, pengaturan, dll.
+2. **Hapus tombol kembali (←) di RaporView santri** (mode "Hanya lihat").
+3. **Dashboard jumlah kelas SALAH** → kelas dihitung dari GURU yang SUDAH punya santri (StatistikView `kelasCount`).
+4. **Cek menyeluruh**: (a) dead code, (b) code ada tapi tak terpakai (fitur dibuat tapi hilang — kyai lupa beberapa), (c) code miss/bug.
+
+**SISA batch lama (masih open):** Dashboard Keuangan masih salah (perlu kyai sebut angka); Performa semua device; Cek gambar + compatibility. Minor: T41 scope Kepala StatistikView; backfill santri lama PSB. (Notif prestasi & splash & pembayaran-merge SUDAH.)
 
 ## 12. LANGKAH PERTAMA SESI BARU
 1. `git -C "D:\Aplikasi Project\Portal MU" log --oneline -8` + baca `HANDOFF-v86-PENDING-RECOVERY.md` (tail).
