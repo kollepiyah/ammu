@@ -507,6 +507,18 @@ async function submitTransfer() {
       created_at: new Date().toISOString()
     }
     await setOne('pembayaran_transfer_pending', id, payload)
+    // v.86.0526: notif ke admin (notif_queue dibaca AppNotifBell — superadmin/admin_keuangan)
+    try {
+      await setOne('notif_queue', `ntf_${id}`, {
+        id: `ntf_${id}`,
+        judul: 'Bukti transfer baru',
+        pesan: `${santriObj?.nama || 'Santri'} kirim bukti transfer Rp ${Number(f.nominal || 0).toLocaleString('id-ID')} (${f.kategori || 'Transfer'}) — menunggu verifikasi.`,
+        kategori: 'pembayaran',
+        ref_id: id,
+        dibaca: false,
+        created_at: new Date().toISOString()
+      })
+    } catch (e) { /* notif best-effort, jangan blokir submit */ }
     toast.success('Bukti transfer terkirim. Menunggu verifikasi admin.')
     resetTransferForm()
   } catch (e) {

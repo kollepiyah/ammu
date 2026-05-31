@@ -75,6 +75,8 @@
           <!-- v.21.115.0528: bayar=isFullAccess (admin keuangan boleh), delete=isAdmin saja (super_admin) — konsisten dengan bulk delete -->
           <button v-if="isFullAccess" @click="openBayar(t)" aria-label="Bayar tagihan" title="Bayar" class="text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 p-2 rounded transition"><i class="fas fa-money-bill-wave"></i></button>
           <button v-if="isAdmin" @click="deleteTagihan(t)" aria-label="Hapus tagihan" title="Hapus (super admin only)" class="text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/30 p-2 rounded transition"><i class="fas fa-trash"></i></button>
+          <!-- v.86.0526: santri/wali bayar tagihan belum lunas via transfer (deep-link) -->
+          <button v-if="isSantriRole && getSisa(t) > 0" @click="goBayar(t)" aria-label="Bayar tagihan" title="Bayar via transfer" class="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-black transition cursor-pointer flex-shrink-0"><i class="fas fa-money-bill-wave"></i>Bayar</button>
         </div>
       </div>
     </div>
@@ -111,6 +113,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { subscribeColl } from '@/services/firestore'
+import { useRouter } from 'vue-router'
 import { doc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/services/firebase'
 import { useAuthStore } from '@/stores/auth'
@@ -210,6 +213,22 @@ function statusLabel(t) {
   if (s === 0) return 'Lunas'
   if (Number(t.bayar || 0) > 0) return 'Cicilan'
   return 'Belum bayar'
+}
+
+// v.86.0526: santri/wali bayar tagihan belum lunas -> deep-link ke PembayaranView (tab transfer, prefill)
+const router = useRouter()
+const isSantriRole = computed(() => auth.sesiAktif?.role === 'santri')
+function goBayar(t) {
+  router.push({
+    path: '/pembayaran',
+    query: {
+      tab: 'transfer',
+      santri: String(t.santri_id || ''),
+      nominal: String(getSisa(t) || ''),
+      kategori: String(t.kategori || ''),
+      tagihan_id: String(t.id || '')
+    }
+  })
 }
 
 // v.86.0526 FIX PRIVACY: santri/wali hanya lihat tagihan dirinya sendiri (anak terpilih), bukan semua santri.
