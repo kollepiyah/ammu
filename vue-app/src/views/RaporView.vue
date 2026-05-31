@@ -279,6 +279,7 @@
         <div class="flex items-center justify-between gap-3 flex-wrap">
           <div class="flex items-center gap-2">
             <button
+              v-if="!isSantri"
               @click="kembaliSantri"
               class="text-xs font-bold px-2 py-1.5 rounded-lg bg-[var(--bg-muted)] hover:bg-slate-200 dark:hover:bg-slate-600 transition cursor-pointer"
               title="Kembali"

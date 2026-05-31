@@ -884,19 +884,24 @@ const kelasCount = computed(() => {
   const set = new Set()
   for (const s of santriRaw.value) {
     if (s.aktif === false) continue
-    // v.86.0526 FIX: hanya hitung kelas dari santri yang SUDAH punya guru (master Kelas & Guru).
-    //   Sebelumnya semua santri aktif dihitung -> kelas tetap muncul (34) walau belum ada guru di-assign.
-    const punyaGuruNgaji = !!(s.guru || s.guru_pagi || s.guru_sore)
-    const guruSekolahArr = Array.isArray(s.guru_sekolah) ? s.guru_sekolah.filter(Boolean) : []
-    if (punyaGuruNgaji) {
-      const lembNgaji = String(s.lembaga || '').trim().toLowerCase()
-      const kelasNgaji = String(s.kelas || '').trim().toLowerCase()
-      if (lembNgaji && kelasNgaji) set.add(`${lembNgaji}|${kelasNgaji}`)
+    // v.87.0526: Jumlah Kelas = DISTINCT (guru × lembaga × kelas) dari santri yang SUDAH punya guru.
+    //   Aturan kyai (canonical): kelas dihitung dari GURU yang punya santri — 2 guru di lembaga+kelas
+    //   sama = 2 kelas. Sebelumnya key cuma `lembaga|kelas` -> dua guru ke-collapse jadi 1 (SALAH).
+    const lembNgaji = String(s.lembaga || '').trim().toLowerCase()
+    const kelasNgaji = String(s.kelas || '').trim().toLowerCase()
+    if (lembNgaji && kelasNgaji) {
+      const guruNgaji = [s.guru_pagi, s.guru_sore, s.guru]
+        .map((g) => String(g || '').trim().toLowerCase())
+        .filter(Boolean)
+      for (const g of guruNgaji) set.add(`${g}|${lembNgaji}|${kelasNgaji}`)
     }
-    if (guruSekolahArr.length > 0) {
-      const lembSek = String(s.lembaga_sekolah || '').trim().toLowerCase()
-      const kelasSek = String(s.kelas_sekolah || '').trim().toLowerCase()
-      if (lembSek && kelasSek) set.add(`${lembSek}|${kelasSek}`)
+    const lembSek = String(s.lembaga_sekolah || '').trim().toLowerCase()
+    const kelasSek = String(s.kelas_sekolah || '').trim().toLowerCase()
+    if (lembSek && kelasSek) {
+      const guruSek = (Array.isArray(s.guru_sekolah) ? s.guru_sekolah : [])
+        .map((g) => String(g || '').trim().toLowerCase())
+        .filter(Boolean)
+      for (const g of guruSek) set.add(`${g}|${lembSek}|${kelasSek}`)
     }
   }
   return set.size

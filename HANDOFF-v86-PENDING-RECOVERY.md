@@ -240,3 +240,13 @@ Scoping saat ini dijalankan oleh DUA mekanisme paralel:
 - Dashboard Keuangan "masih salah" (perlu kyai sebut angka). Performa semua device (#7). Cek gambar + compatibility (#4).
 
 **— END SESI v.87 —**
+
+
+---
+## ADDENDUM (31 Mei — tugas tambahan kyai #2 & #3 dikerjakan)
+- BATCH BARU **#2 DONE**: tombol back (←) di RaporView detail header DISEMBUNYIKAN utk role santri (`v-if="!isSantri"`). File `vue-app/src/views/RaporView.vue`.
+- BATCH BARU **#3 DONE**: StatistikView `kelasCount` — key diubah `lembaga|kelas` → `guru|lembaga|kelas` (canonical rule #1: kelas dihitung dari GURU yang punya santri; 2 guru di lembaga+kelas sama = 2 kelas).
+- ⏳ **SESI BARU WAJIB: BUMP v.87 → v.88** sebelum rilis AAB berikutnya (kyai minta). Tempat bump (KB §5): `vue-app/android/app/build.gradle` (versionCode 87→88 + versionName), `package.json` (root + vue-app = "88.0526"), `vue-app/electron/package.json` ("88.0.526"), `vue-app/src/main.js` Sentry `release: 'portal-mu@88.0526'`, footer 4 file (AppSidebar/LoginView/DashboardView/PpdbAdminView).
+- Sisa BATCH BARU BELUM dikerjakan: **#1 audit master lembaga + semua data/rules/function/skema/pengaturan**, **#4 cek menyeluruh dead code / fitur hilang / code miss**.
+
+**— END ADDENDUM —**

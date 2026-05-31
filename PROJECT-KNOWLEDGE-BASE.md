@@ -99,9 +99,11 @@ HEAD `feature/vue-migration` = `e3d9551` (BELUM push). Detail commit + perintah 
 
 **PENDING — BATCH BARU kyai (31 Mei, belum dikerjakan; detail di HANDOFF):**
 1. **Audit master lembaga + SEMUA data** — pastikan semua berfungsi: rules, function, skema, pengaturan, dll.
-2. **Hapus tombol kembali (←) di RaporView santri** (mode "Hanya lihat").
-3. **Dashboard jumlah kelas SALAH** → kelas dihitung dari GURU yang SUDAH punya santri (StatistikView `kelasCount`).
+2. ~~Hapus tombol kembali (←) di RaporView santri~~ ✅ **DONE** (`v-if="!isSantri"`).
+3. ~~Dashboard jumlah kelas SALAH~~ ✅ **DONE** — `kelasCount` key `lembaga|kelas` → `guru|lembaga|kelas` (StatistikView).
 4. **Cek menyeluruh**: (a) dead code, (b) code ada tapi tak terpakai (fitur dibuat tapi hilang — kyai lupa beberapa), (c) code miss/bug.
+
+**⏳ SESI BARU WAJIB: BUMP v.87 → v.88** sebelum rilis AAB (lihat §5: gradle versionCode 87→88 + versionName, package.json root+vue-app, electron, Sentry release, 4 footer).
 
 **SISA batch lama (masih open):** Dashboard Keuangan masih salah (perlu kyai sebut angka); Performa semua device; Cek gambar + compatibility. Minor: T41 scope Kepala StatistikView; backfill santri lama PSB. (Notif prestasi & splash & pembayaran-merge SUDAH.)
 
