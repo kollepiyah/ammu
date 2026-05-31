@@ -154,3 +154,32 @@ Scoping saat ini dijalankan oleh DUA mekanisme paralel:
 - Data Guru: Kepala saat ini TIDAK lihat guru manapun (menu Data Guru = bucket 'admin'; useGuru return [] utk non-admin) → UNDER-exposed (aman, bukan bocor). Spec "guru lembaganya" = penambahan fitur (beri Kepala view guru scoped) — opsional, bukan leak.
 
 **HEAD `feature/vue-migration` = `5385350`. Build OK. Belum push. Web fix dasbor keuangan (`002aa13`) + splash (`7a3cad9`) + Kepala-scope (`5385350`) semua perlu `npm run firebase:deploy` (web) / rebuild installer (desktop).**
+
+
+---
+## UPDATE (sesi "batch besar: T34 + bugs + bump 87")
+**Versi dinaikkan 86 → 87 (v.87.0526)** — commit `cec35dd`. gradle versionCode 87 + versionName, package.json (root/vue-app/electron), Sentry release, 4 footer (AppSidebar/LoginView/DashboardView/PpdbAdminView).
+
+**Commit sesi ini (branch feature/vue-migration):**
+- `002aa13` fix dashboard keuangan (tabungan net + bisyaroh bulan ini + exclude tabungan)
+- `7a3cad9` fix splash Electron logo (embed base64)
+- `5385350` + `cbf3258` + `1b2b686` RBAC Kepala/PJ scope se-group (Data Santri + Rapor + Rekap + Absensi)
+- `6b86dfd` fix splash Electron DOBEL (tahan main hidden sampai splash native tutup)
+- `3f79f1d` fix Edit Data Saya persist (ProfilGuru+ProfilSantri Object.assign props) + tombol edit Data Santri (border-top)
+- `d011c7c` fix PSB convertToSantri copy biodata LENGKAP (alamat + ortu ayah/ibu flat+nested)
+- `cec35dd` bump versi 87
+
+**PERLU DIJALANKAN KYAI (build/deploy — semua dari root `D:\Aplikasi Project\Portal MU`):**
+1. Web (semua fix Vue): `npm run firebase:deploy`
+2. AAB (versi 87, butuh keystore kyai → jalankan di terminal kyai): `npm run build:aab`
+   → output `vue-app/android/app/build/outputs/bundle/release/app-release.aab` → upload Play Console.
+   (build-aab.cjs: build vue → force-clean assets → cap sync → gradlew bundleRelease. Env kyai sudah ada JAVA_HOME/ANDROID_HOME + keystore.)
+3. Desktop installer (splash fixes): `npm run build:electron --prefix vue-app` → `robocopy "vue-app\dist" "vue-app\electron\app" /MIR` → `cd vue-app\electron && npm run electron:make`
+
+**CATATAN tes device (tidak bisa diverif via build):**
+- Kepala/PJ scope: login akun Kepala → Data Santri/Rapor/Rekap/Absensi harus HANYA santri se-group lembaganya. Helper `lembagaScopeMatches` handle variant/family ('TPQ Sore'→TPQ) & label broad ('Qiraati'→semua qiraati).
+- Edit Data Saya (guru & wali/santri): edit → simpan → data harus TETAP (tidak revert).
+- PSB convert: hanya untuk pendaftar BARU yang di-convert. Santri LAMA (sudah ter-convert dg data tipis) TIDAK ke-backfill otomatis — isi via Edit (admin) atau wali via Profil. (Opsi: bikin skrip backfill dari psb_id — belum dibuat.)
+- Splash Electron: native splash (logo) tampil ~1.8s, main muncul setelah splash tutup (tidak dobel lagi).
+
+**SISA pending:** T41 scope Kepala di StatistikView (agregat, minor) ; backfill santri lama dari PSB (opsional, belum dibuat).
