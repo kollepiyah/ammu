@@ -242,7 +242,6 @@ async function cetakRiwayat(s) {
     const tagihan = tgSnap.docs.map((d) => ({ id: d.id, ...d.data() }))
     const pembayaran = biSnap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((r) => r.sumber === 'pos_santri')
     const tabungan = tbSnap.docs.map((d) => ({ id: d.id, ...d.data() }))
-    console.log('[RiwayatSantri] fetched', { santri_id: s.id, tagihan: tagihan.length, pembayaran: pembayaran.length, tabungan: tabungan.length })
     const kop = buildKopFromSettings(settings.settings || {})
     const { stats } = await cetakRiwayatSantriPdf({
       santri: s, dari: dariStr.value, sampai: sampaiStr.value,

@@ -640,7 +640,6 @@ async function cleanupOrphan() {
       const sid = String(m.santri_id || m.santriId || '')
       return ids.includes(sid)
     })
-    console.log('[cleanupOrphan] targets:', targets.length, 'ids:', ids)
     for (const m of targets) {
       try {
         await deleteDoc(doc(db, 'keuangan_tabungan_santri', String(m.id)))

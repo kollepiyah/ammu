@@ -91,21 +91,6 @@ service cloud.firestore {
       allow create, update, delete: if signedIn();
     }
 
-    match /keuangan_transaksi/{docId} {
-      allow read: if true;
-      allow create: if signedIn()
-        && request.resource.data.id is string
-        && request.resource.data.no_struk is string
-        && request.resource.data.santri_id is number
-        && isValidDate(request.resource.data.tanggal)
-        && isPositive(request.resource.data.total_tagihan)
-        && isPositive(request.resource.data.total_bayar)
-        && request.resource.data.items is list
-        && request.resource.data.items.size() >= 1
-        && request.resource.data.items.size() <= 50;
-      allow update, delete: if false;
-    }
-
     match /keuangan_tabungan_santri/{docId} {
       allow read: if true;
       // v.21.104.0527: relax santri_id (string/number) — app pakai string.
@@ -122,18 +107,6 @@ service cloud.firestore {
         && request.resource.data.nominal > 0;
     }
 
-    match /keuangan_tabungan_guru/{docId} {
-      allow read: if true;
-      allow create: if signedIn()
-        && request.resource.data.id is string
-        && request.resource.data.guru_id is number
-        && request.resource.data.jenis in ['setor', 'tarik']
-        && request.resource.data.nominal is number
-        && request.resource.data.nominal > 0
-        && isValidDate(request.resource.data.tanggal);
-      allow update, delete: if false;
-    }
-
     match /keuangan_gaji/{docId} {
       allow read: if true;
       allow create, update: if signedIn()
@@ -147,19 +120,6 @@ service cloud.firestore {
         && request.resource.data.tunjangan_list is list
         && request.resource.data.potongan_list is list;
       // v.21.99.0527: izinkan delete utk super_admin (koreksi slip bisyaroh).
-      allow delete: if signedIn();
-    }
-
-    match /keuangan_hutang/{docId} {
-      allow read: if true;
-      allow create, update: if signedIn()
-        && request.resource.data.id is string
-        && request.resource.data.kepada is string
-        && request.resource.data.kepada.size() >= 1
-        && request.resource.data.nominal is number
-        && request.resource.data.nominal > 0
-        && request.resource.data.status in ['belum', 'lunas']
-        && isValidDate(request.resource.data.tanggal);
       allow delete: if signedIn();
     }
 
