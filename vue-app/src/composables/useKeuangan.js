@@ -2,7 +2,9 @@
 // Phase 5.12 (v.37.0526)
 // Mirror pattern useSantri/useGuru
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { storeToRefs } from 'pinia'
 import { subscribeColl } from '@/services/firestore'
+import { useCollectionsStore } from '@/stores/collections'
 import { useAuthStore } from '@/stores/auth'
 
 export function useKeuangan() {
@@ -13,9 +15,8 @@ export function useKeuangan() {
   // v.21.104.0527: keuangan_transaksi dihapus (dead code, koleksi tidak pernah ditulis)
   const bisyaroh = ref([])
   const gaji = ref([])
-  const bukuInduk = ref([])
-  const santriRaw = ref([])
-  const guruRaw = ref([])
+  const collections = useCollectionsStore()
+  const { santri: santriRaw, guru: guruRaw, bukuInduk } = storeToRefs(collections)
   const loading = ref(true)
   const error = ref(null)
   const unsubs = []
@@ -67,7 +68,8 @@ export function useKeuangan() {
       loading.value = false
       return
     }
-    // Subscribe all keuangan collections
+    collections.ensure('santri', 'guru', 'keuangan_buku_induk')
+    // Subscribe keuangan-specific collections (tagihan/tabungan/gaji)
     unsubs.push(
       subscribeColl('keuangan_tagihan', (docs) => {
         tagihan.value = docs
@@ -78,15 +80,6 @@ export function useKeuangan() {
       }),
       subscribeColl('keuangan_gaji', (docs) => {
         gaji.value = docs
-      }),
-      subscribeColl('keuangan_buku_induk', (docs) => {
-        bukuInduk.value = docs
-      }),
-      subscribeColl('santri', (docs) => {
-        santriRaw.value = docs
-      }),
-      subscribeColl('guru', (docs) => {
-        guruRaw.value = docs
       })
     )
   })

@@ -1,7 +1,8 @@
 // useGuru — list guru/pegawai real-time + role-based filter + search
 // Phase 5.6 (v.35.0526) — mirror pattern dari useSantri.js
-import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { subscribeColl } from '@/services/firestore'
+import { ref, computed } from 'vue'
+import { storeToRefs } from 'pinia'
+import { useCollectionsStore } from '@/stores/collections'
 import { useAuthStore } from '@/stores/auth'
 // v.21.10.0526: Import lembaga helpers
 import { getLembagaGroup } from './useLembaga'
@@ -73,10 +74,11 @@ const LEMBAGA_ORDER = {
 
 export function useGuru() {
   const auth = useAuthStore()
-  const guruRaw = ref([])
-  const loading = ref(true)
+  const collections = useCollectionsStore()
+  collections.ensure('guru')
+  const { guru: guruRaw } = storeToRefs(collections)
+  const loading = computed(() => !collections.isLoaded('guru'))
   const error = ref(null)
-  let unsubGuru = null
 
   // Search & filter state
   const search = ref('')
@@ -167,20 +169,6 @@ export function useGuru() {
       aktif: aktif.length,
       tidakAktif: all.length - aktif.length,
       perLembaga
-    }
-  })
-
-  onMounted(() => {
-    unsubGuru = subscribeColl('guru', (docs) => {
-      guruRaw.value = docs
-      loading.value = false
-    })
-  })
-
-  onUnmounted(() => {
-    if (unsubGuru) {
-      try { unsubGuru() } catch (e) {}
-      unsubGuru = null
     }
   })
 

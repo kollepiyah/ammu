@@ -2,7 +2,9 @@
 // Phase 5.7 (v.35.0526)
 // v.20.15.0526: Fix subscription — legacy simpan di master/lembaga doc (.list), bukan koleksi terpisah
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { subscribeColl, subscribeDoc } from '@/services/firestore'
+import { storeToRefs } from 'pinia'
+import { subscribeDoc } from '@/services/firestore'
+import { useCollectionsStore } from '@/stores/collections'
 import { useAuthStore } from '@/stores/auth'
 
 // v.21.10.0526: Lembaga hierarchy — group → variants (kyai spec final)
@@ -183,14 +185,13 @@ const LEMBAGA_ORDER = {
 
 export function useLembaga() {
   const auth = useAuthStore()
+  const collections = useCollectionsStore()
+  collections.ensure('guru', 'santri')
+  const { guru: guruRaw, santri: santriRaw } = storeToRefs(collections)
   const lembagaRaw = ref([])
-  const guruRaw = ref([])
-  const santriRaw = ref([])
   const loading = ref(true)
   const error = ref(null)
   let unsubLembaga = null
-  let unsubGuru = null
-  let unsubSantri = null
 
   const search = ref('')
   const filterTipe = ref('')
@@ -264,21 +265,11 @@ export function useLembaga() {
       lembagaRaw.value = Array.isArray(doc?.list) ? doc.list : []
       loading.value = false
     })
-    unsubGuru = subscribeColl('guru', (docs) => {
-      guruRaw.value = docs
-    })
-    unsubSantri = subscribeColl('santri', (docs) => {
-      santriRaw.value = docs
-    })
   })
 
   onUnmounted(() => {
-    for (const u of [unsubLembaga, unsubGuru, unsubSantri]) {
-      if (u) {
-        try {
-          u()
-        } catch (e) {}
-      }
+    if (unsubLembaga) {
+      try { unsubLembaga() } catch (e) {}
     }
   })
 

@@ -1,6 +1,7 @@
 // useSantri — list santri real-time + role-based filter + search
-import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { subscribeColl } from '@/services/firestore'
+import { ref, computed } from 'vue'
+import { storeToRefs } from 'pinia'
+import { useCollectionsStore } from '@/stores/collections'
 import { useAuthStore } from '@/stores/auth'
 // v.21.10.0526: Import LEMBAGA_GROUPS helpers untuk lembaga_refs derivation + lembagaScopeMatches scoping
 import { getLembagaGroup, lembagaScopeMatches } from './useLembaga'
@@ -27,13 +28,12 @@ function deriveSantriLembagaRefs(s) {
 
 export function useSantri() {
   const auth = useAuthStore()
-  const santriRaw = ref([])
-  const guruRaw = ref([])
+  const collections = useCollectionsStore()
+  collections.ensure('santri', 'guru')
+  const { santri: santriRaw, guru: guruRaw } = storeToRefs(collections)
   const lembagaList = ref([])
-  const loading = ref(true)
+  const loading = computed(() => !collections.isLoaded('santri'))
   const error = ref(null)
-  let unsubSantri = null
-  let unsubGuru = null
 
   // Search & filter state
   const search = ref('')
@@ -149,29 +149,6 @@ export function useSantri() {
       old: santriItem.guru || ''
     }
   }
-
-  onMounted(() => {
-    // Subscribe santri
-    unsubSantri = subscribeColl('santri', (docs) => {
-      santriRaw.value = docs
-      loading.value = false
-    })
-    // Subscribe guru (untuk display nama guru pagi/sore)
-    unsubGuru = subscribeColl('guru', (docs) => {
-      guruRaw.value = docs
-    })
-  })
-
-  onUnmounted(() => {
-    if (unsubSantri) {
-      try { unsubSantri() } catch (e) {}
-      unsubSantri = null
-    }
-    if (unsubGuru) {
-      try { unsubGuru() } catch (e) {}
-      unsubGuru = null
-    }
-  })
 
   return {
     santri,

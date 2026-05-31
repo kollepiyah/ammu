@@ -1,7 +1,9 @@
 // useAbsensi — list absensi guru + santri realtime
 // Phase 5.16/17 (v.39.0526)
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { storeToRefs } from 'pinia'
 import { subscribeColl } from '@/services/firestore'
+import { useCollectionsStore } from '@/stores/collections'
 import { useAuthStore } from '@/stores/auth'
 
 const BULAN = [
@@ -11,9 +13,10 @@ const BULAN = [
 
 export function useAbsensi() {
   const auth = useAuthStore()
+  const collections = useCollectionsStore()
+  collections.ensure('guru', 'santri')
+  const { guru: guruRaw, santri: santriRaw } = storeToRefs(collections)
   const absensi = ref([])
-  const guruRaw = ref([])
-  const santriRaw = ref([])
   const loading = ref(true)
   const error = ref(null)
   const unsubs = []
@@ -92,12 +95,6 @@ export function useAbsensi() {
       subscribeColl('absensi', (docs) => {
         absensi.value = docs
         loading.value = false
-      }),
-      subscribeColl('guru', (docs) => {
-        guruRaw.value = docs
-      }),
-      subscribeColl('santri', (docs) => {
-        santriRaw.value = docs
       })
     )
   })
