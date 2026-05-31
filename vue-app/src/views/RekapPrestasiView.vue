@@ -414,7 +414,8 @@ import { useSettingsStore } from '@/stores/settings'
 import { extractNumber, getNamaGuruGelar } from '@/utils/format'
 import { buildListPdf } from '@/utils/pdfBuilder'
 import { useAuthStore } from '@/stores/auth'
-import { isFullFilterRole } from '@/utils/roleScope'
+import { isFullFilterRole, isKepalaLembaga } from '@/utils/roleScope'
+import { lembagaScopeMatches } from '@/composables/useLembaga'
 import { sortSantri } from '@/utils/santriSort'
 
 const LEMBAGA_QIRAATI = ['TPQ Pagi', 'TPQ Sore', 'Pra PTPT', 'PTPT', 'PPPH']
@@ -444,6 +445,12 @@ const filterLembaga = ref('')
 const auth = useAuthStore()
 const isFullFilter = computed(() => isFullFilterRole(auth.sesiAktif))
 const isGuruMode = computed(() => !isFullFilter.value)
+// v.86.0526: Kepala/PJ (role guru, bukan admin) discope ke lembaganya.
+const kepalaScope = computed(() => {
+  const s = auth.sesiAktif
+  if (!s || s.role === 'admin' || s.id === 'admin') return null
+  return isKepalaLembaga(s) ? (s.lembaga || null) : null
+})
 function _lowS(v) { return String(v || '').toLowerCase().trim() }
 function ownNgaji(s) {
   const gn = _lowS(auth.sesiAktif?.guru || auth.sesiAktif?.nama)
@@ -514,6 +521,8 @@ const filteredSantri = computed(() => {
   let list = santriQiraati.value
   // Guru mode: hanya santri ngaji yang diampu
   if (isGuruMode.value) list = list.filter((s) => ownNgaji(s))
+  // v.86.0526: Kepala/PJ → hanya santri lembaganya (block lintas-lembaga)
+  if (kepalaScope.value) list = list.filter((s) => lembagaScopeMatches(kepalaScope.value, s.lembaga) || lembagaScopeMatches(kepalaScope.value, s.lembaga_sekolah))
   if (filterLembaga.value) list = list.filter((s) => lembagaMatch(s, filterLembaga.value))
   if (filterKelas.value) list = list.filter((s) => String(s.kelas || '') === filterKelas.value)
   const kw = search.value.trim().toLowerCase()

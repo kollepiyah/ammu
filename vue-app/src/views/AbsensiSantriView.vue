@@ -170,7 +170,8 @@ import { doc, setDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/services/firebase'
 import { useToast } from '@/composables/useToast'
 import { useAuthStore } from '@/stores/auth'
-import { isFullFilterRole } from '@/utils/roleScope'
+import { isFullFilterRole, isKepalaLembaga } from '@/utils/roleScope'
+import { lembagaScopeMatches } from '@/composables/useLembaga'
 import { sortSantri } from '@/utils/santriSort'
 
 const toast = useToast()
@@ -181,6 +182,12 @@ const isFullFilter = computed(() => isFullFilterRole(auth.sesiAktif))
 const isGuruMode = computed(() => !isFullFilter.value)
 // alias lama supaya template tetap jalan
 const isGuru = isGuruMode
+// v.86.0526: Kepala/PJ (role guru, bukan admin) discope ke lembaganya.
+const kepalaScope = computed(() => {
+  const s = auth.sesiAktif
+  if (!s || s.role === 'admin' || s.id === 'admin') return null
+  return isKepalaLembaga(s) ? (s.lembaga || null) : null
+})
 const guruName = computed(() => String(auth.sesiAktif?.guru || auth.sesiAktif?.nama || '').toLowerCase().trim())
 
 function _low(v) { return String(v || '').toLowerCase().trim() }
@@ -286,6 +293,8 @@ const filteredSantri = computed(() => {
       return false
     }
   })
+  // v.86.0526: Kepala/PJ → hanya santri lembaganya (block lintas-lembaga)
+  if (kepalaScope.value) list = list.filter((s) => lembagaScopeMatches(kepalaScope.value, s.lembaga) || lembagaScopeMatches(kepalaScope.value, s.lembaga_sekolah))
   if (search.value) {
     const kw = search.value.toLowerCase()
     list = list.filter((s) => String(s.nama || '').toLowerCase().includes(kw))
