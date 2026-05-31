@@ -45,7 +45,7 @@
         © 2026 Mambaul Ulum
       </p>
       <p class="text-[9px] text-teal-600 dark:text-teal-400 font-bold tracking-widest mt-0.5">
-        v.74.0526
+        v.87.0526
       </p>
     </div>
   </aside>
@@ -87,7 +87,7 @@ function toTitleCase(s) {
     .map((w) => (w.length ? w[0].toUpperCase() + w.slice(1) : w))
     .join(' ')
 }
-// v.20.58.0526: prioritas txtSidebarTitle (admin set di Pengaturan Web) > kopLine1 > default
+// v.86.0526: prioritas txtSidebarTitle (admin set di Pengaturan Web) > kopLine1 > default
 const namaFull = computed(() => {
   const raw = settings.settings?.txtSidebarTitle || settings.settings?.kopLine1 || 'PONDOK PESANTREN MAMBAUL ULUM'
   return toTitleCase(raw)

@@ -1,6 +1,6 @@
 {
   "name": "ammu-online-desktop",
-  "version": "84.0.526",
+  "version": "87.0.526",
   "description": "Ammu Online — Pondok Pesantren Mambaul Ulum (Desktop)",
   "author": "Pondok Pesantren Mambaul Ulum",
   "main": "build/index.js",
@@ -16,6 +16,7 @@
   "build": {
     "appId": "app.ammu.id.desktop",
     "productName": "Ammu Online",
+    "asar": false,
     "directories": {
       "buildResources": "resources",
       "output": "dist"
@@ -50,20 +51,6 @@
       "shortcutName": "Ammu Online",
       "installerIcon": "assets/appIcon.ico",
       "uninstallerIcon": "assets/appIcon.ico"
-    },
-    "mac": {
-      "target": [
-        { "target": "dmg", "arch": ["arm64", "x64"] }
-      ],
-      "icon": "assets/appIcon.png",
-      "category": "public.app-category.education"
-    },
-    "linux": {
-      "target": [
-        { "target": "AppImage", "arch": ["x64"] }
-      ],
-      "icon": "assets/appIcon.png",
-      "category": "Education"
     }
   },
   "dependencies": {
@@ -75,10 +62,5 @@
     "electron": "^27.0.0",
     "electron-builder": "^24.6.4",
     "typescript": "^5.2.0"
-  },
-  "keywords": [
-    "ammu",
-    "pondok",
-    "mambaul-ulum"
-  ]
+  }
 }

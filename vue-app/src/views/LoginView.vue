@@ -6,14 +6,14 @@ import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
 import * as authService from '@/services/auth'
 
-// v.20.2.0526: full match legacy login — Google + Ingat Saya + Lupa Sandi + Copyright luar card
+// v.86.0526: full match legacy login — Google + Ingat Saya + Lupa Sandi + Copyright luar card
 const router = useRouter()
 const route = useRoute()
 const auth = useAuthStore()
 const settings = useSettingsStore()
 const toast = useToast()
 
-// v.20.7.0526: BG login dari settings (Pengaturan Web → Background Layar).
+// v.86.0526: BG login dari settings (Pengaturan Web → Background Layar).
 // Force load settings di mount supaya BG image tersedia sebelum render (App.vue load async)
 onMounted(() => {
   if (!settings.settings?.bgImage) {
@@ -43,6 +43,14 @@ const downloadDesktopUrl = computed(() =>
   settings.settings?.downloadDesktop ||
   'https://github.com/lexanoisgroup3/ammuonline/releases/latest/download/AmmuOnline-Setup.exe'
 )
+
+// v.86.0526: Tampilkan download section HANYA di web browser
+const isWebOnly = computed(() => {
+  if (typeof window === 'undefined') return false
+  const isCap = window.Capacitor?.isNativePlatform?.() === true
+  const isElectron = window.location?.protocol === 'file:' || /Electron/i.test(navigator?.userAgent || '')
+  return !isCap && !isElectron
+})
 
 const username = ref('')
 const password = ref('')
@@ -117,12 +125,12 @@ function bukaWaAdmin() {
     class="min-h-screen flex flex-col items-center justify-center p-4 relative"
     :style="bgStyle"
   >
-    <!-- v.21.114.0528: backdrop-blur overlay (bukan mask solid) supaya bg image custom tetap terlihat -->
-    <div class="absolute inset-0 backdrop-blur-md bg-teal-900/30 pointer-events-none z-0" aria-hidden="true"></div>
+    <!-- v.86.0526: backdrop-blur overlay — lebih gelap di dark mode -->
+    <div class="absolute inset-0 backdrop-blur-md bg-teal-900/30 dark:bg-slate-900/60 pointer-events-none z-0" aria-hidden="true"></div>
 
-    <!-- CARD LOGIN -->
+    <!-- CARD LOGIN — v.86.0526: dark mode card slate-800 + border teal-400 -->
     <div
-      class="w-full max-w-sm bg-[#F9F6EE] rounded-3xl shadow-2xl border-t-8 border-teal-600 overflow-hidden relative z-10"
+      class="w-full max-w-sm bg-[#F9F6EE] dark:bg-slate-800 rounded-3xl shadow-2xl border-t-8 border-teal-600 dark:border-teal-400 overflow-hidden relative z-10"
     >
       <!-- Header (logo + nama) -->
       <div class="px-6 pt-7 pb-4 text-center">
@@ -296,44 +304,38 @@ function bukaWaAdmin() {
       </div>
     </div>
 
-    <!-- v.21.115.0528: Download section app native (Android/iOS/Desktop) -->
-    <div class="relative z-10 mt-5 max-w-sm w-full">
-      <div class="bg-white/10 backdrop-blur-md rounded-xl px-4 py-3 border border-white/20">
-        <p class="text-[10px] text-white/90 font-black uppercase tracking-widest text-center mb-2">
-          <i class="fas fa-download mr-1"></i>Unduh Aplikasi
+    <!-- v.86.0526: Download section — Android + Desktop only (iOS pakai PWA Add-to-Home).
+         Hide di Capacitor (Android native) + Electron (Desktop) karena sudah di-app native. -->
+    <div v-if="isWebOnly" class="relative z-10 mt-4 max-w-[280px] w-full">
+      <div class="bg-white/8 backdrop-blur-sm rounded-lg px-3 py-2 border border-white/15">
+        <p class="text-[9px] text-white/80 font-bold uppercase tracking-[0.15em] text-center mb-1.5">
+          <i class="fas fa-download mr-1 text-[8px]"></i>Unduh Aplikasi
         </p>
-        <div class="grid grid-cols-3 gap-2">
+        <div class="grid grid-cols-2 gap-2">
           <a
             :href="downloadAndroidUrl"
             target="_blank"
             rel="noopener"
             aria-label="Unduh APK Android"
-            class="flex flex-col items-center gap-1 py-2 rounded-lg bg-white/15 hover:bg-white/25 transition cursor-pointer"
+            class="flex items-center justify-center gap-1.5 py-1.5 rounded-md bg-gradient-to-br from-emerald-500/80 to-teal-600/80 hover:from-emerald-400 hover:to-teal-500 border border-emerald-300/30 shadow-sm hover:shadow-md transition cursor-pointer group"
           >
-            <i class="fab fa-android text-emerald-300 text-lg"></i>
-            <span class="text-[9px] text-white font-bold">Android</span>
-          </a>
-          <a
-            :href="downloadIosUrl"
-            target="_blank"
-            rel="noopener"
-            aria-label="Unduh IPA iOS"
-            class="flex flex-col items-center gap-1 py-2 rounded-lg bg-white/15 hover:bg-white/25 transition cursor-pointer"
-          >
-            <i class="fab fa-apple text-white text-lg"></i>
-            <span class="text-[9px] text-white font-bold">iOS</span>
+            <i class="fab fa-android text-white text-sm group-hover:scale-110 transition"></i>
+            <span class="text-[10px] text-white font-bold tracking-wide">Android</span>
           </a>
           <a
             :href="downloadDesktopUrl"
             target="_blank"
             rel="noopener"
             aria-label="Unduh installer Desktop"
-            class="flex flex-col items-center gap-1 py-2 rounded-lg bg-white/15 hover:bg-white/25 transition cursor-pointer"
+            class="flex items-center justify-center gap-1.5 py-1.5 rounded-md bg-gradient-to-br from-cyan-500/80 to-sky-600/80 hover:from-cyan-400 hover:to-sky-500 border border-cyan-300/30 shadow-sm hover:shadow-md transition cursor-pointer group"
           >
-            <i class="fas fa-desktop text-cyan-300 text-lg"></i>
-            <span class="text-[9px] text-white font-bold">Desktop</span>
+            <i class="fas fa-desktop text-white text-sm group-hover:scale-110 transition"></i>
+            <span class="text-[10px] text-white font-bold tracking-wide">Desktop</span>
           </a>
         </div>
+        <p class="text-[8px] text-white/60 text-center mt-1.5 italic">
+          <i class="fab fa-apple mr-0.5"></i>iOS: gunakan PWA — Tambah ke Layar Utama
+        </p>
       </div>
     </div>
 
@@ -343,7 +345,7 @@ function bukaWaAdmin() {
         © {{ new Date().getFullYear() }} Pondok Pesantren Mambaul Ulum
       </p>
       <p class="text-[11px] text-white/80 font-bold tracking-widest mt-1 drop-shadow">
-        v.74.0526
+        v.87.0526
       </p>
     </div>
   </div>
