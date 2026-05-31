@@ -136,3 +136,21 @@ Scoping saat ini dijalankan oleh DUA mekanisme paralel:
 - Keputusan produk: apakah "data kelasnya" utk guru = **kelas yang diajar saja** (ketat) atau **se-lembaga** (sekarang)? Ini menentukan A/B.
 
 **Belum diimplementasi — menunggu arahan kyai (granularity + A/B). Tidak diedit blind karena menyangkut visibilitas data santri di produksi & tak bisa diverif tanpa akun multi-role.**
+
+
+---
+## UPDATE (lanjutan RBAC — Kepala Lembaga scoping)
+**KEPUTUSAN KYAI:** Kepala Lembaga/PJ discope **SE-GROUP** lembaganya (Kepala TPQ → TPQ Pagi+Sore+Pra PTPT; Kepala SDI → SDI; dst).
+
+**SUDAH dikerjakan + committed (`5385350`):**
+- `useSantri.js` (Data Santri master list): hapus shortcut `isFullAccess` untuk jabatan kepala/pj/pengasuh (yang membuat Kepala lihat SEMUA santri global + bikin branch `canSee` jadi dead code). Kepala kini tersaring: `canSee(exact-lembaga)` + match keluarga lembaga via `getLembagaGroup` (TPQ Pagi/Sore/Pra PTPT → key 'TPQ'). Guru biasa tetap ke santri ampuannya (guru_pagi/guru_sore/guru_sekolah == nama). Build vite OK.
+
+**Verifikasi yang dibutuhkan (TIDAK bisa via build — perlu DEVICE, akun Kepala):**
+- Login akun Kepala TPQ → Data Santri harus tampil HANYA santri TPQ Pagi+Sore+Pra PTPT (bukan SDI/PKBM/Ma'had dst).
+- Pastikan `sesi.lembaga` untuk akun Kepala = salah satu variant (mis. "TPQ Pagi") supaya `getLembagaGroup` resolve ke 'TPQ'. Kalau `lembaga` Kepala kosong/aneh → bisa lihat 0 santri (cek data akun).
+
+**SISA (follow-up, belum dikerjakan — perlu device test):**
+- View akademik (Rapor, RekapPrestasi, AbsensiSantri, Statistik): `isFullFilterRole` masih kasih Kepala FULL-FILTER (bisa pilih SEMUA lembaga & ekspor rapor lintas lembaga = over-exposure sejenis). Belum discope ke group karena: (a) logika picker dipakai bareng super_admin/admin (risiko regресi), (b) kalau Kepala didrop ke guru-mode malah ke-narrow (cuma santri yg dia jadi guru-nya). Butuh penambahan mode "kepala-scope" per-view + tes device.
+- Data Guru: Kepala saat ini TIDAK lihat guru manapun (menu Data Guru = bucket 'admin'; useGuru return [] utk non-admin) → UNDER-exposed (aman, bukan bocor). Spec "guru lembaganya" = penambahan fitur (beri Kepala view guru scoped) — opsional, bukan leak.
+
+**HEAD `feature/vue-migration` = `5385350`. Build OK. Belum push. Web fix dasbor keuangan (`002aa13`) + splash (`7a3cad9`) + Kepala-scope (`5385350`) semua perlu `npm run firebase:deploy` (web) / rebuild installer (desktop).**
