@@ -19,6 +19,12 @@ export function isSuperAdmin(sesi) {
   return sesi.role_sistem === 'super_admin' || sesi.id === 'admin'
 }
 
+// v.86.0526: hanya super_admin yang boleh CRUD (create/update/delete) data master.
+//   admin biasa (role_sistem='admin') & admin_keuangan = VIEW-ONLY (kyai spec: "admin = full akses tanpa CRUD").
+export function canCRUD(sesi) {
+  return isSuperAdmin(sesi)
+}
+
 // v.21.115.0528: cek admin biasa (admin role_sistem, akses everything except master & keuangan)
 export function isAdminBiasa(sesi) {
   if (!sesi) return false
