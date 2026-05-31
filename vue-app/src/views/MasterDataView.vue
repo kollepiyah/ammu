@@ -24,6 +24,7 @@ import { scanTpqShiftMigration, runTpqShiftMigration } from '@/utils/tpqShift'
 import { scanV21_10Migration, runV21_10Migration } from '@/utils/v21_10_migration'
 // v.21.70.0526: TK refactor migration (2 lembaga TK A/B → 1 lembaga TK + jenjang)
 import { scanV21_70TkMigration, runV21_70TkMigration } from '@/utils/v21_70_tk_migration'
+import { scanLembagaNormalize, runLembagaNormalize } from '@/utils/v88_lembaga_normalize'
 import { useGuru } from '@/composables/useGuru'
 
 const route = useRoute()
@@ -241,6 +242,47 @@ async function tpqMigExecute() {
 }
 
 // v.21.24.0526: Drop "Jabatan" tab — kyai req, pindah ke Kelola Lembaga (jabatan per-lembaga)
+// v.88.0526: Normalisasi lembaga santri (TPQ+shift->Pagi/Sore, P3H->PPPH, PRA PTPT->Pra PTPT)
+const lmbNormScan = ref(null)
+const lmbNormRunning = ref(false)
+const lmbNormProgress = ref({ i: 0, total: 0 })
+const lmbNormResult = ref(null)
+
+function lmbNormDryRun() {
+  lmbNormScan.value = scanLembagaNormalize(santriRawForMigration.value || [])
+  lmbNormResult.value = null
+}
+
+async function lmbNormExecute() {
+  if (!lmbNormScan.value || lmbNormScan.value.total === 0) {
+    toast.warning('Jalankan Dry-Run dulu, atau tidak ada data untuk migrasi.')
+    return
+  }
+  const byT = Object.entries(lmbNormScan.value.byTarget).map(([k, v]) => `${v} -> ${k}`).join(', ')
+  const ok = await confirmDlg({
+    title: 'Normalisasi Lembaga Santri?',
+    message: `${lmbNormScan.value.total} santri di-update: ${byT}. ${lmbNormScan.value.tpqNoShift} santri "TPQ" TANPA shift TIDAK diubah (assign manual). Idempotent (_migrated_lembaga_v88_at).`,
+    confirmText: 'Lanjutkan',
+    danger: true
+  })
+  if (!ok) return
+  lmbNormRunning.value = true
+  lmbNormProgress.value = { i: 0, total: lmbNormScan.value.total }
+  try {
+    const result = await runLembagaNormalize(santriRawForMigration.value || [], {
+      onProgress: (i, total) => { lmbNormProgress.value = { i, total } }
+    })
+    lmbNormResult.value = result
+    if (result.fail > 0) toast.warning(`Selesai: ${result.ok} OK, ${result.fail} gagal`)
+    else toast.success(`Normalisasi sukses: ${result.ok} santri ter-update`)
+    lmbNormScan.value = scanLembagaNormalize(santriRawForMigration.value || [])
+  } catch (e) {
+    toast.error('Gagal migrasi: ' + (e.message || e))
+  } finally {
+    lmbNormRunning.value = false
+  }
+}
+
 const TABS = [
   { id: 'lembaga', label: 'Lembaga/Divisi', icon: 'fa-sitemap', color: 'blue' },
   { id: 'tp', label: 'Tahun Pelajaran', icon: 'fa-calendar', color: 'orange' },
@@ -1352,6 +1394,65 @@ async function simpanPengaturanRekap() {
               </li>
             </ul>
           </details>
+        </div>
+      </div>
+
+      <!-- v.88.0526: Normalisasi Lembaga Santri -->
+      <div
+        class="bg-white dark:bg-slate-800 rounded-2xl p-5 md:p-6 border-2 border-emerald-300 dark:border-emerald-700 shadow-sm"
+      >
+        <div class="flex items-center justify-between mb-3">
+          <div>
+            <p class="text-sm font-black text-emerald-700 dark:text-emerald-300">
+              <i class="fas fa-wand-magic-sparkles mr-1"></i>Normalisasi Lembaga Santri
+            </p>
+            <p class="text-xs text-slate-600 dark:text-slate-300 mt-1">
+              Samakan label lama ke canonical: <b>TPQ</b>+shift &rarr; <b>TPQ Pagi/Sore</b>,
+              <b>P3H</b> &rarr; <b>PPPH</b>, <b>PRA PTPT</b> &rarr; <b>Pra PTPT</b>.
+              Santri "TPQ" tanpa shift dilewati (assign manual). Idempotent.
+            </p>
+          </div>
+          <span class="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded uppercase">v.88</span>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button
+            @click="lmbNormDryRun"
+            :disabled="lmbNormRunning"
+            class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black rounded-lg disabled:opacity-50"
+          >
+            <i class="fas fa-search mr-1"></i>Dry-Run (Scan)
+          </button>
+          <button
+            @click="lmbNormExecute"
+            :disabled="lmbNormRunning || !lmbNormScan || lmbNormScan.total === 0"
+            class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <i class="fas fa-database mr-1"></i>Execute Migrasi
+          </button>
+        </div>
+        <div v-if="lmbNormRunning" class="mt-3 text-xs font-bold text-emerald-700">
+          <i class="fas fa-spinner fa-spin mr-1"></i>{{ lmbNormProgress.i }}/{{ lmbNormProgress.total }}
+        </div>
+        <div v-if="lmbNormScan" class="mt-3 bg-slate-50 dark:bg-slate-900 rounded-lg p-3 text-xs">
+          <p class="font-black text-slate-800 dark:text-white mb-2">
+            <i class="fas fa-clipboard-list mr-1"></i>Scan: {{ lmbNormScan.total }} akan dimigrasi
+            <span v-if="lmbNormScan.tpqNoShift > 0" class="text-rose-600">&middot; {{ lmbNormScan.tpqNoShift }} TPQ tanpa shift (manual)</span>
+          </p>
+          <ul class="space-y-1">
+            <li
+              v-for="(ex, i) in lmbNormScan.examples"
+              :key="'ln-' + i"
+              class="font-mono text-[10px] text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 rounded px-2 py-1 border border-slate-200 dark:border-slate-700"
+            >
+              <span class="font-bold">{{ ex.nama }}</span>: <span class="text-rose-600">{{ ex.before }}</span> &rarr; <span class="text-emerald-600">{{ ex.after }}</span>
+            </li>
+          </ul>
+        </div>
+        <div
+          v-if="lmbNormResult"
+          class="mt-3 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 rounded-lg p-3 text-xs font-bold text-emerald-800 dark:text-emerald-200"
+        >
+          <i class="fas fa-check-circle mr-1"></i>Selesai: {{ lmbNormResult.ok }} OK, {{ lmbNormResult.fail }} gagal
         </div>
       </div>
 
