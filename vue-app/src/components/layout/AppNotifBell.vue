@@ -107,12 +107,16 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useNotifications } from '@/composables/useNotifications'
+import { setupLocalNotif, pushFromItems } from '@/composables/useLocalNotif'
 
 const router = useRouter()
 const { items, itemsUnread, unreadCount, markAllRead, clearAll } = useNotifications()
+
+// v.87.0526: mirror feed notif -> OS notifications (status bar HP). No-op di web / kalau plugin belum di-install.
+watch(items, (val) => { try { pushFromItems(val) } catch { /* ignore */ } })
 
 const open = ref(false)
 const activeTab = ref('unread')
@@ -147,6 +151,7 @@ function colorBg(c) {
     case 'amber': return 'bg-amber-100 dark:bg-amber-900/40'
     case 'teal': return 'bg-teal-100 dark:bg-teal-900/40'
     case 'rose': return 'bg-rose-100 dark:bg-rose-900/40'
+    case 'blue': return 'bg-blue-100 dark:bg-blue-900/40'
     default: return 'bg-slate-100 dark:bg-slate-800'
   }
 }
@@ -157,6 +162,7 @@ function colorText(c) {
     case 'amber': return 'text-amber-700 dark:text-amber-300'
     case 'teal': return 'text-teal-700 dark:text-teal-300'
     case 'rose': return 'text-rose-700 dark:text-rose-300'
+    case 'blue': return 'text-blue-700 dark:text-blue-300'
     default: return 'text-slate-700 dark:text-slate-300'
   }
 }
@@ -182,6 +188,8 @@ function onDocClick(e) {
 }
 onMounted(() => {
   document.addEventListener('click', onDocClick)
+  // v.87.0526: minta izin notif HP + listener tap-to-open (native only; no-op di web/desktop)
+  setupLocalNotif(router)
 })
 onUnmounted(() => {
   document.removeEventListener('click', onDocClick)

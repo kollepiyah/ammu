@@ -2002,6 +2002,24 @@ async function saveFormKenaikan() {
     payload.riwayat_kenaikan = newRk
 
     await updateDoc(doc(db, 'santri', String(s.id)), payload)
+    // v.87.0526: tulis event kenaikan ke koleksi `riwayat_kenaikan` (sumber notif untuk wali). Best-effort.
+    try {
+      const evId = `rk_${s.id}_${Date.now()}`
+      await setDoc(doc(db, 'riwayat_kenaikan', evId), {
+        id: evId,
+        santri_id: String(s.id),
+        santri_nama: s.nama || '',
+        dari_lembaga: rkEntry.dari_lembaga || '',
+        dari_kelas: rkEntry.dari_kelas || '',
+        ke_lembaga: rkEntry.ke_lembaga || '',
+        ke_kelas: rkEntry.ke_kelas || '',
+        khotam_ke: rkEntry.khotam_ke || '',
+        tanggal: rkEntry.tanggal || '',
+        createdAt: new Date().toISOString()
+      })
+    } catch (e) {
+      console.warn('[kenaikan-event] gagal tulis riwayat_kenaikan:', e?.message || e)
+    }
     Object.assign(s, payload)
     const idx = santriList.value.findIndex((x) => String(x.id) === String(s.id))
     if (idx >= 0) Object.assign(santriList.value[idx], payload)

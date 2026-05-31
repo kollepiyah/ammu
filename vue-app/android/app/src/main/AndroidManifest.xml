@@ -63,4 +63,6 @@
     <!-- Camera + microphone untuk foto profil (opsional) -->
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <!-- v.87.0526: notifikasi (Android 13+) — wajib utk request izin runtime LocalNotifications -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 </manifest>
