@@ -443,6 +443,24 @@ async function saveProfile() {
       alamat_provinsi: ef.alamat_provinsi,
       updated_at: new Date().toISOString()
     })
+    // v.86.0526 FIX: update objek guru lokal supaya view langsung reflect data baru.
+    //   Sebelumnya view baca props.guru (di-load sekali di ProfilView, tak di-refresh) → tampak "kembali ke default".
+    Object.assign(props.guru, {
+      nik: ef.nik,
+      tempat_lahir: ef.tempat_lahir,
+      tgl_lahir: ef.tgl_lahir,
+      email: ef.email,
+      pendidikan_terakhir: ef.pendidikan_terakhir,
+      nama_ijazah: ef.nama_ijazah,
+      tahun_lulus: ef.tahun_lulus,
+      alamat_dusun: ef.alamat_dusun,
+      alamat_rt: ef.alamat_rt,
+      alamat_rw: ef.alamat_rw,
+      alamat_desa: ef.alamat_desa,
+      alamat_kecamatan: ef.alamat_kecamatan,
+      alamat_kabupaten: ef.alamat_kabupaten,
+      alamat_provinsi: ef.alamat_provinsi
+    })
     toast.success('Profil tersimpan')
     mode.value = 'view'
   } catch (e) {

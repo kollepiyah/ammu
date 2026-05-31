@@ -334,6 +334,19 @@ async function saveProfile() {
       updated_at: new Date().toISOString()
     }
     await updateDoc(doc(db, 'santri', String(props.santri.id)), payload)
+    // v.86.0526 FIX: update objek santri lokal supaya view langsung reflect (sebelumnya revert ke data lama).
+    Object.assign(props.santri, {
+      tempat_lahir: ef.tempat_lahir, nik: ef.nik,
+      alamat_dusun: ef.alamat_dusun, alamat_rt: ef.alamat_rt, alamat_rw: ef.alamat_rw,
+      alamat_desa: ef.alamat_desa, alamat_kecamatan: ef.alamat_kecamatan,
+      alamat_kabupaten: ef.alamat_kabupaten, alamat_provinsi: ef.alamat_provinsi,
+      nama_ayah: ef.nama_ayah, nik_ayah: ef.nik_ayah, pekerjaan_ayah: ef.pekerjaan_ayah,
+      pendidikan_ayah: ef.pendidikan_ayah, hp_ayah: ef.hp_ayah,
+      nama_ibu: ef.nama_ibu, nik_ibu: ef.nik_ibu, pekerjaan_ibu: ef.pekerjaan_ibu,
+      pendidikan_ibu: ef.pendidikan_ibu, hp_ibu: ef.hp_ibu,
+      ayah: { ...(props.santri.ayah || {}), nama: ef.nama_ayah, nik: ef.nik_ayah, pekerjaan: ef.pekerjaan_ayah, pendidikan: ef.pendidikan_ayah, telp: ef.hp_ayah },
+      ibu: { ...(props.santri.ibu || {}), nama: ef.nama_ibu, nik: ef.nik_ibu, pekerjaan: ef.pekerjaan_ibu, pendidikan: ef.pendidikan_ibu, telp: ef.hp_ibu }
+    })
     toast.success('Profil tersimpan')
     mode.value = 'view'
   } catch (e) {

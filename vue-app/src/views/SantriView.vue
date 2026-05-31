@@ -231,7 +231,8 @@
               </a>
             </div>
             <!-- v.21.24.0526: Edit/Reset Sandi/Toggle Aktif/Delete (Master mode only) -->
-            <div v-if="isFullAccess && isMasterMode" class="mt-2 flex justify-end gap-2 flex-wrap">
+            <!-- v.86.0526: pisah dari baris data (border-top + pt) biar tombol tidak menempel/overlap dg no WA -->
+            <div v-if="isFullAccess && isMasterMode" class="mt-2 pt-2 border-t border-[var(--border-subtle)] flex justify-end items-center gap-3 flex-wrap">
               <button @click="resetSandiSantri(s)" class="text-[10px] text-cyan-700 dark:text-cyan-300 hover:underline font-bold" title="Reset sandi ke 1234">
                 <i class="fas fa-key mr-1"></i>Reset Sandi
               </button>
