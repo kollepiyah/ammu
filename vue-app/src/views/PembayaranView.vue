@@ -18,23 +18,15 @@
       </div>
     </div>
 
-    <!-- v.81.0526: 3-tab payment channel selector (santri/wali only) -->
-    <div v-if="isSantriOnly" class="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)] shadow-sm p-2">
-      <div class="flex gap-1.5 overflow-x-auto custom-scrollbar">
-        <button
-          v-for="t in tabsSantri"
-          :key="t.id"
-          @click="activeTab = t.id"
-          :class="[
-            'flex-1 whitespace-nowrap px-3 md:px-4 py-2 md:py-2.5 text-xs md:text-sm font-black transition cursor-pointer rounded-xl flex items-center justify-center gap-1.5',
-            activeTab === t.id
-              ? t.activeClass
-              : 'text-[var(--text-secondary)] hover:bg-slate-50 dark:hover:bg-slate-700/40'
-          ]"
-        >
-          <i :class="['fas', t.icon, 'text-sm']"></i>{{ t.label }}
-        </button>
+    <!-- v.87.0526: header navigasi alur berlangkah (ganti 3-tab). Back/Riwayat kontekstual. -->
+    <div v-if="isSantriOnly" class="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)] shadow-sm p-2 flex items-center justify-between gap-2">
+      <div class="flex items-center gap-1.5 min-w-0">
+        <button v-if="mode === 'flow' && step === 'bayar'" @click="step = 'metode'" class="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-black text-cyan-700 hover:bg-cyan-50 dark:hover:bg-cyan-900/30 transition cursor-pointer"><i class="fas fa-chevron-left"></i>Pilih metode</button>
+        <button v-else-if="mode === 'riwayat'" @click="mode = 'flow'" class="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-black text-cyan-700 hover:bg-cyan-50 dark:hover:bg-cyan-900/30 transition cursor-pointer"><i class="fas fa-chevron-left"></i>Pembayaran</button>
+        <span v-else class="px-1.5 text-sm font-black truncate"><i class="fas fa-wallet text-cyan-500 mr-1"></i>Pilih metode pembayaran</span>
       </div>
+      <button v-if="mode === 'flow'" @click="mode = 'riwayat'" class="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-black text-[var(--text-secondary)] hover:bg-slate-50 dark:hover:bg-slate-700/40 transition cursor-pointer" aria-label="Lihat riwayat pembayaran"><i class="fas fa-history"></i>Riwayat</button>
+      <button v-else @click="mode = 'flow'" class="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-black text-cyan-700 hover:bg-cyan-50 dark:hover:bg-cyan-900/30 transition cursor-pointer"><i class="fas fa-credit-card"></i>Bayar</button>
     </div>
 
     <!-- v.83.0526: Picker anak DIHAPUS di sini — sudah di topbar global (AppHeader).
@@ -44,7 +36,7 @@
     <!-- ============================================================
          TAB: MANUAL — Riwayat pembayaran offline (admin POS) + transfer ter-verifikasi
          ============================================================ -->
-    <template v-if="!isSantriOnly || activeTab === 'manual'">
+    <template v-if="!isSantriOnly || mode === 'riwayat'">
       <!-- Filter (admin) -->
       <div v-if="!isSantriOnly" class="bg-[var(--bg-card)] rounded-2xl p-3 border border-[var(--border-subtle)] shadow-sm grid grid-cols-1 md:grid-cols-3 gap-2">
         <input v-model="search" type="text" placeholder="Cari nama santri..." class="px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)]" />
@@ -90,9 +82,51 @@
     </template>
 
     <!-- ============================================================
-         TAB: TRANSFER BANK — info rekening + upload bukti
+         v.87.0526 STEP: PILIH METODE — daftar metode (bukan tab)
          ============================================================ -->
-    <template v-if="isSantriOnly && activeTab === 'transfer'">
+    <template v-if="isSantriOnly && mode === 'flow' && step === 'metode'">
+      <!-- ringkasan tagihan kalau datang dari tombol Bayar -->
+      <div v-if="transferForm.tagihan_id || transferForm.nominal" class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm">
+        <p class="text-[10px] font-bold uppercase tracking-wider text-[var(--text-secondary)]">Tagihan dipilih</p>
+        <div class="flex items-center justify-between mt-1">
+          <span class="text-sm font-black truncate">{{ transferForm.kategori || 'Pembayaran' }}</span>
+          <span class="text-base font-black text-cyan-700">{{ fmtRp(transferForm.nominal) }}</span>
+        </div>
+      </div>
+
+      <!-- daftar metode (transfer aktif, VA segera hadir) -->
+      <div class="bg-[var(--bg-card)] rounded-2xl p-3 border border-[var(--border-subtle)] shadow-sm space-y-2">
+        <p class="text-[10px] font-bold uppercase tracking-wider text-[var(--text-secondary)] px-1">Pilih cara bayar</p>
+        <button
+          v-for="m in methodsSantri"
+          :key="m.id"
+          @click="pilihMetode(m.id)"
+          :disabled="!m.active"
+          :class="['w-full flex items-center gap-3 p-3 rounded-xl border text-left transition',
+            !m.active ? 'opacity-60 cursor-not-allowed border-[var(--border-subtle)]'
+            : selectedMethod === m.id ? 'border-2 border-cyan-500 bg-cyan-50/40 dark:bg-cyan-900/20 cursor-pointer'
+            : 'border-[var(--border-default)] hover:border-cyan-300 cursor-pointer']"
+        >
+          <i :class="['fas', m.icon, 'text-lg w-6 text-center', m.active ? 'text-cyan-600' : 'text-[var(--text-tertiary)]']"></i>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-black">{{ m.label }}</p>
+            <p class="text-[10px] text-[var(--text-secondary)]">{{ m.desc }}</p>
+          </div>
+          <span v-if="!m.active" class="text-[9px] px-2 py-0.5 rounded font-black uppercase bg-amber-100 text-amber-700 border border-amber-200">Coming soon</span>
+          <i v-else-if="selectedMethod === m.id" class="fas fa-circle-check text-cyan-600 text-lg"></i>
+          <i v-else class="fas fa-chevron-right text-[var(--text-tertiary)]"></i>
+        </button>
+      </div>
+
+      <button @click="lanjutBayar" class="w-full px-5 py-3 bg-cyan-600 hover:bg-cyan-700 text-white font-black rounded-xl text-sm shadow-md transition cursor-pointer">
+        <i class="fas fa-arrow-right mr-1"></i>Lanjut
+      </button>
+    </template>
+
+    <!-- ============================================================
+         v.87.0526 STEP: BAYAR (Transfer Bank) — info rekening + upload bukti
+         ============================================================ -->
+    <template v-if="isSantriOnly && mode === 'flow' && step === 'bayar'">
       <!-- Info Rekening -->
       <div class="bg-gradient-to-br from-cyan-600 to-teal-700 dark:from-cyan-800 dark:to-teal-900 rounded-2xl p-5 text-white shadow-lg">
         <p class="text-[10px] font-bold uppercase opacity-80 tracking-wider mb-3">
@@ -159,17 +193,26 @@
             />
           </div>
           <div>
-            <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase mb-1">Kategori (opsional)</label>
+            <!-- v.87.0526: kalau datang dari tagihan (tagihan_id ada) → kategori terkunci, terisi otomatis. Kalau Setoran Lain → bebas. -->
+            <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase mb-1">
+              Kategori
+              <span v-if="transferForm.tagihan_id" class="text-cyan-600 normal-case"><i class="fas fa-lock text-[9px]"></i> dari tagihan</span>
+              <span v-else class="normal-case">(opsional)</span>
+            </label>
             <input
               v-model="transferForm.kategori"
               type="text"
               list="kategoriList"
+              :readonly="!!transferForm.tagihan_id"
               placeholder="cth: SPP / Syahriah / Tabungan"
-              class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-cyan-500 outline-none"
+              :class="['w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] focus:ring-2 focus:ring-cyan-500 outline-none', transferForm.tagihan_id ? 'bg-slate-100 dark:bg-slate-800 cursor-not-allowed opacity-80' : 'bg-[var(--bg-card-elevated)]']"
             />
             <datalist id="kategoriList">
               <option v-for="k in uniqueKategoriTagihan" :key="k" :value="k">{{ k }}</option>
             </datalist>
+            <p v-if="transferForm.tagihan_id" class="text-[10px] text-cyan-700 italic mt-1">
+              <i class="fas fa-info-circle mr-1"></i>Kategori otomatis dari tagihan yang dipilih.
+            </p>
           </div>
           <div class="md:col-span-2">
             <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase mb-1">Catatan</label>
@@ -260,28 +303,8 @@
       </div>
     </template>
 
-    <!-- ============================================================
-         TAB: VA ACCOUNT — Maintenance placeholder
-         ============================================================ -->
-    <template v-if="isSantriOnly && activeTab === 'va'">
-      <div class="bg-[var(--bg-card)] rounded-2xl p-10 border border-dashed border-amber-300 dark:border-amber-700 shadow-sm text-center">
-        <i class="fas fa-tools text-amber-500 text-5xl mb-4"></i>
-        <h3 class="text-lg font-black text-[var(--text-primary)] mb-2">
-          Sedang Dalam Maintenance
-        </h3>
-        <p class="text-sm text-[var(--text-secondary)] max-w-md mx-auto">
-          Fitur pembayaran via <b>Virtual Account</b> belum aktif. Pondok sedang dalam proses
-          kerjasama dengan <b>KSP BMT PETA</b> sebagai mitra resmi.
-        </p>
-        <p class="text-xs text-[var(--text-tertiary)] italic mt-4">
-          Untuk sementara silakan pakai jalur <b>Transfer Bank</b> manual.
-        </p>
-        <div class="mt-6 inline-flex items-center gap-2 px-4 py-2 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 rounded-xl">
-          <i class="fas fa-info-circle text-amber-600"></i>
-          <span class="text-xs font-bold text-amber-700 dark:text-amber-300">Coming Soon</span>
-        </div>
-      </div>
-    </template>
+    <!-- v.87.0526: blok tab VA DIHAPUS — VA kini jadi baris "Coming soon" (disabled) di langkah Pilih Metode. -->
+
   </div>
 </template>
 
@@ -312,7 +335,10 @@ const loading = ref(true)
 const search = ref('')
 const filterBulan = ref(0)
 const filterTahun = ref(new Date().getFullYear())
-const activeTab = ref('manual')
+// v.87.0526: alur berlangkah (ganti 3-tab). step: 'metode' -> 'bayar'. mode: 'flow' | 'riwayat'.
+const step = ref('metode')
+const mode = ref('flow')
+const selectedMethod = ref('transfer')
 const selectedAnakId = ref('')
 let unsubBayar = null
 let unsubSantri = null
@@ -324,10 +350,10 @@ const isSantriOnly = computed(() => auth.sesiAktif?.role === 'santri')
 // v.81.0526: multi-anak detection via WA wali
 const { children: waliChildren } = useWaliChildren(santriList)
 
-const tabsSantri = [
-  { id: 'manual', label: 'Riwayat', icon: 'fa-receipt', activeClass: 'bg-emerald-600 text-white shadow-md' },
-  { id: 'transfer', label: 'Transfer Bank', icon: 'fa-university', activeClass: 'bg-cyan-600 text-white shadow-md' },
-  { id: 'va', label: 'VA Account', icon: 'fa-credit-card', activeClass: 'bg-amber-600 text-white shadow-md' }
+// v.87.0526: tabsSantri (3-tab) DIHAPUS — diganti alur berlangkah (pilih metode -> bayar) + riwayat via ikon.
+const methodsSantri = [
+  { id: 'transfer', label: 'Transfer Bank', icon: 'fa-university', desc: 'Upload bukti, verifikasi admin', active: true },
+  { id: 'va', label: 'Virtual Account', icon: 'fa-credit-card', desc: 'Segera hadir', active: false }
 ]
 
 // Settings rekening (dari PengaturanKeuanganView)
@@ -538,6 +564,18 @@ function copyToClipboard(text) {
   }
 }
 
+// v.87.0526: navigasi alur berlangkah (pilih metode -> bayar)
+function pilihMetode(id) {
+  const m = methodsSantri.find((x) => x.id === id)
+  if (!m || !m.active) { toast.info('Metode ini belum aktif'); return }
+  selectedMethod.value = id
+}
+function lanjutBayar() {
+  const m = methodsSantri.find((x) => x.id === selectedMethod.value)
+  if (!m || !m.active) { toast.info('Pilih metode yang aktif (Transfer Bank)'); return }
+  step.value = 'bayar'
+}
+
 // ─── Subscribe Firestore ───────────────────────────────────────
 onMounted(() => {
   // Pembayaran tunai POS + transfer yg sudah verified
@@ -563,9 +601,15 @@ onMounted(() => {
       transferForm.value.santri_id = String(waliChildren.value[0].id)
     }
     // v.82.0526: deep-link from TagihanView — auto-fill form transfer
+    // v.87.0526: alur berlangkah — terjemahkan query jadi mode/step (ganti activeTab)
     const q = route.query
-    if (q.tab === 'transfer') {
-      activeTab.value = 'transfer'
+    if (q.view === 'riwayat') {
+      mode.value = 'riwayat'
+    } else {
+      // default: alur pembayaran (pilih metode dulu). Prefill dari tagihan kalau ada.
+      mode.value = 'flow'
+      step.value = 'metode'
+      selectedMethod.value = 'transfer'
       if (q.santri) transferForm.value.santri_id = String(q.santri)
       if (q.nominal) transferForm.value.nominal = Number(q.nominal) || 0
       if (q.kategori) transferForm.value.kategori = String(q.kategori)
@@ -573,7 +617,8 @@ onMounted(() => {
       if (q.nominal && q.kategori) {
         transferForm.value.catatan = `Pembayaran ${q.kategori}`
       }
-      toast.info('Form transfer auto-fill dari tagihan')
+      // toast info hanya kalau benar2 ada prefill dari tagihan (bukan dari "Setoran Lain")
+      if (q.tagihan_id || q.nominal) toast.info('Tagihan terpilih — pilih metode pembayaran')
     }
   }, 500)
 })

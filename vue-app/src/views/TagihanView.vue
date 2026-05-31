@@ -9,6 +9,10 @@
         <div class="flex gap-2">
           <div class="px-3 py-1.5 rounded-full bg-cyan-50 border border-cyan-200 text-xs"><span class="text-cyan-700 font-bold">{{ stats.totalTagihan }}</span> <span class="text-[var(--text-secondary)]">tagihan</span></div>
           <div class="px-3 py-1.5 rounded-full bg-rose-50 border border-rose-200 text-xs"><span class="text-rose-700 font-bold">{{ fmtRp(stats.totalTunggakan) }}</span> <span class="text-[var(--text-secondary)]">tunggakan</span></div>
+          <!-- v.87.0526: santri/wali — ikon Riwayat pembayaran (alur 1 pintu, ganti tab) -->
+          <button v-if="isSantriRole" @click="goRiwayat" aria-label="Riwayat pembayaran" title="Riwayat pembayaran" class="flex items-center justify-center w-8 h-8 rounded-full border border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-slate-50 dark:hover:bg-slate-700/40 text-xs font-black transition cursor-pointer"><i class="fas fa-history"></i></button>
+          <!-- v.87.0526: santri/wali — setoran/bayar di luar tagihan (kategori bebas). Tagihan = 1 pintu pembayaran. -->
+          <button v-if="isSantriRole" @click="goSetoranLain" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black px-3 py-1.5 rounded-full shadow"><i class="fas fa-paper-plane mr-1"></i>Setoran Lain</button>
           <button v-if="isFullAccess" @click="openModalNew" class="bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-black px-3 py-1.5 rounded-full shadow"><i class="fas fa-plus mr-1"></i>Tambah Tagihan</button>
         </div>
       </div>
@@ -229,6 +233,14 @@ function goBayar(t) {
       tagihan_id: String(t.id || '')
     }
   })
+}
+// v.87.0526: setoran/bayar di luar tagihan (kategori bebas) — pintu pembayaran tetap di menu Tagihan
+function goSetoranLain() {
+  router.push({ path: '/pembayaran', query: { tab: 'transfer' } })
+}
+// v.87.0526: buka Riwayat pembayaran (ikon jam) — mode riwayat di PembayaranView
+function goRiwayat() {
+  router.push({ path: '/pembayaran', query: { view: 'riwayat' } })
 }
 
 // v.86.0526 FIX PRIVACY: santri/wali hanya lihat tagihan dirinya sendiri (anak terpilih), bukan semua santri.
