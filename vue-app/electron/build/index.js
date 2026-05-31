@@ -168,16 +168,18 @@ function createMainWindow() {
         show: false
     });
     mainWindow.once('ready-to-show', () => {
-        mainWindow?.show();
-        mainWindow?.focus();
-        // v.83.0526: splash min duration 3000ms — logo animasi bounce 900ms + footer fade 600ms
-        //   + buffer 1500ms supaya logo benar2 settled sebelum close (sebelumnya 2500ms terlalu cepat).
-        //   User feedback: 'splash sangat cepat'.
+        // v.86.0526 FIX "splash dobel": JANGAN tampilkan main window dulu. Splash bawaan web app
+        //   (Powered by Bakafrawi) ikut ke-render di main window → muncul bareng splash native = dobel.
+        //   Tahan main HIDDEN selama splash native tampil, tutup splash dulu, baru show main
+        //   (web app sudah lewat splash internal-nya karena ready-to-show = sudah render).
+        const SPLASH_MIN_MS = 1800;
         setTimeout(() => {
             if (splashWindow && !splashWindow.isDestroyed()) {
                 splashWindow.close();
             }
-        }, 3000);
+            mainWindow?.show();
+            mainWindow?.focus();
+        }, SPLASH_MIN_MS);
     });
     // v.85.0526: Load Vue app — pakai loadFile() di production (handle asar archive otomatis).
     //   loadURL('file://...') tidak work untuk path dalam asar → ERR_FILE_NOT_FOUND.
