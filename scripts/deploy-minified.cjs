@@ -91,6 +91,23 @@ try {
     log(`⚠ Vue build error (skip, deploy legacy only): ${e.message}`)
   }
 
+  // v.87.0526: Build PSB sub-app (vue-app-psb) + sync ke public/psb/ — SITE KEDUA (ammuonline-psb).
+  log('Step 0d: Build PSB (vue-app-psb) + sync ke public/psb/')
+  try {
+    run('npm run build --prefix vue-app-psb')
+    const PSB_DIST = path.join(__dirname, '..', 'vue-app-psb', 'dist')
+    const PSB_TARGET = path.join(PUBLIC, 'psb')
+    if (fs.existsSync(PSB_DIST)) {
+      if (fs.existsSync(PSB_TARGET)) fs.rmSync(PSB_TARGET, { recursive: true, force: true })
+      fs.cpSync(PSB_DIST, PSB_TARGET, { recursive: true })
+      log('✓ PSB dist copied → public/psb/')
+    } else {
+      log('⚠ vue-app-psb/dist tidak ada, skip PSB sync (deploy public/psb existing)')
+    }
+  } catch (e) {
+    log(`⚠ PSB build error (skip, deploy public/psb existing): ${e.message}`)
+  }
+
   // v.52.0526: Build Vue widgets bundle juga (PostCard, KalenderPendidikan, ModalPOS, dll)
   // Output: public/dist/widgets.js — di-import oleh legacy index.html via window.AmmuWidgets
   log('Step 0c: Build Vue widgets bundle → public/dist/widgets.js')
@@ -128,18 +145,20 @@ try {
   fs.copyFileSync(MIN, SRC)
   log(`✓ Minified legacy disalin ke / (root) — Vue tetap accessible di /vue/`)
 
-  log('Step 4: Run firebase deploy — hanya main (Vue ammuonline) + firestore rules')
+  log('Step 4: Run firebase deploy — 2 site: main (Vue ammuonline) + psb + firestore rules')
   // v.20.0526: Multi-site hosting
   // - hosting:main → site `ammuonline` (Vue di public/vue/) → ammuonline.web.app
+  // - hosting:psb  → site `psb` (public/psb/) → ammuonline-psb.web.app
   // v.87.0526: hosting:legacy (portal-mambaul-ulum) DIHAPUS dari deploy — legacy sudah tidak dipakai.
   // v.20.15.0526: deploy firestore rules juga (kalau ada perubahan koleksi/rules baru)
-  run('firebase deploy --only hosting:main,firestore:rules')
+  run('firebase deploy --only hosting:main,hosting:psb,firestore:rules')
 
   log('Step 5: Restore original index.html (untuk dev)')
   restore()
 
   log('✓ Deploy selesai. Original file intact.')
   log('   Vue (utama)  → https://ammuonline.web.app')
+  log('   PSB          → https://ammuonline-psb.web.app')
   log('   (legacy portal-mambaul-ulum di-SKIP — sudah tidak dipakai)')
   log('')
   log('💡 Untuk rebuild AAB (Play Store): npm run build:aab')
