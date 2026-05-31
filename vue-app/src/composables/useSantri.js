@@ -3,7 +3,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { subscribeColl } from '@/services/firestore'
 import { useAuthStore } from '@/stores/auth'
 // v.21.10.0526: Import LEMBAGA_GROUPS helpers untuk lembaga_refs derivation + canSee scoping
-import { getLembagaGroup, canSee } from './useLembaga'
+import { getLembagaGroup, canSee, lembagaScopeMatches } from './useLembaga'
 // v.21.86.0527: Sort konsisten lembaga→kelas→nama (berlaku di semua halaman via composable)
 import { sortSantri } from '@/utils/santriSort'
 
@@ -68,14 +68,11 @@ export function useSantri() {
       // Kepala Lembaga: filter santri yang lembaga-nya = lembaga kepala-nya (via canSee)
       const jabL = String(user?.jabatan || '').toLowerCase()
       const isKepala = jabL.includes('kepala') || jabL.includes('pj') || jabL.includes('pengasuh')
-      const myFamily = getLembagaGroup(user?.lembaga) // 'TPQ' | 'SDI' | ... (keluarga lembaga)
       list = list.filter((s) => {
-        // v.86.0526: Kepala/PJ = SE-GROUP lembaganya (kyai). exact-lembaga via canSee +
-        //   match keluarga lembaga (getLembagaGroup: TPQ Pagi/Sore/Pra PTPT → 'TPQ').
+        // v.86.0526: Kepala/PJ = se-lembaganya (kyai "se-group"). lembagaScopeMatches handle
+        //   variant/family (TPQ Sore→TPQ Pagi/Sore/Pra PTPT) MAUPUN label broad ('Qiraati'→semua qiraati).
         if (isKepala) {
-          if (canSee(user, s.lembaga) || canSee(user, s.lembaga_sekolah)) return true
-          if (myFamily && (getLembagaGroup(s.lembaga) === myFamily || getLembagaGroup(s.lembaga_sekolah) === myFamily)) return true
-          return false
+          return lembagaScopeMatches(user?.lembaga, s.lembaga) || lembagaScopeMatches(user?.lembaga, s.lembaga_sekolah)
         }
         const gp = String(s.guru_pagi || '').trim().toLowerCase()
         const gs = String(s.guru_sore || '').trim().toLowerCase()

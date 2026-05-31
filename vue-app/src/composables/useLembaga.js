@@ -39,9 +39,36 @@ export const VARIANT_TO_GROUP = (() => {
   return map
 })()
 
-// Helper: detect group dari nama lembaga
+// Helper: detect group (family key, mis. 'TPQ') dari nama lembaga
 export function getLembagaGroup(namaLembaga) {
   return VARIANT_TO_GROUP[namaLembaga] || null
+}
+
+// v.86.0526: broad group ('qiraati' | 'sekolah' | 'mahad' | 'non-lembaga') dari nama lembaga.
+//   Terima variant ('TPQ Sore' → qiraati), family key ('TPQ' → qiraati), atau label broad langsung ('Qiraati').
+export function getLembagaBroadGroup(namaLembaga) {
+  if (!namaLembaga) return null
+  const fam = VARIANT_TO_GROUP[namaLembaga] // family key kalau ini variant
+  if (fam && LEMBAGA_GROUPS[fam]) return LEMBAGA_GROUPS[fam].group
+  if (LEMBAGA_GROUPS[namaLembaga]) return LEMBAGA_GROUPS[namaLembaga].group // ini family key
+  const low = String(namaLembaga).toLowerCase().trim()
+  if (['qiraati', 'sekolah', 'mahad', 'non-lembaga'].includes(low)) return low // label broad langsung
+  return null
+}
+
+// v.86.0526: cek apakah Kepala/PJ (lembaga = userLembaga) berhak melihat target_lembaga.
+//   - userLembaga variant/family (mis 'TPQ Sore' / 'TPQ') → scope SE-FAMILY (TPQ Pagi+Sore+Pra PTPT).
+//   - userLembaga label broad (mis 'Qiraati') → scope SE-BROAD-GROUP (semua qiraati).
+//   Dipakai untuk scoping Kepala Lembaga di Data Santri + view akademik (kyai: "Kepala = lembaganya").
+export function lembagaScopeMatches(userLembaga, targetLembaga) {
+  if (!userLembaga || !targetLembaga) return false
+  if (String(userLembaga).toLowerCase().trim() === String(targetLembaga).toLowerCase().trim()) return true
+  const uFam = getLembagaGroup(userLembaga) // family key kalau userLembaga = variant
+  if (uFam) return getLembagaGroup(targetLembaga) === uFam // scope se-family
+  // userLembaga bukan variant → mungkin label broad ('Qiraati'/'Sekolah') atau family key
+  const uBroad = getLembagaBroadGroup(userLembaga)
+  if (uBroad) return getLembagaBroadGroup(targetLembaga) === uBroad
+  return false
 }
 
 // v.21.71.0526: PKBM sub-tier helper — SMP (VII-IX) + SMA (X-XII)

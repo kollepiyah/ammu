@@ -882,7 +882,7 @@ import { ref, computed, onMounted, onUnmounted, unref, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import { subscribeColl } from '@/services/firestore'
 import { useSantri } from '@/composables/useSantri'
-import { useLembaga } from '@/composables/useLembaga'
+import { useLembaga, lembagaScopeMatches } from '@/composables/useLembaga'
 import { useGuru } from '@/composables/useGuru'
 import { useToast } from '@/composables/useToast'
 import { useSettingsStore } from '@/stores/settings'
@@ -912,7 +912,7 @@ onUnmounted(() => {
 const { santriRaw, getRapors } = useSantri()
 const { lembagaRaw } = useLembaga()
 const { guruRaw } = useGuru()
-import { isFullFilterRole } from '@/utils/roleScope'
+import { isFullFilterRole, isKepalaLembaga } from '@/utils/roleScope'
 import { sortSantri } from '@/utils/santriSort'
 const settingsStore = useSettingsStore()
 const authStore = useAuthStore()
@@ -920,6 +920,12 @@ const authStore = useAuthStore()
 // Role-based view restrictions
 // Full filter (pilih lembaga) = admin/super_admin. admin_keuangan + guru/user = guru mode.
 const isFullFilter = computed(() => isFullFilterRole(authStore.sesiAktif))
+// v.86.0526: Kepala/PJ (role guru, bukan admin) discope ke lembaganya di view rapor.
+const kepalaScope = computed(() => {
+  const s = authStore.sesiAktif
+  if (!s || s.role === 'admin' || s.id === 'admin') return null
+  return isKepalaLembaga(s) ? (s.lembaga || null) : null
+})
 const isGuruOnly = computed(() => {
   const s = authStore.sesiAktif
   if (!s || s.role === 'santri') return false
@@ -992,6 +998,10 @@ const santriList = computed(() => {
   const guruMode = isGuruOnly.value
   if (!lmb && !guruMode) return []
   let list = santriRaw.value.filter((s) => s.aktif !== false)
+  // v.86.0526: guard Kepala/PJ — hanya santri lembaganya (lintas-lembaga di-block walau pilih lembaga lain).
+  if (kepalaScope.value) {
+    list = list.filter((s) => lembagaScopeMatches(kepalaScope.value, s.lembaga) || lembagaScopeMatches(kepalaScope.value, s.lembaga_sekolah))
+  }
   if (guruMode && !lmb) {
     // filter berdasarkan kepemilikan sesuai kategori
     const sesiNama = String(authStore.sesiAktif?.nama || '').toLowerCase().trim()
