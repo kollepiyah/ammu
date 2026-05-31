@@ -87,3 +87,25 @@ Dari `git diff --numstat HEAD a7ded60 -- vue-app/src` (a7ded60 = tip v.84 yang h
 - Lost-feature candidates (§C: RaporView/PengaturanView/auth.js dll) — BELUM di-review konten.
 
 **HEAD `feature/vue-migration` = `2d9dbfd`. Semua build OK. Belum push. AAB belum rebuild (tunggu komando + bump versi).**
+
+
+---
+## UPDATE (sesi "dasbor keuangan + admin_keuangan")
+**SUDAH dikerjakan + committed (`002aa13`):**
+- **FIX perhitungan Dashboard Keuangan** (kyai: "perhitungannya gk benar" + "tabungan terpisah, tidak terhitung di buku induk & dasbor"):
+  - `useKeuangan.js stats`: `totalTabunganSantri` = NET (Σsetor − Στarik), bukan `sum(t.saldo)` (field saldo tidak ada di doc transaksi → dulu NaN/0). `totalBisyarohBulan` difilter ke periode bulan berjalan `${year}-${MM}` (dulu menjumlah SEMUA periode).
+  - `KeuanganDashboardView.vue`: exclude `sumber === 'tabungan_santri' | 'tabungan_guru'` dari (a) `monthlyData` (pemasukan/pengeluaran/saldo) dan (b) breakdown pengeluaran per-kategori. Tabungan TERPISAH dari kas pondok.
+  - `BukuIndukView.filteredBuku` SUDAH exclude tabungan sejak v.21.96.0527 (L674-678) — diverifikasi, tidak diubah.
+
+**T30 admin_keuangan — DIVERIFIKASI SUDAH BENAR (tidak perlu ubah kode, sudah dibangun v.21.115.0528):**
+- `auth.js cekHakAkses`: `admin_keuangan` dapat `akses_keuangan` (L98); `admin` biasa dapat semua perm KECUALI `akses_keuangan` (L100) → menu keuangan otomatis tersembunyi dari admin-biasa.
+- Pola konsisten di SEMUA view keuangan: `isFullAccess` (super_admin + admin_keuangan) → boleh **input / bayar / cetak / cetak-ulang / ekspor**; `isAdmin` (=`isSuperAdmin`) → satu-satunya yang boleh **edit + hapus** (per-row & bulk).
+  - BukuInduk: Input Manual + Ekspor Excel + Cetak Laporan + Cetak-ulang struk = ungated (boleh admin_keuangan); Edit (`bukaEditBuku`) & Hapus (`hapusBuku`) = `v-if="isAdmin"` (super only). ✓
+  - Tagihan: Tambah + Bayar = `isFullAccess`; Hapus = `isAdmin`. Tidak ada tombol edit-existing. ✓
+  - HutangPiutang/Tabungan/Bisyaroh: hapus/delete = `isAdmin`; input/generate/setor-tarik = isFullAccess/ungated. ✓
+- Kesimpulan: admin_keuangan **bisa input keluar/masuk + cetak ulang, TIDAK bisa edit/hapus** — persis sesuai aturan kyai.
+
+**PENDING BARU:**
+- **Splashscreen Electron** (kyai kirim screenshot): titlebar+menu native (Berkas/Edit/Tampilan/Bantuan) sudah benar & app jalan, TAPI splash awal = kotak biru-tua gelap solid TANPA logo. Perlu perbaiki splash window Electron (kemungkinan `splash.html`/asset logo tidak ke-load di `electron/app` — cek path logo relatif & robocopy dist→app, atau `index.ts` splash BrowserWindow loadFile). Belum dikerjakan.
+
+**HEAD `feature/vue-migration` = `002aa13`. Build OK (VITE_EXITCODE=0). Belum push. AAB belum rebuild (tunggu komando + bump versi). Web belum deploy (perlu `npm run firebase:deploy`).**
