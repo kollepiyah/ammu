@@ -43,11 +43,11 @@ service cloud.firestore {
 
     match /settings/{docId} {
       allow read: if true;
-      allow write: if signedIn()
-                   && request.resource.data.keys().hasAll(['adminPassword'])
-                   && request.resource.data.adminPassword is string
-                   && request.resource.data.adminPassword.size() >= 1
-                   && request.resource.data.adminPassword.size() <= 200;
+      // v.88.0526: relax — mandat adminPassword dulu memblokir SEMUA write ke settings/general
+      //   (KOP, logo, schema rapor, predikat, master_tp, rekap mapel dll) yg tak menyertakan
+      //   adminPassword -> setDoc pertama reject -> catch -> simpan batal -> "balik ke default".
+      //   settings admin-gated di menu + read public utk login; validasi sandi ada di app.
+      allow write: if signedIn();
     }
 
     // v.21.22.0526: Relax id strict number → legacy data mix string/number

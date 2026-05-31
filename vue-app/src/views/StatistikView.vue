@@ -931,7 +931,7 @@ const lembagaPrestasi = computed(() => {
     ...fromMaster.filter((n) => !URUTAN_LEMBAGA.includes(n))
   ]
   return ordered.map((nama) => {
-    const list = santriRaw.value.filter((s) => s.aktif !== false && s.lembaga === nama)
+    const list = santriRaw.value.filter((s) => s.aktif !== false && String(s.lembaga || '').trim().toLowerCase() === String(nama || '').trim().toLowerCase())
     const dinilai = list.filter((s) => parseNum(s.prestasi_akhir) > 0).length
 
     const top5 = [...list]
@@ -1013,31 +1013,36 @@ const statistikLembaga = computed(() => {
   return lembList
     .map((l) => {
       const nama = l.lembaga || l.nama
+      const namaNorm = String(nama || '').trim().toLowerCase()
       const isSekolah = isSekolahLembaga(nama)
+      // v.88.0526: normalize match (trim/lowercase) — fix lembaga (mis. TPQ Pagi/Sore) terhitung 0 krn beda casing/spasi.
+      const matchLemb = (val) => String(val || '').trim().toLowerCase() === namaNorm
       const santriList = santriRaw.value.filter(
-        (s) => (s.lembaga === nama || s.lembaga_sekolah === nama) && s.aktif !== false
+        (s) => (matchLemb(s.lembaga) || matchLemb(s.lembaga_sekolah)) && s.aktif !== false
       )
-      // v.21.108.0527: kelas = jumlah unique guru pengampu yg punya santri
-      // ter-assign di lembaga ini. Santri tanpa assignment tidak terhitung.
+      // v.88.0526: kelas = DISTINCT (guru x kelas) — konsisten dgn kelasCount (guru x lembaga x kelas).
+      //   Sebelumnya cuma distinct guru sehingga tidak sesuai aturan canonical & beda dari KELAS TOTAL.
       const kelasGuruSet = new Set()
       for (const s of santriList) {
         if (isSekolah) {
+          const kls = String(s.kelas_sekolah || '').trim().toLowerCase()
           const arr = Array.isArray(s.guru_sekolah) ? s.guru_sekolah : []
           for (const g of arr) {
-            const t = String(g || '').trim()
-            if (t) kelasGuruSet.add(t.toLowerCase())
+            const t = String(g || '').trim().toLowerCase()
+            if (t && kls) kelasGuruSet.add(t + '|' + kls)
           }
         } else {
-          const gp = String(s.guru_pagi || '').trim()
-          const gs = String(s.guru_sore || '').trim()
-          if (gp) kelasGuruSet.add(gp.toLowerCase())
-          if (gs) kelasGuruSet.add(gs.toLowerCase())
+          const kls = String(s.kelas || '').trim().toLowerCase()
+          const gp = String(s.guru_pagi || '').trim().toLowerCase()
+          const gs = String(s.guru_sore || '').trim().toLowerCase()
+          if (gp && kls) kelasGuruSet.add(gp + '|' + kls)
+          if (gs && kls) kelasGuruSet.add(gs + '|' + kls)
         }
       }
       const santriCount = santriList.length
       const guruCount = guruRaw.value.filter(
         (g) =>
-          (g.lembaga === nama || g.lembaga_sekolah === nama) && isGuruAktif(g.status)
+          (matchLemb(g.lembaga) || matchLemb(g.lembaga_sekolah)) && isGuruAktif(g.status)
       ).length
       return { nama, kelas: kelasGuruSet.size, santri: santriCount, guru: guruCount }
     })
