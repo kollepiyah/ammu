@@ -493,4 +493,3 @@ async function savePsbAssets() {
   }
 }
 </script>
-   
