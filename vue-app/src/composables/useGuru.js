@@ -4,7 +4,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { subscribeColl } from '@/services/firestore'
 import { useAuthStore } from '@/stores/auth'
 // v.21.10.0526: Import lembaga helpers
-import { getLembagaGroup, canSee } from './useLembaga'
+import { getLembagaGroup } from './useLembaga'
 
 // Helper: derive guru.lembaga_refs dari legacy fields + jabatan_tambahan
 // 1 guru bisa multi-lembaga (mis: Admin Yayasan + Guru TPQ).
@@ -194,7 +194,6 @@ export function useGuru() {
     filterStatus,
     stats,
     isFullAccess,
-    canSee,
     deriveGuruLembagaRefs,
     isKepalaLembaga
   }

@@ -80,7 +80,7 @@
         </div>
       </div>
 
-      <!-- Qiraati: 5 lembaga fixed (TPQ Pagi+Sore split shift, Pra PTPT, PTPT, PPPH) -->
+      <!-- Qiraati: 4 lembaga (TPQ Sore, Pra PTPT, PTPT, PPPH) — TPQ Pagi tidak menerbitkan rapor -->
       <div v-if="kategori === 'qiraati'" class="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
         <button
           v-for="l in QIRAATI_LEMBAGA"

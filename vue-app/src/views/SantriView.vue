@@ -260,7 +260,6 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { useSantri } from '@/composables/useSantri'
-import { canSee } from '@/composables/useLembaga'
 import { useAuthStore } from '@/stores/auth'
 
 // v.21.17c.0526: mode prop — 'view' (sidebar, default) atau 'master' (di Master Data tab, full CRUD)

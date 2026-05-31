@@ -18,8 +18,6 @@ import SantriView from './SantriView.vue'
 import { useLembaga } from '@/composables/useLembaga'
 import { useSantri } from '@/composables/useSantri'
 import { useConfirm } from '@/composables/useConfirm'
-// v.20.80.0526 M16: TPQ shift migration helper
-import { scanTpqShiftMigration, runTpqShiftMigration } from '@/utils/tpqShift'
 // v.21.10.0526: Migration utility — lembaga_refs + group hierarchy
 import { scanV21_10Migration, runV21_10Migration } from '@/utils/v21_10_migration'
 // v.21.70.0526: TK refactor migration (2 lembaga TK A/B → 1 lembaga TK + jenjang)
@@ -193,51 +191,6 @@ async function v21_70MigExecute() {
     toast.error('Gagal migrasi: ' + (e.message || e))
   } finally {
     v21_70MigRunning.value = false
-  }
-}
-
-const tpqMigScan = ref(null) // { totalToMigrate, pagi, sore, examples, alreadyMigrated }
-const tpqMigRunning = ref(false)
-const tpqMigProgress = ref({ i: 0, total: 0 })
-const tpqMigResult = ref(null)
-
-function tpqMigDryRun() {
-  tpqMigScan.value = scanTpqShiftMigration(santriRawForMigration.value || [])
-  tpqMigResult.value = null
-}
-
-async function tpqMigExecute() {
-  if (!tpqMigScan.value || tpqMigScan.value.totalToMigrate === 0) {
-    toast.warning('Jalankan Dry-Run dulu, atau tidak ada data untuk migrasi.')
-    return
-  }
-  const ok = await confirmDlg({
-    title: 'Migrasi TPQ Shift?',
-    message: `${tpqMigScan.value.totalToMigrate} santri akan di-update: lembaga "TPQ Pagi"/"TPQ Sore" → "TPQ" + field shift. Tidak bisa di-undo otomatis (data lama disimpan _migrated_tpq_shift_at).`,
-    confirmText: 'Lanjutkan',
-    danger: true
-  })
-  if (!ok) return
-  tpqMigRunning.value = true
-  tpqMigProgress.value = { i: 0, total: tpqMigScan.value.totalToMigrate }
-  try {
-    const result = await runTpqShiftMigration(santriRawForMigration.value || [], {
-      onProgress: (i, total) => {
-        tpqMigProgress.value = { i, total }
-      }
-    })
-    tpqMigResult.value = result
-    if (result.fail > 0) {
-      toast.warning(`Migrasi selesai: ${result.ok} OK, ${result.fail} gagal`)
-    } else {
-      toast.success(`Migrasi sukses: ${result.ok} santri ter-update`)
-    }
-    // Refresh scan setelah execute
-    tpqMigScan.value = scanTpqShiftMigration(santriRawForMigration.value || [])
-  } catch (e) {
-    toast.error('Gagal migrasi: ' + (e.message || e))
-  } finally {
-    tpqMigRunning.value = false
   }
 }
 
@@ -1453,109 +1406,6 @@ async function simpanPengaturanRekap() {
           class="mt-3 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 rounded-lg p-3 text-xs font-bold text-emerald-800 dark:text-emerald-200"
         >
           <i class="fas fa-check-circle mr-1"></i>Selesai: {{ lmbNormResult.ok }} OK, {{ lmbNormResult.fail }} gagal
-        </div>
-      </div>
-
-      <!-- v.20.80.0526 M16: Tools Migrasi TPQ Shift -->
-      <div
-        class="bg-white dark:bg-slate-800 rounded-2xl p-5 md:p-6 border-2 border-cyan-300 dark:border-cyan-700 shadow-sm"
-      >
-        <div class="flex items-center justify-between mb-3">
-          <div>
-            <p class="text-sm font-black text-cyan-700 dark:text-cyan-300">
-              <i class="fas fa-tools mr-1"></i>Migrasi TPQ Shift
-            </p>
-            <p class="text-xs text-slate-600 dark:text-slate-300 mt-1">
-              Gabung santri <b>TPQ Pagi</b> + <b>TPQ Sore</b> jadi 1 lembaga <b>TPQ</b> dengan field
-              <code class="bg-slate-100 px-1 rounded">shift: 'Pagi'/'Sore'</code>.
-            </p>
-          </div>
-        </div>
-        <div class="flex flex-wrap gap-2">
-          <button
-            @click="tpqMigDryRun"
-            :disabled="tpqMigRunning"
-            class="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-black rounded-lg disabled:opacity-50"
-          >
-            <i class="fas fa-search mr-1"></i>Dry-Run (Scan)
-          </button>
-          <button
-            @click="tpqMigExecute"
-            :disabled="tpqMigRunning || !tpqMigScan || tpqMigScan.totalToMigrate === 0"
-            class="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-black rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <i class="fas fa-database mr-1"></i>Execute Migrasi
-          </button>
-        </div>
-        <div v-if="tpqMigRunning" class="mt-3 text-xs font-bold text-cyan-700">
-          <i class="fas fa-spinner fa-spin mr-1"></i>Migrasi berjalan... {{ tpqMigProgress.i }}/{{
-            tpqMigProgress.total
-          }}
-        </div>
-        <div v-if="tpqMigScan" class="mt-3 bg-slate-50 dark:bg-slate-900 rounded-lg p-3 text-xs">
-          <p class="font-black text-slate-800 dark:text-white mb-2">
-            <i class="fas fa-clipboard-list mr-1"></i>Hasil Scan:
-          </p>
-          <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
-            <div
-              class="bg-white dark:bg-slate-800 rounded p-2 border border-slate-200 dark:border-slate-700"
-            >
-              <p class="text-[10px] text-slate-500 uppercase font-bold">Akan Dimigrasi</p>
-              <p class="text-xl font-black text-rose-700">{{ tpqMigScan.totalToMigrate }}</p>
-            </div>
-            <div
-              class="bg-white dark:bg-slate-800 rounded p-2 border border-slate-200 dark:border-slate-700"
-            >
-              <p class="text-[10px] text-slate-500 uppercase font-bold">TPQ Pagi</p>
-              <p class="text-xl font-black text-cyan-700">{{ tpqMigScan.pagi }}</p>
-            </div>
-            <div
-              class="bg-white dark:bg-slate-800 rounded p-2 border border-slate-200 dark:border-slate-700"
-            >
-              <p class="text-[10px] text-slate-500 uppercase font-bold">TPQ Sore</p>
-              <p class="text-xl font-black text-teal-700">{{ tpqMigScan.sore }}</p>
-            </div>
-            <div
-              class="bg-white dark:bg-slate-800 rounded p-2 border border-slate-200 dark:border-slate-700"
-            >
-              <p class="text-[10px] text-slate-500 uppercase font-bold">Sudah Migrate</p>
-              <p class="text-xl font-black text-emerald-700">{{ tpqMigScan.alreadyMigrated }}</p>
-            </div>
-          </div>
-          <div v-if="tpqMigScan.examples.length > 0" class="mt-3">
-            <p class="text-[10px] font-bold text-slate-600 uppercase">
-              Contoh ({{ tpqMigScan.examples.length }}):
-            </p>
-            <ul class="mt-1 space-y-1">
-              <li
-                v-for="ex in tpqMigScan.examples"
-                :key="ex.id"
-                class="font-mono text-[10px] text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 rounded px-2 py-1 border border-slate-200 dark:border-slate-700"
-              >
-                <span class="font-bold">{{ ex.nama }}</span
-                >:
-                <span class="text-rose-600">{{ ex.before.lembaga }}</span>
-                &rarr; <span class="text-emerald-600">{{ ex.after.lembaga }}</span> + shift=<b>{{
-                  ex.after.shift
-                }}</b>
-              </li>
-            </ul>
-          </div>
-        </div>
-        <div
-          v-if="tpqMigResult"
-          class="mt-3 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-700 rounded-lg p-3 text-xs"
-        >
-          <p class="font-black text-emerald-800 dark:text-emerald-200">
-            <i class="fas fa-check-circle mr-1"></i>Selesai: {{ tpqMigResult.ok }} OK,
-            {{ tpqMigResult.fail }} gagal (total {{ tpqMigResult.total }})
-          </p>
-          <p
-            v-if="tpqMigResult.errors && tpqMigResult.errors.length > 0"
-            class="text-rose-700 mt-1 text-[10px]"
-          >
-            Errors: {{ tpqMigResult.errors.length }} (cek console untuk detail)
-          </p>
         </div>
       </div>
 

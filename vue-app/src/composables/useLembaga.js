@@ -101,32 +101,6 @@ export function formatKelasLabel(lembaga, kelas) {
   return String(kelas)
 }
 
-// Helper: visibility scoping — admin/super_admin bypass, kepala lembaga see all, guru see kelas dia
-export function canSee(user, target_lembaga, target_kelas = null) {
-  if (!user) return false
-  // Override: admin/super_admin
-  if (['admin', 'super_admin'].includes(user.role_sistem)) return true
-  if (user.id === 'admin') return true
-  // Kepala Lembaga: semua data di lembaga-nya
-  const refs = user.lembaga_refs || []
-  for (const ref of refs) {
-    if (
-      ref.jabatan === 'Kepala Lembaga' &&
-      (ref.lembaga === target_lembaga || ref.group === getLembagaGroup(target_lembaga))
-    ) {
-      return true
-    }
-    // Guru biasa: hanya kelas yang dia ajar
-    if (ref.lembaga === target_lembaga) {
-      if (!target_kelas) return true
-      if ((ref.kelas_diajar || []).includes(target_kelas)) return true
-    }
-  }
-  // Legacy back-compat: kalau guru.lembaga match
-  if (user.lembaga === target_lembaga && !target_kelas) return true
-  return false
-}
-
 // v.21.10.0526: Default lembaga seed (match kyai spec — TPQ Pagi/Sore tetap variants, + Ma'had + Sarana Prasarana)
 export const DEFAULT_LEMBAGA_SEED = [
   { lembaga: 'Yayasan', group: 'non-lembaga', kelas: [] },

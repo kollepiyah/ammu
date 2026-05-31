@@ -993,8 +993,8 @@ const distribusiLembaga = computed(() => {
 //   kelas santri (s.kelas || s.kelas_sekolah). Sebelumnya s.guru (BUG).
 // - URUTAN diperluas (TK, MI, MTs, MA, SDI, SMP, SMA, PKBM, Yayasan)
 const URUTAN_LEMBAGA = [
-  'TPQ Pagi', 'TPQ Sore', 'Pra PTPT', 'PTPT', 'PPPH', 'P3H', 'TPQ',
-  'TK', 'SDI', 'MI', 'MTs', 'MA', 'SMP', 'SMA', 'PKBM'
+  'TPQ Pagi', 'TPQ Sore', 'Pra PTPT', 'PTPT', 'PPPH',
+  'TK', 'SDI', 'PKBM'
 ]
 // v.21.108.0527: Kelas dihitung dari assignment santri ↔ guru di "Kelas & Guru"
 // (Master Data). Untuk tiap lembaga:

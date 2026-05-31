@@ -2,8 +2,8 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { subscribeColl } from '@/services/firestore'
 import { useAuthStore } from '@/stores/auth'
-// v.21.10.0526: Import LEMBAGA_GROUPS helpers untuk lembaga_refs derivation + canSee scoping
-import { getLembagaGroup, canSee, lembagaScopeMatches } from './useLembaga'
+// v.21.10.0526: Import LEMBAGA_GROUPS helpers untuk lembaga_refs derivation + lembagaScopeMatches scoping
+import { getLembagaGroup, lembagaScopeMatches } from './useLembaga'
 // v.21.86.0527: Sort konsisten lembaga→kelas→nama (berlaku di semua halaman via composable)
 import { sortSantri } from '@/utils/santriSort'
 
@@ -60,12 +60,12 @@ export function useSantri() {
     // v.21.12.0526: drop blanket aktif filter — handle via filterStatus below (supaya "Tidak Aktif" bisa dilihat)
     let list = santriRaw.value.filter((s) => !!s)
 
-    // Role filter — v.21.10.0526: pakai canSee untuk Kepala Lembaga scoping (lihat semua di lembaga-nya), guru biasa lihat kelasnya
+    // Role filter — v.21.10.0526: pakai lembagaScopeMatches untuk Kepala Lembaga scoping (lihat semua di lembaga-nya), guru biasa lihat kelasnya
     if (!isFullAccess.value) {
       const user = auth.sesiAktif
       const myNama = String(user?.guru || user?.nama || '').trim().toLowerCase()
       if (!myNama) return []
-      // Kepala Lembaga: filter santri yang lembaga-nya = lembaga kepala-nya (via canSee)
+      // Kepala Lembaga: filter santri yang lembaga-nya = lembaga kepala-nya (via lembagaScopeMatches)
       const jabL = String(user?.jabatan || '').toLowerCase()
       const isKepala = jabL.includes('kepala') || jabL.includes('pj') || jabL.includes('pengasuh')
       list = list.filter((s) => {

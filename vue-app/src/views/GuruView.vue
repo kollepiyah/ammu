@@ -361,8 +361,6 @@ import { useSettingsStore } from '@/stores/settings'
 import { useToast as _useToastGuruExp } from '@/composables/useToast'
 import { buildListPdf, buildKopFromSettings } from '@/utils/pdfBuilder'
 import { useGuru } from '@/composables/useGuru'
-// v.21.10.0526: import canSee untuk visibility scoping
-import { canSee } from '@/composables/useLembaga'
 import { useConfirm } from '@/composables/useConfirm'
 // v.21.115.0528: skeleton loader
 import SkeletonCard from '@/components/layout/SkeletonCard.vue'
