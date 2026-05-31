@@ -503,23 +503,37 @@ async function convertToSantri() {
   if (!ok) return
   converting.value = true
   try {
+    // v.86.0526: COPY LENGKAP biodata PSB → santri (kyai: "samakan dg PSB"). Sebelumnya hanya ~10 field
+    //   (struktur alamat + biodata ortu hilang). Field yang masih kosong nanti diisi wali via ProfilSantri.
+    const p = pendaftar.value || {}
     const payload = {
-      nama: pendaftar.value.nama || '',
-      nis: pendaftar.value.nis || '',
-      nik: pendaftar.value.nik || '',
-      jk: pendaftar.value.jk || '',
-      tempat_lahir: pendaftar.value.tempat_lahir || '',
-      tgl_lahir: pendaftar.value.tgl_lahir || '',
-      alamat: [
-        pendaftar.value.alamat_jalan,
-        pendaftar.value.alamat_desa,
-        pendaftar.value.alamat_kecamatan
-      ]
-        .filter(Boolean)
-        .join(', '),
-      lembaga: pendaftar.value.lembaga_tujuan || '',
-      wali: pendaftar.value.nama_wali || ayah.value?.nama || '',
-      wa_wali: pendaftar.value.wa_wali || ayah.value?.telp || '',
+      nama: p.nama || '',
+      nis: p.nis || '',
+      nik: p.nik || '',
+      jk: p.jk || '',
+      tempat_lahir: p.tempat_lahir || '',
+      tgl_lahir: p.tgl_lahir || '',
+      lembaga: p.lembaga_tujuan || p.lembaga || '',
+      kelas: p.kelas || '',
+      // Alamat — struktur lengkap (kalau PSB punya) + string gabungan utk tampilan ringkas
+      alamat_dusun: p.alamat_dusun || p.alamat_jalan || '',
+      alamat_rt: p.alamat_rt || '',
+      alamat_rw: p.alamat_rw || '',
+      alamat_desa: p.alamat_desa || '',
+      alamat_kecamatan: p.alamat_kecamatan || '',
+      alamat_kabupaten: p.alamat_kabupaten || '',
+      alamat_provinsi: p.alamat_provinsi || '',
+      alamat: [p.alamat_jalan, p.alamat_desa, p.alamat_kecamatan].filter(Boolean).join(', '),
+      // Wali + WA santri
+      wali: p.nama_wali || p.nama_ayah || '',
+      wa: p.wa || p.wa_wali || p.telp_ayah || '',
+      wa_wali: p.wa_wali || '',
+      // Ortu — flat + nested (kompat ProfilSantri view + edit)
+      nama_ayah: p.nama_ayah || '', nik_ayah: p.nik_ayah || '', pekerjaan_ayah: p.pekerjaan_ayah || '', pendidikan_ayah: p.pendidikan_ayah || '', hp_ayah: p.hp_ayah || p.telp_ayah || '',
+      nama_ibu: p.nama_ibu || '', nik_ibu: p.nik_ibu || '', pekerjaan_ibu: p.pekerjaan_ibu || '', pendidikan_ibu: p.pendidikan_ibu || '', hp_ibu: p.hp_ibu || p.telp_ibu || '',
+      ayah: { nama: p.nama_ayah || '', nik: p.nik_ayah || '', pekerjaan: p.pekerjaan_ayah || '', pendidikan: p.pendidikan_ayah || '', telp: p.telp_ayah || p.hp_ayah || '' },
+      ibu: { nama: p.nama_ibu || '', nik: p.nik_ibu || '', pekerjaan: p.pekerjaan_ibu || '', pendidikan: p.pendidikan_ibu || '', telp: p.telp_ibu || p.hp_ibu || '' },
+      aktif: true,
       psb_id: docId.value,
       audit: {
         created_at: new Date().toISOString(),
