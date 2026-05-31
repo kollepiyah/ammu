@@ -33,14 +33,17 @@ export function useKeuangan() {
   const stats = computed(() => {
     const tagihanActive = tagihan.value.filter((t) => !t.lunas)
     const totalTagihan = tagihanActive.reduce((sum, t) => sum + (Number(t.nominal) || 0), 0)
-    const totalTabunganSantri = tabunganSantri.value.reduce(
-      (sum, t) => sum + (Number(t.saldo) || 0),
-      0
-    )
-    const totalBisyarohBulan = gaji.value.reduce(
-      (sum, g) => sum + (Number(g.bisyaroh_pokok) || 0) + (Number(g.bisyaroh_tambahan) || 0),
-      0
-    )
+    // v.86.0526 FIX: tabungan = NET (setor - tarik). Doc keuangan_tabungan_santri = transaksi (jenis+nominal),
+    //   tidak punya field `saldo`, jadi sum(t.saldo) sebelumnya = 0/salah.
+    const totalTabunganSantri = tabunganSantri.value.reduce((sum, t) => {
+      const n = Number(t.nominal) || 0
+      return sum + (t.jenis === 'tarik' ? -n : n)
+    }, 0)
+    // v.86.0526 FIX: bisyaroh "bulan ini" = filter ke periode bulan berjalan (sebelumnya sum SEMUA periode).
+    const _periodeNow = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`
+    const totalBisyarohBulan = gaji.value
+      .filter((g) => String(g.periode || '') === _periodeNow)
+      .reduce((sum, g) => sum + (Number(g.bisyaroh_pokok) || 0) + (Number(g.bisyaroh_tambahan) || 0), 0)
     return {
       tagihanCount: tagihanActive.length,
       totalTagihan,

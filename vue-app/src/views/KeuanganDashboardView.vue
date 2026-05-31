@@ -181,6 +181,8 @@ const monthlyData = computed(() => {
     let masuk = 0
     let keluar = 0
     for (const t of bukuInduk.value) {
+      // v.86.0526: tabungan TERPISAH dari kas pondok — JANGAN dihitung di dashboard pemasukan/pengeluaran/saldo
+      if (t.sumber === 'tabungan_santri' || t.sumber === 'tabungan_guru') continue
       const td = t.tanggal ? new Date(t.tanggal) : null
       if (!td || td.getFullYear() !== m.year || td.getMonth() !== m.month) continue
       const n = Number(t.nominal) || 0
@@ -268,6 +270,8 @@ const kategoriBulanIni = computed(() => {
   const groups = {}
   let total = 0
   for (const t of bukuInduk.value) {
+    // v.86.0526: tabungan terpisah — jangan dihitung di breakdown pengeluaran
+    if (t.sumber === 'tabungan_santri' || t.sumber === 'tabungan_guru') continue
     const td = t.tanggal ? new Date(t.tanggal) : null
     if (!td || td.getFullYear() !== now.getFullYear() || td.getMonth() !== now.getMonth()) continue
     if (t.tipe !== 'keluar' && t.type !== 'keluar') continue
