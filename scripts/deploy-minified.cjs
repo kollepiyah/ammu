@@ -64,6 +64,26 @@ try {
       // Copy recursive
       fs.cpSync(VUE_DIST, VUE_TARGET, { recursive: true })
       log(`✓ Vue dist copied → public/vue/`)
+
+      // v.86.0526: copy PWA assets + splash design ke public/vue/ supaya Firebase main serve manifest+icons+splash
+      const PWA_FILES = [
+        'manifest.json','favicon.ico','favicon-32.png','favicon-192.png','apple-touch-icon-180.png',
+        'icon-192.png','icon-512.png','icon-192-maskable.png','icon-512-maskable.png','icon-512-transparent.png',
+        'logo.png','bakafrawi-logo.png',
+        'splash-portrait-light.png','splash-portrait-dark.png',
+        'splash-landscape-light.png','splash-landscape-dark.png'
+      ]
+      let copiedCount = 0
+      for (const f of PWA_FILES) {
+        const src = path.join(PUBLIC, f)
+        const dst = path.join(VUE_TARGET, f)
+        if (fs.existsSync(src)) { fs.copyFileSync(src, dst); copiedCount++ }
+      }
+      const SPLASH_SRC = path.join(PUBLIC, 'splash')
+      if (fs.existsSync(SPLASH_SRC)) {
+        fs.cpSync(SPLASH_SRC, path.join(VUE_TARGET, 'splash'), { recursive: true })
+      }
+      log(`✓ ${copiedCount} PWA assets + splash design copied → public/vue/`)
     } else {
       log('⚠ vue-app/dist tidak ada, skip Vue sync')
     }
@@ -108,19 +128,19 @@ try {
   fs.copyFileSync(MIN, SRC)
   log(`✓ Minified legacy disalin ke / (root) — Vue tetap accessible di /vue/`)
 
-  log('Step 4: Run firebase deploy — multi-target (main = Vue ammuonline, legacy = portal-mambaul-ulum)')
+  log('Step 4: Run firebase deploy — hanya main (Vue ammuonline) + firestore rules')
   // v.20.0526: Multi-site hosting
   // - hosting:main → site `ammuonline` (Vue di public/vue/) → ammuonline.web.app
-  // - hosting:legacy → site `portal-mambaul-ulum` (legacy public/) → portal-mambaul-ulum.web.app
+  // v.87.0526: hosting:legacy (portal-mambaul-ulum) DIHAPUS dari deploy — legacy sudah tidak dipakai.
   // v.20.15.0526: deploy firestore rules juga (kalau ada perubahan koleksi/rules baru)
-  run('firebase deploy --only hosting:main,hosting:legacy,firestore:rules')
+  run('firebase deploy --only hosting:main,firestore:rules')
 
   log('Step 5: Restore original index.html (untuk dev)')
   restore()
 
-  log('✓ Deploy selesai (v.20.0526). Original file intact.')
+  log('✓ Deploy selesai. Original file intact.')
   log('   Vue (utama)  → https://ammuonline.web.app')
-  log('   Legacy backup → https://portal-mambaul-ulum.web.app')
+  log('   (legacy portal-mambaul-ulum di-SKIP — sudah tidak dipakai)')
   log('')
   log('💡 Untuk rebuild AAB (Play Store): npm run build:aab')
   log('   AAB versionCode 20, versionName "20.0526" — match web version')

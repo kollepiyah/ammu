@@ -74,6 +74,25 @@ function createSplashWindow() {
   } catch (e) {
     console.error('[splash] gagal baca splash-dark.png:', splashDarkFs, e)
   }
+  // v.87.0526: splash ikut TEMA APP (bukan OS). Tema terakhir dipersist ke userData/ammu-theme.json
+  //   oleh IPC theme:set. savedDark null = belum pernah di-set -> fallback prefers-color-scheme (OS).
+  let savedDark: boolean | null = null
+  try {
+    const themeFile = path.join(app.getPath('userData'), 'ammu-theme.json')
+    if (fs.existsSync(themeFile)) {
+      savedDark = JSON.parse(fs.readFileSync(themeFile, 'utf8'))?.isDark === true
+    }
+  } catch (e) {
+    console.warn('[splash] gagal baca tema tersimpan:', e)
+  }
+  const useDark = savedDark === true
+  const bodyBgColor = useDark ? '#0F172A' : '#F2FEF9'
+  const bodyBgImage = useDark ? darkBgRule : lightBgRule
+  // fallback OS HANYA kalau tema belum pernah di-set (savedDark === null)
+  const osFallback = savedDark === null
+    ? `@media (prefers-color-scheme: dark) { body { background-color: #0F172A; ${darkBgRule} } }`
+    : ''
+
   const splashHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html, body {
@@ -82,19 +101,14 @@ function createSplashWindow() {
       border-radius: 16px;
     }
     body {
-      background-color: #F2FEF9;
-      ${lightBgRule}
+      background-color: ${bodyBgColor};
+      ${bodyBgImage}
       background-size: cover;
       background-position: center center;
       background-repeat: no-repeat;
       animation: bodyIn 0.4s ease-out;
     }
-    @media (prefers-color-scheme: dark) {
-      body {
-        background-color: #0F172A;
-        ${darkBgRule}
-      }
-    }
+    ${osFallback}
     @keyframes bodyIn { from { opacity: 0; } to { opacity: 1; } }
   </style></head><body></body></html>`
 
@@ -187,6 +201,12 @@ ipcMain.handle('theme:set', async (_event, payload: { isDark: boolean }) => {
     //   Cukup update background color window supaya transisi tema mulus.
     if (mainWindow) {
       mainWindow.setBackgroundColor(palette.color)
+    }
+    // v.87.0526: persist tema supaya splash window di launch berikutnya ikut tema app (bukan OS)
+    try {
+      fs.writeFileSync(path.join(app.getPath('userData'), 'ammu-theme.json'), JSON.stringify({ isDark: !!payload?.isDark }))
+    } catch (e) {
+      console.warn('[theme:set] gagal simpan tema:', e)
     }
     return { ok: true, theme: payload?.isDark ? 'dark' : 'light' }
   } catch (e: any) {

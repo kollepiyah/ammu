@@ -58,8 +58,11 @@
       @media (orientation: landscape) {
         body.dark-mode #splash-screen, html.dark #splash-screen { background-image: url('/splash-landscape-dark.png'); }
       }
-      #splash-screen.fade-out { opacity: 0; pointer-events: none; }
+      /* v.87.0526: fade-out pakai animation forwards supaya MENANG atas fill-mode 'both' splashFadeIn.
+         (Bug lama: opacity:0 ke-override animasi fade-in yang fill both -> splash hilang mendadak tanpa fade.) */
+      #splash-screen.fade-out { animation: splashFadeOut 0.5s ease-out forwards; pointer-events: none; }
       @keyframes splashFadeIn { 0% { opacity: 0; } 100% { opacity: 1; } }
+      @keyframes splashFadeOut { 0% { opacity: 1; } 100% { opacity: 0; } }
       body.app-running #splash-screen { display: none !important; }
     </style>
   </head>
