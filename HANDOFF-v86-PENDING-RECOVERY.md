@@ -70,3 +70,20 @@ Dari `git diff --numstat HEAD a7ded60 -- vue-app/src` (a7ded60 = tip v.84 yang h
 - Semua commit sesi ini di branch `feature/vue-migration` (HEAD `7636268`), BELUM di-push. Working tree masih banyak file v.75→v.86 yang belum di-commit (punya kyai).
 
 **— END HANDOFF —**
+
+---
+## UPDATE (lanjutan sesi "gas semua")
+**SUDAH dikerjakan + committed (lanjutan):**
+- Merge Tagihan↔Pembayaran: tombol "Bayar" di Tagihan (santri, belum lunas) → deep-link `/pembayaran?tab=transfer` (prefill) + `notif_queue` ke admin saat bukti masuk (`e226dd2`). Rekening dari `settings.bank_*` sudah tampil di view recovered.
+- RBAC helper `roleScope.canCRUD` (`2d9dbfd`). **TEMUAN penting:** "admin tanpa CRUD" SUDAH ter-enforce arsitektur — CRUD master-data di balik `isMasterMode` (Master Data = menu super_admin only), CRUD keuangan di balik `isSuperAdmin`, menu keuangan di balik `akses_keuangan`. admin-biasa sudah view-only utk data sensitif.
+
+**MASIH SISA (untuk sesi berikut):**
+- RBAC scoping per JABATAN (perlu review per-view, belum dikerjakan):
+  - admin_keuangan → scope ke kelasnya (kini lihat keuangan global)
+  - user/guru → pastikan strict ke kelasnya (guru-mode filter via nama guru sudah ada di Rapor/Rekap/Absensi; cek view lain)
+  - Kepala Lembaga/PJ → santri kelas + guru/santri lembaganya
+  - Direktur/Supervisor → kelasnya + supervisi (SupervisiView sudah ada)
+  - (Keputusan produk) apakah admin-biasa juga diblokir CRUD operasional (posts/kegiatan/PSB/settings)? Kini masih boleh (dianggap tugas operasional).
+- Lost-feature candidates (§C: RaporView/PengaturanView/auth.js dll) — BELUM di-review konten.
+
+**HEAD `feature/vue-migration` = `2d9dbfd`. Semua build OK. Belum push. AAB belum rebuild (tunggu komando + bump versi).**
