@@ -219,10 +219,10 @@ async function simpan() {
         const f = assignField.value
         const cur = String(s[f] || '').trim()
         if (want && cur.toLowerCase() !== selectedGuru.value.toLowerCase()) {
-          await updateOne('santri', s.id, { [f]: selectedGuru.value })
+          await updateOne('santri', String(s.id), { [f]: selectedGuru.value })
           changed++
         } else if (!want && cur.toLowerCase() === selectedGuru.value.toLowerCase()) {
-          await updateOne('santri', s.id, { [f]: '' })
+          await updateOne('santri', String(s.id), { [f]: '' })
           changed++
         }
       } else {
@@ -231,11 +231,11 @@ async function simpan() {
         const has = lower.includes(selectedGuru.value.toLowerCase())
         if (want && !has) {
           arr.push(selectedGuru.value)
-          await updateOne('santri', s.id, { guru_sekolah: arr })
+          await updateOne('santri', String(s.id), { guru_sekolah: arr })
           changed++
         } else if (!want && has) {
           const next = arr.filter((x) => String(x || '').toLowerCase() !== selectedGuru.value.toLowerCase())
-          await updateOne('santri', s.id, { guru_sekolah: next })
+          await updateOne('santri', String(s.id), { guru_sekolah: next })
           changed++
         }
       }

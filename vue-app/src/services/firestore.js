@@ -51,7 +51,7 @@ export async function setOne(collectionName, id, data) {
 
 /** Update partial fields. */
 export async function updateOne(collectionName, id, partial) {
-  await updateDoc(doc(db, collectionName, id), partial)
+  await updateDoc(doc(db, collectionName, String(id)), partial)
 }
 
 /** Add dokumen baru (auto-generated ID). Return ID baru. */
