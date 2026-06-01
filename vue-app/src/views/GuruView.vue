@@ -38,13 +38,14 @@
             </div>
             <!-- v.21.17c.0526: View vs Master mode actions -->
             <!-- v.21.109.0527: warna cyan (action) bukan rose (danger) -->
+            <div class="flex flex-wrap gap-2 items-center">
             <button @click="printPage" aria-label="Cetak daftar guru PDF" class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold transition cursor-pointer no-print">
               <i class="fas fa-file-pdf"></i>Cetak PDF
             </button>
             <button @click="exportGuruExcel" :disabled="exporting" aria-label="Ekspor daftar guru Excel" class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer">
               <i :class="['fas', exporting ? 'fa-spinner fa-spin' : 'fa-file-excel']"></i>{{ exporting ? 'Ekspor...' : 'Ekspor Excel' }}
             </button>
-            <router-link v-if="!isMasterMode" to="/master-data?tab=guru" class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-slate-200 hover:bg-slate-300 text-[var(--text-primary)] text-xs font-bold transition" title="CRUD guru di Master Data">
+            <router-link v-if="!isMasterMode" to="/master-data?tab=guru" class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold transition" title="CRUD guru di Master Data">
               <i class="fas fa-edit"></i>Kelola
             </router-link>
             <template v-if="isMasterMode">
@@ -59,6 +60,7 @@
                 <i class="fas fa-plus"></i>Tambah Guru
               </router-link>
             </template>
+            </div>
           </div>
         </div>
       </div>
@@ -321,7 +323,7 @@
                   </a>
                 </div>
                 <!-- v.21.22c.0526: Edit/Toggle Aktif/Delete (Master mode only) -->
-                <div v-if="isMasterMode" class="mt-2 flex justify-end gap-2 flex-wrap">
+                <div v-if="isMasterMode" class="mt-2 pt-2 border-t border-slate-100 dark:border-slate-700 flex flex-wrap items-center justify-end gap-x-4 gap-y-1">
                   <!-- v.21.24.0526: Reset Sandi tombol -->
                   <button @click="resetSandiGuru(g)" class="text-[10px] text-cyan-700 dark:text-cyan-300 hover:underline font-bold" title="Reset sandi ke 1234">
                     <i class="fas fa-key mr-1"></i>Reset Sandi
