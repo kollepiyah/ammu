@@ -4,7 +4,7 @@
       <!-- Header — v.21.60.0526: KOP-style layout match formulir physical -->
       <div class="bg-white rounded-2xl p-5 border-t-8 border-teal-600 shadow-md">
         <div class="flex items-center gap-4 border-b-2 border-double border-slate-700 pb-3 mb-3">
-          <img src="/logo.png" alt="Logo MU" class="w-20 h-20 flex-shrink-0" />
+          <img :src="logoKiri || '/logo.png'" alt="Logo Qiraati" class="w-20 h-20 flex-shrink-0 object-contain" />
           <div class="flex-1 text-center">
             <p class="text-[10px] font-bold uppercase tracking-wider text-slate-700">
               YAYASAN AL MANSHUR
@@ -17,7 +17,7 @@
             </p>
             <p class="text-[10px] text-slate-600">Telp. (031) 8674713 / 082233902261</p>
           </div>
-          <div class="w-20 flex-shrink-0"></div>
+          <img :src="logoKanan || '/logo.png'" alt="Logo Pondok" class="w-20 h-20 flex-shrink-0 object-contain" />
         </div>
         <h2
           class="text-center text-base md:text-lg font-black uppercase text-slate-800 underline decoration-2 underline-offset-4"
@@ -562,6 +562,8 @@ const noPendaftaran = ref('')
 const setujuiSyarat = ref(false)
 const psbAssets = ref({})
 const lembagaRaw = ref([])
+const logoKiri = ref('')
+const logoKanan = ref('')
 const tahunAjaran = ref('')
 
 function emptyForm() {
@@ -686,6 +688,12 @@ onMounted(async () => {
   try {
     const snap = await getDoc(doc(db, 'master', 'lembaga'))
     lembagaRaw.value = Array.isArray(snap.data()?.list) ? snap.data().list : []
+  } catch (e) {}
+  try {
+    const st = await getDoc(doc(db, 'settings', 'general'))
+    const d = st.data() || {}
+    logoKiri.value = d.logoQiraati || ''
+    logoKanan.value = d.logoKop || d.logoUrl || ''
   } catch (e) {}
 })
 </script>
