@@ -497,7 +497,10 @@
     <div v-if="isAdminMode && showKelasDetail" class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm">
       <div class="flex items-center justify-between mb-2">
         <h4 class="text-sm font-black text-[var(--text-primary)]"><i class="fas fa-door-open text-cyan-600 mr-1"></i>Rincian Kelas Total ({{ kelasCount }})</h4>
-        <button type="button" @click="showKelasDetail = false" class="text-[var(--text-tertiary)] hover:text-rose-600"><i class="fas fa-times"></i></button>
+        <div class="flex items-center gap-2">
+          <button type="button" @click="bersihkanGuruInvalid" :disabled="bersihRunning" class="text-[11px] font-bold text-white bg-rose-600 hover:bg-rose-700 disabled:opacity-50 px-3 py-1.5 rounded-lg"><i class="fas fa-broom mr-1"></i>Bersihkan guru invalid</button>
+          <button type="button" @click="showKelasDetail = false" class="text-[var(--text-tertiary)] hover:text-rose-600"><i class="fas fa-times"></i></button>
+        </div>
       </div>
       <p class="text-[11px] text-[var(--text-secondary)] mb-2">1 baris = kombinasi <b>guru x lembaga x kelas</b> (santri aktif yg punya guru). <span class="text-rose-600 font-bold">guru yatim</span> = guru tak ada di daftar guru aktif, kemungkinan SAMPAH (santri masih nyantol ke guru lama/terhapus). Perbaiki: edit santri tsb ganti gurunya, atau hapus santri sampah.</p>
       <div class="space-y-1 max-h-72 overflow-auto">
@@ -838,6 +841,10 @@ import { useSantri } from '@/composables/useSantri'
 import { useGuru } from '@/composables/useGuru'
 import { useLembaga, formatKelasLabel } from '@/composables/useLembaga'
 import { subscribeColl } from '@/services/firestore'
+import { doc, setDoc } from 'firebase/firestore'
+import { db } from '@/services/firebase'
+import { useToast } from '@/composables/useToast'
+import { useConfirm } from '@/composables/useConfirm'
 import AdminStatsCharts from '@/components/charts/AdminStatsCharts.vue'
 // v.21.107.0527: gating role konsisten (admin/super_admin/admin_keuangan)
 import { isFullFilterRole } from '@/utils/roleScope'
@@ -863,6 +870,9 @@ function toggleSection(name) {
 const { santriRaw, loading: loadingSantri } = useSantri()
 const { guruRaw, loading: loadingGuru } = useGuru()
 const { lembagaRaw } = useLembaga()
+const toast = useToast()
+const confirmDlg = useConfirm()
+const bersihRunning = ref(false)
 
 // ---- Role / loading --------------------------------------------------------
 const role = computed(() => auth.sesiAktif?.role || 'guest')
@@ -946,6 +956,42 @@ const kelasDetail = computed(() => {
     .map((x) => ({ guru: x.guru, lembaga: x.lembaga, kelas: x.kelas, jenis: x.jenis, jml: x.ids.size, orphan: !aktif.has(x.guru.toLowerCase()) }))
     .sort((a, b) => Number(b.orphan) - Number(a.orphan) || (a.lembaga + a.kelas).localeCompare(b.lembaga + b.kelas))
 })
+
+// v.07.0626: bersihkan field guru invalid (boolean true/false / 'true' / kosong) dari santri.
+//   Santri TIDAK dihapus, cuma nilai sampah di guru_pagi/sore/guru/guru_sekolah dibuang. Idempotent.
+async function bersihkanGuruInvalid() {
+  const targets = []
+  for (const s of santriRaw.value) {
+    const upd = {}
+    let changed = false
+    if (Array.isArray(s.guru_sekolah)) {
+      const cleaned = s.guru_sekolah.filter((g) => typeof g === 'string' && g.trim() !== '' && g !== 'true' && g !== 'false')
+      if (cleaned.length !== s.guru_sekolah.length) { upd.guru_sekolah = cleaned; changed = true }
+    } else if (s.guru_sekolah !== undefined && (typeof s.guru_sekolah !== 'string' || s.guru_sekolah === 'true' || s.guru_sekolah === 'false')) {
+      upd.guru_sekolah = []; changed = true
+    }
+    for (const f of ['guru_pagi', 'guru_sore', 'guru']) {
+      if (s[f] === true || s[f] === false || s[f] === 'true' || s[f] === 'false') { upd[f] = ''; changed = true }
+    }
+    if (changed) targets.push({ id: s.id, upd })
+  }
+  if (targets.length === 0) { toast.success('Tidak ada guru invalid. Data sudah bersih.'); return }
+  const ok = await confirmDlg({
+    title: 'Bersihkan guru invalid?',
+    message: targets.length + ' santri akan dibersihkan field gurunya dari nilai sampah (true/false/kosong). Santri TIDAK dihapus, hanya field guru sampah yang dibuang. Idempotent.',
+    confirmText: 'Bersihkan',
+    danger: true
+  })
+  if (!ok) return
+  bersihRunning.value = true
+  let okc = 0, fail = 0
+  try {
+    for (const t of targets) {
+      try { await setDoc(doc(db, 'santri', String(t.id)), t.upd, { merge: true }); okc++ } catch (e) { fail++ }
+    }
+    toast.success('Bersih: ' + okc + ' santri diperbaiki' + (fail ? (', ' + fail + ' gagal') : ''))
+  } finally { bersihRunning.value = false }
+}
 
 // ---- Helpers ---------------------------------------------------------------
 function parseNum(value) {
