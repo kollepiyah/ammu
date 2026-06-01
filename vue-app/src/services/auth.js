@@ -48,6 +48,22 @@ export async function findUserByLoginInput(input) {
   const uLower = u.toLowerCase()
   const uDigits = u.replace(/\D/g, '')
 
+  // v.07.0626 (Exec D Opsi 2): coba lookup via Cloud Function (server-side, biar PII santri
+  //   tak ke-enumerasi/expose ke client). Pakai hasil function kalau response OK (incl null=tak ketemu).
+  //   FALLBACK ke direct-read di bawah kalau function gagal/error -> login tetap jalan.
+  try {
+    const _resp = await fetch(
+      'https://us-central1-portal-mambaul-ulum.cloudfunctions.net/findUserByLogin?input=' +
+        encodeURIComponent(u)
+    )
+    if (_resp.ok) {
+      const _j = await _resp.json()
+      if (_j && Object.prototype.hasOwnProperty.call(_j, 'user')) return _j.user
+    }
+  } catch (e) {
+    // function down/gagal -> lanjut direct-read (login tak patah)
+  }
+
   // 1) Admin utama — ambil dari settings/web (adminUsername setting) atau default 'adminmu'
   try {
     const settingsSnap = await getDoc(doc(db, 'settings', 'web'))

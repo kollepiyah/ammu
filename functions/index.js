@@ -451,3 +451,85 @@ exports.cleanupAuditLog = onSchedule(
     return null
   }
 )
+
+
+// ====================================================================
+// v.07.0626 (Exec D Opsi 2): findUserByLogin — lookup user SERVER-SIDE (Admin SDK)
+//   Tujuan: client tak perlu baca/enumerasi koleksi guru/santri -> PII santri (NIK/ortu)
+//   tak world-readable. Port logika persis dari client findUserByLoginInput.
+//   Response PII di-STRIP (cuma kirim field yang dibutuhkan login). { user: {...}|null }.
+//   Client tetap punya FALLBACK direct-read kalau function gagal (login tak patah).
+// ====================================================================
+const _STRIP_PII = ['nik','no_kk','ayah','ibu','nama_ayah','nik_ayah','pekerjaan_ayah','pendidikan_ayah','hp_ayah','nama_ibu','nik_ibu','pekerjaan_ibu','pendidikan_ibu','hp_ibu','alamat','alamat_dusun','alamat_rt','alamat_rw','alamat_desa','alamat_kecamatan','alamat_kabupaten','alamat_provinsi','tempat_lahir','nama_panggilan','asal_sekolah','penghasilan_ortu','catatan_riwayat_pribadi','riwayat']
+function _stripPII(o) { const c = { ...o }; for (const k of _STRIP_PII) delete c[k]; return c }
+
+exports.findUserByLogin = onRequest(
+  { region: 'us-central1', timeoutSeconds: 20, memory: '256MiB', cors: true },
+  async (req, res) => {
+    try {
+      const input = String((req.query && req.query.input) || (req.body && req.body.input) || '').trim()
+      if (!input) { res.json({ user: null }); return }
+      const u = input
+      const uLower = u.toLowerCase()
+      const uDigits = u.replace(/\D/g, '')
+      const fdb = getFirestore()
+
+      let adminUser = 'adminmu'
+      try {
+        const ws = await fdb.collection('settings').doc('web').get()
+        if (ws.exists && ws.data() && ws.data().adminUsername) adminUser = ws.data().adminUsername
+      } catch (e) { /* default adminmu */ }
+      if (uLower === 'adminmu' || uLower === String(adminUser).toLowerCase()) {
+        res.json({ user: { source: 'admin', data: { id: 'admin', username: adminUser }, authKey: String(adminUser).toLowerCase() } })
+        return
+      }
+
+      let guruDoc = null
+      let gq = await fdb.collection('guru').where('username', '==', u).limit(1).get()
+      if (!gq.empty) guruDoc = gq.docs[0]
+      if (!guruDoc && uDigits.length >= 8) {
+        gq = await fdb.collection('guru').where('wa', '==', uDigits).limit(1).get()
+        if (!gq.empty) guruDoc = gq.docs[0]
+      }
+      if (!guruDoc && /[a-z]/i.test(u)) {
+        const all = await fdb.collection('guru').get()
+        guruDoc = all.docs.find((d) => String(d.data().username || '').toLowerCase() === uLower)
+      }
+      if (guruDoc) {
+        const g = { id: guruDoc.id, ...guruDoc.data() }
+        const wa = String(g.wa || '').replace(/\D/g, '')
+        const authKey = wa.length >= 8 ? wa : (g.username || String(g.id))
+        res.json({ user: { source: 'guru', data: _stripPII(g), authKey } })
+        return
+      }
+
+      let santriDoc = null
+      let sq = await fdb.collection('santri').where('username', '==', u).limit(1).get()
+      if (!sq.empty) santriDoc = sq.docs[0]
+      if (!santriDoc && uDigits.length >= 8) {
+        sq = await fdb.collection('santri').where('wa', '==', uDigits).limit(1).get()
+        if (!sq.empty) santriDoc = sq.docs[0]
+      }
+      if (!santriDoc) {
+        sq = await fdb.collection('santri').where('nis', '==', u).limit(1).get()
+        if (!sq.empty) santriDoc = sq.docs[0]
+      }
+      if (!santriDoc && /[a-z]/i.test(u)) {
+        const all = await fdb.collection('santri').get()
+        santriDoc = all.docs.find((d) => String(d.data().username || '').toLowerCase() === uLower)
+      }
+      if (santriDoc) {
+        const s = { id: santriDoc.id, ...santriDoc.data() }
+        const wa = String(s.wa || '').replace(/\D/g, '')
+        const authKey = wa.length >= 8 ? wa : (s.username || s.nis || String(s.id))
+        res.json({ user: { source: 'santri', data: _stripPII(s), authKey } })
+        return
+      }
+
+      res.json({ user: null })
+    } catch (e) {
+      logger.error('[findUserByLogin] error', e)
+      res.status(500).json({ error: String((e && e.message) || e) })
+    }
+  }
+)
