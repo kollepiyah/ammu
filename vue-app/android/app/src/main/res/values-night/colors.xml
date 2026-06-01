@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- v.87.0526: splash background DARK (match tema gelap web/electron #0F172A).
+    <!-- v.87.0526: splash background DARK (match tema gelap web/electron #1E293B).
          Dipakai Android 12+ windowSplashScreenBackground saat sistem dark mode (values-night). -->
-    <color name="splashBg">#0F172A</color>
+    <color name="splashBg">#1E293B</color>
 </resources>

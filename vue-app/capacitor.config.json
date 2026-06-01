@@ -1,7 +1,7 @@
 {
   "appId": "app.ammu.id",
   "appName": "Ammu Online",
-  "webDir": "../public/vue",
+  "webDir": "dist",
   "bundledWebRuntime": false,
   "android": {
     "backgroundColor": "#0F766E",
@@ -15,12 +15,12 @@
   },
   "plugins": {
     "SplashScreen": {
-      "launchShowDuration": 1500,
+      "launchShowDuration": 3000,
       "launchAutoHide": true,
       "backgroundColor": "#0F766E",
       "androidSplashResourceName": "splash",
       "androidScaleType": "CENTER_CROP",
-      "showSpinner": true,
+      "showSpinner": false,
       "androidSpinnerStyle": "large",
       "iosSpinnerStyle": "small",
       "spinnerColor": "#FFFFFF"
