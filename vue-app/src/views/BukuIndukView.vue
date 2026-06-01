@@ -146,7 +146,7 @@
                   <input
                     v-model="inputForm.kategori"
                     type="text"
-                    placeholder="Contoh: Operasional, Donasi, Bantuan..."
+                    placeholder="Kategori"
                     class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)]"
                   />
                 </div>

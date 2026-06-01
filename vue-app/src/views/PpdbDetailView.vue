@@ -225,7 +225,7 @@
           <input
             v-model="acfModal.label"
             type="text"
-            placeholder="Misal: Hafalan Saat Ini"
+            placeholder="Label"
             class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] mt-1"
           />
         </div>

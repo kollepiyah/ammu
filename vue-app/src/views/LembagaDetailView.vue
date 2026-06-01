@@ -1430,6 +1430,9 @@ function loadPengaturan() {
     : []
 }
 
+// N1 fix: muat pengaturan saat data lembaga (realtime) termuat — sebelumnya loadPengaturan TAK PERNAH dipanggil -> form balik default tiap refresh
+watch(lembagaData, () => loadPengaturan(), { immediate: true })
+
 // v.20.75.0526: ACF field helpers
 function addAcfField() {
   pengaturanForm.psb_fields.push({

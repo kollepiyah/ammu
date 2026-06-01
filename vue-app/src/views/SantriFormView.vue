@@ -139,7 +139,7 @@
           </div>
           <div v-if="form.lembaga === 'PTPT'">
             <label class="block text-xs font-bold text-rose-600 mb-1 uppercase">Juz (PTPT only)</label>
-            <input v-model="form.juz" type="text" placeholder="cth: 1, 2, 3..." class="w-full px-3 py-2 text-sm rounded-xl border-2 border-rose-300 bg-rose-50 text-rose-800 focus:ring-2 focus:ring-rose-500 outline-none" />
+            <input v-model="form.juz" type="text" placeholder="Nomor" class="w-full px-3 py-2 text-sm rounded-xl border-2 border-rose-300 bg-rose-50 text-rose-800 focus:ring-2 focus:ring-rose-500 outline-none" />
           </div>
         </div>
         <div class="mt-3">
@@ -192,7 +192,7 @@
           </div>
           <div>
             <label class="block text-xs font-bold text-rose-700 mb-1 uppercase">Alasan Keluar</label>
-            <input v-model="form.alasan_keluar" type="text" placeholder="cth: Pindah, Khotam, Lulus, dll" class="w-full px-3 py-2 text-sm rounded-xl border border-rose-300 bg-rose-50/40 focus:ring-2 focus:ring-rose-500 outline-none" />
+            <input v-model="form.alasan_keluar" type="text" placeholder="Keterangan" class="w-full px-3 py-2 text-sm rounded-xl border border-rose-300 bg-rose-50/40 focus:ring-2 focus:ring-rose-500 outline-none" />
           </div>
         </div>
       </div>

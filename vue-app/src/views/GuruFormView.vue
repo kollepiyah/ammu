@@ -28,7 +28,7 @@
         <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
           <div class="md:col-span-3">
             <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase">Nama Lengkap (dengan gelar) *</label>
-            <input v-model="form.nama" type="text" required placeholder="cth: Ust. Ahmad Sholeh, M.Pd" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none" />
+            <input v-model="form.nama" type="text" required placeholder="Nama lengkap dengan gelar" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none" />
           </div>
           <div>
             <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase">L / P *</label>

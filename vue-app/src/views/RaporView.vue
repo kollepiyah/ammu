@@ -879,7 +879,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, unref, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, unref, nextTick, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { subscribeColl } from '@/services/firestore'
 import { useSantri } from '@/composables/useSantri'
@@ -941,6 +941,19 @@ const lembaga = ref('') // 'TPQ Pagi' | 'TPQ Sore' | 'Pra PTPT' | 'PTPT' | 'PPPH
 const santriId = ref(isSantri.value ? String(authStore.sesiAktif?.id || '') : '')
 const filterKelas = ref('')
 const search = ref('')
+
+// N5: santri/wali — auto-buka rapor sendiri tanpa picker (langsung view 'detail')
+watch(santriRaw, (list) => {
+  if (!isSantri.value || view.value === 'detail') return
+  const me = (list || []).find((s) => String(s.id) === String(authStore.sesiAktif?.id || ''))
+  if (!me) return
+  const raps = getRapors(me)
+  if (!raps || raps.length === 0) return
+  kategori.value = raps[0].jenis
+  lembaga.value = raps[0].lembaga
+  santriId.value = String(me.id)
+  view.value = 'detail'
+}, { immediate: true })
 
 // v.21.109.0527: TPQ Pagi DIHAPUS dari rapor — kebijakan: TPQ Pagi tidak
 // menerbitkan rapor. Sisa 4 lembaga Qiraati: TPQ Sore, Pra PTPT, PTPT, PPPH.

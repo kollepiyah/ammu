@@ -55,6 +55,7 @@ const isWebOnly = computed(() => {
 const username = ref('')
 const password = ref('')
 const isSubmitting = ref(false)
+const loginError = ref('')
 const showPassword = ref(false)
 const ingatSaya = ref(true) // default tetap login di perangkat ini
 
@@ -64,12 +65,14 @@ async function handleLogin() {
     return
   }
   isSubmitting.value = true
+  loginError.value = ''
   try {
     await auth.login(username.value.trim(), password.value, ingatSaya.value)
     toast.success('Login berhasil')
     const redirect = route.query.redirect || '/dashboard'
     router.push(redirect)
   } catch (e) {
+    loginError.value = e.message || 'Login gagal'
     toast.error(e.message || 'Login gagal')
   } finally {
     isSubmitting.value = false
@@ -217,6 +220,11 @@ function bukaWaAdmin() {
               </button>
             </div>
           </div>
+
+          <!-- N3: error login inline (sandi salah dll) -->
+          <p v-if="loginError" class="text-[11px] font-bold text-red-600 dark:text-red-400 flex items-center gap-1">
+            <i class="fas fa-circle-exclamation"></i>{{ loginError }}
+          </p>
 
           <!-- Ingat Saya checkbox -->
           <div class="flex items-center gap-2 mt-1">

@@ -33,7 +33,7 @@
               type="text"
               required
               :disabled="!!editingId"
-              placeholder="cth: TPQ Pagi, PTPT, SDI, PKBM"
+              placeholder="Nama lembaga"
               class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] disabled:opacity-60 focus:ring-2 focus:ring-teal-500 outline-none"
             />
             <p v-if="editingId" class="text-[10px] text-cyan-600 mt-1">
@@ -64,7 +64,7 @@
             v-model="newKelasInput"
             @keydown.enter.prevent="onAddKelas"
             type="text"
-            placeholder="Ketik nama kelas, lalu Enter (cth: I, II, Jilid 1, Pra A...)"
+            placeholder="Ketik nama kelas, lalu Enter"
             class="flex-1 px-3 py-2 text-sm rounded-xl border border-teal-300 bg-[var(--bg-card)] focus:ring-2 focus:ring-teal-500 outline-none"
           />
           <button
@@ -142,11 +142,11 @@
           </div>
           <div>
             <label class="block text-xs font-bold text-cyan-700 mb-1 uppercase">Alamat KOP</label>
-            <input v-model="form.kop_alamat" type="text" placeholder="cth: Jl. ..." class="w-full px-3 py-2 text-sm rounded-xl border border-cyan-300 bg-cyan-50 focus:ring-2 focus:ring-cyan-500 outline-none" />
+            <input v-model="form.kop_alamat" type="text" placeholder="Alamat" class="w-full px-3 py-2 text-sm rounded-xl border border-cyan-300 bg-cyan-50 focus:ring-2 focus:ring-cyan-500 outline-none" />
           </div>
           <div>
             <label class="block text-xs font-bold text-cyan-700 mb-1 uppercase">No. Telp</label>
-            <input v-model="form.kop_telp" type="text" placeholder="cth: 0331-..." class="w-full px-3 py-2 text-sm rounded-xl border border-cyan-300 bg-cyan-50 focus:ring-2 focus:ring-cyan-500 outline-none" />
+            <input v-model="form.kop_telp" type="text" placeholder="No. telepon" class="w-full px-3 py-2 text-sm rounded-xl border border-cyan-300 bg-cyan-50 focus:ring-2 focus:ring-cyan-500 outline-none" />
           </div>
         </div>
       </div>

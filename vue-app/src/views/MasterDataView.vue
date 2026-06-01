@@ -983,7 +983,7 @@ async function simpanPengaturanRekap() {
         <input
           v-model="tpForm.value"
           type="text"
-          placeholder="cth: 2025/2026"
+          placeholder="Tahun ajaran"
           class="flex-1 px-3 py-2 text-sm rounded-lg border border-cyan-300 bg-white dark:bg-slate-900 text-slate-800 dark:text-white"
         />
         <button

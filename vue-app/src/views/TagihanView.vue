@@ -95,7 +95,7 @@
             <option v-for="s in santriList" :key="s.id" :value="s.id">{{ s.nama }}</option>
           </select>
           <input v-model="modalKategori" type="text" placeholder="Kategori (SPP, Pendaftaran, dll)" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)]" />
-          <input v-model="modalPeriode" type="text" placeholder="Periode (cth: April 2026)" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)]" />
+          <input v-model="modalPeriode" type="text" placeholder="Periode" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)]" />
           <input v-model.number="modalNominal" type="number" min="0" placeholder="Nominal" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] text-right font-bold" />
           <input v-model="modalJatuhTempo" type="date" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)]" />
         </div>

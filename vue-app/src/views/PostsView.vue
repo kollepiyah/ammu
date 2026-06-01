@@ -71,7 +71,7 @@
             <input
               v-model="modalJudul"
               type="text"
-              placeholder="Mis: Pengumuman Libur Idul Fitri..."
+              placeholder="Judul"
               class="w-full px-4 py-3 text-sm rounded-xl border border-teal-200 dark:border-teal-700 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none placeholder:text-slate-400"
             />
           </div>
