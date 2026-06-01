@@ -80,19 +80,19 @@ service cloud.firestore {
     }
 
     match /absensi/{docId} {
-      allow read: if signedIn();
+      allow read: if true;
       allow write: if signedIn();
     }
 
     match /keuangan_tagihan/{docId} {
-      allow read: if signedIn();
+      allow read: if true;
       // v.21.104.0527: relax — terima santri_id string/number; schema toleran
       // (app pakai field: kategori, nominal, bayar, status). validation di UI.
       allow create, update, delete: if signedIn();
     }
 
     match /keuangan_tabungan_santri/{docId} {
-      allow read: if signedIn();
+      allow read: if true;
       // v.21.104.0527: relax santri_id (string/number) — app pakai string.
       allow create: if signedIn()
         && request.resource.data.id is string
@@ -108,7 +108,7 @@ service cloud.firestore {
     }
 
     match /keuangan_gaji/{docId} {
-      allow read: if signedIn();
+      allow read: if true;
       allow create, update: if signedIn()
         && request.resource.data.id is string
         && request.resource.data.guru_id is number
@@ -124,7 +124,7 @@ service cloud.firestore {
     }
 
     match /keuangan_buku_induk/{docId} {
-      allow read: if signedIn();
+      allow read: if true;
       allow create: if signedIn()
         && request.resource.data.id is string
         && request.resource.data.tipe in ['masuk', 'keluar']
@@ -199,12 +199,12 @@ service cloud.firestore {
     }
 
     match /absensi_kegiatan/{docId} {
-      allow read: if signedIn();
+      allow read: if true;
       allow write: if signedIn();
     }
 
     match /absensi_shift_guru/{docId} {
-      allow read: if signedIn();
+      allow read: if true;
       allow write: if signedIn();
     }
 
@@ -217,13 +217,13 @@ service cloud.firestore {
     }
 
     match /audit_log/{docId} {
-      allow read: if signedIn();
+      allow read: if true;
       allow create: if signedIn();
       allow update, delete: if false;
     }
 
     match /rapor_semester/{docId} {
-      allow read: if signedIn();
+      allow read: if true;
       allow create, update: if signedIn()
         && request.resource.data.santri_id != null
         && request.resource.data.lembaga is string;
@@ -231,14 +231,14 @@ service cloud.firestore {
     }
 
     match /rekap_diniyah/{docId} {
-      allow read: if signedIn();
+      allow read: if true;
       allow create, update: if signedIn() && request.resource.data.santri_id != null;
       allow delete: if signedIn();
     }
 
     // v.20.15.0526: Rekap prestasi Qiraati per santri/bulan (Vue subscribe)
     match /rekap_prestasi/{docId} {
-      allow read: if signedIn();
+      allow read: if true;
       allow create, update: if signedIn();
       allow delete: if signedIn();
     }
@@ -267,13 +267,13 @@ service cloud.firestore {
     }
 
     match /absensi_santri_sekolah/{docId} {
-      allow read: if signedIn();
+      allow read: if true;
       allow create, update: if false;
       allow delete: if signedIn();
     }
 
     match /absensi_santri_sekolah_bulanan/{docId} {
-      allow read: if signedIn();
+      allow read: if true;
       allow create, update: if signedIn()
         && request.resource.data.santri_id != null
         && request.resource.data.periode is string
@@ -287,7 +287,7 @@ service cloud.firestore {
 
     // v.21.84.0527: Absensi ngaji bulanan (Qiraati — input manual guru)
     match /absensi_santri_ngaji_bulanan/{docId} {
-      allow read: if signedIn();
+      allow read: if true;
       allow create, update: if signedIn()
         && request.resource.data.santri_id != null
         && request.resource.data.periode is string
@@ -300,7 +300,7 @@ service cloud.firestore {
     }
 
     match /riwayat_kenaikan/{docId} {
-      allow read: if signedIn();
+      allow read: if true;
       allow create, update: if signedIn();
       allow delete: if signedIn();
     }
@@ -325,19 +325,19 @@ service cloud.firestore {
 
     // v.21.56: keuangan_hutang_piutang
     match /keuangan_hutang_piutang/{docId} {
-      allow read: if signedIn();
+      allow read: if true;
       allow create, update, delete: if signedIn();
     }
 
     // v.21.56: keuangan_pembayaran (POS transactions)
     match /keuangan_pembayaran/{docId} {
-      allow read: if signedIn();
+      allow read: if true;
       allow create, update, delete: if signedIn();
     }
 
     // v.21.22.0526: Absensi guru (fingerprint + manual entry)
     match /absensi_guru/{docId} {
-      allow read: if signedIn();
+      allow read: if true;
       allow write: if signedIn();
     }
 
@@ -412,7 +412,7 @@ service cloud.firestore {
 
     // v.87.0526: Notif prestasi (event ditulis saat input nilai prestasi) — sumber Notif Center.
     match /notif_prestasi/{docId} {
-      allow read: if signedIn();
+      allow read: if true;
       allow create, update: if signedIn();
       allow delete: if signedIn();
     }
