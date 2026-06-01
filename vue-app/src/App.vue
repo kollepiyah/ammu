@@ -4,12 +4,14 @@
       <component :is="Component" />
     </transition>
   </router-view>
+  <PrinterSettingsModal />
 </template>
 
 <script setup>
 import { watch, onMounted } from 'vue'
 import { useSettingsStore } from '@/stores/settings'
 import { useUiStore } from '@/stores/ui'
+import PrinterSettingsModal from '@/components/PrinterSettingsModal.vue'
 
 // v.20.74.1.0526: BUGFIX — App.vue jangan panggil ui.initDarkFromStorage/auth.bindLiveSesi/settings.bindSettings.
 // main.js sudah handle init. App.vue cuma watch theme color + appTitle.
@@ -36,7 +38,8 @@ async function setupNativeIntegration() {
     const { StatusBar, Style } = await import('@capacitor/status-bar')
     const apply = () => {
       const isDark = ui.isDark
-      StatusBar.setStyle({ style: isDark ? Style.Dark : Style.Light }).catch(() => {})
+      // v.85.0526: FIX inversion — Style.Dark = text DARK (untuk LIGHT bg), Style.Light = text LIGHT (untuk DARK bg)
+      StatusBar.setStyle({ style: isDark ? Style.Light : Style.Dark }).catch(() => {})
       StatusBar.setBackgroundColor({ color: isDark ? '#0F172A' : '#F2FEF9' }).catch(() => {})
     }
     apply()

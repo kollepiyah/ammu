@@ -70,6 +70,14 @@
           <i class="fas fa-print mr-1"></i>Struk Dot-matrix
         </button>
         <button
+          v-if="isDesktop"
+          type="button"
+          @click="cetakLangsung"
+          class="text-xs font-bold text-white bg-teal-600 hover:bg-teal-700 px-3 py-2 rounded-lg"
+        >
+          <i class="fas fa-bolt mr-1"></i>Cetak Langsung
+        </button>
+        <button
           type="button"
           @click="lastTrx = null"
           class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 px-2"
@@ -233,7 +241,8 @@ import {
 } from 'firebase/firestore'
 import { db } from '@/services/firebase'
 import { sortSantri } from '@/utils/santriSort'
-import { cetakStrukPdf, cetakStrukDotMatrix } from '@/utils/strukBuilder'
+import { cetakStrukPdf, cetakStrukDotMatrix, buildStrukHtml } from '@/utils/strukBuilder'
+import { isElectron, printStruk, getDefaultPrinter } from '@/composables/useDesktopPrint'
 import { terbilangRupiah } from '@/utils/terbilang'
 import { useSettingsStore } from '@/stores/settings'
 import ModalPOS from '@/components/pos/ModalPOS.vue'
@@ -261,6 +270,7 @@ const todayTrxCount = ref(0)
 const operatorTtdUrl = ref('')
 // v.21.88.0527: transaksi terakhir (utk tombol cetak struk setelah simpan)
 const lastTrx = ref(null)
+const isDesktop = isElectron()
 
 const operatorName = computed(() => {
   return auth.sesiAktif?.nama || auth.sesiAktif?.guru || 'Admin'
@@ -535,6 +545,17 @@ async function cetakLastPdf() {
 }
 function cetakLastDot() {
   if (lastTrx.value) cetakStrukDotMatrix(lastTrx.value, settingsStore.settings || {})
+}
+// v.07.0626: cetak langsung (silent) ke printer default Electron
+async function cetakLangsung() {
+  if (!lastTrx.value) return
+  try {
+    const html = buildStrukHtml(lastTrx.value, settingsStore.settings || {})
+    await printStruk({ html, deviceName: getDefaultPrinter() || undefined })
+    toast.success('Struk dicetak ke printer')
+  } catch (e) {
+    toast.error('Gagal cetak: ' + (e.message || e))
+  }
 }
 
 function fmtTgl(t) {

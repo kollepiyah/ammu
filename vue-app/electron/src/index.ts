@@ -431,6 +431,15 @@ function buildAppMenu() {
       ]
     },
     {
+      label: 'Printer',
+      submenu: [
+        {
+          label: 'Pengaturan Printer',
+          click: () => { mainWindow?.webContents.send('open-printer-settings') }
+        }
+      ]
+    },
+    {
       label: 'Bantuan',
       submenu: [
         {

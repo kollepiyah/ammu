@@ -28,6 +28,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // List printer available
   listPrinters: () => ipcRenderer.invoke('print:list-printers'),
 
+  // v.07.0626: listener menu electron 'Pengaturan Printer' -> renderer buka modal
+  onOpenPrinterSettings: (cb: () => void) => ipcRenderer.on('open-printer-settings', () => cb()),
+
   // v.83.0526: Set title bar overlay color — Vue panggil saat dark mode toggle
   setTheme: (isDark: boolean) => ipcRenderer.invoke('theme:set', { isDark }),
 

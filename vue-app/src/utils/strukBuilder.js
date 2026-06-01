@@ -45,7 +45,7 @@ export async function cetakStrukPdf(trx, settings = {}, { preview = true } = {})
   const font = doc._fontMU || 'helvetica'
   let y = await drawKopLetterhead(doc, kop, { y: 10 })
   drawTitle(doc, 'BUKTI PEMBAYARAN', { y: y + 7, size: 13 })
-  y += 11
+  y += 15
 
   doc.setFontSize(9)
   const pageW = doc.internal.pageSize.getWidth()
@@ -335,4 +335,14 @@ export function cetakStrukDotMatrix(trx, settings = {}) {
   w.document.close()
   w.focus()
   setTimeout(function () { try { w.print() } catch (e) {} }, 350)
+}
+
+// v.07.0626: build HTML struk untuk SILENT print (Electron desktop, tanpa dialog)
+export function buildStrukHtml(trx, settings = {}) {
+  const paper = paperFromSettings(settings)
+  const text = buildStrukText(trx, settings)
+  const css = paper.pageCss +
+    ' body { font-family: "Courier New", monospace; white-space: pre; line-height: 1.35; margin: 0; padding: 4px; }'
+  return '<!DOCTYPE html><html><head><title>Struk</title><style>' + css +
+    '</style></head><body>' + escapeHtml(text) + '</body></html>'
 }

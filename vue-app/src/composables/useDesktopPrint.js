@@ -105,3 +105,12 @@ export default {
   printPdfPreview,
   listPrinters
 }
+
+// v.07.0626: printer default (localStorage) + listener menu electron 'Pengaturan Printer'
+const _PRINTER_KEY = 'ammu_default_printer'
+export function getDefaultPrinter() { try { return localStorage.getItem(_PRINTER_KEY) || '' } catch (e) { return '' } }
+export function setDefaultPrinter(name) { try { localStorage.setItem(_PRINTER_KEY, name || '') } catch (e) {} }
+export function onOpenPrinterSettings(cb) {
+  const api = getAPI()
+  if (api && api.onOpenPrinterSettings) api.onOpenPrinterSettings(cb)
+}
