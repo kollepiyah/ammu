@@ -259,8 +259,8 @@
               </span>
             </p>
             <p class="text-[10px] text-[var(--text-secondary)] truncate">
-              <span class="font-bold">{{ s.lembaga || '-' }}</span>
-              · Kelas {{ s.kelas || '-' }}
+              <span class="font-bold">{{ (kategori === 'diniyah' ? s.lembaga_sekolah : s.lembaga) || '-' }}</span>
+              · Kelas {{ (kategori === 'diniyah' ? s.kelas_sekolah : s.kelas) || '-' }}
               <span v-if="s.nis" class="ml-1">· NIS {{ s.nis }}</span>
               <span v-if="s.is_mukim" class="ml-1 text-teal-600 font-bold">· MUKIM</span>
             </p>
@@ -1191,7 +1191,12 @@ const kop = computed(() => {
   const s = settingsStore.settings || {}
   let lmbObj = {}
   if (santriAktif.value) {
-    const lnorm = String(santriAktif.value.lembaga || '')
+    // v.90.0626: Diniyah pakai KOP lembaga SEKOLAH (lembaga_sekolah), bukan lembaga ngaji
+    const lnorm = String(
+      kategori.value === 'diniyah'
+        ? santriAktif.value.lembaga_sekolah || ''
+        : santriAktif.value.lembaga || ''
+    )
       .toLowerCase()
       .trim()
     lmbObj =
@@ -2073,7 +2078,12 @@ function findRaporDocFor(s) {
 // v.21.85: cari lembaga doc Firestore (untuk override KOP per-lembaga)
 function findLembagaObjFor(s) {
   if (!s) return null
-  const lnorm = String(s.lembaga || '').toLowerCase().trim()
+  // v.90.0626: Diniyah pakai lembaga SEKOLAH (KOP sekolah), selain itu lembaga ngaji
+  const lnorm = String(
+    (kategori.value === 'diniyah' ? s.lembaga_sekolah : s.lembaga) || ''
+  )
+    .toLowerCase()
+    .trim()
   return (lembagaRaw.value || []).find(
     (l) => String(l.lembaga || '').toLowerCase().trim() === lnorm
   ) || null

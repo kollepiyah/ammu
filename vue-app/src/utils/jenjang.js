@@ -43,13 +43,14 @@ export const DEFAULT_MAPEL_DINIYAH = ['Aqidah Akhlak', 'Fiqh', 'Tarikh', 'Bahasa
 // Struktur baru: { SDI: 'a, b', SMP: 'c, d', SMA: 'e, f' } (per jenjang).
 // Fallback kompat lama: key 'PKBM' dipakai utk SMP & SMA bila key jenjang kosong.
 // Mengembalikan array string (nama mapel). Kosong -> DEFAULT_MAPEL_DINIYAH.
+// raw bisa array (format baru) ATAU string koma (format lama) — keduanya didukung.
 export function mapelDiniyahFor(jenjangKey, rekapDiniyahMapel) {
   const all = rekapDiniyahMapel || {}
   let raw = all[jenjangKey]
-  if (!raw && (jenjangKey === 'SMP' || jenjangKey === 'SMA')) raw = all['PKBM']
-  const list = String(raw || '')
-    .split(',')
-    .map((s) => s.trim())
+  const kosong = raw == null || raw === '' || (Array.isArray(raw) && raw.length === 0)
+  if (kosong && (jenjangKey === 'SMP' || jenjangKey === 'SMA')) raw = all['PKBM']
+  const list = (Array.isArray(raw) ? raw : String(raw || '').split(','))
+    .map((s) => String(s).trim())
     .filter(Boolean)
   return list.length ? list : DEFAULT_MAPEL_DINIYAH.slice()
 }
