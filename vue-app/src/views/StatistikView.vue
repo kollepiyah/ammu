@@ -481,13 +481,30 @@
       </div>
       <div
         v-if="isAdminMode"
-        class="bg-gradient-to-br from-cyan-500 dark:from-cyan-700 to-cyan-700 dark:to-cyan-900 rounded-xl p-3 md:p-4 shadow-sm text-white"
+        class="bg-gradient-to-br from-cyan-500 dark:from-cyan-700 to-cyan-700 dark:to-cyan-900 rounded-xl p-3 md:p-4 shadow-sm text-white cursor-pointer hover:brightness-95 transition"
+        @click="showKelasDetail = !showKelasDetail"
+        title="Klik untuk rincian kelas"
       >
         <i class="fas fa-door-open text-lg md:text-xl text-white/90"></i>
         <p class="text-2xl md:text-3xl font-black mt-1">{{ kelasCount }}</p>
         <p class="text-[10px] font-bold uppercase tracking-widest text-white/80 mt-0.5">
           Kelas Total
         </p>
+      </div>
+    </div>
+
+    <!-- v.07.0626: Diagnostik Kelas Total (klik kartu KELAS TOTAL) -->
+    <div v-if="isAdminMode && showKelasDetail" class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm">
+      <div class="flex items-center justify-between mb-2">
+        <h4 class="text-sm font-black text-[var(--text-primary)]"><i class="fas fa-door-open text-cyan-600 mr-1"></i>Rincian Kelas Total ({{ kelasCount }})</h4>
+        <button type="button" @click="showKelasDetail = false" class="text-[var(--text-tertiary)] hover:text-rose-600"><i class="fas fa-times"></i></button>
+      </div>
+      <p class="text-[11px] text-[var(--text-secondary)] mb-2">1 baris = kombinasi <b>guru x lembaga x kelas</b> (santri aktif yg punya guru). <span class="text-rose-600 font-bold">guru yatim</span> = guru tak ada di daftar guru aktif, kemungkinan SAMPAH (santri masih nyantol ke guru lama/terhapus). Perbaiki: edit santri tsb ganti gurunya, atau hapus santri sampah.</p>
+      <div class="space-y-1 max-h-72 overflow-auto">
+        <div v-for="(k, i) in kelasDetail" :key="i" :class="['flex items-center justify-between gap-2 text-xs px-3 py-1.5 rounded-lg', k.orphan ? 'bg-rose-50 dark:bg-rose-900/30 border border-rose-200 dark:border-rose-700' : 'bg-slate-50 dark:bg-slate-800']">
+          <span class="truncate"><b>{{ k.lembaga }}</b> &middot; {{ k.kelas }} &middot; {{ k.guru }} <span class="text-[var(--text-tertiary)]">({{ k.jml }} santri &middot; {{ k.jenis }})</span></span>
+          <span v-if="k.orphan" class="text-[10px] font-bold text-rose-700 dark:text-rose-300 whitespace-nowrap"><i class="fas fa-triangle-exclamation mr-0.5"></i>yatim</span>
+        </div>
       </div>
     </div>
 
@@ -905,6 +922,29 @@ const kelasCount = computed(() => {
     }
   }
   return set.size
+})
+
+// v.07.0626: diagnostik rincian Kelas Total + flag guru yatim (sampah data lama)
+const showKelasDetail = ref(false)
+const kelasDetail = computed(() => {
+  const m = new Map()
+  for (const s of santriRaw.value) {
+    if (s.aktif === false) continue
+    const sid = String(s.id)
+    const addK = (guru, lemb, kelas, jenis) => {
+      const g = String(guru || '').trim(), l = String(lemb || '').trim(), k = String(kelas || '').trim()
+      if (!g || !l || !k) return
+      const key = g.toLowerCase() + '|' + l.toLowerCase() + '|' + k.toLowerCase()
+      if (!m.has(key)) m.set(key, { guru: g, lembaga: l, kelas: k, jenis, ids: new Set() })
+      m.get(key).ids.add(sid)
+    }
+    new Set([s.guru_pagi, s.guru_sore, s.guru].map((x) => String(x || '').trim()).filter(Boolean)).forEach((g) => addK(g, s.lembaga, s.kelas, 'Ngaji'))
+    new Set((Array.isArray(s.guru_sekolah) ? s.guru_sekolah : []).map((x) => String(x || '').trim()).filter(Boolean)).forEach((g) => addK(g, s.lembaga_sekolah, s.kelas_sekolah, 'Sekolah'))
+  }
+  const aktif = new Set(guruRaw.value.filter((g) => isGuruAktif(g.status)).map((g) => String(g.nama || '').trim().toLowerCase()))
+  return [...m.values()]
+    .map((x) => ({ guru: x.guru, lembaga: x.lembaga, kelas: x.kelas, jenis: x.jenis, jml: x.ids.size, orphan: !aktif.has(x.guru.toLowerCase()) }))
+    .sort((a, b) => Number(b.orphan) - Number(a.orphan) || (a.lembaga + a.kelas).localeCompare(b.lembaga + b.kelas))
 })
 
 // ---- Helpers ---------------------------------------------------------------
