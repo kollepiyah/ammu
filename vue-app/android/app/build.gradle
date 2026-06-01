@@ -15,8 +15,8 @@ android {
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         // v.74.0526: + kelas counter fix (unique lembaga+kelas yang ada santri), bersihkan notif feature.
-        // versionCode = counter internal Play Store (HARUS selalu NAIK; 88 sudah di-upload). versionName = tampilan (boleh reset, mis. 07).
-        versionCode 89
+        // versionCode = counter internal Play Store (HARUS selalu NAIK; 89 sudah dipakai). versionName = tampilan (boleh reset, mis. 07).
+        versionCode 90
         versionName "v.07.0626"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
