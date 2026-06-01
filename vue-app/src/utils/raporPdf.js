@@ -301,9 +301,11 @@ function drawSignBlocks(doc, y, santri, settings, lembaga, dbGuru = []) {
   doc.text('Guru Kelas', col2, labelY, { align: 'center' })
   doc.text(labelKepala, col3, labelY, { align: 'center' })
 
-  // Lookup Signatures
-  const guruKelasName = santri.guru || ''
-  const guruKelas = dbGuru.find((g) => g.nama === guruKelasName && g.status !== 'Non-Aktif')
+  // Lookup Signatures — v.90.0626: Diniyah pakai guru_sekolah (wali kelas sekolah), bukan ngaji
+  const _gkSrc = lembaga === 'Diniyah' ? santri.guru_sekolah : santri.guru
+  const _gkArr = Array.isArray(_gkSrc) ? _gkSrc.filter(Boolean) : _gkSrc ? [_gkSrc] : []
+  const guruKelasName = _gkArr.join(', ')
+  const guruKelas = dbGuru.find((g) => _gkArr.some((n) => g.nama === n) && g.status !== 'Non-Aktif')
 
   // v.21.10 match: if labelKepala contains 'PJ PTPT', search specifically for that
   const searchFinal = labelKepala.includes('PJ PTPT') ? 'PJ PTPT' : searchTitle

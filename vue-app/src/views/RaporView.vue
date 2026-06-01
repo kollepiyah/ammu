@@ -1934,7 +1934,10 @@ const jabatanKepala = computed(() => {
 
 const namaGuru = computed(() => {
   const s = santriAktif.value
-  return (s && (Array.isArray(s.guru) ? s.guru.join(', ') : s.guru)) || '-'
+  if (!s) return '-'
+  // v.90.0626: Rapor Diniyah -> Guru Kelas dari guru_sekolah (wali kelas sekolah), bukan ngaji
+  const src = kategori.value === 'diniyah' ? s.guru_sekolah : s.guru
+  return (Array.isArray(src) ? src.filter(Boolean).join(', ') : src) || '-'
 })
 
 function findGuruByName(nama) {

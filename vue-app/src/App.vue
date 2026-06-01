@@ -5,6 +5,8 @@
     </transition>
   </router-view>
   <PrinterSettingsModal />
+  <!-- v.90.0626: ToastStack di-mount GLOBAL (sebelumnya tak pernah dipasang -> toast tak muncul) -->
+  <ToastStack />
 </template>
 
 <script setup>
@@ -12,6 +14,7 @@ import { watch, onMounted } from 'vue'
 import { useSettingsStore } from '@/stores/settings'
 import { useUiStore } from '@/stores/ui'
 import PrinterSettingsModal from '@/components/PrinterSettingsModal.vue'
+import ToastStack from '@/components/ui/ToastStack.vue'
 
 // v.20.74.1.0526: BUGFIX — App.vue jangan panggil ui.initDarkFromStorage/auth.bindLiveSesi/settings.bindSettings.
 // main.js sudah handle init. App.vue cuma watch theme color + appTitle.

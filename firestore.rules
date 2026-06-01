@@ -185,7 +185,8 @@ service cloud.firestore {
 
     // Kritik saran: CREATE tetap allow anonymous (santri/wali boleh kirim tanpa login)
     match /kritik_saran/{docId} {
-      allow read: if signedIn();
+      // v.90.0626: read publik (app custom auth; admin built-in tanpa Firebase Auth + anti-race anon)
+      allow read: if true;
       allow create: if
         request.resource.data.pesan is string
         && request.resource.data.pesan.size() >= 1
@@ -370,7 +371,8 @@ service cloud.firestore {
 
     // v.21.110.0527: Catatan supervisi (Direktur/Supervisor → guru/lembaga)
     match /supervisi_catatan/{docId} {
-      allow read: if signedIn();
+      // v.90.0626: read publik (anti-race anon auth + admin built-in)
+      allow read: if true;
       allow create, update: if signedIn()
         && request.resource.data.id is string
         && request.resource.data.target_type in ['guru', 'lembaga']
@@ -384,7 +386,9 @@ service cloud.firestore {
     // v.21.115.0528: duplicate rule dihapus — userId tidak match auth.uid karena app pakai custom auth + Firebase Anonymous.
     // Tetap signedIn-only sebagai gate, tapi tidak strict per-uid karena userId di sini adalah ID custom (guru/santri/admin).
     match /user_notif_state/{userId} {
-      allow read, write: if signedIn();
+      // v.90.0626: read publik; write tetap butuh sesi (anon admin / guru / santri)
+      allow read: if true;
+      allow write: if signedIn();
     }
 
     // v.21.115.0528: Pengaturan Keuangan (admin keuangan settings)

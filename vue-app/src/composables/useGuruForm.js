@@ -236,10 +236,15 @@ export function useGuruForm() {
         allWithTipe.push({ nama: n, tipe })
       }
     }
-    for (const n of JABATAN_OPTIONS) {
-      if (!allNames.has(n.toLowerCase())) {
-        allNames.add(n.toLowerCase())
-        allWithTipe.push({ nama: n, tipe: JABATAN_GURU_GROUP.includes(n) ? 'guru' : 'pegawai' })
+    // v.90.0626: hardcoded JABATAN_OPTIONS HANYA fallback kalau master/lembaga belum punya jabatan
+    //   (kyai: buang sampah lama — dropdown ikut master/jabatan yang ditambah saja).
+    const adaMaster = jabatanFromLembaga.value.length > 0 || jabatanFromMaster.value.length > 0
+    if (!adaMaster) {
+      for (const n of JABATAN_OPTIONS) {
+        if (!allNames.has(n.toLowerCase())) {
+          allNames.add(n.toLowerCase())
+          allWithTipe.push({ nama: n, tipe: JABATAN_GURU_GROUP.includes(n) ? 'guru' : 'pegawai' })
+        }
       }
     }
 

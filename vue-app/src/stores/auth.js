@@ -3,7 +3,7 @@
 // v.53.1: Persist admin built-in sesiAktif via localStorage (Firebase Auth user only untuk guru/santri)
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { onAuthStateChanged, setPersistence, browserLocalPersistence, indexedDBLocalPersistence } from 'firebase/auth'
+import { onAuthStateChanged, setPersistence, browserLocalPersistence, indexedDBLocalPersistence, signInAnonymously } from 'firebase/auth'
 import { auth as fbAuth } from '@/services/firebase'
 import * as authService from '@/services/auth'
 import { queryColl } from '@/services/firestore'
@@ -33,6 +33,36 @@ function _loadAdminSesi() {
   } catch (e) {
     return null
   }
+}
+
+// v.84.0526: Persist FULL sesi (admin/guru/santri) — fix Android logout setiap close app.
+// Capacitor WebView restart bisa clear IndexedDB → user terlogout. localStorage lebih persistent.
+const SESI_FULL_KEY = 'portalMu_sesiAktif'
+function _persistFullSesi(sesi) {
+  try {
+    if (sesi && sesi.role) {
+      localStorage.setItem(SESI_FULL_KEY, JSON.stringify({ ...sesi, _persisted_at: Date.now() }))
+    } else {
+      localStorage.removeItem(SESI_FULL_KEY)
+    }
+  } catch (e) {}
+}
+function _loadFullSesi() {
+  try {
+    const raw = localStorage.getItem(SESI_FULL_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    if (parsed && parsed.role && parsed.id) {
+      // Expire setelah 30 hari (safety)
+      const age = Date.now() - (parsed._persisted_at || 0)
+      if (age > 30 * 24 * 60 * 60 * 1000) {
+        localStorage.removeItem(SESI_FULL_KEY)
+        return null
+      }
+      return parsed
+    }
+    return null
+  } catch (e) { return null }
 }
 
 export const useAuthStore = defineStore('auth', () => {
@@ -131,6 +161,7 @@ export const useAuthStore = defineStore('auth', () => {
           auth_method: 'admin-builtin'
         }
         _persistAdminSesi(sesiAktif.value)
+        await ensureAnonAuth() // v.90.0626: sesi Anonymous utk admin -> rules signedIn() jalan
         return
       }
 
@@ -312,10 +343,24 @@ export const useAuthStore = defineStore('auth', () => {
     sesiAktif.value = null
     fbUser.value = null
     _persistAdminSesi(null) // clear localStorage
+    _persistFullSesi(null) // v.85.0526: clear backup sesi juga
   }
 
   function setSesiAktif(sesi) {
     sesiAktif.value = sesi
+    _persistFullSesi(sesi) // v.85.0526: auto-persist supaya Android close-app tidak logout
+  }
+
+  // v.90.0626: admin built-in tidak punya sesi Firebase Auth -> request.auth null -> rules
+  //   signedIn() (read/write) gagal. Beri sesi Anonymous biar request.auth != null.
+  //   WAJIB provider Anonymous AKTIF di Firebase Console. Gagal = non-blocking.
+  async function ensureAnonAuth() {
+    try {
+      if (!fbAuth.currentUser) await signInAnonymously(fbAuth)
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.warn('[auth] Anonymous sign-in gagal (aktifkan provider Anonymous di Firebase Console?):', e?.message)
+    }
   }
 
   /**
@@ -342,6 +387,16 @@ export const useAuthStore = defineStore('auth', () => {
   function initAuth() {
     // Step 1: Admin built-in instant restore (sync localStorage)
     restoreAdminSesiFromStorage()
+    // v.85.0526: Restore FULL sesi backup (guru/santri) — fix Android logout setiap close
+    if (!sesiAktif.value) {
+      const stored = _loadFullSesi()
+      if (stored && stored.role) sesiAktif.value = stored
+    }
+    // v.90.0626: sesi admin built-in (no Firebase Auth) -> beri Anonymous supaya request.auth
+    //   != null setelah refresh (rules signedIn read/write tetap jalan).
+    if (sesiAktif.value && sesiAktif.value.auth_method === 'admin-builtin') {
+      ensureAnonAuth()
+    }
 
     // v.21.24c.0526: Force persist Firebase Auth ke IndexedDB (lebih reliable di PWA standalone)
     // Sebelumnya: persistence dipasang hanya saat loginUnified. Di PWA refresh, kalau ada race
@@ -357,7 +412,10 @@ export const useAuthStore = defineStore('auth', () => {
     // Step 2: Subscribe Firebase Auth — first callback resolves authReady
     let resolved = false
     onAuthStateChanged(fbAuth, async (user) => {
-      if (user) {
+      if (user && user.isAnonymous) {
+        // v.90.0626: sesi Anonymous (admin built-in) — set fbUser saja, jangan loadSesi/timpa sesiAktif
+        fbUser.value = user
+      } else if (user) {
         fbUser.value = user
         try {
           await loadSesiFromUser(user)
