@@ -113,7 +113,7 @@
           <button
             v-for="l in diniyahLembaga"
             :key="l.id"
-            @click="pilihLembaga(l.id)"
+            @click="pilihLembaga(l.lembaga || l.id, l.jenjang)"
             :class="[
               'group relative overflow-hidden bg-gradient-to-br rounded-xl p-3 md:p-4 text-left text-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 ease-out cursor-pointer flex flex-col gap-1',
               l.gradient
@@ -890,6 +890,8 @@ import { useSettingsStore } from '@/stores/settings'
 import { useAuthStore } from '@/stores/auth'
 import UiActionCard from '@/components/ui/UiActionCard.vue'
 import { generateRaporPdf } from '@/utils/raporPdf'
+// v.90.0626: util jenjang Diniyah (SDI/SMP/SMA) — sumber tunggal, samakan dg Rekap Diniyah
+import { kelasJenjang, diniyahJenjang, mapelDiniyahFor } from '@/utils/jenjang'
 
 const toast = useToast()
 const route = useRoute()
@@ -940,6 +942,7 @@ const kategori = ref('') // 'qiraati' | 'diniyah'
 const lembaga = ref('') // 'TPQ Pagi' | 'TPQ Sore' | 'Pra PTPT' | 'PTPT' | 'PPPH' | 'SDI' | 'PKBM' | ...
 const santriId = ref(isSantri.value ? String(authStore.sesiAktif?.id || '') : '')
 const filterKelas = ref('')
+const jenjangFilter = ref('') // '' | 'SMP' | 'SMA' - split PKBM, samakan picker dg Rekap Diniyah
 const search = ref('')
 
 // N5: santri/wali — auto-buka rapor sendiri tanpa picker (langsung view 'detail')
@@ -1088,6 +1091,10 @@ const santriList = computed(() => {
         .trim()
       return ls === lmb || (!ls && lb === lmb)
     })
+    // v.90.0626: PKBM dipisah jenjang SMP (VII-IX) / SMA (X-XII)
+    if (jenjangFilter.value) {
+      list = list.filter((s) => kelasJenjang(s.kelas_sekolah || s.kelas) === jenjangFilter.value)
+    }
   }
 
   // Guru-only: limit to santri yang guru-nya = sesi aktif
@@ -1108,7 +1115,12 @@ const santriList = computed(() => {
     })
   }
 
-  if (filterKelas.value) list = list.filter((s) => String(s.kelas || '') === filterKelas.value)
+  if (filterKelas.value) {
+    list = list.filter((s) => {
+      const kv = kategori.value === 'qiraati' ? s.kelas : (s.kelas_sekolah || s.kelas)
+      return String(kv || '') === filterKelas.value
+    })
+  }
   if (search.value.trim()) {
     const kw = search.value.trim().toLowerCase()
     list = list.filter((s) =>
@@ -1123,6 +1135,8 @@ const santriList = computed(() => {
   return sortSantri(list, { lembagaField: lf, kelasField: kf })
 })
 
+// v.90.0626: kelasJenjang dipindah ke utils/jenjang.js (dipakai bareng Rekap Diniyah)
+
 const kelasOptions = computed(() => {
   const lmb = String(lembaga.value || '')
     .toLowerCase()
@@ -1136,7 +1150,9 @@ const kelasOptions = computed(() => {
       .toLowerCase()
       .trim()
     const match = kategori.value === 'qiraati' ? lb === lmb : ls === lmb || (!ls && lb === lmb)
-    if (match && s.kelas) set.add(String(s.kelas))
+    // v.90.0626: diniyah pakai kelas_sekolah (samakan dg Rekap); PKBM dibatasi jenjang aktif
+    const kls = kategori.value === 'qiraati' ? s.kelas : (s.kelas_sekolah || s.kelas)
+    if (match && kls && (!jenjangFilter.value || kelasJenjang(kls) === jenjangFilter.value)) set.add(String(kls))
   })
   return [...set].sort()
 })
@@ -1446,9 +1462,30 @@ function buildSchema(lembagaName) {
   }
 }
 
+// v.90.0626: Rapor Diniyah -> kolom mapel dibangun dari setting per-jenjang (SDI/SMP/SMA)
+//   di settings.rekapDiniyahMapel. Sumber tunggal yang sama dengan Rekap Diniyah & Pengaturan.
+function buildDiniyahSchemaFromSetting(s) {
+  const jk = diniyahJenjang(s?.lembaga_sekolah, s?.kelas_sekolah)
+  const names = mapelDiniyahFor(jk, settingsStore.settings?.rekapDiniyahMapel)
+  const kelas = String(s?.kelas_sekolah || '')
+  return {
+    perKelas: true,
+    jenjang: [
+      {
+        kelas,
+        mapel: names.map((n) => ({ id: slug(n), nama: String(n).toUpperCase(), kkm: 80 }))
+      }
+    ]
+  }
+}
+
 // schema = override dari settings.raporSchemas kalau ada, else default builder
 const schema = computed(() => {
   if (!santriAktif.value) return {}
+  // Diniyah: pakai mapel per-jenjang dari setting (lepas dari schema lembaga ngaji)
+  if (kategori.value === 'diniyah') {
+    return buildDiniyahSchemaFromSetting(santriAktif.value)
+  }
   const lmb = santriAktif.value.lembaga || ''
   const overrides = settingsStore.settings?.raporSchemas || {}
   const lnorm = String(lmb).toLowerCase().trim()
@@ -1931,6 +1968,7 @@ const ekgqKepala = computed(() => {
 // ===== Navigation actions =====
 function pilihKategori(k) {
   kategori.value = k
+  jenjangFilter.value = ''
   filterKelas.value = ''
   search.value = ''
   santriId.value = ''
@@ -1978,26 +2016,22 @@ const diniyahLembaga = computed(() => {
     // Seed default if master kosong
     allowed.forEach((a) => all.push({ lembaga: a.toUpperCase(), id: a.toUpperCase() }))
   }
-  const gradients = [
-    'from-cyan-500 dark:from-cyan-700 to-cyan-700 dark:to-cyan-900',
-    'from-cyan-500 dark:from-cyan-700 to-cyan-700 dark:to-cyan-900',
-    'from-teal-500 dark:from-teal-700 to-teal-700 dark:to-teal-900',
-    'from-teal-500 dark:from-teal-700 to-teal-700 dark:to-teal-900',
-    'from-rose-500 dark:from-rose-700 to-teal-700 dark:to-teal-900',
-    'from-rose-500 dark:from-rose-700 to-rose-700 dark:to-rose-900',
-    'from-cyan-500 dark:from-cyan-700 to-cyan-700 dark:to-cyan-900'
-  ]
-  return all.map((l, idx) => ({
-    id: l.lembaga || l.nama,
-    label: l.lembaga || l.nama,
-    subtitle: l.jenjang || l.deskripsi || 'Sekolah Formal',
-    icon: 'fa-school',
-    gradient: gradients[idx % gradients.length]
-  }))
+  // v.90.0626: SDI satu kartu; PKBM dipecah jadi SMP (VII-IX) & SMA (X-XII) - samakan dg Rekap Diniyah
+  const has = (name) => all.some((l) => String(l.lembaga || l.nama || '').toLowerCase().trim() === name)
+  const cards = []
+  if (has('sdi')) {
+    cards.push({ id: 'SDI', label: 'SDI', subtitle: 'Sekolah Dasar Islam (Kelas I-VI)', icon: 'fa-school', lembaga: 'SDI', jenjang: '', gradient: 'from-cyan-500 dark:from-cyan-700 to-cyan-700 dark:to-cyan-900' })
+  }
+  if (has('pkbm')) {
+    cards.push({ id: 'PKBM-SMP', label: 'SMP', subtitle: 'PKBM · Kelas VII–IX', icon: 'fa-school-flag', lembaga: 'PKBM', jenjang: 'SMP', gradient: 'from-cyan-500 dark:from-cyan-700 to-cyan-700 dark:to-cyan-900' })
+    cards.push({ id: 'PKBM-SMA', label: 'SMA', subtitle: 'PKBM · Kelas X–XII', icon: 'fa-graduation-cap', lembaga: 'PKBM', jenjang: 'SMA', gradient: 'from-teal-500 dark:from-teal-700 to-teal-700 dark:to-teal-900' })
+  }
+  return cards
 })
 
-function pilihLembaga(id) {
+function pilihLembaga(id, jenjang = '') {
   lembaga.value = id
+  jenjangFilter.value = jenjang || ''
   view.value = 'santri'
   santriId.value = ''
   search.value = ''

@@ -16,7 +16,8 @@
       </span>
     </button>
 
-    <!-- Dropdown -->
+    <!-- Dropdown — v.90.0626: mobile teleport ke body biar center & memanjang ke bawah -->
+    <Teleport to="body" :disabled="!isMobile">
     <transition
       enter-active-class="transition ease-out duration-150"
       enter-from-class="opacity-0 scale-95"
@@ -27,7 +28,8 @@
     >
       <div
         v-if="open"
-        class="absolute right-0 mt-2 w-80 md:w-96 bg-[var(--bg-card)] rounded-2xl shadow-2xl border border-[var(--border-subtle)] z-50 overflow-hidden origin-top-right"
+        data-notif-panel
+        class="fixed left-1/2 -translate-x-1/2 top-[4.5rem] w-[calc(100vw-1.5rem)] max-w-sm max-h-[calc(100dvh-6rem)] flex flex-col md:absolute md:left-auto md:right-0 md:translate-x-0 md:top-full md:mt-2 md:w-96 md:max-h-[80vh] bg-[var(--bg-card)] rounded-2xl shadow-2xl border border-[var(--border-subtle)] z-50 overflow-hidden origin-top md:origin-top-right"
       >
         <div class="px-4 py-3 border-b border-[var(--border-subtle)] flex items-center justify-between gap-2">
           <h3 class="text-sm font-black"><i class="fas fa-bell mr-1.5 text-cyan-600"></i>Notifikasi</h3>
@@ -66,7 +68,7 @@
           </button>
         </div>
 
-        <div class="max-h-[60vh] overflow-y-auto">
+        <div class="flex-1 min-h-0 overflow-y-auto">
           <div v-if="visibleList.length === 0" class="p-8 text-center text-xs text-[var(--text-tertiary)] italic">
             <i class="far fa-bell-slash text-2xl mb-2 block"></i>
             {{ activeTab === 'unread' ? 'Tidak ada notifikasi baru' : 'Belum ada notifikasi' }}
@@ -103,6 +105,7 @@
         </div>
       </div>
     </transition>
+    </Teleport>
   </div>
 </template>
 
@@ -120,6 +123,17 @@ watch(items, (val) => { try { pushFromItems(val) } catch { /* ignore */ } })
 
 const open = ref(false)
 const activeTab = ref('unread')
+
+// v.90.0626: deteksi mobile -> Teleport panel ke body (lepas dari containing-block
+//   backdrop-filter header) supaya fixed benar2 ter-center; desktop tetap anchored ke bell.
+const isMobile = ref(false)
+function syncIsMobile() {
+  try {
+    isMobile.value = window.matchMedia('(max-width: 767px)').matches
+  } catch {
+    isMobile.value = false
+  }
+}
 
 const visibleList = computed(() => activeTab.value === 'unread' ? itemsUnread.value : items.value)
 
@@ -179,19 +193,22 @@ function fmtRelative(ts) {
   } catch { return '-' }
 }
 
-// Close on outside click
+// Close on outside click — v.90.0626: panel bisa ter-teleport ke body, cek bell + panel
 function onDocClick(e) {
   if (!open.value) return
-  // Cek apakah click di luar bell
-  const el = e.target.closest('[data-notif-bell]')
-  if (!el) open.value = false
+  const inBell = e.target.closest('[data-notif-bell]')
+  const inPanel = e.target.closest('[data-notif-panel]')
+  if (!inBell && !inPanel) open.value = false
 }
 onMounted(() => {
   document.addEventListener('click', onDocClick)
+  syncIsMobile()
+  window.addEventListener('resize', syncIsMobile)
   // v.87.0526: minta izin notif HP + listener tap-to-open (native only; no-op di web/desktop)
   setupLocalNotif(router)
 })
 onUnmounted(() => {
   document.removeEventListener('click', onDocClick)
+  window.removeEventListener('resize', syncIsMobile)
 })
 </script>

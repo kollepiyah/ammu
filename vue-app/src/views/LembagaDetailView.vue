@@ -733,21 +733,49 @@
       </div>
 
       <div
-        v-if="isFormalLembaga"
-        class="bg-cyan-50 dark:bg-cyan-900/20 rounded-2xl p-4 md:p-5 border border-cyan-200 dark:border-cyan-700 space-y-2"
+        v-if="isDiniyahLembaga"
+        class="bg-cyan-50 dark:bg-cyan-900/20 rounded-2xl p-4 md:p-5 border border-cyan-200 dark:border-cyan-700 space-y-3"
       >
         <h5 class="text-xs font-black text-[var(--text-on-accent)] uppercase">
           <i class="fas fa-list mr-1"></i>Mapel Diniyah
         </h5>
         <p class="text-[11px] text-[var(--text-secondary)]">
-          Mata pelajaran kolom di Rekap Diniyah {{ lembagaId }}. Pisah dgn koma.
+          Mata pelajaran kolom di Rekap &amp; Rapor Diniyah. Pisah dgn koma. Diatur per jenjang.
         </p>
-        <textarea
-          v-model="rekapMapelStr"
-          rows="3"
-          placeholder="Aqidah Akhlak, Fiqh, Tarikh, Bahasa Arab"
-          class="w-full px-3 py-2 text-sm border border-cyan-300 rounded-lg bg-[var(--bg-card)]"
-        ></textarea>
+
+        <!-- v.90.0626: SDI satu set mapel (Kelas I-VI) -->
+        <div v-if="lembagaIdUpper === 'SDI'" class="space-y-1">
+          <label class="text-[10px] font-black text-cyan-800 dark:text-cyan-200 uppercase tracking-wide">SDI &middot; Kelas I-VI</label>
+          <textarea
+            v-model="rekapMapel.SDI"
+            rows="3"
+            placeholder="Aqidah Akhlak, Fiqh, Tarikh, Bahasa Arab"
+            class="w-full px-3 py-2 text-sm border border-cyan-300 rounded-lg bg-[var(--bg-card)]"
+          ></textarea>
+        </div>
+
+        <!-- v.90.0626: PKBM dipisah SMP & SMA (mapel bisa beda) -->
+        <template v-else-if="lembagaIdUpper === 'PKBM'">
+          <div class="space-y-1">
+            <label class="text-[10px] font-black text-cyan-800 dark:text-cyan-200 uppercase tracking-wide">SMP &middot; Kelas VII-IX</label>
+            <textarea
+              v-model="rekapMapel.SMP"
+              rows="3"
+              placeholder="Aqidah Akhlak, Fiqh, Tarikh, Bahasa Arab"
+              class="w-full px-3 py-2 text-sm border border-cyan-300 rounded-lg bg-[var(--bg-card)]"
+            ></textarea>
+          </div>
+          <div class="space-y-1">
+            <label class="text-[10px] font-black text-cyan-800 dark:text-cyan-200 uppercase tracking-wide">SMA &middot; Kelas X-XII</label>
+            <textarea
+              v-model="rekapMapel.SMA"
+              rows="3"
+              placeholder="Aqidah Akhlak, Fiqh, Tarikh, Bahasa Arab"
+              class="w-full px-3 py-2 text-sm border border-cyan-300 rounded-lg bg-[var(--bg-card)]"
+            ></textarea>
+          </div>
+        </template>
+
         <button
           @click="simpanRekapMapel"
           :disabled="saving"
@@ -1089,6 +1117,9 @@ const toast = useToast()
 const confirm = useConfirm()
 
 const lembagaId = computed(() => route.params.id || '')
+// v.90.0626: jenjang Diniyah per lembaga (SDI 1 set; PKBM split SMP/SMA)
+const lembagaIdUpper = computed(() => String(lembagaId.value || '').toUpperCase())
+const isDiniyahLembaga = computed(() => ['SDI', 'PKBM'].includes(lembagaIdUpper.value))
 const activeSection = ref('')
 
 const SECTION_LABELS = {
@@ -1372,17 +1403,26 @@ async function resetRaporSchema() {
   }
 }
 
-// === Rekap mapel ===
-const rekapMapelStr = ref('')
+// === Rekap mapel Diniyah (v.90.0626: per JENJANG — SDI / SMP / SMA) ===
+const rekapMapel = reactive({ SDI: '', SMP: '', SMA: '' })
 function loadRekapMapel() {
   const all = settings.settings?.rekapDiniyahMapel || {}
-  rekapMapelStr.value = all[lembagaId.value] || ''
+  rekapMapel.SDI = all['SDI'] || ''
+  // kompat: nilai lama key 'PKBM' jadi awal SMP & SMA
+  rekapMapel.SMP = all['SMP'] || all['PKBM'] || ''
+  rekapMapel.SMA = all['SMA'] || all['PKBM'] || ''
 }
 async function simpanRekapMapel() {
   saving.value = true
   try {
     const all = { ...(settings.settings?.rekapDiniyahMapel || {}) }
-    all[lembagaId.value] = rekapMapelStr.value
+    const id = lembagaIdUpper.value
+    if (id === 'SDI') {
+      all['SDI'] = rekapMapel.SDI
+    } else if (id === 'PKBM') {
+      all['SMP'] = rekapMapel.SMP
+      all['SMA'] = rekapMapel.SMA
+    }
     await setDoc(doc(db, 'settings', 'general'), { rekapDiniyahMapel: all }, { merge: true })
     await setDoc(doc(db, 'settings', 'web'), { rekapDiniyahMapel: all }, { merge: true })
     settings.settings.rekapDiniyahMapel = all

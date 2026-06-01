@@ -27,11 +27,11 @@
           class="text-xs px-3 py-2 border border-[var(--border-default)] rounded-lg bg-white dark:bg-slate-900 text-[var(--text-primary)]"
         />
         <select
-          v-model="filterLembaga"
+          v-model="filterJenjang"
           class="text-xs px-3 py-2 border border-[var(--border-default)] rounded-lg bg-white dark:bg-slate-900 text-[var(--text-primary)]"
         >
-          <option value="">Semua Lembaga</option>
-          <option v-for="l in lembagaOptions" :key="l" :value="l">{{ l }}</option>
+          <option value="">Semua Jenjang</option>
+          <option v-for="j in DINIYAH_JENJANG" :key="j" :value="j">{{ j }}</option>
         </select>
         <select
           v-model="filterKelas"
@@ -49,26 +49,26 @@
       </div>
     </div>
 
-    <!-- v.21.76: Filter Lembaga Cards (SDI/PKBM) — hidden kalau ada forcedLembaga prop (parent control) -->
-    <div v-if="!forcedLembaga" class="bg-[var(--bg-card)] rounded-2xl p-3 md:p-4 border border-[var(--border-subtle)] shadow-sm">
-      <p class="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-widest mb-2">Filter Lembaga Diniyah</p>
-      <div class="grid grid-cols-3 gap-2">
+    <!-- v.90.0626: Filter Jenjang Diniyah (SDI/SMP/SMA) — hidden kalau dipanggil dari Rekap Prestasi (route query) -->
+    <div v-if="!forcedFromRoute" class="bg-[var(--bg-card)] rounded-2xl p-3 md:p-4 border border-[var(--border-subtle)] shadow-sm">
+      <p class="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-widest mb-2">Filter Jenjang Diniyah</p>
+      <div class="grid grid-cols-4 gap-2">
         <button
-          @click="filterLembaga = ''"
+          @click="filterJenjang = ''"
           :class="[
             'px-3 py-2 text-xs font-black rounded-xl transition cursor-pointer shadow-sm',
-            filterLembaga === '' ? 'bg-slate-700 text-white' : 'bg-[var(--bg-muted)] text-[var(--text-primary)] hover:bg-slate-200'
+            filterJenjang === '' ? 'bg-slate-700 text-white' : 'bg-[var(--bg-muted)] text-[var(--text-primary)] hover:bg-slate-200'
           ]"
         >Semua</button>
         <button
-          v-for="l in LEMBAGA_DINIYAH"
-          :key="l"
-          @click="filterLembaga = l"
+          v-for="j in DINIYAH_JENJANG"
+          :key="j"
+          @click="filterJenjang = j"
           :class="[
             'px-3 py-2 text-xs font-black rounded-xl transition cursor-pointer shadow-sm',
-            filterLembaga === l ? 'bg-cyan-600 text-white' : 'bg-cyan-50 text-cyan-800 hover:bg-cyan-100'
+            filterJenjang === j ? 'bg-cyan-600 text-white' : 'bg-cyan-50 text-cyan-800 hover:bg-cyan-100'
           ]"
-        >{{ l }}</button>
+        >{{ j }}</button>
       </div>
     </div>
 
@@ -170,7 +170,8 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { subscribeColl } from '@/services/firestore'
 import { doc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/services/firebase'
@@ -178,39 +179,54 @@ import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
 import { useSantri } from '@/composables/useSantri'
-import { useLembaga } from '@/composables/useLembaga'
 import { sortSantri } from '@/utils/santriSort'
-import { watch } from 'vue'
-// v.21.76: Diniyah lembaga (SDI + PKBM only per spec canonical kyai)
-const LEMBAGA_DINIYAH = ['SDI', 'PKBM']
+// v.90.0626: util jenjang Diniyah (SDI/SMP/SMA) — sumber tunggal, samakan dg RaporView
+import {
+  diniyahJenjang,
+  DINIYAH_JENJANG,
+  DINIYAH_LEMBAGA,
+  DEFAULT_MAPEL_DINIYAH,
+  mapelDiniyahFor
+} from '@/utils/jenjang'
 
-// v.21.79: Prop forcedLembaga — kalau parent (RekapPrestasiView) drive lembaga, kunci filter ke prop
+// v.21.79: Prop forcedLembaga — kompat lama (parent control). v.90.0626: scope utama via route query.
 const props = defineProps({
   forcedLembaga: { type: String, default: '' }
 })
 
+const route = useRoute()
 const { santriRaw } = useSantri()
-const { lembagaRaw } = useLembaga()
 const auth = useAuthStore()
 const settings = useSettingsStore()
 const toast = useToast()
 
-// Default mapel diniyah (fallback bila settings belum diisi)
-const DEFAULT_MAPEL = ['Aqidah Akhlak', 'Fiqh', 'Tarikh', 'Bahasa Arab']
-
-// Filter state
-const filterLembaga = ref('')
-
-// v.21.79: Sync filterLembaga dari prop forcedLembaga (parent control)
-watch(
-  () => props.forcedLembaga,
-  (v) => {
-    if (v) filterLembaga.value = v
-  },
-  { immediate: true }
-)
+// Filter state — v.90.0626: pakai JENJANG Diniyah (SDI/SMP/SMA), bukan lembaga (SDI/PKBM)
+const filterJenjang = ref('')
 const filterKelas = ref('')
 const search = ref('')
+
+// v.90.0626: scope dari Rekap Prestasi -> /rekap-diniyah?lembaga=SDI | lembaga=PKBM&jenjang=SMP|SMA
+const forcedFromRoute = ref(false)
+function applyScope() {
+  if (props.forcedLembaga) {
+    const f = String(props.forcedLembaga).toUpperCase()
+    filterJenjang.value = f === 'SDI' ? 'SDI' : ''
+    forcedFromRoute.value = true
+    return
+  }
+  const lmb = String(route.query.lembaga || '').toUpperCase()
+  const jen = String(route.query.jenjang || '').toUpperCase()
+  if (lmb === 'SDI') {
+    filterJenjang.value = 'SDI'
+    forcedFromRoute.value = true
+  } else if (jen === 'SMP' || jen === 'SMA') {
+    filterJenjang.value = jen
+    forcedFromRoute.value = true
+  } else {
+    forcedFromRoute.value = false
+  }
+}
+watch(() => route.query, applyScope, { immediate: true, deep: true })
 
 // Periode bulan/tahun
 const BULAN_ID = [
@@ -248,48 +264,38 @@ onUnmounted(() => {
   }
 })
 
-// Schema mapel per kelas (settings.rekapSchemaDiniyahPerKelas[kelas])
-// fallback ke settings.rekapSchemaDiniyah, fallback DEFAULT_MAPEL.
-function getMapelSchema(kelas) {
-  const perKelas = settings.settings?.rekapSchemaDiniyahPerKelas
-  if (perKelas && typeof perKelas === 'object') {
-    const key = String(kelas || '').trim()
-    if (Array.isArray(perKelas[key]) && perKelas[key].length > 0) return perKelas[key]
-  }
-  const flat = settings.settings?.rekapSchemaDiniyah
-  return Array.isArray(flat) && flat.length > 0 ? flat : DEFAULT_MAPEL
+// v.90.0626: mapel Diniyah per JENJANG (SDI/SMP/SMA) dari settings.rekapDiniyahMapel.
+// Sumber tunggal yang sama dengan kotak "Mapel Diniyah" di Pengaturan Lembaga.
+function getMapelForSantri(s) {
+  const jk = diniyahJenjang(s.lembaga_sekolah, s.kelas_sekolah)
+  return mapelDiniyahFor(jk, settings.settings?.rekapDiniyahMapel)
 }
 
 const mapelList = computed(() => {
-  // Jika filter kelas dipilih, ambil schema khusus kelas itu
-  if (filterKelas.value) return getMapelSchema(filterKelas.value)
-  // Otherwise union semua mapel dari santri yang ditampilkan
+  // Jenjang terpilih -> kolom mapel khusus jenjang itu
+  if (filterJenjang.value) {
+    return mapelDiniyahFor(filterJenjang.value, settings.settings?.rekapDiniyahMapel)
+  }
+  // "Semua" -> union mapel dari santri yang ditampilkan
   const set = new Set()
   for (const s of filteredSantri.value) {
-    for (const m of getMapelSchema(s.kelas_sekolah)) set.add(m)
+    for (const m of getMapelForSantri(s)) set.add(m)
   }
-  if (set.size === 0) {
-    const flat = settings.settings?.rekapSchemaDiniyah
-    return Array.isArray(flat) && flat.length > 0 ? flat : DEFAULT_MAPEL
-  }
-  return [...set]
-})
-
-// Lembaga formal yang bisa diniyah: SDI, PKBM
-const DINIYAH_LEMBAGA = ['SDI', 'PKBM']
-
-const lembagaOptions = computed(() => {
-  const fromMaster = (lembagaRaw.value || [])
-    .filter((l) => DINIYAH_LEMBAGA.includes(l.lembaga))
-    .map((l) => l.lembaga)
-    .filter(Boolean)
-  return fromMaster.length > 0 ? fromMaster : DINIYAH_LEMBAGA
+  return set.size ? [...set] : DEFAULT_MAPEL_DINIYAH.slice()
 })
 
 const kelasOptions = computed(() => {
   const set = new Set()
   santriRaw.value.forEach((s) => {
-    if (s.kelas_sekolah) set.add(s.kelas_sekolah)
+    if (!s.kelas_sekolah) return
+    if (!DINIYAH_LEMBAGA.includes(s.lembaga_sekolah)) return
+    // hormati jenjang aktif (kelas SMP saja saat filter SMP, dst)
+    if (
+      filterJenjang.value &&
+      diniyahJenjang(s.lembaga_sekolah, s.kelas_sekolah) !== filterJenjang.value
+    )
+      return
+    set.add(s.kelas_sekolah)
   })
   return [...set].sort()
 })
@@ -310,7 +316,9 @@ const filteredSantri = computed(() => {
       (s) => Array.isArray(s.guru_sekolah) && s.guru_sekolah.includes(myNama.value)
     )
   }
-  if (filterLembaga.value) list = list.filter((s) => s.lembaga_sekolah === filterLembaga.value)
+  if (filterJenjang.value) {
+    list = list.filter((s) => diniyahJenjang(s.lembaga_sekolah, s.kelas_sekolah) === filterJenjang.value)
+  }
   if (filterKelas.value) list = list.filter((s) => s.kelas_sekolah === filterKelas.value)
   const kw = search.value.trim().toLowerCase()
   if (kw)
