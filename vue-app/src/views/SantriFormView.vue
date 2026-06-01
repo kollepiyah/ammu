@@ -72,11 +72,53 @@
               <option value="mahad">Ma'had (Mukim)</option>
             </select>
           </div>
+          <div>
+            <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase">Nama Panggilan</label>
+            <input v-model="form.nama_panggilan" type="text" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase">Tempat Lahir</label>
+            <input v-model="form.tempat_lahir" type="text" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase">No. KK</label>
+            <input v-model="form.no_kk" type="text" maxlength="16" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none" />
+          </div>
         </div>
         <!-- v.21.109.0527: alamat lengkap santri -->
         <div class="mt-3">
           <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase">Alamat Lengkap</label>
           <textarea v-model="form.alamat" rows="2" placeholder="Alamat sesuai KTP/KK" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none resize-none"></textarea>
+        </div>
+        <div class="mt-3 grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase">Dusun / Jalan</label>
+            <input v-model="form.alamat_dusun" type="text" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase">RT</label>
+            <input v-model="form.alamat_rt" type="text" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase">RW</label>
+            <input v-model="form.alamat_rw" type="text" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase">Desa / Kelurahan</label>
+            <input v-model="form.alamat_desa" type="text" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase">Kecamatan</label>
+            <input v-model="form.alamat_kecamatan" type="text" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase">Kabupaten</label>
+            <input v-model="form.alamat_kabupaten" type="text" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase">Provinsi</label>
+            <input v-model="form.alamat_provinsi" type="text" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none" />
+          </div>
         </div>
 
         <!-- Catatan Riwayat Pribadi — hanya untuk Ma'had -->
@@ -85,6 +127,64 @@
             <i class="fas fa-mosque mr-1"></i>Catatan Riwayat Pribadi (Ma'had) <span class="text-[9px] text-[var(--text-tertiary)] normal-case">(opsional)</span>
           </label>
           <textarea v-model="form.catatan_riwayat_pribadi" rows="2" placeholder="Cth: latar belakang keluarga, kesehatan khusus, kebiasaan, dll." class="w-full px-3 py-2 text-sm rounded-xl border border-teal-300 bg-teal-50/30 focus:ring-2 focus:ring-teal-500 outline-none resize-none"></textarea>
+        </div>
+      </div>
+
+      <!-- v.89 (N4): Data Orang Tua + asal sekolah + penghasilan (match PSB) -->
+      <div class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm">
+        <h3 class="text-xs font-black text-slate-700 dark:text-[var(--text-tertiary)] uppercase tracking-wide mb-3"><i class="fas fa-people-roof text-teal-500 mr-1"></i>Data Orang Tua &amp; Asal Sekolah</h3>
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+          <div class="md:col-span-5 text-[11px] font-black text-teal-700 dark:text-teal-300">Ayah</div>
+          <div>
+            <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase">Nama Ayah</label>
+            <input v-model="form.nama_ayah" type="text" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase">NIK Ayah</label>
+            <input v-model="form.nik_ayah" type="text" maxlength="16" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase">Pendidikan</label>
+            <input v-model="form.pendidikan_ayah" type="text" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase">Pekerjaan</label>
+            <input v-model="form.pekerjaan_ayah" type="text" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase">HP / WA</label>
+            <input v-model="form.hp_ayah" type="text" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none" />
+          </div>
+          <div class="md:col-span-5 text-[11px] font-black text-rose-700 dark:text-rose-300">Ibu</div>
+          <div>
+            <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase">Nama Ibu</label>
+            <input v-model="form.nama_ibu" type="text" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase">NIK Ibu</label>
+            <input v-model="form.nik_ibu" type="text" maxlength="16" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase">Pendidikan</label>
+            <input v-model="form.pendidikan_ibu" type="text" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase">Pekerjaan</label>
+            <input v-model="form.pekerjaan_ibu" type="text" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase">HP / WA</label>
+            <input v-model="form.hp_ibu" type="text" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none" />
+          </div>
+          <div class="md:col-span-5 text-[11px] font-black text-slate-600 dark:text-[var(--text-tertiary)]">Lainnya</div>
+          <div>
+            <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase">Asal Sekolah</label>
+            <input v-model="form.asal_sekolah" type="text" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase">Penghasilan Ortu</label>
+            <input v-model="form.penghasilan_ortu" type="text" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none" />
+          </div>
         </div>
       </div>
 
