@@ -740,29 +740,37 @@
           <i class="fas fa-list mr-1"></i>Mapel Diniyah
         </h5>
         <p class="text-[11px] text-[var(--text-secondary)]">
-          Mata pelajaran kolom di Rekap &amp; Rapor Diniyah, diatur per jenjang. Tambah/hapus tiap mapel di bawah.
+          Mata pelajaran kolom di Rekap &amp; Rapor Diniyah, diatur PER KELAS (tiap kelas bisa beda). Tambah/hapus tiap mapel di bawah.
         </p>
 
-        <!-- v.90.0626: input mapel per-field (bukan koma) — SDI 1 jenjang; PKBM SMP & SMA -->
+        <!-- v.90.0626b: input mapel per-KELAS (dari daftar kelas lembaga) -->
+        <p
+          v-if="mapelKelasVisible.length === 0"
+          class="text-[11px] italic text-[var(--text-tertiary)]"
+        >
+          Belum ada kelas di lembaga ini. Tambah kelas dulu di tab &quot;Kelas&quot;.
+        </p>
         <div
-          v-for="jv in mapelJenjangVisible"
-          :key="jv.key"
+          v-for="kv in mapelKelasVisible"
+          :key="kv.key"
           class="bg-[var(--bg-card)] rounded-xl p-3 border border-cyan-100 dark:border-cyan-800 space-y-2"
         >
-          <label class="text-[10px] font-black text-cyan-800 dark:text-cyan-200 uppercase tracking-wide block">{{ jv.label }}</label>
-          <p v-if="rekapMapel[jv.key].length === 0" class="text-[11px] italic text-[var(--text-tertiary)]">
+          <label class="text-[10px] font-black text-cyan-800 dark:text-cyan-200 uppercase tracking-wide block">
+            Kelas {{ kv.key }}<span v-if="kv.jenjang" class="ml-1 text-[9px] font-bold text-cyan-500">({{ kv.jenjang }})</span>
+          </label>
+          <p v-if="(rekapMapel[kv.key] || []).length === 0" class="text-[11px] italic text-[var(--text-tertiary)]">
             Belum ada mapel. Klik &quot;Tambah Mapel&quot;.
           </p>
-          <div v-for="(m, i) in rekapMapel[jv.key]" :key="i" class="flex items-center gap-2">
+          <div v-for="(m, i) in (rekapMapel[kv.key] || [])" :key="i" class="flex items-center gap-2">
             <span class="text-[10px] font-bold text-[var(--text-tertiary)] w-5 text-right">{{ i + 1 }}.</span>
             <input
-              v-model="rekapMapel[jv.key][i]"
+              v-model="rekapMapel[kv.key][i]"
               type="text"
               placeholder="Nama mata pelajaran"
               class="flex-1 px-3 py-2 text-sm border border-cyan-300 rounded-lg bg-[var(--bg-card)]"
             />
             <button
-              @click="removeMapel(jv.key, i)"
+              @click="removeMapel(kv.key, i)"
               class="w-8 h-8 flex items-center justify-center rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 cursor-pointer"
               title="Hapus mapel"
             >
@@ -770,7 +778,7 @@
             </button>
           </div>
           <button
-            @click="addMapel(jv.key)"
+            @click="addMapel(kv.key)"
             class="text-xs font-bold text-cyan-700 dark:text-cyan-300 hover:underline cursor-pointer"
           >
             <i class="fas fa-plus mr-1"></i>Tambah Mapel
@@ -1099,6 +1107,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch, reactive } from 'vue'
+import { jenjangFromKelas } from '@/utils/jenjang'
 import { useRoute, useRouter } from 'vue-router'
 // v.21.10.0526: + LEMBAGA_GROUPS + getLembagaGroup untuk group hierarchy display
 import { useLembaga, LEMBAGA_GROUPS, getLembagaGroup } from '@/composables/useLembaga'
@@ -1404,16 +1413,14 @@ async function resetRaporSchema() {
   }
 }
 
-// === Rekap mapel Diniyah (v.90.0626: per JENJANG SDI/SMP/SMA; input field array, bukan koma) ===
-const rekapMapel = reactive({ SDI: [], SMP: [], SMA: [] })
-const mapelJenjangVisible = computed(() => {
-  if (lembagaIdUpper.value === 'SDI') return [{ key: 'SDI', label: 'SDI \u00b7 Kelas I-VI' }]
-  if (lembagaIdUpper.value === 'PKBM')
-    return [
-      { key: 'SMP', label: 'SMP \u00b7 Kelas VII-IX' },
-      { key: 'SMA', label: 'SMA \u00b7 Kelas X-XII' }
-    ]
-  return []
+// === Rekap mapel Diniyah (v.90.0626b: per KELAS dari lembagaData.kelas) ===
+const rekapMapel = reactive({})
+const mapelKelasVisible = computed(() => {
+  if (!isDiniyahLembaga.value) return []
+  return (lembagaData.value?.kelas || [])
+    .map((k) => String(k || '').trim())
+    .filter(Boolean)
+    .map((k) => ({ key: k, jenjang: jenjangFromKelas(k) }))
 })
 function toMapelArr(v) {
   if (Array.isArray(v)) return v.map((x) => String(x))
@@ -1424,27 +1431,30 @@ function toMapelArr(v) {
 }
 function loadRekapMapel() {
   const all = settings.settings?.rekapDiniyahMapel || {}
-  rekapMapel.SDI = toMapelArr(all['SDI'])
-  // kompat: nilai lama key 'PKBM' (string koma) jadi awal SMP & SMA
-  rekapMapel.SMP = toMapelArr(all['SMP'] != null ? all['SMP'] : all['PKBM'])
-  rekapMapel.SMA = toMapelArr(all['SMA'] != null ? all['SMA'] : all['PKBM'])
+  const isEmpty = (v) => v == null || v === '' || (Array.isArray(v) && v.length === 0)
+  Object.keys(rekapMapel).forEach((k) => delete rekapMapel[k])
+  for (const kv of mapelKelasVisible.value) {
+    let raw = all[kv.key]
+    // kompat: per-kelas > per-jenjang lama (SDI/SMP/SMA) > legacy 'PKBM'
+    if (isEmpty(raw) && kv.jenjang) raw = all[kv.jenjang]
+    if (isEmpty(raw) && (kv.jenjang === 'SMP' || kv.jenjang === 'SMA')) raw = all['PKBM']
+    rekapMapel[kv.key] = toMapelArr(raw)
+  }
 }
 function addMapel(key) {
+  if (!Array.isArray(rekapMapel[key])) rekapMapel[key] = []
   rekapMapel[key].push('')
 }
 function removeMapel(key, i) {
-  rekapMapel[key].splice(i, 1)
+  if (Array.isArray(rekapMapel[key])) rekapMapel[key].splice(i, 1)
 }
 async function simpanRekapMapel() {
   saving.value = true
   try {
     const all = { ...(settings.settings?.rekapDiniyahMapel || {}) }
     const clean = (arr) => (arr || []).map((s) => String(s).trim()).filter(Boolean)
-    const id = lembagaIdUpper.value
-    if (id === 'SDI') all['SDI'] = clean(rekapMapel.SDI)
-    else if (id === 'PKBM') {
-      all['SMP'] = clean(rekapMapel.SMP)
-      all['SMA'] = clean(rekapMapel.SMA)
+    for (const kv of mapelKelasVisible.value) {
+      all[kv.key] = clean(rekapMapel[kv.key])
     }
     await setDoc(doc(db, 'settings', 'general'), { rekapDiniyahMapel: all }, { merge: true })
     await setDoc(doc(db, 'settings', 'web'), { rekapDiniyahMapel: all }, { merge: true })
@@ -1456,6 +1466,14 @@ async function simpanRekapMapel() {
     saving.value = false
   }
 }
+// v.90.0626b: load mapel saat kelas/setting/section siap (loadRekapMapel dulu tak pernah dipanggil)
+watch(
+  () => [lembagaData.value?.kelas, settings.settings?.rekapDiniyahMapel, activeSection.value],
+  () => {
+    if (isDiniyahLembaga.value) loadRekapMapel()
+  },
+  { immediate: true, deep: true }
+)
 
 // === Pengaturan (KOP override + Logo Kop Lembaga) ===
 const pengaturanForm = reactive({

@@ -267,16 +267,16 @@ onUnmounted(() => {
 // v.90.0626: mapel Diniyah per JENJANG (SDI/SMP/SMA) dari settings.rekapDiniyahMapel.
 // Sumber tunggal yang sama dengan kotak "Mapel Diniyah" di Pengaturan Lembaga.
 function getMapelForSantri(s) {
-  const jk = diniyahJenjang(s.lembaga_sekolah, s.kelas_sekolah)
-  return mapelDiniyahFor(jk, settings.settings?.rekapDiniyahMapel)
+  // v.90.0626b: mapel per-KELAS (kelas_sekolah), fallback jenjang lama di util
+  return mapelDiniyahFor(s.kelas_sekolah, settings.settings?.rekapDiniyahMapel)
 }
 
 const mapelList = computed(() => {
-  // Jenjang terpilih -> kolom mapel khusus jenjang itu
-  if (filterJenjang.value) {
-    return mapelDiniyahFor(filterJenjang.value, settings.settings?.rekapDiniyahMapel)
+  // Kelas spesifik dipilih -> kolom mapel khusus kelas itu
+  if (filterKelas.value) {
+    return mapelDiniyahFor(filterKelas.value, settings.settings?.rekapDiniyahMapel)
   }
-  // "Semua" -> union mapel dari santri yang ditampilkan
+  // Selain itu -> union mapel dari santri yang ditampilkan (tiap kelas bisa beda)
   const set = new Set()
   for (const s of filteredSantri.value) {
     for (const m of getMapelForSantri(s)) set.add(m)

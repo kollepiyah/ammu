@@ -891,7 +891,7 @@ import { useAuthStore } from '@/stores/auth'
 import UiActionCard from '@/components/ui/UiActionCard.vue'
 import { generateRaporPdf } from '@/utils/raporPdf'
 // v.90.0626: util jenjang Diniyah (SDI/SMP/SMA) — sumber tunggal, samakan dg Rekap Diniyah
-import { kelasJenjang, diniyahJenjang, mapelDiniyahFor } from '@/utils/jenjang'
+import { kelasJenjang, mapelDiniyahFor } from '@/utils/jenjang'
 
 const toast = useToast()
 const route = useRoute()
@@ -1470,9 +1470,9 @@ function buildSchema(lembagaName) {
 // v.90.0626: Rapor Diniyah -> kolom mapel dibangun dari setting per-jenjang (SDI/SMP/SMA)
 //   di settings.rekapDiniyahMapel. Sumber tunggal yang sama dengan Rekap Diniyah & Pengaturan.
 function buildDiniyahSchemaFromSetting(s) {
-  const jk = diniyahJenjang(s?.lembaga_sekolah, s?.kelas_sekolah)
-  const names = mapelDiniyahFor(jk, settingsStore.settings?.rekapDiniyahMapel)
+  // v.90.0626b: mapel Diniyah PER-KELAS (kelas_sekolah), fallback jenjang lama di util
   const kelas = String(s?.kelas_sekolah || '')
+  const names = mapelDiniyahFor(kelas, settingsStore.settings?.rekapDiniyahMapel)
   return {
     perKelas: true,
     jenjang: [
