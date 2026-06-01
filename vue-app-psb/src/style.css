@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 body {
-  font-family: 'Segoe UI', Tahoma, sans-serif;
+  font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
   background: linear-gradient(135deg, #F9F6EE 0%, #f0ead8 100%);
   min-height: 100vh;
 }

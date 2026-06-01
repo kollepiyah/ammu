@@ -7,15 +7,15 @@
           <img src="/logo.png" alt="Logo MU" class="w-20 h-20 flex-shrink-0" />
           <div class="flex-1 text-center">
             <p class="text-[10px] font-bold uppercase tracking-wider text-slate-700">
-              YAYASAN MAMBAUL ULUM
+              YAYASAN AL MANSHUR
             </p>
             <h1 class="text-base md:text-xl font-black text-slate-900 uppercase tracking-wide">
-              TAMAN PENDIDIKAN AL QUR'AN MAMBAUL ULUM
+              PONDOK PESANTREN MAMBAUL ULUM
             </h1>
             <p class="text-[10px] text-slate-600 mt-0.5">
-              Jl. Kolonel Sugiono 112 Panjunan Kepuh Kiriman Waru Sidoarjo
+              Jalan Kolonel Sugiono, 112. Panjunan Waru Sidoarjo (61256).
             </p>
-            <p class="text-[10px] text-slate-600">Telp: (031) 8537xxx · Email: info@ammu.id</p>
+            <p class="text-[10px] text-slate-600">Telp. (031) 8674713 / 082233902261</p>
           </div>
           <div class="w-20 flex-shrink-0"></div>
         </div>
