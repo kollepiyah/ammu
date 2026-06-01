@@ -17,7 +17,7 @@ android {
         // v.74.0526: + kelas counter fix (unique lembaga+kelas yang ada santri), bersihkan notif feature.
         // versionCode = counter internal Play Store (HARUS selalu NAIK; 89 sudah dipakai). versionName = tampilan (boleh reset, mis. 07).
         versionCode 90
-        versionName "v.07.0626"
+        versionName "v.90.0626"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
