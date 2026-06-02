@@ -36,7 +36,54 @@
 ### D. Konten ketutup gesture bar saat tanpa bottom-nav — FIX
 `AppLayout.vue` `<main>`: saat `!showBottomNav` (browser/Electron/desktop) `main` own `padding-bottom: env(safe-area-inset-bottom)`; saat ada bottom-nav, nav yang own. Konten terakhir tak ketutup.
 
-**File diubah:** `vue-app/src/assets/main.css`, `vue-app/src/components/layout/{BottomNav,GlobalSearch,AppHeader,AppLayout}.vue`, + 27 PNG di `vue-app/android/app/src/main/res/drawable-*/` (splash_icon ×5, splash ×22).
+### E. Dashboard Keuangan: Buku Induk 4 entri tapi grafik/saldo Rp 0 — FIX
+**Akar (`KeuanganDashboardView.vue`):** `monthlyData` & `kategoriBulanIni` HANYA baca `t.tipe` ('masuk'/'keluar') + `t.nominal` dan parse tanggal naif `new Date(t.tanggal)`. Sebagian entri buku induk (legacy / writer lain) simpan **field `masuk`/`keluar`** atau `tipe` varian ('pemasukan'/'in') / tanggal non-ISO → ke-hitung **0**, padahal `BukuIndukView` menampilkannya (pakai `b.masuk || b.nominal`). Jadi kyai lihat 4 entri ada isinya, tapi dashboard 0.
+**Fix:** 3 helper toleran (samakan dgn BukuIndukView + AdminStatsCharts):
+- `ymOf(tanggal)` — parse robust: ISO `YYYY-MM-DD`, `DD/MM/YYYY`, Firestore Timestamp, Date.
+- `arusOf(t)` — `{masuk,keluar}` dari 2 shape: prioritas `tipe`+`nominal`, fallback field `masuk`/`keluar`; kenali 'masuk/in/income/pemasukan' & 'keluar/out/expense/pengeluaran'. TANPA dobel-hitung entri form (tipe+nominal+masuk sekaligus).
+- `isTabungan(t)` — skip residu tabungan (sumber/kategori mengandung 'tabungan').
+`monthlyData` + `kategoriBulanIni` dipakai ulang helper ini.
+> Catatan: KPI Tagihan/Tabungan/Slip Bisyaroh = 0 itu **wajar** (koleksi memang masih kosong), bukan bug.
+> Kalau setelah deploy masih 0: cek 4 entri di menu Buku Induk — pastikan **tanggalnya dalam 12 bulan terakhir** (Jul'25–Jun'26) & ada nominal masuk/keluar.
+
+### F. SELALU LOGOUT saat app dibuka ulang (SEMUA platform: web/PWA/Capacitor/Electron) — FIX
+**Akar (`stores/auth.js`):** dua bug:
+1. `login()` set `sesiAktif` LANGSUNG tapi **tak pernah** panggil `_persistFullSesi` (cuma `setSesiAktif` yg panggil, dan login bypass itu) → backup `localStorage['portalMu_sesiAktif']` tak pernah ditulis.
+2. Saat reopen, `onAuthStateChanged → loadSesiFromUser(user)` **set `sesiAktif = null`** kalau user Firebase tak match `linked_uid`/`linked_email`/`wa` — persis kasus guru/super_admin login pakai username (mis. Rahman Fanani). → ketendang logout.
+**Fix:**
+- `login()` admin/guru/santri → tiap cabang panggil `_persistFullSesi(sesiAktif.value)` (backup ke localStorage).
+- `onAuthStateChanged` → `loadSesiFromUser` hanya jalan kalau `!sesiAktif.value` (jangan timpa sesi yg sudah ke-restore dari localStorage).
+- `initAuth` sudah punya `_loadFullSesi()` (restore sync) → sekarang ADA isinya. localStorage persist di semua platform → tak logout lagi.
+
+### G. Hapus breadcrumb di mobile (yg dilingkari) — DONE
+`AppLayout.vue`: wrapper breadcrumb jadi `hidden md:block` (redundan dgn judul halaman; tetap tampil di desktop).
+
+### H. Konsistensi layout PWA/Capacitor (sidebar safe-area bawah) — DONE
+`AppSidebar.vue`: `aside` + `padding-bottom: env(safe-area-inset-bottom)` supaya footer (© + versi) tak ketutup gesture bar (efek `.h-screen` kini sampai dasar layar).
+
+**File diubah:** `vue-app/src/assets/main.css`, `vue-app/src/stores/auth.js`, `vue-app/src/components/layout/{BottomNav,GlobalSearch,AppHeader,AppLayout,AppSidebar}.vue`, `vue-app/src/views/KeuanganDashboardView.vue`, + 27 PNG splash Android.
+**Verifikasi:** semua SFC OK via `@vue/compiler-sfc`; `auth.js` lolos `node --check`.
+> F/G/H + Dashboard Keuangan = perubahan `.vue/.js` → cukup **`npm run firebase:deploy`** (web/PWA). AAB splash tetap pending sesuai keputusan kyai.
+
+### I. Status bar nutupin overlay (sidebar drawer + search) — FIX
+**Akar:** overlay `fixed`/`absolute` viewport-anchored (sidebar drawer & search overlay) **escape `body` padding-top** → jam status bar nimpa logo drawer & input search (screenshot kyai).
+**Fix:** `AppSidebar.vue` aside + `GlobalSearch.vue` overlay mobile → `padding-top/bottom: env(safe-area-inset-*)`. Bg overlay isi penuh di belakang status bar, konten masuk safe area.
+
+### J. Breadcrumb dihapus TOTAL (semua halaman, semua device) — DONE
+`AppLayout.vue`: blok `AppBreadcrumb` + import dibuang (sebelumnya cuma `hidden md:block`). Kyai minta hapus di semua halaman.
+
+### K. Pull-to-refresh mobile — DONE
+Composable `usePullToRefresh.js` attach ke `<main>` scroll: tarik dari atas (saat scrollTop=0) → indikator panah/spinner → refresh = re-mount view via nonce `:key` (`router-view`) → re-subscribe data. Mobile shell only (`showBottomNav`). Resistance + `preventDefault` hanya saat menarik turun (tak ganggu scroll/horizontal quick-actions).
+
+### L. Gesture back semua halaman mobile — DONE
+- `useEdgeSwipeBack.js`: swipe dari **tepi kiri** → `router.back()` — **platform-agnostic** (PWA/Capacitor/iOS/Android), aktif di mobile shell. Skip kalau ada overlay/dialog terbuka.
+- `App.vue` Android `backButton`: tutup sidebar dulu → pakai Capacitor `canGoBack` (lebih andal dari `history.length`) → exit hanya di root.
+> Catatan iOS: swipe-back native WKWebView (Capacitor iOS) butuh `allowsBackForwardNavigationGestures` di sisi native; edge-swipe JS di atas sudah menutup kebutuhan itu lintas platform.
+
+**File baru:** `usePullToRefresh.js`, `useEdgeSwipeBack.js`. **File diubah (ronde ini):** `AppLayout.vue`, `AppSidebar.vue`, `GlobalSearch.vue`, `App.vue`.
+**Verifikasi:** AppLayout/App.vue well-formed (Read authoritative), composables lolos `node --check`, ui store punya `sidebarOpen/closeSidebar`.
+
+> ⚠️ PENTING (semua ronde): app Capacitor = **NATIVE bundle** (`webDir:dist`, tanpa `server.url`) → web deploy HANYA update **PWA & browser**. **App Android (Capacitor) baru dapat semua fix ini setelah AAB di-rebuild.** Jadi: PWA/browser = `firebase:deploy` cukup; HP (app) = wajib `npm run build:aab`.
 
 ---
 

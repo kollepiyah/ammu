@@ -18,6 +18,11 @@ import {
   Timestamp
 } from 'firebase/firestore'
 import { db } from './firebase'
+import { backupSebelumHapus } from './firestoreSafe'
+
+// v.91.0626: sesi aktif untuk atribusi audit_log saat hapus (di-set dari stores/auth.js via setAuditSesi).
+let _auditSesi = null
+export function setAuditSesi(s) { _auditSesi = s || null }
 
 /** Get satu dokumen by ID. Return null kalau tidak ada. */
 export async function getOne(collectionName, id) {
@@ -60,9 +65,19 @@ export async function addOne(collectionName, data) {
   return ref.id
 }
 
-/** Delete dokumen. */
-export async function deleteOne(collectionName, id) {
-  await deleteDoc(doc(db, collectionName, id))
+/** Delete dokumen — v.91.0626: backup snapshot ke audit_log DULU (recovery), lalu hapus.
+ *  Backup best-effort (gagal TIDAK memblok hapus). Atribusi user via setAuditSesi()/opts.sesi.
+ *  opts: { alasan?: string, sesi?: object, skipBackup?: boolean } */
+export async function deleteOne(collectionName, id, opts = {}) {
+  if (!opts.skipBackup) {
+    try {
+      const snap = await getDoc(doc(db, collectionName, String(id)))
+      if (snap.exists()) {
+        await backupSebelumHapus(collectionName, id, { id: snap.id, ...snap.data() }, opts.alasan || '', opts.sesi || _auditSesi)
+      }
+    } catch (e) { /* backup best-effort — jangan blokir hapus */ }
+  }
+  await deleteDoc(doc(db, collectionName, String(id)))
 }
 
 /** Subscribe collection — return unsubscribe function.

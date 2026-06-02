@@ -1,5 +1,7 @@
 # PROJECT KNOWLEDGE BASE — Ammu Online (Portal MU)
-> Dokumen onboarding untuk sesi Claude baru. Baca ini DULU sebelum mulai. Update terakhir: 31 Mei 2026 (v.88.0526 — sesi lanjutan, HEAD `e3d9551`).
+> Dokumen onboarding untuk sesi Claude baru. Baca ini DULU sebelum mulai. **Update terakhir: 3 Juni 2026 (v.91.0626 — Cowork lanjutan).**
+> ⚠️ KB KANONIK = file ini (`PROJECT-KNOWLEDGE-BASE.md`). File lama `PROJECT_KNOWLEDGE_BASE.md` (underscore) DEPRECATED — abaikan.
+> 👉 **RECAP TERBARU ada di PALING BAWAH** (cari "SESI v.91.0626 LANJUTAN").
 
 ---
 
@@ -189,3 +191,84 @@ Kartu ringkasan/KPI di Beranda + bottom-nav mobile (mockup diberikan); empty-sta
 - Bottom nav "Notifikasi" = halaman penuh (bukan dropdown) atas permintaan kyai (gaya FB).
 - Global search + profil detail = admin/guru only (noSantri).
 - Cara kerja commit via Desktop Commander + mount-stale + EOL: lihat recap v.90 di atas (sama).
+
+
+---
+
+## SESI v.91.0626 LANJUTAN (2–3 Juni 2026, Cowork agent) — RECAP TERBARU, BACA INI
+
+> Lanjutan v.91. BELUM commit/build dari sesi ini — kyai yang commit + deploy/AAB di Windows.
+> Fokus: polish mobile (PWA/Capacitor), bug fixes. Detail lengkap per-fix ada di `SESI-COWORK-02JUN2026-UI.md` (companion).
+
+### ⚠️ PALING PENTING (sering kelupaan)
+**App Capacitor = NATIVE bundle** (`vue-app/capacitor.config.json` `webDir:"dist"`, TANPA `server.url`). Maka:
+- **`npm run firebase:deploy` HANYA update PWA + browser.** App Android yang terinstal TIDAK ikut berubah.
+- **Semua perubahan .vue/.js + splash baru muncul di app HP setelah `npm run build:aab`.** Kalau kyai tes di app terinstal & belum berubah → itu karena AAB belum di-rebuild.
+
+### APA YANG DIKERJAKAN (semua sudah edit + verifikasi, belum commit)
+1. **Splash Capacitor Android compatible semua device** (NATIVE → butuh AAB). Akar: `splash.png` full-bleed + `CENTER_CROP` ke-crop di HP tinggi/tablet; `splash_icon` kepenuhan ke-clip mask Android 12. Fix (regen dari `/Splashscreen` pakai PIL, overwrite in-place, TANPA ubah config/styles): `splash_icon` ×5 densitas (logo ~64% + padding transparan, muat safe-circle Android 12) + `splash.png` ×22 (port/land/light/night → bg solid + logo + footer Bakafrawi DIKELOMPOK DI TENGAH = crop-safe). `splash_branding` (Android 12 bottom) tetap. styles.xml SplashScreen API sudah benar.
+2. **Bottom navbar mengambang** — `assets/main.css`: inset bawah dihitung 2× (body padding-bottom + .h-screen -inset + BottomNav padding-bottom). Fix: body pad top/left/right SAJA; `.h-screen = calc(100dvh - inset-top)`; BottomNav jadi satu-satunya pemilik inset bawah. BottomNav + class `app-bottom-nav` (print-hide) + shadow atas.
+3. **Ikon search mobile mengambang di tengah** — `GlobalSearch.vue` root + `flex-1` (justify-end → mengelompok ke kanan); `AppHeader` header + `gap-2 md:gap-0`.
+4. **Dashboard Keuangan: Buku Induk 4 entri tapi grafik/saldo Rp 0** — `KeuanganDashboardView.vue` dulu cuma baca `t.tipe`+`t.nominal`+`new Date(t.tanggal)`. Sebagian entri pakai field `masuk`/`keluar` / tipe varian / tanggal lain → 0 (padahal BukuIndukView tampil pakai `b.masuk||b.nominal`). Fix: helper `arusOf(t)` (toleran 2 shape), `ymOf(t)` (parse ISO/DD-MM-YYYY/Timestamp), `isTabungan(t)`. KPI Tagihan/Tabungan/Bisyaroh = 0 itu WAJAR (koleksi kosong).
+5. **SELALU LOGOUT saat reopen (SEMUA platform, bukan cuma PWA)** — `stores/auth.js`: (a) `login()` set sesiAktif langsung TAPI tak pernah `_persistFullSesi` → backup localStorage `portalMu_sesiAktif` kosong; (b) `onAuthStateChanged→loadSesiFromUser` set `sesiAktif=null` saat user Firebase tak match linked_uid/email/wa (kasus guru/super_admin login username spt Rahman Fanani). Fix: `_persistFullSesi(sesiAktif.value)` di tiap cabang login (admin/guru/santri); `loadSesiFromUser` hanya jalan `if(!sesiAktif.value)` (jangan timpa sesi ke-restore). ⚠️ User yg sudah login kode lama: harus LOGIN SEKALI lagi sesudah deploy utk seed backup.
+6. **Breadcrumb DIHAPUS total** (semua halaman, semua device) — `AppLayout.vue` buang blok + import AppBreadcrumb.
+7. **Status bar nutupin overlay** — sidebar drawer (`absolute inset-y-0`, viewport-anchored) & search overlay (`fixed inset-0`) escape body padding-top. Fix: `AppSidebar` aside + `GlobalSearch` overlay → `padding-top/bottom: env(safe-area-inset-*)`.
+8. **Pull-to-refresh** (mobile shell) — BARU `composables/usePullToRefresh.js` attach ke `<main>`; refresh = re-mount view via nonce `:key` (re-subscribe). ⚠️ GOTCHA penting: composable return `{distance,refreshing,ready}` (refs) lalu diakses `ptr.refreshing` di template → **ref NESTED di objek biasa TIDAK auto-unwrap** → selalu truthy → spinner nyangkut. FIX: **destructure jadi binding top-level** (`const { distance: pullDist, refreshing: pullBusy } = ...`).
+9. **Gesture back semua halaman mobile** — BARU `composables/useEdgeSwipeBack.js` (swipe tepi kiri → router.back, platform-agnostic, mobile-shell only, skip kalau ada overlay) + `App.vue` Android backButton diperbaiki (tutup sidebar dulu → `canGoBack` Capacitor → exit hanya di root).
+
+### FILE BARU
+`vue-app/src/composables/usePullToRefresh.js`, `vue-app/src/composables/useEdgeSwipeBack.js`.
+### FILE DIUBAH
+`assets/main.css`; `stores/auth.js`; `views/KeuanganDashboardView.vue`; `components/layout/{AppLayout,AppSidebar,AppHeader,BottomNav,GlobalSearch}.vue`; `App.vue`; + 27 PNG splash di `android/app/src/main/res/drawable-*/`.
+
+### YANG HARUS KYAI JALANKAN
+```bat
+:: commit (binary png aman)
+git add -A && git commit --no-verify -m "feat(v.91): splash Android crop-safe, safe-area overlay/navbar, fix logout reopen, dashboard keuangan, pull-to-refresh, gesture back, hapus breadcrumb"
+:: PWA/browser
+npm run firebase:deploy
+:: app HP (WAJIB utk splash + semua fix di atas sampai ke app native)
+npm run build:aab   :: versionCode 91 (kalau sudah keupload -> 92)
+```
+Tes sesudah deploy: login 1× lalu tutup-buka (harus tetap login), pull-to-refresh (spinner harus hilang), swipe tepi kiri = back.
+
+### PENDING (belum dikerjakan)
+- **Rebuild AAB** (splash + semua native JS) — kyai keputusan, tadinya ditahan.
+- **Pensiun model TPQ-shift** (`utils/tpqShift.js` + tombol lama "Migrasi TPQ Shift") — migrasi v.88 sudah selesai jadi aman; cegah lembaga balik ke 'TPQ'+shift.
+- **Audit menyeluruh vs LOGIC GLOBAL** (lembaga/jenjang/rapor/RBAC) — butuh app jalan + konfirmasi kyai.
+- Dashboard Keuangan: kalau masih Rp 0 sesudah deploy → cek tanggal 4 entri (harus dalam 12 bln) di menu Buku Induk.
+
+### GOTCHA SESI INI (utk sesi baru)
+- **Cowork mount LAG**: file yg diedit via Edit-tool sering STALE di bash mount (compile `@vue/compiler-sfc` lewat mount kasih "Element is missing end tag" PALSU). Verifikasi pakai Read/Grep (Windows authoritative) + `node --check` utk .js. Build asli = kyai (`tmp_recovery\_run_vite.cmd`).
+- **CRLF**: auth.js dll CRLF → edit multi-line bisa gagal match; pakai edit 1-baris (semicolon `;`) atau anchor pendek.
+- **Vue ref unwrap**: jangan akses ref nested (`obj.someRef`) di template — destructure ke top-level dulu.
+
+
+---
+
+## SESI v.91.0626 — AUDIT + FIX (3 Juni 2026, Cowork agent) — RECAP TERBARU
+
+> Detail lengkap di `AUDIT-COWORK-03JUN2026.md`. Semua edit LOLOS `vite build` (1756 modul, exit 0) via `tmp_recovery\_run_vite.cmd`. Branch feature/vue-migration. Commit oleh agent (git add -A, --no-verify).
+
+### DIKERJAKAN
+1. **Sidebar mobile menggantung — FIX AKAR:** `AppLayout.vue` root `<div>` tambah `relative` (containing-block drawer `absolute inset-y-0`); `AppSidebar.vue` hapus `padding-top: env(safe-area-inset-top)` (sisakan padding-bottom). Akar = drawer ter-anchor ke viewport/ICB bukan kotak app → tinggi tak deterministik. **Butuh AAB** utk HP.
+2. **Lighthouse perf:** `router/index.js` prefetch SEMUA chunk → dibatasi 9 rute umum + ditunda 4s + skip Save-Data/2g (ini biang "page loaded too slowly"). `index.html`: FA + Google Fonts non-render-blocking (media-swap) + `<meta name=description>`. `user-scalable=no` DIPERTAHANKAN (kyai).
+3. **Dead code dihapus:** `AppBreadcrumb.vue`, `utils/raporCompute.js` (superseded inline di RaporView), `stores/childPicker.js` (superseded useWaliChildren), `components/kartu/KartuKenaikanMatrix.vue` + `KartuKenaikanSchemaEditor.vue` (fitur jalan via useKartuKenaikan). Recover dari git bila perlu.
+4. **EmptyState + PageHeader diadopsi:** EmptyState → SantriView + GuruView; PageHeader → SantriView (de-orphan + konsisten).
+5. **firestoreSafe DI-AKTIFKAN:** `deleteOne()` (services/firestore.js) kini getDoc→backup ke `audit_log`→deleteDoc (best-effort) + `setAuditSesi()`; auth.js feed sesi; hapus santri (single+bulk) & keuangan (Tagihan/BukuInduk/Tabungan/Bisyaroh/HutangPiutang) di-migrasi ke deleteOne. GuruView sudah pakai deleteOne. **Hapus data kini ter-backup & bisa di-recover.**
+
+### CARA KERJA (Desktop Commander, Windows authoritative)
+- File-tools = Desktop Commander (akses D:\ langsung; bukan sandbox mount). edit_block normalize EOL saat match.
+- Build verify: `& "C:\Windows\System32\cmd.exe" /c "...\tmp_recovery\_run_vite.cmd"` → baca `_vite_full.log`.
+- git: `Start-Process -FilePath "C:\Program Files\Git\cmd\git.exe" -ArgumentList ... -RedirectStandardOutput file` (pipeline `& git |` glitch "document in pipeline"). PATH stripped → cmd/git/node full-path.
+- EOL: mayoritas CRLF; firestore.js/firestoreSafe.js/BukuInduk/Bisyaroh/HutangPiutang = LF. Sudah dinormalisasi per-file.
+
+### PENDING (lanjutan)
+- Audit RBAC/lembaga mendalam vs LOGIC GLOBAL → perlu device test multi-akun (RaporView schema sudah cocok).
+- Pensiun `utils/tpqShift.js` + tombol "Migrasi TPQ Shift" (hati-hati, jangan balik migrasi v.88).
+- Backup-sebelum-hapus untuk LEMBAGA (rewrite list di settings, bukan per-doc).
+- PageHeader rollout ke view lain (incremental, cek visual).
+- Dashboard Keuangan: kalau masih Rp0, cek tanggal entri Buku Induk (≤12 bln).
+
+### YANG HARUS KYAI JALANKAN
+`npm run firebase:deploy` (web/PWA) + `npm run build:aab` (WAJIB utk sidebar native + semua fix ke app HP). Tes: sidebar nempel dasar; hapus 1 data uji → cek koleksi `audit_log`; Lighthouse ulang.

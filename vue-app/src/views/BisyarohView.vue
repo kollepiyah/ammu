@@ -572,6 +572,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { subscribeColl } from '@/services/firestore'
 import { doc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore'
+import { deleteOne } from '@/services/firestore' // v.91.0626: hapus = backup audit_log dulu
 import { db } from '@/services/firebase'
 import { useAuthStore } from '@/stores/auth'
 import { isSuperAdmin } from '@/utils/roleScope'
@@ -603,7 +604,7 @@ async function hapusSlip(slip) {
   const label = getNamaGuruGelar(slip.guru_nama || guruNamaById(slip.guru_id)) + ' / ' + slip.periode
   if (!confirm(`Hapus PERMANEN slip bisyaroh:\n${label}\nTotal: ${fmtRp(slip.take_home || 0)}\n\nTidak bisa di-undo.`)) return
   try {
-    await deleteDoc(doc(db, 'keuangan_gaji', String(slip.id)))
+    await deleteOne('keuangan_gaji', slip.id)
     toast.success('Slip dihapus')
   } catch (e) {
     toast.error('Gagal hapus: ' + (e.message || e))
@@ -634,7 +635,7 @@ async function hapusSlipTerpilih() {
   let ok = 0, fail = 0
   for (const id of ids) {
     try {
-      await deleteDoc(doc(db, 'keuangan_gaji', String(id)))
+      await deleteOne('keuangan_gaji', id)
       ok++
     } catch (e) {
       fail++

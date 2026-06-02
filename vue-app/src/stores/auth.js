@@ -6,7 +6,7 @@ import { ref, computed } from 'vue'
 import { onAuthStateChanged, setPersistence, browserLocalPersistence, indexedDBLocalPersistence, signInAnonymously } from 'firebase/auth'
 import { auth as fbAuth } from '@/services/firebase'
 import * as authService from '@/services/auth'
-import { queryColl } from '@/services/firestore'
+import { queryColl, setAuditSesi } from '@/services/firestore'
 
 const ADMIN_EMAIL_SUFFIX = '@portal-mu.local'
 const SESI_STORAGE_KEY = 'portalMu_sesiAdminBuiltIn'
@@ -39,6 +39,8 @@ function _loadAdminSesi() {
 // Capacitor WebView restart bisa clear IndexedDB → user terlogout. localStorage lebih persistent.
 const SESI_FULL_KEY = 'portalMu_sesiAktif'
 function _persistFullSesi(sesi) {
+  // v.91.0626: set sesi utk atribusi audit_log (backup-sebelum-hapus di deleteOne)
+  try { setAuditSesi(sesi && sesi.role ? sesi : null) } catch (e) {}
   try {
     if (sesi && sesi.role) {
       localStorage.setItem(SESI_FULL_KEY, JSON.stringify({ ...sesi, _persisted_at: Date.now() }))
@@ -160,7 +162,7 @@ export const useAuthStore = defineStore('auth', () => {
           akses: { kelola_guru: true, akses_keuangan: true, kelola_santri: true, kelola_lembaga: true, kelola_kelas: true },
           auth_method: 'admin-builtin'
         }
-        _persistAdminSesi(sesiAktif.value)
+        _persistAdminSesi(sesiAktif.value); _persistFullSesi(sesiAktif.value) /* v.91.0626: fix reopen-logout semua platform */
         await ensureAnonAuth() // v.90.0626: sesi Anonymous utk admin -> rules signedIn() jalan
         return
       }
@@ -193,6 +195,7 @@ export const useAuthStore = defineStore('auth', () => {
           firebase_email: result.user?.email
         }
         fbUser.value = result.user
+        _persistFullSesi(sesiAktif.value) /* v.91.0626: backup sesi -> fix reopen-logout */
         return
       }
 
@@ -215,6 +218,7 @@ export const useAuthStore = defineStore('auth', () => {
           firebase_email: result.user?.email
         }
         fbUser.value = result.user
+        _persistFullSesi(sesiAktif.value) /* v.91.0626: backup sesi -> fix reopen-logout */
         return
       }
     } catch (e) {
@@ -392,6 +396,8 @@ export const useAuthStore = defineStore('auth', () => {
       const stored = _loadFullSesi()
       if (stored && stored.role) sesiAktif.value = stored
     }
+    // v.91.0626: set sesi utk atribusi audit_log setelah restore (reopen tetap ter-atribusi)
+    try { setAuditSesi(sesiAktif.value) } catch (e) {}
     // v.90.0626: sesi admin built-in (no Firebase Auth) -> beri Anonymous supaya request.auth
     //   != null setelah refresh (rules signedIn read/write tetap jalan).
     if (sesiAktif.value && sesiAktif.value.auth_method === 'admin-builtin') {
@@ -418,7 +424,7 @@ export const useAuthStore = defineStore('auth', () => {
       } else if (user) {
         fbUser.value = user
         try {
-          await loadSesiFromUser(user)
+          if (!sesiAktif.value) await loadSesiFromUser(user) /* v.91.0626: jangan timpa sesi ke-restore dari localStorage -> fix reopen-logout */
         } catch (e) {
           // eslint-disable-next-line no-console
           console.warn('[auth.initAuth] loadSesiFromUser fail:', e.message)

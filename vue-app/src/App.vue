@@ -54,11 +54,13 @@ async function setupNativeIntegration() {
   // 2. Android back button → Vue Router back (bukan exit app)
   try {
     const { App } = await import('@capacitor/app')
-    App.addListener('backButton', () => {
-      if (window.history.length > 1) {
-        window.history.back()
-      } else {
+    App.addListener('backButton', ({ canGoBack } = {}) => {
+      // v.91.0626: tutup sidebar dulu kalau terbuka, lalu navigasi back; exit hanya di root
+      if (ui.sidebarOpen) { ui.closeSidebar(); return }
+      if (canGoBack === false && window.history.length <= 1) {
         App.exitApp()
+      } else {
+        window.history.back()
       }
     })
   } catch (e) {

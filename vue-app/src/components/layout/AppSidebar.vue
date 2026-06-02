@@ -1,6 +1,6 @@
 <template>
   <!-- v.21.84.0527: Sidebar match legacy - cream mint bg, flat menu, left accent active -->
-  <aside :class="['bg-white dark:bg-slate-900 text-slate-700 dark:text-white flex-shrink-0 flex flex-col absolute inset-y-0 left-0 transform transition-all duration-300 z-50 shadow-xl border-r border-emerald-100 dark:border-white/5 md:relative overflow-hidden', ui.sidebarOpen ? 'translate-x-0 w-72' : '-translate-x-full w-72 md:translate-x-0 md:w-0 md:border-0 md:shadow-none']" aria-label="Sidebar navigasi">
+  <aside :class="['bg-white dark:bg-slate-900 text-slate-700 dark:text-white flex-shrink-0 flex flex-col absolute inset-y-0 left-0 transform transition-all duration-300 z-50 shadow-xl border-r border-emerald-100 dark:border-white/5 md:relative overflow-hidden', ui.sidebarOpen ? 'translate-x-0 w-72' : '-translate-x-full w-72 md:translate-x-0 md:w-0 md:border-0 md:shadow-none']" style="padding-bottom: env(safe-area-inset-bottom)" aria-label="Sidebar navigasi">
     <div class="px-6 pt-8 pb-6 flex flex-col items-center gap-3 relative bg-emerald-50/60 dark:bg-black/20">
       <button @click="ui.closeSidebar()" class="md:hidden absolute top-4 right-4 text-slate-500 hover:text-slate-700 dark:text-white/70 dark:hover:text-white text-xl" aria-label="Tutup sidebar">
         <i class="fas fa-times"></i>

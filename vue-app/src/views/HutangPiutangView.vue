@@ -75,6 +75,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { subscribeColl } from '@/services/firestore'
 import { doc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore'
+import { deleteOne } from '@/services/firestore' // v.91.0626: hapus = backup audit_log dulu
 import { db } from '@/services/firebase'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
@@ -139,7 +140,7 @@ async function deleteItem(h) {
   if (!isAdmin.value) return
   const ok = await confirmDlg({ title: 'Hapus?', message: `Hapus ${h.jenis} dari ${h.pihak}?`, confirmText: 'Hapus', danger: true })
   if (!ok) return
-  try { await deleteDoc(doc(db, 'keuangan_hutang_piutang', String(h.id))); toast.success('Dihapus') } catch (e) { toast.error('Gagal: ' + (e?.message || e)) }
+  try { await deleteOne('keuangan_hutang_piutang', h.id); toast.success('Dihapus') } catch (e) { toast.error('Gagal: ' + (e?.message || e)) }
 }
 
 onMounted(() => { unsub = subscribeColl('keuangan_hutang_piutang', (docs) => { items.value = docs }) })

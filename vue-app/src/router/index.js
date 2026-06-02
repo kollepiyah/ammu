@@ -212,7 +212,12 @@ let _preloadDone = false
 function _prefetchAllChunks() {
   if (_preloadDone) return
   _preloadDone = true
-  const allRoutes = router.getRoutes()
+  // v.91.0626 PERF: skip prefetch di koneksi lambat / Save-Data (hemat kuota HP).
+  try { const _c = navigator.connection; if (_c && (_c.saveData || /(^|-)2g/.test(_c.effectiveType || ''))) return } catch (e) { /* ignore */ }
+  // v.91.0626 PERF: prefetch DIBATASI ke rute paling sering dibuka saja (bukan SEMUA ~50 chunk).
+  // Sebelumnya prefetch semua -> network tak pernah idle -> Lighthouse "page loaded too slowly" + boros data.
+  const _commonNames = new Set(['dashboard', 'santri', 'guru', 'tagihan', 'profil', 'notifikasi', 'capaian-prestasi', 'keuangan', 'personal'])
+  const allRoutes = router.getRoutes().filter((r) => _commonNames.has(r.name))
   // Prefetch dalam batch 3 sekaligus per idle cycle supaya tidak block UI
   let i = 0
   function prefetchNextBatch() {
@@ -235,8 +240,8 @@ function _prefetchAllChunks() {
   prefetchNextBatch()
 }
 router.afterEach(() => {
-  // Mulai prefetch 200ms setelah first navigation (kasih waktu paint dulu)
-  setTimeout(_prefetchAllChunks, 200)
+  // v.91.0626 PERF: prefetch ditunda 4s setelah navigasi pertama (beri ruang paint + ukur Lighthouse).
+  setTimeout(_prefetchAllChunks, 4000)
 })
 
 export default router

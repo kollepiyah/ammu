@@ -394,6 +394,7 @@ import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
 import { useExcel } from '@/composables/useExcel'
 import { doc, setDoc, deleteDoc, updateDoc, serverTimestamp } from 'firebase/firestore'
+import { deleteOne } from '@/services/firestore' // v.91.0626: hapus = backup audit_log dulu
 import { db } from '@/services/firebase'
 import { fmtRp, formatTanggal as formatTgl } from '@/utils/format'
 import { buildListPdf, buildKopFromSettings } from '@/utils/pdfBuilder'
@@ -460,7 +461,7 @@ async function hapusBuku(b) {
   const label = b.keterangan || b.kategori || b.id
   if (!confirm(`Hapus PERMANEN record buku induk:\n${label}\nNominal: ${fmtRp(b.nominal || 0)}\n\nTidak bisa di-undo.`)) return
   try {
-    await deleteDoc(doc(db, 'keuangan_buku_induk', String(b.id)))
+    await deleteOne('keuangan_buku_induk', b.id)
     toast.success('Record dihapus')
   } catch (e) {
     toast.error('Gagal hapus: ' + (e.message || e))
@@ -520,7 +521,7 @@ async function hapusBukuTerpilih() {
   let ok = 0, fail = 0
   for (const id of ids) {
     try {
-      await deleteDoc(doc(db, 'keuangan_buku_induk', String(id)))
+      await deleteOne('keuangan_buku_induk', id)
       ok++
     } catch (e) {
       fail++

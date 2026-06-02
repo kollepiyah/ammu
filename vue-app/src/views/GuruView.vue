@@ -212,19 +212,13 @@
       <!-- v.21.115.0528: skeleton loader replace spinner -->
       <SkeletonCard v-if="loading" :count="5" variant="list" />
 
-      <!-- Empty -->
-      <div
+      <!-- Empty — v.91.0626: komponen EmptyState (konsisten) -->
+      <EmptyState
         v-else-if="guru.length === 0"
-        class="bg-[var(--bg-card)] rounded-2xl p-10 border border-dashed border-[var(--border-default)] text-center"
-      >
-        <i class="fas fa-user-slash text-slate-300 dark:text-[var(--text-secondary)] text-4xl mb-3"></i>
-        <p class="text-sm font-bold text-slate-700 dark:text-[var(--text-tertiary)]">
-          {{ hasFilter ? 'Tidak ada guru yang cocok' : 'Belum ada data guru' }}
-        </p>
-        <p class="text-xs text-[var(--text-secondary)] mt-1">
-          {{ hasFilter ? 'Coba ubah filter atau kata kunci pencarian' : 'Tambah guru pertama di Master Data legacy.' }}
-        </p>
-      </div>
+        icon="fa-user-slash"
+        :title="hasFilter ? 'Tidak ada guru yang cocok' : 'Belum ada data guru'"
+        :description="hasFilter ? 'Coba ubah filter atau kata kunci pencarian' : 'Tambah guru pertama di Master Data legacy.'"
+      />
 
       <!-- v.21.17b.0526: List view-only -->
       <template v-else>
@@ -368,6 +362,7 @@ import { useGuru } from '@/composables/useGuru'
 import { useConfirm } from '@/composables/useConfirm'
 // v.21.115.0528: skeleton loader
 import SkeletonCard from '@/components/layout/SkeletonCard.vue'
+import EmptyState from '@/components/layout/EmptyState.vue' // v.91.0626: empty-state konsisten
 // v.21.11.0526: + deleteOne untuk delete & bulk delete
 import { updateOne, deleteOne } from '@/services/firestore'
 // v.21.13b.0526: + toTitleCase + normalizeWA + parseMultipleWA (dual WA)

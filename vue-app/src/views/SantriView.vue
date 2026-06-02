@@ -1,52 +1,45 @@
 <template>
   <div class="p-3 md:p-5 max-w-6xl mx-auto space-y-4">
-    <!-- v.21.14.0526: Header refactor — title + subtitle inline, stats+buttons wrap -->
-    <div class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm">
-      <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
-        <div class="flex items-baseline gap-2 flex-wrap">
-          <h1 class="text-base md:text-lg font-black text-[var(--text-primary)] whitespace-nowrap">
-            <i class="fas fa-users text-teal-500 mr-1"></i>Data Santri
-          </h1>
-          <p class="text-[11px] text-[var(--text-secondary)]">— {{ isFullAccess ? 'Semua santri pondok' : 'Santri yang Anda ampu' }}</p>
+    <!-- v.91.0626: pakai komponen PageHeader (design-system konsisten) -->
+    <PageHeader icon="fa-users" title="Data Santri" :subtitle="isFullAccess ? 'Semua santri pondok' : 'Santri yang Anda ampu'">
+      <template #stats>
+        <div class="px-3 py-1.5 rounded-full bg-teal-50 dark:bg-teal-900/30 border border-teal-200 dark:border-teal-700 text-xs">
+          <span class="text-teal-700 dark:text-teal-300 font-bold">{{ stats.total }}</span>
+          <span class="text-[var(--text-secondary)] ml-1">total</span>
         </div>
-        <div class="flex flex-wrap gap-2 items-center">
-          <div class="px-3 py-1.5 rounded-full bg-teal-50 dark:bg-teal-900/30 border border-teal-200 dark:border-teal-700 text-xs">
-            <span class="text-teal-700 dark:text-teal-300 font-bold">{{ stats.total }}</span>
-            <span class="text-[var(--text-secondary)] ml-1">total</span>
-          </div>
-          <!-- v.21.12.0526: label "Mukim" → "Ma'had", hide non-mukim label -->
-          <div class="px-3 py-1.5 rounded-full bg-teal-50 dark:bg-teal-900/30 border border-teal-200 dark:border-teal-700 text-xs">
-            <span class="text-teal-700 dark:text-teal-300 font-bold">{{ stats.mukim }}</span>
-            <span class="text-[var(--text-secondary)] ml-1">Ma'had</span>
-          </div>
-          <!-- v.21.17c.0526: View mode actions (sidebar) vs Master mode actions (Master Data) -->
-          <!-- v.21.109.0527: warna cyan (action) bukan rose (danger) -->
-          <button v-if="isFullAccess" @click="cetakPdf" aria-label="Cetak daftar santri PDF" class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold transition cursor-pointer">
-            <i class="fas fa-file-pdf"></i>Cetak PDF
+        <!-- v.21.12.0526: label "Mukim" → "Ma'had", hide non-mukim label -->
+        <div class="px-3 py-1.5 rounded-full bg-teal-50 dark:bg-teal-900/30 border border-teal-200 dark:border-teal-700 text-xs">
+          <span class="text-teal-700 dark:text-teal-300 font-bold">{{ stats.mukim }}</span>
+          <span class="text-[var(--text-secondary)] ml-1">Ma'had</span>
+        </div>
+      </template>
+      <template #actions>
+        <!-- v.21.17c.0526: View mode actions (sidebar) vs Master mode actions (Master Data) -->
+        <button v-if="isFullAccess" @click="cetakPdf" aria-label="Cetak daftar santri PDF" class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold transition cursor-pointer">
+          <i class="fas fa-file-pdf"></i>Cetak PDF
+        </button>
+        <button v-if="isFullAccess" @click="exportSantriExcel" :disabled="exporting" aria-label="Ekspor daftar santri Excel" class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer">
+          <i :class="['fas', exporting ? 'fa-spinner fa-spin' : 'fa-file-excel']"></i>{{ exporting ? 'Ekspor...' : 'Ekspor Excel' }}
+        </button>
+        <!-- View mode: tombol Kelola -->
+        <router-link v-if="isFullAccess && !isMasterMode" to="/master-data?tab=santri" class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-slate-200 hover:bg-slate-300 text-[var(--text-primary)] text-xs font-bold transition" title="CRUD santri di Master Data">
+          <i class="fas fa-edit"></i>Kelola
+        </router-link>
+        <!-- Master mode: full CRUD buttons -->
+        <template v-if="isFullAccess && isMasterMode">
+          <button @click="downloadTemplateSantri" class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold transition cursor-pointer">
+            <i class="fas fa-download"></i>Template
           </button>
-          <button v-if="isFullAccess" @click="exportSantriExcel" :disabled="exporting" aria-label="Ekspor daftar santri Excel" class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer">
-            <i :class="['fas', exporting ? 'fa-spinner fa-spin' : 'fa-file-excel']"></i>{{ exporting ? 'Ekspor...' : 'Ekspor Excel' }}
-          </button>
-          <!-- View mode: tombol Kelola -->
-          <router-link v-if="isFullAccess && !isMasterMode" to="/master-data?tab=santri" class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-slate-200 hover:bg-slate-300 text-[var(--text-primary)] text-xs font-bold transition" title="CRUD santri di Master Data">
-            <i class="fas fa-edit"></i>Kelola
+          <label class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold transition cursor-pointer">
+            <i :class="['fas', importing ? 'fa-spinner fa-spin' : 'fa-upload']"></i>{{ importing ? 'Impor...' : 'Impor XLSX' }}
+            <input type="file" accept=".xlsx,.xls" class="hidden" @change="onImportSantri" :disabled="importing" />
+          </label>
+          <router-link to="/santri/new?from=master" class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-xs font-bold transition">
+            <i class="fas fa-plus"></i>Tambah Santri
           </router-link>
-          <!-- Master mode: full CRUD buttons -->
-          <template v-if="isFullAccess && isMasterMode">
-            <button @click="downloadTemplateSantri" class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold transition cursor-pointer">
-              <i class="fas fa-download"></i>Template
-            </button>
-            <label class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold transition cursor-pointer">
-              <i :class="['fas', importing ? 'fa-spinner fa-spin' : 'fa-upload']"></i>{{ importing ? 'Impor...' : 'Impor XLSX' }}
-              <input type="file" accept=".xlsx,.xls" class="hidden" @change="onImportSantri" :disabled="importing" />
-            </label>
-            <router-link to="/santri/new?from=master" class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-xs font-bold transition">
-              <i class="fas fa-plus"></i>Tambah Santri
-            </router-link>
-          </template>
-        </div>
-      </div>
-    </div>
+        </template>
+      </template>
+    </PageHeader>
 
     <!-- v.21.22c.0526: Bulk action bar (Master mode only) -->
     <div v-if="isMasterMode && isFullAccess && selectedCount > 0" class="bg-gradient-to-r from-teal-50 to-cyan-50 dark:from-teal-900/30 dark:to-cyan-900/30 rounded-2xl p-3 border border-teal-300 dark:border-teal-700 shadow-sm flex flex-wrap items-center gap-2">
@@ -181,16 +174,13 @@
     <!-- v.21.115.0528: skeleton loader replace spinner -->
     <SkeletonCard v-if="loading" :count="5" variant="list" />
 
-    <!-- Empty state -->
-    <div v-else-if="santri.length === 0" class="bg-[var(--bg-card)] rounded-2xl p-10 border border-dashed border-[var(--border-default)] text-center">
-      <i class="fas fa-user-slash text-slate-300 dark:text-[var(--text-secondary)] text-4xl mb-3"></i>
-      <p class="text-sm font-bold text-slate-700 dark:text-[var(--text-tertiary)]">
-        {{ search || filterLembaga || filterMukim ? 'Tidak ada santri yang cocok' : 'Belum ada santri' }}
-      </p>
-      <p class="text-xs text-[var(--text-secondary)] mt-1">
-        {{ search || filterLembaga || filterMukim ? 'Coba ubah filter atau kata kunci pencarian' : isFullAccess ? 'Tambah santri pertama di Master Data' : 'Belum ada santri yang Anda ampu di sistem' }}
-      </p>
-    </div>
+    <!-- Empty state — v.91.0626: komponen EmptyState (konsisten) -->
+    <EmptyState
+      v-else-if="santri.length === 0"
+      icon="fa-user-slash"
+      :title="search || filterLembaga || filterMukim ? 'Tidak ada santri yang cocok' : 'Belum ada santri'"
+      :description="search || filterLembaga || filterMukim ? 'Coba ubah filter atau kata kunci pencarian' : isFullAccess ? 'Tambah santri pertama di Master Data' : 'Belum ada santri yang Anda ampu di sistem'"
+    />
 
     <!-- Santri list -->
     <div v-else class="space-y-2">
@@ -275,8 +265,11 @@ import { useSettingsStore } from '@/stores/settings'
 import { useConfirm } from '@/composables/useConfirm'
 // v.21.115.0528: skeleton loader
 import SkeletonCard from '@/components/layout/SkeletonCard.vue'
+import EmptyState from '@/components/layout/EmptyState.vue' // v.91.0626
+import PageHeader from '@/components/layout/PageHeader.vue' // v.91.0626
 import { setDoc, doc, serverTimestamp, deleteDoc } from 'firebase/firestore'
 import { db } from '@/services/firebase'
+import { deleteOne } from '@/services/firestore' // v.91.0626: hapus = backup ke audit_log dulu
 
 const exporting = ref(false)
 const importing = ref(false)
@@ -343,7 +336,7 @@ async function deleteSantri(s) {
   })
   if (!ok) return
   try {
-    await deleteDoc(doc(db, 'santri', String(s.id)))
+    await deleteOne('santri', s.id)
     toast.success(`Santri "${s.nama}" dihapus`)
   } catch (e) {
     toast.error('Gagal hapus: ' + (e.message || e))
@@ -397,7 +390,7 @@ async function bulkDelete() {
   let okCount = 0, failCount = 0
   for (const id of ids) {
     try {
-      await deleteDoc(doc(db, 'santri', String(id)))
+      await deleteOne('santri', id)
       okCount++
     } catch (e) {
       failCount++

@@ -500,6 +500,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { subscribeColl } from '@/services/firestore'
 import { doc, setDoc, deleteDoc, updateDoc, serverTimestamp } from 'firebase/firestore'
+import { deleteOne } from '@/services/firestore' // v.91.0626: hapus = backup audit_log dulu
 import { isSuperAdmin } from '@/utils/roleScope'
 import { writeAuditLog } from '@/utils/auditLog'
 import { db } from '@/services/firebase'
@@ -642,7 +643,7 @@ async function cleanupOrphan() {
     })
     for (const m of targets) {
       try {
-        await deleteDoc(doc(db, 'keuangan_tabungan_santri', String(m.id)))
+        await deleteOne('keuangan_tabungan_santri', m.id)
         ok++
       } catch (e) {
         fail++
@@ -777,7 +778,7 @@ async function hapusMutasi(m) {
   if (!isAdmin.value) return
   if (!confirm(`Hapus mutasi tabungan?\nSantri: ${m.nama_cache || getNamaSantri(m.santri_id)}\n${m.jenis} ${fmtRp(m.nominal)}\n\nTidak bisa di-undo.`)) return
   try {
-    await deleteDoc(doc(db, 'keuangan_tabungan_santri', String(m.id)))
+    await deleteOne('keuangan_tabungan_santri', m.id)
     toast.success('Mutasi dihapus')
   } catch (e) {
     toast.error('Gagal: ' + (e.message || e))
@@ -793,7 +794,7 @@ async function hapusMutasiTerpilih() {
   let ok = 0, fail = 0
   for (const id of ids) {
     try {
-      await deleteDoc(doc(db, 'keuangan_tabungan_santri', String(id)))
+      await deleteOne('keuangan_tabungan_santri', id)
       ok++
     } catch (e) {
       fail++

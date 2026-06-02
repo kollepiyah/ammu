@@ -4,7 +4,7 @@
 //
 // Pakai Firebase v9 modular SDK (legacy pakai v8 namespaced).
 
-import { doc, runTransaction, setDoc, serverTimestamp, Timestamp } from 'firebase/firestore'
+import { doc, runTransaction, setDoc, deleteDoc, serverTimestamp, Timestamp } from 'firebase/firestore'
 import { db } from './firebase'
 
 /**
@@ -91,6 +91,21 @@ export async function backupSebelumHapus(collectionName, docId, dataSnapshot, al
     console.warn('Backup audit_log gagal:', e?.code || e?.message)
     return null
   }
+}
+
+/**
+ * Safe delete: backup snapshot ke audit_log DULU, lalu hapus. Backup gagal TIDAK memblok hapus
+ * (best-effort recovery). Match pola legacy _backupSebelumHapus + deleteDoc.
+ *
+ * @param {string} coll - nama koleksi
+ * @param {string|number} id - doc id
+ * @param {Object} dataSnapshot - data yang akan dihapus (untuk recovery di audit_log)
+ * @param {string} alasan - keterangan singkat
+ * @param {Object} sesi - useAuthStore().sesiAktif (untuk atribusi user)
+ */
+export async function safeDelete(coll, id, dataSnapshot, alasan = '', sesi = null) {
+  await backupSebelumHapus(coll, id, dataSnapshot, alasan, sesi)
+  await deleteDoc(doc(db, coll, String(id)))
 }
 
 export { Timestamp, serverTimestamp }

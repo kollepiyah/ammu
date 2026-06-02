@@ -56,7 +56,7 @@
 
     <!-- Mobile: overlay penuh -->
     <Teleport to="body">
-      <div v-if="mobileOpen" class="md:hidden fixed inset-0 z-[100] bg-[var(--bg-page)] flex flex-col">
+      <div v-if="mobileOpen" class="md:hidden fixed inset-0 z-[100] bg-[var(--bg-page)] flex flex-col" style="padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom)">
         <div class="flex items-center gap-2 p-3 border-b border-[var(--border-subtle)] bg-[var(--bg-card)]">
           <i class="fas fa-search text-[var(--text-tertiary)]"></i>
           <input ref="mobileInput" v-model="q" type="search" placeholder="Cari santri atau guru..." class="flex-1 bg-transparent text-base outline-none text-[var(--text-primary)] min-w-0" aria-label="Cari" />

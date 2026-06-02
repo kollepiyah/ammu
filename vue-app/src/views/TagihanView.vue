@@ -119,6 +119,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { subscribeColl } from '@/services/firestore'
 import { useRouter } from 'vue-router'
 import { doc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore'
+import { deleteOne } from '@/services/firestore' // v.91.0626: hapus = backup audit_log dulu
 import { db } from '@/services/firebase'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
@@ -169,7 +170,7 @@ async function hapusTagihanTerpilih() {
   let ok = 0, fail = 0
   for (const id of ids) {
     try {
-      await deleteDoc(doc(db, 'keuangan_tagihan', String(id)))
+      await deleteOne('keuangan_tagihan', id)
       ok++
     } catch (e) {
       fail++
@@ -356,7 +357,7 @@ async function simpanModal() {
 async function deleteTagihan(t) {
   const ok = await confirmDlg({ title: 'Hapus tagihan?', message: `Hapus tagihan ${t.santri_nama}?`, confirmText: 'Hapus', danger: true })
   if (!ok) return
-  try { await deleteDoc(doc(db, 'keuangan_tagihan', String(t.id))); toast.success('Tagihan dihapus') } catch (e) { toast.error('Gagal: ' + (e?.message || e)) }
+  try { await deleteOne('keuangan_tagihan', t.id); toast.success('Tagihan dihapus') } catch (e) { toast.error('Gagal: ' + (e?.message || e)) }
 }
 
 onMounted(() => {

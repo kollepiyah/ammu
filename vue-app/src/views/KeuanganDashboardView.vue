@@ -161,6 +161,43 @@ const { tabunganSantri, gaji, bukuInduk, stats, isFullAccess } = useKeuangan()
 const NAMA_BULAN_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des']
 const PALETTE = ['#f43f5e', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#14b8a6', '#06b6d4', '#84cc16', '#f97316']
 
+// v.91.0626 FIX Dashboard Keuangan (Buku Induk 4 entri tapi grafik Rp 0):
+// dashboard dulu HANYA baca t.tipe('masuk'/'keluar') + t.nominal, padahal sebagian entri
+// (legacy / writer lain) simpan field masuk/keluar atau tipe lain (pemasukan/in) -> ke-hitung 0,
+// walau BukuIndukView menampilkannya (pakai b.masuk||b.nominal). Helper di bawah samakan toleransinya.
+// ymOf: parse tanggal robust (ISO 'YYYY-MM-DD', 'DD/MM/YYYY', Firestore Timestamp, Date).
+function ymOf(val) {
+  if (!val) return null
+  if (typeof val === 'object') {
+    if (typeof val.toDate === 'function') { const d = val.toDate(); return { year: d.getFullYear(), month: d.getMonth() } }
+    if (typeof val.seconds === 'number') { const d = new Date(val.seconds * 1000); return { year: d.getFullYear(), month: d.getMonth() } }
+    if (val instanceof Date && !isNaN(val)) return { year: val.getFullYear(), month: val.getMonth() }
+    return null
+  }
+  const s = String(val).trim()
+  let m = s.match(/^(\d{4})-(\d{1,2})/)              // YYYY-MM-DD (format aplikasi)
+  if (m) return { year: +m[1], month: +m[2] - 1 }
+  m = s.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})/)  // DD/MM/YYYY atau DD-MM-YYYY (legacy)
+  if (m) return { year: +m[3], month: +m[2] - 1 }
+  const d = new Date(s)
+  return isNaN(d) ? null : { year: d.getFullYear(), month: d.getMonth() }
+}
+// tabungan TERPISAH dari kas pondok -> jangan dihitung di dashboard
+function isTabungan(t) {
+  const sumber = String(t.sumber || '').toLowerCase()
+  return sumber.includes('tabungan') || String(t.kategori || '').toLowerCase() === 'tabungan'
+}
+// arusOf: toleran 2 shape -> {masuk, keluar}. Prioritas tipe+nominal, fallback field masuk/keluar.
+function arusOf(t) {
+  const tipe = String(t.tipe ?? t.type ?? t.jenis ?? '').toLowerCase().trim()
+  const nominal = Number(t.nominal) || 0
+  const masukF = Number(t.masuk) || 0
+  const keluarF = Number(t.keluar) || 0
+  if (['masuk', 'in', 'income', 'pemasukan'].includes(tipe)) return { masuk: nominal || masukF, keluar: 0 }
+  if (['keluar', 'out', 'expense', 'pengeluaran'].includes(tipe)) return { masuk: 0, keluar: nominal || keluarF }
+  return { masuk: masukF, keluar: keluarF } // tanpa tipe jelas -> pakai field masuk/keluar legacy
+}
+
 // 12 month range ending current month
 const months12 = computed(() => {
   const now = new Date()
@@ -181,13 +218,12 @@ const monthlyData = computed(() => {
     let masuk = 0
     let keluar = 0
     for (const t of bukuInduk.value) {
-      // v.86.0526: tabungan TERPISAH dari kas pondok — JANGAN dihitung di dashboard pemasukan/pengeluaran/saldo
-      if (t.sumber === 'tabungan_santri' || t.sumber === 'tabungan_guru') continue
-      const td = t.tanggal ? new Date(t.tanggal) : null
-      if (!td || td.getFullYear() !== m.year || td.getMonth() !== m.month) continue
-      const n = Number(t.nominal) || 0
-      if (t.tipe === 'masuk' || t.type === 'masuk') masuk += n
-      else if (t.tipe === 'keluar' || t.type === 'keluar') keluar += n
+      if (isTabungan(t)) continue // tabungan terpisah dari kas pondok
+      const ym = ymOf(t.tanggal)
+      if (!ym || ym.year !== m.year || ym.month !== m.month) continue
+      const a = arusOf(t)
+      masuk += a.masuk
+      keluar += a.keluar
     }
     return { ...m, masuk, keluar }
   })
@@ -270,15 +306,14 @@ const kategoriBulanIni = computed(() => {
   const groups = {}
   let total = 0
   for (const t of bukuInduk.value) {
-    // v.86.0526: tabungan terpisah — jangan dihitung di breakdown pengeluaran
-    if (t.sumber === 'tabungan_santri' || t.sumber === 'tabungan_guru') continue
-    const td = t.tanggal ? new Date(t.tanggal) : null
-    if (!td || td.getFullYear() !== now.getFullYear() || td.getMonth() !== now.getMonth()) continue
-    if (t.tipe !== 'keluar' && t.type !== 'keluar') continue
+    if (isTabungan(t)) continue // tabungan terpisah
+    const ym = ymOf(t.tanggal)
+    if (!ym || ym.year !== now.getFullYear() || ym.month !== now.getMonth()) continue
+    const keluar = arusOf(t).keluar
+    if (keluar <= 0) continue
     const kat = t.kategori || '(Tanpa Kategori)'
-    const n = Number(t.nominal) || 0
-    groups[kat] = (groups[kat] || 0) + n
-    total += n
+    groups[kat] = (groups[kat] || 0) + keluar
+    total += keluar
   }
   return Object.entries(groups)
     .map(([nama, val]) => ({ nama, total: val, pct: total > 0 ? Math.round((val / total) * 100) : 0 }))
