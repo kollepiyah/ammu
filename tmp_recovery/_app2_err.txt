@@ -1,0 +1,60 @@
+[19548:0530/192417.641:INFO:CONSOLE(0)] "Not allowed to load local resource: file:///D:/Aplikasi%20Project/Portal%20MU/vue-app/electron/dist/win-unpacked/resources/app/assets/splash-dark.png", source: data:text/html;charset=utf-8,%3C!DOCTYPE%20html%3E%3Chtml%3E%3Chead%3E%3Cmeta%20charset%3D%22utf-8%22%3E%3Cstyle%3E%0A%20%20%20%20*%20%7B%20box-sizing%3A%20border-box%3B%20margin%3A%200%3B%20padding%3A%200%3B%20%7D%0A%20%20%20%20html%2C%20body%20%7B%0A%20%20%20%20%20%20width%3A%20100vw%3B%20height%3A%20100vh%3B%0A%20%20%20%20%20%20overflow%3A%20hidden%3B%0A%20%20%20%20%20%20border-radius%3A%2016px%3B%0A%20%20%20%20%7D%0A%20%20%20%20body%20%7B%0A%20%20%20%20%20%20background-color%3A%20%23F2FEF9%3B%0A%20%20%20%20%20%20background-image%3A%20url('file%3A%2F%2F%2FD%3A%2FAplikasi%20Project%2FPortal%20MU%2Fvue-app%2Felectron%2Fdist%2Fwin-unpacked%2Fresources%2Fapp%2Fassets%2Fsplash-light.png')%3B%0A%20%20%20%20%20%20background-size%3A%20cover%3B%0A%20%20%20%20%20%20background-position%3A%20center%20center%3B%0A%20%20%20%20%20%20background-repeat%3A%20no-repeat%3B%0A%20%20%20%20%20%20animation%3A%20bodyIn%200.4s%20ease-out%3B%0A%20%20%20%20%7D%0A%20%20%20%20%40media%20(prefers-color-scheme%3A%20dark)%20%7B%0A%20%20%20%20%20%20body%20%7B%0A%20%20%20%20%20%20%20%20background-color%3A%20%230F172A%3B%0A%20%20%20%20%20%20%20%20background-image%3A%20url('file%3A%2F%2F%2FD%3A%2FAplikasi%20Project%2FPortal%20MU%2Fvue-app%2Felectron%2Fdist%2Fwin-unpacked%2Fresources%2Fapp%2Fassets%2Fsplash-dark.png')%3B%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%20%20%20%20%40keyframes%20bodyIn%20%7B%20from%20%7B%20opacity%3A%200%3B%20%7D%20to%20%7B%20opacity%3A%201%3B%20%7D%20%7D%0A%20%20%3C%2Fstyle%3E%3C%2Fhead%3E%3Cbody%3E%3C%2Fbody%3E%3C%2Fhtml%3E (0)
+Error: HttpError: 404 
+"method: GET url: https://github.com/lexanoisgroup3/portal-mu/releases.atom\n\nPlease double check that your authentication token is correct. Due to security reasons, actual status maybe not reported, but 404.\n"
+Headers: {
+  "cache-control": "no-cache",
+  "content-encoding": "gzip",
+  "content-length": "40",
+  "content-security-policy": "default-src 'none'; base-uri 'self'; connect-src 'self'; form-action 'self'; img-src 'self' data:; script-src 'self'; style-src 'unsafe-inline'",
+  "content-type": "text/plain; charset=utf-8",
+  "date": "Sat, 30 May 2026 12:24:06 GMT",
+  "referrer-policy": "origin-when-cross-origin, strict-origin-when-cross-origin",
+  "server": "github.com",
+  "strict-transport-security": "max-age=31536000; includeSubdomains; preload",
+  "vary": "X-PJAX, X-PJAX-Container, Turbo-Visit, Turbo-Frame, X-Requested-With,Accept-Encoding, Accept, X-Requested-With",
+  "x-content-type-options": "nosniff",
+  "x-frame-options": "deny",
+  "x-github-request-id": "CC15:321D5D:381972:3DADCB:6A1AD6F2",
+  "x-xss-protection": "0",
+  "set-cookie": [
+    "_gh_sess=DsfQWnKZjGgnsMcXHq%2BWdntvAZ5BqH%2FbnvtyuhHyrXYzq0pC7rRrxMUZsyheZRO67Lv1Y7OXTmvonjk2xj%2Fyo5H%2Bqg10xfFm5tJ%2BTmNBdC3isrIzzFA9mBHXyRLVk2k9uNmWgegdYwKdm%2FwQXszj1RG6Us6GFsB8wtFfrTQ4MWRJNACyxJrJHHcNeJ4H%2F4wVLIAPTd46cYdwc0gLf5iZfxWKDxOqE2%2FWRv21idjpmjeZhlri6LMcUQeMCmOCQU%2Fr6g3aEEQUYajI3i2HmyxIXg%3D%3D--vqxWoxN0wkHezWik--YpMeUtvxwFYbg2FEaaDLfw%3D%3D; path=/; HttpOnly; secure; SameSite=Lax",
+    "_octo=GH1.1.1644936246.1780143858; expires=Sun, 30 May 2027 12:24:18 GMT; domain=.github.com; path=/; secure; SameSite=Lax",
+    "logged_in=no; expires=Sun, 30 May 2027 12:24:18 GMT; domain=.github.com; path=/; HttpOnly; secure; SameSite=Lax"
+  ]
+}
+    at createHttpError (D:\Aplikasi Project\Portal MU\vue-app\electron\dist\win-unpacked\resources\app\node_modules\electron-updater\node_modules\builder-util-runtime\out\httpExecutor.js:21:12)
+    at ElectronHttpExecutor.handleResponse (D:\Aplikasi Project\Portal MU\vue-app\electron\dist\win-unpacked\resources\app\node_modules\electron-updater\node_modules\builder-util-runtime\out\httpExecutor.js:121:20)
+    at ClientRequest.<anonymous> (D:\Aplikasi Project\Portal MU\vue-app\electron\dist\win-unpacked\resources\app\node_modules\electron-updater\node_modules\builder-util-runtime\out\httpExecutor.js:87:26)
+    at ClientRequest.emit (node:events:514:28)
+    at SimpleURLLoaderWrapper.<anonymous> (node:electron/js2c/browser_init:2:109961)
+    at SimpleURLLoaderWrapper.emit (node:events:514:28)
+[AutoUpdate] check fail: 404 
+"method: GET url: https://github.com/lexanoisgroup3/portal-mu/releases.atom\n\nPlease double check that your authentication token is correct. Due to security reasons, actual status maybe not reported, but 404.\n"
+Headers: {
+  "cache-control": "no-cache",
+  "content-encoding": "gzip",
+  "content-length": "40",
+  "content-security-policy": "default-src 'none'; base-uri 'self'; connect-src 'self'; form-action 'self'; img-src 'self' data:; script-src 'self'; style-src 'unsafe-inline'",
+  "content-type": "text/plain; charset=utf-8",
+  "date": "Sat, 30 May 2026 12:24:06 GMT",
+  "referrer-policy": "origin-when-cross-origin, strict-origin-when-cross-origin",
+  "server": "github.com",
+  "strict-transport-security": "max-age=31536000; includeSubdomains; preload",
+  "vary": "X-PJAX, X-PJAX-Container, Turbo-Visit, Turbo-Frame, X-Requested-With,Accept-Encoding, Accept, X-Requested-With",
+  "x-content-type-options": "nosniff",
+  "x-frame-options": "deny",
+  "x-github-request-id": "CC15:321D5D:381972:3DADCB:6A1AD6F2",
+  "x-xss-protection": "0",
+  "set-cookie": [
+    "_gh_sess=DsfQWnKZjGgnsMcXHq%2BWdntvAZ5BqH%2FbnvtyuhHyrXYzq0pC7rRrxMUZsyheZRO67Lv1Y7OXTmvonjk2xj%2Fyo5H%2Bqg10xfFm5tJ%2BTmNBdC3isrIzzFA9mBHXyRLVk2k9uNmWgegdYwKdm%2FwQXszj1RG6Us6GFsB8wtFfrTQ4MWRJNACyxJrJHHcNeJ4H%2F4wVLIAPTd46cYdwc0gLf5iZfxWKDxOqE2%2FWRv21idjpmjeZhlri6LMcUQeMCmOCQU%2Fr6g3aEEQUYajI3i2HmyxIXg%3D%3D--vqxWoxN0wkHezWik--YpMeUtvxwFYbg2FEaaDLfw%3D%3D; path=/; HttpOnly; secure; SameSite=Lax",
+    "_octo=GH1.1.1644936246.1780143858; expires=Sun, 30 May 2027 12:24:18 GMT; domain=.github.com; path=/; secure; SameSite=Lax",
+    "logged_in=no; expires=Sun, 30 May 2027 12:24:18 GMT; domain=.github.com; path=/; HttpOnly; secure; SameSite=Lax"
+  ]
+}
+[19548:0530/192425.579:ERROR:leveldb_factory.cc(88)] Failed to open LevelDB database from C:\Users\Lenovo\AppData\Roaming\ammu-online-desktop\IndexedDB\file__0.indexeddb.leveldb,IO error: C:\Users\Lenovo\AppData\Roaming\ammu-online-desktop\IndexedDB\file__0.indexeddb.leveldb/LOCK: File currently in use. (ChromeMethodBFE: 15::LockFile::2)
+[19548:0530/192427.603:ERROR:leveldb_factory.cc(88)] Failed to open LevelDB database from C:\Users\Lenovo\AppData\Roaming\ammu-online-desktop\IndexedDB\file__0.indexeddb.leveldb,IO error: C:\Users\Lenovo\AppData\Roaming\ammu-online-desktop\IndexedDB\file__0.indexeddb.leveldb/LOCK: File currently in use. (ChromeMethodBFE: 15::LockFile::2)
+[19548:0530/192429.628:ERROR:leveldb_factory.cc(88)] Failed to open LevelDB database from C:\Users\Lenovo\AppData\Roaming\ammu-online-desktop\IndexedDB\file__0.indexeddb.leveldb,IO error: C:\Users\Lenovo\AppData\Roaming\ammu-online-desktop\IndexedDB\file__0.indexeddb.leveldb/LOCK: File currently in use. (ChromeMethodBFE: 15::LockFile::2)
+[19548:0530/192429.688:INFO:CONSOLE(4605)] "[main.js] Splash fallback hide @ 5s — Vue mount mungkin stuck", source: file:///D:/Aplikasi%20Project/Portal%20MU/vue-app/electron/dist/win-unpacked/resources/app/app/assets/index-SovIhz1j.js (4605)
+[19548:0530/192429.957:ERROR:gpu_process_host.cc(991)] GPU process exited unexpectedly: exit_code=-1073740791
+[19548:0530/192429.972:WARNING:gpu_process_host.cc(1360)] The GPU process has crashed 1 time(s)
+[19548:0530/192430.063:WARNING:gpu_process_host.cc(1014)] Reinitialized the GPU process after a crash. The reported initialization time was 60 ms

@@ -1,0 +1,7 @@
+refactor(cleanup): pensiun shift TPQ + hapus dead canSee + rapikan komentar canonical (audit 1 Juni)
+
+- MasterDataView: hapus tombol "Migrasi TPQ Shift" (import+state+handler+card) — arah kebalikan migrasi v.88; tombol hijau "Normalisasi Lembaga Santri" tetap
+- hapus utils/tpqShift.js (orphan, 0 importer)
+- useLembaga: hapus dead canSee() + import di useSantri/useGuru/GuruView/SantriView; deriveGuruLembagaRefs DIPERTAHANKAN (dipakai BisyarohView)
+- RaporView komentar 5->4 lembaga Qiraati; StatistikView URUTAN_LEMBAGA canonical
+- audit menyeluruh vs LOGIC GLOBAL: semua fitur COCOK

@@ -1,0 +1,3 @@
+﻿feat(android): RECOVER widget homescreen Jam Hijri (hilang sejak git reset, dari d3d60f7 v.82)
+
+Widget native AppWidgetProvider: jam digital + tanggal Masehi + Hijriyah, update tiap menit (AlarmManager), tap -> buka app. File: JamHijriWidget.kt + res/layout/widget_jam_hijri.xml + res/xml/widget_jam_hijri_info.xml + res/drawable/widget_bg.xml. Manifest: receiver + SCHEDULE_EXACT_ALARM/USE_EXACT_ALARM. strings: label + description. Perlu rebuild di Android Studio utk verifikasi compile.

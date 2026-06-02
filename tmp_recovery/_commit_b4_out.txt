@@ -1,0 +1,18 @@
+[feature/vue-migration fe0cad4] feat(diniyah): mapel Diniyah PER-KELAS (I-XII), bukan per-jenjang
+ 4 files changed, 81 insertions(+), 43 deletions(-)
+----LOG---- 
+commit fe0cad4fe9103c8060f766be30b3ab71bc65bdb2
+Author: Kyai Rahman Fanani <lexanoisgroup3@gmail.com>
+Date:   Mon Jun 1 19:52:20 2026 +0700
+
+    feat(diniyah): mapel Diniyah PER-KELAS (I-XII), bukan per-jenjang
+    
+    - util jenjang.js: mapelDiniyahFor(kelas, map) key per-kelas + helper jenjangFromKelas; fallback ke per-jenjang lama (SDI/SMP/SMA) + legacy PKBM utk kompat data lama
+    - LembagaDetailView: UI field-list mapel PER KELAS (dari lembagaData.kelas), + FIX loadRekapMapel yang sebelumnya tak pernah dipanggil (watch kelas+setting+section)
+    - RaporView buildDiniyahSchemaFromSetting + RekapDiniyahView getMapelForSantri/mapelList: kolom mapel per kelas (kelas_sekolah)
+
+ vue-app/src/utils/jenjang.js            | 28 ++++++++++--
+ vue-app/src/views/LembagaDetailView.vue | 78 ++++++++++++++++++++-------------
+ vue-app/src/views/RaporView.vue         |  6 +--
+ vue-app/src/views/RekapDiniyahView.vue  | 12 ++---
+ 4 files changed, 81 insertions(+), 43 deletions(-)

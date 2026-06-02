@@ -60,18 +60,42 @@ function blobToBase64(blob) {
 
 /**
  * Save via Capacitor Filesystem + share dialog (Android/iOS).
+ * v.85.0526: Multi-tier fallback — Documents → ExternalStorage → Cache. Android 13+ scoped storage.
  */
 async function saveNative(blob, filename) {
   const safeFilename = sanitizeFilename(filename)
-  // Dynamic import — kalau plugin belum installed, fallback ke web mode
   const { Filesystem, Directory } = await import('@capacitor/filesystem')
   const base64 = await blobToBase64(blob)
-  const result = await Filesystem.writeFile({
-    path: safeFilename,
-    data: base64,
-    directory: Directory.Documents,
-    recursive: true
-  })
+
+  // Try 3 directories in order: Documents → External → Cache (most reliable last)
+  const directories = [
+    { dir: Directory.Documents, label: 'Documents' },
+    { dir: Directory.External, label: 'External' },
+    { dir: Directory.Cache, label: 'Cache' }
+  ]
+
+  let result = null
+  let lastError = null
+  for (const { dir, label } of directories) {
+    try {
+      result = await Filesystem.writeFile({
+        path: safeFilename,
+        data: base64,
+        directory: dir,
+        recursive: true
+      })
+      console.info(`[saveNative] saved to ${label}:`, result.uri)
+      break
+    } catch (e) {
+      lastError = e
+      console.warn(`[saveNative] ${label} fail:`, e?.message || e)
+    }
+  }
+
+  if (!result) {
+    throw new Error(`Gagal simpan PDF: ${lastError?.message || 'unknown'}`)
+  }
+
   // Buka share dialog (user pilih: simpan ke Files / kirim via WA / Email / dst)
   try {
     const { Share } = await import('@capacitor/share')
@@ -80,14 +104,14 @@ async function saveNative(blob, filename) {
       await Share.share({
         title: safeFilename,
         url: result.uri,
-        dialogTitle: 'Simpan atau bagikan file'
+        dialogTitle: 'Simpan atau bagikan PDF'
       })
     } else {
-      // Fallback toast kasih tahu lokasi file
       console.info('[saveNative] file disimpan di:', result.uri)
     }
   } catch (e) {
     console.warn('[saveNative] share gagal:', e?.message || e)
+    // Tetap return URI supaya bisa diakses
   }
   return result.uri
 }

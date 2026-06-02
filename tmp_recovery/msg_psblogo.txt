@@ -1,0 +1,4 @@
+feat(psb): header 2 logo kiri-kanan + KOP/font umum (1 Juni)
+
+- PsbFormView: logo KIRI = settings.logoQiraati, KANAN = settings.logoKop/logoUrl (baca settings/general, sama sumber dgn rapor → auto ikut yang kyai upload)
+- (bundle) N8 KOP umum + N9 font Plus Jakarta, kalau belum ter-commit

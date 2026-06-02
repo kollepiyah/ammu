@@ -1,7 +1,7 @@
 <template>
   <!-- v.91.0626: bottom nav mobile (Android/PWA). 5 tab role-adaptif; Notifikasi = halaman penuh -->
   <nav
-    class="flex items-stretch border-t border-[var(--border-subtle)] bg-[var(--bg-card)]"
+    class="app-bottom-nav shrink-0 flex items-stretch border-t border-[var(--border-subtle)] bg-[var(--bg-card)] shadow-[0_-2px_12px_rgba(0,0,0,0.06)] dark:shadow-[0_-2px_12px_rgba(0,0,0,0.4)]"
     style="padding-bottom: env(safe-area-inset-bottom)"
     aria-label="Navigasi bawah"
   >

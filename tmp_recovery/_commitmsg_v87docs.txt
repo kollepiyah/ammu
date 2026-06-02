@@ -1,0 +1,8 @@
+docs: update KB + HANDOFF untuk sesi v.87 (31 Mei) + batch baru kyai
+
+- PROJECT-KNOWLEDGE-BASE.md: header/§1 HEAD e3d9551, §8 splash DONE (web/electron/android), §11 state v.87 (5 commit 8f0c654->e3d9551) + pending batch baru.
+- HANDOFF-v86-PENDING-RECOVERY.md: append "SESI v.87.0526" (detail tiap commit, perintah build/deploy, catatan WIP kyai jangan git add -A, BATCH BARU 4 item).
+
+BATCH BARU kyai: (1) audit master lembaga + semua data/rules/function/skema/pengaturan, (2) hapus tombol back di RaporView santri, (3) dashboard kelasCount dihitung dari guru yang sudah punya santri, (4) cek menyeluruh dead code / fitur hilang / code miss.
+
+v.87.0526. Belum push.

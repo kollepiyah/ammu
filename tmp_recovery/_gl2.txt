@@ -1,0 +1,5 @@
+99c217f ﻿docs(handoff): Kepala Lembaga discope se-group (useSantri) + sisa follow-up view akademik
+5385350 ﻿fix(rbac): Kepala Lembaga/PJ discope ke se-group lembaganya (sebelumnya lihat SEMUA santri)
+555b42c ﻿docs(handoff): audit RBAC scoping per jabatan - akar masalah lembaga_refs dormant + opsi A/B
+7a3cad9 ﻿fix(electron): splash logo tidak muncul - embed PNG base64 (data: origin tak bisa load file://)
+ca86068 ﻿docs(handoff): dashboard keuangan calc fix + verifikasi admin_keuangan + splash electron pending

@@ -1,0 +1,4 @@
+[feature/vue-migration 50bbac0] chore(release): bump versionName v.90.0626 (versionCode 90)
+ 9 files changed, 9 insertions(+), 9 deletions(-)
+----LOG---- 
+50bbac0 chore(release): bump versionName v.90.0626 (versionCode 90)

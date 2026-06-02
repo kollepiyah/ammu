@@ -1,0 +1,9 @@
+a7ded60 fix(v.84.0526): restore truncated config files
+ public/dist/tailwind.css                    |   2 +-
+ vue-app-psb/index.html                      |  16 ++++-
+ vue-app-psb/vite.config.js                  |   6 +-
+ vue-app/capacitor.config.json               |   5 +-
+ vue-app/package.json                        |  21 +++++-
+ vue-app/src/App.vue                         |  15 +++-
+ vue-app/src/components/layout/AppHeader.vue | 106 +++++++++++++++++++++++++++-
+ 7 files changed, 164 insertions(+), 7 deletions(-)

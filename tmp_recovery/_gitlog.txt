@@ -1,0 +1,10 @@
+00b7cea ﻿docs: PROJECT-KNOWLEDGE-BASE.md untuk onboarding sesi baru (stack, env quirks, build, RBAC, domain, gaya kerja, pending)
+01bf799 ﻿docs(handoff): tangkap batch baru kyai (7 item: dashboard, splash 3-platform, pembayaran-merge, izin android, perf) + analisis tiap item
+f63651a ﻿feat(android): RECOVER widget homescreen Jam Hijri (hilang sejak git reset, dari d3d60f7 v.82)
+cbda489 ﻿docs(handoff): ringkasan sesi batch (T34 + bugs + bump 87) + perintah build/deploy
+cec35dd ﻿chore(release): bump versi 86 -> 87 (v.87.0526) untuk rebuild AAB
+d011c7c ﻿fix(psb): convertToSantri copy biodata LENGKAP dari PSB (samakan dg PSB)
+3f79f1d ﻿fix(profil+santri): Edit Data Saya persist di view + tombol edit Data Santri rapi
+6b86dfd ﻿fix(electron): splash dobel - tahan main window hidden sampai splash native tutup
+1b2b686 ﻿feat(rbac): scope Kepala/PJ di RekapPrestasi + AbsensiSantri (lanjutan T34)
+cbf3258 ﻿feat(rbac): scope Kepala/PJ ke lembaganya - lembagaScopeMatches + Data Santri + Rapor

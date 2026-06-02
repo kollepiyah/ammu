@@ -27,7 +27,10 @@ const fs = require('fs')
 const path = require('path')
 
 const ROOT = path.join(__dirname, '..')
-const ANDROID_DIR = path.join(ROOT, 'android')
+// v.86.0526: Pakai vue-app/android (Capacitor 8 + JDK 21 + Kotlin 2.0.21 + versionCode 85)
+//   Sebelumnya ROOT/android = legacy versionCode 70 (tidak dipakai)
+const VUE_APP = path.join(ROOT, 'vue-app')
+const ANDROID_DIR = path.join(VUE_APP, 'android')
 const AAB_PATH = path.join(
   ANDROID_DIR,
   'app',
@@ -48,8 +51,21 @@ function run(cmd, opts = {}) {
 }
 
 try {
-  log('Step 1: Sync Capacitor — public/ → android assets')
-  run('npx cap sync android', { cwd: ROOT })
+  // v.86.0526: Step 1 — build Vue terbaru ke vue-app/dist (capacitor.config webDir = "dist")
+  log('Step 1: Build Vue app → vue-app/dist/')
+  run('npm run build --prefix vue-app', { cwd: ROOT })
+
+  // v.86.0526: Force-delete Android assets/public dulu sebelum cap sync — cap sync
+  //   kadang skip overwrite kalau detect hash sama. Force clean = guaranteed fresh assets.
+  const ANDROID_ASSETS = path.join(ANDROID_DIR, 'app', 'src', 'main', 'assets', 'public')
+  if (fs.existsSync(ANDROID_ASSETS)) {
+    log('Step 1b: Force-delete Android assets/public/ (avoid cap sync stale cache)')
+    fs.rmSync(ANDROID_ASSETS, { recursive: true, force: true })
+  }
+
+  log('Step 1c: Sync Capacitor — vue-app/dist → vue-app/android/app/src/main/assets/public/')
+  // v.86.0526: webDir = "dist" (relative ke capacitor.config.json) — langsung baca Vue build output
+  run('npx cap sync android', { cwd: VUE_APP })
 
   log('Step 2: Run gradle bundleRelease (generate signed AAB)')
   // Windows: gradlew.bat, Linux/Mac: ./gradlew

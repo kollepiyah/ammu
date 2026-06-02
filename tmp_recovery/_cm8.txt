@@ -1,0 +1,3 @@
+﻿feat(rbac): scope Kepala/PJ di RekapPrestasi + AbsensiSantri (lanjutan T34)
+
+kepalaScope guard (lembagaScopeMatches) di filteredSantri kedua view -> Kepala hanya lihat santri lembaganya. Statistik (aggregate counts, low-PII) = remainder minor, didokumentasikan. Build vite OK.

@@ -1,0 +1,2 @@
+[feature/vue-migration cbf3258] ﻿feat(rbac): scope Kepala/PJ ke lembaganya - lembagaScopeMatches + Data Santri + Rapor
+ 3 files changed, 44 insertions(+), 10 deletions(-)

@@ -1,0 +1,1 @@
+chore: fix pesan versi stale di deploy-minified.cjs (hardcoded "versionCode 20" -> ikut build.gradle)

@@ -1,0 +1,6 @@
+chore(quickwins): prune 3 rule mati + strip 2 debug console.log (audit 1 Juni)
+
+- firestore.rules: hapus match keuangan_transaksi / keuangan_tabungan_guru / keuangan_hutang
+  (collection mati, 0 ref di code; brace balanced 105=105)
+- strip console.log debug di TabunganView(cleanupOrphan) + RiwayatSantriView
+  (dumpOrphan diagnostic + Sentry init DIPERTAHANKAN)

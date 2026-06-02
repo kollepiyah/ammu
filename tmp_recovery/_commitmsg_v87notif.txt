@@ -1,0 +1,15 @@
+feat(notif): perluas Notif Center (tagihan/pembayaran/libur/kenaikan) + wiring notif HP
+
+- useNotifications: tambah jenis tagihan (baru), libur (admin, KECUALI libur_nasional), kenaikan (event),
+  + extend pembayaran (transfer terverifikasi). markAllRead/clearAll + subscribe koleksi terkait.
+  Targeting: wali/santri = miliknya sendiri; libur = semua role (ikut audience).
+- NaikKelasView: saat PROSES NAIK, tulis event ke koleksi `riwayat_kenaikan` (sumber notif). Rule sudah ada.
+- AppNotifBell: mirror feed -> OS notifications (pushFromItems) + minta izin notif saat app shell mount
+  (native only, no-op di web/desktop). Tambah warna 'blue' untuk libur.
+- AndroidManifest: tambah POST_NOTIFICATIONS (Android 13+).
+
+CATATAN:
+- Prestasi DEFER: rekap_prestasi belum punya timestamp presisi (cuma field `bulan`) -> perlu createdAt di penulisnya.
+- Notif HP (status bar) baru aktif setelah: npm i @capacitor/local-notifications@^8 --prefix vue-app + npx cap sync android + rebuild AAB.
+
+v.87.0526. vite build exit 0. Belum push.

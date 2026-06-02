@@ -1,0 +1,2 @@
+cbda489 ﻿docs(handoff): ringkasan sesi batch (T34 + bugs + bump 87) + perintah build/deploy
+cec35dd ﻿chore(release): bump versi 86 -> 87 (v.87.0526) untuk rebuild AAB

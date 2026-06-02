@@ -1,0 +1,7 @@
+﻿chore(release): bump versi 86 -> 87 (v.87.0526) untuk rebuild AAB
+
+- android/app/build.gradle: versionCode 86->87, versionName v.87.0526
+- package.json (root, vue-app): 87.0526 ; electron: 87.0.526
+- Sentry release: portal-mu@87.0526
+- Footer display: AppSidebar, LoginView, DashboardView, PpdbAdminView -> v.87.0526
+Build vite OK. Versi dinaikkan supaya bundle baru diterima Play Console.

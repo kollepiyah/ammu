@@ -1,0 +1,18 @@
+[feature/vue-migration db285c7] feat(mobile): bottom nav 5 tab (Android/PWA+mobile) + halaman Notifikasi penuh; bell pindah dari topbar di mobile
+ 6 files changed, 265 insertions(+), 2 deletions(-)
+ create mode 100644 vue-app/src/components/layout/BottomNav.vue
+ create mode 100644 vue-app/src/composables/useMobileShell.js
+ create mode 100644 vue-app/src/views/NotifikasiView.vue
+commit db285c7b7c03d4a794fa750525e13e0b1426ebe1
+Author: Kyai Rahman Fanani <lexanoisgroup3@gmail.com>
+Date:   Tue Jun 2 08:49:05 2026 +0700
+
+    feat(mobile): bottom nav 5 tab (Android/PWA+mobile) + halaman Notifikasi penuh; bell pindah dari topbar di mobile
+
+ vue-app/src/components/layout/AppHeader.vue |   7 +-
+ vue-app/src/components/layout/AppLayout.vue |   6 ++
+ vue-app/src/components/layout/BottomNav.vue |  66 +++++++++++++
+ vue-app/src/composables/useMobileShell.js   |  46 +++++++++
+ vue-app/src/router/index.js                 |   3 +
+ vue-app/src/views/NotifikasiView.vue        | 139 ++++++++++++++++++++++++++++
+ 6 files changed, 265 insertions(+), 2 deletions(-)

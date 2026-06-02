@@ -1,0 +1,3 @@
+﻿fix(electron): splash dobel - tahan main window hidden sampai splash native tutup
+
+Splash bawaan web app ikut render di main window -> muncul bareng splash native (Powered by Bakafrawi 2x). Sekarang main ditahan hidden selama splash native (1800ms), tutup splash dulu baru show main. tsc OK.

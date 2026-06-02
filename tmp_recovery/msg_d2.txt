@@ -1,0 +1,6 @@
+security(login): Exec D Opsi 2 — login lookup via Cloud Function + fallback
+
+- functions/index.js: +findUserByLogin (onRequest us-central1, Admin SDK lookup guru/santri server-side, port logika client persis, STRIP PII dari response). Tujuan: client tak enumerasi koleksi guru/santri -> PII (NIK/ortu) tak world-readable.
+- services/auth.js findUserByLoginInput: COBA function dulu; FALLBACK direct-read kalau function gagal/down -> login TAK PERNAH patah.
+- AMAN deploy (fallback). LANGKAH FINAL (tighten read santri/guru -> signedIn) DITAHAN sampai kyai konfirmasi login-via-function jalan.
+- Deploy: firebase deploy --only functions (butuh Blaze) + web.

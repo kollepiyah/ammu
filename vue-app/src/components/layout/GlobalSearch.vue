@@ -1,5 +1,7 @@
 <template>
-  <div class="relative flex md:flex-1 md:max-w-md md:mx-3 justify-end" data-global-search>
+  <!-- v.91.0626 FIX posisi ikon search mobile: flex-1 + justify-end -> ikon mengelompok ke kanan
+       (bersama dark-toggle & profil), bukan mengambang di tengah header. Desktop tetap bar md:max-w-md. -->
+  <div class="relative flex flex-1 md:max-w-md md:mx-3 justify-end" data-global-search>
     <!-- Desktop: bar memanjang -->
     <div
       class="hidden md:flex items-center w-full bg-[var(--bg-muted)] rounded-xl px-3 h-9 border border-transparent focus-within:border-teal-400 transition"

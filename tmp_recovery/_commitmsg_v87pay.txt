@@ -1,0 +1,8 @@
+feat(pembayaran): gabung Tagihan + Pembayaran jadi 1 alur berlangkah (wali)
+
+- useMenus: hapus menu "Pembayaran" santri; rename "Tagihan Saya" -> "Tagihan & Pembayaran" (1 pintu).
+- TagihanView: tombol Bayar (per-tagihan, kategori terkunci) + Setoran Lain (kategori bebas) + ikon Riwayat.
+- PembayaranView (wali): ganti 3-tab jadi alur berlangkah -- Pilih Metode (Transfer aktif, VA "coming soon") -> Bayar + upload bukti. Riwayat via mode (ikon). Kategori terkunci kalau datang dari tagihan.
+- Route /pembayaran tetap hidup via deep-link: tab=transfer (prefill) / view=riwayat.
+
+v.87.0526. Build vite (build:electron) exit 0. Belum push, belum deploy.

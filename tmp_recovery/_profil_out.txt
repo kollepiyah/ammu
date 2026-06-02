@@ -1,0 +1,17 @@
+[feature/vue-migration bb7f042] feat(profil): klik nama/avatar santri-guru -> halaman profil read-only + prestasi (noSantri); global search -> profil detail
+ 7 files changed, 84 insertions(+), 12 deletions(-)
+ create mode 100644 vue-app/src/views/ProfilDetailView.vue
+commit bb7f04260749c2c38aa6c43e6b763e02a370dcd0
+Author: Kyai Rahman Fanani <lexanoisgroup3@gmail.com>
+Date:   Tue Jun 2 10:15:23 2026 +0700
+
+    feat(profil): klik nama/avatar santri-guru -> halaman profil read-only + prestasi (noSantri); global search -> profil detail
+
+ vue-app/src/components/layout/GlobalSearch.vue |  4 +-
+ vue-app/src/router/index.js                    |  2 +
+ vue-app/src/views/GuruView.vue                 |  6 ++-
+ vue-app/src/views/ProfilDetailView.vue         | 67 ++++++++++++++++++++++++++
+ vue-app/src/views/SantriView.vue               |  4 +-
+ vue-app/src/views/profil/ProfilGuru.vue        |  7 +--
+ vue-app/src/views/profil/ProfilSantri.vue      |  6 +--
+ 7 files changed, 84 insertions(+), 12 deletions(-)

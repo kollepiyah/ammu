@@ -1,0 +1,6 @@
+﻿feat(rbac): scope Kepala/PJ ke lembaganya - lembagaScopeMatches + Data Santri + Rapor
+
+- useLembaga: getLembagaBroadGroup + lembagaScopeMatches (handle variant/family 'TPQ Sore'=>TPQ family DAN label broad 'Qiraati'=>semua qiraati). Fix latent bug: PJ ber-lembaga broad bisa lihat 0 santri.
+- useSantri: branch Kepala pakai lembagaScopeMatches (robust).
+- RaporView: kepalaScope guard di santriList (block rapor lintas-lembaga utk Kepala/PJ).
+- Sisa view akademik (Rekap/Absensi/Statistik): pola sama, follow-up. Build vite OK.

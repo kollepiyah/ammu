@@ -1,0 +1,6 @@
+security(rules): harden read collection sensitif pasca-login (Exec D opsi 1)
+
+- allow read: if true -> if signedIn() utk 18 collection (keuangan_*, rapor_semester, absensi*, rekap_*, riwayat_kenaikan, notif_prestasi) — blokir baca data keuangan/akademik tanpa login
+- login-lookup (guru/santri/settings/master/beranda_post) TETAP publik -> login lazy tak patah
+- brace balanced 105=105
+- CATATAN: PII santri (NIK/ortu) MASIH world-readable (login butuh baca santri) -> butuh Opsi 2 (login via Cloud Function). Write masih signedIn() (role-aware = Opsi 3 custom claims, pasca-launch)

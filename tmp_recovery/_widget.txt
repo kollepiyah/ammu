@@ -1,0 +1,82 @@
+==== commits w/ 'widget' in message ==== 
+62dda97 fix(pengaturan): hijri preview pakai shared masehiToHijri
+54d6fab docs(phase-5): handoff briefing untuk sesi cowork berikutnya
+4fae8f9 docs(phase-5): wire-up reports per-widget + aggregated full report
+31226a4 feat(w5): wire-up Vue KalenderPendidikan widget dengan mutex W4
+d50c26a feat(w3): wire-up Vue PostCard widget dengan emit bridge
+310317c feat(w4): wire-up Vue KalenderMini widget dengan feature flag toggle
+c0fa81b feat(w2): wire-up Vue JamHijri widget dengan feature flag toggle
+d6b9935 fix: CSP cdn.tailwindcss + print struk margin + logout cancel button
+2d0cf51 docs: CONSOLIDATED-TODO update — Group F (Vue 3) + Group G (UI polish)
+42a7589 docs: expand scope — Group F (Vue 3) + G (UI polish) + ROADMAP-TO-RELEASE
+13cf294 docs: add AUDIT-REPORT-ADDENDUM.md (full directory scan)
+ 
+==== pickaxe AppWidgetProvider ==== 
+d3d60f7 feat(v.82.0526): payment channels, multi-anak wali, fix preselect, simplify santri rapor
+ 
+==== pickaxe appwidget ==== 
+d3d60f7 feat(v.82.0526): payment channels, multi-anak wali, fix preselect, simplify santri rapor
+ 
+==== commits touching *Widget*/*widget* ==== 
+d3d60f7 feat(v.82.0526): payment channels, multi-anak wali, fix preselect, simplify santri rapor
+0c29ceb v.21.27/28 batch: source recovery + PSB filter + konsolidasi route + stubs
+0c591dc auto-deploy: changes + Vue rebuild (v.109.13)
+ac6e98c feat(v.109.47): hapus visual-media color picker + bg-overlay hidden + PostCard Azure/slate
+3324369 auto-deploy: changes + Vue rebuild (v.109.13)
+e2b2f95 feat(v.109.42): force sidebar light JS + notif toast + kalender filter today
+fa5a035 auto-deploy: changes + Vue rebuild (v.109.13)
+1b64122 feat(v.109.40): kalender scroll + theme cerah + sidebar light mode + testPOSVue helper
+19484b3 auto-deploy: changes + Vue rebuild (v.109.13)
+5fe50e9 feat(v.109.39): kalender teal + PostCard Plus Jakarta + Quick POS button
+c173c96 auto-deploy: changes + Vue rebuild (v.109.13)
+e49a154 feat(v.109.38): fix kalender listener skip-first + PostCard judul ringan (700→600)
+565e5fa auto-deploy: changes + Vue rebuild (v.109.13)
+17f3046 feat(v.109.37): fix kalender empty (reactive remount) + PostCard ava=logo, judul weight 700
+8b3faef auto-deploy: changes + Vue rebuild (v.109.13)
+eca5255 feat(v.109.26): JamHijri size up + icon transparent + maskable kecil
+4a9a6b3 auto-deploy: changes + Vue rebuild (v.109.13)
+ace1fba feat(v.109.24): self-host Scheherazade font + strip harokat, regen icons, font elegant, A1-A6 audit
+e1ecde1 auto-deploy: changes + Vue rebuild (v.109.13)
+ca7f788 auto-deploy: changes + Vue rebuild (v.109.13)
+25bf2dd auto-deploy: changes + Vue rebuild (v.109.13)
+74cb641 auto-deploy: changes + Vue rebuild (v.109.13)
+32a12fa auto-deploy: changes + Vue rebuild (v.109.13)
+c0fa81b feat(w2): wire-up Vue JamHijri widget dengan feature flag toggle
+f7e0254 B0+B1+UX: Recovery + Firebase Auth migration + Toast UX
+ 
+==== HEAD tree widget files ==== 
+'findstr' is not recognized as an internal or external command,
+operable program or batch file.
+ 
+==== reflog 30 ==== 
+cbda489 HEAD@{0}: commit: ﻿docs(handoff): ringkasan sesi batch (T34 + bugs + bump 87) + perintah build/deploy
+cec35dd HEAD@{1}: commit: ﻿chore(release): bump versi 86 -> 87 (v.87.0526) untuk rebuild AAB
+d011c7c HEAD@{2}: commit: ﻿fix(psb): convertToSantri copy biodata LENGKAP dari PSB (samakan dg PSB)
+3f79f1d HEAD@{3}: commit: ﻿fix(profil+santri): Edit Data Saya persist di view + tombol edit Data Santri rapi
+6b86dfd HEAD@{4}: commit: ﻿fix(electron): splash dobel - tahan main window hidden sampai splash native tutup
+1b2b686 HEAD@{5}: commit: ﻿feat(rbac): scope Kepala/PJ di RekapPrestasi + AbsensiSantri (lanjutan T34)
+cbf3258 HEAD@{6}: commit: ﻿feat(rbac): scope Kepala/PJ ke lembaganya - lembagaScopeMatches + Data Santri + Rapor
+99c217f HEAD@{7}: commit: ﻿docs(handoff): Kepala Lembaga discope se-group (useSantri) + sisa follow-up view akademik
+5385350 HEAD@{8}: commit: ﻿fix(rbac): Kepala Lembaga/PJ discope ke se-group lembaganya (sebelumnya lihat SEMUA santri)
+555b42c HEAD@{9}: commit: ﻿docs(handoff): audit RBAC scoping per jabatan - akar masalah lembaga_refs dormant + opsi A/B
+7a3cad9 HEAD@{10}: commit: ﻿fix(electron): splash logo tidak muncul - embed PNG base64 (data: origin tak bisa load file://)
+ca86068 HEAD@{11}: commit: ﻿docs(handoff): dashboard keuangan calc fix + verifikasi admin_keuangan + splash electron pending
+002aa13 HEAD@{12}: commit: fix(keuangan): perhitungan dashboard — tabungan terpisah + net + bisyaroh bulan ini
+da4731b HEAD@{13}: commit: docs: update HANDOFF — merge polish done + RBAC finding + sisa scoping per jabatan
+2d9dbfd HEAD@{14}: commit: feat(rbac): helper canCRUD + temuan enforcement RBAC
+e226dd2 HEAD@{15}: commit: feat(pembayaran/merge): tombol Bayar di Tagihan -> transfer + notif admin
+d72933b HEAD@{16}: commit: docs: HANDOFF v.86 — pending tasks + kandidat fitur hilang + reminder bump versi AAB
+7636268 HEAD@{17}: commit: feat(recover): ProfilSantri halaman lengkap (dari 14cb922)
+274a70b HEAD@{18}: commit: feat(recover): admin verify transfer + ProfilGuru + composables/store hilang (14cb922)
+1ffd42d HEAD@{19}: commit: feat(pembayaran): RECOVER fitur transfer (upload bukti) dari commit hilang 14cb922
+a6c52ba HEAD@{20}: commit: fix(privacy): santri/wali hanya lihat tagihan sendiri (TagihanView)
+000e71a HEAD@{21}: commit: feat(rapor/santri): export-only PDF (tanpa preview) + notif belum diinput
+3ddc137 HEAD@{22}: commit: fix(kyai-feedback): rekening Pembayaran dari Pengaturan Keuangan + kelas count dari santri ber-guru
+ce084fd HEAD@{23}: commit: feat(pembayaran): info 2-jalur (Manual + Transfer/VA segera) di view santri/wali
+97510a9 HEAD@{24}: commit: feat(wali): multi-anak picker di top bar (ganti konteks antar anak)
+5629c84 HEAD@{25}: commit: feat(role/santri): rapor + kartu kenaikan view-only
+87b38d6 HEAD@{26}: commit: feat(role/santri): Dashboard Statistik admin/guru-only; santri ke Capaian Prestasi
+50b2d6f HEAD@{27}: commit: fix(privacy): santri/wali hanya lihat rapor sendiri (RaporView)
+eb9acff HEAD@{28}: commit: feat(v.86.0526): electron native header, PWA, splash, perf, pembayaran-pending
+70450f6 HEAD@{29}: reset: moving to origin/feature/vue-migration
+DONE 

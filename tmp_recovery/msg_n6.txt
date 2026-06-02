@@ -1,0 +1,5 @@
+fix(N6): rapikan posisi tombol GuruView
+
+- header: tombol (Cetak PDF/Ekspor Excel/Kelola/Template/Impor/Tambah) dibungkus 1 grup flex -> Kelola tak lagi orphan ke baris bawah
+- tombol Kelola -> teal primary (aksi utama, bukan abu-abu nyemplung)
+- baris aksi kartu guru (Reset Sandi/Non-aktifkan/Edit/Hapus): + border-atas pemisah + align rapi (gap konsisten)

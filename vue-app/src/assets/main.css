@@ -159,3 +159,34 @@ body, html, #app {
   .print-area { position: absolute; left: 0; top: 0; width: 100%; }
   .no-print { display: none !important; }
 }
+
+/* v.85.0526: Safe-area-inset — fix Android/iOS overlap dengan status bar + nav bar di notched devices.
+   Activated via viewport meta `viewport-fit=cover`. */
+@supports (padding: env(safe-area-inset-top)) {
+  /* v.91.0626 FIX bottom-nav mengambang: inset TOP/LEFT/RIGHT di body, tapi inset BAWAH
+     TIDAK di body. Inset bawah di-own komponen paling bawah (BottomNav padding-bottom,
+     atau main saat tanpa bottom-nav) supaya bg navbar mengisi di belakang gesture bar
+     dan tidak ada gap dobel (sebelumnya body padding-bottom + .h-screen -inset + BottomNav
+     padding-bottom = inset bawah dihitung 2x -> navbar mengambang). */
+  body {
+    padding-top: env(safe-area-inset-top);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+    box-sizing: border-box;
+  }
+  /* h-screen: kurangi HANYA top inset (body sudah pad top) -> layout penuh sampai dasar layar */
+  .h-screen {
+    height: calc(100vh - env(safe-area-inset-top));
+    height: calc(100dvh - env(safe-area-inset-top));
+  }
+}
+
+/* Native feel di mobile */
+img { -webkit-touch-callout: none; -webkit-user-drag: none; }
+html { -webkit-overflow-scrolling: touch; }
+button, [role="button"] { min-height: 36px; }
+
+/* Hide scrollbar di mobile (cleaner native feel) */
+@media (max-width: 768px) {
+  ::-webkit-scrollbar { width: 0; height: 0; }
+}

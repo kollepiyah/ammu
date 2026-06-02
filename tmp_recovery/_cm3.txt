@@ -1,0 +1,3 @@
+﻿fix(electron): splash logo tidak muncul - embed PNG base64 (data: origin tak bisa load file://)
+
+Splash di-load via data:text/html (opaque origin) -> Chromium blokir subresource file:// (webSecurity) -> gambar splash gagal load, hanya tampil bg-color gelap. Solusi: baca splash-light/dark.png -> embed base64 data-URI langsung di CSS. tsc exit 0.

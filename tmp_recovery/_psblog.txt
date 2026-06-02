@@ -1,0 +1,5 @@
+fc0dd87 feat(P0-CAP+P5): design tokens + reusable components + role enforcement + Capacitor setup
+0e83bce v.21.84.0527: UI harmonisasi teal + Ammu Channel IG-style
+e4a3315 recovery: full vue-app/src + canonical lembaga spec + UI wire-up
+e0d4d86 v.21.28 file 1/3: useGuruForm jabatan per-lembaga (case-insensitive + Yayasan/Sarana umbrella) + PsbAdminView isAdmin computed fix
+573c115 wip: vue-app source snapshot (pre-recovery)

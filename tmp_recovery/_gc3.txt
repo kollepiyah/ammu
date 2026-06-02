@@ -1,0 +1,3 @@
+[feature/vue-migration 7a3cad9] ﻿fix(electron): splash logo tidak muncul - embed PNG base64 (data: origin tak bisa load file://)
+ 2 files changed, 544 insertions(+), 4 deletions(-)
+ create mode 100644 vue-app/electron/build/index.js

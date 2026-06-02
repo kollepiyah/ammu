@@ -1,0 +1,8 @@
+fix(android): splash native desain Ammu (light/dark, semua ukuran) + buang ikon robot Android 12
+
+- 22 splash.png full-screen (port/land x light/night x 5 densitas) dari folder Splashscreen kyai; CENTER_CROP -> logo center di semua ukuran layar
+- splash_icon.png (logo Ammu transparan, 5 densitas) utk windowSplashScreenAnimatedIcon (Android 12+ system splash)
+- ROOT CAUSE robot: @drawable/ic_launcher_foreground resolve ke drawable-v24 vektor robot template; kini -> @drawable/splash_icon
+- values-night splashBg #0F172A -> #1E293B (match bg gambar dark biar transisi mulus)
+- showSpinner true -> false (root + android assets) gaya WA/IG
+- bump versionCode 89 -> 90 (AAB baru utk splash + fix penugasan)

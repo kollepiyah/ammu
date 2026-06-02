@@ -1,0 +1,6 @@
+chore(release): bump versi reset v.88 -> v.07.0626 (versionCode 88 -> 7)
+
+- gradle versionCode 7 + versionName "v.07.0626"
+- package.json root + vue-app -> "07.0626"; electron -> "7.0.626" (semver)
+- main.js Sentry release portal-mu@07.0626 + 4 footer (AppSidebar/Login/Dashboard/PpdbAdmin) -> v.07.0626
+- Play Store: versionCode 7 belum pernah upload (aman). Komentar historis // v.88 dibiarkan.

@@ -1,0 +1,15 @@
+000e71a HEAD@{0}: commit: feat(rapor/santri): export-only PDF (tanpa preview) + notif belum diinput
+3ddc137 HEAD@{1}: commit: fix(kyai-feedback): rekening Pembayaran dari Pengaturan Keuangan + kelas count dari santri ber-guru
+ce084fd HEAD@{2}: commit: feat(pembayaran): info 2-jalur (Manual + Transfer/VA segera) di view santri/wali
+97510a9 HEAD@{3}: commit: feat(wali): multi-anak picker di top bar (ganti konteks antar anak)
+5629c84 HEAD@{4}: commit: feat(role/santri): rapor + kartu kenaikan view-only
+87b38d6 HEAD@{5}: commit: feat(role/santri): Dashboard Statistik admin/guru-only; santri ke Capaian Prestasi
+50b2d6f HEAD@{6}: commit: fix(privacy): santri/wali hanya lihat rapor sendiri (RaporView)
+eb9acff HEAD@{7}: commit: feat(v.86.0526): electron native header, PWA, splash, perf, pembayaran-pending
+70450f6 HEAD@{8}: reset: moving to origin/feature/vue-migration
+a7ded60 HEAD@{9}: reset: moving to HEAD
+a7ded60 HEAD@{10}: commit: fix(v.84.0526): restore truncated config files
+716a12e HEAD@{11}: commit: feat(v.84.0526): bump version + restore truncated files
+14cb922 HEAD@{12}: commit: fix(v.83.0526): Android persist auth + statusbar theme + splash WA/IG + manifest deploy
+79fb83e HEAD@{13}: reset: moving to HEAD
+79fb83e HEAD@{14}: reset: moving to HEAD

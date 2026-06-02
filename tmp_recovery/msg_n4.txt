@@ -1,0 +1,5 @@
+feat(N4): santri form = field PSB (biodata + ortu + alamat detail)
+
+- useSantriForm: +emptyForm/loadSantri/save field — tempat_lahir, nama_panggilan, no_kk, asal_sekolah, penghasilan_ortu, alamat detail (dusun/rt/rw/desa/kecamatan/kabupaten/provinsi), ortu ayah&ibu (nama/nik/pendidikan/pekerjaan/hp). Save tulis flat + nested ayah/ibu (kompat ProfilSantri/rapor). Load fallback nested.
+- SantriFormView: +input biodata di Identitas, +grid alamat detail, +section "Data Orang Tua & Asal Sekolah".
+- Boleh kosong (diisi santri/wali nanti). Data konsisten dgn PSB.

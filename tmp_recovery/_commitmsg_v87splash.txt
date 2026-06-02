@@ -1,0 +1,13 @@
+feat(splash+deploy): fade web + splash ikut tema app (electron/android) + stop deploy legacy
+
+- web (index.html): fix fade-out splash -- animation forwards MENANG atas fill-mode 'both' fade-in
+  (bug lama: splash hilang mendadak tanpa fade). Tema sudah ikut app via localStorage.
+- electron (index.ts): splash window ikut TEMA APP, persist ke userData/ammu-theme.json via IPC theme:set
+  (bukan prefers-color-scheme/OS). Fallback OS hanya kalau tema belum pernah di-set.
+- android (values-night/colors.xml baru): splashBg DARK #0F172A untuk Android-12 system splash saat
+  sistem dark. Aset drawable-night (capacitor splash) sudah lengkap.
+- deploy (deploy-minified.cjs): hapus hosting:legacy -- hanya hosting:main + firestore:rules.
+  Legacy portal-mambaul-ulum tidak dipakai lagi.
+
+v.87.0526. Verifikasi: vite build web exit 0 (built 7.03s); tsc electron OK (build/index.js ter-emit);
+node --check deploy OK. Belum push. Splash native (electron/android) perlu rebuild installer/AAB utk verif visual.

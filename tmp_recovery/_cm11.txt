@@ -1,0 +1,3 @@
+﻿fix(psb): convertToSantri copy biodata LENGKAP dari PSB (samakan dg PSB)
+
+Sebelumnya santri hasil convert cuma dapat ~10 field (struktur alamat + biodata ortu hilang) -> data santri di admin lebih tipis dari PSB. Sekarang copy alamat lengkap (dusun/rt/rw/desa/kec/kab/prov), ortu ayah/ibu (flat + nested), wa, kelas, aktif. Sisa field kosong diisi wali via ProfilSantri (yang sudah fixed persist). Catatan: hanya utk convert BARU; santri lama tidak ke-backfill otomatis. Build vite OK.

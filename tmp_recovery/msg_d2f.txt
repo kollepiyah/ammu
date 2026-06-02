@@ -1,0 +1,8 @@
+security(rules): Exec D Opsi2 FINAL — tighten read santri/guru -> signedIn()
+
+- match /guru/ + /santri/ : allow read if true -> if signedIn()
+- PII santri (NIK/ortu) + data guru tak bisa dibaca/enumerasi client tanpa login
+- login lookup sudah via Cloud Function findUserByLogin (server-side) -> aman
+- settings/master/beranda_post TETAP publik (app config + PSB + posts butuh pra-login)
+- brace 105=105
+- PENTING: login kini 100% via function; fallback direct-read CLIENT jadi tak berfungsi (rules block). Pastikan function tetap up.

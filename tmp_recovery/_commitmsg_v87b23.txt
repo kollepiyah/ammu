@@ -1,0 +1,7 @@
+feat(rapor+statistik): hapus back-button rapor santri + kelasCount per guru×lembaga×kelas
+
+- RaporView: sembunyikan tombol back (<-) di header detail untuk role santri (v-if="!isSantri"). Santri tetap "Hanya lihat".
+- StatistikView kelasCount: key `lembaga|kelas` -> `guru|lembaga|kelas` (canonical rule #1: Jumlah Kelas = distinct guru×lembaga×kelas dari santri yg SUDAH punya guru; 2 guru di lembaga+kelas sama = 2 kelas). Sebelumnya dua guru ke-collapse jadi 1.
+- docs KB+HANDOFF: tandai BATCH BARU #2 & #3 DONE + note WAJIB bump v.87->v.88 di sesi baru.
+
+v.87.0526. vite build exit 0. Belum push. [batch baru kyai #2 & #3]

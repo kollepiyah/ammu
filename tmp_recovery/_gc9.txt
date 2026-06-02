@@ -1,0 +1,2 @@
+[feature/vue-migration 6b86dfd] ﻿fix(electron): splash dobel - tahan main window hidden sampai splash native tutup
+ 2 files changed, 16 insertions(+), 12 deletions(-)

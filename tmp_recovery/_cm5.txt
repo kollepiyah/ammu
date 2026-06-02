@@ -1,0 +1,3 @@
+﻿fix(rbac): Kepala Lembaga/PJ discope ke se-group lembaganya (sebelumnya lihat SEMUA santri)
+
+useSantri.isFullAccess: hapus shortcut jabatan kepala/pj/pengasuh=>true (yang bikin branch canSee jadi dead code). Kepala kini masuk branch scoping: match exact-lembaga (canSee) + keluarga lembaga via getLembagaGroup (TPQ Pagi/Sore/Pra PTPT => 'TPQ'). Sesuai pilihan kyai 'se-group'. Guru biasa tetap ke santri ampuannya. Build vite OK.

@@ -250,3 +250,66 @@ Scoping saat ini dijalankan oleh DUA mekanisme paralel:
 - Sisa BATCH BARU BELUM dikerjakan: **#1 audit master lembaga + semua data/rules/function/skema/pengaturan**, **#4 cek menyeluruh dead code / fitur hilang / code miss**.
 
 **— END ADDENDUM —**
+
+
+---
+## SESI v.88.0526 — 31 Mei 2026 (Cowork agent) + HANDOFF SESI BARU
+
+### SUDAH sesi ini (edit via Cowork sandbox Linux, python EOL-safe; cek `git status` — sebagian mungkin belum commit/deploy)
+- **Bump v.87 -> v.88** (gradle versionCode 88 + versionName, package.json root/vue-app/electron, main.js Sentry, 4 footer). COMMIT + web DEPLOY sudah.
+- **KOP/Settings revert FIX** — `firestore.rules` `match /settings/{docId}` jadi `allow write: if signedIn();`. Akar: mandat `adminPassword` di SETIAP write memblokir `settings/general` (KOP, logo, schema rapor, predikat, master_tp, rekap mapel) -> setDoc reject -> catch -> "balik ke default". Fix ini sekalian membetulkan SEMUA simpan setting tsb. Deploy: `npm run firebase:deploy` (incl firestore:rules).
+- **Statistik F1** (`StatistikView.vue`): `statistikLembaga[].kelas` -> distinct (guru x kelas) konsisten dgn `kelasCount`; normalize match lembaga (trim/lowercase) di `statistikLembaga` + `lembagaPrestasi`.
+- **MIGRASI lembaga (BARU)** — `utils/v88_lembaga_normalize.js` + tombol hijau "Normalisasi Lembaga Santri" di Master Data. Migrasi `santri.lembaga`: 'TPQ'+shift -> 'TPQ Pagi'/'TPQ Sore'; 'P3H' -> 'PPPH'; 'PRA PTPT' -> 'Pra PTPT'. Idempotent; santri 'TPQ' TANPA shift dilewati (assign manual). setDoc merge sertakan id+nama (lolos rules).
+- **Dead code**: hapus `composables/useAbsensiSantri.js` (yatim) via `git rm`.
+
+### AKAR MASALAH STATISTIK = DATA (penting)
+Distribusi santri nyata: PTPT 186, "PRA PTPT" 186, TPQ 53, P3H 6, "Pra PTPT" 1 (total 432). Label `lembaga` santri TIDAK seragam vs master canonical -> kartu TPQ Pagi/Sore = 0, KELAS/angka aneh. Keputusan kyai: data dimigrasi ke "TPQ Pagi"/"TPQ Sore" TERPISAH (group TPQ), BUKAN model shift v.20.80 (`tpqShift.js`). Migrasi v.88 di atas yang membereskan. `kelasCount` (canonical guru x lembaga x kelas) sudah BENAR.
+
+### PENDING SESI BARU (kerjakan ini)
+1. **Jalankan + verifikasi migrasi v.88**: Master Data -> "Normalisasi Lembaga Santri" -> Dry-Run -> Execute. Cek Statistik TPQ Pagi/Sore keluar + rapor santri TPQ jalan. Santri "TPQ tanpa shift" -> assign manual via Edit. ⚠️ JANGAN klik tombol biru lama "Migrasi TPQ Shift" (arah kebalikan).
+2. **Splash Android** (robot default): `ic_launcher_foreground` = robot Android Studio default, dipakai sbg `windowSplashScreenAnimatedIcon`. Fix: `npm i -D @capacitor/assets --prefix vue-app` + taruh `vue-app/assets/logo.png` (~1024^2) + `cd vue-app && npx @capacitor/assets generate --android && npx cap sync android` + `npm run build:aab`.
+3. **AAB v.88 rebuild** (splash native, POST_NOTIFICATIONS, widget Hijri). Notif HP: `@capacitor/local-notifications` sudah di vue-app/package.json -> `npx cap sync android` + `npm run build:aab`.
+4. **Pensiunkan model shift TPQ** (kebersihan, setelah migrasi sukses): hapus/disable tombol lama "Migrasi TPQ Shift" + audit pemakai `utils/tpqShift.js` (normalizeTpqName dll) supaya tak ada kode yg balik mengubah ke 'TPQ'+shift.
+5. **AUDIT MENYELURUH vs LOGIC GLOBAL canonical (di bawah)** — kyai minta sesi baru verifikasi SEMUA fitur (master lembaga, jenjang/kelas, rapor Qiraati/Diniyah, statistik, dropdown PSB/SantriForm, scoping RBAC, kepala jabatan) COCOK dgn spec ini. Pendekatan: untuk tiap lembaga cek jenjang, kepala, shift, rapor sesuai tabel.
+6. Sisa lama: Dashboard Keuangan (minta kyai sebut angka), performa device, cek gambar/compat.
+
+### LOGIC GLOBAL MAMBAUL ULUM (SUMBER KEBENARAN — verifikasi semua fitur ke sini)
+Yayasan: Al Manshur. Pondok: Mambaul Ulum.
+
+A. LEMBAGA QIRAATI (group 'qiraati'):
+1. TPQ (umbrella): variant = TPQ Pagi, TPQ Sore, Pra PTPT
+   - Kepala: Kepala TPQ
+   - Guru shift: Pagi & Sore / Pagi / Sore
+   - Santri: TPQ Pagi, TPQ Sore, Pra PTPT
+   - Jenjang TPQ Pagi/Sore: Jilid 1 (A,B,C), Jilid 2 (A,B), Jilid 3 (A,B), Jilid 4 (A,B), Jilid 5 (A,B), KPI (Kelas Persiapan IMTAS), PK (Kelas Persiapan Khotaman)
+   - Jenjang Pra PTPT: Level 1 (1/2 Juz), Level 2 (1 Juz), Level 3 (1 1/2 Juz), Level 4 (2 Juz), Level 5 (3 Juz)
+   - Rapor Qiraati: TPQ Pagi TIDAK ADA; TPQ Sore + Pra PTPT ADA
+2. PTPT (Pasca TPQ Program Tahfizh)
+   - Kepala: PJ PTPT
+   - Guru shift: Pagi & Sore / Pagi / Sore ; Santri: Pagi&Sore / Pagi / Sore
+   - Jenjang: Kelas 1 (Juz 1-5), Kelas 2 (Juz 6-10), Kelas 3 (Juz 11-15), Kelas 4 (Juz 16-20), Kelas 5 (Juz 21-25), Kelas 6 (Juz 26-30)
+   - Rapor Qiraati: ADA
+3. PPPH (Pasca PTPT Program Hadits)
+   - Kepala: PJ PPPH
+   - Guru: Pagi & Sore ; Santri: Pagi&Sore
+   - Jenjang: Level 1 (Arba'in Nawawi), Level 2 (Riyadhus Sholihin), Level 3 (Shahih Bukhari), Level 4 (Shahih Muslim)
+   - Rapor Qiraati: ADA
+
+B. LEMBAGA FORMAL (group 'sekolah'):
+1. TK: Kepala = Kepala TK; Jenjang = TK A, TK B; Rapor Diniyah = TIDAK ADA
+2. SDI: Kepala = Kepala SDI; Jenjang = Kelas I-VI; Rapor Diniyah = ADA
+3. PKBM: Kepala = Kepala PKBM; Jenjang = SMP (VII-IX) + SMA (X-XII); Rapor Diniyah = ADA
+
+### MATRIKS RBAC FINAL (kyai 31 Mei)
+- super_admin: full + satu-satunya CRUD + edit/hapus keuangan
+- admin biasa: full VIEW, tanpa CRUD, tanpa keuangan
+- admin_keuangan: keuangan (input/bayar/cetak/cetak-ulang), tanpa edit/hapus
+- guru/user non-kepala: data pribadi + santri KELASNYA (match nama guru) -- sudah benar di useSantri
+- Kepala Lembaga/PJ: SE-LEMBAGA (se-group) -- pemilik scope se-lembaga
+- Direktur/Supervisor: FULL + menu Supervisi
+- santri/wali: pribadi + prestasi
+
+### CARA KERJA COWORK (sandbox Linux)
+git/node ADA native di sandbox (read/diff/sed/python). TAPI: vite build TIDAK bisa (esbuild win32 di node_modules kyai). Commit dari sandbox berisiko CRLF churn. Mount D: tolak `rm` (pakai git rm di Windows). POLA: agent edit via python byte-replace (EOL-safe), KYAI build (`tmp_recovery\_run_vite.cmd`) + commit `--no-verify` + deploy/AAB di Windows. MasterDataView.vue = EOL LF; mayoritas file lain CRLF.
+
+**— END SESI v.88 / HANDOFF SESI BARU —**

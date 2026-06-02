@@ -1,0 +1,251 @@
+d3d60f7 feat(v.82.0526): payment channels, multi-anak wali, fix preselect, simplify santri rapor
+ .github/workflows/ios-build.yml                    |   106 +
+ .gitignore                                         |    10 +
+ ANDROID_WIDGET_TODO.md                             |    87 +
+ IOS_BUILD_GUIDE.md                                 |   156 +
+ Icon+Splashscreen/1.png                            |   Bin 0 -> 109059 bytes
+ Icon+Splashscreen/2.png                            |   Bin 0 -> 78896 bytes
+ Icon+Splashscreen/3.png                            |   Bin 0 -> 160332 bytes
+ Icon+Splashscreen/4.png                            |   Bin 0 -> 144488 bytes
+ Icon+Splashscreen/5.png                            |   Bin 0 -> 105617 bytes
+ Icon+Splashscreen/6.png                            |   Bin 0 -> 75623 bytes
+ firestore.rules                                    |    49 +-
+ key.properties                                     |     4 +
+ package-lock.json                                  | 13943 +++++++------
+ package.json                                       |     7 +-
+ public/dist/tailwind.css                           |     2 +-
+ public/psb/assets/index-DG7xk6V0.js                | 20288 -------------------
+ public/psb/assets/index-DGBJMIIK.css               |   912 -
+ public/psb/index.html                              |   Bin 790 -> 790 bytes
+ public/vue/assets/AbsensiGuruView-B9lB71ao.js      |     1 -
+ public/vue/assets/AbsensiSantriView-ON3_FOp4.js    |     1 -
+ public/vue/assets/AppLayout-DnqScTxq.css           |     1 -
+ public/vue/assets/AppLayout-q6e2sMMm.js            |     6 -
+ public/vue/assets/BisyarohView-CLtXExr0.js         |     8 -
+ public/vue/assets/BukuIndukView-D7VjStNW.js        |     7 -
+ public/vue/assets/CapaianPrestasiView-Cec8QD7k.js  |     1 -
+ public/vue/assets/DashboardView-BR_Upz1K.js        |     1 -
+ public/vue/assets/DashboardView-CsugeZA2.css       |     1 -
+ public/vue/assets/FieldSchemaView-DKzr6xrI.js      |     1 -
+ public/vue/assets/GuruFormView-DCZUklAH.js         |     1 -
+ public/vue/assets/GuruView-CbmttSY_.js             |     2 -
+ public/vue/assets/HutangPiutangView-DFfB0J99.js    |     1 -
+ public/vue/assets/InputBulananView-BLVJbTAo.js     |     1 -
+ public/vue/assets/InputBulananView-BPfVFNv0.css    |     1 -
+ public/vue/assets/KalenderKegiatanView-BanVt94Y.js |     5 -
+ .../vue/assets/KegiatanPesantrenView-DY0WmZVz.js   |     1 -
+ public/vue/assets/KelasView-C1lBPKWP.js            |     1 -
+ .../vue/assets/KeuanganDashboardView-BZI8Mpzz.js   |     1 -
+ public/vue/assets/KritikSaranView-BbCulTpV.js      |     1 -
+ public/vue/assets/LaporanKeuanganView-G6nnLhcM.js  |     1 -
+ public/vue/assets/LembagaDetailView-BRszPeRQ.js    |     3 -
+ public/vue/assets/LembagaFormView-DRKIV7Gm.js      |     1 -
+ public/vue/assets/LoginView-C298sAAq.js            |     1 -
+ public/vue/assets/MasterDataView-DmRu9rW-.js       |     2 -
+ public/vue/assets/MasterFormBridgeView-DCbaBQCS.js |     1 -
+ public/vue/assets/NaikKelasView-DJxIcwmq.js        |     1 -
+ public/vue/assets/NaikKelasView-DWO6tiTe.css       |     1 -
+ public/vue/assets/PembayaranView-dcfnvXXz.js       |     1 -
+ .../vue/assets/PengaturanKeuanganView-D1QJnqEy.js  |     4 -
+ public/vue/assets/PengaturanView-B-AeEnLh.js       |    16 -
+ public/vue/assets/PersonalView-BNC8-gXl.js         |     1 -
+ public/vue/assets/PosSantriView-CNx5BYlg.js        |     1 -
+ public/vue/assets/PosSantriView-D0BGwg6s.css       |     1 -
+ public/vue/assets/PostsView-DyvXEcbs.css           |     1 -
+ public/vue/assets/PostsView-hMpSfsFF.js            |     1 -
+ public/vue/assets/PpdbAdminView-fevlyMAk.js        |     1 -
+ public/vue/assets/PpdbDetailView-V05NtQrW.js       |     1 -
+ public/vue/assets/PpdbFormView-BLOgXpqE.js         |     1 -
+ public/vue/assets/ProfilView-IX64P8Me.js           |     1 -
+ public/vue/assets/RaporView-D7-C7Ycw.js            |     6 -
+ public/vue/assets/RaporView-Xmtq30Xl.css           |     1 -
+ public/vue/assets/RekapDiniyahView-Al4pS5u3.js     |     1 -
+ public/vue/assets/RekapPrestasiView-jsiaqVg9.js    |    19 -
+ public/vue/assets/RiwayatPosView-IUTH2wOK.js       |     9 -
+ public/vue/assets/RiwayatSantriView-3ojJRX3C.js    |     1 -
+ public/vue/assets/SantriFormView-CCo3jMv5.js       |     1 -
+ public/vue/assets/SantriView-DwBm-9rj.js           |     1 -
+ public/vue/assets/SkeletonCard-CE_seKdW.js         |     1 -
+ public/vue/assets/StatistikView-CnqDO8sZ.js        |    18 -
+ public/vue/assets/SupervisiView-Z8pqlr6T.js        |     2 -
+ public/vue/assets/TabunganView-D8GhxVlq.js         |    10 -
+ public/vue/assets/TagihanView-CXCjyOWX.js          |     3 -
+ public/vue/assets/UiActionCard-BKREPQLV.js         |     1 -
+ public/vue/assets/UiButton-Pf0pozjA.js             |    21 -
+ .../assets/_plugin-vue_export-helper-DlAUqK2U.js   |     1 -
+ public/vue/assets/auditLog-CCzFu1T_.js             |     1 -
+ public/vue/assets/format-hvvLOU_z.js               |     1 -
+ public/vue/assets/hijri-BQdwk8_X.js                |     1 -
+ public/vue/assets/index-CyLZ5V3H.css               |     1 -
+ public/vue/assets/index-eg9ALmb_.js                |  4605 -----
+ public/vue/assets/logo-CxXS7KxG.js                 |     1 -
+ public/vue/assets/pdf-CfElz_X6.js                  |     1 -
+ public/vue/assets/pdfBuilder-UgG-fR_z.js           |     1 -
+ public/vue/assets/roleScope-DKDRDRJj.js            |     1 -
+ public/vue/assets/santriSort-DP3NNiLp.js           |     1 -
+ public/vue/assets/storage-Cc3s7tzB.js              |     1 -
+ public/vue/assets/strukBuilder-DSGagWgm.js         |     3 -
+ public/vue/assets/useConfirm-B3bPngUC.js           |     1 -
+ public/vue/assets/useExcel-CfMuM0d2.js             |     1 -
+ public/vue/assets/useGuru-CmSKkIKT.js              |     1 -
+ public/vue/assets/useKegiatan-DSIOb0u0.js          |     1 -
+ public/vue/assets/useKeuangan-BJmRxFCS.js          |     1 -
+ public/vue/assets/useLembaga-BhzViRyS.js           |     1 -
+ public/vue/assets/useMenus-CX5aWToi.js             |     1 -
+ public/vue/assets/useSantri-cITX6raH.js            |     1 -
+ public/vue/assets/useToast-D2cA42_z.js             |     1 -
+ public/vue/index.html                              |     4 +-
+ public/vue/manifest.webmanifest                    |    46 +
+ scripts/deploy-minified.cjs                        |    37 +-
+ storage.rules                                      |     8 +-
+ vue-app-psb/dist/assets/index-BJdn9wcb.css         |   838 -
+ vue-app-psb/dist/assets/index-BOmTLt9n.js          | 20171 ------------------
+ vue-app-psb/dist/index.html                        |    23 -
+ vue-app-psb/dist/logo.png                          |   Bin 132653 -> 0 bytes
+ vue-app-psb/src/views/PsbFormView.vue              |   232 +-
+ vue-app-psb/vite.config.js                         |    10 +-
+ vue-app/android/.gitignore                         |     2 +-
+ vue-app/android/.idea/.gitignore                   |     6 +-
+ vue-app/android/.idea/AndroidProjectSystem.xml     |    10 +-
+ vue-app/android/.idea/compiler.xml                 |    10 +-
+ vue-app/android/.idea/deploymentTargetSelector.xml |    20 +-
+ vue-app/android/.idea/migrations.xml               |    18 +-
+ vue-app/android/.idea/misc.xml                     |     1 -
+ vue-app/android/.idea/runConfigurations.xml        |    32 +-
+ vue-app/android/app/build.gradle                   |    34 +-
+ vue-app/android/app/capacitor.build.gradle         |     3 +
+ .../app/release/baselineProfiles/0/app-release.dm  |   Bin 0 -> 3097 bytes
+ .../app/release/baselineProfiles/1/app-release.dm  |   Bin 0 -> 3040 bytes
+ vue-app/android/app/release/output-metadata.json   |    37 +
+ vue-app/android/app/src/main/AndroidManifest.xml   |    35 +-
+ .../src/main/java/app/ammu/id/MainActivity.java    |    21 +-
+ .../java/app/ammu/id/widgets/JamHijriWidget.kt     |   185 +
+ .../app/src/main/res/drawable-land-hdpi/splash.png |   Bin 160982 -> 31844 bytes
+ .../app/src/main/res/drawable-land-ldpi/splash.png |   Bin 0 -> 7707 bytes
+ .../app/src/main/res/drawable-land-mdpi/splash.png |   Bin 160982 -> 14654 bytes
+ .../main/res/drawable-land-night-hdpi/splash.png   |   Bin 0 -> 30592 bytes
+ .../main/res/drawable-land-night-ldpi/splash.png   |   Bin 0 -> 7756 bytes
+ .../main/res/drawable-land-night-mdpi/splash.png   |   Bin 0 -> 14395 bytes
+ .../main/res/drawable-land-night-xhdpi/splash.png  |   Bin 0 -> 56760 bytes
+ .../main/res/drawable-land-night-xxhdpi/splash.png |   Bin 0 -> 80364 bytes
+ .../res/drawable-land-night-xxxhdpi/splash.png     |   Bin 0 -> 109550 bytes
+ .../src/main/res/drawable-land-xhdpi/splash.png    |   Bin 160982 -> 59124 bytes
+ .../src/main/res/drawable-land-xxhdpi/splash.png   |   Bin 160982 -> 83327 bytes
+ .../src/main/res/drawable-land-xxxhdpi/splash.png  |   Bin 160982 -> 112359 bytes
+ .../app/src/main/res/drawable-night/splash.png     |   Bin 0 -> 7756 bytes
+ .../app/src/main/res/drawable-port-hdpi/splash.png |   Bin 160982 -> 31875 bytes
+ .../app/src/main/res/drawable-port-ldpi/splash.png |   Bin 0 -> 7745 bytes
+ .../app/src/main/res/drawable-port-mdpi/splash.png |   Bin 160982 -> 14745 bytes
+ .../main/res/drawable-port-night-hdpi/splash.png   |   Bin 0 -> 30327 bytes
+ .../main/res/drawable-port-night-ldpi/splash.png   |   Bin 0 -> 7766 bytes
+ .../main/res/drawable-port-night-mdpi/splash.png   |   Bin 0 -> 14407 bytes
+ .../main/res/drawable-port-night-xhdpi/splash.png  |   Bin 0 -> 58518 bytes
+ .../main/res/drawable-port-night-xxhdpi/splash.png |   Bin 0 -> 80947 bytes
+ .../res/drawable-port-night-xxxhdpi/splash.png     |   Bin 0 -> 106482 bytes
+ .../src/main/res/drawable-port-xhdpi/splash.png    |   Bin 160982 -> 61500 bytes
+ .../src/main/res/drawable-port-xxhdpi/splash.png   |   Bin 160982 -> 84873 bytes
+ .../src/main/res/drawable-port-xxxhdpi/splash.png  |   Bin 160982 -> 110847 bytes
+ .../android/app/src/main/res/drawable/splash.png   |   Bin 160982 -> 14745 bytes
+ .../app/src/main/res/drawable/widget_bg.xml        |     9 +
+ .../app/src/main/res/layout/widget_jam_hijri.xml   |    43 +
+ .../src/main/res/mipmap-anydpi-v26/ic_launcher.xml |    11 +-
+ .../res/mipmap-anydpi-v26/ic_launcher_round.xml    |    11 +-
+ .../app/src/main/res/mipmap-hdpi/ic_launcher.png   |   Bin 6275 -> 4607 bytes
+ .../res/mipmap-hdpi/ic_launcher_background.png     |   Bin 0 -> 531 bytes
+ .../res/mipmap-hdpi/ic_launcher_foreground.png     |   Bin 13615 -> 19895 bytes
+ .../src/main/res/mipmap-hdpi/ic_launcher_round.png |   Bin 6442 -> 7172 bytes
+ .../app/src/main/res/mipmap-ldpi/ic_launcher.png   |   Bin 0 -> 982 bytes
+ .../res/mipmap-ldpi/ic_launcher_background.png     |   Bin 0 -> 277 bytes
+ .../res/mipmap-ldpi/ic_launcher_foreground.png     |   Bin 0 -> 7159 bytes
+ .../src/main/res/mipmap-ldpi/ic_launcher_round.png |   Bin 0 -> 2516 bytes
+ .../app/src/main/res/mipmap-mdpi/ic_launcher.png   |   Bin 3326 -> 1903 bytes
+ .../res/mipmap-mdpi/ic_launcher_background.png     |   Bin 0 -> 350 bytes
+ .../res/mipmap-mdpi/ic_launcher_foreground.png     |   Bin 6888 -> 11118 bytes
+ .../src/main/res/mipmap-mdpi/ic_launcher_round.png |   Bin 3429 -> 3873 bytes
+ .../app/src/main/res/mipmap-xhdpi/ic_launcher.png  |   Bin 9773 -> 8097 bytes
+ .../res/mipmap-xhdpi/ic_launcher_background.png    |   Bin 0 -> 697 bytes
+ .../res/mipmap-xhdpi/ic_launcher_foreground.png    |   Bin 20811 -> 28868 bytes
+ .../main/res/mipmap-xhdpi/ic_launcher_round.png    |   Bin 10021 -> 11025 bytes
+ .../app/src/main/res/mipmap-xxhdpi/ic_launcher.png |   Bin 17436 -> 17068 bytes
+ .../res/mipmap-xxhdpi/ic_launcher_background.png   |   Bin 0 -> 1040 bytes
+ .../res/mipmap-xxhdpi/ic_launcher_foreground.png   |   Bin 36167 -> 47624 bytes
+ .../main/res/mipmap-xxhdpi/ic_launcher_round.png   |   Bin 17847 -> 19474 bytes
+ .../src/main/res/mipmap-xxxhdpi/ic_launcher.png    |   Bin 25637 -> 27327 bytes
+ .../res/mipmap-xxxhdpi/ic_launcher_background.png  |   Bin 1169 -> 1726 bytes
+ .../res/mipmap-xxxhdpi/ic_launcher_foreground.png  |   Bin 51795 -> 68272 bytes
+ .../main/res/mipmap-xxxhdpi/ic_launcher_round.png  |   Bin 26060 -> 28469 bytes
+ .../android/app/src/main/res/values/strings.xml    |     2 +
+ .../app/src/main/res/xml/widget_jam_hijri_info.xml |    12 +
+ vue-app/android/build.gradle                       |    27 +-
+ vue-app/android/capacitor.settings.gradle          |     9 +
+ vue-app/android/gradlew.bat                        |   188 +-
+ vue-app/android/variables.gradle                   |     4 +
+ vue-app/capacitor.config.json                      |    18 +-
+ vue-app/capacitor.config.ts                        |    67 -
+ vue-app/electron/.gitignore                        |     6 +
+ vue-app/electron/README.md                         |    97 +
+ vue-app/electron/live-runner.js                    |    70 +
+ vue-app/electron/package-lock.json                 |  4290 ++++
+ vue-app/electron/package.json                      |    84 +
+ vue-app/electron/src/index.ts                      |   442 +
+ vue-app/electron/src/preload.ts                    |    35 +
+ vue-app/electron/tsconfig.json                     |    17 +
+ vue-app/icons/icon-128.webp                        |   Bin 0 -> 14186 bytes
+ vue-app/icons/icon-192.webp                        |   Bin 0 -> 24774 bytes
+ vue-app/icons/icon-256.webp                        |   Bin 0 -> 35583 bytes
+ vue-app/icons/icon-48.webp                         |   Bin 0 -> 3110 bytes
+ vue-app/icons/icon-512.webp                        |   Bin 0 -> 82809 bytes
+ vue-app/icons/icon-72.webp                         |   Bin 0 -> 5917 bytes
+ vue-app/icons/icon-96.webp                         |   Bin 0 -> 9295 bytes
+ vue-app/ios/App/App/Info.plist                     |     4 +-
+ vue-app/package-lock.json                          |  1181 +-
+ vue-app/package.json                               |    24 +-
+ vue-app/public/manifest.webmanifest                |    46 +
+ vue-app/src/App.vue                                |   144 +-
+ .../src/components/dashboard/DashboardKalender.vue |     6 +-
+ vue-app/src/components/layout/AppNotifBell.vue     |    49 +-
+ vue-app/src/components/layout/AppSidebar.vue       |   Bin 7489 -> 7492 bytes
+ vue-app/src/components/posts/PostCard.vue          |    47 +-
+ vue-app/src/composables/useDesktopPrint.js         |   107 +
+ vue-app/src/composables/useExcel.js                |     1 +
+ vue-app/src/composables/useGuruForm.js             |   121 +-
+ vue-app/src/composables/useHaptic.js               |    43 +-
+ vue-app/src/composables/useLembagaForm.js          |    49 +-
+ vue-app/src/composables/useLocalNotif.js           |   121 +
+ vue-app/src/composables/useMenus.js                |    24 +-
+ vue-app/src/composables/useNativeDownload.js       |   101 +-
+ vue-app/src/composables/useNotifications.js        |    36 +-
+ vue-app/src/composables/useSantriForm.js           |   178 +-
+ vue-app/src/composables/useWaliChildren.js         |   105 +
+ vue-app/src/main.js                                |    15 +-
+ vue-app/src/router/index.js                        |    38 +-
+ vue-app/src/services/firebase.js                   |    69 +-
+ vue-app/src/utils/pdfBuilder.js                    |    52 +-
+ vue-app/src/utils/predikat.js                      |    48 +-
+ vue-app/src/utils/raporPdf.js                      |   202 +-
+ vue-app/src/utils/strukBuilder.js                  |    48 +-
+ vue-app/src/views/AbsensiGuruView.vue              |     9 +-
+ vue-app/src/views/CapaianPrestasiView.vue          |    89 +-
+ vue-app/src/views/DashboardView.vue                |   Bin 2323 -> 2326 bytes
+ vue-app/src/views/GuruFormView.vue                 |   225 +-
+ vue-app/src/views/GuruView.vue                     |    37 +-
+ vue-app/src/views/KalenderKegiatanView.vue         |    13 +-
+ vue-app/src/views/LembagaDetailView.vue            |    20 +-
+ vue-app/src/views/LembagaFormView.vue              |    76 +-
+ vue-app/src/views/LoginView.vue                    |     3 +-
+ vue-app/src/views/MasterDataView.vue               |     6 +-
+ vue-app/src/views/NaikKelasView.vue                |   196 +-
+ vue-app/src/views/PembayaranPendingView.vue        |   253 +
+ vue-app/src/views/PembayaranView.vue               |   160 +-
+ vue-app/src/views/PengaturanView.vue               |   479 +-
+ vue-app/src/views/PostsView.vue                    |    16 +-
+ vue-app/src/views/RaporView.vue                    |   606 +-
+ vue-app/src/views/SantriFormView.vue               |   185 +-
+ vue-app/src/views/SantriView.vue                   |    44 +-
+ vue-app/src/views/StatistikView.vue                |   106 +-
+ vue-app/src/views/TabunganView.vue                 |     6 +-
+ vue-app/src/views/TagihanView.vue                  |    33 +-
+ vue-app/src/views/profil/ProfilGuru.vue            |   138 +-
+ vue-app/src/views/profil/ProfilPengaturanSaya.vue  |   157 +-
+ vue-app/src/views/profil/ProfilSantri.vue          |    55 +-
+ 249 files changed, 15115 insertions(+), 58252 deletions(-)
