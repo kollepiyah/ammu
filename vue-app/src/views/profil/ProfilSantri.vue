@@ -220,7 +220,7 @@
         </div>
       </div>
     </div>
-    <ProfilPengaturanSaya role="santri" :entity-id="santri?.id" :entity="santri" />
+    <ProfilPengaturanSaya v-if="!readonly" role="santri" :entity-id="santri?.id" :entity="santri" />
   </div>
 </template>
 

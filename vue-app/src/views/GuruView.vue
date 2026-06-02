@@ -233,8 +233,9 @@
           <div
             v-for="g in guru"
             :key="g.id"
+            @click="goProfil(g, $event)"
             :class="[
-              'bg-[var(--bg-card)] rounded-xl p-3 md:p-4 border shadow-sm hover:shadow-md transition',
+              'bg-[var(--bg-card)] rounded-xl p-3 md:p-4 border shadow-sm hover:shadow-md transition cursor-pointer',
               selected.has(String(g.id)) ? 'border-teal-400 ring-2 ring-teal-100 dark:ring-teal-900/40' : 'border-[var(--border-subtle)]'
             ]"
           >
@@ -243,9 +244,7 @@
               <input v-if="isMasterMode" type="checkbox" :checked="selected.has(String(g.id))" @change="toggleSelect(g.id)" class="flex-shrink-0 mt-2 w-4 h-4 rounded border-[var(--border-default)] text-teal-600 focus:ring-teal-500 cursor-pointer" />
               <!-- Avatar -->
               <div
-                @click="$router.push('/profil/guru/' + g.id)"
-                class="flex-shrink-0 w-12 h-12 md:w-14 md:h-14 rounded-full bg-gradient-to-br from-teal-100 to-emerald-100 dark:from-teal-700 dark:to-emerald-700 border-2 border-white dark:border-slate-700 flex items-center justify-center overflow-hidden cursor-pointer"
-                title="Lihat profil"
+                class="flex-shrink-0 w-12 h-12 md:w-14 md:h-14 rounded-full bg-gradient-to-br from-teal-100 to-emerald-100 dark:from-teal-700 dark:to-emerald-700 border-2 border-white dark:border-slate-700 flex items-center justify-center overflow-hidden"
               >
                 <img v-if="g.foto" :src="g.foto" alt="Foto" class="w-full h-full object-cover" />
                 <i v-else class="fas fa-chalkboard-teacher text-teal-500 dark:text-teal-200"></i>
@@ -254,7 +253,7 @@
               <div class="flex-1 min-w-0">
                 <div class="flex items-start justify-between gap-2">
                   <div class="flex-1 min-w-0">
-                    <h3 @click="$router.push('/profil/guru/' + g.id)" class="text-sm md:text-base font-black text-[var(--text-primary)] truncate cursor-pointer hover:text-teal-600 dark:hover:text-teal-400 transition" title="Lihat profil">
+                    <h3 class="text-sm md:text-base font-black text-[var(--text-primary)] truncate">
                       {{ getNamaGuruGelar(g.nama, g.jk) }}
                     </h3>
                     <p class="text-[11px] text-[var(--text-secondary)] mt-0.5">
@@ -357,7 +356,7 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 // v.21.17c.0526: mode prop — 'view' (sidebar, default) atau 'master' (Master Data, full CRUD)
 const props = defineProps({ mode: { type: String, default: 'view' } })
 const isMasterMode = computed(() => props.mode === 'master')
@@ -389,6 +388,12 @@ const {
 // v.91.0626: prefill pencarian dari ?q= (global search header)
 const _route = useRoute()
 watch(() => _route.query.q, (v) => { if (v != null && v !== '') search.value = String(v) }, { immediate: true })
+// v.91.0626: klik card -> halaman profil (abaikan klik tombol/link/checkbox)
+const router = useRouter()
+function goProfil(g, e) {
+  if (e && e.target && e.target.closest('button, a, input, label')) return
+  router.push('/profil/guru/' + g.id)
+}
 
 // v.21.24d.0526: Dedupe lembaga case-insensitive — "TPQ Pagi" / "TPQ PAGI" / "TPQ pagi" → 1 entry
 // Prefer canonical capitalization (Title Case match master/lembaga)

@@ -270,7 +270,7 @@
         </div>
       </div>
 
-      <p v-if="mode === 'view'" class="text-[10px] text-[var(--text-tertiary)] italic mt-4 text-center pb-3">
+      <p v-if="mode === 'view' && !readonly" class="text-[10px] text-[var(--text-tertiary)] italic mt-4 text-center pb-3">
         <i class="fas fa-info-circle mr-1"></i>Untuk mengubah foto/sandi → tab "Pengaturan Profil" di bawah.
         Untuk update data personal (NIK, alamat, pendidikan, dll) → klik tab "Edit Data Saya" di atas.
       </p>
@@ -278,7 +278,7 @@
 
     <!-- v.21.26.0526: Section Kaitkan Akun Google DIHAPUS — duplikat dgn card di Pengaturan Profil grid -->
 
-    <ProfilPengaturanSaya role="guru" :entity-id="guru?.id" :entity="guru" />
+    <ProfilPengaturanSaya v-if="!readonly" role="guru" :entity-id="guru?.id" :entity="guru" />
   </div>
 </template>
 
