@@ -83,8 +83,8 @@
         </p>
       </div>
 
-      <!-- v.21.111.0527: Notif Center -->
-      <AppNotifBell />
+      <!-- v.21.111.0527: Notif Center — v.91.0626: sembunyi di mobile (pindah ke bottom nav) -->
+      <AppNotifBell v-if="!showBottomNav" />
 
       <!-- v.21.115.0528: tap target w-9 → w-10 (40px) — mobile-friendly per design-tokens -->
       <button
@@ -169,6 +169,9 @@ import { getNamaGuruGelar } from '@/utils/format'
 import AppNotifBell from '@/components/layout/AppNotifBell.vue'
 // v.86.0526: Wali multi-anak picker
 import { useWaliChildren } from '@/composables/useWaliChildren'
+// v.91.0626: sembunyikan bell saat bottom nav aktif (notif pindah ke bottom nav)
+import { useMobileShell } from '@/composables/useMobileShell'
+const { showBottomNav } = useMobileShell()
 
 const auth = useAuthStore()
 const ui = useUiStore()

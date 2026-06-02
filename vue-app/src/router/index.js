@@ -8,6 +8,8 @@ const LoginView = () => import('@/views/LoginView.vue')
 const DashboardView = () => import('@/views/DashboardView.vue')
 const PengaturanView = () => import('@/views/PengaturanView.vue')
 const ProfilView = () => import('@/views/ProfilView.vue')
+// v.91.0626: halaman Notifikasi penuh (bottom nav mobile)
+const NotifikasiView = () => import('@/views/NotifikasiView.vue')
 const SantriView = () => import('@/views/SantriView.vue')
 const GuruView = () => import('@/views/GuruView.vue')
 const LembagaView = () => import('@/views/LembagaView.vue')
@@ -84,6 +86,7 @@ const routes = [
     children: [
       { path: 'dashboard', name: 'dashboard', component: DashboardView },
       { path: 'profil', name: 'profil', component: ProfilView },
+      { path: 'notifikasi', name: 'notifikasi', component: NotifikasiView },
       { path: 'santri', name: 'santri', component: SantriView },
       // Phase 5.13: Full CRUD form Vue
       { path: 'santri/new', name: 'santri-new', component: SantriFormView, meta: { admin: true } },

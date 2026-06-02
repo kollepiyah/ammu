@@ -11,6 +11,8 @@
         </div>
         <router-view />
       </main>
+      <!-- v.91.0626: bottom nav hanya di Android/PWA + mobile -->
+      <BottomNav v-if="showBottomNav" />
     </div>
     <ConfirmDialog />
   </div>
@@ -20,7 +22,11 @@
 import AppSidebar from './AppSidebar.vue'
 import AppHeader from './AppHeader.vue'
 import AppBreadcrumb from './AppBreadcrumb.vue'
+import BottomNav from './BottomNav.vue'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
+import { useMobileShell } from '@/composables/useMobileShell'
+
+const { showBottomNav } = useMobileShell()
 </script>
 
 <style>
