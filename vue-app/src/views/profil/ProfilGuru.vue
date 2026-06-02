@@ -52,8 +52,8 @@
         </div>
       </div>
 
-      <!-- v.79.0526: tab toggle Lihat / Edit Profil Saya -->
-      <div class="px-4 pt-4 flex gap-2 border-b border-[var(--border-subtle)]">
+      <!-- v.79.0526: tab toggle Lihat / Edit Profil Saya — v.91.0626: sembunyi saat readonly -->
+      <div v-if="!readonly" class="px-4 pt-4 flex gap-2 border-b border-[var(--border-subtle)]">
         <button
           @click="mode = 'view'"
           :class="['px-3 py-2 text-xs font-bold rounded-t-lg transition cursor-pointer',
@@ -308,7 +308,8 @@ const PENDIDIKAN_OPTS = [
 ]
 
 const props = defineProps({
-  guru: { type: Object, required: true }
+  guru: { type: Object, required: true },
+  readonly: { type: Boolean, default: false }
 })
 
 const toast = useToast()

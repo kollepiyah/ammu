@@ -136,11 +136,11 @@ function reset() {
 }
 function goSantri(s) {
   reset()
-  router.push('/santri?q=' + encodeURIComponent(s.nama || ''))
+  router.push('/profil/santri/' + s.id)
 }
 function goGuru(g) {
   reset()
-  router.push('/guru?q=' + encodeURIComponent(g.nama || ''))
+  router.push('/profil/guru/' + g.id)
 }
 async function openMobile() {
   mobileOpen.value = true

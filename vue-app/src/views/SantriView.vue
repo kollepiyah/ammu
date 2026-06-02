@@ -198,14 +198,14 @@
         <div class="flex items-start gap-3">
           <!-- v.21.22c.0526: Checkbox (Master mode only) -->
           <input v-if="isMasterMode && isFullAccess" type="checkbox" :checked="selected.has(String(s.id))" @change="toggleSelect(s.id)" class="flex-shrink-0 mt-2 w-4 h-4 rounded border-[var(--border-default)] text-teal-600 focus:ring-teal-500 cursor-pointer" />
-          <div class="flex-shrink-0 w-12 h-12 md:w-14 md:h-14 rounded-full bg-gradient-to-br from-cyan-100 to-cyan-100 dark:from-cyan-700 dark:to-cyan-700 border-2 border-white dark:border-slate-700 flex items-center justify-center overflow-hidden">
+          <div @click="$router.push('/profil/santri/' + s.id)" class="flex-shrink-0 w-12 h-12 md:w-14 md:h-14 rounded-full bg-gradient-to-br from-cyan-100 to-cyan-100 dark:from-cyan-700 dark:to-cyan-700 border-2 border-white dark:border-slate-700 flex items-center justify-center overflow-hidden cursor-pointer" title="Lihat profil">
             <img v-if="s.foto" :src="s.foto" alt="Foto" class="w-full h-full object-cover" />
             <i v-else class="fas fa-user-graduate text-cyan-500 dark:text-cyan-200"></i>
           </div>
           <div class="flex-1 min-w-0">
             <div class="flex items-start justify-between gap-2">
               <div class="flex-1 min-w-0">
-                <h3 class="text-sm md:text-base font-black text-[var(--text-primary)] truncate">{{ s.nama }}</h3>
+                <h3 @click="$router.push('/profil/santri/' + s.id)" class="text-sm md:text-base font-black text-[var(--text-primary)] truncate cursor-pointer hover:text-teal-600 dark:hover:text-teal-400 transition" title="Lihat profil">{{ s.nama }}</h3>
                 <p class="text-[11px] text-[var(--text-secondary)] mt-0.5">
                   NIS: {{ s.nis || '-' }} · {{ s.jk === 'L' ? 'Laki-laki' : 'Perempuan' }}
                 </p>

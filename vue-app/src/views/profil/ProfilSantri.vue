@@ -16,8 +16,8 @@
         </div>
       </div>
 
-      <!-- v.79.0526: tab/section toggle: Lihat / Edit Profil -->
-      <div class="px-4 pt-4 flex gap-2 border-b border-[var(--border-subtle)]">
+      <!-- v.79.0526: tab/section toggle: Lihat / Edit Profil — v.91.0626: sembunyi saat readonly (profil orang lain) -->
+      <div v-if="!readonly" class="px-4 pt-4 flex gap-2 border-b border-[var(--border-subtle)]">
         <button
           @click="mode = 'view'"
           :class="['px-3 py-2 text-xs font-bold rounded-t-lg transition cursor-pointer',
@@ -231,7 +231,7 @@ import { db } from '@/services/firebase'
 import { useToast } from '@/composables/useToast'
 import ProfilPengaturanSaya from './ProfilPengaturanSaya.vue'
 
-const props = defineProps({ santri: { type: Object, required: true } })
+const props = defineProps({ santri: { type: Object, required: true }, readonly: { type: Boolean, default: false } })
 const toast = useToast()
 const mode = ref('view')
 const isSaving = ref(false)
