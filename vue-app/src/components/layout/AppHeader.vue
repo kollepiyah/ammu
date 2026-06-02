@@ -27,6 +27,9 @@
       </span>
     </div>
 
+    <!-- v.91.0626: Global search (admin/guru) — bar di desktop, ikon di mobile -->
+    <GlobalSearch v-if="canSearch" />
+
     <!-- Kanan: dark toggle + dropdown profil -->
     <div class="flex items-center gap-2">
       <!-- v.86.0526: Wali multi-anak -> dropdown pilih anak; selain itu nama statis -->
@@ -172,6 +175,9 @@ import { useWaliChildren } from '@/composables/useWaliChildren'
 // v.91.0626: sembunyikan bell saat bottom nav aktif (notif pindah ke bottom nav)
 import { useMobileShell } from '@/composables/useMobileShell'
 const { showBottomNav } = useMobileShell()
+// v.91.0626: Global search (admin/guru saja)
+import GlobalSearch from '@/components/layout/GlobalSearch.vue'
+const canSearch = computed(() => ['admin', 'guru'].includes(auth.sesiAktif?.role))
 
 const auth = useAuthStore()
 const ui = useUiStore()

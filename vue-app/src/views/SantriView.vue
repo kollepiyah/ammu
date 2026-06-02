@@ -258,7 +258,8 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { useSantri } from '@/composables/useSantri'
 import { useAuthStore } from '@/stores/auth'
 
@@ -289,6 +290,10 @@ const {
   santri, santriRaw, guruRaw, loading, search,
   filterLembaga, filterMukim, filterStatus, stats, isFullAccess
 } = useSantri()
+
+// v.91.0626: prefill pencarian dari ?q= (global search header)
+const route = useRoute()
+watch(() => route.query.q, (v) => { if (v != null && v !== '') search.value = String(v) }, { immediate: true })
 
 // v.21.11.0526: Bulk selection state
 const selected = ref(new Set())

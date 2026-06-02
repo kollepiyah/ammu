@@ -354,7 +354,8 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
+import { useRoute } from 'vue-router'
 // v.21.17c.0526: mode prop — 'view' (sidebar, default) atau 'master' (Master Data, full CRUD)
 const props = defineProps({ mode: { type: String, default: 'view' } })
 const isMasterMode = computed(() => props.mode === 'master')
@@ -382,6 +383,10 @@ const {
   stats,
   isFullAccess
 } = useGuru()
+
+// v.91.0626: prefill pencarian dari ?q= (global search header)
+const _route = useRoute()
+watch(() => _route.query.q, (v) => { if (v != null && v !== '') search.value = String(v) }, { immediate: true })
 
 // v.21.24d.0526: Dedupe lembaga case-insensitive — "TPQ Pagi" / "TPQ PAGI" / "TPQ pagi" → 1 entry
 // Prefer canonical capitalization (Title Case match master/lembaga)
