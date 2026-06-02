@@ -17,6 +17,14 @@
       <h2 class="text-sm md:text-base font-black text-slate-800 dark:text-white tracking-tight">
         {{ appName }}
       </h2>
+      <!-- v.91.0626: indikator offline (PWA/Capacitor) -->
+      <span
+        v-if="!isOnline"
+        class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300"
+        title="Tidak ada koneksi internet"
+      >
+        <span class="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block"></span>Offline
+      </span>
     </div>
 
     <!-- Kanan: dark toggle + dropdown profil -->
@@ -176,6 +184,11 @@ const appName = computed(() => settings.settings?.txtHeaderBar || settings.setti
 const dropdownOpen = ref(false)
 const dropdownRef = ref(null)
 
+// v.91.0626: status koneksi utk indikator offline di topbar
+const isOnline = ref(typeof navigator !== 'undefined' ? navigator.onLine : true)
+function _setOnline() { isOnline.value = true }
+function _setOffline() { isOnline.value = false }
+
 // v.86.0526: Wali multi-anak picker — beralih konteks antar anak
 const { isSantriRole, children, hasMultiple, activeId, switchTo } = useWaliChildren()
 const childOpen = ref(false)
@@ -245,6 +258,14 @@ function handleClickOutside(e) {
     childOpen.value = false
   }
 }
-onMounted(() => document.addEventListener('click', handleClickOutside))
-onBeforeUnmount(() => document.removeEventListener('click', handleClickOutside))
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside)
+  window.addEventListener('online', _setOnline)
+  window.addEventListener('offline', _setOffline)
+})
+onBeforeUnmount(() => {
+  document.removeEventListener('click', handleClickOutside)
+  window.removeEventListener('online', _setOnline)
+  window.removeEventListener('offline', _setOffline)
+})
 </script>

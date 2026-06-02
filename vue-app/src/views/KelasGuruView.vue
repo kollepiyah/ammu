@@ -170,6 +170,14 @@ const santriKandidat = computed(() => {
   return sortSantri(list, { lembagaField: 'lembaga_sekolah', kelasField: 'kelas_sekolah' })
 })
 
+// v.91.0626: search santri di daftar kandidat (filter tampilan saja; centang tetap tersimpan)
+const santriSearch = ref('')
+const santriKandidatTampil = computed(() => {
+  const kw = santriSearch.value.trim().toLowerCase()
+  if (!kw) return santriKandidat.value
+  return santriKandidat.value.filter((s) => String(s.nama || '').toLowerCase().includes(kw))
+})
+
 // Apakah santri saat ini sudah diampu guru terpilih
 function isAssigned(s) {
   if (kategori.value === 'ngaji') {
@@ -447,13 +455,24 @@ function kelasLabel(s) {
         </button>
       </div>
 
+      <input
+        v-if="santriKandidat.length > 0"
+        v-model="santriSearch"
+        type="search"
+        placeholder="Cari nama santri..."
+        class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-input)] text-[var(--text-primary)] mb-2"
+      />
+
       <div v-if="santriKandidat.length === 0" class="text-xs italic text-[var(--text-tertiary)] py-6 text-center">
         <i class="fas fa-inbox text-3xl text-[var(--border-default)] block mb-2"></i>
         Tidak ada santri di lembaga ini.
       </div>
+      <p v-else-if="santriKandidatTampil.length === 0" class="text-xs italic text-[var(--text-tertiary)] py-4 text-center">
+        Tidak ada santri cocok pencarian "{{ santriSearch }}".
+      </p>
       <ul v-else class="space-y-1 max-h-[50vh] overflow-y-auto">
         <li
-          v-for="s in santriKandidat"
+          v-for="s in santriKandidatTampil"
           :key="s.id"
           @click="toggle(s.id)"
           :class="[

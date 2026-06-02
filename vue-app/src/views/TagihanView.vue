@@ -74,7 +74,7 @@
           </div>
           <div class="text-right">
             <p class="text-sm font-black" :class="statusText(t)">{{ fmtRp(getSisa(t)) }}</p>
-            <p class="text-[9px] uppercase text-[var(--text-secondary)]">{{ statusLabel(t) }}</p>
+            <span :class="['inline-block text-[9px] font-bold px-2 py-0.5 rounded-full mt-0.5', statusBadge(t).cls]">{{ statusBadge(t).label }}</span>
           </div>
           <!-- v.21.115.0528: bayar=isFullAccess (admin keuangan boleh), delete=isAdmin saja (super_admin) — konsisten dengan bulk delete -->
           <button v-if="isFullAccess" @click="openBayar(t)" aria-label="Bayar tagihan" title="Bayar" class="text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 p-2 rounded transition"><i class="fas fa-money-bill-wave"></i></button>
@@ -201,10 +201,10 @@ function getSisa(t) {
 }
 
 function statusBg(t) {
-  const s = getSisa(t)
-  if (s === 0) return 'bg-emerald-500'
-  if (Number(t.bayar || 0) > 0) return 'bg-[var(--color-accent)]'
-  return 'bg-rose-500'
+  const k = statusBadge(t).key
+  if (k === 'lunas') return 'bg-emerald-500'
+  if (k === 'nunggak') return 'bg-rose-500'
+  return 'bg-amber-500'
 }
 function statusText(t) {
   const s = getSisa(t)
@@ -217,6 +217,16 @@ function statusLabel(t) {
   if (s === 0) return 'Lunas'
   if (Number(t.bayar || 0) > 0) return 'Cicilan'
   return 'Belum bayar'
+}
+// v.91.0626: badge status sadar jatuh tempo — Lunas / Jatuh tempo / Nunggak (lewat tempo)
+function statusBadge(t) {
+  if (getSisa(t) === 0)
+    return { key: 'lunas', label: 'Lunas', cls: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' }
+  const jt = String(t.jatuh_tempo || '').slice(0, 10)
+  const today = new Date().toISOString().slice(0, 10)
+  if (jt && jt < today)
+    return { key: 'nunggak', label: 'Nunggak', cls: 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300' }
+  return { key: 'tempo', label: 'Jatuh tempo', cls: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300' }
 }
 
 // v.86.0526: santri/wali bayar tagihan belum lunas -> deep-link ke PembayaranView (tab transfer, prefill)
