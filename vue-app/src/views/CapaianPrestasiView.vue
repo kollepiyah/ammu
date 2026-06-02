@@ -242,50 +242,7 @@
         </div>
       </div>
 
-      <!-- Lihat Rapor -->
-      <div
-        class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
-      >
-        <h3
-          class="text-sm font-black text-[var(--text-primary)] uppercase tracking-widest mb-3 pb-2 border-b border-[var(--border-subtle)] flex items-center gap-2"
-        >
-          <i class="fas fa-graduation-cap text-teal-600"></i>Lihat Rapor
-        </h3>
-        <div class="space-y-2">
-          <router-link
-            to="/rapor?kategori=qiraati"
-            class="flex items-center gap-3 p-3 rounded-xl bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 transition cursor-pointer"
-          >
-            <div
-              class="w-9 h-9 rounded-full bg-emerald-600 text-white flex items-center justify-center flex-shrink-0"
-            >
-              <i class="fas fa-eye text-sm"></i>
-            </div>
-            <div class="flex-1 min-w-0">
-              <p class="text-sm font-black text-[var(--text-primary)]">Rapor Qiraati</p>
-              <p class="text-[10px] text-[var(--text-secondary)]">
-                TPQ · Pra PTPT · PTPT · PPPH
-              </p>
-            </div>
-            <i class="fas fa-chevron-right text-[var(--text-tertiary)]"></i>
-          </router-link>
-          <router-link
-            to="/rapor?kategori=diniyah"
-            class="flex items-center gap-3 p-3 rounded-xl bg-cyan-50 hover:bg-cyan-100 dark:bg-cyan-900/20 border border-cyan-200 dark:border-cyan-800 transition cursor-pointer"
-          >
-            <div
-              class="w-9 h-9 rounded-full bg-cyan-600 text-white flex items-center justify-center flex-shrink-0"
-            >
-              <i class="fas fa-eye text-sm"></i>
-            </div>
-            <div class="flex-1 min-w-0">
-              <p class="text-sm font-black text-[var(--text-primary)]">Rapor Diniyah</p>
-              <p class="text-[10px] text-[var(--text-secondary)]">Mata pelajaran agama</p>
-            </div>
-            <i class="fas fa-chevron-right text-[var(--text-tertiary)]"></i>
-          </router-link>
-        </div>
-      </div>
+      <!-- v.91.0626: section "Lihat Rapor" dihapus untuk akun santri (kyai req) -->
     </template>
   </div>
 </template>

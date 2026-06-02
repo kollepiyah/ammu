@@ -69,8 +69,8 @@
           />
           <div :class="['w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0', statusBg(t)]"><i class="fas fa-file-invoice text-white"></i></div>
           <div class="flex-1 min-w-0">
-            <p class="text-sm font-bold truncate">{{ t.santri_nama || getNamaSantri(t.santri_id) }}</p>
-            <p class="text-[10px] text-[var(--text-secondary)]">{{ t.kategori || '-' }} · {{ t.periode || '-' }} · {{ fmtTgl(t.jatuh_tempo) }}</p>
+            <p class="text-sm font-bold truncate">{{ isSantriRole ? ((t.kategori || 'Tagihan') + (t.periode ? ' · ' + t.periode : '')) : (t.santri_nama || getNamaSantri(t.santri_id)) }}</p>
+            <p class="text-[10px] text-[var(--text-secondary)]">{{ isSantriRole ? ('Jatuh tempo: ' + fmtTgl(t.jatuh_tempo)) : ((t.kategori || '-') + ' · ' + (t.periode || '-') + ' · ' + fmtTgl(t.jatuh_tempo)) }}</p>
           </div>
           <div class="text-right">
             <p class="text-sm font-black" :class="statusText(t)">{{ fmtRp(getSisa(t)) }}</p>

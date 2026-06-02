@@ -121,7 +121,7 @@ const routes = [
       // v.20.6.0526: Bisyaroh — guru BOLEH lihat slip bisyarohnya sendiri (no meta gate, BisyarohView gating by role)
       { path: 'bisyaroh', name: 'bisyaroh', component: BisyarohView },
       // v.68.0526: Rapor full Vue (window.print → Save as PDF)
-      { path: 'rapor', name: 'rapor', component: RaporView },
+      { path: 'rapor', name: 'rapor', component: RaporView, meta: { noSantri: true } },
       // v.20.6.0526: Naik Kelas — guru juga boleh akses (proses kenaikan santri kelasnya)
       { path: 'naik-kelas', name: 'naik-kelas', component: NaikKelasView, alias: '/kenaikan' },
       { path: 'absensi-guru', name: 'absensi-guru', component: AbsensiGuruView, meta: { admin: true } },
