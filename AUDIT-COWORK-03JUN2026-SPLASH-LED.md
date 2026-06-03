@@ -79,3 +79,12 @@ npm run build:electron --prefix vue-app
   regen `splash_icon` dgn padding (logo ~62%) — belum diubah krn lingkaran kaligrafi umumnya muat di mask lingkaran.
 - **UI/UX konsistensi (rollout `PageHeader`/`EmptyState` ke view lain):** disarankan incremental + cek visual; belum dirombak
   massal sesi ini (risiko tampilan). Bisa dilanjut bertahap.
+
+## ADDENDUM — logo Bakafrawi gepeng (follow-up kyai)
+- **Akar:** `splash_branding.png` (footer Bakafrawi di splash native Android 12) ber-rasio **1.837:1**, padahal
+  `bakafrawi-logo.png` asli **2.667:1** → ke-squish (gepeng).
+- **Fix native:** regen 5 densitas `splash_branding.png` di rasio **2.667:1** (anti-gepeng) + **diperkecil ~36dp** (sebelumnya
+  ~98dp) ala footer "from Meta". `android/.../res/drawable-{mdpi..xxxhdpi}/splash_branding.png`.
+- **Fix web (`index.html`):** footer Bakafrawi diperkecil — `width 130px → 96px` (max `46vw → 34vw`), teks "Powered by"
+  `12px → 10px` + warna lebih lembut, posisi lebih ke bawah. `height:auto` jaga rasio (memang tak gepeng di web).
+- **Tetap butuh `npm run build:aab`** supaya `splash_branding` baru sampai ke HP.
