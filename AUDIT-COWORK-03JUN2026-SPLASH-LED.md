@@ -88,3 +88,10 @@ npm run build:electron --prefix vue-app
 - **Fix web (`index.html`):** footer Bakafrawi diperkecil — `width 130px → 96px` (max `46vw → 34vw`), teks "Powered by"
   `12px → 10px` + warna lebih lembut, posisi lebih ke bawah. `height:auto` jaga rasio (memang tak gepeng di web).
 - **Tetap butuh `npm run build:aab`** supaya `splash_branding` baru sampai ke HP.
+- **Branding diperkecil lagi:** 36dp → **24dp** (native), web 96px → 72px.
+
+## ADDENDUM 2 — logo app di splash diperkecil (ala Claude/WA/IG)
+- **Android 12 system splash** (`splash_icon`): logo dikasih padding → **~50% kanvas** (sebelumnya ~85%) → tampil lebih kecil + mask-safe. (`drawable-*/splash_icon.png`)
+- **Overlay Capacitor** (`splash.png`): **120dp → 96dp**.
+- **Web/PWA** (`index.html .splash-logo`): **42vw/176px → 28vw/112px**.
+- Butuh `npm run build:aab` utk yg native sampai ke HP.
