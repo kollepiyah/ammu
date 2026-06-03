@@ -52,14 +52,16 @@
         box-sizing: border-box;
       }
       #splash-screen .splash-logo {
-        width: 28vw; max-width: 112px; min-width: 88px; height: auto;
+        position: absolute; top: 40%; left: 50%;
+        transform: translate(-50%, -50%) scale(1);
+        width: 30vw; max-width: 120px; min-width: 92px; height: auto;
         -o-object-fit: contain;
            object-fit: contain; -webkit-user-drag: none; -webkit-user-select: none; -moz-user-select: none; user-select: none;
-        opacity: 0; margin-bottom: 10vh;
+        opacity: 0;
       }
-      /* v.91.0626: animasi logo "muncul" (zoom + fade) — diperlambat (1s) */
+      /* v.91.0626: animasi logo ala NETFLIX — zoom-in halus 2 detik (push-in) */
       #splash-screen.reveal .splash-logo {
-        animation: splashLogoIn 1s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        animation: splashLogoIn 2s cubic-bezier(0.33, 0, 0.2, 1) forwards;
       }
       #splash-screen .splash-brand {
         position: absolute; left: 0; right: 0;
@@ -67,7 +69,7 @@
         display: flex; flex-direction: column; align-items: center; gap: 4px;
         opacity: 0;
       }
-      #splash-screen.reveal .splash-brand { animation: splashFadeIn 0.7s 0.55s ease-out forwards; }
+      #splash-screen.reveal .splash-brand { animation: splashFadeIn 0.8s 1.25s ease-out forwards; }
       #splash-screen .splash-brand-by {
         font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
         font-size: 12px; font-weight: 600; letter-spacing: 0.05em; color: #94A3B8;
@@ -84,13 +86,13 @@
       #splash-screen.fade-out { animation: splashFadeOut 0.5s ease-out forwards; pointer-events: none; }
       @keyframes splashFadeIn { 0% { opacity: 0; } 100% { opacity: 1; } }
       @keyframes splashFadeOut { 0% { opacity: 1; } 100% { opacity: 0; } }
-      @keyframes splashLogoIn { 0% { opacity: 0; transform: scale(0.5); } 55% { opacity: 1; } 100% { opacity: 1; transform: scale(1); } }
+      @keyframes splashLogoIn { 0% { opacity: 0; transform: translate(-50%, -50%) scale(0.72); } 30% { opacity: 1; } 100% { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
       @media (prefers-reduced-motion: reduce) {
         #splash-screen .splash-logo, #splash-screen .splash-brand { opacity: 1 !important; animation: none !important; }
       }
       body.app-running #splash-screen { display: none !important; }
     </style>
-    <script type="module" crossorigin src="/assets/index-DqC7vP8D.js"></script>
+    <script type="module" crossorigin src="/assets/index-CvH_2gzw.js"></script>
     <link rel="modulepreload" crossorigin href="/assets/vendor-BuoL3SL6.js">
     <link rel="modulepreload" crossorigin href="/assets/vendor-firebase-CglLYNqz.js">
     <link rel="stylesheet" crossorigin href="/assets/index-BnvietAZ.css">
