@@ -55,6 +55,12 @@ function hideSplash() {
   }
 }
 
+// v.91.0626: picu animasi "muncul" logo (class .reveal di #splash-screen). Idempotent.
+function revealSplash() {
+  const s = document.getElementById('splash-screen')
+  if (s) s.classList.add('reveal')
+}
+
 try {
   app.mount('#app')
 } catch (mountErr) {
@@ -63,21 +69,26 @@ try {
 }
 
 if (IS_NATIVE) {
-  // v.91.0626 ANTI-DOBEL: di app native, splash OS (Android/iOS) + plugin Capacitor SUDAH
-  // tampil saat cold-start. Splash web (#splash-screen) TIDAK boleh ikut tampil — kalau ikut,
-  // user lihat splash 2x. Maka: sembunyikan splash web SEKETIKA (tanpa fade/min-duration),
-  // lalu tutup splash plugin native saat app siap (handoff mulus).
-  document.body.classList.add('app-running')
+  // v.91.0626 IN-APP ANIM: splash native (OS + plugin Capacitor) sengaja jadi jembatan LATAR
+  // mint TANPA logo. Tutup overlay native ASAP, lalu MAINKAN animasi logo (reveal) di dalam app
+  // -> logo "muncul" beranimasi (zoom+fade). Hanya 1 kali kemunculan logo (tak dobel).
   requestAnimationFrame(() =>
     requestAnimationFrame(() => {
       import('@capacitor/splash-screen')
-        .then(({ SplashScreen }) => SplashScreen.hide({ fadeOutDuration: 250 }).catch(() => {}))
+        .then(({ SplashScreen }) => SplashScreen.hide({ fadeOutDuration: 200 }))
         .catch(() => {})
+        .then(() => { revealSplash(); setTimeout(hideSplash, 1500) })
     })
   )
+  // FALLBACK: kalau plugin tak tersedia/gagal -> tetap reveal + fade-out
+  setTimeout(revealSplash, 1200)
+  setTimeout(() => {
+    if (!document.body.classList.contains('app-running')) hideSplash()
+  }, 5000)
 } else {
-  // v.91.0626: Web/PWA — splash tampil RINGKAS (1400ms, sebelumnya 3000ms) lalu fade-out.
-  const SPLASH_MIN_MS = 1400
+  // v.91.0626: Web/PWA — logo langsung di-reveal (animasi), splash RINGKAS lalu fade-out.
+  requestAnimationFrame(revealSplash)
+  const SPLASH_MIN_MS = 1700
   const splashStart = performance.now()
   requestAnimationFrame(() => {
     const elapsed = performance.now() - splashStart

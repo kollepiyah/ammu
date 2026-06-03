@@ -95,3 +95,21 @@ npm run build:electron --prefix vue-app
 - **Overlay Capacitor** (`splash.png`): **120dp → 96dp**.
 - **Web/PWA** (`index.html .splash-logo`): **42vw/176px → 28vw/112px**.
 - Butuh `npm run build:aab` utk yg native sampai ke HP.
+
+## ADDENDUM 3 — footer "Powered by" + ukuran final (match contoh splash kyai)
+- Sumber footer baru: `Splashscreen/Bakafrawi Logo (Footer).png` (1024² — sudah ada teks "Powered by"). Di-crop ke konten (rasio **1.876**).
+- **Android** `splash_branding.png` (5 densitas) regen dari file ini, tinggi **64dp**, rasio terjaga → "Powered by" tampil lagi di bawah.
+- **Web** (`index.html`): footer = 1 gambar `public/bakafrawi-footer.png` (hapus span teks "Powered by" terpisah), `width 108px`.
+- Logo tengah Android = 40% kanvas + geser ke atas (pusat 44%) — sudah disetujui kyai ("pas").
+- **Asset baru:** `vue-app/public/bakafrawi-footer.png`. (Lama `bakafrawi-logo.png` tak lagi dipakai web; boleh dihapus utk ramping.)
+
+## ADDENDUM 4 — animasi logo "muncul" (pilihan kyai: IN-APP)
+Logo tengah muncul beranimasi (zoom + fade-in, ease-out-back) lalu footer fade-in. Cara: splash native jadi
+jembatan LATAR mint singkat TANPA logo, animasi dimainkan di dalam app (web splash) → mulus & konsisten semua HP.
+- `index.html`: `.splash-logo`/`.splash-brand` default `opacity:0`; animasi dipicu class `.reveal` (`@keyframes splashLogoIn`). `prefers-reduced-motion` → tampil statis.
+- `src/main.js`: `revealSplash()`. Native: tutup overlay Capacitor dulu → `revealSplash()` (animasi terlihat) → fade-out. Web: reveal langsung.
+- `android/.../res/values/styles.xml`: `windowSplashScreenAnimatedIcon` → `@drawable/splash_blank` (transparan); branding system splash dihapus (footer kini di web splash).
+- BARU `android/.../res/drawable/splash_blank.xml` (transparan). `splash.png` overlay → transparan (latar mint saja).
+- `MainActivity.java`: tahan splash sistem `900ms → 500ms` (jembatan singkat).
+- ⚠️ Catatan HP: di sebagian merek, slot ikon transparan BISA diganti ikon launcher sekejap. Kalau muncul di HP kyai (Samsung umumnya aman), kabari — ada alternatif.
+- Butuh `npm run build:aab`.

@@ -14,8 +14,8 @@ import androidx.core.splashscreen.SplashScreen;
 import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
-  // v.90.0626: tahan splash minimal ~900ms supaya logo Ammu (tengah) + "Powered by Bakafrawi"
-  //   (branding bawah, Android 12+) sempat terlihat, lalu FADE-OUT sebelum WebView tampil.
+  // v.91.0626 IN-APP ANIM: splash sistem = LATAR mint singkat (TANPA logo). Tahan ~500ms saja
+  //   lalu fade-out; logo + footer "Powered by Bakafrawi" muncul BERANIMASI di dalam app.
   private boolean keepSplash = true;
 
   @Override
@@ -25,7 +25,7 @@ public class MainActivity extends BridgeActivity {
     super.onCreate(savedInstanceState);
 
     splashScreen.setKeepOnScreenCondition(() -> keepSplash);
-    new Handler(Looper.getMainLooper()).postDelayed(() -> keepSplash = false, 900L);
+    new Handler(Looper.getMainLooper()).postDelayed(() -> keepSplash = false, 500L);
 
     // Fade-out halus splash -> MainActivity
     splashScreen.setOnExitAnimationListener(provider -> {
