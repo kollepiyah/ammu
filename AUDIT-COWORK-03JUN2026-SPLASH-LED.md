@@ -111,5 +111,15 @@ jembatan LATAR mint singkat TANPA logo, animasi dimainkan di dalam app (web spla
 - `android/.../res/values/styles.xml`: `windowSplashScreenAnimatedIcon` → `@drawable/splash_blank` (transparan); branding system splash dihapus (footer kini di web splash).
 - BARU `android/.../res/drawable/splash_blank.xml` (transparan). `splash.png` overlay → transparan (latar mint saja).
 - `MainActivity.java`: tahan splash sistem `900ms → 500ms` (jembatan singkat).
-- ⚠️ Catatan HP: di sebagian merek, slot ikon transparan BISA diganti ikon launcher sekejap. Kalau muncul di HP kyai (Samsung umumnya aman), kabari — ada alternatif.
+- ⚠️ Catatan HP: di sebagian merek, slot ikon transparan BISA diganti ikon launcher sekejap. **→ DIGANTI di Addendum 5.**
 - Butuh `npm run build:aab`.
+
+## ADDENDUM 5 — FINAL: animasi native (anti ikon launcher) + diperlambat + logo lebih ke atas
+Ganti pendekatan transparan (Addendum 4) → **AnimationDrawable** (ikon NYATA, tak akan jadi ikon launcher di HP manapun, tetap beranimasi).
+- BARU `android/.../res/drawable-nodpi/splash_anim_00..13.png` (14 frame zoom/pop, scale 0.72→1.0 overshoot, **center 40%** = lebih ke atas). Frame 0 = logo penuh (fallback aman bila HP tak memutar animasi).
+- BARU `android/.../res/drawable/splash_icon_anim.xml` (`animation-list` oneshot, 14×60ms ≈ **840ms**, jauh lebih pelan dari sebelumnya).
+- `styles.xml`: `windowSplashScreenAnimatedIcon` → `@drawable/splash_icon_anim` + `windowSplashScreenAnimationDuration=1000` + branding (footer) dikembalikan.
+- `MainActivity.java`: tahan splash **500ms → 1300ms** (animasi 840ms main penuh + hold, baru fade — biang "terlalu cepat" karena dulu keburu putus di 500ms).
+- `splash.png` overlay = logo statis center 40% (lanjutan animasi). `main.js`: native skip splash web lagi (anti-dobel; logo animasi ada di splash sistem). Web/PWA: animasi diperlambat (1s) + logo dinaikkan (`margin-bottom:10vh`).
+- `splash_blank.xml` + `splash_icon.png` jadi tak terpakai (boleh diabaikan/hapus).
+- Butuh `npm run build:aab`. Kalau di HP tertentu animasi tak jalan (jarang) → tampil logo statis (frame 0), TETAP bukan ikon launcher.

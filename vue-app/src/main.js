@@ -69,26 +69,21 @@ try {
 }
 
 if (IS_NATIVE) {
-  // v.91.0626 IN-APP ANIM: splash native (OS + plugin Capacitor) sengaja jadi jembatan LATAR
-  // mint TANPA logo. Tutup overlay native ASAP, lalu MAINKAN animasi logo (reveal) di dalam app
-  // -> logo "muncul" beranimasi (zoom+fade). Hanya 1 kali kemunculan logo (tak dobel).
+  // v.91.0626 ANIM NATIVE: splash sistem Android SUDAH menampilkan logo BERANIMASI
+  // (AnimationDrawable) + footer. Maka splash web (#splash-screen) TIDAK ditampilkan (cegah
+  // DOBEL). Overlay Capacitor (logo statis) ditutup saat app siap -> handoff mulus dari animasi.
+  document.body.classList.add('app-running')
   requestAnimationFrame(() =>
     requestAnimationFrame(() => {
       import('@capacitor/splash-screen')
-        .then(({ SplashScreen }) => SplashScreen.hide({ fadeOutDuration: 200 }))
+        .then(({ SplashScreen }) => SplashScreen.hide({ fadeOutDuration: 250 }).catch(() => {}))
         .catch(() => {})
-        .then(() => { revealSplash(); setTimeout(hideSplash, 1500) })
     })
   )
-  // FALLBACK: kalau plugin tak tersedia/gagal -> tetap reveal + fade-out
-  setTimeout(revealSplash, 1200)
-  setTimeout(() => {
-    if (!document.body.classList.contains('app-running')) hideSplash()
-  }, 5000)
 } else {
-  // v.91.0626: Web/PWA — logo langsung di-reveal (animasi), splash RINGKAS lalu fade-out.
+  // v.91.0626: Web/PWA — logo di-reveal (animasi zoom+fade pelan), lalu fade-out.
   requestAnimationFrame(revealSplash)
-  const SPLASH_MIN_MS = 1700
+  const SPLASH_MIN_MS = 2000
   const splashStart = performance.now()
   requestAnimationFrame(() => {
     const elapsed = performance.now() - splashStart
