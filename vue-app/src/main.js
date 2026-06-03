@@ -69,35 +69,40 @@ try {
 }
 
 if (IS_NATIVE) {
-  // v.91.0626 ANIM NATIVE: splash sistem Android SUDAH menampilkan logo BERANIMASI
-  // (AnimationDrawable) + footer. Maka splash web (#splash-screen) TIDAK ditampilkan (cegah
-  // DOBEL). Overlay Capacitor (logo statis) ditutup saat app siap -> handoff mulus dari animasi.
-  document.body.classList.add('app-running')
+  // v.91.0626 IN-APP ANIM (final): splash native = jembatan LATAR mint singkat. Tutup overlay
+  // Capacitor ASAP -> web splash terlihat -> MAINKAN animasi logo (reveal, ~2s ala Netflix) +
+  // footer (gambar HTML, anti-gepeng). Tak dobel: splash sistem tak menampilkan logo.
   requestAnimationFrame(() =>
     requestAnimationFrame(() => {
       import('@capacitor/splash-screen')
-        .then(({ SplashScreen }) => SplashScreen.hide({ fadeOutDuration: 250 }).catch(() => {}))
+        .then(({ SplashScreen }) => SplashScreen.hide({ fadeOutDuration: 200 }))
         .catch(() => {})
+        .then(() => { revealSplash(); setTimeout(hideSplash, 2400) })
     })
   )
+  // FALLBACK: kalau plugin tak tersedia/gagal -> tetap reveal + fade-out
+  setTimeout(revealSplash, 900)
+  setTimeout(() => {
+    if (!document.body.classList.contains('app-running')) hideSplash()
+  }, 6000)
 } else {
-  // v.91.0626: Web/PWA — logo di-reveal (animasi zoom+fade pelan), lalu fade-out.
+  // v.91.0626: Web/PWA — logo di-reveal (animasi Netflix ~2 detik), lalu fade-out.
   requestAnimationFrame(revealSplash)
-  const SPLASH_MIN_MS = 2000
+  const SPLASH_MIN_MS = 2400
   const splashStart = performance.now()
   requestAnimationFrame(() => {
     const elapsed = performance.now() - splashStart
     const remaining = Math.max(0, SPLASH_MIN_MS - elapsed)
     setTimeout(hideSplash, remaining)
   })
-  // FALLBACK: kalau ada apa-apa yg block, force-hide splash max 5 detik
+  // FALLBACK: kalau ada apa-apa yg block, force-hide splash max 6 detik
   setTimeout(() => {
     if (!document.body.classList.contains('app-running')) {
       // eslint-disable-next-line no-console
-      console.warn('[main.js] Splash fallback hide @ 5s — Vue mount mungkin stuck')
+      console.warn('[main.js] Splash fallback hide @ 6s — Vue mount mungkin stuck')
       hideSplash()
     }
-  }, 5000)
+  }, 6000)
 }
 
 // v.20.70.0526: Init Sentry kalau tersedia + DSN dari settings/general.sentryDsn

@@ -123,3 +123,13 @@ Ganti pendekatan transparan (Addendum 4) → **AnimationDrawable** (ikon NYATA, 
 - `splash.png` overlay = logo statis center 40% (lanjutan animasi). `main.js`: native skip splash web lagi (anti-dobel; logo animasi ada di splash sistem). Web/PWA: animasi diperlambat (1s) + logo dinaikkan (`margin-bottom:10vh`).
 - `splash_blank.xml` + `splash_icon.png` jadi tak terpakai (boleh diabaikan/hapus).
 - Butuh `npm run build:aab`. Kalau di HP tertentu animasi tak jalan (jarang) → tampil logo statis (frame 0), TETAP bukan ikon launcher.
+
+## ADDENDUM 6 — FINAL (yg dipakai): IN-APP, 2 detik, animasi ala Netflix
+> Branding slot Android 12 ternyata MEN-STRETCH footer (gepeng) di Samsung. Maka footer WAJIB dirender HTML (in-app).
+> Kembali ke in-app (footer & logo dirender di web splash), animasi diperhalus & diperpanjang 2 detik.
+- `index.html`: logo `position:absolute; top:40%` (lebih ke atas), animasi `splashLogoIn` **2s** `cubic-bezier(0.33,0,0.2,1)` (zoom-in halus "push-in" ala Netflix), footer fade @1.25s. Footer = `bakafrawi-footer.png` (HTML img, `height:auto` → **anti-gepeng**, ada "Powered by").
+- `src/main.js`: native → tutup overlay Capacitor → `revealSplash()` (animasi 2s) → fade-out (~2.4s). Web sama (SPLASH_MIN_MS 2400).
+- `styles.xml`: `windowSplashScreenAnimatedIcon=@drawable/splash_blank` (transparan) lagi; branding sistem DIHAPUS (biang gepeng). `splash.png` overlay = transparan (jembatan mint). `MainActivity` keepSplash **1300→450ms**.
+- Tak terpakai lagi (boleh diabaikan): `splash_icon_anim.xml`, `splash_anim_*.png`, `splash_branding.png`, `splash_icon.png`.
+- ⚠️ Ikon transparan: di Samsung & mayoritas HP = aman (tak ada ikon launcher, sudah dikonfirmasi kyai sebelumnya). Di segelintir OEM non-standar bisa kilas ikon launcher sekejap — trade-off demi footer anti-gepeng + animasi mulus.
+- Butuh `npm run firebase:deploy` + `npm run build:aab`.

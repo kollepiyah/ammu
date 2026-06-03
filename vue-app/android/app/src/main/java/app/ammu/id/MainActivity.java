@@ -14,8 +14,8 @@ import androidx.core.splashscreen.SplashScreen;
 import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
-  // v.91.0626 ANIM NATIVE: tahan splash sistem ~1300ms supaya animasi ikon (zoom/pop ~840ms)
-  //   sempat MAIN PENUH + sedikit hold, baru fade-out. (500ms dulu bikin animasi keburu putus = cepat.)
+  // v.91.0626 IN-APP ANIM (final): splash sistem = LATAR mint SINGKAT (tanpa logo). Tahan ~450ms
+  //   lalu fade-out; logo (animasi Netflix 2 detik) + footer muncul beranimasi di DALAM app.
   private boolean keepSplash = true;
 
   @Override
@@ -25,7 +25,7 @@ public class MainActivity extends BridgeActivity {
     super.onCreate(savedInstanceState);
 
     splashScreen.setKeepOnScreenCondition(() -> keepSplash);
-    new Handler(Looper.getMainLooper()).postDelayed(() -> keepSplash = false, 1300L);
+    new Handler(Looper.getMainLooper()).postDelayed(() -> keepSplash = false, 450L);
 
     // Fade-out halus splash -> MainActivity
     splashScreen.setOnExitAnimationListener(provider -> {
