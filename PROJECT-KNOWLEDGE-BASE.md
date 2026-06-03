@@ -1,7 +1,8 @@
 # PROJECT KNOWLEDGE BASE — Ammu Online (Portal MU)
-> Dokumen onboarding untuk sesi Claude baru. Baca ini DULU sebelum mulai. **Update terakhir: 3 Juni 2026 (v.91.0626 — Cowork lanjutan).**
+> Dokumen onboarding untuk sesi Claude baru. Baca ini DULU sebelum mulai. **Update terakhir: 3 Juni 2026 (v.91.0626 — AUDIT + FIX, Cowork). HEAD `80ea521` (committed, BELUM push).**
 > ⚠️ KB KANONIK = file ini (`PROJECT-KNOWLEDGE-BASE.md`). File lama `PROJECT_KNOWLEDGE_BASE.md` (underscore) DEPRECATED — abaikan.
-> 👉 **RECAP TERBARU ada di PALING BAWAH** (cari "SESI v.91.0626 LANJUTAN").
+> 👉 **RECAP TERBARU ada di PALING BAWAH** (cari "SESI v.91.0626 — AUDIT + FIX"). Audit detail: `AUDIT-COWORK-03JUN2026.md`.
+> ⏳ **STATUS:** fix sidebar + perf + firestoreSafe backup + dead-code SUDAH committed. **Kyai BELUM `npm run firebase:deploy` + `npm run build:aab`** (wajib supaya fix sidebar sampai ke HP). Lihat "PENDING" di recap bawah.
 
 ---
 
