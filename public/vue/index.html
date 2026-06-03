@@ -5,6 +5,8 @@
     <link rel="icon" type="image/png" href="/logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <meta name="theme-color" content="#0f766e" />
+    <!-- v.91.0626 SEO: meta description -->
+    <meta name="description" content="Ammu Online — sistem manajemen Pondok Pesantren Mambaul Ulum: data santri, guru, rapor, keuangan, jadwal & kegiatan dalam satu portal." />
     <!-- v.86.0526: PWA manifest + icons (icon = launcher Capacitor, sesuai req kyai) -->
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
@@ -15,8 +17,10 @@
     <title>Ammu Online — Pondok Pesantren Mambaul Ulum</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" />
+    <!-- v.91.0626 PERF: CSS font non-render-blocking (media-swap) -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" media="print" onload="this.media='all'" />
+    <!-- v.91.0626 PERF: Font Awesome non-render-blocking (media-swap; ikon muncul setelah CSS load) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" media="print" onload="this.media='all'" />
     <!-- v.20.74.0526: jsPDF + pdfmake DROPPED from initial load (now lazy-loaded by service when Rapor/AbsensiGuru opens).
          Savings: ~250 KB on every page load. Sentry tetap async defer. -->
     <script src="https://browser.sentry-cdn.com/7.119.0/bundle.tracing.min.js" crossorigin="anonymous" defer fetchpriority="low"></script>
@@ -66,10 +70,10 @@
       @keyframes splashFadeOut { 0% { opacity: 1; } 100% { opacity: 0; } }
       body.app-running #splash-screen { display: none !important; }
     </style>
-    <script type="module" crossorigin src="/assets/index-CuuANRKw.js"></script>
+    <script type="module" crossorigin src="/assets/index-BRJXsh0d.js"></script>
     <link rel="modulepreload" crossorigin href="/assets/vendor-CZzKrAMl.js">
     <link rel="modulepreload" crossorigin href="/assets/vendor-firebase-C3laE4lf.js">
-    <link rel="stylesheet" crossorigin href="/assets/index-EUAne3fN.css">
+    <link rel="stylesheet" crossorigin href="/assets/index-B5-SIJGq.css">
   </head>
   <body class="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100">
     <!-- v.85.0526: Splash kosong — design (logo + Powered by Bakafrawi) sudah inline di bg-image -->

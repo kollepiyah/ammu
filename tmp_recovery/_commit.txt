@@ -1,0 +1,10 @@
+[feature/vue-migration 80ea521] feat(v.91): fix sidebar mobile menggantung, perf Lighthouse, audit (dead code + firestoreSafe backup), EmptyState/PageHeader + amankan WIP sesi lalu
+ 27 files changed, 582 insertions(+), 1039 deletions(-)
+ create mode 100644 AUDIT-COWORK-03JUN2026.md
+ delete mode 100644 vue-app/src/components/kartu/KartuKenaikanMatrix.vue
+ delete mode 100644 vue-app/src/components/kartu/KartuKenaikanSchemaEditor.vue
+ delete mode 100644 vue-app/src/components/layout/AppBreadcrumb.vue
+ create mode 100644 vue-app/src/composables/useEdgeSwipeBack.js
+ create mode 100644 vue-app/src/composables/usePullToRefresh.js
+ delete mode 100644 vue-app/src/stores/childPicker.js
+ delete mode 100644 vue-app/src/utils/raporCompute.js

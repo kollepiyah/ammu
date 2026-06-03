@@ -1,3 +1,3 @@
-d21cec9 feat(splash+deploy): fade web + splash ikut tema app (electron/android) + stop deploy legacy
-8f0c654 feat(pembayaran): gabung Tagihan + Pembayaran jadi 1 alur berlangkah (wali)
-00b7cea ﻿docs: PROJECT-KNOWLEDGE-BASE.md untuk onboarding sesi baru (stack, env quirks, build, RBAC, domain, gaya kerja, pending)
+80ea521 feat(v.91): fix sidebar mobile menggantung, perf Lighthouse, audit (dead code + firestoreSafe backup), EmptyState/PageHeader + amankan WIP sesi lalu
+5b6f6ff fix(ui+splash): bottom-nav safe-area, splash Android crop-safe, ikon search mobile, layout inset
+562f347 docs(kb): recap sesi v.91.0626 (bottom nav, notif page, global search, profil detail, badge tagihan) untuk sesi baru

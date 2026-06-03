@@ -1,4 +1,12 @@
-# Project Knowledge Base — Portal MU / Ammu Online
+# ⚠️ DEPRECATED — JANGAN PAKAI FILE INI
+
+> File ini USANG (terakhir 30 Mei 2026, pra-v.88). **KB KANONIK = `PROJECT-KNOWLEDGE-BASE.md`** (pakai tanda HUBUNG, bukan underscore).
+> Untuk onboarding sesi baru: baca `PROJECT-KNOWLEDGE-BASE.md` (recap terbaru ada di paling bawah).
+> File ini AMAN DIHAPUS — konten lama tetap ada di git history. Dibiarkan sebagai arsip saja.
+
+---
+
+# Project Knowledge Base — Portal MU / Ammu Online (ARSIP USANG)
 
 > **Untuk siapa**: Agen AI yang baru pertama kali masuk sesi project Portal MU.
 > **Tujuan**: Pahami struktur, konvensi, aturan, dan domain knowledge aplikasi DALAM 5 MENIT.

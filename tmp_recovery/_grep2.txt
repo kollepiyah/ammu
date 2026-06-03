@@ -1,0 +1,158 @@
+﻿=== deleteDoc ===
+\components\posts\ReactionBar.vue :24  import { doc, collection, setDoc, deleteDoc, onSnapshot } from 'firebase/firestore'
+\components\posts\ReactionBar.vue :74  try { await deleteDoc(ref) } catch (e) { /* silent */ }
+\composables\useKegiatan.js :4  import { collection, onSnapshot, doc, setDoc, deleteDoc } from 'firebase/firestore'
+\composables\useKegiatan.js :73  await deleteDoc(doc(db, 'kegiatan', id))
+\composables\useLembagaForm.js :5  import { setDoc, doc, getDoc, deleteDoc, updateDoc } from 'firebase/firestore'
+\services\bukuInduk.js :6  import { doc, setDoc, deleteDoc } from 'firebase/firestore'
+\services\bukuInduk.js :30  await deleteDoc(doc(db, 'keuangan_buku_induk', String(refId)))
+\services\firestore.js :10  deleteDoc,
+\services\firestore.js :65  await deleteDoc(doc(db, collectionName, id))
+\utils\v21_70_tk_migration.js :15  import { doc, deleteDoc, setDoc, updateDoc, writeBatch, collection } from 'firebase/firestore'
+\views\BisyarohView.vue :574  import { doc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore'
+\views\BisyarohView.vue :606  await deleteDoc(doc(db, 'keuangan_gaji', String(slip.id)))
+\views\BisyarohView.vue :637  await deleteDoc(doc(db, 'keuangan_gaji', String(id)))
+\views\BukuIndukView.vue :396  import { doc, setDoc, deleteDoc, updateDoc, serverTimestamp } from 'firebase/firestore'
+\views\BukuIndukView.vue :463  await deleteDoc(doc(db, 'keuangan_buku_induk', String(b.id)))
+\views\BukuIndukView.vue :523  await deleteDoc(doc(db, 'keuangan_buku_induk', String(id)))
+\views\HutangPiutangView.vue :77  import { doc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore'
+\views\HutangPiutangView.vue :142  try { await deleteDoc(doc(db, 'keuangan_hutang_piutang', String(h.id))); toast.success('Dihapus') } catch (e) { toast.error('Gagal: ' + (e?.message || e)) }
+\views\KritikSaranView.vue :200  import { doc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore'
+\views\KritikSaranView.vue :285  await deleteDoc(doc(db, 'kritik_saran', String(k.id)))
+\views\PostsView.vue :168  import { doc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore'
+\views\PostsView.vue :398  await deleteDoc(doc(db, 'beranda_post', String(post.id)))
+\views\RiwayatPosView.vue :6  import { collection, query, orderBy, limit, getDocs, doc, deleteDoc, updateDoc } from 'firebase/firestore'
+\views\RiwayatPosView.vue :39  await deleteDoc(doc(db, 'keuangan_buku_induk', String(e.id)))
+\views\RiwayatPosView.vue :79  await deleteDoc(doc(db, 'keuangan_buku_induk', String(id)))
+\views\SantriView.vue :278  import { setDoc, doc, serverTimestamp, deleteDoc } from 'firebase/firestore'
+\views\SantriView.vue :346  await deleteDoc(doc(db, 'santri', String(s.id)))
+\views\SantriView.vue :400  await deleteDoc(doc(db, 'santri', String(id)))
+\views\SupervisiView.vue :214  import { collection, doc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore'
+\views\SupervisiView.vue :353  await deleteDoc(doc(db, 'supervisi_catatan', String(r.id)))
+\views\TabunganView.vue :502  import { doc, setDoc, deleteDoc, updateDoc, serverTimestamp } from 'firebase/firestore'
+\views\TabunganView.vue :645  await deleteDoc(doc(db, 'keuangan_tabungan_santri', String(m.id)))
+\views\TabunganView.vue :780  await deleteDoc(doc(db, 'keuangan_tabungan_santri', String(m.id)))
+\views\TabunganView.vue :796  await deleteDoc(doc(db, 'keuangan_tabungan_santri', String(id)))
+\views\TagihanView.vue :121  import { doc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore'
+\views\TagihanView.vue :172  await deleteDoc(doc(db, 'keuangan_tagihan', String(id)))
+\views\TagihanView.vue :359  try { await deleteDoc(doc(db, 'keuangan_tagihan', String(t.id))); toast.success('Tagihan dihapus') } catch (e) { toast.error('Gagal: ' + (e?.message || e)) }
+
+=== remove( ===
+\composables\useNativeDownload.js :132  if (a.parentNode) a.remove()
+
+=== async remove ===
+  (none)
+
+=== del( ===
+  (none)
+
+=== function del ===
+\composables\useLembagaForm.js :219  async function deleteLembaga() {
+\services\firestore.js :64  export async function deleteOne(collectionName, id) {
+\services\storage.js :22  export async function deleteFile(path) {
+\views\GuruView.vue :650  async function deleteGuru(g) {
+\views\HutangPiutangView.vue :138  async function deleteItem(h) {
+\views\KritikSaranView.vue :275  async function deleteItem(k) {
+\views\PostsView.vue :386  async function deletePost(p) {
+\views\PpdbDetailView.vue :470  async function deleteAcf(key) {
+\views\SantriView.vue :337  async function deleteSantri(s) {
+\views\TagihanView.vue :356  async function deleteTagihan(t) {
+
+=== export function ===
+\composables\useAbsensi.js :14  export function useAbsensi() {
+\composables\useClock.js :6  export function useClock(intervalMs = 1000) {
+\composables\useConfirm.js :4  export function useConfirm() {
+\composables\useDesktopPrint.js :22  export function isElectron() {
+\composables\useDesktopPrint.js :111  export function getDefaultPrinter() { try { return localStorage.getItem(_PRINTER_KEY) || '' } catch (e) { return '' } }
+\composables\useDesktopPrint.js :112  export function setDefaultPrinter(name) { try { localStorage.setItem(_PRINTER_KEY, name || '') } catch (e) {} }
+\composables\useDesktopPrint.js :113  export function onOpenPrinterSettings(cb) {
+\composables\useEdgeSwipeBack.js :6  export function useEdgeSwipeBack(router, enabled = () => true, opts = {}) {
+\composables\useExcel.js :47  export function useExcel() {
+\composables\useGuru.js :75  export function useGuru() {
+\composables\useGuruForm.js :117  export function useGuruForm() {
+\composables\useKartuKenaikan.js :11  export function useKartuKenaikan() {
+\composables\useKegiatan.js :8  export function useKegiatan() {
+\composables\useKeuangan.js :10  export function useKeuangan() {
+\composables\useLembaga.js :45  export function getLembagaGroup(namaLembaga) {
+\composables\useLembaga.js :51  export function getLembagaBroadGroup(namaLembaga) {
+\composables\useLembaga.js :65  export function lembagaScopeMatches(userLembaga, targetLembaga) {
+\composables\useLembaga.js :83  export function getPkbmSubTier(kelas) {
+\composables\useLembaga.js :91  export function formatPkbmKelas(kelas) {
+\composables\useLembaga.js :100  export function formatKelasLabel(lembaga, kelas) {
+\composables\useLembaga.js :186  export function useLembaga() {
+\composables\useLembagaForm.js :41  export function useLembagaForm() {
+\composables\useMenus.js :80  export function useMenus() {
+\composables\useMobileShell.js :18  export function useMobileShell() {
+\composables\useNativeDownload.js :171  export function isNativePlatform() {
+\composables\useNotifications.js :27  export function useNotifications() {
+\composables\usePullToRefresh.js :6  export function usePullToRefresh(getEl, onRefresh, opts = {}) {
+\composables\useSantri.js :29  export function useSantri() {
+\composables\useSantriForm.js :49  export function useSantriForm() {
+\composables\useToast.js :4  export function useToast() {
+\composables\useWaliChildren.js :10  export function useWaliChildren() {
+\services\auth.js :25  export function toAuthPassword(pass) {
+\services\auth.js :33  export function buildAuthEmail(input) {
+\services\auth.js :305  export function onAuthChange(callback) {
+\services\auth.js :310  export function currentUser() {
+\services\firebase.js :34  export function getSecondaryAuth() {
+\services\firestore.js :75  export function subscribeColl(collectionName, callback, filters = [], orders = []) {
+\services\firestore.js :96  export function subscribeDoc(collectionName, id, callback) {
+\utils\format.js :12  export function fmtRp(n) {
+\utils\format.js :18  export function fmtTgl(d) {
+
+=== collections.js ===
+\stores\collections.js :1  // stores/collections.js — listener Firestore TERPUSAT (fix duplicate full-collection listeners).
+
+=== from '@/services ===
+\components\charts\AdminStatsCharts.vue :93  import { subscribeColl } from '@/services/firestore'
+\components\dashboard\DashboardKalender.vue :66  import { subscribeColl } from '@/services/firestore'
+\components\dashboard\DashboardPosts.vue :91  import { subscribeColl } from '@/services/firestore'
+\components\posts\ReactionBar.vue :25  import { db } from '@/services/firebase'
+\composables\useAbsensi.js :5  import { subscribeColl } from '@/services/firestore'
+\composables\useGuruForm.js :5  import { db } from '@/services/firebase'
+\composables\useGuruForm.js :6  import { subscribeDoc } from '@/services/firestore'
+\composables\useKartuKenaikan.js :6  import { db } from '@/services/firebase'
+\composables\useKegiatan.js :5  import { db } from '@/services/firebase'
+\composables\useKeuangan.js :6  import { subscribeColl } from '@/services/firestore'
+\composables\useLembaga.js :6  import { subscribeDoc } from '@/services/firestore'
+\composables\useLembagaForm.js :6  import { db } from '@/services/firebase'
+\composables\useNotifications.js :22  import { db } from '@/services/firebase'
+\composables\useNotifications.js :23  import { subscribeColl, subscribeDoc } from '@/services/firestore'
+\composables\useSantriForm.js :5  import { db } from '@/services/firebase'
+\stores\auth.js :7  import { auth as fbAuth } from '@/services/firebase'
+\stores\auth.js :8  import * as authService from '@/services/auth'
+\stores\auth.js :9  import { queryColl } from '@/services/firestore'
+\stores\collections.js :6  import { subscribeColl } from '@/services/firestore'
+\stores\settings.js :8  import { getOne, setOne, subscribeDoc } from '@/services/firestore'
+\utils\auditLog.js :13  import { db } from '@/services/firebase'
+\utils\pdfBuilder.js :16  import { jsPDFFromCDN, imageToDataURL } from '@/services/pdf'
+\utils\raporPdf.js :6  import { imageToDataURL } from '@/services/pdf'
+\utils\strukBuilder.js :4  import { imageToDataURL } from '@/services/pdf'
+\utils\v21_10_migration.js :5  import { db } from '@/services/firebase'
+\utils\v21_70_tk_migration.js :14  import { db } from '@/services/firebase'
+\utils\v88_lembaga_normalize.js :9  import { db } from '@/services/firebase'
+\views\profil\ProfilGuru.vue :288  import { db } from '@/services/firebase'
+\views\profil\ProfilGuru.vue :291  import { linkGoogleAccount, unlinkGoogleAccount } from '@/services/auth'
+\views\profil\ProfilPengaturanSaya.vue :290  import { setOne, queryColl } from '@/services/firestore'
+\views\profil\ProfilPengaturanSaya.vue :292  import { db } from '@/services/firebase'
+\views\profil\ProfilPengaturanSaya.vue :293  import { linkGoogleAccount, unlinkGoogleAccount } from '@/services/auth'
+\views\profil\ProfilPengaturanSaya.vue :294  import { uploadBase64 } from '@/services/storage'
+\views\profil\ProfilSantri.vue :230  import { db } from '@/services/firebase'
+\views\AbsensiGuruView.vue :515  import { db } from '@/services/firebase'
+\views\AbsensiGuruView.vue :516  import { setOne } from '@/services/firestore'
+\views\AbsensiGuruView.vue :521  import { jsPDFFromCDN } from '@/services/pdf'
+\views\AbsensiSantriView.vue :168  import { subscribeColl } from '@/services/firestore'
+\views\AbsensiSantriView.vue :170  import { db } from '@/services/firebase'
+\views\BisyarohView.vue :573  import { subscribeColl } from '@/services/firestore'
+
+=== from "@/services ===
+  (none)
+
+=== services dir ===
+auth.js
+bukuInduk.js
+firebase.js
+firestore.js
+firestoreSafe.js
+pdf.js
+storage.js

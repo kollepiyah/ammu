@@ -1,0 +1,11 @@
+﻿ORPHANS (file basename never referenced by any other file):
+\components\kartu\KartuKenaikanMatrix.vue  [KartuKenaikanMatrix]
+\components\kartu\KartuKenaikanSchemaEditor.vue  [KartuKenaikanSchemaEditor]
+\components\layout\AppBreadcrumb.vue  [AppBreadcrumb]
+\components\layout\EmptyState.vue  [EmptyState]
+\components\layout\PageHeader.vue  [PageHeader]
+\services\firestoreSafe.js  [firestoreSafe]
+\stores\childPicker.js  [childPicker]
+\utils\raporCompute.js  [raporCompute]
+
+TOTAL .vue/.js FILES: 144

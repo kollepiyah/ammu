@@ -17,13 +17,24 @@
       <h2 class="text-sm md:text-base font-black text-slate-800 dark:text-white tracking-tight">
         {{ appName }}
       </h2>
-      <!-- v.91.0626: indikator offline (PWA/Capacitor) -->
+      <!-- v.91.0626: indikator koneksi — LED kecil (hijau=online / merah=offline), SELALU tampil -->
       <span
-        v-if="!isOnline"
-        class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300"
-        title="Tidak ada koneksi internet"
+        class="relative inline-flex items-center justify-center w-2.5 h-2.5 flex-shrink-0"
+        :title="isOnline ? 'Terhubung ke internet' : 'Tidak ada koneksi internet'"
+        role="status"
+        :aria-label="isOnline ? 'Status koneksi: online' : 'Status koneksi: offline'"
       >
-        <span class="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block"></span>Offline
+        <!-- ping halus hanya saat offline (menarik perhatian) -->
+        <span
+          v-if="!isOnline"
+          class="absolute inline-flex w-full h-full rounded-full bg-rose-400/70 animate-ping"
+        ></span>
+        <!-- LED inti -->
+        <span
+          class="relative inline-flex w-2.5 h-2.5 rounded-full ring-2 ring-white dark:ring-slate-800 transition-colors"
+          :class="isOnline ? 'bg-emerald-500' : 'bg-rose-500'"
+          :style="isOnline ? 'box-shadow:0 0 5px 1px rgba(16,185,129,0.65)' : 'box-shadow:0 0 5px 1px rgba(244,63,94,0.85)'"
+        ></span>
       </span>
     </div>
 
@@ -193,10 +204,23 @@ const appName = computed(() => settings.settings?.txtHeaderBar || settings.setti
 const dropdownOpen = ref(false)
 const dropdownRef = ref(null)
 
-// v.91.0626: status koneksi utk indikator offline di topbar
+// v.91.0626: status koneksi utk LED indikator di topbar
 const isOnline = ref(typeof navigator !== 'undefined' ? navigator.onLine : true)
 function _setOnline() { isOnline.value = true }
 function _setOffline() { isOnline.value = false }
+// v.91.0626: di app native, navigator.onLine TAK ANDAL di WebView -> pakai @capacitor/network.
+let _netHandle = null
+async function _initNetwork() {
+  try {
+    const C = window.Capacitor
+    const isNative = C && (typeof C.isNativePlatform === 'function' ? C.isNativePlatform() : !!C.isNative)
+    if (!isNative) return
+    const { Network } = await import('@capacitor/network')
+    const st = await Network.getStatus()
+    isOnline.value = !!st.connected
+    _netHandle = await Network.addListener('networkStatusChange', (s) => { isOnline.value = !!s.connected })
+  } catch (e) { /* fallback ke navigator.onLine + event window */ }
+}
 
 // v.86.0526: Wali multi-anak picker — beralih konteks antar anak
 const { isSantriRole, children, hasMultiple, activeId, switchTo } = useWaliChildren()
@@ -271,10 +295,12 @@ onMounted(() => {
   document.addEventListener('click', handleClickOutside)
   window.addEventListener('online', _setOnline)
   window.addEventListener('offline', _setOffline)
+  _initNetwork()
 })
 onBeforeUnmount(() => {
   document.removeEventListener('click', handleClickOutside)
   window.removeEventListener('online', _setOnline)
   window.removeEventListener('offline', _setOffline)
+  try { _netHandle && _netHandle.remove && _netHandle.remove() } catch (e) { /* ignore */ }
 })
 </script>
