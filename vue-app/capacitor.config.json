@@ -27,7 +27,7 @@
       "spinnerColor": "#FFFFFF"
     },
     "StatusBar": {
-      "style": "DARK",
+      "style": "LIGHT",
       "backgroundColor": "#FFFFFF",
       "overlay": false
     },

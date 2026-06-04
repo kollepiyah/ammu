@@ -41,8 +41,9 @@ async function setupNativeIntegration() {
     const { StatusBar, Style } = await import('@capacitor/status-bar')
     const apply = () => {
       const isDark = ui.isDark
-      // v.85.0526: FIX inversion — Style.Dark = text DARK (untuk LIGHT bg), Style.Light = text LIGHT (untuk DARK bg)
-      StatusBar.setStyle({ style: isDark ? Style.Light : Style.Dark }).catch(() => {})
+      // v.93.0626 FIX kontras: per definisi plugin, Style.Dark = teks TERANG (bg gelap),
+      // Style.Light = teks GELAP (bg terang). Komentar lama TERBALIK -> teks status bar tak terlihat.
+      StatusBar.setStyle({ style: isDark ? Style.Dark : Style.Light }).catch(() => {})
       // v.92.0626: warna status bar = SAMA dgn header app (light putih #FFFFFF, dark slate-800 #1E293B)
       StatusBar.setBackgroundColor({ color: isDark ? '#1E293B' : '#FFFFFF' }).catch(() => {})
     }
