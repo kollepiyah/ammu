@@ -154,6 +154,17 @@ function onDocClick(e) {
   if (!open.value) return
   if (!e.target.closest('[data-global-search]')) open.value = false
 }
-onMounted(() => document.addEventListener('click', onDocClick))
-onUnmounted(() => document.removeEventListener('click', onDocClick))
+// v.93.0626: tombol/gesture back Android -> tutup overlay search (mobile) / dropdown (desktop), bukan navigasi
+function onAndroidBack(e) {
+  if (mobileOpen.value) { e.preventDefault(); mobileOpen.value = false }
+  else if (open.value) { e.preventDefault(); open.value = false }
+}
+onMounted(() => {
+  document.addEventListener('click', onDocClick)
+  window.addEventListener('android-back', onAndroidBack)
+})
+onUnmounted(() => {
+  document.removeEventListener('click', onDocClick)
+  window.removeEventListener('android-back', onAndroidBack)
+})
 </script>

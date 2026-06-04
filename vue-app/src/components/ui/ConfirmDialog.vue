@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted, onBeforeUnmount } from 'vue'
 import { useUiStore } from '@/stores/ui'
 import { AlertTriangle } from 'lucide-vue-next'
 import UiButton from './UiButton.vue'
@@ -14,6 +14,13 @@ function close(result) {
 function onBackdrop(e) {
   if (e.target === e.currentTarget) close(false)
 }
+
+// v.93.0626: tombol/gesture back Android -> tutup dialog (batal), bukan navigasi halaman
+function onAndroidBack(e) {
+  if (state.value?.open) { e.preventDefault(); close(false) }
+}
+onMounted(() => window.addEventListener('android-back', onAndroidBack))
+onBeforeUnmount(() => window.removeEventListener('android-back', onAndroidBack))
 </script>
 
 <template>

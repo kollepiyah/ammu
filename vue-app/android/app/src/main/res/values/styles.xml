@@ -13,6 +13,9 @@
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
         <item name="android:background">@null</item>
+        <!-- v.93.0626: ikon status bar GELAP utk bg terang (mode terang) sejak native, biar teks
+             status bar langsung kelihatan tanpa nunggu JS. Mode gelap di-override JS (Style.Dark). -->
+        <item name="android:windowLightStatusBar">true</item>
     </style>
 
 

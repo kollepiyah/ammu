@@ -138,7 +138,16 @@ Ganti pendekatan transparan (Addendum 4) → **AnimationDrawable** (ikon NYATA, 
 - **Sidebar anti-melayang:** drawer mobile `absolute`→`fixed` (penuh viewport), header padding-top + footer padding-bottom + close button = `env(safe-area-inset-*)` → mengisi sampai belakang status bar & gesture bar. Desktop `md:relative` (insets=0, no-op).
 - **Splash logo:** `top: 40%`→`45%` (jangan terlalu ke atas).
 - **Status bar = warna app:** `App.vue` StatusBar bg light `#FFFFFF` / dark `#1E293B` (match header) + `capacitor.config.json` StatusBar `#0F766E`→`#FFFFFF`. (native → butuh AAB)
-  - **FIX kontras (v.93):** enum Style ternyata TERBALIK di kode/komentar lama. Per plugin: `Style.Dark`=teks terang, `Style.Light`=teks gelap. Diperbaiki: `isDark ? Style.Dark : Style.Light` + config `style:"LIGHT"`. Teks status bar kini terlihat di light & dark.
+  - **FIX kontras (v.93):** enum Style ternyata TERBALIK di kode/komentar lama. Per plugin: `Style.Dark`=teks terang, `Style.Light`=teks gelap. Diperbaiki: `isDark ? Style.Dark : Style.Light` + config `style:"LIGHT"`.
+
+## ADDENDUM 8 — status bar (re-apply) + gesture back semua halaman + back 2× keluar
+- **Status bar masih tak terlihat** → akar: splash native (SplashScreen API) me-RESET appearance window saat exit, jadi `setStyle` yg dipanggil saat mount ke-timpa. Fix 3 lapis:
+  1. `App.vue`: `applyStatusBar()` di-apply ULANG di 600/1400/2200/3200ms (lewati durasi splash) + saat `resume`/`appStateChange`.
+  2. `styles.xml` `AppTheme.NoActionBar`: `android:windowLightStatusBar=true` → ikon status bar GELAP utk bg terang sejak native (mode terang langsung benar tanpa nunggu JS; mode gelap di-override JS).
+- **Gesture back semua halaman + back 2× keluar** (`App.vue` backButton, berlaku utk back BUTTON & GESTURE sistem):
+  - urutan: tutup sidebar → tutup overlay (event `android-back` cancelable; `ConfirmDialog` & `GlobalSearch` dengar → tutup diri + `preventDefault`) → navigasi back (semua halaman non-home) → di home (`/dashboard`,`/capaian-prestasi`,`/login`) **tekan back 2× dalam 2 dtk** → keluar app (toast "Tekan sekali lagi untuk keluar").
+  - Swipe tepi-kiri (`useEdgeSwipeBack`) tetap aktif sbg tambahan.
+- Semua native → **butuh `npm run build:aab`** (firebase:deploy TIDAK mengubah status bar/back native).
 - **Bump v.93.0626** (versionCode 93) — 9 titik (gradle/package×3/main.js/4 footer). 92 sudah dipakai.
 - **PDF rapikan** (`utils/raporPdf.js` + `utils/pdfBuilder.js`): semua tabel = **lebar KOP (215-24=191mm F4) + center** (PTPT & Pra-PTPT margin 14/15→12/12, kolom di-rescale sum 191; TPQ/Diniyah/Nilai sudah default 12). Tabel rapor **NO FILL** (hapus shading abu section TPQ, header biru Pra-PTPT, kuning kolom "Jml", abu "Jumlah Khotam"). `buildListPdf` (daftar guru/santri) kolom di-skala isi penuh lebar KOP.
 - **Permission Android** (`AndroidManifest.xml`): eksplisitkan `ACCESS_NETWORK_STATE` (LED network), `VIBRATE` (haptics), `RECEIVE_BOOT_COMPLETED` (notif reboot) — sebelumnya cuma ter-merge dari plugin. Lain (INTERNET, POST_NOTIFICATIONS, storage, media, camera, exact-alarm) sudah ada & sesuai.

@@ -13,6 +13,8 @@
 import { watch, onMounted } from 'vue'
 import { useSettingsStore } from '@/stores/settings'
 import { useUiStore } from '@/stores/ui'
+import { useRouter } from 'vue-router'
+import { useToast } from '@/composables/useToast'
 import PrinterSettingsModal from '@/components/PrinterSettingsModal.vue'
 import ToastStack from '@/components/ui/ToastStack.vue'
 
@@ -20,6 +22,8 @@ import ToastStack from '@/components/ui/ToastStack.vue'
 // main.js sudah handle init. App.vue cuma watch theme color + appTitle.
 const settings = useSettingsStore()
 const ui = useUiStore()
+const router = useRouter()
+const toast = useToast()
 
 watch(() => settings.settings, (s) => {
   if (!s) return
@@ -31,41 +35,59 @@ watch(() => settings.settings, (s) => {
   if (s.appTitle) document.title = s.appTitle
 }, { deep: true, immediate: true })
 
-// v.71.0526: Native enhancements — Status bar style match dark mode + Android back button → Vue Router back.
+// v.71.0526: Native enhancements — StatusBar + Android back. v.93.0626: re-apply status bar
+// setelah splash native (yg me-reset appearance window) + back semua halaman + tekan 2x utk keluar.
 async function setupNativeIntegration() {
   if (typeof window === 'undefined') return
   if (!window.Capacitor?.isNativePlatform?.()) return
 
-  // 1. StatusBar style follow dark mode
+  // 1. StatusBar — warna + style = SAMA dgn header app. Di-apply ULANG beberapa kali karena splash
+  //    native (SplashScreen API) me-reset appearance window saat exit -> teks status bar jadi tak terlihat.
+  let applyStatusBar = () => {}
   try {
     const { StatusBar, Style } = await import('@capacitor/status-bar')
-    const apply = () => {
+    applyStatusBar = () => {
       const isDark = ui.isDark
-      // v.93.0626 FIX kontras: per definisi plugin, Style.Dark = teks TERANG (bg gelap),
-      // Style.Light = teks GELAP (bg terang). Komentar lama TERBALIK -> teks status bar tak terlihat.
+      // Style.Dark = teks TERANG (utk bg gelap), Style.Light = teks GELAP (utk bg terang) — per definisi plugin.
       StatusBar.setStyle({ style: isDark ? Style.Dark : Style.Light }).catch(() => {})
-      // v.92.0626: warna status bar = SAMA dgn header app (light putih #FFFFFF, dark slate-800 #1E293B)
       StatusBar.setBackgroundColor({ color: isDark ? '#1E293B' : '#FFFFFF' }).catch(() => {})
     }
-    apply()
-    watch(() => ui.isDark, apply)
+    applyStatusBar()
+    // re-apply melewati durasi splash (~1.8s) + jaga2
+    ;[600, 1400, 2200, 3200].forEach((ms) => setTimeout(applyStatusBar, ms))
+    watch(() => ui.isDark, applyStatusBar)
   } catch (e) {
+    // eslint-disable-next-line no-console
     console.warn('[StatusBar] plugin tidak tersedia:', e?.message || e)
   }
 
-  // 2. Android back button → Vue Router back (bukan exit app)
+  // 2. Android back: tutup sidebar/overlay dulu -> back di SEMUA halaman -> di home tekan 2x utk keluar.
   try {
     const { App } = await import('@capacitor/app')
-    App.addListener('backButton', ({ canGoBack } = {}) => {
-      // v.91.0626: tutup sidebar dulu kalau terbuka, lalu navigasi back; exit hanya di root
+    // resume sering reset appearance -> apply ulang status bar
+    App.addListener('resume', () => applyStatusBar())
+    App.addListener('appStateChange', ({ isActive } = {}) => { if (isActive) applyStatusBar() })
+
+    const HOME_ROUTES = ['/dashboard', '/capaian-prestasi', '/login']
+    let lastBack = 0
+    App.addListener('backButton', () => {
+      // a. sidebar terbuka -> tutup
       if (ui.sidebarOpen) { ui.closeSidebar(); return }
-      if (canGoBack === false && window.history.length <= 1) {
-        App.exitApp()
-      } else {
-        window.history.back()
-      }
+      // b. overlay/dialog terbuka -> komponen menutup diri (dengar 'android-back' + preventDefault), jangan navigasi
+      const ev = new CustomEvent('android-back', { cancelable: true })
+      window.dispatchEvent(ev)
+      if (ev.defaultPrevented) return
+      // c. bukan halaman home & ada history -> navigasi back
+      const path = router.currentRoute?.value?.path || ''
+      if (!HOME_ROUTES.includes(path) && window.history.length > 1) { window.history.back(); return }
+      // d. di home -> tekan back 2x dalam 2 detik utk keluar app
+      const now = Date.now()
+      if (now - lastBack < 2000) { App.exitApp(); return }
+      lastBack = now
+      try { toast.info('Tekan sekali lagi untuk keluar') } catch (_e) { /* ignore */ }
     })
   } catch (e) {
+    // eslint-disable-next-line no-console
     console.warn('[BackButton] plugin tidak tersedia:', e?.message || e)
   }
 }
