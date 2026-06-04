@@ -53,6 +53,26 @@
         </div>
       </div>
 
+      <!-- v.94.0626: Generate Tagihan Khusus (infaq/iuran sekali-jalan, target fleksibel) -->
+      <div class="mt-3">
+        <label
+          class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
+        >
+          Tagihan Khusus (Infaq / Iuran — sekali jalan)
+        </label>
+        <button
+          @click="openGenKhusus"
+          class="w-full inline-flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 rounded-lg text-sm transition cursor-pointer"
+        >
+          <i class="fas fa-plus-circle"></i>Generate Tagihan Khusus
+        </button>
+        <p class="text-[10px] text-[var(--text-secondary)] mt-1 italic">
+          <i class="fas fa-info-circle mr-1"></i>Untuk infaq pembangunan, infaq kegiatan,
+          dsb. Tidak menyentuh Syahriyah &amp; bisa ditarget per lembaga/kelas/santri.
+          Tagihan yang sudah ada (santri + kategori + periode sama) otomatis di-skip.
+        </p>
+      </div>
+
       <!-- v.21.89.0527: Lebar kertas struk POS (dot-matrix) -->
       <div class="mt-4">
         <label
@@ -655,6 +675,223 @@
         <i class="fas fa-save mr-1"></i>{{ saving ? 'Menyimpan...' : 'Simpan Semua' }}
       </button>
     </div>
+
+    <!-- v.94.0626: Modal Generate Tagihan Khusus (infaq/iuran, target fleksibel) -->
+    <div
+      v-if="genOpen"
+      class="fixed inset-0 z-50 bg-slate-900/60 flex items-center justify-center p-4"
+      @click.self="genOpen = false"
+    >
+      <div
+        class="bg-[var(--bg-card)] rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-5"
+      >
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-base font-black">
+            <i class="fas fa-plus-circle text-emerald-500 mr-1"></i>Generate Tagihan Khusus
+          </h3>
+          <button
+            @click="genOpen = false"
+            class="text-[var(--text-secondary)] hover:text-rose-500 p-1"
+            aria-label="Tutup"
+          >
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+
+        <!-- Jenis / kategori -->
+        <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block">
+          Jenis Tagihan
+        </label>
+        <select
+          v-model="genJenisId"
+          @change="onGenPickJenis"
+          class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)] mb-2"
+        >
+          <option value="">— Ketik manual —</option>
+          <option v-for="j in jenisList" :key="j.id" :value="j.id">{{ j.label }}</option>
+        </select>
+        <input
+          v-model="genKategori"
+          type="text"
+          placeholder="Kategori (mis. Infaq Pembangunan)"
+          class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)] mb-2"
+        />
+
+        <!-- Nominal + jatuh tempo -->
+        <div class="grid grid-cols-2 gap-2 mb-2">
+          <div>
+            <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block">
+              Nominal (Rp)
+            </label>
+            <input
+              :value="genNominalFmt"
+              @input="onGenNominal"
+              type="text"
+              inputmode="numeric"
+              placeholder="0"
+              class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)] text-right font-bold"
+            />
+          </div>
+          <div>
+            <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block">
+              Jatuh Tempo
+            </label>
+            <input
+              v-model="genJatuhTempo"
+              type="date"
+              class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
+            />
+          </div>
+        </div>
+
+        <!-- Periode / label -->
+        <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block">
+          Periode / Label
+        </label>
+        <input
+          v-model="genPeriode"
+          type="text"
+          placeholder="mis. Juni 2026 / Tahap 1"
+          class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)] mb-1"
+        />
+        <label
+          v-if="genJenisId"
+          class="flex items-center gap-1.5 text-[11px] font-bold text-[var(--text-secondary)] mb-3 cursor-pointer"
+        >
+          <input v-model="genPakaiNominalJenis" type="checkbox" class="w-3.5 h-3.5 accent-emerald-600" />
+          Pakai nominal per lembaga/kelas dari pengaturan jenis (kalau ada)
+        </label>
+
+        <!-- Target scope -->
+        <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block">
+          Target Santri
+        </label>
+        <div class="flex gap-1 mb-2 text-xs font-bold">
+          <button
+            type="button"
+            @click="genScope = 'all'"
+            :class="['flex-1 py-1.5 rounded-lg border transition', genScope === 'all' ? 'bg-emerald-600 text-white border-emerald-600' : 'border-[var(--border-default)] text-[var(--text-secondary)]']"
+          >
+            Semua aktif
+          </button>
+          <button
+            type="button"
+            @click="genScope = 'lembaga'"
+            :class="['flex-1 py-1.5 rounded-lg border transition', genScope === 'lembaga' ? 'bg-emerald-600 text-white border-emerald-600' : 'border-[var(--border-default)] text-[var(--text-secondary)]']"
+          >
+            Lembaga/Kelas
+          </button>
+          <button
+            type="button"
+            @click="genScope = 'santri'"
+            :class="['flex-1 py-1.5 rounded-lg border transition', genScope === 'santri' ? 'bg-emerald-600 text-white border-emerald-600' : 'border-[var(--border-default)] text-[var(--text-secondary)]']"
+          >
+            Pilih santri
+          </button>
+        </div>
+
+        <!-- Picker lembaga + kelas -->
+        <div v-if="genScope === 'lembaga'" class="mb-2 space-y-2">
+          <div>
+            <p class="text-[10px] text-[var(--text-secondary)] italic mb-1">
+              Lembaga (kosong = semua lembaga):
+            </p>
+            <div class="flex flex-wrap gap-1.5">
+              <label
+                v-for="lm in genLembagaList"
+                :key="`genlm_${lm}`"
+                class="inline-flex items-center gap-1 text-[10px] font-bold cursor-pointer bg-[var(--bg-card-elevated)] px-2 py-1 rounded border border-[var(--border-default)]"
+              >
+                <input
+                  type="checkbox"
+                  :checked="genLembagaSel.includes(lm)"
+                  @change="toggleGenLembaga(lm)"
+                  class="w-3 h-3 accent-emerald-600"
+                />{{ lm }}
+              </label>
+            </div>
+          </div>
+          <div v-if="genKelasList.length">
+            <p class="text-[10px] text-[var(--text-secondary)] italic mb-1">
+              Kelas (kosong = semua kelas di lembaga terpilih):
+            </p>
+            <div class="flex flex-wrap gap-1.5">
+              <label
+                v-for="kl in genKelasList"
+                :key="`genkl_${kl}`"
+                class="inline-flex items-center gap-1 text-[10px] font-bold cursor-pointer bg-[var(--bg-card-elevated)] px-2 py-1 rounded border border-[var(--border-default)]"
+              >
+                <input
+                  type="checkbox"
+                  :checked="genKelasSel.includes(kl)"
+                  @change="toggleGenKelas(kl)"
+                  class="w-3 h-3 accent-emerald-600"
+                />{{ kl }}
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Picker santri individual -->
+        <div v-if="genScope === 'santri'" class="mb-2">
+          <input
+            v-model="genSantriSearch"
+            type="text"
+            placeholder="Cari nama / NIS..."
+            class="w-full px-3 py-2 text-xs rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)] mb-1"
+          />
+          <div
+            class="max-h-44 overflow-y-auto border border-[var(--border-subtle)] rounded-lg divide-y divide-[var(--border-subtle)]"
+          >
+            <label
+              v-for="s in genSantriFiltered"
+              :key="`gens_${s.id}`"
+              class="flex items-center gap-2 px-2 py-1.5 text-xs cursor-pointer hover:bg-[var(--bg-muted)]"
+            >
+              <input
+                type="checkbox"
+                :checked="genSantriSel.includes(String(s.id))"
+                @change="toggleGenSantri(s.id)"
+                class="w-3.5 h-3.5 accent-emerald-600 flex-shrink-0"
+              />
+              <span class="font-bold text-[var(--text-primary)] truncate">{{ s.nama }}</span>
+              <span class="text-[10px] text-[var(--text-secondary)] whitespace-nowrap">
+                {{ s.lembaga || s.lembaga_sekolah || '' }} {{ s.kelas || s.kelas_sekolah || '' }}
+              </span>
+            </label>
+            <p
+              v-if="genSantriFiltered.length === 0"
+              class="text-[10px] text-[var(--text-tertiary)] italic text-center py-2"
+            >
+              Tidak ada santri.
+            </p>
+          </div>
+          <p class="text-[10px] text-emerald-600 mt-1">{{ genSantriSel.length }} santri dipilih</p>
+        </div>
+
+        <!-- Preview + actions -->
+        <div
+          class="mt-2 mb-3 text-xs bg-emerald-50 dark:bg-emerald-900/20 text-emerald-800 dark:text-emerald-300 rounded-lg px-3 py-2"
+        >
+          <i class="fas fa-users mr-1"></i>Akan dibuat untuk <b>{{ genTargetCount }}</b> santri aktif.
+        </div>
+        <div class="flex gap-2">
+          <button
+            @click="genOpen = false"
+            class="flex-1 px-4 py-2 bg-slate-200 dark:bg-slate-700 text-[var(--text-primary)] font-bold rounded-xl text-sm"
+          >
+            Batal
+          </button>
+          <button
+            @click="doGenKhusus"
+            :disabled="genBusy || genTargetCount === 0"
+            class="flex-1 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold rounded-xl text-sm"
+          >
+            {{ genBusy ? 'Generating...' : 'Generate' }}
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -1123,6 +1360,264 @@ async function autoGenerate() {
     toast.error('Error: ' + (e.message || e))
   } finally {
     generating.value = false
+  }
+}
+
+// ============================================================================
+// v.94.0626: Generate Tagihan Khusus — infaq/iuran SEKALI-JALAN, target fleksibel
+//   (semua santri aktif / per lembaga+kelas / pilih santri tertentu).
+//   - TIDAK menyentuh Syahriyah & tidak butuh flag auto_generate (tombol terpisah).
+//   - Dedup-safe: skip kalau tagihan santri+kategori+periode sudah ada (lunas/belum).
+//   - Tulis ke koleksi keuangan_tagihan (santri_id + created_at) → otomatis muncul
+//     real-time di akun santri/wali (TagihanView) + notif "Tagihan baru"
+//     (useNotifications), tanpa kerja tambahan.
+// ============================================================================
+const genOpen = ref(false)
+const genBusy = ref(false)
+const genJenisId = ref('')
+const genKategori = ref('')
+const genNominal = ref(0)
+const genNominalFmt = ref('')
+const genPakaiNominalJenis = ref(false)
+const genPeriode = ref('')
+const genJatuhTempo = ref('')
+const genScope = ref('all') // 'all' | 'lembaga' | 'santri'
+const genLembagaSel = ref([])
+const genKelasSel = ref([])
+const genSantriSel = ref([])
+const genSantriSearch = ref('')
+const genSantriAktif = ref([])
+
+const _GEN_BULAN_NM = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember']
+
+async function openGenKhusus() {
+  // reset state tiap buka
+  genJenisId.value = ''
+  genKategori.value = ''
+  genNominal.value = 0
+  genNominalFmt.value = ''
+  genPakaiNominalJenis.value = false
+  genScope.value = 'all'
+  genLembagaSel.value = []
+  genKelasSel.value = []
+  genSantriSel.value = []
+  genSantriSearch.value = ''
+  const now = new Date()
+  genPeriode.value = `${_GEN_BULAN_NM[now.getMonth()]} ${now.getFullYear()}`
+  genJatuhTempo.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(form.keu_jatuh_tempo || 10).padStart(2, '0')}`
+  genOpen.value = true
+  // muat santri aktif sekali (untuk preview & picker individual)
+  try {
+    const { collection, getDocs } = await import('firebase/firestore')
+    const snap = await getDocs(collection(db, 'santri'))
+    genSantriAktif.value = snap.docs
+      .map((d) => ({ id: d.id, ...d.data() }))
+      .filter((x) => x.aktif !== false)
+  } catch (e) {
+    toast.error('Gagal memuat data santri: ' + (e.message || e))
+  }
+}
+
+function onGenPickJenis() {
+  const j = jenisList.value.find((x) => x.id === genJenisId.value)
+  if (j) {
+    genKategori.value = j.label || ''
+    if (Number(j.nominal_default) > 0) {
+      genNominal.value = Number(j.nominal_default)
+      genNominalFmt.value = fmtRp(j.nominal_default)
+    }
+  }
+}
+
+function onGenNominal(e) {
+  const n = parseRp(e.target.value)
+  genNominal.value = n
+  genNominalFmt.value = fmtRp(n)
+}
+
+const genLembagaList = computed(() =>
+  (lembagaRaw.value || []).map((l) => l.lembaga).filter(Boolean)
+)
+
+const genKelasList = computed(() => {
+  const sel = genLembagaSel.value
+  const src = (lembagaRaw.value || []).filter((l) => sel.length === 0 || sel.includes(l.lembaga))
+  const set = new Set()
+  for (const l of src) {
+    const ks = Array.isArray(l.kelas) ? l.kelas : Array.isArray(l.kelas_list) ? l.kelas_list : []
+    for (const k of ks) if (k) set.add(String(k))
+  }
+  // fallback: kalau master lembaga tak punya daftar kelas, ambil dari data santri
+  if (set.size === 0) {
+    for (const s of genSantriAktif.value) {
+      if (sel.length === 0 || sel.includes(s.lembaga) || sel.includes(s.lembaga_sekolah)) {
+        if (s.kelas) set.add(String(s.kelas))
+        if (s.kelas_sekolah) set.add(String(s.kelas_sekolah))
+      }
+    }
+  }
+  return [...set].sort()
+})
+
+function toggleGenLembaga(lm) {
+  const i = genLembagaSel.value.indexOf(lm)
+  if (i >= 0) genLembagaSel.value.splice(i, 1)
+  else genLembagaSel.value.push(lm)
+  // buang kelas yang tak lagi valid setelah ubah lembaga
+  genKelasSel.value = genKelasSel.value.filter((k) => genKelasList.value.includes(k))
+}
+function toggleGenKelas(kl) {
+  const i = genKelasSel.value.indexOf(kl)
+  if (i >= 0) genKelasSel.value.splice(i, 1)
+  else genKelasSel.value.push(kl)
+}
+function toggleGenSantri(id) {
+  const sid = String(id)
+  const i = genSantriSel.value.indexOf(sid)
+  if (i >= 0) genSantriSel.value.splice(i, 1)
+  else genSantriSel.value.push(sid)
+}
+
+const genSantriFiltered = computed(() => {
+  const kw = genSantriSearch.value.trim().toLowerCase()
+  let list = genSantriAktif.value
+  if (kw) {
+    list = list.filter(
+      (s) =>
+        String(s.nama || '').toLowerCase().includes(kw) ||
+        String(s.nis || '').toLowerCase().includes(kw)
+    )
+  }
+  return [...list]
+    .sort((a, b) => String(a.nama || '').localeCompare(String(b.nama || '')))
+    .slice(0, 300)
+})
+
+// santri target sesuai scope (dipakai preview + generate)
+const genTargetSantri = computed(() => {
+  const all = genSantriAktif.value
+  if (genScope.value === 'all') return all
+  if (genScope.value === 'santri') {
+    const sel = new Set(genSantriSel.value.map(String))
+    return all.filter((s) => sel.has(String(s.id)))
+  }
+  // lembaga/kelas
+  const lsel = genLembagaSel.value
+  const ksel = genKelasSel.value
+  return all.filter((s) => {
+    const lembagaOk =
+      lsel.length === 0 || lsel.includes(s.lembaga) || lsel.includes(s.lembaga_sekolah)
+    if (!lembagaOk) return false
+    if (ksel.length === 0) return true
+    return ksel.includes(String(s.kelas)) || ksel.includes(String(s.kelas_sekolah))
+  })
+})
+const genTargetCount = computed(() => genTargetSantri.value.length)
+
+// nominal per santri (flat, atau ikut pengaturan jenis bila diminta)
+function _genNominalUntuk(sx) {
+  if (genPakaiNominalJenis.value && genJenisId.value) {
+    const j = jenisList.value.find((x) => x.id === genJenisId.value)
+    if (j) {
+      const perK = j.nominal_per_kelas || {}
+      for (const [lemb, ks] of [
+        [sx.lembaga, sx.kelas],
+        [sx.lembaga_sekolah, sx.kelas_sekolah]
+      ]) {
+        if (!lemb) continue
+        const inner = perK[lemb] || {}
+        const v = Number(inner[ks] || 0)
+        if (v > 0) return v
+      }
+      const perL = j.nominal_per_lembaga || {}
+      const vl = Number(perL[sx.lembaga] || perL[sx.lembaga_sekolah] || 0)
+      if (vl > 0) return vl
+    }
+  }
+  return Number(genNominal.value || 0)
+}
+
+async function doGenKhusus() {
+  if (genBusy.value) return
+  const kategori = String(genKategori.value || '').trim()
+  if (!kategori) {
+    toast.warning('Isi kategori tagihan dulu.')
+    return
+  }
+  const periode = String(genPeriode.value || '').trim()
+  if (!periode) {
+    toast.warning('Isi periode/label dulu.')
+    return
+  }
+  const targets = genTargetSantri.value
+  if (targets.length === 0) {
+    toast.warning('Tidak ada santri target.')
+    return
+  }
+  if (!genPakaiNominalJenis.value && Number(genNominal.value || 0) <= 0) {
+    toast.warning('Nominal harus lebih dari 0.')
+    return
+  }
+  if (
+    !confirm(
+      `Generate tagihan "${kategori}" (${periode}) untuk ${targets.length} santri?\n\nTagihan yang sudah ada (santri + kategori + periode sama) akan di-skip.`
+    )
+  )
+    return
+  genBusy.value = true
+  try {
+    const { collection, getDocs, setDoc, doc, serverTimestamp } = await import('firebase/firestore')
+    // dedup: kumpulkan tagihan existing (santri+kategori+periode)
+    const tSnap = await getDocs(collection(db, 'keuangan_tagihan'))
+    const existing = new Set()
+    for (const d of tSnap.docs) {
+      const t = d.data()
+      existing.add(`${String(t.santri_id)}__${(t.kategori || t.jenis || '').toLowerCase()}__${t.periode || ''}`)
+    }
+    const katLower = kategori.toLowerCase()
+    const katSlug = slugId(kategori)
+    const perSlug = slugId(periode)
+    let created = 0,
+      skipped = 0,
+      errCount = 0
+    for (const sx of targets) {
+      const dupKey = `${String(sx.id)}__${katLower}__${periode}`
+      if (existing.has(dupKey)) {
+        skipped++
+        continue
+      }
+      const nominal = _genNominalUntuk(sx)
+      if (nominal <= 0) {
+        skipped++
+        continue
+      }
+      try {
+        const id = `tagihan_${sx.id}_${katSlug}_${perSlug}`
+        await setDoc(doc(db, 'keuangan_tagihan', id), {
+          id,
+          santri_id: String(sx.id),
+          santri_nama: sx.nama || '',
+          kategori,
+          periode,
+          nominal,
+          bayar: 0,
+          status: 'belum',
+          jatuh_tempo: genJatuhTempo.value || '',
+          sumber: 'generate_khusus',
+          created_at: serverTimestamp()
+        })
+        created++
+      } catch (e) {
+        errCount++
+        console.warn('[genKhusus]', sx.nama, e.message)
+      }
+    }
+    toast.success(`Selesai: ${created} dibuat, ${skipped} skip${errCount ? `, ${errCount} gagal` : ''}`)
+    if (created > 0) genOpen.value = false
+  } catch (e) {
+    toast.error('Error: ' + (e.message || e))
+  } finally {
+    genBusy.value = false
   }
 }
 </script>
