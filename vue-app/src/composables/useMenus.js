@@ -48,13 +48,13 @@ const ALL_MENUS = [
   // v.87.0526: Menu "Pembayaran" santri DIHAPUS — digabung jadi 1 pintu lewat "Tagihan Saya"
   // (tombol Bayar per-tagihan + tombol Setoran Lain di TagihanView). Route /pembayaran tetap hidup via deep-link.
   // v.20.12.0526: santri-only nama match legacy (suffix "Saya")
-  { group: 'Keuangan', name: 'Tabungan Saya', path: '/tabungan', icon: 'fa-piggy-bank', roles: ['santri'], available: true },
+  { group: 'Keuangan', name: 'Tabungan Saya', path: '/tabungan', icon: 'fa-wallet', roles: ['santri'], available: true },
   // v.20.14.0526: Tunggakan & Riwayat digabung jadi 1 menu (sudah ada tab filter Belum Lunas / Lunas di dalam page)
   // v.87.0526: rename "Tagihan Saya" -> "Tagihan & Pembayaran" (1 pintu: lihat tagihan + bayar + riwayat).
   { group: 'Keuangan', name: 'Tagihan & Pembayaran', path: '/tagihan', icon: 'fa-receipt', roles: ['santri'], available: true },
   // v.20.12.0526: Tabungan untuk admin (label tanpa "Saya")
   // v.21.115.0528: Tabungan admin butuh akses_keuangan (super_admin / admin_keuangan), bukan admin biasa.
-  { group: 'Keuangan', name: 'Tabungan', path: '/tabungan', icon: 'fa-piggy-bank', roles: ['admin'], available: true, perm: 'akses_keuangan' },
+  { group: 'Keuangan', name: 'Tabungan', path: '/tabungan', icon: 'fa-wallet', roles: ['admin'], available: true, perm: 'akses_keuangan' },
   { group: 'Keuangan', name: 'Buku Induk', path: '/buku-induk', icon: 'fa-book', roles: ['admin'], available: true, perm: 'akses_keuangan' },
   // v.86.0526: Verifikasi bukti transfer wali (superadmin/admin_keuangan)
   { group: 'Keuangan', name: 'Verifikasi Pembayaran', path: '/pembayaran-pending', icon: 'fa-clipboard-check', roles: ['admin'], available: true, perm: 'akses_keuangan' },

@@ -22,7 +22,7 @@
           <p class="text-[10px] md:text-xs font-black leading-tight drop-shadow-sm">POS Santri</p>
         </router-link>
         <router-link to="/tabungan" class="group relative overflow-hidden bg-gradient-to-br from-emerald-500 dark:from-emerald-700 to-emerald-700 dark:to-emerald-900 rounded-xl p-2.5 md:p-3 text-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col items-center justify-center gap-1 text-center">
-          <i class="fas fa-piggy-bank text-base md:text-lg drop-shadow"></i>
+          <i class="fas fa-wallet text-base md:text-lg drop-shadow"></i>
           <p class="text-[10px] md:text-xs font-black leading-tight drop-shadow-sm">Tabungan</p>
         </router-link>
         <router-link to="/bisyaroh" class="group relative overflow-hidden bg-gradient-to-br from-cyan-500 dark:from-cyan-700 to-cyan-700 dark:to-cyan-900 rounded-xl p-2.5 md:p-3 text-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col items-center justify-center gap-1 text-center">

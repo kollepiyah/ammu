@@ -28,7 +28,7 @@ const COLOR_BY_ICON = {
   'fa-chart-line':          'from-emerald-500 dark:from-emerald-700 to-emerald-700 dark:to-emerald-900',
   'fa-cash-register':       'from-teal-500 dark:from-teal-700 to-teal-700 dark:to-teal-900',
   'fa-hand-holding-usd':    'from-emerald-500 dark:from-emerald-700 to-emerald-700 dark:to-emerald-900',
-  'fa-piggy-bank':          'from-emerald-600 dark:from-emerald-800 to-emerald-800',
+  'fa-wallet':          'from-emerald-600 dark:from-emerald-800 to-emerald-800',
   'fa-book':                'from-teal-700 dark:from-teal-900 to-teal-900',
   'fa-handshake':           'from-cyan-400 dark:from-cyan-700 to-cyan-600 dark:to-cyan-800',
   'fa-sliders-h':           'from-slate-500 to-slate-700',

@@ -23,7 +23,7 @@
         />
         <div class="relative">
           <p class="text-[10px] font-black uppercase tracking-widest opacity-90">
-            <i class="fas fa-piggy-bank mr-1"></i>Tabungan Saya
+            <i class="fas fa-wallet mr-1"></i>Tabungan Saya
           </p>
           <h2 class="text-xl md:text-2xl font-black mt-1 drop-shadow">{{ namaSantriAktif }}</h2>
           <p class="text-[10px] font-bold uppercase tracking-widest opacity-90 mt-4">
@@ -129,7 +129,7 @@
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           <div>
             <h1 class="text-base md:text-lg font-black text-[var(--text-primary)]">
-              <i class="fas fa-piggy-bank text-emerald-500 mr-2"></i>Tabungan
+              <i class="fas fa-wallet text-emerald-500 mr-2"></i>Tabungan
             </h1>
             <p class="text-xs text-[var(--text-secondary)] mt-0.5">Saldo tabungan santri</p>
           </div>
@@ -360,7 +360,7 @@
           class="px-5 py-4 border-b border-[var(--border-subtle)] flex items-center justify-between sticky top-0 bg-[var(--bg-card)] z-10"
         >
           <h3 class="text-base font-black text-[var(--text-primary)]">
-            <i class="fas fa-piggy-bank text-emerald-500 mr-2"></i>Input Mutasi Tabungan
+            <i class="fas fa-wallet text-emerald-500 mr-2"></i>Input Mutasi Tabungan
           </h3>
           <button @click="closeModal" class="text-[var(--text-tertiary)] hover:text-[var(--text-primary)]">
             <i class="fas fa-times text-lg"></i>
