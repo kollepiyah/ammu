@@ -80,15 +80,16 @@ public class KalenderWidget extends AppWidgetProvider {
         String json = sp.getString("events", "[]");
 
         int shown = 0;
-        int[] slotRoot = { R.id.kal_slot1, R.id.kal_slot2 };
-        int[] slotBln = { R.id.kal_bln1, R.id.kal_bln2 };
-        int[] slotTgl = { R.id.kal_tgl1, R.id.kal_tgl2 };
-        int[] slotJudul = { R.id.kal_judul1, R.id.kal_judul2 };
-        int[] slotRange = { R.id.kal_range1, R.id.kal_range2 };
+        int[] slotRoot = { R.id.kal_slot1, R.id.kal_slot2, R.id.kal_slot3, R.id.kal_slot4 };
+        int[] slotBln = { R.id.kal_bln1, R.id.kal_bln2, R.id.kal_bln3, R.id.kal_bln4 };
+        int[] slotTgl = { R.id.kal_tgl1, R.id.kal_tgl2, R.id.kal_tgl3, R.id.kal_tgl4 };
+        int[] slotJudul = { R.id.kal_judul1, R.id.kal_judul2, R.id.kal_judul3, R.id.kal_judul4 };
+        int[] slotRange = { R.id.kal_range1, R.id.kal_range2, R.id.kal_range3, R.id.kal_range4 };
+        int MAX = 4;
 
         try {
             JSONArray arr = new JSONArray(json);
-            for (int i = 0; i < arr.length() && shown < 2; i++) {
+            for (int i = 0; i < arr.length() && shown < MAX; i++) {
                 JSONObject o = arr.optJSONObject(i);
                 if (o == null) continue;
                 int[] start = parseYmd(o.optString("tgl_mulai", ""));
@@ -107,7 +108,7 @@ public class KalenderWidget extends AppWidgetProvider {
         } catch (Exception e) { /* ignore -> empty state */ }
 
         // Sembunyikan slot kosong
-        for (int i = shown; i < 2; i++) views.setViewVisibility(slotRoot[i], View.GONE);
+        for (int i = shown; i < MAX; i++) views.setViewVisibility(slotRoot[i], View.GONE);
         // Empty state
         views.setViewVisibility(R.id.kal_empty, shown == 0 ? View.VISIBLE : View.GONE);
 

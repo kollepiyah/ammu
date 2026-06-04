@@ -118,7 +118,7 @@ onMounted(() => {
     loading.value = false
     // v.94.0626: dorong agenda terdekat (max 5) ke widget Kalender Android
     try {
-      const ev = agenda.value.slice(0, 5).map((it) => ({
+      const ev = agenda.value.slice(0, 8).map((it) => ({
         judul: it.judul || '',
         tgl_mulai: it.tgl_mulai || '',
         tgl_selesai: it.tgl_selesai || ''
