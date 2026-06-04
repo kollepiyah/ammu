@@ -28,7 +28,7 @@
     },
     "StatusBar": {
       "style": "DARK",
-      "backgroundColor": "#0F766E",
+      "backgroundColor": "#FFFFFF",
       "overlay": false
     },
     "Keyboard": {

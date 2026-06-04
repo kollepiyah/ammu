@@ -43,7 +43,8 @@ async function setupNativeIntegration() {
       const isDark = ui.isDark
       // v.85.0526: FIX inversion — Style.Dark = text DARK (untuk LIGHT bg), Style.Light = text LIGHT (untuk DARK bg)
       StatusBar.setStyle({ style: isDark ? Style.Light : Style.Dark }).catch(() => {})
-      StatusBar.setBackgroundColor({ color: isDark ? '#0F172A' : '#F2FEF9' }).catch(() => {})
+      // v.92.0626: warna status bar = SAMA dgn header app (light putih #FFFFFF, dark slate-800 #1E293B)
+      StatusBar.setBackgroundColor({ color: isDark ? '#1E293B' : '#FFFFFF' }).catch(() => {})
     }
     apply()
     watch(() => ui.isDark, apply)

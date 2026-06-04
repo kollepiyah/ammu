@@ -38,46 +38,73 @@
       })()
     </script>
     <style>
-      /* v.85.0526: Splash pakai design asset Bakafrawi (portrait/landscape, light/dark).
-         Background-image contain-fit + solid bg color sebagai fallback. */
+      /* v.91.0626 FIX (compact + anti-gepeng): splash DISUSUN dari logo (bukan 1 gambar full-bleed
+         yang ke-stretch/crop di rasio layar tertentu). Logo di tengah + "Powered by Bakafrawi" di
+         bawah, flex-center di atas bg solid -> TAK PERNAH gepeng di device mana pun, ringan
+         (drop 4 PNG splash ~370KB dari web load), tampilan tetap seperti splash.png. */
       #splash-screen {
         position: fixed; inset: 0; z-index: 99999;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
         background-color: #F2FEF9;
-        background-image: url('splash-portrait-light.png');
-        background-repeat: no-repeat;
-        background-position: center center;
-        background-size: contain;
-        opacity: 1; transition: opacity 0.4s ease-out;
+        opacity: 1;
         animation: splashFadeIn 0.4s ease-out both;
+        padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+        box-sizing: border-box;
       }
-      @media (orientation: landscape) {
-        #splash-screen { background-image: url('splash-landscape-light.png'); }
+      #splash-screen .splash-logo {
+        position: absolute; top: 40%; left: 50%;
+        transform: translate(-50%, -50%) scale(1);
+        width: 30vw; max-width: 120px; min-width: 92px; height: auto;
+        -o-object-fit: contain;
+           object-fit: contain; -webkit-user-drag: none; -webkit-user-select: none; -moz-user-select: none; user-select: none;
+        opacity: 0;
       }
-      body.dark-mode #splash-screen, html.dark #splash-screen {
-        background-color: #0F172A;
-        background-image: url('splash-portrait-dark.png');
+      /* v.91.0626: animasi logo ala NETFLIX — zoom-in halus 2 detik (push-in) */
+      #splash-screen.reveal .splash-logo {
+        animation: splashLogoIn 2s cubic-bezier(0.33, 0, 0.2, 1) forwards;
       }
-      @media (prefers-color-scheme: dark) and (orientation: portrait) {
-        html.dark #splash-screen, body.dark-mode #splash-screen { background-image: url('splash-portrait-dark.png'); }
+      #splash-screen .splash-brand {
+        position: absolute; left: 0; right: 0;
+        bottom: calc(env(safe-area-inset-bottom) + 22px);
+        display: flex; flex-direction: column; align-items: center; gap: 4px;
+        opacity: 0;
       }
-      @media (orientation: landscape) {
-        body.dark-mode #splash-screen, html.dark #splash-screen { background-image: url('splash-landscape-dark.png'); }
+      #splash-screen.reveal .splash-brand { animation: splashFadeIn 0.8s 1.25s ease-out forwards; }
+      #splash-screen .splash-brand-by {
+        font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+        font-size: 12px; font-weight: 600; letter-spacing: 0.05em; color: #94A3B8;
       }
-      /* v.87.0526: fade-out pakai animation forwards supaya MENANG atas fill-mode 'both' splashFadeIn.
-         (Bug lama: opacity:0 ke-override animasi fade-in yang fill both -> splash hilang mendadak tanpa fade.) */
+      /* v.91.0626: footer Bakafrawi (gambar lengkap "Powered by") — height:auto jaga rasio (anti-gepeng) */
+      #splash-screen .splash-brand-img {
+        display: block; width: 108px; max-width: 36vw; height: auto; -o-object-fit: contain; object-fit: contain;
+        -webkit-user-drag: none; -webkit-user-select: none; -moz-user-select: none; user-select: none;
+      }
+      body.dark-mode #splash-screen, html.dark #splash-screen { background-color: #0F172A; }
+      body.dark-mode #splash-screen .splash-brand-by, html.dark #splash-screen .splash-brand-by { color: #94A3B8; }
+      body.dark-mode #splash-screen .splash-brand-img, html.dark #splash-screen .splash-brand-img { filter: brightness(1.12); }
+      /* v.87.0526: fade-out pakai animation forwards supaya MENANG atas fill-mode 'both' splashFadeIn. */
       #splash-screen.fade-out { animation: splashFadeOut 0.5s ease-out forwards; pointer-events: none; }
       @keyframes splashFadeIn { 0% { opacity: 0; } 100% { opacity: 1; } }
       @keyframes splashFadeOut { 0% { opacity: 1; } 100% { opacity: 0; } }
+      @keyframes splashLogoIn { 0% { opacity: 0; transform: translate(-50%, -50%) scale(0.72); } 30% { opacity: 1; } 100% { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
+      @media (prefers-reduced-motion: reduce) {
+        #splash-screen .splash-logo, #splash-screen .splash-brand { opacity: 1 !important; animation: none !important; }
+      }
       body.app-running #splash-screen { display: none !important; }
     </style>
-    <script type="module" crossorigin src="./assets/index-DTY2ZV1w.js"></script>
-    <link rel="modulepreload" crossorigin href="./assets/vendor-DuEYIJ_n.js">
-    <link rel="modulepreload" crossorigin href="./assets/vendor-firebase-BQ7ZohsH.js">
-    <link rel="stylesheet" crossorigin href="./assets/index-LcimTRuD.css">
+    <script type="module" crossorigin src="./assets/index-DPcriTui.js"></script>
+    <link rel="modulepreload" crossorigin href="./assets/vendor-DWO-f0MT.js">
+    <link rel="modulepreload" crossorigin href="./assets/vendor-firebase-YbTGaUlm.js">
+    <link rel="stylesheet" crossorigin href="./assets/index-B43TxULq.css">
   </head>
   <body class="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100">
-    <!-- v.85.0526: Splash kosong — design (logo + Powered by Bakafrawi) sudah inline di bg-image -->
-    <div id="splash-screen" aria-hidden="true"></div>
+    <!-- v.91.0626: Splash disusun dari logo (compact, anti-gepeng) — lihat <style> di atas -->
+    <div id="splash-screen" aria-hidden="true">
+      <img class="splash-logo" src="./logo.png" alt="" />
+      <div class="splash-brand">
+        <img class="splash-brand-img" src="./bakafrawi-footer.png" alt="" />
+      </div>
+    </div>
     <div id="app"></div>
   </body>
 </html>
