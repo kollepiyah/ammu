@@ -246,11 +246,16 @@ export async function buildListPdf({
     const v = typeof c.format === 'function' ? c.format(r[c.key], r) : r[c.key]
     return v == null ? '' : String(v)
   }))
+  // v.93.0626: skala lebar kolom supaya tabel SAMA LEBAR dgn KOP (pageW-24) & center (margin default 12/12).
+  const _availW = doc.internal.pageSize.getWidth() - 24
+  const _sumW = columns.reduce((s, c) => s + (Number(c.width) || 0), 0)
+  const _scale = _sumW > 0 ? _availW / _sumW : 1
   drawTable(doc, {
     startY: y + 4,
     head,
     body,
-    columnStyles: columns.reduce((acc, c, i) => { if (c.width) acc[i] = { cellWidth: c.width }; return acc }, {})
+    tableWidth: _availW,
+    columnStyles: columns.reduce((acc, c, i) => { if (c.width) acc[i] = { cellWidth: Math.round(Number(c.width) * _scale * 100) / 100 }; return acc }, {})
   })
   if (signature) {
     drawSignature(doc, signature)

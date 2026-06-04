@@ -413,7 +413,7 @@ async function generateTpqPdf(doc, y, santri, schema, raporState, settings) {
       {
         content: (sec.title || '').toUpperCase(),
         colSpan: (sec.rows?.length ? 1 : 0) + fields.length,
-        styles: { halign: 'center', fillColor: [240, 240, 240], fontStyle: 'bold' }
+        styles: { halign: 'center', fillColor: [255, 255, 255], fontStyle: 'bold' }
       }
     ]
 
@@ -526,14 +526,13 @@ async function generatePraPtptPdf(doc, y, santri, schema, raporState, settings) 
     })
   })
 
-  // v.21.60.2.0526: presisi total = 185mm (F4 usable). margin kiri+kanan = 14+15 = 29mm. 215-29=186 → 185 aman.
-  // Kolom: Kelas(8) + LevelBaca(14) + Target(28) + Tgl(22) + 7 nilai×14 + Jml(15) = 185
+  // v.93.0626: lebar tabel = KOP (215-24=191mm), margin 12/12 -> center & sama lebar dgn KOP.
+  // Kolom: Kelas(8)+LevelBaca(15)+Target(30)+Tgl(23)+7 nilai×14+Jml(17) = 191
   drawTable(doc, {
     startY: y,
     head,
     body,
-    margin: { left: 14, right: 15 },
-    tableWidth: 185,
+    margin: { left: 12, right: 12 },
     styles: {
       font: doc._fontMU,
       fontSize: 7,
@@ -545,7 +544,7 @@ async function generatePraPtptPdf(doc, y, santri, schema, raporState, settings) 
       overflow: 'linebreak'
     },
     headStyles: {
-      fillColor: [248, 250, 252],
+      fillColor: [255, 255, 255],
       textColor: 0,
       fontStyle: 'bold',
       halign: 'center',
@@ -556,9 +555,9 @@ async function generatePraPtptPdf(doc, y, santri, schema, raporState, settings) 
     alternateRowStyles: { fillColor: [255, 255, 255] },
     columnStyles: {
       0: { cellWidth: 8 }, // Kelas
-      1: { cellWidth: 14 }, // Level Baca
-      2: { cellWidth: 28, halign: 'left' }, // Target Khotam
-      3: { cellWidth: 22 }, // Tgl Khotam (dd/mm/yyyy butuh ruang)
+      1: { cellWidth: 15 }, // Level Baca
+      2: { cellWidth: 30, halign: 'left' }, // Target Khotam
+      3: { cellWidth: 23 }, // Tgl Khotam (dd/mm/yyyy butuh ruang)
       4: { cellWidth: 14 }, // Fashohah
       5: { cellWidth: 14 }, // Tartil
       6: { cellWidth: 14 }, // Tahfizh Juz 30
@@ -566,7 +565,7 @@ async function generatePraPtptPdf(doc, y, santri, schema, raporState, settings) 
       8: { cellWidth: 14 }, // Tajwid
       9: { cellWidth: 14 }, // Doa Harian
       10: { cellWidth: 14 }, // Adab
-      11: { cellWidth: 15, fontStyle: 'bold', fillColor: [253, 246, 178] } // Jml — bold + bg kuning lembut
+      11: { cellWidth: 17, fontStyle: 'bold' } // Jml — bold (v.93: no fill)
     }
   })
 
@@ -582,8 +581,8 @@ async function generatePraPtptPdf(doc, y, santri, schema, raporState, settings) 
 
   drawTable(doc, {
     startY: y,
-    margin: { left: 14, right: 15 },
-    tableWidth: 185,
+    margin: { left: 12, right: 12 },
+    tableWidth: 191,
     body: [
       ['Jumlah Khotam', `${totalKhotam} Khotam`],
       ['Nilai Rata-rata', fmtNilai(avg)]
@@ -598,7 +597,7 @@ async function generatePraPtptPdf(doc, y, santri, schema, raporState, settings) 
       lineColor: [80, 80, 80]
     },
     columnStyles: {
-      0: { cellWidth: 50, fillColor: [248, 250, 252] },
+      0: { cellWidth: 50 },
       1: { fillColor: [255, 255, 255] }
     }
   })
@@ -715,19 +714,19 @@ async function generatePtptPdf(doc, y, santri, schema, raporState, settings) {
       halign: 'center'
     },
     alternateRowStyles: { fillColor: [255, 255, 255] },
-    // F4 width 215mm - margin 14*2 = 187mm usable. Total: 14+12+28+22+22+22+22+16+24 = 182mm
+    // v.93.0626: lebar = KOP (215-24=191mm), margin 12/12, center. Total: 14+12+30+23+23+23+23+17+26 = 191
     columnStyles: {
       0: { cellWidth: 14 },  // Kelas
       1: { cellWidth: 12 },  // Juz
-      2: { cellWidth: 28 },  // Tanggal Khotam
-      3: { cellWidth: 22 },  // Fashohah
-      4: { cellWidth: 22 },  // Tartil
-      5: { cellWidth: 22 },  // Istimror
-      6: { cellWidth: 22 },  // Kelancaran
-      7: { cellWidth: 16 },  // Adab
-      8: { cellWidth: 24 }   // Predikat lebih lebar
+      2: { cellWidth: 30 },  // Tanggal Khotam
+      3: { cellWidth: 23 },  // Fashohah
+      4: { cellWidth: 23 },  // Tartil
+      5: { cellWidth: 23 },  // Istimror
+      6: { cellWidth: 23 },  // Kelancaran
+      7: { cellWidth: 17 },  // Adab
+      8: { cellWidth: 26 }   // Predikat lebih lebar
     },
-    margin: { left: 14, right: 14 }
+    margin: { left: 12, right: 12 }
   })
 
   y = doc.lastAutoTable.finalY + 2

@@ -133,3 +133,12 @@ Ganti pendekatan transparan (Addendum 4) → **AnimationDrawable** (ikon NYATA, 
 - Tak terpakai lagi (boleh diabaikan): `splash_icon_anim.xml`, `splash_anim_*.png`, `splash_branding.png`, `splash_icon.png`.
 - ⚠️ Ikon transparan: di Samsung & mayoritas HP = aman (tak ada ikon launcher, sudah dikonfirmasi kyai sebelumnya). Di segelintir OEM non-standar bisa kilas ikon launcher sekejap — trade-off demi footer anti-gepeng + animasi mulus.
 - Butuh `npm run firebase:deploy` + `npm run build:aab`.
+
+## ADDENDUM 7 — UI polish + v.93 + PDF + permission (batch lanjutan)
+- **Sidebar anti-melayang:** drawer mobile `absolute`→`fixed` (penuh viewport), header padding-top + footer padding-bottom + close button = `env(safe-area-inset-*)` → mengisi sampai belakang status bar & gesture bar. Desktop `md:relative` (insets=0, no-op).
+- **Splash logo:** `top: 40%`→`45%` (jangan terlalu ke atas).
+- **Status bar = warna app:** `App.vue` StatusBar bg light `#FFFFFF` / dark `#1E293B` (match header) + `capacitor.config.json` StatusBar `#0F766E`→`#FFFFFF`. (native → butuh AAB)
+- **Bump v.93.0626** (versionCode 93) — 9 titik (gradle/package×3/main.js/4 footer). 92 sudah dipakai.
+- **PDF rapikan** (`utils/raporPdf.js` + `utils/pdfBuilder.js`): semua tabel = **lebar KOP (215-24=191mm F4) + center** (PTPT & Pra-PTPT margin 14/15→12/12, kolom di-rescale sum 191; TPQ/Diniyah/Nilai sudah default 12). Tabel rapor **NO FILL** (hapus shading abu section TPQ, header biru Pra-PTPT, kuning kolom "Jml", abu "Jumlah Khotam"). `buildListPdf` (daftar guru/santri) kolom di-skala isi penuh lebar KOP.
+- **Permission Android** (`AndroidManifest.xml`): eksplisitkan `ACCESS_NETWORK_STATE` (LED network), `VIBRATE` (haptics), `RECEIVE_BOOT_COMPLETED` (notif reboot) — sebelumnya cuma ter-merge dari plugin. Lain (INTERNET, POST_NOTIFICATIONS, storage, media, camera, exact-alarm) sudah ada & sesuai.
+- Butuh `npm run firebase:deploy` + `npm run build:aab`.
