@@ -33,15 +33,15 @@ const bgStyle = computed(() => {
 // Default ke GitHub Releases latest — admin tinggal ganti owner/repo
 const downloadAndroidUrl = computed(() =>
   settings.settings?.downloadAndroid ||
-  'https://github.com/lexanoisgroup3/ammuonline/releases/latest/download/AmmuOnline.apk'
+  'https://github.com/kollepiyah/ammu/releases/latest/download/AmmuOnline.apk'
 )
 const downloadIosUrl = computed(() =>
   settings.settings?.downloadIos ||
-  'https://github.com/lexanoisgroup3/ammuonline/releases/latest/download/AmmuOnline.ipa'
+  'https://github.com/kollepiyah/ammu/releases/latest/download/AmmuOnline.ipa'
 )
 const downloadDesktopUrl = computed(() =>
   settings.settings?.downloadDesktop ||
-  'https://github.com/lexanoisgroup3/ammuonline/releases/latest/download/AmmuOnline-Setup.exe'
+  'https://github.com/kollepiyah/ammu/releases/latest/download/AmmuOnline-Setup.exe'
 )
 
 // v.86.0526: Tampilkan download section HANYA di web browser

@@ -29,8 +29,8 @@
     ],
     "publish": {
       "provider": "github",
-      "owner": "lexanoisgroup3",
-      "repo": "portal-mu",
+      "owner": "kollepiyah",
+      "repo": "ammu",
       "releaseType": "release"
     },
     "win": {
@@ -41,6 +41,7 @@
       "publisherName": "Pondok Pesantren Mambaul Ulum"
     },
     "nsis": {
+      "artifactName": "AmmuOnline-Setup.${ext}",
       "oneClick": false,
       "perMachine": false,
       "allowElevation": true,
