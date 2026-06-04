@@ -439,6 +439,7 @@ async function cetakUlangStruk(b, mode = 'pdf') {
       lembaga: '',
       kelas: '',
       operator: first.operator || '-',
+      penyetor: first.wali || '',
       items: items.map((e) => ({
         jenis: e.kategori || 'Pembayaran',
         nominal: Number(e.nominal || 0),

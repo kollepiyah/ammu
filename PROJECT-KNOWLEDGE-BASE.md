@@ -1,8 +1,8 @@
 # PROJECT KNOWLEDGE BASE — Ammu Online (Portal MU)
-> Dokumen onboarding untuk sesi Claude baru. Baca ini DULU sebelum mulai. **Update terakhir: 3 Juni 2026 (v.91.0626 — AUDIT + FIX, Cowork). HEAD `80ea521` (committed, BELUM push).**
+> Dokumen onboarding untuk sesi Claude baru. Baca ini DULU sebelum mulai. **Update terakhir: 4 Juni 2026 (v.93.0626 — UI/UX overhaul Cowork: splash+animasi Netflix, LED koneksi, sidebar fixed, status bar, PDF, gesture back). BELUM commit/build.**
 > ⚠️ KB KANONIK = file ini (`PROJECT-KNOWLEDGE-BASE.md`). File lama `PROJECT_KNOWLEDGE_BASE.md` (underscore) DEPRECATED — abaikan.
-> 👉 **RECAP TERBARU ada di PALING BAWAH** (cari "SESI v.91.0626 — AUDIT + FIX"). Audit detail: `AUDIT-COWORK-03JUN2026.md`.
-> ⏳ **STATUS:** fix sidebar + perf + firestoreSafe backup + dead-code SUDAH committed. **Kyai BELUM `npm run firebase:deploy` + `npm run build:aab`** (wajib supaya fix sidebar sampai ke HP). Lihat "PENDING" di recap bawah.
+> 👉 **RECAP TERBARU ada di PALING BAWAH** (cari "SESI v.93.0626"). Detail lengkap (8 addendum): `AUDIT-COWORK-03JUN2026-SPLASH-LED.md`.
+> ⏳ **STATUS:** semua perubahan v.93.0626 SUDAH di file (D:\), BELUM commit. **Kyai WAJIB:** `git add -A && git commit --no-verify -F msg` → `npm run firebase:deploy` → `npm run build:aab` (vc93). Banyak fix NATIVE (splash/status bar/back/permission) → HANYA muncul di HP setelah AAB rebuild, BUKAN firebase:deploy.
 
 ---
 
@@ -46,7 +46,7 @@ Shell Desktop Commander **men-strip PATH + PATHEXT** → `git`/`node`/`npm` tela
 - **Perubahan NATIVE Android (widget/manifest/splash)** → WAJIB rebuild AAB (web deploy tidak cukup).
 
 ## 5. SKEMA VERSI
-Format `v.<versionCode>.<MMYY>` (MM=bulan, YY=2 digit tahun). Saat ini **v.88.0526** (versionCode 88, Mei 2026). Bump SEMUA tempat saat rilis AAB baru (Play Console tolak versionCode sama):
+Format `v.<versionCode>.<MMYY>` (MM=bulan, YY=2 digit tahun). Saat ini **v.93.0626** (versionCode 93, Juni 2026; vc 88-92 SUDAH dipakai → minimal 94 utk rilis berikut). Bump SEMUA tempat saat rilis AAB baru (Play Console tolak versionCode sama):
 - `vue-app/android/app/build.gradle` (versionCode + versionName)
 - `package.json` (root + vue-app = "87.0526"), `vue-app/electron/package.json` ("87.0.526")
 - `vue-app/src/main.js` Sentry `release: 'portal-mu@87.0526'`
@@ -69,7 +69,9 @@ Format `v.<versionCode>.<MMYY>` (MM=bulan, YY=2 digit tahun). Saat ini **v.88.05
 - **Direktur/Supervisor:** + menu Supervisi. **santri/wali:** data pribadi + prestasi saja (sudah dikunci).
 - Bucket `role` (admin/guru/santri) ditentukan di `auth.js`: pengurus (super_admin/admin/admin_keuangan)→'admin'; lainnya→'guru'/'santri'. Menu di `useMenus.js` filter by role + `roleSistem` + `perm` + `featureFlag`.
 
-## 8. SPLASH (status per platform — v.87 DONE)
+## 8. SPLASH (v.93.0626 — IN-APP ANIMATION; detail lengkap: `AUDIT-COWORK-03JUN2026-SPLASH-LED.md`)
+- **v.93 FINAL (yg dipakai):** logo + footer disusun dari `public/logo.png` + `public/bakafrawi-footer.png` (gambar HTML `height:auto` → ANTI-GEPENG, footer sudah ada "Powered by"). Animasi **Netflix zoom-in 2 detik** di DALAM app (`index.html` `#splash-screen.reveal .splash-logo`, logo `top:45%`). Splash NATIVE (sistem+overlay) = JEMBATAN LATAR mint singkat TANPA logo: ikon `@drawable/splash_blank` (transparan), overlay `splash.png` transparan, `MainActivity` keepSplash 450ms. `main.js`: di native SKIP splash web (anti-DOBEL) → `revealSplash()` mainkan animasi. ⚠️ Aset Android lama TAK TERPAKAI lagi (boleh hapus): `splash_icon.png`, `splash_branding.png`, `splash_icon_anim.xml`, `splash_anim_*.png`, `bakafrawi-logo.png`(web). Slot branding Android 12 SENGAJA tak dipakai (men-stretch footer = gepeng di Samsung).
+- (historis ↓ v.87)
 - **Desktop (Electron):** ✓ native logo base64; light/dark ikut **TEMA APP** (persist `userData/ammu-theme.json` via IPC `theme:set`, BUKAN prefers-color-scheme/OS); anti-dobel.
 - **Web:** ✓ fade-out FIX — animation `splashFadeOut` forwards (menang atas fill-mode `both` `splashFadeIn` yang dulu nahan opacity). Tema ikut localStorage (`portalMu_darkMode`).
 - **Android:** ✓ aset light + `drawable-night` lengkap + `values-night/colors.xml` (splashBg dark `#0F172A` utk Android-12 system splash). Splash native ikut tema **SISTEM HP** (tak bisa baca toggle in-app krn render sebelum JS). Verifikasi via rebuild AAB.
@@ -273,3 +275,49 @@ Tes sesudah deploy: login 1× lalu tutup-buka (harus tetap login), pull-to-refre
 
 ### YANG HARUS KYAI JALANKAN
 `npm run firebase:deploy` (web/PWA) + `npm run build:aab` (WAJIB utk sidebar native + semua fix ke app HP). Tes: sidebar nempel dasar; hapus 1 data uji → cek koleksi `audit_log`; Lighthouse ulang.
+
+
+---
+
+## SESI v.93.0626 — UI/UX OVERHAUL (3–4 Juni 2026, Cowork agent) — RECAP TERBARU, BACA INI
+
+> Lanjutan v.91. versionCode **93**, versionName **v.93.0626** (88-92 sudah dipakai). Branch feature/vue-migration.
+> ⚠️ **BELUM commit, BELUM build.** Semua edit ADA di file (D:\, authoritative). Detail lengkap per-item (8 addendum) di `AUDIT-COWORK-03JUN2026-SPLASH-LED.md`.
+> Mount sandbox Cowork LAG utk verifikasi build → gate asli = `tmp_recovery\_run_vite.cmd` (kyai). File-tools (Read/Edit) = D:\ authoritative.
+
+### DIKERJAKAN (ringkas — detail di companion doc)
+1. **SPLASH overhaul** (lihat §8): disusun dari logo (anti-gepeng), animasi **Netflix zoom-in 2 dtk in-app**, native = jembatan mint TANPA logo (anti-dobel), footer "Powered by Bakafrawi" gambar HTML. Logo `top:45%`.
+2. **LED indikator online/offline** di top bar (`AppHeader.vue`): titik kecil hijau=online / merah berkedip=offline, SELALU tampil. Deteksi via `@capacitor/network` (native) + event `online/offline` (web). Ganti pill "Offline" lama.
+3. **Sidebar anti-melayang** (`AppSidebar.vue`): drawer mobile `absolute`→`fixed` (penuh viewport), header/footer/close + `env(safe-area-inset-*)` → mengisi belakang status bar & gesture bar. Desktop `md:relative` (no-op).
+4. **Status bar = warna header app + FIX kontras** (`App.vue` + `capacitor.config.json` + `styles.xml`): light `#FFFFFF`/dark `#1E293B`. Enum Style lama TERBALIK (komentar salah) → `isDark?Style.Dark:Style.Light`. Splash native me-reset appearance → **re-apply 600/1400/2200/3200ms + on resume** + native `windowLightStatusBar=true`.
+5. **Gesture back semua halaman + back 2× keluar** (`App.vue` backButton): sidebar→overlay (event `android-back` cancelable; `ConfirmDialog`+`GlobalSearch` tutup diri)→navigasi back→home tekan 2× (toast). + `useEdgeSwipeBack` swipe tepi kiri tetap.
+6. **PDF rapikan** (`utils/raporPdf.js` + `utils/pdfBuilder.js`): SEMUA tabel = **lebar KOP (F4 191mm) + center** (PTPT/Pra-PTPT margin→12/12, kolom rescale 191; `buildListPdf` skala penuh). Tabel rapor **NO FILL** (hapus shading abu/biru/kuning).
+7. **Permission Android** (`AndroidManifest.xml`): eksplisitkan `ACCESS_NETWORK_STATE`, `VIBRATE`, `RECEIVE_BOOT_COMPLETED` (tadinya cuma ter-merge plugin).
+8. **Ringan**: hapus 4 PNG splash web (~370KB) + ganti 22 PNG splash Android full-design jadi kecil/transparan → **AAB mengecil (wajar, bukan rusak)**.
+9. **Bump v.93.0626** (9 titik: gradle/3×package.json/main.js/4 footer).
+
+### FILE BARU
+`vue-app/public/bakafrawi-footer.png` (footer "Powered by Bakafrawi" lengkap, di-crop dari `Splashscreen/Bakafrawi Logo (Footer).png`); `vue-app/android/.../res/drawable/splash_blank.xml`.
+### FILE DIUBAH (utama)
+`index.html`, `src/main.js`, `src/App.vue`, `capacitor.config.json`, `src/components/layout/{AppHeader,AppSidebar,GlobalSearch}.vue`, `src/components/ui/ConfirmDialog.vue`, `public/manifest.webmanifest`, `android/app/src/main/AndroidManifest.xml`, `android/.../res/values/styles.xml`, `android/.../MainActivity.java`, `android/app/build.gradle`, `package.json`(root+vue-app), `electron/package.json`, `src/utils/{raporPdf,pdfBuilder}.js`, `src/views/{DashboardView,LoginView,PpdbAdminView}.vue`. **Dihapus:** `public/splash-{portrait,landscape}-{light,dark}.png`.
+
+### YANG HARUS KYAI JALANKAN
+```bat
+tmp_recovery\_run_vite.cmd        :: verifikasi build (VITE_EXITCODE=0)
+git add -A && git commit --no-verify -m "release v.93.0626: splash+animasi Netflix, LED koneksi, sidebar fixed, status bar, PDF KOP-width no-fill, gesture back 2x, permission"
+npm run firebase:deploy           :: web/PWA
+npm run build:aab                 :: WAJIB (vc93) — splash/status bar/back/permission NATIVE hanya muncul lewat AAB
+:: (opsional) npm run build:electron --prefix vue-app + robocopy dist->electron/app + electron:make
+```
+
+### TES SESUDAH BUILD (device, kyai)
+- Splash: animasi zoom 2dtk, muncul 1× (tak dobel), logo+footer tak gepeng.
+- Status bar: teks JELAS di mode terang DAN gelap (toggle).
+- Gesture back: tiap halaman back mundur; di Beranda tekan 2× = keluar; dialog/search ditutup back.
+- LED: hijau online, merah saat data/wifi mati.
+- PDF: cetak rapor PTPT + Pra-PTPT + daftar guru → tabel selebar KOP + center, rapor tanpa shading.
+
+### PENDING / BELUM (lanjutan)
+- Aset Android splash lama tak terpakai (`splash_icon*`, `splash_branding`, `splash_anim_*`, `splash_icon_anim.xml`, web `bakafrawi-logo.png`) — boleh dihapus utk ramping (sengaja dibiarkan agar mudah revert).
+- Backlog lama (belum disentuh): audit RBAC/lembaga mendalam vs LOGIC GLOBAL, pensiun model TPQ-shift, Dashboard Keuangan kalau masih Rp0, rollout `PageHeader` ke view lain bertahap, backup-sebelum-hapus utk lembaga.
+- Splash di Electron: animasi web ikut jalan; kalau terasa dobel dgn splash native Electron, minta agent skip salah satu (khusus Electron).

@@ -6,4 +6,6 @@
     <string name="custom_url_scheme">app.ammu.id</string>
     <string name="widget_jam_hijri_label">Jam Hijri Ammu</string>
     <string name="widget_jam_hijri_description">Jam digital + tanggal Masehi &amp; Hijriyah</string>
+    <string name="widget_kalender_label">Kalender Pendidikan Ammu</string>
+    <string name="widget_kalender_description">Agenda kalender pendidikan terdekat</string>
 </resources>

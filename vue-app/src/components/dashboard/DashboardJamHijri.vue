@@ -37,9 +37,30 @@
 </template>
 
 <script setup>
+import { watch, onMounted } from 'vue'
 import { useClock } from '@/composables/useClock'
+import { useSettingsStore } from '@/stores/settings'
+import { getKalibrasi } from '@/utils/hijri'
+import { pushWidgetData } from '@/composables/useWidgetSync'
 
 const { jam, menit, detik, hari, hijri, masehi } = useClock()
+const settings = useSettingsStore()
+
+// v.94.0626: dorong nilai Hijri (Arab) ke widget Android supaya PERSIS sama dgn kartu beranda
+function syncHijriWidget() {
+  const now = new Date()
+  const key =
+    now.getFullYear() +
+    '-' + String(now.getMonth() + 1).padStart(2, '0') +
+    '-' + String(now.getDate()).padStart(2, '0')
+  pushWidgetData({
+    hijri: hijri.value || '',
+    hijriKey: key,
+    kalibrasi: String(getKalibrasi(settings.settings) || 0)
+  })
+}
+onMounted(syncHijriWidget)
+watch(hijri, syncHijriWidget)
 </script>
 
 <style scoped>

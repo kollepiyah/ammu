@@ -130,7 +130,9 @@ export async function cetakStrukPdf(trx, settings = {}, { preview = true } = {})
     }
   }
   ty += 20
-  doc.text('( .................. )', left + 4, ty)
+  // v.94.0626: nama penyetor auto-isi dari wali santri (fallback garis kosong utk TTD manual)
+  const penyetorPdf = String(trx.penyetor || '').trim()
+  doc.text(penyetorPdf ? '( ' + penyetorPdf + ' )' : '( .................. )', left + 4, ty)
   doc.text('( ' + (trx.operator || '').padEnd(16) + ' )', pageW / 2 + 8, ty)
 
   const safe = String(trx.santri_nama || 'santri').replace(/\s+/g, '_')
@@ -259,8 +261,10 @@ function buildStrukWide(trx, settings) {
   out.push(col2('  Penyetor,', '  Penerima,', W, HALF))
   out.push('')
   out.push('')
+  // v.94.0626: penyetor auto-isi dari wali santri (fallback garis kosong)
+  const penyetorWide = String(trx.penyetor || '').trim()
   out.push(col2(
-    '  ( .................. )',
+    '  ' + (penyetorWide ? '( ' + penyetorWide + ' )' : '( .................. )'),
     '  ( ' + padR(String(trx.operator || ''), 16) + ' )',
     W, HALF
   ))
@@ -284,6 +288,8 @@ function buildStrukNarrow(trx, settings, w) {
   const lk = [trx.lembaga, trx.kelas].filter(Boolean).join(' ')
   if (lk) out.push('Kelas : ' + lk)
   out.push('Kasir : ' + (trx.operator || '-'))
+  // v.94.0626: nama penyetor (wali) auto-isi bila ada
+  if (String(trx.penyetor || '').trim()) out.push('Wali  : ' + clip(String(trx.penyetor).trim(), w - 8))
   out.push(repCh('-', w))
   for (const it of trx.items || []) {
     out.push(String(it.jenis || '-'))

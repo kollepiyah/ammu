@@ -41,52 +41,7 @@
       </div>
     </div>
 
-    <!-- v.21.88.0527: Banner sukses + tombol cetak struk transaksi terakhir -->
-    <div
-      v-if="isAdminKeu && lastTrx"
-      class="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700 rounded-2xl p-3 md:p-4 flex items-center justify-between gap-3 flex-wrap"
-    >
-      <div class="min-w-0">
-        <p class="text-sm font-black text-emerald-800 dark:text-emerald-200">
-          <i class="fas fa-check-circle mr-1"></i>Transaksi tersimpan
-        </p>
-        <p class="text-xs text-emerald-700 dark:text-emerald-300 truncate">
-          {{ lastTrx.santri_nama }} · {{ fmtRp(lastTrx.total) }}
-        </p>
-      </div>
-      <div class="flex items-center gap-1.5">
-        <button
-          type="button"
-          @click="cetakLastPdf"
-          class="text-xs font-bold text-rose-700 bg-rose-100 dark:bg-rose-900/40 dark:text-rose-300 px-3 py-2 rounded-lg hover:bg-rose-200"
-        >
-          <i class="fas fa-file-pdf mr-1"></i>Struk PDF
-        </button>
-        <button
-          type="button"
-          @click="cetakLastDot"
-          class="text-xs font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"
-        >
-          <i class="fas fa-print mr-1"></i>Struk Dot-matrix
-        </button>
-        <button
-          v-if="isDesktop"
-          type="button"
-          @click="cetakLangsung"
-          class="text-xs font-bold text-white bg-teal-600 hover:bg-teal-700 px-3 py-2 rounded-lg"
-        >
-          <i class="fas fa-bolt mr-1"></i>Cetak Langsung
-        </button>
-        <button
-          type="button"
-          @click="lastTrx = null"
-          class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 px-2"
-          aria-label="Tutup"
-        >
-          <i class="fas fa-times"></i>
-        </button>
-      </div>
-    </div>
+    <!-- v.94.0626: banner cetak struk DIPINDAH ke dalam modal POS (layar sukses) -->
 
     <!-- Access denied -->
     <div
@@ -215,8 +170,15 @@
       :santri="selectedSantri"
       :operator="operatorName"
       :pending-tagihan="pendingTagihan"
+      :saved-trx="lastTrx"
+      :saving="posSaving"
+      :is-desktop="isDesktop"
       @close="closeModal"
       @simpan="handleSimpan"
+      @cetak-pdf="cetakLastPdf"
+      @cetak-dot="cetakLastDot"
+      @cetak-langsung="cetakLangsung"
+      @pengaturan-printer="openPrinterSettings"
     />
   </div>
 </template>
@@ -270,6 +232,8 @@ const todayTrxCount = ref(0)
 const operatorTtdUrl = ref('')
 // v.21.88.0527: transaksi terakhir (utk tombol cetak struk setelah simpan)
 const lastTrx = ref(null)
+// v.94.0626: status simpan -> disable tombol Simpan + spinner di modal
+const posSaving = ref(false)
 const isDesktop = isElectron()
 
 const operatorName = computed(() => {
@@ -389,6 +353,8 @@ const filteredSantri = computed(() => {
 
 async function openModal(s) {
   selectedSantri.value = s
+  // v.94.0626: buka selalu di mode form (bukan sisa layar sukses transaksi sebelumnya)
+  lastTrx.value = null
   loadingCart.value = true
   pendingTagihan.value = []
   try {
@@ -423,9 +389,13 @@ async function openModal(s) {
 function closeModal() {
   modalOpen.value = false
   pendingTagihan.value = []
+  // v.94.0626: reset transaksi terakhir + santri saat modal benar2 ditutup (selesai cetak)
+  lastTrx.value = null
+  selectedSantri.value = null
 }
 
 async function handleSimpan(payload) {
+  posSaving.value = true
   try {
     const tanggal = payload.tanggal
     const op = payload.operator || operatorName.value
@@ -436,6 +406,13 @@ async function handleSimpan(payload) {
     const ddmmyy = (dt[2] || '') + (dt[1] || '') + String(dt[0] || '').slice(-2)
     const trxId = 'MU-' + seq + ddmmyy
     const santriRef = selectedSantri.value
+    // v.94.0626: nama penyetor = nama walisantri (wali -> nama_wali -> ayah)
+    const waliNama =
+      santriRef?.wali ||
+      santriRef?.nama_wali ||
+      santriRef?.nama_ayah ||
+      (santriRef?.ayah && santriRef.ayah.nama) ||
+      ''
     const writes = []
     let lunasCount = 0
     let partialCount = 0
@@ -454,7 +431,7 @@ async function handleSimpan(payload) {
         santri_id: payload.santri_id,
         santri_nama: payload.santri_nama,
         operator: op,
-        wali: '',
+        wali: waliNama,
         createdAt: serverTimestamp()
       }
       writes.push(setDoc(doc(db, 'keuangan_buku_induk', id), docData))
@@ -508,6 +485,8 @@ async function handleSimpan(payload) {
       lembaga: santriRef?.lembaga || '',
       kelas: santriRef?.kelas || '',
       operator: op,
+      // v.94.0626: penyetor = nama walisantri (auto-isi di struk)
+      penyetor: waliNama,
       // v.21.90.0527: field tambahan utk struk Yayasan-style
       metode: 'TUNAI',
       status_siswa: santriRef?.aktif === false ? 'Tidak Aktif' : 'Aktif',
@@ -522,11 +501,13 @@ async function handleSimpan(payload) {
       bayar: Number(payload.total_bayar || 0),
       kembali: Number(payload.kembalian || 0)
     }
-    modalOpen.value = false
-    selectedSantri.value = null
+    // v.94.0626: JANGAN tutup modal — tampilkan state sukses + tombol cetak DI DALAM modal POS.
+    //   (lastTrx terisi -> ModalPOS otomatis pindah ke layar sukses.)
     pendingTagihan.value = []
   } catch (e) {
     toast.error('Gagal simpan: ' + e.message)
+  } finally {
+    posSaving.value = false
   }
 }
 
@@ -555,6 +536,14 @@ async function cetakLangsung() {
     toast.success('Struk dicetak ke printer')
   } catch (e) {
     toast.error('Gagal cetak: ' + (e.message || e))
+  }
+}
+// v.94.0626: buka modal Pengaturan Printer (PrinterSettingsModal global dengar event ini)
+function openPrinterSettings() {
+  try {
+    window.dispatchEvent(new CustomEvent('ammu:open-printer-settings'))
+  } catch (e) {
+    /* ignore */
   }
 }
 

@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- v.94.0626: widget Kalender Pendidikan — mirror DashboardKalender.vue (max 2 agenda). -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_kalender_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="14dp"
+    android:background="@drawable/widget_card_bg">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="KALENDER PENDIDIKAN"
+        android:textColor="#334155"
+        android:textSize="12sp"
+        android:textStyle="bold"
+        android:letterSpacing="0.08"
+        android:layout_marginBottom="8dp" />
+
+    <!-- Empty state -->
+    <TextView
+        android:id="@+id/kal_empty"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Belum ada agenda dalam waktu dekat"
+        android:textColor="#94A3B8"
+        android:textSize="11sp"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:paddingTop="10dp"
+        android:paddingBottom="10dp"
+        android:visibility="gone" />
+
+    <!-- Slot 1 -->
+    <LinearLayout
+        android:id="@+id/kal_slot1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:padding="8dp"
+        android:layout_marginBottom="6dp"
+        android:background="@drawable/widget_event_bg"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:layout_width="44dp"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/widget_datechip_bg">
+            <TextView
+                android:id="@+id/kal_bln1"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="-"
+                android:textColor="#FFFFFF"
+                android:textSize="9sp"
+                android:textStyle="bold"
+                android:gravity="center"
+                android:paddingTop="1dp"
+                android:paddingBottom="1dp"
+                android:background="@drawable/widget_datechip_top" />
+            <TextView
+                android:id="@+id/kal_tgl1"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="-"
+                android:textColor="#BE123C"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:gravity="center"
+                android:paddingTop="1dp"
+                android:paddingBottom="2dp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="10dp"
+            android:orientation="vertical">
+            <TextView
+                android:id="@+id/kal_judul1"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="-"
+                android:textColor="#1E293B"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:maxLines="1"
+                android:ellipsize="end" />
+            <TextView
+                android:id="@+id/kal_range1"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="-"
+                android:textColor="#0E7490"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:layout_marginTop="1dp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Slot 2 -->
+    <LinearLayout
+        android:id="@+id/kal_slot2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:padding="8dp"
+        android:background="@drawable/widget_event_bg"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:layout_width="44dp"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/widget_datechip_bg">
+            <TextView
+                android:id="@+id/kal_bln2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="-"
+                android:textColor="#FFFFFF"
+                android:textSize="9sp"
+                android:textStyle="bold"
+                android:gravity="center"
+                android:paddingTop="1dp"
+                android:paddingBottom="1dp"
+                android:background="@drawable/widget_datechip_top" />
+            <TextView
+                android:id="@+id/kal_tgl2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="-"
+                android:textColor="#BE123C"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:gravity="center"
+                android:paddingTop="1dp"
+                android:paddingBottom="2dp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="10dp"
+            android:orientation="vertical">
+            <TextView
+                android:id="@+id/kal_judul2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="-"
+                android:textColor="#1E293B"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:maxLines="1"
+                android:ellipsize="end" />
+            <TextView
+                android:id="@+id/kal_range2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="-"
+                android:textColor="#0E7490"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:layout_marginTop="1dp" />
+        </LinearLayout>
+    </LinearLayout>
+
+</LinearLayout>

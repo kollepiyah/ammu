@@ -121,7 +121,7 @@ onMounted(async () => {
     const m = {}
     for (const d of sSnap.docs) {
       const s = d.data()
-      m[d.id] = { lembaga: s.lembaga || '', kelas: s.kelas || '', nis: s.nis || '' }
+      m[d.id] = { lembaga: s.lembaga || '', kelas: s.kelas || '', nis: s.nis || '', wali: s.wali || s.nama_wali || s.nama_ayah || (s.ayah && s.ayah.nama) || '' }
     }
     santriMap.value = m
     // v.21.91.0527: guruTtdMap (nama -> tanda_tangan) utk auto-TTD di reprint struk PDF
@@ -160,6 +160,7 @@ const transaksi = computed(() => {
         kelas: sm.kelas || '',
         tanggal: e.tanggal || '',
         operator: e.operator || '-',
+        penyetor: e.wali || sm.wali || '',
         createdAt: e.createdAt || null,
         items: [],
         total: 0
@@ -198,6 +199,8 @@ function toTrx(t) {
     lembaga: t.lembaga,
     kelas: t.kelas,
     operator: t.operator,
+    // v.94.0626: penyetor (wali) utk reprint struk
+    penyetor: t.penyetor || '',
     // v.21.91.0527: TTD operator dari guru.tanda_tangan (untuk reprint struk PDF)
     operator_ttd_url: guruTtdMap.value[t.operator] || '',
     items: t.items,

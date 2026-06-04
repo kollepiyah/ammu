@@ -22,6 +22,8 @@ public class MainActivity extends BridgeActivity {
   public void onCreate(Bundle savedInstanceState) {
     // Android SplashScreen API — WAJIB install SEBELUM super.onCreate()
     SplashScreen splashScreen = SplashScreen.installSplashScreen(this);
+    // v.94.0626: daftarkan plugin bridge widget (push data Hijri + agenda ke widget home screen)
+    registerPlugin(WidgetBridgePlugin.class);
     super.onCreate(savedInstanceState);
 
     splashScreen.setKeepOnScreenCondition(() -> keepSplash);

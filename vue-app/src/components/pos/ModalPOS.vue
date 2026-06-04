@@ -12,10 +12,21 @@ const props = defineProps({
   open: { type: Boolean, default: false },
   santri: { type: Object, default: () => null },
   operator: { type: String, default: '' },
-  pendingTagihan: { type: Array, default: () => [] }
+  pendingTagihan: { type: Array, default: () => [] },
+  // v.94.0626: transaksi tersimpan -> tampilkan layar sukses + tombol cetak DI DALAM modal
+  savedTrx: { type: Object, default: () => null },
+  saving: { type: Boolean, default: false },
+  isDesktop: { type: Boolean, default: false }
 })
 
-const emit = defineEmits(['close', 'simpan'])
+const emit = defineEmits([
+  'close',
+  'simpan',
+  'cetak-pdf',
+  'cetak-dot',
+  'cetak-langsung',
+  'pengaturan-printer'
+])
 
 // v.21.94.0527: 'Tabungan' DIBUANG dari POS — transaksi tabungan masuk ke menu
 // Tabungan (keuangan terpisah), tidak boleh lewat POS supaya tidak nyangkut di buku induk.
@@ -220,12 +231,14 @@ function onBackdrop(e) {
       <div v-if="open" class="ammu-pos-backdrop" @click="onBackdrop">
         <div class="modal">
           <div class="mhdr">
-            <h2 class="mttl"><i class="fas fa-cash-register"></i>POS Pembayaran</h2>
+            <h2 class="mttl">
+              <i :class="savedTrx ? 'fas fa-check-circle' : 'fas fa-cash-register'"></i>{{ savedTrx ? 'Pembayaran Berhasil' : 'POS Pembayaran' }}
+            </h2>
             <button type="button" class="mclose" @click="close" aria-label="Tutup">
               <i class="fas fa-times"></i>
             </button>
           </div>
-          <div class="mbody">
+          <div v-if="!savedTrx" class="mbody">
             <div v-if="santri" class="santri-info">
               <div class="ava">{{ santri.nama?.[0] || '?' }}</div>
               <div>
@@ -300,10 +313,48 @@ function onBackdrop(e) {
               </div>
             </div>
           </div>
-          <div class="mfoot">
+
+          <!-- v.94.0626: layar SUKSES + tombol cetak struk (dipindah dari banner luar) -->
+          <div v-else class="mbody">
+            <div class="ok-wrap">
+              <div class="ok-badge"><i class="fas fa-check"></i></div>
+              <p class="ok-ttl">Transaksi tersimpan</p>
+              <p class="ok-sub">{{ savedTrx.santri_nama }} · {{ fmtRp(savedTrx.total) }}</p>
+              <p v-if="savedTrx.no_struk" class="ok-meta">No. Bukti: {{ savedTrx.no_struk }}</p>
+              <p v-if="savedTrx.penyetor" class="ok-meta">Penyetor: {{ savedTrx.penyetor }}</p>
+
+              <p class="ok-hint">Cetak struk pembayaran:</p>
+              <div class="ok-print">
+                <button type="button" class="pbtn pdf" @click="emit('cetak-pdf')">
+                  <i class="fas fa-file-pdf"></i>Struk PDF
+                </button>
+                <button type="button" class="pbtn dot" @click="emit('cetak-dot')">
+                  <i class="fas fa-print"></i>Struk Dot-matrix
+                </button>
+                <button v-if="isDesktop" type="button" class="pbtn live" @click="emit('cetak-langsung')">
+                  <i class="fas fa-bolt"></i>Cetak Langsung
+                </button>
+              </div>
+              <button
+                v-if="isDesktop"
+                type="button"
+                class="ok-setting"
+                @click="emit('pengaturan-printer')"
+              >
+                <i class="fas fa-sliders-h"></i> Pengaturan Printer
+              </button>
+            </div>
+          </div>
+
+          <div v-if="!savedTrx" class="mfoot">
             <button type="button" class="btn-cancel" @click="close">Batal</button>
-            <button type="button" class="btn-save" @click="simpan">
-              <i class="fas fa-check"></i>Simpan Transaksi
+            <button type="button" class="btn-save" :disabled="saving" @click="simpan">
+              <i :class="saving ? 'fas fa-spinner fa-spin' : 'fas fa-check'"></i>{{ saving ? 'Menyimpan…' : 'Simpan Transaksi' }}
+            </button>
+          </div>
+          <div v-else class="mfoot">
+            <button type="button" class="btn-save full" @click="close">
+              <i class="fas fa-check-double"></i>Selesai
             </button>
           </div>
         </div>
@@ -379,6 +430,33 @@ function onBackdrop(e) {
 .btn-cancel:hover { background: #cbd5e1; }
 .btn-save { padding: 0.5rem 1rem; border-radius: 0.75rem; background: #0f766e; color: white; font-weight: 700; font-size: 0.875rem; border: none; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; }
 .btn-save:hover { background: #115e59; }
+.btn-save:disabled { opacity: 0.6; cursor: not-allowed; }
+.btn-save.full { width: 100%; justify-content: center; }
+/* v.94.0626: layar sukses + tombol cetak struk di dalam modal */
+.ok-wrap { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 0.5rem 0.25rem 0.25rem; }
+.ok-badge { width: 56px; height: 56px; border-radius: 9999px; background: #d1fae5; color: #059669; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; margin-bottom: 0.75rem; }
+:global(.dark) .ok-badge, .dark-mode .ok-badge { background: rgba(5,150,105,0.2); color: #34d399; }
+.ok-ttl { font-size: 1.05rem; font-weight: 900; margin: 0; color: #065f46; }
+:global(.dark) .ok-ttl, .dark-mode .ok-ttl { color: #6ee7b7; }
+.ok-sub { font-size: 0.85rem; font-weight: 700; margin: 0.15rem 0 0; color: #0f172a; }
+:global(.dark) .ok-sub, .dark-mode .ok-sub { color: #fafafa; }
+.ok-meta { font-size: 0.72rem; color: #64748b; margin: 0.1rem 0 0; }
+:global(.dark) .ok-meta, .dark-mode .ok-meta { color: #a1a1aa; }
+.ok-hint { font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #475569; margin: 1rem 0 0.5rem; }
+:global(.dark) .ok-hint, .dark-mode .ok-hint { color: #cbd5e1; }
+.ok-print { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; width: 100%; }
+.pbtn { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.6rem 0.9rem; border-radius: 0.6rem; font-size: 0.82rem; font-weight: 800; border: none; cursor: pointer; }
+.pbtn.pdf { background: #ffe4e6; color: #be123c; }
+.pbtn.pdf:hover { background: #fecdd3; }
+:global(.dark) .pbtn.pdf, .dark-mode .pbtn.pdf { background: rgba(190,18,60,0.25); color: #fda4af; }
+.pbtn.dot { background: white; color: #334155; border: 1px solid #cbd5e1; }
+.pbtn.dot:hover { background: #f1f5f9; }
+:global(.dark) .pbtn.dot, .dark-mode .pbtn.dot { background: #27272a; color: #e4e4e7; border-color: #3f3f46; }
+.pbtn.live { background: #0f766e; color: white; }
+.pbtn.live:hover { background: #115e59; }
+.ok-setting { margin-top: 0.85rem; background: transparent; border: none; color: #0f766e; font-size: 0.78rem; font-weight: 700; cursor: pointer; text-decoration: underline; }
+.ok-setting:hover { color: #115e59; }
+:global(.dark) .ok-setting, .dark-mode .ok-setting { color: #5eead4; }
 .fade-enter-active, .fade-leave-active { transition: opacity 200ms; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
 </style>

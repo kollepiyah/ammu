@@ -210,6 +210,18 @@ export function drawTitle(doc, text, opts = {}) {
 export async function savePdf(doc, filename = 'document.pdf', { preview = false } = {}) {
   if (preview) {
     const blob = doc.output('blob')
+    // v.94.0626: di Electron Desktop, window.open(blob) TIDAK bisa render PDF
+    //   (muncul dialog cetak "tidak mendukung pratinjau"). Pakai printPdfPreview ->
+    //   jendela Chrome PDF viewer (pratinjau asli, bisa langsung cetak dari situ).
+    try {
+      const { isElectron, printPdfPreview } = await import('@/composables/useDesktopPrint')
+      if (isElectron()) {
+        await printPdfPreview(blob)
+        return ''
+      }
+    } catch (e) {
+      /* fallback ke window.open di bawah */
+    }
     const url = URL.createObjectURL(blob)
     window.open(url, '_blank')
     return url
