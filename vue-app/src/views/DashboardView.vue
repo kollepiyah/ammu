@@ -6,7 +6,6 @@ import DashboardGreeting from '@/components/dashboard/DashboardGreeting.vue'
 import DashboardJamHijri from '@/components/dashboard/DashboardJamHijri.vue'
 import DashboardKalender from '@/components/dashboard/DashboardKalender.vue'
 import DashboardPosts from '@/components/dashboard/DashboardPosts.vue'
-import DashboardQuickActions from '@/components/dashboard/DashboardQuickActions.vue'
 // v.21.17.0526: AdminStatsCharts DIHAPUS dari beranda — sudah ada di menu /statistik (kyai req)
 
 const router = useRouter()
@@ -34,9 +33,6 @@ const isAdmin = computed(() => auth.isAdmin || auth.sesiAktif?.role === 'admin')
       <DashboardKalender @see-all="goKalenderFull" />
     </div>
 
-    <!-- Quick Actions per-role (Card Style ala Rapor) -->
-    <DashboardQuickActions />
-
     <!-- v.72.7: Buat Postingan kecilin (admin only) -->
     <button
       v-if="isAdmin"
@@ -53,7 +49,7 @@ const isAdmin = computed(() => auth.isAdmin || auth.sesiAktif?.role === 'admin')
     <DashboardPosts />
 
     <p class="text-center text-[10px] text-slate-400 dark:text-[var(--text-secondary)] pt-2">
-      <i class="fas fa-circle-info mr-1"></i>Portal MU · Vue 3 SPA · v.94.0626
+      <i class="fas fa-circle-info mr-1"></i>Portal MU · Vue 3 SPA · v.95.0626
     </p>
   </div>
 </template>

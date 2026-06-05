@@ -46,7 +46,7 @@ const TABS = {
   guru: [
     { name: 'Beranda', path: '/dashboard', icon: 'fa-home' },
     { name: 'Pendidikan', path: '/santri', icon: 'fa-users' },
-    { name: 'Keuangan', path: '/personal', icon: 'fa-wallet' },
+    { name: 'Rekap', path: '/rekap-prestasi', icon: 'fa-book-open' },
     { name: 'Notifikasi', path: '/notifikasi', icon: 'fa-bell', notif: true },
     { name: 'Profil', path: '/profil', icon: 'fa-user' }
   ],

@@ -1,0 +1,118 @@
+===TOPLEVEL=== 
+D:/Aplikasi Project/Portal MU
+===nested vue-app/.git?=== 
+no-nested-git 
+===submodule status=== 
+fatal: no submodule mapping found in .gitmodules for path 'Portal MU'
+===STATUS my files=== 
+ M vue-app/android/app/build.gradle
+ M vue-app/src/components/pos/ModalPOS.vue
+ M vue-app/src/main.js
+ M vue-app/src/utils/strukBuilder.js
+ M vue-app/src/views/PosSantriView.vue
+?? vue-app/android/app/src/main/java/app/ammu/id/widgets/JamHijriWidget.java
+===ls-files PosSantri (tracked?)=== 
+vue-app/src/views/PosSantriView.vue
+===diff --stat vue-app (first 40)=== 
+ vue-app/android/app/build.gradle                   |    4 +-
+ vue-app/android/app/src/main/AndroidManifest.xml   |   12 +
+ .../src/main/java/app/ammu/id/MainActivity.java    |    2 +
+ .../java/app/ammu/id/widgets/JamHijriWidget.kt     |  185 -
+ .../app/src/main/res/drawable/widget_bg.xml        |   11 +-
+ .../app/src/main/res/layout/widget_jam_hijri.xml   |   99 +-
+ .../android/app/src/main/res/values/strings.xml    |    2 +
+ .../app/assets/AbsensiGuruView-DwoenLhf.js         |    2 -
+ .../app/assets/AbsensiSantriView-DCP1C3E1.js       |    1 -
+ vue-app/electron/app/assets/AppLayout-DnqScTxq.css |    1 -
+ vue-app/electron/app/assets/AppLayout-Iy2T-YG0.js  |    1 -
+ .../electron/app/assets/BisyarohView-DEbpjM01.js   |    8 -
+ .../electron/app/assets/BukuIndukView-D7VQ9LOq.js  |    7 -
+ .../app/assets/CapaianPrestasiView-DNWWTmUM.js     |    1 -
+ .../electron/app/assets/DashboardView-CYfrEWnL.js  |    1 -
+ vue-app/electron/app/assets/EmptyState-BNpBZvGX.js |    1 -
+ .../app/assets/FieldSchemaView-6Mpwd5kK.js         |    1 -
+ .../electron/app/assets/GuruFormView-DejZIZvH.js   |    1 -
+ vue-app/electron/app/assets/GuruView-2PLgoE11.js   |    2 -
+ .../app/assets/HutangPiutangView-SVAjYpnK.js       |    1 -
+ .../app/assets/InputBulananView-C2ujV2NZ.js        |    1 -
+ .../app/assets/KalenderKegiatanView-C2c-_lkp.js    |    5 -
+ .../app/assets/KegiatanPesantrenView-CCqml2HR.js   |    1 -
+ vue-app/electron/app/assets/KelasView-CRy2Dw2a.js  |    1 -
+ .../app/assets/KeuanganDashboardView-BP11Bzp-.js   |    1 -
+ .../app/assets/KritikSaranView-Dyc2mKNi.js         |    1 -
+ .../app/assets/LaporanKeuanganView-BcGFo_gd.js     |    1 -
+ .../app/assets/LembagaDetailView-B1dTkEMA.js       |    3 -
+ .../app/assets/LembagaFormView-Sk1nfdEs.js         |    1 -
+ vue-app/electron/app/assets/LoginView-BxVz2gB6.js  |    1 -
+ .../electron/app/assets/MasterDataView-Dpp3HzJq.js |    2 -
+ .../app/assets/MasterFormBridgeView-8DORz2q2.js    |    1 -
+ .../electron/app/assets/NaikKelasView-Msim9fqu.js  |    1 -
+ .../electron/app/assets/NotifikasiView-KzuTWeK9.js |    1 -
+ .../app/assets/PembayaranPendingView-CFRY8DIr.js   |    3 -
+ .../electron/app/assets/PembayaranView-Dz8oz_69.js |    1 -
+ .../app/assets/PengaturanKeuanganView-DuiW1hOy.js  |    4 -
+ .../electron/app/assets/PengaturanView-ok3-TJbz.js |    1 -
+ .../electron/app/assets/PersonalView-CRClMd8J.js   |    1 -
+ .../electron/app/assets/PosSantriView-B6t06kL1.js  |    1 -
+ .../electron/app/assets/PosSantriView-D0BGwg6s.css |    1 -
+ vue-app/electron/app/assets/PostsView-BcVEHc-V.js  |    1 -
+ .../electron/app/assets/PpdbAdminView-earMQmVu.js  |    1 -
+ .../electron/app/assets/PpdbDetailView-DZNafD8w.js |    1 -
+ .../electron/app/assets/PpdbFormView-B5lmE7pJ.js   |    1 -
+ .../app/assets/ProfilDetailView-Cge7gdRd.js        |    1 -
+ .../electron/app/assets/ProfilSantri-CVWK8EUx.js   |    1 -
+ vue-app/electron/app/assets/ProfilView-CLPzEkMQ.js |    1 -
+ vue-app/electron/app/assets/RaporView-DbhsgYrB.js  |    7 -
+ .../app/assets/RekapDiniyahView-BY_A9U_2.js        |    1 -
+ .../app/assets/RekapPrestasiView-D_B8AgP6.js       |   19 -
+ .../electron/app/assets/RiwayatPosView-B1xcG6gI.js |    9 -
+ .../app/assets/RiwayatSantriView-Cz62PY5e.js       |    1 -
+ .../electron/app/assets/SantriFormView-BSco1ZZ6.js |    1 -
+ vue-app/electron/app/assets/SantriView-BPl0qXa-.js |    1 -
+ .../electron/app/assets/StatistikView-Dh1XgZos.js  |    1 -
+ .../electron/app/assets/SupervisiView-CZ3cXaZ1.js  |    2 -
+ .../electron/app/assets/TabunganView-BPyCsgYc.js   |   10 -
+ .../electron/app/assets/TagihanView-CqY59tq1.js    |    3 -
+ .../electron/app/assets/UiActionCard-BsFJMhLD.js   |    1 -
+ vue-app/electron/app/assets/UiButton-C0JZQ7Y4.js   |    1 -
+ vue-app/electron/app/assets/auditLog-Cx7dkYHc.js   |    1 -
+ .../electron/app/assets/collections-DFkJ7ZFe.js    |    1 -
+ vue-app/electron/app/assets/index-B43TxULq.css     |    1 -
+ vue-app/electron/app/assets/index-DPcriTui.js      |    2 -
+ vue-app/electron/app/assets/pdfBuilder-D3J8p32R.js |    2 -
+ vue-app/electron/app/assets/storage-XKsukVHU.js    |    1 -
+ .../electron/app/assets/strukBuilder-CDXsUWoc.js   |    3 -
+ vue-app/electron/app/assets/useConfirm-BfH9d_4v.js |    1 -
+ vue-app/electron/app/assets/useExcel-7eCL0Mto.js   |    2 -
+ vue-app/electron/app/assets/useGuru-DEf7GJ9U.js    |    1 -
+ .../electron/app/assets/useKegiatan-DWKFpRaL.js    |    1 -
+ .../electron/app/assets/useKeuangan-BGnP1Fq9.js    |    1 -
+ vue-app/electron/app/assets/useLembaga-i_iQ87wZ.js |    1 -
+ vue-app/electron/app/assets/useMenus-CN3mOpkC.js   |    1 -
+ .../app/assets/useNativeDownload-KdeyH0Vg.js       |    1 -
+ .../app/assets/useNotifications-D0-HqHWy.js        |    1 -
+ vue-app/electron/app/assets/useSantri-DMuYCtHM.js  |    1 -
+ .../app/assets/useWaliChildren-CL1b94Fg.js         |    1 -
+ vue-app/electron/app/assets/vendor-DWO-f0MT.js     |   89 -
+ .../electron/app/assets/vendor-charts-BWmdC5sf.js  |   13 -
+ .../app/assets/vendor-firebase-YbTGaUlm.js         | 4576 --------------------
+ vue-app/electron/app/index.html                    |   10 +-
+ vue-app/electron/package.json                      |    2 +-
+ vue-app/package.json                               |    2 +-
+ vue-app/src/components/PrinterSettingsModal.vue    |   88 +-
+ .../src/components/dashboard/DashboardJamHijri.vue |   21 +
+ .../src/components/dashboard/DashboardKalender.vue |   12 +
+ vue-app/src/components/layout/AppSidebar.vue       |    2 +-
+ vue-app/src/components/pos/ModalPOS.vue            |   92 +-
+ vue-app/src/main.js                                |    2 +-
+ vue-app/src/utils/pdfBuilder.js                    |   12 +
+ vue-app/src/utils/strukBuilder.js                  |   10 +-
+ vue-app/src/views/BukuIndukView.vue                |    1 +
+ vue-app/src/views/DashboardView.vue                |    2 +-
+ vue-app/src/views/LoginView.vue                    |    2 +-
+ vue-app/src/views/PengaturanKeuanganView.vue       |   19 +-
+ vue-app/src/views/PosSantriView.vue                |   87 +-
+ vue-app/src/views/PpdbAdminView.vue                |    2 +-
+ vue-app/src/views/RiwayatPosView.vue               |    5 +-
+ 100 files changed, 385 insertions(+), 5127 deletions(-)
+===DONE=== 

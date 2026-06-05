@@ -5,6 +5,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
 import * as authService from '@/services/auth'
+import loginBg from '@/assets/loginBg.js'
 
 // v.86.0526: full match legacy login — Google + Ingat Saya + Lupa Sandi + Copyright luar card
 const router = useRouter()
@@ -24,7 +25,7 @@ onMounted(() => {
 // v.21.114.0528: drop teal solid overlay → bg image full visible + backdrop-blur overlay separate
 const bgStyle = computed(() => {
   const s = settings.settings || {}
-  const bg = s.bgImage || s.bg_login || s.bg_img || s.bgUrl || '/bg-pesantren.webp'
+  const bg = s.bgImage || s.bg_login || s.bg_img || s.bgUrl || loginBg
   return `background: url('${bg}') center/cover no-repeat;`
 })
 
@@ -129,7 +130,7 @@ function bukaWaAdmin() {
     :style="bgStyle"
   >
     <!-- v.86.0526: backdrop-blur overlay — lebih gelap di dark mode -->
-    <div class="absolute inset-0 backdrop-blur-md bg-teal-900/30 dark:bg-slate-900/60 pointer-events-none z-0" aria-hidden="true"></div>
+    <div class="absolute inset-0 backdrop-blur-sm bg-teal-900/30 dark:bg-slate-900/60 pointer-events-none z-0" aria-hidden="true"></div>
 
     <!-- CARD LOGIN — v.86.0526: dark mode card slate-800 + border teal-400 -->
     <div
@@ -353,7 +354,7 @@ function bukaWaAdmin() {
         © {{ new Date().getFullYear() }} Pondok Pesantren Mambaul Ulum
       </p>
       <p class="text-[11px] text-white/80 font-bold tracking-widest mt-1 drop-shadow">
-        v.94.0626
+        v.95.0626
       </p>
     </div>
   </div>
