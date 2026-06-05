@@ -1,8 +1,8 @@
 # PROJECT KNOWLEDGE BASE — Ammu Online (Portal MU)
-> Dokumen onboarding untuk sesi Claude baru. Baca ini DULU sebelum mulai. **Update terakhir: 4 Juni 2026 (v.93.0626 — UI/UX overhaul Cowork: splash+animasi Netflix, LED koneksi, sidebar fixed, status bar, PDF, gesture back). BELUM commit/build.**
+> Dokumen onboarding untuk sesi Claude baru. Baca ini DULU sebelum mulai. **Update terakhir: 5 Juni 2026 (v.95.0626 — Generate Tagihan Khusus/infaq, ikon Tabungan→dompet, login bg base64+blur, hapus QuickActions Beranda, bottom-nav guru→Rekap, Dashboard Statistik overhaul [Top5 PTPT/PPPH klik-detail + kartu Guru Belum Input + Kelas Overload, scope kepala/PJ], rapor auto-isi Guru Kelas (fallback shift), repo rilis→kollepiyah/ammu, bump vc95).**
 > ⚠️ KB KANONIK = file ini (`PROJECT-KNOWLEDGE-BASE.md`). File lama `PROJECT_KNOWLEDGE_BASE.md` (underscore) DEPRECATED — abaikan.
-> 👉 **RECAP TERBARU ada di PALING BAWAH** (cari "SESI v.93.0626"). Detail lengkap (8 addendum): `AUDIT-COWORK-03JUN2026-SPLASH-LED.md`.
-> ⏳ **STATUS:** semua perubahan v.93.0626 SUDAH di file (D:\), BELUM commit. **Kyai WAJIB:** `git add -A && git commit --no-verify -F msg` → `npm run firebase:deploy` → `npm run build:aab` (vc93). Banyak fix NATIVE (splash/status bar/back/permission) → HANYA muncul di HP setelah AAB rebuild, BUKAN firebase:deploy.
+> 👉 **RECAP TERBARU ada di PALING BAWAH** (cari "SESI v.95.0626"). Sebelumnya v.93.0626 (splash/LED/PDF — detail di `AUDIT-COWORK-03JUN2026-SPLASH-LED.md`).
+> ⏳ **STATUS:** perubahan v.95.0626 ADA di file (D:\). **Alur rilis kyai:** `tmp_recovery\_run_vite.cmd` → `git add -A && git commit --no-verify` → `npm run firebase:deploy` (web/PWA) → `npm run build:aab` (vc95 — WAJIB agar perubahan sampai ke app HP, krn Capacitor NATIVE bundle) → (desktop) `electron:publish` ke repo `kollepiyah/ammu`. Sesi v.95 = web/JS murni (tak ada native baru), tapi AAB tetap perlu utk app HP.
 
 ---
 
@@ -46,7 +46,7 @@ Shell Desktop Commander **men-strip PATH + PATHEXT** → `git`/`node`/`npm` tela
 - **Perubahan NATIVE Android (widget/manifest/splash)** → WAJIB rebuild AAB (web deploy tidak cukup).
 
 ## 5. SKEMA VERSI
-Format `v.<versionCode>.<MMYY>` (MM=bulan, YY=2 digit tahun). Saat ini **v.93.0626** (versionCode 93, Juni 2026; vc 88-92 SUDAH dipakai → minimal 94 utk rilis berikut). Bump SEMUA tempat saat rilis AAB baru (Play Console tolak versionCode sama):
+Format `v.<versionCode>.<MMYY>` (MM=bulan, YY=2 digit tahun). Saat ini **v.95.0626** (versionCode 95, Juni 2026; vc 88-94 SUDAH dipakai → minimal 96 utk rilis berikut). Bump SEMUA tempat saat rilis AAB baru (Play Console tolak versionCode sama):
 - `vue-app/android/app/build.gradle` (versionCode + versionName)
 - `package.json` (root + vue-app = "87.0526"), `vue-app/electron/package.json` ("87.0.526")
 - `vue-app/src/main.js` Sentry `release: 'portal-mu@87.0526'`
@@ -321,3 +321,73 @@ npm run build:aab                 :: WAJIB (vc93) — splash/status bar/back/per
 - Aset Android splash lama tak terpakai (`splash_icon*`, `splash_branding`, `splash_anim_*`, `splash_icon_anim.xml`, web `bakafrawi-logo.png`) — boleh dihapus utk ramping (sengaja dibiarkan agar mudah revert).
 - Backlog lama (belum disentuh): audit RBAC/lembaga mendalam vs LOGIC GLOBAL, pensiun model TPQ-shift, Dashboard Keuangan kalau masih Rp0, rollout `PageHeader` ke view lain bertahap, backup-sebelum-hapus utk lembaga.
 - Splash di Electron: animasi web ikut jalan; kalau terasa dobel dgn splash native Electron, minta agent skip salah satu (khusus Electron).
+
+
+---
+
+## SESI v.95.0626 RECAP (5 Juni 2026, Cowork agent) — BACA INI DULU
+
+> Lanjutan v.93. versionCode **95**, versionName **v.95.0626** (88-94 sudah dipakai → ≥96 utk rilis berikut). Branch feature/vue-migration. Sesi panjang, banyak fitur. Semua edit terverifikasi authoritative (Read/Grep) + compile `@vue/compiler-sfc` utk file baru/kecil. Error "missing end tag"/"Missing }" pada StatistikView/RaporView/raporPdf/router saat compile lewat mount = **FALSE POSITIVE mount-lag** (region edit terbukti bersih via Read). Gerbang build asli = `tmp_recovery\_run_vite.cmd` (kyai).
+
+### DIKERJAKAN
+1. **Generate Tagihan Khusus** (`PengaturanKeuanganView.vue`): tombol + modal infaq/iuran SEKALI-JALAN, target fleksibel (semua / per-lembaga+kelas / pilih santri), dedup-safe (skip santri+kategori+periode sama), TIDAK menyentuh Syahriyah & tak butuh flag `auto_generate`. Tulis ke `keuangan_tagihan` (santri_id + created_at) → real-time muncul di akun santri/wali (TagihanView + notif "Tagihan baru") otomatis.
+2. **Ikon Tabungan** `fa-piggy-bank`→`fa-wallet` (dompet) di: `useMenus`, `TabunganView` (×4), `KeuanganDashboardView`, `DashboardQuickActions` (key color-map). (kyai: ikon babi tak pantas utk pesantren).
+3. **Login bg** (`LoginView`): blur `backdrop-blur-md`→`sm`; bg default jadi **inline base64** (`src/assets/loginBg.js`, webp 1000px ~7KB) — ringan + perbaiki bug fallback `/bg-pesantren.webp` yg 404 (TIDAK ada di `vue-app/public`, hanya di root `public/`). Override `settings.bgImage` tetap menang.
+4. **Hapus Quick Actions Beranda** (`DashboardView`: import + `<DashboardQuickActions/>`). File komponen dibiarkan (yatim/unused).
+5. **Bottom-nav GURU**: tab "Keuangan" (→`/personal`) jadi **"Rekap"** (→`/rekap-prestasi`, ikon `fa-book-open`). (guru tak punya menu pembayaran.)
+6. **Dashboard Statistik overhaul** (detail di bawah).
+7. **Rapor auto-isi Guru Kelas** (detail di bawah).
+8. **Repo rilis dibetulkan → kollepiyah/ammu** (detail di bawah).
+9. **Bump v.95.0626** (gradle vc95+vn; `package.json` root+vue-app "95.0626"; `electron/package.json` "95.0.626"; `main.js` Sentry; 4 footer: Sidebar/Login/Dashboard/PpdbAdmin).
+
+### DASHBOARD STATISTIK (untuk admin/super_admin = SEMUA; kepala/PJ = se-lembaganya)
+- **Scope baru:** `composables/useStatistikScope.js` → `scopedSantriAktif` (full admin=semua; kepala/PJ via `lembagaScopeMatches(sesi.lembaga, …)`), `guruBelumInput`, `kelasOverload`, `statusFromSelisih()`, const `RASIO_GURU_SANTRI`. (StatistikView dulu pakai `santriRaw` UNSCOPED — T41.)
+- **Top 5 HANYA PTPT & PPPH** (`lembagaPrestasi` direstrukturisasi): nilai = selisih (akhir−awal) — PTPT "Hal", PPPH "Hadits". Tiap baris **clickable** → `/statistik/santri/:id`.
+- **Band status:** PTPT `<5 / 5-9 / ≥10` (hal); **PPPH `<5 / 5-20 / >20` (hadits)** [kyai]. Distribusi Kurang/Cukup/Bagus kini utk KEDUANYA (dulu PTPT only).
+- **Kartu "Guru Belum Input"** (bulan ini) → jml guru + total santri; klik → `/statistik/guru-belum-input`. Definisi "belum input" = santri NGAJI tanpa key `catatan_bulanan["YYYY_MM"]` (key ditulis `InputBulananView` saat simpan). Halaman: daftar guru (expand) + santrinya (klik→detail santri).
+- **Kartu "Kelas Overload"** = per (guru×lembaga×kelas) NGAJI; overload bila jml santri > rasio. **Rasio: TPQ Pagi 1:5, TPQ Sore 1:10, Pra PTPT 1:5, PTPT 1:10, PPPH 1:10. Lembaga SEKOLAH = tanpa rasio (skip).**
+- **Hapus pie "Prestasi Santri (per lembaga)"** (M9.b) dari `components/charts/AdminStatsCharts.vue` (+ buang `Pie` import, `extractNum`/`chartSantriPrestasi`/`chartOptionsPie`, `useSantri`/`santriList`).
+- Route baru (`router/index.js`, meta `noSantri`): `/statistik/santri/:id` (`StatistikSantriDetailView`) + `/statistik/guru-belum-input` (`GuruBelumInputView`).
+
+### RAPOR — auto-isi nama Guru Kelas
+- Dulu: Diniyah=`guru_sekolah` (OK), tapi Qiraati/ngaji HANYA baca `s.guru` → MELEWATKAN `guru_pagi`/`guru_sore` → nama Guru Kelas kosong (`-`/`..........`/garis) utk santri shift (TPQ shift & banyak PTPT).
+- Fix (konsisten LAYAR + PDF): Qiraati fallback `guru → guru_pagi → guru_sore`.
+  - `RaporView.vue`: helper `guruKelasNames(s)` dipakai `namaGuru` + `ekgqGuru` (kode EKGQ/NRG ikut benar).
+  - `utils/raporPdf.js` `drawSignBlocks`: `_gkRaw` fallback shift.
+
+### REPO RILIS (GitHub) — DIBETULKAN
+- Git origin asli = **`kollepiyah/ammu`** (public). Link download login + config publish electron DULU salah (`lexanoisgroup3/ammuonline` & `lexanoisgroup3/portal-mu` = repo lama → auto-update 404).
+- Betulkan: `LoginView.vue` 3 link unduh (apk/ipa/exe) → `kollepiyah/ammu`. `electron/package.json` `build.publish`: `owner:kollepiyah, repo:ammu` + `nsis.artifactName:"AmmuOnline-Setup.${ext}"`.
+- ⚠️ `ammuonline.web.app` (Firebase Hosting) = **BENAR, JANGAN diubah** — itu beda hal dari repo GitHub.
+- Desktop publish (butuh token GitHub akun pemilik kollepiyah/ammu, scope `repo`):
+  ```
+  npm run build:electron --prefix vue-app
+  robocopy "vue-app\dist" "vue-app\electron\app" /MIR
+  $env:GH_TOKEN="ghp_..."
+  cd vue-app\electron && npm run electron:publish
+  ```
+  → upload `AmmuOnline-Setup.exe`+`latest.yml` ke rilis v95.0.626. Link login `/releases/latest/download/AmmuOnline-Setup.exe` jadi berfungsi.
+
+### DIKONFIRMASI (tanpa ubah kode)
+- **Syahriyah generate** (tombol "Generate Bulan Ini" lama): santri TPQ Pagi tanpa nominal → TIDAK ditagih (skip `nominal≤0`); nominal per-lembaga/per-kelas akurat (lookup 3-lapis per_kelas→per_lembaga→default). Whitelist `lembaga_only` mengecualikan total. (Disimulasikan node — cocok.)
+- **Rapor santri/wali** sudah disembunyikan (menu admin/guru, route `noSantri` redirect, blok "Lihat Rapor" dihapus v.91).
+- **Permission CAMERA Android** SUDAH ADA di `AndroidManifest.xml` (CAMERA + READ_MEDIA_IMAGES + READ_EXTERNAL); upload struk pakai `<input type=file accept="image/*,.pdf">` (foto kamera / galeri). Tak perlu ubah.
+
+### FILE BARU
+`src/assets/loginBg.js`, `src/composables/useStatistikScope.js`, `src/views/StatistikSantriDetailView.vue`, `src/views/GuruBelumInputView.vue`.
+### FILE DIUBAH (utama)
+`views/{PengaturanKeuanganView,LoginView,DashboardView,StatistikView,RaporView,TabunganView,KeuanganDashboardView,PpdbAdminView}.vue`; `components/layout/{BottomNav,AppSidebar}.vue`; `components/dashboard/DashboardQuickActions.vue`; `components/charts/AdminStatsCharts.vue`; `composables/useMenus.js`; `utils/raporPdf.js`; `router/index.js`; `main.js`; `android/app/build.gradle`; `package.json` (root+vue-app); `electron/package.json`.
+
+### YANG HARUS KYAI JALANKAN
+```bat
+tmp_recovery\_run_vite.cmd
+git add -A && git commit --no-verify -m "release v.95.0626"
+npm run firebase:deploy          :: web/PWA
+npm run build:aab                :: vc95 (Play Console; WAJIB utk app HP — Capacitor NATIVE bundle)
+:: desktop (opsional): lihat blok REPO RILIS (electron:publish ke kollepiyah/ammu)
+```
+
+### PENDING / CATATAN SESI BARU
+- Tes device: kartu Statistik (Guru Belum Input / Kelas Overload) + Top5 PTPT/PPPH klik→detail; login **KEPALA/PJ** → data hanya lembaganya; rapor "Guru Kelas" terisi (PTPT/TPQ shift); bg login muncul instan.
+- **Mount Cowork LAG parah** utk file besar yg di-Edit (StatistikView/RaporView/raporPdf/router) → compile/`node --check` lewat mount kasih error PALSU (truncated/"missing end tag"). Verif pakai **Read/Grep authoritative**; build asli `_run_vite.cmd`.
+- Backlog lama tetap (lihat recap v.93): audit RBAC/lembaga vs LOGIC GLOBAL, pensiun model TPQ-shift, Dashboard Keuangan kalau Rp0, rollout `PageHeader`, backup-sebelum-hapus lembaga. Komponen `DashboardQuickActions.vue` kini yatim (boleh hapus).

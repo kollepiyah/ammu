@@ -17,6 +17,9 @@ import { useRouter } from 'vue-router'
 import { useToast } from '@/composables/useToast'
 import PrinterSettingsModal from '@/components/PrinterSettingsModal.vue'
 import ToastStack from '@/components/ui/ToastStack.vue'
+// v.95.0626: FCM push — daftarkan saat user login (native saja)
+import { useAuthStore } from '@/stores/auth'
+import { usePushNotifications } from '@/composables/usePushNotifications'
 
 // v.20.74.1.0526: BUGFIX — App.vue jangan panggil ui.initDarkFromStorage/auth.bindLiveSesi/settings.bindSettings.
 // main.js sudah handle init. App.vue cuma watch theme color + appTitle.
@@ -24,6 +27,11 @@ const settings = useSettingsStore()
 const ui = useUiStore()
 const router = useRouter()
 const toast = useToast()
+
+// v.95.0626: daftarkan FCM push begitu ada sesi login (native saja; no-op di web/desktop)
+const auth = useAuthStore()
+const push = usePushNotifications()
+watch(() => auth.sesiAktif?.id, (id) => { if (id) push.register() }, { immediate: true })
 
 watch(() => settings.settings, (s) => {
   if (!s) return

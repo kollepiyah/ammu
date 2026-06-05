@@ -28,7 +28,7 @@
 // - Free quota: 2 juta invocations/bulan, 400.000 GB-detik (cukup besar)
 // ====================================================================
 
-const { onDocumentCreated } = require('firebase-functions/v2/firestore')
+const { onDocumentCreated, onDocumentUpdated } = require('firebase-functions/v2/firestore')
 const { onRequest } = require('firebase-functions/v2/https')
 const { onSchedule } = require('firebase-functions/v2/scheduler')
 const { defineSecret } = require('firebase-functions/params')
@@ -44,6 +44,43 @@ const iframelyKey = defineSecret('IFRAMELY_KEY')
 initializeApp()
 const messaging = getMessaging()
 const db = getFirestore()
+
+// v.95.0626: resolve daftar fcm_token dari `target` (server-side, lebih aman & skalabel).
+//   target: 'semua' | {type:'santri',id} | {type:'wa',wa} | {type:'lembaga',lembaga} | {type:'guru',nama}
+async function resolveTokensByTarget(target) {
+  const tokens = new Set()
+  const addTok = (snap) =>
+    snap.forEach((d) => {
+      const t = d.data().fcm_token
+      if (t) tokens.add(t)
+    })
+  try {
+    const t = target || 'semua'
+    if (t === 'semua' || t === 'all' || t.type === 'all') {
+      addTok(await db.collection('santri').where('fcm_token', '!=', null).get())
+      addTok(await db.collection('guru').where('fcm_token', '!=', null).get())
+    } else if (t.type === 'santri' && t.id) {
+      const sdoc = await db.collection('santri').doc(String(t.id)).get()
+      if (sdoc.exists) {
+        const sd = sdoc.data()
+        if (sd.fcm_token) tokens.add(sd.fcm_token)
+        // device wali bisa login sebagai anak lain (wa sama) -> ikutkan
+        if (sd.wa) addTok(await db.collection('santri').where('wa', '==', sd.wa).get())
+      }
+    } else if (t.type === 'wa' && t.wa) {
+      addTok(await db.collection('santri').where('wa', '==', t.wa).get())
+    } else if (t.type === 'lembaga' && t.lembaga) {
+      addTok(await db.collection('santri').where('lembaga', '==', t.lembaga).get())
+      addTok(await db.collection('santri').where('lembaga_sekolah', '==', t.lembaga).get())
+      addTok(await db.collection('guru').where('lembaga', '==', t.lembaga).get())
+    } else if (t.type === 'guru' && t.nama) {
+      addTok(await db.collection('guru').where('nama', '==', t.nama).get())
+    }
+  } catch (e) {
+    logger.warn('resolveTokensByTarget:', e?.message || e)
+  }
+  return [...tokens]
+}
 
 // ====================================================================
 // FUNCTION 1: NOTIFICATION DISPATCHER
@@ -67,7 +104,9 @@ exports.kirimNotifikasiMassal = onDocumentCreated(
       return
     }
 
-    const tokens = data.tokens || []
+    // v.95.0626: pakai tokens eksplisit kalau ada; kalau tidak, resolve dari `target` (server-side)
+    let tokens = Array.isArray(data.tokens) ? data.tokens.filter(Boolean) : []
+    if (tokens.length === 0) tokens = await resolveTokensByTarget(data.target)
     if (tokens.length === 0) {
       await snap.ref.update({ status: 'failed', error: 'No tokens' })
       return
@@ -152,6 +191,70 @@ exports.kirimNotifikasiMassal = onDocumentCreated(
     })
 
     logger.info(`Notif ${notifId}: ${sukses} sukses, ${gagal} gagal`)
+  }
+)
+
+// ====================================================================
+// v.95.0626 — AUTO-PUSH per event (enqueue ke notif_queue -> dikirim kirimNotifikasiMassal)
+// ====================================================================
+
+// Pengumuman baru (beranda_post) -> broadcast ke SEMUA.
+exports.onBerandaPostCreated = onDocumentCreated(
+  { document: 'beranda_post/{id}', region: 'asia-southeast2', timeoutSeconds: 60, memory: '256MiB' },
+  async (event) => {
+    const p = event.data?.data()
+    if (!p) return
+    await db.collection('notif_queue').add({
+      judul: p.judul ? `Pengumuman: ${p.judul}` : 'Pengumuman Baru',
+      pesan: String(p.isi || p.judul || '').slice(0, 140),
+      target: 'semua',
+      link: '/posts',
+      sender: p.author || p.penulis || 'Admin',
+      status: 'pending',
+      timestamp: new Date().toISOString()
+    })
+  }
+)
+
+// Tagihan INDIVIDUAL baru -> push ke wali. Skip BULK (auto_generate/generate_khusus) biar tak flood.
+exports.onTagihanCreated = onDocumentCreated(
+  { document: 'keuangan_tagihan/{id}', region: 'asia-southeast2', timeoutSeconds: 60, memory: '256MiB' },
+  async (event) => {
+    const t = event.data?.data()
+    if (!t || !t.santri_id) return
+    const sumber = String(t.sumber || '')
+    if (sumber === 'auto_generate' || sumber === 'generate_khusus') return // bulk -> jangan spam
+    const rp = new Intl.NumberFormat('id-ID').format(Number(t.nominal || 0))
+    await db.collection('notif_queue').add({
+      judul: 'Tagihan Baru',
+      pesan: `${t.kategori || 'Tagihan'}${t.periode ? ' · ' + t.periode : ''} · Rp ${rp}`,
+      target: { type: 'santri', id: String(t.santri_id) },
+      link: '/tagihan',
+      sender: 'Sistem',
+      status: 'pending',
+      timestamp: new Date().toISOString()
+    })
+  }
+)
+
+// Pembayaran transfer terverifikasi -> push ke wali (saat status berubah jadi 'verified').
+exports.onPembayaranVerified = onDocumentUpdated(
+  { document: 'pembayaran_transfer_pending/{id}', region: 'asia-southeast2', timeoutSeconds: 60, memory: '256MiB' },
+  async (event) => {
+    const before = event.data?.before?.data() || {}
+    const after = event.data?.after?.data() || {}
+    if (after.status !== 'verified' || before.status === after.status) return
+    if (!after.santri_id) return
+    const rp = new Intl.NumberFormat('id-ID').format(Number(after.nominal || 0))
+    await db.collection('notif_queue').add({
+      judul: 'Pembayaran Terverifikasi',
+      pesan: `${after.kategori || 'Pembayaran'} Rp ${rp} sudah diverifikasi. Terima kasih.`,
+      target: { type: 'santri', id: String(after.santri_id) },
+      link: '/tagihan',
+      sender: 'Admin',
+      status: 'pending',
+      timestamp: new Date().toISOString()
+    })
   }
 )
 
