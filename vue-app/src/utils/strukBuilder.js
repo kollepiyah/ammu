@@ -339,8 +339,10 @@ export function cetakStrukDotMatrix(trx, settings = {}) {
   const css = paper.pageCss +
     ' body { font-family: "Courier New", monospace; white-space: pre; line-height: 1.3; margin: 0; padding: 2px 4px; color: #000; -webkit-print-color-adjust: exact; print-color-adjust: exact; }'
   w.document.write(
-    '<!DOCTYPE html><html><head><title>Struk</title><style>' + css +
-    '</style></head><body>' + escapeHtml(text) + '</body></html>'
+    paper.cols >= 60
+      ? buildStrukHtmlWide(trx, settings)
+      : '<!DOCTYPE html><html><head><title>Struk</title><style>' + css +
+        '</style></head><body>' + escapeHtml(text) + '</body></html>'
   )
   w.document.close()
   w.focus()
@@ -348,8 +350,74 @@ export function cetakStrukDotMatrix(trx, settings = {}) {
 }
 
 // v.07.0626: build HTML struk untuk SILENT print (Electron desktop, tanpa dialog)
+function _row(label, val) {
+  return '<tr><td style="vertical-align:top;white-space:nowrap;padding:1px 0;">' + escapeHtml(label) +
+    '</td><td style="vertical-align:top;padding:1px 0 1px 6px;">: ' + escapeHtml(String(val == null ? '' : val)) + '</td></tr>'
+}
+// v.95.0626: STRUK LEBAR (9.5") gaya struk lama — tabel + garis tipis + kotak BUKTI + font proporsional.
+export function buildStrukHtmlWide(trx, s = {}) {
+  const kop1 = String(s.kopLine1 || 'YAYASAN MAMBAUL ULUM')
+  const kop2 = String(s.kopLine2 || '')
+  const addr = [s.kopLine3, s.kopLine4, s.kopLine5].filter(Boolean)
+  const tgl = formatTglDdMmYyyy(trx.tanggal)
+  const terb = trx.terbilang || terbilangRupiah(trx.total)
+  const kelas = [trx.lembaga, trx.kelas].filter(Boolean).join(' ') || '-'
+  const penyetor = String(trx.penyetor || '').trim()
+  const items = (trx.items || [])
+    .map((it, i) =>
+      '<tr><td style="vertical-align:top;padding:2px 4px;width:22px;">' + (i + 1) + '.</td>' +
+      '<td style="vertical-align:top;padding:2px 4px;">' + escapeHtml(clip(String(it.jenis || '-') + (it.keterangan ? ' (' + it.keterangan + ')' : ''), 58)) + '</td>' +
+      '<td style="vertical-align:top;padding:2px 4px;text-align:right;white-space:nowrap;">Rp. ' + fmtNum(it.nominal) + '</td></tr>'
+    )
+    .join('')
+  return '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Struk</title><style>' +
+    '@page{size:241mm 279mm;margin:6mm 10mm;}*{box-sizing:border-box;}' +
+    'body{font-family:Arial,Helvetica,sans-serif;font-size:11.5pt;line-height:1.35;color:#000;margin:0;-webkit-print-color-adjust:exact;print-color-adjust:exact;}' +
+    'table{border-collapse:collapse;width:100%;}.rule{border-top:1.5px solid #000;margin:4px 0;}' +
+    '</style></head><body>' +
+    '<table><tr><td style="vertical-align:top;">' +
+      '<div style="font-weight:bold;font-size:13pt;">' + escapeHtml(kop1) + '</div>' +
+      (kop2 ? '<div style="font-size:10.5pt;">' + escapeHtml(kop2) + '</div>' : '') +
+      addr.map((a) => '<div style="font-size:10pt;">' + escapeHtml(a) + '</div>').join('') +
+    '</td><td style="vertical-align:top;text-align:right;white-space:nowrap;width:1%;">' +
+      '<span style="border:1.5px dashed #000;padding:4px 14px;font-weight:bold;display:inline-block;">BUKTI PEMBAYARAN</span>' +
+    '</td></tr></table>' +
+    '<div class="rule"></div>' +
+    '<table><tr><td style="vertical-align:top;width:56%;"><table>' +
+      _row('Diterima dari', trx.santri_nama || '-') +
+      _row('Nomor Induk', trx.santri_nis || '-') +
+      '<tr><td style="vertical-align:top;white-space:nowrap;padding:1px 0;">Kelas</td>' +
+      '<td style="vertical-align:top;padding:1px 0 1px 6px;">: ' + escapeHtml(kelas) +
+      ' &nbsp;&nbsp;&nbsp;&nbsp;Status Siswa : ' + escapeHtml(trx.status_siswa || 'Aktif') + '</td></tr>' +
+      _row('Terbilang', terb) +
+    '</table></td><td style="vertical-align:top;"><table>' +
+      _row('Tgl. Bayar', tgl) +
+      _row('No. Bukti', trx.no_struk || '-') +
+      _row('Metode', trx.metode || 'TUNAI') +
+      _row('Petugas', trx.operator || '-') +
+    '</table></td></tr></table>' +
+    '<div class="rule"></div>' +
+    '<div style="margin:2px 0;">Dengan rincian pembayaran sebagai berikut :</div>' +
+    '<table>' + items + '</table>' +
+    '<div class="rule"></div>' +
+    '<table><tr>' +
+      '<td style="width:32%;text-align:center;vertical-align:top;padding-top:6px;">Penyetor,</td>' +
+      '<td style="width:32%;text-align:center;vertical-align:top;padding-top:6px;">Penerima,</td>' +
+      '<td style="vertical-align:top;"><table>' +
+        '<tr><td style="text-align:right;font-weight:bold;padding:1px 0;">Jumlah Rp.</td><td style="text-align:right;font-weight:bold;white-space:nowrap;padding:1px 0 1px 10px;">' + fmtNum(trx.total) + '</td></tr>' +
+        '<tr><td style="text-align:right;padding:1px 0;">Pembayaran Rp.</td><td style="text-align:right;white-space:nowrap;padding:1px 0 1px 10px;">' + fmtNum(trx.bayar) + '</td></tr>' +
+        '<tr><td style="text-align:right;padding:1px 0;">Kembali Rp.</td><td style="text-align:right;white-space:nowrap;padding:1px 0 1px 10px;">' + fmtNum(trx.kembali) + '</td></tr>' +
+      '</table></td></tr>' +
+      '<tr><td style="height:44px;"></td><td></td><td></td></tr>' +
+      '<tr><td style="text-align:center;">( ' + (penyetor ? escapeHtml(penyetor) : '&nbsp;..........&nbsp;') + ' )</td>' +
+      '<td style="text-align:center;">( ' + escapeHtml(String(trx.operator || '')) + ' )</td><td></td></tr>' +
+    '</table>' +
+    '</body></html>'
+}
+
 export function buildStrukHtml(trx, settings = {}) {
   const paper = paperFromSettings(settings)
+  if (paper.cols >= 60) return buildStrukHtmlWide(trx, settings)
   const text = buildStrukText(trx, settings)
   const css = paper.pageCss +
     ' body { font-family: "Courier New", monospace; white-space: pre; line-height: 1.3; margin: 0; padding: 2px 4px; color: #000; -webkit-print-color-adjust: exact; print-color-adjust: exact; }'

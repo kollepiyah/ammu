@@ -249,11 +249,14 @@ function closeModal() {
 // v.72.0526: minimum 5 images & 16 MB supaya tidak fragmentasi small limit (admin set 0/small yang bikin user stuck).
 const MAX_IMAGES = computed(() => {
   const v = Number(settings.settings?.postinganMaxImages)
-  return v > 0 ? v : 10
+  // v.95.0626: FLOOR minimum 5 — admin set kecil bikin user stuck.
+  return Math.max(v > 0 ? v : 10, 5)
 })
 const MAX_TOTAL_BYTES = computed(() => {
   const kb = Number(settings.settings?.postinganMaxSizeKb)
-  return (kb > 0 ? kb : 16384) * 1024
+  // v.95.0626 FIX: FLOOR minimum 16 MB. Admin set 0/kecil bikin "maks 0 MB" -> user tak bisa upload
+  //   walau sudah auto-compress (~1MB/gambar). Sebelumnya cuma default saat 0, tak ada floor.
+  return Math.max(kb > 0 ? kb : 16384, 16384) * 1024
 })
 const COMPRESS_THRESHOLD = 1024 * 1024   // 1 MB (compress per-file > 1MB, hardcoded)
 

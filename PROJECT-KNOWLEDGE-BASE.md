@@ -1,8 +1,8 @@
 # PROJECT KNOWLEDGE BASE — Ammu Online (Portal MU)
-> Dokumen onboarding untuk sesi Claude baru. Baca ini DULU sebelum mulai. **Update terakhir: 5 Juni 2026 (v.95.0626 — Generate Tagihan Khusus/infaq, ikon Tabungan→dompet, login bg base64+blur, hapus QuickActions Beranda, bottom-nav guru→Rekap, Dashboard Statistik overhaul [Top5 PTPT/PPPH klik-detail + kartu Guru Belum Input + Kelas Overload, scope kepala/PJ], rapor auto-isi Guru Kelas (fallback shift), repo rilis→kollepiyah/ammu, bump vc95).**
+> Dokumen onboarding untuk sesi Claude baru. Baca ini DULU sebelum mulai. **Update terakhir: 5 Juni 2026 (v.95.0626 — Generate Tagihan Khusus/infaq, ikon Tabungan→dompet, login bg base64+blur, hapus QuickActions Beranda, bottom-nav guru→Rekap, Dashboard Statistik overhaul [Top5 PTPT/PPPH klik-detail + kartu Guru Belum Input + Kelas Overload, scope kepala/PJ], rapor auto-isi Guru Kelas (fallback shift), repo rilis→kollepiyah/ammu, bump vc95). LANJUTAN sesi: FCM push (Android plugin + web/VAPID + 4 trigger server) + fix auth anon (fcm_token bisa simpan) + hapus toggle notif manual, struk dot-matrix 9.5×11 (BUKTI dikotak, terbilang baris penuh, penyetor kiri/penerima kanan), Electron Win7 dual-build (Electron 22) + dropdown versi di download login. TETAP vc95 (belum upload Play Console).**
 > ⚠️ KB KANONIK = file ini (`PROJECT-KNOWLEDGE-BASE.md`). File lama `PROJECT_KNOWLEDGE_BASE.md` (underscore) DEPRECATED — abaikan.
-> 👉 **RECAP TERBARU ada di PALING BAWAH** (cari "SESI v.95.0626"). Sebelumnya v.93.0626 (splash/LED/PDF — detail di `AUDIT-COWORK-03JUN2026-SPLASH-LED.md`).
-> ⏳ **STATUS:** perubahan v.95.0626 ADA di file (D:\). **Alur rilis kyai:** `tmp_recovery\_run_vite.cmd` → `git add -A && git commit --no-verify` → `npm run firebase:deploy` (web/PWA) → `npm run build:aab` (vc95 — WAJIB agar perubahan sampai ke app HP, krn Capacitor NATIVE bundle) → (desktop) `electron:publish` ke repo `kollepiyah/ammu`. Sesi v.95 = web/JS murni (tak ada native baru), tapi AAB tetap perlu utk app HP.
+> 👉 **RECAP TERBARU ada di PALING BAWAH** (cari "SESI v.95.0626 — LANJUTAN: FCM PUSH + STRUK + WIN7"). Sebelumnya v.93.0626 (splash/LED/PDF — detail di `AUDIT-COWORK-03JUN2026-SPLASH-LED.md`).
+> ⏳ **STATUS:** perubahan v.95.0626 ADA di file (D:\). **Alur rilis kyai:** `tmp_recovery\_run_vite.cmd` → `git add -A && git commit --no-verify` → `npm run firebase:deploy` (web/PWA) → `npm run build:aab` (vc95 — WAJIB agar perubahan sampai ke app HP, krn Capacitor NATIVE bundle) → (desktop) `electron:publish` ke repo `kollepiyah/ammu`. Sesi v.95 = web/JS murni, tapi AAB tetap perlu utk app HP. **LANJUTAN aktivasi:** FCM butuh `google-services.json` di `vue-app/android/app/` + `npm i @capacitor/push-notifications --prefix vue-app` + `npx cap sync android` + `firebase deploy --only functions`. Win7 publish: HAPUS rilis GitHub `v95.0.626` lama dulu (electron-builder skip rilis >2 jam) lalu publish ulang. Detail lengkap di section "LANJUTAN: FCM PUSH + STRUK + WIN7" paling bawah.
 
 ---
 
@@ -391,3 +391,43 @@ npm run build:aab                :: vc95 (Play Console; WAJIB utk app HP — Cap
 - Tes device: kartu Statistik (Guru Belum Input / Kelas Overload) + Top5 PTPT/PPPH klik→detail; login **KEPALA/PJ** → data hanya lembaganya; rapor "Guru Kelas" terisi (PTPT/TPQ shift); bg login muncul instan.
 - **Mount Cowork LAG parah** utk file besar yg di-Edit (StatistikView/RaporView/raporPdf/router) → compile/`node --check` lewat mount kasih error PALSU (truncated/"missing end tag"). Verif pakai **Read/Grep authoritative**; build asli `_run_vite.cmd`.
 - Backlog lama tetap (lihat recap v.93): audit RBAC/lembaga vs LOGIC GLOBAL, pensiun model TPQ-shift, Dashboard Keuangan kalau Rp0, rollout `PageHeader`, backup-sebelum-hapus lembaga. Komponen `DashboardQuickActions.vue` kini yatim (boleh hapus).
+
+
+---
+
+## SESI v.95.0626 — LANJUTAN: FCM PUSH + STRUK + WIN7 (5 Juni 2026, Cowork) — RECAP TERBARU, BACA INI
+
+> Masih versionCode **95** (kyai pilih TETAP 95 — belum upload Play Console). Tambahan besar di atas recap v.95 sebelumnya. Branch feature/vue-migration. BELUM commit (kyai).
+
+### A. AUTH — FIX KRITIS (fondasi FCM + semua write santri/wali)
+- Akar error toast "Missing or insufficient permissions": santri/wali/guru yg login lewat **FALLBACK LOKAL** (mayoritas — hanya punya doc Firestore, TANPA akun Firebase Auth) → `result.user=null` → `request.auth=null` → SEMUA write Firestore ditolak (rules `signedIn()`).
+- Fix (`stores/auth.js`): tambah `await ensureAnonAuth()` di cabang login **GURU & SANTRI** (sebelumnya cuma admin). Kini tiap sesi punya sesi Firebase (anon fallback) → write (incl. simpan `fcm_token`) jalan. Provider Anonymous WAJIB aktif di Console (sudah).
+
+### B. FCM PUSH (native Android + web/PWA + server)
+- **Server SUDAH ada sebelumnya** (`functions/index.js`): `kirimNotifikasiMassal` (trigger `notif_queue/{id}` → `messaging.sendEachForMulticast`, cleanup token invalid dari `santri/guru.fcm_token`). Project sudah **Blaze**; FCM **V1 Enabled** (Console). Sender ID 289365012301.
+- **Ditambah server:** helper `resolveTokensByTarget(target)` (target = `'semua'` | `{type:'santri',id}` | `{wa}` | `{lembaga}` | `{guru,nama}`); `kirimNotifikasiMassal` kini resolve token dari `target` kalau `tokens` kosong (server-side, aman). **4 trigger auto-push** (enqueue ke `notif_queue` → dikirim fungsi di atas): `onBerandaPostCreated` (pengumuman→broadcast SEMUA), `onTagihanCreated` (tagihan INDIVIDUAL→wali; SKIP bulk `auto_generate`/`generate_khusus` biar tak flood), `onPembayaranVerified` (status→`verified`→wali), `onKenaikanCreated` (`riwayat_kenaikan` = naik jilid/khotam→wali = "prestasi tertarget").
+- **Client BARU** `composables/usePushNotifications.js`: NATIVE (`window.Capacitor.Plugins.PushNotifications`) register + simpan `fcm_token`; WEB (`firebase/messaging` + VAPID `BFcAMob-…`) `getToken`+`onMessage`. Token: role santri → `santri/{id}.fcm_token`; lainnya → `guru/{id}.fcm_token` (admin built-in skip). Di-wire di `App.vue` (`watch sesiAktif.id → register`). Electron skip (no-op).
+- **Web SW BARU** `public/firebase-messaging-sw.js` (onBackgroundMessage + notificationclick → buka `/#link`).
+- **Toggle "Aktifkan Push Notification" DIHAPUS** dari `ProfilPengaturanSaya.vue` (kyai: cukup izin Android otomatis). Modal `notif` jadi dead-code (boleh dibersihkan).
+- Rules: TAK perlu ubah (santri/guru `update if signedIn()` + validasi id/nama; merge `fcm_token` lolos).
+- **AKTIVASI kyai:** `google-services.json` di `vue-app/android/app/` (Android app `app.ammu.id` sudah didaftar Console) → `npm i @capacitor/push-notifications --prefix vue-app` → `npx cap sync android` → `firebase deploy --only functions` → `firebase:deploy` (web SW) → `build:aab` (native). Web push: Chrome/Edge (Android+desktop) & iOS16.4+ PWA.
+- BELUM: web push perlu tes device; `notif_prestasi` bulanan sengaja TIDAK auto-push (flood); ESC/P struk (lihat C).
+
+### C. STRUK dot-matrix (`utils/strukBuilder.js`) — match struk Yayasan
+- 2 jalur: PDF (`cetakStrukPdf`, F4 — preview) + **TEKS 80-kolom** (`buildStrukWide` → cetak via tombol "Cetak Langsung"/Dot-matrix di POS). Yg ke 9-pin = jalur teks/HTML (Electron `printStruk`). Buram = HTML di-render jadi GRAFIS raster.
+- Fix: `PAPER['9.5'].pageCss` → `@page size 241mm 279mm` (9.5×11 eksplisit) + `font-size:17px; font-weight:700; color:#000` (80 kolom mengisi PENUH lebar 9.5", tebal-hitam) + `print-color-adjust:exact`. (font 13px dulu cuma ~6.5" → kelihatan sempit.)
+- Layout `buildStrukWide`: **"BUKTI PEMBAYARAN" dalam kotak** ASCII (`+--+ | | +--+`) kanan-atas sejajar nama yayasan; **Terbilang baris penuh** (dipindah dari kolom kiri yg ke-clip ~43 char); **Penyetor kolom 2 / Penerima kolom 50**.
+- BELUM tuntas: kalau dot-matrix masih kurang pekat → perlu cetak **TEKS MENTAH ESC/P** (font bawaan printer) = perubahan Electron-main (`useDesktopPrint`/preload/index.ts), BELUM dibuat. Kyai tes cetak sendiri dulu.
+
+### D. ELECTRON Win7 (dual-build) + LOGIN DROPDOWN
+- `electron/package.json`: `electron:make:win7` + `electron:publish:win7` = `electron-builder --config.electronVersion=22.3.27` (Electron 22 dukung Win7; di-download otomatis utk build itu, TAK perlu install kedua) → `AmmuOnline-Setup-Win7.exe`. Build modern (`electron:make`/`electron:publish`) tetap Electron 27 (Win10+).
+- `LoginView.vue`: tombol Desktop jadi **DROPDOWN** (Windows 10/11 = `AmmuOnline-Setup.exe`, Windows 7 = `AmmuOnline-Setup-Win7.exe`). `downloadDesktopWin7Url` (override `settings.downloadDesktopWin7`).
+- ⚠️ **GOTCHA PUBLISH:** electron-builder **SKIP upload** kalau rilis GitHub `v95.0.626` sudah dipublish **>2 jam** (pengaman). Solusi: HAPUS rilis lama di GitHub → publish ulang (**win7 dulu, modern terakhir** biar `latest.yml` = modern). Atau upload manual `.exe`. ⚠️ Token GH yg ter-ekspos di screenshot kyai → **REVOKE/regenerate**.
+
+### E. FILE BARU/DIUBAH (lanjutan)
+- BARU: `composables/usePushNotifications.js`, `public/firebase-messaging-sw.js`.
+- DIUBAH: `stores/auth.js`, `App.vue`, `views/profil/ProfilPengaturanSaya.vue`, `views/LoginView.vue`, `utils/strukBuilder.js`, `functions/index.js`, `electron/package.json`, `vue-app/package.json` (dep `@capacitor/push-notifications`).
+
+### F. GOTCHA SESI INI
+- **Mount Cowork LAG MAKIN PARAH** utk file besar yg di-Edit: `node --check`/compile lewat mount kasih error PALSU ("Unexpected end of input"/"Invalid package config"/"missing end tag"/truncated). Verif AUTHORITATIVE pakai **Read/Grep** (D:\). Build asli = `_run_vite.cmd` (web) + `firebase deploy` (functions di-parse saat deploy).
+- Versi **TETAP 95** (kyai belum upload Play Console) — jangan bump tanpa diminta. Kalau nanti upload AAB ke Play Console & 95 ditolak → baru bump 96 (9 titik, lihat §5).
