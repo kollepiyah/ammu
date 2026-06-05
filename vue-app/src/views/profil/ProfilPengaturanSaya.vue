@@ -380,15 +380,8 @@ const items = computed(() => {
       title: 'Tautkan Akun Google',
       desc: props.entity?.linked_email || props.entity?.google_email || 'Belum tertaut',
       roles: ['admin', 'guru', 'santri']
-    },
-    {
-      id: 'notif',
-      icon: 'fa-bell',
-      color: 'amber',
-      title: 'Notifikasi',
-      desc: 'Aktifkan push notification',
-      roles: ['admin', 'guru', 'santri']
     }
+    // v.95.0626: kartu "Notifikasi" (toggle manual) DIHAPUS — push otomatis via izin Android (kyai req)
   ].filter((it) => it.roles.includes(props.role))
 })
 

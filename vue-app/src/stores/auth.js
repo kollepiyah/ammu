@@ -195,6 +195,7 @@ export const useAuthStore = defineStore('auth', () => {
           firebase_email: result.user?.email
         }
         fbUser.value = result.user
+        await ensureAnonAuth() // v.95.0626: pastikan sesi Firebase ada (anon fallback) -> rules signedIn() + simpan fcm_token jalan
         _persistFullSesi(sesiAktif.value) /* v.91.0626: backup sesi -> fix reopen-logout */
         return
       }
@@ -218,6 +219,7 @@ export const useAuthStore = defineStore('auth', () => {
           firebase_email: result.user?.email
         }
         fbUser.value = result.user
+        await ensureAnonAuth() // v.95.0626: pastikan sesi Firebase ada (anon fallback) -> rules signedIn() + simpan fcm_token jalan
         _persistFullSesi(sesiAktif.value) /* v.91.0626: backup sesi -> fix reopen-logout */
         return
       }

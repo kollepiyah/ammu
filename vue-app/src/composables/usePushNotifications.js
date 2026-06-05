@@ -4,10 +4,17 @@
 //   Token disimpan ke santri/{id}.fcm_token (role santri) atau guru/{id}.fcm_token (guru/admin).
 //   Server (functions kirimNotifikasiMassal) yang resolve token dari `target` & kirim.
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore'
-import { db } from '@/services/firebase'
+import { getMessaging, getToken, onMessage, isSupported } from 'firebase/messaging'
+import { db, firebaseApp } from '@/services/firebase'
 import { useAuthStore } from '@/stores/auth'
 
 const CHANNEL_ID = 'ammu_default'
+// v.95.0626: VAPID public key (Firebase Console > Cloud Messaging > Web Push certificates)
+const VAPID_KEY = 'BFcAMob-CjQqT2pIK7T9O89Qzm7C_7hDdBuIgw-HsdWO4N-YcbK4rvGkKZvTvyOkUa1DprmE6KabIIn7DMY0VEI'
+
+function isElectron() {
+  return /electron/i.test((typeof navigator !== 'undefined' && navigator.userAgent) || '')
+}
 
 function pushPlugin() {
   return (typeof window !== 'undefined' && window.Capacitor?.Plugins?.PushNotifications) || null
@@ -57,10 +64,40 @@ export function usePushNotifications() {
     }
   }
 
-  // Daftarkan device ke FCM + pasang listener (native saja). Idempotent.
+  // WEB push (PWA/browser) via firebase/messaging + VAPID. SW: /firebase-messaging-sw.js
+  async function registerWeb() {
+    try {
+      if (isElectron()) return // desktop Electron: tak ada web push
+      if (!(typeof window !== 'undefined' && 'Notification' in window)) return
+      if (!(await isSupported().catch(() => false))) return
+      let perm = Notification.permission
+      if (perm === 'default') perm = await Notification.requestPermission()
+      if (perm !== 'granted') return
+      const messaging = getMessaging(firebaseApp)
+      const token = await getToken(messaging, { vapidKey: VAPID_KEY })
+      if (token) await saveToken(token)
+      onMessage(messaging, (payload) => {
+        const n = (payload && payload.notification) || {}
+        try {
+          // eslint-disable-next-line no-new
+          new Notification(n.title || 'Mambaul Ulum', { body: n.body || '', icon: '/icon-192.png' })
+        } catch (e) {
+          /* ignore */
+        }
+      })
+    } catch (e) {
+      console.warn('[push-web] gagal:', e?.message || e)
+    }
+  }
+
+  // Daftarkan device ke FCM + pasang listener. Native (Capacitor) ATAU Web (PWA). Idempotent.
   async function register() {
     const p = pushPlugin()
-    if (!isNative() || !p) return
+    if (!isNative()) {
+      await registerWeb()
+      return
+    }
+    if (!p) return
     try {
       let perm = await p.checkPermissions()
       if (perm.receive === 'prompt' || perm.receive === 'prompt-with-rationale') {
