@@ -11,6 +11,8 @@
     "electron:start": "npm run build && electron .",
     "electron:pack": "npm run build && electron-builder build --dir",
     "electron:make": "npm run build && electron-builder build --win nsis",
+    "electron:make:win7": "npm run build && electron-builder build --win nsis --config.electronVersion=22.3.27 --config.nsis.artifactName=AmmuOnline-Setup-Win7.${ext}",
+    "electron:publish:win7": "npm run build && electron-builder build --win nsis --publish always --config.electronVersion=22.3.27 --config.nsis.artifactName=AmmuOnline-Setup-Win7.${ext} --config.nsis.differentialPackage=false",
     "electron:publish": "npm run build && electron-builder build --win nsis --publish always"
   },
   "build": {

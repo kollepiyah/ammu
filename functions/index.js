@@ -258,6 +258,25 @@ exports.onPembayaranVerified = onDocumentUpdated(
   }
 )
 
+// Kenaikan jilid/kelas/khotam (riwayat_kenaikan) -> push "tertarget" ke wali (event, bukan input massal).
+exports.onKenaikanCreated = onDocumentCreated(
+  { document: 'riwayat_kenaikan/{id}', region: 'asia-southeast2', timeoutSeconds: 60, memory: '256MiB' },
+  async (event) => {
+    const r = event.data?.data()
+    if (!r || !r.santri_id) return
+    const tujuan = `${r.ke_lembaga || ''} ${r.ke_kelas || ''}`.trim()
+    await db.collection('notif_queue').add({
+      judul: 'Selamat, Naik Tingkat! 🎉',
+      pesan: tujuan ? `Ananda naik ke ${tujuan}.` : 'Ananda telah naik tingkat. Selamat!',
+      target: { type: 'santri', id: String(r.santri_id) },
+      link: '/capaian-prestasi',
+      sender: 'Pondok',
+      status: 'pending',
+      timestamp: new Date().toISOString()
+    })
+  }
+)
+
 // ====================================================================
 // FUNCTION 2: LINK PREVIEW (Open Graph fetcher)
 // HTTP GET endpoint dengan CORS enabled

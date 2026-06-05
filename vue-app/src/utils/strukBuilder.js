@@ -142,7 +142,7 @@ export async function cetakStrukPdf(trx, settings = {}, { preview = true } = {})
 
 // ── 2) Dot-matrix / thermal (teks fixed-width, paper-aware) ──
 const PAPER = {
-  '9.5': { cols: 80, pageCss: '@page { size: 241mm auto; margin: 4mm; } body { font-size: 11px; }' },
+  '9.5': { cols: 80, pageCss: '@page { size: 241mm 279mm; margin: 5mm 5mm; } body { font-size: 17px; font-weight: 700; color: #000; letter-spacing: 0.3px; }' }, // 9.5x11 inci; font 17px = 80 kolom mengisi penuh lebar 9.5"
   thermal80: { cols: 42, pageCss: '@page { size: 80mm auto; margin: 2mm; } body { font-size: 11px; }' },
   thermal58: { cols: 32, pageCss: '@page { size: 58mm auto; margin: 2mm; } body { font-size: 10px; }' }
 }
@@ -204,8 +204,11 @@ function buildStrukWide(trx, settings) {
     String(s.kopLine5 || '')
   ].filter(function (l) { return l })
 
-  out.push(col2(kopL[0] || '', 'BUKTI PEMBAYARAN', W, HALF))
-  out.push(col2(kopL[1] || '', '================', W, HALF))
+  // v.95.0626: "BUKTI PEMBAYARAN" dalam kotak (kanan atas, sejajar nama yayasan) — match struk asli
+  const tb = ['+------------------+', '| BUKTI PEMBAYARAN |', '+------------------+']
+  out.push(col2('', tb[0], W, HALF))
+  out.push(col2(kopL[0] || '', tb[1], W, HALF))
+  out.push(col2(kopL[1] || '', tb[2], W, HALF))
   for (let i = 2; i < kopL.length; i++) out.push(kopL[i])
   out.push(repCh('=', W))
 
@@ -214,8 +217,7 @@ function buildStrukWide(trx, settings) {
   const ml = [
     ['Diterima dari', trx.santri_nama || '-'],
     ['Nomor Induk', trx.santri_nis || '-'],
-    ['Kelas', [trx.lembaga, trx.kelas].filter(Boolean).join(' ') || '-'],
-    ['Terbilang', terb]
+    ['Kelas', [trx.lembaga, trx.kelas].filter(Boolean).join(' ') || '-']
   ]
   const mr = [
     ['Tgl. Bayar', tglFmt],
@@ -231,6 +233,7 @@ function buildStrukWide(trx, settings) {
     const r = mr[i] ? metaLine(mr[i][0], mr[i][1], LW) : ''
     out.push(col2(l, r, W, HALF))
   }
+  out.push(metaLine('Terbilang', terb, 13)) // v.95.0626: Terbilang baris penuh (tidak terpotong)
   out.push('')
   out.push('Dengan rincian pembayaran sebagai berikut :')
   out.push('')
@@ -258,16 +261,17 @@ function buildStrukWide(trx, settings) {
   out.push('')
   out.push('')
 
-  out.push(col2('  Penyetor,', '  Penerima,', W, HALF))
-  out.push('')
-  out.push('')
-  // v.94.0626: penyetor auto-isi dari wali santri (fallback garis kosong)
+  // v.95.0626: penyetor KIRI bawah, penerima KANAN bawah (kyai req)
+  const SIG = 50 // kolom mulai blok penerima (sisi kanan)
+  const padTo = (str, col) => { str = String(str); return str + ' '.repeat(Math.max(2, col - str.length)) }
   const penyetorWide = String(trx.penyetor || '').trim()
-  out.push(col2(
-    '  ' + (penyetorWide ? '( ' + penyetorWide + ' )' : '( .................. )'),
-    '  ( ' + padR(String(trx.operator || ''), 16) + ' )',
-    W, HALF
-  ))
+  out.push(padTo('  Penyetor,', SIG) + 'Penerima,')
+  out.push('')
+  out.push('')
+  out.push(
+    padTo('  ' + (penyetorWide ? '( ' + penyetorWide + ' )' : '( .................. )'), SIG) +
+    '( ' + padR(String(trx.operator || ''), 16) + ' )'
+  )
   out.push('')
   return out.join('\n')
 }
@@ -333,7 +337,7 @@ export function cetakStrukDotMatrix(trx, settings = {}) {
   const w = window.open('', '_blank', 'width=' + winW + ',height=640')
   if (!w) { alert('Popup diblokir — izinkan popup untuk mencetak struk.'); return }
   const css = paper.pageCss +
-    ' body { font-family: "Courier New", monospace; white-space: pre; line-height: 1.35; margin: 0; padding: 4px; }'
+    ' body { font-family: "Courier New", monospace; white-space: pre; line-height: 1.3; margin: 0; padding: 2px 4px; color: #000; -webkit-print-color-adjust: exact; print-color-adjust: exact; }'
   w.document.write(
     '<!DOCTYPE html><html><head><title>Struk</title><style>' + css +
     '</style></head><body>' + escapeHtml(text) + '</body></html>'
@@ -348,7 +352,7 @@ export function buildStrukHtml(trx, settings = {}) {
   const paper = paperFromSettings(settings)
   const text = buildStrukText(trx, settings)
   const css = paper.pageCss +
-    ' body { font-family: "Courier New", monospace; white-space: pre; line-height: 1.35; margin: 0; padding: 4px; }'
+    ' body { font-family: "Courier New", monospace; white-space: pre; line-height: 1.3; margin: 0; padding: 2px 4px; color: #000; -webkit-print-color-adjust: exact; print-color-adjust: exact; }'
   return '<!DOCTYPE html><html><head><title>Struk</title><style>' + css +
     '</style></head><body>' + escapeHtml(text) + '</body></html>'
 }

@@ -44,6 +44,12 @@ const downloadDesktopUrl = computed(() =>
   settings.settings?.downloadDesktop ||
   'https://github.com/kollepiyah/ammu/releases/latest/download/AmmuOnline-Setup.exe'
 )
+// v.95.0626: installer khusus Windows 7 (Electron 22)
+const downloadDesktopWin7Url = computed(() =>
+  settings.settings?.downloadDesktopWin7 ||
+  'https://github.com/kollepiyah/ammu/releases/latest/download/AmmuOnline-Setup-Win7.exe'
+)
+const showDesktopMenu = ref(false)
 
 // v.86.0526: Tampilkan download section HANYA di web browser
 const isWebOnly = computed(() => {
@@ -331,16 +337,44 @@ function bukaWaAdmin() {
             <i class="fab fa-android text-white text-sm group-hover:scale-110 transition"></i>
             <span class="text-[10px] text-white font-bold tracking-wide">Android</span>
           </a>
-          <a
-            :href="downloadDesktopUrl"
-            target="_blank"
-            rel="noopener"
-            aria-label="Unduh installer Desktop"
-            class="flex items-center justify-center gap-1.5 py-1.5 rounded-md bg-gradient-to-br from-cyan-500/80 to-sky-600/80 hover:from-cyan-400 hover:to-sky-500 border border-cyan-300/30 shadow-sm hover:shadow-md transition cursor-pointer group"
-          >
-            <i class="fas fa-desktop text-white text-sm group-hover:scale-110 transition"></i>
-            <span class="text-[10px] text-white font-bold tracking-wide">Desktop</span>
-          </a>
+          <!-- v.95.0626: Desktop -> dropdown pilih versi (Win10/11 modern vs Win7) -->
+          <div class="relative">
+            <button
+              type="button"
+              @click="showDesktopMenu = !showDesktopMenu"
+              aria-label="Unduh installer Desktop"
+              class="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-md bg-gradient-to-br from-cyan-500/80 to-sky-600/80 hover:from-cyan-400 hover:to-sky-500 border border-cyan-300/30 shadow-sm hover:shadow-md transition cursor-pointer group"
+            >
+              <i class="fas fa-desktop text-white text-sm group-hover:scale-110 transition"></i>
+              <span class="text-[10px] text-white font-bold tracking-wide">Desktop</span>
+              <i class="fas fa-chevron-down text-white/80 text-[8px]"></i>
+            </button>
+            <div
+              v-if="showDesktopMenu"
+              class="absolute z-20 left-0 right-0 mt-1 bg-slate-800/95 backdrop-blur-sm border border-white/15 rounded-md shadow-xl overflow-hidden"
+            >
+              <a
+                :href="downloadDesktopUrl"
+                target="_blank"
+                rel="noopener"
+                @click="showDesktopMenu = false"
+                class="flex items-center gap-1.5 px-2.5 py-1.5 hover:bg-white/10 transition cursor-pointer"
+              >
+                <i class="fab fa-windows text-cyan-300 text-[11px]"></i>
+                <span class="text-[10px] text-white font-bold">Windows 10/11</span>
+              </a>
+              <a
+                :href="downloadDesktopWin7Url"
+                target="_blank"
+                rel="noopener"
+                @click="showDesktopMenu = false"
+                class="flex items-center gap-1.5 px-2.5 py-1.5 hover:bg-white/10 transition cursor-pointer border-t border-white/10"
+              >
+                <i class="fab fa-windows text-amber-300 text-[11px]"></i>
+                <span class="text-[10px] text-white font-bold">Windows 7</span>
+              </a>
+            </div>
+          </div>
         </div>
         <p class="text-[8px] text-white/60 text-center mt-1.5 italic">
           <i class="fab fa-apple mr-0.5"></i>iOS: gunakan PWA — Tambah ke Layar Utama
