@@ -512,7 +512,68 @@
     </div>
 
     <!-- ============================================================
-         ADMIN: Lembaga Prestasi Cards (top5, PTPT distribusi)
+         v.95.0626 ADMIN/KEPALA: Guru Belum Input + Kelas Overload
+         ============================================================ -->
+    <div v-if="isAdminMode" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <!-- Guru belum input bulan ini (klik -> halaman detail) -->
+      <button
+        type="button"
+        @click="goGuruBelumInput"
+        class="text-left bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm hover:shadow-md hover:-translate-y-0.5 transition cursor-pointer flex items-center gap-4"
+      >
+        <div class="w-12 h-12 rounded-2xl bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center flex-shrink-0">
+          <i class="fas fa-user-clock text-amber-600 dark:text-amber-300 text-xl"></i>
+        </div>
+        <div class="min-w-0 flex-1">
+          <p class="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-widest">
+            Guru Belum Input &middot; {{ periodeLabel }}
+          </p>
+          <p class="text-2xl font-black text-[var(--text-primary)] mt-0.5">
+            {{ guruBelumInput.length }}
+            <span class="text-sm font-bold text-[var(--text-secondary)]">guru</span>
+          </p>
+          <p class="text-[11px] text-[var(--text-secondary)] mt-0.5">
+            {{ totalSantriBelumInput }} santri belum diinput &middot; klik untuk detail
+          </p>
+        </div>
+        <i class="fas fa-chevron-right text-[var(--text-tertiary)]"></i>
+      </button>
+
+      <!-- Kelas Overload (rasio guru:santri) -->
+      <div class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm">
+        <div class="flex items-center gap-3 mb-2">
+          <div class="w-10 h-10 rounded-xl bg-rose-100 dark:bg-rose-900/40 flex items-center justify-center flex-shrink-0">
+            <i class="fas fa-triangle-exclamation text-rose-600 dark:text-rose-300"></i>
+          </div>
+          <div class="min-w-0">
+            <p class="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-widest">Kelas Overload</p>
+            <p class="text-xs font-bold text-[var(--text-primary)]">
+              {{ kelasOverload.length }} kelas melebihi rasio guru:santri
+            </p>
+          </div>
+        </div>
+        <div v-if="kelasOverload.length === 0" class="text-xs text-[var(--text-tertiary)] italic py-3 text-center">
+          Semua kelas dalam rasio ideal.
+        </div>
+        <div v-else class="space-y-1 max-h-52 overflow-auto">
+          <div
+            v-for="(k, i) in kelasOverload"
+            :key="i"
+            class="flex items-center justify-between gap-2 bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-700 rounded-lg px-3 py-1.5"
+          >
+            <span class="text-xs truncate">
+              <b class="text-[var(--text-primary)]">{{ k.lembaga }}</b> &middot; {{ k.kelas }} &middot; {{ k.guru }}
+            </span>
+            <span class="text-[10px] font-black text-rose-700 dark:text-rose-300 whitespace-nowrap">
+              {{ k.jml }}/{{ k.ratio }} <span class="opacity-70">(+{{ k.lebih }})</span>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================
+         ADMIN: Lembaga Prestasi Cards (Top 5 — PTPT &amp; PPPH)
          ============================================================ -->
     <div
       v-if="isAdminMode && lembagaPrestasi.length > 0"
@@ -536,8 +597,8 @@
           </p>
         </div>
 
-        <!-- PTPT only: distribusi Kurang / Cukup / Bagus -->
-        <div v-if="lem.nama === 'PTPT'" class="grid grid-cols-3 gap-2 mb-3">
+        <!-- v.95.0626: distribusi Kurang / Cukup / Bagus (PTPT & PPPH) -->
+        <div v-if="lem.total > 0" class="grid grid-cols-3 gap-2 mb-3">
           <div
             class="bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-700 rounded-lg p-2 text-center"
           >
@@ -549,7 +610,7 @@
             <p class="text-xl font-black text-rose-700 dark:text-rose-300 mt-0.5">
               {{ lem.kurang }}
             </p>
-            <p class="text-[8px] text-rose-600 dark:text-rose-400 mt-0.5">&lt;5 hal</p>
+            <p class="text-[8px] text-rose-600 dark:text-rose-400 mt-0.5">{{ lem.bandLabels[0] }}</p>
           </div>
           <div
             class="bg-cyan-50 dark:bg-cyan-900/20 border border-cyan-200 dark:border-cyan-700 rounded-lg p-2 text-center"
@@ -562,7 +623,7 @@
             <p class="text-xl font-black text-cyan-700 dark:text-cyan-300 mt-0.5">
               {{ lem.cukup }}
             </p>
-            <p class="text-[8px] text-cyan-700 dark:text-cyan-400 mt-0.5">5-9 hal</p>
+            <p class="text-[8px] text-cyan-700 dark:text-cyan-400 mt-0.5">{{ lem.bandLabels[1] }}</p>
           </div>
           <div
             class="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700 rounded-lg p-2 text-center"
@@ -575,7 +636,7 @@
             <p class="text-xl font-black text-emerald-700 dark:text-emerald-300 mt-0.5">
               {{ lem.bagus }}
             </p>
-            <p class="text-[8px] text-emerald-600 dark:text-emerald-400 mt-0.5">&gt;=10 hal</p>
+            <p class="text-[8px] text-emerald-600 dark:text-emerald-400 mt-0.5">{{ lem.bandLabels[2] }}</p>
           </div>
         </div>
 
@@ -591,7 +652,8 @@
           <li
             v-for="(s, idx) in lem.top5"
             :key="s.id"
-            class="flex items-center gap-2 bg-slate-50 dark:bg-slate-700/30 px-2 py-1.5 rounded-lg"
+            @click="goSantriDetail(s.id)"
+            class="flex items-center gap-2 bg-slate-50 dark:bg-slate-700/30 hover:bg-teal-50 dark:hover:bg-teal-900/20 px-2 py-1.5 rounded-lg cursor-pointer transition"
           >
             <span
               :class="[
@@ -610,6 +672,7 @@
               {{ s.nama }}
             </p>
             <p class="text-xs font-black text-cyan-700 dark:text-cyan-300">{{ s.totalDisplay }}</p>
+            <i class="fas fa-chevron-right text-[10px] text-[var(--text-tertiary)]"></i>
           </li>
         </ol>
       </div>
@@ -848,6 +911,8 @@ import { useConfirm } from '@/composables/useConfirm'
 import AdminStatsCharts from '@/components/charts/AdminStatsCharts.vue'
 // v.21.107.0527: gating role konsisten (admin/super_admin/admin_keuangan)
 import { isFullFilterRole } from '@/utils/roleScope'
+// v.95.0626: sumber data ter-scope (admin=semua, kepala/PJ=lembaganya) + guru belum input + overload
+import { useStatistikScope, statusFromSelisih } from '@/composables/useStatistikScope'
 
 // Logo dipakai sebagai watermark di greeting santri (dari public/)
 const logoSrc = '/logo.png'
@@ -879,6 +944,23 @@ const role = computed(() => auth.sesiAktif?.role || 'guest')
 // v.21.107.0527: isAdminMode true utk admin, super_admin, admin_keuangan
 const isAdminMode = computed(() => isFullFilterRole(auth.sesiAktif))
 const loadingAny = computed(() => loadingSantri.value || loadingGuru.value)
+
+// v.95.0626: data ter-scope (kepala/PJ = se-lembaga) + kartu Guru Belum Input + Kelas Overload
+const { scopedSantriAktif, guruBelumInput, kelasOverload, periodeKeyNow } = useStatistikScope()
+const _NAMA_BULAN_STAT = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember']
+const periodeLabel = computed(() => {
+  const m = String(periodeKeyNow.value).match(/^(\d{4})_(\d{2})$/)
+  return m ? `${_NAMA_BULAN_STAT[parseInt(m[2]) - 1]} ${m[1]}` : periodeKeyNow.value
+})
+const totalSantriBelumInput = computed(() =>
+  guruBelumInput.value.reduce((sum, g) => sum + g.jml, 0)
+)
+function goSantriDetail(id) {
+  if (id) router.push(`/statistik/santri/${id}`)
+}
+function goGuruBelumInput() {
+  router.push('/statistik/guru-belum-input')
+}
 
 const isGuruAktif = (status) =>
   !status || ['aktif', 'tetap', 'kontrak'].includes(String(status).toLowerCase())
@@ -1009,47 +1091,37 @@ function totalDisplay(s) {
 
 // ---- ADMIN: Per-lembaga prestasi (top5 + PTPT distribusi) ------------------
 // v.21.107.0527: pakai isAdminMode + URUTAN_LEMBAGA expanded
+// v.95.0626: Top 5 HANYA PTPT & PPPH. Nilai = selisih (akhir - awal): PTPT "Hal",
+//   PPPH "Hadits". Band per lembaga (PPPH <5/5-20/>20). Data ter-scope (kepala/PJ
+//   = se-lembaganya). Kartu kosong (total 0) disembunyikan.
+const PRESTASI_LEMBAGA = ['PTPT', 'PPPH']
 const lembagaPrestasi = computed(() => {
   if (!isAdminMode.value) return []
-  const fromMaster = lembagaRaw.value.map((l) => l.lembaga).filter(Boolean)
-  const ordered = [
-    ...URUTAN_LEMBAGA.filter((n) => fromMaster.includes(n)),
-    ...fromMaster.filter((n) => !URUTAN_LEMBAGA.includes(n))
-  ]
-  return ordered.map((nama) => {
-    const list = santriRaw.value.filter((s) => s.aktif !== false && String(s.lembaga || '').trim().toLowerCase() === String(nama || '').trim().toLowerCase())
+  const src = scopedSantriAktif.value
+  return PRESTASI_LEMBAGA.map((nama) => {
+    const low = nama.toLowerCase()
+    const list = src.filter((s) => String(s.lembaga || '').trim().toLowerCase() === low)
     const dinilai = list.filter((s) => parseNum(s.prestasi_akhir) > 0).length
-
-    const top5 = [...list]
-      .sort((a, b) => {
-        const va =
-          a.lembaga === 'PTPT'
-            ? parseNum(a.prestasi_akhir) - parseNum(a.prestasi_awal)
-            : parseNum(a.prestasi_akhir)
-        const vb =
-          b.lembaga === 'PTPT'
-            ? parseNum(b.prestasi_akhir) - parseNum(b.prestasi_awal)
-            : parseNum(b.prestasi_akhir)
-        return vb - va
-      })
+    const unit = nama === 'PPPH' ? 'Hadits' : 'Hal'
+    const top5 = list
+      .map((s) => ({ s, val: parseNum(s.prestasi_akhir) - parseNum(s.prestasi_awal) }))
+      .filter((x) => x.val > 0)
+      .sort((a, b) => b.val - a.val)
       .slice(0, 5)
-      .filter((s) => parseNum(s.prestasi_akhir) > 0)
-      .map((s) => ({ id: s.id, nama: s.nama, totalDisplay: totalDisplay(s) }))
-
+      .map((x) => ({ id: x.s.id, nama: x.s.nama, totalDisplay: `${x.val} ${unit}` }))
     let kurang = 0,
       cukup = 0,
       bagus = 0
-    if (nama === 'PTPT') {
-      for (const s of list) {
-        const diff = parseNum(s.prestasi_akhir) - parseNum(s.prestasi_awal)
-        if (diff <= 0) continue
-        if (diff < 5) kurang++
-        else if (diff < 10) cukup++
-        else bagus++
-      }
+    for (const s of list) {
+      const st = statusFromSelisih(parseNum(s.prestasi_akhir) - parseNum(s.prestasi_awal), nama)
+      if (st === 'kurang') kurang++
+      else if (st === 'cukup') cukup++
+      else if (st === 'bagus') bagus++
     }
-    return { nama, total: list.length, dinilai, top5, kurang, cukup, bagus }
-  })
+    const bandLabels =
+      nama === 'PPPH' ? ['<5 hadits', '5-20 hadits', '>20 hadits'] : ['<5 hal', '5-9 hal', '>=10 hal']
+    return { nama, total: list.length, dinilai, top5, kurang, cukup, bagus, bandLabels }
+  }).filter((x) => x.total > 0)
 })
 
 // ---- ADMIN: Distribusi santri per lembaga (bar) ----------------------------

@@ -23,21 +23,7 @@
         </div>
       </div>
 
-      <!-- M9.b: Stat Santri Prestasi -->
-      <div class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm">
-        <div class="flex items-center justify-between mb-2">
-          <h4 class="text-xs font-black text-[var(--text-primary)] uppercase tracking-wider">
-            <i class="fas fa-trophy text-cyan-600 mr-1"></i>Prestasi Santri (per lembaga)
-          </h4>
-          <span class="text-[10px] text-[var(--text-tertiary)] font-bold">{{ santriList.length || 0 }} santri</span>
-        </div>
-        <div class="relative h-64">
-          <Pie v-if="chartSantriPrestasi" :data="chartSantriPrestasi" :options="chartOptionsPie" />
-          <div v-else class="absolute inset-0 flex items-center justify-center text-xs text-[var(--text-tertiary)] italic">
-            Belum ada data prestasi
-          </div>
-        </div>
-      </div>
+      <!-- v.95.0626: chart "Prestasi Santri (per lembaga)" DIHAPUS (kyai req) -->
 
       <!-- M9.c: Chart Keuangan -->
       <div class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm">
@@ -76,7 +62,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { Bar, Pie, Line } from 'vue-chartjs'
+import { Bar, Line } from 'vue-chartjs'
 import {
   Chart as ChartJS,
   Title,
@@ -91,8 +77,6 @@ import {
   Filler
 } from 'chart.js'
 import { subscribeColl } from '@/services/firestore'
-// v.21.15.0526: + self-contained santri data (instead of prop)
-import { useSantri } from '@/composables/useSantri'
 
 // Register Chart.js components (sekali per app — idempotent)
 ChartJS.register(
@@ -100,9 +84,6 @@ ChartJS.register(
   BarElement, ArcElement, CategoryScale, LinearScale,
   PointElement, LineElement, Filler
 )
-
-// v.21.15.0526: self-contained — gak perlu prop
-const { santriRaw: santriList } = useSantri()
 
 const absensiGuru = ref([])
 const bukuInduk = ref([])
@@ -168,34 +149,6 @@ const chartGuruKehadiran = computed(() => {
       { label: 'Izin', data: izin, backgroundColor: '#3b82f6' },
       { label: 'Alpa', data: alpa, backgroundColor: '#ef4444' }
     ]
-  }
-})
-
-// === M9.b: Prestasi Santri (pie per lembaga) ===
-function extractNum(v) {
-  const m = String(v || '').match(/\d+/)
-  return m ? parseInt(m[0]) : 0
-}
-
-const chartSantriPrestasi = computed(() => {
-  const list = (santriList.value || []).filter((s) => s.aktif !== false)
-  if (!list.length) return null
-  const byLembaga = {}
-  for (const s of list) {
-    const lmb = String(s.lembaga || '—').trim()
-    const akhir = extractNum(s.prestasi_akhir)
-    if (akhir > 0) byLembaga[lmb] = (byLembaga[lmb] || 0) + 1
-  }
-  const entries = Object.entries(byLembaga).sort((a, b) => b[1] - a[1])
-  if (entries.length === 0) return null
-  return {
-    labels: entries.map((e) => e[0]),
-    datasets: [{
-      data: entries.map((e) => e[1]),
-      backgroundColor: entries.map((_, i) => COLORS[i % COLORS.length]),
-      borderColor: '#fff',
-      borderWidth: 2
-    }]
   }
 })
 
@@ -271,14 +224,6 @@ const chartOptionsStacked = {
   scales: {
     x: { stacked: true, ticks: { font: { size: 9 } } },
     y: { stacked: true, beginAtZero: true, ticks: { font: { size: 9 } } }
-  }
-}
-
-const chartOptionsPie = {
-  responsive: true,
-  maintainAspectRatio: false,
-  plugins: {
-    legend: { position: 'right', labels: { font: { size: 10 }, boxWidth: 10 } }
   }
 }
 

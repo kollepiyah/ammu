@@ -48,6 +48,9 @@ const NaikKelasView = () => import('@/views/NaikKelasView.vue')
 // v.66.0526: Kalender Kegiatan + Dashboard Statistik full Vue (Batch B)
 const KalenderKegiatanView = () => import('@/views/KalenderKegiatanView.vue')
 const StatistikView = () => import('@/views/StatistikView.vue')
+// v.95.0626: detail statistik — santri berprestasi + daftar guru belum input
+const StatistikSantriDetailView = () => import('@/views/StatistikSantriDetailView.vue')
+const GuruBelumInputView = () => import('@/views/GuruBelumInputView.vue')
 // v.67.0526: Batch C — Input Bulanan + Rekap Prestasi + Rekap Diniyah
 const InputBulananView = () => import('@/views/InputBulananView.vue')
 const RekapPrestasiView = () => import('@/views/RekapPrestasiView.vue')
@@ -151,6 +154,9 @@ const routes = [
       { path: 'kalender', name: 'kalender', component: KalenderKegiatanView, alias: '/kalender-kegiatan' },
       // v.86.0526: santri diblok dari statistik agregat -> redirect ke Capaian Prestasi (statistik pribadi digabung di sana)
       { path: 'statistik', name: 'statistik', component: StatistikView, meta: { noSantri: true } },
+      // v.95.0626: detail dari kartu statistik (admin/kepala) — santri berprestasi + guru belum input
+      { path: 'statistik/santri/:id', name: 'statistik-santri', component: StatistikSantriDetailView, meta: { noSantri: true } },
+      { path: 'statistik/guru-belum-input', name: 'guru-belum-input', component: GuruBelumInputView, meta: { noSantri: true } },
       // v.20.6.0526: Input Bulanan + Rekap Prestasi/Diniyah — guru boleh akses (input nilai santri kelasnya)
       // v.21.114.0528: Input Bulanan + Rekap Prestasi/Diniyah — block santri access (kyai req — santri cukup lihat data dirinya di Capaian Prestasi)
       { path: 'input-bulanan', name: 'input-bulanan', component: InputBulananView, meta: { noSantri: true } },
