@@ -1932,12 +1932,24 @@ const jabatanKepala = computed(() => {
   return 'Kepala Sekolah'
 })
 
+// v.95.0626: nama Guru Kelas — Diniyah = guru_sekolah; Qiraati/ngaji = guru, fallback
+//   guru_pagi/guru_sore (TPQ shift / PTPT) supaya auto-isi (konsisten dgn raporPdf.js).
+function guruKelasNames(s) {
+  if (!s) return []
+  const raw =
+    kategori.value === 'diniyah'
+      ? s.guru_sekolah
+      : [s.guru, s.guru_pagi, s.guru_sore].find((v) =>
+          Array.isArray(v) ? v.filter(Boolean).length > 0 : String(v || '').trim() !== ''
+        )
+  return (Array.isArray(raw) ? raw : raw ? [raw] : [])
+    .map((g) => String(g || '').trim())
+    .filter(Boolean)
+}
+
 const namaGuru = computed(() => {
-  const s = santriAktif.value
-  if (!s) return '-'
-  // v.90.0626: Rapor Diniyah -> Guru Kelas dari guru_sekolah (wali kelas sekolah), bukan ngaji
-  const src = kategori.value === 'diniyah' ? s.guru_sekolah : s.guru
-  return (Array.isArray(src) ? src.filter(Boolean).join(', ') : src) || '-'
+  const names = guruKelasNames(santriAktif.value)
+  return names.length ? names.join(', ') : '-'
 })
 
 function findGuruByName(nama) {
@@ -1953,12 +1965,10 @@ function findGuruByName(nama) {
   )
 }
 
-// EKGQ fallback chain: nrg -> ekgq -> no_ekgq -> nip
+// EKGQ fallback chain: nrg -> ekgq -> no_ekgq -> nip. v.95.0626: pakai guru kelas sesuai
+//   kategori (Diniyah=guru_sekolah; Qiraati=guru/pagi/sore) supaya kode cocok dengan namanya.
 const ekgqGuru = computed(() => {
-  const s = santriAktif.value
-  if (!s) return ''
-  const guruArr = Array.isArray(s.guru) ? s.guru : s.guru ? [s.guru] : []
-  for (const g of guruArr) {
+  for (const g of guruKelasNames(santriAktif.value)) {
     const obj = findGuruByName(g)
     const code = obj?.nrg || obj?.ekgq || obj?.no_ekgq || obj?.nip || ''
     if (code) return code

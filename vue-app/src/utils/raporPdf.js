@@ -302,8 +302,14 @@ function drawSignBlocks(doc, y, santri, settings, lembaga, dbGuru = []) {
   doc.text(labelKepala, col3, labelY, { align: 'center' })
 
   // Lookup Signatures — v.90.0626: Diniyah pakai guru_sekolah (wali kelas sekolah), bukan ngaji
-  const _gkSrc = lembaga === 'Diniyah' ? santri.guru_sekolah : santri.guru
-  const _gkArr = Array.isArray(_gkSrc) ? _gkSrc.filter(Boolean) : _gkSrc ? [_gkSrc] : []
+  // v.95.0626: Qiraati/ngaji -> guru, fallback guru_pagi/guru_sore (TPQ shift / PTPT) supaya auto-isi
+  const _gkRaw =
+    lembaga === 'Diniyah'
+      ? santri.guru_sekolah
+      : [santri.guru, santri.guru_pagi, santri.guru_sore].find((v) =>
+          Array.isArray(v) ? v.filter(Boolean).length > 0 : String(v || '').trim() !== ''
+        )
+  const _gkArr = Array.isArray(_gkRaw) ? _gkRaw.filter(Boolean) : _gkRaw ? [_gkRaw] : []
   const guruKelasName = _gkArr.join(', ')
   const guruKelas = dbGuru.find((g) => _gkArr.some((n) => g.nama === n) && g.status !== 'Non-Aktif')
 

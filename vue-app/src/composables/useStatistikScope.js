@@ -13,7 +13,7 @@ export const RASIO_GURU_SANTRI = {
   'tpq pagi': 5,
   'tpq sore': 10,
   'pra ptpt': 5,
-  'ptpt': 5,
+  'ptpt': 10,
   'ppph': 10
 }
 
