@@ -459,6 +459,14 @@
                 slip.periode
               }}</span>
               <button
+                @click="openSlipReceipt(slip)"
+                title="Lihat slip bisyaroh"
+                aria-label="Lihat slip bisyaroh"
+                class="text-[10px] font-bold px-2 py-1 rounded bg-cyan-100 text-cyan-700 hover:bg-cyan-200 transition cursor-pointer"
+              >
+                <i class="fas fa-eye"></i>
+              </button>
+              <button
                 @click="kirimWA(slip)"
                 title="Kirim slip via WhatsApp"
                 class="text-[10px] font-bold px-2 py-1 rounded bg-emerald-100 text-emerald-700 hover:bg-emerald-200 transition cursor-pointer"
@@ -541,10 +549,13 @@
             <p class="text-sm font-bold text-[var(--text-primary)]">
               Periode {{ slip.periode }}
             </p>
-            <span
-              class="text-[10px] font-black bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded uppercase"
-              >Take Home {{ fmtRp(slip.take_home) }}</span
-            >
+            <div class="flex items-center gap-2">
+              <span
+                class="text-[10px] font-black bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded uppercase"
+                >Take Home {{ fmtRp(slip.take_home) }}</span
+              >
+              <button @click="openSlipReceipt(slip)" title="Lihat slip" aria-label="Lihat slip bisyaroh" class="w-7 h-7 flex-shrink-0 rounded-full border border-[var(--border-default)] text-cyan-600 hover:bg-cyan-50 dark:hover:bg-cyan-900/30 flex items-center justify-center transition cursor-pointer"><i class="fas fa-eye text-xs"></i></button>
+            </div>
           </div>
           <div class="grid grid-cols-3 gap-2 text-xs">
             <div>
@@ -563,6 +574,14 @@
         </div>
       </div>
     </template>
+    <ReceiptModal
+      :open="slipReceiptOpen"
+      title="Slip Bisyaroh"
+      :body-html="slipReceiptHtml"
+      :downloading="slipReceiptDownloading"
+      @close="slipReceiptOpen = false"
+      @download="downloadSlipReceipt"
+    />
   </div>
 </template>
 
@@ -582,6 +601,9 @@ import { useKeuangan } from '@/composables/useKeuangan'
 import { useGuru } from '@/composables/useGuru'
 import { useToast } from '@/composables/useToast'
 import { fmtRp, getNamaGuruGelar } from '@/utils/format'
+import ReceiptModal from '@/components/ReceiptModal.vue'
+import { buildSlipBisyarohHtml } from '@/utils/receiptHtml'
+import { cetakSlipBisyarohPdf } from '@/utils/strukBuilder'
 
 const { gaji, loading } = useKeuangan()
 const { guruRaw, deriveGuruLembagaRefs } = useGuru()
@@ -598,6 +620,28 @@ const auth = useAuthStore()
 const settingsStore = useSettingsStore()
 // v.21.99.0527: super_admin only — hapus slip bisyaroh (koreksi data)
 const isAdmin = computed(() => isSuperAdmin(auth.sesiAktif))
+
+// v.95.0626: Slip viewer (view-only) — preview slip bisyaroh match desain PDF + download
+const slipReceiptOpen = ref(false)
+const slipReceiptHtml = ref('')
+const slipReceiptData = ref(null)
+const slipReceiptDownloading = ref(false)
+function openSlipReceipt(slip) {
+  slipReceiptData.value = slip
+  slipReceiptHtml.value = buildSlipBisyarohHtml(slip, settingsStore.settings || {})
+  slipReceiptOpen.value = true
+}
+async function downloadSlipReceipt() {
+  if (!slipReceiptData.value) return
+  slipReceiptDownloading.value = true
+  try {
+    await cetakSlipBisyarohPdf(slipReceiptData.value, settingsStore.settings || {}, { preview: false })
+  } catch (e) {
+    toast.error('Gagal membuat PDF: ' + (e.message || e))
+  } finally {
+    slipReceiptDownloading.value = false
+  }
+}
 
 async function hapusSlip(slip) {
   if (!isAdmin.value) return

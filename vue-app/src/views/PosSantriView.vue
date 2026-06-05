@@ -203,8 +203,8 @@ import {
 } from 'firebase/firestore'
 import { db } from '@/services/firebase'
 import { sortSantri } from '@/utils/santriSort'
-import { cetakStrukPdf, cetakStrukDotMatrix, buildStrukHtml } from '@/utils/strukBuilder'
-import { isElectron, printStruk, getDefaultPrinter } from '@/composables/useDesktopPrint'
+import { cetakStrukPdf, cetakStrukDotMatrix, buildStrukHtml, buildStrukEscposBase64 } from '@/utils/strukBuilder'
+import { isElectron, printStruk, printRaw, getDefaultPrinter } from '@/composables/useDesktopPrint'
 import { terbilangRupiah } from '@/utils/terbilang'
 import { useSettingsStore } from '@/stores/settings'
 import ModalPOS from '@/components/pos/ModalPOS.vue'
@@ -351,6 +351,31 @@ const filteredSantri = computed(() => {
   return list.slice(0, 50)
 })
 
+// v.95.0626: derive periode tagihan -> "Juni 2026" dari periode/bulan/jatuh_tempo (utk rincian struk)
+const _BLN_ID = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember']
+function _namaBulan(n) {
+  const i = parseInt(n, 10) - 1
+  return _BLN_ID[i] || ''
+}
+function periodeTagihan(t) {
+  if (!t) return ''
+  // periode "2026-06" / "2026_6" -> "Juni 2026"
+  let m = String(t.periode || '').match(/^(\d{4})[-_](\d{1,2})$/)
+  if (m) return _namaBulan(m[2]) + ' ' + m[1]
+  // periode sudah teks ("Juni 2026") -> pakai apa adanya
+  if (t.periode && /[A-Za-z]/.test(String(t.periode))) return String(t.periode).trim()
+  // bulan (angka/nama) + tahun (field tahun / dari jatuh_tempo)
+  if (t.bulan) {
+    const bln = /^\d+$/.test(String(t.bulan).trim()) ? _namaBulan(t.bulan) : String(t.bulan).trim()
+    const thn = t.tahun || (String(t.jatuh_tempo || '').match(/^(\d{4})/) || [])[1] || ''
+    if (bln) return (thn ? bln + ' ' + thn : bln)
+  }
+  // jatuh_tempo "2026-06-05" -> "Juni 2026"
+  m = String(t.jatuh_tempo || '').match(/^(\d{4})-(\d{2})/)
+  if (m) return _namaBulan(m[2]) + ' ' + m[1]
+  return ''
+}
+
 async function openModal(s) {
   selectedSantri.value = s
   // v.94.0626: buka selalu di mode form (bukan sisa layar sukses transaksi sebelumnya)
@@ -371,11 +396,12 @@ async function openModal(s) {
       const dibayar = Number(t.bayar || t.dibayar || 0)
       return {
         tagihan_id: t.id,
-        jenis: t.jenis_label || t.jenis_id || 'Tagihan',
+        jenis: t.jenis_label || t.jenis_id || t.kategori || 'Tagihan',
         nominal: Math.max(0, penuh - dibayar),
         nominal_penuh: penuh,
         dibayar_lama: dibayar,
-        keterangan: t.keterangan || (t.bulan ? `Bulan ${t.bulan}` : '')
+        // v.95.0626: utamakan periode bersih "Juni 2026" utk rincian struk
+        keterangan: periodeTagihan(t) || t.keterangan || ''
       }
     })
   } catch (e) {
@@ -484,6 +510,8 @@ async function handleSimpan(payload) {
       santri_nis: payload.santri_nis || santriRef?.nis || '',
       lembaga: santriRef?.lembaga || '',
       kelas: santriRef?.kelas || '',
+      lembaga_sekolah: santriRef?.lembaga_sekolah || '',
+      kelas_sekolah: santriRef?.kelas_sekolah || '',
       operator: op,
       // v.94.0626: penyetor = nama walisantri (auto-isi di struk)
       penyetor: waliNama,
@@ -531,9 +559,19 @@ function cetakLastDot() {
 async function cetakLangsung() {
   if (!lastTrx.value) return
   try {
-    const html = buildStrukHtml(lastTrx.value, settingsStore.settings || {})
-    await printStruk({ html, deviceName: getDefaultPrinter() || undefined })
-    toast.success('Struk dicetak ke printer')
+    const s = settingsStore.settings || {}
+    const paper = String(s.posStrukPaper || '9.5')
+    const printerName = getDefaultPrinter()
+    if (paper === '9.5') {
+      // v.95.0626: dot-matrix Epson -> ESC/P raw text (1 slip, ukuran pas, tajam spt struk lama)
+      const base64 = buildStrukEscposBase64(lastTrx.value, s)
+      const res = await printRaw({ base64, deviceName: printerName || undefined })
+      if (res && res.ok === false) throw new Error(res.error || 'Print gagal')
+    } else {
+      const html = buildStrukHtml(lastTrx.value, s)
+      await printStruk({ html, deviceName: printerName || undefined })
+    }
+    toast.success('Struk dikirim ke: ' + (printerName || 'printer default Windows'))
   } catch (e) {
     toast.error('Gagal cetak: ' + (e.message || e))
   }

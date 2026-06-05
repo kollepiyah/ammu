@@ -44,6 +44,16 @@ export async function printStruk(payload) {
 }
 
 /**
+ * v.95.0626: Raw ESC/P print (dot-matrix Epson) — kirim byte mentah (base64) langsung ke printer.
+ * @param {object} payload { base64: string, deviceName?: string }
+ */
+export async function printRaw(payload) {
+  const api = getAPI()
+  if (!api?.printRaw) throw new Error('Electron raw print API tidak tersedia')
+  return api.printRaw(payload)
+}
+
+/**
  * v.80.0526: Silent print PDF blob langsung ke printer (tanpa download dialog).
  * @param {Blob} blob — PDF blob (e.g. dari jsPDF doc.output('blob'))
  * @param {object} opts — { deviceName, copies, color, landscape, pageSize }

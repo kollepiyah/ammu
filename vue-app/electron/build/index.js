@@ -45,6 +45,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const electron_1 = require("electron");
 const path = __importStar(require("path"));
 const fs = __importStar(require("fs"));
+const os = __importStar(require("os"));
+const child_process_1 = require("child_process");
 const electron_updater_1 = require("electron-updater");
 const electron_unhandled_1 = __importDefault(require("electron-unhandled"));
 (0, electron_unhandled_1.default)();
@@ -300,14 +302,96 @@ electron_1.ipcMain.handle('print:struk', async (_event, payload) => {
                 printBackground: false,
                 deviceName: payload.deviceName || '',
                 margins: { marginType: 'none' },
-                // Default 9.5" × 11" Epson dot-matrix (microns). Override dari payload.
-                pageSize: payload.pageSize || { width: 241300, height: 279400 }
+                // v.95.0626: Default 9.5" × 5.5" = 1 slip (microns). Override dari payload.
+                //   width 241300 (9.5") = lebar carriage (orientasi landscape/melebar, teks tegak melintang);
+                //   height 139700 (5.5") = tinggi 1 slip → cegah printer feed 11" = 2 lembar.
+                pageSize: payload.pageSize || { width: 241300, height: 139700 }
             }, (success, errorType) => {
                 printWindow.close();
                 if (success)
                     resolve({ ok: true });
                 else
                     reject(new Error(errorType || 'Print struk gagal'));
+            });
+        });
+    }
+    catch (e) {
+        return { ok: false, error: e?.message || String(e) };
+    }
+});
+// v.95.0626: Script PowerShell raw print via winspool.drv (RAW datatype). Win7+ (PS 2.0, .NET 3.5).
+const RAW_PRINT_PS1 = [
+    'param([string]$PrinterName, [string]$FilePath)',
+    '$ErrorActionPreference = "Stop"',
+    '$code = @"',
+    'using System;',
+    'using System.Runtime.InteropServices;',
+    'public class AmmuRawPrint {',
+    '  [StructLayout(LayoutKind.Sequential, CharSet=CharSet.Unicode)]',
+    '  public struct DOCINFO { [MarshalAs(UnmanagedType.LPWStr)] public string pDocName; [MarshalAs(UnmanagedType.LPWStr)] public string pOutputFile; [MarshalAs(UnmanagedType.LPWStr)] public string pDataType; }',
+    '  [DllImport("winspool.drv", CharSet=CharSet.Unicode, SetLastError=true)] public static extern bool OpenPrinter(string pPrinterName, out IntPtr hPrinter, IntPtr pDefault);',
+    '  [DllImport("winspool.drv", SetLastError=true)] public static extern bool ClosePrinter(IntPtr hPrinter);',
+    '  [DllImport("winspool.drv", CharSet=CharSet.Unicode, SetLastError=true)] public static extern bool StartDocPrinter(IntPtr hPrinter, int level, ref DOCINFO di);',
+    '  [DllImport("winspool.drv", SetLastError=true)] public static extern bool EndDocPrinter(IntPtr hPrinter);',
+    '  [DllImport("winspool.drv", SetLastError=true)] public static extern bool StartPagePrinter(IntPtr hPrinter);',
+    '  [DllImport("winspool.drv", SetLastError=true)] public static extern bool EndPagePrinter(IntPtr hPrinter);',
+    '  [DllImport("winspool.drv", SetLastError=true)] public static extern bool WritePrinter(IntPtr hPrinter, byte[] pBytes, int dwCount, out int dwWritten);',
+    '  public static string Send(string printer, byte[] bytes) {',
+    '    IntPtr h;',
+    '    if (!OpenPrinter(printer, out h, IntPtr.Zero)) return "OpenPrinter:" + Marshal.GetLastWin32Error();',
+    '    DOCINFO di = new DOCINFO(); di.pDocName = "Struk Ammu"; di.pDataType = "RAW";',
+    '    string err = null;',
+    '    if (StartDocPrinter(h, 1, ref di)) {',
+    '      if (StartPagePrinter(h)) {',
+    '        int written; if (!WritePrinter(h, bytes, bytes.Length, out written)) err = "WritePrinter:" + Marshal.GetLastWin32Error();',
+    '        EndPagePrinter(h);',
+    '      } else err = "StartPagePrinter:" + Marshal.GetLastWin32Error();',
+    '      EndDocPrinter(h);',
+    '    } else err = "StartDocPrinter:" + Marshal.GetLastWin32Error();',
+    '    ClosePrinter(h);',
+    '    return err;',
+    '  }',
+    '}',
+    '"@',
+    'Add-Type -TypeDefinition $code -Language CSharp',
+    'if (-not $PrinterName) { $d = Get-WmiObject -Query "SELECT Name FROM Win32_Printer WHERE Default = TRUE"; if ($d) { $PrinterName = $d.Name } }',
+    'if (-not $PrinterName) { Write-Error "Tidak ada printer default"; exit 1 }',
+    '$bytes = [System.IO.File]::ReadAllBytes($FilePath)',
+    '$res = [AmmuRawPrint]::Send($PrinterName, $bytes)',
+    'if ($res) { Write-Error $res; exit 1 }',
+    'Write-Output "OK"'
+].join('\r\n');
+// v.95.0626: IPC raw ESC/P print (dot-matrix) — kirim byte mentah ke printer (bukan render gambar).
+electron_1.ipcMain.handle('print:raw', async (_event, payload) => {
+    try {
+        if (process.platform !== 'win32') {
+            return { ok: false, error: 'Raw print hanya didukung di Windows' };
+        }
+        const buf = Buffer.from((payload && payload.base64) || '', 'base64');
+        if (!buf.length)
+            return { ok: false, error: 'Data struk kosong' };
+        const stamp = Date.now() + '_' + Math.floor(Math.random() * 1e6);
+        const tmpPrn = path.join(os.tmpdir(), 'ammu_struk_' + stamp + '.prn');
+        const tmpPs1 = path.join(os.tmpdir(), 'ammu_rawprint_' + stamp + '.ps1');
+        fs.writeFileSync(tmpPrn, buf);
+        fs.writeFileSync(tmpPs1, RAW_PRINT_PS1, 'utf8');
+        return await new Promise((resolve) => {
+            (0, child_process_1.execFile)('powershell.exe', [
+                '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass',
+                '-File', tmpPs1, '-PrinterName', (payload && payload.deviceName) || '', '-FilePath', tmpPrn
+            ], { windowsHide: true, timeout: 30000 }, (err, _stdout, stderr) => {
+                try {
+                    fs.unlinkSync(tmpPrn);
+                }
+                catch (e) { /* ignore */ }
+                try {
+                    fs.unlinkSync(tmpPs1);
+                }
+                catch (e) { /* ignore */ }
+                if (err)
+                    resolve({ ok: false, error: String(stderr || (err && err.message) || '').trim() || 'Print gagal' });
+                else
+                    resolve({ ok: true });
             });
         });
     }

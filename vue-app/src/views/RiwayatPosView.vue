@@ -8,7 +8,8 @@ import { db } from '@/services/firebase'
 import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
-import { cetakStrukPdf, cetakStrukDotMatrix, fmtRpStruk } from '@/utils/strukBuilder'
+import { cetakStrukPdf, fmtRpStruk, buildStrukEscposBase64 } from '@/utils/strukBuilder'
+import { printRaw, getDefaultPrinter } from '@/composables/useDesktopPrint'
 import { isSuperAdmin } from '@/utils/roleScope'
 import { writeAuditLog } from '@/utils/auditLog'
 
@@ -121,7 +122,7 @@ onMounted(async () => {
     const m = {}
     for (const d of sSnap.docs) {
       const s = d.data()
-      m[d.id] = { lembaga: s.lembaga || '', kelas: s.kelas || '', nis: s.nis || '', wali: s.wali || s.nama_wali || s.nama_ayah || (s.ayah && s.ayah.nama) || '' }
+      m[d.id] = { lembaga: s.lembaga || '', kelas: s.kelas || '', lembaga_sekolah: s.lembaga_sekolah || '', kelas_sekolah: s.kelas_sekolah || '', nis: s.nis || '', wali: s.wali || s.nama_wali || s.nama_ayah || (s.ayah && s.ayah.nama) || '' }
     }
     santriMap.value = m
     // v.21.91.0527: guruTtdMap (nama -> tanda_tangan) utk auto-TTD di reprint struk PDF
@@ -143,6 +144,16 @@ onMounted(async () => {
   }
 })
 
+// v.95.0626: ekstrak periode bersih dari keterangan buku induk verbose ("jenis — nama (nis) — periode")
+function extractPeriode(ket) {
+  const parts = String(ket || '').split(' — ')
+  if (parts.length >= 3) {
+    const last = parts[parts.length - 1].trim()
+    if (/^[A-Za-z]+\s+\d{4}$/.test(last) || (last && last.length <= 22)) return last
+  }
+  return ''
+}
+
 // Group jadi transaksi: pakai trx_id; fallback santri_id + tanggal + operator
 const transaksi = computed(() => {
   const groups = {}
@@ -158,6 +169,8 @@ const transaksi = computed(() => {
         santri_nis: sm.nis || '',
         lembaga: sm.lembaga || '',
         kelas: sm.kelas || '',
+        lembaga_sekolah: sm.lembaga_sekolah || '',
+        kelas_sekolah: sm.kelas_sekolah || '',
         tanggal: e.tanggal || '',
         operator: e.operator || '-',
         penyetor: e.wali || sm.wali || '',
@@ -169,7 +182,7 @@ const transaksi = computed(() => {
     groups[key].items.push({
       jenis: e.kategori || 'Pembayaran',
       nominal: Number(e.nominal || 0),
-      keterangan: e.keterangan || ''
+      keterangan: extractPeriode(e.keterangan)
     })
     groups[key].total += Number(e.nominal || 0)
   }
@@ -198,6 +211,8 @@ function toTrx(t) {
     santri_nis: t.santri_nis,
     lembaga: t.lembaga,
     kelas: t.kelas,
+    lembaga_sekolah: t.lembaga_sekolah || '',
+    kelas_sekolah: t.kelas_sekolah || '',
     operator: t.operator,
     // v.94.0626: penyetor (wali) utk reprint struk
     penyetor: t.penyetor || '',
@@ -217,8 +232,17 @@ async function cetakPdf(t) {
     toast.error('Gagal cetak PDF: ' + (e.message || e))
   }
 }
-function cetakDot(t) {
-  cetakStrukDotMatrix(toTrx(t), settingsStore.settings || {})
+// v.95.0626: reprint dot-matrix -> ESC/P raw (silent, 1 slip, ukuran pas) sama spt POS
+async function cetakDot(t) {
+  try {
+    const s = settingsStore.settings || {}
+    const base64 = buildStrukEscposBase64(toTrx(t), s)
+    const res = await printRaw({ base64, deviceName: getDefaultPrinter() || undefined })
+    if (res && res.ok === false) throw new Error(res.error || 'Print gagal')
+    toast.success('Struk dicetak ke printer')
+  } catch (e) {
+    toast.error('Gagal cetak: ' + (e.message || e))
+  }
 }
 
 function fmtTgl(t) {

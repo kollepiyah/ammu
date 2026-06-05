@@ -11,6 +11,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   printStruk: (payload: { html: string; deviceName?: string }) =>
     ipcRenderer.invoke('print:struk', payload),
 
+  // v.95.0626: Raw ESC/P print (dot-matrix) — kirim byte mentah (base64) langsung ke printer
+  printRaw: (payload: { base64: string; deviceName?: string }) =>
+    ipcRenderer.invoke('print:raw', payload),
+
   // v.80.0526: Silent print PDF langsung (untuk batch print rapor tanpa dialog download)
   printPdf: (payload: {
     pdfBase64: string

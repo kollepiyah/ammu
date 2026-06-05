@@ -46,7 +46,7 @@ import {
   setDefaultPrinter,
   onOpenPrinterSettings,
   isElectron,
-  printStruk
+  printRaw
 } from '@/composables/useDesktopPrint'
 import { useToast } from '@/composables/useToast'
 const toast = useToast()
@@ -85,15 +85,18 @@ function simpan() {
 async function tesCetak() {
   testing.value = true
   try {
-    const html =
-      '<!DOCTYPE html><html><head><meta charset="utf-8"><style>body{font-family:"Courier New",monospace;white-space:pre;font-size:12px;padding:8px}</style></head><body>' +
-      'AMMU ONLINE - TES CETAK\n========================\nPrinter: ' +
-      (selected.value || '(default Windows)') +
-      '\nWaktu  : ' +
-      new Date().toLocaleString('id-ID') +
-      '\n\nJika teks ini tercetak, printer siap dipakai.\n' +
-      '</body></html>'
-    await printStruk({ html, deviceName: selected.value || undefined })
+    // v.95.0626: tes via ESC/P raw (jalur sama dgn struk dot-matrix)
+    const ESC = '\x1B'
+    const txt =
+      'AMMU ONLINE - TES CETAK (ESC/P)\r\n' +
+      '================================\r\n' +
+      'Printer: ' + (selected.value || '(default Windows)') + '\r\n' +
+      'Waktu  : ' + new Date().toLocaleString('id-ID') + '\r\n\r\n' +
+      'Jika teks ini tercetak rapi, printer dot-matrix siap dipakai.\r\n'
+    const raw = ESC + '@' + ESC + 'G' + ESC + '2' + ESC + 'P' + txt + '\x0C'
+    const base64 = typeof btoa === 'function' ? btoa(raw) : raw
+    const res = await printRaw({ base64, deviceName: selected.value || undefined })
+    if (res && res.ok === false) throw new Error(res.error || 'Print gagal')
     toast.success('Tes cetak terkirim ke printer')
   } catch (e) {
     toast.error('Gagal tes cetak: ' + (e?.message || e))

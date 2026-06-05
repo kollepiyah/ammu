@@ -1,7 +1,7 @@
 # PROJECT KNOWLEDGE BASE — Ammu Online (Portal MU)
 > Dokumen onboarding untuk sesi Claude baru. Baca ini DULU sebelum mulai. **Update terakhir: 5 Juni 2026 (v.95.0626 — Generate Tagihan Khusus/infaq, ikon Tabungan→dompet, login bg base64+blur, hapus QuickActions Beranda, bottom-nav guru→Rekap, Dashboard Statistik overhaul [Top5 PTPT/PPPH klik-detail + kartu Guru Belum Input + Kelas Overload, scope kepala/PJ], rapor auto-isi Guru Kelas (fallback shift), repo rilis→kollepiyah/ammu, bump vc95). LANJUTAN sesi: FCM push (Android plugin + web/VAPID + 4 trigger server) + fix auth anon (fcm_token bisa simpan) + hapus toggle notif manual, struk dot-matrix 9.5×11 (BUKTI dikotak, terbilang baris penuh, penyetor kiri/penerima kanan), Electron Win7 dual-build (Electron 22) + dropdown versi di download login. TETAP vc95 (belum upload Play Console).**
 > ⚠️ KB KANONIK = file ini (`PROJECT-KNOWLEDGE-BASE.md`). File lama `PROJECT_KNOWLEDGE_BASE.md` (underscore) DEPRECATED — abaikan.
-> 👉 **RECAP TERBARU ada di PALING BAWAH** (cari "SESI v.95.0626 — LANJUTAN: FCM PUSH + STRUK + WIN7"). Sebelumnya v.93.0626 (splash/LED/PDF — detail di `AUDIT-COWORK-03JUN2026-SPLASH-LED.md`).
+> 👉 **RECAP TERBARU ada di PALING BAWAH** (cari "SESI v.95.0626 — RECEIPT VIEWER + STRUK ESC/P"). Sebelumnya: "LANJUTAN: FCM PUSH + STRUK + WIN7", lalu v.93.0626 (splash/LED/PDF — detail di `AUDIT-COWORK-03JUN2026-SPLASH-LED.md`).
 > ⏳ **STATUS:** perubahan v.95.0626 ADA di file (D:\). **Alur rilis kyai:** `tmp_recovery\_run_vite.cmd` → `git add -A && git commit --no-verify` → `npm run firebase:deploy` (web/PWA) → `npm run build:aab` (vc95 — WAJIB agar perubahan sampai ke app HP, krn Capacitor NATIVE bundle) → (desktop) `electron:publish` ke repo `kollepiyah/ammu`. Sesi v.95 = web/JS murni, tapi AAB tetap perlu utk app HP. **LANJUTAN aktivasi:** FCM butuh `google-services.json` di `vue-app/android/app/` + `npm i @capacitor/push-notifications --prefix vue-app` + `npx cap sync android` + `firebase deploy --only functions`. Win7 publish: HAPUS rilis GitHub `v95.0.626` lama dulu (electron-builder skip rilis >2 jam) lalu publish ulang. Detail lengkap di section "LANJUTAN: FCM PUSH + STRUK + WIN7" paling bawah.
 
 ---
@@ -431,3 +431,52 @@ npm run build:aab                :: vc95 (Play Console; WAJIB utk app HP — Cap
 ### F. GOTCHA SESI INI
 - **Mount Cowork LAG MAKIN PARAH** utk file besar yg di-Edit: `node --check`/compile lewat mount kasih error PALSU ("Unexpected end of input"/"Invalid package config"/"missing end tag"/truncated). Verif AUTHORITATIVE pakai **Read/Grep** (D:\). Build asli = `_run_vite.cmd` (web) + `firebase deploy` (functions di-parse saat deploy).
 - Versi **TETAP 95** (kyai belum upload Play Console) — jangan bump tanpa diminta. Kalau nanti upload AAB ke Play Console & 95 ditolak → baru bump 96 (9 titik, lihat §5).
+
+---
+
+## SESI v.95.0626 — RECEIPT VIEWER + STRUK ESC/P (5–6 Juni 2026, Cowork) — RECAP TERBARU, BACA INI
+
+> versionCode TETAP **95** (belum upload Play Console). Branch feature/vue-migration. **BELUM commit** (kyai lanjut di sesi baru). Lanjutan dari "LANJUTAN: FCM PUSH + STRUK + WIN7" di atas. Fokus: fix upload Posts, viewer struk/slip in-app (view-only), dan **PIVOT cetak struk dot-matrix dari HTML-grafis → TEKS ESC/P (raw print)** — KEPUTUSAN FINAL kyai.
+
+### A. POSTS — fix upload gambar "maks 0MB"
+- `views/PostsView.vue`: `MAX_TOTAL_BYTES`/`MAX_IMAGES` dulu cuma default saat setting 0 → admin set kecil bikin limit ~0MB (toast "maks 0 MB") walau auto-compress ada. Fix: floor `Math.max(setting,16384)*1024` (min 16MB) + `Math.max(.,5)` gambar. Auto-compress (>1MB→~1MB, maxDim 1600, JPEG q0.8) tetap jalan.
+
+### B. RECEIPT VIEWER in-app (VIEW-ONLY, tanpa tombol cetak — kyai req)
+- BARU `components/ReceiptModal.vue`: modal preview HTML + 1 tombol **Download PDF** (no print). 
+- BARU `utils/receiptHtml.js`: `buildReceiptStrukHtml(trx,s)` (bukti pembayaran santri) + `buildSlipBisyarohHtml(slip,s)` — HTML gaya PDF (KOP, BUKTI box, 2-kolom, tabel, total, ttd).
+- BARU `cetakSlipBisyarohPdf(slip,settings,{preview})` di `strukBuilder.js` (jsPDF, match desain `cetakStrukPdf`: KOP F4, "SLIP BISYAROH", line_items, take home, ttd).
+- WIRING ikon **mata**: `PembayaranView.vue` (riwayat santri/wali) per baris → group `keuangan_buku_induk` per `trx_id` → ReceiptModal; download=`cetakStrukPdf(preview:false)`. `BisyarohView.vue` (daftar admin + kartu guru) → ReceiptModal slip; download=`cetakSlipBisyarohPdf(preview:false)`. "samakan dg desain PDF" = preview HTML ikut layout `cetakStrukPdf`.
+
+### C. STRUK DOT-MATRIX → PIVOT KE ESC/P RAW ⭐ (kyai pilih "ESC/P teks tajam", BUKAN HTML grafis)
+- HTML-grafis (`buildStrukHtmlWide` via `printStruk`) di 9-pin LX-310 = **blur** (raster) + 2 lembar (pageSize 11") + kekecilan (scaling). Karena itu PIVOT ke teks mentah.
+- **`buildStrukEscposBase64(trx,settings)`** (`strukBuilder.js`): bungkus teks 80-kolom (`buildStrukText`→`buildStrukWide`) dgn ESC/P: `ESC @` init, `ESC G` double-strike, `ESC 2` 6 LPI, pitch (`ESC P`=10 / `ESC M`=12 / **`ESC g`=15 default** / `0x0F`=17 cpi), `ESC l` margin kiri (center), `ESC C n` form-length (n baris = tinggi slip), margin atas (CRLF×N), isi, `FF`. Return base64.
+- **IPC `print:raw`** (`electron/src/index.ts`): tulis bytes→temp `.prn` + jalankan **PowerShell winspool.drv** (`Add-Type` C#: OpenPrinter/StartDocPrinter datatype RAW/WritePrinter) kirim byte MENTAH ke printer. Win7+ OK. Const `RAW_PRINT_PS1`. Tambah import `os`+`child_process` (execFile).
+- `preload.ts`: expose `printRaw`. `useDesktopPrint.js`: `printRaw(payload)`.
+- WIRING (paper '9.5'→printRaw; thermal tetap HTML): `PosSantriView.cetakLangsung`, `PrinterSettingsModal.tesCetak`, `RiwayatPosView.cetakDot` (reprint).
+- **`buildStrukWide` dirombak ala gambar 2:** garis tipis tunggal (ganti `====`), kolom rata-kanan bersih (ganti titik-titik), **kotak BUKTI rata-KANAN-atas** (`padR(left,W-20)+box`), Penyetor/Penerima **di-tengah** tiap kolom, **total (Jumlah/Pembayaran/Kembali) satu band sebaris ttd di bawah**. Ringkas **±22 baris** → muat 1 slip.
+
+### D. SETELAN STRUK in-app (atur tanpa rebuild — `PengaturanKeuanganView.vue`)
+- Field baru (v-if paper '9.5'): **Ukuran font** (cpi 10/12/15-default/17), **Tinggi slip (baris)** (=tinggi inci×6, default 30≈12.7cm), **Geser ke kanan** (margin kiri/center, default 6), **Margin atas** (baris, default 2). Simpan→settings→`buildStrukEscposBase64` baca langsung. **Tanpa rebuild** utk penyesuaian.
+
+### E. DATA struk
+- Label **"Nomor Induk" → "NIS"** (PDF + mono).
+- **Kelas gabungan** → `kelasFull(trx)` = "PTPT 2/SDI III" (semua builder). Caller (`PosSantriView` lastTrx, `PembayaranView`, `RiwayatPosView`) kirim `lembaga_sekolah`+`kelas_sekolah`.
+- **Bulan/tahun rincian** "(Juni 2026)": `periodeTagihan(t)`=`t.periode||t.bulan||derive(t.jatuh_tempo)` (`PosSantriView`); reprint pakai `extractPeriode(keterangan)` (parse keterangan buku_induk verbose "jenis — nama (nis) — periode"). Berlaku pembayaran BARU (tagihan lama tanpa periode/jatuh_tempo tak ada datanya).
+
+### F. PRINTER TROUBLESHOOT (PENTING — banyak waktu kebuang di sini)
+- "Silent print berhasil tapi tak ngeprint" = **printer default salah** (Microsoft Print to PDF). FIX: Pengaturan Printer (app)→pilih EPSON LX-310→Simpan. Nama yg dikirim = `p.name` (benar).
+- "Tes Page Windows pun tak keluar" (job status "Dicetak" tapi kosong) = printer **off-line / port salah / kabel**. FIX kyai: tekan tombol **On Line** printer + cek Ports tab + kabel. SETELAH ITU ESC/P keluar TAJAM (terbukti). 
+- ⚠️ Perubahan Electron MAIN (`index.ts`/`preload.ts`) HANYA aktif setelah **INSTALL ULANG .exe** (`electron\dist\AmmuOnline-Setup.exe`) — `build:electron`+`robocopy` cuma update renderer.
+
+### G. FILE BARU/DIUBAH (sesi ini)
+- BARU: `components/ReceiptModal.vue`, `utils/receiptHtml.js`.
+- DIUBAH: `utils/strukBuilder.js` (cetakSlipBisyarohPdf, buildStrukEscposBase64, buildStrukWide rombak+BUKTI kanan+ttd tengah+total band, kelasFull, NIS), `electron/src/index.ts` (print:raw+RAW_PRINT_PS1+os/child_process), `electron/src/preload.ts` (printRaw), `composables/useDesktopPrint.js` (printRaw), `views/PosSantriView.vue` (ESC/P+periodeTagihan+school class), `views/PembayaranView.vue` (eye+receipt), `views/BisyarohView.vue` (eye+slip), `views/RiwayatPosView.vue` (reprint ESC/P+extractPeriode+school class), `views/PengaturanKeuanganView.vue` (setelan struk), `views/PostsView.vue` (upload floor).
+
+### H. PENDING (next sesi / kyai)
+- **Rebuild + INSTALL ULANG .exe** utk ESC/P terbaru (BUKTI pojok kanan, ttd tengah, total band, periode, setelan in-app): `cd vue-app; npm run build:electron; robocopy dist electron\app /MIR; cd electron; npm run electron:make` → jalankan installer.
+- **Tune di Pengaturan Keuangan → Penyetelan Struk**: Tinggi slip = ukur×6 (slip kyai ~12-14cm tinggi; **lebar belum disebut** → tanya utk set default geser-kanan), Geser kanan utk center, font 17 kalau kelebaran, margin atas kalau kepotong. Muat kertas pas perforasi atas (Load/Tear-Off).
+- Masih pending dari recap sebelumnya: **commit**; FCM (`google-services.json` + `cap sync` + `firebase deploy --only functions`); **revoke GH token** ter-ekspos; electron republish (win7 dulu, hapus rilis lama).
+
+### I. GOTCHA
+- Mount Cowork LAG/TRUNCATED utk file besar → `node --check` lewat mount kasih error PALSU ("Unexpected end of input", file kepotong). Verif AUTHORITATIVE via **Read/Grep** (D:\) + render fungsi standalone di /tmp. Build asli = `_run_vite.cmd`.
+- ESC/P keterbatasan (vs HTML gambar 2): font selalu fixed-width (bukan proporsional), garis pakai karakter, tak ada huruf tebal. Susunan bisa disamakan, gaya huruf khas dot-matrix — konsekuensi pilih "tajam".

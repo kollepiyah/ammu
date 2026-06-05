@@ -102,6 +102,37 @@
         </button>
       </div>
 
+      <!-- v.95.0626: penyetelan struk dot-matrix ESC/P — atur sendiri tanpa rebuild -->
+      <div v-if="form.posStrukPaper === '9.5'" class="mt-3 p-3 rounded-lg bg-[var(--bg-card-elevated)] border border-[var(--border-default)]">
+        <div class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-2">Penyetelan Struk Dot-matrix (ESC/P)</div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-[10px] text-[var(--text-secondary)] block mb-1">Ukuran font</label>
+            <select v-model.number="form.posStrukCpi" class="w-full px-2 py-1.5 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)]">
+              <option :value="10">10 cpi (paling besar)</option>
+              <option :value="12">12 cpi</option>
+              <option :value="15">15 cpi (kecil)</option>
+              <option :value="17">17 cpi (sangat kecil)</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-[10px] text-[var(--text-secondary)] block mb-1">Tinggi slip (baris) = cm × 3,15</label>
+            <input v-model.number="form.posStrukFormLines" type="number" min="6" max="127" class="w-full px-2 py-1.5 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)]" />
+          </div>
+          <div>
+            <label class="text-[10px] text-[var(--text-secondary)] block mb-1">Geser ke kanan (kolom)</label>
+            <input v-model.number="form.posStrukLeftCols" type="number" min="0" max="40" class="w-full px-2 py-1.5 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)]" />
+          </div>
+          <div>
+            <label class="text-[10px] text-[var(--text-secondary)] block mb-1">Margin atas (baris)</label>
+            <input v-model.number="form.posStrukTopLines" type="number" min="0" max="12" class="w-full px-2 py-1.5 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)]" />
+          </div>
+        </div>
+        <p class="text-[10px] text-[var(--text-secondary)] mt-2 italic">
+          <i class="fas fa-info-circle mr-1"></i>Atur lalu <b>Simpan</b> — langsung berlaku tanpa rebuild. Spasi baris 8 LPI (rapat, muat slip pendek). <b>cpi 10</b> = teks paling besar &amp; mengisi lebar ~210mm (default); pilih 12/15 kalau kelebaran. <b>Tinggi slip (baris) = tinggi kertas (cm) × 3,15</b> — mis. 12cm→38, 13cm→41, 14cm→44. <b>Margin atas 0</b> (printer dot-matrix biasanya sudah ada whitespace atas ~5cm). Geser kanan utk center. Kalau bawah <b>kepotong</b>: kecilkan Tinggi slip atau pilih cpi 12.
+        </p>
+      </div>
+
       <div class="mt-4">
         <h4
           class="font-black text-slate-700 dark:text-[var(--text-tertiary)] text-[11px] uppercase tracking-wider mb-2"
@@ -931,6 +962,11 @@ const form = reactive({
   keu_jatuh_tempo: 10,
   // v.21.89.0527: Lebar kertas struk POS (dot-matrix). '9.5' = Epson LX-310 continuous form (default).
   posStrukPaper: '9.5',
+  // v.95.0626: penyetelan struk ESC/P dot-matrix (bisa diatur sendiri tanpa rebuild)
+  posStrukCpi: 15,
+  posStrukFormLines: 30,
+  posStrukLeftCols: 6,
+  posStrukTopLines: 2,
   keu_jenis_tagihan: [],
   keu_bisyaroh_pagi: '',
   keu_bisyaroh_sore: '',
@@ -959,6 +995,10 @@ function loadFromSettings() {
   const s = settingsStore.settings || {}
   form.keu_jatuh_tempo = s.keu_jatuh_tempo || 10
   form.posStrukPaper = s.posStrukPaper || '9.5'
+  form.posStrukCpi = Number(s.posStrukCpi) || 15
+  form.posStrukFormLines = Number(s.posStrukFormLines) || 30
+  form.posStrukLeftCols = s.posStrukLeftCols != null ? Number(s.posStrukLeftCols) : 6
+  form.posStrukTopLines = s.posStrukTopLines != null ? Number(s.posStrukTopLines) : 2
 
   // v.21.97.0527: + nominal_per_lembaga (override per lembaga)
   const _emptyMap = () => ({})
@@ -1233,6 +1273,10 @@ async function simpan() {
     const payload = {
       keu_jatuh_tempo: form.keu_jatuh_tempo,
       posStrukPaper: form.posStrukPaper || '9.5',
+      posStrukCpi: Number(form.posStrukCpi) || 15,
+      posStrukFormLines: Number(form.posStrukFormLines) || 30,
+      posStrukLeftCols: Number(form.posStrukLeftCols) || 0,
+      posStrukTopLines: Number(form.posStrukTopLines) || 0,
       keuTagihanJenis: jenis,
       keu_jenis_tagihan: jenis.map((t) => t.label),
       keu_bisyaroh_pagi: parseRp(form.keu_bisyaroh_pagi),

@@ -76,6 +76,7 @@
             <div class="text-right">
               <p class="text-sm font-black text-emerald-700">{{ fmtRp(p.nominal) }}</p>
             </div>
+            <button @click="openReceipt(p)" aria-label="Lihat bukti pembayaran" title="Lihat bukti pembayaran" class="w-8 h-8 flex-shrink-0 rounded-full border border-[var(--border-default)] text-cyan-600 hover:bg-cyan-50 dark:hover:bg-cyan-900/30 flex items-center justify-center transition cursor-pointer"><i class="fas fa-eye text-xs"></i></button>
           </div>
         </div>
       </div>
@@ -305,6 +306,14 @@
 
     <!-- v.87.0526: blok tab VA DIHAPUS — VA kini jadi baris "Coming soon" (disabled) di langkah Pilih Metode. -->
 
+    <ReceiptModal
+      :open="receiptOpen"
+      title="Bukti Pembayaran"
+      :body-html="receiptHtmlStr"
+      :downloading="receiptDownloading"
+      @close="receiptOpen = false"
+      @download="downloadReceipt"
+    />
   </div>
 </template>
 
@@ -318,6 +327,9 @@ import { useToast } from '@/composables/useToast'
 import { useWaliChildren } from '@/composables/useWaliChildren'
 import { uploadBase64 } from '@/services/storage'
 import { fmtRp, fmtTgl } from '@/utils/format'
+import ReceiptModal from '@/components/ReceiptModal.vue'
+import { buildReceiptStrukHtml } from '@/utils/receiptHtml'
+import { cetakStrukPdf } from '@/utils/strukBuilder'
 
 // v.82.0526: support deep-link dari TagihanView — auto-fill form transfer
 const route = useRoute()
@@ -371,6 +383,67 @@ const todayISO = computed(() => new Date().toISOString().slice(0, 10))
 function getNamaSantri(id) {
   const s = santriList.value.find((x) => String(x.id) === String(id))
   return s?.nama || '(unknown)'
+}
+
+// v.95.0626: Receipt viewer (view-only) — bukti pembayaran per transaksi (group by trx_id)
+const receiptOpen = ref(false)
+const receiptHtmlStr = ref('')
+const receiptTrx = ref(null)
+const receiptDownloading = ref(false)
+
+function extractPeriode(ket) {
+  const parts = String(ket || '').split(' — ')
+  if (parts.length >= 3) {
+    const last = parts[parts.length - 1].trim()
+    if (/^[A-Za-z]+\s+\d{4}$/.test(last) || (last && last.length <= 22)) return last
+  }
+  return ''
+}
+function buildTrxFromGroup(p) {
+  const key = String(p.trx_id || p.id)
+  const group = pembayaranRaw.value.filter((x) => String(x.trx_id || x.id) === key)
+  const rows = group.length ? group : [p]
+  const s = santriList.value.find((x) => String(x.id) === String(p.santri_id)) || {}
+  const total = rows.reduce((sum, r) => sum + Number(r.nominal || 0), 0)
+  return {
+    no_struk: p.trx_id || p.id || '-',
+    tanggal: p.tanggal,
+    santri_nama: p.santri_nama || getNamaSantri(p.santri_id),
+    santri_nis: s.nis || s.nik || '-',
+    lembaga: s.lembaga || '',
+    kelas: s.kelas || '',
+    lembaga_sekolah: s.lembaga_sekolah || '',
+    kelas_sekolah: s.kelas_sekolah || '',
+    operator: p.operator || 'Administrator',
+    penyetor: p.wali || '',
+    metode: p.sumber === 'transfer_verified' ? 'TRANSFER' : 'TUNAI',
+    status_siswa: s.aktif === false ? 'Tidak Aktif' : 'Aktif',
+    items: rows.map((r) => ({
+      jenis: r.kategori || 'Tagihan',
+      nominal: Number(r.nominal || 0),
+      keterangan: extractPeriode(r.keterangan)
+    })),
+    total,
+    bayar: total,
+    kembali: 0
+  }
+}
+function openReceipt(p) {
+  const trx = buildTrxFromGroup(p)
+  receiptTrx.value = trx
+  receiptHtmlStr.value = buildReceiptStrukHtml(trx, settings.settings || {})
+  receiptOpen.value = true
+}
+async function downloadReceipt() {
+  if (!receiptTrx.value) return
+  receiptDownloading.value = true
+  try {
+    await cetakStrukPdf(receiptTrx.value, settings.settings || {}, { preview: false })
+  } catch (e) {
+    toast.error('Gagal membuat PDF: ' + (e.message || e))
+  } finally {
+    receiptDownloading.value = false
+  }
 }
 
 // Pembayaran ter-confirm (tunai POS + transfer yang sudah di-verify admin)
