@@ -437,8 +437,10 @@ export async function exportRekapBisyarohPdf(slips = [], settings = {}, periodeL
   return doc
 }
 
-// ── 1e) PDF slip TABUNGAN (setor/tarik) — gaya struk POS (slip landscape) ──
-// v.95.0626: cetak bukti setor/tarik tabungan. opts: { preview, saldo, santri }
+// ── 1e) PDF slip TABUNGAN / UANG SAKU (setor/tarik) — layout SAMA dgn struk POS (cetakStrukSlipPdf) ──
+// v.96.0626: disamakan persis dgn slip POS (KOP ringkas, kotak BUKTI kanan-atas, info 2 kolom,
+//   rincian leader-titik, band total kanan, ttd Penyetor/Petugas). opts: { preview, saldo, santri, label }
+//   label = 'TABUNGAN' | 'UANG SAKU'.
 export async function cetakSlipTabunganPdf(mut = {}, settings = {}, { preview = true, saldo = null, santri = {}, label = 'TABUNGAN' } = {}) {
   const kop = buildKopFromSettings(settings)
   const num = (v, lo, hi, def) => { const n = parseFloat(v); return Number.isFinite(n) && n >= lo && n <= hi ? n : def }
@@ -451,8 +453,10 @@ export async function cetakSlipTabunganPdf(mut = {}, settings = {}, { preview = 
   const right = slipW - 9
   const dash = (pat) => { if (typeof doc.setLineDashPattern === 'function') doc.setLineDashPattern(pat || [], 0) }
   const isSetor = String(mut.jenis || 'setor').toLowerCase() === 'setor'
+  const isUS = String(label).toUpperCase().includes('SAKU')
   const boxLabel = 'BUKTI ' + (isSetor ? 'SETOR ' : 'TARIK ') + label
 
+  // ── Header teks RINGKAS + kotak BUKTI kanan-atas (sama dgn POS) ──
   let y = topMm + 4.5
   doc.setFont(font, 'bold'); doc.setFontSize(10)
   doc.text(String(kop.line1 || ''), left, y)
@@ -460,7 +464,7 @@ export async function cetakSlipTabunganPdf(mut = {}, settings = {}, { preview = 
   if (kop.line2) { doc.setFont(font, 'bold'); doc.setFontSize(8.3); doc.text(String(kop.line2), left, ky); ky += 3.2 }
   doc.setFont(font, 'normal'); doc.setFontSize(7)
   for (const ln of [kop.line3, kop.line4, kop.line5].filter(Boolean)) { doc.text(String(ln), left, ky); ky += 2.9 }
-  doc.setFont(font, 'bold'); doc.setFontSize(7.5)
+  doc.setFont(font, 'bold'); doc.setFontSize(8)
   const bw = doc.getTextWidth(boxLabel) + 6
   const bh = 7
   const bx = right - bw
@@ -469,51 +473,97 @@ export async function cetakSlipTabunganPdf(mut = {}, settings = {}, { preview = 
   doc.rect(bx, by, bw, bh)
   dash(null)
   doc.text(boxLabel, bx + bw / 2, by + 4.6, { align: 'center' })
-  const hy = Math.max(ky - 1.4, by + bh) + 2
+  const hy = Math.max(ky - 1.4, by + bh) + 1.6
   doc.setLineWidth(0.5); doc.line(left, hy, right, hy)
-  y = hy + 5
+  y = hy + 4.2
 
-  doc.setFont(font, 'normal'); doc.setFontSize(8.5)
+  // ── Info 2 kolom (Kelas bold; Terbilang kiri; Petugas kanan) ──
+  doc.setFont(font, 'normal'); doc.setFontSize(8.3)
   const colMid = slipW / 2 + 8
   const nama = mut.nama_cache || santri.nama || '-'
+  const nis = santri.nis || mut.santri_nis || '-'
   const kelas = [santri.lembaga_sekolah, santri.kelas_sekolah].filter(Boolean).join(' ') || [santri.lembaga, santri.kelas].filter(Boolean).join(' ') || '-'
-  const leftRows = [['Nama', nama], ['NIS', santri.nis || '-'], ['Kelas', kelas]]
-  const rightRows = [['Tgl', formatTglDdMmYyyy(mut.tanggal)], ['No', mut.id || '-'], ['Petugas', mut.operator || mut.petugas || '-']]
+  const petugas = mut.operator || mut.petugas || '-'
+  const terb = terbilangRupiah(mut.nominal)
+  const tglFmt = formatTglDdMmYyyy(mut.tanggal)
+  const leftRows = [
+    ['Diterima dari', nama],
+    ['NIS', nis],
+    ['__KELAS__', kelas],
+    ['Terbilang', terb]
+  ]
+  const rightRows = [
+    ['Tanggal', tglFmt],
+    ['No. Bukti', mut.id || '-'],
+    ['Metode', 'TUNAI'],
+    ['Petugas', petugas]
+  ]
   const yStart = y
-  const rowH = 4.6
-  const labelW = 15
-  for (let i = 0; i < Math.max(leftRows.length, rightRows.length); i++) {
+  const rowH = 4.2
+  const labelW = 22
+  for (let i = 0; i < leftRows.length; i++) {
     const ry = yStart + i * rowH
-    if (leftRows[i]) { doc.text(leftRows[i][0], left, ry); doc.text(': ' + String(leftRows[i][1]), left + labelW, ry) }
-    if (rightRows[i]) { doc.text(rightRows[i][0], colMid, ry); doc.text(': ' + String(rightRows[i][1]), colMid + 14, ry) }
+    if (leftRows[i][0] === '__KELAS__') {
+      doc.setFont(font, 'normal')
+      doc.text('Kelas', left, ry)
+      doc.text(':', left + labelW, ry)
+      doc.setFont(font, 'bold')
+      doc.text(String(leftRows[i][1]), left + labelW + 2.5, ry)
+    } else {
+      doc.setFont(font, 'normal')
+      doc.text(leftRows[i][0], left, ry)
+      doc.text(': ' + String(leftRows[i][1]), left + labelW, ry)
+    }
   }
-  y = yStart + Math.max(leftRows.length, rightRows.length) * rowH + 4
-  doc.setLineWidth(0.3); doc.line(left, y, right, y); y += 6
-
-  doc.setFont(font, 'bold'); doc.setFontSize(11)
-  doc.text(isSetor ? 'SETORAN' : 'PENARIKAN', left, y)
-  doc.text('Rp. ' + fmtNum(mut.nominal), right, y, { align: 'right' })
-  y += 6
-  doc.setFont(font, 'normal'); doc.setFontSize(9)
-  if (saldo != null) {
-    doc.text('Saldo setelah transaksi', left, y)
-    doc.setFont(font, 'bold'); doc.text('Rp. ' + fmtNum(saldo), right, y, { align: 'right' }); doc.setFont(font, 'normal')
-    y += 5
+  for (let i = 0; i < rightRows.length; i++) {
+    const ry = yStart + i * rowH
+    doc.setFont(font, 'normal')
+    doc.text(rightRows[i][0], colMid, ry)
+    doc.text(': ' + String(rightRows[i][1]), colMid + 19, ry)
   }
-  if (mut.catatan) { doc.setFontSize(8); doc.text('Catatan: ' + String(mut.catatan), left, y); y += 5 }
-  y += 2; doc.setLineWidth(0.3); doc.line(left, y, right, y); y += 6
+  y = yStart + leftRows.length * rowH + 2.8
 
+  // ── Rincian (1 baris: setoran/penarikan + nominal, leader titik) ──
+  doc.setFont(font, 'normal'); doc.setFontSize(8.3)
+  doc.text('Dengan rincian sebagai berikut :', left, y)
+  y += 4.8
   doc.setFontSize(8.6)
-  const c1 = left + 30
-  const c2 = slipW - 38
-  doc.text('Penyetor/Pengambil,', c1, y, { align: 'center' })
+  const ketr = (isSetor ? 'Setoran ' : 'Penarikan ') + (isUS ? 'uang saku' : 'tabungan') + (mut.catatan ? ' (' + mut.catatan + ')' : '')
+  const amt = 'Rp. ' + fmtNum(mut.nominal)
+  doc.text('1.', left, y)
+  doc.text(ketr, left + 5.5, y)
+  doc.text(amt, right, y, { align: 'right' })
+  const ne = left + 5.5 + doc.getTextWidth(ketr) + 2
+  const as = right - doc.getTextWidth(amt) - 2
+  if (as > ne) { dash([0.4, 0.7]); doc.setLineWidth(0.2); doc.line(ne, y - 0.8, as, y - 0.8); dash(null) }
+  y += 4.4 + 0.8
+  doc.setLineWidth(0.5); doc.line(left, y, right, y)
+  y += 5
+
+  // ── Footer: Penyetor/Pengambil + Petugas + band total kanan ──
+  doc.setFontSize(8.6)
+  const c1 = left + 26
+  const c2 = slipW / 2 - 8
+  doc.setFont(font, 'normal')
+  doc.text(isSetor ? 'Penyetor,' : 'Pengambil,', c1, y, { align: 'center' })
   doc.text('Petugas,', c2, y, { align: 'center' })
-  const sy = y + 16
+  const totLabelX = slipW / 2 + 16
+  let ty = y
+  const rowR = (lbl, val, bold) => {
+    doc.setFont(font, bold ? 'bold' : 'normal')
+    doc.text(lbl, totLabelX, ty)
+    doc.text(val, right, ty, { align: 'right' })
+    ty += 4.5
+  }
+  rowR('Jumlah Rp.', fmtNum(mut.nominal), true)
+  if (saldo != null) rowR('Saldo Akhir Rp.', fmtNum(saldo))
+  doc.setFont(font, 'normal')
+  const sy = y + 14
   doc.text('( .................. )', c1, sy, { align: 'center' })
-  doc.text('( ' + (mut.operator || mut.petugas || '') + ' )', c2, sy, { align: 'center' })
+  doc.text('( ' + (petugas && petugas !== '-' ? petugas : '') + ' )', c2, sy, { align: 'center' })
 
   const safe = String(nama).replace(/\s+/g, '_')
-  savePdf(doc, 'slip_tabungan_' + safe + '_' + (mut.tanggal || '') + '.pdf', { preview })
+  savePdf(doc, 'slip_' + (isUS ? 'uangsaku' : 'tabungan') + '_' + safe + '_' + (mut.tanggal || '') + '.pdf', { preview })
   return doc
 }
 

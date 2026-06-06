@@ -376,7 +376,7 @@
           </button>
         </div>
 
-        <form @submit.prevent="simpanMutasi" class="p-5 space-y-3">
+        <form v-if="!savedMutasi" @submit.prevent="simpanMutasi" class="p-5 space-y-3">
           <!-- Santri (datalist autocomplete) -->
           <div>
             <label
@@ -500,6 +500,57 @@
             </button>
           </div>
         </form>
+
+        <!-- v.96.0626: panel SUKSES + tombol cetak struk (gaya POS) -->
+        <div v-else class="p-5 space-y-4 text-center">
+          <div class="mx-auto w-14 h-14 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-2xl">
+            <i class="fas fa-check"></i>
+          </div>
+          <div>
+            <p class="text-base font-black text-[var(--text-primary)]">Mutasi tersimpan</p>
+            <p class="text-sm text-[var(--text-secondary)] mt-0.5">
+              {{ savedMutasi.nama_cache }} &middot;
+              {{ savedMutasi.jenis === 'setor' ? 'Setor' : 'Tarik' }} {{ fmtRp(savedMutasi.nominal) }}
+            </p>
+            <p class="text-[11px] text-[var(--text-tertiary)] mt-0.5">No. Bukti: {{ savedMutasi.id }}</p>
+          </div>
+
+          <p class="text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)]">Cetak struk:</p>
+          <div class="flex flex-wrap items-center justify-center gap-2">
+            <button
+              type="button"
+              @click="cetakSlip(savedMutasi)"
+              class="px-4 py-2 text-xs font-black bg-rose-600 hover:bg-rose-700 text-white rounded-lg"
+            >
+              <i class="fas fa-file-pdf mr-1"></i>Struk PDF
+            </button>
+            <button
+              v-if="isDesktop"
+              type="button"
+              @click="cetakSlipLangsung(savedMutasi)"
+              class="px-4 py-2 text-xs font-black bg-amber-500 hover:bg-amber-600 text-white rounded-lg"
+            >
+              <i class="fas fa-bolt mr-1"></i>Cetak Langsung
+            </button>
+          </div>
+
+          <div class="flex items-center justify-center gap-2 pt-3 border-t border-[var(--border-subtle)]">
+            <button
+              type="button"
+              @click="transaksiBaru"
+              class="px-4 py-2 text-xs font-bold text-[var(--text-primary)] hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700 rounded-lg"
+            >
+              <i class="fas fa-plus mr-1"></i>Transaksi Baru
+            </button>
+            <button
+              type="button"
+              @click="closeModal"
+              class="px-5 py-2 text-xs font-black bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white rounded-lg"
+            >
+              <i class="fas fa-check-double mr-1"></i>Selesai
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -522,6 +573,7 @@ import { useConfirm } from '@/composables/useConfirm'
 import { useKeuangan } from '@/composables/useKeuangan'
 import { fmtRp, fmtTgl } from '@/utils/format'
 import { cetakSlipTabunganPdf, exportRekapTabunganPdf } from '@/utils/strukBuilder'
+import { isElectron, printPdf, getDefaultPrinter } from '@/composables/useDesktopPrint' // v.96.0626: cetak struk setor/tarik gaya POS
 import { useExcel } from '@/composables/useExcel'
 import { useRoute } from 'vue-router'
 
@@ -717,6 +769,10 @@ const autoFilled = ref(false)
 // v.21.100.0527: edit-mode + multi-select bulk delete
 const editingMutasiId = ref(null)
 const selectedMutasi = ref(new Set())
+// v.96.0626: panel "tersimpan" + tombol cetak struk (gaya POS) setelah simpan mutasi baru
+const savedMutasi = ref(null)
+const savedSantri = ref(null)
+const isDesktop = computed(() => isElectron())
 
 // v.21.104.0527: Kategori tabungan terpisah dari jenis tagihan.
 // Sumber utama: settings.keuTabunganKategori (array of {id, label, nominal_default}).
@@ -787,6 +843,15 @@ function openModal(santriId = '', jenis = 'setor') {
 function closeModal() {
   modalOpen.value = false
   editingMutasiId.value = null
+  savedMutasi.value = null
+  savedSantri.value = null
+}
+
+// v.96.0626: reset form utk transaksi baru (modal tetap terbuka, panel cetak ditutup)
+function transaksiBaru() {
+  savedMutasi.value = null
+  savedSantri.value = null
+  openModal('', 'setor')
 }
 
 // v.21.100.0527: super_admin only — buka modal edit dari mutasi existing
@@ -895,6 +960,8 @@ async function simpanMutasi() {
       toast.success('Mutasi diperbarui')
     } else {
       const id = `mutasi_${modalSantriId.value}_${Date.now()}`
+      const tanggal = new Date().toISOString().slice(0, 10)
+      const opName = auth.sesiAktif?.nama || auth.sesiAktif?.guru || 'Admin'
       await setDoc(doc(db, COLL.value, id), {
         id,
         santri_id: modalSantriId.value,
@@ -903,10 +970,26 @@ async function simpanMutasi() {
         kategori: modalKategori.value,
         nominal: Number(modalNominal.value),
         catatan: modalCatatan.value,
-        tanggal: new Date().toISOString().slice(0, 10),
+        tanggal,
+        operator: opName,
         createdAt: serverTimestamp()
       })
       toast.success('Mutasi tersimpan')
+      // v.96.0626: tampilkan panel cetak struk (jangan tutup modal — kyai pilih "tampilkan tombol cetak")
+      savedMutasi.value = {
+        id,
+        santri_id: modalSantriId.value,
+        nama_cache: santri?.nama || '',
+        jenis: modalJenis.value,
+        kategori: modalKategori.value,
+        nominal: Number(modalNominal.value),
+        catatan: modalCatatan.value,
+        tanggal,
+        operator: opName
+      }
+      savedSantri.value = santri || null
+      saving.value = false
+      return
     }
     closeModal()
   } catch (e) {
@@ -925,19 +1008,52 @@ function saldoSantriById(sid) {
   const a = aggregated.value.find((x) => String(x.santri_id) === String(sid))
   return a ? Number(a.saldo) || 0 : 0
 }
+// v.96.0626: cari objek santri (KOP slip butuh NIS/kelas). savedSantri dipakai utk transaksi yg baru disimpan.
+function slipSantriOf(m) {
+  const sid = String(m?.santri_id || m?.santriId || '')
+  if (savedSantri.value && String(savedSantri.value.id) === sid) return savedSantri.value
+  return (santriRaw.value || []).find((s) => String(s.id) === sid) || {}
+}
+function slipOpts(m) {
+  return {
+    saldo: saldoSantriById(m.santri_id || m.santriId),
+    santri: slipSantriOf(m),
+    label: pageTitle.value.toUpperCase()
+  }
+}
+// Struk PDF (preview / unduh) — tombol mata riwayat + panel "tersimpan"
 async function cetakSlip(m) {
   try {
-    const santri = (santriRaw.value || []).find((s) => String(s.id) === String(m.santri_id || m.santriId)) || {}
-    await cetakSlipTabunganPdf(m, settingsStore.settings || {}, { preview: true, saldo: saldoSantriById(m.santri_id || m.santriId), santri, label: pageTitle.value.toUpperCase() })
+    await cetakSlipTabunganPdf(m, settings.settings || {}, { preview: true, ...slipOpts(m) })
   } catch (e) {
     toast.error('Gagal cetak slip: ' + (e.message || e))
+  }
+}
+// v.96.0626: Cetak Langsung (silent ke printer) — gaya POS. Desktop only; web fallback ke preview PDF.
+async function cetakSlipLangsung(m) {
+  try {
+    const s = settings.settings || {}
+    if (!isElectron()) { await cetakSlipTabunganPdf(m, s, { preview: true, ...slipOpts(m) }); return }
+    const printerName = getDefaultPrinter()
+    const docPdf = await cetakSlipTabunganPdf(m, s, { preview: false, ...slipOpts(m) })
+    const blob = docPdf.output('blob')
+    const wMm = docPdf.internal.pageSize.getWidth()
+    const hMm = docPdf.internal.pageSize.getHeight()
+    const res = await printPdf(blob, {
+      deviceName: printerName || undefined,
+      pageSize: { width: Math.round(wMm * 1000), height: Math.round(hMm * 1000) }
+    })
+    if (res && res.ok === false) throw new Error(res.error || 'Print gagal')
+    toast.success('Struk dikirim ke: ' + (printerName || 'printer default Windows'))
+  } catch (e) {
+    toast.error('Gagal cetak: ' + (e.message || e))
   }
 }
 async function exportPdf() {
   const items = filteredItems.value || []
   if (!items.length) { toast.warning('Tidak ada data untuk diekspor.'); return }
   try {
-    await exportRekapTabunganPdf(items, settingsStore.settings || {}, {
+    await exportRekapTabunganPdf(items, settings.settings || {}, {
       title: 'REKAP ' + pageTitle.value.toUpperCase() + ' SANTRI',
       namaOf: (t) => (getNamaSantri(t.santri_id) !== '(unknown)' ? getNamaSantri(t.santri_id) : (t.nama_cache || t.santri_id))
     })

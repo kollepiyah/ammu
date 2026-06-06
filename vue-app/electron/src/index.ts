@@ -408,10 +408,16 @@ ipcMain.handle('print:pdf', async (_event, payload: {
   pageSize?: any
 }) => {
   let printWindow: BrowserWindow | null = null
+  let tmpPdf = ''
   try {
+    // v.96.0626: tulis PDF ke file temp + load via file:// — JAUH lebih andal dari data: URL.
+    //   data: URL besar sering gagal di-render plugin PDF Chrome → halaman KOSONG saat di-print.
+    tmpPdf = path.join(os.tmpdir(), `ammu_print_${Date.now()}_${Math.random().toString(36).slice(2, 8)}.pdf`)
+    fs.writeFileSync(tmpPdf, Buffer.from(payload.pdfBase64, 'base64'))
+
     printWindow = new BrowserWindow({
-      width: 850,
-      height: 1100,
+      width: 900,
+      height: 1200,
       show: false,
       webPreferences: {
         nodeIntegration: false,
@@ -420,20 +426,27 @@ ipcMain.handle('print:pdf', async (_event, payload: {
       }
     })
 
-    const pdfDataUrl = `data:application/pdf;base64,${payload.pdfBase64}`
-    await printWindow.loadURL(pdfDataUrl)
-    // Tunggu render PDF (Chrome PDF viewer butuh waktu untuk parse + render thumbnail)
-    await new Promise((resolve) => setTimeout(resolve, 800))
+    const fileUrl = 'file:///' + tmpPdf.replace(/\\/g, '/')
+    // v.96.0626: tunggu did-finish-load (navigasi + plugin PDF siap), bukan cuma loadURL resolve.
+    await new Promise<void>((resolve) => {
+      let done = false
+      const finish = () => { if (!done) { done = true; resolve() } }
+      printWindow!.webContents.once('did-finish-load', finish)
+      printWindow!.loadURL(fileUrl).catch(finish)
+      setTimeout(finish, 4000) // pengaman bila event tak terpicu
+    })
+    // Chrome PDF viewer butuh waktu RENDER isi (bukan cuma load) → jeda cukup biar tdk kosong.
+    await new Promise((resolve) => setTimeout(resolve, 1500))
 
     const options: any = {
       silent: true,
-      printBackground: false,
+      printBackground: true,
       deviceName: payload.deviceName || '',
       copies: payload.copies || 1,
       color: payload.color !== false,
       landscape: payload.landscape === true,
       pageSize: payload.pageSize || 'A4',
-      margins: { marginType: 'default' }
+      margins: { marginType: 'none' }   // slip ukuran pas; margin 'default' bisa meng-clip → kosong
     }
 
     return await new Promise((resolve, reject) => {
@@ -442,6 +455,7 @@ ipcMain.handle('print:pdf', async (_event, payload: {
           try { printWindow.close() } catch {}
           printWindow = null
         }
+        try { if (tmpPdf) fs.unlinkSync(tmpPdf) } catch {}
         if (success) resolve({ ok: true })
         else reject(new Error(errorType || 'Print PDF gagal'))
       })
@@ -450,6 +464,7 @@ ipcMain.handle('print:pdf', async (_event, payload: {
     if (printWindow) {
       try { printWindow.close() } catch {}
     }
+    try { if (tmpPdf) fs.unlinkSync(tmpPdf) } catch {}
     return { ok: false, error: e?.message || String(e) }
   }
 })
