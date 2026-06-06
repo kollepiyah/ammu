@@ -112,11 +112,11 @@
 
       <!-- v.95.0626: penyetelan struk dot-matrix ESC/P — atur sendiri tanpa rebuild -->
       <div v-if="form.posStrukPaper === '9.5'" class="mt-3 p-3 rounded-lg bg-[var(--bg-card-elevated)] border border-[var(--border-default)]">
-        <div class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-2">Penyetelan Struk Cetak (PDF Slip)</div>
-        <div class="grid grid-cols-3 gap-3">
+        <div class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-2">Penyetelan Struk Cetak (Grafis ESC/P)</div>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div>
             <label class="text-[10px] text-[var(--text-secondary)] block mb-1">Lebar slip (mm)</label>
-            <input v-model.number="form.posStrukSlipW" type="number" min="120" max="260" placeholder="220" class="w-full px-2 py-1.5 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)]" />
+            <input v-model.number="form.posStrukSlipW" type="number" min="120" max="260" placeholder="190" class="w-full px-2 py-1.5 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)]" />
           </div>
           <div>
             <label class="text-[10px] text-[var(--text-secondary)] block mb-1">Tinggi slip (mm)</label>
@@ -124,11 +124,15 @@
           </div>
           <div>
             <label class="text-[10px] text-[var(--text-secondary)] block mb-1">Margin atas (mm)</label>
-            <input v-model.number="form.posStrukTopMm" type="number" min="0" max="140" placeholder="6" class="w-full px-2 py-1.5 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)]" />
+            <input v-model.number="form.posStrukTopMm" type="number" min="0" max="140" placeholder="2" class="w-full px-2 py-1.5 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)]" />
+          </div>
+          <div>
+            <label class="text-[10px] text-[var(--text-secondary)] block mb-1">Geser kanan (mm)</label>
+            <input v-model.number="form.posStrukLeftMm" type="number" min="0" max="80" placeholder="0" class="w-full px-2 py-1.5 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)]" />
           </div>
         </div>
         <p class="text-[10px] text-[var(--text-secondary)] mt-2 italic">
-          <i class="fas fa-info-circle mr-1"></i>Struk dicetak sebagai <b>PDF grafis (tajam)</b>, sesuai contoh. Atur ke ukuran kertas slip: Lebar ~210mm, Tinggi 120–140mm. <b>Margin atas</b> = jarak konten dari tepi atas (naikkan kalau konten ketimpa area kosong/kop tercetak di kertas; turunkan kalau terlalu turun). Di driver printer set ukuran kertas <b>Custom</b> sesuai slip biar tidak di-scale.
+          <i class="fas fa-info-circle mr-1"></i>Struk dicetak <b>grafis langsung ke printer (ESC/P)</b> — tajam &amp; tanpa feed kosong. Lebar maks cetak ~8 inci (200mm). Untuk <b>center</b>: kecilkan <b>Lebar slip</b> (mis. 185) lalu naikkan <b>Geser kanan</b> (mis. 15–18) sampai konten di tengah. <b>Margin atas</b> = jarak dari tepi atas (0 = paling atas). <b>Tinggi slip</b> = tinggi fisik slip (mis. 140) agar tiap cetak maju tepat 1 slip.
         </p>
       </div>
 
@@ -1053,9 +1057,10 @@ const form = reactive({
   // v.21.89.0527: Lebar kertas struk POS (dot-matrix). '9.5' = Epson LX-310 continuous form (default).
   posStrukPaper: '9.5',
   // v.95.0626: penyetelan struk cetak PDF slip (mm) — bisa diatur sendiri tanpa rebuild
-  posStrukSlipW: 220,
+  posStrukSlipW: 190,
   posStrukSlipH: 140,
-  posStrukTopMm: 6,
+  posStrukTopMm: 2,
+  posStrukLeftMm: 0, // v.96.0626: geser kanan (center) utk cetak grafis ESC/P
   keu_jenis_tagihan: [],
   keu_bisyaroh_pagi: '',
   keu_bisyaroh_sore: '',
@@ -1085,9 +1090,10 @@ function loadFromSettings() {
   form.keu_jatuh_tempo = s.keu_jatuh_tempo || 10
   form.keu_auto_generate_cron = s.keu_auto_generate_cron !== false // default ON
   form.posStrukPaper = s.posStrukPaper || '9.5'
-  form.posStrukSlipW = Number(s.posStrukSlipW) || 220
+  form.posStrukSlipW = Number(s.posStrukSlipW) || 190
   form.posStrukSlipH = Number(s.posStrukSlipH) || 140
-  form.posStrukTopMm = s.posStrukTopMm != null ? Number(s.posStrukTopMm) : 6
+  form.posStrukTopMm = s.posStrukTopMm != null ? Number(s.posStrukTopMm) : 2
+  form.posStrukLeftMm = s.posStrukLeftMm != null ? Number(s.posStrukLeftMm) : 0
 
   // v.21.97.0527: + nominal_per_lembaga (override per lembaga)
   const _emptyMap = () => ({})
@@ -1433,9 +1439,11 @@ async function simpan() {
       keu_jatuh_tempo: form.keu_jatuh_tempo,
       keu_auto_generate_cron: form.keu_auto_generate_cron,
       posStrukPaper: form.posStrukPaper || '9.5',
-      posStrukSlipW: Number(form.posStrukSlipW) || 220,
+      posStrukSlipW: Number(form.posStrukSlipW) || 190,
       posStrukSlipH: Number(form.posStrukSlipH) || 140,
-      posStrukTopMm: Number(form.posStrukTopMm) || 6,
+      // v.96.0626: jgn pakai `|| 6` — angka 0 (margin atas 0) jadi ke-reset; pakai isFinite
+      posStrukTopMm: Number.isFinite(Number(form.posStrukTopMm)) ? Number(form.posStrukTopMm) : 2,
+      posStrukLeftMm: Number.isFinite(Number(form.posStrukLeftMm)) ? Number(form.posStrukLeftMm) : 0,
       keuTagihanJenis: jenis,
       keu_jenis_tagihan: jenis.map((t) => t.label),
       keu_bisyaroh_pagi: parseRp(form.keu_bisyaroh_pagi),

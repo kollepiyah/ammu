@@ -965,6 +965,14 @@ const takeHome = computed(() => {
 })
 
 const saving = ref(false)
+// v.96.0626: No. slip bisyaroh rapi — BS-NNNddmmyy (seq harian + tgl generate)
+function genBisyarohNo(extra = 0) {
+  const now = new Date()
+  const ddmmyy = String(now.getDate()).padStart(2, '0') + String(now.getMonth() + 1).padStart(2, '0') + String(now.getFullYear()).slice(-2)
+  const todayCount = (gaji.value || []).filter((s) => typeof s.no_bukti === 'string' && s.no_bukti.slice(-6) === ddmmyy).length
+  return 'BS-' + String(todayCount + 1 + extra).padStart(3, '0') + ddmmyy
+}
+
 async function saveSlipSingle() {
   if (!selectedGuru.value) return
   saving.value = true
@@ -992,6 +1000,7 @@ async function saveSlipSingle() {
     const totalIn = pokok + sekolah + tambahan
     await setDoc(doc(db, 'keuangan_gaji', slipId), {
       id: slipId,
+      no_bukti: genBisyarohNo(),
       guru_id: Number(selectedGuru.value.id) || selectedGuru.value.id,
       guru_nama: selectedGuru.value.nama,
       lembaga: selectedGuru.value.lembaga || '',
@@ -1141,6 +1150,7 @@ async function bulkGenerate() {
         total: tp + ts + tsk
       }
     }
+    let bulkSeq = 0
     for (const g of bulkTargets.value) {
       try {
         const slipId = `gaji_${g.id}_${periode}`
@@ -1156,6 +1166,7 @@ async function bulkGenerate() {
         const totalSlip = totalIn + Number(bonus.total || 0) + totalTunjangan
         await setDoc(doc(db, 'keuangan_gaji', slipId), {
           id: slipId,
+          no_bukti: genBisyarohNo(bulkSeq++),
           guru_id: Number(g.id) || g.id,
           guru_nama: g.nama,
           lembaga: g.lembaga || '',

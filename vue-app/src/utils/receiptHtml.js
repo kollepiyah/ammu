@@ -102,7 +102,7 @@ export function buildReceiptStrukHtml(trx = {}, s = {}) {
       '</table></td>' +
       '<td style="vertical-align:top;"><table style="border-collapse:collapse;">' +
         infoRow('Tgl. Bayar', fmtTgl(trx.tanggal)) +
-        infoRow('No. Bukti', trx.no_struk || '-') +
+        infoRow('No. Transaksi', trx.no_struk || '-') +
         infoRow('Metode', trx.metode || 'TUNAI') +
         infoRow('Petugas', trx.operator || '-') +
         infoRow('Status Siswa', trx.status_siswa || 'Aktif') +
@@ -167,7 +167,7 @@ export function buildSlipBisyarohHtml(slip = {}, s = {}) {
       '</table></td>' +
       '<td style="vertical-align:top;"><table style="border-collapse:collapse;">' +
         infoRow('Periode', fmtPeriode(slip.periode)) +
-        infoRow('No. Slip', slip.id || '-') +
+        infoRow('No. Slip', slip.no_bukti || slip.id || '-') +
       '</table></td>' +
     '</tr></table>' +
     '<div style="margin:10px 0 5px;">Rincian bisyaroh :</div>' +

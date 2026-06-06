@@ -56,72 +56,73 @@ function drawSlip(ctx, p) {
     ctx.fillText(String(t), xx, yy)
   }
   const hr = (yy) => { ctx.fillRect(L, yy, R - L, 1.4) }
+  const topBase = mm2pt(p.topMm != null ? p.topMm : 2)
 
-  let y = mm2pt(2)
-  // ── KOP kiri-atas ──
-  y += 13; text(p.kop.line1 || '', L, y, 15, true)
-  if (p.kop.line2) { y += 12; text(p.kop.line2, L, y, 11, true) }
-  for (const ln of [p.kop.line3, p.kop.line4, p.kop.line5].filter(Boolean)) { y += 9.5; text(ln, L, y, 8.5, false) }
-  // ── Kotak BUKTI kanan-atas ──
+  let y = topBase
+  // ── KOP kiri-atas (jarak baris longgar) ──
+  y += 14; text(p.kop.line1 || '', L, y, 15, true)
+  if (p.kop.line2) { y += 13.5; text(p.kop.line2, L, y, 11, true) }
+  for (const ln of [p.kop.line3, p.kop.line4, p.kop.line5].filter(Boolean)) { y += 11; text(ln, L, y, 8.5, false) }
+  // ── Kotak BUKTI kanan-atas (sejajar atas KOP) ──
   ctx.font = 'bold 10px Arial'
   const bw = ctx.measureText(p.boxLabel).width + mm2pt(4)
   const bx = R - bw
-  const by = mm2pt(2) + 1
+  const by = topBase + 3
   const bh = mm2pt(5)
   ctx.lineWidth = 1.4
   ctx.strokeRect(bx, by, bw, bh)
   text(p.boxLabel, bx + bw / 2, by + bh / 2 + 3.5, 10, true, 'center')
 
-  y += mm2pt(2.2); hr(y); y += mm2pt(1)
-  // ── Info 2 kolom ──
-  const colMid = p.Wpt / 2 + mm2pt(4)
-  const labW = mm2pt(23)
-  const labWr = mm2pt(17)
+  y += mm2pt(2.6); hr(y); y += mm2pt(1.8)
+  // ── Info 2 kolom (label flush-kiri, nilai sejajar; titik dua rata) ──
+  const colMid = p.Wpt / 2 + mm2pt(3)
+  const labW = mm2pt(24)
+  const labWr = mm2pt(18)
   const rows = Math.max(p.infoLeft.length, p.infoRight.length)
-  const rh = mm2pt(4.6)
-  let iy = y + 11
+  const rh = mm2pt(5.4)
+  let iy = y + 12
   for (let i = 0; i < rows; i++) {
     const ry = iy + i * rh
     if (p.infoLeft[i]) {
       text(p.infoLeft[i][0], L, ry, 11, false)
       text(':', L + labW, ry, 11, false)
-      text(p.infoLeft[i][1], L + labW + mm2pt(1.8), ry, 11, false)
+      text(p.infoLeft[i][1], L + labW + mm2pt(2), ry, 11, false)
     }
     if (p.infoRight[i]) {
       text(p.infoRight[i][0], colMid, ry, 11, false)
       text(':', colMid + labWr, ry, 11, false)
-      text(p.infoRight[i][1], colMid + labWr + mm2pt(1.8), ry, 11, false)
+      text(p.infoRight[i][1], colMid + labWr + mm2pt(2), ry, 11, false)
     }
   }
-  y = iy + rows * rh
-  y += mm2pt(0.5); hr(y); y += mm2pt(1)
-  // ── Rincian ──
-  y += 11; if (p.midHeader) text(p.midHeader, L, y, 11, false)
+  y = iy + (rows - 1) * rh
+  y += mm2pt(2.4); hr(y); y += mm2pt(2)
+  // ── Rincian (nama flush-kiri, nominal flush-kanan) ──
+  y += 12; if (p.midHeader) text(p.midHeader, L, y, 11, false)
   for (const it of p.items) {
-    y += mm2pt(4.6)
+    y += mm2pt(5.4)
     text(it.name, L + mm2pt(2), y, 11, false)
     if (it.amount) text(it.amount, R, y, 11, false, 'right')
   }
-  y += mm2pt(1.6); hr(y); y += mm2pt(1)
-  // ── Footer: ttd kiri + total kanan ──
+  y += mm2pt(2.6); hr(y); y += mm2pt(2)
+  // ── Footer: ttd kiri + total kanan (label flush-kiri, nilai flush-kanan) ──
   const c1 = L + mm2pt(20)
-  const c2 = p.Wpt / 2 - mm2pt(6)
-  let fy = y + 11
+  const c2 = p.Wpt / 2 - mm2pt(8)
+  let fy = y + 12
   text(p.signLeftLabel, c1, fy, 10, false, 'center')
   text(p.signRightLabel, c2, fy, 10, false, 'center')
   // total kanan
   let ty = fy
-  const totX = p.Wpt / 2 + mm2pt(12)
+  const totX = p.Wpt / 2 + mm2pt(10)
   for (const [lbl, val, big] of p.totals) {
     text(lbl, totX, ty, big ? 13 : 11, !!big)
     text(val, R, ty, big ? 13 : 11, !!big, 'right')
-    ty += mm2pt(big ? 5 : 4.6)
+    ty += mm2pt(big ? 6 : 5.4)
   }
   // nama ttd
-  const sy = fy + mm2pt(14)
+  const sy = fy + mm2pt(16)
   text(p.signLeftName || '( .......... )', c1, sy, 10, false, 'center')
   text(p.signRightName || '( .......... )', c2, sy, 10, false, 'center')
-  return Math.max(ty, sy) + mm2pt(2)
+  return Math.max(ty, sy) + mm2pt(3)
 }
 
 // Canvas 1-bit -> byte ESC/P bit-image (mode 1, 120dpi) -> base64.
@@ -202,7 +203,7 @@ function posData(trx, settings) {
     kop,
     boxLabel: 'BUKTI PEMBAYARAN',
     infoLeft: [['Diterima dari', trx.santri_nama || '-'], ['NIS', trx.santri_nis || '-'], ['Kelas', kelasFull(trx)], ['Terbilang', trx.terbilang || terbilangRupiah(trx.total)]],
-    infoRight: [['Tgl. Bayar', fmtTgl(trx.tanggal)], ['No. Bukti', trx.no_struk || '-'], ['Metode', trx.metode || 'TUNAI']],
+    infoRight: [['Tgl. Bayar', fmtTgl(trx.tanggal)], ['No. Transaksi', trx.no_struk || '-'], ['Metode', trx.metode || 'TUNAI']],
     midHeader: 'Dengan rincian pembayaran sebagai berikut :',
     items,
     totals,
@@ -220,6 +221,9 @@ function tabData(mut, settings, { saldo = null, santri = {}, label = 'TABUNGAN' 
   const nis = santri.nis || mut.santri_nis || '-'
   const kelas = [santri.lembaga_sekolah, santri.kelas_sekolah].filter(Boolean).join(' ') || [santri.lembaga, santri.kelas].filter(Boolean).join(' ') || '-'
   const petugas = mut.operator || mut.petugas || '-'
+  // v.96.0626: nasabah — setor = nama walisantri; tarik = nama santri
+  const waliName = santri.wali || santri.nama_wali || santri.nama_ayah || (santri.ayah && santri.ayah.nama) || ''
+  const nasabah = isSetor ? waliName : (santri.nama || nama)
   const ket = (isSetor ? 'Setoran ' : 'Penarikan ') + (isUS ? 'uang saku' : 'tabungan') + (mut.catatan ? ' (' + mut.catatan + ')' : '')
   const totals = [['Jumlah Rp.', fmtNum(mut.nominal), true]]
   if (saldo != null) totals.push(['Saldo Akhir Rp.', fmtNum(saldo), false])
@@ -227,12 +231,12 @@ function tabData(mut, settings, { saldo = null, santri = {}, label = 'TABUNGAN' 
     kop,
     boxLabel: 'BUKTI ' + (isSetor ? 'SETOR ' : 'TARIK ') + label,
     infoLeft: [['Diterima dari', nama], ['NIS', nis], ['Kelas', kelas], ['Terbilang', terbilangRupiah(mut.nominal)]],
-    infoRight: [['Tanggal', fmtTgl(mut.tanggal)], ['No. Bukti', mut.id || '-'], ['Metode', 'TUNAI']],
+    infoRight: [['Tanggal', fmtTgl(mut.tanggal)], ['No. Transaksi', mut.no_bukti || mut.id || '-'], ['Metode', 'TUNAI']],
     midHeader: 'Dengan rincian sebagai berikut :',
     items: [{ name: '1. ' + ket, amount: 'Rp. ' + fmtNum(mut.nominal) }],
     totals,
-    signLeftLabel: isSetor ? 'Penyetor,' : 'Pengambil,',
-    signLeftName: '( .......... )',
+    signLeftLabel: isSetor ? 'Nasabah (Penyetor),' : 'Nasabah (Penarik),',
+    signLeftName: '( ' + (nasabah || '.......... ') + ' )',
     signRightLabel: 'Penerima,',
     signRightName: '( ' + (petugas && petugas !== '-' ? petugas : '') + ' )'
   }

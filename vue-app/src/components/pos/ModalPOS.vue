@@ -320,7 +320,7 @@ function onBackdrop(e) {
               <div class="ok-badge"><i class="fas fa-check"></i></div>
               <p class="ok-ttl">Transaksi tersimpan</p>
               <p class="ok-sub">{{ savedTrx.santri_nama }} · {{ fmtRp(savedTrx.total) }}</p>
-              <p v-if="savedTrx.no_struk" class="ok-meta">No. Bukti: {{ savedTrx.no_struk }}</p>
+              <p v-if="savedTrx.no_struk" class="ok-meta">No. Transaksi: {{ savedTrx.no_struk }}</p>
               <p v-if="savedTrx.penyetor" class="ok-meta">Penyetor: {{ savedTrx.penyetor }}</p>
 
               <p class="ok-hint">Cetak struk pembayaran:</p>

@@ -512,7 +512,7 @@
               {{ savedMutasi.nama_cache }} &middot;
               {{ savedMutasi.jenis === 'setor' ? 'Setor' : 'Tarik' }} {{ fmtRp(savedMutasi.nominal) }}
             </p>
-            <p class="text-[11px] text-[var(--text-tertiary)] mt-0.5">No. Bukti: {{ savedMutasi.id }}</p>
+            <p class="text-[11px] text-[var(--text-tertiary)] mt-0.5">No. Transaksi: {{ savedMutasi.no_bukti || savedMutasi.id }}</p>
           </div>
 
           <p class="text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)]">Cetak struk:</p>
@@ -963,8 +963,14 @@ async function simpanMutasi() {
       const id = `mutasi_${modalSantriId.value}_${Date.now()}`
       const tanggal = new Date().toISOString().slice(0, 10)
       const opName = auth.sesiAktif?.nama || auth.sesiAktif?.guru || 'Admin'
+      // v.96.0626: No. Transaksi rapi — TB-NNNddmmyy (tabungan) / US-NNNddmmyy (uang saku), mirror POS MU-
+      const dtp = tanggal.split('-')
+      const ddmmyy = (dtp[2] || '') + (dtp[1] || '') + String(dtp[0] || '').slice(-2)
+      const seqN = (mutasiSource.value || []).filter((x) => x.tanggal === tanggal).length + 1
+      const noBukti = (isUangSaku.value ? 'US-' : 'TB-') + String(seqN).padStart(3, '0') + ddmmyy
       await setDoc(doc(db, COLL.value, id), {
         id,
+        no_bukti: noBukti,
         santri_id: modalSantriId.value,
         nama_cache: santri?.nama || '',
         jenis: modalJenis.value,
@@ -979,6 +985,7 @@ async function simpanMutasi() {
       // v.96.0626: tampilkan panel cetak struk (jangan tutup modal — kyai pilih "tampilkan tombol cetak")
       savedMutasi.value = {
         id,
+        no_bukti: noBukti,
         santri_id: modalSantriId.value,
         nama_cache: santri?.nama || '',
         jenis: modalJenis.value,

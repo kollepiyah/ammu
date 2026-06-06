@@ -69,7 +69,7 @@ export async function cetakStrukPdf(trx, settings = {}, { preview = true } = {})
   ]
   const rightRows = [
     ['Tgl. Bayar', tglFmt],
-    ['No. Bukti', trx.no_struk || '-'],
+    ['No. Transaksi', trx.no_struk || '-'],
     ['Metode', trx.metode || 'TUNAI'],
     ['Petugas', trx.operator || '-'],
     ['Status Siswa', trx.status_siswa || 'Aktif']
@@ -204,7 +204,7 @@ export async function cetakStrukSlipPdf(trx, settings = {}, { preview = false } 
   ]
   const rightRows = [
     ['Tgl. Bayar', tglFmt],
-    ['No. Bukti', trx.no_struk || '-'],
+    ['No. Transaksi', trx.no_struk || '-'],
     ['Metode', trx.metode || 'TUNAI']
   ]
   const yStart = y
@@ -321,7 +321,7 @@ export async function cetakSlipBisyarohPdf(slip = {}, settings = {}, { preview =
   ]
   const rightRows = [
     ['Periode', fmtPer(slip.periode)],
-    ['No. Slip', slip.id || '-']
+    ['No. Slip', slip.no_bukti || slip.id || '-']
   ]
   const yStart = y
   const rowH = 5
@@ -484,6 +484,9 @@ export async function cetakSlipTabunganPdf(mut = {}, settings = {}, { preview = 
   const nis = santri.nis || mut.santri_nis || '-'
   const kelas = [santri.lembaga_sekolah, santri.kelas_sekolah].filter(Boolean).join(' ') || [santri.lembaga, santri.kelas].filter(Boolean).join(' ') || '-'
   const petugas = mut.operator || mut.petugas || '-'
+  // v.96.0626: nasabah — setor = nama walisantri; tarik = nama santri
+  const waliName = santri.wali || santri.nama_wali || santri.nama_ayah || (santri.ayah && santri.ayah.nama) || ''
+  const nasabah = isSetor ? waliName : (santri.nama || nama)
   const terb = terbilangRupiah(mut.nominal)
   const tglFmt = formatTglDdMmYyyy(mut.tanggal)
   const leftRows = [
@@ -494,7 +497,7 @@ export async function cetakSlipTabunganPdf(mut = {}, settings = {}, { preview = 
   ]
   const rightRows = [
     ['Tanggal', tglFmt],
-    ['No. Bukti', mut.id || '-'],
+    ['No. Transaksi', mut.no_bukti || mut.id || '-'],
     ['Metode', 'TUNAI']
   ]
   const yStart = y
@@ -544,7 +547,7 @@ export async function cetakSlipTabunganPdf(mut = {}, settings = {}, { preview = 
   const c1 = left + 26
   const c2 = slipW / 2 - 8
   doc.setFont(font, 'normal')
-  doc.text(isSetor ? 'Penyetor,' : 'Pengambil,', c1, y, { align: 'center' })
+  doc.text(isSetor ? 'Nasabah (Penyetor),' : 'Nasabah (Penarik),', c1, y, { align: 'center' })
   doc.text('Penerima,', c2, y, { align: 'center' })
   const totLabelX = slipW / 2 + 16
   let ty = y
@@ -558,7 +561,7 @@ export async function cetakSlipTabunganPdf(mut = {}, settings = {}, { preview = 
   if (saldo != null) rowR('Saldo Akhir Rp.', fmtNum(saldo))
   doc.setFont(font, 'normal')
   const sy = y + 14
-  doc.text('( .................. )', c1, sy, { align: 'center' })
+  doc.text('( ' + (nasabah || '..................') + ' )', c1, sy, { align: 'center' })
   doc.text('( ' + (petugas && petugas !== '-' ? petugas : '') + ' )', c2, sy, { align: 'center' })
 
   const safe = String(nama).replace(/\s+/g, '_')
@@ -642,6 +645,9 @@ export function buildSlipTabunganHtml(mut = {}, settings = {}, { saldo = null, s
   const nis = santri.nis || mut.santri_nis || '-'
   const kelas = [santri.lembaga_sekolah, santri.kelas_sekolah].filter(Boolean).join(' ') || [santri.lembaga, santri.kelas].filter(Boolean).join(' ') || '-'
   const petugas = mut.operator || mut.petugas || '-'
+  // v.96.0626: nasabah — setor = nama walisantri; tarik = nama santri
+  const waliName = santri.wali || santri.nama_wali || santri.nama_ayah || (santri.ayah && santri.ayah.nama) || ''
+  const nasabah = isSetor ? waliName : (santri.nama || nama)
   const ket = (isSetor ? 'Setoran ' : 'Penarikan ') + (isUS ? 'uang saku' : 'tabungan') + (mut.catatan ? ' (' + mut.catatan + ')' : '')
   const midHtml = '<div class="hdr">Dengan rincian sebagai berikut :</div>'
     + `<div class="item"><span>1. ${escapeHtml(ket)}</span><span class="amt">Rp. ${fmtNum(mut.nominal)}</span></div>`
@@ -649,14 +655,14 @@ export function buildSlipTabunganHtml(mut = {}, settings = {}, { saldo = null, s
   if (saldo != null) totRows.push(['Saldo Akhir Rp.', fmtNum(saldo), false])
   const totHtml = totRows.map(([l, v, b]) => `<div class="tr${b ? ' big' : ''}"><span>${escapeHtml(l)}</span><span>${escapeHtml(v)}</span></div>`).join('')
   const footHtml =
-    `<div class="sign">${isSetor ? 'Penyetor,' : 'Pengambil,'}<div class="sp"></div>( .......... )</div>`
+    `<div class="sign">${isSetor ? 'Nasabah (Penyetor),' : 'Nasabah (Penarik),'}<div class="sp"></div>( ${escapeHtml(nasabah || '.......... ')} )</div>`
     + `<div class="sign">Penerima,<div class="sp"></div>( ${escapeHtml(petugas && petugas !== '-' ? petugas : '')} )</div>`
     + `<div class="tot">${totHtml}</div>`
   return slipShellHtml({
     settings,
     boxLabel: 'BUKTI ' + (isSetor ? 'SETOR ' : 'TARIK ') + label,
     infoLeft: [['Diterima dari', nama], ['NIS', nis], ['Kelas', kelas], ['Terbilang', terbilangRupiah(mut.nominal)]],
-    infoRight: [['Tanggal', formatTglDdMmYyyy(mut.tanggal)], ['No. Bukti', mut.id || '-'], ['Metode', 'TUNAI']],
+    infoRight: [['Tanggal', formatTglDdMmYyyy(mut.tanggal)], ['No. Transaksi', mut.no_bukti || mut.id || '-'], ['Metode', 'TUNAI']],
     midHtml,
     footHtml
   })
@@ -683,7 +689,7 @@ export function buildStrukSlipHtml(trx = {}, settings = {}) {
     settings,
     boxLabel: 'BUKTI PEMBAYARAN',
     infoLeft: [['Diterima dari', trx.santri_nama || '-'], ['NIS', trx.santri_nis || '-'], ['Kelas', kelasFull(trx)], ['Terbilang', trx.terbilang || terbilangRupiah(trx.total)]],
-    infoRight: [['Tgl. Bayar', formatTglDdMmYyyy(trx.tanggal)], ['No. Bukti', trx.no_struk || '-'], ['Metode', trx.metode || 'TUNAI']],
+    infoRight: [['Tgl. Bayar', formatTglDdMmYyyy(trx.tanggal)], ['No. Transaksi', trx.no_struk || '-'], ['Metode', trx.metode || 'TUNAI']],
     midHtml,
     footHtml
   })
@@ -797,7 +803,7 @@ function buildStrukWide(trx, settings) {
   ]
   const mr = [
     ['Tgl. Bayar', tglFmt],
-    ['No. Bukti', trx.no_struk || '-'],
+    ['No. Transaksi', trx.no_struk || '-'],
     ['Metode', trx.metode || 'TUNAI']
   ]
   const rows = Math.max(ml.length, mr.length)
@@ -952,7 +958,7 @@ export function buildStrukHtmlWide(trx, s = {}) {
       _row('Terbilang', terb) +
     '</table></td><td style="vertical-align:top;"><table>' +
       _row('Tgl. Bayar', tgl) +
-      _row('No. Bukti', trx.no_struk || '-') +
+      _row('No. Transaksi', trx.no_struk || '-') +
       _row('Metode', trx.metode || 'TUNAI') +
       _row('Petugas', trx.operator || '-') +
     '</table></td></tr></table>' +
