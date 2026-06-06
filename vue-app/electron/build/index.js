@@ -457,7 +457,7 @@ electron_1.ipcMain.handle('print:pdf', async (_event, payload) => {
         await new Promise((resolve) => setTimeout(resolve, 1500));
         const options = {
             silent: true,
-            printBackground: true,
+            printBackground: false,
             deviceName: payload.deviceName || '',
             copies: payload.copies || 1,
             color: payload.color !== false,
@@ -595,6 +595,10 @@ function buildAppMenu() {
 //   Untuk Electron 27 di Windows, kombinasi ini biasanya kurangi blank-screen lag 200-500ms.
 electron_1.app.commandLine.appendSwitch('disable-features', 'CalculateNativeWinOcclusion');
 electron_1.app.commandLine.appendSwitch('disable-renderer-backgrounding');
+// v.96.0626: FIX teks struk ke-render jadi KOTAK ABU saat silent-print PDF.
+//   Akar: rasterisasi GPU di window print offscreen bikin teks PDF jadi blok (.notdef/black-box).
+//   Software rendering (HW accel OFF) merender teks dgn benar. Aman utk Win7/PC lawas (lebih kompatibel).
+electron_1.app.disableHardwareAcceleration();
 electron_1.app.whenReady().then(() => {
     // v.86.0526: pasang native menu bar dulu
     buildAppMenu();
