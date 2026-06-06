@@ -572,8 +572,9 @@ import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
 import { useKeuangan } from '@/composables/useKeuangan'
 import { fmtRp, fmtTgl } from '@/utils/format'
-import { cetakSlipTabunganPdf, buildSlipTabunganHtml, slipPageSizeMicrons, exportRekapTabunganPdf } from '@/utils/strukBuilder'
-import { isElectron, printStruk, getDefaultPrinter } from '@/composables/useDesktopPrint' // v.96.0626: cetak struk setor/tarik gaya POS (HTML)
+import { cetakSlipTabunganPdf, exportRekapTabunganPdf } from '@/utils/strukBuilder'
+import { buildSlipTabunganEscpBase64 } from '@/utils/escpImage'
+import { isElectron, printRaw, getDefaultPrinter } from '@/composables/useDesktopPrint' // v.96.0626: cetak struk setor/tarik gaya POS (ESC/P grafis raster)
 import { useExcel } from '@/composables/useExcel'
 import { useRoute } from 'vue-router'
 
@@ -1034,10 +1035,9 @@ async function cetakSlipLangsung(m) {
   try {
     const s = settings.settings || {}
     if (!isElectron()) { await cetakSlipTabunganPdf(m, s, { preview: true, ...slipOpts(m) }); return }
-    // v.96.0626: cetak HTML (andal di dot-matrix; PDF lewat Electron sering kosong/kotak)
+    // v.96.0626: cetak GRAFIS RASTER via ESC/P (bypass driver -> TANPA feed 5cm, tetap Arial)
     const printerName = getDefaultPrinter()
-    const html = buildSlipTabunganHtml(m, s, slipOpts(m))
-    const res = await printStruk({ html, deviceName: printerName || undefined, pageSize: slipPageSizeMicrons(s) })
+    const res = await printRaw({ base64: buildSlipTabunganEscpBase64(m, s, slipOpts(m)), deviceName: printerName || undefined })
     if (res && res.ok === false) throw new Error(res.error || 'Print gagal')
     toast.success('Struk dikirim ke: ' + (printerName || 'printer default Windows'))
   } catch (e) {

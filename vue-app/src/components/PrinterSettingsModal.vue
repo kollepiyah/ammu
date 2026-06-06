@@ -46,9 +46,9 @@ import {
   setDefaultPrinter,
   onOpenPrinterSettings,
   isElectron,
-  printStruk
+  printRaw
 } from '@/composables/useDesktopPrint'
-import { buildStrukSlipHtml, slipPageSizeMicrons } from '@/utils/strukBuilder'
+import { buildStrukSlipEscpBase64 } from '@/utils/escpImage'
 import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
 const toast = useToast()
@@ -99,10 +99,9 @@ async function tesCetak() {
       items: [{ jenis: 'Tes Cetak Struk', nominal: 100000, keterangan: '' }],
       total: 100000, bayar: 100000, kembali: 0
     }
-    // v.96.0626: cetak via HTML (andal di dot-matrix; PDF lewat Electron sering kosong/kotak)
+    // v.96.0626: cetak GRAFIS RASTER via ESC/P (bypass driver -> tanpa feed 5cm, tetap Arial)
     const s = settingsStore.settings || {}
-    const html = buildStrukSlipHtml(dummy, s)
-    const res = await printStruk({ html, deviceName: selected.value || undefined, pageSize: slipPageSizeMicrons(s) })
+    const res = await printRaw({ base64: buildStrukSlipEscpBase64(dummy, s), deviceName: selected.value || undefined })
     if (res && res.ok === false) throw new Error(res.error || 'Print gagal')
     toast.success('Tes cetak terkirim ke printer')
   } catch (e) {

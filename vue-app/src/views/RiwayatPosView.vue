@@ -8,8 +8,9 @@ import { db } from '@/services/firebase'
 import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
-import { cetakStrukPdf, cetakStrukSlipPdf, buildStrukSlipHtml, slipPageSizeMicrons, fmtRpStruk } from '@/utils/strukBuilder'
-import { printStruk, getDefaultPrinter } from '@/composables/useDesktopPrint'
+import { cetakStrukPdf, cetakStrukSlipPdf, fmtRpStruk } from '@/utils/strukBuilder'
+import { buildStrukSlipEscpBase64 } from '@/utils/escpImage'
+import { printRaw, getDefaultPrinter } from '@/composables/useDesktopPrint'
 import { isSuperAdmin } from '@/utils/roleScope'
 import { writeAuditLog } from '@/utils/auditLog'
 
@@ -232,13 +233,11 @@ async function cetakPdf(t) {
     toast.error('Gagal cetak PDF: ' + (e.message || e))
   }
 }
-// v.96.0626: reprint 2-ply -> HTML slip (silent), SAMA dgn "Cetak Langsung" POS.
-//   Pakai HTML krn cetak PDF lewat Electron tak andal di dot-matrix (kosong/kotak).
+// v.96.0626: reprint 2-ply -> GRAFIS RASTER ESC/P (bypass driver, TANPA feed 5cm), SAMA dgn "Cetak Langsung" POS.
 async function cetakDot(t) {
   try {
     const s = settingsStore.settings || {}
-    const html = buildStrukSlipHtml(toTrx(t), s)
-    const res = await printStruk({ html, deviceName: getDefaultPrinter() || undefined, pageSize: slipPageSizeMicrons(s) })
+    const res = await printRaw({ base64: buildStrukSlipEscpBase64(toTrx(t), s), deviceName: getDefaultPrinter() || undefined })
     if (res && res.ok === false) throw new Error(res.error || 'Print gagal')
     toast.success('Struk dicetak ke printer')
   } catch (e) {

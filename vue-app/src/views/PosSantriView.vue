@@ -203,7 +203,8 @@ import {
 } from 'firebase/firestore'
 import { db } from '@/services/firebase'
 import { sortSantri } from '@/utils/santriSort'
-import { cetakStrukPdf, cetakStrukSlipPdf, cetakStrukDotMatrix, buildStrukHtml, buildStrukSlipHtml, slipPageSizeMicrons, buildStrukEscposBase64 } from '@/utils/strukBuilder'
+import { cetakStrukPdf, cetakStrukSlipPdf, cetakStrukDotMatrix, buildStrukHtml, buildStrukEscposBase64 } from '@/utils/strukBuilder'
+import { buildStrukSlipEscpBase64 } from '@/utils/escpImage'
 import { isElectron, printStruk, printRaw, printPdf, getDefaultPrinter } from '@/composables/useDesktopPrint'
 import { terbilangRupiah } from '@/utils/terbilang'
 import { useSettingsStore } from '@/stores/settings'
@@ -580,10 +581,9 @@ async function cetakLangsung() {
     const paper = String(s.posStrukPaper || '9.5')
     const printerName = getDefaultPrinter()
     if (paper === '9.5') {
-      // v.96.0626: cetak GRAFIS via HTML (andal di dot-matrix). PDF lewat Electron sering kosong/kotak
-      //   (plugin PDF Chrome gagal di-raster di window print). HTML = teks dirender engine browser.
-      const html = buildStrukSlipHtml(lastTrx.value, s)
-      const res = await printStruk({ html, deviceName: printerName || undefined, pageSize: slipPageSizeMicrons(s) })
+      // v.96.0626: cetak GRAFIS RASTER via ESC/P (bypass driver Windows -> TANPA feed 5cm, tetap Arial).
+      //   Slip dirender ke canvas lalu dikirim sbg bit-image ESC/P langsung ke printer (print:raw).
+      const res = await printRaw({ base64: buildStrukSlipEscpBase64(lastTrx.value, s), deviceName: printerName || undefined })
       if (res && res.ok === false) throw new Error(res.error || 'Print gagal')
     } else {
       const html = buildStrukHtml(lastTrx.value, s)

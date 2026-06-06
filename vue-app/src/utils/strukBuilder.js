@@ -591,14 +591,16 @@ function infoRowsHtml(rows) {
 }
 function slipShellHtml({ settings = {}, boxLabel = '', infoLeft = [], infoRight = [], midHtml = '', footHtml = '' }) {
   const kop = buildKopFromSettings(settings)
-  const { W, H, top } = slipDims(settings)
+  const { top } = slipDims(settings)
   const kopRest = [kop.line3, kop.line4, kop.line5].filter(Boolean).map((l) => `<div class="ks">${escapeHtml(l)}</div>`).join('')
+  // v.96.0626: size:auto + width:100% → IKUTI ukuran kertas driver (form "Slip Ammu"), bukan paksa mm sendiri.
+  //   Ini mencegah driver menengahkan konten (blank di atas). Konten mengalir dari atas kertas.
   return '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Slip</title><style>'
-    + `@page{size:${W}mm ${H}mm;margin:0}`
+    + '@page{size:auto;margin:0}'
     + '*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}'
     + 'html,body{margin:0;padding:0}'
     + 'body{font-family:Arial,Helvetica,sans-serif;color:#000;font-size:13pt;line-height:1.34;font-weight:700}'
-    + `.slip{width:${W}mm;height:${H}mm;padding:${top}mm 7mm 3mm 7mm;position:relative}`
+    + `.slip{width:100%;padding:${top}mm 7mm 3mm 7mm;position:relative}`
     + '.k1{font-weight:bold;font-size:17.5pt;line-height:1.08}'
     + '.k2{font-weight:bold;font-size:13pt}'
     + '.ks{font-size:10pt;font-weight:normal;line-height:1.25}'
