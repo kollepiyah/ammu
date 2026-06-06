@@ -495,8 +495,7 @@ export async function cetakSlipTabunganPdf(mut = {}, settings = {}, { preview = 
   const rightRows = [
     ['Tanggal', tglFmt],
     ['No. Bukti', mut.id || '-'],
-    ['Metode', 'TUNAI'],
-    ['Petugas', petugas]
+    ['Metode', 'TUNAI']
   ]
   const yStart = y
   const rowH = 4.2
@@ -546,7 +545,7 @@ export async function cetakSlipTabunganPdf(mut = {}, settings = {}, { preview = 
   const c2 = slipW / 2 - 8
   doc.setFont(font, 'normal')
   doc.text(isSetor ? 'Penyetor,' : 'Pengambil,', c1, y, { align: 'center' })
-  doc.text('Petugas,', c2, y, { align: 'center' })
+  doc.text('Penerima,', c2, y, { align: 'center' })
   const totLabelX = slipW / 2 + 16
   let ty = y
   const rowR = (lbl, val, bold) => {
@@ -598,27 +597,28 @@ function slipShellHtml({ settings = {}, boxLabel = '', infoLeft = [], infoRight 
     + `@page{size:${W}mm ${H}mm;margin:0}`
     + '*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}'
     + 'html,body{margin:0;padding:0}'
-    + 'body{font-family:Arial,Helvetica,sans-serif;color:#000;font-size:10.5pt;line-height:1.3}'
-    + `.slip{width:${W}mm;height:${H}mm;padding:${top + 3}mm 9mm 4mm 9mm;position:relative}`
-    + '.k1{font-weight:bold;font-size:13pt;line-height:1.15}'
-    + '.k2{font-weight:bold;font-size:10pt}'
-    + '.ks{font-size:8pt;line-height:1.25}'
-    + `.box{position:absolute;top:${top + 3}mm;right:9mm;border:1.5px dashed #000;padding:3px 8px;font-weight:bold;font-size:9pt;text-align:center;line-height:1.15}`
-    + '.hr{border-top:1.5px solid #000;margin:2.5mm 0 2mm}'
-    + '.info{display:flex;gap:6mm}'
+    + 'body{font-family:Arial,Helvetica,sans-serif;color:#000;font-size:13pt;line-height:1.34;font-weight:700}'
+    + `.slip{width:${W}mm;height:${H}mm;padding:${top}mm 7mm 3mm 7mm;position:relative}`
+    + '.k1{font-weight:bold;font-size:17.5pt;line-height:1.08}'
+    + '.k2{font-weight:bold;font-size:13pt}'
+    + '.ks{font-size:10pt;font-weight:normal;line-height:1.25}'
+    + `.box{position:absolute;top:${top}mm;right:7mm;border:2px solid #000;padding:3px 10px;font-weight:bold;font-size:11pt;text-align:center;line-height:1.15}`
+    + '.hr{border-top:2px solid #000;margin:2mm 0 1.6mm}'
+    + '.info{display:flex;gap:5mm}'
     + '.info .col{flex:1}'
     + '.r{display:flex;align-items:baseline;margin:0.3mm 0}'
-    + '.r .l{width:26mm;flex:none}'
+    + '.r .l{width:28mm;flex:none}'
     + '.r .c{width:3mm;flex:none}'
     + '.r .v{flex:1}'
-    + '.r .v.b{font-weight:bold}'
-    + '.item{display:flex;justify-content:space-between;gap:4mm;margin:0.3mm 0}'
+    + '.hdr{margin:0.4mm 0 1mm}'
+    + '.item{display:flex;justify-content:space-between;gap:4mm;margin:0.2mm 0}'
     + '.item .amt{white-space:nowrap}'
-    + '.foot{display:flex;align-items:flex-end;gap:4mm;margin-top:3mm}'
-    + '.jml{flex:1;font-weight:bold;font-size:13pt}'
-    + '.jml .sub{font-size:8.5pt;font-weight:normal;margin-top:1mm}'
-    + '.sign{width:38mm;text-align:center;font-size:9.5pt}'
-    + '.sign .sp{height:13mm}'
+    + '.foot{display:flex;align-items:flex-end;gap:3mm;margin-top:2.5mm}'
+    + '.sign{width:33mm;text-align:center}'
+    + '.sign .sp{height:12mm}'
+    + '.tot{margin-left:auto;text-align:right;min-width:54mm}'
+    + '.tot .tr{display:flex;justify-content:space-between;gap:6mm;margin:0.3mm 0}'
+    + '.tot .big{font-weight:bold;font-size:15.5pt}'
     + '</style></head><body><div class="slip">'
     + `<div class="k1">${escapeHtml(kop.line1 || '')}</div>`
     + (kop.line2 ? `<div class="k2">${escapeHtml(kop.line2)}</div>` : '')
@@ -641,20 +641,20 @@ export function buildSlipTabunganHtml(mut = {}, settings = {}, { saldo = null, s
   const kelas = [santri.lembaga_sekolah, santri.kelas_sekolah].filter(Boolean).join(' ') || [santri.lembaga, santri.kelas].filter(Boolean).join(' ') || '-'
   const petugas = mut.operator || mut.petugas || '-'
   const ket = (isSetor ? 'Setoran ' : 'Penarikan ') + (isUS ? 'uang saku' : 'tabungan') + (mut.catatan ? ' (' + mut.catatan + ')' : '')
-  const midHtml =
-    `<div class="r"><span class="l">Terbilang</span><span class="c">:</span><span class="v">${escapeHtml(terbilangRupiah(mut.nominal))}</span></div>`
-    + `<div class="r"><span class="l">Keterangan</span><span class="c">:</span><span class="v">${escapeHtml(ket)}</span></div>`
+  const midHtml = '<div class="hdr">Dengan rincian sebagai berikut :</div>'
+    + `<div class="item"><span>1. ${escapeHtml(ket)}</span><span class="amt">Rp. ${fmtNum(mut.nominal)}</span></div>`
+  const totRows = [['Jumlah Rp.', fmtNum(mut.nominal), true]]
+  if (saldo != null) totRows.push(['Saldo Akhir Rp.', fmtNum(saldo), false])
+  const totHtml = totRows.map(([l, v, b]) => `<div class="tr${b ? ' big' : ''}"><span>${escapeHtml(l)}</span><span>${escapeHtml(v)}</span></div>`).join('')
   const footHtml =
-    `<div class="jml">Jumlah : Rp. ${fmtNum(mut.nominal)}`
-    + (saldo != null ? `<div class="sub">Saldo Akhir : Rp. ${fmtNum(saldo)}</div>` : '')
-    + '</div>'
-    + `<div class="sign">${isSetor ? 'Penyetor,' : 'Pengambil,'}<div class="sp"></div>( .......... )</div>`
-    + `<div class="sign">Petugas,<div class="sp"></div>( ${escapeHtml(petugas && petugas !== '-' ? petugas : '')} )</div>`
+    `<div class="sign">${isSetor ? 'Penyetor,' : 'Pengambil,'}<div class="sp"></div>( .......... )</div>`
+    + `<div class="sign">Penerima,<div class="sp"></div>( ${escapeHtml(petugas && petugas !== '-' ? petugas : '')} )</div>`
+    + `<div class="tot">${totHtml}</div>`
   return slipShellHtml({
     settings,
     boxLabel: 'BUKTI ' + (isSetor ? 'SETOR ' : 'TARIK ') + label,
-    infoLeft: [['Diterima Dari', nama], ['Nomor Induk', nis], ['Kelas', kelas], ['Status Siswa', 'Aktif']],
-    infoRight: [['Tanggal', formatTglDdMmYyyy(mut.tanggal)], ['No. Bukti', mut.id || '-'], ['Metode', 'TUNAI'], ['Petugas', petugas]],
+    infoLeft: [['Diterima dari', nama], ['NIS', nis], ['Kelas', kelas], ['Terbilang', terbilangRupiah(mut.nominal)]],
+    infoRight: [['Tanggal', formatTglDdMmYyyy(mut.tanggal)], ['No. Bukti', mut.id || '-'], ['Metode', 'TUNAI']],
     midHtml,
     footHtml
   })
@@ -668,22 +668,20 @@ export function buildStrukSlipHtml(trx = {}, settings = {}) {
         return `<div class="item"><span>${i + 1}. ${escapeHtml(name)}</span><span class="amt">Rp. ${fmtNum(it.nominal)}</span></div>`
       }).join('')
     : '<div class="item"><span>&mdash;</span><span></span></div>'
-  const midHtml = itemsHtml
-    + `<div class="r" style="margin-top:1mm"><span class="l">Terbilang</span><span class="c">:</span><span class="v">${escapeHtml(trx.terbilang || terbilangRupiah(trx.total))}</span></div>`
-  const sub = []
-  if (trx.bayar != null) sub.push('Bayar Rp. ' + fmtNum(trx.bayar))
-  if (trx.kembali != null) sub.push('Kembali Rp. ' + fmtNum(trx.kembali))
+  const midHtml = '<div class="hdr">Dengan rincian pembayaran sebagai berikut :</div>' + itemsHtml
+  const totRows = [['Jumlah Rp.', fmtNum(trx.total), true]]
+  if (trx.bayar != null) totRows.push(['Pembayaran Rp.', fmtNum(trx.bayar), false])
+  if (trx.kembali != null) totRows.push(['Kembali Rp.', fmtNum(trx.kembali), false])
+  const totHtml = totRows.map(([l, v, b]) => `<div class="tr${b ? ' big' : ''}"><span>${escapeHtml(l)}</span><span>${escapeHtml(v)}</span></div>`).join('')
   const footHtml =
-    `<div class="jml">Jumlah : Rp. ${fmtNum(trx.total)}`
-    + (sub.length ? `<div class="sub">${escapeHtml(sub.join('   '))}</div>` : '')
-    + '</div>'
-    + `<div class="sign">Penyetor,<div class="sp"></div>( ${escapeHtml(String(trx.penyetor || '').trim())} )</div>`
-    + `<div class="sign">Petugas,<div class="sp"></div>( ${escapeHtml(trx.operator || '')} )</div>`
+    `<div class="sign">Penyetor,<div class="sp"></div>( ${escapeHtml(String(trx.penyetor || '').trim())} )</div>`
+    + `<div class="sign">Penerima,<div class="sp"></div>( ${escapeHtml(trx.operator || '')} )</div>`
+    + `<div class="tot">${totHtml}</div>`
   return slipShellHtml({
     settings,
     boxLabel: 'BUKTI PEMBAYARAN',
-    infoLeft: [['Diterima Dari', trx.santri_nama || '-'], ['Nomor Induk', trx.santri_nis || '-'], ['Kelas', kelasFull(trx)], ['Status Siswa', 'Aktif']],
-    infoRight: [['Tanggal', formatTglDdMmYyyy(trx.tanggal)], ['No. Bukti', trx.no_struk || '-'], ['Metode', trx.metode || 'TUNAI'], ['Petugas', trx.operator || '-']],
+    infoLeft: [['Diterima dari', trx.santri_nama || '-'], ['NIS', trx.santri_nis || '-'], ['Kelas', kelasFull(trx)], ['Terbilang', trx.terbilang || terbilangRupiah(trx.total)]],
+    infoRight: [['Tgl. Bayar', formatTglDdMmYyyy(trx.tanggal)], ['No. Bukti', trx.no_struk || '-'], ['Metode', trx.metode || 'TUNAI']],
     midHtml,
     footHtml
   })
