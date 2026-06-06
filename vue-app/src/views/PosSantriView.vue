@@ -203,7 +203,7 @@ import {
 } from 'firebase/firestore'
 import { db } from '@/services/firebase'
 import { sortSantri } from '@/utils/santriSort'
-import { cetakStrukPdf, cetakStrukSlipPdf, cetakStrukDotMatrix, buildStrukHtml, buildStrukEscposBase64 } from '@/utils/strukBuilder'
+import { cetakStrukPdf, cetakStrukSlipPdf, cetakStrukDotMatrix, buildStrukHtml, buildStrukSlipHtml, slipPageSizeMicrons, buildStrukEscposBase64 } from '@/utils/strukBuilder'
 import { isElectron, printStruk, printRaw, printPdf, getDefaultPrinter } from '@/composables/useDesktopPrint'
 import { terbilangRupiah } from '@/utils/terbilang'
 import { useSettingsStore } from '@/stores/settings'
@@ -580,16 +580,10 @@ async function cetakLangsung() {
     const paper = String(s.posStrukPaper || '9.5')
     const printerName = getDefaultPrinter()
     if (paper === '9.5') {
-      // v.95.0626: cetak GRAFIS via PDF "slip" (tajam, sesuai contoh) -> silent print ke printer.
-      //   Ukuran halaman = slip (mm dari settings) supaya 1:1 tanpa di-scale driver.
-      const doc = await cetakStrukSlipPdf(lastTrx.value, s, { preview: false })
-      const blob = doc.output('blob')
-      const wMm = doc.internal.pageSize.getWidth()
-      const hMm = doc.internal.pageSize.getHeight()
-      const res = await printPdf(blob, {
-        deviceName: printerName || undefined,
-        pageSize: { width: Math.round(wMm * 1000), height: Math.round(hMm * 1000) }
-      })
+      // v.96.0626: cetak GRAFIS via HTML (andal di dot-matrix). PDF lewat Electron sering kosong/kotak
+      //   (plugin PDF Chrome gagal di-raster di window print). HTML = teks dirender engine browser.
+      const html = buildStrukSlipHtml(lastTrx.value, s)
+      const res = await printStruk({ html, deviceName: printerName || undefined, pageSize: slipPageSizeMicrons(s) })
       if (res && res.ok === false) throw new Error(res.error || 'Print gagal')
     } else {
       const html = buildStrukHtml(lastTrx.value, s)

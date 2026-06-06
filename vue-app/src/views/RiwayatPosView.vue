@@ -8,8 +8,8 @@ import { db } from '@/services/firebase'
 import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
-import { cetakStrukPdf, cetakStrukSlipPdf, fmtRpStruk } from '@/utils/strukBuilder'
-import { printPdf, getDefaultPrinter } from '@/composables/useDesktopPrint'
+import { cetakStrukPdf, cetakStrukSlipPdf, buildStrukSlipHtml, slipPageSizeMicrons, fmtRpStruk } from '@/utils/strukBuilder'
+import { printStruk, getDefaultPrinter } from '@/composables/useDesktopPrint'
 import { isSuperAdmin } from '@/utils/roleScope'
 import { writeAuditLog } from '@/utils/auditLog'
 
@@ -232,18 +232,13 @@ async function cetakPdf(t) {
     toast.error('Gagal cetak PDF: ' + (e.message || e))
   }
 }
-// v.95.0626: reprint 2-ply -> PDF slip grafis (silent), SAMA dgn "Cetak Langsung" POS
+// v.96.0626: reprint 2-ply -> HTML slip (silent), SAMA dgn "Cetak Langsung" POS.
+//   Pakai HTML krn cetak PDF lewat Electron tak andal di dot-matrix (kosong/kotak).
 async function cetakDot(t) {
   try {
     const s = settingsStore.settings || {}
-    const doc = await cetakStrukSlipPdf(toTrx(t), s, { preview: false })
-    const blob = doc.output('blob')
-    const wMm = doc.internal.pageSize.getWidth()
-    const hMm = doc.internal.pageSize.getHeight()
-    const res = await printPdf(blob, {
-      deviceName: getDefaultPrinter() || undefined,
-      pageSize: { width: Math.round(wMm * 1000), height: Math.round(hMm * 1000) }
-    })
+    const html = buildStrukSlipHtml(toTrx(t), s)
+    const res = await printStruk({ html, deviceName: getDefaultPrinter() || undefined, pageSize: slipPageSizeMicrons(s) })
     if (res && res.ok === false) throw new Error(res.error || 'Print gagal')
     toast.success('Struk dicetak ke printer')
   } catch (e) {

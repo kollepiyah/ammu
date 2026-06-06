@@ -567,6 +567,128 @@ export async function cetakSlipTabunganPdf(mut = {}, settings = {}, { preview = 
   return doc
 }
 
+// ── 1g) HTML slip (CETAK LANGSUNG dot-matrix) ───────────────────────────────────
+// v.96.0626: cetak PDF lewat Electron TAK ANDAL di dot-matrix (kosong / teks jadi KOTAK abu —
+//   plugin PDF Chrome gagal di-raster di window print). Cetak langsung kini pakai HTML (teks
+//   dirender engine browser = pasti keluar, tajam) via IPC print:struk. Layout disamakan dgn slip PDF
+//   / contoh struk: KOP, kotak BUKTI kanan-atas, info 2 kolom, rincian, Jumlah, ttd. Preview/unduh tetap PDF.
+function slipDims(settings = {}) {
+  const num = (v, lo, hi, def) => { const n = parseFloat(v); return Number.isFinite(n) && n >= lo && n <= hi ? n : def }
+  return {
+    W: num(settings.posStrukSlipW, 120, 260, 220),
+    H: num(settings.posStrukSlipH, 60, 230, 140),
+    top: num(settings.posStrukTopMm, 0, 140, 6)
+  }
+}
+// ukuran halaman (microns) utk opsi print Electron — dipanggil view yg cetak HTML slip.
+export function slipPageSizeMicrons(settings = {}) {
+  const d = slipDims(settings)
+  return { width: Math.round(d.W * 1000), height: Math.round(d.H * 1000) }
+}
+function infoRowsHtml(rows) {
+  return (rows || []).filter(Boolean).map(([k, v]) =>
+    `<div class="r"><span class="l">${escapeHtml(k)}</span><span class="c">:</span><span class="v">${escapeHtml(String(v == null ? '' : v))}</span></div>`
+  ).join('')
+}
+function slipShellHtml({ settings = {}, boxLabel = '', infoLeft = [], infoRight = [], midHtml = '', footHtml = '' }) {
+  const kop = buildKopFromSettings(settings)
+  const { W, H, top } = slipDims(settings)
+  const kopRest = [kop.line3, kop.line4, kop.line5].filter(Boolean).map((l) => `<div class="ks">${escapeHtml(l)}</div>`).join('')
+  return '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Slip</title><style>'
+    + `@page{size:${W}mm ${H}mm;margin:0}`
+    + '*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}'
+    + 'html,body{margin:0;padding:0}'
+    + 'body{font-family:Arial,Helvetica,sans-serif;color:#000;font-size:10.5pt;line-height:1.3}'
+    + `.slip{width:${W}mm;height:${H}mm;padding:${top + 3}mm 9mm 4mm 9mm;position:relative}`
+    + '.k1{font-weight:bold;font-size:13pt;line-height:1.15}'
+    + '.k2{font-weight:bold;font-size:10pt}'
+    + '.ks{font-size:8pt;line-height:1.25}'
+    + `.box{position:absolute;top:${top + 3}mm;right:9mm;border:1.5px dashed #000;padding:3px 8px;font-weight:bold;font-size:9pt;text-align:center;line-height:1.15}`
+    + '.hr{border-top:1.5px solid #000;margin:2.5mm 0 2mm}'
+    + '.info{display:flex;gap:6mm}'
+    + '.info .col{flex:1}'
+    + '.r{display:flex;align-items:baseline;margin:0.3mm 0}'
+    + '.r .l{width:26mm;flex:none}'
+    + '.r .c{width:3mm;flex:none}'
+    + '.r .v{flex:1}'
+    + '.r .v.b{font-weight:bold}'
+    + '.item{display:flex;justify-content:space-between;gap:4mm;margin:0.3mm 0}'
+    + '.item .amt{white-space:nowrap}'
+    + '.foot{display:flex;align-items:flex-end;gap:4mm;margin-top:3mm}'
+    + '.jml{flex:1;font-weight:bold;font-size:13pt}'
+    + '.jml .sub{font-size:8.5pt;font-weight:normal;margin-top:1mm}'
+    + '.sign{width:38mm;text-align:center;font-size:9.5pt}'
+    + '.sign .sp{height:13mm}'
+    + '</style></head><body><div class="slip">'
+    + `<div class="k1">${escapeHtml(kop.line1 || '')}</div>`
+    + (kop.line2 ? `<div class="k2">${escapeHtml(kop.line2)}</div>` : '')
+    + kopRest
+    + `<div class="box">${escapeHtml(boxLabel)}</div>`
+    + '<div class="hr"></div>'
+    + `<div class="info"><div class="col">${infoRowsHtml(infoLeft)}</div><div class="col">${infoRowsHtml(infoRight)}</div></div>`
+    + '<div class="hr"></div>'
+    + `<div class="mid">${midHtml}</div>`
+    + '<div class="hr"></div>'
+    + `<div class="foot">${footHtml}</div>`
+    + '</div></body></html>'
+}
+// Slip TABUNGAN / UANG SAKU (setor/tarik)
+export function buildSlipTabunganHtml(mut = {}, settings = {}, { saldo = null, santri = {}, label = 'TABUNGAN' } = {}) {
+  const isSetor = String(mut.jenis || 'setor').toLowerCase() === 'setor'
+  const isUS = String(label).toUpperCase().includes('SAKU')
+  const nama = mut.nama_cache || santri.nama || '-'
+  const nis = santri.nis || mut.santri_nis || '-'
+  const kelas = [santri.lembaga_sekolah, santri.kelas_sekolah].filter(Boolean).join(' ') || [santri.lembaga, santri.kelas].filter(Boolean).join(' ') || '-'
+  const petugas = mut.operator || mut.petugas || '-'
+  const ket = (isSetor ? 'Setoran ' : 'Penarikan ') + (isUS ? 'uang saku' : 'tabungan') + (mut.catatan ? ' (' + mut.catatan + ')' : '')
+  const midHtml =
+    `<div class="r"><span class="l">Terbilang</span><span class="c">:</span><span class="v">${escapeHtml(terbilangRupiah(mut.nominal))}</span></div>`
+    + `<div class="r"><span class="l">Keterangan</span><span class="c">:</span><span class="v">${escapeHtml(ket)}</span></div>`
+  const footHtml =
+    `<div class="jml">Jumlah : Rp. ${fmtNum(mut.nominal)}`
+    + (saldo != null ? `<div class="sub">Saldo Akhir : Rp. ${fmtNum(saldo)}</div>` : '')
+    + '</div>'
+    + `<div class="sign">${isSetor ? 'Penyetor,' : 'Pengambil,'}<div class="sp"></div>( .......... )</div>`
+    + `<div class="sign">Petugas,<div class="sp"></div>( ${escapeHtml(petugas && petugas !== '-' ? petugas : '')} )</div>`
+  return slipShellHtml({
+    settings,
+    boxLabel: 'BUKTI ' + (isSetor ? 'SETOR ' : 'TARIK ') + label,
+    infoLeft: [['Diterima Dari', nama], ['Nomor Induk', nis], ['Kelas', kelas], ['Status Siswa', 'Aktif']],
+    infoRight: [['Tanggal', formatTglDdMmYyyy(mut.tanggal)], ['No. Bukti', mut.id || '-'], ['Metode', 'TUNAI'], ['Petugas', petugas]],
+    midHtml,
+    footHtml
+  })
+}
+// Slip PEMBAYARAN POS (struk pembayaran santri)
+export function buildStrukSlipHtml(trx = {}, settings = {}) {
+  const items = Array.isArray(trx.items) ? trx.items : []
+  const itemsHtml = items.length
+    ? items.map((it, i) => {
+        const name = (it.jenis || '-') + (it.keterangan ? ' (' + it.keterangan + ')' : '')
+        return `<div class="item"><span>${i + 1}. ${escapeHtml(name)}</span><span class="amt">Rp. ${fmtNum(it.nominal)}</span></div>`
+      }).join('')
+    : '<div class="item"><span>&mdash;</span><span></span></div>'
+  const midHtml = itemsHtml
+    + `<div class="r" style="margin-top:1mm"><span class="l">Terbilang</span><span class="c">:</span><span class="v">${escapeHtml(trx.terbilang || terbilangRupiah(trx.total))}</span></div>`
+  const sub = []
+  if (trx.bayar != null) sub.push('Bayar Rp. ' + fmtNum(trx.bayar))
+  if (trx.kembali != null) sub.push('Kembali Rp. ' + fmtNum(trx.kembali))
+  const footHtml =
+    `<div class="jml">Jumlah : Rp. ${fmtNum(trx.total)}`
+    + (sub.length ? `<div class="sub">${escapeHtml(sub.join('   '))}</div>` : '')
+    + '</div>'
+    + `<div class="sign">Penyetor,<div class="sp"></div>( ${escapeHtml(String(trx.penyetor || '').trim())} )</div>`
+    + `<div class="sign">Petugas,<div class="sp"></div>( ${escapeHtml(trx.operator || '')} )</div>`
+  return slipShellHtml({
+    settings,
+    boxLabel: 'BUKTI PEMBAYARAN',
+    infoLeft: [['Diterima Dari', trx.santri_nama || '-'], ['Nomor Induk', trx.santri_nis || '-'], ['Kelas', kelasFull(trx)], ['Status Siswa', 'Aktif']],
+    infoRight: [['Tanggal', formatTglDdMmYyyy(trx.tanggal)], ['No. Bukti', trx.no_struk || '-'], ['Metode', trx.metode || 'TUNAI'], ['Petugas', trx.operator || '-']],
+    midHtml,
+    footHtml
+  })
+}
+
 // ── 1f) PDF REKAP TABUNGAN (saldo per santri) ──
 export async function exportRekapTabunganPdf(items = [], settings = {}, { title = 'REKAP TABUNGAN', namaOf = null } = {}) {
   const kop = buildKopFromSettings(settings)

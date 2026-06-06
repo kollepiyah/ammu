@@ -46,11 +46,13 @@ import {
   setDefaultPrinter,
   onOpenPrinterSettings,
   isElectron,
-  printPdf
+  printStruk
 } from '@/composables/useDesktopPrint'
-import { cetakStrukSlipPdf } from '@/utils/strukBuilder'
+import { buildStrukSlipHtml, slipPageSizeMicrons } from '@/utils/strukBuilder'
+import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
 const toast = useToast()
+const settingsStore = useSettingsStore()
 const open = ref(false)
 const printers = ref([])
 const selected = ref('')
@@ -97,14 +99,10 @@ async function tesCetak() {
       items: [{ jenis: 'Tes Cetak Struk', nominal: 100000, keterangan: '' }],
       total: 100000, bayar: 100000, kembali: 0
     }
-    const doc = await cetakStrukSlipPdf(dummy, {}, { preview: false })
-    const blob = doc.output('blob')
-    const wMm = doc.internal.pageSize.getWidth()
-    const hMm = doc.internal.pageSize.getHeight()
-    const res = await printPdf(blob, {
-      deviceName: selected.value || undefined,
-      pageSize: { width: Math.round(wMm * 1000), height: Math.round(hMm * 1000) }
-    })
+    // v.96.0626: cetak via HTML (andal di dot-matrix; PDF lewat Electron sering kosong/kotak)
+    const s = settingsStore.settings || {}
+    const html = buildStrukSlipHtml(dummy, s)
+    const res = await printStruk({ html, deviceName: selected.value || undefined, pageSize: slipPageSizeMicrons(s) })
     if (res && res.ok === false) throw new Error(res.error || 'Print gagal')
     toast.success('Tes cetak terkirim ke printer')
   } catch (e) {

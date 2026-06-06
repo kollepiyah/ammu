@@ -572,8 +572,8 @@ import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
 import { useKeuangan } from '@/composables/useKeuangan'
 import { fmtRp, fmtTgl } from '@/utils/format'
-import { cetakSlipTabunganPdf, exportRekapTabunganPdf } from '@/utils/strukBuilder'
-import { isElectron, printPdf, getDefaultPrinter } from '@/composables/useDesktopPrint' // v.96.0626: cetak struk setor/tarik gaya POS
+import { cetakSlipTabunganPdf, buildSlipTabunganHtml, slipPageSizeMicrons, exportRekapTabunganPdf } from '@/utils/strukBuilder'
+import { isElectron, printStruk, getDefaultPrinter } from '@/composables/useDesktopPrint' // v.96.0626: cetak struk setor/tarik gaya POS (HTML)
 import { useExcel } from '@/composables/useExcel'
 import { useRoute } from 'vue-router'
 
@@ -1034,15 +1034,10 @@ async function cetakSlipLangsung(m) {
   try {
     const s = settings.settings || {}
     if (!isElectron()) { await cetakSlipTabunganPdf(m, s, { preview: true, ...slipOpts(m) }); return }
+    // v.96.0626: cetak HTML (andal di dot-matrix; PDF lewat Electron sering kosong/kotak)
     const printerName = getDefaultPrinter()
-    const docPdf = await cetakSlipTabunganPdf(m, s, { preview: false, ...slipOpts(m) })
-    const blob = docPdf.output('blob')
-    const wMm = docPdf.internal.pageSize.getWidth()
-    const hMm = docPdf.internal.pageSize.getHeight()
-    const res = await printPdf(blob, {
-      deviceName: printerName || undefined,
-      pageSize: { width: Math.round(wMm * 1000), height: Math.round(hMm * 1000) }
-    })
+    const html = buildSlipTabunganHtml(m, s, slipOpts(m))
+    const res = await printStruk({ html, deviceName: printerName || undefined, pageSize: slipPageSizeMicrons(s) })
     if (res && res.ok === false) throw new Error(res.error || 'Print gagal')
     toast.success('Struk dikirim ke: ' + (printerName || 'printer default Windows'))
   } catch (e) {
