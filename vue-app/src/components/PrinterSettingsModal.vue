@@ -46,8 +46,9 @@ import {
   setDefaultPrinter,
   onOpenPrinterSettings,
   isElectron,
-  printRaw
+  printPdf
 } from '@/composables/useDesktopPrint'
+import { cetakStrukSlipPdf } from '@/utils/strukBuilder'
 import { useToast } from '@/composables/useToast'
 const toast = useToast()
 const open = ref(false)
@@ -85,17 +86,25 @@ function simpan() {
 async function tesCetak() {
   testing.value = true
   try {
-    // v.95.0626: tes via ESC/P raw (jalur sama dgn struk dot-matrix)
-    const ESC = '\x1B'
-    const txt =
-      'AMMU ONLINE - TES CETAK (ESC/P)\r\n' +
-      '================================\r\n' +
-      'Printer: ' + (selected.value || '(default Windows)') + '\r\n' +
-      'Waktu  : ' + new Date().toLocaleString('id-ID') + '\r\n\r\n' +
-      'Jika teks ini tercetak rapi, printer dot-matrix siap dipakai.\r\n'
-    const raw = ESC + '@' + ESC + 'G' + ESC + '2' + ESC + 'P' + txt + '\x0C'
-    const base64 = typeof btoa === 'function' ? btoa(raw) : raw
-    const res = await printRaw({ base64, deviceName: selected.value || undefined })
+    // v.95.0626: tes cetak pakai contoh STRUK SLIP PDF (jalur sama persis dgn cetak struk asli)
+    const now = new Date()
+    const dummy = {
+      santri_nama: 'TES CETAK STRUK', santri_nis: '-',
+      tanggal: now.toISOString().slice(0, 10),
+      no_struk: 'TEST-' + now.toTimeString().slice(0, 5).replace(':', ''),
+      metode: 'TUNAI', operator: selected.value || 'Printer',
+      penyetor: '', terbilang: 'Seratus Ribu Rupiah',
+      items: [{ jenis: 'Tes Cetak Struk', nominal: 100000, keterangan: '' }],
+      total: 100000, bayar: 100000, kembali: 0
+    }
+    const doc = await cetakStrukSlipPdf(dummy, {}, { preview: false })
+    const blob = doc.output('blob')
+    const wMm = doc.internal.pageSize.getWidth()
+    const hMm = doc.internal.pageSize.getHeight()
+    const res = await printPdf(blob, {
+      deviceName: selected.value || undefined,
+      pageSize: { width: Math.round(wMm * 1000), height: Math.round(hMm * 1000) }
+    })
     if (res && res.ok === false) throw new Error(res.error || 'Print gagal')
     toast.success('Tes cetak terkirim ke printer')
   } catch (e) {

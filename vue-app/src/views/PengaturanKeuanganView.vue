@@ -104,32 +104,23 @@
 
       <!-- v.95.0626: penyetelan struk dot-matrix ESC/P — atur sendiri tanpa rebuild -->
       <div v-if="form.posStrukPaper === '9.5'" class="mt-3 p-3 rounded-lg bg-[var(--bg-card-elevated)] border border-[var(--border-default)]">
-        <div class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-2">Penyetelan Struk Dot-matrix (ESC/P)</div>
-        <div class="grid grid-cols-2 gap-3">
+        <div class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-2">Penyetelan Struk Cetak (PDF Slip)</div>
+        <div class="grid grid-cols-3 gap-3">
           <div>
-            <label class="text-[10px] text-[var(--text-secondary)] block mb-1">Ukuran font</label>
-            <select v-model.number="form.posStrukCpi" class="w-full px-2 py-1.5 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)]">
-              <option :value="10">10 cpi (paling besar)</option>
-              <option :value="12">12 cpi</option>
-              <option :value="15">15 cpi (kecil)</option>
-              <option :value="17">17 cpi (sangat kecil)</option>
-            </select>
+            <label class="text-[10px] text-[var(--text-secondary)] block mb-1">Lebar slip (mm)</label>
+            <input v-model.number="form.posStrukSlipW" type="number" min="120" max="260" placeholder="210" class="w-full px-2 py-1.5 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)]" />
           </div>
           <div>
-            <label class="text-[10px] text-[var(--text-secondary)] block mb-1">Tinggi slip (baris) = cm × 3,15</label>
-            <input v-model.number="form.posStrukFormLines" type="number" min="6" max="127" class="w-full px-2 py-1.5 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)]" />
+            <label class="text-[10px] text-[var(--text-secondary)] block mb-1">Tinggi slip (mm)</label>
+            <input v-model.number="form.posStrukSlipH" type="number" min="60" max="220" placeholder="130" class="w-full px-2 py-1.5 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)]" />
           </div>
           <div>
-            <label class="text-[10px] text-[var(--text-secondary)] block mb-1">Geser ke kanan (kolom)</label>
-            <input v-model.number="form.posStrukLeftCols" type="number" min="0" max="40" class="w-full px-2 py-1.5 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)]" />
-          </div>
-          <div>
-            <label class="text-[10px] text-[var(--text-secondary)] block mb-1">Margin atas (baris)</label>
-            <input v-model.number="form.posStrukTopLines" type="number" min="0" max="12" class="w-full px-2 py-1.5 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)]" />
+            <label class="text-[10px] text-[var(--text-secondary)] block mb-1">Margin atas (mm)</label>
+            <input v-model.number="form.posStrukTopMm" type="number" min="0" max="140" placeholder="6" class="w-full px-2 py-1.5 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)]" />
           </div>
         </div>
         <p class="text-[10px] text-[var(--text-secondary)] mt-2 italic">
-          <i class="fas fa-info-circle mr-1"></i>Atur lalu <b>Simpan</b> — langsung berlaku tanpa rebuild. Spasi baris 8 LPI (rapat, muat slip pendek). <b>cpi 10</b> = teks paling besar &amp; mengisi lebar ~210mm (default); pilih 12/15 kalau kelebaran. <b>Tinggi slip (baris) = tinggi kertas (cm) × 3,15</b> — mis. 12cm→38, 13cm→41, 14cm→44. <b>Margin atas 0</b> (printer dot-matrix biasanya sudah ada whitespace atas ~5cm). Geser kanan utk center. Kalau bawah <b>kepotong</b>: kecilkan Tinggi slip atau pilih cpi 12.
+          <i class="fas fa-info-circle mr-1"></i>Struk dicetak sebagai <b>PDF grafis (tajam)</b>, sesuai contoh. Atur ke ukuran kertas slip: Lebar ~210mm, Tinggi 120–140mm. <b>Margin atas</b> = jarak konten dari tepi atas (naikkan kalau konten ketimpa area kosong/kop tercetak di kertas; turunkan kalau terlalu turun). Di driver printer set ukuran kertas <b>Custom</b> sesuai slip biar tidak di-scale.
         </p>
       </div>
 

@@ -203,8 +203,8 @@ import {
 } from 'firebase/firestore'
 import { db } from '@/services/firebase'
 import { sortSantri } from '@/utils/santriSort'
-import { cetakStrukPdf, cetakStrukDotMatrix, buildStrukHtml, buildStrukEscposBase64 } from '@/utils/strukBuilder'
-import { isElectron, printStruk, printRaw, getDefaultPrinter } from '@/composables/useDesktopPrint'
+import { cetakStrukPdf, cetakStrukSlipPdf, cetakStrukDotMatrix, buildStrukHtml, buildStrukEscposBase64 } from '@/utils/strukBuilder'
+import { isElectron, printStruk, printRaw, printPdf, getDefaultPrinter } from '@/composables/useDesktopPrint'
 import { terbilangRupiah } from '@/utils/terbilang'
 import { useSettingsStore } from '@/stores/settings'
 import ModalPOS from '@/components/pos/ModalPOS.vue'
@@ -384,9 +384,16 @@ async function openModal(s) {
   pendingTagihan.value = []
   try {
     const tagCol = collection(db, 'keuangan_tagihan')
-    const snap = await getDocs(query(tagCol, where('santri_id', '==', s.id), limit(50)))
-    const pending = snap.docs
-      .map((d) => ({ id: d.id, ...d.data() }))
+    // v.95.0626: FIX tagihan khusus tak muncul di POS — cocokkan santri_id sbg STRING (+ NUMBER bila numerik),
+    //   tanpa limit, supaya SAMA dgn yg dilihat akun wali (yg pakai String(santri_id)).
+    const sid = String(s.id)
+    const seen = new Map()
+    const qs = [getDocs(query(tagCol, where('santri_id', '==', sid)))]
+    const sidNum = Number(sid)
+    if (!Number.isNaN(sidNum) && String(sidNum) === sid) qs.push(getDocs(query(tagCol, where('santri_id', '==', sidNum))))
+    const snaps = await Promise.all(qs)
+    for (const snp of snaps) for (const d of snp.docs) seen.set(d.id, { id: d.id, ...d.data() })
+    const pending = [...seen.values()]
       .filter((t) => t.status === 'belum' || t.status === 'partial')
       .sort((a, b) => (a.jatuh_tempo || '').localeCompare(b.jatuh_tempo || ''))
     // v.21.87.0527: kirim sisa (remaining) + meta utk pembayaran sebagian (partial)
@@ -440,6 +447,7 @@ async function handleSimpan(payload) {
       (santriRef?.ayah && santriRef.ayah.nama) ||
       ''
     const writes = []
+    let tagUpdErr = '' // v.95.0626: tangkap error update tagihan biar tidak gagal diam-diam (bug cicil)
     let lunasCount = 0
     let partialCount = 0
     let totalMasuk = 0
@@ -481,13 +489,16 @@ async function handleSimpan(payload) {
         if (isLunas) lunasCount++
         else partialCount++
         writes.push(
-          updateDoc(doc(db, 'keuangan_tagihan', item.tagihan_id), upd).catch((e) =>
+          updateDoc(doc(db, 'keuangan_tagihan', item.tagihan_id), upd).catch((e) => {
             console.warn('[pos] update tagihan fail:', item.tagihan_id, e.message)
-          )
+            tagUpdErr = e.message || String(e)
+          })
         )
       }
     }
     await Promise.all(writes)
+    // v.95.0626: kalau update tagihan gagal (mis. dok tak ada / izin), beri tahu — jangan diam (bug cicil tetap 1jt)
+    if (tagUpdErr) toast.error('Pembayaran tercatat, TAPI sisa tagihan GAGAL diperbarui: ' + tagUpdErr)
     if (histori.value.length > 5) histori.value = histori.value.slice(0, 5)
     // Update ringkasan harian
     todayStats.value = {
@@ -552,8 +563,14 @@ async function cetakLastPdf() {
     toast.error('Gagal cetak PDF: ' + (e.message || e))
   }
 }
-function cetakLastDot() {
-  if (lastTrx.value) cetakStrukDotMatrix(lastTrx.value, settingsStore.settings || {})
+// v.95.0626: "Struk Print" -> buka PDF slip grafis (pratinjau, bisa cetak manual) — format SAMA dgn Cetak Langsung
+async function cetakLastDot() {
+  if (!lastTrx.value) return
+  try {
+    await cetakStrukSlipPdf(lastTrx.value, settingsStore.settings || {}, { preview: true })
+  } catch (e) {
+    toast.error('Gagal buka struk: ' + (e.message || e))
+  }
 }
 // v.07.0626: cetak langsung (silent) ke printer default Electron
 async function cetakLangsung() {
@@ -563,9 +580,16 @@ async function cetakLangsung() {
     const paper = String(s.posStrukPaper || '9.5')
     const printerName = getDefaultPrinter()
     if (paper === '9.5') {
-      // v.95.0626: dot-matrix Epson -> ESC/P raw text (1 slip, ukuran pas, tajam spt struk lama)
-      const base64 = buildStrukEscposBase64(lastTrx.value, s)
-      const res = await printRaw({ base64, deviceName: printerName || undefined })
+      // v.95.0626: cetak GRAFIS via PDF "slip" (tajam, sesuai contoh) -> silent print ke printer.
+      //   Ukuran halaman = slip (mm dari settings) supaya 1:1 tanpa di-scale driver.
+      const doc = await cetakStrukSlipPdf(lastTrx.value, s, { preview: false })
+      const blob = doc.output('blob')
+      const wMm = doc.internal.pageSize.getWidth()
+      const hMm = doc.internal.pageSize.getHeight()
+      const res = await printPdf(blob, {
+        deviceName: printerName || undefined,
+        pageSize: { width: Math.round(wMm * 1000), height: Math.round(hMm * 1000) }
+      })
       if (res && res.ok === false) throw new Error(res.error || 'Print gagal')
     } else {
       const html = buildStrukHtml(lastTrx.value, s)

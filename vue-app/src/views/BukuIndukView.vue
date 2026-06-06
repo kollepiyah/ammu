@@ -401,7 +401,7 @@ import { buildListPdf, buildKopFromSettings } from '@/utils/pdfBuilder'
 import { isSuperAdmin } from '@/utils/roleScope'
 import { writeAuditLog } from '@/utils/auditLog'
 // v.21.103.0527: reprint struk dari BukuInduk untuk record sumber pos_santri
-import { cetakStrukPdf, cetakStrukDotMatrix } from '@/utils/strukBuilder'
+import { cetakStrukPdf, cetakStrukSlipPdf } from '@/utils/strukBuilder'
 import { collection as fbCollection, query as fbQuery, where as fbWhere, getDocs as fbGetDocs } from 'firebase/firestore'
 
 const toast = useToast()
@@ -448,8 +448,12 @@ async function cetakUlangStruk(b, mode = 'pdf') {
       total: items.reduce((sum, e) => sum + Number(e.nominal || 0), 0)
     }
     const sset = settingsStore.settings || {}
-    const fn = mode === 'dot' ? cetakStrukDotMatrix : cetakStrukPdf
-    await fn(trx, sset)
+    // v.95.0626: 2 mode -> 'dot' = struk print 2-ply (PDF slip grafis), selain itu = Struk PDF (F4)
+    if (mode === 'dot') {
+      await cetakStrukSlipPdf(trx, sset, { preview: true })
+    } else {
+      await cetakStrukPdf(trx, sset)
+    }
     toast.success('Struk dicetak ulang')
   } catch (e) {
     console.error('[cetakUlangStruk]', e)

@@ -71,98 +71,59 @@ function wrap(inner) {
   )
 }
 
-// ── Bukti Pembayaran (santri) — layout meniru struk Yayasan (gambar) ────────
-// v.95.0626: KOP rata-kiri + kotak dashed "BUKTI PEMBAYARAN" kanan-atas;
-//   Status Siswa inline di baris Kelas; rincian = daftar bernomor + leader titik;
-//   total band (Jumlah/Pembayaran/Kembali) di kanan sejajar ttd Penyetor/Penerima.
-function fmtRpDot(n) {
-  return 'Rp. ' + fmtNum(n)
-}
-
-// Header: KOP kiri (line1 besar, tanpa logo) + kotak dashed kanan-atas + garis bawah
-function receiptHeaderHtml(s = {}, boxLabel = 'BUKTI PEMBAYARAN') {
-  const l1 = esc(s.kopLine1 || 'YAYASAN MAMBAUL ULUM')
-  const l2 = esc(s.kopLine2 || 'PONDOK PESANTREN MAMBAUL ULUM')
-  const addr = [s.kopLine3, s.kopLine4, s.kopLine5].filter(Boolean).map((a) => esc(a))
-  return (
-    '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;' +
-    'border-bottom:1.5px solid #1a1a1a;padding-bottom:8px;margin-bottom:11px;">' +
-      '<div style="min-width:0;">' +
-        '<div style="font-weight:800;font-size:17px;letter-spacing:.3px;line-height:1.15;">' + l1 + '</div>' +
-        '<div style="font-weight:700;font-size:12.5px;line-height:1.25;">' + l2 + '</div>' +
-        addr.map((a) => '<div style="font-size:10px;color:#333;line-height:1.4;">' + a + '</div>').join('') +
-      '</div>' +
-      '<div style="flex:none;border:1.4px dashed #475569;border-radius:2px;padding:4px 11px;' +
-      'font-weight:800;font-size:11px;letter-spacing:.5px;white-space:nowrap;">' + esc(boxLabel) + '</div>' +
-    '</div>'
-  )
-}
-
-// Baris info "Label : value" (colon sejajar via label cell nowrap)
-function lineRow(label, val, valBold) {
-  return (
-    '<tr><td style="padding:1.5px 0;white-space:nowrap;vertical-align:top;color:#333;">' + esc(label) + '</td>' +
-    '<td style="padding:1.5px 0 1.5px 6px;vertical-align:top;' + (valBold ? 'font-weight:700;' : '') + '">: ' + val + '</td></tr>'
-  )
-}
-
-// Baris rincian bernomor dgn leader titik-titik
-function itemLeaderRow(no, name, amount) {
-  return (
-    '<div style="display:flex;align-items:flex-end;gap:6px;margin:4px 0;font-size:12px;">' +
-      '<span style="flex:none;width:16px;">' + no + '.</span>' +
-      '<span style="flex:none;">' + esc(name) + '</span>' +
-      '<span style="flex:1 1 auto;border-bottom:1px dotted #94a3b8;transform:translateY(-3px);min-width:18px;"></span>' +
-      '<span style="flex:none;white-space:nowrap;">' + esc(amount) + '</span>' +
-    '</div>'
-  )
-}
-
+// ── Bukti Pembayaran (santri) ─────────────────────────────────────────────
 export function buildReceiptStrukHtml(trx = {}, s = {}) {
   const terb = trx.terbilang || terbilangRupiah(trx.total)
   const _ng = [trx.lembaga, trx.kelas].filter(Boolean).join(' ')
   const _sk = [trx.lembaga_sekolah, trx.kelas_sekolah].filter(Boolean).join(' ')
-  const kelas = [_ng, _sk].filter(Boolean).join('/') || '-'
-  const status = esc(trx.status_siswa || 'Aktif')
-  const kelasVal =
-    '<b>' + esc(kelas) + '</b>&nbsp;&nbsp;&nbsp;Status Siswa : ' + status
+  const kelas = [_sk, _ng].filter(Boolean).join('/') || '-' // v.95: urutan sekolah/qiraati
   const items = (trx.items || [])
-    .map((it, i) =>
-      itemLeaderRow(
-        i + 1,
-        String(it.jenis || '-') + (it.keterangan ? ' (' + it.keterangan + ')' : ''),
-        fmtRpDot(it.nominal)
-      )
+    .map(
+      (it, i) =>
+        '<tr>' +
+        '<td style="border:1px solid #cbd5e1;padding:4px 6px;text-align:center;">' + (i + 1) + '</td>' +
+        '<td style="border:1px solid #cbd5e1;padding:4px 6px;">' +
+        esc(String(it.jenis || '-') + (it.keterangan ? ' (' + it.keterangan + ')' : '')) + '</td>' +
+        '<td style="border:1px solid #cbd5e1;padding:4px 6px;text-align:right;white-space:nowrap;">' + fmtRp(it.nominal) + '</td>' +
+        '</tr>'
     )
     .join('')
   const penyetor = String(trx.penyetor || '').trim()
 
   const inner =
-    receiptHeaderHtml(s, 'BUKTI PEMBAYARAN') +
+    kopHtml(s) +
+    titleHtml('BUKTI PEMBAYARAN') +
     '<table style="width:100%;font-size:12px;border-collapse:collapse;"><tr>' +
-      '<td style="vertical-align:top;width:56%;"><table style="border-collapse:collapse;">' +
-        lineRow('Diterima dari', esc(trx.santri_nama || '-')) +
-        lineRow('NIS', esc(trx.santri_nis || '-')) +
-        lineRow('Kelas', kelasVal) +
-        lineRow('Terbilang', esc(terb)) +
+      '<td style="vertical-align:top;width:54%;"><table style="border-collapse:collapse;">' +
+        infoRow('Diterima dari', trx.santri_nama || '-') +
+        infoRow('NIS', trx.santri_nis || '-') +
+        infoRow('Kelas', kelas) +
+        infoRow('Terbilang', terb) +
       '</table></td>' +
       '<td style="vertical-align:top;"><table style="border-collapse:collapse;">' +
-        lineRow('Tgl. Bayar', esc(fmtTgl(trx.tanggal))) +
-        lineRow('No. Bukti', esc(trx.no_struk || '-')) +
-        lineRow('Metode', esc(trx.metode || 'TUNAI')) +
+        infoRow('Tgl. Bayar', fmtTgl(trx.tanggal)) +
+        infoRow('No. Bukti', trx.no_struk || '-') +
+        infoRow('Metode', trx.metode || 'TUNAI') +
+        infoRow('Petugas', trx.operator || '-') +
+        infoRow('Status Siswa', trx.status_siswa || 'Aktif') +
       '</table></td>' +
     '</tr></table>' +
-    '<div style="margin:11px 0 3px;">Dengan rincian pembayaran sebagai berikut :</div>' +
-    (items || '<div style="text-align:center;color:#94a3b8;margin:6px 0;">—</div>') +
-    '<div style="border-top:1px solid #1a1a1a;margin-top:8px;"></div>' +
-    '<table style="width:100%;margin-top:12px;font-size:12px;border-collapse:collapse;"><tr>' +
-      '<td style="width:30%;text-align:center;vertical-align:top;">Penyetor,<div style="height:46px;"></div>( ' + (penyetor ? esc(penyetor) : '..........') + ' )</td>' +
-      '<td style="width:30%;text-align:center;vertical-align:top;">Penerima,<div style="height:46px;"></div>( ' + esc(trx.operator || '') + ' )</td>' +
-      '<td style="width:40%;vertical-align:top;padding-left:6px;"><table style="width:100%;border-collapse:collapse;font-size:12.5px;">' +
-        '<tr><td style="font-weight:800;padding:1.5px 0;white-space:nowrap;">Jumlah Rp.</td><td style="text-align:right;font-weight:800;white-space:nowrap;padding:1.5px 0;">' + fmtNum(trx.total) + '</td></tr>' +
-        '<tr><td style="padding:1.5px 0;white-space:nowrap;">Pembayaran Rp.</td><td style="text-align:right;white-space:nowrap;padding:1.5px 0;">' + fmtNum(trx.bayar) + '</td></tr>' +
-        '<tr><td style="padding:1.5px 0;white-space:nowrap;">Kembali Rp.</td><td style="text-align:right;white-space:nowrap;padding:1.5px 0;">' + fmtNum(trx.kembali) + '</td></tr>' +
-      '</table></td>' +
+    '<div style="margin:10px 0 5px;">Dengan rincian pembayaran sebagai berikut :</div>' +
+    '<table style="width:100%;border-collapse:collapse;font-size:12px;">' +
+      '<thead><tr style="background:#f0fdfa;">' +
+        '<th style="border:1px solid #cbd5e1;padding:4px 6px;width:30px;">No</th>' +
+        '<th style="border:1px solid #cbd5e1;padding:4px 6px;text-align:left;">Jenis Pembayaran</th>' +
+        '<th style="border:1px solid #cbd5e1;padding:4px 6px;width:96px;">Nominal</th>' +
+      '</tr></thead><tbody>' + (items || '<tr><td colspan="3" style="border:1px solid #cbd5e1;padding:6px;text-align:center;color:#94a3b8;">—</td></tr>') + '</tbody>' +
+    '</table>' +
+    '<table style="width:100%;margin-top:10px;font-size:12.5px;"><tr><td style="width:50%;"></td><td><table style="width:100%;border-collapse:collapse;">' +
+      '<tr><td style="text-align:right;font-weight:800;padding:1.5px 0;">Jumlah Rp.</td><td style="text-align:right;font-weight:800;white-space:nowrap;padding:1.5px 0 1.5px 10px;">' + fmtNum(trx.total) + '</td></tr>' +
+      '<tr><td style="text-align:right;padding:1.5px 0;">Pembayaran Rp.</td><td style="text-align:right;white-space:nowrap;padding:1.5px 0 1.5px 10px;">' + fmtNum(trx.bayar) + '</td></tr>' +
+      '<tr><td style="text-align:right;padding:1.5px 0;">Kembali Rp.</td><td style="text-align:right;white-space:nowrap;padding:1.5px 0 1.5px 10px;">' + fmtNum(trx.kembali) + '</td></tr>' +
+    '</table></td></tr></table>' +
+    '<table style="width:100%;margin-top:14px;text-align:center;font-size:12px;"><tr>' +
+      '<td style="width:50%;">Penyetor,<div style="height:42px;"></div>( ' + (penyetor ? esc(penyetor) : '..........') + ' )</td>' +
+      '<td style="width:50%;">Penerima,<div style="height:42px;"></div>( ' + esc(trx.operator || '') + ' )</td>' +
     '</tr></table>'
 
   return wrap(inner)

@@ -26,11 +26,12 @@ function formatTglDdMmYyyy(t) {
   return t
 }
 
-// v.95.0626: Kelas gabungan ngaji + sekolah -> "PTPT 2/SDI III". Hanya yang ada yang ditampilkan.
+// v.95.0626: Kelas gabungan SEKOLAH/QIRAATI -> "PKBM X/PPPH" (mis. "V/PTPT 3").
+//   Urutan: sekolah dulu, lalu qiraati/ngaji. Hanya yang ada yang ditampilkan.
 function kelasFull(trx) {
-  const ng = [trx.lembaga, trx.kelas].filter(Boolean).join(' ')
-  const sk = [trx.lembaga_sekolah, trx.kelas_sekolah].filter(Boolean).join(' ')
-  return [ng, sk].filter(Boolean).join('/') || '-'
+  const ng = [trx.lembaga, trx.kelas].filter(Boolean).join(' ')          // qiraati/ngaji
+  const sk = [trx.lembaga_sekolah, trx.kelas_sekolah].filter(Boolean).join(' ') // sekolah
+  return [sk, ng].filter(Boolean).join('/') || '-'
 }
 
 export function buildKopFromSettings(s = {}) {
@@ -45,49 +46,154 @@ export function buildKopFromSettings(s = {}) {
   }
 }
 
-// ── 1) PDF ber-KOP (F4) — layout meniru struk Yayasan (gambar) ──
-// v.95.0626: KOP rata-kiri (line1 besar, tanpa logo) + kotak dashed "BUKTI PEMBAYARAN"
-//   kanan-atas; Status Siswa inline di baris Kelas; rincian = daftar bernomor + leader
-//   titik; total band (Jumlah/Pembayaran/Kembali) di kanan sejajar ttd Penyetor/Penerima.
+// ── 1) PDF berwarna ber-KOP (A5 portrait) ──
 export async function cetakStrukPdf(trx, settings = {}, { preview = true } = {}) {
   const kop = buildKopFromSettings(settings)
   const doc = await createPdf({ kind: 'umum', orientation: 'p', format: 'F4' })
   const font = doc._fontMU || 'helvetica'
+  let y = await drawKopLetterhead(doc, kop, { y: 10 })
+  drawTitle(doc, 'BUKTI PEMBAYARAN', { y: y + 7, size: 13 })
+  y += 15
+
+  doc.setFontSize(9)
   const pageW = doc.internal.pageSize.getWidth()
   const left = 12
-  const right = pageW - 12
+  const colMid = pageW / 2 + 4
+  const terb = trx.terbilang || terbilangRupiah(trx.total)
+  const tglFmt = formatTglDdMmYyyy(trx.tanggal)
+  const leftRows = [
+    ['Diterima dari', trx.santri_nama || '-'],
+    ['NIS', trx.santri_nis || '-'],
+    ['Kelas', kelasFull(trx)],
+    ['Terbilang', terb]
+  ]
+  const rightRows = [
+    ['Tgl. Bayar', tglFmt],
+    ['No. Bukti', trx.no_struk || '-'],
+    ['Metode', trx.metode || 'TUNAI'],
+    ['Petugas', trx.operator || '-'],
+    ['Status Siswa', trx.status_siswa || 'Aktif']
+  ]
+  const yStart = y
+  const rowH = 5
+  for (let i = 0; i < leftRows.length; i++) {
+    doc.setFont(font, 'normal')
+    doc.text(leftRows[i][0], left, yStart + i * rowH)
+    doc.text(': ' + String(leftRows[i][1]), left + 24, yStart + i * rowH)
+  }
+  for (let i = 0; i < rightRows.length; i++) {
+    doc.setFont(font, 'normal')
+    doc.text(rightRows[i][0], colMid, yStart + i * rowH)
+    doc.text(': ' + String(rightRows[i][1]), colMid + 22, yStart + i * rowH)
+  }
+  y = yStart + Math.max(leftRows.length, rightRows.length) * rowH + 4
+
+  doc.setFont(font, 'normal')
+  doc.text('Dengan rincian pembayaran sebagai berikut :', left, y)
+  y += 3
+
+  drawTable(doc, {
+    startY: y,
+    head: [['No', 'Jenis Pembayaran', 'Nominal']],
+    body: (trx.items || []).map((it, idx) => [
+      String(idx + 1),
+      (it.jenis || '-') + (it.keterangan ? ' (' + it.keterangan + ')' : ''),
+      fmtRpStruk(it.nominal)
+    ]),
+    columnStyles: {
+      0: { halign: 'center', cellWidth: 10 },
+      2: { halign: 'right', cellWidth: 30 }
+    },
+    styles: { fontSize: 9 }
+  })
+
+  let ty = doc.lastAutoTable ? doc.lastAutoTable.finalY : y
+  ty += 6
+  const rightX = pageW - 12
+  doc.setFontSize(10)
+  const rowR = (label, val, bold) => {
+    doc.setFont(font, bold ? 'bold' : 'normal')
+    doc.text(label, rightX - 50, ty)
+    doc.text(val, rightX, ty, { align: 'right' })
+    ty += 5.5
+  }
+  rowR('Jumlah Rp.', fmtNum(trx.total), true)
+  rowR('Pembayaran Rp.', fmtNum(trx.bayar))
+  rowR('Kembali Rp.', fmtNum(trx.kembali))
+
+  ty += 8
+  doc.setFontSize(9)
+  doc.setFont(font, 'normal')
+  doc.text('Penyetor,', left + 8, ty)
+  doc.text('Penerima,', pageW / 2 + 12, ty)
+  // v.21.91.0527: TTD operator (kasir) auto dari guru.tanda_tangan bila ada
+  if (trx.operator_ttd_url) {
+    try {
+      const dataUrl = String(trx.operator_ttd_url).startsWith('data:')
+        ? trx.operator_ttd_url
+        : await imageToDataURL(trx.operator_ttd_url)
+      if (dataUrl) doc.addImage(dataUrl, 'PNG', pageW / 2 + 14, ty + 2, 28, 14, undefined, 'FAST')
+    } catch (e) {
+      /* ignore — fallback nama saja */
+    }
+  }
+  ty += 20
+  // v.94.0626: nama penyetor auto-isi dari wali santri (fallback garis kosong utk TTD manual)
+  const penyetorPdf = String(trx.penyetor || '').trim()
+  doc.text(penyetorPdf ? '( ' + penyetorPdf + ' )' : '( .................. )', left + 4, ty)
+  doc.text('( ' + (trx.operator || '').padEnd(16) + ' )', pageW / 2 + 8, ty)
+
+  const safe = String(trx.santri_nama || 'santri').replace(/\s+/g, '_')
+  savePdf(doc, 'struk_' + safe + '_' + (trx.tanggal || '') + '.pdf', { preview })
+  return doc
+}
+
+// ── 1c) PDF "slip" POS (cetak GRAFIS tajam ke dot-matrix) — gaya CONTOH:
+//   header teks (nama yayasan + alamat, TANPA logo/kop formal) + kotak BUKTI kanan-atas,
+//   Status inline di Kelas, rincian leader titik (+bulan), total band, TANPA Petugas.
+//   Ukuran slip & margin atas dari settings (mm) → pas kertas + whitespace printer.
+//   Return doc (caller -> doc.output('blob') -> printPdf). preview=true utk buka/simpan.
+export async function cetakStrukSlipPdf(trx, settings = {}, { preview = false } = {}) {
+  const kop = buildKopFromSettings(settings)
+  const num = (v, lo, hi, def) => { const n = parseFloat(v); return Number.isFinite(n) && n >= lo && n <= hi ? n : def }
+  const slipW = num(settings.posStrukSlipW, 120, 260, 210)
+  const slipH = num(settings.posStrukSlipH, 60, 220, 130)
+  const topMm = num(settings.posStrukTopMm, 0, 140, 6)
+  // v.95.0626: slip biasanya lebih LEBAR dari tinggi (210x130) -> landscape, biar tidak ke-rotate printer
+  const doc = await createPdf({ kind: 'umum', orientation: slipW >= slipH ? 'l' : 'p', format: [slipW, slipH] })
+  const font = doc._fontMU || 'helvetica'
+  const left = 9
+  const right = slipW - 9
   const dash = (pat) => { if (typeof doc.setLineDashPattern === 'function') doc.setLineDashPattern(pat || [], 0) }
 
-  // ── KOP rata-kiri (line1 besar) + kotak BUKTI (dashed) kanan-atas ──
-  let y = 16
-  doc.setFont(font, 'bold'); doc.setFontSize(15)
+  // ── Header teks RINGKAS (yayasan tdk kebesaran, baris rapat) + kotak BUKTI kanan-atas ──
+  let y = topMm + 4.5
+  doc.setFont(font, 'bold'); doc.setFontSize(10)
   doc.text(String(kop.line1 || ''), left, y)
-  doc.setFontSize(10.5)
-  if (kop.line2) doc.text(String(kop.line2), left, y + 6)
-  doc.setFont(font, 'normal'); doc.setFontSize(8.5)
-  let ky = y + 11
+  let ky = y + 3.8
+  if (kop.line2) { doc.setFont(font, 'bold'); doc.setFontSize(8.3); doc.text(String(kop.line2), left, ky); ky += 3.2 }
+  doc.setFont(font, 'normal'); doc.setFontSize(7)
   for (const ln of [kop.line3, kop.line4, kop.line5].filter(Boolean)) {
     doc.text(String(ln), left, ky)
-    ky += 4
+    ky += 2.9
   }
   const boxLabel = 'BUKTI PEMBAYARAN'
-  doc.setFont(font, 'bold'); doc.setFontSize(10)
-  const bw = doc.getTextWidth(boxLabel) + 9
-  const bh = 9
+  doc.setFont(font, 'bold'); doc.setFontSize(8)
+  const bw = doc.getTextWidth(boxLabel) + 6
+  const bh = 7
   const bx = right - bw
-  const by = y - 5
-  dash([0.8, 0.6]); doc.setLineWidth(0.3)
+  const by = y - 3.8
+  dash([0.7, 0.5]); doc.setLineWidth(0.3)
   doc.rect(bx, by, bw, bh)
   dash(null)
-  doc.text(boxLabel, bx + bw / 2, by + 5.9, { align: 'center' })
-  const hy = Math.max(ky - 2, by + bh) + 3
-  doc.setLineWidth(0.5)
-  doc.line(left, hy, right, hy)
-  y = hy + 7
+  doc.text(boxLabel, bx + bw / 2, by + 4.6, { align: 'center' })
+  const hy = Math.max(ky - 1.4, by + bh) + 1.6
+  doc.setLineWidth(0.5); doc.line(left, hy, right, hy)
+  y = hy + 4.2
 
-  // ── Info 2 kolom ──
-  doc.setFont(font, 'normal'); doc.setFontSize(9)
-  const colMid = pageW / 2 + 8
+  // ── Info 2 kolom (rapat; Kelas = sekolah/qiraati bold; TANPA Status Siswa & Petugas) ──
+  doc.setFont(font, 'normal'); doc.setFontSize(8.3)
+  const colMid = slipW / 2 + 8
   const terb = trx.terbilang || terbilangRupiah(trx.total)
   const tglFmt = formatTglDdMmYyyy(trx.tanggal)
   const leftRows = [
@@ -102,21 +208,16 @@ export async function cetakStrukPdf(trx, settings = {}, { preview = true } = {})
     ['Metode', trx.metode || 'TUNAI']
   ]
   const yStart = y
-  const rowH = 5.5
-  const labelW = 24
+  const rowH = 4.2
+  const labelW = 22
   for (let i = 0; i < leftRows.length; i++) {
     const ry = yStart + i * rowH
     if (leftRows[i][0] === '__KELAS__') {
       doc.setFont(font, 'normal')
       doc.text('Kelas', left, ry)
       doc.text(':', left + labelW, ry)
-      const kx = left + labelW + 2.5
-      const kls = kelasFull(trx)
       doc.setFont(font, 'bold')
-      doc.text(kls, kx, ry)
-      const kw = doc.getTextWidth(kls)
-      doc.setFont(font, 'normal')
-      doc.text('Status Siswa : ' + (trx.status_siswa || 'Aktif'), kx + kw + 6, ry)
+      doc.text(kelasFull(trx), left + labelW + 2.5, ry)
     } else {
       doc.setFont(font, 'normal')
       doc.text(leftRows[i][0], left, ry)
@@ -127,76 +228,67 @@ export async function cetakStrukPdf(trx, settings = {}, { preview = true } = {})
     const ry = yStart + i * rowH
     doc.setFont(font, 'normal')
     doc.text(rightRows[i][0], colMid, ry)
-    doc.text(': ' + String(rightRows[i][1]), colMid + 22, ry)
+    doc.text(': ' + String(rightRows[i][1]), colMid + 19, ry)
   }
-  y = yStart + leftRows.length * rowH + 5
+  y = yStart + leftRows.length * rowH + 2.8
 
-  // ── Rincian: daftar bernomor + leader titik-titik ──
-  doc.setFont(font, 'normal'); doc.setFontSize(9)
+  // ── Rincian (rapat; leader titik + periode) ──
+  doc.setFont(font, 'normal'); doc.setFontSize(8.3)
   doc.text('Dengan rincian pembayaran sebagai berikut :', left, y)
-  y += 6.5
-  doc.setFontSize(9.5)
+  y += 4.8
+  doc.setFontSize(8.6)
   const items = trx.items || []
   for (let i = 0; i < items.length; i++) {
     const it = items[i]
     const name = (it.jenis || '-') + (it.keterangan ? ' (' + it.keterangan + ')' : '')
     const amt = 'Rp. ' + fmtNum(it.nominal)
     doc.text(String(i + 1) + '.', left, y)
-    doc.text(name, left + 6, y)
+    doc.text(name, left + 5.5, y)
     doc.text(amt, right, y, { align: 'right' })
-    const nameEnd = left + 6 + doc.getTextWidth(name) + 2
-    const amtStart = right - doc.getTextWidth(amt) - 2
-    if (amtStart > nameEnd) {
-      dash([0.4, 0.8]); doc.setLineWidth(0.2)
-      doc.line(nameEnd, y - 0.8, amtStart, y - 0.8)
-      dash(null)
-    }
-    y += 5.6
+    const ne = left + 5.5 + doc.getTextWidth(name) + 2
+    const as = right - doc.getTextWidth(amt) - 2
+    if (as > ne) { dash([0.4, 0.7]); doc.setLineWidth(0.2); doc.line(ne, y - 0.8, as, y - 0.8); dash(null) }
+    y += 4.4
   }
-  if (!items.length) { doc.text('—', pageW / 2, y, { align: 'center' }); y += 5.6 }
-  y += 1.5
-  doc.setLineWidth(0.5)
-  doc.line(left, y, right, y)
-  y += 8
+  if (!items.length) { doc.text('—', slipW / 2, y, { align: 'center' }); y += 4.4 }
+  y += 0.8
+  doc.setLineWidth(0.5); doc.line(left, y, right, y)
+  y += 5
 
-  // ── Footer: Penyetor / Penerima (tengah) + total band kanan ──
-  doc.setFontSize(9.5)
-  const c1 = left + 30
-  const c2 = pageW / 2 - 4
+  // ── Footer: Penyetor / Penerima + total band kanan ──
+  doc.setFontSize(8.6)
+  const c1 = left + 26
+  const c2 = slipW / 2 - 8
   doc.setFont(font, 'normal')
   doc.text('Penyetor,', c1, y, { align: 'center' })
   doc.text('Penerima,', c2, y, { align: 'center' })
-  const totLabelX = pageW / 2 + 24
+  const totLabelX = slipW / 2 + 16
   let ty = y
   const rowR = (label, val, bold) => {
     doc.setFont(font, bold ? 'bold' : 'normal')
     doc.text(label, totLabelX, ty)
     doc.text(val, right, ty, { align: 'right' })
-    ty += 5.6
+    ty += 4.5
   }
   rowR('Jumlah Rp.', fmtNum(trx.total), true)
   rowR('Pembayaran Rp.', fmtNum(trx.bayar))
   rowR('Kembali Rp.', fmtNum(trx.kembali))
   doc.setFont(font, 'normal')
-  // v.21.91.0527: TTD operator (kasir) auto dari guru.tanda_tangan bila ada
   if (trx.operator_ttd_url) {
     try {
-      const dataUrl = String(trx.operator_ttd_url).startsWith('data:')
-        ? trx.operator_ttd_url
-        : await imageToDataURL(trx.operator_ttd_url)
-      if (dataUrl) doc.addImage(dataUrl, 'PNG', c2 - 14, y + 2, 28, 14, undefined, 'FAST')
-    } catch (e) {
-      /* ignore — fallback nama saja */
-    }
+      const d = String(trx.operator_ttd_url).startsWith('data:') ? trx.operator_ttd_url : await imageToDataURL(trx.operator_ttd_url)
+      if (d) doc.addImage(d, 'PNG', c2 - 13, y + 1, 24, 11, undefined, 'FAST')
+    } catch (e) { /* ignore */ }
   }
-  const sy = y + 22
-  // v.94.0626: nama penyetor auto-isi dari wali santri (fallback garis kosong utk TTD manual)
+  const sy = y + 14
   const penyetorPdf = String(trx.penyetor || '').trim()
   doc.text(penyetorPdf ? '( ' + penyetorPdf + ' )' : '( .................. )', c1, sy, { align: 'center' })
   doc.text('( ' + (trx.operator || '') + ' )', c2, sy, { align: 'center' })
 
-  const safe = String(trx.santri_nama || 'santri').replace(/\s+/g, '_')
-  savePdf(doc, 'struk_' + safe + '_' + (trx.tanggal || '') + '.pdf', { preview })
+  if (preview) {
+    const safe = String(trx.santri_nama || 'santri').replace(/\s+/g, '_')
+    savePdf(doc, 'struk_' + safe + '_' + (trx.tanggal || '') + '.pdf', { preview: true })
+  }
   return doc
 }
 
@@ -373,12 +465,10 @@ function buildStrukWide(trx, settings) {
 
   const tglFmt = formatTglDdMmYyyy(trx.tanggal)
   const terb = trx.terbilang || terbilangRupiah(trx.total)
-  // v.95.0626: Status Siswa inline di baris Kelas (match gambar + hemat baris utk slip pendek)
-  const statusSiswa = trx.status_siswa || 'Aktif'
   const ml = [
     ['Diterima dari', trx.santri_nama || '-'],
     ['NIS', trx.santri_nis || '-'],
-    ['Kelas', kelasFull(trx) + '  (' + statusSiswa + ')']
+    ['Kelas', kelasFull(trx)]
   ]
   const mr = [
     ['Tgl. Bayar', tglFmt],

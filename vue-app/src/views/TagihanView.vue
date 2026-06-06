@@ -197,7 +197,7 @@ function getNamaSantri(id) {
 
 function getSisa(t) {
   const total = Number(t.nominal || 0)
-  const bayar = Number(t.bayar || 0)
+  const bayar = Number(t.bayar || t.dibayar || 0) // v.95.0626: fallback 'dibayar' biar cicil pasti terbaca
   return Math.max(0, total - bayar)
 }
 

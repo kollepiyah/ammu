@@ -219,9 +219,14 @@ async function verifyTransfer(p) {
         if (tgSnap.exists()) {
           const tg = tgSnap.data()
           const newBayar = (Number(tg.bayar) || 0) + Number(p.nominal || 0)
+          // v.95.0626: set status sesuai sisa (lunas / partial / belum) — biar konsisten dgn POS & badge wali
+          const penuh = Number(tg.nominal || 0)
+          const statusBaru = penuh > 0 && newBayar >= penuh - 0.5 ? 'lunas' : newBayar > 0 ? 'partial' : 'belum'
           await setOne('keuangan_tagihan', String(p.tagihan_id), {
             ...tg,
             bayar: newBayar,
+            dibayar: newBayar,
+            status: statusBaru,
             last_payment_at: new Date().toISOString(),
             last_payment_ref: buId
           })
