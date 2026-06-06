@@ -75,9 +75,7 @@ function drawSlip(ctx, p) {
 
   y += mm2pt(2.6); hr(y); y += mm2pt(1.8)
   // ── Info 2 kolom (label flush-kiri, nilai sejajar; titik dua rata) ──
-  const colMid = p.Wpt / 2 + mm2pt(3)
   const labW = mm2pt(24)
-  const labWr = mm2pt(18)
   const rows = Math.max(p.infoLeft.length, p.infoRight.length)
   const rh = mm2pt(5.4)
   let iy = y + 12
@@ -88,10 +86,9 @@ function drawSlip(ctx, p) {
       text(':', L + labW, ry, 11, false)
       text(p.infoLeft[i][1], L + labW + mm2pt(2), ry, 11, false)
     }
+    // kolom kanan: RATA KANAN (label : value jadi satu) — hindari tumpukan + sesuai permintaan
     if (p.infoRight[i]) {
-      text(p.infoRight[i][0], colMid, ry, 11, false)
-      text(':', colMid + labWr, ry, 11, false)
-      text(p.infoRight[i][1], colMid + labWr + mm2pt(2), ry, 11, false)
+      text(p.infoRight[i][0] + ' : ' + p.infoRight[i][1], R, ry, 11, false, 'right')
     }
   }
   y = iy + (rows - 1) * rh
@@ -110,12 +107,14 @@ function drawSlip(ctx, p) {
   let fy = y + 12
   text(p.signLeftLabel, c1, fy, 10, false, 'center')
   text(p.signRightLabel, c2, fy, 10, false, 'center')
-  // total kanan
+  // total kanan — label NEMPEL di kiri nominal (jarak tetap 3mm), dua-duanya rata kanan
   let ty = fy
-  const totX = p.Wpt / 2 + mm2pt(10)
   for (const [lbl, val, big] of p.totals) {
-    text(lbl, totX, ty, big ? 13 : 11, !!big)
-    text(val, R, ty, big ? 13 : 11, !!big, 'right')
+    const px = big ? 13 : 11
+    ctx.font = (big ? 'bold ' : '') + px + 'px Arial'
+    const vw = ctx.measureText(String(val)).width
+    text(val, R, ty, px, !!big, 'right')
+    text(lbl, R - vw - mm2pt(3), ty, px, !!big, 'right')
     ty += mm2pt(big ? 6 : 5.4)
   }
   // nama ttd
@@ -168,11 +167,14 @@ function encodeEscpBase64(ctx, w, usedH, slipHmm) {
 }
 
 function renderEscp(data, settings) {
-  const slipW = Math.min(num(settings.posStrukSlipW, 120, 260, 220), 203) // batas lebar cetak 9-pin (~8")
-  const slipH = num(settings.posStrukSlipH, 60, 230, 140)
   const dpiH = 120
-  const Wpt = mm2pt(slipW)
-  const canvasW = Math.round((Wpt * dpiH) / 72)
+  const fullMm = Math.min(num(settings.posStrukSlipW, 120, 260, 220), 200) // batas lebar cetak 9-pin (~8")
+  const leftMm = num(settings.posStrukLeftMm, 0, 60, 0)                     // geser kanan
+  const topMm = num(settings.posStrukTopMm, 0, 60, 2)                       // margin atas
+  const slipH = num(settings.posStrukSlipH, 60, 230, 140)
+  // v.96.0626: konten MENYUSUT saat digeser kanan -> geser benar-benar terlihat & tak terpotong di kanan
+  const Wpt = mm2pt(Math.max(110, fullMm - leftMm))
+  const canvasW = Math.round((mm2pt(fullMm) * dpiH) / 72)
   const canvasH = Math.round(mm2pt(Math.max(slipH, 160))) // ruang cukup; di-crop ke konten
   const cv = document.createElement('canvas')
   cv.width = canvasW
@@ -181,7 +183,9 @@ function renderEscp(data, settings) {
   ctx.fillStyle = '#fff'
   ctx.fillRect(0, 0, canvasW, canvasH)
   ctx.setTransform(dpiH / 72, 0, 0, 1, 0, 0) // 1 unit = 1pt (1/72"); horizontal di-stretch ke 120dpi
+  if (leftMm > 0) ctx.translate(mm2pt(leftMm), 0) // geser kanan
   data.Wpt = Wpt
+  data.topMm = topMm
   const maxYpt = drawSlip(ctx, data)
   let usedH = Math.min(canvasH, Math.ceil(maxYpt))
   usedH = Math.ceil(usedH / 8) * 8
