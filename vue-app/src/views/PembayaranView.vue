@@ -480,8 +480,10 @@ const totalPembayaran = computed(() => filteredItems.value.reduce((s, p) => s + 
 // Pending transfer pribadi (santri/wali only)
 const myPendingTransfers = computed(() => {
   if (!isSantriOnly.value) return []
+  // v.95.0626 FIX: transfer yang sudah diverifikasi admin JANGAN tampil di "Menunggu Verifikasi"
+  // lagi (sudah jadi pembayaran transfer_verified di riwayat). Tampilkan hanya pending + rejected.
   return pendingRaw.value
-    .filter((p) => allOwnedIds.value.has(String(p.santri_id)))
+    .filter((p) => allOwnedIds.value.has(String(p.santri_id)) && p.status !== 'verified')
     .sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')))
 })
 
@@ -613,6 +615,7 @@ async function submitTransfer() {
         judul: 'Bukti transfer baru',
         pesan: `${santriObj?.nama || 'Santri'} kirim bukti transfer Rp ${Number(f.nominal || 0).toLocaleString('id-ID')} (${f.kategori || 'Transfer'}) — menunggu verifikasi.`,
         kategori: 'pembayaran',
+        target: 'admin', // v.95.0626c: push HANYA ke admin verifikator, bukan ke wali pengirim
         ref_id: id,
         dibaca: false,
         created_at: new Date().toISOString()

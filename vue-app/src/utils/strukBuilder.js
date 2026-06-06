@@ -156,8 +156,8 @@ export async function cetakStrukPdf(trx, settings = {}, { preview = true } = {})
 export async function cetakStrukSlipPdf(trx, settings = {}, { preview = false } = {}) {
   const kop = buildKopFromSettings(settings)
   const num = (v, lo, hi, def) => { const n = parseFloat(v); return Number.isFinite(n) && n >= lo && n <= hi ? n : def }
-  const slipW = num(settings.posStrukSlipW, 120, 260, 210)
-  const slipH = num(settings.posStrukSlipH, 60, 220, 130)
+  const slipW = num(settings.posStrukSlipW, 120, 260, 220)
+  const slipH = num(settings.posStrukSlipH, 60, 230, 140)
   const topMm = num(settings.posStrukTopMm, 0, 140, 6)
   // v.95.0626: slip biasanya lebih LEBAR dari tinggi (210x130) -> landscape, biar tidak ke-rotate printer
   const doc = await createPdf({ kind: 'umum', orientation: slipW >= slipH ? 'l' : 'p', format: [slipW, slipH] })
@@ -386,6 +386,159 @@ export async function cetakSlipBisyarohPdf(slip = {}, settings = {}, { preview =
 
   const safe = String(slip.guru_nama || 'guru').replace(/\s+/g, '_')
   savePdf(doc, 'slip_bisyaroh_' + safe + '_' + (slip.periode || '') + '.pdf', { preview })
+  return doc
+}
+
+// ── 1d) PDF REKAP slip bisyaroh per bulan (landscape F4) — daftar semua slip + detail kolom ──
+// v.95.0626: ekspor riwayat slip bisyaroh terfilter (per periode) ke 1 PDF tabel rinci + TOTAL.
+export async function exportRekapBisyarohPdf(slips = [], settings = {}, periodeLabel = '') {
+  const kop = buildKopFromSettings(settings)
+  const doc = await createPdf({ kind: 'umum', orientation: 'l', format: 'F4' })
+  let y = await drawKopLetterhead(doc, kop, { y: 10 })
+  drawTitle(doc, 'REKAP SLIP BISYAROH' + (periodeLabel ? ' — ' + periodeLabel : ''), { y: y + 7, size: 13 })
+  y += 14
+
+  const pokokOf = (s) => (Number(s.bisyaroh_pokok) || 0) + (Number(s.bisyaroh_sekolah) || 0) + (Number(s.bisyaroh_tambahan) || 0)
+  const bonusOf = (s) => Number((s.bonus_kehadiran || {}).total || 0)
+  const tunjOf = (s) => Array.isArray(s.tunjangan_list) ? s.tunjangan_list.reduce((a, t) => a + (Number(t.nominal) || 0), 0) : 0
+  const potOf = (s) => Number(s.total_potongan) || 0
+  const takeOf = (s) => Number(s.take_home) || 0
+
+  const tot = { pokok: 0, bonus: 0, tunj: 0, pot: 0, take: 0 }
+  const body = slips.map((s, i) => {
+    tot.pokok += pokokOf(s); tot.bonus += bonusOf(s); tot.tunj += tunjOf(s); tot.pot += potOf(s); tot.take += takeOf(s)
+    return [
+      String(i + 1),
+      s.guru_nama || '-',
+      s.jabatan || '-',
+      fmtRpStruk(pokokOf(s)),
+      fmtRpStruk(bonusOf(s)),
+      fmtRpStruk(tunjOf(s)),
+      fmtRpStruk(potOf(s)),
+      fmtRpStruk(takeOf(s))
+    ]
+  })
+  body.push(['', 'TOTAL (' + slips.length + ' slip)', '', fmtRpStruk(tot.pokok), fmtRpStruk(tot.bonus), fmtRpStruk(tot.tunj), fmtRpStruk(tot.pot), fmtRpStruk(tot.take)])
+
+  drawTable(doc, {
+    startY: y,
+    head: [['No', 'Nama', 'Jabatan', 'Bisyaroh Pokok', 'Bonus', 'Tunjangan', 'Potongan', 'Take Home']],
+    body,
+    columnStyles: {
+      0: { halign: 'center', cellWidth: 10 },
+      3: { halign: 'right' }, 4: { halign: 'right' }, 5: { halign: 'right' },
+      6: { halign: 'right' }, 7: { halign: 'right', fontStyle: 'bold' }
+    },
+    styles: { fontSize: 8, cellPadding: 1.5 }
+  })
+
+  const safe = String(periodeLabel || 'semua').replace(/\s+/g, '_')
+  savePdf(doc, 'rekap_bisyaroh_' + safe + '.pdf', { preview: true })
+  return doc
+}
+
+// ── 1e) PDF slip TABUNGAN (setor/tarik) — gaya struk POS (slip landscape) ──
+// v.95.0626: cetak bukti setor/tarik tabungan. opts: { preview, saldo, santri }
+export async function cetakSlipTabunganPdf(mut = {}, settings = {}, { preview = true, saldo = null, santri = {}, label = 'TABUNGAN' } = {}) {
+  const kop = buildKopFromSettings(settings)
+  const num = (v, lo, hi, def) => { const n = parseFloat(v); return Number.isFinite(n) && n >= lo && n <= hi ? n : def }
+  const slipW = num(settings.posStrukSlipW, 120, 260, 220)
+  const slipH = num(settings.posStrukSlipH, 60, 230, 140)
+  const topMm = num(settings.posStrukTopMm, 0, 140, 6)
+  const doc = await createPdf({ kind: 'umum', orientation: slipW >= slipH ? 'l' : 'p', format: [slipW, slipH] })
+  const font = doc._fontMU || 'helvetica'
+  const left = 9
+  const right = slipW - 9
+  const dash = (pat) => { if (typeof doc.setLineDashPattern === 'function') doc.setLineDashPattern(pat || [], 0) }
+  const isSetor = String(mut.jenis || 'setor').toLowerCase() === 'setor'
+  const boxLabel = 'BUKTI ' + (isSetor ? 'SETOR ' : 'TARIK ') + label
+
+  let y = topMm + 4.5
+  doc.setFont(font, 'bold'); doc.setFontSize(10)
+  doc.text(String(kop.line1 || ''), left, y)
+  let ky = y + 3.8
+  if (kop.line2) { doc.setFont(font, 'bold'); doc.setFontSize(8.3); doc.text(String(kop.line2), left, ky); ky += 3.2 }
+  doc.setFont(font, 'normal'); doc.setFontSize(7)
+  for (const ln of [kop.line3, kop.line4, kop.line5].filter(Boolean)) { doc.text(String(ln), left, ky); ky += 2.9 }
+  doc.setFont(font, 'bold'); doc.setFontSize(7.5)
+  const bw = doc.getTextWidth(boxLabel) + 6
+  const bh = 7
+  const bx = right - bw
+  const by = y - 3.8
+  dash([0.7, 0.5]); doc.setLineWidth(0.3)
+  doc.rect(bx, by, bw, bh)
+  dash(null)
+  doc.text(boxLabel, bx + bw / 2, by + 4.6, { align: 'center' })
+  const hy = Math.max(ky - 1.4, by + bh) + 2
+  doc.setLineWidth(0.5); doc.line(left, hy, right, hy)
+  y = hy + 5
+
+  doc.setFont(font, 'normal'); doc.setFontSize(8.5)
+  const colMid = slipW / 2 + 8
+  const nama = mut.nama_cache || santri.nama || '-'
+  const kelas = [santri.lembaga_sekolah, santri.kelas_sekolah].filter(Boolean).join(' ') || [santri.lembaga, santri.kelas].filter(Boolean).join(' ') || '-'
+  const leftRows = [['Nama', nama], ['NIS', santri.nis || '-'], ['Kelas', kelas]]
+  const rightRows = [['Tgl', formatTglDdMmYyyy(mut.tanggal)], ['No', mut.id || '-'], ['Petugas', mut.operator || mut.petugas || '-']]
+  const yStart = y
+  const rowH = 4.6
+  const labelW = 15
+  for (let i = 0; i < Math.max(leftRows.length, rightRows.length); i++) {
+    const ry = yStart + i * rowH
+    if (leftRows[i]) { doc.text(leftRows[i][0], left, ry); doc.text(': ' + String(leftRows[i][1]), left + labelW, ry) }
+    if (rightRows[i]) { doc.text(rightRows[i][0], colMid, ry); doc.text(': ' + String(rightRows[i][1]), colMid + 14, ry) }
+  }
+  y = yStart + Math.max(leftRows.length, rightRows.length) * rowH + 4
+  doc.setLineWidth(0.3); doc.line(left, y, right, y); y += 6
+
+  doc.setFont(font, 'bold'); doc.setFontSize(11)
+  doc.text(isSetor ? 'SETORAN' : 'PENARIKAN', left, y)
+  doc.text('Rp. ' + fmtNum(mut.nominal), right, y, { align: 'right' })
+  y += 6
+  doc.setFont(font, 'normal'); doc.setFontSize(9)
+  if (saldo != null) {
+    doc.text('Saldo setelah transaksi', left, y)
+    doc.setFont(font, 'bold'); doc.text('Rp. ' + fmtNum(saldo), right, y, { align: 'right' }); doc.setFont(font, 'normal')
+    y += 5
+  }
+  if (mut.catatan) { doc.setFontSize(8); doc.text('Catatan: ' + String(mut.catatan), left, y); y += 5 }
+  y += 2; doc.setLineWidth(0.3); doc.line(left, y, right, y); y += 6
+
+  doc.setFontSize(8.6)
+  const c1 = left + 30
+  const c2 = slipW - 38
+  doc.text('Penyetor/Pengambil,', c1, y, { align: 'center' })
+  doc.text('Petugas,', c2, y, { align: 'center' })
+  const sy = y + 16
+  doc.text('( .................. )', c1, sy, { align: 'center' })
+  doc.text('( ' + (mut.operator || mut.petugas || '') + ' )', c2, sy, { align: 'center' })
+
+  const safe = String(nama).replace(/\s+/g, '_')
+  savePdf(doc, 'slip_tabungan_' + safe + '_' + (mut.tanggal || '') + '.pdf', { preview })
+  return doc
+}
+
+// ── 1f) PDF REKAP TABUNGAN (saldo per santri) ──
+export async function exportRekapTabunganPdf(items = [], settings = {}, { title = 'REKAP TABUNGAN', namaOf = null } = {}) {
+  const kop = buildKopFromSettings(settings)
+  const doc = await createPdf({ kind: 'umum', orientation: 'p', format: 'F4' })
+  let y = await drawKopLetterhead(doc, kop, { y: 10 })
+  drawTitle(doc, title, { y: y + 7, size: 13 })
+  y += 14
+  let tot = 0
+  const body = items.map((t, i) => {
+    const s = Number(t.saldo) || 0
+    tot += s
+    return [String(i + 1), (namaOf ? namaOf(t) : (t.nama_cache || t.santri_id || '-')), t.terakhir_update || '-', fmtRpStruk(s)]
+  })
+  body.push(['', 'TOTAL (' + items.length + ' santri)', '', fmtRpStruk(tot)])
+  drawTable(doc, {
+    startY: y,
+    head: [['No', 'Nama', 'Update Terakhir', 'Saldo']],
+    body,
+    columnStyles: { 0: { halign: 'center', cellWidth: 12 }, 3: { halign: 'right', fontStyle: 'bold' } },
+    styles: { fontSize: 9 }
+  })
+  savePdf(doc, 'rekap_tabungan_' + Date.now() + '.pdf', { preview: true })
   return doc
 }
 

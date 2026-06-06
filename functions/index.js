@@ -34,7 +34,7 @@ const { onSchedule } = require('firebase-functions/v2/scheduler')
 const { defineSecret } = require('firebase-functions/params')
 const { initializeApp } = require('firebase-admin/app')
 const { getMessaging } = require('firebase-admin/messaging')
-const { getFirestore } = require('firebase-admin/firestore')
+const { getFirestore, FieldValue } = require('firebase-admin/firestore')
 const logger = require('firebase-functions/logger')
 
 // v.108.31: Iframely API key as Secret (modern, future-proof, no deprecation)
@@ -59,6 +59,12 @@ async function resolveTokensByTarget(target) {
     if (t === 'semua' || t === 'all' || t.type === 'all') {
       addTok(await db.collection('santri').where('fcm_token', '!=', null).get())
       addTok(await db.collection('guru').where('fcm_token', '!=', null).get())
+    } else if (t === 'admin' || t.type === 'admin') {
+      // v.95.0626c: HANYA admin verifikator (admin/admin_keuangan/super_admin) — bukan wali pengirim
+      addTok(await db.collection('guru').where('role_sistem', 'in', ['admin', 'admin_keuangan', 'super_admin']).get())
+    } else if (t === 'santri_semua' || t.type === 'santri_all') {
+      // v.95.0626d: broadcast ke SEMUA wali/santri saja (tanpa guru) — utk notif tagihan bulanan
+      addTok(await db.collection('santri').where('fcm_token', '!=', null).get())
     } else if (t.type === 'santri' && t.id) {
       const sdoc = await db.collection('santri').doc(String(t.id)).get()
       if (sdoc.exists) {
@@ -126,7 +132,7 @@ exports.kirimNotifikasiMassal = onDocumentCreated(
       webpush: {
         notification: {
           icon: '/icon-192.png',
-          badge: '/icon-72.png'
+          badge: '/icon-192.png'
         },
         fcmOptions: { link: '/' }
       }
@@ -653,5 +659,152 @@ exports.findUserByLogin = onRequest(
       logger.error('[findUserByLogin] error', e)
       res.status(500).json({ error: String((e && e.message) || e) })
     }
+  }
+)
+
+// ====================================================================
+// FUNCTION 5 (v.95.0626): AUTO-GENERATE TAGIHAN BULANAN — jadwal harian, IDEMPOTENT
+//   Replikasi server-side dari tombol manual "autoGenerate" (PengaturanKeuanganView).
+//   - Jalan tiap hari 01:00 WIB. Buat tagihan bulan berjalan utk jenis ber-flag
+//     auto_generate=true. Dedup (santri_id + kategori + periode) -> aman walau jalan
+//     tiap hari: run pertama tiap bulan yang membuat, sisanya skip.
+//   - Nominal: 4-lapis (per-santri -> per-kelas -> per-lembaga -> default), persis client.
+//   - jatuh_tempo = tahun-bulan-<keu_jatuh_tempo> (mis. 2026-06-10).
+//   - Kill-switch: settings/general.keu_auto_generate_cron === false -> SKIP (tanpa hapus
+//     tombol manual; tombol manual tetap utk uji coba).
+//   - Setelah generate, enqueue 1 notif broadcast "Tagihan bulan ini terbit" (tidak spam).
+//
+// DEPLOY: firebase deploy --only functions:autoGenerateTagihanBulanan
+// VERIFIKASI: Firebase Console -> Cloud Scheduler -> job ...autoGenerateTagihanBulanan...
+// TEST MANUAL: Cloud Scheduler -> RUN NOW (atau pakai tombol manual di app).
+// ====================================================================
+const _BULAN_NM = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember']
+
+exports.autoGenerateTagihanBulanan = onSchedule(
+  {
+    schedule: 'every day 01:00',
+    timeZone: 'Asia/Jakarta',
+    region: 'asia-southeast2',
+    timeoutSeconds: 540,
+    memory: '512MiB'
+  },
+  async () => {
+    // 1) Settings (sumber sama dgn tombol manual: settings/general)
+    let s = {}
+    try {
+      const sd = await db.collection('settings').doc('general').get()
+      if (sd.exists) s = sd.data() || {}
+    } catch (e) {
+      logger.warn('[autoGenTagihan] baca settings gagal:', e?.message || e)
+    }
+    if (s.keu_auto_generate_cron === false) {
+      logger.info('[autoGenTagihan] kill-switch OFF (keu_auto_generate_cron=false) — skip.')
+      return null
+    }
+    const jenisAuto = (Array.isArray(s.keuTagihanJenis) ? s.keuTagihanJenis : []).filter(
+      (j) => j && j.auto_generate && String(j.label || '').trim()
+    )
+    if (jenisAuto.length === 0) {
+      logger.info('[autoGenTagihan] tidak ada jenis ber-flag auto_generate — skip.')
+      return null
+    }
+    const jtDay = String(s.keu_jatuh_tempo || 10).padStart(2, '0')
+
+    // 2) Santri aktif
+    const sSnap = await db.collection('santri').get()
+    const santriAktif = sSnap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((x) => x.aktif !== false)
+
+    // 3) Periode bulan berjalan (zona Jakarta)
+    const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Jakarta' }))
+    const periode = `${_BULAN_NM[now.getMonth()]} ${now.getFullYear()}`
+    const ym = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}`
+    const jt = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${jtDay}`
+
+    // 4) Dedup: cukup baca tagihan periode ini saja (hemat, single-field index otomatis)
+    const existing = new Set()
+    try {
+      const tSnap = await db.collection('keuangan_tagihan').where('periode', '==', periode).get()
+      tSnap.forEach((d) => {
+        const t = d.data()
+        existing.add(`${String(t.santri_id)}__${String(t.kategori || t.jenis || '').toLowerCase()}`)
+      })
+    } catch (e) {
+      logger.warn('[autoGenTagihan] baca tagihan existing gagal:', e?.message || e)
+    }
+
+    let created = 0, skipped = 0, errCount = 0
+    let batch = db.batch()
+    let inBatch = 0
+    const commit = async () => {
+      if (inBatch > 0) { await batch.commit(); batch = db.batch(); inBatch = 0 }
+    }
+
+    for (const j of jenisAuto) {
+      const wl = Array.isArray(j.lembaga_only) ? j.lembaga_only.filter(Boolean) : []
+      for (const sx of santriAktif) {
+        if (wl.length > 0 && !(wl.includes(sx.lembaga) || wl.includes(sx.lembaga_sekolah))) continue
+        const dupKey = `${String(sx.id)}__${String(j.label || '').toLowerCase()}`
+        if (existing.has(dupKey)) { skipped++; continue }
+        // 4-lapis lookup: per-santri -> per-kelas -> per-lembaga -> default
+        let nominal = Number((j.nominal_per_santri || {})[String(sx.id)] || 0)
+        if (nominal === 0) {
+          const perK = j.nominal_per_kelas || {}
+          for (const [lemb, ks] of [[sx.lembaga, sx.kelas], [sx.lembaga_sekolah, sx.kelas_sekolah]]) {
+            if (!lemb) continue
+            const v = Number((perK[lemb] || {})[ks] || 0)
+            if (v > 0) { nominal = v; break }
+          }
+        }
+        if (nominal === 0) {
+          const perL = j.nominal_per_lembaga || {}
+          nominal = Number(perL[sx.lembaga] || perL[sx.lembaga_sekolah] || 0) || Number(j.nominal_default || 0)
+        }
+        if (nominal <= 0) { skipped++; continue }
+        try {
+          const id = `tagihan_${sx.id}_${j.id}_${ym}`
+          batch.set(db.collection('keuangan_tagihan').doc(id), {
+            id,
+            santri_id: String(sx.id),
+            santri_nama: sx.nama || '',
+            kategori: j.label || j.id || 'Tagihan',
+            periode,
+            nominal,
+            bayar: 0,
+            status: 'belum',
+            jatuh_tempo: jt,
+            sumber: 'auto_generate',
+            created_at: FieldValue.serverTimestamp()
+          })
+          existing.add(dupKey)
+          created++; inBatch++
+          if (inBatch >= 450) await commit()
+        } catch (e) {
+          errCount++
+          logger.warn('[autoGenTagihan]', sx.nama, e?.message || e)
+        }
+      }
+    }
+    await commit()
+
+    // Broadcast 1 notif kalau ada tagihan baru (onTagihanCreated skip sumber=auto_generate, jadi tak flood)
+    if (created > 0) {
+      try {
+        await db.collection('notif_queue').add({
+          judul: 'Tagihan Bulan Ini Terbit',
+          pesan: `Tagihan ${periode} sudah terbit. Cek menu Tagihan & Pembayaran.`,
+          target: 'santri_semua', // v.95.0626d: hanya wali/santri, bukan guru
+
+          link: '/tagihan',
+          sender: 'Sistem',
+          status: 'pending',
+          timestamp: new Date().toISOString()
+        })
+      } catch (e) {
+        logger.warn('[autoGenTagihan] enqueue notif gagal:', e?.message || e)
+      }
+    }
+
+    logger.info(`[autoGenTagihan] periode=${periode} jt=${jt} created=${created} skipped=${skipped} err=${errCount}`)
+    return null
   }
 )

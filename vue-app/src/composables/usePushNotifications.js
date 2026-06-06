@@ -10,7 +10,8 @@ import { useAuthStore } from '@/stores/auth'
 
 const CHANNEL_ID = 'ammu_default'
 // v.95.0626: VAPID public key (Firebase Console > Cloud Messaging > Web Push certificates)
-const VAPID_KEY = 'BFcAMob-CjQqT2pIK7T9O89Qzm7C_7hDdBuIgw-HsdWO4N-YcbK4rvGkKZvTvyOkUa1DprmE6KabIIn7DMY0VEI'
+// v.95.0626b: FIX — key lama tidak cocok dgn project -> 401 token-subscribe-failed. Diganti key asli Console.
+const VAPID_KEY = 'BOEAStvEGgdHCSKGONFbPY0olQ7OEUUvhbX3NofzqWyFBvaXG0tceRbvNE36Bw7qv35ZL6fXtOPEa6Wyp8VBWfY'
 
 function isElectron() {
   return /electron/i.test((typeof navigator !== 'undefined' && navigator.userAgent) || '')
@@ -80,7 +81,8 @@ export function usePushNotifications() {
         const n = (payload && payload.notification) || {}
         try {
           // eslint-disable-next-line no-new
-          new Notification(n.title || 'Mambaul Ulum', { body: n.body || '', icon: '/icon-192.png' })
+          // v.95.0626c: icon-192 ADA (manifest/SW); badge diperbaiki dari /icon-72.png (tidak ter-serve) ke /icon-192.png
+          new Notification(n.title || 'Mambaul Ulum', { body: n.body || '', icon: '/icon-192.png', badge: '/icon-192.png' })
         } catch (e) {
           /* ignore */
         }

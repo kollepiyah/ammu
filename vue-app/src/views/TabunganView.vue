@@ -23,11 +23,11 @@
         />
         <div class="relative">
           <p class="text-[10px] font-black uppercase tracking-widest opacity-90">
-            <i class="fas fa-wallet mr-1"></i>Tabungan Saya
+            <i class="fas fa-wallet mr-1"></i>{{ pageTitle }} Saya
           </p>
           <h2 class="text-xl md:text-2xl font-black mt-1 drop-shadow">{{ namaSantriAktif }}</h2>
           <p class="text-[10px] font-bold uppercase tracking-widest opacity-90 mt-4">
-            Saldo Tabungan
+            Saldo {{ pageTitle }}
           </p>
           <p class="text-3xl md:text-4xl font-black mt-1 drop-shadow">{{ saldoSantriFmt }}</p>
         </div>
@@ -57,7 +57,7 @@
           class="p-10 border-t-2 border-dashed border-[var(--border-subtle)] text-center"
         >
           <i class="fas fa-inbox text-[var(--text-tertiary)] text-3xl mb-2"></i>
-          <p class="text-sm text-[var(--text-secondary)] italic">Belum ada mutasi tabungan.</p>
+          <p class="text-sm text-[var(--text-secondary)] italic">Belum ada mutasi {{ pageTitle.toLowerCase() }}.</p>
         </div>
         <div v-else class="overflow-x-auto">
           <table class="w-full text-sm">
@@ -129,9 +129,9 @@
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           <div>
             <h1 class="text-base md:text-lg font-black text-[var(--text-primary)]">
-              <i class="fas fa-wallet text-emerald-500 mr-2"></i>Tabungan
+              <i class="fas fa-wallet text-emerald-500 mr-2"></i>{{ pageTitle }}
             </h1>
-            <p class="text-xs text-[var(--text-secondary)] mt-0.5">Saldo tabungan santri</p>
+            <p class="text-xs text-[var(--text-secondary)] mt-0.5">Saldo {{ pageTitle.toLowerCase() }} santri{{ isUangSaku ? " ma'had" : '' }}</p>
           </div>
           <div class="flex flex-wrap gap-2 items-center">
             <div
@@ -141,6 +141,10 @@
                 {{ totalSaldoFmt }}
               </span>
             </div>
+            <button @click="exportPdf" title="Ekspor PDF rekap saldo" class="bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-black px-3 py-1.5 rounded-full shadow"><i class="fas fa-file-pdf mr-1"></i>PDF</button>
+            <button @click="downloadTemplate" title="Unduh template XLSX" class="bg-slate-600 hover:bg-slate-700 text-white text-xs font-black px-3 py-1.5 rounded-full shadow"><i class="fas fa-file-download mr-1"></i>Template</button>
+            <button @click="triggerImport" :disabled="importingTab" title="Impor mutasi dari XLSX" class="bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white text-xs font-black px-3 py-1.5 rounded-full shadow"><i :class="['fas mr-1', importingTab ? 'fa-spinner fa-spin' : 'fa-file-upload']"></i>Impor</button>
+            <input ref="importInput" type="file" accept=".xlsx,.xls" class="hidden" @change="importXlsx" />
             <button
               @click="openModal()"
               class="bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-xs font-black px-3 py-1.5 rounded-full shadow"
@@ -178,7 +182,7 @@
         class="bg-[var(--bg-card)] rounded-2xl p-10 border border-dashed border-[var(--border-default)] text-center"
       >
         <i class="fas fa-wallet text-[var(--text-tertiary)] text-4xl mb-3"></i>
-        <p class="text-sm font-bold text-slate-700 dark:text-[var(--text-tertiary)]">Tidak ada tabungan</p>
+        <p class="text-sm font-bold text-slate-700 dark:text-[var(--text-tertiary)]">Tidak ada {{ pageTitle.toLowerCase() }}</p>
       </div>
 
       <!-- Orphan banner -->
@@ -213,7 +217,7 @@
         <p class="text-[10px] text-rose-600 mt-1.5">
           <i class="fas fa-info-circle mr-1"></i>
           Mutasi orphan = transaksi yang santri-nya sudah dihapus dari data santri. "Hapus Mutasi
-          Orphan" akan menghapus permanen seluruh record `keuangan_tabungan_santri` dengan santri_id
+          Orphan" akan menghapus permanen seluruh record `{{ COLL }}` dengan santri_id
           tersebut.
         </p>
       </div>
@@ -279,7 +283,7 @@
         </h3>
         <div class="flex items-center gap-2">
           <span class="text-[10px] text-[var(--text-tertiary)] font-bold">
-            {{ tabunganSantri.length }} mutasi
+            {{ mutasiSource.length }} mutasi
           </span>
           <button
             v-if="selectedMutasi.size > 0"
@@ -290,7 +294,7 @@
           </button>
         </div>
       </div>
-      <div v-if="tabunganSantri.length === 0" class="p-6 text-center text-xs text-[var(--text-tertiary)] italic">
+      <div v-if="mutasiSource.length === 0" class="p-6 text-center text-xs text-[var(--text-tertiary)] italic">
         Belum ada mutasi.
       </div>
       <div v-else class="max-h-[480px] overflow-y-auto">
@@ -308,7 +312,7 @@
           </thead>
           <tbody>
             <tr
-              v-for="m in tabunganSantri.slice().sort((a,b)=>String(b.tanggal||'').localeCompare(String(a.tanggal||'')))"
+              v-for="m in mutasiSource.slice().sort((a,b)=>String(b.tanggal||'').localeCompare(String(a.tanggal||'')))"
               :key="m.id"
               class="border-t border-[var(--border-subtle)] hover:bg-slate-50 dark:hover:bg-slate-900/30"
             >
@@ -330,6 +334,11 @@
               <td :class="['px-3 py-2 text-right font-black whitespace-nowrap', m.jenis === 'setor' ? 'text-emerald-700' : 'text-rose-700']">{{ fmtRp(m.nominal) }}</td>
               <td class="px-3 py-2 text-[11px] text-[var(--text-secondary)] truncate max-w-[200px]">{{ m.catatan || '-' }}</td>
               <td class="px-3 py-2 text-right whitespace-nowrap">
+                <button
+                  @click="cetakSlip(m)"
+                  class="text-[10px] text-emerald-600 hover:bg-emerald-50 px-1.5 py-1 rounded mr-1"
+                  title="Cetak slip"
+                ><i class="fas fa-receipt"></i></button>
                 <button
                   @click="openEditMutasi(m)"
                   class="text-[10px] text-cyan-600 hover:bg-cyan-50 px-1.5 py-1 rounded mr-1"
@@ -360,7 +369,7 @@
           class="px-5 py-4 border-b border-[var(--border-subtle)] flex items-center justify-between sticky top-0 bg-[var(--bg-card)] z-10"
         >
           <h3 class="text-base font-black text-[var(--text-primary)]">
-            <i class="fas fa-wallet text-emerald-500 mr-2"></i>Input Mutasi Tabungan
+            <i class="fas fa-wallet text-emerald-500 mr-2"></i>Input Mutasi {{ pageTitle }}
           </h3>
           <button @click="closeModal" class="text-[var(--text-tertiary)] hover:text-[var(--text-primary)]">
             <i class="fas fa-times text-lg"></i>
@@ -512,8 +521,19 @@ import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
 import { useKeuangan } from '@/composables/useKeuangan'
 import { fmtRp, fmtTgl } from '@/utils/format'
+import { cetakSlipTabunganPdf, exportRekapTabunganPdf } from '@/utils/strukBuilder'
+import { useExcel } from '@/composables/useExcel'
+import { useRoute } from 'vue-router'
 
 const { tabunganSantri, loading, isFullAccess, getNamaSantri, santriRaw } = useKeuangan()
+// v.95.0626: mode dari route — 'uangsaku' (menu terpisah, koleksi sendiri, santri ma'had/mukim) atau default 'tabungan'
+const route = useRoute()
+const isUangSaku = computed(() => String(route.meta?.mode || route.query?.mode || '') === 'uangsaku')
+const COLL = computed(() => (isUangSaku.value ? 'keuangan_uang_saku_santri' : 'keuangan_tabungan_santri'))
+const pageTitle = computed(() => (isUangSaku.value ? 'Uang Saku' : 'Tabungan'))
+const uangSakuMutasi = ref([]) // sumber mutasi admin saat mode uang saku (subscribe lokal)
+let unsubUS = null
+const mutasiSource = computed(() => (isUangSaku.value ? uangSakuMutasi.value : tabunganSantri.value))
 const auth = useAuthStore()
 const settings = useSettingsStore()
 const toast = useToast()
@@ -555,8 +575,13 @@ const mutasiSantri = computed(() =>
 
 onMounted(() => {
   if (isSantri.value) {
-    unsubMutasi = subscribeColl('keuangan_tabungan_santri', (docs) => {
+    unsubMutasi = subscribeColl(COLL.value, (docs) => {
       mutasiRaw.value = docs
+    })
+  } else if (isUangSaku.value) {
+    // admin + uang saku: tabungan admin pakai useKeuangan.tabunganSantri, uang saku subscribe lokal
+    unsubUS = subscribeColl('keuangan_uang_saku_santri', (docs) => {
+      uangSakuMutasi.value = docs
     })
   }
 })
@@ -567,6 +592,12 @@ onUnmounted(() => {
     } catch (e) {}
     unsubMutasi = null
   }
+  if (unsubUS) {
+    try {
+      unsubUS()
+    } catch (e) {}
+    unsubUS = null
+  }
 })
 
 // =================== ADMIN MODE — aggregate per santri ===================
@@ -574,7 +605,7 @@ const search = ref('')
 
 const aggregated = computed(() => {
   const map = {}
-  for (const t of tabunganSantri.value) {
+  for (const t of mutasiSource.value) {
     const sid = String(t.santri_id || t.santriId || '')
     if (!sid) continue
     if (!map[sid]) {
@@ -637,13 +668,13 @@ async function cleanupOrphan() {
   try {
     // v.21.95.0527: Fix — orphan filter harus cek kedua varian field santri_id/santriId
     // (legacy data pakai santriId), dan compare sebagai string supaya match dgn ids list.
-    const targets = tabunganSantri.value.filter((m) => {
+    const targets = mutasiSource.value.filter((m) => {
       const sid = String(m.santri_id || m.santriId || '')
       return ids.includes(sid)
     })
     for (const m of targets) {
       try {
-        await deleteOne('keuangan_tabungan_santri', m.id)
+        await deleteOne(COLL.value, m.id)
         ok++
       } catch (e) {
         fail++
@@ -691,10 +722,10 @@ const selectedMutasi = ref(new Set())
 // Sumber utama: settings.keuTabunganKategori (array of {id, label, nominal_default}).
 // Fallback default: 4 kategori umum tabungan santri.
 const KATEGORI_TABUNGAN_DEFAULT = [
-  { id: 'umum', label: 'Tabungan Umum', nominal_default: 0 },
-  { id: 'sukarela', label: 'Tabungan Sukarela', nominal_default: 0 },
-  { id: 'wisuda', label: 'Tabungan Wisuda', nominal_default: 0 },
-  { id: 'rihlah', label: 'Tabungan Rihlah', nominal_default: 0 }
+  { id: 'umum', label: 'Umum', nominal_default: 0 },
+  { id: 'sukarela', label: 'Sukarela', nominal_default: 0 },
+  { id: 'wisuda', label: 'Wisuda', nominal_default: 0 },
+  { id: 'rihlah', label: 'Rihlah', nominal_default: 0 }
 ]
 const kategoriOptions = computed(() => {
   const raw = settings.settings?.keuTabunganKategori
@@ -727,7 +758,7 @@ const modalSaldoSantri = computed(() => {
 const santriOptions = computed(() =>
   sortSantri(
     (santriRaw.value || [])
-      .filter((s) => s.aktif !== false)
+      .filter((s) => s.aktif !== false && (!isUangSaku.value || s.is_mukim === true))
       .map((s) => ({ id: s.id, nama: s.nama, lembaga: s.lembaga, kelas: s.kelas }))
   ).slice(0, 200)
 )
@@ -776,9 +807,9 @@ function openEditMutasi(m) {
 // v.21.100.0527: hapus mutasi individual (super_admin)
 async function hapusMutasi(m) {
   if (!isAdmin.value) return
-  if (!confirm(`Hapus mutasi tabungan?\nSantri: ${m.nama_cache || getNamaSantri(m.santri_id)}\n${m.jenis} ${fmtRp(m.nominal)}\n\nTidak bisa di-undo.`)) return
+  if (!confirm(`Hapus mutasi ${pageTitle.value.toLowerCase()}?\nSantri: ${m.nama_cache || getNamaSantri(m.santri_id)}\n${m.jenis} ${fmtRp(m.nominal)}\n\nTidak bisa di-undo.`)) return
   try {
-    await deleteOne('keuangan_tabungan_santri', m.id)
+    await deleteOne(COLL.value, m.id)
     toast.success('Mutasi dihapus')
   } catch (e) {
     toast.error('Gagal: ' + (e.message || e))
@@ -790,11 +821,11 @@ async function hapusMutasiTerpilih() {
   if (!isAdmin.value) return
   const ids = Array.from(selectedMutasi.value)
   if (ids.length === 0) return
-  if (!confirm(`Hapus ${ids.length} mutasi tabungan terpilih?\n\nTidak bisa di-undo.`)) return
+  if (!confirm(`Hapus ${ids.length} mutasi ${pageTitle.value.toLowerCase()} terpilih?\n\nTidak bisa di-undo.`)) return
   let ok = 0, fail = 0
   for (const id of ids) {
     try {
-      await deleteOne('keuangan_tabungan_santri', id)
+      await deleteOne(COLL.value, id)
       ok++
     } catch (e) {
       fail++
@@ -806,7 +837,7 @@ async function hapusMutasiTerpilih() {
   await writeAuditLog({
     operator: auth.sesiAktif?.nama || auth.sesiAktif?.guru || 'Admin',
     action: 'bulk_delete',
-    target: 'keuangan_tabungan_santri',
+    target: COLL.value,
     ids,
     detail: { ok, fail }
   })
@@ -853,7 +884,7 @@ async function simpanMutasi() {
     const santri = (santriRaw.value || []).find((s) => String(s.id) === String(modalSantriId.value))
     if (editingMutasiId.value) {
       // v.21.100.0527: mode edit — update mutasi existing
-      await updateDoc(doc(db, 'keuangan_tabungan_santri', editingMutasiId.value), {
+      await updateDoc(doc(db, COLL.value, editingMutasiId.value), {
         santri_id: modalSantriId.value,
         nama_cache: santri?.nama || '',
         jenis: modalJenis.value,
@@ -864,7 +895,7 @@ async function simpanMutasi() {
       toast.success('Mutasi diperbarui')
     } else {
       const id = `mutasi_${modalSantriId.value}_${Date.now()}`
-      await setDoc(doc(db, 'keuangan_tabungan_santri', id), {
+      await setDoc(doc(db, COLL.value, id), {
         id,
         santri_id: modalSantriId.value,
         nama_cache: santri?.nama || '',
@@ -882,6 +913,94 @@ async function simpanMutasi() {
     toast.error('Gagal: ' + (e?.message || e))
   } finally {
     saving.value = false
+  }
+}
+
+// =================== v.95.0626: EKSPOR PDF / IMPOR XLSX / TEMPLATE / CETAK SLIP ===================
+const { exportSimple, importFile } = useExcel()
+const importingTab = ref(false)
+const importInput = ref(null)
+
+function saldoSantriById(sid) {
+  const a = aggregated.value.find((x) => String(x.santri_id) === String(sid))
+  return a ? Number(a.saldo) || 0 : 0
+}
+async function cetakSlip(m) {
+  try {
+    const santri = (santriRaw.value || []).find((s) => String(s.id) === String(m.santri_id || m.santriId)) || {}
+    await cetakSlipTabunganPdf(m, settingsStore.settings || {}, { preview: true, saldo: saldoSantriById(m.santri_id || m.santriId), santri, label: pageTitle.value.toUpperCase() })
+  } catch (e) {
+    toast.error('Gagal cetak slip: ' + (e.message || e))
+  }
+}
+async function exportPdf() {
+  const items = filteredItems.value || []
+  if (!items.length) { toast.warning('Tidak ada data untuk diekspor.'); return }
+  try {
+    await exportRekapTabunganPdf(items, settingsStore.settings || {}, {
+      title: 'REKAP ' + pageTitle.value.toUpperCase() + ' SANTRI',
+      namaOf: (t) => (getNamaSantri(t.santri_id) !== '(unknown)' ? getNamaSantri(t.santri_id) : (t.nama_cache || t.santri_id))
+    })
+  } catch (e) {
+    toast.error('Gagal ekspor PDF: ' + (e.message || e))
+  }
+}
+async function downloadTemplate() {
+  try {
+    await exportSimple(
+      [{ nis: '03.00245', nama: 'Contoh Santri', jenis: 'setor', nominal: 50000, catatan: 'saldo awal' }],
+      {
+        filename: 'template_' + (isUangSaku.value ? 'uang_saku' : 'tabungan') + '.xlsx',
+        sheetName: pageTitle.value,
+        title: 'TEMPLATE IMPOR ' + pageTitle.value.toUpperCase() + ' (hapus baris contoh, isi data)',
+        columns: [
+          { key: 'nis', header: 'NIS', width: 16 },
+          { key: 'nama', header: 'Nama', width: 28 },
+          { key: 'jenis', header: 'jenis (setor/tarik)', width: 18 },
+          { key: 'nominal', header: 'Nominal', width: 14 },
+          { key: 'catatan', header: 'Catatan', width: 26 }
+        ]
+      }
+    )
+  } catch (e) {
+    toast.error('Gagal buat template: ' + (e.message || e))
+  }
+}
+function triggerImport() { importInput.value && importInput.value.click() }
+async function importXlsx(e) {
+  const file = e.target.files && e.target.files[0]
+  if (!file) return
+  importingTab.value = true
+  try {
+    const rows = await importFile(file)
+    let ok = 0, skip = 0
+    const writes = []
+    for (const r of rows) {
+      const nis = String(r.NIS || r.nis || '').trim()
+      const namaR = String(r.Nama || r.nama || '').trim()
+      const jenis = String(r['jenis (setor/tarik)'] || r.jenis || r.Jenis || 'setor').toLowerCase().includes('tarik') ? 'tarik' : 'setor'
+      const nominal = Number(String(r.Nominal || r.nominal || 0).replace(/[^\d]/g, '')) || 0
+      if (nominal <= 0) { skip++; continue }
+      const santri = (santriRaw.value || []).find(
+        (s) => (nis && String(s.nis) === nis) || (namaR && String(s.nama || '').toLowerCase() === namaR.toLowerCase())
+      )
+      if (!santri) { skip++; continue }
+      const id = `mutasi_${santri.id}_${Date.now()}_${ok}`
+      writes.push(setDoc(doc(db, COLL.value, id), {
+        id, santri_id: String(santri.id), nama_cache: santri.nama || '',
+        jenis, kategori: 'impor', nominal,
+        catatan: String(r.Catatan || r.catatan || 'impor xlsx'),
+        tanggal: new Date().toISOString().slice(0, 10), createdAt: serverTimestamp()
+      }))
+      ok++
+    }
+    await Promise.all(writes)
+    toast.success(`Impor selesai: ${ok} mutasi masuk, ${skip} dilewati (NIS/nama tak cocok atau nominal 0)`)
+  } catch (err) {
+    toast.error('Gagal impor: ' + (err.message || err))
+  } finally {
+    importingTab.value = false
+    if (importInput.value) importInput.value.value = ''
   }
 }
 </script>

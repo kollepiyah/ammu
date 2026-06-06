@@ -53,6 +53,14 @@
         </div>
       </div>
 
+      <!-- v.95.0626: kill-switch cron server auto-generate (tombol manual di atas TETAP berfungsi) -->
+      <div class="mt-3 flex items-start gap-2 p-2.5 rounded-lg bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-700">
+        <input id="autoGenCron" v-model="form.keu_auto_generate_cron" type="checkbox" class="mt-0.5 w-4 h-4 accent-teal-600" />
+        <label for="autoGenCron" class="text-[11px] text-[var(--text-secondary)] leading-snug cursor-pointer">
+          <span class="font-bold text-[var(--text-primary)]">Auto-generate otomatis tiap bulan (server)</span> — sistem membuat tagihan bulan berjalan secara otomatis untuk jenis ber-flag <em>auto_generate</em> (jatuh tempo ikut setelan di atas). Aman dari duplikat. Matikan kalau ingin generate manual saja; tombol "Generate Bulan Ini" tetap bisa dipakai kapan pun untuk uji coba.
+        </label>
+      </div>
+
       <!-- v.94.0626: Generate Tagihan Khusus (infaq/iuran sekali-jalan, target fleksibel) -->
       <div class="mt-3">
         <label
@@ -108,11 +116,11 @@
         <div class="grid grid-cols-3 gap-3">
           <div>
             <label class="text-[10px] text-[var(--text-secondary)] block mb-1">Lebar slip (mm)</label>
-            <input v-model.number="form.posStrukSlipW" type="number" min="120" max="260" placeholder="210" class="w-full px-2 py-1.5 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)]" />
+            <input v-model.number="form.posStrukSlipW" type="number" min="120" max="260" placeholder="220" class="w-full px-2 py-1.5 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)]" />
           </div>
           <div>
             <label class="text-[10px] text-[var(--text-secondary)] block mb-1">Tinggi slip (mm)</label>
-            <input v-model.number="form.posStrukSlipH" type="number" min="60" max="220" placeholder="130" class="w-full px-2 py-1.5 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)]" />
+            <input v-model.number="form.posStrukSlipH" type="number" min="60" max="230" placeholder="140" class="w-full px-2 py-1.5 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)]" />
           </div>
           <div>
             <label class="text-[10px] text-[var(--text-secondary)] block mb-1">Margin atas (mm)</label>
@@ -159,8 +167,8 @@
                 Auto
               </label>
               <button
-                @click="jenis._expanded = !jenis._expanded"
-                :title="jenis._expanded ? 'Tutup override' : 'Atur nominal per lembaga'"
+                @click="toggleExpandJenis(jenis)"
+                :title="jenis._expanded ? 'Tutup override' : 'Atur nominal per lembaga/kelas/santri'"
                 class="col-span-1 text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/30 px-2 py-1 rounded text-xs"
               >
                 <i :class="['fas', jenis._expanded ? 'fa-chevron-up' : 'fa-building']"></i>
@@ -258,6 +266,38 @@
                       </div>
                     </div>
                   </div>
+                </div>
+              </div>
+              <!-- v.95.0626: override nominal per SANTRI (santri yg bayar syahriyahnya beda) -->
+              <div>
+                <p class="text-[10px] text-[var(--text-secondary)] italic mb-1">
+                  <i class="fas fa-user-tag mr-1"></i>Nominal khusus per santri (yg bayarnya beda) — <b>{{ overrideSantriCount(jenis) }}</b> di-set:
+                </p>
+                <input
+                  v-model="perSantriSearch[jenis.id]"
+                  type="text"
+                  placeholder="cari nama / NIS santri..."
+                  class="w-full px-2 py-1 text-xs border border-[var(--border-default)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)] mb-1.5"
+                />
+                <div class="space-y-1 max-h-48 overflow-y-auto">
+                  <div
+                    v-for="s in santriCariFor(jenis)"
+                    :key="`${jenis.id}_ps_${s.id}`"
+                    class="flex items-center gap-2 bg-[var(--bg-card)] rounded px-2 py-1 border border-[var(--border-subtle)]"
+                  >
+                    <span class="flex-1 text-[10px] font-bold text-[var(--text-primary)] truncate">{{ s.nama }} <span class="text-[var(--text-tertiary)] font-normal">{{ s.nis || '-' }}</span></span>
+                    <input
+                      :value="(jenis.nominal_per_santri || {})[String(s.id)] || ''"
+                      @input="setNominalSantri(jenis, s.id, $event.target.value)"
+                      type="number"
+                      min="0"
+                      :placeholder="String(jenis.nominal_default || 0)"
+                      class="w-24 text-[10px] font-bold text-[var(--text-primary)] outline-none border border-[var(--border-default)] rounded px-1.5 py-0.5 text-right"
+                    />
+                  </div>
+                  <p v-if="santriCariFor(jenis).length === 0" class="text-[9px] text-[var(--text-tertiary)] italic px-1 py-1">
+                    {{ perSantriSearch[jenis.id] ? 'Santri tidak ditemukan.' : 'Ketik nama/NIS untuk set nominal khusus. Yang sudah di-set muncul di sini.' }}
+                  </p>
                 </div>
               </div>
             </div>
@@ -542,28 +582,57 @@
         <div
           v-for="(item, idx) in form.master_tunjangan"
           :key="idx"
-          class="grid grid-cols-[1fr_140px_60px] gap-2 items-center bg-emerald-50 dark:bg-emerald-900/20 px-3 py-2 rounded-lg"
+          class="bg-emerald-50 dark:bg-emerald-900/20 px-3 py-2 rounded-lg space-y-1.5"
         >
-          <input
-            v-model="item.nama"
-            type="text"
-            placeholder="Nama tunjangan"
-            class="bg-transparent text-xs font-bold text-[var(--text-primary)] outline-none"
-          />
-          <input
-            v-model="item.nominalFmt"
-            @input="onMasterFmtChange(item, $event)"
-            type="text"
-            inputmode="numeric"
-            placeholder="Rp 0"
-            class="bg-transparent text-xs text-right font-bold text-emerald-800 dark:text-emerald-200 outline-none border border-emerald-300 dark:border-emerald-700 rounded px-2 py-1"
-          />
-          <button
-            @click="removeMaster('tunjangan', idx)"
-            class="text-rose-600 hover:bg-rose-50 px-2 py-1 rounded text-xs"
-          >
-            <i class="fas fa-trash"></i>
-          </button>
+          <div class="grid grid-cols-[1fr_120px_30px_30px] gap-2 items-center">
+            <input
+              v-model="item.nama"
+              type="text"
+              placeholder="Nama tunjangan"
+              class="bg-transparent text-xs font-bold text-[var(--text-primary)] outline-none"
+            />
+            <input
+              v-model="item.nominalFmt"
+              @input="onMasterFmtChange(item, $event)"
+              type="text"
+              inputmode="numeric"
+              placeholder="Rp 0"
+              class="bg-transparent text-xs text-right font-bold text-emerald-800 dark:text-emerald-200 outline-none border border-emerald-300 dark:border-emerald-700 rounded px-2 py-1"
+            />
+            <button
+              @click="item._guruExpanded = !item._guruExpanded"
+              :title="masterScopeLabel(item)"
+              class="text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/30 px-1 py-1 rounded text-xs"
+            >
+              <i class="fas fa-user-tag"></i>
+            </button>
+            <button
+              @click="removeMaster('tunjangan', idx)"
+              class="text-rose-600 hover:bg-rose-50 px-1 py-1 rounded text-xs"
+            >
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+          <div class="text-[9px] text-[var(--text-tertiary)]"><i class="fas fa-filter mr-1"></i>Berlaku: <b class="text-[var(--text-secondary)]">{{ masterScopeLabel(item) }}</b></div>
+          <div v-if="item._guruExpanded" class="border-t border-emerald-200 dark:border-emerald-800 pt-1.5">
+            <input
+              v-model="item._guruSearch"
+              type="text"
+              placeholder="cari guru/pegawai..."
+              class="w-full px-2 py-1 text-[11px] border border-[var(--border-default)] rounded bg-[var(--bg-card)] text-[var(--text-primary)] mb-1"
+            />
+            <div class="max-h-40 overflow-y-auto space-y-0.5">
+              <label
+                v-for="g in masterGuruCari(item)"
+                :key="`${idx}_tg_${g.id}`"
+                class="flex items-center gap-1.5 text-[10px] cursor-pointer px-1 py-0.5 rounded hover:bg-[var(--bg-card)]"
+              >
+                <input type="checkbox" :checked="(item.guru_ids || []).map(String).includes(String(g.id))" @change="toggleGuruMaster(item, g.id)" class="w-3 h-3" />
+                <span class="font-bold text-[var(--text-primary)] truncate">{{ g.nama }}</span>
+              </label>
+            </div>
+            <p class="text-[9px] text-[var(--text-tertiary)] italic mt-1">Tidak pilih satupun = berlaku semua guru/pegawai.</p>
+          </div>
         </div>
       </div>
     </div>
@@ -600,28 +669,57 @@
         <div
           v-for="(item, idx) in form.master_potongan"
           :key="idx"
-          class="grid grid-cols-[1fr_140px_60px] gap-2 items-center bg-rose-50 dark:bg-rose-900/20 px-3 py-2 rounded-lg"
+          class="bg-rose-50 dark:bg-rose-900/20 px-3 py-2 rounded-lg space-y-1.5"
         >
-          <input
-            v-model="item.nama"
-            type="text"
-            placeholder="Nama potongan"
-            class="bg-transparent text-xs font-bold text-[var(--text-primary)] outline-none"
-          />
-          <input
-            v-model="item.nominalFmt"
-            @input="onMasterFmtChange(item, $event)"
-            type="text"
-            inputmode="numeric"
-            placeholder="Rp 0"
-            class="bg-transparent text-xs text-right font-bold text-rose-800 dark:text-rose-200 outline-none border border-rose-300 dark:border-rose-700 rounded px-2 py-1"
-          />
-          <button
-            @click="removeMaster('potongan', idx)"
-            class="text-rose-600 hover:bg-rose-50 px-2 py-1 rounded text-xs"
-          >
-            <i class="fas fa-trash"></i>
-          </button>
+          <div class="grid grid-cols-[1fr_120px_30px_30px] gap-2 items-center">
+            <input
+              v-model="item.nama"
+              type="text"
+              placeholder="Nama potongan"
+              class="bg-transparent text-xs font-bold text-[var(--text-primary)] outline-none"
+            />
+            <input
+              v-model="item.nominalFmt"
+              @input="onMasterFmtChange(item, $event)"
+              type="text"
+              inputmode="numeric"
+              placeholder="Rp 0"
+              class="bg-transparent text-xs text-right font-bold text-rose-800 dark:text-rose-200 outline-none border border-rose-300 dark:border-rose-700 rounded px-2 py-1"
+            />
+            <button
+              @click="item._guruExpanded = !item._guruExpanded"
+              :title="masterScopeLabel(item)"
+              class="text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/30 px-1 py-1 rounded text-xs"
+            >
+              <i class="fas fa-user-tag"></i>
+            </button>
+            <button
+              @click="removeMaster('potongan', idx)"
+              class="text-rose-600 hover:bg-rose-50 px-1 py-1 rounded text-xs"
+            >
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+          <div class="text-[9px] text-[var(--text-tertiary)]"><i class="fas fa-filter mr-1"></i>Berlaku: <b class="text-[var(--text-secondary)]">{{ masterScopeLabel(item) }}</b></div>
+          <div v-if="item._guruExpanded" class="border-t border-rose-200 dark:border-rose-800 pt-1.5">
+            <input
+              v-model="item._guruSearch"
+              type="text"
+              placeholder="cari guru/pegawai..."
+              class="w-full px-2 py-1 text-[11px] border border-[var(--border-default)] rounded bg-[var(--bg-card)] text-[var(--text-primary)] mb-1"
+            />
+            <div class="max-h-40 overflow-y-auto space-y-0.5">
+              <label
+                v-for="g in masterGuruCari(item)"
+                :key="`${idx}_pg_${g.id}`"
+                class="flex items-center gap-1.5 text-[10px] cursor-pointer px-1 py-0.5 rounded hover:bg-[var(--bg-card)]"
+              >
+                <input type="checkbox" :checked="(item.guru_ids || []).map(String).includes(String(g.id))" @change="toggleGuruMaster(item, g.id)" class="w-3 h-3" />
+                <span class="font-bold text-[var(--text-primary)] truncate">{{ g.nama }}</span>
+              </label>
+            </div>
+            <p class="text-[9px] text-[var(--text-tertiary)] italic mt-1">Tidak pilih satupun = berlaku semua guru/pegawai.</p>
+          </div>
         </div>
       </div>
     </div>
@@ -951,13 +1049,13 @@ const jenisList = ref([])
 
 const form = reactive({
   keu_jatuh_tempo: 10,
+  keu_auto_generate_cron: true, // v.95.0626: kill-switch cron server auto-generate
   // v.21.89.0527: Lebar kertas struk POS (dot-matrix). '9.5' = Epson LX-310 continuous form (default).
   posStrukPaper: '9.5',
-  // v.95.0626: penyetelan struk ESC/P dot-matrix (bisa diatur sendiri tanpa rebuild)
-  posStrukCpi: 15,
-  posStrukFormLines: 30,
-  posStrukLeftCols: 6,
-  posStrukTopLines: 2,
+  // v.95.0626: penyetelan struk cetak PDF slip (mm) — bisa diatur sendiri tanpa rebuild
+  posStrukSlipW: 220,
+  posStrukSlipH: 140,
+  posStrukTopMm: 6,
   keu_jenis_tagihan: [],
   keu_bisyaroh_pagi: '',
   keu_bisyaroh_sore: '',
@@ -985,11 +1083,11 @@ function slugId(s) {
 function loadFromSettings() {
   const s = settingsStore.settings || {}
   form.keu_jatuh_tempo = s.keu_jatuh_tempo || 10
+  form.keu_auto_generate_cron = s.keu_auto_generate_cron !== false // default ON
   form.posStrukPaper = s.posStrukPaper || '9.5'
-  form.posStrukCpi = Number(s.posStrukCpi) || 15
-  form.posStrukFormLines = Number(s.posStrukFormLines) || 30
-  form.posStrukLeftCols = s.posStrukLeftCols != null ? Number(s.posStrukLeftCols) : 6
-  form.posStrukTopLines = s.posStrukTopLines != null ? Number(s.posStrukTopLines) : 2
+  form.posStrukSlipW = Number(s.posStrukSlipW) || 220
+  form.posStrukSlipH = Number(s.posStrukSlipH) || 140
+  form.posStrukTopMm = s.posStrukTopMm != null ? Number(s.posStrukTopMm) : 6
 
   // v.21.97.0527: + nominal_per_lembaga (override per lembaga)
   const _emptyMap = () => ({})
@@ -1010,6 +1108,11 @@ function loadFromSettings() {
             nominal_per_kelas:
               t.nominal_per_kelas && typeof t.nominal_per_kelas === 'object'
                 ? JSON.parse(JSON.stringify(t.nominal_per_kelas))
+                : _emptyMap(),
+            // v.95.0626: override nominal per SANTRI (santri yg bayar syahriyahnya beda)
+            nominal_per_santri:
+              t.nominal_per_santri && typeof t.nominal_per_santri === 'object'
+                ? { ...t.nominal_per_santri }
                 : _emptyMap(),
             auto_generate: !!t.auto_generate,
             _expanded: false
@@ -1067,20 +1170,17 @@ function loadFromSettings() {
   form.keu_kategori_keluar = Array.isArray(s.keu_kategori_keluar)
     ? [...s.keu_kategori_keluar]
     : ['Operasional', 'Konsumsi', 'Listrik/Air', 'Perbaikan']
-  form.master_tunjangan = Array.isArray(s.master_tunjangan)
-    ? s.master_tunjangan.map((t) => ({
-        nama: t.nama || '',
-        nominal: t.nominal || 0,
-        nominalFmt: fmtRp(t.nominal || 0)
-      }))
-    : []
-  form.master_potongan = Array.isArray(s.master_potongan)
-    ? s.master_potongan.map((t) => ({
-        nama: t.nama || '',
-        nominal: t.nominal || 0,
-        nominalFmt: fmtRp(t.nominal || 0)
-      }))
-    : []
+  // v.95.0626: + guru_ids (scope per guru/pegawai; kosong = semua)
+  const _mapMaster = (t) => ({
+    nama: t.nama || '',
+    nominal: t.nominal || 0,
+    nominalFmt: fmtRp(t.nominal || 0),
+    guru_ids: Array.isArray(t.guru_ids) ? t.guru_ids.map(String) : [],
+    _guruExpanded: false,
+    _guruSearch: ''
+  })
+  form.master_tunjangan = Array.isArray(s.master_tunjangan) ? s.master_tunjangan.map(_mapMaster) : []
+  form.master_potongan = Array.isArray(s.master_potongan) ? s.master_potongan.map(_mapMaster) : []
   form.bank_nama = s.bank_nama || ''
   form.bank_nomor = s.bank_nomor || ''
   form.bank_atasnama = s.bank_atasnama || ''
@@ -1162,6 +1262,43 @@ function setNominalKelas(jenis, lembagaName, kelas, val) {
   jenis.nominal_per_kelas = cur
 }
 
+// v.95.0626: override nominal per SANTRI (untuk santri yg bayar syahriyahnya beda)
+const perSantriSearch = reactive({})
+function setNominalSantri(jenis, santriId, val) {
+  const n = Number(val) || 0
+  const cur = jenis.nominal_per_santri && typeof jenis.nominal_per_santri === 'object' ? { ...jenis.nominal_per_santri } : {}
+  const sid = String(santriId)
+  if (n > 0) cur[sid] = n
+  else delete cur[sid]
+  jenis.nominal_per_santri = cur
+}
+function santriCariFor(jenis) {
+  const kw = String(perSantriSearch[jenis.id] || '').trim().toLowerCase()
+  const ov = jenis.nominal_per_santri || {}
+  if (!kw) return genSantriAktif.value.filter((s) => Number(ov[String(s.id)] || 0) > 0)
+  return genSantriAktif.value
+    .filter((s) => String(s.nama || '').toLowerCase().includes(kw) || String(s.nis || '').toLowerCase().includes(kw))
+    .slice(0, 25)
+}
+function overrideSantriCount(jenis) {
+  return Object.values(jenis.nominal_per_santri || {}).filter((v) => Number(v) > 0).length
+}
+// v.95.0626: muat santri aktif (sekali) utk picker override per-santri
+async function loadSantriAktif() {
+  if (genSantriAktif.value.length > 0) return
+  try {
+    const { collection, getDocs } = await import('firebase/firestore')
+    const snap = await getDocs(collection(db, 'santri'))
+    genSantriAktif.value = snap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((x) => x.aktif !== false)
+  } catch (e) {
+    toast.error('Gagal memuat data santri: ' + (e.message || e))
+  }
+}
+function toggleExpandJenis(jenis) {
+  jenis._expanded = !jenis._expanded
+  if (jenis._expanded) loadSantriAktif()
+}
+
 function addKategori(kind) {
   const ref$ = kind === 'masuk' ? newKatMasuk : newKatKeluar
   const list = kind === 'masuk' ? form.keu_kategori_masuk : form.keu_kategori_keluar
@@ -1183,8 +1320,30 @@ function addMaster(kind) {
   ;(kind === 'tunjangan' ? form.master_tunjangan : form.master_potongan).push({
     nama: '',
     nominal: 0,
-    nominalFmt: ''
+    nominalFmt: '',
+    guru_ids: [],
+    _guruExpanded: false,
+    _guruSearch: ''
   })
+}
+// v.95.0626: scope master tunjangan/potongan per guru
+function toggleGuruMaster(item, guruId) {
+  const sid = String(guruId)
+  const cur = Array.isArray(item.guru_ids) ? item.guru_ids.map(String) : []
+  const i = cur.indexOf(sid)
+  if (i >= 0) cur.splice(i, 1)
+  else cur.push(sid)
+  item.guru_ids = cur
+}
+function masterGuruCari(item) {
+  const kw = String(item._guruSearch || '').trim().toLowerCase()
+  let list = (guruRaw.value || []).filter((g) => String(g.status || 'Aktif').toLowerCase() === 'aktif')
+  if (kw) list = list.filter((g) => String(g.nama || '').toLowerCase().includes(kw))
+  return list.sort((a, b) => String(a.nama || '').localeCompare(String(b.nama || ''))).slice(0, 60)
+}
+function masterScopeLabel(item) {
+  const n = Array.isArray(item.guru_ids) ? item.guru_ids.length : 0
+  return n === 0 ? 'Semua guru/pegawai' : n + ' guru dipilih'
 }
 
 function removeMaster(kind, idx) {
@@ -1248,6 +1407,14 @@ async function simpan() {
             if (Object.keys(inner).length > 0) perK[lemb] = inner
           }
         }
+        // v.95.0626: serialize nominal_per_santri (buang yg 0)
+        const perS = {}
+        if (t.nominal_per_santri && typeof t.nominal_per_santri === 'object') {
+          for (const [sid, v] of Object.entries(t.nominal_per_santri)) {
+            const n = Number(v) || 0
+            if (n > 0) perS[String(sid)] = n
+          }
+        }
         const wl = Array.isArray(t.lembaga_only)
           ? t.lembaga_only.filter((x) => String(x || '').trim())
           : []
@@ -1257,17 +1424,18 @@ async function simpan() {
           nominal_default: Number(t.nominal_default || 0) || 0,
           nominal_per_lembaga: perL,
           nominal_per_kelas: perK,
+          nominal_per_santri: perS,
           lembaga_only: wl,
           auto_generate: !!t.auto_generate
         }
       })
     const payload = {
       keu_jatuh_tempo: form.keu_jatuh_tempo,
+      keu_auto_generate_cron: form.keu_auto_generate_cron,
       posStrukPaper: form.posStrukPaper || '9.5',
-      posStrukCpi: Number(form.posStrukCpi) || 15,
-      posStrukFormLines: Number(form.posStrukFormLines) || 30,
-      posStrukLeftCols: Number(form.posStrukLeftCols) || 0,
-      posStrukTopLines: Number(form.posStrukTopLines) || 0,
+      posStrukSlipW: Number(form.posStrukSlipW) || 220,
+      posStrukSlipH: Number(form.posStrukSlipH) || 140,
+      posStrukTopMm: Number(form.posStrukTopMm) || 6,
       keuTagihanJenis: jenis,
       keu_jenis_tagihan: jenis.map((t) => t.label),
       keu_bisyaroh_pagi: parseRp(form.keu_bisyaroh_pagi),
@@ -1279,10 +1447,10 @@ async function simpan() {
       keu_kategori_keluar: form.keu_kategori_keluar.filter((t) => t.trim()),
       master_tunjangan: form.master_tunjangan
         .filter((t) => t.nama.trim())
-        .map((t) => ({ nama: t.nama.trim(), nominal: t.nominal || 0 })),
+        .map((t) => ({ nama: t.nama.trim(), nominal: t.nominal || 0, guru_ids: Array.isArray(t.guru_ids) ? t.guru_ids.map(String) : [] })),
       master_potongan: form.master_potongan
         .filter((t) => t.nama.trim())
-        .map((t) => ({ nama: t.nama.trim(), nominal: t.nominal || 0 })),
+        .map((t) => ({ nama: t.nama.trim(), nominal: t.nominal || 0, guru_ids: Array.isArray(t.guru_ids) ? t.guru_ids.map(String) : [] })),
       bank_nama: form.bank_nama.trim(),
       bank_nomor: form.bank_nomor.trim(),
       bank_atasnama: form.bank_atasnama.trim()
@@ -1354,10 +1522,10 @@ async function autoGenerate() {
         }
         const dupKey = `${String(sx.id)}__${(j.label || '').toLowerCase()}__${periode}`
         if (existing.has(dupKey)) { skipped++; continue }
-        // 3-lapis lookup
-        let nominal = 0
+        // v.95.0626: 4-lapis lookup — per-SANTRI dulu (override), lalu per-kelas, per-lembaga, default
+        let nominal = Number((j.nominal_per_santri || {})[String(sx.id)] || 0)
         const perK = j.nominal_per_kelas || {}
-        for (const [lemb, ks] of [[sx.lembaga, sx.kelas], [sx.lembaga_sekolah, sx.kelas_sekolah]]) {
+        if (nominal === 0) for (const [lemb, ks] of [[sx.lembaga, sx.kelas], [sx.lembaga_sekolah, sx.kelas_sekolah]]) {
           if (!lemb) continue
           const inner = perK[lemb] || {}
           const v = Number(inner[ks] || 0)
@@ -1554,6 +1722,9 @@ function _genNominalUntuk(sx) {
   if (genPakaiNominalJenis.value && genJenisId.value) {
     const j = jenisList.value.find((x) => x.id === genJenisId.value)
     if (j) {
+      // v.95.0626: per-santri override dulu
+      const perS = Number((j.nominal_per_santri || {})[String(sx.id)] || 0)
+      if (perS > 0) return perS
       const perK = j.nominal_per_kelas || {}
       for (const [lemb, ks] of [
         [sx.lembaga, sx.kelas],

@@ -190,3 +190,37 @@ button, [role="button"] { min-height: 36px; }
 @media (max-width: 768px) {
   ::-webkit-scrollbar { width: 0; height: 0; }
 }
+
+/* ====================================================================
+   v.95.0626 — #13: "Pass global lebih padat" di layar lebar (desktop).
+   Grid KARTU naik kolom di xl(≥1280) & 2xl(≥1536) supaya whitespace pinggir
+   berkurang. FORM dikecualikan via :has(input/label/select/textarea) supaya
+   tata letak form tidak rusak. Mobile (native app) TIDAK terpengaruh (rules
+   hanya aktif ≥1280px). Opt-out per-grid: tambahkan class "no-densify".
+   :has() didukung Chromium (Capacitor/Electron/browser modern).
+   ==================================================================== */
+@media (min-width: 1280px) {
+  main .grid.md\:grid-cols-2:not(.no-densify):not(:has(input)):not(:has(label)):not(:has(select)):not(:has(textarea)) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  main .grid.md\:grid-cols-3:not(.no-densify):not(:has(input)):not(:has(label)):not(:has(select)):not(:has(textarea)) {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  /* container ber-cap max-w-7xl di <main> -> lebarkan supaya tak banyak ruang kosong pinggir */
+  main > .max-w-7xl,
+  main > div > .max-w-7xl {
+    max-width: 1600px;
+  }
+}
+@media (min-width: 1536px) {
+  main .grid.md\:grid-cols-2:not(.no-densify):not(:has(input)):not(:has(label)):not(:has(select)):not(:has(textarea)) {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  main .grid.md\:grid-cols-3:not(.no-densify):not(:has(input)):not(:has(label)):not(:has(select)):not(:has(textarea)) {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+  main > .max-w-7xl,
+  main > div > .max-w-7xl {
+    max-width: 1840px;
+  }
+}

@@ -10,6 +10,7 @@ function emptyForm() {
   return {
     id: null,
     nis: '',
+    nisn: '', // v.95.0626d: Nomor Induk Siswa Nasional
     nama: '',
     jk: 'L',
     tgl_lahir: '',
@@ -159,6 +160,7 @@ export function useSantriForm() {
       form.value = {
         id: s.id,
         nis: s.nis || '',
+        nisn: s.nisn || '',
         nama: s.nama || '',
         jk: s.jk || 'L',
         tgl_lahir: s.tgl_lahir || '',
@@ -237,6 +239,7 @@ export function useSantriForm() {
       const data = {
         id: editingId.value ? Number(editingId.value) || editingId.value : id,
         nis: f.nis,
+        nisn: f.nisn || '',
         username: defaultUsername,
         nama: toTitleCase(f.nama),
         jk: f.jk,

@@ -107,6 +107,22 @@ service cloud.firestore {
         && request.resource.data.nominal > 0;
     }
 
+    // v.95.0626: Uang Saku santri ma'had — sama persis dgn tabungan (koleksi terpisah)
+    match /keuangan_uang_saku_santri/{docId} {
+      allow read: if true;
+      allow create: if signedIn()
+        && request.resource.data.id is string
+        && request.resource.data.jenis in ['setor', 'tarik']
+        && request.resource.data.nominal is number
+        && request.resource.data.nominal > 0
+        && isValidDate(request.resource.data.tanggal);
+      allow delete: if signedIn();
+      allow update: if signedIn()
+        && request.resource.data.jenis in ['setor', 'tarik']
+        && request.resource.data.nominal is number
+        && request.resource.data.nominal > 0;
+    }
+
     match /keuangan_gaji/{docId} {
       allow read: if true;
       allow create, update: if signedIn()
@@ -133,7 +149,7 @@ service cloud.firestore {
         && isValidDate(request.resource.data.tanggal)
         && request.resource.data.keterangan is string
         && request.resource.data.keterangan.size() >= 1
-        && request.resource.data.sumber in ['manual', 'pos_santri', 'tabungan_santri', 'tabungan_guru', 'gaji', 'hutang'];
+        && request.resource.data.sumber in ['manual', 'pos_santri', 'tabungan_santri', 'tabungan_guru', 'gaji', 'hutang', 'transfer_verified'];
       // v.21.99.0527: izinkan update utk super_admin (koreksi nominal/keterangan via UI gating).
       allow update: if signedIn()
         && request.resource.data.tipe in ['masuk', 'keluar']
@@ -142,7 +158,7 @@ service cloud.firestore {
         && isValidDate(request.resource.data.tanggal)
         && request.resource.data.keterangan is string
         && request.resource.data.keterangan.size() >= 1;
-      allow delete: if signedIn() && resource.data.sumber in ['manual', 'gaji', 'pos_santri', 'tabungan_santri', 'tabungan_guru', 'hutang'];
+      allow delete: if signedIn() && resource.data.sumber in ['manual', 'gaji', 'pos_santri', 'tabungan_santri', 'tabungan_guru', 'hutang', 'transfer_verified'];
     }
 
     match /link_preview_cache/{cacheId} {

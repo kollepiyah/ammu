@@ -83,13 +83,30 @@
             <p class="text-base font-black text-amber-700">{{ fmtRp(p.nominal) }}</p>
           </div>
         </div>
-        <!-- Action buttons (cuma pending) -->
-        <div v-if="p.status === 'pending'" class="flex gap-2 mt-3 pt-3 border-t border-[var(--border-subtle)]">
+        <!-- v.95.0626c: indikator link tagihan -->
+        <p v-if="p.tagihan_id" class="text-[10px] text-cyan-700 dark:text-cyan-300 mt-1 font-bold">
+          <i class="fas fa-link mr-1"></i>Terhubung ke tagihan (saat verifikasi, otomatis kurangi tagihan)
+        </p>
+        <!-- Action buttons -->
+        <div v-if="p.status === 'pending'" class="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-[var(--border-subtle)]">
           <button
             @click="openBukti(p)"
             class="px-3 py-1.5 text-xs font-bold bg-cyan-100 dark:bg-cyan-900/40 hover:bg-cyan-200 text-cyan-700 dark:text-cyan-300 rounded-lg cursor-pointer"
           >
             <i class="fas fa-eye mr-1"></i>Lihat Bukti
+          </button>
+          <button
+            @click="openEdit(p)"
+            class="px-3 py-1.5 text-xs font-bold bg-amber-100 dark:bg-amber-900/40 hover:bg-amber-200 text-amber-700 dark:text-amber-300 rounded-lg cursor-pointer"
+          >
+            <i class="fas fa-link mr-1"></i>Edit / Link Tagihan
+          </button>
+          <button
+            @click="hapusTransfer(p)"
+            title="Hapus record"
+            class="px-2.5 py-1.5 text-xs font-bold bg-rose-50 dark:bg-rose-900/30 hover:bg-rose-100 text-rose-600 rounded-lg cursor-pointer"
+          >
+            <i class="fas fa-trash"></i>
           </button>
           <button
             @click="verifyTransfer(p)"
@@ -113,6 +130,56 @@
           >
             <i class="fas fa-eye mr-1"></i>Lihat Bukti
           </button>
+          <button
+            @click="hapusTransfer(p)"
+            class="ml-auto px-3 py-1.5 text-xs font-bold bg-rose-50 dark:bg-rose-900/30 hover:bg-rose-100 text-rose-600 rounded-lg cursor-pointer"
+          >
+            <i class="fas fa-trash mr-1"></i>Hapus
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- v.95.0626c: Modal Edit / Link Tagihan -->
+    <div
+      v-if="editModal"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-3"
+      @click.self="editModal = false"
+    >
+      <div class="bg-[var(--bg-card)] rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto p-5 space-y-3">
+        <h3 class="text-base font-black text-[var(--text-primary)]">
+          <i class="fas fa-edit text-amber-500 mr-2"></i>Edit Transfer
+          <span class="text-sm font-bold text-[var(--text-secondary)]">— {{ editP?.santri_nama }}</span>
+        </h3>
+        <div>
+          <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase block mb-1">Nominal</label>
+          <input v-model.number="editForm.nominal" type="number" min="0" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)] text-right font-bold" />
+        </div>
+        <div>
+          <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase block mb-1">Kategori</label>
+          <input v-model="editForm.kategori" type="text" placeholder="mis. PMB / Syahriyah / Transfer" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)]" />
+        </div>
+        <div>
+          <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase block mb-1">Terapkan ke Tagihan (opsional)</label>
+          <select v-model="editForm.tagihan_id" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)]">
+            <option value="">— Tidak terhubung (setoran lain) —</option>
+            <option v-for="t in editTagihanList" :key="t.id" :value="t.id">
+              {{ t.kategori || 'Tagihan' }}{{ t.periode ? ' · ' + t.periode : '' }} — sisa {{ fmtRp(sisaTagihan(t)) }}
+            </option>
+          </select>
+          <p class="text-[10px] text-[var(--text-tertiary)] mt-1 italic">
+            Kalau dihubungkan, saat <b>Verifikasi</b> nominal otomatis mengurangi tagihan tsb (lunas/partial).
+          </p>
+        </div>
+        <div>
+          <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase block mb-1">Catatan</label>
+          <textarea v-model="editForm.catatan" rows="2" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"></textarea>
+        </div>
+        <div class="flex gap-2 pt-2">
+          <button @click="editModal = false" class="flex-1 px-4 py-2 text-sm font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-200 rounded-xl">Batal</button>
+          <button @click="saveEdit" :disabled="savingEdit" class="flex-1 px-4 py-2 text-sm font-black bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white rounded-xl">
+            <i :class="['fas', savingEdit ? 'fa-spinner fa-spin' : 'fa-save', 'mr-1']"></i>Simpan
+          </button>
         </div>
       </div>
     </div>
@@ -123,7 +190,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { doc, getDoc } from 'firebase/firestore'
 import { db } from '@/services/firebase'
-import { subscribeColl, setOne } from '@/services/firestore'
+import { subscribeColl, setOne, deleteOne } from '@/services/firestore'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
@@ -178,6 +245,74 @@ function openBukti(p) {
   else toast.warning('Bukti tidak ditemukan')
 }
 
+// ===== v.95.0626c: CRUD record transfer (hapus + edit/link tagihan) =====
+async function hapusTransfer(p) {
+  const ok = await confirm({
+    title: 'Hapus record transfer?',
+    message: `${p.santri_nama} · ${fmtRp(p.nominal)} (${p.kategori || 'Transfer'})\nStatus: ${p.status || 'pending'}\n\nRecord transfer ini dihapus permanen (tidak menghapus catatan buku induk yang sudah dibuat).`,
+    confirmText: 'Hapus',
+    cancelText: 'Batal',
+    danger: true
+  })
+  if (!ok) return
+  try {
+    await deleteOne('pembayaran_transfer_pending', p.id)
+    toast.success('Record transfer dihapus')
+  } catch (e) {
+    toast.error('Gagal hapus: ' + (e?.message || e))
+  }
+}
+
+const editModal = ref(false)
+const editP = ref(null)
+const editForm = ref({ nominal: 0, kategori: '', catatan: '', tagihan_id: '' })
+const editTagihanList = ref([])
+const savingEdit = ref(false)
+async function openEdit(p) {
+  editP.value = p
+  editForm.value = {
+    nominal: Number(p.nominal) || 0,
+    kategori: p.kategori || '',
+    catatan: p.catatan || '',
+    tagihan_id: p.tagihan_id || ''
+  }
+  editTagihanList.value = []
+  editModal.value = true
+  // load tagihan santri (belum lunas) untuk opsi link
+  try {
+    const { collection, getDocs, query, where } = await import('firebase/firestore')
+    const sid = String(p.santri_id)
+    const snap = await getDocs(query(collection(db, 'keuangan_tagihan'), where('santri_id', '==', sid)))
+    editTagihanList.value = snap.docs
+      .map((d) => ({ id: d.id, ...d.data() }))
+      .filter((t) => String(t.status || 'belum') !== 'lunas')
+  } catch (e) {
+    console.warn('[openEdit] load tagihan gagal:', e?.message)
+  }
+}
+async function saveEdit() {
+  if (!editP.value || savingEdit.value) return
+  savingEdit.value = true
+  try {
+    await setOne('pembayaran_transfer_pending', editP.value.id, {
+      ...editP.value,
+      nominal: Number(editForm.value.nominal) || 0,
+      kategori: editForm.value.kategori || 'Transfer',
+      catatan: editForm.value.catatan || '',
+      tagihan_id: editForm.value.tagihan_id || ''
+    })
+    toast.success('Perubahan disimpan')
+    editModal.value = false
+  } catch (e) {
+    toast.error('Gagal simpan: ' + (e?.message || e))
+  } finally {
+    savingEdit.value = false
+  }
+}
+function sisaTagihan(t) {
+  return (Number(t.nominal) || 0) - (Number(t.bayar || t.dibayar) || 0)
+}
+
 async function verifyTransfer(p) {
   const ok = await confirm({
     title: 'Verifikasi Transfer',
@@ -188,38 +323,36 @@ async function verifyTransfer(p) {
   if (!ok) return
   busyIds.value.add(p.id)
   try {
-    // 1. Update status pending ke verified
-    await setOne('pembayaran_transfer_pending', p.id, {
-      ...p,
-      status: 'verified',
-      verified_at: new Date().toISOString(),
-      verified_by: auth.sesiAktif?.nama || 'Admin'
-    })
-    // 2. Tulis ke buku induk keuangan (sumber=transfer_verified)
+    // v.95.0626b: URUTAN DIBALIK — tulis buku induk + tagihan DULU, status 'verified' di-set TERAKHIR.
+    // Kalau ada write yang ditolak rules, status TIDAK terlanjur 'verified' (transfer tetap di Pending, bisa diulang).
     const buId = `bi_trf_${p.id}`
+    // FIX: penuhi rule keuangan_buku_induk — WAJIB tipe (masuk/keluar) + keterangan (string) + nominal number
+    // + tanggal 'YYYY-MM-DD'. Sebelumnya field ini tak diisi + sumber 'transfer_verified' belum di-allow -> write ditolak.
+    const tglBI = /^\d{4}-\d{2}-\d{2}$/.test(String(p.tanggal || '')) ? p.tanggal : new Date().toISOString().slice(0, 10)
     await setOne('keuangan_buku_induk', buId, {
       id: buId,
+      tipe: 'masuk',
       santri_id: p.santri_id,
       santri_nama: p.santri_nama,
       lembaga: p.lembaga,
       kelas: p.kelas,
       kategori: p.kategori || 'Transfer',
-      nominal: p.nominal,
-      tanggal: p.tanggal,
+      nominal: Number(p.nominal) || 0,
+      tanggal: tglBI,
+      keterangan: `Transfer terverifikasi - ${p.kategori || 'Pembayaran'} - ${p.santri_nama || ''}`.trim(),
       catatan: (p.catatan || '') + ' (transfer verified)',
       sumber: 'transfer_verified',
       transfer_ref_id: p.id,
       verified_by: auth.sesiAktif?.nama || 'Admin',
       created_at: new Date().toISOString()
     })
-    // 3. v.82.0526: kalau ada tagihan_id link, update field bayar di tagihan tsb supaya status berubah.
+    // update tagihan terkait (kalau ada link) — non-fatal
     if (p.tagihan_id) {
       try {
         const tgSnap = await getDoc(doc(db, 'keuangan_tagihan', String(p.tagihan_id)))
         if (tgSnap.exists()) {
           const tg = tgSnap.data()
           const newBayar = (Number(tg.bayar) || 0) + Number(p.nominal || 0)
-          // v.95.0626: set status sesuai sisa (lunas / partial / belum) — biar konsisten dgn POS & badge wali
           const penuh = Number(tg.nominal || 0)
           const statusBaru = penuh > 0 && newBayar >= penuh - 0.5 ? 'lunas' : newBayar > 0 ? 'partial' : 'belum'
           await setOne('keuangan_tagihan', String(p.tagihan_id), {
@@ -235,6 +368,13 @@ async function verifyTransfer(p) {
         console.warn('[verifyTransfer] update tagihan gagal:', e?.message)
       }
     }
+    // TERAKHIR: set status pending -> verified (setelah ledger + tagihan beres)
+    await setOne('pembayaran_transfer_pending', p.id, {
+      ...p,
+      status: 'verified',
+      verified_at: new Date().toISOString(),
+      verified_by: auth.sesiAktif?.nama || 'Admin'
+    })
     toast.success('Transfer ' + p.santri_nama + ' di-verifikasi')
   } catch (e) {
     toast.error('Gagal verifikasi: ' + (e?.message || e))

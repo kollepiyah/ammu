@@ -1,7 +1,7 @@
 # PROJECT KNOWLEDGE BASE — Ammu Online (Portal MU)
 > Dokumen onboarding untuk sesi Claude baru. Baca ini DULU sebelum mulai. **Update terakhir: 5 Juni 2026 (v.95.0626 — Generate Tagihan Khusus/infaq, ikon Tabungan→dompet, login bg base64+blur, hapus QuickActions Beranda, bottom-nav guru→Rekap, Dashboard Statistik overhaul [Top5 PTPT/PPPH klik-detail + kartu Guru Belum Input + Kelas Overload, scope kepala/PJ], rapor auto-isi Guru Kelas (fallback shift), repo rilis→kollepiyah/ammu, bump vc95). LANJUTAN sesi: FCM push (Android plugin + web/VAPID + 4 trigger server) + fix auth anon (fcm_token bisa simpan) + hapus toggle notif manual, struk dot-matrix 9.5×11 (BUKTI dikotak, terbilang baris penuh, penyetor kiri/penerima kanan), Electron Win7 dual-build (Electron 22) + dropdown versi di download login. TETAP vc95 (belum upload Play Console).**
 > ⚠️ KB KANONIK = file ini (`PROJECT-KNOWLEDGE-BASE.md`). File lama `PROJECT_KNOWLEDGE_BASE.md` (underscore) DEPRECATED — abaikan.
-> 👉 **RECAP TERBARU ada di PALING BAWAH** (cari "SESI v.95.0626 — RECEIPT VIEWER + STRUK ESC/P"). Sebelumnya: "LANJUTAN: FCM PUSH + STRUK + WIN7", lalu v.93.0626 (splash/LED/PDF — detail di `AUDIT-COWORK-03JUN2026-SPLASH-LED.md`).
+> 👉 **RECAP TERBARU ada di PALING BAWAH** (cari "SESI v.96.0626 — BATCH 13 ITEM + STRUK SLIP PDF + FCM + VERIFY + NOTIF + NISN"). ⚠️ **ESC/P (dot-matrix teks) sudah DIBATALKAN di v.96** → cetak 2-ply balik ke **slip PDF grafis** (`cetakStrukSlipPdf`, 220×140mm). Sebelumnya: "SESI v.95.0626 — RECEIPT VIEWER + STRUK ESC/P", "LANJUTAN: FCM PUSH + STRUK + WIN7".
 > ⏳ **STATUS:** perubahan v.95.0626 ADA di file (D:\). **Alur rilis kyai:** `tmp_recovery\_run_vite.cmd` → `git add -A && git commit --no-verify` → `npm run firebase:deploy` (web/PWA) → `npm run build:aab` (vc95 — WAJIB agar perubahan sampai ke app HP, krn Capacitor NATIVE bundle) → (desktop) `electron:publish` ke repo `kollepiyah/ammu`. Sesi v.95 = web/JS murni, tapi AAB tetap perlu utk app HP. **LANJUTAN aktivasi:** FCM butuh `google-services.json` di `vue-app/android/app/` + `npm i @capacitor/push-notifications --prefix vue-app` + `npx cap sync android` + `firebase deploy --only functions`. Win7 publish: HAPUS rilis GitHub `v95.0.626` lama dulu (electron-builder skip rilis >2 jam) lalu publish ulang. Detail lengkap di section "LANJUTAN: FCM PUSH + STRUK + WIN7" paling bawah.
 
 ---
@@ -46,7 +46,7 @@ Shell Desktop Commander **men-strip PATH + PATHEXT** → `git`/`node`/`npm` tela
 - **Perubahan NATIVE Android (widget/manifest/splash)** → WAJIB rebuild AAB (web deploy tidak cukup).
 
 ## 5. SKEMA VERSI
-Format `v.<versionCode>.<MMYY>` (MM=bulan, YY=2 digit tahun). Saat ini **v.95.0626** (versionCode 95, Juni 2026; vc 88-94 SUDAH dipakai → minimal 96 utk rilis berikut). Bump SEMUA tempat saat rilis AAB baru (Play Console tolak versionCode sama):
+Format `v.<versionCode>.<MMYY>` (MM=bulan, YY=2 digit tahun). Saat ini **v.96.0626** (versionCode 96, Juni 2026; vc 88-96 SUDAH dipakai → minimal 97 utk rilis berikut). Bump SEMUA tempat saat rilis AAB baru (Play Console tolak versionCode sama):
 - `vue-app/android/app/build.gradle` (versionCode + versionName)
 - `package.json` (root + vue-app = "87.0526"), `vue-app/electron/package.json` ("87.0.526")
 - `vue-app/src/main.js` Sentry `release: 'portal-mu@87.0526'`
@@ -480,3 +480,59 @@ npm run build:aab                :: vc95 (Play Console; WAJIB utk app HP — Cap
 ### I. GOTCHA
 - Mount Cowork LAG/TRUNCATED utk file besar → `node --check` lewat mount kasih error PALSU ("Unexpected end of input", file kepotong). Verif AUTHORITATIVE via **Read/Grep** (D:\) + render fungsi standalone di /tmp. Build asli = `_run_vite.cmd`.
 - ESC/P keterbatasan (vs HTML gambar 2): font selalu fixed-width (bukan proporsional), garis pakai karakter, tak ada huruf tebal. Susunan bisa disamakan, gaya huruf khas dot-matrix — konsekuensi pilih "tajam".
+
+---
+
+## SESI v.96.0626 — BATCH 13 ITEM + STRUK SLIP PDF + FCM + VERIFY + NOTIF + NISN (6 Juni 2026, Cowork) — RECAP TERBARU, BACA INI DULU
+
+> versionCode **95→96**, versionName **v.96.0626**. Branch feature/vue-migration. Semua perubahan = WEB renderer + Cloud Functions + Firestore rules (TIDAK ada perubahan native Android/Electron main, KECUALI versionCode/Name). Lanjutan dari v.95 (receipt viewer + ESC/P).
+
+### ⭐ A. STRUK RE-PIVOT: ESC/P → GRAFIS SLIP PDF (kyai BATAL ESC/P)
+- **ESC/P (raw dot-matrix) DIBATALKAN.** Cetak 2-ply = **PDF slip grafis landscape** via **`cetakStrukSlipPdf(trx,settings,{preview})`** (strukBuilder.js): orientation `slipW>=slipH?'l':'p'`, format `[slipW,slipH]`, KOP teks polos (NO logo), kotak BUKTI dashed kanan-atas, info 2-kolom (Kelas tebal, NO Status Siswa), rincian dotted-leader + periode, band TOTAL, ttd Penyetor/Penerima (NO Petugas).
+- **2 MODE**: (1) **Struk PDF** = `cetakStrukPdf` (F4 kop+logo, download) — TIDAK diubah; (2) **Struk Print 2-ply** = `cetakStrukSlipPdf` — SEMUA jalur 2-ply diunifikasi ke sini (PosSantriView.cetakLangsung '9.5'→printPdf, cetakLastDot→preview, RiwayatPosView.cetakDot, PrinterSettingsModal.tesCetak, BukuIndukView dot mode).
+- **Default 220×140mm (22×14cm)** per batas potong (was 210×130) — di strukBuilder num default + form Pengaturan (posStrukSlipW/H/TopMm init/load/simpan/placeholder/max). Settings tersimpan MENANG atas default → kalau kyai sudah pernah simpan, set 220/140 manual.
+- `cetakSlipTabunganPdf(mut,settings,{preview,saldo,santri,label})` BARU — slip setor/tarik (label "BUKTI SETOR/TARIK <TABUNGAN|UANG SAKU>").
+
+### B. BATCH 13 ITEM (semua DONE)
+1. **Cicil** (bayar sebagian→sisa): defensive PosSantriView.handleSimpan (tagUpdErr surface) + TagihanView.getSisa (dibayar fallback) + verify kurangi tagihan (D). **MASIH PERLU TES KYAI (#2 in-progress).**
+2. **Tagihan khusus tak muncul POS**: PosSantriView.openModal query DUAL string+number santri_id (no limit), merge Map.
+3,8. **Filter per-guru Master Tunjangan + Potongan**: items + `guru_ids[]` + panel assign (search+checkbox) PengaturanKeuanganView; BisyarohView `applicableMaster(key,g)` filter guru_ids (kosong=semua) → inject line_items/potongan saat pilihGuru + bulk-generate.
+4. **Filter santri Syahriyah**: jenis `nominal_per_santri{}` + UI per-santri search; generate 4-lapis (santri→kelas→lembaga→default).
+5. **Auto-generate CRON**: CF `autoGenerateTagihanBulanan` (onSchedule 'every day 01:00' WIB, idempotent, baca settings/general.keuTagihanJenis+keu_jatuh_tempo, jenis auto_generate, dedup periode-scoped, broadcast 1 notif santri_semua). Kill-switch `keu_auto_generate_cron` (toggle Pengaturan, default ON). **Tombol manual "Generate Bulan Ini" TETAP.**
+9. **Ekspor PDF rekap bisyaroh**: `exportRekapBisyarohPdf` (F4 landscape tabel+TOTAL) + tombol di tab Riwayat BisyarohView.
+10,11. **Tabungan ekspor/impor + cetak slip**: useExcel (ExcelJS CDN) exportSimple(template)/importFile(impor cocok NIS/nama); `exportRekapTabunganPdf`; header PDF/Template/Impor + cetak slip per mutasi.
+12. **UANG SAKU ma'had**: TabunganView di-PARAMETRIZE by route `mode` (meta.mode='uangsaku'). `isUangSaku`/`COLL`(keuangan_uang_saku_santri)/`pageTitle`/`mutasiSource` (admin uangsaku subscribe lokal `uangSakuMutasi`; tabungan tetap useKeuangan.tabunganSantri). Picker filter `is_mukim===true`. Route `/uang-saku` + menu "Uang Saku"(admin)+"Uang Saku Saya"(santri). Rule `keuangan_uang_saku_santri`. Semua teks mode-aware (kategori "Umum/Sukarela/.." drop prefix Tabungan). **Default mode tabungan TIDAK berubah.**
+13. **Card responsif desktop**: assets/main.css `@media(min-width:1280/1536px)` `main .grid.md\:grid-cols-2/3:not(:has(input/label/select/textarea))` naik kolom (2→3→4, 3→4→5) + widen `main>.max-w-7xl`→1600/1840. Form dikecualikan :has(). Opt-out `no-densify`. Mobile aman (≥1280px only).
+
+### C. FCM PUSH (akhirnya JALAN)
+- **VAPID key SALAH** di usePushNotifications.js → 401. Ganti ke key Console: `BOEAStvEGgdHCSKGONFbPY0olQ7OEUUvhbX3NofzqWyFBvaXG0tceRbvNE36Bw7qv35ZL6fXtOPEa6Wyp8VBWfY`.
+- Kyai enable **Firebase Installations API** + **FCM API** di GCP + allow di API key restrictions → push JALAN.
+- **Ikon**: badge `/icon-72.png` TAK ADA → ganti `/icon-192.png` (onMessage + CF payload + public/firebase-messaging-sw.js + vue-app/public/firebase-messaging-sw.js). PWA Android small-icon = monokrom siluet (batasan platform).
+
+### D. VERIFY TRANSFER + TAGIHAN ("Missing or insufficient permissions")
+- Rule `keuangan_buku_induk` create WAJIB tipe+keterangan+nominal(number)+tanggal(YYYY-MM-DD)+sumber-in-list. Verify dulu tak isi tipe/keterangan, pakai `catatan`, sumber `transfer_verified` belum di-allow → ditolak (status terlanjur verified, ledger gagal). FIX: (1) rule +`'transfer_verified'` (create+delete); (2) verifyTransfer isi tipe='masuk'+keterangan+Number(nominal)+tanggal YYYY-MM-DD; (3) **URUTAN dibalik**: buku_induk+tagihan DULU, status='verified' TERAKHIR.
+- **Tagihan berkurang setelah verify** kalau `tagihan_id` ada (wali bayar via tombol "Bayar"→goBayar set tagihan_id). "Setoran Lain"=standalone → admin pakai Edit/Link (E).
+- **Wali "menunggu" padahal verified**: PembayaranView.myPendingTransfers filter `status!=='verified'`.
+
+### E. CRUD VERIFIKASI PEMBAYARAN (PembayaranPendingView)
+- **Hapus** (semua tab) + **Edit/Link Tagihan** (modal nominal/kategori/catatan + dropdown tagihan belum-lunas → set tagihan_id). Indikator "Terhubung ke tagihan" + sisaTagihan.
+
+### F. NOTIF TARGET (kyai: "sesuai user, jangan terbalik")
+- Transfer "bukti baru" → **target:'admin'** + resolver CF `'admin'` (guru role_sistem admin/admin_keuangan/super_admin). Tagihan bulanan → **'santri_semua'** (resolver baru = santri token saja, BUKAN guru).
+- **Lonceng in-app (`useNotifications.js`) TERPISAH dari notif_queue/FCM** — build dari koleksi sumber, filter PER ROLE: getTagihan/getPembayaran/getKenaikan/getPrestasi = santri-only+own; getBisyaroh=guru-only; getKritik=admin. **Guru TAK PERNAH lihat tagihan.** Sudah benar (tak diubah).
+
+### G. NISN
+- Field NISN di `useSantriForm.js` (emptyForm+populate+save) + input SantriFormView (sebelah NIS) + tampil ProfilSantri. Santri rule tak whitelist field → aman. **Impor/ekspor massal NISN BELUM** (offer kyai).
+
+### H. BUMP v.96.0626 (vc 95→96)
+- gradle (vc96+vn), package.json root+vue-app "96.0626", electron/package.json "96.0.626", main.js Sentry "portal-mu@96.0626", 4 footer (Sidebar/Login/Dashboard/PpdbAdmin). vc 88-95 SUDAH dipakai → minimal **97** rilis berikut.
+
+### I. DEPLOY (kyai jalankan)
+- **Web+rules**: `npm run firebase:deploy` (struk, batch 13, CRUD, verify, NISN, notif web/SW, density, uang saku rule).
+- **Cloud Functions**: `firebase deploy --only functions` (autoGenerateTagihanBulanan + resolver target admin/santri_semua + ikon payload). Blaze aktif.
+- **AAB v.96**: `npm run build:aab` (remote-shell — hanya perlu kalau rilis Play Console; web update cukup firebase:deploy).
+- **Electron**: `npm run build:electron --prefix vue-app` + robocopy dist→electron/app + `cd vue-app\electron && npm run electron:make`. (Electron main TAK berubah sesi ini → renderer-only; tak wajib install ulang .exe.)
+
+### J. PENDING / GOTCHA
+- **Cicil (#2)** nunggu tes kyai setelah deploy. NISN impor/ekspor massal (offer).
+- GOTCHA tetap: mount Cowork LAG/TRUNCATED → `node --check`/grep via mount kasih error PALSU; verif AUTHORITATIVE via Read/Grep (D:\) + render fungsi standalone di /tmp.

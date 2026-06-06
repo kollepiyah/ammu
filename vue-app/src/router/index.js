@@ -126,6 +126,8 @@ const routes = [
       { path: 'riwayat-santri', name: 'riwayat-santri', component: RiwayatSantriView, meta: { keuangan: true } },
       // v.20.6.0526: Tabungan — santri boleh lihat tabungannya sendiri (no meta gate, view-level filter scope ke santri_id sendiri)
       { path: 'tabungan', name: 'tabungan', component: TabunganView },
+      // v.95.0626: Uang Saku santri ma'had — reuse TabunganView (mode='uangsaku', koleksi keuangan_uang_saku_santri)
+      { path: 'uang-saku', name: 'uang-saku', component: TabunganView, meta: { mode: 'uangsaku' } },
       // v.20.6.0526: Bisyaroh — guru BOLEH lihat slip bisyarohnya sendiri (no meta gate, BisyarohView gating by role)
       { path: 'bisyaroh', name: 'bisyaroh', component: BisyarohView },
       // v.68.0526: Rapor full Vue (window.print → Save as PDF)

@@ -402,6 +402,15 @@
             <span class="text-[10px] text-[var(--text-tertiary)] font-bold"
               >{{ filteredSlips.length }} slip · {{ totalTakeFmt }}</span
             >
+            <!-- v.95.0626: ekspor PDF rekap riwayat (terfilter periode) -->
+            <button
+              @click="exportRekap"
+              :disabled="exportingRekap || filteredSlips.length === 0"
+              title="Ekspor PDF rekap slip (sesuai filter periode)"
+              class="text-[10px] font-black bg-cyan-600 hover:bg-cyan-700 disabled:opacity-50 text-white px-2.5 py-1 rounded-lg flex items-center gap-1"
+            >
+              <i :class="['fas', exportingRekap ? 'fa-spinner fa-spin' : 'fa-file-pdf']"></i>Export PDF
+            </button>
             <!-- v.21.100.0527: bulk select hapus -->
             <label v-if="isAdmin && filteredSlips.length > 0" class="flex items-center gap-1 text-[10px] font-bold cursor-pointer">
               <input
@@ -603,7 +612,7 @@ import { useToast } from '@/composables/useToast'
 import { fmtRp, getNamaGuruGelar } from '@/utils/format'
 import ReceiptModal from '@/components/ReceiptModal.vue'
 import { buildSlipBisyarohHtml } from '@/utils/receiptHtml'
-import { cetakSlipBisyarohPdf } from '@/utils/strukBuilder'
+import { cetakSlipBisyarohPdf, exportRekapBisyarohPdf } from '@/utils/strukBuilder'
 
 const { gaji, loading } = useKeuangan()
 const { guruRaw, deriveGuruLembagaRefs } = useGuru()
@@ -640,6 +649,26 @@ async function downloadSlipReceipt() {
     toast.error('Gagal membuat PDF: ' + (e.message || e))
   } finally {
     slipReceiptDownloading.value = false
+  }
+}
+
+// v.95.0626: ekspor PDF rekap riwayat slip bisyaroh (terfilter periode) — detail rinci + total
+const exportingRekap = ref(false)
+function _fmtPeriodeLabel(p) {
+  const m = String(p || '').match(/^(\d{4})-(\d{2})$/)
+  if (m) return (BULAN_NAMES[parseInt(m[2], 10) - 1] || m[2]) + ' ' + m[1]
+  return p || 'Semua Periode'
+}
+async function exportRekap() {
+  const slips = filteredSlips.value || []
+  if (!slips.length) { toast.warning('Tidak ada slip untuk diekspor.'); return }
+  exportingRekap.value = true
+  try {
+    await exportRekapBisyarohPdf(slips, settingsStore.settings || {}, _fmtPeriodeLabel(filterPeriode.value))
+  } catch (e) {
+    toast.error('Gagal ekspor: ' + (e.message || e))
+  } finally {
+    exportingRekap.value = false
   }
 }
 
@@ -820,6 +849,17 @@ function buildLineItemsFromGuru(g) {
   return items
 }
 
+// v.95.0626: master tunjangan/potongan yg berlaku utk guru g (scope guru_ids; kosong = semua)
+function applicableMaster(key, g) {
+  const sset = settingsStore.settings || {}
+  const arr = Array.isArray(sset[key]) ? sset[key] : []
+  const gid = String(g.id)
+  return arr.filter((m) => {
+    const ids = Array.isArray(m.guru_ids) ? m.guru_ids.map(String) : []
+    return ids.length === 0 || ids.includes(gid)
+  })
+}
+
 function pilihGuru(g) {
   selectedGuru.value = g
   const periode = `${tahun.value}-${String(bulan.value).padStart(2, '0')}`
@@ -851,15 +891,22 @@ function pilihGuru(g) {
         nominal: Number(existing.bisyaroh_tambahan)
       })
     }
+    // v.95.0626: tunjangan dari slip (bulk) -> tampil di editor
+    for (const tj of Array.isArray(existing.tunjangan_list) ? existing.tunjangan_list : []) {
+      items.push({ kategori: 'tunjangan', lembaga: '-', label: tj.label || 'Tunjangan', nominal: Number(tj.nominal) || 0 })
+    }
     form.value = {
       line_items: items,
       total_potongan: Number(existing.total_potongan || 0)
     }
   } else {
-    form.value = {
-      line_items: buildLineItemsFromGuru(g),
-      total_potongan: 0
+    // v.95.0626: slip baru — auto-isi tunjangan/potongan per-guru dari master (scope guru_ids; kosong = semua)
+    const items = buildLineItemsFromGuru(g)
+    for (const t of applicableMaster('master_tunjangan', g)) {
+      items.push({ kategori: 'tunjangan', lembaga: '-', label: t.nama || 'Tunjangan', nominal: Number(t.nominal) || 0 })
     }
+    const potonganAuto = applicableMaster('master_potongan', g).reduce((s, p) => s + (Number(p.nominal) || 0), 0)
+    form.value = { line_items: items, total_potongan: potonganAuto }
   }
 }
 
@@ -1100,8 +1147,13 @@ async function bulkGenerate() {
         const pokok = Number(mapPokok[g.id] || 0)
         const sekolah = Number(mapSekolah[g.id] || 0)
         const bonus = hitungBonusGuru(g.id)
+        // v.95.0626: tunjangan & potongan per-guru dari master (scope guru_ids; kosong = semua)
+        const tjList = applicableMaster('master_tunjangan', g).map((t) => ({ label: t.nama || 'Tunjangan', nominal: Number(t.nominal) || 0 }))
+        const ptList = applicableMaster('master_potongan', g).map((p) => ({ label: p.nama || 'Potongan', nominal: Number(p.nominal) || 0 }))
+        const totalTunjangan = tjList.reduce((s, t) => s + t.nominal, 0)
+        const totalPotongan = ptList.reduce((s, p) => s + p.nominal, 0)
         const totalIn = pokok + sekolah
-        const totalSlip = totalIn + Number(bonus.total || 0)
+        const totalSlip = totalIn + Number(bonus.total || 0) + totalTunjangan
         await setDoc(doc(db, 'keuangan_gaji', slipId), {
           id: slipId,
           guru_id: Number(g.id) || g.id,
@@ -1114,14 +1166,14 @@ async function bulkGenerate() {
           bisyaroh_tambahan: 0,
           bonus_kehadiran: bonus,
           total_pemasukan: totalSlip,
-          total_potongan: 0,
-          take_home: totalSlip,
-          tunjangan_list: [],
-          potongan_list: [],
+          total_potongan: totalPotongan,
+          take_home: totalSlip - totalPotongan,
+          tunjangan_list: tjList,
+          potongan_list: ptList,
           generated_via: 'bulk',
           updated_at: serverTimestamp()
         })
-        bulkLog.value.push(`OK ${g.nama} -> ${fmtRp(totalSlip)} (bonus ${fmtRp(bonus.total)})`)
+        bulkLog.value.push(`OK ${g.nama} -> ${fmtRp(totalSlip - totalPotongan)} (bonus ${fmtRp(bonus.total)})`)
       } catch (e) {
         bulkLog.value.push(`ER ${g.nama} -> ${e.message}`)
       }

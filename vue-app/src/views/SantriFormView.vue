@@ -31,6 +31,11 @@
             <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase">NIS</label>
             <input v-model="form.nis" type="text" placeholder="Opsional" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none" />
           </div>
+          <!-- v.95.0626d: NISN (Nomor Induk Siswa Nasional) -->
+          <div>
+            <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase">NISN</label>
+            <input v-model="form.nisn" type="text" placeholder="No. Induk Siswa Nasional" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none" />
+          </div>
           <!-- v.21.109.0527: tambah NIK santri -->
           <div>
             <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase">NIK</label>

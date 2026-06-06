@@ -1,6 +1,6 @@
 {
   "name": "portal-mu-vue",
-  "version": "95.0626",
+  "version": "96.0626",
   "private": true,
   "type": "module",
   "description": "Portal MU Vue 3 SPA — Full migration dari index.html legacy.",

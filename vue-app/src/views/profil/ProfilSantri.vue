@@ -44,6 +44,7 @@
           <h3 class="text-xs font-black uppercase text-[var(--text-primary)] mb-3 border-b pb-2"><i class="fas fa-id-card mr-1"></i>Identitas</h3>
           <ul class="space-y-2 text-sm">
             <li class="flex justify-between"><span class="text-[var(--text-secondary)] font-bold">NIS:</span><span class="font-black">{{ santri?.nis || '-' }}</span></li>
+            <li class="flex justify-between"><span class="text-[var(--text-secondary)] font-bold">NISN:</span><span class="font-black">{{ santri?.nisn || '-' }}</span></li>
             <li class="flex justify-between"><span class="text-[var(--text-secondary)] font-bold">NIK:</span><span class="font-black">{{ santri?.nik || '-' }}</span></li>
             <li class="flex justify-between"><span class="text-[var(--text-secondary)] font-bold">Jenis Kelamin:</span><span class="font-black">{{ santri?.jk === 'L' ? 'Laki-laki' : 'Perempuan' }}</span></li>
             <li class="flex justify-between"><span class="text-[var(--text-secondary)] font-bold">Tempat Lahir:</span><span class="font-black">{{ santri?.tempat_lahir || '-' }}</span></li>
