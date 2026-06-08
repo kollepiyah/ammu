@@ -141,16 +141,20 @@
                 {{ totalSaldoFmt }}
               </span>
             </div>
+            <template v-if="!isDesktop">
             <button @click="exportPdf" title="Ekspor PDF rekap saldo" class="bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-black px-3 py-1.5 rounded-full shadow"><i class="fas fa-file-pdf mr-1"></i>PDF</button>
             <button @click="downloadTemplate" title="Unduh template XLSX" class="bg-slate-600 hover:bg-slate-700 text-white text-xs font-black px-3 py-1.5 rounded-full shadow"><i class="fas fa-file-download mr-1"></i>Template</button>
             <button @click="triggerImport" :disabled="importingTab" title="Impor mutasi dari XLSX" class="bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white text-xs font-black px-3 py-1.5 rounded-full shadow"><i :class="['fas mr-1', importingTab ? 'fa-spinner fa-spin' : 'fa-file-upload']"></i>Impor</button>
+            </template>
             <input ref="importInput" type="file" accept=".xlsx,.xls" class="hidden" @change="importXlsx" />
+            <template v-if="!isDesktop">
             <button
               @click="openModal()"
               class="bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-xs font-black px-3 py-1.5 rounded-full shadow"
             >
               <i class="fas fa-plus mr-1"></i>Input Mutasi
             </button>
+            </template>
           </div>
         </div>
       </div>
@@ -569,6 +573,8 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { useDesktopShell } from '@/composables/useDesktopShell'
+import { definePageActions } from '@/composables/useRibbonContext'
 import { subscribeColl } from '@/services/firestore'
 import { doc, setDoc, deleteDoc, updateDoc, serverTimestamp } from 'firebase/firestore'
 import { deleteOne } from '@/services/firestore' // v.91.0626: hapus = backup audit_log dulu
@@ -1158,4 +1164,16 @@ async function importXlsx(e) {
     if (importInput.value) importInput.value.value = ''
   }
 }
+
+// v.98 full-native (Electron): tombol aksi header (PDF/Template/Impor/Input Mutasi) -> grup pita "Aksi Halaman"
+const { isElectron: isDesktop } = useDesktopShell()
+definePageActions(() => {
+  if (!isFullAccess.value) return []
+  return [
+    { label: 'Input Mutasi', icon: 'plus', primary: true, on: () => openModal() },
+    { label: 'Ekspor PDF', icon: 'printer', on: exportPdf },
+    { label: 'Template', icon: 'download', on: downloadTemplate },
+    { label: 'Impor XLSX', icon: 'file', on: triggerImport, disabled: importingTab.value }
+  ]
+})
 </script>
