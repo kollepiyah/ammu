@@ -136,10 +136,11 @@ function createMainWindow() {
     backgroundColor: TITLEBAR_LIGHT.color,  // cream default (match light mode)
     title: 'Ammu Online',
     icon: path.join(__dirname, '..', 'assets', isWin ? 'appIcon.ico' : 'appIcon.png'),
-    // v.86.0526: native titlebar + menu bar (kyai req — header lengkap, hilangkan overlay
-    //   yang menutupi ikon header app). Title bar + window controls digambar OS sendiri.
-    titleBarStyle: 'default',
-    autoHideMenuBar: false,
+    // v.98: FRAMELESS — title bar custom Ribbon (Office/Win11). Tombol Min/Max/Close digambar
+    //   app (RibbonTitleBar) + dikontrol lewat IPC window:* (lihat handler di bawah). Menu OS
+    //   disembunyikan; accelerator default (copy/paste) tetap aktif.
+    frame: false,
+    autoHideMenuBar: true,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
@@ -187,6 +188,10 @@ function createMainWindow() {
     })
   }
 
+  // v.98: sinkronkan ikon Maksimalkan/Pulihkan di RibbonTitleBar saat window di-maximize via OS/snap
+  mainWindow.on('maximize', () => mainWindow?.webContents.send('window:maximized-changed', true))
+  mainWindow.on('unmaximize', () => mainWindow?.webContents.send('window:maximized-changed', false))
+
   mainWindow.on('closed', () => {
     mainWindow = null
   })
@@ -216,6 +221,21 @@ ipcMain.handle('theme:set', async (_event, payload: { isDark: boolean }) => {
     return { ok: false, error: e?.message || String(e) }
   }
 })
+
+// ─── IPC: Window controls (title bar frameless Ribbon) — v.98 ────────────────
+ipcMain.handle('window:minimize', () => {
+  mainWindow?.minimize()
+})
+ipcMain.handle('window:toggle-maximize', () => {
+  if (!mainWindow) return false
+  if (mainWindow.isMaximized()) mainWindow.unmaximize()
+  else mainWindow.maximize()
+  return mainWindow.isMaximized()
+})
+ipcMain.handle('window:close', () => {
+  mainWindow?.close()
+})
+ipcMain.handle('window:is-maximized', () => !!mainWindow?.isMaximized())
 
 // ─── IPC: Native Print ─────────────────────────────────────────────────────────
 //

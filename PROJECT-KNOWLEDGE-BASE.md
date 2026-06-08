@@ -1,7 +1,7 @@
 # PROJECT KNOWLEDGE BASE — Ammu Online (Portal MU)
 > Dokumen onboarding untuk sesi Claude baru. Baca ini DULU sebelum mulai. **Update terakhir: 5 Juni 2026 (v.95.0626 — Generate Tagihan Khusus/infaq, ikon Tabungan→dompet, login bg base64+blur, hapus QuickActions Beranda, bottom-nav guru→Rekap, Dashboard Statistik overhaul [Top5 PTPT/PPPH klik-detail + kartu Guru Belum Input + Kelas Overload, scope kepala/PJ], rapor auto-isi Guru Kelas (fallback shift), repo rilis→kollepiyah/ammu, bump vc95). LANJUTAN sesi: FCM push (Android plugin + web/VAPID + 4 trigger server) + fix auth anon (fcm_token bisa simpan) + hapus toggle notif manual, struk dot-matrix 9.5×11 (BUKTI dikotak, terbilang baris penuh, penyetor kiri/penerima kanan), Electron Win7 dual-build (Electron 22) + dropdown versi di download login. TETAP vc95 (belum upload Play Console).**
 > ⚠️ KB KANONIK = file ini (`PROJECT-KNOWLEDGE-BASE.md`). File lama `PROJECT_KNOWLEDGE_BASE.md` (underscore) DEPRECATED — abaikan.
-> 👉 **RECAP TERBARU ada di PALING BAWAH** (cari "SESI v.97.0626 — RAPOR REDESIGN FULL-ACF (8 Juni 2026)" lalu cari "SESI v.98.0626" di PALING BAWAH utk layout/rapor/statistik + catatan TRUNCATION raporPdf). ⭐ **CETAK SLIP 2-ply (dot-matrix 9.5") FINAL = ESC/P GRAFIS RASTER** (`utils/escpImage.js` → `print:raw`, BYPASS driver): render canvas Arial → bit-image ESC/P. Driver Windows (PDF/HTML) = kosong/kotak/feed-5cm → JANGAN dipakai utk slip 9.5. Tombol "Struk PDF" tetap PDF (preview/unduh). No.Transaksi: MU-/TB-/US-/BS-NNNddmmyy. Recap sebelumnya: "BATCH 13 ITEM + STRUK SLIP PDF + FCM + VERIFY + NOTIF + NISN", "RECEIPT VIEWER + STRUK ESC/P", "FCM PUSH + STRUK + WIN7".
+> 👉 **RECAP TERBARU ada di PALING BAWAH** (cari "SESI v.97.0626 — RAPOR REDESIGN FULL-ACF (8 Juni 2026)" lalu cari "SESI v.98.0626" di PALING BAWAH utk layout/rapor/statistik + catatan TRUNCATION raporPdf; dan **"SESI BMT-PETA"** di PALING BAWAH utk integrasi pembayaran VA santri + pencairan bisyaroh via BMT PETA). ⭐ **CETAK SLIP 2-ply (dot-matrix 9.5") FINAL = ESC/P GRAFIS RASTER** (`utils/escpImage.js` → `print:raw`, BYPASS driver): render canvas Arial → bit-image ESC/P. Driver Windows (PDF/HTML) = kosong/kotak/feed-5cm → JANGAN dipakai utk slip 9.5. Tombol "Struk PDF" tetap PDF (preview/unduh). No.Transaksi: MU-/TB-/US-/BS-NNNddmmyy. Recap sebelumnya: "BATCH 13 ITEM + STRUK SLIP PDF + FCM + VERIFY + NOTIF + NISN", "RECEIPT VIEWER + STRUK ESC/P", "FCM PUSH + STRUK + WIN7".
 > ⏳ **STATUS:** perubahan v.95.0626 ADA di file (D:\). **Alur rilis kyai:** `tmp_recovery\_run_vite.cmd` → `git add -A && git commit --no-verify` → `npm run firebase:deploy` (web/PWA) → `npm run build:aab` (vc95 — WAJIB agar perubahan sampai ke app HP, krn Capacitor NATIVE bundle) → (desktop) `electron:publish` ke repo `kollepiyah/ammu`. Sesi v.95 = web/JS murni, tapi AAB tetap perlu utk app HP. **LANJUTAN aktivasi:** FCM butuh `google-services.json` di `vue-app/android/app/` + `npm i @capacitor/push-notifications --prefix vue-app` + `npx cap sync android` + `firebase deploy --only functions`. Win7 publish: HAPUS rilis GitHub `v95.0.626` lama dulu (electron-builder skip rilis >2 jam) lalu publish ulang. Detail lengkap di section "LANJUTAN: FCM PUSH + STRUK + WIN7" paling bawah.
 
 ---
@@ -761,3 +761,50 @@ npm run build:aab                :: vc95 (Play Console; WAJIB utk app HP — Cap
 - Opsional bersih root: scratch + .md lama, `firestore.rules.stage2-proposed`, `design_handoff_ammu_desktop/`.
 - Kalau angka PKBM/SMP/SMA atau distribusi terlihat aneh: pastikan `kelas_sekolah` santri PKBM ∈ {VII..XII} (di luar itu tak ter-tier SMP/SMA).
 - Backlog lama tetap: audit RBAC/lembaga mendalam vs LOGIC GLOBAL, pensiun model TPQ-shift, hapus lembaga lama "P3H" (alias→PPPH).
+
+
+---
+
+## SESI BMT-PETA — INTEGRASI PEMBAYARAN VA + PENCAIRAN BISYAROH (8 Juni 2026, Cowork agent) — RECAP, BACA INI
+
+> Workstream **TERPISAH** dari sesi rapor/statistik v.97/v.98 (itu sudah commit HEAD f863998). Sesi ini **BELUM commit** — kyai commit + deploy sendiri (git sandbox Linux corrupt → pakai shell Windows). Tag komentar kode `v.97.0626` (BENTROK label dgn sesi rapor — abaikan, cuma komentar; **versionCode build.gradle TETAP 96, belum bump**).
+> Konteks: integrasi **dua arah** dgn sistem **BMT PETA** — (1) tarik pembayaran santri via **Virtual Account** (masuk), (2) salur **bisyaroh** guru ke rekening BMT (keluar). Masih tahap rancangan/persiapan; **API BMT BELUM ada** → semua bagian BMT default-OFF/dry-run, **alur lama tetap utuh**.
+
+### DELIVERABLE NON-KODE
+- **`SKEMA-INTEGRASI-PEMBAYARAN-VA-BMT-PETA.html`** (root) — dokumen skema untuk diajukan ke BMT PETA Pusat/GM (dua arah: VA masuk + pencairan bisyaroh keluar, 3 model eksekusi, kebutuhan API BMT, Diagram 1-4). Buka di browser → Print → PDF.
+
+### A. VIRTUAL ACCOUNT (santri, masuk)
+- `utils/bmtVa.js` BARU: `computeVaSantri`(prefix+NIS), `formatVa`, `isBmtAktif`. VA TETAP per santri.
+- `PengaturanKeuanganView.vue`: section "Integrasi BMT PETA (Virtual Account)" — `bmt_aktif` (toggle default false), `bmt_nama`, `bmt_va_prefix` (→ settings/general+web).
+- `PembayaranView.vue`: metode `va` aktif mengikuti `bmt_aktif` (`methodsSantri` jadi computed); step bayar VA tampil nomor VA + salin + instruksi. Transfer + upload bukti TETAP (fallback). Default OFF → wali tak berubah sampai kyai nyalakan + isi prefix.
+- `functions/index.js` **`bmtPaymentWebhook`** (onRequest asia-southeast2): terima konfirmasi bayar VA dari BMT → catat buku_induk (sumber `bmt_va`, Admin SDK bypass rules) + alokasi tagihan, IDEMPOTEN via `bmt_trx_id`. **DRY-RUN** sampai `settings.bmt_webhook_enabled=true` + secret `BMT_WEBHOOK_SECRET`. Cari `TODO(BMT)` utk parsing/auth final.
+
+### B. PENCAIRAN BISYAROH (guru, keluar) — slip di koleksi `keuangan_gaji`
+- REALITA (info kyai): admin keuangan **lapor manual ke BMT** (BMT yg transfer), **sebagian guru CASH**. Keputusan kyai: target **Model B (API BMT)**, **Model A cadangan**; sekarang jalan **Model C (laporan Excel)**. Persetujuan = **SATU konfirmasi admin keuangan** (maker-checker ditinjau ulang kalau naik Model B).
+- `BisyarohView.vue` (gate `isAdminKeu` = cekHakAkses('akses_keuangan')):
+  - **`cairkanTerpilih()`**: pilih slip → catat **kas KELUAR** ke `keuangan_buku_induk` (sumber **'gaji'** — sudah di-allow rules; idempoten id `gaji_<slipId>`; skip yg sudah cair) + tandai slip `status_cair='cair'`. **METODE-AWARE**: `metode_cair==='cash'` → 'tunai', else 'bmt'. + audit log. **Menambal: slip dulu TAK pernah masuk Buku Induk.**
+  - **`tandaiMetode('cash'|'bmt')`**: default semua BMT; tandai sebagian Cash (`metode_cair` di slip). Badge Cash/Cair di baris.
+  - **`exportLaporanBmt()`**: ekspor **Excel** (`useExcel().exportSimple`) daftar slip via-BMT belum-cair sesuai filter periode (No, Nama, No.Rek BMT, Nominal, Periode + TOTAL) — gantikan laporan manual admin. Rek dari guru.`rek_bmt`.
+- `functions/index.js` **`bmtDisbursementBatch`** (onRequest): stub Model B (pondok→guru). **DRY-RUN** + sengaja TIDAK pernah mengaku sukses sebelum API BMT disambung (cegah catat pencairan palsu). `settings.bmt_disburse_enabled` + secret `BMT_DISBURSE_SECRET`. Idempoten via `bmt_disburse_log/<slip_id>`.
+- `composables/useGuruForm.js` emptyForm + `views/GuruFormView.vue`: field BARU **`rek_bmt`** (No. Rekening BMT guru, opsional) — tujuan transfer + dipakai Laporan Excel.
+
+### C. TOOLING
+- `scripts/build-apk.cjs` BARU + `package.json` script **`build:apk`**: mirror build-aab tapi `assembleRelease` → `vue-app/android/app/build/outputs/apk/release/app-release.apk` (signed, untuk tester sideload).
+
+### FILE DIUBAH/BARU (sesi ini)
+BARU: `utils/bmtVa.js`, `scripts/build-apk.cjs`, `SKEMA-INTEGRASI-PEMBAYARAN-VA-BMT-PETA.html`. DIUBAH: `views/PembayaranView.vue`, `views/PengaturanKeuanganView.vue`, `views/BisyarohView.vue`, `views/GuruFormView.vue`, `composables/useGuruForm.js`, `functions/index.js`, `package.json`.
+
+### YANG HARUS KYAI JALANKAN
+```bat
+tmp_recovery\_run_vite.cmd
+git add -A && git commit --no-verify -m "feat: integrasi BMT PETA — VA santri + pencairan bisyaroh (Cash/BMT + Laporan Excel) + stub webhook/disbursement + rek_bmt + build:apk + skema GM"
+npm run firebase:deploy                 :: web/PWA
+firebase deploy --only functions        :: bmtPaymentWebhook + bmtDisbursementBatch (set secrets dulu kalau mau aktif)
+:: app HP: npm run build:apk (tester)  /  npm run build:aab (Play, bump vc>=97 dulu)
+```
+Webhook/disbursement AMAN dideploy (dry-run). firestore.rules TIDAK diubah (pakai sumber 'gaji' yg sudah di-allow; webhook pakai Admin SDK).
+
+### PENDING / NEXT (sesi berikut)
+- Isi field **`rek_bmt`** tiap guru agar Laporan BMT punya nomor rekening.
+- Saat API BMT siap: isi `TODO(BMT)` di `bmtPaymentWebhook` (parsing/auth) + `bmtDisbursementBatch` (panggil API), lalu set `bmt_webhook_enabled`/`bmt_disburse_enabled`=true + secrets.
+- Build warning vite (`vendor-pdf` circular + firebase dynamic/static) = **benign**, sengaja diabaikan (bukan dari sesi ini).

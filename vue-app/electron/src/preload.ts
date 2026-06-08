@@ -38,6 +38,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // v.83.0526: Set title bar overlay color — Vue panggil saat dark mode toggle
   setTheme: (isDark: boolean) => ipcRenderer.invoke('theme:set', { isDark }),
 
+  // v.98: kontrol jendela frameless (title bar Ribbon custom)
+  minimizeWindow: () => ipcRenderer.invoke('window:minimize'),
+  toggleMaximizeWindow: () => ipcRenderer.invoke('window:toggle-maximize'),
+  closeWindow: () => ipcRenderer.invoke('window:close'),
+  isWindowMaximized: () => ipcRenderer.invoke('window:is-maximized'),
+  onWindowMaximizeChange: (cb: (v: boolean) => void) =>
+    ipcRenderer.on('window:maximized-changed', (_e, v) => cb(v)),
+
   // Platform info
   platform: process.platform,
   isElectron: true,

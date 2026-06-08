@@ -75,7 +75,11 @@ const CapaianPrestasiView = () => import('@/views/CapaianPrestasiView.vue')
 const PersonalView = () => import('@/views/PersonalView.vue')
 // v.21.110.0527: Data Supervisi (Direktur/Supervisor)
 const SupervisiView = () => import('@/views/SupervisiView.vue')
-const AppLayout = () => import('@/components/layout/AppLayout.vue')
+// v.98: AppShell pilih shell Ribbon (Electron) vs AppLayout lama (web/HP). Lihat AppShell.vue.
+const AppShell = () => import('@/components/layout/AppShell.vue')
+// v.98: view ribbon-native — tab Bantuan + placeholder untuk modul yang belum dibangun
+const BantuanView = () => import('@/views/BantuanView.vue')
+const RibbonPlaceholderView = () => import('@/views/RibbonPlaceholderView.vue')
 
 const routes = [
   { path: '/', redirect: '/dashboard' },
@@ -83,12 +87,15 @@ const routes = [
   { path: '/login', name: 'login', component: LoginView, meta: { public: true } },
   // PSB Public form — no auth, no layout (standalone)
   { path: '/psb-form', name: 'psb-form', component: PsbFormView, meta: { public: true } },
-  // Routes dengan layout shell (header + sidebar)
+  // Routes dengan layout shell. v.98: AppShell = Ribbon (Electron) / AppLayout lama (web/HP).
   {
     path: '/',
-    component: AppLayout,
+    component: AppShell,
     children: [
       { path: 'dashboard', name: 'dashboard', component: DashboardView },
+      // v.98: ribbon-native — tab Bantuan + placeholder modul (navigasi pita tetap aktif)
+      { path: 'bantuan', name: 'bantuan', component: BantuanView },
+      { path: 'modul/:judul', name: 'ribbon-modul', component: RibbonPlaceholderView, meta: { noSantri: true } },
       { path: 'profil', name: 'profil', component: ProfilView },
       { path: 'notifikasi', name: 'notifikasi', component: NotifikasiView },
       { path: 'profil/:tipe/:id', name: 'profil-detail', component: ProfilDetailView, meta: { noSantri: true } },

@@ -1,6 +1,8 @@
 // Bootstrap Vue 3 SPA
 // v.20.0526: Import Tailwind CSS entry — auto-bundle ke dist/assets/index-*.css
 import './assets/main.css'
+// v.98: token + style shell Ribbon desktop (Electron). Semua selector di-scope .ammu-ribbon-app -> aman utk web/HP.
+import './assets/ribbon.css'
 
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'

@@ -460,7 +460,8 @@
     <section>
       <h2><span class="n">11.</span>Integrasi Dua Arah: Pencairan Bisyaroh Guru</h2>
       <p class="sub">BMT tidak hanya menarik pembayaran santri (masuk), tapi juga menyalurkan bisyaroh ke guru (keluar).</p>
-      <p>Semua guru/pegawai sudah punya rekening BMT, dan bisyaroh selama ini ditarik dari sana. Ammu Online sudah menghitung bisyaroh tiap guru (pokok + bonus kehadiran + tunjangan − potongan). Usulannya: hasil hitungan itu dipakai untuk <strong>mencairkan ke rekening BMT guru</strong>, dan begitu pencairan dikonfirmasi, <strong>otomatis tercatat sebagai kas keluar di Buku Induk</strong> pondok — menutup celah pencatatan yang sekarang masih manual.</p>
+      <p><strong>Kondisi saat ini:</strong> semua guru/pegawai punya rekening BMT, dan untuk membayar bisyaroh admin keuangan <strong>membuat daftar/laporan secara manual lalu menyetorkannya ke BMT</strong> (BMT yang mengeksekusi transfer ke rekening guru); <strong>sebagian guru dibayar tunai (cash)</strong>. Ammu Online sudah menghitung bisyaroh tiap guru (pokok + bonus kehadiran + tunjangan − potongan).</p>
+      <p><strong>Yang diotomatiskan:</strong> Ammu membuatkan <strong>laporan pencairan untuk BMT (file Excel)</strong> — menggantikan daftar manual admin — dan begitu pencairan dikonfirmasi, <strong>otomatis tercatat sebagai kas keluar di Buku Induk</strong> (per metode: BMT atau Tunai), menutup celah pencatatan yang selama ini manual.</p>
       <figure>
         <svg viewBox="0 0 980 230" role="img" aria-labelledby="bis-t bis-d" xmlns="http://www.w3.org/2000/svg" font-family="'Segoe UI',system-ui,Arial,sans-serif">
           <title id="bis-t">Alur pencairan bisyaroh dari Ammu ke rekening BMT guru dengan pencatatan otomatis</title>
@@ -519,16 +520,16 @@
           <div class="con">− Transfer masih manual</div>
         </div>
         <div class="opt">
-          <span class="badge">Jalan tengah</span>
-          <h4>Model C — File pencairan massal</h4>
-          <p>Ammu ekspor file daftar (format BMT) → admin unggah ke sistem BMT untuk eksekusi sekaligus.</p>
-          <div class="pro">+ Satu unggah banyak guru</div>
-          <div class="con">− Perlu fitur bulk-upload BMT</div>
+          <span class="badge">Proses saat ini — sudah diotomatiskan</span>
+          <h4>Model C — Laporan/file ke BMT</h4>
+          <p>Ammu ekspor daftar pencairan (Excel) → admin setor ke BMT untuk dieksekusi → admin konfirmasi di Ammu → tercatat. Inilah cara pondok sekarang, kini dibuatkan otomatis.</p>
+          <div class="pro">+ Sesuai alur nyata, jalan sekarang</div>
+          <div class="con">− Setor laporan masih manual</div>
         </div>
       </div>
       <div class="note bmt">
         <span class="t">Keputusan pondok</span>
-        Target <strong>Model B</strong> (penuh otomatis via API BMT), dengan <strong>Model A sebagai cadangan</strong> bila BMT belum memiliki API disbursement. Persetujuan pencairan dilakukan oleh admin keuangan.
+        Saat ini berjalan dengan <strong>Model C</strong> (Ammu membuat laporan Excel untuk BMT) — sesuai kebiasaan pondok. Target berikutnya <strong>Model B</strong> (penuh otomatis via API BMT) agar laporan tak perlu disetor manual; <strong>Model A</strong> sebagai cadangan. Pembayaran <strong>tunai</strong> didukung dengan menandai slip "Cash" (tidak masuk laporan BMT, tetap tercatat sebagai kas keluar tunai). Persetujuan oleh admin keuangan.
       </div>
       <h3>Yang dibutuhkan dari BMT (sisi pencairan)</h3>
       <table>

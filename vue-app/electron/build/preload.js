@@ -19,6 +19,12 @@ electron_1.contextBridge.exposeInMainWorld('electronAPI', {
     onOpenPrinterSettings: (cb) => electron_1.ipcRenderer.on('open-printer-settings', () => cb()),
     // v.83.0526: Set title bar overlay color — Vue panggil saat dark mode toggle
     setTheme: (isDark) => electron_1.ipcRenderer.invoke('theme:set', { isDark }),
+    // v.98: kontrol jendela frameless (title bar Ribbon custom)
+    minimizeWindow: () => electron_1.ipcRenderer.invoke('window:minimize'),
+    toggleMaximizeWindow: () => electron_1.ipcRenderer.invoke('window:toggle-maximize'),
+    closeWindow: () => electron_1.ipcRenderer.invoke('window:close'),
+    isWindowMaximized: () => electron_1.ipcRenderer.invoke('window:is-maximized'),
+    onWindowMaximizeChange: (cb) => electron_1.ipcRenderer.on('window:maximized-changed', (_e, v) => cb(v)),
     // Platform info
     platform: process.platform,
     isElectron: true,
