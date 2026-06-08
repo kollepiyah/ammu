@@ -268,48 +268,30 @@
 
     <!-- RAPOR SEMESTER section: Predikat + Schema Editor + buka page rapor -->
     <div v-if="activeSection === 'rapor'" class="space-y-3">
-      <!-- Predikat Global -->
+      <!-- Predikat (otomatis, sesuai spek — tidak perlu diatur) -->
       <div
         class="bg-cyan-50 dark:bg-cyan-900/20 rounded-2xl p-4 md:p-5 border border-cyan-200 dark:border-cyan-700 shadow-sm"
       >
         <h5 class="text-xs font-black text-cyan-900 uppercase mb-2 flex items-center gap-2">
-          <i class="fas fa-star"></i>Aturan Predikat
-          <span class="text-[9px] bg-cyan-200 text-cyan-900 px-2 py-0.5 rounded">GLOBAL</span>
+          <i class="fas fa-star"></i>Predikat
+          <span class="text-[9px] bg-cyan-200 text-cyan-900 px-2 py-0.5 rounded">OTOMATIS</span>
         </h5>
         <p class="text-[11px] text-cyan-700 mb-3 italic">
-          Berlaku di semua lembaga. Edit di sini = berlaku untuk semua.
+          Predikat dihitung otomatis dari nilai (tidak perlu diatur).
         </p>
-        <div class="space-y-1">
-          <div
-            v-for="(r, idx) in predikatRules"
-            :key="idx"
-            class="flex items-center gap-2 text-xs bg-[var(--bg-card)] rounded px-2 py-1"
-          >
-            <input
-              v-model="r.label"
-              class="w-10 font-black text-center px-1 py-0.5 border border-[var(--border-default)] rounded"
-            />
-            <input
-              v-model.number="r.min"
-              type="number"
-              class="w-14 px-2 py-0.5 border border-[var(--border-default)] rounded"
-            />
-            <span>-</span>
-            <input
-              v-model.number="r.max"
-              type="number"
-              class="w-14 px-2 py-0.5 border border-[var(--border-default)] rounded"
-            />
-            <button @click="predikatRules.splice(idx, 1)" class="text-rose-500 text-xs">
-              <i class="fas fa-times"></i>
-            </button>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-[11px]">
+          <div class="bg-[var(--bg-card)] rounded px-2 py-1.5 border border-cyan-100">
+            <b>Mumtaz</b> · &ge; 81
           </div>
-          <button
-            @click="addPredikatRule"
-            class="text-xs text-cyan-600 hover:text-cyan-800 font-bold"
-          >
-            <i class="fas fa-plus mr-1"></i>Tambah Aturan
-          </button>
+          <div class="bg-[var(--bg-card)] rounded px-2 py-1.5 border border-cyan-100">
+            <b>Jayyid</b> · 71&ndash;80 / di atas KKM
+          </div>
+          <div class="bg-[var(--bg-card)] rounded px-2 py-1.5 border border-cyan-100">
+            <b>Maqbul</b> · 61&ndash;70 / 65&ndash;KKM
+          </div>
+          <div class="bg-[var(--bg-card)] rounded px-2 py-1.5 border border-cyan-100">
+            <b>Rasib</b> · &le; 60 / &lt; 65
+          </div>
         </div>
       </div>
 
@@ -716,8 +698,15 @@
 
         <!-- kosong / empty -->
         <div v-else class="bg-cyan-50 border border-cyan-200 p-3 rounded text-xs text-cyan-800">
-          <i class="fas fa-info-circle mr-1"></i>Belum ada struktur schema. Klik tombol template di
-          atas untuk mulai.
+          <template v-if="isDiniyahLembaga">
+            <i class="fas fa-info-circle mr-1"></i>Lembaga formal memakai <b>Rapor Diniyah</b> otomatis
+            (No · Mata Pelajaran · KKM · Rata-rata Sumatif · Sumatif Akhir Semester · Predikat). Daftar
+            mata pelajaran diatur di bagian <b>"Mata Pelajaran"</b> (tab Rekap), bukan di sini.
+          </template>
+          <template v-else>
+            <i class="fas fa-info-circle mr-1"></i>Belum ada struktur schema. Klik tombol template di
+            atas untuk mulai.
+          </template>
         </div>
 
         <p class="text-[10px] text-[var(--text-secondary)] italic">
@@ -756,7 +745,7 @@
         class="bg-cyan-50 dark:bg-cyan-900/20 rounded-2xl p-4 md:p-5 border border-cyan-200 dark:border-cyan-700 space-y-3"
       >
         <h5 class="text-xs font-black text-[var(--text-on-accent)] uppercase">
-          <i class="fas fa-list mr-1"></i>Mapel Diniyah
+          <i class="fas fa-list mr-1"></i>Mata Pelajaran
         </h5>
         <p class="text-[11px] text-[var(--text-secondary)]">
           Mata pelajaran kolom di Rekap &amp; Rapor Diniyah, diatur PER KELAS (tiap kelas bisa beda). Tambah/hapus tiap mapel di bawah.
@@ -778,7 +767,7 @@
             Kelas {{ kv.key }}<span v-if="kv.jenjang" class="ml-1 text-[9px] font-bold text-cyan-500">({{ kv.jenjang }})</span>
           </label>
           <p v-if="(rekapMapel[kv.key] || []).length === 0" class="text-[11px] italic text-[var(--text-tertiary)]">
-            Belum ada mapel. Klik &quot;Tambah Mapel&quot;.
+            Belum ada mata pelajaran. Klik &quot;Isi default&quot; atau &quot;Tambah&quot;.
           </p>
           <div v-for="(m, i) in (rekapMapel[kv.key] || [])" :key="i" class="flex items-center gap-2">
             <span class="text-[10px] font-bold text-[var(--text-tertiary)] w-5 text-right">{{ i + 1 }}.</span>
@@ -796,12 +785,20 @@
               <i class="fas fa-times"></i>
             </button>
           </div>
-          <button
-            @click="addMapel(kv.key)"
-            class="text-xs font-bold text-cyan-700 dark:text-cyan-300 hover:underline cursor-pointer"
-          >
-            <i class="fas fa-plus mr-1"></i>Tambah Mapel
-          </button>
+          <div class="flex items-center gap-3 flex-wrap">
+            <button
+              @click="isiMapelDefault(kv.key, kv.jenjang)"
+              class="text-xs font-bold text-emerald-700 dark:text-emerald-300 hover:underline cursor-pointer"
+            >
+              <i class="fas fa-wand-magic-sparkles mr-1"></i>Isi default<span v-if="kv.jenjang"> ({{ kv.jenjang }})</span>
+            </button>
+            <button
+              @click="addMapel(kv.key)"
+              class="text-xs font-bold text-cyan-700 dark:text-cyan-300 hover:underline cursor-pointer"
+            >
+              <i class="fas fa-plus mr-1"></i>Tambah Mata Pelajaran
+            </button>
+          </div>
         </div>
 
         <button
@@ -809,7 +806,7 @@
           :disabled="saving"
           class="text-xs font-black px-3 py-1.5 rounded bg-cyan-600 hover:bg-cyan-700 text-white disabled:opacity-50"
         >
-          <i :class="['fas', saving ? 'fa-spinner fa-spin' : 'fa-save', 'mr-1']"></i>Simpan Mapel
+          <i :class="['fas', saving ? 'fa-spinner fa-spin' : 'fa-save', 'mr-1']"></i>Simpan Mata Pelajaran
         </button>
       </div>
 
@@ -1338,7 +1335,18 @@ function loadSchema() {
     }
     raporSchema.value = JSON.parse(JSON.stringify(found))
   } else {
-    raporSchema.value = {}
+    // Auto-tampilkan template default sesuai lembaga (Qiraati) biar editor tak kosong.
+    const t = lname.includes('tpq')
+      ? 'tpq'
+      : lname === 'pra ptpt'
+        ? 'pra-ptpt'
+        : lname === 'ptpt'
+          ? 'ptpt'
+          : lname === 'ppph' || lname === 'p3h'
+            ? 'ppph'
+            : ''
+    if (t) applyTemplate(t, true)
+    else raporSchema.value = {}
   }
 }
 function addLevel() {
@@ -1463,6 +1471,15 @@ function loadRekapMapel() {
 function addMapel(key) {
   if (!Array.isArray(rekapMapel[key])) rekapMapel[key] = []
   rekapMapel[key].push('')
+}
+const MAPEL_DEFAULT_DINIYAH = {
+  SDI: ['Tauhid', 'Fiqh', 'Tarikh', 'Akhlaq', 'Bahasa Arab', 'Tahajji', 'Praktek Ibadah', 'ASWAJA & ke-NU-an'],
+  SMP: ['Tauhid', 'Fiqh', 'Akhlaq', 'Nahwu', 'Shorof', 'Khot/Pego', 'Tasawwuf', 'ASWAJA & ke-NU-an'],
+  SMA: ['Akhlaq/Ulumul Qur’an', 'Nahwu', 'Fiqh', 'Ushul Fiqh', 'Faroidl', 'Tasawwuf', 'Ilmu Falak', 'ASWAJA & ke-NU-an']
+}
+function isiMapelDefault(key, jenjang) {
+  const j = String(jenjang || '').toUpperCase()
+  rekapMapel[key] = [...(MAPEL_DEFAULT_DINIYAH[j] || MAPEL_DEFAULT_DINIYAH.SDI)]
 }
 function removeMapel(key, i) {
   if (Array.isArray(rekapMapel[key])) rekapMapel[key].splice(i, 1)
@@ -1724,7 +1741,7 @@ function getSchemaTypeBadge() {
   return 'belum di-set / kosong'
 }
 
-function applyTemplate(t) {
+function applyTemplate(t, silent = false) {
   if (t === 'tpq') {
     raporSchema.value = {
       sections: [
@@ -1855,6 +1872,6 @@ function applyTemplate(t) {
       ]
     }
   }
-  toast.success(`Template "${t}" diterapkan`)
+  if (!silent) toast.success(`Template "${t}" diterapkan`)
 }
 </script>

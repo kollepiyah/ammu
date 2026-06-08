@@ -174,7 +174,7 @@ async function drawKopRapor(doc, settings, lembaga, lembagaOverride = null) {
   if (leftUrl) {
     try {
       const dataUrl = leftUrl.startsWith('data:') ? leftUrl : await imageToDataURL(leftUrl)
-      if (dataUrl) doc.addImage(dataUrl, 'PNG', 14, startY, 18, 18, undefined, 'FAST')
+      if (dataUrl) doc.addImage(dataUrl, 'PNG', 15, startY, 18, 18, undefined, 'FAST')
     } catch (_e) {}
   }
 
@@ -184,7 +184,7 @@ async function drawKopRapor(doc, settings, lembaga, lembagaOverride = null) {
   if (rightUrl) {
     try {
       const dataUrl = rightUrl.startsWith('data:') ? rightUrl : await imageToDataURL(rightUrl)
-      if (dataUrl) doc.addImage(dataUrl, 'PNG', pageW - 32, startY, 18, 18, undefined, 'FAST')
+      if (dataUrl) doc.addImage(dataUrl, 'PNG', pageW - 33, startY, 18, 18, undefined, 'FAST')
     } catch (_e) {}
   }
 
@@ -251,9 +251,9 @@ async function drawKopRapor(doc, settings, lembaga, lembagaOverride = null) {
   // 2-line divider
   const dividerY = startY + 25
   doc.setLineWidth(0.6)
-  doc.line(12, dividerY, pageW - 12, dividerY)
+  doc.line(15, dividerY, pageW - 15, dividerY)
   doc.setLineWidth(0.2)
-  doc.line(12, dividerY + 1, pageW - 12, dividerY + 1)
+  doc.line(15, dividerY + 1, pageW - 15, dividerY + 1)
 
   return dividerY + 4
 }
@@ -281,7 +281,8 @@ function drawIdentitas(doc, y, santri, raporState) {
   doc.setFontSize(11)
 
   const col1 = 16
-  const colonRX = pageW - 50
+  const idLeftX = pageW - 84
+  const idColonX = pageW - 52
 
   const ta = raporState.tahun_ajaran || raporState.periode?.tahun_ajaran || ''
   const sm = raporState.semester || raporState.periode?.semester || ''
@@ -304,9 +305,9 @@ function drawIdentitas(doc, y, santri, raporState) {
     doc.text(':', col1 + 24, py)
     doc.text(safeStr(row[1]), col1 + 27, py)
 
-    doc.text(row[2], colonRX - 1.5, py, { align: 'right' })
-    doc.text(':', colonRX, py)
-    doc.text(safeStr(row[3]), pageW - 14, py, { align: 'right' })
+    doc.text(row[2], idLeftX, py)
+    doc.text(':', idColonX, py)
+    doc.text(safeStr(row[3]), pageW - 15, py, { align: 'right' })
   })
 
   return y + rows.length * 5 + 3
@@ -319,14 +320,14 @@ function drawIdentitas(doc, y, santri, raporState) {
 function drawAbsensiKepribadian(doc, y, absensi, kepribadian) {
   // v.21.47: tambah gap 4mm supaya tidak nempel tabel diatas
   const pageW = doc.internal.pageSize.getWidth()
-  const colW = (pageW - 28) / 2
+  const colW = (pageW - 30) / 2
   const font = doc._fontMU || 'times'
   y = y + 4 // gap top
 
   doc.setFont(font, 'bold')
   doc.setFontSize(10)
-  doc.text('ABSENSI', 14, y + 3.5)
-  doc.text('NILAI KEPRIBADIAN', 14 + colW + 10, y + 3.5)
+  doc.text('ABSENSI', 15, y + 3.5)
+  doc.text('NILAI KEPRIBADIAN', 15 + colW + 22, y + 3.5)
 
   doc.setFont(font, 'normal')
   doc.setFontSize(9)
@@ -348,8 +349,8 @@ function drawAbsensiKepribadian(doc, y, absensi, kepribadian) {
   kpRows.forEach((kr, i) => {
     const py = y + 8 + i * 4
     const lbl = (kr[0] + '   : ').padEnd(13, ' ')
-    doc.text(lbl, 14 + colW + 10, py)
-    formatKepribadian(doc, 14 + colW + 10 + doc.getTextWidth(lbl), py, kr[1], opts, font)
+    doc.text(lbl, 15 + colW + 22, py)
+    formatKepribadian(doc, 15 + colW + 22 + doc.getTextWidth(lbl), py, kr[1], opts, font)
   })
 
   for (let i = 0; i < 3; i++) {
@@ -394,14 +395,13 @@ async function drawSignBlocks(doc, y, santri, settings, lembaga, dbGuru = [], le
   const yStart = y + 5
   doc.setFont(font, 'normal')
   doc.setFontSize(9)
-  const _dkLabelX = pageW - 82
-  const _dkColonX = pageW - 52
-  doc.text('Dikeluarkan di', _dkLabelX, yStart)
+  const _dkColonX = pageW - 48
+  doc.text('Dikeluarkan di', _dkColonX - 1.5, yStart, { align: 'right' })
   doc.text(':', _dkColonX, yStart)
-  doc.text(String(tempat), _dkColonX + 2.5, yStart)
-  doc.text('Pada Tanggal', _dkLabelX, yStart + 5)
+  doc.text(String(tempat), pageW - 15, yStart, { align: 'right' })
+  doc.text('Pada Tanggal', _dkColonX - 1.5, yStart + 5, { align: 'right' })
   doc.text(':', _dkColonX, yStart + 5)
-  doc.text(String(today), _dkColonX + 2.5, yStart + 5)
+  doc.text(String(today), pageW - 15, yStart + 5, { align: 'right' })
 
   const col1 = 35
   const col2 = pageW / 2
@@ -504,7 +504,7 @@ function drawCatatanBox(doc, y, catatan) {
   y = y + 3
   doc.setFont(font, 'bold')
   doc.setFontSize(10)
-  doc.text('CATATAN UNTUK SANTRI / ORANG TUA:', 14, y + 4)
+  doc.text('CATATAN UNTUK SANTRI / ORANG TUA:', 15, y + 4)
 
   doc.setFont(font, 'normal')
   doc.setFontSize(9)
@@ -512,10 +512,10 @@ function drawCatatanBox(doc, y, catatan) {
   const boxH = 22 // v.21.47: box height naik 18 → 22
   const boxY = y + 6
   doc.setLineWidth(0.3)
-  doc.rect(14, boxY, pageW - 28, boxH)
+  doc.rect(15, boxY, pageW - 30, boxH)
   if (txt) {
     const lines = doc.splitTextToSize(txt, pageW - 32)
-    doc.text(lines, 16, boxY + 5)
+    doc.text(lines, 17, boxY + 5)
   }
   return boxY + boxH + 4
 }
@@ -686,7 +686,7 @@ async function generatePraPtptPdf(doc, y, santri, schema, raporState, settings) 
     startY: y,
     head,
     body,
-    margin: { left: 12, right: 12 },
+    margin: { left: 15, right: 15 },
     styles: {
       font: doc._fontMU,
       fontSize: 7,
@@ -710,8 +710,8 @@ async function generatePraPtptPdf(doc, y, santri, schema, raporState, settings) 
     columnStyles: {
       0: { cellWidth: 8 }, // Kelas
       1: { cellWidth: 15 }, // Level Baca
-      2: { cellWidth: 30, halign: 'left' }, // Target Khotam
-      3: { cellWidth: 23 }, // Tgl Khotam (dd/mm/yyyy butuh ruang)
+      2: { cellWidth: 26, halign: 'left' }, // Target Khotam
+      3: { cellWidth: 21 }, // Tgl Khotam (dd/mm/yyyy butuh ruang)
       4: { cellWidth: 16 }, // Fashohah
       5: { cellWidth: 16 }, // Tartil
       6: { cellWidth: 16 }, // Tahfizh Juz 30
@@ -734,8 +734,8 @@ async function generatePraPtptPdf(doc, y, santri, schema, raporState, settings) 
 
   drawTable(doc, {
     startY: y,
-    margin: { left: 12, right: 12 },
-    tableWidth: 191,
+    margin: { left: 15, right: 15 },
+    tableWidth: 185,
     body: [
       ['Jumlah Khotam', `${totalKhotam} Khotam`],
       ['Nilai Rata-rata', fmtNilai(avg)]
@@ -847,7 +847,7 @@ async function generatePtptPdf(doc, y, santri, schema, raporState, settings) {
   const dateW = 28
   const predW = 32
   const numCount = numIds.length
-  const numW = Math.max(16, Math.floor((191 - 14 - 12 - dateW - predW) / Math.max(1, numCount)))
+  const numW = Math.max(16, Math.floor((185 - 14 - 12 - dateW - predW) / Math.max(1, numCount)))
   const columnStyles = { 0: { cellWidth: 14 }, 1: { cellWidth: 12 } }
   fields.forEach((f, idx) => {
     if (f.type === 'date') columnStyles[2 + idx] = { cellWidth: dateW }
@@ -860,7 +860,7 @@ async function generatePtptPdf(doc, y, santri, schema, raporState, settings) {
     head,
     body,
     theme: 'grid',
-    margin: { left: 12, right: 12 },
+    margin: { left: 15, right: 15 },
     styles: { font: doc._fontMU, fontSize: fSize, cellPadding: cPad, halign: 'center', valign: 'middle', overflow: 'linebreak', lineColor: [80, 80, 80], lineWidth: 0.15 },
     headStyles: { fillColor: [255, 255, 255], textColor: 0, fontStyle: 'bold', lineWidth: 0.2, lineColor: [60, 60, 60], valign: 'middle', halign: 'center' },
     alternateRowStyles: { fillColor: [255, 255, 255] },
@@ -908,7 +908,7 @@ async function generateDiniyahPdf(doc, y, santri, schema, raporState, settings) 
     startY: y,
     head,
     body,
-    margin: { left: 12, right: 12 },
+    margin: { left: 15, right: 15 },
     styles: { font: doc._fontMU, fontSize: 10, cellPadding: 2.2, minCellHeight: 12.5, halign: 'center', valign: 'middle', overflow: 'linebreak', lineColor: [80, 80, 80], lineWidth: 0.15 },
     headStyles: { fillColor: [255, 255, 255], textColor: 0, fontStyle: 'bold', lineWidth: 0.15, fontSize: 8.5, minCellHeight: 11, valign: 'middle' },
     alternateRowStyles: { fillColor: [255, 255, 255] },
@@ -923,7 +923,7 @@ async function generateDiniyahPdf(doc, y, santri, schema, raporState, settings) 
   drawTable(doc, {
     startY: y,
     body: [['Rata-rata Nilai', fmtNilai(avg)]],
-    margin: { left: 12, right: 12 },
+    margin: { left: 15, right: 15 },
     styles: { font: doc._fontMU, fontSize: 10, fontStyle: 'bold', halign: 'center', valign: 'middle', cellPadding: 2.2, minCellHeight: 11, lineColor: [80, 80, 80], lineWidth: 0.15 },
     columnStyles: { 0: { cellWidth: 120 } }
   })
@@ -959,7 +959,7 @@ async function generatePpphPdf(doc, y, santri, schema, raporState, settings) {
     startY: y,
     head,
     body,
-    margin: { left: 12, right: 12 },
+    margin: { left: 15, right: 15 },
     styles: { font: doc._fontMU, fontSize: 9, cellPadding: 1.6, halign: 'center', valign: 'middle', overflow: 'linebreak', lineColor: [80, 80, 80], lineWidth: 0.15 },
     headStyles: { fillColor: [255, 255, 255], textColor: 0, fontStyle: 'bold', lineWidth: 0.15 },
     alternateRowStyles: { fillColor: [255, 255, 255] },

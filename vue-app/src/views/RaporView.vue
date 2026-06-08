@@ -539,11 +539,11 @@
                 <tr><td class="pr-2 py-0.5 align-top">NIS</td><td class="pr-1 py-0.5">:</td><td class="py-0.5">{{ santriAktif.nis || '-' }}</td></tr>
               </tbody>
             </table>
-            <table>
+            <table class="min-w-[230px]">
               <tbody>
-                <tr><td class="pr-2 py-0.5 text-right">Kelas</td><td class="pr-1 py-0.5">:</td><td class="py-0.5 font-bold text-right">{{ kelasGabungan }}</td></tr>
-                <tr><td class="pr-2 py-0.5 text-right">Semester</td><td class="pr-1 py-0.5">:</td><td class="py-0.5 text-right">{{ semester }}</td></tr>
-                <tr><td class="pr-2 py-0.5 text-right">Tahun Ajaran</td><td class="pr-1 py-0.5">:</td><td class="py-0.5 text-right">{{ tahunAjaran }}</td></tr>
+                <tr><td class="pr-2 py-0.5">Kelas</td><td class="pr-1 py-0.5">:</td><td class="py-0.5 font-bold text-right">{{ kelasGabungan }}</td></tr>
+                <tr><td class="pr-2 py-0.5">Semester</td><td class="pr-1 py-0.5">:</td><td class="py-0.5 text-right">{{ semester }}</td></tr>
+                <tr><td class="pr-2 py-0.5">Tahun Ajaran</td><td class="pr-1 py-0.5">:</td><td class="py-0.5 text-right">{{ tahunAjaran }}</td></tr>
               </tbody>
             </table>
           </div>
@@ -929,7 +929,7 @@
                 <p class="my-0.5">2. Izin : {{ absensi.izin || 0 }} Hari</p>
                 <p class="my-0.5">3. Alpa : {{ absensi.alpa || 0 }} Hari</p>
               </td>
-              <td class="align-top w-1/2">
+              <td class="align-top w-1/2 pl-10">
                 <p class="font-bold mb-1">NILAI KEPRIBADIAN</p>
                 <p v-for="kp in kepribadianRows" :key="kp.label" class="my-0.5">
                   {{ kp.label }} :
@@ -952,12 +952,12 @@
           <div class="mt-8 text-[10px]">
             <table class="ml-auto mb-5 text-[10px]" style="width: auto">
               <tr>
-                <td class="pr-3 text-left">Dikeluarkan di</td>
+                <td class="pr-2 text-right">Dikeluarkan di</td>
                 <td class="pr-1">:</td>
                 <td class="text-left">{{ kotaRapor }}</td>
               </tr>
               <tr>
-                <td class="pr-3 text-left">Pada Tanggal</td>
+                <td class="pr-2 text-right">Pada Tanggal</td>
                 <td class="pr-1">:</td>
                 <td class="text-left">{{ tglCetak }}</td>
               </tr>
@@ -1347,30 +1347,11 @@ const kop = computed(() => {
             .trim() === lnorm
       ) || {}
   }
-  const isDiniyah = kategori.value === 'diniyah'
-  let line1 = lmbObj.kop_line1 || s.kopLine1 || s.subtitleRapor || ''
-  if (!line1) {
-    const ln = String((isDiniyah ? santriAktif.value?.lembaga_sekolah : santriAktif.value?.lembaga) || '').toLowerCase().trim()
-    if (ln === 'ptpt') line1 = 'Pasca TPQ Program Tahfizh'
-    else if (ln === 'ppph' || ln === 'p3h') line1 = 'Pasca PTPT Program Hadits'
-    else if (isDiniyah) line1 = 'Sekolah'
-    else line1 = 'Taman Pendidikan Al-Qur’an'
-  }
-  // Line 2: "[LABEL] [NAMA]" — TPQ Pagi/Sore/Pra PTPT -> TPQ; Diniyah -> nama lembaga sekolah
-  const lnorm2 = String((isDiniyah ? santriAktif.value?.lembaga_sekolah : santriAktif.value?.lembaga) || '').toLowerCase().trim()
-  let label = ''
-  if (['tpq pagi', 'tpq sore', 'pra ptpt'].includes(lnorm2)) label = 'TPQ'
-  else if (isDiniyah) label = lmbObj.lembaga || lnorm2.toUpperCase()
-  else label = (isDiniyah ? santriAktif.value?.lembaga_sekolah : santriAktif.value?.lembaga) || ''
-  const namaKop = (lmbObj.kop_line2 || s.kopLine2 || 'MAMBAUL ULUM').trim()
-  const namaU = namaKop.toUpperCase()
-  const labelU = String(label || '').toUpperCase()
-  const line2 = !labelU ? namaU : namaU.startsWith(labelU) ? namaU : `${label} ${namaKop}`.toUpperCase()
   return {
-    line1,
-    line2,
-    line3: lmbObj.kop_line3 || s.kopLine3 || s.alamat || 'Jl. Kol. Sugiono 112 Panjunan-Kepuh Kiriman Waru Sidoarjo',
-    line4: lmbObj.kop_line4 || s.kopLine4 || s.telp || 'Telp. 031-8674713',
+    line1: lmbObj.kop_line1 || s.kopLine1 || '',
+    line2: lmbObj.kop_line2 || s.kopLine2 || 'PONDOK PESANTREN MAMBAUL ULUM',
+    line3: lmbObj.kop_line3 || s.kopLine3 || '',
+    line4: lmbObj.kop_line4 || s.kopLine4 || '',
     pengasuh: s.namaPengasuh || ''
   }
 })
@@ -1400,7 +1381,9 @@ const arStyleMd = { fontFamily: "'Traditional Arabic','Amiri','Scheherazade New'
 
 const logoKiri = computed(() => {
   const s = settingsStore.settings || {}
-  return s.logoQiraati || s.logoKop || s.logoUrl || '/logo.png'
+  return kategori.value === 'diniyah'
+    ? s.logoKop || s.logoUrl || '/logo.png'
+    : s.logoQiraati || '/logo.png'
 })
 
 const logoKanan = computed(() => {
@@ -1419,7 +1402,7 @@ const logoKanan = computed(() => {
           .toLowerCase()
           .trim() === lnorm
     ) || {}
-  return lmbObj.kop_logo || settingsStore.settings?.logoKop || settingsStore.settings?.logoUrl || ''
+  return lmbObj.kop_logo || settingsStore.settings?.logoUrl || ''
 })
 
 function titleCase(s) {
@@ -1690,8 +1673,35 @@ function buildDiniyahSchemaFromSetting(s) {
   }
 }
 
-// schema = override dari settings.raporSchemas kalau ada, else default builder
-const schema = computed(() => {
+// Hapus paksa kolom Adab dari skema apa pun (override lama maupun default).
+function stripAdabSchema(sc) {
+  if (!sc || typeof sc !== 'object') return sc
+  const out = JSON.parse(JSON.stringify(sc))
+  const noAdab = (arr) => (Array.isArray(arr) ? arr.filter((f) => f && f.id !== 'adab') : arr)
+  const fixPred = (arr) => {
+    if (Array.isArray(arr))
+      arr.forEach((f) => {
+        if (f && f.type === 'auto_predikat' && f.source === 'adab') f.source = 'avg'
+      })
+  }
+  if (Array.isArray(out.fields)) {
+    out.fields = noAdab(out.fields)
+    fixPred(out.fields)
+  }
+  if (Array.isArray(out.fieldsNilai)) out.fieldsNilai = noAdab(out.fieldsNilai)
+  if (Array.isArray(out.sections)) {
+    out.sections.forEach((sec) => {
+      if (Array.isArray(sec.fields)) {
+        sec.fields = noAdab(sec.fields)
+        fixPred(sec.fields)
+      }
+    })
+  }
+  return out
+}
+
+// schema = override dari settings.raporSchemas kalau ada, else default builder (Adab di-strip)
+const _schemaRaw = computed(() => {
   if (!santriAktif.value) return {}
   // Diniyah: pakai mapel per-jenjang dari setting (lepas dari schema lembaga ngaji)
   if (kategori.value === 'diniyah') {
@@ -1723,10 +1733,19 @@ const schema = computed(() => {
         (j) =>
           Array.isArray(j.mapel) && j.mapel.some((m) => /juz/i.test(String(m.id || m.nama || '')))
       )
-    return isTahfizh && overrideHasJuzMapel ? buildSchema(lmb) : found
+    // Migrasi override LAMA: PTPT ber-Adab / tanpa Tgl Khotam, PPPH non-perKitab -> default baru.
+    const ptptStale =
+      lnorm === 'ptpt' &&
+      found.tableLayout === 'kelasJuz' &&
+      ((found.fields || []).some((f) => f.id === 'adab') ||
+        !(found.fields || []).some((f) => f.id === 'tgl_khotam'))
+    const ppphStale = (lnorm === 'ppph' || lnorm === 'p3h') && !found.perKitab
+    if ((isTahfizh && overrideHasJuzMapel) || ptptStale || ppphStale) return buildSchema(lmb)
+    return found
   }
   return buildSchema(kategori.value === 'diniyah' ? 'diniyah' : lmb)
 })
+const schema = computed(() => stripAdabSchema(_schemaRaw.value))
 
 const sections = computed(() => (Array.isArray(schema.value.sections) ? schema.value.sections : []))
 const fieldsNilai = computed(() =>
