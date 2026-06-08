@@ -4,6 +4,7 @@
 
 import { createPdf, drawTable, savePdf } from './pdfBuilder'
 import { imageToDataURL } from '@/services/pdf'
+import { predikatQiraati, predikatDiniyah, PREDIKAT_AR } from './predikat'
 
 // ============================================================
 // Helpers
@@ -39,6 +40,99 @@ function fmtNilai(v) {
 
 function safeStr(v) {
   return v == null ? '' : String(v)
+}
+
+function fmtDateShort(v) {
+  if (!v) return ''
+  try {
+    return new Date(v).toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' })
+  } catch {
+    return String(v)
+  }
+}
+
+// ===== Predikat aksara Arab di PDF (render canvas -> image, shaping benar) =====
+const _arPredCache = {}
+function arabicPredikatDataURL(key) {
+  if (!key || !PREDIKAT_AR[key]) return ''
+  if (_arPredCache[key]) return _arPredCache[key]
+  try {
+    if (typeof document === 'undefined') return ''
+    const txt = PREDIKAT_AR[key]
+    const scale = 6
+    const W = 110
+    const H = 30
+    const c = document.createElement('canvas')
+    c.width = W * scale
+    c.height = H * scale
+    const ctx = c.getContext('2d')
+    ctx.scale(scale, scale)
+    ctx.clearRect(0, 0, W, H)
+    ctx.fillStyle = '#000000'
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    try { ctx.direction = 'rtl' } catch (_e) {}
+    ctx.font = "700 20px 'Traditional Arabic','Amiri','Scheherazade New','Segoe UI','Arial',serif"
+    ctx.fillText(txt, W / 2, H / 2 + 1)
+    const url = c.toDataURL('image/png')
+    _arPredCache[key] = url
+    return url
+  } catch (_e) {
+    return ''
+  }
+}
+function drawPredikatImage(doc, cell, key) {
+  const url = arabicPredikatDataURL(key)
+  if (!url) return
+  const iw = Math.min(20, cell.width - 1.5)
+  const ih = iw * (30 / 110)
+  const ix = cell.x + (cell.width - iw) / 2
+  const iy = cell.y + (cell.height - ih) / 2
+  try { doc.addImage(url, 'PNG', ix, iy, iw, ih, undefined, 'FAST') } catch (_e) {}
+}
+
+// tgl khotam PTPT dari kartu kenaikan (kelas_K -> juz_N), best-effort.
+function tglKhotamPtptKK(santri, juzNum) {
+  const kk = santri && santri.kartu_kenaikan
+  if (!kk || !juzNum) return ''
+  let scope = kk['PTPT']
+  if (!scope) {
+    const k = Object.keys(kk).find((x) => String(x).toLowerCase().trim() === 'ptpt')
+    scope = k ? kk[k] : null
+  }
+  if (!scope || typeof scope !== 'object') return ''
+  const n = parseInt(juzNum, 10)
+  const itemId = 'juz_' + n
+  const tryO = (o) => {
+    if (!o || typeof o !== 'object') return ''
+    if (o[itemId]) return o[itemId]
+    const es = Array.isArray(o.entries) ? o.entries : []
+    const m = es.find((e) => e?.itemId === itemId && e?.tanggal)
+    return m ? m.tanggal : ''
+  }
+  const d = tryO(scope['kelas_' + Math.ceil(n / 5)])
+  if (d) return d
+  for (const kkey of Object.keys(scope)) {
+    const v = tryO(scope[kkey])
+    if (v) return v
+  }
+  return ''
+}
+// tgl khotam level (PPPH) dari kartu kenaikan.
+function tglKhotamLevelKK(santri, lembaga, levelId) {
+  const kk = santri && santri.kartu_kenaikan
+  if (!kk) return ''
+  let scope = kk[lembaga]
+  if (!scope) {
+    const k = Object.keys(kk).find((x) => String(x).toLowerCase().trim() === String(lembaga).toLowerCase().trim())
+    scope = k ? kk[k] : null
+  }
+  if (!scope || typeof scope !== 'object') return ''
+  const o = scope[levelId] || {}
+  if (o.ceremonial) return o.ceremonial
+  const es = Array.isArray(o.entries) ? o.entries : []
+  const m = es.find((e) => e?.tanggal)
+  return m ? m.tanggal : ''
 }
 
 /**
@@ -180,35 +274,35 @@ function drawJudulRapor(doc, y) {
 // ============================================================
 
 function drawIdentitas(doc, y, santri, raporState) {
-  // v.21.46: tahun/semester geser kanan + rapikan spacing
+  // Kiri: Nama / NISN / NIS · Kanan: Kelas (gabungan) / Semester / Tahun Ajaran
   const pageW = doc.internal.pageSize.getWidth()
   const font = doc._fontMU || 'times'
   doc.setFont(font, 'normal')
   doc.setFontSize(11)
 
-  const col1 = 16 // label kiri
-  const col2 = pageW - 68 // v.21.49: lebih ke kanan lagi (was -80)
+  const col1 = 16
+  const col2 = pageW - 86
 
-  const ta = raporState.periode?.tahun_ajaran || ''
-  const sm = raporState.periode?.semester || ''
-  const isPasc = ['Pra PTPT', 'PTPT', 'PPPH'].includes(raporState.lembaga)
+  const ta = raporState.tahun_ajaran || raporState.periode?.tahun_ajaran || ''
+  const sm = raporState.semester || raporState.periode?.semester || ''
+  const sekolah = String(santri.kelas_sekolah || '').trim()
+  const ngaji = [String(santri.lembaga || '').trim(), String(santri.kelas || '').trim()]
+    .filter(Boolean)
+    .join(' ')
+    .trim()
+  const kelasGab = [sekolah, ngaji].filter(Boolean).join(' / ') || '-'
 
   const rows = [
-    ['Nama Santri', santri.nama || '-', 'Tahun Pelajaran', ta],
-    [
-      isPasc ? 'Kelas Sekolah' : 'Jilid / Kelas',
-      isPasc ? santri.kelas_sekolah || '-' : santri.kelas || '-',
-      'Semester',
-      sm
-    ]
+    ['Nama', santri.nama || '-', 'Kelas', kelasGab],
+    ['NISN', santri.nisn || '-', 'Semester', sm],
+    ['NIS', santri.nis || '-', 'Tahun Ajaran', ta]
   ]
 
-  // Plain text rows (NO box border) — line spacing rapikan 5mm
   rows.forEach((row, i) => {
     const py = y + i * 5
     doc.text(row[0], col1, py)
-    doc.text(':', col1 + 28, py)
-    doc.text(safeStr(row[1]), col1 + 31, py)
+    doc.text(':', col1 + 24, py)
+    doc.text(safeStr(row[1]), col1 + 27, py)
 
     doc.text(row[2], col2, py)
     doc.text(':', col2 + 28, py)
@@ -264,7 +358,7 @@ function drawAbsensiKepribadian(doc, y, absensi, kepribadian) {
   return y + 24 // v.21.47: relax from y+22
 }
 
-function drawSignBlocks(doc, y, santri, settings, lembaga, dbGuru = []) {
+async function drawSignBlocks(doc, y, santri, settings, lembaga, dbGuru = [], lembagaOverride = null) {
   const pageW = doc.internal.pageSize.getWidth()
   const font = doc._fontMU || 'times'
   const tempat = settings.kota || 'Sidoarjo'
@@ -276,21 +370,38 @@ function drawSignBlocks(doc, y, santri, settings, lembaga, dbGuru = []) {
   // Diniyah → Kepala Madin
   let labelKepala = 'Kepala TPQ MU'
   let searchTitle = 'KEPALA TPQ'
-  if (lembaga === 'PTPT' || lembaga === 'PPPH') {
+  if (lembaga === 'PTPT') {
     labelKepala = 'PJ PTPT'
     searchTitle = 'PJ PTPT'
+  } else if (lembaga === 'PPPH') {
+    labelKepala = 'PJ PPPH'
+    searchTitle = 'PJ PPPH'
   } else if (lembaga === 'Diniyah') {
-    // v.21.59: Diniyah ikut Sekolah (bukan Madin)
-    labelKepala = 'Kepala Sekolah'
-    searchTitle = 'KEPALA SEKOLAH'
+    const ls = String(santri.lembaga_sekolah || '').toLowerCase().trim()
+    if (ls === 'sdi') {
+      labelKepala = 'Kepala SDI'
+      searchTitle = 'KEPALA SDI'
+    } else if (ls === 'pkbm') {
+      labelKepala = 'Kepala PKBM'
+      searchTitle = 'KEPALA PKBM'
+    } else {
+      labelKepala = 'Kepala Sekolah'
+      searchTitle = 'KEPALA SEKOLAH'
+    }
   }
 
   // v.21.47: tambah gap atas (y+5) supaya tidak nempel ke tabel
   const yStart = y + 5
   doc.setFont(font, 'normal')
   doc.setFontSize(9)
-  doc.text(`Dikeluarkan di : ${tempat}`, pageW - 14, yStart, { align: 'right' })
-  doc.text(`Pada Tanggal   : ${today}`, pageW - 14, yStart + 5, { align: 'right' })
+  const _dkLabelX = pageW - 82
+  const _dkColonX = pageW - 52
+  doc.text('Dikeluarkan di', _dkLabelX, yStart)
+  doc.text(':', _dkColonX, yStart)
+  doc.text(String(tempat), _dkColonX + 2.5, yStart)
+  doc.text('Pada Tanggal', _dkLabelX, yStart + 5)
+  doc.text(':', _dkColonX, yStart + 5)
+  doc.text(String(today), _dkColonX + 2.5, yStart + 5)
 
   const col1 = 35
   const col2 = pageW / 2
@@ -298,7 +409,7 @@ function drawSignBlocks(doc, y, santri, settings, lembaga, dbGuru = []) {
   const labelY = yStart + 14 // v.21.47: relax gap label dari +10 ke +14
 
   doc.text('Wali Santri', col1, labelY, { align: 'center' })
-  doc.text('Guru Kelas', col2, labelY, { align: 'center' })
+  doc.text(lembaga === 'Diniyah' ? 'Wali Kelas' : 'Guru Kelas', col2, labelY, { align: 'center' })
   doc.text(labelKepala, col3, labelY, { align: 'center' })
 
   // Lookup Signatures — v.90.0626: Diniyah pakai guru_sekolah (wali kelas sekolah), bukan ngaji
@@ -322,14 +433,34 @@ function drawSignBlocks(doc, y, santri, settings, lembaga, dbGuru = []) {
     return (jab.includes(searchFinal) || jabT.includes(searchFinal)) && g.status !== 'Non-Aktif'
   })
 
+  // Nama Kepala/PJ: guru jabatan match -> master Lembaga (kepala_lembaga) -> settings.
+  const kepalaNamaLmb =
+    (lembagaOverride &&
+      (lembagaOverride.kepala_lembaga || lembagaOverride.kepala_sekolah || lembagaOverride.kepala)) ||
+    ''
+  const kepalaNama = kepala?.nama || kepalaNamaLmb || settings.namaKepala || settings.namaPengasuh || ''
+  const kepalaGuru =
+    kepala || (kepalaNama ? dbGuru.find((g) => g.nama === kepalaNama && g.status !== 'Non-Aktif') : null)
+
   const nameY = labelY + 26 // v.21.47: relax kembali ke +26 (kompak terlalu agresif)
 
-  // Signature Images
-  if (guruKelas?.ttd_b64) {
-    doc.addImage(guruKelas.ttd_b64, 'PNG', col2 - 15, labelY + 2, 30, 15, undefined, 'FAST')
+  // Tanda tangan digital — auto-fill dari akun guru (field tanda_tangan/ttd_url/ttd/ttd_b64).
+  const _resolveTtd = async (g) => {
+    const src = g?.tanda_tangan || g?.ttd_url || g?.ttd || g?.ttd_b64 || ''
+    if (!src) return ''
+    try {
+      return src.startsWith('data:') ? src : await imageToDataURL(src)
+    } catch (_e) {
+      return ''
+    }
   }
-  if (kepala?.ttd_b64) {
-    doc.addImage(kepala.ttd_b64, 'PNG', col3 - 15, labelY + 2, 30, 15, undefined, 'FAST')
+  const guruTtdImg = await _resolveTtd(guruKelas)
+  const kepalaTtdImg = await _resolveTtd(kepalaGuru)
+  if (guruTtdImg) {
+    try { doc.addImage(guruTtdImg, 'PNG', col2 - 15, labelY + 2, 30, 15, undefined, 'FAST') } catch (_e) {}
+  }
+  if (kepalaTtdImg) {
+    try { doc.addImage(kepalaTtdImg, 'PNG', col3 - 15, labelY + 2, 30, 15, undefined, 'FAST') } catch (_e) {}
   }
 
   doc.setFont(font, 'bold')
@@ -345,7 +476,7 @@ function drawSignBlocks(doc, y, santri, settings, lembaga, dbGuru = []) {
   // EKGQ raw number saja, NO prefix label (kyai spec v.21.43)
   // Fallback chain: ekgq → no_ekgq → no_syahadah → nip
   const guruEkgq =
-    guruKelas?.ekgq || guruKelas?.no_ekgq || guruKelas?.no_syahadah || guruKelas?.nip || ''
+    guruKelas?.nrg || guruKelas?.ekgq || guruKelas?.no_ekgq || guruKelas?.no_syahadah || guruKelas?.nip || ''
   if (guruEkgq) {
     doc.setFont(font, 'normal')
     doc.setFontSize(8)
@@ -355,9 +486,10 @@ function drawSignBlocks(doc, y, santri, settings, lembaga, dbGuru = []) {
   }
 
   // Kepala
-  const kName = kepala?.nama || settings.namaKepala || '________________'
+  const kName = kepalaNama || '________________'
   doc.text(kName, col3, nameY, { align: 'center' })
-  const kepalaEkgq = kepala?.ekgq || kepala?.no_ekgq || kepala?.no_syahadah || kepala?.nip || ''
+  const kepalaEkgq =
+    kepalaGuru?.nrg || kepalaGuru?.ekgq || kepalaGuru?.no_ekgq || kepalaGuru?.no_syahadah || kepalaGuru?.nip || ''
   if (kepalaEkgq) {
     doc.setFont(font, 'normal')
     doc.setFontSize(8)
@@ -440,18 +572,35 @@ async function generateTpqPdf(doc, y, santri, schema, raporState, settings) {
     const heads = [headRow1, headRow2]
     if (hasAnyGroup) heads.push(headRow3)
 
+    const predFieldIdx = fields.findIndex((f) => f.type === 'auto_predikat')
+    const numIds = fields.filter((f) => f.type === 'number').map((f) => f.id)
+    const predikatKeys = []
     const body = []
-    if (sec.rows?.length) {
-      for (const row of sec.rows) {
-        const r = [row]
-        for (const f of fields) r.push(safeStr(data[`${sec.id}__${row}__${f.id}`]))
-        body.push(r)
+    const pushRow = (prefix, rowLabel) => {
+      const r = rowLabel != null ? [rowLabel] : []
+      for (const f of fields) {
+        if (f.type === 'auto_predikat') r.push('')
+        else if (f.type === 'date') r.push(fmtDateShort(data[`${prefix}__${f.id}`]))
+        else r.push(safeStr(data[`${prefix}__${f.id}`]))
       }
-    } else {
-      const r = []
-      for (const f of fields) r.push(safeStr(data[`${sec.id}__${f.id}`]))
+      let sum = 0
+      let n = 0
+      numIds.forEach((id) => {
+        const v = Number(data[`${prefix}__${id}`])
+        if (!isNaN(v) && v > 0) {
+          sum += v
+          n++
+        }
+      })
+      predikatKeys.push(n > 0 ? predikatQiraati(sum / n).key : '')
       body.push(r)
     }
+    if (sec.rows?.length) {
+      for (const row of sec.rows) pushRow(`${sec.id}__${row}`, row)
+    } else {
+      pushRow(`${sec.id}`, null)
+    }
+    const predikatColIdx = (sec.rows?.length ? 1 : 0) + predFieldIdx
 
     drawTable(doc, {
       startY: y,
@@ -459,7 +608,8 @@ async function generateTpqPdf(doc, y, santri, schema, raporState, settings) {
       body,
       styles: { font: doc._fontMU, fontSize: 7.5, cellPadding: 1.0, halign: 'center', valign: 'middle', overflow: 'linebreak', lineColor: [80,80,80], lineWidth: 0.15 },
       headStyles: { fillColor: [255, 255, 255], textColor: 0, lineWidth: 0.15 },
-      alternateRowStyles: { fillColor: [255, 255, 255] } // v.21.51: no zebra
+      alternateRowStyles: { fillColor: [255, 255, 255] },
+      didDrawCell: (d) => { if (predFieldIdx >= 0 && d.section === 'body' && d.column.index === predikatColIdx) drawPredikatImage(doc, d.cell, predikatKeys[d.row.index]) }
     })
     y = (doc.lastAutoTable?.finalY || y) + 2
   }
@@ -489,7 +639,6 @@ async function generatePraPtptPdf(doc, y, santri, schema, raporState, settings) 
       'Ghorib',
       'Tajwid',
       "Do'a\nHarian",
-      'Adab',
       'Jml'
     ]
   ]
@@ -519,10 +668,9 @@ async function generatePraPtptPdf(doc, y, santri, schema, raporState, settings) 
       r.push(safeStr(data[`pra__${lvl.id}__${kh.id}__ghorib`]))
       r.push(safeStr(data[`pra__${lvl.id}__${kh.id}__tajwid`]))
       r.push(safeStr(data[`pra__${lvl.id}__${kh.id}__doa_harian`]))
-      r.push(safeStr(data[`pra__${lvl.id}__${kh.id}__adab`]))
 
       let sum = 0
-      const keys = ['fashohah', 'tartil', 'tahfizh_juz_30', 'ghorib', 'tajwid', 'adab']
+      const keys = ['fashohah', 'tartil', 'tahfizh_juz_30', 'ghorib', 'tajwid']
       keys.forEach((k) => {
         const v = Number(data[`pra__${lvl.id}__${kh.id}__${k}`])
         if (v) sum += v
@@ -564,14 +712,13 @@ async function generatePraPtptPdf(doc, y, santri, schema, raporState, settings) 
       1: { cellWidth: 15 }, // Level Baca
       2: { cellWidth: 30, halign: 'left' }, // Target Khotam
       3: { cellWidth: 23 }, // Tgl Khotam (dd/mm/yyyy butuh ruang)
-      4: { cellWidth: 14 }, // Fashohah
-      5: { cellWidth: 14 }, // Tartil
-      6: { cellWidth: 14 }, // Tahfizh Juz 30
-      7: { cellWidth: 14 }, // Ghorib
-      8: { cellWidth: 14 }, // Tajwid
-      9: { cellWidth: 14 }, // Doa Harian
-      10: { cellWidth: 14 }, // Adab
-      11: { cellWidth: 17, fontStyle: 'bold' } // Jml — bold (v.93: no fill)
+      4: { cellWidth: 16 }, // Fashohah
+      5: { cellWidth: 16 }, // Tartil
+      6: { cellWidth: 16 }, // Tahfizh Juz 30
+      7: { cellWidth: 16 }, // Ghorib
+      8: { cellWidth: 16 }, // Tajwid
+      9: { cellWidth: 16 }, // Doa Harian
+      10: { cellWidth: 19, fontStyle: 'bold' } // Jml — bold
     }
   })
 
@@ -612,127 +759,117 @@ async function generatePraPtptPdf(doc, y, santri, schema, raporState, settings) 
 }
 
 async function generatePtptPdf(doc, y, santri, schema, raporState, settings) {
-  // v.21.49: Kelas rowspan + Istimror typo fix + center align (kyai image spec)
   const data = raporState.data || {}
-  const head = [
-    [
-      { content: 'Kelas', rowSpan: 2, styles: { valign: 'middle' } },
-      { content: 'Juz', rowSpan: 2, styles: { valign: 'middle' } },
-      { content: 'Tanggal Khotam', rowSpan: 2, styles: { valign: 'middle' } },
-      { content: 'Kualitas Bacaan', colSpan: 2 },
-      { content: 'Kualitas Hafalan', colSpan: 2 },
-      { content: 'Adab', rowSpan: 2, styles: { valign: 'middle' } },
-      { content: 'Predikat', rowSpan: 2, styles: { valign: 'middle' } }
-    ],
-    ['Fashohah', 'Tartil', 'Istimror', 'Kelancaran']
+  const fields = schema.fields || []
+
+  // Header grouping dari schema (sama dgn tampilan layar).
+  const groupedFields = fields.filter((f) => f.group)
+  const hasGroup = groupedFields.length > 0
+  const headRow1 = [
+    { content: 'Kelas', rowSpan: hasGroup ? 2 : 1, styles: { valign: 'middle' } },
+    { content: 'Juz', rowSpan: hasGroup ? 2 : 1, styles: { valign: 'middle' } }
   ]
+  let gi = 0
+  while (gi < fields.length) {
+    const f = fields[gi]
+    if (f.group) {
+      let span = 1
+      let j = gi + 1
+      while (j < fields.length && fields[j].group === f.group) {
+        span++
+        j++
+      }
+      headRow1.push({ content: f.group, colSpan: span, styles: { halign: 'center' } })
+      gi = j
+    } else {
+      headRow1.push({ content: f.label, rowSpan: hasGroup ? 2 : 1, styles: { valign: 'middle' } })
+      gi++
+    }
+  }
+  const head = hasGroup ? [headRow1, groupedFields.map((f) => f.label)] : [headRow1]
 
-  const body = []
-  const rows = schema.rows || []
+  const predFieldIdx = fields.findIndex((f) => f.type === 'auto_predikat')
+  const predikatColIdx = 2 + predFieldIdx
+  const numIds = fields.filter((f) => f.type === 'number').map((f) => f.id)
+  const predikatKeys = []
 
-  // Cumulative filter: e.g. Kelas 2 shows Juz 1-10
   const curKelasNum = parseInt(String(santri.kelas).match(/\d+/)?.[0] || '1')
-  const filteredRows = rows.filter((r) => {
-    const rKlsNum = parseInt(String(r.kelas).match(/\d+/)?.[0] || '1')
-    return rKlsNum <= curKelasNum
-  })
-
-  // v.21.49: Group by kelas for rowspan — index pertama kelas dapat rowSpan = count
+  const filteredRows = (schema.rows || []).filter(
+    (r) => parseInt(String(r.kelas).match(/\d+/)?.[0] || '1') <= curKelasNum
+  )
   const kelasCount = {}
   for (const r of filteredRows) {
     const k = String(r.kelas).trim()
     kelasCount[k] = (kelasCount[k] || 0) + 1
   }
   const kelasSeen = new Set()
-
+  const body = []
   for (const row of filteredRows) {
     const juzNum = String(row.juz).match(/\d+/)?.[0]
+    const base = `kj__juz_${juzNum}`
     const kelasKey = String(row.kelas).trim()
     const r = []
     if (!kelasSeen.has(kelasKey)) {
-      // First row of this kelas — set rowSpan
-      r.push({
-        content: row.kelas,
-        rowSpan: kelasCount[kelasKey],
-        styles: { valign: 'middle', fontStyle: 'bold' }
-      })
+      r.push({ content: row.kelas, rowSpan: kelasCount[kelasKey], styles: { valign: 'middle', fontStyle: 'bold' } })
       kelasSeen.add(kelasKey)
     }
     r.push(row.juz)
-    r.push(safeStr(data[`kj__juz_${juzNum}__tgl_khotam`]))
-    r.push(safeStr(data[`kj__juz_${juzNum}__bacaan_fashohah`]))
-    r.push(safeStr(data[`kj__juz_${juzNum}__bacaan_tartil`]))
-    r.push(
-      safeStr(
-        data[`kj__juz_${juzNum}__hafalan_istimror`] || data[`kj__juz_${juzNum}__hafalan_istiqror`]
-      )
-    )
-    r.push(safeStr(data[`kj__juz_${juzNum}__hafalan_kelancaran`]))
-    r.push(safeStr(data[`kj__juz_${juzNum}__adab`]))
-    r.push(safeStr(data[`kj__juz_${juzNum}__predikat`]))
+    let sum = 0
+    let n = 0
+    for (const f of fields) {
+      if (f.type === 'date') {
+        r.push(fmtDateShort(data[`${base}__tgl_khotam`] || tglKhotamPtptKK(santri, juzNum)))
+      } else if (f.type === 'auto_predikat') {
+        r.push('')
+      } else {
+        r.push(safeStr(data[`${base}__${f.id}`]))
+      }
+    }
+    numIds.forEach((id) => {
+      const v = Number(data[`${base}__${id}`])
+      if (!isNaN(v) && v > 0) {
+        sum += v
+        n++
+      }
+    })
+    predikatKeys.push(n > 0 ? predikatQiraati(sum / n).key : '')
     body.push(r)
   }
 
-  // PTPT auto-compact threshold (kyai spec v.21.43) — 5 step density
-  // Kelas 1 → 5 rows spacious; Kelas 5-6 → 25-30 rows compact untuk muat 1 halaman
-  // v.21.86: lebih compact + Predikat width lebih lebar untuk teks "Sangat Baik"
   let fSize, cPad
-  const n = body.length
-  if (n <= 5) {
-    fSize = 9
-    cPad = 1.8
-  } else if (n <= 10) {
-    fSize = 8.5
-    cPad = 1.4
-  } else if (n <= 20) {
-    fSize = 8
-    cPad = 1.0
-  } else if (n <= 30) {
-    fSize = 7
-    cPad = 0.6
-  } else {
-    fSize = 6
-    cPad = 0.4
-  }
+  const nrows = body.length
+  if (nrows <= 5) { fSize = 9; cPad = 1.8 }
+  else if (nrows <= 10) { fSize = 8.5; cPad = 1.4 }
+  else if (nrows <= 20) { fSize = 8; cPad = 1.0 }
+  else if (nrows <= 30) { fSize = 7; cPad = 0.6 }
+  else { fSize = 6; cPad = 0.4 }
+
+  const dateW = 28
+  const predW = 32
+  const numCount = numIds.length
+  const numW = Math.max(16, Math.floor((191 - 14 - 12 - dateW - predW) / Math.max(1, numCount)))
+  const columnStyles = { 0: { cellWidth: 14 }, 1: { cellWidth: 12 } }
+  fields.forEach((f, idx) => {
+    if (f.type === 'date') columnStyles[2 + idx] = { cellWidth: dateW }
+    else if (f.type === 'auto_predikat') columnStyles[2 + idx] = { cellWidth: predW }
+    else columnStyles[2 + idx] = { cellWidth: numW }
+  })
 
   drawTable(doc, {
     startY: y,
     head,
     body,
     theme: 'grid',
-    styles: {
-      font: doc._fontMU,
-      fontSize: fSize,
-      cellPadding: cPad,
-      halign: 'center',
-      valign: 'middle',
-      overflow: 'linebreak',
-      lineColor: [80, 80, 80],
-      lineWidth: 0.15
-    },
-    headStyles: {
-      fillColor: [255, 255, 255],
-      textColor: 0,
-      fontStyle: 'bold',
-      lineWidth: 0.2,
-      lineColor: [60, 60, 60],
-      valign: 'middle',
-      halign: 'center'
-    },
+    margin: { left: 12, right: 12 },
+    styles: { font: doc._fontMU, fontSize: fSize, cellPadding: cPad, halign: 'center', valign: 'middle', overflow: 'linebreak', lineColor: [80, 80, 80], lineWidth: 0.15 },
+    headStyles: { fillColor: [255, 255, 255], textColor: 0, fontStyle: 'bold', lineWidth: 0.2, lineColor: [60, 60, 60], valign: 'middle', halign: 'center' },
     alternateRowStyles: { fillColor: [255, 255, 255] },
-    // v.93.0626: lebar = KOP (215-24=191mm), margin 12/12, center. Total: 14+12+30+23+23+23+23+17+26 = 191
-    columnStyles: {
-      0: { cellWidth: 14 },  // Kelas
-      1: { cellWidth: 12 },  // Juz
-      2: { cellWidth: 30 },  // Tanggal Khotam
-      3: { cellWidth: 23 },  // Fashohah
-      4: { cellWidth: 23 },  // Tartil
-      5: { cellWidth: 23 },  // Istimror
-      6: { cellWidth: 23 },  // Kelancaran
-      7: { cellWidth: 17 },  // Adab
-      8: { cellWidth: 26 }   // Predikat lebih lebar
-    },
-    margin: { left: 12, right: 12 }
+    columnStyles,
+    didDrawCell: (d) => {
+      if (predFieldIdx >= 0 && d.section === 'body' && d.column.index === predikatColIdx) {
+        drawPredikatImage(doc, d.cell, predikatKeys[d.row.index])
+      }
+    }
   })
 
   y = doc.lastAutoTable.finalY + 2
@@ -748,31 +885,87 @@ async function generatePtptPdf(doc, y, santri, schema, raporState, settings) {
 
 async function generateDiniyahPdf(doc, y, santri, schema, raporState, settings) {
   const data = raporState.data || {}
-  const jenjang = (schema.jenjang || []).find((j) => j.kelas === (santri.kelas_sekolah || ''))
+  const jenjang =
+    (schema.jenjang || []).find((j) => j.kelas === (santri.kelas_sekolah || '')) ||
+    (schema.jenjang || [])[0]
   if (!jenjang) return y
 
-  const head = [['NO', 'MATA PELAJARAN', 'KKM', 'RATA-RATA SUMATIF', 'SUMATIF AKHIR']]
+  const predikatKeys = []
+  const head = [['NO', 'MATA PELAJARAN', 'KKM', 'RATA-RATA SUMATIF', 'SUMATIF AKHIR SEMESTER', 'PREDIKAT']]
   const body = (jenjang.mapel || []).map((m, i) => {
-    const mid =
-      m.id ||
-      String(m.nama)
-        .toLowerCase()
-        .replace(/[^a-z0-9]/g, '_')
-    const keyR = `dn__${jenjang.kelas}__${mid}__sumatif`
-    const keyS = `dn__${jenjang.kelas}__${mid}__akhir`
-    return [i + 1, m.nama, m.kkm || 80, safeStr(data[keyR]), safeStr(data[keyS])]
+    const mid = m.id || String(m.nama).toLowerCase().replace(/[^a-z0-9]/g, '_')
+    const sm = Number(data[`dn__${jenjang.kelas}__${mid}__sumatif`])
+    const ak = Number(data[`dn__${jenjang.kelas}__${mid}__akhir`])
+    const arr = [sm, ak].filter((v) => !isNaN(v) && v > 0)
+    const nilai = arr.length ? arr.reduce((s2, v) => s2 + v, 0) / arr.length : null
+    const kkm = Number(m.kkm) || 75
+    predikatKeys.push(nilai == null ? '' : predikatDiniyah(nilai, kkm).key)
+    return [i + 1, m.nama, kkm, isNaN(sm) ? '-' : fmtNilai(sm), isNaN(ak) ? '-' : fmtNilai(ak), '']
   })
 
   drawTable(doc, {
     startY: y,
     head,
     body,
-    styles: { font: doc._fontMU, fontSize: 8, cellPadding: 1.2, halign: 'center', valign: 'middle', overflow: 'linebreak', lineColor: [80,80,80], lineWidth: 0.15 },
-    headStyles: { fillColor: [255, 255, 255], textColor: 0, lineWidth: 0.15 },
-    alternateRowStyles: { fillColor: [255, 255, 255] }, // v.21.51: no zebra
-    columnStyles: { 1: { halign: 'left', fontStyle: 'bold' } }
+    margin: { left: 12, right: 12 },
+    styles: { font: doc._fontMU, fontSize: 8.5, cellPadding: 1.4, halign: 'center', valign: 'middle', overflow: 'linebreak', lineColor: [80, 80, 80], lineWidth: 0.15 },
+    headStyles: { fillColor: [255, 255, 255], textColor: 0, fontStyle: 'bold', lineWidth: 0.15, fontSize: 7.5 },
+    alternateRowStyles: { fillColor: [255, 255, 255] },
+    columnStyles: { 0: { cellWidth: 12 }, 1: { halign: 'left', fontStyle: 'bold' }, 2: { cellWidth: 16 }, 3: { cellWidth: 34 }, 4: { cellWidth: 34 }, 5: { cellWidth: 32 } },
+    didDrawCell: (d) => {
+      if (d.section === 'body' && d.column.index === 5) drawPredikatImage(doc, d.cell, predikatKeys[d.row.index])
+    }
+  })
+  return doc.lastAutoTable.finalY || y
+}
+
+async function generatePpphPdf(doc, y, santri, schema, raporState, settings) {
+  const data = raporState.data || {}
+  const fieldsNilai = schema.fieldsNilai || []
+  const predikatKeys = []
+  const head = [['Level', 'Kitab', 'Tgl Khotam', ...fieldsNilai.map((f) => f.label), 'Predikat']]
+  const predikatColIdx = 3 + fieldsNilai.length
+  const body = (schema.levels || []).map((lvl, i) => {
+    const tgl = data[`ppph__${lvl.id}__tgl_khotam`] || tglKhotamLevelKK(santri, 'PPPH', lvl.id)
+    const cells = [i + 1, lvl.kitab || lvl.label, fmtDateShort(tgl)]
+    let sum = 0
+    let n = 0
+    fieldsNilai.forEach((f) => {
+      const v = data[`ppph__${lvl.id}__${f.id}`]
+      cells.push(safeStr(v))
+      const num = Number(v)
+      if (!isNaN(num) && num > 0) {
+        sum += num
+        n++
+      }
+    })
+    predikatKeys.push(n > 0 ? predikatQiraati(sum / n).key : '')
+    cells.push('')
+    return cells
   })
 
+  drawTable(doc, {
+    startY: y,
+    head,
+    body,
+    margin: { left: 12, right: 12 },
+    styles: { font: doc._fontMU, fontSize: 9, cellPadding: 1.6, halign: 'center', valign: 'middle', overflow: 'linebreak', lineColor: [80, 80, 80], lineWidth: 0.15 },
+    headStyles: { fillColor: [255, 255, 255], textColor: 0, fontStyle: 'bold', lineWidth: 0.15 },
+    alternateRowStyles: { fillColor: [255, 255, 255] },
+    columnStyles: { 0: { cellWidth: 16 }, 1: { halign: 'left', fontStyle: 'bold' }, 2: { cellWidth: 28 }, [predikatColIdx]: { cellWidth: 34 } },
+    didDrawCell: (d) => {
+      if (d.section === 'body' && d.column.index === predikatColIdx) drawPredikatImage(doc, d.cell, predikatKeys[d.row.index])
+    }
+  })
+
+  y = doc.lastAutoTable.finalY + 2
+  const avg = raporState.rata_rata || 0
+  drawTable(doc, {
+    startY: y,
+    body: [['Nilai Rata-rata', fmtNilai(avg)]],
+    styles: { font: doc._fontMU, fontSize: 8.5, fontStyle: 'bold', halign: 'center', cellPadding: 1.2 },
+    columnStyles: { 0: { cellWidth: 100 } }
+  })
   return doc.lastAutoTable.finalY || y
 }
 
@@ -798,11 +991,11 @@ export async function generateRaporPdf({
 
   if (schema?.perLevel) {
     y = await generatePraPtptPdf(doc, y, santri, schema, raporState, settings)
+  } else if (schema?.perKitab) {
+    y = await generatePpphPdf(doc, y, santri, schema, raporState, settings)
   } else if (schema?.perKelas) {
     y = await generateDiniyahPdf(doc, y, santri, schema, raporState, settings)
-  } else if (lembaga === 'PTPT' || lembaga === 'PPPH') {
-    // v.21.115.0528: PPPH (Pasca PTPT Program Hadits) ikut format PTPT, bukan TPQ.
-    // Sebelum fix: PPPH falls through ke generateTpqPdf yang format-nya beda lembaga.
+  } else if (lembaga === 'PTPT') {
     y = await generatePtptPdf(doc, y, santri, schema, raporState, settings)
   } else {
     y = await generateTpqPdf(doc, y, santri, schema, raporState, settings)
@@ -810,7 +1003,7 @@ export async function generateRaporPdf({
 
   y = drawAbsensiKepribadian(doc, y + 4, raporState.absensi, raporState.kepribadian)
   y = drawCatatanBox(doc, y + 4, raporState.catatan_wali_kelas || raporState.catatan)
-  y = drawSignBlocks(doc, y + 6, santri, settings, lembaga, dbGuru, lembagaOverride)
+  y = await drawSignBlocks(doc, y + 6, santri, settings, lembaga, dbGuru, lembagaOverride)
 
   const fn =
     filename ||

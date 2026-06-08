@@ -299,14 +299,37 @@
               {{ santriAktif?.nama }} · {{ lembaga }} · {{ tahunAjaran }} {{ semester }}
             </h2>
           </div>
-          <button
-            v-if="santriAktif && !isSantri"
-            @click="exportPdfSingle()"
-            aria-label="Ekspor rapor PDF santri ini"
-            class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold transition cursor-pointer"
-          >
-            <i class="fas fa-file-pdf"></i>Ekspor PDF
-          </button>
+          <div v-if="santriAktif && !isSantri" class="flex items-center gap-2 flex-wrap">
+            <button
+              v-if="!editMode"
+              @click="startEdit"
+              class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition cursor-pointer"
+            >
+              <i class="fas fa-pen-to-square"></i>Isi / Edit Rapor
+            </button>
+            <template v-else>
+              <button
+                @click="simpanRapor"
+                :disabled="savingRapor"
+                class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer"
+              >
+                <i :class="['fas', savingRapor ? 'fa-spinner fa-spin' : 'fa-save']"></i>{{ savingRapor ? 'Menyimpan...' : 'Simpan' }}
+              </button>
+              <button
+                @click="cancelEdit"
+                class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold transition cursor-pointer"
+              >
+                Batal
+              </button>
+            </template>
+            <button
+              @click="exportPdfSingle()"
+              aria-label="Ekspor rapor PDF santri ini"
+              class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold transition cursor-pointer"
+            >
+              <i class="fas fa-file-pdf"></i>Ekspor PDF
+            </button>
+          </div>
           <!-- v.86.0526: santri = view-only (tanpa ekspor PDF) -->
           <span
             v-else-if="santriAktif && isSantri"
@@ -332,6 +355,107 @@
           >
             <i :class="['fas', r.jenis === 'qiraati' ? 'fa-mosque' : 'fa-book-open', 'mr-1']"></i>
             {{ r.lembaga }} ({{ r.jenis === 'qiraati' ? 'Qiraati' : 'Diniyah' }})
+          </button>
+        </div>
+      </div>
+
+      <!-- ===== Editor Nilai (no-print) ===== -->
+      <div
+        v-if="editMode && santriAktif"
+        class="no-print bg-amber-50 dark:bg-slate-800 rounded-2xl p-4 md:p-5 border border-amber-200 dark:border-slate-700 shadow-sm space-y-4"
+      >
+        <div class="flex items-center justify-between gap-2 flex-wrap">
+          <h3 class="text-sm font-black text-amber-900 dark:text-amber-200">
+            <i class="fas fa-pen-to-square mr-1"></i>Isi / Edit Nilai Rapor
+          </h3>
+          <span class="text-[11px] text-amber-700 dark:text-amber-300">
+            Predikat &amp; rata-rata otomatis. Tgl khotam terisi dari menu Kenaikan (bisa diubah).
+          </span>
+        </div>
+
+        <div v-for="g in editGroups" :key="g.title" class="space-y-2">
+          <h4 class="text-xs font-bold text-[var(--text-primary)] uppercase tracking-wide border-b border-amber-200 dark:border-slate-600 pb-1">
+            {{ g.title }}
+          </h4>
+          <div
+            v-for="(row, ri) in g.rows"
+            :key="ri"
+            class="rounded-lg bg-white dark:bg-slate-900 border border-amber-100 dark:border-slate-700 p-2"
+          >
+            <div class="text-[11px] font-bold text-[var(--text-secondary)] mb-1">{{ row.label }}</div>
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+              <label v-for="f in row.fields" :key="f.key" class="flex flex-col gap-0.5">
+                <span class="text-[10px] text-[var(--text-tertiary)]">{{ f.label }}</span>
+                <input
+                  v-if="f.type === 'auto'"
+                  :value="f.autoVal == null ? '-' : f.autoVal"
+                  readonly
+                  title="Otomatis dari rekap bulanan"
+                  class="text-xs px-2 py-1 border border-[var(--border-default)] rounded bg-[var(--bg-muted)] text-[var(--text-secondary)] cursor-not-allowed"
+                />
+                <input
+                  v-else
+                  :type="f.type === 'date' ? 'date' : f.type === 'number' ? 'number' : 'text'"
+                  v-model="draft.data_nilai[f.key]"
+                  class="text-xs px-2 py-1 border border-[var(--border-default)] rounded bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
+                />
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div class="rounded-lg bg-white dark:bg-slate-900 border border-amber-100 dark:border-slate-700 p-2">
+            <div class="text-xs font-bold mb-1 text-[var(--text-primary)]">Absensi (Hari)</div>
+            <div class="grid grid-cols-3 gap-2">
+              <label class="flex flex-col gap-0.5">
+                <span class="text-[10px] text-[var(--text-tertiary)]">Sakit</span>
+                <input type="number" min="0" v-model="draft.absensi.sakit" class="text-xs px-2 py-1 border border-[var(--border-default)] rounded bg-[var(--bg-card-elevated)] text-[var(--text-primary)]" />
+              </label>
+              <label class="flex flex-col gap-0.5">
+                <span class="text-[10px] text-[var(--text-tertiary)]">Izin</span>
+                <input type="number" min="0" v-model="draft.absensi.izin" class="text-xs px-2 py-1 border border-[var(--border-default)] rounded bg-[var(--bg-card-elevated)] text-[var(--text-primary)]" />
+              </label>
+              <label class="flex flex-col gap-0.5">
+                <span class="text-[10px] text-[var(--text-tertiary)]">Alpa</span>
+                <input type="number" min="0" v-model="draft.absensi.alpa" class="text-xs px-2 py-1 border border-[var(--border-default)] rounded bg-[var(--bg-card-elevated)] text-[var(--text-primary)]" />
+              </label>
+            </div>
+          </div>
+          <div class="rounded-lg bg-white dark:bg-slate-900 border border-amber-100 dark:border-slate-700 p-2">
+            <div class="text-xs font-bold mb-1 text-[var(--text-primary)]">Nilai Kepribadian</div>
+            <div class="grid grid-cols-3 gap-2">
+              <label v-for="k in ['kelakuan', 'kerajinan', 'kebersihan']" :key="k" class="flex flex-col gap-0.5">
+                <span class="text-[10px] text-[var(--text-tertiary)] capitalize">{{ k }}</span>
+                <select v-model="draft.kepribadian[k]" class="text-xs px-1 py-1 border border-[var(--border-default)] rounded bg-[var(--bg-card-elevated)] text-[var(--text-primary)]">
+                  <option>Baik</option>
+                  <option>Cukup</option>
+                  <option>Perlu Perhatian</option>
+                </select>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="rounded-lg bg-white dark:bg-slate-900 border border-amber-100 dark:border-slate-700 p-2">
+          <div class="text-xs font-bold mb-1 text-[var(--text-primary)]">Catatan untuk Santri / Orang Tua</div>
+          <textarea
+            v-model="draft.catatan"
+            rows="2"
+            class="w-full text-xs px-2 py-1 border border-[var(--border-default)] rounded bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
+          ></textarea>
+        </div>
+
+        <div class="flex items-center gap-2 justify-end">
+          <button @click="cancelEdit" class="h-9 px-3 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold cursor-pointer">
+            Batal
+          </button>
+          <button
+            @click="simpanRapor"
+            :disabled="savingRapor"
+            class="h-9 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold cursor-pointer"
+          >
+            <i :class="['fas', savingRapor ? 'fa-spinner fa-spin' : 'fa-save', 'mr-1']"></i>{{ savingRapor ? 'Menyimpan...' : 'Simpan Rapor' }}
           </button>
         </div>
       </div>
@@ -403,66 +527,35 @@
 
           <!-- Judul -->
           <h2 class="text-center text-[13px] font-bold underline my-2.5 leading-snug">
-            {{
-              kategori === 'diniyah'
-                ? 'LAPORAN HASIL BELAJAR DINIYAH PESERTA DIDIK'
-                : 'SURAT KETERANGAN HASIL PENDIDIKAN'
-            }}
-            <template v-if="kategori === 'diniyah'">
-              <br />TAHUN PELAJARAN {{ tahunAjaran }}
-            </template>
+            SURAT KETERANGAN HASIL PENDIDIKAN
           </h2>
 
-          <!-- Identitas -->
+          <!-- Identitas (Kiri: Nama/NISN/NIS · Kanan: Kelas/Semester/Tahun) -->
           <table class="w-full text-[11px] mb-2">
-            <tbody v-if="kategori === 'diniyah'">
+            <tbody>
               <tr>
-                <td class="w-[120px] py-0.5">No. Induk</td>
+                <td class="w-[110px] py-0.5">Nama</td>
                 <td class="w-[10px]">:</td>
+                <td class="py-0.5 font-bold">{{ santriAktif.nama }}</td>
+                <td class="w-[110px]">Kelas</td>
+                <td class="w-[10px]">:</td>
+                <td class="font-bold">{{ kelasGabungan }}</td>
+              </tr>
+              <tr>
+                <td class="py-0.5">NISN</td>
+                <td>:</td>
+                <td class="py-0.5">{{ santriAktif.nisn || '-' }}</td>
+                <td>Semester</td>
+                <td>:</td>
+                <td>{{ semester }}</td>
+              </tr>
+              <tr>
+                <td class="py-0.5">NIS</td>
+                <td>:</td>
                 <td class="py-0.5">{{ santriAktif.nis || '-' }}</td>
-                <td class="w-[120px]">Kelas</td>
-                <td class="w-[10px]">:</td>
-                <td>{{ santriAktif.kelas_sekolah || '-' }}</td>
-              </tr>
-              <tr>
-                <td class="py-0.5">Nama</td>
+                <td>Tahun Ajaran</td>
                 <td>:</td>
-                <td class="py-0.5">{{ santriAktif.nama }}</td>
-                <td>Semester</td>
-                <td>:</td>
-                <td>{{ semester }}</td>
-              </tr>
-              <tr>
-                <td class="py-0.5">Lembaga</td>
-                <td>:</td>
-                <td class="py-0.5" colspan="4">
-                  {{ santriAktif.lembaga_sekolah || santriAktif.lembaga || '-' }}
-                </td>
-              </tr>
-            </tbody>
-            <tbody v-else>
-              <tr>
-                <td class="w-[120px] py-0.5">Nama Santri</td>
-                <td class="w-[10px]">:</td>
-                <td class="py-0.5">{{ santriAktif.nama }}</td>
-                <td class="w-[120px]">Tahun Pelajaran</td>
-                <td class="w-[10px]">:</td>
                 <td>{{ tahunAjaran }}</td>
-              </tr>
-              <tr>
-                <td class="py-0.5">Lembaga</td>
-                <td>:</td>
-                <td class="py-0.5">{{ santriAktif.lembaga || '-' }}</td>
-                <td>Semester</td>
-                <td>:</td>
-                <td>{{ semester }}</td>
-              </tr>
-              <tr>
-                <td class="py-0.5">Kelas</td>
-                <td>:</td>
-                <td class="py-0.5" colspan="4">
-                  {{ santriAktif.kelas_sekolah || santriAktif.kelas || '-' }}
-                </td>
               </tr>
             </tbody>
           </table>
@@ -562,33 +655,79 @@
             <table v-else class="w-full border-collapse text-[11px]">
               <thead class="bg-cyan-100">
                 <tr>
-                  <th class="border border-black px-2 py-1.5 w-[40px]">NO</th>
+                  <th class="border border-black px-2 py-1.5 w-[32px]">NO</th>
                   <th class="border border-black px-2 py-1.5 text-left">MATA PELAJARAN</th>
-                  <th class="border border-black px-2 py-1.5 w-[50px]">KKM</th>
-                  <th class="border border-black px-2 py-1.5">NILAI RATA-RATA SUMATIF</th>
-                  <th class="border border-black px-2 py-1.5">NILAI SUMATIF AKHIR SEMESTER</th>
+                  <th class="border border-black px-2 py-1.5 w-[40px]">KKM</th>
+                  <th class="border border-black px-1 py-1.5 w-[78px] leading-tight">RATA-RATA SUMATIF</th>
+                  <th class="border border-black px-1 py-1.5 w-[78px] leading-tight">SUMATIF AKHIR SEMESTER</th>
+                  <th class="border border-black px-2 py-1.5 w-[84px]">PREDIKAT</th>
                 </tr>
               </thead>
               <tbody>
                 <tr v-for="(mp, idx) in jenjangAktif.mapel || []" :key="mp.id || idx">
-                  <td class="border border-black px-2 py-1.5 text-center font-bold">
-                    {{ idx + 1 }}
-                  </td>
+                  <td class="border border-black px-2 py-1.5 text-center font-bold">{{ idx + 1 }}</td>
                   <td class="border border-black px-2 py-1.5">{{ mp.nama }}</td>
-                  <td class="border border-black px-2 py-1.5 text-center">{{ mp.kkm || 80 }}</td>
+                  <td class="border border-black px-2 py-1.5 text-center">{{ mp.kkm || 75 }}</td>
+                  <td class="border border-black px-2 py-1.5 text-center">{{ fmtNumber(nilaiSumatif(mp)) }}</td>
                   <td class="border border-black px-2 py-1.5 text-center">
-                    {{
-                      getNilai(
-                        `dn__${santriAktif.kelas_sekolah}__${mp.id || slug(mp.nama)}__sumatif`
-                      ) || '-'
-                    }}
+                    {{ getNilai(`dn__${santriAktif.kelas_sekolah}__${mp.id || slug(mp.nama)}__akhir`) || '-' }}
                   </td>
-                  <td class="border border-black px-2 py-1.5 text-center">
-                    {{
-                      getNilai(
-                        `dn__${santriAktif.kelas_sekolah}__${mp.id || slug(mp.nama)}__akhir`
-                      ) || '-'
-                    }}
+                  <td
+                    class="border border-black px-2 py-1.5 text-center"
+                    lang="ar"
+                    dir="rtl"
+                    :style="arStyleMd"
+                  >
+                    {{ predikatDiniyahMapel(mp) }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- ===== Body Layout C2: PPPH (perKitab, 4 level kitab Hadits) ===== -->
+          <div v-else-if="schema.perKitab" class="mt-3">
+            <table class="w-full border-collapse text-[10px] md:text-[11px]">
+              <thead class="bg-[var(--bg-muted)]">
+                <tr>
+                  <th class="border border-slate-500 px-1.5 py-1 align-middle w-[44px]">Level</th>
+                  <th class="border border-slate-500 px-1.5 py-1 text-left align-middle">Kitab</th>
+                  <th class="border border-slate-500 px-1.5 py-1 align-middle w-[72px]">Tgl Khotam</th>
+                  <th
+                    v-for="f in fieldsNilai"
+                    :key="f.id"
+                    class="border border-slate-500 px-1.5 py-1 align-middle"
+                  >
+                    {{ f.label }}
+                  </th>
+                  <th class="border border-slate-500 px-1.5 py-1 align-middle w-[80px]">Predikat</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(lvl, i) in schema.levels || []" :key="lvl.id">
+                  <td class="border border-slate-500 px-1.5 py-1 text-center font-bold">
+                    {{ i + 1 }}
+                  </td>
+                  <td class="border border-slate-500 px-1.5 py-1 font-bold">
+                    {{ lvl.kitab || lvl.label }}
+                  </td>
+                  <td class="border border-slate-500 px-1.5 py-1 text-center">
+                    {{ fmtDate(getNilai(`ppph__${lvl.id}__tgl_khotam`)) }}
+                  </td>
+                  <td
+                    v-for="f in fieldsNilai"
+                    :key="f.id"
+                    class="border border-slate-500 px-1.5 py-1 text-center"
+                  >
+                    {{ getNilai(`ppph__${lvl.id}__${f.id}`) || '' }}
+                  </td>
+                  <td
+                    class="border border-slate-500 px-1.5 py-1 text-center"
+                    lang="ar"
+                    dir="rtl"
+                    :style="arStyleMd"
+                  >
+                    {{ predikatPpph(lvl.id) }}
                   </td>
                 </tr>
               </tbody>
@@ -653,6 +792,9 @@
                     v-for="f in schema.fields || []"
                     :key="f.id"
                     class="border border-slate-500 px-1.5 py-1 text-center"
+                    :lang="f.id === 'predikat' ? 'ar' : null"
+                    :dir="f.id === 'predikat' ? 'rtl' : null"
+                    :style="f.id === 'predikat' ? arStyleSm : null"
                   >
                     {{ getNilaiKelasJuz(row, f) }}
                   </td>
@@ -727,6 +869,9 @@
                       v-for="f in sec.fields"
                       :key="f.id"
                       class="border border-slate-500 px-1 py-1 text-center"
+                      :lang="f.id === 'predikat' ? 'ar' : null"
+                      :dir="f.id === 'predikat' ? 'rtl' : null"
+                      :style="f.id === 'predikat' ? arStyleSm : null"
                     >
                       {{ getSectionValue(sec.id, row, f) }}
                     </td>
@@ -751,6 +896,9 @@
                       v-for="f in sec.fields"
                       :key="f.id"
                       class="border border-slate-500 px-1 py-1 text-center"
+                      :lang="f.id === 'predikat' ? 'ar' : null"
+                      :dir="f.id === 'predikat' ? 'rtl' : null"
+                      :style="f.id === 'predikat' ? arStyleSm : null"
                     >
                       {{ getSectionValue(sec.id, null, f) }}
                     </td>
@@ -818,7 +966,7 @@
               </tr>
               <tr>
                 <td>Wali Santri</td>
-                <td>Guru Kelas</td>
+                <td>{{ kategori === 'diniyah' ? 'Wali Kelas' : 'Guru Kelas' }}</td>
                 <td>{{ jabatanKepala }}</td>
               </tr>
               <tr style="height: 60px; vertical-align: bottom">
@@ -867,8 +1015,8 @@
               </tr>
               <tr class="text-[9px] text-[var(--text-secondary)]">
                 <td></td>
-                <td>{{ ekgqGuru ? 'EKGQ: ' + ekgqGuru : '' }}</td>
-                <td>{{ ekgqKepala ? 'EKGQ: ' + ekgqKepala : '' }}</td>
+                <td>{{ ekgqGuru || '' }}</td>
+                <td>{{ ekgqKepala || '' }}</td>
               </tr>
             </table>
           </div>
@@ -891,25 +1039,28 @@ import { useAuthStore } from '@/stores/auth'
 import UiActionCard from '@/components/ui/UiActionCard.vue'
 import { generateRaporPdf } from '@/utils/raporPdf'
 // v.90.0626: util jenjang Diniyah (SDI/SMP/SMA) — sumber tunggal, samakan dg Rekap Diniyah
-import { kelasJenjang, mapelDiniyahFor } from '@/utils/jenjang'
+import { kelasJenjang, mapelDiniyahFor, diniyahJenjang, jenjangFromKelas } from '@/utils/jenjang'
+import { predikatQiraati, predikatDiniyah } from '@/utils/predikat'
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore'
+import { db } from '@/services/firebase'
 
 const toast = useToast()
 const route = useRoute()
 
 // Real-time rapor docs (1 doc per santri+lembaga+periode)
 const raporDocs = ref([])
-let unsubRapor = null
+const rekapDiniyahDocs = ref([])
+const absNgajiDocs = ref([])
+const absSekolahDocs = ref([])
+const _unsubsRapor = []
 onMounted(() => {
-  unsubRapor = subscribeColl('rapor_semester', (docs) => {
-    raporDocs.value = docs || []
-  })
+  _unsubsRapor.push(subscribeColl('rapor_semester', (docs) => { raporDocs.value = docs || [] }))
+  _unsubsRapor.push(subscribeColl('rekap_diniyah', (docs) => { rekapDiniyahDocs.value = docs || [] }))
+  _unsubsRapor.push(subscribeColl('absensi_santri_ngaji_bulanan', (docs) => { absNgajiDocs.value = docs || [] }))
+  _unsubsRapor.push(subscribeColl('absensi_santri_sekolah_bulanan', (docs) => { absSekolahDocs.value = docs || [] }))
 })
 onUnmounted(() => {
-  if (unsubRapor) {
-    try {
-      unsubRapor()
-    } catch (e) {}
-  }
+  _unsubsRapor.forEach((u) => { try { u() } catch (e) {} })
 })
 
 const { santriRaw, getRapors } = useSantri()
@@ -1222,6 +1373,23 @@ const tglCetak = computed(() =>
   )
 )
 
+// Kelas gabungan: "Kelas Sekolah / Kelas Qiraati" (mis. "VII / PTPT 4", "TK A / Pra PTPT 3").
+const kelasGabungan = computed(() => {
+  const s = santriAktif.value
+  if (!s) return '-'
+  const sekolah = String(s.kelas_sekolah || '').trim()
+  const ngaji = [String(s.lembaga || '').trim(), String(s.kelas || '').trim()]
+    .filter(Boolean)
+    .join(' ')
+    .trim()
+  const parts = [sekolah, ngaji].filter(Boolean)
+  return parts.length ? parts.join(' / ') : '-'
+})
+
+// Style aksara Arab untuk kolom predikat (tampilan layar).
+const arStyleSm = { fontFamily: "'Traditional Arabic','Amiri','Scheherazade New',serif", fontSize: '14px' }
+const arStyleMd = { fontFamily: "'Traditional Arabic','Amiri','Scheherazade New',serif", fontSize: '15px' }
+
 const logoKiri = computed(() => {
   const s = settingsStore.settings || {}
   return kategori.value === 'diniyah'
@@ -1270,11 +1438,8 @@ const ttdGuru = computed(() => {
 })
 
 const ttdKepala = computed(() => {
-  const g = (guruRaw.value || []).find((x) => {
-    const r = String(x.role_sistem || '').toLowerCase()
-    const j = String(x.jabatan || '').toLowerCase()
-    return r === 'super_admin' || r === 'admin' || j.includes('kepala') || j.includes('pengasuh')
-  })
+  const nk = namaKepala.value
+  const g = nk ? (guruRaw.value || []).find((x) => x.nama === nk) : null
   return g?.tanda_tangan || g?.ttd_url || g?.ttd || ''
 })
 
@@ -1285,8 +1450,7 @@ const FIELDS_NILAI_DEFAULT = [
   { id: 'tahfizh_juz_30', label: 'Tahfizh Juz 30' },
   { id: 'ghorib', label: 'Ghorib' },
   { id: 'tajwid', label: 'Tajwid' },
-  { id: 'doa_harian', label: 'Doa Harian' },
-  { id: 'adab', label: 'Adab' }
+  { id: 'doa_harian', label: 'Doa Harian' }
 ]
 
 // ===== Schema builder per lembaga =====
@@ -1357,14 +1521,14 @@ function buildSchema(lembagaName) {
     }
   }
 
-  // PTPT / PPPH: tableLayout kelasJuz, KUMULATIF up to santri kelas
-  if (lmb === 'ptpt' || lmb === 'ppph') {
+  // PTPT: tableLayout kelasJuz, KUMULATIF up to santri kelas (Adab dihapus; Tgl Khotam auto).
+  if (lmb === 'ptpt') {
     const fields = [
+      { id: 'tgl_khotam', label: 'Tgl Khotam', type: 'date' },
       { id: 'istimror', label: 'Istimror', type: 'number', group: 'Kualitas Hafalan' },
       { id: 'kelancaran', label: 'Kelancaran', type: 'number', group: 'Kualitas Hafalan' },
       { id: 'fashohah', label: 'Fashohah', type: 'number', group: 'Kualitas Bacaan' },
       { id: 'tajwid', label: 'Tajwid', type: 'number', group: 'Kualitas Bacaan' },
-      { id: 'adab', label: 'Adab', type: 'number' },
       { id: 'predikat', label: 'Predikat', type: 'auto_predikat', source: 'avg' }
     ]
     const rows = []
@@ -1374,6 +1538,24 @@ function buildSchema(lembagaName) {
         rows.push({ kelas: 'Kelas ' + k, juz: 'Juz ' + j })
     }
     return { tableLayout: 'kelasJuz', fields, rows }
+  }
+
+  // PPPH (Pasca PTPT Program Hadits): 4 level kitab. Tgl Khotam (auto) + aspek + Predikat.
+  if (lmb === 'ppph' || lmb === 'p3h') {
+    return {
+      perKitab: true,
+      fieldsNilai: [
+        { id: 'hafalan', label: 'Hafalan' },
+        { id: 'pemahaman', label: 'Pemahaman' },
+        { id: 'kelancaran', label: 'Kelancaran' }
+      ],
+      levels: [
+        { id: 'lvl_1', label: 'Level 1', kitab: "Arba'in Nawawi" },
+        { id: 'lvl_2', label: 'Level 2', kitab: 'Riyadhus Shalihin' },
+        { id: 'lvl_3', label: 'Level 3', kitab: 'Shahih Bukhari' },
+        { id: 'lvl_4', label: 'Level 4', kitab: 'Shahih Muslim' }
+      ]
+    }
   }
 
   // TPQ (Pagi/Sore = same schema): sections jilid + IMTAS + Khotaman
@@ -1393,8 +1575,7 @@ function buildSchema(lembagaName) {
               type: 'text',
               group: 'Materi Tambahan'
             },
-            { id: 'adab', label: 'Adab', type: 'number' },
-            { id: 'predikat', label: 'Predikat', type: 'auto_predikat', source: 'adab' }
+            { id: 'predikat', label: 'Predikat', type: 'auto_predikat', source: 'avg' }
           ]
         },
         {
@@ -1413,7 +1594,6 @@ function buildSchema(lembagaName) {
               type: 'text',
               group: 'Materi Tambahan'
             },
-            { id: 'adab', label: 'Adab', type: 'number' },
             { id: 'predikat', label: 'Predikat', type: 'auto_predikat', source: 'avg' }
           ]
         },
@@ -1434,7 +1614,6 @@ function buildSchema(lembagaName) {
               type: 'text',
               group: 'Materi Tambahan'
             },
-            { id: 'adab', label: 'Adab', type: 'number' },
             { id: 'predikat', label: 'Predikat', type: 'auto_predikat', source: 'avg' }
           ]
         }
@@ -1469,16 +1648,37 @@ function buildSchema(lembagaName) {
 
 // v.90.0626: Rapor Diniyah -> kolom mapel dibangun dari setting per-jenjang (SDI/SMP/SMA)
 //   di settings.rekapDiniyahMapel. Sumber tunggal yang sama dengan Rekap Diniyah & Pengaturan.
+// Default mapel Diniyah per jenjang (dipakai bila settings.rekapDiniyahMapel kosong).
+const DINIYAH_MAPEL_DEFAULT = {
+  SDI: ['Tauhid', 'Fiqh', 'Tarikh', 'Akhlaq', 'Bahasa Arab', 'Tahajji', 'Praktek Ibadah', 'ASWAJA & ke-NU-an'],
+  SMP: ['Tauhid', 'Fiqh', 'Akhlaq', 'Nahwu', 'Shorof', 'Khot/Pego', 'Tasawwuf', 'ASWAJA & ke-NU-an'],
+  SMA: ['Akhlaq/Ulumul Qur’an', 'Nahwu', 'Fiqh', 'Ushul Fiqh', 'Faroidl', 'Tasawwuf', 'Ilmu Falak', 'ASWAJA & ke-NU-an']
+}
+const DINIYAH_KKM_DEFAULT = 75
+
+function _mapelDiniyahResolved(kelas, jenjang) {
+  const all = settingsStore.settings?.rekapDiniyahMapel || {}
+  const isEmpty = (v) => v == null || v === '' || (Array.isArray(v) && v.length === 0)
+  let raw = all[String(kelas || '').trim()]
+  if (isEmpty(raw) && jenjang) raw = all[jenjang]
+  if (isEmpty(raw) && (jenjang === 'SMP' || jenjang === 'SMA')) raw = all['PKBM']
+  const list = (Array.isArray(raw) ? raw : String(raw || '').split(','))
+    .map((x) => String(x).trim())
+    .filter(Boolean)
+  if (list.length) return list
+  return DINIYAH_MAPEL_DEFAULT[jenjang] || DINIYAH_MAPEL_DEFAULT.SDI
+}
+
 function buildDiniyahSchemaFromSetting(s) {
-  // v.90.0626b: mapel Diniyah PER-KELAS (kelas_sekolah), fallback jenjang lama di util
   const kelas = String(s?.kelas_sekolah || '')
-  const names = mapelDiniyahFor(kelas, settingsStore.settings?.rekapDiniyahMapel)
+  const jenjang = diniyahJenjang(s?.lembaga_sekolah, kelas) || jenjangFromKelas(kelas) || 'SDI'
+  const names = _mapelDiniyahResolved(kelas, jenjang)
   return {
     perKelas: true,
     jenjang: [
       {
         kelas,
-        mapel: names.map((n) => ({ id: slug(n), nama: String(n).toUpperCase(), kkm: 80 }))
+        mapel: names.map((n) => ({ id: slug(n), nama: String(n).toUpperCase(), kkm: DINIYAH_KKM_DEFAULT }))
       }
     ]
   }
@@ -1584,7 +1784,11 @@ const raporDoc = computed(() => {
   return raporDocs.value.find((r) => r.id === docId) || null
 })
 
-const absensi = computed(() => raporDoc.value?.absensi || { sakit: 0, izin: 0, alpa: 0 })
+const absensi = computed(() => {
+  const a = raporDoc.value?.absensi
+  if (a && (a.sakit || a.izin || a.alpa || a.hadir || a._generatedFrom)) return a
+  return absensiBulananSum()
+})
 const kepribadian = computed(
   () => raporDoc.value?.kepribadian || { kelakuan: 'Baik', kerajinan: 'Baik', kebersihan: 'Baik' }
 )
@@ -1595,14 +1799,11 @@ const rataRata = computed(() => {
   const fromDoc = raporDoc.value?.rata_rata
   if (fromDoc && Number(fromDoc) > 0) return fromDoc
   if (schema.value.perKelas && jenjangAktif.value) {
-    const nilai = raporDoc.value?.data_nilai || {}
-    const kls = santriAktif.value?.kelas_sekolah || ''
     let sum = 0
     let n = 0
     ;(jenjangAktif.value.mapel || []).forEach((mp) => {
-      const mid = mp.id || slug(mp.nama)
-      const v = Number(nilai[`dn__${kls}__${mid}__akhir`])
-      if (!isNaN(v) && v > 0) {
+      const v = nilaiDiniyah(mp)
+      if (v != null && v > 0) {
         sum += v
         n++
       }
@@ -1637,16 +1838,48 @@ function tglKhotamFromKenaikan(lvlId, khId) {
   return any?.tanggal || ''
 }
 
+// PTPT: tgl khotam per Juz dari kartu kenaikan (kelas_K -> juz_N).
+function getTglKhotamPtpt(juzNum) {
+  const s = santriAktif.value
+  if (!s?.kartu_kenaikan || !juzNum) return ''
+  const kk = s.kartu_kenaikan
+  let scope = kk['PTPT']
+  if (!scope) {
+    const k = Object.keys(kk).find((x) => String(x).toLowerCase().trim() === 'ptpt')
+    scope = k ? kk[k] : null
+  }
+  if (!scope || typeof scope !== 'object') return ''
+  const n = parseInt(juzNum, 10)
+  const itemId = 'juz_' + n
+  const tryObj = (o) => {
+    if (!o || typeof o !== 'object') return ''
+    if (o[itemId]) return o[itemId]
+    const es = Array.isArray(o.entries) ? o.entries : []
+    const m = es.find((e) => e?.itemId === itemId && e?.tanggal)
+    return m ? m.tanggal : ''
+  }
+  const direct = tryObj(scope['kelas_' + Math.ceil(n / 5)])
+  if (direct) return direct
+  for (const kkey of Object.keys(scope)) {
+    const v = tryObj(scope[kkey])
+    if (v) return v
+  }
+  return ''
+}
+
 function getNilai(key) {
-  // tgl_khotam fallback chain ke kartu kenaikan
+  const stored = raporDoc.value?.data_nilai?.[key]
+  if (stored !== undefined && stored !== null && stored !== '') return stored
+  // tgl_khotam auto-fill dari kartu kenaikan (kalau belum diisi manual di editor)
   if (key && key.endsWith('__tgl_khotam')) {
     const parts = key.split('__')
-    if (parts.length === 4) {
-      const fromKk = tglKhotamFromKenaikan(parts[1], parts[2])
-      if (fromKk) return fromKk
+    if (parts[0] === 'kj' && parts.length === 3) {
+      return getTglKhotamPtpt(String(parts[1]).match(/\d+/)?.[0])
     }
+    if (parts.length === 4) return tglKhotamFromKenaikan(parts[1], parts[2])
+    if (parts.length === 3) return tglKhotamFromKenaikan(parts[1], '')
   }
-  return raporDoc.value?.data_nilai?.[key]
+  return stored
 }
 
 function fmtDate(v) {
@@ -1669,22 +1902,99 @@ function slug(s) {
     .replace(/^_|_$/g, '')
 }
 
-// ===== Predikat rules =====
-const DEFAULT_PREDIKAT = [
-  { min: 85, max: 100, label: 'A' },
-  { min: 70, max: 84, label: 'B' },
-  { min: 55, max: 69, label: 'C' },
-  { min: 0, max: 54, label: 'D' }
-]
+// ===== Auto-fill: Rata-rata Sumatif (rekap bulanan) + Absensi (absensi bulanan) =====
+function mapelKeyRekap(name) {
+  return String(name).toLowerCase().replace(/[^a-z0-9]/g, '_')
+}
+// Bulan-bulan satu semester. Ganjil: Jul-Des (tahun awal); Genap: Jan-Jun (tahun akhir).
+function semesterPeriodes(sep) {
+  const yrs = String(tahunAjaran.value || '').split('-').map((x) => parseInt(x, 10))
+  const startY = yrs[0] || new Date().getFullYear()
+  const endY = yrs[1] || startY + 1
+  const ganjil = String(semester.value).toLowerCase() === 'ganjil'
+  const year = ganjil ? startY : endY
+  const months = ganjil ? [7, 8, 9, 10, 11, 12] : [1, 2, 3, 4, 5, 6]
+  return months.map((m) => `${year}${sep}${String(m).padStart(2, '0')}`)
+}
+// Rata-rata nilai bulanan satu mapel (koleksi rekap_diniyah) selama satu semester.
+function rataSumatifBulananFor(s, mapelNama) {
+  if (!s) return null
+  const key = mapelKeyRekap(mapelNama)
+  const vals = []
+  for (const pk of semesterPeriodes('_')) {
+    const d = rekapDiniyahDocs.value.find((r) => r.id === `diniyah_${s.id}_${pk}`)
+    const v = Number(d?.data?.[key])
+    if (!isNaN(v) && v > 0) vals.push(v)
+  }
+  if (!vals.length) return null
+  return Math.round((vals.reduce((a, v) => a + v, 0) / vals.length) * 10) / 10
+}
+function rataSumatifBulanan(mp) {
+  return rataSumatifBulananFor(santriAktif.value, mp.nama)
+}
+// Jumlah sakit/izin/alpa bulanan selama satu semester (ngaji utk Qiraati, sekolah utk Diniyah).
+function absensiBulananSumFor(s, isDiniyah) {
+  const out = { sakit: 0, izin: 0, alpa: 0 }
+  if (!s) return out
+  const src = isDiniyah ? absSekolahDocs.value : absNgajiDocs.value
+  for (const pr of semesterPeriodes('-')) {
+    const d = src.find((a) => a.id === `${s.id}_${pr}`)
+    if (!d) continue
+    out.sakit += Number(d.sakit) || 0
+    out.izin += Number(d.izin) || 0
+    out.alpa += Number(d.alpa) || 0
+  }
+  return out
+}
+function absensiBulananSum() {
+  return absensiBulananSumFor(santriAktif.value, kategori.value === 'diniyah')
+}
+
+// ===== Predikat (skala kyai: Mumtaz/Jayyid/Maqbul/Rasib, aksara Arab) =====
+// Qiraati (TPQ/Pra PTPT/PTPT/PPPH) band tetap; Diniyah relatif KKM (tabel Diniyah).
 function predikat(n) {
-  const rules =
-    settingsStore.settings?.predikatRules && settingsStore.settings.predikatRules.length > 0
-      ? settingsStore.settings.predikatRules
-      : DEFAULT_PREDIKAT
-  const v = Number(n)
-  if (isNaN(v)) return '-'
-  const r = rules.find((rr) => v >= Number(rr.min) && v <= Number(rr.max))
-  return r ? r.label : '-'
+  return predikatQiraati(n).ar || ''
+}
+
+// PPPH: predikat per level dari rata-rata aspek (hafalan/pemahaman/kelancaran).
+function predikatPpph(lvlId) {
+  const nilai = raporDoc.value?.data_nilai || {}
+  let sum = 0
+  let n = 0
+  ;(schema.value.fieldsNilai || []).forEach((f) => {
+    const v = Number(nilai[`ppph__${lvlId}__${f.id}`])
+    if (!isNaN(v) && v > 0) {
+      sum += v
+      n++
+    }
+  })
+  return n > 0 ? predikatQiraati(sum / n).ar : ''
+}
+
+// Rata-rata Sumatif: nilai tersimpan kalau ada, kalau tidak auto dari rekap bulanan.
+function nilaiSumatif(mp) {
+  const nilai = raporDoc.value?.data_nilai || {}
+  const kls = santriAktif.value?.kelas_sekolah || ''
+  const mid = mp.id || slug(mp.nama)
+  const stored = nilai[`dn__${kls}__${mid}__sumatif`]
+  if (stored !== undefined && stored !== null && stored !== '') return Number(stored)
+  return rataSumatifBulanan(mp)
+}
+// Nilai akhir mapel = rata-rata (Rata-rata Sumatif & Sumatif Akhir Semester) -> dasar predikat.
+function nilaiDiniyah(mp) {
+  const nilai = raporDoc.value?.data_nilai || {}
+  const kls = santriAktif.value?.kelas_sekolah || ''
+  const mid = mp.id || slug(mp.nama)
+  const sm = nilaiSumatif(mp)
+  const ak = Number(nilai[`dn__${kls}__${mid}__akhir`])
+  const arr = [sm, ak].filter((v) => v != null && !isNaN(v) && v > 0)
+  if (!arr.length) return null
+  return arr.reduce((a, v) => a + v, 0) / arr.length
+}
+function predikatDiniyahMapel(mp) {
+  const v = nilaiDiniyah(mp)
+  if (v == null) return ''
+  return predikatDiniyah(v, Number(mp.kkm) || 75).ar
 }
 
 // ===== Pra PTPT helpers =====
@@ -1805,29 +2115,26 @@ function flatKey(row) {
 }
 function getNilaiKelasJuz(row, field) {
   if (!row || !field) return '-'
-  const key = `${flatKey(row)}__${field.id}`
+  const juzNum = String(row.juz).match(/\d+/)?.[0]
+  const base = `kj__juz_${juzNum}`
   const nilai = raporDoc.value?.data_nilai || {}
-  const v = nilai[key]
   if (field.type === 'auto_predikat') {
-    if (field.source === 'avg') {
-      const numFields = (schema.value.fields || []).filter((f) => f.type === 'number')
-      let sum = 0
-      let n = 0
-      numFields.forEach((nf) => {
-        const vv = Number(nilai[`${flatKey(row)}__${nf.id}`] || 0)
-        if (!isNaN(vv) && vv > 0) {
-          sum += vv
-          n++
-        }
-      })
-      return n > 0 ? predikat(sum / n) : '-'
-    }
-    if (field.source) {
-      const vv = Number(nilai[`${flatKey(row)}__${field.source}`] || 0)
-      return vv > 0 ? predikat(vv) : '-'
-    }
-    return '-'
+    const numFields = (schema.value.fields || []).filter((f) => f.type === 'number')
+    let sum = 0
+    let n = 0
+    numFields.forEach((nf) => {
+      const vv = Number(nilai[`${base}__${nf.id}`] || 0)
+      if (!isNaN(vv) && vv > 0) {
+        sum += vv
+        n++
+      }
+    })
+    return n > 0 ? predikatQiraati(sum / n).ar : ''
   }
+  if (field.type === 'date' || field.id === 'tgl_khotam') {
+    return fmtDate(getNilai(`${base}__tgl_khotam`))
+  }
+  const v = nilai[`${base}__${field.id}`]
   return v == null || v === '' ? '' : String(v)
 }
 
@@ -1929,6 +2236,8 @@ const jabatanKepala = computed(() => {
     return 'Kepala TPQ'
   if (lnorm === 'ptpt') return 'PJ PTPT'
   if (lnorm === 'ppph' || lnorm === 'p3h') return 'PJ PPPH'
+  if (lnorm === 'sdi') return 'Kepala SDI'
+  if (lnorm === 'pkbm') return 'Kepala PKBM'
   return 'Kepala Sekolah'
 })
 
@@ -2068,12 +2377,31 @@ function kembaliSantri() {
 
 // v.21.85: Build raporState object dari computed values utk pass ke generateRaporPdf
 function buildRaporStateFor(s, raporDocObj) {
+  const isDiniyah = kategori.value === 'diniyah'
+  const dn = { ...(raporDocObj?.data_nilai || {}) }
+  // Auto Rata-rata Sumatif (Diniyah) dari rekap bulanan bila belum tersimpan.
+  if (isDiniyah) {
+    const kls = s.kelas_sekolah || ''
+    const jen = diniyahJenjang(s.lembaga_sekolah, kls) || jenjangFromKelas(kls) || 'SDI'
+    _mapelDiniyahResolved(kls, jen).forEach((nm) => {
+      const k = `dn__${kls}__${slug(nm)}__sumatif`
+      if (dn[k] == null || dn[k] === '') {
+        const auto = rataSumatifBulananFor(s, nm)
+        if (auto != null) dn[k] = auto
+      }
+    })
+  }
+  // Auto absensi dari absensi bulanan bila belum tersimpan.
+  let absensi = raporDocObj?.absensi
+  if (!absensi || !(absensi.sakit || absensi.izin || absensi.alpa || absensi.hadir || absensi._generatedFrom)) {
+    absensi = absensiBulananSumFor(s, isDiniyah)
+  }
   return {
-    lembaga: kategori.value === 'diniyah' ? 'Diniyah' : (s.lembaga || ''),
+    lembaga: isDiniyah ? 'Diniyah' : (s.lembaga || ''),
     tahun_ajaran: tahunAjaran.value,
     semester: semester.value,
-    data_nilai: raporDocObj?.data_nilai || {},
-    absensi: raporDocObj?.absensi || { sakit: 0, izin: 0, alpa: 0 },
+    data_nilai: dn,
+    absensi: absensi || { sakit: 0, izin: 0, alpa: 0 },
     kepribadian: raporDocObj?.kepribadian || { kelakuan: 'Baik', kerajinan: 'Baik', kebersihan: 'Baik' },
     catatan: raporDocObj?.catatan || '',
     catatan_wali_kelas: raporDocObj?.catatan || '',
@@ -2170,6 +2498,206 @@ function toggleSelectAll() {
 
 function clearSelection() {
   selectedSantriIds.value = new Set()
+}
+
+// ===== Editor nilai rapor (isi/edit + simpan) =====
+const editMode = ref(false)
+const savingRapor = ref(false)
+const draft = ref({
+  data_nilai: {},
+  absensi: { sakit: 0, izin: 0, alpa: 0 },
+  kepribadian: { kelakuan: 'Baik', kerajinan: 'Baik', kebersihan: 'Baik' },
+  catatan: ''
+})
+
+// Daftar field input per skema (Diniyah / PPPH / PTPT / Pra PTPT / TPQ).
+const editGroups = computed(() => {
+  const sc = schema.value
+  const s = santriAktif.value
+  if (!s) return []
+  const groups = []
+  if (sc.perKelas && jenjangAktif.value) {
+    const kls = s.kelas_sekolah || ''
+    groups.push({
+      title: 'Nilai Mata Pelajaran',
+      rows: (jenjangAktif.value.mapel || []).map((mp) => {
+        const mid = mp.id || slug(mp.nama)
+        return {
+          label: mp.nama,
+          fields: [
+            { key: `dn__${kls}__${mid}__sumatif`, label: 'Rata-rata Sumatif (auto)', type: 'auto', autoVal: rataSumatifBulanan(mp) },
+            { key: `dn__${kls}__${mid}__akhir`, label: 'Sumatif Akhir Semester', type: 'number' }
+          ]
+        }
+      })
+    })
+  } else if (sc.perKitab) {
+    groups.push({
+      title: 'Nilai per Kitab',
+      rows: (sc.levels || []).map((lvl) => ({
+        label: `${lvl.label} — ${lvl.kitab}`,
+        fields: [
+          { key: `ppph__${lvl.id}__tgl_khotam`, label: 'Tgl Khotam', type: 'date' },
+          ...(sc.fieldsNilai || []).map((f) => ({ key: `ppph__${lvl.id}__${f.id}`, label: f.label, type: 'number' }))
+        ]
+      }))
+    })
+  } else if (sc.tableLayout === 'kelasJuz') {
+    groups.push({
+      title: 'Nilai per Juz',
+      rows: kelasJuzRows.value.map((r) => {
+        const jz = String(r.juz).match(/\d+/)?.[0]
+        const base = `kj__juz_${jz}`
+        return {
+          label: `${r.kelas} · ${r.juz}`,
+          fields: [
+            { key: `${base}__tgl_khotam`, label: 'Tgl Khotam', type: 'date' },
+            ...(sc.fields || []).filter((f) => f.type === 'number').map((f) => ({ key: `${base}__${f.id}`, label: f.label, type: 'number' }))
+          ]
+        }
+      })
+    })
+  } else if (sc.perLevel) {
+    const rows = []
+    ;(sc.levels || []).forEach((lvl) => {
+      ;(lvl.khotamList || []).forEach((kh) => {
+        const base = `pra__${lvl.id}__${kh.id}`
+        rows.push({
+          label: `${lvl.label} · ${kh.labelKhotam}`,
+          fields: [
+            { key: `${base}__tgl_khotam`, label: 'Tgl Khotam', type: 'date' },
+            ...(sc.fieldsNilai || []).map((f) => ({ key: `${base}__${f.id}`, label: f.label, type: 'number' }))
+          ]
+        })
+      })
+    })
+    groups.push({ title: 'Nilai per Khotam', rows })
+  } else if ((sc.sections || []).length) {
+    ;(sc.sections || []).forEach((sec) => {
+      const flds = (sec.fields || []).filter((f) => f.type !== 'auto_predikat')
+      const mkFields = (row) =>
+        flds.map((f) => ({
+          key: row ? `${sec.id}__${row}__${f.id}` : `${sec.id}__${f.id}`,
+          label: f.label,
+          type: f.type === 'date' ? 'date' : f.type === 'number' ? 'number' : 'text'
+        }))
+      if (sec.rows && sec.rows.length) {
+        groups.push({ title: sec.title, rows: sec.rows.map((row) => ({ label: String(row), fields: mkFields(row) })) })
+      } else {
+        groups.push({ title: sec.title, rows: [{ label: sec.title, fields: mkFields(null) }] })
+      }
+    })
+  }
+  return groups
+})
+
+function startEdit() {
+  const d = raporDoc.value || {}
+  const dn = { ...(d.data_nilai || {}) }
+  // prefill tgl khotam dari kartu kenaikan bila belum diisi
+  editGroups.value.forEach((g) =>
+    g.rows.forEach((row) =>
+      row.fields.forEach((f) => {
+        if (f.type === 'date' && (dn[f.key] == null || dn[f.key] === '')) {
+          const auto = getNilai(f.key)
+          if (auto) dn[f.key] = auto
+        }
+      })
+    )
+  )
+  draft.value = {
+    data_nilai: dn,
+    absensi: { sakit: 0, izin: 0, alpa: 0, ...(d.absensi || {}) },
+    kepribadian: { kelakuan: 'Baik', kerajinan: 'Baik', kebersihan: 'Baik', ...(d.kepribadian || {}) },
+    catatan: d.catatan || ''
+  }
+  editMode.value = true
+}
+function cancelEdit() {
+  editMode.value = false
+}
+
+function computeRataFromDraft() {
+  const dn = draft.value.data_nilai || {}
+  const sc = schema.value
+  const vals = []
+  const avgOf = (keys) => {
+    let sum = 0
+    let n = 0
+    keys.forEach((k) => {
+      const v = Number(dn[k])
+      if (!isNaN(v) && v > 0) {
+        sum += v
+        n++
+      }
+    })
+    return n ? sum / n : null
+  }
+  if (sc.perKelas && jenjangAktif.value) {
+    const kls = santriAktif.value?.kelas_sekolah || ''
+    ;(jenjangAktif.value.mapel || []).forEach((mp) => {
+      const mid = mp.id || slug(mp.nama)
+      const a = avgOf([`dn__${kls}__${mid}__sumatif`, `dn__${kls}__${mid}__akhir`])
+      if (a != null) vals.push(a)
+    })
+  } else if (sc.perKitab) {
+    ;(sc.levels || []).forEach((lvl) => {
+      const a = avgOf((sc.fieldsNilai || []).map((f) => `ppph__${lvl.id}__${f.id}`))
+      if (a != null) vals.push(a)
+    })
+  } else if (sc.tableLayout === 'kelasJuz') {
+    kelasJuzRows.value.forEach((r) => {
+      const jz = String(r.juz).match(/\d+/)?.[0]
+      const a = avgOf((sc.fields || []).filter((f) => f.type === 'number').map((f) => `kj__juz_${jz}__${f.id}`))
+      if (a != null) vals.push(a)
+    })
+  } else if (sc.perLevel) {
+    ;(sc.levels || []).forEach((lvl) =>
+      (lvl.khotamList || []).forEach((kh) => {
+        const a = avgOf((sc.fieldsNilai || []).map((f) => `pra__${lvl.id}__${kh.id}__${f.id}`))
+        if (a != null) vals.push(a)
+      })
+    )
+  }
+  return vals.length ? vals.reduce((a, v) => a + v, 0) / vals.length : 0
+}
+
+async function simpanRapor() {
+  const s = santriAktif.value
+  if (!s || savingRapor.value) return
+  savingRapor.value = true
+  try {
+    const periodKey = `${tahunAjaran.value}_${semester.value}`.replace(/[^a-zA-Z0-9_]/g, '_')
+    const lmbKey = kategori.value === 'diniyah' ? 'Diniyah' : s.lembaga || ''
+    const docId = `rapor_${s.id}_${lmbKey}_${periodKey}`
+    await setDoc(
+      doc(db, 'rapor_semester', docId),
+      {
+        santri_id: String(s.id),
+        santri_nama: s.nama || '',
+        lembaga: lmbKey,
+        tahunAjaran: tahunAjaran.value,
+        semester: semester.value,
+        data_nilai: { ...draft.value.data_nilai },
+        absensi: {
+          sakit: Number(draft.value.absensi.sakit) || 0,
+          izin: Number(draft.value.absensi.izin) || 0,
+          alpa: Number(draft.value.absensi.alpa) || 0
+        },
+        kepribadian: { ...draft.value.kepribadian },
+        catatan: draft.value.catatan || '',
+        rata_rata: Number(computeRataFromDraft().toFixed(2)) || 0,
+        updated_at: serverTimestamp()
+      },
+      { merge: true }
+    )
+    toast?.success?.('Rapor tersimpan')
+    editMode.value = false
+  } catch (e) {
+    toast?.error?.('Gagal simpan rapor: ' + (e?.message || e))
+  } finally {
+    savingRapor.value = false
+  }
 }
 
 // ===== Auto-route from query (?kategori=...) + role-based shortcut =====
