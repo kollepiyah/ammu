@@ -780,6 +780,59 @@
       </div>
     </div>
 
+    <!-- v.97.0626: Integrasi BMT PETA (Virtual Account) -->
+    <div
+      class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
+    >
+      <h3
+        class="text-xs md:text-sm font-black text-[var(--text-primary)] uppercase tracking-widest mb-3 border-b border-[var(--border-subtle)] pb-2"
+      >
+        <i class="fas fa-credit-card text-indigo-600 mr-1"></i>Integrasi BMT PETA (Virtual Account)
+      </h3>
+      <p class="text-[10px] text-[var(--text-tertiary)] italic mb-3">
+        Aktifkan untuk menampilkan opsi pembayaran Virtual Account (VA tetap per santri) di halaman
+        Pembayaran wali. Konfirmasi otomatis menyusul setelah integrasi API BMT siap.
+      </p>
+      <label
+        class="flex items-start gap-2 p-2.5 rounded-lg bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-700 mb-3 cursor-pointer"
+      >
+        <input v-model="form.bmt_aktif" type="checkbox" class="mt-0.5 w-4 h-4 accent-indigo-600" />
+        <span class="text-[11px] text-[var(--text-secondary)] leading-snug">
+          <span class="font-bold text-[var(--text-primary)]">Aktifkan opsi Virtual Account BMT PETA</span>
+          — saat OFF, alur pembayaran wali tetap seperti sekarang (transfer + upload bukti). Saat ON,
+          opsi VA muncul memakai prefix di bawah.
+        </span>
+      </label>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div>
+          <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
+            >Nama BMT / Penerbit VA</label
+          >
+          <input
+            v-model="form.bmt_nama"
+            type="text"
+            placeholder="BMT PETA"
+            class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
+          />
+        </div>
+        <div>
+          <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
+            >Prefix Kode VA (dari BMT)</label
+          >
+          <input
+            v-model="form.bmt_va_prefix"
+            type="text"
+            inputmode="numeric"
+            placeholder="mis. 8810"
+            class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)] font-mono"
+          />
+          <p class="text-[10px] text-[var(--text-tertiary)] italic mt-1">
+            Nomor VA santri = <b>prefix</b> + NIS santri. Format final mengikuti standar BMT PETA.
+          </p>
+        </div>
+      </div>
+    </div>
+
     <!-- Sticky save bar -->
     <div
       class="sticky bottom-4 z-20 flex justify-end gap-2 bg-[var(--bg-card)]/95 dark:bg-slate-800/95 backdrop-blur-sm rounded-2xl p-3 border border-[var(--border-subtle)] shadow-lg"
@@ -1073,7 +1126,11 @@ const form = reactive({
   master_potongan: [],
   bank_nama: '',
   bank_nomor: '',
-  bank_atasnama: ''
+  bank_atasnama: '',
+  // v.97.0626: Integrasi BMT PETA (Virtual Account)
+  bmt_aktif: false,
+  bmt_nama: '',
+  bmt_va_prefix: ''
 })
 
 function slugId(s) {
@@ -1190,6 +1247,10 @@ function loadFromSettings() {
   form.bank_nama = s.bank_nama || ''
   form.bank_nomor = s.bank_nomor || ''
   form.bank_atasnama = s.bank_atasnama || ''
+  // v.97.0626: BMT PETA Virtual Account
+  form.bmt_aktif = s.bmt_aktif === true
+  form.bmt_nama = s.bmt_nama || ''
+  form.bmt_va_prefix = s.bmt_va_prefix || ''
 }
 
 onMounted(loadFromSettings)
@@ -1461,7 +1522,11 @@ async function simpan() {
         .map((t) => ({ nama: t.nama.trim(), nominal: t.nominal || 0, guru_ids: Array.isArray(t.guru_ids) ? t.guru_ids.map(String) : [] })),
       bank_nama: form.bank_nama.trim(),
       bank_nomor: form.bank_nomor.trim(),
-      bank_atasnama: form.bank_atasnama.trim()
+      bank_atasnama: form.bank_atasnama.trim(),
+      // v.97.0626: Integrasi BMT PETA (Virtual Account)
+      bmt_aktif: !!form.bmt_aktif,
+      bmt_nama: String(form.bmt_nama || '').trim(),
+      bmt_va_prefix: String(form.bmt_va_prefix || '').trim()
     }
     for (const [k, v] of Object.entries(form.keu_bisyaroh_pokok)) {
       const n = parseRp(v)

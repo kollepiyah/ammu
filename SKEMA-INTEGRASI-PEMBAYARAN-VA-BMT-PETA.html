@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Skema Integrasi Pembayaran VA &amp; Transfer Otomatis — Ammu Online ⇄ BMT PETA</title>
+<style>
+  :root{
+    --ink:#0f172a; --ink2:#334155; --ink3:#64748b;
+    --line:#e2e8f0; --line2:#cbd5e1; --bg:#ffffff; --bg2:#f8fafc;
+    --ammu:#0e7490; --ammu2:#0891b2; --ammu-bg:#ecfeff;
+    --bmt:#4338ca; --bmt2:#6366f1; --bmt-bg:#eef2ff;
+    --ok:#047857; --ok-bg:#ecfdf5; --warn:#b45309; --warn-bg:#fffbeb; --rose:#be123c;
+  }
+  *{box-sizing:border-box}
+  html{ -webkit-text-size-adjust:100% }
+  body{
+    margin:0; background:var(--bg2); color:var(--ink);
+    font-family:'Segoe UI',system-ui,-apple-system,Roboto,Arial,sans-serif;
+    line-height:1.6; font-size:15px;
+  }
+  .page{ max-width:980px; margin:0 auto; background:var(--bg); }
+  .wrap{ padding:34px 46px; }
+  /* ---- cover ---- */
+  .cover{
+    background:linear-gradient(135deg,#0e7490 0%,#155e75 55%,#1e3a8a 100%);
+    color:#fff; padding:44px 46px 38px;
+  }
+  .cover .kicker{ font-size:12px; letter-spacing:.22em; text-transform:uppercase; opacity:.85; font-weight:700 }
+  .cover h1{ font-size:27px; line-height:1.25; margin:12px 0 8px; font-weight:800; letter-spacing:-.01em }
+  .cover p{ margin:6px 0 0; opacity:.92; font-size:14px; max-width:62ch }
+  .cover .meta{ display:flex; flex-wrap:wrap; gap:8px; margin-top:20px }
+  .chip{ background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.25); padding:5px 12px; border-radius:999px; font-size:12px; font-weight:600 }
+  .chip.live{ background:#fbbf24; color:#3b2606; border-color:#fbbf24 }
+  /* ---- type ---- */
+  h2{ font-size:19px; margin:38px 0 4px; font-weight:800; color:var(--ink); letter-spacing:-.01em }
+  h2 .n{ color:var(--ammu); font-variant-numeric:tabular-nums; margin-right:8px }
+  h2 + .sub{ color:var(--ink3); font-size:13.5px; margin:0 0 14px }
+  h3{ font-size:15px; margin:22px 0 8px; font-weight:700; color:var(--ink) }
+  p{ margin:9px 0 }
+  .lead{ font-size:15.5px; color:var(--ink2) }
+  section{ border-top:1px solid var(--line); }
+  ul,ol{ margin:9px 0; padding-left:22px } li{ margin:5px 0 }
+  strong{ color:var(--ink) }
+  code{ background:#f1f5f9; border:1px solid var(--line); border-radius:5px; padding:1px 6px; font-family:'Consolas',monospace; font-size:.86em; color:#0f172a }
+  .muted{ color:var(--ink3) }
+  /* ---- callouts ---- */
+  .note{ border-radius:12px; padding:13px 16px; margin:14px 0; font-size:13.5px; border:1px solid }
+  .note .t{ font-weight:800; display:block; margin-bottom:2px; font-size:12px; text-transform:uppercase; letter-spacing:.05em }
+  .note.warn{ background:var(--warn-bg); border-color:#fcd34d; color:#7c2d12 }
+  .note.ok{ background:var(--ok-bg); border-color:#a7f3d0; color:#064e3b }
+  .note.bmt{ background:var(--bmt-bg); border-color:#c7d2fe; color:#312e81 }
+  /* ---- table ---- */
+  table{ width:100%; border-collapse:collapse; margin:14px 0; font-size:13px }
+  th,td{ border:1px solid var(--line); padding:8px 11px; text-align:left; vertical-align:top }
+  th{ background:var(--bg2); font-weight:700; color:var(--ink2); font-size:11.5px; text-transform:uppercase; letter-spacing:.04em }
+  td code{ font-size:.82em }
+  .tag{ display:inline-block; font-size:10.5px; font-weight:800; padding:2px 8px; border-radius:6px; text-transform:uppercase; letter-spacing:.03em }
+  .tag.ammu{ background:var(--ammu-bg); color:var(--ammu) } .tag.bmt{ background:var(--bmt-bg); color:var(--bmt) }
+  .tag.ok{ background:var(--ok-bg); color:var(--ok) } .tag.warn{ background:var(--warn-bg); color:var(--warn) }
+  /* ---- option cards ---- */
+  .opts{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin:16px 0 }
+  .opt{ border:1px solid var(--line); border-radius:13px; padding:15px; background:var(--bg) }
+  .opt.rec{ border-color:var(--ammu2); box-shadow:0 0 0 3px var(--ammu-bg) }
+  .opt h4{ margin:0 0 6px; font-size:13.5px; font-weight:800 }
+  .opt .badge{ font-size:10px; font-weight:800; color:var(--ammu); text-transform:uppercase; letter-spacing:.05em }
+  .opt p{ margin:6px 0 0; font-size:12.5px; color:var(--ink2) }
+  .opt .pro{ color:var(--ok); font-size:12px; margin-top:8px } .opt .con{ color:var(--rose); font-size:12px; margin-top:3px }
+  /* ---- figure ---- */
+  figure{ margin:18px 0; border:1px solid var(--line); border-radius:14px; overflow:hidden; background:var(--bg) }
+  figure svg{ display:block; width:100%; height:auto }
+  figcaption{ padding:9px 14px; font-size:12px; color:var(--ink3); background:var(--bg2); border-top:1px solid var(--line) }
+  .legend{ display:flex; flex-wrap:wrap; gap:14px; margin:10px 0 0; font-size:12px; color:var(--ink2) }
+  .legend span{ display:inline-flex; align-items:center; gap:6px }
+  .sw{ width:13px; height:13px; border-radius:4px; display:inline-block }
+  /* ---- steps ---- */
+  .roadmap{ counter-reset:step; margin:14px 0 }
+  .rstep{ display:flex; gap:14px; padding:12px 0; border-bottom:1px dashed var(--line) }
+  .rstep:last-child{ border-bottom:0 }
+  .rstep .num{ flex:0 0 30px; height:30px; border-radius:50%; background:var(--ammu); color:#fff; font-weight:800; display:flex; align-items:center; justify-content:center; font-size:14px }
+  .rstep .body{ flex:1 } .rstep h4{ margin:3px 0 2px; font-size:14px } .rstep p{ margin:0; font-size:13px; color:var(--ink2) }
+  footer{ border-top:2px solid var(--ammu); padding:20px 46px 40px; color:var(--ink3); font-size:12px }
+  .sr-only{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0) }
+  @media (max-width:720px){ .wrap{padding:22px} .opts{grid-template-columns:1fr} .cover{padding:30px 24px} .cover h1{font-size:22px} }
+  @media print{
+    body{ background:#fff; font-size:11.5pt }
+    .page{ max-width:none } .wrap{ padding:0 6mm }
+    .cover{ -webkit-print-color-adjust:exact; print-color-adjust:exact }
+    section{ break-inside:avoid } figure{ break-inside:avoid } .opts{ break-inside:avoid }
+    h2{ break-after:avoid }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ============== COVER ============== -->
+  <div class="cover">
+    <div class="kicker">Dokumen Rancangan · Untuk Evaluasi</div>
+    <h1>Skema Integrasi Pembayaran Virtual Account &amp; Transfer Otomatis<br>Ammu Online &nbsp;⇄&nbsp; Sistem BMT PETA</h1>
+    <p>Acuan teknis-konseptual untuk dipelajari BMT PETA Pusat, tim pengembang sistem BMT, dan General Manager — menghubungkan tagihan santri di aplikasi Ammu Online dengan kanal pembayaran BMT PETA secara otomatis, tanpa upload bukti manual.</p>
+    <div class="meta">
+      <span class="chip">Pondok Pesantren Mambaul Ulum</span>
+      <span class="chip">Aplikasi: Ammu Online</span>
+      <span class="chip">Juni 2026 · v.1 draft</span>
+      <span class="chip live">Status: Usulan — menunggu detail API BMT</span>
+    </div>
+  </div>
+
+  <div class="wrap">
+
+    <!-- ============== 1. RINGKASAN ============== -->
+    <section style="border-top:0">
+      <h2><span class="n">1.</span>Ringkasan Eksekutif</h2>
+      <p class="sub">Apa yang diusulkan dan kenapa.</p>
+      <p class="lead">Ammu Online adalah sistem manajemen pesantren (data santri, akademik, dan <strong>keuangan</strong>) yang dipakai Pondok Mambaul Ulum. Modul keuangannya sudah menghasilkan <strong>tagihan per santri</strong> (syahriyah, infaq, iuran). Saat ini pembayaran non-tunai dilakukan lewat transfer bank biasa lalu wali <strong>meng-upload bukti</strong> dan admin <strong>memverifikasi manual</strong>.</p>
+      <p>Usulannya: mengganti proses manual itu dengan <strong>Virtual Account (VA) dari BMT PETA</strong>. Setiap santri memperoleh <strong>satu nomor VA tetap</strong>. Wali cukup membayar ke nomor tersebut melalui kanal BMT/bank, dan <strong>sistem BMT memberi konfirmasi otomatis</strong> ke Ammu Online sehingga tagihan langsung tertandai <em>LUNAS</em> — tanpa upload bukti, tanpa verifikasi manual.</p>
+      <div class="note bmt">
+        <span class="t">Inti yang diharapkan dari BMT PETA</span>
+        Satu hal yang membuat seluruh skema ini bisa berjalan otomatis adalah <strong>kanal konfirmasi pembayaran dari sisi BMT</strong> (notifikasi/“webhook”, atau API status yang bisa ditanya Ammu). Tanpa sumber konfirmasi dari BMT, pembayaran tidak bisa ditandai lunas otomatis. Bagian ini sengaja kami tonjolkan agar bisa didiskusikan dengan tim pengembang BMT.
+      </div>
+      <table>
+        <tr><th>Aspek</th><th>Sekarang (manual)</th><th>Usulan (BMT VA)</th></tr>
+        <tr><td>Cara bayar</td><td>Transfer bank biasa</td><td>Bayar ke <strong>VA tetap per santri</strong> via kanal BMT/bank</td></tr>
+        <tr><td>Bukti</td><td>Wali upload foto bukti</td><td><strong>Tidak perlu</strong> — konfirmasi dari sistem BMT</td></tr>
+        <tr><td>Verifikasi</td><td>Admin cek &amp; setujui manual</td><td><strong>Otomatis</strong> (real-time)</td></tr>
+        <tr><td>Identifikasi pembayar</td><td>Cocokkan nama/nominal manual</td><td>Nomor VA = identitas santri</td></tr>
+        <tr><td>Rekonsiliasi kas</td><td>Admin catat ke Buku Induk</td><td>Tercatat otomatis + laporan BMT</td></tr>
+      </table>
+    </section>
+
+    <!-- ============== 2. ARSITEKTUR ============== -->
+    <section>
+      <h2><span class="n">2.</span>Arsitektur Integrasi</h2>
+      <p class="sub">Komponen yang terlibat dan titik sambung antara Ammu Online dan BMT PETA.</p>
+      <figure>
+        <svg viewBox="0 0 980 360" role="img" aria-labelledby="arch-t arch-d" xmlns="http://www.w3.org/2000/svg" font-family="'Segoe UI',system-ui,Arial,sans-serif">
+          <title id="arch-t">Arsitektur integrasi Ammu Online dengan sistem BMT PETA</title>
+          <desc id="arch-d">Wali memakai aplikasi Ammu Online; aplikasi tersambung ke backend Firebase, lalu lewat lapisan integrasi API atau webhook terhubung ke sistem inti BMT PETA dan jaringan bank/switching Virtual Account.</desc>
+          <defs>
+            <marker id="ar" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#64748b"/></marker>
+            <marker id="arb" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#6366f1"/></marker>
+          </defs>
+          <!-- lane labels -->
+          <text x="120" y="26" text-anchor="middle" font-size="11" font-weight="700" fill="#0e7490" letter-spacing="1">PENGGUNA</text>
+          <text x="395" y="26" text-anchor="middle" font-size="11" font-weight="700" fill="#0e7490" letter-spacing="1">AMMU ONLINE (PONDOK)</text>
+          <text x="775" y="26" text-anchor="middle" font-size="11" font-weight="700" fill="#4338ca" letter-spacing="1">SISI BMT PETA</text>
+          <line x1="258" y1="36" x2="258" y2="330" stroke="#e2e8f0" stroke-dasharray="4 5"/>
+          <line x1="600" y1="36" x2="600" y2="330" stroke="#c7d2fe" stroke-dasharray="4 5"/>
+
+          <!-- Wali -->
+          <rect x="40" y="120" width="160" height="92" rx="14" fill="#ecfeff" stroke="#0891b2" stroke-width="1.5"/>
+          <text x="120" y="152" text-anchor="middle" font-size="14" font-weight="800" fill="#0e7490">Wali Santri</text>
+          <text x="120" y="173" text-anchor="middle" font-size="11.5" fill="#334155">Aplikasi HP /</text>
+          <text x="120" y="189" text-anchor="middle" font-size="11.5" fill="#334155">m-banking BMT</text>
+
+          <!-- Ammu app -->
+          <rect x="300" y="70" width="190" height="80" rx="13" fill="#ffffff" stroke="#0891b2" stroke-width="1.5"/>
+          <text x="395" y="100" text-anchor="middle" font-size="13.5" font-weight="800" fill="#0e7490">Ammu Online App</text>
+          <text x="395" y="120" text-anchor="middle" font-size="11" fill="#334155">Tagihan · VA · Notifikasi</text>
+          <text x="395" y="136" text-anchor="middle" font-size="11" fill="#334155">Vue · Android · Desktop</text>
+
+          <!-- Firebase + connector -->
+          <rect x="300" y="182" width="190" height="96" rx="13" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5"/>
+          <text x="395" y="208" text-anchor="middle" font-size="13" font-weight="800" fill="#0f172a">Backend Pondok</text>
+          <text x="395" y="227" text-anchor="middle" font-size="11" fill="#334155">Firebase (data tagihan)</text>
+          <text x="395" y="245" text-anchor="middle" font-size="11" fill="#334155">+ Layanan Integrasi BMT</text>
+          <text x="395" y="263" text-anchor="middle" font-size="10.5" font-style="italic" fill="#64748b">(endpoint webhook / klien API)</text>
+
+          <!-- BMT core -->
+          <rect x="650" y="70" width="170" height="80" rx="13" fill="#eef2ff" stroke="#6366f1" stroke-width="1.5"/>
+          <text x="735" y="100" text-anchor="middle" font-size="13.5" font-weight="800" fill="#4338ca">Sistem Inti BMT</text>
+          <text x="735" y="120" text-anchor="middle" font-size="11" fill="#3730a3">Core banking BMT PETA</text>
+          <text x="735" y="136" text-anchor="middle" font-size="11" fill="#3730a3">Penerbit nomor VA</text>
+
+          <!-- Bank / switching -->
+          <rect x="650" y="182" width="170" height="80" rx="13" fill="#ffffff" stroke="#6366f1" stroke-width="1.5"/>
+          <text x="735" y="212" text-anchor="middle" font-size="13" font-weight="800" fill="#4338ca">Bank / Switching</text>
+          <text x="735" y="232" text-anchor="middle" font-size="11" fill="#3730a3">Kanal VA: ATM, m-bank,</text>
+          <text x="735" y="248" text-anchor="middle" font-size="11" fill="#3730a3">teller, QRIS (opsional)</text>
+
+          <!-- arrows -->
+          <line x1="200" y1="150" x2="298" y2="120" stroke="#64748b" stroke-width="1.6" marker-end="url(#ar)"/>
+          <text x="248" y="128" text-anchor="middle" font-size="10" fill="#475569">lihat tagihan</text>
+          <line x1="200" y1="182" x2="648" y2="222" stroke="#64748b" stroke-width="1.6" marker-end="url(#ar)" stroke-dasharray="2 3"/>
+          <text x="430" y="320" text-anchor="middle" font-size="10.5" fill="#475569">wali bayar VA lewat kanal bank/BMT</text>
+
+          <line x1="490" y1="110" x2="648" y2="108" stroke="#6366f1" stroke-width="1.8" marker-end="url(#arb)"/>
+          <text x="568" y="100" text-anchor="middle" font-size="10" fill="#4338ca">minta / sinkron VA</text>
+          <line x1="648" y1="150" x2="492" y2="225" stroke="#6366f1" stroke-width="2" marker-end="url(#arb)"/>
+          <text x="565" y="190" text-anchor="middle" font-size="10.5" font-weight="700" fill="#4338ca">konfirmasi bayar</text>
+          <text x="565" y="204" text-anchor="middle" font-size="9.5" fill="#6366f1">(webhook / API)</text>
+
+          <line x1="735" y1="150" x2="735" y2="180" stroke="#6366f1" stroke-width="1.6" marker-end="url(#arb)"/>
+        </svg>
+        <figcaption><strong>Diagram 1.</strong> Garis putus-putus ungu = titik sambung yang perlu disepakati dengan tim BMT. “Layanan Integrasi BMT” adalah komponen kecil baru di sisi pondok yang menerima konfirmasi dari BMT dan menandai tagihan lunas.</figcaption>
+      </figure>
+      <div class="legend">
+        <span><i class="sw" style="background:#ecfeff;border:1px solid #0891b2"></i> Komponen Ammu / pondok</span>
+        <span><i class="sw" style="background:#eef2ff;border:1px solid #6366f1"></i> Komponen BMT PETA</span>
+        <span><i class="sw" style="background:#6366f1"></i> Jalur yang butuh API/kesepakatan BMT</span>
+      </div>
+    </section>
+
+    <!-- ============== 3. MODEL VA ============== -->
+    <section>
+      <h2><span class="n">3.</span>Model Virtual Account: Tetap per Santri</h2>
+      <p class="sub">Pilihan yang diambil: setiap santri punya satu nomor VA permanen.</p>
+      <p>Nomor VA dibentuk dari <strong>kode institusi BMT</strong> (prefix yang ditetapkan BMT) digabung dengan <strong>identitas santri</strong> (NIS/ID santri). Nomor ini <strong>tetap</strong> — dipakai untuk semua tagihan santri tersebut (syahriyah bulanan, infaq, iuran), berapa pun nominalnya.</p>
+      <figure>
+        <svg viewBox="0 0 980 150" role="img" aria-labelledby="va-t" xmlns="http://www.w3.org/2000/svg" font-family="'Segoe UI',system-ui,Arial,sans-serif">
+          <title id="va-t">Contoh pembentukan nomor Virtual Account dari kode BMT dan NIS santri</title>
+          <rect x="40" y="45" width="210" height="60" rx="10" fill="#eef2ff" stroke="#6366f1" stroke-width="1.5"/>
+          <text x="145" y="70" text-anchor="middle" font-size="11" font-weight="700" fill="#4338ca">KODE BMT (prefix)</text>
+          <text x="145" y="93" text-anchor="middle" font-size="17" font-weight="800" fill="#312e81" font-family="Consolas,monospace">8 8 1 0 2 4</text>
+          <text x="280" y="83" text-anchor="middle" font-size="26" fill="#94a3b8">+</text>
+          <rect x="320" y="45" width="250" height="60" rx="10" fill="#ecfeff" stroke="#0891b2" stroke-width="1.5"/>
+          <text x="445" y="70" text-anchor="middle" font-size="11" font-weight="700" fill="#0e7490">NIS / ID SANTRI</text>
+          <text x="445" y="93" text-anchor="middle" font-size="17" font-weight="800" fill="#0e7490" font-family="Consolas,monospace">2 0 2 6 0 0 4 7</text>
+          <text x="600" y="83" text-anchor="middle" font-size="26" fill="#94a3b8">=</text>
+          <rect x="645" y="38" width="295" height="74" rx="12" fill="#0e7490" stroke="#155e75" stroke-width="1.5"/>
+          <text x="792" y="63" text-anchor="middle" font-size="11" font-weight="700" fill="#a5f3fc">NOMOR VA TETAP SANTRI</text>
+          <text x="792" y="92" text-anchor="middle" font-size="19" font-weight="800" fill="#ffffff" font-family="Consolas,monospace">8810 2420 2600 47</text>
+        </svg>
+        <figcaption><strong>Diagram 2.</strong> Pola contoh saja — format final (panjang, prefix, check digit) <strong>mengikuti standar BMT PETA</strong>.</figcaption>
+      </figure>
+      <table>
+        <tr><th>Properti</th><th>Keterangan</th></tr>
+        <tr><td>Jenis</td><td>VA <strong>tetap/permanen</strong> (bukan per-tagihan) — satu nomor seumur santri aktif</td></tr>
+        <tr><td>Pembentuk</td><td><code>prefix_BMT + NIS</code> · disimpan di data santri sebagai <code>va_bmt</code></td></tr>
+        <tr><td>Nominal</td><td><strong>Terbuka</strong> — wali bisa bayar sesuai tagihan (open amount), atau BMT bisa menutup ke nominal tagihan bila didukung</td></tr>
+        <tr><td>Identifikasi</td><td>Saat ada pembayaran masuk, BMT mengirim nomor VA → Ammu tahu ini santri siapa</td></tr>
+        <tr><td>Kelebihan</td><td>Mudah diingat &amp; dibagikan ke wali, tidak perlu generate ulang tiap bulan</td></tr>
+        <tr><td>Catatan</td><td>Karena open amount, pencocokan ke tagihan tertentu dilakukan di sisi Ammu (alokasi ke tagihan terdekat / sesuai instruksi wali)</td></tr>
+      </table>
+    </section>
+
+    <!-- ============== 4. ALUR BARU ============== -->
+    <section>
+      <h2><span class="n">4.</span>Alur Pembayaran Baru (End-to-End)</h2>
+      <p class="sub">Dari tagihan terbit sampai tertandai lunas otomatis — tanpa upload bukti.</p>
+      <figure>
+        <svg viewBox="0 0 980 430" role="img" aria-labelledby="flow-t flow-d" xmlns="http://www.w3.org/2000/svg" font-family="'Segoe UI',system-ui,Arial,sans-serif">
+          <title id="flow-t">Alur pembayaran Virtual Account end-to-end dalam tiga jalur: Wali, Ammu Online, dan BMT PETA</title>
+          <desc id="flow-d">Tagihan dibuat di Ammu dan VA santri ditampilkan; wali membayar lewat kanal BMT; BMT mengirim konfirmasi; Ammu menandai lunas dan mengirim notifikasi serta struk.</desc>
+          <defs>
+            <marker id="f1" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#0891b2"/></marker>
+            <marker id="f2" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#6366f1"/></marker>
+          </defs>
+          <!-- swimlanes -->
+          <rect x="0" y="0" width="980" height="120" fill="#fcfdff"/>
+          <rect x="0" y="120" width="980" height="170" fill="#f8fafc"/>
+          <rect x="0" y="290" width="980" height="140" fill="#fbfcff"/>
+          <text x="18" y="34" font-size="12" font-weight="800" fill="#0e7490" transform="rotate(0)">WALI</text>
+          <text x="18" y="150" font-size="12" font-weight="800" fill="#0e7490">AMMU ONLINE</text>
+          <text x="18" y="318" font-size="12" font-weight="800" fill="#4338ca">BMT PETA</text>
+          <line x1="0" y1="120" x2="980" y2="120" stroke="#e2e8f0"/>
+          <line x1="0" y1="290" x2="980" y2="290" stroke="#e2e8f0"/>
+
+          <!-- step boxes -->
+          <!-- 1 Ammu generate tagihan -->
+          <rect x="95" y="180" width="150" height="66" rx="11" fill="#fff" stroke="#0891b2" stroke-width="1.4"/>
+          <circle cx="110" cy="195" r="11" fill="#0e7490"/><text x="110" y="199" text-anchor="middle" font-size="11" font-weight="800" fill="#fff">1</text>
+          <text x="170" y="210" text-anchor="middle" font-size="11.5" font-weight="700" fill="#0f172a">Tagihan terbit</text>
+          <text x="170" y="227" text-anchor="middle" font-size="10" fill="#475569">syahriyah/infaq</text>
+          <text x="170" y="240" text-anchor="middle" font-size="10" fill="#475569">+ VA santri tampil</text>
+
+          <!-- 2 Wali lihat -->
+          <rect x="300" y="40" width="150" height="62" rx="11" fill="#ecfeff" stroke="#0891b2" stroke-width="1.4"/>
+          <circle cx="315" cy="55" r="11" fill="#0e7490"/><text x="315" y="59" text-anchor="middle" font-size="11" font-weight="800" fill="#fff">2</text>
+          <text x="375" y="72" text-anchor="middle" font-size="11.5" font-weight="700" fill="#0f172a">Wali buka app</text>
+          <text x="375" y="89" text-anchor="middle" font-size="10" fill="#475569">lihat tagihan + No. VA</text>
+
+          <!-- 3 Wali bayar -->
+          <rect x="300" y="330" width="150" height="66" rx="11" fill="#eef2ff" stroke="#6366f1" stroke-width="1.4"/>
+          <circle cx="315" cy="346" r="11" fill="#4338ca"/><text x="315" y="350" text-anchor="middle" font-size="11" font-weight="800" fill="#fff">3</text>
+          <text x="375" y="362" text-anchor="middle" font-size="11.5" font-weight="700" fill="#0f172a">Bayar ke VA</text>
+          <text x="375" y="378" text-anchor="middle" font-size="10" fill="#3730a3">m-bank / ATM / teller</text>
+          <text x="375" y="390" text-anchor="middle" font-size="10" fill="#3730a3">/ kantor BMT</text>
+
+          <!-- 4 BMT terima -->
+          <rect x="510" y="330" width="150" height="66" rx="11" fill="#fff" stroke="#6366f1" stroke-width="1.4"/>
+          <circle cx="525" cy="346" r="11" fill="#4338ca"/><text x="525" y="350" text-anchor="middle" font-size="11" font-weight="800" fill="#fff">4</text>
+          <text x="585" y="362" text-anchor="middle" font-size="11.5" font-weight="700" fill="#0f172a">BMT terima dana</text>
+          <text x="585" y="378" text-anchor="middle" font-size="10" fill="#3730a3">dana masuk rek. pondok</text>
+          <text x="585" y="390" text-anchor="middle" font-size="10" fill="#3730a3">di BMT</text>
+
+          <!-- 5 BMT konfirmasi -->
+          <rect x="510" y="180" width="150" height="66" rx="11" fill="#eef2ff" stroke="#6366f1" stroke-width="1.6"/>
+          <circle cx="525" cy="195" r="11" fill="#4338ca"/><text x="525" y="199" text-anchor="middle" font-size="11" font-weight="800" fill="#fff">5</text>
+          <text x="585" y="208" text-anchor="middle" font-size="11.5" font-weight="800" fill="#312e81">Konfirmasi →</text>
+          <text x="585" y="225" text-anchor="middle" font-size="10" fill="#3730a3">kirim notif ke Ammu</text>
+          <text x="585" y="238" text-anchor="middle" font-size="10" fill="#3730a3">(VA, nominal, waktu)</text>
+
+          <!-- 6 Ammu lunas -->
+          <rect x="715" y="180" width="160" height="66" rx="11" fill="#ecfdf5" stroke="#047857" stroke-width="1.6"/>
+          <circle cx="730" cy="195" r="11" fill="#047857"/><text x="730" y="199" text-anchor="middle" font-size="11" font-weight="800" fill="#fff">6</text>
+          <text x="795" y="205" text-anchor="middle" font-size="11.5" font-weight="800" fill="#064e3b">Tagihan LUNAS</text>
+          <text x="795" y="221" text-anchor="middle" font-size="10" fill="#065f46">otomatis tercatat</text>
+          <text x="795" y="234" text-anchor="middle" font-size="10" fill="#065f46">Buku Induk</text>
+
+          <!-- 7 notif wali -->
+          <rect x="715" y="40" width="160" height="62" rx="11" fill="#ecfeff" stroke="#0891b2" stroke-width="1.4"/>
+          <circle cx="730" cy="55" r="11" fill="#0e7490"/><text x="730" y="59" text-anchor="middle" font-size="11" font-weight="800" fill="#fff">7</text>
+          <text x="795" y="72" text-anchor="middle" font-size="11.5" font-weight="700" fill="#0f172a">Notifikasi + struk</text>
+          <text x="795" y="89" text-anchor="middle" font-size="10" fill="#475569">wali terima bukti lunas</text>
+
+          <!-- arrows -->
+          <path d="M170,180 L170,103 L298,72" fill="none" stroke="#0891b2" stroke-width="1.6" marker-end="url(#f1)"/>
+          <path d="M375,102 L375,328" fill="none" stroke="#6366f1" stroke-width="1.6" marker-end="url(#f2)" stroke-dasharray="3 3"/>
+          <line x1="450" y1="363" x2="508" y2="363" stroke="#6366f1" stroke-width="1.6" marker-end="url(#f2)"/>
+          <path d="M585,330 L585,248" fill="none" stroke="#6366f1" stroke-width="1.6" marker-end="url(#f2)"/>
+          <line x1="660" y1="213" x2="713" y2="213" stroke="#6366f1" stroke-width="2" marker-end="url(#f2)"/>
+          <path d="M795,180 L795,104" fill="none" stroke="#0891b2" stroke-width="1.6" marker-end="url(#f1)"/>
+        </svg>
+        <figcaption><strong>Diagram 3.</strong> Langkah 5 (konfirmasi BMT → Ammu) adalah jalur kunci. Semua langkah lain sudah ada/siap di Ammu; yang ditunggu adalah bentuk konfirmasi dari BMT.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============== 5. PERBANDINGAN ============== -->
+    <section>
+      <h2><span class="n">5.</span>Perbandingan Alur Lama vs Baru</h2>
+      <p class="sub">Berapa langkah yang dihilangkan.</p>
+      <table>
+        <tr><th style="width:50%">Alur Lama — Transfer + Upload Bukti <span class="tag warn">manual</span></th><th style="width:50%">Alur Baru — VA BMT <span class="tag ok">otomatis</span></th></tr>
+        <tr>
+          <td>1. Wali transfer ke rekening pondok</td>
+          <td>1. Wali bayar ke nomor VA santri</td>
+        </tr>
+        <tr>
+          <td>2. Wali foto/screenshot bukti</td>
+          <td>2. <em>(tidak ada — dilewati)</em></td>
+        </tr>
+        <tr>
+          <td>3. Wali upload bukti di app</td>
+          <td>3. <em>(tidak ada — dilewati)</em></td>
+        </tr>
+        <tr>
+          <td>4. Admin buka daftar pending</td>
+          <td>4. BMT kirim konfirmasi otomatis</td>
+        </tr>
+        <tr>
+          <td>5. Admin cocokkan &amp; verifikasi manual</td>
+          <td>5. Ammu tandai lunas + catat Buku Induk otomatis</td>
+        </tr>
+        <tr>
+          <td>6. Status baru jadi “Lunas”</td>
+          <td>6. Wali langsung terima notifikasi + struk</td>
+        </tr>
+        <tr>
+          <td class="muted">Rawan telat, salah cocok, bukti palsu, beban admin</td>
+          <td class="muted">Real-time, anti salah-cocok, beban admin minim</td>
+        </tr>
+      </table>
+      <div class="note ok">
+        <span class="t">Tetap aman saat transisi</span>
+        Alur lama (transfer + upload bukti) <strong>tidak dihapus</strong> — dipertahankan sebagai cadangan sampai integrasi BMT benar-benar siap dan teruji. VA diaktifkan lewat sebuah saklar pengaturan, sehingga peralihan bisa bertahap dan aman.
+      </div>
+    </section>
+
+    <!-- ============== 6. OPSI KONFIRMASI ============== -->
+    <section>
+      <h2><span class="n">6.</span>Opsi Mekanisme Konfirmasi</h2>
+      <p class="sub">Tiga cara Ammu bisa tahu pembayaran sudah masuk — dipilih bersama tim BMT.</p>
+      <div class="opts">
+        <div class="opt rec">
+          <span class="badge">★ Rekomendasi</span>
+          <h4>A. Webhook (push) dari BMT</h4>
+          <p>Tiap ada pembayaran VA masuk, sistem BMT otomatis memanggil endpoint Ammu (mengirim nomor VA, nominal, waktu, ID transaksi).</p>
+          <div class="pro">+ Real-time, paling hemat, paling rapi</div>
+          <div class="con">− Perlu BMT mendukung webhook keluar + tanda tangan keamanan</div>
+        </div>
+        <div class="opt">
+          <span class="badge">Alternatif</span>
+          <h4>B. Polling API BMT</h4>
+          <p>Ammu berkala (mis. tiap beberapa menit) menanyakan status pembayaran ke API BMT.</p>
+          <div class="pro">+ Tidak butuh webhook; cukup API status</div>
+          <div class="con">− Tidak instan; beban kueri berkala</div>
+        </div>
+        <div class="opt">
+          <span class="badge">Alternatif</span>
+          <h4>C. Rekonsiliasi BMT</h4>
+          <p>BMT yang menandai lunas di sistemnya; Ammu menampilkan/menarik data dari BMT (mis. file/laporan harian).</p>
+          <div class="pro">+ Cocok bila keuangan dipusatkan di BMT</div>
+          <div class="con">− Paling lambat; bergantung jadwal rekon</div>
+        </div>
+      </div>
+      <div class="note bmt">
+        <span class="t">Keputusan menunggu BMT</span>
+        Mekanisme final <strong>mengikuti kemampuan sistem BMT PETA</strong>. Ammu Online dirancang fleksibel sehingga bisa menyesuaikan ke salah satu dari tiga opsi di atas tanpa merombak aplikasi.
+      </div>
+    </section>
+
+    <!-- ============== 7. DATA EXCHANGE ============== -->
+    <section>
+      <h2><span class="n">7.</span>Data yang Dipertukarkan</h2>
+      <p class="sub">Gambaran field minimum (final mengikuti spesifikasi BMT).</p>
+      <h3>a. Saat konfirmasi pembayaran (BMT → Ammu)</h3>
+      <table>
+        <tr><th>Field</th><th>Contoh</th><th>Guna</th></tr>
+        <tr><td><code>va_number</code></td><td>8810242026004 7</td><td>Identitas santri</td></tr>
+        <tr><td><code>amount</code></td><td>150000</td><td>Nominal dibayar</td></tr>
+        <tr><td><code>paid_at</code></td><td>2026-06-08T14:31:00+07</td><td>Waktu bayar</td></tr>
+        <tr><td><code>bmt_trx_id</code></td><td>TRX-0098812</td><td>ID transaksi BMT (anti-dobel)</td></tr>
+        <tr><td><code>channel</code></td><td>mbanking / teller</td><td>Kanal bayar</td></tr>
+        <tr><td><code>signature</code></td><td>hmac-sha256…</td><td>Pengaman keaslian data</td></tr>
+      </table>
+      <h3>b. Saat pendaftaran / sinkron VA (Ammu ↔ BMT)</h3>
+      <table>
+        <tr><th>Field</th><th>Contoh</th><th>Guna</th></tr>
+        <tr><td><code>santri_id / nis</code></td><td>20260047</td><td>Identitas santri di pondok</td></tr>
+        <tr><td><code>nama</code></td><td>Ahmad Fulan</td><td>Nama tampil di kanal bayar</td></tr>
+        <tr><td><code>va_number</code></td><td>8810242026004 7</td><td>Nomor VA yang diterbitkan/disepakati</td></tr>
+        <tr><td><code>status</code></td><td>aktif / nonaktif</td><td>Santri keluar → VA dinonaktifkan</td></tr>
+      </table>
+    </section>
+
+    <!-- ============== 8. KEBUTUHAN BMT ============== -->
+    <section>
+      <h2><span class="n">8.</span>Yang Dibutuhkan dari BMT PETA</h2>
+      <p class="sub">Daftar terbuka untuk dibahas dengan tim pengembang BMT.</p>
+      <table>
+        <tr><th>No</th><th>Kebutuhan</th><th>Catatan</th></tr>
+        <tr><td>1</td><td>Dokumentasi API / spesifikasi teknis</td><td>Endpoint, format request/response, kode error</td></tr>
+        <tr><td>2</td><td>Mekanisme konfirmasi (opsi A/B/C §6)</td><td>Webhook lebih disukai bila tersedia</td></tr>
+        <tr><td>3</td><td>Format &amp; aturan nomor VA</td><td>Prefix institusi, panjang, check digit, open/closed amount</td></tr>
+        <tr><td>4</td><td>Kredensial &amp; keamanan</td><td>API key / token, IP allowlist, tanda tangan (HMAC)</td></tr>
+        <tr><td>5</td><td>Lingkungan uji (sandbox)</td><td>Untuk uji coba sebelum live</td></tr>
+        <tr><td>6</td><td>Skema settlement &amp; rekonsiliasi</td><td>Dana masuk ke rekening pondok di BMT; laporan harian</td></tr>
+        <tr><td>7</td><td>Biaya &amp; SLA</td><td>Biaya per transaksi, jam layanan, dukungan teknis</td></tr>
+      </table>
+    </section>
+
+    <!-- ============== 9. KEAMANAN ============== -->
+    <section>
+      <h2><span class="n">9.</span>Keamanan &amp; Tata Kelola</h2>
+      <ul>
+        <li><strong>Tanda tangan data (HMAC/signature)</strong> pada setiap konfirmasi — memastikan notifikasi benar-benar dari BMT, bukan pihak lain.</li>
+        <li><strong>Anti-dobel (idempoten)</strong> — satu <code>bmt_trx_id</code> hanya diproses sekali, mencegah tagihan ter-lunas ganda.</li>
+        <li><strong>Tanpa menyimpan data kartu/PIN</strong> — Ammu hanya menerima status pembayaran, tidak menyentuh kredensial perbankan wali.</li>
+        <li><strong>Jejak audit</strong> — setiap pelunasan otomatis tercatat (sumber, waktu, ID transaksi) di Buku Induk &amp; log audit yang sudah ada di Ammu.</li>
+        <li><strong>Kanal terenkripsi (HTTPS)</strong> untuk semua komunikasi.</li>
+      </ul>
+    </section>
+
+    <!-- ============== 10. ROADMAP ============== -->
+    <section>
+      <h2><span class="n">10.</span>Tahapan Implementasi</h2>
+      <p class="sub">Bertahap, dengan alur lama sebagai jaring pengaman.</p>
+      <div class="roadmap">
+        <div class="rstep"><div class="num">1</div><div class="body"><h4>Kesepakatan &amp; spesifikasi</h4><p>BMT &amp; pondok sepakati mekanisme (§6), format VA, dan akses sandbox. <span class="tag bmt">butuh BMT</span></p></div></div>
+        <div class="rstep"><div class="num">2</div><div class="body"><h4>Siapkan kerangka di Ammu (sudah dimulai)</h4><p>Opsi VA &amp; konfigurasi BMT disiapkan di aplikasi dalam keadaan non-aktif (saklar). Tidak mengganggu operasi berjalan.</p></div></div>
+        <div class="rstep"><div class="num">3</div><div class="body"><h4>Integrasi &amp; uji sandbox</h4><p>Sambungkan ke API/webhook BMT di lingkungan uji, uji pembayaran &amp; konfirmasi end-to-end.</p></div></div>
+        <div class="rstep"><div class="num">4</div><div class="body"><h4>Uji terbatas (pilot)</h4><p>Aktifkan untuk sebagian santri; alur lama tetap tersedia sebagai cadangan.</p></div></div>
+        <div class="rstep"><div class="num">5</div><div class="body"><h4>Live penuh</h4><p>Aktifkan untuk semua santri setelah stabil; upload bukti manual menjadi opsi darurat saja.</p></div></div>
+      </div>
+    </section>
+
+    <!-- ============== 11. CATATAN ============== -->
+    <section>
+      <h2><span class="n">11.</span>Catatan &amp; Asumsi</h2>
+      <ul>
+        <li>Dokumen ini adalah <strong>rancangan awal (draft)</strong> untuk bahan evaluasi; angka, format VA, dan field data bersifat <strong>contoh</strong> dan akan disesuaikan dengan standar BMT PETA.</li>
+        <li>Mekanisme konfirmasi <strong>belum dikunci</strong> — menunggu detail kemampuan sistem BMT (lihat §6).</li>
+        <li>Modul tagihan, notifikasi, struk, dan Buku Induk yang disebut di sini <strong>sudah berjalan</strong> di Ammu Online; yang baru hanyalah lapisan integrasi BMT.</li>
+        <li>Pondok siap menyediakan kontak teknis untuk berkoordinasi dengan tim pengembang BMT.</li>
+      </ul>
+    </section>
+
+  </div>
+
+  <footer>
+    <strong>Ammu Online</strong> — Sistem Manajemen Pondok Pesantren Mambaul Ulum &nbsp;·&nbsp; Skema Integrasi Pembayaran VA &amp; Transfer Otomatis dengan BMT PETA &nbsp;·&nbsp; Dokumen draft v.1, Juni 2026.<br>
+    Disusun sebagai bahan acuan/evaluasi. Detail teknis final mengikuti hasil koordinasi dengan tim pengembang sistem BMT PETA.
+  </footer>
+
+</div>
+</body>
+</html>

@@ -127,7 +127,7 @@
     <!-- ============================================================
          v.87.0526 STEP: BAYAR (Transfer Bank) — info rekening + upload bukti
          ============================================================ -->
-    <template v-if="isSantriOnly && mode === 'flow' && step === 'bayar'">
+    <template v-if="isSantriOnly && mode === 'flow' && step === 'bayar' && selectedMethod !== 'va'">
       <!-- Info Rekening -->
       <div class="bg-gradient-to-br from-cyan-600 to-teal-700 dark:from-cyan-800 dark:to-teal-900 rounded-2xl p-5 text-white shadow-lg">
         <p class="text-[10px] font-bold uppercase opacity-80 tracking-wider mb-3">
@@ -304,7 +304,61 @@
       </div>
     </template>
 
-    <!-- v.87.0526: blok tab VA DIHAPUS — VA kini jadi baris "Coming soon" (disabled) di langkah Pilih Metode. -->
+    <!-- ============================================================
+         v.97.0626 STEP: BAYAR (Virtual Account BMT PETA) — tampil nomor VA tetap santri + instruksi.
+         Auto-konfirmasi via BMT (integrasi menyusul). Upload bukti tetap tersedia via metode Transfer.
+         ============================================================ -->
+    <template v-if="isSantriOnly && mode === 'flow' && step === 'bayar' && selectedMethod === 'va'">
+      <!-- Kartu Nomor VA -->
+      <div class="bg-gradient-to-br from-indigo-600 to-violet-700 dark:from-indigo-800 dark:to-violet-900 rounded-2xl p-5 text-white shadow-lg">
+        <p class="text-[10px] font-bold uppercase opacity-80 tracking-wider mb-3">
+          <i class="fas fa-credit-card mr-1"></i>Virtual Account {{ bmtNama || 'BMT PETA' }}
+        </p>
+        <div v-if="vaNumber">
+          <p v-if="vaSantri" class="text-sm font-bold opacity-90 mb-1">
+            <i class="fas fa-user-graduate mr-1"></i>{{ vaSantri.nama }}
+          </p>
+          <p class="text-2xl md:text-3xl font-black mt-1 tracking-wider drop-shadow break-all">
+            {{ formatVa(vaNumber) }}
+            <button
+              @click="copyToClipboard(vaNumber)"
+              class="ml-2 px-2 py-1 text-xs bg-white/20 hover:bg-white/30 rounded-lg backdrop-blur transition cursor-pointer align-middle"
+              :title="'Salin nomor VA'"
+            >
+              <i class="fas fa-copy"></i>
+            </button>
+          </p>
+          <p class="text-[11px] opacity-90 mt-3 leading-relaxed">
+            Bayar ke nomor VA di atas lewat m-banking / ATM / teller / kantor {{ bmtNama || 'BMT PETA' }}.
+            Pembayaran akan terkonfirmasi otomatis — tanpa perlu upload bukti.
+          </p>
+        </div>
+        <div v-else-if="waliChildren.length > 1" class="py-2">
+          <p class="text-sm font-bold mb-2"><i class="fas fa-hand-pointer mr-1"></i>Pilih anak dulu</p>
+          <select
+            v-model="transferForm.santri_id"
+            class="w-full px-3 py-2 text-sm rounded-xl border-0 text-slate-800 outline-none cursor-pointer"
+          >
+            <option value="">— Pilih Anak —</option>
+            <option v-for="c in waliChildren" :key="c.id" :value="String(c.id)">{{ c.nama }}</option>
+          </select>
+        </div>
+        <div v-else class="text-center py-4">
+          <i class="fas fa-exclamation-circle text-2xl mb-2 opacity-80"></i>
+          <p class="text-sm font-bold">Nomor VA belum tersedia</p>
+          <p class="text-[10px] opacity-80 italic mt-1">Hubungi admin pondok untuk info Virtual Account santri.</p>
+        </div>
+      </div>
+
+      <!-- Catatan integrasi -->
+      <div class="mt-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl p-4 text-[12px] text-amber-800 dark:text-amber-200 leading-relaxed">
+        <i class="fas fa-info-circle mr-1"></i>
+        <strong>Konfirmasi otomatis ({{ bmtNama || 'BMT PETA' }})</strong> — saat dana masuk, tagihan
+        tertandai lunas sendiri dan Anda menerima notifikasi. Integrasi konfirmasi BMT sedang
+        disiapkan; jika butuh segera, sementara bisa pakai metode
+        <button @click="step = 'metode'" class="font-black underline cursor-pointer">Transfer Bank</button>.
+      </div>
+    </template>
 
     <ReceiptModal
       :open="receiptOpen"
@@ -330,6 +384,7 @@ import { fmtRp, fmtTgl } from '@/utils/format'
 import ReceiptModal from '@/components/ReceiptModal.vue'
 import { buildReceiptStrukHtml } from '@/utils/receiptHtml'
 import { cetakStrukPdf } from '@/utils/strukBuilder'
+import { computeVaSantri, formatVa, isBmtAktif } from '@/utils/bmtVa'
 
 // v.82.0526: support deep-link dari TagihanView — auto-fill form transfer
 const route = useRoute()
@@ -363,10 +418,13 @@ const isSantriOnly = computed(() => auth.sesiAktif?.role === 'santri')
 const { children: waliChildren } = useWaliChildren(santriList)
 
 // v.87.0526: tabsSantri (3-tab) DIHAPUS — diganti alur berlangkah (pilih metode -> bayar) + riwayat via ikon.
-const methodsSantri = [
+// v.97.0626: VA aktif mengikuti settings BMT (bmt_aktif). Default OFF → tetap "Coming soon" (disabled).
+const bmtAktif = computed(() => isBmtAktif(settings.settings))
+const bmtNama = computed(() => (settings.settings || {}).bmt_nama || '')
+const methodsSantri = computed(() => [
   { id: 'transfer', label: 'Transfer Bank', icon: 'fa-university', desc: 'Upload bukti, verifikasi admin', active: true },
-  { id: 'va', label: 'Virtual Account', icon: 'fa-credit-card', desc: 'Segera hadir', active: false }
-]
+  { id: 'va', label: 'Virtual Account', icon: 'fa-credit-card', desc: bmtAktif.value ? ('Bayar via VA ' + (bmtNama.value || 'BMT PETA')) : 'Segera hadir', active: bmtAktif.value }
+])
 
 // Settings rekening (dari PengaturanKeuanganView)
 const rekInfo = computed(() => {
@@ -377,6 +435,19 @@ const rekInfo = computed(() => {
     bank_atasnama: s.bank_atasnama || ''
   }
 })
+
+// v.97.0626: VA BMT — santri terpilih (dari transferForm / anak tunggal) + nomor VA tetap
+const vaSantri = computed(() => {
+  const list = waliChildren.value || []
+  if (!list.length) return null
+  const sid = transferForm.value?.santri_id
+  if (sid) {
+    const found = list.find((c) => String(c.id) === String(sid))
+    if (found) return found
+  }
+  return list.length === 1 ? list[0] : null
+})
+const vaNumber = computed(() => computeVaSantri(vaSantri.value, settings.settings))
 
 const todayISO = computed(() => new Date().toISOString().slice(0, 10))
 
@@ -642,13 +713,13 @@ function copyToClipboard(text) {
 
 // v.87.0526: navigasi alur berlangkah (pilih metode -> bayar)
 function pilihMetode(id) {
-  const m = methodsSantri.find((x) => x.id === id)
+  const m = methodsSantri.value.find((x) => x.id === id)
   if (!m || !m.active) { toast.info('Metode ini belum aktif'); return }
   selectedMethod.value = id
 }
 function lanjutBayar() {
-  const m = methodsSantri.find((x) => x.id === selectedMethod.value)
-  if (!m || !m.active) { toast.info('Pilih metode yang aktif (Transfer Bank)'); return }
+  const m = methodsSantri.value.find((x) => x.id === selectedMethod.value)
+  if (!m || !m.active) { toast.info('Pilih metode yang aktif'); return }
   step.value = 'bayar'
 }
 

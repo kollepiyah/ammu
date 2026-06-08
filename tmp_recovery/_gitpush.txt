@@ -1,0 +1,7 @@
+feature/vue-migration
+origin	https://github.com/kollepiyah/ammu.git (fetch)
+origin	https://github.com/kollepiyah/ammu.git (push)
+=== PUSH === 
+To https://github.com/kollepiyah/ammu.git
+   70450f6..f863998  HEAD -> feature/vue-migration
+PUSH_EXITCODE=0 

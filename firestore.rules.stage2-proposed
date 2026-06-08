@@ -1,0 +1,456 @@
+// ============================================================================
+// FIREBASE FIRESTORE RULES — MAMBAUL ULUM
+// v.108.44 — B2 Tightening (Firebase Auth based)
+// ============================================================================
+//
+// CHANGELOG:
+// - v.108.44 (2026-05-13): Migrate dari permissive `allow write: if true`
+//   ke `allow write: if request.auth != null`. Setelah B1 Firebase Auth migration
+//   sukses, semua user yang interact app pasti signed in via Firebase Auth.
+//   Anonymous DevTools attacker tidak bisa write lagi.
+//
+// PRINSIP RULES BARU:
+//   - READ: tetap public/permissive untuk login lookup (anonymous read tetap OK)
+//     karena saat lazy migration login, signIn fail dulu (anonymous), perlu
+//     baca db_guru/db_santri untuk verify password lama.
+//   - WRITE: WAJIB Firebase Auth signed in (request.auth != null).
+//     Plus validasi struktur data tetap dipertahankan.
+//   - DELETE: WAJIB Firebase Auth signed in.
+//
+// CARA BYPASS YANG SAH (untuk admin SDK / Cloud Function):
+//   - Cloud Function dengan Admin SDK bypass rules secara native.
+//   - Backend lain (Cloud Run) bisa via service account.
+//
+// ============================================================================
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ----- HELPER FUNCTIONS -----
+    function isString(v) { return v is string; }
+    function isNumber(v) { return v is number; }
+    function isPositive(v) { return v is number && v >= 0; }
+    function isValidDate(v) {
+      return v is string && v.size() == 10 && v.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}');
+    }
+    function signedIn() { return request.auth != null; }
+
+    match /master/{docId} {
+      allow read: if true;
+      allow write: if signedIn();
+    }
+
+    match /settings/{docId} {
+      allow read: if true;
+      // v.88.0526: relax — mandat adminPassword dulu memblokir SEMUA write ke settings/general
+      //   (KOP, logo, schema rapor, predikat, master_tp, rekap mapel dll) yg tak menyertakan
+      //   adminPassword -> setDoc pertama reject -> catch -> simpan batal -> "balik ke default".
+      //   settings admin-gated di menu + read public utk login; validasi sandi ada di app.
+      allow write: if signedIn();
+    }
+
+    // v.21.22.0526: Relax id strict number → legacy data mix string/number
+    match /guru/{docId} {
+      allow read: if true;
+      allow create, update: if signedIn()
+        && (request.resource.data.id is number || request.resource.data.id is string)
+        && request.resource.data.nama is string
+        && request.resource.data.nama.size() >= 1
+        && request.resource.data.nama.size() <= 200
+        && (
+          !('role_sistem' in request.resource.data)
+          || request.resource.data.role_sistem in ['guru_biasa', 'user', 'admin', 'admin_keuangan', 'super_admin']
+        );
+      allow delete: if signedIn();
+    }
+
+    match /santri/{docId} {
+      allow read: if true;
+      allow create, update: if signedIn()
+        && (request.resource.data.id is number || request.resource.data.id is string)
+        && request.resource.data.nama is string
+        && request.resource.data.nama.size() >= 1
+        && request.resource.data.nama.size() <= 200
+        && (
+          !('aktif' in request.resource.data)
+          || request.resource.data.aktif is bool
+        );
+      allow delete: if signedIn();
+    }
+
+    match /absensi/{docId} {
+      allow read: if true;
+      allow write: if signedIn();
+    }
+
+    match /keuangan_tagihan/{docId} {
+      allow read: if true;
+      // v.21.104.0527: relax — terima santri_id string/number; schema toleran.
+      // v.96.0626 audit: validasi MERGE-SAFE (cek tipe hanya jika field ada -> aman utk update parsial).
+      allow create, update: if signedIn()
+        && (!('nominal' in request.resource.data) || request.resource.data.nominal is number)
+        && (!('santri_id' in request.resource.data) || request.resource.data.santri_id is string || request.resource.data.santri_id is number);
+      allow delete: if signedIn();
+    }
+
+    match /keuangan_tabungan_santri/{docId} {
+      allow read: if true;
+      // v.21.104.0527: relax santri_id (string/number) — app pakai string.
+      allow create: if signedIn()
+        && request.resource.data.id is string
+        && request.resource.data.jenis in ['setor', 'tarik']
+        && request.resource.data.nominal is number
+        && request.resource.data.nominal > 0
+        && isValidDate(request.resource.data.tanggal);
+      allow delete: if signedIn();
+      allow update: if signedIn()
+        && request.resource.data.jenis in ['setor', 'tarik']
+        && request.resource.data.nominal is number
+        && request.resource.data.nominal > 0;
+    }
+
+    // v.95.0626: Uang Saku santri ma'had — sama persis dgn tabungan (koleksi terpisah)
+    match /keuangan_uang_saku_santri/{docId} {
+      allow read: if true;
+      allow create: if signedIn()
+        && request.resource.data.id is string
+        && request.resource.data.jenis in ['setor', 'tarik']
+        && request.resource.data.nominal is number
+        && request.resource.data.nominal > 0
+        && isValidDate(request.resource.data.tanggal);
+      allow delete: if signedIn();
+      allow update: if signedIn()
+        && request.resource.data.jenis in ['setor', 'tarik']
+        && request.resource.data.nominal is number
+        && request.resource.data.nominal > 0;
+    }
+
+    match /keuangan_gaji/{docId} {
+      allow read: if true;
+      allow create, update: if signedIn()
+        && request.resource.data.id is string
+        && request.resource.data.guru_id is number
+        && request.resource.data.periode is string
+        && request.resource.data.periode.matches('[0-9]{4}-[0-9]{2}')
+        && isPositive(request.resource.data.bisyaroh_pokok)
+        && isPositive(request.resource.data.total_pemasukan)
+        && isPositive(request.resource.data.total_potongan)
+        && request.resource.data.tunjangan_list is list
+        && request.resource.data.potongan_list is list;
+      // v.21.99.0527: izinkan delete utk super_admin (koreksi slip bisyaroh).
+      allow delete: if signedIn();
+    }
+
+    match /keuangan_buku_induk/{docId} {
+      allow read: if true;
+      allow create: if signedIn()
+        && request.resource.data.id is string
+        && request.resource.data.tipe in ['masuk', 'keluar']
+        && request.resource.data.nominal is number
+        && request.resource.data.nominal > 0
+        && isValidDate(request.resource.data.tanggal)
+        && request.resource.data.keterangan is string
+        && request.resource.data.keterangan.size() >= 1
+        && request.resource.data.sumber in ['manual', 'pos_santri', 'tabungan_santri', 'tabungan_guru', 'gaji', 'hutang', 'transfer_verified'];
+      // v.21.99.0527: izinkan update utk super_admin (koreksi nominal/keterangan via UI gating).
+      allow update: if signedIn()
+        && request.resource.data.tipe in ['masuk', 'keluar']
+        && request.resource.data.nominal is number
+        && request.resource.data.nominal > 0
+        && isValidDate(request.resource.data.tanggal)
+        && request.resource.data.keterangan is string
+        && request.resource.data.keterangan.size() >= 1;
+      allow delete: if signedIn() && resource.data.sumber in ['manual', 'gaji', 'pos_santri', 'tabungan_santri', 'tabungan_guru', 'hutang', 'transfer_verified'];
+    }
+
+    match /link_preview_cache/{cacheId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /beranda_post/{docId} {
+      allow read: if true;
+      // v.21.84.0527: relax judul (allow empty for IG-style image-only post)
+      // judul + isi salah satu boleh kosong, total content tetap dibatasi
+      allow create, update: if signedIn()
+        && request.resource.data.id is string
+        && (
+          !('judul' in request.resource.data)
+          || (request.resource.data.judul is string && request.resource.data.judul.size() <= 200)
+        )
+        && (
+          !('isi' in request.resource.data)
+          || (request.resource.data.isi is string && request.resource.data.isi.size() <= 5000)
+        );
+      allow delete: if signedIn();
+
+      // v.21.84.0527: reactions sub-collection (Instagram-like likes)
+      match /reactions/{userId} {
+        allow read: if true;
+        allow write: if signedIn();
+      }
+    }
+
+    match /kegiatan/{docId} {
+      allow read: if true;
+      allow create, update: if signedIn()
+        && request.resource.data.id is string
+        && request.resource.data.judul is string
+        && request.resource.data.judul.size() >= 1
+        && isValidDate(request.resource.data.tgl_mulai);
+      allow delete: if signedIn();
+    }
+
+    // Kritik saran: CREATE tetap allow anonymous (santri/wali boleh kirim tanpa login)
+    match /kritik_saran/{docId} {
+      // v.90.0626: read publik (app custom auth; admin built-in tanpa Firebase Auth + anti-race anon)
+      allow read: if true;
+      allow create: if
+        request.resource.data.pesan is string
+        && request.resource.data.pesan.size() >= 1
+        && request.resource.data.pesan.size() <= 2000;
+      allow update, delete: if signedIn();
+    }
+
+    match /profil_pesantren/{docId} {
+      allow read: if true;
+      allow write: if signedIn();
+    }
+
+    match /absensi_kegiatan/{docId} {
+      allow read: if true;
+      allow write: if signedIn();
+    }
+
+    match /absensi_shift_guru/{docId} {
+      allow read: if true;
+      allow write: if signedIn();
+    }
+
+    match /notif_queue/{docId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.judul is string
+        && request.resource.data.pesan is string;
+      allow update, delete: if signedIn();
+    }
+
+    match /audit_log/{docId} {
+      allow read: if true;
+      allow create: if signedIn();
+      allow update, delete: if false;
+    }
+
+    match /rapor_semester/{docId} {
+      allow read: if true;
+      allow create, update: if signedIn()
+        && request.resource.data.santri_id != null
+        && request.resource.data.lembaga is string;
+      allow delete: if signedIn();
+    }
+
+    match /rekap_diniyah/{docId} {
+      allow read: if true;
+      allow create, update: if signedIn() && request.resource.data.santri_id != null;
+      allow delete: if signedIn();
+    }
+
+    // v.20.15.0526: Rekap prestasi Qiraati per santri/bulan (Vue subscribe)
+    match /rekap_prestasi/{docId} {
+      allow read: if true;
+      allow create, update: if signedIn();
+      allow delete: if signedIn();
+    }
+
+    // v.20.15.0526: PSB Pendaftaran Santri Baru (Vue PsbFormView + PpdbAdminView)
+    match /psb_pendaftaran/{docId} {
+      allow read: if true;
+      // CREATE: allow anonymous (formulir publik bisa diisi tanpa login)
+      allow create: if request.resource.data.nama is string
+        && request.resource.data.nama.size() >= 1
+        && request.resource.data.nama.size() <= 200;
+      // UPDATE/DELETE: hanya admin (signedIn)
+      allow update, delete: if signedIn();
+    }
+
+    // v.20.15.0526: Lembaga collection (fallback kalau Vue subscribe `lembaga`, legacy pakai master/lembaga)
+    match /lembaga/{docId} {
+      allow read: if true;
+      allow write: if signedIn();
+    }
+
+    // v.20.15.0526: Tabungan mutasi (Vue subscribe — kompat sama keuangan_tabungan_santri)
+    match /tabungan_mutasi/{docId} {
+      allow read: if true;
+      allow write: if signedIn();
+    }
+
+    match /absensi_santri_sekolah/{docId} {
+      allow read: if true;
+      allow create, update: if false;
+      allow delete: if signedIn();
+    }
+
+    match /absensi_santri_sekolah_bulanan/{docId} {
+      allow read: if true;
+      allow create, update: if signedIn()
+        && request.resource.data.santri_id != null
+        && request.resource.data.periode is string
+        && request.resource.data.periode.matches('^[0-9]{4}-(0[1-9]|1[0-2])$')
+        && request.resource.data.sakit is number && request.resource.data.sakit >= 0
+        && request.resource.data.izin is number && request.resource.data.izin >= 0
+        && request.resource.data.alpa is number && request.resource.data.alpa >= 0
+        && request.resource.data.hadir is number && request.resource.data.hadir >= 0;
+      allow delete: if signedIn();
+    }
+
+    // v.21.84.0527: Absensi ngaji bulanan (Qiraati — input manual guru)
+    match /absensi_santri_ngaji_bulanan/{docId} {
+      allow read: if true;
+      allow create, update: if signedIn()
+        && request.resource.data.santri_id != null
+        && request.resource.data.periode is string
+        && request.resource.data.periode.matches('^[0-9]{4}-(0[1-9]|1[0-2])$')
+        && request.resource.data.sakit is number && request.resource.data.sakit >= 0
+        && request.resource.data.izin is number && request.resource.data.izin >= 0
+        && request.resource.data.alpa is number && request.resource.data.alpa >= 0
+        && request.resource.data.hadir is number && request.resource.data.hadir >= 0;
+      allow delete: if signedIn();
+    }
+
+    match /riwayat_kenaikan/{docId} {
+      allow read: if true;
+      allow create, update: if signedIn();
+      allow delete: if signedIn();
+    }
+
+    match /backup_hapus/{docId} {
+      allow read: if signedIn();
+      allow create: if signedIn();
+      allow update, delete: if false;
+    }
+
+    // v.21.56: posts (Ammu Channel) - allow read public for all users
+    match /posts/{docId} {
+      allow read: if true;
+      allow create, update, delete: if signedIn();
+
+      // v.21.84.0527: reactions sub-collection
+      match /reactions/{userId} {
+        allow read: if true;
+        allow write: if signedIn();
+      }
+    }
+
+    // v.21.56: keuangan_hutang_piutang
+    match /keuangan_hutang_piutang/{docId} {
+      allow read: if true;
+      // v.96.0626 audit: validasi MERGE-SAFE (toggle {lunas} via merge tetap lolos).
+      allow create, update: if signedIn()
+        && (!('nominal' in request.resource.data) || request.resource.data.nominal is number);
+      allow delete: if signedIn();
+    }
+
+    // v.21.56: keuangan_pembayaran (POS transactions)
+    match /keuangan_pembayaran/{docId} {
+      allow read: if true;
+      // v.96.0626 audit: validasi MERGE-SAFE (cek tipe hanya jika field ada).
+      allow create, update: if signedIn()
+        && (!('nominal' in request.resource.data) || request.resource.data.nominal is number);
+      allow delete: if signedIn();
+    }
+
+    // v.21.22.0526: Absensi guru (fingerprint + manual entry)
+    match /absensi_guru/{docId} {
+      allow read: if true;
+      allow write: if signedIn();
+    }
+
+    // v.21.22.0526: Kegiatan pesantren (admin kelola, semua user lihat)
+    match /kegiatan_pesantren/{docId} {
+      allow read: if true;
+      allow write: if signedIn();
+    }
+
+    // v.21.61.2.0526: kegiatan_master (master template kegiatan harian — admin kelola via Kegiatan Pesantren tab)
+    match /kegiatan_master/{docId} {
+      allow read: if true;
+      allow write: if signedIn();
+    }
+
+    // v.21.16.0526: Pembayaran konfirmasi (wali upload bukti, admin verify)
+    match /pembayaran_konfirmasi/{docId} {
+      allow read: if signedIn();
+      // CREATE: wali boleh kirim konfirmasi (signedIn cukup)
+      allow create: if signedIn()
+        && request.resource.data.santri_id is number
+        && request.resource.data.nominal is number
+        && request.resource.data.nominal > 0
+        && request.resource.data.status in ['pending']
+        && request.resource.data.tanggal_transfer is string;
+      // UPDATE: hanya admin (status verifikasi) — allow any signedIn untuk simplicity
+      allow update: if signedIn();
+      allow delete: if signedIn();
+    }
+
+    // v.21.110.0527: Catatan supervisi (Direktur/Supervisor → guru/lembaga)
+    match /supervisi_catatan/{docId} {
+      // v.90.0626: read publik (anti-race anon auth + admin built-in)
+      allow read: if true;
+      allow create, update: if signedIn()
+        && request.resource.data.id is string
+        && request.resource.data.target_type in ['guru', 'lembaga']
+        && request.resource.data.target_id is string
+        && request.resource.data.judul is string
+        && request.resource.data.catatan is string
+        && request.resource.data.judul.size() <= 300
+        && request.resource.data.catatan.size() <= 20000;
+      allow delete: if signedIn();
+    }
+
+    // v.21.110.0527: Per-user notif state (last_seen per kategori)
+    // v.21.115.0528: duplicate rule dihapus — userId tidak match auth.uid karena app pakai custom auth + Firebase Anonymous.
+    // Tetap signedIn-only sebagai gate, tapi tidak strict per-uid karena userId di sini adalah ID custom (guru/santri/admin).
+    match /user_notif_state/{userId} {
+      // v.90.0626: read publik; write tetap butuh sesi (anon admin / guru / santri)
+      allow read: if true;
+      allow write: if signedIn();
+    }
+
+    // v.21.115.0528: Pengaturan Keuangan (admin keuangan settings)
+    match /pengaturan_keuangan/{docId} {
+      allow read: if true;
+      allow write: if signedIn();
+    }
+
+    // v.21.115.0528: Per-user scheduled job state (kalau ada feature recurring task)
+    match /scheduled_jobs/{docId} {
+      allow read: if signedIn();
+      allow write: if signedIn();
+    }
+
+    // v.86.0526: Bukti transfer pembayaran (wali upload -> admin verifikasi).
+    //   CREATE: signedIn + nominal valid + status pending. UPDATE/DELETE: signedIn (admin verify).
+    match /pembayaran_transfer_pending/{docId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.nominal is number
+        && request.resource.data.nominal > 0
+        && request.resource.data.status == 'pending';
+      allow update, delete: if signedIn();
+    }
+
+    // v.87.0526: Notif prestasi (event ditulis saat input nilai prestasi) — sumber Notif Center.
+    match /notif_prestasi/{docId} {
+      allow read: if true;
+      allow create, update: if signedIn();
+      allow delete: if signedIn();
+    }
+
+    // Default deny untuk collection lain
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
