@@ -1,7 +1,7 @@
 # PROJECT KNOWLEDGE BASE — Ammu Online (Portal MU)
 > Dokumen onboarding untuk sesi Claude baru. Baca ini DULU sebelum mulai. **Update terakhir: 5 Juni 2026 (v.95.0626 — Generate Tagihan Khusus/infaq, ikon Tabungan→dompet, login bg base64+blur, hapus QuickActions Beranda, bottom-nav guru→Rekap, Dashboard Statistik overhaul [Top5 PTPT/PPPH klik-detail + kartu Guru Belum Input + Kelas Overload, scope kepala/PJ], rapor auto-isi Guru Kelas (fallback shift), repo rilis→kollepiyah/ammu, bump vc95). LANJUTAN sesi: FCM push (Android plugin + web/VAPID + 4 trigger server) + fix auth anon (fcm_token bisa simpan) + hapus toggle notif manual, struk dot-matrix 9.5×11 (BUKTI dikotak, terbilang baris penuh, penyetor kiri/penerima kanan), Electron Win7 dual-build (Electron 22) + dropdown versi di download login. TETAP vc95 (belum upload Play Console).**
 > ⚠️ KB KANONIK = file ini (`PROJECT-KNOWLEDGE-BASE.md`). File lama `PROJECT_KNOWLEDGE_BASE.md` (underscore) DEPRECATED — abaikan.
-> 👉 **RECAP TERBARU ada di PALING BAWAH** (cari "SESI v.97.0626 — RAPOR REDESIGN FULL-ACF (8 Juni 2026)" lalu cari "SESI v.98.0626" di PALING BAWAH utk layout/rapor/statistik + catatan TRUNCATION raporPdf; dan **"SESI BMT-PETA"** di PALING BAWAH utk integrasi pembayaran VA santri + pencairan bisyaroh via BMT PETA). ⭐ **CETAK SLIP 2-ply (dot-matrix 9.5") FINAL = ESC/P GRAFIS RASTER** (`utils/escpImage.js` → `print:raw`, BYPASS driver): render canvas Arial → bit-image ESC/P. Driver Windows (PDF/HTML) = kosong/kotak/feed-5cm → JANGAN dipakai utk slip 9.5. Tombol "Struk PDF" tetap PDF (preview/unduh). No.Transaksi: MU-/TB-/US-/BS-NNNddmmyy. Recap sebelumnya: "BATCH 13 ITEM + STRUK SLIP PDF + FCM + VERIFY + NOTIF + NISN", "RECEIPT VIEWER + STRUK ESC/P", "FCM PUSH + STRUK + WIN7".
+> 👉 **RECAP TERBARU ada di PALING BAWAH** (cari "SESI v.97.0626 — RAPOR REDESIGN FULL-ACF (8 Juni 2026)" lalu cari "SESI v.98.0626" di PALING BAWAH utk layout/rapor/statistik + catatan TRUNCATION raporPdf; dan **"SESI BMT-PETA"** di PALING BAWAH utk integrasi pembayaran VA santri + pencairan bisyaroh via BMT PETA; dan **"SESI v.98 — RIBBON DESKTOP REDESIGN (Electron-only)"** di PALING BAWAH = redesain shell desktop gaya Ribbon/Office [frameless, pita kontekstual, full-native, updater in-app, Impor Kalender] + **ANTREAN AUDIT/SHIP sesi berikutnya**). ⭐ **CETAK SLIP 2-ply (dot-matrix 9.5") FINAL = ESC/P GRAFIS RASTER** (`utils/escpImage.js` → `print:raw`, BYPASS driver): render canvas Arial → bit-image ESC/P. Driver Windows (PDF/HTML) = kosong/kotak/feed-5cm → JANGAN dipakai utk slip 9.5. Tombol "Struk PDF" tetap PDF (preview/unduh). No.Transaksi: MU-/TB-/US-/BS-NNNddmmyy. Recap sebelumnya: "BATCH 13 ITEM + STRUK SLIP PDF + FCM + VERIFY + NOTIF + NISN", "RECEIPT VIEWER + STRUK ESC/P", "FCM PUSH + STRUK + WIN7".
 > ⏳ **STATUS:** perubahan v.95.0626 ADA di file (D:\). **Alur rilis kyai:** `tmp_recovery\_run_vite.cmd` → `git add -A && git commit --no-verify` → `npm run firebase:deploy` (web/PWA) → `npm run build:aab` (vc95 — WAJIB agar perubahan sampai ke app HP, krn Capacitor NATIVE bundle) → (desktop) `electron:publish` ke repo `kollepiyah/ammu`. Sesi v.95 = web/JS murni, tapi AAB tetap perlu utk app HP. **LANJUTAN aktivasi:** FCM butuh `google-services.json` di `vue-app/android/app/` + `npm i @capacitor/push-notifications --prefix vue-app` + `npx cap sync android` + `firebase deploy --only functions`. Win7 publish: HAPUS rilis GitHub `v95.0.626` lama dulu (electron-builder skip rilis >2 jam) lalu publish ulang. Detail lengkap di section "LANJUTAN: FCM PUSH + STRUK + WIN7" paling bawah.
 
 ---
@@ -808,3 +808,58 @@ Webhook/disbursement AMAN dideploy (dry-run). firestore.rules TIDAK diubah (paka
 - Isi field **`rek_bmt`** tiap guru agar Laporan BMT punya nomor rekening.
 - Saat API BMT siap: isi `TODO(BMT)` di `bmtPaymentWebhook` (parsing/auth) + `bmtDisbursementBatch` (panggil API), lalu set `bmt_webhook_enabled`/`bmt_disburse_enabled`=true + secrets.
 - Build warning vite (`vendor-pdf` circular + firebase dynamic/static) = **benign**, sengaja diabaikan (bukan dari sesi ini).
+
+
+---
+
+## SESI v.98 — RIBBON DESKTOP REDESIGN (Electron-only) — 8–9 Juni 2026, Cowork — RECAP TERBARU, BACA INI
+
+> Workstream **TERPISAH** & paling baru. **Redesain shell DESKTOP (Electron) ke gaya Ribbon (MS Office + Windows 11).** Web & HP **TETAP** pakai shell lama (`AppLayout`). **Backend/data/logika Firebase TIDAK disentuh — hanya lapisan UI/navigasi.** Tag komentar kode `v.98`. **versionCode native BELUM dibump** (electron `package.json` 96.0.626, vue-app `package.json` 97.0626).
+> ✅ Sudah di-commit kyai sesi ini (feature/vue-migration). Antrean commit v.98: `51f20c0` shell → `66bd06e` rollout (Supervisi/Tagihan/BukuInduk + Mapel Diniyah + Cek Pembaruan) → `671eaae` Bisyaroh/Kalender → `09b5378` Tabungan/Uang Saku → `4344885` POS/NaikKelas/Rapor → `51cb29b` Impor Kalender → `39a6dd2` sembunyikan header judul (Kelas/Kritik/Personal/Notifikasi).
+> ⚠️ **Ribbon HANYA muncul di build Electron.** Kode `.vue` ikut ke-bundle web tapi di-gate `useDesktopShell().isElectron` → web/HP aman. Agar `.exe` dapat Ribbon: **rebuild Electron + `electron:publish`** (web `firebase:deploy` tidak menyentuh desktop).
+
+### LINGKUP & KEPUTUSAN KYAI (verbatim intent)
+- Ribbon **Electron saja**; web/HP legacy. **Title bar frameless (Opsi A)** — 1 bar, tombol Min/Max/Close custom.
+- **Dark mode = SLATE konsisten** (bukan coklat). Search bar: **jangan dilebarkan, tinggi 30px**. **Card sapaan dihapus** (identitas sudah di title bar).
+- **Mapel = editor LANGSUNG** (bukan via Master Lembaga). **Tombol dobel/mati → bangun fiturnya atau hapus** (no placeholder mati). **Pembaruan in-app** (tak perlu buka web/GitHub).
+- **Full native**: SEMUA halaman action/tab-heavy → header in-page disembunyikan, aksi/sub-tab pindah ke pita.
+
+### ARSITEKTUR SHELL
+- `components/layout/AppShell.vue` (BARU) — toggle: `<RibbonLayout v-if useRibbon>` (Electron) vs `<AppLayout v-else>` (web/HP). Router parent = AppShell.
+- `components/ribbon/*` (BARU): **RibbonLayout** (root; `watch route /dashboard→/beranda`; `useUpdater().wire()`), **RibbonTitleBar** (frameless drag, GlobalSearch, AppNotifBell, kartu user `useRibbonUser`, window controls `useWindowControls`), **RibbonTabBar**, **RibbonBar** (render grup tab + grup kontekstual **"Aksi Halaman"** dari `pageActions`, actionStacks ber-3), RibbonGroup, RibbonButton, **RibbonIcon** (peta path SVG, incl. 'restore'), RibbonClock (`useClock`), RibbonStatusBar, **RibbonBackstage** (Pengaturan→/pengaturan-desktop).
+- `assets/ribbon.css` (BARU): chrome scoped `.ammu-ribbon-app` + prefix `rb-` + `[data-theme]` light/dark. **Dark = SLATE** (`--rb-app-bg:#0f172a`, `--rb-strip/card:#1e293b`, border `#334155`, teks `#f1f5f9`); `--accent: var(--theme-color,#0f766e)`. Edge-to-edge: `.ammu-ribbon-app .rb-content :is(.max-w-2xl..7xl,.page-narrow){max-width:none!important}`. Search `.rb-searchwrap{width:min(520px,46vw)}` + tinggi 30px.
+- **Electron** `electron/src/index.ts`: `frame:false`+`autoHideMenuBar:true`; IPC window (minimize/toggle-maximize/close/is-maximized + event maximized-changed); `setupUpdater(mainWindow)` + IPC `update:check/download/install` + autoUpdater events (**autoDownload=false**). `preload.ts` expose window controls + updater (checkUpdate/downloadUpdate/installUpdate/onUpdateStatus/onUpdateProgress).
+
+### NAVIGASI PITA (`composables/useRibbonNav.js`)
+- **7 tab**: Home / Pendidikan / Keuangan / Saluran / Personal / Supervisi / Bantuan. `TABS`+`TAB_PATHS`+`passGate` (admin/keuangan/supervisi/noSantri/superadmin) + `activeTab` watcher + `selectTab` + `onItem` (theme/ribbon/refresh/update/logout/modul/to).
+- **Tombol data → mode kelola** (`?kelola=1`): `/santri?kelola=1`, `/guru?kelola=1&tipe=guru`, dst (router `props` map `mode`).
+- **Aksi kontekstual**: `composables/useRibbonContext.js` (BARU, `pageActions` singleton + `definePageActions(getActions)`) — tiap view daftarkan aksi halaman; reaktif (watchEffect), **Electron-only**, dibersihkan `onUnmounted`.
+
+### FULL-NATIVE (Electron): header in-page disembunyikan, aksi→pita
+Pola per view: `const { isElectron: isDesktop } = useDesktopShell()` + bungkus header `v-if="!isDesktop"` + `definePageActions(...)` di **AKHIR** `<script setup>`. View ter-wire: **Santri, Guru, Tagihan, BukuInduk, Bisyaroh, Supervisi(sub-tab), Kalender, Tabungan, PosSantri, NaikKelas, Rapor** + (sesi ini, judul-saja) **Kelas, Kritik & Saran, Personal, Notifikasi** (Notifikasi: aksi Tandai Dibaca/Bersihkan→pita). **Profil** dilewati (kontennya komponen profil, tak ada judul terpisah).
+
+### FITUR BARU
+- **Mapel Diniyah editor langsung** (`views/MapelDesktopView.vue`, route `/mapel-lembaga`): port rekapMapel, simpan ke `settings/general`+`settings/web` (`rekapDiniyahMapel`/`rekapDiniyahKKM`); banner info Diniyah (berkaitan rapor).
+- **Cek Pembaruan in-app** (`composables/useUpdater.js` + autoUpdater): ada update → konfirm download → progres → konfirm install; tak ada → **toast "aplikasi sudah versi terbaru"**.
+- **Impor Kalender Kegiatan** (`views/ImporKalenderView.vue`, route `/impor-kalender`, admin): unduh template Excel → unggah → pratinjau (valid/dilewati) → impor ke koleksi **`kegiatan`** via `useKegiatan().simpanKegiatan` (toleran format tanggal + alias kolom). Akses: pita tab **Kalender → "Impor Excel"**.
+- **BerandaDesktopView** (2 dasbor: statistik + keuangan, via `useStatistikDashboard`/`useKeuanganDashboard`), **KeuanganDesktopView**, **PengaturanDesktopView** (hub kartu ACF/CRUD → /pengaturan-desktop), **BantuanView** (konten nyata, `?bagian`), RibbonPlaceholderView.
+
+### FILE BARU (utama)
+composables: `useDesktopShell, useWindowControls, useRibbonNav, useRibbonContext, useUpdater, useRibbonPrefs, useRibbonUser, useStatistikDashboard, useKeuanganDashboard, useClock`. components: `layout/AppShell.vue`, `ribbon/{RibbonLayout,RibbonTitleBar,RibbonTabBar,RibbonBar,RibbonGroup,RibbonButton,RibbonIcon,RibbonClock,RibbonStatusBar,RibbonBackstage}.vue`. assets: `ribbon.css`. views: `BerandaDesktopView, KeuanganDesktopView, MapelDesktopView, PengaturanDesktopView, ImporKalenderView, RibbonPlaceholderView, BantuanView`. electron: `src/index.ts` (frameless+IPC+updater), `src/preload.ts`. router: rute baru (bantuan, modul/:judul, beranda, keuangan-desktop, kelas-guru, mapel-lembaga, pengaturan-desktop, impor-kalender) + `/santri`&`/guru` props mode.
+
+### CATATAN NOTIFIKASI SUPERVISI (rujukan utk audit notif)
+Catatan supervisi (koleksi **`supervisi_catatan`**, dibuat dari menu **Data Supervisi**) sampai ke akun guru/kepala/PJ lewat **2 jalur**: (1) **lonceng notif** — `useNotifications.getSupervisi()` filter `target_type==='guru' && target_id===me` ATAU `target_type==='lembaga' && isKepala(lembaga itu)`, jenis `'supervisi'`, link `/personal`; (2) **halaman Personal** → bagian **"Catatan Supervisi"** (filter sama), status Open→Diproses→Selesai. Menu `/supervisi` = sisi **pembuat/supervisor** (Buat/Riwayat/Rekap).
+
+### ⚠️ GOTCHA (Cowork — sama spt sesi lain)
+- **Mount LAG**: SFC compile via Linux mount memberi "Element is missing end tag"/"Unexpected EOF" **PALSU** utk file baru di-Edit/Write. **Read tool (D:\) = AUTHORITATIVE.** Gate asli = build Windows kyai (`tmp_recovery\_run_vite.cmd`).
+- **`definePageActions` taruh di AKHIR `<script setup>`** (setelah deklarasi ref): fungsi ter-hoist, ref tidak → hindari TDZ.
+- **Bash workspace cold-start** kadang timeout 45s → retry. **git di sandbox Linux kadang aneh** (`ls-files` glitch) → file D:\ tetap kebenaran.
+- **PowerShell kyai pakai `;` BUKAN `&&`** (gabung command). Selalu `cd "D:\Aplikasi Project\Portal MU";`.
+
+### ⏳ PENDING — SESI BERIKUTNYA (ANTREAN AUDIT + SHIP, instruksi kyai)
+**A. AUDIT ELECTRON menyeluruh** — (1) semua fitur berfungsi; (2) **tak ada tombol mati/placeholder**; (3) UI/UX rapi (spacing, alignment, dark **slate** konsisten, edge-to-edge); (4) **sesuai kode desain Visual Communication** (token warna/tipografi/aksen — banding ke prototipe `design_handoff_ammu_desktop/`).
+**B. AUDIT WEB + ANDROID** — performa bagus di semua device (bundle/lazy-load, list besar, langganan Firestore, memori).
+**C. AUDIT NOTIFIKASI sesuai rule (role & scope)** — pembayaran/tagihan; **catatan prestasi anak → akun walisantri**; **catatan kelas guru & bisyaroh → akun guru**; supervisi → guru/kepala/PJ; kritik → admin; libur/kenaikan → audiens tepat. Cek `useNotifications.js` + Cloud Functions FCM (`functions/index.js`).
+**D. AUDIT SEMUA FILTER DATA sesuai role & scope (ANTI DATA BOCOR)** — santri/wali hanya datanya sendiri; guru sesuai lembaga/kelas; admin_keuangan sesuai scope; tak ada kebocoran lintas-lembaga/akun. Cek `utils/roleScope.js` + filter tiap composable/view + `firestore.rules`.
+**E. CEK KARTU KENAIKAN** — pastikan **tgl & catatan terisi OTOMATIS dari proses naik kelas** (`NaikKelasView` + sumber data kenaikan), bukan kosong/manual.
+**F. JIKA SEMUA LOLOS → SHIP** — `git commit` → `npm run firebase:deploy` (web/PWA) → rebuild **AAB** (bump versionCode ≥97 di SEMUA titik §5) untuk Play → **`electron:publish`** (GitHub `kollepiyah/ammu`, electron-updater) → **push git** → update KB + rekap task → **DONE**.
