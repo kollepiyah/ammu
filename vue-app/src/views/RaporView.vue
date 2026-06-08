@@ -397,6 +397,7 @@
                   v-else
                   :type="f.type === 'date' ? 'date' : f.type === 'number' ? 'number' : 'text'"
                   v-model="draft.data_nilai[f.key]"
+                  :placeholder="f.placeholder || ''"
                   class="text-xs px-2 py-1 border border-[var(--border-default)] rounded bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
                 />
               </label>
@@ -511,7 +512,7 @@
                   {{ titleCase(kop.line3) }}
                 </div>
                 <div v-if="kop.line4" class="text-[12px] font-normal leading-tight text-[var(--text-primary)]">
-                  {{ titleCase(kop.line4) }}
+                  {{ (kop.line4 || '').toLowerCase() }}
                 </div>
               </td>
               <td class="w-[95px] text-center align-middle">
@@ -532,14 +533,14 @@
 
           <!-- Identitas: kiri rata kiri (Nama/NISN/NIS), kanan rata kanan (Kelas/Semester/Tahun) -->
           <div class="flex items-start text-[11px] mb-2">
-            <table class="w-1/2">
+            <table class="w-[55%]">
               <tbody>
                 <tr><td class="w-[90px] py-0.5 align-top">Nama Santri</td><td class="w-[10px] py-0.5">:</td><td class="py-0.5 font-bold">{{ santriAktif.nama }}</td></tr>
                 <tr><td class="py-0.5">NISN</td><td class="py-0.5">:</td><td class="py-0.5">{{ santriAktif.nisn || '-' }}</td></tr>
                 <tr><td class="py-0.5">NIS</td><td class="py-0.5">:</td><td class="py-0.5">{{ santriAktif.nis || '-' }}</td></tr>
               </tbody>
             </table>
-            <table class="w-1/2">
+            <table class="w-[45%]">
               <tbody>
                 <tr><td class="w-[100px] py-0.5 align-top">Kelas</td><td class="w-[10px] py-0.5">:</td><td class="py-0.5 font-bold">{{ kelasGabungan }}</td></tr>
                 <tr><td class="py-0.5">Semester</td><td class="py-0.5">:</td><td class="py-0.5">{{ semester }}</td></tr>
@@ -2564,7 +2565,7 @@ const editGroups = computed(() => {
         return {
           label: mp.nama,
           fields: [
-            { key: `dn__${kls}__${mid}__sumatif`, label: 'Rata-rata Sumatif (auto)', type: 'auto', autoVal: rataSumatifBulanan(mp) },
+            { key: `dn__${kls}__${mid}__sumatif`, label: 'Rata-rata Sumatif', type: 'number', placeholder: rataSumatifBulanan(mp) == null ? 'Auto (rekap bln)' : `Auto: ${rataSumatifBulanan(mp)}`, autoVal: rataSumatifBulanan(mp) },
             { key: `dn__${kls}__${mid}__akhir`, label: 'Sumatif Akhir Semester', type: 'number' }
           ]
         }
@@ -2676,8 +2677,14 @@ function computeRataFromDraft() {
     const kls = santriAktif.value?.kelas_sekolah || ''
     ;(jenjangAktif.value.mapel || []).forEach((mp) => {
       const mid = mp.id || slug(mp.nama)
-      const a = avgOf([`dn__${kls}__${mid}__sumatif`, `dn__${kls}__${mid}__akhir`])
-      if (a != null) vals.push(a)
+      const smRaw = dn[`dn__${kls}__${mid}__sumatif`]
+      const sm =
+        smRaw !== undefined && smRaw !== null && smRaw !== ''
+          ? Number(smRaw)
+          : rataSumatifBulanan(mp)
+      const ak = Number(dn[`dn__${kls}__${mid}__akhir`])
+      const arr = [sm, ak].filter((v) => v != null && !isNaN(v) && v > 0)
+      if (arr.length) vals.push(arr.reduce((a, v) => a + v, 0) / arr.length)
     })
   } else if (sc.perKitab) {
     ;(sc.levels || []).forEach((lvl) => {

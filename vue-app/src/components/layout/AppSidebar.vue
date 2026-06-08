@@ -45,7 +45,7 @@
         © 2026 Mambaul Ulum
       </p>
       <p class="text-[9px] text-teal-600 dark:text-teal-400 font-bold tracking-widest mt-0.5">
-        v.96.0626
+        v.97.0626
       </p>
     </div>
   </aside>

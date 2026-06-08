@@ -164,13 +164,15 @@ function formatKepribadian(doc, x, y, val, options, font) {
 // KOP (logo Qiraati kiri + 4 lines center + logo MU kanan + 2-line divider)
 // ============================================================
 
-async function drawKopRapor(doc, settings, lembaga, lembagaOverride = null) {
+async function drawKopRapor(doc, settings, lembaga, lembagaOverride = null, isDiniyah = false) {
   const pageW = doc.internal.pageSize.getWidth()
   const font = doc._fontMU || 'times'
   const startY = 10
 
-  // Logo kiri (Qiraati) - Shared for all
-  const leftUrl = settings.logoQiraati || settings.logoKop || settings.logoUrl || '/logo.png'
+  // Logo kiri: Diniyah pakai LOGO PONDOK (sama dgn KOP umum), Qiraati pakai logoQiraati.
+  const pondokLogo =
+    settings.logoKop || settings.kop_logo || settings.kopLogo || settings.logoUrl || '/logo.png'
+  const leftUrl = isDiniyah ? pondokLogo : settings.logoQiraati || pondokLogo
   if (leftUrl) {
     try {
       const dataUrl = leftUrl.startsWith('data:') ? leftUrl : await imageToDataURL(leftUrl)
@@ -249,7 +251,7 @@ async function drawKopRapor(doc, settings, lembaga, lembagaOverride = null) {
     settings.kopLine4 ||
     settings.telp ||
     'Telp. 031-8674713'
-  doc.text(telp, pageW / 2, startY + 22, { align: 'center' })
+  doc.text(telp.toLowerCase(), pageW / 2, startY + 22, { align: 'center' })
 
   // 2-line divider
   const dividerY = startY + 25
@@ -285,8 +287,8 @@ function drawIdentitas(doc, y, santri, raporState) {
 
   const col1 = 16
   const col1Colon = 42
-  const rLabelX = pageW - 90
-  const rColonX = pageW - 62
+  const rLabelX = pageW - 80
+  const rColonX = pageW - 52
 
   const ta = raporState.tahun_ajaran || raporState.periode?.tahun_ajaran || ''
   const sm = raporState.semester || raporState.periode?.semester || ''
@@ -1006,7 +1008,7 @@ export async function generateRaporPdf({
   const doc = await createPdf({ kind: 'rapor', orientation: 'p', format: [215, 330] }) // v.21.51: F4 (215×330mm)
   const lembaga = raporState.lembaga || santri.lembaga || ''
 
-  let y = await drawKopRapor(doc, settings, lembaga, lembagaOverride)
+  let y = await drawKopRapor(doc, settings, lembaga, lembagaOverride, !!schema?.perKelas)
   y = drawJudulRapor(doc, y)
   y = drawIdentitas(doc, y, santri, raporState)
 

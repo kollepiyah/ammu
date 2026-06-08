@@ -1,6 +1,6 @@
 {
   "name": "portal-mu-vue",
-  "version": "96.0626",
+  "version": "97.0626",
   "private": true,
   "type": "module",
   "description": "Portal MU Vue 3 SPA — Full migration dari index.html legacy.",
@@ -27,6 +27,9 @@
     "@capacitor/status-bar": "^8.0.2",
     "chart.js": "^4.5.1",
     "firebase": "^10.14.1",
+    "exceljs": "^4.4.0",
+    "jspdf": "^2.5.1",
+    "jspdf-autotable": "^3.5.31",
     "lucide-vue-next": "^0.460.0",
     "pinia": "^2.2.6",
     "vue": "^3.5.13",
@@ -34,7 +37,7 @@
     "vue-router": "^4.4.5"
   },
   "devDependencies": {
-    "@capacitor/cli": "^7.6.5",
+    "@capacitor/cli": "^8.3.4",
     "@vitejs/plugin-vue": "^5.2.1",
     "autoprefixer": "^10.4.20",
     "postcss": "^8.4.49",

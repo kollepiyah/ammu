@@ -1,7 +1,7 @@
 # PROJECT KNOWLEDGE BASE — Ammu Online (Portal MU)
 > Dokumen onboarding untuk sesi Claude baru. Baca ini DULU sebelum mulai. **Update terakhir: 5 Juni 2026 (v.95.0626 — Generate Tagihan Khusus/infaq, ikon Tabungan→dompet, login bg base64+blur, hapus QuickActions Beranda, bottom-nav guru→Rekap, Dashboard Statistik overhaul [Top5 PTPT/PPPH klik-detail + kartu Guru Belum Input + Kelas Overload, scope kepala/PJ], rapor auto-isi Guru Kelas (fallback shift), repo rilis→kollepiyah/ammu, bump vc95). LANJUTAN sesi: FCM push (Android plugin + web/VAPID + 4 trigger server) + fix auth anon (fcm_token bisa simpan) + hapus toggle notif manual, struk dot-matrix 9.5×11 (BUKTI dikotak, terbilang baris penuh, penyetor kiri/penerima kanan), Electron Win7 dual-build (Electron 22) + dropdown versi di download login. TETAP vc95 (belum upload Play Console).**
 > ⚠️ KB KANONIK = file ini (`PROJECT-KNOWLEDGE-BASE.md`). File lama `PROJECT_KNOWLEDGE_BASE.md` (underscore) DEPRECATED — abaikan.
-> 👉 **RECAP TERBARU ada di PALING BAWAH** (cari "SESI v.96.0626 — BATCH 13 ITEM + STRUK SLIP PDF + FCM + VERIFY + NOTIF + NISN"). ⚠️ **ESC/P (dot-matrix teks) sudah DIBATALKAN di v.96** → cetak 2-ply balik ke **slip PDF grafis** (`cetakStrukSlipPdf`, 220×140mm). Sebelumnya: "SESI v.95.0626 — RECEIPT VIEWER + STRUK ESC/P", "LANJUTAN: FCM PUSH + STRUK + WIN7".
+> 👉 **RECAP TERBARU ada di PALING BAWAH** (cari "SESI v.97.0626 — RAPOR REDESIGN FULL-ACF (8 Juni 2026)"). ⭐ **CETAK SLIP 2-ply (dot-matrix 9.5") FINAL = ESC/P GRAFIS RASTER** (`utils/escpImage.js` → `print:raw`, BYPASS driver): render canvas Arial → bit-image ESC/P. Driver Windows (PDF/HTML) = kosong/kotak/feed-5cm → JANGAN dipakai utk slip 9.5. Tombol "Struk PDF" tetap PDF (preview/unduh). No.Transaksi: MU-/TB-/US-/BS-NNNddmmyy. Recap sebelumnya: "BATCH 13 ITEM + STRUK SLIP PDF + FCM + VERIFY + NOTIF + NISN", "RECEIPT VIEWER + STRUK ESC/P", "FCM PUSH + STRUK + WIN7".
 > ⏳ **STATUS:** perubahan v.95.0626 ADA di file (D:\). **Alur rilis kyai:** `tmp_recovery\_run_vite.cmd` → `git add -A && git commit --no-verify` → `npm run firebase:deploy` (web/PWA) → `npm run build:aab` (vc95 — WAJIB agar perubahan sampai ke app HP, krn Capacitor NATIVE bundle) → (desktop) `electron:publish` ke repo `kollepiyah/ammu`. Sesi v.95 = web/JS murni, tapi AAB tetap perlu utk app HP. **LANJUTAN aktivasi:** FCM butuh `google-services.json` di `vue-app/android/app/` + `npm i @capacitor/push-notifications --prefix vue-app` + `npx cap sync android` + `firebase deploy --only functions`. Win7 publish: HAPUS rilis GitHub `v95.0.626` lama dulu (electron-builder skip rilis >2 jam) lalu publish ulang. Detail lengkap di section "LANJUTAN: FCM PUSH + STRUK + WIN7" paling bawah.
 
 ---
@@ -536,3 +536,193 @@ npm run build:aab                :: vc95 (Play Console; WAJIB utk app HP — Cap
 ### J. PENDING / GOTCHA
 - **Cicil (#2)** nunggu tes kyai setelah deploy. NISN impor/ekspor massal (offer).
 - GOTCHA tetap: mount Cowork LAG/TRUNCATED → `node --check`/grep via mount kasih error PALSU; verif AUTHORITATIVE via Read/Grep (D:\) + render fungsi standalone di /tmp.
+
+
+---
+
+## SESI v.96.0626 — CETAK LANGSUNG = ESC/P GRAFIS RASTER + No.TRANSAKSI + NASABAH (6 Juni 2026, Cowork) — RECAP TERBARU, BACA INI DULU
+
+> Lanjutan v.96. versionCode TETAP **96**. Branch feature/vue-migration. **SUDAH commit + deploy + install** (commit `3dacb59` struk + `b971bb6` hapus folder duplikat; `_run_vite.cmd` EXIT=0; firebase:deploy + electron rebuild + install ulang .exe — SELESAI & terpasang). Fokus: bikin cetak struk 2-ply di EPSON LX-310 BENAR (tajam, tanpa blank), No. Transaksi rapi, Nasabah, polish layout.
+
+### ⭐ A. CETAK LANGSUNG (dot-matrix 9.5") = ESC/P GRAFIS RASTER (KEPUTUSAN FINAL)
+- **Akar masalah:** cetak lewat **driver Windows** di LX-310 SELALU bermasalah: (a) **kosong** (printPdf PDF plugin di window tersembunyi), (b) teks jadi **KOTAK abu** (rasterisasi GPU offscreen), (c) **feed kosong ~5cm** di atas tiap cetak (Top-of-Form driver — muncul BAHKAN di "Cetak Halaman Uji" Windows). App LAMA tak begitu krn cetak **langsung ke printer (tanpa driver)**.
+- **Solusi FINAL:** render slip ke `<canvas>` (font **Arial**, anisotropic **120dpi H × 72dpi V** via `ctx.setTransform(120/72,0,0,1)` biar teks TIDAK gepeng) → threshold 1-bit → encode **ESC/P bit-image** (`ESC *` mode 1 = 120dpi, `ESC 3 24` = line spacing 8/72") → base64 → kirim via IPC **`print:raw`** (winspool RAW, **BYPASS driver**). Hasil: **grafis Arial, tajam, TANPA feed 5cm**.
+- **File BARU `vue-app/src/utils/escpImage.js`:** `buildStrukSlipEscpBase64(trx)` (POS) + `buildSlipTabunganEscpBase64(mut, {saldo,santri,label})` (tabungan/uang saku). Internal: `posData`/`tabData` (data) → `drawSlip` (canvas) → `encodeEscpBase64`. Tiap cetak maju tepat 1 slip via padding line-feed (dari `posStrukSlipH`).
+- **Wiring 4 jalur 9.5** → `printRaw({ base64, deviceName })`: `PosSantriView.cetakLangsung`, `RiwayatPosView.cetakDot`, `TabunganView.cetakSlipLangsung`, `PrinterSettingsModal.tesCetak`. (Thermal non-9.5 tetap `printStruk` HTML; web non-Electron fallback `cetak...Pdf` preview.)
+- **`print:raw` IPC SUDAH ADA sejak v.95** (`RAW_PRINT_PS1` winspool, `electron/src/index.ts`) → **TIDAK perlu ubah Electron main**. Perubahan = RENDERER-only → rebuild electron + **INSTALL ULANG .exe**.
+- ⚠️ **JANGAN balik** cetak slip 9.5 ke `printPdf`(PDF) atau `printStruk`(HTML) — dua-duanya lewat driver = kosong/kotak/feed-5cm. Builder HTML (`buildStrukSlipHtml`/`buildSlipTabunganHtml`) & `cetakStrukSlipPdf` silent kini **tak dipakai utk cetak 9.5** (PDF masih utk tombol "Struk PDF" preview/unduh). `print:pdf` Electron diubah (file://+showInactive) tapi kini cuma utk **rapor batch**, bukan slip.
+
+### B. SLIP TABUNGAN & UANG SAKU = gaya POS + tombol cetak
+- Layout disamakan POS (KOP, kotak BUKTI kanan-atas, 2 kolom, rincian, total, ttd). `cetakSlipTabunganPdf` (PDF preview) di-rewrite samakan POS; `buildSlipTabunganHtml` (HTML); `buildSlipTabunganEscpBase64` (ESC/P cetak).
+- `TabunganView.simpanMutasi` (mutasi BARU) → **panel SUKSES** (modal tak ditutup) dgn tombol **Struk PDF** + **Cetak Langsung** + Transaksi Baru/Selesai (kyai pilih "tampilkan tombol cetak"). Uang Saku = mode route (`label='UANG SAKU'`).
+
+### C. No. TRANSAKSI rapi (format NNNddmmyy)
+- POS = `MU-` (sudah, field `no_struk`), **Tabungan = `TB-`**, **Uang Saku = `US-`** (di-generate `TabunganView.simpanMutasi` → field **`no_bukti`**; seq = jumlah mutasi hari ini di `mutasiSource` + 1, + ddmmyy). **Bisyaroh = `BS-`** (`BisyarohView.genBisyarohNo()` — single `saveSlipSingle` + `bulkGenerate`, field `no_bukti`).
+- Label **"No. Bukti" → "No. Transaksi"** di SEMUA slip (strukBuilder POS+tabungan, escpImage, receiptHtml, ModalPOS, panel TabunganView). Bisyaroh tetap "No. Slip" (pakai `no_bukti`). Slip pakai `mut.no_bukti || mut.id` (lama tanpa no_bukti tetap fallback id). Rules TAK whitelist ketat → field `no_bukti` aman.
+
+### D. NASABAH (khusus Tabungan/Uang Saku)
+- ttd KIRI: **setor → "Nasabah (Penyetor)" = nama WALISANTRI**; **tarik → "Nasabah (Penarik)" = nama SANTRI**. Wali = `santri.wali||nama_wali||nama_ayah||ayah.nama`. ttd KANAN tetap "Penerima" (operator/petugas). (escpImage tabData + strukBuilder cetakSlipTabunganPdf + buildSlipTabunganHtml.)
+
+### E. PENYETELAN STRUK (PengaturanKeuanganView) + POLISH
+- Field: `posStrukSlipW` (Lebar), `posStrukSlipH` (Tinggi), `posStrukTopMm` (Margin atas), **BARU `posStrukLeftMm` (Geser kanan)**.
+- **FIX "Margin atas tak bisa 0":** simpan dulu `Number(...)||6` → 0 ke-reset; ganti `Number.isFinite(...)?...:default`. Default baru: Lebar 190, Margin atas 2.
+- **FIX "Geser kanan tak berfungsi":** ternyata `escpImage.renderEscp` BELUM baca `posStrukLeftMm`/`posStrukTopMm` (field ada, wiring terlewat). Kini dibaca: geser kanan = `ctx.translate`, konten **MENYUSUT** saat digeser biar tak kepotong kanan (lebar maks 9-pin ~200mm/8"). Margin atas → start y konten.
+- **Polish layout escpImage:** font besar+tebal Arial, jarak baris longgar, **kolom kanan (Tanggal/No.Transaksi/Metode) RATA KANAN** (anti-tumpuk), **total (Jumlah/Pembayaran/Kembali/Saldo) label NEMPEL kiri nominal** (jarak 3mm via measureText).
+
+### F. CLEANUP GIT
+- Hapus folder **DUPLIKAT NYASAR** `D:\Aplikasi Project\Portal MU\Portal MU\` (~110MB, gitlink mode 160000, salinan lama Mei) yg bikin `git status` nampilin "modified: Portal MU (modified content)". `git rm --cached "Portal MU"` + `Remove-Item -Recurse` + commit (`b971bb6`).
+
+### FILE BARU/DIUBAH
+- BARU: `utils/escpImage.js`.
+- DIUBAH: `utils/strukBuilder.js` (cetakSlipTabunganPdf rewrite, buildSlipTabunganHtml/buildStrukSlipHtml + slipShellHtml, No.Transaksi, Nasabah, no_bukti); `views/TabunganView.vue` (panel cetak + no_bukti TB/US + cetakSlipLangsung→ESC/P); `views/PosSantriView.vue` + `views/RiwayatPosView.vue` (cetak 9.5→ESC/P); `views/BisyarohView.vue` (genBisyarohNo + wire single/bulk); `views/PengaturanKeuanganView.vue` (field Geser kanan + fix margin0 + default 190/2); `components/PrinterSettingsModal.vue` (tesCetak→ESC/P); `components/pos/ModalPOS.vue` (label); `utils/receiptHtml.js` (label + no_bukti). `electron/src/index.ts` (print:pdf file://+showInactive — utk rapor; tak dipakai slip).
+
+### GOTCHA / CATATAN SESI BARU
+- **Cetak slip 9.5 LX-310 WAJIB ESC/P raw (`print:raw` + escpImage)** — jangan balik ke driver (kosong/kotak/feed-5cm). App lama rapi krn raw, bukan grafis driver.
+- ESC/P bit-image: `ESC *` mode 1 (120dpi H), `ESC 3 24` (8/72" line), canvas anisotropic scaleH=120/72 (teks tak gepeng). Lebar maks ~200mm (960 dots).
+- Mount Cowork LAG/TRUNCATED tetap → `node --check`/compile via mount = error PALSU; verif AUTHORITATIVE Read/Grep (D:\).
+- Folder `Portal MU/Portal MU` SUDAH dihapus — jangan bingung lagi soal "modified: Portal MU".
+
+### PENDING (lama, belum disentuh)
+- Cicil (#2) tes; NISN impor/ekspor massal; audit RBAC/lembaga vs LOGIC GLOBAL; pensiun TPQ-shift; backlog v.93/v.95.
+- Builder HTML slip (`buildStrukSlipHtml`/`buildSlipTabunganHtml`) + slip PDF silent kini sebagian dead (cetak pakai ESC/P) — boleh dirapikan kalau mau ramping.
+- Transaksi tabungan/uang saku & slip bisyaroh **lama** tak punya `no_bukti` → reprint fallback ke id. Yang baru/regenerate dapat TB-/US-/BS-.
+
+
+---
+
+## SESI v.108 (8 Juni 2026, Cowork) — POS METODE BAYAR + BAYAR DI MUKA + KERANJANG + FILTER RIWAYAT + RESIDU BUKU INDUK + LAYOUT MAX-WIDTH — RECAP TERBARU, BACA INI DULU
+
+> Branch feature/vue-migration. **BELUM commit / build / deploy** (kyai tes dulu via `npm run dev`, lalu rebuild AAB). Semua edit diverifikasi compile (SFC) tapi belum dijalankan di app sungguhan. versionCode belum dibump (placeholder "v.108" di komentar kode).
+
+### ⭐ A. STRUK TABUNGAN — label "Nasabah" (BATALKAN sebagian keputusan v.96 D)
+- ttd kiri slip tabungan/uang saku: **"Nasabah (Penyetor)"/"Nasabah (Penarik)" → cukup "Nasabah,"** (kurung dibuang) atas permintaan kyai.
+- File: `utils/strukBuilder.js` (baris ~550 PDF + ~658 HTML thermal), `utils/escpImage.js` (`signLeftLabel` ~242). Nama nasabah (wali utk setor / santri utk tarik) TETAP terisi di bawah label.
+- Label "Penyetor," pada struk **POS penjualan** (receiptHtml/strukBuilder POS) TIDAK diubah — beda konteks.
+
+### B. POS METODE BAYAR (Tunai / Transfer — TANPA QRIS)
+- `components/pos/ModalPOS.vue`: `METODE_LIST = ['Tunai','Transfer']`, ref `metode`, `isTunai`. Saat non-tunai (Transfer): bagian "Uang diterima/uang cepat/kembalian" disembunyikan, `bayar=total`, kembalian 0. Emit `metode` di payload `simpan`.
+- `views/PosSantriView.vue`: `docData.metode = payload.metode||'Tunai'` (tersimpan ke `keuangan_buku_induk`); `lastTrx.metode = (payload.metode||'Tunai').toUpperCase()` (ganti hardcode 'TUNAI'). Struk sudah baca `trx.metode||'TUNAI'` (strukBuilder banyak titik) → otomatis tampil.
+
+### C. POS BAYAR DI MUKA (beberapa bulan ke depan)
+- Tagihan bulan depan BELUM dibuat di sistem (tagihan dibuat manual per santri per periode di TagihanView). Keputusan kyai: **POS yang MEMBUAT** tagihan baru status **lunas** utk bulan yang dibayar maju.
+- `ModalPOS.vue`: section "Bayar di muka" — pilih jenis rutin + bulan mulai (`type=month`, default bulan depan) + jumlah bulan → `addPrepay()` generate item per bulan (`{prepay:true, periode:'YYYY-MM', periode_label:'Juli 2026'}`), nominal dari `lookupNominal()` (3-lapis: per_kelas→per_lembaga→default, di-refactor dari addExtra). Anti-dobel dgn tagihan tertunggak & prepay yg sudah ada.
+- `PosSantriView.handleSimpan`: item ber-`prepay` → `setDoc(keuangan_tagihan, tagihan_{sid}_{ts}_{rand})` {kategori, periode(label), periode_kode, nominal, bayar, dibayar, status:'lunas', jatuh_tempo: periode+'-10', dibayar_via:'pos_santri', trx_id}.
+
+### D. POS KERANJANG GABUNGAN (UX — kyai: "ribet, daftar transaksi gk muncul")
+- Sebelumnya prepay item nyasar ke list "Item lain". Sekarang **SATU "Keranjang"**: tagihan tertunggak (prefilled) + item lain + bayar-di-muka tampil dalam 1 daftar `cart-row` (jenis + tag [Tagihan/Bayar muka/Item] + keterangan/periode + nominal editable + ✕). Checkbox tagihan DIHAPUS — semua tagihan otomatis di keranjang, ✕ utk buang (`removeTagihan(key)`); item via `removeItem(id)`.
+- Kontrol "Tambah pembayaran" (item lain + bayar di muka) diringkas di atas keranjang. `total` & `simpan` tak lagi pakai `r.checked` (semua tagihanRows dihitung).
+
+### E. DASHBOARD — hitungan Buku Induk jujur
+- `views/KeuanganDashboardView.vue`: dulu `bukuInduk.length` (mentah) → tampil 4 walau ledger 0. Tambah computed **`bukuIndukValid`** (buang kategori/sumber 'tabungan' + wajib tanggal `^\d{4}-\d{2}`); card pakai `bukuIndukValid.length`. (composable useKeuangan TAK diubah.)
+
+### F. BUKU INDUK — tombol "Bersihkan residu" (super_admin)
+- `views/BukuIndukView.vue`: computed **`residuBuku`** (entri tabungan-residu ATAU tanpa tanggal valid = yg ke-hitung dashboard tapi tak tampil ledger) + fungsi **`bersihkanResidu()`** (confirm → `deleteOne` per id → `writeAuditLog` action `cleanup_residu`). Banner kuning di atas list (v-if isAdmin && residuBuku.length>0) dgn tombol "Bersihkan residu (N)".
+- **PENDING kyai**: klik tombol ini di app utk benar2 hapus 4 dok sampah (agen tak bisa akses Firestore langsung).
+
+### G. FILTER TAHUN/BULAN/TANGGAL di Riwayat
+- `views/RiwayatPosView.vue`: ganti single date `filterTanggal` → 3 select **filterYear/filterMonth/filterDay** (+ `years` computed dari data). Filter di computed `transaksi`.
+- `views/TabunganView.vue` (dipakai **Tabungan & Uang Saku** via route mode): panel "Semua Mutasi" dapat 3 select **mutFilterYear/Month/Day** + `mutYears` + computed **`mutasiFiltered`** (v-for tabel pakai ini; count "X / Y mutasi"; empty state ikut filter).
+
+### H. LAYOUT — fix white space layar besar (TERPUSAT, 1 file)
+- Keluhan kyai: di layar besar banyak white space, card terlihat kecil/melompong (full-bleed, konten meregang).
+- `components/layout/AppLayout.vue`: bungkus `<router-view>` dgn **`<div class="mx-auto w-full max-w-[1400px]">`**. ≤1400px tak berubah (HP/tablet/laptop full); >1400px konten ditengahkan & compact. Angka 1400 mudah disetel. (Alternatif kalau kyai mau card MENGISI penuh layar besar: tambah kolom `xl:` di grid, belum dilakukan.)
+
+### FILE DIUBAH SESI INI
+- `components/pos/ModalPOS.vue` (metode + bayar di muka + keranjang gabungan)
+- `views/PosSantriView.vue` (metode ke buku induk/struk + buat tagihan prepay lunas)
+- `utils/strukBuilder.js` + `utils/escpImage.js` (label Nasabah)
+- `views/KeuanganDashboardView.vue` (bukuIndukValid)
+- `views/BukuIndukView.vue` (residuBuku + bersihkanResidu + banner)
+- `views/RiwayatPosView.vue` (filter Y/M/D)
+- `views/TabunganView.vue` (filter Y/M/D panel Semua Mutasi)
+- `components/layout/AppLayout.vue` (max-width wrapper)
+
+### ⚠️ GOTCHA PENTING (BACA — beda dari sesi lalu)
+- **Edit/Write tool MERUSAK file di Windows mount sesi ini** (TRUNCATE + inject NULL byte): PosSantriView & ModalPOS ter-truncate di tengah, strukBuilder dapat 5 null byte. **POLA AMAN dipakai: restore `git show HEAD:path` → /tmp → patch via `python3` (assert count==1) → verify → `cp` ke target.** JANGAN andalkan Edit tool utk file penting; kalaupun pakai, langsung verify null/tail.
+- **Build penuh TIDAK BISA di sandbox**: `node_modules` terinstall utk **Windows** → rollup (`@rollup/rollup-linux-x64-gnu`) & esbuild (`@esbuild/win32-x64`) native binary salah platform. `npm run build`/vite/esbuild GAGAL di Linux sandbox — itu NORMAL, bukan error kode. **Verifikasi kompilasi pakai parser murni-JS**: `@vue/compiler-sfc` (parse+compileScript+compileTemplate) utk .vue, `@babel/parser` utk .js (lihat /tmp/vchk*.mjs pola). Build sungguhan di mesin kyai (Windows).
+- Capacitor: kyai bilang mode **NATIVE** (bukan remote), TAPI `capacitor.config.json` ter-commit MASIH ada `server.url: https://ammuonline.web.app` + `webDir:"public"` (komentar build-aab.cjs juga "REMOTE"). **Belum disinkronkan** — kalau benar mau native murni, `server.url` perlu dihapus & `webDir` ke build Vue. Konfirmasi ke kyai. (Untuk tes fitur web: `npm run dev`; untuk app native: `npm run build:aab` lalu install.)
+
+### PENDING SESI INI
+- Kyai TES via `npm run dev` (hot-reload): metode bayar, bayar di muka, keranjang, filter riwayat, layout 1400px (mungkin perlu disetel 1280/lain), tombol Bersihkan residu (klik utk hapus 4 dok).
+- Belum commit/build/deploy. AAB native vs config remote perlu diperjelas.
+- Pending lama tetap: Cicil(#2) tes; NISN massal; audit RBAC/lembaga; pensiun TPQ-shift.
+
+---
+
+## SESI v.96.0626 — AUDIT MENYELURUH + REMEDIASI P0/P1 + PERFORMA (8 Juni 2026, Cowork) — RECAP TERBARU, BACA INI DULU
+
+> Audit menyeluruh (logika/filter/dead-code/UI-UX/performa/keamanan) + eksekusi remediasi berurutan P0→P1→P2. versionCode TETAP 96 (TIDAK dibump). Branch feature/vue-migration. Laporan audit lengkap: `AUDIT-COWORK-08JUN2026-MENYELURUH.md`.
+> ⚠️ GOTCHA mount Cowork sesi ini: **bash mount TIDAK BISA hapus file** (rm/unlink ditolak "Operation not permitted") & **read via bash sering STALE** pasca Edit/cp. → Verifikasi AUTHORITATIVE pakai Read tool; edit kode via python→cp + validasi `@vue/compiler-sfc`/`@babel/parser` di /tmp. Build asli = kyai `.\tmp_recovery\_run_vite.cmd` (SUDAH HIJAU, VITE_EXITCODE=0).
+
+### STATUS DEPLOY (PENTING untuk sesi baru)
+- **Committed:** HANYA #9 (`d0adced` — stop-track build output + keystore lama). SEMUA perubahan lain MASIH uncommitted (working tree) → kyai commit besar nanti.
+- **Sudah LIVE di web** (kyai firebase:deploy saat setup App Check): App Check init (`firebase.js`) + CSP reCAPTCHA (`firebase.json`).
+- **BELUM deploy:** #11/#12/#13/#16/#17 + App Check sinkron + messaging lazy → kyai WAJIB `npm run firebase:deploy` (web) + `npm run build:aab` (native) final.
+- **Rules hardening BELUM deploy:** kyai `firebase deploy --only firestore:rules` (`firestore.rules` sudah diupdate; backup `firestore.rules.bak.pre-stage2`).
+- **App Check:** Web App "mambaululum" REGISTERED (reCAPTCHA v3); Firestore+Storage = **MONITOR** (BELUM Enforce). Site key di `vue-app/.env.local` (`VITE_APPCHECK_RECAPTCHA_KEY`, gitignored). Android `app.ammu.id` BELUM register (native pakai debug token/Play Integrity nanti). Flip Enforce setelah verified tinggi (WEB dulu).
+- **npm install SUDAH:** jspdf, jspdf-autotable, exceljs (di vue-app).
+
+### DIKERJAKAN (per task)
+- **#8 KEAMANAN (P0):** App Check reCAPTCHA v3 — init SINKRON `services/firebase.js` (env-gated; key kosong=OFF). CSP `firebase.json` +`www.google.com`+`recaptcha.net` (script/script-elem/frame, 3 site). `firestore.rules` hardening MERGE-SAFE (keuangan_tagihan/pembayaran/hutang_piutang cek tipe kondisional + supervisi_catatan cap teks). Model = custom-auth + Anonymous TANPA role claim → rules TAK bisa tegakkan peran; App Check = gate per-app (lever utama). Role enforcement penuh = custom claims (future, BELUM).
+- **#9 HIGIENE REPO (P0, COMMITTED d0adced):** gitignore `public/vue/`+`electron/app/`+`*.keystore`; `git rm --cached` 213 file build-artifact + keystore lama. Hentikan churn 412 file.
+- **#10 CAPACITOR (P1):** `@capacitor/cli` ^7.6.5→^8.3.4 (vue-app). Komentar `build-aab.cjs` diluruskan ke NATIVE (build = vue-app/android, webDir:dist). Root `android/`+`capacitor.config.json` = legacy REMOTE vc70 MATI (hapus = #14).
+- **#11 PDF/EXCEL OFFLINE (P1):** `services/pdf.js` + `composables/useExcel.js` → dynamic-import npm (jspdf/jspdf-autotable/exceljs) ganti CDN; html2pdf+pdfmake DEAD dihapus. + 3 dep di vue-app/package.json.
+- **#12 SCOPE KEPALA (P1):** `useStatistikScope.js` +`scopedSantriAll`; StatistikView 8 computed KPI/chart `santriRaw`→`scopedSantriAll` → Kepala/PJ lihat lembaganya saja. (RekapDiniyah/InputBulanan masih santriRaw TAPI filter-driven = follow-up lunak; AbsensiGuru N/A.)
+- **#13 POS ANTI-DOBEL (P1):** ModalPOS.addPrepay + prop `prepaidPeriodes` (dari PosSantriView.openModal `seen` incl. LUNAS) → cegah tagihan bayar-di-muka ganda lintas-sesi. Cicil: logika BENAR (review), tinggal tes fungsional kyai.
+- **#15 DEAD CODE (P2):** orphan `DashboardQuickActions.vue`+`useKartuKenaikan.js` (0 ref) → kyai `git rm` (PowerShell: `Remove-Item` lock dulu). Dead-export `strukBuilder` (buildStrukSlipHtml/buildSlipTabunganHtml) DIBIARKAN (kritikal, lazy, nol biaya); **buildStrukHtmlWide MASIH dipakai internal** (L909/982).
+- **#16 LAYOUT (P2):** disatukan **1600px** (AppLayout cap + main.css density, buang 1840 yg konflik) + grid densify → "kompatibel semua layar" (kyai).
+- **#17 PERFORMA:** vite `manualChunks` pisah jspdf→`vendor-pdf`, exceljs→`vendor-excel`, firebase/messaging→`vendor-fcm` (lazy, keluar boot). `usePushNotifications` messaging dynamic-import. **Boot vendor 1.88MB → 545KB** (exceljs 940KB + pdf 391KB + fcm 26KB kini LAZY). Lighthouse 36 ter-skew IndexedDB/login → RETEST INCOGNITO.
+- **#14 SKIP** (kyai): bersih legacy ~674MB (root public/+android/), tmp_recovery, 93 .md, dup KB underscore.
+
+### FILE DIUBAH (uncommitted)
+`firebase.json`, `firestore.rules`(+.bak.pre-stage2), `.gitignore`(+vue-app/.gitignore), `scripts/build-aab.cjs`; vue-app: `services/{firebase,pdf}.js`, `composables/{useExcel,usePushNotifications,useStatistikScope}.js`, `views/{StatistikView,PosSantriView}.vue`, `components/pos/ModalPOS.vue`, `components/layout/AppLayout.vue`, `assets/main.css`, `vite.config.js`, `package.json`, `.env.local`(gitignored). BARU: `firestore.rules.stage2-proposed`(=live, boleh hapus), `AUDIT-COWORK-08JUN2026-MENYELURUH.md`, `tmp_recovery/_commit_task9_higiene.cmd`. Inert sisa: `vue-app/node_modules/_sc.mjs`,`_sc2.mjs` (gitignored).
+
+### SISA KYAI (urut, PowerShell — selalu `cd "D:\Aplikasi Project\Portal MU";`)
+1. `.\tmp_recovery\_run_vite.cmd` (final cek; sudah hijau).
+2. `git rm` 2 orphan (#15): `if (Test-Path ".git\index.lock"){Remove-Item -Force ".git\index.lock"}` lalu `git rm vue-app/src/components/dashboard/DashboardQuickActions.vue vue-app/src/composables/useKartuKenaikan.js`.
+3. Deploy: `firebase deploy --only firestore:rules` ; `npm run firebase:deploy` ; `npm run build:aab`.
+4. App Check → **Enforce** setelah monitor verified (web dulu).
+5. Commit besar + push.
+6. Retest Lighthouse **incognito**.
+
+### GOTCHA SESI INI (untuk sesi baru)
+- Mount Cowork: TIDAK bisa hapus file + read bash STALE pasca-edit → Read tool authoritative; edit via python→cp + validasi parser di /tmp.
+- `npm install --prefix vue-app` DARI ROOT salah baca package.json root ("removed 2, changed 1" bukan "added") → install dari DALAM: `cd vue-app; npm install`.
+- vite `manualChunks` `else→'vendor'` MELUMAT dynamic-import jadi eager → WAJIB rule eksplisit per lib berat (vendor-pdf/excel/fcm) supaya tetap lazy.
+- Kyai pakai **PowerShell** → sintaks PS (`Test-Path`/`Remove-Item`), BUKAN CMD (`if exist...del`). Beri perintah lengkap dgn `cd "D:\..."`.
+- App Check Enforce: hati-hati FCM token + native (belum register) → enforce WEB dulu.
+
+
+---
+
+## SESI v.97.0626 — RAPOR REDESIGN FULL-ACF (8 Juni 2026)
+> Redesign total fitur **Rapor** (Qiraati + Diniyah) sesuai SKEMA RAPOR kyai. Web/JS murni (versionCode native TETAP, hanya bump display 96→97). File: `utils/predikat.js`, `utils/raporPdf.js`, `views/RaporView.vue`, `views/LembagaDetailView.vue`, `views/PengaturanView.vue`. **Preview on-screen == hasil PDF (paritas dijaga).**
+
+### Hasil akhir (spec kyai)
+- **Header rapor:** judul "SURAT KETERANGAN HASIL PENDIDIKAN". Identitas **2 kolom rata kiri**, titik dua sejajar: kiri = Nama Santri/NISN/NIS, kanan = Kelas(gabungan "VII/PTPT 1")/Semester/Tahun Ajaran (digeser ke kanan, `rLabelX=pageW-80`).
+- **Predikat (EDITABLE):** Mumtaz/Jayyid/Maqbul/Rasib (aksara Arab di layar via font, di PDF via canvas→image). Skala bisa diedit admin (label+nilai minimum) di Lembaga→Rapor. Sumber tunggal `settings.predikatScale` → `predikat.js predikatNilai(nilai, scale)`. Default min: 81/71/61/0.
+- **Adab DIHAPUS total** (stripAdabSchema + migrasi override lama PTPT/PPPH yg masih ber-Adab → rebuild via buildSchema).
+- **Qiraati:** PTPT (kelasJuz, kolom Tgl Khotam auto dari kartu kenaikan, Istimror/Kelancaran/Fashohah/Tajwid + Predikat). PPPH = **4 kitab** (Arba'in/Riyadhus/Bukhari/Muslim) perKitab. TPQ + Pra PTPT tanpa Adab.
+- **Diniyah (SDI/SMP/SMA):** kolom No|Mapel|KKM|**Rata-rata Sumatif**|**Sumatif Akhir Semester**|Predikat (Sumatif & Akhir TERPISAH). Rata-rata Sumatif = AVERAGE rekap bulanan per semester (auto) **TAPI bisa di-override manual** di editor (input number, kosong=auto, placeholder "Auto: N"). Absensi auto dari absensi bulanan.
+- **KOP per-lembaga (JANGAN diubah strukturnya):** 2 logo. **Logo kiri:** Diniyah = **logo pondok** (`settings.logoKop`, sama KOP umum); Qiraati = `settings.logoQiraati`. **Logo kanan:** per-lembaga `lembagaOverride.kop_logo`. Fallback `/logo.png` agar selalu 2 logo. **KOP line 4 dipaksa lowercase** (utk email; layar dulu `titleCase` → diganti `.toLowerCase()`). Diniyah dideteksi via `schema.perKelas` (diteruskan ke `drawKopRapor(...,isDiniyah)`).
+- **TTD:** Qiraati = Wali Santri | Guru Kelas (Nama+No.EKGQ auto dari akun guru) | Kepala/PJ. PPPH→PJ PPPH. Diniyah = Wali Santri | Wali Kelas | Kepala (SDI→"Kepala SDI", PKBM→"Kepala PKBM"). TTD gambar auto dari `guru.tanda_tangan` (bukan `ttd_b64`). No.EKGQ = angka saja tanpa label.
+- **Margin PDF ~1.5cm.** Tabel "Nilai Rata-rata" full-width (margin 15, tableWidth 185).
+
+### FULL ACF (semua editable di Master Data → Lembaga → Pengaturan Rapor)
+- **Struktur Field Rapor** (Qiraati): auto-load template default kalau belum ada override; editable (kelasJuz/perKitab/perLevel/sections).
+- **Mata Pelajaran Diniyah + KKM:** section "Mata Pelajaran" — tiap mapel ada input **nama + KKM** per kelas (+"Isi default"). Nama → `settings.rekapDiniyahMapel`; KKM → `settings.rekapDiniyahKKM[kelas][i]` (paralel index). RaporView `buildDiniyahSchemaFromSetting` baca KKM dari situ.
+- **Predikat:** editor label+min (read-only info card LAMA diganti editor editable) → `settings.predikatScale`.
+- **KOP per-lembaga:** Edit Info (kop_line1-4 + kop_logo). Logo kiri global Diniyah = Pengaturan Web → Logo Kop.
+
+### Arsitektur kunci (RaporView.vue)
+- Subscribe: `rapor_semester`, `rekap_diniyah`, `absensi_santri_ngaji_bulanan`, `absensi_santri_sekolah_bulanan`.
+- `schema = computed(stripAdabSchema(_schemaRaw))`. `_schemaRaw`: override `settings.raporSchemas[lembaga]` > `buildSchema()`; migrasi auto utk PTPT/PPPH stale.
+- Diniyah pakai `buildDiniyahSchemaFromSetting` (mapel dari rekapDiniyahMapel, KKM dari rekapDiniyahKKM) — BUKAN raporSchemas.
+- `nilaiSumatif(mp)`: stored manual > auto rekap bulanan. `buildRaporStateFor`: inject auto sumatif+absensi utk PDF (manual override menang). Editor inline: `startEdit/draft/simpanRapor` (setDoc merge → `rapor_semester.data_nilai`). Key: `dn__{kelas}__{mid}__sumatif|akhir`, `ppph__{lvl}__{field}`, `kj__juz_{n}__{field}`, `pra__{lvl}__{kh}__{field}`.
+
+### CARA EDIT (workflow Cowork sesi ini — sama dgn audit)
+- Mount bash TIDAK bisa hapus file + read STALE pasca-cp → edit via python→`/tmp` + validasi `@vue/compiler-sfc`(.vue)/`@babel/parser`(.js) di /tmp, lalu `cp` ke mount. Validasi AUTHORITATIVE = DC copy ke nama baru lalu parse (hindari stale).
+- Build kyai: `.\tmp_recovery\_run_vite.cmd` (VITE_EXITCODE=0). Deploy web: `npm run firebase:deploy`.
+
+### ⚠️ ACTION KYAI sisa
+- **Hapus lembaga lama "P3H"** di Master Data → Lembaga (sekarang = PPPH); pindahkan santrinya ke PPPH. Kode sudah alias p3h→ppph tapi entri lembaga lama harus dihapus manual.
