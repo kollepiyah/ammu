@@ -1,8 +1,8 @@
 <template>
   <div class="p-3 md:p-5 max-w-2xl mx-auto">
     <div class="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)] shadow-sm overflow-hidden">
-      <!-- Header + aksi -->
-      <div class="px-4 py-3 border-b border-[var(--border-subtle)] flex items-center justify-between gap-2">
+      <!-- Header + aksi — v.98: di Electron judul+aksi pindah ke pita "Aksi Halaman" -->
+      <div v-if="!isDesktop" class="px-4 py-3 border-b border-[var(--border-subtle)] flex items-center justify-between gap-2">
         <h2 class="text-base font-black text-[var(--text-primary)]">
           <i class="fas fa-bell mr-1.5 text-cyan-600"></i>Notifikasi
         </h2>
@@ -83,12 +83,23 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useNotifications } from '@/composables/useNotifications'
+import { useDesktopShell } from '@/composables/useDesktopShell'
+import { definePageActions } from '@/composables/useRibbonContext'
 
 const router = useRouter()
 const { items, itemsUnread, unreadCount, markAllRead, clearAll } = useNotifications()
 
 const activeTab = ref('unread')
 const visibleList = computed(() => (activeTab.value === 'unread' ? itemsUnread.value : items.value))
+
+// v.98 full-native (Electron): aksi notifikasi -> grup pita "Aksi Halaman"; header bar disembunyikan
+const { isElectron: isDesktop } = useDesktopShell()
+definePageActions(() => {
+  const acts = []
+  if (unreadCount.value > 0) acts.push({ label: 'Tandai Dibaca', icon: 'check', primary: true, on: markAllRead })
+  if (items.value.length > 0) acts.push({ label: 'Bersihkan', icon: 'archive', on: clearAll })
+  return acts
+})
 
 function bukaItem(it) {
   markAllRead()

@@ -1,6 +1,7 @@
 <template>
   <div class="p-3 md:p-5 max-w-5xl mx-auto space-y-4">
     <div
+      v-if="!isDesktop"
       class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm"
     >
       <h1 class="text-base md:text-lg font-black">
@@ -46,7 +47,9 @@ import { formatKelasLabel } from '@/composables/useLembaga'
 import { ref, onMounted } from 'vue'
 import { doc, getDoc, onSnapshot } from 'firebase/firestore'
 import { db } from '@/services/firebase'
+import { useDesktopShell } from '@/composables/useDesktopShell'
 const lembagaList = ref([])
+const { isElectron: isDesktop } = useDesktopShell()
 let unsub = null
 onMounted(() => {
   unsub = onSnapshot(doc(db, 'master', 'lembaga'), (snap) => {

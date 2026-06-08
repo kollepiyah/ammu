@@ -2,7 +2,7 @@
   <!-- v.21.84.0527: Kritik & Saran — match legacy (form sesi + admin reply + self-list) -->
   <div class="p-3 md:p-5 space-y-4">
     <!-- Header -->
-    <div class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm">
+    <div v-if="!isDesktop" class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm">
       <h1 class="text-base md:text-lg font-black">
         <i class="fas fa-comment-dots text-teal-600 mr-2"></i>Kritik &amp; Saran
       </h1>
@@ -202,10 +202,12 @@ import { db } from '@/services/firebase'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
+import { useDesktopShell } from '@/composables/useDesktopShell'
 
 const auth = useAuthStore()
 const toast = useToast()
 const confirmDlg = useConfirm()
+const { isElectron: isDesktop } = useDesktopShell()
 
 const items = ref([])
 const loading = ref(true)

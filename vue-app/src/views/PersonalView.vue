@@ -2,7 +2,7 @@
   <!-- v.21.84.0527: Personal — data statistik pribadi guru/pegawai (kehadiran + bisyaroh) -->
   <div class="p-3 md:p-5 space-y-4">
     <!-- Header -->
-    <div class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm">
+    <div v-if="!isDesktop" class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm">
       <h1 class="text-base md:text-lg font-black">
         <i class="fas fa-id-badge text-teal-600 mr-2"></i>Personal
       </h1>
@@ -200,8 +200,10 @@ import { fmtRp, hitungLamaMengajar } from '@/utils/format'
 // v.21.110.0527: catatan supervisi
 import { useToast } from '@/composables/useToast'
 import { isKepalaLembaga } from '@/utils/roleScope'
+import { useDesktopShell } from '@/composables/useDesktopShell'
 
 const auth = useAuthStore()
+const { isElectron: isDesktop } = useDesktopShell()
 const guru = ref(null)
 const slipRaw = ref([])
 const absensiGuru = ref([])
