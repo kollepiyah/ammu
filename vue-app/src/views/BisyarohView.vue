@@ -411,6 +411,15 @@
             >
               <i :class="['fas', exportingRekap ? 'fa-spinner fa-spin' : 'fa-file-pdf']"></i>Export PDF
             </button>
+            <!-- v.97.0626: ekspor daftar pencairan via BMT (Excel) untuk disetor ke BMT -->
+            <button
+              v-if="isAdminKeu && filteredSlips.length > 0"
+              @click="exportLaporanBmt"
+              title="Ekspor daftar pencairan via BMT (Excel) — slip non-cash di filter periode ini"
+              class="text-[10px] font-black bg-indigo-600 hover:bg-indigo-700 text-white px-2.5 py-1 rounded-lg flex items-center gap-1"
+            >
+              <i class="fas fa-file-excel"></i>Laporan BMT
+            </button>
             <!-- v.21.100.0527: bulk select hapus -->
             <label v-if="isAdmin && filteredSlips.length > 0" class="flex items-center gap-1 text-[10px] font-bold cursor-pointer">
               <input
@@ -427,6 +436,22 @@
               class="text-[10px] font-black bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1 rounded-lg"
             >
               <i class="fas fa-money-check-alt mr-1"></i>Cairkan &amp; Catat ({{ selectedSlip.size }})
+            </button>
+            <button
+              v-if="isAdminKeu && selectedSlip.size > 0"
+              @click="tandaiMetode('cash')"
+              title="Tandai slip terpilih dibayar Cash (tidak masuk laporan BMT)"
+              class="text-[10px] font-black bg-amber-500 hover:bg-amber-600 text-white px-2.5 py-1 rounded-lg"
+            >
+              <i class="fas fa-money-bill-wave mr-1"></i>Tandai Cash
+            </button>
+            <button
+              v-if="isAdminKeu && selectedSlip.size > 0"
+              @click="tandaiMetode('bmt')"
+              title="Kembalikan slip terpilih ke metode BMT"
+              class="text-[10px] font-black bg-slate-500 hover:bg-slate-600 text-white px-2.5 py-1 rounded-lg"
+            >
+              <i class="fas fa-university mr-1"></i>Tandai BMT
             </button>
             <button
               v-if="isAdmin && selectedSlip.size > 0"
@@ -475,6 +500,8 @@
               <span class="text-[10px] bg-cyan-100 text-cyan-800 font-bold px-2 py-0.5 rounded">{{
                 slip.periode
               }}</span>
+              <span v-if="String(slip.metode_cair || '') === 'cash'" class="text-[10px] bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded">Cash</span>
+              <span v-if="String(slip.status_cair || '') === 'cair'" class="text-[10px] bg-emerald-100 text-emerald-700 font-bold px-2 py-0.5 rounded"><i class="fas fa-check"></i> Cair</span>
               <button
                 @click="openSlipReceipt(slip)"
                 title="Lihat slip bisyaroh"
@@ -617,6 +644,7 @@ import { useSettingsStore } from '@/stores/settings'
 import { useKeuangan } from '@/composables/useKeuangan'
 import { useGuru } from '@/composables/useGuru'
 import { useToast } from '@/composables/useToast'
+import { useExcel } from '@/composables/useExcel'
 import { fmtRp, getNamaGuruGelar } from '@/utils/format'
 import ReceiptModal from '@/components/ReceiptModal.vue'
 import { buildSlipBisyarohHtml } from '@/utils/receiptHtml'
@@ -764,18 +792,19 @@ async function cairkanTerpilih() {
   for (const s of belum) {
     try {
       const th = _slipTakeHome(s)
+      const metode = String(s.metode_cair || '') === 'cash' ? 'tunai' : 'bmt'
       const biId = `gaji_${s.id}`
       await setDoc(doc(db, 'keuangan_buku_induk', biId), {
         id: biId,
         tipe: 'keluar',
         nominal: th,
         tanggal: tgl,
-        keterangan: `Bisyaroh ${s.periode || ''} — ${s.guru_nama || ''}`.trim(),
+        keterangan: `Bisyaroh ${s.periode || ''} — ${s.guru_nama || ''} (${metode === 'tunai' ? 'Tunai' : 'BMT'})`.trim(),
         sumber: 'gaji',
         kategori: 'Bisyaroh',
         guru_id: s.guru_id != null ? s.guru_id : '',
         slip_id: String(s.id),
-        metode: 'bmt',
+        metode,
         operator,
         created_at: serverTimestamp()
       })
@@ -783,7 +812,7 @@ async function cairkanTerpilih() {
         status_cair: 'cair',
         dicairkan_at: serverTimestamp(),
         dicairkan_by: operator,
-        dicairkan_via: 'bmt_manual',
+        dicairkan_via: metode === 'tunai' ? 'cash' : 'bmt_manual',
         buku_induk_id: biId
       }, { merge: true })
       ok++
@@ -802,6 +831,64 @@ async function cairkanTerpilih() {
   })
   if (fail > 0) toast.warning(`${ok} dicairkan & dicatat, ${fail} gagal — cek console`)
   else toast.success(`${ok} slip dicairkan & tercatat di Buku Induk`)
+}
+
+// v.97.0626: tandai metode pencairan slip terpilih (default BMT; tandai 'cash' utk yg dibayar tunai).
+async function tandaiMetode(metode) {
+  if (!isAdminKeu.value) return
+  const ids = Array.from(selectedSlip.value)
+  if (ids.length === 0) return
+  const val = metode === 'cash' ? 'cash' : 'bmt'
+  let ok = 0
+  for (const id of ids) {
+    try {
+      await setDoc(doc(db, 'keuangan_gaji', String(id)), { metode_cair: val }, { merge: true })
+      ok++
+    } catch (e) { console.warn('[tandaiMetode]', id, e.message) }
+  }
+  selectedSlip.value = new Set()
+  toast.success(`${ok} slip ditandai ${val === 'cash' ? 'Cash' : 'BMT'}`)
+}
+
+// v.97.0626: ekspor daftar pencairan via BMT (Excel) — slip non-cash & belum cair di filter periode aktif.
+async function exportLaporanBmt() {
+  if (!isAdminKeu.value) return
+  const target = filteredSlips.value.filter(
+    (s) => String(s.metode_cair || '') !== 'cash' && String(s.status_cair || '') !== 'cair' && _slipTakeHome(s) > 0
+  )
+  if (target.length === 0) { toast.info('Tidak ada slip via BMT yang perlu dicairkan di filter ini'); return }
+  const guruById = (id) => (guruRaw.value || []).find((g) => String(g.id) === String(id)) || {}
+  const rows = target.map((s, i) => {
+    const g = guruById(s.guru_id)
+    return {
+      no: i + 1,
+      nama: s.guru_nama || g.nama || '',
+      rek_bmt: g.rek_bmt || '',
+      nominal: _slipTakeHome(s),
+      periode: s.periode || ''
+    }
+  })
+  const total = rows.reduce((a, r) => a + Number(r.nominal || 0), 0)
+  rows.push({ no: '', nama: 'TOTAL', rek_bmt: '', nominal: total, periode: '' })
+  const per = filterPeriode.value || rows[0]?.periode || 'semua'
+  try {
+    const { exportSimple } = useExcel()
+    await exportSimple(rows, {
+      filename: `Laporan_Pencairan_BMT_${per}.xlsx`,
+      sheetName: 'Pencairan BMT',
+      title: `Laporan Pencairan Bisyaroh via BMT — ${per}`,
+      columns: [
+        { key: 'no', header: 'No', width: 6 },
+        { key: 'nama', header: 'Nama Guru/Pegawai', width: 30 },
+        { key: 'rek_bmt', header: 'No. Rekening BMT', width: 22 },
+        { key: 'nominal', header: 'Nominal (Rp)', width: 16 },
+        { key: 'periode', header: 'Periode', width: 14 }
+      ]
+    })
+    toast.success(`Laporan BMT (${target.length} guru) diekspor`)
+  } catch (e) {
+    toast.error('Gagal ekspor: ' + (e.message || e))
+  }
 }
 const toast = useToast()
 
