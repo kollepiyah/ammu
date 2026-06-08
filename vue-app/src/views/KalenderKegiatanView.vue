@@ -38,23 +38,26 @@
           >
             <i class="fas fa-chevron-right text-[var(--text-secondary)] text-xs"></i>
           </button>
-          <!-- v.21.114.0528: Seed libur nasional Indonesia untuk tahun yg ditampilkan -->
-          <button
-            v-if="bisaEdit"
-            @click="seedLiburNasional"
-            class="text-xs font-bold px-3 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 transition cursor-pointer flex items-center gap-1.5"
-            title="Tambahkan libur nasional Indonesia untuk tahun ini"
-          >
-            <i class="fas fa-flag text-[10px]"></i>Libur Nasional
-          </button>
-          <button
-            v-if="bisaEdit"
-            @click="openModal()"
-            class="text-xs font-bold px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-700 text-white transition cursor-pointer flex items-center gap-1.5"
-            title="Tambah kegiatan"
-          >
-            <i class="fas fa-plus text-[10px]"></i>Tambah
-          </button>
+          <!-- v.98: di Electron tombol aksi pindah ke pita "Aksi Halaman"; navigasi bulan tetap di sini -->
+          <template v-if="!isDesktop">
+            <!-- v.21.114.0528: Seed libur nasional Indonesia untuk tahun yg ditampilkan -->
+            <button
+              v-if="bisaEdit"
+              @click="seedLiburNasional"
+              class="text-xs font-bold px-3 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 transition cursor-pointer flex items-center gap-1.5"
+              title="Tambahkan libur nasional Indonesia untuk tahun ini"
+            >
+              <i class="fas fa-flag text-[10px]"></i>Libur Nasional
+            </button>
+            <button
+              v-if="bisaEdit"
+              @click="openModal()"
+              class="text-xs font-bold px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-700 text-white transition cursor-pointer flex items-center gap-1.5"
+              title="Tambah kegiatan"
+            >
+              <i class="fas fa-plus text-[10px]"></i>Tambah
+            </button>
+          </template>
         </div>
       </div>
     </div>
@@ -306,6 +309,8 @@
 
 <script setup>
 import { ref, reactive, computed } from 'vue'
+import { useDesktopShell } from '@/composables/useDesktopShell'
+import { definePageActions } from '@/composables/useRibbonContext'
 import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
@@ -562,4 +567,14 @@ async function hapus() {
     saving.value = false
   }
 }
+
+// v.98 full-native (Electron): aksi kalender -> grup pita "Aksi Halaman" (navigasi bulan tetap di halaman)
+const { isElectron: isDesktop } = useDesktopShell()
+definePageActions(() => {
+  if (!bisaEdit.value) return []
+  return [
+    { label: 'Tambah Kegiatan', icon: 'plus', primary: true, on: () => openModal() },
+    { label: 'Libur Nasional', icon: 'calendar', on: seedLiburNasional }
+  ]
+})
 </script>

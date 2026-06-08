@@ -22,6 +22,7 @@
           Generate slip bisyaroh bulanan, terhubung dengan absensi &amp; bisyaroh pokok.
         </p>
         <div
+          v-if="!isDesktop"
           class="flex gap-2 border-b border-[var(--border-subtle)] mt-4 overflow-x-auto"
         >
           <button
@@ -633,6 +634,8 @@
 // BisyarohView — slip bisyaroh guru/pegawai
 // v.21.10+ line_items system, bulk generate dari settings, kirim WA slip
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useDesktopShell } from '@/composables/useDesktopShell'
+import { definePageActions } from '@/composables/useRibbonContext'
 import { subscribeColl } from '@/services/firestore'
 import { doc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore'
 import { deleteOne } from '@/services/firestore' // v.91.0626: hapus = backup audit_log dulu
@@ -931,6 +934,17 @@ const tahun = ref(now.getFullYear())
 
 // ─── Tab state ────────────────────────────────────────────────────────────
 const mainTab = ref('generate')
+
+// v.98 full-native (Electron): sub-menu Bisyaroh -> grup pita "Aksi Halaman"; tab in-page disembunyikan
+const { isElectron: isDesktop } = useDesktopShell()
+definePageActions(() => {
+  if (!isAdminKeu.value) return []
+  return [
+    { label: 'Generate Slip', icon: 'doc', primary: mainTab.value === 'generate', on: () => { mainTab.value = 'generate' } },
+    { label: 'Riwayat Slip', icon: 'refresh', primary: mainTab.value === 'riwayat', on: () => { mainTab.value = 'riwayat' } },
+    { label: 'Ekspor Rekap', icon: 'download', on: exportRekap }
+  ]
+})
 const subTab = ref('single')
 
 // ─── Single (Per Guru) state ──────────────────────────────────────────────
