@@ -1,7 +1,8 @@
 <template>
   <div class="p-3 md:p-5 max-w-4xl mx-auto space-y-4">
-    <!-- Header -->
+    <!-- Header — v.98: redundan dgn pita (POS Santri & Riwayat sudah di Keuangan), sembunyikan di Electron -->
     <div
+      v-if="!isDesktop"
       class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
     >
       <div class="flex items-center justify-between gap-2">
@@ -188,6 +189,7 @@
 // v.21+: POS Santri — kasir cepat pembayaran tagihan/syahriyah/tabungan dengan modal cart.
 // Save ke keuangan_buku_induk (sumber='pos_santri') + auto-lunas tagihan terkait.
 import { ref, computed, onMounted } from 'vue'
+import { useDesktopShell } from '@/composables/useDesktopShell'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
 import {
@@ -243,6 +245,7 @@ const operatorName = computed(() => {
   return auth.sesiAktif?.nama || auth.sesiAktif?.guru || 'Admin'
 })
 
+const { isElectron: isDesktop } = useDesktopShell()
 const isAdminKeu = computed(() => {
   const rs = auth.sesiAktif?.role_sistem || ''
   return auth.sesiAktif?.role === 'admin' || ['admin', 'admin_keuangan', 'super_admin'].includes(rs)

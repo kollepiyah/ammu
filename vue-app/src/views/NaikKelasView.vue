@@ -62,9 +62,9 @@
       <p class="text-sm font-bold text-rose-700 dark:text-rose-300">Akses Ditolak</p>
     </div>
 
-    <!-- Tab Switcher (admin/guru) -->
+    <!-- Tab Switcher (admin/guru) — v.98: di Electron sub-menu (Form/Riwayat/Pengaturan) ada di pita -->
     <div
-      v-if="isAdmin || isGuru"
+      v-if="(isAdmin || isGuru) && !isDesktop"
       class="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)] shadow-sm p-2"
     >
       <div class="flex gap-1.5 overflow-x-auto custom-scrollbar">
@@ -1015,6 +1015,8 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
+import { useDesktopShell } from '@/composables/useDesktopShell'
+import { definePageActions } from '@/composables/useRibbonContext'
 import { collection, doc, getDocs, setDoc, updateDoc } from 'firebase/firestore'
 import { db } from '@/services/firebase'
 import { useAuthStore } from '@/stores/auth'
@@ -1053,6 +1055,18 @@ const loadingSantri = ref(true)
 const searchFormSantri = ref('')
 const filterLembaga = ref('')
 const activeTab = ref('form')
+
+// v.98 full-native (Electron): sub-menu Naik Kelas -> grup pita "Aksi Halaman"; tab switcher in-page disembunyikan
+const { isElectron: isDesktop } = useDesktopShell()
+definePageActions(() => {
+  if (!(isAdmin.value || isGuru.value)) return []
+  const acts = [
+    { label: 'Form Kenaikan', icon: 'edit', primary: activeTab.value === 'form', on: () => { activeTab.value = 'form' } },
+    { label: 'Riwayat Kenaikan', icon: 'refresh', primary: activeTab.value === 'riwayat', on: () => { activeTab.value = 'riwayat' } }
+  ]
+  if (isAdmin.value) acts.push({ label: 'Pengaturan', icon: 'gear', primary: activeTab.value === 'pengaturan', on: () => { activeTab.value = 'pengaturan' } })
+  return acts
+})
 
 // Color helper per lembaga (active/inactive)
 const LEMBAGA_COLOR_MAP = {

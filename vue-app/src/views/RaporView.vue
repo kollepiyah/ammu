@@ -206,7 +206,7 @@
           </span>
         </div>
         <button
-          v-if="selectedSantriIds.size > 0"
+          v-if="selectedSantriIds.size > 0 && !isDesktop"
           @click="exportPdfBatch"
           :disabled="exportingBatch"
           aria-label="Ekspor batch rapor PDF"
@@ -1018,6 +1018,8 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, unref, nextTick, watch } from 'vue'
+import { useDesktopShell } from '@/composables/useDesktopShell'
+import { definePageActions } from '@/composables/useRibbonContext'
 import { useRoute } from 'vue-router'
 import { subscribeColl } from '@/services/firestore'
 import { useSantri } from '@/composables/useSantri'
@@ -1301,6 +1303,13 @@ const kelasOptions = computed(() => {
 // v.21.85: Multi-select state untuk batch PDF
 const selectedSantriIds = ref(new Set())
 const exportingBatch = ref(false)
+
+// v.98 full-native (Electron): Ekspor PDF batch -> grup pita "Aksi Halaman" (muncul saat ada santri dipilih)
+const { isElectron: isDesktop } = useDesktopShell()
+definePageActions(() => {
+  if (selectedSantriIds.value.size === 0) return []
+  return [{ label: `Ekspor PDF (${selectedSantriIds.value.size})`, icon: 'printer', primary: true, on: exportPdfBatch, disabled: exportingBatch.value }]
+})
 
 const santriAktif = computed(
   () => santriRaw.value.find((s) => String(s.id) === String(santriId.value)) || null
