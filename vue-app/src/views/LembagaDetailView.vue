@@ -695,6 +695,25 @@
           </details>
         </div>
 
+        <!-- perKitab preview (PPPH 4 level kitab) -->
+        <div
+          v-else-if="raporSchema.perKitab"
+          class="space-y-2 bg-[var(--bg-card)] p-3 rounded-xl border border-teal-100"
+        >
+          <p class="text-xs font-black text-teal-800 dark:text-teal-200 mb-1">
+            Schema PPPH (4 Level Kitab Hadits)
+          </p>
+          <div class="bg-teal-50/60 p-2 rounded text-[11px] text-[var(--text-primary)] space-y-1">
+            <p v-for="(lvl, i) in raporSchema.levels || []" :key="lvl.id">
+              <strong>{{ i + 1 }}. {{ lvl.label }}:</strong> {{ lvl.kitab }}
+            </p>
+            <p>
+              <strong>Kolom nilai:</strong>
+              {{ (raporSchema.fieldsNilai || []).map((f) => f.label).join(' · ') }} · Tgl Khotam · Predikat
+            </p>
+          </div>
+        </div>
+
         <!-- kosong / empty -->
         <div v-else class="bg-cyan-50 border border-cyan-200 p-3 rounded text-xs text-cyan-800">
           <i class="fas fa-info-circle mr-1"></i>Belum ada struktur schema. Klik tombol template di
@@ -1717,8 +1736,7 @@ function applyTemplate(t) {
             { id: 'tgl_khotam', label: 'Tgl Khotam Jilid', type: 'date' },
             { id: 'doa_harian', label: 'Doa Harian', type: 'text' },
             { id: 'surat_pendek', label: 'Surat Pendek', type: 'text' },
-            { id: 'adab', label: 'Adab', type: 'number' },
-            { id: 'predikat', label: 'Predikat', type: 'auto_predikat', source: 'adab' }
+            { id: 'predikat', label: 'Predikat', type: 'auto_predikat', source: 'avg' }
           ]
         },
         {
@@ -1732,7 +1750,6 @@ function applyTemplate(t) {
             { id: 'tajwid', label: 'Tajwid', type: 'number' },
             { id: 'doa_harian', label: 'Doa Harian', type: 'text' },
             { id: 'surat_pendek', label: 'Surat Pendek', type: 'text' },
-            { id: 'adab', label: 'Adab', type: 'number' },
             { id: 'predikat', label: 'Predikat', type: 'auto_predikat', source: 'avg' }
           ]
         },
@@ -1748,7 +1765,6 @@ function applyTemplate(t) {
             { id: 'tajwid', label: 'Tajwid', type: 'number' },
             { id: 'doa_harian', label: 'Doa Harian', type: 'text' },
             { id: 'surat_pendek', label: 'Surat Pendek', type: 'text' },
-            { id: 'adab', label: 'Adab', type: 'number' },
             { id: 'predikat', label: 'Predikat', type: 'auto_predikat', source: 'avg' }
           ]
         }
@@ -1776,8 +1792,7 @@ function applyTemplate(t) {
         { id: 'tahfizh_juz_30', label: 'Tahfizh Juz 30' },
         { id: 'ghorib', label: 'Ghorib' },
         { id: 'tajwid', label: 'Tajwid' },
-        { id: 'doa_harian', label: 'Doa Harian' },
-        { id: 'adab', label: 'Adab' }
+        { id: 'doa_harian', label: 'Doa Harian' }
       ],
       levels: [
         { id: 'lvl_1', label: 'Level 1', levelBaca: '½ Juz', khotamList: KH3_2 },
@@ -1790,11 +1805,11 @@ function applyTemplate(t) {
   } else if (t === 'ptpt') {
     // v.20.50.0526: PTPT spec kyai v2 — Istimror+Kelancaran (Hafalan), Fashohah+Tajwid (Bacaan), 7 juz per kelas
     const PTPT_FIELDS = [
+      { id: 'tgl_khotam', label: 'Tgl Khotam', type: 'date' },
       { id: 'istimror', label: 'Istimror', type: 'number', group: 'Kualitas Hafalan' },
       { id: 'kelancaran', label: 'Kelancaran', type: 'number', group: 'Kualitas Hafalan' },
       { id: 'fashohah', label: 'Fashohah', type: 'number', group: 'Kualitas Bacaan' },
       { id: 'tajwid', label: 'Tajwid', type: 'number', group: 'Kualitas Bacaan' },
-      { id: 'adab', label: 'Adab', type: 'number' },
       { id: 'predikat', label: 'Predikat', type: 'auto_predikat', source: 'avg' }
     ]
     // v.20.51.0526: 5 juz × 6 kelas = 30 juz total
@@ -1805,47 +1820,31 @@ function applyTemplate(t) {
     }
     raporSchema.value = { tableLayout: 'kelasJuz', fields: PTPT_FIELDS, rows }
   } else if (t === 'ppph') {
-    // v.20.45.0526: PPPH = PTPT struktur (kelas × juz), kyai req
-    const PPPH_FIELDS = [
-      { id: 'istimror', label: 'Istimror', type: 'number', group: 'Kualitas Hafalan' },
-      { id: 'murajaah', label: 'Murajaah', type: 'number', group: 'Kualitas Hafalan' },
-      { id: 'fashohah', label: 'Fashohah', type: 'number', group: 'Kualitas Bacaan' },
-      { id: 'tartil', label: 'Tartil', type: 'number', group: 'Kualitas Bacaan' },
-      { id: 'adab', label: 'Adab', type: 'number' },
-      { id: 'predikat', label: 'Predikat', type: 'auto_predikat', source: 'avg' }
-    ]
+    // PPPH: 4 level kitab Hadits (Arba'in/Riyadhus/Bukhari/Muslim) — aspek + Predikat
     raporSchema.value = {
-      sections: [
-        {
-          id: 'tahap_1',
-          title: 'Tahap 1',
-          rows: ['Juz 1', 'Juz 2', 'Juz 3', 'Juz 4', 'Juz 5'],
-          fields: JSON.parse(JSON.stringify(PPPH_FIELDS))
-        },
-        {
-          id: 'tahap_2',
-          title: 'Tahap 2',
-          rows: ['Juz 6', 'Juz 7', 'Juz 8', 'Juz 9', 'Juz 10'],
-          fields: JSON.parse(JSON.stringify(PPPH_FIELDS))
-        },
-        {
-          id: 'tahap_3',
-          title: 'Tahap 3',
-          rows: ['Juz 11', 'Juz 12', 'Juz 13', 'Juz 14', 'Juz 15'],
-          fields: JSON.parse(JSON.stringify(PPPH_FIELDS))
-        }
+      perKitab: true,
+      fieldsNilai: [
+        { id: 'hafalan', label: 'Hafalan' },
+        { id: 'pemahaman', label: 'Pemahaman' },
+        { id: 'kelancaran', label: 'Kelancaran' }
+      ],
+      levels: [
+        { id: 'lvl_1', label: 'Level 1', kitab: "Arba'in Nawawi" },
+        { id: 'lvl_2', label: 'Level 2', kitab: 'Riyadhus Shalihin' },
+        { id: 'lvl_3', label: 'Level 3', kitab: 'Shahih Bukhari' },
+        { id: 'lvl_4', label: 'Level 4', kitab: 'Shahih Muslim' }
       ]
     }
   } else if (t === 'diniyah') {
     // v.21.24.0526: Diniyah template — restore minimal (mapel default Madin)
     const DM = [
-      { id: 'tauhid', nama: 'TAUHID', kkm: 80 },
-      { id: 'fiqih', nama: 'FIQIH', kkm: 80 },
-      { id: 'akhlaq', nama: 'AKHLAQ', kkm: 80 },
-      { id: 'nahwu', nama: 'NAHWU', kkm: 80 },
-      { id: 'sharaf', nama: 'SHARAF', kkm: 80 },
-      { id: 'hadits', nama: 'HADITS', kkm: 80 },
-      { id: 'tajwid', nama: 'TAJWID', kkm: 80 }
+      { id: 'tauhid', nama: 'TAUHID', kkm: 75 },
+      { id: 'fiqh', nama: 'FIQH', kkm: 75 },
+      { id: 'akhlaq', nama: 'AKHLAQ', kkm: 75 },
+      { id: 'nahwu', nama: 'NAHWU', kkm: 75 },
+      { id: 'sharaf', nama: 'SHARAF', kkm: 75 },
+      { id: 'hadits', nama: 'HADITS', kkm: 75 },
+      { id: 'tajwid', nama: 'TAJWID', kkm: 75 }
     ]
     raporSchema.value = {
       perKelas: true,

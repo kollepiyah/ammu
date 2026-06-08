@@ -1507,8 +1507,7 @@ function initSchemaType(type) {
       perLevel: true,
       fieldsNilai: [
         { id: 'fashohah', label: 'Fashohah' },
-        { id: 'tartil', label: 'Tartil' },
-        { id: 'adab', label: 'Adab' }
+        { id: 'tartil', label: 'Tartil' }
       ],
       levels: [
         {
@@ -1531,9 +1530,9 @@ function initSchemaType(type) {
         {
           kelas: 'I',
           mapel: [
-            { id: 'tauhid', nama: 'TAUHID', kkm: 80 },
-            { id: 'fiqih', nama: 'FIQIH', kkm: 80 },
-            { id: 'akhlaq', nama: 'AKHLAQ', kkm: 80 }
+            { id: 'tauhid', nama: 'TAUHID', kkm: 75 },
+            { id: 'fiqh', nama: 'FIQH', kkm: 75 },
+            { id: 'akhlaq', nama: 'AKHLAQ', kkm: 75 }
           ]
         }
       ]
@@ -1546,8 +1545,9 @@ function initSchemaType(type) {
           title: 'Jilid',
           rows: ['1A', '1B', '2A', '2B'],
           fields: [
-            { id: 'adab', label: 'Adab', type: 'number' },
-            { id: 'predikat', label: 'Predikat', type: 'auto_predikat', source: 'adab' }
+            { id: 'fashohah', label: 'Fashohah', type: 'number' },
+            { id: 'tartil', label: 'Tartil', type: 'number' },
+            { id: 'predikat', label: 'Predikat', type: 'auto_predikat', source: 'avg' }
           ]
         }
       ]
@@ -1664,8 +1664,8 @@ function resetSchemaTemplate() {
     .trim()
   let template = {}
 
-  if (key === 'pra ptpt' || key === 'ptpt' || key === 'ppph' || key === 'p3h') {
-    // perLevel matrix khusus PTPT/PPPH (5 level)
+  if (key === 'pra ptpt') {
+    // Pra PTPT: perLevel (5 level khotam) — tanpa Adab
     template = {
       perLevel: true,
       fieldsNilai: [
@@ -1674,8 +1674,7 @@ function resetSchemaTemplate() {
         { id: 'tahfizh_juz_30', label: 'Tahfizh Juz 30' },
         { id: 'ghorib', label: 'Ghorib' },
         { id: 'tajwid', label: 'Tajwid' },
-        { id: 'doa_harian', label: 'Doa Harian' },
-        { id: 'adab', label: 'Adab' }
+        { id: 'doa_harian', label: 'Doa Harian' }
       ],
       levels: [
         buildLevel('lvl_1', 'Level 1', '½ Juz', 3, 2),
@@ -1685,8 +1684,43 @@ function resetSchemaTemplate() {
         buildLevel('lvl_5', 'Level 5', '3 Juz', 11, 3)
       ]
     }
+  } else if (key === 'ptpt') {
+    // PTPT: kelasJuz — Tgl Khotam + aspek + Predikat, tanpa Adab
+    const rows = []
+    for (let kls = 1; kls <= 6; kls++) {
+      const start = (kls - 1) * 5 + 1
+      for (let j = start; j <= start + 4; j++) rows.push({ kelas: 'Kelas ' + kls, juz: 'Juz ' + j })
+    }
+    template = {
+      tableLayout: 'kelasJuz',
+      fields: [
+        { id: 'tgl_khotam', label: 'Tgl Khotam', type: 'date' },
+        { id: 'istimror', label: 'Istimror', type: 'number', group: 'Kualitas Hafalan' },
+        { id: 'kelancaran', label: 'Kelancaran', type: 'number', group: 'Kualitas Hafalan' },
+        { id: 'fashohah', label: 'Fashohah', type: 'number', group: 'Kualitas Bacaan' },
+        { id: 'tajwid', label: 'Tajwid', type: 'number', group: 'Kualitas Bacaan' },
+        { id: 'predikat', label: 'Predikat', type: 'auto_predikat', source: 'avg' }
+      ],
+      rows
+    }
+  } else if (key === 'ppph' || key === 'p3h') {
+    // PPPH: 4 level kitab Hadits
+    template = {
+      perKitab: true,
+      fieldsNilai: [
+        { id: 'hafalan', label: 'Hafalan' },
+        { id: 'pemahaman', label: 'Pemahaman' },
+        { id: 'kelancaran', label: 'Kelancaran' }
+      ],
+      levels: [
+        { id: 'lvl_1', label: 'Level 1', kitab: "Arba'in Nawawi" },
+        { id: 'lvl_2', label: 'Level 2', kitab: 'Riyadhus Shalihin' },
+        { id: 'lvl_3', label: 'Level 3', kitab: 'Shahih Bukhari' },
+        { id: 'lvl_4', label: 'Level 4', kitab: 'Shahih Muslim' }
+      ]
+    }
   } else if (key === 'tpq' || key.startsWith('tpq ')) {
-    // sections matrix Jilid untuk TPQ Sore
+    // sections matrix Jilid untuk TPQ Sore — tanpa Adab
     template = {
       sections: [
         {
@@ -1697,34 +1731,17 @@ function resetSchemaTemplate() {
             { id: 'tgl_naik', label: 'Tgl Naik', type: 'date' },
             { id: 'fashohah', label: 'Fashohah', type: 'number' },
             { id: 'tartil', label: 'Tartil', type: 'number' },
-            { id: 'adab', label: 'Adab', type: 'number' },
             { id: 'predikat', label: 'Predikat', type: 'auto_predikat', source: 'avg' }
           ]
         }
       ]
     }
   } else {
-    // Diniyah / sekolah formal — perKelas mapel KKM
     template = {
       perKelas: true,
       jenjang: [
-        {
-          kelas: 'I',
-          mapel: [
-            { id: 'tauhid', nama: 'TAUHID', kkm: 80 },
-            { id: 'fiqih', nama: 'FIQIH', kkm: 80 },
-            { id: 'akhlaq', nama: 'AKHLAQ', kkm: 80 }
-          ]
-        },
-        {
-          kelas: 'II',
-          mapel: [
-            { id: 'tauhid', nama: 'TAUHID', kkm: 80 },
-            { id: 'fiqih', nama: 'FIQIH', kkm: 80 },
-            { id: 'akhlaq', nama: 'AKHLAQ', kkm: 80 },
-            { id: 'tarikh', nama: 'TARIKH', kkm: 80 }
-          ]
-        }
+        { kelas: 'I', mapel: [ { id: 'tauhid', nama: 'TAUHID', kkm: 75 }, { id: 'fiqh', nama: 'FIQH', kkm: 75 }, { id: 'akhlaq', nama: 'AKHLAQ', kkm: 75 } ] },
+        { kelas: 'II', mapel: [ { id: 'tauhid', nama: 'TAUHID', kkm: 75 }, { id: 'fiqh', nama: 'FIQH', kkm: 75 }, { id: 'akhlaq', nama: 'AKHLAQ', kkm: 75 }, { id: 'tarikh', nama: 'TARIKH', kkm: 75 } ] }
       ]
     }
   }

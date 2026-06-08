@@ -530,35 +530,23 @@
             SURAT KETERANGAN HASIL PENDIDIKAN
           </h2>
 
-          <!-- Identitas (Kiri: Nama/NISN/NIS · Kanan: Kelas/Semester/Tahun) -->
-          <table class="w-full text-[11px] mb-2">
-            <tbody>
-              <tr>
-                <td class="w-[110px] py-0.5">Nama</td>
-                <td class="w-[10px]">:</td>
-                <td class="py-0.5 font-bold">{{ santriAktif.nama }}</td>
-                <td class="w-[110px]">Kelas</td>
-                <td class="w-[10px]">:</td>
-                <td class="font-bold">{{ kelasGabungan }}</td>
-              </tr>
-              <tr>
-                <td class="py-0.5">NISN</td>
-                <td>:</td>
-                <td class="py-0.5">{{ santriAktif.nisn || '-' }}</td>
-                <td>Semester</td>
-                <td>:</td>
-                <td>{{ semester }}</td>
-              </tr>
-              <tr>
-                <td class="py-0.5">NIS</td>
-                <td>:</td>
-                <td class="py-0.5">{{ santriAktif.nis || '-' }}</td>
-                <td>Tahun Ajaran</td>
-                <td>:</td>
-                <td>{{ tahunAjaran }}</td>
-              </tr>
-            </tbody>
-          </table>
+          <!-- Identitas: kiri rata kiri (Nama/NISN/NIS), kanan rata kanan (Kelas/Semester/Tahun) -->
+          <div class="flex justify-between items-start text-[11px] mb-2 gap-6">
+            <table>
+              <tbody>
+                <tr><td class="pr-2 py-0.5 align-top">Nama</td><td class="pr-1 py-0.5">:</td><td class="py-0.5 font-bold">{{ santriAktif.nama }}</td></tr>
+                <tr><td class="pr-2 py-0.5 align-top">NISN</td><td class="pr-1 py-0.5">:</td><td class="py-0.5">{{ santriAktif.nisn || '-' }}</td></tr>
+                <tr><td class="pr-2 py-0.5 align-top">NIS</td><td class="pr-1 py-0.5">:</td><td class="py-0.5">{{ santriAktif.nis || '-' }}</td></tr>
+              </tbody>
+            </table>
+            <table>
+              <tbody>
+                <tr><td class="pr-2 py-0.5 text-right">Kelas</td><td class="pr-1 py-0.5">:</td><td class="py-0.5 font-bold text-right">{{ kelasGabungan }}</td></tr>
+                <tr><td class="pr-2 py-0.5 text-right">Semester</td><td class="pr-1 py-0.5">:</td><td class="py-0.5 text-right">{{ semester }}</td></tr>
+                <tr><td class="pr-2 py-0.5 text-right">Tahun Ajaran</td><td class="pr-1 py-0.5">:</td><td class="py-0.5 text-right">{{ tahunAjaran }}</td></tr>
+              </tbody>
+            </table>
+          </div>
 
           <!-- ===== Body Layout A: Pra PTPT (perLevel, 5 levels, Lvl 5 punya I-XI) ===== -->
           <div v-if="schema.perLevel" class="mt-3">
@@ -664,16 +652,16 @@
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="(mp, idx) in jenjangAktif.mapel || []" :key="mp.id || idx">
-                  <td class="border border-black px-2 py-1.5 text-center font-bold">{{ idx + 1 }}</td>
-                  <td class="border border-black px-2 py-1.5">{{ mp.nama }}</td>
-                  <td class="border border-black px-2 py-1.5 text-center">{{ mp.kkm || 75 }}</td>
-                  <td class="border border-black px-2 py-1.5 text-center">{{ fmtNumber(nilaiSumatif(mp)) }}</td>
-                  <td class="border border-black px-2 py-1.5 text-center">
+                <tr v-for="(mp, idx) in jenjangAktif.mapel || []" :key="mp.id || idx" style="height: 34px">
+                  <td class="border border-black px-2 py-2.5 text-center font-bold">{{ idx + 1 }}</td>
+                  <td class="border border-black px-2 py-2.5 font-bold">{{ mp.nama }}</td>
+                  <td class="border border-black px-2 py-2.5 text-center">{{ mp.kkm || 75 }}</td>
+                  <td class="border border-black px-2 py-2.5 text-center">{{ fmtNumber(nilaiSumatif(mp)) }}</td>
+                  <td class="border border-black px-2 py-2.5 text-center">
                     {{ getNilai(`dn__${santriAktif.kelas_sekolah}__${mp.id || slug(mp.nama)}__akhir`) || '-' }}
                   </td>
                   <td
-                    class="border border-black px-2 py-1.5 text-center"
+                    class="border border-black px-2 py-2.5 text-center"
                     lang="ar"
                     dir="rtl"
                     :style="arStyleMd"
@@ -937,15 +925,19 @@
             <tr>
               <td class="align-top w-1/2 pr-3">
                 <p class="font-bold mb-1">ABSENSI :</p>
-                <p class="my-0.5">1. Sakit : {{ absensi.sakit || 0 }}</p>
-                <p class="my-0.5">2. Izin : {{ absensi.izin || 0 }}</p>
-                <p class="my-0.5">3. Alpa : {{ absensi.alpa || 0 }}</p>
+                <p class="my-0.5">1. Sakit : {{ absensi.sakit || 0 }} Hari</p>
+                <p class="my-0.5">2. Izin : {{ absensi.izin || 0 }} Hari</p>
+                <p class="my-0.5">3. Alpa : {{ absensi.alpa || 0 }} Hari</p>
               </td>
               <td class="align-top w-1/2">
                 <p class="font-bold mb-1">NILAI KEPRIBADIAN</p>
-                <p class="my-0.5">Kelakuan : {{ kepribadian.kelakuan || 'Baik' }}</p>
-                <p class="my-0.5">Kerajinan : {{ kepribadian.kerajinan || 'Baik' }}</p>
-                <p class="my-0.5">Kebersihan : {{ kepribadian.kebersihan || 'Baik' }}</p>
+                <p v-for="kp in kepribadianRows" :key="kp.label" class="my-0.5">
+                  {{ kp.label }} :
+                  <span v-for="(opt, i) in KEPRIBADIAN_OPTS" :key="opt"
+                    ><span :class="kp.val === opt ? 'font-bold' : 'line-through text-slate-400'">{{ opt }}</span
+                    ><span v-if="i < KEPRIBADIAN_OPTS.length - 1"> / </span></span
+                  >
+                </p>
               </td>
             </tr>
           </table>
@@ -956,61 +948,58 @@
             <p class="m-0 whitespace-pre-line">{{ catatanRapor }}</p>
           </div>
 
-          <!-- Tanda Tangan -->
+          <!-- Tanda Tangan (samakan dengan PDF) -->
           <div class="mt-8 text-[10px]">
+            <table class="ml-auto mb-5 text-[10px]" style="width: auto">
+              <tr>
+                <td class="pr-3 text-left">Dikeluarkan di</td>
+                <td class="pr-1">:</td>
+                <td class="text-left">{{ kotaRapor }}</td>
+              </tr>
+              <tr>
+                <td class="pr-3 text-left">Pada Tanggal</td>
+                <td class="pr-1">:</td>
+                <td class="text-left">{{ tglCetak }}</td>
+              </tr>
+            </table>
             <table class="w-full text-center">
               <tr>
-                <td class="w-1/3"></td>
-                <td class="w-1/3"></td>
-                <td class="w-1/3">Sidoarjo, {{ tglCetak }}</td>
+                <td class="w-1/3">Wali Santri</td>
+                <td class="w-1/3">{{ kategori === 'diniyah' ? 'Wali Kelas' : 'Guru Kelas' }}</td>
+                <td class="w-1/3">{{ jabatanKepala }}</td>
               </tr>
-              <tr>
-                <td>Wali Santri</td>
-                <td>{{ kategori === 'diniyah' ? 'Wali Kelas' : 'Guru Kelas' }}</td>
-                <td>{{ jabatanKepala }}</td>
-              </tr>
-              <tr style="height: 60px; vertical-align: bottom">
+              <tr style="height: 56px; vertical-align: bottom">
                 <td></td>
                 <td>
                   <img
                     v-if="ttdGuru"
                     :src="ttdGuru"
-                    alt="TTD Guru"
-                    style="
-                      display: inline-block;
-                      max-width: 120px;
-                      max-height: 60px;
-                      object-fit: contain;
-                    "
+                    alt=""
+                    style="display: inline-block; max-width: 120px; max-height: 56px; object-fit: contain"
                   />
                 </td>
                 <td>
                   <img
                     v-if="ttdKepala"
                     :src="ttdKepala"
-                    alt="TTD Kepala"
-                    style="
-                      display: inline-block;
-                      max-width: 120px;
-                      max-height: 60px;
-                      object-fit: contain;
-                    "
+                    alt=""
+                    style="display: inline-block; max-width: 120px; max-height: 56px; object-fit: contain"
                   />
                 </td>
               </tr>
               <tr>
                 <td>
-                  <span class="underline font-bold">{{
-                    santriAktif?.wali || '..............................'
+                  <span class="font-bold">{{
+                    santriAktif?.wali || santriAktif?.nama_wali || '________________'
                   }}</span>
                 </td>
                 <td>
-                  <span class="underline font-bold">{{ namaGuru || '..........' }}</span>
+                  <span class="font-bold">{{
+                    namaGuru && namaGuru !== '-' ? namaGuru : '________________'
+                  }}</span>
                 </td>
                 <td>
-                  <span class="underline font-bold">{{
-                    namaKepala || '..............................'
-                  }}</span>
+                  <span class="font-bold">{{ namaKepala || '________________' }}</span>
                 </td>
               </tr>
               <tr class="text-[9px] text-[var(--text-secondary)]">
@@ -1358,11 +1347,30 @@ const kop = computed(() => {
             .trim() === lnorm
       ) || {}
   }
+  const isDiniyah = kategori.value === 'diniyah'
+  let line1 = lmbObj.kop_line1 || s.kopLine1 || s.subtitleRapor || ''
+  if (!line1) {
+    const ln = String((isDiniyah ? santriAktif.value?.lembaga_sekolah : santriAktif.value?.lembaga) || '').toLowerCase().trim()
+    if (ln === 'ptpt') line1 = 'Pasca TPQ Program Tahfizh'
+    else if (ln === 'ppph' || ln === 'p3h') line1 = 'Pasca PTPT Program Hadits'
+    else if (isDiniyah) line1 = 'Sekolah'
+    else line1 = 'Taman Pendidikan Al-Qur’an'
+  }
+  // Line 2: "[LABEL] [NAMA]" — TPQ Pagi/Sore/Pra PTPT -> TPQ; Diniyah -> nama lembaga sekolah
+  const lnorm2 = String((isDiniyah ? santriAktif.value?.lembaga_sekolah : santriAktif.value?.lembaga) || '').toLowerCase().trim()
+  let label = ''
+  if (['tpq pagi', 'tpq sore', 'pra ptpt'].includes(lnorm2)) label = 'TPQ'
+  else if (isDiniyah) label = lmbObj.lembaga || lnorm2.toUpperCase()
+  else label = (isDiniyah ? santriAktif.value?.lembaga_sekolah : santriAktif.value?.lembaga) || ''
+  const namaKop = (lmbObj.kop_line2 || s.kopLine2 || 'MAMBAUL ULUM').trim()
+  const namaU = namaKop.toUpperCase()
+  const labelU = String(label || '').toUpperCase()
+  const line2 = !labelU ? namaU : namaU.startsWith(labelU) ? namaU : `${label} ${namaKop}`.toUpperCase()
   return {
-    line1: lmbObj.kop_line1 || s.kopLine1 || '',
-    line2: lmbObj.kop_line2 || s.kopLine2 || 'PONDOK PESANTREN MAMBAUL ULUM',
-    line3: lmbObj.kop_line3 || s.kopLine3 || '',
-    line4: lmbObj.kop_line4 || s.kopLine4 || '',
+    line1,
+    line2,
+    line3: lmbObj.kop_line3 || s.kopLine3 || s.alamat || 'Jl. Kol. Sugiono 112 Panjunan-Kepuh Kiriman Waru Sidoarjo',
+    line4: lmbObj.kop_line4 || s.kopLine4 || s.telp || 'Telp. 031-8674713',
     pengasuh: s.namaPengasuh || ''
   }
 })
@@ -1392,9 +1400,7 @@ const arStyleMd = { fontFamily: "'Traditional Arabic','Amiri','Scheherazade New'
 
 const logoKiri = computed(() => {
   const s = settingsStore.settings || {}
-  return kategori.value === 'diniyah'
-    ? s.logoKop || s.logoUrl || '/logo.png'
-    : s.logoQiraati || '/logo.png'
+  return s.logoQiraati || s.logoKop || s.logoUrl || '/logo.png'
 })
 
 const logoKanan = computed(() => {
@@ -1413,7 +1419,7 @@ const logoKanan = computed(() => {
           .toLowerCase()
           .trim() === lnorm
     ) || {}
-  return lmbObj.kop_logo || settingsStore.settings?.logoUrl || ''
+  return lmbObj.kop_logo || settingsStore.settings?.logoKop || settingsStore.settings?.logoUrl || ''
 })
 
 function titleCase(s) {
@@ -1793,6 +1799,15 @@ const kepribadian = computed(
   () => raporDoc.value?.kepribadian || { kelakuan: 'Baik', kerajinan: 'Baik', kebersihan: 'Baik' }
 )
 const catatanRapor = computed(() => raporDoc.value?.catatan || '')
+
+// Samakan tampilan layar dengan PDF (kepribadian coret pilihan, kota TTD).
+const KEPRIBADIAN_OPTS = ['Baik', 'Cukup', 'Perlu Perhatian']
+const kotaRapor = computed(() => settingsStore.settings?.kota || 'Sidoarjo')
+const kepribadianRows = computed(() => [
+  { label: 'Kelakuan', val: kepribadian.value?.kelakuan || 'Baik' },
+  { label: 'Kerajinan', val: kepribadian.value?.kerajinan || 'Baik' },
+  { label: 'Kebersihan', val: kepribadian.value?.kebersihan || 'Baik' }
+])
 
 // ===== Rata-rata =====
 const rataRata = computed(() => {

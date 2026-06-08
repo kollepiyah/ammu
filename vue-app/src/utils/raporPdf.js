@@ -281,7 +281,7 @@ function drawIdentitas(doc, y, santri, raporState) {
   doc.setFontSize(11)
 
   const col1 = 16
-  const col2 = pageW - 86
+  const colonRX = pageW - 50
 
   const ta = raporState.tahun_ajaran || raporState.periode?.tahun_ajaran || ''
   const sm = raporState.semester || raporState.periode?.semester || ''
@@ -304,9 +304,9 @@ function drawIdentitas(doc, y, santri, raporState) {
     doc.text(':', col1 + 24, py)
     doc.text(safeStr(row[1]), col1 + 27, py)
 
-    doc.text(row[2], col2, py)
-    doc.text(':', col2 + 28, py)
-    doc.text(safeStr(row[3]), col2 + 31, py)
+    doc.text(row[2], colonRX - 1.5, py, { align: 'right' })
+    doc.text(':', colonRX, py)
+    doc.text(safeStr(row[3]), pageW - 14, py, { align: 'right' })
   })
 
   return y + rows.length * 5 + 3
@@ -903,18 +903,29 @@ async function generateDiniyahPdf(doc, y, santri, schema, raporState, settings) 
     return [i + 1, m.nama, kkm, isNaN(sm) ? '-' : fmtNilai(sm), isNaN(ak) ? '-' : fmtNilai(ak), '']
   })
 
+  // Baris lebih tinggi + teks lebih besar -> mengisi halaman (kurangi whitespace bawah).
   drawTable(doc, {
     startY: y,
     head,
     body,
     margin: { left: 12, right: 12 },
-    styles: { font: doc._fontMU, fontSize: 8.5, cellPadding: 1.4, halign: 'center', valign: 'middle', overflow: 'linebreak', lineColor: [80, 80, 80], lineWidth: 0.15 },
-    headStyles: { fillColor: [255, 255, 255], textColor: 0, fontStyle: 'bold', lineWidth: 0.15, fontSize: 7.5 },
+    styles: { font: doc._fontMU, fontSize: 10, cellPadding: 2.2, minCellHeight: 12.5, halign: 'center', valign: 'middle', overflow: 'linebreak', lineColor: [80, 80, 80], lineWidth: 0.15 },
+    headStyles: { fillColor: [255, 255, 255], textColor: 0, fontStyle: 'bold', lineWidth: 0.15, fontSize: 8.5, minCellHeight: 11, valign: 'middle' },
     alternateRowStyles: { fillColor: [255, 255, 255] },
     columnStyles: { 0: { cellWidth: 12 }, 1: { halign: 'left', fontStyle: 'bold' }, 2: { cellWidth: 16 }, 3: { cellWidth: 34 }, 4: { cellWidth: 34 }, 5: { cellWidth: 32 } },
     didDrawCell: (d) => {
       if (d.section === 'body' && d.column.index === 5) drawPredikatImage(doc, d.cell, predikatKeys[d.row.index])
     }
+  })
+
+  y = doc.lastAutoTable.finalY + 3
+  const avg = raporState.rata_rata || 0
+  drawTable(doc, {
+    startY: y,
+    body: [['Rata-rata Nilai', fmtNilai(avg)]],
+    margin: { left: 12, right: 12 },
+    styles: { font: doc._fontMU, fontSize: 10, fontStyle: 'bold', halign: 'center', valign: 'middle', cellPadding: 2.2, minCellHeight: 11, lineColor: [80, 80, 80], lineWidth: 0.15 },
+    columnStyles: { 0: { cellWidth: 120 } }
   })
   return doc.lastAutoTable.finalY || y
 }
