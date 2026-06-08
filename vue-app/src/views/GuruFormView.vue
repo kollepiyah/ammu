@@ -135,6 +135,10 @@
             <input v-model="form.no_ekgq" type="text" placeholder="Opsional" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none" />
           </div>
           <div>
+            <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase">No. Rekening BMT</label>
+            <input v-model="form.rek_bmt" type="text" inputmode="numeric" placeholder="Untuk pencairan bisyaroh (opsional)" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none font-mono" />
+          </div>
+          <div>
             <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase">ID Fingerprint</label>
             <input v-model="form.id_fingerprint" type="text" placeholder="Opsional" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none" />
           </div>

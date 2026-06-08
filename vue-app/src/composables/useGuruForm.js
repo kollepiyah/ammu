@@ -21,6 +21,8 @@ function emptyForm() {
     lembaga_sekolah: '',
     tanggal_tugas: '',
     no_ekgq: '',
+    // v.97.0626: nomor rekening BMT guru (tujuan pencairan bisyaroh via BMT)
+    rek_bmt: '',
     wa: '',
     status: 'Aktif',
     id_fingerprint: '',
