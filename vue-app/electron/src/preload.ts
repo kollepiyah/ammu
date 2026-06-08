@@ -46,6 +46,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onWindowMaximizeChange: (cb: (v: boolean) => void) =>
     ipcRenderer.on('window:maximized-changed', (_e, v) => cb(v)),
 
+  // v.98: auto-update in-app (cek manual dari pita Bantuan)
+  checkUpdate: () => ipcRenderer.invoke('update:check'),
+  downloadUpdate: () => ipcRenderer.invoke('update:download'),
+  installUpdate: () => ipcRenderer.invoke('update:install'),
+  onUpdateStatus: (cb: (s: any) => void) => ipcRenderer.on('update:status', (_e, s) => cb(s)),
+  onUpdateProgress: (cb: (p: any) => void) => ipcRenderer.on('update:progress', (_e, p) => cb(p)),
+
   // Platform info
   platform: process.platform,
   isElectron: true,

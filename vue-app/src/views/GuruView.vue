@@ -13,8 +13,10 @@
     </div>
 
     <template v-else>
-      <!-- v.21.14.0526: Header refactor — title inline subtitle, stats+buttons wrap -->
-      <div class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm">
+      <!-- v.98: input impor tersembunyi (dipicu aksi pita "Impor XLSX" di Electron) -->
+      <input ref="importInputGuru" type="file" accept=".xlsx,.xls" class="hidden" @change="onImportGuru" />
+      <!-- v.21.14.0526: Header refactor. v.98: header disembunyikan di Electron (aksi -> pita) -->
+      <div v-if="!isDesktop" class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm">
         <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
           <div class="flex items-baseline gap-2 flex-wrap">
             <h1 class="text-base md:text-lg font-black text-[var(--text-primary)] whitespace-nowrap">
@@ -225,7 +227,7 @@
 
         <div class="space-y-2">
           <div
-            v-for="g in guru"
+            v-for="g in guruShown"
             :key="g.id"
             @click="goProfil(g, $event)"
             :class="[
@@ -351,6 +353,8 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useDesktopShell } from '@/composables/useDesktopShell'
+import { definePageActions } from '@/composables/useRibbonContext'
 // v.21.17c.0526: mode prop — 'view' (sidebar, default) atau 'master' (Master Data, full CRUD)
 const props = defineProps({ mode: { type: String, default: 'view' } })
 const isMasterMode = computed(() => props.mode === 'master')
@@ -383,6 +387,20 @@ const {
 // v.91.0626: prefill pencarian dari ?q= (global search header)
 const _route = useRoute()
 watch(() => _route.query.q, (v) => { if (v != null && v !== '') search.value = String(v) }, { immediate: true })
+// v.98: pita "Data Guru" (?tipe=guru) vs "Data Pegawai" (?tipe=pegawai) — pisah guru vs pegawai non-guru.
+// Heuristik (belum ada field eksplisit): jabatan mengandung guru/ustadz/pengajar/mudarris/wali kelas/kepala
+// dianggap GURU; selain itu PEGAWAI. Ganti regex / pakai field khusus bila kyai mau klasifikasi lain.
+const tipeFilter = computed(() => String(_route.query.tipe || '').toLowerCase())
+function _isPengajar(g) {
+  const j = (String(g.jabatan || '') + ' ' + String(g.jabatan_tambahan || '')).toLowerCase()
+  return /guru|ustadz|ustadzah|pengajar|mu.?allim|mudarr?is|asatidz|wali\s*kelas|kepala|pengasuh/.test(j)
+}
+const guruShown = computed(() => {
+  const t = tipeFilter.value
+  if (t === 'guru') return guru.value.filter(_isPengajar)
+  if (t === 'pegawai') return guru.value.filter((g) => !_isPengajar(g))
+  return guru.value
+})
 // v.91.0626: klik card -> halaman profil (abaikan klik tombol/link/checkbox)
 const router = useRouter()
 function goProfil(g, e) {
@@ -476,6 +494,32 @@ const exporting = ref(false)
 // v.21.11.0526: + importFile untuk Impor XLSX
 const { exportStyled, importFile } = useExcel()
 const importingGuru = ref(false)
+
+// v.98 full-native (Electron): header disembunyikan, aksi pindah ke grup pita "Aksi Halaman"
+const { isElectron: isDesktop } = useDesktopShell()
+const importInputGuru = ref(null)
+function triggerImportGuru() {
+  try {
+    importInputGuru.value && importInputGuru.value.click()
+  } catch (e) {
+    /* ignore */
+  }
+}
+definePageActions(() => {
+  if (!isFullAccess.value) return []
+  const acts = [
+    { label: 'Cetak PDF', icon: 'printer', on: printPage },
+    { label: 'Ekspor Excel', icon: 'download', on: exportGuruExcel, disabled: exporting.value }
+  ]
+  if (isMasterMode.value) {
+    acts.push({ label: 'Tambah Guru', icon: 'plus', primary: true, on: () => router.push('/guru/new?from=master') })
+    acts.push({ label: 'Template', icon: 'download', on: downloadTemplateGuru })
+    acts.push({ label: 'Impor XLSX', icon: 'file', on: triggerImportGuru, disabled: importingGuru.value })
+  } else {
+    acts.push({ label: 'Kelola', icon: 'edit', primary: true, on: () => router.push('/master-data?tab=guru') })
+  }
+  return acts
+})
 const importPreviewGuru = ref(null)
 const _settingsExp = useSettingsStore()
 const _toastExp = _useToastGuruExp()

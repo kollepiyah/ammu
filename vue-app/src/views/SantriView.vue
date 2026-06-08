@@ -1,7 +1,7 @@
 <template>
   <div class="p-3 md:p-5 max-w-6xl mx-auto space-y-4">
     <!-- v.91.0626: pakai komponen PageHeader (design-system konsisten) -->
-    <PageHeader icon="fa-users" title="Data Santri" :subtitle="isFullAccess ? 'Semua santri pondok' : 'Santri yang Anda ampu'">
+    <PageHeader v-if="!isDesktop" icon="fa-users" title="Data Santri" :subtitle="isFullAccess ? 'Semua santri pondok' : 'Santri yang Anda ampu'">
       <template #stats>
         <div class="px-3 py-1.5 rounded-full bg-teal-50 dark:bg-teal-900/30 border border-teal-200 dark:border-teal-700 text-xs">
           <span class="text-teal-700 dark:text-teal-300 font-bold">{{ stats.total }}</span>
@@ -40,6 +40,9 @@
         </template>
       </template>
     </PageHeader>
+
+    <!-- v.98: input impor tersembunyi (dipicu aksi pita "Impor XLSX" di Electron) -->
+    <input ref="importInput" type="file" accept=".xlsx,.xls" class="hidden" @change="onImportSantri" />
 
     <!-- v.21.22c.0526: Bulk action bar (Master mode only) -->
     <div v-if="isMasterMode && isFullAccess && selectedCount > 0" class="bg-gradient-to-r from-teal-50 to-cyan-50 dark:from-teal-900/30 dark:to-cyan-900/30 rounded-2xl p-3 border border-teal-300 dark:border-teal-700 shadow-sm flex flex-wrap items-center gap-2">
@@ -250,6 +253,8 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useDesktopShell } from '@/composables/useDesktopShell'
+import { definePageActions } from '@/composables/useRibbonContext'
 import { useSantri } from '@/composables/useSantri'
 import { useAuthStore } from '@/stores/auth'
 
@@ -287,8 +292,37 @@ const {
 // v.91.0626: prefill pencarian dari ?q= (global search header)
 const route = useRoute()
 watch(() => route.query.q, (v) => { if (v != null && v !== '') search.value = String(v) }, { immediate: true })
+// v.98: pita Pendidikan "Data Ma'had" -> ?tempat=mukim memilih filter status tempat
+watch(() => route.query.tempat, (v) => { if (v != null && v !== '') filterMukim.value = String(v) }, { immediate: true })
 // v.91.0626: klik card -> halaman profil (abaikan klik tombol/link/checkbox)
 const router = useRouter()
+
+// v.98 full-native (Electron): header in-page disembunyikan, aksi pindah ke grup pita "Aksi Halaman"
+const { isElectron: isDesktop } = useDesktopShell()
+const importInput = ref(null)
+function triggerImportSantri() {
+  try {
+    importInput.value && importInput.value.click()
+  } catch (e) {
+    /* ignore */
+  }
+}
+definePageActions(() => {
+  if (!isFullAccess.value) return []
+  const acts = [
+    { label: 'Cetak PDF', icon: 'printer', on: cetakPdf },
+    { label: 'Ekspor Excel', icon: 'download', on: exportSantriExcel, disabled: exporting.value }
+  ]
+  if (isMasterMode.value) {
+    acts.push({ label: 'Tambah Santri', icon: 'plus', primary: true, on: () => router.push('/santri/new?from=master') })
+    acts.push({ label: 'Template', icon: 'download', on: downloadTemplateSantri })
+    acts.push({ label: 'Impor XLSX', icon: 'file', on: triggerImportSantri, disabled: importing.value })
+  } else {
+    acts.push({ label: 'Kelola', icon: 'edit', primary: true, on: () => router.push('/master-data?tab=santri') })
+  }
+  return acts
+})
+
 function goProfil(s, e) {
   if (e && e.target && e.target.closest('button, a, input, label')) return
   router.push('/profil/santri/' + s.id)

@@ -1,6 +1,6 @@
 <template>
   <div class="p-3 md:p-5 max-w-5xl mx-auto space-y-4">
-    <div class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm">
+    <div v-if="!isDesktop" class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm">
       <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
         <div>
           <h1 class="text-base md:text-lg font-black"><i class="fas fa-file-invoice-dollar text-cyan-500 mr-2"></i>Tagihan Santri</h1>
@@ -118,6 +118,8 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { subscribeColl } from '@/services/firestore'
 import { useRouter } from 'vue-router'
+import { useDesktopShell } from '@/composables/useDesktopShell'
+import { definePageActions } from '@/composables/useRibbonContext'
 import { doc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore'
 import { deleteOne } from '@/services/firestore' // v.91.0626: hapus = backup audit_log dulu
 import { db } from '@/services/firebase'
@@ -367,5 +369,17 @@ onMounted(() => {
 onUnmounted(() => {
   if (unsubTagihan) { try { unsubTagihan() } catch (e) {} }
   if (unsubSantri) { try { unsubSantri() } catch (e) {} }
+})
+
+// v.98 full-native (Electron): header in-page disembunyikan, aksi -> grup pita "Aksi Halaman"
+const { isElectron: isDesktop } = useDesktopShell()
+definePageActions(() => {
+  const acts = []
+  if (isFullAccess.value) acts.push({ label: 'Tambah Tagihan', icon: 'plus', primary: true, on: openModalNew })
+  if (isSantriRole.value) {
+    acts.push({ label: 'Setoran Lain', icon: 'send', on: goSetoranLain })
+    acts.push({ label: 'Riwayat', icon: 'refresh', on: goRiwayat })
+  }
+  return acts
 })
 </script>

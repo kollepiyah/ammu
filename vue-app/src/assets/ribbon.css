@@ -48,25 +48,26 @@
   --rb-shadow-card: 0 1px 2px rgba(20, 30, 28, 0.06), 0 1px 3px rgba(20, 30, 28, 0.05);
 }
 
-/* ---- DARK ---- */
+/* ---- DARK ---- (slate, KONSISTEN dgn palet app: --bg-page #0f172a, --bg-card #1e293b,
+   --border-subtle #334155, header/status bar #1e293b). Hindari palet coklat Office. */
 .ammu-ribbon-app[data-theme='dark'] {
   --accent: var(--theme-color, #0f766e);
-  --rb-app-bg: #1b1a19;
-  --rb-surface: #262523;
-  --rb-surface-2: #2d2c2a;
-  --rb-strip: #2b2a28;
-  --rb-strip-text: rgba(255, 255, 255, 0.92);
-  --rb-strip-text-dim: rgba(255, 255, 255, 0.55);
-  --rb-ribbon-body: #201f1e;
-  --rb-ribbon-border: #3a3836;
-  --rb-text: #e9e7e3;
-  --rb-text-dim: #a29e98;
-  --rb-card: #262523;
-  --rb-card-border: #3a3836;
-  --rb-hover: rgba(255, 255, 255, 0.07);
-  --rb-divider: #3a3836;
-  --rb-content-bg: #1b1a19;
-  --rb-tab-active-bg: #201f1e;
+  --rb-app-bg: #0f172a;
+  --rb-surface: #1e293b;
+  --rb-surface-2: #334155;
+  --rb-strip: #1e293b; /* titlebar/tabbar/statusbar = slate-800 (sama header app dark) */
+  --rb-strip-text: rgba(241, 245, 249, 0.95);
+  --rb-strip-text-dim: rgba(148, 163, 184, 0.9);
+  --rb-ribbon-body: #0f172a; /* panel pita = slate-900 (sama konten) */
+  --rb-ribbon-border: #334155;
+  --rb-text: #f1f5f9;
+  --rb-text-dim: #94a3b8;
+  --rb-card: #1e293b;
+  --rb-card-border: #334155;
+  --rb-hover: rgba(255, 255, 255, 0.06);
+  --rb-divider: #334155;
+  --rb-content-bg: #0f172a;
+  --rb-tab-active-bg: #0f172a; /* tab aktif "naik" ke warna panel pita */
   --rb-tab-active-text: #ffffff;
   --rb-shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4);
 }
@@ -136,7 +137,19 @@
   min-width: 0;
 }
 .ammu-ribbon-app .rb-searchwrap {
-  width: min(440px, 42vw);
+  width: min(520px, 46vw);
+  margin: 0 16px;
+  display: flex;
+  align-items: center;
+}
+/* GlobalSearch dipakai ulang di titlebar — isi lebar wrapper + tinggi pas (jangan mepet ke atas) */
+.ammu-ribbon-app .rb-searchwrap [data-global-search] {
+  max-width: none;
+  margin: 0;
+  width: 100%;
+}
+.ammu-ribbon-app .rb-searchwrap [data-global-search] > .md\:flex {
+  height: 30px !important;
 }
 .ammu-ribbon-app .rb-right {
   display: flex;
@@ -314,8 +327,9 @@
   border-bottom: 1px solid var(--rb-ribbon-border);
   display: flex;
   align-items: stretch;
-  padding: 6px 8px 4px;
+  padding: 8px 14px 6px;
   flex: none;
+  gap: 2px;
   overflow-x: auto;
   overflow-y: hidden;
 }
@@ -334,7 +348,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 0 8px;
+  padding: 0 14px;
   position: relative;
   flex: none;
 }
@@ -349,8 +363,8 @@
 }
 .ammu-ribbon-app .rb-rgroup-items {
   display: flex;
-  align-items: stretch;
-  gap: 2px;
+  align-items: center;
+  gap: 4px;
   flex: 1;
 }
 .ammu-ribbon-app .rb-rgroup-label {
@@ -358,6 +372,14 @@
   color: var(--rb-text-dim);
   margin-top: 3px;
   text-align: center;
+}
+/* v.98 full-native: grup aksi kontekstual halaman didorong ke ujung kanan pita */
+.ammu-ribbon-app .rb-rgroup-context {
+  margin-left: auto;
+}
+.ammu-ribbon-app .rb-act-primary {
+  color: var(--accent);
+  font-weight: 600;
 }
 .ammu-ribbon-app[data-ribbon='simple'] .rb-rgroup-label {
   display: none;
@@ -644,11 +666,18 @@
   border: 3px solid var(--rb-content-bg);
 }
 
+/* v.98: SEMUA halaman edge-to-edge di Electron — lepas cap lebar Tailwind bawaan tiap view
+   (dashboard, daftar, pengaturan, dll) supaya mengisi penuh lebar layar. Web/HP tak terpengaruh
+   (scope .ammu-ribbon-app). */
+.ammu-ribbon-app .rb-content :is(.max-w-2xl, .max-w-3xl, .max-w-4xl, .max-w-5xl, .max-w-6xl, .max-w-7xl, .page-narrow) {
+  max-width: none !important;
+}
+
 /* page chrome for ribbon-native views (Home/Bantuan/Placeholder) */
+/* v.98: full edge-to-edge (lepas cap lebar) — konten mengisi seluruh lebar layar */
 .ammu-ribbon-app .rb-page {
-  padding: 22px 26px 40px;
-  max-width: 1180px;
-  margin: 0 auto;
+  padding: 22px 28px 44px;
+  width: 100%;
 }
 .ammu-ribbon-app .rb-section-title {
   display: flex;

@@ -29,8 +29,8 @@
     </div>
 
     <template v-else>
-      <!-- Tab -->
-      <div class="flex gap-2 bg-[var(--bg-card-elevated)] p-1 rounded-xl">
+      <!-- Tab — v.98: di Electron sub-menu (Buat/Riwayat/Rekap) ada di pita; sembunyikan di sini -->
+      <div v-if="!isDesktop" class="flex gap-2 bg-[var(--bg-card-elevated)] p-1 rounded-xl">
         <button
           v-for="t in tabs"
           :key="t.id"
@@ -210,13 +210,15 @@
 
 <script setup>
 // v.21.110.0527 — Data Supervisi: catatan & rekomendasi
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { collection, doc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/services/firebase'
 import { subscribeColl, subscribeDoc } from '@/services/firestore'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
 import { isSupervisor } from '@/utils/roleScope'
+import { useRoute } from 'vue-router'
+import { useDesktopShell } from '@/composables/useDesktopShell'
 
 const auth = useAuthStore()
 const toast = useToast()
@@ -229,6 +231,14 @@ const tabs = [
   { id: 'rekap', label: 'Rekap', icon: 'fa-chart-bar' }
 ]
 const activeTab = ref('buat')
+// v.98: sub-menu Supervisi dari pita -> ?tab=buat|riwayat|rekap; sembunyikan tab in-page di Electron
+const { isElectron: isDesktop } = useDesktopShell()
+const _routeSup = useRoute()
+watch(
+  () => _routeSup.query.tab,
+  (v) => { if (['buat', 'riwayat', 'rekap'].includes(String(v))) activeTab.value = String(v) },
+  { immediate: true }
+)
 
 // State sumber data
 const guruRaw = ref([])

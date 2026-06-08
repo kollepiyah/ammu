@@ -77,7 +77,14 @@ const PersonalView = () => import('@/views/PersonalView.vue')
 const SupervisiView = () => import('@/views/SupervisiView.vue')
 // v.98: AppShell pilih shell Ribbon (Electron) vs AppLayout lama (web/HP). Lihat AppShell.vue.
 const AppShell = () => import('@/components/layout/AppShell.vue')
-// v.98: view ribbon-native — tab Bantuan + placeholder untuk modul yang belum dibangun
+// v.98: view ribbon-native — Home desktop (dua dasbor) + tab Bantuan + placeholder modul
+const BerandaDesktopView = () => import('@/views/BerandaDesktopView.vue')
+const KeuanganDesktopView = () => import('@/views/KeuanganDesktopView.vue')
+// v.98: Kelas & Guru — assign santri ke guru (sudah ada, kini dirutekan utk pita "Kelas")
+const KelasGuruView = () => import('@/views/KelasGuruView.vue')
+// v.98: halaman khusus Electron — Mapel lembaga formal + Pengaturan (hub full-CRUD/ACF)
+const MapelDesktopView = () => import('@/views/MapelDesktopView.vue')
+const PengaturanDesktopView = () => import('@/views/PengaturanDesktopView.vue')
 const BantuanView = () => import('@/views/BantuanView.vue')
 const RibbonPlaceholderView = () => import('@/views/RibbonPlaceholderView.vue')
 
@@ -93,18 +100,20 @@ const routes = [
     component: AppShell,
     children: [
       { path: 'dashboard', name: 'dashboard', component: DashboardView },
-      // v.98: ribbon-native — tab Bantuan + placeholder modul (navigasi pita tetap aktif)
+      // v.98: ribbon-native — Home desktop (dua dasbor) + Bantuan + placeholder modul
+      { path: 'beranda', name: 'beranda', component: BerandaDesktopView, meta: { noSantri: true } },
       { path: 'bantuan', name: 'bantuan', component: BantuanView },
       { path: 'modul/:judul', name: 'ribbon-modul', component: RibbonPlaceholderView, meta: { noSantri: true } },
       { path: 'profil', name: 'profil', component: ProfilView },
       { path: 'notifikasi', name: 'notifikasi', component: NotifikasiView },
       { path: 'profil/:tipe/:id', name: 'profil-detail', component: ProfilDetailView, meta: { noSantri: true } },
-      { path: 'santri', name: 'santri', component: SantriView },
+      // v.98: ?kelola=1 -> mode 'master' (CRUD langsung di Electron, tak view-only). Web tanpa query = view.
+      { path: 'santri', name: 'santri', component: SantriView, props: (route) => ({ mode: route.query.kelola === '1' ? 'master' : 'view' }) },
       // Phase 5.13: Full CRUD form Vue
       { path: 'santri/new', name: 'santri-new', component: SantriFormView, meta: { admin: true } },
       { path: 'santri/:id/edit', name: 'santri-edit', component: SantriFormView, meta: { admin: true } },
       // Phase 5.6-5.8: Master Data
-      { path: 'guru', name: 'guru', component: GuruView, meta: { admin: true } },
+      { path: 'guru', name: 'guru', component: GuruView, meta: { admin: true }, props: (route) => ({ mode: route.query.kelola === '1' ? 'master' : 'view' }) },
       { path: 'guru/new', name: 'guru-new', component: GuruFormView, meta: { admin: true } },
       { path: 'guru/:id/edit', name: 'guru-edit', component: GuruFormView, meta: { admin: true } },
       // v.21.27.0526: /lembaga redirect ke /master-data?tab=lembaga (konsolidasi single source)
@@ -113,6 +122,11 @@ const routes = [
       { path: 'lembaga/:id/edit', name: 'lembaga-edit', component: LembagaFormView, meta: { admin: true } },
       { path: 'lembaga/:id', name: 'lembaga-detail', component: LembagaDetailView, meta: { admin: true } },
       { path: 'kelas', name: 'kelas', component: KelasView, meta: { admin: true } },
+      // v.98: assign guru+santri (pita Pendidikan -> Kelas)
+      { path: 'kelas-guru', name: 'kelas-guru', component: KelasGuruView, meta: { admin: true } },
+      // v.98: halaman khusus Electron — Mapel lembaga formal + Pengaturan (hub)
+      { path: 'mapel-lembaga', name: 'mapel-lembaga', component: MapelDesktopView, meta: { admin: true } },
+      { path: 'pengaturan-desktop', name: 'pengaturan-desktop', component: PengaturanDesktopView, meta: { admin: true } },
       // Phase 5.9: Edit/Tambah bridge ke legacy (full form di legacy index.html)
       { path: 'master-form/:entity', name: 'master-form', component: MasterFormBridgeView, meta: { admin: true } },
       // Phase 5.10 + 5.11: Field Order + ACF Custom Field schema editor
@@ -120,6 +134,8 @@ const routes = [
       // Batch 3 Phase 5.12-5.18: Keuangan + Rapor + Kritik
       // v.21.115.0528: meta.keuangan = perlu cekHakAkses('akses_keuangan') — admin biasa diblok per kyai spec.
       { path: 'keuangan', name: 'keuangan', component: KeuanganDashboardView, meta: { keuangan: true } },
+      // v.98: dasbor keuangan versi desktop/Ribbon (kartu + grafik + donut + Transaksi Terakhir)
+      { path: 'keuangan-desktop', name: 'keuangan-desktop', component: KeuanganDesktopView, meta: { keuangan: true } },
       // v.20.6.0526: Tagihan accessible santri (lihat tunggakan + riwayat pembayaran)
       { path: 'tagihan', name: 'tagihan', component: TagihanView },
       // v.20.12.0526: Pembayaran santri/wali — placeholder fitur 2-jalur

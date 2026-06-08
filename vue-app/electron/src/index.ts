@@ -191,6 +191,7 @@ function createMainWindow() {
   // v.98: sinkronkan ikon Maksimalkan/Pulihkan di RibbonTitleBar saat window di-maximize via OS/snap
   mainWindow.on('maximize', () => mainWindow?.webContents.send('window:maximized-changed', true))
   mainWindow.on('unmaximize', () => mainWindow?.webContents.send('window:maximized-changed', false))
+  setupUpdater(mainWindow) // v.98: auto-update in-app (manual check dari pita)
 
   mainWindow.on('closed', () => {
     mainWindow = null
@@ -236,6 +237,37 @@ ipcMain.handle('window:close', () => {
   mainWindow?.close()
 })
 ipcMain.handle('window:is-maximized', () => !!mainWindow?.isMaximized())
+
+// ─── Auto-update (electron-updater + GitHub Releases) — v.98 in-app check ────
+let _updaterWired = false
+function setupUpdater(win: BrowserWindow | null) {
+  try {
+    autoUpdater.autoDownload = false
+    autoUpdater.autoInstallOnAppQuit = true
+    if (_updaterWired) return
+    _updaterWired = true
+    const send = (channel: string, payload: any) => {
+      try { win?.webContents.send(channel, payload) } catch (e) { /* ignore */ }
+    }
+    autoUpdater.on('update-available', (info) => send('update:status', { status: 'available', version: info?.version }))
+    autoUpdater.on('update-not-available', (info) => send('update:status', { status: 'none', version: info?.version }))
+    autoUpdater.on('error', (err: any) => send('update:status', { status: 'error', message: String(err?.message || err) }))
+    autoUpdater.on('download-progress', (p) => send('update:progress', { percent: Math.round(p?.percent || 0) }))
+    autoUpdater.on('update-downloaded', (info) => send('update:status', { status: 'downloaded', version: info?.version }))
+  } catch (e) {
+    console.warn('[updater] setup gagal:', e)
+  }
+}
+ipcMain.handle('update:check', async () => {
+  try { await autoUpdater.checkForUpdates(); return { ok: true } } catch (e: any) { return { ok: false, error: e?.message || String(e) } }
+})
+ipcMain.handle('update:download', async () => {
+  try { await autoUpdater.downloadUpdate(); return { ok: true } } catch (e: any) { return { ok: false, error: e?.message || String(e) } }
+})
+ipcMain.handle('update:install', () => {
+  try { autoUpdater.quitAndInstall() } catch (e) { /* ignore */ }
+  return { ok: true }
+})
 
 // ─── IPC: Native Print ─────────────────────────────────────────────────────────
 //

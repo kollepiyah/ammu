@@ -5,10 +5,13 @@
       <template v-for="(it, i) in bigs" :key="'b' + i">
         <RibbonClock v-if="it.type === 'clock'" />
         <div v-else-if="it.type === 'greeting'" class="rb-greet">
-          <span class="rb-avatar-lg">{{ initials }}</span>
+          <span class="rb-avatar-lg">
+            <img v-if="fotoUrl" :src="fotoUrl" alt="" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover" />
+            <template v-else>{{ initials }}</template>
+          </span>
           <div>
-            <div class="g1">Ahlan, {{ userName }}!</div>
-            <div class="g2">Masuk sebagai <span class="rb-badge-admin">{{ userRole }}</span></div>
+            <div class="g1">{{ welcomeWord }}, {{ namaUser }}!</div>
+            <div class="g2">Masuk sebagai <span class="rb-badge-admin">{{ roleLabel }}</span></div>
           </div>
         </div>
         <RibbonButton v-else :item="it" :act="act" />
@@ -26,25 +29,14 @@
 import { computed } from 'vue'
 import RibbonButton from './RibbonButton.vue'
 import RibbonClock from './RibbonClock.vue'
-import { useAuthStore } from '@/stores/auth'
+import { useRibbonUser } from '@/composables/useRibbonUser'
 
 const props = defineProps({
   group: { type: Object, required: true },
   act: { type: Function, required: true }
 })
 
-const auth = useAuthStore()
-const userName = computed(() => auth.sesiAktif?.nama || auth.sesiAktif?.name || 'Pengguna')
-const userRole = computed(() => {
-  const s = auth.sesiAktif || {}
-  return (s.role_sistem || s.jabatan || s.role || '').toString().toUpperCase() || 'PENGGUNA'
-})
-const initials = computed(() => {
-  const n = userName.value.trim()
-  if (!n) return '?'
-  const parts = n.split(/\s+/)
-  return ((parts[0]?.[0] || '') + (parts[1]?.[0] || '')).toUpperCase() || n[0].toUpperCase()
-})
+const { welcomeWord, namaUser, roleLabel, fotoUrl, initials } = useRibbonUser()
 
 const bigs = computed(() => props.group.items.filter((i) => ['large', 'clock', 'greeting'].includes(i.type)))
 const stacks = computed(() => {

@@ -20,8 +20,11 @@
         <AppNotifBell />
       </div>
       <button class="rb-user" type="button" title="Akun" @click="goProfil">
-        <span class="rb-avatar">{{ initials }}</span>
-        <span class="nm"><b>{{ userName }}</b><span>{{ userRole }}</span></span>
+        <span class="rb-avatar">
+          <img v-if="fotoUrl" :src="fotoUrl" alt="" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover" />
+          <template v-else>{{ initials }}</template>
+        </span>
+        <span class="nm"><b>{{ namaUser }}</b><span>{{ roleLabel }}</span></span>
       </button>
 
       <div v-if="win.available" class="rb-winctrls">
@@ -46,33 +49,21 @@ import RibbonIcon from './RibbonIcon.vue'
 import GlobalSearch from '@/components/layout/GlobalSearch.vue'
 import AppNotifBell from '@/components/layout/AppNotifBell.vue'
 import { useUiStore } from '@/stores/ui'
-import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
 import { useWindowControls } from '@/composables/useWindowControls'
+import { useRibbonUser } from '@/composables/useRibbonUser'
 
 const ui = useUiStore()
-const auth = useAuthStore()
 const settings = useSettingsStore()
 const router = useRouter()
 const win = useWindowControls()
+const { namaUser, roleLabel, fotoUrl, initials } = useRibbonUser()
 
 const logoBroken = ref(false)
 const logoSrc = computed(() => (logoBroken.value ? '/logo.png' : settings.settings?.logoUrl || '/logo.png'))
 function onLogoError() {
   logoBroken.value = true
 }
-
-const userName = computed(() => auth.sesiAktif?.nama || auth.sesiAktif?.name || 'Pengguna')
-const userRole = computed(() => {
-  const s = auth.sesiAktif || {}
-  return (s.role_sistem || s.jabatan || s.role || 'Pengguna').toString().toUpperCase()
-})
-const initials = computed(() => {
-  const n = userName.value.trim()
-  if (!n) return '?'
-  const p = n.split(/\s+/)
-  return ((p[0]?.[0] || '') + (p[1]?.[0] || '')).toUpperCase() || n[0].toUpperCase()
-})
 
 function toggleTheme() {
   ui.toggleDark()

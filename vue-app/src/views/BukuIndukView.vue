@@ -9,8 +9,9 @@
     </div>
 
     <template v-else>
-      <!-- Header + stats + actions -->
+      <!-- Header + stats + actions. v.98: disembunyikan di Electron (aksi -> pita "Aksi Halaman") -->
       <div
+        v-if="!isDesktop"
         class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
       >
         <!-- v.21.113.0528: Header restructure — title + subtitle kiri, semua tombol aksi rapi di kanan (Ekspor/Input/Cetak), warna cyan konsisten -->
@@ -405,6 +406,8 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, reactive } from 'vue'
+import { useDesktopShell } from '@/composables/useDesktopShell'
+import { definePageActions } from '@/composables/useRibbonContext'
 import { subscribeColl } from '@/services/firestore'
 import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
@@ -854,4 +857,15 @@ async function exportBukuIndukExcel() {
     exportingBI.value = false
   }
 }
+
+// v.98 full-native (Electron): header in-page disembunyikan, aksi -> grup pita "Aksi Halaman"
+const { isElectron: isDesktop } = useDesktopShell()
+definePageActions(() => {
+  if (!isFullAccess.value) return []
+  return [
+    { label: 'Input Manual', icon: 'plus', primary: true, on: () => bukaModalInput() },
+    { label: 'Ekspor Excel', icon: 'download', on: exportBukuIndukExcel, disabled: exportingBI.value },
+    { label: 'Cetak Laporan', icon: 'printer', on: cetakLaporan }
+  ]
+})
 </script>

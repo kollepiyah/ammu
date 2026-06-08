@@ -68,13 +68,13 @@ const settings = useSettingsStore()
 const active = ref('beranda')
 
 const rail = computed(() => [
-  { id: 'beranda', icon: 'home', label: 'Beranda', to: '/dashboard' },
+  { id: 'beranda', icon: 'home', label: 'Beranda', to: '/beranda' },
   { id: 'baru', icon: 'plus', label: 'Postingan Baru', to: '/posts' },
   { id: 'buka', icon: 'folder', label: 'Buka Arsip', to: '/posts' },
   { id: 'info', icon: 'info', label: 'Info' },
   { sep: true },
   { id: 'akun', icon: 'user', label: 'Akun', to: '/profil' },
-  { id: 'pengaturan', icon: 'gear', label: 'Pengaturan', to: auth.isAdmin ? '/pengaturan-web' : '/profil' },
+  { id: 'pengaturan', icon: 'gear', label: 'Pengaturan', to: auth.isAdmin ? '/pengaturan-desktop' : '/profil' },
   { id: 'tentang', icon: 'help', label: 'Tentang' },
   { id: 'keluar', icon: 'logout', label: 'Keluar', action: 'logout' }
 ])
