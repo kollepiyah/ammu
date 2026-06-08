@@ -1,7 +1,7 @@
 # PROJECT KNOWLEDGE BASE — Ammu Online (Portal MU)
 > Dokumen onboarding untuk sesi Claude baru. Baca ini DULU sebelum mulai. **Update terakhir: 5 Juni 2026 (v.95.0626 — Generate Tagihan Khusus/infaq, ikon Tabungan→dompet, login bg base64+blur, hapus QuickActions Beranda, bottom-nav guru→Rekap, Dashboard Statistik overhaul [Top5 PTPT/PPPH klik-detail + kartu Guru Belum Input + Kelas Overload, scope kepala/PJ], rapor auto-isi Guru Kelas (fallback shift), repo rilis→kollepiyah/ammu, bump vc95). LANJUTAN sesi: FCM push (Android plugin + web/VAPID + 4 trigger server) + fix auth anon (fcm_token bisa simpan) + hapus toggle notif manual, struk dot-matrix 9.5×11 (BUKTI dikotak, terbilang baris penuh, penyetor kiri/penerima kanan), Electron Win7 dual-build (Electron 22) + dropdown versi di download login. TETAP vc95 (belum upload Play Console).**
 > ⚠️ KB KANONIK = file ini (`PROJECT-KNOWLEDGE-BASE.md`). File lama `PROJECT_KNOWLEDGE_BASE.md` (underscore) DEPRECATED — abaikan.
-> 👉 **RECAP TERBARU ada di PALING BAWAH** (cari "SESI v.97.0626 — RAPOR REDESIGN FULL-ACF (8 Juni 2026)"). ⭐ **CETAK SLIP 2-ply (dot-matrix 9.5") FINAL = ESC/P GRAFIS RASTER** (`utils/escpImage.js` → `print:raw`, BYPASS driver): render canvas Arial → bit-image ESC/P. Driver Windows (PDF/HTML) = kosong/kotak/feed-5cm → JANGAN dipakai utk slip 9.5. Tombol "Struk PDF" tetap PDF (preview/unduh). No.Transaksi: MU-/TB-/US-/BS-NNNddmmyy. Recap sebelumnya: "BATCH 13 ITEM + STRUK SLIP PDF + FCM + VERIFY + NOTIF + NISN", "RECEIPT VIEWER + STRUK ESC/P", "FCM PUSH + STRUK + WIN7".
+> 👉 **RECAP TERBARU ada di PALING BAWAH** (cari "SESI v.97.0626 — RAPOR REDESIGN FULL-ACF (8 Juni 2026)" lalu cari "SESI v.98.0626" di PALING BAWAH utk layout/rapor/statistik + catatan TRUNCATION raporPdf). ⭐ **CETAK SLIP 2-ply (dot-matrix 9.5") FINAL = ESC/P GRAFIS RASTER** (`utils/escpImage.js` → `print:raw`, BYPASS driver): render canvas Arial → bit-image ESC/P. Driver Windows (PDF/HTML) = kosong/kotak/feed-5cm → JANGAN dipakai utk slip 9.5. Tombol "Struk PDF" tetap PDF (preview/unduh). No.Transaksi: MU-/TB-/US-/BS-NNNddmmyy. Recap sebelumnya: "BATCH 13 ITEM + STRUK SLIP PDF + FCM + VERIFY + NOTIF + NISN", "RECEIPT VIEWER + STRUK ESC/P", "FCM PUSH + STRUK + WIN7".
 > ⏳ **STATUS:** perubahan v.95.0626 ADA di file (D:\). **Alur rilis kyai:** `tmp_recovery\_run_vite.cmd` → `git add -A && git commit --no-verify` → `npm run firebase:deploy` (web/PWA) → `npm run build:aab` (vc95 — WAJIB agar perubahan sampai ke app HP, krn Capacitor NATIVE bundle) → (desktop) `electron:publish` ke repo `kollepiyah/ammu`. Sesi v.95 = web/JS murni, tapi AAB tetap perlu utk app HP. **LANJUTAN aktivasi:** FCM butuh `google-services.json` di `vue-app/android/app/` + `npm i @capacitor/push-notifications --prefix vue-app` + `npx cap sync android` + `firebase deploy --only functions`. Win7 publish: HAPUS rilis GitHub `v95.0.626` lama dulu (electron-builder skip rilis >2 jam) lalu publish ulang. Detail lengkap di section "LANJUTAN: FCM PUSH + STRUK + WIN7" paling bawah.
 
 ---
@@ -726,3 +726,38 @@ npm run build:aab                :: vc95 (Play Console; WAJIB utk app HP — Cap
 
 ### ⚠️ ACTION KYAI sisa
 - **Hapus lembaga lama "P3H"** di Master Data → Lembaga (sekarang = PPPH); pindahkan santrinya ke PPPH. Kode sudah alias p3h→ppph tapi entri lembaga lama harus dihapus manual.
+
+---
+
+## SESI v.98.0626 — LAYOUT FULL-WIDTH + RAPOR/STATISTIK (8 Juni 2026, Cowork)
+> Lanjutan v.97. **Web/JS murni — display TETAP v.97.0626 (versionCode native TIDAK dibump).** Branch feature/vue-migration. SUDAH commit + push + `npm run firebase:deploy` (web/PWA) oleh kyai. Commit "all pending" (`git add -u`) → IKUT melandaskan kerja v95/v96 yg sebelumnya menggantung (POS metode/bayar-muka/keranjang, struk ESC/P, filter riwayat Y/M/D, dashboard residu, App Check, vite manualChunks). Scratch TIDAK di-commit (tmp_recovery/, firestore.rules.stage2-proposed, design_handoff_ammu_desktop/, AUDIT/REKAP .md masih untracked — pakai `git add -u`).
+
+### DIKERJAKAN
+1. **LAYOUT FULL-WIDTH edge-to-edge SEMUA halaman** (kyai: di layar besar banyak white space, card melompong). TERPUSAT di 2 file:
+   - `components/layout/AppLayout.vue`: cap `max-w-[1600px]` DILEPAS → `<div class="w-full">`.
+   - `assets/main.css` (ganti section densify v95/v96): (a) **un-cap page container** `main .max-w-{4,5,6,7}xl.mx-auto:not(.page-narrow) { max-width:none }` di ≥1024px; (b) **grid kartu auto-fit** — `md:grid-cols-2 → repeat(auto-fit,minmax(300px,1fr))`, `md:grid-cols-3`+`lg:grid-cols-3 → minmax(230px,1fr)` di ≥1024px. Form dikecualikan `:not(:has(input/label/select/textarea))`. `lg:grid-cols-2` SENGAJA dibiarkan (split Beranda greeting|kalender).
+   - **AKAR white space**: TIAP view nge-cap diri sendiri (`max-w-4xl/5xl/6xl/7xl mx-auto`); main.css lama cuma override `max-w-7xl` → cap lain lolos. (POS=4xl 896px, Beranda/Statistik/Santri=6xl 1152px.)
+   - **Kenapa auto-fit (bukan kolom-tetap)**: versi-1 pakai `repeat(4/5/6)` BERTAHAP → grid yg cuma 2 kartu (Personal Bisyaroh/Lama, chooser Rekap-Prestasi & Absensi-Santri = md:grid-cols-2) menyisakan kolom kosong di kanan ("belum full"). auto-fit: 2 kartu → melebar 50/50; banyak kartu → mengalir nambah kolom.
+   - **Form/pengaturan dijaga RAMPING** (anti-melar) via class **`.page-narrow`** di 6 view: GuruFormView, SantriFormView, PengaturanView, PengaturanKeuanganView, FieldSchemaView, LembagaDetailView. (ProfilView SEMPAT ditandai lalu DILEPAS — halaman tampilan, kyai mau full.)
+   - **Knobs gampang**: minmax 300px (grid-2) / 230px (grid-3); breakpoint un-cap 1024px; opt-out `.page-narrow` (container) & `.no-densify` (grid).
+2. **Rapor Pra PTPT — field Kelas** (`utils/raporPdf.js drawIdentitas` + `views/RaporView.vue kelasGabungan` — PARITY): hapus prefix lembaga → `{kelas_sekolah} / {kelas/level}` (mis "I / Level ½ Juz", atau "Level ½ Juz" kalau tak ada kelas sekolah). HANYA `lembaga==='Pra PTPT'`; PTPT tetap "VII / PTPT 1".
+3. **Rapor — blok "Dikeluarkan di / Pada Tanggal"** (`raporPdf.js drawSignBlocks`): nilai tempat+tanggal **rata kiri** tepat setelah titik dua (dulu `align:'right'` flush ke tepi `pageW-15`). Posisi blok tetap (atas TTD Kepala).
+4. **Statistik Lembaga — PKBM → SMP + SMA** (`views/StatistikView.vue statistikLembaga`): kartu PKBM diganti 2 kartu **SMP** (kelas VII-IX) & **SMA** (X-XII) via `getPkbmSubTier` (useLembaga). flatMap ganti row 'pkbm'. Santri by `kelas_sekolah`; guru per-tier diturunkan dari `guru_sekolah` santri (master guru PKBM tak ber-sub-tier). + import `getPkbmSubTier`; `URUTAN_LEMBAGA` += 'SMP','SMA'.
+5. **Distribusi Santri per Lembaga** (`StatistikView.vue distribusiLembaga`): kini hitung `s.lembaga` (ngaji) **+ `s.lembaga_sekolah` (FORMAL)**; PKBM dipecah SMP/SMA. Dulu cuma `s.lembaga` → lembaga formal (TK/SDI/SMP/SMA) tak terdata.
+
+### FILE DIUBAH (sesi ini)
+`components/layout/AppLayout.vue`, `assets/main.css`, `utils/raporPdf.js`, `views/RaporView.vue`, `views/StatistikView.vue`, `views/{GuruFormView,SantriFormView,PengaturanView,PengaturanKeuanganView,FieldSchemaView,LembagaDetailView,ProfilView}.vue`.
+
+### ⚠️ GOTCHA PENTING (BACA — sesi Cowork ini)
+- **Desktop Commander `edit_block` MEN-TRUNCATE `raporPdf.js`** (file 1037 baris): ekor file (blok `saveBlob` + `}` penutup `generateRaporPdf`) HILANG saat salah satu edit → `node --check` "Unexpected end of input", brace `{}` +1. **Diperbaiki**: `git show HEAD:vue-app/src/utils/raporPdf.js` (v97 SUDAH committed = HEAD f863998) → restore ekor via python ke mount → `node --check` OK + `diff <(git show HEAD:..) file` = hanya 2 edit niat. **PELAJARAN: utk file BESAR (>~1000 baris), JANGAN percaya edit_block buta — SELALU verifikasi `node --check`(.js) / brace-balance / diff-HEAD sesudahnya.**
+- **Bash mount STALE** utk file yg diedit via DC (DC tulis langsung ke D:\, mount lag) → `wc -l`/`tail`/last-line via bash bisa SALAH (mis. main.css dilapor 223 baris padahal 235; StatistikView 1491 padahal 1543). **Read tool = AUTHORITATIVE (D:\).** File yg DITULIS via mount (python) propagate normal ke D:\.
+- **git index CORRUPT di sandbox Linux** ("index uses extension ... corrupt") → `git diff`/`git status` via bash GAGAL, TAPI `git show HEAD:path` (object DB) JALAN. Recovery: `git show` + `diff <(git show HEAD:path) file`.
+- Verifikasi semua file besar lain UTUH via Read tool (end-tag benar): StatistikView 1543, RaporView 2807, PengaturanView 1789, PengaturanKeuanganView 1837, LembagaDetailView 1906, GuruForm/SantriForm.
+
+### STATUS DEPLOY / PENDING
+- ✅ Commit + push (feature/vue-migration) + `npm run firebase:deploy` (web/PWA) — DONE kyai. Build verify `tmp_recovery\_run_vite.cmd` = VITE_EXITCODE=0.
+- ⏳ **App HP terinstal TAK berubah** sampai `npm run build:aab` (BELUM; vc minimal 97). Desktop Electron perlu rebuild kalau mau perubahan ke .exe.
+- ⏳ **firestore.rules** ikut ke-commit (App Check v96). `firebase:deploy`=hosting; kalau rules belum live: `firebase deploy --only firestore:rules`.
+- Opsional bersih root: scratch + .md lama, `firestore.rules.stage2-proposed`, `design_handoff_ammu_desktop/`.
+- Kalau angka PKBM/SMP/SMA atau distribusi terlihat aneh: pastikan `kelas_sekolah` santri PKBM ∈ {VII..XII} (di luar itu tak ter-tier SMP/SMA).
+- Backlog lama tetap: audit RBAC/lembaga mendalam vs LOGIC GLOBAL, pensiun model TPQ-shift, hapus lembaga lama "P3H" (alias→PPPH).
