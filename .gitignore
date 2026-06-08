@@ -130,3 +130,10 @@ AUTO-SESSION-REPORT.md
 deployed-firestore.rules.txt
 deployed-firestore.rules.tmp
 AUDIT-FINAL.md
+
+# === Audit 08Jun2026 (v.96.0626): stop-track build/deploy output + signing keys ===
+# public/vue = output build Vue (regenerated oleh scripts/deploy-minified.cjs Step 0b)
+public/vue/
+# Signing keystore — JANGAN commit (repo publik kollepiyah/ammu)
+*.keystore
+ammu-app.keystore*
