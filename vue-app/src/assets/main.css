@@ -199,28 +199,37 @@ button, [role="button"] { min-height: 36px; }
    hanya aktif ≥1280px). Opt-out per-grid: tambahkan class "no-densify".
    :has() didukung Chromium (Capacitor/Electron/browser modern).
    ==================================================================== */
-@media (min-width: 1280px) {
-  main .grid.md\:grid-cols-2:not(.no-densify):not(:has(input)):not(:has(label)):not(:has(select)):not(:has(textarea)) {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-  main .grid.md\:grid-cols-3:not(.no-densify):not(:has(input)):not(:has(label)):not(:has(select)):not(:has(textarea)) {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-  /* container ber-cap max-w-7xl di <main> -> lebarkan supaya tak banyak ruang kosong pinggir */
-  main > .max-w-7xl,
-  main > div > .max-w-7xl {
-    max-width: 1600px;
+/* v.98.0626 (layout FULL edge-to-edge) — UPDATE perilaku di atas:
+   cap lebar 1600 DILEPAS total (kyai minta konten penuh di SEMUA halaman).
+   Un-cap mulai >=1024px. FORM/pengaturan dijaga nyaman via class .page-narrow.
+   Kolom kartu MENGISI PENUH lebar layar via auto-fit (form dikecualikan). */
+
+/* (1) Lepas cap page container tiap view -> konten mengisi PENUH lebar layar.
+   Hanya menyasar root view (.max-w-Nxl + .mx-auto); modal (max-w-* w-full TANPA
+   mx-auto) TIDAK terkena. .page-narrow = opt-out utk halaman form. */
+@media (min-width: 1024px) {
+  main .max-w-4xl.mx-auto:not(.page-narrow),
+  main .max-w-5xl.mx-auto:not(.page-narrow),
+  main .max-w-6xl.mx-auto:not(.page-narrow),
+  main .max-w-7xl.mx-auto:not(.page-narrow) {
+    max-width: none;
   }
 }
-@media (min-width: 1536px) {
+
+/* (2) Grid kartu MENGISI PENUH lebar via auto-fit:
+   - 2 kartu  -> melebar 50/50 (TIDAK ada kolom kosong di kanan)
+   - banyak kartu -> mengalir nambah kolom otomatis (makin lebar layar makin padat)
+   minmax(<min>,1fr): <min> = lebar minimum kartu sebelum turun baris.
+   lg:grid-cols-2 SENGAJA dibiarkan (split 2-kolom Beranda: greeting|kalender).
+   Form dikecualikan (:has input/label/select/textarea) supaya tak rusak. */
+@media (min-width: 1024px) {
+  /* grid 2-kolom: kartu lebih besar (chooser/ringkasan/panel) */
   main .grid.md\:grid-cols-2:not(.no-densify):not(:has(input)):not(:has(label)):not(:has(select)):not(:has(textarea)) {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   }
-  main .grid.md\:grid-cols-3:not(.no-densify):not(:has(input)):not(:has(label)):not(:has(select)):not(:has(textarea)) {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-  }
-  main > .max-w-7xl,
-  main > div > .max-w-7xl {
-    max-width: 1840px;
+  /* grid 3-kolom: kartu lebih kecil (daftar santri/guru, POS, dll) */
+  main .grid.md\:grid-cols-3:not(.no-densify):not(:has(input)):not(:has(label)):not(:has(select)):not(:has(textarea)),
+  main .grid.lg\:grid-cols-3:not(.no-densify):not(:has(input)):not(:has(label)):not(:has(select)):not(:has(textarea)) {
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
   }
 }

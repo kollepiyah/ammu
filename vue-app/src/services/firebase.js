@@ -4,6 +4,7 @@ import { initializeApp, getApp } from 'firebase/app'
 import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore'
 import { getAuth, connectAuthEmulator } from 'firebase/auth'
 import { getStorage, connectStorageEmulator } from 'firebase/storage'
+import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check'
 
 // v.20.3.0526: ROOT CAUSE FIX — sebelumnya Vue connect ke project `qiraati-rapor` (defunct),
 // data + akun real ada di `portal-mambaul-ulum`. Itu sebabnya:
@@ -22,6 +23,27 @@ const firebaseConfig = {
 }
 
 export const firebaseApp = initializeApp(firebaseConfig)
+// === App Check (audit 08Jun2026, v.96.0626) — blokir klien non-app ==========================
+// Init SINKRON, tepat setelah initializeApp & SEBELUM getFirestore/getAuth dipakai, supaya
+// SEMUA request Firestore/Auth/Storage App Check-aware sejak awal (penting agar aman saat
+// Console di-Enforce: request awal tak ditolak karena token belum siap).
+// AMAN/non-breaking: hanya aktif bila VITE_APPCHECK_RECAPTCHA_KEY di-set. Key kosong = OFF.
+// Web/PWA: reCAPTCHA v3. Native (Capacitor/Electron): set VITE_APPCHECK_DEBUG_TOKEN (token
+// terdaftar di Console) atau exempt dulu. try/catch -> gagal init TIDAK memblok app.
+try {
+  const _acKey = import.meta.env.VITE_APPCHECK_RECAPTCHA_KEY
+  const _acDebug = import.meta.env.VITE_APPCHECK_DEBUG_TOKEN
+  if (_acDebug && typeof self !== 'undefined') {
+    self.FIREBASE_APPCHECK_DEBUG_TOKEN = _acDebug === 'true' ? true : _acDebug
+  }
+  if (_acKey) {
+    initializeAppCheck(firebaseApp, {
+      provider: new ReCaptchaV3Provider(_acKey),
+      isTokenAutoRefreshEnabled: true
+    })
+  }
+} catch (e) { /* non-blocking */ }
+// ==========================================================================================
 export const db = getFirestore(firebaseApp)
 export const auth = getAuth(firebaseApp)
 export const storage = getStorage(firebaseApp)

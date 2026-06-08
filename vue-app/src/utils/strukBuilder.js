@@ -547,7 +547,7 @@ export async function cetakSlipTabunganPdf(mut = {}, settings = {}, { preview = 
   const c1 = left + 26
   const c2 = slipW / 2 - 8
   doc.setFont(font, 'normal')
-  doc.text(isSetor ? 'Nasabah (Penyetor),' : 'Nasabah (Penarik),', c1, y, { align: 'center' })
+  doc.text('Nasabah,', c1, y, { align: 'center' })
   doc.text('Penerima,', c2, y, { align: 'center' })
   const totLabelX = slipW / 2 + 16
   let ty = y
@@ -655,7 +655,7 @@ export function buildSlipTabunganHtml(mut = {}, settings = {}, { saldo = null, s
   if (saldo != null) totRows.push(['Saldo Akhir Rp.', fmtNum(saldo), false])
   const totHtml = totRows.map(([l, v, b]) => `<div class="tr${b ? ' big' : ''}"><span>${escapeHtml(l)}</span><span>${escapeHtml(v)}</span></div>`).join('')
   const footHtml =
-    `<div class="sign">${isSetor ? 'Nasabah (Penyetor),' : 'Nasabah (Penarik),'}<div class="sp"></div>( ${escapeHtml(nasabah || '.......... ')} )</div>`
+    `<div class="sign">Nasabah,<div class="sp"></div>( ${escapeHtml(nasabah || '.......... ')} )</div>`
     + `<div class="sign">Penerima,<div class="sp"></div>( ${escapeHtml(petugas && petugas !== '-' ? petugas : '')} )</div>`
     + `<div class="tot">${totHtml}</div>`
   return slipShellHtml({

@@ -1368,10 +1368,11 @@ const kelasGabungan = computed(() => {
   const s = santriAktif.value
   if (!s) return '-'
   const sekolah = String(s.kelas_sekolah || '').trim()
-  const ngaji = [String(s.lembaga || '').trim(), String(s.kelas || '').trim()]
-    .filter(Boolean)
-    .join(' ')
-    .trim()
+  const _lembG = String(s.lembaga || '').trim()
+  // v.98.0626: Pra PTPT -> level saja tanpa prefix "Pra PTPT" (parity dgn PDF)
+  const ngaji = _lembG === 'Pra PTPT'
+    ? String(s.kelas || '').trim()
+    : [_lembG, String(s.kelas || '').trim()].filter(Boolean).join(' ').trim()
   const parts = [sekolah, ngaji].filter(Boolean)
   return parts.length ? parts.join(' / ') : '-'
 })

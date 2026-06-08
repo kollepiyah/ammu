@@ -31,8 +31,14 @@ export default defineConfig({
         //   firebase + chart.js jadi chunk sendiri supaya initial load lebih ringan & cache-friendly.
         manualChunks(id) {
           if (id.includes('node_modules')) {
+            if (id.includes('firebase/messaging') || id.includes('@firebase/messaging')) return 'vendor-fcm'
             if (id.includes('firebase') || id.includes('@firebase')) return 'vendor-firebase'
             if (id.includes('chart.js') || id.includes('vue-chartjs')) return 'vendor-charts'
+            // v.96.0626 audit perf: jspdf/exceljs DIPAKAI hanya saat cetak/ekspor (dynamic import).
+            //   Pisah ke chunk sendiri supaya TIDAK ikut 'vendor' boot-chunk (sebelumnya ~1.9MB).
+            //   Tetap offline (ter-bundle di dist), initial load jauh lebih ringan (lazy).
+            if (id.includes('jspdf')) return 'vendor-pdf'
+            if (id.includes('exceljs')) return 'vendor-excel'
             return 'vendor'
           }
         }

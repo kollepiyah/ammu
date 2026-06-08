@@ -104,7 +104,20 @@ const entries = ref([]) // raw buku_induk pos rows
 const santriMap = ref({}) // id -> {lembaga, kelas, nis}
 const guruTtdMap = ref({}) // nama -> tanda_tangan URL (utk auto-isi TTD Penerima di struk PDF)
 const search = ref('')
-const filterTanggal = ref('') // '' = semua
+// v.108: filter tahun / bulan / hari
+const BULAN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember']
+const filterYear = ref(new Date().getFullYear())
+const filterMonth = ref(0) // 0 = semua bulan
+const filterDay = ref(0) // 0 = semua tanggal
+const years = computed(() => {
+  const ys = new Set()
+  for (const e of entries.value) {
+    const y = String(e.tanggal || '').slice(0, 4)
+    if (/^\d{4}$/.test(y)) ys.add(Number(y))
+  }
+  ys.add(new Date().getFullYear())
+  return [...ys].sort((a, b) => b - a)
+})
 
 onMounted(async () => {
   if (!isAdminKeu.value) {
@@ -188,8 +201,14 @@ const transaksi = computed(() => {
     groups[key].total += Number(e.nominal || 0)
   }
   let list = Object.values(groups)
-  // filter tanggal
-  if (filterTanggal.value) list = list.filter((t) => t.tanggal === filterTanggal.value)
+  // filter tahun / bulan / hari
+  list = list.filter((t) => {
+    const tg = String(t.tanggal || '')
+    if (filterYear.value && tg.slice(0, 4) !== String(filterYear.value)) return false
+    if (filterMonth.value > 0 && tg.slice(5, 7) !== String(filterMonth.value).padStart(2, '0')) return false
+    if (filterDay.value > 0 && tg.slice(8, 10) !== String(filterDay.value).padStart(2, '0')) return false
+    return true
+  })
   // search nama
   const kw = search.value.trim().toLowerCase()
   if (kw) list = list.filter((t) => String(t.santri_nama).toLowerCase().includes(kw))
@@ -297,19 +316,26 @@ function fmtTgl(t) {
               class="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none"
             />
           </div>
-          <input
-            v-model="filterTanggal"
-            type="date"
+          <select
+            v-model.number="filterYear"
             class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none"
-          />
-          <button
-            v-if="filterTanggal"
-            type="button"
-            @click="filterTanggal = ''"
-            class="px-3 py-2.5 text-xs font-bold rounded-xl border border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-[var(--bg-muted)]"
           >
-            Semua tanggal
-          </button>
+            <option v-for="y in years" :key="y" :value="y">{{ y }}</option>
+          </select>
+          <select
+            v-model.number="filterMonth"
+            class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none"
+          >
+            <option :value="0">Semua bulan</option>
+            <option v-for="(b, i) in BULAN" :key="b" :value="i + 1">{{ b }}</option>
+          </select>
+          <select
+            v-model.number="filterDay"
+            class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none"
+          >
+            <option :value="0">Semua tgl</option>
+            <option v-for="d in 31" :key="d" :value="d">{{ d }}</option>
+          </select>
         </div>
       </div>
 

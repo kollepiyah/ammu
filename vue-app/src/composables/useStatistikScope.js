@@ -59,6 +59,17 @@ export function useStatistikScope() {
     )
   })
 
+  // v.96.0626: scoped TERMASUK non-aktif (utk KPI total/aktif/non di StatistikView).
+  const scopedSantriAll = computed(() => {
+    const all = santriRaw.value || []
+    if (isFullAdmin.value) return all
+    const ul = auth.sesiAktif?.lembaga
+    if (!ul) return []
+    return all.filter(
+      (s) => s && (lembagaScopeMatches(ul, s.lembaga) || lembagaScopeMatches(ul, s.lembaga_sekolah))
+    )
+  })
+
   // periode bulan berjalan — format match InputBulananView (`YYYY_MM`)
   const periodeKeyNow = computed(() => {
     const d = new Date()
@@ -123,6 +134,7 @@ export function useStatistikScope() {
     isAdminMode,
     isFullAdmin,
     scopedSantriAktif,
+    scopedSantriAll,
     periodeKeyNow,
     guruBelumInput,
     kelasOverload

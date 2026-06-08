@@ -228,6 +228,23 @@
         </div>
       </div>
 
+      <!-- v.108: banner bersih-residu (super_admin) -->
+      <div
+        v-if="isAdmin && residuBuku.length > 0"
+        class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl px-4 py-3 flex items-center justify-between gap-2 flex-wrap"
+      >
+        <span class="text-xs font-bold text-amber-800 dark:text-amber-300">
+          <i class="fas fa-triangle-exclamation mr-1"></i>{{ residuBuku.length }} entri residu/tanpa tanggal valid (terhitung di dashboard, tak tampil di ledger)
+        </span>
+        <button
+          type="button"
+          @click="bersihkanResidu"
+          class="text-[11px] font-black bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded-lg"
+        >
+          <i class="fas fa-broom mr-1"></i>Bersihkan residu ({{ residuBuku.length }})
+        </button>
+      </div>
+
       <!-- Loading -->
       <div v-if="loading" class="bg-[var(--bg-card)] rounded-2xl p-10 text-center">
         <i class="fas fa-spinner fa-spin text-cyan-500 text-3xl mb-3"></i>
@@ -544,6 +561,37 @@ async function hapusBukuTerpilih() {
   })
   if (fail > 0) toast.warning(`${ok} dihapus, ${fail} gagal — cek console`)
   else toast.success(`${ok} record dihapus`)
+}
+// v.108: residu = entri tabungan-residu ATAU tanpa tanggal valid (ke-hitung di dashboard tapi tdk tampil di ledger)
+const residuBuku = computed(() =>
+  bukuRaw.value.filter((b) => {
+    const kat = String(b.kategori || '').toLowerCase()
+    const sumber = String(b.sumber || '').toLowerCase()
+    const tabungan = kat === 'tabungan' || sumber.includes('tabungan')
+    const noTgl = !/^\d{4}-\d{2}/.test(String(b.tanggal || '').trim())
+    return tabungan || noTgl
+  })
+)
+async function bersihkanResidu() {
+  if (!isAdmin.value) return
+  const list = residuBuku.value
+  if (list.length === 0) { toast.info('Tidak ada residu.'); return }
+  if (!confirm(`Hapus ${list.length} entri residu/tak-bertanggal dari buku induk?\n\nIni entri yang ter-hitung di dashboard tapi TIDAK muncul di ledger. Tidak bisa di-undo.`)) return
+  let ok = 0, fail = 0
+  const ids = list.map((b) => String(b.id))
+  for (const id of ids) {
+    try { await deleteOne('keuangan_buku_induk', id); ok++ }
+    catch (e) { fail++; console.warn('[bersihkanResidu]', id, e.message) }
+  }
+  await writeAuditLog({
+    operator: auth.sesiAktif?.nama || auth.sesiAktif?.guru || 'Admin',
+    action: 'cleanup_residu',
+    target: 'keuangan_buku_induk',
+    ids,
+    detail: { ok, fail }
+  })
+  if (fail > 0) toast.warning(`${ok} residu dihapus, ${fail} gagal — cek console`)
+  else toast.success(`${ok} entri residu dibersihkan`)
 }
 const inputForm = reactive({
   tanggal: new Date().toISOString().slice(0, 10),

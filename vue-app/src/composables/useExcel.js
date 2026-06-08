@@ -9,31 +9,10 @@ let _loadedPromise = null
  * Sebelumnya local-first → MIME 'text/html' karena rewrite rule.
  */
 function loadExcelJS() {
-  if (typeof window === 'undefined') return Promise.reject(new Error('no window'))
-  if (window.ExcelJS) return Promise.resolve(window.ExcelJS)
   if (_loadedPromise) return _loadedPromise
-
-  const CDN_URL = 'https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js'
-  const LOCAL_URL = '/vue/exceljs.min.js'
-
-  function tryLoad(src) {
-    return new Promise((resolve, reject) => {
-      const s = document.createElement('script')
-      s.src = src
-      s.async = true
-      s.onload = () => {
-        if (window.ExcelJS) resolve(window.ExcelJS)
-        else reject(new Error('ExcelJS not exposed after ' + src))
-      }
-      s.onerror = () => reject(new Error('Script error: ' + src))
-      document.head.appendChild(s)
-    })
-  }
-
-  _loadedPromise = tryLoad(CDN_URL).catch((err) => {
-    console.warn('[useExcel] CDN load failed, fallback to local:', err.message)
-    return tryLoad(LOCAL_URL)
-  })
+  // v.96.0626 (audit): ExcelJS di-BUNDLE lokal (npm) via dynamic import -> offline-capable
+  //   (native/Electron/PWA), tak lagi tergantung CDN cdnjs. Lazy/code-split.
+  _loadedPromise = import('exceljs').then((mod) => mod.default || mod)
   return _loadedPromise
 }
 

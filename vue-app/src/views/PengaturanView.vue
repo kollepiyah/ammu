@@ -1,5 +1,5 @@
 <template>
-  <div class="p-4 max-w-5xl mx-auto pb-32">
+  <div class="p-4 max-w-5xl mx-auto pb-32 page-narrow">
     <!-- ============================================================
          HEADER: tombol back + judul + indikator unsaved
          ============================================================ -->

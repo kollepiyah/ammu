@@ -1,340 +1,42 @@
+=== BRANCH === 
 feature/vue-migration
----STATUS--- 
+=== STATUS SHORT === 
  M PROJECT-KNOWLEDGE-BASE.md
- m "Portal MU"
- M package.json
- D public/vue/assets/AbsensiGuruView-SdbU7wKw.js
- D public/vue/assets/AbsensiSantriView-C6uEgq04.js
- D public/vue/assets/AppLayout-Bgp_ZOnH.js
- D public/vue/assets/AppLayout-DnqScTxq.css
- D public/vue/assets/BisyarohView-BYOxMRR1.js
- D public/vue/assets/BukuIndukView-Dcw-LGK2.js
- D public/vue/assets/CapaianPrestasiView-ChVLv9Aj.js
- D public/vue/assets/DashboardView-WwprJC9i.js
- D public/vue/assets/EmptyState-Mo4OFUGV.js
- D public/vue/assets/FieldSchemaView-Dd-bJsSj.js
- D public/vue/assets/GuruFormView-C7k8dK1X.js
- D public/vue/assets/GuruView-BtV_Nyw7.js
- D public/vue/assets/HutangPiutangView-DnPnL0kT.js
- D public/vue/assets/InputBulananView-CKw0mtMn.js
- D public/vue/assets/KalenderKegiatanView-B_cfsBLW.js
- D public/vue/assets/KegiatanPesantrenView-DOxGGuuS.js
- D public/vue/assets/KelasView-CxLKX4xD.js
- D public/vue/assets/KeuanganDashboardView-V4spX-0K.js
- D public/vue/assets/KritikSaranView-FNZT8q_z.js
- D public/vue/assets/LaporanKeuanganView-BmyEORfl.js
- D public/vue/assets/LembagaDetailView-BelLEITJ.js
- D public/vue/assets/LembagaFormView-7wx5MlpA.js
- D public/vue/assets/LoginView-Cwu26lGo.js
- D public/vue/assets/MasterDataView-CLKOl49q.js
- D public/vue/assets/MasterFormBridgeView-BolC2-7z.js
- D public/vue/assets/NaikKelasView-DRGgDRn7.js
- D public/vue/assets/NotifikasiView-DD0TkccP.js
- D public/vue/assets/PembayaranPendingView-C_Xame7l.js
- D public/vue/assets/PembayaranView-B1QBLj3n.js
- D public/vue/assets/PengaturanKeuanganView-D0OyU2ak.js
- D public/vue/assets/PengaturanView-Cs_sQMvf.js
- D public/vue/assets/PersonalView-DQZOqIHX.js
- D public/vue/assets/PosSantriView-zXTqbNJ2.js
- D public/vue/assets/PostsView-DEVRJ1NR.js
- D public/vue/assets/PpdbAdminView-CvUcTpDe.js
- D public/vue/assets/PpdbDetailView-C3H2o6l_.js
- D public/vue/assets/PpdbFormView-BE5WOOGW.js
- D public/vue/assets/ProfilDetailView-Qr9rcvTl.js
- D public/vue/assets/ProfilSantri-ps0eYjbo.js
- D public/vue/assets/ProfilView-BoL9jm9w.js
- D public/vue/assets/RaporView-nh5GmgBf.js
- D public/vue/assets/RekapDiniyahView-DXZHwxrT.js
- D public/vue/assets/RekapPrestasiView-DBUFkStA.js
- D public/vue/assets/RiwayatPosView-BmZ8IBOU.js
- D public/vue/assets/RiwayatSantriView-lWLACuq2.js
- D public/vue/assets/SantriFormView-Bc0uE70_.js
- D public/vue/assets/SantriView-DF2XpomX.js
- D public/vue/assets/StatistikView-BwUwvHbz.js
- D public/vue/assets/SupervisiView-iZ2QvM_F.js
- D public/vue/assets/TabunganView-DEuctjXB.js
- D public/vue/assets/TagihanView-BjWCNBn1.js
- D public/vue/assets/UiActionCard-D0Mx1Qoy.js
- D public/vue/assets/UiButton-oxcoUTba.js
- D public/vue/assets/auditLog-CoWYTR7e.js
- D public/vue/assets/collections-DMbYC7hv.js
- D public/vue/assets/index-D7hc0CtE.js
- D public/vue/assets/pdfBuilder-DiIsiF7g.js
- D public/vue/assets/storage-CulxTZg5.js
- D public/vue/assets/strukBuilder-CGBpbR1h.js
- D public/vue/assets/useConfirm-Cm_PD30o.js
- D public/vue/assets/useExcel-B4m-VPQB.js
- D public/vue/assets/useGuru-F-ZtolLf.js
- D public/vue/assets/useKegiatan-DIdN5og2.js
- D public/vue/assets/useKeuangan-DRFQjcmK.js
- D public/vue/assets/useLembaga-DxjwrcvG.js
- D public/vue/assets/useMenus-DbM8uKL9.js
- D public/vue/assets/useNativeDownload-CoIKnPs_.js
- D public/vue/assets/useNotifications-CBY49lYl.js
- D public/vue/assets/useSantri-DxekQBBM.js
- D public/vue/assets/useWaliChildren-BvsJ8rM8.js
- D public/vue/assets/vendor-BuoL3SL6.js
- D public/vue/assets/vendor-charts-CJRx1Q1f.js
- D public/vue/assets/vendor-firebase-CglLYNqz.js
- M public/vue/index.html
+ M firebase.json
+ M firestore.rules
+ M public/dist/tailwind.css
+ M scripts/build-aab.cjs
+ M tmp_recovery/_git_status.cmd
  M tmp_recovery/_gitstatus.txt
- M vue-app/android/app/build.gradle
- M vue-app/android/app/src/main/AndroidManifest.xml
- M vue-app/android/app/src/main/java/app/ammu/id/MainActivity.java
- D vue-app/android/app/src/main/java/app/ammu/id/widgets/JamHijriWidget.kt
- M vue-app/android/app/src/main/res/drawable/widget_bg.xml
- M vue-app/android/app/src/main/res/layout/widget_jam_hijri.xml
- M vue-app/android/app/src/main/res/values/strings.xml
- D vue-app/electron/app/assets/AbsensiGuruView-DwoenLhf.js
- D vue-app/electron/app/assets/AbsensiSantriView-DCP1C3E1.js
- D vue-app/electron/app/assets/AppLayout-DnqScTxq.css
- D vue-app/electron/app/assets/AppLayout-Iy2T-YG0.js
- D vue-app/electron/app/assets/BisyarohView-DEbpjM01.js
- D vue-app/electron/app/assets/BukuIndukView-D7VQ9LOq.js
- D vue-app/electron/app/assets/CapaianPrestasiView-DNWWTmUM.js
- D vue-app/electron/app/assets/DashboardView-CYfrEWnL.js
- D vue-app/electron/app/assets/EmptyState-BNpBZvGX.js
- D vue-app/electron/app/assets/FieldSchemaView-6Mpwd5kK.js
- D vue-app/electron/app/assets/GuruFormView-DejZIZvH.js
- D vue-app/electron/app/assets/GuruView-2PLgoE11.js
- D vue-app/electron/app/assets/HutangPiutangView-SVAjYpnK.js
- D vue-app/electron/app/assets/InputBulananView-C2ujV2NZ.js
- D vue-app/electron/app/assets/KalenderKegiatanView-C2c-_lkp.js
- D vue-app/electron/app/assets/KegiatanPesantrenView-CCqml2HR.js
- D vue-app/electron/app/assets/KelasView-CRy2Dw2a.js
- D vue-app/electron/app/assets/KeuanganDashboardView-BP11Bzp-.js
- D vue-app/electron/app/assets/KritikSaranView-Dyc2mKNi.js
- D vue-app/electron/app/assets/LaporanKeuanganView-BcGFo_gd.js
- D vue-app/electron/app/assets/LembagaDetailView-B1dTkEMA.js
- D vue-app/electron/app/assets/LembagaFormView-Sk1nfdEs.js
- D vue-app/electron/app/assets/LoginView-BxVz2gB6.js
- D vue-app/electron/app/assets/MasterDataView-Dpp3HzJq.js
- D vue-app/electron/app/assets/MasterFormBridgeView-8DORz2q2.js
- D vue-app/electron/app/assets/NaikKelasView-Msim9fqu.js
- D vue-app/electron/app/assets/NotifikasiView-KzuTWeK9.js
- D vue-app/electron/app/assets/PembayaranPendingView-CFRY8DIr.js
- D vue-app/electron/app/assets/PembayaranView-Dz8oz_69.js
- D vue-app/electron/app/assets/PengaturanKeuanganView-DuiW1hOy.js
- D vue-app/electron/app/assets/PengaturanView-ok3-TJbz.js
- D vue-app/electron/app/assets/PersonalView-CRClMd8J.js
- D vue-app/electron/app/assets/PosSantriView-B6t06kL1.js
- D vue-app/electron/app/assets/PosSantriView-D0BGwg6s.css
- D vue-app/electron/app/assets/PostsView-BcVEHc-V.js
- D vue-app/electron/app/assets/PpdbAdminView-earMQmVu.js
- D vue-app/electron/app/assets/PpdbDetailView-DZNafD8w.js
- D vue-app/electron/app/assets/PpdbFormView-B5lmE7pJ.js
- D vue-app/electron/app/assets/ProfilDetailView-Cge7gdRd.js
- D vue-app/electron/app/assets/ProfilSantri-CVWK8EUx.js
- D vue-app/electron/app/assets/ProfilView-CLPzEkMQ.js
- D vue-app/electron/app/assets/RaporView-DbhsgYrB.js
- D vue-app/electron/app/assets/RekapDiniyahView-BY_A9U_2.js
- D vue-app/electron/app/assets/RekapPrestasiView-D_B8AgP6.js
- D vue-app/electron/app/assets/RiwayatPosView-B1xcG6gI.js
- D vue-app/electron/app/assets/RiwayatSantriView-Cz62PY5e.js
- D vue-app/electron/app/assets/SantriFormView-BSco1ZZ6.js
- D vue-app/electron/app/assets/SantriView-BPl0qXa-.js
- D vue-app/electron/app/assets/StatistikView-Dh1XgZos.js
- D vue-app/electron/app/assets/SupervisiView-CZ3cXaZ1.js
- D vue-app/electron/app/assets/TabunganView-BPyCsgYc.js
- D vue-app/electron/app/assets/TagihanView-CqY59tq1.js
- D vue-app/electron/app/assets/UiActionCard-BsFJMhLD.js
- D vue-app/electron/app/assets/UiButton-C0JZQ7Y4.js
- D vue-app/electron/app/assets/auditLog-Cx7dkYHc.js
- D vue-app/electron/app/assets/collections-DFkJ7ZFe.js
- D vue-app/electron/app/assets/index-B43TxULq.css
- D vue-app/electron/app/assets/index-DPcriTui.js
- D vue-app/electron/app/assets/pdfBuilder-D3J8p32R.js
- D vue-app/electron/app/assets/storage-XKsukVHU.js
- D vue-app/electron/app/assets/strukBuilder-CDXsUWoc.js
- D vue-app/electron/app/assets/useConfirm-BfH9d_4v.js
- D vue-app/electron/app/assets/useExcel-7eCL0Mto.js
- D vue-app/electron/app/assets/useGuru-DEf7GJ9U.js
- D vue-app/electron/app/assets/useKegiatan-DWKFpRaL.js
- D vue-app/electron/app/assets/useKeuangan-BGnP1Fq9.js
- D vue-app/electron/app/assets/useLembaga-i_iQ87wZ.js
- D vue-app/electron/app/assets/useMenus-CN3mOpkC.js
- D vue-app/electron/app/assets/useNativeDownload-KdeyH0Vg.js
- D vue-app/electron/app/assets/useNotifications-D0-HqHWy.js
- D vue-app/electron/app/assets/useSantri-DMuYCtHM.js
- D vue-app/electron/app/assets/useWaliChildren-CL1b94Fg.js
- D vue-app/electron/app/assets/vendor-DWO-f0MT.js
- D vue-app/electron/app/assets/vendor-charts-BWmdC5sf.js
- D vue-app/electron/app/assets/vendor-firebase-YbTGaUlm.js
- M vue-app/electron/app/index.html
- M vue-app/electron/package.json
+ M vue-app/package-lock.json
  M vue-app/package.json
- M vue-app/src/components/PrinterSettingsModal.vue
- M vue-app/src/components/dashboard/DashboardJamHijri.vue
- M vue-app/src/components/dashboard/DashboardKalender.vue
+ M vue-app/src/assets/main.css
+ M vue-app/src/components/layout/AppLayout.vue
  M vue-app/src/components/layout/AppSidebar.vue
  M vue-app/src/components/pos/ModalPOS.vue
+ M vue-app/src/composables/useExcel.js
+ M vue-app/src/composables/usePushNotifications.js
+ M vue-app/src/composables/useStatistikScope.js
  M vue-app/src/main.js
- M vue-app/src/utils/pdfBuilder.js
+ M vue-app/src/services/firebase.js
+ M vue-app/src/services/pdf.js
+ M vue-app/src/utils/escpImage.js
+ M vue-app/src/utils/raporPdf.js
  M vue-app/src/utils/strukBuilder.js
  M vue-app/src/views/BukuIndukView.vue
- M vue-app/src/views/DashboardView.vue
- M vue-app/src/views/LoginView.vue
- M vue-app/src/views/PengaturanKeuanganView.vue
+ M vue-app/src/views/KeuanganDashboardView.vue
  M vue-app/src/views/PosSantriView.vue
- M vue-app/src/views/PpdbAdminView.vue
+ M vue-app/src/views/RaporView.vue
  M vue-app/src/views/RiwayatPosView.vue
-?? public/vue/assets/AbsensiGuruView-CyBLjYvg.js
-?? public/vue/assets/AbsensiSantriView-DlTJKvo8.js
-?? public/vue/assets/AppLayout-DNyh4H9S.css
-?? public/vue/assets/AppLayout-Dg-JvqgO.js
-?? public/vue/assets/BisyarohView-Bl_q-uK0.js
-?? public/vue/assets/BukuIndukView-B3JrYVIz.js
-?? public/vue/assets/CapaianPrestasiView-DYxxKFU8.js
-?? public/vue/assets/DashboardView-EraiJw8f.js
-?? public/vue/assets/EmptyState-a9E0_k1r.js
-?? public/vue/assets/FieldSchemaView-BudJOSYX.js
-?? public/vue/assets/GuruFormView-CQ30mqzI.js
-?? public/vue/assets/GuruView-D15kfLW1.js
-?? public/vue/assets/HutangPiutangView-BPGzdL5v.js
-?? public/vue/assets/InputBulananView-e2xaRXhU.js
-?? public/vue/assets/KalenderKegiatanView-Dgc_Z3UR.js
-?? public/vue/assets/KegiatanPesantrenView-CQWvaxSk.js
-?? public/vue/assets/KelasView-Dn-mJFcx.js
-?? public/vue/assets/KeuanganDashboardView-BoPNLGO1.js
-?? public/vue/assets/KritikSaranView-Dpxig3tt.js
-?? public/vue/assets/LaporanKeuanganView-BBzxrysT.js
-?? public/vue/assets/LembagaDetailView-DKNb5nEr.js
-?? public/vue/assets/LembagaFormView-CDEYXG-p.js
-?? public/vue/assets/LoginView-BmRM-3T_.js
-?? public/vue/assets/MasterDataView-oVXiV2ls.js
-?? public/vue/assets/MasterFormBridgeView-DJ-Q3jRn.js
-?? public/vue/assets/NaikKelasView-DvDeGzHQ.js
-?? public/vue/assets/NotifikasiView-B6Om8S-L.js
-?? public/vue/assets/PembayaranPendingView-C0aD0Tg9.js
-?? public/vue/assets/PembayaranView-BmKvXme2.js
-?? public/vue/assets/PengaturanKeuanganView-WypCocuw.js
-?? public/vue/assets/PengaturanView-CkCLbwCQ.js
-?? public/vue/assets/PersonalView-Dg0UbcnH.js
-?? public/vue/assets/PosSantriView-BAMutGUt.js
-?? public/vue/assets/PostsView-aWeOWdIp.js
-?? public/vue/assets/PpdbAdminView-COP1D4fa.js
-?? public/vue/assets/PpdbDetailView-dX_82_yj.js
-?? public/vue/assets/PpdbFormView-RpVUmSDK.js
-?? public/vue/assets/ProfilDetailView-BlY4ExpX.js
-?? public/vue/assets/ProfilSantri-CkII4Ct5.js
-?? public/vue/assets/ProfilView-DDKu4EYb.js
-?? public/vue/assets/RaporView-CCcJ89_C.js
-?? public/vue/assets/RekapDiniyahView-BTfBLr5-.js
-?? public/vue/assets/RekapPrestasiView-C4M4T79G.js
-?? public/vue/assets/RiwayatPosView-C5hQf5sa.js
-?? public/vue/assets/RiwayatSantriView-l96jEZ4V.js
-?? public/vue/assets/SantriFormView-BGJs3xw-.js
-?? public/vue/assets/SantriView-CD0cqJjD.js
-?? public/vue/assets/StatistikView-B1auDNq3.js
-?? public/vue/assets/SupervisiView-7U_lM95g.js
-?? public/vue/assets/TabunganView-BPr97v4r.js
-?? public/vue/assets/TagihanView-CDFR1SVK.js
-?? public/vue/assets/UiActionCard-CBWTApAt.js
-?? public/vue/assets/UiButton-CDHycocv.js
-?? public/vue/assets/auditLog-Dwb-3sh0.js
-?? public/vue/assets/collections-B19d6p-0.js
-?? public/vue/assets/index-C5qveU97.js
-?? public/vue/assets/pdfBuilder-DfqDygss.js
-?? public/vue/assets/storage-Ce5u-bTv.js
-?? public/vue/assets/strukBuilder-Sanionwg.js
-?? public/vue/assets/useConfirm-DUpVvMva.js
-?? public/vue/assets/useExcel--BX4Mjm5.js
-?? public/vue/assets/useGuru-g4n4s36D.js
-?? public/vue/assets/useKegiatan-DRx6Nhba.js
-?? public/vue/assets/useKeuangan-DnKMBa5h.js
-?? public/vue/assets/useLembaga-BTHZeTqB.js
-?? public/vue/assets/useMenus-BMntmZki.js
-?? public/vue/assets/useNativeDownload-iAWH2KCm.js
-?? public/vue/assets/useNotifications-DBLgMMSh.js
-?? public/vue/assets/useSantri-Dfry1Cq1.js
-?? public/vue/assets/useWaliChildren-CS1IqoS5.js
-?? public/vue/assets/vendor-IxPSciDF.js
-?? public/vue/assets/vendor-charts-DP97xNoq.js
-?? public/vue/assets/vendor-firebase-BcfQRLYQ.js
-?? tmp_recovery/_git_status.cmd
-?? vue-app/android/app/src/main/java/app/ammu/id/WidgetBridgePlugin.java
-?? vue-app/android/app/src/main/java/app/ammu/id/widgets/JamHijriWidget.java
-?? vue-app/android/app/src/main/java/app/ammu/id/widgets/KalenderWidget.java
-?? vue-app/android/app/src/main/res/drawable/widget_card_bg.xml
-?? vue-app/android/app/src/main/res/drawable/widget_chip.xml
-?? vue-app/android/app/src/main/res/drawable/widget_datechip_bg.xml
-?? vue-app/android/app/src/main/res/drawable/widget_datechip_top.xml
-?? vue-app/android/app/src/main/res/drawable/widget_event_bg.xml
-?? vue-app/android/app/src/main/res/layout/widget_kalender.xml
-?? vue-app/android/app/src/main/res/xml/widget_kalender_info.xml
-?? vue-app/electron/app/assets/AbsensiGuruView-DshS9p0W.js
-?? vue-app/electron/app/assets/AbsensiSantriView-Dyxe_z7h.js
-?? vue-app/electron/app/assets/AppLayout-Chtjn_CO.js
-?? vue-app/electron/app/assets/AppLayout-DNyh4H9S.css
-?? vue-app/electron/app/assets/BisyarohView-CO2Xw0G_.js
-?? vue-app/electron/app/assets/BukuIndukView-CnUxFwf4.js
-?? vue-app/electron/app/assets/CapaianPrestasiView-OXPQwVG9.js
-?? vue-app/electron/app/assets/DashboardView-ajXTqPAn.js
-?? vue-app/electron/app/assets/EmptyState-7b3O6A22.js
-?? vue-app/electron/app/assets/FieldSchemaView-DvFqu3Zb.js
-?? vue-app/electron/app/assets/GuruFormView-DxIeMOqK.js
-?? vue-app/electron/app/assets/GuruView-DUKMUL9S.js
-?? vue-app/electron/app/assets/HutangPiutangView-DzChiOQG.js
-?? vue-app/electron/app/assets/InputBulananView-CP6l-KD9.js
-?? vue-app/electron/app/assets/KalenderKegiatanView-Dtij0WbM.js
-?? vue-app/electron/app/assets/KegiatanPesantrenView-Bor2YmQ6.js
-?? vue-app/electron/app/assets/KelasView-CPcZuMc6.js
-?? vue-app/electron/app/assets/KeuanganDashboardView-CDPCqtXM.js
-?? vue-app/electron/app/assets/KritikSaranView-o5hXwe2g.js
-?? vue-app/electron/app/assets/LaporanKeuanganView-CINv4Hrz.js
-?? vue-app/electron/app/assets/LembagaDetailView-Ju06GXx0.js
-?? vue-app/electron/app/assets/LembagaFormView-CrEJPDt8.js
-?? vue-app/electron/app/assets/LoginView-oDW8n2MO.js
-?? vue-app/electron/app/assets/MasterDataView-AUMuG4zk.js
-?? vue-app/electron/app/assets/MasterFormBridgeView-B0PecYcI.js
-?? vue-app/electron/app/assets/NaikKelasView-Bt3W1w2z.js
-?? vue-app/electron/app/assets/NotifikasiView-DK3qCVl7.js
-?? vue-app/electron/app/assets/PembayaranPendingView-GyJFBsXY.js
-?? vue-app/electron/app/assets/PembayaranView-B141MqbA.js
-?? vue-app/electron/app/assets/PengaturanKeuanganView-xco_6_pD.js
-?? vue-app/electron/app/assets/PengaturanView-BWK_3nuU.js
-?? vue-app/electron/app/assets/PersonalView-Bqutwclf.js
-?? vue-app/electron/app/assets/PosSantriView-C8-r6MlC.js
-?? vue-app/electron/app/assets/PosSantriView-Dk7njSg4.css
-?? vue-app/electron/app/assets/PostsView-BiSjfQAU.js
-?? vue-app/electron/app/assets/PpdbAdminView-CvsuJMsA.js
-?? vue-app/electron/app/assets/PpdbDetailView-B5fvxXeL.js
-?? vue-app/electron/app/assets/PpdbFormView-BMhEdNwj.js
-?? vue-app/electron/app/assets/ProfilDetailView-CEd0DYan.js
-?? vue-app/electron/app/assets/ProfilSantri-DKoJl_N-.js
-?? vue-app/electron/app/assets/ProfilView-B7GlzGyJ.js
-?? vue-app/electron/app/assets/RaporView-CCrBHxkb.js
-?? vue-app/electron/app/assets/RekapDiniyahView-CIgO6crd.js
-?? vue-app/electron/app/assets/RekapPrestasiView-DDGSDSYR.js
-?? vue-app/electron/app/assets/RiwayatPosView-DcUSa_Mp.js
-?? vue-app/electron/app/assets/RiwayatSantriView-29U0nDTD.js
-?? vue-app/electron/app/assets/SantriFormView-CR7ned7b.js
-?? vue-app/electron/app/assets/SantriView-B1Qx4eZf.js
-?? vue-app/electron/app/assets/StatistikView-CkNq4G6r.js
-?? vue-app/electron/app/assets/SupervisiView-DGefwY00.js
-?? vue-app/electron/app/assets/TabunganView-CzsgS7e-.js
-?? vue-app/electron/app/assets/TagihanView-2dC3LeZs.js
-?? vue-app/electron/app/assets/UiActionCard-7QOJ1MaE.js
-?? vue-app/electron/app/assets/UiButton-DImV8Ns6.js
-?? vue-app/electron/app/assets/auditLog-DQ94K6G9.js
-?? vue-app/electron/app/assets/collections-Cci5Xs4W.js
-?? vue-app/electron/app/assets/index-Bx5g_0wt.css
-?? vue-app/electron/app/assets/index-Dhpxo1pw.js
-?? vue-app/electron/app/assets/pdfBuilder-D8ptpqC-.js
-?? vue-app/electron/app/assets/storage-eFVHtOSp.js
-?? vue-app/electron/app/assets/strukBuilder-CfgHQpFR.js
-?? vue-app/electron/app/assets/useConfirm-CLOYIPBr.js
-?? vue-app/electron/app/assets/useExcel-BVB-5hMR.js
-?? vue-app/electron/app/assets/useGuru-6NE6nij2.js
-?? vue-app/electron/app/assets/useKegiatan-IhEff8en.js
-?? vue-app/electron/app/assets/useKeuangan-CIegl8DP.js
-?? vue-app/electron/app/assets/useLembaga-BOEJJ7fK.js
-?? vue-app/electron/app/assets/useMenus-DP9nply7.js
-?? vue-app/electron/app/assets/useNativeDownload-BkASa3yd.js
-?? vue-app/electron/app/assets/useNotifications-B7TaGA5f.js
-?? vue-app/electron/app/assets/useSantri-ClH--ltj.js
-?? vue-app/electron/app/assets/useWaliChildren-40fs85Xc.js
-?? vue-app/electron/app/assets/vendor-DjzLzD3c.js
-?? vue-app/electron/app/assets/vendor-charts-CRV6tsGR.js
-?? vue-app/electron/app/assets/vendor-firebase-C8ApBrYt.js
-?? vue-app/src/composables/useWidgetSync.js
+ M vue-app/src/views/StatistikView.vue
+ M vue-app/src/views/TabunganView.vue
+ M vue-app/vite.config.js
+?? AUDIT-COWORK-08JUN2026-MENYELURUH.md
+?? REKAP-TASK-POS-TABUNGAN.md
+?? design_handoff_ammu_desktop/
+?? firestore.rules.stage2-proposed
+?? tmp_recovery/_commit_task9_higiene.cmd
+=== LAST 3 COMMITS === 
+f4662b8 feat(rapor): identitas 2 kolom rata kiri (Nama Santri), tabel rata-rata full width, KOP 2 logo fallback, predikat editable (label+min), KKM Diniyah editable di Mata Pelajaran
+9e4d4b3 feat(rapor): hapus paksa Adab (strip + migrasi override lama), margin 1.5cm, rapikan identitas/kepribadian/tanggal, editor Lembaga auto-skema default + Mata Pelajaran (isi default), predikat info read-only (ACF cleanup), Diniyah Sumatif/Akhir + auto rekap bulanan, PPPH 4 kitab, editor nilai inline, TTD nama/EKGQ/ttd auto
+692337e feat(rapor): redesign Qiraati & Diniyah - identitas NISN/Kelas gabungan (kiri-kiri/kanan-kanan), predikat aksara Arab Mumtaz/Jayyid/Maqbul/Rasib, hapus Adab, PPPH 4 kitab, PTPT Tgl Khotam, Diniyah Sumatif/Akhir terpisah (Sumatif auto rata-rata rekap bulanan) + Predikat + tabel compact, absensi auto bulanan, editor nilai inline, preview=PDF (TTD/kepribadian/KOP), TTD nama+EKGQ+tanda tangan auto akun guru, label Kepala SDI/PKBM & PJ PPPH, editor template Lembaga/Pengaturan disamakan

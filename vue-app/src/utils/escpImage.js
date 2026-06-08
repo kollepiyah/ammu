@@ -239,7 +239,7 @@ function tabData(mut, settings, { saldo = null, santri = {}, label = 'TABUNGAN' 
     midHeader: 'Dengan rincian sebagai berikut :',
     items: [{ name: '1. ' + ket, amount: 'Rp. ' + fmtNum(mut.nominal) }],
     totals,
-    signLeftLabel: isSetor ? 'Nasabah (Penyetor),' : 'Nasabah (Penarik),',
+    signLeftLabel: 'Nasabah,',
     signLeftName: '( ' + (nasabah || '.......... ') + ' )',
     signRightLabel: 'Penerima,',
     signRightName: '( ' + (petugas && petugas !== '-' ? petugas : '') + ' )'

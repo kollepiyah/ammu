@@ -66,7 +66,7 @@
         </router-link>
         <router-link to="/buku-induk" class="block bg-[var(--bg-card)] p-4 rounded-2xl border border-[var(--border-subtle)] shadow-sm hover:shadow-md transition">
           <p class="text-[10px] uppercase font-bold text-[var(--text-secondary)] tracking-wider">Buku Induk</p>
-          <p class="text-2xl font-black text-cyan-600 dark:text-cyan-400 mt-1">{{ bukuInduk.length }}</p>
+          <p class="text-2xl font-black text-cyan-600 dark:text-cyan-400 mt-1">{{ bukuIndukValid.length }}</p>
           <p class="text-[11px] text-[var(--text-secondary)] mt-1 font-bold">entries</p>
         </router-link>
       </div>
@@ -157,6 +157,15 @@ import { computed } from 'vue'
 import { useKeuangan } from '@/composables/useKeuangan'
 import { fmtRp } from '@/utils/format'
 const { tabunganSantri, gaji, bukuInduk, stats, isFullAccess } = useKeuangan()
+// v.108: hitung entri buku induk yg BERMAKNA saja (samakan dgn ledger): buang residu tabungan + entri tanpa tanggal valid
+const bukuIndukValid = computed(() =>
+  (bukuInduk.value || []).filter((b) => {
+    const kat = String(b.kategori || '').toLowerCase()
+    const sumber = String(b.sumber || '').toLowerCase()
+    if (kat === 'tabungan' || sumber.includes('tabungan')) return false
+    return /^\d{4}-\d{2}/.test(String(b.tanggal || '').trim())
+  })
+)
 
 const NAMA_BULAN_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des']
 const PALETTE = ['#f43f5e', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#14b8a6', '#06b6d4', '#84cc16', '#f97316']

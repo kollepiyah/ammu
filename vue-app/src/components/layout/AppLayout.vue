@@ -27,7 +27,12 @@
           </div>
         </div>
         <!-- v.91.0626: breadcrumb DIHAPUS total (semua halaman) atas permintaan kyai -> lebih rapi -->
-        <router-view :key="rvKey" />
+        <!-- v.98.0626 (layout full): cap 1600px DILEPAS (kyai minta full edge-to-edge di SEMUA
+             halaman). Wrapper w-full saja; pelepasan cap per-halaman (max-w-Nxl mx-auto -> none)
+             + densify kolom grid diatur TERPUSAT di assets/main.css. Form tetap nyaman via .page-narrow. -->
+        <div class="w-full">
+          <router-view :key="rvKey" />
+        </div>
       </main>
       <!-- v.91.0626: bottom nav hanya di Android/PWA + mobile -->
       <BottomNav v-if="showBottomNav" />

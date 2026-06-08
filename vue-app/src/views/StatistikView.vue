@@ -757,7 +757,7 @@
     <!-- ============================================================
          ADMIN: AdminStatsCharts (chart.js 12-bulan)
          ============================================================ -->
-    <AdminStatsCharts v-if="isAdminMode" :santri-list="santriRaw" />
+    <AdminStatsCharts v-if="isAdminMode" :santri-list="scopedSantriAll" />
 
     <!-- ============================================================
          GURU: Statistik Pengajaran + Kehadiran + Kelas Saya
@@ -902,7 +902,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
 import { useSantri } from '@/composables/useSantri'
 import { useGuru } from '@/composables/useGuru'
-import { useLembaga, formatKelasLabel } from '@/composables/useLembaga'
+import { useLembaga, formatKelasLabel, getPkbmSubTier } from '@/composables/useLembaga'
 import { subscribeColl } from '@/services/firestore'
 import { doc, setDoc } from 'firebase/firestore'
 import { db } from '@/services/firebase'
@@ -946,7 +946,7 @@ const isAdminMode = computed(() => isFullFilterRole(auth.sesiAktif))
 const loadingAny = computed(() => loadingSantri.value || loadingGuru.value)
 
 // v.95.0626: data ter-scope (kepala/PJ = se-lembaga) + kartu Guru Belum Input + Kelas Overload
-const { scopedSantriAktif, guruBelumInput, kelasOverload, periodeKeyNow } = useStatistikScope()
+const { scopedSantriAktif, scopedSantriAll, guruBelumInput, kelasOverload, periodeKeyNow } = useStatistikScope()
 const _NAMA_BULAN_STAT = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember']
 const periodeLabel = computed(() => {
   const m = String(periodeKeyNow.value).match(/^(\d{4})_(\d{2})$/)
@@ -966,8 +966,8 @@ const isGuruAktif = (status) =>
   !status || ['aktif', 'tetap', 'kontrak'].includes(String(status).toLowerCase())
 
 // ---- Aggregate counters ----------------------------------------------------
-const totalSantri = computed(() => santriRaw.value.length)
-const santriAktif = computed(() => santriRaw.value.filter((s) => s.aktif !== false).length)
+const totalSantri = computed(() => scopedSantriAll.value.length)
+const santriAktif = computed(() => scopedSantriAll.value.filter((s) => s.aktif !== false).length)
 const santriNonAktif = computed(() => totalSantri.value - santriAktif.value)
 
 const totalGuru = computed(() => guruRaw.value.length)
@@ -977,7 +977,7 @@ const guruNonAktif = computed(() => totalGuru.value - guruAktif.value)
 const lembagaCount = computed(() => {
   if (lembagaRaw.value.length > 0) return lembagaRaw.value.length
   const set = new Set()
-  for (const s of santriRaw.value) {
+  for (const s of scopedSantriAll.value) {
     if (s.aktif !== false && s.lembaga) set.add(String(s.lembaga).toUpperCase().trim())
   }
   return set.size
@@ -991,7 +991,7 @@ const lembagaCount = computed(() => {
 // Sekarang lebih intuitif: 1 lembaga × N kelas yang ada santri-nya.
 const kelasCount = computed(() => {
   const set = new Set()
-  for (const s of santriRaw.value) {
+  for (const s of scopedSantriAll.value) {
     if (s.aktif === false) continue
     // v.87.0526: Jumlah Kelas = DISTINCT (guru × lembaga × kelas) dari santri yang SUDAH punya guru.
     //   Aturan kyai (canonical): kelas dihitung dari GURU yang punya santri — 2 guru di lembaga+kelas
@@ -1020,7 +1020,7 @@ const kelasCount = computed(() => {
 const showKelasDetail = ref(false)
 const kelasDetail = computed(() => {
   const m = new Map()
-  for (const s of santriRaw.value) {
+  for (const s of scopedSantriAll.value) {
     if (s.aktif === false) continue
     const sid = String(s.id)
     const addK = (guru, lemb, kelas, jenis) => {
@@ -1128,11 +1128,19 @@ const lembagaPrestasi = computed(() => {
 const distribusiLembaga = computed(() => {
   if (role.value !== 'admin') return []
   const map = {}
-  santriRaw.value
+  const add = (k) => { const key = String(k || '').trim(); if (key) map[key] = (map[key] || 0) + 1 }
+  scopedSantriAll.value
     .filter((s) => s.aktif !== false)
     .forEach((s) => {
-      const k = s.lembaga || '(Tanpa Lembaga)'
-      map[k] = (map[k] || 0) + 1
+      // v.98.0626: hitung lembaga ngaji + lembaga FORMAL (sekolah). PKBM dipecah SMP/SMA.
+      let any = false
+      if (String(s.lembaga || '').trim()) { add(s.lembaga); any = true }
+      const ls = String(s.lembaga_sekolah || '').trim()
+      if (ls) {
+        add(ls.toUpperCase() === 'PKBM' ? (getPkbmSubTier(s.kelas_sekolah) || 'PKBM') : ls)
+        any = true
+      }
+      if (!any) add('(Tanpa Lembaga)')
     })
   const max = Math.max(...Object.values(map), 1)
   return Object.entries(map)
@@ -1152,7 +1160,7 @@ const distribusiLembaga = computed(() => {
 // - URUTAN diperluas (TK, MI, MTs, MA, SDI, SMP, SMA, PKBM, Yayasan)
 const URUTAN_LEMBAGA = [
   'TPQ Pagi', 'TPQ Sore', 'Pra PTPT', 'PTPT', 'PPPH',
-  'TK', 'SDI', 'PKBM'
+  'TK', 'SDI', 'SMP', 'SMA', 'PKBM'
 ]
 // v.21.108.0527: Kelas dihitung dari assignment santri ↔ guru di "Kelas & Guru"
 // (Master Data). Untuk tiap lembaga:
@@ -1168,6 +1176,25 @@ function isSekolahLembaga(nama) {
 const statistikLembaga = computed(() => {
   if (!isAdminMode.value) return []
   const lembList = (lembagaRaw.value || []).filter((l) => Array.isArray(l.kelas) && l.kelas.length > 0)
+  // v.98.0626: PKBM dipecah jadi SMP (VII-IX) & SMA (X-XII). Guru per sub-tier
+  //   diturunkan dari assignment guru_sekolah santri (master guru PKBM tak ber-sub-tier).
+  const buildPkbmTier = (tier) => {
+    const sl = scopedSantriAll.value.filter((s) => {
+      if (s.aktif === false) return false
+      const isPk = String(s.lembaga_sekolah || '').trim().toUpperCase() === 'PKBM' ||
+        String(s.lembaga || '').trim().toUpperCase() === 'PKBM'
+      return isPk && getPkbmSubTier(s.kelas_sekolah) === tier
+    })
+    const kg = new Set(), gset = new Set()
+    for (const s of sl) {
+      const kls = String(s.kelas_sekolah || '').trim().toLowerCase()
+      for (const g of (Array.isArray(s.guru_sekolah) ? s.guru_sekolah : [])) {
+        const t = String(g || '').trim().toLowerCase()
+        if (t) { gset.add(t); if (kls) kg.add(t + '|' + kls) }
+      }
+    }
+    return { nama: tier, kelas: kg.size, santri: sl.length, guru: gset.size }
+  }
   return lembList
     .map((l) => {
       const nama = l.lembaga || l.nama
@@ -1175,7 +1202,7 @@ const statistikLembaga = computed(() => {
       const isSekolah = isSekolahLembaga(nama)
       // v.88.0526: normalize match (trim/lowercase) — fix lembaga (mis. TPQ Pagi/Sore) terhitung 0 krn beda casing/spasi.
       const matchLemb = (val) => String(val || '').trim().toLowerCase() === namaNorm
-      const santriList = santriRaw.value.filter(
+      const santriList = scopedSantriAll.value.filter(
         (s) => (matchLemb(s.lembaga) || matchLemb(s.lembaga_sekolah)) && s.aktif !== false
       )
       // v.88.0526: kelas = DISTINCT (guru x kelas) — konsisten dgn kelasCount (guru x lembaga x kelas).
@@ -1204,6 +1231,12 @@ const statistikLembaga = computed(() => {
       ).length
       return { nama, kelas: kelasGuruSet.size, santri: santriCount, guru: guruCount }
     })
+    // v.98.0626: ganti kartu PKBM jadi 2 kartu SMP & SMA
+    .flatMap((row) =>
+      String(row.nama).trim().toLowerCase() === 'pkbm'
+        ? [buildPkbmTier('SMP'), buildPkbmTier('SMA')]
+        : [row]
+    )
     .sort((a, b) => {
       const ia = URUTAN_LEMBAGA.indexOf(a.nama)
       const ib = URUTAN_LEMBAGA.indexOf(b.nama)

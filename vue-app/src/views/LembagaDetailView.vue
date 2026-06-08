@@ -1,6 +1,6 @@
 <template>
   <!-- v.21.10.0526: Lembaga Detail page + group hierarchy badge + sibling variants -->
-  <div class="p-3 md:p-5 max-w-5xl mx-auto space-y-4">
+  <div class="p-3 md:p-5 max-w-5xl mx-auto space-y-4 page-narrow">
     <!-- Breadcrumb + actions -->
     <div
       class="bg-emerald-50/40 dark:bg-slate-800 rounded-2xl p-4 md:p-5 border border-emerald-200 dark:border-slate-700 shadow-sm"

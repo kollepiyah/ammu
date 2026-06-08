@@ -4,7 +4,7 @@
 //   Token disimpan ke santri/{id}.fcm_token (role santri) atau guru/{id}.fcm_token (guru/admin).
 //   Server (functions kirimNotifikasiMassal) yang resolve token dari `target` & kirim.
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore'
-import { getMessaging, getToken, onMessage, isSupported } from 'firebase/messaging'
+// v.96.0626 perf: firebase/messaging di-LAZY (dynamic import di registerWeb) -> keluar dari boot bundle
 import { db, firebaseApp } from '@/services/firebase'
 import { useAuthStore } from '@/stores/auth'
 
@@ -68,6 +68,7 @@ export function usePushNotifications() {
   // WEB push (PWA/browser) via firebase/messaging + VAPID. SW: /firebase-messaging-sw.js
   async function registerWeb() {
     try {
+      const { getMessaging, getToken, onMessage, isSupported } = await import('firebase/messaging')
       if (isElectron()) return // desktop Electron: tak ada web push
       if (!(typeof window !== 'undefined' && 'Notification' in window)) return
       if (!(await isSupported().catch(() => false))) return

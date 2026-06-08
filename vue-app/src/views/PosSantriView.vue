@@ -170,6 +170,7 @@
       :santri="selectedSantri"
       :operator="operatorName"
       :pending-tagihan="pendingTagihan"
+      :prepaid-periodes="prepaidPeriodes"
       :saved-trx="lastTrx"
       :saving="posSaving"
       :is-desktop="isDesktop"
@@ -224,6 +225,7 @@ const histori = ref([])
 const tunggakanMap = ref({})
 const filterTunggakan = ref(false)
 const pendingTagihan = ref([])
+const prepaidPeriodes = ref([]) // v.96.0626 audit: periode sudah ada tagihan -> anti-dobel bayar di muka
 const loadingCart = ref(false)
 // v.21.87.0527: ringkasan transaksi POS hari ini
 const todayStats = ref({ count: 0, total: 0 })
@@ -383,6 +385,7 @@ async function openModal(s) {
   lastTrx.value = null
   loadingCart.value = true
   pendingTagihan.value = []
+  prepaidPeriodes.value = []
   try {
     const tagCol = collection(db, 'keuangan_tagihan')
     // v.95.0626: FIX tagihan khusus tak muncul di POS — cocokkan santri_id sbg STRING (+ NUMBER bila numerik),
@@ -412,6 +415,9 @@ async function openModal(s) {
         keterangan: periodeTagihan(t) || t.keterangan || ''
       }
     })
+    prepaidPeriodes.value = [...seen.values()]
+      .filter((t) => t.periode_kode)
+      .map((t) => ({ jenis: String(t.jenis_label || t.jenis_id || t.kategori || '').toLowerCase().trim(), periode: String(t.periode_kode) }))
   } catch (e) {
     console.warn('[pos] load tagihan fail:', e.message)
   } finally {
@@ -463,6 +469,7 @@ async function handleSimpan(payload) {
         keterangan: `${item.jenis} — ${payload.santri_nama} (${payload.santri_nis || payload.santri_id})${item.keterangan ? ' — ' + item.keterangan : ''}`,
         sumber: 'pos_santri',
         trx_id: trxId,
+        metode: payload.metode || 'Tunai',
         santri_id: payload.santri_id,
         santri_nama: payload.santri_nama,
         operator: op,
@@ -495,6 +502,33 @@ async function handleSimpan(payload) {
             tagUpdErr = e.message || String(e)
           })
         )
+      } else if (item.prepay && item.periode) {
+        // v.108: bayar di muka — tagihan bulan depan belum ada, buat baru langsung LUNAS
+        const tagId = `tagihan_${payload.santri_id}_${Date.now()}_${Math.floor(Math.random() * 1000)}`
+        writes.push(
+          setDoc(doc(db, 'keuangan_tagihan', tagId), {
+            id: tagId,
+            santri_id: payload.santri_id,
+            santri_nama: payload.santri_nama,
+            kategori: item.jenis,
+            periode: item.periode_label || item.periode,
+            periode_kode: item.periode,
+            nominal: Number(item.nominal),
+            bayar: Number(item.nominal),
+            dibayar: Number(item.nominal),
+            status: 'lunas',
+            jatuh_tempo: item.periode + '-10',
+            tanggal_lunas: tanggal,
+            dibayar_via: 'pos_santri',
+            operator_pelunasan: op,
+            trx_id: trxId,
+            createdAt: serverTimestamp()
+          }).catch((e) => {
+            console.warn('[pos] buat tagihan prepay fail:', tagId, e.message)
+            tagUpdErr = e.message || String(e)
+          })
+        )
+        lunasCount++
       }
     }
     await Promise.all(writes)
@@ -528,7 +562,7 @@ async function handleSimpan(payload) {
       // v.94.0626: penyetor = nama walisantri (auto-isi di struk)
       penyetor: waliNama,
       // v.21.90.0527: field tambahan utk struk Yayasan-style
-      metode: 'TUNAI',
+      metode: (payload.metode || 'Tunai').toUpperCase(),
       status_siswa: santriRef?.aktif === false ? 'Tidak Aktif' : 'Aktif',
       terbilang: terbilangRupiah(_total),
       operator_ttd_url: operatorTtdUrl.value || '',

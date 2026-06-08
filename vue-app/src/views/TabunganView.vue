@@ -281,9 +281,20 @@
           <i class="fas fa-list-check text-emerald-600 mr-2"></i>Semua Mutasi
           <span class="text-[10px] text-[var(--text-tertiary)] font-bold ml-1">(super admin)</span>
         </h3>
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 flex-wrap">
+          <select v-model.number="mutFilterYear" class="text-[11px] px-2 py-1 rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)] outline-none">
+            <option v-for="y in mutYears" :key="y" :value="y">{{ y }}</option>
+          </select>
+          <select v-model.number="mutFilterMonth" class="text-[11px] px-2 py-1 rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)] outline-none">
+            <option :value="0">Semua bln</option>
+            <option v-for="(b, i) in BULAN_TAB" :key="b" :value="i + 1">{{ b }}</option>
+          </select>
+          <select v-model.number="mutFilterDay" class="text-[11px] px-2 py-1 rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)] outline-none">
+            <option :value="0">Semua tgl</option>
+            <option v-for="d in 31" :key="d" :value="d">{{ d }}</option>
+          </select>
           <span class="text-[10px] text-[var(--text-tertiary)] font-bold">
-            {{ mutasiSource.length }} mutasi
+            {{ mutasiFiltered.length }} / {{ mutasiSource.length }} mutasi
           </span>
           <button
             v-if="selectedMutasi.size > 0"
@@ -294,8 +305,8 @@
           </button>
         </div>
       </div>
-      <div v-if="mutasiSource.length === 0" class="p-6 text-center text-xs text-[var(--text-tertiary)] italic">
-        Belum ada mutasi.
+      <div v-if="mutasiFiltered.length === 0" class="p-6 text-center text-xs text-[var(--text-tertiary)] italic">
+        {{ mutasiSource.length === 0 ? 'Belum ada mutasi.' : 'Tidak ada mutasi pada filter ini.' }}
       </div>
       <div v-else class="max-h-[480px] overflow-y-auto">
         <table class="w-full text-xs">
@@ -312,7 +323,7 @@
           </thead>
           <tbody>
             <tr
-              v-for="m in mutasiSource.slice().sort((a,b)=>String(b.tanggal||'').localeCompare(String(a.tanggal||'')))"
+              v-for="m in mutasiFiltered"
               :key="m.id"
               class="border-t border-[var(--border-subtle)] hover:bg-slate-50 dark:hover:bg-slate-900/30"
             >
@@ -587,6 +598,32 @@ const pageTitle = computed(() => (isUangSaku.value ? 'Uang Saku' : 'Tabungan'))
 const uangSakuMutasi = ref([]) // sumber mutasi admin saat mode uang saku (subscribe lokal)
 let unsubUS = null
 const mutasiSource = computed(() => (isUangSaku.value ? uangSakuMutasi.value : tabunganSantri.value))
+// v.108: filter tahun/bulan/hari utk panel "Semua Mutasi"
+const BULAN_TAB = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember']
+const mutFilterYear = ref(new Date().getFullYear())
+const mutFilterMonth = ref(0)
+const mutFilterDay = ref(0)
+const mutYears = computed(() => {
+  const ys = new Set()
+  for (const m of mutasiSource.value) {
+    const y = String(m.tanggal || '').slice(0, 4)
+    if (/^\d{4}$/.test(y)) ys.add(Number(y))
+  }
+  ys.add(new Date().getFullYear())
+  return [...ys].sort((a, b) => b - a)
+})
+const mutasiFiltered = computed(() =>
+  mutasiSource.value
+    .filter((m) => {
+      const tg = String(m.tanggal || '')
+      if (mutFilterYear.value && tg.slice(0, 4) !== String(mutFilterYear.value)) return false
+      if (mutFilterMonth.value > 0 && tg.slice(5, 7) !== String(mutFilterMonth.value).padStart(2, '0')) return false
+      if (mutFilterDay.value > 0 && tg.slice(8, 10) !== String(mutFilterDay.value).padStart(2, '0')) return false
+      return true
+    })
+    .slice()
+    .sort((a, b) => String(b.tanggal || '').localeCompare(String(a.tanggal || '')))
+)
 const auth = useAuthStore()
 const settings = useSettingsStore()
 const toast = useToast()

@@ -293,10 +293,11 @@ function drawIdentitas(doc, y, santri, raporState) {
   const ta = raporState.tahun_ajaran || raporState.periode?.tahun_ajaran || ''
   const sm = raporState.semester || raporState.periode?.semester || ''
   const sekolah = String(santri.kelas_sekolah || '').trim()
-  const ngaji = [String(santri.lembaga || '').trim(), String(santri.kelas || '').trim()]
-    .filter(Boolean)
-    .join(' ')
-    .trim()
+  const _lembId = String(santri.lembaga || '').trim()
+  // v.98.0626: Pra PTPT -> tampilkan level saja tanpa prefix "Pra PTPT" (kyai)
+  const ngaji = _lembId === 'Pra PTPT'
+    ? String(santri.kelas || '').trim()
+    : [_lembId, String(santri.kelas || '').trim()].filter(Boolean).join(' ').trim()
   const kelasGab = [sekolah, ngaji].filter(Boolean).join(' / ') || '-'
 
   const rows = [
@@ -404,10 +405,10 @@ async function drawSignBlocks(doc, y, santri, settings, lembaga, dbGuru = [], le
   const _dkColonX = pageW - 48
   doc.text('Dikeluarkan di', _dkColonX - 1.5, yStart, { align: 'right' })
   doc.text(':', _dkColonX, yStart)
-  doc.text(String(tempat), pageW - 15, yStart, { align: 'right' })
+  doc.text(String(tempat), _dkColonX + 2, yStart) // v.98.0626: nilai rata kiri (tdk flush ke tepi kanan)
   doc.text('Pada Tanggal', _dkColonX - 1.5, yStart + 5, { align: 'right' })
   doc.text(':', _dkColonX, yStart + 5)
-  doc.text(String(today), pageW - 15, yStart + 5, { align: 'right' })
+  doc.text(String(today), _dkColonX + 2, yStart + 5) // v.98.0626: nilai rata kiri
 
   const col1 = 35
   const col2 = pageW / 2

@@ -15,12 +15,11 @@
  * Output:
  *   android/app/build/outputs/bundle/release/app-release.aab
  *
- * Note: v.12.0526 pakai Capacitor mode REMOTE (server.url → ammuonline.web.app),
- * jadi assets di AAB hanya bootstrap shell. Update web content cukup `firebase:deploy`,
- * AAB tidak perlu rebuild tiap bug fix kecil. Rebuild AAB hanya saat:
- *   - Bump versionCode (Play Store release)
- *   - Update Capacitor plugins / native code
- *   - Update splash / icon / theme XML
+ * Note: v.96.0626 — Capacitor mode NATIVE (vue-app/capacitor.config.json: webDir "dist",
+ * TANPA server.url). Web di-BUNDLE ke AAB → SEMUA perubahan .vue/.js + splash/native baru
+ * sampai ke app HP SETELAH rebuild AAB ini. `firebase:deploy` HANYA update PWA/browser,
+ * BUKAN app terinstal. (Komentar lama "mode REMOTE" USANG — itu root/android legacy vc70.)
+ * Rebuild AAB tiap: perubahan kode web, bump versionCode, plugin/native, splash/icon/theme.
  */
 const { execSync } = require('child_process')
 const fs = require('fs')

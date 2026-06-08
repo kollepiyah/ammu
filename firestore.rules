@@ -86,9 +86,12 @@ service cloud.firestore {
 
     match /keuangan_tagihan/{docId} {
       allow read: if true;
-      // v.21.104.0527: relax — terima santri_id string/number; schema toleran
-      // (app pakai field: kategori, nominal, bayar, status). validation di UI.
-      allow create, update, delete: if signedIn();
+      // v.21.104.0527: relax — terima santri_id string/number; schema toleran.
+      // v.96.0626 audit: validasi MERGE-SAFE (cek tipe hanya jika field ada -> aman utk update parsial).
+      allow create, update: if signedIn()
+        && (!('nominal' in request.resource.data) || request.resource.data.nominal is number)
+        && (!('santri_id' in request.resource.data) || request.resource.data.santri_id is string || request.resource.data.santri_id is number);
+      allow delete: if signedIn();
     }
 
     match /keuangan_tabungan_santri/{docId} {
@@ -343,13 +346,19 @@ service cloud.firestore {
     // v.21.56: keuangan_hutang_piutang
     match /keuangan_hutang_piutang/{docId} {
       allow read: if true;
-      allow create, update, delete: if signedIn();
+      // v.96.0626 audit: validasi MERGE-SAFE (toggle {lunas} via merge tetap lolos).
+      allow create, update: if signedIn()
+        && (!('nominal' in request.resource.data) || request.resource.data.nominal is number);
+      allow delete: if signedIn();
     }
 
     // v.21.56: keuangan_pembayaran (POS transactions)
     match /keuangan_pembayaran/{docId} {
       allow read: if true;
-      allow create, update, delete: if signedIn();
+      // v.96.0626 audit: validasi MERGE-SAFE (cek tipe hanya jika field ada).
+      allow create, update: if signedIn()
+        && (!('nominal' in request.resource.data) || request.resource.data.nominal is number);
+      allow delete: if signedIn();
     }
 
     // v.21.22.0526: Absensi guru (fingerprint + manual entry)
@@ -394,7 +403,9 @@ service cloud.firestore {
         && request.resource.data.target_type in ['guru', 'lembaga']
         && request.resource.data.target_id is string
         && request.resource.data.judul is string
-        && request.resource.data.catatan is string;
+        && request.resource.data.catatan is string
+        && request.resource.data.judul.size() <= 300
+        && request.resource.data.catatan.size() <= 20000;
       allow delete: if signedIn();
     }
 

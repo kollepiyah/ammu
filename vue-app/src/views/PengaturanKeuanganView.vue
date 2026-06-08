@@ -1,5 +1,5 @@
 <template>
-  <div class="p-4 md:p-6 max-w-5xl mx-auto space-y-4">
+  <div class="p-4 md:p-6 max-w-5xl mx-auto space-y-4 page-narrow">
     <!-- Header -->
     <div
       class="bg-[var(--bg-card)] rounded-2xl p-5 md:p-6 border border-[var(--border-subtle)] shadow-sm"
