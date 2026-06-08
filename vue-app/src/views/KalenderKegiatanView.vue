@@ -311,6 +311,7 @@
 import { ref, reactive, computed } from 'vue'
 import { useDesktopShell } from '@/composables/useDesktopShell'
 import { definePageActions } from '@/composables/useRibbonContext'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
@@ -570,11 +571,13 @@ async function hapus() {
 
 // v.98 full-native (Electron): aksi kalender -> grup pita "Aksi Halaman" (navigasi bulan tetap di halaman)
 const { isElectron: isDesktop } = useDesktopShell()
+const _routerKal = useRouter()
 definePageActions(() => {
   if (!bisaEdit.value) return []
   return [
     { label: 'Tambah Kegiatan', icon: 'plus', primary: true, on: () => openModal() },
-    { label: 'Libur Nasional', icon: 'calendar', on: seedLiburNasional }
+    { label: 'Libur Nasional', icon: 'calendar', on: seedLiburNasional },
+    { label: 'Impor Excel', icon: 'download', on: () => _routerKal.push('/impor-kalender') }
   ]
 })
 </script>

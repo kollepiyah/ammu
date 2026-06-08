@@ -85,6 +85,8 @@ const KelasGuruView = () => import('@/views/KelasGuruView.vue')
 // v.98: halaman khusus Electron — Mapel lembaga formal + Pengaturan (hub full-CRUD/ACF)
 const MapelDesktopView = () => import('@/views/MapelDesktopView.vue')
 const PengaturanDesktopView = () => import('@/views/PengaturanDesktopView.vue')
+// v.98: halaman impor kegiatan kalender via Excel
+const ImporKalenderView = () => import('@/views/ImporKalenderView.vue')
 const BantuanView = () => import('@/views/BantuanView.vue')
 const RibbonPlaceholderView = () => import('@/views/RibbonPlaceholderView.vue')
 
@@ -127,6 +129,7 @@ const routes = [
       // v.98: halaman khusus Electron — Mapel lembaga formal + Pengaturan (hub)
       { path: 'mapel-lembaga', name: 'mapel-lembaga', component: MapelDesktopView, meta: { admin: true } },
       { path: 'pengaturan-desktop', name: 'pengaturan-desktop', component: PengaturanDesktopView, meta: { admin: true } },
+      { path: 'impor-kalender', name: 'impor-kalender', component: ImporKalenderView, meta: { admin: true } },
       // Phase 5.9: Edit/Tambah bridge ke legacy (full form di legacy index.html)
       { path: 'master-form/:entity', name: 'master-form', component: MasterFormBridgeView, meta: { admin: true } },
       // Phase 5.10 + 5.11: Field Order + ACF Custom Field schema editor
