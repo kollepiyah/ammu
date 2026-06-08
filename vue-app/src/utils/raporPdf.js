@@ -170,7 +170,7 @@ async function drawKopRapor(doc, settings, lembaga, lembagaOverride = null) {
   const startY = 10
 
   // Logo kiri (Qiraati) - Shared for all
-  const leftUrl = settings.logoQiraati || ''
+  const leftUrl = settings.logoQiraati || settings.logoKop || settings.logoUrl || '/logo.png'
   if (leftUrl) {
     try {
       const dataUrl = leftUrl.startsWith('data:') ? leftUrl : await imageToDataURL(leftUrl)
@@ -180,7 +180,10 @@ async function drawKopRapor(doc, settings, lembaga, lembagaOverride = null) {
 
   // Logo kanan (MU / Pesantren) — v.21.51: cek per-lembaga override dulu
   const rightUrl =
-    (lembagaOverride && lembagaOverride.kop_logo) || settings.logoKop || settings.logoUrl || ''
+    (lembagaOverride && lembagaOverride.kop_logo) ||
+    settings.logoKop ||
+    settings.logoUrl ||
+    '/logo.png'
   if (rightUrl) {
     try {
       const dataUrl = rightUrl.startsWith('data:') ? rightUrl : await imageToDataURL(rightUrl)
@@ -281,8 +284,9 @@ function drawIdentitas(doc, y, santri, raporState) {
   doc.setFontSize(11)
 
   const col1 = 16
-  const idLeftX = pageW - 84
-  const idColonX = pageW - 52
+  const col1Colon = 42
+  const rLabelX = pageW - 90
+  const rColonX = pageW - 62
 
   const ta = raporState.tahun_ajaran || raporState.periode?.tahun_ajaran || ''
   const sm = raporState.semester || raporState.periode?.semester || ''
@@ -294,7 +298,7 @@ function drawIdentitas(doc, y, santri, raporState) {
   const kelasGab = [sekolah, ngaji].filter(Boolean).join(' / ') || '-'
 
   const rows = [
-    ['Nama', santri.nama || '-', 'Kelas', kelasGab],
+    ['Nama Santri', santri.nama || '-', 'Kelas', kelasGab],
     ['NISN', santri.nisn || '-', 'Semester', sm],
     ['NIS', santri.nis || '-', 'Tahun Ajaran', ta]
   ]
@@ -302,12 +306,12 @@ function drawIdentitas(doc, y, santri, raporState) {
   rows.forEach((row, i) => {
     const py = y + i * 5
     doc.text(row[0], col1, py)
-    doc.text(':', col1 + 24, py)
-    doc.text(safeStr(row[1]), col1 + 27, py)
+    doc.text(':', col1Colon, py)
+    doc.text(safeStr(row[1]), col1Colon + 3, py)
 
-    doc.text(row[2], idLeftX, py)
-    doc.text(':', idColonX, py)
-    doc.text(safeStr(row[3]), pageW - 15, py, { align: 'right' })
+    doc.text(row[2], rLabelX, py)
+    doc.text(':', rColonX, py)
+    doc.text(safeStr(row[3]), rColonX + 3, py)
   })
 
   return y + rows.length * 5 + 3
@@ -592,7 +596,7 @@ async function generateTpqPdf(doc, y, santri, schema, raporState, settings) {
           n++
         }
       })
-      predikatKeys.push(n > 0 ? predikatQiraati(sum / n).key : '')
+      predikatKeys.push(n > 0 ? predikatQiraati(sum / n, settings.predikatScale).key : '')
       body.push(r)
     }
     if (sec.rows?.length) {
@@ -619,7 +623,9 @@ async function generateTpqPdf(doc, y, santri, schema, raporState, settings) {
     startY: y,
     body: [['Nilai Rata-rata', fmtNilai(avg)]],
     styles: { font: doc._fontMU, fontSize: 8.5, fontStyle: 'bold', halign: 'center', cellPadding: 1.2 },
-    columnStyles: { 0: { cellWidth: 100 }, 1: { cellWidth: 'auto' } }
+    margin: { left: 15, right: 15 },
+    tableWidth: 185,
+    columnStyles: { 0: { cellWidth: 110 }, 1: { cellWidth: 'auto' } }
   })
   return doc.lastAutoTable?.finalY || y
 }
@@ -832,7 +838,7 @@ async function generatePtptPdf(doc, y, santri, schema, raporState, settings) {
         n++
       }
     })
-    predikatKeys.push(n > 0 ? predikatQiraati(sum / n).key : '')
+    predikatKeys.push(n > 0 ? predikatQiraati(sum / n, settings.predikatScale).key : '')
     body.push(r)
   }
 
@@ -878,7 +884,9 @@ async function generatePtptPdf(doc, y, santri, schema, raporState, settings) {
     startY: y,
     body: [['Nilai Rata-rata', fmtNilai(avg)]],
     styles: { font: doc._fontMU, fontSize: 8.5, fontStyle: 'bold', halign: 'center', cellPadding: 1.2 },
-    columnStyles: { 0: { cellWidth: 100 } }
+    margin: { left: 15, right: 15 },
+    tableWidth: 185,
+    columnStyles: { 0: { cellWidth: 110 } }
   })
   return doc.lastAutoTable.finalY || y
 }
@@ -899,7 +907,7 @@ async function generateDiniyahPdf(doc, y, santri, schema, raporState, settings) 
     const arr = [sm, ak].filter((v) => !isNaN(v) && v > 0)
     const nilai = arr.length ? arr.reduce((s2, v) => s2 + v, 0) / arr.length : null
     const kkm = Number(m.kkm) || 75
-    predikatKeys.push(nilai == null ? '' : predikatDiniyah(nilai, kkm).key)
+    predikatKeys.push(nilai == null ? '' : predikatDiniyah(nilai, kkm, settings.predikatScale).key)
     return [i + 1, m.nama, kkm, isNaN(sm) ? '-' : fmtNilai(sm), isNaN(ak) ? '-' : fmtNilai(ak), '']
   })
 
@@ -950,7 +958,7 @@ async function generatePpphPdf(doc, y, santri, schema, raporState, settings) {
         n++
       }
     })
-    predikatKeys.push(n > 0 ? predikatQiraati(sum / n).key : '')
+    predikatKeys.push(n > 0 ? predikatQiraati(sum / n, settings.predikatScale).key : '')
     cells.push('')
     return cells
   })
@@ -975,7 +983,9 @@ async function generatePpphPdf(doc, y, santri, schema, raporState, settings) {
     startY: y,
     body: [['Nilai Rata-rata', fmtNilai(avg)]],
     styles: { font: doc._fontMU, fontSize: 8.5, fontStyle: 'bold', halign: 'center', cellPadding: 1.2 },
-    columnStyles: { 0: { cellWidth: 100 } }
+    margin: { left: 15, right: 15 },
+    tableWidth: 185,
+    columnStyles: { 0: { cellWidth: 110 } }
   })
   return doc.lastAutoTable.finalY || y
 }

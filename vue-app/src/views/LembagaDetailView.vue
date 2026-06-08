@@ -268,30 +268,41 @@
 
     <!-- RAPOR SEMESTER section: Predikat + Schema Editor + buka page rapor -->
     <div v-if="activeSection === 'rapor'" class="space-y-3">
-      <!-- Predikat (otomatis, sesuai spek — tidak perlu diatur) -->
+      <!-- Predikat (editable: label + nilai minimum) -->
       <div
         class="bg-cyan-50 dark:bg-cyan-900/20 rounded-2xl p-4 md:p-5 border border-cyan-200 dark:border-cyan-700 shadow-sm"
       >
         <h5 class="text-xs font-black text-cyan-900 uppercase mb-2 flex items-center gap-2">
           <i class="fas fa-star"></i>Predikat
-          <span class="text-[9px] bg-cyan-200 text-cyan-900 px-2 py-0.5 rounded">OTOMATIS</span>
+          <span class="text-[9px] bg-cyan-200 text-cyan-900 px-2 py-0.5 rounded">GLOBAL</span>
         </h5>
         <p class="text-[11px] text-cyan-700 mb-3 italic">
-          Predikat dihitung otomatis dari nilai (tidak perlu diatur).
+          Atur label &amp; nilai minimum tiap predikat (urut dari tertinggi). Berlaku semua lembaga.
         </p>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-[11px]">
-          <div class="bg-[var(--bg-card)] rounded px-2 py-1.5 border border-cyan-100">
-            <b>Mumtaz</b> · &ge; 81
+        <div class="space-y-1">
+          <div
+            v-for="(r, idx) in predikatScale"
+            :key="idx"
+            class="flex items-center gap-2 text-xs bg-[var(--bg-card)] rounded px-2 py-1"
+          >
+            <input
+              v-model="r.label"
+              placeholder="Label"
+              class="flex-1 font-bold px-2 py-0.5 border border-[var(--border-default)] rounded"
+            />
+            <span class="text-[10px] text-[var(--text-tertiary)]">min</span>
+            <input
+              v-model.number="r.min"
+              type="number"
+              class="w-16 px-2 py-0.5 border border-[var(--border-default)] rounded"
+            />
+            <button @click="predikatScale.splice(idx, 1)" class="text-rose-500 text-xs">
+              <i class="fas fa-times"></i>
+            </button>
           </div>
-          <div class="bg-[var(--bg-card)] rounded px-2 py-1.5 border border-cyan-100">
-            <b>Jayyid</b> · 71&ndash;80 / di atas KKM
-          </div>
-          <div class="bg-[var(--bg-card)] rounded px-2 py-1.5 border border-cyan-100">
-            <b>Maqbul</b> · 61&ndash;70 / 65&ndash;KKM
-          </div>
-          <div class="bg-[var(--bg-card)] rounded px-2 py-1.5 border border-cyan-100">
-            <b>Rasib</b> · &le; 60 / &lt; 65
-          </div>
+          <button @click="addPredikatRule" class="text-xs text-cyan-600 hover:text-cyan-800 font-bold">
+            <i class="fas fa-plus mr-1"></i>Tambah Predikat
+          </button>
         </div>
       </div>
 
@@ -777,6 +788,13 @@
               placeholder="Nama mata pelajaran"
               class="flex-1 px-3 py-2 text-sm border border-cyan-300 rounded-lg bg-[var(--bg-card)]"
             />
+            <input
+              v-model.number="rekapKkm[kv.key][i]"
+              type="number"
+              placeholder="KKM"
+              title="KKM"
+              class="w-16 px-2 py-2 text-sm text-center border border-cyan-300 rounded-lg bg-[var(--bg-card)]"
+            />
             <button
               @click="removeMapel(kv.key, i)"
               class="w-8 h-8 flex items-center justify-center rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 cursor-pointer"
@@ -1259,7 +1277,7 @@ async function saveLembagaKelas(newList) {
 // === Rapor: Predikat global + Schema editor ===
 const saving = ref(false)
 const uploading = ref(false)
-const predikatRules = ref([])
+const predikatScale = ref([])
 const raporSchema = ref({})
 
 // v.20.56.0526: Deteksi PTPT/PPPH legacy schema di Firestore (perKelas + juz_* mapel)
@@ -1295,20 +1313,20 @@ const flatKelasGroupsPreview = computed(() => {
 })
 
 function loadPredikatRules() {
-  const rules = settings.settings?.predikatRules
-  if (Array.isArray(rules) && rules.length > 0) {
-    predikatRules.value = JSON.parse(JSON.stringify(rules))
+  const sc = settings.settings?.predikatScale
+  if (Array.isArray(sc) && sc.length > 0) {
+    predikatScale.value = JSON.parse(JSON.stringify(sc))
   } else {
-    predikatRules.value = [
-      { min: 85, max: 100, label: 'A' },
-      { min: 70, max: 84, label: 'B' },
-      { min: 55, max: 69, label: 'C' },
-      { min: 0, max: 54, label: 'D' }
+    predikatScale.value = [
+      { key: 'mumtaz', label: 'Mumtaz', min: 81 },
+      { key: 'jayyid', label: 'Jayyid', min: 71 },
+      { key: 'maqbul', label: 'Maqbul', min: 61 },
+      { key: 'rasib', label: 'Rasib', min: 0 }
     ]
   }
 }
 function addPredikatRule() {
-  predikatRules.value.push({ min: 0, max: 0, label: '' })
+  predikatScale.value.push({ key: '', label: '', min: 0 })
 }
 
 function loadSchema() {
@@ -1397,16 +1415,16 @@ async function simpanRaporSchema() {
     allSchemas[lembagaId.value] = JSON.parse(JSON.stringify(raporSchema.value))
     await setDoc(
       doc(db, 'settings', 'general'),
-      { raporSchemas: allSchemas, predikatRules: predikatRules.value },
+      { raporSchemas: allSchemas, predikatScale: predikatScale.value },
       { merge: true }
     )
     await setDoc(
       doc(db, 'settings', 'web'),
-      { raporSchemas: allSchemas, predikatRules: predikatRules.value },
+      { raporSchemas: allSchemas, predikatScale: predikatScale.value },
       { merge: true }
     )
     settings.settings.raporSchemas = allSchemas
-    settings.settings.predikatRules = predikatRules.value
+    settings.settings.predikatScale = predikatScale.value
     toast.success(`Schema rapor ${lembagaId.value} tersimpan`)
   } catch (e) {
     toast.error('Gagal: ' + (e.message || e))
@@ -1442,6 +1460,7 @@ async function resetRaporSchema() {
 
 // === Rekap mapel Diniyah (v.90.0626b: per KELAS dari lembagaData.kelas) ===
 const rekapMapel = reactive({})
+const rekapKkm = reactive({})
 const mapelKelasVisible = computed(() => {
   if (!isDiniyahLembaga.value) return []
   return (lembagaData.value?.kelas || [])
@@ -1466,11 +1485,16 @@ function loadRekapMapel() {
     if (isEmpty(raw) && kv.jenjang) raw = all[kv.jenjang]
     if (isEmpty(raw) && (kv.jenjang === 'SMP' || kv.jenjang === 'SMA')) raw = all['PKBM']
     rekapMapel[kv.key] = toMapelArr(raw)
+    const kkmAll = settings.settings?.rekapDiniyahKKM || {}
+    const kkmArr = kkmAll[kv.key] || []
+    rekapKkm[kv.key] = rekapMapel[kv.key].map((_, i) => Number(kkmArr[i]) || 75)
   }
 }
 function addMapel(key) {
   if (!Array.isArray(rekapMapel[key])) rekapMapel[key] = []
+  if (!Array.isArray(rekapKkm[key])) rekapKkm[key] = []
   rekapMapel[key].push('')
+  rekapKkm[key].push(75)
 }
 const MAPEL_DEFAULT_DINIYAH = {
   SDI: ['Tauhid', 'Fiqh', 'Tarikh', 'Akhlaq', 'Bahasa Arab', 'Tahajji', 'Praktek Ibadah', 'ASWAJA & ke-NU-an'],
@@ -1480,21 +1504,26 @@ const MAPEL_DEFAULT_DINIYAH = {
 function isiMapelDefault(key, jenjang) {
   const j = String(jenjang || '').toUpperCase()
   rekapMapel[key] = [...(MAPEL_DEFAULT_DINIYAH[j] || MAPEL_DEFAULT_DINIYAH.SDI)]
+  rekapKkm[key] = rekapMapel[key].map(() => 75)
 }
 function removeMapel(key, i) {
   if (Array.isArray(rekapMapel[key])) rekapMapel[key].splice(i, 1)
+  if (Array.isArray(rekapKkm[key])) rekapKkm[key].splice(i, 1)
 }
 async function simpanRekapMapel() {
   saving.value = true
   try {
     const all = { ...(settings.settings?.rekapDiniyahMapel || {}) }
     const clean = (arr) => (arr || []).map((s) => String(s).trim()).filter(Boolean)
+    const kkmAll = { ...(settings.settings?.rekapDiniyahKKM || {}) }
     for (const kv of mapelKelasVisible.value) {
       all[kv.key] = clean(rekapMapel[kv.key])
+      kkmAll[kv.key] = (rekapKkm[kv.key] || []).map((v) => Number(v) || 75)
     }
-    await setDoc(doc(db, 'settings', 'general'), { rekapDiniyahMapel: all }, { merge: true })
-    await setDoc(doc(db, 'settings', 'web'), { rekapDiniyahMapel: all }, { merge: true })
+    await setDoc(doc(db, 'settings', 'general'), { rekapDiniyahMapel: all, rekapDiniyahKKM: kkmAll }, { merge: true })
+    await setDoc(doc(db, 'settings', 'web'), { rekapDiniyahMapel: all, rekapDiniyahKKM: kkmAll }, { merge: true })
     settings.settings.rekapDiniyahMapel = all
+    settings.settings.rekapDiniyahKKM = kkmAll
     toast.success('Mapel rekap tersimpan')
   } catch (e) {
     toast.error('Gagal: ' + (e.message || e))

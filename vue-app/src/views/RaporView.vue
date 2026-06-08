@@ -531,19 +531,19 @@
           </h2>
 
           <!-- Identitas: kiri rata kiri (Nama/NISN/NIS), kanan rata kanan (Kelas/Semester/Tahun) -->
-          <div class="flex justify-between items-start text-[11px] mb-2 gap-6">
-            <table>
+          <div class="flex items-start text-[11px] mb-2">
+            <table class="w-1/2">
               <tbody>
-                <tr><td class="pr-2 py-0.5 align-top">Nama</td><td class="pr-1 py-0.5">:</td><td class="py-0.5 font-bold">{{ santriAktif.nama }}</td></tr>
-                <tr><td class="pr-2 py-0.5 align-top">NISN</td><td class="pr-1 py-0.5">:</td><td class="py-0.5">{{ santriAktif.nisn || '-' }}</td></tr>
-                <tr><td class="pr-2 py-0.5 align-top">NIS</td><td class="pr-1 py-0.5">:</td><td class="py-0.5">{{ santriAktif.nis || '-' }}</td></tr>
+                <tr><td class="w-[90px] py-0.5 align-top">Nama Santri</td><td class="w-[10px] py-0.5">:</td><td class="py-0.5 font-bold">{{ santriAktif.nama }}</td></tr>
+                <tr><td class="py-0.5">NISN</td><td class="py-0.5">:</td><td class="py-0.5">{{ santriAktif.nisn || '-' }}</td></tr>
+                <tr><td class="py-0.5">NIS</td><td class="py-0.5">:</td><td class="py-0.5">{{ santriAktif.nis || '-' }}</td></tr>
               </tbody>
             </table>
-            <table class="min-w-[230px]">
+            <table class="w-1/2">
               <tbody>
-                <tr><td class="pr-2 py-0.5">Kelas</td><td class="pr-1 py-0.5">:</td><td class="py-0.5 font-bold text-right">{{ kelasGabungan }}</td></tr>
-                <tr><td class="pr-2 py-0.5">Semester</td><td class="pr-1 py-0.5">:</td><td class="py-0.5 text-right">{{ semester }}</td></tr>
-                <tr><td class="pr-2 py-0.5">Tahun Ajaran</td><td class="pr-1 py-0.5">:</td><td class="py-0.5 text-right">{{ tahunAjaran }}</td></tr>
+                <tr><td class="w-[100px] py-0.5 align-top">Kelas</td><td class="w-[10px] py-0.5">:</td><td class="py-0.5 font-bold">{{ kelasGabungan }}</td></tr>
+                <tr><td class="py-0.5">Semester</td><td class="py-0.5">:</td><td class="py-0.5">{{ semester }}</td></tr>
+                <tr><td class="py-0.5">Tahun Ajaran</td><td class="py-0.5">:</td><td class="py-0.5">{{ tahunAjaran }}</td></tr>
               </tbody>
             </table>
           </div>
@@ -1402,7 +1402,7 @@ const logoKanan = computed(() => {
           .toLowerCase()
           .trim() === lnorm
     ) || {}
-  return lmbObj.kop_logo || settingsStore.settings?.logoUrl || ''
+  return lmbObj.kop_logo || settingsStore.settings?.logoKop || settingsStore.settings?.logoUrl || '/logo.png'
 })
 
 function titleCase(s) {
@@ -1662,12 +1662,17 @@ function buildDiniyahSchemaFromSetting(s) {
   const kelas = String(s?.kelas_sekolah || '')
   const jenjang = diniyahJenjang(s?.lembaga_sekolah, kelas) || jenjangFromKelas(kelas) || 'SDI'
   const names = _mapelDiniyahResolved(kelas, jenjang)
+  const kkmArr = (settingsStore.settings?.rekapDiniyahKKM || {})[kelas] || []
   return {
     perKelas: true,
     jenjang: [
       {
         kelas,
-        mapel: names.map((n) => ({ id: slug(n), nama: String(n).toUpperCase(), kkm: DINIYAH_KKM_DEFAULT }))
+        mapel: names.map((n, i) => ({
+          id: slug(n),
+          nama: String(n).toUpperCase(),
+          kkm: Number(kkmArr[i]) || DINIYAH_KKM_DEFAULT
+        }))
       }
     ]
   }
@@ -1987,7 +1992,7 @@ function absensiBulananSum() {
 // ===== Predikat (skala kyai: Mumtaz/Jayyid/Maqbul/Rasib, aksara Arab) =====
 // Qiraati (TPQ/Pra PTPT/PTPT/PPPH) band tetap; Diniyah relatif KKM (tabel Diniyah).
 function predikat(n) {
-  return predikatQiraati(n).ar || ''
+  return predikatQiraati(n, settingsStore.settings?.predikatScale).ar || ''
 }
 
 // PPPH: predikat per level dari rata-rata aspek (hafalan/pemahaman/kelancaran).
@@ -2002,7 +2007,7 @@ function predikatPpph(lvlId) {
       n++
     }
   })
-  return n > 0 ? predikatQiraati(sum / n).ar : ''
+  return n > 0 ? predikatQiraati(sum / n, settingsStore.settings?.predikatScale).ar : ''
 }
 
 // Rata-rata Sumatif: nilai tersimpan kalau ada, kalau tidak auto dari rekap bulanan.
@@ -2028,7 +2033,7 @@ function nilaiDiniyah(mp) {
 function predikatDiniyahMapel(mp) {
   const v = nilaiDiniyah(mp)
   if (v == null) return ''
-  return predikatDiniyah(v, Number(mp.kkm) || 75).ar
+  return predikatDiniyah(v, Number(mp.kkm) || 75, settingsStore.settings?.predikatScale).ar
 }
 
 // ===== Pra PTPT helpers =====
@@ -2163,7 +2168,7 @@ function getNilaiKelasJuz(row, field) {
         n++
       }
     })
-    return n > 0 ? predikatQiraati(sum / n).ar : ''
+    return n > 0 ? predikatQiraati(sum / n, settingsStore.settings?.predikatScale).ar : ''
   }
   if (field.type === 'date' || field.id === 'tgl_khotam') {
     return fmtDate(getNilai(`${base}__tgl_khotam`))
