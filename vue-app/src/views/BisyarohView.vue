@@ -421,6 +421,14 @@
               />Pilih semua
             </label>
             <button
+              v-if="isAdminKeu && selectedSlip.size > 0"
+              @click="cairkanTerpilih"
+              title="Catat pencairan ke Buku Induk (setelah transfer ke rekening BMT guru)"
+              class="text-[10px] font-black bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1 rounded-lg"
+            >
+              <i class="fas fa-money-check-alt mr-1"></i>Cairkan &amp; Catat ({{ selectedSlip.size }})
+            </button>
+            <button
               v-if="isAdmin && selectedSlip.size > 0"
               @click="hapusSlipTerpilih"
               class="text-[10px] font-black bg-rose-600 hover:bg-rose-700 text-white px-2.5 py-1 rounded-lg"
@@ -726,6 +734,74 @@ async function hapusSlipTerpilih() {
   })
   if (fail > 0) toast.warning(`${ok} dihapus, ${fail} gagal — cek console`)
   else toast.success(`${ok} slip dihapus`)
+}
+
+// v.97.0626: Cairkan bisyaroh terpilih (Model A — admin transfer di BMT lalu konfirmasi di sini).
+// Auto-catat kas KELUAR ke Buku Induk (sumber 'gaji', idempoten via id gaji_<slipId>) + tandai slip 'cair'.
+// TODO(Model B): saat API disbursement BMT siap, ganti/dampingi dgn pemanggilan Cloud Function bmtDisbursementBatch.
+function _todayYMD() {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+function _slipTakeHome(s) {
+  const th = Number(s.take_home)
+  if (th > 0) return th
+  return (Number(s.bisyaroh_pokok) || 0) + (Number(s.bisyaroh_sekolah) || 0) + (Number(s.bisyaroh_tambahan) || 0) - (Number(s.total_potongan) || 0)
+}
+async function cairkanTerpilih() {
+  if (!isAdminKeu.value) { toast.error('Hanya admin keuangan yang bisa mencairkan'); return }
+  const ids = Array.from(selectedSlip.value)
+  if (ids.length === 0) return
+  const slips = ids.map((id) => filteredSlips.value.find((x) => String(x.id) === String(id))).filter(Boolean)
+  const belum = slips.filter((s) => String(s.status_cair || '') !== 'cair' && _slipTakeHome(s) > 0)
+  const sudah = slips.length - belum.length
+  if (belum.length === 0) { toast.info('Semua slip terpilih sudah dicairkan / nominal 0'); return }
+  const totalRp = belum.reduce((a, s) => a + _slipTakeHome(s), 0)
+  if (!confirm(`Cairkan ${belum.length} slip (total ${fmtRp(totalRp)})?\n\nPastikan transfer ke rekening BMT guru sudah dilakukan.\nIni mencatat kas KELUAR ke Buku Induk & menandai slip lunas.${sudah ? `\n\n(${sudah} slip dilewati: sudah cair / nominal 0)` : ''}`)) return
+  const tgl = _todayYMD()
+  const operator = auth.sesiAktif?.nama || auth.sesiAktif?.guru || 'Admin'
+  let ok = 0, fail = 0
+  for (const s of belum) {
+    try {
+      const th = _slipTakeHome(s)
+      const biId = `gaji_${s.id}`
+      await setDoc(doc(db, 'keuangan_buku_induk', biId), {
+        id: biId,
+        tipe: 'keluar',
+        nominal: th,
+        tanggal: tgl,
+        keterangan: `Bisyaroh ${s.periode || ''} — ${s.guru_nama || ''}`.trim(),
+        sumber: 'gaji',
+        kategori: 'Bisyaroh',
+        guru_id: s.guru_id != null ? s.guru_id : '',
+        slip_id: String(s.id),
+        metode: 'bmt',
+        operator,
+        created_at: serverTimestamp()
+      })
+      await setDoc(doc(db, 'keuangan_gaji', String(s.id)), {
+        status_cair: 'cair',
+        dicairkan_at: serverTimestamp(),
+        dicairkan_by: operator,
+        dicairkan_via: 'bmt_manual',
+        buku_induk_id: biId
+      }, { merge: true })
+      ok++
+    } catch (e) {
+      fail++
+      console.warn('[cairkanBisyaroh]', s.id, e.message)
+    }
+  }
+  selectedSlip.value = new Set()
+  await writeAuditLog({
+    operator,
+    action: 'cairkan_bisyaroh',
+    target: 'keuangan_gaji',
+    ids: belum.map((s) => String(s.id)),
+    detail: { ok, fail, total: totalRp, via: 'bmt_manual' }
+  })
+  if (fail > 0) toast.warning(`${ok} dicairkan & dicatat, ${fail} gagal — cek console`)
+  else toast.success(`${ok} slip dicairkan & tercatat di Buku Induk`)
 }
 const toast = useToast()
 

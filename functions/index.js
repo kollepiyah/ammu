@@ -808,3 +808,227 @@ exports.autoGenerateTagihanBulanan = onSchedule(
     return null
   }
 )
+
+// ====================================================================
+// FUNCTION 6 (v.97.0626): BMT PETA — WEBHOOK KONFIRMASI PEMBAYARAN VA (santri)
+//   STUB/KERANGKA — AMAN DIDEPLOY. Default DRY-RUN: TIDAK menulis Firestore sampai
+//     (a) settings/general.bmt_webhook_enabled === true, DAN
+//     (b) secret BMT_WEBHOOK_SECRET sudah di-set.
+//   Saat ENABLED: catat pembayaran ke keuangan_buku_induk + alokasikan ke tagihan santri,
+//   IDEMPOTEN via bmt_trx_id (1 transaksi diproses sekali).
+//   Format payload & autentikasi FINAL MENGIKUTI SPEC BMT — lihat bagian bertanda TODO(BMT).
+//
+// SETUP & DEPLOY:
+//   firebase functions:secrets:set BMT_WEBHOOK_SECRET   (paste secret saat prompt)
+//   firebase deploy --only functions:bmtPaymentWebhook
+// URL endpoint (berikan ke BMT):
+//   https://asia-southeast2-<projectId>.cloudfunctions.net/bmtPaymentWebhook
+// ====================================================================
+const bmtWebhookSecret = defineSecret('BMT_WEBHOOK_SECRET')
+
+function _digitsOnly(s) { return String(s || '').replace(/\D/g, '') }
+
+exports.bmtPaymentWebhook = onRequest(
+  { region: 'asia-southeast2', timeoutSeconds: 60, memory: '256MiB', cors: false, secrets: [bmtWebhookSecret] },
+  async (req, res) => {
+    try {
+      if (req.method !== 'POST') { res.status(405).json({ ok: false, error: 'POST only' }); return }
+
+      // 1) AUTENTIKASI — verifikasi secret/tanda tangan dari BMT.
+      //    TODO(BMT): ganti ke skema final BMT (HMAC signature + timestamp, IP allowlist, dll).
+      const secret = (bmtWebhookSecret.value && bmtWebhookSecret.value()) || ''
+      const provided = String(req.get('x-bmt-signature') || req.get('authorization') || '').replace(/^Bearer\s+/i, '')
+      if (!secret) { res.status(503).json({ ok: false, error: 'webhook belum dikonfigurasi (secret kosong)' }); return }
+      if (!provided || provided !== secret) { res.status(401).json({ ok: false, error: 'unauthorized' }); return }
+
+      // 2) PARSE payload — TODO(BMT): sesuaikan nama field dgn spesifikasi BMT.
+      const b = req.body || {}
+      const vaNumber = _digitsOnly(b.va_number || b.virtual_account || b.va)
+      const amount = Number(b.amount || b.nominal || 0)
+      const bmtTrxId = String(b.bmt_trx_id || b.trx_id || b.reference_id || '')
+      const paidAt = String(b.paid_at || b.payment_time || new Date().toISOString())
+      const channel = String(b.channel || b.payment_channel || 'bmt')
+      if (!vaNumber || !(amount > 0) || !bmtTrxId) {
+        res.status(400).json({ ok: false, error: 'payload tidak lengkap (butuh va_number, amount, bmt_trx_id)' }); return
+      }
+
+      // 3) Settings + kill-switch (DRY-RUN default).
+      let s = {}
+      try { const sd = await db.collection('settings').doc('general').get(); if (sd.exists) s = sd.data() || {} } catch (e) { /* default */ }
+      const enabled = s.bmt_webhook_enabled === true
+      const prefix = _digitsOnly(s.bmt_va_prefix)
+
+      // 4) Resolusi santri dari VA: cocokkan field va_bmt, lalu fallback strip-prefix -> nis.
+      let santri = null
+      try {
+        let q = await db.collection('santri').where('va_bmt', '==', vaNumber).limit(1).get()
+        if (q.empty && prefix && vaNumber.startsWith(prefix)) {
+          const nis = vaNumber.slice(prefix.length)
+          q = await db.collection('santri').where('nis', '==', nis).limit(1).get()
+        }
+        if (!q.empty) santri = { id: q.docs[0].id, ...q.docs[0].data() }
+      } catch (e) { logger.warn('[bmtWebhook] resolve santri:', e?.message || e) }
+
+      // 5) DRY-RUN: kalau belum enabled, jangan tulis apa pun — cuma log & ack (utk uji koneksi BMT).
+      if (!enabled) {
+        logger.info(`[bmtWebhook] DRY-RUN va=${vaNumber} amount=${amount} trx=${bmtTrxId} santri=${santri ? santri.id : '?'}`)
+        res.json({ ok: true, mode: 'dry-run', resolved_santri: santri ? (santri.nama || santri.id) : null, note: 'set settings.bmt_webhook_enabled=true utk aktifkan pencatatan' }); return
+      }
+
+      // 6) IDEMPOTEN: 1 bmt_trx_id diproses sekali.
+      const logRef = db.collection('bmt_payment_log').doc(bmtTrxId)
+      if ((await logRef.get()).exists) { res.json({ ok: true, duplicate: true }); return }
+
+      if (!santri) {
+        await logRef.set({ status: 'unmatched', va_number: vaNumber, amount, paid_at: paidAt, channel, created_at: FieldValue.serverTimestamp() })
+        res.status(202).json({ ok: true, matched: false, note: 'VA tak cocok santri — dicatat sbg unmatched utk ditinjau admin' }); return
+      }
+
+      // 7) Catat kas masuk (buku induk) + alokasi ke tagihan belum lunas (tertua dulu).
+      //    TODO(BMT/kyai): konfirmasi aturan alokasi & nilai status final ('lunas'/'sebagian').
+      const tgl = String(paidAt).slice(0, 10)
+      const biId = `bmtva_${bmtTrxId}`
+      const batch = db.batch()
+      batch.set(db.collection('keuangan_buku_induk').doc(biId), {
+        id: biId, tipe: 'masuk', keterangan: `Pembayaran VA — ${santri.nama || santri.id} — ${channel}`,
+        nominal: amount, tanggal: tgl, sumber: 'bmt_va', santri_id: String(santri.id),
+        bmt_trx_id: bmtTrxId, created_at: FieldValue.serverTimestamp()
+      })
+      let sisa = amount
+      try {
+        const tq = await db.collection('keuangan_tagihan').where('santri_id', '==', String(santri.id)).get()
+        const belum = tq.docs.map((d) => ({ id: d.id, ...d.data() }))
+          .filter((t) => String(t.status || 'belum') !== 'lunas')
+          .sort((a, b) => String(a.jatuh_tempo || '').localeCompare(String(b.jatuh_tempo || '')))
+        for (const t of belum) {
+          if (sisa <= 0) break
+          const kurang = Number(t.nominal || 0) - Number(t.bayar || 0)
+          if (kurang <= 0) continue
+          const bayar = Math.min(sisa, kurang)
+          const nb = Number(t.bayar || 0) + bayar
+          batch.update(db.collection('keuangan_tagihan').doc(t.id), {
+            bayar: nb, status: nb >= Number(t.nominal || 0) ? 'lunas' : 'sebagian',
+            sumber_bayar: 'bmt_va', updated_at: FieldValue.serverTimestamp()
+          })
+          sisa -= bayar
+        }
+      } catch (e) { logger.warn('[bmtWebhook] alokasi tagihan:', e?.message || e) }
+
+      batch.set(logRef, {
+        status: 'processed', va_number: vaNumber, amount, sisa_tak_teralokasi: sisa,
+        santri_id: String(santri.id), bmt_trx_id: bmtTrxId, paid_at: paidAt, channel,
+        created_at: FieldValue.serverTimestamp()
+      })
+      await batch.commit()
+
+      try {
+        await db.collection('notif_queue').add({
+          judul: 'Pembayaran Diterima',
+          pesan: `Pembayaran Rp ${new Intl.NumberFormat('id-ID').format(amount)} via VA sudah diterima. Terima kasih.`,
+          target: { type: 'santri', id: String(santri.id) }, link: '/tagihan',
+          sender: 'Sistem', status: 'pending', timestamp: new Date().toISOString()
+        })
+      } catch (e) { /* notif best-effort */ }
+
+      logger.info(`[bmtWebhook] processed trx=${bmtTrxId} santri=${santri.id} amount=${amount} sisa=${sisa}`)
+      res.json({ ok: true, processed: true, santri: santri.nama || santri.id, allocated: amount - sisa, unallocated: sisa })
+    } catch (e) {
+      logger.error('[bmtWebhook] error', e)
+      res.status(500).json({ ok: false, error: String((e && e.message) || e) })
+    }
+  }
+)
+
+// ====================================================================
+// FUNCTION 7 (v.97.0626): BMT PETA — PENCAIRAN BISYAROH (disbursement, pondok -> guru)
+//   STUB/KERANGKA Model B — AMAN. Default DRY-RUN: TIDAK memerintahkan transfer & TIDAK
+//   menulis Firestore sampai (a) settings/general.bmt_disburse_enabled === true DAN
+//   (b) secret BMT_DISBURSE_SECRET di-set. Bahkan saat enabled, fungsi TIDAK pernah mengaku
+//   sukses sebelum API BMT benar2 disambung (lihat TODO(BMT)) — jadi tak akan mencatat
+//   pencairan yang tak terjadi.
+//   Body: { periode, items:[{ slip_id, guru_id, rek_bmt, nominal }] }.
+//   Idempoten via bmt_disburse_log/<slip_id>. FALLBACK (Model A) = konfirmasi manual di
+//   UI BisyarohView (admin transfer sendiri di BMT) — fungsi ini tak dipakai pada Model A.
+//
+// SETUP & DEPLOY:
+//   firebase functions:secrets:set BMT_DISBURSE_SECRET
+//   firebase deploy --only functions:bmtDisbursementBatch
+// ====================================================================
+const bmtDisburseSecret = defineSecret('BMT_DISBURSE_SECRET')
+
+exports.bmtDisbursementBatch = onRequest(
+  { region: 'asia-southeast2', timeoutSeconds: 120, memory: '256MiB', cors: false, secrets: [bmtDisburseSecret] },
+  async (req, res) => {
+    try {
+      if (req.method !== 'POST') { res.status(405).json({ ok: false, error: 'POST only' }); return }
+
+      // 1) AUTENTIKASI pemanggil. TODO: ganti ke verifikasi sesi admin yang kuat.
+      const secret = (bmtDisburseSecret.value && bmtDisburseSecret.value()) || ''
+      const provided = String(req.get('authorization') || '').replace(/^Bearer\s+/i, '')
+      if (!secret) { res.status(503).json({ ok: false, error: 'disbursement belum dikonfigurasi (secret kosong)' }); return }
+      if (!provided || provided !== secret) { res.status(401).json({ ok: false, error: 'unauthorized' }); return }
+
+      // 2) PARSE daftar pencairan.
+      const items = Array.isArray(req.body && req.body.items) ? req.body.items : []
+      const periode = String((req.body && req.body.periode) || '')
+      if (items.length === 0) { res.status(400).json({ ok: false, error: 'items kosong' }); return }
+      const norm = items.map((it) => ({
+        slip_id: String(it.slip_id || ''),
+        guru_id: it.guru_id != null ? it.guru_id : '',
+        rek_bmt: String(it.rek_bmt || '').replace(/\s+/g, ''),
+        nominal: Number(it.nominal || 0)
+      }))
+      const invalid = norm.filter((it) => !it.slip_id || !it.rek_bmt || !(it.nominal > 0))
+
+      // 3) Settings + kill-switch (DRY-RUN default).
+      let s = {}
+      try { const sd = await db.collection('settings').doc('general').get(); if (sd.exists) s = sd.data() || {} } catch (e) { /* default */ }
+      const enabled = s.bmt_disburse_enabled === true
+
+      // 4) DRY-RUN: validasi & rencana saja, tanpa transfer/tulis.
+      if (!enabled) {
+        const total = norm.reduce((a, it) => a + (it.nominal > 0 ? it.nominal : 0), 0)
+        logger.info(`[bmtDisburse] DRY-RUN periode=${periode} items=${norm.length} invalid=${invalid.length} total=${total}`)
+        res.json({ ok: true, mode: 'dry-run', count: norm.length, invalid: invalid.length, total, note: 'set settings.bmt_disburse_enabled=true + sambungkan API BMT utk eksekusi nyata' }); return
+      }
+      if (invalid.length > 0) { res.status(400).json({ ok: false, error: 'ada item tak valid (slip_id/rek_bmt/nominal)', invalid }); return }
+
+      // 5) EKSEKUSI per item (idempoten via bmt_disburse_log/<slip_id>).
+      const results = []
+      for (const it of norm) {
+        const logRef = db.collection('bmt_disburse_log').doc(it.slip_id)
+        if ((await logRef.get()).exists) { results.push({ slip_id: it.slip_id, status: 'duplicate' }); continue }
+
+        // --- TODO(BMT): panggil API disbursement BMT (pondok rek -> it.rek_bmt, it.nominal) ---
+        //   const bmtResp = await callBmtDisbursementApi(it)  // implementasi mengikuti spec BMT
+        //   const sukses = !!bmtResp.success; const trxId = String(bmtResp.trx_id || '')
+        // Selama API belum tersambung, JANGAN mengaku sukses (cegah pencatatan pencairan palsu):
+        const sukses = false
+        const trxId = ''
+
+        if (!sukses) { results.push({ slip_id: it.slip_id, status: 'pending_api', note: 'API BMT belum terhubung' }); continue }
+
+        // (Saat API tersedia) catat kas keluar + tandai slip + log idempoten.
+        const tgl = new Date().toISOString().slice(0, 10)
+        const biId = `gaji_${it.slip_id}`
+        const batch = db.batch()
+        batch.set(db.collection('keuangan_buku_induk').doc(biId), {
+          id: biId, tipe: 'keluar', nominal: it.nominal, tanggal: tgl,
+          keterangan: `Bisyaroh ${periode} — guru ${it.guru_id}`, sumber: 'gaji', kategori: 'Bisyaroh',
+          guru_id: it.guru_id, slip_id: it.slip_id, metode: 'bmt_api', bmt_trx_id: trxId, created_at: FieldValue.serverTimestamp()
+        })
+        batch.set(db.collection('keuangan_gaji').doc(it.slip_id), {
+          status_cair: 'cair', dicairkan_at: FieldValue.serverTimestamp(), dicairkan_via: 'bmt_api', bmt_trx_id: trxId, buku_induk_id: biId
+        }, { merge: true })
+        batch.set(logRef, { status: 'processed', slip_id: it.slip_id, guru_id: it.guru_id, nominal: it.nominal, bmt_trx_id: trxId, created_at: FieldValue.serverTimestamp() })
+        await batch.commit()
+        results.push({ slip_id: it.slip_id, status: 'processed', bmt_trx_id: trxId })
+      }
+
+      res.json({ ok: true, processed: results.filter((r) => r.status === 'processed').length, results })
+    } catch (e) {
+      logger.error('[bmtDisburse] error', e)
+      res.status(500).json({ ok: false, error: String((e && e.message) || e) })
+    }
+  }
+)

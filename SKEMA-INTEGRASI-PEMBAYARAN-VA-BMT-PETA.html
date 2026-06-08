@@ -98,7 +98,7 @@
   <div class="cover">
     <div class="kicker">Dokumen Rancangan · Untuk Evaluasi</div>
     <h1>Skema Integrasi Pembayaran Virtual Account &amp; Transfer Otomatis<br>Ammu Online &nbsp;⇄&nbsp; Sistem BMT PETA</h1>
-    <p>Acuan teknis-konseptual untuk dipelajari BMT PETA Pusat, tim pengembang sistem BMT, dan General Manager — menghubungkan tagihan santri di aplikasi Ammu Online dengan kanal pembayaran BMT PETA secara otomatis, tanpa upload bukti manual.</p>
+    <p>Acuan teknis-konseptual untuk dipelajari BMT PETA Pusat, tim pengembang sistem BMT, dan General Manager — menghubungkan tagihan santri di aplikasi Ammu Online dengan kanal pembayaran BMT PETA secara otomatis tanpa upload bukti manual, sekaligus <strong>integrasi dua arah</strong>: menarik pembayaran santri lewat Virtual Account (masuk) <em>dan</em> menyalurkan bisyaroh guru ke rekening BMT (keluar).</p>
     <div class="meta">
       <span class="chip">Pondok Pesantren Mambaul Ulum</span>
       <span class="chip">Aplikasi: Ammu Online</span>
@@ -456,9 +456,93 @@
       </div>
     </section>
 
-    <!-- ============== 11. CATATAN ============== -->
+    <!-- ============== 11. PENCAIRAN BISYAROH (DUA ARAH) ============== -->
     <section>
-      <h2><span class="n">11.</span>Catatan &amp; Asumsi</h2>
+      <h2><span class="n">11.</span>Integrasi Dua Arah: Pencairan Bisyaroh Guru</h2>
+      <p class="sub">BMT tidak hanya menarik pembayaran santri (masuk), tapi juga menyalurkan bisyaroh ke guru (keluar).</p>
+      <p>Semua guru/pegawai sudah punya rekening BMT, dan bisyaroh selama ini ditarik dari sana. Ammu Online sudah menghitung bisyaroh tiap guru (pokok + bonus kehadiran + tunjangan − potongan). Usulannya: hasil hitungan itu dipakai untuk <strong>mencairkan ke rekening BMT guru</strong>, dan begitu pencairan dikonfirmasi, <strong>otomatis tercatat sebagai kas keluar di Buku Induk</strong> pondok — menutup celah pencatatan yang sekarang masih manual.</p>
+      <figure>
+        <svg viewBox="0 0 980 230" role="img" aria-labelledby="bis-t bis-d" xmlns="http://www.w3.org/2000/svg" font-family="'Segoe UI',system-ui,Arial,sans-serif">
+          <title id="bis-t">Alur pencairan bisyaroh dari Ammu ke rekening BMT guru dengan pencatatan otomatis</title>
+          <desc id="bis-d">Ammu menghitung bisyaroh, admin menyetujui, BMT mentransfer ke rekening guru, guru menerima, dan pencairan otomatis tercatat sebagai kas keluar di Buku Induk.</desc>
+          <defs>
+            <marker id="bz" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#94a3b8"/></marker>
+            <marker id="bzg" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#047857"/></marker>
+          </defs>
+          <rect x="24" y="40" width="208" height="76" rx="12" fill="#ecfeff" stroke="#0891b2" stroke-width="1.5"/>
+          <text x="128" y="68" text-anchor="middle" font-size="13" font-weight="800" fill="#0e7490">Ammu hitung bisyaroh</text>
+          <text x="128" y="90" text-anchor="middle" font-size="10.5" fill="#334155">pokok + kehadiran +</text>
+          <text x="128" y="104" text-anchor="middle" font-size="10.5" fill="#334155">tunjangan − potongan</text>
+
+          <rect x="278" y="40" width="208" height="76" rx="12" fill="#ecfeff" stroke="#0891b2" stroke-width="1.5"/>
+          <text x="382" y="68" text-anchor="middle" font-size="13" font-weight="800" fill="#0e7490">Admin setujui</text>
+          <text x="382" y="90" text-anchor="middle" font-size="10.5" fill="#334155">review daftar +</text>
+          <text x="382" y="104" text-anchor="middle" font-size="10.5" fill="#334155">perintah cairkan</text>
+
+          <rect x="532" y="40" width="208" height="76" rx="12" fill="#eef2ff" stroke="#6366f1" stroke-width="1.5"/>
+          <text x="636" y="68" text-anchor="middle" font-size="13" font-weight="800" fill="#4338ca">BMT transfer</text>
+          <text x="636" y="90" text-anchor="middle" font-size="10.5" fill="#3730a3">rek. pondok → rek.</text>
+          <text x="636" y="104" text-anchor="middle" font-size="10.5" fill="#3730a3">BMT tiap guru</text>
+
+          <rect x="786" y="40" width="170" height="76" rx="12" fill="#eef2ff" stroke="#6366f1" stroke-width="1.5"/>
+          <text x="871" y="68" text-anchor="middle" font-size="13" font-weight="800" fill="#4338ca">Guru terima</text>
+          <text x="871" y="90" text-anchor="middle" font-size="10.5" fill="#3730a3">masuk rekening</text>
+          <text x="871" y="104" text-anchor="middle" font-size="10.5" fill="#3730a3">BMT guru</text>
+
+          <line x1="232" y1="78" x2="276" y2="78" stroke="#94a3b8" stroke-width="1.7" marker-end="url(#bz)"/>
+          <line x1="486" y1="78" x2="530" y2="78" stroke="#94a3b8" stroke-width="1.7" marker-end="url(#bz)"/>
+          <line x1="740" y1="78" x2="784" y2="78" stroke="#94a3b8" stroke-width="1.7" marker-end="url(#bz)"/>
+
+          <rect x="278" y="160" width="462" height="46" rx="11" fill="#ecfdf5" stroke="#047857" stroke-width="1.5"/>
+          <text x="509" y="180" text-anchor="middle" font-size="12" font-weight="800" fill="#064e3b">Konfirmasi → auto-catat KAS KELUAR di Buku Induk</text>
+          <text x="509" y="197" text-anchor="middle" font-size="10" fill="#065f46">+ slip ditandai "cair" (idempoten, tak dobel)</text>
+          <path d="M382,116 L382,158" fill="none" stroke="#047857" stroke-width="1.6" marker-end="url(#bzg)"/>
+          <path d="M636,116 L636,158" fill="none" stroke="#047857" stroke-width="1.6" stroke-dasharray="3 3" marker-end="url(#bzg)"/>
+        </svg>
+        <figcaption><strong>Diagram 4.</strong> Pencairan bisyaroh (kas keluar) — cerminan dari alur VA (kas masuk). Bersama-sama membentuk integrasi dua arah dengan BMT PETA.</figcaption>
+      </figure>
+
+      <h3>Tiga model eksekusi pencairan</h3>
+      <div class="opts">
+        <div class="opt rec">
+          <span class="badge">★ Target pondok</span>
+          <h4>Model B — API BMT (full otomatis)</h4>
+          <p>Ammu kirim perintah pencairan → BMT transfer pondok→guru sendiri → Ammu catat dari status BMT.</p>
+          <div class="pro">+ Benar-benar otomatis</div>
+          <div class="con">− Butuh API disbursement dari BMT</div>
+        </div>
+        <div class="opt">
+          <span class="badge">Cadangan</span>
+          <h4>Model A — Admin transfer, app catat</h4>
+          <p>Admin transfer via BMT, lalu konfirmasi di Ammu → otomatis tercatat kas keluar + slip ditandai cair.</p>
+          <div class="pro">+ Jalan tanpa API, bisa sekarang</div>
+          <div class="con">− Transfer masih manual</div>
+        </div>
+        <div class="opt">
+          <span class="badge">Jalan tengah</span>
+          <h4>Model C — File pencairan massal</h4>
+          <p>Ammu ekspor file daftar (format BMT) → admin unggah ke sistem BMT untuk eksekusi sekaligus.</p>
+          <div class="pro">+ Satu unggah banyak guru</div>
+          <div class="con">− Perlu fitur bulk-upload BMT</div>
+        </div>
+      </div>
+      <div class="note bmt">
+        <span class="t">Keputusan pondok</span>
+        Target <strong>Model B</strong> (penuh otomatis via API BMT), dengan <strong>Model A sebagai cadangan</strong> bila BMT belum memiliki API disbursement. Persetujuan pencairan dilakukan oleh admin keuangan.
+      </div>
+      <h3>Yang dibutuhkan dari BMT (sisi pencairan)</h3>
+      <table>
+        <tr><th>No</th><th>Kebutuhan</th><th>Catatan</th></tr>
+        <tr><td>1</td><td>API disbursement / transfer keluar</td><td>Pondok → rekening BMT tiap guru (single + batch)</td></tr>
+        <tr><td>2</td><td>Validasi/inquiry rekening</td><td>Cek nama-rekening sebelum transfer (cegah salah kirim)</td></tr>
+        <tr><td>3</td><td>Status per-transfer</td><td>Sukses/gagal per guru (untuk tangani gagal sebagian)</td></tr>
+        <tr><td>4</td><td>Kredensial, keamanan, sandbox</td><td>Sama seperti sisi VA (§8)</td></tr>
+      </table>
+    </section>
+
+    <!-- ============== 12. CATATAN ============== -->
+    <section>
+      <h2><span class="n">12.</span>Catatan &amp; Asumsi</h2>
       <ul>
         <li>Dokumen ini adalah <strong>rancangan awal (draft)</strong> untuk bahan evaluasi; angka, format VA, dan field data bersifat <strong>contoh</strong> dan akan disesuaikan dengan standar BMT PETA.</li>
         <li>Mekanisme konfirmasi <strong>belum dikunci</strong> — menunggu detail kemampuan sistem BMT (lihat §6).</li>
