@@ -11,6 +11,7 @@ function emptyForm() {
     id: null,
     nis: '',
     nisn: '', // v.95.0626d: Nomor Induk Siswa Nasional
+    nik: '', // v.99: NIK santri (16 digit KTP) — sebelumnya ada di form tapi tak ter-load/simpan
     nama: '',
     jk: 'L',
     tgl_lahir: '',
@@ -99,32 +100,31 @@ export function useSantriForm() {
   // Lembaga sekolah (formal: TK umbrella, SDI, PKBM) — TK menggabung TK A+B
   const lembagaSekolahOptions = computed(() => ['TK', 'SDI', 'PKBM'])
 
-  // Guru list filtered by lembaga (untuk multi-select guru pengajar)
+  // v.99: helper taksonomi tipe_pegawai — useGuruForm kini simpan 'guru'|'pegawai'|'pegawai_guru'
+  //   (BUKAN legacy 'ngaji'/'ngaji_sekolah'/'sekolah'). Filter lama pakai nilai legacy → daftar guru
+  //   KOSONG di form santri (akar "data guru tidak terbaca"). Terima BARU + legacy + kosong.
+  function _isGuruMengajar(g) {
+    const t = String(g.tipe_pegawai || '').toLowerCase().trim()
+    return !t || ['guru', 'pegawai_guru', 'ngaji', 'ngaji_sekolah', 'sekolah'].includes(t)
+  }
+  function _isAktifGuru(g) {
+    return String(g.status || 'Aktif').toLowerCase().trim() === 'aktif'
+  }
+
+  // Guru list filtered by lembaga (untuk multi-select guru pengajar Qiraati)
   const guruByLembaga = computed(() => {
     if (!form.value.lembaga) return []
     return guruRaw.value
-      .filter((g) => {
-        const aktif = String(g.status || 'Aktif').toLowerCase().trim() === 'aktif'
-        const tipeOk = ['ngaji', 'ngaji_sekolah'].includes(g.tipe_pegawai) || !g.tipe_pegawai
-        return aktif && tipeOk && g.lembaga === form.value.lembaga
-      })
+      .filter((g) => _isAktifGuru(g) && _isGuruMengajar(g) && g.lembaga === form.value.lembaga)
       .sort((a, b) => String(a.nama || '').localeCompare(String(b.nama || ''), 'id'))
   })
 
-  // Guru sekolah filtered by lembaga_sekolah
+  // Guru sekolah filtered by lembaga_sekolah (match lembaga ATAU lembaga_sekolah — kanonik v.98 dropdown)
   const guruByLembagaSekolah = computed(() => {
-    if (!form.value.lembaga_sekolah) return []
+    const ls = form.value.lembaga_sekolah
+    if (!ls) return []
     return guruRaw.value
-      .filter((g) => {
-        const aktif = String(g.status || 'Aktif').toLowerCase().trim() === 'aktif'
-        return (
-          aktif &&
-          ((g.tipe_pegawai === 'sekolah' && g.lembaga === form.value.lembaga_sekolah) ||
-            (g.tipe_pegawai === 'ngaji_sekolah' &&
-              (g.lembaga === form.value.lembaga_sekolah ||
-                g.lembaga_sekolah === form.value.lembaga_sekolah)))
-        )
-      })
+      .filter((g) => _isAktifGuru(g) && _isGuruMengajar(g) && (g.lembaga_sekolah === ls || g.lembaga === ls))
       .sort((a, b) => String(a.nama || '').localeCompare(String(b.nama || ''), 'id'))
   })
 
@@ -161,6 +161,7 @@ export function useSantriForm() {
         id: s.id,
         nis: s.nis || '',
         nisn: s.nisn || '',
+        nik: s.nik || '', // v.99: load NIK santri
         nama: s.nama || '',
         jk: s.jk || 'L',
         tgl_lahir: s.tgl_lahir || '',
@@ -240,6 +241,7 @@ export function useSantriForm() {
         id: editingId.value ? Number(editingId.value) || editingId.value : id,
         nis: f.nis,
         nisn: f.nisn || '',
+        nik: String(f.nik || '').trim(), // v.99: simpan NIK santri
         username: defaultUsername,
         nama: toTitleCase(f.nama),
         jk: f.jk,
@@ -303,7 +305,9 @@ export function useSantriForm() {
           }
         } catch (e) { /* ignore */ }
       }
-      await setDoc(doc(db, 'santri', String(data.id)), data)
+      // v.99: merge:true — jangan menimpa/hapus field tersimpan yg tak ada di payload
+      //   (mis. wa_2, psb_id, shift_qiraati, lembaga_refs) saat edit santri.
+      await setDoc(doc(db, 'santri', String(data.id)), data, { merge: true })
       toast.success(editingId.value ? 'Data santri diupdate' : 'Santri baru disimpan')
       return true
     } catch (e) {

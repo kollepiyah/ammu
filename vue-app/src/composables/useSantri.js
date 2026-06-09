@@ -4,7 +4,7 @@ import { storeToRefs } from 'pinia'
 import { useCollectionsStore } from '@/stores/collections'
 import { useAuthStore } from '@/stores/auth'
 // v.21.10.0526: Import LEMBAGA_GROUPS helpers untuk lembaga_refs derivation + lembagaScopeMatches scoping
-import { getLembagaGroup, lembagaScopeMatches } from './useLembaga'
+import { getLembagaGroup, lembagaScopeMatches, getPkbmSubTier } from './useLembaga'
 // v.21.86.0527: Sort konsisten lembaga→kelas→nama (berlaku di semua halaman via composable)
 import { sortSantri } from '@/utils/santriSort'
 
@@ -101,8 +101,19 @@ export function useSantri() {
     }
 
     // Lembaga filter — v.97.0626: cocokkan lembaga NGAJI ATAU lembaga SEKOLAH (formal)
+    // v.99: SMP/SMA = sub-jenjang PKBM (turunan kelas). Pilihan filter "SMP"/"SMA" → santri PKBM per jenjang.
     if (filterLembaga.value) {
-      list = list.filter((s) => s.lembaga === filterLembaga.value || s.lembaga_sekolah === filterLembaga.value)
+      const fl = filterLembaga.value
+      if (fl === 'SMP' || fl === 'SMA') {
+        list = list.filter((s) => {
+          const isPkbm =
+            String(s.lembaga_sekolah || '').toUpperCase() === 'PKBM' ||
+            String(s.lembaga || '').toUpperCase() === 'PKBM'
+          return isPkbm && getPkbmSubTier(String(s.kelas_sekolah || s.kelas || '').toUpperCase()) === fl
+        })
+      } else {
+        list = list.filter((s) => s.lembaga === fl || s.lembaga_sekolah === fl)
+      }
     }
 
     // Kelas filter

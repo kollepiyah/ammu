@@ -517,6 +517,7 @@ const importPreviewGuru = ref(null)
 const _settingsExp = useSettingsStore()
 const _toastExp = _useToastGuruExp()
 
+// v.99: ekspor LENGKAP — selaras template & impor (+ jabatan tambahan, tanggal tugas, EKGQ, No Rek BMT, tipe/shift/role/fingerprint)
 function _buildExcelRows(list) {
   return list.map((g, i) => ({
     no: i + 1,
@@ -524,29 +525,43 @@ function _buildExcelRows(list) {
     nik: g.nik || '',
     jk: g.jk || '',
     tgl_lahir: g.tgl_lahir || '',
+    jabatan: g.jabatan || '',
+    jabatan_tambahan: g.jabatan_tambahan || '',
     lembaga: g.lembaga || '',
     lembaga_sekolah: g.lembaga_sekolah || '',
-    jabatan: g.jabatan || '',
+    tanggal_tugas: g.tanggal_tugas || '',
+    ekgq: g.ekgq || g.no_ekgq || '',
+    rek_bmt: g.rek_bmt || '',
     pendidikan: g.pendidikan_terakhir || '',
-    tgl_masuk: g.tgl_masuk || '',
-    alamat: g.alamat || '',
     wa: g.wa || g.no_wa || '',
+    alamat: g.alamat || '',
+    tipe_pegawai: g.tipe_pegawai || '',
+    shift: g.shift || '',
+    role_sistem: g.role_sistem || '',
+    id_fingerprint: g.id_fingerprint || '',
     status: g.status || 'Aktif'
   }))
 }
 const _excelColumns = [
   { key: 'no', header: 'No', width: 5 },
-  { key: 'nama', header: 'Nama', width: 28 },
+  { key: 'nama', header: 'Nama Guru (Dengan Gelar)', width: 28 },
   { key: 'nik', header: 'NIK', width: 18 },
   { key: 'jk', header: 'L/P', width: 5 },
-  { key: 'tgl_lahir', header: 'Tgl Lahir', width: 12 },
+  { key: 'tgl_lahir', header: 'Tgl Lahir (DD/MM/YYYY)', width: 14 },
+  { key: 'jabatan', header: 'Jabatan', width: 18 },
+  { key: 'jabatan_tambahan', header: 'Jabatan Tambahan', width: 16 },
   { key: 'lembaga', header: 'Lembaga', width: 14 },
-  { key: 'lembaga_sekolah', header: 'Sekolah', width: 16 },
-  { key: 'jabatan', header: 'Jabatan', width: 20 },
-  { key: 'pendidikan', header: 'Pendidikan', width: 14 },
-  { key: 'tgl_masuk', header: 'Tgl Masuk', width: 12 },
+  { key: 'lembaga_sekolah', header: 'Lembaga Sekolah', width: 14 },
+  { key: 'tanggal_tugas', header: 'Tanggal Tugas (DD/MM/YYYY)', width: 14 },
+  { key: 'ekgq', header: 'EKGQ', width: 12 },
+  { key: 'rek_bmt', header: 'No Rek BMT', width: 18 },
+  { key: 'pendidikan', header: 'Pendidikan Terakhir', width: 16 },
   { key: 'wa', header: 'WA', width: 14 },
-  { key: 'alamat', header: 'Alamat', width: 30 },
+  { key: 'alamat', header: 'Alamat', width: 28 },
+  { key: 'tipe_pegawai', header: 'Tipe Pegawai (guru/pegawai/pegawai_guru)', width: 20 },
+  { key: 'shift', header: 'Shift (pagi/sore/pagi_sore)', width: 14 },
+  { key: 'role_sistem', header: 'Role Sistem (user/admin/admin_keuangan/super_admin)', width: 18 },
+  { key: 'id_fingerprint', header: 'ID Fingerprint', width: 14 },
   { key: 'status', header: 'Status', width: 10 }
 ]
 
@@ -786,12 +801,15 @@ async function bulkExportSelected() {
 // v.21.13b.0526: Template TANPA KOP — headers di row 1 langsung supaya importFile auto-detect benar
 async function downloadTemplateGuru() {
   try {
+    // v.99: selaras field guru terbaru (+ NIK, Tgl Lahir, Jabatan Tambahan, No Rek BMT, Pendidikan, Alamat).
+    //   FIX hint Tipe Pegawai ke taksonomi BARU (guru/pegawai/pegawai_guru) — nilai legacy bikin guru tak terbaca di form santri.
     const headers = [
-      'Nama Guru (Dengan Gelar)', 'L/P', 'Jabatan', 'Lembaga', 'Lembaga Sekolah',
-      'Tanggal Tugas (DD/MM/YYYY)', 'EKGQ', 'WA', 'Status',
-      'Tipe Pegawai (ngaji/sekolah/ngaji_sekolah)', 'Shift (pagi/sore/pagi_sore)',
+      'Nama Guru (Dengan Gelar)', 'NIK', 'L/P', 'Tgl Lahir (DD/MM/YYYY)',
+      'Jabatan', 'Jabatan Tambahan', 'Lembaga', 'Lembaga Sekolah',
+      'Tanggal Tugas (DD/MM/YYYY)', 'EKGQ', 'No Rek BMT', 'Pendidikan Terakhir', 'WA', 'Status',
+      'Tipe Pegawai (guru/pegawai/pegawai_guru)', 'Shift (pagi/sore/pagi_sore)',
       'ID Fingerprint', 'Role Sistem (user/admin/admin_keuangan/super_admin)',
-      'Username (opsional)'
+      'Username (opsional)', 'Alamat'
     ]
     await exportStyled([], {
       filename: 'Template_Data_Guru.xlsx',
@@ -812,6 +830,17 @@ function _parseTglGuru(v) {
   const m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/)
   if (m) return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`
   return s
+}
+
+// v.99: normalisasi tipe_pegawai impor — legacy (ngaji/sekolah/ngaji_sekolah/admin) → BARU (guru/pegawai/pegawai_guru).
+//   Tanpa ini, guru hasil impor lama tak terbaca di form santri (filter pakai taksonomi baru).
+function _normTipeGuru(v) {
+  const t = String(v || '').trim().toLowerCase()
+  if (!t) return 'guru'
+  if (t === 'ngaji' || t === 'sekolah' || t === 'ngaji_sekolah') return 'guru'
+  if (t === 'admin') return 'pegawai'
+  if (['guru', 'pegawai', 'pegawai_guru'].includes(t)) return t
+  return 'guru'
 }
 
 async function onImportGuru(e) {
@@ -865,20 +894,24 @@ async function onImportGuru(e) {
           nama,
           jk: String(_pick(r, 'L/P', 'JK', 'Jenis Kelamin', 'jk') || 'P').trim().toUpperCase().charAt(0),
           nik: String(_pick(r, 'NIK', 'nik') || '').trim(),
-          tgl_lahir: _parseTglGuru(_pick(r, 'Tgl Lahir', 'Tanggal Lahir', 'tgl_lahir')),
+          tgl_lahir: _parseTglGuru(_pick(r, 'Tgl Lahir (DD/MM/YYYY)', 'Tgl Lahir', 'Tanggal Lahir', 'tgl_lahir')),
           jabatan,
           jabatan_tambahan: String(_pick(r, 'Jabatan Tambahan', 'jabatan_tambahan') || '').trim(),
           lembaga,
           lembaga_sekolah: String(_pick(r, 'Lembaga Sekolah', 'lembaga_sekolah') || '').trim(),
-          tanggal_tugas: _parseTglGuru(_pick(r, 'Tgl Tugas', 'Tanggal Tugas', 'tanggal_tugas')),
+          tanggal_tugas: _parseTglGuru(_pick(r, 'Tanggal Tugas (DD/MM/YYYY)', 'Tgl Tugas', 'Tanggal Tugas', 'tanggal_tugas')),
           ekgq: String(_pick(r, 'No Syahadah', 'EKGQ', 'ekgq') || '').trim(),
+          // v.99: No Rekening BMT (tujuan pencairan bisyaroh) + pendidikan + fingerprint
+          rek_bmt: String(_pick(r, 'No Rek BMT', 'Rek BMT', 'rek_bmt') || '').trim(),
+          pendidikan_terakhir: String(_pick(r, 'Pendidikan Terakhir', 'Pendidikan', 'pendidikan_terakhir') || '').trim(),
+          id_fingerprint: String(_pick(r, 'ID Fingerprint', 'id_fingerprint') || '').trim(),
           wa,
           wa_2: waList[1] || '',
-          username: wa || String(_pick(r, 'Username', 'username') || '').trim(),
+          username: wa || String(_pick(r, 'Username (opsional)', 'Username', 'username') || '').trim(),
           status: statusVal,
-          tipe_pegawai: String(_pick(r, 'Tipe Pegawai', 'tipe_pegawai') || 'guru').trim().toLowerCase(),
-          shift: String(_pick(r, 'Shift', 'shift') || 'pagi_sore').trim().toLowerCase(),
-          role_sistem: String(_pick(r, 'Role Sistem', 'role_sistem') || 'user').trim().toLowerCase(),
+          tipe_pegawai: _normTipeGuru(_pick(r, 'Tipe Pegawai (guru/pegawai/pegawai_guru)', 'Tipe Pegawai', 'tipe_pegawai')),
+          shift: String(_pick(r, 'Shift (pagi/sore/pagi_sore)', 'Shift', 'shift') || 'pagi_sore').trim().toLowerCase(),
+          role_sistem: String(_pick(r, 'Role Sistem (user/admin/admin_keuangan/super_admin)', 'Role Sistem', 'role_sistem') || 'user').trim().toLowerCase(),
           custom_fields: {}
         }
       })

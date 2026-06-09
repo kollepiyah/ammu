@@ -237,6 +237,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useDesktopShell } from '@/composables/useDesktopShell'
 import { definePageActions } from '@/composables/useRibbonContext'
 import { useSantri } from '@/composables/useSantri'
+import { getPkbmSubTier } from '@/composables/useLembaga' // v.99: PKBM -> SMP/SMA (turunan kelas)
 import { useAuthStore } from '@/stores/auth'
 
 // v.21.17c.0526: mode prop — 'view' (sidebar, default) atau 'master' (di Master Data tab, full CRUD)
@@ -452,10 +453,20 @@ const uniqueLembaga = computed(() => {
 })
 
 // v.97.0626: daftar lembaga SEKOLAH (formal) utk dropdown filter
+// v.99: PKBM sudah di-split jadi sub-jenjang SMP (VII-IX) / SMA (X-XII) di master data →
+//   filter menampilkan SMP/SMA (turunan kelas_sekolah), TIDAK ada opsi "PKBM" lagi.
 const uniqueLembagaSekolah = computed(() => {
   const set = new Set()
   for (const s of santriRaw.value) {
-    if (s.lembaga_sekolah) set.add(s.lembaga_sekolah)
+    const ls = s.lembaga_sekolah
+    if (!ls) continue
+    if (String(ls).toUpperCase() === 'PKBM') {
+      const tier = getPkbmSubTier(String(s.kelas_sekolah || s.kelas || '').toUpperCase())
+      if (tier) set.add(tier) // 'SMP' | 'SMA'
+      // PKBM tanpa kelas valid: tetap tampil di "Semua lembaga" (tak ditambah opsi PKBM)
+    } else {
+      set.add(ls)
+    }
   }
   return [...set].sort()
 })
@@ -529,15 +540,26 @@ async function exportSantriExcel() {
   if (exporting.value) return
   exporting.value = true
   try {
+    // v.99: ekspor LENGKAP — selaras dgn template & impor (round-trip ekspor→edit→impor)
+    const _g = (s) => Array.isArray(s.guru_sekolah) ? s.guru_sekolah.join(' | ') : (s.guru_sekolah || '')
     const rows = (santri.value || []).map((s, i) => ({
-      no: i + 1, nama: s.nama || '', nis: s.nis || '', jk: s.jk || '',
-      tgl_lahir: s.tgl_lahir || '', lembaga: s.lembaga || '', kelas: s.kelas || '',
-      // v.21.19.0526: + juz column (PTPT)
-      juz: s.juz || '',
-      kelas_sekolah: s.kelas_sekolah || '', lembaga_sekolah: s.lembaga_sekolah || '',
-      wali: s.nama_wali || s.wali || '', alamat: s.alamat || '',
-      mukim: s.is_mukim ? 'Mukim' : 'Non-mukim',
-      status: s.aktif === false ? 'Non-aktif' : 'Aktif'
+      no: i + 1,
+      nis: s.nis || '', nisn: s.nisn || '', nik: s.nik || '',
+      nama: s.nama || '', panggilan: s.nama_panggilan || '', jk: s.jk || '',
+      tempat_lahir: s.tempat_lahir || '', tgl_lahir: s.tgl_lahir || '', tgl_masuk: s.tgl_masuk || '', no_kk: s.no_kk || '',
+      wali: s.nama_wali || s.wali || '', wa: s.wa || '',
+      lembaga: s.lembaga || '', kelas: s.kelas || '', juz: s.juz || '',
+      guru_pagi: s.guru_pagi || '', guru_sore: s.guru_sore || '',
+      lembaga_sekolah: s.lembaga_sekolah || '', kelas_sekolah: s.kelas_sekolah || '', guru_sekolah: _g(s), asal_sekolah: s.asal_sekolah || '',
+      nama_ayah: s.nama_ayah || (s.ayah && s.ayah.nama) || '', nik_ayah: s.nik_ayah || (s.ayah && s.ayah.nik) || '',
+      pendidikan_ayah: s.pendidikan_ayah || (s.ayah && s.ayah.pendidikan) || '', pekerjaan_ayah: s.pekerjaan_ayah || (s.ayah && s.ayah.pekerjaan) || '', hp_ayah: s.hp_ayah || (s.ayah && s.ayah.telp) || '',
+      nama_ibu: s.nama_ibu || (s.ibu && s.ibu.nama) || '', nik_ibu: s.nik_ibu || (s.ibu && s.ibu.nik) || '',
+      pendidikan_ibu: s.pendidikan_ibu || (s.ibu && s.ibu.pendidikan) || '', pekerjaan_ibu: s.pekerjaan_ibu || (s.ibu && s.ibu.pekerjaan) || '', hp_ibu: s.hp_ibu || (s.ibu && s.ibu.telp) || '',
+      penghasilan_ortu: s.penghasilan_ortu || '',
+      alamat: s.alamat || '', dusun: s.alamat_dusun || '', rt: s.alamat_rt || '', rw: s.alamat_rw || '',
+      desa: s.alamat_desa || '', kecamatan: s.alamat_kecamatan || '', kabupaten: s.alamat_kabupaten || '', provinsi: s.alamat_provinsi || '',
+      aktif: s.aktif === false ? 'false' : 'true', mukim: s.is_mukim ? 'true' : 'false', fullday: s.is_fullday ? 'true' : 'false',
+      catatan: s.catatan_riwayat_pribadi || '', tgl_keluar: s.tgl_keluar || '', alasan_keluar: s.alasan_keluar || ''
     }))
     const ss = settingsStore.settings || {}
     await exportStyled(rows, {
@@ -547,19 +569,52 @@ async function exportSantriExcel() {
       subtitle: `Data Santri — ${rows.length} santri (${new Date().toLocaleDateString('id-ID')})`,
       columns: [
         { key: 'no', header: 'No', width: 5 },
-        { key: 'nama', header: 'Nama', width: 28 },
         { key: 'nis', header: 'NIS', width: 12 },
+        { key: 'nisn', header: 'NISN', width: 14 },
+        { key: 'nik', header: 'NIK', width: 18 },
+        { key: 'nama', header: 'Nama Santri', width: 26 },
+        { key: 'panggilan', header: 'Nama Panggilan', width: 14 },
         { key: 'jk', header: 'L/P', width: 5 },
-        { key: 'tgl_lahir', header: 'Tgl Lahir', width: 12 },
-        { key: 'lembaga', header: 'Lembaga', width: 14 },
-        { key: 'kelas', header: 'Kelas', width: 10 },
-        { key: 'juz', header: 'Juz', width: 8 },
-        { key: 'kelas_sekolah', header: 'Kls Sekolah', width: 12 },
-        { key: 'lembaga_sekolah', header: 'Sekolah', width: 16 },
-        { key: 'wali', header: 'Wali', width: 22 },
-        { key: 'alamat', header: 'Alamat', width: 30 },
-        { key: 'mukim', header: 'Status Tinggal', width: 12 },
-        { key: 'status', header: 'Status', width: 10 }
+        { key: 'tempat_lahir', header: 'Tempat Lahir', width: 14 },
+        { key: 'tgl_lahir', header: 'Tgl Lahir (DD/MM/YYYY)', width: 14 },
+        { key: 'tgl_masuk', header: 'Tgl Masuk (DD/MM/YYYY)', width: 14 },
+        { key: 'no_kk', header: 'No KK', width: 18 },
+        { key: 'wali', header: 'Nama Wali', width: 22 },
+        { key: 'wa', header: 'No WA Wali', width: 16 },
+        { key: 'lembaga', header: 'Lembaga Qiraati', width: 14 },
+        { key: 'kelas', header: 'Kelas Qiraati', width: 12 },
+        { key: 'juz', header: 'Juz (PTPT)', width: 8 },
+        { key: 'guru_pagi', header: 'Guru Pagi', width: 18 },
+        { key: 'guru_sore', header: 'Guru Sore', width: 18 },
+        { key: 'lembaga_sekolah', header: 'Lembaga Sekolah', width: 14 },
+        { key: 'kelas_sekolah', header: 'Kelas Sekolah', width: 12 },
+        { key: 'guru_sekolah', header: 'Guru Sekolah (pisah |)', width: 22 },
+        { key: 'asal_sekolah', header: 'Asal Sekolah', width: 18 },
+        { key: 'nama_ayah', header: 'Nama Ayah', width: 20 },
+        { key: 'nik_ayah', header: 'NIK Ayah', width: 18 },
+        { key: 'pendidikan_ayah', header: 'Pendidikan Ayah', width: 14 },
+        { key: 'pekerjaan_ayah', header: 'Pekerjaan Ayah', width: 14 },
+        { key: 'hp_ayah', header: 'HP Ayah', width: 16 },
+        { key: 'nama_ibu', header: 'Nama Ibu', width: 20 },
+        { key: 'nik_ibu', header: 'NIK Ibu', width: 18 },
+        { key: 'pendidikan_ibu', header: 'Pendidikan Ibu', width: 14 },
+        { key: 'pekerjaan_ibu', header: 'Pekerjaan Ibu', width: 14 },
+        { key: 'hp_ibu', header: 'HP Ibu', width: 16 },
+        { key: 'penghasilan_ortu', header: 'Penghasilan Ortu', width: 14 },
+        { key: 'alamat', header: 'Alamat', width: 28 },
+        { key: 'dusun', header: 'Dusun/Jalan', width: 16 },
+        { key: 'rt', header: 'RT', width: 6 },
+        { key: 'rw', header: 'RW', width: 6 },
+        { key: 'desa', header: 'Desa', width: 14 },
+        { key: 'kecamatan', header: 'Kecamatan', width: 14 },
+        { key: 'kabupaten', header: 'Kabupaten', width: 14 },
+        { key: 'provinsi', header: 'Provinsi', width: 14 },
+        { key: 'aktif', header: 'Status Aktif (true/false)', width: 12 },
+        { key: 'mukim', header: 'Mukim (true/false)', width: 10 },
+        { key: 'fullday', header: 'Fullday (true/false)', width: 10 },
+        { key: 'catatan', header: 'Catatan Riwayat Pribadi (Mukim)', width: 26 },
+        { key: 'tgl_keluar', header: 'Tgl Keluar (DD/MM/YYYY)', width: 14 },
+        { key: 'alasan_keluar', header: 'Alasan Keluar', width: 18 }
       ]
     })
     toast.success(`Ekspor ${rows.length} santri ke Excel`)
@@ -573,12 +628,18 @@ async function exportSantriExcel() {
 // v.21.13b.0526: Template TANPA KOP supaya importFile auto-detect headers di row 1
 async function downloadTemplateSantri() {
   try {
+    // v.99: template diselaraskan dengan SEMUA field form santri (biodata + ortu + alamat detail)
     const headers = [
-      'NIS', 'Nama Santri', 'L/P', 'Tgl Lahir (DD/MM/YYYY)', 'Tgl Masuk (DD/MM/YYYY)',
-      'Nama Wali', 'No WA Wali', 'Lembaga Qiraati', 'Kelas Qiraati',
-      'Guru Pagi', 'Guru Sore', 'Juz (PTPT)', 'Lembaga Sekolah', 'Kelas Sekolah',
-      'Guru Sekolah (pisah |)', 'Status Aktif (true/false)', 'Mukim (true/false)', 'Fullday (true/false)',
-      'Catatan Riwayat Pribadi (Mukim)', 'Alamat'
+      'NIS', 'NISN', 'NIK', 'Nama Santri', 'Nama Panggilan', 'L/P',
+      'Tempat Lahir', 'Tgl Lahir (DD/MM/YYYY)', 'Tgl Masuk (DD/MM/YYYY)', 'No KK',
+      'Nama Wali', 'No WA Wali',
+      'Lembaga Qiraati', 'Kelas Qiraati', 'Juz (PTPT)', 'Guru Pagi', 'Guru Sore',
+      'Lembaga Sekolah', 'Kelas Sekolah', 'Guru Sekolah (pisah |)', 'Asal Sekolah',
+      'Nama Ayah', 'NIK Ayah', 'Pendidikan Ayah', 'Pekerjaan Ayah', 'HP Ayah',
+      'Nama Ibu', 'NIK Ibu', 'Pendidikan Ibu', 'Pekerjaan Ibu', 'HP Ibu', 'Penghasilan Ortu',
+      'Alamat', 'Dusun/Jalan', 'RT', 'RW', 'Desa', 'Kecamatan', 'Kabupaten', 'Provinsi',
+      'Status Aktif (true/false)', 'Mukim (true/false)', 'Fullday (true/false)',
+      'Catatan Riwayat Pribadi (Mukim)', 'Tgl Keluar (DD/MM/YYYY)', 'Alasan Keluar'
     ]
     await exportStyled([], {
       filename: 'Template_Data_Santri.xlsx',
@@ -667,6 +728,12 @@ async function onImportSantri(e) {
         wali: toTitleCase(_pick(r, 'Nama Wali', 'Wali', 'wali') || ''),
         data: {
           nis, nama,
+          // v.99: biodata tambahan (selaras form + template baru)
+          nisn: String(_pick(r, 'NISN', 'nisn') || '').trim(),
+          nik: String(_pick(r, 'NIK', 'nik') || '').trim(),
+          nama_panggilan: toTitleCase(_pick(r, 'Nama Panggilan', 'nama_panggilan') || ''),
+          tempat_lahir: toTitleCase(_pick(r, 'Tempat Lahir', 'tempat_lahir') || ''),
+          no_kk: String(_pick(r, 'No KK', 'No. KK', 'no_kk') || '').trim(),
           jk: String(_pick(r, 'L/P', 'JK', 'Jenis Kelamin', 'jk') || 'L').trim().toUpperCase().charAt(0),
           tgl_lahir: parseTglDDMMYYYY(_pick(r, 'Tgl Lahir (DD/MM/YYYY)', 'Tgl Lahir', 'Tanggal Lahir', 'tgl_lahir')),
           tgl_masuk: parseTglDDMMYYYY(_pick(r, 'Tgl Masuk (DD/MM/YYYY)', 'Tgl Masuk', 'Tanggal Masuk', 'tgl_masuk')),
@@ -685,6 +752,44 @@ async function onImportSantri(e) {
           is_fullday: parseBool(_pick(r, 'Fullday (true/false)', 'Fullday', 'is_fullday')),
           catatan_riwayat_pribadi: String(_pick(r, 'Catatan Riwayat Pribadi (Mukim)', 'Catatan Riwayat Pribadi', 'catatan_riwayat_pribadi') || '').trim(),
           alamat: String(_pick(r, 'Alamat', 'alamat') || '').trim(),
+          // v.99: alamat detail
+          alamat_dusun: String(_pick(r, 'Dusun/Jalan', 'Dusun', 'alamat_dusun') || '').trim(),
+          alamat_rt: String(_pick(r, 'RT', 'alamat_rt') || '').trim(),
+          alamat_rw: String(_pick(r, 'RW', 'alamat_rw') || '').trim(),
+          alamat_desa: String(_pick(r, 'Desa', 'Desa / Kelurahan', 'alamat_desa') || '').trim(),
+          alamat_kecamatan: String(_pick(r, 'Kecamatan', 'alamat_kecamatan') || '').trim(),
+          alamat_kabupaten: String(_pick(r, 'Kabupaten', 'alamat_kabupaten') || '').trim(),
+          alamat_provinsi: String(_pick(r, 'Provinsi', 'alamat_provinsi') || '').trim(),
+          // v.99: asal sekolah + penghasilan + data ortu (flat + nested ayah/ibu spt form)
+          asal_sekolah: toTitleCase(_pick(r, 'Asal Sekolah', 'asal_sekolah') || ''),
+          penghasilan_ortu: String(_pick(r, 'Penghasilan Ortu', 'penghasilan_ortu') || '').trim(),
+          nama_ayah: toTitleCase(_pick(r, 'Nama Ayah', 'nama_ayah') || ''),
+          nik_ayah: String(_pick(r, 'NIK Ayah', 'nik_ayah') || '').trim(),
+          pendidikan_ayah: String(_pick(r, 'Pendidikan Ayah', 'pendidikan_ayah') || '').trim(),
+          pekerjaan_ayah: String(_pick(r, 'Pekerjaan Ayah', 'pekerjaan_ayah') || '').trim(),
+          hp_ayah: String(_pick(r, 'HP Ayah', 'hp_ayah') || '').trim(),
+          nama_ibu: toTitleCase(_pick(r, 'Nama Ibu', 'nama_ibu') || ''),
+          nik_ibu: String(_pick(r, 'NIK Ibu', 'nik_ibu') || '').trim(),
+          pendidikan_ibu: String(_pick(r, 'Pendidikan Ibu', 'pendidikan_ibu') || '').trim(),
+          pekerjaan_ibu: String(_pick(r, 'Pekerjaan Ibu', 'pekerjaan_ibu') || '').trim(),
+          hp_ibu: String(_pick(r, 'HP Ibu', 'hp_ibu') || '').trim(),
+          ayah: {
+            nama: toTitleCase(_pick(r, 'Nama Ayah', 'nama_ayah') || ''),
+            nik: String(_pick(r, 'NIK Ayah', 'nik_ayah') || '').trim(),
+            pekerjaan: String(_pick(r, 'Pekerjaan Ayah', 'pekerjaan_ayah') || '').trim(),
+            pendidikan: String(_pick(r, 'Pendidikan Ayah', 'pendidikan_ayah') || '').trim(),
+            telp: String(_pick(r, 'HP Ayah', 'hp_ayah') || '').trim()
+          },
+          ibu: {
+            nama: toTitleCase(_pick(r, 'Nama Ibu', 'nama_ibu') || ''),
+            nik: String(_pick(r, 'NIK Ibu', 'nik_ibu') || '').trim(),
+            pekerjaan: String(_pick(r, 'Pekerjaan Ibu', 'pekerjaan_ibu') || '').trim(),
+            pendidikan: String(_pick(r, 'Pendidikan Ibu', 'pendidikan_ibu') || '').trim(),
+            telp: String(_pick(r, 'HP Ibu', 'hp_ibu') || '').trim()
+          },
+          // v.99: status keluar
+          tgl_keluar: parseTglDDMMYYYY(_pick(r, 'Tgl Keluar (DD/MM/YYYY)', 'Tgl Keluar', 'tgl_keluar')),
+          alasan_keluar: String(_pick(r, 'Alasan Keluar', 'alasan_keluar') || '').trim(),
           custom_fields: {}
         }
       })
