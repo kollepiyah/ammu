@@ -8,6 +8,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useUiStore } from '@/stores/ui'
 import { useRibbonPrefs } from './useRibbonPrefs'
 import { useUpdater } from './useUpdater'
+import { useToast } from './useToast'
 
 const TABS = [
   {
@@ -218,7 +219,7 @@ const TABS = [
       {
         label: 'Kontak & Pembaruan',
         items: [
-          { type: 'large', icon: 'comment', label: 'Hubungi\nAdmin', to: '/kritik-saran' },
+          { type: 'large', icon: 'comment', label: 'Hubungi\nAdmin', action: 'kontak' },
           { type: 'small', icon: 'bell', label: 'Lapor Bug', to: '/kritik-saran' },
           { type: 'small', icon: 'refresh', label: 'Cek Pembaruan', action: 'update' }
         ]
@@ -263,6 +264,7 @@ export function useRibbonNav() {
   const ui = useUiStore()
   const prefs = useRibbonPrefs()
   const updater = useUpdater()
+  const toast = useToast()
 
   function passGate(gate) {
     if (!gate) return true
@@ -334,6 +336,11 @@ export function useRibbonNav() {
     }
     if (item.action === 'update') {
       updater.check()
+      return
+    }
+    if (item.action === 'kontak') {
+      // v.97.0626: kontak author (ganti arah ke Kritik & Saran) — tampilkan toast info
+      toast.info('Hubungi Admin — Rahman Fanani · WA: 085331172477 (Bakafrawi Project)', 8000)
       return
     }
     if (item.action === 'logout') {

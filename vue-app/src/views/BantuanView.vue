@@ -28,7 +28,7 @@
         v-for="c in homeCards"
         :key="c.id"
         class="text-left bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl p-5 shadow-sm transition hover:border-[var(--color-primary)] hover:shadow-md"
-        @click="c.to ? go(c.to) : goBagian(c.id)"
+        @click="c.kontak ? showKontak() : (c.to ? go(c.to) : goBagian(c.id))"
       >
         <div class="w-11 h-11 rounded-xl grid place-items-center mb-3 text-[var(--color-primary)]" style="background: color-mix(in srgb, var(--color-primary) 12%, transparent)">
           <i :class="['fas', c.icon, 'text-lg']"></i>
@@ -83,6 +83,9 @@
           <div class="flex justify-between border-b border-[var(--border-subtle)] py-2"><span class="text-[var(--text-secondary)]">Lembaga</span><span class="font-semibold">{{ lembagaName }}</span></div>
           <div class="flex justify-between border-b border-[var(--border-subtle)] py-2"><span class="text-[var(--text-secondary)]">Platform</span><span class="font-semibold">Windows (Electron)</span></div>
           <div class="flex justify-between border-b border-[var(--border-subtle)] py-2"><span class="text-[var(--text-secondary)]">Hak Cipta</span><span class="font-semibold">© 2026 {{ lembagaName }}</span></div>
+          <div class="flex justify-between border-b border-[var(--border-subtle)] py-2"><span class="text-[var(--text-secondary)]">Author</span><span class="font-semibold">{{ AUTHOR.nama }}</span></div>
+          <div class="flex justify-between border-b border-[var(--border-subtle)] py-2"><span class="text-[var(--text-secondary)]">Kontak</span><span class="font-semibold">WA: {{ AUTHOR.wa }}</span></div>
+          <div class="flex justify-between border-b border-[var(--border-subtle)] py-2"><span class="text-[var(--text-secondary)]">Organization</span><span class="font-semibold">{{ AUTHOR.org }}</span></div>
         </div>
       </div>
     </div>
@@ -112,10 +115,18 @@
 import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useSettingsStore } from '@/stores/settings'
+import { useToast } from '@/composables/useToast'
 
 const route = useRoute()
 const router = useRouter()
 const settings = useSettingsStore()
+const toast = useToast()
+
+// v.97.0626: info author/kontak (dipakai kartu "Hubungi Admin" + bagian Tentang)
+const AUTHOR = { nama: 'Rahman Fanani', wa: '085331172477', org: 'Bakafrawi Project' }
+function showKontak() {
+  toast.info(`Hubungi Admin — ${AUTHOR.nama} · WA: ${AUTHOR.wa} (${AUTHOR.org})`, 8000)
+}
 
 const lembagaName = computed(() => settings.settings?.namaLembaga || 'Pondok Pesantren Mambaul Ulum')
 const version = computed(() => settings.settings?.appVersion || 'v.97.0626')
@@ -158,7 +169,7 @@ const homeCards = [
   { id: 'faq', icon: 'fa-circle-question', title: 'Pertanyaan Umum (FAQ)', desc: 'Jawaban atas pertanyaan yang sering diajukan pengguna.' },
   { id: 'tentang', icon: 'fa-circle-info', title: 'Tentang Aplikasi', desc: 'Informasi versi, lembaga, dan platform aplikasi.' },
   { id: 'rilis', icon: 'fa-clipboard-list', title: 'Catatan Rilis', desc: 'Ringkasan perubahan dan fitur baru tiap versi.' },
-  { title: 'Hubungi Admin', icon: 'fa-headset', desc: 'Kirim pesan ke administrator lewat Kritik & Saran.', to: '/kritik-saran' },
+  { title: 'Hubungi Admin', icon: 'fa-headset', desc: 'Tampilkan kontak admin/pembuat aplikasi (WA).', kontak: true },
   { title: 'Lapor Bug', icon: 'fa-bug', desc: 'Laporkan kendala atau galat yang Anda temui.', to: '/kritik-saran' }
 ]
 
