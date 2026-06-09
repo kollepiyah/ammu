@@ -46,7 +46,7 @@ Shell Desktop Commander **men-strip PATH + PATHEXT** → `git`/`node`/`npm` tela
 - **Perubahan NATIVE Android (widget/manifest/splash)** → WAJIB rebuild AAB (web deploy tidak cukup).
 
 ## 5. SKEMA VERSI
-Format `v.<versionCode>.<MMYY>` (MM=bulan, YY=2 digit tahun). Saat ini **v.98.0626** (versionCode 98, Juni 2026; vc 88-98 SUDAH dipakai → minimal 99 utk rilis berikut). Bump SEMUA tempat saat rilis AAB baru (Play Console tolak versionCode sama):
+Format `v.<versionCode>.<MMYY>` (MM=bulan, YY=2 digit tahun). Saat ini **v.99.0626** (versionCode 99, Juni 2026; vc 88-99 SUDAH dipakai → minimal 100 utk rilis berikut). Bump SEMUA tempat saat rilis AAB baru (Play Console tolak versionCode sama):
 - `vue-app/android/app/build.gradle` (versionCode + versionName)
 - `package.json` (root + vue-app = "87.0526"), `vue-app/electron/package.json` ("87.0.526")
 - `vue-app/src/main.js` Sentry `release: 'portal-mu@87.0526'`
@@ -961,3 +961,43 @@ git push
 - **App Check**: Electron/Android kini TANPA App Check token. Saat nanti Console di-**Enforce**, desktop/native butuh debug token / Play Integrity dulu (jangan Enforce sebelum itu).
 - **Bantuan di mobile**: muncul di **sidebar drawer** (group "Bantuan"), bukan bottom-nav (bottom-nav tetap 5 tab). Konten `BantuanView` menyesuaikan platform via `useDesktopShell`+`Capacitor.isNativePlatform()`.
 - Mount/bash sandbox tetap STALE/terpotong utk file yg di-Edit → Read tool authoritative; `node --check` lulus = file valid walau `tail` tampak terpotong.
+
+
+---
+
+## SESI v.99.0626 — AUDIT MASTER DATA + FORM SANTRI/GURU + FILTER PKBM + XLSX + KELAS-FLOW + BUMP v.99 (9 Juni 2026, Cowork) — RECAP TERBARU, BACA INI DULU
+> Web/JS murni **+ BUMP versionCode 98→99** (versionName v.99.0626). Branch feature/vue-migration. Verifikasi via **Read tool authoritative** (mount Cowork serve file TERPOTONG → parser bash tak reliabel; gate build = kyai `tmp_recovery\_run_vite.cmd`). Laporan lengkap: `AUDIT-COWORK-09JUN2026-MASTERDATA-FORM-XLSX.md`.
+
+### DIKERJAKAN
+1. **Form edit santri**: + field `nik` (load+simpan; sebelumnya ada di template tapi yatim) ; `save()` → `setDoc(...,{merge:true})` (anti-wipe field tersimpan: wa_2/psb_id/shift_qiraati/lembaga_refs). [`useSantriForm.js`]
+2. **Guru tak terbaca di form santri** — AKAR: `guruByLembaga`/`guruByLembagaSekolah` filter `tipe_pegawai` **legacy** (ngaji/ngaji_sekolah/sekolah), padahal `useGuruForm` simpan **baru** (guru/pegawai/pegawai_guru). FIX: helper `_isGuruMengajar` (baru+legacy+kosong) + match `lembaga` ATAU `lembaga_sekolah`. [`useSantriForm.js`]
+3. **Filter Data Santri**: PKBM → **SMP/SMA** (turunan kelas via `getPkbmSubTier`), tanpa opsi "PKBM". Data tetap `lembaga_sekolah='PKBM'` (TANPA migrasi). [`useSantri.js`+`SantriView.vue`]. **Guru & NaikKelas SENGAJA tetap "PKBM"** (guru tak ber-kelas; promosi = unit PKBM). Rapor/RekapDiniyah/Statistik/Absensi sudah SMP/SMA sejak v.90/v.98.
+4. **Template/ekspor/impor XLSX**: Santri 46 kolom (NISN/NIK/panggilan/tempat lahir/No KK/alamat detail/ayah-ibu flat+nested/asal sekolah/penghasilan/keluar) ; Guru (+NIK/Tgl Lahir/Jabatan Tambahan/Tanggal Tugas/EKGQ/**No Rek BMT**/Pendidikan/Tipe-Shift-Role-Fingerprint, FIX hint Tipe Pegawai ke taksonomi baru, `_normTipeGuru` normalisasi legacy→baru saat impor). [`SantriView.vue`+`GuruView.vue`]
+5. **Kelas & Guru → ALUR KELAS (REWRITE, pilihan kyai opsi B):** kategori→lembaga→**KELAS (+tambah kelas)**→pilih **1-2 guru** (Pagi/Sore atau 2 guru sekolah)→assign santri. Default guru kelas disimpan di **`master/lembaga.list[i].kelas_guru[kelas]`** (`{guru_pagi,guru_sore}` / `{guru_sekolah:[]}`). Penugasan tetap ditulis ke santri (`guru_pagi`/`guru_sore`/`guru_sekolah`, non-destruktif) → kompat downstream. [`KelasGuruView.vue`]
+6. **Form santri PREFILL** guru dari `kelas_guru` default saat lembaga+kelas dipilih & guru kosong (non-destruktif). [`useSantriForm.js`]
+7. **BUMP v.99.0626** (vc 98→99) di SEMUA titik §5 + fallback display Ribbon/Bantuan. Komentar tag historis `v.98.0626` SENGAJA tak diubah.
+
+### KOMPAT (sudah dicek) — rekap/rapor/kenaikan OK ✅
+- Field BARU `kelas_guru` di `master/lembaga` **DIPERTAHANKAN** semua penulis lembaga (`LembagaDetailView.saveLembagaKelas`/`simpanPengaturan` + `useLembagaForm.save` pakai spread `{...existing}`). Aman dari ke-wipe saat edit lembaga.
+- **Rapor** baca `guru/guru_pagi/guru_sore/guru_sekolah` → otomatis terisi dari alur Kelas baru (sinergi). **Rekap** pakai jenjang SMP/SMA (sudah ada). **Kenaikan** pakai `updateDoc` partial → field baru aman. Catatan: naik kelas TIDAK auto-ubah guru (sama spt sebelumnya; prefill kelas membantu saat edit santri).
+
+### FILE DIUBAH
+`composables/useSantriForm.js`, `composables/useSantri.js`, `views/SantriView.vue`, `views/GuruView.vue`, `views/KelasGuruView.vue` (REWRITE). Bump: `vue-app/android/app/build.gradle`, `package.json`(root+vue-app), `vue-app/electron/package.json`, `vue-app/src/main.js`, footer `AppSidebar/LoginView/DashboardView/PpdbAdminView`, fallback `RibbonBackstage/RibbonStatusBar/BantuanView`. BARU: `AUDIT-COWORK-09JUN2026-MASTERDATA-FORM-XLSX.md`.
+
+### KYAI JALANKAN (PowerShell, `;`)
+```
+cd "D:\Aplikasi Project\Portal MU";
+.\tmp_recovery\_run_vite.cmd                                  # cek VITE_EXITCODE=0
+if (Test-Path ".git\index.lock") { Remove-Item -Force ".git\index.lock" }
+git add -A ; git commit --no-verify -m "feat(v.99): NIK+merge-safe santri, guru terbaca (taksonomi tipe_pegawai), filter PKBM->SMP/SMA, XLSX santri+guru lengkap, Kelas&Guru alur-kelas + prefill form, bump vc99"
+npm run firebase:deploy                                       # web/PWA
+npm run build:aab                                             # AAB vc99 (Play Console) — butuh keystore
+npm run build:electron --prefix vue-app ; robocopy "vue-app\dist" "vue-app\electron\app" /MIR ; cd vue-app\electron ; npm run electron:publish ; cd ..\..
+git push
+```
+**firestore.rules TIDAK diubah** sesi ini (tulis `master/lembaga` + `santri` sudah diizinkan) → tak perlu deploy rules.
+
+### PENDING / NEXT
+- Setelah deploy: kyai isi guru tiap KELAS via halaman Kelas & Guru (otomatis jadi default + prefill form santri).
+- Opsional: auto-reset/assign guru saat Naik Kelas (sekarang manual). Isi `rek_bmt` guru utk Laporan BMT.
+- Backlog lama tetap (audit RBAC mendalam, pensiun TPQ-shift, hapus lembaga lama "P3H").

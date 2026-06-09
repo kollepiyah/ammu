@@ -128,6 +128,30 @@ export function useSantriForm() {
       .sort((a, b) => String(a.nama || '').localeCompare(String(b.nama || ''), 'id'))
   })
 
+  // v.99: default guru per kelas (master/lembaga.kelas_guru) — sumber sama dgn halaman Kelas & Guru.
+  function _kelasGuruDefault(lembagaNama, kelasNama) {
+    if (!lembagaNama || !kelasNama) return null
+    const l = lembagaRaw.value.find((x) => (x.lembaga || x.nama) === lembagaNama)
+    const map = l && l.kelas_guru ? l.kelas_guru : null
+    return (map && map[kelasNama]) || null
+  }
+  // Prefill guru Qiraati dari default kelas bila kosong (non-destruktif; nilai tersimpan menang).
+  watch(() => [form.value.lembaga, form.value.kelas], () => {
+    const def = _kelasGuruDefault(form.value.lembaga, form.value.kelas)
+    if (!def) return
+    if (!form.value.guru_pagi && def.guru_pagi) form.value.guru_pagi = def.guru_pagi
+    if (!form.value.guru_sore && def.guru_sore) form.value.guru_sore = def.guru_sore
+  })
+  // Prefill guru sekolah dari default kelas bila kosong.
+  watch(() => [form.value.lembaga_sekolah, form.value.kelas_sekolah], () => {
+    const def = _kelasGuruDefault(form.value.lembaga_sekolah, form.value.kelas_sekolah)
+    if (!def) return
+    const arr = Array.isArray(def.guru_sekolah) ? def.guru_sekolah.filter(Boolean) : []
+    if (arr.length && (!Array.isArray(form.value.guru_sekolah) || form.value.guru_sekolah.length === 0)) {
+      form.value.guru_sekolah = [...arr]
+    }
+  })
+
   // ============== ACTIONS ==============
 
   function resetForm() {

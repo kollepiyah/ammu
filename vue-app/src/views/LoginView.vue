@@ -388,7 +388,7 @@ function bukaWaAdmin() {
         © {{ new Date().getFullYear() }} Pondok Pesantren Mambaul Ulum
       </p>
       <p class="text-[11px] text-white/80 font-bold tracking-widest mt-1 drop-shadow">
-        v.98.0626
+        v.99.0626
       </p>
     </div>
   </div>

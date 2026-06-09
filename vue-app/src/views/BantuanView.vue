@@ -142,7 +142,7 @@ const introText = computed(() =>
 )
 
 const lembagaName = computed(() => settings.settings?.namaLembaga || 'Pondok Pesantren Mambaul Ulum')
-const version = computed(() => settings.settings?.appVersion || 'v.98.0626')
+const version = computed(() => settings.settings?.appVersion || 'v.99.0626')
 const logoSrc = computed(() => settings.settings?.logoUrl || '/logo.png')
 
 const sections = [

@@ -39,5 +39,20 @@ npm run firebase:deploy                 # web/PWA (cukup; ini perubahan JS)
 # App HP (.aab) HANYA bila ingin di aplikasi terpasang — bump versionCode >=99 dulu.
 ```
 
-## PENDING (keputusan kyai — fitur Kelas & Guru / shift)
-Permintaan baru: guru pagi&sore vs 1-shift → opsi **(A) Guru Partner** (set guru_pagi+guru_sore sekaligus per santri tercentang) ATAU **(B) alur Kelas: lembaga→tambah kelas→pilih 1-2 guru→assign santri**, sekaligus selaraskan picker guru di form santri. **Menunggu pilihan kyai sebelum implementasi.** (Catatan: form santri SUDAH dukung 2 guru + shift via MultiSelectGuruPengajar; halaman Kelas & Guru saat ini hanya 1 guru/simpan.)
+## KELAS & GURU — ALUR KELAS (kyai pilih opsi B) ✅ IMPLEMENTASI
+Redesain `views/KelasGuruView.vue` jadi class-centric: **kategori → lembaga → KELAS (+ tambah kelas) → pilih 1-2 GURU → assign santri.**
+- **Ngaji**: 2 dropdown **Guru Pagi / Guru Sore** (isi 1 atau 2 — jawab kebutuhan "pagi&sore vs 1 shift"). **Sekolah**: 2 slot **Guru Sekolah**.
+- **Default guru per kelas DISIMPAN** di `master/lembaga.list[i].kelas_guru[kelas]` (`{guru_pagi,guru_sore}` ngaji / `{guru_sekolah:[]}` sekolah) → dipakai prefill + **selaras form santri**.
+- **Penugasan** ditulis ke SANTRI tercentang (kompat downstream): ngaji → `guru_pagi`/`guru_sore` (+ `guru`); sekolah → `guru_sekolah[]`. **Non-destruktif** (hanya set guru yg dipilih; tak meng-clear).
+- **Tambah kelas** menambah nama kelas ke `master/lembaga.list[i].kelas`.
+
+### Selaras form edit santri (`useSantriForm.js`)
+- 2 watcher prefill: saat `lembaga+kelas` (atau `lembaga_sekolah+kelas_sekolah`) dipilih & field guru KOSONG → isi dari `master/lembaga.kelas_guru` default (non-destruktif, tetap bisa diedit). → picker guru form santri kini "mengikuti" guru kelas.
+
+### Catatan teknis Kelas-flow
+- `master/lembaga` ditulis via `updateOne('master','lembaga',{list})` (rewrite array `list`). Tak ada koleksi/skema baru selain field opsional `kelas_guru` di tiap entri lembaga.
+- Santri kandidat kini di-scope **lembaga + kelas** (bukan lembaga saja). Default centang = semua santri kelas (bisa di-uncheck).
+- Pembaca lama (rapor/absensi/scoping) TIDAK berubah — tetap baca `guru_pagi`/`guru_sore`/`guru_sekolah` di santri.
+
+## FILE DIUBAH (sesi v.99)
+`composables/useSantriForm.js`, `composables/useSantri.js`, `views/SantriView.vue`, `views/GuruView.vue`, `views/KelasGuruView.vue` (rewrite). BARU: file audit ini.
