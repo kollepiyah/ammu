@@ -327,7 +327,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useDesktopShell } from '@/composables/useDesktopShell'
 import { definePageActions } from '@/composables/useRibbonContext'
@@ -344,7 +344,7 @@ import { useConfirm } from '@/composables/useConfirm'
 import SkeletonCard from '@/components/layout/SkeletonCard.vue'
 import EmptyState from '@/components/layout/EmptyState.vue' // v.91.0626: empty-state konsisten
 // v.21.11.0526: + deleteOne untuk delete & bulk delete
-import { updateOne, deleteOne } from '@/services/firestore'
+import { updateOne, deleteOne, subscribeDoc } from '@/services/firestore'
 // v.21.13b.0526: + toTitleCase + normalizeWA + parseMultipleWA (dual WA)
 import { getNamaGuruGelar, formatTanggal, hitungLamaMengajar, toTitleCase, normalizeWA, parseMultipleWA } from '@/utils/format'
 
@@ -359,6 +359,18 @@ const {
   stats,
   isFullAccess
 } = useGuru()
+
+// v.99: sumber FILTER jabatan = master/jabatan (yang kyai tambahkan), bukan distinct dari data guru.
+const jabatanMaster = ref([])
+let _unsubJabatanGV = null
+onMounted(() => {
+  _unsubJabatanGV = subscribeDoc('master', 'jabatan', (d) => {
+    const items = Array.isArray(d?.items) ? d.items.map((it) => it && it.nama).filter(Boolean) : []
+    const list = Array.isArray(d?.list) ? d.list.filter(Boolean) : []
+    jabatanMaster.value = items.length ? items : list
+  })
+})
+onUnmounted(() => { if (_unsubJabatanGV) { try { _unsubJabatanGV() } catch (e) {} } })
 
 // v.91.0626: prefill pencarian dari ?q= (global search header)
 const _route = useRoute()
@@ -421,6 +433,10 @@ const uniqueLembagaSekolah = computed(() => {
 })
 
 const uniqueJabatan = computed(() => {
+  // v.99: hanya jabatan dari master/jabatan (ditambahkan kyai). Fallback distinct guru bila master kosong.
+  if (jabatanMaster.value.length) {
+    return [...new Set(jabatanMaster.value)].sort((a, b) => String(a).localeCompare(String(b), 'id'))
+  }
   const set = new Set()
   for (const g of guruRaw.value) {
     if (g?.jabatan) set.add(g.jabatan)

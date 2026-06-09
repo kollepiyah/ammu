@@ -18,7 +18,8 @@
   "build": {
     "appId": "app.ammu.id.desktop",
     "productName": "Ammu Online",
-    "asar": false,
+    "asar": true,
+    "asarUnpack": ["assets/**/*"],
     "directories": {
       "buildResources": "resources",
       "output": "dist"

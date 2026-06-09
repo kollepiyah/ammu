@@ -80,10 +80,15 @@ export const PKBM_SUB_TIERS = {
 }
 
 // Get sub-tier (SMP/SMA) dari nama kelas PKBM
+// v.99: ROBUST — terima Romawi (VII..XII), Arab (7..12), prefix "Kelas/Kls/Tingkat/SMP/SMA", case-insensitive.
 export function getPkbmSubTier(kelas) {
-  if (!kelas) return null
-  if (PKBM_SUB_TIERS.SMP.includes(kelas)) return 'SMP'
-  if (PKBM_SUB_TIERS.SMA.includes(kelas)) return 'SMA'
+  if (kelas === null || kelas === undefined || kelas === '') return null
+  let k = String(kelas).toUpperCase().trim()
+  k = k.replace(/^(KELAS|KLS|TINGKAT)\s+/, '').replace(/^(SMP|SMA)\s*[-\s]*/, '').trim()
+  const arab = { '7': 'VII', '8': 'VIII', '9': 'IX', '10': 'X', '11': 'XI', '12': 'XII' }
+  if (arab[k]) k = arab[k]
+  if (PKBM_SUB_TIERS.SMP.includes(k)) return 'SMP'
+  if (PKBM_SUB_TIERS.SMA.includes(k)) return 'SMA'
   return null
 }
 

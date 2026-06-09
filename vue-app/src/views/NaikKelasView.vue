@@ -103,6 +103,75 @@
         >
           <i class="fas fa-cog text-sm"></i>Pengaturan
         </button>
+        <button
+          v-if="isAdmin"
+          @click="activeTab = 'mutasi'"
+          :class="[
+            'flex-1 whitespace-nowrap px-3 md:px-4 py-2 md:py-2.5 text-xs md:text-sm font-black transition cursor-pointer rounded-xl flex items-center justify-center gap-1.5',
+            activeTab === 'mutasi'
+              ? 'bg-amber-600 text-white shadow-md'
+              : 'text-[var(--text-secondary)] hover:bg-amber-50 hover:text-amber-700'
+          ]"
+        >
+          <i class="fas fa-right-from-bracket text-sm"></i>Mutasi
+        </button>
+      </div>
+    </div>
+
+    <!-- v.99: SUB-MENU MUTASI (keluar) — kategori → filter lembaga → list santri → keluarkan -->
+    <div v-if="isAdmin && activeTab === 'mutasi'" class="space-y-3">
+      <div class="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)] shadow-sm p-4">
+        <h3 class="text-sm font-black text-[var(--text-primary)] mb-3"><i class="fas fa-right-from-bracket text-amber-600 mr-1"></i>Mutasi / Keluar Santri</h3>
+        <div class="grid grid-cols-2 gap-2">
+          <button @click="mutasiKategori = 'qiraati'; mutasiLembaga = ''" :class="['px-3 py-3 rounded-xl text-sm font-black border transition cursor-pointer', mutasiKategori === 'qiraati' ? 'bg-teal-600 text-white border-teal-700' : 'bg-[var(--bg-muted)] text-[var(--text-primary)] border-[var(--border-default)] hover:bg-teal-50 dark:hover:bg-teal-900/30']"><i class="fas fa-book-quran mr-1"></i>Lembaga Qiraati</button>
+          <button @click="mutasiKategori = 'sekolah'; mutasiLembaga = ''" :class="['px-3 py-3 rounded-xl text-sm font-black border transition cursor-pointer', mutasiKategori === 'sekolah' ? 'bg-cyan-600 text-white border-cyan-700' : 'bg-[var(--bg-muted)] text-[var(--text-primary)] border-[var(--border-default)] hover:bg-cyan-50 dark:hover:bg-cyan-900/30']"><i class="fas fa-school mr-1"></i>Lembaga Sekolah</button>
+        </div>
+        <div v-if="mutasiKategori" class="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <label class="block text-[11px] font-bold text-[var(--text-secondary)] uppercase mb-1">Filter Lembaga</label>
+            <select v-model="mutasiLembaga" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-amber-500 outline-none cursor-pointer">
+              <option value="">— pilih lembaga —</option>
+              <option v-for="l in mutasiLembagaOptions" :key="l" :value="l">{{ l }}</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-[var(--text-secondary)] uppercase mb-1">Tanggal Keluar</label>
+            <input v-model="mutasiTgl" type="date" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-amber-500 outline-none" />
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-[var(--text-secondary)] uppercase mb-1">Alasan Keluar</label>
+            <select v-model="mutasiAlasan" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-amber-500 outline-none cursor-pointer">
+              <option value="">— pilih —</option>
+              <option value="Lulus">Lulus</option>
+              <option value="Pindah">Pindah</option>
+              <option value="Mengundurkan diri">Mengundurkan diri</option>
+              <option value="Wafat">Wafat</option>
+              <option value="Lainnya">Lainnya</option>
+            </select>
+          </div>
+        </div>
+        <input v-if="mutasiKategori && mutasiAlasan === 'Lainnya'" v-model="mutasiAlasanLain" type="text" placeholder="Keterangan alasan keluar" class="mt-2 w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-amber-500 outline-none" />
+      </div>
+
+      <div v-if="mutasiLembaga" class="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)] shadow-sm p-4">
+        <div class="flex items-center justify-between gap-2 mb-2 flex-wrap">
+          <p class="text-[11px] text-[var(--text-secondary)]"><b class="text-[var(--text-primary)]">{{ mutasiCandidates.length }}</b> santri {{ mutasiShowKeluar ? 'sudah keluar' : 'aktif' }} di {{ mutasiLembaga }}.</p>
+          <label class="inline-flex items-center gap-2 text-[11px] font-bold text-[var(--text-secondary)] cursor-pointer">
+            <input type="checkbox" v-model="mutasiShowKeluar" class="w-4 h-4 accent-amber-600" />Tampilkan yang sudah keluar
+          </label>
+        </div>
+        <input v-model="mutasiSearch" type="search" placeholder="Cari nama / NIS..." class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-amber-500 outline-none mb-2" />
+        <ul class="space-y-1 max-h-[50vh] overflow-y-auto">
+          <li v-for="s in mutasiCandidates" :key="s.id" class="flex items-center gap-2 px-3 py-2 rounded-lg bg-[var(--bg-muted)]">
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-bold text-[var(--text-primary)] truncate">{{ s.nama }}</p>
+              <p class="text-[10px] text-[var(--text-tertiary)] truncate">NIS {{ s.nis || '-' }} · {{ mutasiKelasLabel(s) }}<span v-if="mutasiShowKeluar && s.tgl_keluar"> · keluar {{ s.tgl_keluar }} ({{ s.alasan_keluar || '-' }})</span></p>
+            </div>
+            <button v-if="!mutasiShowKeluar" @click="keluarkanSantri(s)" :disabled="mutasiSaving" class="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-amber-600 hover:bg-amber-700 text-white disabled:opacity-50 flex-shrink-0"><i class="fas fa-right-from-bracket mr-1"></i>Keluarkan</button>
+            <button v-else @click="reaktifSantri(s)" :disabled="mutasiSaving" class="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-50 flex-shrink-0"><i class="fas fa-rotate-left mr-1"></i>Aktifkan</button>
+          </li>
+          <li v-if="mutasiCandidates.length === 0" class="text-xs italic text-[var(--text-tertiary)] text-center py-4">Tidak ada santri.</li>
+        </ul>
       </div>
     </div>
 
@@ -111,6 +180,17 @@
       v-if="isAdmin && activeTab === 'form'"
       class="bg-[var(--bg-card)] rounded-2xl p-3 md:p-4 border border-[var(--border-subtle)] shadow-sm"
     >
+      <!-- v.99: kategori Qiraati / Sekolah -->
+      <div class="flex gap-2 mb-3">
+        <button
+          @click="kenaikanKategori = 'qiraati'; filterLembaga = ''"
+          :class="['flex-1 px-3 py-2 rounded-xl text-xs font-black border transition cursor-pointer', kenaikanKategori === 'qiraati' ? 'bg-teal-600 text-white border-teal-700' : 'bg-[var(--bg-muted)] text-[var(--text-primary)] border-[var(--border-default)] hover:bg-teal-50 dark:hover:bg-teal-900/30']"
+        ><i class="fas fa-book-quran mr-1"></i>Lembaga Qiraati</button>
+        <button
+          @click="kenaikanKategori = 'sekolah'; filterLembaga = ''"
+          :class="['flex-1 px-3 py-2 rounded-xl text-xs font-black border transition cursor-pointer', kenaikanKategori === 'sekolah' ? 'bg-cyan-600 text-white border-cyan-700' : 'bg-[var(--bg-muted)] text-[var(--text-primary)] border-[var(--border-default)] hover:bg-cyan-50 dark:hover:bg-cyan-900/30']"
+        ><i class="fas fa-school mr-1"></i>Lembaga Sekolah</button>
+      </div>
       <p
         class="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-widest mb-2"
       >
@@ -118,7 +198,7 @@
       </p>
       <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 md:gap-3">
         <button
-          v-for="l in LEMBAGA_KENAIKAN_LIST"
+          v-for="l in kenaikanLembagaOptions"
           :key="l"
           @click="filterLembaga = l"
           :class="[
@@ -1024,7 +1104,7 @@ import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
 import { useGuru } from '@/composables/useGuru'
 import { useExcel } from '@/composables/useExcel'
-import { useLembaga } from '@/composables/useLembaga'
+import { useLembaga, getPkbmSubTier } from '@/composables/useLembaga'
 import { sortSantri } from '@/utils/santriSort'
 import { LEMBAGA_KENAIKAN_LIST, getKartuKenaikanSchema, getKopKartuLembaga } from '@/utils/kenaikan'
 import { buildListPdf, createPdf, drawTable, savePdf } from '@/utils/pdfBuilder'
@@ -1054,6 +1134,12 @@ const santriList = ref([])
 const loadingSantri = ref(true)
 const searchFormSantri = ref('')
 const filterLembaga = ref('')
+// v.99: kenaikan kategori (Qiraati / Sekolah) — sekolah pakai lembaga_sekolah (SMP/SMA = sub-tier PKBM)
+const kenaikanKategori = ref('qiraati')
+const SEKOLAH_KENAIKAN = ['TK', 'SDI', 'SMP', 'SMA']
+const kenaikanLembagaOptions = computed(() =>
+  kenaikanKategori.value === 'sekolah' ? SEKOLAH_KENAIKAN : LEMBAGA_KENAIKAN_LIST
+)
 const activeTab = ref('form')
 
 // v.98 full-native (Electron): sub-menu Naik Kelas -> grup pita "Aksi Halaman"; tab switcher in-page disembunyikan
@@ -1065,8 +1151,76 @@ definePageActions(() => {
     { label: 'Riwayat Kenaikan', icon: 'refresh', primary: activeTab.value === 'riwayat', on: () => { activeTab.value = 'riwayat' } }
   ]
   if (isAdmin.value) acts.push({ label: 'Pengaturan', icon: 'gear', primary: activeTab.value === 'pengaturan', on: () => { activeTab.value = 'pengaturan' } })
+  if (isAdmin.value) acts.push({ label: 'Mutasi', icon: 'logout', primary: activeTab.value === 'mutasi', on: () => { activeTab.value = 'mutasi' } })
   return acts
 })
+
+// ────────── v.99: MUTASI (keluar) santri — sub-menu Kenaikan/Mutasi. Pola: kategori → lembaga → list → keluarkan ──────────
+const mutasiKategori = ref('') // '' | 'qiraati' | 'sekolah'
+const mutasiLembaga = ref('')
+const mutasiTgl = ref(new Date().toISOString().slice(0, 10))
+const mutasiAlasan = ref('')
+const mutasiAlasanLain = ref('')
+const mutasiSearch = ref('')
+const mutasiShowKeluar = ref(false)
+const mutasiSaving = ref(false)
+const QIRAATI_MUT = ['TPQ Pagi', 'TPQ Sore', 'Pra PTPT', 'PTPT', 'PPPH']
+const SEKOLAH_MUT = ['TK', 'SDI', 'SMP', 'SMA']
+const mutasiLembagaOptions = computed(() => {
+  if (mutasiKategori.value === 'qiraati') {
+    const fromM = (lembagaRaw.value || []).filter((l) => QIRAATI_MUT.includes(l.lembaga)).map((l) => l.lembaga)
+    return fromM.length ? [...new Set(fromM)] : QIRAATI_MUT
+  }
+  if (mutasiKategori.value === 'sekolah') return SEKOLAH_MUT
+  return []
+})
+function mutasiMatch(s) {
+  const lmb = mutasiLembaga.value
+  if (!lmb) return false
+  if (mutasiKategori.value === 'qiraati') {
+    return String(s.lembaga || '').trim().toLowerCase() === lmb.toLowerCase()
+  }
+  if (lmb === 'SMP' || lmb === 'SMA') {
+    const isPk = String(s.lembaga_sekolah || '').trim().toUpperCase() === 'PKBM'
+    return isPk && getPkbmSubTier(s.kelas_sekolah || s.kelas) === lmb
+  }
+  return String(s.lembaga_sekolah || '').trim().toLowerCase() === lmb.toLowerCase()
+}
+const mutasiCandidates = computed(() => {
+  if (!mutasiLembaga.value) return []
+  const kw = mutasiSearch.value.trim().toLowerCase()
+  let list = (santriList.value || []).filter((s) => {
+    const stateOk = mutasiShowKeluar.value ? s.aktif === false : s.aktif !== false
+    return stateOk && mutasiMatch(s)
+  })
+  if (kw) list = list.filter((s) => String(s.nama || '').toLowerCase().includes(kw) || String(s.nis || '').toLowerCase().includes(kw))
+  return sortSantri(list)
+})
+function mutasiKelasLabel(s) {
+  return mutasiKategori.value === 'qiraati' ? (s.kelas || '-') : (s.kelas_sekolah || s.kelas || '-')
+}
+async function keluarkanSantri(s) {
+  const alasan = mutasiAlasan.value === 'Lainnya' ? (mutasiAlasanLain.value.trim() || 'Lainnya') : mutasiAlasan.value
+  if (!alasan) { toast.warning('Pilih alasan keluar dulu'); return }
+  mutasiSaving.value = true
+  try {
+    await setDoc(doc(db, 'santri', String(s.id)), {
+      aktif: false, tgl_keluar: mutasiTgl.value || new Date().toISOString().slice(0, 10), alasan_keluar: alasan
+    }, { merge: true })
+    s.aktif = false; s.tgl_keluar = mutasiTgl.value; s.alasan_keluar = alasan
+    santriList.value = [...santriList.value]
+    toast.success(`${s.nama} ditandai keluar (${alasan})`)
+  } catch (e) { toast.error('Gagal: ' + (e.message || e)) } finally { mutasiSaving.value = false }
+}
+async function reaktifSantri(s) {
+  mutasiSaving.value = true
+  try {
+    await setDoc(doc(db, 'santri', String(s.id)), { aktif: true, tgl_keluar: '', alasan_keluar: '' }, { merge: true })
+    s.aktif = true; s.tgl_keluar = ''; s.alasan_keluar = ''
+    santriList.value = [...santriList.value]
+    toast.success(`${s.nama} diaktifkan kembali`)
+  } catch (e) { toast.error('Gagal: ' + (e.message || e)) } finally { mutasiSaving.value = false }
+}
 
 // Color helper per lembaga (active/inactive)
 const LEMBAGA_COLOR_MAP = {
@@ -1163,6 +1317,16 @@ const filteredFormSantri = computed(() => {
         .toUpperCase()
         .trim()
       return (lmb === 'PPPH' || lmb === 'P3H') && s.aktif !== false
+    })
+  } else if (['TK', 'SDI', 'SMP', 'SMA', 'PKBM'].includes(fl)) {
+    // v.99: kenaikan lembaga SEKOLAH — match lembaga_sekolah (SMP/SMA = sub-tier PKBM dari kelas)
+    list = santriList.value.filter((s) => {
+      if (s.aktif === false) return false
+      if (fl === 'SMP' || fl === 'SMA') {
+        return String(s.lembaga_sekolah || '').toUpperCase().trim() === 'PKBM' &&
+          getPkbmSubTier(s.kelas_sekolah || s.kelas) === fl
+      }
+      return String(s.lembaga_sekolah || '').toUpperCase().trim() === fl
     })
   } else {
     list = santriList.value.filter(

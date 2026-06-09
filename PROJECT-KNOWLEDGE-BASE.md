@@ -1001,3 +1001,35 @@ git push
 - Setelah deploy: kyai isi guru tiap KELAS via halaman Kelas & Guru (otomatis jadi default + prefill form santri).
 - Opsional: auto-reset/assign guru saat Naik Kelas (sekarang manual). Isi `rek_bmt` guru utk Laporan BMT.
 - Backlog lama tetap (audit RBAC mendalam, pensiun TPQ-shift, hapus lembaga lama "P3H").
+
+### BATCH LANJUTAN v.99 (sesi sama — fix + fitur tambahan)
+1. **Electron asar AKTIF** (`electron/package.json`: `asar:true` + `asarUnpack:["assets/**/*"]`) — warning hilang; splash/icon dibaca via fs tetap jalan (Electron asar-aware). **WAJIB rebuild Electron.**
+2. **Filter jabatan (GuruView)** bersumber dari **master/jabatan** (yang kyai tambahkan), bukan distinct data guru (+subscribeDoc; fallback distinct guru bila master kosong).
+3. **Kepala TPQ = SEMUA lembaga Qiraati** (umbrella 'Qiraati'); PJ Administrasi tetap 'Qiraati'. (JABATAN_QIRAATI_UMBRELLA=[PJ Administrasi, Kepala TPQ]; getLembagaGroup dikembalikan ke asal.)
+4. **Profil guru** baris "Lembaga/Devisi" → relabel **"Lembaga:"** (istilah "Devisi" dibuang; lembaga tetap tampil). [`ProfilGuru.vue`]
+5. **PKBM**: santri TETAP split SMP/SMA; **guru TIDAK displit** (Statistik: guru = total lembaga PKBM, sama di kartu SMP & SMA). [`StatistikView.vue`]
+6. **`getPkbmSubTier` robust** (VII-XII, 7-12, "Kelas X", case-insensitive). ⚠️ Kalau SMP/SMA masih ~0 santri: cek record benar2 `lembaga_sekolah='PKBM'`+kelas VII-XII (bukan bug klasifikasi; `kelasJenjang` Rapor/Rekap sudah robust).
+7. **MUTASI santri (#21)** — **Kenaikan/Mutasi → tab "Mutasi"**: kategori (Qiraati/Sekolah) → filter lembaga → list → **Keluarkan** (tgl+alasan, aktif=false) + toggle "sudah keluar" → **aktifkan kembali**. [`NaikKelasView.vue`]
+8. **KENAIKAN lembaga SEKOLAH (#19)** — "Form Kenaikan" + toggle **Qiraati/Sekolah**. Sekolah → TK/SDI/SMP/SMA → list (match `lembaga_sekolah`, SMP/SMA=jenjang PKBM) → form perbarui **Kelas Sekolah**. Akar lama: filter Qiraati-only + list match `lembaga` ngaji. Simpan `updateDoc` parsial (ngaji aman). [`NaikKelasView.vue`]
+
+### FILE DIUBAH (batch lanjutan)
+`electron/package.json`, `composables/{useGuruForm,useLembaga}.js`, `views/GuruView.vue`, `views/StatistikView.vue`, `views/profil/ProfilGuru.vue`, `views/NaikKelasView.vue`.
+
+### MASIH PENDING (sesi berikutnya)
+- **#17 Hubungi Admin**: toast → **popup/modal detail** + **edit kontak admin** + **ACF konten menu Bantuan** (simpan settings). (`useRibbonNav.js` L343 + `BantuanView.vue` AUTHOR hardcoded.)
+- **#18 Analisis duplikat** (audit): santri (NIS/NISN/nama) & guru (WA/nama).
+- **#20 Statistik detail kelas per lembaga** (drill-down kelas → guru + daftar santri) di dasbor.
+- **#3 "Filter Semua lembaga"**: tunggu contoh konkret dari kyai.
+
+### DEPLOY/REBUILD FINAL (SEMUA batch v.99 — PowerShell)
+```
+cd "D:\Aplikasi Project\Portal MU";
+.\tmp_recovery\_run_vite.cmd
+if (Test-Path ".git\index.lock") { Remove-Item -Force ".git\index.lock" }
+git add -A ; git commit --no-verify -m "feat(v.99): audit master data — NIK+merge santri, guru terbaca (taksonomi), PKBM->SMP/SMA, XLSX santri+guru, Kelas&Guru alur-kelas+prefill, jabatan filter master, Kepala TPQ=Qiraati, asar Electron, mutasi + kenaikan sekolah, bump vc99"
+npm run firebase:deploy
+npm run build:aab
+npm run build:electron --prefix vue-app ; robocopy "vue-app\dist" "vue-app\electron\app" /MIR ; cd vue-app\electron ; npm run electron:publish ; cd ..\..
+git push
+```
+firestore.rules TIDAK diubah → tak perlu deploy rules.

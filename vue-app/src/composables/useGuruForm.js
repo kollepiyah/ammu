@@ -129,7 +129,7 @@ export function useGuruForm() {
 
   // v.21.17.0526: Lembaga Qiraati only (TPQ Pagi/Sore, Pra PTPT, PTPT, PPPH)
   const QIRAATI_LEMBAGA = ['TPQ Pagi', 'TPQ Sore', 'Pra PTPT', 'PTPT', 'PPPH']
-  // v.21.21.0526: Jabatan yang boleh pilih "Qiraati" umbrella (mewakili semua qiraati lembaga)
+  // v.21.21.0526: PJ Administrasi & Kepala TPQ → umbrella "Qiraati" (mewakili SEMUA lembaga qiraati). (kyai: Kepala TPQ tetap semua qiraati)
   const JABATAN_QIRAATI_UMBRELLA = ['PJ Administrasi', 'Kepala TPQ']
   const lembagaPondokOptions = computed(() => {
     const fromMaster = lembagaRaw.value

@@ -133,7 +133,7 @@
               <span class="font-black text-slate-800 dark:text-slate-100 text-right">{{ guru?.jabatan || '-' }}</span>
             </li>
             <li class="flex justify-between gap-2">
-              <span class="text-cyan-700 font-bold">Lembaga/Devisi:</span>
+              <span class="text-cyan-700 font-bold">Lembaga:</span>
               <span class="font-black text-slate-800 dark:text-slate-100 text-right">{{ guru?.lembaga || '-' }}</span>
             </li>
             <li class="flex justify-between gap-2">

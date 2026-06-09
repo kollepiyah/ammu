@@ -1178,22 +1178,29 @@ const statistikLembaga = computed(() => {
   const lembList = (lembagaRaw.value || []).filter((l) => Array.isArray(l.kelas) && l.kelas.length > 0)
   // v.98.0626: PKBM dipecah jadi SMP (VII-IX) & SMA (X-XII). Guru per sub-tier
   //   diturunkan dari assignment guru_sekolah santri (master guru PKBM tak ber-sub-tier).
+  // v.99: guru PKBM TIDAK displit SMP/SMA — guru tetap di unit PKBM (master). Hitung sekali, tampil sama di SMP & SMA.
+  const guruPkbmTotal = guruRaw.value.filter((g) =>
+    isGuruAktif(g.status) &&
+    (String(g.lembaga_sekolah || '').trim().toUpperCase() === 'PKBM' ||
+      String(g.lembaga || '').trim().toUpperCase() === 'PKBM')
+  ).length
   const buildPkbmTier = (tier) => {
     const sl = scopedSantriAll.value.filter((s) => {
       if (s.aktif === false) return false
       const isPk = String(s.lembaga_sekolah || '').trim().toUpperCase() === 'PKBM' ||
         String(s.lembaga || '').trim().toUpperCase() === 'PKBM'
-      return isPk && getPkbmSubTier(s.kelas_sekolah) === tier
+      // v.99: kelas_sekolah fallback ke kelas; getPkbmSubTier robust (Romawi/Arab/prefix)
+      return isPk && getPkbmSubTier(s.kelas_sekolah || s.kelas) === tier
     })
-    const kg = new Set(), gset = new Set()
+    const kg = new Set()
     for (const s of sl) {
       const kls = String(s.kelas_sekolah || '').trim().toLowerCase()
       for (const g of (Array.isArray(s.guru_sekolah) ? s.guru_sekolah : [])) {
         const t = String(g || '').trim().toLowerCase()
-        if (t) { gset.add(t); if (kls) kg.add(t + '|' + kls) }
+        if (t && kls) kg.add(t + '|' + kls)
       }
     }
-    return { nama: tier, kelas: kg.size, santri: sl.length, guru: gset.size }
+    return { nama: tier, kelas: kg.size, santri: sl.length, guru: guruPkbmTotal }
   }
   return lembList
     .map((l) => {
