@@ -4,7 +4,7 @@ import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { setDoc, doc, collection, getDoc, getDocs, onSnapshot } from 'firebase/firestore'
 import { db } from '@/services/firebase'
 import { useToast } from '@/composables/useToast'
-import { toTitleCase } from '@/utils/format'
+import { toTitleCase, normalizeWA } from '@/utils/format'
 
 function emptyForm() {
   return {
@@ -274,7 +274,7 @@ export function useSantriForm() {
         tgl_masuk: f.tgl_masuk,
         usia_masuk: usiaMasuk.value,
         wali: toTitleCase(f.nama_wali),
-        wa: f.wa_wali,
+        wa: normalizeWA(f.wa_wali), // v.99: auto leading-0
         lembaga_sekolah: f.lembaga_sekolah,
         kelas_sekolah: f.kelas_sekolah || '-',
         guru_sekolah: f.guru_sekolah,

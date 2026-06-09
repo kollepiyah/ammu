@@ -887,7 +887,7 @@ async function onImportGuru(e) {
       return ''
     }
     for (const r of rows) {
-      const namaRaw = String(_pick(r, 'Nama Guru', 'Nama', 'NAMA', 'nama') || '').trim()
+      const namaRaw = String(_pick(r, 'Nama Guru (Dengan Gelar)', 'Nama Guru', 'Nama', 'NAMA', 'nama') || '').trim()
       if (!namaRaw) { skipCount++; continue }
       const nama = toTitleCase(namaRaw)
       const waList = parseMultipleWA(_pick(r, 'No WA', 'WA', 'wa'))

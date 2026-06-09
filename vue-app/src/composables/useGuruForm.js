@@ -6,7 +6,7 @@ import { db } from '@/services/firebase'
 import { subscribeDoc } from '@/services/firestore'
 import { useToast } from '@/composables/useToast'
 import { useAuthStore } from '@/stores/auth'
-import { toTitleCase } from '@/utils/format'
+import { toTitleCase, normalizeWA } from '@/utils/format'
 
 function emptyForm() {
   return {
@@ -264,11 +264,19 @@ export function useGuruForm() {
     return filtered.map((j) => j.nama)
   })
 
-  // v.21.25.0526: FIX — tipe_pegawai sekarang 'guru'|'pegawai'|'pegawai_guru' (bukan legacy 'ngaji_sekolah')
-  // Lembaga sekolah visible & saved untuk 'guru' dan 'pegawai_guru'. 'pegawai' murni → no lembaga sekolah.
-  const showLembagaSekolah = computed(() =>
-    ['guru', 'pegawai_guru'].includes(form.value.tipe_pegawai)
-  )
+  // v.99: BUTUH LEMBAGA dari master/jabatan items[].tipe_lembaga (kyai: "mana jabatan yg butuh lembaga dan tidak").
+  //   Fallback: JABATAN_NO_LEMBAGA hardcoded → 'non-lembaga'; selain itu → 'lembaga'.
+  const jabatanTipeLembaga = computed(() => {
+    const j = String(form.value.jabatan || '').toLowerCase().trim()
+    const item = jabatanItemsFromMaster.value.find((it) => it && String(it.nama || '').toLowerCase().trim() === j)
+    if (item && item.tipe_lembaga) return item.tipe_lembaga
+    if (JABATAN_NO_LEMBAGA.some((n) => String(n).toLowerCase() === j)) return 'non-lembaga'
+    return 'lembaga'
+  })
+  const butuhLembaga = computed(() => jabatanTipeLembaga.value !== 'non-lembaga')
+  // Lembaga (Qiraati & Sekolah) tampil & disimpan HANYA bila jabatan butuh lembaga.
+  const showLembagaSekolah = computed(() => butuhLembaga.value)
+  const showLembagaQiraati = computed(() => butuhLembaga.value)
 
   // Apakah user current admin (untuk show role_sistem option)
   const isSuperAdmin = computed(() => auth.sesiAktif?.role_sistem === 'super_admin')
@@ -335,7 +343,7 @@ export function useGuruForm() {
       return 'Jabatan tambahan harus berbeda dari jabatan utama'
     }
     // v.21.18.0526: tipe pegawai → no lembaga; tipe guru/pegawai_guru → minimal 1 lembaga
-    if (f.tipe_pegawai !== 'pegawai' && !f.lembaga && !f.lembaga_sekolah) {
+    if (butuhLembaga.value && !f.lembaga && !f.lembaga_sekolah) {
       return 'Pilih minimal 1 lembaga (Qiraati atau Sekolah)'
     }
     if (!String(f.wa || '').trim()) return 'No WA wajib diisi'
@@ -363,11 +371,11 @@ export function useGuruForm() {
         nik: String(f.nik || '').trim(),
         jabatan: f.jabatan,
         jabatan_tambahan: f.jabatan_tambahan || '',
-        lembaga: f.lembaga,
-        lembaga_sekolah: showLembagaSekolah.value ? f.lembaga_sekolah : '',
+        lembaga: butuhLembaga.value ? f.lembaga : '',
+        lembaga_sekolah: butuhLembaga.value ? f.lembaga_sekolah : '',
         tanggal_tugas: f.tanggal_tugas || '',
         ekgq: f.no_ekgq || '',
-        wa: f.wa,
+        wa: normalizeWA(f.wa), // v.99: auto leading-0
         username: defaultUsername,
         status: f.status,
         id_fingerprint: f.id_fingerprint || '',
@@ -460,6 +468,8 @@ export function useGuruForm() {
     jabatanOptionsDynamic,
     jabatanOptionsFiltered,
     showLembagaSekolah,
+    showLembagaQiraati,
+    butuhLembaga,
     isSuperAdmin,
     resetForm,
     loadGuru,

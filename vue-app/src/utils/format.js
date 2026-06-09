@@ -118,8 +118,9 @@ export function normalizeWA(raw) {
   if (raw === null || raw === undefined) return ''
   let s = String(raw).trim().replace(/[^\d]/g, '')
   if (!s) return ''
-  if (s.startsWith('62') && s.length >= 11) s = '0' + s.slice(2)
-  else if (s.startsWith('8') && s.length >= 9 && s.length <= 13) s = '0' + s
+  // v.99: +62 → 0; jika awalan BUKAN 0 → tambah 0 (kyai req: "no WA auto tambah 0 jika awalan gk ada 0")
+  if (s.startsWith('62')) s = '0' + s.slice(2)
+  else if (!s.startsWith('0')) s = '0' + s
   return s
 }
 
@@ -129,11 +130,12 @@ export function normalizeWA(raw) {
  */
 export function parseMultipleWA(raw) {
   if (raw === null || raw === undefined) return []
-  const parts = String(raw).split(/[\/;,\n]+/)
+  // v.99: pemisah lebih luas — / ; , | newline, kata "dan", ATAU 2+ spasi. + dedup.
+  const parts = String(raw).split(/[\/;,|]+|\n+|\s+dan\s+|\s{2,}/i)
   const result = []
   for (const p of parts) {
     const norm = normalizeWA(p)
-    if (norm && norm.length >= 8) result.push(norm)
+    if (norm && norm.length >= 8 && !result.includes(norm)) result.push(norm)
   }
   return result
 }

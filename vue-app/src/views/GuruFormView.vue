@@ -205,6 +205,7 @@ const {
   isLoading,
   isSaving,
   editingId,
+  butuhLembaga,
   lembagaPondokOptions,
   lembagaSekolahOptions,
   jabatanOptionsFiltered,
@@ -214,10 +215,10 @@ const {
   save
 } = useGuruForm()
 
-// v.21.18.0526: showLembaga rules berdasarkan tipe_pegawai baru (guru/pegawai/pegawai_guru)
-const isJabatanNoLembaga = computed(() => form.value.tipe_pegawai === 'pegawai')
-const showLembagaQiraati = computed(() => form.value.tipe_pegawai === 'guru' || form.value.tipe_pegawai === 'pegawai_guru')
-const showLembagaSekolah = computed(() => form.value.tipe_pegawai === 'guru' || form.value.tipe_pegawai === 'pegawai_guru')
+// v.99: show/butuh lembaga dari JABATAN (master/jabatan tipe_lembaga) — bukan tipe_pegawai
+const isJabatanNoLembaga = computed(() => !butuhLembaga.value)
+const showLembagaQiraati = computed(() => butuhLembaga.value)
+const showLembagaSekolah = computed(() => butuhLembaga.value)
 
 watch(() => form.value.tipe_pegawai, (newTipe) => {
   // Pegawai → clear lembaga (no teaching context)
