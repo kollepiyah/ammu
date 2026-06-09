@@ -100,9 +100,9 @@ export function useSantri() {
       )
     }
 
-    // Lembaga filter
+    // Lembaga filter — v.97.0626: cocokkan lembaga NGAJI ATAU lembaga SEKOLAH (formal)
     if (filterLembaga.value) {
-      list = list.filter((s) => s.lembaga === filterLembaga.value)
+      list = list.filter((s) => s.lembaga === filterLembaga.value || s.lembaga_sekolah === filterLembaga.value)
     }
 
     // Kelas filter

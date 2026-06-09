@@ -85,7 +85,7 @@ service cloud.firestore {
     }
 
     match /keuangan_tagihan/{docId} {
-      allow read: if true;
+      allow read: if signedIn(); // v.98 hardening: data keuangan sensitif — tutup baca publik
       // v.21.104.0527: relax — terima santri_id string/number; schema toleran.
       // v.96.0626 audit: validasi MERGE-SAFE (cek tipe hanya jika field ada -> aman utk update parsial).
       allow create, update: if signedIn()
@@ -95,7 +95,7 @@ service cloud.firestore {
     }
 
     match /keuangan_tabungan_santri/{docId} {
-      allow read: if true;
+      allow read: if signedIn(); // v.98 hardening
       // v.21.104.0527: relax santri_id (string/number) — app pakai string.
       allow create: if signedIn()
         && request.resource.data.id is string
@@ -112,7 +112,7 @@ service cloud.firestore {
 
     // v.95.0626: Uang Saku santri ma'had — sama persis dgn tabungan (koleksi terpisah)
     match /keuangan_uang_saku_santri/{docId} {
-      allow read: if true;
+      allow read: if signedIn(); // v.98 hardening
       allow create: if signedIn()
         && request.resource.data.id is string
         && request.resource.data.jenis in ['setor', 'tarik']
@@ -127,7 +127,7 @@ service cloud.firestore {
     }
 
     match /keuangan_gaji/{docId} {
-      allow read: if true;
+      allow read: if signedIn(); // v.98 hardening: bisyaroh guru — jangan terbaca publik
       allow create, update: if signedIn()
         && request.resource.data.id is string
         && request.resource.data.guru_id is number
@@ -143,7 +143,7 @@ service cloud.firestore {
     }
 
     match /keuangan_buku_induk/{docId} {
-      allow read: if true;
+      allow read: if signedIn(); // v.98 hardening
       allow create: if signedIn()
         && request.resource.data.id is string
         && request.resource.data.tipe in ['masuk', 'keluar']
@@ -229,7 +229,7 @@ service cloud.firestore {
     }
 
     match /notif_queue/{docId} {
-      allow read: if signedIn();
+      allow read: if false; // v.98 hardening: buffer dispatch server-only (berisi pesan + token FCM)
       allow create: if signedIn()
         && request.resource.data.judul is string
         && request.resource.data.pesan is string;
@@ -237,13 +237,13 @@ service cloud.firestore {
     }
 
     match /audit_log/{docId} {
-      allow read: if true;
+      allow read: if signedIn(); // v.98 hardening
       allow create: if signedIn();
       allow update, delete: if false;
     }
 
     match /rapor_semester/{docId} {
-      allow read: if true;
+      allow read: if signedIn(); // v.98 hardening: nilai rapor santri
       allow create, update: if signedIn()
         && request.resource.data.santri_id != null
         && request.resource.data.lembaga is string;
@@ -251,14 +251,14 @@ service cloud.firestore {
     }
 
     match /rekap_diniyah/{docId} {
-      allow read: if true;
+      allow read: if signedIn(); // v.98 hardening
       allow create, update: if signedIn() && request.resource.data.santri_id != null;
       allow delete: if signedIn();
     }
 
     // v.20.15.0526: Rekap prestasi Qiraati per santri/bulan (Vue subscribe)
     match /rekap_prestasi/{docId} {
-      allow read: if true;
+      allow read: if signedIn(); // v.98 hardening
       allow create, update: if signedIn();
       allow delete: if signedIn();
     }
@@ -282,7 +282,7 @@ service cloud.firestore {
 
     // v.20.15.0526: Tabungan mutasi (Vue subscribe — kompat sama keuangan_tabungan_santri)
     match /tabungan_mutasi/{docId} {
-      allow read: if true;
+      allow read: if signedIn(); // v.98 hardening
       allow write: if signedIn();
     }
 
@@ -320,7 +320,7 @@ service cloud.firestore {
     }
 
     match /riwayat_kenaikan/{docId} {
-      allow read: if true;
+      allow read: if signedIn(); // v.98 hardening
       allow create, update: if signedIn();
       allow delete: if signedIn();
     }
@@ -345,7 +345,7 @@ service cloud.firestore {
 
     // v.21.56: keuangan_hutang_piutang
     match /keuangan_hutang_piutang/{docId} {
-      allow read: if true;
+      allow read: if signedIn(); // v.98 hardening
       // v.96.0626 audit: validasi MERGE-SAFE (toggle {lunas} via merge tetap lolos).
       allow create, update: if signedIn()
         && (!('nominal' in request.resource.data) || request.resource.data.nominal is number);
@@ -354,7 +354,7 @@ service cloud.firestore {
 
     // v.21.56: keuangan_pembayaran (POS transactions)
     match /keuangan_pembayaran/{docId} {
-      allow read: if true;
+      allow read: if signedIn(); // v.98 hardening
       // v.96.0626 audit: validasi MERGE-SAFE (cek tipe hanya jika field ada).
       allow create, update: if signedIn()
         && (!('nominal' in request.resource.data) || request.resource.data.nominal is number);
@@ -396,8 +396,8 @@ service cloud.firestore {
 
     // v.21.110.0527: Catatan supervisi (Direktur/Supervisor → guru/lembaga)
     match /supervisi_catatan/{docId} {
-      // v.90.0626: read publik (anti-race anon auth + admin built-in)
-      allow read: if true;
+      // v.98 hardening: catatan supervisi sensitif — wajib signedIn (bukan publik)
+      allow read: if signedIn();
       allow create, update: if signedIn()
         && request.resource.data.id is string
         && request.resource.data.target_type in ['guru', 'lembaga']
@@ -443,7 +443,7 @@ service cloud.firestore {
 
     // v.87.0526: Notif prestasi (event ditulis saat input nilai prestasi) — sumber Notif Center.
     match /notif_prestasi/{docId} {
-      allow read: if true;
+      allow read: if signedIn(); // v.98 hardening
       allow create, update: if signedIn();
       allow delete: if signedIn();
     }

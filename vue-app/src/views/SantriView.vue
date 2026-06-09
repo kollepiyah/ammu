@@ -117,12 +117,22 @@
 
     <!-- Search + filter bar -->
     <div class="bg-[var(--bg-card)] rounded-2xl p-3 md:p-4 border border-[var(--border-subtle)] shadow-sm">
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
-        <div class="md:col-span-2 relative">
-          <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] text-sm"></i>
-          <input v-model="search" type="text" placeholder="Cari nama, NIS, atau wali..." class="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition" />
-        </div>
-        <!-- v.21.115.0528: filter lembaga dropdown dihapus (redundan dengan chip shortcuts) -->
+      <!-- Pencarian -->
+      <div class="relative">
+        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] text-sm"></i>
+        <input v-model="search" type="text" placeholder="Cari nama, NIS, atau wali..." class="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition" />
+      </div>
+      <!-- v.97.0626: filter dropdown (lembaga Qiraati + Sekolah, status tempat, status aktif) -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-2 mt-2">
+        <select v-model="filterLembaga" class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none">
+          <option value="">Semua lembaga</option>
+          <optgroup v-if="uniqueLembaga.length" label="Qiraati (Ngaji)">
+            <option v-for="l in uniqueLembaga" :key="'ng-' + l" :value="l">{{ l }}</option>
+          </optgroup>
+          <optgroup v-if="uniqueLembagaSekolah.length" label="Sekolah (Formal)">
+            <option v-for="l in uniqueLembagaSekolah" :key="'sk-' + l" :value="l">{{ l }}</option>
+          </optgroup>
+        </select>
         <select v-model="filterMukim" class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none">
           <option value="">Semua status tempat</option>
           <option value="mukim">Ma'had</option>
@@ -134,35 +144,6 @@
           <option value="">Semua status</option>
           <option value="tidak_aktif">Tidak aktif / Keluar</option>
         </select>
-      </div>
-      <!-- v.21.115.0528: Lembaga chip shortcuts (konsisten dengan GuruView) -->
-      <div v-if="uniqueLembaga.length > 0" class="flex flex-wrap gap-1.5 mt-2">
-        <button
-          type="button"
-          @click="filterLembaga = ''"
-          :class="[
-            'px-2.5 py-1 text-[11px] rounded-full border font-bold transition cursor-pointer',
-            filterLembaga === ''
-              ? 'bg-teal-600 text-white border-teal-600'
-              : 'bg-white dark:bg-slate-700 text-[var(--text-secondary)] border-[var(--border-default)] hover:bg-teal-50 dark:hover:bg-slate-600'
-          ]"
-        >
-          Semua lembaga
-        </button>
-        <button
-          v-for="l in uniqueLembaga"
-          :key="l"
-          type="button"
-          @click="filterLembaga = filterLembaga === l ? '' : l"
-          :class="[
-            'px-2.5 py-1 text-[11px] rounded-full border font-bold transition cursor-pointer',
-            filterLembaga === l
-              ? 'bg-teal-600 text-white border-teal-600'
-              : 'bg-white dark:bg-slate-700 text-[var(--text-secondary)] border-[var(--border-default)] hover:bg-teal-50 dark:hover:bg-slate-600'
-          ]"
-        >
-          {{ l }}
-        </button>
       </div>
       <!-- v.21.22c.0526: Select-all (Master mode only) -->
       <div v-if="isMasterMode && isFullAccess && santri.length > 0" class="mt-2 pt-2 border-t border-[var(--border-subtle)] flex items-center gap-2">
@@ -466,6 +447,15 @@ const uniqueLembaga = computed(() => {
   const set = new Set()
   for (const s of santriRaw.value) {
     if (s.lembaga) set.add(s.lembaga)
+  }
+  return [...set].sort()
+})
+
+// v.97.0626: daftar lembaga SEKOLAH (formal) utk dropdown filter
+const uniqueLembagaSekolah = computed(() => {
+  const set = new Set()
+  for (const s of santriRaw.value) {
+    if (s.lembaga_sekolah) set.add(s.lembaga_sekolah)
   }
   return [...set].sort()
 })

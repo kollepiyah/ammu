@@ -953,12 +953,12 @@
           <div class="mt-8 text-[10px]">
             <table class="ml-auto mb-5 text-[10px]" style="width: auto">
               <tr>
-                <td class="pr-2 text-right">Dikeluarkan di</td>
+                <td class="pr-2 text-left">Dikeluarkan di</td>
                 <td class="pr-1">:</td>
                 <td class="text-left">{{ kotaRapor }}</td>
               </tr>
               <tr>
-                <td class="pr-2 text-right">Pada Tanggal</td>
+                <td class="pr-2 text-left">Pada Tanggal</td>
                 <td class="pr-1">:</td>
                 <td class="text-left">{{ tglCetak }}</td>
               </tr>

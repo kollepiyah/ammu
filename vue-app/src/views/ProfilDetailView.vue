@@ -43,21 +43,45 @@
 import { ref, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { getOne } from '@/services/firestore'
+import { useAuthStore } from '@/stores/auth'
+import { lembagaScopeMatches } from '@/composables/useLembaga'
 import BackButton from '@/components/layout/BackButton.vue'
 import ProfilSantri from '@/views/profil/ProfilSantri.vue'
 import ProfilGuru from '@/views/profil/ProfilGuru.vue'
 
 const route = useRoute()
+const auth = useAuthStore()
 const tipe = computed(() => (route.params.tipe === 'guru' ? 'guru' : 'santri'))
 const id = computed(() => String(route.params.id || ''))
 const rec = ref(null)
 const loading = ref(true)
 
+// v.98 ANTI-BOCOR: guard scope — cegah buka profil di luar wewenang (deep-link/search).
+//  admin/super/admin_keuangan = bebas; guru = hanya ampuannya / dirinya; Kepala/PJ = se-lembaga.
+function canView(tp, r) {
+  const s = auth.sesiAktif
+  if (!s || !r) return false
+  if (s.role === 'admin' || s.id === 'admin' || ['super_admin', 'admin', 'admin_keuangan'].includes(s.role_sistem)) return true
+  const myNama = String(s.guru || s.nama || '').trim().toLowerCase()
+  const jab = String(s.jabatan || '').toLowerCase()
+  const isKepala = /(^|\s)(kepala|pj|pengasuh)(\s|$)/.test(jab)
+  if (tp === 'guru') {
+    return !!myNama && String(r.nama || '').trim().toLowerCase() === myNama
+  }
+  if (isKepala) return lembagaScopeMatches(s.lembaga, r.lembaga) || lembagaScopeMatches(s.lembaga, r.lembaga_sekolah)
+  const gp = String(r.guru_pagi || '').trim().toLowerCase()
+  const gs = String(r.guru_sore || '').trim().toLowerCase()
+  const gOld = String(r.guru || '').trim().toLowerCase()
+  const gsek = Array.isArray(r.guru_sekolah) ? r.guru_sekolah.map((x) => String(x || '').trim().toLowerCase()) : []
+  return !!myNama && (gp === myNama || gs === myNama || (gOld === myNama && !gp && !gs) || gsek.includes(myNama))
+}
+
 async function load() {
   loading.value = true
   rec.value = null
   try {
-    rec.value = await getOne(tipe.value, id.value)
+    const r = await getOne(tipe.value, id.value)
+    rec.value = canView(tipe.value, r) ? r : null
   } catch (e) {
     rec.value = null
   }

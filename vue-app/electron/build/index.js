@@ -218,6 +218,7 @@ function createMainWindow() {
     // v.98: sinkronkan ikon Maksimalkan/Pulihkan di RibbonTitleBar saat window di-maximize via OS/snap
     mainWindow.on('maximize', () => mainWindow?.webContents.send('window:maximized-changed', true));
     mainWindow.on('unmaximize', () => mainWindow?.webContents.send('window:maximized-changed', false));
+    setupUpdater(mainWindow); // v.98: auto-update in-app (manual check dari pita)
     mainWindow.on('closed', () => {
         mainWindow = null;
     });
@@ -265,6 +266,56 @@ electron_1.ipcMain.handle('window:close', () => {
     mainWindow?.close();
 });
 electron_1.ipcMain.handle('window:is-maximized', () => !!mainWindow?.isMaximized());
+// ─── Auto-update (electron-updater + GitHub Releases) — v.98 in-app check ────
+let _updaterWired = false;
+function setupUpdater(win) {
+    try {
+        electron_updater_1.autoUpdater.autoDownload = false;
+        electron_updater_1.autoUpdater.autoInstallOnAppQuit = true;
+        if (_updaterWired)
+            return;
+        _updaterWired = true;
+        const send = (channel, payload) => {
+            try {
+                win?.webContents.send(channel, payload);
+            }
+            catch (e) { /* ignore */ }
+        };
+        electron_updater_1.autoUpdater.on('update-available', (info) => send('update:status', { status: 'available', version: info?.version }));
+        electron_updater_1.autoUpdater.on('update-not-available', (info) => send('update:status', { status: 'none', version: info?.version }));
+        electron_updater_1.autoUpdater.on('error', (err) => send('update:status', { status: 'error', message: String(err?.message || err) }));
+        electron_updater_1.autoUpdater.on('download-progress', (p) => send('update:progress', { percent: Math.round(p?.percent || 0) }));
+        electron_updater_1.autoUpdater.on('update-downloaded', (info) => send('update:status', { status: 'downloaded', version: info?.version }));
+    }
+    catch (e) {
+        console.warn('[updater] setup gagal:', e);
+    }
+}
+electron_1.ipcMain.handle('update:check', async () => {
+    try {
+        await electron_updater_1.autoUpdater.checkForUpdates();
+        return { ok: true };
+    }
+    catch (e) {
+        return { ok: false, error: e?.message || String(e) };
+    }
+});
+electron_1.ipcMain.handle('update:download', async () => {
+    try {
+        await electron_updater_1.autoUpdater.downloadUpdate();
+        return { ok: true };
+    }
+    catch (e) {
+        return { ok: false, error: e?.message || String(e) };
+    }
+});
+electron_1.ipcMain.handle('update:install', () => {
+    try {
+        electron_updater_1.autoUpdater.quitAndInstall();
+    }
+    catch (e) { /* ignore */ }
+    return { ok: true };
+});
 // ─── IPC: Native Print ─────────────────────────────────────────────────────────
 //
 // Renderer panggil window.electronAPI.printSilent({ html, options }).

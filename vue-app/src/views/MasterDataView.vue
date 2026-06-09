@@ -1,6 +1,6 @@
 <script setup>
 // v.72.8.0526 Master Data restructure ke 7 tabs match legacy
-import { ref, computed, reactive, onMounted, watch } from 'vue'
+import { ref, computed, reactive, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useSettingsStore } from '@/stores/settings'
 // v.21.12.0526: + subscribeDoc untuk master/jabatan
@@ -44,6 +44,8 @@ onMounted(() => {
     auditLogs.value = sorted
   })
 })
+// v.98: cleanup listener audit_log (cegah leak tiap mount Master Data)
+onUnmounted(() => { if (_unsubAudit) _unsubAudit() })
 function formatTanggal(ts) {
   if (!ts) return '-'
   try {

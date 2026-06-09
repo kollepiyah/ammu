@@ -403,12 +403,15 @@ async function drawSignBlocks(doc, y, santri, settings, lembaga, dbGuru = [], le
   doc.setFont(font, 'normal')
   doc.setFontSize(9)
   const _dkColonX = pageW - 48
-  doc.text('Dikeluarkan di', _dkColonX - 1.5, yStart, { align: 'right' })
+  // v.97.0626: label rata KIRI (tepi kiri sejajar) + titik dua & nilai tetap sejajar
+  const _dkLabelW = Math.max(doc.getTextWidth('Dikeluarkan di'), doc.getTextWidth('Pada Tanggal'))
+  const _dkLabelX = _dkColonX - 2 - _dkLabelW
+  doc.text('Dikeluarkan di', _dkLabelX, yStart)
   doc.text(':', _dkColonX, yStart)
-  doc.text(String(tempat), _dkColonX + 2, yStart) // v.98.0626: nilai rata kiri (tdk flush ke tepi kanan)
-  doc.text('Pada Tanggal', _dkColonX - 1.5, yStart + 5, { align: 'right' })
+  doc.text(String(tempat), _dkColonX + 2, yStart)
+  doc.text('Pada Tanggal', _dkLabelX, yStart + 5)
   doc.text(':', _dkColonX, yStart + 5)
-  doc.text(String(today), _dkColonX + 2, yStart + 5) // v.98.0626: nilai rata kiri
+  doc.text(String(today), _dkColonX + 2, yStart + 5)
 
   const col1 = 35
   const col2 = pageW / 2

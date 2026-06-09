@@ -44,7 +44,7 @@
 <script setup>
 // v.21.71.0526: PKBM SMP/SMA sub-tier label
 import { formatKelasLabel } from '@/composables/useLembaga'
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { doc, getDoc, onSnapshot } from 'firebase/firestore'
 import { db } from '@/services/firebase'
 import { useDesktopShell } from '@/composables/useDesktopShell'
@@ -56,4 +56,6 @@ onMounted(() => {
     lembagaList.value = Array.isArray(snap.data()?.list) ? snap.data().list : []
   })
 })
+// v.98: cleanup listener master/lembaga (cegah leak tiap navigasi ke/dari Kelas)
+onUnmounted(() => { if (unsub) unsub() })
 </script>

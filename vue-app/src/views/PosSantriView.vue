@@ -245,7 +245,7 @@ const operatorName = computed(() => {
   return auth.sesiAktif?.nama || auth.sesiAktif?.guru || 'Admin'
 })
 
-const { isElectron: isDesktop } = useDesktopShell()
+// v.98 fix BUILD: isDesktop sudah dideklarasikan di atas (isElectron()) — hapus deklarasi ganda (cegah "Identifier 'isDesktop' has already been declared").
 const isAdminKeu = computed(() => {
   const rs = auth.sesiAktif?.role_sistem || ''
   return auth.sesiAktif?.role === 'admin' || ['admin', 'admin_keuangan', 'super_admin'].includes(rs)

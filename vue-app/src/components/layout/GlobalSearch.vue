@@ -96,8 +96,10 @@ import { useSantri } from '@/composables/useSantri'
 import { useGuru } from '@/composables/useGuru'
 
 const router = useRouter()
-const { santriRaw } = useSantri()
-const { guruRaw } = useGuru()
+// v.98 ANTI-BOCOR: pakai list TER-SCOPE (santri/guru), bukan *Raw (mentah).
+// Guru hanya menemukan santri ampuannya; daftar guru kosong utk non-admin (useGuru.guru => []).
+const { santri: santriScoped } = useSantri()
+const { guru: guruScoped } = useGuru()
 
 const q = ref('')
 const open = ref(false)
@@ -108,7 +110,7 @@ const LIMIT = 6
 const kw = computed(() => q.value.trim().toLowerCase())
 const santriHits = computed(() => {
   if (!kw.value) return []
-  return (santriRaw.value || [])
+  return (santriScoped.value || [])
     .filter((s) => {
       const n = String(s.nama || '').toLowerCase()
       const nis = String(s.nis || '').toLowerCase()
@@ -118,7 +120,7 @@ const santriHits = computed(() => {
 })
 const guruHits = computed(() => {
   if (!kw.value) return []
-  return (guruRaw.value || [])
+  return (guruScoped.value || [])
     .filter((g) => String(g.nama || '').toLowerCase().includes(kw.value))
     .slice(0, LIMIT)
 })

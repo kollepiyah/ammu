@@ -1166,7 +1166,7 @@ async function importXlsx(e) {
 }
 
 // v.98 full-native (Electron): tombol aksi header (PDF/Template/Impor/Input Mutasi) -> grup pita "Aksi Halaman"
-const { isElectron: isDesktop } = useDesktopShell()
+// v.98 fix BUILD: isDesktop sudah dideklarasikan di atas (computed isElectron()) — hapus deklarasi ganda (cegah "Identifier 'isDesktop' has already been declared").
 definePageActions(() => {
   if (!isFullAccess.value) return []
   return [

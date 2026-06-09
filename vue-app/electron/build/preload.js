@@ -25,6 +25,12 @@ electron_1.contextBridge.exposeInMainWorld('electronAPI', {
     closeWindow: () => electron_1.ipcRenderer.invoke('window:close'),
     isWindowMaximized: () => electron_1.ipcRenderer.invoke('window:is-maximized'),
     onWindowMaximizeChange: (cb) => electron_1.ipcRenderer.on('window:maximized-changed', (_e, v) => cb(v)),
+    // v.98: auto-update in-app (cek manual dari pita Bantuan)
+    checkUpdate: () => electron_1.ipcRenderer.invoke('update:check'),
+    downloadUpdate: () => electron_1.ipcRenderer.invoke('update:download'),
+    installUpdate: () => electron_1.ipcRenderer.invoke('update:install'),
+    onUpdateStatus: (cb) => electron_1.ipcRenderer.on('update:status', (_e, s) => cb(s)),
+    onUpdateProgress: (cb) => electron_1.ipcRenderer.on('update:progress', (_e, p) => cb(p)),
     // Platform info
     platform: process.platform,
     isElectron: true,

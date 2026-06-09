@@ -1,6 +1,6 @@
 // useSantriForm — manage santri CRUD form state (create + edit)
 // Phase 5.13 (v.40.0526) — port logic legacy simpanSantri + editAdminSantri
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { setDoc, doc, collection, getDoc, getDocs, onSnapshot } from 'firebase/firestore'
 import { db } from '@/services/firebase'
 import { useToast } from '@/composables/useToast'
@@ -323,6 +323,12 @@ export function useSantriForm() {
     unsubGuru = onSnapshot(collection(db, 'guru'), (snap) => {
       guruRaw.value = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
     })
+  })
+
+  // v.98: cleanup listener (cegah leak listener koleksi `guru` penuh tiap buka form santri)
+  onUnmounted(() => {
+    if (unsubLembaga) unsubLembaga()
+    if (unsubGuru) unsubGuru()
   })
 
   return {
