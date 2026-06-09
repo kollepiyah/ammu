@@ -132,7 +132,12 @@ export function useGuru() {
     // v.21.24d.0526: Lembaga filter case-insensitive (dedupe varian "TPQ Pagi" vs "TPQ PAGI")
     if (filterLembaga.value) {
       const target = String(filterLembaga.value).toLowerCase()
-      list = list.filter((g) => String(g.lembaga || '').toLowerCase() === target)
+      // v.97.0626: cocokkan lembaga NGAJI ATAU lembaga SEKOLAH (formal)
+      list = list.filter(
+        (g) =>
+          String(g.lembaga || '').toLowerCase() === target ||
+          String(g.lembaga_sekolah || '').toLowerCase() === target
+      )
     }
 
     // Jabatan filter

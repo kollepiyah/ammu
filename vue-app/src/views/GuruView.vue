@@ -130,56 +130,32 @@
 
       <!-- Search + filter bar -->
       <div class="bg-[var(--bg-card)] rounded-2xl p-3 md:p-4 border border-[var(--border-subtle)] shadow-sm">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
-          <!-- Search -->
-          <div class="md:col-span-2 relative">
-            <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] text-sm"></i>
-            <input
-              v-model="search"
-              type="text"
-              placeholder="Cari nama, WA, jabatan, atau username..."
-              class="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition"
-            />
-          </div>
-          <!-- v.21.115.0528: filter lembaga dropdown dihapus (redundan dengan chip shortcuts di baris bawah) -->
-          <!-- Filter status -->
-          <select
-            v-model="filterStatus"
-            class="md:col-span-2 px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none"
-          >
+        <!-- Pencarian -->
+        <div class="relative">
+          <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] text-sm"></i>
+          <input
+            v-model="search"
+            type="text"
+            placeholder="Cari nama, WA, jabatan, atau username..."
+            class="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition"
+          />
+        </div>
+        <!-- v.97.0626: filter dropdown (lembaga Qiraati + Sekolah, status) gantikan chip -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
+          <select v-model="filterLembaga" class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none">
+            <option value="">Semua lembaga</option>
+            <optgroup v-if="uniqueLembaga.length" label="Qiraati (Ngaji)">
+              <option v-for="l in uniqueLembaga" :key="'ng-' + l" :value="l">{{ l }}</option>
+            </optgroup>
+            <optgroup v-if="uniqueLembagaSekolah.length" label="Sekolah (Formal)">
+              <option v-for="l in uniqueLembagaSekolah" :key="'sk-' + l" :value="l">{{ l }}</option>
+            </optgroup>
+          </select>
+          <select v-model="filterStatus" class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none">
             <option value="aktif">Hanya yang aktif</option>
             <option value="">Semua status</option>
             <option value="tidak_aktif">Tidak aktif saja</option>
           </select>
-        </div>
-        <!-- v.20.16.0526: Filter LEMBAGA chips (replace jabatan, kyai req) -->
-        <div v-if="uniqueLembaga.length > 0" class="flex flex-wrap gap-1.5 mt-2">
-          <button
-            type="button"
-            @click="filterLembaga = ''"
-            :class="[
-              'px-2.5 py-1 text-[11px] rounded-full border font-bold transition',
-              filterLembaga === ''
-                ? 'bg-teal-600 text-white border-teal-600'
-                : 'bg-white dark:bg-slate-700 text-[var(--text-secondary)] border-[var(--border-default)] hover:bg-teal-50'
-            ]"
-          >
-            Semua lembaga
-          </button>
-          <button
-            v-for="l in uniqueLembaga"
-            :key="l"
-            type="button"
-            @click="filterLembaga = filterLembaga === l ? '' : l"
-            :class="[
-              'px-2.5 py-1 text-[11px] rounded-full border font-bold transition',
-              filterLembaga === l
-                ? 'bg-teal-600 text-white border-teal-600'
-                : 'bg-white dark:bg-slate-700 text-[var(--text-secondary)] border-[var(--border-default)] hover:bg-teal-50'
-            ]"
-          >
-            {{ l }}
-          </button>
         </div>
       </div>
 
@@ -418,6 +394,23 @@ const uniqueLembaga = computed(() => {
     const key = raw.toLowerCase()
     if (!map.has(key)) {
       // Pakai Title Case kalau yang ada all-caps, else as-is
+      const canonical = raw === raw.toUpperCase()
+        ? raw.split(' ').map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ')
+        : raw
+      map.set(key, canonical)
+    }
+  }
+  return [...map.values()].sort()
+})
+
+// v.97.0626: daftar lembaga SEKOLAH (formal) utk dropdown filter (dedupe case-insensitive + Title Case)
+const uniqueLembagaSekolah = computed(() => {
+  const map = new Map()
+  for (const g of guruRaw.value) {
+    const raw = String(g?.lembaga_sekolah || '').trim()
+    if (!raw) continue
+    const key = raw.toLowerCase()
+    if (!map.has(key)) {
       const canonical = raw === raw.toUpperCase()
         ? raw.split(' ').map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ')
         : raw

@@ -36,7 +36,14 @@ try {
   if (_acDebug && typeof self !== 'undefined') {
     self.FIREBASE_APPCHECK_DEBUG_TOKEN = _acDebug === 'true' ? true : _acDebug
   }
-  if (_acKey) {
+  // v.97.0626: reCAPTCHA v3 HANYA jalan di origin web http(s). Di Electron (file://) & Capacitor
+  // native (localhost/capacitor scheme) reCAPTCHA gagal terus -> spam "appCheck/recaptcha-error".
+  // Skip kecuali ada debug token (token debug bypass reCAPTCHA & terdaftar di Console).
+  const _isWebOrigin =
+    typeof location !== 'undefined' && /^https?:$/.test(location.protocol) &&
+    !(typeof navigator !== 'undefined' && /Electron/i.test(navigator.userAgent)) &&
+    !(typeof window !== 'undefined' && window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform())
+  if (_acKey && (_isWebOrigin || _acDebug)) {
     initializeAppCheck(firebaseApp, {
       provider: new ReCaptchaV3Provider(_acKey),
       isTokenAutoRefreshEnabled: true

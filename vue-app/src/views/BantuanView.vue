@@ -130,6 +130,9 @@ const sections = [
   { id: 'lisensi', label: 'Lisensi', icon: 'fa-shield-halved' }
 ]
 const bagian = ref('beranda')
+// v.97.0626: deklarasi `open` HARUS sebelum watch immediate di bawah (callback akses open.value
+// sinkron saat setup -> kalau dideklarasi setelah watch = TDZ "Cannot access 'd' before init").
+const open = ref(-1)
 watch(
   () => route.query.bagian,
   (v) => {
@@ -146,7 +149,6 @@ function go(to) {
   router.push(to)
 }
 
-const open = ref(-1)
 function toggle(i) {
   open.value = open.value === i ? -1 : i
 }
