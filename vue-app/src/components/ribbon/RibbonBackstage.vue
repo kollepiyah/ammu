@@ -81,7 +81,7 @@ const rail = computed(() => [
 
 const logoSrc = computed(() => settings.settings?.logoUrl || '/logo.png')
 const lembagaName = computed(() => settings.settings?.namaLembaga || 'Pondok Pesantren Mambaul Ulum')
-const version = computed(() => settings.settings?.appVersion || 'v.97.0626')
+const version = computed(() => settings.settings?.appVersion || 'v.98.0626')
 const userName = computed(() => auth.sesiAktif?.nama || auth.sesiAktif?.name || 'Pengguna')
 
 const infoRows = computed(() => [

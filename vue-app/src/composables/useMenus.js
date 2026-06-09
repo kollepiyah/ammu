@@ -74,7 +74,10 @@ const ALL_MENUS = [
   { group: 'Komunikasi', name: 'Kritik & Saran', path: '/kritik-saran', icon: 'fa-comment-dots', roles: ['admin', 'guru', 'santri'], available: true, featureFlag: 'fiturKritikSaran' },
 
   // GROUP: SISTEM (admin only)
-  { group: 'Sistem', name: 'Pengaturan Sistem', path: '/pengaturan-web', icon: 'fa-cog', roles: ['admin'], available: true }
+  { group: 'Sistem', name: 'Pengaturan Sistem', path: '/pengaturan-web', icon: 'fa-cog', roles: ['admin'], available: true },
+
+  // GROUP: BANTUAN (semua role) — v.98.0626: Pusat Bantuan kini di web/Android (sebelumnya hanya pita Bantuan di Electron)
+  { group: 'Bantuan', name: 'Pusat Bantuan', path: '/bantuan', icon: 'fa-circle-question', roles: ['admin', 'guru', 'santri'], available: true }
 ]
 
 /**

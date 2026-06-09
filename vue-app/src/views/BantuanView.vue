@@ -70,18 +70,15 @@
         <div class="flex items-center gap-4 mb-4">
           <img :src="logoSrc" alt="" class="w-16 h-16 rounded-2xl bg-white p-1.5 object-contain border border-[var(--border-subtle)]" />
           <div>
-            <div class="text-lg font-black text-[var(--text-primary)]">Ammu Online — Desktop</div>
+            <div class="text-lg font-black text-[var(--text-primary)]">Ammu Online — {{ platformName }}</div>
             <div class="text-sm text-[var(--text-secondary)]">Sistem Manajemen {{ lembagaName }}</div>
           </div>
         </div>
-        <p class="text-sm text-[var(--text-secondary)] leading-relaxed mb-4">
-          Versi desktop (Electron) dengan antarmuka pita ala perkantoran modern — akses cepat ke data santri,
-          guru, rapor, keuangan, jadwal, dan kanal informasi dalam satu jendela.
-        </p>
+        <p class="text-sm text-[var(--text-secondary)] leading-relaxed mb-4">{{ introText }}</p>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-8 text-sm">
           <div class="flex justify-between border-b border-[var(--border-subtle)] py-2"><span class="text-[var(--text-secondary)]">Versi</span><span class="font-semibold">{{ version }}</span></div>
           <div class="flex justify-between border-b border-[var(--border-subtle)] py-2"><span class="text-[var(--text-secondary)]">Lembaga</span><span class="font-semibold">{{ lembagaName }}</span></div>
-          <div class="flex justify-between border-b border-[var(--border-subtle)] py-2"><span class="text-[var(--text-secondary)]">Platform</span><span class="font-semibold">Windows (Electron)</span></div>
+          <div class="flex justify-between border-b border-[var(--border-subtle)] py-2"><span class="text-[var(--text-secondary)]">Platform</span><span class="font-semibold">{{ platformDetail }}</span></div>
           <div class="flex justify-between border-b border-[var(--border-subtle)] py-2"><span class="text-[var(--text-secondary)]">Hak Cipta</span><span class="font-semibold">© 2026 {{ lembagaName }}</span></div>
           <div class="flex justify-between border-b border-[var(--border-subtle)] py-2"><span class="text-[var(--text-secondary)]">Author</span><span class="font-semibold">{{ AUTHOR.nama }}</span></div>
           <div class="flex justify-between border-b border-[var(--border-subtle)] py-2"><span class="text-[var(--text-secondary)]">Kontak</span><span class="font-semibold">WA: {{ AUTHOR.wa }}</span></div>
@@ -116,6 +113,7 @@ import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
+import { useDesktopShell } from '@/composables/useDesktopShell'
 
 const route = useRoute()
 const router = useRouter()
@@ -128,8 +126,23 @@ function showKontak() {
   toast.info(`Hubungi Admin — ${AUTHOR.nama} · WA: ${AUTHOR.wa} (${AUTHOR.org})`, 8000)
 }
 
+// v.98.0626: Bantuan tampil di SEMUA platform (Electron/Android/Web) — konten menyesuaikan.
+const { isElectron } = useDesktopShell()
+const isAndroid = (() => {
+  try { return !!(typeof window !== 'undefined' && window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) } catch (e) { return false }
+})()
+const platformName = computed(() => (isElectron.value ? 'Desktop' : isAndroid ? 'Android' : 'Web'))
+const platformDetail = computed(() => (isElectron.value ? 'Windows (Electron)' : isAndroid ? 'Android (aplikasi)' : 'Web (Browser / PWA)'))
+const introText = computed(() =>
+  isElectron.value
+    ? 'Versi desktop (Electron) dengan antarmuka pita ala perkantoran modern — akses cepat ke data santri, guru, rapor, keuangan, jadwal, dan kanal informasi dalam satu jendela.'
+    : isAndroid
+      ? 'Versi aplikasi Android — akses data santri, guru, rapor, keuangan, jadwal, dan kanal informasi langsung dari ponsel, lengkap dengan notifikasi.'
+      : 'Versi web (browser / PWA) — akses dari mana saja lewat peramban, dengan fitur yang sama seperti aplikasi.'
+)
+
 const lembagaName = computed(() => settings.settings?.namaLembaga || 'Pondok Pesantren Mambaul Ulum')
-const version = computed(() => settings.settings?.appVersion || 'v.97.0626')
+const version = computed(() => settings.settings?.appVersion || 'v.98.0626')
 const logoSrc = computed(() => settings.settings?.logoUrl || '/logo.png')
 
 const sections = [
@@ -178,8 +191,8 @@ const panduan = [
     icon: 'fa-users',
     q: 'Mengelola Data Santri',
     steps: [
-      'Buka tab Pendidikan → Data Santri.',
-      'Gunakan kotak cari atau chip lembaga untuk menyaring.',
+      'Buka menu Pendidikan → Data Santri.',
+      'Gunakan kotak cari atau dropdown lembaga (Qiraati / Sekolah) untuk menyaring.',
       'Klik kartu santri untuk melihat profil; klik "Kelola" untuk tambah/ubah (khusus super admin).',
       'Filter "status tempat" untuk memisah santri Ma\'had (mukim) dan Pulang-Pergi.'
     ]
@@ -188,7 +201,7 @@ const panduan = [
     icon: 'fa-graduation-cap',
     q: 'Input Nilai & Cetak Rapor',
     steps: [
-      'Tab Pendidikan → Nilai / Rapor (atau Rekap Nilai untuk input bulanan).',
+      'Menu Pendidikan → Nilai / Rapor (atau Rekap Nilai untuk input bulanan).',
       'Pilih lembaga, kelas, dan semester.',
       'Isi nilai per santri, lalu simpan.',
       'Buka Cetak Rapor → pilih kelas → cetak (Save as PDF / printer).'
@@ -198,7 +211,7 @@ const panduan = [
     icon: 'fa-chalkboard-teacher',
     q: 'Menugaskan Guru ke Santri (Kelas)',
     steps: [
-      'Tab Pendidikan → Kelas (Guru-Santri).',
+      'Menu Pendidikan → Kelas (Guru-Santri).',
       'Pilih kategori (Ngaji/Sekolah) → lembaga → guru (+shift untuk ngaji).',
       'Centang santri yang diampu guru tersebut, lalu simpan.'
     ]
@@ -207,7 +220,7 @@ const panduan = [
     icon: 'fa-cash-register',
     q: 'Transaksi Keuangan (POS & Tagihan)',
     steps: [
-      'Tab Keuangan → POS Santri untuk transaksi cepat pembayaran.',
+      'Menu Keuangan → POS Santri untuk transaksi cepat pembayaran.',
       'Tagihan Aktif untuk melihat & membuat tagihan.',
       'Verifikasi Bayar untuk menyetujui bukti transfer wali.',
       'Buku Induk & Laporan untuk rekap kas pondok.'
@@ -216,15 +229,15 @@ const panduan = [
 ]
 
 const faq = [
-  { q: 'Kata sandi default akun baru apa?', a: 'Akun baru memakai kata sandi default "1234". Pengguna disarankan segera menggantinya lewat tab Personal → Profil Saya.' },
+  { q: 'Kata sandi default akun baru apa?', a: 'Akun baru memakai kata sandi default "1234". Pengguna disarankan segera menggantinya lewat menu Personal → Profil Saya.' },
   { q: 'Kenapa beberapa menu tidak muncul untuk saya?', a: 'Menu menyesuaikan peran (RBAC). Misalnya menu Keuangan hanya untuk admin keuangan/super admin, dan Master Data hanya untuk super admin.' },
-  { q: 'Bagaimana mengganti tema gelap/terang?', a: 'Klik ikon bulan/matahari di pojok kanan atas, atau tombol "Tema" di pita Home → Tampilan.' },
+  { q: 'Bagaimana mengganti tema gelap/terang?', a: 'Klik ikon bulan/matahari di bagian atas aplikasi. Di versi desktop juga tersedia tombol "Tema" pada pita Home → Tampilan.' },
   { q: 'Tabungan tidak masuk ke Buku Induk, apakah normal?', a: 'Ya. Tabungan santri terpisah dari kas pondok, jadi memang tidak ikut dihitung di Buku Induk maupun dasbor keuangan.' },
   { q: 'Cetak slip/struk tidak keluar di printer dot-matrix?', a: 'Gunakan menu cetak struk (ESC/P) di POS, bukan "Struk PDF". Pastikan printer dot-matrix terpilih sebagai printer default.' }
 ]
 
 const rilis = [
-  { versi: 'v.98', tgl: 'Juni 2026', items: ['Antarmuka desktop bergaya Ribbon (Office/Windows 11).', 'Dasbor Home: statistik pendidikan + keuangan.', 'Tema gelap konsisten (palet slate).'] },
+  { versi: 'v.98', tgl: 'Juni 2026', items: ['Antarmuka desktop bergaya Ribbon (Office/Windows 11).', 'Dasbor Home: statistik pendidikan + keuangan.', 'Tema gelap konsisten (palet slate).', 'Filter lembaga (Qiraati + Sekolah) jadi dropdown di Data Santri & Guru.', 'Pusat Bantuan kini tersedia di web & Android.', 'Perapian tanda tangan rapor & info kontak admin.'] },
   { versi: 'v.97', tgl: 'Juni 2026', items: ['Bisyaroh metode BMT/Cash + ekspor Laporan BMT.', 'Integrasi VA BMT PETA (kerangka).'] },
   { versi: 'v.95', tgl: 'Juni 2026', items: ['Generate tagihan khusus/infaq.', 'FCM push notification (Android).', 'Struk dot-matrix 9.5×11 (ESC/P raster).'] }
 ]
