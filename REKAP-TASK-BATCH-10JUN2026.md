@@ -1,6 +1,6 @@
 # REKAP TASK + RENCANA BATCH — Sesi 10 Juni 2026 (Cowork)
 
-> **STATUS:** ✅ Batch 1–6 SELESAI & deployed kyai. ✅ **Batch 7 (T19 scrollbar login + T21 statistik lembaga→halaman data kelas + T20 Google login Electron [PERLU VERIFIKASI DEVICE])** SELESAI (verify vite+tsc exit 0, **BELUM commit/deploy oleh kyai** — masih uncommitted di working tree: `LoginView.vue`, `StatistikView.vue`, `StatistikLembagaDetailView.vue`, `router/index.js`, `electron/src/index.ts`+`build/index.js`). ✅ **T22 + follow-up (commit `23d7c9a`)** SELESAI — lihat blok di bawah. ⏳ Lanjut: **Batch 8 = AKHIR (untuk sesi baru)** — re-audit + bump vc≥100 + ship. Keputusan kyai: Batch 4 Bisyaroh/Syahriyah = Electron saja. Batch 6: schema sekolah = 1 tanggal naik/kelas + kelulusan; semua step.
+> **STATUS:** ✅ Batch 1–6 SELESAI & deployed kyai. ✅ **Batch 7 (T19 scrollbar login + T21 statistik lembaga→halaman data kelas + T20 Google login Electron [PERLU VERIFIKASI DEVICE])** SELESAI & **COMMIT `413cbf7`** (verify vite+tsc exit 0; **PENDING kyai = deploy web + rebuild Electron**). ✅ **T22 + follow-up (commit `23d7c9a`)** SELESAI — lihat blok di bawah. ⏳ Lanjut: **Batch 8 = AKHIR (untuk sesi baru)** — re-audit + bump vc≥100 + ship. Keputusan kyai: Batch 4 Bisyaroh/Syahriyah = Electron saja. Batch 6: schema sekolah = 1 tanggal naik/kelas + kelulusan; semua step.
 >
 > ### ✅ T22 + FOLLOW-UP SELESAI (10 Jun 2026, sesi lanjutan) — commit `23d7c9a`
 > ⚠️ **Catatan label:** commit message tertulis "Batch7" — itu KELIRU (Batch 7 = T19/T20/T21 di atas). Isi commit `23d7c9a` sebenarnya = **T22 (audit tombol hilang Electron → nativize) + 3 follow-up (P5/P6/P7)**, masuk wilayah Batch 8.
@@ -8,7 +8,7 @@
 > - **P7 (hapus dead `.rb-greet`):** `ribbon.css` (−46 baris CSS greeting widget) + `RibbonGroup.vue` (template greeting + import `useRibbonUser` + filter `'greeting'` dibuang; `useRibbonUser` MASIH dipakai `RibbonTitleBar.vue` → composable TIDAK dihapus) + `useRibbonNav.js` (`itemVisible` buang `'greeting'`).
 > - **P6 (perf TagihanView):** `getNamaSantri` O(n²) `.find()` → `santriMap` computed (Map) O(1) lookup; modal simpan juga pakai Map.
 > - **P5 (security functions):** `resolveTokensByTarget` — guard fan-out `wa` minimal 8 char (`String(wa).trim().length >= 8`) di branch `type:'santri'` & `type:'wa'`, cegah cross-family notif leak saat `wa` kosong/duplikat.
-> - Verify: `npx vite build` exit 0 (built in ~21s, tanpa error). **TANPA bump versionCode.** PENDING kyai = commit T19/T20/T21 + deploy/rebuild.
+> - Verify: `npx vite build` exit 0 (built in ~21s, tanpa error). **TANPA bump versionCode.** (T19/T20/T21 sudah commit `413cbf7`; PENDING kyai = deploy/rebuild.)
 >
 > ### 🆕 TASK BARU KYAI (10 Jun 2026)
 > - **T21 → Batch 7:** Dasbor "Statistik Lembaga" bisa diklik → diarahkan ke **halaman data kelas** (guru + santri per kelas). ✅ SELESAI.
