@@ -282,7 +282,8 @@ import { ref, computed, defineComponent, h, onMounted, onUnmounted } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { doc, onSnapshot } from 'firebase/firestore'
 import { db } from '@/services/firebase'
-import { updateOne, addOne } from '@/services/firestore'
+import { updateOne, addOne, getAll } from '@/services/firestore'
+import { nextNisForNew } from '@/utils/nisGenerator' // v.100 Batch14: NIS PSB = append (lanjut NNNN)
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
@@ -539,6 +540,14 @@ async function convertToSantri() {
         created_at: new Date().toISOString(),
         created_by: auth.sesiAktif?.nama || 'Admin'
       }
+    }
+    // v.100 Batch14: NIS otomatis untuk santri PSB — APPEND (lanjut NNNN berikutnya, TANPA reshuffle).
+    //   Kyai: "kalau dari PSB tetap meneruskan, walau lebih tua". Hanya bila NIS belum diisi & ada tgl lahir.
+    if (!payload.nis) {
+      try {
+        const allSantri = await getAll('santri')
+        payload.nis = nextNisForNew(allSantri, payload.tgl_lahir)
+      } catch (e) { /* gagal hitung → biarkan NIS kosong, bisa digenerate via impor */ }
     }
     await addOne('santri', payload)
     await updateOne('psb_pendaftaran', docId.value, {

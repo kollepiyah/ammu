@@ -261,7 +261,8 @@ import EmptyState from '@/components/layout/EmptyState.vue' // v.91.0626
 import PageHeader from '@/components/layout/PageHeader.vue' // v.91.0626
 import { setDoc, doc, serverTimestamp, deleteDoc } from 'firebase/firestore'
 import { db } from '@/services/firebase'
-import { deleteOne } from '@/services/firestore' // v.91.0626: hapus = backup ke audit_log dulu
+import { deleteOne, getAll } from '@/services/firestore' // v.91.0626: hapus = backup ke audit_log dulu
+import { planRegenerateNis, applyNisChanges } from '@/utils/nisGenerator' // v.100 Batch14: auto-NIS pasca impor (reshuffle tgl lahir tertua)
 
 const exporting = ref(false)
 const importing = ref(false)
@@ -273,6 +274,7 @@ const sendingGsheet = ref(false)
 const toast = useToast()
 const confirmDlg = useConfirm()
 const settingsStore = useSettingsStore()
+const authStore = useAuthStore() // v.100 Batch14: atribusi user utk audit_log generate NIS
 
 const {
   santri, santriRaw, guruRaw, loading, search,
@@ -883,6 +885,18 @@ async function confirmImportSantri() {
       }
     }
     toast.success(`Impor selesai: ${ok} OK, ${fail} gagal`)
+    // v.100 Batch14: regenerate NIS otomatis (IMPOR = reshuffle SEMUA santri by tgl lahir tertua → nama A–Z)
+    try {
+      const fresh = await getAll('santri')
+      const plan = planRegenerateNis(fresh)
+      const res = await applyNisChanges(plan.changes, { sesi: authStore?.sesiAktif, mode: 'impor' })
+      let msg = `NIS digenerate ulang: ${res.changed} diperbarui`
+      if (plan.skipped.length) msg += `, ${plan.skipped.length} tanpa tgl lahir (dilewati)`
+      if (res.fail) msg += `, ${res.fail} gagal`
+      toast.success(msg)
+    } catch (e) {
+      toast.warning('NIS gagal digenerate ulang: ' + (e.message || e))
+    }
     importPreview.value = null
   } catch (e) {
     toast.error('Gagal: ' + (e.message || e))

@@ -62,7 +62,9 @@ const TABS = [
           { type: 'large', icon: 'users', label: 'Kelas\n(Guru-Santri)', to: '/kelas-guru', gate: 'admin' },
           { type: 'small', icon: 'book', label: 'Mapel', to: '/mapel-lembaga', gate: 'admin' },
           { type: 'small', icon: 'trophy', label: 'Nilai / Rapor', to: '/rapor' },
-          { type: 'small', icon: 'check', label: 'Absensi', to: '/absensi-santri' }
+          { type: 'small', icon: 'check', label: 'Absensi', to: '/absensi-santri' },
+          // v.100 Batch14: Absensi Guru (admin-only) sebelumnya yatim di Electron — ada di menu web, tak ada tombol pita
+          { type: 'small', icon: 'clipboard', label: 'Absensi Guru', to: '/absensi-guru', gate: 'admin' }
         ]
       },
       {
@@ -71,7 +73,9 @@ const TABS = [
           { type: 'large', icon: 'mosque', label: 'Master\nLembaga', to: '/master-data?tab=lembaga', gate: 'superadmin' },
           { type: 'large', icon: 'chart-line', label: 'Kenaikan\n/ Mutasi', to: '/naik-kelas' },
           { type: 'small', icon: 'calendar', label: 'Tahun Ajaran', to: '/master-data?tab=tp', gate: 'superadmin' },
-          { type: 'small', icon: 'clock', label: 'Semester', to: '/master-data?tab=tp', gate: 'superadmin' }
+          { type: 'small', icon: 'clock', label: 'Semester', to: '/master-data?tab=tp', gate: 'superadmin' },
+          // v.100 Batch14: Audit Data (Kesehatan Data/Migrate/Gabung/Generate NIS) sebelumnya yatim di Electron — tab-bar disembunyikan (T22), tak ada tombol pita
+          { type: 'small', icon: 'shield', label: 'Audit Data', to: '/master-data?tab=audit', gate: 'superadmin' }
         ]
       },
       {

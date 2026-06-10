@@ -21,6 +21,7 @@ import { useSantri } from '@/composables/useSantri'
 import { useConfirm } from '@/composables/useConfirm'
 // v.100: migrasi gabung duplikat (dedupe). Migrasi lama satu-kali (v.21.10/v.21.70/v.88) dihapus — sudah selesai.
 import { scanDedupe, runDedupe, mergeGroupManual } from '@/utils/v100_dedupe'
+import { planRegenerateNis, applyNisChanges } from '@/utils/nisGenerator' // v.100 Batch14: auto-generate NIS (manual + preview)
 import { scanLembagaFix, applyLembagaFix, LEMBAGA_QIRAATI_OPSI } from '@/utils/v100_lembagaFix'
 import { useAuthStore } from '@/stores/auth'
 // v.100 Batch8: audit kesehatan data (integritas + kandidat duplikat fuzzy)
@@ -107,6 +108,47 @@ const { auditGroups, fuzzyDup, totalIssues, totalFuzzy } = useDataAudit(
 const healthOpen = reactive({})
 function toggleHealth(key) { healthOpen[key] = !healthOpen[key] }
 const showFuzzy = ref(false)
+
+// v.100 Batch14: Generate NIS otomatis (MANUAL + preview). Format NNNN+DDMMYY, urut tgl lahir
+//   TERTUA→termuda lalu nama A–Z. (Pasca impor santri, regenerate ini juga jalan otomatis di SantriView.)
+const nisPlan = ref(null) // { changes, skipped, total, max } | null
+const nisGenerating = ref(false)
+const nisProgress = ref({ i: 0, total: 0 })
+const nisResult = ref(null)
+const nisChangedCount = computed(() => (nisPlan.value?.changes || []).filter((c) => c.changed).length)
+function scanNis() {
+  nisResult.value = null
+  nisPlan.value = planRegenerateNis(santriRawForMigration.value || [])
+}
+async function applyNis() {
+  if (!nisPlan.value || nisGenerating.value) return
+  const n = nisChangedCount.value
+  if (n === 0) { toast.success('Tidak ada NIS yang perlu diubah — semua sudah sesuai.'); return }
+  const ok = await confirmDlg({
+    title: 'Terapkan Generate NIS?',
+    message: `${n} NIS santri akan diperbarui (urut tgl lahir TERTUA → nama A–Z). ${nisPlan.value.skipped.length} santri tanpa tgl lahir DILEWATI (NIS lama dibiarkan). NIS = field; riwayat keuangan/rapor pakai ID santri → TIDAK terpengaruh. Lanjutkan?`,
+    confirmText: 'Terapkan',
+    danger: false
+  })
+  if (!ok) return
+  nisGenerating.value = true
+  nisProgress.value = { i: 0, total: n }
+  try {
+    const res = await applyNisChanges(nisPlan.value.changes, {
+      sesi: authStore?.sesiAktif,
+      mode: 'manual',
+      onProgress: (i, total) => { nisProgress.value = { i, total } }
+    })
+    nisResult.value = res
+    if (res.fail) toast.warning(`Generate NIS: ${res.ok} OK, ${res.fail} gagal — ${res.errors.join('; ')}`)
+    else toast.success(`Generate NIS selesai: ${res.changed} NIS diperbarui.`)
+    nisPlan.value = null
+  } catch (e) {
+    toast.error('Gagal generate NIS: ' + (e.message || e))
+  } finally {
+    nisGenerating.value = false
+  }
+}
 
 // v.100 Batch13: Gabung manual dari panel "Kandidat Nama Mirip" (checkbox per record).
 //   Fuzzy group bisa CAMPUR (sebagian orang sama, sebagian beda) → user centang hanya yang SAMA,
@@ -1106,6 +1148,51 @@ async function simpanPengaturanRekap() {
 
     <!-- TAB 7: AUDIT LOG (M6 v.20.79 — replace placeholder) -->
     <div v-else-if="activeTab === 'audit'" class="space-y-4">
+      <!-- v.100 Batch14: Generate NIS Otomatis -->
+      <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 md:p-6 border-2 border-teal-300 dark:border-teal-700 shadow-sm">
+        <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+          <div class="min-w-0">
+            <p class="text-sm font-black text-teal-700 dark:text-teal-300"><i class="fas fa-hashtag mr-1"></i>Generate NIS Otomatis</p>
+            <p class="text-xs text-slate-600 dark:text-slate-300 mt-1">Format <b>NNNN+DDMMYY</b> (mis. <code class="bg-slate-100 dark:bg-slate-700 px-1 rounded">0001120399</code>): nomor urut global dari <b>tgl lahir TERTUA → termuda</b>, seri tgl sama → <b>nama A–Z</b>. Santri tanpa tgl lahir dilewati (NIS lama dibiarkan). NIS = field; riwayat keuangan/rapor pakai ID santri → tidak terpengaruh. <i>(Pasca impor santri, regenerate ini juga jalan otomatis.)</i></p>
+          </div>
+          <button @click="scanNis" :disabled="nisGenerating" class="px-3 py-1.5 bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white text-xs font-black rounded-lg whitespace-nowrap"><i class="fas fa-magnifying-glass mr-1"></i>Pratinjau</button>
+        </div>
+        <div v-if="nisPlan" class="space-y-2">
+          <div class="flex flex-wrap gap-2 text-xs">
+            <span class="px-2 py-1 rounded-lg bg-teal-50 text-teal-800 dark:bg-teal-900/30 dark:text-teal-200 font-bold">{{ nisChangedCount }} berubah</span>
+            <span class="px-2 py-1 rounded-lg bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200 font-bold">{{ nisPlan.total - nisChangedCount }} tetap</span>
+            <span class="px-2 py-1 rounded-lg bg-amber-50 text-amber-800 dark:bg-amber-900/30 dark:text-amber-200 font-bold">{{ nisPlan.skipped.length }} tanpa tgl lahir</span>
+          </div>
+          <div v-if="nisChangedCount" class="max-h-64 overflow-y-auto border border-slate-200 dark:border-slate-700 rounded-lg">
+            <table class="w-full text-[11px]">
+              <thead class="sticky top-0 bg-slate-100 dark:bg-slate-700">
+                <tr>
+                  <th class="p-1.5 text-left font-black">#</th>
+                  <th class="p-1.5 text-left font-black">Nama</th>
+                  <th class="p-1.5 text-left font-black">NIS Lama</th>
+                  <th class="p-1.5 text-left font-black">NIS Baru</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(c, ci) in nisPlan.changes.filter((x) => x.changed)" :key="c.id" class="border-t border-slate-100 dark:border-slate-700">
+                  <td class="p-1.5 text-slate-400">{{ ci + 1 }}</td>
+                  <td class="p-1.5 font-bold text-slate-800 dark:text-white">{{ c.nama }}</td>
+                  <td class="p-1.5 font-mono text-slate-400 line-through">{{ c.oldNis || '—' }}</td>
+                  <td class="p-1.5 font-mono font-black text-teal-700 dark:text-teal-300">{{ c.newNis }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="flex items-center gap-2 flex-wrap">
+            <button @click="applyNis" :disabled="nisGenerating || !nisChangedCount" class="px-4 py-2 bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white text-xs font-black rounded-lg">
+              <i :class="['fas', nisGenerating ? 'fa-spinner fa-spin' : 'fa-check', 'mr-1']"></i>{{ nisGenerating ? `Menulis ${nisProgress.i}/${nisProgress.total}…` : `Terapkan (${nisChangedCount})` }}
+            </button>
+            <button @click="nisPlan = null" :disabled="nisGenerating" class="px-3 py-2 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-lg">Batal</button>
+          </div>
+        </div>
+        <p v-if="nisResult" class="text-xs font-bold text-emerald-700 dark:text-emerald-300 mt-2"><i class="fas fa-circle-check mr-1"></i>{{ nisResult.changed }} NIS diperbarui{{ nisResult.fail ? `, ${nisResult.fail} gagal` : '' }}.</p>
+      </div>
+
       <!-- v.99: Analisis Data Duplikat -->
       <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 md:p-6 border-2 border-rose-300 dark:border-rose-700 shadow-sm">
         <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
