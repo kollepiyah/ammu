@@ -21,6 +21,8 @@ import { useSantri } from '@/composables/useSantri'
 import { useConfirm } from '@/composables/useConfirm'
 // v.100: migrasi gabung duplikat (dedupe). Migrasi lama satu-kali (v.21.10/v.21.70/v.88) dihapus — sudah selesai.
 import { scanDedupe, runDedupe, mergeGroupManual } from '@/utils/v100_dedupe'
+import { scanLembagaFix, applyLembagaFix, LEMBAGA_QIRAATI_OPSI } from '@/utils/v100_lembagaFix'
+import { useAuthStore } from '@/stores/auth'
 // v.100 Batch8: audit kesehatan data (integritas + kandidat duplikat fuzzy)
 import { useDataAudit } from '@/composables/useDataAudit'
 import { useGuru } from '@/composables/useGuru'
@@ -186,6 +188,52 @@ async function gabungGrupManual(kat, g) {
     toast.error('Gagal gabung grup: ' + (e.message || e))
   } finally {
     manualMerging.value = ''
+  }
+}
+
+// v.100 Batch10: Migrasi Lembaga — perbaiki salah impor penempatan lembaga (scan → centang → terapkan)
+const authStore = useAuthStore()
+const lfixFindings = ref(null) // null = belum scan
+const lfixChecked = reactive({})
+const lfixRunning = ref(false)
+const lfixProgress = ref({ i: 0, total: 0 })
+const lfixResult = ref(null)
+function lfixKey(f) { return f.type + '|' + f.id }
+function lfixScan() {
+  const found = scanLembagaFix(santriRawForMigration.value || [])
+  lfixFindings.value = found
+  for (const k of Object.keys(lfixChecked)) delete lfixChecked[k]
+  for (const f of found) lfixChecked[lfixKey(f)] = !!f.defaultOn
+  lfixResult.value = null
+}
+const lfixSelectedCount = computed(() =>
+  (lfixFindings.value || []).filter((f) => lfixChecked[lfixKey(f)]).length
+)
+async function lfixApply() {
+  const items = (lfixFindings.value || []).filter((f) => lfixChecked[lfixKey(f)])
+  if (!items.length) { toast.warning('Tidak ada temuan yang dicentang.'); return }
+  const ok = await confirmDlg({
+    title: 'Terapkan Migrasi Lembaga?',
+    message: `${items.length} santri akan diperbarui sesuai saran (lembaga diganti / lembaga sekolah dikosongkan). Nilai LAMA di-backup ke audit_log. Lanjutkan?`,
+    confirmText: 'Terapkan',
+    danger: true
+  })
+  if (!ok) return
+  lfixRunning.value = true
+  lfixProgress.value = { i: 0, total: items.length }
+  try {
+    const res = await applyLembagaFix(items, {
+      sesi: authStore.sesiAktif,
+      onProgress: (i, total) => { lfixProgress.value = { i, total } }
+    })
+    lfixResult.value = res
+    if (res.fail > 0) toast.warning(`Selesai: ${res.ok} OK, ${res.fail} gagal — ${res.errors.join('; ')}`)
+    else toast.success(`Migrasi lembaga: ${res.ok} santri diperbarui (backup di audit_log).`)
+    lfixScan()
+  } catch (e) {
+    toast.error('Gagal migrasi lembaga: ' + (e.message || e))
+  } finally {
+    lfixRunning.value = false
   }
 }
 
@@ -1060,6 +1108,49 @@ async function simpanPengaturanRekap() {
           </div>
         </div>
       </div>
+      <!-- v.100 Batch10: Migrasi Lembaga — perbaiki salah impor penempatan lembaga -->
+      <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 md:p-6 border-2 border-amber-300 dark:border-amber-700 shadow-sm">
+        <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+          <div>
+            <p class="text-sm font-black text-amber-700 dark:text-amber-300"><i class="fas fa-route mr-1"></i>Migrasi Lembaga (Salah Impor)</p>
+            <p class="text-xs text-slate-600 dark:text-slate-300 mt-1">Deteksi penempatan lembaga yang salah dari impor: (A) kelas pola <b>Level/Juz → PTPT</b>, <b>Pra PTPT → Pra PTPT</b>, <b>Jilid/KPI → TPQ</b> tapi lembaga tak cocok — saran bisa DIUBAH per baris; (B) <b>Lembaga Sekolah berisi nilai ngaji</b> (mis. "TPQ Pagi") → dikosongkan; (C) lembaga TPQ tapi sekolah TK → cek manual (default tidak dicentang). Nilai lama di-backup ke audit_log.</p>
+          </div>
+          <span v-if="lfixFindings" class="text-[10px] font-bold px-2 py-0.5 rounded uppercase" :class="lfixFindings.length ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'">{{ lfixFindings.length }} temuan</span>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <button @click="lfixScan" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-black rounded-lg">
+            <i class="fas fa-magnifying-glass mr-1"></i>Scan Salah Impor
+          </button>
+          <button @click="lfixApply" :disabled="lfixRunning || !lfixFindings || lfixSelectedCount === 0" class="px-3 py-1.5 bg-amber-700 hover:bg-amber-800 disabled:opacity-50 text-white text-xs font-black rounded-lg">
+            <i class="fas fa-wand-magic-sparkles mr-1"></i>{{ lfixRunning ? `Memproses… ${lfixProgress.i}/${lfixProgress.total}` : `Terapkan (${lfixSelectedCount})` }}
+          </button>
+        </div>
+        <div v-if="lfixFindings && lfixFindings.length === 0" class="mt-2 text-xs text-emerald-700 dark:text-emerald-300 font-bold">
+          <i class="fas fa-circle-check mr-1"></i>Tidak ada salah penempatan lembaga terdeteksi.
+        </div>
+        <div v-if="lfixFindings && lfixFindings.length" class="mt-3 space-y-1.5 max-h-[420px] overflow-y-auto pr-1">
+          <label v-for="f in lfixFindings" :key="lfixKey(f)" class="flex items-start gap-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-2 text-xs cursor-pointer">
+            <input type="checkbox" v-model="lfixChecked[lfixKey(f)]" class="mt-0.5 accent-amber-600" />
+            <span class="flex-1 min-w-0">
+              <b class="text-slate-800 dark:text-white">{{ f.nama }}</b>
+              <span class="text-slate-500 dark:text-slate-400"> · NIS {{ f.nis }}</span>
+              <span class="block text-slate-600 dark:text-slate-300 mt-0.5">{{ f.alasan }}</span>
+            </span>
+            <select
+              v-if="f.type === 'kelas_lembaga'"
+              v-model="f.saranLembaga"
+              @click.stop
+              class="text-[11px] px-2 py-1 rounded-lg border border-amber-300 dark:border-amber-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white flex-shrink-0"
+              title="Lembaga tujuan (bisa diubah)"
+            >
+              <option v-for="o in LEMBAGA_QIRAATI_OPSI" :key="o" :value="o">{{ o }}</option>
+            </select>
+            <span v-else class="text-[10px] font-bold text-amber-700 dark:text-amber-300 flex-shrink-0">kosongkan sekolah</span>
+          </label>
+          <p v-if="lfixResult" class="text-xs font-bold text-slate-700 dark:text-slate-200">Hasil: {{ lfixResult.ok }} OK, {{ lfixResult.fail }} gagal.</p>
+        </div>
+      </div>
+
       <!-- v.100 Batch8: Kesehatan Data (pro audit) — integritas + kandidat duplikat fuzzy -->
       <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 md:p-6 border-2 border-cyan-300 dark:border-cyan-700 shadow-sm">
         <div class="flex items-center justify-between mb-3 flex-wrap gap-2">

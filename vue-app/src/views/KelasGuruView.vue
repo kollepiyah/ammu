@@ -12,9 +12,12 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { subscribeColl, subscribeDoc, updateOne } from '@/services/firestore'
 import { useToast } from '@/composables/useToast'
-import { sortSantri } from '@/utils/santriSort'
+import { sortSantri, sortLembagaNames } from '@/utils/santriSort'
+import { useExcel } from '@/composables/useExcel'
+import { toTitleCase } from '@/utils/format'
 
 const toast = useToast()
+const { exportStyled, importFile } = useExcel()
 
 const santriRaw = ref([])
 const guruRaw = ref([])
@@ -87,7 +90,7 @@ const lembagaOptions = computed(() => {
       if (g) return g === 'qiraati'
       return QIRAATI.includes(n)
     })
-    return list.length ? [...new Set(list)] : QIRAATI.filter((n) => n !== 'P3H' && n !== 'TPQ')
+    return sortLembagaNames(list.length ? [...new Set(list)] : QIRAATI.filter((n) => n !== 'P3H' && n !== 'TPQ'))
   }
   if (kategori.value === 'sekolah') {
     const list = names.filter((n) => {
@@ -95,7 +98,7 @@ const lembagaOptions = computed(() => {
       if (g) return g === 'sekolah'
       return SEKOLAH.includes(n)
     })
-    return list.length ? [...new Set(list)] : SEKOLAH
+    return sortLembagaNames(list.length ? [...new Set(list)] : SEKOLAH)
   }
   return []
 })
@@ -277,6 +280,122 @@ async function simpan() {
 function kelasLabel(s) {
   return kategori.value === 'ngaji' ? s.kelas || '-' : s.kelas_sekolah || s.kelas || '-'
 }
+
+// ── v.100 Batch10: impor massal assign guru→santri via XLSX (data baru & banyak — kyai) ──
+const exportingTpl = ref(false)
+const importingAssign = ref(false)
+const importAssignProgress = ref({ i: 0, total: 0 })
+
+// Template berisi DAFTAR SANTRI (prefilled) → kyai tinggal isi/koreksi kolom guru lalu impor.
+async function downloadTemplateAssign() {
+  if (exportingTpl.value) return
+  exportingTpl.value = true
+  try {
+    const list = sortSantri((santriRaw.value || []).filter((s) => s && s.aktif !== false))
+    const rows = list.map((s) => ({
+      nis: s.nis || '', nama: s.nama || '',
+      lembaga: s.lembaga || '', kelas: s.kelas || '',
+      guru_pagi: s.guru_pagi || '', guru_sore: s.guru_sore || '',
+      lembaga_sekolah: s.lembaga_sekolah || '', kelas_sekolah: s.kelas_sekolah || '',
+      guru_sekolah_1: Array.isArray(s.guru_sekolah) ? s.guru_sekolah[0] || '' : s.guru_sekolah || '',
+      guru_sekolah_2: Array.isArray(s.guru_sekolah) ? s.guru_sekolah[1] || '' : ''
+    }))
+    await exportStyled(rows, {
+      filename: 'Template_Assign_Guru_Santri.xlsx',
+      sheetName: 'Assign Guru',
+      // tanpa KOP — header di row 1 supaya importFile auto-detect
+      columns: [
+        { key: 'nis', header: 'NIS', width: 12 },
+        { key: 'nama', header: 'Nama Santri', width: 26 },
+        { key: 'lembaga', header: 'Lembaga Qiraati', width: 14 },
+        { key: 'kelas', header: 'Kelas Qiraati', width: 14 },
+        { key: 'guru_pagi', header: 'Guru Pagi', width: 20 },
+        { key: 'guru_sore', header: 'Guru Sore', width: 20 },
+        { key: 'lembaga_sekolah', header: 'Lembaga Sekolah', width: 14 },
+        { key: 'kelas_sekolah', header: 'Kelas Sekolah', width: 12 },
+        { key: 'guru_sekolah_1', header: 'Guru Sekolah 1', width: 20 },
+        { key: 'guru_sekolah_2', header: 'Guru Sekolah 2', width: 20 }
+      ]
+    })
+    toast.success(`Template berisi ${rows.length} santri. Isi kolom guru lalu impor. Tanda "-" = kosongkan guru.`)
+  } catch (e) {
+    toast.error('Gagal buat template: ' + (e.message || e))
+  } finally {
+    exportingTpl.value = false
+  }
+}
+
+function _pickCell(row, ...aliases) {
+  for (const a of aliases) {
+    if (row[a] !== undefined && row[a] !== null && row[a] !== '') return row[a]
+  }
+  const lower = {}
+  for (const k of Object.keys(row)) lower[k.toLowerCase().trim()] = row[k]
+  for (const a of aliases) {
+    const v = lower[String(a).toLowerCase().trim()]
+    if (v !== undefined && v !== null && v !== '') return v
+  }
+  return ''
+}
+// '' = lewati (jangan ubah), '-' = KOSONGKAN, selain itu = set nama guru (Title Case)
+function _guruCell(v) {
+  const s = String(v == null ? '' : v).trim()
+  if (!s) return undefined
+  if (s === '-') return ''
+  return toTitleCase(s)
+}
+
+async function onImportAssign(e) {
+  const file = e.target?.files?.[0]
+  if (!file) return
+  importingAssign.value = true
+  try {
+    const rows = await importFile(file)
+    if (!rows.length) { toast.warning('File kosong / format tidak sesuai'); return }
+    const list = santriRaw.value || []
+    const byNis = new Map()
+    const byNama = new Map()
+    for (const s of list) {
+      const nis = String(s.nis || '').trim()
+      if (nis && !byNis.has(nis)) byNis.set(nis, s)
+      const nm = String(s.nama || '').trim().toLowerCase()
+      if (nm && !byNama.has(nm)) byNama.set(nm, s)
+    }
+    let updated = 0, skipped = 0, notFound = 0
+    importAssignProgress.value = { i: 0, total: rows.length }
+    for (const r of rows) {
+      importAssignProgress.value = { i: importAssignProgress.value.i + 1, total: rows.length }
+      const nis = String(_pickCell(r, 'NIS', 'nis') || '').trim()
+      const nama = String(_pickCell(r, 'Nama Santri', 'Nama', 'nama') || '').trim().toLowerCase()
+      const s = (nis && byNis.get(nis)) || (nama && byNama.get(nama)) || null
+      if (!s) { if (nis || nama) notFound++; continue }
+      const patch = {}
+      const gp = _guruCell(_pickCell(r, 'Guru Pagi', 'guru_pagi'))
+      const gs = _guruCell(_pickCell(r, 'Guru Sore', 'guru_sore'))
+      if (gp !== undefined) patch.guru_pagi = gp
+      if (gs !== undefined) patch.guru_sore = gs
+      const gMain = (gp !== undefined && gp) || (gs !== undefined && gs)
+      if (gMain) patch.guru = gMain // backward-compat (spt simpan() alur kelas)
+      const g1 = _guruCell(_pickCell(r, 'Guru Sekolah 1', 'guru_sekolah_1', 'Guru Sekolah'))
+      const g2 = _guruCell(_pickCell(r, 'Guru Sekolah 2', 'guru_sekolah_2'))
+      if (g1 !== undefined || g2 !== undefined) {
+        const cur = Array.isArray(s.guru_sekolah) ? s.guru_sekolah : (s.guru_sekolah ? [s.guru_sekolah] : [])
+        const a1 = g1 !== undefined ? g1 : (cur[0] || '')
+        const a2 = g2 !== undefined ? g2 : (cur[1] || '')
+        patch.guru_sekolah = [a1, a2].filter(Boolean)
+      }
+      if (!Object.keys(patch).length) { skipped++; continue }
+      await updateOne('santri', String(s.id), patch)
+      updated++
+    }
+    toast.success(`Impor assign selesai: ${updated} santri diperbarui, ${skipped} dilewati (kolom guru kosong), ${notFound} tak ditemukan (NIS/nama).`)
+  } catch (e2) {
+    toast.error('Gagal impor: ' + (e2.message || e2))
+  } finally {
+    importingAssign.value = false
+    if (e.target) e.target.value = ''
+  }
+}
 </script>
 
 <template>
@@ -291,14 +410,33 @@ function kelasLabel(s) {
             Pilih lembaga &rarr; kelas &rarr; tetapkan 1&ndash;2 guru &rarr; assign santri.
           </p>
         </div>
-        <button
-          v-if="kategori"
-          type="button"
-          @click="reset"
-          class="text-xs font-bold text-[var(--text-secondary)] bg-[var(--bg-muted)] hover:bg-slate-300 dark:hover:bg-slate-600 px-3 py-1.5 rounded-lg"
-        >
-          <i class="fas fa-rotate-left mr-1"></i>Mulai Ulang
-        </button>
+        <div class="flex items-center gap-2 flex-wrap">
+          <!-- v.100 Batch10: impor massal assign guru (data baru & banyak) -->
+          <button
+            type="button"
+            @click="downloadTemplateAssign"
+            :disabled="exportingTpl"
+            class="text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 px-3 py-1.5 rounded-lg"
+          >
+            <i :class="['fas mr-1', exportingTpl ? 'fa-spinner fa-spin' : 'fa-file-arrow-down']"></i>Template Assign
+          </button>
+          <label
+            class="text-xs font-bold text-white bg-teal-600 hover:bg-teal-700 px-3 py-1.5 rounded-lg cursor-pointer"
+            :class="importingAssign ? 'opacity-50 pointer-events-none' : ''"
+          >
+            <i :class="['fas mr-1', importingAssign ? 'fa-spinner fa-spin' : 'fa-file-arrow-up']"></i>
+            {{ importingAssign ? `Impor… ${importAssignProgress.i}/${importAssignProgress.total}` : 'Impor Assign' }}
+            <input type="file" accept=".xlsx,.xls" class="hidden" @change="onImportAssign" :disabled="importingAssign" />
+          </label>
+          <button
+            v-if="kategori"
+            type="button"
+            @click="reset"
+            class="text-xs font-bold text-[var(--text-secondary)] bg-[var(--bg-muted)] hover:bg-slate-300 dark:hover:bg-slate-600 px-3 py-1.5 rounded-lg"
+          >
+            <i class="fas fa-rotate-left mr-1"></i>Mulai Ulang
+          </button>
+        </div>
       </div>
     </div>
 

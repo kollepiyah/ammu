@@ -248,6 +248,15 @@
         <button @click="exportExcel()" :disabled="busy" aria-label="Ekspor rekap Excel" class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer">
           <i class="fas fa-file-excel"></i>Excel
         </button>
+        <!-- v.100 Batch10: impor massal nilai prestasi (data baru & banyak) — admin -->
+        <button v-if="isFullFilter" @click="downloadTemplateRekap()" :disabled="busy" aria-label="Unduh template impor" class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer">
+          <i class="fas fa-file-arrow-down"></i>Template Impor
+        </button>
+        <label v-if="isFullFilter" aria-label="Impor rekap XLSX" class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold transition cursor-pointer" :class="importingRekap ? 'opacity-50 pointer-events-none' : ''">
+          <i :class="['fas', importingRekap ? 'fa-spinner fa-spin' : 'fa-file-arrow-up']"></i>
+          {{ importingRekap ? `Impor… ${importRekapProgress.i}/${importRekapProgress.total}` : 'Impor XLSX' }}
+          <input type="file" accept=".xlsx,.xls" class="hidden" @change="onImportRekap" :disabled="importingRekap" />
+        </label>
         <button @click="simpanRekap()" :disabled="busy" aria-label="Simpan rekap" class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] disabled:opacity-50 text-white text-xs font-black transition cursor-pointer">
           <i :class="['fas', busy ? 'fa-spinner fa-spin' : 'fa-save']"></i>{{ busy ? 'Menyimpan...' : 'SIMPAN' }}
         </button>
@@ -709,6 +718,126 @@ async function simpanRekap() {
     toast.error('Gagal simpan: ' + (e.message || e))
   }
   busy.value = false
+}
+
+// ── v.100 Batch10: TEMPLATE + IMPOR XLSX rekap prestasi Qiraati (data baru & banyak — kyai) ──
+const { importFile } = useExcel()
+const importingRekap = ref(false)
+const importRekapProgress = ref({ i: 0, total: 0 })
+
+// Template berisi DAFTAR SANTRI sesuai filter aktif → tinggal isi kolom prestasi lalu impor.
+async function downloadTemplateRekap() {
+  if (busy.value) return
+  busy.value = true
+  try {
+    const list = filteredSantri.value || []
+    const rows = list.map((s) => ({
+      nis: s.nis || '', nama: s.nama || '',
+      lembaga: s.lembaga || '', kelas: s.kelas || '',
+      juz: extractNumber(s.juz) || '',
+      awal: s.prestasi_awal || '', akhir: s.prestasi_akhir || '',
+      total: s.prestasi_total || ''
+    }))
+    await exportStyled(rows, {
+      filename: `Template_Rekap_Prestasi_${(filterLembaga.value || 'Qiraati').replace(/\s+/g, '_')}.xlsx`,
+      sheetName: 'Rekap Prestasi',
+      // tanpa KOP — header row 1 supaya importFile auto-detect
+      columns: [
+        { key: 'nis', header: 'NIS', width: 12 },
+        { key: 'nama', header: 'Nama Santri', width: 26 },
+        { key: 'lembaga', header: 'Lembaga Qiraati', width: 14 },
+        { key: 'kelas', header: 'Kelas', width: 16 },
+        { key: 'juz', header: 'Juz (PTPT, angka)', width: 12 },
+        { key: 'awal', header: 'Prestasi Awal', width: 14 },
+        { key: 'akhir', header: 'Prestasi Akhir', width: 14 },
+        { key: 'total', header: 'Prestasi Total (TPQ/PPPH manual)', width: 22 }
+      ]
+    })
+    toast.success(`Template berisi ${rows.length} santri (${filterLembaga.value || 'semua Qiraati'}). PTPT: isi Awal+Akhir (total auto). Lainnya: isi Total.`)
+  } catch (e) {
+    toast.error('Gagal buat template: ' + (e.message || e))
+  } finally {
+    busy.value = false
+  }
+}
+
+function _pickRekap(row, ...aliases) {
+  for (const a of aliases) {
+    if (row[a] !== undefined && row[a] !== null && row[a] !== '') return row[a]
+  }
+  const lower = {}
+  for (const k of Object.keys(row)) lower[k.toLowerCase().trim()] = row[k]
+  for (const a of aliases) {
+    const v = lower[String(a).toLowerCase().trim()]
+    if (v !== undefined && v !== null && v !== '') return v
+  }
+  return ''
+}
+
+async function onImportRekap(e) {
+  const file = e.target?.files?.[0]
+  if (!file) return
+  importingRekap.value = true
+  try {
+    const rows = await importFile(file)
+    if (!rows.length) { toast.warning('File kosong / format tidak sesuai'); return }
+    const list = santriRaw.value || []
+    const byNis = new Map()
+    const byNama = new Map()
+    for (const s of list) {
+      const nis = String(s.nis || '').trim()
+      if (nis && !byNis.has(nis)) byNis.set(nis, s)
+      const nm = String(s.nama || '').trim().toLowerCase()
+      if (nm && !byNama.has(nm)) byNama.set(nm, s)
+    }
+    let updated = 0, skipped = 0, notFound = 0
+    importRekapProgress.value = { i: 0, total: rows.length }
+    const _periode = new Date().toISOString().slice(0, 7)
+    for (const r of rows) {
+      importRekapProgress.value = { i: importRekapProgress.value.i + 1, total: rows.length }
+      const nis = String(_pickRekap(r, 'NIS', 'nis') || '').trim()
+      const nama = String(_pickRekap(r, 'Nama Santri', 'Nama', 'nama') || '').trim().toLowerCase()
+      const s = (nis && byNis.get(nis)) || (nama && byNama.get(nama)) || null
+      if (!s) { if (nis || nama) notFound++; continue }
+      const awal = String(_pickRekap(r, 'Prestasi Awal', 'Awal', 'awal') || '').trim()
+      const akhir = String(_pickRekap(r, 'Prestasi Akhir', 'Akhir', 'akhir') || '').trim()
+      const totalIn = String(_pickRekap(r, 'Prestasi Total (TPQ/PPPH manual)', 'Prestasi Total', 'Total', 'total') || '').trim()
+      const juzIn = String(_pickRekap(r, 'Juz (PTPT, angka)', 'Juz', 'juz') || '').trim()
+      const payload = {}
+      if (awal) payload.prestasi_awal = awal
+      if (akhir) payload.prestasi_akhir = akhir
+      const isPtpt = String(s.lembaga || '').toLowerCase().trim() === 'ptpt'
+      if (isPtpt) {
+        // mirror simpanRekap: total PTPT auto dari Awal/Akhir
+        const aw = extractNumber(awal || s.prestasi_awal)
+        const ak = extractNumber(akhir || s.prestasi_akhir)
+        const tot = Math.max(0, ak - aw)
+        if (awal || akhir) payload.prestasi_total = tot > 0 ? `${tot} Hal` : ''
+        if (juzIn) payload.juz = `JUZ ${extractNumber(juzIn)}`
+      } else if (totalIn) {
+        payload.prestasi_total = totalIn
+      }
+      if (!Object.keys(payload).length) { skipped++; continue }
+      await updateDoc(doc(db, 'santri', String(s.id)), payload)
+      // event notif prestasi (sama dgn simpanRekap) → Notif Center wali
+      const _npId = `np_${s.id}_${_periode}`
+      await setDoc(doc(db, 'notif_prestasi', _npId), {
+        id: _npId,
+        santri_id: String(s.id),
+        santri_nama: s.nama || '',
+        total: String(payload.prestasi_total ?? totalIn ?? ''),
+        periode: _periode,
+        createdAt: new Date().toISOString()
+      }, { merge: true })
+      updated++
+    }
+    toast.success(`Impor rekap selesai: ${updated} santri terisi, ${skipped} dilewati (kolom prestasi kosong), ${notFound} tak ditemukan (NIS/nama).`)
+  } catch (e2) {
+    toast.error('Gagal impor: ' + (e2.message || e2))
+  } finally {
+    importingRekap.value = false
+    if (e.target) e.target.value = ''
+  }
 }
 
 // EXPORT PDF

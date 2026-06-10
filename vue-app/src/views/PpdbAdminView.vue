@@ -323,6 +323,7 @@ import { subscribeColl, updateOne, deleteOne, subscribeDoc, setOne } from '@/ser
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
+import { sortLembagaNames } from '@/utils/santriSort' // v.100 Batch10: urutan canonical dropdown lembaga
 
 const auth = useAuthStore()
 const toast = useToast()
@@ -377,7 +378,8 @@ const stats = computed(() => {
 })
 
 const lembagaOptions = computed(() =>
-  [...new Set(ppdbRaw.value.map((p) => p.lembaga_tujuan).filter(Boolean))].sort()
+  // v.100 Batch10: urut canonical lembaga (bukan alfabetis)
+  sortLembagaNames([...new Set(ppdbRaw.value.map((p) => p.lembaga_tujuan).filter(Boolean))])
 )
 const tahunOptions = computed(() =>
   [...new Set(ppdbRaw.value.map((p) => p.tahunAjaran).filter(Boolean))].sort().reverse()

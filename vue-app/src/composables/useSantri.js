@@ -130,8 +130,8 @@ export function useSantri() {
     if (filterStatus.value === 'aktif') list = list.filter((s) => s.aktif !== false)
     else if (filterStatus.value === 'tidak_aktif') list = list.filter((s) => s.aktif === false)
 
-    // v.21.86.0527: Sort lembaga→kelas→nama (konsisten di semua halaman)
-    return sortSantri(list)
+    // v.100 Batch10: Data Santri urut lembaga→NAMA A–Z (kyai; kelas impor tak seragam bikin urutan tampak acak)
+    return sortSantri(list, { byNama: true })
   })
 
   // Stats

@@ -238,6 +238,7 @@ import { useDesktopShell } from '@/composables/useDesktopShell'
 import { definePageActions } from '@/composables/useRibbonContext'
 import { useSantri } from '@/composables/useSantri'
 import { getPkbmSubTier } from '@/composables/useLembaga' // v.99: PKBM -> SMP/SMA (turunan kelas)
+import { sortLembagaNames } from '@/utils/santriSort' // v.100 Batch10: urutan canonical dropdown lembaga
 import { useAuthStore } from '@/stores/auth'
 
 // v.21.17c.0526: mode prop — 'view' (sidebar, default) atau 'master' (di Master Data tab, full CRUD)
@@ -449,7 +450,7 @@ const uniqueLembaga = computed(() => {
   for (const s of santriRaw.value) {
     if (s.lembaga) set.add(s.lembaga)
   }
-  return [...set].sort()
+  return sortLembagaNames([...set]) // v.100 Batch10: urut canonical (bukan alfabetis)
 })
 
 // v.97.0626: daftar lembaga SEKOLAH (formal) utk dropdown filter
@@ -468,7 +469,7 @@ const uniqueLembagaSekolah = computed(() => {
       set.add(ls)
     }
   }
-  return [...set].sort()
+  return sortLembagaNames([...set]) // v.100 Batch10: TK → SDI → SMP → SMA
 })
 
 function formatGuru(s) {

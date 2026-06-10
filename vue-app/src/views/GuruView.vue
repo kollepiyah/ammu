@@ -347,6 +347,7 @@ import EmptyState from '@/components/layout/EmptyState.vue' // v.91.0626: empty-
 import { updateOne, deleteOne, subscribeDoc } from '@/services/firestore'
 // v.21.13b.0526: + toTitleCase + normalizeWA + parseMultipleWA (dual WA)
 import { getNamaGuruGelar, formatTanggal, hitungLamaMengajar, toTitleCase, normalizeWA, parseMultipleWA } from '@/utils/format'
+import { sortLembagaNames } from '@/utils/santriSort' // v.100 Batch10: urutan canonical dropdown lembaga
 
 const {
   guru,
@@ -418,7 +419,7 @@ const uniqueLembaga = computed(() => {
       map.set(key, canonical)
     }
   }
-  return [...map.values()].sort()
+  return sortLembagaNames([...map.values()]) // v.100 Batch10: urut canonical
 })
 
 // v.97.0626: daftar lembaga SEKOLAH (formal) utk dropdown filter (dedupe case-insensitive + Title Case)
@@ -435,7 +436,7 @@ const uniqueLembagaSekolah = computed(() => {
       map.set(key, canonical)
     }
   }
-  return [...map.values()].sort()
+  return sortLembagaNames([...map.values()]) // v.100 Batch10: urut canonical
 })
 
 const uniqueJabatan = computed(() => {

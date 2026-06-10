@@ -65,7 +65,9 @@ export function kelasRank(kelas) {
 /**
  * Sort list santri: lembaga → kelas → nama.
  * @param {Array} list
- * @param {Object} opts { lembagaField, kelasField } default auto (lembaga/kelas; fallback lembaga_sekolah/kelas_sekolah)
+ * @param {Object} opts { lembagaField, kelasField, byNama } default auto (lembaga/kelas; fallback lembaga_sekolah/kelas_sekolah).
+ *   byNama=true (v.100 Batch10, permintaan kyai utk Data Santri): lembaga → nama A–Z (lewati tier kelas —
+ *   kelas impor sering tidak seragam sehingga urutan tampak acak).
  */
 export function sortSantri(list, opts = {}) {
   const lf = opts.lembagaField
@@ -78,9 +80,23 @@ export function sortSantri(list, opts = {}) {
     // kalau lembaga rank sama tapi string beda, urut alfabet lembaga
     const ls = String(getLembaga(a) || '').localeCompare(String(getLembaga(b) || ''))
     if (ls !== 0) return ls
-    const kr = kelasRank(getKelas(a)) - kelasRank(getKelas(b))
-    if (kr !== 0) return kr
-    return String(a.nama || '').localeCompare(String(b.nama || ''))
+    if (!opts.byNama) {
+      const kr = kelasRank(getKelas(a)) - kelasRank(getKelas(b))
+      if (kr !== 0) return kr
+    }
+    return String(a.nama || '').localeCompare(String(b.nama || ''), 'id')
+  })
+}
+
+/**
+ * v.100 Batch10: sort array NAMA lembaga (string) sesuai urutan canonical → dipakai
+ * dropdown/filter lembaga di semua halaman (sebelumnya `.sort()` alfabetis = salah urut).
+ */
+export function sortLembagaNames(names) {
+  return [...(names || [])].sort((a, b) => {
+    const r = lembagaRank(a) - lembagaRank(b)
+    if (r !== 0) return r
+    return String(a || '').localeCompare(String(b || ''), 'id')
   })
 }
 

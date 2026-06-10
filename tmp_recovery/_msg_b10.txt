@@ -1,0 +1,10 @@
+feat(v.100) Batch10: migrasi lembaga salah-impor + impor XLSX rekap prestasi & assign guru + urutan lembaga/sort
+
+- Migrasi Lembaga (Master Data > Audit Data, util v100_lembagaFix.js): scan kelas pola Level/Juz->PTPT, "Pra PTPT"->Pra PTPT, Jilid/KPI->TPQ yang lembaganya tak cocok (saran editable per baris); lembaga_sekolah berisi nilai ngaji (mis. "TPQ Pagi") -> dikosongkan; lembaga TPQ + sekolah TK -> flag cek-manual (default tak dicentang). Apply = updateDoc parsial + backup nilai lama ke audit_log (aksi 'update').
+- Rekap Prestasi Qiraati: tombol Template Impor (prefilled daftar santri sesuai filter: NIS/Nama/Lembaga/Kelas/Juz/Awal/Akhir/Total) + Impor XLSX (match NIS->nama; PTPT total auto "N Hal" + JUZ n; lainnya pakai Total; + notif_prestasi). Admin only.
+- Kelas & Guru: tombol Template Assign (prefilled semua santri aktif) + Impor Assign (sel kosong=lewati, "-"=kosongkan, isi=set; guru compat + guru_sekolah 2 slot).
+- Urutan: santriSort.js + sortLembagaNames() (sumber tunggal urutan dropdown lembaga) dipakai SantriView/GuruView/KelasGuruView/PpdbAdminView (semula .sort() alfabetis); useSantri sort jadi lembaga->NAMA A-Z (byNama, kelas impor tak seragam bikin urutan tampak acak).
+
+Verify: _run_vite.cmd VITE_EXITCODE=0. Vue source murni (semua platform).
+
+Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
