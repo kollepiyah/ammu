@@ -186,6 +186,49 @@ export function scanDedupe({ santriList = [], guruList = [] } = {}) {
   }
 }
 
+// v.100 Batch9: gabung MANUAL satu grup (keputusan admin dari panel detail) — TANPA guard
+//   sinyal/konflik identitas (kasus nyata kyai: NIS dobel hasil impor berulang utk orang sama,
+//   auto-Migrate sengaja menolak krn NIS beda = konflik keras). Tetap aman: primer = record
+//   terlengkap, field kosong diisi dari duplikat, sisanya dihapus via deleteOne (backup audit_log).
+export async function mergeGroupManual(coll, items, opts = {}) {
+  const { onProgress } = opts
+  const list = (items || []).filter((x) => x && x.id)
+  if (list.length < 2) return { ok: 0, fail: 0, total: 0, errors: ['grup < 2 record valid'] }
+  const { primary, dups, patch } = planGroup(list)
+  const total = dups.length + (Object.keys(patch).length ? 1 : 0)
+  let i = 0
+  let ok = 0
+  let fail = 0
+  const errors = []
+  if (Object.keys(patch).length) {
+    try {
+      await setDoc(
+        doc(db, coll, String(primary.id)),
+        { ...patch, id: primary.id, nama: primary.nama },
+        { merge: true }
+      )
+      ok++
+    } catch (e) {
+      fail++
+      errors.push(`${coll}/${primary.id} merge: ${e.message || e}`)
+    }
+    i++
+    onProgress && onProgress(i, total)
+  }
+  for (const d of dups) {
+    try {
+      await deleteOne(coll, String(d.id))
+      ok++
+    } catch (e) {
+      fail++
+      errors.push(`${coll}/${d.id} delete: ${e.message || e}`)
+    }
+    i++
+    onProgress && onProgress(i, total)
+  }
+  return { ok, fail, total, errors, primaryId: primary.id, removedIds: dups.map((d) => d.id) }
+}
+
 // Execute. opts: { onProgress?(i,total), dryRun? }
 export async function runDedupe({ santriList = [], guruList = [] } = {}, opts = {}) {
   const { onProgress, dryRun = false } = opts

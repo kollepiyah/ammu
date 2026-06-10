@@ -20,7 +20,7 @@ import { useLembaga } from '@/composables/useLembaga'
 import { useSantri } from '@/composables/useSantri'
 import { useConfirm } from '@/composables/useConfirm'
 // v.100: migrasi gabung duplikat (dedupe). Migrasi lama satu-kali (v.21.10/v.21.70/v.88) dihapus — sudah selesai.
-import { scanDedupe, runDedupe } from '@/utils/v100_dedupe'
+import { scanDedupe, runDedupe, mergeGroupManual } from '@/utils/v100_dedupe'
 // v.100 Batch8: audit kesehatan data (integritas + kandidat duplikat fuzzy)
 import { useDataAudit } from '@/composables/useDataAudit'
 import { useGuru } from '@/composables/useGuru'
@@ -76,7 +76,8 @@ function _findDup(list, keyFn, labelFn) {
   const map = new Map()
   for (const it of list) { const k = keyFn(it); if (!k) continue; if (!map.has(k)) map.set(k, []); map.get(k).push(it) }
   const groups = []
-  for (const [key, arr] of map) if (arr.length > 1) groups.push({ key, count: arr.length, items: arr.map(labelFn) })
+  // v.100 Batch9: bawa records mentah utk tombol "Gabung Grup Ini" (merge manual per-grup)
+  for (const [key, arr] of map) if (arr.length > 1) groups.push({ key, count: arr.length, items: arr.map(labelFn), records: arr })
   return groups
 }
 const dupSantriNama = computed(() => _findDup(santriRawForMigration.value || [], (s) => _normDup(s.nama), (s) => `${s.nama} · NIS ${s.nis || '-'} · ${s.lembaga || s.lembaga_sekolah || '-'}`))
@@ -85,11 +86,11 @@ const dupSantriNisn = computed(() => _findDup((santriRawForMigration.value || []
 const dupGuruNama = computed(() => _findDup(guruRawForMigration.value || [], (g) => _normDup(g.nama), (g) => `${g.nama} · ${g.jabatan || '-'}`))
 const dupGuruWa = computed(() => _findDup((guruRawForMigration.value || []).filter((g) => _normDup(g.wa)), (g) => String(g.wa || '').replace(/\D/g, ''), (g) => `${g.nama} · WA ${g.wa}`))
 const dupKategori = computed(() => [
-  { label: 'Santri — Nama sama', groups: dupSantriNama.value },
-  { label: 'Santri — NIS sama', groups: dupSantriNis.value },
-  { label: 'Santri — NISN sama', groups: dupSantriNisn.value },
-  { label: 'Guru — Nama sama', groups: dupGuruNama.value },
-  { label: 'Guru — WA sama', groups: dupGuruWa.value }
+  { label: 'Santri — Nama sama', kind: 'santri', groups: dupSantriNama.value },
+  { label: 'Santri — NIS sama', kind: 'santri', groups: dupSantriNis.value },
+  { label: 'Santri — NISN sama', kind: 'santri', groups: dupSantriNisn.value },
+  { label: 'Guru — Nama sama', kind: 'guru', groups: dupGuruNama.value },
+  { label: 'Guru — WA sama', kind: 'guru', groups: dupGuruWa.value }
 ])
 const totalDupGroups = computed(() => dupKategori.value.reduce((n, k) => n + k.groups.length, 0))
 const showDupDetail = ref(false)
@@ -155,6 +156,36 @@ async function dedupeExecute() {
     toast.error('Gagal gabung duplikat: ' + (e.message || e))
   } finally {
     dedupeRunning.value = false
+  }
+}
+
+// v.100 Batch9: gabung MANUAL per-grup (keputusan admin) — utk grup yang auto-Migrate tolak
+//   (mis. nama sama tapi NIS beda hasil impor berulang). Guard identitas DILEWATI dgn sadar.
+const manualMerging = ref('')
+async function gabungGrupManual(kat, g) {
+  if (manualMerging.value) return
+  const recs = g.records || []
+  if (recs.length < 2) {
+    toast.warning('Grup tidak valid untuk digabung.')
+    return
+  }
+  const nama = recs[0]?.nama || '-'
+  const ok = await confirmDlg({
+    title: 'Gabung Grup Ini (Manual)?',
+    message: `${g.count} record "${nama}" akan digabung ke record TERLENGKAP: field kosong diisi dari duplikat, ${g.count - 1} record lain DIHAPUS (ter-backup audit_log → bisa di-recover). Guard konflik identitas DILEWATI karena ini keputusan manual — pastikan benar-benar ORANG YANG SAMA. Lanjutkan?`,
+    confirmText: 'Gabung & Hapus',
+    danger: true
+  })
+  if (!ok) return
+  manualMerging.value = kat.label + '|' + g.key
+  try {
+    const result = await mergeGroupManual(kat.kind, recs)
+    if (result.fail > 0) toast.warning(`Gabung "${nama}": ${result.ok} OK, ${result.fail} gagal — ${result.errors.join('; ')}`)
+    else toast.success(`Grup "${nama}" digabung (${result.removedIds.length} duplikat dihapus, backup di audit_log).`)
+  } catch (e) {
+    toast.error('Gagal gabung grup: ' + (e.message || e))
+  } finally {
+    manualMerging.value = ''
   }
 }
 
@@ -983,7 +1014,7 @@ async function simpanPengaturanRekap() {
         <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
           <div>
             <p class="text-sm font-black text-rose-700 dark:text-rose-300"><i class="fas fa-clone mr-1"></i>Analisis Data Duplikat</p>
-            <p class="text-xs text-slate-600 dark:text-slate-300 mt-1">Deteksi santri (Nama / NIS / NISN sama) &amp; guru (Nama / WA sama). <b>Migrate</b> menggabung: (1) identitas unik (NIS/NISN/WA sama) + (2) nama sama yang punya sinyal penguat (NIK/tgl lahir/lembaga+kelas sama). Nama sama tanpa sinyal / yang konflik identitas TIDAK digabung — rapikan manual via Edit/Hapus.</p>
+            <p class="text-xs text-slate-600 dark:text-slate-300 mt-1">Deteksi santri (Nama / NIS / NISN sama) &amp; guru (Nama / WA sama). <b>Migrate</b> menggabung: (1) identitas unik (NIS/NISN/WA sama) + (2) nama sama yang punya sinyal penguat (NIK/tgl lahir/lembaga+kelas sama). Nama sama tanpa sinyal / yang konflik identitas TIDAK digabung otomatis — buka <b>Lihat Detail</b> lalu pakai tombol <b>Gabung Grup Ini</b> (keputusan manual per grup), atau rapikan via Edit/Hapus.</p>
           </div>
           <span class="text-[10px] font-bold px-2 py-0.5 rounded uppercase" :class="totalDupGroups > 0 ? 'bg-rose-100 text-rose-800' : 'bg-emerald-100 text-emerald-800'">{{ totalDupGroups }} grup duplikat</span>
         </div>
@@ -1010,7 +1041,18 @@ async function simpanPengaturanRekap() {
           <div v-for="kat in dupKategori" :key="kat.label" v-show="kat.groups.length">
             <p class="text-xs font-black text-slate-800 dark:text-white mb-1">{{ kat.label }} ({{ kat.groups.length }})</p>
             <div v-for="(g, gi) in kat.groups" :key="gi" class="bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 rounded-lg p-2 mb-1.5 text-xs">
-              <p class="font-bold text-rose-700 dark:text-rose-300">{{ g.count }}× sama:</p>
+              <div class="flex items-center justify-between gap-2 flex-wrap">
+                <p class="font-bold text-rose-700 dark:text-rose-300">{{ g.count }}× sama:</p>
+                <!-- v.100 Batch9: gabung manual per-grup (utk grup yang auto-Migrate tolak, mis. NIS beda) -->
+                <button
+                  @click="gabungGrupManual(kat, g)"
+                  :disabled="manualMerging !== ''"
+                  class="px-2.5 py-1 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white text-[11px] font-black rounded-lg"
+                  title="Gabung grup ini ke record terlengkap (lewati guard identitas — keputusan manual)"
+                >
+                  <i class="fas fa-code-merge mr-1"></i>{{ manualMerging === kat.label + '|' + g.key ? 'Menggabung…' : 'Gabung Grup Ini' }}
+                </button>
+              </div>
               <ul class="list-disc ml-5 text-slate-700 dark:text-slate-200">
                 <li v-for="(it, ii) in g.items" :key="ii">{{ it }}</li>
               </ul>
