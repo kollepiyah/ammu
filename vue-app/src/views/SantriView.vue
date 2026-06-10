@@ -240,7 +240,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useDesktopShell } from '@/composables/useDesktopShell'
 import { definePageActions } from '@/composables/useRibbonContext'
 import { useSantri } from '@/composables/useSantri'
-import { getPkbmSubTier } from '@/composables/useLembaga' // v.99: PKBM -> SMP/SMA (turunan kelas)
+import { getPkbmSubTier, canonLembaga } from '@/composables/useLembaga' // v.99: PKBM -> SMP/SMA; v.100: auto-deteksi nama lembaga kanonik
 import { sortLembagaNames } from '@/utils/santriSort' // v.100 Batch10: urutan canonical dropdown lembaga
 import { useAuthStore } from '@/stores/auth'
 
@@ -768,7 +768,8 @@ async function onImportSantri(e) {
       if (!namaRaw) { skipCount++; continue }
       const nama = toTitleCase(namaRaw)
       const nis = String(_pick(r, 'NIS', 'nis') || '').trim()
-      const lembaga = String(_pick(r, 'Lembaga Qiraati', 'Lembaga', 'lembaga') || '').trim().toUpperCase()
+      // v.100 Batch12: auto-deteksi nama lembaga ke bentuk kanonik ("PRA PTPT" -> "Pra PTPT", dst)
+      const lembaga = canonLembaga(_pick(r, 'Lembaga Qiraati', 'Lembaga', 'lembaga'))
       const kelas = String(_pick(r, 'Kelas Qiraati', 'Kelas', 'kelas') || '').trim()
       const idx = existing.findIndex((s) =>
         (nis && String(s.nis || '') === nis) ||
@@ -801,7 +802,7 @@ async function onImportSantri(e) {
           guru_pagi: toTitleCase(_pick(r, 'Guru Pagi', 'Guru Kelas Pagi', 'guru_pagi') || ''),
           guru_sore: toTitleCase(_pick(r, 'Guru Sore', 'Guru Kelas Sore', 'guru_sore') || ''),
           juz: String(_pick(r, 'Juz (PTPT)', 'Juz', 'juz') || '').trim().toUpperCase(),
-          lembaga_sekolah: String(_pick(r, 'Lembaga Sekolah', 'lembaga_sekolah') || '').trim().toUpperCase(),
+          lembaga_sekolah: canonLembaga(_pick(r, 'Lembaga Sekolah', 'lembaga_sekolah')),
           kelas_sekolah: String(_pick(r, 'Kelas Sekolah', 'kelas_sekolah') || '').trim(),
           guru_sekolah: String(_pick(r, 'Guru Sekolah (pisah |)', 'Guru Sekolah', 'guru_sekolah') || '').split('|').map((s) => s.trim()).filter(Boolean),
           aktif: parseAktif(aktifVal),

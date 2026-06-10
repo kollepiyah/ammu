@@ -48,6 +48,46 @@ export function getLembagaGroup(namaLembaga) {
   return VARIANT_TO_GROUP[namaLembaga] || null
 }
 
+// v.100 Batch12: semua nama lembaga KANONIK (dari variants LEMBAGA_GROUPS) — sumber tunggal.
+export const LEMBAGA_CANON_ALL = (() => {
+  const out = []
+  for (const info of Object.values(LEMBAGA_GROUPS)) {
+    for (const v of info.variants) if (!out.includes(v)) out.push(v)
+  }
+  return out
+})()
+function _lkey(s) {
+  return String(s == null ? '' : s).toLowerCase().replace(/[^a-z0-9]/g, '')
+}
+// alias umum (tulisan beda) → kanonik. SMP/SMA = sub-tier PKBM → dipetakan ke 'PKBM'.
+const _LEMBAGA_ALIAS = {
+  p3h: 'PPPH',
+  praptpt: 'Pra PTPT',
+  smp: 'PKBM',
+  sma: 'PKBM',
+  sd: 'SDI',
+  sdislam: 'SDI',
+  mahad: "Ma'had",
+  saranaprasarana: 'Sarana Prasarana',
+  sarpras: 'Sarana Prasarana'
+}
+/**
+ * v.100 Batch12: auto-deteksi nama lembaga ke bentuk KANONIK app.
+ *   "PRA PTPT" / "pra-ptpt" → "Pra PTPT"; "tpq pagi" → "TPQ Pagi"; "SMP" → "PKBM"; dst.
+ *   Tak dikenal → kembalikan apa adanya (trim) supaya tak merusak nilai lain.
+ */
+export function canonLembaga(input) {
+  const raw = String(input == null ? '' : input).trim()
+  if (!raw) return ''
+  const k = _lkey(raw)
+  if (!k) return raw
+  for (const c of LEMBAGA_CANON_ALL) {
+    if (_lkey(c) === k) return c // cocok langsung ke kanonik
+  }
+  if (_LEMBAGA_ALIAS[k]) return _LEMBAGA_ALIAS[k]
+  return raw
+}
+
 // v.86.0526: broad group ('qiraati' | 'sekolah' | 'mahad' | 'non-lembaga') dari nama lembaga.
 //   Terima variant ('TPQ Sore' → qiraati), family key ('TPQ' → qiraati), atau label broad langsung ('Qiraati').
 export function getLembagaBroadGroup(namaLembaga) {
