@@ -348,7 +348,9 @@ import { useConfirm } from '@/composables/useConfirm'
 import SkeletonCard from '@/components/layout/SkeletonCard.vue'
 import EmptyState from '@/components/layout/EmptyState.vue' // v.91.0626: empty-state konsisten
 // v.21.11.0526: + deleteOne untuk delete & bulk delete
-import { updateOne, deleteOne, subscribeDoc } from '@/services/firestore'
+import { updateOne, deleteOne, subscribeDoc, getAll } from '@/services/firestore'
+import { planRegenerateNig, applyNigChanges } from '@/utils/nigGenerator' // v.100 Batch16: auto-NIG pasca impor (reshuffle tgl tugas terlama)
+import { useAuthStore as _useAuthStoreGuru } from '@/stores/auth'
 // v.21.13b.0526: + toTitleCase + normalizeWA + parseMultipleWA (dual WA)
 import { getNamaGuruGelar, formatTanggal, hitungLamaMengajar, toTitleCase, normalizeWA, parseMultipleWA } from '@/utils/format'
 import { sortLembagaNames } from '@/utils/santriSort' // v.100 Batch10: urutan canonical dropdown lembaga
@@ -547,6 +549,7 @@ definePageActions(() => {
 const importPreviewGuru = ref(null)
 const _settingsExp = useSettingsStore()
 const _toastExp = _useToastGuruExp()
+const _authStoreGuru = _useAuthStoreGuru() // v.100 Batch16: atribusi user utk audit_log generate NIG
 
 // v.99: ekspor LENGKAP — selaras template & impor (+ jabatan tambahan, tanggal tugas, NIG, No Rek BMT, tipe/shift/role/fingerprint)
 function _buildExcelRows(list) {
@@ -1007,6 +1010,18 @@ async function confirmImportGuru() {
       }
     }
     _toastExp.success(`Impor selesai: ${ok} OK, ${fail} gagal`)
+    // v.100 Batch16: regenerate NIG otomatis (IMPOR = reshuffle SEMUA guru by tgl tugas terlama → nama A–Z)
+    try {
+      const fresh = await getAll('guru')
+      const plan = planRegenerateNig(fresh)
+      const res = await applyNigChanges(plan.changes, { sesi: _authStoreGuru?.sesiAktif })
+      let msg = `NIG digenerate ulang: ${res.changed} diperbarui`
+      if (plan.skipped.length) msg += `, ${plan.skipped.length} tanpa tgl tugas (dilewati)`
+      if (res.fail) msg += `, ${res.fail} gagal`
+      _toastExp.success(msg)
+    } catch (e) {
+      _toastExp.warning('NIG gagal digenerate ulang: ' + (e.message || e))
+    }
     importPreviewGuru.value = null
   } catch (e) {
     _toastExp.error('Gagal: ' + (e.message || e))

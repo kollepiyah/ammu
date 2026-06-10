@@ -83,7 +83,9 @@ const TABS = [
         items: [
           { type: 'large', icon: 'printer', label: 'Cetak\nRapor', to: '/rapor' },
           { type: 'small', icon: 'calendar-days', label: 'Kalender', to: '/kalender' },
-          { type: 'small', icon: 'chart-line', label: 'Rekap Nilai', to: '/rekap-prestasi' }
+          { type: 'small', icon: 'chart-line', label: 'Rekap Nilai', to: '/rekap-prestasi' },
+          // v.100 Batch16: Kegiatan Pesantren (agenda pondok) — sebelumnya hanya via Pengaturan Desktop, kini tombol pita langsung
+          { type: 'small', icon: 'megaphone', label: 'Kegiatan Pesantren', to: '/kegiatan-pesantren', gate: 'admin' }
         ]
       }
     ]

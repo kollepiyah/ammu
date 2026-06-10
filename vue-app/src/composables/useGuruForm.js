@@ -3,7 +3,8 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { setDoc, doc, getDoc, collection, onSnapshot } from 'firebase/firestore'
 import { db } from '@/services/firebase'
-import { subscribeDoc } from '@/services/firestore'
+import { subscribeDoc, getAll } from '@/services/firestore'
+import { nextNigForNew } from '@/utils/nigGenerator' // v.100 Batch16: NIG guru baru = append (lanjut NNN)
 import { useToast } from '@/composables/useToast'
 import { useAuthStore } from '@/stores/auth'
 import { toTitleCase, normalizeWA } from '@/utils/format'
@@ -413,6 +414,13 @@ export function useGuruForm() {
         lembaga_sekolah: data.lembaga_sekolah,
         tipe_pegawai: data.tipe_pegawai
       })
+      // v.100 Batch16: guru BARU tanpa NIG → append NIG otomatis (lanjut NNN+1, TANPA reshuffle)
+      if (!editingId.value && !data.nig && data.tanggal_tugas) {
+        try {
+          const allGuru = await getAll('guru')
+          data.nig = nextNigForNew(allGuru, data.tanggal_tugas)
+        } catch (e) { /* gagal hitung → biarkan kosong, bisa digenerate via impor/tombol */ }
+      }
       await setDoc(doc(db, 'guru', String(data.id)), data, { merge: true })
       toast.success(editingId.value ? 'Data guru diupdate' : 'Guru baru disimpan')
       return true

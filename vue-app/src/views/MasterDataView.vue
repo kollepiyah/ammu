@@ -22,6 +22,7 @@ import { useConfirm } from '@/composables/useConfirm'
 // v.100: migrasi gabung duplikat (dedupe). Migrasi lama satu-kali (v.21.10/v.21.70/v.88) dihapus — sudah selesai.
 import { scanDedupe, runDedupe, mergeGroupManual } from '@/utils/v100_dedupe'
 import { planRegenerateNis, applyNisChanges } from '@/utils/nisGenerator' // v.100 Batch14: auto-generate NIS (manual + preview)
+import { planRegenerateNig, applyNigChanges } from '@/utils/nigGenerator' // v.100 Batch16: auto-generate NIG (manual + preview)
 import { scanLembagaFix, applyLembagaFix, LEMBAGA_QIRAATI_OPSI } from '@/utils/v100_lembagaFix'
 import { useAuthStore } from '@/stores/auth'
 // v.100 Batch8: audit kesehatan data (integritas + kandidat duplikat fuzzy)
@@ -147,6 +148,46 @@ async function applyNis() {
     toast.error('Gagal generate NIS: ' + (e.message || e))
   } finally {
     nisGenerating.value = false
+  }
+}
+
+// v.100 Batch16: Generate NIG otomatis (MANUAL + preview). NNN+DDMMYY, urut tgl TUGAS terlama→terbaru → nama A–Z.
+//   (Pasca impor guru, regenerate ini juga jalan otomatis di GuruView; guru baru via form = append.)
+const nigPlan = ref(null)
+const nigGenerating = ref(false)
+const nigProgress = ref({ i: 0, total: 0 })
+const nigResult = ref(null)
+const nigChangedCount = computed(() => (nigPlan.value?.changes || []).filter((c) => c.changed).length)
+function scanNig() {
+  nigResult.value = null
+  nigPlan.value = planRegenerateNig(guruRawForMigration.value || [])
+}
+async function applyNig() {
+  if (!nigPlan.value || nigGenerating.value) return
+  const n = nigChangedCount.value
+  if (n === 0) { toast.success('Tidak ada NIG yang perlu diubah — semua sudah sesuai.'); return }
+  const ok = await confirmDlg({
+    title: 'Terapkan Generate NIG?',
+    message: `${n} NIG guru akan diperbarui (urut tgl TUGAS terlama → nama A–Z). ${nigPlan.value.skipped.length} guru tanpa tgl tugas DILEWATI (NIG lama dibiarkan). NIG = field, tak dipakai kunci lintas-koleksi → aman. Lanjutkan?`,
+    confirmText: 'Terapkan',
+    danger: false
+  })
+  if (!ok) return
+  nigGenerating.value = true
+  nigProgress.value = { i: 0, total: n }
+  try {
+    const res = await applyNigChanges(nigPlan.value.changes, {
+      sesi: authStore?.sesiAktif,
+      onProgress: (i, total) => { nigProgress.value = { i, total } }
+    })
+    nigResult.value = res
+    if (res.fail) toast.warning(`Generate NIG: ${res.ok} OK, ${res.fail} gagal — ${res.errors.join('; ')}`)
+    else toast.success(`Generate NIG selesai: ${res.changed} NIG diperbarui.`)
+    nigPlan.value = null
+  } catch (e) {
+    toast.error('Gagal generate NIG: ' + (e.message || e))
+  } finally {
+    nigGenerating.value = false
   }
 }
 
@@ -1191,6 +1232,51 @@ async function simpanPengaturanRekap() {
           </div>
         </div>
         <p v-if="nisResult" class="text-xs font-bold text-emerald-700 dark:text-emerald-300 mt-2"><i class="fas fa-circle-check mr-1"></i>{{ nisResult.changed }} NIS diperbarui{{ nisResult.fail ? `, ${nisResult.fail} gagal` : '' }}.</p>
+      </div>
+
+      <!-- v.100 Batch16: Generate NIG Otomatis -->
+      <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 md:p-6 border-2 border-indigo-300 dark:border-indigo-700 shadow-sm">
+        <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+          <div class="min-w-0">
+            <p class="text-sm font-black text-indigo-700 dark:text-indigo-300"><i class="fas fa-id-badge mr-1"></i>Generate NIG Otomatis</p>
+            <p class="text-xs text-slate-600 dark:text-slate-300 mt-1">Nomor Induk Guru. Format <b>NNN+DDMMYY</b> (9 digit): nomor urut dari <b>tgl TUGAS terlama → terbaru</b>, seri → <b>nama A–Z</b>; DDMMYY = tgl tugas. Guru tanpa tgl tugas dilewati. <i>(Pasca impor guru jalan otomatis; guru baru via form = lanjut nomor.)</i></p>
+          </div>
+          <button @click="scanNig" :disabled="nigGenerating" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-xs font-black rounded-lg whitespace-nowrap"><i class="fas fa-magnifying-glass mr-1"></i>Pratinjau</button>
+        </div>
+        <div v-if="nigPlan" class="space-y-2">
+          <div class="flex flex-wrap gap-2 text-xs">
+            <span class="px-2 py-1 rounded-lg bg-indigo-50 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-200 font-bold">{{ nigChangedCount }} berubah</span>
+            <span class="px-2 py-1 rounded-lg bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200 font-bold">{{ nigPlan.total - nigChangedCount }} tetap</span>
+            <span class="px-2 py-1 rounded-lg bg-amber-50 text-amber-800 dark:bg-amber-900/30 dark:text-amber-200 font-bold">{{ nigPlan.skipped.length }} tanpa tgl tugas</span>
+          </div>
+          <div v-if="nigChangedCount" class="max-h-64 overflow-y-auto border border-slate-200 dark:border-slate-700 rounded-lg">
+            <table class="w-full text-[11px]">
+              <thead class="sticky top-0 bg-slate-100 dark:bg-slate-700">
+                <tr>
+                  <th class="p-1.5 text-left font-black">#</th>
+                  <th class="p-1.5 text-left font-black">Nama</th>
+                  <th class="p-1.5 text-left font-black">NIG Lama</th>
+                  <th class="p-1.5 text-left font-black">NIG Baru</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(c, ci) in nigPlan.changes.filter((x) => x.changed)" :key="c.id" class="border-t border-slate-100 dark:border-slate-700">
+                  <td class="p-1.5 text-slate-400">{{ ci + 1 }}</td>
+                  <td class="p-1.5 font-bold text-slate-800 dark:text-white">{{ c.nama }}</td>
+                  <td class="p-1.5 font-mono text-slate-400 line-through">{{ c.oldNig || '—' }}</td>
+                  <td class="p-1.5 font-mono font-black text-indigo-700 dark:text-indigo-300">{{ c.newNig }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="flex items-center gap-2 flex-wrap">
+            <button @click="applyNig" :disabled="nigGenerating || !nigChangedCount" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-xs font-black rounded-lg">
+              <i :class="['fas', nigGenerating ? 'fa-spinner fa-spin' : 'fa-check', 'mr-1']"></i>{{ nigGenerating ? `Menulis ${nigProgress.i}/${nigProgress.total}…` : `Terapkan (${nigChangedCount})` }}
+            </button>
+            <button @click="nigPlan = null" :disabled="nigGenerating" class="px-3 py-2 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-lg">Batal</button>
+          </div>
+        </div>
+        <p v-if="nigResult" class="text-xs font-bold text-emerald-700 dark:text-emerald-300 mt-2"><i class="fas fa-circle-check mr-1"></i>{{ nigResult.changed }} NIG diperbarui{{ nigResult.fail ? `, ${nigResult.fail} gagal` : '' }}.</p>
       </div>
 
       <!-- v.99: Analisis Data Duplikat -->
