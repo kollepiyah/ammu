@@ -1,0 +1,11 @@
+feat(v.100) Batch6: Kenaikan/Mutasi skema SEKOLAH (T2)
+
+- utils/kenaikan.js: DEFAULT_KARTU_KENAIKAN_{TK,SDI,SMP,SMA} (1 tgl naik/kelas + kelulusan di kelas akhir), getKartuKenaikanSchema kenal sekolah, export LEMBAGA_KENAIKAN_SEKOLAH
+- NaikKelasView Pengaturan: list lembaga Qiraati + Sekolah (atur KOP & schema kartu sekolah)
+- NaikKelasView Form "Proses Naik" sekolah: formIsSekolah (admin+kategori sekolah), lembaga/kelas/guru sekolah-aware, jalur simpan terpisah saveFormKenaikanSekolah (tak menyentuh logika Qiraati): kelas_sekolah + guru_sekolah (non-destruktif) + kartu_kenaikan[TK/SDI/SMP/SMA] + ceremonial kelas akhir + catatan + riwayat + event riwayat_kenaikan
+- NaikKelasView Riwayat: dropdown optgroup Qiraati/Sekolah, filter lembaga_sekolah (SMP/SMA sub-tier)
+- eksporKartuPdf sekolah: identitas pakai kelas_sekolah + baris GURU KELAS, ceremonial label Kelulusan; modal kartuCeremonialLabel
+
+Verify: _run_vite.cmd VITE_EXITCODE=0. Tanpa bump versionCode (ship di Batch 8).
+
+Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>

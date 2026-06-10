@@ -134,6 +134,37 @@ export const DEFAULT_KARTU_KENAIKAN_PRA_PTPT = {
   ]
 }
 
+// v.100 Batch6: Skema kartu kenaikan SEKOLAH — 1 tanggal naik per kelas + kelulusan (ceremonial) di kelas akhir.
+// Label kelas sengaja = token kelas_sekolah ('TK A'/'I'/'VII'/'X'…) agar resolveKenaikanSchemaPath direct-match.
+function _sekolahKelas(label, ceremonial = false) {
+  return {
+    id: 'kls_' + String(label).toLowerCase().replace(/\s+/g, '_'),
+    label: String(label),
+    items: [{ id: 'naik', label: 'Tgl Naik' }],
+    ceremonial
+  }
+}
+function _sekolahKelasList(labels) {
+  return labels.map((l, i, a) => _sekolahKelas(l, i === a.length - 1))
+}
+
+export const DEFAULT_KARTU_KENAIKAN_TK = {
+  itemHeader: 'Kenaikan',
+  kelasList: _sekolahKelasList(['TK A', 'TK B'])
+}
+export const DEFAULT_KARTU_KENAIKAN_SDI = {
+  itemHeader: 'Kenaikan',
+  kelasList: _sekolahKelasList(['I', 'II', 'III', 'IV', 'V', 'VI'])
+}
+export const DEFAULT_KARTU_KENAIKAN_SMP = {
+  itemHeader: 'Kenaikan',
+  kelasList: _sekolahKelasList(['VII', 'VIII', 'IX'])
+}
+export const DEFAULT_KARTU_KENAIKAN_SMA = {
+  itemHeader: 'Kenaikan',
+  kelasList: _sekolahKelasList(['X', 'XI', 'XII'])
+}
+
 // v.72.11.0526: P3H rename → PPPH
 export const DEFAULT_KARTU_KENAIKAN_PPPH = {
   itemHeader: 'Kitab',
@@ -185,6 +216,11 @@ export function getKartuKenaikanSchema(lembaga, settings) {
   if (lembaga === 'Pra PTPT') return JSON.parse(JSON.stringify(DEFAULT_KARTU_KENAIKAN_PRA_PTPT))
   if (lembaga === 'PPPH' || lembaga === 'P3H')
     return JSON.parse(JSON.stringify(DEFAULT_KARTU_KENAIKAN_PPPH))
+  // v.100 Batch6: skema SEKOLAH
+  if (lembaga === 'TK') return JSON.parse(JSON.stringify(DEFAULT_KARTU_KENAIKAN_TK))
+  if (lembaga === 'SDI') return JSON.parse(JSON.stringify(DEFAULT_KARTU_KENAIKAN_SDI))
+  if (lembaga === 'SMP') return JSON.parse(JSON.stringify(DEFAULT_KARTU_KENAIKAN_SMP))
+  if (lembaga === 'SMA') return JSON.parse(JSON.stringify(DEFAULT_KARTU_KENAIKAN_SMA))
   return { itemHeader: 'Item', kelasList: [] }
 }
 
@@ -203,3 +239,5 @@ export function getKopKartuLembaga(lembaga, settings) {
 
 // v.72.11.0526: Urutan baru per kyai spec — TPQ Pagi → TPQ Sore → Pra PTPT → PTPT → PPPH
 export const LEMBAGA_KENAIKAN_LIST = ['TPQ Pagi', 'TPQ Sore', 'Pra PTPT', 'PTPT', 'PPPH']
+// v.100 Batch6: lembaga Sekolah untuk kenaikan (SMP/SMA = sub-tier PKBM dari kelas). Urutan TK → SDI → SMP → SMA.
+export const LEMBAGA_KENAIKAN_SEKOLAH = ['TK', 'SDI', 'SMP', 'SMA']

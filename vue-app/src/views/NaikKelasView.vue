@@ -277,18 +277,26 @@
     >
       <div class="flex flex-wrap items-center gap-2 mb-3">
         <label class="text-xs font-bold text-[var(--text-secondary)]">
-          Lembaga Qiraati:
+          Lembaga:
         </label>
         <select
           v-model="riwayatLembaga"
           class="text-xs px-3 py-1.5 border border-[var(--border-default)] rounded-lg bg-white dark:bg-slate-900 text-[var(--text-primary)]"
         >
           <option value="">— Pilih Lembaga —</option>
-          <option value="TPQ Pagi">TPQ Pagi</option>
-          <option value="TPQ Sore">TPQ Sore</option>
-          <option value="Pra PTPT">Pra PTPT</option>
-          <option value="PTPT">PTPT</option>
-          <option value="PPPH">PPPH</option>
+          <optgroup label="Qiraati">
+            <option value="TPQ Pagi">TPQ Pagi</option>
+            <option value="TPQ Sore">TPQ Sore</option>
+            <option value="Pra PTPT">Pra PTPT</option>
+            <option value="PTPT">PTPT</option>
+            <option value="PPPH">PPPH</option>
+          </optgroup>
+          <optgroup label="Sekolah">
+            <option value="TK">TK</option>
+            <option value="SDI">SDI</option>
+            <option value="SMP">SMP</option>
+            <option value="SMA">SMA</option>
+          </optgroup>
         </select>
         <input
           v-model="riwayatSearch"
@@ -413,7 +421,7 @@
       </p>
       <div class="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
         <button
-          v-for="l in LEMBAGA_KENAIKAN_LIST"
+          v-for="l in pengaturanLembagaList"
           :key="l"
           @click="selectPengaturanLembaga(l)"
           :class="[
@@ -738,7 +746,7 @@
                       v-if="k.ceremonial"
                       class="bg-cyan-50 dark:bg-cyan-900/20 border-t border-[var(--border-default)] px-2 py-1.5 flex items-center gap-2 text-[10px]"
                     >
-                      <span class="font-bold text-cyan-800 dark:text-cyan-300">Ceremonial:</span>
+                      <span class="font-bold text-cyan-800 dark:text-cyan-300">{{ kartuCeremonialLabel }}:</span>
                       <input
                         type="date"
                         :value="getCeremonial(k.id)"
@@ -782,7 +790,7 @@
                             <option v-for="it in k.items" :key="it.id" :value="it.id">
                               {{ schema.itemHeader }} {{ it.label }}
                             </option>
-                            <option v-if="k.ceremonial" value="ceremonial">Ceremonial</option>
+                            <option v-if="k.ceremonial" value="ceremonial">{{ kartuCeremonialLabel }}</option>
                           </select>
                           <select
                             v-model="noteDraft[k.id].tipe"
@@ -949,7 +957,7 @@
                 </p>
               </div>
 
-              <div>
+              <div v-if="!formIsSekolah">
                 <label
                   class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase tracking-wide"
                 >
@@ -969,14 +977,14 @@
                   <label
                     class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase tracking-wide"
                   >
-                    Lembaga Baru
+                    {{ formIsSekolah ? 'Lembaga Sekolah' : 'Lembaga Baru' }}
                   </label>
                   <select
                     v-model="formData.lembaga"
                     class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-white dark:bg-slate-900 text-[var(--text-primary)] cursor-pointer"
                   >
                     <option value="">-- Pilih Lembaga --</option>
-                    <option v-for="l in LEMBAGA_KENAIKAN_LIST" :key="l" :value="l">{{ l }}</option>
+                    <option v-for="l in formLembagaOptions" :key="l" :value="l">{{ l }}</option>
                   </select>
                 </div>
                 <div>
@@ -1106,7 +1114,7 @@ import { useGuru } from '@/composables/useGuru'
 import { useExcel } from '@/composables/useExcel'
 import { useLembaga, getPkbmSubTier } from '@/composables/useLembaga'
 import { sortSantri } from '@/utils/santriSort'
-import { LEMBAGA_KENAIKAN_LIST, getKartuKenaikanSchema, getKopKartuLembaga } from '@/utils/kenaikan'
+import { LEMBAGA_KENAIKAN_LIST, LEMBAGA_KENAIKAN_SEKOLAH, getKartuKenaikanSchema, getKopKartuLembaga } from '@/utils/kenaikan'
 import { buildListPdf, createPdf, drawTable, savePdf } from '@/utils/pdfBuilder'
 import { imageToDataURL } from '@/services/pdf'
 
@@ -1140,6 +1148,8 @@ const SEKOLAH_KENAIKAN = ['TK', 'SDI', 'SMP', 'SMA']
 const kenaikanLembagaOptions = computed(() =>
   kenaikanKategori.value === 'sekolah' ? SEKOLAH_KENAIKAN : LEMBAGA_KENAIKAN_LIST
 )
+// v.100 Batch6: Pengaturan KOP/Schema kini mencakup lembaga Qiraati + Sekolah
+const pengaturanLembagaList = computed(() => [...LEMBAGA_KENAIKAN_LIST, ...LEMBAGA_KENAIKAN_SEKOLAH])
 const activeTab = ref('form')
 
 // v.98 full-native (Electron): sub-menu Naik Kelas -> grup pita "Aksi Halaman"; tab switcher in-page disembunyikan
@@ -1383,6 +1393,19 @@ const riwayatList = computed(() => {
     list = santriList.value.filter(
       (s) => (s.lembaga === 'PPPH' || s.lembaga === 'P3H') && s.aktif !== false
     )
+  } else if (LEMBAGA_KENAIKAN_SEKOLAH.includes(riwayatLembaga.value)) {
+    // v.100 Batch6: riwayat lembaga SEKOLAH — match lembaga_sekolah (SMP/SMA = sub-tier PKBM dari kelas)
+    const rl = riwayatLembaga.value
+    list = santriList.value.filter((s) => {
+      if (s.aktif === false) return false
+      if (rl === 'SMP' || rl === 'SMA') {
+        return (
+          String(s.lembaga_sekolah || '').toUpperCase().trim() === 'PKBM' &&
+          getPkbmSubTier(s.kelas_sekolah || s.kelas) === rl
+        )
+      }
+      return String(s.lembaga_sekolah || '').toUpperCase().trim() === rl
+    })
   } else {
     list = santriList.value.filter((s) => s.lembaga === riwayatLembaga.value && s.aktif !== false)
   }
@@ -1658,6 +1681,10 @@ const cellData = ref({})
 const savingKartu = ref(false)
 
 const kopHeader = computed(() => getKopKartuLembaga(kartuLembaga.value, settingsStore.settings))
+// v.100 Batch6: kartu lembaga sekolah → ceremonial ditampilkan sebagai "Kelulusan"
+const kartuCeremonialLabel = computed(() =>
+  LEMBAGA_KENAIKAN_SEKOLAH.includes(kartuLembaga.value) ? 'Kelulusan' : 'Ceremonial'
+)
 
 function openKartu(s) {
   kartuSantri.value = s
@@ -1841,6 +1868,17 @@ const formData = ref({
   tanggal: ''
 })
 const savingForm = ref(false)
+// v.100 Batch6: mode form sekolah (kenaikan kelas sekolah, bukan jilid/juz Qiraati)
+const formIsSekolah = ref(false)
+const formLembagaOptions = computed(() =>
+  formIsSekolah.value ? LEMBAGA_KENAIKAN_SEKOLAH : LEMBAGA_KENAIKAN_LIST
+)
+const SEKOLAH_KELAS_MAP = {
+  TK: ['TK A', 'TK B'],
+  SDI: ['I', 'II', 'III', 'IV', 'V', 'VI'],
+  SMP: ['VII', 'VIII', 'IX'],
+  SMA: ['X', 'XI', 'XII']
+}
 const KELAS_SEKOLAH_LIST = [
   'TPQ Pagi',
   'TK A',
@@ -1885,6 +1923,10 @@ const khotamOptions = computed(() => {
 })
 
 const kelasOptions = computed(() => {
+  // v.100 Batch6: mode sekolah — kelas dari peta lembaga sekolah
+  if (formIsSekolah.value) {
+    return SEKOLAH_KELAS_MAP[String(formData.value.lembaga || '').toUpperCase().trim()] || []
+  }
   const lmb = String(formData.value.lembaga || '')
     .toLowerCase()
     .trim()
@@ -1925,6 +1967,19 @@ const juzRangeForKelas = computed(() => {
 const guruOptions = computed(() => {
   const lmb = formData.value.lembaga
   if (!lmb) return []
+  // v.100 Batch6: mode sekolah — guru by lembaga_sekolah (SMP/SMA → PKBM)
+  if (formIsSekolah.value) {
+    const m = String(lmb).toUpperCase().trim()
+    const target = m === 'SMP' || m === 'SMA' ? 'PKBM' : m
+    return (guruRaw.value || [])
+      .filter(
+        (g) =>
+          String(g.lembaga_sekolah || '').toUpperCase().trim() === target ||
+          String(g.lembaga || '').toUpperCase().trim() === target
+      )
+      .map((g) => g.nama)
+      .filter(Boolean)
+  }
   return (guruRaw.value || [])
     .filter((g) => g.lembaga === lmb || g.lembaga_sekolah === lmb)
     .map((g) => g.nama)
@@ -1933,6 +1988,23 @@ const guruOptions = computed(() => {
 
 function openFormKenaikan(s) {
   formSantri.value = s
+  // v.100 Batch6: mode SEKOLAH — admin di kategori sekolah (filterLembaga = TK/SDI/SMP/SMA)
+  formIsSekolah.value = isAdmin.value && kenaikanKategori.value === 'sekolah'
+  if (formIsSekolah.value) {
+    const lmbSek = String(filterLembaga.value || '').toUpperCase().trim()
+    formData.value = {
+      tanggal: new Date().toISOString().slice(0, 10),
+      kelas_sekolah: s.kelas_sekolah || '',
+      lembaga: lmbSek, // TK/SDI/SMP/SMA (kunci kartu_kenaikan sekolah)
+      kelas: s.kelas_sekolah || '', // kelas sekolah saat ini (pilih kelas baru utk naik)
+      guru: Array.isArray(s.guru_sekolah) ? s.guru_sekolah[0] || '' : s.guru_sekolah || '',
+      juz: '',
+      khotam_ke: '',
+      catatan: ''
+    }
+    formOpen.value = true
+    return
+  }
   // v.21.71: Resolve current lembaga ke canonical Qiraati only
   // Santri lembaga = "TPQ" (single) → resolve ke "TPQ Pagi"/"TPQ Sore" via shift
   let matched = ''
@@ -2016,7 +2088,115 @@ function resolveKenaikanSchemaPath(lembaga, kelasLabel, juzNum, khotamKe) {
   return { kelasId: null, itemId: null }
 }
 
+// v.100 Batch6: simpan kenaikan kelas SEKOLAH (jalur terpisah, tak menyentuh logika Qiraati)
+async function saveFormKenaikanSekolah() {
+  const s = formSantri.value
+  if (!s) return
+  const lmb = String(formData.value.lembaga || '').toUpperCase().trim() // TK/SDI/SMP/SMA
+  const kls = formData.value.kelas || ''
+  if (!lmb || !kls) {
+    toast.warning('Pilih lembaga & kelas sekolah dulu')
+    return
+  }
+  savingForm.value = true
+  try {
+    const today = new Date().toISOString().slice(0, 10)
+    const todayId = new Date().toLocaleDateString('id-ID')
+    const payload = { kelas_sekolah: kls }
+    // Guru wali kelas baru (non-destruktif: taruh di depan, pertahankan guru sekolah lain)
+    if (formData.value.guru) {
+      const existing = Array.isArray(s.guru_sekolah)
+        ? s.guru_sekolah.filter(Boolean)
+        : s.guru_sekolah
+          ? [s.guru_sekolah]
+          : []
+      payload.guru_sekolah = Array.from(new Set([formData.value.guru, ...existing]))
+    }
+    // Kartu kenaikan: tanggal naik + kelulusan (ceremonial) di kelas akhir
+    const kk = { ...(s.kartu_kenaikan || {}) }
+    const resolved = resolveKenaikanSchemaPath(lmb, kls)
+    if (resolved.kelasId) {
+      if (!kk[lmb]) kk[lmb] = {}
+      if (!kk[lmb][resolved.kelasId]) kk[lmb][resolved.kelasId] = {}
+      const block = kk[lmb][resolved.kelasId]
+      if (!Array.isArray(block.entries)) block.entries = []
+      if (resolved.itemId) block[resolved.itemId] = today
+      const schema = getKartuKenaikanSchema(lmb, settingsStore.settings)
+      const lastKelas = (schema.kelasList || [])[(schema.kelasList || []).length - 1]
+      if (lastKelas && lastKelas.id === resolved.kelasId) block.ceremonial = today
+      if (formData.value.catatan && formData.value.catatan.trim()) {
+        block.entries.push({
+          tanggal: today,
+          itemId: resolved.itemId || 'naik',
+          tipe: 'catatan',
+          text: formData.value.catatan.trim()
+        })
+      }
+      payload.kartu_kenaikan = kk
+    }
+    // Riwayat (text)
+    const riwayat = Array.isArray(s.riwayat) ? [...s.riwayat] : []
+    let ket = `Naik ke ${lmb} Kelas ${kls}`
+    if (formData.value.guru) ket += ` | Guru: ${formData.value.guru}`
+    riwayat.push({
+      tgl_naik: today,
+      tanggal: todayId,
+      keterangan: ket,
+      lembaga: lmb,
+      kelas_from: s.kelas_sekolah || '',
+      kelas_to: kls,
+      catatan: formData.value.catatan || '',
+      guru: formData.value.guru || ''
+    })
+    payload.riwayat = riwayat
+    // Riwayat kenaikan terstruktur
+    const rkEntry = {
+      tanggal: today,
+      tanggal_display: todayId,
+      dari_lembaga: lmb,
+      dari_kelas: s.kelas_sekolah || '',
+      ke_lembaga: lmb,
+      ke_kelas: kls,
+      khotam_ke: '',
+      juz: ''
+    }
+    payload.riwayat_kenaikan = Array.isArray(s.riwayat_kenaikan)
+      ? [...s.riwayat_kenaikan, rkEntry]
+      : [rkEntry]
+    await updateDoc(doc(db, 'santri', String(s.id)), payload)
+    // Event kenaikan (sumber notif wali). Best-effort.
+    try {
+      const evId = `rk_${s.id}_${Date.now()}`
+      await setDoc(doc(db, 'riwayat_kenaikan', evId), {
+        id: evId,
+        santri_id: String(s.id),
+        santri_nama: s.nama || '',
+        dari_lembaga: rkEntry.dari_lembaga,
+        dari_kelas: rkEntry.dari_kelas,
+        ke_lembaga: rkEntry.ke_lembaga,
+        ke_kelas: rkEntry.ke_kelas,
+        khotam_ke: '',
+        tanggal: today,
+        createdAt: new Date().toISOString()
+      })
+    } catch (e) {
+      console.warn('[kenaikan-event] gagal tulis riwayat_kenaikan:', e?.message || e)
+    }
+    Object.assign(s, payload)
+    const idx = santriList.value.findIndex((x) => String(x.id) === String(s.id))
+    if (idx >= 0) Object.assign(santriList.value[idx], payload)
+    toast.success(`Kenaikan ${s.nama} tersimpan`)
+    formOpen.value = false
+  } catch (e) {
+    toast.error('Gagal: ' + (e.message || e))
+  } finally {
+    savingForm.value = false
+  }
+}
+
 async function saveFormKenaikan() {
+  // v.100 Batch6: alihkan ke jalur sekolah bila mode sekolah aktif
+  if (formIsSekolah.value) return saveFormKenaikanSekolah()
   const s = formSantri.value
   if (!s) return
 
@@ -2311,6 +2491,8 @@ async function eksporKartuPdf() {
     const data = cellData.value || {}
     const _kop = kopHeader.value
     const settingsObj = settingsStore.settings || {}
+    // v.100 Batch6: kartu lembaga SEKOLAH — identitas pakai kelas_sekolah + guru sekolah, ceremonial = Kelulusan
+    const isSekolahKartu = LEMBAGA_KENAIKAN_SEKOLAH.includes(kartuLembaga.value)
     // Build rows: one row per (kelas, item) combo so the matrix is flattened
     const rows = []
     for (const k of sch.kelasList || []) {
@@ -2329,7 +2511,11 @@ async function eksporKartuPdf() {
         const cv = dataKelas.ceremonial
         rows.push({
           kelas: k.label || '',
-          item: (sch.itemHeader || '').toLowerCase() === 'jilid' ? 'Khotaman' : 'Ceremonial',
+          item: isSekolahKartu
+            ? 'Kelulusan'
+            : (sch.itemHeader || '').toLowerCase() === 'jilid'
+              ? 'Khotaman'
+              : 'Ceremonial',
           tanggal: cv ? formatDate(cv) : '-'
         })
       }
@@ -2383,14 +2569,27 @@ async function eksporKartuPdf() {
     let yId = dividerY + 12
     doc.setFont('helvetica', 'normal')
     doc.setFontSize(10)
-    const identitasRows = [
-      ['NAMA', (s.nama || '-').toUpperCase()],
-      ['NO. INDUK', s.nis || '-'],
-      ['LEMBAGA', kartuLembaga.value || s.lembaga || '-'],
-      ['KELAS', s.kelas || '-'],
-      ['TGL MASUK', s.tgl_masuk || '-'],
-      ['ALAMAT', (s.alamat || '-').toUpperCase()]
-    ]
+    const guruSekolahNama = Array.isArray(s.guru_sekolah)
+      ? s.guru_sekolah.filter(Boolean).join(', ')
+      : s.guru_sekolah || '-'
+    const identitasRows = isSekolahKartu
+      ? [
+          ['NAMA', (s.nama || '-').toUpperCase()],
+          ['NO. INDUK', s.nis || '-'],
+          ['LEMBAGA', kartuLembaga.value || s.lembaga_sekolah || '-'],
+          ['KELAS', s.kelas_sekolah || '-'],
+          ['GURU KELAS', guruSekolahNama || '-'],
+          ['TGL MASUK', s.tgl_masuk || '-'],
+          ['ALAMAT', (s.alamat || '-').toUpperCase()]
+        ]
+      : [
+          ['NAMA', (s.nama || '-').toUpperCase()],
+          ['NO. INDUK', s.nis || '-'],
+          ['LEMBAGA', kartuLembaga.value || s.lembaga || '-'],
+          ['KELAS', s.kelas || '-'],
+          ['TGL MASUK', s.tgl_masuk || '-'],
+          ['ALAMAT', (s.alamat || '-').toUpperCase()]
+        ]
     for (const [k, v] of identitasRows) {
       doc.text(k, 14, yId)
       doc.text(':', 38, yId)
