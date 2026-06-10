@@ -425,6 +425,7 @@ import { useExcel } from '@/composables/useExcel'
 import { useGoogleSheet } from '@/composables/useGoogleSheet' // v.100 Batch12: ekspor ke Google Sheet
 import { useSettingsStore } from '@/stores/settings'
 import { extractNumber, getNamaGuruGelar } from '@/utils/format'
+import { bestNameMatch } from '@/utils/fuzzyMatch' // v.100 Batch12: cocokkan nama mirip saat impor
 import { buildListPdf } from '@/utils/pdfBuilder'
 import { useAuthStore } from '@/stores/auth'
 import { isFullFilterRole, isKepalaLembaga } from '@/utils/roleScope'
@@ -796,14 +797,19 @@ async function onImportRekap(e) {
       const nm = String(s.nama || '').trim().toLowerCase()
       if (nm && !byNama.has(nm)) byNama.set(nm, s)
     }
-    let updated = 0, skipped = 0, notFound = 0
+    let updated = 0, skipped = 0, notFound = 0, fuzzyMatched = 0
     importRekapProgress.value = { i: 0, total: rows.length }
     const _periode = new Date().toISOString().slice(0, 7)
     for (const r of rows) {
       importRekapProgress.value = { i: importRekapProgress.value.i + 1, total: rows.length }
       const nis = String(_pickRekap(r, 'NIS', 'nis') || '').trim()
       const nama = String(_pickRekap(r, 'Nama Santri', 'Nama', 'nama') || '').trim().toLowerCase()
-      const s = (nis && byNis.get(nis)) || (nama && byNama.get(nama)) || null
+      let s = (nis && byNis.get(nis)) || (nama && byNama.get(nama)) || null
+      // v.100 Batch12: fallback nama MIRIP (fuzzy) — NIS/nama persis tak ketemu, coba kemiripan tinggi & tak ambigu
+      if (!s && nama) {
+        const m = bestNameMatch(nama, list, { getName: (x) => x.nama })
+        if (m) { s = m.item; fuzzyMatched++ }
+      }
       if (!s) { if (nis || nama) notFound++; continue }
       const awal = String(_pickRekap(r, 'Prestasi Awal', 'Awal', 'awal') || '').trim()
       const akhir = String(_pickRekap(r, 'Prestasi Akhir', 'Akhir', 'akhir') || '').trim()
@@ -837,7 +843,7 @@ async function onImportRekap(e) {
       }, { merge: true })
       updated++
     }
-    toast.success(`Impor rekap selesai: ${updated} santri terisi, ${skipped} dilewati (kolom prestasi kosong), ${notFound} tak ditemukan (NIS/nama).`)
+    toast.success(`Impor rekap selesai: ${updated} santri terisi${fuzzyMatched ? ` (${fuzzyMatched} via nama mirip — cek bila ragu)` : ''}, ${skipped} dilewati (kolom prestasi kosong), ${notFound} tak ditemukan (NIS/nama).`)
   } catch (e2) {
     toast.error('Gagal impor: ' + (e2.message || e2))
   } finally {

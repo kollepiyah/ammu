@@ -15,6 +15,7 @@ import { useToast } from '@/composables/useToast'
 import { sortSantri, sortLembagaNames } from '@/utils/santriSort'
 import { useExcel } from '@/composables/useExcel'
 import { toTitleCase } from '@/utils/format'
+import { bestNameMatch } from '@/utils/fuzzyMatch' // v.100 Batch12: cocokkan nama mirip saat impor
 
 const toast = useToast()
 const { exportStyled, importFile } = useExcel()
@@ -361,13 +362,18 @@ async function onImportAssign(e) {
       const nm = String(s.nama || '').trim().toLowerCase()
       if (nm && !byNama.has(nm)) byNama.set(nm, s)
     }
-    let updated = 0, skipped = 0, notFound = 0
+    let updated = 0, skipped = 0, notFound = 0, fuzzyMatched = 0
     importAssignProgress.value = { i: 0, total: rows.length }
     for (const r of rows) {
       importAssignProgress.value = { i: importAssignProgress.value.i + 1, total: rows.length }
       const nis = String(_pickCell(r, 'NIS', 'nis') || '').trim()
       const nama = String(_pickCell(r, 'Nama Santri', 'Nama', 'nama') || '').trim().toLowerCase()
-      const s = (nis && byNis.get(nis)) || (nama && byNama.get(nama)) || null
+      let s = (nis && byNis.get(nis)) || (nama && byNama.get(nama)) || null
+      // v.100 Batch12: fallback nama MIRIP (fuzzy) — NIS/nama persis tak ketemu, coba kemiripan tinggi & tak ambigu
+      if (!s && nama) {
+        const m = bestNameMatch(nama, list, { getName: (x) => x.nama })
+        if (m) { s = m.item; fuzzyMatched++ }
+      }
       if (!s) { if (nis || nama) notFound++; continue }
       const patch = {}
       const gp = _guruCell(_pickCell(r, 'Guru Pagi', 'guru_pagi'))
@@ -388,7 +394,7 @@ async function onImportAssign(e) {
       await updateOne('santri', String(s.id), patch)
       updated++
     }
-    toast.success(`Impor assign selesai: ${updated} santri diperbarui, ${skipped} dilewati (kolom guru kosong), ${notFound} tak ditemukan (NIS/nama).`)
+    toast.success(`Impor assign selesai: ${updated} santri diperbarui${fuzzyMatched ? ` (${fuzzyMatched} via nama mirip — cek bila ragu)` : ''}, ${skipped} dilewati (kolom guru kosong), ${notFound} tak ditemukan (NIS/nama).`)
   } catch (e2) {
     toast.error('Gagal impor: ' + (e2.message || e2))
   } finally {

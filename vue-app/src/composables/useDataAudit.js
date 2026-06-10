@@ -2,6 +2,8 @@
 //   santri/guru/lembaga + kandidat duplikat fuzzy (nama mirip). REPORT-ONLY (tidak mengubah data).
 //   Dipakai di MasterDataView tab "Audit Data".
 import { computed } from 'vue'
+// v.100 Batch12: fuzzy nama dipindah ke util bersama (dipakai juga oleh impor Rekap/Assign).
+import { fuzzyKey, simRatio } from '@/utils/fuzzyMatch'
 
 function norm(v) {
   return String(v == null ? '' : v).trim().toLowerCase().replace(/\s+/g, ' ')
@@ -32,37 +34,6 @@ function looksNumericName(nama) {
   if (!s) return false
   if (/[a-zA-Z]/.test(s)) return false // ada huruf → nama wajar
   return /\d/.test(s) // tanpa huruf tapi ada angka → mencurigakan
-}
-// Kunci agresif untuk deteksi nama mirip: buang semua non-alfanumerik + gelar umum.
-function fuzzyKey(nama) {
-  return norm(nama)
-    .replace(/\b(m|moh|moch|muh|mhd|h|hj|kh|ust|ustadz|ustadzah|drs|s\.?pd|s\.?ag|a\.?ma)\b/g, '')
-    .replace(/[^a-z0-9]/g, '')
-}
-// v.100 Batch12: jarak edit (Levenshtein) + rasio kemiripan — deteksi nama mirip lebih canggih.
-function levenshtein(a, b) {
-  a = a || ''
-  b = b || ''
-  const m = a.length
-  const n = b.length
-  if (!m) return n
-  if (!n) return m
-  let prev = new Array(n + 1)
-  for (let j = 0; j <= n; j++) prev[j] = j
-  for (let i = 1; i <= m; i++) {
-    const cur = [i]
-    for (let j = 1; j <= n; j++) {
-      const cost = a[i - 1] === b[j - 1] ? 0 : 1
-      cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + cost)
-    }
-    prev = cur
-  }
-  return prev[n]
-}
-function simRatio(a, b) {
-  const mx = Math.max((a || '').length, (b || '').length)
-  if (!mx) return 0
-  return 1 - levenshtein(a, b) / mx
 }
 // Normalisasi tgl lahir ke 'YYYY-MM-DD' utk dibandingkan (terima Date / DD-MM-YYYY / YYYY-MM-DD).
 function normDob(v) {
