@@ -1101,8 +1101,12 @@ firestore.rules TIDAK diubah.
 - **T14 pecah jadi tombol:** grup pita **Pengaturan** baru (Pengaturan Keuangan penuh + Syahriyah Santri + Tagihan & Struk). Header view ikut section (judul/subjudul dinamis `sectionMeta`).
 - **FILE:** `views/PengaturanKeuanganView.vue` (focusSection/secVisible/sectionMeta + v-show per-card + auto-open modal), `composables/useRibbonNav.js` (tab Keuangan). Build `_run_vite.cmd` exit 0.
 
-### ⏳ PENDING — Batch 5–8 (urut rekomendasi; detail di `REKAP-TASK-BATCH-10JUN2026.md`)
-- **Batch 5 — Ribbon PSB + Printer [T15/T16]:** tab **PSB** baru di ribbon (Riwayat Pendaftaran, Upload S&K, Info Pembayaran jadi tombol); **Printer** dilengkapi + di **backstage/menu File** (`RibbonBackstage.vue`, `useDesktopPrint.js`).
+### ✅ SELESAI Batch 5 — Ribbon PSB + Printer di Menu File [T15/T16] (ELECTRON SAJA)
+- **T16 tab PSB:** tab baru `psb` di `useRibbonNav.js` (gate admin) — grup "Pendaftaran" (Riwayat Pendaftaran → `?section=riwayat`, Pratinjau Form → `/psb-form`) + grup "Berkas & Info" (Upload Syarat → `?section=syarat`, Info Pembayaran → `?section=pembayaran`). `TAB_PATHS.psb=['/psb']` (dipindah dari pendidikan). `PpdbAdminView` dibuat **section-aware** (`focusSection`/`secVisible`, v-show, `:open` auto-expand details asset saat fokus). Tanpa query (web/Android) tampil penuh.
+- **T15 Printer di menu File:** `RibbonBackstage.vue` dapat rail **Printer** → halaman ringkas (printer default + mode) + tombol "Buka Pengaturan Printer" yang men-dispatch event `ammu:open-printer-settings` (reuse `PrinterSettingsModal` global yang sudah lengkap: deteksi Windows, pilih default, tes cetak ESC/P, simpan). Penyetelan ukuran slip/ESC-P tetap di Keuangan → Buat Tagihan.
+- **FILE:** `composables/useRibbonNav.js` (tab psb + TAB_PATHS), `views/PpdbAdminView.vue` (section-aware), `components/ribbon/RibbonBackstage.vue` (rail+page Printer). Build `_run_vite.cmd` exit 0.
+
+### ⏳ PENDING — Batch 6–8 (urut rekomendasi; detail di `REKAP-TASK-BATCH-10JUN2026.md`)
 - **Batch 6 — Kenaikan/Mutasi skema SEKOLAH [T2] (RISIKO TINGGI):** cabang sekolah di `NaikKelasView` pakai `lembaga_sekolah`+`kelas_sekolah`+`guru_sekolah[]`; tambah **field catatan kenaikan**; template **kartu kenaikan sekolah** di `raporPdf.js` (KOP + guru sekolah, bukan PTPT/Qiraati). Saat ini kenaikan sekolah masih pakai jalur kartu Qiraati.
 - **Batch 7 — Login Electron [T19/T20]:** scrollbar `LoginView` modern; **fix Google login Electron** (kemungkinan `signInWithPopup` → flow browser-sistem + `signInWithCredential`; butuh error nyata + device test kyai).
 - **Batch 8 — Re-audit 4 platform + ship [T1]:** verifikasi regresi (anti-bocor v.98, listener leak), **bump versionCode ≥100**, deploy.

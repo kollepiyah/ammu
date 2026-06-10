@@ -60,7 +60,10 @@
       </div>
 
       <!-- v.21.25.0526: PSB Assets — Upload Syarat + Info Pembayaran + ACF per-lembaga (issue #50) -->
+      <!-- T16: section-aware (pita PSB Electron) — ?section=syarat|pembayaran fokuskan sel terkait -->
       <details
+        v-show="secVisible('syarat') || secVisible('pembayaran')"
+        :open="isAssetsFocus || null"
         class="bg-[var(--bg-card)] rounded-2xl p-3 md:p-4 border border-[var(--border-subtle)] shadow-sm"
       >
         <summary class="cursor-pointer text-sm font-black text-[var(--text-primary)]">
@@ -92,7 +95,7 @@
             </option>
           </select>
           <div v-if="psbAssetLembaga" class="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div>
+            <div v-show="secVisible('syarat')">
               <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1"
                 >Syarat & Ketentuan (URL atau base64)</label
               >
@@ -109,7 +112,7 @@
                 class="mt-1 text-xs"
               />
             </div>
-            <div>
+            <div v-show="secVisible('pembayaran')">
               <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1"
                 >Info Pembayaran (URL atau base64)</label
               >
@@ -139,6 +142,8 @@
         </div>
       </details>
 
+      <!-- T16: blok Riwayat Pendaftaran (filter + daftar) — fokus via ?section=riwayat -->
+      <div v-show="secVisible('riwayat')" class="space-y-4">
       <!-- Filter -->
       <div
         class="bg-[var(--bg-card)] rounded-2xl p-3 md:p-4 border border-[var(--border-subtle)] shadow-sm"
@@ -306,13 +311,14 @@
         <i class="fas fa-circle-info mr-1"></i>{{ filteredPpdb.length }} pendaftar · Vue 3 ·
         v.99.0626
       </p>
+      </div><!-- /blok Riwayat -->
     </template>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRoute } from 'vue-router'
 import { subscribeColl, updateOne, deleteOne, subscribeDoc, setOne } from '@/services/firestore'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
@@ -320,6 +326,15 @@ import { useConfirm } from '@/composables/useConfirm'
 
 const auth = useAuthStore()
 const toast = useToast()
+const route = useRoute()
+
+// T16 (Batch 5, Electron): pita PSB memecah halaman jadi tombol → ?section=riwayat|syarat|pembayaran.
+// Tanpa query (web/Android) tampil PENUH. v-show (bukan v-if) supaya field asset tetap ter-mount.
+const focusSection = computed(() => String(route.query.section || ''))
+function secVisible(name) {
+  return !focusSection.value || focusSection.value === name
+}
+const isAssetsFocus = computed(() => focusSection.value === 'syarat' || focusSection.value === 'pembayaran')
 
 // v.21.27.0526: isAdmin computed — admin builtin + super_admin/admin/admin_keuangan role_sistem boleh akses PSB
 const isAdmin = computed(() => {

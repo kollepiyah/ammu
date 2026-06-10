@@ -138,6 +138,29 @@ const TABS = [
     ]
   },
   {
+    // T16: tab PSB (Pendaftaran Santri Baru) — Electron pita
+    id: 'psb',
+    name: 'PSB',
+    defaultTo: '/psb',
+    gate: 'admin',
+    groups: [
+      {
+        label: 'Pendaftaran',
+        items: [
+          { type: 'large', icon: 'clipboard', label: 'Riwayat\nPendaftaran', to: '/psb?section=riwayat', accent: true },
+          { type: 'small', icon: 'send', label: 'Pratinjau Form', to: '/psb-form' }
+        ]
+      },
+      {
+        label: 'Berkas & Info',
+        items: [
+          { type: 'large', icon: 'file', label: 'Upload\nSyarat', to: '/psb?section=syarat' },
+          { type: 'large', icon: 'wallet', label: 'Info\nPembayaran', to: '/psb?section=pembayaran' }
+        ]
+      }
+    ]
+  },
+  {
     id: 'saluran',
     name: 'Saluran',
     defaultTo: '/posts',
@@ -245,8 +268,9 @@ const TAB_PATHS = {
   pendidikan: [
     '/santri', '/guru', '/kelas', '/kelas-guru', '/mapel-lembaga', '/rapor', '/absensi-santri', '/absensi-guru',
     '/naik-kelas', '/rekap-prestasi', '/rekap-diniyah', '/input-bulanan',
-    '/master-data', '/psb', '/kegiatan-pesantren', '/statistik', '/kalender'
+    '/master-data', '/kegiatan-pesantren', '/statistik', '/kalender'
   ],
+  psb: ['/psb'],
   keuangan: [
     '/keuangan', '/keuangan-desktop', '/tagihan', '/pembayaran', '/pembayaran-pending', '/tabungan',
     '/uang-saku', '/bisyaroh', '/buku-induk', '/laporan-keuangan', '/hutang-piutang',

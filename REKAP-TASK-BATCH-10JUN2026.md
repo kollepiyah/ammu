@@ -1,6 +1,6 @@
 # REKAP TASK + RENCANA BATCH — Sesi 10 Juni 2026 (Cowork)
 
-> **STATUS:** ✅ Batch 1 (T3/T4/T5/T11), ✅ Batch 2 (T9/T10), ✅ Batch 3 (T12/T13/T17/T18) & ✅ Batch 4 (T6/T7/T8/T14, Electron-saja) SELESAI. Plus fix lanjutan: tombol Migrate kini gabung nama-sama bersinyal. ⏳ Lanjut: Batch 5 (ribbon PSB + Printer di backstage). Keputusan kyai: Batch 4 Bisyaroh/Syahriyah = Electron saja (web/Android pakai Pengaturan Keuangan gabungan).
+> **STATUS:** ✅ Batch 1 (T3/T4/T5/T11), ✅ Batch 2 (T9/T10), ✅ Batch 3 (T12/T13/T17/T18), ✅ Batch 4 (T6/T7/T8/T14, Electron-saja) & ✅ Batch 5 (T15/T16) SELESAI. Plus fix: tombol Migrate gabung nama-sama bersinyal. ⏳ Lanjut: Batch 6 (Kenaikan/Mutasi skema Sekolah — RISIKO TINGGI). Keputusan kyai: Batch 4 Bisyaroh/Syahriyah = Electron saja (web/Android pakai Pengaturan Keuangan gabungan).
 
 > Disusun setelah membaca KB kanonik (`PROJECT-KNOWLEDGE-BASE.md`), `LOGIC-GLOBAL-LEMBAGA-CANONICAL.md`, `AUDIT-COWORK-09JUN2026-RIBBON-SHIP.md`, dan inspeksi langsung file sumber (`useRibbonNav.js`, `RibbonTitleBar.vue`, `NaikKelasView.vue`, `useLembaga.js`, `santriSort.js`, `GuruView.vue`, `GlobalSearch.vue`).
 > Status awal repo: HEAD pasca audit v.98; ada uncommitted UI batch (lihat KB §STATUS). Build asli & rilis tetap dijalankan kyai di Windows.

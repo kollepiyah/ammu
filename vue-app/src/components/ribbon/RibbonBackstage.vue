@@ -39,6 +39,24 @@
         </div>
       </template>
 
+      <template v-else-if="active === 'printer'">
+        <h1>Printer</h1>
+        <p style="color: var(--rb-text-dim); max-width: 560px; line-height: 1.7">
+          Atur printer default untuk cetak langsung struk POS (dot-matrix / thermal). Daftar printer
+          diambil dari Windows. Penyetelan ukuran slip &amp; ESC/P ada di Keuangan → Buat Tagihan.
+        </p>
+        <div class="rb-bs-info" style="margin-top: 18px; max-width: 460px">
+          <div class="row"><b>Printer Default</b><span>{{ defaultPrinterLabel }}</span></div>
+          <div class="row"><b>Mode</b><span>{{ isDesktop ? 'Desktop (Windows)' : 'Web / HP' }}</span></div>
+        </div>
+        <button class="rb-bs-item" style="margin-top: 18px; max-width: 340px" type="button" @click="openPrinterSettings">
+          <RibbonIcon name="printer" :size="18" /> Buka Pengaturan Printer
+        </button>
+        <p v-if="!isDesktop" style="color: var(--rb-text-dim); margin-top: 12px; font-size: 12px">
+          Deteksi printer hanya tersedia di aplikasi Desktop (Windows).
+        </p>
+      </template>
+
       <template v-else>
         <h1>Selamat datang</h1>
         <div class="rb-bs-cards">
@@ -59,11 +77,24 @@ import { useRouter } from 'vue-router'
 import RibbonIcon from './RibbonIcon.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
+import { getDefaultPrinter, isElectron } from '@/composables/useDesktopPrint'
 
 const emit = defineEmits(['close'])
 const router = useRouter()
 const auth = useAuthStore()
 const settings = useSettingsStore()
+
+// T15: ringkasan printer di menu File; pengaturan lengkap dibuka via modal global (event)
+const isDesktop = isElectron()
+const defaultPrinterLabel = computed(() => getDefaultPrinter() || '(default sistem Windows)')
+function openPrinterSettings() {
+  emit('close')
+  try {
+    window.dispatchEvent(new CustomEvent('ammu:open-printer-settings'))
+  } catch (e) {
+    /* ignore */
+  }
+}
 
 const active = ref('beranda')
 
@@ -75,6 +106,7 @@ const rail = computed(() => [
   { sep: true },
   { id: 'akun', icon: 'user', label: 'Akun', to: '/profil' },
   { id: 'pengaturan', icon: 'gear', label: 'Pengaturan', to: auth.isAdmin ? '/pengaturan-desktop' : '/profil' },
+  { id: 'printer', icon: 'printer', label: 'Printer' }, // T15: Pengaturan Printer di menu File
   { id: 'tentang', icon: 'help', label: 'Tentang' },
   { id: 'keluar', icon: 'logout', label: 'Keluar', action: 'logout' }
 ])
@@ -116,7 +148,7 @@ async function onRail(it) {
     router.push('/login')
     return
   }
-  if (it.id === 'info' || it.id === 'tentang') {
+  if (it.id === 'info' || it.id === 'tentang' || it.id === 'printer') {
     active.value = it.id
     return
   }
