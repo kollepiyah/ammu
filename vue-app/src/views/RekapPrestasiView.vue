@@ -859,6 +859,7 @@ function _pickRekap(row, ...aliases) {
 // Ringkasan nilai utk preview
 function _fmtNilaiBaru(p) {
   const parts = []
+  if (p.kelas != null && p.kelas !== '') parts.push(`Kelas ${p.kelas}`)
   if (p.prestasi_awal != null && p.prestasi_awal !== '') parts.push(`Awal ${p.prestasi_awal}`)
   if (p.prestasi_akhir != null && p.prestasi_akhir !== '') parts.push(`Akhir ${p.prestasi_akhir}`)
   if (p.prestasi_total != null && p.prestasi_total !== '') parts.push(`Total ${p.prestasi_total}`)
@@ -867,6 +868,7 @@ function _fmtNilaiBaru(p) {
 }
 function _fmtNilaiLama(s) {
   const parts = []
+  if (s.kelas) parts.push(`Kelas ${s.kelas}`)
   if (s.prestasi_awal) parts.push(`Awal ${s.prestasi_awal}`)
   if (s.prestasi_akhir) parts.push(`Akhir ${s.prestasi_akhir}`)
   if (s.prestasi_total) parts.push(`Total ${s.prestasi_total}`)
@@ -967,6 +969,8 @@ async function onImportRekap(e) {
       const akhir = String(_pickRekap(r, 'Prestasi Akhir', 'Akhir', 'akhir') || '').trim()
       const totalIn = String(_pickRekap(r, 'Prestasi Total (TPQ/PPPH manual)', 'Prestasi Total', 'Total', 'total') || '').trim()
       const juzIn = String(_pickRekap(r, 'Juz (PTPT, angka)', 'Juz', 'juz') || '').trim()
+      // v.100 Batch15b (kyai): kolom "PTPT" di Google Form = KELAS Qiraati → tulis ke field kelas.
+      const ptptKelasIn = String(_pickRekap(r, 'PTPT', 'ptpt') || '').trim()
       const payload = {}
       if (awal) payload.prestasi_awal = awal
       if (akhir) payload.prestasi_akhir = akhir
@@ -978,6 +982,7 @@ async function onImportRekap(e) {
         const tot = Math.max(0, ak - aw)
         if (awal || akhir) payload.prestasi_total = tot > 0 ? `${tot} Hal` : ''
         if (juzIn) payload.juz = `JUZ ${extractNumber(juzIn)}`
+        if (ptptKelasIn) payload.kelas = ptptKelasIn // PTPT = Kelas (posisi terkini)
       } else if (totalIn) {
         payload.prestasi_total = totalIn
       }
