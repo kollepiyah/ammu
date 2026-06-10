@@ -15,10 +15,21 @@ import { db } from '@/services/firebase'
 import { deleteOne } from '@/services/firestore'
 
 function norm(v) {
-  return String(v == null ? '' : v).trim().toLowerCase()
+  // v.100 Batch8: collapse spasi ganda/dalam supaya "Ahmad  Fauzi" == "Ahmad Fauzi"
+  return String(v == null ? '' : v).trim().toLowerCase().replace(/\s+/g, ' ')
 }
 function digits(v) {
   return String(v == null ? '' : v).replace(/\D/g, '')
+}
+// v.100 Batch8: normalisasi nomor HP Indonesia ke bentuk kanonik 62XXXX
+//   ("0812.." == "+62 812.." == "62812.."). Tanpa ini, dedupe WA kelewat krn beda prefix.
+function canonPhone(v) {
+  let d = digits(v)
+  if (!d) return ''
+  d = d.replace(/^0+/, '') // buang trunk 0 / leading zeros
+  if (d.startsWith('62')) d = d.slice(2) // buang kode negara
+  d = d.replace(/^0+/, '') // jaga-jaga "62" lalu "0"
+  return d ? '62' + d : ''
 }
 function isEmpty(v) {
   if (v == null) return true
@@ -59,14 +70,14 @@ function diffText(a, b) {
   return !isEmpty(a) && !isEmpty(b) && norm(a) !== norm(b)
 }
 function eqPhone(a, b) {
-  const da = digits(a)
-  const db = digits(b)
-  return da.length >= 8 && da === db
+  const da = canonPhone(a)
+  const db = canonPhone(b)
+  return da.length >= 10 && da === db
 }
 function diffPhone(a, b) {
-  const da = digits(a)
-  const db = digits(b)
-  return da.length >= 8 && db.length >= 8 && da !== db
+  const da = canonPhone(a)
+  const db = canonPhone(b)
+  return da.length >= 10 && db.length >= 10 && da !== db
 }
 // Apakah d & primary kemungkinan ORANG YANG SAMA (nama sudah sama di grup ini)?
 function santriSamePerson(p, d) {
@@ -145,8 +156,8 @@ function buildPlan({ santriList = [], guruList = [] }) {
       plan.guru.push({ primary, dups: realDups, patch })
     }
   }
-  // pass 1: WA sama (identitas). pass 2 (v.100): NAMA sama + sinyal penguat.
-  addGuruGroups(groupBy(guruList.filter((x) => digits(x.wa).length >= 8), (x) => 'wa:' + digits(x.wa)))
+  // pass 1: WA sama (identitas, kanonik 0/62/+62). pass 2 (v.100): NAMA sama + sinyal penguat.
+  addGuruGroups(groupBy(guruList.filter((x) => canonPhone(x.wa).length >= 10), (x) => 'wa:' + canonPhone(x.wa)))
   addGuruGroups(groupBy(guruList.filter((x) => norm(x.nama)), (x) => 'nama:' + norm(x.nama)), guruSamePerson)
   return plan
 }

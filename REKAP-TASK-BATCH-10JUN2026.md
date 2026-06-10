@@ -10,6 +10,13 @@
 > - **P5 (security functions):** `resolveTokensByTarget` — guard fan-out `wa` minimal 8 char (`String(wa).trim().length >= 8`) di branch `type:'santri'` & `type:'wa'`, cegah cross-family notif leak saat `wa` kosong/duplikat.
 > - Verify: `npx vite build` exit 0 (built in ~21s, tanpa error). **TANPA bump versionCode.** (T19/T20/T21 sudah commit `413cbf7`; PENDING kyai = deploy/rebuild.)
 >
+> ### ✅ AUDIT MENU OVERHAUL (10 Jun 2026, Batch 8) — commit menyusul
+> Permintaan kyai: migrasi duplikat lebih pintar, hapus fitur audit tak terpakai, tambah fitur audit pro. Di `MasterDataView.vue` tab **Audit Data**:
+> - **HAPUS 3 migrasi satu-kali yang sudah selesai** (panel + script + file util): Migrasi v.21.10 (`lembaga_refs` — dormant, lihat KB §10), Migrasi TK v.21.70, Normalisasi Lembaga v.88. File dihapus: `utils/v21_10_migration.js`, `utils/v21_70_tk_migration.js`, `utils/v88_lembaga_normalize.js` (git tetap simpan history). Tidak ada importer lain (sudah dicek).
+> - **Migrate duplikat lebih pintar** (`utils/v100_dedupe.js`): `canonPhone()` normalisasi WA Indonesia (`0`/`62`/`+62` → kanonik `62XXXX`) dipakai di `eqPhone`/`diffPhone` + kunci grup WA guru → duplikat WA beda-prefix kini ketangkap. `norm()` collapse spasi ganda (nama). Auto-merge tetap konservatif (identitas unik + nama-sama bersinyal, guard konflik).
+> - **Fitur audit PRO baru "Kesehatan Data"** (composable baru `composables/useDataAudit.js`, report-only): integritas santri (tanpa NIS/lembaga/guru/WA, WA invalid, **rujuk guru tak terdaftar/yatim**, field guru sampah true/false), guru (tanpa jabatan/lembaga, WA invalid), lembaga (tanpa kelas/santri) — tiap temuan ada jumlah + detail expand & severity (danger/warn/info). Plus **Kandidat Nama Mirip (fuzzy)**: nama yang terlihat sama tapi beda tulisan (gelar/spasi/ejaan) untuk review manual (tidak auto-merge).
+> - Verify: `_run_vite.cmd` exit 0. TANPA bump versionCode.
+>
 > ### 🆕 TASK BARU KYAI (10 Jun 2026)
 > - **T21 → Batch 7:** Dasbor "Statistik Lembaga" bisa diklik → diarahkan ke **halaman data kelas** (guru + santri per kelas). ✅ SELESAI.
 > - **T22 → Batch 8 (akhir):** Cek beberapa halaman ada tombol **hilang di Electron** (mis. Buku Induk: di web ada input manual dll, di Electron hilang). **Pindahkan tombol-tombol ke ribbon.** Cek halaman lain mungkin ada juga. ⏳ BELUM (Batch 8).

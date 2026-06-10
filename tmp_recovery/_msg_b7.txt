@@ -1,0 +1,9 @@
+feat(v.100) Batch7: login Electron (scrollbar T19, Google popup T20) + statistik lembaga klik (T21)
+
+- T21: kartu "Statistik Lembaga" di StatistikView -> klik buka halaman data kelas (guru+santri per kelas). View baru StatistikLembagaDetailView.vue + route /statistik/lembaga/:nama (noSantri). Santri klik -> /profil/santri/:id. Inline detail lama (detailLembaga/detailKelasRows) dihapus, logika diport.
+- T19: LoginView root +class login-page + <style> :has(.login-page) scrollbar tipis modern (khusus route login; mobile sudah disembunyikan).
+- T20: electron/src/index.ts tambah setWindowOpenHandler -> izinkan popup OAuth (firebaseapp.com/web.app/accounts.google.com/apis.google.com), URL lain -> shell.openExternal. Akar: default Electron deny window.open -> signInWithPopup gagal. PERLU VERIFIKASI DEVICE (popup https vs opener file:// bisa kena batasan postMessage).
+
+Verify: _run_vite.cmd exit 0, tsc electron exit 0. Tanpa bump versionCode (ship di Batch 8).
+
+Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>

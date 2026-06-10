@@ -19,12 +19,10 @@ import SantriView from './SantriView.vue'
 import { useLembaga } from '@/composables/useLembaga'
 import { useSantri } from '@/composables/useSantri'
 import { useConfirm } from '@/composables/useConfirm'
-// v.21.10.0526: Migration utility — lembaga_refs + group hierarchy
-import { scanV21_10Migration, runV21_10Migration } from '@/utils/v21_10_migration'
-// v.21.70.0526: TK refactor migration (2 lembaga TK A/B → 1 lembaga TK + jenjang)
-import { scanV21_70TkMigration, runV21_70TkMigration } from '@/utils/v21_70_tk_migration'
-import { scanLembagaNormalize, runLembagaNormalize } from '@/utils/v88_lembaga_normalize'
+// v.100: migrasi gabung duplikat (dedupe). Migrasi lama satu-kali (v.21.10/v.21.70/v.88) dihapus — sudah selesai.
 import { scanDedupe, runDedupe } from '@/utils/v100_dedupe'
+// v.100 Batch8: audit kesehatan data (integritas + kandidat duplikat fuzzy)
+import { useDataAudit } from '@/composables/useDataAudit'
 import { useGuru } from '@/composables/useGuru'
 
 const route = useRoute()
@@ -97,172 +95,19 @@ const totalDupGroups = computed(() => dupKategori.value.reduce((n, k) => n + k.g
 const showDupDetail = ref(false)
 const confirmDlg = useConfirm()
 
-// v.21.10.0526: V21.10 Migration state (lembaga_refs + group hierarchy)
-const v21MigScan = ref(null)
-const v21MigRunning = ref(false)
-const v21MigProgress = ref({ phase: '', i: 0, total: 0 })
-const v21MigResult = ref(null)
-
-function v21MigDryRun() {
-  v21MigScan.value = scanV21_10Migration({
-    santriList: santriRawForMigration.value || [],
-    guruList: guruRawForMigration.value || [],
-    lembagaList: lembagaRaw.value || []
-  })
-  v21MigResult.value = null
-}
-
-async function v21MigExecute() {
-  if (!v21MigScan.value || v21MigScan.value.totalDocs === 0) {
-    toast.warning('Jalankan Dry-Run dulu, atau tidak ada data untuk migrasi.')
-    return
-  }
-  const ok = await confirmDlg({
-    title: 'Migrasi v.21.10 Schema?',
-    message: `${v21MigScan.value.santri.toMigrate} santri + ${v21MigScan.value.guru.toMigrate} guru + ${v21MigScan.value.lembaga.toMigrate} lembaga akan di-update dgn lembaga_refs[] + group/kepala_jabatan. Idempotent (skip kalau sudah punya). Field _migrated_v21_10_at akan ditambahkan.`,
-    confirmText: 'Lanjutkan',
-    danger: true
-  })
-  if (!ok) return
-  v21MigRunning.value = true
-  v21MigProgress.value = { phase: 'start', i: 0, total: v21MigScan.value.totalDocs }
-  try {
-    const result = await runV21_10Migration({
-      santriList: santriRawForMigration.value || [],
-      guruList: guruRawForMigration.value || [],
-      lembagaList: lembagaRaw.value || [],
-      onProgress: (p) => {
-        v21MigProgress.value = p
-      }
-    })
-    v21MigResult.value = result
-    const totalOk = result.santri.ok + result.guru.ok + result.lembaga.ok
-    const totalFail = result.santri.fail + result.guru.fail + result.lembaga.fail
-    if (totalFail > 0) {
-      toast.warning(`Migrasi selesai: ${totalOk} OK, ${totalFail} gagal. Cek errors.`)
-    } else {
-      toast.success(`Migrasi v.21.10 sukses: ${totalOk} dokumen ter-update`)
-    }
-    v21MigScan.value = scanV21_10Migration({
-      santriList: santriRawForMigration.value || [],
-      guruList: guruRawForMigration.value || [],
-      lembagaList: lembagaRaw.value || []
-    })
-  } catch (e) {
-    toast.error('Gagal migrasi: ' + (e.message || e))
-  } finally {
-    v21MigRunning.value = false
-  }
-}
-// v.21.70.0526: TK Migration state (2 lembaga TK A/B → 1 lembaga TK)
-const v21_70MigScan = ref(null)
-const v21_70MigRunning = ref(false)
-const v21_70MigProgress = ref({ phase: '', current: 0, total: 0, msg: '' })
-const v21_70MigResult = ref(null)
-
-function v21_70MigDryRun() {
-  v21_70MigScan.value = scanV21_70TkMigration({
-    santriList: santriRawForMigration.value || [],
-    guruList: guruRawForMigration.value || [],
-    lembagaList: lembagaRaw.value || []
-  })
-  v21_70MigResult.value = null
-}
-
-async function v21_70MigExecute() {
-  if (!v21_70MigScan.value) {
-    toast.warning('Jalankan Dry-Run dulu')
-    return
-  }
-  const s = v21_70MigScan.value
-  if (
-    s.santriCount === 0 &&
-    s.guruCount === 0 &&
-    s.legacyLembagaDocs.length === 0 &&
-    !s.needCreateCanonical
-  ) {
-    toast.info('Tidak ada data untuk dimigrasi (sudah migrated atau tidak ada TK A/B legacy)')
-    return
-  }
-  const ok = await confirmDlg({
-    title: 'Migrasi TK v.21.70?',
-    message: `${s.santriCount} santri + ${s.guruCount} guru akan di-update: lembaga "TK A"/"TK B" → "TK" + kelas "TK A"/"TK B" sebagai jenjang. Legacy lembaga docs (${s.legacyLembagaDocs.join(', ') || 'none'}) akan dihapus. Idempotent. Field _migrated_v21_70_tk akan ditambahkan.`,
-    confirmText: 'Lanjutkan',
-    danger: true
-  })
-  if (!ok) return
-  v21_70MigRunning.value = true
-  v21_70MigProgress.value = {
-    phase: 'start',
-    current: 0,
-    total: s.santriCount + s.guruCount + 1,
-    msg: ''
-  }
-  try {
-    const result = await runV21_70TkMigration({
-      santriList: santriRawForMigration.value || [],
-      guruList: guruRawForMigration.value || [],
-      lembagaList: lembagaRaw.value || [],
-      onProgress: (p) => {
-        v21_70MigProgress.value = p
-      }
-    })
-    v21_70MigResult.value = result
-    toast.success(
-      `Migrasi TK v.21.70 sukses: ${result.santriMigrated} santri + ${result.guruMigrated} guru ter-update`
-    )
-    v21_70MigScan.value = scanV21_70TkMigration({
-      santriList: santriRawForMigration.value || [],
-      guruList: guruRawForMigration.value || [],
-      lembagaList: lembagaRaw.value || []
-    })
-  } catch (e) {
-    toast.error('Gagal migrasi: ' + (e.message || e))
-  } finally {
-    v21_70MigRunning.value = false
-  }
-}
-
-// v.21.24.0526: Drop "Jabatan" tab — kyai req, pindah ke Kelola Lembaga (jabatan per-lembaga)
-// v.88.0526: Normalisasi lembaga santri (TPQ+shift->Pagi/Sore, P3H->PPPH, PRA PTPT->Pra PTPT)
-const lmbNormScan = ref(null)
-const lmbNormRunning = ref(false)
-const lmbNormProgress = ref({ i: 0, total: 0 })
-const lmbNormResult = ref(null)
-
-function lmbNormDryRun() {
-  lmbNormScan.value = scanLembagaNormalize(santriRawForMigration.value || [])
-  lmbNormResult.value = null
-}
-
-async function lmbNormExecute() {
-  if (!lmbNormScan.value || lmbNormScan.value.total === 0) {
-    toast.warning('Jalankan Dry-Run dulu, atau tidak ada data untuk migrasi.')
-    return
-  }
-  const byT = Object.entries(lmbNormScan.value.byTarget).map(([k, v]) => `${v} -> ${k}`).join(', ')
-  const ok = await confirmDlg({
-    title: 'Normalisasi Lembaga Santri?',
-    message: `${lmbNormScan.value.total} santri di-update: ${byT}. ${lmbNormScan.value.tpqNoShift} santri "TPQ" TANPA shift TIDAK diubah (assign manual). Idempotent (_migrated_lembaga_v88_at).`,
-    confirmText: 'Lanjutkan',
-    danger: true
-  })
-  if (!ok) return
-  lmbNormRunning.value = true
-  lmbNormProgress.value = { i: 0, total: lmbNormScan.value.total }
-  try {
-    const result = await runLembagaNormalize(santriRawForMigration.value || [], {
-      onProgress: (i, total) => { lmbNormProgress.value = { i, total } }
-    })
-    lmbNormResult.value = result
-    if (result.fail > 0) toast.warning(`Selesai: ${result.ok} OK, ${result.fail} gagal`)
-    else toast.success(`Normalisasi sukses: ${result.ok} santri ter-update`)
-    lmbNormScan.value = scanLembagaNormalize(santriRawForMigration.value || [])
-  } catch (e) {
-    toast.error('Gagal migrasi: ' + (e.message || e))
-  } finally {
-    lmbNormRunning.value = false
-  }
+// v.100 Batch8: Kesehatan Data (data-health) — integritas + kandidat duplikat fuzzy (report-only)
+const { auditGroups, fuzzyDup, totalIssues, totalFuzzy } = useDataAudit(
+  santriRawForMigration,
+  guruRawForMigration,
+  lembagaRaw
+)
+const healthOpen = reactive({})
+function toggleHealth(key) { healthOpen[key] = !healthOpen[key] }
+const showFuzzy = ref(false)
+const HEALTH_SEV = {
+  danger: { dot: 'bg-rose-500', badge: 'bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-200' },
+  warn: { dot: 'bg-amber-500', badge: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200' },
+  info: { dot: 'bg-cyan-500', badge: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/40 dark:text-cyan-200' }
 }
 
 // v.100: Migrate (Gabung Duplikat) — gabung duplikat identitas (NIS/NISN santri, WA guru).
@@ -1173,358 +1018,54 @@ async function simpanPengaturanRekap() {
           </div>
         </div>
       </div>
-      <!-- v.21.10.0526: Tools Migrasi v.21.10 Schema (lembaga_refs + group hierarchy) -->
-      <div
-        class="bg-white dark:bg-slate-800 rounded-2xl p-5 md:p-6 border-2 border-teal-300 dark:border-teal-700 shadow-sm"
-      >
+      <!-- v.100 Batch8: Kesehatan Data (pro audit) — integritas + kandidat duplikat fuzzy -->
+      <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 md:p-6 border-2 border-cyan-300 dark:border-cyan-700 shadow-sm">
         <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
           <div>
-            <p class="text-sm font-black text-teal-700 dark:text-teal-300">
-              <i class="fas fa-layer-group mr-1"></i>Migrasi v.21.10 Schema
-            </p>
-            <p class="text-xs text-slate-600 dark:text-slate-300 mt-1">
-              Derive <code class="bg-slate-100 px-1 rounded">lembaga_refs[]</code> untuk santri &
-              guru, + <code class="bg-slate-100 px-1 rounded">group</code> &
-              <code class="bg-slate-100 px-1 rounded">kepala_jabatan</code> per lembaga. Idempotent
-              (skip kalau sudah ada).
-            </p>
+            <p class="text-sm font-black text-cyan-700 dark:text-cyan-300"><i class="fas fa-heart-pulse mr-1"></i>Kesehatan Data</p>
+            <p class="text-xs text-slate-600 dark:text-slate-300 mt-1">Audit integritas data santri / guru / lembaga (read-only). Klik baris bermasalah untuk lihat detail.</p>
           </div>
-          <span
-            class="text-[10px] bg-teal-100 text-teal-800 font-bold px-2 py-0.5 rounded uppercase"
-            >v.21.10</span
-          >
+          <span class="text-[10px] font-bold px-2 py-0.5 rounded uppercase" :class="totalIssues > 0 ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'">{{ totalIssues }} temuan</span>
         </div>
-        <div class="flex flex-wrap gap-2">
-          <button
-            @click="v21MigDryRun"
-            :disabled="v21MigRunning"
-            class="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-black rounded-lg disabled:opacity-50"
-          >
-            <i class="fas fa-search mr-1"></i>Dry-Run (Scan)
-          </button>
-          <button
-            @click="v21MigExecute"
-            :disabled="v21MigRunning || !v21MigScan || v21MigScan.totalDocs === 0"
-            class="px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white text-xs font-black rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <i class="fas fa-database mr-1"></i>Execute Migrasi
-          </button>
-        </div>
-        <div v-if="v21MigRunning" class="mt-3 text-xs font-bold text-teal-700">
-          <i class="fas fa-spinner fa-spin mr-1"></i>{{ v21MigProgress.phase || 'Migrasi' }}...
-          {{ v21MigProgress.i }}/{{ v21MigProgress.total }}
-        </div>
-        <div v-if="v21MigScan" class="mt-3 bg-slate-50 dark:bg-slate-900 rounded-lg p-3 text-xs">
-          <p class="font-black text-slate-800 dark:text-white mb-2">
-            <i class="fas fa-clipboard-list mr-1"></i>Hasil Scan:
-          </p>
-          <div class="grid grid-cols-3 gap-2">
-            <div
-              class="bg-white dark:bg-slate-800 rounded p-2 border border-slate-200 dark:border-slate-700"
-            >
-              <p class="text-[10px] text-slate-500 uppercase font-bold">Santri</p>
-              <p class="text-xl font-black text-teal-700">
-                {{ v21MigScan.santri.toMigrate }}/{{ v21MigScan.santri.total }}
-              </p>
-              <p class="text-[9px] text-slate-400">skip: {{ v21MigScan.santri.skipped }}</p>
+        <div class="space-y-1.5">
+          <div v-for="g in auditGroups" :key="g.key" class="rounded-lg border" :class="g.items.length ? 'border-slate-200 dark:border-slate-700' : 'border-emerald-100 dark:border-emerald-800/40'">
+            <button type="button" @click="g.items.length && toggleHealth(g.key)" :class="['w-full flex items-center gap-2 px-3 py-2 text-left', g.items.length ? 'cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900/30' : 'cursor-default']">
+              <span v-if="g.items.length" class="w-2 h-2 rounded-full flex-shrink-0" :class="HEALTH_SEV[g.sev].dot"></span>
+              <i v-else class="fas fa-circle-check text-emerald-500 text-xs flex-shrink-0"></i>
+              <i :class="['fas', g.icon, 'text-slate-400 text-xs flex-shrink-0 w-4 text-center']"></i>
+              <span class="flex-1 text-xs font-bold text-slate-700 dark:text-slate-200">{{ g.label }}</span>
+              <span class="text-[10px] font-black px-2 py-0.5 rounded" :class="g.items.length ? HEALTH_SEV[g.sev].badge : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200'">{{ g.items.length }}</span>
+              <i v-if="g.items.length" :class="['fas text-[10px] text-slate-400', healthOpen[g.key] ? 'fa-chevron-up' : 'fa-chevron-down']"></i>
+            </button>
+            <div v-if="g.items.length && healthOpen[g.key]" class="px-3 pb-2 border-t border-slate-100 dark:border-slate-700/50 pt-1.5 max-h-60 overflow-y-auto">
+              <ul class="space-y-0.5">
+                <li v-for="it in g.items" :key="it.id" class="text-[11px] text-slate-600 dark:text-slate-300 flex items-center gap-2">
+                  <span class="font-bold text-slate-800 dark:text-white truncate">{{ it.nama }}</span>
+                  <span class="text-slate-400 truncate">· {{ it.detail }}</span>
+                </li>
+              </ul>
             </div>
-            <div
-              class="bg-white dark:bg-slate-800 rounded p-2 border border-slate-200 dark:border-slate-700"
-            >
-              <p class="text-[10px] text-slate-500 uppercase font-bold">Guru</p>
-              <p class="text-xl font-black text-cyan-700">
-                {{ v21MigScan.guru.toMigrate }}/{{ v21MigScan.guru.total }}
-              </p>
-              <p class="text-[9px] text-slate-400">skip: {{ v21MigScan.guru.skipped }}</p>
-            </div>
-            <div
-              class="bg-white dark:bg-slate-800 rounded p-2 border border-slate-200 dark:border-slate-700"
-            >
-              <p class="text-[10px] text-slate-500 uppercase font-bold">Lembaga</p>
-              <p class="text-xl font-black text-emerald-700">
-                {{ v21MigScan.lembaga.toMigrate }}/{{ v21MigScan.lembaga.total }}
-              </p>
-              <p class="text-[9px] text-slate-400">add group/kepala</p>
-            </div>
-          </div>
-          <div v-if="v21MigScan.santri.examples.length > 0" class="mt-3">
-            <p class="text-[10px] font-bold text-slate-600 uppercase">
-              Santri sample ({{ v21MigScan.santri.examples.length }}):
-            </p>
-            <ul class="mt-1 space-y-1">
-              <li
-                v-for="ex in v21MigScan.santri.examples"
-                :key="'s-' + ex.id"
-                class="font-mono text-[10px] text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 rounded px-2 py-1 border border-slate-200 dark:border-slate-700"
-              >
-                <span class="font-bold">{{ ex.nama }}</span
-                >: <span class="text-emerald-600">{{ ex.refs.length }} refs</span> →
-                <span class="text-slate-500">{{ ex.refs.map((r) => r.lembaga).join(' + ') }}</span>
-              </li>
-            </ul>
-          </div>
-          <div v-if="v21MigScan.guru.examples.length > 0" class="mt-2">
-            <p class="text-[10px] font-bold text-slate-600 uppercase">
-              Guru sample ({{ v21MigScan.guru.examples.length }}):
-            </p>
-            <ul class="mt-1 space-y-1">
-              <li
-                v-for="ex in v21MigScan.guru.examples"
-                :key="'g-' + ex.id"
-                class="font-mono text-[10px] text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 rounded px-2 py-1 border border-slate-200 dark:border-slate-700"
-              >
-                <span class="font-bold">{{ ex.nama }}</span
-                >: <span class="text-emerald-600">{{ ex.refs.length }} refs</span> →
-                <span class="text-slate-500">{{
-                  ex.refs
-                    .map((r) => r.lembaga + ' (' + (r.jabatan_di_sini || '-') + ')')
-                    .join(' + ')
-                }}</span>
-              </li>
-            </ul>
           </div>
         </div>
-        <div
-          v-if="v21MigResult"
-          class="mt-3 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-700 rounded-lg p-3 text-xs"
-        >
-          <p class="font-black text-emerald-800 dark:text-emerald-200">
-            <i class="fas fa-check-circle mr-1"></i>Migrasi v.21.10 selesai
-          </p>
-          <div class="grid grid-cols-3 gap-2 mt-2">
-            <div class="bg-white rounded p-2">
-              <p class="text-[10px] text-slate-500 uppercase font-bold">Santri</p>
-              <p class="font-black text-emerald-700">
-                OK: {{ v21MigResult.santri.ok }}
-                <span class="text-rose-600 text-[10px]">FAIL: {{ v21MigResult.santri.fail }}</span>
-              </p>
-            </div>
-            <div class="bg-white rounded p-2">
-              <p class="text-[10px] text-slate-500 uppercase font-bold">Guru</p>
-              <p class="font-black text-emerald-700">
-                OK: {{ v21MigResult.guru.ok }}
-                <span class="text-rose-600 text-[10px]">FAIL: {{ v21MigResult.guru.fail }}</span>
-              </p>
-            </div>
-            <div class="bg-white rounded p-2">
-              <p class="text-[10px] text-slate-500 uppercase font-bold">Lembaga</p>
-              <p class="font-black text-emerald-700">
-                OK: {{ v21MigResult.lembaga.ok }}
-                <span class="text-rose-600 text-[10px]">FAIL: {{ v21MigResult.lembaga.fail }}</span>
-              </p>
-            </div>
-          </div>
-          <div
-            v-if="v21MigResult.errors.length > 0"
-            class="mt-2 bg-rose-50 border border-rose-200 rounded p-2"
-          >
-            <p class="text-[10px] font-bold text-rose-800">
-              Errors ({{ v21MigResult.errors.length }}):
-            </p>
-            <ul class="mt-1 space-y-0.5 max-h-32 overflow-y-auto">
-              <li
-                v-for="(e, i) in v21MigResult.errors.slice(0, 10)"
-                :key="i"
-                class="text-[9px] font-mono text-rose-700"
-              >
-                {{ e }}
-              </li>
-            </ul>
-          </div>
-        </div>
-      </div>
 
-      <!-- v.21.70.0526: Tools Migrasi TK Refactor (2 lembaga TK A/B → 1 lembaga TK) -->
-      <div
-        class="bg-white dark:bg-slate-800 rounded-2xl p-5 md:p-6 border-2 border-cyan-300 dark:border-cyan-700 shadow-sm"
-      >
-        <div class="flex items-center justify-between mb-3">
-          <div>
-            <p class="text-sm font-black text-cyan-700 dark:text-cyan-300">
-              <i class="fas fa-school mr-1"></i>Migrasi TK Refactor
+        <!-- Kandidat duplikat fuzzy (nama mirip) -->
+        <div class="mt-4 pt-3 border-t border-slate-200 dark:border-slate-700">
+          <div class="flex items-center justify-between gap-2 flex-wrap">
+            <p class="text-xs font-black text-slate-700 dark:text-slate-200">
+              <i class="fas fa-clone text-amber-500 mr-1"></i>Kandidat Nama Mirip
+              <span class="text-[10px] font-bold px-1.5 py-0.5 rounded ml-1" :class="totalFuzzy ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-700'">{{ totalFuzzy }}</span>
             </p>
-            <p class="text-xs text-slate-600 dark:text-slate-300 mt-1">
-              Gabung lembaga <b>TK A</b> + <b>TK B</b> jadi 1 lembaga <b>TK</b> dengan
-              <code class="bg-slate-100 px-1 rounded">kelas: ['TK A', 'TK B']</code> sebagai jenjang
-              (analog Kelas I-VI di SDI). Idempotent.
-            </p>
+            <button v-if="totalFuzzy" @click="showFuzzy = !showFuzzy" class="text-[11px] font-bold text-amber-700 dark:text-amber-300 hover:underline">{{ showFuzzy ? 'Sembunyikan' : 'Lihat' }}</button>
           </div>
-          <span
-            class="text-[10px] bg-cyan-100 text-cyan-800 font-bold px-2 py-0.5 rounded uppercase"
-            >v.21.70</span
-          >
-        </div>
-        <div class="flex flex-wrap gap-2">
-          <button
-            @click="v21_70MigDryRun"
-            :disabled="v21_70MigRunning"
-            class="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-black rounded-lg disabled:opacity-50"
-          >
-            <i class="fas fa-search mr-1"></i>Dry-Run (Scan)
-          </button>
-          <button
-            @click="v21_70MigExecute"
-            :disabled="v21_70MigRunning || !v21_70MigScan"
-            class="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-black rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <i class="fas fa-database mr-1"></i>Execute Migrasi
-          </button>
-        </div>
-        <div v-if="v21_70MigRunning" class="mt-3 text-xs font-bold text-cyan-700">
-          <i class="fas fa-spinner fa-spin mr-1"></i>{{ v21_70MigProgress.phase }}...
-          {{ v21_70MigProgress.current }}/{{ v21_70MigProgress.total }}
-        </div>
-        <div v-if="v21_70MigScan" class="mt-3 bg-slate-50 dark:bg-slate-900 rounded-lg p-3 text-xs">
-          <p class="font-black text-slate-800 dark:text-white mb-2">
-            <i class="fas fa-clipboard-list mr-1"></i>Hasil Scan:
-          </p>
-          <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
-            <div
-              class="bg-white dark:bg-slate-800 rounded p-2 border border-slate-200 dark:border-slate-700"
-            >
-              <p class="text-[10px] text-slate-500 uppercase font-bold">Santri TK A/B</p>
-              <p class="text-xl font-black text-cyan-700">{{ v21_70MigScan.santriCount }}</p>
-            </div>
-            <div
-              class="bg-white dark:bg-slate-800 rounded p-2 border border-slate-200 dark:border-slate-700"
-            >
-              <p class="text-[10px] text-slate-500 uppercase font-bold">Guru TK A/B</p>
-              <p class="text-xl font-black text-cyan-700">{{ v21_70MigScan.guruCount }}</p>
-            </div>
-            <div
-              class="bg-white dark:bg-slate-800 rounded p-2 border border-slate-200 dark:border-slate-700"
-            >
-              <p class="text-[10px] text-slate-500 uppercase font-bold">Legacy Docs</p>
-              <p class="text-xl font-black text-rose-700">
-                {{ v21_70MigScan.legacyLembagaDocs.length }}
-              </p>
-              <p class="text-[9px] text-slate-400">
-                {{ v21_70MigScan.legacyLembagaDocs.join(', ') || '-' }}
-              </p>
-            </div>
-            <div
-              class="bg-white dark:bg-slate-800 rounded p-2 border border-slate-200 dark:border-slate-700"
-            >
-              <p class="text-[10px] text-slate-500 uppercase font-bold">Create Canonical</p>
-              <p class="text-xl font-black text-emerald-700">
-                {{ v21_70MigScan.needCreateCanonical ? 'YA' : 'tidak' }}
-              </p>
+          <p class="text-[11px] text-slate-500 mt-1">Nama yang terlihat sama tapi ditulis beda (gelar / spasi / ejaan). Migrate TIDAK menggabung otomatis — periksa &amp; rapikan manual via Edit/Hapus.</p>
+          <div v-if="showFuzzy" class="mt-2 space-y-1.5">
+            <div v-for="(grp, gi) in fuzzyDup" :key="gi" class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-2 text-[11px]">
+              <p class="font-bold text-amber-700 dark:text-amber-300 uppercase text-[9px] mb-0.5">{{ grp.kind }}</p>
+              <ul class="space-y-0.5">
+                <li v-for="it in grp.items" :key="it.id" class="text-slate-700 dark:text-slate-200"><span class="font-bold">{{ it.nama }}</span> <span class="text-slate-400">· {{ it.detail }}</span></li>
+              </ul>
             </div>
           </div>
-          <div
-            v-if="v21_70MigScan.santriPreview && v21_70MigScan.santriPreview.length > 0"
-            class="mt-3"
-          >
-            <p class="text-[10px] font-bold text-slate-600 uppercase">
-              Santri sample ({{ v21_70MigScan.santriPreview.length }}):
-            </p>
-            <ul class="mt-1 space-y-1">
-              <li
-                v-for="(ex, i) in v21_70MigScan.santriPreview"
-                :key="'tk-s-' + i"
-                class="font-mono text-[10px] text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 rounded px-2 py-1 border border-slate-200 dark:border-slate-700"
-              >
-                <span class="font-bold">{{ ex.before.nama }}</span
-                >:
-                <span class="text-rose-600">{{ ex.before.lembaga }}</span>
-                →
-                <span class="text-emerald-600"
-                  >{{ ex.after.lembaga }} (kelas: {{ ex.after.kelas }})</span
-                >
-              </li>
-            </ul>
-          </div>
-        </div>
-        <div
-          v-if="v21_70MigResult"
-          class="mt-3 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-700 rounded-lg p-3 text-xs"
-        >
-          <p class="font-black text-emerald-800 dark:text-emerald-200">
-            <i class="fas fa-check-circle mr-1"></i>Migrasi TK v.21.70 selesai
-          </p>
-          <div class="grid grid-cols-2 gap-2 mt-2">
-            <div class="bg-white rounded p-2">
-              <p class="text-[10px] text-slate-500 uppercase font-bold">Santri Migrated</p>
-              <p class="font-black text-emerald-700">{{ v21_70MigResult.santriMigrated }}</p>
-            </div>
-            <div class="bg-white rounded p-2">
-              <p class="text-[10px] text-slate-500 uppercase font-bold">Guru Migrated</p>
-              <p class="font-black text-emerald-700">{{ v21_70MigResult.guruMigrated }}</p>
-            </div>
-          </div>
-          <details v-if="v21_70MigResult.log && v21_70MigResult.log.length > 0" class="mt-2">
-            <summary class="text-[10px] cursor-pointer text-slate-600">
-              Log ({{ v21_70MigResult.log.length }})
-            </summary>
-            <ul class="mt-1 space-y-0.5 max-h-32 overflow-y-auto">
-              <li
-                v-for="(l, i) in v21_70MigResult.log"
-                :key="i"
-                class="text-[9px] font-mono text-slate-700"
-              >
-                {{ l }}
-              </li>
-            </ul>
-          </details>
-        </div>
-      </div>
-
-      <!-- v.88.0526: Normalisasi Lembaga Santri -->
-      <div
-        class="bg-white dark:bg-slate-800 rounded-2xl p-5 md:p-6 border-2 border-emerald-300 dark:border-emerald-700 shadow-sm"
-      >
-        <div class="flex items-center justify-between mb-3">
-          <div>
-            <p class="text-sm font-black text-emerald-700 dark:text-emerald-300">
-              <i class="fas fa-wand-magic-sparkles mr-1"></i>Normalisasi Lembaga Santri
-            </p>
-            <p class="text-xs text-slate-600 dark:text-slate-300 mt-1">
-              Samakan label lama ke canonical: <b>TPQ</b>+shift &rarr; <b>TPQ Pagi/Sore</b>,
-              <b>P3H</b> &rarr; <b>PPPH</b>, <b>PRA PTPT</b> &rarr; <b>Pra PTPT</b>.
-              Santri "TPQ" tanpa shift dilewati (assign manual). Idempotent.
-            </p>
-          </div>
-          <span class="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded uppercase">v.88</span>
-        </div>
-        <div class="flex flex-wrap gap-2">
-          <button
-            @click="lmbNormDryRun"
-            :disabled="lmbNormRunning"
-            class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black rounded-lg disabled:opacity-50"
-          >
-            <i class="fas fa-search mr-1"></i>Dry-Run (Scan)
-          </button>
-          <button
-            @click="lmbNormExecute"
-            :disabled="lmbNormRunning || !lmbNormScan || lmbNormScan.total === 0"
-            class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <i class="fas fa-database mr-1"></i>Execute Migrasi
-          </button>
-        </div>
-        <div v-if="lmbNormRunning" class="mt-3 text-xs font-bold text-emerald-700">
-          <i class="fas fa-spinner fa-spin mr-1"></i>{{ lmbNormProgress.i }}/{{ lmbNormProgress.total }}
-        </div>
-        <div v-if="lmbNormScan" class="mt-3 bg-slate-50 dark:bg-slate-900 rounded-lg p-3 text-xs">
-          <p class="font-black text-slate-800 dark:text-white mb-2">
-            <i class="fas fa-clipboard-list mr-1"></i>Scan: {{ lmbNormScan.total }} akan dimigrasi
-            <span v-if="lmbNormScan.tpqNoShift > 0" class="text-rose-600">&middot; {{ lmbNormScan.tpqNoShift }} TPQ tanpa shift (manual)</span>
-          </p>
-          <ul class="space-y-1">
-            <li
-              v-for="(ex, i) in lmbNormScan.examples"
-              :key="'ln-' + i"
-              class="font-mono text-[10px] text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 rounded px-2 py-1 border border-slate-200 dark:border-slate-700"
-            >
-              <span class="font-bold">{{ ex.nama }}</span>: <span class="text-rose-600">{{ ex.before }}</span> &rarr; <span class="text-emerald-600">{{ ex.after }}</span>
-            </li>
-          </ul>
-        </div>
-        <div
-          v-if="lmbNormResult"
-          class="mt-3 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 rounded-lg p-3 text-xs font-bold text-emerald-800 dark:text-emerald-200"
-        >
-          <i class="fas fa-check-circle mr-1"></i>Selesai: {{ lmbNormResult.ok }} OK, {{ lmbNormResult.fail }} gagal
         </div>
       </div>
 
