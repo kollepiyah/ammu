@@ -131,8 +131,8 @@
             <input v-model="form.wa" type="tel" required placeholder="08..." class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none" />
           </div>
           <div>
-            <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase">No. Syahadah Qiraati</label>
-            <input v-model="form.no_ekgq" type="text" placeholder="Opsional" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none" />
+            <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase">NIG (Nomor Induk Guru)</label>
+            <input v-model="form.no_nig" type="text" placeholder="Opsional" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none" />
           </div>
           <div>
             <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase">No. Rekening BMT</label>

@@ -2324,12 +2324,12 @@ function findGuruByName(nama) {
   )
 }
 
-// EKGQ fallback chain: nrg -> ekgq -> no_ekgq -> nip. v.95.0626: pakai guru kelas sesuai
-//   kategori (Diniyah=guru_sekolah; Qiraati=guru/pagi/sore) supaya kode cocok dengan namanya.
+// NIG fallback chain (v.100 Batch11 EKGQ→NIG): nig -> nrg -> ekgq -> no_ekgq -> nip. v.95.0626:
+//   pakai guru kelas sesuai kategori (Diniyah=guru_sekolah; Qiraati=guru/pagi/sore) supaya kode cocok namanya.
 const ekgqGuru = computed(() => {
   for (const g of guruKelasNames(santriAktif.value)) {
     const obj = findGuruByName(g)
-    const code = obj?.nrg || obj?.ekgq || obj?.no_ekgq || obj?.nip || ''
+    const code = obj?.nig || obj?.nrg || obj?.ekgq || obj?.no_ekgq || obj?.nip || ''
     if (code) return code
   }
   return ''
@@ -2339,7 +2339,7 @@ const ekgqKepala = computed(() => {
   const nk = namaKepala.value
   if (!nk) return ''
   const obj = findGuruByName(nk)
-  return obj?.nrg || obj?.ekgq || obj?.no_ekgq || obj?.nip || ''
+  return obj?.nig || obj?.nrg || obj?.ekgq || obj?.no_ekgq || obj?.nip || ''
 })
 
 // ===== Navigation actions =====

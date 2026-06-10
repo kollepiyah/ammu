@@ -215,17 +215,17 @@
             </label>
           </div>
 
-          <!-- EKGQ -->
+          <!-- NIG (Nomor Induk Guru) — dulu EKGQ -->
           <div v-else-if="activeModal === 'ekgq'">
-            <h3 class="text-lg font-black mb-3">No. Syahadah Qiraati (EKGQ)</h3>
+            <h3 class="text-lg font-black mb-3">NIG (Nomor Induk Guru)</h3>
             <input
               v-model="ekgqState.value"
               type="text"
               class="w-full px-3 py-2 border border-[var(--border-default)] rounded-lg text-sm"
-              placeholder="EKGQ-2023-001"
+              placeholder="Nomor Induk Guru"
             />
             <p class="text-[10px] text-[var(--text-secondary)] italic mt-2">
-              Nomor syahadah resmi dari Pusat Qiraati
+              Nomor Induk Guru
             </p>
           </div>
 
@@ -368,8 +368,8 @@ const items = computed(() => {
       id: 'ekgq',
       icon: 'fa-id-card',
       color: 'cyan',
-      title: 'No. Syahadah Qiraati',
-      desc: props.entity?.ekgq || props.entity?.no_syahadah || 'Belum diisi',
+      title: 'NIG (Nomor Induk Guru)',
+      desc: props.entity?.nig || props.entity?.ekgq || props.entity?.no_syahadah || 'Belum diisi',
       roles: ['guru']
     },
     {
@@ -397,7 +397,7 @@ function openModal(id) {
   activeModal.value = id
   if (id === 'username') usernameState.value.value = props.entity?.username || ''
   if (id === 'wa' || id === 'wa_wali') waState.value.value = props.entity?.wa || ''
-  if (id === 'ekgq') ekgqState.value.value = props.entity?.ekgq || props.entity?.no_syahadah || ''
+  if (id === 'ekgq') ekgqState.value.value = props.entity?.nig || props.entity?.ekgq || props.entity?.no_syahadah || ''
   if (id === 'notif') notifState.value.enabled = props.entity?.notifEnabled !== false
 }
 
@@ -584,8 +584,8 @@ async function simpanNotif() {
 async function simpanEkgq() {
   busy.value = true
   try {
-    await setOne('guru', String(props.entityId), { ekgq: ekgqState.value.value.trim() })
-    toast.success('No. Syahadah Qiraati disimpan')
+    await setOne('guru', String(props.entityId), { nig: ekgqState.value.value.trim() })
+    toast.success('NIG (Nomor Induk Guru) disimpan')
     closeModal()
     emit('updated')
   } catch (e) {

@@ -483,10 +483,10 @@ async function drawSignBlocks(doc, y, santri, settings, lembaga, dbGuru = [], le
   // Guru
   const gName = guruKelasName || '________________'
   doc.text(gName, col2, nameY, { align: 'center' })
-  // EKGQ raw number saja, NO prefix label (kyai spec v.21.43)
-  // Fallback chain: ekgq → no_ekgq → no_syahadah → nip
+  // NIG raw number saja, NO prefix label (kyai spec v.21.43; v.100 Batch11 EKGQ→NIG)
+  // Fallback chain: nig → nrg → ekgq → no_ekgq → no_syahadah → nip
   const guruEkgq =
-    guruKelas?.nrg || guruKelas?.ekgq || guruKelas?.no_ekgq || guruKelas?.no_syahadah || guruKelas?.nip || ''
+    guruKelas?.nig || guruKelas?.nrg || guruKelas?.ekgq || guruKelas?.no_ekgq || guruKelas?.no_syahadah || guruKelas?.nip || ''
   if (guruEkgq) {
     doc.setFont(font, 'normal')
     doc.setFontSize(8)
@@ -499,7 +499,7 @@ async function drawSignBlocks(doc, y, santri, settings, lembaga, dbGuru = [], le
   const kName = kepalaNama || '________________'
   doc.text(kName, col3, nameY, { align: 'center' })
   const kepalaEkgq =
-    kepalaGuru?.nrg || kepalaGuru?.ekgq || kepalaGuru?.no_ekgq || kepalaGuru?.no_syahadah || kepalaGuru?.nip || ''
+    kepalaGuru?.nig || kepalaGuru?.nrg || kepalaGuru?.ekgq || kepalaGuru?.no_ekgq || kepalaGuru?.no_syahadah || kepalaGuru?.nip || ''
   if (kepalaEkgq) {
     doc.setFont(font, 'normal')
     doc.setFontSize(8)

@@ -540,7 +540,7 @@ const importPreviewGuru = ref(null)
 const _settingsExp = useSettingsStore()
 const _toastExp = _useToastGuruExp()
 
-// v.99: ekspor LENGKAP — selaras template & impor (+ jabatan tambahan, tanggal tugas, EKGQ, No Rek BMT, tipe/shift/role/fingerprint)
+// v.99: ekspor LENGKAP — selaras template & impor (+ jabatan tambahan, tanggal tugas, NIG, No Rek BMT, tipe/shift/role/fingerprint)
 function _buildExcelRows(list) {
   return list.map((g, i) => ({
     no: i + 1,
@@ -553,7 +553,7 @@ function _buildExcelRows(list) {
     lembaga: g.lembaga || '',
     lembaga_sekolah: g.lembaga_sekolah || '',
     tanggal_tugas: g.tanggal_tugas || '',
-    ekgq: g.ekgq || g.no_ekgq || '',
+    nig: g.nig || g.ekgq || g.no_ekgq || g.no_syahadah || '',
     rek_bmt: g.rek_bmt || '',
     pendidikan: g.pendidikan_terakhir || '',
     wa: g.wa || g.no_wa || '',
@@ -576,7 +576,7 @@ const _excelColumns = [
   { key: 'lembaga', header: 'Lembaga', width: 14 },
   { key: 'lembaga_sekolah', header: 'Lembaga Sekolah', width: 14 },
   { key: 'tanggal_tugas', header: 'Tanggal Tugas (DD/MM/YYYY)', width: 14 },
-  { key: 'ekgq', header: 'EKGQ', width: 12 },
+  { key: 'nig', header: 'NIG', width: 12 },
   { key: 'rek_bmt', header: 'No Rek BMT', width: 18 },
   { key: 'pendidikan', header: 'Pendidikan Terakhir', width: 16 },
   { key: 'wa', header: 'WA', width: 14 },
@@ -829,7 +829,7 @@ async function downloadTemplateGuru() {
     const headers = [
       'Nama Guru (Dengan Gelar)', 'NIK', 'L/P', 'Tgl Lahir (DD/MM/YYYY)',
       'Jabatan', 'Jabatan Tambahan', 'Lembaga', 'Lembaga Sekolah',
-      'Tanggal Tugas (DD/MM/YYYY)', 'EKGQ', 'No Rek BMT', 'Pendidikan Terakhir', 'WA', 'Status',
+      'Tanggal Tugas (DD/MM/YYYY)', 'NIG', 'No Rek BMT', 'Pendidikan Terakhir', 'WA', 'Status',
       'Tipe Pegawai (guru/pegawai/pegawai_guru)', 'Shift (pagi/sore/pagi_sore)',
       'ID Fingerprint', 'Role Sistem (user/admin/admin_keuangan/super_admin)',
       'Username (opsional)', 'Alamat'
@@ -923,7 +923,7 @@ async function onImportGuru(e) {
           lembaga,
           lembaga_sekolah: String(_pick(r, 'Lembaga Sekolah', 'lembaga_sekolah') || '').trim(),
           tanggal_tugas: _parseTglGuru(_pick(r, 'Tanggal Tugas (DD/MM/YYYY)', 'Tgl Tugas', 'Tanggal Tugas', 'tanggal_tugas')),
-          ekgq: String(_pick(r, 'No Syahadah', 'EKGQ', 'ekgq') || '').trim(),
+          nig: String(_pick(r, 'NIG', 'No Syahadah', 'EKGQ', 'ekgq', 'nig') || '').trim(),
           // v.99: No Rekening BMT (tujuan pencairan bisyaroh) + pendidikan + fingerprint
           rek_bmt: String(_pick(r, 'No Rek BMT', 'Rek BMT', 'rek_bmt') || '').trim(),
           pendidikan_terakhir: String(_pick(r, 'Pendidikan Terakhir', 'Pendidikan', 'pendidikan_terakhir') || '').trim(),

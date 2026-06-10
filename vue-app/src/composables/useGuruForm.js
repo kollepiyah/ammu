@@ -20,7 +20,7 @@ function emptyForm() {
     lembaga: '',
     lembaga_sekolah: '',
     tanggal_tugas: '',
-    no_ekgq: '',
+    no_nig: '',
     // v.97.0626: nomor rekening BMT guru (tujuan pencairan bisyaroh via BMT)
     rek_bmt: '',
     wa: '',
@@ -311,7 +311,8 @@ export function useGuruForm() {
         lembaga: g.lembaga || '',
         lembaga_sekolah: g.lembaga_sekolah || '',
         tanggal_tugas: g.tanggal_tugas || '',
-        no_ekgq: g.ekgq || '',
+        // v.100 Batch11: EKGQ → NIG (Nomor Induk Guru). Field baru `nig`, fallback baca data lama.
+        no_nig: g.nig || g.ekgq || g.no_ekgq || g.no_syahadah || '',
         wa: g.wa || '',
         status: g.status || 'Aktif',
         id_fingerprint: g.id_fingerprint || '',
@@ -374,7 +375,7 @@ export function useGuruForm() {
         lembaga: butuhLembaga.value ? f.lembaga : '',
         lembaga_sekolah: butuhLembaga.value ? f.lembaga_sekolah : '',
         tanggal_tugas: f.tanggal_tugas || '',
-        ekgq: f.no_ekgq || '',
+        nig: f.no_nig || '', // v.100 Batch11: Nomor Induk Guru (dulu ekgq)
         wa: normalizeWA(f.wa), // v.99: auto leading-0
         username: defaultUsername,
         status: f.status,
@@ -399,7 +400,8 @@ export function useGuruForm() {
             data.linked_email = old.linked_email || null
             if (old.ttd) data.ttd = old.ttd
             if (old.akses) data.akses = old.akses
-            if (old.no_syahadah && !data.ekgq) data.ekgq = old.no_syahadah
+            // v.100 Batch11: pertahankan NIG lama (fallback ekgq/no_syahadah) bila form kosong saat edit
+            if (!data.nig) data.nig = old.nig || old.ekgq || old.no_ekgq || old.no_syahadah || ''
           }
         } catch (e) {
           /* ignore */

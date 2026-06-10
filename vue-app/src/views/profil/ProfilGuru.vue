@@ -164,8 +164,8 @@
               <p class="font-black text-slate-800 dark:text-slate-100 mt-1">{{ roleSistem }}</p>
             </div>
             <div class="bg-[var(--bg-card)] p-3 rounded-xl border border-teal-100">
-              <p class="text-[10px] text-teal-600 font-bold uppercase">No. Syahadah</p>
-              <p class="font-black text-slate-800 dark:text-slate-100 mt-1">{{ guru?.ekgq || '-' }}</p>
+              <p class="text-[10px] text-teal-600 font-bold uppercase">NIG</p>
+              <p class="font-black text-slate-800 dark:text-slate-100 mt-1">{{ guru?.nig || guru?.ekgq || guru?.no_syahadah || '-' }}</p>
             </div>
             <div class="bg-[var(--bg-card)] p-3 rounded-xl border border-teal-100">
               <p class="text-[10px] text-teal-600 font-bold uppercase">ID Fingerprint</p>
