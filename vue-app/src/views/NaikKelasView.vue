@@ -315,6 +315,16 @@
           {{ exportingExcel ? 'Mengeksport…' : 'Excel' }}
         </button>
         <button
+          v-if="riwayatLembaga && riwayatList.length > 0 && gsheetConfigured()"
+          @click="kirimRiwayatGsheet"
+          :disabled="sendingGsheet"
+          aria-label="Kirim riwayat naik kelas ke Google Sheet"
+          class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold disabled:opacity-50 transition cursor-pointer"
+        >
+          <i :class="['fas', sendingGsheet ? 'fa-spinner fa-spin' : 'fa-table']"></i>
+          {{ sendingGsheet ? 'Mengirim…' : 'Google Sheet' }}
+        </button>
+        <button
           v-if="riwayatLembaga && riwayatList.length > 0"
           @click="exportRiwayatPdf"
           :disabled="exportingPdf"
@@ -1110,6 +1120,7 @@ import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
 import { useGuru } from '@/composables/useGuru'
 import { useExcel } from '@/composables/useExcel'
+import { useGoogleSheet } from '@/composables/useGoogleSheet' // v.100 Batch12: ekspor ke Google Sheet
 import { useLembaga, getPkbmSubTier } from '@/composables/useLembaga'
 import { sortSantri } from '@/utils/santriSort'
 import { LEMBAGA_KENAIKAN_LIST, LEMBAGA_KENAIKAN_SEKOLAH, getKartuKenaikanSchema, getKopKartuLembaga } from '@/utils/kenaikan'
@@ -1121,6 +1132,8 @@ const settingsStore = useSettingsStore()
 const toast = useToast()
 const { guruRaw } = useGuru()
 const { exportStyled } = useExcel()
+// v.100 Batch12: kirim Riwayat Kenaikan ke Google Sheet (hybrid, mirip PDF)
+const { isConfigured: gsheetConfigured, sendToSheet } = useGoogleSheet()
 const { lembagaRaw } = useLembaga()
 
 // ────────── ROLE FLAGS ──────────
@@ -1487,85 +1500,119 @@ function toggleExpand(id) {
   expanded.value = new Set(expanded.value)
 }
 
-// ────────── Excel export Riwayat ──────────
+// ────────── Export Riwayat (Excel + Google Sheet) ──────────
 const exportingExcel = ref(false)
+const sendingGsheet = ref(false)
+const _riwayatColumns = [
+  { header: 'Nama Santri', key: 'Nama', width: 28 },
+  { header: 'Lembaga', key: 'Lembaga', width: 14 },
+  { header: 'Kelas/Level', key: 'Kelas', width: 14 },
+  { header: 'Khotam', key: 'Khotam', width: 10 },
+  { header: 'Tanggal', key: 'Tanggal', width: 14 },
+  { header: 'Guru Penilai', key: 'Guru', width: 22 },
+  { header: 'Juz', key: 'Juz', width: 8 },
+  { header: 'Catatan', key: 'Catatan', width: 36 }
+]
+function _riwayatSubtitle() {
+  return `Per ${new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}`
+}
+// Bangun baris riwayat kenaikan — dipakai bersama Excel + Google Sheet
+function _buildRiwayatRows() {
+  const rows = []
+  const target = riwayatLembaga.value
+  const lembagaKeys =
+    target === 'TPQ'
+      ? ['TPQ Pagi', 'TPQ Sore', 'TPQ']
+      : target === 'PPPH'
+        ? ['PPPH', 'P3H']
+        : [target]
+  for (const s of riwayatList.value) {
+    const block = s.kartu_kenaikan || {}
+    let any = false
+    for (const lk of lembagaKeys) {
+      const lblock = block[lk]
+      if (!lblock || typeof lblock !== 'object') continue
+      for (const [klsLbl, kls] of Object.entries(lblock)) {
+        if (!kls || typeof kls !== 'object') continue
+        for (const [itemKey, val] of Object.entries(kls)) {
+          if (!val) continue
+          const data = typeof val === 'object' ? val : { tanggal: String(val) }
+          rows.push({
+            Nama: s.nama || '',
+            Lembaga: lk,
+            Kelas: klsLbl,
+            Khotam: itemKey,
+            Tanggal: data.tanggal || data.tgl || '',
+            Guru: data.guru || data.guru_penilai || '',
+            Juz: data.juz || '',
+            Catatan: data.catatan || data.rekomendasi || ''
+          })
+          any = true
+        }
+      }
+    }
+    if (!any) {
+      rows.push({
+        Nama: s.nama || '',
+        Lembaga: target,
+        Kelas: s.kelas || '',
+        Khotam: '-',
+        Tanggal: '-',
+        Guru: '-',
+        Juz: '-',
+        Catatan: 'Belum ada riwayat'
+      })
+    }
+  }
+  rows.sort(
+    (a, b) =>
+      String(a.Nama).localeCompare(String(b.Nama)) ||
+      String(a.Tanggal).localeCompare(String(b.Tanggal))
+  )
+  return { rows, target }
+}
 async function exportRiwayatExcel() {
   if (!riwayatLembaga.value || !riwayatList.value.length) return
   exportingExcel.value = true
   try {
-    const rows = []
-    const target = riwayatLembaga.value
-    const lembagaKeys =
-      target === 'TPQ'
-        ? ['TPQ Pagi', 'TPQ Sore', 'TPQ']
-        : target === 'PPPH'
-          ? ['PPPH', 'P3H']
-          : [target]
-    for (const s of riwayatList.value) {
-      const block = s.kartu_kenaikan || {}
-      let any = false
-      for (const lk of lembagaKeys) {
-        const lblock = block[lk]
-        if (!lblock || typeof lblock !== 'object') continue
-        for (const [klsLbl, kls] of Object.entries(lblock)) {
-          if (!kls || typeof kls !== 'object') continue
-          for (const [itemKey, val] of Object.entries(kls)) {
-            if (!val) continue
-            const data = typeof val === 'object' ? val : { tanggal: String(val) }
-            rows.push({
-              Nama: s.nama || '',
-              Lembaga: lk,
-              Kelas: klsLbl,
-              Khotam: itemKey,
-              Tanggal: data.tanggal || data.tgl || '',
-              Guru: data.guru || data.guru_penilai || '',
-              Juz: data.juz || '',
-              Catatan: data.catatan || data.rekomendasi || ''
-            })
-            any = true
-          }
-        }
-      }
-      if (!any) {
-        rows.push({
-          Nama: s.nama || '',
-          Lembaga: target,
-          Kelas: s.kelas || '',
-          Khotam: '-',
-          Tanggal: '-',
-          Guru: '-',
-          Juz: '-',
-          Catatan: 'Belum ada riwayat'
-        })
-      }
-    }
-    rows.sort(
-      (a, b) =>
-        String(a.Nama).localeCompare(String(b.Nama)) ||
-        String(a.Tanggal).localeCompare(String(b.Tanggal))
-    )
-    await exportStyled({
+    const { rows, target } = _buildRiwayatRows()
+    // v.100 Batch12 FIX: dulu exportStyled dipanggil dgn 1 objek (salah) → kini (rows, opts).
+    await exportStyled(rows, {
       filename: `Riwayat_Kenaikan_${target.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}.xlsx`,
       sheetName: `Riwayat ${target}`,
-      title: `RIWAYAT KENAIKAN — ${target}`,
-      subtitle: `Per ${new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}`,
-      columns: [
-        { header: 'Nama Santri', key: 'Nama', width: 28 },
-        { header: 'Lembaga', key: 'Lembaga', width: 14 },
-        { header: 'Kelas/Level', key: 'Kelas', width: 14 },
-        { header: 'Khotam', key: 'Khotam', width: 10 },
-        { header: 'Tanggal', key: 'Tanggal', width: 14 },
-        { header: 'Guru Penilai', key: 'Guru', width: 22 },
-        { header: 'Juz', key: 'Juz', width: 8 },
-        { header: 'Catatan', key: 'Catatan', width: 36 }
-      ],
-      rows
+      kop: [`RIWAYAT KENAIKAN — ${target}`],
+      subtitle: _riwayatSubtitle(),
+      columns: _riwayatColumns
     })
     toast.success(`${rows.length} baris Riwayat ${target} ter-eksport`)
   } catch (e) {
     toast.error('Gagal eksport: ' + (e.message || e))
   } finally {
     exportingExcel.value = false
+  }
+}
+// v.100 Batch12: kirim Riwayat Kenaikan ke Google Sheet (reuse data/kolom yang sama dgn Excel)
+async function kirimRiwayatGsheet() {
+  if (!riwayatLembaga.value || !riwayatList.value.length) return
+  if (sendingGsheet.value) return
+  if (!gsheetConfigured()) { toast.warning('Google Sheet belum diatur. Buka Pengaturan → Google Sheet dulu.'); return }
+  sendingGsheet.value = true
+  try {
+    const { rows, target } = _buildRiwayatRows()
+    const { url } = await sendToSheet({
+      rows,
+      title: `Riwayat Kenaikan ${target}`,
+      sheetName: `Riwayat ${target}`,
+      kop: [`RIWAYAT KENAIKAN — ${target}`],
+      subtitle: _riwayatSubtitle(),
+      columns: _riwayatColumns
+    })
+    toast.success(`${rows.length} baris terkirim ke Google Sheet.`)
+    try { window.open(url, '_blank') } catch (e) { /* ignore */ }
+  } catch (e) {
+    toast.error('Gagal kirim ke Google Sheet: ' + (e?.message || e))
+  } finally {
+    sendingGsheet.value = false
   }
 }
 

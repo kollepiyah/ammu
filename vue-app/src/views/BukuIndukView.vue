@@ -36,6 +36,15 @@
               <i :class="['fas', exportingBI ? 'fa-spinner fa-spin' : 'fa-file-excel']"></i>{{ exportingBI ? 'Ekspor...' : 'Ekspor Excel' }}
             </button>
             <button
+              v-if="gsheetConfigured()"
+              @click="kirimBukuGsheet"
+              :disabled="sendingGsheet"
+              aria-label="Kirim Buku Induk ke Google Sheet"
+              class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer"
+            >
+              <i :class="['fas', sendingGsheet ? 'fa-spinner fa-spin' : 'fa-table']"></i>{{ sendingGsheet ? 'Mengirim...' : 'Google Sheet' }}
+            </button>
+            <button
               @click="bukaModalInput()"
               aria-label="Input transaksi manual"
               class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-xs font-bold transition cursor-pointer"
@@ -413,6 +422,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
 import { useExcel } from '@/composables/useExcel'
+import { useGoogleSheet } from '@/composables/useGoogleSheet' // v.100 Batch12: ekspor ke Google Sheet
 import { doc, setDoc, deleteDoc, updateDoc, serverTimestamp } from 'firebase/firestore'
 import { deleteOne } from '@/services/firestore' // v.91.0626: hapus = backup audit_log dulu
 import { db } from '@/services/firebase'
@@ -428,6 +438,9 @@ const toast = useToast()
 const auth = useAuthStore()
 const settingsStore = useSettingsStore()
 const { exportStyled } = useExcel()
+// v.100 Batch12: kirim Buku Induk ke Google Sheet (hybrid, mirip PDF)
+const { isConfigured: gsheetConfigured, sendToSheet } = useGoogleSheet()
+const sendingGsheet = ref(false)
 // v.21.98.0527: super_admin only — bisa hapus record buku induk
 const isAdmin = computed(() => isSuperAdmin(auth.sesiAktif))
 
@@ -858,6 +871,52 @@ async function exportBukuIndukExcel() {
   }
 }
 
+// v.100 Batch12: kirim Buku Induk ke Google Sheet (reuse rows + kolom yang sama dgn Excel)
+async function kirimBukuGsheet() {
+  if (sendingGsheet.value) return
+  if (!gsheetConfigured()) { toast.warning('Google Sheet belum diatur. Buka Pengaturan → Google Sheet dulu.'); return }
+  sendingGsheet.value = true
+  try {
+    const list = filteredBuku.value || bukuRaw.value || []
+    const rows = list.map((b, i) => ({
+      no: i + 1,
+      tanggal: b.tanggal || '',
+      no_struk: b.no_struk || '',
+      keterangan: b.keterangan || b.deskripsi || '',
+      kategori: b.kategori || '',
+      tipe: b.tipe || (Number(b.masuk) > 0 ? 'Masuk' : 'Keluar'),
+      masuk: b.masuk || (b.tipe === 'masuk' ? b.nominal : 0) || 0,
+      keluar: b.keluar || (b.tipe === 'keluar' ? b.nominal : 0) || 0,
+      saldo: b.saldo || 0
+    }))
+    const s = settingsStore.settings || {}
+    const { url } = await sendToSheet({
+      rows,
+      title: `Buku Induk ${new Date().toISOString().slice(0, 10)}`,
+      sheetName: 'Buku Induk',
+      kop: [s.kopLine1 || '', s.kopLine2 || 'PONDOK PESANTREN MAMBAUL ULUM', s.kopLine3 || '', s.kopLine4 || ''].filter(Boolean),
+      subtitle: `Buku Induk Keuangan — ${rows.length} transaksi`,
+      columns: [
+        { key: 'no', header: 'No', width: 5 },
+        { key: 'tanggal', header: 'Tanggal', width: 12 },
+        { key: 'no_struk', header: 'No Struk', width: 14 },
+        { key: 'keterangan', header: 'Keterangan', width: 32 },
+        { key: 'kategori', header: 'Kategori', width: 16 },
+        { key: 'tipe', header: 'Tipe', width: 10 },
+        { key: 'masuk', header: 'Masuk', width: 14 },
+        { key: 'keluar', header: 'Keluar', width: 14 },
+        { key: 'saldo', header: 'Saldo', width: 14 }
+      ]
+    })
+    toast.success(`${rows.length} transaksi terkirim ke Google Sheet.`)
+    try { window.open(url, '_blank') } catch (e) { /* ignore */ }
+  } catch (e) {
+    toast.error('Gagal kirim ke Google Sheet: ' + (e?.message || e))
+  } finally {
+    sendingGsheet.value = false
+  }
+}
+
 // v.98 full-native (Electron): header in-page disembunyikan, aksi -> grup pita "Aksi Halaman"
 const { isElectron: isDesktop } = useDesktopShell()
 definePageActions(() => {
@@ -865,6 +924,7 @@ definePageActions(() => {
   return [
     { label: 'Input Manual', icon: 'plus', primary: true, on: () => bukaModalInput() },
     { label: 'Ekspor Excel', icon: 'download', on: exportBukuIndukExcel, disabled: exportingBI.value },
+    ...(gsheetConfigured() ? [{ label: 'Google Sheet', icon: 'file', on: kirimBukuGsheet, disabled: sendingGsheet.value }] : []),
     { label: 'Cetak Laporan', icon: 'printer', on: cetakLaporan }
   ]
 })

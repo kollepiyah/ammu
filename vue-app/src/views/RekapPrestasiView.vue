@@ -248,6 +248,9 @@
         <button @click="exportExcel()" :disabled="busy" aria-label="Ekspor rekap Excel" class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer">
           <i class="fas fa-file-excel"></i>Excel
         </button>
+        <button v-if="gsheetConfigured()" @click="kirimRekapGsheet()" :disabled="busy" aria-label="Kirim rekap ke Google Sheet" class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer">
+          <i :class="['fas', 'fa-table']"></i>Google Sheet
+        </button>
         <!-- v.100 Batch10: impor massal nilai prestasi (data baru & banyak) — admin -->
         <button v-if="isFullFilter" @click="downloadTemplateRekap()" :disabled="busy" aria-label="Unduh template impor" class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer">
           <i class="fas fa-file-arrow-down"></i>Template Impor
@@ -419,6 +422,7 @@ import { db } from '@/services/firebase'
 import { doc, setDoc, updateDoc } from 'firebase/firestore'
 import { useToast } from '@/composables/useToast'
 import { useExcel } from '@/composables/useExcel'
+import { useGoogleSheet } from '@/composables/useGoogleSheet' // v.100 Batch12: ekspor ke Google Sheet
 import { useSettingsStore } from '@/stores/settings'
 import { extractNumber, getNamaGuruGelar } from '@/utils/format'
 import { buildListPdf } from '@/utils/pdfBuilder'
@@ -438,6 +442,8 @@ const TAHUN_LIST = [2024, 2025, 2026, 2027, 2028]
 const toast = useToast()
 const settings = useSettingsStore()
 const { exportStyled } = useExcel()
+// v.100 Batch12: kirim Rekap Prestasi ke Google Sheet (hybrid, mirip PDF)
+const { isConfigured: gsheetConfigured, sendToSheet } = useGoogleSheet()
 
 const modes = [
   { id: 'bulanan', label: 'Input Bulanan', icon: 'fa-table' },
@@ -952,6 +958,50 @@ async function exportExcel() {
     toast.error('Gagal export Excel: ' + (e.message || e))
   }
   busy.value = false
+}
+
+// v.100 Batch12: kirim Rekap Prestasi ke Google Sheet (reuse data/kolom yang sama dgn Excel)
+async function kirimRekapGsheet() {
+  if (busy.value) return
+  if (!gsheetConfigured()) { toast.warning('Google Sheet belum diatur. Buka Pengaturan → Google Sheet dulu.'); return }
+  busy.value = true
+  try {
+    const set = settings.savedSettings || {}
+    const judul = `REKAPITULASI PRESTASI QIRAATI BULAN ${String(bulan.value).toUpperCase()} ${tahun.value}`
+    const columns = [
+      { key: 'no', header: 'No', width: 6 },
+      { key: 'nama', header: 'Nama Santri', width: 28 },
+      { key: 'jk', header: 'L/P', width: 6 },
+      { key: 'lembaga_kelas', header: 'Lembaga/Kelas', width: 22 }
+    ]
+    if (hasPTPT.value) columns.push({ key: 'juz', header: 'Juz', width: 10 })
+    columns.push({ key: 'awal', header: 'Awal Bln', width: 12 })
+    columns.push({ key: 'akhir', header: 'Akhir Bln', width: 12 })
+    columns.push({ key: 'total', header: 'Total', width: 12 })
+    let no = 1
+    const rows = filteredSantri.value.map((s) => {
+      const aw = getEdit(s.id, 'awal') || s.prestasi_awal || ''
+      const ak = getEdit(s.id, 'akhir') || s.prestasi_akhir || ''
+      const tot = s.lembaga === 'PTPT' ? computedTotal(s) : (getEdit(s.id, 'total') || s.prestasi_total || '')
+      const jz = s.lembaga === 'PTPT' ? (getEdit(s.id, 'juz') || s.juz || '-') : '-'
+      return { no: no++, nama: s.nama, jk: s.jk || '-', lembaga_kelas: `${s.lembaga} - ${s.kelas || '-'}`, juz: jz, awal: aw, akhir: ak, total: tot }
+    })
+    const kopLines = [set.kopLine1 || set.txtAppName || '', set.kopLine2 || '', set.kopLine3 || '', set.kopLine4 || ''].filter(Boolean)
+    const { url } = await sendToSheet({
+      rows,
+      title: `Rekap Prestasi ${bulan.value} ${tahun.value}`,
+      sheetName: 'Rekap Prestasi',
+      kop: kopLines,
+      subtitle: `${judul} · Total: ${rows.length} santri`,
+      columns
+    })
+    toast.success(`${rows.length} santri terkirim ke Google Sheet.`)
+    try { window.open(url, '_blank') } catch (e) { /* ignore */ }
+  } catch (e) {
+    toast.error('Gagal kirim ke Google Sheet: ' + (e?.message || e))
+  } finally {
+    busy.value = false
+  }
 }
 
 // CETAK HTML (print preview newwindow)

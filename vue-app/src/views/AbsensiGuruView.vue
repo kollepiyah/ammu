@@ -237,6 +237,15 @@
               <i class="fas fa-file-excel"></i>Excel
             </button>
             <button
+              v-if="gsheetConfigured()"
+              @click="kirimAbsensiGsheet"
+              :disabled="sendingGsheet"
+              aria-label="Kirim rekap absensi guru ke Google Sheet"
+              class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer"
+            >
+              <i :class="['fas', sendingGsheet ? 'fa-spinner fa-spin' : 'fa-table']"></i>{{ sendingGsheet ? 'Mengirim...' : 'Google Sheet' }}
+            </button>
+            <button
               @click="exportRekapPdf"
               aria-label="Cetak rekap absensi guru PDF"
               class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold transition cursor-pointer"
@@ -516,6 +525,7 @@ import { db } from '@/services/firebase'
 import { setOne } from '@/services/firestore'
 import { useAbsensi } from '@/composables/useAbsensi'
 import { useExcel } from '@/composables/useExcel'
+import { useGoogleSheet } from '@/composables/useGoogleSheet' // v.100 Batch12: ekspor ke Google Sheet
 import { useToast } from '@/composables/useToast'
 import { useSettingsStore } from '@/stores/settings'
 import { jsPDFFromCDN } from '@/services/pdf'
@@ -538,6 +548,9 @@ const {
 } = useAbsensi()
 
 const { importFile, exportSimple } = useExcel()
+// v.100 Batch12: kirim Rekap Absensi Guru ke Google Sheet (hybrid, mirip PDF)
+const { isConfigured: gsheetConfigured, sendToSheet } = useGoogleSheet()
+const sendingGsheet = ref(false)
 const settingsStore = useSettingsStore()
 const toast = useToast()
 // v.21.114.0528: kegiatan composable utk derive hari libur dari event multi-day
@@ -898,6 +911,48 @@ async function exportRekapExcel() {
     toast.success('Excel berhasil di-ekspor')
   } catch (e) {
     toast.error('Gagal ekspor Excel: ' + (e.message || e))
+  }
+}
+
+// v.100 Batch12: kirim Rekap Absensi Guru ke Google Sheet (reuse data/kolom yang sama dgn Excel)
+async function kirimAbsensiGsheet() {
+  if (sendingGsheet.value) return
+  if (!gsheetConfigured()) { toast.warning('Google Sheet belum diatur. Buka Pengaturan → Google Sheet dulu.'); return }
+  sendingGsheet.value = true
+  try {
+    const days = daysInMonth.value
+    const columns = [
+      { key: 'nama', header: 'Nama Guru', width: 28 },
+      { key: 'lembaga', header: 'Lembaga', width: 16 }
+    ]
+    for (let d = 1; d <= days; d++) columns.push({ key: 'd' + d, header: String(d), width: 4 })
+    columns.push({ key: 'H', header: 'H', width: 5 })
+    columns.push({ key: 'T', header: 'T', width: 5 })
+    columns.push({ key: 'IS', header: 'I/S', width: 5 })
+    const rows = guruAktif.value.map((g) => {
+      const r = { nama: g.nama, lembaga: g.lembaga || g.unit || '-' }
+      for (let d = 1; d <= days; d++) r['d' + d] = cellText(g.id, d)
+      r.H = countStatus(g.id, ['hadir'])
+      r.T = countStatus(g.id, ['terlambat'])
+      r.IS = countStatus(g.id, ['izin', 'sakit'])
+      return r
+    })
+    const ss = settingsStore.settings || {}
+    const judul = `REKAP ABSENSI GURU — ${getBulanLabel(selectedMonth.value).toUpperCase()} ${selectedYear.value}`
+    const { url } = await sendToSheet({
+      rows,
+      title: `Rekap Absensi Guru ${selectedYear.value}-${String(selectedMonth.value).padStart(2, '0')}`,
+      sheetName: 'Rekap Absensi',
+      kop: [ss.kopLine1 || 'PONDOK PESANTREN MAMBAUL ULUM', judul].filter(Boolean),
+      subtitle: `${rows.length} guru`,
+      columns
+    })
+    toast.success(`${rows.length} guru terkirim ke Google Sheet.`)
+    try { window.open(url, '_blank') } catch (e) { /* ignore */ }
+  } catch (e) {
+    toast.error('Gagal kirim ke Google Sheet: ' + (e?.message || e))
+  } finally {
+    sendingGsheet.value = false
   }
 }
 

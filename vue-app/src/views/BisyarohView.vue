@@ -421,6 +421,16 @@
             >
               <i class="fas fa-file-excel"></i>Laporan BMT
             </button>
+            <!-- v.100 Batch12: kirim Laporan BMT ke Google Sheet (mirip PDF) -->
+            <button
+              v-if="isAdminKeu && filteredSlips.length > 0 && gsheetConfigured()"
+              @click="kirimBmtGsheet"
+              :disabled="sendingGsheetBmt"
+              title="Kirim daftar pencairan via BMT ke Google Sheet"
+              class="text-[10px] font-black bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white px-2.5 py-1 rounded-lg flex items-center gap-1"
+            >
+              <i :class="['fas', sendingGsheetBmt ? 'fa-spinner fa-spin' : 'fa-table']"></i>Sheet BMT
+            </button>
             <!-- v.21.100.0527: bulk select hapus -->
             <label v-if="isAdmin && filteredSlips.length > 0" class="flex items-center gap-1 text-[10px] font-bold cursor-pointer">
               <input
@@ -647,6 +657,7 @@ import { useSettingsStore } from '@/stores/settings'
 import { useKeuangan } from '@/composables/useKeuangan'
 import { useGuru } from '@/composables/useGuru'
 import { useToast } from '@/composables/useToast'
+import { useGoogleSheet } from '@/composables/useGoogleSheet' // v.100 Batch12: ekspor ke Google Sheet
 import { useExcel } from '@/composables/useExcel'
 import { fmtRp, getNamaGuruGelar } from '@/utils/format'
 import ReceiptModal from '@/components/ReceiptModal.vue'
@@ -894,6 +905,50 @@ async function exportLaporanBmt() {
   }
 }
 const toast = useToast()
+
+// v.100 Batch12: kirim Laporan Pencairan BMT ke Google Sheet (reuse data/kolom yang sama dgn Excel)
+const { isConfigured: gsheetConfigured, sendToSheet: _sendBmtSheet } = useGoogleSheet()
+const sendingGsheetBmt = ref(false)
+async function kirimBmtGsheet() {
+  if (!isAdminKeu.value || sendingGsheetBmt.value) return
+  if (!gsheetConfigured()) { toast.warning('Google Sheet belum diatur. Buka Pengaturan → Google Sheet dulu.'); return }
+  const target = filteredSlips.value.filter(
+    (s) => String(s.metode_cair || '') !== 'cash' && String(s.status_cair || '') !== 'cair' && _slipTakeHome(s) > 0
+  )
+  if (target.length === 0) { toast.info('Tidak ada slip via BMT yang perlu dicairkan di filter ini'); return }
+  sendingGsheetBmt.value = true
+  try {
+    const guruById = (id) => (guruRaw.value || []).find((g) => String(g.id) === String(id)) || {}
+    const rows = target.map((s, i) => {
+      const g = guruById(s.guru_id)
+      return { no: i + 1, nama: s.guru_nama || g.nama || '', rek_bmt: g.rek_bmt || '', nominal: _slipTakeHome(s), periode: s.periode || '' }
+    })
+    const total = rows.reduce((a, r) => a + Number(r.nominal || 0), 0)
+    rows.push({ no: '', nama: 'TOTAL', rek_bmt: '', nominal: total, periode: '' })
+    const per = filterPeriode.value || rows[0]?.periode || 'semua'
+    const ss = settingsStore.settings || {}
+    const { url } = await _sendBmtSheet({
+      rows,
+      title: `Laporan Pencairan BMT ${per}`,
+      sheetName: 'Pencairan BMT',
+      kop: [ss.kopLine1 || 'PONDOK PESANTREN MAMBAUL ULUM', `Laporan Pencairan Bisyaroh via BMT — ${per}`].filter(Boolean),
+      subtitle: `${target.length} guru/pegawai`,
+      columns: [
+        { key: 'no', header: 'No', width: 6 },
+        { key: 'nama', header: 'Nama Guru/Pegawai', width: 30 },
+        { key: 'rek_bmt', header: 'No. Rekening BMT', width: 22 },
+        { key: 'nominal', header: 'Nominal (Rp)', width: 16 },
+        { key: 'periode', header: 'Periode', width: 14 }
+      ]
+    })
+    toast.success(`Laporan BMT (${target.length} guru) terkirim ke Google Sheet.`)
+    try { window.open(url, '_blank') } catch (e) { /* ignore */ }
+  } catch (e) {
+    toast.error('Gagal kirim ke Google Sheet: ' + (e?.message || e))
+  } finally {
+    sendingGsheetBmt.value = false
+  }
+}
 
 // ─── Role guards ──────────────────────────────────────────────────────────
 // v.21.115.0528: gunakan cekHakAkses('akses_keuangan') untuk konsisten dengan menu gate.

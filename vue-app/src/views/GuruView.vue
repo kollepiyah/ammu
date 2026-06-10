@@ -47,6 +47,9 @@
             <button @click="exportGuruExcel" :disabled="exporting" aria-label="Ekspor daftar guru Excel" class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer">
               <i :class="['fas', exporting ? 'fa-spinner fa-spin' : 'fa-file-excel']"></i>{{ exporting ? 'Ekspor...' : 'Ekspor Excel' }}
             </button>
+            <button v-if="gsheetConfigured()" @click="kirimGuruGsheet" :disabled="sendingGsheet" aria-label="Kirim daftar guru ke Google Sheet" class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer">
+              <i :class="['fas', sendingGsheet ? 'fa-spinner fa-spin' : 'fa-table']"></i>{{ sendingGsheet ? 'Mengirim...' : 'Google Sheet' }}
+            </button>
             <router-link v-if="!isMasterMode" to="/master-data?tab=guru" class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold transition" title="CRUD guru di Master Data">
               <i class="fas fa-edit"></i>Kelola
             </router-link>
@@ -337,6 +340,7 @@ const isMasterMode = computed(() => props.mode === 'master')
 import { useExcel } from '@/composables/useExcel'
 import { useSettingsStore } from '@/stores/settings'
 import { useToast as _useToastGuruExp } from '@/composables/useToast'
+import { useGoogleSheet } from '@/composables/useGoogleSheet' // v.100 Batch12: ekspor ke Google Sheet
 import { buildListPdf, buildKopFromSettings } from '@/utils/pdfBuilder'
 import { useGuru } from '@/composables/useGuru'
 import { useConfirm } from '@/composables/useConfirm'
@@ -509,6 +513,9 @@ async function printPage() {
 const exporting = ref(false)
 // v.21.11.0526: + importFile untuk Impor XLSX
 const { exportStyled, importFile } = useExcel()
+// v.100 Batch12: kirim Data Guru ke Google Sheet (hybrid, mirip PDF) — reuse rows/kolom Excel
+const { isConfigured: gsheetConfigured, sendToSheet: _sendGuruSheet } = useGoogleSheet()
+const sendingGsheet = ref(false)
 const importingGuru = ref(false)
 
 // v.98 full-native (Electron): header disembunyikan, aksi pindah ke grup pita "Aksi Halaman"
@@ -527,6 +534,7 @@ definePageActions(() => {
     { label: 'Cetak PDF', icon: 'printer', on: printPage },
     { label: 'Ekspor Excel', icon: 'download', on: exportGuruExcel, disabled: exporting.value }
   ]
+  if (gsheetConfigured()) acts.push({ label: 'Google Sheet', icon: 'file', on: kirimGuruGsheet, disabled: sendingGsheet.value })
   if (isMasterMode.value) {
     acts.push({ label: 'Tambah Guru', icon: 'plus', primary: true, on: () => router.push('/guru/new?from=master') })
     acts.push({ label: 'Template', icon: 'download', on: downloadTemplateGuru })
@@ -607,6 +615,32 @@ async function exportGuruExcel() {
     _toastExp.error('Gagal: ' + (e.message || e))
   } finally {
     exporting.value = false
+  }
+}
+
+// v.100 Batch12: kirim Data Guru ke Google Sheet (reuse rows + kolom yang sama dgn Excel)
+async function kirimGuruGsheet() {
+  if (sendingGsheet.value) return
+  if (!gsheetConfigured()) { _toastExp.warning('Google Sheet belum diatur. Buka Pengaturan → Google Sheet dulu.'); return }
+  sendingGsheet.value = true
+  try {
+    const list = (typeof guruRaw !== 'undefined' && guruRaw.value) || []
+    const rows = _buildExcelRows(list)
+    const ss = _settingsExp.settings || {}
+    const { url } = await _sendGuruSheet({
+      rows,
+      title: `Data Guru ${new Date().toISOString().slice(0, 10)}`,
+      sheetName: 'Data Guru',
+      kop: [ss.kopLine1 || '', ss.kopLine2 || 'PONDOK PESANTREN MAMBAUL ULUM', ss.kopLine3 || '', ss.kopLine4 || ''].filter(Boolean),
+      subtitle: `Data Guru/Pegawai — ${rows.length} orang`,
+      columns: _excelColumns
+    })
+    _toastExp.success(`${rows.length} guru terkirim ke Google Sheet.`)
+    try { window.open(url, '_blank') } catch (e) { /* ignore */ }
+  } catch (e) {
+    _toastExp.error('Gagal kirim ke Google Sheet: ' + (e?.message || e))
+  } finally {
+    sendingGsheet.value = false
   }
 }
 
