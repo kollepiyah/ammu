@@ -346,6 +346,21 @@ function _guruCell(v) {
   return toTitleCase(s)
 }
 
+// v.100 Batch14: pisah guru pagi/sore (kyai). Dukung 1 sel "Guru A/Guru B" → pagi=A, sore=B;
+//   1 nama tanpa "/" → pagi & sore SAMA (guru yang sama dua sesi).
+//   Prioritas: kolom kombinasi ('Guru'/'Guru Ngaji'/'Guru Pagi/Sore') > kolom terpisah (Guru Pagi & Guru Sore).
+function _splitGuruPair(gpCol, gsCol, gCombined) {
+  const comb = String(gCombined == null ? '' : gCombined).trim()
+  if (comb) {
+    if (comb.includes('/')) { const [a, b] = comb.split('/'); return { pagi: a, sore: b } }
+    return { pagi: comb, sore: comb } // 1 nama → pagi & sore sama
+  }
+  let p = String(gpCol == null ? '' : gpCol).trim()
+  let s = String(gsCol == null ? '' : gsCol).trim()
+  if (p.includes('/')) { const [a, b] = p.split('/'); p = a; s = s || b } // "A/B" nyasar di kolom Guru Pagi
+  return { pagi: p, sore: s }
+}
+
 async function onImportAssign(e) {
   const file = e.target?.files?.[0]
   if (!file) return
@@ -376,8 +391,14 @@ async function onImportAssign(e) {
       }
       if (!s) { if (nis || nama) notFound++; continue }
       const patch = {}
-      const gp = _guruCell(_pickCell(r, 'Guru Pagi', 'guru_pagi'))
-      const gs = _guruCell(_pickCell(r, 'Guru Sore', 'guru_sore'))
+      // v.100 Batch14: dukung "Guru A/Guru B" (1 sel) → pagi/sore; 1 nama → pagi & sore sama
+      const { pagi: _gpRaw, sore: _gsRaw } = _splitGuruPair(
+        _pickCell(r, 'Guru Pagi', 'guru_pagi'),
+        _pickCell(r, 'Guru Sore', 'guru_sore'),
+        _pickCell(r, 'Guru Pagi/Sore', 'Guru Pagi & Sore', 'Guru Ngaji', 'Guru')
+      )
+      const gp = _guruCell(_gpRaw)
+      const gs = _guruCell(_gsRaw)
       if (gp !== undefined) patch.guru_pagi = gp
       if (gs !== undefined) patch.guru_sore = gs
       const gMain = (gp !== undefined && gp) || (gs !== undefined && gs)

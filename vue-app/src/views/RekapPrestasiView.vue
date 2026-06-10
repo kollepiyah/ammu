@@ -29,7 +29,7 @@
               <p class="text-2xl font-black text-rose-700 dark:text-rose-300">{{ importRekapPreview.cNotFound }}</p>
             </div>
           </div>
-          <p v-if="importRekapPreview.cFuzzy" class="text-[11px] text-amber-700 dark:text-amber-300 mb-2"><i class="fas fa-circle-info mr-1"></i>{{ importRekapPreview.cFuzzy }} baris dicocokkan via <b>nama mirip</b> (badge "Mirip") — periksa bila ragu.</p>
+          <p v-if="importRekapPreview.cFuzzy" class="text-[11px] text-amber-700 dark:text-amber-300 mb-2"><i class="fas fa-circle-info mr-1"></i>{{ importRekapPreview.cFuzzy }} baris dicocokkan via <b>nama mirip / tak lengkap</b> (badge "Mirip"/"Lingkup", pakai lingkup guru+kelas) — periksa bila ragu.</p>
           <table class="w-full border border-slate-200 dark:border-slate-700">
             <thead class="bg-slate-100 dark:bg-slate-700/50">
               <tr>
@@ -54,7 +54,7 @@
                     'bg-rose-100 text-rose-700': p.action === 'notfound'
                   }">{{ p.action === 'baru' ? 'BARU' : p.action === 'update' ? 'UPDATE' : p.action === 'skip' ? 'LEWATI' : 'TAK ADA' }}</span>
                 </td>
-                <td class="px-2 py-1"><span v-if="p.matchBy" class="text-[10px] px-1.5 py-0.5 rounded" :class="p.matchBy === 'Mirip' ? 'bg-amber-100 text-amber-700 font-bold' : 'bg-slate-100 text-slate-500'">{{ p.matchBy }}</span></td>
+                <td class="px-2 py-1"><span v-if="p.matchBy" class="text-[10px] px-1.5 py-0.5 rounded" :class="(p.matchBy === 'Mirip' || p.matchBy === 'Lingkup') ? 'bg-amber-100 text-amber-700 font-bold' : 'bg-slate-100 text-slate-500'">{{ p.matchBy }}</span></td>
                 <td class="px-2 py-1 font-bold text-slate-700 dark:text-slate-200">{{ p.nama }}</td>
                 <td class="px-2 py-1">{{ p.nis }}</td>
                 <td class="px-2 py-1">{{ p.lembaga }}</td>
@@ -498,7 +498,7 @@ import { useExcel } from '@/composables/useExcel'
 import { useGoogleSheet } from '@/composables/useGoogleSheet' // v.100 Batch12: ekspor ke Google Sheet
 import { useSettingsStore } from '@/stores/settings'
 import { extractNumber, getNamaGuruGelar } from '@/utils/format'
-import { bestNameMatch } from '@/utils/fuzzyMatch' // v.100 Batch12: cocokkan nama mirip saat impor
+import { bestNameMatch, fuzzyKey, simRatio } from '@/utils/fuzzyMatch' // v.100 Batch12/14: cocokkan nama mirip + scope guru (impor Google Form)
 import { buildListPdf } from '@/utils/pdfBuilder'
 import { useAuthStore } from '@/stores/auth'
 import { isFullFilterRole, isKepalaLembaga } from '@/utils/roleScope'
@@ -874,6 +874,43 @@ function _fmtNilaiLama(s) {
   return parts.join(' · ') || '—'
 }
 
+// v.100 Batch14: impor Google Form — nama santri sering TAK lengkap & tanpa NIS. Manfaatkan kolom
+//   Guru + Kelas + JK utk MEMPERSEMPIT pencarian, lalu cocokkan nama (persis/awalan/token) di lingkup kecil.
+//   (Guru/Kelas/JK hanya penyaring — TIDAK ditulis ke santri. Yang ditulis: Juz → field juz, dsb.)
+function _normNm(x) { return String(x == null ? '' : x).toLowerCase().replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim() }
+function _guruScopeMatch(s, guruIn) {
+  const gi = _normNm(guruIn)
+  if (!gi) return false
+  for (const g of [s.guru_pagi, s.guru_sore, s.guru]) {
+    const gn = _normNm(g)
+    if (!gn) continue
+    if (gn === gi || gn.includes(gi) || gi.includes(gn)) return true
+    if (simRatio(fuzzyKey(g), fuzzyKey(guruIn)) >= 0.8) return true
+  }
+  return false
+}
+// Cocokkan nama (mungkin tak lengkap) di dalam pool. Return { s, how } | { s:null, ambiguous? }.
+function _matchNameInPool(namaIn, pool) {
+  const fn = _normNm(namaIn)
+  if (!fn) return { s: null }
+  const ftok = fn.split(' ').filter(Boolean)
+  let cands = pool.filter((s) => _normNm(s.nama) === fn) // 1) persis
+  if (cands.length === 1) return { s: cands[0], how: 'Nama' }
+  if (cands.length > 1) return { s: null, ambiguous: cands.length }
+  cands = pool.filter((s) => { // 2) awalan / subset token (nama form lebih pendek)
+    const sn = _normNm(s.nama)
+    if (!sn) return false
+    if (sn.startsWith(fn) || fn.startsWith(sn)) return true
+    const stok = sn.split(' ')
+    return ftok.every((t) => stok.some((u) => u === t || u.startsWith(t) || t.startsWith(u)))
+  })
+  if (cands.length === 1) return { s: cands[0], how: 'Lingkup' }
+  if (cands.length > 1) return { s: null, ambiguous: cands.length }
+  const m = bestNameMatch(fn, pool, { getName: (x) => x.nama, min: 0.72 }) // 3) fuzzy ejaan (longgar, pool sempit)
+  if (m) return { s: m.item, how: 'Mirip' }
+  return { s: null }
+}
+
 // v.100 Batch12: FASE 1 — baca file → bangun PREVIEW (review dulu, belum tulis ke Firestore).
 async function onImportRekap(e) {
   const file = e.target?.files?.[0]
@@ -895,15 +932,32 @@ async function onImportRekap(e) {
     let cBaru = 0, cUpdate = 0, cSkip = 0, cNotFound = 0, cFuzzy = 0
     for (const r of rows) {
       const nisIn = String(_pickRekap(r, 'NIS', 'nis') || '').trim()
-      const namaIn = String(_pickRekap(r, 'Nama Santri', 'Nama', 'nama') || '').trim()
+      const namaIn = String(_pickRekap(r, 'Nama Santri', 'Nama Lengkap Santri', 'Nama', 'nama') || '').trim()
       const namaLow = namaIn.toLowerCase()
+      // v.100 Batch14: kolom Google Form sbg PENYARING pencocokan (tidak ditulis ke santri)
+      const guruIn = String(_pickRekap(r, 'Nama Lengkap Guru', 'Nama Guru', 'Guru', 'guru') || '').trim()
+      const kelasIn = String(_pickRekap(r, 'Sekolah', 'Kelas', 'kelas') || '').trim()
+      const jkIn = String(_pickRekap(r, 'Jenis Kelamin', 'JK', 'L/P', 'jk') || '').trim().toUpperCase().charAt(0)
       let s = null, matchBy = ''
       if (nisIn && byNis.get(nisIn)) { s = byNis.get(nisIn); matchBy = 'NIS' }
       else if (namaLow && byNama.get(namaLow)) { s = byNama.get(namaLow); matchBy = 'Nama' }
       else if (namaLow) {
-        // v.100 Batch12: fallback nama MIRIP (fuzzy) — kemiripan tinggi & tak ambigu
-        const m = bestNameMatch(namaLow, list, { getName: (x) => x.nama })
-        if (m) { s = m.item; matchBy = 'Mirip'; cFuzzy++ }
+        // v.100 Batch14: bangun POOL ter-scope (guru → kelas → JK), cocokkan nama tak lengkap di lingkup kecil
+        let pool = list
+        if (guruIn) { const byG = list.filter((x) => _guruScopeMatch(x, guruIn)); if (byG.length) pool = byG }
+        if (kelasIn) { const kf = _normNm(kelasIn); const byK = pool.filter((x) => _normNm(x.kelas_sekolah) === kf || _normNm(x.kelas) === kf); if (byK.length) pool = byK }
+        if (jkIn === 'L' || jkIn === 'P') { const byJ = pool.filter((x) => String(x.jk || '').toUpperCase().charAt(0) === jkIn); if (byJ.length) pool = byJ }
+        const scoped = pool !== list
+        const res = _matchNameInPool(namaIn, pool)
+        if (res.s) {
+          s = res.s
+          matchBy = res.how === 'Nama' ? 'Nama' : res.how // 'Lingkup' | 'Mirip'
+          if (res.how !== 'Nama') cFuzzy++
+        } else if (!scoped) {
+          // tanpa info guru/kelas → fallback fuzzy global lama (kemiripan tinggi & tak ambigu)
+          const m = bestNameMatch(namaLow, list, { getName: (x) => x.nama })
+          if (m) { s = m.item; matchBy = 'Mirip'; cFuzzy++ }
+        }
       }
       if (!s) {
         if (nisIn || namaIn) { cNotFound++; plan.push({ action: 'notfound', matchBy: '', nama: namaIn || '(tanpa nama)', nis: nisIn || '-', lembaga: '', nilaiBaru: '—', nilaiLama: '—' }) }
