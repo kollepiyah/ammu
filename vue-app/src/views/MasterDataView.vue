@@ -8,6 +8,7 @@ import { subscribeColl, subscribeDoc } from '@/services/firestore'
 import { useToast } from '@/composables/useToast'
 import { doc, setDoc } from 'firebase/firestore'
 import { db } from '@/services/firebase'
+import { useDesktopShell } from '@/composables/useDesktopShell'
 import LembagaView from './LembagaView.vue'
 // v.21.85.0527: KelasView read-only diganti KelasGuruView (assign santri↔guru) + JabatanKelolaView (ACF)
 import KelasGuruView from './KelasGuruView.vue'
@@ -46,6 +47,7 @@ onMounted(() => {
   })
 })
 // v.98: cleanup listener audit_log (cegah leak tiap mount Master Data)
+const { isElectron: isDesktop } = useDesktopShell()
 onUnmounted(() => { if (_unsubAudit) _unsubAudit() })
 function formatTanggal(ts) {
   if (!ts) return '-'
@@ -620,8 +622,9 @@ async function simpanPengaturanRekap() {
 <template>
   <!-- v.72.8.0526: Master Data 7 tabs match legacy "Pusat Master Data" -->
   <div class="p-4 md:p-6 max-w-6xl mx-auto space-y-4">
-    <!-- v.21.14.0526: Tighter header -->
+    <!-- v.21.14.0526: Tighter header — v.100: sembunyikan di Electron (aksi → pita) -->
     <header
+      v-if="!isDesktop"
       class="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-200 dark:border-slate-700 shadow-sm"
     >
       <div class="flex items-baseline gap-2 flex-wrap">
@@ -636,8 +639,9 @@ async function simpanPengaturanRekap() {
       </div>
     </header>
 
-    <!-- v.21.14.0526: tabs flex-wrap (replace overflow-x-auto) supaya semua tab kelihatan, tidak cropped -->
+    <!-- v.21.14.0526: tabs flex-wrap — v.100: sembunyikan di Electron (navigasi via pita) -->
     <div
+      v-if="!isDesktop"
       class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-2"
     >
       <div class="flex flex-wrap gap-1.5">

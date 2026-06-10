@@ -71,9 +71,9 @@ async function resolveTokensByTarget(target) {
         const sd = sdoc.data()
         if (sd.fcm_token) tokens.add(sd.fcm_token)
         // device wali bisa login sebagai anak lain (wa sama) -> ikutkan
-        if (sd.wa) addTok(await db.collection('santri').where('wa', '==', sd.wa).get())
+        if (sd.wa && String(sd.wa).trim().length >= 8) addTok(await db.collection('santri').where('wa', '==', sd.wa).get())
       }
-    } else if (t.type === 'wa' && t.wa) {
+    } else if (t.type === 'wa' && t.wa && String(t.wa).trim().length >= 8) {
       addTok(await db.collection('santri').where('wa', '==', t.wa).get())
     } else if (t.type === 'lembaga' && t.lembaga) {
       addTok(await db.collection('santri').where('lembaga', '==', t.lembaga).get())

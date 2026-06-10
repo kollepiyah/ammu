@@ -314,7 +314,7 @@ export function useRibbonNav() {
     return true
   }
   function itemVisible(it) {
-    if (it.type === 'clock' || it.type === 'greeting' || it.type === 'toggle') return true
+    if (it.type === 'clock' || it.type === 'toggle') return true
     return passGate(it.gate)
   }
 

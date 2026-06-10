@@ -135,6 +135,11 @@ const toast = useToast()
 const confirmDlg = useConfirm()
 const tagihanRaw = ref([])
 const santriList = ref([])
+const santriMap = computed(() => {
+  const m = new Map()
+  for (const s of santriList.value) m.set(String(s.id), s)
+  return m
+})
 const loading = ref(true)
 const search = ref('')
 const filterStatus = ref('')
@@ -193,8 +198,7 @@ async function hapusTagihanTerpilih() {
 }
 
 function getNamaSantri(id) {
-  const s = santriList.value.find((x) => String(x.id) === String(id))
-  return s?.nama || '(unknown)'
+  return santriMap.value.get(String(id))?.nama || '(unknown)'
 }
 
 function getSisa(t) {
@@ -316,7 +320,7 @@ async function simpanModal() {
     if (modalMode.value === 'new') {
       if (!modalSantriId.value || !modalNominal.value) { toast.warning('Lengkapi data'); return }
       const id = `tagihan_${modalSantriId.value}_${Date.now()}`
-      const santri = santriList.value.find((s) => String(s.id) === String(modalSantriId.value))
+      const santri = santriMap.value.get(String(modalSantriId.value))
       await setDoc(doc(db, 'keuangan_tagihan', id), {
         id, santri_id: modalSantriId.value, santri_nama: santri?.nama || '',
         kategori: modalKategori.value, periode: modalPeriode.value,

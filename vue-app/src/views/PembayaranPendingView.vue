@@ -1,7 +1,7 @@
 <template>
   <div class="p-3 md:p-5 max-w-5xl mx-auto space-y-4">
-    <!-- Header -->
-    <div class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+    <!-- Header — v.100: sembunyikan di Electron (judul redundan dgn pita) -->
+    <div v-if="!isDesktop" class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-3">
       <div>
         <h1 class="text-base md:text-lg font-black">
           <i class="fas fa-hourglass-half text-amber-500 mr-2"></i>Verifikasi Pembayaran
@@ -188,6 +188,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useDesktopShell } from '@/composables/useDesktopShell'
 import { doc, getDoc } from 'firebase/firestore'
 import { db } from '@/services/firebase'
 import { subscribeColl, setOne, deleteOne } from '@/services/firestore'
@@ -412,6 +413,8 @@ onMounted(() => {
     loading.value = false
   })
 })
+const { isElectron: isDesktop } = useDesktopShell()
+
 onUnmounted(() => {
   if (unsubPending) { try { unsubPending() } catch (e) {} }
 })

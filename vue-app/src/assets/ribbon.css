@@ -597,52 +597,6 @@
 .ammu-ribbon-app[data-ribbon='simple'] .rb-clock .day {
   display: none;
 }
-.ammu-ribbon-app .rb-greet {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  align-self: center;
-  background: var(--rb-surface);
-  border: 1px solid var(--rb-card-border);
-  border-radius: 8px;
-  padding: 8px 14px 8px 10px;
-  height: 62px;
-}
-.ammu-ribbon-app[data-ribbon='simple'] .rb-greet {
-  height: 34px;
-  padding: 4px 10px;
-}
-.ammu-ribbon-app .rb-greet .rb-avatar-lg {
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  background: var(--accent);
-  color: #fff;
-  font-weight: 700;
-  font-size: 16px;
-  flex: none;
-}
-.ammu-ribbon-app[data-ribbon='simple'] .rb-greet .rb-avatar-lg {
-  width: 24px;
-  height: 24px;
-  font-size: 11px;
-}
-.ammu-ribbon-app .rb-greet .g1 {
-  font-size: 13px;
-  font-weight: 600;
-}
-.ammu-ribbon-app .rb-greet .g2 {
-  font-size: 11px;
-  color: var(--rb-text-dim);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.ammu-ribbon-app[data-ribbon='simple'] .rb-greet .g2 {
-  display: none;
-}
 .ammu-ribbon-app .rb-badge-admin {
   background: color-mix(in srgb, var(--accent) 14%, transparent);
   color: var(--accent);

@@ -1,6 +1,7 @@
 <template>
   <div class="p-3 md:p-5 max-w-5xl mx-auto space-y-4">
-    <div class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm">
+    <!-- Header — v.100: sembunyikan di Electron (aksi → pita) -->
+    <div v-if="!isDesktop" class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm">
       <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
         <div>
           <h1 class="text-base md:text-lg font-black"><i class="fas fa-balance-scale text-cyan-500 mr-2"></i>Hutang Piutang</h1>
@@ -73,6 +74,8 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useDesktopShell } from '@/composables/useDesktopShell'
+import { definePageActions } from '@/composables/useRibbonContext'
 import { subscribeColl } from '@/services/firestore'
 import { doc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore'
 import { deleteOne } from '@/services/firestore' // v.91.0626: hapus = backup audit_log dulu
@@ -144,5 +147,8 @@ async function deleteItem(h) {
 }
 
 onMounted(() => { unsub = subscribeColl('keuangan_hutang_piutang', (docs) => { items.value = docs }) })
+const { isElectron: isDesktop } = useDesktopShell()
+definePageActions(() => [{ label: 'Tambah', icon: 'plus', primary: true, on: () => openModal() }])
+
 onUnmounted(() => { if (unsub) { try { unsub() } catch (e) {} } })
 </script>

@@ -1,8 +1,8 @@
 <template>
   <!-- v.21.84.0527: Ammu Channel — Instagram-style pakai PostCard widget existing -->
   <div class="p-3 md:p-5 space-y-4">
-    <!-- Header -->
-    <div class="bg-[var(--bg-card)] rounded-2xl p-3 md:p-4 border border-[var(--border-subtle)] shadow-sm flex justify-between items-center gap-3">
+    <!-- Header — v.100: sembunyikan di Electron (aksi → pita) -->
+    <div v-if="!isDesktop" class="bg-[var(--bg-card)] rounded-2xl p-3 md:p-4 border border-[var(--border-subtle)] shadow-sm flex justify-between items-center gap-3">
       <div class="flex-1 min-w-0">
         <h1 class="text-lg md:text-xl font-black truncate">
           <i class="fas fa-bullhorn text-teal-600 mr-2"></i>{{ channelName }}
@@ -172,6 +172,8 @@ import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
+import { useDesktopShell } from '@/composables/useDesktopShell'
+import { definePageActions } from '@/composables/useRibbonContext'
 import PostCard from '@/components/posts/PostCard.vue'
 import ReactionBar from '@/components/posts/ReactionBar.vue'
 
@@ -410,6 +412,12 @@ onMounted(() => {
     postsRaw.value = docs
     loading.value = false
   })
+})
+
+const { isElectron: isDesktop } = useDesktopShell()
+definePageActions(() => {
+  if (!isAdmin.value) return []
+  return [{ label: 'Post Baru', icon: 'plus', primary: true, on: () => openModal() }]
 })
 
 onUnmounted(() => {
