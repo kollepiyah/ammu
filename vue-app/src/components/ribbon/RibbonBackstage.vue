@@ -42,17 +42,65 @@
       <template v-else-if="active === 'printer'">
         <h1>Printer</h1>
         <p style="color: var(--rb-text-dim); max-width: 560px; line-height: 1.7">
-          Atur printer default untuk cetak langsung struk POS (dot-matrix / thermal). Daftar printer
-          diambil dari Windows. Penyetelan ukuran slip &amp; ESC/P ada di Keuangan → Buat Tagihan.
+          Pilih printer default untuk cetak langsung struk/slip (dot-matrix / thermal). Daftar
+          diambil langsung dari Windows. Penyetelan ukuran slip &amp; ESC/P ada di Keuangan → Buat Tagihan.
         </p>
-        <div class="rb-bs-info" style="margin-top: 18px; max-width: 460px">
-          <div class="row"><b>Printer Default</b><span>{{ defaultPrinterLabel }}</span></div>
-          <div class="row"><b>Mode</b><span>{{ isDesktop ? 'Desktop (Windows)' : 'Web / HP' }}</span></div>
-        </div>
-        <button class="rb-bs-item" style="margin-top: 18px; max-width: 340px" type="button" @click="openPrinterSettings">
-          <RibbonIcon name="printer" :size="18" /> Buka Pengaturan Printer
-        </button>
-        <p v-if="!isDesktop" style="color: var(--rb-text-dim); margin-top: 12px; font-size: 12px">
+
+        <template v-if="isDesktop">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; max-width: 560px; margin-top: 18px">
+            <b style="color: var(--rb-text)">Printer Terdeteksi ({{ printers.length }})</b>
+            <button class="rb-bs-item" style="width: auto; padding: 6px 12px" type="button" :disabled="loadingPrinters" @click="refreshPrinters">
+              <RibbonIcon name="refresh" :size="16" /> {{ loadingPrinters ? 'Mendeteksi…' : 'Deteksi Ulang' }}
+            </button>
+          </div>
+
+          <div style="max-width: 560px; margin-top: 10px; display: flex; flex-direction: column; gap: 8px">
+            <button
+              type="button"
+              class="rb-bs-item"
+              :style="printerItemStyle('')"
+              @click="selectedPrinter = ''"
+            >
+              <RibbonIcon name="printer" :size="18" />
+              <span style="flex: 1; text-align: left">(Printer default sistem Windows)</span>
+              <span v-if="selectedPrinter === ''" style="font-size: 11px; font-weight: 700; color: var(--accent)">✓ dipilih</span>
+            </button>
+            <button
+              v-for="p in printers"
+              :key="p.name"
+              type="button"
+              class="rb-bs-item"
+              :style="printerItemStyle(p.name)"
+              @click="selectedPrinter = p.name"
+            >
+              <RibbonIcon name="printer" :size="18" />
+              <span style="flex: 1; text-align: left">
+                {{ p.displayName || p.name }}
+                <span v-if="p.isDefault" style="font-size: 11px; color: var(--rb-text-dim)"> — default Windows</span>
+              </span>
+              <span v-if="selectedPrinter === p.name" style="font-size: 11px; font-weight: 700; color: var(--accent)">✓ dipilih</span>
+            </button>
+            <p v-if="!loadingPrinters && printers.length === 0" style="color: #d97706; font-size: 12px">
+              Tidak ada printer terdeteksi. Pastikan printer menyala &amp; terpasang di Windows, lalu klik "Deteksi Ulang".
+            </p>
+          </div>
+
+          <div style="display: flex; gap: 10px; margin-top: 16px; max-width: 560px">
+            <button class="rb-bs-item" style="width: auto; padding: 8px 16px; background: var(--accent); color: #fff" type="button" @click="simpanPrinter">
+              <RibbonIcon name="save" :size="16" /> Simpan Default
+            </button>
+            <button class="rb-bs-item" style="width: auto; padding: 8px 16px" type="button" :disabled="testingPrint" @click="tesCetakPrinter">
+              <RibbonIcon name="printer" :size="16" /> {{ testingPrint ? 'Mengirim…' : 'Tes Cetak' }}
+            </button>
+          </div>
+
+          <div class="rb-bs-info" style="margin-top: 18px; max-width: 460px">
+            <div class="row"><b>Default App</b><span>{{ defaultPrinterLabel }}</span></div>
+            <div class="row"><b>Mode</b><span>Desktop (Windows)</span></div>
+          </div>
+        </template>
+
+        <p v-else style="color: var(--rb-text-dim); margin-top: 12px; font-size: 12px">
           Deteksi printer hanya tersedia di aplikasi Desktop (Windows).
         </p>
       </template>
@@ -77,22 +125,71 @@ import { useRouter } from 'vue-router'
 import RibbonIcon from './RibbonIcon.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
-import { getDefaultPrinter, isElectron } from '@/composables/useDesktopPrint'
+import { listPrinters, getDefaultPrinter, setDefaultPrinter, isElectron, printRaw } from '@/composables/useDesktopPrint'
+import { buildStrukSlipEscpBase64 } from '@/utils/escpImage'
+import { useToast } from '@/composables/useToast'
 
 const emit = defineEmits(['close'])
 const router = useRouter()
 const auth = useAuthStore()
 const settings = useSettingsStore()
+const toast = useToast()
 
-// T15: ringkasan printer di menu File; pengaturan lengkap dibuka via modal global (event)
+// v.100 Batch9 (T15 lanjutan): pengaturan printer PENUH langsung di backstage gaya Office —
+//   deteksi printer Windows, pilih default app, tes cetak ESC/P (reuse useDesktopPrint, tanpa modal).
 const isDesktop = isElectron()
-const defaultPrinterLabel = computed(() => getDefaultPrinter() || '(default sistem Windows)')
-function openPrinterSettings() {
-  emit('close')
+const printers = ref([])
+const selectedPrinter = ref(getDefaultPrinter())
+const savedPrinter = ref(getDefaultPrinter())
+const loadingPrinters = ref(false)
+const testingPrint = ref(false)
+const defaultPrinterLabel = computed(() => savedPrinter.value || '(default sistem Windows)')
+
+async function refreshPrinters() {
+  loadingPrinters.value = true
   try {
-    window.dispatchEvent(new CustomEvent('ammu:open-printer-settings'))
+    printers.value = (await listPrinters()) || []
   } catch (e) {
-    /* ignore */
+    printers.value = []
+  } finally {
+    loadingPrinters.value = false
+  }
+}
+
+function printerItemStyle(name) {
+  const base = 'display:flex;align-items:center;gap:10px;'
+  return selectedPrinter.value === name
+    ? base + 'border:1.5px solid var(--accent);background:color-mix(in srgb, var(--accent) 10%, transparent)'
+    : base
+}
+
+function simpanPrinter() {
+  setDefaultPrinter(selectedPrinter.value)
+  savedPrinter.value = selectedPrinter.value
+  toast.success(selectedPrinter.value ? 'Printer default: ' + selectedPrinter.value : 'Pakai printer default sistem')
+}
+
+async function tesCetakPrinter() {
+  testingPrint.value = true
+  try {
+    const now = new Date()
+    const dummy = {
+      santri_nama: 'TES CETAK STRUK', santri_nis: '-',
+      tanggal: now.toISOString().slice(0, 10),
+      no_struk: 'TEST-' + now.toTimeString().slice(0, 5).replace(':', ''),
+      metode: 'TUNAI', operator: selectedPrinter.value || 'Printer',
+      penyetor: '', terbilang: 'Seratus Ribu Rupiah',
+      items: [{ jenis: 'Tes Cetak Struk', nominal: 100000, keterangan: '' }],
+      total: 100000, bayar: 100000, kembali: 0
+    }
+    const s = settings.settings || {}
+    const res = await printRaw({ base64: buildStrukSlipEscpBase64(dummy, s), deviceName: selectedPrinter.value || undefined })
+    if (res && res.ok === false) throw new Error(res.error || 'Print gagal')
+    toast.success('Tes cetak terkirim ke printer')
+  } catch (e) {
+    toast.error('Gagal tes cetak: ' + (e?.message || e))
+  } finally {
+    testingPrint.value = false
   }
 }
 
@@ -150,6 +247,7 @@ async function onRail(it) {
   }
   if (it.id === 'info' || it.id === 'tentang' || it.id === 'printer') {
     active.value = it.id
+    if (it.id === 'printer' && isDesktop) refreshPrinters()
     return
   }
   if (it.to) goAndClose(it.to)

@@ -246,8 +246,7 @@
           <div class="flex-1 min-w-0">
             <p class="text-sm font-bold text-[var(--text-primary)] truncate">{{ s.nama }}</p>
             <p class="text-[11px] text-[var(--text-secondary)] truncate">
-              {{ s.lembaga }}{{ s.kelas ? ' · ' + s.kelas : ''
-              }}{{ s.juz && s.juz !== '-' ? ' · Juz ' + s.juz : '' }}
+              {{ santriRowLabel(s) }}
             </p>
           </div>
           <div class="flex items-center gap-1.5 flex-shrink-0">
@@ -952,8 +951,7 @@
                   {{ formSantri?.nama || '-' }}
                 </strong>
                 <p class="text-[11px] text-[var(--text-secondary)] mt-1">
-                  Saat ini: {{ formSantri?.lembaga || '-'
-                  }}{{ formSantri?.kelas ? ' · ' + formSantri.kelas : '' }}
+                  Saat ini: {{ formSaatIni }}
                 </p>
               </div>
 
@@ -1359,7 +1357,13 @@ const filteredFormSantri = computed(() => {
         .includes(kw)
     )
   }
-  return sortSantri(list, { lembagaField: 'lembaga', kelasField: 'kelas' })
+  // v.100 Batch9: kategori sekolah → urut pakai field sekolah (bukan kelas ngaji)
+  return sortSantri(
+    list,
+    kenaikanKategori.value === 'sekolah'
+      ? { lembagaField: 'lembaga_sekolah', kelasField: 'kelas_sekolah' }
+      : { lembagaField: 'lembaga', kelasField: 'kelas' }
+  )
 })
 
 // ────────── Riwayat tab ──────────
@@ -1873,6 +1877,25 @@ const formIsSekolah = ref(false)
 const formLembagaOptions = computed(() =>
   formIsSekolah.value ? LEMBAGA_KENAIKAN_SEKOLAH : LEMBAGA_KENAIKAN_LIST
 )
+// v.100 Batch9: identitas form & label baris ikut KATEGORI — mode sekolah baca
+//   lembaga_sekolah/kelas_sekolah (sebelumnya selalu lembaga/kelas ngaji → form sekolah
+//   tampak "membaca data Qiraati" walau simpan sudah benar via saveFormKenaikanSekolah).
+const formSaatIni = computed(() => {
+  const s = formSantri.value
+  if (!s) return '-'
+  if (formIsSekolah.value) {
+    return (s.lembaga_sekolah || '-') + (s.kelas_sekolah ? ' · ' + s.kelas_sekolah : '')
+  }
+  return (s.lembaga || '-') + (s.kelas ? ' · ' + s.kelas : '')
+})
+function santriRowLabel(s) {
+  if (!isGuru.value && kenaikanKategori.value === 'sekolah') {
+    return (s.lembaga_sekolah || '-') + (s.kelas_sekolah ? ' · ' + s.kelas_sekolah : '')
+  }
+  let t = (s.lembaga || '') + (s.kelas ? ' · ' + s.kelas : '')
+  if (s.juz && s.juz !== '-') t += ' · Juz ' + s.juz
+  return t
+}
 const SEKOLAH_KELAS_MAP = {
   TK: ['TK A', 'TK B'],
   SDI: ['I', 'II', 'III', 'IV', 'V', 'VI'],
