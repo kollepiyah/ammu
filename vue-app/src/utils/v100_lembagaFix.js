@@ -1,6 +1,7 @@
 // v.100 Batch10: Migrasi Lembaga — perbaiki SALAH IMPOR penempatan lembaga santri.
-//   Kasus nyata kyai: (A) kelas Qiraati berisi "Level ..." tapi lembaga masih TPQ Pagi
-//   (harusnya PTPT; "Pra PTPT ..." → Pra PTPT); (B) lembaga_sekolah terisi nilai NGAJI
+//   Kasus nyata kyai: (A) kelas Qiraati berisi "Level ..." tapi lembaga tak cocok
+//   (kelas "Level ..." → Pra PTPT; "Juz N" utuh → PTPT; "Pra PTPT ..." → Pra PTPT);
+//   (B) lembaga_sekolah terisi nilai NGAJI
 //   ("Sekolah: TPQ Pagi" — invalid, sekolah hanya TK/SDI/PKBM); (C) lembaga TPQ tapi
 //   lembaga_sekolah TK (flag cek-manual, default TIDAK dicentang).
 //   Scan = report-only. Apply = updateDoc parsial per santri + backup nilai LAMA ke
@@ -23,9 +24,10 @@ export function inferLembagaFromKelas(kelas) {
   const k = low(kelas)
   if (!k || k === '-') return ''
   if (/pra\s*[-_]?\s*ptpt/.test(k)) return 'Pra PTPT'
-  // keputusan kyai 10 Jun: kelas berisi "Level" (tanpa "Pra PTPT") = PTPT
-  if (/\blevel\b/.test(k)) return 'PTPT'
-  if (/\bjuz\b/.test(k)) return 'PTPT'
+  // keputusan kyai 10 Jun (revisi): kelas berisi "Level" (mis. "Level 3 Juz") = Pra PTPT.
+  //   Cek "level" SEBELUM "juz" agar "Level N Juz" tertangkap Pra PTPT, bukan PTPT.
+  if (/\blevel\b/.test(k)) return 'Pra PTPT'
+  if (/\bjuz\b/.test(k)) return 'PTPT' // "Juz N" utuh tanpa "Level" = PTPT
   if (/jilid|persiapan|khotam|kpi|finishing/.test(k)) return 'TPQ' // family (Pagi/Sore tak bisa ditebak)
   return ''
 }

@@ -567,6 +567,7 @@ async function kirimGoogleSheet() {
       wa: s.wa || ''
     }))
     const { url } = await sendToSheet({
+      rows, // v.100: WAJIB — tanpa ini Apps Script hanya tulis KOP + header (baris data kosong)
       title: `Data Santri ${new Date().toISOString().slice(0, 10)}`,
       sheetName: 'Data Santri',
       kop: [ss.kopLine1 || 'PONDOK PESANTREN MAMBAUL ULUM', ss.kopLine2 || '', ss.kopLine3 || ''].filter(Boolean),

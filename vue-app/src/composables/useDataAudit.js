@@ -25,6 +25,14 @@ function isPhoneValid(v) {
 function isGuruAktif(status) {
   return !status || ['aktif', 'tetap', 'kontrak'].includes(String(status).toLowerCase())
 }
+// Nama yang TIDAK mengandung huruf sama sekali (hanya angka/simbol) — kandidat NIK/NIS
+// nyasar ke kolom nama saat impor. mis. "3576010101010001".
+function looksNumericName(nama) {
+  const s = String(nama == null ? '' : nama).trim()
+  if (!s) return false
+  if (/[a-zA-Z]/.test(s)) return false // ada huruf → nama wajar
+  return /\d/.test(s) // tanpa huruf tapi ada angka → mencurigakan
+}
 // Kunci agresif untuk deteksi nama mirip: buang semua non-alfanumerik + gelar umum.
 function fuzzyKey(nama) {
   return norm(nama)
@@ -77,6 +85,10 @@ export function useDataAudit(santriRef, guruRef, lembagaRef) {
     // ── SANTRI ────────────────────────────────────────────────
     const sTanpaNis = sList.filter((s) => isEmptyStr(s.nis))
     out.push({ key: 's_nis', label: 'Santri tanpa NIS', icon: 'fa-id-badge', sev: 'warn', items: sTanpaNis.map(sLabel) })
+
+    // Nama berupa angka (NIK/NIS salah masuk ke kolom nama) — perlu dibetulkan manual via Edit
+    const sNamaAngka = sList.filter((s) => looksNumericName(s.nama))
+    out.push({ key: 's_nama_angka', label: 'Santri: nama tampak seperti angka (mungkin NIK/NIS salah kolom)', icon: 'fa-hashtag', sev: 'danger', items: sNamaAngka.map((s) => ({ ...sLabel(s), detail: `nama "${s.nama}" · NIS ${s.nis || '-'}` })) })
 
     const sTanpaLembaga = sList.filter((s) => isEmptyStr(s.lembaga) && isEmptyStr(s.lembaga_sekolah))
     out.push({ key: 's_lembaga', label: 'Santri tanpa lembaga', icon: 'fa-building-circle-xmark', sev: 'danger', items: sTanpaLembaga.map(sLabel) })

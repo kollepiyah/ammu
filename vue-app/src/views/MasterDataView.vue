@@ -1113,7 +1113,7 @@ async function simpanPengaturanRekap() {
         <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
           <div>
             <p class="text-sm font-black text-amber-700 dark:text-amber-300"><i class="fas fa-route mr-1"></i>Migrasi Lembaga (Salah Impor)</p>
-            <p class="text-xs text-slate-600 dark:text-slate-300 mt-1">Deteksi penempatan lembaga yang salah dari impor: (A) kelas pola <b>Level/Juz → PTPT</b>, <b>Pra PTPT → Pra PTPT</b>, <b>Jilid/KPI → TPQ</b> tapi lembaga tak cocok — saran bisa DIUBAH per baris; (B) <b>Lembaga Sekolah berisi nilai ngaji</b> (mis. "TPQ Pagi") → dikosongkan; (C) lembaga TPQ tapi sekolah TK → cek manual (default tidak dicentang). Nilai lama di-backup ke audit_log.</p>
+            <p class="text-xs text-slate-600 dark:text-slate-300 mt-1">Deteksi penempatan lembaga yang salah dari impor: (A) kelas pola <b>Level → Pra PTPT</b>, <b>Juz (utuh) → PTPT</b>, <b>Pra PTPT → Pra PTPT</b>, <b>Jilid/KPI → TPQ</b> tapi lembaga tak cocok — saran bisa DIUBAH per baris; (B) <b>Lembaga Sekolah berisi nilai ngaji</b> (mis. "TPQ Pagi") → dikosongkan; (C) lembaga TPQ tapi sekolah TK → cek manual (default tidak dicentang). Nilai lama di-backup ke audit_log.</p>
           </div>
           <span v-if="lfixFindings" class="text-[10px] font-bold px-2 py-0.5 rounded uppercase" :class="lfixFindings.length ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'">{{ lfixFindings.length }} temuan</span>
         </div>
