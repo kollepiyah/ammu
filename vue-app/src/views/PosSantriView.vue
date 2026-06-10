@@ -206,7 +206,7 @@ import {
 } from 'firebase/firestore'
 import { db } from '@/services/firebase'
 import { sortSantri } from '@/utils/santriSort'
-import { cetakStrukPdf, cetakStrukSlipPdf, cetakStrukDotMatrix, buildStrukHtml, buildStrukEscposBase64 } from '@/utils/strukBuilder'
+import { cetakStrukPdf, cetakStrukSlipPdf, buildStrukHtml } from '@/utils/strukBuilder'
 import { buildStrukSlipEscpBase64 } from '@/utils/escpImage'
 import { isElectron, printStruk, printRaw, printPdf, getDefaultPrinter } from '@/composables/useDesktopPrint'
 import { terbilangRupiah } from '@/utils/terbilang'

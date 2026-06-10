@@ -896,25 +896,6 @@ function escapeHtml(t) {
   })
 }
 
-export function cetakStrukDotMatrix(trx, settings = {}) {
-  const paper = paperFromSettings(settings)
-  const text = buildStrukText(trx, settings)
-  const winW = paper.cols >= 60 ? 760 : 380
-  const w = window.open('', '_blank', 'width=' + winW + ',height=640')
-  if (!w) { alert('Popup diblokir — izinkan popup untuk mencetak struk.'); return }
-  const css = paper.pageCss +
-    ' body { font-family: "Courier New", monospace; white-space: pre; line-height: 1.3; margin: 0; padding: 2px 4px; color: #000; -webkit-print-color-adjust: exact; print-color-adjust: exact; }'
-  w.document.write(
-    paper.cols >= 60
-      ? buildStrukHtmlWide(trx, settings)
-      : '<!DOCTYPE html><html><head><title>Struk</title><style>' + css +
-        '</style></head><body>' + escapeHtml(text) + '</body></html>'
-  )
-  w.document.close()
-  w.focus()
-  setTimeout(function () { try { w.print() } catch (e) {} }, 350)
-}
-
 // v.07.0626: build HTML struk untuk SILENT print (Electron desktop, tanpa dialog)
 function _row(label, val) {
   return '<tr><td style="vertical-align:top;white-space:nowrap;padding:1px 0;">' + escapeHtml(label) +
@@ -985,35 +966,4 @@ export function buildStrukHtml(trx, settings = {}) {
     ' body { font-family: "Courier New", monospace; white-space: pre; line-height: 1.3; margin: 0; padding: 2px 4px; color: #000; -webkit-print-color-adjust: exact; print-color-adjust: exact; }'
   return '<!DOCTYPE html><html><head><title>Struk</title><style>' + css +
     '</style></head><body>' + escapeHtml(text) + '</body></html>'
-}
-
-// v.95.0626: ESC/P raw bytes (base64) untuk Epson LX-310 dot-matrix — teks fixed-width + perintah
-//   printer langsung (BUKAN render gambar). Set form-length via ESC C -> 1 slip per struk, ukuran
-//   pas, tajam spt struk lama. settings.posStrukFormLines = jumlah baris 1 slip (default 33 = 5.5" @ 6 LPI).
-export function buildStrukEscposBase64(trx, settings = {}) {
-  const ESC = '\x1B'
-  const text = buildStrukText(trx, settings) // 80-kolom fixed-width (sama dgn struk lama)
-  let lines = parseInt(settings && settings.posStrukFormLines, 10)
-  if (!(lines >= 6 && lines <= 127)) lines = 41 // 41 baris @ 8 LPI ~= 13cm (1 slip; setel ke tinggi kertas: cm x 3.15)
-  let raw = ''
-  raw += ESC + '@'                               // 1) reset/init printer
-  raw += ESC + 'G'                               // 2) double-strike ON (lebih hitam utk 2-ply carbon)
-  raw += ESC + '0'                               // 3) line spacing 1/8" (8 LPI) — rapat, muat slip pendek 12-14cm
-  // 4) char pitch: DEFAULT 10 cpi (pica) — 80 kolom = 8" = ~203mm, mengisi penuh kertas ~210mm.
-  //    settings.posStrukCpi = 10|12|15|17 (makin besar = makin kecil/rapat utk kertas sempit)
-  const cpi = parseInt(settings && settings.posStrukCpi, 10)
-  raw += cpi === 12 ? ESC + 'M' : cpi === 15 ? ESC + 'g' : cpi === 17 ? '\x0F' : ESC + 'P'
-  // 4b) margin kiri = centering (geser konten ke kanan). settings.posStrukLeftCols (default 6; 0 = mepet kiri)
-  const leftCols = parseInt(settings && settings.posStrukLeftCols, 10)
-  const lm = leftCols >= 0 && leftCols <= 40 ? leftCols : 1 // default 1 kolom: 80 kol @10cpi=203mm hampir penuhi 210mm
-  if (lm > 0) raw += ESC + 'l' + String.fromCharCode(lm)
-  raw += ESC + 'C' + String.fromCharCode(lines)  // 5) page length = `lines` baris (panjang 1 slip)
-  // 5b) margin atas (zona tak-tercetak printer). settings.posStrukTopLines (default 2 baris kosong)
-  const topLines = parseInt(settings && settings.posStrukTopLines, 10)
-  const tl = topLines >= 0 && topLines <= 12 ? topLines : 0 // default 0: printer dot-matrix biasanya sudah ada whitespace atas (~5cm)
-  if (tl > 0) raw += '\r\n'.repeat(tl)
-  raw += String(text).replace(/\r?\n/g, '\r\n')  // 6) isi struk, tiap baris diakhiri CR+LF
-  raw += '\x0C'                                  // 7) form feed -> maju tepat ke slip berikutnya
-  if (typeof btoa === 'function') return btoa(raw)
-  return Buffer.from(raw, 'latin1').toString('base64')
 }
