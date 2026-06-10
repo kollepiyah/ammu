@@ -5,17 +5,19 @@
       class="bg-[var(--bg-card)] rounded-2xl p-5 md:p-6 border border-[var(--border-subtle)] shadow-sm"
     >
       <h2 class="text-lg md:text-xl font-black text-[var(--text-primary)]">
-        <i class="fas fa-sliders-h text-cyan-600 mr-2"></i>Pengaturan Keuangan
+        <i class="fas fa-sliders-h text-cyan-600 mr-2"></i>{{ sectionMeta.t }}
       </h2>
       <p class="text-xs text-[var(--text-secondary)] mt-1">
-        Atur tanggal jatuh tempo, jenis tagihan, bisyaroh shift &amp; bisyaroh pokok.
+        {{ sectionMeta.s }}
       </p>
     </div>
 
-    <!-- Pembayaran & Jatuh Tempo -->
+    <!-- Pembayaran & Jatuh Tempo (T14: section-aware — tagihan/struk vs syahriyah) -->
     <div
+      v-show="secVisible('tagihan') || secVisible('syahriyah')"
       class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
     >
+      <div v-show="secVisible('tagihan')">
       <h3
         class="text-xs md:text-sm font-black text-[var(--text-primary)] uppercase tracking-widest mb-3 border-b border-[var(--border-subtle)] pb-2"
       >
@@ -135,8 +137,9 @@
           <i class="fas fa-info-circle mr-1"></i>Struk dicetak <b>grafis langsung ke printer (ESC/P)</b> — tajam &amp; tanpa feed kosong. Lebar maks cetak ~8 inci (200mm). Untuk <b>center</b>: kecilkan <b>Lebar slip</b> (mis. 185) lalu naikkan <b>Geser kanan</b> (mis. 15–18) sampai konten di tengah. <b>Margin atas</b> = jarak dari tepi atas (0 = paling atas). <b>Tinggi slip</b> = tinggi fisik slip (mis. 140) agar tiap cetak maju tepat 1 slip.
         </p>
       </div>
+      </div><!-- /blok tagihan -->
 
-      <div class="mt-4">
+      <div v-show="secVisible('syahriyah')" class="mt-4">
         <h4
           class="font-black text-slate-700 dark:text-[var(--text-tertiary)] text-[11px] uppercase tracking-wider mb-2"
         >
@@ -330,6 +333,7 @@
 
     <!-- Bisyaroh -->
     <div
+      v-show="secVisible('bisyaroh')"
       class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
     >
       <h3
@@ -459,6 +463,7 @@
 
     <!-- Kategori Transaksi -->
     <div
+      v-show="!focusSection"
       class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
     >
       <h3
@@ -556,6 +561,7 @@
 
     <!-- Master Tunjangan -->
     <div
+      v-show="secVisible('bisyaroh')"
       class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
     >
       <div
@@ -643,6 +649,7 @@
 
     <!-- Master Potongan -->
     <div
+      v-show="secVisible('bisyaroh')"
       class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
     >
       <div
@@ -730,6 +737,7 @@
 
     <!-- Bank -->
     <div
+      v-show="!focusSection"
       class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
     >
       <h3
@@ -782,6 +790,7 @@
 
     <!-- v.97.0626: Integrasi BMT PETA (Virtual Account) -->
     <div
+      v-show="!focusSection"
       class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
     >
       <h3
@@ -1074,6 +1083,7 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { doc, setDoc } from 'firebase/firestore'
 import { db } from '@/services/firebase'
 import { useSettingsStore } from '@/stores/settings'
@@ -1085,6 +1095,20 @@ const settingsStore = useSettingsStore()
 const { guruRaw } = useGuru()
 const { lembagaRaw } = useLembaga()
 const toast = useToast()
+const route = useRoute()
+
+// v.100 (Batch 4, Electron): pita Keuangan memecah Pengaturan jadi tombol → buka view ini dgn
+// ?section=tagihan|syahriyah|bisyaroh untuk fokus 1 area. Tanpa query (web/Android) tampil PENUH.
+const focusSection = computed(() => String(route.query.section || ''))
+function secVisible(name) {
+  return !focusSection.value || focusSection.value === name
+}
+const sectionMeta = computed(() => {
+  if (focusSection.value === 'tagihan') return { t: 'Buat / Generate Tagihan', s: 'Generate tagihan bulanan & tagihan khusus (infaq/iuran), atur jatuh tempo & struk.' }
+  if (focusSection.value === 'syahriyah') return { t: 'Pengaturan Syahriyah Santri', s: 'Atur jenis & nominal syahriyah, whitelist + override per lembaga/kelas/santri.' }
+  if (focusSection.value === 'bisyaroh') return { t: 'Pengaturan Bisyaroh Guru/Pegawai', s: 'Bisyaroh shift & pokok, plus master tunjangan & potongan.' }
+  return { t: 'Pengaturan Keuangan', s: 'Atur tanggal jatuh tempo, jenis tagihan, bisyaroh shift & bisyaroh pokok.' }
+})
 
 // v.94.0626: buka modal Pengaturan Printer (deteksi printer Windows). PrinterSettingsModal global dengar event ini.
 function bukaPengaturanPrinter() {
@@ -1253,7 +1277,13 @@ function loadFromSettings() {
   form.bmt_va_prefix = s.bmt_va_prefix || ''
 }
 
-onMounted(loadFromSettings)
+onMounted(() => {
+  loadFromSettings()
+  // T6: tombol pita "Buat Tagihan" buka langsung modal Generate Tagihan Khusus
+  if (route.query.gen) {
+    setTimeout(() => { try { openGenKhusus() } catch (e) { /* ignore */ } }, 0)
+  }
+})
 
 function fmtRp(v) {
   const n = parseInt(String(v).replace(/\D/g, '')) || 0

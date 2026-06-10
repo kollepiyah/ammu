@@ -95,7 +95,8 @@ const TABS = [
         items: [
           { type: 'large', icon: 'layers', label: 'POS\nSantri', to: '/pos-santri', accent: true },
           { type: 'large', icon: 'file', label: 'Tagihan\nAktif', to: '/tagihan' },
-          { type: 'small', icon: 'edit', label: 'Buat Tagihan', to: '/tagihan' },
+          // T6: Buat Tagihan → halaman Generate Tagihan Khusus (modal auto-buka via ?gen=1)
+          { type: 'small', icon: 'edit', label: 'Buat Tagihan', to: '/keu-pengaturan?section=tagihan&gen=1' },
           { type: 'small', icon: 'bell', label: 'Verifikasi Bayar', to: '/pembayaran-pending' }
         ]
       },
@@ -112,7 +113,8 @@ const TABS = [
         items: [
           { type: 'large', icon: 'doc', label: 'Slip\nBisyaroh', to: '/bisyaroh' },
           { type: 'small', icon: 'users', label: 'Hutang Piutang', to: '/hutang-piutang' },
-          { type: 'small', icon: 'gear', label: 'Pengaturan', to: '/keu-pengaturan' }
+          // T7: Pengaturan Bisyaroh → halaman fokus bisyaroh guru/pegawai
+          { type: 'small', icon: 'gear', label: 'Pengaturan Bisyaroh', to: '/keu-pengaturan?section=bisyaroh' }
         ]
       },
       {
@@ -121,6 +123,16 @@ const TABS = [
           { type: 'large', icon: 'book', label: 'Buku\nInduk', to: '/buku-induk' },
           { type: 'small', icon: 'chart-line', label: 'Laporan', to: '/laporan-keuangan' },
           { type: 'small', icon: 'download', label: 'Riwayat Santri', to: '/riwayat-santri' }
+        ]
+      },
+      {
+        // T14: pengaturan keuangan dipecah jadi tombol terpisah (bukan 1 halaman menyeluruh)
+        label: 'Pengaturan',
+        items: [
+          { type: 'large', icon: 'gear', label: 'Pengaturan\nKeuangan', to: '/keu-pengaturan' },
+          // T8: Pengaturan Syahriyah santri → halaman fokus
+          { type: 'small', icon: 'file', label: 'Syahriyah Santri', to: '/keu-pengaturan?section=syahriyah' },
+          { type: 'small', icon: 'printer', label: 'Tagihan & Struk', to: '/keu-pengaturan?section=tagihan' }
         ]
       }
     ]

@@ -1093,8 +1093,15 @@ firestore.rules TIDAK diubah.
 - **T18 Logout + konfirmasi:** tombol Keluar (ikon `logout`) di `rb-right` → `ui.confirm(...)` pop-up dulu → `auth.logout()` → `/login` (tidak langsung keluar).
 - **FILE:** `components/ribbon/RibbonTitleBar.vue`, `components/ribbon/RibbonIcon.vue`, `composables/useRibbonContext.js`, `components/layout/GlobalSearch.vue`, `assets/ribbon.css` (style `:disabled` QAT), `views/SantriFormView.vue`. Build `_run_vite.cmd` exit 0.
 
-### ⏳ PENDING — Batch 4–8 (urut rekomendasi; detail di `REKAP-TASK-BATCH-10JUN2026.md`)
-- **Batch 4 — Ribbon Keuangan pecah jadi tombol [T6/T7/T8/T14] (ELECTRON SAJA):** tombol **Buat Tagihan** = halaman Generate Tagihan Khusus; **Pengaturan Bisyaroh** (halaman khusus edit bisyaroh guru/pegawai); **Pengaturan Syahriyah** (halaman khusus). Pecah `PengaturanKeuanganView` + rute baru + `useRibbonNav.js`.
+### ✅ SELESAI Batch 4 — Ribbon Keuangan pecah jadi tombol [T6/T7/T8/T14] (ELECTRON SAJA)
+- **Pendekatan:** `PengaturanKeuanganView` dibuat **section-aware** via `?section=tagihan|syahriyah|bisyaroh` (TANPA duplikasi logika/rute baru). Tanpa query (web/Android) → tampil PENUH seperti semula. Pakai **`v-show`** (bukan v-if) supaya semua field tetap ter-mount → tombol Simpan tetap menyimpan SELURUH setting walau hanya 1 section tampil.
+- **T6 Buat Tagihan:** tombol pita "Buat Tagihan" → `/keu-pengaturan?section=tagihan&gen=1` → halaman tagihan/struk + modal **Generate Tagihan Khusus** auto-buka (onMounted baca `route.query.gen`).
+- **T7 Pengaturan Bisyaroh:** grup Bisyaroh, tombol "Pengaturan Bisyaroh" → `?section=bisyaroh` (Bisyaroh shift/pokok + Master Tunjangan + Potongan).
+- **T8 Pengaturan Syahriyah:** grup Pengaturan, "Syahriyah Santri" → `?section=syahriyah` (jenis+nominal+whitelist+override).
+- **T14 pecah jadi tombol:** grup pita **Pengaturan** baru (Pengaturan Keuangan penuh + Syahriyah Santri + Tagihan & Struk). Header view ikut section (judul/subjudul dinamis `sectionMeta`).
+- **FILE:** `views/PengaturanKeuanganView.vue` (focusSection/secVisible/sectionMeta + v-show per-card + auto-open modal), `composables/useRibbonNav.js` (tab Keuangan). Build `_run_vite.cmd` exit 0.
+
+### ⏳ PENDING — Batch 5–8 (urut rekomendasi; detail di `REKAP-TASK-BATCH-10JUN2026.md`)
 - **Batch 5 — Ribbon PSB + Printer [T15/T16]:** tab **PSB** baru di ribbon (Riwayat Pendaftaran, Upload S&K, Info Pembayaran jadi tombol); **Printer** dilengkapi + di **backstage/menu File** (`RibbonBackstage.vue`, `useDesktopPrint.js`).
 - **Batch 6 — Kenaikan/Mutasi skema SEKOLAH [T2] (RISIKO TINGGI):** cabang sekolah di `NaikKelasView` pakai `lembaga_sekolah`+`kelas_sekolah`+`guru_sekolah[]`; tambah **field catatan kenaikan**; template **kartu kenaikan sekolah** di `raporPdf.js` (KOP + guru sekolah, bukan PTPT/Qiraati). Saat ini kenaikan sekolah masih pakai jalur kartu Qiraati.
 - **Batch 7 — Login Electron [T19/T20]:** scrollbar `LoginView` modern; **fix Google login Electron** (kemungkinan `signInWithPopup` → flow browser-sistem + `signInWithCredential`; butuh error nyata + device test kyai).
