@@ -49,6 +49,8 @@ const P = {
   save: 'M5 5a1 1 0 0 1 1-1h10l3 3v12a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1zM8 4v5h7V4M8 20v-6h8v6',
   undo: 'M9 14 4 9l5-5M4 9h11a5 5 0 0 1 0 10h-3',
   redo: 'M15 14l5-5-5-5M20 9H9a5 5 0 0 0 0 10h3',
+  'arrow-left': 'M19 12H5M11 6l-6 6 6 6',
+  'arrow-right': 'M5 12h14M13 6l6 6-6 6',
   refresh: 'M20 12a8 8 0 1 1-2.3-5.6M20 4v4h-4',
   book: 'M5 4h11a2 2 0 0 1 2 2v14H7a2 2 0 0 0-2 2zM18 20H7a2 2 0 0 0-2 2M9 8h6M9 12h6',
   file: 'M7 3h7l5 5v12a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1ZM14 3v5h5M9 13h6M9 17h4',

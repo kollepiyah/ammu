@@ -118,9 +118,13 @@
   border: 0;
   cursor: pointer;
 }
-.ammu-ribbon-app .rb-qat-btn:hover {
+.ammu-ribbon-app .rb-qat-btn:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.16);
   opacity: 1;
+}
+.ammu-ribbon-app .rb-qat-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
 }
 .ammu-ribbon-app .rb-qat-sep {
   width: 1px;

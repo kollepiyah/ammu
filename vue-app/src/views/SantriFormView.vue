@@ -324,6 +324,7 @@
 import { onMounted, watch, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useSantriForm } from '@/composables/useSantriForm'
+import { definePageSave } from '@/composables/useRibbonContext'
 import MultiSelectGuruPengajar from '@/components/form/MultiSelectGuruPengajar.vue'
 import MultiSelectGuruSekolah from '@/components/form/MultiSelectGuruSekolah.vue'
 
@@ -407,4 +408,7 @@ async function onSubmit() {
     else router.push('/santri')
   }
 }
+
+// v.100 T13: tombol Simpan title bar Electron jalankan submit form santri ini (no-op di web/HP)
+definePageSave(onSubmit)
 </script>

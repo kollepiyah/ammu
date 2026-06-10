@@ -1,5 +1,7 @@
 # REKAP TASK + RENCANA BATCH — Sesi 10 Juni 2026 (Cowork)
 
+> **STATUS:** ✅ Batch 1 (T3/T4/T5/T11), ✅ Batch 2 (T9/T10) & ✅ Batch 3 (T12/T13/T17/T18) SELESAI (belum commit/build — perintah di bawah & di PKB recap v.100). ⏳ Lanjut: Batch 4 (ribbon keuangan: Buat Tagihan + Bisyaroh + Syahriyah, Electron saja). Keputusan kyai: Batch 4 Bisyaroh/Syahriyah = Electron saja.
+
 > Disusun setelah membaca KB kanonik (`PROJECT-KNOWLEDGE-BASE.md`), `LOGIC-GLOBAL-LEMBAGA-CANONICAL.md`, `AUDIT-COWORK-09JUN2026-RIBBON-SHIP.md`, dan inspeksi langsung file sumber (`useRibbonNav.js`, `RibbonTitleBar.vue`, `NaikKelasView.vue`, `useLembaga.js`, `santriSort.js`, `GuruView.vue`, `GlobalSearch.vue`).
 > Status awal repo: HEAD pasca audit v.98; ada uncommitted UI batch (lihat KB §STATUS). Build asli & rilis tetap dijalankan kyai di Windows.
 > **Konvensi tetap dipatuhi:** surgical edits, verifikasi tiap edit (`tmp_recovery\_run_vite.cmd`), commit `--no-verify`, Vue source dipakai bersama Web/PWA/Android/Electron (perubahan `.vue/.js` → web via `firebase:deploy`, app HP via `build:aab`, desktop via `build:electron`).

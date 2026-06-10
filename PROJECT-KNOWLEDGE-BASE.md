@@ -1,4 +1,5 @@
 # PROJECT KNOWLEDGE BASE — Ammu Online (Portal MU)
+> 🆕 **RECAP TERAKHIR = "SESI v.100 — BATCH BARU KYAI (20 TASK) + BATCH 1+2 SELESAI" (di PALING BAWAH).** Rencana 8-batch lengkap + peta task→file = **`REKAP-TASK-BATCH-10JUN2026.md`**. Status: Batch 1 (urutan lembaga canonical + sort A–Z) & Batch 2 (fix Data Guru `tipe_pegawai` + tombol Migrate gabung duplikat) SELESAI, belum commit/build. Lanjut = Batch 3 (title bar Electron).
 > Dokumen onboarding untuk sesi Claude baru. Baca ini DULU sebelum mulai. **Update terakhir: 9 Juni 2026 (UI BATCH + BUMP v.98 — bump versionCode 97→98 di SEMUA titik §5; perubahan: (1) rapor "Dikeluarkan di/Pada Tanggal" label rata KIRI (tepi sejajar) di semua rapor [raporPdf.js + RaporView preview]; (2) filter lembaga di Data Santri & Data Guru: chip → DROPDOWN dgn optgroup Qiraati + Sekolah [match `lembaga` ATAU `lembaga_sekolah`]; (3) FIX Electron: App Check skip reCAPTCHA di `file://`/Capacitor native [stop spam `appCheck/recaptcha-error`], fix TDZ BantuanView [`open` ref dipindah sebelum watch immediate]; (4) "Hubungi Admin" → TOAST kontak author (Rahman Fanani, WA 085331172477, Bakafrawi Project) + info Author/Kontak/Organization di Tentang; (5) Pusat Bantuan kini TAMPIL di web & Android [menu sidebar useMenus + konten platform-aware]. ⚠️ Batch ini sebagian BELUM commit/deploy/rebuild — lihat STATUS di bawah. Recap SEBELUMNYA: AUDIT v.98 RIBBON + SHIP [5 fix keamanan/perf, bump vc97 — sudah live].**
 > ⚠️ KB KANONIK = file ini (`PROJECT-KNOWLEDGE-BASE.md`). File lama `PROJECT_KNOWLEDGE_BASE.md` (underscore) DEPRECATED — abaikan.
 > 👉 **RECAP TERBARU ada di PALING BAWAH** (cari **"SESI v.98 — UI BATCH + BUMP v.98 (9 Juni 2026)"** = recap TERAKHIR: rapor align + filter dropdown santri/guru + fix Electron App Check/TDZ + kontak author + Bantuan multi-platform + bump vc98; sebelumnya **"SESI v.98 — AUDIT RIBBON + SHIP (9 Juni 2026)"** = audit menyeluruh A–E + 5 fix + bump vc97, SUDAH ship; sebelumnya **"SESI v.98 — RIBBON DESKTOP REDESIGN (Electron-only)"** = redesain shell desktop gaya Ribbon/Office [frameless, pita kontekstual, full-native, updater in-app, Impor Kalender]; **"SESI BMT-PETA"** utk integrasi pembayaran VA santri + pencairan bisyaroh via BMT PETA; "SESI v.97.0626 — RAPOR REDESIGN FULL-ACF" + "SESI v.98.0626" utk layout/rapor/statistik + catatan TRUNCATION raporPdf). ⭐ **CETAK SLIP 2-ply (dot-matrix 9.5") FINAL = ESC/P GRAFIS RASTER** (`utils/escpImage.js` → `print:raw`, BYPASS driver): render canvas Arial → bit-image ESC/P. Driver Windows (PDF/HTML) = kosong/kotak/feed-5cm → JANGAN dipakai utk slip 9.5. Tombol "Struk PDF" tetap PDF (preview/unduh). No.Transaksi: MU-/TB-/US-/BS-NNNddmmyy. Recap sebelumnya: "BATCH 13 ITEM + STRUK SLIP PDF + FCM + VERIFY + NOTIF + NISN", "RECEIPT VIEWER + STRUK ESC/P", "FCM PUSH + STRUK + WIN7".
@@ -1059,3 +1060,59 @@ cd "D:\Aplikasi Project\Portal MU";
 .\tmp_recovery\_run_vite.cmd ; if (Test-Path ".git\index.lock"){Remove-Item -Force ".git\index.lock"} ; git add -A ; git commit --no-verify -m "feat(v.99): impor guru fix, WA leading-0+multi, jabatan tipe_lembaga, Hubungi Admin popup+ACF Bantuan, analisis duplikat, statistik detail kelas" ; npm run firebase:deploy
 ```
 firestore.rules TIDAK diubah.
+
+---
+
+## SESI v.100 — BATCH BARU KYAI (20 TASK) + BATCH 1+2 SELESAI (10 Juni 2026, Cowork) — RECAP TERBARU, BACA INI
+
+> Kyai memberi **20 task baru** (audit + fitur Electron Ribbon + skema kenaikan Sekolah + urutan lembaga + login). Saya bagi jadi **8 batch**. **Rencana lengkap + peta task→file + urutan eksekusi = `REKAP-TASK-BATCH-10JUN2026.md`** (baca itu untuk detail tiap task).
+> Keputusan kyai: kerjakan **Batch 1 + 2 dulu**; halaman Bisyaroh/Syahriyah khusus (Batch 4) = **Electron saja** (web/Android tetap pakai Pengaturan Keuangan gabungan).
+> Kyai melanjutkan di **Claude Code desktop** → di sana Desktop Commander baca `D:\` langsung (authoritative), **tidak ada** masalah mount-truncated seperti Cowork bash.
+
+### ✅ SELESAI sesi ini (Batch 1 + 2) — BELUM commit/build (kyai)
+**Batch 1 — Urutan lembaga canonical + sort A–Z [T3/T4/T5/T11]:**
+- `utils/santriSort.js` = **SUMBER TUNGGAL** urutan lembaga sekarang. `lembagaRank` di-**export**; `LEMBAGA_RANK` dirapikan canonical: Qiraati (TPQ Pagi→TPQ Sore→Pra PTPT→PTPT→PPPH) → Sekolah (TK→SDI→PKBM; SMP/SMA = sub-tier PKBM rank sama) → non-utama (Ma'had/Yayasan/Sarpras di akhir). + helper baru `sortGuru(list)` (lembaga→nama A–Z).
+- `composables/useLembaga.js` — buang `LEMBAGA_ORDER` lokal yang SALAH (Yayasan rank 0 di atas semua; Ma'had menyela Qiraati↔Sekolah) → `import { lembagaRank }` + sort pakai itu.
+- `composables/useGuru.js` — buang `LEMBAGA_ORDER`/`JABATAN_ORDER` lokal (incomplete, jabatan-first) → sort **lembaga (Qiraati dulu, `lembaga||lembaga_sekolah`) → nama A–Z**.
+- Santri: sudah `sortSantri` (lembaga→kelas→nama A–Z) di `useSantri` (tak diubah). Sisa sort alfabetis lembaga di `StatistikView`/`useStatistikScope` = agregat statistik (bukan roster) → sengaja dibiarkan.
+
+**Batch 2a — Data Guru terfilter pegawai [T10]:**
+- `views/GuruView.vue` `_isPengajar()` — **utamakan field `tipe_pegawai`** (`guru`/`pegawai_guru`/`ngaji`/`ngaji_sekolah`/`sekolah` → GURU; `pegawai`/`admin` → PEGAWAI); regex `jabatan` jadi fallback saja. Akar bug: dulu cuma regex `jabatan` → guru yg jabatannya tak match (kosong/"Tenaga Pendidik") salah masuk Pegawai.
+
+**Batch 2b — Tombol Migrate scan duplikat [T9]:**
+- FILE BARU `utils/v100_dedupe.js` — `scanDedupe()` + `runDedupe()`. AMAN & reversibel: hanya gabung duplikat **identitas unik** (santri NIS / NISN, guru WA). Per grup: pilih record terlengkap = primer → isi field kosong primer dari duplikat (non-destruktif) → `deleteOne` sisanya (auto-backup `audit_log`). Duplikat **"Nama sama" SENGAJA tidak** auto-merge (rawan 2 orang beda nama sama).
+- `views/MasterDataView.vue` — di panel "Analisis Data Duplikat": tombol **Dry-Run Migrate** + **Migrate (Gabung Duplikat)** + ringkasan rencana + progress. (Pakai `santriRaw`/`guruRaw` penuh.)
+
+### FILE DIUBAH/BARU sesi ini
+`utils/santriSort.js`, `composables/useLembaga.js`, `composables/useGuru.js`, `views/GuruView.vue`, `views/MasterDataView.vue`, **BARU** `utils/v100_dedupe.js`.
+
+### ✅ SELESAI Batch 3 — Title bar Electron [T12/T13/T17/T18] (belum commit/build di atas Batch 1+2)
+- **T12 Mundur/Maju:** QAT `RibbonTitleBar.vue` — Undo/Redo (inert `tabindex=-1`) diganti **Mundur** (`router.back`) / **Maju** (`router.forward`). Status disable dari `window.history.state.back/.forward` (Vue Router 4), di-sync via `router.afterEach`+`popstate`. Ikon baru `arrow-left`/`arrow-right` di `RibbonIcon.vue`.
+- **T13 Simpan:** infra baru `definePageSave(fn)` + singleton `pageSave` di `useRibbonContext.js`. Tombol Simpan QAT jalankan handler halaman aktif; **disable** (opacity .35) bila halaman tak daftarkan. Contoh wiring: `SantriFormView.vue` daftar `definePageSave(onSubmit)`.
+- **T17 Search muncul di list:** akar = root shell `.ammu-ribbon-app { overflow:hidden }` meng-clip dropdown `absolute`. Fix `GlobalSearch.vue`: dropdown desktop **Teleport ke body + posisi `fixed`** (anchor ke rect bar, reposition saat scroll/resize). Tetap hormati scope anti-bocor v.98 (`useSantri`/`useGuru` ter-scope). Berlaku di Electron & web.
+- **T18 Logout + konfirmasi:** tombol Keluar (ikon `logout`) di `rb-right` → `ui.confirm(...)` pop-up dulu → `auth.logout()` → `/login` (tidak langsung keluar).
+- **FILE:** `components/ribbon/RibbonTitleBar.vue`, `components/ribbon/RibbonIcon.vue`, `composables/useRibbonContext.js`, `components/layout/GlobalSearch.vue`, `assets/ribbon.css` (style `:disabled` QAT), `views/SantriFormView.vue`. Build `_run_vite.cmd` exit 0.
+
+### ⏳ PENDING — Batch 4–8 (urut rekomendasi; detail di `REKAP-TASK-BATCH-10JUN2026.md`)
+- **Batch 4 — Ribbon Keuangan pecah jadi tombol [T6/T7/T8/T14] (ELECTRON SAJA):** tombol **Buat Tagihan** = halaman Generate Tagihan Khusus; **Pengaturan Bisyaroh** (halaman khusus edit bisyaroh guru/pegawai); **Pengaturan Syahriyah** (halaman khusus). Pecah `PengaturanKeuanganView` + rute baru + `useRibbonNav.js`.
+- **Batch 5 — Ribbon PSB + Printer [T15/T16]:** tab **PSB** baru di ribbon (Riwayat Pendaftaran, Upload S&K, Info Pembayaran jadi tombol); **Printer** dilengkapi + di **backstage/menu File** (`RibbonBackstage.vue`, `useDesktopPrint.js`).
+- **Batch 6 — Kenaikan/Mutasi skema SEKOLAH [T2] (RISIKO TINGGI):** cabang sekolah di `NaikKelasView` pakai `lembaga_sekolah`+`kelas_sekolah`+`guru_sekolah[]`; tambah **field catatan kenaikan**; template **kartu kenaikan sekolah** di `raporPdf.js` (KOP + guru sekolah, bukan PTPT/Qiraati). Saat ini kenaikan sekolah masih pakai jalur kartu Qiraati.
+- **Batch 7 — Login Electron [T19/T20]:** scrollbar `LoginView` modern; **fix Google login Electron** (kemungkinan `signInWithPopup` → flow browser-sistem + `signInWithCredential`; butuh error nyata + device test kyai).
+- **Batch 8 — Re-audit 4 platform + ship [T1]:** verifikasi regresi (anti-bocor v.98, listener leak), **bump versionCode ≥100**, deploy.
+
+### VERIFIKASI + SHIP Batch 1+2 (kyai, PowerShell — pakai `;`)
+```powershell
+cd "D:\Aplikasi Project\Portal MU";
+.\tmp_recovery\_run_vite.cmd                       # harus VITE_EXITCODE=0
+if (Test-Path ".git\index.lock"){Remove-Item -Force ".git\index.lock"}
+git add -A ; git commit --no-verify -m "feat(v.100) Batch1+2: urutan lembaga canonical (sumber tunggal lembagaRank) + sort guru/santri A-Z; fix Data Guru pakai tipe_pegawai; tombol Migrate gabung duplikat identitas (NIS/NISN/WA)"
+npm run firebase:deploy                            # web/PWA
+npm run build:electron --prefix vue-app ; robocopy "vue-app\dist" "vue-app\electron\app" /MIR ; cd vue-app\electron ; npm run electron:publish ; cd ..\..
+# (app HP, hanya bila perlu) npm run build:aab   # SETELAH bump versionCode ≥100
+git push
+```
+firestore.rules TIDAK diubah sesi ini. Semua perubahan = Vue source murni (kena Web/PWA/Android/Electron).
+
+### CATATAN UNTUK SESI LANJUTAN (Claude Code desktop)
+- Build gate asli tetap `tmp_recovery\_run_vite.cmd` (VITE_EXITCODE=0). Tes fungsional kyai: (a) urutan list Santri & Guru = Qiraati dulu lalu Sekolah, nama A–Z; (b) menu Pendidikan→Data Guru kini tampil GURU (bukan kebanjiran pegawai); (c) Master Data→Analisis Duplikat → Dry-Run Migrate lalu Migrate, cek `audit_log` ter-backup.
+- Mulai Batch 3 dari `RibbonTitleBar.vue` (QAT Save/Undo/Redo masih `tabindex="-1"` tanpa `@click` = memang inert, bukan regresi).
