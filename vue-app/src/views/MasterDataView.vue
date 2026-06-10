@@ -285,7 +285,7 @@ async function dedupeExecute() {
   const s = dedupeScan.value
   const ok = await confirmDlg({
     title: 'Gabung Duplikat Identitas?',
-    message: `${s.santriToRemove} santri (NIS/NISN sama) + ${s.guruToRemove} guru (WA sama) akan DIGABUNG ke record terlengkap; field kosong diisi dari duplikat, sisanya DIHAPUS (ter-backup ke audit_log → bisa di-recover). Duplikat "Nama sama" TIDAK ikut (rapikan manual). Lanjutkan?`,
+    message: `${s.santriToRemove} santri + ${s.guruToRemove} guru akan DIGABUNG ke record terlengkap (identitas unik NIS/NISN/WA, plus nama-sama yang punya sinyal penguat & tanpa konflik identitas); field kosong diisi dari duplikat, sisanya DIHAPUS (ter-backup ke audit_log → bisa di-recover). Lanjutkan?`,
     confirmText: 'Gabung & Hapus',
     danger: true
   })
@@ -1134,7 +1134,7 @@ async function simpanPengaturanRekap() {
         <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
           <div>
             <p class="text-sm font-black text-rose-700 dark:text-rose-300"><i class="fas fa-clone mr-1"></i>Analisis Data Duplikat</p>
-            <p class="text-xs text-slate-600 dark:text-slate-300 mt-1">Deteksi santri (Nama / NIS / NISN sama) &amp; guru (Nama / WA sama). Periksa, lalu gabung otomatis duplikat identitas (NIS/NISN/WA) via <b>Migrate</b>, atau rapikan manual via Edit/Hapus.</p>
+            <p class="text-xs text-slate-600 dark:text-slate-300 mt-1">Deteksi santri (Nama / NIS / NISN sama) &amp; guru (Nama / WA sama). <b>Migrate</b> menggabung: (1) identitas unik (NIS/NISN/WA sama) + (2) nama sama yang punya sinyal penguat (NIK/tgl lahir/lembaga+kelas sama). Nama sama tanpa sinyal / yang konflik identitas TIDAK digabung — rapikan manual via Edit/Hapus.</p>
           </div>
           <span class="text-[10px] font-bold px-2 py-0.5 rounded uppercase" :class="totalDupGroups > 0 ? 'bg-rose-100 text-rose-800' : 'bg-emerald-100 text-emerald-800'">{{ totalDupGroups }} grup duplikat</span>
         </div>
@@ -1150,7 +1150,7 @@ async function simpanPengaturanRekap() {
           </button>
         </div>
         <div v-if="dedupeScan" class="mt-2 text-xs rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 p-2 text-amber-800 dark:text-amber-200">
-          <p class="font-bold"><i class="fas fa-circle-info mr-1"></i>Rencana Migrate (identitas unik): {{ dedupeScan.santriToRemove }} santri (NIS/NISN) + {{ dedupeScan.guruToRemove }} guru (WA) akan digabung. Duplikat "Nama sama" diabaikan (manual).</p>
+          <p class="font-bold"><i class="fas fa-circle-info mr-1"></i>Rencana Migrate: {{ dedupeScan.santriToRemove }} santri + {{ dedupeScan.guruToRemove }} guru akan digabung (identitas unik + nama-sama bersinyal penguat). Nama sama tanpa sinyal / konflik identitas diabaikan (manual).</p>
           <ul v-if="dedupeScan.examples.length" class="list-disc ml-5 mt-1">
             <li v-for="(ex, ei) in dedupeScan.examples" :key="ei">Simpan {{ ex.keep }} · hapus {{ ex.remove.join(', ') }}<span v-if="ex.fill.length"> · isi: {{ ex.fill.join(', ') }}</span></li>
           </ul>

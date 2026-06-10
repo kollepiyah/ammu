@@ -1,9 +1,12 @@
 // v.100: Migrasi Gabung Duplikat (dedupe) — untuk tombol "Migrate" di panel Analisis Data Duplikat.
-//   AMAN & REVERSIBLE: hanya menggabung duplikat berdasarkan KUNCI IDENTITAS yang benar-benar unik:
-//     - santri: NIS sama, atau NISN sama
-//     - guru:   WA (nomor sendiri) sama
-//   Duplikat "Nama sama" SENGAJA TIDAK di-auto-merge (rawan false-positive 2 orang beda
-//   berbnama sama) → tetap dirapikan manual via Edit/Hapus.
+//   AMAN & REVERSIBLE. Menggabung duplikat lewat 2 jalur:
+//     1) IDENTITAS UNIK (selalu digabung): santri NIS sama / NISN sama; guru WA sama.
+//     2) NAMA SAMA + SINYAL PENGUAT (v.100, atas keputusan kyai): hanya digabung bila nama
+//        sama DAN ada minimal 1 sinyal yang menguatkan "orang yang sama" DAN tidak ada
+//        konflik identitas keras. Sinyal santri: NIS/NISN/NIK/tgl_lahir/WA-wali sama, atau
+//        (lembaga+kelas) / (lembaga_sekolah+kelas_sekolah) sama. Sinyal guru: WA/NIK sama, atau
+//        (lembaga+jabatan) sama. KONFLIK KERAS (blokir merge walau nama sama): NIS/NISN/NIK/
+//        tgl_lahir berbeda (santri); WA/NIK berbeda (guru) → dianggap 2 orang berbeda.
 //   Strategi: per grup, pilih 1 record PRIMER (paling lengkap) → isi field kosong primer dari
 //   duplikat lain (non-destruktif terhadap data yang sudah ada) → HAPUS duplikat lain
 //   (deleteOne sudah mem-backup ke audit_log → bisa di-recover). Idempotent.
@@ -48,8 +51,44 @@ function groupBy(list, keyFn) {
   return groups
 }
 
+// ---- v.100: sinyal penguat & konflik identitas untuk merge berbasis NAMA ----
+function eqText(a, b) {
+  return !isEmpty(a) && !isEmpty(b) && norm(a) === norm(b)
+}
+function diffText(a, b) {
+  return !isEmpty(a) && !isEmpty(b) && norm(a) !== norm(b)
+}
+function eqPhone(a, b) {
+  const da = digits(a)
+  const db = digits(b)
+  return da.length >= 8 && da === db
+}
+function diffPhone(a, b) {
+  const da = digits(a)
+  const db = digits(b)
+  return da.length >= 8 && db.length >= 8 && da !== db
+}
+// Apakah d & primary kemungkinan ORANG YANG SAMA (nama sudah sama di grup ini)?
+function santriSamePerson(p, d) {
+  // konflik keras → pasti beda orang
+  if (diffText(p.nis, d.nis) || diffText(p.nisn, d.nisn) || diffText(p.nik, d.nik) || diffText(p.tgl_lahir, d.tgl_lahir)) return false
+  // butuh ≥1 sinyal penguat
+  if (eqText(p.nis, d.nis) || eqText(p.nisn, d.nisn) || eqText(p.nik, d.nik) || eqText(p.tgl_lahir, d.tgl_lahir)) return true
+  if (eqPhone(p.wa, d.wa)) return true
+  if (eqText(p.lembaga, d.lembaga) && eqText(p.kelas, d.kelas)) return true
+  if (eqText(p.lembaga_sekolah, d.lembaga_sekolah) && eqText(p.kelas_sekolah, d.kelas_sekolah)) return true
+  return false
+}
+function guruSamePerson(p, d) {
+  if (diffPhone(p.wa, d.wa) || diffText(p.nik, d.nik)) return false
+  if (eqPhone(p.wa, d.wa) || eqText(p.nik, d.nik)) return true
+  if (eqText(p.lembaga, d.lembaga) && eqText(p.jabatan, d.jabatan)) return true
+  return false
+}
+
 // Pilih primer (paling lengkap; tiebreak: punya NIS, lalu id terkecil) + susun patch isi field kosong.
-function planGroup(items) {
+// filterFn(primary, dup) opsional → hanya merge dup yang lolos (dipakai jalur NAMA-sama).
+function planGroup(items, filterFn = null) {
   const sorted = [...items].sort((a, b) => {
     const c = completeness(b) - completeness(a)
     if (c !== 0) return c
@@ -59,7 +98,8 @@ function planGroup(items) {
     return String(a.id || '').localeCompare(String(b.id || ''))
   })
   const primary = sorted[0]
-  const dups = sorted.slice(1)
+  let dups = sorted.slice(1)
+  if (filterFn) dups = dups.filter((d) => filterFn(primary, d))
   const patch = {}
   for (const d of dups) {
     for (const k of Object.keys(d || {})) {
@@ -76,25 +116,38 @@ function buildPlan({ santriList = [], guruList = [] }) {
   const seenSantriDup = new Set()
   const seenGuruDup = new Set()
 
-  function addSantriGroups(groups) {
+  function addSantriGroups(groups, filterFn = null) {
     for (const g of groups) {
-      const { primary, dups, patch } = planGroup(g.items)
+      // jangan ikutkan record yang sudah dijadwalkan dihapus di pass sebelumnya
+      const items = g.items.filter((s) => !seenSantriDup.has(s.id))
+      if (items.length < 2) continue
+      const { primary, dups, patch } = planGroup(items, filterFn)
       const realDups = dups.filter((d) => d.id && d.id !== primary.id && !seenSantriDup.has(d.id))
       if (!realDups.length) continue
       for (const d of realDups) seenSantriDup.add(d.id)
       plan.santri.push({ primary, dups: realDups, patch })
     }
   }
+  // pass 1-2: identitas unik (selalu gabung)
   addSantriGroups(groupBy(santriList.filter((s) => norm(s.nis)), (s) => 'nis:' + norm(s.nis)))
   addSantriGroups(groupBy(santriList.filter((s) => norm(s.nisn)), (s) => 'nisn:' + norm(s.nisn)))
+  // pass 3 (v.100): NAMA sama + sinyal penguat
+  addSantriGroups(groupBy(santriList.filter((s) => norm(s.nama)), (s) => 'nama:' + norm(s.nama)), santriSamePerson)
 
-  for (const g of groupBy(guruList.filter((x) => digits(x.wa).length >= 8), (x) => 'wa:' + digits(x.wa))) {
-    const { primary, dups, patch } = planGroup(g.items)
-    const realDups = dups.filter((d) => d.id && d.id !== primary.id && !seenGuruDup.has(d.id))
-    if (!realDups.length) continue
-    for (const d of realDups) seenGuruDup.add(d.id)
-    plan.guru.push({ primary, dups: realDups, patch })
+  function addGuruGroups(groups, filterFn = null) {
+    for (const g of groups) {
+      const items = g.items.filter((x) => !seenGuruDup.has(x.id))
+      if (items.length < 2) continue
+      const { primary, dups, patch } = planGroup(items, filterFn)
+      const realDups = dups.filter((d) => d.id && d.id !== primary.id && !seenGuruDup.has(d.id))
+      if (!realDups.length) continue
+      for (const d of realDups) seenGuruDup.add(d.id)
+      plan.guru.push({ primary, dups: realDups, patch })
+    }
   }
+  // pass 1: WA sama (identitas). pass 2 (v.100): NAMA sama + sinyal penguat.
+  addGuruGroups(groupBy(guruList.filter((x) => digits(x.wa).length >= 8), (x) => 'wa:' + digits(x.wa)))
+  addGuruGroups(groupBy(guruList.filter((x) => norm(x.nama)), (x) => 'nama:' + norm(x.nama)), guruSamePerson)
   return plan
 }
 
