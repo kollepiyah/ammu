@@ -107,6 +107,55 @@ const { auditGroups, fuzzyDup, totalIssues, totalFuzzy } = useDataAudit(
 const healthOpen = reactive({})
 function toggleHealth(key) { healthOpen[key] = !healthOpen[key] }
 const showFuzzy = ref(false)
+
+// v.100 Batch13: Gabung manual dari panel "Kandidat Nama Mirip" (checkbox per record).
+//   Fuzzy group bisa CAMPUR (sebagian orang sama, sebagian beda) → user centang hanya yang SAMA,
+//   lalu gabung ke record terlengkap (reuse mergeGroupManual: backup audit_log, guard identitas dilewati sadar).
+const _santriById = computed(() => {
+  const m = new Map()
+  for (const s of (santriRawForMigration.value || [])) m.set(String(s.id), s)
+  return m
+})
+const _guruById = computed(() => {
+  const m = new Map()
+  for (const g of (guruRawForMigration.value || [])) m.set(String(g.id), g)
+  return m
+})
+const fuzzyChecked = reactive({}) // id → bool (undefined = tercentang/ikut gabung)
+const fuzzyMerging = ref('')
+function fuzzyGrpKey(grp) { return grp.items.map((i) => i.id).sort().join('|') }
+async function gabungFuzzy(grp) {
+  if (fuzzyMerging.value) return
+  const picked = grp.items.filter((it) => fuzzyChecked[it.id] !== false)
+  if (picked.length < 2) {
+    toast.warning('Centang minimal 2 record yang benar-benar ORANG SAMA.')
+    return
+  }
+  const lookup = grp.kind === 'guru' ? _guruById.value : _santriById.value
+  const recs = picked.map((it) => lookup.get(String(it.id))).filter(Boolean)
+  if (recs.length < 2) {
+    toast.warning('Record mentah tidak ditemukan — coba muat ulang halaman.')
+    return
+  }
+  const lines = picked.map((it) => `• ${it.nama} — ${it.detail}`).join('\n')
+  const ok = await confirmDlg({
+    title: 'Gabung Record Tercentang?',
+    message: `${recs.length} record berikut digabung ke yang TERLENGKAP, sisanya DIHAPUS (ter-backup audit_log → bisa di-recover):\n${lines}\n\nFuzzy bisa keliru — pastikan benar-benar ORANG YANG SAMA (cek NIS & tgl lahir). Lanjutkan?`,
+    confirmText: 'Gabung & Hapus',
+    danger: true
+  })
+  if (!ok) return
+  fuzzyMerging.value = fuzzyGrpKey(grp)
+  try {
+    const result = await mergeGroupManual(grp.kind, recs)
+    if (result.fail > 0) toast.warning(`Gabung: ${result.ok} OK, ${result.fail} gagal — ${result.errors.join('; ')}`)
+    else toast.success(`Digabung (${result.removedIds.length} duplikat dihapus, backup di audit_log).`)
+  } catch (e) {
+    toast.error('Gagal gabung: ' + (e.message || e))
+  } finally {
+    fuzzyMerging.value = ''
+  }
+}
 const HEALTH_SEV = {
   danger: { dot: 'bg-rose-500', badge: 'bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-200' },
   warn: { dot: 'bg-amber-500', badge: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200' },
@@ -1190,12 +1239,25 @@ async function simpanPengaturanRekap() {
             </p>
             <button v-if="totalFuzzy" @click="showFuzzy = !showFuzzy" class="text-[11px] font-bold text-amber-700 dark:text-amber-300 hover:underline">{{ showFuzzy ? 'Sembunyikan' : 'Lihat' }}</button>
           </div>
-          <p class="text-[11px] text-slate-500 mt-1">Nama yang ditulis beda tapi mirip (gelar / spasi / ejaan, jarak edit), atau <b>tgl lahir sama</b>. <b>Tidak</b> memakai No. WA (wali bisa punya banyak anak). Migrate TIDAK menggabung otomatis — periksa &amp; rapikan manual via Edit/Hapus.</p>
+          <p class="text-[11px] text-slate-500 mt-1">Nama yang ditulis beda tapi mirip (gelar / spasi / ejaan, jarak edit), atau <b>tgl lahir sama</b>. <b>Tidak</b> memakai No. WA (wali bisa punya banyak anak). Auto-Migrate TIDAK menggabung ini — <b>centang record yang ORANG SAMA</b> lalu <b>Gabung yang dicentang</b> (sisanya rapikan via Edit/Hapus). Cek NIS &amp; tgl lahir dulu — pasangan bisa ternyata beda orang.</p>
           <div v-if="showFuzzy" class="mt-2 space-y-1.5">
             <div v-for="(grp, gi) in fuzzyDup" :key="gi" class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-2 text-[11px]">
-              <p class="font-bold text-amber-700 dark:text-amber-300 uppercase text-[9px] mb-0.5">{{ grp.kind }}<span v-if="grp.reason" class="normal-case text-amber-600 dark:text-amber-400"> · {{ grp.reason }}</span></p>
+              <div class="flex items-center justify-between gap-2 flex-wrap mb-1">
+                <p class="font-bold text-amber-700 dark:text-amber-300 uppercase text-[9px]">{{ grp.kind }}<span v-if="grp.reason" class="normal-case text-amber-600 dark:text-amber-400"> · {{ grp.reason }}</span></p>
+                <button
+                  @click="gabungFuzzy(grp)"
+                  :disabled="fuzzyMerging !== ''"
+                  class="px-2 py-0.5 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white text-[10px] font-black rounded-md"
+                  title="Gabung record yang dicentang ke yang terlengkap (keputusan manual, lewati guard identitas)"
+                >
+                  <i class="fas fa-code-merge mr-1"></i>{{ fuzzyMerging === fuzzyGrpKey(grp) ? 'Menggabung…' : 'Gabung yang dicentang' }}
+                </button>
+              </div>
               <ul class="space-y-0.5">
-                <li v-for="it in grp.items" :key="it.id" class="text-slate-700 dark:text-slate-200"><span class="font-bold">{{ it.nama }}</span> <span class="text-slate-400">· {{ it.detail }}</span></li>
+                <li v-for="it in grp.items" :key="it.id" class="flex items-start gap-1.5 text-slate-700 dark:text-slate-200">
+                  <input type="checkbox" :checked="fuzzyChecked[it.id] !== false" @change="fuzzyChecked[it.id] = $event.target.checked" class="mt-0.5 accent-rose-600 cursor-pointer" />
+                  <span><span class="font-bold">{{ it.nama }}</span> <span class="text-slate-400">· {{ it.detail }}</span></span>
+                </li>
               </ul>
             </div>
           </div>
