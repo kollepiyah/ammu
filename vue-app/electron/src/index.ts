@@ -5,7 +5,7 @@
 //   2. IPC handler untuk native print struk (silent, 80mm thermal or A4 portrait)
 //   3. Auto-update via electron-updater + GitHub Releases
 
-import { app, BrowserWindow, ipcMain, dialog, protocol, Menu } from 'electron'
+import { app, BrowserWindow, ipcMain, dialog, protocol, Menu, shell } from 'electron'
 import * as path from 'path'
 import * as fs from 'fs'
 import * as os from 'os'
@@ -154,6 +154,35 @@ function createMainWindow() {
     },
     paintWhenInitiallyHidden: true,  // pre-render saat hidden supaya pop instan
     show: false
+  })
+
+  // v.100 Batch7 (T20): izinkan popup OAuth (Google sign-in). Default Electron men-DENY
+  //   window.open → signInWithPopup gagal diam-diam. Hanya domain auth tepercaya yang dibuka
+  //   sebagai popup; URL eksternal lain dibuka di browser sistem (bukan di dalam app).
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    let host = ''
+    try { host = new URL(url).hostname } catch { host = '' }
+    const isAuthPopup =
+      /\.firebaseapp\.com$/i.test(host) ||
+      /\.web\.app$/i.test(host) ||
+      host === 'accounts.google.com' ||
+      host === 'apis.google.com'
+    if (isAuthPopup) {
+      return {
+        action: 'allow',
+        overrideBrowserWindowOptions: {
+          width: 500,
+          height: 650,
+          autoHideMenuBar: true,
+          webPreferences: { nodeIntegration: false, contextIsolation: true }
+        }
+      }
+    }
+    // URL non-auth → buka di browser sistem, jangan navigasi di dalam app
+    if (/^https?:/i.test(url)) {
+      try { shell.openExternal(url) } catch { /* ignore */ }
+    }
+    return { action: 'deny' }
   })
 
   mainWindow.once('ready-to-show', () => {

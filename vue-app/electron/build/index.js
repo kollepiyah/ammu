@@ -184,6 +184,41 @@ function createMainWindow() {
         paintWhenInitiallyHidden: true, // pre-render saat hidden supaya pop instan
         show: false
     });
+    // v.100 Batch7 (T20): izinkan popup OAuth (Google sign-in). Default Electron men-DENY
+    //   window.open → signInWithPopup gagal diam-diam. Hanya domain auth tepercaya yang dibuka
+    //   sebagai popup; URL eksternal lain dibuka di browser sistem (bukan di dalam app).
+    mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+        let host = '';
+        try {
+            host = new URL(url).hostname;
+        }
+        catch {
+            host = '';
+        }
+        const isAuthPopup = /\.firebaseapp\.com$/i.test(host) ||
+            /\.web\.app$/i.test(host) ||
+            host === 'accounts.google.com' ||
+            host === 'apis.google.com';
+        if (isAuthPopup) {
+            return {
+                action: 'allow',
+                overrideBrowserWindowOptions: {
+                    width: 500,
+                    height: 650,
+                    autoHideMenuBar: true,
+                    webPreferences: { nodeIntegration: false, contextIsolation: true }
+                }
+            };
+        }
+        // URL non-auth → buka di browser sistem, jangan navigasi di dalam app
+        if (/^https?:/i.test(url)) {
+            try {
+                electron_1.shell.openExternal(url);
+            }
+            catch { /* ignore */ }
+        }
+        return { action: 'deny' };
+    });
     mainWindow.once('ready-to-show', () => {
         // v.86.0526 FIX "splash dobel": JANGAN tampilkan main window dulu. Splash bawaan web app
         //   (Powered by Bakafrawi) ikut ke-render di main window → muncul bareng splash native = dobel.

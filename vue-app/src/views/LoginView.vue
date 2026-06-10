@@ -132,7 +132,7 @@ function bukaWaAdmin() {
 
 <template>
   <div
-    class="min-h-screen flex flex-col items-center justify-center p-4 relative"
+    class="login-page min-h-screen flex flex-col items-center justify-center p-4 relative"
     :style="bgStyle"
   >
     <!-- v.86.0526: backdrop-blur overlay — lebih gelap di dark mode -->
@@ -393,3 +393,31 @@ function bukaWaAdmin() {
     </div>
   </div>
 </template>
+
+<style>
+/* v.100 Batch7 (T19): scrollbar modern utk halaman login (terutama Electron desktop —
+   di mobile scrollbar sudah disembunyikan via main.css). Di-scope ke route login
+   pakai :has(.login-page) supaya tak mempengaruhi halaman lain. */
+html:has(.login-page)::-webkit-scrollbar,
+.login-page ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+html:has(.login-page)::-webkit-scrollbar-track,
+.login-page ::-webkit-scrollbar-track {
+  background: transparent;
+}
+html:has(.login-page)::-webkit-scrollbar-thumb,
+.login-page ::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.35);
+  border-radius: 9999px;
+}
+html:has(.login-page)::-webkit-scrollbar-thumb:hover,
+.login-page ::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.55);
+}
+html:has(.login-page) {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.35) transparent;
+}
+</style>
