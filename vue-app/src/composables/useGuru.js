@@ -6,6 +6,8 @@ import { useCollectionsStore } from '@/stores/collections'
 import { useAuthStore } from '@/stores/auth'
 // v.21.10.0526: Import lembaga helpers
 import { getLembagaGroup } from './useLembaga'
+// v.100: urutan lembaga canonical (sumber tunggal)
+import { lembagaRank } from '@/utils/santriSort'
 
 // Helper: derive guru.lembaga_refs dari legacy fields + jabatan_tambahan
 // 1 guru bisa multi-lembaga (mis: Admin Yayasan + Guru TPQ).
@@ -54,22 +56,6 @@ function isKepalaLembaga(g, namaLembaga = null) {
     return refs.some(r => r.lembaga === namaLembaga && /kepala/i.test(r.jabatan_di_sini || ''))
   }
   return refs.some(r => /kepala/i.test(r.jabatan_di_sini || ''))
-}
-
-const JABATAN_ORDER = {
-  'Kepala Lembaga': 1,
-  'PJ PTPT': 2,
-  'PJ Administrasi': 3,
-  'Guru': 4,
-  'Pegawai': 5
-}
-
-const LEMBAGA_ORDER = {
-  'TPQ Pagi': 1,
-  'TPQ Sore': 2,
-  'Pra PTPT': 3,
-  'PTPT': 4,
-  'Yayasan': 0
 }
 
 export function useGuru() {
@@ -145,13 +131,10 @@ export function useGuru() {
       list = list.filter((g) => g.jabatan === filterJabatan.value)
     }
 
-    // Sort: jabatan order → lembaga order → nama asc
+    // v.100: Sort canonical — lembaga (Qiraati dulu, lembaga ngaji ATAU sekolah) → nama A–Z
     return list.sort((a, b) => {
-      const oa = JABATAN_ORDER[a.jabatan] || 99
-      const ob = JABATAN_ORDER[b.jabatan] || 99
-      if (oa !== ob) return oa - ob
-      const la = LEMBAGA_ORDER[a.lembaga] !== undefined ? LEMBAGA_ORDER[a.lembaga] : 99
-      const lb = LEMBAGA_ORDER[b.lembaga] !== undefined ? LEMBAGA_ORDER[b.lembaga] : 99
+      const la = lembagaRank(a.lembaga || a.lembaga_sekolah)
+      const lb = lembagaRank(b.lembaga || b.lembaga_sekolah)
       if (la !== lb) return la - lb
       return String(a.nama || '').localeCompare(String(b.nama || ''), 'id')
     })

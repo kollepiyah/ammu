@@ -23,6 +23,7 @@ import { scanV21_10Migration, runV21_10Migration } from '@/utils/v21_10_migratio
 // v.21.70.0526: TK refactor migration (2 lembaga TK A/B → 1 lembaga TK + jenjang)
 import { scanV21_70TkMigration, runV21_70TkMigration } from '@/utils/v21_70_tk_migration'
 import { scanLembagaNormalize, runLembagaNormalize } from '@/utils/v88_lembaga_normalize'
+import { scanDedupe, runDedupe } from '@/utils/v100_dedupe'
 import { useGuru } from '@/composables/useGuru'
 
 const route = useRoute()
@@ -259,6 +260,54 @@ async function lmbNormExecute() {
     toast.error('Gagal migrasi: ' + (e.message || e))
   } finally {
     lmbNormRunning.value = false
+  }
+}
+
+// v.100: Migrate (Gabung Duplikat) — gabung duplikat identitas (NIS/NISN santri, WA guru).
+const dedupeScan = ref(null)
+const dedupeRunning = ref(false)
+const dedupeProgress = ref({ i: 0, total: 0 })
+const dedupeResult = ref(null)
+
+function dedupeDryRun() {
+  dedupeScan.value = scanDedupe({
+    santriList: santriRawForMigration.value || [],
+    guruList: guruRawForMigration.value || []
+  })
+  dedupeResult.value = null
+}
+
+async function dedupeExecute() {
+  if (!dedupeScan.value || dedupeScan.value.total === 0) {
+    toast.warning('Jalankan Dry-Run dulu, atau tidak ada duplikat identitas untuk digabung.')
+    return
+  }
+  const s = dedupeScan.value
+  const ok = await confirmDlg({
+    title: 'Gabung Duplikat Identitas?',
+    message: `${s.santriToRemove} santri (NIS/NISN sama) + ${s.guruToRemove} guru (WA sama) akan DIGABUNG ke record terlengkap; field kosong diisi dari duplikat, sisanya DIHAPUS (ter-backup ke audit_log → bisa di-recover). Duplikat "Nama sama" TIDAK ikut (rapikan manual). Lanjutkan?`,
+    confirmText: 'Gabung & Hapus',
+    danger: true
+  })
+  if (!ok) return
+  dedupeRunning.value = true
+  dedupeProgress.value = { i: 0, total: s.total }
+  try {
+    const result = await runDedupe(
+      { santriList: santriRawForMigration.value || [], guruList: guruRawForMigration.value || [] },
+      { onProgress: (i, total) => { dedupeProgress.value = { i, total } } }
+    )
+    dedupeResult.value = result
+    if (result.fail > 0) toast.warning(`Selesai: ${result.ok} operasi OK, ${result.fail} gagal. Cek errors.`)
+    else toast.success(`Gabung duplikat sukses: ${result.ok} operasi.`)
+    dedupeScan.value = scanDedupe({
+      santriList: santriRawForMigration.value || [],
+      guruList: guruRawForMigration.value || []
+    })
+  } catch (e) {
+    toast.error('Gagal gabung duplikat: ' + (e.message || e))
+  } finally {
+    dedupeRunning.value = false
   }
 }
 
@@ -1085,13 +1134,28 @@ async function simpanPengaturanRekap() {
         <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
           <div>
             <p class="text-sm font-black text-rose-700 dark:text-rose-300"><i class="fas fa-clone mr-1"></i>Analisis Data Duplikat</p>
-            <p class="text-xs text-slate-600 dark:text-slate-300 mt-1">Deteksi santri (Nama / NIS / NISN sama) &amp; guru (Nama / WA sama). Periksa lalu rapikan manual via Edit/Hapus.</p>
+            <p class="text-xs text-slate-600 dark:text-slate-300 mt-1">Deteksi santri (Nama / NIS / NISN sama) &amp; guru (Nama / WA sama). Periksa, lalu gabung otomatis duplikat identitas (NIS/NISN/WA) via <b>Migrate</b>, atau rapikan manual via Edit/Hapus.</p>
           </div>
           <span class="text-[10px] font-bold px-2 py-0.5 rounded uppercase" :class="totalDupGroups > 0 ? 'bg-rose-100 text-rose-800' : 'bg-emerald-100 text-emerald-800'">{{ totalDupGroups }} grup duplikat</span>
         </div>
-        <button @click="showDupDetail = !showDupDetail" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-black rounded-lg">
-          <i class="fas fa-search mr-1"></i>{{ showDupDetail ? 'Sembunyikan Detail' : 'Lihat Detail' }}
-        </button>
+        <div class="flex flex-wrap items-center gap-2">
+          <button @click="showDupDetail = !showDupDetail" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-black rounded-lg">
+            <i class="fas fa-search mr-1"></i>{{ showDupDetail ? 'Sembunyikan Detail' : 'Lihat Detail' }}
+          </button>
+          <button @click="dedupeDryRun" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-black rounded-lg">
+            <i class="fas fa-vial mr-1"></i>Dry-Run Migrate
+          </button>
+          <button @click="dedupeExecute" :disabled="dedupeRunning || !dedupeScan || dedupeScan.total === 0" class="px-3 py-1.5 bg-rose-700 hover:bg-rose-800 disabled:opacity-50 text-white text-xs font-black rounded-lg">
+            <i class="fas fa-code-merge mr-1"></i>{{ dedupeRunning ? `Menggabung… ${dedupeProgress.i}/${dedupeProgress.total}` : 'Migrate (Gabung Duplikat)' }}
+          </button>
+        </div>
+        <div v-if="dedupeScan" class="mt-2 text-xs rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 p-2 text-amber-800 dark:text-amber-200">
+          <p class="font-bold"><i class="fas fa-circle-info mr-1"></i>Rencana Migrate (identitas unik): {{ dedupeScan.santriToRemove }} santri (NIS/NISN) + {{ dedupeScan.guruToRemove }} guru (WA) akan digabung. Duplikat "Nama sama" diabaikan (manual).</p>
+          <ul v-if="dedupeScan.examples.length" class="list-disc ml-5 mt-1">
+            <li v-for="(ex, ei) in dedupeScan.examples" :key="ei">Simpan {{ ex.keep }} · hapus {{ ex.remove.join(', ') }}<span v-if="ex.fill.length"> · isi: {{ ex.fill.join(', ') }}</span></li>
+          </ul>
+          <p v-if="dedupeResult" class="mt-1 font-bold">Hasil: {{ dedupeResult.ok }} OK, {{ dedupeResult.fail }} gagal.</p>
+        </div>
         <div v-if="showDupDetail" class="mt-3 space-y-3">
           <p v-if="totalDupGroups === 0" class="text-xs text-emerald-700 dark:text-emerald-300 font-bold"><i class="fas fa-circle-check mr-1"></i>Tidak ada duplikat terdeteksi.</p>
           <div v-for="kat in dupKategori" :key="kat.label" v-show="kat.groups.length">

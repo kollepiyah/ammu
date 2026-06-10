@@ -1,8 +1,12 @@
 // v.21.84.0527: Sorting santri konsisten — urut per lembaga lalu kelas lalu nama.
 // Dipakai di semua halaman (SantriView, Rekap, Rapor, Absensi, dll).
 
-// Urutan canonical lembaga (ngaji dulu, lalu formal). Lowercase keys.
+// Urutan canonical lembaga (Qiraati dulu, lalu Sekolah, lalu non-utama). Lowercase keys.
+// v.100: SUMBER TUNGGAL urutan lembaga (dipakai useLembaga + useGuru via lembagaRank).
+//   Qiraati: TPQ Pagi → TPQ Sore → Pra PTPT → PTPT → PPPH
+//   Sekolah: TK → SDI → PKBM (SMP/SMA = sub-tier PKBM)
 const LEMBAGA_RANK = {
+  // Qiraati
   'tpq pagi': 10,
   tpq: 11, // single (anggap setara TPQ Pagi)
   'tpq sore': 12,
@@ -10,16 +14,22 @@ const LEMBAGA_RANK = {
   ptpt: 30,
   ppph: 40,
   p3h: 40, // legacy = PPPH
-  'tk a': 50,
-  'tk b': 51,
-  tk: 52,
+  // Sekolah
+  tk: 50,
+  'tk a': 51,
+  'tk b': 52,
   sdi: 60,
-  smp: 70,
-  pkbm: 75,
-  sma: 80
+  pkbm: 70,
+  smp: 70, // PKBM sub-tier SMP
+  sma: 70, // PKBM sub-tier SMA
+  // Non-utama (paling akhir)
+  "ma'had": 80,
+  mahad: 80,
+  yayasan: 90,
+  'sarana prasarana': 91
 }
 
-function lembagaRank(lmb) {
+export function lembagaRank(lmb) {
   const k = String(lmb || '').toLowerCase().trim()
   return LEMBAGA_RANK[k] ?? 999
 }
@@ -71,5 +81,21 @@ export function sortSantri(list, opts = {}) {
     const kr = kelasRank(getKelas(a)) - kelasRank(getKelas(b))
     if (kr !== 0) return kr
     return String(a.nama || '').localeCompare(String(b.nama || ''))
+  })
+}
+
+/**
+ * Sort list guru/pegawai: lembaga (Qiraati dulu) → nama A–Z.
+ * Lembaga guru bisa dari `lembaga` (ngaji) atau `lembaga_sekolah` (formal).
+ * @param {Array} list
+ */
+export function sortGuru(list) {
+  const getLembaga = (g) => g.lembaga || g.lembaga_sekolah || ''
+  return [...(list || [])].sort((a, b) => {
+    const lr = lembagaRank(getLembaga(a)) - lembagaRank(getLembaga(b))
+    if (lr !== 0) return lr
+    const ls = String(getLembaga(a) || '').localeCompare(String(getLembaga(b) || ''))
+    if (ls !== 0) return ls
+    return String(a.nama || '').localeCompare(String(b.nama || ''), 'id')
   })
 }

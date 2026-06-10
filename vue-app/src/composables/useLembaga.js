@@ -6,6 +6,8 @@ import { storeToRefs } from 'pinia'
 import { subscribeDoc } from '@/services/firestore'
 import { useCollectionsStore } from '@/stores/collections'
 import { useAuthStore } from '@/stores/auth'
+// v.100: urutan lembaga canonical = sumber tunggal di utils/santriSort
+import { lembagaRank } from '@/utils/santriSort'
 
 // v.21.10.0526: Lembaga hierarchy — group → variants (kyai spec final)
 export const LEMBAGA_GROUPS = {
@@ -172,22 +174,6 @@ export const DEFAULT_LEMBAGA_SEED = [
   { lembaga: 'PKBM', group: 'sekolah', kelas: ['VII', 'VIII', 'IX', 'X', 'XI', 'XII'] }
 ]
 
-const LEMBAGA_ORDER = {
-  Yayasan: 0,
-  'TPQ Pagi': 1,
-  'TPQ Sore': 2,
-  'Pra PTPT': 3,
-  PTPT: 4,
-  PPPH: 5,
-  "Ma'had": 6,
-  TK: 7,
-  'TK A': 8,
-  'TK B': 9,
-  SDI: 10,
-  PKBM: 11,
-  'Sarana Prasarana': 12
-}
-
 export function useLembaga() {
   const auth = useAuthStore()
   const collections = useCollectionsStore()
@@ -233,10 +219,10 @@ export function useLembaga() {
       list = list.filter((l) => (l.tipe || 'Qiraati') === filterTipe.value)
     }
 
-    // Sort: predefined order → nama
+    // Sort: urutan canonical (lembagaRank) → nama
     return list.sort((a, b) => {
-      const oa = LEMBAGA_ORDER[a.lembaga] !== undefined ? LEMBAGA_ORDER[a.lembaga] : 99
-      const ob = LEMBAGA_ORDER[b.lembaga] !== undefined ? LEMBAGA_ORDER[b.lembaga] : 99
+      const oa = lembagaRank(a.lembaga)
+      const ob = lembagaRank(b.lembaga)
       if (oa !== ob) return oa - ob
       return String(a.lembaga || '').localeCompare(String(b.lembaga || ''), 'id')
     })

@@ -379,7 +379,13 @@ watch(() => _route.query.q, (v) => { if (v != null && v !== '') search.value = S
 // Heuristik (belum ada field eksplisit): jabatan mengandung guru/ustadz/pengajar/mudarris/wali kelas/kepala
 // dianggap GURU; selain itu PEGAWAI. Ganti regex / pakai field khusus bila kyai mau klasifikasi lain.
 const tipeFilter = computed(() => String(_route.query.tipe || '').toLowerCase())
+// v.100 FIX: utamakan field eksplisit `tipe_pegawai` (guru/pegawai/pegawai_guru + legacy ngaji/sekolah).
+// Tanpa ini, guru yang `jabatan`-nya tak cocok regex (mis. kosong/"Tenaga Pendidik") salah terfilter jadi PEGAWAI.
 function _isPengajar(g) {
+  const t = String(g.tipe_pegawai || '').toLowerCase().trim()
+  if (['guru', 'pegawai_guru', 'ngaji', 'ngaji_sekolah', 'sekolah'].includes(t)) return true
+  if (['pegawai', 'admin'].includes(t)) return false
+  // fallback heuristik jabatan bila tipe_pegawai kosong / legacy tak dikenal
   const j = (String(g.jabatan || '') + ' ' + String(g.jabatan_tambahan || '')).toLowerCase()
   return /guru|ustadz|ustadzah|pengajar|mu.?allim|mudarr?is|asatidz|wali\s*kelas|kepala|pengasuh/.test(j)
 }
