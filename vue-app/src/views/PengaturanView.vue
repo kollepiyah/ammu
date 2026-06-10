@@ -815,6 +815,51 @@
     </UiCard>
 
     <!-- ============================================================
+         SECTION: Integrasi Google Sheet (Apps Script) — v.100 Batch11
+         ============================================================ -->
+    <UiCard
+      v-show="section === 'integrasi'"
+      title="Integrasi Google Sheet"
+      subtitle="Kirim laporan ke Google Sheet (rapi mirip PDF) via Apps Script"
+      class="mb-4"
+    >
+      <div class="space-y-3">
+        <div class="text-[11px] text-[var(--text-secondary)] bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg p-3 leading-relaxed">
+          <i class="fas fa-circle-info mr-1 text-emerald-600"></i>
+          Tempel <b>URL Web App</b> + <b>Token</b> dari Apps Script kyai. Panduan lengkap ada di file
+          <code>docs/APPSCRIPT-GSHEET.md</code>. Setelah diisi, tombol <b>"Google Sheet"</b> muncul di Data Santri.
+        </div>
+        <div>
+          <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block">URL Web App (Apps Script)</label>
+          <input
+            v-model.trim="form.gsheetUrl"
+            type="url"
+            placeholder="https://script.google.com/macros/s/AKfyc.../exec"
+            class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] font-mono"
+          />
+        </div>
+        <div>
+          <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block">Token Rahasia</label>
+          <input
+            v-model.trim="form.gsheetToken"
+            type="text"
+            placeholder="Kata sandi rahasia (samakan dengan di Apps Script)"
+            class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] font-mono"
+          />
+        </div>
+        <button
+          type="button"
+          @click="tesGsheet"
+          :disabled="gsheetTesting || !form.gsheetUrl"
+          class="px-4 py-2 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white"
+        >
+          <i :class="['fas mr-1', gsheetTesting ? 'fa-spinner fa-spin' : 'fa-vial']"></i>{{ gsheetTesting ? 'Menguji…' : 'Tes Koneksi' }}
+        </button>
+        <p class="text-[10px] text-[var(--text-tertiary)] italic">Tes Koneksi membuat 1 sheet contoh berisi 2 baris. Jangan lupa klik <b>Simpan</b> di bawah agar URL/token tersimpan.</p>
+      </div>
+    </UiCard>
+
+    <!-- ============================================================
          SECTION: Schema Rapor per-Lembaga (sections / perLevel / perKelas)
          ============================================================ -->
     <UiCard
@@ -1178,6 +1223,7 @@ import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
 import { useLembaga } from '@/composables/useLembaga'
+import { useGoogleSheet } from '@/composables/useGoogleSheet'
 import { uploadBase64 } from '@/services/storage'
 import {
   ArrowLeft as ArrowLeftIcon,
@@ -1260,7 +1306,10 @@ function defaultForm() {
     shiftSoreTerlambat: '14:15',
     shiftSekolahMulai: '07:00',
     shiftSekolahSelesai: '13:00',
-    shiftSekolahTerlambat: '07:15'
+    shiftSekolahTerlambat: '07:15',
+    // v.100 Batch11: integrasi Google Sheet (Apps Script Web App)
+    gsheetUrl: '',
+    gsheetToken: ''
   }
 }
 
@@ -1308,6 +1357,12 @@ const tabs = [
     label: 'Pengaturan Postingan',
     icon: 'fa-bullhorn',
     gradient: 'from-teal-500 dark:from-teal-700 to-teal-700 dark:to-teal-900'
+  },
+  {
+    id: 'integrasi',
+    label: 'Google Sheet',
+    icon: 'fa-table',
+    gradient: 'from-emerald-500 dark:from-emerald-700 to-emerald-700 dark:to-emerald-900'
   }
   // Note: section "rekapDiniyah" & "raporSchema" tetap render dari kartu di template
   // (akses via routing /pengaturan?section=rekapDiniyah / ?section=raporSchema)
@@ -1784,6 +1839,42 @@ async function simpanSemua() {
     toast.error('Gagal simpan: ' + (e?.message || e))
   } finally {
     saving.value = false
+  }
+}
+
+// v.100 Batch11: Tes koneksi Google Sheet (Apps Script). Pakai URL/token dari form (belum harus disimpan).
+const gsheetTesting = ref(false)
+async function tesGsheet() {
+  if (gsheetTesting.value) return
+  const url = String(form.value.gsheetUrl || '').trim()
+  if (!url) { toast.warning('Isi URL Web App dulu.'); return }
+  gsheetTesting.value = true
+  try {
+    // simpan dulu supaya composable (baca dari settings) pakai nilai terbaru
+    await settingsStore.save({ ...form.value })
+    dirty.value = false
+    const { sendToSheet } = useGoogleSheet()
+    const { url: sheetUrl } = await sendToSheet({
+      title: 'Tes Koneksi Ammu',
+      sheetName: 'Tes',
+      kop: [settingsStore.settings?.kopLine1 || 'PONDOK PESANTREN MAMBAUL ULUM', 'Tes Integrasi Google Sheet'],
+      subtitle: 'Dibuat ' + new Date().toLocaleString('id-ID'),
+      columns: [
+        { key: 'no', header: 'No', width: 6 },
+        { key: 'ket', header: 'Keterangan', width: 30 },
+        { key: 'nilai', header: 'Nilai', width: 16 }
+      ],
+      rows: [
+        { no: 1, ket: 'Koneksi Apps Script', nilai: 'OK' },
+        { no: 2, ket: 'Waktu', nilai: new Date().toLocaleTimeString('id-ID') }
+      ]
+    })
+    toast.success('Berhasil! Sheet contoh dibuat.')
+    try { window.open(sheetUrl, '_blank') } catch (e) { /* ignore */ }
+  } catch (e) {
+    toast.error('Tes gagal: ' + (e?.message || e))
+  } finally {
+    gsheetTesting.value = false
   }
 }
 </script>

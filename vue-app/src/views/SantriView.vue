@@ -21,6 +21,9 @@
         <button v-if="isFullAccess" @click="exportSantriExcel" :disabled="exporting" aria-label="Ekspor daftar santri Excel" class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer">
           <i :class="['fas', exporting ? 'fa-spinner fa-spin' : 'fa-file-excel']"></i>{{ exporting ? 'Ekspor...' : 'Ekspor Excel' }}
         </button>
+        <button v-if="isFullAccess && gsheetConfigured()" @click="kirimGoogleSheet" :disabled="sendingGsheet" aria-label="Kirim daftar santri ke Google Sheet" class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer">
+          <i :class="['fas', sendingGsheet ? 'fa-spinner fa-spin' : 'fa-table']"></i>{{ sendingGsheet ? 'Mengirim...' : 'Google Sheet' }}
+        </button>
         <!-- View mode: tombol Kelola -->
         <router-link v-if="isFullAccess && !isMasterMode" to="/master-data?tab=santri" class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-slate-200 hover:bg-slate-300 text-[var(--text-primary)] text-xs font-bold transition" title="CRUD santri di Master Data">
           <i class="fas fa-edit"></i>Kelola
@@ -247,6 +250,7 @@ const isMasterMode = computed(() => props.mode === 'master')
 // v.21.13b.0526: + toTitleCase + normalizeWA + parseMultipleWA (v.21.22b dual WA)
 import { getNamaGuruGelar, toTitleCase, normalizeWA, parseMultipleWA } from '@/utils/format'
 import { useExcel } from '@/composables/useExcel'
+import { useGoogleSheet } from '@/composables/useGoogleSheet'
 import { buildListPdf, buildKopFromSettings } from '@/utils/pdfBuilder'
 import { useToast } from '@/composables/useToast'
 import { useSettingsStore } from '@/stores/settings'
@@ -263,6 +267,9 @@ const exporting = ref(false)
 const importing = ref(false)
 const importPreview = ref(null)
 const { exportStyled, importFile } = useExcel()
+// v.100 Batch11: kirim ke Google Sheet (layout rapi mirip PDF) — hybrid, Excel tetap
+const { isConfigured: gsheetConfigured, sendToSheet } = useGoogleSheet()
+const sendingGsheet = ref(false)
 const toast = useToast()
 const confirmDlg = useConfirm()
 const settingsStore = useSettingsStore()
@@ -296,6 +303,7 @@ definePageActions(() => {
     { label: 'Cetak PDF', icon: 'printer', on: cetakPdf },
     { label: 'Ekspor Excel', icon: 'download', on: exportSantriExcel, disabled: exporting.value }
   ]
+  if (gsheetConfigured()) acts.push({ label: 'Google Sheet', icon: 'file', on: kirimGoogleSheet, disabled: sendingGsheet.value })
   if (isMasterMode.value) {
     acts.push({ label: 'Tambah Santri', icon: 'plus', primary: true, on: () => router.push('/santri/new?from=master') })
     acts.push({ label: 'Template', icon: 'download', on: downloadTemplateSantri })
@@ -534,6 +542,53 @@ async function cetakPdf() {
     toast?.success?.('PDF santri berhasil dibuat')
   } catch (e) {
     toast?.error?.('Gagal cetak PDF: ' + (e?.message || e))
+  }
+}
+
+// v.100 Batch11: kirim Data Santri ke Google Sheet (kolom ringkas mirip PDF)
+async function kirimGoogleSheet() {
+  if (sendingGsheet.value) return
+  if (!gsheetConfigured()) {
+    toast.warning('Google Sheet belum diatur. Buka Pengaturan → Google Sheet dulu.')
+    return
+  }
+  sendingGsheet.value = true
+  try {
+    const ss = settingsStore.settings || {}
+    const rows = (santri.value || []).map((s, i) => ({
+      no: i + 1,
+      nama: s.nama || '',
+      nis: s.nis || '',
+      jk: s.jk || '',
+      lembaga: s.lembaga || '',
+      kelas: s.kelas || '',
+      lembaga_sekolah: s.lembaga_sekolah || '',
+      kelas_sekolah: s.kelas_sekolah || '',
+      wa: s.wa || ''
+    }))
+    const { url } = await sendToSheet({
+      title: `Data Santri ${new Date().toISOString().slice(0, 10)}`,
+      sheetName: 'Data Santri',
+      kop: [ss.kopLine1 || 'PONDOK PESANTREN MAMBAUL ULUM', ss.kopLine2 || '', ss.kopLine3 || ''].filter(Boolean),
+      subtitle: `Data Santri — ${rows.length} santri (${new Date().toLocaleDateString('id-ID')})`,
+      columns: [
+        { key: 'no', header: 'No', width: 6 },
+        { key: 'nama', header: 'Nama Santri', width: 28 },
+        { key: 'nis', header: 'NIS', width: 14 },
+        { key: 'jk', header: 'L/P', width: 6 },
+        { key: 'lembaga', header: 'Lembaga Qiraati', width: 16 },
+        { key: 'kelas', header: 'Kelas', width: 14 },
+        { key: 'lembaga_sekolah', header: 'Lembaga Sekolah', width: 16 },
+        { key: 'kelas_sekolah', header: 'Kelas Sekolah', width: 14 },
+        { key: 'wa', header: 'No. WA Wali', width: 18 }
+      ]
+    })
+    toast.success(`${rows.length} santri terkirim ke Google Sheet.`)
+    try { window.open(url, '_blank') } catch (e) { /* ignore */ }
+  } catch (e) {
+    toast.error('Gagal kirim ke Google Sheet: ' + (e?.message || e))
+  } finally {
+    sendingGsheet.value = false
   }
 }
 

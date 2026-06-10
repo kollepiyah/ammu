@@ -31,7 +31,10 @@ const DEFAULT_SETTINGS = {
   // v.21.10.0526: Ma'had tagihan template + sub-kategori (kyai spec final)
   mahad_tagihan_template: [],  // [{ kategori: 'makan', nominal_default: 0 }]
   mahad_sub_kategori: [],       // ['makan', 'listrik', 'air', dst]
-  tarif_fullday_default: 0      // Fullday extra fix nominal (admin input)
+  tarif_fullday_default: 0,     // Fullday extra fix nominal (admin input)
+  // v.100 Batch11: integrasi Google Sheet (Apps Script Web App) — kirim laporan rapi mirip PDF
+  gsheetUrl: '',
+  gsheetToken: ''
 }
 
 export const useSettingsStore = defineStore('settings', () => {
