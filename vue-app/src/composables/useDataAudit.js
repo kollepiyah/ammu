@@ -39,6 +39,42 @@ function fuzzyKey(nama) {
     .replace(/\b(m|moh|moch|muh|mhd|h|hj|kh|ust|ustadz|ustadzah|drs|s\.?pd|s\.?ag|a\.?ma)\b/g, '')
     .replace(/[^a-z0-9]/g, '')
 }
+// v.100 Batch12: jarak edit (Levenshtein) + rasio kemiripan — deteksi nama mirip lebih canggih.
+function levenshtein(a, b) {
+  a = a || ''
+  b = b || ''
+  const m = a.length
+  const n = b.length
+  if (!m) return n
+  if (!n) return m
+  let prev = new Array(n + 1)
+  for (let j = 0; j <= n; j++) prev[j] = j
+  for (let i = 1; i <= m; i++) {
+    const cur = [i]
+    for (let j = 1; j <= n; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1
+      cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + cost)
+    }
+    prev = cur
+  }
+  return prev[n]
+}
+function simRatio(a, b) {
+  const mx = Math.max((a || '').length, (b || '').length)
+  if (!mx) return 0
+  return 1 - levenshtein(a, b) / mx
+}
+// Normalisasi tgl lahir ke 'YYYY-MM-DD' utk dibandingkan (terima Date / DD-MM-YYYY / YYYY-MM-DD).
+function normDob(v) {
+  if (!v) return ''
+  if (v instanceof Date) return v.toISOString().slice(0, 10)
+  const s = String(v).trim()
+  let m = s.match(/^(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{4})$/)
+  if (m) return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`
+  m = s.match(/^(\d{4})[/\-.](\d{1,2})[/\-.](\d{1,2})/)
+  if (m) return `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}`
+  return s
+}
 
 /**
  * @param {import('vue').Ref<Array>} santriRef
@@ -155,28 +191,64 @@ export function useDataAudit(santriRef, guruRef, lembagaRef) {
     return out
   })
 
-  // ── KANDIDAT DUPLIKAT FUZZY (nama mirip, report-only) ───────
+  // ── KANDIDAT DUPLIKAT FUZZY (nama mirip / tgl lahir sama, report-only) ───────
+  // v.100 Batch12 (kyai): lebih canggih — pakai jarak edit (Levenshtein) utk nama yang ditulis
+  //   beda + sinyal tgl_lahir SAMA. TIDAK pakai No. WA (wali multi-anak berbagi 1 WA).
   const fuzzyDup = computed(() => {
     const build = (list, kind) => {
-      const map = new Map()
-      for (const it of list) {
-        const fk = fuzzyKey(it.nama)
-        if (!fk || fk.length < 3) continue
-        if (!map.has(fk)) map.set(fk, [])
-        map.get(fk).push(it)
+      const items = (list || []).filter((x) => x && x.id != null).map((x) => {
+        const dob = normDob(x.tgl_lahir)
+        return {
+          id: String(x.id),
+          nama: x.nama || '-',
+          nkey: fuzzyKey(x.nama),
+          dob,
+          detail: kind === 'santri'
+            ? `NIS ${x.nis || '-'}${dob ? ' · lahir ' + dob : ''}`
+            : (x.jabatan || '-')
+        }
+      })
+      const n = items.length
+      // union-find: gabung pasangan kandidat jadi satu grup
+      const parent = items.map((_, i) => i)
+      const find = (a) => { while (parent[a] !== a) { parent[a] = parent[parent[a]]; a = parent[a] } return a }
+      const pairs = []
+      for (let i = 0; i < n; i++) {
+        for (let j = i + 1; j < n; j++) {
+          const A = items[i]
+          const B = items[j]
+          if (norm(A.nama) === norm(B.nama)) continue // identik → ditangani panel Migrate
+          const lenOk = A.nkey && B.nkey && A.nkey.length >= 3 && B.nkey.length >= 3 && Math.abs(A.nkey.length - B.nkey.length) <= 5
+          const sim = lenOk ? simRatio(A.nkey, B.nkey) : 0
+          const sameDob = !!A.dob && A.dob === B.dob
+          let why = ''
+          if (sim >= 0.85) why = 'nama sangat mirip'
+          else if (sameDob && sim >= 0.5) why = 'nama mirip + tgl lahir sama'
+          else if (sameDob && sim >= 0.4) why = 'tgl lahir sama'
+          if (why) pairs.push([i, j, why])
+        }
       }
-      const groups = []
-      for (const [, arr] of map) {
+      for (const [i, j] of pairs) {
+        const ra = find(i)
+        const rb = find(j)
+        if (ra !== rb) parent[ra] = rb
+      }
+      const member = new Map() // root → Set(idx)
+      const reason = new Map() // root → Set(why)
+      for (const [i, j, why] of pairs) {
+        const r = find(i)
+        if (!member.has(r)) { member.set(r, new Set()); reason.set(r, new Set()) }
+        member.get(r).add(i)
+        member.get(r).add(j)
+        reason.get(r).add(why)
+      }
+      const out = []
+      for (const [r, set] of member) {
+        const arr = [...set].map((idx) => items[idx])
         if (arr.length < 2) continue
-        // hanya tampilkan bila bentuk NAMA-nya beda (yang persis-sama sudah ditangani Migrate)
-        const distinct = new Set(arr.map((x) => norm(x.nama)))
-        if (distinct.size < 2) continue
-        groups.push({
-          kind,
-          items: arr.map((x) => ({ id: String(x.id), nama: x.nama || '-', detail: kind === 'santri' ? `NIS ${x.nis || '-'}` : (x.jabatan || '-') }))
-        })
+        out.push({ kind, reason: [...reason.get(r)].join(', '), items: arr.map((x) => ({ id: x.id, nama: x.nama, detail: x.detail })) })
       }
-      return groups
+      return out
     }
     return [...build(santriAktif.value, 'santri'), ...build(guruAktif.value, 'guru')]
   })

@@ -2,8 +2,8 @@
 //   Kasus nyata kyai: (A) kelas Qiraati berisi "Level ..." tapi lembaga tak cocok
 //   (kelas "Level ..." → Pra PTPT; "Juz N" utuh → PTPT; "Pra PTPT ..." → Pra PTPT);
 //   (B) lembaga_sekolah terisi nilai NGAJI
-//   ("Sekolah: TPQ Pagi" — invalid, sekolah hanya TK/SDI/PKBM); (C) lembaga TPQ tapi
-//   lembaga_sekolah TK (flag cek-manual, default TIDAK dicentang).
+//   ("Sekolah: TPQ Pagi" — invalid, sekolah hanya TK/SDI/PKBM); (C) lembaga TPQ PAGI
+//   tapi lembaga_sekolah TK — bentrok jam pagi (flag cek-manual, default TIDAK dicentang).
 //   Scan = report-only. Apply = updateDoc parsial per santri + backup nilai LAMA ke
 //   audit_log (aksi 'update', bisa dipulihkan manual). Saran lembaga (rule A) EDITABLE.
 import { doc, setDoc, updateDoc } from 'firebase/firestore'
@@ -17,6 +17,10 @@ function low(v) {
 }
 function isTpqFamily(lmb) {
   return low(lmb).startsWith('tpq')
+}
+// TPQ PAGI saja (ngaji pagi) — bentrok jam dgn sekolah TK (juga pagi).
+function isTpqPagi(lmb) {
+  return /tpq\s*pagi/.test(low(lmb))
 }
 
 // Tebak lembaga Qiraati yang BENAR dari string kelas. '' = tidak bisa menebak.
@@ -84,12 +88,14 @@ export function scanLembagaFix(santriList = []) {
       })
     }
 
-    // ── Rule C (cek manual): lembaga TPQ tapi sekolah TK ──
-    if (isTpqFamily(s.lembaga) && ls === 'tk') {
+    // ── Rule C (cek manual): TPQ PAGI tapi sekolah TK ──
+    // kyai: santri TPQ Pagi (ngaji pagi) tidak mungkin TK (sekolah pagi) — bentrok jam.
+    //   TPQ SORE + TK itu WAJAR (TK pagi, ngaji sore) → JANGAN diflag.
+    if (isTpqPagi(s.lembaga) && ls === 'tk') {
       findings.push({
         ...base,
         type: 'tpq_tk',
-        alasan: `Lembaga ${s.lembaga} tapi sekolah TK — cek manual (kyai: santri TPQ bukan TK)`,
+        alasan: `Lembaga ${s.lembaga} (ngaji pagi) tapi sekolah TK — bentrok jam pagi, cek manual`,
         patch: { lembaga_sekolah: '', kelas_sekolah: '' },
         defaultOn: false
       })

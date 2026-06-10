@@ -3,8 +3,9 @@
 //     1) IDENTITAS UNIK (selalu digabung): santri NIS sama / NISN sama; guru WA sama.
 //     2) NAMA SAMA + SINYAL PENGUAT (v.100, atas keputusan kyai): hanya digabung bila nama
 //        sama DAN ada minimal 1 sinyal yang menguatkan "orang yang sama" DAN tidak ada
-//        konflik identitas keras. Sinyal santri: NIS/NISN/NIK/tgl_lahir/WA-wali sama, atau
-//        (lembaga+kelas) / (lembaga_sekolah+kelas_sekolah) sama. Sinyal guru: WA/NIK sama, atau
+//        konflik identitas keras. Sinyal santri: NIS/NISN/NIK/tgl_lahir sama, atau
+//        (lembaga+kelas) / (lembaga_sekolah+kelas_sekolah) sama. (WA-wali TIDAK dipakai utk
+//        santri — wali multi-anak berbagi 1 WA.) Sinyal guru: WA/NIK sama, atau
 //        (lembaga+jabatan) sama. KONFLIK KERAS (blokir merge walau nama sama): NIS/NISN/NIK/
 //        tgl_lahir berbeda (santri); WA/NIK berbeda (guru) → dianggap 2 orang berbeda.
 //   Strategi: per grup, pilih 1 record PRIMER (paling lengkap) → isi field kosong primer dari
@@ -83,9 +84,9 @@ function diffPhone(a, b) {
 function santriSamePerson(p, d) {
   // konflik keras → pasti beda orang
   if (diffText(p.nis, d.nis) || diffText(p.nisn, d.nisn) || diffText(p.nik, d.nik) || diffText(p.tgl_lahir, d.tgl_lahir)) return false
-  // butuh ≥1 sinyal penguat
+  // butuh ≥1 sinyal penguat. v.100 Batch12 (kyai): WA-wali SENGAJA TIDAK dipakai sbg sinyal —
+  //   wali multi-anak berbagi 1 nomor WA, jadi WA sama ≠ orang yang sama.
   if (eqText(p.nis, d.nis) || eqText(p.nisn, d.nisn) || eqText(p.nik, d.nik) || eqText(p.tgl_lahir, d.tgl_lahir)) return true
-  if (eqPhone(p.wa, d.wa)) return true
   if (eqText(p.lembaga, d.lembaga) && eqText(p.kelas, d.kelas)) return true
   if (eqText(p.lembaga_sekolah, d.lembaga_sekolah) && eqText(p.kelas_sekolah, d.kelas_sekolah)) return true
   return false

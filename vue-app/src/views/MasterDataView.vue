@@ -1113,7 +1113,7 @@ async function simpanPengaturanRekap() {
         <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
           <div>
             <p class="text-sm font-black text-amber-700 dark:text-amber-300"><i class="fas fa-route mr-1"></i>Migrasi Lembaga (Salah Impor)</p>
-            <p class="text-xs text-slate-600 dark:text-slate-300 mt-1">Deteksi penempatan lembaga yang salah dari impor: (A) kelas pola <b>Level → Pra PTPT</b>, <b>Juz (utuh) → PTPT</b>, <b>Pra PTPT → Pra PTPT</b>, <b>Jilid/KPI → TPQ</b> tapi lembaga tak cocok — saran bisa DIUBAH per baris; (B) <b>Lembaga Sekolah berisi nilai ngaji</b> (mis. "TPQ Pagi") → dikosongkan; (C) lembaga TPQ tapi sekolah TK → cek manual (default tidak dicentang). Nilai lama di-backup ke audit_log.</p>
+            <p class="text-xs text-slate-600 dark:text-slate-300 mt-1">Deteksi penempatan lembaga yang salah dari impor: (A) kelas pola <b>Level → Pra PTPT</b>, <b>Juz (utuh) → PTPT</b>, <b>Pra PTPT → Pra PTPT</b>, <b>Jilid/KPI → TPQ</b> tapi lembaga tak cocok — saran bisa DIUBAH per baris; (B) <b>Lembaga Sekolah berisi nilai ngaji</b> (mis. "TPQ Pagi") → dikosongkan; (C) lembaga TPQ <b>Pagi</b> tapi sekolah TK (bentrok jam pagi) → cek manual (default tidak dicentang). Nilai lama di-backup ke audit_log.</p>
           </div>
           <span v-if="lfixFindings" class="text-[10px] font-bold px-2 py-0.5 rounded uppercase" :class="lfixFindings.length ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'">{{ lfixFindings.length }} temuan</span>
         </div>
@@ -1190,10 +1190,10 @@ async function simpanPengaturanRekap() {
             </p>
             <button v-if="totalFuzzy" @click="showFuzzy = !showFuzzy" class="text-[11px] font-bold text-amber-700 dark:text-amber-300 hover:underline">{{ showFuzzy ? 'Sembunyikan' : 'Lihat' }}</button>
           </div>
-          <p class="text-[11px] text-slate-500 mt-1">Nama yang terlihat sama tapi ditulis beda (gelar / spasi / ejaan). Migrate TIDAK menggabung otomatis — periksa &amp; rapikan manual via Edit/Hapus.</p>
+          <p class="text-[11px] text-slate-500 mt-1">Nama yang ditulis beda tapi mirip (gelar / spasi / ejaan, jarak edit), atau <b>tgl lahir sama</b>. <b>Tidak</b> memakai No. WA (wali bisa punya banyak anak). Migrate TIDAK menggabung otomatis — periksa &amp; rapikan manual via Edit/Hapus.</p>
           <div v-if="showFuzzy" class="mt-2 space-y-1.5">
             <div v-for="(grp, gi) in fuzzyDup" :key="gi" class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-2 text-[11px]">
-              <p class="font-bold text-amber-700 dark:text-amber-300 uppercase text-[9px] mb-0.5">{{ grp.kind }}</p>
+              <p class="font-bold text-amber-700 dark:text-amber-300 uppercase text-[9px] mb-0.5">{{ grp.kind }}<span v-if="grp.reason" class="normal-case text-amber-600 dark:text-amber-400"> · {{ grp.reason }}</span></p>
               <ul class="space-y-0.5">
                 <li v-for="it in grp.items" :key="it.id" class="text-slate-700 dark:text-slate-200"><span class="font-bold">{{ it.nama }}</span> <span class="text-slate-400">· {{ it.detail }}</span></li>
               </ul>
