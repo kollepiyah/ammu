@@ -1,6 +1,79 @@
 <template>
   <div class="p-3 md:p-5 max-w-7xl mx-auto space-y-4">
 
+    <!-- v.100 Batch12: Preview impor Rekap Prestasi (review dulu: Baru/Update/Lewati/Tak ditemukan) -->
+    <div v-if="importRekapPreview" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+      <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-5xl w-full max-h-[88vh] flex flex-col">
+        <div class="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+          <h3 class="text-base font-black text-slate-800 dark:text-slate-100">
+            <i class="fas fa-file-import text-cyan-600 mr-2"></i>Preview Impor Rekap Prestasi — {{ importRekapPreview.plan.length }} baris
+          </h3>
+          <button @click="importRekapPreview = null" class="text-slate-400 hover:text-rose-600 text-xl"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="p-4 overflow-auto flex-1 text-xs">
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3">
+            <div class="bg-emerald-50 dark:bg-emerald-900/20 rounded p-2 border border-emerald-200 dark:border-emerald-800">
+              <p class="text-[10px] text-emerald-700 dark:text-emerald-300 font-bold uppercase">Baru</p>
+              <p class="text-2xl font-black text-emerald-700 dark:text-emerald-300">{{ importRekapPreview.cBaru }}</p>
+            </div>
+            <div class="bg-cyan-50 dark:bg-cyan-900/20 rounded p-2 border border-cyan-200 dark:border-cyan-800">
+              <p class="text-[10px] text-cyan-700 dark:text-cyan-300 font-bold uppercase">Update</p>
+              <p class="text-2xl font-black text-cyan-700 dark:text-cyan-300">{{ importRekapPreview.cUpdate }}</p>
+            </div>
+            <div class="bg-slate-50 dark:bg-slate-700/40 rounded p-2 border border-slate-200 dark:border-slate-600">
+              <p class="text-[10px] text-slate-600 dark:text-slate-300 font-bold uppercase">Lewati (kosong)</p>
+              <p class="text-2xl font-black text-slate-600 dark:text-slate-300">{{ importRekapPreview.cSkip }}</p>
+            </div>
+            <div class="bg-rose-50 dark:bg-rose-900/20 rounded p-2 border border-rose-200 dark:border-rose-800">
+              <p class="text-[10px] text-rose-700 dark:text-rose-300 font-bold uppercase">Tak ditemukan</p>
+              <p class="text-2xl font-black text-rose-700 dark:text-rose-300">{{ importRekapPreview.cNotFound }}</p>
+            </div>
+          </div>
+          <p v-if="importRekapPreview.cFuzzy" class="text-[11px] text-amber-700 dark:text-amber-300 mb-2"><i class="fas fa-circle-info mr-1"></i>{{ importRekapPreview.cFuzzy }} baris dicocokkan via <b>nama mirip</b> (badge "Mirip") — periksa bila ragu.</p>
+          <table class="w-full border border-slate-200 dark:border-slate-700">
+            <thead class="bg-slate-100 dark:bg-slate-700/50">
+              <tr>
+                <th class="px-2 py-1 text-left">#</th>
+                <th class="px-2 py-1 text-left">Aksi</th>
+                <th class="px-2 py-1 text-left">Cocok</th>
+                <th class="px-2 py-1 text-left">Nama</th>
+                <th class="px-2 py-1 text-left">NIS</th>
+                <th class="px-2 py-1 text-left">Lembaga</th>
+                <th class="px-2 py-1 text-left">Nilai Baru</th>
+                <th class="px-2 py-1 text-left">Nilai Lama</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(p, i) in importRekapPreview.preview" :key="i" class="border-t border-slate-200 dark:border-slate-700">
+                <td class="px-2 py-1">{{ i + 1 }}</td>
+                <td class="px-2 py-1">
+                  <span class="font-bold px-1.5 py-0.5 rounded text-[10px]" :class="{
+                    'bg-emerald-100 text-emerald-700': p.action === 'baru',
+                    'bg-cyan-100 text-cyan-700': p.action === 'update',
+                    'bg-slate-200 text-slate-600': p.action === 'skip',
+                    'bg-rose-100 text-rose-700': p.action === 'notfound'
+                  }">{{ p.action === 'baru' ? 'BARU' : p.action === 'update' ? 'UPDATE' : p.action === 'skip' ? 'LEWATI' : 'TAK ADA' }}</span>
+                </td>
+                <td class="px-2 py-1"><span v-if="p.matchBy" class="text-[10px] px-1.5 py-0.5 rounded" :class="p.matchBy === 'Mirip' ? 'bg-amber-100 text-amber-700 font-bold' : 'bg-slate-100 text-slate-500'">{{ p.matchBy }}</span></td>
+                <td class="px-2 py-1 font-bold text-slate-700 dark:text-slate-200">{{ p.nama }}</td>
+                <td class="px-2 py-1">{{ p.nis }}</td>
+                <td class="px-2 py-1">{{ p.lembaga }}</td>
+                <td class="px-2 py-1 text-cyan-700 dark:text-cyan-300">{{ p.nilaiBaru }}</td>
+                <td class="px-2 py-1 text-slate-400">{{ p.nilaiLama }}</td>
+              </tr>
+            </tbody>
+          </table>
+          <p v-if="importRekapPreview.plan.length > importRekapPreview.preview.length" class="text-[10px] italic text-slate-500 mt-2">…dan {{ importRekapPreview.plan.length - importRekapPreview.preview.length }} baris lagi (semua diproses saat konfirmasi)</p>
+        </div>
+        <div class="p-4 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-2">
+          <button @click="importRekapPreview = null" class="px-4 py-2 text-xs font-bold rounded-lg bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 text-slate-700 dark:text-slate-100">Batal</button>
+          <button @click="confirmImportRekap" :disabled="importingRekap || importRekapPreview.applyCount === 0" class="px-4 py-2 text-xs font-bold rounded-lg bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white disabled:opacity-50">
+            <i :class="['fas', importingRekap ? 'fa-spinner fa-spin' : 'fa-check', 'mr-1']"></i>{{ importingRekap ? `Memproses… ${importRekapProgress.i}/${importRekapProgress.total}` : `Konfirmasi (${importRekapPreview.applyCount})` }}
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- ===== LAYER 1: LANDING (pilih Qiraati / Diniyah) ===== -->
     <div
       v-if="viewStep === 'landing'"
@@ -731,6 +804,8 @@ async function simpanRekap() {
 const { importFile } = useExcel()
 const importingRekap = ref(false)
 const importRekapProgress = ref({ i: 0, total: 0 })
+// v.100 Batch12: preview impor (review dulu spt impor santri/guru) sebelum tulis
+const importRekapPreview = ref(null)
 
 // Template berisi DAFTAR SANTRI sesuai filter aktif → tinggal isi kolom prestasi lalu impor.
 async function downloadTemplateRekap() {
@@ -781,6 +856,25 @@ function _pickRekap(row, ...aliases) {
   return ''
 }
 
+// Ringkasan nilai utk preview
+function _fmtNilaiBaru(p) {
+  const parts = []
+  if (p.prestasi_awal != null && p.prestasi_awal !== '') parts.push(`Awal ${p.prestasi_awal}`)
+  if (p.prestasi_akhir != null && p.prestasi_akhir !== '') parts.push(`Akhir ${p.prestasi_akhir}`)
+  if (p.prestasi_total != null && p.prestasi_total !== '') parts.push(`Total ${p.prestasi_total}`)
+  if (p.juz != null && p.juz !== '') parts.push(p.juz)
+  return parts.join(' · ') || '—'
+}
+function _fmtNilaiLama(s) {
+  const parts = []
+  if (s.prestasi_awal) parts.push(`Awal ${s.prestasi_awal}`)
+  if (s.prestasi_akhir) parts.push(`Akhir ${s.prestasi_akhir}`)
+  if (s.prestasi_total) parts.push(`Total ${s.prestasi_total}`)
+  if (s.juz) parts.push(s.juz)
+  return parts.join(' · ') || '—'
+}
+
+// v.100 Batch12: FASE 1 — baca file → bangun PREVIEW (review dulu, belum tulis ke Firestore).
 async function onImportRekap(e) {
   const file = e.target?.files?.[0]
   if (!file) return
@@ -797,20 +891,24 @@ async function onImportRekap(e) {
       const nm = String(s.nama || '').trim().toLowerCase()
       if (nm && !byNama.has(nm)) byNama.set(nm, s)
     }
-    let updated = 0, skipped = 0, notFound = 0, fuzzyMatched = 0
-    importRekapProgress.value = { i: 0, total: rows.length }
-    const _periode = new Date().toISOString().slice(0, 7)
+    const plan = []
+    let cBaru = 0, cUpdate = 0, cSkip = 0, cNotFound = 0, cFuzzy = 0
     for (const r of rows) {
-      importRekapProgress.value = { i: importRekapProgress.value.i + 1, total: rows.length }
-      const nis = String(_pickRekap(r, 'NIS', 'nis') || '').trim()
-      const nama = String(_pickRekap(r, 'Nama Santri', 'Nama', 'nama') || '').trim().toLowerCase()
-      let s = (nis && byNis.get(nis)) || (nama && byNama.get(nama)) || null
-      // v.100 Batch12: fallback nama MIRIP (fuzzy) — NIS/nama persis tak ketemu, coba kemiripan tinggi & tak ambigu
-      if (!s && nama) {
-        const m = bestNameMatch(nama, list, { getName: (x) => x.nama })
-        if (m) { s = m.item; fuzzyMatched++ }
+      const nisIn = String(_pickRekap(r, 'NIS', 'nis') || '').trim()
+      const namaIn = String(_pickRekap(r, 'Nama Santri', 'Nama', 'nama') || '').trim()
+      const namaLow = namaIn.toLowerCase()
+      let s = null, matchBy = ''
+      if (nisIn && byNis.get(nisIn)) { s = byNis.get(nisIn); matchBy = 'NIS' }
+      else if (namaLow && byNama.get(namaLow)) { s = byNama.get(namaLow); matchBy = 'Nama' }
+      else if (namaLow) {
+        // v.100 Batch12: fallback nama MIRIP (fuzzy) — kemiripan tinggi & tak ambigu
+        const m = bestNameMatch(namaLow, list, { getName: (x) => x.nama })
+        if (m) { s = m.item; matchBy = 'Mirip'; cFuzzy++ }
       }
-      if (!s) { if (nis || nama) notFound++; continue }
+      if (!s) {
+        if (nisIn || namaIn) { cNotFound++; plan.push({ action: 'notfound', matchBy: '', nama: namaIn || '(tanpa nama)', nis: nisIn || '-', lembaga: '', nilaiBaru: '—', nilaiLama: '—' }) }
+        continue
+      }
       const awal = String(_pickRekap(r, 'Prestasi Awal', 'Awal', 'awal') || '').trim()
       const akhir = String(_pickRekap(r, 'Prestasi Akhir', 'Akhir', 'akhir') || '').trim()
       const totalIn = String(_pickRekap(r, 'Prestasi Total (TPQ/PPPH manual)', 'Prestasi Total', 'Total', 'total') || '').trim()
@@ -829,26 +927,62 @@ async function onImportRekap(e) {
       } else if (totalIn) {
         payload.prestasi_total = totalIn
       }
-      if (!Object.keys(payload).length) { skipped++; continue }
-      await updateDoc(doc(db, 'santri', String(s.id)), payload)
-      // event notif prestasi (sama dgn simpanRekap) → Notif Center wali
-      const _npId = `np_${s.id}_${_periode}`
-      await setDoc(doc(db, 'notif_prestasi', _npId), {
-        id: _npId,
-        santri_id: String(s.id),
-        santri_nama: s.nama || '',
-        total: String(payload.prestasi_total ?? totalIn ?? ''),
-        periode: _periode,
-        createdAt: new Date().toISOString()
-      }, { merge: true })
-      updated++
+      const base = { matchBy, santriId: String(s.id), nama: s.nama || namaIn, nis: s.nis || nisIn || '-', lembaga: s.lembaga || '-', nilaiLama: _fmtNilaiLama(s) }
+      if (!Object.keys(payload).length) {
+        cSkip++
+        plan.push({ ...base, action: 'skip', nilaiBaru: '—' })
+        continue
+      }
+      const hadOld = !!(s.prestasi_total || s.prestasi_awal || s.prestasi_akhir)
+      const action = hadOld ? 'update' : 'baru'
+      if (action === 'baru') cBaru++; else cUpdate++
+      plan.push({ ...base, action, payload, totalIn, nilaiBaru: _fmtNilaiBaru(payload) })
     }
-    toast.success(`Impor rekap selesai: ${updated} santri terisi${fuzzyMatched ? ` (${fuzzyMatched} via nama mirip — cek bila ragu)` : ''}, ${skipped} dilewati (kolom prestasi kosong), ${notFound} tak ditemukan (NIS/nama).`)
+    importRekapPreview.value = { plan, preview: plan.slice(0, 100), cBaru, cUpdate, cSkip, cNotFound, cFuzzy, applyCount: cBaru + cUpdate }
+  } catch (e2) {
+    toast.error('Gagal baca file: ' + (e2.message || e2))
+  } finally {
+    importingRekap.value = false
+    if (e.target) e.target.value = ''
+  }
+}
+
+// v.100 Batch12: FASE 2 — terapkan hasil preview (hanya baris Baru/Update).
+async function confirmImportRekap() {
+  if (!importRekapPreview.value) return
+  const items = importRekapPreview.value.plan.filter((p) => p.action === 'baru' || p.action === 'update')
+  if (!items.length) { importRekapPreview.value = null; return }
+  importingRekap.value = true
+  importRekapProgress.value = { i: 0, total: items.length }
+  const _periode = new Date().toISOString().slice(0, 7)
+  let ok = 0, fail = 0
+  try {
+    for (const it of items) {
+      importRekapProgress.value = { i: importRekapProgress.value.i + 1, total: items.length }
+      try {
+        await updateDoc(doc(db, 'santri', String(it.santriId)), it.payload)
+        // event notif prestasi (sama dgn simpanRekap) → Notif Center wali
+        const _npId = `np_${it.santriId}_${_periode}`
+        await setDoc(doc(db, 'notif_prestasi', _npId), {
+          id: _npId,
+          santri_id: String(it.santriId),
+          santri_nama: it.nama || '',
+          total: String(it.payload.prestasi_total ?? it.totalIn ?? ''),
+          periode: _periode,
+          createdAt: new Date().toISOString()
+        }, { merge: true })
+        ok++
+      } catch (err) {
+        fail++
+        console.error('[importRekap]', it.santriId, err)
+      }
+    }
+    toast.success(`Impor rekap: ${ok} santri terisi${fail ? `, ${fail} gagal` : ''}.`)
+    importRekapPreview.value = null
   } catch (e2) {
     toast.error('Gagal impor: ' + (e2.message || e2))
   } finally {
     importingRekap.value = false
-    if (e.target) e.target.value = ''
   }
 }
 
