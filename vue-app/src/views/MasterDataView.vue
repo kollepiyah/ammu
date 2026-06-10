@@ -68,6 +68,30 @@ const { lembagaRaw } = useLembaga()
 const { santriRaw: santriRawForMigration } = useSantri()
 // v.21.10.0526: Guru data untuk migration
 const { guruRaw: guruRawForMigration } = useGuru()
+
+// v.99: Analisis Data Duplikat (audit) — santri (Nama/NIS/NISN) + guru (Nama/WA)
+function _normDup(v) { return String(v || '').trim().toLowerCase() }
+function _findDup(list, keyFn, labelFn) {
+  const map = new Map()
+  for (const it of list) { const k = keyFn(it); if (!k) continue; if (!map.has(k)) map.set(k, []); map.get(k).push(it) }
+  const groups = []
+  for (const [key, arr] of map) if (arr.length > 1) groups.push({ key, count: arr.length, items: arr.map(labelFn) })
+  return groups
+}
+const dupSantriNama = computed(() => _findDup(santriRawForMigration.value || [], (s) => _normDup(s.nama), (s) => `${s.nama} · NIS ${s.nis || '-'} · ${s.lembaga || s.lembaga_sekolah || '-'}`))
+const dupSantriNis = computed(() => _findDup((santriRawForMigration.value || []).filter((s) => _normDup(s.nis)), (s) => _normDup(s.nis), (s) => `${s.nama} · NIS ${s.nis}`))
+const dupSantriNisn = computed(() => _findDup((santriRawForMigration.value || []).filter((s) => _normDup(s.nisn)), (s) => _normDup(s.nisn), (s) => `${s.nama} · NISN ${s.nisn}`))
+const dupGuruNama = computed(() => _findDup(guruRawForMigration.value || [], (g) => _normDup(g.nama), (g) => `${g.nama} · ${g.jabatan || '-'}`))
+const dupGuruWa = computed(() => _findDup((guruRawForMigration.value || []).filter((g) => _normDup(g.wa)), (g) => String(g.wa || '').replace(/\D/g, ''), (g) => `${g.nama} · WA ${g.wa}`))
+const dupKategori = computed(() => [
+  { label: 'Santri — Nama sama', groups: dupSantriNama.value },
+  { label: 'Santri — NIS sama', groups: dupSantriNis.value },
+  { label: 'Santri — NISN sama', groups: dupSantriNisn.value },
+  { label: 'Guru — Nama sama', groups: dupGuruNama.value },
+  { label: 'Guru — WA sama', groups: dupGuruWa.value }
+])
+const totalDupGroups = computed(() => dupKategori.value.reduce((n, k) => n + k.groups.length, 0))
+const showDupDetail = ref(false)
 const confirmDlg = useConfirm()
 
 // v.21.10.0526: V21.10 Migration state (lembaga_refs + group hierarchy)
@@ -1056,6 +1080,31 @@ async function simpanPengaturanRekap() {
 
     <!-- TAB 7: AUDIT LOG (M6 v.20.79 — replace placeholder) -->
     <div v-else-if="activeTab === 'audit'" class="space-y-4">
+      <!-- v.99: Analisis Data Duplikat -->
+      <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 md:p-6 border-2 border-rose-300 dark:border-rose-700 shadow-sm">
+        <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+          <div>
+            <p class="text-sm font-black text-rose-700 dark:text-rose-300"><i class="fas fa-clone mr-1"></i>Analisis Data Duplikat</p>
+            <p class="text-xs text-slate-600 dark:text-slate-300 mt-1">Deteksi santri (Nama / NIS / NISN sama) &amp; guru (Nama / WA sama). Periksa lalu rapikan manual via Edit/Hapus.</p>
+          </div>
+          <span class="text-[10px] font-bold px-2 py-0.5 rounded uppercase" :class="totalDupGroups > 0 ? 'bg-rose-100 text-rose-800' : 'bg-emerald-100 text-emerald-800'">{{ totalDupGroups }} grup duplikat</span>
+        </div>
+        <button @click="showDupDetail = !showDupDetail" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-black rounded-lg">
+          <i class="fas fa-search mr-1"></i>{{ showDupDetail ? 'Sembunyikan Detail' : 'Lihat Detail' }}
+        </button>
+        <div v-if="showDupDetail" class="mt-3 space-y-3">
+          <p v-if="totalDupGroups === 0" class="text-xs text-emerald-700 dark:text-emerald-300 font-bold"><i class="fas fa-circle-check mr-1"></i>Tidak ada duplikat terdeteksi.</p>
+          <div v-for="kat in dupKategori" :key="kat.label" v-show="kat.groups.length">
+            <p class="text-xs font-black text-slate-800 dark:text-white mb-1">{{ kat.label }} ({{ kat.groups.length }})</p>
+            <div v-for="(g, gi) in kat.groups" :key="gi" class="bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 rounded-lg p-2 mb-1.5 text-xs">
+              <p class="font-bold text-rose-700 dark:text-rose-300">{{ g.count }}× sama:</p>
+              <ul class="list-disc ml-5 text-slate-700 dark:text-slate-200">
+                <li v-for="(it, ii) in g.items" :key="ii">{{ it }}</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
       <!-- v.21.10.0526: Tools Migrasi v.21.10 Schema (lembaga_refs + group hierarchy) -->
       <div
         class="bg-white dark:bg-slate-800 rounded-2xl p-5 md:p-6 border-2 border-teal-300 dark:border-teal-700 shadow-sm"

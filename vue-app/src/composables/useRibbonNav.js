@@ -339,8 +339,8 @@ export function useRibbonNav() {
       return
     }
     if (item.action === 'kontak') {
-      // v.97.0626: kontak author (ganti arah ke Kritik & Saran) — tampilkan toast info
-      toast.info('Hubungi Admin — Rahman Fanani · WA: 085331172477 (Bakafrawi Project)', 8000)
+      // v.99: buka POPUP kontak admin di Pusat Bantuan (bukan toast)
+      router.push('/bantuan?kontak=1')
       return
     }
     if (item.action === 'logout') {

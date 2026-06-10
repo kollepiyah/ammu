@@ -52,10 +52,12 @@
     "@capacitor/android": "^6.2.0",
     "@capacitor/app": "^6.0.2",
     "@capacitor/core": "^6.2.0",
+    "@capacitor/filesystem": "^6.0.1",
     "@capacitor/push-notifications": "^6.0.4",
     "@capacitor/share": "^6.0.3",
     "@capacitor/splash-screen": "^6.0.3",
     "@capacitor/status-bar": "^6.0.2",
-    "@capacitor/filesystem": "^6.0.1"
+    "baseline-browser-mapping": "^2.10.35",
+    "caniuse-lite": "^1.0.30001797"
   }
 }

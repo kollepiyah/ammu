@@ -1033,3 +1033,29 @@ npm run build:electron --prefix vue-app ; robocopy "vue-app\dist" "vue-app\elect
 git push
 ```
 firestore.rules TIDAK diubah → tak perlu deploy rules.
+
+---
+
+### BATCH v.99 — IMPOR FIX + 3 FITUR LANJUTAN (lanjutan, sesi sama) — SEMUA SELESAI ✅
+**A. Fix impor & WA & jabatan (web/JS):**
+1. **Impor guru ke-skip semua** → header template `'Nama Guru (Dengan Gelar)'` tak cocok alias `_pick('Nama Guru')`. Alias ditambah. [`GuruView.vue`]
+2. **`normalizeWA`** (utils/format.js): `+62`→`0`, dan **awalan bukan 0 → tambah 0**. Dipakai di impor + simpan form guru/santri.
+3. **`parseMultipleWA`**: pemisah lebih luas (`/ ; , |` newline, "dan", 2+ spasi) + dedup → WA wali dobel impor santri = 2 nomor (`wa` + `wa_2`).
+4. **Jabatan butuh-lembaga dari master/jabatan `tipe_lembaga`** ("Perlu/Tanpa Lembaga"), bukan `tipe_pegawai`. Field lembaga muncul & wajib hanya bila jabatan butuh lembaga. [`useGuruForm.js` + `GuruFormView.vue`]
+
+**B. 3 fitur lanjutan:**
+5. **#17 Hubungi Admin** → **POPUP modal** (bukan toast) + **edit kontak admin** (settings `adminNama/adminWa/adminOrg`) + **ACF Panduan & FAQ** (super_admin edit/tambah/hapus/reset, simpan `settings.bantuanPanduan/bantuanFaq`, fallback default). Pita "Hubungi Admin" → `/bantuan?kontak=1` buka popup. [`BantuanView.vue`, `useRibbonNav.js`]
+6. **#18 Analisis Data Duplikat** — Master Data → tab **"Audit Data"**: kartu deteksi duplikat santri (Nama/NIS/NISN) + guru (Nama/WA), tampil grup + anggota; rapikan manual via Edit/Hapus. [`MasterDataView.vue`]
+7. **#20 Statistik detail kelas** — StatistikView: **klik kartu lembaga → drill-down kelas** (guru pengampu + daftar santri). Dukung Qiraati + Sekolah (SMP/SMA). [`StatistikView.vue`]
+
+### FILE DIUBAH (batch ini)
+`utils/format.js`, `views/GuruView.vue`, `composables/{useGuruForm,useSantriForm}.js`, `views/GuruFormView.vue`, `views/BantuanView.vue`, `composables/useRibbonNav.js`, `views/MasterDataView.vue`, `views/StatistikView.vue`.
+
+### STATUS: SEMUA permintaan kyai v.99 SELESAI. Pending kecil: **#3 "Filter Semua lembaga"** (tunggu contoh konkret). Settings BARU (opsional diisi admin): `adminNama/adminWa/adminOrg`, `bantuanPanduan[]`, `bantuanFaq[]` — semua punya fallback.
+
+### DEPLOY (web cukup `firebase:deploy`; Electron rebuild bila mau ke desktop)
+```
+cd "D:\Aplikasi Project\Portal MU";
+.\tmp_recovery\_run_vite.cmd ; if (Test-Path ".git\index.lock"){Remove-Item -Force ".git\index.lock"} ; git add -A ; git commit --no-verify -m "feat(v.99): impor guru fix, WA leading-0+multi, jabatan tipe_lembaga, Hubungi Admin popup+ACF Bantuan, analisis duplikat, statistik detail kelas" ; npm run firebase:deploy
+```
+firestore.rules TIDAK diubah.

@@ -692,7 +692,9 @@
         <div
           v-for="lem in statistikLembaga"
           :key="lem.nama"
-          class="bg-[var(--bg-card)] p-4 rounded-2xl border border-[var(--border-subtle)] shadow-sm border-l-4 border-l-teal-500 hover:shadow-md transition"
+          @click="detailLembaga = detailLembaga === lem.nama ? '' : lem.nama"
+          :class="['bg-[var(--bg-card)] p-4 rounded-2xl border border-[var(--border-subtle)] shadow-sm border-l-4 border-l-teal-500 hover:shadow-md transition cursor-pointer', detailLembaga === lem.nama ? 'ring-2 ring-teal-400' : '']"
+          title="Klik untuk lihat detail kelas (guru + santri)"
         >
           <h4
             class="font-black text-[var(--text-primary)] text-sm uppercase tracking-wider mb-3"
@@ -718,6 +720,24 @@
               <p class="text-[9px] text-cyan-700 dark:text-cyan-300 font-bold uppercase">Guru</p>
               <p class="text-lg font-black text-cyan-800 dark:text-cyan-200">{{ lem.guru }}</p>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- v.99: Detail kelas per lembaga (klik kartu di atas) -->
+      <div v-if="detailLembaga" class="mt-4 border-t border-[var(--border-subtle)] pt-3">
+        <div class="flex items-center justify-between mb-2">
+          <p class="text-sm font-black text-[var(--text-primary)]"><i class="fas fa-list-ul text-teal-600 mr-1"></i>Detail Kelas — {{ detailLembaga }}</p>
+          <button @click="detailLembaga = ''" class="text-[11px] font-bold text-[var(--text-secondary)] hover:underline"><i class="fas fa-times mr-1"></i>Tutup</button>
+        </div>
+        <p v-if="detailKelasRows.length === 0" class="text-xs italic text-[var(--text-tertiary)] py-3">Belum ada santri di lembaga ini.</p>
+        <div v-else class="space-y-2">
+          <div v-for="row in detailKelasRows" :key="row.kelas" class="bg-[var(--bg-muted)] rounded-xl p-3">
+            <div class="flex items-center justify-between gap-2 flex-wrap mb-1">
+              <p class="text-sm font-black text-[var(--text-primary)]">Kelas {{ row.kelas }} <span class="text-[11px] font-bold text-[var(--text-tertiary)]">· {{ row.santri.length }} santri</span></p>
+              <p class="text-[11px] font-bold text-teal-700 dark:text-teal-300"><i class="fas fa-chalkboard-teacher mr-1"></i>{{ row.guru.length ? row.guru.join(', ') : '— belum ada guru —' }}</p>
+            </div>
+            <p class="text-xs text-[var(--text-secondary)]">{{ row.santri.join(' · ') }}</p>
           </div>
         </div>
       </div>
@@ -1249,6 +1269,36 @@ const statistikLembaga = computed(() => {
       const ib = URUTAN_LEMBAGA.indexOf(b.nama)
       return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib)
     })
+})
+
+// v.99: Detail kelas per lembaga (drill-down dari kartu Statistik Lembaga) — kelas → guru + daftar santri
+const detailLembaga = ref('')
+const _SEKOLAH_NAMA = ['TK', 'SDI', 'SMP', 'SMA', 'PKBM']
+const detailKelasRows = computed(() => {
+  const nm = detailLembaga.value
+  if (!nm) return []
+  const up = nm.toUpperCase()
+  const isSek = _SEKOLAH_NAMA.includes(up)
+  const list = (scopedSantriAll.value || []).filter((s) => {
+    if (s.aktif === false) return false
+    if (!isSek) return String(s.lembaga || '').trim().toLowerCase() === nm.toLowerCase()
+    if (up === 'SMP' || up === 'SMA') {
+      return String(s.lembaga_sekolah || '').trim().toUpperCase() === 'PKBM' && getPkbmSubTier(s.kelas_sekolah || s.kelas) === up
+    }
+    return String(s.lembaga_sekolah || '').trim().toUpperCase() === up
+  })
+  const byKelas = new Map()
+  for (const s of list) {
+    const kls = isSek ? (s.kelas_sekolah || s.kelas || '-') : (s.kelas || '-')
+    if (!byKelas.has(kls)) byKelas.set(kls, { kelas: kls, guruSet: new Set(), santri: [] })
+    const e = byKelas.get(kls)
+    e.santri.push(s.nama || '-')
+    if (isSek) { for (const g of (Array.isArray(s.guru_sekolah) ? s.guru_sekolah : [])) if (g) e.guruSet.add(g) }
+    else { if (s.guru_pagi) e.guruSet.add(s.guru_pagi + ' (pagi)'); if (s.guru_sore) e.guruSet.add(s.guru_sore + ' (sore)') }
+  }
+  return [...byKelas.values()]
+    .map((e) => ({ kelas: e.kelas, guru: [...e.guruSet], santri: e.santri.sort((a, b) => String(a).localeCompare(String(b), 'id')) }))
+    .sort((a, b) => String(a.kelas).localeCompare(String(b.kelas), 'id', { numeric: true }))
 })
 
 // ---- Header label (role-aware) --------------------------------------------
