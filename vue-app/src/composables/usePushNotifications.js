@@ -138,7 +138,12 @@ export function usePushNotifications() {
                   id: Date.now() % 2147483000,
                   title: notif?.title || 'Mambaul Ulum',
                   body: notif?.body || '',
-                  channelId: CHANNEL_ID
+                  channelId: CHANNEL_ID,
+                  // v.100: ikon kecil status bar = silhouette putih Ammu (bukan kotak putih default)
+                  smallIcon: 'ic_stat_ammu',
+                  iconColor: '#0F766E',
+                  // teruskan link supaya tap notif foreground bisa navigasi (lihat actionPerformed)
+                  extra: notif?.data || {}
                 }
               ]
             })
@@ -157,6 +162,23 @@ export function usePushNotifications() {
             }
           }
         })
+        // v.100: notif foreground di-repost via LocalNotifications -> tap-nya memicu listener
+        //   LocalNotifications (bukan Push). Wire juga agar navigasi link tetap jalan.
+        try {
+          const ln = localNotifPlugin()
+          ln?.addListener?.('localNotificationActionPerformed', (action) => {
+            const link = action?.notification?.extra?.link
+            if (link && typeof window !== 'undefined') {
+              try {
+                window.location.hash = String(link).startsWith('#') ? link : '#' + link
+              } catch (e) {
+                /* ignore */
+              }
+            }
+          })
+        } catch (e) {
+          /* LocalNotifications opsional */
+        }
       }
 
       await p.register()

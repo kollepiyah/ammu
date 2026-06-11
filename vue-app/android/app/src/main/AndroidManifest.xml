@@ -33,6 +33,19 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
+
+        <!-- v.100: ikon & warna notifikasi FCM (status bar) — silhouette putih logo Ammu.
+             Tanpa ini, notif latar belakang FCM tampil sbg kotak putih default. -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_stat_ammu" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_color"
+            android:resource="@color/ammu_notif_accent" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="ammu_default" />
+
         <!-- v.75.0526 (recovered v.87.0526): Widget Jam Hijri home screen -->
         <receiver
             android:name=".widgets.JamHijriWidget"

@@ -885,10 +885,20 @@ async function downloadTemplateGuru() {
 
 function _parseTglGuru(v) {
   if (!v) return ''
-  if (v instanceof Date) return v.toISOString().slice(0, 10)
+  // v.99: guard bug epoch Excel — sel tanggal kosong terbaca jadi 1899-12-30 (serial 0).
+  //   Tahun < 1901 mustahil -> kosongkan (penting: tanggal_tugas kosong jangan jadi 301299 di NIG).
+  if (v instanceof Date) {
+    if (isNaN(v.getTime()) || v.getFullYear() < 1901) return ''
+    return v.toISOString().slice(0, 10)
+  }
   const s = String(v).trim()
+  if (!s) return ''
   const m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/)
-  if (m) return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`
+  if (m) {
+    if (Number(m[3]) < 1901) return ''
+    return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`
+  }
+  if (s.slice(0, 10) === '1899-12-30' || s.slice(0, 10) === '1900-01-00') return ''
   return s
 }
 

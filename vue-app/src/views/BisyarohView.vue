@@ -231,6 +231,8 @@
                   <div>Pagi: <b>{{ bonusKehadiran.hadir_pagi }}x</b> × Rp{{ Number(bonusKehadiran.tarif_pagi).toLocaleString('id-ID') }} = {{ fmtRp(bonusKehadiran.total_pagi) }}</div>
                   <div>Sore: <b>{{ bonusKehadiran.hadir_sore }}x</b> × Rp{{ Number(bonusKehadiran.tarif_sore).toLocaleString('id-ID') }} = {{ fmtRp(bonusKehadiran.total_sore) }}</div>
                   <div>Sekolah: <b>{{ bonusKehadiran.hadir_sekolah }}x</b> × Rp{{ Number(bonusKehadiran.tarif_sekolah).toLocaleString('id-ID') }} = {{ fmtRp(bonusKehadiran.total_sekolah) }}</div>
+                  <div v-if="bonusKehadiran.hadir_pegawai_pagi || bonusKehadiran.tarif_pegawai_pagi">Pegawai Pagi: <b>{{ bonusKehadiran.hadir_pegawai_pagi }}x</b> × Rp{{ Number(bonusKehadiran.tarif_pegawai_pagi).toLocaleString('id-ID') }} = {{ fmtRp(bonusKehadiran.total_pegawai_pagi) }}</div>
+                  <div v-if="bonusKehadiran.hadir_pegawai_sore || bonusKehadiran.tarif_pegawai_sore">Pegawai Sore: <b>{{ bonusKehadiran.hadir_pegawai_sore }}x</b> × Rp{{ Number(bonusKehadiran.tarif_pegawai_sore).toLocaleString('id-ID') }} = {{ fmtRp(bonusKehadiran.total_pegawai_sore) }}</div>
                 </div>
                 <p class="text-[9px] text-cyan-600 italic mt-1">
                   Tidak hadir = tidak dapat bonus (bukan dipotong). Atur tarif di Pengaturan Keuangan.
@@ -1156,8 +1158,11 @@ function addLineItem() {
 const bonusKehadiran = computed(() => {
   const out = {
     hadir_pagi: 0, hadir_sore: 0, hadir_sekolah: 0,
+    hadir_pegawai_pagi: 0, hadir_pegawai_sore: 0,
     tarif_pagi: 0, tarif_sore: 0, tarif_sekolah: 0,
+    tarif_pegawai_pagi: 0, tarif_pegawai_sore: 0,
     total_pagi: 0, total_sore: 0, total_sekolah: 0,
+    total_pegawai_pagi: 0, total_pegawai_sore: 0,
     total: 0
   }
   if (!selectedGuru.value) return out
@@ -1173,15 +1178,21 @@ const bonusKehadiran = computed(() => {
     if (sh === 'pagi') out.hadir_pagi += 1
     else if (sh === 'sore') out.hadir_sore += 1
     else if (sh === 'sekolah') out.hadir_sekolah += 1
+    else if (sh === 'pegawai_pagi') out.hadir_pegawai_pagi += 1
+    else if (sh === 'pegawai_sore') out.hadir_pegawai_sore += 1
   }
   const sset = settingsStore.settings || {}
   out.tarif_pagi = Number(sset.keu_bisyaroh_pagi || 0) || 0
   out.tarif_sore = Number(sset.keu_bisyaroh_sore || 0) || 0
   out.tarif_sekolah = Number(sset.keu_bisyaroh_sekolah_shift || 0) || 0
+  out.tarif_pegawai_pagi = Number(sset.keu_bisyaroh_pegawai_pagi || 0) || 0
+  out.tarif_pegawai_sore = Number(sset.keu_bisyaroh_pegawai_sore || 0) || 0
   out.total_pagi = out.hadir_pagi * out.tarif_pagi
   out.total_sore = out.hadir_sore * out.tarif_sore
   out.total_sekolah = out.hadir_sekolah * out.tarif_sekolah
-  out.total = out.total_pagi + out.total_sore + out.total_sekolah
+  out.total_pegawai_pagi = out.hadir_pegawai_pagi * out.tarif_pegawai_pagi
+  out.total_pegawai_sore = out.hadir_pegawai_sore * out.tarif_pegawai_sore
+  out.total = out.total_pagi + out.total_sore + out.total_sekolah + out.total_pegawai_pagi + out.total_pegawai_sore
   return out
 })
 
@@ -1247,9 +1258,13 @@ async function saveSlipSingle() {
         hadir_pagi: Number(bonus.hadir_pagi || 0),
         hadir_sore: Number(bonus.hadir_sore || 0),
         hadir_sekolah: Number(bonus.hadir_sekolah || 0),
+        hadir_pegawai_pagi: Number(bonus.hadir_pegawai_pagi || 0),
+        hadir_pegawai_sore: Number(bonus.hadir_pegawai_sore || 0),
         tarif_pagi: Number(bonus.tarif_pagi || 0),
         tarif_sore: Number(bonus.tarif_sore || 0),
         tarif_sekolah: Number(bonus.tarif_sekolah || 0),
+        tarif_pegawai_pagi: Number(bonus.tarif_pegawai_pagi || 0),
+        tarif_pegawai_sore: Number(bonus.tarif_pegawai_sore || 0),
         total: Number(bonus.total || 0)
       },
       total_pemasukan: totalIn + Number(bonus.total || 0),
@@ -1359,8 +1374,10 @@ async function bulkGenerate() {
     const tarifPagi = Number(settings.keu_bisyaroh_pagi || 0) || 0
     const tarifSore = Number(settings.keu_bisyaroh_sore || 0) || 0
     const tarifSekolah = Number(settings.keu_bisyaroh_sekolah_shift || 0) || 0
+    const tarifPegPagi = Number(settings.keu_bisyaroh_pegawai_pagi || 0) || 0
+    const tarifPegSore = Number(settings.keu_bisyaroh_pegawai_sore || 0) || 0
     function hitungBonusGuru(guruId) {
-      let hp = 0, hs = 0, hsk = 0
+      let hp = 0, hs = 0, hsk = 0, hpp = 0, hps = 0
       const gid = String(guruId)
       for (const a of absensiShift.value || []) {
         if (String(a.guru_id) !== gid) continue
@@ -1372,14 +1389,20 @@ async function bulkGenerate() {
         if (sh === 'pagi') hp++
         else if (sh === 'sore') hs++
         else if (sh === 'sekolah') hsk++
+        else if (sh === 'pegawai_pagi') hpp++
+        else if (sh === 'pegawai_sore') hps++
       }
       const tp = hp * tarifPagi
       const ts = hs * tarifSore
       const tsk = hsk * tarifSekolah
+      const tpp = hpp * tarifPegPagi
+      const tps = hps * tarifPegSore
       return {
         hadir_pagi: hp, hadir_sore: hs, hadir_sekolah: hsk,
+        hadir_pegawai_pagi: hpp, hadir_pegawai_sore: hps,
         tarif_pagi: tarifPagi, tarif_sore: tarifSore, tarif_sekolah: tarifSekolah,
-        total: tp + ts + tsk
+        tarif_pegawai_pagi: tarifPegPagi, tarif_pegawai_sore: tarifPegSore,
+        total: tp + ts + tsk + tpp + tps
       }
     }
     let bulkSeq = 0

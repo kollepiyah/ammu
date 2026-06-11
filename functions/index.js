@@ -47,6 +47,8 @@ const db = getFirestore()
 
 // v.95.0626: resolve daftar fcm_token dari `target` (server-side, lebih aman & skalabel).
 //   target: 'semua' | {type:'santri',id} | {type:'wa',wa} | {type:'lembaga',lembaga} | {type:'guru',nama}
+// v.100: normalisasi nama utk pembanding keluarga (dipakai guard fan-out same-wa di branch santri).
+function _normNama(s) { return String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '') }
 async function resolveTokensByTarget(target) {
   const tokens = new Set()
   const addTok = (snap) =>
@@ -70,8 +72,25 @@ async function resolveTokensByTarget(target) {
       if (sdoc.exists) {
         const sd = sdoc.data()
         if (sd.fcm_token) tokens.add(sd.fcm_token)
-        // device wali bisa login sebagai anak lain (wa sama) -> ikutkan
-        if (sd.wa && String(sd.wa).trim().length >= 8) addTok(await db.collection('santri').where('wa', '==', sd.wa).get())
+        // device wali bisa login sebagai anak lain (wa sama) -> ikutkan, TAPI hanya SE-KELUARGA
+        //   (nik_ayah / nama_ayah sama dgn santri target). Cegah notif bocor ke keluarga lain
+        //   yg nomor WA-nya kebetulan tertukar/sama. Tanpa data ayah -> konservatif (token sendiri saja).
+        if (sd.wa && String(sd.wa).trim().length >= 8) {
+          const nikAyah = _digitsOnly(sd.nik_ayah || (sd.ayah && sd.ayah.nik))
+          const namaAyah = _normNama(sd.nama_ayah || (sd.ayah && sd.ayah.nama))
+          if (nikAyah || namaAyah) {
+            const sib = await db.collection('santri').where('wa', '==', sd.wa).get()
+            sib.forEach((d) => {
+              const x = d.data()
+              if (!x.fcm_token) return
+              const xnik = _digitsOnly(x.nik_ayah || (x.ayah && x.ayah.nik))
+              const xnama = _normNama(x.nama_ayah || (x.ayah && x.ayah.nama))
+              if ((nikAyah && xnik && xnik === nikAyah) || (namaAyah && xnama && xnama === namaAyah)) {
+                tokens.add(x.fcm_token)
+              }
+            })
+          }
+        }
       }
     } else if (t.type === 'wa' && t.wa && String(t.wa).trim().length >= 8) {
       addTok(await db.collection('santri').where('wa', '==', t.wa).get())
@@ -119,22 +138,27 @@ exports.kirimNotifikasiMassal = onDocumentCreated(
     }
 
     // Build message
+    // v.100: teruskan `link` (utk tap->buka halaman) + stringify target (FCM data hanya boleh string,
+    //   target event individual berupa objek {type,id} -> kalau tak di-stringify, send GAGAL).
+    const _link = String(data.link || '/')
+    const _hashLink = '/#' + (_link.startsWith('#') ? _link.slice(1) : _link)
     const message = {
       notification: {
         title: data.judul || 'Mambaul Ulum',
         body: data.pesan || ''
       },
       data: {
-        target: data.target || 'semua',
+        target: typeof data.target === 'string' ? data.target : JSON.stringify(data.target || 'semua'),
         sender: data.sender || 'Admin',
-        timestamp: data.timestamp || new Date().toISOString()
+        timestamp: data.timestamp || new Date().toISOString(),
+        link: _link
       },
       webpush: {
         notification: {
           icon: '/icon-192.png',
           badge: '/icon-192.png'
         },
-        fcmOptions: { link: '/' }
+        fcmOptions: { link: _hashLink }
       }
     }
 
@@ -230,10 +254,13 @@ exports.onTagihanCreated = onDocumentCreated(
     if (!t || !t.santri_id) return
     const sumber = String(t.sumber || '')
     if (sumber === 'auto_generate' || sumber === 'generate_khusus') return // bulk -> jangan spam
+    // v.100: tagihan yang LAHIR sudah lunas (mis. bayar-di-muka via POS, dibayar di loket) jangan
+    //   kirim notif "Tagihan Baru" — wali sudah membayarnya langsung, notif "tagihan baru" menyesatkan.
+    if (String(t.status || '').toLowerCase() === 'lunas') return
     const rp = new Intl.NumberFormat('id-ID').format(Number(t.nominal || 0))
     await db.collection('notif_queue').add({
       judul: 'Tagihan Baru',
-      pesan: `${t.kategori || 'Tagihan'}${t.periode ? ' · ' + t.periode : ''} · Rp ${rp}`,
+      pesan: `${t.santri_nama ? t.santri_nama + ' · ' : ''}${t.kategori || 'Tagihan'}${t.periode ? ' · ' + t.periode : ''} · Rp ${rp}`,
       target: { type: 'santri', id: String(t.santri_id) },
       link: '/tagihan',
       sender: 'Sistem',
@@ -254,7 +281,7 @@ exports.onPembayaranVerified = onDocumentUpdated(
     const rp = new Intl.NumberFormat('id-ID').format(Number(after.nominal || 0))
     await db.collection('notif_queue').add({
       judul: 'Pembayaran Terverifikasi',
-      pesan: `${after.kategori || 'Pembayaran'} Rp ${rp} sudah diverifikasi. Terima kasih.`,
+      pesan: `${after.santri_nama ? after.santri_nama + ' · ' : ''}${after.kategori || 'Pembayaran'} Rp ${rp} sudah diverifikasi. Terima kasih.`,
       target: { type: 'santri', id: String(after.santri_id) },
       link: '/tagihan',
       sender: 'Admin',
@@ -271,10 +298,33 @@ exports.onKenaikanCreated = onDocumentCreated(
     const r = event.data?.data()
     if (!r || !r.santri_id) return
     const tujuan = `${r.ke_lembaga || ''} ${r.ke_kelas || ''}`.trim()
+    const _nm = r.santri_nama ? String(r.santri_nama) : 'Ananda'
     await db.collection('notif_queue').add({
       judul: 'Selamat, Naik Tingkat! 🎉',
-      pesan: tujuan ? `Ananda naik ke ${tujuan}.` : 'Ananda telah naik tingkat. Selamat!',
+      pesan: tujuan ? `${_nm} naik ke ${tujuan}.` : `${_nm} telah naik tingkat. Selamat!`,
       target: { type: 'santri', id: String(r.santri_id) },
+      link: '/capaian-prestasi',
+      sender: 'Pondok',
+      status: 'pending',
+      timestamp: new Date().toISOString()
+    })
+  }
+)
+
+// v.100: Rekap prestasi baru (notif_prestasi) -> push "tertarget" ke wali.
+//   Doc id = np_<santriId>_<YYYY-MM> (1 per santri/bulan) -> onCreate = 1x/bulan, tak spam
+//   (re-impor di bulan sama = update, tak memicu push lagi).
+exports.onPrestasiCreated = onDocumentCreated(
+  { document: 'notif_prestasi/{id}', region: 'asia-southeast2', timeoutSeconds: 60, memory: '256MiB' },
+  async (event) => {
+    const p = event.data?.data()
+    if (!p || !p.santri_id) return
+    const nm = p.santri_nama ? String(p.santri_nama) : 'Ananda'
+    const tot = String(p.total || '').trim()
+    await db.collection('notif_queue').add({
+      judul: 'Prestasi Diperbarui',
+      pesan: tot ? `${nm} · nilai prestasi bulan ini: ${tot}` : `${nm} · rekap prestasi bulan ini sudah dinilai.`,
+      target: { type: 'santri', id: String(p.santri_id) },
       link: '/capaian-prestasi',
       sender: 'Pondok',
       status: 'pending',

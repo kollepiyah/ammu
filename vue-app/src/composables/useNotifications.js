@@ -157,7 +157,8 @@ export function useNotifications() {
     if (role.value !== 'santri') return []
     const me = userId.value
     return tagihanRaw.value
-      .filter((t) => String(t.santri_id) === me)
+      // v.100: jangan tampilkan sbg "Tagihan baru" jika tagihan LAHIR sudah lunas (bayar-di-muka POS).
+      .filter((t) => String(t.santri_id) === me && String(t.status || '').toLowerCase() !== 'lunas')
       .map((t) => ({
         id: t.id || t._id,
         jenis: 'tagihan',

@@ -388,6 +388,33 @@
             class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)] font-bold"
           />
         </div>
+        <!-- v.99: bonus kehadiran khusus PEGAWAI (tarif beda dari guru) — pisah pagi & sore -->
+        <div>
+          <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block">
+            Bisyaroh per Shift Pegawai — Pagi (otomatis dari absensi)
+          </label>
+          <input
+            v-model="form.keu_bisyaroh_pegawai_pagi"
+            @input="onFmtChange($event, 'keu_bisyaroh_pegawai_pagi')"
+            type="text"
+            inputmode="numeric"
+            placeholder="Nominal per kehadiran..."
+            class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)] font-bold"
+          />
+        </div>
+        <div>
+          <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block">
+            Bisyaroh per Shift Pegawai — Sore (otomatis dari absensi)
+          </label>
+          <input
+            v-model="form.keu_bisyaroh_pegawai_sore"
+            @input="onFmtChange($event, 'keu_bisyaroh_pegawai_sore')"
+            type="text"
+            inputmode="numeric"
+            placeholder="Nominal per kehadiran..."
+            class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)] font-bold"
+          />
+        </div>
       </div>
 
       <div>
@@ -1142,6 +1169,8 @@ const form = reactive({
   keu_bisyaroh_pagi: '',
   keu_bisyaroh_sore: '',
   keu_bisyaroh_sekolah_shift: '',
+  keu_bisyaroh_pegawai_pagi: '',
+  keu_bisyaroh_pegawai_sore: '',
   keu_bisyaroh_pokok: {},
   keu_bisyaroh_sekolah: {},
   keu_kategori_masuk: [],
@@ -1242,6 +1271,8 @@ function loadFromSettings() {
   form.keu_bisyaroh_pagi = fmtRp(s.keu_bisyaroh_pagi || 0)
   form.keu_bisyaroh_sore = fmtRp(s.keu_bisyaroh_sore || 0)
   form.keu_bisyaroh_sekolah_shift = fmtRp(s.keu_bisyaroh_sekolah_shift || 0)
+  form.keu_bisyaroh_pegawai_pagi = fmtRp(s.keu_bisyaroh_pegawai_pagi || 0)
+  form.keu_bisyaroh_pegawai_sore = fmtRp(s.keu_bisyaroh_pegawai_sore || 0)
   form.keu_bisyaroh_pokok = { ...(s.keu_bisyaroh_pokok || {}) }
   form.keu_bisyaroh_sekolah = { ...(s.keu_bisyaroh_sekolah || {}) }
   for (const k of Object.keys(form.keu_bisyaroh_pokok)) {
@@ -1540,6 +1571,8 @@ async function simpan() {
       keu_bisyaroh_pagi: parseRp(form.keu_bisyaroh_pagi),
       keu_bisyaroh_sore: parseRp(form.keu_bisyaroh_sore),
       keu_bisyaroh_sekolah_shift: parseRp(form.keu_bisyaroh_sekolah_shift),
+      keu_bisyaroh_pegawai_pagi: parseRp(form.keu_bisyaroh_pegawai_pagi),
+      keu_bisyaroh_pegawai_sore: parseRp(form.keu_bisyaroh_pegawai_sore),
       keu_bisyaroh_pokok: {},
       keu_bisyaroh_sekolah: {},
       keu_kategori_masuk: form.keu_kategori_masuk.filter((t) => t.trim()),

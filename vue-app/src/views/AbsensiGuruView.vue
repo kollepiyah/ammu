@@ -85,6 +85,9 @@
             <option value="">Semua shift</option>
             <option value="pagi">Pagi saja</option>
             <option value="sore">Sore saja</option>
+            <option value="sekolah">Sekolah saja</option>
+            <option value="pegawai_pagi">Pegawai Pagi</option>
+            <option value="pegawai_sore">Pegawai Sore</option>
           </select>
         </div>
       </div>
@@ -370,8 +373,9 @@
           }}
         </h3>
         <p class="text-xs text-[var(--text-secondary)] mb-4">
-          Centang guru yang hadir per shift (Pagi/Sore/Sekolah). Submit untuk simpan ke koleksi
-          <code>absensi_shift_guru</code>.
+          Centang yang hadir per shift. Kolom muncul sesuai tipe &amp; shift: guru → shift
+          mengajar (+ Sekolah bila ada), pegawai → Peg. Pagi/Sore, dual-role → keduanya. Submit
+          untuk simpan ke koleksi <code>absensi_shift_guru</code>.
         </p>
         <div class="overflow-x-auto">
           <table class="w-full text-xs">
@@ -383,32 +387,21 @@
                   Nama Guru
                 </th>
                 <th
-                  class="p-2 text-center font-black text-cyan-700 dark:text-cyan-300 uppercase text-[10px] tracking-wider"
+                  v-for="col in SHIFT_COLS"
+                  :key="'h-' + col.key"
+                  class="p-2 text-center font-black uppercase text-[10px] tracking-wider"
+                  :class="col.key.startsWith('pegawai') ? 'text-indigo-700 dark:text-indigo-300' : (col.key === 'sekolah' ? 'text-teal-700 dark:text-teal-300' : 'text-cyan-700 dark:text-cyan-300')"
                   colspan="2"
                 >
-                  Pagi
-                </th>
-                <th
-                  class="p-2 text-center font-black text-cyan-700 dark:text-cyan-300 uppercase text-[10px] tracking-wider"
-                  colspan="2"
-                >
-                  Sore
-                </th>
-                <th
-                  class="p-2 text-center font-black text-teal-700 dark:text-teal-300 uppercase text-[10px] tracking-wider"
-                  colspan="2"
-                >
-                  Sekolah
+                  {{ col.label }}
                 </th>
               </tr>
               <tr class="bg-slate-50 dark:bg-slate-800">
                 <th></th>
-                <th class="p-1 text-[10px] font-bold">Hadir</th>
-                <th class="p-1 text-[10px] font-bold">Jam</th>
-                <th class="p-1 text-[10px] font-bold">Hadir</th>
-                <th class="p-1 text-[10px] font-bold">Jam</th>
-                <th class="p-1 text-[10px] font-bold">Hadir</th>
-                <th class="p-1 text-[10px] font-bold">Jam</th>
+                <template v-for="col in SHIFT_COLS" :key="'hj-' + col.key">
+                  <th class="p-1 text-[10px] font-bold">Hadir</th>
+                  <th class="p-1 text-[10px] font-bold">Jam</th>
+                </template>
               </tr>
             </thead>
             <tbody>
@@ -422,26 +415,30 @@
                 >
                   {{ g.nama }}
                 </td>
-                <template v-for="shift in ['pagi', 'sore', 'sekolah']" :key="shift + g.id">
+                <template v-for="col in SHIFT_COLS" :key="col.key + g.id">
                   <td colspan="2" class="p-1">
-                    <div class="flex items-center gap-1 justify-center">
+                    <div
+                      v-if="(guruShifts[g.id] || []).includes(col.key)"
+                      class="flex items-center gap-1 justify-center"
+                    >
                       <input
                         type="checkbox"
-                        v-model="harianForm[g.id + '_' + shift + '_hadir']"
+                        v-model="harianForm[g.id + '_' + col.key + '_hadir']"
                         class="w-4 h-4 accent-teal-600 cursor-pointer"
                       />
                       <input
-                        v-if="harianForm[g.id + '_' + shift + '_hadir']"
-                        v-model="harianForm[g.id + '_' + shift + '_jam']"
+                        v-if="harianForm[g.id + '_' + col.key + '_hadir']"
+                        v-model="harianForm[g.id + '_' + col.key + '_jam']"
                         type="time"
                         class="text-[10px] px-1 py-0.5 border border-[var(--border-default)] rounded bg-[var(--bg-card)]"
                       />
                     </div>
+                    <div v-else class="text-center text-[var(--text-tertiary)] text-[10px]">·</div>
                   </td>
                 </template>
               </tr>
               <tr v-if="guruAktif.length === 0">
-                <td colspan="7" class="text-center text-[var(--text-tertiary)] italic py-6">
+                <td colspan="11" class="text-center text-[var(--text-tertiary)] italic py-6">
                   Tidak ada guru aktif
                 </td>
               </tr>
@@ -491,11 +488,15 @@
           <div class="flex items-center gap-3">
             <div
               :class="[
-                'flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold text-xs',
-                a.shift === 'pagi' ? 'bg-[var(--color-accent)]' : 'bg-teal-500'
+                'flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold text-[11px]',
+                String(a.shift || '').startsWith('pegawai')
+                  ? 'bg-indigo-500'
+                  : a.shift === 'pagi'
+                    ? 'bg-[var(--color-accent)]'
+                    : 'bg-teal-500'
               ]"
             >
-              {{ a.shift === 'pagi' ? 'P' : 'S' }}
+              {{ shiftAbbr(a.shift) }}
             </div>
             <div class="flex-1 min-w-0">
               <p class="text-sm font-bold text-[var(--text-primary)] truncate">
@@ -616,16 +617,17 @@ async function handleImportFingerprint(ev) {
           errors.push(`Row: guru ${fpId || nama} tidak ditemukan`)
           continue
         }
+        const baseShift = thresholdBaseShift(shift)
         const terlambatKey =
-          shift === 'sore'
+          baseShift === 'sore'
             ? 'shiftSoreTerlambat'
-            : shift === 'sekolah'
+            : baseShift === 'sekolah'
               ? 'shiftSekolahTerlambat'
               : 'shiftPagiTerlambat'
         const mulaiKey =
-          shift === 'sore'
+          baseShift === 'sore'
             ? 'shiftSoreMulai'
-            : shift === 'sekolah'
+            : baseShift === 'sekolah'
               ? 'shiftSekolahMulai'
               : 'shiftPagiMulai'
         const batas = String(
@@ -685,6 +687,54 @@ const guruAktif = computed(() =>
     .sort((a, b) => String(a.nama || '').localeCompare(String(b.nama || ''), 'id'))
 )
 
+// v.99: kolom shift absensi (guru mengajar + PEGAWAI pisah pagi/sore, tarif beda di Pengaturan).
+const SHIFT_COLS = [
+  { key: 'pagi', label: 'Pagi' },
+  { key: 'sore', label: 'Sore' },
+  { key: 'sekolah', label: 'Sekolah' },
+  { key: 'pegawai_pagi', label: 'Peg. Pagi' },
+  { key: 'pegawai_sore', label: 'Peg. Sore' }
+]
+
+// Shift mana yang berlaku utk seorang guru/pegawai (gating per tipe & shift):
+//   guru -> shift mengajar (pagi/sore sesuai field shift) + Sekolah bila punya lembaga_sekolah;
+//   pegawai -> Peg. Pagi/Sore; dual-role (pegawai_guru) -> keduanya.
+function shiftsForGuru(g) {
+  const tipe = String(g?.tipe_pegawai || 'guru').toLowerCase().trim()
+  const hasPegawai = tipe.includes('pegawai')
+  const hasGuru = !hasPegawai || tipe.includes('guru') // pegawai murni=false; guru/dual/legacy=true
+  const shiftField = String(g?.shift || 'pagi_sore').toLowerCase()
+  const hasSekolah = !!(g?.lembaga_sekolah && String(g.lembaga_sekolah).trim())
+  const set = new Set()
+  if (hasGuru && shiftField.includes('pagi')) set.add('pagi')
+  if (hasGuru && shiftField.includes('sore')) set.add('sore')
+  if (hasGuru && hasSekolah) set.add('sekolah')
+  if (hasPegawai) { set.add('pegawai_pagi'); set.add('pegawai_sore') }
+  return set
+}
+// peta id -> array shift (reaktif, dipakai di template form harian)
+const guruShifts = computed(() => {
+  const m = {}
+  for (const g of guruAktif.value) m[g.id] = [...shiftsForGuru(g)]
+  return m
+})
+
+// shift -> ambang jam (pegawai reuse ambang pagi/sore guru; sekolah sendiri)
+function thresholdBaseShift(shift) {
+  if (shift === 'pegawai_pagi') return 'pagi'
+  if (shift === 'pegawai_sore') return 'sore'
+  return shift
+}
+function shiftAbbr(sh) {
+  const s = String(sh || '').toLowerCase()
+  if (s === 'pagi') return 'P'
+  if (s === 'sore') return 'S'
+  if (s === 'sekolah') return 'Sk'
+  if (s === 'pegawai_pagi') return 'PgP'
+  if (s === 'pegawai_sore') return 'PgS'
+  return '?'
+}
+
 // =====================================================
 // INPUT HARIAN
 // =====================================================
@@ -697,19 +747,22 @@ async function saveHarian() {
   const batch = writeBatch(db)
   let count = 0
   for (const g of guruAktif.value) {
-    for (const shift of ['pagi', 'sore', 'sekolah']) {
+    const allow = shiftsForGuru(g)
+    for (const shift of ['pagi', 'sore', 'sekolah', 'pegawai_pagi', 'pegawai_sore']) {
+      if (!allow.has(shift)) continue
       if (!harianForm.value[g.id + '_' + shift + '_hadir']) continue
       const jam = String(harianForm.value[g.id + '_' + shift + '_jam'] || '').trim()
+      const baseShift = thresholdBaseShift(shift)
       const terlambatKey =
-        shift === 'sore'
+        baseShift === 'sore'
           ? 'shiftSoreTerlambat'
-          : shift === 'sekolah'
+          : baseShift === 'sekolah'
             ? 'shiftSekolahTerlambat'
             : 'shiftPagiTerlambat'
       const mulaiKey =
-        shift === 'sore'
+        baseShift === 'sore'
           ? 'shiftSoreMulai'
-          : shift === 'sekolah'
+          : baseShift === 'sekolah'
             ? 'shiftSekolahMulai'
             : 'shiftPagiMulai'
       const batas = String(

@@ -4,7 +4,8 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { onAuthStateChanged, setPersistence, browserLocalPersistence, indexedDBLocalPersistence, signInAnonymously } from 'firebase/auth'
-import { auth as fbAuth } from '@/services/firebase'
+import { doc, setDoc } from 'firebase/firestore'
+import { auth as fbAuth, db } from '@/services/firebase'
 import * as authService from '@/services/auth'
 import { queryColl, setAuditSesi } from '@/services/firestore'
 
@@ -345,6 +346,19 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function logout() {
+    // v.100 K1: hapus fcm_token user yang KELUAR sebelum sign-out — cegah notif anak/wali
+    //   nyasar ke pengguna berikutnya di HP yang sama (token device basi menempel di doc lama).
+    //   Best-effort; dijalankan selagi sesi Firebase masih ada (rules signedIn() lolos).
+    try {
+      const s = sesiAktif.value
+      if (s && s.id && String(s.id) !== 'admin') {
+        const coll = s.role === 'santri' ? 'santri' : 'guru'
+        await setDoc(doc(db, coll, String(s.id)), { fcm_token: null }, { merge: true })
+      }
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.warn('[auth.logout] clear fcm_token gagal:', e?.message || e)
+    }
     await authService.logout()
     sesiAktif.value = null
     fbUser.value = null

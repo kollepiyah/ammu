@@ -714,10 +714,22 @@ async function downloadTemplateSantri() {
 
 function parseTglDDMMYYYY(v) {
   if (!v) return ''
-  if (v instanceof Date) return v.toISOString().slice(0, 10)
+  // v.99: guard bug epoch Excel — sel tanggal KOSONG sering terbaca SheetJS sebagai
+  //   Date/serial 0 = 1899-12-30. Tahun < 1901 = mustahil utk data santri -> kosongkan
+  //   (jangan isi otomatis). Berlaku tgl_lahir/tgl_masuk/tgl_keluar.
+  if (v instanceof Date) {
+    if (isNaN(v.getTime()) || v.getFullYear() < 1901) return ''
+    return v.toISOString().slice(0, 10)
+  }
   const s = String(v).trim()
+  if (!s) return ''
   const m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/)
-  if (m) return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`
+  if (m) {
+    if (Number(m[3]) < 1901) return ''
+    return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`
+  }
+  // ISO atau format lain — buang epoch eksplisit
+  if (s.slice(0, 10) === '1899-12-30' || s.slice(0, 10) === '1900-01-00') return ''
   return s
 }
 
