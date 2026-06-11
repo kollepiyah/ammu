@@ -1199,3 +1199,7 @@ npm run build:electron --prefix vue-app ; robocopy "vue-app\dist" "vue-app\elect
 git push
 ```
 firestore.rules TIDAK berubah. **Setelah deploy paket v.99: isi 2 tarif bisyaroh pegawai di Pengaturan Keuangan.**
+
+### FOLLOW-UP — Shift kerja PEGAWAI utk dual-role (11 Jun 2026, approve kyai)
+- **Temuan kyai**: tipe `pegawai_guru` (dual-role) tak bisa memilih shift PEGAWAI — field `shift` dipakai utk "Shift Qiraati" (mengajar); blok "Shift Kerja" hanya muncul utk tipe `pegawai` murni. Akibat di absensi: kolom Peg.Pagi & Peg.Sore SELALU dua-duanya (tak peduli shift) → bisa salah-centang.
+- **Fix (Vue murni, web+AAB+Electron, TANPA bump vc)**: field baru **`shift_pegawai`** (`useGuruForm` emptyForm/populate/save, default `'pagi_sore'`); blok form **"Shift Kerja (Pegawai)"** `v-if tipe==='pegawai_guru'` (`GuruFormView`); `AbsensiGuruView.shiftsForGuru` gating kolom pegawai = shift kerja (pegawai murni→`g.shift`, dual→`g.shift_pegawai`; default `pagi_sore`=dua kolom → data lama tak regresi). Bonus calc (`BisyarohView`) tak diubah — sudah murni dari record absensi. Verify `_run_vite.cmd` exit 0.

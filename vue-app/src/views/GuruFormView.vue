@@ -108,6 +108,16 @@
               <i class="fas fa-info-circle mr-1"></i>Boleh pilih Qiraati saja, Sekolah saja, atau keduanya (kalau ngajar di 2 lembaga).
             </p>
           </template>
+          <!-- v.99: Shift kerja PEGAWAI utk dual-role (terpisah dari Shift Qiraati/mengajar) -->
+          <div v-if="form.tipe_pegawai === 'pegawai_guru'" class="md:col-span-2 bg-[var(--bg-card-elevated)] rounded-lg p-3 space-y-1.5">
+            <label class="block text-xs font-bold text-indigo-600 mb-1 uppercase">Shift Kerja (Pegawai)</label>
+            <select v-model="form.shift_pegawai" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-indigo-500 outline-none">
+              <option v-for="s in SHIFT_OPTIONS" :key="`pegdual-${s.value}`" :value="s.value">{{ s.label }}</option>
+            </select>
+            <p class="text-[10px] text-[var(--text-secondary)] italic">
+              <i class="fas fa-info-circle mr-1"></i><b>Shift Qiraati</b> = jadwal mengajar; <b>Shift Kerja</b> = jadwal sebagai pegawai. Menentukan kolom absensi Peg. Pagi/Sore &amp; bonus.
+            </p>
+          </div>
           <div>
             <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase">Tanggal Tugas</label>
             <input v-model="form.tanggal_tugas" type="date" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-cyan-500 outline-none cursor-pointer" />

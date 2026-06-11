@@ -709,7 +709,13 @@ function shiftsForGuru(g) {
   if (hasGuru && shiftField.includes('pagi')) set.add('pagi')
   if (hasGuru && shiftField.includes('sore')) set.add('sore')
   if (hasGuru && hasSekolah) set.add('sekolah')
-  if (hasPegawai) { set.add('pegawai_pagi'); set.add('pegawai_sore') }
+  if (hasPegawai) {
+    // v.99: kolom pegawai mengikuti SHIFT KERJA — pegawai murni pakai g.shift, dual-role pakai g.shift_pegawai.
+    //   Default 'pagi_sore' (data lama tanpa shift_pegawai) -> dua kolom (tak ada regresi).
+    const sp = String((hasGuru ? g?.shift_pegawai : g?.shift) || 'pagi_sore').toLowerCase()
+    if (sp.includes('pagi')) set.add('pegawai_pagi')
+    if (sp.includes('sore')) set.add('pegawai_sore')
+  }
   return set
 }
 // peta id -> array shift (reaktif, dipakai di template form harian)

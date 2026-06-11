@@ -29,6 +29,7 @@ function emptyForm() {
     id_fingerprint: '',
     tipe_pegawai: 'guru',
     shift: 'pagi_sore',
+    shift_pegawai: 'pagi_sore', // v.99: shift kerja PEGAWAI (terpisah dari shift mengajar Qiraati) — utk dual-role
     role_sistem: 'user',
     custom_fields: {}
   }
@@ -326,6 +327,7 @@ export function useGuruForm() {
           return 'guru'
         })(),
         shift: g.shift || 'pagi_sore',
+        shift_pegawai: g.shift_pegawai || 'pagi_sore', // v.99: shift kerja pegawai (dual-role)
         role_sistem: g.role_sistem || 'user',
         custom_fields: g.custom_fields || {}
       }
@@ -383,6 +385,7 @@ export function useGuruForm() {
         id_fingerprint: f.id_fingerprint || '',
         tipe_pegawai: f.tipe_pegawai,
         shift: f.shift,
+        shift_pegawai: f.shift_pegawai || 'pagi_sore', // v.99: shift kerja pegawai (dual-role)
         role_sistem: isSuperAdmin.value ? f.role_sistem : 'user',
         custom_fields: f.custom_fields || {},
         password: '1234',

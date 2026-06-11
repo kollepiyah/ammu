@@ -1,0 +1,146 @@
+// =====================================================================
+//  DATA SANTRI AUTO — Power Query (M)
+//  Gabung 2 Google Form + map ke 46 kolom Template + deteksi DUPLIKAT & TYPO
+//  ---------------------------------------------------------------------
+//  CARA PAKAI (ringkas):
+//   1. Excel  ->  tab Data  ->  Get Data  ->  From Other Sources  ->  Blank Query
+//   2. Home   ->  Advanced Editor  ->  hapus semua isinya
+//   3. COPY-PASTE seluruh kode di bawah ini  ->  Done
+//   4. Home   ->  Close & Load
+//   (Detail lengkap ada di sheet "PETUNJUK" pada file Excel-nya.)
+//
+//  CATATAN: kode ini berasumsi Form 2 punya SUSUNAN KOLOM SAMA dengan Form 1.
+//           Kalau Form 2 beda urutan kolom, beri tahu saya untuk menyesuaikan.
+// =====================================================================
+let
+    // --- 1) Link CSV "Publikasikan di web" dari tiap Google Sheet ---
+    Link1 = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTtBicuaAhwo1F_xmgD9xssXKyUDZ3SaVCRz7hkHy2MHrGiJcv1618u5j_rxr1GwYDyHDb61ZMn0nkI/pub?output=csv",
+    Link2 = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQjLxGkGxOrdBj1W26KcJkOHjZJ4fWkyqEx1nmJgZEO5NB6URNI2lf1IfwWien3LJgwJ9F6qFrevwfX/pub?gid=1253182443&single=true&output=csv",
+
+    // Helper: ubah nilai apa pun jadi teks (null -> "")
+    T = (v) => if v = null then "" else Text.From(v),
+
+    // --- 2) Ambil 1 CSV (23 kolom) lalu buang baris header ---
+    Ambil = (url as text) as table =>
+        Table.Skip(
+            Csv.Document(
+                Web.Contents(url),
+                [Delimiter = ",", Columns = 23, Encoding = 65001, QuoteStyle = QuoteStyle.Csv]
+            ),
+            1
+        ),
+
+    Sumber1 = Ambil(Link1),
+    // Kalau Link2 kosong / error, pakai tabel kosong supaya tidak gagal
+    Sumber2 = try Ambil(Link2) otherwise #table(Table.ColumnNames(Sumber1), {}),
+    Gabung  = Table.Combine({Sumber1, Sumber2}),
+
+    // --- 3) Beri nama kolom sesuai isi Google Form ---
+    NamaKolom = Table.RenameColumns(Gabung, {
+        {"Column2",  "NIK"},
+        {"Column3",  "Nama Santri"},
+        {"Column4",  "Email Wali"},
+        {"Column5",  "No WA Wali"},
+        {"Column6",  "L/P"},
+        {"Column7",  "Tempat Lahir"},
+        {"Column8",  "Tgl Lahir (DD/MM/YYYY)"},
+        {"Column9",  "Provinsi"},
+        {"Column10", "Nama Ayah"},
+        {"Column11", "Nama Ibu"},
+        {"Column12", "Pekerjaan Ayah"},
+        {"Column13", "Pekerjaan Ibu"},
+        {"Column14", "Nama Wali Form"},
+        {"Column16", "Penghasilan Ortu"},
+        {"Column17", "Lembaga Qiraati"},
+        {"Column18", "Kelas Qiraati"},
+        {"Column19", "Kabupaten"},
+        {"Column20", "Alamat"}
+    }),
+
+    // --- 4) Buang baris kosong (tak ada NIK & tak ada nama) ---
+    BuangKosong = Table.SelectRows(NamaKolom, each
+        not (Text.Trim(T([NIK])) = "" and Text.Trim(T([Nama Santri])) = "")),
+
+    // --- 5) Rapikan nama santri (buang spasi berlebih) ---
+    TrimNama = Table.TransformColumns(BuangKosong,
+        {{"Nama Santri", each Text.Trim(T(_)), type text}}),
+
+    // --- 6) Nama Wali: kalau kosong di form, pakai Nama Ayah ---
+    WaliFix = Table.AddColumn(TrimNama, "Nama Wali", each
+        if Text.Trim(T([Nama Wali Form])) = "" then [Nama Ayah] else [Nama Wali Form],
+        type text),
+
+    // --- 7) "Nama Rapi" = huruf kecil, 1 spasi, tanpa tanda baca ---
+    NamaRapi = Table.AddColumn(WaliFix, "Nama Rapi", each
+        Text.Lower(
+            Text.Combine(
+                List.Select(Text.SplitAny(T([Nama Santri]), " .,'-_"), each _ <> ""),
+                " ")),
+        type text),
+
+    // --- 8) "Kunci Nama" = kunci fonetik penangkap typo ---
+    //        (hapus spasi -> sisakan huruf -> buang vokal -> rapatkan huruf dobel)
+    KunciNama = Table.AddColumn(NamaRapi, "Kunci Nama", each
+        let
+            hurufSaja  = Text.Select([Nama Rapi], {"a".."z"}),
+            tanpaVokal = Text.Remove(hurufSaja, {"a","i","u","e","o"}),
+            chars      = Text.ToList(tanpaVokal),
+            rapat      = if List.Count(chars) = 0 then ""
+                         else Text.Combine(
+                                List.Accumulate(List.Skip(chars, 1), {List.First(chars)},
+                                    (s, c) => if List.Last(s) = c then s else s & {c}))
+        in rapat,
+        type text),
+
+    // --- 9) Hitung kemunculan (di-buffer biar cepat) ---
+    Buf     = Table.Buffer(KunciNama),
+    LNIK    = List.Buffer(Buf[NIK]),
+    LKunci  = List.Buffer(Buf[Kunci Nama]),
+    HitNIK  = Table.AddColumn(Buf, "Jml NIK Sama", each
+                List.Count(List.Select(LNIK, (x) => x = [NIK])), Int64.Type),
+    HitNama = Table.AddColumn(HitNIK, "Jml Nama Mirip", each
+                List.Count(List.Select(LKunci, (x) => x = [Kunci Nama])), Int64.Type),
+
+    // --- 10) Kolom STATUS CEK ---
+    StatusCek = Table.AddColumn(HitNama, "STATUS CEK", each
+        let
+            rapi      = [Nama Rapi],
+            namaAngka = Text.Length(rapi) > 0
+                        and Text.Length(Text.Select(rapi, {"0".."9"})) = Text.Length(Text.Remove(rapi, {" "})),
+            dupNIK    = Text.Trim(T([NIK])) <> "" and [Jml NIK Sama] > 1,
+            mirip     = Text.Length([Kunci Nama]) >= 3 and [Jml Nama Mirip] > 1
+        in
+            if namaAngka then "NAMA BERUPA ANGKA - cek"
+            else if dupNIK then "DUPLIKAT (NIK sama)"
+            else if mirip then "CEK: nama mirip / typo"
+            else "OK",
+        type text),
+
+    // --- 11) Tambah kolom Template yang tidak ada di form (isi kosong) ---
+    KolomKosong = {
+        "NIS","NISN","Nama Panggilan","Tgl Masuk (DD/MM/YYYY)","No KK","Juz (PTPT)",
+        "Guru Pagi","Guru Sore","Lembaga Sekolah","Kelas Sekolah","Guru Sekolah (pisah |)",
+        "Asal Sekolah","NIK Ayah","Pendidikan Ayah","HP Ayah","NIK Ibu","Pendidikan Ibu",
+        "HP Ibu","Dusun/Jalan","RT","RW","Desa","Kecamatan","Status Aktif (true/false)",
+        "Mukim (true/false)","Fullday (true/false)","Catatan Riwayat Pribadi (Mukim)",
+        "Tgl Keluar (DD/MM/YYYY)","Alasan Keluar"
+    },
+    TambahKosong = List.Accumulate(KolomKosong, StatusCek,
+        (tbl, c) => Table.AddColumn(tbl, c, each null)),
+
+    // --- 12) Susun = 46 kolom Template, lalu kolom analisa di belakang ---
+    UrutanTemplate = {
+        "NIS","NISN","NIK","Nama Santri","Nama Panggilan","L/P","Tempat Lahir",
+        "Tgl Lahir (DD/MM/YYYY)","Tgl Masuk (DD/MM/YYYY)","No KK","Nama Wali","No WA Wali",
+        "Lembaga Qiraati","Kelas Qiraati","Juz (PTPT)","Guru Pagi","Guru Sore","Lembaga Sekolah",
+        "Kelas Sekolah","Guru Sekolah (pisah |)","Asal Sekolah","Nama Ayah","NIK Ayah",
+        "Pendidikan Ayah","Pekerjaan Ayah","HP Ayah","Nama Ibu","NIK Ibu","Pendidikan Ibu",
+        "Pekerjaan Ibu","HP Ibu","Penghasilan Ortu","Alamat","Dusun/Jalan","RT","RW","Desa",
+        "Kecamatan","Kabupaten","Provinsi","Status Aktif (true/false)","Mukim (true/false)",
+        "Fullday (true/false)","Catatan Riwayat Pribadi (Mukim)","Tgl Keluar (DD/MM/YYYY)","Alasan Keluar"
+    },
+    KolomAnalisa = {"STATUS CEK","Email Wali","Nama Rapi","Kunci Nama","Jml NIK Sama","Jml Nama Mirip"},
+
+    Hasil = Table.SelectColumns(TambahKosong, List.Combine({UrutanTemplate, KolomAnalisa}))
+in
+    Hasil
