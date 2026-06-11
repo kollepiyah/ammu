@@ -137,3 +137,7 @@ public/vue/
 # Signing keystore — JANGAN commit (repo publik kollepiyah/ammu)
 *.keystore
 ammu-app.keystore*
+
+# v.99 (11 Jun 2026): artefak data lokal (PII / Power Query) — JANGAN commit ke repo publik
+DATA SANTRI AUTO (siap Power Query).xlsx
+Kode Power Query (M) - DataSantri.txt
