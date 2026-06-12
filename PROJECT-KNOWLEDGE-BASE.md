@@ -1237,3 +1237,29 @@ firestore.rules TIDAK berubah. **Setelah deploy paket v.99: isi 2 tarif bisyaroh
 - `npm run firebase:deploy` (web/PWA) + `npm run build:aab` (app HP) + rebuild Electron + `git push`.
 - Isi NIS Dinas (`nis_sekolah`) santri sekolah: manual via form ATAU impor XLSX template BARU (unduh ulang template!).
 - Template XLSX lama masih diterima importer (kolom NIS lama = No. Induk).
+
+---
+
+## SESI v.100 — KOP MUASSIS (12 Jun 2026, Claude Code) — RECAP TERBARU
+
+> Baris PERTAMA semua KOP (rapor + KOP umum) = gambar kaligrafi muassis
+> (`vue-app/src/assets/muassis.png`, dari `muassis.png` root, 3000×554 rasio 5.42, 35KB).
+> Commit `54411d8` (9 file). Verify `_run_vite.cmd` exit 0. BELUM deploy.
+
+### MODEL
+- Util pusat **`utils/kopMuassis.js`**: `MUASSIS_URL`/`MUASSIS_RATIO` + `muassisDataUrl()` (async cache, jsPDF/print-window)
+  + `muassisDataUrlSync()` (builder HTML sinkron) + `muassisImageSync()` (HTMLImageElement utk canvas ESC/P).
+  Pre-warm saat modul dimuat. SEMUA renderer fallback ke teks `settings.kopLine1` bila gambar gagal/belum siap.
+- Renderer yang diganti: `raporPdf.drawKopRapor` (center 80mm, baris 2-4+divider relatif `kopBase`),
+  `pdfBuilder.drawKopLetterhead` (kiri h10mm, off +4.5mm → semua PDF list/struk F4/riwayat otomatis ikut),
+  `strukBuilder` (slip POS+tabungan PDF h7mm; `slipShellHtml`+`buildStrukHtmlWide` pakai dataURL),
+  `escpImage.drawSlip` (h26pt canvas), `receiptHtml.kopHtml` (26px), `RekapPrestasiView` print-window,
+  `RaporView` preview (34px + `dark:invert`).
+- **TIDAK diganti (by design)**: struk dot-matrix MODE TEKS + XLSX/GSheet (tak bisa gambar → tetap kopLine1),
+  kartu kontrol kenaikan (KOP sendiri judul+subjudul, `kenaikan.getKopKartuLembaga`), sidebar title.
+  `settings.kopLine1` kini berperan sebagai fallback/teks-only.
+
+### PENDING KYAI
+- Deploy: `npm run firebase:deploy` + `build:aab` + rebuild Electron + `git push`.
+- Tes visual: cetak 1 rapor Qiraati + 1 Diniyah (KOP ~10mm lebih tinggi dr sblmnya — cek tak ada overflow halaman),
+  1 slip POS (PDF + ESC/P), kwitansi in-app, PDF daftar (KOP umum).
