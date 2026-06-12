@@ -389,10 +389,11 @@ async function drawSignBlocks(doc, y, santri, settings, lembaga, dbGuru = [], le
   const today = fmtTanggalID(new Date())
 
   // Determine Kepala Label (kyai spec v.21.44 — image refs)
-  // TPQ + Pra PTPT → Kepala TPQ MU (Pra PTPT inherit TPQ)
-  // PTPT + PPPH → PJ PTPT
-  // Diniyah → Kepala Madin
-  let labelKepala = 'Kepala TPQ MU'
+  // TPQ + Pra PTPT → Kepala TPQ (Pra PTPT inherit TPQ); PTPT/PPPH → PJ; Diniyah → per sekolah.
+  // v.100b: label DISPLAY di-suffix nama pondok (kyai: "Kepala TPQ Mambaul Ulum"); searchTitle
+  //   (lookup guru by jabatan) TIDAK ikut suffix.
+  const nmPondok = settings.namaPondokSingkat || 'Mambaul Ulum'
+  let labelKepala = 'Kepala TPQ'
   let searchTitle = 'KEPALA TPQ'
   if (lembaga === 'PTPT') {
     labelKepala = 'PJ PTPT'
@@ -413,6 +414,7 @@ async function drawSignBlocks(doc, y, santri, settings, lembaga, dbGuru = [], le
       searchTitle = 'KEPALA SEKOLAH'
     }
   }
+  labelKepala = `${labelKepala} ${nmPondok}`
 
   // v.21.47: tambah gap atas (y+5) supaya tidak nempel ke tabel
   const yStart = y + 5

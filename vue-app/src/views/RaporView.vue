@@ -2282,16 +2282,19 @@ const namaKepala = computed(() => {
 const jabatanKepala = computed(() => {
   const s = santriAktif.value
   if (!s) return 'Kepala'
+  // v.100b: suffix nama pondok (kyai: "Kepala TPQ Mambaul Ulum"), selaras raporPdf drawSignBlocks
+  const nmPondok = settingsStore.settings?.namaPondokSingkat || 'Mambaul Ulum'
   const lnorm = String(kategori.value === 'diniyah' ? s.lembaga_sekolah || '' : s.lembaga || '')
     .toLowerCase()
     .trim()
+  let label = 'Kepala Sekolah'
   if (lnorm === 'tpq pagi' || lnorm === 'tpq sore' || lnorm === 'tpq' || lnorm === 'pra ptpt')
-    return 'Kepala TPQ'
-  if (lnorm === 'ptpt') return 'PJ PTPT'
-  if (lnorm === 'ppph' || lnorm === 'p3h') return 'PJ PPPH'
-  if (lnorm === 'sdi') return 'Kepala SDI'
-  if (lnorm === 'pkbm') return 'Kepala PKBM'
-  return 'Kepala Sekolah'
+    label = 'Kepala TPQ'
+  else if (lnorm === 'ptpt') label = 'PJ PTPT'
+  else if (lnorm === 'ppph' || lnorm === 'p3h') label = 'PJ PPPH'
+  else if (lnorm === 'sdi') label = 'Kepala SDI'
+  else if (lnorm === 'pkbm') label = 'Kepala PKBM'
+  return `${label} ${nmPondok}`
 })
 
 // v.95.0626: nama Guru Kelas — Diniyah = guru_sekolah; Qiraati/ngaji = guru, fallback
