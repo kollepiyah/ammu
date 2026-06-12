@@ -410,18 +410,21 @@
             </tr>
             <tr v-for="s in grp.santri" :key="s.id" class="hover:bg-cyan-50/30">
               <!-- v.21.115.0528: nama santri body sticky kiri -->
-              <td class="p-2 border border-slate-300 font-bold text-slate-800 whitespace-nowrap sticky left-0 bg-white dark:bg-slate-800 z-[1]">{{ s.nama }}</td>
+              <td class="p-2 border border-slate-300 font-bold text-slate-800 whitespace-nowrap sticky left-0 bg-white dark:bg-slate-800 z-[1]">
+                {{ s.nama }}
+                <span v-if="isGuruMode && !canEditPrestasi(s)" class="ml-1 text-[8px] font-black px-1.5 py-0.5 rounded bg-cyan-100 text-cyan-700 align-middle" title="Santri kelas sekolah Anda — prestasi qiraati hanya dapat dilihat">SEKOLAH</span>
+              </td>
               <td class="p-2 border border-slate-300 text-center font-bold">{{ s.jk || '-' }}</td>
               <td class="p-2 border border-slate-300 text-center text-[10px]">{{ s.lembaga }} - {{ s.kelas || '-' }}</td>
               <td v-if="hasPTPT" class="p-1 border border-slate-300 bg-rose-50/40">
-                <input v-if="s.lembaga === 'PTPT'" type="number" min="1" max="30" :value="getJuzNum(s)" @input="setJuz(s.id, $event.target.value)" class="w-full text-center bg-rose-50 text-rose-900 rounded p-1 text-[11px] font-bold border border-rose-300 outline-none focus:ring-2 focus:ring-rose-400" />
+                <input v-if="s.lembaga === 'PTPT'" type="number" min="1" max="30" :value="getJuzNum(s)" @input="setJuz(s.id, $event.target.value)" :readonly="!canEditPrestasi(s)" :class="['w-full text-center rounded p-1 text-[11px] font-bold border outline-none focus:ring-2 focus:ring-rose-400', canEditPrestasi(s) ? 'bg-rose-50 text-rose-900 border-rose-300' : 'bg-slate-100 text-slate-500 border-slate-200 cursor-not-allowed']" />
                 <span v-else class="text-[10px] text-slate-400">-</span>
               </td>
               <td class="p-1 border border-slate-300 bg-white">
-                <input type="text" :value="getEdit(s.id, 'awal')" @input="setEdit(s.id, 'awal', $event.target.value)" class="w-full text-center border-2 border-slate-200 rounded-lg p-1.5 text-[11px] font-black shadow-sm focus:border-teal-500 outline-none" />
+                <input type="text" :value="getEdit(s.id, 'awal')" @input="setEdit(s.id, 'awal', $event.target.value)" :readonly="!canEditPrestasi(s)" :class="['w-full text-center border-2 rounded-lg p-1.5 text-[11px] font-black shadow-sm focus:border-teal-500 outline-none', canEditPrestasi(s) ? 'border-slate-200' : 'border-slate-100 bg-slate-100 text-slate-500 cursor-not-allowed']" />
               </td>
               <td class="p-1 border border-slate-300 bg-white">
-                <input type="text" :value="getEdit(s.id, 'akhir')" @input="setEdit(s.id, 'akhir', $event.target.value)" class="w-full text-center border-2 border-slate-200 rounded-lg p-1.5 text-[11px] font-black shadow-sm focus:border-teal-500 outline-none" />
+                <input type="text" :value="getEdit(s.id, 'akhir')" @input="setEdit(s.id, 'akhir', $event.target.value)" :readonly="!canEditPrestasi(s)" :class="['w-full text-center border-2 rounded-lg p-1.5 text-[11px] font-black shadow-sm focus:border-teal-500 outline-none', canEditPrestasi(s) ? 'border-slate-200' : 'border-slate-100 bg-slate-100 text-slate-500 cursor-not-allowed']" />
               </td>
               <td class="p-1 border border-slate-300 bg-slate-50">
                 <input
@@ -436,7 +439,8 @@
                   type="text"
                   :value="getEdit(s.id, 'total')"
                   @input="setEdit(s.id, 'total', $event.target.value)"
-                  class="w-full text-center font-black text-[11px] p-1.5 rounded-lg border-2 border-slate-200 shadow-sm focus:border-teal-500 outline-none"
+                  :readonly="!canEditPrestasi(s)"
+                  :class="['w-full text-center font-black text-[11px] p-1.5 rounded-lg border-2 shadow-sm focus:border-teal-500 outline-none', canEditPrestasi(s) ? 'border-slate-200' : 'border-slate-100 bg-slate-100 text-slate-500 cursor-not-allowed']"
                 />
               </td>
             </tr>
@@ -503,6 +507,7 @@ import { buildListPdf } from '@/utils/pdfBuilder'
 import { muassisDataUrlSync } from '@/utils/kopMuassis' // v.100: baris-1 KOP print = gambar muassis
 import { useAuthStore } from '@/stores/auth'
 import { isFullFilterRole, isKepalaLembaga } from '@/utils/roleScope'
+import { ownsSekolah } from '@/utils/guruScope' // v.100b: guru sekolah lihat prestasi qiraati santri kelasnya (read-only)
 import { lembagaScopeMatches } from '@/composables/useLembaga'
 import { sortSantri } from '@/utils/santriSort'
 
@@ -546,6 +551,14 @@ function ownNgaji(s) {
   const gn = _lowS(auth.sesiAktif?.guru || auth.sesiAktif?.nama)
   if (!gn) return false
   return _lowS(s.guru_pagi) === gn || _lowS(s.guru_sore) === gn || _lowS(s.guru) === gn
+}
+// v.100b: santri ini di kelas SEKOLAH guru ini? (utk LIHAT prestasi qiraati, read-only).
+function ownSekolah(s) {
+  return ownsSekolah(s, auth.sesiAktif?.guru || auth.sesiAktif?.nama)
+}
+// Boleh edit prestasi? admin/kepala = ya; guru = hanya santri NGAJI ampuannya (sekolah = read-only).
+function canEditPrestasi(s) {
+  return !isGuruMode.value || ownNgaji(s)
 }
 const filterKelas = ref('')
 const expandedId = ref(null)
@@ -609,8 +622,8 @@ function lembagaMatch(s, filter) {
 
 const filteredSantri = computed(() => {
   let list = santriQiraati.value
-  // Guru mode: hanya santri ngaji yang diampu
-  if (isGuruMode.value) list = list.filter((s) => ownNgaji(s))
+  // Guru mode: santri ngaji ampuan (editable) + santri kelas sekolahnya (read-only, lihat prestasi qiraati)
+  if (isGuruMode.value) list = list.filter((s) => ownNgaji(s) || ownSekolah(s))
   // v.86.0526: Kepala/PJ → hanya santri lembaganya (block lintas-lembaga)
   if (kepalaScope.value) list = list.filter((s) => lembagaScopeMatches(kepalaScope.value, s.lembaga) || lembagaScopeMatches(kepalaScope.value, s.lembaga_sekolah))
   if (filterLembaga.value) list = list.filter((s) => lembagaMatch(s, filterLembaga.value))
@@ -764,6 +777,7 @@ async function simpanRekap() {
       const e = edits[id]
       const s = santriRaw.value.find((x) => String(x.id) === String(id))
       if (!s) continue
+      if (!canEditPrestasi(s)) continue // v.100b: guru sekolah read-only — jangan simpan
       const payload = {}
       if (e.awal !== undefined) payload.prestasi_awal = e.awal
       if (e.akhir !== undefined) payload.prestasi_akhir = e.akhir
@@ -1274,12 +1288,12 @@ function initGuruFlow() {
     return arr.includes(gn)
   })
   if (hasNgaji && !hasSekolah) {
+    // Guru qiraati murni → langsung input ngaji.
     filterLembaga.value = ''
     viewStep.value = 'input'
-  } else if (!hasNgaji && hasSekolah) {
-    router.push('/rekap-diniyah')
   }
-  // both → tetap landing
+  // v.100b: guru sekolah-saja & dual → tetap LANDING supaya bisa pilih Rekap Qiraati
+  //   (lihat prestasi qiraati santri kelas sekolahnya, read-only) ATAU Rekap Diniyah.
 }
 
 onMounted(() => {
