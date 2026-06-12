@@ -23,6 +23,7 @@ import { db } from '@/services/firebase'
 import { subscribeColl, subscribeDoc } from '@/services/firestore'
 import { useAuthStore } from '@/stores/auth'
 import { isKepalaLembaga } from '@/utils/roleScope'
+import { lembagaScopeMatches } from '@/composables/useLembaga' // v.100: scope kepala utk notif tes kenaikan
 
 export function useNotifications() {
   const auth = useAuthStore()
@@ -38,6 +39,7 @@ export function useNotifications() {
   const liburRaw = ref([])     // dari koleksi `kegiatan` (filter tipe === 'libur')
   const kenaikanRaw = ref([])  // dari koleksi `riwayat_kenaikan` (event ditulis saat PROSES NAIK)
   const prestasiRaw = ref([])  // dari koleksi `notif_prestasi` (event ditulis saat input nilai prestasi)
+  const tesRaw = ref([])       // v.100: dari koleksi `tes_kenaikan` (ajuan + hasil tes)
   const notifState = ref({})
 
   // unsub list
@@ -230,6 +232,64 @@ export function useNotifications() {
       }))
   }
 
+  // v.100: Tes Kenaikan Qiraati — per role. Sumber: koleksi `tes_kenaikan`.
+  //   Guru pengaju → hasil ajuannya. Kepala/PJ (+admin) → ajuan baru dalam scope. Wali → anaknya LULUS.
+  function getTesKenaikan() {
+    const sesi = auth.sesiAktif || {}
+    const me = userId.value
+    const out = []
+    if (role.value === 'guru' || role.value === 'admin') {
+      // sbg PENGAJU: ajuan saya yang sudah ada hasil
+      for (const a of tesRaw.value) {
+        if (String(a.guru_id || '') !== me || a.status === 'diajukan') continue
+        const lulus = a.status === 'lulus'
+        out.push({
+          id: 'tesres_' + (a.id || a._id),
+          jenis: 'tes',
+          judul: lulus ? 'Tes: Lulus' : a.status === 'ditolak' ? 'Tes: Ditolak' : 'Tes: Belum Lulus',
+          body: `${a.nama_cache || ''}${a.target ? ' → ' + a.target : ''}`.trim(),
+          ts: tsMs(a.tgl_hasil || a._ts),
+          link: '/tes-kenaikan',
+          icon: 'fa-clipboard-check',
+          color: lulus ? 'teal' : 'amber'
+        })
+      }
+      // sbg PENGUJI (kepala/PJ scoped, admin semua): ajuan baru menunggu tes
+      if (isAdminRole.value || isKepalaLembaga(sesi)) {
+        for (const a of tesRaw.value) {
+          if (a.status !== 'diajukan') continue
+          if (!isAdminRole.value && !lembagaScopeMatches(sesi.lembaga, a.lembaga)) continue
+          out.push({
+            id: 'tesreq_' + (a.id || a._id),
+            jenis: 'tes',
+            judul: 'Ajuan Tes Baru',
+            body: `${a.nama_cache || ''}${a.guru_nama ? ' · ' + a.guru_nama : ''}`.trim(),
+            ts: tsMs(a.tgl_daftar || a._ts),
+            link: '/tes-kenaikan',
+            icon: 'fa-clipboard-check',
+            color: 'amber'
+          })
+        }
+      }
+    } else if (role.value === 'santri') {
+      // WALI/SANTRI: anaknya LULUS (kabar siap naik)
+      for (const a of tesRaw.value) {
+        if (String(a.santri_id) !== me || a.status !== 'lulus') continue
+        out.push({
+          id: 'teslulus_' + (a.id || a._id),
+          jenis: 'tes',
+          judul: 'Lulus Tes Kenaikan',
+          body: `Siap naik ke ${a.target || 'tingkat berikutnya'}`,
+          ts: tsMs(a.tgl_hasil || a._ts),
+          link: '/capaian-prestasi',
+          icon: 'fa-clipboard-check',
+          color: 'teal'
+        })
+      }
+    }
+    return out
+  }
+
   // v.73.0526: cleared_at = timestamp setelah user klik "Bersihkan semua".
   // Notif dengan ts <= cleared_at di-hide dari list (per-user state).
   const clearedAt = computed(() => Number(notifState.value?.cleared_at || 0))
@@ -245,7 +305,8 @@ export function useNotifications() {
       ...getTagihan(),
       ...getLibur(),
       ...getKenaikan(),
-      ...getPrestasi()
+      ...getPrestasi(),
+      ...getTesKenaikan()
     ]
     const clearTs = clearedAt.value
     return all
@@ -272,7 +333,7 @@ export function useNotifications() {
   function allSeenNow(now) {
     return {
       supervisi: now, kritik: now, post: now, pembayaran: now, bisyaroh: now,
-      tagihan: now, libur: now, kenaikan: now, prestasi: now
+      tagihan: now, libur: now, kenaikan: now, prestasi: now, tes: now
     }
   }
 
@@ -329,6 +390,8 @@ export function useNotifications() {
     }
     // v.87.0526: hari libur (kegiatan) — semua role
     unsubs.push(subscribeColl('kegiatan', (docs) => { liburRaw.value = docs || [] }))
+    // v.100: tes kenaikan — semua role (filter per-role di getTesKenaikan)
+    unsubs.push(subscribeColl('tes_kenaikan', (docs) => { tesRaw.value = docs || [] }))
     if (userId.value) {
       unsubs.push(subscribeDoc('user_notif_state', userId.value, (d) => { notifState.value = d || {} }))
     }

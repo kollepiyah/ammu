@@ -333,6 +333,68 @@ exports.onPrestasiCreated = onDocumentCreated(
   }
 )
 
+// v.100: Tes Kenaikan Qiraati — ajuan baru (status 'diajukan') -> push ke Kepala/PJ lembaga.
+//   kepala_nama di-resolve di app saat ajukan (target type 'guru' by nama).
+exports.onTesKenaikanCreated = onDocumentCreated(
+  { document: 'tes_kenaikan/{id}', region: 'asia-southeast2', timeoutSeconds: 60, memory: '256MiB' },
+  async (event) => {
+    const t = event.data?.data()
+    if (!t || t.status !== 'diajukan' || !t.kepala_nama) return // tanpa kepala teridentifikasi -> hanya in-app
+    const nm = t.nama_cache ? String(t.nama_cache) : 'Santri'
+    await db.collection('notif_queue').add({
+      judul: 'Ajuan Tes Kenaikan',
+      pesan: `${nm} diajukan tes${t.target ? ' ke ' + t.target : ''}${t.guru_nama ? ' oleh ' + t.guru_nama : ''}.`,
+      target: { type: 'guru', nama: String(t.kepala_nama) },
+      link: '/tes-kenaikan',
+      sender: 'Pondok',
+      status: 'pending',
+      timestamp: new Date().toISOString()
+    })
+  }
+)
+
+// v.100: Hasil tes diputuskan kepala -> LULUS push Wali + Guru; tidak lulus/ditolak push Guru saja.
+//   Guard: hanya saat status berubah & ada `penguji` (skip pembatalan pengaju yg tak set penguji).
+exports.onTesKenaikanDecided = onDocumentUpdated(
+  { document: 'tes_kenaikan/{id}', region: 'asia-southeast2', timeoutSeconds: 60, memory: '256MiB' },
+  async (event) => {
+    const before = event.data?.before?.data() || {}
+    const after = event.data?.after?.data() || {}
+    if (before.status === after.status || !after.penguji) return // tak berubah / batal pengaju -> skip
+    const nm = after.nama_cache ? String(after.nama_cache) : 'Ananda'
+    const tgt = after.target || 'tingkat berikutnya'
+    if (after.status === 'lulus') {
+      if (after.santri_id) {
+        await db.collection('notif_queue').add({
+          judul: 'Lulus Tes Kenaikan! 🎉',
+          pesan: `${nm} dinyatakan LULUS dan siap naik ke ${tgt}.`,
+          target: { type: 'santri', id: String(after.santri_id) },
+          link: '/capaian-prestasi',
+          sender: 'Pondok', status: 'pending', timestamp: new Date().toISOString()
+        })
+      }
+      if (after.guru_nama) {
+        await db.collection('notif_queue').add({
+          judul: 'Hasil Tes: Lulus',
+          pesan: `${nm} LULUS — siap naik ke ${tgt}.`,
+          target: { type: 'guru', nama: String(after.guru_nama) },
+          link: '/tes-kenaikan',
+          sender: 'Pondok', status: 'pending', timestamp: new Date().toISOString()
+        })
+      }
+    } else if ((after.status === 'tidak_lulus' || after.status === 'ditolak') && after.guru_nama) {
+      const lbl = after.status === 'tidak_lulus' ? 'Belum lulus' : 'Ditolak'
+      await db.collection('notif_queue').add({
+        judul: `Hasil Tes: ${lbl}`,
+        pesan: `${nm} → ${lbl}${after.catatan_hasil ? ' · ' + after.catatan_hasil : ''}.`,
+        target: { type: 'guru', nama: String(after.guru_nama) },
+        link: '/tes-kenaikan',
+        sender: 'Pondok', status: 'pending', timestamp: new Date().toISOString()
+      })
+    }
+  }
+)
+
 // ====================================================================
 // FUNCTION 2: LINK PREVIEW (Open Graph fetcher)
 // HTTP GET endpoint dengan CORS enabled
