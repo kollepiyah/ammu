@@ -3,6 +3,7 @@
 import { createPdf, drawKopLetterhead, drawTitle, drawTable, savePdf } from './pdfBuilder'
 import { imageToDataURL } from '@/services/pdf'
 import { terbilangRupiah } from './terbilang'
+import { muassisDataUrl, muassisDataUrlSync, MUASSIS_RATIO } from './kopMuassis' // v.100: baris-1 KOP = gambar muassis
 
 export function fmtRpStruk(n) {
   return 'Rp ' + new Intl.NumberFormat('id-ID').format(Math.round(n || 0))
@@ -167,10 +168,19 @@ export async function cetakStrukSlipPdf(trx, settings = {}, { preview = false } 
   const dash = (pat) => { if (typeof doc.setLineDashPattern === 'function') doc.setLineDashPattern(pat || [], 0) }
 
   // ── Header teks RINGKAS (yayasan tdk kebesaran, baris rapat) + kotak BUKTI kanan-atas ──
+  // v.100: baris-1 = gambar muassis (h 7mm); fallback teks kop.line1.
   let y = topMm + 4.5
-  doc.setFont(font, 'bold'); doc.setFontSize(10)
-  doc.text(String(kop.line1 || ''), left, y)
-  let ky = y + 3.8
+  let ky
+  const muassis = await muassisDataUrl()
+  if (muassis) {
+    const muH = 7
+    try { doc.addImage(muassis, 'PNG', left, y - 4, muH * MUASSIS_RATIO, muH, undefined, 'FAST') } catch (_e) {}
+    ky = y + 6.5
+  } else {
+    doc.setFont(font, 'bold'); doc.setFontSize(10)
+    doc.text(String(kop.line1 || ''), left, y)
+    ky = y + 3.8
+  }
   if (kop.line2) { doc.setFont(font, 'bold'); doc.setFontSize(8.3); doc.text(String(kop.line2), left, ky); ky += 3.2 }
   doc.setFont(font, 'normal'); doc.setFontSize(7)
   for (const ln of [kop.line3, kop.line4, kop.line5].filter(Boolean)) {
@@ -457,10 +467,19 @@ export async function cetakSlipTabunganPdf(mut = {}, settings = {}, { preview = 
   const boxLabel = 'BUKTI ' + (isSetor ? 'SETOR ' : 'TARIK ') + label
 
   // ── Header teks RINGKAS + kotak BUKTI kanan-atas (sama dgn POS) ──
+  // v.100: baris-1 = gambar muassis (h 7mm); fallback teks kop.line1.
   let y = topMm + 4.5
-  doc.setFont(font, 'bold'); doc.setFontSize(10)
-  doc.text(String(kop.line1 || ''), left, y)
-  let ky = y + 3.8
+  let ky
+  const muassis = await muassisDataUrl()
+  if (muassis) {
+    const muH = 7
+    try { doc.addImage(muassis, 'PNG', left, y - 4, muH * MUASSIS_RATIO, muH, undefined, 'FAST') } catch (_e) {}
+    ky = y + 6.5
+  } else {
+    doc.setFont(font, 'bold'); doc.setFontSize(10)
+    doc.text(String(kop.line1 || ''), left, y)
+    ky = y + 3.8
+  }
   if (kop.line2) { doc.setFont(font, 'bold'); doc.setFontSize(8.3); doc.text(String(kop.line2), left, ky); ky += 3.2 }
   doc.setFont(font, 'normal'); doc.setFontSize(7)
   for (const ln of [kop.line3, kop.line4, kop.line5].filter(Boolean)) { doc.text(String(ln), left, ky); ky += 2.9 }
@@ -625,7 +644,10 @@ function slipShellHtml({ settings = {}, boxLabel = '', infoLeft = [], infoRight 
     + '.tot .tr{display:flex;justify-content:space-between;gap:6mm;margin:0.3mm 0}'
     + '.tot .big{font-weight:bold;font-size:15.5pt}'
     + '</style></head><body><div class="slip">'
-    + `<div class="k1">${escapeHtml(kop.line1 || '')}</div>`
+    // v.100: baris-1 = gambar muassis (dataURL cache); fallback teks kop.line1
+    + (muassisDataUrlSync()
+        ? `<div><img src="${muassisDataUrlSync()}" alt="" style="height:8mm;display:block" /></div>`
+        : `<div class="k1">${escapeHtml(kop.line1 || '')}</div>`)
     + (kop.line2 ? `<div class="k2">${escapeHtml(kop.line2)}</div>` : '')
     + kopRest
     + `<div class="box">${escapeHtml(boxLabel)}</div>`
@@ -923,7 +945,10 @@ export function buildStrukHtmlWide(trx, s = {}) {
     'table{border-collapse:collapse;width:100%;}.sheet{width:182mm;margin:6mm 0 6mm 12mm;}.rule{border-top:1.5px solid #000;margin:5px 0;}' +
     '</style></head><body><div class="sheet">' +
     '<table><tr><td style="vertical-align:top;">' +
-      '<div style="font-weight:bold;font-size:12pt;">' + escapeHtml(kop1) + '</div>' +
+      // v.100: baris-1 = gambar muassis (dataURL cache); fallback teks kop1
+      (muassisDataUrlSync()
+        ? '<div><img src="' + muassisDataUrlSync() + '" alt="" style="height:7mm;display:block" /></div>'
+        : '<div style="font-weight:bold;font-size:12pt;">' + escapeHtml(kop1) + '</div>') +
       (kop2 ? '<div style="font-size:10pt;">' + escapeHtml(kop2) + '</div>' : '') +
       addr.map((a) => '<div style="font-size:9pt;">' + escapeHtml(a) + '</div>').join('') +
     '</td><td style="vertical-align:top;text-align:right;white-space:nowrap;width:1%;">' +

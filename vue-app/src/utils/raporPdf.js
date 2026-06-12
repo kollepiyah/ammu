@@ -4,6 +4,7 @@
 
 import { createPdf, drawTable, savePdf } from './pdfBuilder'
 import { imageToDataURL } from '@/services/pdf'
+import { muassisDataUrl, MUASSIS_RATIO } from './kopMuassis' // v.100: baris-1 KOP = gambar muassis
 import { predikatQiraati, predikatDiniyah, PREDIKAT_AR } from './predikat'
 
 // ============================================================
@@ -197,18 +198,29 @@ async function drawKopRapor(doc, settings, lembaga, lembagaOverride = null, isDi
   // Wired ke Pengaturan KOP Surat (settings.kopLine1-4) sebagai override
   doc.setFont(font, 'bold')
 
-  // Line 1: per-lembaga override (master/lembaga) > settings.kopLine1 > default per-lembaga
-  let line1 =
-    (lembagaOverride && lembagaOverride.kop_line1) || settings.kopLine1 || settings.subtitleRapor
-  if (!line1) {
-    if (lembaga === 'PTPT') line1 = 'Pasca TPQ Program Tahfizh'
-    else if (lembaga === 'PPPH') line1 = 'Pasca PTPT Program Hadits'
-    else if (lembaga === 'Diniyah')
-      line1 = 'Sekolah' // v.21.59: Diniyah ikut Sekolah (bukan Madin)
-    else line1 = 'Taman Pendidikan Al-Qur’an' // TPQ Pagi/Sore + Pra PTPT default
+  // v.100: Line 1 = GAMBAR kaligrafi muassis (semua rapor). kopBase = batas bawah baris-1;
+  //   baris 2-4 + divider mengikuti relatif (offset lama: L2=base+7, L3=+13, L4=+17, div=+20).
+  //   Fallback (gambar gagal) = teks lama (per-lembaga override > kopLine1 > default).
+  let kopBase = startY + 5
+  const muassis = await muassisDataUrl()
+  if (muassis) {
+    const muW = 80
+    const muH = muW / MUASSIS_RATIO // ≈ 14.8mm
+    try { doc.addImage(muassis, 'PNG', (pageW - muW) / 2, startY, muW, muH, undefined, 'FAST') } catch (_e) {}
+    kopBase = startY + muH
+  } else {
+    let line1 =
+      (lembagaOverride && lembagaOverride.kop_line1) || settings.kopLine1 || settings.subtitleRapor
+    if (!line1) {
+      if (lembaga === 'PTPT') line1 = 'Pasca TPQ Program Tahfizh'
+      else if (lembaga === 'PPPH') line1 = 'Pasca PTPT Program Hadits'
+      else if (lembaga === 'Diniyah')
+        line1 = 'Sekolah' // v.21.59: Diniyah ikut Sekolah (bukan Madin)
+      else line1 = 'Taman Pendidikan Al-Qur’an' // TPQ Pagi/Sore + Pra PTPT default
+    }
+    doc.setFontSize(13)
+    doc.text(line1.toUpperCase(), pageW / 2, startY + 5, { align: 'center' })
   }
-  doc.setFontSize(13)
-  doc.text(line1.toUpperCase(), pageW / 2, startY + 5, { align: 'center' })
 
   // Line 2: "[LEMBAGA] [namaLembaga]" UPPERCASE
   // namaLembaga dari settings.kopLine2 atau default "MAMBAUL ULUM"
@@ -233,7 +245,8 @@ async function drawKopRapor(doc, settings, lembaga, lembagaOverride = null, isDi
     line2 = namaUpper.startsWith(labelUpper)
       ? namaUpper
       : `${lembagaLabel} ${namaLembaga}`.toUpperCase()
-  doc.text(line2, pageW / 2, startY + 12, { align: 'center' })
+  doc.setFont(font, 'bold')
+  doc.text(line2, pageW / 2, kopBase + 7, { align: 'center' })
 
   // Line 3: Alamat (wired ke settings.kopLine3 atau settings.alamat)
   doc.setFont(font, 'normal')
@@ -243,7 +256,7 @@ async function drawKopRapor(doc, settings, lembaga, lembagaOverride = null, isDi
     settings.kopLine3 ||
     settings.alamat ||
     'Jl. Kol. Sugiono 112 Panjunan-Kepuh Kiriman Waru Sidoarjo'
-  doc.text(addr, pageW / 2, startY + 18, { align: 'center' })
+  doc.text(addr, pageW / 2, kopBase + 13, { align: 'center' })
 
   // Line 4: Telp (wired ke settings.kopLine4 atau settings.telp)
   const telp =
@@ -251,10 +264,10 @@ async function drawKopRapor(doc, settings, lembaga, lembagaOverride = null, isDi
     settings.kopLine4 ||
     settings.telp ||
     'Telp. 031-8674713'
-  doc.text(telp.toLowerCase(), pageW / 2, startY + 22, { align: 'center' })
+  doc.text(telp.toLowerCase(), pageW / 2, kopBase + 17, { align: 'center' })
 
   // 2-line divider
-  const dividerY = startY + 25
+  const dividerY = kopBase + 20
   doc.setLineWidth(0.6)
   doc.line(15, dividerY, pageW - 15, dividerY)
   doc.setLineWidth(0.2)

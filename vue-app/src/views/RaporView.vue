@@ -502,9 +502,9 @@
                 />
               </td>
               <td class="text-center align-middle px-2 py-0.5">
-                <div v-if="kop.line1" class="text-[14px] font-normal uppercase leading-tight">
-                  {{ kop.line1 }}
-                </div>
+                <!-- v.100: baris-1 KOP = gambar kaligrafi muassis (match PDF) -->
+                <img :src="MUASSIS_URL" alt="" class="mx-auto dark:invert print:invert-0" style="height:34px;object-fit:contain" />
+
                 <div v-if="kop.line2" class="text-[22px] font-bold uppercase leading-tight">
                   {{ kop.line2 }}
                 </div>
@@ -1032,6 +1032,7 @@ import { useSettingsStore } from '@/stores/settings'
 import { useAuthStore } from '@/stores/auth'
 import UiActionCard from '@/components/ui/UiActionCard.vue'
 import { generateRaporPdf } from '@/utils/raporPdf'
+import { MUASSIS_URL } from '@/utils/kopMuassis' // v.100: baris-1 KOP = gambar muassis
 // v.90.0626: util jenjang Diniyah (SDI/SMP/SMA) — sumber tunggal, samakan dg Rekap Diniyah
 import { kelasJenjang, mapelDiniyahFor, diniyahJenjang, jenjangFromKelas } from '@/utils/jenjang'
 import { predikatQiraati, predikatDiniyah } from '@/utils/predikat'

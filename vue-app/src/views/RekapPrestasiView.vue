@@ -500,6 +500,7 @@ import { useSettingsStore } from '@/stores/settings'
 import { extractNumber, getNamaGuruGelar } from '@/utils/format'
 import { bestNameMatch, fuzzyKey, simRatio } from '@/utils/fuzzyMatch' // v.100 Batch12/14: cocokkan nama mirip + scope guru (impor Google Form)
 import { buildListPdf } from '@/utils/pdfBuilder'
+import { muassisDataUrlSync } from '@/utils/kopMuassis' // v.100: baris-1 KOP print = gambar muassis
 import { useAuthStore } from '@/stores/auth'
 import { isFullFilterRole, isKepalaLembaga } from '@/utils/roleScope'
 import { lembagaScopeMatches } from '@/composables/useLembaga'
@@ -1236,7 +1237,9 @@ function cetakHTML() {
     th{background:#e5e7eb;font-weight:bold;}
   </style></head><body>
   <div class="header">
-    <p style="font-weight:bold;">${set.kopLine1 || set.txtAppName || ''}</p>
+    ${muassisDataUrlSync()
+      ? `<img src="${muassisDataUrlSync()}" alt="" style="height:30px;display:block;margin:0 auto 2px;" />`
+      : `<p style="font-weight:bold;">${set.kopLine1 || set.txtAppName || ''}</p>`}
     <h1 style="margin:2px 0;font-size:16px;font-weight:900;">${set.kopLine2 || ''}</h1>
     <p>${set.kopLine3 || ''}</p>
     <p>${set.kopLine4 || ''}</p>

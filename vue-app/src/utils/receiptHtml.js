@@ -2,6 +2,7 @@
 //   preview di dalam app (ReceiptModal). Bukan untuk cetak; tombol cetak tidak ada.
 //   buildReceiptStrukHtml -> bukti pembayaran santri. buildSlipBisyarohHtml -> slip gaji guru.
 import { terbilangRupiah } from './terbilang'
+import { muassisDataUrlSync, MUASSIS_URL } from '@/utils/kopMuassis' // v.100: baris-1 KOP = gambar muassis
 
 const BULAN_NM = [
   'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
@@ -38,10 +39,14 @@ function kopHtml(s = {}) {
   const l1 = esc(s.kopLine1 || 'YAYASAN MAMBAUL ULUM')
   const l2 = esc(s.kopLine2 || 'PONDOK PESANTREN MAMBAUL ULUM')
   const addr = [s.kopLine3, s.kopLine4, s.kopLine5].filter(Boolean).map((a) => esc(a))
+  // v.100: baris-1 = gambar muassis (view in-app → URL bundel cukup; dataURL bila sudah ter-cache)
+  const muSrc = muassisDataUrlSync() || MUASSIS_URL
   return (
     '<div style="text-align:center;border-bottom:2px solid #0f766e;padding-bottom:9px;margin-bottom:11px;">' +
     (logo ? '<img src="' + esc(logo) + '" alt="logo" style="height:46px;margin-bottom:5px;object-fit:contain;" />' : '') +
-    '<div style="font-weight:800;font-size:16px;color:#0f766e;line-height:1.2;">' + l1 + '</div>' +
+    (muSrc
+      ? '<img src="' + muSrc + '" alt="" style="height:26px;margin:0 auto 2px;display:block;object-fit:contain;" />'
+      : '<div style="font-weight:800;font-size:16px;color:#0f766e;line-height:1.2;">' + l1 + '</div>') +
     '<div style="font-weight:700;font-size:13px;line-height:1.2;">' + l2 + '</div>' +
     addr.map((a) => '<div style="font-size:10.5px;color:#555;line-height:1.3;">' + a + '</div>').join('') +
     '</div>'

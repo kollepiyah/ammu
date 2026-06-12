@@ -12,6 +12,7 @@
 //   Hasil cetak TIDAK gepeng (aspect benar).
 import { buildKopFromSettings } from './strukBuilder'
 import { terbilangRupiah } from './terbilang'
+import { muassisImageSync, MUASSIS_RATIO } from './kopMuassis' // v.100: baris-1 KOP = gambar muassis
 
 const mm2pt = (mm) => (mm * 72) / 25.4
 
@@ -60,7 +61,15 @@ function drawSlip(ctx, p) {
 
   let y = topBase
   // ── KOP kiri-atas (jarak baris longgar) ──
-  y += 14; text(p.kop.line1 || '', L, y, 15, true)
+  // v.100: baris-1 = gambar muassis (h 26pt); fallback teks kop.line1 (gambar belum ter-load).
+  const muImg = muassisImageSync()
+  if (muImg) {
+    const mh = 26
+    ctx.drawImage(muImg, L, y + 2, mh * MUASSIS_RATIO, mh)
+    y += 2 + mh
+  } else {
+    y += 14; text(p.kop.line1 || '', L, y, 15, true)
+  }
   if (p.kop.line2) { y += 13.5; text(p.kop.line2, L, y, 11, true) }
   for (const ln of [p.kop.line3, p.kop.line4, p.kop.line5].filter(Boolean)) { y += 11; text(ln, L, y, 8.5, false) }
   // ── Kotak BUKTI kanan-atas (sejajar atas KOP) ──

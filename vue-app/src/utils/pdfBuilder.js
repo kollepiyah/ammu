@@ -14,6 +14,7 @@
 //   doc.save('filename.pdf')
 
 import { jsPDFFromCDN, imageToDataURL } from '@/services/pdf'
+import { muassisDataUrl, MUASSIS_RATIO } from './kopMuassis' // v.100: baris-1 KOP = gambar muassis
 
 /**
  * v.21.92.0527: Helper kanonik bangun kop dari settings.
@@ -90,30 +91,38 @@ export async function drawKopLetterhead(doc, kop = {}, opts = {}) {
 
   // v.21.92.0527: KOP rata kiri — judul mulai di sebelah kanan logo.
   // Hierarki: L1 kecil (Yayasan), L2 BESAR bold (Pondok Pesantren), L3 alamat, L4-L5 telp/email.
-  const lines = [kop.line1, kop.line2, kop.line3].filter(Boolean)
+  // v.100: L1 = GAMBAR kaligrafi muassis (tinggi 10mm); baris di bawahnya geser +off.
+  //   Fallback (gambar gagal) = teks kop.line1, off=0 (layout lama persis).
   const subLines = [kop.line4, kop.line5].filter(Boolean)
   const textX = hasLogo ? 12 + LOGO_SIZE + 6 : 12
   doc.setFont(font, 'bold')
-  doc.setFontSize(11)
-  if (lines[0]) {
-    doc.text(String(lines[0]), textX, y + 5)
+  let off = 0
+  const muassis = await muassisDataUrl()
+  if (muassis) {
+    const muH = 10
+    const muW = muH * MUASSIS_RATIO // ≈ 54mm
+    try { doc.addImage(muassis, 'PNG', textX, y + 0.5, muW, muH, undefined, 'FAST') } catch (_e) {}
+    off = 4.5 // zona baris-1 teks (~6mm) → gambar 10.5mm
+  } else if (kop.line1) {
+    doc.setFontSize(11)
+    doc.text(String(kop.line1), textX, y + 5)
   }
   doc.setFontSize(16)
-  if (lines[1]) {
-    doc.text(String(lines[1]), textX, y + 13)
+  if (kop.line2) {
+    doc.text(String(kop.line2), textX, y + 13 + off)
   }
   doc.setFont(font, 'normal')
   doc.setFontSize(9)
-  if (lines[2]) {
-    doc.text(String(lines[2]), textX, y + 19)
+  if (kop.line3) {
+    doc.text(String(kop.line3), textX, y + 19 + off)
   }
-  let yy = y + 23
+  let yy = y + 23 + off
   for (const sl of subLines) {
     doc.text(String(sl), textX, yy)
     yy += 4
   }
   // Pastikan KOP setidaknya setinggi logo
-  y = Math.max(yy, y + (hasLogo ? LOGO_SIZE + 2 : 25))
+  y = Math.max(yy, y + (hasLogo ? LOGO_SIZE + 2 : 25) + off)
   // Garis pemisah
   if (opts.withLine !== false) {
     doc.setLineWidth(0.4)
