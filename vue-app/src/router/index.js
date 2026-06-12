@@ -45,6 +45,8 @@ const RiwayatPosView = () => import('@/views/RiwayatPosView.vue')
 const RiwayatSantriView = () => import('@/views/RiwayatSantriView.vue')
 // v.64.0526: Naik Kelas full Vue (replace bridge view v.63)
 const NaikKelasView = () => import('@/views/NaikKelasView.vue')
+// v.100: Tes Kenaikan Qiraati (guru ajukan → kepala/PJ uji → lulus = siap naik)
+const TesKenaikanView = () => import('@/views/TesKenaikanView.vue')
 // v.66.0526: Kalender Kegiatan + Dashboard Statistik full Vue (Batch B)
 const KalenderKegiatanView = () => import('@/views/KalenderKegiatanView.vue')
 const StatistikView = () => import('@/views/StatistikView.vue')
@@ -162,6 +164,7 @@ const routes = [
       { path: 'rapor', name: 'rapor', component: RaporView, meta: { noSantri: true } },
       // v.20.6.0526: Naik Kelas — guru juga boleh akses (proses kenaikan santri kelasnya)
       { path: 'naik-kelas', name: 'naik-kelas', component: NaikKelasView, alias: '/kenaikan' },
+      { path: 'tes-kenaikan', name: 'tes-kenaikan', component: TesKenaikanView, meta: { noSantri: true } },
       { path: 'absensi-guru', name: 'absensi-guru', component: AbsensiGuruView, meta: { admin: true } },
       { path: 'absensi-santri', name: 'absensi-santri', component: AbsensiSantriView },
       { path: 'posts', name: 'posts', component: PostsView, alias: '/mading' },

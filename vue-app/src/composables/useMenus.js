@@ -27,6 +27,8 @@ const ALL_MENUS = [
   { group: 'Pendidikan', name: 'Data Santri', path: '/santri', icon: 'fa-users', roles: ['admin', 'guru'], available: true },
   { group: 'Pendidikan', name: 'Data Guru', path: '/guru', icon: 'fa-chalkboard-teacher', roles: ['admin'], available: true },
   { group: 'Pendidikan', name: 'Kenaikan/Mutasi', path: '/naik-kelas', icon: 'fa-level-up-alt', roles: ['admin', 'guru'], available: true },
+  // v.100: Tes Kenaikan Qiraati — guru ajukan tes santri ke Kepala/PJ; lulus = siap naik. featureFlag default ON.
+  { group: 'Pendidikan', name: 'Tes Kenaikan', path: '/tes-kenaikan', icon: 'fa-clipboard-check', roles: ['admin', 'guru'], available: true, featureFlag: 'fiturTesKenaikan' },
   { group: 'Pendidikan', name: 'Rekap Prestasi', path: '/rekap-prestasi', icon: 'fa-book-open', roles: ['admin', 'guru'], available: true },
   { group: 'Pendidikan', name: 'Rapor Semester', path: '/rapor', icon: 'fa-graduation-cap', roles: ['admin', 'guru'], available: true },
   // v.20.5.0526: Absensi Guru — HANYA admin (kyai req — guru jangan lihat absensi guru, itu admin-only)
