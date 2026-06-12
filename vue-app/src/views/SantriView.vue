@@ -171,7 +171,13 @@
 
     <!-- Santri list -->
     <div v-else class="space-y-2">
-      <div v-for="s in santri" :key="s.id" @click="goProfil(s, $event)" class="bg-[var(--bg-card)] rounded-xl p-3 md:p-4 border border-[var(--border-subtle)] shadow-sm hover:shadow-md transition cursor-pointer">
+      <template v-for="s in santriRows" :key="s.id">
+      <!-- v.100b: header section utk guru dual-role (Qiraati / Sekolah) -->
+      <div v-if="sectionHeaderFor(s)" class="flex items-center gap-2 pt-2 pb-1 first:pt-0">
+        <span class="text-xs font-black text-teal-700 dark:text-teal-300 uppercase tracking-wider"><i class="fas fa-layer-group mr-1.5"></i>{{ sectionHeaderFor(s) }}</span>
+        <span class="flex-1 h-px bg-[var(--border-subtle)]"></span>
+      </div>
+      <div @click="goProfil(s, $event)" class="bg-[var(--bg-card)] rounded-xl p-3 md:p-4 border border-[var(--border-subtle)] shadow-sm hover:shadow-md transition cursor-pointer">
         <div class="flex items-start gap-3">
           <!-- v.21.22c.0526: Checkbox (Master mode only) -->
           <input v-if="isMasterMode && isFullAccess" type="checkbox" :checked="selected.has(String(s.id))" @change="toggleSelect(s.id)" class="flex-shrink-0 mt-2 w-4 h-4 rounded border-[var(--border-default)] text-teal-600 focus:ring-teal-500 cursor-pointer" />
@@ -226,6 +232,7 @@
           </div>
         </div>
       </div>
+      </template>
     </div>
 
     <p class="text-center text-[10px] text-slate-400 dark:text-[var(--text-secondary)] pt-2">
@@ -243,6 +250,7 @@ import { useSantri } from '@/composables/useSantri'
 import { getPkbmSubTier, canonLembaga } from '@/composables/useLembaga' // v.99: PKBM -> SMP/SMA; v.100: auto-deteksi nama lembaga kanonik
 import { sortLembagaNames } from '@/utils/santriSort' // v.100 Batch10: urutan canonical dropdown lembaga
 import { useAuthStore } from '@/stores/auth'
+import { ownsNgaji, ownsSekolah, deteksiTipeGuru } from '@/utils/guruScope' // v.100b: pisah santri qiraati/sekolah utk guru dual
 
 // v.21.17c.0526: mode prop — 'view' (sidebar, default) atau 'master' (di Master Data tab, full CRUD)
 const props = defineProps({ mode: { type: String, default: 'view' } })
@@ -288,6 +296,32 @@ watch(() => route.query.q, (v) => { if (v != null && v !== '') search.value = St
 watch(() => route.query.tempat, (v) => { if (v != null && v !== '') filterMukim.value = String(v) }, { immediate: true })
 // v.91.0626: klik card -> halaman profil (abaikan klik tombol/link/checkbox)
 const router = useRouter()
+
+// v.100b: guru DUAL-role (Qiraati + Sekolah) → pisah daftar jadi 2 section.
+//   Tipe dideteksi dari SELURUH santri (santriRaw), tak terpengaruh filter/cari aktif.
+const myNamaGuru = computed(() => authStore.sesiAktif?.guru || authStore.sesiAktif?.nama || '')
+const guruDual = computed(() => {
+  if (isFullAccess.value) return false
+  const t = deteksiTipeGuru(santriRaw.value, myNamaGuru.value)
+  return t.qiraati && t.sekolah
+})
+// Daftar tampil + peta header section (pada santri pertama tiap grup). Non-dual → list apa adanya.
+const guruDisplay = computed(() => {
+  if (!guruDual.value) return { rows: santri.value, headerById: {} }
+  const nm = myNamaGuru.value
+  const ngaji = [], sekolah = []
+  for (const s of santri.value) {
+    if (ownsNgaji(s, nm)) ngaji.push(s)
+    else if (ownsSekolah(s, nm)) sekolah.push(s)
+    else ngaji.push(s)
+  }
+  const headerById = {}
+  if (ngaji.length) headerById[ngaji[0].id] = `Santri Qiraati Saya (${ngaji.length})`
+  if (sekolah.length) headerById[sekolah[0].id] = `Santri Kelas Sekolah Saya (${sekolah.length})`
+  return { rows: [...ngaji, ...sekolah], headerById }
+})
+const santriRows = computed(() => guruDisplay.value.rows)
+function sectionHeaderFor(s) { return guruDisplay.value.headerById[String(s.id)] || guruDisplay.value.headerById[s.id] || null }
 
 // v.98 full-native (Electron): header in-page disembunyikan, aksi pindah ke grup pita "Aksi Halaman"
 const { isElectron: isDesktop } = useDesktopShell()
