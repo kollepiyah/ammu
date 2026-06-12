@@ -1203,3 +1203,37 @@ firestore.rules TIDAK berubah. **Setelah deploy paket v.99: isi 2 tarif bisyaroh
 ### FOLLOW-UP — Shift kerja PEGAWAI utk dual-role (11 Jun 2026, approve kyai)
 - **Temuan kyai**: tipe `pegawai_guru` (dual-role) tak bisa memilih shift PEGAWAI — field `shift` dipakai utk "Shift Qiraati" (mengajar); blok "Shift Kerja" hanya muncul utk tipe `pegawai` murni. Akibat di absensi: kolom Peg.Pagi & Peg.Sore SELALU dua-duanya (tak peduli shift) → bisa salah-centang.
 - **Fix (Vue murni, web+AAB+Electron, TANPA bump vc)**: field baru **`shift_pegawai`** (`useGuruForm` emptyForm/populate/save, default `'pagi_sore'`); blok form **"Shift Kerja (Pegawai)"** `v-if tipe==='pegawai_guru'` (`GuruFormView`); `AbsensiGuruView.shiftsForGuru` gating kolom pegawai = shift kerja (pegawai murni→`g.shift`, dual→`g.shift_pegawai`; default `pagi_sore`=dua kolom → data lama tak regresi). Bonus calc (`BisyarohView`) tak diubah — sudah murni dari record absensi. Verify `_run_vite.cmd` exit 0.
+
+---
+
+## SESI v.100 — NIS → "No. Induk" + NIS Dinas manual (12 Jun 2026, Claude Code) — RECAP TERBARU
+
+> Permintaan kyai: santri sekolah TK/SDI/PKBM ternyata SUDAH punya NIS & NISN dari Dinas (input manual).
+> Keputusan: nomor auto NNNN+DDMMYY TETAP untuk SEMUA santri tapi berganti label jadi **"No. Induk"**;
+> NIS Dinas = field BARU. Rapor Qiraati pakai No. Induk, rapor Diniyah pakai NIS (Dinas).
+> Commit `a99a0ae` (26 file, verify `_run_vite.cmd` exit 0). BELUM deploy.
+
+### MODEL DATA (penting utk sesi berikutnya)
+- **`nis` (field lama, TIDAK di-rename)** = No. Induk pondok, auto NNNN+DDMMYY (nisGenerator). Label UI = "No. Induk".
+  JANGAN rename field ini: dipakai login santri (`services/auth.js where('nis'==...)` + authKey/username default),
+  VA BMT (`bmtVa.js`), dedupe/Migrate (`v100_dedupe.js`), impor/ekspor XLSX, struk.
+- **`nis_sekolah` (BARU)** = NIS dari Dinas, MANUAL, khusus santri sekolah. Label UI = "NIS".
+- **`nisn`** (sudah ada sejak v.95) = NISN Dinas, manual.
+
+### PERUBAHAN
+1. Form santri (`useSantriForm` + `SantriFormView`): + field/input `nis_sekolah`; label "NIS"→"No. Induk".
+2. Rapor: `raporPdf.drawIdentitas(+param isDiniyah=schema.perKelas)` & `RaporView` preview —
+   Qiraati → "No. Induk" (nis); Diniyah → "NIS" (nis_sekolah); NISN tetap di keduanya.
+3. PSB convert (`PpdbDetailView`): `p.nis` form PSB → `nis_sekolah`; `payload.nis` SELALU auto (append); + copy `p.nisn`.
+4. XLSX Santri (`SantriView`): template/ekspor punya kolom "No. Induk" + "NIS"; importer SADAR-TEMPLATE
+   (`hasNoIndukCol`): template lama kolom NIS→field nis; template baru kolom NIS→nis_sekolah
+   (template lama TIDAK menimpa nis_sekolah). Importer KelasGuru/RekapPrestasi/Tabungan terima header lama+baru.
+5. Relabel "NIS"→"No. Induk" di UI/cetak: struk ESC/P+HTML+PDF (teks polos pakai "Induk : " 6-char jaga alignment),
+   kwitansi, ProfilSantri (+baris NIS Dinas), POS/ModalPOS, search placeholder, audit data, dedupe, NaikKelas,
+   Statistik×2, RiwayatSantri, pesan error login, tombol/dialog Generate di MasterData.
+6. `nisGenerator.js`: LOGIC & format TIDAK berubah (cuma komentar + alasan audit_log). Aksi audit tetap `generate_nis`.
+
+### PENDING KYAI
+- `npm run firebase:deploy` (web/PWA) + `npm run build:aab` (app HP) + rebuild Electron + `git push`.
+- Isi NIS Dinas (`nis_sekolah`) santri sekolah: manual via form ATAU impor XLSX template BARU (unduh ulang template!).
+- Template XLSX lama masih diterima importer (kolom NIS lama = No. Induk).
