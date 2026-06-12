@@ -1263,3 +1263,44 @@ firestore.rules TIDAK berubah. **Setelah deploy paket v.99: isi 2 tarif bisyaroh
 - Deploy: `npm run firebase:deploy` + `build:aab` + rebuild Electron + `git push`.
 - Tes visual: cetak 1 rapor Qiraati + 1 Diniyah (KOP ~10mm lebih tinggi dr sblmnya — cek tak ada overflow halaman),
   1 slip POS (PDF + ESC/P), kwitansi in-app, PDF daftar (KOP umum).
+
+---
+
+## SESI v.100 — FITUR TES KENAIKAN QIRAATI (12 Jun 2026, Claude Code) — RECAP TERBARU
+
+> Fitur BARU: guru ngaji mengajukan tes kenaikan santri ampuannya ke Kepala/PJ via aplikasi.
+> Commits: A `50ea5fc`, B `ef99177`, C `568f0b9`. Verify _run_vite.cmd exit 0 tiap fase.
+
+### KEPUTUSAN KYAI (domain)
+- **Pra PTPT TANPA tes** → dikecualikan total. **TPQ** Pagi/Sore = Naik Jilid. **PTPT** = 2 model:
+  Naik Juz (Juz n→n+1) & Naik Kelas (hanya bila juz akhir kelas = kelipatan 5, "setelah ceremonial").
+  **PPPH** = Naik Level. Cakupan: TPQ+PTPT+PPPH.
+- **LULUS = "siap naik" SAJA** — TIDAK ubah kelas santri (santri bisa pindah kelas). Kenaikan aktual
+  tetap MANUAL di NaikKelasView. Penguji = Kepala/PJ lembaga. Antrian saja (tanpa jadwal). Bisa batch.
+- Notif WALI HANYA saat LULUS. Ajuan→Kepala; hasil→Guru; lulus→Wali+Guru; tidak lulus/tolak→Guru saja.
+
+### ARSITEKTUR
+- Koleksi baru **`tes_kenaikan`** (auto id). Field: santri_id, nama_cache, lembaga, kelas_asal,
+  juz_asal, jenis ('jilid'|'juz'|'kelas'|'level'), target, guru_id, guru_nama, kepala_nama (resolve
+  saat ajukan utk push), status ('diajukan'|'lulus'|'tidak_lulus'|'ditolak'), penguji, catatan_hasil,
+  tgl_daftar/tgl_hasil, _ts, batch_id. Rules: read/write signedIn (scoping di app).
+- **utils/tesKenaikan.js** (pure): isEligibleForTes, tesJenisOptions, tesTargetOptions, tesTargetDefault,
+  canNaikKelasPtpt (juz%5==0), STATUS_LABEL. Opsi target diturunkan dari schema utils/kenaikan.js.
+- **composables/useTesKenaikan.js**: subscribe koleksi, scope per-role (pengaju=guru by guru_id;
+  penguji=kepala via lembagaScopeMatches(sesi.lembaga) + admin=semua). ajukanBatch/putuskan/batalAjuan +
+  hasOpenAjuan (guard dobel). Reuse useSantri utk daftar santri (sudah ter-scope).
+- **views/TesKenaikanView.vue** (route /tes-kenaikan, menu Pendidikan "Tes Kenaikan",
+  featureFlag fiturTesKenaikan default ON): tab adaptif role — Ajukan (batch checkbox + jenis/target) +
+  Status Ajuan (guru); Antrian (Lulus/Belum/Tolak + catatan) + Riwayat (kepala/admin).
+- **functions/index.js**: onTesKenaikanCreated (push Kepala by kepala_nama) + onTesKenaikanDecided
+  (lulus→Wali+Guru, tidak/tolak→Guru; guard status berubah & ada penguji → skip batal pengaju).
+  Reuse notif_queue + resolveTokensByTarget ({type:'guru',nama}/{type:'santri',id}).
+- **useNotifications.js**: getTesKenaikan() per-role + subscribe + jenis 'tes' di markAllRead/clearAll.
+- **NaikKelasView.vue**: badge hijau "Siap naik → [target]" di daftar Proses Naik (santri lulus tes,
+  auto-hilang setelah target tercapai). subscribeColl realtime.
+
+### PENDING KYAI (deploy)
+- `npm run firebase:deploy` (web) + **`firebase deploy --only firestore:rules`** (koleksi tes_kenaikan)
+  + **`firebase deploy --only functions`** (push Fase B — onTesKenaikan*) + `build:aab` + Electron + push.
+- Tanpa deploy functions: notif HP tes TAK jalan (Notif Center in-app tetap jalan).
+- featureFlag fiturTesKenaikan default ON (sembunyikan via settings.fiturTesKenaikan=false bila perlu).
