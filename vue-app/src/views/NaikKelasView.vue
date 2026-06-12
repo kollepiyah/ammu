@@ -160,12 +160,12 @@
             <input type="checkbox" v-model="mutasiShowKeluar" class="w-4 h-4 accent-amber-600" />Tampilkan yang sudah keluar
           </label>
         </div>
-        <input v-model="mutasiSearch" type="search" placeholder="Cari nama / NIS..." class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-amber-500 outline-none mb-2" />
+        <input v-model="mutasiSearch" type="search" placeholder="Cari nama / No. Induk..." class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-amber-500 outline-none mb-2" />
         <ul class="space-y-1 max-h-[50vh] overflow-y-auto">
           <li v-for="s in mutasiCandidates" :key="s.id" class="flex items-center gap-2 px-3 py-2 rounded-lg bg-[var(--bg-muted)]">
             <div class="flex-1 min-w-0">
               <p class="text-sm font-bold text-[var(--text-primary)] truncate">{{ s.nama }}</p>
-              <p class="text-[10px] text-[var(--text-tertiary)] truncate">NIS {{ s.nis || '-' }} · {{ mutasiKelasLabel(s) }}<span v-if="mutasiShowKeluar && s.tgl_keluar"> · keluar {{ s.tgl_keluar }} ({{ s.alasan_keluar || '-' }})</span></p>
+              <p class="text-[10px] text-[var(--text-tertiary)] truncate">No. Induk {{ s.nis || '-' }} · {{ mutasiKelasLabel(s) }}<span v-if="mutasiShowKeluar && s.tgl_keluar"> · keluar {{ s.tgl_keluar }} ({{ s.alasan_keluar || '-' }})</span></p>
             </div>
             <button v-if="!mutasiShowKeluar" @click="keluarkanSantri(s)" :disabled="mutasiSaving" class="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-amber-600 hover:bg-amber-700 text-white disabled:opacity-50 flex-shrink-0"><i class="fas fa-right-from-bracket mr-1"></i>Keluarkan</button>
             <button v-else @click="reaktifSantri(s)" :disabled="mutasiSaving" class="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-50 flex-shrink-0"><i class="fas fa-rotate-left mr-1"></i>Aktifkan</button>

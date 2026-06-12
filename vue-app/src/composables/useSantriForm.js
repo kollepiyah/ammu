@@ -9,8 +9,9 @@ import { toTitleCase, normalizeWA } from '@/utils/format'
 function emptyForm() {
   return {
     id: null,
-    nis: '',
+    nis: '', // No. Induk pondok (auto NNNN+DDMMYY via nisGenerator; bisa diisi manual)
     nisn: '', // v.95.0626d: Nomor Induk Siswa Nasional
+    nis_sekolah: '', // v.100: NIS dari Dinas (manual) — khusus santri sekolah TK/SDI/PKBM
     nik: '', // v.99: NIK santri (16 digit KTP) — sebelumnya ada di form tapi tak ter-load/simpan
     nama: '',
     jk: 'L',
@@ -185,6 +186,7 @@ export function useSantriForm() {
         id: s.id,
         nis: s.nis || '',
         nisn: s.nisn || '',
+        nis_sekolah: s.nis_sekolah || '', // v.100: NIS Dinas (manual)
         nik: s.nik || '', // v.99: load NIK santri
         nama: s.nama || '',
         jk: s.jk || 'L',
@@ -265,6 +267,7 @@ export function useSantriForm() {
         id: editingId.value ? Number(editingId.value) || editingId.value : id,
         nis: f.nis,
         nisn: f.nisn || '',
+        nis_sekolah: String(f.nis_sekolah || '').trim(), // v.100: NIS Dinas (manual)
         nik: String(f.nik || '').trim(), // v.99: simpan NIK santri
         username: defaultUsername,
         nama: toTitleCase(f.nama),

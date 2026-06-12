@@ -21,7 +21,7 @@
         </p>
         <h2 class="text-xl md:text-2xl font-black mt-1">{{ santri.nama }}</h2>
         <div class="flex flex-wrap gap-2 mt-3">
-          <span v-if="santri.nis" class="bg-white/20 backdrop-blur-sm text-white text-[11px] font-black px-3 py-1 rounded-full">NIS: {{ santri.nis }}</span>
+          <span v-if="santri.nis" class="bg-white/20 backdrop-blur-sm text-white text-[11px] font-black px-3 py-1 rounded-full">No. Induk: {{ santri.nis }}</span>
           <span class="bg-white/20 backdrop-blur-sm text-white text-[11px] font-black px-3 py-1 rounded-full">{{ santri.lembaga || '-' }}</span>
           <span v-if="statusBadge" :class="['text-[11px] font-black px-3 py-1 rounded-full', statusBadge.cls]">{{ statusBadge.label }}</span>
         </div>

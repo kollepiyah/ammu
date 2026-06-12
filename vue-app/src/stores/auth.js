@@ -132,7 +132,7 @@ export const useAuthStore = defineStore('auth', () => {
       if (!userInfo) {
         // v.20.2.0526: Hapus bocoran admin username dari error. Hint umum saja.
         const err = new Error(
-          'Username tidak ditemukan. Pastikan ketik dengan benar — Guru/Pegawai bisa pakai username atau no WA, Santri pakai NIS atau no WA wali.'
+          'Username tidak ditemukan. Pastikan ketik dengan benar — Guru/Pegawai bisa pakai username atau no WA, Santri pakai No. Induk atau no WA wali.'
         )
         err.code = 'auth/not-found'
         throw err

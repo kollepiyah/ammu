@@ -46,7 +46,7 @@
               <span
                 v-if="santri.nis"
                 class="bg-[var(--bg-card)]/25 text-white text-[11px] font-black px-3 py-1 rounded-full backdrop-blur-sm"
-                >NIS: {{ santri.nis }}</span
+                >No. Induk: {{ santri.nis }}</span
               >
               <span
                 class="bg-[var(--color-accent)]/90 text-[var(--text-on-accent)] text-[11px] font-black px-3 py-1 rounded-full uppercase tracking-wider"

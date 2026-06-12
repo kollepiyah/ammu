@@ -73,7 +73,7 @@
               <option value="">Semua lembaga</option>
               <option v-for="l in lembagaOptions" :key="l" :value="l">{{ l }}</option>
             </select>
-            <input v-model="search" type="text" placeholder="Cari nama / NIS..." class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-cyan-500 outline-none" />
+            <input v-model="search" type="text" placeholder="Cari nama / No. Induk..." class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-cyan-500 outline-none" />
           </div>
           <p class="text-[10px] text-[var(--text-tertiary)] font-bold mt-1.5">{{ filteredSantri.length }} santri ditemukan</p>
         </div>
@@ -95,7 +95,7 @@
             </div>
             <div class="flex-1 min-w-0">
               <p class="text-sm font-bold text-[var(--text-primary)] truncate">{{ s.nama }}</p>
-              <p class="text-[10px] text-[var(--text-secondary)] truncate">NIS {{ s.nis || s.id }} · {{ s.lembaga || '-' }} · {{ s.kelas || '-' }}</p>
+              <p class="text-[10px] text-[var(--text-secondary)] truncate">No. Induk {{ s.nis || s.id }} · {{ s.lembaga || '-' }} · {{ s.kelas || '-' }}</p>
             </div>
             <!-- v.21.115.0528: standardize per design-tokens — Cetak PDF cyan -->
             <button type="button" :disabled="busyId === s.id" @click="cetakRiwayat(s)" aria-label="Cetak PDF riwayat santri" class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer">

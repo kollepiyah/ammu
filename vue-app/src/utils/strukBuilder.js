@@ -63,7 +63,7 @@ export async function cetakStrukPdf(trx, settings = {}, { preview = true } = {})
   const tglFmt = formatTglDdMmYyyy(trx.tanggal)
   const leftRows = [
     ['Diterima dari', trx.santri_nama || '-'],
-    ['NIS', trx.santri_nis || '-'],
+    ['No. Induk', trx.santri_nis || '-'],
     ['Kelas', kelasFull(trx)],
     ['Terbilang', terb]
   ]
@@ -198,7 +198,7 @@ export async function cetakStrukSlipPdf(trx, settings = {}, { preview = false } 
   const tglFmt = formatTglDdMmYyyy(trx.tanggal)
   const leftRows = [
     ['Diterima dari', trx.santri_nama || '-'],
-    ['NIS', trx.santri_nis || '-'],
+    ['No. Induk', trx.santri_nis || '-'],
     ['__KELAS__', ''],
     ['Terbilang', terb]
   ]
@@ -491,7 +491,7 @@ export async function cetakSlipTabunganPdf(mut = {}, settings = {}, { preview = 
   const tglFmt = formatTglDdMmYyyy(mut.tanggal)
   const leftRows = [
     ['Diterima dari', nama],
-    ['NIS', nis],
+    ['No. Induk', nis],
     ['__KELAS__', kelas],
     ['Terbilang', terb]
   ]
@@ -661,7 +661,7 @@ export function buildSlipTabunganHtml(mut = {}, settings = {}, { saldo = null, s
   return slipShellHtml({
     settings,
     boxLabel: 'BUKTI ' + (isSetor ? 'SETOR ' : 'TARIK ') + label,
-    infoLeft: [['Diterima dari', nama], ['NIS', nis], ['Kelas', kelas], ['Terbilang', terbilangRupiah(mut.nominal)]],
+    infoLeft: [['Diterima dari', nama], ['No. Induk', nis], ['Kelas', kelas], ['Terbilang', terbilangRupiah(mut.nominal)]],
     infoRight: [['Tanggal', formatTglDdMmYyyy(mut.tanggal)], ['No. Transaksi', mut.no_bukti || mut.id || '-'], ['Metode', 'TUNAI']],
     midHtml,
     footHtml
@@ -688,7 +688,7 @@ export function buildStrukSlipHtml(trx = {}, settings = {}) {
   return slipShellHtml({
     settings,
     boxLabel: 'BUKTI PEMBAYARAN',
-    infoLeft: [['Diterima dari', trx.santri_nama || '-'], ['NIS', trx.santri_nis || '-'], ['Kelas', kelasFull(trx)], ['Terbilang', trx.terbilang || terbilangRupiah(trx.total)]],
+    infoLeft: [['Diterima dari', trx.santri_nama || '-'], ['No. Induk', trx.santri_nis || '-'], ['Kelas', kelasFull(trx)], ['Terbilang', trx.terbilang || terbilangRupiah(trx.total)]],
     infoRight: [['Tgl. Bayar', formatTglDdMmYyyy(trx.tanggal)], ['No. Transaksi', trx.no_struk || '-'], ['Metode', trx.metode || 'TUNAI']],
     midHtml,
     footHtml
@@ -798,7 +798,7 @@ function buildStrukWide(trx, settings) {
   const terb = trx.terbilang || terbilangRupiah(trx.total)
   const ml = [
     ['Diterima dari', trx.santri_nama || '-'],
-    ['NIS', trx.santri_nis || '-'],
+    ['No. Induk', trx.santri_nis || '-'],
     ['Kelas', kelasFull(trx)]
   ]
   const mr = [
@@ -854,7 +854,7 @@ function buildStrukNarrow(trx, settings, w) {
   out.push('No    : ' + (trx.no_struk || '-'))
   out.push('Tgl   : ' + formatTglDdMmYyyy(trx.tanggal))
   out.push('Nama  : ' + (trx.santri_nama || '-'))
-  if (trx.santri_nis) out.push('NIS   : ' + trx.santri_nis)
+  if (trx.santri_nis) out.push('Induk : ' + trx.santri_nis) // No. Induk — label 6 char jaga alignment kolom struk teks
   const lk = kelasFull(trx)
   if (lk) out.push('Kelas : ' + lk)
   out.push('Kasir : ' + (trx.operator || '-'))
@@ -932,7 +932,7 @@ export function buildStrukHtmlWide(trx, s = {}) {
     '<div class="rule"></div>' +
     '<table><tr><td style="vertical-align:top;width:56%;"><table>' +
       _row('Diterima dari', trx.santri_nama || '-') +
-      _row('NIS', trx.santri_nis || '-') +
+      _row('No. Induk', trx.santri_nis || '-') +
       '<tr><td style="vertical-align:top;white-space:nowrap;padding:1px 0;">Kelas</td>' +
       '<td style="vertical-align:top;padding:1px 0 1px 6px;">: ' + escapeHtml(kelas) +
       ' &nbsp;&nbsp;&nbsp;&nbsp;Status Siswa : ' + escapeHtml(trx.status_siswa || 'Aktif') + '</td></tr>' +

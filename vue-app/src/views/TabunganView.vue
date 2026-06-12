@@ -1115,7 +1115,7 @@ async function downloadTemplate() {
         sheetName: pageTitle.value,
         title: 'TEMPLATE IMPOR ' + pageTitle.value.toUpperCase() + ' (hapus baris contoh, isi data)',
         columns: [
-          { key: 'nis', header: 'NIS', width: 16 },
+          { key: 'nis', header: 'No. Induk', width: 16 },
           { key: 'nama', header: 'Nama', width: 28 },
           { key: 'jenis', header: 'jenis (setor/tarik)', width: 18 },
           { key: 'nominal', header: 'Nominal', width: 14 },
@@ -1137,7 +1137,7 @@ async function importXlsx(e) {
     let ok = 0, skip = 0
     const writes = []
     for (const r of rows) {
-      const nis = String(r.NIS || r.nis || '').trim()
+      const nis = String(r['No. Induk'] || r['No Induk'] || r.NIS || r.nis || '').trim() // v.100: terima header baru + template lama
       const namaR = String(r.Nama || r.nama || '').trim()
       const jenis = String(r['jenis (setor/tarik)'] || r.jenis || r.Jenis || 'setor').toLowerCase().includes('tarik') ? 'tarik' : 'setor'
       const nominal = Number(String(r.Nominal || r.nominal || 0).replace(/[^\d]/g, '')) || 0
@@ -1156,7 +1156,7 @@ async function importXlsx(e) {
       ok++
     }
     await Promise.all(writes)
-    toast.success(`Impor selesai: ${ok} mutasi masuk, ${skip} dilewati (NIS/nama tak cocok atau nominal 0)`)
+    toast.success(`Impor selesai: ${ok} mutasi masuk, ${skip} dilewati (No. Induk/nama tak cocok atau nominal 0)`)
   } catch (err) {
     toast.error('Gagal impor: ' + (err.message || err))
   } finally {

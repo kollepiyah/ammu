@@ -278,8 +278,9 @@ function drawJudulRapor(doc, y) {
 // Identity
 // ============================================================
 
-function drawIdentitas(doc, y, santri, raporState) {
-  // Kiri: Nama / NISN / NIS · Kanan: Kelas (gabungan) / Semester / Tahun Ajaran
+function drawIdentitas(doc, y, santri, raporState, isDiniyah = false) {
+  // Kiri: Nama / NISN / nomor identitas · Kanan: Kelas (gabungan) / Semester / Tahun Ajaran
+  // v.100: Qiraati → "No. Induk" (field nis, auto pondok); Diniyah → "NIS" (field nis_sekolah, manual Dinas)
   const pageW = doc.internal.pageSize.getWidth()
   const font = doc._fontMU || 'times'
   doc.setFont(font, 'normal')
@@ -303,7 +304,9 @@ function drawIdentitas(doc, y, santri, raporState) {
   const rows = [
     ['Nama Santri', santri.nama || '-', 'Kelas', kelasGab],
     ['NISN', santri.nisn || '-', 'Semester', sm],
-    ['NIS', santri.nis || '-', 'Tahun Ajaran', ta]
+    isDiniyah
+      ? ['NIS', santri.nis_sekolah || '-', 'Tahun Ajaran', ta]
+      : ['No. Induk', santri.nis || '-', 'Tahun Ajaran', ta]
   ]
 
   rows.forEach((row, i) => {
@@ -1014,7 +1017,7 @@ export async function generateRaporPdf({
 
   let y = await drawKopRapor(doc, settings, lembaga, lembagaOverride, !!schema?.perKelas)
   y = drawJudulRapor(doc, y)
-  y = drawIdentitas(doc, y, santri, raporState)
+  y = drawIdentitas(doc, y, santri, raporState, !!schema?.perKelas)
 
   if (schema?.perLevel) {
     y = await generatePraPtptPdf(doc, y, santri, schema, raporState, settings)

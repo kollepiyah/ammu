@@ -1,5 +1,7 @@
-// v.100 Batch14: Auto-generate NIS santri.
-//   Format NIS = NNNN + DDMMYY (10 digit). Contoh 0001120399 = urutan 0001, lahir 12-03-99.
+// v.100 Batch14: Auto-generate No. Induk santri (field Firestore tetap `nis` — jangan rename,
+//   dipakai login santri/VA BMT/dedupe). Label UI = "No. Induk". NIS & NISN Dinas (santri sekolah
+//   TK/SDI/PKBM) = field TERPISAH `nis_sekolah` + `nisn`, diinput MANUAL, tidak disentuh util ini.
+//   Format No. Induk = NNNN + DDMMYY (10 digit). Contoh 0001120399 = urutan 0001, lahir 12-03-99.
 //     - NNNN  : nomor urut GLOBAL berdasar tgl lahir TERTUA→termuda; seri (tgl sama) → nama A–Z.
 //     - DDMMYY: tgl lahir santri itu sendiri (dari tgl_lahir 'YYYY-MM-DD').
 //   MODE IMPOR : re-sort & assign ulang SEMUA santri (reshuffle NNNN menyesuaikan tgl lahir tertua).
@@ -104,7 +106,7 @@ export async function applyNisChanges(changes, opts = {}) {
         collection: 'santri',
         doc_id: '(batch)',
         data_snapshot: JSON.stringify({ mode, diubah: todo.map((c) => ({ id: c.id, nama: c.nama, dari: c.oldNis, ke: c.newNis })) }).slice(0, 50000),
-        alasan: `Generate NIS otomatis (${mode}): ${ok} NIS diperbarui`,
+        alasan: `Generate No. Induk otomatis (${mode}): ${ok} No. Induk diperbarui`,
         user_id: String(sesi && sesi.id != null ? sesi.id : 'unknown'),
         user_nama: (sesi && (sesi.nama || sesi.guru)) || 'unknown',
         timestamp: new Date().toISOString()

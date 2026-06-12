@@ -37,7 +37,7 @@
                 <th class="px-2 py-1 text-left">Aksi</th>
                 <th class="px-2 py-1 text-left">Cocok</th>
                 <th class="px-2 py-1 text-left">Nama</th>
-                <th class="px-2 py-1 text-left">NIS</th>
+                <th class="px-2 py-1 text-left">No. Induk</th>
                 <th class="px-2 py-1 text-left">Lembaga</th>
                 <th class="px-2 py-1 text-left">Nilai Baru</th>
                 <th class="px-2 py-1 text-left">Nilai Lama</th>
@@ -825,7 +825,7 @@ async function downloadTemplateRekap() {
       sheetName: 'Rekap Prestasi',
       // tanpa KOP — header row 1 supaya importFile auto-detect
       columns: [
-        { key: 'nis', header: 'NIS', width: 12 },
+        { key: 'nis', header: 'No. Induk', width: 12 },
         { key: 'nama', header: 'Nama Santri', width: 26 },
         { key: 'lembaga', header: 'Lembaga Qiraati', width: 14 },
         { key: 'kelas', header: 'Kelas', width: 16 },
@@ -933,7 +933,7 @@ async function onImportRekap(e) {
     const plan = []
     let cBaru = 0, cUpdate = 0, cSkip = 0, cNotFound = 0, cFuzzy = 0
     for (const r of rows) {
-      const nisIn = String(_pickRekap(r, 'NIS', 'nis') || '').trim()
+      const nisIn = String(_pickRekap(r, 'No. Induk', 'No Induk', 'no_induk', 'NIS', 'nis') || '').trim() // v.100: terima header baru + template lama
       const namaIn = String(_pickRekap(r, 'Nama Santri', 'Nama Lengkap Santri', 'Nama', 'nama') || '').trim()
       const namaLow = namaIn.toLowerCase()
       // v.100 Batch14: kolom Google Form sbg PENYARING pencocokan (tidak ditulis ke santri)
@@ -941,7 +941,7 @@ async function onImportRekap(e) {
       const kelasIn = String(_pickRekap(r, 'Sekolah', 'Kelas', 'kelas') || '').trim()
       const jkIn = String(_pickRekap(r, 'Jenis Kelamin', 'JK', 'L/P', 'jk') || '').trim().toUpperCase().charAt(0)
       let s = null, matchBy = ''
-      if (nisIn && byNis.get(nisIn)) { s = byNis.get(nisIn); matchBy = 'NIS' }
+      if (nisIn && byNis.get(nisIn)) { s = byNis.get(nisIn); matchBy = 'No. Induk' }
       else if (namaLow && byNama.get(namaLow)) { s = byNama.get(namaLow); matchBy = 'Nama' }
       else if (namaLow) {
         // v.100 Batch14: bangun POOL ter-scope (guru → kelas → JK), cocokkan nama tak lengkap di lingkup kecil

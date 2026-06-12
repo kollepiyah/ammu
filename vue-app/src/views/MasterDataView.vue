@@ -84,14 +84,14 @@ function _findDup(list, keyFn, labelFn) {
   for (const [key, arr] of map) if (arr.length > 1) groups.push({ key, count: arr.length, items: arr.map(labelFn), records: arr })
   return groups
 }
-const dupSantriNama = computed(() => _findDup(santriRawForMigration.value || [], (s) => _normDup(s.nama), (s) => `${s.nama} · NIS ${s.nis || '-'} · ${s.lembaga || s.lembaga_sekolah || '-'}`))
-const dupSantriNis = computed(() => _findDup((santriRawForMigration.value || []).filter((s) => _normDup(s.nis)), (s) => _normDup(s.nis), (s) => `${s.nama} · NIS ${s.nis}`))
+const dupSantriNama = computed(() => _findDup(santriRawForMigration.value || [], (s) => _normDup(s.nama), (s) => `${s.nama} · No. Induk ${s.nis || '-'} · ${s.lembaga || s.lembaga_sekolah || '-'}`))
+const dupSantriNis = computed(() => _findDup((santriRawForMigration.value || []).filter((s) => _normDup(s.nis)), (s) => _normDup(s.nis), (s) => `${s.nama} · No. Induk ${s.nis}`))
 const dupSantriNisn = computed(() => _findDup((santriRawForMigration.value || []).filter((s) => _normDup(s.nisn)), (s) => _normDup(s.nisn), (s) => `${s.nama} · NISN ${s.nisn}`))
 const dupGuruNama = computed(() => _findDup(guruRawForMigration.value || [], (g) => _normDup(g.nama), (g) => `${g.nama} · ${g.jabatan || '-'}`))
 const dupGuruWa = computed(() => _findDup((guruRawForMigration.value || []).filter((g) => _normDup(g.wa)), (g) => String(g.wa || '').replace(/\D/g, ''), (g) => `${g.nama} · WA ${g.wa}`))
 const dupKategori = computed(() => [
   { label: 'Santri — Nama sama', kind: 'santri', groups: dupSantriNama.value },
-  { label: 'Santri — NIS sama', kind: 'santri', groups: dupSantriNis.value },
+  { label: 'Santri — No. Induk sama', kind: 'santri', groups: dupSantriNis.value },
   { label: 'Santri — NISN sama', kind: 'santri', groups: dupSantriNisn.value },
   { label: 'Guru — Nama sama', kind: 'guru', groups: dupGuruNama.value },
   { label: 'Guru — WA sama', kind: 'guru', groups: dupGuruWa.value }
@@ -124,10 +124,10 @@ function scanNis() {
 async function applyNis() {
   if (!nisPlan.value || nisGenerating.value) return
   const n = nisChangedCount.value
-  if (n === 0) { toast.success('Tidak ada NIS yang perlu diubah — semua sudah sesuai.'); return }
+  if (n === 0) { toast.success('Tidak ada No. Induk yang perlu diubah — semua sudah sesuai.'); return }
   const ok = await confirmDlg({
-    title: 'Terapkan Generate NIS?',
-    message: `${n} NIS santri akan diperbarui (urut tgl lahir TERTUA → nama A–Z). ${nisPlan.value.skipped.length} santri tanpa tgl lahir DILEWATI (NIS lama dibiarkan). NIS = field; riwayat keuangan/rapor pakai ID santri → TIDAK terpengaruh. Lanjutkan?`,
+    title: 'Terapkan Generate No. Induk?',
+    message: `${n} No. Induk santri akan diperbarui (urut tgl lahir TERTUA → nama A–Z). ${nisPlan.value.skipped.length} santri tanpa tgl lahir DILEWATI (No. Induk lama dibiarkan). No. Induk = field; riwayat keuangan/rapor pakai ID santri → TIDAK terpengaruh. NIS & NISN Dinas (santri sekolah) TIDAK disentuh. Lanjutkan?`,
     confirmText: 'Terapkan',
     danger: false
   })
@@ -141,11 +141,11 @@ async function applyNis() {
       onProgress: (i, total) => { nisProgress.value = { i, total } }
     })
     nisResult.value = res
-    if (res.fail) toast.warning(`Generate NIS: ${res.ok} OK, ${res.fail} gagal — ${res.errors.join('; ')}`)
-    else toast.success(`Generate NIS selesai: ${res.changed} NIS diperbarui.`)
+    if (res.fail) toast.warning(`Generate No. Induk: ${res.ok} OK, ${res.fail} gagal — ${res.errors.join('; ')}`)
+    else toast.success(`Generate No. Induk selesai: ${res.changed} No. Induk diperbarui.`)
     nisPlan.value = null
   } catch (e) {
-    toast.error('Gagal generate NIS: ' + (e.message || e))
+    toast.error('Gagal generate No. Induk: ' + (e.message || e))
   } finally {
     nisGenerating.value = false
   }
@@ -223,7 +223,7 @@ async function gabungFuzzy(grp) {
   const lines = picked.map((it) => `• ${it.nama} — ${it.detail}`).join('\n')
   const ok = await confirmDlg({
     title: 'Gabung Record Tercentang?',
-    message: `${recs.length} record berikut digabung ke yang TERLENGKAP, sisanya DIHAPUS (ter-backup audit_log → bisa di-recover):\n${lines}\n\nFuzzy bisa keliru — pastikan benar-benar ORANG YANG SAMA (cek NIS & tgl lahir). Lanjutkan?`,
+    message: `${recs.length} record berikut digabung ke yang TERLENGKAP, sisanya DIHAPUS (ter-backup audit_log → bisa di-recover):\n${lines}\n\nFuzzy bisa keliru — pastikan benar-benar ORANG YANG SAMA (cek No. Induk & tgl lahir). Lanjutkan?`,
     confirmText: 'Gabung & Hapus',
     danger: true
   })
@@ -267,7 +267,7 @@ async function dedupeExecute() {
   const s = dedupeScan.value
   const ok = await confirmDlg({
     title: 'Gabung Duplikat Identitas?',
-    message: `${s.santriToRemove} santri + ${s.guruToRemove} guru akan DIGABUNG ke record terlengkap (identitas unik NIS/NISN/WA, plus nama-sama yang punya sinyal penguat & tanpa konflik identitas); field kosong diisi dari duplikat, sisanya DIHAPUS (ter-backup ke audit_log → bisa di-recover). Lanjutkan?`,
+    message: `${s.santriToRemove} santri + ${s.guruToRemove} guru akan DIGABUNG ke record terlengkap (identitas unik No. Induk/NISN/WA, plus nama-sama yang punya sinyal penguat & tanpa konflik identitas); field kosong diisi dari duplikat, sisanya DIHAPUS (ter-backup ke audit_log → bisa di-recover). Lanjutkan?`,
     confirmText: 'Gabung & Hapus',
     danger: true
   })
@@ -1189,12 +1189,12 @@ async function simpanPengaturanRekap() {
 
     <!-- TAB 7: AUDIT LOG (M6 v.20.79 — replace placeholder) -->
     <div v-else-if="activeTab === 'audit'" class="space-y-4">
-      <!-- v.100 Batch14: Generate NIS Otomatis -->
+      <!-- v.100 Batch14: Generate No. Induk Otomatis (field nis) -->
       <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 md:p-6 border-2 border-teal-300 dark:border-teal-700 shadow-sm">
         <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
           <div class="min-w-0">
-            <p class="text-sm font-black text-teal-700 dark:text-teal-300"><i class="fas fa-hashtag mr-1"></i>Generate NIS Otomatis</p>
-            <p class="text-xs text-slate-600 dark:text-slate-300 mt-1">Format <b>NNNN+DDMMYY</b> (mis. <code class="bg-slate-100 dark:bg-slate-700 px-1 rounded">0001120399</code>): nomor urut global dari <b>tgl lahir TERTUA → termuda</b>, seri tgl sama → <b>nama A–Z</b>. Santri tanpa tgl lahir dilewati (NIS lama dibiarkan). NIS = field; riwayat keuangan/rapor pakai ID santri → tidak terpengaruh. <i>(Pasca impor santri, regenerate ini juga jalan otomatis.)</i></p>
+            <p class="text-sm font-black text-teal-700 dark:text-teal-300"><i class="fas fa-hashtag mr-1"></i>Generate No. Induk Otomatis</p>
+            <p class="text-xs text-slate-600 dark:text-slate-300 mt-1">Format <b>NNNN+DDMMYY</b> (mis. <code class="bg-slate-100 dark:bg-slate-700 px-1 rounded">0001120399</code>): nomor urut global dari <b>tgl lahir TERTUA → termuda</b>, seri tgl sama → <b>nama A–Z</b>. Santri tanpa tgl lahir dilewati (No. Induk lama dibiarkan). No. Induk = field; riwayat keuangan/rapor pakai ID santri → tidak terpengaruh. <b>NIS &amp; NISN dari Dinas (santri TK/SDI/PKBM) diinput manual &amp; tidak disentuh.</b> <i>(Pasca impor santri, regenerate ini juga jalan otomatis.)</i></p>
           </div>
           <button @click="scanNis" :disabled="nisGenerating" class="px-3 py-1.5 bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white text-xs font-black rounded-lg whitespace-nowrap"><i class="fas fa-magnifying-glass mr-1"></i>Pratinjau</button>
         </div>
@@ -1210,8 +1210,8 @@ async function simpanPengaturanRekap() {
                 <tr>
                   <th class="p-1.5 text-left font-black">#</th>
                   <th class="p-1.5 text-left font-black">Nama</th>
-                  <th class="p-1.5 text-left font-black">NIS Lama</th>
-                  <th class="p-1.5 text-left font-black">NIS Baru</th>
+                  <th class="p-1.5 text-left font-black">No. Induk Lama</th>
+                  <th class="p-1.5 text-left font-black">No. Induk Baru</th>
                 </tr>
               </thead>
               <tbody>
@@ -1231,7 +1231,7 @@ async function simpanPengaturanRekap() {
             <button @click="nisPlan = null" :disabled="nisGenerating" class="px-3 py-2 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-lg">Batal</button>
           </div>
         </div>
-        <p v-if="nisResult" class="text-xs font-bold text-emerald-700 dark:text-emerald-300 mt-2"><i class="fas fa-circle-check mr-1"></i>{{ nisResult.changed }} NIS diperbarui{{ nisResult.fail ? `, ${nisResult.fail} gagal` : '' }}.</p>
+        <p v-if="nisResult" class="text-xs font-bold text-emerald-700 dark:text-emerald-300 mt-2"><i class="fas fa-circle-check mr-1"></i>{{ nisResult.changed }} No. Induk diperbarui{{ nisResult.fail ? `, ${nisResult.fail} gagal` : '' }}.</p>
       </div>
 
       <!-- v.100 Batch16: Generate NIG Otomatis -->
@@ -1284,7 +1284,7 @@ async function simpanPengaturanRekap() {
         <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
           <div>
             <p class="text-sm font-black text-rose-700 dark:text-rose-300"><i class="fas fa-clone mr-1"></i>Analisis Data Duplikat</p>
-            <p class="text-xs text-slate-600 dark:text-slate-300 mt-1">Deteksi santri (Nama / NIS / NISN sama) &amp; guru (Nama / WA sama). <b>Migrate</b> menggabung: (1) identitas unik (NIS/NISN/WA sama) + (2) nama sama yang punya sinyal penguat (NIK/tgl lahir/lembaga+kelas sama). Nama sama tanpa sinyal / yang konflik identitas TIDAK digabung otomatis — buka <b>Lihat Detail</b> lalu pakai tombol <b>Gabung Grup Ini</b> (keputusan manual per grup), atau rapikan via Edit/Hapus.</p>
+            <p class="text-xs text-slate-600 dark:text-slate-300 mt-1">Deteksi santri (Nama / No. Induk / NISN sama) &amp; guru (Nama / WA sama). <b>Migrate</b> menggabung: (1) identitas unik (No. Induk/NISN/WA sama) + (2) nama sama yang punya sinyal penguat (NIK/tgl lahir/lembaga+kelas sama). Nama sama tanpa sinyal / yang konflik identitas TIDAK digabung otomatis — buka <b>Lihat Detail</b> lalu pakai tombol <b>Gabung Grup Ini</b> (keputusan manual per grup), atau rapikan via Edit/Hapus.</p>
           </div>
           <span class="text-[10px] font-bold px-2 py-0.5 rounded uppercase" :class="totalDupGroups > 0 ? 'bg-rose-100 text-rose-800' : 'bg-emerald-100 text-emerald-800'">{{ totalDupGroups }} grup duplikat</span>
         </div>
@@ -1355,7 +1355,7 @@ async function simpanPengaturanRekap() {
             <input type="checkbox" v-model="lfixChecked[lfixKey(f)]" class="mt-0.5 accent-amber-600" />
             <span class="flex-1 min-w-0">
               <b class="text-slate-800 dark:text-white">{{ f.nama }}</b>
-              <span class="text-slate-500 dark:text-slate-400"> · NIS {{ f.nis }}</span>
+              <span class="text-slate-500 dark:text-slate-400"> · No. Induk {{ f.nis }}</span>
               <span class="block text-slate-600 dark:text-slate-300 mt-0.5">{{ f.alasan }}</span>
             </span>
             <select
@@ -1412,7 +1412,7 @@ async function simpanPengaturanRekap() {
             </p>
             <button v-if="totalFuzzy" @click="showFuzzy = !showFuzzy" class="text-[11px] font-bold text-amber-700 dark:text-amber-300 hover:underline">{{ showFuzzy ? 'Sembunyikan' : 'Lihat' }}</button>
           </div>
-          <p class="text-[11px] text-slate-500 mt-1">Nama yang ditulis beda tapi mirip (gelar / spasi / ejaan, jarak edit), atau <b>tgl lahir sama</b>. <b>Tidak</b> memakai No. WA (wali bisa punya banyak anak). Auto-Migrate TIDAK menggabung ini — <b>centang record yang ORANG SAMA</b> lalu <b>Gabung yang dicentang</b> (sisanya rapikan via Edit/Hapus). Cek NIS &amp; tgl lahir dulu — pasangan bisa ternyata beda orang.</p>
+          <p class="text-[11px] text-slate-500 mt-1">Nama yang ditulis beda tapi mirip (gelar / spasi / ejaan, jarak edit), atau <b>tgl lahir sama</b>. <b>Tidak</b> memakai No. WA (wali bisa punya banyak anak). Auto-Migrate TIDAK menggabung ini — <b>centang record yang ORANG SAMA</b> lalu <b>Gabung yang dicentang</b> (sisanya rapikan via Edit/Hapus). Cek No. Induk &amp; tgl lahir dulu — pasangan bisa ternyata beda orang.</p>
           <div v-if="showFuzzy" class="mt-2 space-y-1.5">
             <div v-for="(grp, gi) in fuzzyDup" :key="gi" class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-2 text-[11px]">
               <div class="flex items-center justify-between gap-2 flex-wrap mb-1">

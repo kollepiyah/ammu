@@ -43,7 +43,9 @@
         <div class="bg-[var(--bg-card-elevated)] p-4 rounded-2xl border border-[var(--border-subtle)]">
           <h3 class="text-xs font-black uppercase text-[var(--text-primary)] mb-3 border-b pb-2"><i class="fas fa-id-card mr-1"></i>Identitas</h3>
           <ul class="space-y-2 text-sm">
-            <li class="flex justify-between"><span class="text-[var(--text-secondary)] font-bold">NIS:</span><span class="font-black">{{ santri?.nis || '-' }}</span></li>
+            <li class="flex justify-between"><span class="text-[var(--text-secondary)] font-bold">No. Induk:</span><span class="font-black">{{ santri?.nis || '-' }}</span></li>
+            <!-- v.100: NIS Dinas (manual, santri sekolah TK/SDI/PKBM) -->
+            <li class="flex justify-between"><span class="text-[var(--text-secondary)] font-bold">NIS:</span><span class="font-black">{{ santri?.nis_sekolah || '-' }}</span></li>
             <li class="flex justify-between"><span class="text-[var(--text-secondary)] font-bold">NISN:</span><span class="font-black">{{ santri?.nisn || '-' }}</span></li>
             <li class="flex justify-between"><span class="text-[var(--text-secondary)] font-bold">NIK:</span><span class="font-black">{{ santri?.nik || '-' }}</span></li>
             <li class="flex justify-between"><span class="text-[var(--text-secondary)] font-bold">Jenis Kelamin:</span><span class="font-black">{{ santri?.jk === 'L' ? 'Laki-laki' : 'Perempuan' }}</span></li>
@@ -98,7 +100,7 @@
 
       <!-- ===== Mode Edit ===== -->
       <!-- v.79.0526: santri bisa edit data profilnya sendiri (parent, alamat, tempat lahir).
-           Field master (NIS, lembaga, kelas, guru) hanya bisa diedit admin. -->
+           Field master (No. Induk, lembaga, kelas, guru) hanya bisa diedit admin. -->
       <div v-else class="p-4 space-y-4">
         <p class="text-xs text-[var(--text-secondary)] bg-emerald-50/60 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl px-3 py-2">
           <i class="fas fa-info-circle text-emerald-600 mr-1"></i>

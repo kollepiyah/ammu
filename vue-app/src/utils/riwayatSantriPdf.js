@@ -147,7 +147,7 @@ export async function cetakRiwayatSantriPdf({
   doc.setFontSize(10)
   const infoLines = [
     ['Nama', santri.nama || '-'],
-    ['NIS', santri.nis || santri.id || '-'],
+    ['No. Induk', santri.nis || santri.id || '-'],
     ['Lembaga', santri.lembaga || '-'],
     ['Kelas', santri.kelas || '-'],
     ['Periode', `${fmtTgl(dari)} s/d ${fmtTgl(sampai)}`]

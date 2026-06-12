@@ -261,7 +261,7 @@
             <p class="text-[10px] text-[var(--text-secondary)] truncate">
               <span class="font-bold">{{ (kategori === 'diniyah' ? s.lembaga_sekolah : s.lembaga) || '-' }}</span>
               · Kelas {{ (kategori === 'diniyah' ? s.kelas_sekolah : s.kelas) || '-' }}
-              <span v-if="s.nis" class="ml-1">· NIS {{ s.nis }}</span>
+              <span v-if="s.nis" class="ml-1">· No. Induk {{ s.nis }}</span>
               <span v-if="s.is_mukim" class="ml-1 text-teal-600 font-bold">· MUKIM</span>
             </p>
           </div>
@@ -531,13 +531,15 @@
             SURAT KETERANGAN HASIL PENDIDIKAN
           </h2>
 
-          <!-- Identitas: kiri rata kiri (Nama/NISN/NIS), kanan rata kanan (Kelas/Semester/Tahun) -->
+          <!-- Identitas: kiri rata kiri (Nama/NISN/nomor identitas), kanan rata kanan (Kelas/Semester/Tahun) -->
+          <!-- v.100: Diniyah (perKelas) → "NIS" = nis_sekolah (Dinas); Qiraati → "No. Induk" = nis (auto pondok) -->
           <div class="flex items-start text-[11px] mb-2">
             <table class="w-[55%]">
               <tbody>
                 <tr><td class="w-[90px] py-0.5 align-top">Nama Santri</td><td class="w-[10px] py-0.5">:</td><td class="py-0.5 font-bold">{{ santriAktif.nama }}</td></tr>
                 <tr><td class="py-0.5">NISN</td><td class="py-0.5">:</td><td class="py-0.5">{{ santriAktif.nisn || '-' }}</td></tr>
-                <tr><td class="py-0.5">NIS</td><td class="py-0.5">:</td><td class="py-0.5">{{ santriAktif.nis || '-' }}</td></tr>
+                <tr v-if="schema.perKelas"><td class="py-0.5">NIS</td><td class="py-0.5">:</td><td class="py-0.5">{{ santriAktif.nis_sekolah || '-' }}</td></tr>
+                <tr v-else><td class="py-0.5">No. Induk</td><td class="py-0.5">:</td><td class="py-0.5">{{ santriAktif.nis || '-' }}</td></tr>
               </tbody>
             </table>
             <table class="w-[45%]">

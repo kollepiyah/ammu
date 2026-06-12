@@ -69,7 +69,7 @@
           <input
             v-model="search"
             type="search"
-            placeholder="Cari nama, NIS, atau WA wali..."
+            placeholder="Cari nama, No. Induk, atau WA wali..."
             class="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none"
           />
         </div>

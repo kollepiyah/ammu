@@ -96,7 +96,7 @@ export function buildReceiptStrukHtml(trx = {}, s = {}) {
     '<table style="width:100%;font-size:12px;border-collapse:collapse;"><tr>' +
       '<td style="vertical-align:top;width:54%;"><table style="border-collapse:collapse;">' +
         infoRow('Diterima dari', trx.santri_nama || '-') +
-        infoRow('NIS', trx.santri_nis || '-') +
+        infoRow('No. Induk', trx.santri_nis || '-') +
         infoRow('Kelas', kelas) +
         infoRow('Terbilang', terb) +
       '</table></td>' +

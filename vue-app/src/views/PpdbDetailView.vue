@@ -509,7 +509,9 @@ async function convertToSantri() {
     const p = pendaftar.value || {}
     const payload = {
       nama: p.nama || '',
-      nis: p.nis || '',
+      nis: '', // v.100: No. Induk pondok — SELALU auto-generate di bawah (NNNN+DDMMYY)
+      nis_sekolah: p.nis_sekolah || p.nis || '', // v.100: NIS Dinas (manual) — nilai NIS dari form PSB (kalau ada) pindah ke sini
+      nisn: p.nisn || '',
       nik: p.nik || '',
       jk: p.jk || '',
       tempat_lahir: p.tempat_lahir || '',
@@ -541,13 +543,13 @@ async function convertToSantri() {
         created_by: auth.sesiAktif?.nama || 'Admin'
       }
     }
-    // v.100 Batch14: NIS otomatis untuk santri PSB — APPEND (lanjut NNNN berikutnya, TANPA reshuffle).
-    //   Kyai: "kalau dari PSB tetap meneruskan, walau lebih tua". Hanya bila NIS belum diisi & ada tgl lahir.
+    // v.100 Batch14: No. Induk otomatis untuk santri PSB — APPEND (lanjut NNNN berikutnya, TANPA reshuffle).
+    //   Kyai: "kalau dari PSB tetap meneruskan, walau lebih tua". Butuh tgl lahir valid.
     if (!payload.nis) {
       try {
         const allSantri = await getAll('santri')
         payload.nis = nextNisForNew(allSantri, payload.tgl_lahir)
-      } catch (e) { /* gagal hitung → biarkan NIS kosong, bisa digenerate via impor */ }
+      } catch (e) { /* gagal hitung → biarkan No. Induk kosong, bisa digenerate via impor */ }
     }
     await addOne('santri', payload)
     await updateOne('psb_pendaftaran', docId.value, {

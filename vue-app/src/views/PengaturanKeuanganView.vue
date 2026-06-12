@@ -283,7 +283,7 @@
                 <input
                   v-model="perSantriSearch[jenis.id]"
                   type="text"
-                  placeholder="cari nama / NIS santri..."
+                  placeholder="cari nama / No. Induk santri..."
                   class="w-full px-2 py-1 text-xs border border-[var(--border-default)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)] mb-1.5"
                 />
                 <div class="space-y-1 max-h-48 overflow-y-auto">
@@ -303,7 +303,7 @@
                     />
                   </div>
                   <p v-if="santriCariFor(jenis).length === 0" class="text-[9px] text-[var(--text-tertiary)] italic px-1 py-1">
-                    {{ perSantriSearch[jenis.id] ? 'Santri tidak ditemukan.' : 'Ketik nama/NIS untuk set nominal khusus. Yang sudah di-set muncul di sini.' }}
+                    {{ perSantriSearch[jenis.id] ? 'Santri tidak ditemukan.' : 'Ketik nama/No. Induk untuk set nominal khusus. Yang sudah di-set muncul di sini.' }}
                   </p>
                 </div>
               </div>
@@ -863,7 +863,7 @@
             class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)] font-mono"
           />
           <p class="text-[10px] text-[var(--text-tertiary)] italic mt-1">
-            Nomor VA santri = <b>prefix</b> + NIS santri. Format final mengikuti standar BMT PETA.
+            Nomor VA santri = <b>prefix</b> + No. Induk santri. Format final mengikuti standar BMT PETA.
           </p>
         </div>
       </div>
@@ -1050,7 +1050,7 @@
           <input
             v-model="genSantriSearch"
             type="text"
-            placeholder="Cari nama / NIS..."
+            placeholder="Cari nama / No. Induk..."
             class="w-full px-3 py-2 text-xs rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)] mb-1"
           />
           <div

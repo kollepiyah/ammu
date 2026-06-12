@@ -74,7 +74,7 @@ export function useDataAudit(santriRef, guruRef, lembagaRef) {
 
   function sLabel(s) {
     const lmb = s.lembaga || s.lembaga_sekolah || '-'
-    return { id: String(s.id), nama: s.nama || '(tanpa nama)', detail: `NIS ${s.nis || '-'} · ${lmb}` }
+    return { id: String(s.id), nama: s.nama || '(tanpa nama)', detail: `No. Induk ${s.nis || '-'} · ${lmb}` }
   }
   function gLabel(g) {
     return {
@@ -91,11 +91,11 @@ export function useDataAudit(santriRef, guruRef, lembagaRef) {
 
     // ── SANTRI ────────────────────────────────────────────────
     const sTanpaNis = sList.filter((s) => isEmptyStr(s.nis))
-    out.push({ key: 's_nis', label: 'Santri tanpa NIS', icon: 'fa-id-badge', sev: 'warn', items: sTanpaNis.map(sLabel) })
+    out.push({ key: 's_nis', label: 'Santri tanpa No. Induk', icon: 'fa-id-badge', sev: 'warn', items: sTanpaNis.map(sLabel) })
 
     // Nama berupa angka (NIK/NIS salah masuk ke kolom nama) — perlu dibetulkan manual via Edit
     const sNamaAngka = sList.filter((s) => looksNumericName(s.nama))
-    out.push({ key: 's_nama_angka', label: 'Santri: nama tampak seperti angka (mungkin NIK/NIS salah kolom)', icon: 'fa-hashtag', sev: 'danger', items: sNamaAngka.map((s) => ({ ...sLabel(s), detail: `nama "${s.nama}" · NIS ${s.nis || '-'}` })) })
+    out.push({ key: 's_nama_angka', label: 'Santri: nama tampak seperti angka (mungkin NIK/No. Induk salah kolom)', icon: 'fa-hashtag', sev: 'danger', items: sNamaAngka.map((s) => ({ ...sLabel(s), detail: `nama "${s.nama}" · No. Induk ${s.nis || '-'}` })) })
 
     const sTanpaLembaga = sList.filter((s) => isEmptyStr(s.lembaga) && isEmptyStr(s.lembaga_sekolah))
     out.push({ key: 's_lembaga', label: 'Santri tanpa lembaga', icon: 'fa-building-circle-xmark', sev: 'danger', items: sTanpaLembaga.map(sLabel) })
@@ -175,7 +175,7 @@ export function useDataAudit(santriRef, guruRef, lembagaRef) {
           nkey: fuzzyKey(x.nama),
           dob,
           detail: kind === 'santri'
-            ? `NIS ${x.nis || '-'}${dob ? ' · lahir ' + dob : ''}`
+            ? `No. Induk ${x.nis || '-'}${dob ? ' · lahir ' + dob : ''}`
             : (x.jabatan || '-')
         }
       })

@@ -37,7 +37,7 @@
         <span
           v-if="santriProfile.nis"
           class="inline-block mt-3 bg-[var(--bg-card)]/20 backdrop-blur-sm text-white text-xs font-black px-3 py-1 rounded-full"
-          >NIS: {{ santriProfile.nis }}</span
+          >No. Induk: {{ santriProfile.nis }}</span
         >
         <button
           @click="gotoProfil"

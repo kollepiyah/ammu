@@ -311,7 +311,7 @@ function onBackdrop(e) {
               <div>
                 <p class="snm">{{ santri.nama }}</p>
                 <p class="sub">
-                  NIS: {{ santri.nis || '—' }}{{ santri.lembaga ? ' · ' + santri.lembaga : ''
+                  No. Induk: {{ santri.nis || '—' }}{{ santri.lembaga ? ' · ' + santri.lembaga : ''
                   }}{{ santri.kelas ? ' · ' + santri.kelas : '' }}
                 </p>
               </div>

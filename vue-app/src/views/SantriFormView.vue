@@ -28,8 +28,13 @@
         </h3>
         <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
           <div>
+            <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase">No. Induk</label>
+            <input v-model="form.nis" type="text" placeholder="Otomatis (NNNN+tgl lahir)" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none" />
+          </div>
+          <!-- v.100: NIS dari Dinas (manual) — khusus santri sekolah TK/SDI/PKBM -->
+          <div>
             <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase">NIS</label>
-            <input v-model="form.nis" type="text" placeholder="Opsional" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none" />
+            <input v-model="form.nis_sekolah" type="text" placeholder="NIS Dinas (santri sekolah)" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none" />
           </div>
           <!-- v.95.0626d: NISN (Nomor Induk Siswa Nasional) -->
           <div>

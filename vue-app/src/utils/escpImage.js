@@ -206,7 +206,7 @@ function posData(trx, settings) {
   return {
     kop,
     boxLabel: 'BUKTI PEMBAYARAN',
-    infoLeft: [['Diterima dari', trx.santri_nama || '-'], ['NIS', trx.santri_nis || '-'], ['Kelas', kelasFull(trx)], ['Terbilang', trx.terbilang || terbilangRupiah(trx.total)]],
+    infoLeft: [['Diterima dari', trx.santri_nama || '-'], ['No. Induk', trx.santri_nis || '-'], ['Kelas', kelasFull(trx)], ['Terbilang', trx.terbilang || terbilangRupiah(trx.total)]],
     infoRight: [['Tgl. Bayar', fmtTgl(trx.tanggal)], ['No. Transaksi', trx.no_struk || '-'], ['Metode', trx.metode || 'TUNAI']],
     midHeader: 'Dengan rincian pembayaran sebagai berikut :',
     items,
@@ -234,7 +234,7 @@ function tabData(mut, settings, { saldo = null, santri = {}, label = 'TABUNGAN' 
   return {
     kop,
     boxLabel: 'BUKTI ' + (isSetor ? 'SETOR ' : 'TARIK ') + label,
-    infoLeft: [['Diterima dari', nama], ['NIS', nis], ['Kelas', kelas], ['Terbilang', terbilangRupiah(mut.nominal)]],
+    infoLeft: [['Diterima dari', nama], ['No. Induk', nis], ['Kelas', kelas], ['Terbilang', terbilangRupiah(mut.nominal)]],
     infoRight: [['Tanggal', fmtTgl(mut.tanggal)], ['No. Transaksi', mut.no_bukti || mut.id || '-'], ['Metode', 'TUNAI']],
     midHeader: 'Dengan rincian sebagai berikut :',
     items: [{ name: '1. ' + ket, amount: 'Rp. ' + fmtNum(mut.nominal) }],

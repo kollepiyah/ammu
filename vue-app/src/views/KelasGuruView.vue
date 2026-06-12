@@ -306,7 +306,7 @@ async function downloadTemplateAssign() {
       sheetName: 'Assign Guru',
       // tanpa KOP — header di row 1 supaya importFile auto-detect
       columns: [
-        { key: 'nis', header: 'NIS', width: 12 },
+        { key: 'nis', header: 'No. Induk', width: 12 },
         { key: 'nama', header: 'Nama Santri', width: 26 },
         { key: 'lembaga', header: 'Lembaga Qiraati', width: 14 },
         { key: 'kelas', header: 'Kelas Qiraati', width: 14 },
@@ -381,7 +381,7 @@ async function onImportAssign(e) {
     importAssignProgress.value = { i: 0, total: rows.length }
     for (const r of rows) {
       importAssignProgress.value = { i: importAssignProgress.value.i + 1, total: rows.length }
-      const nis = String(_pickCell(r, 'NIS', 'nis') || '').trim()
+      const nis = String(_pickCell(r, 'No. Induk', 'No Induk', 'no_induk', 'NIS', 'nis') || '').trim() // v.100: terima header baru + template lama
       const nama = String(_pickCell(r, 'Nama Santri', 'Nama', 'nama') || '').trim().toLowerCase()
       let s = (nis && byNis.get(nis)) || (nama && byNama.get(nama)) || null
       // v.100 Batch12: fallback nama MIRIP (fuzzy) — NIS/nama persis tak ketemu, coba kemiripan tinggi & tak ambigu
@@ -415,7 +415,7 @@ async function onImportAssign(e) {
       await updateOne('santri', String(s.id), patch)
       updated++
     }
-    toast.success(`Impor assign selesai: ${updated} santri diperbarui${fuzzyMatched ? ` (${fuzzyMatched} via nama mirip — cek bila ragu)` : ''}, ${skipped} dilewati (kolom guru kosong), ${notFound} tak ditemukan (NIS/nama).`)
+    toast.success(`Impor assign selesai: ${updated} santri diperbarui${fuzzyMatched ? ` (${fuzzyMatched} via nama mirip — cek bila ragu)` : ''}, ${skipped} dilewati (kolom guru kosong), ${notFound} tak ditemukan (No. Induk/nama).`)
   } catch (e2) {
     toast.error('Gagal impor: ' + (e2.message || e2))
   } finally {

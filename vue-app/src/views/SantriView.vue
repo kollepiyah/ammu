@@ -87,7 +87,7 @@
                 <th class="px-2 py-1 text-left">#</th>
                 <th class="px-2 py-1 text-left">Aksi</th>
                 <th class="px-2 py-1 text-left">Nama</th>
-                <th class="px-2 py-1 text-left">NIS</th>
+                <th class="px-2 py-1 text-left">No. Induk</th>
                 <th class="px-2 py-1 text-left">Lembaga</th>
                 <th class="px-2 py-1 text-left">Kelas</th>
                 <th class="px-2 py-1 text-left">Wali</th>
@@ -123,7 +123,7 @@
       <!-- Pencarian -->
       <div class="relative">
         <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] text-sm"></i>
-        <input v-model="search" type="text" placeholder="Cari nama, NIS, atau wali..." class="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition" />
+        <input v-model="search" type="text" placeholder="Cari nama, No. Induk, atau wali..." class="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition" />
       </div>
       <!-- v.97.0626: filter dropdown (lembaga Qiraati + Sekolah, status tempat, status aktif) -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-2 mt-2">
@@ -184,7 +184,7 @@
               <div class="flex-1 min-w-0">
                 <h3 class="text-sm md:text-base font-black text-[var(--text-primary)] truncate">{{ s.nama }}</h3>
                 <p class="text-[11px] text-[var(--text-secondary)] mt-0.5">
-                  NIS: {{ s.nis || '-' }} · {{ s.jk === 'L' ? 'Laki-laki' : 'Perempuan' }}
+                  No. Induk: {{ s.nis || '-' }} · {{ s.jk === 'L' ? 'Laki-laki' : 'Perempuan' }}
                 </p>
               </div>
               <!-- v.21.12.0526: Ma'had / Fullday / Tidak Aktif / (PP tanpa label) -->
@@ -357,7 +357,7 @@ function clearSelection() { selected.value = new Set() }
 async function deleteSantri(s) {
   const ok = await confirmDlg({
     title: `Hapus ${s.nama}?`,
-    message: `Santri "${s.nama}" (NIS: ${s.nis || '-'}) akan dihapus permanen dari Firestore. Aksi ini tidak bisa di-undo.`,
+    message: `Santri "${s.nama}" (No. Induk: ${s.nis || '-'}) akan dihapus permanen dari Firestore. Aksi ini tidak bisa di-undo.`,
     confirmText: 'Hapus',
     danger: true
   })
@@ -532,7 +532,7 @@ async function cetakPdf() {
       columns: [
         { key: 'no', header: 'No', width: 12 },
         { key: 'nama', header: 'Nama Santri', width: 60 },
-        { key: 'nis', header: 'NIS', width: 25 },
+        { key: 'nis', header: 'No. Induk', width: 25 },
         { key: 'jk', header: 'JK', width: 12 },
         { key: 'lembaga', header: 'Lembaga', width: 35 },
         { key: 'kelas', header: 'Kelas', width: 25 },
@@ -577,7 +577,7 @@ async function kirimGoogleSheet() {
       columns: [
         { key: 'no', header: 'No', width: 6 },
         { key: 'nama', header: 'Nama Santri', width: 28 },
-        { key: 'nis', header: 'NIS', width: 14 },
+        { key: 'nis', header: 'No. Induk', width: 14 },
         { key: 'jk', header: 'L/P', width: 6 },
         { key: 'lembaga', header: 'Lembaga Qiraati', width: 16 },
         { key: 'kelas', header: 'Kelas', width: 14 },
@@ -603,7 +603,7 @@ async function exportSantriExcel() {
     const _g = (s) => Array.isArray(s.guru_sekolah) ? s.guru_sekolah.join(' | ') : (s.guru_sekolah || '')
     const rows = (santri.value || []).map((s, i) => ({
       no: i + 1,
-      nis: s.nis || '', nisn: s.nisn || '', nik: s.nik || '',
+      nis: s.nis || '', nis_sekolah: s.nis_sekolah || '', nisn: s.nisn || '', nik: s.nik || '',
       nama: s.nama || '', panggilan: s.nama_panggilan || '', jk: s.jk || '',
       tempat_lahir: s.tempat_lahir || '', tgl_lahir: s.tgl_lahir || '', tgl_masuk: s.tgl_masuk || '', no_kk: s.no_kk || '',
       wali: s.nama_wali || s.wali || '', wa: s.wa || '',
@@ -628,7 +628,8 @@ async function exportSantriExcel() {
       subtitle: `Data Santri — ${rows.length} santri (${new Date().toLocaleDateString('id-ID')})`,
       columns: [
         { key: 'no', header: 'No', width: 5 },
-        { key: 'nis', header: 'NIS', width: 12 },
+        { key: 'nis', header: 'No. Induk', width: 12 },
+        { key: 'nis_sekolah', header: 'NIS', width: 12 },
         { key: 'nisn', header: 'NISN', width: 14 },
         { key: 'nik', header: 'NIK', width: 18 },
         { key: 'nama', header: 'Nama Santri', width: 26 },
@@ -689,7 +690,7 @@ async function downloadTemplateSantri() {
   try {
     // v.99: template diselaraskan dengan SEMUA field form santri (biodata + ortu + alamat detail)
     const headers = [
-      'NIS', 'NISN', 'NIK', 'Nama Santri', 'Nama Panggilan', 'L/P',
+      'No. Induk', 'NIS', 'NISN', 'NIK', 'Nama Santri', 'Nama Panggilan', 'L/P',
       'Tempat Lahir', 'Tgl Lahir (DD/MM/YYYY)', 'Tgl Masuk (DD/MM/YYYY)', 'No KK',
       'Nama Wali', 'No WA Wali',
       'Lembaga Qiraati', 'Kelas Qiraati', 'Juz (PTPT)', 'Guru Pagi', 'Guru Sore',
@@ -777,11 +778,15 @@ async function onImportSantri(e) {
       }
       return ''
     }
+    // v.100: template BARU punya kolom 'No. Induk' (auto pondok) + 'NIS' (NIS Dinas manual).
+    //   Template LAMA hanya punya 'NIS' = nomor auto pondok → tetap dipetakan ke field nis (No. Induk).
+    const hasNoIndukCol = rows.some((row) => Object.keys(row).some((k) => String(k).toLowerCase().replace(/[\s.]/g, '') === 'noinduk'))
     for (const r of rows) {
       const namaRaw = String(_pick(r, 'Nama Santri', 'Nama', 'NAMA', 'nama') || '').trim()
       if (!namaRaw) { skipCount++; continue }
       const nama = toTitleCase(namaRaw)
-      const nis = String(_pick(r, 'NIS', 'nis') || '').trim()
+      const nis = String((hasNoIndukCol ? _pick(r, 'No. Induk', 'No Induk', 'no_induk') : _pick(r, 'NIS', 'nis')) || '').trim()
+      const nisSekolah = String((hasNoIndukCol ? _pick(r, 'NIS', 'nis') : _pick(r, 'NIS Dinas', 'nis_sekolah')) || '').trim()
       // v.100 Batch12: auto-deteksi nama lembaga ke bentuk kanonik ("PRA PTPT" -> "Pra PTPT", dst)
       const lembaga = canonLembaga(_pick(r, 'Lembaga Qiraati', 'Lembaga', 'lembaga'))
       const kelas = String(_pick(r, 'Kelas Qiraati', 'Kelas', 'kelas') || '').trim()
@@ -800,6 +805,7 @@ async function onImportSantri(e) {
         wali: toTitleCase(_pick(r, 'Nama Wali', 'Wali', 'wali') || ''),
         data: {
           nis, nama,
+          ...(hasNoIndukCol ? { nis_sekolah: nisSekolah } : {}), // template lama tak punya kolom NIS Dinas → jangan timpa
           // v.99: biodata tambahan (selaras form + template baru)
           nisn: String(_pick(r, 'NISN', 'nisn') || '').trim(),
           nik: String(_pick(r, 'NIK', 'nik') || '').trim(),
@@ -897,17 +903,17 @@ async function confirmImportSantri() {
       }
     }
     toast.success(`Impor selesai: ${ok} OK, ${fail} gagal`)
-    // v.100 Batch14: regenerate NIS otomatis (IMPOR = reshuffle SEMUA santri by tgl lahir tertua → nama A–Z)
+    // v.100 Batch14: regenerate No. Induk otomatis (IMPOR = reshuffle SEMUA santri by tgl lahir tertua → nama A–Z)
     try {
       const fresh = await getAll('santri')
       const plan = planRegenerateNis(fresh)
       const res = await applyNisChanges(plan.changes, { sesi: authStore?.sesiAktif, mode: 'impor' })
-      let msg = `NIS digenerate ulang: ${res.changed} diperbarui`
+      let msg = `No. Induk digenerate ulang: ${res.changed} diperbarui`
       if (plan.skipped.length) msg += `, ${plan.skipped.length} tanpa tgl lahir (dilewati)`
       if (res.fail) msg += `, ${res.fail} gagal`
       toast.success(msg)
     } catch (e) {
-      toast.warning('NIS gagal digenerate ulang: ' + (e.message || e))
+      toast.warning('No. Induk gagal digenerate ulang: ' + (e.message || e))
     }
     importPreview.value = null
   } catch (e) {
