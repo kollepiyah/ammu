@@ -76,33 +76,22 @@ export async function drawKopLetterhead(doc, kop = {}, opts = {}) {
   const pageW = doc.internal.pageSize.getWidth()
   let y = startY
   const LOGO_SIZE = 22
-  let hasLogo = false
-
-  // Logo (left)
-  if (kop.logoUrl) {
-    try {
-      const dataUrl = kop.logoUrl.startsWith('data:') ? kop.logoUrl : await imageToDataURL(kop.logoUrl)
-      if (dataUrl) {
-        doc.addImage(dataUrl, 'PNG', 12, y, LOGO_SIZE, LOGO_SIZE, undefined, 'FAST')
-        hasLogo = true
-      }
-    } catch { /* ignore */ }
-  }
 
   // v.21.92.0527: KOP rata kiri — judul mulai di sebelah kanan logo.
   // Hierarki: L1 kecil (Yayasan), L2 BESAR bold (Pondok Pesantren), L3 alamat, L4-L5 telp/email.
-  // v.100: L1 = GAMBAR kaligrafi muassis (tinggi 10mm); baris di bawahnya geser +off.
+  // v.100b: L1 = GAMBAR kaligrafi muassis (tinggi 9mm, file ter-crop) RAPAT ke L2 (off 3mm);
+  //   teks digambar DULU supaya tinggi blok diketahui → logo dicenter vertikal terhadap blok.
   //   Fallback (gambar gagal) = teks kop.line1, off=0 (layout lama persis).
   const subLines = [kop.line4, kop.line5].filter(Boolean)
-  const textX = hasLogo ? 12 + LOGO_SIZE + 6 : 12
+  const textX = kop.logoUrl ? 12 + LOGO_SIZE + 6 : 12
   doc.setFont(font, 'bold')
   let off = 0
   const muassis = await muassisDataUrl()
   if (muassis) {
-    const muH = 10
-    const muW = muH * MUASSIS_RATIO // ≈ 54mm
+    const muH = 9
+    const muW = muH * MUASSIS_RATIO // ≈ 81mm
     try { doc.addImage(muassis, 'PNG', textX, y + 0.5, muW, muH, undefined, 'FAST') } catch (_e) {}
-    off = 4.5 // zona baris-1 teks (~6mm) → gambar 10.5mm
+    off = 3 // gambar bawah y+9.5 → L2 baseline y+16 (rapat, gap visual <1mm)
   } else if (kop.line1) {
     doc.setFontSize(11)
     doc.text(String(kop.line1), textX, y + 5)
@@ -121,6 +110,23 @@ export async function drawKopLetterhead(doc, kop = {}, opts = {}) {
     doc.text(String(sl), textX, yy)
     yy += 4
   }
+
+  // Logo (kiri) — digambar terakhir, dicenter vertikal terhadap tinggi blok teks KOP
+  let hasLogo = false
+  const contentBottom = subLines.length
+    ? yy - 4 + 1.5
+    : kop.line3 ? y + 19 + off + 1.5 : kop.line2 ? y + 13 + off + 1.5 : y + 10.5
+  if (kop.logoUrl) {
+    try {
+      const dataUrl = kop.logoUrl.startsWith('data:') ? kop.logoUrl : await imageToDataURL(kop.logoUrl)
+      if (dataUrl) {
+        const logoY = startY + Math.max(0, (contentBottom - startY - LOGO_SIZE) / 2)
+        doc.addImage(dataUrl, 'PNG', 12, logoY, LOGO_SIZE, LOGO_SIZE, undefined, 'FAST')
+        hasLogo = true
+      }
+    } catch { /* ignore */ }
+  }
+
   // Pastikan KOP setidaknya setinggi logo
   y = Math.max(yy, y + (hasLogo ? LOGO_SIZE + 2 : 25) + off)
   // Garis pemisah

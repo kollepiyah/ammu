@@ -204,8 +204,8 @@ async function drawKopRapor(doc, settings, lembaga, lembagaOverride = null, isDi
   let kopBase = startY + 5
   const muassis = await muassisDataUrl()
   if (muassis) {
-    const muW = 80
-    const muH = muW / MUASSIS_RATIO // ≈ 14.8mm
+    const muW = 100
+    const muH = muW / MUASSIS_RATIO // ≈ 11.1mm (file ter-crop, rasio 9.03)
     try { doc.addImage(muassis, 'PNG', (pageW - muW) / 2, startY, muW, muH, undefined, 'FAST') } catch (_e) {}
     kopBase = startY + muH
   } else {

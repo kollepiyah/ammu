@@ -1,5 +1,5 @@
 // v.100: Baris PERTAMA semua KOP = gambar kaligrafi muassis (مؤسسة المنصور معهد منبع العلوم الأسلامى)
-//   dari src/assets/muassis.png (3000×554 px). Dipakai oleh:
+//   dari src/assets/muassis.png (2998×332 px, ter-crop tanpa whitespace). Dipakai oleh:
 //     - raporPdf.drawKopRapor (KOP rapor, center)
 //     - pdfBuilder.drawKopLetterhead (KOP umum semua PDF list/struk F4, kiri)
 //     - strukBuilder cetakStrukSlipPdf/cetakSlipTabunganPdf (slip PDF) + slipShellHtml +
@@ -13,7 +13,7 @@ import muassisUrl from '@/assets/muassis.png'
 import { imageToDataURL } from '@/services/pdf'
 
 export const MUASSIS_URL = muassisUrl
-export const MUASSIS_RATIO = 3000 / 554 // lebar/tinggi asli ≈ 5.42 → tinggi = lebar / RATIO
+export const MUASSIS_RATIO = 2998 / 332 // lebar/tinggi asli ≈ 9.03 (file ter-crop, tanpa whitespace) → tinggi = lebar / RATIO
 
 let _dataUrl = null
 let _loading = null
