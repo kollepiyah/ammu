@@ -216,6 +216,17 @@
       v-if="(isAdmin && activeTab === 'form' && filterLembaga) || (isGuru && activeTab === 'form')"
       class="bg-[var(--bg-card)] rounded-2xl p-3 md:p-4 border border-[var(--border-subtle)] shadow-sm"
     >
+      <!-- v.100b: toggle kategori untuk guru dual-role (Qiraati + Sekolah) -->
+      <div v-if="isGuru && guruDual" class="flex gap-2 mb-3">
+        <button
+          @click="kenaikanKategori = 'qiraati'"
+          :class="['flex-1 px-3 py-2 rounded-xl text-xs font-black border transition cursor-pointer', kenaikanKategori === 'qiraati' ? 'bg-teal-600 text-white border-teal-700' : 'bg-[var(--bg-muted)] text-[var(--text-primary)] border-[var(--border-default)] hover:bg-teal-50 dark:hover:bg-teal-900/30']"
+        ><i class="fas fa-book-quran mr-1"></i>Santri Qiraati</button>
+        <button
+          @click="kenaikanKategori = 'sekolah'"
+          :class="['flex-1 px-3 py-2 rounded-xl text-xs font-black border transition cursor-pointer', kenaikanKategori === 'sekolah' ? 'bg-cyan-600 text-white border-cyan-700' : 'bg-[var(--bg-muted)] text-[var(--text-primary)] border-[var(--border-default)] hover:bg-cyan-50 dark:hover:bg-cyan-900/30']"
+        ><i class="fas fa-school mr-1"></i>Kelas Sekolah</button>
+      </div>
       <div class="relative mb-3">
         <i
           class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] text-sm"
@@ -1120,7 +1131,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useDesktopShell } from '@/composables/useDesktopShell'
 import { definePageActions } from '@/composables/useRibbonContext'
 import { collection, doc, getDocs, setDoc, updateDoc } from 'firebase/firestore'
@@ -1135,6 +1146,7 @@ import { useGoogleSheet } from '@/composables/useGoogleSheet' // v.100 Batch12: 
 import { useLembaga, getPkbmSubTier } from '@/composables/useLembaga'
 import { sortSantri } from '@/utils/santriSort'
 import { LEMBAGA_KENAIKAN_LIST, LEMBAGA_KENAIKAN_SEKOLAH, getKartuKenaikanSchema, getKopKartuLembaga } from '@/utils/kenaikan'
+import { ownsNgaji, ownsSekolah, deteksiTipeGuru } from '@/utils/guruScope' // v.100b: scope guru qiraati/sekolah
 import { buildListPdf, createPdf, drawTable, savePdf } from '@/utils/pdfBuilder'
 import { imageToDataURL } from '@/services/pdf'
 
@@ -1158,6 +1170,10 @@ const isGuru = computed(() => {
   return sa?.role === 'guru' && sa?.role_sistem !== 'super_admin' && sa?.id !== 'admin'
 })
 const isSantriRole = computed(() => authStore.sesiAktif?.role === 'santri')
+// v.100b: tipe guru (Qiraati / Sekolah) dari assignment santri → toggle kategori untuk guru dual-role.
+const myNamaGuru = computed(() => authStore.sesiAktif?.guru || authStore.sesiAktif?.nama || '')
+const guruTipe = computed(() => deteksiTipeGuru(santriList.value, myNamaGuru.value))
+const guruDual = computed(() => guruTipe.value.qiraati && guruTipe.value.sekolah)
 
 // ────────── STATE: santri list ──────────
 const santriList = ref([])
@@ -1186,6 +1202,18 @@ definePageActions(() => {
   if (isAdmin.value) acts.push({ label: 'Mutasi', icon: 'logout', primary: activeTab.value === 'mutasi', on: () => { activeTab.value = 'mutasi' } })
   return acts
 })
+
+// v.100b: guru tipe-tunggal → set kategori otomatis (Sekolah-saja → 'sekolah'); dual → biarkan default
+//   'qiraati' + toggle tersedia. Re-run saat santriList termuat (tipe terdeteksi).
+watch(
+  guruTipe,
+  (t) => {
+    if (!isGuru.value) return
+    if (t.sekolah && !t.qiraati) kenaikanKategori.value = 'sekolah'
+    else if (t.qiraati && !t.sekolah) kenaikanKategori.value = 'qiraati'
+  },
+  { immediate: true }
+)
 
 // ────────── v.99: MUTASI (keluar) santri — sub-menu Kenaikan/Mutasi. Pola: kategori → lembaga → list → keluarkan ──────────
 const mutasiKategori = ref('') // '' | 'qiraati' | 'sekolah'
@@ -1294,12 +1322,13 @@ const mySantri = computed(() => {
 
 // ────────── Filtered santri for form tab (shift-aware) ──────────
 const filteredFormSantri = computed(() => {
-  // Guru-only mode: show only santri owned by guru (guru / guru_pagi / guru_sore)
+  // v.100b: Guru mode — sadar KATEGORI. Qiraati → santri ngaji ampuan (guru_pagi/sore/guru);
+  //   Sekolah → santri kelas sekolahnya (guru_sekolah). Tipe guru tentukan kategori yg tersedia.
   if (isGuru.value) {
+    const gname = myNamaGuru.value
     let list = santriList.value.filter((s) => s.aktif !== false)
-    const sa = authStore.sesiAktif
-    const gname = sa?.guru || sa?.nama
-    list = list.filter((s) => s.guru === gname || s.guru_pagi === gname || s.guru_sore === gname)
+    if (kenaikanKategori.value === 'sekolah') list = list.filter((s) => ownsSekolah(s, gname))
+    else list = list.filter((s) => ownsNgaji(s, gname))
     if (searchFormSantri.value) {
       const kw = searchFormSantri.value.toLowerCase()
       list = list.filter((s) =>
@@ -1308,7 +1337,12 @@ const filteredFormSantri = computed(() => {
           .includes(kw)
       )
     }
-    return sortSantri(list, { lembagaField: 'lembaga', kelasField: 'kelas' })
+    return sortSantri(
+      list,
+      kenaikanKategori.value === 'sekolah'
+        ? { lembagaField: 'lembaga_sekolah', kelasField: 'kelas_sekolah' }
+        : { lembagaField: 'lembaga', kelasField: 'kelas' }
+    )
   }
   if (!filterLembaga.value) return []
   let list
@@ -1947,7 +1981,7 @@ const formSaatIni = computed(() => {
   return (s.lembaga || '-') + (s.kelas ? ' · ' + s.kelas : '')
 })
 function santriRowLabel(s) {
-  if (!isGuru.value && kenaikanKategori.value === 'sekolah') {
+  if (kenaikanKategori.value === 'sekolah') {
     return (s.lembaga_sekolah || '-') + (s.kelas_sekolah ? ' · ' + s.kelas_sekolah : '')
   }
   let t = (s.lembaga || '') + (s.kelas ? ' · ' + s.kelas : '')
@@ -2069,10 +2103,16 @@ const guruOptions = computed(() => {
 
 function openFormKenaikan(s) {
   formSantri.value = s
-  // v.100 Batch6: mode SEKOLAH — admin di kategori sekolah (filterLembaga = TK/SDI/SMP/SMA)
-  formIsSekolah.value = isAdmin.value && kenaikanKategori.value === 'sekolah'
+  // v.100 Batch6: mode SEKOLAH — admin (filterLembaga = TK/SDI/SMP/SMA) ATAU guru sekolah (kategori).
+  // v.100b: guru sekolah/dual kini bisa proses kenaikan sekolah (sebelumnya hanya admin).
+  formIsSekolah.value = kenaikanKategori.value === 'sekolah'
   if (formIsSekolah.value) {
-    const lmbSek = String(filterLembaga.value || '').toUpperCase().trim()
+    // lmbSek: admin pakai filterLembaga; guru turunkan dari santri (PKBM → SMP/SMA via sub-tier).
+    let lmbSek = String(filterLembaga.value || '').toUpperCase().trim()
+    if (!lmbSek) {
+      lmbSek = String(s.lembaga_sekolah || '').toUpperCase().trim()
+      if (lmbSek === 'PKBM') lmbSek = getPkbmSubTier(s.kelas_sekolah || s.kelas) || 'SMP'
+    }
     formData.value = {
       tanggal: new Date().toISOString().slice(0, 10),
       kelas_sekolah: s.kelas_sekolah || '',
