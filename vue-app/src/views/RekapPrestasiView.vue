@@ -276,6 +276,24 @@
       <input v-model="search" type="text" placeholder="Cari nama..." class="px-3 py-2 text-sm rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-teal-500 outline-none col-span-2 md:col-span-1" />
     </div>
 
+    <!-- v.100d: FILTER KATEGORI SANTRI (guru DUAL saja) — Qiraati ngaji vs Sekolah read-only → ekspor terpisah -->
+    <div v-if="isDualGuru" class="bg-white dark:bg-slate-800 rounded-2xl p-3 border border-slate-200 dark:border-slate-700 shadow-sm flex flex-wrap items-center gap-2">
+      <span class="text-[11px] font-bold text-slate-500 dark:text-slate-400">
+        <i class="fas fa-filter mr-1 text-cyan-500"></i>Kategori santri:
+      </span>
+      <div class="flex gap-1 bg-slate-100 dark:bg-slate-700 p-1 rounded-xl">
+        <button
+          v-for="t in tipeOptions"
+          :key="t.id"
+          @click="filterTipe = t.id"
+          :class="['px-3 py-1.5 text-[11px] font-bold rounded-lg transition cursor-pointer', filterTipe === t.id ? 'bg-white dark:bg-slate-800 shadow-sm text-cyan-700' : 'text-slate-500 hover:text-slate-700']"
+        >
+          <i :class="['fas', t.icon, 'mr-1']"></i>{{ t.label }}
+        </button>
+      </div>
+      <span class="text-[10px] text-slate-400 italic">Ekspor (PDF/Excel/Sheet/Cetak) mengikuti kategori terpilih.</span>
+    </div>
+
     <!-- STATS BADGES -->
     <div class="bg-white dark:bg-slate-800 rounded-2xl p-3 md:p-4 border border-slate-200 dark:border-slate-700 shadow-sm grid grid-cols-2 md:grid-cols-6 gap-2 text-center">
       <div class="bg-cyan-50 rounded-lg p-2">
@@ -508,7 +526,7 @@ import { muassisDataUrlSync } from '@/utils/kopMuassis' // v.100: baris-1 KOP pr
 import { useAuthStore } from '@/stores/auth'
 import { useRouter } from 'vue-router' // v.100c-fix: pilihKategori('diniyah') pakai router.push (sebelumnya undefined → ReferenceError)
 import { isFullFilterRole, isKepalaLembaga } from '@/utils/roleScope'
-import { ownsSekolah } from '@/utils/guruScope' // v.100b: guru sekolah lihat prestasi qiraati santri kelasnya (read-only)
+import { ownsSekolah, deteksiTipeGuru } from '@/utils/guruScope' // v.100b: guru sekolah lihat prestasi qiraati santri kelasnya (read-only); v.100d: deteksiTipeGuru utk toggle kategori guru dual
 import { lembagaScopeMatches } from '@/composables/useLembaga'
 import { sortSantri } from '@/utils/santriSort'
 
@@ -530,6 +548,12 @@ const modes = [
   { id: 'bulanan', label: 'Input Bulanan', icon: 'fa-table' },
   { id: 'ranking', label: 'Ranking', icon: 'fa-medal' },
   { id: 'riwayat', label: 'Riwayat', icon: 'fa-history' }
+]
+// v.100d: kategori santri utk guru DUAL (Qiraati ngaji vs Sekolah read-only) → ekspor terpisah
+const tipeOptions = [
+  { id: 'all', label: 'Semua', icon: 'fa-layer-group' },
+  { id: 'qiraati', label: 'Qiraati', icon: 'fa-mosque' },
+  { id: 'sekolah', label: 'Sekolah', icon: 'fa-school' }
 ]
 
 const santriRaw = ref([])
@@ -562,6 +586,10 @@ function ownSekolah(s) {
 function canEditPrestasi(s) {
   return !isGuruMode.value || ownNgaji(s)
 }
+// v.100d: filter kategori utk guru DUAL (mengampu ngaji DAN wali kelas sekolah) → ekspor terpisah
+const filterTipe = ref('all') // 'all' | 'qiraati' | 'sekolah'
+const tipeGuru = computed(() => deteksiTipeGuru(santriQiraati.value, auth.sesiAktif?.guru || auth.sesiAktif?.nama))
+const isDualGuru = computed(() => isGuruMode.value && tipeGuru.value.qiraati && tipeGuru.value.sekolah)
 const filterKelas = ref('')
 const expandedId = ref(null)
 const mode = ref('bulanan')
@@ -625,7 +653,12 @@ function lembagaMatch(s, filter) {
 const filteredSantri = computed(() => {
   let list = santriQiraati.value
   // Guru mode: santri ngaji ampuan (editable) + santri kelas sekolahnya (read-only, lihat prestasi qiraati)
-  if (isGuruMode.value) list = list.filter((s) => ownNgaji(s) || ownSekolah(s))
+  if (isGuruMode.value) {
+    list = list.filter((s) => ownNgaji(s) || ownSekolah(s))
+    // v.100d: guru DUAL pisah kategori → ekspor terpisah. qiraati=ngaji (editable); sekolah=read-only (badge "SEKOLAH")
+    if (filterTipe.value === 'qiraati') list = list.filter((s) => ownNgaji(s))
+    else if (filterTipe.value === 'sekolah') list = list.filter((s) => ownSekolah(s) && !ownNgaji(s))
+  }
   // v.86.0526: Kepala/PJ → hanya santri lembaganya (block lintas-lembaga)
   if (kepalaScope.value) list = list.filter((s) => lembagaScopeMatches(kepalaScope.value, s.lembaga) || lembagaScopeMatches(kepalaScope.value, s.lembaga_sekolah))
   if (filterLembaga.value) list = list.filter((s) => lembagaMatch(s, filterLembaga.value))
