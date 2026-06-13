@@ -149,6 +149,14 @@
         </div>
       </div>
 
+      <!-- v.100c: Tren perkembangan capaian (Opsi A) -->
+      <TrenCapaianChart
+        v-if="santriId"
+        :santri-ids="santriIdsTren"
+        title="Tren Capaian Saya"
+        subtitle="Halaman yang bertambah tiap bulan."
+      />
+
       <!-- Catatan Prestasi -->
       <div
         class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
@@ -253,6 +261,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
 import { subscribeColl } from '@/services/firestore'
 import { useSantri } from '@/composables/useSantri'
+import TrenCapaianChart from '@/components/charts/TrenCapaianChart.vue' // v.100c: Opsi A — tren capaian
 
 const auth = useAuthStore()
 const settings = useSettingsStore()
@@ -263,6 +272,9 @@ const santriId = computed(() => String(auth.sesiAktif?.id || ''))
 
 // Santri object dari santriRaw real-time list
 const santri = computed(() => santriRaw.value.find((s) => String(s.id) === santriId.value) || null)
+
+// v.100c: id santri (stabil) untuk TrenCapaianChart — tren capaian diri/anak.
+const santriIdsTren = computed(() => (santriId.value ? [santriId.value] : []))
 
 // Periode aktif dari settings
 const periodeAktif = computed(() => settings.settings?.periodeAktif || "Dzulqo'dah 1447")

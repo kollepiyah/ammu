@@ -791,6 +791,28 @@
         </div>
       </div>
 
+      <!-- v.100c: Tren perkembangan capaian Qiraati (Opsi A) — Kepala=lembaga, Guru=kelasnya (dipisah) -->
+      <TrenCapaianChart
+        v-if="isKepalaMode"
+        :santri-ids="lembagaSantriIds"
+        :title="`Tren Capaian — ${namaLembagaSaya}`"
+        subtitle="Rata-rata halaman bertambah per bulan, se-lembaga Anda."
+      />
+      <template v-else>
+        <TrenCapaianChart
+          v-if="adaQiraati"
+          :santri-ids="qiraatiSantriIds"
+          title="Tren Capaian — Santri Ngaji Saya"
+          subtitle="Rata-rata halaman bertambah per bulan (Qiraati)."
+        />
+        <TrenCapaianChart
+          v-if="adaSekolah"
+          :santri-ids="sekolahSantriIds"
+          title="Tren Capaian Qiraati — Santri Sekolah Saya"
+          subtitle="Capaian Qiraati dari santri kelas sekolah yang Anda ampu."
+        />
+      </template>
+
       <!-- Breakdown Qiraati (kalau guru ngaji) -->
       <div v-if="adaQiraati && qiraatiPrestasi.length > 0" class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm">
         <h3 class="text-xs md:text-sm font-black text-[var(--text-primary)] uppercase tracking-widest mb-3 border-b border-[var(--border-subtle)] pb-2">
@@ -912,8 +934,9 @@ import { db } from '@/services/firebase'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
 import AdminStatsCharts from '@/components/charts/AdminStatsCharts.vue'
+import TrenCapaianChart from '@/components/charts/TrenCapaianChart.vue' // v.100c: Opsi A — tren capaian
 // v.21.107.0527: gating role konsisten (admin/super_admin/admin_keuangan)
-import { isFullFilterRole } from '@/utils/roleScope'
+import { isFullFilterRole, isKepalaLembaga } from '@/utils/roleScope'
 // v.95.0626: sumber data ter-scope (admin=semua, kepala/PJ=lembaganya) + guru belum input + overload
 import { useStatistikScope, statusFromSelisih } from '@/composables/useStatistikScope'
 
@@ -1507,6 +1530,14 @@ const sekolahPrestasi = computed(() =>
     .sort((a, b) => prestasiNum(b) - prestasiNum(a))
     .slice(0, 5)
 )
+
+// v.100c: Tren perkembangan capaian (Opsi A) — id santri per scope untuk TrenCapaianChart.
+//   Kepala/PJ -> se-lembaga (scopedSantriAktif). Guru -> kelasnya (ngaji & sekolah, DIPISAH).
+const isKepalaMode = computed(() => isKepalaLembaga(auth.sesiAktif))
+const namaLembagaSaya = computed(() => auth.sesiAktif?.lembaga || 'Lembaga')
+const lembagaSantriIds = computed(() => scopedSantriAktif.value.map((s) => String(s.id)))
+const qiraatiSantriIds = computed(() => santriQiraatiSaya.value.map((s) => String(s.id)))
+const sekolahSantriIds = computed(() => santriSekolahSaya.value.map((s) => String(s.id)))
 
 // Kehadiran guru bulan ini (subscribe absensi_shift_guru)
 const absensiShiftGuru = ref([])
