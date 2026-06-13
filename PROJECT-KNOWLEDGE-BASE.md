@@ -1392,3 +1392,57 @@ firestore.rules TIDAK berubah. **Setelah deploy paket v.99: isi 2 tarif bisyaroh
 - Tes: (a) login guru sekolah → menu Rapor Semester → harus ke Diniyah (bukan Qiraati); guru DUAL → picker.
   (b) Edit rapor diniyah → set KKM mapel → Simpan KKM → cek predikat berubah sesuai KKM.
   (c) Set Tgl terbit di toolbar → ekspor PDF → cek "Dikeluarkan Pada Tanggal".
+
+---
+
+## SESI v.100c (lanjut-2) — FIX 4 BUG GURU SEKOLAH + AGENDA SESI BARU (13 Jun 2026, Claude Code)
+
+> Commit `33e5c6c`. Verify build:electron exit 0. BELUM deploy. (Lanjutan dari `342d9a8`/`e89fbed`.)
+
+### FIX (commit `33e5c6c`)
+1. **`router is not defined` → guru tak bisa buka Rekap Diniyah.** RekapPrestasiView TAK impor
+   vue-router; `pilihKategori('diniyah')` panggil `router.push` (template pakai `$router`, script `router`
+   undefined). Fix: `import { useRouter }` + `const router = useRouter()`.
+2. **Preview rapor kolom nama Kepala/PJ KOSONG, tapi PDF terisi.** Akar: `namaKepala` (preview) hanya
+   baca master lembaga; PDF (`raporPdf.drawSignBlocks`) cari guru by JABATAN. Fix: `namaKepala` cari guru
+   by jabatan (KEPALA TPQ/PJ PTPT/KEPALA SDI/PKBM/dst) DULU → selaras PDF, lalu fallback master+settings.
+3. **Kartu kenaikan SEKOLAH balik ke kartu Qiraati (guru).** `openKartu` pakai `filterLembaga||s.lembaga`
+   — guru filterLembaga kosong → `s.lembaga` (qiraati). Fix: sadar `kenaikanKategori` — sekolah →
+   `lembaga_sekolah` (PKBM→SMP/SMA via getPkbmSubTier), else qiraati. (Path dari tab Riwayat sudah set
+   filterLembaga → tetap benar.)
+4. **Riwayat kenaikan (akun guru) tampil SEMUA santri.** `riwayatList` tak di-scope. Fix: guru hanya
+   lihat ampuannya — `ownsSekolah` utk lembaga sekolah, `ownsNgaji` utk qiraati (util guruScope).
+
+### JAWABAN INVESTIGASI: apakah riwayat tertimpa? (kyai tanya)
+- **Kenaikan**: ✅ PENUH. Append `santri.riwayat[]` + `santri.riwayat_kenaikan[]` + entri `kartu_kenaikan`
+  + dokumen per-event koleksi `riwayat_kenaikan` (id `rk_{id}_{timestamp}`). Tak tertimpa.
+- **Tes Kenaikan**: ✅ PENUH. Tiap ajuan = dokumen baru auto-id; hasil update status dokumen itu.
+- **Rapor**: ✅ per (santri×lembaga×semester) = `rapor_{id}_{lembaga}_{periode}`. Tiap semester sendiri.
+- **Rekap Prestasi**: ⚠️ SEBAGIAN. Field `santri.prestasi_awal/akhir/total` = bulan BERJALAN (tertimpa
+  tiap bulan). Riwayat bulanan TERPISAH di `notif_prestasi` (`np_{id}_{YYYY-MM}`) TAPI HANYA simpan
+  `total` (bukan awal/akhir). Submenu "Riwayat" di RekapPrestasiView (mode 'riwayat') menampilkan
+  **Riwayat KENAIKAN** (`s.riwayat.length`), BUKAN riwayat prestasi bulanan.
+
+---
+
+## ⏭️ AGENDA SESI BARU (kyai akan lanjut di sesi baru) — PRIORITAS
+
+> Kyai eksplisit menyebut 3 hal untuk dibahas/dikerjakan di sesi BARU. Catatan biar sesi baru efisien.
+
+1. **Riwayat Rekap Prestasi BULANAN** (kyai: "harusnya sudah ada karena ada submenunya").
+   - TEMUAN: submenu "Riwayat" (mode 'riwayat' RekapPrestasiView, tab id 'riwayat') menampilkan Riwayat
+     KENAIKAN, bukan prestasi bulanan. `notif_prestasi` hanya simpan `total` per bulan.
+   - RENCANA: saat `simpanRekap`, snapshot **awal+akhir+total** per bulan ke koleksi khusus
+     (mis. `riwayat_prestasi` id `rp_{santriId}_{YYYY-MM}`) ATAU perluas field `notif_prestasi`. Lalu
+     tampilkan timeline bulanan di submenu Riwayat (per santri: tabel bulan→awal/akhir/total). Pertimbangkan
+     migrasi/backfill dari `notif_prestasi` lama (total saja).
+2. **Diskusi DATABASE: Firestore vs "SQL Connect" (Firebase Data Connect / Cloud SQL PostgreSQL).**
+   - Konteks: app skala pondok (santri/guru/kenaikan/rapor/keuangan = relasional). Bahas trade-off,
+     biaya, effort migrasi, apakah worth. (Jawaban ringkas sudah diberi di chat; pendalaman di sesi baru.)
+3. **Menu DAFTAR TES (Tes Kenaikan Qiraati)** — kyai ingin FOKUS bahas/kembangkan fitur ini.
+   - Status saat ini: Fase A/B/C SELESAI (commit `50ea5fc`/`ef99177`/`568f0b9`). Lihat recap "FITUR TES
+     KENAIKAN QIRAATI" di atas. Kemungkinan arah: penyempurnaan UX, statistik tes, integrasi ke rapor, dll.
+
+### STATUS DEPLOY (semua sesi v.100/b/c BELUM deploy oleh kyai)
+- Web: `npm run firebase:deploy`. Rules: `firebase deploy --only firestore:rules` (koleksi `tes_kenaikan`).
+  Functions: `firebase deploy --only functions` (push tes — `onTesKenaikan*`). + AAB + Electron + push.
