@@ -973,7 +973,31 @@ async function generatePpphPdf(doc, y, santri, schema, raporState, settings) {
   const data = raporState.data || {}
   const fieldsNilai = schema.fieldsNilai || []
   const predikatKeys = []
-  const head = [['Level', 'Kitab', 'Tgl Khotam', ...fieldsNilai.map((f) => f.label), 'Predikat']]
+  // v.100d: header grup 2 baris bila ada `group` (Hafalan Al-Qur'an / Hafalan Hadits); else flat.
+  let head
+  if (fieldsNilai.some((f) => f.group)) {
+    const row1 = [
+      { content: 'Level', rowSpan: 2 },
+      { content: 'Kitab', rowSpan: 2 },
+      { content: 'Tgl Khotam', rowSpan: 2 }
+    ]
+    let i = 0
+    while (i < fieldsNilai.length) {
+      const f = fieldsNilai[i]
+      if (f.group) {
+        let span = 1
+        let j = i + 1
+        while (j < fieldsNilai.length && fieldsNilai[j].group === f.group) { span++; j++ }
+        row1.push({ content: f.group, colSpan: span })
+        i = j
+      } else { row1.push({ content: f.label, rowSpan: 2 }); i++ }
+    }
+    row1.push({ content: 'Predikat', rowSpan: 2 })
+    const row2 = fieldsNilai.filter((f) => f.group).map((f) => f.label)
+    head = [row1, row2]
+  } else {
+    head = [['Level', 'Kitab', 'Tgl Khotam', ...fieldsNilai.map((f) => f.label), 'Predikat']]
+  }
   const predikatColIdx = 3 + fieldsNilai.length
   const body = (schema.levels || []).map((lvl, i) => {
     const tgl = data[`ppph__${lvl.id}__tgl_khotam`] || tglKhotamLevelKK(santri, 'PPPH', lvl.id)

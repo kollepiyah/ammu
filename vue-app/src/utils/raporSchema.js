@@ -62,8 +62,9 @@ export const DEFAULT_SCHEMA_PTPT = {
     { id: 'tgl_khotam', label: 'Tanggal Khotam', type: 'date' },
     { id: 'bacaan_fashohah', label: 'Fashohah', type: 'number', group: 'Kualitas Bacaan' },
     { id: 'bacaan_tartil', label: 'Tartil', type: 'number', group: 'Kualitas Bacaan' },
+    // v.100d (kyai): tukar urutan + 'Kelancaran' jadi 'Tahfizh' (id tetap → data lama aman)
+    { id: 'hafalan_kelancaran', label: 'Tahfizh', type: 'number', group: 'Kualitas Hafalan' },
     { id: 'hafalan_istimror', label: 'Istimror', type: 'number', group: 'Kualitas Hafalan' },
-    { id: 'hafalan_kelancaran', label: 'Kelancaran', type: 'number', group: 'Kualitas Hafalan' },
     { id: 'adab', label: 'Adab', type: 'number' },
     { id: 'predikat', label: 'Predikat', type: 'auto_predikat', source: 'avg' }
   ]

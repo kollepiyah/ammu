@@ -713,17 +713,17 @@
             <table class="w-full border-collapse text-[10px] md:text-[11px]">
               <thead class="bg-[var(--bg-muted)]">
                 <tr>
-                  <th class="border border-slate-500 px-1.5 py-1 align-middle w-[44px]">Level</th>
-                  <th class="border border-slate-500 px-1.5 py-1 text-left align-middle">Kitab</th>
-                  <th class="border border-slate-500 px-1.5 py-1 align-middle w-[72px]">Tgl Khotam</th>
-                  <th
-                    v-for="f in fieldsNilai"
-                    :key="f.id"
-                    class="border border-slate-500 px-1.5 py-1 align-middle"
-                  >
-                    {{ f.label }}
-                  </th>
-                  <th class="border border-slate-500 px-1.5 py-1 align-middle w-[80px]">Predikat</th>
+                  <th rowspan="2" class="border border-slate-500 px-1.5 py-1 align-middle w-[44px]">Level</th>
+                  <th rowspan="2" class="border border-slate-500 px-1.5 py-1 text-left align-middle">Kitab</th>
+                  <th rowspan="2" class="border border-slate-500 px-1.5 py-1 align-middle w-[72px]">Tgl Khotam</th>
+                  <template v-for="(h, idx) in ppphHeaderRow1" :key="idx">
+                    <th v-if="h.group" :colspan="h.span" class="border border-slate-500 px-1.5 py-1">{{ h.group }}</th>
+                    <th v-else rowspan="2" class="border border-slate-500 px-1.5 py-1 align-middle">{{ h.label }}</th>
+                  </template>
+                  <th rowspan="2" class="border border-slate-500 px-1.5 py-1 align-middle w-[80px]">Predikat</th>
+                </tr>
+                <tr>
+                  <th v-for="f in ppphGroupedFields" :key="f.id" class="border border-slate-500 px-1.5 py-1">{{ f.label }}</th>
                 </tr>
               </thead>
               <tbody>
@@ -1602,8 +1602,9 @@ function buildSchema(lembagaName) {
   if (lmb === 'ptpt') {
     const fields = [
       { id: 'tgl_khotam', label: 'Tgl Khotam', type: 'date' },
+      // v.100d (kyai): tukar urutan Istimror↔Kelancaran + 'Kelancaran' jadi 'Tahfizh' (id tetap → data lama aman)
+      { id: 'kelancaran', label: 'Tahfizh', type: 'number', group: 'Kualitas Hafalan' },
       { id: 'istimror', label: 'Istimror', type: 'number', group: 'Kualitas Hafalan' },
-      { id: 'kelancaran', label: 'Kelancaran', type: 'number', group: 'Kualitas Hafalan' },
       { id: 'fashohah', label: 'Fashohah', type: 'number', group: 'Kualitas Bacaan' },
       { id: 'tajwid', label: 'Tajwid', type: 'number', group: 'Kualitas Bacaan' },
       { id: 'predikat', label: 'Predikat', type: 'auto_predikat', source: 'avg' }
@@ -1618,13 +1619,16 @@ function buildSchema(lembagaName) {
   }
 
   // PPPH (Pasca PTPT Program Hadits): 4 level kitab. Tgl Khotam (auto) + aspek + Predikat.
+  // v.100d (kyai): desain ulang — 2 grup: Hafalan Al-Qur'an (Tahfizh/Fashohah/Tajwid) + Hafalan Hadits (Ketepatan Matan/Pemahaman Sanad).
   if (lmb === 'ppph' || lmb === 'p3h') {
     return {
       perKitab: true,
       fieldsNilai: [
-        { id: 'hafalan', label: 'Hafalan' },
-        { id: 'pemahaman', label: 'Pemahaman' },
-        { id: 'kelancaran', label: 'Kelancaran' }
+        { id: 'tahfizh', label: 'Tahfizh', group: "Hafalan Al-Qur'an" },
+        { id: 'fashohah', label: 'Fashohah', group: "Hafalan Al-Qur'an" },
+        { id: 'tajwid', label: 'Tajwid', group: "Hafalan Al-Qur'an" },
+        { id: 'ketepatan_matan', label: 'Ketepatan Matan', group: 'Hafalan Hadits' },
+        { id: 'pemahaman_sanad', label: 'Pemahaman Sanad', group: 'Hafalan Hadits' }
       ],
       levels: [
         { id: 'lvl_1', label: 'Level 1', kitab: "Arba'in Nawawi" },
@@ -1861,8 +1865,13 @@ const _schemaRaw = computed(() => {
       lnorm === 'ptpt' &&
       found.tableLayout === 'kelasJuz' &&
       ((found.fields || []).some((f) => f.id === 'adab') ||
-        !(found.fields || []).some((f) => f.id === 'tgl_khotam'))
-    const ppphStale = (lnorm === 'ppph' || lnorm === 'p3h') && !found.perKitab
+        !(found.fields || []).some((f) => f.id === 'tgl_khotam') ||
+        // v.100d: paksa layout baru (Tahfizh + urutan baru) bila override lama belum punya
+        !(found.fields || []).some((f) => f.label === 'Tahfizh'))
+    const ppphStale =
+      (lnorm === 'ppph' || lnorm === 'p3h') &&
+      // v.100d: paksa skema baru (2 grup) bila bukan perKitab / belum punya aspek Hadits
+      (!found.perKitab || !(found.fieldsNilai || []).some((f) => f.id === 'ketepatan_matan'))
     if ((isTahfizh && overrideHasJuzMapel) || ptptStale || ppphStale) return buildSchema(lmb)
     return found
   }
@@ -2318,6 +2327,25 @@ const flatHeaderRow1 = computed(() => {
   return out
 })
 const flatGroupedFields = computed(() => (schema.value.fields || []).filter((f) => f && f.group))
+
+// v.100d: header grup 2 tingkat utk PPPH (perKitab), pola sama dgn flatHeaderRow1 tapi atas `fieldsNilai`.
+const ppphHeaderRow1 = computed(() => {
+  const fields = fieldsNilai.value || []
+  const out = []
+  let i = 0
+  while (i < fields.length) {
+    const f = fields[i]
+    if (f.group) {
+      let span = 1
+      let j = i + 1
+      while (j < fields.length && fields[j].group === f.group) { span++; j++ }
+      out.push({ group: f.group, span })
+      i = j
+    } else { out.push({ label: f.label }); i++ }
+  }
+  return out
+})
+const ppphGroupedFields = computed(() => (fieldsNilai.value || []).filter((f) => f && f.group))
 
 function kelasNum(v) {
   const m = String(v || '').match(/(\d+)/)
