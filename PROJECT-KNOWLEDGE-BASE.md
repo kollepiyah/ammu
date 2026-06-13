@@ -1356,3 +1356,39 @@ firestore.rules TIDAK berubah. **Setelah deploy paket v.99: isi 2 tarif bisyaroh
 - Tes visual: (a) ekspor rapor PDF → cek logo (22mm/center; sebut angka bila mau disesuaikan);
   (b) /statistik (guru/kepala) + Capaian Prestasi (santri) → tren muncul (butuh ≥2 bln data notif_prestasi).
 - FOLLOW-UP opsional: tren **Diniyah/sekolah per-semester** (`rekap_diniyah`) utk guru sekolah-murni.
+
+---
+
+## SESI v.100c (lanjut) — RAPOR: FIX REDIRECT GURU SEKOLAH + KKM EDITABLE + TGL MANUAL (13 Jun 2026, Claude Code)
+
+> 2 commit: `342d9a8` (fix #1 redirect), `e89fbed` (#2 KKM + #3 tanggal). Verify build:electron exit 0. BELUM deploy.
+
+### #1 FIX — guru sekolah tak lagi dipaksa ke rapor Qiraati (`342d9a8`)
+- Bug: akun guru sekolah klik "Rapor Semester" → auto-jump ke daftar santri Qiraati. Akar: onMounted
+  auto-jump pakai field `guru.lembaga` (tak andal) + selalu prioritas jalur qiraati.
+- Fix: auto-jump pakai `deteksiTipeGuru(santriRaw)` (sama dgn picker kartu, util guruScope) →
+  qiraati-saja→'qiraati', sekolah-saja→'diniyah', DUAL→tetap picker (pilih sendiri). Dipindah ke
+  `watch([santriRaw, guruTipeRapor])` (async-safe). Daftar guru-mode `lembaga=''` sudah filter benar.
+
+### #2 KKM diniyah EDITABLE — per kelas (`e89fbed`)
+- Editor KKM mapel di form edit rapor diniyah (`v-if kategori==='diniyah'`). `kkmMapelNames` (dari
+  `_mapelDiniyahResolved`) + `kkmDraft[]`; `saveKkm()` tulis **`settings.rekapDiniyahKKM[kelas]`**
+  (berlaku SEMUA santri kelas itu — KKM = standar kelas). `buildDiniyahSchemaFromSetting` baca array ini
+  → reaktif. `loadKkmDraft()` dipanggil di `startEdit` saat diniyah.
+
+### #3 Tanggal terbit rapor MANUAL — satu per periode (`e89fbed`)
+- "Dikeluarkan Pada Tanggal" bisa diset manual. SATU tanggal per periode (TahunAjaran+Semester),
+  berlaku semua santri, tersimpan **`settings.raporTglTerbit[periodKey]`**. Input `type=date` di toolbar
+  list (batch) + detail; `@change saveTglTerbit`. Kosong → hari ini.
+- `tglCetak` (preview) & `buildRaporStateFor.tanggal` (=`tglTerbitID` terformat ID) → `raporPdf.drawSignBlocks`
+  pakai `raporState.tanggal` bila ada, else `fmtTanggalID(new Date())`.
+
+### CATATAN
+- Izin: `firestore.rules` settings `allow write: if signedIn()` → guru bisa simpan KKM & tanggal (via
+  `settingsStore.save` yg merge ke settings/general + settings/web).
+
+### PENDING KYAI
+- Deploy: `npm run firebase:deploy` (web saja — tanpa bump vc/rules/functions/native).
+- Tes: (a) login guru sekolah → menu Rapor Semester → harus ke Diniyah (bukan Qiraati); guru DUAL → picker.
+  (b) Edit rapor diniyah → set KKM mapel → Simpan KKM → cek predikat berubah sesuai KKM.
+  (c) Set Tgl terbit di toolbar → ekspor PDF → cek "Dikeluarkan Pada Tanggal".
