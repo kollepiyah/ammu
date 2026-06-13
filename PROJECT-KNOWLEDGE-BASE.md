@@ -1442,14 +1442,15 @@ firestore.rules TIDAK berubah. **Setelah deploy paket v.99: isi 2 tarif bisyaroh
 3. **Menu DAFTAR TES (Tes Kenaikan Qiraati)** — kyai ingin FOKUS bahas/kembangkan fitur ini.
    - Status saat ini: Fase A/B/C SELESAI (commit `50ea5fc`/`ef99177`/`568f0b9`). Lihat recap "FITUR TES
      KENAIKAN QIRAATI" di atas. Kemungkinan arah: penyempurnaan UX, statistik tes, integrasi ke rapor, dll.
-4. **Rekap Prestasi (input bulanan) — FILTER pemisah Qiraati / Sekolah utk guru DUAL.**
+4. ✅ **SELESAI (commit `9a337a1`, v.100d) — Rekap Prestasi (input bulanan) FILTER pemisah Qiraati / Sekolah utk guru DUAL.**
    - Konteks (screenshot kyai, akun Aizza Jundhana GURU/PEGAWAI): mode bulanan tampilkan santri qiraati
      ampuan (editable) + santri kelas sekolah (badge "SEKOLAH", read-only) TERCAMPUR dlm satu tabel.
-   - MINTA kyai: tambah toggle filter (Qiraati / Sekolah / Semua) di RekapPrestasiView mode bulanan
-     supaya bisa **ekspor TERSENDIRI** (PDF/Excel/Google Sheet) per kategori santri.
-   - RENCANA: ref `filterTipe` ('all'|'qiraati'|'sekolah'); `filteredSantri` hormati filter (qiraati=ownNgaji,
-     sekolah=ownSekolah); toggle hanya tampil utk guru DUAL (`deteksiTipeGuru`). Ekspor sudah pakai
-     `filteredSantri` → otomatis terpisah. (Pola sama dgn toggle NaikKelasView / 2-section SantriView.)
+   - HASIL: toggle segmented **Semua / Qiraati / Sekolah** di `RekapPrestasiView` (`v-if="isDualGuru"`,
+     tampil di SEMUA mode utk guru dual). `filterTipe` ('all'|'qiraati'|'sekolah') di `filteredSantri`:
+     qiraati=`ownNgaji` (editable), sekolah=`ownSekolah && !ownNgaji` (read-only, tak dobel), all=campur (perilaku lama).
+     `isDualGuru` via `deteksiTipeGuru` (guruScope). Ekspor PDF/Excel/Sheet/Cetak/Template ikut OTOMATIS
+     (semua pakai `filteredSantri`) → terpisah per kategori. Vue source murni, TANPA bump versionCode.
+     Verify build:electron exit 0. **Deploy web kyai (`firebase:deploy`); AAB/Electron opsional.**
 
 ### STATUS DEPLOY (semua sesi v.100/b/c BELUM deploy oleh kyai)
 - Web: `npm run firebase:deploy`. Rules: `firebase deploy --only firestore:rules` (koleksi `tes_kenaikan`).
