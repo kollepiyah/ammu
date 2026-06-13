@@ -31,12 +31,18 @@
     <!-- ============ TAB: AJUKAN (guru) ============ -->
     <div v-if="activeTab === 'ajukan'" class="space-y-3">
       <div class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm space-y-3">
-        <div class="relative">
-          <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] text-sm"></i>
-          <input v-model="search" type="text" placeholder="Cari nama / No. Induk santri..." class="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-teal-500 outline-none" />
+        <div class="flex gap-2">
+          <div class="relative flex-1">
+            <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] text-sm"></i>
+            <input v-model="search" type="text" placeholder="Cari nama / No. Induk santri..." class="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-teal-500 outline-none" />
+          </div>
+          <select v-model="fLembaga" class="px-2.5 py-2.5 text-xs rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-teal-500 outline-none">
+            <option value="">Semua lembaga</option>
+            <option v-for="l in TES_LEMBAGA_OPTS" :key="l" :value="l">{{ l }}</option>
+          </select>
         </div>
         <p class="text-[11px] text-[var(--text-tertiary)] font-bold">
-          {{ santriEligible.length }} santri bisa diajukan (Pra PTPT dikecualikan).
+          {{ santriEligible.length }} santri bisa diajukan.
           Tercentang: <b class="text-teal-600">{{ checkedCount }}</b>
         </p>
       </div>
@@ -125,11 +131,23 @@
 
     <!-- ============ TAB: ANTRIAN (kepala/admin) ============ -->
     <div v-else-if="activeTab === 'antrian'" class="space-y-2">
-      <div v-if="antrian.length === 0" class="bg-[var(--bg-card)] rounded-2xl p-10 border border-dashed border-[var(--border-default)] text-center">
-        <i class="fas fa-clipboard-check text-[var(--text-tertiary)] text-3xl mb-2"></i>
-        <p class="text-sm text-[var(--text-secondary)] italic">Belum ada ajuan tes menunggu.</p>
+      <!-- v.100d: filter Lembaga/Jenis/Cari -->
+      <div class="bg-[var(--bg-card)] rounded-2xl p-2.5 border border-[var(--border-subtle)] shadow-sm flex flex-wrap gap-2">
+        <select v-model="fLembaga" class="px-2.5 py-2 text-xs rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-teal-500 outline-none">
+          <option value="">Semua lembaga</option>
+          <option v-for="l in TES_LEMBAGA_OPTS" :key="l" :value="l">{{ l }}</option>
+        </select>
+        <select v-model="fJenis" class="px-2.5 py-2 text-xs rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-teal-500 outline-none">
+          <option value="">Semua jenis</option>
+          <option v-for="j in JENIS_OPTS" :key="j.value" :value="j.value">{{ j.label }}</option>
+        </select>
+        <input v-model="fCari" type="text" placeholder="Cari nama…" class="flex-1 min-w-[120px] px-2.5 py-2 text-xs rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-teal-500 outline-none" />
       </div>
-      <div v-for="a in antrian" :key="a.id" class="bg-[var(--bg-card)] rounded-xl p-3.5 border border-[var(--border-subtle)] shadow-sm">
+      <div v-if="antrianView.length === 0" class="bg-[var(--bg-card)] rounded-2xl p-10 border border-dashed border-[var(--border-default)] text-center">
+        <i class="fas fa-clipboard-check text-[var(--text-tertiary)] text-3xl mb-2"></i>
+        <p class="text-sm text-[var(--text-secondary)] italic">{{ antrian.length ? 'Tak ada yang cocok dengan filter.' : 'Belum ada ajuan tes menunggu.' }}</p>
+      </div>
+      <div v-for="a in antrianView" :key="a.id" class="bg-[var(--bg-card)] rounded-xl p-3.5 border border-[var(--border-subtle)] shadow-sm">
         <div class="flex items-start justify-between gap-3">
           <div class="min-w-0">
             <p class="text-sm font-bold text-[var(--text-primary)] truncate">{{ a.nama_cache }}</p>
@@ -168,11 +186,23 @@
 
     <!-- ============ TAB: RIWAYAT (kepala/admin) ============ -->
     <div v-else-if="activeTab === 'riwayat'" class="space-y-2">
-      <div v-if="riwayat.length === 0" class="bg-[var(--bg-card)] rounded-2xl p-10 border border-dashed border-[var(--border-default)] text-center">
-        <i class="fas fa-history text-[var(--text-tertiary)] text-3xl mb-2"></i>
-        <p class="text-sm text-[var(--text-secondary)] italic">Belum ada riwayat tes.</p>
+      <!-- v.100d: filter Lembaga/Jenis/Cari -->
+      <div class="bg-[var(--bg-card)] rounded-2xl p-2.5 border border-[var(--border-subtle)] shadow-sm flex flex-wrap gap-2">
+        <select v-model="fLembaga" class="px-2.5 py-2 text-xs rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-teal-500 outline-none">
+          <option value="">Semua lembaga</option>
+          <option v-for="l in TES_LEMBAGA_OPTS" :key="l" :value="l">{{ l }}</option>
+        </select>
+        <select v-model="fJenis" class="px-2.5 py-2 text-xs rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-teal-500 outline-none">
+          <option value="">Semua jenis</option>
+          <option v-for="j in JENIS_OPTS" :key="j.value" :value="j.value">{{ j.label }}</option>
+        </select>
+        <input v-model="fCari" type="text" placeholder="Cari nama…" class="flex-1 min-w-[120px] px-2.5 py-2 text-xs rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-teal-500 outline-none" />
       </div>
-      <div v-for="a in riwayat" :key="a.id" class="bg-[var(--bg-card)] rounded-xl p-3.5 border border-[var(--border-subtle)] shadow-sm">
+      <div v-if="riwayatView.length === 0" class="bg-[var(--bg-card)] rounded-2xl p-10 border border-dashed border-[var(--border-default)] text-center">
+        <i class="fas fa-history text-[var(--text-tertiary)] text-3xl mb-2"></i>
+        <p class="text-sm text-[var(--text-secondary)] italic">{{ riwayat.length ? 'Tak ada yang cocok dengan filter.' : 'Belum ada riwayat tes.' }}</p>
+      </div>
+      <div v-for="a in riwayatView" :key="a.id" class="bg-[var(--bg-card)] rounded-xl p-3.5 border border-[var(--border-subtle)] shadow-sm">
         <div class="flex items-start justify-between gap-3">
           <div class="min-w-0">
             <p class="text-sm font-bold text-[var(--text-primary)] truncate">{{ a.nama_cache }}</p>
@@ -248,6 +278,8 @@
 import { ref, reactive, computed } from 'vue'
 import { useSantri } from '@/composables/useSantri'
 import { useTesKenaikan } from '@/composables/useTesKenaikan'
+import { useAuthStore } from '@/stores/auth' // v.100d: nama guru utk scope ngaji-only
+import { ownsNgaji } from '@/utils/guruScope' // v.100d
 import { getOne } from '@/services/firestore' // v.100d: muat dokumen santri penuh utk auto-naik
 import { buildKenaikanQiraatiPayload, writeKenaikan } from '@/utils/promosiKenaikan' // v.100d
 import { useSettingsStore } from '@/stores/settings'
@@ -272,8 +304,35 @@ const {
 
 const settings = computed(() => settingsStore.settings || {})
 
-// Santri yang boleh diajukan (sudah ter-scope per role oleh useSantri).
-const santriEligible = computed(() => (santri.value || []).filter((s) => isEligibleForTes(s)))
+const auth = useAuthStore()
+const myGuruNama = computed(() => String(auth.sesiAktif?.guru || auth.sesiAktif?.nama || '').trim())
+
+// v.100d: filter UI (Lembaga/Jenis/Cari) — berguna utk Kepala/PJ & admin lintas-lembaga.
+const fLembaga = ref('')
+const fJenis = ref('')
+const fCari = ref('')
+const TES_LEMBAGA_OPTS = ['TPQ Pagi', 'TPQ Sore', 'Pra PTPT', 'PTPT', 'PPPH']
+const JENIS_OPTS = [
+  { value: 'jilid', label: 'Jilid' }, { value: 'khotam', label: 'Khotam' },
+  { value: 'juz', label: 'Juz' }, { value: 'kelas', label: 'Kelas' }, { value: 'level', label: 'Level' }
+]
+function matchAjuanFilter(a) {
+  if (fLembaga.value && a.lembaga !== fLembaga.value) return false
+  if (fJenis.value && a.jenis !== fJenis.value) return false
+  if (fCari.value && !String(a.nama_cache || '').toLowerCase().includes(fCari.value.toLowerCase())) return false
+  return true
+}
+const antrianView = computed(() => antrian.value.filter(matchAjuanFilter))
+const riwayatView = computed(() => riwayat.value.filter(matchAjuanFilter))
+
+// Santri yang boleh diajukan (ter-scope per role oleh useSantri).
+//   v.100d: guru biasa (bukan penguji) DIBATASI ke santri NGAJI ampuannya (bukan wali kelas sekolah).
+const santriEligible = computed(() => {
+  let list = (santri.value || []).filter((s) => isEligibleForTes(s))
+  if (!isPenguji.value) list = list.filter((s) => ownsNgaji(s, myGuruNama.value))
+  if (fLembaga.value) list = list.filter((s) => s.lembaga === fLembaga.value)
+  return list
+})
 
 // ----- Tabs (adaptif role) -----
 // Tab Ajukan tampil bila ada santri dalam scope (guru→ampuan, kepala→se-lembaga) atau bukan penguji.
