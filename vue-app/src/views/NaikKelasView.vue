@@ -196,17 +196,18 @@
       >
         Filter Lembaga
       </p>
-      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 md:gap-3">
+      <div class="grid grid-cols-3 sm:grid-cols-5 gap-2 md:gap-3">
         <button
           v-for="l in kenaikanLembagaOptions"
           :key="l"
           @click="filterLembaga = l"
           :class="[
-            'px-3 py-2.5 text-sm font-black rounded-xl transition cursor-pointer shadow-sm',
+            'flex flex-col items-center justify-center gap-1.5 px-2 py-3 rounded-xl transition cursor-pointer shadow-sm active:scale-95',
             filterLembaga === l ? lembagaColor(l, true) : lembagaColor(l, false)
           ]"
         >
-          {{ l }}
+          <i :class="['fas', lembagaIcon(l), 'text-xl']"></i>
+          <span class="text-[11px] font-black leading-tight text-center">{{ l }}</span>
         </button>
       </div>
     </div>
@@ -287,29 +288,35 @@
       v-if="(isAdmin || isGuru) && activeTab === 'riwayat'"
       class="bg-[var(--bg-card)] rounded-2xl p-3 md:p-4 border border-[var(--border-subtle)] shadow-sm"
     >
-      <div class="flex flex-wrap items-center gap-2 mb-3">
-        <label class="text-xs font-bold text-[var(--text-secondary)]">
-          Lembaga:
-        </label>
-        <select
-          v-model="riwayatLembaga"
-          class="text-xs px-3 py-1.5 border border-[var(--border-default)] rounded-lg bg-white dark:bg-slate-900 text-[var(--text-primary)]"
+      <!-- v.100e: filter lembaga Riwayat = KARTU IKON (samakan dgn Form Kenaikan) -->
+      <div class="flex gap-2 mb-3">
+        <button
+          @click="riwayatKategori = 'qiraati'; riwayatLembaga = ''"
+          :class="['flex-1 px-3 py-2 rounded-xl text-xs font-black border transition cursor-pointer', riwayatKategori === 'qiraati' ? 'bg-teal-600 text-white border-teal-700' : 'bg-[var(--bg-muted)] text-[var(--text-primary)] border-[var(--border-default)] hover:bg-teal-50 dark:hover:bg-teal-900/30']"
+        ><i class="fas fa-book-quran mr-1"></i>Lembaga Qiraati</button>
+        <button
+          @click="riwayatKategori = 'sekolah'; riwayatLembaga = ''"
+          :class="['flex-1 px-3 py-2 rounded-xl text-xs font-black border transition cursor-pointer', riwayatKategori === 'sekolah' ? 'bg-cyan-600 text-white border-cyan-700' : 'bg-[var(--bg-muted)] text-[var(--text-primary)] border-[var(--border-default)] hover:bg-cyan-50 dark:hover:bg-cyan-900/30']"
+        ><i class="fas fa-school mr-1"></i>Lembaga Sekolah</button>
+      </div>
+      <p class="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-widest mb-2">
+        Filter Lembaga
+      </p>
+      <div class="grid grid-cols-3 sm:grid-cols-5 gap-2 md:gap-3 mb-3">
+        <button
+          v-for="l in riwayatLembagaOptions"
+          :key="l"
+          @click="riwayatLembaga = l"
+          :class="[
+            'flex flex-col items-center justify-center gap-1.5 px-2 py-3 rounded-xl transition cursor-pointer shadow-sm active:scale-95',
+            riwayatLembaga === l ? lembagaColor(l, true) : lembagaColor(l, false)
+          ]"
         >
-          <option value="">— Pilih Lembaga —</option>
-          <optgroup label="Qiraati">
-            <option value="TPQ Pagi">TPQ Pagi</option>
-            <option value="TPQ Sore">TPQ Sore</option>
-            <option value="Pra PTPT">Pra PTPT</option>
-            <option value="PTPT">PTPT</option>
-            <option value="PPPH">PPPH</option>
-          </optgroup>
-          <optgroup label="Sekolah">
-            <option value="TK">TK</option>
-            <option value="SDI">SDI</option>
-            <option value="SMP">SMP</option>
-            <option value="SMA">SMA</option>
-          </optgroup>
-        </select>
+          <i :class="['fas', lembagaIcon(l), 'text-xl']"></i>
+          <span class="text-[11px] font-black leading-tight text-center">{{ l }}</span>
+        </button>
+      </div>
+      <div class="flex flex-wrap items-center gap-2 mb-3">
         <input
           v-model="riwayatSearch"
           type="text"
@@ -1305,6 +1312,22 @@ function lembagaColor(l, active) {
   return active ? c.active : c.inactive
 }
 
+// v.100e: ikon per lembaga utk KARTU IKON filter Kenaikan (Form + Riwayat).
+const LEMBAGA_ICON_MAP = {
+  'TPQ Pagi': 'fa-sun',
+  'TPQ Sore': 'fa-moon',
+  'Pra PTPT': 'fa-seedling',
+  PTPT: 'fa-book-quran',
+  PPPH: 'fa-award',
+  TK: 'fa-shapes',
+  SDI: 'fa-school',
+  SMP: 'fa-book-open',
+  SMA: 'fa-graduation-cap'
+}
+function lembagaIcon(l) {
+  return LEMBAGA_ICON_MAP[l] || 'fa-book'
+}
+
 // ────────── Santri (untuk role santri) ──────────
 const mySantri = computed(() => {
   const sa = authStore.sesiAktif
@@ -1419,6 +1442,10 @@ const filteredFormSantri = computed(() => {
 
 // ────────── Riwayat tab ──────────
 const riwayatLembaga = ref('')
+const riwayatKategori = ref('qiraati') // v.100e: kategori filter Riwayat (samakan dgn Form Kenaikan)
+const riwayatLembagaOptions = computed(() =>
+  riwayatKategori.value === 'sekolah' ? SEKOLAH_KENAIKAN : LEMBAGA_KENAIKAN_LIST
+)
 const riwayatSearch = ref('')
 const riwayatList = computed(() => {
   if (!riwayatLembaga.value) return []

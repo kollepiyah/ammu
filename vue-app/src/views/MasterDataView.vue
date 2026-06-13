@@ -38,12 +38,11 @@ const auditLogs = ref([])
 let _unsubAudit = null
 onMounted(() => {
   _unsubAudit = subscribeColl('audit_log', (rows) => {
+    // v.100e: 2 penulis pakai format timestamp beda (Firestore Timestamp vs string ISO) →
+    //   sort lama `tb - ta` jadi NaN utk entri ISO → urutan kacau → entri hapus terbaru
+    //   terlempar dari 50 teratas ("tidak update"). auditTsMs() normalkan ke epoch ms.
     const sorted = [...(rows || [])]
-      .sort((a, b) => {
-        const ta = a.timestamp?.seconds || a.timestamp || 0
-        const tb = b.timestamp?.seconds || b.timestamp || 0
-        return tb - ta
-      })
+      .sort((a, b) => auditTsMs(b.timestamp) - auditTsMs(a.timestamp))
       .slice(0, 50)
     auditLogs.value = sorted
   })
@@ -65,6 +64,30 @@ function formatTanggal(ts) {
   } catch {
     return String(ts).slice(0, 16)
   }
+}
+// v.100e: timestamp audit_log campur (Firestore Timestamp .seconds | string ISO | ms) → epoch ms.
+function auditTsMs(ts) {
+  if (!ts) return 0
+  if (typeof ts === 'object' && ts.seconds != null) return ts.seconds * 1000
+  if (typeof ts === 'number') return ts < 1e12 ? ts * 1000 : ts
+  const t = Date.parse(ts)
+  return isNaN(t) ? 0 : t
+}
+// v.100e: nama operator — penulis backup hapus pakai user_nama, writeAuditLog pakai operator.
+function auditUser(log) {
+  return log.user_nama || log.operator || log.user || '-'
+}
+// v.100e: detail ringkas dari 2 format (gabung target/collection/alasan/jumlah/objek detail).
+function auditDetail(log) {
+  if (log.keterangan) return String(log.keterangan)
+  const parts = []
+  if (log.target) parts.push(log.target)
+  if (log.collection) parts.push(log.collection)
+  if (log.alasan) parts.push(log.alasan)
+  if (log.ids_count) parts.push(`${log.ids_count} item`)
+  if (log.detail != null)
+    parts.push(typeof log.detail === 'object' ? JSON.stringify(log.detail) : String(log.detail))
+  return parts.join(' · ') || '-'
 }
 
 const toast = useToast()
@@ -1473,7 +1496,7 @@ async function simpanPengaturanRekap() {
                   {{ formatTanggal(log.timestamp) }}
                 </td>
                 <td class="p-2 font-bold text-slate-800 dark:text-white">
-                  {{ log.user_nama || log.user || '-' }}
+                  {{ auditUser(log) }}
                 </td>
                 <td class="p-2">
                   <span
@@ -1482,7 +1505,7 @@ async function simpanPengaturanRekap() {
                   >
                 </td>
                 <td class="p-2 text-slate-600 dark:text-slate-300 text-[11px] max-w-md truncate">
-                  {{ log.detail || log.keterangan || '-' }}
+                  {{ auditDetail(log) }}
                 </td>
               </tr>
             </tbody>
