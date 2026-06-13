@@ -1471,6 +1471,13 @@ const riwayatList = computed(() => {
   } else {
     list = santriList.value.filter((s) => s.lembaga === riwayatLembaga.value && s.aktif !== false)
   }
+  // v.100c-fix: GURU hanya lihat santri ampuannya di riwayat (sebelumnya tampil SEMUA santri lembaga).
+  //   Sekolah → guru_sekolah; Qiraati → guru ngaji.
+  if (isGuru.value) {
+    const nm = myNamaGuru.value
+    const isSek = LEMBAGA_KENAIKAN_SEKOLAH.includes(riwayatLembaga.value)
+    list = list.filter((s) => (isSek ? ownsSekolah(s, nm) : ownsNgaji(s, nm)))
+  }
   if (riwayatSearch.value) {
     const kw = riwayatSearch.value.toLowerCase()
     list = list.filter((s) =>
@@ -1784,7 +1791,17 @@ const kartuCeremonialLabel = computed(() =>
 
 function openKartu(s) {
   kartuSantri.value = s
-  const lemb = filterLembaga.value || s.lembaga
+  // v.100c-fix: kartu sadar KATEGORI. filterLembaga di-set utk admin & dari riwayat; guru form
+  //   (filterLembaga kosong) → turunkan dari kategori: sekolah=lembaga_sekolah (PKBM→SMP/SMA), else qiraati.
+  let lemb = filterLembaga.value
+  if (!lemb) {
+    if (kenaikanKategori.value === 'sekolah') {
+      lemb = String(s.lembaga_sekolah || '').toUpperCase().trim()
+      if (lemb === 'PKBM') lemb = getPkbmSubTier(s.kelas_sekolah || s.kelas) || 'SMP'
+    } else {
+      lemb = s.lembaga
+    }
+  }
   kartuLembaga.value = lemb
   schema.value = getKartuKenaikanSchema(lemb, settingsStore.settings)
   cellData.value =

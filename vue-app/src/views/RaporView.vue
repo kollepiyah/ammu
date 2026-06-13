@@ -2367,6 +2367,20 @@ const namaKepala = computed(() => {
   const lnorm = String(kategori.value === 'diniyah' ? s.lembaga_sekolah || '' : s.lembaga || '')
     .toLowerCase()
     .trim()
+  // v.100c-fix: SELARASKAN dgn PDF (raporPdf.drawSignBlocks) — cari guru by JABATAN dulu
+  //   (preview dulu kosong krn hanya baca master lembaga). Prioritas: guru jabatan → master → settings.
+  let searchTitle = 'KEPALA SEKOLAH'
+  if (['tpq pagi', 'tpq sore', 'tpq', 'pra ptpt'].includes(lnorm)) searchTitle = 'KEPALA TPQ'
+  else if (lnorm === 'ptpt') searchTitle = 'PJ PTPT'
+  else if (lnorm === 'ppph' || lnorm === 'p3h') searchTitle = 'PJ PPPH'
+  else if (lnorm === 'sdi') searchTitle = 'KEPALA SDI'
+  else if (lnorm === 'pkbm') searchTitle = 'KEPALA PKBM'
+  const kepalaGuru = (guruRaw.value || []).find((g) => {
+    const jab = String(g.jabatan || '').toUpperCase()
+    const jabT = String(g.jabatan_tambahan || '').toUpperCase()
+    return (jab.includes(searchTitle) || jabT.includes(searchTitle)) && g.status !== 'Non-Aktif'
+  })
+  if (kepalaGuru?.nama) return kepalaGuru.nama
   const lmbObj =
     (lembagaRaw.value || []).find(
       (l) =>
@@ -2378,6 +2392,7 @@ const namaKepala = computed(() => {
     lmbObj.kepala_lembaga ||
     lmbObj.kepala_sekolah ||
     lmbObj.kepala ||
+    settingsStore.settings?.namaKepala ||
     settingsStore.settings?.namaPengasuh ||
     ''
   )

@@ -506,6 +506,7 @@ import { bestNameMatch, fuzzyKey, simRatio } from '@/utils/fuzzyMatch' // v.100 
 import { buildListPdf } from '@/utils/pdfBuilder'
 import { muassisDataUrlSync } from '@/utils/kopMuassis' // v.100: baris-1 KOP print = gambar muassis
 import { useAuthStore } from '@/stores/auth'
+import { useRouter } from 'vue-router' // v.100c-fix: pilihKategori('diniyah') pakai router.push (sebelumnya undefined → ReferenceError)
 import { isFullFilterRole, isKepalaLembaga } from '@/utils/roleScope'
 import { ownsSekolah } from '@/utils/guruScope' // v.100b: guru sekolah lihat prestasi qiraati santri kelasnya (read-only)
 import { lembagaScopeMatches } from '@/composables/useLembaga'
@@ -538,6 +539,7 @@ const busy = ref(false)
 const search = ref('')
 const filterLembaga = ref('')
 const auth = useAuthStore()
+const router = useRouter()
 const isFullFilter = computed(() => isFullFilterRole(auth.sesiAktif))
 const isGuruMode = computed(() => !isFullFilter.value)
 // v.86.0526: Kepala/PJ (role guru, bukan admin) discope ke lembaganya.
