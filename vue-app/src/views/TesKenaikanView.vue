@@ -282,6 +282,9 @@ import { useAuthStore } from '@/stores/auth' // v.100d: nama guru utk scope ngaj
 import { ownsNgaji } from '@/utils/guruScope' // v.100d
 import { getOne } from '@/services/firestore' // v.100d: muat dokumen santri penuh utk auto-naik
 import { buildKenaikanQiraatiPayload, writeKenaikan } from '@/utils/promosiKenaikan' // v.100d
+import { buildTesRaporFeed, currentRaporPeriode } from '@/utils/tesRaporFeed' // v.100d Fase 3: nilai tes → rapor
+import { db } from '@/services/firebase'
+import { doc, setDoc } from 'firebase/firestore'
 import { juzNum } from '@/utils/format' // v.100e: normalisasi tampilan juz (anti dobel "Juz JUZ n")
 import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
@@ -551,7 +554,31 @@ async function submitLulus() {
     }
     const { payload, rkEntry } = buildKenaikanQiraatiPayload(s, opts, { settings: settings.value, lembagaList: [] })
     await writeKenaikan(s, payload, rkEntry)
-    await putuskan(a.id, 'lulus', catatan[a.id] || '', collectNilai(a))
+    const nilaiObj = collectNilai(a)
+    await putuskan(a.id, 'lulus', catatan[a.id] || '', nilaiObj)
+    // v.100d Fase 3: nilai tes auto → rapor (posisi yang DISELESAIKAN, periode berjalan; prefill editable)
+    try {
+      const feed = buildTesRaporFeed(
+        { lembaga: a.lembaga, kelas_asal: a.kelas_asal, juz_asal: a.juz_asal, target: a.target },
+        nilaiObj
+      )
+      if (feed) {
+        const { tahunAjaran, semester, periodKey } = currentRaporPeriode()
+        const lmbKey = s.lembaga || a.lembaga || ''
+        const rid = `rapor_${s.id}_${lmbKey}_${periodKey}`
+        await setDoc(doc(db, 'rapor_semester', rid), {
+          santri_id: String(s.id),
+          santri_nama: s.nama || a.nama_cache || '',
+          lembaga: lmbKey,
+          tahunAjaran,
+          semester,
+          data_nilai: feed,
+          updated_at: new Date().toISOString()
+        }, { merge: true })
+      }
+    } catch (e2) {
+      console.warn('[tes→rapor] gagal feed nilai ke rapor:', e2?.message || e2)
+    }
     delete catatan[a.id]; delete nilai[a.id]
     toast.success(`${a.nama_cache} LULUS & dinaikkan ke ${naikForm.kelas}.`)
     closeLulus()
