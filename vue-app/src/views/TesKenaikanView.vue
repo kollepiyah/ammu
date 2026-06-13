@@ -218,6 +218,89 @@
       </div>
     </div>
 
+    <!-- ============ TAB: REKAP (statistik + cetak PDF) — v.100d Fase 5 ============ -->
+    <div v-else-if="activeTab === 'rekap'" class="space-y-3">
+      <!-- filter -->
+      <div class="bg-[var(--bg-card)] rounded-2xl p-2.5 border border-[var(--border-subtle)] shadow-sm flex flex-wrap gap-2">
+        <select v-model="fLembaga" class="px-2.5 py-2 text-xs rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-teal-500 outline-none">
+          <option value="">Semua lembaga</option>
+          <option v-for="l in TES_LEMBAGA_OPTS" :key="l" :value="l">{{ l }}</option>
+        </select>
+        <select v-model="fJenis" class="px-2.5 py-2 text-xs rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-teal-500 outline-none">
+          <option value="">Semua jenis</option>
+          <option v-for="j in JENIS_OPTS" :key="j.value" :value="j.value">{{ j.label }}</option>
+        </select>
+        <input v-model="fCari" type="text" placeholder="Cari nama…" class="flex-1 min-w-[120px] px-2.5 py-2 text-xs rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-teal-500 outline-none" />
+      </div>
+
+      <!-- kartu statistik -->
+      <div class="grid grid-cols-3 md:grid-cols-6 gap-2 text-center">
+        <div class="bg-[var(--bg-card)] rounded-xl p-2.5 border border-[var(--border-subtle)] shadow-sm">
+          <p class="text-2xl font-black text-[var(--text-primary)]">{{ statsRekap.total }}</p>
+          <p class="text-[10px] uppercase text-[var(--text-tertiary)]">Total</p>
+        </div>
+        <div class="bg-amber-50 dark:bg-amber-900/20 rounded-xl p-2.5 border border-amber-200 dark:border-amber-800">
+          <p class="text-2xl font-black text-amber-600">{{ statsRekap.diajukan }}</p>
+          <p class="text-[10px] uppercase text-amber-700/80">Menunggu</p>
+        </div>
+        <div class="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-2.5 border border-emerald-200 dark:border-emerald-800">
+          <p class="text-2xl font-black text-emerald-600">{{ statsRekap.lulus }}</p>
+          <p class="text-[10px] uppercase text-emerald-700/80">Lulus</p>
+        </div>
+        <div class="bg-orange-50 dark:bg-orange-900/20 rounded-xl p-2.5 border border-orange-200 dark:border-orange-800">
+          <p class="text-2xl font-black text-orange-600">{{ statsRekap.tidak_lulus }}</p>
+          <p class="text-[10px] uppercase text-orange-700/80">Belum</p>
+        </div>
+        <div class="bg-rose-50 dark:bg-rose-900/20 rounded-xl p-2.5 border border-rose-200 dark:border-rose-800">
+          <p class="text-2xl font-black text-rose-600">{{ statsRekap.ditolak }}</p>
+          <p class="text-[10px] uppercase text-rose-700/80">Tolak</p>
+        </div>
+        <div class="bg-cyan-50 dark:bg-cyan-900/20 rounded-xl p-2.5 border border-cyan-200 dark:border-cyan-800">
+          <p class="text-2xl font-black text-cyan-600">{{ statsRekap.kelulusan }}%</p>
+          <p class="text-[10px] uppercase text-cyan-700/80">Kelulusan</p>
+        </div>
+      </div>
+
+      <!-- per lembaga -->
+      <div class="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)] shadow-sm overflow-x-auto">
+        <table class="w-full text-xs">
+          <thead class="bg-[var(--bg-muted)]">
+            <tr class="text-[10px] uppercase text-[var(--text-secondary)]">
+              <th class="px-2 py-2 text-left">Lembaga</th>
+              <th class="px-2 py-2 text-center">Menunggu</th>
+              <th class="px-2 py-2 text-center">Lulus</th>
+              <th class="px-2 py-2 text-center">Belum</th>
+              <th class="px-2 py-2 text-center">Tolak</th>
+              <th class="px-2 py-2 text-center">% Lulus</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="r in statsRekap.lembagaRows" :key="r.lembaga" class="border-t border-[var(--border-subtle)]">
+              <td class="px-2 py-1.5 font-bold text-[var(--text-primary)]">{{ r.lembaga }}</td>
+              <td class="px-2 py-1.5 text-center text-amber-600">{{ r.diajukan }}</td>
+              <td class="px-2 py-1.5 text-center text-emerald-600 font-bold">{{ r.lulus }}</td>
+              <td class="px-2 py-1.5 text-center text-orange-600">{{ r.tidak_lulus }}</td>
+              <td class="px-2 py-1.5 text-center text-rose-600">{{ r.ditolak }}</td>
+              <td class="px-2 py-1.5 text-center font-bold text-cyan-600">{{ r.pct }}%</td>
+            </tr>
+            <tr v-if="statsRekap.lembagaRows.length === 0">
+              <td colspan="6" class="px-2 py-4 text-center text-[var(--text-tertiary)] italic">Belum ada data tes.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- cetak PDF -->
+      <div class="flex flex-wrap gap-2">
+        <button @click="cetakDaftarTes" :disabled="cetakBusy" class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 disabled:opacity-50 text-white text-xs font-bold transition">
+          <i :class="['fas', cetakBusy ? 'fa-spinner fa-spin' : 'fa-file-pdf']"></i>Cetak Daftar Antrian
+        </button>
+        <button @click="cetakRekapHasil" :disabled="cetakBusy" class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white text-xs font-bold transition">
+          <i :class="['fas', cetakBusy ? 'fa-spinner fa-spin' : 'fa-file-pdf']"></i>Cetak Rekap Hasil
+        </button>
+      </div>
+    </div>
+
     <!-- v.100d: Modal LULUS → naik otomatis (Kepala/PJ konfirmasi tujuan + pilih guru) -->
     <div v-if="lulusFor" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
       <div class="bg-[var(--bg-card)] rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] flex flex-col">
@@ -285,6 +368,7 @@ import { buildKenaikanQiraatiPayload, writeKenaikan } from '@/utils/promosiKenai
 import { buildTesRaporFeed, currentRaporPeriode } from '@/utils/tesRaporFeed' // v.100d Fase 3: nilai tes → rapor
 import { db } from '@/services/firebase'
 import { doc, setDoc } from 'firebase/firestore'
+import { buildListPdf } from '@/utils/pdfBuilder' // v.100d Fase 5: cetak daftar/rekap tes PDF
 import { juzNum } from '@/utils/format' // v.100e: normalisasi tampilan juz (anti dobel "Juz JUZ n")
 import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
@@ -329,6 +413,90 @@ function matchAjuanFilter(a) {
 const antrianView = computed(() => antrian.value.filter(matchAjuanFilter))
 const riwayatView = computed(() => riwayat.value.filter(matchAjuanFilter))
 
+// v.100d Fase 5: statistik/rekap tes (hormati filter aktif) — diajukan/lulus/belum/tolak + % kelulusan + per lembaga.
+const statsRekap = computed(() => {
+  const all = [...antrianView.value, ...riwayatView.value]
+  const base = { diajukan: 0, lulus: 0, tidak_lulus: 0, ditolak: 0 }
+  const tot = { ...base }
+  const perLembaga = {}
+  for (const a of all) {
+    const st = a.status || 'diajukan'
+    if (tot[st] != null) tot[st]++
+    const l = a.lembaga || '—'
+    if (!perLembaga[l]) perLembaga[l] = { lembaga: l, ...base }
+    if (perLembaga[l][st] != null) perLembaga[l][st]++
+  }
+  const tested = tot.lulus + tot.tidak_lulus
+  const kelulusan = tested > 0 ? Math.round((tot.lulus / tested) * 100) : 0
+  const lembagaRows = Object.values(perLembaga).map((r) => {
+    const t = r.lulus + r.tidak_lulus
+    return { ...r, pct: t > 0 ? Math.round((r.lulus / t) * 100) : 0 }
+  })
+  return { total: all.length, ...tot, kelulusan, lembagaRows }
+})
+
+// ----- Fase 5: cetak PDF (PDF saja, sesuai kyai) -----
+const cetakBusy = ref(false)
+function _kopRekap() {
+  const set = settingsStore.settings || {}
+  return { title: set.kopLine1 || set.txtAppName || '', name: set.kopLine2 || '', address: set.kopLine3 || '', contact: set.kopLine4 || '' }
+}
+async function cetakDaftarTes() {
+  if (cetakBusy.value) return
+  const list = antrianView.value
+  if (!list.length) { toast.warning('Tidak ada antrian untuk dicetak.'); return }
+  cetakBusy.value = true
+  try {
+    const rows = list.map((a, i) => ({
+      no: i + 1, nama: a.nama_cache || '', lembaga: a.lembaga || '',
+      kelas: a.kelas_asal || '-', target: a.target || '-', guru: a.guru_nama || '-', tgl: fmtTgl(a.tgl_daftar)
+    }))
+    await buildListPdf({
+      kind: 'umum', orientation: 'l', kop: _kopRekap(),
+      title: 'DAFTAR PESERTA TES KENAIKAN QIRAATI',
+      columns: [
+        { key: 'no', header: 'No', width: 30 },
+        { key: 'nama', header: 'Nama Santri', width: 150 },
+        { key: 'lembaga', header: 'Lembaga', width: 80 },
+        { key: 'kelas', header: 'Kelas/Posisi', width: 80 },
+        { key: 'target', header: 'Target', width: 90 },
+        { key: 'guru', header: 'Pengaju', width: 110 },
+        { key: 'tgl', header: 'Tgl Ajuan', width: 70 }
+      ],
+      rows, filename: 'Daftar_Peserta_Tes.pdf'
+    })
+    toast.success('PDF daftar peserta dibuat.')
+  } catch (e) { toast.error('Gagal cetak: ' + (e.message || e)) } finally { cetakBusy.value = false }
+}
+async function cetakRekapHasil() {
+  if (cetakBusy.value) return
+  const list = riwayatView.value
+  if (!list.length) { toast.warning('Tidak ada riwayat untuk dicetak.'); return }
+  cetakBusy.value = true
+  try {
+    const rows = list.map((a, i) => ({
+      no: i + 1, nama: a.nama_cache || '', lembaga: a.lembaga || '',
+      arah: `${a.kelas_asal || '-'} → ${a.target || '-'}`,
+      status: statusLabel(a.status), penguji: a.penguji || '-', tgl: fmtTgl(a.tgl_hasil)
+    }))
+    await buildListPdf({
+      kind: 'umum', orientation: 'l', kop: _kopRekap(),
+      title: 'REKAP HASIL TES KENAIKAN QIRAATI',
+      columns: [
+        { key: 'no', header: 'No', width: 30 },
+        { key: 'nama', header: 'Nama Santri', width: 150 },
+        { key: 'lembaga', header: 'Lembaga', width: 80 },
+        { key: 'arah', header: 'Asal → Target', width: 130 },
+        { key: 'status', header: 'Hasil', width: 90 },
+        { key: 'penguji', header: 'Penguji', width: 100 },
+        { key: 'tgl', header: 'Tanggal', width: 70 }
+      ],
+      rows, filename: 'Rekap_Hasil_Tes.pdf'
+    })
+    toast.success('PDF rekap hasil dibuat.')
+  } catch (e) { toast.error('Gagal cetak: ' + (e.message || e)) } finally { cetakBusy.value = false }
+}
+
 // Santri yang boleh diajukan (ter-scope per role oleh useSantri).
 //   v.100d: guru biasa (bukan penguji) DIBATASI ke santri NGAJI ampuannya (bukan wali kelas sekolah).
 const santriEligible = computed(() => {
@@ -350,6 +518,7 @@ const tabs = computed(() => {
   if (isPenguji.value) {
     out.push({ id: 'antrian', label: 'Antrian Tes', icon: 'fa-clipboard-check', badge: antrian.value.length || 0 })
     out.push({ id: 'riwayat', label: 'Riwayat', icon: 'fa-history' })
+    out.push({ id: 'rekap', label: 'Rekap', icon: 'fa-chart-pie' }) // v.100d Fase 5
   }
   return out
 })
