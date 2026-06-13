@@ -392,7 +392,8 @@ async function drawSignBlocks(doc, y, santri, settings, lembaga, dbGuru = [], le
   const pageW = doc.internal.pageSize.getWidth()
   const font = doc._fontMU || 'times'
   const tempat = settings.kota || 'Sidoarjo'
-  const today = fmtTanggalID(new Date())
+  // v.100c #3: tanggal terbit manual dari raporState.tanggal (sudah terformat ID); fallback hari ini.
+  const today = raporState.tanggal || fmtTanggalID(new Date())
 
   // Determine Kepala Label (kyai spec v.21.44 — image refs)
   // TPQ + Pra PTPT → Kepala TPQ (Pra PTPT inherit TPQ); PTPT/PPPH → PJ; Diniyah → per sekolah.

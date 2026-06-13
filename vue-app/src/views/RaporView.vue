@@ -207,6 +207,11 @@
           <span v-if="selectedSantriIds.size > 0" class="text-xs text-[var(--text-secondary)]">
             <b class="text-[var(--color-primary)]">{{ selectedSantriIds.size }}</b> santri dipilih
           </span>
+          <!-- v.100c #3: tanggal terbit rapor (manual, berlaku semua santri periode ini) -->
+          <label class="inline-flex items-center gap-1.5 text-[11px] font-bold text-[var(--text-secondary)]">
+            <i class="fas fa-calendar-day text-cyan-600"></i>Tgl terbit:
+            <input type="date" v-model="tglTerbit" @change="saveTglTerbit" title="Tanggal terbit rapor — berlaku semua santri periode ini (kosong = hari ini)" class="text-xs px-2 py-1 border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)]" />
+          </label>
         </div>
         <button
           v-if="selectedSantriIds.size > 0 && !isDesktop"
@@ -303,6 +308,11 @@
             </h2>
           </div>
           <div v-if="santriAktif && !isSantri" class="flex items-center gap-2 flex-wrap">
+            <!-- v.100c #3: tanggal terbit rapor (manual, berlaku semua santri periode ini) -->
+            <label class="inline-flex items-center gap-1.5 text-[11px] font-bold text-[var(--text-secondary)]">
+              <i class="fas fa-calendar-day text-cyan-600"></i>Tgl:
+              <input type="date" v-model="tglTerbit" @change="saveTglTerbit" title="Tanggal terbit rapor — berlaku semua santri periode ini (kosong = hari ini)" class="text-xs px-2 py-1.5 border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)]" />
+            </label>
             <button
               v-if="!editMode"
               @click="startEdit"
@@ -374,6 +384,25 @@
           <span class="text-[11px] text-amber-700 dark:text-amber-300">
             Predikat &amp; rata-rata otomatis. Tgl khotam terisi dari menu Kenaikan (bisa diubah).
           </span>
+        </div>
+
+        <!-- v.100c #2: KKM mapel diniyah — per kelas (berlaku semua santri kelas ini) -->
+        <div v-if="kategori === 'diniyah' && kkmMapelNames.length" class="rounded-lg bg-white dark:bg-slate-900 border border-amber-200 dark:border-slate-700 p-3">
+          <div class="flex items-center justify-between gap-2 flex-wrap mb-2">
+            <h4 class="text-xs font-black text-amber-900 dark:text-amber-200 uppercase tracking-wide">
+              <i class="fas fa-bullseye mr-1"></i>KKM Mapel — Kelas {{ kkmKelas }}
+              <span class="font-normal normal-case text-[10px] text-amber-700 dark:text-amber-300">(berlaku semua santri kelas ini)</span>
+            </h4>
+            <button @click="saveKkm" :disabled="savingKkm" class="h-8 px-3 inline-flex items-center gap-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white text-[11px] font-bold transition cursor-pointer">
+              <i :class="['fas', savingKkm ? 'fa-spinner fa-spin' : 'fa-save']"></i>Simpan KKM
+            </button>
+          </div>
+          <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+            <label v-for="(nm, i) in kkmMapelNames" :key="nm" class="flex flex-col gap-0.5">
+              <span class="text-[10px] text-[var(--text-tertiary)] truncate" :title="nm">{{ nm }}</span>
+              <input type="number" min="0" max="100" v-model.number="kkmDraft[i]" class="text-xs px-2 py-1 border border-[var(--border-default)] rounded bg-[var(--bg-card-elevated)] text-[var(--text-primary)] text-center font-bold" />
+            </label>
+          </div>
         </div>
 
         <div v-for="g in editGroups" :key="g.title" class="space-y-2">
@@ -1391,10 +1420,33 @@ const kop = computed(() => {
   }
 })
 
+// v.100c #3: tanggal terbit rapor MANUAL — satu tanggal per periode (Tahun Ajaran+Semester),
+//   tersimpan di settings.raporTglTerbit[periodKey], dipakai SEMUA santri. Kosong → hari ini.
+const periodKeyRapor = computed(() => `${tahunAjaran.value}_${semester.value}`.replace(/[^a-zA-Z0-9_]/g, '_'))
+const tglTerbit = ref('') // 'YYYY-MM-DD'
+watch(
+  [periodKeyRapor, () => settingsStore.settings?.raporTglTerbit],
+  () => { tglTerbit.value = (settingsStore.settings?.raporTglTerbit || {})[periodKeyRapor.value] || '' },
+  { immediate: true }
+)
+async function saveTglTerbit() {
+  try {
+    const map = { ...(settingsStore.settings?.raporTglTerbit || {}) }
+    map[periodKeyRapor.value] = tglTerbit.value || ''
+    await settingsStore.save({ raporTglTerbit: map })
+  } catch (e) { toast?.error?.('Gagal simpan tanggal: ' + (e.message || e)) }
+}
+// Tanggal terformat Indonesia (preview + PDF). '' bila tglTerbit invalid → caller fallback hari ini.
+const tglTerbitID = computed(() => {
+  const v = String(tglTerbit.value || '').trim()
+  const m = v.match(/^(\d{4})-(\d{2})-(\d{2})$/)
+  if (!m) return ''
+  return new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
+    .format(new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])))
+})
 const tglCetak = computed(() =>
-  new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }).format(
-    new Date()
-  )
+  tglTerbitID.value ||
+  new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date())
 )
 
 // Kelas gabungan: "Kelas Sekolah / Kelas Qiraati" (mis. "VII / PTPT 4", "TK A / Pra PTPT 3").
@@ -1711,6 +1763,36 @@ function buildDiniyahSchemaFromSetting(s) {
         }))
       }
     ]
+  }
+}
+
+// v.100c #2: KKM diniyah PER KELAS — guru bisa edit; tersimpan settings.rekapDiniyahKKM[kelas]
+//   (berlaku semua santri kelas itu). Schema diniyah di atas baca array ini → reaktif.
+const kkmKelas = computed(() => String(santriAktif.value?.kelas_sekolah || ''))
+const kkmMapelNames = computed(() => {
+  if (kategori.value !== 'diniyah' || !santriAktif.value) return []
+  const kls = kkmKelas.value
+  const jen = diniyahJenjang(santriAktif.value.lembaga_sekolah, kls) || jenjangFromKelas(kls) || 'SDI'
+  return _mapelDiniyahResolved(kls, jen)
+})
+const kkmDraft = ref([])
+function loadKkmDraft() {
+  const arr = (settingsStore.settings?.rekapDiniyahKKM || {})[kkmKelas.value] || []
+  kkmDraft.value = kkmMapelNames.value.map((nm, i) => Number(arr[i]) || DINIYAH_KKM_DEFAULT)
+}
+const savingKkm = ref(false)
+async function saveKkm() {
+  if (savingKkm.value || !kkmKelas.value) return
+  savingKkm.value = true
+  try {
+    const map = { ...(settingsStore.settings?.rekapDiniyahKKM || {}) }
+    map[kkmKelas.value] = kkmDraft.value.map((v) => Math.max(0, Math.min(100, Number(v) || DINIYAH_KKM_DEFAULT)))
+    await settingsStore.save({ rekapDiniyahKKM: map })
+    toast?.success?.('KKM tersimpan untuk kelas ' + kkmKelas.value)
+  } catch (e) {
+    toast?.error?.('Gagal simpan KKM: ' + (e.message || e))
+  } finally {
+    savingKkm.value = false
   }
 }
 
@@ -2483,7 +2565,8 @@ function buildRaporStateFor(s, raporDocObj) {
     kepribadian: raporDocObj?.kepribadian || { kelakuan: 'Baik', kerajinan: 'Baik', kebersihan: 'Baik' },
     catatan: raporDocObj?.catatan || '',
     catatan_wali_kelas: raporDocObj?.catatan || '',
-    rata_rata: raporDocObj?.rata_rata || rataRata.value || 0
+    rata_rata: raporDocObj?.rata_rata || rataRata.value || 0,
+    tanggal: tglTerbitID.value || '' // v.100c #3: tgl terbit manual (kosong → PDF pakai hari ini)
   }
 }
 
@@ -2689,6 +2772,7 @@ function startEdit() {
     kepribadian: { kelakuan: 'Baik', kerajinan: 'Baik', kebersihan: 'Baik', ...(d.kepribadian || {}) },
     catatan: d.catatan || ''
   }
+  if (kategori.value === 'diniyah') loadKkmDraft() // v.100c #2: siapkan KKM kelas utk diedit
   editMode.value = true
 }
 function cancelEdit() {
