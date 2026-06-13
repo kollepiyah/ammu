@@ -1,4 +1,5 @@
 # PROJECT KNOWLEDGE BASE — Ammu Online (Portal MU)
+> 🆕 **RECAP TERBARU (13 Jun 2026) = "SESI v.100b/c — SANTRIVIEW DUAL-ROLE + RAPOR (filter/KOP) + STATISTIK TREN"** di PALING BAWAH. Commit `181ce9e` / `a1c3ad2` / `dd1064f`. Verify build:electron exit 0. BELUM deploy.
 > 🆕 **RECAP TERAKHIR = "SESI v.99.0626 — PUSH NOTIF + STATUS BAR + BONUS PEGAWAI + FIX TGL IMPOR" (di PALING BAWAH).** Rencana 8-batch lengkap + peta task→file = **`REKAP-TASK-BATCH-10JUN2026.md`**.
 > ✅ **STATUS 10 Jun 2026 (sesi Claude Code desktop): Batch 1–5 SELESAI & SUDAH commit + deploy/rebuild oleh kyai; Batch 6 SELESAI (verify `_run_vite.cmd` exit 0, BELUM commit/deploy oleh kyai).** Commit urut B1–5: `17b02e5` (B1+2 urutan lembaga canonical + sort A–Z + fix Data Guru tipe_pegawai + Migrate identitas) → `8b676a7` (B3 title bar Electron: Mundur/Maju, Simpan via `definePageSave`, Logout+konfirmasi, search Teleport anti-clip) → `65d2f33` (fix Migrate: gabung NAMA-sama bila ada sinyal penguat + guard konflik) → `b403935` (B4 ribbon Keuangan pecah jadi tombol, Electron — `PengaturanKeuanganView` section-aware `?section=`) → `78c9cb5` (B5 tab PSB ribbon + Printer di backstage menu File). **Batch 6 (T2 — Kenaikan/Mutasi skema SEKOLAH):** `utils/kenaikan.js` (default schema TK/SDI/SMP/SMA = 1 tgl naik/kelas + kelulusan) + `views/NaikKelasView.vue` (Pengaturan + Form "Proses Naik" sekolah via jalur terpisah `saveFormKenaikanSekolah`, Riwayat sekolah, PDF kartu sekolah dgn baris GURU KELAS + label Kelulusan) — commit `9649f30`. Detail di `REKAP-TASK-BATCH-10JUN2026.md` (blok "BATCH 6 SELESAI"). **Batch 7 (T19 scrollbar login + T21 statistik lembaga→halaman data kelas `/statistik/lembaga/:nama` + T20 Google login Electron):** `LoginView.vue` (+`login-page` scrollbar modern), `StatistikView.vue` (kartu lembaga → `goLembagaDetail` router.push, inline detail dihapus) + view baru `StatistikLembagaDetailView.vue` + route, `electron/src/index.ts` (`setWindowOpenHandler` izinkan popup OAuth — ⚠️ **T20 PERLU VERIFIKASI DEVICE KYAI**, popup file:// bisa kena batasan postMessage). Verify vite+tsc exit 0. Semua Vue source murni, **TANPA bump versionCode**. ⚠️ **Batch 7 ini MASIH UNCOMMITTED di working tree** (kyai belum commit/deploy): `LoginView.vue`, `StatistikView.vue`, `StatistikLembagaDetailView.vue`, `router/index.js`, `electron/src/index.ts`+`build/index.js`. **✅ T22 + follow-up SELESAI — commit `23d7c9a`** (⚠️ message tertulis "Batch7" tapi KELIRU; isinya T22+P5/P6/P7, wilayah Batch 8): **T22** nativize 4 view Electron (`PostsView`/`HutangPiutangView`/`PembayaranPendingView`/`MasterDataView` — header/tab `v-if="!isDesktop"`, aksi → pita via `definePageActions`; hasil audit: tak ada tombol benar2 hilang); **P7** hapus dead `.rb-greet` (`ribbon.css` −46 baris + `RibbonGroup.vue` + `useRibbonNav.js`; `useRibbonUser` tetap dipakai `RibbonTitleBar`); **P6** `TagihanView.getNamaSantri` O(n²)→`santriMap` O(1); **P5** `functions/index.js resolveTokensByTarget` guard fan-out `wa`≥8 char (cegah cross-family leak). Verify `npx vite build` exit 0. **✅ Batch 8 FINAL SELESAI (10 Jun 2026, sesi Claude Code): re-audit regresi LOLOS (anti-bocor v.98 utuh — GlobalSearch scoped + canView ProfilDetail; StatistikLembagaDetail ter-scope `scopedSantriAll`+noSantri; useDataAudit murni computed; cleanup `audit_log` MasterDataView selamat; referensi 3 util migrasi terhapus NIHIL; `setWindowOpenHandler` sinkron src/build) + P9 (hapus dead `cetakStrukDotMatrix`+`buildStrukEscposBase64` di `strukBuilder.js` + rapikan import `PosSantriView`; `buildStrukHtml` TETAP — masih dipakai cetak non-9.5) + BUMP vc99→100 v.100.0626 (13 titik §5, sisa "99.0626" di src = NOL). Verify `_run_vite.cmd` exit 0. PENDING kyai = SHIP: `firebase:deploy` + **`firebase deploy --only functions`** (⚠️ WAJIB — P5 guard fan-out `wa` di `functions/index.js` commit `23d7c9a` BELUM pernah dideploy) + `build:aab` (vc100) + `electron:publish` + `git push` (rules TIDAK berubah sejak v.98 live). T20 Google login = verifikasi device kyai pasca rebuild Electron. ✚ **Batch 9 (fix tes device kyai):** (1) form kenaikan SEKOLAH tampil identitas/label `lembaga_sekolah·kelas_sekolah` (bug tampilan; simpan memang sudah benar) — `NaikKelasView.vue` `formSaatIni`+`santriRowLabel`; (2) backstage Printer = pengaturan PENUH gaya Office (deteksi/pilih/Simpan Default/Tes Cetak ESC/P langsung di `RibbonBackstage.vue`, reuse `useDesktopPrint`; modal global tetap utk POS/Keuangan); (3) tombol **"Gabung Grup Ini"** per-grup di panel Analisis Duplikat (`mergeGroupManual` di `v100_dedupe.js`) — utk grup nama-sama ber-NIS-beda yang auto-Migrate tolak (guard konflik keras by design); merge manual sadar + konfirmasi + backup audit_log. Verify exit 0. ✚ **Batch 10 (4 fitur kyai):** (1) **Migrasi Lembaga** salah-impor (util `v100_lembagaFix.js` + kartu amber di Audit Data: kelas Level/Juz→PTPT, Pra PTPT→Pra PTPT, Jilid→TPQ, `lembaga_sekolah` nilai ngaji→kosongkan, TPQ+TK→cek manual; saran editable, backup audit_log aksi 'update'); (2) **impor+template XLSX Rekap Prestasi Qiraati** (`RekapPrestasiView`, admin, template prefilled, PTPT auto-total+notif_prestasi); (3) **impor+template XLSX assign guru→santri** (`KelasGuruView`, `-`=kosongkan); (4) **`sortLembagaNames()`** sumber tunggal urutan dropdown lembaga (SantriView/GuruView/KelasGuru/Ppdb) + `useSantri` sort jadi **lembaga→NAMA A–Z** (`byNama:true`). Verify exit 0.** Detail tiap batch SELESAI ada di recap v.100 PALING BAWAH + `REKAP-TASK-BATCH-10JUN2026.md`.
 > Dokumen onboarding untuk sesi Claude baru. Baca ini DULU sebelum mulai. **Update terakhir: 9 Juni 2026 (UI BATCH + BUMP v.98 — bump versionCode 97→98 di SEMUA titik §5; perubahan: (1) rapor "Dikeluarkan di/Pada Tanggal" label rata KIRI (tepi sejajar) di semua rapor [raporPdf.js + RaporView preview]; (2) filter lembaga di Data Santri & Data Guru: chip → DROPDOWN dgn optgroup Qiraati + Sekolah [match `lembaga` ATAU `lembaga_sekolah`]; (3) FIX Electron: App Check skip reCAPTCHA di `file://`/Capacitor native [stop spam `appCheck/recaptcha-error`], fix TDZ BantuanView [`open` ref dipindah sebelum watch immediate]; (4) "Hubungi Admin" → TOAST kontak author (Rahman Fanani, WA 085331172477, Bakafrawi Project) + info Author/Kontak/Organization di Tentang; (5) Pusat Bantuan kini TAMPIL di web & Android [menu sidebar useMenus + konten platform-aware]. ⚠️ Batch ini sebagian BELUM commit/deploy/rebuild — lihat STATUS di bawah. Recap SEBELUMNYA: AUDIT v.98 RIBBON + SHIP [5 fix keamanan/perf, bump vc97 — sudah live].**
@@ -1304,3 +1305,54 @@ firestore.rules TIDAK berubah. **Setelah deploy paket v.99: isi 2 tarif bisyaroh
   + **`firebase deploy --only functions`** (push Fase B — onTesKenaikan*) + `build:aab` + Electron + push.
 - Tanpa deploy functions: notif HP tes TAK jalan (Notif Center in-app tetap jalan).
 - featureFlag fiturTesKenaikan default ON (sembunyikan via settings.fiturTesKenaikan=false bila perlu).
+
+---
+
+## SESI v.100b/c — SANTRIVIEW DUAL-ROLE + RAPOR (FILTER/KOP) + STATISTIK TREN (13 Jun 2026, Claude Code) — RECAP TERBARU
+
+> 3 commit di `feature/vue-migration`: `181ce9e` (SantriView dual-role), `a1c3ad2` (rapor),
+> `dd1064f` (statistik tren). Verify `_run_vite.cmd`/build:electron exit 0 tiap commit. BELUM deploy.
+> Util BARU `utils/guruScope.js` = sumber tunggal scope guru (dipakai SantriView + RaporView + StatistikView).
+
+### 1) SantriView — 2 section guru dual-role (`181ce9e`, v.100b)
+- Guru yang mengampu Qiraati DAN Sekolah (non-fullaccess) → daftar santri terbagi 2 grup berheader:
+  "Santri Qiraati Saya (n)" + "Santri Kelas Sekolah Saya (n)". Guru single-role & admin: apa adanya.
+- **utils/guruScope.js** (BARU): `ownsNgaji(s,nama)` (guru_pagi/sore/guru), `ownsSekolah(s,nama)`
+  (guru_sekolah[]), `deteksiTipeGuru(list,nama)`→{qiraati,sekolah}. Deteksi dari santriRaw (semua santri,
+  tak terpengaruh filter/cari aktif).
+- SantriView: computed guruDual/guruDisplay (pisah ngaji/sekolah + header di santri pertama tiap grup) +
+  santriRows + sectionHeaderFor(); card dibungkus `<template v-for="santriRows">`.
+
+### 2) Rapor — filter kategori per tipe guru + KOP logo + baris-4 (`a1c3ad2`)
+- RaporView picker (STEP 1): kartu kategori difilter `deteksiTipeGuru` — dual=Qiraati+Diniyah,
+  qiraati-saja=Qiraati, sekolah-saja=Diniyah, admin/full=keduanya. Grid auto 1 kolom bila 1 kartu.
+  Computed showKatQiraati/showKatDiniyah (fallback tak-terdeteksi → keduanya).
+- **KOP rapor PDF** (`raporPdf.drawKopRapor`): logo **18→22mm + center vertikal** pada blok KOP +
+  kiri-kanan ukuran/margin identik. AKAR (di-diff dari `54411d8^`): logo dipaku `y=startY=10` sejak dulu,
+  tapi baris-1 jadi gambar muassis → blok memanjang (divider 35→~41mm) → logo ketinggian & terlihat kecil.
+  `LOGO_SZ=22`, `logoY` center thd [startY, startY+100/MUASSIS_RATIO+20]; kanan `pageW-15-LOGO_SZ`.
+- Baris-4 KOP (telp) **apa-adanya** — hapus `toLowerCase()` di PDF (`raporPdf.js:267`) & preview
+  (`RaporView.vue` ~L515). Baris-3 alamat masih `titleCase` (sengaja; kyai hanya minta baris 4).
+
+### 3) Statistik — grafik Tren Perkembangan capaian Qiraati (`dd1064f`, "Opsi A")
+- Pilihan kyai: Opsi A (tren garis) di Halaman Statistik, cakupan **Qiraati dulu**; guru sekolah
+  (wali kelas) tetap lihat tren Qiraati dari santri sekolahnya (DIPISAH).
+- Sumber data = **`notif_prestasi`** (`np_{santriId}_{YYYY-MM}`, field `total`="N Hal" + `periode`) =
+  riwayat capaian/bulan. ⚠️ `catatan_bulanan[bulan]` HANYA simpan TEKS catatan (bukan angka) → tak dipakai.
+  `prestasi_awal/akhir/total` = field bulan BERJALAN (ditimpa) → bukan riwayat.
+- **components/charts/TrenCapaianChart.vue** (BARU, Chart.js Line via vue-chartjs): props
+  `santriIds[]`+`title`+`subtitle`. Query `notif_prestasi where santri_id 'in'` (chunk ≤10), agregat
+  rata-rata capaian per periode, N bulan terakhir (default 12), chip delta ↑/↓, empty-state (butuh ≥2 bln).
+  Self-contained (pola AdminStatsCharts).
+- **StatistikView** (cabang `role==='guru'`): Kepala/PJ (`isKepalaLembaga`) → tren se-lembaga
+  (`scopedSantriAktif`); Guru → tren kelasnya DIPISAH ngaji (`santriQiraatiSaya`) & sekolah
+  (`santriSekolahSaya`). Computed isKepalaMode/lembagaSantriIds/qiraatiSantriIds/sekolahSantriIds.
+  **TANPA ubah router/menu** (guru sudah akses /statistik).
+- **CapaianPrestasiView** (santri/wali — wali pakai akun santri, 1 anak/akun): tren diri/anak
+  (`santriIdsTren=[santriId]`). Wali diblok dari /statistik (meta noSantri) → tren-nya di sini.
+
+### PENDING KYAI
+- Deploy: `npm run firebase:deploy` (web saja — TANPA bump vc, TANPA perubahan rules/functions/native).
+- Tes visual: (a) ekspor rapor PDF → cek logo (22mm/center; sebut angka bila mau disesuaikan);
+  (b) /statistik (guru/kepala) + Capaian Prestasi (santri) → tren muncul (butuh ≥2 bln data notif_prestasi).
+- FOLLOW-UP opsional: tren **Diniyah/sekolah per-semester** (`rekap_diniyah`) utk guru sekolah-murni.
