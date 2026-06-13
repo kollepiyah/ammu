@@ -33,8 +33,10 @@
         </select>
       </div>
 
-      <div class="grid grid-cols-2 gap-2 md:gap-3">
+      <!-- v.100c: kartu kategori difilter per tipe guru (dual=2 kartu, qiraati saja, sekolah saja) -->
+      <div :class="['grid gap-2 md:gap-3', showKatQiraati && showKatDiniyah ? 'grid-cols-2' : 'grid-cols-1']">
         <UiActionCard
+          v-if="showKatQiraati"
           icon="fas fa-mosque"
           title="Rapor Qiraati"
           subtitle="TPQ Sore · Pra PTPT · PTPT · PPPH"
@@ -42,6 +44,7 @@
           @click="pilihKategori('qiraati')"
         />
         <UiActionCard
+          v-if="showKatDiniyah"
           icon="fas fa-book-open"
           title="Rapor Diniyah"
           subtitle="Mata pelajaran agama"
@@ -512,7 +515,7 @@
                   {{ titleCase(kop.line3) }}
                 </div>
                 <div v-if="kop.line4" class="text-[12px] font-normal leading-tight text-[var(--text-primary)]">
-                  {{ (kop.line4 || '').toLowerCase() }}
+                  {{ kop.line4 }}
                 </div>
               </td>
               <td class="w-[95px] text-center align-middle">
@@ -1036,6 +1039,7 @@ import { MUASSIS_URL } from '@/utils/kopMuassis' // v.100: baris-1 KOP = gambar 
 // v.90.0626: util jenjang Diniyah (SDI/SMP/SMA) — sumber tunggal, samakan dg Rekap Diniyah
 import { kelasJenjang, mapelDiniyahFor, diniyahJenjang, jenjangFromKelas } from '@/utils/jenjang'
 import { predikatQiraati, predikatDiniyah } from '@/utils/predikat'
+import { deteksiTipeGuru } from '@/utils/guruScope' // v.100c: filter kartu kategori rapor per tipe guru
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/services/firebase'
 
@@ -1081,6 +1085,24 @@ const isGuruOnly = computed(() => {
   return !isFullFilter.value
 })
 const isSantri = computed(() => authStore.sesiAktif?.role === 'santri')
+
+// v.100c: filter kartu kategori (Qiraati/Diniyah) di picker per TIPE guru.
+//   - Dual (qiraati+sekolah): kedua kartu.  - Qiraati saja: kartu Qiraati.
+//   - Sekolah saja: kartu Diniyah.  - Admin/full & tak terdeteksi: kedua kartu (fallback aman).
+//   Deteksi dari santriRaw (semua santri) via util yang sama dengan SantriView.
+const guruTipeRapor = computed(() =>
+  deteksiTipeGuru(santriRaw.value, authStore.sesiAktif?.guru || authStore.sesiAktif?.nama || '')
+)
+const showKatQiraati = computed(() => {
+  if (isFullFilter.value) return true
+  const t = guruTipeRapor.value
+  return !t.qiraati && !t.sekolah ? true : t.qiraati
+})
+const showKatDiniyah = computed(() => {
+  if (isFullFilter.value) return true
+  const t = guruTipeRapor.value
+  return !t.qiraati && !t.sekolah ? true : t.sekolah
+})
 
 // Navigation state machine: picker -> lembaga -> santri -> detail
 const view = ref('picker')

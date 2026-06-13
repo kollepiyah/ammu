@@ -169,6 +169,12 @@ async function drawKopRapor(doc, settings, lembaga, lembagaOverride = null, isDi
   const pageW = doc.internal.pageSize.getWidth()
   const font = doc._fontMU || 'times'
   const startY = 10
+  // v.100c: logo KOP — diperbesar + center vertikal pd blok KOP. Sejak baris-1 jadi gambar muassis,
+  //   blok memanjang ke bawah → logo lama (18mm, dipaku di y=startY) jadi ketinggian & terlihat kecil.
+  //   LOGO_SZ dipakai kiri & kanan (ukuran IDENTIK); logoY center thd [startY, divider].
+  const LOGO_SZ = 22
+  const _kopBottom = startY + 100 / MUASSIS_RATIO + 20 // = dividerY saat muassis tampil
+  const logoY = startY + (_kopBottom - startY - LOGO_SZ) / 2
 
   // Logo kiri: Diniyah pakai LOGO PONDOK (sama dgn KOP umum), Qiraati pakai logoQiraati.
   const pondokLogo =
@@ -177,7 +183,7 @@ async function drawKopRapor(doc, settings, lembaga, lembagaOverride = null, isDi
   if (leftUrl) {
     try {
       const dataUrl = leftUrl.startsWith('data:') ? leftUrl : await imageToDataURL(leftUrl)
-      if (dataUrl) doc.addImage(dataUrl, 'PNG', 15, startY, 18, 18, undefined, 'FAST')
+      if (dataUrl) doc.addImage(dataUrl, 'PNG', 15, logoY, LOGO_SZ, LOGO_SZ, undefined, 'FAST')
     } catch (_e) {}
   }
 
@@ -190,7 +196,7 @@ async function drawKopRapor(doc, settings, lembaga, lembagaOverride = null, isDi
   if (rightUrl) {
     try {
       const dataUrl = rightUrl.startsWith('data:') ? rightUrl : await imageToDataURL(rightUrl)
-      if (dataUrl) doc.addImage(dataUrl, 'PNG', pageW - 33, startY, 18, 18, undefined, 'FAST')
+      if (dataUrl) doc.addImage(dataUrl, 'PNG', pageW - 15 - LOGO_SZ, logoY, LOGO_SZ, LOGO_SZ, undefined, 'FAST')
     } catch (_e) {}
   }
 
@@ -264,7 +270,7 @@ async function drawKopRapor(doc, settings, lembaga, lembagaOverride = null, isDi
     settings.kopLine4 ||
     settings.telp ||
     'Telp. 031-8674713'
-  doc.text(telp.toLowerCase(), pageW / 2, kopBase + 17, { align: 'center' })
+  doc.text(telp, pageW / 2, kopBase + 17, { align: 'center' })
 
   // 2-line divider
   const dividerY = kopBase + 20
