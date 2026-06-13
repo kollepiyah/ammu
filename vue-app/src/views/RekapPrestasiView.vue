@@ -383,6 +383,7 @@
             </p>
             <div class="flex flex-wrap gap-1 mt-1">
               <span class="text-[9px] bg-cyan-100 text-cyan-700 px-1.5 py-0.5 rounded font-bold">{{ countRiwayat(s) }} kenaikan</span>
+              <span v-if="prestasiRiwayatOf(s.id).length" class="text-[9px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded font-bold">{{ prestasiRiwayatOf(s.id).length }} bln prestasi</span>
               <span v-if="s.prestasi_awal" class="text-[9px] bg-cyan-100 text-cyan-700 px-1.5 py-0.5 rounded font-bold">Awal: {{ s.prestasi_awal }}</span>
               <span v-if="s.prestasi_akhir" class="text-[9px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded font-bold">Akhir: {{ s.prestasi_akhir }}</span>
               <span v-if="s.prestasi_total" class="text-[9px] bg-teal-100 text-teal-700 px-1.5 py-0.5 rounded font-bold">Total: {{ s.prestasi_total }}</span>
@@ -392,14 +393,43 @@
             <i :class="['fas', expandedId === s.id ? 'fa-chevron-up' : 'fa-chevron-down']"></i>
           </button>
         </div>
-        <div v-if="expandedId === s.id && Array.isArray(s.riwayat) && s.riwayat.length > 0" class="mt-2 pt-2 border-t border-cyan-100">
-          <p class="text-[10px] font-bold text-cyan-700 uppercase mb-1">Riwayat Kenaikan ({{ s.riwayat.length }})</p>
-          <div class="space-y-1">
-            <div v-for="(r, i) in s.riwayat" :key="i" class="text-[11px] bg-cyan-50 rounded px-2 py-1 flex justify-between gap-2">
-              <span><b>{{ r.tgl_naik || r.tanggal || '-' }}</b>: {{ r.kelas_from || '?' }} → {{ r.kelas_to || r.keterangan || '?' }}</span>
-              <span v-if="r.catatan" class="text-slate-500 italic truncate">{{ r.catatan }}</span>
+        <div v-if="expandedId === s.id" class="mt-2 pt-2 border-t border-cyan-100 space-y-3">
+          <!-- v.100d: Riwayat Prestasi Bulanan (snapshot per bulan) -->
+          <div v-if="prestasiRiwayatOf(s.id).length > 0">
+            <p class="text-[10px] font-bold text-emerald-700 uppercase mb-1">Riwayat Prestasi Bulanan ({{ prestasiRiwayatOf(s.id).length }})</p>
+            <div class="overflow-x-auto">
+              <table class="w-full text-[11px] border-collapse">
+                <thead>
+                  <tr class="bg-emerald-50 text-emerald-800">
+                    <th class="border border-emerald-100 px-2 py-1 text-left">Bulan</th>
+                    <th class="border border-emerald-100 px-2 py-1 text-center">Awal</th>
+                    <th class="border border-emerald-100 px-2 py-1 text-center">Akhir</th>
+                    <th class="border border-emerald-100 px-2 py-1 text-center">Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="r in prestasiRiwayatOf(s.id)" :key="r.id">
+                    <td class="border border-slate-200 px-2 py-1 font-bold text-slate-700">{{ r.bulan_label || r.periode }}</td>
+                    <td class="border border-slate-200 px-2 py-1 text-center">{{ r.awal || '-' }}</td>
+                    <td class="border border-slate-200 px-2 py-1 text-center">{{ r.akhir || '-' }}</td>
+                    <td class="border border-slate-200 px-2 py-1 text-center font-bold text-emerald-700">{{ r.total || '-' }}<span v-if="r.juz" class="text-rose-600"> · {{ r.juz }}</span></td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
+          <!-- Riwayat Kenaikan (existing) -->
+          <div v-if="Array.isArray(s.riwayat) && s.riwayat.length > 0">
+            <p class="text-[10px] font-bold text-cyan-700 uppercase mb-1">Riwayat Kenaikan ({{ s.riwayat.length }})</p>
+            <div class="space-y-1">
+              <div v-for="(r, i) in s.riwayat" :key="i" class="text-[11px] bg-cyan-50 rounded px-2 py-1 flex justify-between gap-2">
+                <span><b>{{ r.tgl_naik || r.tanggal || '-' }}</b>: {{ r.kelas_from || '?' }} → {{ r.kelas_to || r.keterangan || '?' }}</span>
+                <span v-if="r.catatan" class="text-slate-500 italic truncate">{{ r.catatan }}</span>
+              </div>
+            </div>
+          </div>
+          <!-- kosong -->
+          <p v-if="prestasiRiwayatOf(s.id).length === 0 && !(Array.isArray(s.riwayat) && s.riwayat.length)" class="text-[11px] text-slate-400 italic">Belum ada riwayat prestasi bulanan / kenaikan untuk santri ini.</p>
         </div>
       </div>
     </div>
@@ -558,6 +588,7 @@ const tipeOptions = [
 
 const santriRaw = ref([])
 const guruRaw = ref([])
+const riwayatPrestasiRaw = ref([]) // v.100d: koleksi riwayat_prestasi (snapshot bulanan)
 const loading = ref(true)
 const busy = ref(false)
 const search = ref('')
@@ -595,6 +626,13 @@ const expandedId = ref(null)
 const mode = ref('bulanan')
 const bulan = ref(BULAN_LIST[_now.getMonth()])
 const tahun = ref(_now.getFullYear())
+// v.100d: periode utk riwayat prestasi bulanan = bulan+tahun TERPILIH di filter (YYYY-MM)
+const periodeSel = computed(() => {
+  const mi = BULAN_LIST.indexOf(bulan.value)
+  const mm = String((mi >= 0 ? mi : _now.getMonth()) + 1).padStart(2, '0')
+  return `${tahun.value}-${mm}`
+})
+const bulanLabelSel = computed(() => `${bulan.value} ${tahun.value}`)
 
 // v.21.84.0527: 3-layer flow — landing → sub-landing → input (match live UX)
 const viewStep = ref('landing') // 'landing' | 'sub-qiraati' | 'sub-diniyah' | 'input'
@@ -633,6 +671,7 @@ function backToSub() {
 const edits = reactive({})
 let unsubSantri = null
 let unsubGuru = null
+let unsubRiwayatP = null // v.100d
 
 const santriQiraati = computed(() => {
   return santriRaw.value.filter((s) => {
@@ -755,6 +794,20 @@ const rankingPerLembaga = computed(() => {
   return result
 })
 
+// v.100d: riwayat prestasi bulanan per santri (submenu Riwayat) — urut periode TERBARU dulu
+const riwayatPrestasiBySantri = computed(() => {
+  const m = {}
+  for (const r of riwayatPrestasiRaw.value) {
+    const sid = String(r.santri_id || '')
+    if (!sid) continue
+    if (!m[sid]) m[sid] = []
+    m[sid].push(r)
+  }
+  for (const sid in m) m[sid].sort((a, b) => String(b.periode || '').localeCompare(String(a.periode || '')))
+  return m
+})
+function prestasiRiwayatOf(id) { return riwayatPrestasiBySantri.value[String(id)] || [] }
+
 // Helpers
 function countRiwayat(s) { return Array.isArray(s.riwayat) ? s.riwayat.length : 0 }
 function toggleExpand(id) { expandedId.value = expandedId.value === id ? null : id }
@@ -838,6 +891,22 @@ async function simpanRekap() {
         total: String(payload.prestasi_total ?? e.total ?? ''),
         periode: _periode,
         createdAt: new Date().toISOString()
+      }, { merge: true }))
+      // v.100d: snapshot prestasi BULANAN (periode = bulan/tahun terpilih) → submenu Riwayat
+      const _rpAwal = e.awal !== undefined ? e.awal : (s.prestasi_awal || '')
+      const _rpAkhir = e.akhir !== undefined ? e.akhir : (s.prestasi_akhir || '')
+      const _rpTotal = s.lembaga === 'PTPT'
+        ? (payload.prestasi_total || '')
+        : (e.total !== undefined ? e.total : (s.prestasi_total || ''))
+      const _rpJuz = s.lembaga === 'PTPT' ? (e.juz !== undefined ? e.juz : (s.juz || '')) : ''
+      const _rpId = `rp_${id}_${periodeSel.value}`
+      promises.push(setDoc(doc(db, 'riwayat_prestasi', _rpId), {
+        id: _rpId, santri_id: String(id), santri_nama: s.nama || '',
+        lembaga: s.lembaga || '', kelas: s.kelas || '',
+        periode: periodeSel.value, bulan_label: bulanLabelSel.value,
+        awal: String(_rpAwal || ''), akhir: String(_rpAkhir || ''),
+        total: String(_rpTotal || ''), juz: String(_rpJuz || ''),
+        updatedAt: new Date().toISOString()
       }, { merge: true }))
     }
     await Promise.all(promises)
@@ -1079,6 +1148,19 @@ async function confirmImportRekap() {
           total: String(it.payload.prestasi_total ?? it.totalIn ?? ''),
           periode: _periode,
           createdAt: new Date().toISOString()
+        }, { merge: true })
+        // v.100d: snapshot prestasi BULANAN (periode = bulan/tahun terpilih di layar)
+        const _sImp = santriRaw.value.find((x) => String(x.id) === String(it.santriId))
+        const _rpId = `rp_${it.santriId}_${periodeSel.value}`
+        await setDoc(doc(db, 'riwayat_prestasi', _rpId), {
+          id: _rpId, santri_id: String(it.santriId), santri_nama: it.nama || '',
+          lembaga: it.lembaga || _sImp?.lembaga || '', kelas: _sImp?.kelas || '',
+          periode: periodeSel.value, bulan_label: bulanLabelSel.value,
+          awal: String(it.payload.prestasi_awal ?? _sImp?.prestasi_awal ?? ''),
+          akhir: String(it.payload.prestasi_akhir ?? _sImp?.prestasi_akhir ?? ''),
+          total: String(it.payload.prestasi_total ?? it.totalIn ?? _sImp?.prestasi_total ?? ''),
+          juz: String(it.payload.juz ?? ''),
+          updatedAt: new Date().toISOString()
         }, { merge: true })
         ok++
       } catch (err) {
@@ -1344,10 +1426,15 @@ onMounted(() => {
   unsubGuru = subscribeColl('guru', (docs) => {
     guruRaw.value = docs
   })
+  // v.100d: riwayat prestasi bulanan
+  unsubRiwayatP = subscribeColl('riwayat_prestasi', (docs) => {
+    riwayatPrestasiRaw.value = docs
+  })
 })
 onUnmounted(() => {
   if (unsubSantri) { try { unsubSantri() } catch (e) {} }
   if (unsubGuru) { try { unsubGuru() } catch (e) {} }
+  if (unsubRiwayatP) { try { unsubRiwayatP() } catch (e) {} }
 })
 
 // reset filterKelas kalau lembaga ganti

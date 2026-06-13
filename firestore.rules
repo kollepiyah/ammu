@@ -448,6 +448,13 @@ service cloud.firestore {
       allow delete: if signedIn();
     }
 
+    // v.100d: Riwayat prestasi BULANAN (snapshot awal/akhir/total per santri per bulan terpilih). Scoping di sisi app.
+    match /riwayat_prestasi/{docId} {
+      allow read: if signedIn();
+      allow create, update: if signedIn();
+      allow delete: if signedIn();
+    }
+
     // v.100: Tes Kenaikan Qiraati (guru ajukan → kepala/PJ uji). Scoping per-role di sisi app.
     match /tes_kenaikan/{docId} {
       allow read: if signedIn();
