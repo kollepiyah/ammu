@@ -2808,26 +2808,29 @@ onMounted(() => {
       view.value = 'detail'
     }
   }
-  // Guru-only: auto-jump to their lembaga's santri list
-  if (isGuruOnly.value && view.value === 'picker') {
-    const lmb = String(authStore.sesiAktif?.lembaga || '').trim()
-    // v.21.109.0527: guru TPQ Pagi tidak menerbitkan rapor — skip auto-route
-    if (lmb.toLowerCase() === 'tpq pagi') {
-      view.value = 'picker'
-    } else {
-      const match = QIRAATI_LEMBAGA.find((l) => l.id.toLowerCase() === lmb.toLowerCase())
-      if (match) {
-        kategori.value = 'qiraati'
-        lembaga.value = match.id
-        view.value = 'santri'
-      } else if (lmb) {
-        kategori.value = 'diniyah'
-        lembaga.value = lmb
-        view.value = 'santri'
-      }
-    }
-  }
+  // v.100c-fix: guru auto-jump dipindah ke watch guruAutoJump (sadar TIPE guru, async-safe).
 })
+
+// v.100c-fix: auto-jump guru ke daftar santri sesuai TIPE (deteksiTipeGuru), BUKAN field lembaga.
+//   - Qiraati saja → kategori 'qiraati'.  - Sekolah saja → kategori 'diniyah'.
+//   - DUAL → tetap di picker (guru pilih sendiri Qiraati/Diniyah).  - admin/santri/route-query: skip.
+//   Reaktif: jalan sekali saat santriRaw termuat (tipe terdeteksi).
+let _guruAutoJumpDone = false
+watch(
+  [santriRaw, guruTipeRapor],
+  () => {
+    if (_guruAutoJumpDone) return
+    if (!isGuruOnly.value || isSantri.value || view.value !== 'picker') return
+    const t = guruTipeRapor.value
+    if (!t.qiraati && !t.sekolah) return // santriRaw belum termuat / tak terdeteksi → tunggu
+    _guruAutoJumpDone = true
+    if (t.qiraati && t.sekolah) return // dual → biarkan di picker
+    kategori.value = t.sekolah ? 'diniyah' : 'qiraati'
+    lembaga.value = ''
+    view.value = 'santri'
+  },
+  { immediate: true }
+)
 </script>
 
 <style scoped>
