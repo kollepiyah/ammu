@@ -137,6 +137,26 @@
             <p class="text-[10px] text-[var(--text-tertiary)] mt-0.5">Pengaju: {{ a.guru_nama || '-' }} · {{ fmtTgl(a.tgl_daftar) }}</p>
           </div>
         </div>
+        <!-- v.100d: nilai aspek tes (skala 0–90) — penguji isi saat menguji -->
+        <div class="mt-2 space-y-2">
+          <template v-for="grp in aspekGroupsFor(a)" :key="grp.group || 'g'">
+            <p v-if="grp.group" class="text-[10px] font-black text-teal-700 uppercase mt-1">{{ grp.group }}</p>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              <div v-for="asp in grp.aspek" :key="asp.key">
+                <label class="block text-[10px] font-bold text-[var(--text-secondary)] mb-0.5">
+                  {{ asp.label }}<span v-if="!asp.toRapor" class="text-[var(--text-tertiary)]" title="Nilai ini tidak masuk rapor">*</span>
+                </label>
+                <input
+                  type="number" min="0" :max="MAX_NILAI" inputmode="numeric"
+                  :value="getNilai(a.id, asp.key)"
+                  @input="setNilai(a.id, asp.key, $event.target.value)"
+                  :placeholder="`0–${MAX_NILAI}`"
+                  class="w-full px-2 py-1.5 text-xs rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none"
+                />
+              </div>
+            </div>
+          </template>
+        </div>
         <textarea v-model="catatan[a.id]" rows="1" placeholder="Catatan hasil (opsional)..." class="w-full mt-2 px-2.5 py-1.5 text-xs rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none resize-none"></textarea>
         <div class="flex gap-2 mt-2">
           <button @click="decide(a, 'lulus')" :disabled="busyId === a.id" class="flex-1 px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-black"><i class="fas fa-check mr-1"></i>Lulus</button>
@@ -159,6 +179,9 @@
             <p class="text-[11px] text-[var(--text-secondary)] mt-0.5">{{ a.lembaga }} · {{ a.kelas_asal || '-' }} → <b>{{ a.target }}</b></p>
             <p class="text-[10px] text-[var(--text-tertiary)] mt-0.5">Pengaju: {{ a.guru_nama || '-' }} · Penguji: {{ a.penguji || '-' }} · {{ fmtTgl(a.tgl_hasil) }}</p>
             <p v-if="a.catatan_hasil" class="text-[11px] text-[var(--text-tertiary)] mt-1 italic">Catatan: {{ a.catatan_hasil }}</p>
+            <div v-if="a.nilai && Object.keys(a.nilai).length" class="mt-1.5 flex flex-wrap gap-1">
+              <span v-for="(v, k) in a.nilai" :key="k" class="text-[10px] bg-teal-50 text-teal-700 px-1.5 py-0.5 rounded font-bold">{{ nilaiLabelFor(a, k) }}: {{ v }}</span>
+            </div>
           </div>
           <span :class="['text-[10px] font-black px-2.5 py-1 rounded-full flex-shrink-0', statusCls(a.status)]">{{ statusLabel(a.status) }}</span>
         </div>
@@ -177,7 +200,8 @@ import { useConfirm } from '@/composables/useConfirm'
 import { useDesktopShell } from '@/composables/useDesktopShell'
 import {
   isEligibleForTes, tesJenisOptions, tesTargetOptions, tesTargetDefault,
-  canNaikKelasPtpt, STATUS_LABEL
+  canNaikKelasPtpt, STATUS_LABEL,
+  tesAspekGroups, tesAspekFlat, clampNilaiTes, TES_NILAI_MAX
 } from '@/utils/tesKenaikan'
 
 const { isElectron } = useDesktopShell()
@@ -279,6 +303,24 @@ async function batalkan(a) {
 // ----- Tab Antrian: putuskan hasil -----
 const catatan = reactive({})
 const busyId = ref(null)
+// v.100d: nilai aspek per ajuan (skala 0–90) — penguji isi saat menguji.
+const nilai = reactive({})
+const MAX_NILAI = TES_NILAI_MAX
+function aspekGroupsFor(a) { return tesAspekGroups({ lembaga: a.lembaga, kelas: a.kelas_asal, juz: a.juz_asal }) }
+function getNilai(id, key) { return nilai[id]?.[key] ?? '' }
+function setNilai(id, key, val) { if (!nilai[id]) nilai[id] = {}; nilai[id][key] = val }
+function collectNilai(a) {
+  const out = {}
+  for (const asp of tesAspekFlat({ lembaga: a.lembaga, kelas: a.kelas_asal, juz: a.juz_asal })) {
+    const v = clampNilaiTes(getNilai(a.id, asp.key))
+    if (v !== null) out[asp.key] = v
+  }
+  return out
+}
+function nilaiLabelFor(a, key) {
+  const asp = tesAspekFlat({ lembaga: a.lembaga, kelas: a.kelas_asal, juz: a.juz_asal }).find((x) => x.key === key)
+  return asp?.label || key
+}
 async function decide(a, status) {
   const label = status === 'lulus' ? 'LULUS (siap naik)' : status === 'tidak_lulus' ? 'BELUM LULUS' : 'TOLAK'
   const ok = await confirmDlg({
@@ -292,8 +334,9 @@ async function decide(a, status) {
   if (!ok) return
   busyId.value = a.id
   try {
-    await putuskan(a.id, status, catatan[a.id] || '')
+    await putuskan(a.id, status, catatan[a.id] || '', collectNilai(a))
     delete catatan[a.id]
+    delete nilai[a.id]
     toast.success('Hasil tersimpan.')
   } catch (e) {
     toast.error('Gagal menyimpan: ' + (e.message || e))

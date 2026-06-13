@@ -8,8 +8,8 @@
 //   Opsi target diturunkan dari schema kartu kenaikan (utils/kenaikan.js) → tak hardcode ganda.
 import { getKartuKenaikanSchema } from './kenaikan'
 
-// Lembaga NGAJI yang ikut fitur tes (Pra PTPT sengaja TIDAK termasuk).
-export const TES_LEMBAGA = ['TPQ Pagi', 'TPQ Sore', 'PTPT', 'PPPH']
+// v.100d: Lembaga NGAJI yang ikut fitur tes. Pra PTPT KINI IKUT (tes per khotam, kyai 14 Jun).
+export const TES_LEMBAGA = ['TPQ Pagi', 'TPQ Sore', 'Pra PTPT', 'PTPT', 'PPPH']
 
 // Santri layak diajukan tes? (lembaga ngaji ikut tes + masih aktif)
 export function isEligibleForTes(s) {
@@ -21,6 +21,7 @@ export function isEligibleForTes(s) {
 export function tesJenisOptions(lembaga) {
   const l = String(lembaga || '').trim()
   if (l === 'TPQ Pagi' || l === 'TPQ Sore') return [{ value: 'jilid', label: 'Naik Jilid' }]
+  if (l === 'Pra PTPT') return [{ value: 'khotam', label: 'Naik Khotam' }] // v.100d
   if (l === 'PTPT')
     return [
       { value: 'juz', label: 'Naik Juz' },
@@ -61,6 +62,11 @@ export function tesTargetOptions(santri, jenis, settings) {
   if (jenis === 'juz') return Array.from({ length: 30 }, (_, i) => 'Juz ' + (i + 1))
   if (jenis === 'kelas') return kelasLabels('PTPT', settings)
   if (jenis === 'level') return kelasLabels('PPPH', settings)
+  // v.100d: Pra PTPT — naik khotam (I..V). Item schema bisa duplikat antar level → dedupe.
+  if (jenis === 'khotam') {
+    const uniq = [...new Set(flattenItems('Pra PTPT', settings).map((x) => String(x)))]
+    return uniq.map((x) => 'Khotam ' + x)
+  }
   return []
 }
 
@@ -96,7 +102,75 @@ export function tesTargetDefault(santri, jenis, settings) {
 // Label ramah status untuk UI.
 export const STATUS_LABEL = {
   diajukan: 'Menunggu tes',
-  lulus: 'Lulus — siap naik',
+  lulus: 'Lulus — naik',
   tidak_lulus: 'Belum lulus',
   ditolak: 'Ditolak'
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// v.100d: PENILAIAN TES per lembaga (skala 0–90). Penguji (Kepala/PJ) isi nilai
+//   tiap aspek saat memutuskan hasil. `toRapor` = nilai aspek ini auto mengisi rapor
+//   (pre-fill, masih bisa diedit di menu Rapor). Skema per kyai (14 Jun 2026):
+//     TPQ Jilid 1A–5B : Fashohah, Tartil, Doa Harian, Surat Pendek  (→rapor: Doa Harian + Surat Pendek)
+//     TPQ KPI/IMTAS   : + Ghorib, Tajwid                            (→rapor: semua)
+//     Pra PTPT (khotam): Fashohah, Tartil, Tahfizh Juz 30, Ghorib, Tajwid, Doa Harian (→rapor: semua)
+//     PTPT            : Kualitas Hafalan[Tahfizh, Istimror] · Kualitas Bacaan[Fashohah, Tajwid] (→semua)
+//     PPPH            : Hafalan Al-Qur'an[Tahfizh, Fashohah, Tajwid] · Hafalan Hadits[Ketepatan Matan, Pemahaman Sanad] (→semua)
+// ─────────────────────────────────────────────────────────────────────────────
+export const TES_NILAI_MAX = 90
+
+// TPQ: bedakan tingkat KPI/IMTAS (Persiapan IMTAS, Khotaman/PK) dari Jilid (1A–5B).
+function _tpqIsKpi(s) {
+  const k = String(s?.kelas || '').toUpperCase()
+  return /KPI|IMTAS|KHOTAM|PERSIAPAN|\bPK\b/.test(k)
+}
+
+// Aspek tes berkelompok per lembaga. Return: [{ group, aspek: [{ key, label, toRapor }] }].
+export function tesAspekGroups(santri) {
+  const l = String(santri?.lembaga || '').trim()
+  const A = (key, label, toRapor = true) => ({ key, label, toRapor })
+  if (l === 'TPQ Pagi' || l === 'TPQ Sore' || l === 'TPQ') {
+    if (_tpqIsKpi(santri)) {
+      return [{ group: '', aspek: [
+        A('fashohah', 'Fashohah'), A('tartil', 'Tartil'), A('ghorib', 'Ghorib'),
+        A('tajwid', 'Tajwid'), A('doa_harian', 'Doa Harian'), A('surat_pendek', 'Surat Pendek')
+      ] }]
+    }
+    return [{ group: '', aspek: [
+      A('fashohah', 'Fashohah', false), A('tartil', 'Tartil', false),
+      A('doa_harian', 'Doa Harian', true), A('surat_pendek', 'Surat Pendek', true)
+    ] }]
+  }
+  if (l === 'Pra PTPT') {
+    return [{ group: '', aspek: [
+      A('fashohah', 'Fashohah'), A('tartil', 'Tartil'), A('tahfizh_juz30', 'Tahfizh Juz 30'),
+      A('ghorib', 'Ghorib'), A('tajwid', 'Tajwid'), A('doa_harian', 'Doa Harian')
+    ] }]
+  }
+  if (l === 'PTPT') {
+    return [
+      { group: 'Kualitas Hafalan', aspek: [A('tahfizh', 'Tahfizh'), A('istimror', 'Istimror')] },
+      { group: 'Kualitas Bacaan', aspek: [A('fashohah', 'Fashohah'), A('tajwid', 'Tajwid')] }
+    ]
+  }
+  if (l === 'PPPH' || l === 'P3H') {
+    return [
+      { group: "Hafalan Al-Qur'an", aspek: [A('tahfizh', 'Tahfizh'), A('fashohah', 'Fashohah'), A('tajwid', 'Tajwid')] },
+      { group: 'Hafalan Hadits', aspek: [A('ketepatan_matan', 'Ketepatan Matan'), A('pemahaman_sanad', 'Pemahaman Sanad')] }
+    ]
+  }
+  return []
+}
+
+// Daftar datar semua aspek (untuk iterasi input/validasi nilai).
+export function tesAspekFlat(santri) {
+  return tesAspekGroups(santri).flatMap((g) => g.aspek)
+}
+
+// Validasi nilai aspek (0..TES_NILAI_MAX). Return number ter-clamp atau null bila kosong/invalid.
+export function clampNilaiTes(v) {
+  if (v === '' || v === null || v === undefined) return null
+  const n = Number(v)
+  if (!Number.isFinite(n)) return null
+  return Math.max(0, Math.min(TES_NILAI_MAX, n))
 }

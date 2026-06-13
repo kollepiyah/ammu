@@ -101,13 +101,16 @@ export function useTesKenaikan() {
   }
 
   // Penguji: tetapkan hasil. status: 'lulus' | 'tidak_lulus' | 'ditolak'.
-  async function putuskan(id, status, catatan = '') {
-    await updateOne('tes_kenaikan', id, {
+  //   nilai = { aspekKey: angka 0–90 } (v.100d) — opsional, disimpan apa adanya.
+  async function putuskan(id, status, catatan = '', nilai = null) {
+    const patch = {
       status,
       catatan_hasil: String(catatan || ''),
       penguji: myNama.value,
       tgl_hasil: new Date().toISOString()
-    })
+    }
+    if (nilai && typeof nilai === 'object' && Object.keys(nilai).length) patch.nilai = nilai
+    await updateOne('tes_kenaikan', id, patch)
   }
 
   // Pengaju: batalkan ajuan yang masih 'diajukan' (sebelum diuji).
