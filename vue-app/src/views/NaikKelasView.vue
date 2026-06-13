@@ -1146,6 +1146,7 @@ import { useGoogleSheet } from '@/composables/useGoogleSheet' // v.100 Batch12: 
 import { useLembaga, getPkbmSubTier } from '@/composables/useLembaga'
 import { sortSantri } from '@/utils/santriSort'
 import { LEMBAGA_KENAIKAN_LIST, LEMBAGA_KENAIKAN_SEKOLAH, getKartuKenaikanSchema, getKopKartuLembaga } from '@/utils/kenaikan'
+import { buildKenaikanQiraatiPayload, writeKenaikan, resolveKenaikanSchemaPath } from '@/utils/promosiKenaikan' // v.100d: logika naik bersama
 import { ownsNgaji, ownsSekolah, deteksiTipeGuru } from '@/utils/guruScope' // v.100b: scope guru qiraati/sekolah
 import { buildListPdf, createPdf, drawTable, savePdf } from '@/utils/pdfBuilder'
 import { imageToDataURL } from '@/services/pdf'
@@ -2182,49 +2183,7 @@ function openFormKenaikan(s) {
   formOpen.value = true
 }
 
-// v.21.75: Resolve kelas label dari Form Kenaikan ke schema {kelasId, itemId}
-// PTPT: {kelas: "Kelas 1", juz: "5"} → {kelasId: "kelas_1", itemId: "juz_5"}
-// Pra PTPT: {kelas: "Level 1", khotam_ke: "I"} → {kelasId: "lvl_1", itemId: "kh_I"}
-// TPQ: {kelas: "Jilid 1A"} → {kelasId: "jilid_1", itemId: "1A"}
-// PPPH: {kelas: "Level 1 (Arba'in Nawawi)"} → {kelasId: "lvl_1", itemId: "arb_done"}
-function resolveKenaikanSchemaPath(lembaga, kelasLabel, juzNum, khotamKe) {
-  if (!lembaga || !kelasLabel) return { kelasId: null, itemId: null }
-  const schema = getKartuKenaikanSchema(lembaga, settingsStore.settings)
-  if (!schema || !Array.isArray(schema.kelasList)) return { kelasId: null, itemId: null }
-
-  // 1) Direct match: kelasLabel === parent.label (PTPT/Pra PTPT/PPPH/single-item TPQ)
-  let kelasEntry = schema.kelasList.find((k) => k.label === kelasLabel)
-  if (kelasEntry) {
-    let itemId = null
-    if (juzNum) {
-      const it = kelasEntry.items.find((i) => i.label === `Juz ${juzNum}` || i.id === `juz_${juzNum}`)
-      itemId = it?.id || null
-    } else if (khotamKe) {
-      const it = kelasEntry.items.find((i) => i.label === khotamKe || i.label === String(khotamKe).toUpperCase())
-      itemId = it?.id || null
-    } else if (kelasEntry.items.length === 1) {
-      itemId = kelasEntry.items[0].id
-    }
-    return { kelasId: kelasEntry.id, itemId }
-  }
-
-  // 2) TPQ combined: "Jilid 1A" → parent "Jilid 1" + item "1A"
-  // Strategi: untuk setiap (parent, item) pair, cek apakah parent.label.replace(trailing digit) + item.label match
-  for (const parent of schema.kelasList) {
-    for (const it of parent.items) {
-      // Format candidates: "Jilid 1A" = parent.label[without trailing num] + item.label, atau gabung
-      const stripped = parent.label.replace(/\s+\d+$/, '') // "Jilid 1" → "Jilid"
-      const cand1 = `${stripped} ${it.label}`  // "Jilid 1A"
-      const cand2 = `${parent.label}${it.label}`  // "Jilid 11A"
-      const cand3 = `${parent.label} ${it.label}`  // "Jilid 1 1A"
-      if (kelasLabel === cand1 || kelasLabel === cand2 || kelasLabel === cand3) {
-        return { kelasId: parent.id, itemId: it.id }
-      }
-    }
-  }
-
-  return { kelasId: null, itemId: null }
-}
+// v.100d: resolveKenaikanSchemaPath dipindah ke utils/promosiKenaikan.js (dipakai bareng Tes Kenaikan).
 
 // v.100 Batch6: simpan kenaikan kelas SEKOLAH (jalur terpisah, tak menyentuh logika Qiraati)
 async function saveFormKenaikanSekolah() {
@@ -2252,7 +2211,7 @@ async function saveFormKenaikanSekolah() {
     }
     // Kartu kenaikan: tanggal naik + kelulusan (ceremonial) di kelas akhir
     const kk = { ...(s.kartu_kenaikan || {}) }
-    const resolved = resolveKenaikanSchemaPath(lmb, kls)
+    const resolved = resolveKenaikanSchemaPath(lmb, kls, undefined, undefined, settingsStore.settings)
     if (resolved.kelasId) {
       if (!kk[lmb]) kk[lmb] = {}
       if (!kk[lmb][resolved.kelasId]) kk[lmb][resolved.kelasId] = {}
@@ -2361,161 +2320,21 @@ async function saveFormKenaikan() {
 
   savingForm.value = true
   try {
-    const payload = {
-      kelas_sekolah: formData.value.kelas_sekolah || '',
+    // v.100d: logika naik Qiraati diekstrak ke util bersama (dipakai juga oleh Tes Kenaikan).
+    const opts = {
       lembaga: formData.value.lembaga || '',
       kelas: formData.value.kelas || '',
-      guru: formData.value.guru || ''
+      juz: formData.value.juz,
+      khotam_ke: formData.value.khotam_ke,
+      guru: formData.value.guru || '',
+      kelas_sekolah: formData.value.kelas_sekolah || '',
+      catatan: formData.value.catatan || ''
     }
-    if (formData.value.lembaga === 'PTPT' && formData.value.juz) {
-      payload.juz = `JUZ ${formData.value.juz}`
-    }
-    const today = new Date().toISOString().slice(0, 10)
-    const todayId = new Date().toLocaleDateString('id-ID')
-
-    // v.21.75: Update kartu_kenaikan via schema-aware path (kelasId.itemId = tanggal)
-    const kk = { ...(s.kartu_kenaikan || {}) }
-    const lmb = formData.value.lembaga
-    const kls = formData.value.kelas
-    if (lmb && kls) {
-      const resolved = resolveKenaikanSchemaPath(lmb, kls, formData.value.juz, formData.value.khotam_ke)
-      if (resolved.kelasId) {
-        if (!kk[lmb]) kk[lmb] = {}
-        if (!kk[lmb][resolved.kelasId]) kk[lmb][resolved.kelasId] = {}
-        const block = kk[lmb][resolved.kelasId]
-        if (!Array.isArray(block.entries)) block.entries = []
-        // Set tanggal lulus untuk item-specific (juz/khotam/sub-tier)
-        if (resolved.itemId) {
-          block[resolved.itemId] = today
-        }
-        // Ceremonial = tanggal khataman/penyerahan untuk SELURUH kelas
-        block.ceremonial = today
-        if (formData.value.catatan && formData.value.catatan.trim()) {
-          block.entries.push({
-            tanggal: today,
-            itemId: resolved.itemId || 'kenaikan',
-            tipe: 'catatan',
-            text: formData.value.catatan.trim()
-          })
-        }
-        payload.kartu_kenaikan = kk
-      } else {
-        // Fallback: schema tidak ke-resolve, save dengan label (legacy compat)
-        if (!kk[lmb]) kk[lmb] = {}
-        if (!kk[lmb][kls]) kk[lmb][kls] = {}
-        kk[lmb][kls].ceremonial = today
-        payload.kartu_kenaikan = kk
-      }
-    }
-
-    // Append riwayat (text) — backward compatibility
-    const riwayat = Array.isArray(s.riwayat) ? [...s.riwayat] : []
-    const last = riwayat.length > 0 ? riwayat[riwayat.length - 1] : null
-    const fromKls = last?.kelas_to || s.kelas || ''
-    const toKls = formData.value.kelas || ''
-    const sameLembaga = (s.lembaga || '') === lmbBaru
-    const aksi = sameLembaga ? 'Naik' : 'Dipindah'
-    let ket = `${aksi} ke ${lmbBaru} Kelas ${klsBaru}`
-    if (lmbBaru === 'PTPT' && formData.value.juz) ket += ` (Juz ${formData.value.juz})`
-    if (lmbBaru === 'Pra PTPT' && khotamKe) ket += ` (Khotam ${khotamKe})`
-    if (formData.value.guru) ket += ` | Guru: ${formData.value.guru}`
-
-    if (fromKls !== toKls || formData.value.juz || khotamKe) {
-      riwayat.push({
-        tgl_naik: today,
-        tanggal: todayId,
-        keterangan: ket,
-        lembaga: lmbBaru || s.lembaga || '',
-        kelas_from: fromKls,
-        kelas_to: toKls,
-        juz: formData.value.juz ? `JUZ ${formData.value.juz}` : null,
-        catatan: formData.value.catatan || '',
-        guru: formData.value.guru || ''
-      })
-
-      // PATCH v.21.50 — Auto-catatan transisi penting (Poin 13 legacy)
-      const lmbgL = (s.lembaga || '').toUpperCase()
-      const klsL = (s.kelas || '').toLowerCase()
-      const lmbgB = (lmbBaru || '').toUpperCase()
-      const klsB = (klsBaru || '').toLowerCase()
-      // 1) Persiapan Khotaman → Pra PTPT (level 1)
-      if (
-        klsL.includes('persiapan khotaman') &&
-        lmbgB.includes('PRA PTPT') &&
-        klsB.includes('level 1')
-      ) {
-        riwayat.push({
-          tanggal: todayId,
-          tgl_naik: today,
-          keterangan: `Telah LULUS IMTAS pada tanggal ${todayId}`
-        })
-      }
-      // 2) Pra PTPT level 5 → PTPT kelas 1
-      else if (
-        lmbgL.includes('PRA PTPT') &&
-        klsL.includes('level 5') &&
-        lmbgB === 'PTPT' &&
-        klsB.includes('kelas 1')
-      ) {
-        riwayat.push({
-          tanggal: todayId,
-          tgl_naik: today,
-          keterangan: `Telah Khotam Al-Qur'an bil Nazhor 60x pada tanggal ${todayId}`
-        })
-      }
-      // 3) PTPT (kelas terakhir) → lembaga lain
-      else if (lmbgL === 'PTPT' && lmbgB !== 'PTPT' && lmbgB !== '') {
-        const lembagaPTPT = (lembagaRaw.value || []).find(
-          (l) => String(l.lembaga || '').toUpperCase() === 'PTPT'
-        )
-        const klsListPTPT =
-          (lembagaPTPT && (lembagaPTPT.kelas_list || lembagaPTPT.kelas)) || ['Kelas 6']
-        const kelasTerakhirPTPT = klsListPTPT[klsListPTPT.length - 1] || 'Kelas 6'
-        if ((s.kelas || '').toLowerCase() === String(kelasTerakhirPTPT).toLowerCase()) {
-          riwayat.push({
-            tanggal: todayId,
-            tgl_naik: today,
-            keterangan: `Alhamdulillah, ananda ${s.nama} telah khotam Al-Qur'an 30 juz bil Ghoib pada tanggal ${todayId}`
-          })
-        }
-      }
-
-      payload.riwayat = riwayat
-    }
-
-    // PATCH v.21.50 — riwayat_kenaikan structured (legacy compat)
-    const rkEntry = {
-      tanggal: today,
-      tanggal_display: todayId,
-      dari_lembaga: s.lembaga || '',
-      dari_kelas: s.kelas || '',
-      ke_lembaga: lmbBaru,
-      ke_kelas: klsBaru,
-      khotam_ke: khotamKe || '',
-      juz: lmbBaru === 'PTPT' ? `JUZ ${formData.value.juz}` : ''
-    }
-    const newRk = Array.isArray(s.riwayat_kenaikan) ? [...s.riwayat_kenaikan, rkEntry] : [rkEntry]
-    payload.riwayat_kenaikan = newRk
-
-    await updateDoc(doc(db, 'santri', String(s.id)), payload)
-    // v.87.0526: tulis event kenaikan ke koleksi `riwayat_kenaikan` (sumber notif untuk wali). Best-effort.
-    try {
-      const evId = `rk_${s.id}_${Date.now()}`
-      await setDoc(doc(db, 'riwayat_kenaikan', evId), {
-        id: evId,
-        santri_id: String(s.id),
-        santri_nama: s.nama || '',
-        dari_lembaga: rkEntry.dari_lembaga || '',
-        dari_kelas: rkEntry.dari_kelas || '',
-        ke_lembaga: rkEntry.ke_lembaga || '',
-        ke_kelas: rkEntry.ke_kelas || '',
-        khotam_ke: rkEntry.khotam_ke || '',
-        tanggal: rkEntry.tanggal || '',
-        createdAt: new Date().toISOString()
-      })
-    } catch (e) {
-      console.warn('[kenaikan-event] gagal tulis riwayat_kenaikan:', e?.message || e)
-    }
+    const { payload, rkEntry } = buildKenaikanQiraatiPayload(s, opts, {
+      settings: settingsStore.settings,
+      lembagaList: lembagaRaw.value
+    })
+    await writeKenaikan(s, payload, rkEntry)
     Object.assign(s, payload)
     const idx = santriList.value.findIndex((x) => String(x.id) === String(s.id))
     if (idx >= 0) Object.assign(santriList.value[idx], payload)
