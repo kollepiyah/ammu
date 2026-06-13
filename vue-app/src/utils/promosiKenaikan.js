@@ -87,7 +87,8 @@ export function buildKenaikanQiraatiPayload(s, opts = {}, ctx = {}) {
       if (resolved.itemId) {
         block[resolved.itemId] = today
       }
-      block.ceremonial = today
+      // v.100e: ceremonial TIDAK auto-isi. Tgl ceremonial/khotaman (PTPT/PPPH/PK) diisi MANUAL
+      //   lewat editor kartu (NaikKelasView setCeremonial) saat acara benar-benar digelar.
       if (opts.catatan && opts.catatan.trim()) {
         block.entries.push({
           tanggal: today,
@@ -100,7 +101,7 @@ export function buildKenaikanQiraatiPayload(s, opts = {}, ctx = {}) {
     } else {
       if (!kk[lmb]) kk[lmb] = {}
       if (!kk[lmb][kls]) kk[lmb][kls] = {}
-      kk[lmb][kls].ceremonial = today
+      // v.100e: ceremonial diisi MANUAL (tidak auto-stamp di sini).
       payload.kartu_kenaikan = kk
     }
   }

@@ -54,6 +54,18 @@ export function extractNumber(s) {
 }
 
 /**
+ * v.100e: Normalisasi nomor juz dari nilai apa pun → string angka saja.
+ * 'JUZ 6' | 'Juz 6' | '6' | 6 → '6'. Kosong/'-'/non-angka → ''.
+ * Dipakai sebagai SUMBER TUNGGAL tampilan juz supaya tidak dobel "Juz JUZ 6"
+ * (kenaikan PTPT menyimpan juz sebagai 'JUZ n', form menyimpan 'n').
+ */
+export function juzNum(v) {
+  if (v == null || v === '' || v === '-') return ''
+  const m = String(v).match(/\d+/)
+  return m ? m[0] : ''
+}
+
+/**
  * v.21.13b.0526: Smart Title Case — capitalize setelah space/koma/titik/dash.
  * Apostrof TIDAK dianggap separator supaya "mu'asyaroh" → "Mu'asyaroh" (bukan "Mu'Asyaroh").
  * Setelah titik (gelar) tetap capitalize: "s.e." → "S.E." / "evi, s.pd." → "Evi, S.Pd."

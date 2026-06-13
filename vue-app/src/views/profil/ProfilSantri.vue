@@ -59,7 +59,7 @@
           <ul class="space-y-2 text-sm">
             <li class="flex justify-between"><span class="text-cyan-700 font-bold">Lembaga:</span><span class="font-black">{{ santri?.lembaga || '-' }}</span></li>
             <li class="flex justify-between"><span class="text-cyan-700 font-bold">Kelas:</span><span class="font-black">{{ santri?.kelas || '-' }}</span></li>
-            <li v-if="santri?.juz" class="flex justify-between"><span class="text-cyan-700 font-bold">Juz:</span><span class="font-black">{{ santri.juz }}</span></li>
+            <li v-if="santri?.juz" class="flex justify-between"><span class="text-cyan-700 font-bold">Juz:</span><span class="font-black">{{ juzNum(santri.juz) }}</span></li>
             <li class="flex justify-between"><span class="text-cyan-700 font-bold">Lembaga Sekolah:</span><span class="font-black">{{ santri?.lembaga_sekolah || '-' }}</span></li>
             <li class="flex justify-between"><span class="text-cyan-700 font-bold">Kelas Sekolah:</span><span class="font-black">{{ santri?.kelas_sekolah || '-' }}</span></li>
           </ul>
@@ -233,6 +233,7 @@ import { doc, updateDoc } from 'firebase/firestore'
 import { db } from '@/services/firebase'
 import { useToast } from '@/composables/useToast'
 import ProfilPengaturanSaya from './ProfilPengaturanSaya.vue'
+import { juzNum } from '@/utils/format' // v.100e: normalisasi tampilan juz (anti dobel "Juz JUZ n")
 
 const props = defineProps({ santri: { type: Object, required: true }, readonly: { type: Boolean, default: false } })
 const toast = useToast()

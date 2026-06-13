@@ -201,7 +201,7 @@
             <div class="flex flex-wrap gap-1 mt-1.5">
               <span v-if="s.lembaga" class="text-[10px] bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-700 px-2 py-0.5 rounded font-bold">{{ s.lembaga }} · {{ s.kelas || '-' }}</span>
               <span v-if="s.kelas_sekolah" class="text-[10px] bg-cyan-50 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-700 px-2 py-0.5 rounded font-bold">Sekolah: {{ s.kelas_sekolah }}</span>
-              <span v-if="s.juz" class="text-[10px] bg-rose-50 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-700 px-2 py-0.5 rounded font-bold">Juz {{ s.juz }}</span>
+              <span v-if="s.juz" class="text-[10px] bg-rose-50 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-700 px-2 py-0.5 rounded font-bold">Juz {{ juzNum(s.juz) }}</span>
             </div>
             <div class="flex flex-wrap gap-1 mt-1">
               <span v-for="(label, k) in formatGuru(s)" :key="k" class="text-[10px] bg-slate-50 dark:bg-slate-700/40 text-[var(--text-secondary)] border border-slate-200 dark:border-slate-600 px-1.5 py-0.5 rounded">{{ label }}</span>
@@ -256,7 +256,7 @@ import { ownsNgaji, ownsSekolah, deteksiTipeGuru } from '@/utils/guruScope' // v
 const props = defineProps({ mode: { type: String, default: 'view' } })
 const isMasterMode = computed(() => props.mode === 'master')
 // v.21.13b.0526: + toTitleCase + normalizeWA + parseMultipleWA (v.21.22b dual WA)
-import { getNamaGuruGelar, toTitleCase, normalizeWA, parseMultipleWA } from '@/utils/format'
+import { getNamaGuruGelar, toTitleCase, normalizeWA, parseMultipleWA, juzNum } from '@/utils/format'
 import { useExcel } from '@/composables/useExcel'
 import { useGoogleSheet } from '@/composables/useGoogleSheet'
 import { buildListPdf, buildKopFromSettings } from '@/utils/pdfBuilder'

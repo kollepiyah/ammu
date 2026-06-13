@@ -354,6 +354,36 @@ export function useGuruForm() {
     return null
   }
 
+  // v.100e: Saat guru di-rename, santri masih menyimpan nama LAMA (guru disimpan sebagai string nama,
+  //   BUKAN id). Sebar nama baru HANYA ke santri yang gurunya = nama lama (4 field referensi guru).
+  //   Pondok kecil → ambil semua santri sekali, patch yang cocok. Best-effort (gagal ≠ gagalkan simpan guru).
+  async function propagateGuruRename(oldNama, newNama) {
+    try {
+      const allSantri = await getAll('santri')
+      const eq = (v) => String(v || '').trim().toLowerCase() === String(oldNama).trim().toLowerCase()
+      let count = 0
+      for (const s of allSantri) {
+        const patch = {}
+        if (eq(s.guru_pagi)) patch.guru_pagi = newNama
+        if (eq(s.guru_sore)) patch.guru_sore = newNama
+        if (eq(s.guru)) patch.guru = newNama
+        if (Array.isArray(s.guru_sekolah)) {
+          const repl = s.guru_sekolah.map((g) => (eq(g) ? newNama : g))
+          if (repl.some((g, i) => g !== s.guru_sekolah[i])) patch.guru_sekolah = repl
+        } else if (eq(s.guru_sekolah)) {
+          patch.guru_sekolah = newNama
+        }
+        if (Object.keys(patch).length) {
+          await setDoc(doc(db, 'santri', String(s.id)), patch, { merge: true })
+          count++
+        }
+      }
+      if (count > 0) toast.success(`Nama guru diperbarui di ${count} data santri.`)
+    } catch (e) {
+      console.warn('[guru-rename] propagasi gagal:', e?.message || e)
+    }
+  }
+
   async function save() {
     if (isSaving.value) return false
     const err = validate()
@@ -392,11 +422,13 @@ export function useGuruForm() {
         foto: ''
       }
       // Preserve fields existing kalau edit (v.21.25: + ttd, akses, no_ekgq alias)
+      let _oldNama = '' // v.100e: nama guru SEBELUM edit (deteksi rename → propagasi ke santri)
       if (editingId.value) {
         try {
           const oldSnap = await getDoc(doc(db, 'guru', String(editingId.value)))
           if (oldSnap.exists()) {
             const old = oldSnap.data()
+            _oldNama = old.nama || ''
             data.password = old.password || '1234'
             data.foto = old.foto || ''
             data.username = old.username || defaultUsername
@@ -425,6 +457,10 @@ export function useGuruForm() {
         } catch (e) { /* gagal hitung → biarkan kosong, bisa digenerate via impor/tombol */ }
       }
       await setDoc(doc(db, 'guru', String(data.id)), data, { merge: true })
+      // v.100e: rename guru → perbarui nama tersimpan di referensi santri (denormalisasi)
+      if (editingId.value && _oldNama && _oldNama.trim().toLowerCase() !== String(data.nama).trim().toLowerCase()) {
+        await propagateGuruRename(_oldNama, data.nama)
+      }
       toast.success(editingId.value ? 'Data guru diupdate' : 'Guru baru disimpan')
       return true
     } catch (e) {

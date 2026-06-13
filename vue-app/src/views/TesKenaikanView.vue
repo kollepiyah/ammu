@@ -66,7 +66,7 @@
               <div class="flex-1 min-w-0">
                 <p class="text-sm font-bold text-[var(--text-primary)] truncate">{{ s.nama }}</p>
                 <p class="text-[11px] text-[var(--text-secondary)]">
-                  {{ s.lembaga }}<span v-if="s.kelas"> · {{ s.kelas }}</span><span v-if="s.juz && s.juz !== '-'"> · Juz {{ s.juz }}</span>
+                  {{ s.lembaga }}<span v-if="s.kelas"> · {{ s.kelas }}</span><span v-if="s.juz && s.juz !== '-'"> · Juz {{ juzNum(s.juz) }}</span>
                 </p>
                 <p v-if="hasOpenAjuan(s.id)" class="text-[10px] text-amber-600 font-bold mt-0.5">
                   <i class="fas fa-hourglass-half mr-1"></i>Sudah ada ajuan menunggu tes
@@ -282,6 +282,7 @@ import { useAuthStore } from '@/stores/auth' // v.100d: nama guru utk scope ngaj
 import { ownsNgaji } from '@/utils/guruScope' // v.100d
 import { getOne } from '@/services/firestore' // v.100d: muat dokumen santri penuh utk auto-naik
 import { buildKenaikanQiraatiPayload, writeKenaikan } from '@/utils/promosiKenaikan' // v.100d
+import { juzNum } from '@/utils/format' // v.100e: normalisasi tampilan juz (anti dobel "Juz JUZ n")
 import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'

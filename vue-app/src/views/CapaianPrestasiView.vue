@@ -85,7 +85,7 @@
               <span class="text-[var(--text-secondary)] font-bold">Jilid / Kelas:</span>
               <span class="font-black text-[var(--text-primary)]">
                 {{ santri.kelas || '-'
-                }}{{ santri.juz && santri.juz !== '-' ? ' (Juz ' + santri.juz + ')' : '' }}
+                }}{{ santri.juz && santri.juz !== '-' ? ' (Juz ' + juzNum(santri.juz) + ')' : '' }}
               </span>
             </div>
             <div class="flex justify-between">
@@ -262,6 +262,7 @@ import { useSettingsStore } from '@/stores/settings'
 import { subscribeColl } from '@/services/firestore'
 import { useSantri } from '@/composables/useSantri'
 import TrenCapaianChart from '@/components/charts/TrenCapaianChart.vue' // v.100c: Opsi A — tren capaian
+import { juzNum } from '@/utils/format' // v.100e: normalisasi tampilan juz (anti dobel "Juz JUZ n")
 
 const auth = useAuthStore()
 const settings = useSettingsStore()
@@ -277,7 +278,9 @@ const santri = computed(() => santriRaw.value.find((s) => String(s.id) === santr
 const santriIdsTren = computed(() => (santriId.value ? [santriId.value] : []))
 
 // Periode aktif dari settings
-const periodeAktif = computed(() => settings.settings?.periodeAktif || "Dzulqo'dah 1447")
+// v.100e: sumber periode = settings.txtPeriode (diisi admin di Pengaturan "Periode Aktif").
+//   Sebelumnya baca `periodeAktif` (field hantu, tak pernah diisi) + fallback hardcoded → header macet.
+const periodeAktif = computed(() => settings.settings?.periodeAktif || settings.settings?.txtPeriode || '-')
 
 // Helper: parse angka dari string yang mungkin mengandung non-digit
 function parseHal(v) {

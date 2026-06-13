@@ -96,7 +96,7 @@
               {{ santriProfile.kelas || '-'
               }}{{
                 santriProfile.juz && santriProfile.juz !== '-'
-                  ? ' (Juz ' + santriProfile.juz + ')'
+                  ? ' (Juz ' + juzNum(santriProfile.juz) + ')'
                   : ''
               }}
             </p>
@@ -937,6 +937,7 @@ import AdminStatsCharts from '@/components/charts/AdminStatsCharts.vue'
 import TrenCapaianChart from '@/components/charts/TrenCapaianChart.vue' // v.100c: Opsi A — tren capaian
 // v.21.107.0527: gating role konsisten (admin/super_admin/admin_keuangan)
 import { isFullFilterRole, isKepalaLembaga } from '@/utils/roleScope'
+import { juzNum } from '@/utils/format' // v.100e: normalisasi tampilan juz (anti dobel "Juz JUZ n")
 // v.95.0626: sumber data ter-scope (admin=semua, kepala/PJ=lembaganya) + guru belum input + overload
 import { useStatistikScope, statusFromSelisih } from '@/composables/useStatistikScope'
 

@@ -37,7 +37,7 @@
             <p class="text-base font-black truncate">{{ mySantri.nama }}</p>
             <p class="text-[11px] opacity-90 mt-0.5">
               {{ mySantri.lembaga }}{{ mySantri.kelas ? ' · Kelas ' + mySantri.kelas : ''
-              }}{{ mySantri.juz && mySantri.juz !== '-' ? ' · Juz ' + mySantri.juz : '' }}
+              }}{{ mySantri.juz && mySantri.juz !== '-' ? ' · Juz ' + juzNum(mySantri.juz) : '' }}
             </p>
           </div>
           <span
@@ -1138,6 +1138,7 @@ import { useLembaga, getPkbmSubTier } from '@/composables/useLembaga'
 import { sortSantri } from '@/utils/santriSort'
 import { LEMBAGA_KENAIKAN_LIST, LEMBAGA_KENAIKAN_SEKOLAH, getKartuKenaikanSchema, getKopKartuLembaga } from '@/utils/kenaikan'
 import { buildKenaikanQiraatiPayload, writeKenaikan, resolveKenaikanSchemaPath } from '@/utils/promosiKenaikan' // v.100d: logika naik bersama
+import { juzNum } from '@/utils/format' // v.100e: normalisasi tampilan juz (anti dobel "Juz JUZ n")
 import { ownsNgaji, ownsSekolah, deteksiTipeGuru } from '@/utils/guruScope' // v.100b: scope guru qiraati/sekolah
 import { buildListPdf, createPdf, drawTable, savePdf } from '@/utils/pdfBuilder'
 import { imageToDataURL } from '@/services/pdf'
@@ -1994,7 +1995,7 @@ function santriRowLabel(s) {
     return (s.lembaga_sekolah || '-') + (s.kelas_sekolah ? ' · ' + s.kelas_sekolah : '')
   }
   let t = (s.lembaga || '') + (s.kelas ? ' · ' + s.kelas : '')
-  if (s.juz && s.juz !== '-') t += ' · Juz ' + s.juz
+  if (s.juz && s.juz !== '-') t += ' · Juz ' + juzNum(s.juz)
   return t
 }
 const SEKOLAH_KELAS_MAP = {
