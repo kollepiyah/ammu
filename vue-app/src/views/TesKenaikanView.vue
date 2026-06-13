@@ -159,7 +159,7 @@
         </div>
         <textarea v-model="catatan[a.id]" rows="1" placeholder="Catatan hasil (opsional)..." class="w-full mt-2 px-2.5 py-1.5 text-xs rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none resize-none"></textarea>
         <div class="flex gap-2 mt-2">
-          <button @click="decide(a, 'lulus')" :disabled="busyId === a.id" class="flex-1 px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-black"><i class="fas fa-check mr-1"></i>Lulus</button>
+          <button @click="openLulus(a)" :disabled="busyId === a.id" class="flex-1 px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-black"><i class="fas fa-check mr-1"></i>Lulus</button>
           <button @click="decide(a, 'tidak_lulus')" :disabled="busyId === a.id" class="flex-1 px-3 py-2 rounded-lg bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white text-xs font-black"><i class="fas fa-redo mr-1"></i>Belum Lulus</button>
           <button @click="decide(a, 'ditolak')" :disabled="busyId === a.id" class="px-3 py-2 rounded-lg bg-[var(--bg-muted)] hover:bg-rose-50 text-rose-600 text-xs font-black border border-[var(--border-subtle)]"><i class="fas fa-times mr-1"></i>Tolak</button>
         </div>
@@ -187,6 +187,60 @@
         </div>
       </div>
     </div>
+
+    <!-- v.100d: Modal LULUS → naik otomatis (Kepala/PJ konfirmasi tujuan + pilih guru) -->
+    <div v-if="lulusFor" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+      <div class="bg-[var(--bg-card)] rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] flex flex-col">
+        <div class="p-4 border-b border-[var(--border-subtle)] flex items-center justify-between">
+          <h3 class="text-sm font-black text-[var(--text-primary)]"><i class="fas fa-circle-check text-emerald-600 mr-1.5"></i>Lulus &amp; Naikkan</h3>
+          <button @click="closeLulus" class="text-[var(--text-tertiary)] hover:text-rose-600 text-lg"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="p-4 overflow-auto flex-1 space-y-3 text-sm">
+          <p class="text-xs text-[var(--text-secondary)]">
+            <b class="text-[var(--text-primary)]">{{ lulusFor.nama_cache }}</b> — {{ lulusFor.lembaga }} · {{ lulusFor.kelas_asal || '-' }}
+            <span class="block mt-0.5">Diajukan naik ke <b>{{ lulusFor.target }}</b>. Konfirmasi tujuan &amp; guru berikutnya:</span>
+          </p>
+          <div v-if="!lulusSantri" class="text-xs text-[var(--text-tertiary)] italic"><i class="fas fa-spinner fa-spin mr-1"></i>Memuat data santri…</div>
+          <template v-else>
+            <div>
+              <label class="block text-[10px] font-black uppercase text-[var(--text-secondary)] mb-1">Kelas / tingkat tujuan</label>
+              <select v-model="naikForm.kelas" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none">
+                <option value="" disabled>— pilih —</option>
+                <option v-for="k in canonKelasOptions(naikForm.lembaga)" :key="k" :value="k">{{ k }}</option>
+              </select>
+            </div>
+            <div v-if="naikForm.lembaga === 'PTPT'">
+              <label class="block text-[10px] font-black uppercase text-[var(--text-secondary)] mb-1">Juz</label>
+              <select v-model="naikForm.juz" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none">
+                <option value="">—</option>
+                <option v-for="j in juzOptionsNaik()" :key="j" :value="String(j)">Juz {{ j }}</option>
+              </select>
+            </div>
+            <div v-if="naikForm.lembaga === 'Pra PTPT'">
+              <label class="block text-[10px] font-black uppercase text-[var(--text-secondary)] mb-1">Khotam ke</label>
+              <select v-model="naikForm.khotam_ke" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none">
+                <option value="">—</option>
+                <option v-for="r in KHOTAM_ROMAWI" :key="r" :value="r">Khotam {{ r }}</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-[10px] font-black uppercase text-[var(--text-secondary)] mb-1">Guru berikutnya (bila pindah kelas)</label>
+              <input list="guru-naik-list" v-model="naikForm.guru" placeholder="Nama guru" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none" />
+              <datalist id="guru-naik-list">
+                <option v-for="g in guruOptionsFor(naikForm.lembaga)" :key="g" :value="g"></option>
+              </datalist>
+            </div>
+            <p class="text-[10px] text-[var(--text-tertiary)] italic">Catatan tes diambil dari kolom catatan di antrian; nilai aspek yang sudah diisi ikut tersimpan.</p>
+          </template>
+        </div>
+        <div class="p-4 border-t border-[var(--border-subtle)] flex justify-end gap-2">
+          <button @click="closeLulus" class="px-4 py-2 text-xs font-bold rounded-lg bg-[var(--bg-muted)] text-[var(--text-secondary)]">Batal</button>
+          <button @click="submitLulus" :disabled="naikBusy || !lulusSantri" class="px-4 py-2 text-xs font-black rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-50">
+            <i :class="['fas', naikBusy ? 'fa-spinner fa-spin' : 'fa-check', 'mr-1']"></i>Lulus &amp; Naikkan
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -194,6 +248,8 @@
 import { ref, reactive, computed } from 'vue'
 import { useSantri } from '@/composables/useSantri'
 import { useTesKenaikan } from '@/composables/useTesKenaikan'
+import { getOne } from '@/services/firestore' // v.100d: muat dokumen santri penuh utk auto-naik
+import { buildKenaikanQiraatiPayload, writeKenaikan } from '@/utils/promosiKenaikan' // v.100d
 import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
@@ -322,12 +378,11 @@ function nilaiLabelFor(a, key) {
   return asp?.label || key
 }
 async function decide(a, status) {
-  const label = status === 'lulus' ? 'LULUS (siap naik)' : status === 'tidak_lulus' ? 'BELUM LULUS' : 'TOLAK'
+  // v.100d: 'lulus' kini lewat modal naik (openLulus). decide hanya utk Belum Lulus / Tolak.
+  const label = status === 'tidak_lulus' ? 'BELUM LULUS' : 'TOLAK'
   const ok = await confirmDlg({
     title: `Tetapkan hasil: ${label}?`,
-    message: status === 'lulus'
-      ? `${a.nama_cache} dinyatakan LULUS & ditandai siap naik ke ${a.target}. Kenaikan aktual tetap diproses di menu Kenaikan. Lanjutkan?`
-      : `${a.nama_cache} → ${label}. Lanjutkan?`,
+    message: `${a.nama_cache} → ${label}. Lanjutkan?`,
     confirmText: 'Simpan',
     danger: status === 'ditolak'
   })
@@ -342,6 +397,108 @@ async function decide(a, status) {
     toast.error('Gagal menyimpan: ' + (e.message || e))
   } finally {
     busyId.value = null
+  }
+}
+
+// ----- v.100d: Lulus → naik otomatis (modal: konfirmasi tujuan + pilih guru) -----
+const lulusFor = ref(null)
+const lulusSantri = ref(null)
+const naikForm = reactive({ lembaga: '', kelas: '', juz: '', khotam_ke: '', guru: '' })
+const naikBusy = ref(false)
+const KHOTAM_ROMAWI = ['I', 'II', 'III', 'IV', 'V']
+
+function canonKelasOptions(lembaga) {
+  const lmb = String(lembaga || '').toLowerCase().trim()
+  if (lmb === 'tpq' || lmb === 'tpq pagi' || lmb === 'tpq sore') return ['Jilid 1A', 'Jilid 1B', 'Jilid 1C', 'Jilid 2A', 'Jilid 2B', 'Jilid 3A', 'Jilid 3B', 'Jilid 4A', 'Jilid 4B', 'Jilid 5A', 'Jilid 5B', 'KPI', 'Persiapan Khotaman']
+  if (lmb === 'pra ptpt') return ['Level 1', 'Level 2', 'Level 3', 'Level 4', 'Level 5']
+  if (lmb === 'ptpt') return ['Kelas 1', 'Kelas 2', 'Kelas 3', 'Kelas 4', 'Kelas 5', 'Kelas 6']
+  if (lmb === 'ppph' || lmb === 'p3h') return ["Level 1 (Arba'in Nawawi)", 'Level 2 (Riyadhus Sholihin)', 'Level 3 (Shahih Bukhari)', 'Level 4 (Shahih Muslim)']
+  return []
+}
+function juzOptionsNaik() {
+  const m = String(naikForm.kelas || '').match(/(\d+)/)
+  if (!m) return Array.from({ length: 30 }, (_, i) => i + 1)
+  const k = parseInt(m[1], 10)
+  if (k < 1 || k > 6) return Array.from({ length: 30 }, (_, i) => i + 1)
+  const start = (k - 1) * 5 + 1
+  return Array.from({ length: 5 }, (_, i) => start + i)
+}
+function guruOptionsFor(lembaga) {
+  return (guruRaw.value || []).filter((g) => g.lembaga === lembaga || g.lembaga_sekolah === lembaga).map((g) => g.nama).filter(Boolean)
+}
+// Tebakan tujuan dari target tes (Kepala bisa koreksi via dropdown).
+function prefillNaik(a) {
+  const lmb = a.lembaga
+  const opts = canonKelasOptions(lmb)
+  const t = String(a.target || '')
+  let kelas = '', juz = '', khotam = ''
+  if (lmb === 'PTPT') {
+    if (a.jenis === 'juz') {
+      const m = t.match(/(\d+)/); juz = m ? m[1] : ''
+      if (juz) kelas = `Kelas ${Math.ceil(Number(juz) / 5)}`
+    } else {
+      kelas = opts.find((o) => o.toLowerCase() === t.toLowerCase()) || t
+      const m = kelas.match(/(\d+)/); if (m) juz = String((Number(m[1]) - 1) * 5 + 1)
+    }
+  } else if (lmb === 'Pra PTPT') {
+    khotam = t.replace(/khotam\s*/i, '').trim().toUpperCase()
+    kelas = opts.find((o) => o.toLowerCase() === String(a.kelas_asal || '').toLowerCase()) || a.kelas_asal || ''
+  } else if (lmb === 'PPPH' || lmb === 'P3H') {
+    kelas = opts.find((o) => o.toLowerCase() === t.toLowerCase()) || t
+  } else {
+    const tu = t.toUpperCase()
+    if (/^\d[A-C]$/i.test(t)) kelas = `Jilid ${tu}`
+    else if (tu.includes('IMTAS')) kelas = 'KPI'
+    else if (tu.includes('KHOTAM')) kelas = 'Persiapan Khotaman'
+    else kelas = opts.find((o) => o.toLowerCase() === t.toLowerCase()) || t
+  }
+  return { kelas, juz, khotam }
+}
+async function openLulus(a) {
+  lulusFor.value = a
+  lulusSantri.value = null
+  naikForm.lembaga = a.lembaga || ''
+  naikForm.kelas = ''; naikForm.juz = ''; naikForm.khotam_ke = ''; naikForm.guru = ''
+  try {
+    const s = await getOne('santri', String(a.santri_id))
+    lulusSantri.value = s
+    const pre = prefillNaik(a)
+    naikForm.kelas = pre.kelas
+    naikForm.juz = pre.juz
+    naikForm.khotam_ke = pre.khotam
+    naikForm.guru = s ? (Array.isArray(s.guru) ? s.guru[0] || '' : s.guru || '') : ''
+  } catch (e) {
+    toast.error('Gagal memuat data santri: ' + (e.message || e))
+  }
+}
+function closeLulus() { lulusFor.value = null; lulusSantri.value = null }
+async function submitLulus() {
+  const a = lulusFor.value
+  const s = lulusSantri.value
+  if (!a) return
+  if (!s) { toast.error('Data santri belum termuat.'); return }
+  if (!naikForm.kelas) { toast.warning('Pilih kelas tujuan dulu.'); return }
+  naikBusy.value = true
+  try {
+    const opts = {
+      lembaga: naikForm.lembaga || a.lembaga || '',
+      kelas: naikForm.kelas,
+      juz: naikForm.lembaga === 'PTPT' ? naikForm.juz : '',
+      khotam_ke: naikForm.lembaga === 'Pra PTPT' ? naikForm.khotam_ke : '',
+      guru: naikForm.guru || '',
+      kelas_sekolah: s.kelas_sekolah || '',
+      catatan: catatan[a.id] || ''
+    }
+    const { payload, rkEntry } = buildKenaikanQiraatiPayload(s, opts, { settings: settings.value, lembagaList: [] })
+    await writeKenaikan(s, payload, rkEntry)
+    await putuskan(a.id, 'lulus', catatan[a.id] || '', collectNilai(a))
+    delete catatan[a.id]; delete nilai[a.id]
+    toast.success(`${a.nama_cache} LULUS & dinaikkan ke ${naikForm.kelas}.`)
+    closeLulus()
+  } catch (e) {
+    toast.error('Gagal proses lulus: ' + (e.message || e))
+  } finally {
+    naikBusy.value = false
   }
 }
 

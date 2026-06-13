@@ -257,14 +257,6 @@
           <div class="flex-1 min-w-0">
             <p class="text-sm font-bold text-[var(--text-primary)] truncate">
               {{ s.nama }}
-              <!-- v.100: badge siap naik (lulus tes kenaikan) -->
-              <span
-                v-if="siapNaikTarget(s)"
-                class="ml-1.5 inline-flex items-center gap-1 align-middle text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700"
-                :title="`Lulus tes — siap naik ke ${siapNaikTarget(s)}`"
-              >
-                <i class="fas fa-circle-check"></i>Siap naik → {{ siapNaikTarget(s) }}
-              </span>
             </p>
             <p class="text-[11px] text-[var(--text-secondary)] truncate">
               {{ santriRowLabel(s) }}
@@ -1136,7 +1128,6 @@ import { useDesktopShell } from '@/composables/useDesktopShell'
 import { definePageActions } from '@/composables/useRibbonContext'
 import { collection, doc, getDocs, setDoc, updateDoc } from 'firebase/firestore'
 import { db } from '@/services/firebase'
-import { subscribeColl } from '@/services/firestore' // v.100: badge "siap naik" dari tes_kenaikan
 import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
@@ -2698,29 +2689,7 @@ async function eksporKartuPdf() {
 }
 
 // ────────── Lifecycle: load santri ──────────
-// v.100: badge "siap naik" — santri yang LULUS tes kenaikan (auto-hilang setelah target tercapai).
-const tesLulusRaw = ref([])
-let _unsubTes = null
-const tesLulusMap = computed(() => {
-  const m = {}
-  for (const a of tesLulusRaw.value) {
-    if (a.status !== 'lulus' || !a.santri_id) continue
-    const sid = String(a.santri_id)
-    const ts = a._ts || (a.tgl_hasil ? Date.parse(a.tgl_hasil) : 0)
-    if (!m[sid] || ts > m[sid]._ts) m[sid] = { target: a.target || '', jenis: a.jenis || '', _ts: ts }
-  }
-  return m
-})
-// Return label target bila santri "siap naik" & target BELUM tercapai; null bila tak ada / sudah naik.
-function siapNaikTarget(s) {
-  const hit = tesLulusMap.value[String(s.id)]
-  if (!hit || !hit.target) return null
-  const tgt = String(hit.target).toLowerCase()
-  const reached =
-    (hit.jenis === 'juz' && ('juz ' + String(s.juz || '').toLowerCase()) === tgt) ||
-    String(s.kelas || '').toLowerCase() === tgt
-  return reached ? null : hit.target
-}
+// v.100d: badge "siap naik" dihapus — Lulus tes kini langsung menaikkan santri (lihat TesKenaikanView).
 
 onMounted(async () => {
   if (!isAdmin.value && !isGuru.value && !isSantriRole.value) {
@@ -2735,9 +2704,7 @@ onMounted(async () => {
   } finally {
     loadingSantri.value = false
   }
-  _unsubTes = subscribeColl('tes_kenaikan', (docs) => { tesLulusRaw.value = docs || [] })
 })
-onUnmounted(() => { if (_unsubTes) _unsubTes() })
 </script>
 
 <style scoped>
