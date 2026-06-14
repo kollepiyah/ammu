@@ -3,13 +3,14 @@
 // v.53.1: Persist admin built-in sesiAktif via localStorage (Firebase Auth user only untuk guru/santri)
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { onAuthStateChanged, setPersistence, browserLocalPersistence, indexedDBLocalPersistence, signInAnonymously } from 'firebase/auth'
+import { onAuthStateChanged, setPersistence, browserLocalPersistence, indexedDBLocalPersistence } from 'firebase/auth'
 import { doc, setDoc } from 'firebase/firestore'
 import { auth as fbAuth, db } from '@/services/firebase'
 import * as authService from '@/services/auth'
 import { queryColl, setAuditSesi } from '@/services/firestore'
 
-const ADMIN_EMAIL_SUFFIX = '@portal-mu.local'
+// v.100f: domain Auth internal — baru '@ammu.local', legacy '@portal-mu.local' (backward-compat).
+const AUTH_EMAIL_DOMAINS = ['@ammu.local', '@portal-mu.local']
 const SESI_STORAGE_KEY = 'portalMu_sesiAdminBuiltIn'
 
 function _persistAdminSesi(sesi) {
@@ -161,10 +162,12 @@ export const useAuthStore = defineStore('auth', () => {
           jabatan: 'Administrator',
           lembaga: 'Semua Data',
           akses: { kelola_guru: true, akses_keuangan: true, kelola_santri: true, kelola_lembaga: true, kelola_kelas: true },
-          auth_method: 'admin-builtin'
+          auth_method: 'admin-builtin',
+          firebase_uid: result.user?.uid,
+          firebase_email: result.user?.email
         }
+        fbUser.value = result.user // v.100f: admin kini punya sesi Firebase Auth ASLI (Anonymous di-disable)
         _persistAdminSesi(sesiAktif.value); _persistFullSesi(sesiAktif.value) /* v.91.0626: fix reopen-logout semua platform */
-        await ensureAnonAuth() // v.90.0626: sesi Anonymous utk admin -> rules signedIn() jalan
         return
       }
 
@@ -196,7 +199,6 @@ export const useAuthStore = defineStore('auth', () => {
           firebase_email: result.user?.email
         }
         fbUser.value = result.user
-        await ensureAnonAuth() // v.95.0626: pastikan sesi Firebase ada (anon fallback) -> rules signedIn() + simpan fcm_token jalan
         _persistFullSesi(sesiAktif.value) /* v.91.0626: backup sesi -> fix reopen-logout */
         return
       }
@@ -220,7 +222,6 @@ export const useAuthStore = defineStore('auth', () => {
           firebase_email: result.user?.email
         }
         fbUser.value = result.user
-        await ensureAnonAuth() // v.95.0626: pastikan sesi Firebase ada (anon fallback) -> rules signedIn() + simpan fcm_token jalan
         _persistFullSesi(sesiAktif.value) /* v.91.0626: backup sesi -> fix reopen-logout */
         return
       }
@@ -257,6 +258,24 @@ export const useAuthStore = defineStore('auth', () => {
     const uid = user.uid
     const emailLower = (user.email || '').toLowerCase()
 
+    // v.100f: kenali email admin built-in (adminmu@<domain>). Normalnya sesi admin
+    //   sudah di-restore dari localStorage (loadSesiFromUser di-skip), ini jaring
+    //   pengaman bila localStorage kosong tapi sesi Firebase admin tetap ada.
+    const adminDomain = AUTH_EMAIL_DOMAINS.find((d) => emailLower.endsWith(d))
+    if (adminDomain) {
+      const localPart = emailLower.slice(0, -adminDomain.length)
+      if (localPart === 'adminmu' || localPart === 'admin') {
+        sesiAktif.value = {
+          id: 'admin', role: 'admin', role_sistem: 'super_admin', nama: 'Administrator',
+          guru: 'Admin Utama', jk: 'L', jabatan: 'Administrator', lembaga: 'Semua Data',
+          akses: { kelola_guru: true, akses_keuangan: true, kelola_santri: true, kelola_lembaga: true, kelola_kelas: true },
+          auth_method: 'admin-builtin', firebase_uid: uid, firebase_email: user.email
+        }
+        _persistAdminSesi(sesiAktif.value); _persistFullSesi(sesiAktif.value)
+        return
+      }
+    }
+
     // Step 1: lookup by linked_uid (Google linking)
     let matchGuru = await queryColl('guru', [['linked_uid', '==', uid]], [], 1)
     let matchSantri = []
@@ -272,10 +291,11 @@ export const useAuthStore = defineStore('auth', () => {
       }
     }
 
-    // Step 3: fallback by WA dari email pattern (`{wa}@portal-mu.local`)
-    if (matchGuru.length === 0 && matchSantri.length === 0 && emailLower.endsWith(ADMIN_EMAIL_SUFFIX)) {
-      const wa = emailLower.replace(ADMIN_EMAIL_SUFFIX, '')
-      if (wa && wa !== 'admin') {
+    // Step 3: fallback by WA dari email pattern (`{wa}@ammu.local` atau legacy `@portal-mu.local`)
+    const waDomain = AUTH_EMAIL_DOMAINS.find((d) => emailLower.endsWith(d))
+    if (matchGuru.length === 0 && matchSantri.length === 0 && waDomain) {
+      const wa = emailLower.slice(0, -waDomain.length)
+      if (wa && wa !== 'admin' && wa !== 'adminmu') {
         // Coba match field wa (number atau string)
         matchGuru = await queryColl('guru', [['wa', '==', wa]], [], 1)
         if (matchGuru.length === 0) {
@@ -371,18 +391,6 @@ export const useAuthStore = defineStore('auth', () => {
     _persistFullSesi(sesi) // v.85.0526: auto-persist supaya Android close-app tidak logout
   }
 
-  // v.90.0626: admin built-in tidak punya sesi Firebase Auth -> request.auth null -> rules
-  //   signedIn() (read/write) gagal. Beri sesi Anonymous biar request.auth != null.
-  //   WAJIB provider Anonymous AKTIF di Firebase Console. Gagal = non-blocking.
-  async function ensureAnonAuth() {
-    try {
-      if (!fbAuth.currentUser) await signInAnonymously(fbAuth)
-    } catch (e) {
-      // eslint-disable-next-line no-console
-      console.warn('[auth] Anonymous sign-in gagal (aktifkan provider Anonymous di Firebase Console?):', e?.message)
-    }
-  }
-
   /**
    * Restore sesi admin built-in dari localStorage saat App init.
    * Dipanggil di App.vue onMounted setelah Firebase Auth check selesai.
@@ -414,11 +422,9 @@ export const useAuthStore = defineStore('auth', () => {
     }
     // v.91.0626: set sesi utk atribusi audit_log setelah restore (reopen tetap ter-atribusi)
     try { setAuditSesi(sesiAktif.value) } catch (e) {}
-    // v.90.0626: sesi admin built-in (no Firebase Auth) -> beri Anonymous supaya request.auth
-    //   != null setelah refresh (rules signedIn read/write tetap jalan).
-    if (sesiAktif.value && sesiAktif.value.auth_method === 'admin-builtin') {
-      ensureAnonAuth()
-    }
+    // v.100f: admin built-in kini punya sesi Firebase Auth ASLI (Anonymous di-disable).
+    //   Saat refresh, sesi Auth admin di-restore otomatis oleh persistence (onAuthStateChanged
+    //   fire dengan user admin asli) → request.auth tetap valid tanpa Anonymous.
 
     // v.21.24c.0526: Force persist Firebase Auth ke IndexedDB (lebih reliable di PWA standalone)
     // Sebelumnya: persistence dipasang hanya saat loginUnified. Di PWA refresh, kalau ada race

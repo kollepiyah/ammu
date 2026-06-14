@@ -29,13 +29,30 @@ export function toAuthPassword(pass) {
 // ============================================================================
 // BUILD AUTH EMAIL — port buildAuthEmail dari legacy
 // Sanitize username/WA/NIS → email Firebase Auth internal format
+// v.100f: domain baru '@ammu.local' utk provisioning baru. Domain lama
+//   '@portal-mu.local' tetap DICOBA saat sign-in (backward-compat) supaya akun
+//   lama tidak terkunci — lihat authEmailCandidates().
 // ============================================================================
-export function buildAuthEmail(input) {
-  const clean = String(input || '')
+export const AUTH_EMAIL_DOMAIN = '@ammu.local'
+export const LEGACY_AUTH_EMAIL_DOMAINS = ['@portal-mu.local']
+
+function sanitizeAuthLocalPart(input) {
+  return String(input || '')
     .toLowerCase()
     .replace(/[^a-z0-9._-]/g, '')
+}
+
+export function buildAuthEmail(input) {
+  const clean = sanitizeAuthLocalPart(input)
   if (!clean) return null
-  return clean + '@portal-mu.local'
+  return clean + AUTH_EMAIL_DOMAIN
+}
+
+// Kandidat email utk sign-in: domain baru DULU, lalu domain legacy (akun lama).
+export function authEmailCandidates(input) {
+  const clean = sanitizeAuthLocalPart(input)
+  if (!clean) return []
+  return [AUTH_EMAIL_DOMAIN, ...LEGACY_AUTH_EMAIL_DOMAINS].map((d) => clean + d)
 }
 
 // ============================================================================
@@ -151,11 +168,72 @@ export async function findUserByLoginInput(input) {
 
 // ============================================================================
 // LOGIN UNIFIED — port loginUnified dari legacy (try padded → raw → migration)
+// v.100f: admin kini sign-in Firebase Auth ASLI (bukan Anonymous, yang sudah
+//   di-disable di Console) + coba domain baru & legacy (backward-compat).
 // ============================================================================
+const MIGRATABLE_AUTH_CODES = [
+  'auth/wrong-password',
+  'auth/invalid-credential',
+  'auth/invalid-login-credentials',
+  'auth/user-not-found'
+]
+
+// Coba sign-in lintas kandidat email (domain baru → legacy), padded → raw.
+// Return { user, authMethod } bila sukses; null bila semua tak ketemu/sandi-salah
+// (caller lanjut ke provisioning). Lempar error non-migratable (network dll).
+async function _trySignInCandidates(emails, rawPassword) {
+  for (const email of emails) {
+    // Padded password (format baku)
+    try {
+      const cred = await signInWithEmailAndPassword(auth, email, toAuthPassword(rawPassword))
+      return { user: cred.user, authMethod: 'firebase-padded' }
+    } catch (e) {
+      if (!MIGRATABLE_AUTH_CODES.includes(e.code || '')) throw e
+    }
+    // Raw password (akun pra-padding) + silently upgrade ke padded
+    try {
+      const cred = await signInWithEmailAndPassword(auth, email, rawPassword)
+      try {
+        const { updatePassword } = await import('firebase/auth')
+        await updatePassword(cred.user, toAuthPassword(rawPassword))
+      } catch (upgErr) {
+        // eslint-disable-next-line no-console
+        console.warn('[auth] Password upgrade fail:', upgErr.message)
+      }
+      return { user: cred.user, authMethod: 'firebase-raw-upgraded' }
+    } catch (e) {
+      if (!MIGRATABLE_AUTH_CODES.includes(e.code || '')) throw e
+    }
+  }
+  return null
+}
+
+// Provision akun Auth baru utk `email` (secondary app supaya tak swap sesi utama),
+// lalu sign-in di app utama.
+async function _provisionAndSignIn(email, rawPassword) {
+  const secAuth = getSecondaryAuth()
+  if (!secAuth) throw new Error('Secondary Firebase Auth init fail')
+  try {
+    await createUserWithEmailAndPassword(secAuth, email, toAuthPassword(rawPassword))
+    try { await fbSignOut(secAuth) } catch (e) {}
+    const cred2 = await signInWithEmailAndPassword(auth, email, toAuthPassword(rawPassword))
+    return { user: cred2.user, authMethod: 'firebase-migrated' }
+  } catch (provErr) {
+    if (provErr.code === 'auth/email-already-in-use') {
+      // Akun sudah ada — retry signIn padded di app utama.
+      const cred2 = await signInWithEmailAndPassword(auth, email, toAuthPassword(rawPassword))
+      return { user: cred2.user, authMethod: 'firebase-already-exists' }
+    }
+    throw provErr
+  }
+}
+
 export async function loginUnified(userInfo, password, persistent = true) {
   await setPersistence(auth, persistent ? browserLocalPersistence : browserSessionPersistence)
 
-  // Admin built-in: validate password dari settings/admin atau settings/web
+  // Admin built-in: validasi password dari settings/admin atau settings/web,
+  // LALU establish sesi Firebase Auth ASLI (provider Anonymous sudah di-disable →
+  // admin WAJIB punya request.auth != null supaya rules tulis lolos).
   if (userInfo.source === 'admin') {
     const settingsAdmin = await getDoc(doc(db, 'settings', 'admin')).catch(() => null)
     const settingsWeb = await getDoc(doc(db, 'settings', 'web')).catch(() => null)
@@ -168,89 +246,46 @@ export async function loginUnified(userInfo, password, persistent = true) {
       err.code = 'auth/wrong-password'
       throw err
     }
-    return { authMethod: 'admin-builtin', user: null }
+    const emails = authEmailCandidates(userInfo.authKey)
+    let res = await _trySignInCandidates(emails, password)
+    if (!res) res = await _provisionAndSignIn(buildAuthEmail(userInfo.authKey), password)
+    return { authMethod: 'admin-' + res.authMethod, user: res.user }
   }
 
-  // Normal user: Firebase Auth signIn
-  const authEmail = buildAuthEmail(userInfo.authKey)
-  if (!authEmail) throw new Error('Username/WA tidak valid untuk Auth')
+  // Normal user: coba kandidat email (domain baru → legacy), padded → raw.
+  const emails = authEmailCandidates(userInfo.authKey)
+  if (emails.length === 0) throw new Error('Username/WA tidak valid untuk Auth')
 
-  let signInCred = null
-  // Try padded password first
-  try {
-    signInCred = await signInWithEmailAndPassword(auth, authEmail, toAuthPassword(password))
-    return { authMethod: 'firebase-padded', user: signInCred.user }
-  } catch (padErr) {
-    const code = padErr.code || ''
-    const migratableCodes = ['auth/wrong-password', 'auth/invalid-credential', 'auth/invalid-login-credentials', 'auth/user-not-found']
-    if (!migratableCodes.includes(code)) throw padErr
+  const res = await _trySignInCandidates(emails, password)
+  if (res) return res
 
-    // Fallback: try raw password (backward compat untuk akun yg ke-migrate sebelum padding fix)
-    try {
-      signInCred = await signInWithEmailAndPassword(auth, authEmail, password)
-      // Silently upgrade password ke padded format
-      try {
-        const { updatePassword } = await import('firebase/auth')
-        await updatePassword(signInCred.user, toAuthPassword(password))
-      } catch (upgErr) {
-        // eslint-disable-next-line no-console
-        console.warn('[auth] Password upgrade fail:', upgErr.message)
-      }
-      return { authMethod: 'firebase-raw-upgraded', user: signInCred.user }
-    } catch (rawErr) {
-      // Raw juga gagal — kemungkinan user belum ada Firebase Auth account
-      if (!['auth/wrong-password', 'auth/invalid-credential', 'auth/invalid-login-credentials', 'auth/user-not-found'].includes(rawErr.code)) {
-        throw rawErr
-      }
-      // Lanjut ke lazy migration
-    }
-  }
-
-  // LAZY MIGRATION: validate password lawas di Firestore, lalu provision Firebase Auth
+  // LAZY MIGRATION: validasi password lawas di Firestore, lalu provision Auth (domain baru).
   const oldPass = userInfo.data.password || '1234'
   if (password !== oldPass) {
     const err = new Error('Kata sandi salah')
     err.code = 'auth/wrong-password'
     throw err
   }
-
-  // Provision Auth account di secondary app supaya tidak swap session
-  const secAuth = getSecondaryAuth()
-  if (!secAuth) throw new Error('Secondary Firebase Auth init fail')
-
+  const authEmail = buildAuthEmail(userInfo.authKey)
+  const provRes = await _provisionAndSignIn(authEmail, password)
+  // Tag Firestore: firebase_uid + email_auth (best-effort, tidak memblok login)
   try {
-    const cred = await createUserWithEmailAndPassword(secAuth, authEmail, toAuthPassword(password))
-    // Update Firestore: tag user dengan firebase_uid + email_auth
-    try {
-      await updateDoc(doc(db, userInfo.source, String(userInfo.data.id)), {
-        firebase_uid: cred.user.uid,
-        email_auth: authEmail,
-        password_migrated: true
-      })
-    } catch (updErr) {
-      // eslint-disable-next-line no-console
-      console.warn('[auth] Firestore migration tag fail:', updErr.message)
-    }
-    // SignOut secondary supaya bersih
-    try { await fbSignOut(secAuth) } catch (e) {}
-
-    // Now signIn di main app
-    const cred2 = await signInWithEmailAndPassword(auth, authEmail, toAuthPassword(password))
-    return { authMethod: 'firebase-migrated', user: cred2.user }
-  } catch (provErr) {
-    if (provErr.code === 'auth/email-already-in-use') {
-      // Edge case: Auth account sudah ada tapi password beda. Retry signIn padded.
-      const cred2 = await signInWithEmailAndPassword(auth, authEmail, toAuthPassword(password))
-      return { authMethod: 'firebase-already-exists', user: cred2.user }
-    }
-    throw provErr
+    await updateDoc(doc(db, userInfo.source, String(userInfo.data.id)), {
+      firebase_uid: provRes.user.uid,
+      email_auth: authEmail,
+      password_migrated: true
+    })
+  } catch (updErr) {
+    // eslint-disable-next-line no-console
+    console.warn('[auth] Firestore migration tag fail:', updErr.message)
   }
+  return provRes
 }
 
 /** @deprecated v.53 — pakai loginUnified() */
 export async function loginWithWa(wa, password, persistent = true) {
   await setPersistence(auth, persistent ? browserLocalPersistence : browserSessionPersistence)
-  const email = `${wa}@portal-mu.local`
+  const email = buildAuthEmail(wa)
   return signInWithEmailAndPassword(auth, email, toAuthPassword(password))
 }
 
