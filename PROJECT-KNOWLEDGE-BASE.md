@@ -1,5 +1,6 @@
 # PROJECT KNOWLEDGE BASE — Ammu Online (Portal MU)
-> 🆕🆕🆕 **RECAP PALING BARU (14 Jun 2026, LANJUTAN-2) — HEAD `63a92a8`.** TES KENAIKAN **Fase 3/4/5 SELESAI** → Item 3 TUNTAS (`237cc9c` skema rapor PTPT[Tahfizh+swap]/PPPH[2 grup] + `508587a` nilai tes auto→rapor `rapor_semester` saat Lulus + `45caa05` tab Rekap statistik/cetak PDF). + 2 fix kartu PTPT (`aedfe7a` preview reaktif/computed + `63a92a8` guard abaikan override basi 4-juz). ⏳ **AKTIF/BELUM TUNTAS:** kartu PTPT preview **MASIH 4 juz** di device kyai walau Reset+Simpan+deploy+hard reload — kemungkinan besar **service worker PWA serve bundle LAMA** (guard belum jalan); NEXT = **force SW update** (DevTools Unregister + Clear site data + tutup semua tab) lalu kalau masih → inspeksi live via Claude in Chrome. Pending lain: absen HP **geofence** (konsep+mockup saja, belum dikode), **Item 2 diskusi DB Firestore-vs-SQL** (belum). Gaya feedback: **JANGAN pakai kata "Saya"** di label/menu. Detail PALING BAWAH ("LANJUTAN-2").
+> 🆕🆕🆕 **RECAP PALING BARU (14 Jun 2026, SESI v.100f — KEAMANAN + AUTH DOMAIN @ammu.local).** ✅ SUDAH DEPLOY (web+functions) + REBUILD (AAB vc100 + Electron) + PUSH. HEAD `37ac8a5`. (1) Provider **Anonymous di-DISABLE** → admin login kini Firebase Auth ASLI (bukan `signInAnonymously`), auto-provision `adminmu@ammu.local` (`24e44f9`). (2) Domain Auth internal **`@portal-mu.local` → `@ammu.local`** (backward-compat: sign-in coba domain baru lalu legacy → akun lama TAK terkunci, nol re-provision). (3) **Audit keamanan** + fix CRITICAL: Cloud Function `findUserByLogin` bocorkan `password` plaintext → strip `_STRIP_PII` (`050c796`). (4) **App Check native** via debug token (web tetap reCAPTCHA; token TIDAK di-bake ke bundle web — `a0a40d1`+`37ac8a5`); status Console = **Monitoring (BELUM Enforce)**. (5) Bump **v.100.0626 / vc100** (`e18595c`). ⏳ PENDING: **Enforce App Check** (tunggu semua 12 penguji update AAB vc100 + verified% ~95% + device sendiri verified); keamanan lanjutan (tutup read publik guru/santri/settings = BERISIKO login; hapus password plaintext; fix ganti-sandi M1); kartu PTPT preview "4 juz" (SW cache); Item 2 DB Firestore-vs-SQL; produksi → App Check Play Integrity asli (perlu upgrade firebase 10→12). **Absen geofence DICORET kyai.** Detail PALING BAWAH ("SESI v.100f").
+> 🆕🆕 **RECAP (14 Jun 2026, LANJUTAN-2) — HEAD `63a92a8`.** TES KENAIKAN **Fase 3/4/5 SELESAI** → Item 3 TUNTAS (`237cc9c` skema rapor PTPT[Tahfizh+swap]/PPPH[2 grup] + `508587a` nilai tes auto→rapor `rapor_semester` saat Lulus + `45caa05` tab Rekap statistik/cetak PDF). + 2 fix kartu PTPT (`aedfe7a` preview reaktif/computed + `63a92a8` guard abaikan override basi 4-juz). ⏳ **AKTIF/BELUM TUNTAS:** kartu PTPT preview **MASIH 4 juz** di device kyai walau Reset+Simpan+deploy+hard reload — kemungkinan besar **service worker PWA serve bundle LAMA** (guard belum jalan); NEXT = **force SW update** (DevTools Unregister + Clear site data + tutup semua tab) lalu kalau masih → inspeksi live via Claude in Chrome. Pending lain: absen HP **geofence** (konsep+mockup saja, belum dikode), **Item 2 diskusi DB Firestore-vs-SQL** (belum). Gaya feedback: **JANGAN pakai kata "Saya"** di label/menu. Detail PALING BAWAH ("LANJUTAN-2").
 > 🆕🆕 **RECAP (14 Jun 2026, lanjutan) = RECOVERY sesi terpotong + FIX EKSPOR PDF RAPOR.** HEAD `60bede7`. (1) feat **Izin & Sakit mandiri guru** `f7e93fd` (PersonalView + useIzinGuru + rules `izin_guru`); (2) fix **ekspor PDF rapor** `60bede7` — `raporState` undefined di `drawSignBlocks` (memutus ekspor SEMUA lembaga sejak v.100c) + nilai kosong (`data` vs `data_nilai`). ✅ SUDAH DEPLOY web. ⚠️ **KOREKSI TOPOLOGI:** LIVE = **Vue `ammuonline.web.app`** + PSB; legacy `portal-mambaul-ulum`/`public/index.html` **MATI** (jangan diedit). ⏳ **PENDING kyai (DATA, bukan kode):** kartu kenaikan **PTPT Juz 5/10/15/20/25/30 hilang** = override basi `settings.kartuKenaikanSchema.PTPT` (4 juz/kelas) → fix in-app: Kenaikan → tab **Pengaturan** → pilih **PTPT** → **Reset Default** → **Simpan Schema** (schema per-lembaga BEDA, jangan reset borongan). Detail PALING BAWAH ("SESI v.100d LANJUTAN").
 > 🆕 **RECAP (14 Jun 2026) = SESI v.100d/e — 4 BUG FIX + AUDIT LOG FIX + KARTU IKON FILTER KENAIKAN + REVIEW KEAMANAN. ✅ SEMUA SUDAH DEPLOY (web).** HEAD `ff43298` (`ce392e8`+`ff43298`). Detail di PALING BAWAH ("SESI v.100d + v.100e"). ⚠️ PENDING utk AGEN BERIKUTNYA: Tes Kenaikan redesign **Fase 3/4/5** + **remediasi keamanan** (rules SENGAJA belum diubah — bisa memutus login).
 > 🆕 **RECAP TERBARU (13 Jun 2026) = "SESI v.100b/c — SANTRIVIEW DUAL-ROLE + RAPOR (filter/KOP) + STATISTIK TREN"** di PALING BAWAH. Commit `181ce9e` / `a1c3ad2` / `dd1064f`. Verify build:electron exit 0. BELUM deploy.
@@ -52,7 +53,7 @@ Shell Desktop Commander **men-strip PATH + PATHEXT** → `git`/`node`/`npm` tela
 - **Perubahan NATIVE Android (widget/manifest/splash)** → WAJIB rebuild AAB (web deploy tidak cukup).
 
 ## 5. SKEMA VERSI
-Format `v.<versionCode>.<MMYY>` (MM=bulan, YY=2 digit tahun). Saat ini **v.99.0626** (versionCode **99**, Juni 2026). ⚠️ **Play Console terakhir = vc 98** → vc 99 VALID utk rilis berikut. CATATAN: vc 100 sempat di-set di sesi sebelumnya lalu **DITURUNKAN ke 99** oleh kyai (11 Jun 2026) karena vc 99/100 belum pernah benar-benar ter-upload ke Play. Bump SEMUA tempat saat rilis AAB baru (Play Console tolak versionCode sama):
+Format `v.<versionCode>.<MMYY>` (MM=bulan, YY=2 digit tahun). Saat ini **v.100.0626** (versionCode **100**, Juni 2026) — SUDAH di-build AAB + upload Play Console (internal testing) 14 Jun 2026, commit `e18595c`. (Riwayat: vc 100 sempat di-set lalu DITURUNKAN ke 99 pada 11 Jun karena belum ter-upload; kini vc100 benar-benar dipakai → rilis berikut minimal **vc 101**.) Bump SEMUA tempat saat rilis AAB baru (Play Console tolak versionCode sama):
 - `vue-app/android/app/build.gradle` (versionCode + versionName)
 - `package.json` (root + vue-app = "87.0526"), `vue-app/electron/package.json` ("87.0.526")
 - `vue-app/src/main.js` Sentry `release: 'portal-mu@87.0526'`
@@ -1547,3 +1548,51 @@ firestore.rules TIDAK berubah. **Setelah deploy paket v.99: isi 2 tarif bisyaroh
 - **SUDAH deploy web (kyai):** Fase 3/4/5 + izin/sakit + fix PDF rapor (`237cc9c`..`60bede7`) — terkonfirmasi (PDF rapor sudah jalan). 
 - **BELUM PASTI aktif di device:** `aedfe7a` + `63a92a8` (kartu PTPT) — kyai bilang sudah deploy+hard reload tapi gejala tetap → diduga SW cache; perlu force SW update (lihat C). 
 - Tak ada perubahan rules/functions/vc di commit kartu. `git push` semua commit sesi ini = cek (branch `feature/vue-migration` belum tentu ter-push).
+
+
+---
+
+## SESI v.100f — KEAMANAN + AUTH DOMAIN @ammu.local + APP CHECK NATIVE + BUMP v.100 (14 Jun 2026, Claude Code) — RECAP TERBARU
+
+> Branch feature/vue-migration. HEAD `37ac8a5`. ✅ SUDAH commit + deploy web (`firebase:deploy`) + functions + rebuild AAB vc100 (upload Play internal testing) + Electron + push. Verify `_run_vite.cmd` VITE_EXITCODE=0 tiap langkah. Tugas kyai: (1) audit keamanan data, (2) disable Anonymous login, (3) ganti domain email Auth ke @ammu.local.
+
+### COMMIT (urut)
+- `24e44f9` admin login Firebase Auth asli (Anonymous di-disable) + domain @ammu.local backward-compat
+- `050c796` fix(security/functions): strip 'password'+'linked_email' dari output findUserByLogin
+- `a0a40d1` App Check native via debug token (web tetap reCAPTCHA murni)
+- `e18595c` bump v.99.0626 → v.100.0626 (versionCode 100)
+- `37ac8a5` jangan bake App Check debug token ke bundle web
+
+### 1. ANONYMOUS DISABLE + ADMIN FIREBASE AUTH ASLI (Task 2)
+- Kyai disable provider Anonymous di Console. Sebelumnya admin built-in TANPA Firebase Auth → pakai `ensureAnonAuth()`/`signInAnonymously` agar `request.auth != null` (rules tulis lolos). Anon mati = admin TAK BISA tulis.
+- Fix `services/auth.js loginUnified`: admin kini validasi sandi (settings) LALU sign-in/provision Firebase Auth ASLI `adminmu@<domain>` via helper `_trySignInCandidates`/`_provisionAndSignIn`. `stores/auth.js`: hapus `signInAnonymously`+`ensureAnonAuth`; admin set `fbUser`; `loadSesiFromUser` kenali email admin (jaring pengaman refresh bila localStorage kosong).
+- ⚠️ Admin login PERTAMA pasca-deploy auto-provision akun Auth pakai sandi `settings`. Pasca-deploy admin **logout+login 1×** (buang sesi anon sisa ≤1 jam). Email/Password provider WAJIB tetap aktif.
+
+### 2. DOMAIN AUTH @portal-mu.local → @ammu.local (Task 3, backward-compat)
+- `buildAuthEmail()` → `@ammu.local` (konstanta `AUTH_EMAIL_DOMAIN`). `authEmailCandidates()` = [@ammu.local, @portal-mu.local] → sign-in coba domain baru DULU lalu legacy → akun lama TIDAK terkunci, nol re-provision (keputusan kyai = backward-compat). `stores/auth.js AUTH_EMAIL_DOMAINS` (2 domain) dipakai `loadSesiFromUser`.
+- LEGACY tak diubah (MATI): `src/helpers.js`, `public/index.html`, `tests/unit/buildAuthEmail.test.js` masih @portal-mu.local.
+
+### 3. AUDIT KEAMANAN (Task 1) + fix
+- 🔴 FIX (`050c796`, deployed): `findUserByLogin` (functions/index.js, onRequest publik CORS terbuka) balas `password` plaintext (`_STRIP_PII` tak menyertakan) → tambah 'password'+'linked_email'. Aman: client tak butuh password dari endpoint (lazy-migration akun baru selalu '1234'; akun ber-password lain pasti sudah punya akun Auth → sign-in duluan). Fallback direct-read masih punya password bila function down.
+- 🔴 BELUM (berisiko/besar — keputusan kyai): `settings`/`guru`/`santri` `read:if true` + password plaintext. Tutup read BUTUH pindah validasi sandi admin + login lookup ke server (admin login baca settings SEBELUM sign-in = unauth). Hapus password plaintext = refactor data-model + login. ⚠️ `firestore.rules.stage2-proposed` STALE (pre-v.98, kurang hardened — jangan jadi basis).
+- 🟠 write rules cuma `request.auth != null` tanpa cek role → self-register email/password masih dapat auth → akar = custom claims. App Check (lihat 4) = mitigasi tanpa risiko login. `storage psb/` read publik (KK/akta) — TAK ditutup: upload PSB publik (wali tanpa login) butuh `getDownloadURL` (read).
+- 🟡 ganti-sandi `ProfilPengaturanSaya.vue:423-435` cuma update Firestore `password`, tak panggil Auth `updatePassword` → drift; ganti-sandi admin tulis `settings/general` (login baca `settings/admin`/`web`) → tak berefek.
+
+### 4. APP CHECK NATIVE (status Console: Monitoring, BELUM Enforce)
+- Sebelumnya `firebase.js` HANYA init App Check di web https → native (Android Capacitor WebView + Electron) tak kirim token → ~55% unverified (Firestore 45% verified = web reCAPTCHA).
+- Blocker Play Integrity ASLI: plugin `@capacitor-firebase/app-check@8` peer-dep `firebase ^12` (app pakai firebase ^10) → upgrade major, TUNDA ke produksi.
+- Fase internal testing: `firebase.js` dipisah per-platform — web reCAPTCHA; native pakai DEBUG TOKEN (`VITE_APPCHECK_DEBUG_TOKEN`), token HANYA diterapkan saat native. `deploy-minified.cjs` set `VITE_APPCHECK_DEBUG_TOKEN=''` utk build web → token TIDAK ter-bake ke bundle web publik (cegah bypass setelah Enforce). Token didaftar di Console App Check > app **WEB (mambaululum)** — karena Capacitor/Electron pakai web `appId` di firebase.js (registrasi Play Integrity app Android TAK terpakai JS-SDK-in-WebView).
+- ⏳ Enforce NANTI: tunggu SEMUA 12 penguji update AAB vc100 + verified% ~95% + device sendiri verified. Enforce sekarang = HP AAB lama langsung ke-block (per-API, tak bisa separuh).
+
+### 5. BUMP v.100.0626 (vc100) — 13 titik §5
+build.gradle (vc100+vn), package.json root+vue-app ("100.0626"), electron/package.json ("100.0.626"), main.js Sentry ("portal-mu@100.0626"), footer Login/Dashboard/PpdbAdmin/AppSidebar, fallback RibbonStatusBar/RibbonBackstage/BantuanView ("v.100.0626"). AAB vc100 SUDAH upload Play (internal testing) → rilis berikut minimal vc101.
+
+### PENDING (urut)
+1. **Enforce App Check** setelah penguji update AAB vc100 + verified% sehat.
+2. **Keamanan lanjutan** (keputusan kyai): tutup read publik (server-side admin auth + lookup) / hapus password plaintext / fix ganti-sandi M1.
+3. Kartu PTPT preview "4 juz" — SW cache (force SW update).
+4. Item 2: diskusi DB Firestore vs SQL (paling akhir).
+5. Produksi: App Check **Play Integrity asli** (upgrade firebase 10→12 + `@capacitor-firebase/app-check` + CustomProvider).
+- **Absen geofence: DICORET kyai (14 Jun).**
+
+### MEMORY ditulis: `project_auth_domain_ammu`, `project_security_findings` (update).
