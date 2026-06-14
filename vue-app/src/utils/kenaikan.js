@@ -198,6 +198,19 @@ export const DEFAULT_KARTU_KENAIKAN_PPPH = {
 // Backward compat alias
 export const DEFAULT_KARTU_KENAIKAN_P3H = DEFAULT_KARTU_KENAIKAN_PPPH
 
+// v.100d: override PTPT dianggap VALID hanya bila tiap kelas ≥5 juz & total ≥30 (kanonik 6×5).
+//   Override basi (mis. 4 juz/kelas → Juz 5/10/15/20/25/30 hilang) diabaikan agar pakai default.
+function _isValidPtptOverride(sch) {
+  if (!sch || !Array.isArray(sch.kelasList) || sch.kelasList.length === 0) return false
+  let total = 0
+  for (const k of sch.kelasList) {
+    const n = Array.isArray(k.items) ? k.items.length : 0
+    if (n < 5) return false
+    total += n
+  }
+  return total >= 30
+}
+
 /**
  * Get schema kartu kenaikan untuk lembaga tertentu.
  * Cek dulu di settings.kartuKenaikanSchema[lembaga] (override admin),
@@ -209,7 +222,13 @@ export const DEFAULT_KARTU_KENAIKAN_P3H = DEFAULT_KARTU_KENAIKAN_PPPH
  */
 export function getKartuKenaikanSchema(lembaga, settings) {
   const all = settings?.kartuKenaikanSchema || {}
-  if (all[lembaga]) return JSON.parse(JSON.stringify(all[lembaga]))
+  if (all[lembaga]) {
+    // v.100d: guard override basi PTPT → pakai default kanonik (5 juz/kelas, 30 juz).
+    if (lembaga === 'PTPT' && !_isValidPtptOverride(all[lembaga])) {
+      return JSON.parse(JSON.stringify(DEFAULT_KARTU_KENAIKAN_PTPT))
+    }
+    return JSON.parse(JSON.stringify(all[lembaga]))
+  }
   if (lembaga === 'PTPT') return JSON.parse(JSON.stringify(DEFAULT_KARTU_KENAIKAN_PTPT))
   if (lembaga === 'TPQ' || lembaga === 'TPQ Pagi' || lembaga === 'TPQ Sore')
     return JSON.parse(JSON.stringify(DEFAULT_KARTU_KENAIKAN_TPQ))
