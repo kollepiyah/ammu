@@ -700,7 +700,11 @@ exports.cleanupAuditLog = onSchedule(
 //   Response PII di-STRIP (cuma kirim field yang dibutuhkan login). { user: {...}|null }.
 //   Client tetap punya FALLBACK direct-read kalau function gagal (login tak patah).
 // ====================================================================
-const _STRIP_PII = ['nik','no_kk','ayah','ibu','nama_ayah','nik_ayah','pekerjaan_ayah','pendidikan_ayah','hp_ayah','nama_ibu','nik_ibu','pekerjaan_ibu','pendidikan_ibu','hp_ibu','alamat','alamat_dusun','alamat_rt','alamat_rw','alamat_desa','alamat_kecamatan','alamat_kabupaten','alamat_provinsi','tempat_lahir','nama_panggilan','asal_sekolah','penghasilan_ortu','catatan_riwayat_pribadi','riwayat']
+// v.100f: WAJIB strip 'password' (kredensial plaintext) + 'linked_email' (email Google PII).
+//   Sebelumnya bocor: GET findUserByLogin?input=<nama/NIS/WA> balas password plaintext.
+//   Client TIDAK butuh password dari sini (lazy-migration akun baru selalu default '1234';
+//   akun ber-password lain pasti sudah punya akun Auth → sign-in duluan, tak masuk lazy-migration).
+const _STRIP_PII = ['password','linked_email','nik','no_kk','ayah','ibu','nama_ayah','nik_ayah','pekerjaan_ayah','pendidikan_ayah','hp_ayah','nama_ibu','nik_ibu','pekerjaan_ibu','pendidikan_ibu','hp_ibu','alamat','alamat_dusun','alamat_rt','alamat_rw','alamat_desa','alamat_kecamatan','alamat_kabupaten','alamat_provinsi','tempat_lahir','nama_panggilan','asal_sekolah','penghasilan_ortu','catatan_riwayat_pribadi','riwayat']
 function _stripPII(o) { const c = { ...o }; for (const k of _STRIP_PII) delete c[k]; return c }
 
 exports.findUserByLogin = onRequest(
