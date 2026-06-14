@@ -1799,7 +1799,9 @@ async function saveKop() {
 const kartuOpen = ref(false)
 const kartuSantri = ref(null)
 const kartuLembaga = ref('')
-const schema = ref({ itemHeader: 'Item', kelasList: [] })
+// v.100d: schema kartu = COMPUTED reaktif (dulu ref snapshot di openKartu → preview basi saat skema di-reset
+//   sementara PDF baca fresh). Sekarang preview ikut perubahan settings.kartuKenaikanSchema secara live.
+const schema = computed(() => getKartuKenaikanSchema(kartuLembaga.value, settingsStore.settings))
 const cellData = ref({})
 const savingKartu = ref(false)
 
@@ -1823,7 +1825,6 @@ function openKartu(s) {
     }
   }
   kartuLembaga.value = lemb
-  schema.value = getKartuKenaikanSchema(lemb, settingsStore.settings)
   cellData.value =
     s.kartu_kenaikan && s.kartu_kenaikan[lemb]
       ? JSON.parse(JSON.stringify(s.kartu_kenaikan[lemb]))
