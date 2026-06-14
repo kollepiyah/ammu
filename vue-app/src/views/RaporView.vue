@@ -2604,6 +2604,7 @@ function buildRaporStateFor(s, raporDocObj) {
     tahun_ajaran: tahunAjaran.value,
     semester: semester.value,
     data_nilai: dn,
+    data: dn, // v.100d fix: generator raporPdf baca raporState.data (bukan data_nilai)
     absensi: absensi || { sakit: 0, izin: 0, alpa: 0 },
     kepribadian: raporDocObj?.kepribadian || { kelakuan: 'Baik', kerajinan: 'Baik', kebersihan: 'Baik' },
     catatan: raporDocObj?.catatan || '',

@@ -388,7 +388,7 @@ function drawAbsensiKepribadian(doc, y, absensi, kepribadian) {
   return y + 24 // v.21.47: relax from y+22
 }
 
-async function drawSignBlocks(doc, y, santri, settings, lembaga, dbGuru = [], lembagaOverride = null) {
+async function drawSignBlocks(doc, y, santri, settings, lembaga, dbGuru = [], lembagaOverride = null, raporState = {}) {
   const pageW = doc.internal.pageSize.getWidth()
   const font = doc._fontMU || 'times'
   const tempat = settings.kota || 'Sidoarjo'
@@ -1079,7 +1079,7 @@ export async function generateRaporPdf({
 
   y = drawAbsensiKepribadian(doc, y + 4, raporState.absensi, raporState.kepribadian)
   y = drawCatatanBox(doc, y + 4, raporState.catatan_wali_kelas || raporState.catatan)
-  y = await drawSignBlocks(doc, y + 6, santri, settings, lembaga, dbGuru, lembagaOverride)
+  y = await drawSignBlocks(doc, y + 6, santri, settings, lembaga, dbGuru, lembagaOverride, raporState)
 
   const fn =
     filename ||
