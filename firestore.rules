@@ -455,6 +455,13 @@ service cloud.firestore {
       allow delete: if signedIn();
     }
 
+    // v.100d: Izin/Sakit guru (guru ajukan → Kepala/PJ setujui → isi absensi_shift_guru). Scoping di sisi app.
+    match /izin_guru/{docId} {
+      allow read: if signedIn();
+      allow create, update: if signedIn();
+      allow delete: if signedIn();
+    }
+
     // v.100: Tes Kenaikan Qiraati (guru ajukan → kepala/PJ uji). Scoping per-role di sisi app.
     match /tes_kenaikan/{docId} {
       allow read: if signedIn();
