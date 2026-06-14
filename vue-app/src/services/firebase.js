@@ -33,17 +33,31 @@ export const firebaseApp = initializeApp(firebaseConfig)
 try {
   const _acKey = import.meta.env.VITE_APPCHECK_RECAPTCHA_KEY
   const _acDebug = import.meta.env.VITE_APPCHECK_DEBUG_TOKEN
-  if (_acDebug && typeof self !== 'undefined') {
-    self.FIREBASE_APPCHECK_DEBUG_TOKEN = _acDebug === 'true' ? true : _acDebug
-  }
   // v.97.0626: reCAPTCHA v3 HANYA jalan di origin web http(s). Di Electron (file://) & Capacitor
   // native (localhost/capacitor scheme) reCAPTCHA gagal terus -> spam "appCheck/recaptcha-error".
-  // Skip kecuali ada debug token (token debug bypass reCAPTCHA & terdaftar di Console).
+  const _isNative =
+    (typeof navigator !== 'undefined' && /Electron/i.test(navigator.userAgent)) ||
+    (typeof window !== 'undefined' && window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform())
   const _isWebOrigin =
-    typeof location !== 'undefined' && /^https?:$/.test(location.protocol) &&
-    !(typeof navigator !== 'undefined' && /Electron/i.test(navigator.userAgent)) &&
-    !(typeof window !== 'undefined' && window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform())
-  if (_acKey && (_isWebOrigin || _acDebug)) {
+    typeof location !== 'undefined' && /^https?:$/.test(location.protocol) && !_isNative
+
+  if (_isNative) {
+    // v.100f: NATIVE (Capacitor/Electron) — App Check via DEBUG TOKEN.
+    //   reCAPTCHA tak bisa jalan di WebView/file://; JS SDK juga tak bisa pakai Play Integrity
+    //   native tanpa plugin. Debug token (VITE_APPCHECK_DEBUG_TOKEN, didaftarkan di Console
+    //   App Check > app Android > Manage debug tokens) membuat request native ter-verifikasi.
+    //   Token HANYA diterapkan di native -> web tetap reCAPTCHA murni (tak ikut melemah).
+    //   COCOK utk fase INTERNAL TESTING. PRODUKSI: ganti ke Play Integrity via
+    //   @capacitor-firebase/app-check + CustomProvider (butuh upgrade firebase JS ke v12).
+    if (_acDebug && typeof self !== 'undefined') {
+      self.FIREBASE_APPCHECK_DEBUG_TOKEN = _acDebug === 'true' ? true : _acDebug
+      initializeAppCheck(firebaseApp, {
+        provider: new ReCaptchaV3Provider(_acKey || 'appcheck-native-debug'),
+        isTokenAutoRefreshEnabled: true
+      })
+    }
+  } else if (_isWebOrigin && _acKey) {
+    // Web/PWA: reCAPTCHA v3 asli.
     initializeAppCheck(firebaseApp, {
       provider: new ReCaptchaV3Provider(_acKey),
       isTokenAutoRefreshEnabled: true
