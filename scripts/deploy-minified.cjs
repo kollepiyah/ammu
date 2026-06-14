@@ -43,6 +43,12 @@ process.on('uncaughtException', (err) => {
 })
 
 try {
+  // v.100f: JANGAN bake debug token App Check ke bundle WEB (publik bisa diekstrak -> bypass).
+  //   Web pakai reCAPTCHA asli; debug token HANYA utk build NATIVE (AAB/Electron).
+  //   Vite: env yg sudah ada di process.env menang atas .env.local -> ini meng-override jadi kosong.
+  process.env.VITE_APPCHECK_DEBUG_TOKEN = ''
+  log('App Check: debug token DIKOSONGKAN utk bundle web (web pakai reCAPTCHA murni).')
+
   log('Step 0: Regenerate Tailwind CSS (mencegah dist/tailwind.css missing/stale)')
   const DIST_TAILWIND = path.join(PUBLIC, 'dist', 'tailwind.css')
   run('npm run build:css')
