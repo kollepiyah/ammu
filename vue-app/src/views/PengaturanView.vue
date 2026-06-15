@@ -1854,13 +1854,16 @@ function resetSchemaTemplate() {
       rows
     }
   } else if (key === 'ppph' || key === 'p3h') {
-    // PPPH: 4 level kitab Hadits
+    // PPPH: 4 level kitab Hadits — v.101: Hafalan Hadits (Pencapaian/Ketepatan Matan/Pemahaman Sanad) lalu Hafalan Al-Qur'an.
     template = {
       perKitab: true,
       fieldsNilai: [
-        { id: 'hafalan', label: 'Hafalan' },
-        { id: 'pemahaman', label: 'Pemahaman' },
-        { id: 'kelancaran', label: 'Kelancaran' }
+        { id: 'pencapaian', label: 'Pencapaian', group: 'Hafalan Hadits' },
+        { id: 'ketepatan_matan', label: 'Ketepatan Matan', group: 'Hafalan Hadits' },
+        { id: 'pemahaman_sanad', label: 'Pemahaman Sanad', group: 'Hafalan Hadits' },
+        { id: 'tahfizh', label: 'Tahfizh', group: "Hafalan Al-Qur'an" },
+        { id: 'fashohah', label: 'Fashohah', group: "Hafalan Al-Qur'an" },
+        { id: 'tartil', label: 'Tartil', group: "Hafalan Al-Qur'an" }
       ],
       levels: [
         { id: 'lvl_1', label: 'Level 1', kitab: "Arba'in Nawawi" },

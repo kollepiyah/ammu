@@ -1867,12 +1867,16 @@ function applyTemplate(t, silent = false) {
     raporSchema.value = { tableLayout: 'kelasJuz', fields: PTPT_FIELDS, rows }
   } else if (t === 'ppph') {
     // PPPH: 4 level kitab Hadits (Arba'in/Riyadhus/Bukhari/Muslim) — aspek + Predikat
+    // v.101: Hafalan Hadits (Pencapaian/Ketepatan Matan/Pemahaman Sanad) dulu, lalu Hafalan Al-Qur'an.
     raporSchema.value = {
       perKitab: true,
       fieldsNilai: [
-        { id: 'hafalan', label: 'Hafalan' },
-        { id: 'pemahaman', label: 'Pemahaman' },
-        { id: 'kelancaran', label: 'Kelancaran' }
+        { id: 'pencapaian', label: 'Pencapaian', group: 'Hafalan Hadits' },
+        { id: 'ketepatan_matan', label: 'Ketepatan Matan', group: 'Hafalan Hadits' },
+        { id: 'pemahaman_sanad', label: 'Pemahaman Sanad', group: 'Hafalan Hadits' },
+        { id: 'tahfizh', label: 'Tahfizh', group: "Hafalan Al-Qur'an" },
+        { id: 'fashohah', label: 'Fashohah', group: "Hafalan Al-Qur'an" },
+        { id: 'tartil', label: 'Tartil', group: "Hafalan Al-Qur'an" }
       ],
       levels: [
         { id: 'lvl_1', label: 'Level 1', kitab: "Arba'in Nawawi" },

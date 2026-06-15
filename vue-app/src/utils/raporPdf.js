@@ -290,7 +290,8 @@ function drawJudulRapor(doc, y) {
   doc.setFontSize(13)
   doc.text('SURAT KETERANGAN HASIL PENDIDIKAN', pageW / 2, y + 6, { align: 'center' })
   // v.21.59: hapus garis bawah judul (kyai spec)
-  return y + 14
+  // v.101 (kyai): beri jarak lebih ke blok identitas (jangan terlalu dekat)
+  return y + 19
 }
 
 // ============================================================
@@ -320,13 +321,19 @@ function drawIdentitas(doc, y, santri, raporState, isDiniyah = false) {
     : [_lembId, String(santri.kelas || '').trim()].filter(Boolean).join(' ').trim()
   const kelasGab = [sekolah, ngaji].filter(Boolean).join(' / ') || '-'
 
-  const rows = [
-    ['Nama Santri', santri.nama || '-', 'Kelas', kelasGab],
-    ['NISN', santri.nisn || '-', 'Semester', sm],
-    isDiniyah
-      ? ['NIS', santri.nis_sekolah || '-', 'Tahun Ajaran', ta]
-      : ['No. Induk', santri.nis || '-', 'Tahun Ajaran', ta]
-  ]
+  // v.101: Qiraati → hapus kolom NISN; susunan kiri Nama/No.Induk/Kelas, kanan Semester/Tahun Ajaran (kyai).
+  //   Diniyah/sekolah formal → tetap NISN + NIS Dinas.
+  const rows = isDiniyah
+    ? [
+        ['Nama Santri', santri.nama || '-', 'Kelas', kelasGab],
+        ['NISN', santri.nisn || '-', 'Semester', sm],
+        ['NIS', santri.nis_sekolah || '-', 'Tahun Ajaran', ta]
+      ]
+    : [
+        ['Nama Santri', santri.nama || '-', 'Semester', sm],
+        ['No. Induk', santri.nis || '-', 'Tahun Ajaran', ta],
+        ['Kelas', kelasGab, '', '']
+      ]
 
   rows.forEach((row, i) => {
     const py = y + i * 5
@@ -334,9 +341,12 @@ function drawIdentitas(doc, y, santri, raporState, isDiniyah = false) {
     doc.text(':', col1Colon, py)
     doc.text(safeStr(row[1]), col1Colon + 3, py)
 
-    doc.text(row[2], rLabelX, py)
-    doc.text(':', rColonX, py)
-    doc.text(safeStr(row[3]), rColonX + 3, py)
+    // kolom kanan opsional (baris ke-3 Qiraati kosong → jangan gambar titik dua nyangkut)
+    if (row[2]) {
+      doc.text(row[2], rLabelX, py)
+      doc.text(':', rColonX, py)
+      doc.text(safeStr(row[3]), rColonX + 3, py)
+    }
   })
 
   return y + rows.length * 5 + 3
@@ -977,8 +987,8 @@ async function generatePpphPdf(doc, y, santri, schema, raporState, settings) {
   let head
   if (fieldsNilai.some((f) => f.group)) {
     const row1 = [
-      { content: 'Level', rowSpan: 2 },
-      { content: 'Kitab', rowSpan: 2 },
+      { content: 'No', rowSpan: 2 },
+      { content: 'Level Kitab', rowSpan: 2 },
       { content: 'Tgl Khotam', rowSpan: 2 }
     ]
     let i = 0
@@ -996,7 +1006,7 @@ async function generatePpphPdf(doc, y, santri, schema, raporState, settings) {
     const row2 = fieldsNilai.filter((f) => f.group).map((f) => f.label)
     head = [row1, row2]
   } else {
-    head = [['Level', 'Kitab', 'Tgl Khotam', ...fieldsNilai.map((f) => f.label), 'Predikat']]
+    head = [['No', 'Level Kitab', 'Tgl Khotam', ...fieldsNilai.map((f) => f.label), 'Predikat']]
   }
   const predikatColIdx = 3 + fieldsNilai.length
   const body = (schema.levels || []).map((lvl, i) => {
@@ -1018,15 +1028,28 @@ async function generatePpphPdf(doc, y, santri, schema, raporState, settings) {
     return cells
   })
 
+  // v.101 (kyai): lebar kolom eksplisit supaya teks tidak terpotong di F4 (10 kolom, lebar usable 185mm).
+  //   No kecil · Level Kitab lega (sisa ~28mm) · Tgl & Predikat ringkas · tiap kolom nilai 18mm.
+  const ppphCols = {
+    0: { cellWidth: 8 }, // No
+    1: { halign: 'left', fontStyle: 'bold' }, // Level Kitab (auto → dapat sisa)
+    2: { cellWidth: 19 }, // Tgl Khotam
+    [predikatColIdx]: { cellWidth: 22 } // Predikat
+  }
+  fieldsNilai.forEach((_f, i) => { ppphCols[3 + i] = { cellWidth: 18 } })
+
   drawTable(doc, {
     startY: y,
     head,
     body,
     margin: { left: 15, right: 15 },
-    styles: { font: doc._fontMU, fontSize: 9, cellPadding: 1.6, halign: 'center', valign: 'middle', overflow: 'linebreak', lineColor: [80, 80, 80], lineWidth: 0.15 },
-    headStyles: { fillColor: [255, 255, 255], textColor: 0, fontStyle: 'bold', lineWidth: 0.15 },
+    styles: { font: doc._fontMU, fontSize: 8.5, cellPadding: 1.2, halign: 'center', valign: 'middle', overflow: 'linebreak', lineColor: [80, 80, 80], lineWidth: 0.15 },
+    headStyles: { fillColor: [255, 255, 255], textColor: 0, fontStyle: 'bold', fontSize: 7.5, lineWidth: 0.15 },
+    // v.101 (kyai): baris dilonggarkan VERTIKAL (tinggi min + padding atas/bawah), padding kiri/kanan tipis
+    //   supaya teks (Pencapaian/Tahfizh/Tartil/nama kitab) tidak ke-wrap di tengah kata.
+    bodyStyles: { minCellHeight: 14, cellPadding: { top: 4, right: 1.2, bottom: 4, left: 1.2 } },
     alternateRowStyles: { fillColor: [255, 255, 255] },
-    columnStyles: { 0: { cellWidth: 16 }, 1: { halign: 'left', fontStyle: 'bold' }, 2: { cellWidth: 28 }, [predikatColIdx]: { cellWidth: 34 } },
+    columnStyles: ppphCols,
     didDrawCell: (d) => {
       if (d.section === 'body' && d.column.index === predikatColIdx) drawPredikatImage(doc, d.cell, predikatKeys[d.row.index])
     }

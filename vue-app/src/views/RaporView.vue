@@ -559,28 +559,46 @@
           </table>
 
           <!-- Judul -->
-          <h2 class="text-center text-[13px] font-bold underline my-2.5 leading-snug">
+          <h2 class="text-center text-[13px] font-bold underline mt-2.5 mb-5 leading-snug">
             SURAT KETERANGAN HASIL PENDIDIKAN
           </h2>
 
-          <!-- Identitas: kiri rata kiri (Nama/NISN/nomor identitas), kanan rata kanan (Kelas/Semester/Tahun) -->
-          <!-- v.100: Diniyah (perKelas) → "NIS" = nis_sekolah (Dinas); Qiraati → "No. Induk" = nis (auto pondok) -->
+          <!-- Identitas — v.101: Qiraati HAPUS NISN (kiri Nama/No.Induk/Kelas · kanan Semester/Tahun Ajaran);
+               Diniyah (perKelas) → tetap NISN + NIS Dinas (kiri Nama/NISN/NIS · kanan Kelas/Semester/Tahun). -->
           <div class="flex items-start text-[11px] mb-2">
-            <table class="w-[55%]">
-              <tbody>
-                <tr><td class="w-[90px] py-0.5 align-top">Nama Santri</td><td class="w-[10px] py-0.5">:</td><td class="py-0.5 font-bold">{{ santriAktif.nama }}</td></tr>
-                <tr><td class="py-0.5">NISN</td><td class="py-0.5">:</td><td class="py-0.5">{{ santriAktif.nisn || '-' }}</td></tr>
-                <tr v-if="schema.perKelas"><td class="py-0.5">NIS</td><td class="py-0.5">:</td><td class="py-0.5">{{ santriAktif.nis_sekolah || '-' }}</td></tr>
-                <tr v-else><td class="py-0.5">No. Induk</td><td class="py-0.5">:</td><td class="py-0.5">{{ santriAktif.nis || '-' }}</td></tr>
-              </tbody>
-            </table>
-            <table class="w-[45%]">
-              <tbody>
-                <tr><td class="w-[100px] py-0.5 align-top">Kelas</td><td class="w-[10px] py-0.5">:</td><td class="py-0.5 font-bold">{{ kelasGabungan }}</td></tr>
-                <tr><td class="py-0.5">Semester</td><td class="py-0.5">:</td><td class="py-0.5">{{ semester }}</td></tr>
-                <tr><td class="py-0.5">Tahun Ajaran</td><td class="py-0.5">:</td><td class="py-0.5">{{ tahunAjaran }}</td></tr>
-              </tbody>
-            </table>
+            <!-- Diniyah / sekolah formal -->
+            <template v-if="schema.perKelas">
+              <table class="w-[55%]">
+                <tbody>
+                  <tr><td class="w-[90px] py-0.5 align-top">Nama Santri</td><td class="w-[10px] py-0.5">:</td><td class="py-0.5 font-bold">{{ santriAktif.nama }}</td></tr>
+                  <tr><td class="py-0.5">NISN</td><td class="py-0.5">:</td><td class="py-0.5">{{ santriAktif.nisn || '-' }}</td></tr>
+                  <tr><td class="py-0.5">NIS</td><td class="py-0.5">:</td><td class="py-0.5">{{ santriAktif.nis_sekolah || '-' }}</td></tr>
+                </tbody>
+              </table>
+              <table class="w-[45%]">
+                <tbody>
+                  <tr><td class="w-[100px] py-0.5 align-top">Kelas</td><td class="w-[10px] py-0.5">:</td><td class="py-0.5 font-bold">{{ kelasGabungan }}</td></tr>
+                  <tr><td class="py-0.5">Semester</td><td class="py-0.5">:</td><td class="py-0.5">{{ semester }}</td></tr>
+                  <tr><td class="py-0.5">Tahun Ajaran</td><td class="py-0.5">:</td><td class="py-0.5">{{ tahunAjaran }}</td></tr>
+                </tbody>
+              </table>
+            </template>
+            <!-- Qiraati (TPQ / Pra PTPT / PTPT / PPPH) -->
+            <template v-else>
+              <table class="w-[55%]">
+                <tbody>
+                  <tr><td class="w-[90px] py-0.5 align-top">Nama Santri</td><td class="w-[10px] py-0.5">:</td><td class="py-0.5 font-bold">{{ santriAktif.nama }}</td></tr>
+                  <tr><td class="py-0.5">No. Induk</td><td class="py-0.5">:</td><td class="py-0.5">{{ santriAktif.nis || '-' }}</td></tr>
+                  <tr><td class="py-0.5 align-top">Kelas</td><td class="py-0.5">:</td><td class="py-0.5 font-bold">{{ kelasGabungan }}</td></tr>
+                </tbody>
+              </table>
+              <table class="w-[45%]">
+                <tbody>
+                  <tr><td class="w-[100px] py-0.5 align-top">Semester</td><td class="w-[10px] py-0.5">:</td><td class="py-0.5">{{ semester }}</td></tr>
+                  <tr><td class="py-0.5">Tahun Ajaran</td><td class="py-0.5">:</td><td class="py-0.5">{{ tahunAjaran }}</td></tr>
+                </tbody>
+              </table>
+            </template>
           </div>
 
           <!-- ===== Body Layout A: Pra PTPT (perLevel, 5 levels, Lvl 5 punya I-XI) ===== -->
@@ -713,8 +731,8 @@
             <table class="w-full border-collapse text-[10px] md:text-[11px]">
               <thead class="bg-[var(--bg-muted)]">
                 <tr>
-                  <th rowspan="2" class="border border-slate-500 px-1.5 py-1 align-middle w-[44px]">Level</th>
-                  <th rowspan="2" class="border border-slate-500 px-1.5 py-1 text-left align-middle">Kitab</th>
+                  <th rowspan="2" class="border border-slate-500 px-1.5 py-1 align-middle w-[44px]">No</th>
+                  <th rowspan="2" class="border border-slate-500 px-1.5 py-1 text-left align-middle">Level Kitab</th>
                   <th rowspan="2" class="border border-slate-500 px-1.5 py-1 align-middle w-[72px]">Tgl Khotam</th>
                   <template v-for="(h, idx) in ppphHeaderRow1" :key="idx">
                     <th v-if="h.group" :colspan="h.span" class="border border-slate-500 px-1.5 py-1">{{ h.group }}</th>
@@ -726,26 +744,27 @@
                   <th v-for="f in ppphGroupedFields" :key="f.id" class="border border-slate-500 px-1.5 py-1">{{ f.label }}</th>
                 </tr>
               </thead>
+              <!-- v.101 (kyai): isi PPPH sedikit → baris dilonggarkan (py lebih besar) -->
               <tbody>
                 <tr v-for="(lvl, i) in schema.levels || []" :key="lvl.id">
-                  <td class="border border-slate-500 px-1.5 py-1 text-center font-bold">
+                  <td class="border border-slate-500 px-1.5 py-3 text-center font-bold">
                     {{ i + 1 }}
                   </td>
-                  <td class="border border-slate-500 px-1.5 py-1 font-bold">
+                  <td class="border border-slate-500 px-1.5 py-3 font-bold">
                     {{ lvl.kitab || lvl.label }}
                   </td>
-                  <td class="border border-slate-500 px-1.5 py-1 text-center">
+                  <td class="border border-slate-500 px-1.5 py-3 text-center">
                     {{ fmtDate(getNilai(`ppph__${lvl.id}__tgl_khotam`)) }}
                   </td>
                   <td
                     v-for="f in fieldsNilai"
                     :key="f.id"
-                    class="border border-slate-500 px-1.5 py-1 text-center"
+                    class="border border-slate-500 px-1.5 py-3 text-center"
                   >
                     {{ getNilai(`ppph__${lvl.id}__${f.id}`) || '' }}
                   </td>
                   <td
-                    class="border border-slate-500 px-1.5 py-1 text-center"
+                    class="border border-slate-500 px-1.5 py-3 text-center"
                     lang="ar"
                     dir="rtl"
                     :style="arStyleMd"
@@ -1619,16 +1638,17 @@ function buildSchema(lembagaName) {
   }
 
   // PPPH (Pasca PTPT Program Hadits): 4 level kitab. Tgl Khotam (auto) + aspek + Predikat.
-  // v.100d (kyai): desain ulang — 2 grup: Hafalan Al-Qur'an (Tahfizh/Fashohah/Tajwid) + Hafalan Hadits (Ketepatan Matan/Pemahaman Sanad).
+  // v.101 (kyai): urutan grup DIBALIK — Hafalan Hadits dulu (+ kolom Pencapaian), baru Hafalan Al-Qur'an.
   if (lmb === 'ppph' || lmb === 'p3h') {
     return {
       perKitab: true,
       fieldsNilai: [
+        { id: 'pencapaian', label: 'Pencapaian', group: 'Hafalan Hadits' },
+        { id: 'ketepatan_matan', label: 'Ketepatan Matan', group: 'Hafalan Hadits' },
+        { id: 'pemahaman_sanad', label: 'Pemahaman Sanad', group: 'Hafalan Hadits' },
         { id: 'tahfizh', label: 'Tahfizh', group: "Hafalan Al-Qur'an" },
         { id: 'fashohah', label: 'Fashohah', group: "Hafalan Al-Qur'an" },
-        { id: 'tajwid', label: 'Tajwid', group: "Hafalan Al-Qur'an" },
-        { id: 'ketepatan_matan', label: 'Ketepatan Matan', group: 'Hafalan Hadits' },
-        { id: 'pemahaman_sanad', label: 'Pemahaman Sanad', group: 'Hafalan Hadits' }
+        { id: 'tartil', label: 'Tartil', group: "Hafalan Al-Qur'an" }
       ],
       levels: [
         { id: 'lvl_1', label: 'Level 1', kitab: "Arba'in Nawawi" },
@@ -1871,7 +1891,10 @@ const _schemaRaw = computed(() => {
     const ppphStale =
       (lnorm === 'ppph' || lnorm === 'p3h') &&
       // v.100d: paksa skema baru (2 grup) bila bukan perKitab / belum punya aspek Hadits
-      (!found.perKitab || !(found.fieldsNilai || []).some((f) => f.id === 'ketepatan_matan'))
+      // v.101: + paksa bila override lama belum punya kolom Pencapaian (urutan grup baru)
+      (!found.perKitab ||
+        !(found.fieldsNilai || []).some((f) => f.id === 'ketepatan_matan') ||
+        !(found.fieldsNilai || []).some((f) => f.id === 'pencapaian'))
     if ((isTahfizh && overrideHasJuzMapel) || ptptStale || ppphStale) return buildSchema(lmb)
     return found
   }

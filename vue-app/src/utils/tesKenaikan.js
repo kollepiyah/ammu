@@ -115,7 +115,7 @@ export const STATUS_LABEL = {
 //     TPQ KPI/IMTAS   : + Ghorib, Tajwid                            (→rapor: semua)
 //     Pra PTPT (khotam): Fashohah, Tartil, Tahfizh Juz 30, Ghorib, Tajwid, Doa Harian (→rapor: semua)
 //     PTPT            : Kualitas Hafalan[Tahfizh, Istimror] · Kualitas Bacaan[Fashohah, Tajwid] (→semua)
-//     PPPH            : Hafalan Al-Qur'an[Tahfizh, Fashohah, Tajwid] · Hafalan Hadits[Ketepatan Matan, Pemahaman Sanad] (→semua)
+//     PPPH            : Hafalan Al-Qur'an[Tahfizh, Fashohah, Tartil] · Hafalan Hadits[Ketepatan Matan, Pemahaman Sanad] (Pencapaian = manual, di luar kenaikan)
 // ─────────────────────────────────────────────────────────────────────────────
 export const TES_NILAI_MAX = 90
 
@@ -155,7 +155,7 @@ export function tesAspekGroups(santri) {
   }
   if (l === 'PPPH' || l === 'P3H') {
     return [
-      { group: "Hafalan Al-Qur'an", aspek: [A('tahfizh', 'Tahfizh'), A('fashohah', 'Fashohah'), A('tajwid', 'Tajwid')] },
+      { group: "Hafalan Al-Qur'an", aspek: [A('tahfizh', 'Tahfizh'), A('fashohah', 'Fashohah'), A('tartil', 'Tartil')] },
       { group: 'Hafalan Hadits', aspek: [A('ketepatan_matan', 'Ketepatan Matan'), A('pemahaman_sanad', 'Pemahaman Sanad')] }
     ]
   }

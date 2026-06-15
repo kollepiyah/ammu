@@ -46,7 +46,8 @@ export function buildTesRaporFeed(tes, nilai) {
     const n = _num(tes.kelas_asal)
     if (!n) return null
     const base = `ppph__lvl_${n}`
-    ;['tahfizh', 'fashohah', 'tajwid', 'ketepatan_matan', 'pemahaman_sanad'].forEach((a) => put(`${base}__${a}`, a))
+    // v.101: PPPH aspek Al-Qur'an ke-3 = Tartil (bukan Tajwid). Pencapaian = manual (tidak di-feed dari tes).
+    ;['tahfizh', 'fashohah', 'tartil', 'ketepatan_matan', 'pemahaman_sanad'].forEach((a) => put(`${base}__${a}`, a))
   } else if (lmb === 'Pra PTPT') {
     const n = _num(tes.kelas_asal)
     const rom = String(tes.target || '').replace(/khotam\s*/i, '').trim().toUpperCase()

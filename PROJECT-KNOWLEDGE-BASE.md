@@ -1,5 +1,6 @@
 # PROJECT KNOWLEDGE BASE — Ammu Online (Portal MU)
-> 🆕🆕🆕 **RECAP PALING BARU (14 Jun 2026, SESI v.100f — KEAMANAN + AUTH DOMAIN @ammu.local).** ✅ SUDAH DEPLOY (web+functions) + REBUILD (AAB vc100 + Electron) + PUSH. HEAD `37ac8a5`. (1) Provider **Anonymous di-DISABLE** → admin login kini Firebase Auth ASLI (bukan `signInAnonymously`), auto-provision `adminmu@ammu.local` (`24e44f9`). (2) Domain Auth internal **`@portal-mu.local` → `@ammu.local`** (backward-compat: sign-in coba domain baru lalu legacy → akun lama TAK terkunci, nol re-provision). (3) **Audit keamanan** + fix CRITICAL: Cloud Function `findUserByLogin` bocorkan `password` plaintext → strip `_STRIP_PII` (`050c796`). (4) **App Check native** via debug token (web tetap reCAPTCHA; token TIDAK di-bake ke bundle web — `a0a40d1`+`37ac8a5`); status Console = **Monitoring (BELUM Enforce)**. (5) Bump **v.100.0626 / vc100** (`e18595c`). ⏳ PENDING: **Enforce App Check** (tunggu semua 12 penguji update AAB vc100 + verified% ~95% + device sendiri verified); keamanan lanjutan (tutup read publik guru/santri/settings = BERISIKO login; hapus password plaintext; fix ganti-sandi M1); kartu PTPT preview "4 juz" (SW cache); Item 2 DB Firestore-vs-SQL; produksi → App Check Play Integrity asli (perlu upgrade firebase 10→12). **Absen geofence DICORET kyai.** Detail PALING BAWAH ("SESI v.100f").
+> 🆕🆕🆕 **RECAP PALING BARU (15 Jun 2026, SESI v.101 — RAPOR PPPH REDESIGN + IDENTITAS QIRAATI TANPA NISN).** ✅ SUDAH DEPLOY (web `ammuonline.web.app`, 3× iterasi oleh kyai). (1) **Identitas rapor Qiraati** (TPQ/Pra PTPT/PTPT/PPPH): kolom **NISN DIHAPUS** → kiri Nama Santri·No. Induk·Kelas, kanan Semester·Tahun Ajaran (**Diniyah/sekolah formal TETAP pakai NISN**). (2) **Rapor PPPH** sesuai contoh kyai: header kolom **No · Level Kitab · Tgl Khotam**; urutan grup **DIBALIK** → **Hafalan Hadits** (Pencapaian, Ketepatan Matan, Pemahaman Sanad) lalu **Hafalan Al-Qur'an** (Tahfizh, Fashohah, **Tartil**); aspek ke-3 Al-Qur'an = **Tartil** (bukan Tajwid) — ikut diubah di **Tes Kenaikan** + feed nilai; **Pencapaian** = kolom baru **MANUAL** (di luar Tes Kenaikan). (3) **Lebar kolom PPPH** diperbaiki (No 8·Level Kitab ~28·Tgl 19·6 nilai @18·Predikat 22 = 185mm) + padding **asimetris** (atas/bawah tebal, kiri/kanan tipis) → teks tak kepotong tengah kata; baris dilonggarkan (minCellHeight 14). (4) Jarak judul 'SURAT KETERANGAN' ↔ identitas dilebarkan. (5) Skema PPPH default disinkronkan 3 titik (RaporView buildSchema + PengaturanView + LembagaDetailView) + `ppphStale` diperkuat (override tanpa `pencapaian` → rebuild default). (6) Bump **display v.101.0626** (AppSidebar + Ribbon fallback + package.json root); ⚠️ **versionCode AAB BELUM naik** (deploy web-only) → rilis AAB berikut tetap min vc101. Detail PALING BAWAH ("SESI v.101").
+> 🆕🆕🆕 **RECAP (14 Jun 2026, SESI v.100f — KEAMANAN + AUTH DOMAIN @ammu.local).** ✅ SUDAH DEPLOY (web+functions) + REBUILD (AAB vc100 + Electron) + PUSH. HEAD `37ac8a5`. (1) Provider **Anonymous di-DISABLE** → admin login kini Firebase Auth ASLI (bukan `signInAnonymously`), auto-provision `adminmu@ammu.local` (`24e44f9`). (2) Domain Auth internal **`@portal-mu.local` → `@ammu.local`** (backward-compat: sign-in coba domain baru lalu legacy → akun lama TAK terkunci, nol re-provision). (3) **Audit keamanan** + fix CRITICAL: Cloud Function `findUserByLogin` bocorkan `password` plaintext → strip `_STRIP_PII` (`050c796`). (4) **App Check native** via debug token (web tetap reCAPTCHA; token TIDAK di-bake ke bundle web — `a0a40d1`+`37ac8a5`); status Console = **Monitoring (BELUM Enforce)**. (5) Bump **v.100.0626 / vc100** (`e18595c`). ⏳ PENDING: **Enforce App Check** (tunggu semua 12 penguji update AAB vc100 + verified% ~95% + device sendiri verified); keamanan lanjutan (tutup read publik guru/santri/settings = BERISIKO login; hapus password plaintext; fix ganti-sandi M1); kartu PTPT preview "4 juz" (SW cache); Item 2 DB Firestore-vs-SQL; produksi → App Check Play Integrity asli (perlu upgrade firebase 10→12). **Absen geofence DICORET kyai.** Detail PALING BAWAH ("SESI v.100f").
 > 🆕🆕 **RECAP (14 Jun 2026, LANJUTAN-2) — HEAD `63a92a8`.** TES KENAIKAN **Fase 3/4/5 SELESAI** → Item 3 TUNTAS (`237cc9c` skema rapor PTPT[Tahfizh+swap]/PPPH[2 grup] + `508587a` nilai tes auto→rapor `rapor_semester` saat Lulus + `45caa05` tab Rekap statistik/cetak PDF). + 2 fix kartu PTPT (`aedfe7a` preview reaktif/computed + `63a92a8` guard abaikan override basi 4-juz). ⏳ **AKTIF/BELUM TUNTAS:** kartu PTPT preview **MASIH 4 juz** di device kyai walau Reset+Simpan+deploy+hard reload — kemungkinan besar **service worker PWA serve bundle LAMA** (guard belum jalan); NEXT = **force SW update** (DevTools Unregister + Clear site data + tutup semua tab) lalu kalau masih → inspeksi live via Claude in Chrome. Pending lain: absen HP **geofence** (konsep+mockup saja, belum dikode), **Item 2 diskusi DB Firestore-vs-SQL** (belum). Gaya feedback: **JANGAN pakai kata "Saya"** di label/menu. Detail PALING BAWAH ("LANJUTAN-2").
 > 🆕🆕 **RECAP (14 Jun 2026, lanjutan) = RECOVERY sesi terpotong + FIX EKSPOR PDF RAPOR.** HEAD `60bede7`. (1) feat **Izin & Sakit mandiri guru** `f7e93fd` (PersonalView + useIzinGuru + rules `izin_guru`); (2) fix **ekspor PDF rapor** `60bede7` — `raporState` undefined di `drawSignBlocks` (memutus ekspor SEMUA lembaga sejak v.100c) + nilai kosong (`data` vs `data_nilai`). ✅ SUDAH DEPLOY web. ⚠️ **KOREKSI TOPOLOGI:** LIVE = **Vue `ammuonline.web.app`** + PSB; legacy `portal-mambaul-ulum`/`public/index.html` **MATI** (jangan diedit). ⏳ **PENDING kyai (DATA, bukan kode):** kartu kenaikan **PTPT Juz 5/10/15/20/25/30 hilang** = override basi `settings.kartuKenaikanSchema.PTPT` (4 juz/kelas) → fix in-app: Kenaikan → tab **Pengaturan** → pilih **PTPT** → **Reset Default** → **Simpan Schema** (schema per-lembaga BEDA, jangan reset borongan). Detail PALING BAWAH ("SESI v.100d LANJUTAN").
 > 🆕 **RECAP (14 Jun 2026) = SESI v.100d/e — 4 BUG FIX + AUDIT LOG FIX + KARTU IKON FILTER KENAIKAN + REVIEW KEAMANAN. ✅ SEMUA SUDAH DEPLOY (web).** HEAD `ff43298` (`ce392e8`+`ff43298`). Detail di PALING BAWAH ("SESI v.100d + v.100e"). ⚠️ PENDING utk AGEN BERIKUTNYA: Tes Kenaikan redesign **Fase 3/4/5** + **remediasi keamanan** (rules SENGAJA belum diubah — bisa memutus login).
@@ -53,7 +54,7 @@ Shell Desktop Commander **men-strip PATH + PATHEXT** → `git`/`node`/`npm` tela
 - **Perubahan NATIVE Android (widget/manifest/splash)** → WAJIB rebuild AAB (web deploy tidak cukup).
 
 ## 5. SKEMA VERSI
-Format `v.<versionCode>.<MMYY>` (MM=bulan, YY=2 digit tahun). Saat ini **v.100.0626** (versionCode **100**, Juni 2026) — SUDAH di-build AAB + upload Play Console (internal testing) 14 Jun 2026, commit `e18595c`. (Riwayat: vc 100 sempat di-set lalu DITURUNKAN ke 99 pada 11 Jun karena belum ter-upload; kini vc100 benar-benar dipakai → rilis berikut minimal **vc 101**.) Bump SEMUA tempat saat rilis AAB baru (Play Console tolak versionCode sama):
+Format `v.<versionCode>.<MMYY>` (MM=bulan, YY=2 digit tahun). Saat ini **display web v.101.0626** (15 Jun — AppSidebar + Ribbon fallback + package.json root), tapi **versionCode AAB masih 100** (deploy v.101 = web-only, belum rilis AAB). AAB terakhir = **v.100.0626** (versionCode **100**, Juni 2026) — di-build + upload Play Console (internal testing) 14 Jun 2026, commit `e18595c`. (Riwayat: vc 100 sempat di-set lalu DITURUNKAN ke 99 pada 11 Jun karena belum ter-upload; kini vc100 benar-benar dipakai → rilis berikut minimal **vc 101**.) Bump SEMUA tempat saat rilis AAB baru (Play Console tolak versionCode sama):
 - `vue-app/android/app/build.gradle` (versionCode + versionName)
 - `package.json` (root + vue-app = "87.0526"), `vue-app/electron/package.json` ("87.0.526")
 - `vue-app/src/main.js` Sentry `release: 'portal-mu@87.0526'`
@@ -1596,3 +1597,44 @@ build.gradle (vc100+vn), package.json root+vue-app ("100.0626"), electron/packag
 - **Absen geofence: DICORET kyai (14 Jun).**
 
 ### MEMORY ditulis: `project_auth_domain_ammu`, `project_security_findings` (update).
+
+---
+
+## SESI v.101 — RAPOR PPPH REDESIGN + IDENTITAS QIRAATI (15 Jun 2026, Claude Code) — RECAP TERBARU
+
+> Permintaan kyai (kirim contoh PDF): (1) sesuaikan rapor PPPH spt contoh; (2) semua identitas rapor Qiraati spt contoh — **kolom NISN dihapus**. Iterasi: contoh → balik urutan grup + Pencapaian → Tartil (+ Tes Kenaikan) → fix lebar kolom. ✅ SUDAH DEPLOY web `ammuonline.web.app` (3× oleh kyai). Branch `feature/vue-migration`.
+
+### A. IDENTITAS RAPOR QIRAATI — NISN DIHAPUS (Qiraati saja, keputusan kyai)
+- `raporPdf.js drawIdentitas` + `RaporView.vue` blok identitas: cabang **Qiraati** (non-Diniyah) = kiri **Nama Santri · No. Induk · Kelas**, kanan **Semester · Tahun Ajaran** (NISN dihapus). Sel kanan baris-3 kosong → guard di PDF agar titik dua tak nyangkut.
+- **Diniyah/sekolah formal (perKelas) TETAP**: kiri Nama·NISN·NIS, kanan Kelas·Semester·Tahun (NISN penting utk Dinas).
+
+### B. TABEL PPPH — sesuai contoh
+- Header kolom: `Level`→**`No`**, `Kitab`→**`Level Kitab`** (PDF `generatePpphPdf` jalur grup+flat; `RaporView` thead PPPH).
+- **Urutan grup DIBALIK**: Hafalan Hadits (Pencapaian, Ketepatan Matan, Pemahaman Sanad) → Hafalan Al-Qur'an (Tahfizh, Fashohah, **Tartil**) → Predikat.
+- **Pencapaian** = kolom BARU di Hafalan Hadits, **MANUAL** (TIDAK masuk Tes Kenaikan / feed nilai).
+- Aspek ke-3 Al-Qur'an = **Tartil** (bukan Tajwid) — kyai konfirmasi "memang tartil". Diubah juga di **Tes Kenaikan** (`tesKenaikan.js` grup PPPH) + **feed nilai** (`tesRaporFeed.js` array PPPH `tajwid`→`tartil`).
+- Skema default disinkronkan 3 titik: `RaporView.vue buildSchema('ppph')` (**SUMBER live** layar+PDF), `PengaturanView.vue` (reset template), `LembagaDetailView.vue` (reset template). + `ppphStale` diperkuat: override lama tanpa field `pencapaian` → rebuild ke default baru.
+
+### C. LEBAR KOLOM PPPH (fix iterasi-3 — sempat kepotong tengah kata)
+- Akar: `cellPadding 2.6` (utk longgar baris) makan ruang **HORIZONTAL** → teks pecah ("Pencapaia/n", "Riyadhu/s/Shalihin").
+- Solusi `generatePpphPdf`: padding **asimetris** `bodyStyles.cellPadding {top:4,right:1.2,bottom:4,left:1.2}` (longgar vertikal, lega horizontal) + lebar eksplisit `ppphCols`: **No 8 · Level Kitab auto(~28) · Tgl 19 · 6 nilai @18 · Predikat 22 = 185mm** (lebar KOP F4) + font isi 8.5 / header 7.5.
+- **Verifikasi** (font `times` = font rapor): skrip Node + jspdf-autotable cek line-count tiap sel → semua kata tunggal 1 baris; hanya "Ketepatan Matan"/"Pemahaman Sanad" wrap rapi 2-kata (sama spt contoh). ANY mid-word wrap = NIHIL.
+
+### D. SPASI
+- Jarak judul "SURAT KETERANGAN HASIL PENDIDIKAN" ↔ identitas dilebarkan: PDF `drawJudulRapor` return `+14`→`+19`; layar h2 `my-2.5`→`mt-2.5 mb-5`.
+- Baris PPPH dilonggarkan: PDF `minCellHeight 14`; layar td `py-1`→`py-3`.
+
+### FILE DIUBAH
+- `vue-app/src/utils/raporPdf.js` (drawIdentitas, generatePpphPdf header+lebar+padding, drawJudulRapor)
+- `vue-app/src/views/RaporView.vue` (identitas 2 cabang, thead PPPH, tbody py-3, h2 spasi, buildSchema ppph, ppphStale)
+- `vue-app/src/views/PengaturanView.vue` + `LembagaDetailView.vue` (template reset PPPH)
+- `vue-app/src/utils/tesKenaikan.js` (PPPH aspek tajwid→tartil + komentar) + `tesRaporFeed.js` (feed PPPH tartil)
+- Bump display: `AppSidebar.vue`, `RibbonBackstage.vue`, `RibbonStatusBar.vue`, `package.json` root → **v.101.0626** (versionCode AAB BELUM naik — web-only deploy).
+
+### GOTCHA / CATATAN (utk sesi baru)
+- Skema rapor PPPH live = `buildSchema('ppph')` di RaporView (override Firestore dipakai HANYA bila valid & ber-`pencapaian`; else rebuild default). **3 titik default WAJIB sinkron.**
+- Edge headless TIDAK reliable render PDF di mesin ini (hasil gelap/kosong) → verifikasi PDF pakai **skrip Node jspdf-autotable line-count, font `times`**.
+- `pdftotext -table`/`-layout` (xpdf, di `C:\Program Files\Git\mingw64\bin`) OK utk ekstrak teks PDF (poppler image tools TIDAK ada).
+- ⏳ PENDING: bila rilis AAB berikut → bump versionCode 100→101 di SEMUA titik §5 (build.gradle, electron, Sentry, footer Login/Dashboard/PpdbAdmin) + rebuild AAB/Electron.
+
+### MEMORY ditulis: `project_rapor_ppph_qiraati` (baru) + MEMORY.md pointer.
