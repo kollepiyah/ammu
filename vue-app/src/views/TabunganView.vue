@@ -473,7 +473,6 @@
               v-model.number="modalNominal"
               type="number"
               min="0"
-              placeholder="Rp 0"
               class="w-full mt-1 px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-emerald-500 outline-none font-black text-lg text-emerald-700"
               required
             />
@@ -490,7 +489,6 @@
             <input
               v-model="modalCatatan"
               type="text"
-              placeholder="Keterangan"
               class="w-full mt-1 px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-emerald-500 outline-none"
             />
           </div>

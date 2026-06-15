@@ -104,7 +104,6 @@
               <textarea
                 v-model="psbAssetSyarat"
                 rows="8"
-                placeholder="Ketik / tempel isi Syarat & Ketentuan pendaftaran di sini..."
                 class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)] leading-relaxed"
               ></textarea>
             </div>
@@ -115,7 +114,6 @@
               <textarea
                 v-model="psbAssetPembayaran"
                 rows="8"
-                placeholder="Ketik / tempel Info Pembayaran (rincian biaya, no. rekening, dll)..."
                 class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)] leading-relaxed"
               ></textarea>
             </div>

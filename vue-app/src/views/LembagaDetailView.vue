@@ -222,7 +222,6 @@
       <form @submit.prevent="onAddKelas" class="flex gap-2">
         <input
           v-model="newKelasInput"
-          placeholder="Nama kelas/jilid (mis: Jilid 1, KPI, Persiapan Khotaman)"
           class="flex-1 px-3 py-2 text-sm border border-teal-300 rounded-lg bg-[var(--bg-card)]"
         />
         <button
@@ -287,7 +286,6 @@
           >
             <input
               v-model="r.label"
-              placeholder="Label"
               class="flex-1 font-bold px-2 py-0.5 border border-[var(--border-default)] rounded"
             />
             <span class="text-[10px] text-[var(--text-tertiary)]">min</span>
@@ -427,12 +425,10 @@
             <div class="grid grid-cols-[1fr_1fr_auto] gap-2">
               <input
                 v-model="lvl.label"
-                placeholder="Label (Level 1)"
                 class="text-xs px-2 py-1 border border-[var(--border-default)] rounded"
               />
               <input
                 v-model="lvl.levelBaca"
-                placeholder="Baca (½ Juz)"
                 class="text-xs px-2 py-1 border border-[var(--border-default)] rounded"
               />
               <button
@@ -459,7 +455,6 @@
               >
                 <input
                   v-model="kh.labelKhotam"
-                  placeholder="Khotam I"
                   class="text-[11px] px-1.5 py-0.5 border border-[var(--border-default)] rounded"
                 />
                 <input
@@ -502,7 +497,6 @@
             <div class="flex items-center justify-between mb-1">
               <input
                 v-model="j.kelas"
-                placeholder="Kelas (I/II/...)"
                 class="text-xs font-bold px-2 py-1 border border-[var(--border-default)] rounded w-32"
               />
               <button @click="raporSchema.jenjang.splice(jIdx, 1)" class="text-rose-500 text-xs">
@@ -518,7 +512,6 @@
                 <input
                   v-model="m.nama"
                   class="flex-1 text-[11px] px-1 py-0.5 border-0 bg-transparent outline-none"
-                  placeholder="Mapel"
                 />
                 <input
                   v-model.number="m.kkm"
@@ -562,7 +555,6 @@
             <div class="flex items-center justify-between gap-2">
               <input
                 v-model="sec.title"
-                placeholder="Title section"
                 class="text-xs font-bold px-2 py-1 border border-[var(--border-default)] rounded flex-1"
               />
               <button @click="raporSchema.sections.splice(sIdx, 1)" class="text-rose-500 text-xs">
@@ -604,7 +596,6 @@
               >
                 <input
                   v-model="fl.label"
-                  placeholder="Label"
                   class="text-[11px] px-1.5 py-0.5 border border-[var(--border-default)] rounded bg-[var(--bg-card)]"
                 />
                 <select
@@ -785,13 +776,11 @@
             <input
               v-model="rekapMapel[kv.key][i]"
               type="text"
-              placeholder="Nama mata pelajaran"
               class="flex-1 px-3 py-2 text-sm border border-cyan-300 rounded-lg bg-[var(--bg-card)]"
             />
             <input
               v-model.number="rekapKkm[kv.key][i]"
               type="number"
-              placeholder="KKM"
               title="KKM"
               class="w-16 px-2 py-2 text-sm text-center border border-cyan-300 rounded-lg bg-[var(--bg-card)]"
             />
@@ -1037,7 +1026,6 @@
             <textarea
               v-model="pengaturanForm.info_pembayaran_teks"
               rows="3"
-              placeholder="Cth: SPP Rp 150.000/bulan, daftar ulang Rp 250.000..."
               class="w-full text-xs px-3 py-2 rounded border border-teal-200 bg-[var(--bg-card)] resize-none"
             ></textarea>
           </div>
@@ -1048,9 +1036,6 @@
             <textarea
               v-model="pengaturanForm.syarat_ketentuan_teks"
               rows="4"
-              placeholder="Cth: 1. Mengisi formulir lengkap
-2. Foto copy KK + Akta
-3. ..."
               class="w-full text-xs px-3 py-2 rounded border border-teal-200 bg-[var(--bg-card)] resize-none"
             ></textarea>
           </div>
@@ -1076,12 +1061,10 @@
             <div class="grid grid-cols-1 md:grid-cols-12 gap-2">
               <input
                 v-model="field.label"
-                placeholder="Label *"
                 class="md:col-span-3 text-xs px-2 py-1.5 border rounded"
               />
               <input
                 v-model="field.id"
-                placeholder="id (slug, opt)"
                 class="md:col-span-2 text-xs px-2 py-1.5 border rounded"
               />
               <select v-model="field.type" class="md:col-span-2 text-xs px-2 py-1.5 border rounded">
@@ -1097,7 +1080,6 @@
               </select>
               <input
                 v-model="field.placeholder"
-                placeholder="Placeholder/help"
                 class="md:col-span-3 text-xs px-2 py-1.5 border rounded"
               />
               <label class="md:col-span-1 flex items-center gap-1 text-xs">
@@ -1114,7 +1096,6 @@
               <input
                 v-model="field._optsStr"
                 @input="updateOptsFromStr(field)"
-                placeholder="Pilihan dropdown (pisah koma)"
                 class="w-full text-xs px-2 py-1.5 border rounded"
               />
             </div>

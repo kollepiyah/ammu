@@ -876,27 +876,23 @@ async function simpanPengaturanRekap() {
             <input
               v-model.number="p.min"
               type="number"
-              placeholder="Min"
               class="col-span-2 px-2 py-1.5 text-xs text-center border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-900 text-slate-800 dark:text-white"
             />
             <span class="col-span-1 text-center text-xs text-slate-500">-</span>
             <input
               v-model.number="p.max"
               type="number"
-              placeholder="Max"
               class="col-span-2 px-2 py-1.5 text-xs text-center border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-900 text-slate-800 dark:text-white"
             />
             <input
               v-model="p.label"
               type="text"
-              placeholder="Label"
               maxlength="3"
               class="col-span-2 px-2 py-1.5 text-xs text-center font-black border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-900 text-slate-800 dark:text-white"
             />
             <input
               v-model="p.desc"
               type="text"
-              placeholder="Deskripsi (Mumtaz, Jayyid, dll)"
               class="col-span-4 px-2 py-1.5 text-xs border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-900 text-slate-800 dark:text-white"
             />
             <button
@@ -1141,7 +1137,6 @@ async function simpanPengaturanRekap() {
         <input
           v-model="tpForm.value"
           type="text"
-          placeholder="Tahun ajaran"
           class="flex-1 px-3 py-2 text-sm rounded-lg border border-cyan-300 bg-white dark:bg-slate-900 text-slate-800 dark:text-white"
         />
         <button

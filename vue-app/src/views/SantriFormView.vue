@@ -29,26 +29,26 @@
         <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
           <div>
             <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase">No. Induk</label>
-            <input v-model="form.nis" type="text" placeholder="Otomatis (NNNN+tgl lahir)" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none" />
+            <input v-model="form.nis" type="text" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none" />
           </div>
           <!-- v.100: NIS dari Dinas (manual) — khusus santri sekolah TK/SDI/PKBM -->
           <div>
             <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase">NIS</label>
-            <input v-model="form.nis_sekolah" type="text" placeholder="NIS Dinas (santri sekolah)" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none" />
+            <input v-model="form.nis_sekolah" type="text" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none" />
           </div>
           <!-- v.95.0626d: NISN (Nomor Induk Siswa Nasional) -->
           <div>
             <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase">NISN</label>
-            <input v-model="form.nisn" type="text" placeholder="No. Induk Siswa Nasional" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none" />
+            <input v-model="form.nisn" type="text" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none" />
           </div>
           <!-- v.21.109.0527: tambah NIK santri -->
           <div>
             <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase">NIK</label>
-            <input v-model="form.nik" type="text" maxlength="16" placeholder="16 digit KTP (opsional)" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none" />
+            <input v-model="form.nik" type="text" maxlength="16" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none" />
           </div>
           <div class="md:col-span-2">
             <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase">Nama Lengkap *</label>
-            <input v-model="form.nama" type="text" required placeholder="Nama santri lengkap" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none" />
+            <input v-model="form.nama" type="text" required class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none" />
           </div>
           <div>
             <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase">Jenis Kelamin *</label>
@@ -98,7 +98,7 @@
         <!-- v.21.109.0527: alamat lengkap santri -->
         <div class="mt-3">
           <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase">Alamat Lengkap</label>
-          <textarea v-model="form.alamat" rows="2" placeholder="Alamat sesuai KTP/KK" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none resize-none"></textarea>
+          <textarea v-model="form.alamat" rows="2" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none resize-none"></textarea>
         </div>
         <div class="mt-3 grid grid-cols-2 md:grid-cols-4 gap-3">
           <div>
@@ -136,7 +136,7 @@
           <label class="block text-xs font-bold text-teal-700 mb-1 uppercase">
             <i class="fas fa-mosque mr-1"></i>Catatan Riwayat Pribadi (Ma'had) <span class="text-[9px] text-[var(--text-tertiary)] normal-case">(opsional)</span>
           </label>
-          <textarea v-model="form.catatan_riwayat_pribadi" rows="2" placeholder="Cth: latar belakang keluarga, kesehatan khusus, kebiasaan, dll." class="w-full px-3 py-2 text-sm rounded-xl border border-teal-300 bg-teal-50/30 focus:ring-2 focus:ring-teal-500 outline-none resize-none"></textarea>
+          <textarea v-model="form.catatan_riwayat_pribadi" rows="2" class="w-full px-3 py-2 text-sm rounded-xl border border-teal-300 bg-teal-50/30 focus:ring-2 focus:ring-teal-500 outline-none resize-none"></textarea>
         </div>
       </div>
 
@@ -249,7 +249,7 @@
           </div>
           <div v-if="form.lembaga === 'PTPT'">
             <label class="block text-xs font-bold text-rose-600 mb-1 uppercase">Juz (PTPT only)</label>
-            <input v-model="form.juz" type="text" placeholder="Nomor" class="w-full px-3 py-2 text-sm rounded-xl border-2 border-rose-300 bg-rose-50 text-rose-800 focus:ring-2 focus:ring-rose-500 outline-none" />
+            <input v-model="form.juz" type="text" class="w-full px-3 py-2 text-sm rounded-xl border-2 border-rose-300 bg-rose-50 text-rose-800 focus:ring-2 focus:ring-rose-500 outline-none" />
           </div>
         </div>
         <div class="mt-3">
@@ -274,7 +274,7 @@
           </div>
           <div>
             <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase">No WA Wali *</label>
-            <input v-model="form.wa_wali" type="tel" required placeholder="08..." class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none" />
+            <input v-model="form.wa_wali" type="tel" required class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none" />
           </div>
         </div>
       </div>
@@ -302,7 +302,7 @@
           </div>
           <div>
             <label class="block text-xs font-bold text-rose-700 mb-1 uppercase">Alasan Keluar</label>
-            <input v-model="form.alasan_keluar" type="text" placeholder="Keterangan" class="w-full px-3 py-2 text-sm rounded-xl border border-rose-300 bg-rose-50/40 focus:ring-2 focus:ring-rose-500 outline-none" />
+            <input v-model="form.alasan_keluar" type="text" class="w-full px-3 py-2 text-sm rounded-xl border border-rose-300 bg-rose-50/40 focus:ring-2 focus:ring-rose-500 outline-none" />
           </div>
         </div>
       </div>

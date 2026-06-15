@@ -156,7 +156,6 @@
                   <input
                     v-model="inputForm.kategori"
                     type="text"
-                    placeholder="Kategori"
                     class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)]"
                   />
                 </div>
@@ -166,7 +165,6 @@
                     v-model="inputForm.keterangan"
                     required
                     rows="2"
-                    placeholder="Deskripsi transaksi..."
                     class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)] resize-none"
                   ></textarea>
                 </div>

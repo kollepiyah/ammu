@@ -157,7 +157,7 @@
         </div>
         <div>
           <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase block mb-1">Kategori</label>
-          <input v-model="editForm.kategori" type="text" placeholder="mis. PMB / Syahriyah / Transfer" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)]" />
+          <input v-model="editForm.kategori" type="text" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)]" />
         </div>
         <div>
           <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase block mb-1">Terapkan ke Tagihan (opsional)</label>

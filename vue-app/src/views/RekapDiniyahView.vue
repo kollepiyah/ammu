@@ -144,7 +144,6 @@
                   :value="getCell(s.id, m)"
                   @change="(ev) => saveCell(s.id, m, ev.target.value)"
                   class="w-full text-center text-[11px] py-1 px-1 border-0 outline-none bg-transparent focus:bg-cyan-50 dark:focus:bg-cyan-900/30 dark:text-white"
-                  placeholder="-"
                 />
               </td>
               <td

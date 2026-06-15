@@ -233,7 +233,6 @@
                 required
                 type="text"
                 class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-white dark:bg-slate-900 text-[var(--text-primary)] focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none"
-                placeholder="Nama kegiatan"
               />
             </div>
             <div class="grid grid-cols-2 gap-3">
@@ -295,7 +294,6 @@
                 v-model="form.deskripsi"
                 rows="3"
                 class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-white dark:bg-slate-900 text-[var(--text-primary)] resize-none"
-                placeholder="Catatan tambahan (opsional)"
               ></textarea>
             </div>
           </div>

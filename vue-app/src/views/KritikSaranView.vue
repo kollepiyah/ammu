@@ -31,7 +31,6 @@
           v-model="form.pesan"
           rows="4"
           maxlength="1000"
-          placeholder="Tuliskan kritik / saran / apresiasi Anda..."
           class="w-full px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-input)] focus:ring-2 focus:ring-teal-500 outline-none resize-none"
         ></textarea>
         <p class="text-[10px] text-[var(--text-tertiary)] text-right mt-1">{{ form.pesan.length }}/1000 karakter</p>
@@ -169,7 +168,6 @@
           v-model="replyText"
           rows="4"
           maxlength="2000"
-          placeholder="Tulis balasan untuk pengirim..."
           class="w-full px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-input)] focus:ring-2 focus:ring-teal-500 outline-none resize-none"
         ></textarea>
         <div class="flex gap-2">

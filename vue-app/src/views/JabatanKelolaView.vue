@@ -204,7 +204,6 @@ const sorted = computed(() =>
         <input
           v-model="form.nama"
           type="text"
-          placeholder="Nama jabatan"
           class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-input)] text-[var(--text-primary)]"
           @keyup.enter="simpan"
         />

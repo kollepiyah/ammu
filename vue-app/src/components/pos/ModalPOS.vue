@@ -367,7 +367,7 @@ function onBackdrop(e) {
                       <span v-else class="cart-tag tag-item">Item</span>
                     </div>
                     <span v-if="item.prepay" class="cart-ket">{{ item.periode_label || item.keterangan }}</span>
-                    <input v-else v-model="item.keterangan" class="cart-ket-input" placeholder="Keterangan (opsional)" />
+                    <input v-else v-model="item.keterangan" class="cart-ket-input" />
                   </div>
                   <input v-model.number="item.nominal" type="number" class="inp-nom" />
                   <button type="button" class="rm" @click="removeItem(item.id)" aria-label="Hapus"><i class="fas fa-times"></i></button>

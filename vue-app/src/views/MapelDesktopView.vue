@@ -63,7 +63,6 @@
           <div v-for="(m, i) in (rekapMapel[kv.key] || [])" :key="i" class="flex items-center gap-2 mb-1.5">
             <input
               v-model="rekapMapel[kv.key][i]"
-              placeholder="Nama mata pelajaran"
               class="flex-1 px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-teal-500 outline-none"
             />
             <input
@@ -71,7 +70,6 @@
               type="number"
               min="0"
               max="100"
-              placeholder="KKM"
               class="w-20 px-2 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-teal-500 outline-none text-center"
             />
             <button type="button" class="w-9 h-9 grid place-items-center rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20" title="Hapus mapel" @click="removeMapel(kv.key, i)">

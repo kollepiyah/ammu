@@ -46,10 +46,10 @@
       <template v-if="editPanduan">
         <div v-for="(p, i) in panduanDraft" :key="i" class="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl p-3 space-y-2">
           <div class="flex items-center gap-2">
-            <input v-model="p.q" placeholder="Judul panduan" class="flex-1 px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] outline-none" />
+            <input v-model="p.q" class="flex-1 px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] outline-none" />
             <button @click="hapusPanduan(i)" class="text-rose-600 hover:text-rose-700 px-2" title="Hapus"><i class="fas fa-trash"></i></button>
           </div>
-          <textarea v-model="p.stepsText" rows="4" placeholder="Satu langkah per baris" class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] outline-none resize-y"></textarea>
+          <textarea v-model="p.stepsText" rows="4" class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] outline-none resize-y"></textarea>
         </div>
         <div class="flex gap-2 flex-wrap">
           <button @click="tambahPanduan" class="text-xs font-bold px-3 py-2 rounded-lg bg-[var(--bg-muted)]"><i class="fas fa-plus mr-1"></i>Tambah</button>
@@ -81,10 +81,10 @@
       <template v-if="editFaq">
         <div v-for="(f, i) in faqDraft" :key="i" class="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl p-3 space-y-2">
           <div class="flex items-center gap-2">
-            <input v-model="f.q" placeholder="Pertanyaan" class="flex-1 px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] outline-none" />
+            <input v-model="f.q" class="flex-1 px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] outline-none" />
             <button @click="hapusFaq(i)" class="text-rose-600 hover:text-rose-700 px-2" title="Hapus"><i class="fas fa-trash"></i></button>
           </div>
-          <textarea v-model="f.a" rows="3" placeholder="Jawaban" class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] outline-none resize-y"></textarea>
+          <textarea v-model="f.a" rows="3" class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] outline-none resize-y"></textarea>
         </div>
         <div class="flex gap-2 flex-wrap">
           <button @click="tambahFaq" class="text-xs font-bold px-3 py-2 rounded-lg bg-[var(--bg-muted)]"><i class="fas fa-plus mr-1"></i>Tambah</button>

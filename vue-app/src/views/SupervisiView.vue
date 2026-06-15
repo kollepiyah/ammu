@@ -68,17 +68,17 @@
 
           <div class="md:col-span-2">
             <label class="block text-[10px] uppercase font-black text-[var(--text-secondary)] mb-1">Judul *</label>
-            <input v-model="form.judul" type="text" placeholder="Judul / topik" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] outline-none focus:ring-2 focus:ring-cyan-500" />
+            <input v-model="form.judul" type="text" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] outline-none focus:ring-2 focus:ring-cyan-500" />
           </div>
 
           <div class="md:col-span-2">
             <label class="block text-[10px] uppercase font-black text-[var(--text-secondary)] mb-1">Catatan *</label>
-            <textarea v-model="form.catatan" rows="3" placeholder="Observasi / temuan / catatan supervisi" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] outline-none focus:ring-2 focus:ring-cyan-500 resize-none"></textarea>
+            <textarea v-model="form.catatan" rows="3" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] outline-none focus:ring-2 focus:ring-cyan-500 resize-none"></textarea>
           </div>
 
           <div class="md:col-span-2">
             <label class="block text-[10px] uppercase font-black text-[var(--text-secondary)] mb-1">Rekomendasi</label>
-            <textarea v-model="form.rekomendasi" rows="2" placeholder="Saran tindak lanjut" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] outline-none focus:ring-2 focus:ring-cyan-500 resize-none"></textarea>
+            <textarea v-model="form.rekomendasi" rows="2" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] outline-none focus:ring-2 focus:ring-cyan-500 resize-none"></textarea>
           </div>
 
           <div>

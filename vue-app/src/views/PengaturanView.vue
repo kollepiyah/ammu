@@ -56,9 +56,9 @@
         <UiInput v-model="form.txtAppName" label="Nama Aplikasi" required />
         <UiInput v-model="form.txtAppDesc" label="Deskripsi / Sub-Title" />
         <UiInput v-model="form.txtSidebarTitle" label="Nama Sidebar / Lembaga" />
-        <UiInput v-model="form.txtHeaderBar" label="Teks Header Bar" placeholder="Ammu Online" />
+        <UiInput v-model="form.txtHeaderBar" label="Teks Header Bar" />
         <UiInput v-model="form.txtPeriode" label="Periode Aktif" />
-        <UiInput v-model="form.txtWelcome" label="Sapaan Ahlan" placeholder="Ahlan" />
+        <UiInput v-model="form.txtWelcome" label="Sapaan Ahlan" />
         <UiInput v-model="form.alamat" label="Alamat Pondok" />
         <UiInput v-model="form.noTelp" label="No. Telepon" />
         <UiInput v-model="form.namaChannel" label="Nama Channel Pesan" />
@@ -327,7 +327,6 @@
         <UiInput
           v-model="form.adminUsername"
           label="Username Admin Built-in"
-          placeholder="adminmu"
         />
       </div>
       <form
@@ -694,7 +693,6 @@
           v-model="newMapel"
           @keyup.enter="addMapel"
           type="text"
-          placeholder="Nama mata pelajaran baru..."
           class="flex-1 px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)]"
         />
         <button
@@ -763,7 +761,6 @@
           <input
             v-model="newKelas"
             type="text"
-            placeholder="Nama kelas (mis: TK A, I, II, III)"
             class="flex-1 px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)]"
           />
           <button
@@ -873,7 +870,6 @@
           <input
             v-model.trim="form.gsheetUrl"
             type="url"
-            placeholder="https://script.google.com/macros/s/AKfyc.../exec"
             class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] font-mono"
           />
         </div>
@@ -884,7 +880,6 @@
           <input
             v-model.trim="form.gsheetToken"
             type="text"
-            placeholder="Kata sandi rahasia (samakan dengan di Apps Script)"
             class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] font-mono"
           />
         </div>
@@ -997,7 +992,6 @@
                 v-model="newField"
                 @keyup.enter="addFieldNilai"
                 type="text"
-                placeholder="Tambah field nilai (Fashohah, Tartil, ...)"
                 class="flex-1 px-2 py-1 text-xs border border-[var(--border-default)] rounded bg-[var(--bg-card)]"
               />
               <button
@@ -1018,12 +1012,10 @@
                 <div class="grid grid-cols-3 gap-2 mb-2">
                   <input
                     v-model="level.label"
-                    placeholder="Label (Level 1)"
                     class="text-xs px-2 py-1 border border-[var(--border-default)] rounded"
                   />
                   <input
                     v-model="level.levelBaca"
-                    placeholder="Baca (½ Juz)"
                     class="text-xs px-2 py-1 border border-[var(--border-default)] rounded"
                   />
                   <button
@@ -1044,7 +1036,6 @@
                   >
                     <input
                       v-model="kh.labelKhotam"
-                      placeholder="Khotam I"
                       class="text-[11px] px-1.5 py-0.5 border border-[var(--border-default)] rounded bg-[var(--bg-card)]"
                     />
                     <input
@@ -1092,7 +1083,6 @@
                 <input
                   v-model="jen.kelas"
                   class="text-xs font-bold px-2 py-1 border border-[var(--border-default)] rounded w-32"
-                  placeholder="Kelas (TK A)"
                 />
                 <button
                   @click="form.raporSchemas[raporLembaga].jenjang.splice(ji, 1)"
@@ -1110,7 +1100,6 @@
                   <input
                     v-model="m.nama"
                     class="flex-1 text-[11px] px-1 py-0.5 border-0 bg-transparent"
-                    placeholder="Mapel"
                   />
                   <input
                     v-model.number="m.kkm"
@@ -1157,7 +1146,6 @@
                 <input
                   v-model="sec.title"
                   class="text-xs font-bold px-2 py-1 border border-[var(--border-default)] rounded flex-1"
-                  placeholder="Title section (Jilid)"
                 />
                 <button
                   @click="form.raporSchemas[raporLembaga].sections.splice(si, 1)"
@@ -1208,7 +1196,6 @@
                 >
                   <input
                     v-model="field.label"
-                    placeholder="Label"
                     class="text-[11px] px-1.5 py-0.5 border border-[var(--border-default)] rounded bg-[var(--bg-card)]"
                   />
                   <select

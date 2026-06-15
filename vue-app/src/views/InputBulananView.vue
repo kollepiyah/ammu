@@ -197,7 +197,6 @@
                       min="1"
                       max="30"
                       inputmode="numeric"
-                      placeholder="-"
                       :title="ptptJuzHint(s.kelas)"
                       class="flex-1 min-w-0 text-center font-black text-[11px] p-1 rounded border border-rose-300 dark:border-rose-700 bg-rose-50 dark:bg-rose-900/30 text-rose-900 dark:text-rose-200"
                     />
@@ -217,7 +216,6 @@
                     v-model="formMap[s.id].prestasi_awal"
                     @input="markDirty(s.id)"
                     type="text"
-                    placeholder="-"
                     class="w-full text-center font-black text-[11px] p-1.5 rounded border border-[var(--border-default)] bg-white dark:bg-slate-900 text-[var(--text-primary)]"
                   />
                 </td>
@@ -228,7 +226,6 @@
                     v-model="formMap[s.id].prestasi_akhir"
                     @input="markDirty(s.id)"
                     type="text"
-                    placeholder="-"
                     class="w-full text-center font-black text-[11px] p-1.5 rounded border border-[var(--border-default)] bg-white dark:bg-slate-900 text-[var(--text-primary)]"
                   />
                 </td>
@@ -252,7 +249,6 @@
                     v-model="formMap[s.id].prestasi_total"
                     @input="markDirty(s.id)"
                     type="text"
-                    placeholder="manual"
                     class="w-full text-center font-black text-[11px] p-1.5 rounded border border-cyan-300 dark:border-cyan-700 bg-cyan-50 dark:bg-cyan-900/30 text-cyan-900 dark:text-cyan-200"
                     title="Manual input"
                   />
@@ -329,7 +325,6 @@
               <textarea
                 v-model="catatanDraft"
                 rows="6"
-                placeholder="Tulis catatan bulan ini untuk santri (mis: progress, perilaku, hal yg perlu diperhatikan, rekomendasi)..."
                 class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)] resize-none"
               ></textarea>
               <p class="text-[10px] text-[var(--text-tertiary)] italic">

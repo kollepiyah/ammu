@@ -59,10 +59,10 @@
           <option value="hutang">Hutang (pesantren wajib bayar)</option>
           <option value="piutang">Piutang (pesantren klaim ke pihak)</option>
         </select>
-        <input v-model="modalPihak" type="text" placeholder="Nama pihak (orang/toko/dll)" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)]" />
-        <input v-model.number="modalNominal" type="number" min="0" placeholder="Nominal" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] text-right font-bold" />
+        <input v-model="modalPihak" type="text" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)]" />
+        <input v-model.number="modalNominal" type="number" min="0" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] text-right font-bold" />
         <input v-model="modalTanggal" type="date" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)]" />
-        <textarea v-model="modalCatatan" rows="2" placeholder="Catatan" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] resize-none"></textarea>
+        <textarea v-model="modalCatatan" rows="2" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] resize-none"></textarea>
         <div class="flex gap-2">
           <button @click="modalOpen = false" class="flex-1 px-4 py-2 bg-slate-200 text-[var(--text-primary)] font-bold rounded-xl text-sm">Batal</button>
           <button @click="simpan" :disabled="saving" class="flex-1 px-4 py-2 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white font-bold rounded-xl text-sm">{{ saving ? 'Menyimpan...' : 'Simpan' }}</button>

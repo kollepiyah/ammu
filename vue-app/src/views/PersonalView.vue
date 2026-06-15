@@ -218,7 +218,7 @@
           </div>
           <div>
             <label class="block text-[10px] font-black uppercase text-[var(--text-secondary)] mb-1">Keterangan</label>
-            <textarea v-model="izinForm.keterangan" rows="2" placeholder="Alasan singkat..." class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] outline-none focus:ring-2 focus:ring-cyan-500 resize-none"></textarea>
+            <textarea v-model="izinForm.keterangan" rows="2" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] outline-none focus:ring-2 focus:ring-cyan-500 resize-none"></textarea>
           </div>
         </div>
         <div class="p-4 border-t border-[var(--border-subtle)] flex justify-end gap-2">
@@ -262,7 +262,7 @@
             <p class="text-xs whitespace-pre-line">{{ s.respon_target }}</p>
           </div>
           <div v-if="s.status !== 'selesai'" class="mt-2 space-y-2">
-            <textarea v-model="responText[s.id]" rows="2" placeholder="Tulis tanggapan..." class="w-full px-2 py-1.5 text-xs rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] outline-none focus:ring-2 focus:ring-cyan-500 resize-none"></textarea>
+            <textarea v-model="responText[s.id]" rows="2" class="w-full px-2 py-1.5 text-xs rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] outline-none focus:ring-2 focus:ring-cyan-500 resize-none"></textarea>
             <div class="flex gap-2 flex-wrap">
               <button v-if="(s.status || 'open') === 'open'" @click="updateSupervisiStatus(s, 'in_progress')" class="text-[10px] font-bold bg-cyan-100 text-cyan-700 px-2.5 py-1 rounded-lg hover:bg-cyan-200">
                 <i class="fas fa-play mr-1"></i>Tandai Diproses

@@ -118,19 +118,19 @@
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div>
             <label class="text-[10px] text-[var(--text-secondary)] block mb-1">Lebar slip (mm)</label>
-            <input v-model.number="form.posStrukSlipW" type="number" min="120" max="260" placeholder="190" class="w-full px-2 py-1.5 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)]" />
+            <input v-model.number="form.posStrukSlipW" type="number" min="120" max="260" class="w-full px-2 py-1.5 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)]" />
           </div>
           <div>
             <label class="text-[10px] text-[var(--text-secondary)] block mb-1">Tinggi slip (mm)</label>
-            <input v-model.number="form.posStrukSlipH" type="number" min="60" max="230" placeholder="140" class="w-full px-2 py-1.5 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)]" />
+            <input v-model.number="form.posStrukSlipH" type="number" min="60" max="230" class="w-full px-2 py-1.5 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)]" />
           </div>
           <div>
             <label class="text-[10px] text-[var(--text-secondary)] block mb-1">Margin atas (mm)</label>
-            <input v-model.number="form.posStrukTopMm" type="number" min="0" max="140" placeholder="2" class="w-full px-2 py-1.5 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)]" />
+            <input v-model.number="form.posStrukTopMm" type="number" min="0" max="140" class="w-full px-2 py-1.5 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)]" />
           </div>
           <div>
             <label class="text-[10px] text-[var(--text-secondary)] block mb-1">Geser kanan (mm)</label>
-            <input v-model.number="form.posStrukLeftMm" type="number" min="0" max="80" placeholder="0" class="w-full px-2 py-1.5 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)]" />
+            <input v-model.number="form.posStrukLeftMm" type="number" min="0" max="80" class="w-full px-2 py-1.5 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)]" />
           </div>
         </div>
         <p class="text-[10px] text-[var(--text-secondary)] mt-2 italic">
@@ -159,14 +159,12 @@
               <input
                 v-model="jenis.label"
                 type="text"
-                placeholder="Label (Syahriyah, Infaq, ...)"
                 class="col-span-5 bg-transparent text-sm font-bold text-[var(--text-primary)] outline-none border-b border-[var(--border-default)] pb-1"
               />
               <input
                 v-model.number="jenis.nominal_default"
                 type="number"
                 min="0"
-                placeholder="Nominal default"
                 class="col-span-3 bg-[var(--bg-card)] text-xs font-bold text-[var(--text-primary)] outline-none border border-[var(--border-default)] rounded px-2 py-1"
               />
               <label class="col-span-2 flex items-center gap-1 text-[10px] font-bold text-[var(--text-secondary)]">
@@ -318,7 +316,6 @@
             v-model="newJenis"
             @keyup.enter="addJenis"
             type="text"
-            placeholder="Nama jenis tagihan baru..."
             class="flex-1 px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
           />
           <button
@@ -355,7 +352,6 @@
             @input="onFmtChange($event, 'keu_bisyaroh_pagi')"
             type="text"
             inputmode="numeric"
-            placeholder="Nominal per kehadiran..."
             class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)] font-bold"
           />
         </div>
@@ -370,7 +366,6 @@
             @input="onFmtChange($event, 'keu_bisyaroh_sore')"
             type="text"
             inputmode="numeric"
-            placeholder="Nominal per kehadiran..."
             class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)] font-bold"
           />
         </div>
@@ -384,7 +379,6 @@
             @input="onFmtChange($event, 'keu_bisyaroh_sekolah_shift')"
             type="text"
             inputmode="numeric"
-            placeholder="Nominal per kehadiran..."
             class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)] font-bold"
           />
         </div>
@@ -398,7 +392,6 @@
             @input="onFmtChange($event, 'keu_bisyaroh_pegawai_pagi')"
             type="text"
             inputmode="numeric"
-            placeholder="Nominal per kehadiran..."
             class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)] font-bold"
           />
         </div>
@@ -411,7 +404,6 @@
             @input="onFmtChange($event, 'keu_bisyaroh_pegawai_sore')"
             type="text"
             inputmode="numeric"
-            placeholder="Nominal per kehadiran..."
             class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)] font-bold"
           />
         </div>
@@ -460,7 +452,6 @@
               @input="onFmtMapChange($event, 'keu_bisyaroh_pokok', g.id)"
               type="text"
               inputmode="numeric"
-              placeholder="0"
               title="Pokok Pondok"
               class="px-2 py-1.5 text-xs text-right font-bold border border-[var(--border-default)] rounded bg-white dark:bg-slate-900 text-[var(--text-primary)]"
             />
@@ -469,7 +460,6 @@
               @input="onFmtMapChange($event, 'keu_bisyaroh_sekolah', g.id)"
               type="text"
               inputmode="numeric"
-              placeholder="0"
               title="Pokok Sekolah (terpisah)"
               class="px-2 py-1.5 text-xs text-right font-bold border border-emerald-300 dark:border-emerald-700 rounded bg-emerald-50 dark:bg-emerald-900/20 text-emerald-800 dark:text-emerald-200"
             />
@@ -530,7 +520,6 @@
               v-model="newKatMasuk"
               @keyup.enter="addKategori('masuk')"
               type="text"
-              placeholder="Kategori baru..."
               class="flex-1 px-3 py-2 text-xs border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
             />
             <button
@@ -572,7 +561,6 @@
               v-model="newKatKeluar"
               @keyup.enter="addKategori('keluar')"
               type="text"
-              placeholder="Kategori baru..."
               class="flex-1 px-3 py-2 text-xs border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
             />
             <button
@@ -625,7 +613,6 @@
             <input
               v-model="item.nama"
               type="text"
-              placeholder="Nama tunjangan"
               class="bg-transparent text-xs font-bold text-[var(--text-primary)] outline-none"
             />
             <input
@@ -633,7 +620,6 @@
               @input="onMasterFmtChange(item, $event)"
               type="text"
               inputmode="numeric"
-              placeholder="Rp 0"
               class="bg-transparent text-xs text-right font-bold text-emerald-800 dark:text-emerald-200 outline-none border border-emerald-300 dark:border-emerald-700 rounded px-2 py-1"
             />
             <button
@@ -713,7 +699,6 @@
             <input
               v-model="item.nama"
               type="text"
-              placeholder="Nama potongan"
               class="bg-transparent text-xs font-bold text-[var(--text-primary)] outline-none"
             />
             <input
@@ -721,7 +706,6 @@
               @input="onMasterFmtChange(item, $event)"
               type="text"
               inputmode="numeric"
-              placeholder="Rp 0"
               class="bg-transparent text-xs text-right font-bold text-rose-800 dark:text-rose-200 outline-none border border-rose-300 dark:border-rose-700 rounded px-2 py-1"
             />
             <button
@@ -784,7 +768,6 @@
           <input
             v-model="form.bank_nama"
             type="text"
-            placeholder="BSI / BCA / BRI..."
             class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
           />
         </div>
@@ -796,7 +779,6 @@
           <input
             v-model="form.bank_nomor"
             type="text"
-            placeholder="1234567890"
             class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
           />
         </div>
@@ -808,7 +790,6 @@
           <input
             v-model="form.bank_atasnama"
             type="text"
-            placeholder="Yayasan Mambaul Ulum"
             class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
           />
         </div>
@@ -847,7 +828,6 @@
           <input
             v-model="form.bmt_nama"
             type="text"
-            placeholder="BMT PETA"
             class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
           />
         </div>
@@ -859,7 +839,6 @@
             v-model="form.bmt_va_prefix"
             type="text"
             inputmode="numeric"
-            placeholder="mis. 8810"
             class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)] font-mono"
           />
           <p class="text-[10px] text-[var(--text-tertiary)] italic mt-1">
@@ -926,7 +905,6 @@
         <input
           v-model="genKategori"
           type="text"
-          placeholder="Kategori (mis. Infaq Pembangunan)"
           class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)] mb-2"
         />
 
@@ -941,7 +919,6 @@
               @input="onGenNominal"
               type="text"
               inputmode="numeric"
-              placeholder="0"
               class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)] text-right font-bold"
             />
           </div>
@@ -964,7 +941,6 @@
         <input
           v-model="genPeriode"
           type="text"
-          placeholder="mis. Juni 2026 / Tahap 1"
           class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)] mb-1"
         />
         <label

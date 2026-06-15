@@ -150,7 +150,7 @@
             </select>
           </div>
         </div>
-        <input v-if="mutasiKategori && mutasiAlasan === 'Lainnya'" v-model="mutasiAlasanLain" type="text" placeholder="Keterangan alasan keluar" class="mt-2 w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-amber-500 outline-none" />
+        <input v-if="mutasiKategori && mutasiAlasan === 'Lainnya'" v-model="mutasiAlasanLain" type="text" class="mt-2 w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-amber-500 outline-none" />
       </div>
 
       <div v-if="mutasiLembaga" class="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)] shadow-sm p-4">
@@ -494,7 +494,6 @@
                 <input
                   v-model="kopForm.judul"
                   type="text"
-                  placeholder="KONTROL KENAIKAN KELAS"
                   class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-white dark:bg-slate-900 text-[var(--text-primary)]"
                 />
               </div>
@@ -506,7 +505,6 @@
                 <input
                   v-model="kopForm.subjudul"
                   type="text"
-                  placeholder="PTPT MAMBAUL ULUM"
                   class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-white dark:bg-slate-900 text-[var(--text-primary)]"
                 />
               </div>
@@ -518,7 +516,6 @@
                 <input
                   v-model="kopForm.alamat"
                   type="text"
-                  placeholder="Jl. Kolonel Sugiono No. 112 Panjunan - Waru - Sidoarjo"
                   class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-white dark:bg-slate-900 text-[var(--text-primary)]"
                 />
               </div>
@@ -568,7 +565,6 @@
               </label>
               <input
                 v-model="schemaDraft.itemHeader"
-                placeholder="Item"
                 class="w-full px-2 py-1.5 text-sm border border-teal-300 rounded bg-white dark:bg-slate-900 text-[var(--text-primary)]"
               />
             </div>
@@ -600,7 +596,6 @@
                 <div class="grid grid-cols-[1fr_auto_auto] gap-2 items-center">
                   <input
                     v-model="k.label"
-                    placeholder="Label (Kelas 1)"
                     class="text-xs font-bold px-2 py-1 border border-[var(--border-default)] rounded bg-white dark:bg-slate-900 text-[var(--text-primary)]"
                   />
                   <label
@@ -832,7 +827,6 @@
                         <textarea
                           v-model="noteDraft[k.id].text"
                           rows="2"
-                          placeholder="Tulis catatan/rekomendasi..."
                           class="w-full px-2 py-1 text-[10px] border border-[var(--border-default)] rounded bg-white dark:bg-slate-900 text-[var(--text-primary)] resize-none"
                         ></textarea>
                         <div class="flex justify-end gap-1">
@@ -1096,7 +1090,6 @@
                 <textarea
                   v-model="formData.catatan"
                   rows="3"
-                  placeholder="Tulis catatan atau rekomendasi guru saat kenaikan ini..."
                   class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-white dark:bg-slate-900 text-[var(--text-primary)] resize-none"
                 ></textarea>
               </div>

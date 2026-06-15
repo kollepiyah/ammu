@@ -175,7 +175,7 @@
             </div>
           </template>
         </div>
-        <textarea v-model="catatan[a.id]" rows="1" placeholder="Catatan hasil (opsional)..." class="w-full mt-2 px-2.5 py-1.5 text-xs rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none resize-none"></textarea>
+        <textarea v-model="catatan[a.id]" rows="1" class="w-full mt-2 px-2.5 py-1.5 text-xs rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none resize-none"></textarea>
         <div class="flex gap-2 mt-2">
           <button @click="openLulus(a)" :disabled="busyId === a.id" class="flex-1 px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-black"><i class="fas fa-check mr-1"></i>Lulus</button>
           <button @click="decide(a, 'tidak_lulus')" :disabled="busyId === a.id" class="flex-1 px-3 py-2 rounded-lg bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white text-xs font-black"><i class="fas fa-redo mr-1"></i>Belum Lulus</button>
@@ -338,7 +338,7 @@
             </div>
             <div>
               <label class="block text-[10px] font-black uppercase text-[var(--text-secondary)] mb-1">Guru berikutnya (bila pindah kelas)</label>
-              <input list="guru-naik-list" v-model="naikForm.guru" placeholder="Nama guru" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none" />
+              <input list="guru-naik-list" v-model="naikForm.guru" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none" />
               <datalist id="guru-naik-list">
                 <option v-for="g in guruOptionsFor(naikForm.lembaga)" :key="g" :value="g"></option>
               </datalist>

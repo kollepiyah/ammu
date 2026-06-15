@@ -553,7 +553,6 @@ async function onImportAssign(e) {
         <input
           v-model="newKelas"
           type="text"
-          placeholder="Tambah kelas baru..."
           class="flex-1 px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-input)] text-[var(--text-primary)]"
           @keyup.enter="tambahKelas"
         />

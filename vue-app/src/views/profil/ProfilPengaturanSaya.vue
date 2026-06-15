@@ -98,7 +98,6 @@
               @blur="cekUsername"
               type="text"
               class="w-full px-3 py-2 border border-[var(--border-default)] rounded-lg text-sm"
-              placeholder="username unik"
             />
             <p v-if="usernameState.checking" class="text-xs text-[var(--text-secondary)] mt-2">
               Cek...
@@ -118,7 +117,6 @@
               v-model="waState.value"
               type="tel"
               class="w-full px-3 py-2 border border-[var(--border-default)] rounded-lg text-sm"
-              placeholder="08xxxxxxxxxx"
             />
             <p class="text-[10px] text-[var(--text-secondary)] italic mt-2">
               Format Indonesia, akan dibersihkan dari simbol
@@ -132,7 +130,6 @@
               v-model="waState.value"
               type="tel"
               class="w-full px-3 py-2 border border-[var(--border-default)] rounded-lg text-sm"
-              placeholder="08xxxxxxxxxx"
             />
             <p class="text-[10px] text-[var(--text-secondary)] italic mt-2">
               Nomor wali (orang tua) untuk terima notifikasi pondok.
@@ -211,7 +208,6 @@
               v-model="ekgqState.value"
               type="text"
               class="w-full px-3 py-2 border border-[var(--border-default)] rounded-lg text-sm"
-              placeholder="Nomor Induk Guru"
             />
             <p class="text-[10px] text-[var(--text-secondary)] italic mt-2">Nomor Induk Guru</p>
           </div>

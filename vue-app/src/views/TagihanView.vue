@@ -94,16 +94,16 @@
             <option value="">-- Pilih santri --</option>
             <option v-for="s in santriList" :key="s.id" :value="s.id">{{ s.nama }}</option>
           </select>
-          <input v-model="modalKategori" type="text" placeholder="Kategori (SPP, Pendaftaran, dll)" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)]" />
-          <input v-model="modalPeriode" type="text" placeholder="Periode" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)]" />
-          <input v-model.number="modalNominal" type="number" min="0" placeholder="Nominal" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] text-right font-bold" />
+          <input v-model="modalKategori" type="text" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)]" />
+          <input v-model="modalPeriode" type="text" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)]" />
+          <input v-model.number="modalNominal" type="number" min="0" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] text-right font-bold" />
           <input v-model="modalJatuhTempo" type="date" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)]" />
         </div>
         <div v-else class="space-y-2">
           <p class="text-xs">Tagihan: <b>{{ modalTagihan?.santri_nama }}</b> ({{ modalTagihan?.kategori }})</p>
           <p class="text-xs">Sisa: <b class="text-rose-700">{{ fmtRp(getSisa(modalTagihan || {})) }}</b></p>
-          <input v-model.number="modalBayarNominal" type="number" min="0" placeholder="Nominal bayar" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] text-right font-bold" />
-          <input v-model="modalCatatan" type="text" placeholder="Catatan" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)]" />
+          <input v-model.number="modalBayarNominal" type="number" min="0" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] text-right font-bold" />
+          <input v-model="modalCatatan" type="text" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)]" />
         </div>
         <div class="mt-4 flex gap-2">
           <button @click="modalOpen = false" class="flex-1 px-4 py-2 bg-slate-200 hover:bg-slate-300 text-[var(--text-primary)] font-bold rounded-xl text-sm">Batal</button>

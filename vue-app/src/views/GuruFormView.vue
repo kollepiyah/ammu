@@ -28,7 +28,7 @@
         <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
           <div class="md:col-span-3">
             <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase">Nama Lengkap (dengan gelar) *</label>
-            <input v-model="form.nama" type="text" required placeholder="Nama lengkap dengan gelar" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none" />
+            <input v-model="form.nama" type="text" required class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none" />
           </div>
           <div>
             <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase">L / P *</label>
@@ -134,23 +134,23 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div>
             <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase">NIK (16 digit)</label>
-            <input v-model="form.nik" type="text" maxlength="16" placeholder="Diisi user nanti" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none font-mono" />
+            <input v-model="form.nik" type="text" maxlength="16" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none font-mono" />
           </div>
           <div>
             <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase">No. WhatsApp *</label>
-            <input v-model="form.wa" type="tel" required placeholder="08..." class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none" />
+            <input v-model="form.wa" type="tel" required class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none" />
           </div>
           <div>
             <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase">NIG (Nomor Induk Guru)</label>
-            <input v-model="form.no_nig" type="text" placeholder="Opsional" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none" />
+            <input v-model="form.no_nig" type="text" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none" />
           </div>
           <div>
             <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase">No. Rekening BMT</label>
-            <input v-model="form.rek_bmt" type="text" inputmode="numeric" placeholder="Untuk pencairan bisyaroh (opsional)" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none font-mono" />
+            <input v-model="form.rek_bmt" type="text" inputmode="numeric" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none font-mono" />
           </div>
           <div>
             <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase">ID Fingerprint</label>
-            <input v-model="form.id_fingerprint" type="text" placeholder="Opsional" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none" />
+            <input v-model="form.id_fingerprint" type="text" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none" />
           </div>
         </div>
       </div>
