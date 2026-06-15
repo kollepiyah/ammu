@@ -301,7 +301,7 @@
 
         <p class="text-center text-[10px] text-[var(--text-tertiary)] pt-2">
           <i class="fas fa-circle-info mr-1"></i>{{ filteredPpdb.length }} pendaftar · Vue 3 ·
-          v.100.0626
+          v.101.0626
         </p>
       </div>
       <!-- /blok Riwayat -->
