@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex" />
+    <meta http-equiv="refresh" content="3; url=https://ammuonline.web.app" />
+    <title>Ammu Online — Portal sudah pindah</title>
+    <link rel="icon" type="image/png" href="/logo.png" />
+    <style>
+      :root { color-scheme: light dark; }
+      html, body { height: 100%; margin: 0; }
+      body {
+        font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        gap: 14px; text-align: center; padding: 24px; box-sizing: border-box;
+        background: #F2FEF9; color: #0F172A;
+      }
+      @media (prefers-color-scheme: dark) { body { background: #0F172A; color: #F1F5F9; } }
+      img { width: 88px; height: 88px; object-fit: contain; }
+      h1 { font-size: 1.25rem; font-weight: 700; margin: 4px 0 0; }
+      p { margin: 0; color: #64748B; max-width: 460px; line-height: 1.5; }
+      a.btn {
+        margin-top: 8px; display: inline-block; text-decoration: none; font-weight: 600;
+        background: #0F766E; color: #fff; padding: 10px 22px; border-radius: 9999px;
+      }
+      .muted { font-size: 0.8rem; color: #94A3B8; }
+    </style>
+  </head>
+  <body>
+    <img src="/logo.png" alt="Ammu Online" onerror="this.style.display='none'" />
+    <h1>Portal Ammu Online sudah pindah</h1>
+    <p>Alamat lama ini sudah tidak dipakai. Anda akan dialihkan otomatis ke alamat baru.</p>
+    <a class="btn" href="https://ammuonline.web.app">Buka Ammu Online &rarr;</a>
+    <p class="muted">Jika tidak teralihkan, ketuk tombol di atas.</p>
+    <script>
+      // Bersihkan jejak app lama (PWA cache + service worker) lalu alihkan ke app baru.
+      // Ini mematikan app legacy yang dulu mem-bake DSN Sentry hardcoded -> stop polusi Sentry.
+      (function () {
+        var DEST = 'https://ammuonline.web.app';
+        function go() { try { location.replace(DEST); } catch (e) { location.href = DEST; } }
+        var done = false;
+        function once() { if (done) return; done = true; go(); }
+        try {
+          var jobs = [];
+          if ('caches' in window) {
+            jobs.push(caches.keys().then(function (ks) {
+              return Promise.all(ks.map(function (k) { return caches.delete(k); }));
+            }).catch(function () {}));
+          }
+          if ('serviceWorker' in navigator) {
+            jobs.push(navigator.serviceWorker.getRegistrations().then(function (regs) {
+              return Promise.all(regs.map(function (r) { return r.unregister(); }));
+            }).catch(function () {}));
+          }
+          Promise.all(jobs).then(once);
+        } catch (e) { /* abaikan */ }
+        // Jaring pengaman: tetap alihkan walau cleanup gagal/lama.
+        setTimeout(once, 1500);
+      })();
+    </script>
+  </body>
+</html>

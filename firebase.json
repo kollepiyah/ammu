@@ -71,15 +71,14 @@
     },
     {
       "target": "legacy",
-      "public": "public",
+      "public": "legacy-redirect",
       "ignore": [
         "firebase.json",
         "**/.*",
         "**/node_modules/**",
         "**/*.bak*",
         "**/*.log",
-        "**/*.backup*",
-        "vue/**"
+        "**/*.backup*"
       ],
       "rewrites": [
         {
