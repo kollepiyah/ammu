@@ -107,18 +107,34 @@ if (IS_NATIVE) {
   }, 6000)
 }
 
-// v.20.70.0526: Init Sentry kalau tersedia + DSN dari settings/general.sentryDsn
+// v.100h: Init Sentry — DSN dari build-time env (VITE_SENTRY_DSN) ATAU default project,
+//   dengan Firestore settings/general.sentryDsn sbg OVERRIDE opsional (backward-compat).
+//   AKAR FIX (#5 audit): dulu DSN HANYA dari Firestore; field itu KOSONG utk app Vue ->
+//   Sentry tak pernah init -> hanya site legacy (DSN hardcoded + masih hidup) yg muncul di
+//   dashboard. DSN browser BUKAN rahasia (selalu terekspos di bundle klien) — sama project
+//   dgn legacy, dibedakan via release/environment.
+const DEFAULT_SENTRY_DSN =
+  'https://1bd853a93f9f5d495dcf3e0db5cfe635@o4511390323834880.ingest.us.sentry.io/4511398644088832'
 async function initSentry() {
   try {
+    // 1) Resolusi DSN dulu (env > default) supaya tak gugur saat field Firestore kosong.
+    let dsn = (import.meta.env.VITE_SENTRY_DSN || '').trim() || DEFAULT_SENTRY_DSN
+    // 2) Tunggu SDK CDN (window.Sentry) siap — maks 5 dtk (toleran koneksi lambat).
     const t0 = Date.now()
-    while (!window.Sentry && Date.now() - t0 < 3000) {
+    while (!window.Sentry && Date.now() - t0 < 5000) {
       await new Promise((r) => setTimeout(r, 100))
     }
     if (!window.Sentry) return
-    const { db } = await import('@/services/firebase')
-    const { doc, getDoc } = await import('firebase/firestore')
-    const snap = await getDoc(doc(db, 'settings', 'general'))
-    const dsn = snap.exists() ? (snap.data()?.sentryDsn || '') : ''
+    // 3) Override dari Firestore bila admin set (opsional, non-blocking).
+    try {
+      const { db } = await import('@/services/firebase')
+      const { doc, getDoc } = await import('firebase/firestore')
+      const snap = await getDoc(doc(db, 'settings', 'general'))
+      const fsDsn = snap.exists() ? (snap.data()?.sentryDsn || '').trim() : ''
+      if (fsDsn) dsn = fsDsn
+    } catch {
+      /* abaikan — pakai env/default */
+    }
     if (!dsn) return
     window.Sentry.init({
       dsn,
