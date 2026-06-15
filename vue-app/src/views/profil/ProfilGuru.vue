@@ -302,7 +302,7 @@ const PENDIDIKAN_OPTS = [
   'D1',
   'D2',
   'D3',
-  'D4 / S1',
+  'S1',
   'S2',
   'S3'
 ]
@@ -359,9 +359,12 @@ async function handleUnlinkGoogle() {
 }
 
 const namaGelar = computed(() => getNamaGuruGelar(props.guru?.nama, props.guru?.jk))
-const jabatanHeader = computed(
-  () => `${props.guru?.jabatan || 'Pegawai'} - ${props.guru?.lembaga || '-'}`
-)
+// v.101: sembunyikan " - lembaga" kalau guru tak punya lembaga (jangan tampil "Jabatan - -")
+const jabatanHeader = computed(() => {
+  const jab = props.guru?.jabatan || 'Pegawai'
+  const lemb = props.guru?.lembaga
+  return lemb ? `${jab} - ${lemb}` : jab
+})
 const jkLabel = computed(() => (props.guru?.jk === 'L' ? 'Laki-laki' : 'Perempuan'))
 const tglTugasFmt = computed(() => formatTanggal(props.guru?.tanggal_tugas))
 const lamaMengajar = computed(() => hitungLamaMengajar(props.guru?.tanggal_tugas))

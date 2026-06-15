@@ -130,7 +130,6 @@
                 v-model="form.nama"
                 type="text"
                 required
-                placeholder="Sesuai akte lahir"
                 class="w-full px-4 py-2.5 text-sm rounded-xl border border-slate-300 bg-white shadow-sm"
               />
             </div>
@@ -167,7 +166,6 @@
                 v-model="form.nik"
                 type="text"
                 maxlength="16"
-                placeholder="3515..."
                 class="w-full px-4 py-2.5 text-sm rounded-xl border border-slate-300 bg-white shadow-sm"
               />
             </div>
@@ -179,7 +177,6 @@
                 v-model="form.no_kk"
                 type="text"
                 maxlength="16"
-                placeholder="3515..."
                 class="w-full px-4 py-2.5 text-sm rounded-xl border border-slate-300 bg-white shadow-sm"
               />
             </div>
@@ -191,7 +188,6 @@
                 v-model="form.tempat_lahir"
                 type="text"
                 required
-                placeholder="Kabupaten / Kota"
                 class="w-full px-4 py-2.5 text-sm rounded-xl border border-slate-300 bg-white shadow-sm"
               />
             </div>
@@ -215,7 +211,6 @@
               <input
                 v-model="form.asal_sekolah"
                 type="text"
-                placeholder="Contoh: TK Aisyiyah Bustanul Athfal"
                 class="w-full px-4 py-2.5 text-sm rounded-xl border border-slate-300 bg-white shadow-sm"
               />
             </div>
@@ -231,7 +226,6 @@
                   v-model="form.alamat_dusun"
                   type="text"
                   required
-                  placeholder="Contoh: Jl. Merpati No. 10 / Dusun Panjunan"
                   class="w-full px-4 py-2.5 text-sm rounded-xl border border-slate-300 bg-white"
                 />
               </div>
@@ -354,7 +348,6 @@
                   <input
                     v-model="form.ayah_ttl"
                     type="text"
-                    placeholder="Contoh: Sidoarjo, 12-05-1980"
                     class="w-full px-4 py-2.5 text-sm rounded-xl border-none shadow-sm"
                   />
                 </div>
@@ -365,7 +358,6 @@
                   <input
                     v-model="form.ayah_hp"
                     type="tel"
-                    placeholder="08xxxxxxxxxx"
                     class="w-full px-4 py-2.5 text-sm rounded-xl border-none shadow-sm"
                   />
                 </div>
@@ -431,7 +423,6 @@
                   <input
                     v-model="form.ibu_ttl"
                     type="text"
-                    placeholder="Contoh: Sidoarjo, 12-05-1985"
                     class="w-full px-4 py-2.5 text-sm rounded-xl border-none shadow-sm"
                   />
                 </div>
@@ -442,7 +433,6 @@
                   <input
                     v-model="form.ibu_hp"
                     type="tel"
-                    placeholder="08xxxxxxxxxx"
                     class="w-full px-4 py-2.5 text-sm rounded-xl border-none shadow-sm"
                   />
                 </div>
@@ -459,7 +449,6 @@
                   v-model="form.wa_wali"
                   type="tel"
                   required
-                  placeholder="08xxxxxxxxxx"
                   class="w-full px-4 py-2.5 text-sm rounded-xl border border-slate-300 bg-white"
                 />
               </div>
@@ -482,7 +471,6 @@
                 <input
                   v-model="form.yang_mendaftarkan"
                   type="text"
-                  placeholder="Isi jika bukan Ortu kandung"
                   class="w-full px-4 py-2.5 text-sm rounded-xl border border-slate-300 bg-white"
                 />
               </div>

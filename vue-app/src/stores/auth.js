@@ -217,6 +217,7 @@ export const useAuthStore = defineStore('auth', () => {
           lembaga: s.lembaga || '',
           kelas: s.kelas || '',
           wali: s.wali || '',
+          is_mukim: s.is_mukim === true, // v.101: gate menu Uang Saku (ma'had/mukim saja)
           auth_method: result.authMethod,
           firebase_uid: result.user?.uid,
           firebase_email: result.user?.email
@@ -351,6 +352,7 @@ export const useAuthStore = defineStore('auth', () => {
         lembaga: s.lembaga || '',
         kelas: s.kelas || '',
         wali: s.wali || '',
+        is_mukim: s.is_mukim === true, // v.101: gate menu Uang Saku (ma'had/mukim saja)
         auth_method: 'firebase',
         firebase_uid: uid,
         firebase_email: user.email

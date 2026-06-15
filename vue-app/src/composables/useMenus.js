@@ -52,7 +52,7 @@ const ALL_MENUS = [
   // v.20.12.0526: santri-only nama match legacy (suffix "Saya")
   { group: 'Keuangan', name: 'Tabungan Saya', path: '/tabungan', icon: 'fa-wallet', roles: ['santri'], available: true },
   // v.95.0626: Uang Saku santri ma'had (mukim) — konsep = tabungan, koleksi terpisah
-  { group: 'Keuangan', name: 'Uang Saku Saya', path: '/uang-saku', icon: 'fa-coins', roles: ['santri'], available: true },
+  { group: 'Keuangan', name: 'Uang Saku Saya', path: '/uang-saku', icon: 'fa-coins', roles: ['santri'], available: true, santriMukimOnly: true },
   // v.20.14.0526: Tunggakan & Riwayat digabung jadi 1 menu (sudah ada tab filter Belum Lunas / Lunas di dalam page)
   // v.87.0526: rename "Tagihan Saya" -> "Tagihan & Pembayaran" (1 pintu: lihat tagihan + bayar + riwayat).
   { group: 'Keuangan', name: 'Tagihan & Pembayaran', path: '/tagihan', icon: 'fa-receipt', roles: ['santri'], available: true },
@@ -109,6 +109,8 @@ export function useMenus() {
         return true
       }
       if (!m.roles.includes(role)) return false
+      // v.101: Uang Saku santri HANYA untuk ma'had (mukim) — sembunyikan dari santri non-mukim
+      if (m.santriMukimOnly && !auth.sesiAktif?.is_mukim) return false
       // v.21.19.0526: roleSistem gate — kalau menu set roleSistem array, user.role_sistem harus match
       if (m.roleSistem && !m.roleSistem.includes(roleSistem)) return false
       if (m.perm && !auth.cekHakAkses(m.perm)) return false
