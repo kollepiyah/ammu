@@ -33,7 +33,11 @@
         <span
           class="relative inline-flex w-2.5 h-2.5 rounded-full ring-2 ring-white dark:ring-slate-800 transition-colors"
           :class="isOnline ? 'bg-emerald-500' : 'bg-rose-500'"
-          :style="isOnline ? 'box-shadow:0 0 5px 1px rgba(16,185,129,0.65)' : 'box-shadow:0 0 5px 1px rgba(244,63,94,0.85)'"
+          :style="
+            isOnline
+              ? 'box-shadow:0 0 5px 1px rgba(16,185,129,0.65)'
+              : 'box-shadow:0 0 5px 1px rgba(244,63,94,0.85)'
+          "
         ></span>
       </span>
     </div>
@@ -51,8 +55,13 @@
           aria-label="Pilih anak"
         >
           <span class="text-right leading-tight hidden sm:block">
-            <span class="block text-xs font-black text-slate-800 dark:text-white truncate max-w-[130px]">{{ namaUser }}</span>
-            <span class="block text-[9px] font-bold text-teal-500 uppercase tracking-wider">{{ children.length }} anak · ganti</span>
+            <span
+              class="block text-xs font-black text-slate-800 dark:text-white truncate max-w-[130px]"
+              >{{ namaUser }}</span
+            >
+            <span class="block text-[9px] font-bold text-teal-500 uppercase tracking-wider"
+              >{{ children.length }} anak · ganti</span
+            >
           </span>
           <i class="fas fa-child text-teal-500 sm:hidden"></i>
           <i class="fas fa-chevron-down text-[10px] text-slate-400"></i>
@@ -69,18 +78,29 @@
             v-if="childOpen"
             class="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 py-2 z-50"
           >
-            <p class="px-4 py-1.5 text-[10px] font-bold uppercase text-slate-400 tracking-wider">Pilih Anak</p>
+            <p class="px-4 py-1.5 text-[10px] font-bold uppercase text-slate-400 tracking-wider">
+              Pilih Anak
+            </p>
             <button
               v-for="c in children"
               :key="c.id"
               @click="pickChild(c)"
               class="w-full text-left px-4 py-2.5 text-sm font-bold flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-700 transition cursor-pointer"
-              :class="String(c.id) === activeId ? 'text-teal-600 dark:text-teal-300' : 'text-slate-700 dark:text-slate-200'"
+              :class="
+                String(c.id) === activeId
+                  ? 'text-teal-600 dark:text-teal-300'
+                  : 'text-slate-700 dark:text-slate-200'
+              "
             >
-              <span class="w-7 h-7 rounded-full bg-teal-100 dark:bg-teal-700 text-teal-600 dark:text-teal-200 flex items-center justify-center text-xs font-black flex-shrink-0">{{ (c.nama || '?').charAt(0) }}</span>
+              <span
+                class="w-7 h-7 rounded-full bg-teal-100 dark:bg-teal-700 text-teal-600 dark:text-teal-200 flex items-center justify-center text-xs font-black flex-shrink-0"
+                >{{ (c.nama || '?').charAt(0) }}</span
+              >
               <span class="flex-1 min-w-0">
                 <span class="block truncate">{{ c.nama }}</span>
-                <span class="block text-[10px] text-slate-400 font-medium">{{ c.lembaga }}{{ c.kelas ? ' · ' + c.kelas : '' }}</span>
+                <span class="block text-[10px] text-slate-400 font-medium"
+                  >{{ c.lembaga }}{{ c.kelas ? ' · ' + c.kelas : '' }}</span
+                >
               </span>
               <i v-if="String(c.id) === activeId" class="fas fa-check text-teal-500"></i>
             </button>
@@ -92,7 +112,9 @@
         <p class="text-xs font-black text-slate-800 dark:text-white leading-tight">
           {{ namaUser }}
         </p>
-        <p class="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-0.5">
+        <p
+          class="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-0.5"
+        >
           {{ roleLabel }}
         </p>
       </div>
@@ -137,7 +159,9 @@
               <p class="text-sm font-black text-slate-800 dark:text-white truncate">
                 {{ namaUser }}
               </p>
-              <p class="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider mt-0.5">
+              <p
+                class="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider mt-0.5"
+              >
                 {{ roleLabel }}
               </p>
             </div>
@@ -199,27 +223,38 @@ const route = useRoute()
 const router = useRouter()
 
 // v.20.58.0526: prioritas txtHeaderBar (admin set "Teks Header Bar") > txtAppName > default
-const appName = computed(() => settings.settings?.txtHeaderBar || settings.settings?.txtAppName || 'Ammu Online')
+const appName = computed(
+  () => settings.settings?.txtHeaderBar || settings.settings?.txtAppName || 'Ammu Online'
+)
 
 const dropdownOpen = ref(false)
 const dropdownRef = ref(null)
 
 // v.91.0626: status koneksi utk LED indikator di topbar
 const isOnline = ref(typeof navigator !== 'undefined' ? navigator.onLine : true)
-function _setOnline() { isOnline.value = true }
-function _setOffline() { isOnline.value = false }
+function _setOnline() {
+  isOnline.value = true
+}
+function _setOffline() {
+  isOnline.value = false
+}
 // v.91.0626: di app native, navigator.onLine TAK ANDAL di WebView -> pakai @capacitor/network.
 let _netHandle = null
 async function _initNetwork() {
   try {
     const C = window.Capacitor
-    const isNative = C && (typeof C.isNativePlatform === 'function' ? C.isNativePlatform() : !!C.isNative)
+    const isNative =
+      C && (typeof C.isNativePlatform === 'function' ? C.isNativePlatform() : !!C.isNative)
     if (!isNative) return
     const { Network } = await import('@capacitor/network')
     const st = await Network.getStatus()
     isOnline.value = !!st.connected
-    _netHandle = await Network.addListener('networkStatusChange', (s) => { isOnline.value = !!s.connected })
-  } catch (e) { /* fallback ke navigator.onLine + event window */ }
+    _netHandle = await Network.addListener('networkStatusChange', (s) => {
+      isOnline.value = !!s.connected
+    })
+  } catch (e) {
+    /* fallback ke navigator.onLine + event window */
+  }
 }
 
 // v.86.0526: Wali multi-anak picker — beralih konteks antar anak
@@ -244,11 +279,19 @@ const namaUser = computed(() => {
   if (!s) return 'User'
   // v.20.74.1.0526: guru-promoted-to-admin pakai nama asli, hanya built-in admin = 'Administrator'
   if (s.id === 'admin') return 'Administrator'
-  if (s.role === 'guru' || s.role === 'admin') return getNamaGuruGelar(s.nama, s.jk) || s.nama || s.username || 'Pengguna'
+  if (s.role === 'guru' || s.role === 'admin')
+    return getNamaGuruGelar(s.nama, s.jk) || s.nama || s.username || 'Pengguna'
   return s.nama || s.username || '—'
 })
 
-const fotoUrl = computed(() => auth.sesiAktif?.foto || '')
+const fotoUrl = computed(() => {
+  const s = auth.sesiAktif
+  if (!s) return ''
+  if (s.foto) return s.foto
+  // Admin built-in: foto disimpan di settings/web.adminFoto (tak ada di sesiAktif)
+  if (s.id === 'admin') return settings.settings?.adminFoto || ''
+  return ''
+})
 
 const PAGE_TITLES = {
   '/dashboard': 'Beranda',
@@ -301,6 +344,10 @@ onBeforeUnmount(() => {
   document.removeEventListener('click', handleClickOutside)
   window.removeEventListener('online', _setOnline)
   window.removeEventListener('offline', _setOffline)
-  try { _netHandle && _netHandle.remove && _netHandle.remove() } catch (e) { /* ignore */ }
+  try {
+    _netHandle && _netHandle.remove && _netHandle.remove()
+  } catch (e) {
+    /* ignore */
+  }
 })
 </script>

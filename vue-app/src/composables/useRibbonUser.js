@@ -20,7 +20,8 @@ export function useRibbonUser() {
     const s = auth.sesiAktif
     if (!s) return 'Pengguna'
     if (s.id === 'admin') return 'Administrator'
-    if (s.role === 'guru' || s.role === 'admin') return getNamaGuruGelar(s.nama, s.jk) || s.nama || s.username || 'Pengguna'
+    if (s.role === 'guru' || s.role === 'admin')
+      return getNamaGuruGelar(s.nama, s.jk) || s.nama || s.username || 'Pengguna'
     return s.nama || s.username || 'Pengguna'
   })
 
@@ -30,6 +31,8 @@ export function useRibbonUser() {
     const s = auth.sesiAktif
     if (!s) return ''
     if (s.foto) return s.foto
+    // Admin built-in: foto disimpan di settings/web.adminFoto (tak punya dok guru/santri)
+    if (s.id === 'admin') return settings.settings?.adminFoto || ''
     const gid = s.id || s.guru_id
     if (gid && guruRaw.value?.length) {
       const g = guruRaw.value.find((x) => String(x.id) === String(gid))

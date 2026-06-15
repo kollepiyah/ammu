@@ -5,7 +5,9 @@
       class="bg-[var(--bg-card)] rounded-2xl p-10 border border-dashed border-rose-300 text-center"
     >
       <i class="fas fa-lock text-rose-300 text-4xl mb-3"></i>
-      <p class="text-sm font-bold text-slate-700 dark:text-[var(--text-tertiary)]">Akses Admin only</p>
+      <p class="text-sm font-bold text-slate-700 dark:text-[var(--text-tertiary)]">
+        Akses Admin only
+      </p>
     </div>
 
     <template v-else>
@@ -97,37 +99,25 @@
           <div v-if="psbAssetLembaga" class="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div v-show="secVisible('syarat')">
               <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1"
-                >Syarat & Ketentuan (URL atau base64)</label
+                >Syarat &amp; Ketentuan (teks)</label
               >
-              <input
+              <textarea
                 v-model="psbAssetSyarat"
-                type="text"
-                placeholder="https://... atau data:image/png;base64,..."
-                class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)]"
-              />
-              <input
-                type="file"
-                accept="image/*,application/pdf"
-                @change="onUploadSyarat"
-                class="mt-1 text-xs"
-              />
+                rows="8"
+                placeholder="Ketik / tempel isi Syarat & Ketentuan pendaftaran di sini..."
+                class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)] leading-relaxed"
+              ></textarea>
             </div>
             <div v-show="secVisible('pembayaran')">
               <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1"
-                >Info Pembayaran (URL atau base64)</label
+                >Info Pembayaran (teks)</label
               >
-              <input
+              <textarea
                 v-model="psbAssetPembayaran"
-                type="text"
-                placeholder="https://... atau data:image/png;base64,..."
-                class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)]"
-              />
-              <input
-                type="file"
-                accept="image/*,application/pdf"
-                @change="onUploadPembayaran"
-                class="mt-1 text-xs"
-              />
+                rows="8"
+                placeholder="Ketik / tempel Info Pembayaran (rincian biaya, no. rekening, dll)..."
+                class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)] leading-relaxed"
+              ></textarea>
             </div>
           </div>
           <button
@@ -144,174 +134,177 @@
 
       <!-- T16: blok Riwayat Pendaftaran (filter + daftar) — fokus via ?section=riwayat -->
       <div v-show="secVisible('riwayat')" class="space-y-4">
-      <!-- Filter -->
-      <div
-        class="bg-[var(--bg-card)] rounded-2xl p-3 md:p-4 border border-[var(--border-subtle)] shadow-sm"
-      >
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
-          <div class="md:col-span-2 relative">
-            <i
-              class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] text-sm"
-            ></i>
-            <input
-              v-model="search"
-              type="text"
-              placeholder="Cari nama / wali / WA / No. Pendaftaran..."
-              class="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-teal-500 outline-none"
-            />
+        <!-- Filter -->
+        <div
+          class="bg-[var(--bg-card)] rounded-2xl p-3 md:p-4 border border-[var(--border-subtle)] shadow-sm"
+        >
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
+            <div class="md:col-span-2 relative">
+              <i
+                class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] text-sm"
+              ></i>
+              <input
+                v-model="search"
+                type="text"
+                placeholder="Cari nama / wali / WA / No. Pendaftaran..."
+                class="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-teal-500 outline-none"
+              />
+            </div>
+            <select
+              v-model="filterStatus"
+              class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-teal-500 outline-none"
+            >
+              <option value="">Semua status</option>
+              <option value="pending">Pending</option>
+              <option value="approved">Approved</option>
+              <option value="rejected">Rejected</option>
+              <option value="enrolled">Enrolled</option>
+            </select>
+            <select
+              v-model="filterLembaga"
+              class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-teal-500 outline-none"
+            >
+              <option value="">Semua lembaga</option>
+              <option v-for="l in lembagaOptions" :key="l" :value="l">{{ l }}</option>
+            </select>
           </div>
-          <select
-            v-model="filterStatus"
-            class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-teal-500 outline-none"
-          >
-            <option value="">Semua status</option>
-            <option value="pending">Pending</option>
-            <option value="approved">Approved</option>
-            <option value="rejected">Rejected</option>
-            <option value="enrolled">Enrolled</option>
-          </select>
-          <select
-            v-model="filterLembaga"
-            class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-teal-500 outline-none"
-          >
-            <option value="">Semua lembaga</option>
-            <option v-for="l in lembagaOptions" :key="l" :value="l">{{ l }}</option>
-          </select>
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-2 mt-2">
+            <select
+              v-model="filterTahun"
+              class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-teal-500 outline-none md:col-span-2"
+            >
+              <option value="">Semua tahun ajaran</option>
+              <option v-for="t in tahunOptions" :key="t" :value="t">{{ t }}</option>
+            </select>
+          </div>
         </div>
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-2 mt-2">
-          <select
-            v-model="filterTahun"
-            class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-teal-500 outline-none md:col-span-2"
-          >
-            <option value="">Semua tahun ajaran</option>
-            <option v-for="t in tahunOptions" :key="t" :value="t">{{ t }}</option>
-          </select>
-        </div>
-      </div>
 
-      <!-- Loading / Empty -->
-      <div v-if="loading" class="bg-[var(--bg-card)] rounded-2xl p-10 text-center">
-        <i class="fas fa-spinner fa-spin text-teal-500 text-3xl mb-3"></i>
-        <p class="text-sm text-[var(--text-secondary)] font-bold">Memuat pendaftar...</p>
-      </div>
-      <div
-        v-else-if="filteredPpdb.length === 0"
-        class="bg-[var(--bg-card)] rounded-2xl p-10 border border-dashed border-[var(--border-default)] text-center"
-      >
-        <i class="fas fa-inbox text-[var(--text-tertiary)] text-4xl mb-3"></i>
-        <p class="text-sm font-bold text-[var(--text-primary)]">
-          {{ search ? 'Tidak ada cocok' : 'Belum ada pendaftar' }}
+        <!-- Loading / Empty -->
+        <div v-if="loading" class="bg-[var(--bg-card)] rounded-2xl p-10 text-center">
+          <i class="fas fa-spinner fa-spin text-teal-500 text-3xl mb-3"></i>
+          <p class="text-sm text-[var(--text-secondary)] font-bold">Memuat pendaftar...</p>
+        </div>
+        <div
+          v-else-if="filteredPpdb.length === 0"
+          class="bg-[var(--bg-card)] rounded-2xl p-10 border border-dashed border-[var(--border-default)] text-center"
+        >
+          <i class="fas fa-inbox text-[var(--text-tertiary)] text-4xl mb-3"></i>
+          <p class="text-sm font-bold text-[var(--text-primary)]">
+            {{ search ? 'Tidak ada cocok' : 'Belum ada pendaftar' }}
+          </p>
+        </div>
+
+        <!-- List -->
+        <div v-else class="space-y-2">
+          <div
+            v-for="p in filteredPpdb"
+            :key="p.id"
+            :class="['rounded-xl p-3 md:p-4 border shadow-sm', statusBg(p.status)]"
+          >
+            <div class="flex items-start gap-3">
+              <div
+                :class="[
+                  'flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center text-white text-lg font-bold',
+                  p.jk === 'L' ? 'bg-cyan-500' : 'bg-rose-500'
+                ]"
+              >
+                {{ p.jk === 'L' ? 'L' : 'P' }}
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-start justify-between gap-2">
+                  <div class="flex-1 min-w-0">
+                    <h3 class="text-sm font-black text-[var(--text-primary)] truncate">
+                      <span
+                        v-if="p.no_pendaftaran"
+                        class="text-[10px] text-teal-600 bg-teal-50 px-1.5 py-0.5 rounded mr-1"
+                        >{{ p.no_pendaftaran }}</span
+                      >
+                      {{ p.nama }}
+                    </h3>
+                    <p class="text-[11px] text-[var(--text-secondary)] mt-0.5">
+                      {{ p.tempat_lahir || '-' }}, {{ p.tgl_lahir }} · Daftar:
+                      {{ fmtDate(p.tanggal_daftar || p.tgl_daftar) }}
+                    </p>
+                  </div>
+                  <span
+                    :class="[
+                      'text-[9px] px-2 py-0.5 rounded font-black uppercase tracking-wider flex-shrink-0',
+                      statusBadge(p.status)
+                    ]"
+                  >
+                    {{ p.status || 'pending' }}
+                  </span>
+                </div>
+                <!-- Detail rows -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2 text-[11px]">
+                  <div class="bg-[var(--bg-card)]/60 p-2 rounded">
+                    <p class="text-[var(--text-secondary)]">
+                      <i class="fas fa-school mr-1"></i>Lembaga Tujuan:
+                    </p>
+                    <p class="font-bold text-[var(--text-primary)]">
+                      {{ p.lembaga_tujuan }} {{ p.is_mukim ? '(Mukim)' : '' }}
+                    </p>
+                  </div>
+                  <div class="bg-[var(--bg-card)]/60 p-2 rounded">
+                    <p class="text-[var(--text-secondary)]">
+                      <i class="fas fa-user-friends mr-1"></i>Wali / Yang Mendaftarkan:
+                    </p>
+                    <p class="font-bold text-[var(--text-primary)] truncate">
+                      {{ p.yang_mendaftarkan || p.nama_wali || '—' }}
+                    </p>
+                    <a
+                      v-if="p.wa_wali"
+                      :href="`https://wa.me/${cleanWa(p.wa_wali)}`"
+                      target="_blank"
+                      class="text-green-600 hover:underline"
+                    >
+                      <i class="fab fa-whatsapp mr-1"></i>{{ p.wa_wali }}
+                    </a>
+                  </div>
+                </div>
+                <p v-if="p.catatan" class="text-[11px] text-[var(--text-secondary)] mt-2 italic">
+                  <i class="fas fa-comment mr-1"></i>{{ p.catatan }}
+                </p>
+                <!-- Actions -->
+                <div class="flex gap-1.5 mt-3 justify-end flex-wrap">
+                  <RouterLink
+                    :to="`/psb/${p.id}`"
+                    class="text-[10px] px-2.5 py-1 bg-cyan-100 hover:bg-cyan-200 text-cyan-700 font-bold rounded transition"
+                  >
+                    <i class="fas fa-eye mr-1"></i>Lihat
+                  </RouterLink>
+                  <button
+                    v-if="p.status !== 'approved'"
+                    @click="updateStatus(p, 'approved')"
+                    class="text-[10px] px-2.5 py-1 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 font-bold rounded transition"
+                  >
+                    <i class="fas fa-check mr-1"></i>Approve
+                  </button>
+                  <button
+                    v-if="p.status !== 'rejected'"
+                    @click="updateStatus(p, 'rejected')"
+                    class="text-[10px] px-2.5 py-1 bg-rose-100 hover:bg-rose-200 text-rose-700 font-bold rounded transition"
+                  >
+                    <i class="fas fa-times mr-1"></i>Reject
+                  </button>
+                  <button
+                    @click="onDelete(p)"
+                    class="text-[10px] px-2.5 py-1 bg-[var(--bg-muted)] hover:bg-slate-200 text-[var(--text-primary)] font-bold rounded transition"
+                  >
+                    <i class="fas fa-trash mr-1"></i>Hapus
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <p class="text-center text-[10px] text-[var(--text-tertiary)] pt-2">
+          <i class="fas fa-circle-info mr-1"></i>{{ filteredPpdb.length }} pendaftar · Vue 3 ·
+          v.100.0626
         </p>
       </div>
-
-      <!-- List -->
-      <div v-else class="space-y-2">
-        <div
-          v-for="p in filteredPpdb"
-          :key="p.id"
-          :class="['rounded-xl p-3 md:p-4 border shadow-sm', statusBg(p.status)]"
-        >
-          <div class="flex items-start gap-3">
-            <div
-              :class="[
-                'flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center text-white text-lg font-bold',
-                p.jk === 'L' ? 'bg-cyan-500' : 'bg-rose-500'
-              ]"
-            >
-              {{ p.jk === 'L' ? 'L' : 'P' }}
-            </div>
-            <div class="flex-1 min-w-0">
-              <div class="flex items-start justify-between gap-2">
-                <div class="flex-1 min-w-0">
-                  <h3 class="text-sm font-black text-[var(--text-primary)] truncate">
-                    <span
-                      v-if="p.no_pendaftaran"
-                      class="text-[10px] text-teal-600 bg-teal-50 px-1.5 py-0.5 rounded mr-1"
-                      >{{ p.no_pendaftaran }}</span
-                    >
-                    {{ p.nama }}
-                  </h3>
-                  <p class="text-[11px] text-[var(--text-secondary)] mt-0.5">
-                    {{ p.tempat_lahir || '-' }}, {{ p.tgl_lahir }} · Daftar:
-                    {{ fmtDate(p.tanggal_daftar || p.tgl_daftar) }}
-                  </p>
-                </div>
-                <span
-                  :class="[
-                    'text-[9px] px-2 py-0.5 rounded font-black uppercase tracking-wider flex-shrink-0',
-                    statusBadge(p.status)
-                  ]"
-                >
-                  {{ p.status || 'pending' }}
-                </span>
-              </div>
-              <!-- Detail rows -->
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2 text-[11px]">
-                <div class="bg-[var(--bg-card)]/60 p-2 rounded">
-                  <p class="text-[var(--text-secondary)]"><i class="fas fa-school mr-1"></i>Lembaga Tujuan:</p>
-                  <p class="font-bold text-[var(--text-primary)]">
-                    {{ p.lembaga_tujuan }} {{ p.is_mukim ? '(Mukim)' : '' }}
-                  </p>
-                </div>
-                <div class="bg-[var(--bg-card)]/60 p-2 rounded">
-                  <p class="text-[var(--text-secondary)]">
-                    <i class="fas fa-user-friends mr-1"></i>Wali / Yang Mendaftarkan:
-                  </p>
-                  <p class="font-bold text-[var(--text-primary)] truncate">
-                    {{ p.yang_mendaftarkan || p.nama_wali || '—' }}
-                  </p>
-                  <a
-                    v-if="p.wa_wali"
-                    :href="`https://wa.me/${cleanWa(p.wa_wali)}`"
-                    target="_blank"
-                    class="text-green-600 hover:underline"
-                  >
-                    <i class="fab fa-whatsapp mr-1"></i>{{ p.wa_wali }}
-                  </a>
-                </div>
-              </div>
-              <p v-if="p.catatan" class="text-[11px] text-[var(--text-secondary)] mt-2 italic">
-                <i class="fas fa-comment mr-1"></i>{{ p.catatan }}
-              </p>
-              <!-- Actions -->
-              <div class="flex gap-1.5 mt-3 justify-end flex-wrap">
-                <RouterLink
-                  :to="`/psb/${p.id}`"
-                  class="text-[10px] px-2.5 py-1 bg-cyan-100 hover:bg-cyan-200 text-cyan-700 font-bold rounded transition"
-                >
-                  <i class="fas fa-eye mr-1"></i>Lihat
-                </RouterLink>
-                <button
-                  v-if="p.status !== 'approved'"
-                  @click="updateStatus(p, 'approved')"
-                  class="text-[10px] px-2.5 py-1 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 font-bold rounded transition"
-                >
-                  <i class="fas fa-check mr-1"></i>Approve
-                </button>
-                <button
-                  v-if="p.status !== 'rejected'"
-                  @click="updateStatus(p, 'rejected')"
-                  class="text-[10px] px-2.5 py-1 bg-rose-100 hover:bg-rose-200 text-rose-700 font-bold rounded transition"
-                >
-                  <i class="fas fa-times mr-1"></i>Reject
-                </button>
-                <button
-                  @click="onDelete(p)"
-                  class="text-[10px] px-2.5 py-1 bg-[var(--bg-muted)] hover:bg-slate-200 text-[var(--text-primary)] font-bold rounded transition"
-                >
-                  <i class="fas fa-trash mr-1"></i>Hapus
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <p class="text-center text-[10px] text-[var(--text-tertiary)] pt-2">
-        <i class="fas fa-circle-info mr-1"></i>{{ filteredPpdb.length }} pendaftar · Vue 3 ·
-        v.100.0626
-      </p>
-      </div><!-- /blok Riwayat -->
+      <!-- /blok Riwayat -->
     </template>
   </div>
 </template>
@@ -325,8 +318,25 @@ import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
 import { sortLembagaNames } from '@/utils/santriSort' // v.100 Batch10: urutan canonical dropdown lembaga
 
+// v.100g: fmtDate tak terdefinisi di file ini → render baris pendaftaran lempar
+//   "s.fmtDate is not a function" → PpdbAdminView crash → halaman PSB blank.
+//   Definisikan lokal (format tanggal daftar dd/mm/yyyy, id-ID).
+function fmtDate(v) {
+  if (!v) return ''
+  try {
+    return new Date(v).toLocaleDateString('id-ID', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    })
+  } catch {
+    return String(v)
+  }
+}
+
 const auth = useAuthStore()
 const toast = useToast()
+const confirmDlg = useConfirm()
 const route = useRoute()
 
 // T16 (Batch 5, Electron): pita PSB memecah halaman jadi tombol → ?section=riwayat|syarat|pembayaran.
@@ -335,7 +345,9 @@ const focusSection = computed(() => String(route.query.section || ''))
 function secVisible(name) {
   return !focusSection.value || focusSection.value === name
 }
-const isAssetsFocus = computed(() => focusSection.value === 'syarat' || focusSection.value === 'pembayaran')
+const isAssetsFocus = computed(
+  () => focusSection.value === 'syarat' || focusSection.value === 'pembayaran'
+)
 
 // v.21.27.0526: isAdmin computed — admin builtin + super_admin/admin/admin_keuangan role_sistem boleh akses PSB
 const isAdmin = computed(() => {
@@ -425,6 +437,50 @@ function statusBg(s) {
   return 'bg-cyan-50 border-cyan-200'
 }
 
+// v.100g: helper template yang hilang dari komponen ini → render & aksi PSB admin crash
+//   ("s.X is not a function"). Dipulihkan semua: statusBadge, cleanWa, updateStatus, onDelete.
+function statusBadge(s) {
+  const st = String(s || 'pending').toLowerCase()
+  if (st === 'approved') return 'bg-emerald-200 text-emerald-800'
+  if (st === 'rejected') return 'bg-rose-200 text-rose-800'
+  if (st === 'enrolled') return 'bg-teal-200 text-teal-800'
+  return 'bg-cyan-200 text-cyan-800'
+}
+
+// Normalisasi nomor WA Indonesia utk link wa.me (0xxxx → 62xxxx).
+function cleanWa(wa) {
+  let d = String(wa || '').replace(/\D/g, '')
+  if (d.startsWith('0')) d = '62' + d.slice(1)
+  else if (d.startsWith('8')) d = '62' + d
+  return d
+}
+
+async function updateStatus(p, status) {
+  try {
+    await updateOne('psb_pendaftaran', String(p.id), { status })
+    toast.success('Status → ' + status)
+  } catch (e) {
+    toast.error('Gagal ubah status: ' + (e?.message || e))
+  }
+}
+
+async function onDelete(p) {
+  const ok = await confirmDlg({
+    title: 'Hapus pendaftar?',
+    message: `Hapus data pendaftaran "${p.nama || ''}"? Tindakan ini permanen.`,
+    confirmText: 'Hapus',
+    cancelText: 'Batal',
+    danger: true
+  })
+  if (!ok) return
+  try {
+    await deleteOne('psb_pendaftaran', String(p.id))
+    toast.success('Pendaftar dihapus')
+  } catch (e) {
+    toast.error('Gagal hapus: ' + (e?.message || e))
+  }
+}
+
 // v.21.25.0526: PSB Assets per-lembaga upload (issue #50)
 const psbAssetsAll = ref({})
 const psbAssetLembaga = ref('')
@@ -466,32 +522,8 @@ _watchAssets(psbAssetLembaga, (l) => {
   psbAssetPembayaran.value = a.pembayaran || ''
 })
 
-function _fileToBase64(file) {
-  return new Promise((res, rej) => {
-    const r = new FileReader()
-    r.onload = () => res(r.result)
-    r.onerror = rej
-    r.readAsDataURL(file)
-  })
-}
-async function onUploadSyarat(e) {
-  const f = e.target.files?.[0]
-  if (!f) return
-  if (f.size > 1024 * 1024) {
-    toast.warning('Max 1MB')
-    return
-  }
-  psbAssetSyarat.value = await _fileToBase64(f)
-}
-async function onUploadPembayaran(e) {
-  const f = e.target.files?.[0]
-  if (!f) return
-  if (f.size > 1024 * 1024) {
-    toast.warning('Max 1MB')
-    return
-  }
-  psbAssetPembayaran.value = await _fileToBase64(f)
-}
+// v.100g: Syarat & Info Pembayaran kini berupa TEKS (admin ketik di textarea) — bukan
+//   upload file/URL lagi. Fungsi upload base64 lama dihapus.
 async function savePsbAssets() {
   if (!psbAssetLembaga.value) return
   savingAssets.value = true

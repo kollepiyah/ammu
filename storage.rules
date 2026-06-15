@@ -77,6 +77,29 @@ service firebase.storage {
       allow delete: if request.auth != null;
     }
 
+    // v.100f (2026-06-14): Foto profil SEMUA role (admin/guru/santri) via Personal >
+    //   Profil Saya > Ganti Foto. ProfilPengaturanSaya.vue upload ke `profil_foto/`
+    //   (santri_foto/guru_foto di atas legacy, tak dipakai Vue lagi). Tanpa rule ini
+    //   path jatuh ke default-deny → storage/unauthorized (write) + 403 (read/display).
+    match /profil_foto/{file=**} {
+      allow read: if true;
+      allow write: if request.auth != null
+                   && request.resource.size < 4 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+      allow delete: if request.auth != null;
+    }
+
+    // v.100f (2026-06-14): Tanda tangan digital via Personal > Profil Saya.
+    //   Kode upload ke `tanda_tangan/` (bukan `ttd_guru/` yg cuma "disiapkan").
+    //   Fix mismatch nama path → fitur TTD digital sebelumnya diam-diam default-deny.
+    match /tanda_tangan/{file=**} {
+      allow read: if true;
+      allow write: if request.auth != null
+                   && request.resource.size < 2 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+      allow delete: if request.auth != null;
+    }
+
     // BG Rapor (TPQ + Diniyah) — watermark transparan di belakang konten rapor
     match /bg_rapor/{file=**} {
       allow read: if true;

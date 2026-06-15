@@ -83,11 +83,15 @@
         <UiInput v-model="form.kopLine3" label="Baris 3 (alamat / opsional)" />
         <UiInput v-model="form.kopLine4" label="Baris 4 (telp / opsional)" />
       </div>
-      <div class="mt-4 p-3 bg-[var(--bg-card-elevated)] border border-[var(--border-subtle)] rounded-lg text-center">
+      <div
+        class="mt-4 p-3 bg-[var(--bg-card-elevated)] border border-[var(--border-subtle)] rounded-lg text-center"
+      >
         <p class="text-xs uppercase tracking-widest font-black text-[var(--text-primary)]">
           {{ form.kopLine1 || '— Baris 1 —' }}
         </p>
-        <p class="text-lg font-black text-[var(--text-primary)]">{{ form.kopLine2 || '— Baris 2 —' }}</p>
+        <p class="text-lg font-black text-[var(--text-primary)]">
+          {{ form.kopLine2 || '— Baris 2 —' }}
+        </p>
         <p v-if="form.kopLine3" class="text-xs text-[var(--text-secondary)]">{{ form.kopLine3 }}</p>
         <p v-if="form.kopLine4" class="text-xs text-[var(--text-secondary)]">{{ form.kopLine4 }}</p>
       </div>
@@ -169,7 +173,9 @@
         </div>
 
         <!-- Background Layar -->
-        <div class="border-2 border-dashed border-[var(--border-default)] p-4 rounded-2xl bg-[var(--bg-card-elevated)]">
+        <div
+          class="border-2 border-dashed border-[var(--border-default)] p-4 rounded-2xl bg-[var(--bg-card-elevated)]"
+        >
           <label class="block text-xs font-black text-[var(--text-primary)] mb-2 uppercase"
             >Background Layar</label
           >
@@ -308,7 +314,6 @@
       </div>
     </UiCard>
 
-
     <!-- ============================================================
          SECTION: Default Admin Built-in
          ============================================================ -->
@@ -372,7 +377,9 @@
     >
       <div class="grid md:grid-cols-3 gap-4">
         <div>
-          <label class="text-xs font-bold text-[var(--text-primary)] mb-2 block">Warna Accent</label>
+          <label class="text-xs font-bold text-[var(--text-primary)] mb-2 block"
+            >Warna Accent</label
+          >
           <div class="flex items-center gap-2">
             <input
               v-model="form.themeColor"
@@ -402,7 +409,9 @@
           </div>
         </div>
         <div>
-          <label class="text-xs font-bold text-[var(--text-primary)] mb-2 block">Sidebar BG (legacy)</label>
+          <label class="text-xs font-bold text-[var(--text-primary)] mb-2 block"
+            >Sidebar BG (legacy)</label
+          >
           <div class="flex items-center gap-2">
             <input
               v-model="form.sidebarBgColor"
@@ -423,8 +432,6 @@
       </p>
     </UiCard>
 
-
-
     <!-- ============================================================
          SECTION: Fitur & Mode Aplikasi
          ============================================================ -->
@@ -435,37 +442,63 @@
       class="mb-4"
     >
       <div class="grid md:grid-cols-2 gap-2">
-        <label class="flex items-center gap-2 cursor-pointer p-2 hover:bg-[var(--bg-card-elevated)] rounded">
+        <label
+          class="flex items-center gap-2 cursor-pointer p-2 hover:bg-[var(--bg-card-elevated)] rounded"
+        >
           <input v-model="form.fiturBeranda" type="checkbox" class="w-4 h-4 accent-teal-600" />
           Beranda (Mading + Quick Action)
         </label>
-        <label class="flex items-center gap-2 cursor-pointer p-2 hover:bg-[var(--bg-card-elevated)] rounded">
+        <label
+          class="flex items-center gap-2 cursor-pointer p-2 hover:bg-[var(--bg-card-elevated)] rounded"
+        >
           <input v-model="form.fiturKalender" type="checkbox" class="w-4 h-4 accent-teal-600" />
           Kalender Pendidikan
         </label>
-        <label class="flex items-center gap-2 cursor-pointer p-2 hover:bg-[var(--bg-card-elevated)] rounded">
+        <label
+          class="flex items-center gap-2 cursor-pointer p-2 hover:bg-[var(--bg-card-elevated)] rounded"
+        >
           <input v-model="form.fiturKritikSaran" type="checkbox" class="w-4 h-4 accent-teal-600" />
           Kritik &amp; Saran
         </label>
-        <label class="flex items-center gap-2 cursor-pointer p-2 hover:bg-[var(--bg-card-elevated)] rounded">
+        <label
+          class="flex items-center gap-2 cursor-pointer p-2 hover:bg-[var(--bg-card-elevated)] rounded"
+        >
           <input v-model="form.fiturNotifikasi" type="checkbox" class="w-4 h-4 accent-teal-600" />
-          Notifikasi FCM <span class="text-[10px] text-[var(--text-tertiary)] italic">(belum aktif — perlu setup FCM)</span>
+          Notifikasi FCM
+          <span class="text-[10px] text-[var(--text-tertiary)] italic"
+            >(belum aktif — perlu setup FCM)</span
+          >
         </label>
-        <label class="flex items-center gap-2 cursor-pointer p-2 hover:bg-[var(--bg-card-elevated)] rounded">
+        <label
+          class="flex items-center gap-2 cursor-pointer p-2 hover:bg-[var(--bg-card-elevated)] rounded"
+        >
           <input
             v-model="form.autoNotifPostingan"
             type="checkbox"
             class="w-4 h-4 accent-teal-600"
           />
-          Auto-Notif setiap Postingan <span class="text-[10px] text-[var(--text-tertiary)] italic">(belum aktif — depend FCM)</span>
+          Auto-Notif setiap Postingan
+          <span class="text-[10px] text-[var(--text-tertiary)] italic"
+            >(belum aktif — depend FCM)</span
+          >
         </label>
-        <label class="flex items-center gap-2 cursor-pointer p-2 hover:bg-[var(--bg-card-elevated)] rounded">
+        <label
+          class="flex items-center gap-2 cursor-pointer p-2 hover:bg-[var(--bg-card-elevated)] rounded"
+        >
           <input v-model="form.softDelete" type="checkbox" class="w-4 h-4 accent-rose-600" />
-          Soft Delete (recoverable) <span class="text-[10px] text-[var(--text-tertiary)] italic">(belum aktif — placeholder)</span>
+          Soft Delete (recoverable)
+          <span class="text-[10px] text-[var(--text-tertiary)] italic"
+            >(belum aktif — placeholder)</span
+          >
         </label>
       </div>
       <div class="p-3 bg-teal-50 border border-teal-200 rounded-lg mt-3">
-        <p class="text-xs font-black text-teal-800 mb-2 uppercase">Mode Capacitor / PWA <span class="text-[9px] text-teal-600 font-normal italic normal-case ml-1">(hanya untuk build desktop/mobile)</span></p>
+        <p class="text-xs font-black text-teal-800 mb-2 uppercase">
+          Mode Capacitor / PWA
+          <span class="text-[9px] text-teal-600 font-normal italic normal-case ml-1"
+            >(hanya untuk build desktop/mobile)</span
+          >
+        </p>
         <div class="flex gap-3 flex-wrap">
           <label class="flex items-center gap-2 cursor-pointer text-sm">
             <input
@@ -506,7 +539,9 @@
           </p>
           <div class="grid grid-cols-3 gap-2">
             <div>
-              <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase block mb-1">Mulai</label>
+              <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase block mb-1"
+                >Mulai</label
+              >
               <input
                 v-model="form.shiftPagiMulai"
                 type="time"
@@ -543,7 +578,9 @@
           </p>
           <div class="grid grid-cols-3 gap-2">
             <div>
-              <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase block mb-1">Mulai</label>
+              <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase block mb-1"
+                >Mulai</label
+              >
               <input
                 v-model="form.shiftSoreMulai"
                 type="time"
@@ -580,7 +617,9 @@
           </p>
           <div class="grid grid-cols-3 gap-2">
             <div>
-              <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase block mb-1">Mulai</label>
+              <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase block mb-1"
+                >Mulai</label
+              >
               <input
                 v-model="form.shiftSekolahMulai"
                 type="time"
@@ -615,7 +654,6 @@
         dianggap "Hadir"; lewat dari ini &rarr; status auto "Terlambat" saat impor fingerprint.
       </p>
     </UiCard>
-
 
     <!-- ============================================================
          SECTION: Schema Rekap Diniyah (default + override per kelas)
@@ -666,9 +704,7 @@
           <i class="fas fa-plus mr-1"></i>Tambah
         </button>
       </div>
-      <div
-        class="mt-3 p-3 bg-teal-50 border border-teal-200 rounded-xl text-[11px] text-teal-800"
-      >
+      <div class="mt-3 p-3 bg-teal-50 border border-teal-200 rounded-xl text-[11px] text-teal-800">
         <i class="fas fa-info-circle mr-1"></i>Mata pelajaran <b>default</b> (semua kelas). Untuk
         override per-kelas, edit di bawah.
       </div>
@@ -689,9 +725,7 @@
             class="bg-[var(--bg-card)] border border-teal-200 rounded-xl p-3"
           >
             <div class="flex items-center justify-between mb-2">
-              <p class="text-xs font-black text-teal-800 uppercase">
-                &#x1F4DA; Kelas {{ kelas }}
-              </p>
+              <p class="text-xs font-black text-teal-800 uppercase">&#x1F4DA; Kelas {{ kelas }}</p>
               <button
                 @click="delete form.rekapSchemaDiniyahPerKelas[kelas]"
                 class="text-rose-600 text-xs font-bold hover:bg-rose-50 px-2 py-0.5 rounded"
@@ -824,13 +858,18 @@
       class="mb-4"
     >
       <div class="space-y-3">
-        <div class="text-[11px] text-[var(--text-secondary)] bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg p-3 leading-relaxed">
+        <div
+          class="text-[11px] text-[var(--text-secondary)] bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg p-3 leading-relaxed"
+        >
           <i class="fas fa-circle-info mr-1 text-emerald-600"></i>
-          Tempel <b>URL Web App</b> + <b>Token</b> dari Apps Script kyai. Panduan lengkap ada di file
-          <code>docs/APPSCRIPT-GSHEET.md</code>. Setelah diisi, tombol <b>"Google Sheet"</b> muncul di Data Santri.
+          Tempel <b>URL Web App</b> + <b>Token</b> dari Apps Script kyai. Panduan lengkap ada di
+          file <code>docs/APPSCRIPT-GSHEET.md</code>. Setelah diisi, tombol
+          <b>"Google Sheet"</b> muncul di Data Santri.
         </div>
         <div>
-          <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block">URL Web App (Apps Script)</label>
+          <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
+            >URL Web App (Apps Script)</label
+          >
           <input
             v-model.trim="form.gsheetUrl"
             type="url"
@@ -839,7 +878,9 @@
           />
         </div>
         <div>
-          <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block">Token Rahasia</label>
+          <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
+            >Token Rahasia</label
+          >
           <input
             v-model.trim="form.gsheetToken"
             type="text"
@@ -853,9 +894,13 @@
           :disabled="gsheetTesting || !form.gsheetUrl"
           class="px-4 py-2 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white"
         >
-          <i :class="['fas mr-1', gsheetTesting ? 'fa-spinner fa-spin' : 'fa-vial']"></i>{{ gsheetTesting ? 'Menguji…' : 'Tes Koneksi' }}
+          <i :class="['fas mr-1', gsheetTesting ? 'fa-spinner fa-spin' : 'fa-vial']"></i
+          >{{ gsheetTesting ? 'Menguji…' : 'Tes Koneksi' }}
         </button>
-        <p class="text-[10px] text-[var(--text-tertiary)] italic">Tes Koneksi membuat 1 sheet contoh berisi 2 baris. Jangan lupa klik <b>Simpan</b> di bawah agar URL/token tersimpan.</p>
+        <p class="text-[10px] text-[var(--text-tertiary)] italic">
+          Tes Koneksi membuat 1 sheet contoh berisi 2 baris. Jangan lupa klik <b>Simpan</b> di bawah
+          agar URL/token tersimpan.
+        </p>
       </div>
     </UiCard>
 
@@ -870,7 +915,8 @@
     >
       <div class="space-y-3">
         <div>
-          <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase block mb-1 tracking-wider"
+          <label
+            class="text-[10px] font-bold text-[var(--text-secondary)] uppercase block mb-1 tracking-wider"
             >Pilih Lembaga</label
           >
           <select
@@ -885,13 +931,8 @@
           </select>
         </div>
 
-        <div
-          v-if="raporLembaga"
-          class="bg-teal-50 border border-teal-200 rounded-xl p-4 space-y-3"
-        >
-          <p class="text-xs font-black text-teal-900 uppercase">
-            Schema untuk: {{ raporLembaga }}
-          </p>
+        <div v-if="raporLembaga" class="bg-teal-50 border border-teal-200 rounded-xl p-4 space-y-3">
+          <p class="text-xs font-black text-teal-900 uppercase">Schema untuk: {{ raporLembaga }}</p>
 
           <div class="bg-cyan-50 border border-cyan-300 rounded-lg p-3 text-[11px] text-cyan-900">
             <p class="font-black uppercase tracking-wider mb-1 text-cyan-700">
@@ -1085,7 +1126,12 @@
                 </div>
               </div>
               <button
-                @click="() => {; jen.mapel = jen.mapel || []; jen.mapel.push({ id: 'mapel_' + Date.now(), nama: '', kkm: 80 }); }"
+                @click="
+                  () => {
+                    jen.mapel = jen.mapel || []
+                    jen.mapel.push({ id: 'mapel_' + Date.now(), nama: '', kkm: 80 })
+                  }
+                "
                 class="text-[10px] text-teal-700 font-bold mt-1"
               >
                 + Tambah Mapel
@@ -1139,7 +1185,12 @@
                     </button>
                   </span>
                   <button
-                    @click="() => {; sec.rows = sec.rows || []; sec.rows.push('Baru'); }"
+                    @click="
+                      () => {
+                        sec.rows = sec.rows || []
+                        sec.rows.push('Baru')
+                      }
+                    "
                     class="bg-teal-200 hover:bg-teal-300 text-teal-800 text-[10px] font-bold px-2 py-0.5 rounded"
                   >
                     + Row
@@ -1174,7 +1225,12 @@
                   </button>
                 </div>
                 <button
-                  @click="() => {; sec.fields = sec.fields || []; sec.fields.push({ id: 'f_' + Date.now(), label: 'Baru', type: 'number' }); }"
+                  @click="
+                    () => {
+                      sec.fields = sec.fields || []
+                      sec.fields.push({ id: 'f_' + Date.now(), label: 'Baru', type: 'number' })
+                    }
+                  "
                   class="bg-teal-200 hover:bg-teal-300 text-[10px] font-bold px-2 py-0.5 rounded"
                 >
                   + Field
@@ -1225,6 +1281,8 @@ import { useConfirm } from '@/composables/useConfirm'
 import { useLembaga } from '@/composables/useLembaga'
 import { useGoogleSheet } from '@/composables/useGoogleSheet'
 import { uploadBase64 } from '@/services/storage'
+import { setOne } from '@/services/firestore'
+import { toAuthPassword } from '@/services/auth'
 import {
   ArrowLeft as ArrowLeftIcon,
   Image as ImageIcon,
@@ -1290,7 +1348,9 @@ function defaultForm() {
     sidebarBgColor: '#0f172a',
     kalibrasiHijri: 0,
     adminUsername: 'adminmu',
-    adminPassword: '1234',
+    // v.100g: adminPassword TIDAK lagi di form publik (dulu ikut ter-save ke
+    //   settings/general+web yg read publik → sandi admin bocor). Ganti sandi admin
+    //   kini lewat changeAdminPassword() → Firebase Auth + settings/admin (read:false).
     fiturBeranda: true,
     fiturKalender: true,
     fiturKritikSaran: true,
@@ -1330,15 +1390,30 @@ const tabs = [
     icon: 'fa-id-card',
     gradient: 'from-teal-500 dark:from-teal-700 to-teal-700 dark:to-teal-900'
   },
-  { id: 'kop', label: 'KOP Surat', icon: 'fa-file-alt', gradient: 'from-cyan-500 dark:from-cyan-700 to-cyan-700 dark:to-cyan-900' },
-  { id: 'logo', label: 'Logo & BG', icon: 'fa-image', gradient: 'from-cyan-500 dark:from-cyan-700 to-cyan-700 dark:to-cyan-900' },
+  {
+    id: 'kop',
+    label: 'KOP Surat',
+    icon: 'fa-file-alt',
+    gradient: 'from-cyan-500 dark:from-cyan-700 to-cyan-700 dark:to-cyan-900'
+  },
+  {
+    id: 'logo',
+    label: 'Logo & BG',
+    icon: 'fa-image',
+    gradient: 'from-cyan-500 dark:from-cyan-700 to-cyan-700 dark:to-cyan-900'
+  },
   {
     id: 'hijri',
     label: 'Kalibrasi Hijri',
     icon: 'fa-moon',
     gradient: 'from-cyan-500 dark:from-cyan-700 to-cyan-700 dark:to-cyan-900'
   },
-  { id: 'admin', label: 'Admin Password', icon: 'fa-lock', gradient: 'from-rose-500 dark:from-rose-700 to-rose-700 dark:to-rose-900' },
+  {
+    id: 'admin',
+    label: 'Admin Password',
+    icon: 'fa-lock',
+    gradient: 'from-rose-500 dark:from-rose-700 to-rose-700 dark:to-rose-900'
+  },
   {
     id: 'theme',
     label: 'Tema Warna',
@@ -1351,7 +1426,12 @@ const tabs = [
     icon: 'fa-toggle-on',
     gradient: 'from-teal-500 dark:from-teal-700 to-teal-700 dark:to-teal-900'
   },
-  { id: 'shift', label: 'Jam Shift', icon: 'fa-clock', gradient: 'from-cyan-500 dark:from-cyan-700 to-cyan-700 dark:to-cyan-900' },
+  {
+    id: 'shift',
+    label: 'Jam Shift',
+    icon: 'fa-clock',
+    gradient: 'from-cyan-500 dark:from-cyan-700 to-cyan-700 dark:to-cyan-900'
+  },
   {
     id: 'postingan',
     label: 'Pengaturan Postingan',
@@ -1512,11 +1592,26 @@ async function changeAdminPassword() {
     danger: true
   })
   if (ok) {
-    form.value.adminPassword = pwdNew.value
-    pwdNew.value = ''
-    pwdConfirm.value = ''
-    toast.info('Password siap disimpan — klik Simpan untuk apply')
-    dirty.value = true
+    try {
+      // v.100g: sandi admin tak lagi disimpan publik. Update Firebase Auth (sumber
+      //   kebenaran login) + salinan privat settings/admin (read:false). Apply langsung.
+      const { getAuth, updatePassword } = await import('firebase/auth')
+      const u = getAuth().currentUser
+      if (!u) throw Object.assign(new Error('no-session'), { code: 'no-session' })
+      await updatePassword(u, toAuthPassword(pwdNew.value))
+      await setOne('settings', 'admin', { password: pwdNew.value })
+      pwdNew.value = ''
+      pwdConfirm.value = ''
+      toast.success('Password admin berhasil diganti')
+    } catch (e) {
+      if (e?.code === 'auth/requires-recent-login') {
+        toast.error('Demi keamanan, logout lalu login lagi sebelum ganti sandi admin')
+      } else if (e?.code === 'no-session') {
+        toast.error('Sesi admin tak ditemukan. Logout lalu login lagi.')
+      } else {
+        toast.error('Gagal ganti sandi: ' + (e?.message || e))
+      }
+    }
   }
 }
 
@@ -1795,8 +1890,23 @@ function resetSchemaTemplate() {
     template = {
       perKelas: true,
       jenjang: [
-        { kelas: 'I', mapel: [ { id: 'tauhid', nama: 'TAUHID', kkm: 75 }, { id: 'fiqh', nama: 'FIQH', kkm: 75 }, { id: 'akhlaq', nama: 'AKHLAQ', kkm: 75 } ] },
-        { kelas: 'II', mapel: [ { id: 'tauhid', nama: 'TAUHID', kkm: 75 }, { id: 'fiqh', nama: 'FIQH', kkm: 75 }, { id: 'akhlaq', nama: 'AKHLAQ', kkm: 75 }, { id: 'tarikh', nama: 'TARIKH', kkm: 75 } ] }
+        {
+          kelas: 'I',
+          mapel: [
+            { id: 'tauhid', nama: 'TAUHID', kkm: 75 },
+            { id: 'fiqh', nama: 'FIQH', kkm: 75 },
+            { id: 'akhlaq', nama: 'AKHLAQ', kkm: 75 }
+          ]
+        },
+        {
+          kelas: 'II',
+          mapel: [
+            { id: 'tauhid', nama: 'TAUHID', kkm: 75 },
+            { id: 'fiqh', nama: 'FIQH', kkm: 75 },
+            { id: 'akhlaq', nama: 'AKHLAQ', kkm: 75 },
+            { id: 'tarikh', nama: 'TARIKH', kkm: 75 }
+          ]
+        }
       ]
     }
   }
@@ -1847,7 +1957,10 @@ const gsheetTesting = ref(false)
 async function tesGsheet() {
   if (gsheetTesting.value) return
   const url = String(form.value.gsheetUrl || '').trim()
-  if (!url) { toast.warning('Isi URL Web App dulu.'); return }
+  if (!url) {
+    toast.warning('Isi URL Web App dulu.')
+    return
+  }
   gsheetTesting.value = true
   try {
     // simpan dulu supaya composable (baca dari settings) pakai nilai terbaru
@@ -1857,7 +1970,10 @@ async function tesGsheet() {
     const { url: sheetUrl } = await sendToSheet({
       title: 'Tes Koneksi Ammu',
       sheetName: 'Tes',
-      kop: [settingsStore.settings?.kopLine1 || 'PONDOK PESANTREN MAMBAUL ULUM', 'Tes Integrasi Google Sheet'],
+      kop: [
+        settingsStore.settings?.kopLine1 || 'PONDOK PESANTREN MAMBAUL ULUM',
+        'Tes Integrasi Google Sheet'
+      ],
       subtitle: 'Dibuat ' + new Date().toLocaleString('id-ID'),
       columns: [
         { key: 'no', header: 'No', width: 6 },
@@ -1870,7 +1986,11 @@ async function tesGsheet() {
       ]
     })
     toast.success('Berhasil! Sheet contoh dibuat.')
-    try { window.open(sheetUrl, '_blank') } catch (e) { /* ignore */ }
+    try {
+      window.open(sheetUrl, '_blank')
+    } catch (e) {
+      /* ignore */
+    }
   } catch (e) {
     toast.error('Tes gagal: ' + (e?.message || e))
   } finally {

@@ -42,7 +42,10 @@ service cloud.firestore {
     }
 
     match /settings/{docId} {
-      allow read: if true;
+      // v.100g (security): tutup baca PUBLIK doc 'admin' (berisi sandi admin plaintext).
+      //   Doc lain (web/general = branding/kop/logo/adminUsername) TETAP read publik utk
+      //   login lookup & branding. Validasi sandi admin kini server-side (verifyAdminPassword).
+      allow read: if docId != 'admin';
       // v.88.0526: relax — mandat adminPassword dulu memblokir SEMUA write ke settings/general
       //   (KOP, logo, schema rapor, predikat, master_tp, rekap mapel dll) yg tak menyertakan
       //   adminPassword -> setDoc pertama reject -> catch -> simpan batal -> "balik ke default".

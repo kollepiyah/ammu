@@ -48,7 +48,11 @@ const db = getFirestore()
 // v.95.0626: resolve daftar fcm_token dari `target` (server-side, lebih aman & skalabel).
 //   target: 'semua' | {type:'santri',id} | {type:'wa',wa} | {type:'lembaga',lembaga} | {type:'guru',nama}
 // v.100: normalisasi nama utk pembanding keluarga (dipakai guard fan-out same-wa di branch santri).
-function _normNama(s) { return String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '') }
+function _normNama(s) {
+  return String(s || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '')
+}
 async function resolveTokensByTarget(target) {
   const tokens = new Set()
   const addTok = (snap) =>
@@ -63,7 +67,12 @@ async function resolveTokensByTarget(target) {
       addTok(await db.collection('guru').where('fcm_token', '!=', null).get())
     } else if (t === 'admin' || t.type === 'admin') {
       // v.95.0626c: HANYA admin verifikator (admin/admin_keuangan/super_admin) — bukan wali pengirim
-      addTok(await db.collection('guru').where('role_sistem', 'in', ['admin', 'admin_keuangan', 'super_admin']).get())
+      addTok(
+        await db
+          .collection('guru')
+          .where('role_sistem', 'in', ['admin', 'admin_keuangan', 'super_admin'])
+          .get()
+      )
     } else if (t === 'santri_semua' || t.type === 'santri_all') {
       // v.95.0626d: broadcast ke SEMUA wali/santri saja (tanpa guru) — utk notif tagihan bulanan
       addTok(await db.collection('santri').where('fcm_token', '!=', null).get())
@@ -85,7 +94,10 @@ async function resolveTokensByTarget(target) {
               if (!x.fcm_token) return
               const xnik = _digitsOnly(x.nik_ayah || (x.ayah && x.ayah.nik))
               const xnama = _normNama(x.nama_ayah || (x.ayah && x.ayah.nama))
-              if ((nikAyah && xnik && xnik === nikAyah) || (namaAyah && xnama && xnama === namaAyah)) {
+              if (
+                (nikAyah && xnik && xnik === nikAyah) ||
+                (namaAyah && xnama && xnama === namaAyah)
+              ) {
                 tokens.add(x.fcm_token)
               }
             })
@@ -148,7 +160,8 @@ exports.kirimNotifikasiMassal = onDocumentCreated(
         body: data.pesan || ''
       },
       data: {
-        target: typeof data.target === 'string' ? data.target : JSON.stringify(data.target || 'semua'),
+        target:
+          typeof data.target === 'string' ? data.target : JSON.stringify(data.target || 'semua'),
         sender: data.sender || 'Admin',
         timestamp: data.timestamp || new Date().toISOString(),
         link: _link
@@ -230,7 +243,12 @@ exports.kirimNotifikasiMassal = onDocumentCreated(
 
 // Pengumuman baru (beranda_post) -> broadcast ke SEMUA.
 exports.onBerandaPostCreated = onDocumentCreated(
-  { document: 'beranda_post/{id}', region: 'asia-southeast2', timeoutSeconds: 60, memory: '256MiB' },
+  {
+    document: 'beranda_post/{id}',
+    region: 'asia-southeast2',
+    timeoutSeconds: 60,
+    memory: '256MiB'
+  },
   async (event) => {
     const p = event.data?.data()
     if (!p) return
@@ -248,7 +266,12 @@ exports.onBerandaPostCreated = onDocumentCreated(
 
 // Tagihan INDIVIDUAL baru -> push ke wali. Skip BULK (auto_generate/generate_khusus) biar tak flood.
 exports.onTagihanCreated = onDocumentCreated(
-  { document: 'keuangan_tagihan/{id}', region: 'asia-southeast2', timeoutSeconds: 60, memory: '256MiB' },
+  {
+    document: 'keuangan_tagihan/{id}',
+    region: 'asia-southeast2',
+    timeoutSeconds: 60,
+    memory: '256MiB'
+  },
   async (event) => {
     const t = event.data?.data()
     if (!t || !t.santri_id) return
@@ -272,7 +295,12 @@ exports.onTagihanCreated = onDocumentCreated(
 
 // Pembayaran transfer terverifikasi -> push ke wali (saat status berubah jadi 'verified').
 exports.onPembayaranVerified = onDocumentUpdated(
-  { document: 'pembayaran_transfer_pending/{id}', region: 'asia-southeast2', timeoutSeconds: 60, memory: '256MiB' },
+  {
+    document: 'pembayaran_transfer_pending/{id}',
+    region: 'asia-southeast2',
+    timeoutSeconds: 60,
+    memory: '256MiB'
+  },
   async (event) => {
     const before = event.data?.before?.data() || {}
     const after = event.data?.after?.data() || {}
@@ -293,7 +321,12 @@ exports.onPembayaranVerified = onDocumentUpdated(
 
 // Kenaikan jilid/kelas/khotam (riwayat_kenaikan) -> push "tertarget" ke wali (event, bukan input massal).
 exports.onKenaikanCreated = onDocumentCreated(
-  { document: 'riwayat_kenaikan/{id}', region: 'asia-southeast2', timeoutSeconds: 60, memory: '256MiB' },
+  {
+    document: 'riwayat_kenaikan/{id}',
+    region: 'asia-southeast2',
+    timeoutSeconds: 60,
+    memory: '256MiB'
+  },
   async (event) => {
     const r = event.data?.data()
     if (!r || !r.santri_id) return
@@ -315,7 +348,12 @@ exports.onKenaikanCreated = onDocumentCreated(
 //   Doc id = np_<santriId>_<YYYY-MM> (1 per santri/bulan) -> onCreate = 1x/bulan, tak spam
 //   (re-impor di bulan sama = update, tak memicu push lagi).
 exports.onPrestasiCreated = onDocumentCreated(
-  { document: 'notif_prestasi/{id}', region: 'asia-southeast2', timeoutSeconds: 60, memory: '256MiB' },
+  {
+    document: 'notif_prestasi/{id}',
+    region: 'asia-southeast2',
+    timeoutSeconds: 60,
+    memory: '256MiB'
+  },
   async (event) => {
     const p = event.data?.data()
     if (!p || !p.santri_id) return
@@ -323,7 +361,9 @@ exports.onPrestasiCreated = onDocumentCreated(
     const tot = String(p.total || '').trim()
     await db.collection('notif_queue').add({
       judul: 'Prestasi Diperbarui',
-      pesan: tot ? `${nm} · nilai prestasi bulan ini: ${tot}` : `${nm} · rekap prestasi bulan ini sudah dinilai.`,
+      pesan: tot
+        ? `${nm} · nilai prestasi bulan ini: ${tot}`
+        : `${nm} · rekap prestasi bulan ini sudah dinilai.`,
       target: { type: 'santri', id: String(p.santri_id) },
       link: '/capaian-prestasi',
       sender: 'Pondok',
@@ -336,7 +376,12 @@ exports.onPrestasiCreated = onDocumentCreated(
 // v.100: Tes Kenaikan Qiraati — ajuan baru (status 'diajukan') -> push ke Kepala/PJ lembaga.
 //   kepala_nama di-resolve di app saat ajukan (target type 'guru' by nama).
 exports.onTesKenaikanCreated = onDocumentCreated(
-  { document: 'tes_kenaikan/{id}', region: 'asia-southeast2', timeoutSeconds: 60, memory: '256MiB' },
+  {
+    document: 'tes_kenaikan/{id}',
+    region: 'asia-southeast2',
+    timeoutSeconds: 60,
+    memory: '256MiB'
+  },
   async (event) => {
     const t = event.data?.data()
     if (!t || t.status !== 'diajukan' || !t.kepala_nama) return // tanpa kepala teridentifikasi -> hanya in-app
@@ -356,7 +401,12 @@ exports.onTesKenaikanCreated = onDocumentCreated(
 // v.100: Hasil tes diputuskan kepala -> LULUS push Wali + Guru; tidak lulus/ditolak push Guru saja.
 //   Guard: hanya saat status berubah & ada `penguji` (skip pembatalan pengaju yg tak set penguji).
 exports.onTesKenaikanDecided = onDocumentUpdated(
-  { document: 'tes_kenaikan/{id}', region: 'asia-southeast2', timeoutSeconds: 60, memory: '256MiB' },
+  {
+    document: 'tes_kenaikan/{id}',
+    region: 'asia-southeast2',
+    timeoutSeconds: 60,
+    memory: '256MiB'
+  },
   async (event) => {
     const before = event.data?.before?.data() || {}
     const after = event.data?.after?.data() || {}
@@ -370,7 +420,9 @@ exports.onTesKenaikanDecided = onDocumentUpdated(
           pesan: `${nm} dinyatakan LULUS dan siap naik ke ${tgt}.`,
           target: { type: 'santri', id: String(after.santri_id) },
           link: '/capaian-prestasi',
-          sender: 'Pondok', status: 'pending', timestamp: new Date().toISOString()
+          sender: 'Pondok',
+          status: 'pending',
+          timestamp: new Date().toISOString()
         })
       }
       if (after.guru_nama) {
@@ -379,7 +431,9 @@ exports.onTesKenaikanDecided = onDocumentUpdated(
           pesan: `${nm} LULUS — siap naik ke ${tgt}.`,
           target: { type: 'guru', nama: String(after.guru_nama) },
           link: '/tes-kenaikan',
-          sender: 'Pondok', status: 'pending', timestamp: new Date().toISOString()
+          sender: 'Pondok',
+          status: 'pending',
+          timestamp: new Date().toISOString()
         })
       }
     } else if ((after.status === 'tidak_lulus' || after.status === 'ditolak') && after.guru_nama) {
@@ -389,7 +443,9 @@ exports.onTesKenaikanDecided = onDocumentUpdated(
         pesan: `${nm} → ${lbl}${after.catatan_hasil ? ' · ' + after.catatan_hasil : ''}.`,
         target: { type: 'guru', nama: String(after.guru_nama) },
         link: '/tes-kenaikan',
-        sender: 'Pondok', status: 'pending', timestamp: new Date().toISOString()
+        sender: 'Pondok',
+        status: 'pending',
+        timestamp: new Date().toISOString()
       })
     }
   }
@@ -692,7 +748,6 @@ exports.cleanupAuditLog = onSchedule(
   }
 )
 
-
 // ====================================================================
 // v.07.0626 (Exec D Opsi 2): findUserByLogin — lookup user SERVER-SIDE (Admin SDK)
 //   Tujuan: client tak perlu baca/enumerasi koleksi guru/santri -> PII santri (NIK/ortu)
@@ -704,15 +759,55 @@ exports.cleanupAuditLog = onSchedule(
 //   Sebelumnya bocor: GET findUserByLogin?input=<nama/NIS/WA> balas password plaintext.
 //   Client TIDAK butuh password dari sini (lazy-migration akun baru selalu default '1234';
 //   akun ber-password lain pasti sudah punya akun Auth → sign-in duluan, tak masuk lazy-migration).
-const _STRIP_PII = ['password','linked_email','nik','no_kk','ayah','ibu','nama_ayah','nik_ayah','pekerjaan_ayah','pendidikan_ayah','hp_ayah','nama_ibu','nik_ibu','pekerjaan_ibu','pendidikan_ibu','hp_ibu','alamat','alamat_dusun','alamat_rt','alamat_rw','alamat_desa','alamat_kecamatan','alamat_kabupaten','alamat_provinsi','tempat_lahir','nama_panggilan','asal_sekolah','penghasilan_ortu','catatan_riwayat_pribadi','riwayat']
-function _stripPII(o) { const c = { ...o }; for (const k of _STRIP_PII) delete c[k]; return c }
+const _STRIP_PII = [
+  'password',
+  'linked_email',
+  'nik',
+  'no_kk',
+  'ayah',
+  'ibu',
+  'nama_ayah',
+  'nik_ayah',
+  'pekerjaan_ayah',
+  'pendidikan_ayah',
+  'hp_ayah',
+  'nama_ibu',
+  'nik_ibu',
+  'pekerjaan_ibu',
+  'pendidikan_ibu',
+  'hp_ibu',
+  'alamat',
+  'alamat_dusun',
+  'alamat_rt',
+  'alamat_rw',
+  'alamat_desa',
+  'alamat_kecamatan',
+  'alamat_kabupaten',
+  'alamat_provinsi',
+  'tempat_lahir',
+  'nama_panggilan',
+  'asal_sekolah',
+  'penghasilan_ortu',
+  'catatan_riwayat_pribadi',
+  'riwayat'
+]
+function _stripPII(o) {
+  const c = { ...o }
+  for (const k of _STRIP_PII) delete c[k]
+  return c
+}
 
 exports.findUserByLogin = onRequest(
   { region: 'us-central1', timeoutSeconds: 20, memory: '256MiB', cors: true },
   async (req, res) => {
     try {
-      const input = String((req.query && req.query.input) || (req.body && req.body.input) || '').trim()
-      if (!input) { res.json({ user: null }); return }
+      const input = String(
+        (req.query && req.query.input) || (req.body && req.body.input) || ''
+      ).trim()
+      if (!input) {
+        res.json({ user: null })
+        return
+      }
       const u = input
       const uLower = u.toLowerCase()
       const uDigits = u.replace(/\D/g, '')
@@ -722,9 +817,17 @@ exports.findUserByLogin = onRequest(
       try {
         const ws = await fdb.collection('settings').doc('web').get()
         if (ws.exists && ws.data() && ws.data().adminUsername) adminUser = ws.data().adminUsername
-      } catch (e) { /* default adminmu */ }
+      } catch (e) {
+        /* default adminmu */
+      }
       if (uLower === 'adminmu' || uLower === String(adminUser).toLowerCase()) {
-        res.json({ user: { source: 'admin', data: { id: 'admin', username: adminUser }, authKey: String(adminUser).toLowerCase() } })
+        res.json({
+          user: {
+            source: 'admin',
+            data: { id: 'admin', username: adminUser },
+            authKey: String(adminUser).toLowerCase()
+          }
+        })
         return
       }
 
@@ -742,7 +845,7 @@ exports.findUserByLogin = onRequest(
       if (guruDoc) {
         const g = { id: guruDoc.id, ...guruDoc.data() }
         const wa = String(g.wa || '').replace(/\D/g, '')
-        const authKey = wa.length >= 8 ? wa : (g.username || String(g.id))
+        const authKey = wa.length >= 8 ? wa : g.username || String(g.id)
         res.json({ user: { source: 'guru', data: _stripPII(g), authKey } })
         return
       }
@@ -765,7 +868,7 @@ exports.findUserByLogin = onRequest(
       if (santriDoc) {
         const s = { id: santriDoc.id, ...santriDoc.data() }
         const wa = String(s.wa || '').replace(/\D/g, '')
-        const authKey = wa.length >= 8 ? wa : (s.username || s.nis || String(s.id))
+        const authKey = wa.length >= 8 ? wa : s.username || s.nis || String(s.id)
         res.json({ user: { source: 'santri', data: _stripPII(s), authKey } })
         return
       }
@@ -774,6 +877,89 @@ exports.findUserByLogin = onRequest(
     } catch (e) {
       logger.error('[findUserByLogin] error', e)
       res.status(500).json({ error: String((e && e.message) || e) })
+    }
+  }
+)
+
+// ====================================================================
+// v.100g (security): verifyAdminPassword — validasi sandi admin SERVER-SIDE.
+//   Tujuan: tutup paparan `adminPassword` yang sebelumnya public-read di
+//   settings (siapa pun ber-apiKey bisa baca sandi admin → login super_admin).
+//   Admin SDK bypass rules → tetap baca settings/admin walau rules read:false.
+//   Mode:
+//     - POST { password } / GET ?password=  → { ok: boolean }
+//     - GET ?migrate=1 (tanpa sandi)        → pindahkan adminPassword dari
+//       settings/general|web (publik) ke settings/admin.password, lalu HAPUS
+//       dari doc publik. Idempoten. Jalankan SEKALI setelah client baru live.
+//   Sumber sandi (prioritas): settings/admin → settings/general → settings/web → '1234'.
+// ====================================================================
+exports.verifyAdminPassword = onRequest(
+  { region: 'us-central1', timeoutSeconds: 20, memory: '256MiB', cors: true },
+  async (req, res) => {
+    try {
+      const [adminSnap, generalSnap, webSnap] = await Promise.all([
+        db
+          .collection('settings')
+          .doc('admin')
+          .get()
+          .catch(() => null),
+        db
+          .collection('settings')
+          .doc('general')
+          .get()
+          .catch(() => null),
+        db
+          .collection('settings')
+          .doc('web')
+          .get()
+          .catch(() => null)
+      ])
+      const adminData = (adminSnap && adminSnap.exists && adminSnap.data()) || {}
+      const generalData = (generalSnap && generalSnap.exists && generalSnap.data()) || {}
+      const webData = (webSnap && webSnap.exists && webSnap.data()) || {}
+
+      const fromPublic = generalData.adminPassword || webData.adminPassword || null
+      const stored = adminData.password || adminData.adminPassword || fromPublic || '1234'
+
+      const isMigrate =
+        (req.query && req.query.migrate === '1') || (req.body && req.body.migrate === true)
+      if (isMigrate) {
+        // 1) seed settings/admin.password kalau belum ada
+        const adminHasPass = !!(adminData.password || adminData.adminPassword)
+        if (!adminHasPass && fromPublic) {
+          await db
+            .collection('settings')
+            .doc('admin')
+            .set({ password: fromPublic }, { merge: true })
+        }
+        // 2) hapus adminPassword plaintext dari doc PUBLIK (web/general)
+        const ops = []
+        if ('adminPassword' in generalData) {
+          ops.push(
+            db.collection('settings').doc('general').update({ adminPassword: FieldValue.delete() })
+          )
+        }
+        if ('adminPassword' in webData) {
+          ops.push(
+            db.collection('settings').doc('web').update({ adminPassword: FieldValue.delete() })
+          )
+        }
+        await Promise.all(ops)
+        res.json({ migrated: true, seeded: !adminHasPass && !!fromPublic, cleaned: ops.length })
+        return
+      }
+
+      const password = String(
+        (req.body && req.body.password) || (req.query && req.query.password) || ''
+      )
+      if (!password) {
+        res.status(400).json({ ok: false, error: 'no-password' })
+        return
+      }
+      res.json({ ok: password === String(stored) })
+    } catch (e) {
+      logger.error('[verifyAdminPassword] error', e)
+      res.status(500).json({ ok: false, error: String((e && e.message) || e) })
     }
   }
 )
@@ -794,7 +980,20 @@ exports.findUserByLogin = onRequest(
 // VERIFIKASI: Firebase Console -> Cloud Scheduler -> job ...autoGenerateTagihanBulanan...
 // TEST MANUAL: Cloud Scheduler -> RUN NOW (atau pakai tombol manual di app).
 // ====================================================================
-const _BULAN_NM = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember']
+const _BULAN_NM = [
+  'Januari',
+  'Februari',
+  'Maret',
+  'April',
+  'Mei',
+  'Juni',
+  'Juli',
+  'Agustus',
+  'September',
+  'Oktober',
+  'November',
+  'Desember'
+]
 
 exports.autoGenerateTagihanBulanan = onSchedule(
   {
@@ -828,7 +1027,9 @@ exports.autoGenerateTagihanBulanan = onSchedule(
 
     // 2) Santri aktif
     const sSnap = await db.collection('santri').get()
-    const santriAktif = sSnap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((x) => x.aktif !== false)
+    const santriAktif = sSnap.docs
+      .map((d) => ({ id: d.id, ...d.data() }))
+      .filter((x) => x.aktif !== false)
 
     // 3) Periode bulan berjalan (zona Jakarta)
     const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Jakarta' }))
@@ -848,11 +1049,17 @@ exports.autoGenerateTagihanBulanan = onSchedule(
       logger.warn('[autoGenTagihan] baca tagihan existing gagal:', e?.message || e)
     }
 
-    let created = 0, skipped = 0, errCount = 0
+    let created = 0,
+      skipped = 0,
+      errCount = 0
     let batch = db.batch()
     let inBatch = 0
     const commit = async () => {
-      if (inBatch > 0) { await batch.commit(); batch = db.batch(); inBatch = 0 }
+      if (inBatch > 0) {
+        await batch.commit()
+        batch = db.batch()
+        inBatch = 0
+      }
     }
 
     for (const j of jenisAuto) {
@@ -860,22 +1067,36 @@ exports.autoGenerateTagihanBulanan = onSchedule(
       for (const sx of santriAktif) {
         if (wl.length > 0 && !(wl.includes(sx.lembaga) || wl.includes(sx.lembaga_sekolah))) continue
         const dupKey = `${String(sx.id)}__${String(j.label || '').toLowerCase()}`
-        if (existing.has(dupKey)) { skipped++; continue }
+        if (existing.has(dupKey)) {
+          skipped++
+          continue
+        }
         // 4-lapis lookup: per-santri -> per-kelas -> per-lembaga -> default
         let nominal = Number((j.nominal_per_santri || {})[String(sx.id)] || 0)
         if (nominal === 0) {
           const perK = j.nominal_per_kelas || {}
-          for (const [lemb, ks] of [[sx.lembaga, sx.kelas], [sx.lembaga_sekolah, sx.kelas_sekolah]]) {
+          for (const [lemb, ks] of [
+            [sx.lembaga, sx.kelas],
+            [sx.lembaga_sekolah, sx.kelas_sekolah]
+          ]) {
             if (!lemb) continue
             const v = Number((perK[lemb] || {})[ks] || 0)
-            if (v > 0) { nominal = v; break }
+            if (v > 0) {
+              nominal = v
+              break
+            }
           }
         }
         if (nominal === 0) {
           const perL = j.nominal_per_lembaga || {}
-          nominal = Number(perL[sx.lembaga] || perL[sx.lembaga_sekolah] || 0) || Number(j.nominal_default || 0)
+          nominal =
+            Number(perL[sx.lembaga] || perL[sx.lembaga_sekolah] || 0) ||
+            Number(j.nominal_default || 0)
         }
-        if (nominal <= 0) { skipped++; continue }
+        if (nominal <= 0) {
+          skipped++
+          continue
+        }
         try {
           const id = `tagihan_${sx.id}_${j.id}_${ym}`
           batch.set(db.collection('keuangan_tagihan').doc(id), {
@@ -892,7 +1113,8 @@ exports.autoGenerateTagihanBulanan = onSchedule(
             created_at: FieldValue.serverTimestamp()
           })
           existing.add(dupKey)
-          created++; inBatch++
+          created++
+          inBatch++
           if (inBatch >= 450) await commit()
         } catch (e) {
           errCount++
@@ -920,7 +1142,9 @@ exports.autoGenerateTagihanBulanan = onSchedule(
       }
     }
 
-    logger.info(`[autoGenTagihan] periode=${periode} jt=${jt} created=${created} skipped=${skipped} err=${errCount}`)
+    logger.info(
+      `[autoGenTagihan] periode=${periode} jt=${jt} created=${created} skipped=${skipped} err=${errCount}`
+    )
     return null
   }
 )
@@ -942,20 +1166,40 @@ exports.autoGenerateTagihanBulanan = onSchedule(
 // ====================================================================
 const bmtWebhookSecret = defineSecret('BMT_WEBHOOK_SECRET')
 
-function _digitsOnly(s) { return String(s || '').replace(/\D/g, '') }
+function _digitsOnly(s) {
+  return String(s || '').replace(/\D/g, '')
+}
 
 exports.bmtPaymentWebhook = onRequest(
-  { region: 'asia-southeast2', timeoutSeconds: 60, memory: '256MiB', cors: false, secrets: [bmtWebhookSecret] },
+  {
+    region: 'asia-southeast2',
+    timeoutSeconds: 60,
+    memory: '256MiB',
+    cors: false,
+    secrets: [bmtWebhookSecret]
+  },
   async (req, res) => {
     try {
-      if (req.method !== 'POST') { res.status(405).json({ ok: false, error: 'POST only' }); return }
+      if (req.method !== 'POST') {
+        res.status(405).json({ ok: false, error: 'POST only' })
+        return
+      }
 
       // 1) AUTENTIKASI — verifikasi secret/tanda tangan dari BMT.
       //    TODO(BMT): ganti ke skema final BMT (HMAC signature + timestamp, IP allowlist, dll).
       const secret = (bmtWebhookSecret.value && bmtWebhookSecret.value()) || ''
-      const provided = String(req.get('x-bmt-signature') || req.get('authorization') || '').replace(/^Bearer\s+/i, '')
-      if (!secret) { res.status(503).json({ ok: false, error: 'webhook belum dikonfigurasi (secret kosong)' }); return }
-      if (!provided || provided !== secret) { res.status(401).json({ ok: false, error: 'unauthorized' }); return }
+      const provided = String(req.get('x-bmt-signature') || req.get('authorization') || '').replace(
+        /^Bearer\s+/i,
+        ''
+      )
+      if (!secret) {
+        res.status(503).json({ ok: false, error: 'webhook belum dikonfigurasi (secret kosong)' })
+        return
+      }
+      if (!provided || provided !== secret) {
+        res.status(401).json({ ok: false, error: 'unauthorized' })
+        return
+      }
 
       // 2) PARSE payload — TODO(BMT): sesuaikan nama field dgn spesifikasi BMT.
       const b = req.body || {}
@@ -965,12 +1209,20 @@ exports.bmtPaymentWebhook = onRequest(
       const paidAt = String(b.paid_at || b.payment_time || new Date().toISOString())
       const channel = String(b.channel || b.payment_channel || 'bmt')
       if (!vaNumber || !(amount > 0) || !bmtTrxId) {
-        res.status(400).json({ ok: false, error: 'payload tidak lengkap (butuh va_number, amount, bmt_trx_id)' }); return
+        res
+          .status(400)
+          .json({ ok: false, error: 'payload tidak lengkap (butuh va_number, amount, bmt_trx_id)' })
+        return
       }
 
       // 3) Settings + kill-switch (DRY-RUN default).
       let s = {}
-      try { const sd = await db.collection('settings').doc('general').get(); if (sd.exists) s = sd.data() || {} } catch (e) { /* default */ }
+      try {
+        const sd = await db.collection('settings').doc('general').get()
+        if (sd.exists) s = sd.data() || {}
+      } catch (e) {
+        /* default */
+      }
       const enabled = s.bmt_webhook_enabled === true
       const prefix = _digitsOnly(s.bmt_va_prefix)
 
@@ -983,21 +1235,48 @@ exports.bmtPaymentWebhook = onRequest(
           q = await db.collection('santri').where('nis', '==', nis).limit(1).get()
         }
         if (!q.empty) santri = { id: q.docs[0].id, ...q.docs[0].data() }
-      } catch (e) { logger.warn('[bmtWebhook] resolve santri:', e?.message || e) }
+      } catch (e) {
+        logger.warn('[bmtWebhook] resolve santri:', e?.message || e)
+      }
 
       // 5) DRY-RUN: kalau belum enabled, jangan tulis apa pun — cuma log & ack (utk uji koneksi BMT).
       if (!enabled) {
-        logger.info(`[bmtWebhook] DRY-RUN va=${vaNumber} amount=${amount} trx=${bmtTrxId} santri=${santri ? santri.id : '?'}`)
-        res.json({ ok: true, mode: 'dry-run', resolved_santri: santri ? (santri.nama || santri.id) : null, note: 'set settings.bmt_webhook_enabled=true utk aktifkan pencatatan' }); return
+        logger.info(
+          `[bmtWebhook] DRY-RUN va=${vaNumber} amount=${amount} trx=${bmtTrxId} santri=${santri ? santri.id : '?'}`
+        )
+        res.json({
+          ok: true,
+          mode: 'dry-run',
+          resolved_santri: santri ? santri.nama || santri.id : null,
+          note: 'set settings.bmt_webhook_enabled=true utk aktifkan pencatatan'
+        })
+        return
       }
 
       // 6) IDEMPOTEN: 1 bmt_trx_id diproses sekali.
       const logRef = db.collection('bmt_payment_log').doc(bmtTrxId)
-      if ((await logRef.get()).exists) { res.json({ ok: true, duplicate: true }); return }
+      if ((await logRef.get()).exists) {
+        res.json({ ok: true, duplicate: true })
+        return
+      }
 
       if (!santri) {
-        await logRef.set({ status: 'unmatched', va_number: vaNumber, amount, paid_at: paidAt, channel, created_at: FieldValue.serverTimestamp() })
-        res.status(202).json({ ok: true, matched: false, note: 'VA tak cocok santri — dicatat sbg unmatched utk ditinjau admin' }); return
+        await logRef.set({
+          status: 'unmatched',
+          va_number: vaNumber,
+          amount,
+          paid_at: paidAt,
+          channel,
+          created_at: FieldValue.serverTimestamp()
+        })
+        res
+          .status(202)
+          .json({
+            ok: true,
+            matched: false,
+            note: 'VA tak cocok santri — dicatat sbg unmatched utk ditinjau admin'
+          })
+        return
       }
 
       // 7) Catat kas masuk (buku induk) + alokasi ke tagihan belum lunas (tertua dulu).
@@ -1006,14 +1285,24 @@ exports.bmtPaymentWebhook = onRequest(
       const biId = `bmtva_${bmtTrxId}`
       const batch = db.batch()
       batch.set(db.collection('keuangan_buku_induk').doc(biId), {
-        id: biId, tipe: 'masuk', keterangan: `Pembayaran VA — ${santri.nama || santri.id} — ${channel}`,
-        nominal: amount, tanggal: tgl, sumber: 'bmt_va', santri_id: String(santri.id),
-        bmt_trx_id: bmtTrxId, created_at: FieldValue.serverTimestamp()
+        id: biId,
+        tipe: 'masuk',
+        keterangan: `Pembayaran VA — ${santri.nama || santri.id} — ${channel}`,
+        nominal: amount,
+        tanggal: tgl,
+        sumber: 'bmt_va',
+        santri_id: String(santri.id),
+        bmt_trx_id: bmtTrxId,
+        created_at: FieldValue.serverTimestamp()
       })
       let sisa = amount
       try {
-        const tq = await db.collection('keuangan_tagihan').where('santri_id', '==', String(santri.id)).get()
-        const belum = tq.docs.map((d) => ({ id: d.id, ...d.data() }))
+        const tq = await db
+          .collection('keuangan_tagihan')
+          .where('santri_id', '==', String(santri.id))
+          .get()
+        const belum = tq.docs
+          .map((d) => ({ id: d.id, ...d.data() }))
           .filter((t) => String(t.status || 'belum') !== 'lunas')
           .sort((a, b) => String(a.jatuh_tempo || '').localeCompare(String(b.jatuh_tempo || '')))
         for (const t of belum) {
@@ -1023,16 +1312,26 @@ exports.bmtPaymentWebhook = onRequest(
           const bayar = Math.min(sisa, kurang)
           const nb = Number(t.bayar || 0) + bayar
           batch.update(db.collection('keuangan_tagihan').doc(t.id), {
-            bayar: nb, status: nb >= Number(t.nominal || 0) ? 'lunas' : 'sebagian',
-            sumber_bayar: 'bmt_va', updated_at: FieldValue.serverTimestamp()
+            bayar: nb,
+            status: nb >= Number(t.nominal || 0) ? 'lunas' : 'sebagian',
+            sumber_bayar: 'bmt_va',
+            updated_at: FieldValue.serverTimestamp()
           })
           sisa -= bayar
         }
-      } catch (e) { logger.warn('[bmtWebhook] alokasi tagihan:', e?.message || e) }
+      } catch (e) {
+        logger.warn('[bmtWebhook] alokasi tagihan:', e?.message || e)
+      }
 
       batch.set(logRef, {
-        status: 'processed', va_number: vaNumber, amount, sisa_tak_teralokasi: sisa,
-        santri_id: String(santri.id), bmt_trx_id: bmtTrxId, paid_at: paidAt, channel,
+        status: 'processed',
+        va_number: vaNumber,
+        amount,
+        sisa_tak_teralokasi: sisa,
+        santri_id: String(santri.id),
+        bmt_trx_id: bmtTrxId,
+        paid_at: paidAt,
+        channel,
         created_at: FieldValue.serverTimestamp()
       })
       await batch.commit()
@@ -1041,13 +1340,26 @@ exports.bmtPaymentWebhook = onRequest(
         await db.collection('notif_queue').add({
           judul: 'Pembayaran Diterima',
           pesan: `Pembayaran Rp ${new Intl.NumberFormat('id-ID').format(amount)} via VA sudah diterima. Terima kasih.`,
-          target: { type: 'santri', id: String(santri.id) }, link: '/tagihan',
-          sender: 'Sistem', status: 'pending', timestamp: new Date().toISOString()
+          target: { type: 'santri', id: String(santri.id) },
+          link: '/tagihan',
+          sender: 'Sistem',
+          status: 'pending',
+          timestamp: new Date().toISOString()
         })
-      } catch (e) { /* notif best-effort */ }
+      } catch (e) {
+        /* notif best-effort */
+      }
 
-      logger.info(`[bmtWebhook] processed trx=${bmtTrxId} santri=${santri.id} amount=${amount} sisa=${sisa}`)
-      res.json({ ok: true, processed: true, santri: santri.nama || santri.id, allocated: amount - sisa, unallocated: sisa })
+      logger.info(
+        `[bmtWebhook] processed trx=${bmtTrxId} santri=${santri.id} amount=${amount} sisa=${sisa}`
+      )
+      res.json({
+        ok: true,
+        processed: true,
+        santri: santri.nama || santri.id,
+        allocated: amount - sisa,
+        unallocated: sisa
+      })
     } catch (e) {
       logger.error('[bmtWebhook] error', e)
       res.status(500).json({ ok: false, error: String((e && e.message) || e) })
@@ -1073,21 +1385,41 @@ exports.bmtPaymentWebhook = onRequest(
 const bmtDisburseSecret = defineSecret('BMT_DISBURSE_SECRET')
 
 exports.bmtDisbursementBatch = onRequest(
-  { region: 'asia-southeast2', timeoutSeconds: 120, memory: '256MiB', cors: false, secrets: [bmtDisburseSecret] },
+  {
+    region: 'asia-southeast2',
+    timeoutSeconds: 120,
+    memory: '256MiB',
+    cors: false,
+    secrets: [bmtDisburseSecret]
+  },
   async (req, res) => {
     try {
-      if (req.method !== 'POST') { res.status(405).json({ ok: false, error: 'POST only' }); return }
+      if (req.method !== 'POST') {
+        res.status(405).json({ ok: false, error: 'POST only' })
+        return
+      }
 
       // 1) AUTENTIKASI pemanggil. TODO: ganti ke verifikasi sesi admin yang kuat.
       const secret = (bmtDisburseSecret.value && bmtDisburseSecret.value()) || ''
       const provided = String(req.get('authorization') || '').replace(/^Bearer\s+/i, '')
-      if (!secret) { res.status(503).json({ ok: false, error: 'disbursement belum dikonfigurasi (secret kosong)' }); return }
-      if (!provided || provided !== secret) { res.status(401).json({ ok: false, error: 'unauthorized' }); return }
+      if (!secret) {
+        res
+          .status(503)
+          .json({ ok: false, error: 'disbursement belum dikonfigurasi (secret kosong)' })
+        return
+      }
+      if (!provided || provided !== secret) {
+        res.status(401).json({ ok: false, error: 'unauthorized' })
+        return
+      }
 
       // 2) PARSE daftar pencairan.
       const items = Array.isArray(req.body && req.body.items) ? req.body.items : []
       const periode = String((req.body && req.body.periode) || '')
-      if (items.length === 0) { res.status(400).json({ ok: false, error: 'items kosong' }); return }
+      if (items.length === 0) {
+        res.status(400).json({ ok: false, error: 'items kosong' })
+        return
+      }
       const norm = items.map((it) => ({
         slip_id: String(it.slip_id || ''),
         guru_id: it.guru_id != null ? it.guru_id : '',
@@ -1098,22 +1430,45 @@ exports.bmtDisbursementBatch = onRequest(
 
       // 3) Settings + kill-switch (DRY-RUN default).
       let s = {}
-      try { const sd = await db.collection('settings').doc('general').get(); if (sd.exists) s = sd.data() || {} } catch (e) { /* default */ }
+      try {
+        const sd = await db.collection('settings').doc('general').get()
+        if (sd.exists) s = sd.data() || {}
+      } catch (e) {
+        /* default */
+      }
       const enabled = s.bmt_disburse_enabled === true
 
       // 4) DRY-RUN: validasi & rencana saja, tanpa transfer/tulis.
       if (!enabled) {
         const total = norm.reduce((a, it) => a + (it.nominal > 0 ? it.nominal : 0), 0)
-        logger.info(`[bmtDisburse] DRY-RUN periode=${periode} items=${norm.length} invalid=${invalid.length} total=${total}`)
-        res.json({ ok: true, mode: 'dry-run', count: norm.length, invalid: invalid.length, total, note: 'set settings.bmt_disburse_enabled=true + sambungkan API BMT utk eksekusi nyata' }); return
+        logger.info(
+          `[bmtDisburse] DRY-RUN periode=${periode} items=${norm.length} invalid=${invalid.length} total=${total}`
+        )
+        res.json({
+          ok: true,
+          mode: 'dry-run',
+          count: norm.length,
+          invalid: invalid.length,
+          total,
+          note: 'set settings.bmt_disburse_enabled=true + sambungkan API BMT utk eksekusi nyata'
+        })
+        return
       }
-      if (invalid.length > 0) { res.status(400).json({ ok: false, error: 'ada item tak valid (slip_id/rek_bmt/nominal)', invalid }); return }
+      if (invalid.length > 0) {
+        res
+          .status(400)
+          .json({ ok: false, error: 'ada item tak valid (slip_id/rek_bmt/nominal)', invalid })
+        return
+      }
 
       // 5) EKSEKUSI per item (idempoten via bmt_disburse_log/<slip_id>).
       const results = []
       for (const it of norm) {
         const logRef = db.collection('bmt_disburse_log').doc(it.slip_id)
-        if ((await logRef.get()).exists) { results.push({ slip_id: it.slip_id, status: 'duplicate' }); continue }
+        if ((await logRef.get()).exists) {
+          results.push({ slip_id: it.slip_id, status: 'duplicate' })
+          continue
+        }
 
         // --- TODO(BMT): panggil API disbursement BMT (pondok rek -> it.rek_bmt, it.nominal) ---
         //   const bmtResp = await callBmtDisbursementApi(it)  // implementasi mengikuti spec BMT
@@ -1122,26 +1477,61 @@ exports.bmtDisbursementBatch = onRequest(
         const sukses = false
         const trxId = ''
 
-        if (!sukses) { results.push({ slip_id: it.slip_id, status: 'pending_api', note: 'API BMT belum terhubung' }); continue }
+        if (!sukses) {
+          results.push({
+            slip_id: it.slip_id,
+            status: 'pending_api',
+            note: 'API BMT belum terhubung'
+          })
+          continue
+        }
 
         // (Saat API tersedia) catat kas keluar + tandai slip + log idempoten.
         const tgl = new Date().toISOString().slice(0, 10)
         const biId = `gaji_${it.slip_id}`
         const batch = db.batch()
         batch.set(db.collection('keuangan_buku_induk').doc(biId), {
-          id: biId, tipe: 'keluar', nominal: it.nominal, tanggal: tgl,
-          keterangan: `Bisyaroh ${periode} — guru ${it.guru_id}`, sumber: 'gaji', kategori: 'Bisyaroh',
-          guru_id: it.guru_id, slip_id: it.slip_id, metode: 'bmt_api', bmt_trx_id: trxId, created_at: FieldValue.serverTimestamp()
+          id: biId,
+          tipe: 'keluar',
+          nominal: it.nominal,
+          tanggal: tgl,
+          keterangan: `Bisyaroh ${periode} — guru ${it.guru_id}`,
+          sumber: 'gaji',
+          kategori: 'Bisyaroh',
+          guru_id: it.guru_id,
+          slip_id: it.slip_id,
+          metode: 'bmt_api',
+          bmt_trx_id: trxId,
+          created_at: FieldValue.serverTimestamp()
         })
-        batch.set(db.collection('keuangan_gaji').doc(it.slip_id), {
-          status_cair: 'cair', dicairkan_at: FieldValue.serverTimestamp(), dicairkan_via: 'bmt_api', bmt_trx_id: trxId, buku_induk_id: biId
-        }, { merge: true })
-        batch.set(logRef, { status: 'processed', slip_id: it.slip_id, guru_id: it.guru_id, nominal: it.nominal, bmt_trx_id: trxId, created_at: FieldValue.serverTimestamp() })
+        batch.set(
+          db.collection('keuangan_gaji').doc(it.slip_id),
+          {
+            status_cair: 'cair',
+            dicairkan_at: FieldValue.serverTimestamp(),
+            dicairkan_via: 'bmt_api',
+            bmt_trx_id: trxId,
+            buku_induk_id: biId
+          },
+          { merge: true }
+        )
+        batch.set(logRef, {
+          status: 'processed',
+          slip_id: it.slip_id,
+          guru_id: it.guru_id,
+          nominal: it.nominal,
+          bmt_trx_id: trxId,
+          created_at: FieldValue.serverTimestamp()
+        })
         await batch.commit()
         results.push({ slip_id: it.slip_id, status: 'processed', bmt_trx_id: trxId })
       }
 
-      res.json({ ok: true, processed: results.filter((r) => r.status === 'processed').length, results })
+      res.json({
+        ok: true,
+        processed: results.filter((r) => r.status === 'processed').length,
+        results
+      })
     } catch (e) {
       logger.error('[bmtDisburse] error', e)
       res.status(500).json({ ok: false, error: String((e && e.message) || e) })

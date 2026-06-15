@@ -4,7 +4,11 @@
       <!-- Header — v.21.60.0526: KOP-style layout match formulir physical -->
       <div class="bg-white rounded-2xl p-5 border-t-8 border-teal-600 shadow-md">
         <div class="flex items-center gap-4 border-b-2 border-double border-slate-700 pb-3 mb-3">
-          <img :src="logoKiri || '/logo.png'" alt="Logo Qiraati" class="w-20 h-20 flex-shrink-0 object-contain" />
+          <img
+            :src="logoKiri || '/logo.png'"
+            alt="Logo Qiraati"
+            class="w-20 h-20 flex-shrink-0 object-contain"
+          />
           <div class="flex-1 text-center">
             <p class="text-[10px] font-bold uppercase tracking-wider text-slate-700">
               YAYASAN AL MANSHUR
@@ -17,7 +21,11 @@
             </p>
             <p class="text-[10px] text-slate-600">Telp. (031) 8674713 / 082233902261</p>
           </div>
-          <img :src="logoKanan || '/logo.png'" alt="Logo Pondok" class="w-20 h-20 flex-shrink-0 object-contain" />
+          <img
+            :src="logoKanan || '/logo.png'"
+            alt="Logo Pondok"
+            class="w-20 h-20 flex-shrink-0 object-contain"
+          />
         </div>
         <h2
           class="text-center text-base md:text-lg font-black uppercase text-slate-800 underline decoration-2 underline-offset-4"
@@ -59,7 +67,7 @@
       </div>
 
       <!-- Form (Multi-Step Layout) -->
-      <form v-else @submit.prevent="onSubmit" class="space-y-6">
+      <form v-else @submit.prevent="openTerms" class="space-y-6">
         <!-- STEP 1: Pilihan Lembaga -->
         <div class="bg-white rounded-2xl p-6 shadow-sm border-2 border-teal-300">
           <h3
@@ -486,22 +494,9 @@
         <div
           class="bg-white rounded-3xl p-6 shadow-xl border border-slate-100 flex flex-col items-center"
         >
-          <label class="flex items-start gap-3 mb-6 cursor-pointer">
-            <input
-              v-model="setujuiSyarat"
-              type="checkbox"
-              required
-              class="mt-1 w-5 h-5 rounded-lg text-teal-600 focus:ring-teal-500"
-            />
-            <span class="text-xs text-slate-600 leading-relaxed font-medium">
-              Saya menyatakan bahwa data yang diisi adalah <b>benar dan akurat</b> sesuai dokumen
-              asli. Saya menyetujui syarat & ketentuan pendaftaran di TPQ Mambaul Ulum.
-            </span>
-          </label>
-
           <button
             type="submit"
-            :disabled="submitting || !setujuiSyarat"
+            :disabled="submitting"
             class="w-full md:w-auto md:px-16 bg-teal-600 hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-black py-4 rounded-2xl shadow-lg shadow-teal-200 transition-all active:scale-95 flex items-center justify-center gap-3"
           >
             <i :class="['fas', submitting ? 'fa-spinner fa-spin' : 'fa-paper-plane']"></i>
@@ -509,11 +504,135 @@
           </button>
 
           <p
-            v-if="errorMsg"
+            v-if="errorMsg && !showTerms"
             class="mt-4 text-xs font-black text-rose-600 bg-rose-50 px-4 py-2 rounded-lg border border-rose-100"
           >
             <i class="fas fa-exclamation-triangle mr-1"></i> {{ errorMsg }}
           </p>
+        </div>
+
+        <!-- v.100g: Modal Syarat & Ketentuan + Info Pembayaran (muncul saat klik Daftar Sekarang).
+             User baca dokumen → centang setuju → Kirim. Pola umum aplikasi. -->
+        <div
+          v-if="showTerms"
+          class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 sm:p-4"
+          @click.self="showTerms = false"
+        >
+          <div
+            class="bg-white w-full sm:max-w-lg sm:rounded-3xl rounded-t-3xl max-h-[90vh] flex flex-col shadow-2xl"
+          >
+            <div class="flex items-center justify-between p-5 border-b border-slate-100">
+              <h3 class="text-base font-black text-slate-800">
+                <i class="fas fa-file-signature text-teal-600 mr-1"></i>Syarat &amp; Ketentuan
+              </h3>
+              <button
+                type="button"
+                @click="showTerms = false"
+                class="w-8 h-8 rounded-full hover:bg-slate-100 text-slate-500"
+              >
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-5 space-y-4 text-left">
+              <div
+                v-if="currentAssets.syarat"
+                class="bg-slate-50 rounded-2xl p-4 border border-slate-100"
+              >
+                <p class="text-xs font-black text-slate-700 uppercase tracking-wide mb-2">
+                  <i class="fas fa-file-contract text-teal-600 mr-1"></i>Syarat &amp; Ketentuan
+                </p>
+                <img
+                  v-if="assetIsImage(currentAssets.syarat)"
+                  :src="currentAssets.syarat"
+                  alt="Syarat & Ketentuan"
+                  class="w-full rounded-xl border border-slate-200"
+                />
+                <a
+                  v-else-if="assetIsUrl(currentAssets.syarat)"
+                  :href="currentAssets.syarat"
+                  target="_blank"
+                  rel="noopener"
+                  class="inline-flex items-center gap-2 text-sm font-bold text-teal-700 hover:underline"
+                >
+                  <i class="fas fa-file-pdf"></i> Buka / unduh Syarat &amp; Ketentuan
+                </a>
+                <div v-else class="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">
+                  {{ currentAssets.syarat }}
+                </div>
+              </div>
+              <div
+                v-if="currentAssets.pembayaran"
+                class="bg-emerald-50 rounded-2xl p-4 border border-emerald-100"
+              >
+                <p class="text-xs font-black text-slate-700 uppercase tracking-wide mb-2">
+                  <i class="fas fa-money-bill-wave text-emerald-600 mr-1"></i>Info Pembayaran
+                </p>
+                <img
+                  v-if="assetIsImage(currentAssets.pembayaran)"
+                  :src="currentAssets.pembayaran"
+                  alt="Info Pembayaran"
+                  class="w-full rounded-xl border border-slate-200"
+                />
+                <a
+                  v-else-if="assetIsUrl(currentAssets.pembayaran)"
+                  :href="currentAssets.pembayaran"
+                  target="_blank"
+                  rel="noopener"
+                  class="inline-flex items-center gap-2 text-sm font-bold text-emerald-700 hover:underline"
+                >
+                  <i class="fas fa-file-pdf"></i> Buka / unduh Info Pembayaran
+                </a>
+                <div v-else class="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">
+                  {{ currentAssets.pembayaran }}
+                </div>
+              </div>
+              <p
+                v-if="!currentAssets.syarat && !currentAssets.pembayaran"
+                class="text-xs text-slate-400 text-center py-2"
+              >
+                (Belum ada dokumen syarat/info pembayaran untuk lembaga ini.)
+              </p>
+
+              <label class="flex items-start gap-3 cursor-pointer pt-1">
+                <input
+                  v-model="setujuiSyarat"
+                  type="checkbox"
+                  class="mt-1 w-5 h-5 rounded-lg text-teal-600 focus:ring-teal-500"
+                />
+                <span class="text-xs text-slate-600 leading-relaxed font-medium">
+                  Saya menyatakan bahwa data yang diisi adalah <b>benar dan akurat</b> sesuai
+                  dokumen asli. Saya menyetujui syarat & ketentuan pendaftaran di TPQ Mambaul Ulum.
+                </span>
+              </label>
+
+              <p
+                v-if="errorMsg"
+                class="text-xs font-black text-rose-600 bg-rose-50 px-4 py-2 rounded-lg border border-rose-100"
+              >
+                <i class="fas fa-exclamation-triangle mr-1"></i> {{ errorMsg }}
+              </p>
+            </div>
+
+            <div class="p-5 border-t border-slate-100 flex gap-3">
+              <button
+                type="button"
+                @click="showTerms = false"
+                class="flex-1 py-3 rounded-2xl border border-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-50"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                :disabled="submitting || !setujuiSyarat"
+                @click="onSubmit"
+                class="flex-[2] py-3 rounded-2xl bg-teal-600 hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-black text-sm flex items-center justify-center gap-2"
+              >
+                <i :class="['fas', submitting ? 'fa-spinner fa-spin' : 'fa-paper-plane']"></i>
+                {{ submitting ? 'MEMPROSES...' : 'Setuju & Kirim' }}
+              </button>
+            </div>
+          </div>
         </div>
       </form>
 
@@ -560,6 +679,7 @@ const submitting = ref(false)
 const errorMsg = ref('')
 const noPendaftaran = ref('')
 const setujuiSyarat = ref(false)
+const showTerms = ref(false) // v.100g: modal syarat & ketentuan saat klik Daftar Sekarang
 const psbAssets = ref({})
 const lembagaRaw = ref([])
 const logoKiri = ref('')
@@ -611,6 +731,46 @@ const lembagaQiraati = computed(() => {
   return fromMaster.length > 0 ? fromMaster : QIRAATI_NAMES
 })
 
+// v.100g: Syarat & Info Pembayaran per lembaga (di-upload admin → settings/psb_assets).
+//   Ditampilkan SEBELUM checkbox persetujuan, sesuai lembaga yang dipilih calon santri.
+const currentAssets = computed(() => psbAssets.value?.[form.value.lembaga_qiraati] || {})
+function assetIsImage(v) {
+  const s = String(v || '')
+  return /^data:image\//i.test(s) || /\.(png|jpe?g|gif|webp|svg)(\?|#|$)/i.test(s)
+}
+// v.100g: nilai asset bisa TEKS (admin ketik) atau URL/base64 (data lama). Deteksi URL
+//   supaya teks ditampilkan apa adanya, URL/file tetap jadi link (backward-compat).
+function assetIsUrl(v) {
+  return /^(https?:|data:)/i.test(String(v || ''))
+}
+
+// v.100g: klik Daftar Sekarang → validasi field DULU, lalu buka modal syarat.
+//   Checkbox persetujuan + tombol Kirim ada DI DALAM modal (pola umum aplikasi).
+function openTerms() {
+  errorMsg.value = ''
+  const nama = String(form.value.nama || '').trim()
+  if (!nama) {
+    errorMsg.value = 'Nama santri wajib diisi'
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+    return
+  }
+  if (nama.length > 200) {
+    errorMsg.value = 'Nama santri maks 200 karakter'
+    return
+  }
+  if (!form.value.lembaga_qiraati) {
+    errorMsg.value = 'Lembaga Qiraati wajib dipilih'
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+    return
+  }
+  if (!form.value.tipe_santri) {
+    errorMsg.value = 'Tipe santri wajib dipilih'
+    return
+  }
+  setujuiSyarat.value = false // wajib centang ulang tiap buka modal
+  showTerms.value = true
+}
+
 async function onSubmit() {
   errorMsg.value = ''
   // v.21.50: Explicit validation + better error messaging
@@ -655,6 +815,7 @@ async function onSubmit() {
     await addDoc(collection(db, 'psb_pendaftaran'), payload)
     noPendaftaran.value = noPdf
     submitted.value = true
+    showTerms.value = false // v.100g: tutup modal syarat setelah sukses kirim
     window.scrollTo({ top: 0, behavior: 'smooth' })
   } catch (e) {
     console.error('[onSubmit]', e)
@@ -688,6 +849,11 @@ onMounted(async () => {
   try {
     const snap = await getDoc(doc(db, 'master', 'lembaga'))
     lembagaRaw.value = Array.isArray(snap.data()?.list) ? snap.data().list : []
+  } catch (e) {}
+  try {
+    // v.100g: Syarat & Info Pembayaran per lembaga (di-upload admin via PSB admin)
+    const pa = await getDoc(doc(db, 'settings', 'psb_assets'))
+    psbAssets.value = pa.exists() ? pa.data() || {} : {}
   } catch (e) {}
   try {
     const st = await getDoc(doc(db, 'settings', 'general'))

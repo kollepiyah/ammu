@@ -51,9 +51,7 @@
             <h3 class="text-lg font-black mb-3">Ganti Sandi</h3>
             <div class="space-y-2">
               <div>
-                <label class="text-xs font-bold text-[var(--text-secondary)]"
-                  >Password Lama</label
-                >
+                <label class="text-xs font-bold text-[var(--text-secondary)]">Password Lama</label>
                 <input
                   v-model="formSandi.lama"
                   type="password"
@@ -61,9 +59,7 @@
                 />
               </div>
               <div>
-                <label class="text-xs font-bold text-[var(--text-secondary)]"
-                  >Password Baru</label
-                >
+                <label class="text-xs font-bold text-[var(--text-secondary)]">Password Baru</label>
                 <input
                   v-model="formSandi.baru"
                   type="password"
@@ -71,9 +67,7 @@
                 />
               </div>
               <div>
-                <label class="text-xs font-bold text-[var(--text-secondary)]"
-                  >Konfirmasi</label
-                >
+                <label class="text-xs font-bold text-[var(--text-secondary)]">Konfirmasi</label>
                 <input
                   v-model="formSandi.konfirmasi"
                   type="password"
@@ -93,9 +87,7 @@
               :disabled="fotoState.uploading"
               class="w-full text-sm"
             />
-            <p class="text-[10px] text-[var(--text-secondary)] italic mt-2">
-              JPG/PNG, maks 2MB
-            </p>
+            <p class="text-[10px] text-[var(--text-secondary)] italic mt-2">JPG/PNG, maks 2MB</p>
           </div>
 
           <!-- Username -->
@@ -108,10 +100,7 @@
               class="w-full px-3 py-2 border border-[var(--border-default)] rounded-lg text-sm"
               placeholder="username unik"
             />
-            <p
-              v-if="usernameState.checking"
-              class="text-xs text-[var(--text-secondary)] mt-2"
-            >
+            <p v-if="usernameState.checking" class="text-xs text-[var(--text-secondary)] mt-2">
               Cek...
             </p>
             <p v-else-if="usernameState.available === true" class="text-xs text-emerald-600 mt-2">
@@ -224,14 +213,10 @@
               class="w-full px-3 py-2 border border-[var(--border-default)] rounded-lg text-sm"
               placeholder="Nomor Induk Guru"
             />
-            <p class="text-[10px] text-[var(--text-secondary)] italic mt-2">
-              Nomor Induk Guru
-            </p>
+            <p class="text-[10px] text-[var(--text-secondary)] italic mt-2">Nomor Induk Guru</p>
           </div>
 
-          <div
-            class="flex justify-end gap-2 mt-5 pt-3 border-t border-[var(--border-subtle)]"
-          >
+          <div class="flex justify-end gap-2 mt-5 pt-3 border-t border-[var(--border-subtle)]">
             <button
               @click="closeModal"
               class="px-4 py-2 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--bg-muted)] rounded-lg"
@@ -288,9 +273,12 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { setOne, queryColl } from '@/services/firestore'
-import { setDoc, doc } from 'firebase/firestore'
-import { db } from '@/services/firebase'
-import { linkGoogleAccount, unlinkGoogleAccount } from '@/services/auth'
+import {
+  linkGoogleAccount,
+  unlinkGoogleAccount,
+  verifyAdminPassword,
+  toAuthPassword
+} from '@/services/auth'
 import { uploadBase64 } from '@/services/storage'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
@@ -397,7 +385,9 @@ function openModal(id) {
   activeModal.value = id
   if (id === 'username') usernameState.value.value = props.entity?.username || ''
   if (id === 'wa' || id === 'wa_wali') waState.value.value = props.entity?.wa || ''
-  if (id === 'ekgq') ekgqState.value.value = props.entity?.nig || props.entity?.ekgq || props.entity?.no_syahadah || ''
+  if (id === 'ekgq')
+    ekgqState.value.value =
+      props.entity?.nig || props.entity?.ekgq || props.entity?.no_syahadah || ''
   if (id === 'notif') notifState.value.enabled = props.entity?.notifEnabled !== false
 }
 
@@ -415,17 +405,31 @@ async function simpanSandi() {
   busy.value = true
   try {
     if (props.role === 'admin') {
-      const lama = settingsStore.settings.adminPassword || '1234'
-      if (formSandi.value.lama !== lama) {
+      // v.100g: validasi sandi lama via server (settings/admin tak lagi public-read).
+      const ok = await verifyAdminPassword(formSandi.value.lama)
+      if (!ok) {
         toast.error('Password lama salah')
         return
       }
-      await setDoc(
-        doc(db, 'settings', 'general'),
-        { ...settingsStore.settings, adminPassword: formSandi.value.baru },
-        { merge: true }
-      )
-      settingsStore.settings.adminPassword = formSandi.value.baru
+      // Sync Firebase Auth DULU (sumber kebenaran login). Kalau gagal → batalkan,
+      //   jangan biarkan settings/admin desync dengan password Auth.
+      try {
+        const { getAuth, updatePassword } = await import('firebase/auth')
+        const u = getAuth().currentUser
+        if (!u) throw Object.assign(new Error('no-session'), { code: 'no-session' })
+        await updatePassword(u, toAuthPassword(formSandi.value.baru))
+      } catch (e) {
+        if (e?.code === 'auth/requires-recent-login') {
+          toast.error('Demi keamanan, logout lalu login lagi sebelum ganti sandi admin')
+        } else if (e?.code === 'no-session') {
+          toast.error('Sesi admin tak ditemukan. Logout lalu login lagi.')
+        } else {
+          toast.error('Gagal sinkron sandi: ' + (e?.message || e))
+        }
+        return
+      }
+      // Auth sukses → simpan salinan privat (settings/admin, read:false, write signedIn).
+      await setOne('settings', 'admin', { password: formSandi.value.baru })
     } else {
       if (props.entity?.password && formSandi.value.lama !== props.entity.password) {
         toast.error('Password lama salah')
@@ -458,8 +462,16 @@ async function onPickFoto(ev) {
           reader.result,
           file.type
         )
-        const coll = props.role === 'guru' ? 'guru' : 'santri'
-        await setOne(coll, String(props.entityId), { foto: url })
+        if (props.role === 'admin') {
+          // Admin built-in tak punya dokumen guru/santri → simpan foto di settings/web
+          //   (field adminFoto, read publik). Avatar dibaca via useRibbonUser/ProfilAdmin
+          //   dari settings store yang subscribe real-time ke settings/web.
+          await setOne('settings', 'web', { adminFoto: url })
+          settingsStore.settings.adminFoto = url
+        } else {
+          const coll = props.role === 'guru' ? 'guru' : 'santri'
+          await setOne(coll, String(props.entityId), { foto: url })
+        }
         toast.success('Foto profil diupdate')
         closeModal()
         emit('updated')

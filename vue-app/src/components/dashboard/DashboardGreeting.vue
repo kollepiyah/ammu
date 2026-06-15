@@ -21,7 +21,9 @@
 
     <!-- Text content -->
     <div class="relative z-10 flex-1 min-w-0">
-      <h2 class="text-sm md:text-base font-black text-teal-700 dark:text-teal-300 leading-tight truncate">
+      <h2
+        class="text-sm md:text-base font-black text-teal-700 dark:text-teal-300 leading-tight truncate"
+      >
         {{ welcomeWord }}, {{ namaUser }}!
       </h2>
       <div class="flex items-center gap-2 text-[10px] md:text-xs mt-0.5">
@@ -55,6 +57,8 @@ const fotoUrl = computed(() => {
   const s = auth.sesiAktif
   if (!s) return ''
   if (s.foto) return s.foto
+  // Admin built-in: foto disimpan di settings/web.adminFoto
+  if (s.id === 'admin') return settings.settings?.adminFoto || ''
   const gid = s.id || s.guru_id
   if (gid && guruRaw.value?.length) {
     const g = guruRaw.value.find((x) => String(x.id) === String(gid))
@@ -71,7 +75,8 @@ const namaUser = computed(() => {
   // → akun kayak 'kollepiyah' (guru dipromote) salah di-greet 'Ahlan, Administrator!'.
   // Fix: 'Administrator' literal hanya untuk built-in admin (id==='admin'), selainnya pakai nama asli.
   if (s.id === 'admin') return 'Administrator'
-  if (s.role === 'guru' || s.role === 'admin') return getNamaGuruGelar(s.nama, s.jk) || s.nama || s.username || 'Pengguna'
+  if (s.role === 'guru' || s.role === 'admin')
+    return getNamaGuruGelar(s.nama, s.jk) || s.nama || s.username || 'Pengguna'
   return s.nama || s.username || '—'
 })
 
@@ -83,11 +88,15 @@ const ROLE_LABELS = {
 const roleLabel = computed(() => ROLE_LABELS[auth.sesiAktif?.role] || '—')
 
 const ROLE_STYLES = {
-  admin: 'bg-teal-50 text-teal-700 border-teal-300 dark:bg-teal-900/30 dark:text-teal-300 dark:border-teal-700',
+  admin:
+    'bg-teal-50 text-teal-700 border-teal-300 dark:bg-teal-900/30 dark:text-teal-300 dark:border-teal-700',
   guru: 'bg-teal-50 text-teal-700 border-teal-300 dark:bg-teal-900/30 dark:text-teal-300 dark:border-teal-700',
-  santri: 'bg-cyan-50 text-cyan-700 border-cyan-300 dark:bg-cyan-900/30 dark:text-cyan-300 dark:border-cyan-700'
+  santri:
+    'bg-cyan-50 text-cyan-700 border-cyan-300 dark:bg-cyan-900/30 dark:text-cyan-300 dark:border-cyan-700'
 }
-const roleStyle = computed(() => ROLE_STYLES[auth.sesiAktif?.role] || ROLE_STYLES[auth.sesiAktif?.role] || ROLE_STYLES.santri)
+const roleStyle = computed(
+  () => ROLE_STYLES[auth.sesiAktif?.role] || ROLE_STYLES[auth.sesiAktif?.role] || ROLE_STYLES.santri
+)
 
 const iconRole = computed(() => {
   if (auth.sesiAktif?.role === 'admin') return 'fa-user-shield'

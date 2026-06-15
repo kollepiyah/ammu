@@ -12,7 +12,17 @@ import {
   signInWithPopup
 } from 'firebase/auth'
 import { auth, getSecondaryAuth } from './firebase'
-import { doc, getDoc, collection, query, where, getDocs, limit as fsLimit, updateDoc } from 'firebase/firestore'
+import {
+  doc,
+  getDoc,
+  setDoc,
+  collection,
+  query,
+  where,
+  getDocs,
+  limit as fsLimit,
+  updateDoc
+} from 'firebase/firestore'
 import { db } from './firebase'
 
 const googleProvider = new GoogleAuthProvider()
@@ -24,6 +34,26 @@ const googleProvider = new GoogleAuthProvider()
 // ============================================================================
 export function toAuthPassword(pass) {
   return 'mu_auth_' + String(pass || '')
+}
+
+// v.100g (security): validasi sandi admin SERVER-SIDE (Cloud Function) supaya
+//   `adminPassword` tak perlu lagi public-read di settings. Return boolean.
+//   Gagal/down → false (caller perlakukan sebagai sandi salah; aman karena
+//   hanya dipakai saat provisioning admin pertama, jalur normal pakai sign-in).
+const FUNCTIONS_BASE = 'https://us-central1-portal-mambaul-ulum.cloudfunctions.net'
+export async function verifyAdminPassword(password) {
+  try {
+    const resp = await fetch(FUNCTIONS_BASE + '/verifyAdminPassword', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password })
+    })
+    if (!resp.ok) return false
+    const j = await resp.json()
+    return !!(j && j.ok)
+  } catch (e) {
+    return false
+  }
 }
 
 // ============================================================================
@@ -84,7 +114,8 @@ export async function findUserByLoginInput(input) {
   // 1) Admin utama — ambil dari settings/web (adminUsername setting) atau default 'adminmu'
   try {
     const settingsSnap = await getDoc(doc(db, 'settings', 'web'))
-    const adminUser = (settingsSnap.exists() ? settingsSnap.data().adminUsername : 'adminmu') || 'adminmu'
+    const adminUser =
+      (settingsSnap.exists() ? settingsSnap.data().adminUsername : 'adminmu') || 'adminmu'
     if (uLower === 'adminmu' || uLower === adminUser.toLowerCase()) {
       return {
         source: 'admin',
@@ -119,9 +150,7 @@ export async function findUserByLoginInput(input) {
   // Strategy 3: case-insensitive scan kalau input ada huruf
   if (!guruDoc && /[a-z]/i.test(u)) {
     const allGuru = await getDocs(query(guruRef))
-    guruDoc = allGuru.docs.find(
-      (d) => String(d.data().username || '').toLowerCase() === uLower
-    )
+    guruDoc = allGuru.docs.find((d) => String(d.data().username || '').toLowerCase() === uLower)
   }
 
   if (guruDoc) {
@@ -151,9 +180,7 @@ export async function findUserByLoginInput(input) {
   // Case-insensitive scan untuk santri username
   if (!santriDoc && /[a-z]/i.test(u)) {
     const allSantri = await getDocs(query(santriRef))
-    santriDoc = allSantri.docs.find(
-      (d) => String(d.data().username || '').toLowerCase() === uLower
-    )
+    santriDoc = allSantri.docs.find((d) => String(d.data().username || '').toLowerCase() === uLower)
   }
 
   if (santriDoc) {
@@ -215,7 +242,9 @@ async function _provisionAndSignIn(email, rawPassword) {
   if (!secAuth) throw new Error('Secondary Firebase Auth init fail')
   try {
     await createUserWithEmailAndPassword(secAuth, email, toAuthPassword(rawPassword))
-    try { await fbSignOut(secAuth) } catch (e) {}
+    try {
+      await fbSignOut(secAuth)
+    } catch (e) {}
     const cred2 = await signInWithEmailAndPassword(auth, email, toAuthPassword(rawPassword))
     return { user: cred2.user, authMethod: 'firebase-migrated' }
   } catch (provErr) {
@@ -235,20 +264,27 @@ export async function loginUnified(userInfo, password, persistent = true) {
   // LALU establish sesi Firebase Auth ASLI (provider Anonymous sudah di-disable →
   // admin WAJIB punya request.auth != null supaya rules tulis lolos).
   if (userInfo.source === 'admin') {
-    const settingsAdmin = await getDoc(doc(db, 'settings', 'admin')).catch(() => null)
-    const settingsWeb = await getDoc(doc(db, 'settings', 'web')).catch(() => null)
-    const storedPass =
-      (settingsAdmin?.exists() && (settingsAdmin.data().password || settingsAdmin.data().adminPassword)) ||
-      (settingsWeb?.exists() && settingsWeb.data().adminPassword) ||
-      '1234'
-    if (password !== storedPass) {
-      const err = new Error('Sandi admin salah')
-      err.code = 'auth/wrong-password'
-      throw err
-    }
+    // v.100g: TAK lagi baca `adminPassword` publik. Firebase Auth (akun adminmu@…)
+    //   jadi sumber kebenaran: coba sign-in dulu. Hanya kalau akun belum ada
+    //   (provisioning pertama), validasi sandi via server (verifyAdminPassword).
     const emails = authEmailCandidates(userInfo.authKey)
     let res = await _trySignInCandidates(emails, password)
-    if (!res) res = await _provisionAndSignIn(buildAuthEmail(userInfo.authKey), password)
+    if (!res) {
+      const ok = await verifyAdminPassword(password)
+      if (!ok) {
+        const err = new Error('Sandi admin salah')
+        err.code = 'auth/wrong-password'
+        throw err
+      }
+      res = await _provisionAndSignIn(buildAuthEmail(userInfo.authKey), password)
+    }
+    // Best-effort: jaga salinan privat settings/admin.password sinkron dgn sandi yang
+    //   barusan sukses (admin signedIn → write lolos; doc read:false). Non-blocking.
+    try {
+      await setDoc(doc(db, 'settings', 'admin'), { password }, { merge: true })
+    } catch (e) {
+      /* non-blocking */
+    }
     return { authMethod: 'admin-' + res.authMethod, user: res.user }
   }
 
@@ -304,13 +340,24 @@ export async function linkGoogleAccount(collectionName, docId) {
   const cred = await signInWithPopup(auth, googleProvider)
   const user = cred?.user
   if (!user?.uid) throw new Error('Gagal dapat UID Google')
-  const guruExists = await getDocs(query(collection(db, 'guru'), where('linked_uid', '==', user.uid), fsLimit(1)))
-  const santriExists = await getDocs(query(collection(db, 'santri'), where('linked_uid', '==', user.uid), fsLimit(1)))
+  const guruExists = await getDocs(
+    query(collection(db, 'guru'), where('linked_uid', '==', user.uid), fsLimit(1))
+  )
+  const santriExists = await getDocs(
+    query(collection(db, 'santri'), where('linked_uid', '==', user.uid), fsLimit(1))
+  )
   const conflict = []
-  guruExists.forEach((d) => { if (collectionName !== 'guru' || String(d.id) !== String(docId)) conflict.push(`guru/${d.id}`) })
-  santriExists.forEach((d) => { if (collectionName !== 'santri' || String(d.id) !== String(docId)) conflict.push(`santri/${d.id}`) })
+  guruExists.forEach((d) => {
+    if (collectionName !== 'guru' || String(d.id) !== String(docId)) conflict.push(`guru/${d.id}`)
+  })
+  santriExists.forEach((d) => {
+    if (collectionName !== 'santri' || String(d.id) !== String(docId))
+      conflict.push(`santri/${d.id}`)
+  })
   if (conflict.length > 0) {
-    throw new Error(`Akun Google ini sudah dipakai oleh: ${conflict.join(', ')}. Unlink dulu sebelum link ulang.`)
+    throw new Error(
+      `Akun Google ini sudah dipakai oleh: ${conflict.join(', ')}. Unlink dulu sebelum link ulang.`
+    )
   }
   await updateDoc(doc(db, collectionName, String(docId)), {
     linked_uid: user.uid,

@@ -57,6 +57,16 @@
             >
               <i class="fas fa-plus text-[10px]"></i>Tambah
             </button>
+            <!-- v.100g: tombol Impor Excel HANYA ada di pita Electron sebelumnya -> hilang di
+                 web/mobile. Kembalikan di sini (route /impor-kalender, sama dgn aksi desktop). -->
+            <button
+              v-if="bisaEdit"
+              @click="$router.push('/impor-kalender')"
+              class="text-xs font-bold px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 transition cursor-pointer flex items-center gap-1.5"
+              title="Impor jadwal kegiatan dari Excel"
+            >
+              <i class="fas fa-file-import text-[10px]"></i>Impor
+            </button>
           </template>
         </div>
       </div>
@@ -139,8 +149,13 @@
       >
         <i class="fas fa-list-ul text-cyan-600 mr-2"></i>Kegiatan Bulan Ini
       </h3>
-      <div v-if="kegiatanBulan.length === 0" class="text-xs text-[var(--text-tertiary)] italic text-center py-4">
-        <i class="fas fa-calendar-times text-2xl text-slate-300 dark:text-[var(--text-secondary)] block mb-2"></i>
+      <div
+        v-if="kegiatanBulan.length === 0"
+        class="text-xs text-[var(--text-tertiary)] italic text-center py-4"
+      >
+        <i
+          class="fas fa-calendar-times text-2xl text-slate-300 dark:text-[var(--text-secondary)] block mb-2"
+        ></i>
         Tidak ada kegiatan bulan ini.
       </div>
       <div v-else class="space-y-2">
@@ -159,10 +174,20 @@
         >
           <div class="flex items-start justify-between gap-2">
             <div class="flex-1 min-w-0">
-              <p class="text-xs font-black text-[var(--text-primary)] flex items-center gap-1.5 flex-wrap">
+              <p
+                class="text-xs font-black text-[var(--text-primary)] flex items-center gap-1.5 flex-wrap"
+              >
                 {{ k.judul }}
-                <span v-if="k.tipe === 'libur_nasional'" class="text-[9px] font-black bg-rose-200 text-rose-700 px-1.5 py-0.5 rounded uppercase tracking-wider">Libur Nasional</span>
-                <span v-else-if="k.tipe === 'libur'" class="text-[9px] font-black bg-amber-200 text-amber-700 px-1.5 py-0.5 rounded uppercase tracking-wider">Libur</span>
+                <span
+                  v-if="k.tipe === 'libur_nasional'"
+                  class="text-[9px] font-black bg-rose-200 text-rose-700 px-1.5 py-0.5 rounded uppercase tracking-wider"
+                  >Libur Nasional</span
+                >
+                <span
+                  v-else-if="k.tipe === 'libur'"
+                  class="text-[9px] font-black bg-amber-200 text-amber-700 px-1.5 py-0.5 rounded uppercase tracking-wider"
+                  >Libur</span
+                >
               </p>
               <p class="text-[10px] text-[var(--text-secondary)] mt-0.5">
                 {{ formatRangeTanggal(k.tgl_mulai, k.tgl_akhir) }}
@@ -504,7 +529,8 @@ async function seedLiburNasional() {
   const list = getLiburNasional(tahun.value)
   const ok = await confirmDlg({
     title: `Tambahkan ${list.length} libur nasional ${tahun.value}?`,
-    message: 'Akan men-duplikat jika sudah ada — Anda bisa hapus manual setelahnya. Tanggal Hijriyah-based merupakan estimasi, mohon verifikasi dengan SKB 3 Menteri resmi.',
+    message:
+      'Akan men-duplikat jika sudah ada — Anda bisa hapus manual setelahnya. Tanggal Hijriyah-based merupakan estimasi, mohon verifikasi dengan SKB 3 Menteri resmi.',
     confirmText: 'Tambahkan',
     cancelText: 'Batal',
     danger: false
