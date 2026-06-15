@@ -154,3 +154,6 @@ tmp_recovery/_psb_build.log
 tmp_recovery/_preview_*.py
 tmp_recovery/_gen_*.py
 tmp_recovery/_stat_preview.png
+
+# public/psb = artefak deploy (di-regenerate Step 0d deploy-minified dari vue-app-psb)
+public/psb/
