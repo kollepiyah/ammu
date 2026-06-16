@@ -1134,6 +1134,118 @@ exports.syncUserClaims = onRequest(
 )
 
 // ====================================================================
+// v.102 A2 (ANALITIK): analyticsQuery — jembatan App -> BigQuery.
+//   App TAK query BigQuery langsung (butuh kredensial). Fungsi ini: verifikasi ID token,
+//   wajib role admin/super_admin, jalankan SQL WHITELIST (client cuma kirim nama laporan
+//   + filter terbatas, BUKAN SQL bebas). Sumber: dataset firestore_export (stream A1).
+//   DEPLOY: firebase deploy --only functions:analyticsQuery
+//   (deploy meng-install dep @google-cloud/bigquery otomatis di cloud build)
+// ====================================================================
+const _BQ_PROJECT = 'portal-mambaul-ulum'
+const _BQ_DS = 'firestore_export'
+let _bqClient = null
+function _bq() {
+  if (!_bqClient) {
+    const { BigQuery } = require('@google-cloud/bigquery')
+    _bqClient = new BigQuery()
+  }
+  return _bqClient
+}
+// Whitelist laporan (SQL ditetapkan server; param di-parameterize, anti-injection).
+const _ANALYTICS = {
+  // ---- SANTRI ----
+  santri_per_lembaga: {
+    sql:
+      "SELECT IFNULL(JSON_VALUE(data,'$.lembaga'),'(tanpa lembaga)') AS label, COUNT(*) AS value " +
+      'FROM `' + _BQ_PROJECT + '.' + _BQ_DS + '.santri_raw_latest` ' +
+      "WHERE data IS NOT NULL AND IFNULL(JSON_VALUE(data,'$.aktif'),'true') != 'false' " +
+      'GROUP BY label ORDER BY value DESC',
+    params: []
+  },
+  santri_mukim: {
+    sql:
+      "SELECT CASE WHEN JSON_VALUE(data,'$.is_mukim')='true' THEN 'Mukim' ELSE 'Non-mukim' END AS label, COUNT(*) AS value " +
+      'FROM `' + _BQ_PROJECT + '.' + _BQ_DS + '.santri_raw_latest` ' +
+      "WHERE data IS NOT NULL AND IFNULL(JSON_VALUE(data,'$.aktif'),'true') != 'false' " +
+      'GROUP BY label ORDER BY label',
+    params: []
+  },
+  // ---- KEUANGAN (buku induk) ----
+  keuangan_ringkas: {
+    sql:
+      "SELECT SUM(CASE WHEN JSON_VALUE(data,'$.tipe')='masuk' THEN CAST(JSON_VALUE(data,'$.nominal') AS NUMERIC) ELSE 0 END) AS masuk, " +
+      "SUM(CASE WHEN JSON_VALUE(data,'$.tipe')='keluar' THEN CAST(JSON_VALUE(data,'$.nominal') AS NUMERIC) ELSE 0 END) AS keluar " +
+      'FROM `' + _BQ_PROJECT + '.' + _BQ_DS + '.keuangan_buku_induk_raw_latest` ' +
+      'WHERE data IS NOT NULL',
+    params: []
+  },
+  keuangan_bulanan: {
+    sql:
+      "SELECT FORMAT_DATE('%Y-%m', SAFE.PARSE_DATE('%Y-%m-%d', JSON_VALUE(data,'$.tanggal'))) AS bulan, " +
+      "SUM(CASE WHEN JSON_VALUE(data,'$.tipe')='masuk' THEN CAST(JSON_VALUE(data,'$.nominal') AS NUMERIC) ELSE 0 END) AS masuk, " +
+      "SUM(CASE WHEN JSON_VALUE(data,'$.tipe')='keluar' THEN CAST(JSON_VALUE(data,'$.nominal') AS NUMERIC) ELSE 0 END) AS keluar " +
+      'FROM `' + _BQ_PROJECT + '.' + _BQ_DS + '.keuangan_buku_induk_raw_latest` ' +
+      "WHERE data IS NOT NULL AND SAFE.PARSE_DATE('%Y-%m-%d', JSON_VALUE(data,'$.tanggal')) BETWEEN DATE(@year,1,1) AND DATE(@year,12,31) " +
+      'GROUP BY bulan ORDER BY bulan',
+    params: [{ name: 'year', type: 'INT64', from: 'year', def: () => new Date().getFullYear() }]
+  }
+}
+
+exports.analyticsQuery = onRequest(
+  { region: 'us-central1', timeoutSeconds: 60, memory: '512MiB', cors: true },
+  async (req, res) => {
+    try {
+      const authz = String(req.headers.authorization || req.headers.Authorization || '')
+      const m = authz.match(/^Bearer\s+(.+)$/i)
+      if (!m) {
+        res.status(401).json({ ok: false, error: 'no-token' })
+        return
+      }
+      let decoded
+      try {
+        decoded = await getAuth().verifyIdToken(m[1])
+      } catch (e) {
+        res.status(401).json({ ok: false, error: 'invalid-token' })
+        return
+      }
+      const role = decoded.role || ''
+      if (!['super_admin', 'admin'].includes(role)) {
+        res.status(403).json({ ok: false, error: 'forbidden' })
+        return
+      }
+
+      const name = String((req.query && req.query.report) || (req.body && req.body.report) || '')
+      const rep = _ANALYTICS[name]
+      if (!rep) {
+        res.status(400).json({ ok: false, error: 'unknown-report' })
+        return
+      }
+
+      const params = {}
+      const types = {}
+      for (const p of rep.params || []) {
+        let v = (req.query && req.query[p.from]) != null ? req.query[p.from] : req.body && req.body[p.from]
+        if (v === undefined || v === null || v === '') v = p.def ? p.def() : null
+        if (p.type === 'INT64') v = parseInt(v, 10)
+        params[p.name] = v
+        types[p.name] = p.type
+      }
+
+      const [rows] = await _bq().query({
+        query: rep.sql,
+        params,
+        types,
+        location: 'asia-southeast2'
+      })
+      res.json({ ok: true, report: name, rows })
+    } catch (e) {
+      logger.error('[analyticsQuery] error', e)
+      res.status(500).json({ ok: false, error: String((e && e.message) || e) })
+    }
+  }
+)
+
+// ====================================================================
 // FUNCTION 5 (v.95.0626): AUTO-GENERATE TAGIHAN BULANAN — jadwal harian, IDEMPOTENT
 //   Replikasi server-side dari tombol manual "autoGenerate" (PengaturanKeuanganView).
 //   - Jalan tiap hari 01:00 WIB. Buat tagihan bulan berjalan utk jenis ber-flag
