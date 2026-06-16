@@ -55,7 +55,7 @@ service cloud.firestore {
 
     // v.21.22.0526: Relax id strict number → legacy data mix string/number
     match /guru/{docId} {
-      allow read: if true;
+      allow read: if signedIn(); // S3 (v.102): tutup read publik (PII guru); scope per-role di app
       allow create, update: if signedIn()
         && (request.resource.data.id is number || request.resource.data.id is string)
         && request.resource.data.nama is string
@@ -69,7 +69,7 @@ service cloud.firestore {
     }
 
     match /santri/{docId} {
-      allow read: if true;
+      allow read: if signedIn(); // S3 (v.102): tutup read publik (PII anak+wali); scope per-role di app
       allow create, update: if signedIn()
         && (request.resource.data.id is number || request.resource.data.id is string)
         && request.resource.data.nama is string

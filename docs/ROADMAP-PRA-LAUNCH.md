@@ -18,8 +18,8 @@
 | Tahap | Aksi | Gerbang uji | Status |
 |------|------|-------------|--------|
 | **S1** | Hapus password plaintext santri/guru (login = Firebase Auth, sandi awal '1234') | strip field doc lama | ✅ kode v.102 (`a5839b1`); ⏳ jalankan `stripPlaintextPasswords` 1× |
-| **S2** | Login-lookup **server-only**: andalkan Cloud Function `findUserByLogin` (Admin SDK baca server-side); lepas ketergantungan direct-read publik | login admin/guru/santri jalan tanpa read publik | ⬜ belum |
-| **S3** | **Tutup read publik** `santri`/`guru` → `signedIn()` (settings/web tetap publik utk branding, tanpa rahasia) | semua halaman data jalan pasca-login; PSB jalan | ⬜ belum |
+| **S2** | Login-lookup **server-only**: andalkan Cloud Function `findUserByLogin` (Admin SDK baca server-side); lepas ketergantungan direct-read publik | login admin/guru/santri jalan tanpa read publik | ✅ `541ae6e` — deployed + login OK (kyai) |
+| **S3** | **Tutup read publik** `santri`/`guru` → `signedIn()` (settings/web tetap publik utk branding, tanpa rahasia) | semua halaman data jalan pasca-login; PSB jalan | ✅ rules applied; ⏳ `firebase deploy --only firestore:rules` + tes 3 role |
 | **S4** | **Custom claims** (role di token JWT) + rules **write/delete per-role** (stop "siapa pun login = bisa nulis") | tiap role: yang berhak tulis bisa, lainnya ditolak | ⬜ belum |
 | **S5** | **App Check enforce** (Storage dulu → Firestore/Auth) | setelah app produksi native terverifikasi | ⬜ tunggu produksi |
 
