@@ -150,6 +150,9 @@ export const useAuthStore = defineStore('auth', () => {
       // 3) Auth via Firebase (padded → raw → lazy migration)
       const result = await authService.loginUnified(userInfo, password, persistent)
 
+      // S4a (v.102): set custom claim `role` di token (best-effort; rules enforce di S4b)
+      try { await authService.syncUserClaims() } catch (e) { /* best-effort */ }
+
       // 4) Build sesiAktif sesuai source
       if (userInfo.source === 'admin') {
         sesiAktif.value = {

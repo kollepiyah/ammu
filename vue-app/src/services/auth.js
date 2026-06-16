@@ -274,6 +274,31 @@ export async function loginWithWa(wa, password, persistent = true) {
   return signInWithEmailAndPassword(auth, email, toAuthPassword(password))
 }
 
+// S4a (v.102): minta server set custom claim `role` di token (RBAC enforce di rules S4b).
+//   Dipanggil sesudah login sukses. Best-effort: kalau gagal, tak memblok login (tapi
+//   write role-gated bisa gagal sampai login ulang). Refresh token agar claim ikut.
+export async function syncUserClaims() {
+  const u = auth.currentUser
+  if (!u) return null
+  try {
+    const token = await u.getIdToken()
+    const resp = await fetch(FUNCTIONS_BASE + '/syncUserClaims', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + token }
+    })
+    if (!resp.ok) return null
+    const j = await resp.json()
+    await u.getIdToken(true) // refresh → token bawa claim role
+    // eslint-disable-next-line no-console
+    console.info('[auth] claim role:', j && j.role) // S4a: verifikasi (boleh dihapus pasca S4)
+    return j && j.role
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.warn('[auth] syncUserClaims gagal (best-effort):', e && e.message)
+    return null
+  }
+}
+
 /** Google OAuth (opsional). */
 export async function loginWithGoogle() {
   return signInWithPopup(auth, googleProvider)

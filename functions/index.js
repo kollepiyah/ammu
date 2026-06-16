@@ -35,6 +35,7 @@ const { defineSecret } = require('firebase-functions/params')
 const { initializeApp } = require('firebase-admin/app')
 const { getMessaging } = require('firebase-admin/messaging')
 const { getFirestore, FieldValue } = require('firebase-admin/firestore')
+const { getAuth } = require('firebase-admin/auth')
 const logger = require('firebase-functions/logger')
 
 // v.108.31: Iframely API key as Secret (modern, future-proof, no deprecation)
@@ -1016,6 +1017,74 @@ exports.stripPlaintextPasswords = onRequest(
       res.json({ ok: true, stripped: result })
     } catch (e) {
       logger.error('[stripPlaintextPasswords] error', e)
+      res.status(500).json({ ok: false, error: String((e && e.message) || e) })
+    }
+  }
+)
+
+// ====================================================================
+// v.102 S4a (RBAC): syncUserClaims — set custom claim `role` di token Firebase Auth
+//   (enforce per-role di firestore.rules = S4b). Verifikasi ID token pemanggil
+//   (Authorization: Bearer <token>), tentukan role server-side:
+//     - email = adminUsername/adminmu  -> 'super_admin'
+//     - doc guru (firebase_uid == uid).role_sistem -> super_admin|admin|admin_keuangan|guru
+//     - doc santri (firebase_uid == uid) -> 'santri'
+//   setCustomUserClaims(uid, {role}). Idempoten; client lalu getIdToken(true).
+//   DEPLOY: firebase deploy --only functions:syncUserClaims
+// ====================================================================
+exports.syncUserClaims = onRequest(
+  { region: 'us-central1', timeoutSeconds: 20, memory: '256MiB', cors: true },
+  async (req, res) => {
+    try {
+      const authz = String(req.headers.authorization || req.headers.Authorization || '')
+      const m = authz.match(/^Bearer\s+(.+)$/i)
+      if (!m) {
+        res.status(401).json({ ok: false, error: 'no-token' })
+        return
+      }
+      let decoded
+      try {
+        decoded = await getAuth().verifyIdToken(m[1])
+      } catch (e) {
+        res.status(401).json({ ok: false, error: 'invalid-token' })
+        return
+      }
+      const uid = decoded.uid
+      const email = String(decoded.email || '').toLowerCase()
+      const localPart = email.split('@')[0]
+
+      let adminUser = 'adminmu'
+      try {
+        const ws = await db.collection('settings').doc('web').get()
+        if (ws.exists && ws.data() && ws.data().adminUsername) {
+          adminUser = String(ws.data().adminUsername).toLowerCase()
+        }
+      } catch (e) {
+        /* default adminmu */
+      }
+
+      let role = null
+      if (localPart === adminUser || localPart === 'adminmu') {
+        role = 'super_admin'
+      } else {
+        const gq = await db.collection('guru').where('firebase_uid', '==', uid).limit(1).get()
+        if (!gq.empty) {
+          const rs = String(gq.docs[0].data().role_sistem || 'guru')
+          role = ['super_admin', 'admin', 'admin_keuangan'].includes(rs) ? rs : 'guru'
+        } else {
+          const sq = await db.collection('santri').where('firebase_uid', '==', uid).limit(1).get()
+          if (!sq.empty) role = 'santri'
+        }
+      }
+
+      if (!role) {
+        res.status(403).json({ ok: false, error: 'role-not-found' })
+        return
+      }
+      await getAuth().setCustomUserClaims(uid, { role })
+      res.json({ ok: true, role })
+    } catch (e) {
+      logger.error('[syncUserClaims] error', e)
       res.status(500).json({ ok: false, error: String((e && e.message) || e) })
     }
   }
