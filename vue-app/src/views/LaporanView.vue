@@ -51,6 +51,8 @@
         <div class="relative h-72"><Doughnut v-if="cSantriMukim" :data="cSantriMukim" :options="optDoughnut" /><div v-else :class="emptyCls">Belum ada data</div></div>
       </div>
     </div>
+    <!-- v.103: ringkasan santri/lembaga realtime (KPI + grid lembaga + distribusi bar) -->
+    <RingkasanSantriLembaga v-show="tab === 'santri'" />
 
     <!-- ===== KEUANGAN ===== -->
     <div v-show="!loading && tab === 'keuangan'" class="space-y-4">
@@ -85,6 +87,8 @@
         <div class="relative h-72"><Bar v-if="cRaporLembaga" :data="cRaporLembaga" :options="optBar" /><div v-else :class="emptyCls">Belum ada data</div></div>
       </div>
     </div>
+    <!-- v.103: distribusi capaian prestasi (PTPT & PPPH) realtime + ekspor -->
+    <DistribusiPrestasi v-show="tab === 'akademik'" />
 
     <!-- ===== ABSENSI ===== -->
     <div v-show="!loading && tab === 'absensi'" class="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -115,6 +119,8 @@
         <div class="relative h-72"><Bar v-if="cGajiBulanan" :data="cGajiBulanan" :options="optCurrency" /><div v-else :class="emptyCls">Belum ada data</div></div>
       </div>
     </div>
+    <!-- v.103: alert operasional realtime (Guru Belum Input + Kelas Overload) -->
+    <OperasionalGuru v-show="tab === 'pegawai'" />
   </div>
 </template>
 
@@ -125,6 +131,11 @@ import {
   Chart as ChartJS, Title, Tooltip, Legend, BarElement, ArcElement, CategoryScale, LinearScale
 } from 'chart.js'
 import { analyticsQuery } from '@/services/analytics'
+// v.103 "rapikan dashboard": section non-grafik admin dari StatistikView dilebur ke
+// tab terkait (Firestore-realtime, terpisah dari gate loading BigQuery di bawah).
+import RingkasanSantriLembaga from '@/components/statistik/RingkasanSantriLembaga.vue'
+import DistribusiPrestasi from '@/components/statistik/DistribusiPrestasi.vue'
+import OperasionalGuru from '@/components/statistik/OperasionalGuru.vue'
 
 ChartJS.register(Title, Tooltip, Legend, BarElement, ArcElement, CategoryScale, LinearScale)
 
