@@ -575,6 +575,29 @@
     <!-- ============================================================
          ADMIN: Lembaga Prestasi Cards (Top 5 — PTPT &amp; PPPH)
          ============================================================ -->
+    <!-- v.102: header + ekspor distribusi (detail santri + status + guru ampuan) -->
+    <div
+      v-if="isAdminMode && lembagaPrestasi.length > 0"
+      class="flex items-center justify-between flex-wrap gap-2"
+    >
+      <h3 class="text-sm md:text-base font-black text-[var(--text-primary)]">
+        <i class="fas fa-chart-simple text-teal-600 mr-1"></i>Distribusi Capaian Prestasi (PTPT &amp; PPPH)
+      </h3>
+      <div class="flex gap-2">
+        <button
+          @click="exportDistribusi('xlsx')"
+          class="h-8 px-3 inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition"
+        >
+          <i class="fas fa-file-excel"></i>Excel
+        </button>
+        <button
+          @click="exportDistribusi('pdf')"
+          class="h-8 px-3 inline-flex items-center gap-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition"
+        >
+          <i class="fas fa-file-pdf"></i>PDF
+        </button>
+      </div>
+    </div>
     <div
       v-if="isAdminMode && lembagaPrestasi.length > 0"
       class="grid grid-cols-1 md:grid-cols-2 gap-3"
@@ -938,6 +961,8 @@ import TrenCapaianChart from '@/components/charts/TrenCapaianChart.vue' // v.100
 // v.21.107.0527: gating role konsisten (admin/super_admin/admin_keuangan)
 import { isFullFilterRole, isKepalaLembaga } from '@/utils/roleScope'
 import { juzNum } from '@/utils/format' // v.100e: normalisasi tampilan juz (anti dobel "Juz JUZ n")
+import { useExcel } from '@/composables/useExcel' // v.102: ekspor distribusi (Excel)
+import { buildListPdf, buildKopFromSettings } from '@/utils/pdfBuilder' // v.102: ekspor distribusi (PDF)
 // v.95.0626: sumber data ter-scope (admin=semua, kepala/PJ=lembaganya) + guru belum input + overload
 import { useStatistikScope, statusFromSelisih } from '@/composables/useStatistikScope'
 
@@ -964,6 +989,7 @@ const { guruRaw, loading: loadingGuru } = useGuru()
 const { lembagaRaw } = useLembaga()
 const toast = useToast()
 const confirmDlg = useConfirm()
+const { exportStyled } = useExcel()
 const bersihRunning = ref(false)
 
 // ---- Role / loading --------------------------------------------------------
@@ -1150,6 +1176,85 @@ const lembagaPrestasi = computed(() => {
     return { nama, total: list.length, dinilai, top5, kurang, cukup, bagus, bandLabels }
   }).filter((x) => x.total > 0)
 })
+
+// v.102: ekspor distribusi capaian (PTPT & PPPH) — DETAIL per santri + status + guru ampuan
+function _distribusiRows() {
+  const out = []
+  const src = scopedSantriAktif.value || []
+  let no = 0
+  for (const nama of PRESTASI_LEMBAGA) {
+    const low = nama.toLowerCase()
+    const list = src.filter((s) => String(s.lembaga || '').trim().toLowerCase() === low)
+    for (const s of list) {
+      const awal = parseNum(s.prestasi_awal)
+      const akhir = parseNum(s.prestasi_akhir)
+      const selisih = akhir - awal
+      const st = statusFromSelisih(selisih, nama)
+      const gSek = Array.isArray(s.guru_sekolah) ? s.guru_sekolah.filter(Boolean).join(' | ') : (s.guru_sekolah || '')
+      out.push({
+        no: ++no,
+        nama: s.nama || '',
+        lembaga: nama,
+        kelas: s.kelas || '',
+        awal,
+        akhir,
+        selisih,
+        status: st === 'bagus' ? 'Bagus' : st === 'cukup' ? 'Cukup' : st === 'kurang' ? 'Kurang' : '-',
+        guru_pagi: s.guru_pagi || s.guru || '',
+        guru_sore: s.guru_sore || '',
+        guru_sekolah: gSek
+      })
+    }
+  }
+  return out
+}
+const _DIST_COLS = [
+  { key: 'no', header: 'No', width: 5 },
+  { key: 'nama', header: 'Nama Santri', width: 26 },
+  { key: 'lembaga', header: 'Lembaga', width: 10 },
+  { key: 'kelas', header: 'Kelas', width: 10 },
+  { key: 'awal', header: 'Awal', width: 8 },
+  { key: 'akhir', header: 'Akhir', width: 8 },
+  { key: 'selisih', header: 'Selisih', width: 8 },
+  { key: 'status', header: 'Status', width: 10 },
+  { key: 'guru_pagi', header: 'Guru Pagi', width: 18 },
+  { key: 'guru_sore', header: 'Guru Sore', width: 18 },
+  { key: 'guru_sekolah', header: 'Guru Sekolah', width: 20 }
+]
+async function exportDistribusi(fmt) {
+  const rows = _distribusiRows()
+  if (!rows.length) {
+    toast.error('Belum ada data distribusi untuk diekspor')
+    return
+  }
+  const ss = settings.settings || {}
+  const stamp = new Date().toISOString().slice(0, 10)
+  try {
+    if (fmt === 'pdf') {
+      await buildListPdf({
+        kind: 'umum',
+        orientation: 'l',
+        format: 'F4',
+        kop: buildKopFromSettings(ss),
+        title: 'DISTRIBUSI CAPAIAN PRESTASI (PTPT & PPPH)',
+        columns: _DIST_COLS,
+        rows,
+        filename: `distribusi_prestasi_${stamp}.pdf`
+      })
+    } else {
+      await exportStyled(rows, {
+        filename: `distribusi_prestasi_${stamp}.xlsx`,
+        sheetName: 'Distribusi Prestasi',
+        kop: [ss.kopLine1 || '', ss.kopLine2 || 'PONDOK PESANTREN MAMBAUL ULUM', ss.kopLine3 || '', ss.kopLine4 || ''],
+        subtitle: `Distribusi Capaian Prestasi — ${rows.length} santri (${new Date().toLocaleDateString('id-ID')})`,
+        columns: _DIST_COLS
+      })
+    }
+    toast.success('Ekspor distribusi berhasil')
+  } catch (e) {
+    toast.error('Gagal ekspor: ' + (e.message || e))
+  }
+}
 
 // ---- ADMIN: Distribusi santri per lembaga (bar) ----------------------------
 const distribusiLembaga = computed(() => {

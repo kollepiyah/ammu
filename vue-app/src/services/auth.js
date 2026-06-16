@@ -289,8 +289,6 @@ export async function syncUserClaims() {
     if (!resp.ok) return null
     const j = await resp.json()
     await u.getIdToken(true) // refresh → token bawa claim role
-    // eslint-disable-next-line no-console
-    console.info('[auth] claim role:', j && j.role) // S4a: verifikasi (boleh dihapus pasca S4)
     return j && j.role
   } catch (e) {
     // eslint-disable-next-line no-console
