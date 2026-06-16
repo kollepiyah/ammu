@@ -43,9 +43,9 @@ diuji login semua role dulu sebelum lanjut; sediakan rollback `firestore.rules`.
 
 | Tahap | Aksi | Status |
 |------|------|--------|
-| **A1** | **Nyalakan BigQuery stream** → riwayat lengkap. Runbook: `docs/BIGQUERY-STREAM-SETUP.md` | ✅ `848f2da` — 3 instance terpasang (santri/guru/keuangan_buku_induk), tabel `_raw_latest` muncul (deklaratif, deploy `--only extensions`) |
-| **A2** | **Jembatan Cloud Function → BigQuery** (server, aman — app tak query langsung; role-scoped) | ✅ `d023d56` — fn `analyticsQuery` (admin/super, SQL whitelist); ⏳ deploy `functions:analyticsQuery` (+`npm install` @google-cloud/bigquery) |
-| **A3** | **Menu "Analitik/Laporan" di app** + grafik, baca via A2 | 🔄 bidang **Santri + Keuangan** dulu (per-lembaga, mukim, arus kas bulanan, KPI) — LaporanView + service + route + menu; ⏳ deploy web. Akademik/Absensi/Pegawai = pola sama menyusul |
+| **A1** | **Nyalakan BigQuery stream** → riwayat lengkap. Runbook: `docs/BIGQUERY-STREAM-SETUP.md` | ✅ **8 stream DEPLOYED** (`848f2da`+`b92dda3`): santri, guru, keuangan_buku_induk, rapor_semester, tes_kenaikan, absensi_santri_ngaji_bulanan, absensi_santri_sekolah_bulanan, keuangan_gaji. Semua 8 view `_raw_latest` terverifikasi via `bq ls` |
+| **A2** | **Jembatan Cloud Function → BigQuery** (server, aman — app tak query langsung; role-scoped) | ✅ **DEPLOYED** (`d023d56`+`b92dda3`) — fn `analyticsQuery` (admin/super, SQL whitelist, 11 laporan). SQL tersulit (absensi/gaji param year) terverifikasi `bq query` EXIT 0 |
+| **A3** | **Menu "Analitik/Laporan" di app** + grafik, baca via A2 | ✅ **DEPLOYED** (`acc0581`+`b92dda3`) — LaporanView **5 tab** (Santri/Keuangan/Akademik/Absensi/Pegawai), vue-chartjs, year selector, stacked bar absensi. Live ammuonline.web.app (data kosong sampai backfill/tulisan baru) |
 | **A4** | *(opsional)* Looker Studio untuk dashboard yayasan (lihat-saja) | ⬜ opsional |
 
 > Pola data: **Firestore = master (tulis + baca operasional realtime), BigQuery = cermin
