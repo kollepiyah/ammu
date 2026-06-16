@@ -109,6 +109,8 @@ const routes = [
       // v.98: ribbon-native — Home desktop (dua dasbor) + Bantuan + placeholder modul
       { path: 'beranda', name: 'beranda', component: BerandaDesktopView, meta: { noSantri: true } },
       { path: 'bantuan', name: 'bantuan', component: BantuanView },
+      // v.102 A3: Laporan/Analitik (BigQuery) — admin/super_admin only
+      { path: 'laporan', name: 'laporan', component: () => import('@/views/LaporanView.vue'), meta: { admin: true, noSantri: true } },
       { path: 'modul/:judul', name: 'ribbon-modul', component: RibbonPlaceholderView, meta: { noSantri: true } },
       { path: 'profil', name: 'profil', component: ProfilView },
       { path: 'notifikasi', name: 'notifikasi', component: NotifikasiView },

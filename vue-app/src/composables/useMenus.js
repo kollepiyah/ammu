@@ -13,6 +13,8 @@ const ALL_MENUS = [
   { group: 'Menu', name: 'Beranda', path: '/dashboard', icon: 'fa-home', roles: ['admin', 'guru', 'santri'], available: true, featureFlag: 'fiturBeranda' },
   // v.86.0526: Dashboard Statistik HANYA admin/guru. Santri: statistik prestasi pribadi digabung ke Capaian Prestasi (kyai req).
   { group: 'Menu', name: 'Dashboard Statistik', path: '/statistik', icon: 'fa-chart-pie', roles: ['admin', 'guru'], available: true },
+  // v.102: Laporan/Analitik (BigQuery) — super_admin + admin biasa saja (bukan admin_keuangan/guru/santri)
+  { group: 'Menu', name: 'Laporan', path: '/laporan', icon: 'fa-chart-bar', roles: ['admin'], roleSistem: ['super_admin', 'admin'], available: true },
   { group: 'Menu', name: 'Kalender Kegiatan', path: '/kalender', icon: 'fa-calendar-alt', roles: ['admin', 'guru', 'santri'], available: true, featureFlag: 'fiturKalender' },
   // v.20.14.0526: Capaian Prestasi santri — pindah ke group Menu (di bawah Kalender, tanpa label Pendidikan)
   { group: 'Menu', name: 'Capaian Prestasi', path: '/capaian-prestasi', icon: 'fa-trophy', roles: ['santri'], available: true },

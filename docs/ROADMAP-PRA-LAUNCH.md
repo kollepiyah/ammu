@@ -20,7 +20,7 @@
 | **S1** | Hapus password plaintext santri/guru (login = Firebase Auth, sandi awal '1234') | strip field doc lama | ✅ kode v.102 (`a5839b1`); ⏳ jalankan `stripPlaintextPasswords` 1× |
 | **S2** | Login-lookup **server-only**: andalkan Cloud Function `findUserByLogin` (Admin SDK baca server-side); lepas ketergantungan direct-read publik | login admin/guru/santri jalan tanpa read publik | ✅ `541ae6e` — deployed + login OK (kyai) |
 | **S3** | **Tutup read publik** `santri`/`guru` → `signedIn()` (settings/web tetap publik utk branding, tanpa rahasia) | semua halaman data jalan pasca-login; PSB jalan | ✅ rules applied; ⏳ `firebase deploy --only firestore:rules` + tes 3 role |
-| **S4** | **Custom claims** (role di token JWT) + rules **write/delete per-role** (stop "siapa pun login = bisa nulis") | tiap role: yang berhak tulis bisa, lainnya ditolak | ✅ **S4a** terverifikasi (claim role jalan). 🔄 **S4b** implemented: rules per-role (B lengkap) + `syncUserClaims` tag firebase_uid & claim supervisi; ⏳ deploy `functions:syncUserClaims,firestore:rules` + tes per-role |
+| **S4** | **Custom claims** (role di token JWT) + rules **write/delete per-role** (stop "siapa pun login = bisa nulis") | tiap role: yang berhak tulis bisa, lainnya ditolak | ✅ **SELESAI** (`eb1cd26`) — deploy+logout/login+tes super_admin lolos (16 Jun). HAPUS=super_admin saja; canManage/canKeuangan/canAkademik/canSupervisi; self-edit anti-eskalasi |
 | **S5** | **App Check enforce** (Storage dulu → Firestore/Auth) | setelah app produksi native terverifikasi | ⬜ tunggu produksi |
 
 **Catatan S2–S4:** aman dikerjakan SEKARANG justru karena belum ada user hidup. Tiap tahap
@@ -43,9 +43,9 @@ diuji login semua role dulu sebelum lanjut; sediakan rollback `firestore.rules`.
 
 | Tahap | Aksi | Status |
 |------|------|--------|
-| **A1** | **Nyalakan BigQuery stream** (setelah D1, sebelum data asli) → riwayat lengkap sejak hari-1. Runbook: `docs/BIGQUERY-STREAM-SETUP.md` | ⬜ belum |
-| **A2** | **Jembatan Cloud Function → BigQuery** (server, aman — app tak query BigQuery langsung; role-scoped) | ⬜ belum |
-| **A3** | **Menu "Analitik/Laporan" di app** — 5 bidang (keuangan/akademik/santri/absensi/pegawai) + grafik, baca via A2 | ⬜ belum |
+| **A1** | **Nyalakan BigQuery stream** → riwayat lengkap. Runbook: `docs/BIGQUERY-STREAM-SETUP.md` | ✅ `848f2da` — 3 instance terpasang (santri/guru/keuangan_buku_induk), tabel `_raw_latest` muncul (deklaratif, deploy `--only extensions`) |
+| **A2** | **Jembatan Cloud Function → BigQuery** (server, aman — app tak query langsung; role-scoped) | ✅ `d023d56` — fn `analyticsQuery` (admin/super, SQL whitelist); ⏳ deploy `functions:analyticsQuery` (+`npm install` @google-cloud/bigquery) |
+| **A3** | **Menu "Analitik/Laporan" di app** + grafik, baca via A2 | 🔄 bidang **Santri + Keuangan** dulu (per-lembaga, mukim, arus kas bulanan, KPI) — LaporanView + service + route + menu; ⏳ deploy web. Akademik/Absensi/Pegawai = pola sama menyusul |
 | **A4** | *(opsional)* Looker Studio untuk dashboard yayasan (lihat-saja) | ⬜ opsional |
 
 > Pola data: **Firestore = master (tulis + baca operasional realtime), BigQuery = cermin
