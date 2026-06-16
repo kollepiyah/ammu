@@ -217,6 +217,11 @@
     "storage-extract-image-text": "googlecloud/storage-extract-image-text@0.1.9",
     "firestore-bigquery-export-santri": "firebase/firestore-bigquery-export@0.3.2",
     "firestore-bigquery-export-guru": "firebase/firestore-bigquery-export@0.3.2",
-    "firestore-bigquery-export-keuangan": "firebase/firestore-bigquery-export@0.3.2"
+    "firestore-bigquery-export-keuangan": "firebase/firestore-bigquery-export@0.3.2",
+    "fbq-rapor": "firebase/firestore-bigquery-export@0.3.2",
+    "fbq-tes": "firebase/firestore-bigquery-export@0.3.2",
+    "fbq-absensi-ngaji": "firebase/firestore-bigquery-export@0.3.2",
+    "fbq-absensi-sekolah": "firebase/firestore-bigquery-export@0.3.2",
+    "fbq-gaji": "firebase/firestore-bigquery-export@0.3.2"
   }
 }

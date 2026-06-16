@@ -1188,6 +1188,70 @@ const _ANALYTICS = {
       "WHERE data IS NOT NULL AND SAFE.PARSE_DATE('%Y-%m-%d', JSON_VALUE(data,'$.tanggal')) BETWEEN DATE(@year,1,1) AND DATE(@year,12,31) " +
       'GROUP BY bulan ORDER BY bulan',
     params: [{ name: 'year', type: 'INT64', from: 'year', def: () => new Date().getFullYear() }]
+  },
+  // ---- AKADEMIK ----
+  akademik_tes_status: {
+    sql:
+      "SELECT IFNULL(JSON_VALUE(data,'$.status'),'(tanpa status)') AS label, COUNT(*) AS value " +
+      'FROM `' + _BQ_PROJECT + '.' + _BQ_DS + '.tes_kenaikan_raw_latest` ' +
+      'WHERE data IS NOT NULL GROUP BY label ORDER BY value DESC',
+    params: []
+  },
+  akademik_rapor_per_lembaga: {
+    sql:
+      "SELECT IFNULL(JSON_VALUE(data,'$.lembaga'),'(tanpa lembaga)') AS label, COUNT(*) AS value " +
+      'FROM `' + _BQ_PROJECT + '.' + _BQ_DS + '.rapor_semester_raw_latest` ' +
+      'WHERE data IS NOT NULL GROUP BY label ORDER BY value DESC',
+    params: []
+  },
+  // ---- ABSENSI ----
+  absensi_ngaji_bulanan: {
+    sql:
+      "SELECT JSON_VALUE(data,'$.periode') AS bulan, " +
+      "SUM(SAFE_CAST(JSON_VALUE(data,'$.hadir') AS INT64)) AS hadir, " +
+      "SUM(SAFE_CAST(JSON_VALUE(data,'$.sakit') AS INT64)) AS sakit, " +
+      "SUM(SAFE_CAST(JSON_VALUE(data,'$.izin') AS INT64)) AS izin, " +
+      "SUM(SAFE_CAST(JSON_VALUE(data,'$.alpa') AS INT64)) AS alpa " +
+      'FROM `' + _BQ_PROJECT + '.' + _BQ_DS + '.absensi_santri_ngaji_bulanan_raw_latest` ' +
+      "WHERE data IS NOT NULL AND SUBSTR(JSON_VALUE(data,'$.periode'),1,4) = CAST(@year AS STRING) " +
+      'GROUP BY bulan ORDER BY bulan',
+    params: [{ name: 'year', type: 'INT64', from: 'year', def: () => new Date().getFullYear() }]
+  },
+  absensi_sekolah_bulanan: {
+    sql:
+      "SELECT JSON_VALUE(data,'$.periode') AS bulan, " +
+      "SUM(SAFE_CAST(JSON_VALUE(data,'$.hadir') AS INT64)) AS hadir, " +
+      "SUM(SAFE_CAST(JSON_VALUE(data,'$.sakit') AS INT64)) AS sakit, " +
+      "SUM(SAFE_CAST(JSON_VALUE(data,'$.izin') AS INT64)) AS izin, " +
+      "SUM(SAFE_CAST(JSON_VALUE(data,'$.alpa') AS INT64)) AS alpa " +
+      'FROM `' + _BQ_PROJECT + '.' + _BQ_DS + '.absensi_santri_sekolah_bulanan_raw_latest` ' +
+      "WHERE data IS NOT NULL AND SUBSTR(JSON_VALUE(data,'$.periode'),1,4) = CAST(@year AS STRING) " +
+      'GROUP BY bulan ORDER BY bulan',
+    params: [{ name: 'year', type: 'INT64', from: 'year', def: () => new Date().getFullYear() }]
+  },
+  // ---- PEGAWAI ----
+  pegawai_per_lembaga: {
+    sql:
+      "SELECT IFNULL(JSON_VALUE(data,'$.lembaga'),'(tanpa lembaga)') AS label, COUNT(*) AS value " +
+      'FROM `' + _BQ_PROJECT + '.' + _BQ_DS + '.guru_raw_latest` ' +
+      'WHERE data IS NOT NULL GROUP BY label ORDER BY value DESC',
+    params: []
+  },
+  pegawai_per_jabatan: {
+    sql:
+      "SELECT IFNULL(JSON_VALUE(data,'$.jabatan'),'(tanpa jabatan)') AS label, COUNT(*) AS value " +
+      'FROM `' + _BQ_PROJECT + '.' + _BQ_DS + '.guru_raw_latest` ' +
+      'WHERE data IS NOT NULL GROUP BY label ORDER BY value DESC',
+    params: []
+  },
+  pegawai_gaji_bulanan: {
+    sql:
+      "SELECT JSON_VALUE(data,'$.periode') AS bulan, " +
+      "SUM(SAFE_CAST(JSON_VALUE(data,'$.total_pemasukan') AS NUMERIC) - IFNULL(SAFE_CAST(JSON_VALUE(data,'$.total_potongan') AS NUMERIC),0)) AS bersih " +
+      'FROM `' + _BQ_PROJECT + '.' + _BQ_DS + '.keuangan_gaji_raw_latest` ' +
+      "WHERE data IS NOT NULL AND SUBSTR(JSON_VALUE(data,'$.periode'),1,4) = CAST(@year AS STRING) " +
+      'GROUP BY bulan ORDER BY bulan',
+    params: [{ name: 'year', type: 'INT64', from: 'year', def: () => new Date().getFullYear() }]
   }
 }
 
