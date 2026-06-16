@@ -1063,22 +1063,42 @@ exports.syncUserClaims = onRequest(
         /* default adminmu */
       }
 
+      // localPart = authKey email (= wa digits ATAU username ATAU nis ATAU id).
+      const isDigits = /^\d{8,}$/.test(localPart)
+      async function _findIn(coll) {
+        // robust: firebase_uid -> username -> (nis utk santri) -> wa
+        let q = await db.collection(coll).where('firebase_uid', '==', uid).limit(1).get()
+        if (!q.empty) return q.docs[0]
+        q = await db.collection(coll).where('username', '==', localPart).limit(1).get()
+        if (!q.empty) return q.docs[0]
+        if (coll === 'santri') {
+          q = await db.collection(coll).where('nis', '==', localPart).limit(1).get()
+          if (!q.empty) return q.docs[0]
+        }
+        if (isDigits) {
+          q = await db.collection(coll).where('wa', '==', localPart).limit(1).get()
+          if (!q.empty) return q.docs[0]
+        }
+        return null
+      }
+
       let role = null
-      if (localPart === adminUser || localPart === 'adminmu') {
+      if (localPart === adminUser || localPart === 'adminmu' || localPart === 'admin') {
         role = 'super_admin'
       } else {
-        const gq = await db.collection('guru').where('firebase_uid', '==', uid).limit(1).get()
-        if (!gq.empty) {
-          const rs = String(gq.docs[0].data().role_sistem || 'guru')
+        const gdoc = await _findIn('guru')
+        if (gdoc) {
+          const rs = String(gdoc.data().role_sistem || 'guru')
           role = ['super_admin', 'admin', 'admin_keuangan'].includes(rs) ? rs : 'guru'
         } else {
-          const sq = await db.collection('santri').where('firebase_uid', '==', uid).limit(1).get()
-          if (!sq.empty) role = 'santri'
+          const sdoc = await _findIn('santri')
+          if (sdoc) role = 'santri'
         }
       }
 
       if (!role) {
-        res.status(403).json({ ok: false, error: 'role-not-found' })
+        // diagnosa sementara (admin-gated, pre-launch): tampilkan identitas yg tak ketemu
+        res.status(403).json({ ok: false, error: 'role-not-found', uid, email, localPart })
         return
       }
       await getAuth().setCustomUserClaims(uid, { role })
