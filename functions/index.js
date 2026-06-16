@@ -1083,16 +1083,37 @@ exports.syncUserClaims = onRequest(
       }
 
       let role = null
+      let supervisi = false
       if (localPart === adminUser || localPart === 'adminmu' || localPart === 'admin') {
         role = 'super_admin'
       } else {
         const gdoc = await _findIn('guru')
         if (gdoc) {
-          const rs = String(gdoc.data().role_sistem || 'guru')
+          const data = gdoc.data()
+          const rs = String(data.role_sistem || 'guru')
           role = ['super_admin', 'admin', 'admin_keuangan'].includes(rs) ? rs : 'guru'
+          // claim supervisi dari jabatan (Direktur/Supervisor) — utk rule supervisi_catatan
+          supervisi = /direktur|supervisor|supervisi/i.test(String(data.jabatan || ''))
+          // tag firebase_uid server-side (Admin SDK) → utk rule ownDoc (self-edit profil)
+          if (data.firebase_uid !== uid) {
+            try {
+              await gdoc.ref.update({ firebase_uid: uid })
+            } catch (e) {
+              /* best-effort */
+            }
+          }
         } else {
           const sdoc = await _findIn('santri')
-          if (sdoc) role = 'santri'
+          if (sdoc) {
+            role = 'santri'
+            if (sdoc.data().firebase_uid !== uid) {
+              try {
+                await sdoc.ref.update({ firebase_uid: uid })
+              } catch (e) {
+                /* best-effort */
+              }
+            }
+          }
         }
       }
 
@@ -1101,8 +1122,10 @@ exports.syncUserClaims = onRequest(
         res.status(403).json({ ok: false, error: 'role-not-found', uid, email, localPart })
         return
       }
-      await getAuth().setCustomUserClaims(uid, { role })
-      res.json({ ok: true, role })
+      const claims = { role }
+      if (supervisi) claims.supervisi = true
+      await getAuth().setCustomUserClaims(uid, claims)
+      res.json({ ok: true, role, supervisi })
     } catch (e) {
       logger.error('[syncUserClaims] error', e)
       res.status(500).json({ ok: false, error: String((e && e.message) || e) })

@@ -20,7 +20,7 @@
 | **S1** | Hapus password plaintext santri/guru (login = Firebase Auth, sandi awal '1234') | strip field doc lama | ✅ kode v.102 (`a5839b1`); ⏳ jalankan `stripPlaintextPasswords` 1× |
 | **S2** | Login-lookup **server-only**: andalkan Cloud Function `findUserByLogin` (Admin SDK baca server-side); lepas ketergantungan direct-read publik | login admin/guru/santri jalan tanpa read publik | ✅ `541ae6e` — deployed + login OK (kyai) |
 | **S3** | **Tutup read publik** `santri`/`guru` → `signedIn()` (settings/web tetap publik utk branding, tanpa rahasia) | semua halaman data jalan pasca-login; PSB jalan | ✅ rules applied; ⏳ `firebase deploy --only firestore:rules` + tes 3 role |
-| **S4** | **Custom claims** (role di token JWT) + rules **write/delete per-role** (stop "siapa pun login = bisa nulis") | tiap role: yang berhak tulis bisa, lainnya ditolak | 🔄 **S4a** (infra claim) built: fn `syncUserClaims` + client sync; ⏳ deploy+verifikasi token → **S4b** rules (scope **B lengkap**) |
+| **S4** | **Custom claims** (role di token JWT) + rules **write/delete per-role** (stop "siapa pun login = bisa nulis") | tiap role: yang berhak tulis bisa, lainnya ditolak | ✅ **S4a** terverifikasi (claim role jalan). 🔄 **S4b** implemented: rules per-role (B lengkap) + `syncUserClaims` tag firebase_uid & claim supervisi; ⏳ deploy `functions:syncUserClaims,firestore:rules` + tes per-role |
 | **S5** | **App Check enforce** (Storage dulu → Firestore/Auth) | setelah app produksi native terverifikasi | ⬜ tunggu produksi |
 
 **Catatan S2–S4:** aman dikerjakan SEKARANG justru karena belum ada user hidup. Tiap tahap
