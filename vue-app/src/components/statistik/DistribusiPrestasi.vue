@@ -8,7 +8,7 @@
     <!-- header + ekspor distribusi (detail santri + status + guru ampuan) -->
     <div class="flex items-center justify-between flex-wrap gap-2">
       <h3 class="text-sm md:text-base font-black text-[var(--text-primary)]">
-        <i class="fas fa-chart-simple text-teal-600 mr-1"></i>Distribusi Capaian Prestasi (PTPT &amp; PPPH)
+        <i class="fas fa-trophy text-amber-500 mr-1"></i>Top Santri PTPT &amp; PPPH
       </h3>
       <div class="flex gap-2">
         <button
@@ -142,6 +142,7 @@ import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
 import { useExcel } from '@/composables/useExcel'
 import { buildListPdf, buildKopFromSettings } from '@/utils/pdfBuilder'
+import { juzNum } from '@/utils/format'
 import { isFullFilterRole } from '@/utils/roleScope'
 import { useStatistikScope, statusFromSelisih } from '@/composables/useStatistikScope'
 
@@ -196,54 +197,71 @@ const lembagaPrestasi = computed(() => {
   }).filter((x) => x.total > 0)
 })
 
-// v.102: ekspor distribusi capaian (PTPT & PPPH) — DETAIL per santri + status + guru ampuan
-function _distribusiRows() {
+// Usia (tahun) dari tgl_lahir (YYYY-MM-DD)
+function usiaTahun(tglLahir) {
+  if (!tglLahir) return ''
+  const d = new Date(tglLahir)
+  if (isNaN(d.getTime())) return ''
+  const now = new Date()
+  let age = now.getFullYear() - d.getFullYear()
+  const m = now.getMonth() - d.getMonth()
+  if (m < 0 || (m === 0 && now.getDate() < d.getDate())) age--
+  return age >= 0 && age < 120 ? `${age} th` : ''
+}
+// Guru pengampu ngaji (PTPT/PPPH): pagi/sore/lama, unik
+function guruPengampu(s) {
+  return [...new Set([s.guru_pagi, s.guru_sore, s.guru].map((g) => String(g || '').trim()).filter(Boolean))].join(' / ')
+}
+
+// v.103: ekspor HANYA Top 5 santri per lembaga (PTPT & PPPH) + kolom detail
+//   (nama, wali/ayah, alamat, total capaian, kelas/juz, usia, kelas sekolah, guru).
+function _topSantriRows() {
   const out = []
   const src = scopedSantriAktif.value || []
   let no = 0
   for (const nama of PRESTASI_LEMBAGA) {
     const low = nama.toLowerCase()
-    const list = src.filter((s) => String(s.lembaga || '').trim().toLowerCase() === low)
-    for (const s of list) {
-      const awal = parseNum(s.prestasi_awal)
-      const akhir = parseNum(s.prestasi_akhir)
-      const selisih = akhir - awal
-      const st = statusFromSelisih(selisih, nama)
-      const gSek = Array.isArray(s.guru_sekolah) ? s.guru_sekolah.filter(Boolean).join(' | ') : (s.guru_sekolah || '')
+    const unit = nama === 'PPPH' ? 'Hadits' : 'Hal'
+    const top5 = src
+      .filter((s) => String(s.lembaga || '').trim().toLowerCase() === low)
+      .map((s) => ({ s, val: parseNum(s.prestasi_akhir) - parseNum(s.prestasi_awal) }))
+      .filter((x) => x.val > 0)
+      .sort((a, b) => b.val - a.val)
+      .slice(0, 5)
+    for (const { s, val } of top5) {
+      const juz = s.juz && String(s.juz) !== '-' ? ` (Juz ${juzNum(s.juz)})` : ''
       out.push({
         no: ++no,
         nama: s.nama || '',
+        wali: s.nama_ayah || s.nama_wali || '',
+        alamat: s.alamat || '',
         lembaga: nama,
-        kelas: s.kelas || '',
-        awal,
-        akhir,
-        selisih,
-        status: st === 'bagus' ? 'Bagus' : st === 'cukup' ? 'Cukup' : st === 'kurang' ? 'Kurang' : '-',
-        guru_pagi: s.guru_pagi || s.guru || '',
-        guru_sore: s.guru_sore || '',
-        guru_sekolah: gSek
+        total: `${val} ${unit}`,
+        kelas_juz: `${s.kelas || '-'}${juz}`,
+        usia: usiaTahun(s.tgl_lahir),
+        kelas_sekolah: [s.lembaga_sekolah, s.kelas_sekolah].map((x) => String(x || '').trim()).filter(Boolean).join(' ') || '-',
+        guru: guruPengampu(s) || '-'
       })
     }
   }
   return out
 }
-const _DIST_COLS = [
+const _TOP_COLS = [
   { key: 'no', header: 'No', width: 5 },
-  { key: 'nama', header: 'Nama Santri', width: 26 },
-  { key: 'lembaga', header: 'Lembaga', width: 10 },
-  { key: 'kelas', header: 'Kelas', width: 10 },
-  { key: 'awal', header: 'Awal', width: 8 },
-  { key: 'akhir', header: 'Akhir', width: 8 },
-  { key: 'selisih', header: 'Selisih', width: 8 },
-  { key: 'status', header: 'Status', width: 10 },
-  { key: 'guru_pagi', header: 'Guru Pagi', width: 18 },
-  { key: 'guru_sore', header: 'Guru Sore', width: 18 },
-  { key: 'guru_sekolah', header: 'Guru Sekolah', width: 20 }
+  { key: 'nama', header: 'Nama Santri', width: 24 },
+  { key: 'wali', header: 'Wali/Ayah', width: 22 },
+  { key: 'alamat', header: 'Alamat', width: 30 },
+  { key: 'lembaga', header: 'Lembaga', width: 9 },
+  { key: 'total', header: 'Total Capaian', width: 12 },
+  { key: 'kelas_juz', header: 'Kelas/Juz', width: 16 },
+  { key: 'usia', header: 'Usia', width: 7 },
+  { key: 'kelas_sekolah', header: 'Kelas Sekolah', width: 18 },
+  { key: 'guru', header: 'Guru Pengampu', width: 22 }
 ]
 async function exportDistribusi(fmt) {
-  const rows = _distribusiRows()
+  const rows = _topSantriRows()
   if (!rows.length) {
-    toast.error('Belum ada data distribusi untuk diekspor')
+    toast.error('Belum ada data Top Santri untuk diekspor')
     return
   }
   const ss = settings.settings || {}
@@ -255,21 +273,21 @@ async function exportDistribusi(fmt) {
         orientation: 'l',
         format: 'F4',
         kop: buildKopFromSettings(ss),
-        title: 'DISTRIBUSI CAPAIAN PRESTASI (PTPT & PPPH)',
-        columns: _DIST_COLS,
+        title: 'TOP 5 SANTRI PRESTASI (PTPT & PPPH)',
+        columns: _TOP_COLS,
         rows,
-        filename: `distribusi_prestasi_${stamp}.pdf`
+        filename: `top_santri_prestasi_${stamp}.pdf`
       })
     } else {
       await exportStyled(rows, {
-        filename: `distribusi_prestasi_${stamp}.xlsx`,
-        sheetName: 'Distribusi Prestasi',
+        filename: `top_santri_prestasi_${stamp}.xlsx`,
+        sheetName: 'Top Santri',
         kop: [ss.kopLine1 || '', ss.kopLine2 || 'PONDOK PESANTREN MAMBAUL ULUM', ss.kopLine3 || '', ss.kopLine4 || ''],
-        subtitle: `Distribusi Capaian Prestasi — ${rows.length} santri (${new Date().toLocaleDateString('id-ID')})`,
-        columns: _DIST_COLS
+        subtitle: `Top 5 Santri Prestasi PTPT & PPPH — ${rows.length} santri (${new Date().toLocaleDateString('id-ID')})`,
+        columns: _TOP_COLS
       })
     }
-    toast.success('Ekspor distribusi berhasil')
+    toast.success('Ekspor Top Santri berhasil')
   } catch (e) {
     toast.error('Gagal ekspor: ' + (e.message || e))
   }
