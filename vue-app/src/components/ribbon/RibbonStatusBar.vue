@@ -27,7 +27,7 @@ const santriCount = computed(() => (santri.value || []).length)
 const guruCount = computed(() => (guru.value || []).length)
 const lembagaName = computed(() => settings.settings?.namaLembaga || settings.settings?.appTitle || 'Mambaul Ulum')
 // versi tampil: ambil dari settings bila ada supaya tak menambah titik bump baru di kode
-const version = computed(() => settings.settings?.appVersion || 'v.101.0626')
+const version = computed(() => settings.settings?.appVersion || 'v.102.0626')
 
 const hijri = computed(() => {
   try {
