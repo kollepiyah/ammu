@@ -41,8 +41,7 @@
     </div>
 
     <!-- ===== SANTRI ===== -->
-    <!-- v.103: KPI ringkas (total santri/guru/lembaga/kelas) di ATAS chart -->
-    <RingkasanSantriLembaga section="kpi" v-show="tab === 'santri'" />
+    <!-- v.103: KPI ringkas dipindah ke dasbor (/statistik). Di sini chart BigQuery + breakdown lembaga. -->
     <div v-show="!loading && tab === 'santri'" class="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <div :class="cardCls">
         <h3 :class="titleCls"><i class="fas fa-users text-teal-600 mr-1"></i>Santri Aktif per Lembaga</h3>

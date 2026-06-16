@@ -446,11 +446,12 @@
     </div>
 
     <!-- ============================================================
-         ADMIN: Grafik Statistik (chart.js 12-bulan) — HANYA grafik visual.
-         v.103 "rapikan dashboard": KPI, alert operasional, distribusi capaian,
-         grid per-lembaga & distribusi per-lembaga DIPINDAH ke Laporan
-         (tab Santri/Akademik/Pegawai) — komponen di components/statistik/.
+         ADMIN: KPI ringkas (Total Santri/Guru/Lembaga/Kelas) + Grafik Perkembangan.
+         v.103: KPI dikembalikan ke dasbor (kyai req — at-a-glance cocok di sini).
+         Alert operasional, distribusi capaian, grid/distribusi per-lembaga tetap di
+         Laporan (components/statistik/*).
          ============================================================ -->
+    <RingkasanSantriLembaga v-if="isAdminMode" section="kpi" />
     <AdminStatsCharts v-if="isAdminMode" :santri-list="scopedSantriAll" />
 
     <!-- ============================================================
@@ -622,6 +623,7 @@ import { formatKelasLabel } from '@/composables/useLembaga'
 import { subscribeColl } from '@/services/firestore'
 import AdminStatsCharts from '@/components/charts/AdminStatsCharts.vue'
 import TrenCapaianChart from '@/components/charts/TrenCapaianChart.vue' // v.100c: Opsi A — tren capaian
+import RingkasanSantriLembaga from '@/components/statistik/RingkasanSantriLembaga.vue' // v.103: KPI ringkas di dasbor
 // v.21.107.0527: gating role konsisten (admin/super_admin/admin_keuangan)
 import { isFullFilterRole, isKepalaLembaga } from '@/utils/roleScope'
 import { juzNum } from '@/utils/format' // v.100e: normalisasi tampilan juz (anti dobel "Juz JUZ n")

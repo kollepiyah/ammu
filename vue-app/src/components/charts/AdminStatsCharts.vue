@@ -34,7 +34,7 @@
         <div class="relative h-60">
           <Line v-if="chartCapaian" :data="chartCapaian" :options="optLine" />
           <div v-else class="absolute inset-0 flex items-center justify-center text-center text-xs text-[var(--text-tertiary)] italic px-4">
-            Belum cukup data capaian (butuh ≥ 2 bulan terisi)
+            Belum ada data capaian
           </div>
         </div>
       </div>
@@ -81,17 +81,29 @@
         </div>
       </div>
 
-      <!-- Kenaikan Tes per Lembaga (full width) -->
-      <div class="lg:col-span-2 bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm">
+      <!-- Kenaikan Tes per Lembaga — 1 card/lembaga, stacked Lulus vs Belum Lulus per kelas -->
+      <div class="lg:col-span-2 pt-1">
+        <h4 class="text-xs font-black text-[var(--text-primary)] uppercase tracking-wider">
+          <i class="fas fa-arrow-up-right-dots text-[var(--color-primary)] mr-1"></i>Kenaikan Tes per Lembaga
+          <span class="text-[10px] text-[var(--text-tertiary)] font-bold normal-case ml-1">per kelas · {{ rangeLabel }}</span>
+        </h4>
+      </div>
+      <div v-if="tesByLembaga.length === 0" class="lg:col-span-2 bg-[var(--bg-card)] rounded-2xl p-6 border border-[var(--border-subtle)] shadow-sm text-center text-xs text-[var(--text-tertiary)] italic">
+        Belum ada hasil tes (lulus/belum) pada rentang ini
+      </div>
+      <div
+        v-for="t in tesByLembaga"
+        :key="t.lembaga"
+        class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm"
+      >
         <div class="flex items-center justify-between mb-2">
-          <h4 class="text-xs font-black text-[var(--text-primary)] uppercase tracking-wider">
-            <i class="fas fa-arrow-up-right-dots text-[var(--color-primary)] mr-1"></i>Kenaikan Tes per Lembaga
+          <h4 class="text-xs font-black text-[var(--text-primary)] uppercase tracking-wider truncate">
+            <i class="fas fa-clipboard-check text-emerald-600 mr-1"></i>{{ t.lembaga }}
           </h4>
-          <span class="text-[10px] text-[var(--text-tertiary)] font-bold">santri lulus naik · {{ rangeLabel }}</span>
+          <span class="text-[10px] text-[var(--text-tertiary)] font-bold whitespace-nowrap">{{ t.lulusTotal }} naik · {{ t.kelulusan }}%</span>
         </div>
-        <div class="relative h-64">
-          <Bar v-if="chartTesLembaga" :data="chartTesLembaga" :options="optBar" />
-          <div v-else class="absolute inset-0 flex items-center justify-center text-xs text-[var(--text-tertiary)] italic">Belum ada kelulusan tes pada rentang ini</div>
+        <div class="relative h-56">
+          <Bar :data="t.data" :options="optTesStacked" />
         </div>
       </div>
     </div>
@@ -225,7 +237,7 @@ const chartCapaian = computed(() => {
     byP[p].c++
   }
   const periods = Object.keys(byP).sort().slice(-capaianMonths.value)
-  if (periods.length < 2) return null
+  if (periods.length < 1) return null // v.103: tampil walau baru 1 bulan terisi
   return {
     labels: periods.map((p) => { const [y, m] = p.split('-'); return `${MON[+m - 1]} ${y.slice(2)}` }),
     datasets: [{
@@ -297,23 +309,45 @@ const chartSantriMasuk = computed(() => {
   }
 })
 
-// ---- Kenaikan Tes per Lembaga (bar, lulus dalam rentang) -------------------
-const chartTesLembaga = computed(() => {
+// ---- Kenaikan Tes per Lembaga — 1 chart/lembaga, stacked Lulus vs Belum Lulus per kelas ----
+// "Belum Lulus" = status tidak_lulus (sudah diuji, gagal). diajukan/ditolak diabaikan
+// (belum ada hasil). Hormati rentang via tgl_hasil; tanpa tanggal tetap dihitung.
+const tesByLembaga = computed(() => {
   const ws = windowStart.value
-  const map = {}
+  const byLemb = {}
   for (const t of tesList.value) {
-    if (String(t.status || '').toLowerCase() !== 'lulus') continue
+    const st = String(t.status || '').toLowerCase()
+    if (st !== 'lulus' && st !== 'tidak_lulus') continue
     const d = toDate(t.tgl_hasil || t.tgl_uji || t.tgl)
-    if (d && d < ws) continue // tanpa tanggal = tetap dihitung
+    if (d && d < ws) continue
     const lemb = String(t.lembaga || '').trim() || '(Lainnya)'
-    map[lemb] = (map[lemb] || 0) + 1
+    const kelas = String(t.kelas_asal || t.kelas || '').trim() || '-'
+    if (!byLemb[lemb]) byLemb[lemb] = {}
+    if (!byLemb[lemb][kelas]) byLemb[lemb][kelas] = { lulus: 0, belum: 0 }
+    if (st === 'lulus') byLemb[lemb][kelas].lulus++
+    else byLemb[lemb][kelas].belum++
   }
-  const entries = Object.entries(map).sort((a, b) => b[1] - a[1])
-  if (!entries.length) return null
-  return {
-    labels: entries.map((e) => e[0]),
-    datasets: [{ label: 'Santri naik (lulus tes)', data: entries.map((e) => e[1]), backgroundColor: entries.map((_, i) => COLORS[i % COLORS.length]) }]
+  const out = []
+  for (const [lemb, kelasMap] of Object.entries(byLemb)) {
+    const kelasKeys = Object.keys(kelasMap).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
+    if (!kelasKeys.length) continue
+    const lulusTotal = kelasKeys.reduce((s, k) => s + kelasMap[k].lulus, 0)
+    const belumTotal = kelasKeys.reduce((s, k) => s + kelasMap[k].belum, 0)
+    const tested = lulusTotal + belumTotal
+    out.push({
+      lembaga: lemb,
+      lulusTotal,
+      kelulusan: tested > 0 ? Math.round((lulusTotal / tested) * 100) : 0,
+      data: {
+        labels: kelasKeys,
+        datasets: [
+          { label: 'Lulus', data: kelasKeys.map((k) => kelasMap[k].lulus), backgroundColor: '#10b981' },
+          { label: 'Belum Lulus', data: kelasKeys.map((k) => kelasMap[k].belum), backgroundColor: '#f59e0b' }
+        ]
+      }
+    })
   }
+  return out.sort((a, b) => b.lulusTotal - a.lulusTotal)
 })
 
 // ---- Chart options ---------------------------------------------------------
@@ -331,9 +365,12 @@ const optLineCurrency = {
   },
   scales: { x: xScale, y: { beginAtZero: true, ticks: { font: { size: 9 }, callback: (v) => 'Rp ' + new Intl.NumberFormat('id-ID', { notation: 'compact' }).format(v) }, grid: { color: 'rgba(136,135,128,0.15)' } } }
 }
-const optBar = {
+const optTesStacked = {
   responsive: true, maintainAspectRatio: false,
-  plugins: { legend: { display: false } },
-  scales: { x: { ticks: { font: { size: 9 } }, grid: { display: false } }, y: { beginAtZero: true, ticks: { font: { size: 9 }, precision: 0 } } }
+  plugins: { legend: { position: 'bottom', labels: { font: { size: 10 }, boxWidth: 10 } } },
+  scales: {
+    x: { stacked: true, ticks: { font: { size: 9 } }, grid: { display: false } },
+    y: { stacked: true, beginAtZero: true, ticks: { font: { size: 9 }, precision: 0 } }
+  }
 }
 </script>
