@@ -427,12 +427,28 @@ async function simpanSandi() {
       // Auth sukses → simpan salinan privat (settings/admin, read:false, write signedIn).
       await setOne('settings', 'admin', { password: formSandi.value.baru })
     } else {
-      if (props.entity?.password && formSandi.value.lama !== props.entity.password) {
-        toast.error('Password lama salah')
+      // v.102: guru/santri ganti sandi via Firebase Auth (sumber kebenaran login),
+      //   BUKAN field Firestore plaintext. Reauth dgn sandi lama → updatePassword.
+      try {
+        const { getAuth, updatePassword, reauthenticateWithCredential, EmailAuthProvider } =
+          await import('firebase/auth')
+        const u = getAuth().currentUser
+        if (!u || !u.email) throw Object.assign(new Error('no-session'), { code: 'no-session' })
+        const cred = EmailAuthProvider.credential(u.email, toAuthPassword(formSandi.value.lama))
+        await reauthenticateWithCredential(u, cred)
+        await updatePassword(u, toAuthPassword(formSandi.value.baru))
+      } catch (e) {
+        if (e?.code === 'auth/wrong-password' || e?.code === 'auth/invalid-credential') {
+          toast.error('Password lama salah')
+        } else if (e?.code === 'auth/requires-recent-login') {
+          toast.error('Demi keamanan, logout lalu login lagi sebelum ganti sandi')
+        } else if (e?.code === 'no-session') {
+          toast.error('Sesi tak ditemukan. Logout lalu login lagi.')
+        } else {
+          toast.error('Gagal ganti sandi: ' + (e?.message || e))
+        }
         return
       }
-      const coll = props.role === 'guru' ? 'guru' : 'santri'
-      await setOne(coll, String(props.entityId), { password: formSandi.value.baru })
     }
     toast.success('Password berhasil diganti')
     closeModal()

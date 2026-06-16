@@ -418,7 +418,7 @@ export function useGuruForm() {
         shift_pegawai: f.shift_pegawai || 'pagi_sore', // v.99: shift kerja pegawai (dual-role)
         role_sistem: isSuperAdmin.value ? f.role_sistem : 'user',
         custom_fields: f.custom_fields || {},
-        password: '1234',
+        // v.102: field `password` plaintext DIHAPUS — login pakai Firebase Auth (sandi awal '1234' via lazy-migration)
         foto: ''
       }
       // Preserve fields existing kalau edit (v.21.25: + ttd, akses, no_ekgq alias)
@@ -429,7 +429,6 @@ export function useGuruForm() {
           if (oldSnap.exists()) {
             const old = oldSnap.data()
             _oldNama = old.nama || ''
-            data.password = old.password || '1234'
             data.foto = old.foto || ''
             data.username = old.username || defaultUsername
             data.linked_uid = old.linked_uid || null

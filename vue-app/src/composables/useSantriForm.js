@@ -309,7 +309,7 @@ export function useSantriForm() {
         ayah: { nama: f.nama_ayah || '', nik: f.nik_ayah || '', pekerjaan: f.pekerjaan_ayah || '', pendidikan: f.pendidikan_ayah || '', telp: f.hp_ayah || '' },
         ibu: { nama: f.nama_ibu || '', nik: f.nik_ibu || '', pekerjaan: f.pekerjaan_ibu || '', pendidikan: f.pendidikan_ibu || '', telp: f.hp_ibu || '' },
         custom_fields: f.custom_fields || {},
-        password: '1234', // default password baru
+        // v.102: field `password` plaintext DIHAPUS — login pakai Firebase Auth (sandi awal '1234' via lazy-migration)
         foto: '',
         riwayat: [],
         prestasi_awal: '',
@@ -322,7 +322,6 @@ export function useSantriForm() {
           const oldSnap = await getDoc(doc(db, 'santri', String(editingId.value)))
           if (oldSnap.exists()) {
             const old = oldSnap.data()
-            data.password = old.password || '1234'
             data.foto = old.foto || ''
             data.riwayat = old.riwayat || []
             data.prestasi_awal = old.prestasi_awal || ''

@@ -965,6 +965,63 @@ exports.verifyAdminPassword = onRequest(
 )
 
 // ====================================================================
+// v.102 (security): stripPlaintextPasswords — HAPUS field `password` plaintext dari
+//   SEMUA doc koleksi `santri` + `guru`. Legacy: login kini pakai Firebase Auth
+//   (sandi awal '1234' via lazy-migration), field Firestore tak lagi dibaca utk auth.
+//   Admin SDK bypass rules → tetap bisa update walau read/write rule ketat. Idempoten.
+//   Guard: ?password=<sandi admin> (divalidasi via settings/admin, sama spt verifyAdminPassword).
+//   Mode: GET/POST { password } → { ok, stripped: { santri, guru } }.
+//   DEPLOY: firebase deploy --only functions:stripPlaintextPasswords
+//   JALANKAN SEKALI: GET .../stripPlaintextPasswords?password=<sandiadmin>
+// ====================================================================
+exports.stripPlaintextPasswords = onRequest(
+  { region: 'us-central1', timeoutSeconds: 120, memory: '256MiB', cors: true },
+  async (req, res) => {
+    try {
+      const password = String(
+        (req.body && req.body.password) || (req.query && req.query.password) || ''
+      )
+      const adminSnap = await db
+        .collection('settings')
+        .doc('admin')
+        .get()
+        .catch(() => null)
+      const adminData = (adminSnap && adminSnap.exists && adminSnap.data()) || {}
+      const stored = adminData.password || adminData.adminPassword || '1234'
+      if (!password || password !== String(stored)) {
+        res.status(403).json({ ok: false, error: 'forbidden' })
+        return
+      }
+      const result = {}
+      for (const coll of ['santri', 'guru']) {
+        const snap = await db.collection(coll).get()
+        let stripped = 0
+        let batch = db.batch()
+        let n = 0
+        for (const docSnap of snap.docs) {
+          if ('password' in docSnap.data()) {
+            batch.update(docSnap.ref, { password: FieldValue.delete() })
+            stripped++
+            n++
+            if (n >= 400) {
+              await batch.commit()
+              batch = db.batch()
+              n = 0
+            }
+          }
+        }
+        if (n > 0) await batch.commit()
+        result[coll] = stripped
+      }
+      res.json({ ok: true, stripped: result })
+    } catch (e) {
+      logger.error('[stripPlaintextPasswords] error', e)
+      res.status(500).json({ ok: false, error: String((e && e.message) || e) })
+    }
+  }
+)
+
+// ====================================================================
 // FUNCTION 5 (v.95.0626): AUTO-GENERATE TAGIHAN BULANAN — jadwal harian, IDEMPOTENT
 //   Replikasi server-side dari tombol manual "autoGenerate" (PengaturanKeuanganView).
 //   - Jalan tiap hari 01:00 WIB. Buat tagihan bulan berjalan utk jenis ber-flag
