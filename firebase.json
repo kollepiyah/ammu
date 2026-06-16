@@ -212,5 +212,11 @@
         "*.local"
       ]
     }
-  ]
+  ],
+  "extensions": {
+    "storage-extract-image-text": "googlecloud/storage-extract-image-text@0.1.9",
+    "firestore-bigquery-export-santri": "firebase/firestore-bigquery-export@0.3.2",
+    "firestore-bigquery-export-guru": "firebase/firestore-bigquery-export@0.3.2",
+    "firestore-bigquery-export-keuangan": "firebase/firestore-bigquery-export@0.3.2"
+  }
 }
