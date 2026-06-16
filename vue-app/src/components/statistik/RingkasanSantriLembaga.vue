@@ -6,7 +6,7 @@
        ============================================================ -->
   <div class="space-y-4">
     <!-- ADMIN: Top Stats Grid (Santri / Guru / Lembaga / Kelas) -->
-    <div v-if="isAdminMode" class="grid grid-cols-2 md:grid-cols-4 gap-3">
+    <div v-if="showKpi && isAdminMode" class="grid grid-cols-2 md:grid-cols-4 gap-3">
       <div
         class="bg-gradient-to-br from-teal-500 dark:from-teal-700 to-teal-700 dark:to-teal-900 rounded-xl p-3 md:p-4 shadow-sm text-white"
       >
@@ -50,7 +50,7 @@
     </div>
 
     <!-- Diagnostik Kelas Total (klik kartu KELAS TOTAL) -->
-    <div v-if="isAdminMode && showKelasDetail" class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm">
+    <div v-if="showKpi && isAdminMode && showKelasDetail" class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm">
       <div class="flex items-center justify-between mb-2">
         <h4 class="text-sm font-black text-[var(--text-primary)]"><i class="fas fa-door-open text-cyan-600 mr-1"></i>Rincian Kelas Total ({{ kelasCount }})</h4>
         <div class="flex items-center gap-2">
@@ -69,7 +69,7 @@
 
     <!-- ADMIN: Statistik Lembaga grid (per-lembaga kelas/santri/guru) -->
     <div
-      v-if="isAdminMode && statistikLembaga.length > 0"
+      v-if="showLembaga && isAdminMode && statistikLembaga.length > 0"
       class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
     >
       <h3 class="text-sm md:text-base font-black text-[var(--text-primary)] mb-3">
@@ -115,7 +115,7 @@
 
     <!-- ADMIN: Distribusi Santri per Lembaga (bar chart) -->
     <div
-      v-if="isAdminMode && distribusiLembaga.length > 0"
+      v-if="showLembaga && isAdminMode && distribusiLembaga.length > 0"
       class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
     >
       <h3
@@ -163,6 +163,12 @@ import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
 import { isFullFilterRole } from '@/utils/roleScope'
 import { useStatistikScope } from '@/composables/useStatistikScope'
+
+// v.103: section = 'all' (default) | 'kpi' (KPI + diagnostik) | 'lembaga' (grid + bar).
+//   Dipakai LaporanView utk menaruh KPI di ATAS chart & breakdown lembaga di BAWAH chart.
+const props = defineProps({ section: { type: String, default: 'all' } })
+const showKpi = computed(() => props.section === 'all' || props.section === 'kpi')
+const showLembaga = computed(() => props.section === 'all' || props.section === 'lembaga')
 
 const router = useRouter()
 const auth = useAuthStore()

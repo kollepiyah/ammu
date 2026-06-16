@@ -41,6 +41,8 @@
     </div>
 
     <!-- ===== SANTRI ===== -->
+    <!-- v.103: KPI ringkas (total santri/guru/lembaga/kelas) di ATAS chart -->
+    <RingkasanSantriLembaga section="kpi" v-show="tab === 'santri'" />
     <div v-show="!loading && tab === 'santri'" class="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <div :class="cardCls">
         <h3 :class="titleCls"><i class="fas fa-users text-teal-600 mr-1"></i>Santri Aktif per Lembaga</h3>
@@ -51,8 +53,8 @@
         <div class="relative h-72"><Doughnut v-if="cSantriMukim" :data="cSantriMukim" :options="optDoughnut" /><div v-else :class="emptyCls">Belum ada data</div></div>
       </div>
     </div>
-    <!-- v.103: ringkasan santri/lembaga realtime (KPI + grid lembaga + distribusi bar) -->
-    <RingkasanSantriLembaga v-show="tab === 'santri'" />
+    <!-- v.103: breakdown per-lembaga (grid + distribusi bar) di BAWAH chart -->
+    <RingkasanSantriLembaga section="lembaga" v-show="tab === 'santri'" />
 
     <!-- ===== KEUANGAN ===== -->
     <div v-show="!loading && tab === 'keuangan'" class="space-y-4">
@@ -103,6 +105,8 @@
     </div>
 
     <!-- ===== PEGAWAI ===== -->
+    <!-- v.103: alert operasional realtime (Guru Belum Input + Kelas Overload) di ATAS chart -->
+    <OperasionalGuru v-show="tab === 'pegawai'" />
     <div v-show="!loading && tab === 'pegawai'" class="space-y-4">
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div :class="cardCls">
@@ -119,8 +123,6 @@
         <div class="relative h-72"><Bar v-if="cGajiBulanan" :data="cGajiBulanan" :options="optCurrency" /><div v-else :class="emptyCls">Belum ada data</div></div>
       </div>
     </div>
-    <!-- v.103: alert operasional realtime (Guru Belum Input + Kelas Overload) -->
-    <OperasionalGuru v-show="tab === 'pegawai'" />
   </div>
 </template>
 
