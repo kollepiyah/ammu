@@ -73,7 +73,7 @@
       </div>
       <div :class="cardCls">
         <h3 :class="titleCls"><i class="fas fa-coins text-cyan-600 mr-1"></i>Arus Kas per Bulan ({{ year }})</h3>
-        <div class="relative h-80"><Bar v-if="cKeuBulanan" :data="cKeuBulanan" :options="optCurrency" /><div v-else :class="emptyCls">Belum ada transaksi tahun ini</div></div>
+        <div class="relative h-80"><Line v-if="cKeuBulanan" :data="cKeuBulanan" :options="optCurrency" /><div v-else :class="emptyCls">Belum ada transaksi tahun ini</div></div>
       </div>
     </div>
 
@@ -95,11 +95,11 @@
     <div v-show="!loading && tab === 'absensi'" class="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <div :class="cardCls">
         <h3 :class="titleCls"><i class="fas fa-book-quran text-teal-600 mr-1"></i>Absensi Ngaji per Bulan ({{ year }})</h3>
-        <div class="relative h-80"><Bar v-if="cAbsNgaji" :data="cAbsNgaji" :options="optStacked" /><div v-else :class="emptyCls">Belum ada data</div></div>
+        <div class="relative h-80"><Line v-if="cAbsNgaji" :data="cAbsNgaji" :options="optLineCount" /><div v-else :class="emptyCls">Belum ada data</div></div>
       </div>
       <div :class="cardCls">
         <h3 :class="titleCls"><i class="fas fa-school text-teal-600 mr-1"></i>Absensi Sekolah per Bulan ({{ year }})</h3>
-        <div class="relative h-80"><Bar v-if="cAbsSekolah" :data="cAbsSekolah" :options="optStacked" /><div v-else :class="emptyCls">Belum ada data</div></div>
+        <div class="relative h-80"><Line v-if="cAbsSekolah" :data="cAbsSekolah" :options="optLineCount" /><div v-else :class="emptyCls">Belum ada data</div></div>
       </div>
     </div>
 
@@ -119,7 +119,7 @@
       </div>
       <div :class="cardCls">
         <h3 :class="titleCls"><i class="fas fa-hand-holding-usd text-teal-600 mr-1"></i>Bisyaroh Bersih per Bulan ({{ year }})</h3>
-        <div class="relative h-72"><Bar v-if="cGajiBulanan" :data="cGajiBulanan" :options="optCurrency" /><div v-else :class="emptyCls">Belum ada data</div></div>
+        <div class="relative h-72"><Line v-if="cGajiBulanan" :data="cGajiBulanan" :options="optCurrency" /><div v-else :class="emptyCls">Belum ada data</div></div>
       </div>
     </div>
   </div>
@@ -127,9 +127,10 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { Bar, Doughnut } from 'vue-chartjs'
+import { Bar, Doughnut, Line } from 'vue-chartjs'
 import {
-  Chart as ChartJS, Title, Tooltip, Legend, BarElement, ArcElement, CategoryScale, LinearScale
+  Chart as ChartJS, Title, Tooltip, Legend, BarElement, ArcElement, CategoryScale, LinearScale,
+  PointElement, LineElement, Filler
 } from 'chart.js'
 import { analyticsQuery } from '@/services/analytics'
 // v.103 "rapikan dashboard": section non-grafik admin dari StatistikView dilebur ke
@@ -138,7 +139,7 @@ import RingkasanSantriLembaga from '@/components/statistik/RingkasanSantriLembag
 import DistribusiPrestasi from '@/components/statistik/DistribusiPrestasi.vue'
 import OperasionalGuru from '@/components/statistik/OperasionalGuru.vue'
 
-ChartJS.register(Title, Tooltip, Legend, BarElement, ArcElement, CategoryScale, LinearScale)
+ChartJS.register(Title, Tooltip, Legend, BarElement, ArcElement, CategoryScale, LinearScale, PointElement, LineElement, Filler)
 
 const tabs = [
   { id: 'santri', label: 'Santri', icon: 'fa-users' },
@@ -173,15 +174,22 @@ const catChart = (rows, colorOne) =>
   rows.length
     ? { labels: rows.map((r) => r.label), datasets: [{ label: 'Jumlah', data: rows.map((r) => num(r.value)), backgroundColor: colorOne || rows.map((_, i) => COLORS[i % COLORS.length]) }] }
     : null
+// v.103: dataset bergaya LINE (chart per-bulan di Laporan jadi line, sesuai req kyai)
+const lineDs = (label, data, color, fill = false) => ({
+  label, data,
+  borderColor: color,
+  backgroundColor: fill ? color + '26' : color, // 26 = ~15% alpha (8-digit hex)
+  tension: 0.3, fill, borderWidth: 2, pointRadius: 2, pointBackgroundColor: color
+})
 const absChart = (rows) =>
   rows.length
     ? {
         labels: rows.map((r) => monthLabel(r.bulan)),
         datasets: [
-          { label: 'Hadir', data: rows.map((r) => num(r.hadir)), backgroundColor: '#10b981' },
-          { label: 'Sakit', data: rows.map((r) => num(r.sakit)), backgroundColor: '#f59e0b' },
-          { label: 'Izin', data: rows.map((r) => num(r.izin)), backgroundColor: '#3b82f6' },
-          { label: 'Alpa', data: rows.map((r) => num(r.alpa)), backgroundColor: '#ef4444' }
+          lineDs('Hadir', rows.map((r) => num(r.hadir)), '#10b981'),
+          lineDs('Sakit', rows.map((r) => num(r.sakit)), '#f59e0b'),
+          lineDs('Izin', rows.map((r) => num(r.izin)), '#3b82f6'),
+          lineDs('Alpa', rows.map((r) => num(r.alpa)), '#ef4444')
         ]
       }
     : null
@@ -216,8 +224,8 @@ const loadKeuangan = () => run(async () => {
   ringkas.value = { masuk: num(x.masuk), keluar: num(x.keluar) }
   cKeuBulanan.value = m.length
     ? { labels: m.map((b) => monthLabel(b.bulan)), datasets: [
-        { label: 'Masuk', data: m.map((b) => num(b.masuk)), backgroundColor: '#10b981' },
-        { label: 'Keluar', data: m.map((b) => num(b.keluar)), backgroundColor: '#ef4444' }
+        lineDs('Masuk', m.map((b) => num(b.masuk)), '#10b981', true),
+        lineDs('Keluar', m.map((b) => num(b.keluar)), '#ef4444', true)
       ] }
     : null
 })
@@ -242,7 +250,7 @@ const loadPegawai = () => run(async () => {
   ])
   cPegLembaga.value = catChart(l)
   cPegJabatan.value = catChart(j)
-  cGajiBulanan.value = g.length ? { labels: g.map((b) => monthLabel(b.bulan)), datasets: [{ label: 'Bisyaroh Bersih', data: g.map((b) => num(b.bersih)), backgroundColor: '#06b6d4' }] } : null
+  cGajiBulanan.value = g.length ? { labels: g.map((b) => monthLabel(b.bulan)), datasets: [lineDs('Bisyaroh Bersih', g.map((b) => num(b.bersih)), '#06b6d4', true)] } : null
 })
 
 const LOADERS = { santri: loadSantri, keuangan: loadKeuangan, akademik: loadAkademik, absensi: loadAbsensi, pegawai: loadPegawai }
@@ -258,7 +266,8 @@ onMounted(loadSantri)
 // chart options
 const optBar = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { font: { size: 9 } } }, y: { beginAtZero: true, ticks: { font: { size: 9 }, precision: 0 } } } }
 const optDoughnut = { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 12 } } } }
-const optStacked = { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { font: { size: 10 }, boxWidth: 10 } } }, scales: { x: { stacked: true, ticks: { font: { size: 9 } } }, y: { stacked: true, beginAtZero: true, ticks: { font: { size: 9 }, precision: 0 } } } }
+// v.103: absensi per-bulan jadi multi-line (bukan stacked bar lagi)
+const optLineCount = { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { font: { size: 10 }, boxWidth: 10 } } }, scales: { x: { ticks: { font: { size: 9 } }, grid: { display: false } }, y: { beginAtZero: true, ticks: { font: { size: 9 }, precision: 0 }, grid: { color: 'rgba(136,135,128,0.15)' } } } }
 const optCurrency = {
   responsive: true, maintainAspectRatio: false,
   plugins: { legend: { position: 'bottom', labels: { font: { size: 10 }, boxWidth: 10 } }, tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: Rp ${new Intl.NumberFormat('id-ID').format(ctx.parsed.y)}` } } },
