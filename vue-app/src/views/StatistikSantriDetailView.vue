@@ -127,6 +127,22 @@ const statusBadge = computed(() => {
 
 const dataRows = computed(() => {
   const s = santri.value || {}
+  // v.102: guru pagi & sore (keduanya bila beda) + guru sekolah (sebelumnya cuma 1 guru)
+  const gPagi = String(s.guru_pagi || '').trim()
+  const gSore = String(s.guru_sore || '').trim()
+  const gOld = String(s.guru || '').trim()
+  const gSek = Array.isArray(s.guru_sekolah)
+    ? s.guru_sekolah.map((x) => String(x || '').trim()).filter(Boolean)
+    : (String(s.guru_sekolah || '').trim() ? [String(s.guru_sekolah).trim()] : [])
+  const guruRows = []
+  if (gPagi && gSore && gPagi.toLowerCase() !== gSore.toLowerCase()) {
+    guruRows.push({ label: 'Guru Ngaji Pagi', value: gPagi })
+    guruRows.push({ label: 'Guru Ngaji Sore', value: gSore })
+  } else {
+    const g = gPagi || gSore || gOld
+    if (g) guruRows.push({ label: 'Guru Pengampu', value: g })
+  }
+  if (gSek.length) guruRows.push({ label: 'Guru Sekolah', value: gSek.join(', ') })
   return [
     { label: 'Lembaga Qiraati', value: s.lembaga },
     { label: 'Jilid / Kelas', value: s.kelas },
@@ -134,7 +150,7 @@ const dataRows = computed(() => {
       label: 'Kelas Sekolah',
       value: s.kelas_sekolah ? formatKelasLabel(s.lembaga_sekolah, s.kelas_sekolah) : ''
     },
-    { label: 'Guru Pengampu', value: s.guru || s.guru_pagi || s.guru_sore || '' },
+    ...guruRows,
     { label: 'Wali', value: s.wali || s.nama_wali || (s.ayah && s.ayah.nama) || '' },
     { label: 'No. WA Wali', value: s.wa || '' }
   ]
