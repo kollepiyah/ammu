@@ -93,11 +93,11 @@ export function authEmailCandidates(input) {
 export async function findUserByLoginInput(input) {
   const u = String(input || '').trim()
   const uLower = u.toLowerCase()
-  const uDigits = u.replace(/\D/g, '')
 
-  // v.07.0626 (Exec D Opsi 2): coba lookup via Cloud Function (server-side, biar PII santri
-  //   tak ke-enumerasi/expose ke client). Pakai hasil function kalau response OK (incl null=tak ketemu).
-  //   FALLBACK ke direct-read di bawah kalau function gagal/error -> login tetap jalan.
+  // S2 (v.102): lookup via Cloud Function (server-side, Admin SDK) = SUMBER UTAMA.
+  //   PII di-strip server-side → TAK perlu read publik guru/santri di client.
+  //   Fallback HANYA admin built-in (settings/web tetap publik); guru/santri andalkan function.
+  let _functionResponded = false
   try {
     const _resp = await fetch(
       'https://us-central1-portal-mambaul-ulum.cloudfunctions.net/findUserByLogin?input=' +
@@ -106,12 +106,15 @@ export async function findUserByLoginInput(input) {
     if (_resp.ok) {
       const _j = await _resp.json()
       if (_j && Object.prototype.hasOwnProperty.call(_j, 'user')) return _j.user
+      _functionResponded = true
     }
   } catch (e) {
-    // function down/gagal -> lanjut direct-read (login tak patah)
+    // function down/gagal -> fallback admin-only di bawah
   }
 
-  // 1) Admin utama — ambil dari settings/web (adminUsername setting) atau default 'adminmu'
+  // Fallback admin-only: baca settings/web (TETAP publik utk branding). Admin (kyai)
+  //   tetap bisa login walau function sempat down. Guru/santri TIDAK di-fallback
+  //   (read publik ditutup di S3 — sepenuhnya andalkan function).
   try {
     const settingsSnap = await getDoc(doc(db, 'settings', 'web'))
     const adminUser =
@@ -124,72 +127,18 @@ export async function findUserByLoginInput(input) {
       }
     }
   } catch (e) {
-    // Settings tidak bisa dibaca — fallback default 'adminmu'
     if (uLower === 'adminmu') {
       return { source: 'admin', data: { id: 'admin', username: 'adminmu' }, authKey: 'adminmu' }
     }
   }
 
-  // 2) Guru: match by username (case-insensitive) atau WA digits
-  // v.20.1.0526: ROOT CAUSE FIX — legacy pakai .toLowerCase() match in-memory,
-  // Firestore where('==') case-sensitive. Solusi: try exact match dulu (cheap),
-  // kalau empty + ada huruf → full scan + filter lower (handle "Ahmad" vs "ahmad").
-  const guruRef = collection(db, 'guru')
-  let guruDoc = null
-
-  // Strategy 1: exact match (fast path — kebanyakan username sudah lowercase)
-  let guruResults = await getDocs(query(guruRef, where('username', '==', u), fsLimit(1)))
-  if (!guruResults.empty) guruDoc = guruResults.docs[0]
-
-  // Strategy 2: WA digits match (uDigits >= 8)
-  if (!guruDoc && uDigits.length >= 8) {
-    guruResults = await getDocs(query(guruRef, where('wa', '==', uDigits), fsLimit(1)))
-    if (!guruResults.empty) guruDoc = guruResults.docs[0]
+  // Function tak memberi jawaban & bukan admin → layanan login terganggu
+  //   (BUKAN "user tidak ditemukan" — bedakan agar pesan ke user akurat saat outage).
+  if (!_functionResponded) {
+    const err = new Error('Layanan login sedang terganggu. Coba lagi sebentar.')
+    err.code = 'login/service-unavailable'
+    throw err
   }
-
-  // Strategy 3: case-insensitive scan kalau input ada huruf
-  if (!guruDoc && /[a-z]/i.test(u)) {
-    const allGuru = await getDocs(query(guruRef))
-    guruDoc = allGuru.docs.find((d) => String(d.data().username || '').toLowerCase() === uLower)
-  }
-
-  if (guruDoc) {
-    const g = { id: guruDoc.id, ...guruDoc.data() }
-    const wa = String(g.wa || '').replace(/\D/g, '')
-    const authKey = wa.length >= 8 ? wa : g.username || String(g.id)
-    return { source: 'guru', data: g, authKey }
-  }
-
-  // 3) Santri: match by username, WA wali, atau NIS (same strategy)
-  const santriRef = collection(db, 'santri')
-  let santriDoc = null
-
-  let santriResults = await getDocs(query(santriRef, where('username', '==', u), fsLimit(1)))
-  if (!santriResults.empty) santriDoc = santriResults.docs[0]
-
-  if (!santriDoc && uDigits.length >= 8) {
-    santriResults = await getDocs(query(santriRef, where('wa', '==', uDigits), fsLimit(1)))
-    if (!santriResults.empty) santriDoc = santriResults.docs[0]
-  }
-
-  if (!santriDoc) {
-    santriResults = await getDocs(query(santriRef, where('nis', '==', u), fsLimit(1)))
-    if (!santriResults.empty) santriDoc = santriResults.docs[0]
-  }
-
-  // Case-insensitive scan untuk santri username
-  if (!santriDoc && /[a-z]/i.test(u)) {
-    const allSantri = await getDocs(query(santriRef))
-    santriDoc = allSantri.docs.find((d) => String(d.data().username || '').toLowerCase() === uLower)
-  }
-
-  if (santriDoc) {
-    const s = { id: santriDoc.id, ...santriDoc.data() }
-    const wa = String(s.wa || '').replace(/\D/g, '')
-    const authKey = wa.length >= 8 ? wa : s.username || s.nis || String(s.id)
-    return { source: 'santri', data: s, authKey }
-  }
-
   return null
 }
 
