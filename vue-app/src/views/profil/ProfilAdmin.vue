@@ -57,9 +57,10 @@
 
       <!-- Body content (Identitas + Informasi + Pengaturan Profil) -->
       <div class="p-6 md:p-8">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- v.103 mobile: kartu detail jadi scroll-samping (snap-carousel); grid di desktop -->
+        <div class="flex md:grid md:grid-cols-2 gap-4 overflow-x-auto md:overflow-visible snap-x snap-mandatory -mx-6 px-6 md:mx-0 md:px-0 pb-2 hide-scrollbar">
           <div
-            class="bg-[var(--bg-card-elevated)] p-5 rounded-2xl border border-[var(--border-subtle)]"
+            class="snap-center shrink-0 w-[85%] md:w-auto bg-[var(--bg-card-elevated)] p-5 rounded-2xl border border-[var(--border-subtle)]"
           >
             <h3
               class="font-black text-[var(--text-primary)] text-sm uppercase tracking-widest border-b border-[var(--border-subtle)] pb-2 mb-4"
@@ -89,7 +90,7 @@
           </div>
 
           <div
-            class="bg-emerald-50 dark:bg-emerald-900/20 p-5 rounded-2xl border border-emerald-100"
+            class="snap-center shrink-0 w-[85%] md:w-auto bg-emerald-50 dark:bg-emerald-900/20 p-5 rounded-2xl border border-emerald-100"
           >
             <h3
               class="font-black text-emerald-800 text-sm uppercase tracking-widest border-b border-emerald-200 pb-2 mb-4"

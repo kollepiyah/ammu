@@ -5,6 +5,10 @@
 @tailwind components;
 @tailwind utilities;
 
+/* v.103: util untuk section scroll-samping (snap-carousel) — sembunyikan scrollbar */
+.hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+.hide-scrollbar::-webkit-scrollbar { display: none; }
+
 :root {
   /* === LIGHT MODE — Teal + Ivory === */
   --bg-page: #FFFFFF;
