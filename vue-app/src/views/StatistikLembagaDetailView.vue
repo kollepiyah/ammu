@@ -61,8 +61,8 @@
         </span>
       </div>
 
-      <!-- Tabel santri -->
-      <div class="overflow-x-auto">
+      <!-- Tabel santri (desktop) -->
+      <div class="hidden md:block overflow-x-auto">
         <table class="w-full text-xs">
           <thead>
             <tr class="text-left text-[var(--text-secondary)] border-b border-[var(--border-subtle)]">
@@ -88,6 +88,25 @@
           </tbody>
         </table>
       </div>
+
+      <!-- List santri (mobile) — baris sentuh penuh, native feel -->
+      <ul class="md:hidden divide-y divide-[var(--border-subtle)]">
+        <li v-for="(s, i) in g.santri" :key="s.id">
+          <button
+            @click="goSantri(s.id)"
+            class="w-full flex items-center gap-3 px-4 py-3 text-left active:bg-teal-50/60 dark:active:bg-teal-900/20 transition"
+          >
+            <span class="text-[11px] font-black text-[var(--text-tertiary)] w-5 flex-shrink-0">{{ i + 1 }}</span>
+            <span class="flex-1 min-w-0">
+              <span class="block text-sm font-bold text-[var(--text-primary)] truncate">{{ s.nama }}</span>
+              <span class="block text-[11px] text-[var(--text-secondary)] mt-0.5">
+                Capaian: {{ s.capaian || '-' }}<template v-if="isJuz"> &middot; Juz {{ s.juz || '-' }}</template>
+              </span>
+            </span>
+            <i class="fas fa-chevron-right text-[11px] text-[var(--text-tertiary)] flex-shrink-0"></i>
+          </button>
+        </li>
+      </ul>
     </div>
   </div>
 </template>
