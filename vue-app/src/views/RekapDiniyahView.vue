@@ -83,7 +83,8 @@
           Pilih lembaga/kelas lain atau pastikan santri punya lembaga_sekolah.
         </p>
       </div>
-      <div v-else class="overflow-x-auto">
+      <template v-else>
+      <div v-if="!isMobile" class="overflow-x-auto">
         <table class="w-full text-xs border-collapse">
           <thead class="bg-[var(--bg-muted)] sticky top-0">
             <tr>
@@ -158,6 +159,42 @@
           </tbody>
         </table>
       </div>
+
+      <!-- Mobile: kartu per santri (header + grid input mapel) -->
+      <div v-if="isMobile" class="space-y-2.5">
+        <div
+          v-for="s in filteredSantri"
+          :key="s.id"
+          class="bg-[var(--bg-card)] rounded-xl border border-[var(--border-subtle)] shadow-sm p-3"
+        >
+          <div class="flex items-center justify-between gap-2 mb-2.5">
+            <div class="min-w-0">
+              <p class="text-sm font-bold text-[var(--text-primary)] truncate">{{ s.nama }}</p>
+              <p class="text-[10px] text-[var(--text-secondary)]">{{ s.lembaga_sekolah || '-' }} &middot; {{ s.kelas_sekolah || '-' }}</p>
+            </div>
+            <span :class="['text-[11px] font-black px-2.5 py-1 rounded-lg bg-cyan-50 dark:bg-cyan-900/20 flex-shrink-0', rataColor(rataNilai(s.id))]">
+              Rata2 {{ rataNilai(s.id) }}
+            </span>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <label
+              v-for="m in mapelList"
+              :key="m"
+              class="flex items-center justify-between gap-2 bg-[var(--bg-muted)] rounded-lg pl-2.5 pr-1 py-1"
+            >
+              <span class="text-[11px] font-bold text-[var(--text-secondary)] truncate">{{ m }}</span>
+              <input
+                type="text"
+                inputmode="numeric"
+                :value="getCell(s.id, m)"
+                @change="(ev) => saveCell(s.id, m, ev.target.value)"
+                class="w-12 flex-shrink-0 text-center text-sm font-bold py-1.5 rounded-md border border-[var(--border-default)] bg-[var(--bg-card)] outline-none focus:ring-2 focus:ring-cyan-500 dark:text-white"
+              />
+            </label>
+          </div>
+        </div>
+      </div>
+      </template>
     </div>
 
     <p class="text-[10px] text-[var(--text-tertiary)] italic text-center">
@@ -177,6 +214,7 @@ import { db } from '@/services/firebase'
 import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
+import { useMobileShell } from '@/composables/useMobileShell'
 import { useSantri } from '@/composables/useSantri'
 import { sortSantri } from '@/utils/santriSort'
 // v.90.0626: util jenjang Diniyah (SDI/SMP/SMA) — sumber tunggal, samakan dg RaporView
@@ -198,6 +236,7 @@ const { santriRaw } = useSantri()
 const auth = useAuthStore()
 const settings = useSettingsStore()
 const toast = useToast()
+const { isMobile } = useMobileShell()
 
 // Filter state — v.90.0626: pakai JENJANG Diniyah (SDI/SMP/SMA), bukan lembaga (SDI/PKBM)
 const filterJenjang = ref('')

@@ -65,7 +65,7 @@
     <div
       class="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)] shadow-sm overflow-hidden"
     >
-      <div class="overflow-x-auto">
+      <div v-if="!isMobile" class="overflow-x-auto">
         <table class="w-full text-xs">
           <thead class="bg-[var(--bg-muted)] sticky top-0">
             <tr>
@@ -280,6 +280,69 @@
           </tbody>
         </table>
       </div>
+
+      <!-- Mobile: kartu input per santri (berkelompok) -->
+      <div v-if="isMobile" class="space-y-3">
+        <div v-if="filteredSantri.length === 0" class="text-center text-[var(--text-tertiary)] italic py-8">
+          <i class="fas fa-inbox text-2xl block mb-2"></i>Tidak ada santri yang cocok dengan filter.
+        </div>
+        <template v-else v-for="(grp, gi) in grouped" :key="'m' + gi">
+          <p class="text-[11px] font-black text-[var(--text-primary)] uppercase tracking-widest px-1 pt-1">
+            <i class="fas fa-layer-group mr-1.5 text-teal-600"></i>{{ grp.label }}
+          </p>
+          <div
+            v-for="s in grp.items"
+            :key="'m' + s.id"
+            class="bg-[var(--bg-card)] rounded-xl border border-[var(--border-subtle)] shadow-sm p-3 space-y-2.5"
+          >
+            <div class="flex items-center justify-between gap-2">
+              <p class="text-sm font-bold text-[var(--text-primary)] truncate">
+                {{ s.nama }}
+                <span class="text-[10px] font-bold text-[var(--text-secondary)]">{{ s.jk }}<template v-if="s.usia"> &middot; {{ s.usia }}</template></span>
+              </p>
+              <button
+                @click="openCatatan(s)"
+                :class="['inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold flex-shrink-0', formMap[s.id]?.catatan ? 'bg-cyan-200 dark:bg-cyan-700 text-cyan-900 dark:text-cyan-100' : 'bg-[var(--bg-muted)] text-[var(--text-tertiary)]']"
+              >
+                <i class="fas fa-comment-dots"></i>Catatan
+              </button>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <label class="block">
+                <span class="block text-[9px] font-black uppercase tracking-wider text-[var(--text-secondary)] mb-0.5">Kls Sekolah</span>
+                <select v-model="formMap[s.id].kelas_sekolah" @change="markDirty(s.id)" class="w-full text-xs font-bold p-2 rounded-lg border border-[var(--border-default)] bg-white dark:bg-slate-900 text-[var(--text-primary)]">
+                  <option value="">-</option>
+                  <option v-for="k in kelasSekolahOptions" :key="k" :value="k">{{ k }}</option>
+                </select>
+              </label>
+              <label class="block">
+                <span class="block text-[9px] font-black uppercase tracking-wider text-[var(--text-secondary)] mb-0.5">Qiraati</span>
+                <select v-model="formMap[s.id].kelas" @change="markDirty(s.id)" class="w-full text-xs font-bold p-2 rounded-lg border border-[var(--border-default)] bg-white dark:bg-slate-900 text-[var(--text-primary)]">
+                  <option value="">-</option>
+                  <option v-for="k in kelasOptions(s.lembaga)" :key="k" :value="k">{{ k }}</option>
+                </select>
+              </label>
+              <label v-if="hasPtpt && lembagaKey(s) === 'ptpt'" class="block">
+                <span class="block text-[9px] font-black uppercase tracking-wider text-rose-600 mb-0.5">Juz <span class="font-medium normal-case">{{ ptptJuzHint(s.kelas) }}</span></span>
+                <input v-model="formMap[s.id].juz" @input="markDirty(s.id)" type="number" min="1" max="30" inputmode="numeric" class="w-full text-center font-black text-sm p-2 rounded-lg border border-rose-300 dark:border-rose-700 bg-rose-50 dark:bg-rose-900/30 text-rose-900 dark:text-rose-200" />
+              </label>
+              <label class="block">
+                <span class="block text-[9px] font-black uppercase tracking-wider text-teal-700 mb-0.5">Awal Bln</span>
+                <input v-model="formMap[s.id].prestasi_awal" @input="markDirty(s.id)" type="text" inputmode="numeric" class="w-full text-center font-black text-sm p-2 rounded-lg border border-[var(--border-default)] bg-white dark:bg-slate-900 text-[var(--text-primary)]" />
+              </label>
+              <label class="block">
+                <span class="block text-[9px] font-black uppercase tracking-wider text-teal-700 mb-0.5">Akhir Bln</span>
+                <input v-model="formMap[s.id].prestasi_akhir" @input="markDirty(s.id)" type="text" inputmode="numeric" class="w-full text-center font-black text-sm p-2 rounded-lg border border-[var(--border-default)] bg-white dark:bg-slate-900 text-[var(--text-primary)]" />
+              </label>
+              <label class="block">
+                <span class="block text-[9px] font-black uppercase tracking-wider text-cyan-700 mb-0.5">Total</span>
+                <input v-if="isAutoCompute(s)" :value="hitungTotal(s, formMap[s.id])" :class="['w-full text-center font-black text-sm p-2 rounded-lg cursor-not-allowed', totalClass(s, formMap[s.id])]" readonly title="Auto-compute" />
+                <input v-else v-model="formMap[s.id].prestasi_total" @input="markDirty(s.id)" type="text" inputmode="numeric" class="w-full text-center font-black text-sm p-2 rounded-lg border border-cyan-300 dark:border-cyan-700 bg-cyan-50 dark:bg-cyan-900/30 text-cyan-900 dark:text-cyan-200" title="Manual input" />
+              </label>
+            </div>
+          </div>
+        </template>
+      </div>
     </div>
 
     <!-- Catatan modal -->
@@ -366,11 +429,13 @@ import { useLembaga } from '@/composables/useLembaga'
 import { sortSantri } from '@/utils/santriSort'
 import { useGuru } from '@/composables/useGuru'
 import { useToast } from '@/composables/useToast'
+import { useMobileShell } from '@/composables/useMobileShell'
 
 const { santriRaw } = useSantri()
 const { lembagaRaw } = useLembaga()
 const { guruRaw } = useGuru()
 const toast = useToast()
+const { isMobile } = useMobileShell()
 const auth = useAuthStore()
 const route = useRoute()
 
