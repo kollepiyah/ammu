@@ -23,7 +23,11 @@
           <slot></slot>
         </p>
       </div>
-      <div v-if="$slots.stats || $slots.actions" class="flex flex-wrap gap-2 items-center">
+      <!-- v.103 mobile: tombol aksi jadi toolbar 1-baris scroll-samping (tak wrap berantakan); desktop wrap normal -->
+      <div
+        v-if="$slots.stats || $slots.actions"
+        class="flex flex-nowrap md:flex-wrap items-center gap-2 overflow-x-auto md:overflow-visible hide-scrollbar [&>*]:shrink-0 md:[&>*]:shrink -mx-1 px-1 lg:mx-0 lg:px-0"
+      >
         <slot name="stats"></slot>
         <slot name="actions"></slot>
       </div>
