@@ -76,7 +76,10 @@ async function setupNativeIntegration() {
     App.addListener('resume', () => applyStatusBar())
     App.addListener('appStateChange', ({ isActive } = {}) => { if (isActive) applyStatusBar() })
 
+    // v.103: back pola TAB-APP (kyai). Home = tekan 2x keluar; tab utama lain = ke Beranda
+    //   (jangan telusuri history antar-tab → dulu "balik ke halaman lain"); halaman detail = back ke induk.
     const HOME_ROUTES = ['/dashboard', '/capaian-prestasi', '/login']
+    const TAB_ROOTS = ['/dashboard', '/capaian-prestasi', '/santri', '/tagihan', '/keuangan', '/rekap-prestasi', '/notifikasi', '/profil']
     let lastBack = 0
     App.addListener('backButton', () => {
       // a. sidebar terbuka -> tutup
@@ -85,14 +88,20 @@ async function setupNativeIntegration() {
       const ev = new CustomEvent('android-back', { cancelable: true })
       window.dispatchEvent(ev)
       if (ev.defaultPrevented) return
-      // c. bukan halaman home & ada history -> navigasi back
       const path = router.currentRoute?.value?.path || ''
-      if (!HOME_ROUTES.includes(path) && window.history.length > 1) { window.history.back(); return }
-      // d. di home -> tekan back 2x dalam 2 detik utk keluar app
-      const now = Date.now()
-      if (now - lastBack < 2000) { App.exitApp(); return }
-      lastBack = now
-      try { toast.info('Tekan sekali lagi untuk keluar') } catch (_e) { /* ignore */ }
+      // c. di HOME -> tekan back 2x dalam 2 detik utk keluar app
+      if (HOME_ROUTES.includes(path)) {
+        const now = Date.now()
+        if (now - lastBack < 2000) { App.exitApp(); return }
+        lastBack = now
+        try { toast.info('Tekan sekali lagi untuk keluar') } catch (_e) { /* ignore */ }
+        return
+      }
+      // d. tab utama lain -> ke Beranda (stack tak menumpuk; back lagi = keluar)
+      if (TAB_ROOTS.includes(path)) { router.replace('/dashboard'); return }
+      // e. halaman detail -> kembali ke induk (history), fallback ke Beranda
+      if (window.history.length > 1) { router.back(); return }
+      router.replace('/dashboard')
     })
   } catch (e) {
     // eslint-disable-next-line no-console

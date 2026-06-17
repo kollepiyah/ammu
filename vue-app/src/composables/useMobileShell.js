@@ -2,6 +2,7 @@
 // Bottom nav HANYA muncul di: Android (Capacitor native) ATAU PWA terinstal (standalone)
 // DAN viewport mobile. Browser desktop / Electron -> pakai sidebar biasa.
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { forceMobileShell } from '@/utils/shellOverride'
 
 function detectNative() {
   try {
@@ -40,7 +41,10 @@ export function useMobileShell() {
   })
   onUnmounted(() => window.removeEventListener('resize', sync))
 
-  // (Android native ATAU PWA standalone) DAN mobile
-  const showBottomNav = computed(() => isMobile.value && (_isNative || isStandalone.value))
+  // (Android native ATAU PWA standalone) DAN mobile.
+  // v.103: ?shell=mobile -> paksa bottom nav di lebar HP (uji UI Android di browser).
+  const showBottomNav = computed(() =>
+    isMobile.value && (forceMobileShell || _isNative || isStandalone.value)
+  )
   return { isMobile, isStandalone, isNative: _isNative, showBottomNav }
 }

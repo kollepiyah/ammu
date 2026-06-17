@@ -2,6 +2,7 @@
 // Ribbon shell HANYA aktif di Electron (keputusan kyai: "Electron saja").
 // Browser desktop biasa + Capacitor (HP/PWA) tetap pakai shell lama (AppLayout).
 import { ref } from 'vue'
+import { forceMobileShell, forceDesktopRibbon } from '@/utils/shellOverride'
 
 function detectElectron() {
   try {
@@ -24,7 +25,8 @@ function detectElectron() {
 }
 
 // Singleton — dihitung sekali (status Electron tidak berubah saat runtime).
-const _isElectron = ref(detectElectron())
+// v.103: hormati override dev (?shell=mobile|desktop) utk uji tampilan.
+const _isElectron = ref(forceMobileShell ? false : (forceDesktopRibbon ? true : detectElectron()))
 
 export function useDesktopShell() {
   return {
