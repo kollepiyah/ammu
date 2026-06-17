@@ -24,8 +24,8 @@
             </h1>
             <p class="text-[11px] text-[var(--text-secondary)]">— Master data guru &amp; pegawai pondok</p>
           </div>
-          <!-- Stats badges + tombol tambah -->
-          <div class="flex flex-wrap gap-2 items-center">
+          <!-- Stats badges + tombol tambah — v.103 mobile: toolbar 1-baris scroll-samping -->
+          <div class="flex flex-nowrap md:flex-wrap gap-2 items-center overflow-x-auto md:overflow-visible hide-scrollbar [&>*]:shrink-0 md:[&>*]:shrink -mx-1 px-1 lg:mx-0 lg:px-0">
             <div class="px-3 py-1.5 rounded-full bg-teal-50 dark:bg-teal-900/30 border border-teal-200 dark:border-teal-700 text-xs">
               <span class="text-teal-700 dark:text-teal-300 font-bold">{{ stats.total }}</span>
               <span class="text-[var(--text-secondary)] ml-1">total</span>
@@ -40,7 +40,7 @@
             </div>
             <!-- v.21.17c.0526: View vs Master mode actions -->
             <!-- v.21.109.0527: warna cyan (action) bukan rose (danger) -->
-            <div class="flex flex-wrap gap-2 items-center">
+            <div class="flex flex-nowrap md:flex-wrap gap-2 items-center [&>*]:shrink-0 md:[&>*]:shrink">
             <button @click="printPage" aria-label="Cetak daftar guru PDF" class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold transition cursor-pointer no-print">
               <i class="fas fa-file-pdf"></i>Cetak PDF
             </button>
