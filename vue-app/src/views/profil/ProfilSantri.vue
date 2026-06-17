@@ -39,8 +39,10 @@
       </div>
 
       <!-- ===== Mode View ===== -->
-      <div v-if="mode === 'view'" class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div class="bg-[var(--bg-card-elevated)] p-4 rounded-2xl border border-[var(--border-subtle)]">
+      <div v-if="mode === 'view'" class="p-4 space-y-4">
+        <!-- v.103 mobile: kartu info scroll-samping (snap); grid 2-kolom di desktop -->
+        <div class="flex md:grid md:grid-cols-2 gap-4 overflow-x-auto md:overflow-visible snap-x snap-mandatory hide-scrollbar pb-1">
+        <div class="snap-center shrink-0 w-[88%] md:w-auto bg-[var(--bg-card-elevated)] p-4 rounded-2xl border border-[var(--border-subtle)]">
           <h3 class="text-xs font-black uppercase text-[var(--text-primary)] mb-3 border-b pb-2"><i class="fas fa-id-card mr-1"></i>Identitas</h3>
           <ul class="space-y-2 text-sm">
             <li class="flex justify-between"><span class="text-[var(--text-secondary)] font-bold">No. Induk:</span><span class="font-black">{{ santri?.nis || '-' }}</span></li>
@@ -54,7 +56,7 @@
             <li class="flex justify-between"><span class="text-[var(--text-secondary)] font-bold">Tgl Masuk:</span><span class="font-black">{{ santri?.tgl_masuk || '-' }}</span></li>
           </ul>
         </div>
-        <div class="bg-cyan-50 dark:bg-cyan-900/20 p-4 rounded-2xl border border-cyan-200 dark:border-cyan-800">
+        <div class="snap-center shrink-0 w-[88%] md:w-auto bg-cyan-50 dark:bg-cyan-900/20 p-4 rounded-2xl border border-cyan-200 dark:border-cyan-800">
           <h3 class="text-xs font-black uppercase text-cyan-700 dark:text-cyan-300 mb-3 border-b border-cyan-200 dark:border-cyan-800 pb-2"><i class="fas fa-school mr-1"></i>Pendidikan</h3>
           <ul class="space-y-2 text-sm">
             <li class="flex justify-between"><span class="text-cyan-700 font-bold">Lembaga:</span><span class="font-black">{{ santri?.lembaga || '-' }}</span></li>
@@ -66,7 +68,7 @@
         </div>
 
         <!-- v.79.0526: Data Ayah -->
-        <div class="bg-emerald-50 dark:bg-emerald-900/20 p-4 rounded-2xl border border-emerald-200 dark:border-emerald-800">
+        <div class="snap-center shrink-0 w-[88%] md:w-auto bg-emerald-50 dark:bg-emerald-900/20 p-4 rounded-2xl border border-emerald-200 dark:border-emerald-800">
           <h3 class="text-xs font-black uppercase text-emerald-700 dark:text-emerald-300 mb-3 border-b border-emerald-200 dark:border-emerald-800 pb-2"><i class="fas fa-male mr-1"></i>Data Ayah</h3>
           <ul class="space-y-2 text-sm">
             <li class="flex justify-between"><span class="text-emerald-700 font-bold">Nama:</span><span class="font-black">{{ ayahNama || '-' }}</span></li>
@@ -78,7 +80,7 @@
         </div>
 
         <!-- v.79.0526: Data Ibu -->
-        <div class="bg-rose-50 dark:bg-rose-900/20 p-4 rounded-2xl border border-rose-200 dark:border-rose-800">
+        <div class="snap-center shrink-0 w-[88%] md:w-auto bg-rose-50 dark:bg-rose-900/20 p-4 rounded-2xl border border-rose-200 dark:border-rose-800">
           <h3 class="text-xs font-black uppercase text-rose-700 dark:text-rose-300 mb-3 border-b border-rose-200 dark:border-rose-800 pb-2"><i class="fas fa-female mr-1"></i>Data Ibu</h3>
           <ul class="space-y-2 text-sm">
             <li class="flex justify-between"><span class="text-rose-700 font-bold">Nama:</span><span class="font-black">{{ ibuNama || '-' }}</span></li>
@@ -89,7 +91,10 @@
           </ul>
         </div>
 
-        <div class="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-2xl border border-amber-200 dark:border-amber-800 md:col-span-2">
+        </div>
+        <!-- /scroll-samping -->
+
+        <div class="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-2xl border border-amber-200 dark:border-amber-800">
           <h3 class="text-xs font-black uppercase text-amber-700 dark:text-amber-300 mb-3 border-b border-amber-200 dark:border-amber-800 pb-2"><i class="fas fa-user-friends mr-1"></i>Wali</h3>
           <ul class="space-y-2 text-sm">
             <li class="flex justify-between"><span class="text-amber-700 font-bold">Nama Wali:</span><span class="font-black">{{ santri?.wali || '-' }}</span></li>

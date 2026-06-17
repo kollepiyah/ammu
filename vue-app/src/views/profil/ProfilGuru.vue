@@ -76,9 +76,11 @@
 
       <!-- ===== Mode View ===== -->
       <!-- GRID DETAIL -->
-      <div v-if="mode === 'view'" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div v-if="mode === 'view'" class="p-4 md:p-6 space-y-4">
+        <!-- v.103 mobile: 2 kartu info jadi scroll-samping (snap), grid 2-kolom di desktop -->
+        <div class="flex md:grid md:grid-cols-2 gap-4 overflow-x-auto md:overflow-visible snap-x snap-mandatory hide-scrollbar pb-1">
         <!-- Identitas -->
-        <div class="bg-[var(--bg-card-elevated)] p-5 rounded-2xl border border-[var(--border-subtle)]">
+        <div class="snap-center shrink-0 w-[88%] md:w-auto bg-[var(--bg-card-elevated)] p-5 rounded-2xl border border-[var(--border-subtle)]">
           <h3
             class="font-black text-[var(--text-primary)] text-sm uppercase tracking-widest border-b border-[var(--border-subtle)] pb-2 mb-4"
           >
@@ -121,7 +123,7 @@
         </div>
 
         <!-- Tugas & Lembaga -->
-        <div class="bg-cyan-50 dark:bg-cyan-900/20 p-5 rounded-2xl border border-cyan-100">
+        <div class="snap-center shrink-0 w-[88%] md:w-auto bg-cyan-50 dark:bg-cyan-900/20 p-5 rounded-2xl border border-cyan-100">
           <h3
             class="font-black text-cyan-800 text-sm uppercase tracking-widest border-b border-cyan-200 pb-2 mb-4"
           >
@@ -151,8 +153,11 @@
           </ul>
         </div>
 
-        <!-- Sistem & Akses (full width on md) -->
-        <div class="bg-teal-50 dark:bg-teal-900/20 p-5 rounded-2xl border border-teal-100 md:col-span-2">
+        </div>
+        <!-- /scroll-samping -->
+
+        <!-- Sistem & Akses (full width) -->
+        <div class="bg-teal-50 dark:bg-teal-900/20 p-5 rounded-2xl border border-teal-100">
           <h3
             class="font-black text-teal-800 text-sm uppercase tracking-widest border-b border-teal-200 pb-2 mb-4"
           >
