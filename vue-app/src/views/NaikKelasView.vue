@@ -129,7 +129,7 @@
         <div class="grid grid-cols-2 gap-2">
           <button
             @click="
-              mutasiKategori = 'qiraati'
+              mutasiKategori = 'qiraati';
               mutasiLembaga = ''
             "
             :class="[
@@ -143,7 +143,7 @@
           </button>
           <button
             @click="
-              mutasiKategori = 'sekolah'
+              mutasiKategori = 'sekolah';
               mutasiLembaga = ''
             "
             :class="[
@@ -280,7 +280,7 @@
       <div class="flex gap-2 mb-3">
         <button
           @click="
-            kenaikanKategori = 'qiraati'
+            kenaikanKategori = 'qiraati';
             filterLembaga = ''
           "
           :class="[
@@ -294,7 +294,7 @@
         </button>
         <button
           @click="
-            kenaikanKategori = 'sekolah'
+            kenaikanKategori = 'sekolah';
             filterLembaga = ''
           "
           :class="[
@@ -420,7 +420,7 @@
       <div class="flex gap-2 mb-3">
         <button
           @click="
-            riwayatKategori = 'qiraati'
+            riwayatKategori = 'qiraati';
             riwayatLembaga = ''
           "
           :class="[
@@ -434,7 +434,7 @@
         </button>
         <button
           @click="
-            riwayatKategori = 'sekolah'
+            riwayatKategori = 'sekolah';
             riwayatLembaga = ''
           "
           :class="[
