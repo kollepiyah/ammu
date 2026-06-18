@@ -4,7 +4,7 @@ import { initializeApp, getApp } from 'firebase/app'
 import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore'
 import { getAuth, connectAuthEmulator } from 'firebase/auth'
 import { getStorage, connectStorageEmulator } from 'firebase/storage'
-import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check'
+import { initializeAppCheck, ReCaptchaV3Provider, CustomProvider } from 'firebase/app-check'
 
 // v.20.3.0526: ROOT CAUSE FIX — sebelumnya Vue connect ke project `qiraati-rapor` (defunct),
 // data + akun real ada di `portal-mambaul-ulum`. Itu sebabnya:
@@ -23,6 +23,28 @@ const firebaseConfig = {
 }
 
 export const firebaseApp = initializeApp(firebaseConfig)
+
+// v.105 (S5): loader Play Integrity native (memoized) untuk CustomProvider App Check.
+//   Hanya dipakai di Capacitor Android. Plugin + FirebaseAppCheck.initialize() di-load
+//   LAZY saat token pertama diminta; di-cache supaya initialize native sekali saja.
+let _nativeAppCheckReady = null
+function _ensureNativeAppCheck() {
+  if (!_nativeAppCheckReady) {
+    _nativeAppCheckReady = import('@capacitor-firebase/app-check').then(async (mod) => {
+      const FAC = mod.FirebaseAppCheck
+      // Android: provider Play Integrity otomatis (sesuai google-services.json).
+      await FAC.initialize({ isTokenAutoRefreshEnabled: true })
+      return FAC
+    })
+  }
+  return _nativeAppCheckReady
+}
+async function _getNativeAppCheckToken() {
+  const FAC = await _ensureNativeAppCheck()
+  const r = await FAC.getToken()
+  return { token: r.token, expireTimeMillis: r.expireTimeMillis }
+}
+
 // === App Check (audit 08Jun2026, v.96.0626) — blokir klien non-app ==========================
 // Init SINKRON, tepat setelah initializeApp & SEBELUM getFirestore/getAuth dipakai, supaya
 // SEMUA request Firestore/Auth/Storage App Check-aware sejak awal (penting agar aman saat
@@ -35,20 +57,28 @@ try {
   const _acDebug = import.meta.env.VITE_APPCHECK_DEBUG_TOKEN
   // v.97.0626: reCAPTCHA v3 HANYA jalan di origin web http(s). Di Electron (file://) & Capacitor
   // native (localhost/capacitor scheme) reCAPTCHA gagal terus -> spam "appCheck/recaptcha-error".
-  const _isNative =
-    (typeof navigator !== 'undefined' && /Electron/i.test(navigator.userAgent)) ||
-    (typeof window !== 'undefined' && window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform())
+  const _isElectron = typeof navigator !== 'undefined' && /Electron/i.test(navigator.userAgent)
+  const _isCapacitorNative =
+    typeof window !== 'undefined' && window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()
+  const _isNative = _isElectron || _isCapacitorNative
   const _isWebOrigin =
     typeof location !== 'undefined' && /^https?:$/.test(location.protocol) && !_isNative
 
-  if (_isNative) {
-    // v.100f: NATIVE (Capacitor/Electron) — App Check via DEBUG TOKEN.
-    //   reCAPTCHA tak bisa jalan di WebView/file://; JS SDK juga tak bisa pakai Play Integrity
-    //   native tanpa plugin. Debug token (VITE_APPCHECK_DEBUG_TOKEN, didaftarkan di Console
-    //   App Check > app Android > Manage debug tokens) membuat request native ter-verifikasi.
-    //   Token HANYA diterapkan di native -> web tetap reCAPTCHA murni (tak ikut melemah).
-    //   COCOK utk fase INTERNAL TESTING. PRODUKSI: ganti ke Play Integrity via
-    //   @capacitor-firebase/app-check + CustomProvider (butuh upgrade firebase JS ke v12).
+  if (_isCapacitorNative) {
+    // v.105 (S5): NATIVE Android (Capacitor) — App Check PRODUKSI via PLAY INTEGRITY.
+    //   @capacitor-firebase/app-check meng-attest device di sisi native; CustomProvider
+    //   menyalurkan token native ke JS SDK (WebView). initializeAppCheck dipanggil SINKRON
+    //   (registrasi awal) — plugin di-load + getToken LAZY (memoized) saat request pertama.
+    //   Menggantikan DEBUG TOKEN lama (dev-only, tak valid utk user produksi).
+    //   PRASYARAT enforce: daftarkan Play Integrity di Firebase Console (App Check > app
+    //   Android) + SHA-256 (upload & app-signing) + `npx cap sync android` + rebuild AAB.
+    initializeAppCheck(firebaseApp, {
+      provider: new CustomProvider({ getToken: _getNativeAppCheckToken }),
+      isTokenAutoRefreshEnabled: true
+    })
+  } else if (_isElectron) {
+    // Electron (desktop) — TAK ada Play Integrity → tetap DEBUG TOKEN (fase testing).
+    //   VITE_APPCHECK_DEBUG_TOKEN didaftarkan di Console App Check > app Web > Manage debug tokens.
     if (_acDebug && typeof self !== 'undefined') {
       self.FIREBASE_APPCHECK_DEBUG_TOKEN = _acDebug === 'true' ? true : _acDebug
       initializeAppCheck(firebaseApp, {
