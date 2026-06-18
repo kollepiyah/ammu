@@ -105,7 +105,7 @@ service cloud.firestore {
     }
 
     match /absensi/{docId} {
-      allow read: if true;
+      allow read: if signedIn(); // v.105 audit: tutup read publik (PII + status kehadiran santri)
       allow create, update: if canAkademik();
       allow delete: if isSuper();
     }
@@ -223,7 +223,7 @@ service cloud.firestore {
 
     // Kritik saran: CREATE tetap anonim (santri/wali boleh kirim tanpa login)
     match /kritik_saran/{docId} {
-      allow read: if true;
+      allow read: if signedIn(); // v.105 audit: hanya pengurus baca masukan (CREATE tetap anonim, lihat bawah)
       allow create: if
         request.resource.data.pesan is string
         && request.resource.data.pesan.size() >= 1
@@ -239,13 +239,13 @@ service cloud.firestore {
     }
 
     match /absensi_kegiatan/{docId} {
-      allow read: if true;
+      allow read: if signedIn(); // v.105 audit: tutup read publik
       allow create, update: if canAkademik();
       allow delete: if isSuper();
     }
 
     match /absensi_shift_guru/{docId} {
-      allow read: if true;
+      allow read: if signedIn(); // v.105 audit: tutup read publik
       allow create, update: if canAkademik();
       allow delete: if isSuper();
     }
@@ -286,7 +286,7 @@ service cloud.firestore {
 
     // PSB Pendaftaran Santri Baru — CREATE publik (formulir tanpa login)
     match /psb_pendaftaran/{docId} {
-      allow read: if true;
+      allow read: if signedIn(); // v.105 audit: PII pendaftar; form publik HANYA create (lihat bawah)
       allow create: if request.resource.data.nama is string
         && request.resource.data.nama.size() >= 1
         && request.resource.data.nama.size() <= 200;
@@ -307,13 +307,13 @@ service cloud.firestore {
     }
 
     match /absensi_santri_sekolah/{docId} {
-      allow read: if true;
+      allow read: if signedIn(); // v.105 audit: tutup read publik (PII + kehadiran)
       allow create, update: if false;
       allow delete: if isSuper();
     }
 
     match /absensi_santri_sekolah_bulanan/{docId} {
-      allow read: if true;
+      allow read: if signedIn(); // v.105 audit: tutup read publik (PII + kehadiran)
       allow create, update: if canAkademik()
         && request.resource.data.santri_id != null
         && request.resource.data.periode is string
@@ -327,7 +327,7 @@ service cloud.firestore {
 
     // Absensi ngaji bulanan (Qiraati — input manual guru)
     match /absensi_santri_ngaji_bulanan/{docId} {
-      allow read: if true;
+      allow read: if signedIn(); // v.105 audit: tutup read publik (PII + kehadiran)
       allow create, update: if canAkademik()
         && request.resource.data.santri_id != null
         && request.resource.data.periode is string
@@ -379,7 +379,7 @@ service cloud.firestore {
 
     // Absensi guru (fingerprint + manual entry)
     match /absensi_guru/{docId} {
-      allow read: if true;
+      allow read: if signedIn(); // v.105 audit: tutup read publik (PII + kehadiran guru)
       allow create, update: if canAkademik();
       allow delete: if isSuper();
     }
@@ -431,7 +431,7 @@ service cloud.firestore {
     }
 
     match /pengaturan_keuangan/{docId} {
-      allow read: if true;
+      allow read: if signedIn(); // v.105 audit: tutup read publik (konfigurasi keuangan)
       allow create, update: if canKeuangan();
       allow delete: if isSuper();
     }
