@@ -503,6 +503,7 @@ import PageHeader from '@/components/layout/PageHeader.vue' // v.91.0626
 import { setDoc, doc, serverTimestamp, deleteDoc } from 'firebase/firestore'
 import { db } from '@/services/firebase'
 import { deleteOne, getAll } from '@/services/firestore' // v.91.0626: hapus = backup ke audit_log dulu
+import { resetUserPassword } from '@/services/auth' // v.105: reset sandi via Firebase Auth (bukan field plaintext)
 import { planRegenerateNis, applyNisChanges } from '@/utils/nisGenerator' // v.100 Batch14: auto-NIS pasca impor (reshuffle tgl lahir tertua)
 
 const exporting = ref(false)
@@ -694,7 +695,7 @@ async function resetSandiSantri(s) {
   })
   if (!ok) return
   try {
-    await setDoc(doc(db, 'santri', String(s.id)), { password: '1234' }, { merge: true })
+    await resetUserPassword('santri', s.id)
     toast.success(`Sandi ${s.nama} direset ke 1234`)
   } catch (e) {
     toast.error('Gagal reset: ' + (e.message || e))

@@ -550,6 +550,7 @@ import SkeletonCard from '@/components/layout/SkeletonCard.vue'
 import EmptyState from '@/components/layout/EmptyState.vue' // v.91.0626: empty-state konsisten
 // v.21.11.0526: + deleteOne untuk delete & bulk delete
 import { updateOne, deleteOne, subscribeDoc, getAll } from '@/services/firestore'
+import { resetUserPassword as _resetUserPassword } from '@/services/auth' // v.105: reset sandi via Firebase Auth (bukan field plaintext)
 import { planRegenerateNig, applyNigChanges } from '@/utils/nigGenerator' // v.100 Batch16: auto-NIG pasca impor (reshuffle tgl tugas terlama)
 import { useAuthStore as _useAuthStoreGuru } from '@/stores/auth'
 // v.21.13b.0526: + toTitleCase + normalizeWA + parseMultipleWA (dual WA)
@@ -1057,7 +1058,7 @@ async function resetSandiGuru(g) {
   })
   if (!ok) return
   try {
-    await updateOne('guru', String(g.id), { password: '1234' })
+    await _resetUserPassword('guru', g.id)
     _toastExp.success(`Sandi ${g.nama} direset ke 1234`)
   } catch (e) {
     _toastExp.error('Gagal reset: ' + (e.message || e))
@@ -1363,7 +1364,8 @@ async function confirmImportGuru() {
           _doc(_db, 'guru', String(numId)),
           {
             id: numId,
-            password: '1234',
+            // v.105: TANPA field `password` plaintext — guru impor login dgn '1234' via
+            //   lazy-migration default (findUserByLogin strip password; field tak dipakai login).
             ...item.data,
             _imported_v21_26_at: _stamp()
           },

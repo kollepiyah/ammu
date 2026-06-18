@@ -297,6 +297,23 @@ export async function syncUserClaims() {
   }
 }
 
+// v.105 (S1 lanjut): reset sandi guru/santri ke '1234' lewat Firebase Auth (Admin SDK),
+//   menggantikan tulis field `password` plaintext ke Firestore. Server verifikasi ID token
+//   pemanggil + WAJIB super_admin. Lempar error kalau gagal (caller tampilkan toast).
+export async function resetUserPassword(collection, docId) {
+  const u = auth.currentUser
+  if (!u) throw new Error('Sesi login admin tidak ditemukan — login ulang lalu coba lagi.')
+  const token = await u.getIdToken()
+  const resp = await fetch(FUNCTIONS_BASE + '/resetUserPassword', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+    body: JSON.stringify({ collection, docId: String(docId) })
+  })
+  const data = await resp.json().catch(() => ({}))
+  if (!resp.ok || !data.ok) throw new Error(data.error || 'reset-gagal')
+  return data
+}
+
 /** Google OAuth (opsional). */
 export async function loginWithGoogle() {
   return signInWithPopup(auth, googleProvider)

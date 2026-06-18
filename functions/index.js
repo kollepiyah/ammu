@@ -1134,6 +1134,91 @@ exports.syncUserClaims = onRequest(
 )
 
 // ====================================================================
+// v.105 (S1 lanjut): resetUserPassword — reset sandi guru/santri ke '1234'
+//   LEWAT Firebase Auth (Admin SDK), BUKAN tulis field `password` plaintext ke
+//   Firestore. Field `password` itu vestigial (di-strip findUserByLogin, TAK
+//   dipakai login) → tulis '1234' ke situ = no-op utk user yg sudah migrasi
+//   (sandi asli di Firebase Auth). Fungsi ini reset sandi Auth yang benar +
+//   bersihkan sisa field plaintext.
+//   GUARD: pemanggil WAJIB super_admin (verify ID token + claim role).
+//   Target di-resolve via firebase_uid (utama) / email authKey@ammu.local (fallback).
+//   DEPLOY: firebase deploy --only functions:resetUserPassword
+// ====================================================================
+const _RESET_AUTH_DOMAIN = '@ammu.local'
+const _RESET_LEGACY_DOMAINS = ['@portal-mu.local']
+const _RESET_DEFAULT_PASS = 'mu_auth_1234' // = toAuthPassword('1234') di client
+function _resetSanitizeLocalPart(input) {
+  return String(input || '').toLowerCase().replace(/[^a-z0-9._-]/g, '')
+}
+exports.resetUserPassword = onRequest(
+  { region: 'us-central1', timeoutSeconds: 30, memory: '256MiB', cors: true },
+  async (req, res) => {
+    try {
+      // 1) Pemanggil WAJIB super_admin
+      const authz = String(req.headers.authorization || req.headers.Authorization || '')
+      const m = authz.match(/^Bearer\s+(.+)$/i)
+      if (!m) { res.status(401).json({ ok: false, error: 'no-token' }); return }
+      let decoded
+      try { decoded = await getAuth().verifyIdToken(m[1]) }
+      catch (e) { res.status(401).json({ ok: false, error: 'invalid-token' }); return }
+      if (decoded.role !== 'super_admin') {
+        res.status(403).json({ ok: false, error: 'forbidden' })
+        return
+      }
+
+      // 2) Validasi input
+      const collection = String((req.body && req.body.collection) || '')
+      const docId = String((req.body && req.body.docId) || '')
+      if (!['santri', 'guru'].includes(collection) || !docId) {
+        res.status(400).json({ ok: false, error: 'bad-input' })
+        return
+      }
+
+      // 3) Baca doc target
+      const ref = db.collection(collection).doc(docId)
+      const snap = await ref.get()
+      if (!snap.exists) { res.status(404).json({ ok: false, error: 'not-found' }); return }
+      const data = snap.data() || {}
+
+      // 4) Resolve akun Auth target → reset password ke '1234'
+      let didResetAuth = false
+      let targetUid = data.firebase_uid || null
+      if (!targetUid) {
+        const wa = String(data.wa || '').replace(/\D/g, '')
+        const authKey = wa.length >= 8
+          ? wa
+          : (data.username || (collection === 'santri' ? data.nis : '') || docId)
+        const clean = _resetSanitizeLocalPart(authKey)
+        if (clean) {
+          const emails = [_RESET_AUTH_DOMAIN, ..._RESET_LEGACY_DOMAINS].map((d) => clean + d)
+          for (const em of emails) {
+            try { const u = await getAuth().getUserByEmail(em); targetUid = u.uid; break }
+            catch (e) { /* coba domain lain */ }
+          }
+        }
+      }
+      if (targetUid) {
+        try {
+          await getAuth().updateUser(targetUid, { password: _RESET_DEFAULT_PASS })
+          didResetAuth = true
+        } catch (e) {
+          // belum ada akun Auth → lazy-migration default '1234' saat login pertama
+          logger.warn('[resetUserPassword] updateUser gagal:', e && e.message)
+        }
+      }
+
+      // 5) Hapus sisa field password plaintext (vestigial) di doc
+      try { await ref.update({ password: FieldValue.delete() }) } catch (e) { /* best-effort */ }
+
+      res.json({ ok: true, didResetAuth })
+    } catch (e) {
+      logger.error('[resetUserPassword] error', e)
+      res.status(500).json({ ok: false, error: String((e && e.message) || e) })
+    }
+  }
+)
+
+// ====================================================================
 // v.102 A2 (ANALITIK): analyticsQuery — jembatan App -> BigQuery.
 //   App TAK query BigQuery langsung (butuh kredensial). Fungsi ini: verifikasi ID token,
 //   wajib role admin/super_admin, jalankan SQL WHITELIST (client cuma kirim nama laporan
