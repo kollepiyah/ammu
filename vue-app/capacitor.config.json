@@ -28,8 +28,7 @@
     },
     "StatusBar": {
       "style": "LIGHT",
-      "backgroundColor": "#FFFFFF",
-      "overlay": false
+      "overlay": true
     },
     "Keyboard": {
       "resize": "body",

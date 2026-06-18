@@ -59,8 +59,12 @@ async function setupNativeIntegration() {
   if (typeof window === 'undefined') return
   if (!window.Capacitor?.isNativePlatform?.()) return
 
-  // 1. StatusBar — warna + style = SAMA dgn header app. Di-apply ULANG beberapa kali karena splash
-  //    native (SplashScreen API) me-reset appearance window saat exit -> teks status bar jadi tak terlihat.
+  // 1. StatusBar — EDGE-TO-EDGE (v.105.0626): bar TRANSPARAN (overlay:true di capacitor.config),
+  //    konten digambar di belakangnya, warna bar datang dari --bg-page (putih/#0F172A) via safe-area.
+  //    Hanya STYLE (kontras ikon) yg diatur di sini — pakai WindowInsetsController, BUKAN deprecated.
+  //    setBackgroundColor SENGAJA DIBUANG: no-op di Android 15+ (lihat StatusBar.shouldSetStatusBarColor)
+  //    + bila dipaksa malah meng-"cat" bar solid → mematahkan edge-to-edge di device <15.
+  //    Di-apply ULANG beberapa kali karena splash native (SplashScreen API) me-reset appearance window.
   let applyStatusBar = () => {}
   try {
     const { StatusBar, Style } = await import('@capacitor/status-bar')
@@ -68,7 +72,6 @@ async function setupNativeIntegration() {
       const isDark = ui.isDark
       // Style.Dark = teks TERANG (utk bg gelap), Style.Light = teks GELAP (utk bg terang) — per definisi plugin.
       StatusBar.setStyle({ style: isDark ? Style.Dark : Style.Light }).catch(() => {})
-      StatusBar.setBackgroundColor({ color: isDark ? '#1E293B' : '#FFFFFF' }).catch(() => {})
     }
     applyStatusBar()
     // re-apply melewati durasi splash (~1.8s) + jaga2
