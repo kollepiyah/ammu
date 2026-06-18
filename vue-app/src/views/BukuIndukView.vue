@@ -5,7 +5,9 @@
       class="bg-[var(--bg-card)] rounded-2xl p-10 border border-dashed border-rose-300 text-center"
     >
       <i class="fas fa-lock text-rose-300 text-4xl mb-3"></i>
-      <p class="text-sm font-bold text-slate-700 dark:text-[var(--text-tertiary)]">Akses Keuangan terbatas</p>
+      <p class="text-sm font-bold text-slate-700 dark:text-[var(--text-tertiary)]">
+        Akses Keuangan terbatas
+      </p>
     </div>
 
     <template v-else>
@@ -17,7 +19,9 @@
         <!-- v.21.113.0528: Header restructure — title + subtitle kiri, semua tombol aksi rapi di kanan (Ekspor/Input/Cetak), warna cyan konsisten -->
         <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
           <div class="min-w-0">
-            <h1 class="text-base md:text-lg font-black text-[var(--text-primary)] whitespace-nowrap">
+            <h1
+              class="text-base md:text-lg font-black text-[var(--text-primary)] whitespace-nowrap"
+            >
               <i class="fas fa-book text-cyan-500 mr-1"></i>Buku Induk (General Ledger)
             </h1>
             <p class="text-[11px] text-[var(--text-secondary)] mt-0.5">
@@ -26,35 +30,40 @@
             </p>
           </div>
           <!-- v.21.113.0528: tombol aksi grup kanan — Ekspor/Input/Cetak konsisten h-9 px-3 rounded-xl -->
-          <div class="flex gap-2 flex-wrap items-center">
+          <!-- v.103b: mobile = toolbar 1-baris scroll-samping (tak wrap berantakan); desktop wrap normal -->
+          <div
+            class="flex flex-nowrap md:flex-wrap items-center gap-2 overflow-x-auto md:overflow-visible hide-scrollbar [&>*]:shrink-0 md:[&>*]:shrink -mx-1 px-1 lg:mx-0 lg:px-0"
+          >
             <button
               @click="exportBukuIndukExcel"
               :disabled="exportingBI"
               aria-label="Ekspor Buku Induk ke Excel"
-              class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer"
+              class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer"
             >
-              <i :class="['fas', exportingBI ? 'fa-spinner fa-spin' : 'fa-file-excel']"></i>{{ exportingBI ? 'Ekspor...' : 'Ekspor Excel' }}
+              <i :class="['fas', exportingBI ? 'fa-spinner fa-spin' : 'fa-file-excel']"></i
+              >{{ exportingBI ? 'Ekspor...' : 'Ekspor Excel' }}
             </button>
             <button
               v-if="gsheetConfigured()"
               @click="kirimBukuGsheet"
               :disabled="sendingGsheet"
               aria-label="Kirim Buku Induk ke Google Sheet"
-              class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer"
+              class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer"
             >
-              <i :class="['fas', sendingGsheet ? 'fa-spinner fa-spin' : 'fa-table']"></i>{{ sendingGsheet ? 'Mengirim...' : 'Google Sheet' }}
+              <i :class="['fas', sendingGsheet ? 'fa-spinner fa-spin' : 'fa-table']"></i
+              >{{ sendingGsheet ? 'Mengirim...' : 'Google Sheet' }}
             </button>
             <button
               @click="bukaModalInput()"
               aria-label="Input transaksi manual"
-              class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-xs font-bold transition cursor-pointer"
+              class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-xs font-bold transition cursor-pointer"
             >
               <i class="fas fa-plus-circle"></i>Input Manual
             </button>
             <button
               @click="cetakLaporan"
               aria-label="Cetak laporan buku induk PDF"
-              class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold transition cursor-pointer"
+              class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold transition cursor-pointer"
             >
               <i class="fas fa-file-pdf"></i>Cetak Laporan
             </button>
@@ -114,7 +123,9 @@
               </h3>
               <div class="space-y-3">
                 <div>
-                  <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1">Tanggal *</label>
+                  <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1"
+                    >Tanggal *</label
+                  >
                   <input
                     v-model="inputForm.tanggal"
                     type="date"
@@ -123,7 +134,9 @@
                   />
                 </div>
                 <div>
-                  <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1">Tipe *</label>
+                  <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1"
+                    >Tipe *</label
+                  >
                   <div class="grid grid-cols-2 gap-2">
                     <button
                       type="button"
@@ -152,7 +165,9 @@
                   </div>
                 </div>
                 <div>
-                  <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1">Kategori</label>
+                  <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1"
+                    >Kategori</label
+                  >
                   <input
                     v-model="inputForm.kategori"
                     type="text"
@@ -160,7 +175,9 @@
                   />
                 </div>
                 <div>
-                  <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1">Keterangan *</label>
+                  <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1"
+                    >Keterangan *</label
+                  >
                   <textarea
                     v-model="inputForm.keterangan"
                     required
@@ -169,7 +186,9 @@
                   ></textarea>
                 </div>
                 <div>
-                  <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1">Nominal (Rp) *</label>
+                  <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1"
+                    >Nominal (Rp) *</label
+                  >
                   <input
                     v-model.number="inputForm.nominal"
                     type="number"
@@ -179,7 +198,9 @@
                   />
                 </div>
               </div>
-              <div class="flex items-center justify-end gap-2 mt-5 pt-4 border-t border-[var(--border-subtle)]">
+              <div
+                class="flex items-center justify-end gap-2 mt-5 pt-4 border-t border-[var(--border-subtle)]"
+              >
                 <button
                   type="button"
                   @click="modalInputOpen = false"
@@ -242,7 +263,8 @@
         class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl px-4 py-3 flex items-center justify-between gap-2 flex-wrap"
       >
         <span class="text-xs font-bold text-amber-800 dark:text-amber-300">
-          <i class="fas fa-triangle-exclamation mr-1"></i>{{ residuBuku.length }} entri residu/tanpa tanggal valid (terhitung di dashboard, tak tampil di ledger)
+          <i class="fas fa-triangle-exclamation mr-1"></i>{{ residuBuku.length }} entri residu/tanpa
+          tanggal valid (terhitung di dashboard, tak tampil di ledger)
         </span>
         <button
           type="button"
@@ -286,7 +308,9 @@
               type="button"
               @click="selectedBuku = new Set()"
               class="text-[10px] font-bold px-3 py-1.5 rounded-lg bg-[var(--bg-muted)] text-[var(--text-secondary)]"
-            >Batal</button>
+            >
+              Batal
+            </button>
             <button
               type="button"
               @click="hapusBukuTerpilih"
@@ -298,7 +322,12 @@
         </div>
         <!-- Table header (desktop) -->
         <div
-          :class="['hidden md:grid gap-2 px-4 py-2 bg-slate-50 dark:bg-slate-700 text-[10px] uppercase font-bold text-[var(--text-secondary)] tracking-wider border-b border-[var(--border-subtle)]', isAdmin ? 'md:grid-cols-[36px_100px_1fr_120px_120px]' : 'md:grid-cols-[100px_1fr_120px_120px]']"
+          :class="[
+            'hidden md:grid gap-2 px-4 py-2 bg-slate-50 dark:bg-slate-700 text-[10px] uppercase font-bold text-[var(--text-secondary)] tracking-wider border-b border-[var(--border-subtle)]',
+            isAdmin
+              ? 'md:grid-cols-[36px_100px_1fr_120px_120px]'
+              : 'md:grid-cols-[100px_1fr_120px_120px]'
+          ]"
         >
           <span v-if="isAdmin" class="text-center">
             <input
@@ -318,9 +347,17 @@
           <div
             v-for="b in filteredBuku"
             :key="b.id"
-            :class="['px-4 py-2.5 md:grid gap-2 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition', isAdmin ? 'md:grid-cols-[36px_100px_1fr_120px_120px]' : 'md:grid-cols-[100px_1fr_120px_120px]']"
+            :class="[
+              'px-4 py-2.5 md:grid gap-2 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition',
+              isAdmin
+                ? 'md:grid-cols-[36px_100px_1fr_120px_120px]'
+                : 'md:grid-cols-[100px_1fr_120px_120px]'
+            ]"
           >
-            <span v-if="isAdmin" class="md:text-center hidden md:inline-flex md:items-center md:justify-center">
+            <span
+              v-if="isAdmin"
+              class="md:text-center hidden md:inline-flex md:items-center md:justify-center"
+            >
               <input
                 type="checkbox"
                 :checked="selectedBuku.has(String(b.id))"
@@ -328,7 +365,9 @@
                 class="w-4 h-4 accent-rose-600"
               />
             </span>
-            <span class="text-[11px] text-[var(--text-secondary)] font-bold whitespace-nowrap block md:inline">
+            <span
+              class="text-[11px] text-[var(--text-secondary)] font-bold whitespace-nowrap block md:inline"
+            >
               {{ formatTgl(b.tanggal) }}
             </span>
             <div class="md:inline">
@@ -342,7 +381,9 @@
                 >
                   {{ b.kategori }}
                 </span>
-                <span v-if="b.ref_id" class="ml-1 text-[var(--text-tertiary)]">· #{{ b.ref_id }}</span>
+                <span v-if="b.ref_id" class="ml-1 text-[var(--text-tertiary)]"
+                  >· #{{ b.ref_id }}</span
+                >
               </p>
             </div>
             <div class="mt-1 md:mt-0 md:text-right">
@@ -430,7 +471,12 @@ import { isSuperAdmin } from '@/utils/roleScope'
 import { writeAuditLog } from '@/utils/auditLog'
 // v.21.103.0527: reprint struk dari BukuInduk untuk record sumber pos_santri
 import { cetakStrukPdf, cetakStrukSlipPdf } from '@/utils/strukBuilder'
-import { collection as fbCollection, query as fbQuery, where as fbWhere, getDocs as fbGetDocs } from 'firebase/firestore'
+import {
+  collection as fbCollection,
+  query as fbQuery,
+  where as fbWhere,
+  getDocs as fbGetDocs
+} from 'firebase/firestore'
 
 const toast = useToast()
 const auth = useAuthStore()
@@ -495,7 +541,12 @@ async function cetakUlangStruk(b, mode = 'pdf') {
 async function hapusBuku(b) {
   if (!isAdmin.value) return
   const label = b.keterangan || b.kategori || b.id
-  if (!confirm(`Hapus PERMANEN record buku induk:\n${label}\nNominal: ${fmtRp(b.nominal || 0)}\n\nTidak bisa di-undo.`)) return
+  if (
+    !confirm(
+      `Hapus PERMANEN record buku induk:\n${label}\nNominal: ${fmtRp(b.nominal || 0)}\n\nTidak bisa di-undo.`
+    )
+  )
+    return
   try {
     await deleteOne('keuangan_buku_induk', b.id)
     toast.success('Record dihapus')
@@ -554,7 +605,8 @@ async function hapusBukuTerpilih() {
   const ids = Array.from(selectedBuku.value)
   if (ids.length === 0) return
   if (!confirm(`Hapus ${ids.length} record buku induk terpilih?\n\nTidak bisa di-undo.`)) return
-  let ok = 0, fail = 0
+  let ok = 0,
+    fail = 0
   for (const id of ids) {
     try {
       await deleteOne('keuangan_buku_induk', id)
@@ -589,13 +641,27 @@ const residuBuku = computed(() =>
 async function bersihkanResidu() {
   if (!isAdmin.value) return
   const list = residuBuku.value
-  if (list.length === 0) { toast.info('Tidak ada residu.'); return }
-  if (!confirm(`Hapus ${list.length} entri residu/tak-bertanggal dari buku induk?\n\nIni entri yang ter-hitung di dashboard tapi TIDAK muncul di ledger. Tidak bisa di-undo.`)) return
-  let ok = 0, fail = 0
+  if (list.length === 0) {
+    toast.info('Tidak ada residu.')
+    return
+  }
+  if (
+    !confirm(
+      `Hapus ${list.length} entri residu/tak-bertanggal dari buku induk?\n\nIni entri yang ter-hitung di dashboard tapi TIDAK muncul di ledger. Tidak bisa di-undo.`
+    )
+  )
+    return
+  let ok = 0,
+    fail = 0
   const ids = list.map((b) => String(b.id))
   for (const id of ids) {
-    try { await deleteOne('keuangan_buku_induk', id); ok++ }
-    catch (e) { fail++; console.warn('[bersihkanResidu]', id, e.message) }
+    try {
+      await deleteOne('keuangan_buku_induk', id)
+      ok++
+    } catch (e) {
+      fail++
+      console.warn('[bersihkanResidu]', id, e.message)
+    }
   }
   await writeAuditLog({
     operator: auth.sesiAktif?.nama || auth.sesiAktif?.guru || 'Admin',
@@ -872,7 +938,10 @@ async function exportBukuIndukExcel() {
 // v.100 Batch12: kirim Buku Induk ke Google Sheet (reuse rows + kolom yang sama dgn Excel)
 async function kirimBukuGsheet() {
   if (sendingGsheet.value) return
-  if (!gsheetConfigured()) { toast.warning('Google Sheet belum diatur. Buka Pengaturan → Google Sheet dulu.'); return }
+  if (!gsheetConfigured()) {
+    toast.warning('Google Sheet belum diatur. Buka Pengaturan → Google Sheet dulu.')
+    return
+  }
   sendingGsheet.value = true
   try {
     const list = filteredBuku.value || bukuRaw.value || []
@@ -892,7 +961,12 @@ async function kirimBukuGsheet() {
       rows,
       title: `Buku Induk ${new Date().toISOString().slice(0, 10)}`,
       sheetName: 'Buku Induk',
-      kop: [s.kopLine1 || '', s.kopLine2 || 'PONDOK PESANTREN MAMBAUL ULUM', s.kopLine3 || '', s.kopLine4 || ''].filter(Boolean),
+      kop: [
+        s.kopLine1 || '',
+        s.kopLine2 || 'PONDOK PESANTREN MAMBAUL ULUM',
+        s.kopLine3 || '',
+        s.kopLine4 || ''
+      ].filter(Boolean),
       subtitle: `Buku Induk Keuangan — ${rows.length} transaksi`,
       columns: [
         { key: 'no', header: 'No', width: 5 },
@@ -907,7 +981,11 @@ async function kirimBukuGsheet() {
       ]
     })
     toast.success(`${rows.length} transaksi terkirim ke Google Sheet.`)
-    try { window.open(url, '_blank') } catch (e) { /* ignore */ }
+    try {
+      window.open(url, '_blank')
+    } catch (e) {
+      /* ignore */
+    }
   } catch (e) {
     toast.error('Gagal kirim ke Google Sheet: ' + (e?.message || e))
   } finally {
@@ -921,8 +999,22 @@ definePageActions(() => {
   if (!isFullAccess.value) return []
   return [
     { label: 'Input Manual', icon: 'plus', primary: true, on: () => bukaModalInput() },
-    { label: 'Ekspor Excel', icon: 'download', on: exportBukuIndukExcel, disabled: exportingBI.value },
-    ...(gsheetConfigured() ? [{ label: 'Google Sheet', icon: 'file', on: kirimBukuGsheet, disabled: sendingGsheet.value }] : []),
+    {
+      label: 'Ekspor Excel',
+      icon: 'download',
+      on: exportBukuIndukExcel,
+      disabled: exportingBI.value
+    },
+    ...(gsheetConfigured()
+      ? [
+          {
+            label: 'Google Sheet',
+            icon: 'file',
+            on: kirimBukuGsheet,
+            disabled: sendingGsheet.value
+          }
+        ]
+      : []),
     { label: 'Cetak Laporan', icon: 'printer', on: cetakLaporan }
   ]
 })

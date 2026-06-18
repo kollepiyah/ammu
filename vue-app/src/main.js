@@ -33,7 +33,10 @@ auth.initAuth()
 // v.21.24c.0526: STATIC import settings — fix race dengan view init.
 import { useSettingsStore } from './stores/settings'
 const settingsStore = useSettingsStore(pinia)
-settingsStore.load().then(() => settingsStore.subscribe()).catch(() => {})
+settingsStore
+  .load()
+  .then(() => settingsStore.subscribe())
+  .catch(() => {})
 
 // v.91.0626: deteksi Capacitor native — untuk ANTI-DOBEL splash.
 const IS_NATIVE = (() => {
@@ -41,7 +44,9 @@ const IS_NATIVE = (() => {
     const C = window.Capacitor
     if (!C) return false
     return typeof C.isNativePlatform === 'function' ? C.isNativePlatform() : !!C.isNative
-  } catch { return false }
+  } catch {
+    return false
+  }
 })()
 
 // v.20.4.0526: Defensive mount + splash auto-hide (web/PWA)
@@ -79,7 +84,10 @@ if (IS_NATIVE) {
       import('@capacitor/splash-screen')
         .then(({ SplashScreen }) => SplashScreen.hide({ fadeOutDuration: 200 }))
         .catch(() => {})
-        .then(() => { revealSplash(); setTimeout(hideSplash, 2400) })
+        .then(() => {
+          revealSplash()
+          setTimeout(hideSplash, 2400)
+        })
     })
   )
   // FALLBACK: kalau plugin tak tersedia/gagal -> tetap reveal + fade-out
@@ -139,7 +147,7 @@ async function initSentry() {
     window.Sentry.init({
       dsn,
       tracesSampleRate: 0.1,
-      release: 'portal-mu@102.0626',
+      release: 'portal-mu@103.0626',
       environment: window.location.hostname.includes('localhost') ? 'dev' : 'prod'
     })
     // eslint-disable-next-line no-console

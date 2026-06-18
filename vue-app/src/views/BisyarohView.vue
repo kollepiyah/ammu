@@ -6,7 +6,9 @@
       class="bg-[var(--bg-card)] rounded-2xl p-10 border border-dashed border-rose-300 text-center"
     >
       <i class="fas fa-lock text-rose-300 text-4xl mb-3"></i>
-      <p class="text-sm font-bold text-slate-700 dark:text-[var(--text-tertiary)]">Akses Keuangan terbatas</p>
+      <p class="text-sm font-bold text-slate-700 dark:text-[var(--text-tertiary)]">
+        Akses Keuangan terbatas
+      </p>
     </div>
 
     <!-- ADMIN KEUANGAN -->
@@ -21,9 +23,10 @@
         <p class="text-xs text-[var(--text-secondary)] mt-1">
           Generate slip bisyaroh bulanan, terhubung dengan absensi &amp; bisyaroh pokok.
         </p>
+        <!-- v.103b: tab strip 1-baris scroll-samping, scrollbar disembunyikan -->
         <div
           v-if="!isDesktop"
-          class="flex gap-2 border-b border-[var(--border-subtle)] mt-4 overflow-x-auto"
+          class="flex flex-nowrap gap-2 border-b border-[var(--border-subtle)] mt-4 overflow-x-auto hide-scrollbar [&>*]:shrink-0"
         >
           <button
             @click="mainTab = 'generate'"
@@ -71,7 +74,9 @@
             @click="subTab = 'bulk'"
             :class="[
               'flex-1 px-4 py-2 text-xs font-black uppercase tracking-wider rounded-lg transition cursor-pointer',
-              subTab === 'bulk' ? 'bg-emerald-600 text-white' : 'text-[var(--text-secondary)] hover:bg-emerald-50'
+              subTab === 'bulk'
+                ? 'bg-emerald-600 text-white'
+                : 'text-[var(--text-secondary)] hover:bg-emerald-50'
             ]"
           >
             <i class="fas fa-users mr-1"></i>Bulk Generate
@@ -85,7 +90,9 @@
         >
           <!-- Filter Tipe -->
           <div>
-            <p class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-2 tracking-wider">
+            <p
+              class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-2 tracking-wider"
+            >
               Filter Tipe Pegawai
             </p>
             <div class="flex gap-2 flex-wrap">
@@ -150,7 +157,9 @@
 
           <!-- Daftar guru -->
           <div>
-            <p class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-2 tracking-wider">
+            <p
+              class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-2 tracking-wider"
+            >
               Daftar Guru — {{ filteredGuru.length }} pegawai
             </p>
             <div
@@ -222,20 +231,56 @@
                 </button>
               </div>
               <!-- v.21.103.0527: Bonus Kehadiran auto (pagi/sore/sekolah) -->
-              <div class="bg-cyan-50 dark:bg-cyan-900/20 rounded-lg px-3 py-2 border border-cyan-200">
+              <div
+                class="bg-cyan-50 dark:bg-cyan-900/20 rounded-lg px-3 py-2 border border-cyan-200"
+              >
                 <div class="flex items-center justify-between gap-2 flex-wrap mb-1.5">
-                  <p class="text-xs font-black text-cyan-800"><i class="fas fa-bolt mr-1"></i>Bonus Kehadiran (otomatis dari absensi)</p>
-                  <p class="text-base font-black text-cyan-900">{{ fmtRp(bonusKehadiran.total) }}</p>
+                  <p class="text-xs font-black text-cyan-800">
+                    <i class="fas fa-bolt mr-1"></i>Bonus Kehadiran (otomatis dari absensi)
+                  </p>
+                  <p class="text-base font-black text-cyan-900">
+                    {{ fmtRp(bonusKehadiran.total) }}
+                  </p>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-1.5 text-[10px] text-cyan-700">
-                  <div>Pagi: <b>{{ bonusKehadiran.hadir_pagi }}x</b> × Rp{{ Number(bonusKehadiran.tarif_pagi).toLocaleString('id-ID') }} = {{ fmtRp(bonusKehadiran.total_pagi) }}</div>
-                  <div>Sore: <b>{{ bonusKehadiran.hadir_sore }}x</b> × Rp{{ Number(bonusKehadiran.tarif_sore).toLocaleString('id-ID') }} = {{ fmtRp(bonusKehadiran.total_sore) }}</div>
-                  <div>Sekolah: <b>{{ bonusKehadiran.hadir_sekolah }}x</b> × Rp{{ Number(bonusKehadiran.tarif_sekolah).toLocaleString('id-ID') }} = {{ fmtRp(bonusKehadiran.total_sekolah) }}</div>
-                  <div v-if="bonusKehadiran.hadir_pegawai_pagi || bonusKehadiran.tarif_pegawai_pagi">Pegawai Pagi: <b>{{ bonusKehadiran.hadir_pegawai_pagi }}x</b> × Rp{{ Number(bonusKehadiran.tarif_pegawai_pagi).toLocaleString('id-ID') }} = {{ fmtRp(bonusKehadiran.total_pegawai_pagi) }}</div>
-                  <div v-if="bonusKehadiran.hadir_pegawai_sore || bonusKehadiran.tarif_pegawai_sore">Pegawai Sore: <b>{{ bonusKehadiran.hadir_pegawai_sore }}x</b> × Rp{{ Number(bonusKehadiran.tarif_pegawai_sore).toLocaleString('id-ID') }} = {{ fmtRp(bonusKehadiran.total_pegawai_sore) }}</div>
+                  <div>
+                    Pagi: <b>{{ bonusKehadiran.hadir_pagi }}x</b> × Rp{{
+                      Number(bonusKehadiran.tarif_pagi).toLocaleString('id-ID')
+                    }}
+                    = {{ fmtRp(bonusKehadiran.total_pagi) }}
+                  </div>
+                  <div>
+                    Sore: <b>{{ bonusKehadiran.hadir_sore }}x</b> × Rp{{
+                      Number(bonusKehadiran.tarif_sore).toLocaleString('id-ID')
+                    }}
+                    = {{ fmtRp(bonusKehadiran.total_sore) }}
+                  </div>
+                  <div>
+                    Sekolah: <b>{{ bonusKehadiran.hadir_sekolah }}x</b> × Rp{{
+                      Number(bonusKehadiran.tarif_sekolah).toLocaleString('id-ID')
+                    }}
+                    = {{ fmtRp(bonusKehadiran.total_sekolah) }}
+                  </div>
+                  <div
+                    v-if="bonusKehadiran.hadir_pegawai_pagi || bonusKehadiran.tarif_pegawai_pagi"
+                  >
+                    Pegawai Pagi: <b>{{ bonusKehadiran.hadir_pegawai_pagi }}x</b> × Rp{{
+                      Number(bonusKehadiran.tarif_pegawai_pagi).toLocaleString('id-ID')
+                    }}
+                    = {{ fmtRp(bonusKehadiran.total_pegawai_pagi) }}
+                  </div>
+                  <div
+                    v-if="bonusKehadiran.hadir_pegawai_sore || bonusKehadiran.tarif_pegawai_sore"
+                  >
+                    Pegawai Sore: <b>{{ bonusKehadiran.hadir_pegawai_sore }}x</b> × Rp{{
+                      Number(bonusKehadiran.tarif_pegawai_sore).toLocaleString('id-ID')
+                    }}
+                    = {{ fmtRp(bonusKehadiran.total_pegawai_sore) }}
+                  </div>
                 </div>
                 <p class="text-[9px] text-cyan-600 italic mt-1">
-                  Tidak hadir = tidak dapat bonus (bukan dipotong). Atur tarif di Pengaturan Keuangan.
+                  Tidak hadir = tidak dapat bonus (bukan dipotong). Atur tarif di Pengaturan
+                  Keuangan.
                 </p>
               </div>
               <button
@@ -249,7 +294,9 @@
               >
                 <div>
                   <p class="text-xs font-bold text-rose-700">Potongan Lain (manual)</p>
-                  <p class="text-[10px] text-rose-500">Opsional — bukan dari absen. Tidak hadir tidak otomatis dipotong.</p>
+                  <p class="text-[10px] text-rose-500">
+                    Opsional — bukan dari absen. Tidak hadir tidak otomatis dipotong.
+                  </p>
                 </div>
                 <input
                   v-model.number="form.total_potongan"
@@ -290,7 +337,9 @@
             Keuangan ({{ BULAN_NAMES[bulan - 1] }} {{ tahun }}).
           </p>
           <div>
-            <p class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 tracking-wider">
+            <p
+              class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 tracking-wider"
+            >
               Generate untuk:
             </p>
             <div class="flex gap-2 flex-wrap">
@@ -311,7 +360,9 @@
           </div>
           <div class="grid grid-cols-2 gap-2">
             <div>
-              <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block">Bulan</label>
+              <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
+                >Bulan</label
+              >
               <select
                 v-model.number="bulan"
                 class="w-full text-sm px-3 py-2 border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)]"
@@ -322,7 +373,9 @@
               </select>
             </div>
             <div>
-              <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block">Tahun</label>
+              <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
+                >Tahun</label
+              >
               <input
                 v-model.number="tahun"
                 type="number"
@@ -412,7 +465,8 @@
               title="Ekspor PDF rekap slip (sesuai filter periode)"
               class="text-[10px] font-black bg-cyan-600 hover:bg-cyan-700 disabled:opacity-50 text-white px-2.5 py-1 rounded-lg flex items-center gap-1"
             >
-              <i :class="['fas', exportingRekap ? 'fa-spinner fa-spin' : 'fa-file-pdf']"></i>Export PDF
+              <i :class="['fas', exportingRekap ? 'fa-spinner fa-spin' : 'fa-file-pdf']"></i>Export
+              PDF
             </button>
             <!-- v.97.0626: ekspor daftar pencairan via BMT (Excel) untuk disetor ke BMT -->
             <button
@@ -431,10 +485,14 @@
               title="Kirim daftar pencairan via BMT ke Google Sheet"
               class="text-[10px] font-black bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white px-2.5 py-1 rounded-lg flex items-center gap-1"
             >
-              <i :class="['fas', sendingGsheetBmt ? 'fa-spinner fa-spin' : 'fa-table']"></i>Sheet BMT
+              <i :class="['fas', sendingGsheetBmt ? 'fa-spinner fa-spin' : 'fa-table']"></i>Sheet
+              BMT
             </button>
             <!-- v.21.100.0527: bulk select hapus -->
-            <label v-if="isAdmin && filteredSlips.length > 0" class="flex items-center gap-1 text-[10px] font-bold cursor-pointer">
+            <label
+              v-if="isAdmin && filteredSlips.length > 0"
+              class="flex items-center gap-1 text-[10px] font-bold cursor-pointer"
+            >
               <input
                 type="checkbox"
                 :checked="selectedSlip.size === filteredSlips.length && filteredSlips.length > 0"
@@ -448,7 +506,9 @@
               title="Catat pencairan ke Buku Induk (setelah transfer ke rekening BMT guru)"
               class="text-[10px] font-black bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1 rounded-lg"
             >
-              <i class="fas fa-money-check-alt mr-1"></i>Cairkan &amp; Catat ({{ selectedSlip.size }})
+              <i class="fas fa-money-check-alt mr-1"></i>Cairkan &amp; Catat ({{
+                selectedSlip.size
+              }})
             </button>
             <button
               v-if="isAdminKeu && selectedSlip.size > 0"
@@ -513,8 +573,16 @@
               <span class="text-[10px] bg-cyan-100 text-cyan-800 font-bold px-2 py-0.5 rounded">{{
                 slip.periode
               }}</span>
-              <span v-if="String(slip.metode_cair || '') === 'cash'" class="text-[10px] bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded">Cash</span>
-              <span v-if="String(slip.status_cair || '') === 'cair'" class="text-[10px] bg-emerald-100 text-emerald-700 font-bold px-2 py-0.5 rounded"><i class="fas fa-check"></i> Cair</span>
+              <span
+                v-if="String(slip.metode_cair || '') === 'cash'"
+                class="text-[10px] bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded"
+                >Cash</span
+              >
+              <span
+                v-if="String(slip.status_cair || '') === 'cair'"
+                class="text-[10px] bg-emerald-100 text-emerald-700 font-bold px-2 py-0.5 rounded"
+                ><i class="fas fa-check"></i> Cair</span
+              >
               <button
                 @click="openSlipReceipt(slip)"
                 title="Lihat slip bisyaroh"
@@ -603,15 +671,20 @@
           class="bg-[var(--bg-card)] rounded-xl p-3 border border-[var(--border-subtle)] shadow-sm"
         >
           <div class="flex items-center justify-between gap-2 mb-2">
-            <p class="text-sm font-bold text-[var(--text-primary)]">
-              Periode {{ slip.periode }}
-            </p>
+            <p class="text-sm font-bold text-[var(--text-primary)]">Periode {{ slip.periode }}</p>
             <div class="flex items-center gap-2">
               <span
                 class="text-[10px] font-black bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded uppercase"
                 >Take Home {{ fmtRp(slip.take_home) }}</span
               >
-              <button @click="openSlipReceipt(slip)" title="Lihat slip" aria-label="Lihat slip bisyaroh" class="w-7 h-7 flex-shrink-0 rounded-full border border-[var(--border-default)] text-cyan-600 hover:bg-cyan-50 dark:hover:bg-cyan-900/30 flex items-center justify-center transition cursor-pointer"><i class="fas fa-eye text-xs"></i></button>
+              <button
+                @click="openSlipReceipt(slip)"
+                title="Lihat slip"
+                aria-label="Lihat slip bisyaroh"
+                class="w-7 h-7 flex-shrink-0 rounded-full border border-[var(--border-default)] text-cyan-600 hover:bg-cyan-50 dark:hover:bg-cyan-900/30 flex items-center justify-center transition cursor-pointer"
+              >
+                <i class="fas fa-eye text-xs"></i>
+              </button>
             </div>
           </div>
           <div class="grid grid-cols-3 gap-2 text-xs">
@@ -672,10 +745,18 @@ const { guruRaw, deriveGuruLembagaRefs } = useGuru()
 const absensiShift = ref([])
 let unsubAbsensi = null
 onMounted(() => {
-  unsubAbsensi = subscribeColl('absensi_shift_guru', (docs) => { absensiShift.value = docs || [] })
+  unsubAbsensi = subscribeColl('absensi_shift_guru', (docs) => {
+    absensiShift.value = docs || []
+  })
 })
 onUnmounted(() => {
-  if (unsubAbsensi) { try { unsubAbsensi() } catch { /* ignore */ } }
+  if (unsubAbsensi) {
+    try {
+      unsubAbsensi()
+    } catch {
+      /* ignore */
+    }
+  }
 })
 const auth = useAuthStore()
 const settingsStore = useSettingsStore()
@@ -696,7 +777,9 @@ async function downloadSlipReceipt() {
   if (!slipReceiptData.value) return
   slipReceiptDownloading.value = true
   try {
-    await cetakSlipBisyarohPdf(slipReceiptData.value, settingsStore.settings || {}, { preview: false })
+    await cetakSlipBisyarohPdf(slipReceiptData.value, settingsStore.settings || {}, {
+      preview: false
+    })
   } catch (e) {
     toast.error('Gagal membuat PDF: ' + (e.message || e))
   } finally {
@@ -713,10 +796,17 @@ function _fmtPeriodeLabel(p) {
 }
 async function exportRekap() {
   const slips = filteredSlips.value || []
-  if (!slips.length) { toast.warning('Tidak ada slip untuk diekspor.'); return }
+  if (!slips.length) {
+    toast.warning('Tidak ada slip untuk diekspor.')
+    return
+  }
   exportingRekap.value = true
   try {
-    await exportRekapBisyarohPdf(slips, settingsStore.settings || {}, _fmtPeriodeLabel(filterPeriode.value))
+    await exportRekapBisyarohPdf(
+      slips,
+      settingsStore.settings || {},
+      _fmtPeriodeLabel(filterPeriode.value)
+    )
   } catch (e) {
     toast.error('Gagal ekspor: ' + (e.message || e))
   } finally {
@@ -726,8 +816,14 @@ async function exportRekap() {
 
 async function hapusSlip(slip) {
   if (!isAdmin.value) return
-  const label = getNamaGuruGelar(slip.guru_nama || guruNamaById(slip.guru_id)) + ' / ' + slip.periode
-  if (!confirm(`Hapus PERMANEN slip bisyaroh:\n${label}\nTotal: ${fmtRp(slip.take_home || 0)}\n\nTidak bisa di-undo.`)) return
+  const label =
+    getNamaGuruGelar(slip.guru_nama || guruNamaById(slip.guru_id)) + ' / ' + slip.periode
+  if (
+    !confirm(
+      `Hapus PERMANEN slip bisyaroh:\n${label}\nTotal: ${fmtRp(slip.take_home || 0)}\n\nTidak bisa di-undo.`
+    )
+  )
+    return
   try {
     await deleteOne('keuangan_gaji', slip.id)
     toast.success('Slip dihapus')
@@ -757,7 +853,8 @@ async function hapusSlipTerpilih() {
   const ids = Array.from(selectedSlip.value)
   if (ids.length === 0) return
   if (!confirm(`Hapus ${ids.length} slip bisyaroh terpilih?\n\nTidak bisa di-undo.`)) return
-  let ok = 0, fail = 0
+  let ok = 0,
+    fail = 0
   for (const id of ids) {
     try {
       await deleteOne('keuangan_gaji', id)
@@ -790,21 +887,40 @@ function _todayYMD() {
 function _slipTakeHome(s) {
   const th = Number(s.take_home)
   if (th > 0) return th
-  return (Number(s.bisyaroh_pokok) || 0) + (Number(s.bisyaroh_sekolah) || 0) + (Number(s.bisyaroh_tambahan) || 0) - (Number(s.total_potongan) || 0)
+  return (
+    (Number(s.bisyaroh_pokok) || 0) +
+    (Number(s.bisyaroh_sekolah) || 0) +
+    (Number(s.bisyaroh_tambahan) || 0) -
+    (Number(s.total_potongan) || 0)
+  )
 }
 async function cairkanTerpilih() {
-  if (!isAdminKeu.value) { toast.error('Hanya admin keuangan yang bisa mencairkan'); return }
+  if (!isAdminKeu.value) {
+    toast.error('Hanya admin keuangan yang bisa mencairkan')
+    return
+  }
   const ids = Array.from(selectedSlip.value)
   if (ids.length === 0) return
-  const slips = ids.map((id) => filteredSlips.value.find((x) => String(x.id) === String(id))).filter(Boolean)
+  const slips = ids
+    .map((id) => filteredSlips.value.find((x) => String(x.id) === String(id)))
+    .filter(Boolean)
   const belum = slips.filter((s) => String(s.status_cair || '') !== 'cair' && _slipTakeHome(s) > 0)
   const sudah = slips.length - belum.length
-  if (belum.length === 0) { toast.info('Semua slip terpilih sudah dicairkan / nominal 0'); return }
+  if (belum.length === 0) {
+    toast.info('Semua slip terpilih sudah dicairkan / nominal 0')
+    return
+  }
   const totalRp = belum.reduce((a, s) => a + _slipTakeHome(s), 0)
-  if (!confirm(`Cairkan ${belum.length} slip (total ${fmtRp(totalRp)})?\n\nPastikan transfer ke rekening BMT guru sudah dilakukan.\nIni mencatat kas KELUAR ke Buku Induk & menandai slip lunas.${sudah ? `\n\n(${sudah} slip dilewati: sudah cair / nominal 0)` : ''}`)) return
+  if (
+    !confirm(
+      `Cairkan ${belum.length} slip (total ${fmtRp(totalRp)})?\n\nPastikan transfer ke rekening BMT guru sudah dilakukan.\nIni mencatat kas KELUAR ke Buku Induk & menandai slip lunas.${sudah ? `\n\n(${sudah} slip dilewati: sudah cair / nominal 0)` : ''}`
+    )
+  )
+    return
   const tgl = _todayYMD()
   const operator = auth.sesiAktif?.nama || auth.sesiAktif?.guru || 'Admin'
-  let ok = 0, fail = 0
+  let ok = 0,
+    fail = 0
   for (const s of belum) {
     try {
       const th = _slipTakeHome(s)
@@ -815,7 +931,8 @@ async function cairkanTerpilih() {
         tipe: 'keluar',
         nominal: th,
         tanggal: tgl,
-        keterangan: `Bisyaroh ${s.periode || ''} — ${s.guru_nama || ''} (${metode === 'tunai' ? 'Tunai' : 'BMT'})`.trim(),
+        keterangan:
+          `Bisyaroh ${s.periode || ''} — ${s.guru_nama || ''} (${metode === 'tunai' ? 'Tunai' : 'BMT'})`.trim(),
         sumber: 'gaji',
         kategori: 'Bisyaroh',
         guru_id: s.guru_id != null ? s.guru_id : '',
@@ -824,13 +941,17 @@ async function cairkanTerpilih() {
         operator,
         created_at: serverTimestamp()
       })
-      await setDoc(doc(db, 'keuangan_gaji', String(s.id)), {
-        status_cair: 'cair',
-        dicairkan_at: serverTimestamp(),
-        dicairkan_by: operator,
-        dicairkan_via: metode === 'tunai' ? 'cash' : 'bmt_manual',
-        buku_induk_id: biId
-      }, { merge: true })
+      await setDoc(
+        doc(db, 'keuangan_gaji', String(s.id)),
+        {
+          status_cair: 'cair',
+          dicairkan_at: serverTimestamp(),
+          dicairkan_by: operator,
+          dicairkan_via: metode === 'tunai' ? 'cash' : 'bmt_manual',
+          buku_induk_id: biId
+        },
+        { merge: true }
+      )
       ok++
     } catch (e) {
       fail++
@@ -860,7 +981,9 @@ async function tandaiMetode(metode) {
     try {
       await setDoc(doc(db, 'keuangan_gaji', String(id)), { metode_cair: val }, { merge: true })
       ok++
-    } catch (e) { console.warn('[tandaiMetode]', id, e.message) }
+    } catch (e) {
+      console.warn('[tandaiMetode]', id, e.message)
+    }
   }
   selectedSlip.value = new Set()
   toast.success(`${ok} slip ditandai ${val === 'cash' ? 'Cash' : 'BMT'}`)
@@ -870,9 +993,15 @@ async function tandaiMetode(metode) {
 async function exportLaporanBmt() {
   if (!isAdminKeu.value) return
   const target = filteredSlips.value.filter(
-    (s) => String(s.metode_cair || '') !== 'cash' && String(s.status_cair || '') !== 'cair' && _slipTakeHome(s) > 0
+    (s) =>
+      String(s.metode_cair || '') !== 'cash' &&
+      String(s.status_cair || '') !== 'cair' &&
+      _slipTakeHome(s) > 0
   )
-  if (target.length === 0) { toast.info('Tidak ada slip via BMT yang perlu dicairkan di filter ini'); return }
+  if (target.length === 0) {
+    toast.info('Tidak ada slip via BMT yang perlu dicairkan di filter ini')
+    return
+  }
   const guruById = (id) => (guruRaw.value || []).find((g) => String(g.id) === String(id)) || {}
   const rows = target.map((s, i) => {
     const g = guruById(s.guru_id)
@@ -913,17 +1042,32 @@ const { isConfigured: gsheetConfigured, sendToSheet: _sendBmtSheet } = useGoogle
 const sendingGsheetBmt = ref(false)
 async function kirimBmtGsheet() {
   if (!isAdminKeu.value || sendingGsheetBmt.value) return
-  if (!gsheetConfigured()) { toast.warning('Google Sheet belum diatur. Buka Pengaturan → Google Sheet dulu.'); return }
+  if (!gsheetConfigured()) {
+    toast.warning('Google Sheet belum diatur. Buka Pengaturan → Google Sheet dulu.')
+    return
+  }
   const target = filteredSlips.value.filter(
-    (s) => String(s.metode_cair || '') !== 'cash' && String(s.status_cair || '') !== 'cair' && _slipTakeHome(s) > 0
+    (s) =>
+      String(s.metode_cair || '') !== 'cash' &&
+      String(s.status_cair || '') !== 'cair' &&
+      _slipTakeHome(s) > 0
   )
-  if (target.length === 0) { toast.info('Tidak ada slip via BMT yang perlu dicairkan di filter ini'); return }
+  if (target.length === 0) {
+    toast.info('Tidak ada slip via BMT yang perlu dicairkan di filter ini')
+    return
+  }
   sendingGsheetBmt.value = true
   try {
     const guruById = (id) => (guruRaw.value || []).find((g) => String(g.id) === String(id)) || {}
     const rows = target.map((s, i) => {
       const g = guruById(s.guru_id)
-      return { no: i + 1, nama: s.guru_nama || g.nama || '', rek_bmt: g.rek_bmt || '', nominal: _slipTakeHome(s), periode: s.periode || '' }
+      return {
+        no: i + 1,
+        nama: s.guru_nama || g.nama || '',
+        rek_bmt: g.rek_bmt || '',
+        nominal: _slipTakeHome(s),
+        periode: s.periode || ''
+      }
     })
     const total = rows.reduce((a, r) => a + Number(r.nominal || 0), 0)
     rows.push({ no: '', nama: 'TOTAL', rek_bmt: '', nominal: total, periode: '' })
@@ -933,7 +1077,10 @@ async function kirimBmtGsheet() {
       rows,
       title: `Laporan Pencairan BMT ${per}`,
       sheetName: 'Pencairan BMT',
-      kop: [ss.kopLine1 || 'PONDOK PESANTREN MAMBAUL ULUM', `Laporan Pencairan Bisyaroh via BMT — ${per}`].filter(Boolean),
+      kop: [
+        ss.kopLine1 || 'PONDOK PESANTREN MAMBAUL ULUM',
+        `Laporan Pencairan Bisyaroh via BMT — ${per}`
+      ].filter(Boolean),
       subtitle: `${target.length} guru/pegawai`,
       columns: [
         { key: 'no', header: 'No', width: 6 },
@@ -944,7 +1091,11 @@ async function kirimBmtGsheet() {
       ]
     })
     toast.success(`Laporan BMT (${target.length} guru) terkirim ke Google Sheet.`)
-    try { window.open(url, '_blank') } catch (e) { /* ignore */ }
+    try {
+      window.open(url, '_blank')
+    } catch (e) {
+      /* ignore */
+    }
   } catch (e) {
     toast.error('Gagal kirim ke Google Sheet: ' + (e?.message || e))
   } finally {
@@ -997,8 +1148,22 @@ const { isElectron: isDesktop } = useDesktopShell()
 definePageActions(() => {
   if (!isAdminKeu.value) return []
   return [
-    { label: 'Generate Slip', icon: 'doc', primary: mainTab.value === 'generate', on: () => { mainTab.value = 'generate' } },
-    { label: 'Riwayat Slip', icon: 'refresh', primary: mainTab.value === 'riwayat', on: () => { mainTab.value = 'riwayat' } },
+    {
+      label: 'Generate Slip',
+      icon: 'doc',
+      primary: mainTab.value === 'generate',
+      on: () => {
+        mainTab.value = 'generate'
+      }
+    },
+    {
+      label: 'Riwayat Slip',
+      icon: 'refresh',
+      primary: mainTab.value === 'riwayat',
+      on: () => {
+        mainTab.value = 'riwayat'
+      }
+    },
     { label: 'Ekspor Rekap', icon: 'download', on: exportRekap }
   ]
 })
@@ -1127,7 +1292,12 @@ function pilihGuru(g) {
     }
     // v.95.0626: tunjangan dari slip (bulk) -> tampil di editor
     for (const tj of Array.isArray(existing.tunjangan_list) ? existing.tunjangan_list : []) {
-      items.push({ kategori: 'tunjangan', lembaga: '-', label: tj.label || 'Tunjangan', nominal: Number(tj.nominal) || 0 })
+      items.push({
+        kategori: 'tunjangan',
+        lembaga: '-',
+        label: tj.label || 'Tunjangan',
+        nominal: Number(tj.nominal) || 0
+      })
     }
     form.value = {
       line_items: items,
@@ -1137,9 +1307,17 @@ function pilihGuru(g) {
     // v.95.0626: slip baru — auto-isi tunjangan/potongan per-guru dari master (scope guru_ids; kosong = semua)
     const items = buildLineItemsFromGuru(g)
     for (const t of applicableMaster('master_tunjangan', g)) {
-      items.push({ kategori: 'tunjangan', lembaga: '-', label: t.nama || 'Tunjangan', nominal: Number(t.nominal) || 0 })
+      items.push({
+        kategori: 'tunjangan',
+        lembaga: '-',
+        label: t.nama || 'Tunjangan',
+        nominal: Number(t.nominal) || 0
+      })
     }
-    const potonganAuto = applicableMaster('master_potongan', g).reduce((s, p) => s + (Number(p.nominal) || 0), 0)
+    const potonganAuto = applicableMaster('master_potongan', g).reduce(
+      (s, p) => s + (Number(p.nominal) || 0),
+      0
+    )
     form.value = { line_items: items, total_potongan: potonganAuto }
   }
 }
@@ -1157,12 +1335,21 @@ function addLineItem() {
 // 3 shift: pagi, sore, sekolah. hadir = status in [hadir, terlambat].
 const bonusKehadiran = computed(() => {
   const out = {
-    hadir_pagi: 0, hadir_sore: 0, hadir_sekolah: 0,
-    hadir_pegawai_pagi: 0, hadir_pegawai_sore: 0,
-    tarif_pagi: 0, tarif_sore: 0, tarif_sekolah: 0,
-    tarif_pegawai_pagi: 0, tarif_pegawai_sore: 0,
-    total_pagi: 0, total_sore: 0, total_sekolah: 0,
-    total_pegawai_pagi: 0, total_pegawai_sore: 0,
+    hadir_pagi: 0,
+    hadir_sore: 0,
+    hadir_sekolah: 0,
+    hadir_pegawai_pagi: 0,
+    hadir_pegawai_sore: 0,
+    tarif_pagi: 0,
+    tarif_sore: 0,
+    tarif_sekolah: 0,
+    tarif_pegawai_pagi: 0,
+    tarif_pegawai_sore: 0,
+    total_pagi: 0,
+    total_sore: 0,
+    total_sekolah: 0,
+    total_pegawai_pagi: 0,
+    total_pegawai_sore: 0,
     total: 0
   }
   if (!selectedGuru.value) return out
@@ -1192,7 +1379,12 @@ const bonusKehadiran = computed(() => {
   out.total_sekolah = out.hadir_sekolah * out.tarif_sekolah
   out.total_pegawai_pagi = out.hadir_pegawai_pagi * out.tarif_pegawai_pagi
   out.total_pegawai_sore = out.hadir_pegawai_sore * out.tarif_pegawai_sore
-  out.total = out.total_pagi + out.total_sore + out.total_sekolah + out.total_pegawai_pagi + out.total_pegawai_sore
+  out.total =
+    out.total_pagi +
+    out.total_sore +
+    out.total_sekolah +
+    out.total_pegawai_pagi +
+    out.total_pegawai_sore
   return out
 })
 
@@ -1211,8 +1403,13 @@ const saving = ref(false)
 // v.96.0626: No. slip bisyaroh rapi — BS-NNNddmmyy (seq harian + tgl generate)
 function genBisyarohNo(extra = 0) {
   const now = new Date()
-  const ddmmyy = String(now.getDate()).padStart(2, '0') + String(now.getMonth() + 1).padStart(2, '0') + String(now.getFullYear()).slice(-2)
-  const todayCount = (gaji.value || []).filter((s) => typeof s.no_bukti === 'string' && s.no_bukti.slice(-6) === ddmmyy).length
+  const ddmmyy =
+    String(now.getDate()).padStart(2, '0') +
+    String(now.getMonth() + 1).padStart(2, '0') +
+    String(now.getFullYear()).slice(-2)
+  const todayCount = (gaji.value || []).filter(
+    (s) => typeof s.no_bukti === 'string' && s.no_bukti.slice(-6) === ddmmyy
+  ).length
   return 'BS-' + String(todayCount + 1 + extra).padStart(3, '0') + ddmmyy
 }
 
@@ -1377,7 +1574,11 @@ async function bulkGenerate() {
     const tarifPegPagi = Number(settings.keu_bisyaroh_pegawai_pagi || 0) || 0
     const tarifPegSore = Number(settings.keu_bisyaroh_pegawai_sore || 0) || 0
     function hitungBonusGuru(guruId) {
-      let hp = 0, hs = 0, hsk = 0, hpp = 0, hps = 0
+      let hp = 0,
+        hs = 0,
+        hsk = 0,
+        hpp = 0,
+        hps = 0
       const gid = String(guruId)
       for (const a of absensiShift.value || []) {
         if (String(a.guru_id) !== gid) continue
@@ -1398,10 +1599,16 @@ async function bulkGenerate() {
       const tpp = hpp * tarifPegPagi
       const tps = hps * tarifPegSore
       return {
-        hadir_pagi: hp, hadir_sore: hs, hadir_sekolah: hsk,
-        hadir_pegawai_pagi: hpp, hadir_pegawai_sore: hps,
-        tarif_pagi: tarifPagi, tarif_sore: tarifSore, tarif_sekolah: tarifSekolah,
-        tarif_pegawai_pagi: tarifPegPagi, tarif_pegawai_sore: tarifPegSore,
+        hadir_pagi: hp,
+        hadir_sore: hs,
+        hadir_sekolah: hsk,
+        hadir_pegawai_pagi: hpp,
+        hadir_pegawai_sore: hps,
+        tarif_pagi: tarifPagi,
+        tarif_sore: tarifSore,
+        tarif_sekolah: tarifSekolah,
+        tarif_pegawai_pagi: tarifPegPagi,
+        tarif_pegawai_sore: tarifPegSore,
         total: tp + ts + tsk + tpp + tps
       }
     }
@@ -1413,8 +1620,14 @@ async function bulkGenerate() {
         const sekolah = Number(mapSekolah[g.id] || 0)
         const bonus = hitungBonusGuru(g.id)
         // v.95.0626: tunjangan & potongan per-guru dari master (scope guru_ids; kosong = semua)
-        const tjList = applicableMaster('master_tunjangan', g).map((t) => ({ label: t.nama || 'Tunjangan', nominal: Number(t.nominal) || 0 }))
-        const ptList = applicableMaster('master_potongan', g).map((p) => ({ label: p.nama || 'Potongan', nominal: Number(p.nominal) || 0 }))
+        const tjList = applicableMaster('master_tunjangan', g).map((t) => ({
+          label: t.nama || 'Tunjangan',
+          nominal: Number(t.nominal) || 0
+        }))
+        const ptList = applicableMaster('master_potongan', g).map((p) => ({
+          label: p.nama || 'Potongan',
+          nominal: Number(p.nominal) || 0
+        }))
         const totalTunjangan = tjList.reduce((s, t) => s + t.nominal, 0)
         const totalPotongan = ptList.reduce((s, p) => s + p.nominal, 0)
         const totalIn = pokok + sekolah
@@ -1439,7 +1652,9 @@ async function bulkGenerate() {
           generated_via: 'bulk',
           updated_at: serverTimestamp()
         })
-        bulkLog.value.push(`OK ${g.nama} -> ${fmtRp(totalSlip - totalPotongan)} (bonus ${fmtRp(bonus.total)})`)
+        bulkLog.value.push(
+          `OK ${g.nama} -> ${fmtRp(totalSlip - totalPotongan)} (bonus ${fmtRp(bonus.total)})`
+        )
       } catch (e) {
         bulkLog.value.push(`ER ${g.nama} -> ${e.message}`)
       }

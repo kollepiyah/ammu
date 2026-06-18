@@ -34,7 +34,12 @@
       </div>
 
       <!-- v.100c: kartu kategori difilter per tipe guru (dual=2 kartu, qiraati saja, sekolah saja) -->
-      <div :class="['grid gap-2 md:gap-3', showKatQiraati && showKatDiniyah ? 'grid-cols-2' : 'grid-cols-1']">
+      <div
+        :class="[
+          'grid gap-2 md:gap-3',
+          showKatQiraati && showKatDiniyah ? 'grid-cols-2' : 'grid-cols-1'
+        ]"
+      >
         <UiActionCard
           v-if="showKatQiraati"
           icon="fas fa-mosque"
@@ -108,7 +113,9 @@
           v-if="diniyahLembaga.length === 0"
           class="text-center py-8 text-xs text-[var(--text-tertiary)] italic"
         >
-          <i class="fas fa-school text-3xl text-slate-300 dark:text-[var(--text-secondary)] block mb-2"></i>
+          <i
+            class="fas fa-school text-3xl text-slate-300 dark:text-[var(--text-secondary)] block mb-2"
+          ></i>
           Belum ada sekolah formal terdaftar. Tambah lembaga tipe "Formal" di Master Data &gt;
           Lembaga.
         </div>
@@ -156,10 +163,13 @@
                   'mr-1'
                 ]"
               ></i>
-              {{ lembaga || (kategori === 'qiraati' ? 'Ngaji Saya' : 'Sekolah Saya') }} · {{ tahunAjaran }} {{ semester }}
+              {{ lembaga || (kategori === 'qiraati' ? 'Ngaji Saya' : 'Sekolah Saya') }} ·
+              {{ tahunAjaran }} {{ semester }}
             </h2>
           </div>
-          <span class="text-[10px] text-[var(--text-tertiary)] font-bold">{{ santriList.length }} santri</span>
+          <span class="text-[10px] text-[var(--text-tertiary)] font-bold"
+            >{{ santriList.length }} santri</span
+          >
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -201,16 +211,36 @@
             @click="toggleSelectAll"
             class="text-xs font-bold px-3 py-1.5 rounded-lg bg-[var(--bg-muted)] hover:bg-[var(--color-primary-soft)] transition cursor-pointer text-[var(--text-primary)]"
           >
-            <i :class="['fas', selectedSantriIds.size === santriList.length && santriList.length > 0 ? 'fa-check-square' : 'fa-square', 'mr-1']"></i>
-            {{ selectedSantriIds.size === santriList.length && santriList.length > 0 ? 'Hapus Semua Pilihan' : 'Pilih Semua' }}
+            <i
+              :class="[
+                'fas',
+                selectedSantriIds.size === santriList.length && santriList.length > 0
+                  ? 'fa-check-square'
+                  : 'fa-square',
+                'mr-1'
+              ]"
+            ></i>
+            {{
+              selectedSantriIds.size === santriList.length && santriList.length > 0
+                ? 'Hapus Semua Pilihan'
+                : 'Pilih Semua'
+            }}
           </button>
           <span v-if="selectedSantriIds.size > 0" class="text-xs text-[var(--text-secondary)]">
             <b class="text-[var(--color-primary)]">{{ selectedSantriIds.size }}</b> santri dipilih
           </span>
           <!-- v.100c #3: tanggal terbit rapor (manual, berlaku semua santri periode ini) -->
-          <label class="inline-flex items-center gap-1.5 text-[11px] font-bold text-[var(--text-secondary)]">
+          <label
+            class="inline-flex items-center gap-1.5 text-[11px] font-bold text-[var(--text-secondary)]"
+          >
             <i class="fas fa-calendar-day text-cyan-600"></i>Tgl terbit:
-            <input type="date" v-model="tglTerbit" @change="saveTglTerbit" title="Tanggal terbit rapor — berlaku semua santri periode ini (kosong = hari ini)" class="text-xs px-2 py-1 border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)]" />
+            <input
+              type="date"
+              v-model="tglTerbit"
+              @change="saveTglTerbit"
+              title="Tanggal terbit rapor — berlaku semua santri periode ini (kosong = hari ini)"
+              class="text-xs px-2 py-1 border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
+            />
           </label>
         </div>
         <button
@@ -218,14 +248,17 @@
           @click="exportPdfBatch"
           :disabled="exportingBatch"
           aria-label="Ekspor batch rapor PDF"
-          class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer"
+          class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer"
         >
           <i :class="['fas', exportingBatch ? 'fa-spinner fa-spin' : 'fa-file-pdf']"></i>
           {{ exportingBatch ? 'Mengekspor...' : `Ekspor PDF (${selectedSantriIds.size})` }}
         </button>
       </div>
 
-      <div v-if="santriList.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-3">
+      <div
+        v-if="santriList.length > 0"
+        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-3"
+      >
         <div
           v-for="s in santriList"
           :key="s.id"
@@ -249,31 +282,33 @@
             @click="pilihSantri(s)"
             class="flex-1 min-w-0 text-left flex items-center gap-3 cursor-pointer"
           >
-          <div
-            class="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 dark:from-emerald-700 to-emerald-600 dark:to-emerald-800 flex items-center justify-center text-white font-bold text-sm"
-          >
-            {{ (s.nama || '?').charAt(0).toUpperCase() }}
-          </div>
-          <div class="flex-1 min-w-0">
-            <p class="text-sm font-bold text-[var(--text-primary)] truncate">
-              {{ s.nama }}
-              <span
-                v-if="getRapors(s).length > 1"
-                class="ml-1 text-[9px] bg-cyan-100 text-cyan-800 px-1.5 py-0.5 rounded font-bold align-middle"
-                :title="`Santri ini punya ${getRapors(s).length} rapor`"
-              >
-                <i class="fas fa-layer-group mr-0.5"></i>
-                {{ getRapors(s).length }} rapor
-              </span>
-            </p>
-            <p class="text-[10px] text-[var(--text-secondary)] truncate">
-              <span class="font-bold">{{ (kategori === 'diniyah' ? s.lembaga_sekolah : s.lembaga) || '-' }}</span>
-              · Kelas {{ (kategori === 'diniyah' ? s.kelas_sekolah : s.kelas) || '-' }}
-              <span v-if="s.nis" class="ml-1">· No. Induk {{ s.nis }}</span>
-              <span v-if="s.is_mukim" class="ml-1 text-teal-600 font-bold">· MUKIM</span>
-            </p>
-          </div>
-          <i class="fas fa-chevron-right text-[var(--text-tertiary)] text-xs"></i>
+            <div
+              class="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 dark:from-emerald-700 to-emerald-600 dark:to-emerald-800 flex items-center justify-center text-white font-bold text-sm"
+            >
+              {{ (s.nama || '?').charAt(0).toUpperCase() }}
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-bold text-[var(--text-primary)] truncate">
+                {{ s.nama }}
+                <span
+                  v-if="getRapors(s).length > 1"
+                  class="ml-1 text-[9px] bg-cyan-100 text-cyan-800 px-1.5 py-0.5 rounded font-bold align-middle"
+                  :title="`Santri ini punya ${getRapors(s).length} rapor`"
+                >
+                  <i class="fas fa-layer-group mr-0.5"></i>
+                  {{ getRapors(s).length }} rapor
+                </span>
+              </p>
+              <p class="text-[10px] text-[var(--text-secondary)] truncate">
+                <span class="font-bold">{{
+                  (kategori === 'diniyah' ? s.lembaga_sekolah : s.lembaga) || '-'
+                }}</span>
+                · Kelas {{ (kategori === 'diniyah' ? s.kelas_sekolah : s.kelas) || '-' }}
+                <span v-if="s.nis" class="ml-1">· No. Induk {{ s.nis }}</span>
+                <span v-if="s.is_mukim" class="ml-1 text-teal-600 font-bold">· MUKIM</span>
+              </p>
+            </div>
+            <i class="fas fa-chevron-right text-[var(--text-tertiary)] text-xs"></i>
           </button>
         </div>
       </div>
@@ -309,14 +344,22 @@
           </div>
           <div v-if="santriAktif && !isSantri" class="flex items-center gap-2 flex-wrap">
             <!-- v.100c #3: tanggal terbit rapor (manual, berlaku semua santri periode ini) -->
-            <label class="inline-flex items-center gap-1.5 text-[11px] font-bold text-[var(--text-secondary)]">
+            <label
+              class="inline-flex items-center gap-1.5 text-[11px] font-bold text-[var(--text-secondary)]"
+            >
               <i class="fas fa-calendar-day text-cyan-600"></i>Tgl:
-              <input type="date" v-model="tglTerbit" @change="saveTglTerbit" title="Tanggal terbit rapor — berlaku semua santri periode ini (kosong = hari ini)" class="text-xs px-2 py-1.5 border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)]" />
+              <input
+                type="date"
+                v-model="tglTerbit"
+                @change="saveTglTerbit"
+                title="Tanggal terbit rapor — berlaku semua santri periode ini (kosong = hari ini)"
+                class="text-xs px-2 py-1.5 border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
+              />
             </label>
             <button
               v-if="!editMode"
               @click="startEdit"
-              class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition cursor-pointer"
+              class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition cursor-pointer"
             >
               <i class="fas fa-pen-to-square"></i>Isi / Edit Rapor
             </button>
@@ -324,13 +367,14 @@
               <button
                 @click="simpanRapor"
                 :disabled="savingRapor"
-                class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer"
+                class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer"
               >
-                <i :class="['fas', savingRapor ? 'fa-spinner fa-spin' : 'fa-save']"></i>{{ savingRapor ? 'Menyimpan...' : 'Simpan' }}
+                <i :class="['fas', savingRapor ? 'fa-spinner fa-spin' : 'fa-save']"></i
+                >{{ savingRapor ? 'Menyimpan...' : 'Simpan' }}
               </button>
               <button
                 @click="cancelEdit"
-                class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold transition cursor-pointer"
+                class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold transition cursor-pointer"
               >
                 Batal
               </button>
@@ -338,7 +382,7 @@
             <button
               @click="exportPdfSingle()"
               aria-label="Ekspor rapor PDF santri ini"
-              class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold transition cursor-pointer"
+              class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold transition cursor-pointer"
             >
               <i class="fas fa-file-pdf"></i>Ekspor PDF
             </button>
@@ -387,26 +431,47 @@
         </div>
 
         <!-- v.100c #2: KKM mapel diniyah — per kelas (berlaku semua santri kelas ini) -->
-        <div v-if="kategori === 'diniyah' && kkmMapelNames.length" class="rounded-lg bg-white dark:bg-slate-900 border border-amber-200 dark:border-slate-700 p-3">
+        <div
+          v-if="kategori === 'diniyah' && kkmMapelNames.length"
+          class="rounded-lg bg-white dark:bg-slate-900 border border-amber-200 dark:border-slate-700 p-3"
+        >
           <div class="flex items-center justify-between gap-2 flex-wrap mb-2">
-            <h4 class="text-xs font-black text-amber-900 dark:text-amber-200 uppercase tracking-wide">
+            <h4
+              class="text-xs font-black text-amber-900 dark:text-amber-200 uppercase tracking-wide"
+            >
               <i class="fas fa-bullseye mr-1"></i>KKM Mapel — Kelas {{ kkmKelas }}
-              <span class="font-normal normal-case text-[10px] text-amber-700 dark:text-amber-300">(berlaku semua santri kelas ini)</span>
+              <span class="font-normal normal-case text-[10px] text-amber-700 dark:text-amber-300"
+                >(berlaku semua santri kelas ini)</span
+              >
             </h4>
-            <button @click="saveKkm" :disabled="savingKkm" class="h-8 px-3 inline-flex items-center gap-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white text-[11px] font-bold transition cursor-pointer">
+            <button
+              @click="saveKkm"
+              :disabled="savingKkm"
+              class="h-8 px-3 inline-flex items-center gap-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white text-[11px] font-bold transition cursor-pointer"
+            >
               <i :class="['fas', savingKkm ? 'fa-spinner fa-spin' : 'fa-save']"></i>Simpan KKM
             </button>
           </div>
           <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
             <label v-for="(nm, i) in kkmMapelNames" :key="nm" class="flex flex-col gap-0.5">
-              <span class="text-[10px] text-[var(--text-tertiary)] truncate" :title="nm">{{ nm }}</span>
-              <input type="number" min="0" max="100" v-model.number="kkmDraft[i]" class="text-xs px-2 py-1 border border-[var(--border-default)] rounded bg-[var(--bg-card-elevated)] text-[var(--text-primary)] text-center font-bold" />
+              <span class="text-[10px] text-[var(--text-tertiary)] truncate" :title="nm">{{
+                nm
+              }}</span>
+              <input
+                type="number"
+                min="0"
+                max="100"
+                v-model.number="kkmDraft[i]"
+                class="text-xs px-2 py-1 border border-[var(--border-default)] rounded bg-[var(--bg-card-elevated)] text-[var(--text-primary)] text-center font-bold"
+              />
             </label>
           </div>
         </div>
 
         <div v-for="g in editGroups" :key="g.title" class="space-y-2">
-          <h4 class="text-xs font-bold text-[var(--text-primary)] uppercase tracking-wide border-b border-amber-200 dark:border-slate-600 pb-1">
+          <h4
+            class="text-xs font-bold text-[var(--text-primary)] uppercase tracking-wide border-b border-amber-200 dark:border-slate-600 pb-1"
+          >
             {{ g.title }}
           </h4>
           <div
@@ -414,7 +479,9 @@
             :key="ri"
             class="rounded-lg bg-white dark:bg-slate-900 border border-amber-100 dark:border-slate-700 p-2"
           >
-            <div class="text-[11px] font-bold text-[var(--text-secondary)] mb-1">{{ row.label }}</div>
+            <div class="text-[11px] font-bold text-[var(--text-secondary)] mb-1">
+              {{ row.label }}
+            </div>
             <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
               <label v-for="f in row.fields" :key="f.key" class="flex flex-col gap-0.5">
                 <span class="text-[10px] text-[var(--text-tertiary)]">{{ f.label }}</span>
@@ -438,29 +505,55 @@
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div class="rounded-lg bg-white dark:bg-slate-900 border border-amber-100 dark:border-slate-700 p-2">
+          <div
+            class="rounded-lg bg-white dark:bg-slate-900 border border-amber-100 dark:border-slate-700 p-2"
+          >
             <div class="text-xs font-bold mb-1 text-[var(--text-primary)]">Absensi (Hari)</div>
             <div class="grid grid-cols-3 gap-2">
               <label class="flex flex-col gap-0.5">
                 <span class="text-[10px] text-[var(--text-tertiary)]">Sakit</span>
-                <input type="number" min="0" v-model="draft.absensi.sakit" class="text-xs px-2 py-1 border border-[var(--border-default)] rounded bg-[var(--bg-card-elevated)] text-[var(--text-primary)]" />
+                <input
+                  type="number"
+                  min="0"
+                  v-model="draft.absensi.sakit"
+                  class="text-xs px-2 py-1 border border-[var(--border-default)] rounded bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
+                />
               </label>
               <label class="flex flex-col gap-0.5">
                 <span class="text-[10px] text-[var(--text-tertiary)]">Izin</span>
-                <input type="number" min="0" v-model="draft.absensi.izin" class="text-xs px-2 py-1 border border-[var(--border-default)] rounded bg-[var(--bg-card-elevated)] text-[var(--text-primary)]" />
+                <input
+                  type="number"
+                  min="0"
+                  v-model="draft.absensi.izin"
+                  class="text-xs px-2 py-1 border border-[var(--border-default)] rounded bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
+                />
               </label>
               <label class="flex flex-col gap-0.5">
                 <span class="text-[10px] text-[var(--text-tertiary)]">Alpa</span>
-                <input type="number" min="0" v-model="draft.absensi.alpa" class="text-xs px-2 py-1 border border-[var(--border-default)] rounded bg-[var(--bg-card-elevated)] text-[var(--text-primary)]" />
+                <input
+                  type="number"
+                  min="0"
+                  v-model="draft.absensi.alpa"
+                  class="text-xs px-2 py-1 border border-[var(--border-default)] rounded bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
+                />
               </label>
             </div>
           </div>
-          <div class="rounded-lg bg-white dark:bg-slate-900 border border-amber-100 dark:border-slate-700 p-2">
+          <div
+            class="rounded-lg bg-white dark:bg-slate-900 border border-amber-100 dark:border-slate-700 p-2"
+          >
             <div class="text-xs font-bold mb-1 text-[var(--text-primary)]">Nilai Kepribadian</div>
             <div class="grid grid-cols-3 gap-2">
-              <label v-for="k in ['kelakuan', 'kerajinan', 'kebersihan']" :key="k" class="flex flex-col gap-0.5">
+              <label
+                v-for="k in ['kelakuan', 'kerajinan', 'kebersihan']"
+                :key="k"
+                class="flex flex-col gap-0.5"
+              >
                 <span class="text-[10px] text-[var(--text-tertiary)] capitalize">{{ k }}</span>
-                <select v-model="draft.kepribadian[k]" class="text-xs px-1 py-1 border border-[var(--border-default)] rounded bg-[var(--bg-card-elevated)] text-[var(--text-primary)]">
+                <select
+                  v-model="draft.kepribadian[k]"
+                  class="text-xs px-1 py-1 border border-[var(--border-default)] rounded bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
+                >
                   <option>Baik</option>
                   <option>Cukup</option>
                   <option>Perlu Perhatian</option>
@@ -470,8 +563,12 @@
           </div>
         </div>
 
-        <div class="rounded-lg bg-white dark:bg-slate-900 border border-amber-100 dark:border-slate-700 p-2">
-          <div class="text-xs font-bold mb-1 text-[var(--text-primary)]">Catatan untuk Santri / Orang Tua</div>
+        <div
+          class="rounded-lg bg-white dark:bg-slate-900 border border-amber-100 dark:border-slate-700 p-2"
+        >
+          <div class="text-xs font-bold mb-1 text-[var(--text-primary)]">
+            Catatan untuk Santri / Orang Tua
+          </div>
           <textarea
             v-model="draft.catatan"
             rows="2"
@@ -480,7 +577,10 @@
         </div>
 
         <div class="flex items-center gap-2 justify-end">
-          <button @click="cancelEdit" class="h-9 px-3 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold cursor-pointer">
+          <button
+            @click="cancelEdit"
+            class="h-9 px-3 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold cursor-pointer"
+          >
             Batal
           </button>
           <button
@@ -488,7 +588,8 @@
             :disabled="savingRapor"
             class="h-9 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold cursor-pointer"
           >
-            <i :class="['fas', savingRapor ? 'fa-spinner fa-spin' : 'fa-save', 'mr-1']"></i>{{ savingRapor ? 'Menyimpan...' : 'Simpan Rapor' }}
+            <i :class="['fas', savingRapor ? 'fa-spinner fa-spin' : 'fa-save', 'mr-1']"></i
+            >{{ savingRapor ? 'Menyimpan...' : 'Simpan Rapor' }}
           </button>
         </div>
       </div>
@@ -535,15 +636,26 @@
               </td>
               <td class="text-center align-middle px-2 py-0.5">
                 <!-- v.100: baris-1 KOP = gambar kaligrafi muassis (match PDF) -->
-                <img :src="MUASSIS_URL" alt="" class="mx-auto dark:invert print:invert-0" style="height:34px;object-fit:contain" />
+                <img
+                  :src="MUASSIS_URL"
+                  alt=""
+                  class="mx-auto dark:invert print:invert-0"
+                  style="height: 34px; object-fit: contain"
+                />
 
                 <div v-if="kop.line2" class="text-[22px] font-bold uppercase leading-tight">
                   {{ kop.line2 }}
                 </div>
-                <div v-if="kop.line3" class="text-[12px] font-normal leading-tight text-[var(--text-primary)]">
+                <div
+                  v-if="kop.line3"
+                  class="text-[12px] font-normal leading-tight text-[var(--text-primary)]"
+                >
                   {{ titleCase(kop.line3) }}
                 </div>
-                <div v-if="kop.line4" class="text-[12px] font-normal leading-tight text-[var(--text-primary)]">
+                <div
+                  v-if="kop.line4"
+                  class="text-[12px] font-normal leading-tight text-[var(--text-primary)]"
+                >
                   {{ kop.line4 }}
                 </div>
               </td>
@@ -570,16 +682,40 @@
             <template v-if="schema.perKelas">
               <table class="w-[55%]">
                 <tbody>
-                  <tr><td class="w-[90px] py-0.5 align-top">Nama Santri</td><td class="w-[10px] py-0.5">:</td><td class="py-0.5 font-bold">{{ santriAktif.nama }}</td></tr>
-                  <tr><td class="py-0.5">NISN</td><td class="py-0.5">:</td><td class="py-0.5">{{ santriAktif.nisn || '-' }}</td></tr>
-                  <tr><td class="py-0.5">NIS</td><td class="py-0.5">:</td><td class="py-0.5">{{ santriAktif.nis_sekolah || '-' }}</td></tr>
+                  <tr>
+                    <td class="w-[90px] py-0.5 align-top">Nama Santri</td>
+                    <td class="w-[10px] py-0.5">:</td>
+                    <td class="py-0.5 font-bold">{{ santriAktif.nama }}</td>
+                  </tr>
+                  <tr>
+                    <td class="py-0.5">NISN</td>
+                    <td class="py-0.5">:</td>
+                    <td class="py-0.5">{{ santriAktif.nisn || '-' }}</td>
+                  </tr>
+                  <tr>
+                    <td class="py-0.5">NIS</td>
+                    <td class="py-0.5">:</td>
+                    <td class="py-0.5">{{ santriAktif.nis_sekolah || '-' }}</td>
+                  </tr>
                 </tbody>
               </table>
               <table class="w-[45%]">
                 <tbody>
-                  <tr><td class="w-[100px] py-0.5 align-top">Kelas</td><td class="w-[10px] py-0.5">:</td><td class="py-0.5 font-bold">{{ kelasGabungan }}</td></tr>
-                  <tr><td class="py-0.5">Semester</td><td class="py-0.5">:</td><td class="py-0.5">{{ semester }}</td></tr>
-                  <tr><td class="py-0.5">Tahun Ajaran</td><td class="py-0.5">:</td><td class="py-0.5">{{ tahunAjaran }}</td></tr>
+                  <tr>
+                    <td class="w-[100px] py-0.5 align-top">Kelas</td>
+                    <td class="w-[10px] py-0.5">:</td>
+                    <td class="py-0.5 font-bold">{{ kelasGabungan }}</td>
+                  </tr>
+                  <tr>
+                    <td class="py-0.5">Semester</td>
+                    <td class="py-0.5">:</td>
+                    <td class="py-0.5">{{ semester }}</td>
+                  </tr>
+                  <tr>
+                    <td class="py-0.5">Tahun Ajaran</td>
+                    <td class="py-0.5">:</td>
+                    <td class="py-0.5">{{ tahunAjaran }}</td>
+                  </tr>
                 </tbody>
               </table>
             </template>
@@ -587,15 +723,35 @@
             <template v-else>
               <table class="w-[55%]">
                 <tbody>
-                  <tr><td class="w-[90px] py-0.5 align-top">Nama Santri</td><td class="w-[10px] py-0.5">:</td><td class="py-0.5 font-bold">{{ santriAktif.nama }}</td></tr>
-                  <tr><td class="py-0.5">No. Induk</td><td class="py-0.5">:</td><td class="py-0.5">{{ santriAktif.nis || '-' }}</td></tr>
-                  <tr><td class="py-0.5 align-top">Kelas</td><td class="py-0.5">:</td><td class="py-0.5 font-bold">{{ kelasGabungan }}</td></tr>
+                  <tr>
+                    <td class="w-[90px] py-0.5 align-top">Nama Santri</td>
+                    <td class="w-[10px] py-0.5">:</td>
+                    <td class="py-0.5 font-bold">{{ santriAktif.nama }}</td>
+                  </tr>
+                  <tr>
+                    <td class="py-0.5">No. Induk</td>
+                    <td class="py-0.5">:</td>
+                    <td class="py-0.5">{{ santriAktif.nis || '-' }}</td>
+                  </tr>
+                  <tr>
+                    <td class="py-0.5 align-top">Kelas</td>
+                    <td class="py-0.5">:</td>
+                    <td class="py-0.5 font-bold">{{ kelasGabungan }}</td>
+                  </tr>
                 </tbody>
               </table>
               <table class="w-[45%]">
                 <tbody>
-                  <tr><td class="w-[100px] py-0.5 align-top">Semester</td><td class="w-[10px] py-0.5">:</td><td class="py-0.5">{{ semester }}</td></tr>
-                  <tr><td class="py-0.5">Tahun Ajaran</td><td class="py-0.5">:</td><td class="py-0.5">{{ tahunAjaran }}</td></tr>
+                  <tr>
+                    <td class="w-[100px] py-0.5 align-top">Semester</td>
+                    <td class="w-[10px] py-0.5">:</td>
+                    <td class="py-0.5">{{ semester }}</td>
+                  </tr>
+                  <tr>
+                    <td class="py-0.5">Tahun Ajaran</td>
+                    <td class="py-0.5">:</td>
+                    <td class="py-0.5">{{ tahunAjaran }}</td>
+                  </tr>
                 </tbody>
               </table>
             </template>
@@ -699,19 +855,35 @@
                   <th class="border border-black px-2 py-1.5 w-[32px]">NO</th>
                   <th class="border border-black px-2 py-1.5 text-left">MATA PELAJARAN</th>
                   <th class="border border-black px-2 py-1.5 w-[40px]">KKM</th>
-                  <th class="border border-black px-1 py-1.5 w-[78px] leading-tight">RATA-RATA SUMATIF</th>
-                  <th class="border border-black px-1 py-1.5 w-[78px] leading-tight">SUMATIF AKHIR SEMESTER</th>
+                  <th class="border border-black px-1 py-1.5 w-[78px] leading-tight">
+                    RATA-RATA SUMATIF
+                  </th>
+                  <th class="border border-black px-1 py-1.5 w-[78px] leading-tight">
+                    SUMATIF AKHIR SEMESTER
+                  </th>
                   <th class="border border-black px-2 py-1.5 w-[84px]">PREDIKAT</th>
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="(mp, idx) in jenjangAktif.mapel || []" :key="mp.id || idx" style="height: 34px">
-                  <td class="border border-black px-2 py-2.5 text-center font-bold">{{ idx + 1 }}</td>
+                <tr
+                  v-for="(mp, idx) in jenjangAktif.mapel || []"
+                  :key="mp.id || idx"
+                  style="height: 34px"
+                >
+                  <td class="border border-black px-2 py-2.5 text-center font-bold">
+                    {{ idx + 1 }}
+                  </td>
                   <td class="border border-black px-2 py-2.5 font-bold">{{ mp.nama }}</td>
                   <td class="border border-black px-2 py-2.5 text-center">{{ mp.kkm || 75 }}</td>
-                  <td class="border border-black px-2 py-2.5 text-center">{{ fmtNumber(nilaiSumatif(mp)) }}</td>
                   <td class="border border-black px-2 py-2.5 text-center">
-                    {{ getNilai(`dn__${santriAktif.kelas_sekolah}__${mp.id || slug(mp.nama)}__akhir`) || '-' }}
+                    {{ fmtNumber(nilaiSumatif(mp)) }}
+                  </td>
+                  <td class="border border-black px-2 py-2.5 text-center">
+                    {{
+                      getNilai(
+                        `dn__${santriAktif.kelas_sekolah}__${mp.id || slug(mp.nama)}__akhir`
+                      ) || '-'
+                    }}
                   </td>
                   <td
                     class="border border-black px-2 py-2.5 text-center"
@@ -731,17 +903,42 @@
             <table class="w-full border-collapse text-[10px] md:text-[11px]">
               <thead class="bg-[var(--bg-muted)]">
                 <tr>
-                  <th rowspan="2" class="border border-slate-500 px-1.5 py-1 align-middle w-[44px]">No</th>
-                  <th rowspan="2" class="border border-slate-500 px-1.5 py-1 text-left align-middle">Level Kitab</th>
-                  <th rowspan="2" class="border border-slate-500 px-1.5 py-1 align-middle w-[72px]">Tgl Khotam</th>
+                  <th rowspan="2" class="border border-slate-500 px-1.5 py-1 align-middle w-[44px]">
+                    No
+                  </th>
+                  <th
+                    rowspan="2"
+                    class="border border-slate-500 px-1.5 py-1 text-left align-middle"
+                  >
+                    Level Kitab
+                  </th>
+                  <th rowspan="2" class="border border-slate-500 px-1.5 py-1 align-middle w-[72px]">
+                    Tgl Khotam
+                  </th>
                   <template v-for="(h, idx) in ppphHeaderRow1" :key="idx">
-                    <th v-if="h.group" :colspan="h.span" class="border border-slate-500 px-1.5 py-1">{{ h.group }}</th>
-                    <th v-else rowspan="2" class="border border-slate-500 px-1.5 py-1 align-middle">{{ h.label }}</th>
+                    <th
+                      v-if="h.group"
+                      :colspan="h.span"
+                      class="border border-slate-500 px-1.5 py-1"
+                    >
+                      {{ h.group }}
+                    </th>
+                    <th v-else rowspan="2" class="border border-slate-500 px-1.5 py-1 align-middle">
+                      {{ h.label }}
+                    </th>
                   </template>
-                  <th rowspan="2" class="border border-slate-500 px-1.5 py-1 align-middle w-[80px]">Predikat</th>
+                  <th rowspan="2" class="border border-slate-500 px-1.5 py-1 align-middle w-[80px]">
+                    Predikat
+                  </th>
                 </tr>
                 <tr>
-                  <th v-for="f in ppphGroupedFields" :key="f.id" class="border border-slate-500 px-1.5 py-1">{{ f.label }}</th>
+                  <th
+                    v-for="f in ppphGroupedFields"
+                    :key="f.id"
+                    class="border border-slate-500 px-1.5 py-1"
+                  >
+                    {{ f.label }}
+                  </th>
                 </tr>
               </thead>
               <!-- v.101 (kyai): isi PPPH sedikit → baris dilonggarkan (py lebih besar) -->
@@ -988,7 +1185,9 @@
                 <p v-for="kp in kepribadianRows" :key="kp.label" class="my-0.5">
                   {{ kp.label }} :
                   <span v-for="(opt, i) in KEPRIBADIAN_OPTS" :key="opt"
-                    ><span :class="kp.val === opt ? 'font-bold' : 'line-through text-slate-400'">{{ opt }}</span
+                    ><span :class="kp.val === opt ? 'font-bold' : 'line-through text-slate-400'">{{
+                      opt
+                    }}</span
                     ><span v-if="i < KEPRIBADIAN_OPTS.length - 1"> / </span></span
                   >
                 </p>
@@ -1029,7 +1228,12 @@
                     v-if="ttdGuru"
                     :src="ttdGuru"
                     alt=""
-                    style="display: inline-block; max-width: 120px; max-height: 56px; object-fit: contain"
+                    style="
+                      display: inline-block;
+                      max-width: 120px;
+                      max-height: 56px;
+                      object-fit: contain;
+                    "
                   />
                 </td>
                 <td>
@@ -1037,7 +1241,12 @@
                     v-if="ttdKepala"
                     :src="ttdKepala"
                     alt=""
-                    style="display: inline-block; max-width: 120px; max-height: 56px; object-fit: contain"
+                    style="
+                      display: inline-block;
+                      max-width: 120px;
+                      max-height: 56px;
+                      object-fit: contain;
+                    "
                   />
                 </td>
               </tr>
@@ -1101,13 +1310,33 @@ const absNgajiDocs = ref([])
 const absSekolahDocs = ref([])
 const _unsubsRapor = []
 onMounted(() => {
-  _unsubsRapor.push(subscribeColl('rapor_semester', (docs) => { raporDocs.value = docs || [] }))
-  _unsubsRapor.push(subscribeColl('rekap_diniyah', (docs) => { rekapDiniyahDocs.value = docs || [] }))
-  _unsubsRapor.push(subscribeColl('absensi_santri_ngaji_bulanan', (docs) => { absNgajiDocs.value = docs || [] }))
-  _unsubsRapor.push(subscribeColl('absensi_santri_sekolah_bulanan', (docs) => { absSekolahDocs.value = docs || [] }))
+  _unsubsRapor.push(
+    subscribeColl('rapor_semester', (docs) => {
+      raporDocs.value = docs || []
+    })
+  )
+  _unsubsRapor.push(
+    subscribeColl('rekap_diniyah', (docs) => {
+      rekapDiniyahDocs.value = docs || []
+    })
+  )
+  _unsubsRapor.push(
+    subscribeColl('absensi_santri_ngaji_bulanan', (docs) => {
+      absNgajiDocs.value = docs || []
+    })
+  )
+  _unsubsRapor.push(
+    subscribeColl('absensi_santri_sekolah_bulanan', (docs) => {
+      absSekolahDocs.value = docs || []
+    })
+  )
 })
 onUnmounted(() => {
-  _unsubsRapor.forEach((u) => { try { u() } catch (e) {} })
+  _unsubsRapor.forEach((u) => {
+    try {
+      u()
+    } catch (e) {}
+  })
 })
 
 const { santriRaw, getRapors } = useSantri()
@@ -1125,7 +1354,7 @@ const isFullFilter = computed(() => isFullFilterRole(authStore.sesiAktif))
 const kepalaScope = computed(() => {
   const s = authStore.sesiAktif
   if (!s || s.role === 'admin' || s.id === 'admin') return null
-  return isKepalaLembaga(s) ? (s.lembaga || null) : null
+  return isKepalaLembaga(s) ? s.lembaga || null : null
 })
 const isGuruOnly = computed(() => {
   const s = authStore.sesiAktif
@@ -1162,17 +1391,21 @@ const jenjangFilter = ref('') // '' | 'SMP' | 'SMA' - split PKBM, samakan picker
 const search = ref('')
 
 // N5: santri/wali — auto-buka rapor sendiri tanpa picker (langsung view 'detail')
-watch(santriRaw, (list) => {
-  if (!isSantri.value || view.value === 'detail') return
-  const me = (list || []).find((s) => String(s.id) === String(authStore.sesiAktif?.id || ''))
-  if (!me) return
-  const raps = getRapors(me)
-  if (!raps || raps.length === 0) return
-  kategori.value = raps[0].jenis
-  lembaga.value = raps[0].lembaga
-  santriId.value = String(me.id)
-  view.value = 'detail'
-}, { immediate: true })
+watch(
+  santriRaw,
+  (list) => {
+    if (!isSantri.value || view.value === 'detail') return
+    const me = (list || []).find((s) => String(s.id) === String(authStore.sesiAktif?.id || ''))
+    if (!me) return
+    const raps = getRapors(me)
+    if (!raps || raps.length === 0) return
+    kategori.value = raps[0].jenis
+    lembaga.value = raps[0].lembaga
+    santriId.value = String(me.id)
+    view.value = 'detail'
+  },
+  { immediate: true }
+)
 
 // v.21.109.0527: TPQ Pagi DIHAPUS dari rapor — kebijakan: TPQ Pagi tidak
 // menerbitkan rapor. Sisa 4 lembaga Qiraati: TPQ Sore, Pra PTPT, PTPT, PPPH.
@@ -1233,25 +1466,46 @@ const santriList = computed(() => {
   let list = santriRaw.value.filter((s) => s.aktif !== false)
   // v.86.0526: guard Kepala/PJ — hanya santri lembaganya (lintas-lembaga di-block walau pilih lembaga lain).
   if (kepalaScope.value) {
-    list = list.filter((s) => lembagaScopeMatches(kepalaScope.value, s.lembaga) || lembagaScopeMatches(kepalaScope.value, s.lembaga_sekolah))
+    list = list.filter(
+      (s) =>
+        lembagaScopeMatches(kepalaScope.value, s.lembaga) ||
+        lembagaScopeMatches(kepalaScope.value, s.lembaga_sekolah)
+    )
   }
   if (guruMode && !lmb) {
     // filter berdasarkan kepemilikan sesuai kategori
-    const sesiNama = String(authStore.sesiAktif?.nama || '').toLowerCase().trim()
-    const sesiGuru = String(authStore.sesiAktif?.guru || '').toLowerCase().trim()
+    const sesiNama = String(authStore.sesiAktif?.nama || '')
+      .toLowerCase()
+      .trim()
+    const sesiGuru = String(authStore.sesiAktif?.guru || '')
+      .toLowerCase()
+      .trim()
     list = list.filter((s) => {
       if (kategori.value === 'qiraati') {
-        const names = [s.guru, s.guru_pagi, s.guru_sore].filter(Boolean).map((g) => String(g).toLowerCase().trim())
+        const names = [s.guru, s.guru_pagi, s.guru_sore]
+          .filter(Boolean)
+          .map((g) => String(g).toLowerCase().trim())
         return names.includes(sesiNama) || names.includes(sesiGuru)
       } else {
-        const arr = Array.isArray(s.guru_sekolah) ? s.guru_sekolah.map((g) => String(g || '').toLowerCase().trim()) : []
+        const arr = Array.isArray(s.guru_sekolah)
+          ? s.guru_sekolah.map((g) =>
+              String(g || '')
+                .toLowerCase()
+                .trim()
+            )
+          : []
         return arr.includes(sesiNama) || arr.includes(sesiGuru)
       }
     })
-    if (filterKelas.value) list = list.filter((s) => String(s.kelas || s.kelas_sekolah || '') === filterKelas.value)
+    if (filterKelas.value)
+      list = list.filter((s) => String(s.kelas || s.kelas_sekolah || '') === filterKelas.value)
     if (search.value.trim()) {
       const kw = search.value.trim().toLowerCase()
-      list = list.filter((s) => String(s.nama || '').toLowerCase().includes(kw))
+      list = list.filter((s) =>
+        String(s.nama || '')
+          .toLowerCase()
+          .includes(kw)
+      )
     }
     const lf = kategori.value === 'qiraati' ? 'lembaga' : 'lembaga_sekolah'
     const kf = kategori.value === 'qiraati' ? 'kelas' : 'kelas_sekolah'
@@ -1265,8 +1519,12 @@ const santriList = computed(() => {
     }
     if (lmb === 'tpq sore') {
       list = list.filter((s) => {
-        const l = String(s.lembaga || '').toLowerCase().trim()
-        const sh = String(s.shift || '').toLowerCase().trim()
+        const l = String(s.lembaga || '')
+          .toLowerCase()
+          .trim()
+        const sh = String(s.shift || '')
+          .toLowerCase()
+          .trim()
         return (l === 'tpq' && sh === 'sore') || l === lmb
       })
     } else if (lmb === 'pra ptpt') {
@@ -1333,7 +1591,7 @@ const santriList = computed(() => {
 
   if (filterKelas.value) {
     list = list.filter((s) => {
-      const kv = kategori.value === 'qiraati' ? s.kelas : (s.kelas_sekolah || s.kelas)
+      const kv = kategori.value === 'qiraati' ? s.kelas : s.kelas_sekolah || s.kelas
       return String(kv || '') === filterKelas.value
     })
   }
@@ -1367,8 +1625,9 @@ const kelasOptions = computed(() => {
       .trim()
     const match = kategori.value === 'qiraati' ? lb === lmb : ls === lmb || (!ls && lb === lmb)
     // v.90.0626: diniyah pakai kelas_sekolah (samakan dg Rekap); PKBM dibatasi jenjang aktif
-    const kls = kategori.value === 'qiraati' ? s.kelas : (s.kelas_sekolah || s.kelas)
-    if (match && kls && (!jenjangFilter.value || kelasJenjang(kls) === jenjangFilter.value)) set.add(String(kls))
+    const kls = kategori.value === 'qiraati' ? s.kelas : s.kelas_sekolah || s.kelas
+    if (match && kls && (!jenjangFilter.value || kelasJenjang(kls) === jenjangFilter.value))
+      set.add(String(kls))
   })
   return [...set].sort()
 })
@@ -1381,7 +1640,15 @@ const exportingBatch = ref(false)
 const { isElectron: isDesktop } = useDesktopShell()
 definePageActions(() => {
   if (selectedSantriIds.value.size === 0) return []
-  return [{ label: `Ekspor PDF (${selectedSantriIds.value.size})`, icon: 'printer', primary: true, on: exportPdfBatch, disabled: exportingBatch.value }]
+  return [
+    {
+      label: `Ekspor PDF (${selectedSantriIds.value.size})`,
+      icon: 'printer',
+      primary: true,
+      on: exportPdfBatch,
+      disabled: exportingBatch.value
+    }
+  ]
 })
 
 const santriAktif = computed(
@@ -1441,11 +1708,15 @@ const kop = computed(() => {
 
 // v.100c #3: tanggal terbit rapor MANUAL — satu tanggal per periode (Tahun Ajaran+Semester),
 //   tersimpan di settings.raporTglTerbit[periodKey], dipakai SEMUA santri. Kosong → hari ini.
-const periodKeyRapor = computed(() => `${tahunAjaran.value}_${semester.value}`.replace(/[^a-zA-Z0-9_]/g, '_'))
+const periodKeyRapor = computed(() =>
+  `${tahunAjaran.value}_${semester.value}`.replace(/[^a-zA-Z0-9_]/g, '_')
+)
 const tglTerbit = ref('') // 'YYYY-MM-DD'
 watch(
   [periodKeyRapor, () => settingsStore.settings?.raporTglTerbit],
-  () => { tglTerbit.value = (settingsStore.settings?.raporTglTerbit || {})[periodKeyRapor.value] || '' },
+  () => {
+    tglTerbit.value = (settingsStore.settings?.raporTglTerbit || {})[periodKeyRapor.value] || ''
+  },
   { immediate: true }
 )
 async function saveTglTerbit() {
@@ -1453,19 +1724,27 @@ async function saveTglTerbit() {
     const map = { ...(settingsStore.settings?.raporTglTerbit || {}) }
     map[periodKeyRapor.value] = tglTerbit.value || ''
     await settingsStore.save({ raporTglTerbit: map })
-  } catch (e) { toast?.error?.('Gagal simpan tanggal: ' + (e.message || e)) }
+  } catch (e) {
+    toast?.error?.('Gagal simpan tanggal: ' + (e.message || e))
+  }
 }
 // Tanggal terformat Indonesia (preview + PDF). '' bila tglTerbit invalid → caller fallback hari ini.
 const tglTerbitID = computed(() => {
   const v = String(tglTerbit.value || '').trim()
   const m = v.match(/^(\d{4})-(\d{2})-(\d{2})$/)
   if (!m) return ''
-  return new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
-    .format(new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])))
+  return new Intl.DateTimeFormat('id-ID', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  }).format(new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])))
 })
-const tglCetak = computed(() =>
-  tglTerbitID.value ||
-  new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date())
+const tglCetak = computed(
+  () =>
+    tglTerbitID.value ||
+    new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }).format(
+      new Date()
+    )
 )
 
 // Kelas gabungan: "Kelas Sekolah / Kelas Qiraati" (mis. "VII / PTPT 4", "TK A / Pra PTPT 3").
@@ -1475,16 +1754,23 @@ const kelasGabungan = computed(() => {
   const sekolah = String(s.kelas_sekolah || '').trim()
   const _lembG = String(s.lembaga || '').trim()
   // v.98.0626: Pra PTPT -> level saja tanpa prefix "Pra PTPT" (parity dgn PDF)
-  const ngaji = _lembG === 'Pra PTPT'
-    ? String(s.kelas || '').trim()
-    : [_lembG, String(s.kelas || '').trim()].filter(Boolean).join(' ').trim()
+  const ngaji =
+    _lembG === 'Pra PTPT'
+      ? String(s.kelas || '').trim()
+      : [_lembG, String(s.kelas || '').trim()].filter(Boolean).join(' ').trim()
   const parts = [sekolah, ngaji].filter(Boolean)
   return parts.length ? parts.join(' / ') : '-'
 })
 
 // Style aksara Arab untuk kolom predikat (tampilan layar).
-const arStyleSm = { fontFamily: "'Traditional Arabic','Amiri','Scheherazade New',serif", fontSize: '14px' }
-const arStyleMd = { fontFamily: "'Traditional Arabic','Amiri','Scheherazade New',serif", fontSize: '15px' }
+const arStyleSm = {
+  fontFamily: "'Traditional Arabic','Amiri','Scheherazade New',serif",
+  fontSize: '14px'
+}
+const arStyleMd = {
+  fontFamily: "'Traditional Arabic','Amiri','Scheherazade New',serif",
+  fontSize: '15px'
+}
 
 const logoKiri = computed(() => {
   const s = settingsStore.settings || {}
@@ -1509,7 +1795,12 @@ const logoKanan = computed(() => {
           .toLowerCase()
           .trim() === lnorm
     ) || {}
-  return lmbObj.kop_logo || settingsStore.settings?.logoKop || settingsStore.settings?.logoUrl || '/logo.png'
+  return (
+    lmbObj.kop_logo ||
+    settingsStore.settings?.logoKop ||
+    settingsStore.settings?.logoUrl ||
+    '/logo.png'
+  )
 })
 
 function titleCase(s) {
@@ -1751,9 +2042,36 @@ function buildSchema(lembagaName) {
 //   di settings.rekapDiniyahMapel. Sumber tunggal yang sama dengan Rekap Diniyah & Pengaturan.
 // Default mapel Diniyah per jenjang (dipakai bila settings.rekapDiniyahMapel kosong).
 const DINIYAH_MAPEL_DEFAULT = {
-  SDI: ['Tauhid', 'Fiqh', 'Tarikh', 'Akhlaq', 'Bahasa Arab', 'Tahajji', 'Praktek Ibadah', 'ASWAJA & ke-NU-an'],
-  SMP: ['Tauhid', 'Fiqh', 'Akhlaq', 'Nahwu', 'Shorof', 'Khot/Pego', 'Tasawwuf', 'ASWAJA & ke-NU-an'],
-  SMA: ['Akhlaq/Ulumul Qur’an', 'Nahwu', 'Fiqh', 'Ushul Fiqh', 'Faroidl', 'Tasawwuf', 'Ilmu Falak', 'ASWAJA & ke-NU-an']
+  SDI: [
+    'Tauhid',
+    'Fiqh',
+    'Tarikh',
+    'Akhlaq',
+    'Bahasa Arab',
+    'Tahajji',
+    'Praktek Ibadah',
+    'ASWAJA & ke-NU-an'
+  ],
+  SMP: [
+    'Tauhid',
+    'Fiqh',
+    'Akhlaq',
+    'Nahwu',
+    'Shorof',
+    'Khot/Pego',
+    'Tasawwuf',
+    'ASWAJA & ke-NU-an'
+  ],
+  SMA: [
+    'Akhlaq/Ulumul Qur’an',
+    'Nahwu',
+    'Fiqh',
+    'Ushul Fiqh',
+    'Faroidl',
+    'Tasawwuf',
+    'Ilmu Falak',
+    'ASWAJA & ke-NU-an'
+  ]
 }
 const DINIYAH_KKM_DEFAULT = 75
 
@@ -1796,7 +2114,8 @@ const kkmKelas = computed(() => String(santriAktif.value?.kelas_sekolah || ''))
 const kkmMapelNames = computed(() => {
   if (kategori.value !== 'diniyah' || !santriAktif.value) return []
   const kls = kkmKelas.value
-  const jen = diniyahJenjang(santriAktif.value.lembaga_sekolah, kls) || jenjangFromKelas(kls) || 'SDI'
+  const jen =
+    diniyahJenjang(santriAktif.value.lembaga_sekolah, kls) || jenjangFromKelas(kls) || 'SDI'
   return _mapelDiniyahResolved(kls, jen)
 })
 const kkmDraft = ref([])
@@ -1810,7 +2129,9 @@ async function saveKkm() {
   savingKkm.value = true
   try {
     const map = { ...(settingsStore.settings?.rekapDiniyahKKM || {}) }
-    map[kkmKelas.value] = kkmDraft.value.map((v) => Math.max(0, Math.min(100, Number(v) || DINIYAH_KKM_DEFAULT)))
+    map[kkmKelas.value] = kkmDraft.value.map((v) =>
+      Math.max(0, Math.min(100, Number(v) || DINIYAH_KKM_DEFAULT))
+    )
     await settingsStore.save({ rekapDiniyahKKM: map })
     toast?.success?.('KKM tersimpan untuk kelas ' + kkmKelas.value)
   } catch (e) {
@@ -2093,11 +2414,15 @@ function slug(s) {
 
 // ===== Auto-fill: Rata-rata Sumatif (rekap bulanan) + Absensi (absensi bulanan) =====
 function mapelKeyRekap(name) {
-  return String(name).toLowerCase().replace(/[^a-z0-9]/g, '_')
+  return String(name)
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '_')
 }
 // Bulan-bulan satu semester. Ganjil: Jul-Des (tahun awal); Genap: Jan-Jun (tahun akhir).
 function semesterPeriodes(sep) {
-  const yrs = String(tahunAjaran.value || '').split('-').map((x) => parseInt(x, 10))
+  const yrs = String(tahunAjaran.value || '')
+    .split('-')
+    .map((x) => parseInt(x, 10))
   const startY = yrs[0] || new Date().getFullYear()
   const endY = yrs[1] || startY + 1
   const ganjil = String(semester.value).toLowerCase() === 'ganjil'
@@ -2361,10 +2686,16 @@ const ppphHeaderRow1 = computed(() => {
     if (f.group) {
       let span = 1
       let j = i + 1
-      while (j < fields.length && fields[j].group === f.group) { span++; j++ }
+      while (j < fields.length && fields[j].group === f.group) {
+        span++
+        j++
+      }
       out.push({ group: f.group, span })
       i = j
-    } else { out.push({ label: f.label }); i++ }
+    } else {
+      out.push({ label: f.label })
+      i++
+    }
   }
   return out
 })
@@ -2570,14 +2901,44 @@ const diniyahLembaga = computed(() => {
     allowed.forEach((a) => all.push({ lembaga: a.toUpperCase(), id: a.toUpperCase() }))
   }
   // v.90.0626: SDI satu kartu; PKBM dipecah jadi SMP (VII-IX) & SMA (X-XII) - samakan dg Rekap Diniyah
-  const has = (name) => all.some((l) => String(l.lembaga || l.nama || '').toLowerCase().trim() === name)
+  const has = (name) =>
+    all.some(
+      (l) =>
+        String(l.lembaga || l.nama || '')
+          .toLowerCase()
+          .trim() === name
+    )
   const cards = []
   if (has('sdi')) {
-    cards.push({ id: 'SDI', label: 'SDI', subtitle: 'Sekolah Dasar Islam (Kelas I-VI)', icon: 'fa-school', lembaga: 'SDI', jenjang: '', gradient: 'from-cyan-500 dark:from-cyan-700 to-cyan-700 dark:to-cyan-900' })
+    cards.push({
+      id: 'SDI',
+      label: 'SDI',
+      subtitle: 'Sekolah Dasar Islam (Kelas I-VI)',
+      icon: 'fa-school',
+      lembaga: 'SDI',
+      jenjang: '',
+      gradient: 'from-cyan-500 dark:from-cyan-700 to-cyan-700 dark:to-cyan-900'
+    })
   }
   if (has('pkbm')) {
-    cards.push({ id: 'PKBM-SMP', label: 'SMP', subtitle: 'PKBM · Kelas VII–IX', icon: 'fa-school-flag', lembaga: 'PKBM', jenjang: 'SMP', gradient: 'from-cyan-500 dark:from-cyan-700 to-cyan-700 dark:to-cyan-900' })
-    cards.push({ id: 'PKBM-SMA', label: 'SMA', subtitle: 'PKBM · Kelas X–XII', icon: 'fa-graduation-cap', lembaga: 'PKBM', jenjang: 'SMA', gradient: 'from-teal-500 dark:from-teal-700 to-teal-700 dark:to-teal-900' })
+    cards.push({
+      id: 'PKBM-SMP',
+      label: 'SMP',
+      subtitle: 'PKBM · Kelas VII–IX',
+      icon: 'fa-school-flag',
+      lembaga: 'PKBM',
+      jenjang: 'SMP',
+      gradient: 'from-cyan-500 dark:from-cyan-700 to-cyan-700 dark:to-cyan-900'
+    })
+    cards.push({
+      id: 'PKBM-SMA',
+      label: 'SMA',
+      subtitle: 'PKBM · Kelas X–XII',
+      icon: 'fa-graduation-cap',
+      lembaga: 'PKBM',
+      jenjang: 'SMA',
+      gradient: 'from-teal-500 dark:from-teal-700 to-teal-700 dark:to-teal-900'
+    })
   }
   return cards
 })
@@ -2619,17 +2980,24 @@ function buildRaporStateFor(s, raporDocObj) {
   }
   // Auto absensi dari absensi bulanan bila belum tersimpan.
   let absensi = raporDocObj?.absensi
-  if (!absensi || !(absensi.sakit || absensi.izin || absensi.alpa || absensi.hadir || absensi._generatedFrom)) {
+  if (
+    !absensi ||
+    !(absensi.sakit || absensi.izin || absensi.alpa || absensi.hadir || absensi._generatedFrom)
+  ) {
     absensi = absensiBulananSumFor(s, isDiniyah)
   }
   return {
-    lembaga: isDiniyah ? 'Diniyah' : (s.lembaga || ''),
+    lembaga: isDiniyah ? 'Diniyah' : s.lembaga || '',
     tahun_ajaran: tahunAjaran.value,
     semester: semester.value,
     data_nilai: dn,
     data: dn, // v.100d fix: generator raporPdf baca raporState.data (bukan data_nilai)
     absensi: absensi || { sakit: 0, izin: 0, alpa: 0 },
-    kepribadian: raporDocObj?.kepribadian || { kelakuan: 'Baik', kerajinan: 'Baik', kebersihan: 'Baik' },
+    kepribadian: raporDocObj?.kepribadian || {
+      kelakuan: 'Baik',
+      kerajinan: 'Baik',
+      kebersihan: 'Baik'
+    },
     catatan: raporDocObj?.catatan || '',
     catatan_wali_kelas: raporDocObj?.catatan || '',
     rata_rata: raporDocObj?.rata_rata || rataRata.value || 0,
@@ -2639,7 +3007,7 @@ function buildRaporStateFor(s, raporDocObj) {
 
 function findRaporDocFor(s) {
   const periodKey = `${tahunAjaran.value}_${semester.value}`.replace(/[^a-zA-Z0-9_]/g, '_')
-  const lmbKey = kategori.value === 'diniyah' ? 'Diniyah' : (s.lembaga || '')
+  const lmbKey = kategori.value === 'diniyah' ? 'Diniyah' : s.lembaga || ''
   const docId = `rapor_${s.id}_${lmbKey}_${periodKey}`
   return raporDocs.value.find((r) => r.id === docId) || null
 }
@@ -2648,14 +3016,17 @@ function findRaporDocFor(s) {
 function findLembagaObjFor(s) {
   if (!s) return null
   // v.90.0626: Diniyah pakai lembaga SEKOLAH (KOP sekolah), selain itu lembaga ngaji
-  const lnorm = String(
-    (kategori.value === 'diniyah' ? s.lembaga_sekolah : s.lembaga) || ''
-  )
+  const lnorm = String((kategori.value === 'diniyah' ? s.lembaga_sekolah : s.lembaga) || '')
     .toLowerCase()
     .trim()
-  return (lembagaRaw.value || []).find(
-    (l) => String(l.lembaga || '').toLowerCase().trim() === lnorm
-  ) || null
+  return (
+    (lembagaRaw.value || []).find(
+      (l) =>
+        String(l.lembaga || '')
+          .toLowerCase()
+          .trim() === lnorm
+    ) || null
+  )
 }
 
 async function exportPdfSingle(santri = null) {
@@ -2691,10 +3062,14 @@ async function exportPdfBatch() {
     return
   }
   exportingBatch.value = true
-  let ok = 0, fail = 0
+  let ok = 0,
+    fail = 0
   for (const id of ids) {
     const s = santriRaw.value.find((x) => String(x.id) === String(id))
-    if (!s) { fail++; continue }
+    if (!s) {
+      fail++
+      continue
+    }
     try {
       await exportPdfSingle(s)
       ok++
@@ -2753,7 +3128,16 @@ const editGroups = computed(() => {
         return {
           label: mp.nama,
           fields: [
-            { key: `dn__${kls}__${mid}__sumatif`, label: 'Rata-rata Sumatif', type: 'number', placeholder: rataSumatifBulanan(mp) == null ? 'Auto (rekap bln)' : `Auto: ${rataSumatifBulanan(mp)}`, autoVal: rataSumatifBulanan(mp) },
+            {
+              key: `dn__${kls}__${mid}__sumatif`,
+              label: 'Rata-rata Sumatif',
+              type: 'number',
+              placeholder:
+                rataSumatifBulanan(mp) == null
+                  ? 'Auto (rekap bln)'
+                  : `Auto: ${rataSumatifBulanan(mp)}`,
+              autoVal: rataSumatifBulanan(mp)
+            },
             { key: `dn__${kls}__${mid}__akhir`, label: 'Sumatif Akhir Semester', type: 'number' }
           ]
         }
@@ -2766,7 +3150,11 @@ const editGroups = computed(() => {
         label: `${lvl.label} — ${lvl.kitab}`,
         fields: [
           { key: `ppph__${lvl.id}__tgl_khotam`, label: 'Tgl Khotam', type: 'date' },
-          ...(sc.fieldsNilai || []).map((f) => ({ key: `ppph__${lvl.id}__${f.id}`, label: f.label, type: 'number' }))
+          ...(sc.fieldsNilai || []).map((f) => ({
+            key: `ppph__${lvl.id}__${f.id}`,
+            label: f.label,
+            type: 'number'
+          }))
         ]
       }))
     })
@@ -2780,7 +3168,9 @@ const editGroups = computed(() => {
           label: `${r.kelas} · ${r.juz}`,
           fields: [
             { key: `${base}__tgl_khotam`, label: 'Tgl Khotam', type: 'date' },
-            ...(sc.fields || []).filter((f) => f.type === 'number').map((f) => ({ key: `${base}__${f.id}`, label: f.label, type: 'number' }))
+            ...(sc.fields || [])
+              .filter((f) => f.type === 'number')
+              .map((f) => ({ key: `${base}__${f.id}`, label: f.label, type: 'number' }))
           ]
         }
       })
@@ -2794,7 +3184,11 @@ const editGroups = computed(() => {
           label: `${lvl.label} · ${kh.labelKhotam}`,
           fields: [
             { key: `${base}__tgl_khotam`, label: 'Tgl Khotam', type: 'date' },
-            ...(sc.fieldsNilai || []).map((f) => ({ key: `${base}__${f.id}`, label: f.label, type: 'number' }))
+            ...(sc.fieldsNilai || []).map((f) => ({
+              key: `${base}__${f.id}`,
+              label: f.label,
+              type: 'number'
+            }))
           ]
         })
       })
@@ -2810,7 +3204,10 @@ const editGroups = computed(() => {
           type: f.type === 'date' ? 'date' : f.type === 'number' ? 'number' : 'text'
         }))
       if (sec.rows && sec.rows.length) {
-        groups.push({ title: sec.title, rows: sec.rows.map((row) => ({ label: String(row), fields: mkFields(row) })) })
+        groups.push({
+          title: sec.title,
+          rows: sec.rows.map((row) => ({ label: String(row), fields: mkFields(row) }))
+        })
       } else {
         groups.push({ title: sec.title, rows: [{ label: sec.title, fields: mkFields(null) }] })
       }
@@ -2836,7 +3233,12 @@ function startEdit() {
   draft.value = {
     data_nilai: dn,
     absensi: { sakit: 0, izin: 0, alpa: 0, ...(d.absensi || {}) },
-    kepribadian: { kelakuan: 'Baik', kerajinan: 'Baik', kebersihan: 'Baik', ...(d.kepribadian || {}) },
+    kepribadian: {
+      kelakuan: 'Baik',
+      kerajinan: 'Baik',
+      kebersihan: 'Baik',
+      ...(d.kepribadian || {})
+    },
     catatan: d.catatan || ''
   }
   if (kategori.value === 'diniyah') loadKkmDraft() // v.100c #2: siapkan KKM kelas utk diedit
@@ -2883,7 +3285,9 @@ function computeRataFromDraft() {
   } else if (sc.tableLayout === 'kelasJuz') {
     kelasJuzRows.value.forEach((r) => {
       const jz = String(r.juz).match(/\d+/)?.[0]
-      const a = avgOf((sc.fields || []).filter((f) => f.type === 'number').map((f) => `kj__juz_${jz}__${f.id}`))
+      const a = avgOf(
+        (sc.fields || []).filter((f) => f.type === 'number').map((f) => `kj__juz_${jz}__${f.id}`)
+      )
       if (a != null) vals.push(a)
     })
   } else if (sc.perLevel) {

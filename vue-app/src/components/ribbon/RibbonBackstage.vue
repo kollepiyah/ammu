@@ -6,7 +6,13 @@
       </button>
       <template v-for="(it, i) in rail" :key="i">
         <div v-if="it.sep" class="rb-bs-sep"></div>
-        <button v-else class="rb-bs-item" :class="{ active: active === it.id }" type="button" @click="onRail(it)">
+        <button
+          v-else
+          class="rb-bs-item"
+          :class="{ active: active === it.id }"
+          type="button"
+          @click="onRail(it)"
+        >
           <RibbonIcon :name="it.icon" :size="18" /> {{ it.label }}
         </button>
       </template>
@@ -16,26 +22,37 @@
       <template v-if="active === 'info'">
         <h1>Info</h1>
         <div class="rb-bs-info">
-          <div v-for="(r, i) in infoRows" :key="i" class="row"><b>{{ r[0] }}</b><span>{{ r[1] }}</span></div>
+          <div v-for="(r, i) in infoRows" :key="i" class="row">
+            <b>{{ r[0] }}</b
+            ><span>{{ r[1] }}</span>
+          </div>
         </div>
       </template>
 
       <template v-else-if="active === 'tentang'">
         <h1>Tentang</h1>
         <div style="display: flex; gap: 18px; align-items: center; margin-bottom: 20px">
-          <img :src="logoSrc" alt="" style="width: 72px; height: 72px; border-radius: 16px; background: #fff; padding: 6px" />
+          <img
+            :src="logoSrc"
+            alt=""
+            style="width: 72px; height: 72px; border-radius: 16px; background: #fff; padding: 6px"
+          />
           <div>
             <div style="font-size: 22px; font-weight: 700; color: var(--rb-text)">Ammu Online</div>
             <div style="color: var(--rb-text-dim)">Sistem Manajemen {{ lembagaName }}</div>
           </div>
         </div>
         <p style="color: var(--rb-text-dim); max-width: 560px; line-height: 1.7">
-          Versi desktop (Electron) dengan antarmuka pita ala perkantoran modern — akses cepat ke data santri, guru,
-          rapor, keuangan, jadwal, dan kanal informasi dalam satu jendela.
+          Versi desktop (Electron) dengan antarmuka pita ala perkantoran modern — akses cepat ke
+          data santri, guru, rapor, keuangan, jadwal, dan kanal informasi dalam satu jendela.
         </p>
         <div class="rb-bs-info" style="margin-top: 18px; max-width: 420px">
-          <div class="row"><b>Versi</b><span>{{ version }}</span></div>
-          <div class="row"><b>Hak Cipta</b><span>© 2026 {{ lembagaName }}</span></div>
+          <div class="row">
+            <b>Versi</b><span>{{ version }}</span>
+          </div>
+          <div class="row">
+            <b>Hak Cipta</b><span>© 2026 {{ lembagaName }}</span>
+          </div>
         </div>
       </template>
 
@@ -43,18 +60,43 @@
         <h1>Printer</h1>
         <p style="color: var(--rb-text-dim); max-width: 560px; line-height: 1.7">
           Pilih printer default untuk cetak langsung struk/slip (dot-matrix / thermal). Daftar
-          diambil langsung dari Windows. Penyetelan ukuran slip &amp; ESC/P ada di Keuangan → Buat Tagihan.
+          diambil langsung dari Windows. Penyetelan ukuran slip &amp; ESC/P ada di Keuangan → Buat
+          Tagihan.
         </p>
 
         <template v-if="isDesktop">
-          <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; max-width: 560px; margin-top: 18px">
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              gap: 10px;
+              max-width: 560px;
+              margin-top: 18px;
+            "
+          >
             <b style="color: var(--rb-text)">Printer Terdeteksi ({{ printers.length }})</b>
-            <button class="rb-bs-item" style="width: auto; padding: 6px 12px" type="button" :disabled="loadingPrinters" @click="refreshPrinters">
-              <RibbonIcon name="refresh" :size="16" /> {{ loadingPrinters ? 'Mendeteksi…' : 'Deteksi Ulang' }}
+            <button
+              class="rb-bs-item"
+              style="width: auto; padding: 6px 12px"
+              type="button"
+              :disabled="loadingPrinters"
+              @click="refreshPrinters"
+            >
+              <RibbonIcon name="refresh" :size="16" />
+              {{ loadingPrinters ? 'Mendeteksi…' : 'Deteksi Ulang' }}
             </button>
           </div>
 
-          <div style="max-width: 560px; margin-top: 10px; display: flex; flex-direction: column; gap: 8px">
+          <div
+            style="
+              max-width: 560px;
+              margin-top: 10px;
+              display: flex;
+              flex-direction: column;
+              gap: 8px;
+            "
+          >
             <button
               type="button"
               class="rb-bs-item"
@@ -63,7 +105,11 @@
             >
               <RibbonIcon name="printer" :size="18" />
               <span style="flex: 1; text-align: left">(Printer default sistem Windows)</span>
-              <span v-if="selectedPrinter === ''" style="font-size: 11px; font-weight: 700; color: var(--accent)">✓ dipilih</span>
+              <span
+                v-if="selectedPrinter === ''"
+                style="font-size: 11px; font-weight: 700; color: var(--accent)"
+                >✓ dipilih</span
+              >
             </button>
             <button
               v-for="p in printers"
@@ -76,26 +122,50 @@
               <RibbonIcon name="printer" :size="18" />
               <span style="flex: 1; text-align: left">
                 {{ p.displayName || p.name }}
-                <span v-if="p.isDefault" style="font-size: 11px; color: var(--rb-text-dim)"> — default Windows</span>
+                <span v-if="p.isDefault" style="font-size: 11px; color: var(--rb-text-dim)">
+                  — default Windows</span
+                >
               </span>
-              <span v-if="selectedPrinter === p.name" style="font-size: 11px; font-weight: 700; color: var(--accent)">✓ dipilih</span>
+              <span
+                v-if="selectedPrinter === p.name"
+                style="font-size: 11px; font-weight: 700; color: var(--accent)"
+                >✓ dipilih</span
+              >
             </button>
-            <p v-if="!loadingPrinters && printers.length === 0" style="color: #d97706; font-size: 12px">
-              Tidak ada printer terdeteksi. Pastikan printer menyala &amp; terpasang di Windows, lalu klik "Deteksi Ulang".
+            <p
+              v-if="!loadingPrinters && printers.length === 0"
+              style="color: #d97706; font-size: 12px"
+            >
+              Tidak ada printer terdeteksi. Pastikan printer menyala &amp; terpasang di Windows,
+              lalu klik "Deteksi Ulang".
             </p>
           </div>
 
           <div style="display: flex; gap: 10px; margin-top: 16px; max-width: 560px">
-            <button class="rb-bs-item" style="width: auto; padding: 8px 16px; background: var(--accent); color: #fff" type="button" @click="simpanPrinter">
+            <button
+              class="rb-bs-item"
+              style="width: auto; padding: 8px 16px; background: var(--accent); color: #fff"
+              type="button"
+              @click="simpanPrinter"
+            >
               <RibbonIcon name="save" :size="16" /> Simpan Default
             </button>
-            <button class="rb-bs-item" style="width: auto; padding: 8px 16px" type="button" :disabled="testingPrint" @click="tesCetakPrinter">
-              <RibbonIcon name="printer" :size="16" /> {{ testingPrint ? 'Mengirim…' : 'Tes Cetak' }}
+            <button
+              class="rb-bs-item"
+              style="width: auto; padding: 8px 16px"
+              type="button"
+              :disabled="testingPrint"
+              @click="tesCetakPrinter"
+            >
+              <RibbonIcon name="printer" :size="16" />
+              {{ testingPrint ? 'Mengirim…' : 'Tes Cetak' }}
             </button>
           </div>
 
           <div class="rb-bs-info" style="margin-top: 18px; max-width: 460px">
-            <div class="row"><b>Default App</b><span>{{ defaultPrinterLabel }}</span></div>
+            <div class="row">
+              <b>Default App</b><span>{{ defaultPrinterLabel }}</span>
+            </div>
             <div class="row"><b>Mode</b><span>Desktop (Windows)</span></div>
           </div>
         </template>
@@ -108,7 +178,13 @@
       <template v-else>
         <h1>Selamat datang</h1>
         <div class="rb-bs-cards">
-          <button v-for="(t, i) in welcomeTiles" :key="i" class="rb-bs-tile" type="button" @click="goAndClose(t.to)">
+          <button
+            v-for="(t, i) in welcomeTiles"
+            :key="i"
+            class="rb-bs-tile"
+            type="button"
+            @click="goAndClose(t.to)"
+          >
             <div class="ti"><RibbonIcon :name="t.icon" :size="22" /></div>
             <h4>{{ t.t }}</h4>
             <p>{{ t.p }}</p>
@@ -125,7 +201,13 @@ import { useRouter } from 'vue-router'
 import RibbonIcon from './RibbonIcon.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
-import { listPrinters, getDefaultPrinter, setDefaultPrinter, isElectron, printRaw } from '@/composables/useDesktopPrint'
+import {
+  listPrinters,
+  getDefaultPrinter,
+  setDefaultPrinter,
+  isElectron,
+  printRaw
+} from '@/composables/useDesktopPrint'
 import { buildStrukSlipEscpBase64 } from '@/utils/escpImage'
 import { useToast } from '@/composables/useToast'
 
@@ -159,14 +241,19 @@ async function refreshPrinters() {
 function printerItemStyle(name) {
   const base = 'display:flex;align-items:center;gap:10px;'
   return selectedPrinter.value === name
-    ? base + 'border:1.5px solid var(--accent);background:color-mix(in srgb, var(--accent) 10%, transparent)'
+    ? base +
+        'border:1.5px solid var(--accent);background:color-mix(in srgb, var(--accent) 10%, transparent)'
     : base
 }
 
 function simpanPrinter() {
   setDefaultPrinter(selectedPrinter.value)
   savedPrinter.value = selectedPrinter.value
-  toast.success(selectedPrinter.value ? 'Printer default: ' + selectedPrinter.value : 'Pakai printer default sistem')
+  toast.success(
+    selectedPrinter.value
+      ? 'Printer default: ' + selectedPrinter.value
+      : 'Pakai printer default sistem'
+  )
 }
 
 async function tesCetakPrinter() {
@@ -174,16 +261,24 @@ async function tesCetakPrinter() {
   try {
     const now = new Date()
     const dummy = {
-      santri_nama: 'TES CETAK STRUK', santri_nis: '-',
+      santri_nama: 'TES CETAK STRUK',
+      santri_nis: '-',
       tanggal: now.toISOString().slice(0, 10),
       no_struk: 'TEST-' + now.toTimeString().slice(0, 5).replace(':', ''),
-      metode: 'TUNAI', operator: selectedPrinter.value || 'Printer',
-      penyetor: '', terbilang: 'Seratus Ribu Rupiah',
+      metode: 'TUNAI',
+      operator: selectedPrinter.value || 'Printer',
+      penyetor: '',
+      terbilang: 'Seratus Ribu Rupiah',
       items: [{ jenis: 'Tes Cetak Struk', nominal: 100000, keterangan: '' }],
-      total: 100000, bayar: 100000, kembali: 0
+      total: 100000,
+      bayar: 100000,
+      kembali: 0
     }
     const s = settings.settings || {}
-    const res = await printRaw({ base64: buildStrukSlipEscpBase64(dummy, s), deviceName: selectedPrinter.value || undefined })
+    const res = await printRaw({
+      base64: buildStrukSlipEscpBase64(dummy, s),
+      deviceName: selectedPrinter.value || undefined
+    })
     if (res && res.ok === false) throw new Error(res.error || 'Print gagal')
     toast.success('Tes cetak terkirim ke printer')
   } catch (e) {
@@ -202,15 +297,22 @@ const rail = computed(() => [
   { id: 'info', icon: 'info', label: 'Info' },
   { sep: true },
   { id: 'akun', icon: 'user', label: 'Akun', to: '/profil' },
-  { id: 'pengaturan', icon: 'gear', label: 'Pengaturan', to: auth.isAdmin ? '/pengaturan-desktop' : '/profil' },
+  {
+    id: 'pengaturan',
+    icon: 'gear',
+    label: 'Pengaturan',
+    to: auth.isAdmin ? '/pengaturan-desktop' : '/profil'
+  },
   { id: 'printer', icon: 'printer', label: 'Printer' }, // T15: Pengaturan Printer di menu File
   { id: 'tentang', icon: 'help', label: 'Tentang' },
   { id: 'keluar', icon: 'logout', label: 'Keluar', action: 'logout' }
 ])
 
 const logoSrc = computed(() => settings.settings?.logoUrl || '/logo.png')
-const lembagaName = computed(() => settings.settings?.namaLembaga || 'Pondok Pesantren Mambaul Ulum')
-const version = computed(() => settings.settings?.appVersion || 'v.102.0626')
+const lembagaName = computed(
+  () => settings.settings?.namaLembaga || 'Pondok Pesantren Mambaul Ulum'
+)
+const version = computed(() => settings.settings?.appVersion || 'v.103.0626')
 const userName = computed(() => auth.sesiAktif?.nama || auth.sesiAktif?.name || 'Pengguna')
 
 const infoRows = computed(() => [
@@ -227,7 +329,12 @@ const welcomeTiles = [
   { icon: 'chart-pie', t: 'Dasbor Statistik', p: 'Ringkasan pendidikan', to: '/statistik' },
   { icon: 'wallet', t: 'Keuangan', p: 'Tagihan, tabungan, buku induk', to: '/keuangan' },
   { icon: 'calendar', t: 'Kalender', p: 'Agenda kegiatan', to: '/kalender' },
-  { icon: 'gear', t: 'Pengaturan', p: 'Konfigurasi aplikasi', to: auth.isAdmin ? '/pengaturan-web' : '/profil' }
+  {
+    icon: 'gear',
+    t: 'Pengaturan',
+    p: 'Konfigurasi aplikasi',
+    to: auth.isAdmin ? '/pengaturan-web' : '/profil'
+  }
 ]
 
 function goAndClose(to) {

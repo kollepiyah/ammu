@@ -32,22 +32,26 @@ const bgStyle = computed(() => {
 // v.21.115.0528: URL download app native (Android/iOS/Desktop)
 // Bisa di-override dari Pengaturan Web (settings.downloadAndroid, downloadIos, downloadDesktop)
 // Default ke GitHub Releases latest — admin tinggal ganti owner/repo
-const downloadAndroidUrl = computed(() =>
-  settings.settings?.downloadAndroid ||
-  'https://github.com/kollepiyah/ammu/releases/latest/download/AmmuOnline.apk'
+const downloadAndroidUrl = computed(
+  () =>
+    settings.settings?.downloadAndroid ||
+    'https://github.com/kollepiyah/ammu/releases/latest/download/AmmuOnline.apk'
 )
-const downloadIosUrl = computed(() =>
-  settings.settings?.downloadIos ||
-  'https://github.com/kollepiyah/ammu/releases/latest/download/AmmuOnline.ipa'
+const downloadIosUrl = computed(
+  () =>
+    settings.settings?.downloadIos ||
+    'https://github.com/kollepiyah/ammu/releases/latest/download/AmmuOnline.ipa'
 )
-const downloadDesktopUrl = computed(() =>
-  settings.settings?.downloadDesktop ||
-  'https://github.com/kollepiyah/ammu/releases/latest/download/AmmuOnline-Setup.exe'
+const downloadDesktopUrl = computed(
+  () =>
+    settings.settings?.downloadDesktop ||
+    'https://github.com/kollepiyah/ammu/releases/latest/download/AmmuOnline-Setup.exe'
 )
 // v.95.0626: installer khusus Windows 7 (Electron 22)
-const downloadDesktopWin7Url = computed(() =>
-  settings.settings?.downloadDesktopWin7 ||
-  'https://github.com/kollepiyah/ammu/releases/latest/download/AmmuOnline-Setup-Win7.exe'
+const downloadDesktopWin7Url = computed(
+  () =>
+    settings.settings?.downloadDesktopWin7 ||
+    'https://github.com/kollepiyah/ammu/releases/latest/download/AmmuOnline-Setup-Win7.exe'
 )
 const showDesktopMenu = ref(false)
 
@@ -55,7 +59,8 @@ const showDesktopMenu = ref(false)
 const isWebOnly = computed(() => {
   if (typeof window === 'undefined') return false
   const isCap = window.Capacitor?.isNativePlatform?.() === true
-  const isElectron = window.location?.protocol === 'file:' || /Electron/i.test(navigator?.userAgent || '')
+  const isElectron =
+    window.location?.protocol === 'file:' || /Electron/i.test(navigator?.userAgent || '')
   return !isCap && !isElectron
 })
 
@@ -120,12 +125,16 @@ const adminWaPondok = computed(() => {
   return s.adminWa || s.contactWa || s.waAdmin || ''
 })
 function bukaWaAdmin() {
-  const wa = String(adminWaPondok.value || '').replace(/[^0-9]/g, '').replace(/^0/, '62')
+  const wa = String(adminWaPondok.value || '')
+    .replace(/[^0-9]/g, '')
+    .replace(/^0/, '62')
   if (!wa) {
     toast.warning('Nomor WA Admin belum di-setup di Pengaturan Web')
     return
   }
-  const msg = encodeURIComponent("Assalamu'alaikum Admin Pondok, saya lupa sandi akun Portal Ammu Online. Mohon bantu reset sandi. Terima kasih.")
+  const msg = encodeURIComponent(
+    "Assalamu'alaikum Admin Pondok, saya lupa sandi akun Portal Ammu Online. Mohon bantu reset sandi. Terima kasih."
+  )
   window.open(`https://wa.me/${wa}?text=${msg}`, '_blank')
 }
 </script>
@@ -136,7 +145,10 @@ function bukaWaAdmin() {
     :style="bgStyle"
   >
     <!-- v.86.0526: backdrop-blur overlay — lebih gelap di dark mode -->
-    <div class="absolute inset-0 backdrop-blur-sm bg-teal-900/30 dark:bg-slate-900/60 pointer-events-none z-0" aria-hidden="true"></div>
+    <div
+      class="absolute inset-0 backdrop-blur-sm bg-teal-900/30 dark:bg-slate-900/60 pointer-events-none z-0"
+      aria-hidden="true"
+    ></div>
 
     <!-- CARD LOGIN — v.86.0526: dark mode card slate-800 + border teal-400 -->
     <div
@@ -167,10 +179,22 @@ function bukaWaAdmin() {
           class="w-full bg-[var(--bg-card)] border border-[var(--border-default)] hover:bg-[var(--bg-card-elevated)] disabled:opacity-50 text-[var(--text-primary)] font-bold py-2.5 rounded-xl shadow-sm cursor-pointer flex justify-center items-center gap-2 transition text-sm"
         >
           <svg class="w-4 h-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+            <path
+              fill="#4285F4"
+              d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+            />
+            <path
+              fill="#34A853"
+              d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+            />
+            <path
+              fill="#FBBC05"
+              d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+            />
+            <path
+              fill="#EA4335"
+              d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+            />
           </svg>
           <span>Login dengan Google</span>
         </button>
@@ -178,18 +202,24 @@ function bukaWaAdmin() {
         <!-- Divider ATAU -->
         <div class="flex items-center gap-2 my-1">
           <div class="flex-1 h-px bg-slate-300"></div>
-          <span class="text-[9px] text-[var(--text-tertiary)] font-bold uppercase tracking-widest">atau</span>
+          <span class="text-[9px] text-[var(--text-tertiary)] font-bold uppercase tracking-widest"
+            >atau</span
+          >
           <div class="flex-1 h-px bg-slate-300"></div>
         </div>
 
         <form @submit.prevent="handleLogin" class="space-y-3" autocomplete="on">
           <!-- Username -->
           <div>
-            <label class="block text-[9px] font-bold text-[var(--text-primary)] mb-1 uppercase tracking-wide">
+            <label
+              class="block text-[9px] font-bold text-[var(--text-primary)] mb-1 uppercase tracking-wide"
+            >
               Username
             </label>
             <div class="relative">
-              <i class="fas fa-user absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] text-sm"></i>
+              <i
+                class="fas fa-user absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] text-sm"
+              ></i>
               <input
                 v-model="username"
                 type="text"
@@ -203,11 +233,15 @@ function bukaWaAdmin() {
 
           <!-- Password + eye toggle -->
           <div>
-            <label class="block text-[9px] font-bold text-[var(--text-primary)] mb-1 uppercase tracking-wide">
+            <label
+              class="block text-[9px] font-bold text-[var(--text-primary)] mb-1 uppercase tracking-wide"
+            >
               Kata Sandi
             </label>
             <div class="relative">
-              <i class="fas fa-lock absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] text-sm"></i>
+              <i
+                class="fas fa-lock absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] text-sm"
+              ></i>
               <input
                 v-model="password"
                 :type="showPassword ? 'text' : 'password'"
@@ -229,7 +263,10 @@ function bukaWaAdmin() {
           </div>
 
           <!-- N3: error login inline (sandi salah dll) -->
-          <p v-if="loginError" class="text-[11px] font-bold text-red-600 dark:text-red-400 flex items-center gap-1">
+          <p
+            v-if="loginError"
+            class="text-[11px] font-bold text-red-600 dark:text-red-400 flex items-center gap-1"
+          >
             <i class="fas fa-circle-exclamation"></i>{{ loginError }}
           </p>
 
@@ -241,7 +278,10 @@ function bukaWaAdmin() {
               type="checkbox"
               class="w-4 h-4 cursor-pointer accent-teal-600"
             />
-            <label for="login-ingat-saya" class="text-[10px] font-bold text-[var(--text-primary)] cursor-pointer">
+            <label
+              for="login-ingat-saya"
+              class="text-[10px] font-bold text-[var(--text-primary)] cursor-pointer"
+            >
               Ingat Saya (tetap login di perangkat ini)
             </label>
           </div>
@@ -270,15 +310,22 @@ function bukaWaAdmin() {
       </div>
 
       <!-- Footer Bakafrawi (dalam card) — v.20.4: ukuran match legacy (h-7 ≈ 28px) -->
-      <div class="px-6 py-4 mt-2 border-t border-[var(--border-subtle)] text-center bg-[var(--bg-card)]/40">
-        <p class="text-[9px] text-[var(--text-secondary)] uppercase tracking-widest font-bold mb-1.5">
+      <div
+        class="px-6 py-4 mt-2 border-t border-[var(--border-subtle)] text-center bg-[var(--bg-card)]/40"
+      >
+        <p
+          class="text-[9px] text-[var(--text-secondary)] uppercase tracking-widest font-bold mb-1.5"
+        >
           Powered By
         </p>
         <img
           src="/bakafrawi-logo.png"
           alt="Bakafrawi Project"
           class="h-7 w-auto max-w-[140px] mx-auto opacity-95 object-contain"
-          onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"
+          onerror="
+            this.style.display = 'none'
+            this.nextElementSibling.style.display = 'block'
+          "
         />
         <p class="text-xs font-black text-teal-700 tracking-wide mt-0.5" style="display: none">
           Bakafrawi Project
@@ -287,19 +334,32 @@ function bukaWaAdmin() {
     </div>
 
     <!-- v.21.24b.0526: Modal Lupa Sandi -->
-    <div v-if="showLupaSandi" class="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4" @click.self="showLupaSandi = false">
+    <div
+      v-if="showLupaSandi"
+      class="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4"
+      @click.self="showLupaSandi = false"
+    >
       <div class="bg-[var(--bg-card)] rounded-2xl shadow-2xl max-w-md w-full p-6 relative">
-        <button @click="showLupaSandi = false" class="absolute top-3 right-3 text-[var(--text-tertiary)] hover:text-rose-600 text-lg cursor-pointer">
+        <button
+          @click="showLupaSandi = false"
+          class="absolute top-3 right-3 text-[var(--text-tertiary)] hover:text-rose-600 text-lg cursor-pointer"
+        >
           <i class="fas fa-times"></i>
         </button>
         <div class="text-center">
-          <div class="w-16 h-16 mx-auto mb-3 rounded-full bg-cyan-100 flex items-center justify-center">
+          <div
+            class="w-16 h-16 mx-auto mb-3 rounded-full bg-cyan-100 flex items-center justify-center"
+          >
             <i class="fas fa-key text-cyan-600 text-2xl"></i>
           </div>
           <h3 class="text-lg font-black text-[var(--text-primary)] mb-1">Lupa Sandi?</h3>
-          <p class="text-xs text-[var(--text-secondary)] mb-4">Sandi hanya dapat di-reset oleh Admin Pondok.</p>
+          <p class="text-xs text-[var(--text-secondary)] mb-4">
+            Sandi hanya dapat di-reset oleh Admin Pondok.
+          </p>
         </div>
-        <div class="bg-cyan-50 border-2 border-cyan-200 rounded-xl p-3 text-xs text-[var(--text-primary)] space-y-1.5">
+        <div
+          class="bg-cyan-50 border-2 border-cyan-200 rounded-xl p-3 text-xs text-[var(--text-primary)] space-y-1.5"
+        >
           <p><i class="fas fa-info-circle text-cyan-600 mr-1"></i><b>Langkah:</b></p>
           <ol class="list-decimal ml-5 space-y-1">
             <li>Hubungi Admin Pondok via WhatsApp/langsung</li>
@@ -309,10 +369,17 @@ function bukaWaAdmin() {
           </ol>
         </div>
         <div class="mt-4 flex gap-2">
-          <button v-if="adminWaPondok" @click="bukaWaAdmin" class="flex-1 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-bold py-2.5 rounded-xl text-sm cursor-pointer transition">
+          <button
+            v-if="adminWaPondok"
+            @click="bukaWaAdmin"
+            class="flex-1 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-bold py-2.5 rounded-xl text-sm cursor-pointer transition"
+          >
             <i class="fab fa-whatsapp mr-1"></i>Hubungi Admin via WA
           </button>
-          <button @click="showLupaSandi = false" class="flex-1 bg-slate-200 hover:bg-slate-300 text-[var(--text-primary)] font-bold py-2.5 rounded-xl text-sm cursor-pointer transition">
+          <button
+            @click="showLupaSandi = false"
+            class="flex-1 bg-slate-200 hover:bg-slate-300 text-[var(--text-primary)] font-bold py-2.5 rounded-xl text-sm cursor-pointer transition"
+          >
             <i class="fas fa-check mr-1"></i>Mengerti
           </button>
         </div>
@@ -323,7 +390,9 @@ function bukaWaAdmin() {
          Hide di Capacitor (Android native) + Electron (Desktop) karena sudah di-app native. -->
     <div v-if="isWebOnly" class="relative z-10 mt-4 max-w-[280px] w-full">
       <div class="bg-white/8 backdrop-blur-sm rounded-lg px-3 py-2 border border-white/15">
-        <p class="text-[9px] text-white/80 font-bold uppercase tracking-[0.15em] text-center mb-1.5">
+        <p
+          class="text-[9px] text-white/80 font-bold uppercase tracking-[0.15em] text-center mb-1.5"
+        >
           <i class="fas fa-download mr-1 text-[8px]"></i>Unduh Aplikasi
         </p>
         <div class="grid grid-cols-2 gap-2">
@@ -387,9 +456,7 @@ function bukaWaAdmin() {
       <p class="text-[11px] text-white/90 font-bold uppercase tracking-wider drop-shadow">
         © {{ new Date().getFullYear() }} Pondok Pesantren Mambaul Ulum
       </p>
-      <p class="text-[11px] text-white/80 font-bold tracking-widest mt-1 drop-shadow">
-        v.102.0626
-      </p>
+      <p class="text-[11px] text-white/80 font-bold tracking-widest mt-1 drop-shadow">v.103.0626</p>
     </div>
   </div>
 </template>

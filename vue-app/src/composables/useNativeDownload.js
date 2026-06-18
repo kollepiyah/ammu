@@ -19,12 +19,19 @@
 //   // Dari base64 / data URL:
 //   await saveDataUrl(dataUrl, 'image.png')
 
+// v.103b: toast lokasi simpan (ganti dialog Share yg dinilai "ribet" oleh kyai)
+import { useToast } from '@/composables/useToast'
+
 /**
  * Cek apakah running di native Capacitor (Android/iOS).
  */
 function isNative() {
   try {
-    return !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform())
+    return !!(
+      window.Capacitor &&
+      window.Capacitor.isNativePlatform &&
+      window.Capacitor.isNativePlatform()
+    )
   } catch {
     return false
   }
@@ -67,24 +74,29 @@ async function saveNative(blob, filename) {
   const { Filesystem, Directory } = await import('@capacitor/filesystem')
   const base64 = await blobToBase64(blob)
 
-  // Try 3 directories in order: Documents → External → Cache (most reliable last)
+  // v.103b: simpan ke subfolder "AmmuOnline" di folder publik supaya rapi & mudah ditemukan.
+  // Multi-tier fallback krn scoped storage (Android 13+): Documents → Penyimpanan App → Cache.
+  const SUBFOLDER = 'AmmuOnline'
+  const path = `${SUBFOLDER}/${safeFilename}`
   const directories = [
     { dir: Directory.Documents, label: 'Documents' },
-    { dir: Directory.External, label: 'External' },
+    { dir: Directory.External, label: 'Penyimpanan App' },
     { dir: Directory.Cache, label: 'Cache' }
   ]
 
   let result = null
+  let savedLabel = null
   let lastError = null
   for (const { dir, label } of directories) {
     try {
       result = await Filesystem.writeFile({
-        path: safeFilename,
+        path,
         data: base64,
         directory: dir,
         recursive: true
       })
-      console.info(`[saveNative] saved to ${label}:`, result.uri)
+      savedLabel = label
+      console.info(`[saveNative] saved to ${label}/${SUBFOLDER}:`, result.uri)
       break
     } catch (e) {
       lastError = e
@@ -93,25 +105,45 @@ async function saveNative(blob, filename) {
   }
 
   if (!result) {
-    throw new Error(`Gagal simpan PDF: ${lastError?.message || 'unknown'}`)
+    throw new Error(`Gagal simpan file: ${lastError?.message || 'unknown'}`)
   }
 
-  // Buka share dialog (user pilih: simpan ke Files / kirim via WA / Email / dst)
+  // v.103b: TIDAK lagi paksa dialog Share tiap ekspor (kyai: ribet). File tersimpan otomatis,
+  // cukup tampilkan TOAST lokasi simpan. Folder publik (Documents/Penyimpanan App) = user-visible.
+  const userVisible = savedLabel === 'Documents' || savedLabel === 'Penyimpanan App'
+  let toast = null
   try {
-    const { Share } = await import('@capacitor/share')
-    const canShare = await Share.canShare()
-    if (canShare && canShare.value) {
-      await Share.share({
-        title: safeFilename,
-        url: result.uri,
-        dialogTitle: 'Simpan atau bagikan PDF'
-      })
-    } else {
-      console.info('[saveNative] file disimpan di:', result.uri)
+    toast = useToast()
+  } catch (_e) {
+    /* di luar konteks Pinia — abaikan */
+  }
+
+  if (userVisible) {
+    try {
+      toast?.success?.(`Tersimpan di ${savedLabel}/${SUBFOLDER} — ${safeFilename}`)
+    } catch (_e) {
+      /* ignore */
     }
-  } catch (e) {
-    console.warn('[saveNative] share gagal:', e?.message || e)
-    // Tetap return URI supaya bisa diakses
+  } else {
+    // Hanya Cache yg berhasil (tak terlihat user) -> buka Share supaya file tak "hilang".
+    try {
+      toast?.info?.('File siap — pilih tujuan simpan/bagikan')
+    } catch (_e) {
+      /* ignore */
+    }
+    try {
+      const { Share } = await import('@capacitor/share')
+      const canShare = await Share.canShare()
+      if (canShare && canShare.value) {
+        await Share.share({
+          title: safeFilename,
+          url: result.uri,
+          dialogTitle: 'Simpan atau bagikan file'
+        })
+      }
+    } catch (e) {
+      console.warn('[saveNative] share fallback gagal:', e?.message || e)
+    }
   }
   return result.uri
 }

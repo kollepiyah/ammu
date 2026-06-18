@@ -31,17 +31,27 @@ const toast = useToast()
 // v.95.0626: daftarkan FCM push begitu ada sesi login (native saja; no-op di web/desktop)
 const auth = useAuthStore()
 const push = usePushNotifications()
-watch(() => auth.sesiAktif?.id, (id) => { if (id) push.register() }, { immediate: true })
+watch(
+  () => auth.sesiAktif?.id,
+  (id) => {
+    if (id) push.register()
+  },
+  { immediate: true }
+)
 
-watch(() => settings.settings, (s) => {
-  if (!s) return
-  const root = document.documentElement
-  if (s.themeColor) root.style.setProperty('--theme-color', s.themeColor)
-  // v.21.106.0527: apply themeTextColor + sidebarBgColor (picker dulu tanpa efek)
-  if (s.themeTextColor) root.style.setProperty('--theme-text-color', s.themeTextColor)
-  if (s.sidebarBgColor) root.style.setProperty('--sidebar-bg', s.sidebarBgColor)
-  if (s.appTitle) document.title = s.appTitle
-}, { deep: true, immediate: true })
+watch(
+  () => settings.settings,
+  (s) => {
+    if (!s) return
+    const root = document.documentElement
+    if (s.themeColor) root.style.setProperty('--theme-color', s.themeColor)
+    // v.21.106.0527: apply themeTextColor + sidebarBgColor (picker dulu tanpa efek)
+    if (s.themeTextColor) root.style.setProperty('--theme-text-color', s.themeTextColor)
+    if (s.sidebarBgColor) root.style.setProperty('--sidebar-bg', s.sidebarBgColor)
+    if (s.appTitle) document.title = s.appTitle
+  },
+  { deep: true, immediate: true }
+)
 
 // v.71.0526: Native enhancements — StatusBar + Android back. v.93.0626: re-apply status bar
 // setelah splash native (yg me-reset appearance window) + back semua halaman + tekan 2x utk keluar.
@@ -74,33 +84,49 @@ async function setupNativeIntegration() {
     const { App } = await import('@capacitor/app')
     // resume sering reset appearance -> apply ulang status bar
     App.addListener('resume', () => applyStatusBar())
-    App.addListener('appStateChange', ({ isActive } = {}) => { if (isActive) applyStatusBar() })
+    App.addListener('appStateChange', ({ isActive } = {}) => {
+      if (isActive) applyStatusBar()
+    })
 
-    // v.103: back pola TAB-APP (kyai). Home = tekan 2x keluar; tab utama lain = ke Beranda
-    //   (jangan telusuri history antar-tab → dulu "balik ke halaman lain"); halaman detail = back ke induk.
-    const HOME_ROUTES = ['/dashboard', '/capaian-prestasi', '/login']
-    const TAB_ROOTS = ['/dashboard', '/capaian-prestasi', '/santri', '/tagihan', '/keuangan', '/rekap-prestasi', '/notifikasi', '/profil']
+    // v.103b (kyai 18 Jun): back pola NATIVE back-stack — mundur ke layar SEBELUMNYA di mana pun
+    //   selama ada history; keluar app HANYA di Beranda/root tanpa history (tekan 2x). Sub-state
+    //   halaman (mis. alur Rekap, modal) ditangani komponen via event 'android-back' + preventDefault.
+    const HOME_ROUTES = ['/dashboard', '/login']
     let lastBack = 0
     App.addListener('backButton', () => {
       // a. sidebar terbuka -> tutup
-      if (ui.sidebarOpen) { ui.closeSidebar(); return }
+      if (ui.sidebarOpen) {
+        ui.closeSidebar()
+        return
+      }
       // b. overlay/dialog terbuka -> komponen menutup diri (dengar 'android-back' + preventDefault), jangan navigasi
       const ev = new CustomEvent('android-back', { cancelable: true })
       window.dispatchEvent(ev)
       if (ev.defaultPrevented) return
       const path = router.currentRoute?.value?.path || ''
-      // c. di HOME -> tekan back 2x dalam 2 detik utk keluar app
-      if (HOME_ROUTES.includes(path)) {
-        const now = Date.now()
-        if (now - lastBack < 2000) { App.exitApp(); return }
-        lastBack = now
-        try { toast.info('Tekan sekali lagi untuk keluar') } catch (_e) { /* ignore */ }
+      // c. ada entry sebelumnya & BUKAN di Beranda -> mundur 1 layar (native back-stack).
+      //    Pakai history.state.back (diisi Vue Router) — andal di hash mode WebView, beda dgn history.length.
+      const canGoBack = !!(window.history.state && window.history.state.back)
+      if (canGoBack && !HOME_ROUTES.includes(path)) {
+        router.back()
         return
       }
-      // d. tab utama lain -> ke Beranda (stack tak menumpuk; back lagi = keluar)
-      if (TAB_ROOTS.includes(path)) { router.replace('/dashboard'); return }
-      // e. halaman detail -> kembali ke induk (history), fallback ke Beranda
-      if (window.history.length > 1) { router.back(); return }
+      // d. di Beranda/root -> tekan back 2x dalam 2 detik utk keluar app
+      if (HOME_ROUTES.includes(path)) {
+        const now = Date.now()
+        if (now - lastBack < 2000) {
+          App.exitApp()
+          return
+        }
+        lastBack = now
+        try {
+          toast.info('Tekan sekali lagi untuk keluar')
+        } catch (_e) {
+          /* ignore */
+        }
+        return
+      }
+      // e. halaman non-home tanpa history (mis. deep-link) -> ke Beranda (jangan keluar dari halaman acak)
       router.replace('/dashboard')
     })
   } catch (e) {
@@ -116,16 +142,22 @@ onMounted(setupNativeIntegration)
 /* v.20.74.0526: Scheherazade WOFF2 first (148KB, 75% smaller than TTF) + TTF fallback */
 @font-face {
   font-family: 'Scheherazade New';
-  src: url('/fonts/ScheherazadeNew-SemiBold.woff2') format('woff2'),
-       url('/fonts/ScheherazadeNew-SemiBold.ttf') format('truetype');
+  src:
+    url('/fonts/ScheherazadeNew-SemiBold.woff2') format('woff2'),
+    url('/fonts/ScheherazadeNew-SemiBold.ttf') format('truetype');
   font-weight: 600;
   font-style: normal;
   font-display: swap;
 }
 
 :root {
-  font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
-  --bg-cream: #F9F6EE;
+  font-family:
+    'Plus Jakarta Sans',
+    'Inter',
+    system-ui,
+    -apple-system,
+    sans-serif;
+  --bg-cream: #f9f6ee;
   --theme-color: #0f766e;
 }
 
@@ -136,15 +168,42 @@ body {
   -webkit-touch-callout: none;
   overscroll-behavior: none;
 }
-body.dark-mode { background-color: #0f172a; }
+body.dark-mode {
+  background-color: #0f172a;
+}
 
 /* v.71.0526: Disable text selection di non-input elements untuk native feel.
    Tetap allow select di input/textarea/p text content yang useful (e.g. nama santri). */
-body, button, a, span, div, h1, h2, h3, h4, h5, h6, nav, header, aside, main, footer, li, ul, ol, td, th {
+body,
+button,
+a,
+span,
+div,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+nav,
+header,
+aside,
+main,
+footer,
+li,
+ul,
+ol,
+td,
+th {
   -webkit-user-select: none;
   user-select: none;
 }
-input, textarea, [contenteditable], pre, code, .selectable {
+input,
+textarea,
+[contenteditable],
+pre,
+code,
+.selectable {
   -webkit-user-select: text;
   user-select: text;
 }
@@ -156,12 +215,19 @@ input, textarea, [contenteditable], pre, code, .selectable {
 }
 
 /* v.71.0526: Faster tap (200ms delay removed implicitly via touch-action) */
-button, a, [role="button"], input, select, textarea {
+button,
+a,
+[role='button'],
+input,
+select,
+textarea {
   touch-action: manipulation;
 }
 
 .font-arabic {
-  font-family: 'Scheherazade New', 'Droid Arabic Naskh', 'Noto Naskh Arabic', 'Amiri', 'Traditional Arabic', serif !important;
+  font-family:
+    'Scheherazade New', 'Droid Arabic Naskh', 'Noto Naskh Arabic', 'Amiri', 'Traditional Arabic',
+    serif !important;
   font-weight: 600 !important;
 }
 
@@ -171,15 +237,21 @@ button, a, [role="button"], input, select, textarea {
   outline-offset: 2px !important;
   border-radius: 4px;
 }
-button:focus-visible, a:focus-visible, [role="button"]:focus-visible,
-input:focus-visible, select:focus-visible, textarea:focus-visible {
+button:focus-visible,
+a:focus-visible,
+[role='button']:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
   outline: 2px solid var(--theme-color, #0f766e) !important;
   outline-offset: 2px !important;
 }
 
 /* v.20.74.0526 A11Y: prefers-reduced-motion (WCAG 2.3.3) */
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
@@ -187,13 +259,23 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
   }
 }
 
-.fade-enter-active, .fade-leave-active { transition: opacity 0.18s ease; }
-.fade-enter-from, .fade-leave-to { opacity: 0; }
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.18s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
 
 /* v.20.75.0526: @media print — pakai window.print() native untuk cetak Rapor (drop pdfmake) */
 @media print {
-  @page { size: A4; margin: 12mm; }
-  html, body {
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
+  html,
+  body {
     background: #fff !important;
     color: #000 !important;
     -webkit-print-color-adjust: exact !important;
@@ -211,15 +293,18 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
   nav.app-bottom-nav {
     display: none !important;
   }
-  .h-screen, .overflow-hidden {
+  .h-screen,
+  .overflow-hidden {
     height: auto !important;
     overflow: visible !important;
   }
-  main, .flex-1 {
+  main,
+  .flex-1 {
     overflow: visible !important;
     padding: 0 !important;
   }
-  #rapor-print-area, .print-area {
+  #rapor-print-area,
+  .print-area {
     background: #fff !important;
     box-shadow: none !important;
     border: 0 !important;
@@ -227,11 +312,15 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
     padding: 0 !important;
     margin: 0 !important;
   }
-  table, tr, td, th {
+  table,
+  tr,
+  td,
+  th {
     page-break-inside: avoid !important;
     break-inside: avoid !important;
   }
-  .ttd-block, .signature-block {
+  .ttd-block,
+  .signature-block {
     page-break-inside: avoid !important;
   }
   .font-arabic {

@@ -82,9 +82,9 @@
     <!-- v.85.0526: storage permissions untuk PDF export (Capacitor Filesystem + Share) -->
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
-    <!-- Android 13+ scoped media -->
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
-    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+    <!-- v.103b: READ_MEDIA_IMAGES/VIDEO DIHAPUS (kebijakan Google Play "Penggunaan izin foto & video
+         tidak valid"). App hanya pilih gambar sesekali (logo/foto profil/dokumen) lewat <input type="file">
+         WebView = file chooser/photo picker sistem, yg TIDAK butuh izin ini. Jangan tambah kembali. -->
     <!-- Camera + microphone untuk foto profil (opsional) -->
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />

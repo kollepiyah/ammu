@@ -6,7 +6,9 @@
       class="bg-[var(--bg-card)] rounded-2xl p-10 border border-dashed border-rose-300 text-center"
     >
       <i class="fas fa-lock text-rose-300 text-4xl mb-3"></i>
-      <p class="text-sm font-bold text-slate-700 dark:text-[var(--text-tertiary)]">Akses terbatas</p>
+      <p class="text-sm font-bold text-slate-700 dark:text-[var(--text-tertiary)]">
+        Akses terbatas
+      </p>
     </div>
 
     <template v-else>
@@ -222,11 +224,15 @@
               >&#9632; Libur</span
             >
           </div>
-          <div class="flex gap-2 flex-wrap">
+          <!-- v.103b: mobile = toolbar 1-baris scroll-samping; desktop wrap normal -->
+          <div
+            class="flex flex-nowrap md:flex-wrap items-center gap-2 overflow-x-auto md:overflow-visible hide-scrollbar [&>*]:shrink-0 md:[&>*]:shrink -mx-1 px-1 lg:mx-0 lg:px-0"
+          >
             <!-- v.21.114.0528: Kelola libur pindah ke Kalender Kegiatan (kyai req) — tombol link sekedarnya -->
+            <!-- v.103b: samakan ke pola tombol standar (h-11 md:h-9 rounded-xl), warna rose dipertahankan -->
             <router-link
               to="/kalender"
-              class="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-black px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition"
+              class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-black transition"
               title="Atur libur (manual & nasional) di menu Kalender Kegiatan"
             >
               <i class="fas fa-calendar-plus"></i> Atur Libur di Kalender
@@ -235,7 +241,7 @@
             <button
               @click="exportRekapExcel"
               aria-label="Ekspor rekap absensi guru Excel"
-              class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition cursor-pointer"
+              class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition cursor-pointer"
             >
               <i class="fas fa-file-excel"></i>Excel
             </button>
@@ -244,14 +250,15 @@
               @click="kirimAbsensiGsheet"
               :disabled="sendingGsheet"
               aria-label="Kirim rekap absensi guru ke Google Sheet"
-              class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer"
+              class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer"
             >
-              <i :class="['fas', sendingGsheet ? 'fa-spinner fa-spin' : 'fa-table']"></i>{{ sendingGsheet ? 'Mengirim...' : 'Google Sheet' }}
+              <i :class="['fas', sendingGsheet ? 'fa-spinner fa-spin' : 'fa-table']"></i
+              >{{ sendingGsheet ? 'Mengirim...' : 'Google Sheet' }}
             </button>
             <button
               @click="exportRekapPdf"
               aria-label="Cetak rekap absensi guru PDF"
-              class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold transition cursor-pointer"
+              class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold transition cursor-pointer"
             >
               <i class="fas fa-file-pdf"></i>PDF
             </button>
@@ -263,7 +270,9 @@
           class="bg-[var(--bg-card)] rounded-2xl p-10 border border-dashed border-[var(--border-default)] text-center"
         >
           <i class="fas fa-calendar-times text-[var(--text-tertiary)] text-4xl mb-3"></i>
-          <p class="text-sm font-bold text-slate-700 dark:text-[var(--text-tertiary)]">Tidak ada guru aktif</p>
+          <p class="text-sm font-bold text-slate-700 dark:text-[var(--text-tertiary)]">
+            Tidak ada guru aktif
+          </p>
         </div>
 
         <div
@@ -272,9 +281,7 @@
         >
           <table class="w-full text-[10px] md:text-[11px] border-collapse">
             <thead>
-              <tr
-                class="bg-[var(--bg-muted)] text-[var(--text-primary)] sticky top-0"
-              >
+              <tr class="bg-[var(--bg-muted)] text-[var(--text-primary)] sticky top-0">
                 <th
                   class="p-1.5 text-left font-black uppercase tracking-wider sticky left-0 bg-[var(--bg-muted)] z-10 min-w-[180px]"
                 >
@@ -373,9 +380,9 @@
           }}
         </h3>
         <p class="text-xs text-[var(--text-secondary)] mb-4">
-          Centang yang hadir per shift. Kolom muncul sesuai tipe &amp; shift: guru → shift
-          mengajar (+ Sekolah bila ada), pegawai → Peg. Pagi/Sore, dual-role → keduanya. Submit
-          untuk simpan ke koleksi <code>absensi_shift_guru</code>.
+          Centang yang hadir per shift. Kolom muncul sesuai tipe &amp; shift: guru → shift mengajar
+          (+ Sekolah bila ada), pegawai → Peg. Pagi/Sore, dual-role → keduanya. Submit untuk simpan
+          ke koleksi <code>absensi_shift_guru</code>.
         </p>
         <div class="overflow-x-auto">
           <table class="w-full text-xs">
@@ -390,7 +397,13 @@
                   v-for="col in SHIFT_COLS"
                   :key="'h-' + col.key"
                   class="p-2 text-center font-black uppercase text-[10px] tracking-wider"
-                  :class="col.key.startsWith('pegawai') ? 'text-indigo-700 dark:text-indigo-300' : (col.key === 'sekolah' ? 'text-teal-700 dark:text-teal-300' : 'text-cyan-700 dark:text-cyan-300')"
+                  :class="
+                    col.key.startsWith('pegawai')
+                      ? 'text-indigo-700 dark:text-indigo-300'
+                      : col.key === 'sekolah'
+                        ? 'text-teal-700 dark:text-teal-300'
+                        : 'text-cyan-700 dark:text-cyan-300'
+                  "
                   colspan="2"
                 >
                   {{ col.label }}
@@ -405,11 +418,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr
-                v-for="g in guruAktif"
-                :key="g.id"
-                class="border-b border-[var(--border-subtle)]"
-              >
+              <tr v-for="g in guruAktif" :key="g.id" class="border-b border-[var(--border-subtle)]">
                 <td
                   class="p-2 font-bold text-[var(--text-primary)] sticky left-0 bg-[var(--bg-card)]"
                 >
@@ -478,7 +487,9 @@
           class="bg-[var(--bg-card)] rounded-2xl p-10 border border-dashed border-[var(--border-default)] text-center"
         >
           <i class="fas fa-calendar-times text-[var(--text-tertiary)] text-4xl mb-3"></i>
-          <p class="text-sm font-bold text-slate-700 dark:text-[var(--text-tertiary)]">Tidak ada absensi</p>
+          <p class="text-sm font-bold text-slate-700 dark:text-[var(--text-tertiary)]">
+            Tidak ada absensi
+          </p>
         </div>
         <div
           v-for="a in filteredAbsensi"
@@ -700,7 +711,9 @@ const SHIFT_COLS = [
 //   guru -> shift mengajar (pagi/sore sesuai field shift) + Sekolah bila punya lembaga_sekolah;
 //   pegawai -> Peg. Pagi/Sore; dual-role (pegawai_guru) -> keduanya.
 function shiftsForGuru(g) {
-  const tipe = String(g?.tipe_pegawai || 'guru').toLowerCase().trim()
+  const tipe = String(g?.tipe_pegawai || 'guru')
+    .toLowerCase()
+    .trim()
   const hasPegawai = tipe.includes('pegawai')
   const hasGuru = !hasPegawai || tipe.includes('guru') // pegawai murni=false; guru/dual/legacy=true
   const shiftField = String(g?.shift || 'pagi_sore').toLowerCase()
@@ -909,7 +922,9 @@ function cellClass(guruId, d) {
   const a = getAbsensiCell(guruId, d)
   if (!a) {
     const today = new Date().toISOString().slice(0, 10)
-    return isoDateOf(d) <= today ? 'bg-rose-100 text-rose-700' : 'bg-[var(--bg-card-elevated)] text-[var(--text-tertiary)]'
+    return isoDateOf(d) <= today
+      ? 'bg-rose-100 text-rose-700'
+      : 'bg-[var(--bg-card-elevated)] text-[var(--text-tertiary)]'
   }
   const s = String(a.status || 'hadir').toLowerCase()
   if (s === 'terlambat') return 'bg-cyan-200 text-cyan-800'
@@ -976,7 +991,10 @@ async function exportRekapExcel() {
 // v.100 Batch12: kirim Rekap Absensi Guru ke Google Sheet (reuse data/kolom yang sama dgn Excel)
 async function kirimAbsensiGsheet() {
   if (sendingGsheet.value) return
-  if (!gsheetConfigured()) { toast.warning('Google Sheet belum diatur. Buka Pengaturan → Google Sheet dulu.'); return }
+  if (!gsheetConfigured()) {
+    toast.warning('Google Sheet belum diatur. Buka Pengaturan → Google Sheet dulu.')
+    return
+  }
   sendingGsheet.value = true
   try {
     const days = daysInMonth.value
@@ -1007,7 +1025,11 @@ async function kirimAbsensiGsheet() {
       columns
     })
     toast.success(`${rows.length} guru terkirim ke Google Sheet.`)
-    try { window.open(url, '_blank') } catch (e) { /* ignore */ }
+    try {
+      window.open(url, '_blank')
+    } catch (e) {
+      /* ignore */
+    }
   } catch (e) {
     toast.error('Gagal kirim ke Google Sheet: ' + (e?.message || e))
   } finally {
