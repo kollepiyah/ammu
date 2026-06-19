@@ -594,15 +594,31 @@ onUnmounted(() => {
   }
 })
 
-// v.91.0626: prefill pencarian dari ?q= (global search header)
+// v.107: filter <-> URL query — pertahankan filter saat "back" dari halaman detail/profil.
+//   Baca saat mount + saat berubah (dukung global-search ?q= + pita ?tipe=). Tulis saat filter berubah.
 const _route = useRoute()
-watch(
-  () => _route.query.q,
-  (v) => {
-    if (v != null && v !== '') search.value = String(v)
-  },
-  { immediate: true }
-)
+const router = useRouter()
+let _syncingQuery = false
+function syncFiltersFromQuery() {
+  _syncingQuery = true
+  search.value = _route.query.q != null ? String(_route.query.q) : ''
+  filterLembaga.value = _route.query.lembaga != null ? String(_route.query.lembaga) : ''
+  filterJabatan.value = _route.query.jabatan != null ? String(_route.query.jabatan) : ''
+  filterStatus.value = _route.query.status != null ? String(_route.query.status) : 'aktif'
+  _syncingQuery = false
+}
+syncFiltersFromQuery()
+watch(() => _route.query, syncFiltersFromQuery)
+watch([search, filterLembaga, filterJabatan, filterStatus], () => {
+  if (_syncingQuery) return
+  const q = {}
+  if (_route.query.tipe) q.tipe = _route.query.tipe // jaga pita Data Guru/Pegawai
+  if (search.value) q.q = search.value
+  if (filterLembaga.value) q.lembaga = filterLembaga.value
+  if (filterJabatan.value) q.jabatan = filterJabatan.value
+  if (filterStatus.value && filterStatus.value !== 'aktif') q.status = filterStatus.value
+  router.replace({ query: q }).catch(() => {})
+})
 // v.98: pita "Data Guru" (?tipe=guru) vs "Data Pegawai" (?tipe=pegawai) — pisah guru vs pegawai non-guru.
 // Heuristik (belum ada field eksplisit): jabatan mengandung guru/ustadz/pengajar/mudarris/wali kelas/kepala
 // dianggap GURU; selain itu PEGAWAI. Ganti regex / pakai field khusus bila kyai mau klasifikasi lain.
@@ -628,7 +644,6 @@ const guruShown = computed(() => {
   return guru.value
 })
 // v.91.0626: klik card -> halaman profil (abaikan klik tombol/link/checkbox)
-const router = useRouter()
 function goProfil(g, e) {
   if (e && e.target && e.target.closest('button, a, input, label')) return
   router.push('/profil/guru/' + g.id)

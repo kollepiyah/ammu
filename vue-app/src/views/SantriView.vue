@@ -531,25 +531,31 @@ const {
   isFullAccess
 } = useSantri()
 
-// v.91.0626: prefill pencarian dari ?q= (global search header)
+// v.107: filter <-> URL query — pertahankan filter saat "back" dari halaman detail/profil.
+//   Baca query saat mount + saat berubah (dukung global-search header ?q= + pita ?tempat=).
+//   Tulis query (router.replace) saat filter berubah -> URL daftar membawa filter -> back memulihkannya.
 const route = useRoute()
-watch(
-  () => route.query.q,
-  (v) => {
-    if (v != null && v !== '') search.value = String(v)
-  },
-  { immediate: true }
-)
-// v.98: pita Pendidikan "Data Ma'had" -> ?tempat=mukim memilih filter status tempat
-watch(
-  () => route.query.tempat,
-  (v) => {
-    if (v != null && v !== '') filterMukim.value = String(v)
-  },
-  { immediate: true }
-)
-// v.91.0626: klik card -> halaman profil (abaikan klik tombol/link/checkbox)
 const router = useRouter()
+let _syncingQuery = false
+function syncFiltersFromQuery() {
+  _syncingQuery = true
+  search.value = route.query.q != null ? String(route.query.q) : ''
+  filterLembaga.value = route.query.lembaga != null ? String(route.query.lembaga) : ''
+  filterMukim.value = route.query.tempat != null ? String(route.query.tempat) : ''
+  filterStatus.value = route.query.status != null ? String(route.query.status) : 'aktif'
+  _syncingQuery = false
+}
+syncFiltersFromQuery()
+watch(() => route.query, syncFiltersFromQuery)
+watch([search, filterLembaga, filterMukim, filterStatus], () => {
+  if (_syncingQuery) return
+  const q = {}
+  if (search.value) q.q = search.value
+  if (filterLembaga.value) q.lembaga = filterLembaga.value
+  if (filterMukim.value) q.tempat = filterMukim.value
+  if (filterStatus.value && filterStatus.value !== 'aktif') q.status = filterStatus.value
+  router.replace({ query: q }).catch(() => {})
+})
 
 // v.100b: guru DUAL-role (Qiraati + Sekolah) → pisah daftar jadi 2 section.
 //   Tipe dideteksi dari SELURUH santri (santriRaw), tak terpengaruh filter/cari aktif.
