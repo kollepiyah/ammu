@@ -163,10 +163,12 @@
       <div class="meta">
         <p style="margin: 0">
           <strong>Tanggal Efektif:</strong> 15 Mei 2026<br />
-          <strong>Versi:</strong> 1.0<br />
+          <strong>Terakhir Diperbarui:</strong> 19 Juni 2026<br />
+          <strong>Versi:</strong> 1.1<br />
+          <strong>Status Aplikasi:</strong> Tersedia di Google Play (produksi)<br />
           <strong>Pengelola:</strong> Pondok Pesantren Mambaul Ulum, Sidoarjo<br />
           <strong>Kontak Privasi:</strong>
-          <a href="mailto:lexanoisgroup3@gmail.com">lexanoisgroup3@gmail.com</a>
+          <a href="mailto:kollepiyah@gmail.com">kollepiyah@gmail.com</a>
         </p>
       </div>
 
@@ -240,6 +242,11 @@
         <li>Token notifikasi (FCM token) untuk mengirim notifikasi push</li>
         <li>Versi aplikasi yang digunakan</li>
         <li>Log audit perubahan data (siapa mengubah apa, kapan)</li>
+        <li>
+          Laporan error/diagnostik teknis (stack trace, versi aplikasi, jenis perangkat/browser)
+          melalui layanan <strong>Sentry</strong> — untuk mendeteksi &amp; memperbaiki bug. Sentry
+          <strong>tidak dikonfigurasi</strong> mengirim data pribadi pengguna.
+        </li>
       </ul>
 
       <h3>2.5 Data yang TIDAK Kami Kumpulkan</h3>
@@ -292,6 +299,12 @@
         </li>
         <li>
           <strong>Firebase Hosting</strong> — penyimpanan dan distribusi aplikasi web (kode HTML/CSS/JS).
+        </li>
+        <li>
+          <strong>Google BigQuery</strong> — cermin data internal (hanya-baca) dari Firestore untuk
+          laporan &amp; analitik internal pondok (mis. menu Laporan). Query dibatasi peran Pengurus
+          melalui server (Cloud Functions), bukan langsung dari perangkat pengguna. Tetap di lingkungan
+          Google Cloud yang sama, tidak dibagikan ke pihak luar.
         </li>
       </ul>
 
@@ -366,12 +379,23 @@
               >
             </td>
           </tr>
+          <tr>
+            <td>Functional Software, Inc. (Sentry)</td>
+            <td>Pemantauan error/crash &amp; kinerja teknis (diagnostik)</td>
+            <td>
+              <a href="https://sentry.io/privacy/" target="_blank" rel="noopener"
+                >sentry.io/privacy</a
+              >
+            </td>
+          </tr>
         </tbody>
       </table>
 
       <p>
-        Kami TIDAK menggunakan platform iklan, analytics pihak ketiga (Google Analytics, Mixpanel,
-        Facebook Pixel, dll.), atau layanan tracking lainnya.
+        Kami TIDAK menggunakan platform iklan atau analytics pemasaran/pelacakan perilaku (Google
+        Analytics, Mixpanel, Facebook Pixel, dll.). Untuk keandalan teknis kami menggunakan
+        <strong>Sentry</strong> (pemantauan error/crash) — yang dikirim hanya data diagnostik teknis,
+        bukan untuk iklan atau pembuatan profil pengguna.
       </p>
 
       <h2 id="anak">6. Pengguna di Bawah Umur (Santri)</h2>
@@ -407,7 +431,7 @@
       </ul>
       <p>
         Permintaan dapat diajukan melalui email
-        <a href="mailto:lexanoisgroup3@gmail.com">lexanoisgroup3@gmail.com</a> dengan subjek
+        <a href="mailto:kollepiyah@gmail.com">kollepiyah@gmail.com</a> dengan subjek
         <em>"Permintaan Data Pribadi — Ammu Online"</em>. Kami akan merespons dalam waktu maksimal
         <strong>14 hari kerja</strong>.
       </p>
@@ -439,6 +463,11 @@
         Riwayat versi:
       </p>
       <ul>
+        <li>
+          <strong>v1.1 — 19 Juni 2026</strong>: Pembaruan kontak privasi; penjelasan keamanan
+          (custom claims &amp; App Check); penambahan layanan Sentry (pemantauan error) &amp; Google
+          BigQuery (analitik internal).
+        </li>
         <li><strong>v1.0 — 15 Mei 2026</strong>: Versi awal, rilis bersama Ammu Online v1.0.0.</li>
       </ul>
 
@@ -457,7 +486,7 @@
           <tr>
             <th>Email Kontak Privasi</th>
             <td>
-              <a href="mailto:lexanoisgroup3@gmail.com">lexanoisgroup3@gmail.com</a>
+              <a href="mailto:kollepiyah@gmail.com">kollepiyah@gmail.com</a>
             </td>
           </tr>
           <tr>
@@ -469,7 +498,7 @@
     </main>
 
     <footer>
-      &copy; 2026 Pondok Pesantren Mambaul Ulum. Kebijakan Privasi v1.0 — 15 Mei 2026.<br />
+      &copy; 2026 Pondok Pesantren Mambaul Ulum. Kebijakan Privasi v1.1 — diperbarui 19 Juni 2026.<br />
       <a href="/">Kembali ke Aplikasi</a>
     </footer>
   </body>
