@@ -3123,11 +3123,12 @@ async function eksporKartuPdf() {
             // CENTER manual (JANGAN pakai align/baseline + angle — di jsPDF itu menggeser anchor
             //   sejauh ½ lebar teks ke kiri ⇒ tanggal lompat ~1 kolom + tak center). Hitung sendiri:
             const tw = doc.getTextWidth(txt) // panjang teks (mm) → rentang vertikal saat dirotasi
-            const capH = fs * 0.3528 * 0.72 // tinggi huruf (mm) → rentang horizontal
             const cx = d.cell.x + d.cell.width / 2
             const cy = d.cell.y + d.cell.height / 2
-            // angle -90 = baca atas→bawah; anchor tepi-atas teks (cy - tw/2) di tengah-horizontal sel.
-            doc.text(txt, cx + capH / 2, cy - tw / 2, { angle: -90 })
+            // angle -90 = baca atas→bawah. VERTIKAL: anchor tepi-atas (cy - tw/2). HORIZONTAL:
+            //   baseline:'middle' → jsPDF center pakai metrik font (offset kecil, aman). JANGAN
+            //   pakai align:'center' (itu geser ½ lebar teks = lompat kolom).
+            doc.text(txt, cx, cy - tw / 2, { angle: -90, baseline: 'middle' })
             doc.setFontSize(prev)
           }
         }
