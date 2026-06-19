@@ -188,7 +188,8 @@
 <script setup>
 // v.21+: POS Santri — kasir cepat pembayaran tagihan/syahriyah/tabungan dengan modal cart.
 // Save ke keuangan_buku_induk (sumber='pos_santri') + auto-lunas tagihan terkait.
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useDesktopShell } from '@/composables/useDesktopShell'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
@@ -226,6 +227,27 @@ const modalOpen = ref(false)
 const histori = ref([])
 const tunggakanMap = ref({})
 const filterTunggakan = ref(false)
+// v.107: filter <-> URL query — pertahankan filter saat kembali (mis. dari Riwayat POS).
+const _route = useRoute()
+const _router = useRouter()
+let _syncingQuery = false
+function syncFiltersFromQuery() {
+  _syncingQuery = true
+  search.value = _route.query.q != null ? String(_route.query.q) : ''
+  filterLembaga.value = _route.query.lembaga != null ? String(_route.query.lembaga) : ''
+  filterTunggakan.value = _route.query.tunggakan === '1'
+  _syncingQuery = false
+}
+syncFiltersFromQuery()
+watch(() => _route.query, syncFiltersFromQuery)
+watch([search, filterLembaga, filterTunggakan], () => {
+  if (_syncingQuery) return
+  const q = {}
+  if (search.value) q.q = search.value
+  if (filterLembaga.value) q.lembaga = filterLembaga.value
+  if (filterTunggakan.value) q.tunggakan = '1'
+  _router.replace({ query: q }).catch(() => {})
+})
 const pendingTagihan = ref([])
 const prepaidPeriodes = ref([]) // v.96.0626 audit: periode sudah ada tagihan -> anti-dobel bayar di muka
 const loadingCart = ref(false)
