@@ -294,7 +294,8 @@ import {
   linkGoogleAccount,
   unlinkGoogleAccount,
   verifyAdminPassword,
-  toAuthPassword
+  toAuthPassword,
+  syncUserClaims
 } from '@/services/auth'
 import { uploadBase64 } from '@/services/storage'
 import { useToast } from '@/composables/useToast'
@@ -484,6 +485,26 @@ async function simpanSandi() {
   }
 }
 
+// v.108: jalankan write Firestore; bila kena permission-denied (token belum bawa custom
+//   claim `role` — syncUserClaims gagal saat login, mis. sinyal jelek), sync ulang claim
+//   lalu retry SEKALI. syncUserClaims juga menandai firebase_uid di dokumen (syarat ownDoc
+//   self-edit guru/santri). Gagal tetap → pesan jelas supaya user login ulang.
+async function writeWithClaimRetry(writeFn) {
+  try {
+    return await writeFn()
+  } catch (e) {
+    const denied =
+      e?.code === 'permission-denied' ||
+      /insufficient permissions/i.test(String(e?.message || ''))
+    if (!denied) throw e
+    const role = await syncUserClaims().catch(() => null)
+    if (!role) {
+      throw new Error('Sesi belum punya izin tulis. Logout lalu login lagi di jaringan stabil.')
+    }
+    return await writeFn()
+  }
+}
+
 // v.108: pilih file = STAGING saja (pratinjau). Upload baru jalan saat klik "Simpan"
 //   (simpanFoto). Sebelumnya auto-upload saat onChange tanpa tombol konfirmasi.
 function onPickFoto(ev) {
@@ -519,16 +540,18 @@ async function simpanFoto() {
       dataUrl,
       contentType
     )
-    if (props.role === 'admin') {
-      // Admin built-in tak punya dokumen guru/santri → simpan foto di settings/web
-      //   (field adminFoto, read publik). Avatar dibaca via useRibbonUser/ProfilAdmin
-      //   dari settings store yang subscribe real-time ke settings/web.
-      await setOne('settings', 'web', { adminFoto: url })
-      settingsStore.settings.adminFoto = url
-    } else {
-      const coll = props.role === 'guru' ? 'guru' : 'santri'
-      await setOne(coll, String(props.entityId), { foto: url })
-    }
+    await writeWithClaimRetry(async () => {
+      if (props.role === 'admin') {
+        // Admin built-in tak punya dokumen guru/santri → simpan foto di settings/web
+        //   (field adminFoto, read publik). Avatar dibaca via useRibbonUser/ProfilAdmin
+        //   dari settings store yang subscribe real-time ke settings/web.
+        await setOne('settings', 'web', { adminFoto: url })
+        settingsStore.settings.adminFoto = url
+      } else {
+        const coll = props.role === 'guru' ? 'guru' : 'santri'
+        await setOne(coll, String(props.entityId), { foto: url })
+      }
+    })
     toast.success('Foto profil diupdate')
     closeModal()
     emit('updated')
