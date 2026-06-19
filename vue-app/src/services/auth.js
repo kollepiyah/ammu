@@ -9,7 +9,8 @@ import {
   browserLocalPersistence,
   browserSessionPersistence,
   GoogleAuthProvider,
-  signInWithPopup
+  signInWithPopup,
+  signInWithCredential
 } from 'firebase/auth'
 import { auth, getSecondaryAuth } from './firebase'
 import {
@@ -26,6 +27,31 @@ import {
 import { db } from './firebase'
 
 const googleProvider = new GoogleAuthProvider()
+
+// v.108: Google sign-in. Di Capacitor native, signInWithPopup (web SDK) TAK jalan di
+//   WebView (popup OAuth gagal + nyasar ke __/auth/handler / domain app lain). Pakai plugin
+//   native @capacitor-firebase/authentication (skipNativeAuth) → ambil idToken Google →
+//   signInWithCredential supaya sesi tetap di JS SDK (sumber kebenaran seluruh app).
+//   Web/PWA: tetap signInWithPopup.
+function _isCapNative() {
+  return (
+    typeof window !== 'undefined' &&
+    window.Capacitor &&
+    window.Capacitor.isNativePlatform &&
+    window.Capacitor.isNativePlatform()
+  )
+}
+async function _signInGoogle() {
+  if (_isCapNative()) {
+    const { FirebaseAuthentication } = await import('@capacitor-firebase/authentication')
+    const result = await FirebaseAuthentication.signInWithGoogle()
+    const idToken = result && result.credential && result.credential.idToken
+    if (!idToken) throw new Error('Google sign-in gagal: idToken kosong')
+    const cred = GoogleAuthProvider.credential(idToken, result.credential.accessToken)
+    return signInWithCredential(auth, cred)
+  }
+  return signInWithPopup(auth, googleProvider)
+}
 
 // ============================================================================
 // PASSWORD PADDING — port _toAuthPassword dari legacy
@@ -316,7 +342,7 @@ export async function resetUserPassword(collection, docId) {
 
 /** Google OAuth (opsional). */
 export async function loginWithGoogle() {
-  return signInWithPopup(auth, googleProvider)
+  return _signInGoogle()
 }
 
 /**
@@ -326,7 +352,7 @@ export async function linkGoogleAccount(collectionName, docId) {
   if (!['guru', 'santri'].includes(collectionName)) {
     throw new Error('linkGoogleAccount: collection harus guru/santri')
   }
-  const cred = await signInWithPopup(auth, googleProvider)
+  const cred = await _signInGoogle()
   const user = cred?.user
   if (!user?.uid) throw new Error('Gagal dapat UID Google')
   const guruExists = await getDocs(

@@ -88,6 +88,13 @@
               class="w-full text-sm"
             />
             <p class="text-[10px] text-[var(--text-secondary)] italic mt-2">JPG/PNG, maks 2MB</p>
+            <div v-if="fotoState.dataUrl" class="mt-3 flex justify-center">
+              <img
+                :src="fotoState.dataUrl"
+                alt="Pratinjau foto"
+                class="w-24 h-24 rounded-full object-cover border border-[var(--border-default)]"
+              />
+            </div>
           </div>
 
           <!-- Username -->
@@ -259,6 +266,14 @@
             >
               Simpan
             </button>
+            <button
+              v-else-if="activeModal === 'foto'"
+              @click="simpanFoto"
+              :disabled="busy || fotoState.uploading || !fotoState.dataUrl"
+              class="px-4 py-2 text-sm font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg disabled:opacity-50"
+            >
+              {{ fotoState.uploading ? 'Menyimpan...' : 'Simpan' }}
+            </button>
           </div>
         </div>
       </div>
@@ -370,7 +385,7 @@ const items = computed(() => {
 })
 
 const formSandi = ref({ lama: '', baru: '', konfirmasi: '' })
-const fotoState = ref({ uploading: false, dataUrl: '' })
+const fotoState = ref({ uploading: false, dataUrl: '', file: null })
 const usernameState = ref({ value: '', checking: false, available: null })
 const waState = ref({ value: '' })
 const ttdState = ref({ uploading: false, dataUrl: '' })
@@ -390,7 +405,7 @@ function openModal(id) {
 function closeModal() {
   activeModal.value = null
   formSandi.value = { lama: '', baru: '', konfirmasi: '' }
-  fotoState.value = { uploading: false, dataUrl: '' }
+  fotoState.value = { uploading: false, dataUrl: '', file: null }
   ttdState.value = { uploading: false, dataUrl: '' }
 }
 
@@ -460,43 +475,49 @@ async function simpanSandi() {
   }
 }
 
-async function onPickFoto(ev) {
+// v.108: pilih file = STAGING saja (pratinjau). Upload baru jalan saat klik "Simpan"
+//   (simpanFoto). Sebelumnya auto-upload saat onChange tanpa tombol konfirmasi.
+function onPickFoto(ev) {
   const file = ev.target.files?.[0]
   if (!file) return
-  if (file.size > 2 * 1024 * 1024) return toast.error('Maks 2MB')
+  if (file.size > 2 * 1024 * 1024) {
+    ev.target.value = ''
+    return toast.error('Maks 2MB')
+  }
+  const reader = new FileReader()
+  reader.onload = () => {
+    fotoState.value.dataUrl = reader.result
+    fotoState.value.file = file
+  }
+  reader.readAsDataURL(file)
+}
+
+async function simpanFoto() {
+  if (!fotoState.value.dataUrl || !fotoState.value.file) return toast.error('Pilih foto dulu')
   fotoState.value.uploading = true
   try {
-    const reader = new FileReader()
-    reader.onload = async () => {
-      try {
-        const url = await uploadBase64(
-          `profil_foto/${props.role}_${props.entityId}_${Date.now()}.jpg`,
-          reader.result,
-          file.type
-        )
-        if (props.role === 'admin') {
-          // Admin built-in tak punya dokumen guru/santri → simpan foto di settings/web
-          //   (field adminFoto, read publik). Avatar dibaca via useRibbonUser/ProfilAdmin
-          //   dari settings store yang subscribe real-time ke settings/web.
-          await setOne('settings', 'web', { adminFoto: url })
-          settingsStore.settings.adminFoto = url
-        } else {
-          const coll = props.role === 'guru' ? 'guru' : 'santri'
-          await setOne(coll, String(props.entityId), { foto: url })
-        }
-        toast.success('Foto profil diupdate')
-        closeModal()
-        emit('updated')
-      } catch (e) {
-        toast.error('Upload gagal: ' + (e.message || e))
-      } finally {
-        fotoState.value.uploading = false
-      }
+    const url = await uploadBase64(
+      `profil_foto/${props.role}_${props.entityId}_${Date.now()}.jpg`,
+      fotoState.value.dataUrl,
+      fotoState.value.file.type
+    )
+    if (props.role === 'admin') {
+      // Admin built-in tak punya dokumen guru/santri → simpan foto di settings/web
+      //   (field adminFoto, read publik). Avatar dibaca via useRibbonUser/ProfilAdmin
+      //   dari settings store yang subscribe real-time ke settings/web.
+      await setOne('settings', 'web', { adminFoto: url })
+      settingsStore.settings.adminFoto = url
+    } else {
+      const coll = props.role === 'guru' ? 'guru' : 'santri'
+      await setOne(coll, String(props.entityId), { foto: url })
     }
-    reader.readAsDataURL(file)
+    toast.success('Foto profil diupdate')
+    closeModal()
+    emit('updated')
   } catch (e) {
+    toast.error('Upload gagal: ' + (e.message || e))
+  } finally {
     fotoState.value.uploading = false
-    toast.error('Error: ' + (e.message || e))
   }
 }
 

@@ -38,6 +38,10 @@
     "LocalNotifications": {
       "smallIcon": "ic_stat_ammu",
       "iconColor": "#0F766E"
+    },
+    "FirebaseAuthentication": {
+      "skipNativeAuth": true,
+      "providers": ["google.com"]
     }
   },
   "server": {

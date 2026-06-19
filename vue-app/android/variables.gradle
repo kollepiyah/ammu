@@ -13,4 +13,7 @@ ext {
     androidxJunitVersion = '1.2.1'
     androidxEspressoCoreVersion = '3.6.1'
     cordovaAndroidVersion = '10.1.1'
+    // v.108: aktifkan dependensi Google Sign-In utk @capacitor-firebase/authentication.
+    //   Tanpa flag ini, deps Google cuma compileOnly → runtime crash saat signInWithGoogle.
+    rgcfaIncludeGoogle = true
 }
