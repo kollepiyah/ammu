@@ -386,6 +386,24 @@
             >{{ statusLabel(a.status) }}</span
           >
         </div>
+        <!-- v.107 CRUD (super_admin): uji ulang / hapus record historis -->
+        <div
+          v-if="canCrud"
+          class="mt-2 pt-2 border-t border-[var(--border-subtle)] flex justify-end gap-2"
+        >
+          <button
+            @click="ujiUlang(a)"
+            class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl text-xs font-bold bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200"
+          >
+            <i class="fas fa-rotate-left"></i>Uji Ulang
+          </button>
+          <button
+            @click="hapusRecord(a)"
+            class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl text-xs font-bold bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200"
+          >
+            <i class="fas fa-trash"></i>Hapus
+          </button>
+        </div>
       </div>
     </div>
 
@@ -667,8 +685,52 @@ const confirmDlg = useConfirm()
 const settingsStore = useSettingsStore()
 
 const { santri, search, guruRaw } = useSantri()
-const { myAjuan, antrian, riwayat, isPenguji, ajukanBatch, putuskan, batalAjuan, hasOpenAjuan } =
-  useTesKenaikan()
+const {
+  myAjuan,
+  antrian,
+  riwayat,
+  isPenguji,
+  ajukanBatch,
+  putuskan,
+  batalAjuan,
+  hasOpenAjuan,
+  canCrud,
+  resetAjuan,
+  hapusAjuan
+} = useTesKenaikan()
+
+// v.107 CRUD (super_admin): uji ulang (reset → antrian utk dinilai ulang) + hapus record.
+async function ujiUlang(a) {
+  const ok = await confirmDlg({
+    title: `Uji ulang ${a.nama_cache}?`,
+    message:
+      'Record dikembalikan ke antrian (status "diajukan") & nilai/hasil dikosongkan agar bisa dinilai ulang.',
+    confirmText: 'Uji Ulang'
+  })
+  if (!ok) return
+  try {
+    await resetAjuan(a.id)
+    toast.success('Dikembalikan ke antrian untuk uji ulang.')
+  } catch (e) {
+    toast.error('Gagal: ' + (e.message || e))
+  }
+}
+async function hapusRecord(a) {
+  const ok = await confirmDlg({
+    title: `Hapus record tes ${a.nama_cache}?`,
+    message:
+      'Record tes kenaikan dihapus permanen (dicadangkan ke audit_log). Tidak mengubah kelas/rapor santri.',
+    confirmText: 'Hapus',
+    danger: true
+  })
+  if (!ok) return
+  try {
+    await hapusAjuan(a.id)
+    toast.success('Record tes dihapus.')
+  } catch (e) {
+    toast.error('Gagal hapus: ' + (e.message || e))
+  }
+}
 
 const settings = computed(() => settingsStore.settings || {})
 

@@ -642,6 +642,9 @@
                       <th class="border border-emerald-100 px-2 py-1 text-center">Awal</th>
                       <th class="border border-emerald-100 px-2 py-1 text-center">Akhir</th>
                       <th class="border border-emerald-100 px-2 py-1 text-center">Total</th>
+                      <th v-if="canCrud" class="border border-emerald-100 px-2 py-1 text-center">
+                        Aksi
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -660,6 +663,25 @@
                       >
                         {{ r.total || '-'
                         }}<span v-if="r.juz" class="text-rose-600"> · {{ r.juz }}</span>
+                      </td>
+                      <td
+                        v-if="canCrud"
+                        class="border border-slate-200 px-1 py-1 text-center whitespace-nowrap"
+                      >
+                        <button
+                          @click="openEditPrestasi(r)"
+                          class="text-cyan-600 hover:text-cyan-800 px-1"
+                          title="Koreksi"
+                        >
+                          <i class="fas fa-pen"></i>
+                        </button>
+                        <button
+                          @click="hapusPrestasi(r)"
+                          class="text-rose-600 hover:text-rose-800 px-1"
+                          title="Hapus"
+                        >
+                          <i class="fas fa-trash"></i>
+                        </button>
                       </td>
                     </tr>
                   </tbody>
@@ -1037,14 +1059,77 @@
       </div>
     </template>
   </div>
-</template>
+    <!-- v.107: modal koreksi prestasi bulanan (super_admin) -->
+    <div
+      v-if="editP"
+      class="fixed inset-0 z-[100] bg-black/40 flex items-center justify-center p-4"
+      @click.self="editP = null"
+    >
+      <div
+        class="bg-[var(--bg-card)] rounded-2xl p-4 w-full max-w-xs shadow-xl border border-[var(--border-subtle)]"
+      >
+        <h3 class="text-sm font-bold text-[var(--text-primary)] mb-3">
+          Koreksi Prestasi — {{ editP.label }}
+        </h3>
+        <div class="space-y-2">
+          <label class="block text-[11px] font-semibold text-[var(--text-secondary)]"
+            >Awal
+            <input
+              v-model="editP.awal"
+              type="number"
+              class="mt-0.5 w-full px-2.5 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)]"
+            />
+          </label>
+          <label class="block text-[11px] font-semibold text-[var(--text-secondary)]"
+            >Akhir
+            <input
+              v-model="editP.akhir"
+              type="number"
+              class="mt-0.5 w-full px-2.5 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)]"
+            />
+          </label>
+          <label class="block text-[11px] font-semibold text-[var(--text-secondary)]"
+            >Total
+            <input
+              v-model="editP.total"
+              type="number"
+              class="mt-0.5 w-full px-2.5 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)]"
+            />
+          </label>
+          <label class="block text-[11px] font-semibold text-[var(--text-secondary)]"
+            >Juz (opsional)
+            <input
+              v-model="editP.juz"
+              type="text"
+              class="mt-0.5 w-full px-2.5 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)]"
+            />
+          </label>
+        </div>
+        <div class="flex justify-end gap-2 mt-4">
+          <button
+            @click="editP = null"
+            class="h-9 px-3 rounded-xl text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200"
+          >
+            Batal
+          </button>
+          <button
+            @click="saveEditPrestasi()"
+            class="h-9 px-3 rounded-xl text-xs font-bold bg-teal-600 text-white hover:bg-teal-700"
+          >
+            Simpan
+          </button>
+        </div>
+      </div>
+    </div>
+  </template>
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, reactive, watch } from 'vue'
-import { subscribeColl } from '@/services/firestore'
+import { subscribeColl, deleteOne } from '@/services/firestore'
 import { db } from '@/services/firebase'
 import { doc, setDoc, updateDoc } from 'firebase/firestore'
 import { useToast } from '@/composables/useToast'
+import { useConfirm } from '@/composables/useConfirm'
 import { useExcel } from '@/composables/useExcel'
 import { useGoogleSheet } from '@/composables/useGoogleSheet' // v.100 Batch12: ekspor ke Google Sheet
 import { useSettingsStore } from '@/stores/settings'
@@ -1054,7 +1139,7 @@ import { buildListPdf } from '@/utils/pdfBuilder'
 import { muassisDataUrlSync } from '@/utils/kopMuassis' // v.100: baris-1 KOP print = gambar muassis
 import { useAuthStore } from '@/stores/auth'
 import { useRouter } from 'vue-router' // v.100c-fix: pilihKategori('diniyah') pakai router.push (sebelumnya undefined → ReferenceError)
-import { isFullFilterRole, isKepalaLembaga } from '@/utils/roleScope'
+import { isFullFilterRole, isKepalaLembaga, isSuperAdmin } from '@/utils/roleScope'
 import { ownsSekolah, deteksiTipeGuru } from '@/utils/guruScope' // v.100b: guru sekolah lihat prestasi qiraati santri kelasnya (read-only); v.100d: deteksiTipeGuru utk toggle kategori guru dual
 import { lembagaScopeMatches } from '@/composables/useLembaga'
 import { sortSantri } from '@/utils/santriSort'
@@ -1104,6 +1189,55 @@ const busy = ref(false)
 const search = ref('')
 const filterLembaga = ref('')
 const auth = useAuthStore()
+
+// v.107 CRUD (super_admin): koreksi/hapus snapshot prestasi bulanan (koleksi riwayat_prestasi).
+const confirmDlg = useConfirm()
+const canCrud = computed(() => isSuperAdmin(auth.sesiAktif || {}))
+const editP = ref(null) // record riwayat_prestasi yang sedang dikoreksi
+function openEditPrestasi(r) {
+  editP.value = {
+    id: r.id,
+    label: r.bulan_label || r.periode || '',
+    awal: r.awal ?? '',
+    akhir: r.akhir ?? '',
+    total: r.total ?? '',
+    juz: r.juz ?? ''
+  }
+}
+async function saveEditPrestasi() {
+  const e = editP.value
+  if (!e) return
+  try {
+    await updateDoc(doc(db, 'riwayat_prestasi', String(e.id)), {
+      awal: e.awal === '' ? null : Number(e.awal),
+      akhir: e.akhir === '' ? null : Number(e.akhir),
+      total: e.total === '' ? null : Number(e.total),
+      juz: e.juz === '' ? null : e.juz,
+      _edited_at: new Date().toISOString()
+    })
+    toast.success('Prestasi bulanan dikoreksi.')
+    editP.value = null
+  } catch (err) {
+    toast.error('Gagal simpan koreksi: ' + (err.message || err))
+  }
+}
+async function hapusPrestasi(r) {
+  const ok = await confirmDlg({
+    title: `Hapus prestasi ${r.bulan_label || r.periode}?`,
+    message: 'Snapshot prestasi bulanan ini dihapus (dicadangkan ke audit_log).',
+    confirmText: 'Hapus',
+    danger: true
+  })
+  if (!ok) return
+  try {
+    await deleteOne('riwayat_prestasi', String(r.id), {
+      alasan: 'Hapus snapshot prestasi bulanan (super_admin)'
+    })
+    toast.success('Prestasi bulanan dihapus.')
+  } catch (err) {
+    toast.error('Gagal hapus: ' + (err.message || err))
+  }
+}
 const router = useRouter()
 const { isMobile } = useMobileShell()
 const isFullFilter = computed(() => isFullFilterRole(auth.sesiAktif))

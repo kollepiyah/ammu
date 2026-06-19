@@ -3,7 +3,7 @@
 //   LULUS = tandai "siap naik" SAJA (tak ubah kelas santri) — kenaikan aktual tetap manual di
 //   NaikKelasView (kyai: santri bisa pindah kelas). Notif HP menyusul (Fase B, functions).
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { subscribeColl, addOne, updateOne } from '@/services/firestore'
+import { subscribeColl, addOne, updateOne, deleteOne } from '@/services/firestore'
 import { useAuthStore } from '@/stores/auth'
 import { isSuperAdmin, isAdminBiasa, isAdminKeuangan, isKepalaLembaga } from '@/utils/roleScope'
 import { lembagaScopeMatches } from '@/composables/useLembaga'
@@ -118,6 +118,33 @@ export function useTesKenaikan() {
     await updateOne('tes_kenaikan', id, { status: 'ditolak', catatan_hasil: 'Dibatalkan pengaju', tgl_hasil: new Date().toISOString() })
   }
 
+  // v.107 CRUD (super_admin saja): koreksi/hapus record tes_kenaikan historis.
+  const canCrud = computed(() => isSuperAdmin(sesi.value))
+  // Edit/koreksi record lama: ubah status/nilai/jenis/target/catatan (record tetap ada).
+  async function editAjuan(id, patch) {
+    await updateOne('tes_kenaikan', id, {
+      ...patch,
+      _edited_at: new Date().toISOString(),
+      _edited_by: myNama.value
+    })
+  }
+  // Reset ke 'diajukan' (uji ulang) — kosongkan hasil.
+  async function resetAjuan(id) {
+    await updateOne('tes_kenaikan', id, {
+      status: 'diajukan',
+      nilai: null,
+      catatan_hasil: '',
+      penguji: '',
+      tgl_hasil: '',
+      _edited_at: new Date().toISOString(),
+      _edited_by: myNama.value
+    })
+  }
+  // Hard-delete record (backup ke audit_log dulu via deleteOne).
+  async function hapusAjuan(id) {
+    await deleteOne('tes_kenaikan', id, { alasan: 'Hapus record tes kenaikan (super_admin)' })
+  }
+
   onMounted(() => {
     if (!auth.sesiAktif) return
     unsub = subscribeColl('tes_kenaikan', (docs) => {
@@ -143,6 +170,10 @@ export function useTesKenaikan() {
     hasOpenAjuan,
     ajukanBatch,
     putuskan,
-    batalAjuan
+    batalAjuan,
+    canCrud,
+    editAjuan,
+    resetAjuan,
+    hapusAjuan
   }
 }
