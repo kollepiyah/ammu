@@ -2259,14 +2259,14 @@ function labelItem(kelas, itemId) {
   return it ? it.label : itemId
 }
 
+// v.107: tanggal kartu kenaikan = teks "14 Mei 2026" (bulan teks + tahun 4 digit penuh).
+//   Berlaku ke semua ekspor PDF + list catatan. Input <input type=date> di preview modal tak terpengaruh.
 function formatDate(s) {
   if (!s) return '-'
   try {
-    return new Date(s).toLocaleDateString('id-ID', {
-      day: '2-digit',
-      month: 'short',
-      year: '2-digit'
-    })
+    const d = new Date(s)
+    if (isNaN(d)) return s
+    return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
   } catch {
     return s
   }
@@ -2998,18 +2998,42 @@ async function eksporKartuPdf() {
       // Solve: 66 + 2body = availableH → body = (availableH - 66) / 2
       const bodyRowH = Math.max(25, Math.min(60, (availableH - 70) / 2))
 
+      // v.107: baris tanggal (body row 0) digambar VERTIKAL (rotate down, -90°) — kolom Juz sempit,
+      //   DD-MM-YYYY tak muat horizontal. didParseCell kosongkan teks default; didDrawCell gambar manual.
+      const dateCellHooks = {
+        didParseCell: (d) => {
+          if (d.section === 'body' && d.row.index === 0) {
+            d.cell.styles.minCellHeight = bodyRowH
+            d.cell.styles.halign = 'center'
+            const t = Array.isArray(d.cell.text)
+              ? d.cell.text.join(' ').trim()
+              : String(d.cell.text || '').trim()
+            d.cell._vtext = t
+            if (t) d.cell.text = [''] // jangan gambar horizontal; vertikal di didDrawCell
+          }
+        },
+        didDrawCell: (d) => {
+          if (d.section === 'body' && d.row.index === 0 && d.cell._vtext) {
+            const txt = d.cell._vtext
+            const prev = doc.getFontSize()
+            doc.setFontSize(12) // v.107: perbesar font tanggal
+            // CENTER penuh: anchor di tengah sel; align:'center' = tengah sepanjang teks
+            //   (sumbu vertikal), baseline:'middle' = tengah tebal huruf (sumbu horizontal).
+            const cx = d.cell.x + d.cell.width / 2
+            const cy = d.cell.y + d.cell.height / 2
+            doc.text(txt, cx, cy, { angle: -90, align: 'center', baseline: 'middle' }) // -90 = atas→bawah
+            doc.setFontSize(prev)
+          }
+        }
+      }
+
       const blokA = buildBlok(1)
       drawTable(doc, {
         ...commonOpts,
         startY: tableStartY,
         head: blokA.head,
         body: blokA.body,
-        didParseCell: (data) => {
-          if (data.section === 'body' && data.row.index === 0) {
-            data.cell.styles.minCellHeight = bodyRowH
-            data.cell.styles.halign = 'center'
-          }
-        }
+        ...dateCellHooks
       })
 
       const lastY = doc.lastAutoTable.finalY
@@ -3019,12 +3043,7 @@ async function eksporKartuPdf() {
         startY: lastY + 4,
         head: blokB.head,
         body: blokB.body,
-        didParseCell: (data) => {
-          if (data.section === 'body' && data.row.index === 0) {
-            data.cell.styles.minCellHeight = bodyRowH
-            data.cell.styles.halign = 'center'
-          }
-        }
+        ...dateCellHooks
       })
     } else {
       // Flat layout dengan rowspan kelas (TPQ, Pra PTPT, PPPH)
