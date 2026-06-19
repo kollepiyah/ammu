@@ -3118,12 +3118,16 @@ async function eksporKartuPdf() {
           if (d.section === 'body' && d.row.index === 0 && d.cell._vtext) {
             const txt = d.cell._vtext
             const prev = doc.getFontSize()
-            doc.setFontSize(12) // v.107: perbesar font tanggal
-            // CENTER penuh: anchor di tengah sel; align:'center' = tengah sepanjang teks
-            //   (sumbu vertikal), baseline:'middle' = tengah tebal huruf (sumbu horizontal).
+            const fs = 12 // perbesar font tanggal
+            doc.setFontSize(fs)
+            // CENTER manual (JANGAN pakai align/baseline + angle — di jsPDF itu menggeser anchor
+            //   sejauh ½ lebar teks ke kiri ⇒ tanggal lompat ~1 kolom + tak center). Hitung sendiri:
+            const tw = doc.getTextWidth(txt) // panjang teks (mm) → rentang vertikal saat dirotasi
+            const capH = fs * 0.3528 * 0.72 // tinggi huruf (mm) → rentang horizontal
             const cx = d.cell.x + d.cell.width / 2
             const cy = d.cell.y + d.cell.height / 2
-            doc.text(txt, cx, cy, { angle: -90, align: 'center', baseline: 'middle' }) // -90 = atas→bawah
+            // angle -90 = baca atas→bawah; anchor tepi-atas teks (cy - tw/2) di tengah-horizontal sel.
+            doc.text(txt, cx + capH / 2, cy - tw / 2, { angle: -90 })
             doc.setFontSize(prev)
           }
         }
