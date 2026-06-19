@@ -88,12 +88,18 @@
               class="w-full text-sm"
             />
             <p class="text-[10px] text-[var(--text-secondary)] italic mt-2">JPG/PNG, maks 2MB</p>
-            <div v-if="fotoState.dataUrl" class="mt-3 flex justify-center">
-              <img
+            <div v-if="fotoState.dataUrl" class="mt-3">
+              <Cropper
+                ref="cropperRef"
                 :src="fotoState.dataUrl"
-                alt="Pratinjau foto"
-                class="w-24 h-24 rounded-full object-cover border border-[var(--border-default)]"
+                :stencil-component="CircleStencil"
+                :stencil-props="{ aspectRatio: 1 }"
+                :canvas="{ maxWidth: 512, maxHeight: 512 }"
+                class="h-64 rounded-lg bg-slate-100 dark:bg-slate-800"
               />
+              <p class="text-[10px] text-[var(--text-secondary)] italic mt-2 text-center">
+                Geser &amp; cubit untuk atur posisi foto
+              </p>
             </div>
           </div>
 
@@ -295,6 +301,8 @@ import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
 import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
+import { Cropper, CircleStencil } from 'vue-advanced-cropper'
+import 'vue-advanced-cropper/dist/style.css'
 
 const props = defineProps({
   role: { type: String, default: 'admin' },
@@ -386,6 +394,7 @@ const items = computed(() => {
 
 const formSandi = ref({ lama: '', baru: '', konfirmasi: '' })
 const fotoState = ref({ uploading: false, dataUrl: '', file: null })
+const cropperRef = ref(null)
 const usernameState = ref({ value: '', checking: false, available: null })
 const waState = ref({ value: '' })
 const ttdState = ref({ uploading: false, dataUrl: '' })
@@ -493,13 +502,22 @@ function onPickFoto(ev) {
 }
 
 async function simpanFoto() {
-  if (!fotoState.value.dataUrl || !fotoState.value.file) return toast.error('Pilih foto dulu')
+  if (!fotoState.value.dataUrl) return toast.error('Pilih foto dulu')
   fotoState.value.uploading = true
   try {
+    // Ambil hasil crop (canvas, maks 512px) → JPEG. Fallback ke gambar asli bila cropper
+    //   belum siap.
+    let dataUrl = fotoState.value.dataUrl
+    let contentType = fotoState.value.file?.type || 'image/jpeg'
+    const result = cropperRef.value && cropperRef.value.getResult()
+    if (result && result.canvas) {
+      dataUrl = result.canvas.toDataURL('image/jpeg', 0.9)
+      contentType = 'image/jpeg'
+    }
     const url = await uploadBase64(
       `profil_foto/${props.role}_${props.entityId}_${Date.now()}.jpg`,
-      fotoState.value.dataUrl,
-      fotoState.value.file.type
+      dataUrl,
+      contentType
     )
     if (props.role === 'admin') {
       // Admin built-in tak punya dokumen guru/santri → simpan foto di settings/web
