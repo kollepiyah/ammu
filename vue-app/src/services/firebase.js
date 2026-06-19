@@ -1,7 +1,7 @@
 // Firebase v10 modular — init satu kali, export instances
 // Migrasi dari `firebase.firestore()` (compat) di legacy ke modular SDK
 import { initializeApp, getApp } from 'firebase/app'
-import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore'
+import { initializeFirestore, getFirestore, connectFirestoreEmulator } from 'firebase/firestore'
 import { getAuth, connectAuthEmulator } from 'firebase/auth'
 import { getStorage, connectStorageEmulator } from 'firebase/storage'
 import { initializeAppCheck, ReCaptchaV3Provider, CustomProvider } from 'firebase/app-check'
@@ -34,13 +34,18 @@ function _ensureNativeAppCheck() {
       const FAC = mod.FirebaseAppCheck
       // Android: provider Play Integrity otomatis (sesuai google-services.json).
       await FAC.initialize({ isTokenAutoRefreshEnabled: true })
-      return FAC
+      // v.109 FIX: FAC = Capacitor plugin proxy yang merespons SEMUA akses properti
+      // (termasuk `.then`) dengan sebuah fungsi → bila `return FAC` di dalam .then/async,
+      // mesin Promise menyangka FAC thenable lalu memanggil FAC.then(resolve,reject) →
+      // native "FirebaseAppCheck.then() is not implemented on android". Bungkus objek
+      // biasa agar nilai resolve BUKAN thenable.
+      return { FAC }
     })
   }
   return _nativeAppCheckReady
 }
 async function _getNativeAppCheckToken() {
-  const FAC = await _ensureNativeAppCheck()
+  const { FAC } = await _ensureNativeAppCheck()
   const r = await FAC.getToken()
   return { token: r.token, expireTimeMillis: r.expireTimeMillis }
 }
@@ -95,7 +100,16 @@ try {
   }
 } catch (e) { /* non-blocking */ }
 // ==========================================================================================
-export const db = getFirestore(firebaseApp)
+// v.109 FIX: Firestore transport. Default WebChannel streaming GAGAL di Android WebView
+// (Capacitor) → "Could not reach Cloud Firestore backend within 10 seconds" → offline mode
+// → data macet "Memuat…" selamanya. Force long-polling KHUSUS native; web tetap WebChannel
+// (lebih efisien & sudah jalan). initializeFirestore WAJIB jadi akses Firestore PERTAMA —
+// titik ini adalah init Firestore pertama di app, jadi aman.
+const _isCapNativeFS =
+  typeof window !== 'undefined' && window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()
+export const db = _isCapNativeFS
+  ? initializeFirestore(firebaseApp, { experimentalForceLongPolling: true })
+  : getFirestore(firebaseApp)
 export const auth = getAuth(firebaseApp)
 export const storage = getStorage(firebaseApp)
 
