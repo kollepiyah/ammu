@@ -555,6 +555,14 @@
               >
                 <i class="fas fa-eye"></i>Lihat
               </button>
+              <button
+                v-if="canCrud && (s.riwayat_kenaikan || []).length"
+                @click="batalKenaikanTerakhir(s)"
+                class="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold px-3 py-1.5 rounded-lg text-xs cursor-pointer flex items-center gap-1 flex-shrink-0"
+                title="Batalkan kenaikan terakhir (super_admin)"
+              >
+                <i class="fas fa-rotate-left"></i>Batal
+              </button>
             </div>
             <div
               v-if="expanded.has(s.id)"
@@ -1299,11 +1307,14 @@
 import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useDesktopShell } from '@/composables/useDesktopShell'
 import { definePageActions } from '@/composables/useRibbonContext'
-import { collection, doc, getDocs, setDoc, updateDoc } from 'firebase/firestore'
+import { collection, doc, getDocs, setDoc, updateDoc, query, where } from 'firebase/firestore'
 import { db } from '@/services/firebase'
+import { deleteOne } from '@/services/firestore'
 import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
+import { useConfirm } from '@/composables/useConfirm'
+import { isSuperAdmin } from '@/utils/roleScope'
 import { useGuru } from '@/composables/useGuru'
 import { useExcel } from '@/composables/useExcel'
 import { useGoogleSheet } from '@/composables/useGoogleSheet' // v.100 Batch12: ekspor ke Google Sheet
@@ -1328,6 +1339,9 @@ import { imageToDataURL } from '@/services/pdf'
 const authStore = useAuthStore()
 const settingsStore = useSettingsStore()
 const toast = useToast()
+const confirmDlg = useConfirm()
+// v.107 CRUD (super_admin): batalkan kenaikan terakhir (undo cascade) — pulihkan kelas/juz santri.
+const canCrud = computed(() => isSuperAdmin(authStore.sesiAktif || {}))
 const { guruRaw } = useGuru()
 const { exportStyled } = useExcel()
 // v.100 Batch12: kirim Riwayat Kenaikan ke Google Sheet (hybrid, mirip PDF)
@@ -2696,6 +2710,94 @@ async function saveFormKenaikan() {
     toast.error('Gagal: ' + (e.message || e))
   } finally {
     savingForm.value = false
+  }
+}
+
+// v.107 CRUD (super_admin): batalkan kenaikan TERAKHIR santri (undo cascade).
+//   Pulihkan kelas/lembaga ke `dari_*` entri terakhir + juz ke entri sebelumnya (PTPT);
+//   buang stempel tanggal di kartu_kenaikan; pop entri riwayat_kenaikan[] + riwayat[];
+//   hapus event doc `riwayat_kenaikan` terbaru (backup audit_log). Pra-launch (data uji) aman.
+async function batalKenaikanTerakhir(s) {
+  const arr = Array.isArray(s.riwayat_kenaikan) ? s.riwayat_kenaikan : []
+  if (!arr.length) {
+    toast.warning('Tidak ada kenaikan untuk dibatalkan.')
+    return
+  }
+  const last = arr[arr.length - 1]
+  const prev = arr.length >= 2 ? arr[arr.length - 2] : null
+  const balikKe = `${last.dari_lembaga || '-'}${last.dari_kelas ? ' · ' + last.dari_kelas : ''}`
+  const ok = await confirmDlg({
+    title: `Batalkan kenaikan terakhir ${s.nama}?`,
+    message:
+      `Santri dikembalikan ke: ${balikKe}. Entri terakhir (${last.tanggal_display || last.tanggal}) dihapus, ` +
+      'stempel tanggal di kartu dibuang, event dicadangkan ke audit_log. Hanya kenaikan TERAKHIR yang dibatalkan.',
+    confirmText: 'Batalkan',
+    danger: true
+  })
+  if (!ok) return
+  try {
+    const patch = {
+      lembaga: last.dari_lembaga || '',
+      kelas: last.dari_kelas || '',
+      juz: prev && prev.juz ? prev.juz : ''
+    }
+    // buang stempel tanggal di kartu_kenaikan untuk entri ini
+    const kk = { ...(s.kartu_kenaikan || {}) }
+    const lmb = last.ke_lembaga
+    if (lmb && kk[lmb]) {
+      const jn = last.juz ? juzNum(last.juz) : ''
+      const resolved = resolveKenaikanSchemaPath(
+        lmb,
+        last.ke_kelas,
+        jn,
+        last.khotam_ke,
+        settingsStore.settings
+      )
+      if (resolved.kelasId && kk[lmb][resolved.kelasId]) {
+        const blk = { ...kk[lmb][resolved.kelasId] }
+        if (resolved.itemId && blk[resolved.itemId] != null) delete blk[resolved.itemId]
+        kk[lmb] = { ...kk[lmb], [resolved.kelasId]: blk }
+        patch.kartu_kenaikan = kk
+      }
+    }
+    // pop entri terakhir dari array embedded (riwayat_kenaikan + riwayat teks)
+    patch.riwayat_kenaikan = arr.slice(0, -1)
+    if (Array.isArray(s.riwayat) && s.riwayat.length) {
+      const r = [...s.riwayat]
+      for (let i = r.length - 1; i >= 0; i--) {
+        if (
+          String(r[i].tgl_naik || '') === String(last.tanggal || '') &&
+          String(r[i].kelas_to || '') === String(last.ke_kelas || '')
+        ) {
+          r.splice(i, 1)
+          break
+        }
+      }
+      patch.riwayat = r
+    }
+    await updateDoc(doc(db, 'santri', String(s.id)), patch)
+    Object.assign(s, patch)
+    const idx = santriList.value.findIndex((x) => String(x.id) === String(s.id))
+    if (idx >= 0) Object.assign(santriList.value[idx], patch)
+    // hapus event doc riwayat_kenaikan TERBARU milik santri ini (backup ke audit_log)
+    try {
+      const snap = await getDocs(
+        query(collection(db, 'riwayat_kenaikan'), where('santri_id', '==', String(s.id)))
+      )
+      const evs = snap.docs
+        .map((d) => ({ id: d.id, ...d.data() }))
+        .sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')))
+      if (evs[0]) {
+        await deleteOne('riwayat_kenaikan', evs[0].id, {
+          alasan: 'Batalkan kenaikan terakhir (super_admin)'
+        })
+      }
+    } catch (e) {
+      /* event best-effort */
+    }
+    toast.success(`Kenaikan terakhir ${s.nama} dibatalkan → ${patch.lembaga} ${patch.kelas}`)
+  } catch (e) {
+    toast.error('Gagal batalkan: ' + (e.message || e))
   }
 }
 
