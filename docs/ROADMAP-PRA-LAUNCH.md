@@ -17,9 +17,9 @@
 
 | Tahap | Aksi | Gerbang uji | Status |
 |------|------|-------------|--------|
-| **S1** | Hapus password plaintext santri/guru (login = Firebase Auth, sandi awal '1234') | strip field doc lama | ✅ kode v.102 (`a5839b1`); ⏳ jalankan `stripPlaintextPasswords` 1× |
+| **S1** | Hapus password plaintext santri/guru (login = Firebase Auth, sandi awal '1234') | strip field doc lama | ✅ **SELESAI** — `stripPlaintextPasswords` dijalankan 1× (20 Jun); field `password` vestigial, login Firebase Auth asli |
 | **S2** | Login-lookup **server-only**: andalkan Cloud Function `findUserByLogin` (Admin SDK baca server-side); lepas ketergantungan direct-read publik | login admin/guru/santri jalan tanpa read publik | ✅ `541ae6e` — deployed + login OK (kyai) |
-| **S3** | **Tutup read publik** `santri`/`guru` → `signedIn()` (settings/web tetap publik utk branding, tanpa rahasia) | semua halaman data jalan pasca-login; PSB jalan | ✅ rules applied; ⏳ `firebase deploy --only firestore:rules` + tes 3 role |
+| **S3** | **Tutup read publik** `santri`/`guru` → `signedIn()` (settings/web tetap publik utk branding, tanpa rahasia) | semua halaman data jalan pasca-login; PSB jalan | ✅ **SELESAI** — rules deployed + tes 3 role lolos (20 Jun); +8 koleksi absensi/keuangan ikut ditutup (`ee6b2ef`) |
 | **S4** | **Custom claims** (role di token JWT) + rules **write/delete per-role** (stop "siapa pun login = bisa nulis") | tiap role: yang berhak tulis bisa, lainnya ditolak | ✅ **SELESAI** (`eb1cd26`) — deploy+logout/login+tes super_admin lolos (16 Jun). HAPUS=super_admin saja; canManage/canKeuangan/canAkademik/canSupervisi; self-edit anti-eskalasi |
 | **S5** | **App Check enforce** (Storage dulu → Firestore/Auth) | setelah app produksi native terverifikasi | ⬜ tunggu produksi |
 
