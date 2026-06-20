@@ -14,7 +14,7 @@
             {{ hijriRangeLabel }}
           </p>
         </div>
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 flex-wrap justify-end">
           <button
             @click="prevMonth"
             aria-label="Bulan sebelumnya"
