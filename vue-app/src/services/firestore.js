@@ -49,9 +49,17 @@ export async function queryColl(collectionName, filters = [], orders = [], limit
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }))
 }
 
-/** Set (overwrite) dokumen. */
+/** Set (overwrite) dokumen. HATI-HATI: menimpa SELURUH dokumen. Untuk update
+ *  sebagian field (mis. edit profil), pakai mergeOne — bukan ini. */
 export async function setOne(collectionName, id, data) {
   await setDoc(doc(db, collectionName, id), data)
+}
+
+/** Set/merge sebagian field: pertahankan field lain + buat dokumen bila belum ada.
+ *  Penting agar rule validasi tetap lolos (request.resource.data masih punya
+ *  id/nama dari dokumen lama) dan tidak menghapus data. */
+export async function mergeOne(collectionName, id, data) {
+  await setDoc(doc(db, collectionName, id), data, { merge: true })
 }
 
 /** Update partial fields. */

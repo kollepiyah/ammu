@@ -289,7 +289,7 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import { setOne, queryColl } from '@/services/firestore'
+import { mergeOne, queryColl } from '@/services/firestore'
 import {
   linkGoogleAccount,
   unlinkGoogleAccount,
@@ -450,7 +450,7 @@ async function simpanSandi() {
         return
       }
       // Auth sukses → simpan salinan privat (settings/admin, read:false, write signedIn).
-      await setOne('settings', 'admin', { password: formSandi.value.baru })
+      await mergeOne('settings', 'admin', { password: formSandi.value.baru })
     } else {
       // v.102: guru/santri ganti sandi via Firebase Auth (sumber kebenaran login),
       //   BUKAN field Firestore plaintext. Reauth dgn sandi lama → updatePassword.
@@ -545,11 +545,11 @@ async function simpanFoto() {
         // Admin built-in tak punya dokumen guru/santri → simpan foto di settings/web
         //   (field adminFoto, read publik). Avatar dibaca via useRibbonUser/ProfilAdmin
         //   dari settings store yang subscribe real-time ke settings/web.
-        await setOne('settings', 'web', { adminFoto: url })
+        await mergeOne('settings', 'web', { adminFoto: url })
         settingsStore.settings.adminFoto = url
       } else {
         const coll = props.role === 'guru' ? 'guru' : 'santri'
-        await setOne(coll, String(props.entityId), { foto: url })
+        await mergeOne(coll, String(props.entityId), { foto: url })
       }
     })
     toast.success('Foto profil diupdate')
@@ -588,7 +588,7 @@ async function simpanUsername() {
   busy.value = true
   try {
     const coll = props.role === 'guru' ? 'guru' : 'santri'
-    await setOne(coll, String(props.entityId), { username: usernameState.value.value.trim() })
+    await mergeOne(coll, String(props.entityId), { username: usernameState.value.value.trim() })
     toast.success('Username updated')
     closeModal()
     emit('updated')
@@ -607,7 +607,7 @@ async function simpanWa() {
   busy.value = true
   try {
     const coll = props.role === 'guru' ? 'guru' : 'santri'
-    await setOne(coll, String(props.entityId), { wa: cleaned })
+    await mergeOne(coll, String(props.entityId), { wa: cleaned })
     toast.success('No WA diupdate')
     closeModal()
     emit('updated')
@@ -632,7 +632,7 @@ async function onPickTtd(ev) {
           reader.result,
           file.type
         )
-        await setOne('guru', String(props.entityId), { tanda_tangan: url })
+        await mergeOne('guru', String(props.entityId), { tanda_tangan: url })
         toast.success('Tanda tangan diupdate')
         closeModal()
         emit('updated')
@@ -655,7 +655,7 @@ async function simpanNotif() {
       toast.info('Admin notif diatur di Pengaturan Web')
     } else {
       const coll = props.role === 'guru' ? 'guru' : 'santri'
-      await setOne(coll, String(props.entityId), { notifEnabled: notifState.value.enabled })
+      await mergeOne(coll, String(props.entityId), { notifEnabled: notifState.value.enabled })
     }
     toast.success(notifState.value.enabled ? 'Notif AKTIF' : 'Notif NONAKTIF')
     closeModal()
@@ -670,7 +670,7 @@ async function simpanNotif() {
 async function simpanEkgq() {
   busy.value = true
   try {
-    await setOne('guru', String(props.entityId), { nig: ekgqState.value.value.trim() })
+    await mergeOne('guru', String(props.entityId), { nig: ekgqState.value.value.trim() })
     toast.success('NIG (Nomor Induk Guru) disimpan')
     closeModal()
     emit('updated')
