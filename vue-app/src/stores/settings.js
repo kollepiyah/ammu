@@ -5,7 +5,7 @@
 // Subscribe ke 'general' real-time supaya kalibrasi Hijri / kop / logo update otomatis di Vue.
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { getOne, setOne, subscribeDoc } from '@/services/firestore'
+import { getOne, mergeOne, subscribeDoc } from '@/services/firestore'
 
 const SETTINGS_DOC_ID_VUE = 'web' // Firestore: settings/web (Vue Pengaturan PoC)
 const SETTINGS_DOC_ID_LEGACY = 'general' // Firestore: settings/general (legacy Pengaturan Web — source of truth)
@@ -132,8 +132,8 @@ export const useSettingsStore = defineStore('settings', () => {
       // Sebelumnya hanya save ke /web → legacy /general overwrite di subscribe
       // → kalibrasiHijri, kop, dll tampak "tidak tersimpan" padahal sudah.
       await Promise.all([
-        setOne('settings', SETTINGS_DOC_ID_LEGACY, merged),
-        setOne('settings', SETTINGS_DOC_ID_VUE, merged)
+        mergeOne('settings', SETTINGS_DOC_ID_LEGACY, merged),
+        mergeOne('settings', SETTINGS_DOC_ID_VUE, merged)
       ])
       settings.value = merged
     } catch (e) {

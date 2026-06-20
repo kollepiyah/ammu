@@ -310,7 +310,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
-import { subscribeColl, updateOne, deleteOne, subscribeDoc, setOne } from '@/services/firestore'
+import { subscribeColl, updateOne, deleteOne, subscribeDoc, mergeOne } from '@/services/firestore'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
@@ -531,7 +531,7 @@ async function savePsbAssets() {
       syarat: psbAssetSyarat.value || '',
       pembayaran: psbAssetPembayaran.value || ''
     }
-    await setOne('settings', 'psb_assets', merged)
+    await mergeOne('settings', 'psb_assets', merged)
     toast.success('Berhasil simpan asset PSB lembaga ' + psbAssetLembaga.value)
   } catch (e) {
     toast.error('Gagal: ' + (e?.message || e))
