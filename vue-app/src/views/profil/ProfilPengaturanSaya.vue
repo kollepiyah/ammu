@@ -297,7 +297,7 @@ import {
   toAuthPassword,
   syncUserClaims
 } from '@/services/auth'
-import { uploadBase64 } from '@/services/storage'
+import { uploadBase64, deleteFile } from '@/services/storage'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
 import { useAuthStore } from '@/stores/auth'
@@ -494,8 +494,7 @@ async function writeWithClaimRetry(writeFn) {
     return await writeFn()
   } catch (e) {
     const denied =
-      e?.code === 'permission-denied' ||
-      /insufficient permissions/i.test(String(e?.message || ''))
+      e?.code === 'permission-denied' || /insufficient permissions/i.test(String(e?.message || ''))
     if (!denied) throw e
     const role = await syncUserClaims().catch(() => null)
     if (!role) {
@@ -526,6 +525,9 @@ async function simpanFoto() {
   if (!fotoState.value.dataUrl) return toast.error('Pilih foto dulu')
   fotoState.value.uploading = true
   try {
+    // v.108: simpan URL foto lama (sebelum ditimpa) utk dihapus dari Storage setelah
+    //   write sukses — cegah file yatim numpuk.
+    const fotoLama = props.role === 'admin' ? settingsStore.settings.adminFoto : props.entity?.foto
     // Ambil hasil crop (canvas, maks 512px) → JPEG. Fallback ke gambar asli bila cropper
     //   belum siap.
     let dataUrl = fotoState.value.dataUrl
@@ -552,6 +554,11 @@ async function simpanFoto() {
         await mergeOne(coll, String(props.entityId), { foto: url })
       }
     })
+    // v.108: hapus foto lama di Storage (best-effort, HANYA file kelolaan 'profil_foto/').
+    //   Non-blocking: gagal hapus tak membatalkan simpan; object-not-found ditelan deleteFile.
+    if (fotoLama && fotoLama !== url && /profil_foto/.test(fotoLama)) {
+      deleteFile(fotoLama).catch(() => {})
+    }
     // v.108: avatar pita/greeting update SEKETIKA tanpa refresh (sesiAktif.foto reaktif)
     authStore.updateSesiFoto(url)
     // v.108: foto BESAR di halaman profil baca props.entity.foto (objek guru/santri parent).
