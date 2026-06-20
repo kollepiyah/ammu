@@ -189,7 +189,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useDesktopShell } from '@/composables/useDesktopShell'
-import { doc, getDoc } from 'firebase/firestore'
+import { doc, getDoc, runTransaction } from 'firebase/firestore'
 import { db } from '@/services/firebase'
 import { subscribeColl, setOne, deleteOne } from '@/services/firestore'
 import { useAuthStore } from '@/stores/auth'
@@ -347,24 +347,31 @@ async function verifyTransfer(p) {
       verified_by: auth.sesiAktif?.nama || 'Admin',
       created_at: new Date().toISOString()
     })
-    // update tagihan terkait (kalau ada link) — non-fatal
+    // update tagihan terkait (kalau ada link) — non-fatal, ATOMIK + IDEMPOTEN.
+    // v.108: transaksi cegah lost-update (2 admin/device proses bersamaan) +
+    //   applied_transfer_refs cegah DOBEL-hitung saat retry (status 'verified' di-set
+    //   TERAKHIR → transfer bisa diulang; tanpa guard ini bayar bertambah 2×).
     if (p.tagihan_id) {
       try {
-        const tgSnap = await getDoc(doc(db, 'keuangan_tagihan', String(p.tagihan_id)))
-        if (tgSnap.exists()) {
+        const tgRef = doc(db, 'keuangan_tagihan', String(p.tagihan_id))
+        await runTransaction(db, async (tx) => {
+          const tgSnap = await tx.get(tgRef)
+          if (!tgSnap.exists()) return
           const tg = tgSnap.data()
+          const applied = Array.isArray(tg.applied_transfer_refs) ? tg.applied_transfer_refs : []
+          if (applied.includes(p.id)) return // transfer ini sudah dihitung → idempoten, skip
           const newBayar = (Number(tg.bayar) || 0) + Number(p.nominal || 0)
           const penuh = Number(tg.nominal || 0)
           const statusBaru = penuh > 0 && newBayar >= penuh - 0.5 ? 'lunas' : newBayar > 0 ? 'partial' : 'belum'
-          await setOne('keuangan_tagihan', String(p.tagihan_id), {
-            ...tg,
+          tx.update(tgRef, {
             bayar: newBayar,
             dibayar: newBayar,
             status: statusBaru,
             last_payment_at: new Date().toISOString(),
-            last_payment_ref: buId
+            last_payment_ref: buId,
+            applied_transfer_refs: [...applied, p.id]
           })
-        }
+        })
       } catch (e) {
         console.warn('[verifyTransfer] update tagihan gagal:', e?.message)
       }
