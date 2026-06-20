@@ -396,6 +396,15 @@ export const useAuthStore = defineStore('auth', () => {
     _persistFullSesi(sesi) // v.85.0526: auto-persist supaya Android close-app tidak logout
   }
 
+  // v.108: update foto sesi seketika supaya avatar pita/greeting reaktif TANPA refresh
+  //   (fotoUrl di useRibbonUser baca sesiAktif.foto duluan). + persist agar tahan reopen.
+  function updateSesiFoto(url) {
+    if (!sesiAktif.value) return
+    sesiAktif.value = { ...sesiAktif.value, foto: url }
+    _persistFullSesi(sesiAktif.value)
+    if (String(sesiAktif.value.id) === 'admin') _persistAdminSesi(sesiAktif.value)
+  }
+
   /**
    * Restore sesi admin built-in dari localStorage saat App init.
    * Dipanggil di App.vue onMounted setelah Firebase Auth check selesai.
@@ -488,6 +497,7 @@ export const useAuthStore = defineStore('auth', () => {
     logout,
     setSesi: setSesiAktif,
     setSesiAktif,
+    updateSesiFoto,
     restoreAdminSesiFromStorage,
     initAuth,
     loadSesiFromUser

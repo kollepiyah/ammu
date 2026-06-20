@@ -312,7 +312,7 @@ const props = defineProps({
 })
 const emit = defineEmits(['updated'])
 
-useAuthStore()
+const authStore = useAuthStore()
 const settingsStore = useSettingsStore()
 const toast = useToast()
 const confirmDlg = useConfirm()
@@ -552,6 +552,8 @@ async function simpanFoto() {
         await mergeOne(coll, String(props.entityId), { foto: url })
       }
     })
+    // v.108: avatar pita/greeting update SEKETIKA tanpa refresh (sesiAktif.foto reaktif)
+    authStore.updateSesiFoto(url)
     toast.success('Foto profil diupdate')
     closeModal()
     emit('updated')
