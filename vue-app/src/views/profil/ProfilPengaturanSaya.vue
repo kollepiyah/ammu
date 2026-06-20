@@ -554,6 +554,10 @@ async function simpanFoto() {
     })
     // v.108: avatar pita/greeting update SEKETIKA tanpa refresh (sesiAktif.foto reaktif)
     authStore.updateSesiFoto(url)
+    // v.108: foto BESAR di halaman profil baca props.entity.foto (objek guru/santri parent).
+    //   Mutasi langsung supaya reflect tanpa refresh (pola sama Object.assign(props.guru) di
+    //   ProfilGuru). Admin pakai settings.adminFoto (sudah di-set di atas).
+    if (props.entity && props.role !== 'admin') props.entity.foto = url
     toast.success('Foto profil diupdate')
     closeModal()
     emit('updated')
