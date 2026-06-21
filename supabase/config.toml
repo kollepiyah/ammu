@@ -1,0 +1,10 @@
+# Supabase config — Ammu Online (SINGLE-TENANT, Pondok Mambaul Ulum).
+# Project ref: rzwefjilxzsqlokkwiyt — region ap-southeast-1 (Singapore).
+# Skema dikelola via supabase/migrations/*.sql → auto-apply lewat integrasi GitHub saat push.
+# TIDAK ada tenant_id (single-tenant); RLS hanya untuk PERAN
+# (super_admin / admin / admin_keuangan / guru / santri).
+project_id = "rzwefjilxzsqlokkwiyt"
+
+[db]
+# Versi Postgres untuk `supabase start` lokal (opsional). Remote di-manage Supabase.
+major_version = 15

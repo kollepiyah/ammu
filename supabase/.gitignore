@@ -1,0 +1,4 @@
+# Supabase local artifacts & secrets — JANGAN commit
+.branches
+.temp
+.env
