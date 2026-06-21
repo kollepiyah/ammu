@@ -201,6 +201,8 @@ const routes = [
       { path: 'rekap-diniyah', name: 'rekap-diniyah', component: RekapDiniyahView, meta: { noSantri: true } },
       // v.21.19.0526: Master Data HANYA super_admin (kyai req)
       { path: 'master-data', name: 'master-data', component: MasterDataView, meta: { admin: true, roleSistem: 'super_admin' } },
+      // F3 (migrasi Supabase): alat impor master Excel -> Supabase (super_admin)
+      { path: 'impor-supabase', name: 'impor-supabase', component: () => import('@/views/ImporSupabaseView.vue'), meta: { admin: true, roleSistem: 'super_admin', noSantri: true } },
       // v.20.13.0526: Capaian Prestasi (santri only — merged Dashboard + Pendidikan menu)
       { path: 'capaian-prestasi', name: 'capaian-prestasi', component: CapaianPrestasiView },
       // v.20.18.0526: Personal page admin (statistik kehadiran + slip bisyaroh personal)
