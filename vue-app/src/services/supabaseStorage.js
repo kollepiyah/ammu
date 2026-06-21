@@ -1,11 +1,14 @@
 // supabaseStorage.js — F3: Supabase Storage (paralel storage.js Firebase).
-// Bucket disarankan (buat di Dashboard Supabase, set PUBLIC utk foto/branding):
-//   'fotos'    -> foto santri/guru
+// Bucket SUDAH dibuat di Dashboard Supabase (set photo/branding PUBLIC):
+//   'photo'    -> foto santri/guru
 //   'branding' -> logo/kop aplikasi
 //   'psb'      -> dokumen pendaftaran
 // Belum dipakai view operasional sampai cutover (F6). migrateUrl = pindah file
 // dari Firebase Storage URL -> Supabase.
 import { supabase } from './supabase'
+
+// Sumber tunggal nama bucket (hindari salah ketik di pemanggil).
+export const BUCKET = { photo: 'photo', branding: 'branding', psb: 'psb' }
 
 function _ensure() {
   if (!supabase) throw new Error('Supabase belum dikonfigurasi (.env.local).')
