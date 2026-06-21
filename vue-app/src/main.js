@@ -18,6 +18,12 @@ const pinia = createPinia()
 app.use(pinia)
 app.use(router)
 
+// F4 (migrasi Supabase): SWR cache utk view yang sudah cutover ke db.js (F6).
+// Additif — tak memengaruhi store/firestore yang masih jalan.
+import { VueQueryPlugin } from '@tanstack/vue-query'
+import { queryClient } from './services/queryClient'
+app.use(VueQueryPlugin, { queryClient })
+
 // v.71.0526: register v-haptic directive globally untuk tombol native feel
 import { vHaptic } from './composables/useHaptic'
 app.directive('haptic', vHaptic)
