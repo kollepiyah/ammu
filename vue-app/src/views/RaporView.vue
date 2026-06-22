@@ -1283,7 +1283,7 @@ import { ref, computed, onMounted, onUnmounted, unref, nextTick, watch } from 'v
 import { useDesktopShell } from '@/composables/useDesktopShell'
 import { definePageActions } from '@/composables/useRibbonContext'
 import { useRoute } from 'vue-router'
-import { subscribeColl } from '@/services/firestore'
+import { subscribeColl, mergeOne, serverTimestamp } from '@/services/db'
 import { useSantri } from '@/composables/useSantri'
 import { useLembaga, lembagaScopeMatches } from '@/composables/useLembaga'
 import { useGuru } from '@/composables/useGuru'
@@ -1297,8 +1297,6 @@ import { MUASSIS_URL } from '@/utils/kopMuassis' // v.100: baris-1 KOP = gambar 
 import { kelasJenjang, mapelDiniyahFor, diniyahJenjang, jenjangFromKelas } from '@/utils/jenjang'
 import { predikatQiraati, predikatDiniyah } from '@/utils/predikat'
 import { deteksiTipeGuru } from '@/utils/guruScope' // v.100c: filter kartu kategori rapor per tipe guru
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore'
-import { db } from '@/services/firebase'
 
 const toast = useToast()
 const route = useRoute()
@@ -3309,27 +3307,23 @@ async function simpanRapor() {
     const periodKey = `${tahunAjaran.value}_${semester.value}`.replace(/[^a-zA-Z0-9_]/g, '_')
     const lmbKey = kategori.value === 'diniyah' ? 'Diniyah' : s.lembaga || ''
     const docId = `rapor_${s.id}_${lmbKey}_${periodKey}`
-    await setDoc(
-      doc(db, 'rapor_semester', docId),
-      {
-        santri_id: String(s.id),
-        santri_nama: s.nama || '',
-        lembaga: lmbKey,
-        tahunAjaran: tahunAjaran.value,
-        semester: semester.value,
-        data_nilai: { ...draft.value.data_nilai },
-        absensi: {
-          sakit: Number(draft.value.absensi.sakit) || 0,
-          izin: Number(draft.value.absensi.izin) || 0,
-          alpa: Number(draft.value.absensi.alpa) || 0
-        },
-        kepribadian: { ...draft.value.kepribadian },
-        catatan: draft.value.catatan || '',
-        rata_rata: Number(computeRataFromDraft().toFixed(2)) || 0,
-        updated_at: serverTimestamp()
+    await mergeOne('rapor_semester', docId, {
+      santri_id: String(s.id),
+      santri_nama: s.nama || '',
+      lembaga: lmbKey,
+      tahunAjaran: tahunAjaran.value,
+      semester: semester.value,
+      data_nilai: { ...draft.value.data_nilai },
+      absensi: {
+        sakit: Number(draft.value.absensi.sakit) || 0,
+        izin: Number(draft.value.absensi.izin) || 0,
+        alpa: Number(draft.value.absensi.alpa) || 0
       },
-      { merge: true }
-    )
+      kepribadian: { ...draft.value.kepribadian },
+      catatan: draft.value.catatan || '',
+      rata_rata: Number(computeRataFromDraft().toFixed(2)) || 0,
+      updated_at: serverTimestamp()
+    })
     toast?.success?.('Rapor tersimpan')
     editMode.value = false
   } catch (e) {
