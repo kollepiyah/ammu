@@ -79,7 +79,7 @@ async function handleLogin() {
   isSubmitting.value = true
   loginError.value = ''
   try {
-    await auth.login(username.value.trim(), password.value, ingatSaya.value)
+    await auth.login(username.value.trim().toLowerCase(), password.value, ingatSaya.value)
     toast.success('Login berhasil')
     const redirect = route.query.redirect || '/dashboard'
     router.push(redirect)
@@ -225,6 +225,9 @@ function bukaWaAdmin() {
                 type="text"
                 placeholder="Masukkan username"
                 autocomplete="username"
+                autocapitalize="none"
+                autocorrect="off"
+                spellcheck="false"
                 required
                 class="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition"
               />
