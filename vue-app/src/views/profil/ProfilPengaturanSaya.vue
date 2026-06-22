@@ -289,7 +289,7 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import { mergeOne, queryColl } from '@/services/firestore'
+import { mergeOne, queryColl } from '@/services/db'
 import {
   linkGoogleAccount,
   unlinkGoogleAccount,

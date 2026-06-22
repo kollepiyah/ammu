@@ -50,7 +50,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useAuthStore } from '@/stores/auth'
-import { getOne } from '@/services/firestore'
+import { getOne } from '@/services/db'
 import ProfilAdmin from './profil/ProfilAdmin.vue'
 import ProfilGuru from './profil/ProfilGuru.vue'
 import ProfilSantri from './profil/ProfilSantri.vue'
@@ -59,8 +59,8 @@ const auth = useAuthStore()
 const sesi = computed(() => auth.sesiAktif)
 const role = computed(() => sesi.value?.role || null)
 // v.20.11.0526: built-in admin = id 'admin' DAN auth_method 'admin-builtin' (bukan guru promoted super_admin)
-const isBuiltInAdmin = computed(() =>
-  sesi.value?.id === 'admin' || sesi.value?.auth_method === 'admin-builtin'
+const isBuiltInAdmin = computed(
+  () => sesi.value?.id === 'admin' || sesi.value?.auth_method === 'admin-builtin'
 )
 
 const guru = ref(null)
@@ -85,7 +85,13 @@ async function loadProfil() {
     }
     // v.20.11.0526: kalau ada firebase_uid atau id !== 'admin' → ini guru/santri (termasuk super_admin promoted)
     // Cek source dari sesi data — kalau punya field guru/jabatan = guru
-    const isGuru = s.role === 'guru' || s.guru || s.jabatan || s.role_sistem === 'super_admin' || s.role_sistem === 'admin' || s.role_sistem === 'admin_keuangan'
+    const isGuru =
+      s.role === 'guru' ||
+      s.guru ||
+      s.jabatan ||
+      s.role_sistem === 'super_admin' ||
+      s.role_sistem === 'admin' ||
+      s.role_sistem === 'admin_keuangan'
     if (isGuru) {
       const g = await getOne('guru', String(s.id))
       if (g) guru.value = g
