@@ -36,7 +36,8 @@ export function useExcel() {
     wb.created = new Date()
     const ws = wb.addWorksheet(opts.sheetName || 'Data')
 
-    const columns = opts.columns || Object.keys(rows[0] || {}).map((k) => ({ key: k, header: k, width: 16 }))
+    const columns =
+      opts.columns || Object.keys(rows[0] || {}).map((k) => ({ key: k, header: k, width: 16 }))
 
     let titleRowOffset = 0
     if (opts.title) {
@@ -57,7 +58,12 @@ export function useExcel() {
       cell.font = { bold: true, color: { argb: 'FFFFFFFF' } }
       cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0F766E' } }
       cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }
-      cell.border = { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } }
+      cell.border = {
+        top: { style: 'thin' },
+        bottom: { style: 'thin' },
+        left: { style: 'thin' },
+        right: { style: 'thin' }
+      }
     })
     headerRow.height = 22
 
@@ -73,12 +79,19 @@ export function useExcel() {
         const cell = row.getCell(i + 1)
         cell.value = r[c.key] ?? ''
         cell.alignment = { vertical: 'middle', wrapText: true }
-        cell.border = { top: { style: 'hair' }, bottom: { style: 'hair' }, left: { style: 'hair' }, right: { style: 'hair' } }
+        cell.border = {
+          top: { style: 'hair' },
+          bottom: { style: 'hair' },
+          left: { style: 'hair' },
+          right: { style: 'hair' }
+        }
       })
     })
 
     const buffer = await wb.xlsx.writeBuffer()
-    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+    const blob = new Blob([buffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    })
     await downloadBlob(blob, opts.filename || `export_${Date.now()}.xlsx`)
   }
 
@@ -89,7 +102,8 @@ export function useExcel() {
     const ExcelJS = await loadExcelJS()
     const wb = new ExcelJS.Workbook()
     const ws = wb.addWorksheet(opts.sheetName || 'Data')
-    const columns = opts.columns || Object.keys(rows[0] || {}).map((k) => ({ key: k, header: k, width: 16 }))
+    const columns =
+      opts.columns || Object.keys(rows[0] || {}).map((k) => ({ key: k, header: k, width: 16 }))
 
     const kop = opts.kop || []
     let rowIdx = 1
@@ -127,7 +141,12 @@ export function useExcel() {
       cell.font = { bold: true, color: { argb: 'FFFFFFFF' } }
       cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0F766E' } }
       cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }
-      cell.border = { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } }
+      cell.border = {
+        top: { style: 'thin' },
+        bottom: { style: 'thin' },
+        left: { style: 'thin' },
+        right: { style: 'thin' }
+      }
     })
     headerRow.height = 24
     rowIdx++
@@ -139,7 +158,12 @@ export function useExcel() {
         const cell = row.getCell(i + 1)
         cell.value = r[col.key] ?? ''
         cell.alignment = { vertical: 'middle', wrapText: true }
-        cell.border = { top: { style: 'hair' }, bottom: { style: 'hair' }, left: { style: 'hair' }, right: { style: 'hair' } }
+        cell.border = {
+          top: { style: 'hair' },
+          bottom: { style: 'hair' },
+          left: { style: 'hair' },
+          right: { style: 'hair' }
+        }
       })
       rowIdx++
     })
@@ -149,7 +173,9 @@ export function useExcel() {
     })
 
     const buffer = await wb.xlsx.writeBuffer()
-    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+    const blob = new Blob([buffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    })
     await downloadBlob(blob, opts.filename || `export_${Date.now()}.xlsx`)
   }
 
@@ -166,17 +192,19 @@ export function useExcel() {
     const ws = wb.worksheets[0]
     if (!ws) return []
 
-    // Step 1: Find header row — pick row in first 10 with most non-empty cells
+    // Step 1: Find header row — pick row in first 10 with most DISTINCT short cells.
+    // Distinct (bukan sekadar jumlah sel) agar baris metadata ber-isi sama berulang
+    // (mis. ekspor Fingerspot "Perjanjian : ..." × 13 kolom) tak salah dikira header.
     let bestHeaderRow = 1
     let bestCount = 0
     for (let i = 1; i <= Math.min(10, ws.rowCount); i++) {
-      let count = 0
+      const seen = new Set()
       ws.getRow(i).eachCell((cell) => {
         const v = String(cell.value || '').trim()
-        if (v && v.length > 0 && v.length < 60) count++
+        if (v && v.length < 60) seen.add(v.toLowerCase())
       })
-      if (count > bestCount) {
-        bestCount = count
+      if (seen.size > bestCount) {
+        bestCount = seen.size
         bestHeaderRow = i
       }
     }
@@ -198,7 +226,9 @@ export function useExcel() {
         if (v && typeof v === 'object' && 'result' in v) v = v.result
         obj[headers[colNumber - 1]] = v
       })
-      if (Object.values(obj).some((v) => v !== undefined && v !== null && String(v).trim() !== '')) {
+      if (
+        Object.values(obj).some((v) => v !== undefined && v !== null && String(v).trim() !== '')
+      ) {
         rows.push(obj)
       }
     })
