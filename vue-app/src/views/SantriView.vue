@@ -502,7 +502,7 @@ import EmptyState from '@/components/layout/EmptyState.vue' // v.91.0626
 import PageHeader from '@/components/layout/PageHeader.vue' // v.91.0626
 // v.91.0626: deleteOne = backup ke audit_log dulu. serverTimestamp = shim ISO (db.js).
 import { mergeOne, deleteOne, getAll, serverTimestamp } from '@/services/db'
-import { resetUserPassword } from '@/services/auth' // v.105: reset sandi via Firebase Auth (bukan field plaintext)
+import { resetUserPassword } from '@/services/authSupabase' // reset sandi via Edge Function (super_admin)
 import { planRegenerateNis, applyNisChanges } from '@/utils/nisGenerator' // v.100 Batch14: auto-NIS pasca impor (reshuffle tgl lahir tertua)
 
 const exporting = ref(false)

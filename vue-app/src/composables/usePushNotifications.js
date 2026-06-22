@@ -2,16 +2,18 @@
 //   handle notif diterima (foreground) & di-tap (navigasi). Akses plugin via
 //   window.Capacitor.Plugins.PushNotifications (auto-register native; AMAN di web/desktop = no-op).
 //   Token disimpan ke santri/{id}.fcm_token (role santri) atau guru/{id}.fcm_token (guru/admin).
-//   Server (functions kirimNotifikasiMassal) yang resolve token dari `target` & kirim.
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore'
+//   Migrasi Supabase: token kini ditulis ke Supabase via db.js (masuk data jsonb) — dibaca
+//   Edge Function dispatch-push. FCM (firebaseApp/messaging) tetap = transport push saja.
+import { mergeOne } from '@/services/db'
 // v.96.0626 perf: firebase/messaging di-LAZY (dynamic import di registerWeb) -> keluar dari boot bundle
-import { db, firebaseApp } from '@/services/firebase'
+import { firebaseApp } from '@/services/firebase'
 import { useAuthStore } from '@/stores/auth'
 
 const CHANNEL_ID = 'ammu_default'
 // v.95.0626: VAPID public key (Firebase Console > Cloud Messaging > Web Push certificates)
 // v.95.0626b: FIX — key lama tidak cocok dgn project -> 401 token-subscribe-failed. Diganti key asli Console.
-const VAPID_KEY = 'BOEAStvEGgdHCSKGONFbPY0olQ7OEUUvhbX3NofzqWyFBvaXG0tceRbvNE36Bw7qv35ZL6fXtOPEa6Wyp8VBWfY'
+const VAPID_KEY =
+  'BOEAStvEGgdHCSKGONFbPY0olQ7OEUUvhbX3NofzqWyFBvaXG0tceRbvNE36Bw7qv35ZL6fXtOPEa6Wyp8VBWfY'
 
 function isElectron() {
   return /electron/i.test((typeof navigator !== 'undefined' && navigator.userAgent) || '')
@@ -45,11 +47,7 @@ export function usePushNotifications() {
     const td = targetDoc()
     if (!t || !td) return
     try {
-      await setDoc(
-        doc(db, td.coll, td.id),
-        { fcm_token: t, fcm_token_at: serverTimestamp() },
-        { merge: true }
-      )
+      await mergeOne(td.coll, td.id, { fcm_token: t, fcm_token_at: new Date().toISOString() })
     } catch (e) {
       console.warn('[push] saveToken gagal:', e?.message || e)
     }
@@ -59,7 +57,7 @@ export function usePushNotifications() {
     const td = targetDoc()
     if (!td) return
     try {
-      await setDoc(doc(db, td.coll, td.id), { fcm_token: null }, { merge: true })
+      await mergeOne(td.coll, td.id, { fcm_token: null })
     } catch (e) {
       /* ignore */
     }
@@ -83,7 +81,11 @@ export function usePushNotifications() {
         try {
           // eslint-disable-next-line no-new
           // v.95.0626c: icon-192 ADA (manifest/SW); badge diperbaiki dari /icon-72.png (tidak ter-serve) ke /icon-192.png
-          new Notification(n.title || 'Mambaul Ulum', { body: n.body || '', icon: '/icon-192.png', badge: '/icon-192.png' })
+          new Notification(n.title || 'Mambaul Ulum', {
+            body: n.body || '',
+            icon: '/icon-192.png',
+            badge: '/icon-192.png'
+          })
         } catch (e) {
           /* ignore */
         }

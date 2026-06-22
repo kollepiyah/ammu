@@ -234,3 +234,28 @@ export async function currentSession() {
   const { data } = await supabase.auth.getSession()
   return data?.session || null
 }
+
+/**
+ * resetUserPassword — admin (WAJIB super_admin) reset sandi guru/santri ke '1234'.
+ * Pengganti Cloud Function resetUserPassword: panggil Edge Function reset-user-password
+ * (service-role; guard super_admin via RPC admin_target_auth_uid). Lempar error bila gagal.
+ */
+export async function resetUserPassword(collection, docId) {
+  _ensure()
+  const { data, error } = await supabase.functions.invoke('reset-user-password', {
+    body: { collection, docId: String(docId) }
+  })
+  if (error) {
+    // FunctionsHttpError (non-2xx): coba ambil pesan dari body respons.
+    let msg = error.message || 'reset-gagal'
+    try {
+      const j = await error.context?.json?.()
+      if (j?.error) msg = j.error
+    } catch {
+      /* noop */
+    }
+    throw new Error(msg)
+  }
+  if (!data?.ok) throw new Error(data?.error || 'reset-gagal')
+  return data
+}

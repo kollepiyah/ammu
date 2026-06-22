@@ -557,7 +557,7 @@ import {
   getAll,
   serverTimestamp
 } from '@/services/db'
-import { resetUserPassword as _resetUserPassword } from '@/services/auth' // v.105: reset sandi via Firebase Auth (bukan field plaintext)
+import { resetUserPassword as _resetUserPassword } from '@/services/authSupabase' // reset sandi via Edge Function (super_admin)
 import { planRegenerateNig, applyNigChanges } from '@/utils/nigGenerator' // v.100 Batch16: auto-NIG pasca impor (reshuffle tgl tugas terlama)
 import { useAuthStore as _useAuthStoreGuru } from '@/stores/auth'
 // v.21.13b.0526: + toTitleCase + normalizeWA + parseMultipleWA (dual WA)
