@@ -655,11 +655,9 @@ import { useSantri } from '@/composables/useSantri'
 import { useTesKenaikan } from '@/composables/useTesKenaikan'
 import { useAuthStore } from '@/stores/auth' // v.100d: nama guru utk scope ngaji-only
 import { ownsNgaji } from '@/utils/guruScope' // v.100d
-import { getOne } from '@/services/firestore' // v.100d: muat dokumen santri penuh utk auto-naik
+import { getOne, mergeOne } from '@/services/db' // v.100d: muat dokumen santri penuh utk auto-naik
 import { buildKenaikanQiraatiPayload, writeKenaikan } from '@/utils/promosiKenaikan' // v.100d
 import { buildTesRaporFeed, currentRaporPeriode } from '@/utils/tesRaporFeed' // v.100d Fase 3: nilai tes → rapor
-import { db } from '@/services/firebase'
-import { doc, setDoc } from 'firebase/firestore'
 import { buildListPdf } from '@/utils/pdfBuilder' // v.100d Fase 5: cetak daftar/rekap tes PDF
 import { juzNum } from '@/utils/format' // v.100e: normalisasi tampilan juz (anti dobel "Juz JUZ n")
 import { useSettingsStore } from '@/stores/settings'
@@ -1204,19 +1202,15 @@ async function submitLulus() {
         const { tahunAjaran, semester, periodKey } = currentRaporPeriode()
         const lmbKey = s.lembaga || a.lembaga || ''
         const rid = `rapor_${s.id}_${lmbKey}_${periodKey}`
-        await setDoc(
-          doc(db, 'rapor_semester', rid),
-          {
-            santri_id: String(s.id),
-            santri_nama: s.nama || a.nama_cache || '',
-            lembaga: lmbKey,
-            tahunAjaran,
-            semester,
-            data_nilai: feed,
-            updated_at: new Date().toISOString()
-          },
-          { merge: true }
-        )
+        await mergeOne('rapor_semester', rid, {
+          santri_id: String(s.id),
+          santri_nama: s.nama || a.nama_cache || '',
+          lembaga: lmbKey,
+          tahunAjaran,
+          semester,
+          data_nilai: feed,
+          updated_at: new Date().toISOString()
+        })
       }
     } catch (e2) {
       console.warn('[tes→rapor] gagal feed nilai ke rapor:', e2?.message || e2)
