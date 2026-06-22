@@ -6,7 +6,9 @@
       class="bg-[var(--bg-card)] rounded-2xl p-10 border border-dashed border-rose-300 text-center"
     >
       <i class="fas fa-lock text-rose-300 text-4xl mb-3"></i>
-      <p class="text-sm font-bold text-slate-700 dark:text-[var(--text-tertiary)]">Akses Keuangan terbatas</p>
+      <p class="text-sm font-bold text-slate-700 dark:text-[var(--text-tertiary)]">
+        Akses Keuangan terbatas
+      </p>
     </div>
 
     <!-- =================== MODE SANTRI =================== -->
@@ -57,7 +59,9 @@
           class="p-10 border-t-2 border-dashed border-[var(--border-subtle)] text-center"
         >
           <i class="fas fa-inbox text-[var(--text-tertiary)] text-3xl mb-2"></i>
-          <p class="text-sm text-[var(--text-secondary)] italic">Belum ada mutasi {{ pageTitle.toLowerCase() }}.</p>
+          <p class="text-sm text-[var(--text-secondary)] italic">
+            Belum ada mutasi {{ pageTitle.toLowerCase() }}.
+          </p>
         </div>
         <div v-else class="overflow-x-auto">
           <table class="w-full text-sm">
@@ -108,9 +112,7 @@
                 >
                   {{ fmtRp(m.saldo_after || m.saldo) }}
                 </td>
-                <td
-                  class="px-4 py-2.5 text-xs text-[var(--text-secondary)] truncate max-w-[200px]"
-                >
+                <td class="px-4 py-2.5 text-xs text-[var(--text-secondary)] truncate max-w-[200px]">
                   {{ m.catatan || '-' }}
                 </td>
               </tr>
@@ -131,7 +133,9 @@
             <h1 class="text-base md:text-lg font-black text-[var(--text-primary)]">
               <i class="fas fa-wallet text-emerald-500 mr-2"></i>{{ pageTitle }}
             </h1>
-            <p class="text-xs text-[var(--text-secondary)] mt-0.5">Saldo {{ pageTitle.toLowerCase() }} santri{{ isUangSaku ? " ma'had" : '' }}</p>
+            <p class="text-xs text-[var(--text-secondary)] mt-0.5">
+              Saldo {{ pageTitle.toLowerCase() }} santri{{ isUangSaku ? " ma'had" : '' }}
+            </p>
           </div>
           <div class="flex flex-wrap gap-2 items-center">
             <div
@@ -142,18 +146,44 @@
               </span>
             </div>
             <template v-if="!isDesktop">
-            <button @click="exportPdf" title="Ekspor PDF rekap saldo" class="bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-black px-3 py-1.5 rounded-full shadow"><i class="fas fa-file-pdf mr-1"></i>PDF</button>
-            <button @click="downloadTemplate" title="Unduh template XLSX" class="bg-slate-600 hover:bg-slate-700 text-white text-xs font-black px-3 py-1.5 rounded-full shadow"><i class="fas fa-file-download mr-1"></i>Template</button>
-            <button @click="triggerImport" :disabled="importingTab" title="Impor mutasi dari XLSX" class="bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white text-xs font-black px-3 py-1.5 rounded-full shadow"><i :class="['fas mr-1', importingTab ? 'fa-spinner fa-spin' : 'fa-file-upload']"></i>Impor</button>
+              <button
+                @click="exportPdf"
+                title="Ekspor PDF rekap saldo"
+                class="bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-black px-3 py-1.5 rounded-full shadow"
+              >
+                <i class="fas fa-file-pdf mr-1"></i>PDF
+              </button>
+              <button
+                @click="downloadTemplate"
+                title="Unduh template XLSX"
+                class="bg-slate-600 hover:bg-slate-700 text-white text-xs font-black px-3 py-1.5 rounded-full shadow"
+              >
+                <i class="fas fa-file-download mr-1"></i>Template
+              </button>
+              <button
+                @click="triggerImport"
+                :disabled="importingTab"
+                title="Impor mutasi dari XLSX"
+                class="bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white text-xs font-black px-3 py-1.5 rounded-full shadow"
+              >
+                <i :class="['fas mr-1', importingTab ? 'fa-spinner fa-spin' : 'fa-file-upload']"></i
+                >Impor
+              </button>
             </template>
-            <input ref="importInput" type="file" accept=".xlsx,.xls" class="hidden" @change="importXlsx" />
+            <input
+              ref="importInput"
+              type="file"
+              accept=".xlsx,.xls"
+              class="hidden"
+              @change="importXlsx"
+            />
             <template v-if="!isDesktop">
-            <button
-              @click="openModal()"
-              class="bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-xs font-black px-3 py-1.5 rounded-full shadow"
-            >
-              <i class="fas fa-plus mr-1"></i>Input Mutasi
-            </button>
+              <button
+                @click="openModal()"
+                class="bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-xs font-black px-3 py-1.5 rounded-full shadow"
+              >
+                <i class="fas fa-plus mr-1"></i>Input Mutasi
+              </button>
             </template>
           </div>
         </div>
@@ -186,7 +216,9 @@
         class="bg-[var(--bg-card)] rounded-2xl p-10 border border-dashed border-[var(--border-default)] text-center"
       >
         <i class="fas fa-wallet text-[var(--text-tertiary)] text-4xl mb-3"></i>
-        <p class="text-sm font-bold text-slate-700 dark:text-[var(--text-tertiary)]">Tidak ada {{ pageTitle.toLowerCase() }}</p>
+        <p class="text-sm font-bold text-slate-700 dark:text-[var(--text-tertiary)]">
+          Tidak ada {{ pageTitle.toLowerCase() }}
+        </p>
       </div>
 
       <!-- Orphan banner -->
@@ -221,8 +253,7 @@
         <p class="text-[10px] text-rose-600 mt-1.5">
           <i class="fas fa-info-circle mr-1"></i>
           Mutasi orphan = transaksi yang santri-nya sudah dihapus dari data santri. "Hapus Mutasi
-          Orphan" akan menghapus permanen seluruh record `{{ COLL }}` dengan santri_id
-          tersebut.
+          Orphan" akan menghapus permanen seluruh record `{{ COLL }}` dengan santri_id tersebut.
         </p>
       </div>
 
@@ -280,20 +311,31 @@
       v-if="isFullAccess && isAdmin"
       class="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)] shadow-sm overflow-hidden"
     >
-      <div class="px-4 md:px-5 py-3 border-b border-[var(--border-subtle)] flex items-center justify-between flex-wrap gap-2">
+      <div
+        class="px-4 md:px-5 py-3 border-b border-[var(--border-subtle)] flex items-center justify-between flex-wrap gap-2"
+      >
         <h3 class="text-sm font-black text-[var(--text-primary)] uppercase tracking-widest">
           <i class="fas fa-list-check text-emerald-600 mr-2"></i>Semua Mutasi
           <span class="text-[10px] text-[var(--text-tertiary)] font-bold ml-1">(super admin)</span>
         </h3>
         <div class="flex items-center gap-2 flex-wrap">
-          <select v-model.number="mutFilterYear" class="text-[11px] px-2 py-1 rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)] outline-none">
+          <select
+            v-model.number="mutFilterYear"
+            class="text-[11px] px-2 py-1 rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)] outline-none"
+          >
             <option v-for="y in mutYears" :key="y" :value="y">{{ y }}</option>
           </select>
-          <select v-model.number="mutFilterMonth" class="text-[11px] px-2 py-1 rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)] outline-none">
+          <select
+            v-model.number="mutFilterMonth"
+            class="text-[11px] px-2 py-1 rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)] outline-none"
+          >
             <option :value="0">Semua bln</option>
             <option v-for="(b, i) in BULAN_TAB" :key="b" :value="i + 1">{{ b }}</option>
           </select>
-          <select v-model.number="mutFilterDay" class="text-[11px] px-2 py-1 rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)] outline-none">
+          <select
+            v-model.number="mutFilterDay"
+            class="text-[11px] px-2 py-1 rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)] outline-none"
+          >
             <option :value="0">Semua tgl</option>
             <option v-for="d in 31" :key="d" :value="d">{{ d }}</option>
           </select>
@@ -309,13 +351,18 @@
           </button>
         </div>
       </div>
-      <div v-if="mutasiFiltered.length === 0" class="p-6 text-center text-xs text-[var(--text-tertiary)] italic">
+      <div
+        v-if="mutasiFiltered.length === 0"
+        class="p-6 text-center text-xs text-[var(--text-tertiary)] italic"
+      >
         {{ mutasiSource.length === 0 ? 'Belum ada mutasi.' : 'Tidak ada mutasi pada filter ini.' }}
       </div>
       <div v-else class="max-h-[480px] overflow-y-auto">
         <table class="w-full text-xs">
           <thead class="bg-[var(--bg-card-elevated)] sticky top-0">
-            <tr class="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-wider">
+            <tr
+              class="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-wider"
+            >
               <th class="px-3 py-2 w-8"></th>
               <th class="px-3 py-2 text-left">Tanggal</th>
               <th class="px-3 py-2 text-left">Santri</th>
@@ -339,31 +386,56 @@
                   class="w-4 h-4 accent-emerald-600"
                 />
               </td>
-              <td class="px-3 py-2 whitespace-nowrap text-[11px] text-[var(--text-secondary)]">{{ fmtTgl(m.tanggal) }}</td>
+              <td class="px-3 py-2 whitespace-nowrap text-[11px] text-[var(--text-secondary)]">
+                {{ fmtTgl(m.tanggal) }}
+              </td>
               <td class="px-3 py-2 font-bold text-[var(--text-primary)] truncate max-w-[200px]">
                 {{ m.nama_cache || getNamaSantri(m.santri_id) }}
               </td>
               <td class="px-3 py-2">
-                <span :class="['inline-block text-[10px] font-black uppercase px-2 py-0.5 rounded', m.jenis === 'setor' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700']">{{ m.jenis }}</span>
+                <span
+                  :class="[
+                    'inline-block text-[10px] font-black uppercase px-2 py-0.5 rounded',
+                    m.jenis === 'setor'
+                      ? 'bg-emerald-100 text-emerald-700'
+                      : 'bg-rose-100 text-rose-700'
+                  ]"
+                  >{{ m.jenis }}</span
+                >
               </td>
-              <td :class="['px-3 py-2 text-right font-black whitespace-nowrap', m.jenis === 'setor' ? 'text-emerald-700' : 'text-rose-700']">{{ fmtRp(m.nominal) }}</td>
-              <td class="px-3 py-2 text-[11px] text-[var(--text-secondary)] truncate max-w-[200px]">{{ m.catatan || '-' }}</td>
+              <td
+                :class="[
+                  'px-3 py-2 text-right font-black whitespace-nowrap',
+                  m.jenis === 'setor' ? 'text-emerald-700' : 'text-rose-700'
+                ]"
+              >
+                {{ fmtRp(m.nominal) }}
+              </td>
+              <td class="px-3 py-2 text-[11px] text-[var(--text-secondary)] truncate max-w-[200px]">
+                {{ m.catatan || '-' }}
+              </td>
               <td class="px-3 py-2 text-right whitespace-nowrap">
                 <button
                   @click="cetakSlip(m)"
                   class="text-[10px] text-emerald-600 hover:bg-emerald-50 px-1.5 py-1 rounded mr-1"
                   title="Cetak slip"
-                ><i class="fas fa-receipt"></i></button>
+                >
+                  <i class="fas fa-receipt"></i>
+                </button>
                 <button
                   @click="openEditMutasi(m)"
                   class="text-[10px] text-cyan-600 hover:bg-cyan-50 px-1.5 py-1 rounded mr-1"
                   title="Edit"
-                ><i class="fas fa-edit"></i></button>
+                >
+                  <i class="fas fa-edit"></i>
+                </button>
                 <button
                   @click="hapusMutasi(m)"
                   class="text-[10px] text-rose-600 hover:bg-rose-50 px-1.5 py-1 rounded"
                   title="Hapus"
-                ><i class="fas fa-trash"></i></button>
+                >
+                  <i class="fas fa-trash"></i>
+                </button>
               </td>
             </tr>
           </tbody>
@@ -386,7 +458,10 @@
           <h3 class="text-base font-black text-[var(--text-primary)]">
             <i class="fas fa-wallet text-emerald-500 mr-2"></i>Input Mutasi {{ pageTitle }}
           </h3>
-          <button @click="closeModal" class="text-[var(--text-tertiary)] hover:text-[var(--text-primary)]">
+          <button
+            @click="closeModal"
+            class="text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
+          >
             <i class="fas fa-times text-lg"></i>
           </button>
         </div>
@@ -516,19 +591,26 @@
 
         <!-- v.96.0626: panel SUKSES + tombol cetak struk (gaya POS) -->
         <div v-else class="p-5 space-y-4 text-center">
-          <div class="mx-auto w-14 h-14 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-2xl">
+          <div
+            class="mx-auto w-14 h-14 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-2xl"
+          >
             <i class="fas fa-check"></i>
           </div>
           <div>
             <p class="text-base font-black text-[var(--text-primary)]">Mutasi tersimpan</p>
             <p class="text-sm text-[var(--text-secondary)] mt-0.5">
               {{ savedMutasi.nama_cache }} &middot;
-              {{ savedMutasi.jenis === 'setor' ? 'Setor' : 'Tarik' }} {{ fmtRp(savedMutasi.nominal) }}
+              {{ savedMutasi.jenis === 'setor' ? 'Setor' : 'Tarik' }}
+              {{ fmtRp(savedMutasi.nominal) }}
             </p>
-            <p class="text-[11px] text-[var(--text-tertiary)] mt-0.5">No. Transaksi: {{ savedMutasi.no_bukti || savedMutasi.id }}</p>
+            <p class="text-[11px] text-[var(--text-tertiary)] mt-0.5">
+              No. Transaksi: {{ savedMutasi.no_bukti || savedMutasi.id }}
+            </p>
           </div>
 
-          <p class="text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)]">Cetak struk:</p>
+          <p class="text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)]">
+            Cetak struk:
+          </p>
           <div class="flex flex-wrap items-center justify-center gap-2">
             <button
               type="button"
@@ -547,7 +629,9 @@
             </button>
           </div>
 
-          <div class="flex items-center justify-center gap-2 pt-3 border-t border-[var(--border-subtle)]">
+          <div
+            class="flex items-center justify-center gap-2 pt-3 border-t border-[var(--border-subtle)]"
+          >
             <button
               type="button"
               @click="transaksiBaru"
@@ -573,12 +657,10 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useDesktopShell } from '@/composables/useDesktopShell'
 import { definePageActions } from '@/composables/useRibbonContext'
-import { subscribeColl } from '@/services/firestore'
-import { doc, setDoc, deleteDoc, updateDoc, serverTimestamp } from 'firebase/firestore'
-import { deleteOne } from '@/services/firestore' // v.91.0626: hapus = backup audit_log dulu
+// v.91.0626: deleteOne = backup audit_log dulu. serverTimestamp = shim ISO string (db.js).
+import { subscribeColl, setOne, updateOne, deleteOne, serverTimestamp } from '@/services/db'
 import { isSuperAdmin } from '@/utils/roleScope'
 import { writeAuditLog } from '@/utils/auditLog'
-import { db } from '@/services/firebase'
 import { sortSantri } from '@/utils/santriSort'
 import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
@@ -596,14 +678,33 @@ import { useRoute } from 'vue-router'
 const { tabunganSantri, loading, isFullAccess, getNamaSantri, santriRaw } = useKeuangan()
 // v.95.0626: mode dari route — 'uangsaku' (menu terpisah, koleksi sendiri, santri ma'had/mukim) atau default 'tabungan'
 const route = useRoute()
-const isUangSaku = computed(() => String(route.meta?.mode || route.query?.mode || '') === 'uangsaku')
-const COLL = computed(() => (isUangSaku.value ? 'keuangan_uang_saku_santri' : 'keuangan_tabungan_santri'))
+const isUangSaku = computed(
+  () => String(route.meta?.mode || route.query?.mode || '') === 'uangsaku'
+)
+const COLL = computed(() =>
+  isUangSaku.value ? 'keuangan_uang_saku_santri' : 'keuangan_tabungan_santri'
+)
 const pageTitle = computed(() => (isUangSaku.value ? 'Uang Saku' : 'Tabungan'))
 const uangSakuMutasi = ref([]) // sumber mutasi admin saat mode uang saku (subscribe lokal)
 let unsubUS = null
-const mutasiSource = computed(() => (isUangSaku.value ? uangSakuMutasi.value : tabunganSantri.value))
+const mutasiSource = computed(() =>
+  isUangSaku.value ? uangSakuMutasi.value : tabunganSantri.value
+)
 // v.108: filter tahun/bulan/hari utk panel "Semua Mutasi"
-const BULAN_TAB = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember']
+const BULAN_TAB = [
+  'Januari',
+  'Februari',
+  'Maret',
+  'April',
+  'Mei',
+  'Juni',
+  'Juli',
+  'Agustus',
+  'September',
+  'Oktober',
+  'November',
+  'Desember'
+]
 const mutFilterYear = ref(new Date().getFullYear())
 const mutFilterMonth = ref(0)
 const mutFilterDay = ref(0)
@@ -621,8 +722,13 @@ const mutasiFiltered = computed(() =>
     .filter((m) => {
       const tg = String(m.tanggal || '')
       if (mutFilterYear.value && tg.slice(0, 4) !== String(mutFilterYear.value)) return false
-      if (mutFilterMonth.value > 0 && tg.slice(5, 7) !== String(mutFilterMonth.value).padStart(2, '0')) return false
-      if (mutFilterDay.value > 0 && tg.slice(8, 10) !== String(mutFilterDay.value).padStart(2, '0')) return false
+      if (
+        mutFilterMonth.value > 0 &&
+        tg.slice(5, 7) !== String(mutFilterMonth.value).padStart(2, '0')
+      )
+        return false
+      if (mutFilterDay.value > 0 && tg.slice(8, 10) !== String(mutFilterDay.value).padStart(2, '0'))
+        return false
       return true
     })
     .slice()
@@ -903,7 +1009,9 @@ function openEditMutasi(m) {
   editingMutasiId.value = String(m.id)
   modalSantriId.value = String(m.santri_id || m.santriId || '')
   const sx = (santriRaw.value || []).find((x) => String(x.id) === modalSantriId.value)
-  modalSantriLabel.value = sx ? `${sx.nama} (${sx.lembaga || ''} - ${sx.kelas || ''})` : (m.nama_cache || '')
+  modalSantriLabel.value = sx
+    ? `${sx.nama} (${sx.lembaga || ''} - ${sx.kelas || ''})`
+    : m.nama_cache || ''
   modalJenis.value = m.jenis || 'setor'
   modalKategori.value = m.kategori || 'umum'
   modalNominal.value = Number(m.nominal || 0)
@@ -914,7 +1022,12 @@ function openEditMutasi(m) {
 // v.21.100.0527: hapus mutasi individual (super_admin)
 async function hapusMutasi(m) {
   if (!isAdmin.value) return
-  if (!confirm(`Hapus mutasi ${pageTitle.value.toLowerCase()}?\nSantri: ${m.nama_cache || getNamaSantri(m.santri_id)}\n${m.jenis} ${fmtRp(m.nominal)}\n\nTidak bisa di-undo.`)) return
+  if (
+    !confirm(
+      `Hapus mutasi ${pageTitle.value.toLowerCase()}?\nSantri: ${m.nama_cache || getNamaSantri(m.santri_id)}\n${m.jenis} ${fmtRp(m.nominal)}\n\nTidak bisa di-undo.`
+    )
+  )
+    return
   try {
     await deleteOne(COLL.value, m.id)
     toast.success('Mutasi dihapus')
@@ -928,8 +1041,14 @@ async function hapusMutasiTerpilih() {
   if (!isAdmin.value) return
   const ids = Array.from(selectedMutasi.value)
   if (ids.length === 0) return
-  if (!confirm(`Hapus ${ids.length} mutasi ${pageTitle.value.toLowerCase()} terpilih?\n\nTidak bisa di-undo.`)) return
-  let ok = 0, fail = 0
+  if (
+    !confirm(
+      `Hapus ${ids.length} mutasi ${pageTitle.value.toLowerCase()} terpilih?\n\nTidak bisa di-undo.`
+    )
+  )
+    return
+  let ok = 0,
+    fail = 0
   for (const id of ids) {
     try {
       await deleteOne(COLL.value, id)
@@ -990,8 +1109,8 @@ async function simpanMutasi() {
   try {
     const santri = (santriRaw.value || []).find((s) => String(s.id) === String(modalSantriId.value))
     if (editingMutasiId.value) {
-      // v.21.100.0527: mode edit — update mutasi existing
-      await updateDoc(doc(db, COLL.value, editingMutasiId.value), {
+      // v.21.100.0527: mode edit — update mutasi existing (row pasti ada, dari list)
+      await updateOne(COLL.value, editingMutasiId.value, {
         santri_id: modalSantriId.value,
         nama_cache: santri?.nama || '',
         jenis: modalJenis.value,
@@ -1009,7 +1128,7 @@ async function simpanMutasi() {
       const ddmmyy = (dtp[2] || '') + (dtp[1] || '') + String(dtp[0] || '').slice(-2)
       const seqN = (mutasiSource.value || []).filter((x) => x.tanggal === tanggal).length + 1
       const noBukti = (isUangSaku.value ? 'US-' : 'TB-') + String(seqN).padStart(3, '0') + ddmmyy
-      await setDoc(doc(db, COLL.value, id), {
+      await setOne(COLL.value, id, {
         id,
         no_bukti: noBukti,
         santri_id: modalSantriId.value,
@@ -1082,10 +1201,16 @@ async function cetakSlip(m) {
 async function cetakSlipLangsung(m) {
   try {
     const s = settings.settings || {}
-    if (!isElectron()) { await cetakSlipTabunganPdf(m, s, { preview: true, ...slipOpts(m) }); return }
+    if (!isElectron()) {
+      await cetakSlipTabunganPdf(m, s, { preview: true, ...slipOpts(m) })
+      return
+    }
     // v.96.0626: cetak GRAFIS RASTER via ESC/P (bypass driver -> TANPA feed 5cm, tetap Arial)
     const printerName = getDefaultPrinter()
-    const res = await printRaw({ base64: buildSlipTabunganEscpBase64(m, s, slipOpts(m)), deviceName: printerName || undefined })
+    const res = await printRaw({
+      base64: buildSlipTabunganEscpBase64(m, s, slipOpts(m)),
+      deviceName: printerName || undefined
+    })
     if (res && res.ok === false) throw new Error(res.error || 'Print gagal')
     toast.success('Struk dikirim ke: ' + (printerName || 'printer default Windows'))
   } catch (e) {
@@ -1094,11 +1219,17 @@ async function cetakSlipLangsung(m) {
 }
 async function exportPdf() {
   const items = filteredItems.value || []
-  if (!items.length) { toast.warning('Tidak ada data untuk diekspor.'); return }
+  if (!items.length) {
+    toast.warning('Tidak ada data untuk diekspor.')
+    return
+  }
   try {
     await exportRekapTabunganPdf(items, settings.settings || {}, {
       title: 'REKAP ' + pageTitle.value.toUpperCase() + ' SANTRI',
-      namaOf: (t) => (getNamaSantri(t.santri_id) !== '(unknown)' ? getNamaSantri(t.santri_id) : (t.nama_cache || t.santri_id))
+      namaOf: (t) =>
+        getNamaSantri(t.santri_id) !== '(unknown)'
+          ? getNamaSantri(t.santri_id)
+          : t.nama_cache || t.santri_id
     })
   } catch (e) {
     toast.error('Gagal ekspor PDF: ' + (e.message || e))
@@ -1107,11 +1238,20 @@ async function exportPdf() {
 async function downloadTemplate() {
   try {
     await exportSimple(
-      [{ nis: '03.00245', nama: 'Contoh Santri', jenis: 'setor', nominal: 50000, catatan: 'saldo awal' }],
+      [
+        {
+          nis: '03.00245',
+          nama: 'Contoh Santri',
+          jenis: 'setor',
+          nominal: 50000,
+          catatan: 'saldo awal'
+        }
+      ],
       {
         filename: 'template_' + (isUangSaku.value ? 'uang_saku' : 'tabungan') + '.xlsx',
         sheetName: pageTitle.value,
-        title: 'TEMPLATE IMPOR ' + pageTitle.value.toUpperCase() + ' (hapus baris contoh, isi data)',
+        title:
+          'TEMPLATE IMPOR ' + pageTitle.value.toUpperCase() + ' (hapus baris contoh, isi data)',
         columns: [
           { key: 'nis', header: 'No. Induk', width: 16 },
           { key: 'nama', header: 'Nama', width: 28 },
@@ -1125,36 +1265,60 @@ async function downloadTemplate() {
     toast.error('Gagal buat template: ' + (e.message || e))
   }
 }
-function triggerImport() { importInput.value && importInput.value.click() }
+function triggerImport() {
+  importInput.value && importInput.value.click()
+}
 async function importXlsx(e) {
   const file = e.target.files && e.target.files[0]
   if (!file) return
   importingTab.value = true
   try {
     const rows = await importFile(file)
-    let ok = 0, skip = 0
+    let ok = 0,
+      skip = 0
     const writes = []
     for (const r of rows) {
       const nis = String(r['No. Induk'] || r['No Induk'] || r.NIS || r.nis || '').trim() // v.100: terima header baru + template lama
       const namaR = String(r.Nama || r.nama || '').trim()
-      const jenis = String(r['jenis (setor/tarik)'] || r.jenis || r.Jenis || 'setor').toLowerCase().includes('tarik') ? 'tarik' : 'setor'
+      const jenis = String(r['jenis (setor/tarik)'] || r.jenis || r.Jenis || 'setor')
+        .toLowerCase()
+        .includes('tarik')
+        ? 'tarik'
+        : 'setor'
       const nominal = Number(String(r.Nominal || r.nominal || 0).replace(/[^\d]/g, '')) || 0
-      if (nominal <= 0) { skip++; continue }
+      if (nominal <= 0) {
+        skip++
+        continue
+      }
       const santri = (santriRaw.value || []).find(
-        (s) => (nis && String(s.nis) === nis) || (namaR && String(s.nama || '').toLowerCase() === namaR.toLowerCase())
+        (s) =>
+          (nis && String(s.nis) === nis) ||
+          (namaR && String(s.nama || '').toLowerCase() === namaR.toLowerCase())
       )
-      if (!santri) { skip++; continue }
+      if (!santri) {
+        skip++
+        continue
+      }
       const id = `mutasi_${santri.id}_${Date.now()}_${ok}`
-      writes.push(setDoc(doc(db, COLL.value, id), {
-        id, santri_id: String(santri.id), nama_cache: santri.nama || '',
-        jenis, kategori: 'impor', nominal,
-        catatan: String(r.Catatan || r.catatan || 'impor xlsx'),
-        tanggal: new Date().toISOString().slice(0, 10), createdAt: serverTimestamp()
-      }))
+      writes.push(
+        setOne(COLL.value, id, {
+          id,
+          santri_id: String(santri.id),
+          nama_cache: santri.nama || '',
+          jenis,
+          kategori: 'impor',
+          nominal,
+          catatan: String(r.Catatan || r.catatan || 'impor xlsx'),
+          tanggal: new Date().toISOString().slice(0, 10),
+          createdAt: serverTimestamp()
+        })
+      )
       ok++
     }
     await Promise.all(writes)
-    toast.success(`Impor selesai: ${ok} mutasi masuk, ${skip} dilewati (No. Induk/nama tak cocok atau nominal 0)`)
+    toast.success(
+      `Impor selesai: ${ok} mutasi masuk, ${skip} dilewati (No. Induk/nama tak cocok atau nominal 0)`
+    )
   } catch (err) {
     toast.error('Gagal impor: ' + (err.message || err))
   } finally {
