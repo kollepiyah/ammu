@@ -188,9 +188,7 @@
 // Tidak pakai Firestore where() — fetch semua + filter di client supaya
 // kompat dgn santri_id (bisa string atau number di data lama).
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { collection, getDocs } from 'firebase/firestore'
-import { db } from '@/services/firebase'
-import { subscribeColl } from '@/services/firestore'
+import { subscribeColl, getAll } from '@/services/db'
 import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
@@ -354,16 +352,12 @@ async function cetakRiwayat(s) {
   busyId.value = s.id
   lastDebug.value = null
   try {
-    const [tgSnap, biSnap, tbSnap] = await Promise.all([
-      getDocs(collection(db, 'keuangan_tagihan')),
-      getDocs(collection(db, 'keuangan_buku_induk')),
-      getDocs(collection(db, 'keuangan_tabungan_santri'))
+    const [tagihan, bukuInduk, tabungan] = await Promise.all([
+      getAll('keuangan_tagihan'),
+      getAll('keuangan_buku_induk'),
+      getAll('keuangan_tabungan_santri')
     ])
-    const tagihan = tgSnap.docs.map((d) => ({ id: d.id, ...d.data() }))
-    const pembayaran = biSnap.docs
-      .map((d) => ({ id: d.id, ...d.data() }))
-      .filter((r) => r.sumber === 'pos_santri')
-    const tabungan = tbSnap.docs.map((d) => ({ id: d.id, ...d.data() }))
+    const pembayaran = bukuInduk.filter((r) => r.sumber === 'pos_santri')
     const kop = buildKopFromSettings(settings.settings || {})
     const { stats } = await cetakRiwayatSantriPdf({
       santri: s,
