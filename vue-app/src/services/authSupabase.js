@@ -292,6 +292,14 @@ async function _syncGoogleEmail(coll, id, current) {
   }
 }
 
+/** Tukar kode OAuth (PKCE) jadi sesi — dipanggil initAuth saat balik dari Google.
+ *  Perlu krn detectSessionInUrl:false (auto-detect dimatikan supaya login biasa tak hang). */
+export async function exchangeOAuthCode(code) {
+  _ensure()
+  const { error } = await supabase.auth.exchangeCodeForSession(code)
+  if (error) throw error
+}
+
 export async function loginWithGoogle() {
   _ensure()
   const { error } = await supabase.auth.signInWithOAuth({

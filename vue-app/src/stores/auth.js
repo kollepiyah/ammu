@@ -258,7 +258,19 @@ export const useAuthStore = defineStore('auth', () => {
    * 2) Subscribe Supabase Auth: event pertama resolve authReady. Bila ada sesi Supabase
    *    (di-restore persistSession) tapi sesiAktif kosong/basi -> buildSesi() rekonstruksi.
    */
-  function initAuth() {
+  async function initAuth() {
+    // Step 0: OAuth Google return — tukar ?code jadi sesi (detectSessionInUrl:false → manual).
+    try {
+      const _code = new URLSearchParams(window.location.search).get('code')
+      if (_code) {
+        await authSupabase.exchangeOAuthCode(_code)
+        const _clean = window.location.origin + window.location.pathname + window.location.hash
+        window.history.replaceState({}, '', _clean)
+      }
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.warn('[auth.initAuth] OAuth code exchange gagal:', e?.message || e)
+    }
     // Step 1: restore cepat dari localStorage (sync)
     restoreAdminSesiFromStorage()
     if (!sesiAktif.value) {

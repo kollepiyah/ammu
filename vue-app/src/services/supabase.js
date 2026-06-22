@@ -17,10 +17,10 @@ export const supabase =
         auth: {
           persistSession: true,
           autoRefreshToken: true,
-          // v.109: Google OAuth (signInWithOAuth/linkIdentity) balik dgn `?code=` (PKCE).
-          //   detectSessionInUrl WAJIB true supaya sesi tertangkap saat redirect balik.
-          //   Hanya aktif bila ada param auth di URL → login username/WA/NIS tak terdampak.
-          detectSessionInUrl: true,
+          // v.109: detectSessionInUrl FALSE (true bikin login username/WA/NIS hang krn
+          //   proses URL hash-router saat init). OAuth Google balik dgn `?code=` ditukar
+          //   MANUAL via authSupabase.exchangeOAuthCode di initAuth (lihat stores/auth.js).
+          detectSessionInUrl: false,
           flowType: 'pkce'
         }
       })
