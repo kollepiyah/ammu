@@ -523,8 +523,7 @@
 
       <!-- Footer -->
       <p class="text-center text-[10px] text-slate-400 dark:text-[var(--text-secondary)] pt-2">
-        <i class="fas fa-circle-info mr-1"></i>Menampilkan {{ guru.length }} guru · Vue 3 · Phase
-        5.6
+        <i class="fas fa-circle-info mr-1"></i>Menampilkan {{ guru.length }} guru
       </p>
     </template>
   </div>
@@ -1058,7 +1057,7 @@ async function bulkSetRole() {
 async function deleteGuru(g) {
   const ok = await confirmDialog({
     title: `Hapus ${g.nama}?`,
-    message: `Guru "${g.nama}" (${g.jabatan || '-'}) akan dihapus permanen dari Firestore. Aksi ini tidak bisa di-undo.`,
+    message: `Guru "${g.nama}" (${g.jabatan || '-'}) akan dihapus permanen. Aksi ini tidak bisa di-undo.`,
     confirmText: 'Hapus',
     danger: true
   })
@@ -1110,7 +1109,7 @@ async function bulkDeleteGuru() {
   if (ids.length === 0) return
   const ok = await confirmDialog({
     title: `Hapus ${ids.length} guru?`,
-    message: `${ids.length} guru akan dihapus PERMANEN dari Firestore. Aksi ini tidak bisa di-undo. Lanjutkan?`,
+    message: `${ids.length} guru akan dihapus PERMANEN. Aksi ini tidak bisa di-undo. Lanjutkan?`,
     confirmText: 'Hapus Semua',
     danger: true
   })

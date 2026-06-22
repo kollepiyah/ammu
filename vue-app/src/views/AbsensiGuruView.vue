@@ -524,7 +524,7 @@
 
       <p class="text-center text-[10px] text-[var(--text-tertiary)] pt-2">
         <i class="fas fa-circle-info mr-1"></i>
-        {{ filteredAbsensi.length }} absensi &middot; Vue 3 &middot; Phase 5.16
+        {{ filteredAbsensi.length }} absensi
       </p>
     </template>
   </div>

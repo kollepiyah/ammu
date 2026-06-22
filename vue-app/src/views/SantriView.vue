@@ -678,7 +678,7 @@ function clearSelection() {
 async function deleteSantri(s) {
   const ok = await confirmDlg({
     title: `Hapus ${s.nama}?`,
-    message: `Santri "${s.nama}" (No. Induk: ${s.nis || '-'}) akan dihapus permanen dari Firestore. Aksi ini tidak bisa di-undo.`,
+    message: `Santri "${s.nama}" (No. Induk: ${s.nis || '-'}) akan dihapus permanen. Aksi ini tidak bisa di-undo.`,
     confirmText: 'Hapus',
     danger: true
   })
@@ -729,7 +729,7 @@ async function bulkDelete() {
   if (ids.length === 0) return
   const ok = await confirmDlg({
     title: `Hapus ${ids.length} santri?`,
-    message: `${ids.length} santri akan dihapus PERMANEN dari Firestore. Aksi ini tidak bisa di-undo. Lanjutkan?`,
+    message: `${ids.length} santri akan dihapus PERMANEN. Aksi ini tidak bisa di-undo. Lanjutkan?`,
     confirmText: 'Hapus Semua',
     danger: true
   })

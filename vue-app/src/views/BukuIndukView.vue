@@ -445,8 +445,7 @@
       </div>
 
       <p class="text-center text-[10px] text-[var(--text-tertiary)] pt-2">
-        <i class="fas fa-circle-info mr-1"></i>{{ filteredBuku.length }} transaksi · Vue 3 · Phase
-        5.14
+        <i class="fas fa-circle-info mr-1"></i>{{ filteredBuku.length }} transaksi
       </p>
     </template>
   </div>

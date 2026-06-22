@@ -637,7 +637,7 @@
           class="bg-cyan-50 border-2 border-cyan-300 rounded-xl p-3 mb-2"
         >
           <p class="text-xs font-black text-[var(--text-on-accent)] mb-1">
-            <i class="fas fa-exclamation-triangle mr-1"></i>Schema lama terdeteksi di Firestore
+            <i class="fas fa-exclamation-triangle mr-1"></i>Schema lama terdeteksi
           </p>
           <p class="text-[11px] text-cyan-700 mb-2">
             Klik tombol <b>PTPT (Kelas Juz)</b> di atas lalu <b>Simpan</b> untuk migrasi ke format
@@ -722,8 +722,8 @@
         </div>
 
         <p class="text-[10px] text-[var(--text-secondary)] italic">
-          <i class="fas fa-info-circle mr-1"></i>Klik "Simpan" untuk apply ke Firestore. Vue rapor
-          page otomatis pakai schema ini.
+          <i class="fas fa-info-circle mr-1"></i>Klik "Simpan" untuk menyimpan. Halaman rapor
+          otomatis pakai schema ini.
         </p>
       </div>
 

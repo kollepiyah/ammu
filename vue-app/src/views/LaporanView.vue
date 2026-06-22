@@ -6,7 +6,7 @@
         <i class="fas fa-chart-bar text-teal-600 mr-2"></i>Laporan &amp; Analitik
       </h1>
       <p class="text-xs text-[var(--text-secondary)] mt-0.5">
-        Ringkasan data lintas waktu — sumber analitik (Supabase). Diperbarui realtime sesuai data.
+        Ringkasan data lintas waktu — diperbarui beberapa saat setelah data berubah.
       </p>
     </div>
 

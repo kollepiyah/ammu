@@ -1,15 +1,25 @@
 <template>
   <div class="p-3 md:p-5 max-w-3xl mx-auto space-y-4">
     <!-- Header -->
-    <div class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm flex items-center justify-between gap-3">
+    <div
+      class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm flex items-center justify-between gap-3"
+    >
       <div>
         <h1 class="text-lg md:text-xl font-black text-[var(--text-primary)]">
-          <i :class="editingId ? 'fas fa-edit text-cyan-500' : 'fas fa-building text-teal-500'" class="mr-2"></i>
+          <i
+            :class="editingId ? 'fas fa-edit text-cyan-500' : 'fas fa-building text-teal-500'"
+            class="mr-2"
+          ></i>
           {{ editingId ? `Edit Lembaga: ${form.lembaga}` : 'Tambah Lembaga Baru' }}
         </h1>
-        <p class="text-xs text-[var(--text-secondary)] mt-0.5">Master data lembaga + daftar kelas/jilid</p>
+        <p class="text-xs text-[var(--text-secondary)] mt-0.5">
+          Master data lembaga + daftar kelas/jilid
+        </p>
       </div>
-      <router-link to="/lembaga" class="px-3 py-2 text-sm bg-[var(--bg-muted)] hover:bg-slate-200 text-slate-700 dark:text-[var(--text-tertiary)] font-bold rounded-xl transition">
+      <router-link
+        to="/lembaga"
+        class="px-3 py-2 text-sm bg-[var(--bg-muted)] hover:bg-slate-200 text-slate-700 dark:text-[var(--text-tertiary)] font-bold rounded-xl transition"
+      >
         <i class="fas fa-arrow-left mr-1"></i>Kembali
       </router-link>
     </div>
@@ -21,13 +31,19 @@
 
     <form v-else @submit.prevent="onSubmit" class="space-y-4">
       <!-- Identitas lembaga -->
-      <div class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm">
-        <h3 class="text-xs font-black text-slate-700 dark:text-[var(--text-tertiary)] uppercase tracking-wide mb-3">
+      <div
+        class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
+      >
+        <h3
+          class="text-xs font-black text-slate-700 dark:text-[var(--text-tertiary)] uppercase tracking-wide mb-3"
+        >
           <i class="fas fa-id-card text-teal-500 mr-1"></i>Identitas Lembaga
         </h3>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase">Nama Lembaga *</label>
+            <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase"
+              >Nama Lembaga *</label
+            >
             <input
               v-model="form.lembaga"
               type="text"
@@ -36,24 +52,37 @@
               class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] disabled:opacity-60 focus:ring-2 focus:ring-teal-500 outline-none"
             />
             <p v-if="editingId" class="text-[10px] text-cyan-600 mt-1">
-              <i class="fas fa-info-circle mr-1"></i>Nama lembaga tidak bisa diubah saat edit (sebagai ID)
+              <i class="fas fa-info-circle mr-1"></i>Nama lembaga tidak bisa diubah saat edit
+              (sebagai ID)
             </p>
           </div>
           <div>
-            <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase">Tipe Lembaga *</label>
-            <select v-model="form.tipe" required class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none">
-              <option v-for="t in TIPE_OPTIONS" :key="t.value" :value="t.value">{{ t.label }}</option>
+            <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase"
+              >Tipe Lembaga *</label
+            >
+            <select
+              v-model="form.tipe"
+              required
+              class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none"
+            >
+              <option v-for="t in TIPE_OPTIONS" :key="t.value" :value="t.value">
+                {{ t.label }}
+              </option>
             </select>
           </div>
         </div>
       </div>
 
       <!-- Daftar Kelas -->
-      <div class="bg-teal-50/40 dark:bg-teal-900/20 rounded-2xl p-4 md:p-5 border-2 border-teal-300 dark:border-teal-700 shadow-sm">
+      <div
+        class="bg-teal-50/40 dark:bg-teal-900/20 rounded-2xl p-4 md:p-5 border-2 border-teal-300 dark:border-teal-700 shadow-sm"
+      >
         <div class="flex items-center justify-between mb-3">
           <h3 class="text-xs font-black text-teal-800 dark:text-teal-300 uppercase tracking-wide">
             <i class="fas fa-door-open text-teal-600 mr-1"></i>Daftar Kelas / Jilid
-            <span class="ml-1 text-[10px] bg-teal-100 text-teal-700 px-1.5 py-0.5 rounded">{{ form.kelas.length }}</span>
+            <span class="ml-1 text-[10px] bg-teal-100 text-teal-700 px-1.5 py-0.5 rounded">{{
+              form.kelas.length
+            }}</span>
           </h3>
         </div>
 
@@ -76,7 +105,10 @@
         </div>
 
         <!-- Kelas list -->
-        <div v-if="form.kelas.length === 0" class="text-center text-xs text-[var(--text-tertiary)] italic py-6 bg-[var(--bg-card)]/40 rounded-xl border border-dashed border-teal-300">
+        <div
+          v-if="form.kelas.length === 0"
+          class="text-center text-xs text-[var(--text-tertiary)] italic py-6 bg-[var(--bg-card)]/40 rounded-xl border border-dashed border-teal-300"
+        >
           Belum ada kelas. Ketik di atas + Enter untuk menambah.
         </div>
         <div v-else class="space-y-1.5">
@@ -85,7 +117,9 @@
             :key="idx"
             class="flex items-center gap-2 bg-[var(--bg-card)] border border-teal-200 rounded-lg p-2"
           >
-            <span class="text-[10px] bg-teal-100 text-teal-700 font-black px-2 py-0.5 rounded">#{{ idx + 1 }}</span>
+            <span class="text-[10px] bg-teal-100 text-teal-700 font-black px-2 py-0.5 rounded"
+              >#{{ idx + 1 }}</span
+            >
             <span class="flex-1 text-sm font-bold text-[var(--text-primary)]">{{ k }}</span>
             <button
               type="button"
@@ -120,10 +154,14 @@
       <!-- v.21.93.0527: Daftar Jabatan dipindah ke Master Data → Jabatan (ACF CRUD).
            Bagian ini sengaja dihapus dari edit lembaga supaya tidak duplikat. -->
 
-
       <!-- KOP Section (Formal only) -->
-      <div v-if="showKop" class="bg-cyan-50/40 dark:bg-cyan-900/20 rounded-2xl p-4 md:p-5 border-2 border-cyan-300 dark:border-cyan-700 shadow-sm">
-        <h3 class="text-xs font-black text-cyan-800 dark:text-cyan-300 uppercase tracking-wide mb-3">
+      <div
+        v-if="showKop"
+        class="bg-cyan-50/40 dark:bg-cyan-900/20 rounded-2xl p-4 md:p-5 border-2 border-cyan-300 dark:border-cyan-700 shadow-sm"
+      >
+        <h3
+          class="text-xs font-black text-cyan-800 dark:text-cyan-300 uppercase tracking-wide mb-3"
+        >
           <i class="fas fa-file-image text-cyan-600 mr-1"></i>KOP Letterhead (Formal)
         </h3>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -135,23 +173,37 @@
               class="w-full px-3 py-2 text-sm rounded-xl border border-cyan-300 bg-cyan-50 focus:ring-2 focus:ring-cyan-500 outline-none"
             />
             <p class="text-[10px] text-[var(--text-secondary)] mt-0.5">
-              <i class="fas fa-info-circle mr-1"></i>Upload logo lewat /pengaturan-web atau paste URL Firebase Storage.
+              <i class="fas fa-info-circle mr-1"></i>Upload logo lewat /pengaturan-web atau paste
+              URL gambar.
             </p>
           </div>
           <div>
             <label class="block text-xs font-bold text-cyan-700 mb-1 uppercase">Alamat KOP</label>
-            <input v-model="form.kop_alamat" type="text" class="w-full px-3 py-2 text-sm rounded-xl border border-cyan-300 bg-cyan-50 focus:ring-2 focus:ring-cyan-500 outline-none" />
+            <input
+              v-model="form.kop_alamat"
+              type="text"
+              class="w-full px-3 py-2 text-sm rounded-xl border border-cyan-300 bg-cyan-50 focus:ring-2 focus:ring-cyan-500 outline-none"
+            />
           </div>
           <div>
             <label class="block text-xs font-bold text-cyan-700 mb-1 uppercase">No. Telp</label>
-            <input v-model="form.kop_telp" type="text" class="w-full px-3 py-2 text-sm rounded-xl border border-cyan-300 bg-cyan-50 focus:ring-2 focus:ring-cyan-500 outline-none" />
+            <input
+              v-model="form.kop_telp"
+              type="text"
+              class="w-full px-3 py-2 text-sm rounded-xl border border-cyan-300 bg-cyan-50 focus:ring-2 focus:ring-cyan-500 outline-none"
+            />
           </div>
         </div>
       </div>
 
       <!-- Actions sticky -->
-      <div class="bg-[var(--bg-card)] rounded-2xl p-3 border border-[var(--border-subtle)] shadow-sm sticky bottom-3 flex gap-2">
-        <router-link to="/lembaga" class="flex-1 text-center px-4 py-3 bg-[var(--bg-muted)] hover:bg-slate-200 text-slate-700 dark:text-[var(--text-tertiary)] font-bold rounded-xl text-sm shadow-md transition">
+      <div
+        class="bg-[var(--bg-card)] rounded-2xl p-3 border border-[var(--border-subtle)] shadow-sm sticky bottom-3 flex gap-2"
+      >
+        <router-link
+          to="/lembaga"
+          class="flex-1 text-center px-4 py-3 bg-[var(--bg-muted)] hover:bg-slate-200 text-slate-700 dark:text-[var(--text-tertiary)] font-bold rounded-xl text-sm shadow-md transition"
+        >
           <i class="fas fa-times mr-1"></i>Batal
         </router-link>
         <button
@@ -163,14 +215,19 @@
         >
           <i class="fas fa-trash mr-1"></i>Hapus
         </button>
-        <button type="submit" :disabled="isSaving" class="flex-1 px-4 py-3 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] disabled:opacity-50 text-white font-bold rounded-xl text-sm shadow-md transition">
-          <i class="fas fa-save mr-1"></i>{{ isSaving ? 'Menyimpan...' : (editingId ? 'Update Lembaga' : 'Simpan Lembaga') }}
+        <button
+          type="submit"
+          :disabled="isSaving"
+          class="flex-1 px-4 py-3 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] disabled:opacity-50 text-white font-bold rounded-xl text-sm shadow-md transition"
+        >
+          <i class="fas fa-save mr-1"></i
+          >{{ isSaving ? 'Menyimpan...' : editingId ? 'Update Lembaga' : 'Simpan Lembaga' }}
         </button>
       </div>
     </form>
 
     <p class="text-center text-[10px] text-[var(--text-tertiary)] pt-2">
-      <i class="fas fa-circle-info mr-1"></i>Vue 3 · v.21.23.0526 — CRUD Lembaga + Jabatan per-lembaga
+      <i class="fas fa-circle-info mr-1"></i>v.21.23.0526
     </p>
   </div>
 </template>
