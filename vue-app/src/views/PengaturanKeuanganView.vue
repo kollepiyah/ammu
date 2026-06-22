@@ -18,126 +18,177 @@
       class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
     >
       <div v-show="secVisible('tagihan')">
-      <h3
-        class="text-xs md:text-sm font-black text-[var(--text-primary)] uppercase tracking-widest mb-3 border-b border-[var(--border-subtle)] pb-2"
-      >
-        <i class="fas fa-calendar-day text-teal-600 mr-1"></i>Pembayaran &amp; Jatuh Tempo
-      </h3>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <div>
-          <label
-            class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
-          >
-            Tanggal Jatuh Tempo Default Syahriyah Bulanan (1-28)
-          </label>
-          <input
-            v-model.number="form.keu_jatuh_tempo"
-            type="number"
-            min="1"
-            max="28"
-            class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
-          />
+        <h3
+          class="text-xs md:text-sm font-black text-[var(--text-primary)] uppercase tracking-widest mb-3 border-b border-[var(--border-subtle)] pb-2"
+        >
+          <i class="fas fa-calendar-day text-teal-600 mr-1"></i>Pembayaran &amp; Jatuh Tempo
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div>
+            <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block">
+              Tanggal Jatuh Tempo Default Syahriyah Bulanan (1-28)
+            </label>
+            <input
+              v-model.number="form.keu_jatuh_tempo"
+              type="number"
+              min="1"
+              max="28"
+              class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
+            />
+          </div>
+          <div>
+            <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block">
+              Auto-Generate Pembayaran
+            </label>
+            <button
+              @click="autoGenerate"
+              :disabled="generating"
+              class="w-full bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-bold py-2 rounded-lg text-sm transition cursor-pointer disabled:opacity-50"
+            >
+              <i class="fas fa-sync mr-1"></i
+              >{{ generating ? 'Generating...' : 'Generate Bulan Ini' }}
+            </button>
+          </div>
         </div>
-        <div>
+
+        <!-- v.95.0626: kill-switch cron server auto-generate (tombol manual di atas TETAP berfungsi) -->
+        <div
+          class="mt-3 flex items-start gap-2 p-2.5 rounded-lg bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-700"
+        >
+          <input
+            id="autoGenCron"
+            v-model="form.keu_auto_generate_cron"
+            type="checkbox"
+            class="mt-0.5 w-4 h-4 accent-teal-600"
+          />
           <label
-            class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
+            for="autoGenCron"
+            class="text-[11px] text-[var(--text-secondary)] leading-snug cursor-pointer"
           >
-            Auto-Generate Pembayaran
+            <span class="font-bold text-[var(--text-primary)]"
+              >Auto-generate otomatis tiap bulan (server)</span
+            >
+            — sistem membuat tagihan bulan berjalan secara otomatis untuk jenis ber-flag
+            <em>auto_generate</em> (jatuh tempo ikut setelan di atas). Aman dari duplikat. Matikan
+            kalau ingin generate manual saja; tombol "Generate Bulan Ini" tetap bisa dipakai kapan
+            pun untuk uji coba.
+          </label>
+        </div>
+
+        <!-- v.94.0626: Generate Tagihan Khusus (infaq/iuran sekali-jalan, target fleksibel) -->
+        <div class="mt-3">
+          <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block">
+            Tagihan Khusus (Infaq / Iuran — sekali jalan)
           </label>
           <button
-            @click="autoGenerate"
-            :disabled="generating"
-            class="w-full bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-bold py-2 rounded-lg text-sm transition cursor-pointer disabled:opacity-50"
+            @click="openGenKhusus"
+            class="w-full inline-flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 rounded-lg text-sm transition cursor-pointer"
           >
-            <i class="fas fa-sync mr-1"></i
-            >{{ generating ? 'Generating...' : 'Generate Bulan Ini' }}
+            <i class="fas fa-plus-circle"></i>Generate Tagihan Khusus
+          </button>
+          <p class="text-[10px] text-[var(--text-secondary)] mt-1 italic">
+            <i class="fas fa-info-circle mr-1"></i>Untuk infaq pembangunan, infaq kegiatan, dsb.
+            Tidak menyentuh Syahriyah &amp; bisa ditarget per lembaga/kelas/santri. Tagihan yang
+            sudah ada (santri + kategori + periode sama) otomatis di-skip.
+          </p>
+        </div>
+
+        <!-- v.21.89.0527: Lebar kertas struk POS (dot-matrix) -->
+        <div class="mt-4">
+          <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block">
+            Lebar Kertas Struk POS (Dot-matrix)
+          </label>
+          <select
+            v-model="form.posStrukPaper"
+            class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
+          >
+            <option value="9.5">9.5 inci (continuous form, ±24 cm — Epson LX-310)</option>
+            <option value="thermal80">80 mm thermal (~42 kolom)</option>
+            <option value="thermal58">58 mm thermal (~32 kolom)</option>
+          </select>
+          <p class="text-[10px] text-[var(--text-secondary)] mt-1 italic">
+            <i class="fas fa-info-circle mr-1"></i>Untuk cetak struk POS ke printer dot-matrix Epson
+            LX-310 atau thermal. Cetak langsung (silent) tersedia di aplikasi Desktop (Windows).
+          </p>
+          <!-- v.94.0626: buka Pengaturan Printer (deteksi printer terhubung Windows) -->
+          <button
+            type="button"
+            @click="bukaPengaturanPrinter"
+            class="mt-2 inline-flex items-center gap-1.5 text-xs font-bold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-900/30 px-3 py-2 rounded-lg hover:bg-teal-100"
+          >
+            <i class="fas fa-print"></i>Pengaturan Printer (Desktop)
           </button>
         </div>
-      </div>
 
-      <!-- v.95.0626: kill-switch cron server auto-generate (tombol manual di atas TETAP berfungsi) -->
-      <div class="mt-3 flex items-start gap-2 p-2.5 rounded-lg bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-700">
-        <input id="autoGenCron" v-model="form.keu_auto_generate_cron" type="checkbox" class="mt-0.5 w-4 h-4 accent-teal-600" />
-        <label for="autoGenCron" class="text-[11px] text-[var(--text-secondary)] leading-snug cursor-pointer">
-          <span class="font-bold text-[var(--text-primary)]">Auto-generate otomatis tiap bulan (server)</span> — sistem membuat tagihan bulan berjalan secara otomatis untuk jenis ber-flag <em>auto_generate</em> (jatuh tempo ikut setelan di atas). Aman dari duplikat. Matikan kalau ingin generate manual saja; tombol "Generate Bulan Ini" tetap bisa dipakai kapan pun untuk uji coba.
-        </label>
-      </div>
-
-      <!-- v.94.0626: Generate Tagihan Khusus (infaq/iuran sekali-jalan, target fleksibel) -->
-      <div class="mt-3">
-        <label
-          class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
+        <!-- v.95.0626: penyetelan struk dot-matrix ESC/P — atur sendiri tanpa rebuild -->
+        <div
+          v-if="form.posStrukPaper === '9.5'"
+          class="mt-3 p-3 rounded-lg bg-[var(--bg-card-elevated)] border border-[var(--border-default)]"
         >
-          Tagihan Khusus (Infaq / Iuran — sekali jalan)
-        </label>
-        <button
-          @click="openGenKhusus"
-          class="w-full inline-flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 rounded-lg text-sm transition cursor-pointer"
-        >
-          <i class="fas fa-plus-circle"></i>Generate Tagihan Khusus
-        </button>
-        <p class="text-[10px] text-[var(--text-secondary)] mt-1 italic">
-          <i class="fas fa-info-circle mr-1"></i>Untuk infaq pembangunan, infaq kegiatan,
-          dsb. Tidak menyentuh Syahriyah &amp; bisa ditarget per lembaga/kelas/santri.
-          Tagihan yang sudah ada (santri + kategori + periode sama) otomatis di-skip.
-        </p>
-      </div>
-
-      <!-- v.21.89.0527: Lebar kertas struk POS (dot-matrix) -->
-      <div class="mt-4">
-        <label
-          class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
-        >
-          Lebar Kertas Struk POS (Dot-matrix)
-        </label>
-        <select
-          v-model="form.posStrukPaper"
-          class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
-        >
-          <option value="9.5">9.5 inci (continuous form, ±24 cm — Epson LX-310)</option>
-          <option value="thermal80">80 mm thermal (~42 kolom)</option>
-          <option value="thermal58">58 mm thermal (~32 kolom)</option>
-        </select>
-        <p class="text-[10px] text-[var(--text-secondary)] mt-1 italic">
-          <i class="fas fa-info-circle mr-1"></i>Untuk cetak struk POS ke printer dot-matrix
-          Epson LX-310 atau thermal. Cetak langsung (silent) tersedia di aplikasi Desktop (Windows).
-        </p>
-        <!-- v.94.0626: buka Pengaturan Printer (deteksi printer terhubung Windows) -->
-        <button
-          type="button"
-          @click="bukaPengaturanPrinter"
-          class="mt-2 inline-flex items-center gap-1.5 text-xs font-bold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-900/30 px-3 py-2 rounded-lg hover:bg-teal-100"
-        >
-          <i class="fas fa-print"></i>Pengaturan Printer (Desktop)
-        </button>
-      </div>
-
-      <!-- v.95.0626: penyetelan struk dot-matrix ESC/P — atur sendiri tanpa rebuild -->
-      <div v-if="form.posStrukPaper === '9.5'" class="mt-3 p-3 rounded-lg bg-[var(--bg-card-elevated)] border border-[var(--border-default)]">
-        <div class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-2">Penyetelan Struk Cetak (Grafis ESC/P)</div>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <div>
-            <label class="text-[10px] text-[var(--text-secondary)] block mb-1">Lebar slip (mm)</label>
-            <input v-model.number="form.posStrukSlipW" type="number" min="120" max="260" class="w-full px-2 py-1.5 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)]" />
+          <div class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-2">
+            Penyetelan Struk Cetak (Grafis ESC/P)
           </div>
-          <div>
-            <label class="text-[10px] text-[var(--text-secondary)] block mb-1">Tinggi slip (mm)</label>
-            <input v-model.number="form.posStrukSlipH" type="number" min="60" max="230" class="w-full px-2 py-1.5 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)]" />
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div>
+              <label class="text-[10px] text-[var(--text-secondary)] block mb-1"
+                >Lebar slip (mm)</label
+              >
+              <input
+                v-model.number="form.posStrukSlipW"
+                type="number"
+                min="120"
+                max="260"
+                class="w-full px-2 py-1.5 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)]"
+              />
+            </div>
+            <div>
+              <label class="text-[10px] text-[var(--text-secondary)] block mb-1"
+                >Tinggi slip (mm)</label
+              >
+              <input
+                v-model.number="form.posStrukSlipH"
+                type="number"
+                min="60"
+                max="230"
+                class="w-full px-2 py-1.5 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)]"
+              />
+            </div>
+            <div>
+              <label class="text-[10px] text-[var(--text-secondary)] block mb-1"
+                >Margin atas (mm)</label
+              >
+              <input
+                v-model.number="form.posStrukTopMm"
+                type="number"
+                min="0"
+                max="140"
+                class="w-full px-2 py-1.5 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)]"
+              />
+            </div>
+            <div>
+              <label class="text-[10px] text-[var(--text-secondary)] block mb-1"
+                >Geser kanan (mm)</label
+              >
+              <input
+                v-model.number="form.posStrukLeftMm"
+                type="number"
+                min="0"
+                max="80"
+                class="w-full px-2 py-1.5 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)]"
+              />
+            </div>
           </div>
-          <div>
-            <label class="text-[10px] text-[var(--text-secondary)] block mb-1">Margin atas (mm)</label>
-            <input v-model.number="form.posStrukTopMm" type="number" min="0" max="140" class="w-full px-2 py-1.5 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)]" />
-          </div>
-          <div>
-            <label class="text-[10px] text-[var(--text-secondary)] block mb-1">Geser kanan (mm)</label>
-            <input v-model.number="form.posStrukLeftMm" type="number" min="0" max="80" class="w-full px-2 py-1.5 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)]" />
-          </div>
+          <p class="text-[10px] text-[var(--text-secondary)] mt-2 italic">
+            <i class="fas fa-info-circle mr-1"></i>Struk dicetak
+            <b>grafis langsung ke printer (ESC/P)</b> — tajam &amp; tanpa feed kosong. Lebar maks
+            cetak ~8 inci (200mm). Untuk <b>center</b>: kecilkan <b>Lebar slip</b> (mis. 185) lalu
+            naikkan <b>Geser kanan</b> (mis. 15–18) sampai konten di tengah. <b>Margin atas</b> =
+            jarak dari tepi atas (0 = paling atas). <b>Tinggi slip</b> = tinggi fisik slip (mis.
+            140) agar tiap cetak maju tepat 1 slip.
+          </p>
         </div>
-        <p class="text-[10px] text-[var(--text-secondary)] mt-2 italic">
-          <i class="fas fa-info-circle mr-1"></i>Struk dicetak <b>grafis langsung ke printer (ESC/P)</b> — tajam &amp; tanpa feed kosong. Lebar maks cetak ~8 inci (200mm). Untuk <b>center</b>: kecilkan <b>Lebar slip</b> (mis. 185) lalu naikkan <b>Geser kanan</b> (mis. 15–18) sampai konten di tengah. <b>Margin atas</b> = jarak dari tepi atas (0 = paling atas). <b>Tinggi slip</b> = tinggi fisik slip (mis. 140) agar tiap cetak maju tepat 1 slip.
-        </p>
       </div>
-      </div><!-- /blok tagihan -->
+      <!-- /blok tagihan -->
 
       <div v-show="secVisible('syahriyah')" class="mt-4">
         <h4
@@ -167,13 +218,17 @@
                 min="0"
                 class="col-span-3 bg-[var(--bg-card)] text-xs font-bold text-[var(--text-primary)] outline-none border border-[var(--border-default)] rounded px-2 py-1"
               />
-              <label class="col-span-2 flex items-center gap-1 text-[10px] font-bold text-[var(--text-secondary)]">
+              <label
+                class="col-span-2 flex items-center gap-1 text-[10px] font-bold text-[var(--text-secondary)]"
+              >
                 <input v-model="jenis.auto_generate" type="checkbox" class="w-3 h-3" />
                 Auto
               </label>
               <button
                 @click="toggleExpandJenis(jenis)"
-                :title="jenis._expanded ? 'Tutup override' : 'Atur nominal per lembaga/kelas/santri'"
+                :title="
+                  jenis._expanded ? 'Tutup override' : 'Atur nominal per lembaga/kelas/santri'
+                "
                 class="col-span-1 text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/30 px-2 py-1 rounded text-xs"
               >
                 <i :class="['fas', jenis._expanded ? 'fa-chevron-up' : 'fa-building']"></i>
@@ -188,36 +243,48 @@
               </button>
             </div>
             <!-- v.21.100.0527: Whitelist + override per-lembaga + per-kelas -->
-            <div v-if="jenis._expanded" class="mt-2 pt-2 border-t border-[var(--border-subtle)] space-y-3">
+            <div
+              v-if="jenis._expanded"
+              class="mt-2 pt-2 border-t border-[var(--border-subtle)] space-y-3"
+            >
               <!-- 1) Whitelist lembaga -->
               <div>
                 <p class="text-[10px] text-[var(--text-secondary)] italic mb-1">
-                  <i class="fas fa-filter mr-1"></i>Hanya untuk lembaga ini (kosong = semua lembaga):
+                  <i class="fas fa-filter mr-1"></i>Hanya untuk lembaga ini (kosong = semua
+                  lembaga):
                 </p>
                 <div class="flex flex-wrap gap-1.5">
                   <label
-                    v-for="lemb in (lembagaRaw || [])"
+                    v-for="lemb in lembagaRaw || []"
                     :key="`${jenis.id}_wl_${lemb.lembaga}`"
                     class="inline-flex items-center gap-1 text-[10px] font-bold cursor-pointer bg-[var(--bg-card)] px-2 py-1 rounded border border-[var(--border-default)]"
                   >
                     <input
                       type="checkbox"
-                      :checked="Array.isArray(jenis.lembaga_only) && jenis.lembaga_only.includes(lemb.lembaga)"
+                      :checked="
+                        Array.isArray(jenis.lembaga_only) &&
+                        jenis.lembaga_only.includes(lemb.lembaga)
+                      "
                       @change="toggleLembagaOnly(jenis, lemb.lembaga)"
                       class="w-3 h-3 accent-teal-600"
                     />
                     {{ lemb.lembaga }}
                   </label>
                 </div>
-                <p v-if="Array.isArray(jenis.lembaga_only) && jenis.lembaga_only.length > 0" class="text-[9px] text-teal-600 mt-1">
-                  <i class="fas fa-check-circle"></i> Hanya muncul di POS untuk: {{ jenis.lembaga_only.join(', ') }}
+                <p
+                  v-if="Array.isArray(jenis.lembaga_only) && jenis.lembaga_only.length > 0"
+                  class="text-[9px] text-teal-600 mt-1"
+                >
+                  <i class="fas fa-check-circle"></i> Hanya muncul di POS untuk:
+                  {{ jenis.lembaga_only.join(', ') }}
                 </p>
               </div>
 
               <!-- 2) Override per-lembaga -->
               <div>
                 <p class="text-[10px] text-[var(--text-secondary)] italic mb-1.5">
-                  <i class="fas fa-building mr-1"></i>Nominal per lembaga (override default). Kosong / 0 = pakai default.
+                  <i class="fas fa-building mr-1"></i>Nominal per lembaga (override default). Kosong
+                  / 0 = pakai default.
                 </p>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                   <div
@@ -225,10 +292,18 @@
                     :key="`${jenis.id}_pl_${lemb.lembaga}`"
                     class="flex items-center gap-2 bg-[var(--bg-card)] rounded px-2 py-1"
                   >
-                    <span class="text-[10px] font-bold text-[var(--text-secondary)] flex-1 truncate">{{ lemb.lembaga }}</span>
+                    <span
+                      class="text-[10px] font-bold text-[var(--text-secondary)] flex-1 truncate"
+                      >{{ lemb.lembaga }}</span
+                    >
                     <input
                       :value="jenis.nominal_per_lembaga?.[lemb.lembaga] || ''"
-                      @input="jenis.nominal_per_lembaga = { ...(jenis.nominal_per_lembaga || {}), [lemb.lembaga]: Number($event.target.value) || 0 }"
+                      @input="
+                        jenis.nominal_per_lembaga = {
+                          ...(jenis.nominal_per_lembaga || {}),
+                          [lemb.lembaga]: Number($event.target.value) || 0
+                        }
+                      "
                       type="number"
                       min="0"
                       :placeholder="String(jenis.nominal_default || 0)"
@@ -241,7 +316,8 @@
               <!-- 3) Override per-kelas (paling spesifik) -->
               <div>
                 <p class="text-[10px] text-[var(--text-secondary)] italic mb-1.5">
-                  <i class="fas fa-layer-group mr-1"></i>Nominal per kelas (paling spesifik, mengalahkan per-lembaga). Kosong = pakai per-lembaga / default.
+                  <i class="fas fa-layer-group mr-1"></i>Nominal per kelas (paling spesifik,
+                  mengalahkan per-lembaga). Kosong = pakai per-lembaga / default.
                 </p>
                 <div class="space-y-2">
                   <div
@@ -249,8 +325,13 @@
                     :key="`${jenis.id}_pk_${lemb.lembaga}`"
                     class="bg-[var(--bg-card)] rounded p-2 border border-[var(--border-subtle)]"
                   >
-                    <p class="text-[10px] font-black text-[var(--text-secondary)] mb-1">{{ lemb.lembaga }}</p>
-                    <div v-if="kelasOfLembaga(lemb).length === 0" class="text-[9px] text-[var(--text-tertiary)] italic">
+                    <p class="text-[10px] font-black text-[var(--text-secondary)] mb-1">
+                      {{ lemb.lembaga }}
+                    </p>
+                    <div
+                      v-if="kelasOfLembaga(lemb).length === 0"
+                      class="text-[9px] text-[var(--text-tertiary)] italic"
+                    >
                       Lembaga ini belum punya kelas
                     </div>
                     <div v-else class="grid grid-cols-2 md:grid-cols-3 gap-1.5">
@@ -259,13 +340,22 @@
                         :key="`${jenis.id}_pk_${lemb.lembaga}_${kls}`"
                         class="flex items-center gap-1.5"
                       >
-                        <span class="text-[9px] font-bold text-[var(--text-secondary)] w-12 truncate">{{ kls }}</span>
+                        <span
+                          class="text-[9px] font-bold text-[var(--text-secondary)] w-12 truncate"
+                          >{{ kls }}</span
+                        >
                         <input
                           :value="(jenis.nominal_per_kelas?.[lemb.lembaga] || {})[kls] || ''"
                           @input="setNominalKelas(jenis, lemb.lembaga, kls, $event.target.value)"
                           type="number"
                           min="0"
-                          :placeholder="String((jenis.nominal_per_lembaga || {})[lemb.lembaga] || jenis.nominal_default || 0)"
+                          :placeholder="
+                            String(
+                              (jenis.nominal_per_lembaga || {})[lemb.lembaga] ||
+                                jenis.nominal_default ||
+                                0
+                            )
+                          "
                           class="flex-1 text-[10px] font-bold text-[var(--text-primary)] outline-none border border-[var(--border-default)] rounded px-1.5 py-0.5 text-right"
                         />
                       </div>
@@ -276,7 +366,8 @@
               <!-- v.95.0626: override nominal per SANTRI (santri yg bayar syahriyahnya beda) -->
               <div>
                 <p class="text-[10px] text-[var(--text-secondary)] italic mb-1">
-                  <i class="fas fa-user-tag mr-1"></i>Nominal khusus per santri (yg bayarnya beda) — <b>{{ overrideSantriCount(jenis) }}</b> di-set:
+                  <i class="fas fa-user-tag mr-1"></i>Nominal khusus per santri (yg bayarnya beda) —
+                  <b>{{ overrideSantriCount(jenis) }}</b> di-set:
                 </p>
                 <input
                   v-model="perSantriSearch[jenis.id]"
@@ -290,7 +381,12 @@
                     :key="`${jenis.id}_ps_${s.id}`"
                     class="flex items-center gap-2 bg-[var(--bg-card)] rounded px-2 py-1 border border-[var(--border-subtle)]"
                   >
-                    <span class="flex-1 text-[10px] font-bold text-[var(--text-primary)] truncate">{{ s.nama }} <span class="text-[var(--text-tertiary)] font-normal">{{ s.nis || '-' }}</span></span>
+                    <span class="flex-1 text-[10px] font-bold text-[var(--text-primary)] truncate"
+                      >{{ s.nama }}
+                      <span class="text-[var(--text-tertiary)] font-normal">{{
+                        s.nis || '-'
+                      }}</span></span
+                    >
                     <input
                       :value="(jenis.nominal_per_santri || {})[String(s.id)] || ''"
                       @input="setNominalSantri(jenis, s.id, $event.target.value)"
@@ -300,14 +396,24 @@
                       class="w-24 text-[10px] font-bold text-[var(--text-primary)] outline-none border border-[var(--border-default)] rounded px-1.5 py-0.5 text-right"
                     />
                   </div>
-                  <p v-if="santriCariFor(jenis).length === 0" class="text-[9px] text-[var(--text-tertiary)] italic px-1 py-1">
-                    {{ perSantriSearch[jenis.id] ? 'Santri tidak ditemukan.' : 'Ketik nama/No. Induk untuk set nominal khusus. Yang sudah di-set muncul di sini.' }}
+                  <p
+                    v-if="santriCariFor(jenis).length === 0"
+                    class="text-[9px] text-[var(--text-tertiary)] italic px-1 py-1"
+                  >
+                    {{
+                      perSantriSearch[jenis.id]
+                        ? 'Santri tidak ditemukan.'
+                        : 'Ketik nama/No. Induk untuk set nominal khusus. Yang sudah di-set muncul di sini.'
+                    }}
                   </p>
                 </div>
               </div>
             </div>
           </div>
-          <p v-if="jenisList.length === 0" class="text-xs text-[var(--text-tertiary)] italic text-center py-2">
+          <p
+            v-if="jenisList.length === 0"
+            class="text-xs text-[var(--text-tertiary)] italic text-center py-2"
+          >
             Belum ada jenis tagihan. Tambah di bawah.
           </p>
         </div>
@@ -342,9 +448,7 @@
         class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4 pb-4 border-b border-[var(--border-subtle)]"
       >
         <div>
-          <label
-            class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
-          >
+          <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block">
             Bisyaroh per Shift Pagi (otomatis dari absensi)
           </label>
           <input
@@ -356,9 +460,7 @@
           />
         </div>
         <div>
-          <label
-            class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
-          >
+          <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block">
             Bisyaroh per Shift Sore (otomatis dari absensi)
           </label>
           <input
@@ -636,8 +738,14 @@
               <i class="fas fa-trash"></i>
             </button>
           </div>
-          <div class="text-[9px] text-[var(--text-tertiary)]"><i class="fas fa-filter mr-1"></i>Berlaku: <b class="text-[var(--text-secondary)]">{{ masterScopeLabel(item) }}</b></div>
-          <div v-if="item._guruExpanded" class="border-t border-emerald-200 dark:border-emerald-800 pt-1.5">
+          <div class="text-[9px] text-[var(--text-tertiary)]">
+            <i class="fas fa-filter mr-1"></i>Berlaku:
+            <b class="text-[var(--text-secondary)]">{{ masterScopeLabel(item) }}</b>
+          </div>
+          <div
+            v-if="item._guruExpanded"
+            class="border-t border-emerald-200 dark:border-emerald-800 pt-1.5"
+          >
             <input
               v-model="item._guruSearch"
               type="text"
@@ -650,11 +758,18 @@
                 :key="`${idx}_tg_${g.id}`"
                 class="flex items-center gap-1.5 text-[10px] cursor-pointer px-1 py-0.5 rounded hover:bg-[var(--bg-card)]"
               >
-                <input type="checkbox" :checked="(item.guru_ids || []).map(String).includes(String(g.id))" @change="toggleGuruMaster(item, g.id)" class="w-3 h-3" />
+                <input
+                  type="checkbox"
+                  :checked="(item.guru_ids || []).map(String).includes(String(g.id))"
+                  @change="toggleGuruMaster(item, g.id)"
+                  class="w-3 h-3"
+                />
                 <span class="font-bold text-[var(--text-primary)] truncate">{{ g.nama }}</span>
               </label>
             </div>
-            <p class="text-[9px] text-[var(--text-tertiary)] italic mt-1">Tidak pilih satupun = berlaku semua guru/pegawai.</p>
+            <p class="text-[9px] text-[var(--text-tertiary)] italic mt-1">
+              Tidak pilih satupun = berlaku semua guru/pegawai.
+            </p>
           </div>
         </div>
       </div>
@@ -722,8 +837,14 @@
               <i class="fas fa-trash"></i>
             </button>
           </div>
-          <div class="text-[9px] text-[var(--text-tertiary)]"><i class="fas fa-filter mr-1"></i>Berlaku: <b class="text-[var(--text-secondary)]">{{ masterScopeLabel(item) }}</b></div>
-          <div v-if="item._guruExpanded" class="border-t border-rose-200 dark:border-rose-800 pt-1.5">
+          <div class="text-[9px] text-[var(--text-tertiary)]">
+            <i class="fas fa-filter mr-1"></i>Berlaku:
+            <b class="text-[var(--text-secondary)]">{{ masterScopeLabel(item) }}</b>
+          </div>
+          <div
+            v-if="item._guruExpanded"
+            class="border-t border-rose-200 dark:border-rose-800 pt-1.5"
+          >
             <input
               v-model="item._guruSearch"
               type="text"
@@ -736,11 +857,18 @@
                 :key="`${idx}_pg_${g.id}`"
                 class="flex items-center gap-1.5 text-[10px] cursor-pointer px-1 py-0.5 rounded hover:bg-[var(--bg-card)]"
               >
-                <input type="checkbox" :checked="(item.guru_ids || []).map(String).includes(String(g.id))" @change="toggleGuruMaster(item, g.id)" class="w-3 h-3" />
+                <input
+                  type="checkbox"
+                  :checked="(item.guru_ids || []).map(String).includes(String(g.id))"
+                  @change="toggleGuruMaster(item, g.id)"
+                  class="w-3 h-3"
+                />
                 <span class="font-bold text-[var(--text-primary)] truncate">{{ g.nama }}</span>
               </label>
             </div>
-            <p class="text-[9px] text-[var(--text-tertiary)] italic mt-1">Tidak pilih satupun = berlaku semua guru/pegawai.</p>
+            <p class="text-[9px] text-[var(--text-tertiary)] italic mt-1">
+              Tidak pilih satupun = berlaku semua guru/pegawai.
+            </p>
           </div>
         </div>
       </div>
@@ -761,8 +889,7 @@
       </p>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
         <div>
-          <label
-            class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
+          <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
             >Nama Bank</label
           >
           <input
@@ -772,8 +899,7 @@
           />
         </div>
         <div>
-          <label
-            class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
+          <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
             >Nomor Rekening</label
           >
           <input
@@ -783,8 +909,7 @@
           />
         </div>
         <div>
-          <label
-            class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
+          <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
             >Atas Nama</label
           >
           <input
@@ -815,9 +940,11 @@
       >
         <input v-model="form.bmt_aktif" type="checkbox" class="mt-0.5 w-4 h-4 accent-indigo-600" />
         <span class="text-[11px] text-[var(--text-secondary)] leading-snug">
-          <span class="font-bold text-[var(--text-primary)]">Aktifkan opsi Virtual Account BMT PETA</span>
-          — saat OFF, alur pembayaran wali tetap seperti sekarang (transfer + upload bukti). Saat ON,
-          opsi VA muncul memakai prefix di bawah.
+          <span class="font-bold text-[var(--text-primary)]"
+            >Aktifkan opsi Virtual Account BMT PETA</span
+          >
+          — saat OFF, alur pembayaran wali tetap seperti sekarang (transfer + upload bukti). Saat
+          ON, opsi VA muncul memakai prefix di bawah.
         </span>
       </label>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -842,7 +969,8 @@
             class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)] font-mono"
           />
           <p class="text-[10px] text-[var(--text-tertiary)] italic mt-1">
-            Nomor VA santri = <b>prefix</b> + No. Induk santri. Format final mengikuti standar BMT PETA.
+            Nomor VA santri = <b>prefix</b> + No. Induk santri. Format final mengikuti standar BMT
+            PETA.
           </p>
         </div>
       </div>
@@ -947,7 +1075,11 @@
           v-if="genJenisId"
           class="flex items-center gap-1.5 text-[11px] font-bold text-[var(--text-secondary)] mb-3 cursor-pointer"
         >
-          <input v-model="genPakaiNominalJenis" type="checkbox" class="w-3.5 h-3.5 accent-emerald-600" />
+          <input
+            v-model="genPakaiNominalJenis"
+            type="checkbox"
+            class="w-3.5 h-3.5 accent-emerald-600"
+          />
           Pakai nominal per lembaga/kelas dari pengaturan jenis (kalau ada)
         </label>
 
@@ -959,21 +1091,36 @@
           <button
             type="button"
             @click="genScope = 'all'"
-            :class="['flex-1 py-1.5 rounded-lg border transition', genScope === 'all' ? 'bg-emerald-600 text-white border-emerald-600' : 'border-[var(--border-default)] text-[var(--text-secondary)]']"
+            :class="[
+              'flex-1 py-1.5 rounded-lg border transition',
+              genScope === 'all'
+                ? 'bg-emerald-600 text-white border-emerald-600'
+                : 'border-[var(--border-default)] text-[var(--text-secondary)]'
+            ]"
           >
             Semua aktif
           </button>
           <button
             type="button"
             @click="genScope = 'lembaga'"
-            :class="['flex-1 py-1.5 rounded-lg border transition', genScope === 'lembaga' ? 'bg-emerald-600 text-white border-emerald-600' : 'border-[var(--border-default)] text-[var(--text-secondary)]']"
+            :class="[
+              'flex-1 py-1.5 rounded-lg border transition',
+              genScope === 'lembaga'
+                ? 'bg-emerald-600 text-white border-emerald-600'
+                : 'border-[var(--border-default)] text-[var(--text-secondary)]'
+            ]"
           >
             Lembaga/Kelas
           </button>
           <button
             type="button"
             @click="genScope = 'santri'"
-            :class="['flex-1 py-1.5 rounded-lg border transition', genScope === 'santri' ? 'bg-emerald-600 text-white border-emerald-600' : 'border-[var(--border-default)] text-[var(--text-secondary)]']"
+            :class="[
+              'flex-1 py-1.5 rounded-lg border transition',
+              genScope === 'santri'
+                ? 'bg-emerald-600 text-white border-emerald-600'
+                : 'border-[var(--border-default)] text-[var(--text-secondary)]'
+            ]"
           >
             Pilih santri
           </button>
@@ -1062,7 +1209,8 @@
         <div
           class="mt-2 mb-3 text-xs bg-emerald-50 dark:bg-emerald-900/20 text-emerald-800 dark:text-emerald-300 rounded-lg px-3 py-2"
         >
-          <i class="fas fa-users mr-1"></i>Akan dibuat untuk <b>{{ genTargetCount }}</b> santri aktif.
+          <i class="fas fa-users mr-1"></i>Akan dibuat untuk <b>{{ genTargetCount }}</b> santri
+          aktif.
         </div>
         <div class="flex gap-2">
           <button
@@ -1087,8 +1235,8 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { doc, setDoc } from 'firebase/firestore'
-import { db } from '@/services/firebase'
+// v.F6e: adapter Supabase (serverTimestamp = shim ISO string).
+import { getAll, setOne, mergeOne, serverTimestamp } from '@/services/db'
 import { useSettingsStore } from '@/stores/settings'
 import { useGuru } from '@/composables/useGuru'
 import { useLembaga } from '@/composables/useLembaga'
@@ -1107,10 +1255,25 @@ function secVisible(name) {
   return !focusSection.value || focusSection.value === name
 }
 const sectionMeta = computed(() => {
-  if (focusSection.value === 'tagihan') return { t: 'Buat / Generate Tagihan', s: 'Generate tagihan bulanan & tagihan khusus (infaq/iuran), atur jatuh tempo & struk.' }
-  if (focusSection.value === 'syahriyah') return { t: 'Pengaturan Syahriyah Santri', s: 'Atur jenis & nominal syahriyah, whitelist + override per lembaga/kelas/santri.' }
-  if (focusSection.value === 'bisyaroh') return { t: 'Pengaturan Bisyaroh Guru/Pegawai', s: 'Bisyaroh shift & pokok, plus master tunjangan & potongan.' }
-  return { t: 'Pengaturan Keuangan', s: 'Atur tanggal jatuh tempo, jenis tagihan, bisyaroh shift & bisyaroh pokok.' }
+  if (focusSection.value === 'tagihan')
+    return {
+      t: 'Buat / Generate Tagihan',
+      s: 'Generate tagihan bulanan & tagihan khusus (infaq/iuran), atur jatuh tempo & struk.'
+    }
+  if (focusSection.value === 'syahriyah')
+    return {
+      t: 'Pengaturan Syahriyah Santri',
+      s: 'Atur jenis & nominal syahriyah, whitelist + override per lembaga/kelas/santri.'
+    }
+  if (focusSection.value === 'bisyaroh')
+    return {
+      t: 'Pengaturan Bisyaroh Guru/Pegawai',
+      s: 'Bisyaroh shift & pokok, plus master tunjangan & potongan.'
+    }
+  return {
+    t: 'Pengaturan Keuangan',
+    s: 'Atur tanggal jatuh tempo, jenis tagihan, bisyaroh shift & bisyaroh pokok.'
+  }
 })
 
 // v.94.0626: buka modal Pengaturan Printer (deteksi printer Windows). PrinterSettingsModal global dengar event ini.
@@ -1233,13 +1396,49 @@ function loadFromSettings() {
     }))
   } else {
     arr = [
-      { id: 'syahriyah', label: 'Syahriyah', nominal_default: 0, nominal_per_lembaga: _emptyMap(), lembaga_only: [], nominal_per_kelas: _emptyMap(), auto_generate: true, _expanded: false },
-      { id: 'spp_sekolah', label: 'SPP Sekolah', nominal_default: 0, nominal_per_lembaga: _emptyMap(), lembaga_only: [], nominal_per_kelas: _emptyMap(), auto_generate: false, _expanded: false },
-      { id: 'kebersihan', label: 'Kebersihan', nominal_default: 0, nominal_per_lembaga: _emptyMap(), lembaga_only: [], nominal_per_kelas: _emptyMap(), auto_generate: false, _expanded: false }
+      {
+        id: 'syahriyah',
+        label: 'Syahriyah',
+        nominal_default: 0,
+        nominal_per_lembaga: _emptyMap(),
+        lembaga_only: [],
+        nominal_per_kelas: _emptyMap(),
+        auto_generate: true,
+        _expanded: false
+      },
+      {
+        id: 'spp_sekolah',
+        label: 'SPP Sekolah',
+        nominal_default: 0,
+        nominal_per_lembaga: _emptyMap(),
+        lembaga_only: [],
+        nominal_per_kelas: _emptyMap(),
+        auto_generate: false,
+        _expanded: false
+      },
+      {
+        id: 'kebersihan',
+        label: 'Kebersihan',
+        nominal_default: 0,
+        nominal_per_lembaga: _emptyMap(),
+        lembaga_only: [],
+        nominal_per_kelas: _emptyMap(),
+        auto_generate: false,
+        _expanded: false
+      }
     ]
   }
   if (!arr.find((t) => t.id === 'syahriyah')) {
-    arr.unshift({ id: 'syahriyah', label: 'Syahriyah', nominal_default: 0, nominal_per_lembaga: _emptyMap(), lembaga_only: [], nominal_per_kelas: _emptyMap(), auto_generate: true, _expanded: false })
+    arr.unshift({
+      id: 'syahriyah',
+      label: 'Syahriyah',
+      nominal_default: 0,
+      nominal_per_lembaga: _emptyMap(),
+      lembaga_only: [],
+      nominal_per_kelas: _emptyMap(),
+      auto_generate: true,
+      _expanded: false
+    })
   }
   jenisList.value = arr
   form.keu_jenis_tagihan = arr.map((t) => t.label)
@@ -1273,7 +1472,9 @@ function loadFromSettings() {
     _guruExpanded: false,
     _guruSearch: ''
   })
-  form.master_tunjangan = Array.isArray(s.master_tunjangan) ? s.master_tunjangan.map(_mapMaster) : []
+  form.master_tunjangan = Array.isArray(s.master_tunjangan)
+    ? s.master_tunjangan.map(_mapMaster)
+    : []
   form.master_potongan = Array.isArray(s.master_potongan) ? s.master_potongan.map(_mapMaster) : []
   form.bank_nama = s.bank_nama || ''
   form.bank_nomor = s.bank_nomor || ''
@@ -1288,7 +1489,13 @@ onMounted(() => {
   loadFromSettings()
   // T6: tombol pita "Buat Tagihan" buka langsung modal Generate Tagihan Khusus
   if (route.query.gen) {
-    setTimeout(() => { try { openGenKhusus() } catch (e) { /* ignore */ } }, 0)
+    setTimeout(() => {
+      try {
+        openGenKhusus()
+      } catch (e) {
+        /* ignore */
+      }
+    }, 0)
   }
 })
 
@@ -1317,7 +1524,16 @@ function addJenis() {
     toast.warning('Jenis tagihan sudah ada')
     return
   }
-  jenisList.value.push({ id, label: s, nominal_default: 0, nominal_per_lembaga: {}, lembaga_only: [], nominal_per_kelas: {}, auto_generate: false, _expanded: false })
+  jenisList.value.push({
+    id,
+    label: s,
+    nominal_default: 0,
+    nominal_per_lembaga: {},
+    lembaga_only: [],
+    nominal_per_kelas: {},
+    auto_generate: false,
+    _expanded: false
+  })
   newJenis.value = ''
 }
 
@@ -1355,9 +1571,10 @@ function kelasOfLembaga(lemb) {
 
 function setNominalKelas(jenis, lembagaName, kelas, val) {
   const n = Number(val) || 0
-  const cur = jenis.nominal_per_kelas && typeof jenis.nominal_per_kelas === 'object'
-    ? { ...jenis.nominal_per_kelas }
-    : {}
+  const cur =
+    jenis.nominal_per_kelas && typeof jenis.nominal_per_kelas === 'object'
+      ? { ...jenis.nominal_per_kelas }
+      : {}
   const inner = { ...(cur[lembagaName] || {}) }
   if (n > 0) inner[kelas] = n
   else delete inner[kelas]
@@ -1370,18 +1587,31 @@ function setNominalKelas(jenis, lembagaName, kelas, val) {
 const perSantriSearch = reactive({})
 function setNominalSantri(jenis, santriId, val) {
   const n = Number(val) || 0
-  const cur = jenis.nominal_per_santri && typeof jenis.nominal_per_santri === 'object' ? { ...jenis.nominal_per_santri } : {}
+  const cur =
+    jenis.nominal_per_santri && typeof jenis.nominal_per_santri === 'object'
+      ? { ...jenis.nominal_per_santri }
+      : {}
   const sid = String(santriId)
   if (n > 0) cur[sid] = n
   else delete cur[sid]
   jenis.nominal_per_santri = cur
 }
 function santriCariFor(jenis) {
-  const kw = String(perSantriSearch[jenis.id] || '').trim().toLowerCase()
+  const kw = String(perSantriSearch[jenis.id] || '')
+    .trim()
+    .toLowerCase()
   const ov = jenis.nominal_per_santri || {}
   if (!kw) return genSantriAktif.value.filter((s) => Number(ov[String(s.id)] || 0) > 0)
   return genSantriAktif.value
-    .filter((s) => String(s.nama || '').toLowerCase().includes(kw) || String(s.nis || '').toLowerCase().includes(kw))
+    .filter(
+      (s) =>
+        String(s.nama || '')
+          .toLowerCase()
+          .includes(kw) ||
+        String(s.nis || '')
+          .toLowerCase()
+          .includes(kw)
+    )
     .slice(0, 25)
 }
 function overrideSantriCount(jenis) {
@@ -1391,9 +1621,7 @@ function overrideSantriCount(jenis) {
 async function loadSantriAktif() {
   if (genSantriAktif.value.length > 0) return
   try {
-    const { collection, getDocs } = await import('firebase/firestore')
-    const snap = await getDocs(collection(db, 'santri'))
-    genSantriAktif.value = snap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((x) => x.aktif !== false)
+    genSantriAktif.value = (await getAll('santri')).filter((x) => x.aktif !== false)
   } catch (e) {
     toast.error('Gagal memuat data santri: ' + (e.message || e))
   }
@@ -1440,9 +1668,18 @@ function toggleGuruMaster(item, guruId) {
   item.guru_ids = cur
 }
 function masterGuruCari(item) {
-  const kw = String(item._guruSearch || '').trim().toLowerCase()
-  let list = (guruRaw.value || []).filter((g) => String(g.status || 'Aktif').toLowerCase() === 'aktif')
-  if (kw) list = list.filter((g) => String(g.nama || '').toLowerCase().includes(kw))
+  const kw = String(item._guruSearch || '')
+    .trim()
+    .toLowerCase()
+  let list = (guruRaw.value || []).filter(
+    (g) => String(g.status || 'Aktif').toLowerCase() === 'aktif'
+  )
+  if (kw)
+    list = list.filter((g) =>
+      String(g.nama || '')
+        .toLowerCase()
+        .includes(kw)
+    )
   return list.sort((a, b) => String(a.nama || '').localeCompare(String(b.nama || ''))).slice(0, 60)
 }
 function masterScopeLabel(item) {
@@ -1541,7 +1778,9 @@ async function simpan() {
       posStrukSlipH: Number(form.posStrukSlipH) || 140,
       // v.96.0626: jgn pakai `|| 6` — angka 0 (margin atas 0) jadi ke-reset; pakai isFinite
       posStrukTopMm: Number.isFinite(Number(form.posStrukTopMm)) ? Number(form.posStrukTopMm) : 2,
-      posStrukLeftMm: Number.isFinite(Number(form.posStrukLeftMm)) ? Number(form.posStrukLeftMm) : 0,
+      posStrukLeftMm: Number.isFinite(Number(form.posStrukLeftMm))
+        ? Number(form.posStrukLeftMm)
+        : 0,
       keuTagihanJenis: jenis,
       keu_jenis_tagihan: jenis.map((t) => t.label),
       keu_bisyaroh_pagi: parseRp(form.keu_bisyaroh_pagi),
@@ -1555,10 +1794,18 @@ async function simpan() {
       keu_kategori_keluar: form.keu_kategori_keluar.filter((t) => t.trim()),
       master_tunjangan: form.master_tunjangan
         .filter((t) => t.nama.trim())
-        .map((t) => ({ nama: t.nama.trim(), nominal: t.nominal || 0, guru_ids: Array.isArray(t.guru_ids) ? t.guru_ids.map(String) : [] })),
+        .map((t) => ({
+          nama: t.nama.trim(),
+          nominal: t.nominal || 0,
+          guru_ids: Array.isArray(t.guru_ids) ? t.guru_ids.map(String) : []
+        })),
       master_potongan: form.master_potongan
         .filter((t) => t.nama.trim())
-        .map((t) => ({ nama: t.nama.trim(), nominal: t.nominal || 0, guru_ids: Array.isArray(t.guru_ids) ? t.guru_ids.map(String) : [] })),
+        .map((t) => ({
+          nama: t.nama.trim(),
+          nominal: t.nominal || 0,
+          guru_ids: Array.isArray(t.guru_ids) ? t.guru_ids.map(String) : []
+        })),
       bank_nama: form.bank_nama.trim(),
       bank_nomor: form.bank_nomor.trim(),
       bank_atasnama: form.bank_atasnama.trim(),
@@ -1575,8 +1822,8 @@ async function simpan() {
       const n = parseRp(v)
       if (n > 0) payload.keu_bisyaroh_sekolah[k] = n
     }
-    await setDoc(doc(db, 'settings', 'general'), payload, { merge: true })
-    await setDoc(doc(db, 'settings', 'web'), payload, { merge: true })
+    await mergeOne('settings', 'general', payload)
+    await mergeOne('settings', 'web', payload)
     toast.success('Pengaturan keuangan tersimpan')
   } catch (e) {
     toast.error('Gagal simpan: ' + (e.message || e))
@@ -1596,35 +1843,51 @@ function reset() {
 // (nominal_per_kelas → nominal_per_lembaga → nominal_default).
 async function autoGenerate() {
   if (generating.value) return
-  if (!confirm('Generate tagihan otomatis bulan ini untuk semua santri aktif?\n\nJenis ber-flag auto_generate akan di-create. Tagihan duplikat (periode sama) akan di-skip.')) return
+  if (
+    !confirm(
+      'Generate tagihan otomatis bulan ini untuk semua santri aktif?\n\nJenis ber-flag auto_generate akan di-create. Tagihan duplikat (periode sama) akan di-skip.'
+    )
+  )
+    return
   generating.value = true
   try {
-    const { collection, getDocs, setDoc, doc, serverTimestamp } = await import('firebase/firestore')
-    const { db } = await import('@/services/firebase')
-    const jenisAuto = (jenisList.value || []).filter((j) => j.auto_generate && String(j.label || '').trim())
+    const jenisAuto = (jenisList.value || []).filter(
+      (j) => j.auto_generate && String(j.label || '').trim()
+    )
     if (jenisAuto.length === 0) {
       toast.warning('Tidak ada jenis tagihan dengan flag auto_generate.')
       generating.value = false
       return
     }
     // Fetch santri aktif
-    const sSnap = await getDocs(collection(db, 'santri'))
-    const santriAktif = sSnap.docs
-      .map((d) => ({ id: d.id, ...d.data() }))
-      .filter((x) => x.aktif !== false)
+    const santriAktif = (await getAll('santri')).filter((x) => x.aktif !== false)
     // Fetch tagihan existing utk skip duplikat
-    const tSnap = await getDocs(collection(db, 'keuangan_tagihan'))
+    const tagihanAll = await getAll('keuangan_tagihan')
     const existing = new Set()
-    for (const d of tSnap.docs) {
-      const t = d.data()
+    for (const t of tagihanAll) {
       const key = `${String(t.santri_id)}__${(t.kategori || t.jenis || '').toLowerCase()}__${t.periode || ''}`
       existing.add(key)
     }
     const now = new Date()
-    const BULAN_NM = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember']
+    const BULAN_NM = [
+      'Januari',
+      'Februari',
+      'Maret',
+      'April',
+      'Mei',
+      'Juni',
+      'Juli',
+      'Agustus',
+      'September',
+      'Oktober',
+      'November',
+      'Desember'
+    ]
     const periode = `${BULAN_NM[now.getMonth()]} ${now.getFullYear()}`
     const jt = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(form.keu_jatuh_tempo || 10).padStart(2, '0')}`
-    let created = 0, skipped = 0, errCount = 0
+    let created = 0,
+      skipped = 0,
+      errCount = 0
     for (const j of jenisAuto) {
       const wl = Array.isArray(j.lembaga_only) ? j.lembaga_only.filter(Boolean) : []
       for (const sx of santriAktif) {
@@ -1633,24 +1896,39 @@ async function autoGenerate() {
           if (!(wl.includes(sx.lembaga) || wl.includes(sx.lembaga_sekolah))) continue
         }
         const dupKey = `${String(sx.id)}__${(j.label || '').toLowerCase()}__${periode}`
-        if (existing.has(dupKey)) { skipped++; continue }
+        if (existing.has(dupKey)) {
+          skipped++
+          continue
+        }
         // v.95.0626: 4-lapis lookup — per-SANTRI dulu (override), lalu per-kelas, per-lembaga, default
         let nominal = Number((j.nominal_per_santri || {})[String(sx.id)] || 0)
         const perK = j.nominal_per_kelas || {}
-        if (nominal === 0) for (const [lemb, ks] of [[sx.lembaga, sx.kelas], [sx.lembaga_sekolah, sx.kelas_sekolah]]) {
-          if (!lemb) continue
-          const inner = perK[lemb] || {}
-          const v = Number(inner[ks] || 0)
-          if (v > 0) { nominal = v; break }
-        }
+        if (nominal === 0)
+          for (const [lemb, ks] of [
+            [sx.lembaga, sx.kelas],
+            [sx.lembaga_sekolah, sx.kelas_sekolah]
+          ]) {
+            if (!lemb) continue
+            const inner = perK[lemb] || {}
+            const v = Number(inner[ks] || 0)
+            if (v > 0) {
+              nominal = v
+              break
+            }
+          }
         if (nominal === 0) {
           const perL = j.nominal_per_lembaga || {}
-          nominal = Number(perL[sx.lembaga] || perL[sx.lembaga_sekolah] || 0) || Number(j.nominal_default || 0)
+          nominal =
+            Number(perL[sx.lembaga] || perL[sx.lembaga_sekolah] || 0) ||
+            Number(j.nominal_default || 0)
         }
-        if (nominal <= 0) { skipped++; continue }
+        if (nominal <= 0) {
+          skipped++
+          continue
+        }
         try {
           const id = `tagihan_${sx.id}_${j.id}_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}`
-          await setDoc(doc(db, 'keuangan_tagihan', id), {
+          await setOne('keuangan_tagihan', id, {
             id,
             santri_id: String(sx.id),
             santri_nama: sx.nama || '',
@@ -1670,7 +1948,9 @@ async function autoGenerate() {
         }
       }
     }
-    toast.success(`Auto-generate: ${created} dibuat, ${skipped} skip${errCount ? `, ${errCount} gagal` : ''}`)
+    toast.success(
+      `Auto-generate: ${created} dibuat, ${skipped} skip${errCount ? `, ${errCount} gagal` : ''}`
+    )
   } catch (e) {
     toast.error('Error: ' + (e.message || e))
   } finally {
@@ -1703,7 +1983,20 @@ const genSantriSel = ref([])
 const genSantriSearch = ref('')
 const genSantriAktif = ref([])
 
-const _GEN_BULAN_NM = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember']
+const _GEN_BULAN_NM = [
+  'Januari',
+  'Februari',
+  'Maret',
+  'April',
+  'Mei',
+  'Juni',
+  'Juli',
+  'Agustus',
+  'September',
+  'Oktober',
+  'November',
+  'Desember'
+]
 
 async function openGenKhusus() {
   // reset state tiap buka
@@ -1723,11 +2016,7 @@ async function openGenKhusus() {
   genOpen.value = true
   // muat santri aktif sekali (untuk preview & picker individual)
   try {
-    const { collection, getDocs } = await import('firebase/firestore')
-    const snap = await getDocs(collection(db, 'santri'))
-    genSantriAktif.value = snap.docs
-      .map((d) => ({ id: d.id, ...d.data() }))
-      .filter((x) => x.aktif !== false)
+    genSantriAktif.value = (await getAll('santri')).filter((x) => x.aktif !== false)
   } catch (e) {
     toast.error('Gagal memuat data santri: ' + (e.message || e))
   }
@@ -1799,8 +2088,12 @@ const genSantriFiltered = computed(() => {
   if (kw) {
     list = list.filter(
       (s) =>
-        String(s.nama || '').toLowerCase().includes(kw) ||
-        String(s.nis || '').toLowerCase().includes(kw)
+        String(s.nama || '')
+          .toLowerCase()
+          .includes(kw) ||
+        String(s.nis || '')
+          .toLowerCase()
+          .includes(kw)
     )
   }
   return [...list]
@@ -1884,13 +2177,13 @@ async function doGenKhusus() {
     return
   genBusy.value = true
   try {
-    const { collection, getDocs, setDoc, doc, serverTimestamp } = await import('firebase/firestore')
     // dedup: kumpulkan tagihan existing (santri+kategori+periode)
-    const tSnap = await getDocs(collection(db, 'keuangan_tagihan'))
+    const tagihanAll = await getAll('keuangan_tagihan')
     const existing = new Set()
-    for (const d of tSnap.docs) {
-      const t = d.data()
-      existing.add(`${String(t.santri_id)}__${(t.kategori || t.jenis || '').toLowerCase()}__${t.periode || ''}`)
+    for (const t of tagihanAll) {
+      existing.add(
+        `${String(t.santri_id)}__${(t.kategori || t.jenis || '').toLowerCase()}__${t.periode || ''}`
+      )
     }
     const katLower = kategori.toLowerCase()
     const katSlug = slugId(kategori)
@@ -1911,7 +2204,7 @@ async function doGenKhusus() {
       }
       try {
         const id = `tagihan_${sx.id}_${katSlug}_${perSlug}`
-        await setDoc(doc(db, 'keuangan_tagihan', id), {
+        await setOne('keuangan_tagihan', id, {
           id,
           santri_id: String(sx.id),
           santri_nama: sx.nama || '',
@@ -1930,7 +2223,9 @@ async function doGenKhusus() {
         console.warn('[genKhusus]', sx.nama, e.message)
       }
     }
-    toast.success(`Selesai: ${created} dibuat, ${skipped} skip${errCount ? `, ${errCount} gagal` : ''}`)
+    toast.success(
+      `Selesai: ${created} dibuat, ${skipped} skip${errCount ? `, ${errCount} gagal` : ''}`
+    )
     if (created > 0) genOpen.value = false
   } catch (e) {
     toast.error('Error: ' + (e.message || e))
