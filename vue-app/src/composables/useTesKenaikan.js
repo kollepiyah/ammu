@@ -3,7 +3,7 @@
 //   LULUS = tandai "siap naik" SAJA (tak ubah kelas santri) — kenaikan aktual tetap manual di
 //   NaikKelasView (kyai: santri bisa pindah kelas). Notif HP menyusul (Fase B, functions).
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { subscribeColl, addOne, updateOne, deleteOne } from '@/services/firestore'
+import { subscribeColl, addOne, updateOne, deleteOne } from '@/services/db'
 import { useAuthStore } from '@/stores/auth'
 import { isSuperAdmin, isAdminBiasa, isAdminKeuangan, isKepalaLembaga } from '@/utils/roleScope'
 import { lembagaScopeMatches } from '@/composables/useLembaga'
@@ -33,8 +33,7 @@ export function useTesKenaikan() {
     return false
   }
 
-  const sortNewest = (arr) =>
-    [...arr].sort((a, b) => (b._ts || 0) - (a._ts || 0))
+  const sortNewest = (arr) => [...arr].sort((a, b) => (b._ts || 0) - (a._ts || 0))
 
   // Guru: ajuan yang SAYA buat (semua status, terbaru dulu).
   const myAjuan = computed(() =>
@@ -61,12 +60,20 @@ export function useTesKenaikan() {
   //   Return { ok, fail, skipped, errors }.
   async function ajukanBatch(items, guruList = []) {
     const batchId = 'tes_' + Date.now()
-    let ok = 0, fail = 0, skipped = 0
+    let ok = 0,
+      fail = 0,
+      skipped = 0
     const errors = []
     for (const it of items || []) {
       const s = it.santri
-      if (!s || !s.id) { skipped++; continue }
-      if (hasOpenAjuan(s.id)) { skipped++; continue } // sudah ada ajuan terbuka
+      if (!s || !s.id) {
+        skipped++
+        continue
+      }
+      if (hasOpenAjuan(s.id)) {
+        skipped++
+        continue
+      } // sudah ada ajuan terbuka
       // Resolve nama kepala/PJ lembaga ini (utk push notif Fase B) — best-effort.
       const kepala = (guruList || []).find((g) => {
         const j = `${g.jabatan || ''} ${g.jabatan_tambahan || ''}`.toLowerCase()
@@ -115,7 +122,11 @@ export function useTesKenaikan() {
 
   // Pengaju: batalkan ajuan yang masih 'diajukan' (sebelum diuji).
   async function batalAjuan(id) {
-    await updateOne('tes_kenaikan', id, { status: 'ditolak', catatan_hasil: 'Dibatalkan pengaju', tgl_hasil: new Date().toISOString() })
+    await updateOne('tes_kenaikan', id, {
+      status: 'ditolak',
+      catatan_hasil: 'Dibatalkan pengaju',
+      tgl_hasil: new Date().toISOString()
+    })
   }
 
   // v.107 CRUD (super_admin saja): koreksi/hapus record tes_kenaikan historis.
@@ -156,7 +167,9 @@ export function useTesKenaikan() {
       loaded.value = true
     })
   })
-  onUnmounted(() => { if (unsub) unsub() })
+  onUnmounted(() => {
+    if (unsub) unsub()
+  })
 
   return {
     loaded,

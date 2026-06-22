@@ -139,7 +139,9 @@
               </p>
               <p class="text-base font-black text-teal-800 mt-0.5">{{ totalCapaian }} hal</p>
             </div>
-            <div class="bg-[var(--bg-card-elevated)] rounded-xl p-2.5 text-center border border-[var(--border-subtle)]">
+            <div
+              class="bg-[var(--bg-card-elevated)] rounded-xl p-2.5 text-center border border-[var(--border-subtle)]"
+            >
               <p class="text-[9px] font-black text-[var(--text-secondary)] uppercase">Status</p>
               <p class="text-base font-black text-[var(--text-primary)] mt-0.5">
                 {{ statusLabel }}
@@ -168,7 +170,9 @@
         </h3>
         <div v-if="catatanList.length === 0" class="py-6 text-center">
           <i class="fas fa-inbox text-[var(--text-tertiary)] text-2xl mb-2"></i>
-          <p class="text-xs text-[var(--text-secondary)] italic">Belum ada catatan prestasi untuk santri ini.</p>
+          <p class="text-xs text-[var(--text-secondary)] italic">
+            Belum ada catatan prestasi untuk santri ini.
+          </p>
         </div>
         <div v-else class="space-y-2.5">
           <div
@@ -212,7 +216,9 @@
         </h3>
         <div v-if="kartuKenaikanList.length === 0" class="py-6 text-center">
           <i class="fas fa-inbox text-[var(--text-tertiary)] text-2xl mb-2"></i>
-          <p class="text-xs text-[var(--text-secondary)] italic">Belum ada riwayat kenaikan jilid.</p>
+          <p class="text-xs text-[var(--text-secondary)] italic">
+            Belum ada riwayat kenaikan jilid.
+          </p>
         </div>
         <div v-else class="space-y-2.5">
           <div
@@ -259,7 +265,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
-import { subscribeColl } from '@/services/firestore'
+import { subscribeColl } from '@/services/db'
 import { useSantri } from '@/composables/useSantri'
 import TrenCapaianChart from '@/components/charts/TrenCapaianChart.vue' // v.100c: Opsi A — tren capaian
 import { juzNum } from '@/utils/format' // v.100e: normalisasi tampilan juz (anti dobel "Juz JUZ n")
@@ -280,7 +286,9 @@ const santriIdsTren = computed(() => (santriId.value ? [santriId.value] : []))
 // Periode aktif dari settings
 // v.100e: sumber periode = settings.txtPeriode (diisi admin di Pengaturan "Periode Aktif").
 //   Sebelumnya baca `periodeAktif` (field hantu, tak pernah diisi) + fallback hardcoded → header macet.
-const periodeAktif = computed(() => settings.settings?.periodeAktif || settings.settings?.txtPeriode || '-')
+const periodeAktif = computed(
+  () => settings.settings?.periodeAktif || settings.settings?.txtPeriode || '-'
+)
 
 // Helper: parse angka dari string yang mungkin mengandung non-digit
 function parseHal(v) {

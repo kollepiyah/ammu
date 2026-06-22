@@ -1,9 +1,7 @@
 // v.100d: Izin/Sakit mandiri guru. Guru ajukan → Kepala/PJ (atau admin) setujui → otomatis isi
 //   `absensi_shift_guru` (status izin/sakit) per tanggal × shift. Pola mirip useTesKenaikan.
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { subscribeColl, addOne, updateOne } from '@/services/firestore'
-import { doc, setDoc } from 'firebase/firestore'
-import { db } from '@/services/firebase'
+import { subscribeColl, addOne, updateOne, mergeOne } from '@/services/db'
 import { useAuthStore } from '@/stores/auth'
 import { isSuperAdmin, isAdminBiasa, isAdminKeuangan, isKepalaLembaga } from '@/utils/roleScope'
 import { lembagaScopeMatches } from '@/composables/useLembaga'
@@ -57,7 +55,8 @@ export function useIzinGuru() {
   // Guru ajukan izin/sakit. payload: { jenis, keterangan, tgl_mulai, tgl_selesai, shifts[] }.
   async function ajukan(payload) {
     const now = new Date()
-    const shifts = Array.isArray(payload.shifts) && payload.shifts.length ? payload.shifts : ['pagi', 'sore']
+    const shifts =
+      Array.isArray(payload.shifts) && payload.shifts.length ? payload.shifts : ['pagi', 'sore']
     return addOne('izin_guru', {
       guru_id: myId.value,
       guru_nama: myNama.value,
@@ -105,8 +104,11 @@ export function useIzinGuru() {
         const docId = `shift_${a.guru_id}_${tgl}_${sh}`
         const ex = exById.get(docId)
         const exSt = String(ex?.status || '').toLowerCase()
-        if (exSt === 'hadir' || exSt === 'masuk' || exSt === 'terlambat') { skipped++; continue }
-        await setDoc(doc(db, 'absensi_shift_guru', docId), {
+        if (exSt === 'hadir' || exSt === 'masuk' || exSt === 'terlambat') {
+          skipped++
+          continue
+        }
+        await mergeOne('absensi_shift_guru', docId, {
           id: docId,
           guru_id: String(a.guru_id),
           guru_nama: a.guru_nama || '',
@@ -117,7 +119,7 @@ export function useIzinGuru() {
           source: 'pengajuan_guru',
           izin_id: String(a.id),
           imported_at: new Date().toISOString()
-        }, { merge: true })
+        })
         written++
       }
     }
@@ -139,11 +141,21 @@ export function useIzinGuru() {
       }))
     })
   })
-  onUnmounted(() => { if (unsub) unsub() })
+  onUnmounted(() => {
+    if (unsub) unsub()
+  })
 
   return {
-    izinRaw, myIzin, antrian, riwayat,
-    isApprover, isAdmin, isKepala,
-    ajukan, batal, tolak, setujui
+    izinRaw,
+    myIzin,
+    antrian,
+    riwayat,
+    isApprover,
+    isAdmin,
+    isKepala,
+    ajukan,
+    batal,
+    tolak,
+    setujui
   }
 }

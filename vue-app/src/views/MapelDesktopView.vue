@@ -8,10 +8,18 @@
 
     <div
       class="mb-4 flex items-start gap-2 text-[13px] rounded-xl p-3 border"
-      style="background: color-mix(in srgb, var(--color-primary) 8%, transparent); border-color: color-mix(in srgb, var(--color-primary) 25%, transparent); color: var(--text-secondary)"
+      style="
+        background: color-mix(in srgb, var(--color-primary) 8%, transparent);
+        border-color: color-mix(in srgb, var(--color-primary) 25%, transparent);
+        color: var(--text-secondary);
+      "
     >
       <i class="fas fa-circle-info text-[var(--color-primary)] mt-0.5"></i>
-      <span>Ini <b>mata pelajaran Diniyah</b> untuk lembaga formal — dipakai sebagai kolom nilai di <b>Rekap &amp; Rapor Diniyah</b>. Atur per kelas lalu Simpan; perubahan langsung dipakai saat cetak rapor.</span>
+      <span
+        >Ini <b>mata pelajaran Diniyah</b> untuk lembaga formal — dipakai sebagai kolom nilai di
+        <b>Rekap &amp; Rapor Diniyah</b>. Atur per kelas lalu Simpan; perubahan langsung dipakai
+        saat cetak rapor.</span
+      >
     </div>
 
     <!-- Pemilih lembaga formal -->
@@ -30,37 +38,66 @@
           :key="l.lembaga"
           type="button"
           class="px-4 py-2 rounded-xl text-sm font-semibold border transition"
-          :class="selected && selected.lembaga === l.lembaga
-            ? 'bg-[var(--color-primary)] text-white border-[var(--color-primary)]'
-            : 'bg-[var(--bg-card)] text-[var(--text-primary)] border-[var(--border-subtle)] hover:border-[var(--color-primary)]'"
+          :class="
+            selected && selected.lembaga === l.lembaga
+              ? 'bg-[var(--color-primary)] text-white border-[var(--color-primary)]'
+              : 'bg-[var(--bg-card)] text-[var(--text-primary)] border-[var(--border-subtle)] hover:border-[var(--color-primary)]'
+          "
           @click="selectLembaga(l)"
         >
           {{ l.lembaga }} <span class="opacity-70">· {{ (l.kelas || []).length }} kelas</span>
         </button>
       </div>
 
-      <div v-if="selected && kelasVisible.length === 0" class="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl p-6 text-center text-sm text-[var(--text-secondary)]">
-        Lembaga <b>{{ selected.lembaga }}</b> belum punya kelas. Tambahkan kelas dulu di Master Lembaga.
+      <div
+        v-if="selected && kelasVisible.length === 0"
+        class="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl p-6 text-center text-sm text-[var(--text-secondary)]"
+      >
+        Lembaga <b>{{ selected.lembaga }}</b> belum punya kelas. Tambahkan kelas dulu di Master
+        Lembaga.
       </div>
 
       <div v-else-if="selected" class="space-y-3">
-        <div v-for="kv in kelasVisible" :key="kv.key" class="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl p-4 shadow-sm">
+        <div
+          v-for="kv in kelasVisible"
+          :key="kv.key"
+          class="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl p-4 shadow-sm"
+        >
           <div class="flex items-center justify-between gap-2 mb-2">
             <h3 class="text-sm font-black text-[var(--text-primary)]">
               <i class="fas fa-layer-group text-[var(--color-primary)] mr-1"></i>Kelas {{ kv.key }}
-              <span v-if="kv.jenjang" class="text-[10px] font-bold text-[var(--text-tertiary)] ml-1">({{ kv.jenjang }})</span>
+              <span v-if="kv.jenjang" class="text-[10px] font-bold text-[var(--text-tertiary)] ml-1"
+                >({{ kv.jenjang }})</span
+              >
             </h3>
             <div class="flex gap-2">
-              <button type="button" class="text-xs font-bold px-2.5 py-1 rounded-lg bg-[var(--bg-card-elevated)] border border-[var(--border-subtle)] hover:border-[var(--color-primary)]" @click="isiMapelDefault(kv.key, kv.jenjang)">
+              <button
+                type="button"
+                class="text-xs font-bold px-2.5 py-1 rounded-lg bg-[var(--bg-card-elevated)] border border-[var(--border-subtle)] hover:border-[var(--color-primary)]"
+                @click="isiMapelDefault(kv.key, kv.jenjang)"
+              >
                 <i class="fas fa-wand-magic-sparkles mr-1"></i>Isi default
               </button>
-              <button type="button" class="text-xs font-bold px-2.5 py-1 rounded-lg bg-[var(--color-primary)] text-white hover:opacity-90" @click="addMapel(kv.key)">
+              <button
+                type="button"
+                class="text-xs font-bold px-2.5 py-1 rounded-lg bg-[var(--color-primary)] text-white hover:opacity-90"
+                @click="addMapel(kv.key)"
+              >
                 <i class="fas fa-plus mr-1"></i>Mapel
               </button>
             </div>
           </div>
-          <p v-if="(rekapMapel[kv.key] || []).length === 0" class="text-[11px] italic text-[var(--text-tertiary)]">Belum ada mapel untuk kelas ini.</p>
-          <div v-for="(m, i) in (rekapMapel[kv.key] || [])" :key="i" class="flex items-center gap-2 mb-1.5">
+          <p
+            v-if="(rekapMapel[kv.key] || []).length === 0"
+            class="text-[11px] italic text-[var(--text-tertiary)]"
+          >
+            Belum ada mapel untuk kelas ini.
+          </p>
+          <div
+            v-for="(m, i) in rekapMapel[kv.key] || []"
+            :key="i"
+            class="flex items-center gap-2 mb-1.5"
+          >
             <input
               v-model="rekapMapel[kv.key][i]"
               class="flex-1 px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-teal-500 outline-none"
@@ -72,15 +109,26 @@
               max="100"
               class="w-20 px-2 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-teal-500 outline-none text-center"
             />
-            <button type="button" class="w-9 h-9 grid place-items-center rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20" title="Hapus mapel" @click="removeMapel(kv.key, i)">
+            <button
+              type="button"
+              class="w-9 h-9 grid place-items-center rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20"
+              title="Hapus mapel"
+              @click="removeMapel(kv.key, i)"
+            >
               <i class="fas fa-trash"></i>
             </button>
           </div>
         </div>
 
         <div class="flex justify-end pt-1">
-          <button type="button" :disabled="saving" class="px-5 py-2.5 rounded-xl bg-[var(--color-primary)] text-white text-sm font-bold hover:opacity-90 disabled:opacity-50" @click="simpan">
-            <i :class="['fas', saving ? 'fa-spinner fa-spin' : 'fa-save', 'mr-1.5']"></i>{{ saving ? 'Menyimpan...' : 'Simpan Mapel' }}
+          <button
+            type="button"
+            :disabled="saving"
+            class="px-5 py-2.5 rounded-xl bg-[var(--color-primary)] text-white text-sm font-bold hover:opacity-90 disabled:opacity-50"
+            @click="simpan"
+          >
+            <i :class="['fas', saving ? 'fa-spinner fa-spin' : 'fa-save', 'mr-1.5']"></i
+            >{{ saving ? 'Menyimpan...' : 'Simpan Mapel' }}
           </button>
         </div>
       </div>
@@ -97,17 +145,43 @@ import { useLembaga, getLembagaBroadGroup } from '@/composables/useLembaga'
 import { jenjangFromKelas } from '@/utils/jenjang'
 import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
-import { doc, setDoc } from 'firebase/firestore'
-import { db } from '@/services/firebase'
+import { mergeOne } from '@/services/db'
 
 const { lembaga } = useLembaga()
 const settings = useSettingsStore()
 const toast = useToast()
 
 const MAPEL_DEFAULT_DINIYAH = {
-  SDI: ['Tauhid', 'Fiqh', 'Tarikh', 'Akhlaq', 'Bahasa Arab', 'Tahajji', 'Praktek Ibadah', 'ASWAJA & ke-NU-an'],
-  SMP: ['Tauhid', 'Fiqh', 'Akhlaq', 'Nahwu', 'Shorof', 'Khot/Pego', 'Tasawwuf', 'ASWAJA & ke-NU-an'],
-  SMA: ['Akhlaq/Ulumul Qur’an', 'Nahwu', 'Fiqh', 'Ushul Fiqh', 'Faroidl', 'Tasawwuf', 'Ilmu Falak', 'ASWAJA & ke-NU-an']
+  SDI: [
+    'Tauhid',
+    'Fiqh',
+    'Tarikh',
+    'Akhlaq',
+    'Bahasa Arab',
+    'Tahajji',
+    'Praktek Ibadah',
+    'ASWAJA & ke-NU-an'
+  ],
+  SMP: [
+    'Tauhid',
+    'Fiqh',
+    'Akhlaq',
+    'Nahwu',
+    'Shorof',
+    'Khot/Pego',
+    'Tasawwuf',
+    'ASWAJA & ke-NU-an'
+  ],
+  SMA: [
+    'Akhlaq/Ulumul Qur’an',
+    'Nahwu',
+    'Fiqh',
+    'Ushul Fiqh',
+    'Faroidl',
+    'Tasawwuf',
+    'Ilmu Falak',
+    'ASWAJA & ke-NU-an'
+  ]
 }
 
 const formalLembaga = computed(() =>
@@ -132,7 +206,10 @@ const kelasVisible = computed(() => {
 
 function toMapelArr(v) {
   if (Array.isArray(v)) return v.map((x) => String(x))
-  return String(v || '').split(',').map((s) => s.trim()).filter(Boolean)
+  return String(v || '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
 }
 function loadRekap() {
   const all = settings.settings?.rekapDiniyahMapel || {}
@@ -168,7 +245,13 @@ function selectLembaga(l) {
   selected.value = l
   loadRekap()
 }
-watch(() => settings.settings?.rekapDiniyahMapel, () => { if (selected.value) loadRekap() }, { deep: true })
+watch(
+  () => settings.settings?.rekapDiniyahMapel,
+  () => {
+    if (selected.value) loadRekap()
+  },
+  { deep: true }
+)
 
 async function simpan() {
   saving.value = true
@@ -180,8 +263,8 @@ async function simpan() {
       all[kv.key] = clean(rekapMapel[kv.key])
       kkmAll[kv.key] = (rekapKkm[kv.key] || []).map((v) => Number(v) || 75)
     }
-    await setDoc(doc(db, 'settings', 'general'), { rekapDiniyahMapel: all, rekapDiniyahKKM: kkmAll }, { merge: true })
-    await setDoc(doc(db, 'settings', 'web'), { rekapDiniyahMapel: all, rekapDiniyahKKM: kkmAll }, { merge: true })
+    await mergeOne('settings', 'general', { rekapDiniyahMapel: all, rekapDiniyahKKM: kkmAll })
+    await mergeOne('settings', 'web', { rekapDiniyahMapel: all, rekapDiniyahKKM: kkmAll })
     if (settings.settings) {
       settings.settings.rekapDiniyahMapel = all
       settings.settings.rekapDiniyahKKM = kkmAll

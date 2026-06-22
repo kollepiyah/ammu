@@ -2,13 +2,23 @@
 // Phase 5.16/17 (v.39.0526)
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { storeToRefs } from 'pinia'
-import { subscribeColl } from '@/services/firestore'
+import { subscribeColl } from '@/services/db'
 import { useCollectionsStore } from '@/stores/collections'
 import { useAuthStore } from '@/stores/auth'
 
 const BULAN = [
-  'Januari','Februari','Maret','April','Mei','Juni',
-  'Juli','Agustus','September','Oktober','November','Desember'
+  'Januari',
+  'Februari',
+  'Maret',
+  'April',
+  'Mei',
+  'Juni',
+  'Juli',
+  'Agustus',
+  'September',
+  'Oktober',
+  'November',
+  'Desember'
 ]
 
 export function useAbsensi() {
@@ -100,7 +110,13 @@ export function useAbsensi() {
   })
 
   onUnmounted(() => {
-    for (const u of unsubs) { if (u) { try { u() } catch (e) {} } }
+    for (const u of unsubs) {
+      if (u) {
+        try {
+          u()
+        } catch (e) {}
+      }
+    }
   })
 
   return {
