@@ -1,7 +1,10 @@
 <template>
   <div class="p-3 md:p-5 max-w-5xl mx-auto space-y-4">
     <!-- Header — v.100: sembunyikan di Electron (judul redundan dgn pita) -->
-    <div v-if="!isDesktop" class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+    <div
+      v-if="!isDesktop"
+      class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-3"
+    >
       <div>
         <h1 class="text-base md:text-lg font-black">
           <i class="fas fa-hourglass-half text-amber-500 mr-2"></i>Verifikasi Pembayaran
@@ -43,7 +46,10 @@
     <div v-if="loading" class="bg-[var(--bg-card)] rounded-2xl p-10 text-center">
       <i class="fas fa-spinner fa-spin text-amber-500 text-3xl"></i>
     </div>
-    <div v-else-if="filteredItems.length === 0" class="bg-[var(--bg-card)] rounded-2xl p-10 border border-dashed border-[var(--border-default)] text-center">
+    <div
+      v-else-if="filteredItems.length === 0"
+      class="bg-[var(--bg-card)] rounded-2xl p-10 border border-dashed border-[var(--border-default)] text-center"
+    >
       <i class="fas fa-inbox text-[var(--text-tertiary)] text-3xl mb-2"></i>
       <p class="text-sm text-[var(--text-secondary)] italic">
         {{ filterStatus === 'pending' ? 'Tidak ada transfer menunggu.' : 'Belum ada.' }}
@@ -56,26 +62,57 @@
         class="bg-[var(--bg-card)] rounded-xl p-4 border border-[var(--border-subtle)] shadow-sm"
       >
         <div class="flex items-start gap-3">
-          <div :class="['w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0',
-            p.status === 'verified' ? 'bg-emerald-100 text-emerald-600' :
-            p.status === 'rejected' ? 'bg-rose-100 text-rose-600' : 'bg-amber-100 text-amber-600']">
-            <i :class="['fas', p.status === 'verified' ? 'fa-check' : p.status === 'rejected' ? 'fa-times' : 'fa-hourglass-half']"></i>
+          <div
+            :class="[
+              'w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0',
+              p.status === 'verified'
+                ? 'bg-emerald-100 text-emerald-600'
+                : p.status === 'rejected'
+                  ? 'bg-rose-100 text-rose-600'
+                  : 'bg-amber-100 text-amber-600'
+            ]"
+          >
+            <i
+              :class="[
+                'fas',
+                p.status === 'verified'
+                  ? 'fa-check'
+                  : p.status === 'rejected'
+                    ? 'fa-times'
+                    : 'fa-hourglass-half'
+              ]"
+            ></i>
           </div>
           <div class="flex-1 min-w-0">
             <p class="text-base font-black truncate">{{ p.santri_nama }}</p>
             <p class="text-[11px] text-[var(--text-secondary)]">
-              {{ p.lembaga }}{{ p.kelas ? ' · Kls ' + p.kelas : '' }} ·
-              {{ fmtTgl(p.tanggal) }} · {{ p.kategori || 'Transfer' }}
+              {{ p.lembaga }}{{ p.kelas ? ' · Kls ' + p.kelas : '' }} · {{ fmtTgl(p.tanggal) }} ·
+              {{ p.kategori || 'Transfer' }}
             </p>
             <p class="text-[10px] text-[var(--text-tertiary)] mt-0.5">
-              Wali WA: <a :href="`https://wa.me/${cleanWa(p.wali_wa)}`" target="_blank" class="text-green-600 hover:underline">{{ p.wali_wa }}</a>
+              Wali WA:
+              <a
+                :href="`https://wa.me/${cleanWa(p.wali_wa)}`"
+                target="_blank"
+                class="text-green-600 hover:underline"
+                >{{ p.wali_wa }}</a
+              >
               · Dikirim: {{ fmtTglWaktu(p.created_at) }}
             </p>
-            <p v-if="p.catatan" class="text-[11px] text-[var(--text-primary)] mt-1 italic">"{{ p.catatan }}"</p>
-            <p v-if="p.status === 'verified' && p.verified_at" class="text-[10px] text-emerald-700 mt-1 font-bold">
-              <i class="fas fa-check-circle mr-1"></i>Verified: {{ fmtTglWaktu(p.verified_at) }} oleh {{ p.verified_by }}
+            <p v-if="p.catatan" class="text-[11px] text-[var(--text-primary)] mt-1 italic">
+              "{{ p.catatan }}"
             </p>
-            <p v-if="p.status === 'rejected' && p.alasan_tolak" class="text-[10px] text-rose-700 mt-1 font-bold">
+            <p
+              v-if="p.status === 'verified' && p.verified_at"
+              class="text-[10px] text-emerald-700 mt-1 font-bold"
+            >
+              <i class="fas fa-check-circle mr-1"></i>Verified:
+              {{ fmtTglWaktu(p.verified_at) }} oleh {{ p.verified_by }}
+            </p>
+            <p
+              v-if="p.status === 'rejected' && p.alasan_tolak"
+              class="text-[10px] text-rose-700 mt-1 font-bold"
+            >
               <i class="fas fa-times-circle mr-1"></i>Ditolak: {{ p.alasan_tolak }}
             </p>
           </div>
@@ -85,10 +122,14 @@
         </div>
         <!-- v.95.0626c: indikator link tagihan -->
         <p v-if="p.tagihan_id" class="text-[10px] text-cyan-700 dark:text-cyan-300 mt-1 font-bold">
-          <i class="fas fa-link mr-1"></i>Terhubung ke tagihan (saat verifikasi, otomatis kurangi tagihan)
+          <i class="fas fa-link mr-1"></i>Terhubung ke tagihan (saat verifikasi, otomatis kurangi
+          tagihan)
         </p>
         <!-- Action buttons -->
-        <div v-if="p.status === 'pending'" class="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-[var(--border-subtle)]">
+        <div
+          v-if="p.status === 'pending'"
+          class="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-[var(--border-subtle)]"
+        >
           <button
             @click="openBukti(p)"
             class="px-3 py-1.5 text-xs font-bold bg-cyan-100 dark:bg-cyan-900/40 hover:bg-cyan-200 text-cyan-700 dark:text-cyan-300 rounded-lg cursor-pointer"
@@ -113,7 +154,8 @@
             :disabled="busyIds.has(p.id)"
             class="ml-auto px-4 py-1.5 text-xs font-black bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-lg cursor-pointer"
           >
-            <i :class="['fas', busyIds.has(p.id) ? 'fa-spinner fa-spin' : 'fa-check', 'mr-1']"></i>Verifikasi
+            <i :class="['fas', busyIds.has(p.id) ? 'fa-spinner fa-spin' : 'fa-check', 'mr-1']"></i
+            >Verifikasi
           </button>
           <button
             @click="rejectTransfer(p)"
@@ -146,38 +188,77 @@
       class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-3"
       @click.self="editModal = false"
     >
-      <div class="bg-[var(--bg-card)] rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto p-5 space-y-3">
+      <div
+        class="bg-[var(--bg-card)] rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto p-5 space-y-3"
+      >
         <h3 class="text-base font-black text-[var(--text-primary)]">
           <i class="fas fa-edit text-amber-500 mr-2"></i>Edit Transfer
-          <span class="text-sm font-bold text-[var(--text-secondary)]">— {{ editP?.santri_nama }}</span>
+          <span class="text-sm font-bold text-[var(--text-secondary)]"
+            >— {{ editP?.santri_nama }}</span
+          >
         </h3>
         <div>
-          <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase block mb-1">Nominal</label>
-          <input v-model.number="editForm.nominal" type="number" min="0" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)] text-right font-bold" />
+          <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase block mb-1"
+            >Nominal</label
+          >
+          <input
+            v-model.number="editForm.nominal"
+            type="number"
+            min="0"
+            class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)] text-right font-bold"
+          />
         </div>
         <div>
-          <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase block mb-1">Kategori</label>
-          <input v-model="editForm.kategori" type="text" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)]" />
+          <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase block mb-1"
+            >Kategori</label
+          >
+          <input
+            v-model="editForm.kategori"
+            type="text"
+            class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
+          />
         </div>
         <div>
-          <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase block mb-1">Terapkan ke Tagihan (opsional)</label>
-          <select v-model="editForm.tagihan_id" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)]">
+          <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase block mb-1"
+            >Terapkan ke Tagihan (opsional)</label
+          >
+          <select
+            v-model="editForm.tagihan_id"
+            class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
+          >
             <option value="">— Tidak terhubung (setoran lain) —</option>
             <option v-for="t in editTagihanList" :key="t.id" :value="t.id">
-              {{ t.kategori || 'Tagihan' }}{{ t.periode ? ' · ' + t.periode : '' }} — sisa {{ fmtRp(sisaTagihan(t)) }}
+              {{ t.kategori || 'Tagihan' }}{{ t.periode ? ' · ' + t.periode : '' }} — sisa
+              {{ fmtRp(sisaTagihan(t)) }}
             </option>
           </select>
           <p class="text-[10px] text-[var(--text-tertiary)] mt-1 italic">
-            Kalau dihubungkan, saat <b>Verifikasi</b> nominal otomatis mengurangi tagihan tsb (lunas/partial).
+            Kalau dihubungkan, saat <b>Verifikasi</b> nominal otomatis mengurangi tagihan tsb
+            (lunas/partial).
           </p>
         </div>
         <div>
-          <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase block mb-1">Catatan</label>
-          <textarea v-model="editForm.catatan" rows="2" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"></textarea>
+          <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase block mb-1"
+            >Catatan</label
+          >
+          <textarea
+            v-model="editForm.catatan"
+            rows="2"
+            class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
+          ></textarea>
         </div>
         <div class="flex gap-2 pt-2">
-          <button @click="editModal = false" class="flex-1 px-4 py-2 text-sm font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-200 rounded-xl">Batal</button>
-          <button @click="saveEdit" :disabled="savingEdit" class="flex-1 px-4 py-2 text-sm font-black bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white rounded-xl">
+          <button
+            @click="editModal = false"
+            class="flex-1 px-4 py-2 text-sm font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-200 rounded-xl"
+          >
+            Batal
+          </button>
+          <button
+            @click="saveEdit"
+            :disabled="savingEdit"
+            class="flex-1 px-4 py-2 text-sm font-black bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white rounded-xl"
+          >
             <i :class="['fas', savingEdit ? 'fa-spinner fa-spin' : 'fa-save', 'mr-1']"></i>Simpan
           </button>
         </div>
@@ -189,9 +270,9 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useDesktopShell } from '@/composables/useDesktopShell'
-import { doc, getDoc, runTransaction } from 'firebase/firestore'
-import { db } from '@/services/firebase'
-import { subscribeColl, setOne, deleteOne } from '@/services/firestore'
+// v.F6e: adapter Supabase. runTransaction → read-modify-write (getOne+updateOne);
+//   single-tenant + idempoten via applied_transfer_refs, atomicity penuh ditunda dbSafe.
+import { subscribeColl, setOne, deleteOne, getOne, queryColl, updateOne } from '@/services/db'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
@@ -208,9 +289,24 @@ const busyIds = ref(new Set())
 let unsubPending = null
 
 const tabs = [
-  { id: 'pending', label: 'Pending', icon: 'fa-hourglass-half', activeClass: 'bg-amber-600 text-white shadow-md' },
-  { id: 'verified', label: 'Verified', icon: 'fa-check-circle', activeClass: 'bg-emerald-600 text-white shadow-md' },
-  { id: 'rejected', label: 'Ditolak', icon: 'fa-times-circle', activeClass: 'bg-rose-600 text-white shadow-md' }
+  {
+    id: 'pending',
+    label: 'Pending',
+    icon: 'fa-hourglass-half',
+    activeClass: 'bg-amber-600 text-white shadow-md'
+  },
+  {
+    id: 'verified',
+    label: 'Verified',
+    icon: 'fa-check-circle',
+    activeClass: 'bg-emerald-600 text-white shadow-md'
+  },
+  {
+    id: 'rejected',
+    label: 'Ditolak',
+    icon: 'fa-times-circle',
+    activeClass: 'bg-rose-600 text-white shadow-md'
+  }
 ]
 
 const filteredItems = computed(() => {
@@ -219,7 +315,9 @@ const filteredItems = computed(() => {
     .sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')))
 })
 
-const pendingCount = computed(() => pendingRaw.value.filter((p) => (p.status || 'pending') === 'pending').length)
+const pendingCount = computed(
+  () => pendingRaw.value.filter((p) => (p.status || 'pending') === 'pending').length
+)
 const totalPending = computed(() =>
   pendingRaw.value
     .filter((p) => (p.status || 'pending') === 'pending')
@@ -238,7 +336,13 @@ function fmtTglWaktu(iso) {
   if (!iso) return '-'
   const d = new Date(iso)
   if (isNaN(d.getTime())) return iso
-  return d.toLocaleString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+  return d.toLocaleString('id-ID', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
 }
 
 function openBukti(p) {
@@ -281,12 +385,9 @@ async function openEdit(p) {
   editModal.value = true
   // load tagihan santri (belum lunas) untuk opsi link
   try {
-    const { collection, getDocs, query, where } = await import('firebase/firestore')
     const sid = String(p.santri_id)
-    const snap = await getDocs(query(collection(db, 'keuangan_tagihan'), where('santri_id', '==', sid)))
-    editTagihanList.value = snap.docs
-      .map((d) => ({ id: d.id, ...d.data() }))
-      .filter((t) => String(t.status || 'belum') !== 'lunas')
+    const rows = await queryColl('keuangan_tagihan', [['santri_id', '==', sid]])
+    editTagihanList.value = rows.filter((t) => String(t.status || 'belum') !== 'lunas')
   } catch (e) {
     console.warn('[openEdit] load tagihan gagal:', e?.message)
   }
@@ -329,7 +430,9 @@ async function verifyTransfer(p) {
     const buId = `bi_trf_${p.id}`
     // FIX: penuhi rule keuangan_buku_induk — WAJIB tipe (masuk/keluar) + keterangan (string) + nominal number
     // + tanggal 'YYYY-MM-DD'. Sebelumnya field ini tak diisi + sumber 'transfer_verified' belum di-allow -> write ditolak.
-    const tglBI = /^\d{4}-\d{2}-\d{2}$/.test(String(p.tanggal || '')) ? p.tanggal : new Date().toISOString().slice(0, 10)
+    const tglBI = /^\d{4}-\d{2}-\d{2}$/.test(String(p.tanggal || ''))
+      ? p.tanggal
+      : new Date().toISOString().slice(0, 10)
     await setOne('keuangan_buku_induk', buId, {
       id: buId,
       tipe: 'masuk',
@@ -340,7 +443,8 @@ async function verifyTransfer(p) {
       kategori: p.kategori || 'Transfer',
       nominal: Number(p.nominal) || 0,
       tanggal: tglBI,
-      keterangan: `Transfer terverifikasi - ${p.kategori || 'Pembayaran'} - ${p.santri_nama || ''}`.trim(),
+      keterangan:
+        `Transfer terverifikasi - ${p.kategori || 'Pembayaran'} - ${p.santri_nama || ''}`.trim(),
       catatan: (p.catatan || '') + ' (transfer verified)',
       sumber: 'transfer_verified',
       transfer_ref_id: p.id,
@@ -353,17 +457,16 @@ async function verifyTransfer(p) {
     //   TERAKHIR → transfer bisa diulang; tanpa guard ini bayar bertambah 2×).
     if (p.tagihan_id) {
       try {
-        const tgRef = doc(db, 'keuangan_tagihan', String(p.tagihan_id))
-        await runTransaction(db, async (tx) => {
-          const tgSnap = await tx.get(tgRef)
-          if (!tgSnap.exists()) return
-          const tg = tgSnap.data()
-          const applied = Array.isArray(tg.applied_transfer_refs) ? tg.applied_transfer_refs : []
-          if (applied.includes(p.id)) return // transfer ini sudah dihitung → idempoten, skip
+        // v.F6e: read-modify-write (adapter tanpa transaksi). Guard applied_transfer_refs
+        //   tetap cegah dobel-hitung saat retry. Row dipastikan ada sblm updateOne.
+        const tg = await getOne('keuangan_tagihan', String(p.tagihan_id))
+        const applied = Array.isArray(tg?.applied_transfer_refs) ? tg.applied_transfer_refs : []
+        if (tg && !applied.includes(p.id)) {
           const newBayar = (Number(tg.bayar) || 0) + Number(p.nominal || 0)
           const penuh = Number(tg.nominal || 0)
-          const statusBaru = penuh > 0 && newBayar >= penuh - 0.5 ? 'lunas' : newBayar > 0 ? 'partial' : 'belum'
-          tx.update(tgRef, {
+          const statusBaru =
+            penuh > 0 && newBayar >= penuh - 0.5 ? 'lunas' : newBayar > 0 ? 'partial' : 'belum'
+          await updateOne('keuangan_tagihan', String(p.tagihan_id), {
             bayar: newBayar,
             dibayar: newBayar,
             status: statusBaru,
@@ -371,7 +474,7 @@ async function verifyTransfer(p) {
             last_payment_ref: buId,
             applied_transfer_refs: [...applied, p.id]
           })
-        })
+        }
       } catch (e) {
         console.warn('[verifyTransfer] update tagihan gagal:', e?.message)
       }
@@ -423,6 +526,10 @@ onMounted(() => {
 const { isElectron: isDesktop } = useDesktopShell()
 
 onUnmounted(() => {
-  if (unsubPending) { try { unsubPending() } catch (e) {} }
+  if (unsubPending) {
+    try {
+      unsubPending()
+    } catch (e) {}
+  }
 })
 </script>
