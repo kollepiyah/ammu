@@ -1023,8 +1023,10 @@ async function simpanPengaturanRekap() {
         </p>
         <button
           @click="
-            activeTab = 'lembaga'
-            lembagaSubTab = 'field-schema'
+            () => {
+              activeTab = 'lembaga'
+              lembagaSubTab = 'field-schema'
+            }
           "
           class="bg-teal-600 hover:bg-teal-700 text-white font-bold px-3 py-1.5 rounded-lg text-xs cursor-pointer"
         >

@@ -528,8 +528,10 @@
             </div>
             <button
               @click="
-                j.mapel = j.mapel || []
-                j.mapel.push({ id: 'm_' + Date.now(), nama: '', kkm: 80 })
+                () => {
+                  j.mapel = j.mapel || []
+                  j.mapel.push({ id: 'm_' + Date.now(), nama: '', kkm: 80 })
+                }
               "
               class="text-[10px] text-teal-700 font-bold mt-1"
             >

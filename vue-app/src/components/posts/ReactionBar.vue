@@ -20,9 +20,10 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
-import { doc, collection, setDoc, deleteDoc, onSnapshot } from 'firebase/firestore'
-import { db } from '@/services/firebase'
+// v.F6e: post_reactions = tabel Supabase PK komposit (post_id,post_type,user_id),
+//   tanpa kolom id/data → pakai supabase client LANGSUNG (adapter db.js PK-tunggal tak cocok).
+import { ref, computed, onMounted, watch } from 'vue'
+import { supabase } from '@/services/supabase'
 import { useAuthStore } from '@/stores/auth'
 
 const props = defineProps({
@@ -42,7 +43,6 @@ const REACTIONS = [
 ]
 
 const reactions = ref([])
-let unsub = null
 
 const counts = computed(() => {
   const c = {}
@@ -53,38 +53,49 @@ const counts = computed(() => {
 })
 
 const myReaction = computed(() => {
-  const mine = reactions.value.find((r) => r.userId === myUid.value)
+  const mine = reactions.value.find((r) => String(r.user_id) === myUid.value)
   return mine?.emoji || null
 })
 
-function subscribe() {
-  if (unsub) try { unsub() } catch {}
-  if (!props.postId) return
-  const col = collection(db, props.collection, props.postId, 'reactions')
-  unsub = onSnapshot(col, (snap) => {
-    reactions.value = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
-  })
+async function load() {
+  if (!props.postId || !supabase) return
+  const { data, error } = await supabase
+    .from('post_reactions')
+    .select('*')
+    .eq('post_type', props.collection)
+    .eq('post_id', String(props.postId))
+  if (!error) reactions.value = data || []
 }
 
 async function toggleReaction(emoji) {
-  if (!props.postId || !myUid.value || myUid.value === 'anon') return
-  const ref = doc(db, props.collection, props.postId, 'reactions', myUid.value)
-  if (myReaction.value === emoji) {
-    // toggle off
-    try { await deleteDoc(ref) } catch (e) { /* silent */ }
-  } else {
-    try {
-      await setDoc(ref, {
-        userId: myUid.value,
-        emoji,
-        nama: auth.sesiAktif?.nama || '',
-        created_at: new Date().toISOString()
-      })
-    } catch (e) { /* silent */ }
+  if (!props.postId || !myUid.value || myUid.value === 'anon' || !supabase) return
+  try {
+    if (myReaction.value === emoji) {
+      // toggle off
+      await supabase
+        .from('post_reactions')
+        .delete()
+        .eq('post_id', String(props.postId))
+        .eq('post_type', props.collection)
+        .eq('user_id', myUid.value)
+    } else {
+      await supabase.from('post_reactions').upsert(
+        {
+          post_id: String(props.postId),
+          post_type: props.collection,
+          user_id: myUid.value,
+          emoji,
+          created_at: new Date().toISOString()
+        },
+        { onConflict: 'post_id,post_type,user_id' }
+      )
+    }
+  } catch (e) {
+    /* silent */
   }
+  await load()
 }
 
-onMounted(subscribe)
-onUnmounted(() => { if (unsub) try { unsub() } catch {} })
-watch(() => props.postId, subscribe)
+onMounted(load)
+watch(() => props.postId, load)
 </script>
