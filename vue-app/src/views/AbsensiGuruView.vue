@@ -532,9 +532,7 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
-import { doc, writeBatch } from 'firebase/firestore'
-import { db } from '@/services/firebase'
-import { setOne } from '@/services/firestore'
+import { setOne } from '@/services/db'
 import { useAbsensi } from '@/composables/useAbsensi'
 import { useExcel } from '@/composables/useExcel'
 import { useGoogleSheet } from '@/composables/useGoogleSheet' // v.100 Batch12: ekspor ke Google Sheet
@@ -588,7 +586,6 @@ async function handleImportFingerprint(ev) {
       toast.warning('File kosong / tidak ada data')
       return
     }
-    const batch = writeBatch(db)
     let ok = 0
     let errCount = 0
     const errors = []
@@ -647,7 +644,7 @@ async function handleImportFingerprint(ev) {
         let status = 'hadir'
         if (jam && batas && jam > batas) status = 'terlambat'
         const docId = `shift_${guru.id}_${tanggal}_${shift}`
-        batch.set(doc(db, 'absensi_shift_guru', docId), {
+        await setOne('absensi_shift_guru', docId, {
           id: docId,
           guru_id: guru.id,
           guru_nama: guru.nama,
@@ -664,7 +661,6 @@ async function handleImportFingerprint(ev) {
         errors.push(`Row error: ${e.message}`)
       }
     }
-    if (ok > 0) await batch.commit()
     importResult.value = { ok, error: errCount, errors: errors.slice(0, 5) }
     if (ok > 0) {
       toast.success(`Impor selesai: ${ok} OK, ${errCount} error`)
@@ -763,8 +759,7 @@ const hasAnyHadir = computed(() => Object.keys(harianForm.value).some((k) => har
 
 async function saveHarian() {
   const today = new Date().toISOString().slice(0, 10)
-  const batch = writeBatch(db)
-  let count = 0
+  const writes = []
   for (const g of guruAktif.value) {
     const allow = shiftsForGuru(g)
     for (const shift of ['pagi', 'sore', 'sekolah', 'pegawai_pagi', 'pegawai_sore']) {
@@ -790,7 +785,7 @@ async function saveHarian() {
       let status = 'hadir'
       if (jam && batas && jam > batas) status = 'terlambat'
       const docId = `shift_${g.id}_${today}_${shift}`
-      batch.set(doc(db, 'absensi_shift_guru', docId), {
+      writes.push({
         id: docId,
         guru_id: g.id,
         guru_nama: g.nama,
@@ -801,17 +796,16 @@ async function saveHarian() {
         source: 'manual_harian',
         imported_at: new Date().toISOString()
       })
-      count++
     }
   }
-  if (count === 0) {
+  if (writes.length === 0) {
     toast.warning('Tidak ada centang hadir — tidak ada yang disimpan')
     return
   }
   savingHarian.value = true
   try {
-    await batch.commit()
-    toast.success(`${count} absensi tersimpan untuk ${today}`)
+    for (const w of writes) await setOne('absensi_shift_guru', w.id, w)
+    toast.success(`${writes.length} absensi tersimpan untuk ${today}`)
     harianForm.value = {}
   } catch (e) {
     toast.error('Gagal: ' + (e.message || e))
