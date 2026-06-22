@@ -456,27 +456,26 @@
 import { ref, computed, onMounted, onUnmounted, reactive } from 'vue'
 import { useDesktopShell } from '@/composables/useDesktopShell'
 import { definePageActions } from '@/composables/useRibbonContext'
-import { subscribeColl } from '@/services/firestore'
+// v.91.0626: deleteOne = backup audit_log dulu. serverTimestamp = shim ISO (db.js).
+import {
+  subscribeColl,
+  setOne,
+  updateOne,
+  deleteOne,
+  queryColl,
+  serverTimestamp
+} from '@/services/db'
 import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
 import { useExcel } from '@/composables/useExcel'
 import { useGoogleSheet } from '@/composables/useGoogleSheet' // v.100 Batch12: ekspor ke Google Sheet
-import { doc, setDoc, deleteDoc, updateDoc, serverTimestamp } from 'firebase/firestore'
-import { deleteOne } from '@/services/firestore' // v.91.0626: hapus = backup audit_log dulu
-import { db } from '@/services/firebase'
 import { fmtRp, formatTanggal as formatTgl } from '@/utils/format'
 import { buildListPdf, buildKopFromSettings } from '@/utils/pdfBuilder'
 import { isSuperAdmin } from '@/utils/roleScope'
 import { writeAuditLog } from '@/utils/auditLog'
 // v.21.103.0527: reprint struk dari BukuInduk untuk record sumber pos_santri
 import { cetakStrukPdf, cetakStrukSlipPdf } from '@/utils/strukBuilder'
-import {
-  collection as fbCollection,
-  query as fbQuery,
-  where as fbWhere,
-  getDocs as fbGetDocs
-} from 'firebase/firestore'
 
 const toast = useToast()
 const auth = useAuthStore()
@@ -497,10 +496,7 @@ async function cetakUlangStruk(b, mode = 'pdf') {
   }
   try {
     // Fetch semua record dengan trx_id sama
-    const snap = await fbGetDocs(
-      fbQuery(fbCollection(db, 'keuangan_buku_induk'), fbWhere('trx_id', '==', trxId))
-    )
-    const items = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+    const items = await queryColl('keuangan_buku_induk', [['trx_id', '==', trxId]])
     if (items.length === 0) {
       toast.warning('Data transaksi tidak ditemukan')
       return
@@ -725,7 +721,7 @@ async function simpanInputManual() {
       }
       upd.masuk = upd.tipe === 'masuk' ? upd.nominal : 0
       upd.keluar = upd.tipe === 'keluar' ? upd.nominal : 0
-      await updateDoc(doc(db, 'keuangan_buku_induk', editingId.value), upd)
+      await updateOne('keuangan_buku_induk', editingId.value, upd)
       toast.success('Transaksi diperbarui')
     } else {
       const id = `bi_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`
@@ -742,7 +738,7 @@ async function simpanInputManual() {
       }
       if (inputForm.tipe === 'masuk') payload.masuk = payload.nominal
       else payload.keluar = payload.nominal
-      await setDoc(doc(db, 'keuangan_buku_induk', id), payload)
+      await setOne('keuangan_buku_induk', id, payload)
       toast.success('Transaksi tersimpan')
     }
     modalInputOpen.value = false

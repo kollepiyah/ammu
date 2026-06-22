@@ -549,7 +549,14 @@ import { useConfirm } from '@/composables/useConfirm'
 import SkeletonCard from '@/components/layout/SkeletonCard.vue'
 import EmptyState from '@/components/layout/EmptyState.vue' // v.91.0626: empty-state konsisten
 // v.21.11.0526: + deleteOne untuk delete & bulk delete
-import { updateOne, deleteOne, subscribeDoc, getAll } from '@/services/firestore'
+import {
+  mergeOne,
+  updateOne,
+  deleteOne,
+  subscribeDoc,
+  getAll,
+  serverTimestamp
+} from '@/services/db'
 import { resetUserPassword as _resetUserPassword } from '@/services/auth' // v.105: reset sandi via Firebase Auth (bukan field plaintext)
 import { planRegenerateNig, applyNigChanges } from '@/utils/nigGenerator' // v.100 Batch16: auto-NIG pasca impor (reshuffle tgl tugas terlama)
 import { useAuthStore as _useAuthStoreGuru } from '@/stores/auth'
@@ -1362,12 +1369,6 @@ async function confirmImportGuru() {
   let ok = 0,
     fail = 0
   try {
-    const {
-      setDoc: _setDoc,
-      doc: _doc,
-      serverTimestamp: _stamp
-    } = await import('firebase/firestore')
-    const { db: _db } = await import('@/services/firebase')
     for (const item of importPreviewGuru.value.rows) {
       try {
         const numId = item.existingId
@@ -1375,17 +1376,13 @@ async function confirmImportGuru() {
             Number(String(item.existingId).replace(/\D/g, '')) ||
             Date.now() + ok
           : Date.now() + ok
-        await _setDoc(
-          _doc(_db, 'guru', String(numId)),
-          {
-            id: numId,
-            // v.105: TANPA field `password` plaintext — guru impor login dgn '1234' via
-            //   lazy-migration default (findUserByLogin strip password; field tak dipakai login).
-            ...item.data,
-            _imported_v21_26_at: _stamp()
-          },
-          { merge: true }
-        )
+        // v.105: TANPA field `password` plaintext — guru impor login dgn '1234' via
+        //   lazy-migration default (findUserByLogin strip password; field tak dipakai login).
+        await mergeOne('guru', String(numId), {
+          id: numId,
+          ...item.data,
+          _imported_v21_26_at: serverTimestamp()
+        })
         ok++
       } catch (e) {
         fail++

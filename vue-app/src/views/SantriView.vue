@@ -500,9 +500,8 @@ import { useConfirm } from '@/composables/useConfirm'
 import SkeletonCard from '@/components/layout/SkeletonCard.vue'
 import EmptyState from '@/components/layout/EmptyState.vue' // v.91.0626
 import PageHeader from '@/components/layout/PageHeader.vue' // v.91.0626
-import { setDoc, doc, serverTimestamp, deleteDoc } from 'firebase/firestore'
-import { db } from '@/services/firebase'
-import { deleteOne, getAll } from '@/services/firestore' // v.91.0626: hapus = backup ke audit_log dulu
+// v.91.0626: deleteOne = backup ke audit_log dulu. serverTimestamp = shim ISO (db.js).
+import { mergeOne, deleteOne, getAll, serverTimestamp } from '@/services/db'
 import { resetUserPassword } from '@/services/auth' // v.105: reset sandi via Firebase Auth (bukan field plaintext)
 import { planRegenerateNis, applyNisChanges } from '@/utils/nisGenerator' // v.100 Batch14: auto-NIS pasca impor (reshuffle tgl lahir tertua)
 
@@ -718,7 +717,7 @@ async function toggleAktifSantri(s) {
   })
   if (!ok) return
   try {
-    await setDoc(doc(db, 'santri', String(s.id)), { aktif: newStatus }, { merge: true })
+    await mergeOne('santri', String(s.id), { aktif: newStatus })
     toast.success(`${s.nama} di-set ${newStatus ? 'AKTIF' : 'TIDAK AKTIF'}`)
   } catch (e) {
     toast.error('Gagal: ' + (e.message || e))
@@ -768,7 +767,7 @@ async function bulkSetStatusSantri(status) {
     failCount = 0
   for (const id of ids) {
     try {
-      await setDoc(doc(db, 'santri', String(id)), { aktif: status === 'aktif' }, { merge: true })
+      await mergeOne('santri', String(id), { aktif: status === 'aktif' })
       okCount++
     } catch (e) {
       failCount++
@@ -1370,15 +1369,11 @@ async function confirmImportSantri() {
             Number(String(item.existingId).replace(/\D/g, '')) ||
             Date.now() + ok
           : Date.now() + ok
-        await setDoc(
-          doc(db, 'santri', String(numId)),
-          {
-            id: numId,
-            ...item.data,
-            _imported_v21_26_at: serverTimestamp()
-          },
-          { merge: true }
-        )
+        await mergeOne('santri', String(numId), {
+          id: numId,
+          ...item.data,
+          _imported_v21_26_at: serverTimestamp()
+        })
         ok++
       } catch (e) {
         fail++
