@@ -155,6 +155,7 @@ export async function buildSesi() {
     }
     const rs = prof.role_sistem || 'guru'
     const isPengurus = ['admin', 'admin_keuangan', 'super_admin'].includes(rs)
+    const linkedEmail = await _syncGoogleEmail('guru', g.id, g.linked_email)
     return {
       id: g.id,
       role: isPengurus ? 'admin' : 'guru',
@@ -168,6 +169,7 @@ export async function buildSesi() {
       username: g.username || '',
       wa: g.wa || '',
       foto: g.foto || '',
+      linked_email: linkedEmail || g.linked_email || '',
       akses: g.akses || {},
       auth_method: 'supabase',
       supabase_uid: uid,
@@ -184,6 +186,7 @@ export async function buildSesi() {
       e.code = 'auth/inactive'
       throw e
     }
+    const linkedEmailS = await _syncGoogleEmail('santri', s.id, s.linked_email)
     return {
       id: s.id,
       role: 'santri',
@@ -197,6 +200,7 @@ export async function buildSesi() {
       kelas: s.kelas || '',
       wali: s.wali || '',
       is_mukim: s.is_mukim === true,
+      linked_email: linkedEmailS || s.linked_email || '',
       auth_method: 'supabase',
       supabase_uid: uid,
       supabase_email: email
@@ -271,6 +275,20 @@ function _googleRedirect() {
     return window.location.origin + window.location.pathname
   } catch {
     return undefined
+  }
+}
+
+// Sync email Google tertaut → row guru/santri (badge "tertaut" baca row, bukan identitas
+// Supabase). Dipanggil di buildSesi (titik balik OAuth). Best-effort, tak ganggu login.
+async function _syncGoogleEmail(coll, id, current) {
+  try {
+    const { data } = await supabase.auth.getUserIdentities()
+    const gi = (data?.identities || []).find((i) => i.provider === 'google')
+    const em = gi?.identity_data?.email || (gi ? 'google' : '')
+    if (em && em !== current) await mergeOne(coll, String(id), { linked_email: em })
+    return em
+  } catch {
+    return current || ''
   }
 }
 
