@@ -62,7 +62,9 @@
           v-if="masterKegiatan.length === 0"
           class="text-xs text-[var(--text-tertiary)] italic text-center py-8"
         >
-          <i class="fas fa-inbox text-3xl text-slate-300 dark:text-[var(--text-secondary)] block mb-2"></i>
+          <i
+            class="fas fa-inbox text-3xl text-slate-300 dark:text-[var(--text-secondary)] block mb-2"
+          ></i>
           Belum ada master kegiatan. Tambah kegiatan pertama via tombol di atas.
         </div>
         <div v-else class="space-y-2">
@@ -125,8 +127,13 @@
           {{ tahunFilter }}. Data absensi terhubung dengan fingerprint device yang di-impor pada tab
           Impor Fingerprint.
         </p>
-        <div v-if="santriMukim.length === 0" class="text-xs text-[var(--text-tertiary)] italic text-center py-8">
-          <i class="fas fa-users text-3xl text-slate-300 dark:text-[var(--text-secondary)] block mb-2"></i>
+        <div
+          v-if="santriMukim.length === 0"
+          class="text-xs text-[var(--text-tertiary)] italic text-center py-8"
+        >
+          <i
+            class="fas fa-users text-3xl text-slate-300 dark:text-[var(--text-secondary)] block mb-2"
+          ></i>
           Belum ada santri mukim terdaftar. Daftarkan santri sebagai mukim via Data Santri.
         </div>
         <div v-else class="overflow-x-auto">
@@ -341,8 +348,7 @@
 
 <script setup>
 import { ref, reactive, computed, unref } from 'vue'
-import { doc, setDoc, writeBatch } from 'firebase/firestore'
-import { db } from '@/services/firebase'
+import { setOne, mergeOne } from '@/services/db'
 import { useSettingsStore } from '@/stores/settings'
 import { useSantri } from '@/composables/useSantri'
 import { sortSantri } from '@/utils/santriSort'
@@ -441,8 +447,8 @@ async function simpanKegiatan() {
     }
     if (form.idx !== null) list[form.idx] = entry
     else list.push(entry)
-    await setDoc(doc(db, 'settings', 'general'), { master_kegiatan: list }, { merge: true })
-    await setDoc(doc(db, 'settings', 'web'), { master_kegiatan: list }, { merge: true })
+    await mergeOne('settings', 'general', { master_kegiatan: list })
+    await mergeOne('settings', 'web', { master_kegiatan: list })
     toast.success(form.idx !== null ? 'Diperbarui' : 'Tersimpan')
     modalOpen.value = false
   } catch (e) {
@@ -457,8 +463,8 @@ async function hapusKegiatan(idx) {
   try {
     const list = [...masterKegiatan.value]
     list.splice(idx, 1)
-    await setDoc(doc(db, 'settings', 'general'), { master_kegiatan: list }, { merge: true })
-    await setDoc(doc(db, 'settings', 'web'), { master_kegiatan: list }, { merge: true })
+    await mergeOne('settings', 'general', { master_kegiatan: list })
+    await mergeOne('settings', 'web', { master_kegiatan: list })
     toast.success('Dihapus')
   } catch (e) {
     toast.error('Error: ' + (e.message || e))
@@ -482,7 +488,7 @@ async function onFileChange(ev) {
       toast.warning('File kosong / tidak ada data')
       return
     }
-    const batch = writeBatch(db)
+    const writes = []
     let okCount = 0
     let errCount = 0
     const errors = []
@@ -553,24 +559,26 @@ async function onFileChange(ev) {
             .replace(/[^a-z0-9]+/g, '_')
             .replace(/^_+|_+$/g, '') || 'keg'
         const docId = `keg_${santri.id}_${tanggal}_${slug}`
-        batch.set(doc(db, 'absensi_kegiatan', docId), {
-          id: docId,
-          santri_id: santri.id,
-          santri_nama: santri.nama,
-          tanggal,
-          jam: rawJam || '',
-          kegiatan: namaKegiatan,
-          status: 'hadir',
-          source: 'fingerprint_import',
-          imported_at: new Date().toISOString()
-        })
+        writes.push(
+          setOne('absensi_kegiatan', docId, {
+            id: docId,
+            santri_id: santri.id,
+            santri_nama: santri.nama,
+            tanggal,
+            jam: rawJam || '',
+            kegiatan: namaKegiatan,
+            status: 'hadir',
+            source: 'fingerprint_import',
+            imported_at: new Date().toISOString()
+          })
+        )
         okCount++
       } catch (rowErr) {
         errCount++
         errors.push(`Row error: ${rowErr.message}`)
       }
     }
-    if (okCount > 0) await batch.commit()
+    if (writes.length > 0) await Promise.all(writes)
     imporResult.value = { ok: okCount, error: errCount, errors: errors.slice(0, 5) }
     if (okCount > 0) {
       toast.success(`Impor selesai: ${okCount} OK, ${errCount} error`)

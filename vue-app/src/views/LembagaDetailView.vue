@@ -65,9 +65,10 @@
           </p>
           <p class="text-sm font-black">
             {{ lembagaId }} <span class="opacity-60 font-normal">termasuk group</span>
-            <span class="ml-1 px-2 py-0.5 bg-[var(--bg-card)]/60 rounded text-xs font-black uppercase">{{
-              groupKey
-            }}</span>
+            <span
+              class="ml-1 px-2 py-0.5 bg-[var(--bg-card)]/60 rounded text-xs font-black uppercase"
+              >{{ groupKey }}</span
+            >
           </p>
           <p class="text-[11px] mt-1 opacity-80">
             <i class="fas fa-user-tie mr-1"></i>Kepala lembaga:
@@ -244,8 +245,8 @@
           class="flex justify-between items-center bg-[var(--bg-card-elevated)] px-3 py-2 rounded-lg border border-[var(--border-subtle)]"
         >
           <span class="text-sm font-bold"
-            ><i class="fas fa-grip-vertical text-[var(--text-tertiary)] mr-2 text-xs"></i>{{ i + 1 }}.
-            {{ k }}</span
+            ><i class="fas fa-grip-vertical text-[var(--text-tertiary)] mr-2 text-xs"></i
+            >{{ i + 1 }}. {{ k }}</span
           >
           <div class="flex gap-1">
             <button
@@ -298,7 +299,10 @@
               <i class="fas fa-times"></i>
             </button>
           </div>
-          <button @click="addPredikatRule" class="text-xs text-cyan-600 hover:text-cyan-800 font-bold">
+          <button
+            @click="addPredikatRule"
+            class="text-xs text-cyan-600 hover:text-cyan-800 font-bold"
+          >
             <i class="fas fa-plus mr-1"></i>Tambah Predikat
           </button>
         </div>
@@ -479,9 +483,7 @@
           class="space-y-2 bg-[var(--bg-card)] p-3 rounded-xl border border-teal-100"
         >
           <div class="flex justify-between items-center">
-            <p class="text-xs font-black text-teal-800 uppercase">
-              Jenjang Kelas × Mata Pelajaran
-            </p>
+            <p class="text-xs font-black text-teal-800 uppercase">Jenjang Kelas × Mata Pelajaran</p>
             <button
               @click="addJenjang"
               class="text-[10px] bg-teal-200 hover:bg-teal-300 text-teal-800 font-bold px-2 py-0.5 rounded"
@@ -525,7 +527,10 @@
               </div>
             </div>
             <button
-              @click="j.mapel = j.mapel || []; j.mapel.push({ id: 'm_' + Date.now(), nama: '', kkm: 80 })"
+              @click="
+                j.mapel = j.mapel || []
+                j.mapel.push({ id: 'm_' + Date.now(), nama: '', kkm: 80 })
+              "
               class="text-[10px] text-teal-700 font-bold mt-1"
             >
               + Tambah Mapel
@@ -612,7 +617,10 @@
                 </button>
               </div>
               <button
-                @click="(sec.fields = sec.fields || []) && sec.fields.push({ id: 'f_' + Date.now(), label: 'Baru', type: 'number' })"
+                @click="
+                  (sec.fields = sec.fields || []) &&
+                  sec.fields.push({ id: 'f_' + Date.now(), label: 'Baru', type: 'number' })
+                "
                 class="bg-teal-200 hover:bg-teal-300 text-[10px] font-bold px-2 py-0.5 rounded"
               >
                 + Field
@@ -649,9 +657,7 @@
           <p class="text-xs font-black text-teal-800 dark:text-teal-200 mb-1">
             📋 Schema PTPT (Flat Kelas × Juz)
           </p>
-          <div
-            class="bg-teal-50/60 p-2 rounded text-[11px] text-[var(--text-primary)] space-y-1"
-          >
+          <div class="bg-teal-50/60 p-2 rounded text-[11px] text-[var(--text-primary)] space-y-1">
             <p><strong>Total baris:</strong> {{ (raporSchema.rows || []).length }} (Kelas × Juz)</p>
             <p>
               <strong>Kolom nilai:</strong>
@@ -693,7 +699,8 @@
             </p>
             <p>
               <strong>Kolom nilai:</strong>
-              {{ (raporSchema.fieldsNilai || []).map((f) => f.label).join(' · ') }} · Tgl Khotam · Predikat
+              {{ (raporSchema.fieldsNilai || []).map((f) => f.label).join(' · ') }} · Tgl Khotam ·
+              Predikat
             </p>
           </div>
         </div>
@@ -701,13 +708,14 @@
         <!-- kosong / empty -->
         <div v-else class="bg-cyan-50 border border-cyan-200 p-3 rounded text-xs text-cyan-800">
           <template v-if="isDiniyahLembaga">
-            <i class="fas fa-info-circle mr-1"></i>Lembaga formal memakai <b>Rapor Diniyah</b> otomatis
-            (No · Mata Pelajaran · KKM · Rata-rata Sumatif · Sumatif Akhir Semester · Predikat). Daftar
-            mata pelajaran diatur di bagian <b>"Mata Pelajaran"</b> (tab Rekap), bukan di sini.
+            <i class="fas fa-info-circle mr-1"></i>Lembaga formal memakai
+            <b>Rapor Diniyah</b> otomatis (No · Mata Pelajaran · KKM · Rata-rata Sumatif · Sumatif
+            Akhir Semester · Predikat). Daftar mata pelajaran diatur di bagian
+            <b>"Mata Pelajaran"</b> (tab Rekap), bukan di sini.
           </template>
           <template v-else>
-            <i class="fas fa-info-circle mr-1"></i>Belum ada struktur schema. Klik tombol template di
-            atas untuk mulai.
+            <i class="fas fa-info-circle mr-1"></i>Belum ada struktur schema. Klik tombol template
+            di atas untuk mulai.
           </template>
         </div>
 
@@ -750,7 +758,8 @@
           <i class="fas fa-list mr-1"></i>Mata Pelajaran
         </h5>
         <p class="text-[11px] text-[var(--text-secondary)]">
-          Mata pelajaran kolom di Rekap &amp; Rapor Diniyah, diatur PER KELAS (tiap kelas bisa beda). Tambah/hapus tiap mapel di bawah.
+          Mata pelajaran kolom di Rekap &amp; Rapor Diniyah, diatur PER KELAS (tiap kelas bisa
+          beda). Tambah/hapus tiap mapel di bawah.
         </p>
 
         <!-- v.90.0626b: input mapel per-KELAS (dari daftar kelas lembaga) -->
@@ -765,14 +774,24 @@
           :key="kv.key"
           class="bg-[var(--bg-card)] rounded-xl p-3 border border-cyan-100 dark:border-cyan-800 space-y-2"
         >
-          <label class="text-[10px] font-black text-cyan-800 dark:text-cyan-200 uppercase tracking-wide block">
-            Kelas {{ kv.key }}<span v-if="kv.jenjang" class="ml-1 text-[9px] font-bold text-cyan-500">({{ kv.jenjang }})</span>
+          <label
+            class="text-[10px] font-black text-cyan-800 dark:text-cyan-200 uppercase tracking-wide block"
+          >
+            Kelas {{ kv.key
+            }}<span v-if="kv.jenjang" class="ml-1 text-[9px] font-bold text-cyan-500"
+              >({{ kv.jenjang }})</span
+            >
           </label>
-          <p v-if="(rekapMapel[kv.key] || []).length === 0" class="text-[11px] italic text-[var(--text-tertiary)]">
+          <p
+            v-if="(rekapMapel[kv.key] || []).length === 0"
+            class="text-[11px] italic text-[var(--text-tertiary)]"
+          >
             Belum ada mata pelajaran. Klik &quot;Isi default&quot; atau &quot;Tambah&quot;.
           </p>
-          <div v-for="(m, i) in (rekapMapel[kv.key] || [])" :key="i" class="flex items-center gap-2">
-            <span class="text-[10px] font-bold text-[var(--text-tertiary)] w-5 text-right">{{ i + 1 }}.</span>
+          <div v-for="(m, i) in rekapMapel[kv.key] || []" :key="i" class="flex items-center gap-2">
+            <span class="text-[10px] font-bold text-[var(--text-tertiary)] w-5 text-right"
+              >{{ i + 1 }}.</span
+            >
             <input
               v-model="rekapMapel[kv.key][i]"
               type="text"
@@ -797,7 +816,9 @@
               @click="isiMapelDefault(kv.key, kv.jenjang)"
               class="text-xs font-bold text-emerald-700 dark:text-emerald-300 hover:underline cursor-pointer"
             >
-              <i class="fas fa-wand-magic-sparkles mr-1"></i>Isi default<span v-if="kv.jenjang"> ({{ kv.jenjang }})</span>
+              <i class="fas fa-wand-magic-sparkles mr-1"></i>Isi default<span v-if="kv.jenjang">
+                ({{ kv.jenjang }})</span
+              >
             </button>
             <button
               @click="addMapel(kv.key)"
@@ -813,7 +834,8 @@
           :disabled="saving"
           class="text-xs font-black px-3 py-1.5 rounded bg-cyan-600 hover:bg-cyan-700 text-white disabled:opacity-50"
         >
-          <i :class="['fas', saving ? 'fa-spinner fa-spin' : 'fa-save', 'mr-1']"></i>Simpan Mata Pelajaran
+          <i :class="['fas', saving ? 'fa-spinner fa-spin' : 'fa-save', 'mr-1']"></i>Simpan Mata
+          Pelajaran
         </button>
       </div>
 
@@ -961,9 +983,7 @@
         </p>
         <div class="space-y-3">
           <div>
-            <label class="text-[11px] font-bold text-teal-800 block mb-1"
-              >📄 Info Pembayaran</label
-            >
+            <label class="text-[11px] font-bold text-teal-800 block mb-1">📄 Info Pembayaran</label>
             <div class="flex items-center gap-2">
               <input
                 type="file"
@@ -1063,10 +1083,7 @@
                 v-model="field.label"
                 class="md:col-span-3 text-xs px-2 py-1.5 border rounded"
               />
-              <input
-                v-model="field.id"
-                class="md:col-span-2 text-xs px-2 py-1.5 border rounded"
-              />
+              <input v-model="field.id" class="md:col-span-2 text-xs px-2 py-1.5 border rounded" />
               <select v-model="field.type" class="md:col-span-2 text-xs px-2 py-1.5 border rounded">
                 <option value="text">Teks</option>
                 <option value="number">Angka</option>
@@ -1130,8 +1147,7 @@ import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
 import { uploadBase64 } from '@/services/storage'
-import { doc, setDoc } from 'firebase/firestore'
-import { db } from '@/services/firebase'
+import { setOne, mergeOne } from '@/services/db'
 import UiActionCard from '@/components/ui/UiActionCard.vue'
 
 const route = useRoute()
@@ -1198,7 +1214,8 @@ const groupBadgeClass = computed(() => {
   if (g === 'qiraati') return 'bg-emerald-100 text-emerald-800 border-emerald-300'
   if (g === 'sekolah') return 'bg-cyan-100 text-cyan-800 border-cyan-300'
   if (g === 'mahad') return 'bg-teal-100 text-teal-800 border-teal-300'
-  if (g === 'non-lembaga') return 'bg-slate-200 text-[var(--text-primary)] border-[var(--border-default)]'
+  if (g === 'non-lembaga')
+    return 'bg-slate-200 text-[var(--text-primary)] border-[var(--border-default)]'
   return 'bg-cyan-100 text-cyan-800 border-cyan-300'
 })
 
@@ -1246,7 +1263,7 @@ async function saveLembagaKelas(newList) {
     const idx = all.findIndex((l) => l.lembaga === lembagaData.value?.lembaga)
     if (idx < 0) throw new Error('Lembaga tidak ditemukan')
     all[idx] = { ...all[idx], kelas: newList }
-    await setDoc(doc(db, 'master', 'lembaga'), { list: all })
+    await setOne('master', 'lembaga', { list: all })
     toast.success('Daftar kelas tersimpan')
   } catch (e) {
     toast.error('Gagal: ' + (e.message || e))
@@ -1394,16 +1411,14 @@ async function simpanRaporSchema() {
   try {
     const allSchemas = { ...(settings.settings?.raporSchemas || {}) }
     allSchemas[lembagaId.value] = JSON.parse(JSON.stringify(raporSchema.value))
-    await setDoc(
-      doc(db, 'settings', 'general'),
-      { raporSchemas: allSchemas, predikatScale: predikatScale.value },
-      { merge: true }
-    )
-    await setDoc(
-      doc(db, 'settings', 'web'),
-      { raporSchemas: allSchemas, predikatScale: predikatScale.value },
-      { merge: true }
-    )
+    await mergeOne('settings', 'general', {
+      raporSchemas: allSchemas,
+      predikatScale: predikatScale.value
+    })
+    await mergeOne('settings', 'web', {
+      raporSchemas: allSchemas,
+      predikatScale: predikatScale.value
+    })
     settings.settings.raporSchemas = allSchemas
     settings.settings.predikatScale = predikatScale.value
     toast.success(`Schema rapor ${lembagaId.value} tersimpan`)
@@ -1427,8 +1442,8 @@ async function resetRaporSchema() {
   try {
     const allSchemas = { ...(settings.settings?.raporSchemas || {}) }
     delete allSchemas[lembagaId.value]
-    await setDoc(doc(db, 'settings', 'general'), { raporSchemas: allSchemas }, { merge: true })
-    await setDoc(doc(db, 'settings', 'web'), { raporSchemas: allSchemas }, { merge: true })
+    await mergeOne('settings', 'general', { raporSchemas: allSchemas })
+    await mergeOne('settings', 'web', { raporSchemas: allSchemas })
     settings.settings.raporSchemas = allSchemas
     raporSchema.value = {}
     toast.success('Schema di-reset ke default factory')
@@ -1478,9 +1493,36 @@ function addMapel(key) {
   rekapKkm[key].push(75)
 }
 const MAPEL_DEFAULT_DINIYAH = {
-  SDI: ['Tauhid', 'Fiqh', 'Tarikh', 'Akhlaq', 'Bahasa Arab', 'Tahajji', 'Praktek Ibadah', 'ASWAJA & ke-NU-an'],
-  SMP: ['Tauhid', 'Fiqh', 'Akhlaq', 'Nahwu', 'Shorof', 'Khot/Pego', 'Tasawwuf', 'ASWAJA & ke-NU-an'],
-  SMA: ['Akhlaq/Ulumul Qur’an', 'Nahwu', 'Fiqh', 'Ushul Fiqh', 'Faroidl', 'Tasawwuf', 'Ilmu Falak', 'ASWAJA & ke-NU-an']
+  SDI: [
+    'Tauhid',
+    'Fiqh',
+    'Tarikh',
+    'Akhlaq',
+    'Bahasa Arab',
+    'Tahajji',
+    'Praktek Ibadah',
+    'ASWAJA & ke-NU-an'
+  ],
+  SMP: [
+    'Tauhid',
+    'Fiqh',
+    'Akhlaq',
+    'Nahwu',
+    'Shorof',
+    'Khot/Pego',
+    'Tasawwuf',
+    'ASWAJA & ke-NU-an'
+  ],
+  SMA: [
+    'Akhlaq/Ulumul Qur’an',
+    'Nahwu',
+    'Fiqh',
+    'Ushul Fiqh',
+    'Faroidl',
+    'Tasawwuf',
+    'Ilmu Falak',
+    'ASWAJA & ke-NU-an'
+  ]
 }
 function isiMapelDefault(key, jenjang) {
   const j = String(jenjang || '').toUpperCase()
@@ -1501,8 +1543,8 @@ async function simpanRekapMapel() {
       all[kv.key] = clean(rekapMapel[kv.key])
       kkmAll[kv.key] = (rekapKkm[kv.key] || []).map((v) => Number(v) || 75)
     }
-    await setDoc(doc(db, 'settings', 'general'), { rekapDiniyahMapel: all, rekapDiniyahKKM: kkmAll }, { merge: true })
-    await setDoc(doc(db, 'settings', 'web'), { rekapDiniyahMapel: all, rekapDiniyahKKM: kkmAll }, { merge: true })
+    await mergeOne('settings', 'general', { rekapDiniyahMapel: all, rekapDiniyahKKM: kkmAll })
+    await mergeOne('settings', 'web', { rekapDiniyahMapel: all, rekapDiniyahKKM: kkmAll })
     settings.settings.rekapDiniyahMapel = all
     settings.settings.rekapDiniyahKKM = kkmAll
     toast.success('Mapel rekap tersimpan')
@@ -1626,8 +1668,8 @@ async function uploadLogoQiraati(e) {
           reader.result,
           file.type
         )
-        await setDoc(doc(db, 'settings', 'general'), { logoQiraati: url }, { merge: true })
-        await setDoc(doc(db, 'settings', 'web'), { logoQiraati: url }, { merge: true })
+        await mergeOne('settings', 'general', { logoQiraati: url })
+        await mergeOne('settings', 'web', { logoQiraati: url })
         settings.settings.logoQiraati = url
         toast.success('Logo Qiraati global terupload')
       } catch (err) {
@@ -1709,7 +1751,7 @@ async function simpanPengaturan() {
       syarat_ketentuan_teks: pengaturanForm.syarat_ketentuan_teks,
       psb_fields: cleanedFields
     }
-    await setDoc(doc(db, 'master', 'lembaga'), { list: all })
+    await setOne('master', 'lembaga', { list: all })
     toast.success(`Pengaturan ${lembagaId.value} tersimpan`)
   } catch (e) {
     toast.error('Gagal: ' + (e.message || e))
