@@ -17,8 +17,11 @@ export const supabase =
         auth: {
           persistSession: true,
           autoRefreshToken: true,
-          // App pakai hash-router; tak ada magic-link redirect untuk diparse.
-          detectSessionInUrl: false
+          // v.109: Google OAuth (signInWithOAuth/linkIdentity) balik dgn `?code=` (PKCE).
+          //   detectSessionInUrl WAJIB true supaya sesi tertangkap saat redirect balik.
+          //   Hanya aktif bila ada param auth di URL → login username/WA/NIS tak terdampak.
+          detectSessionInUrl: true,
+          flowType: 'pkce'
         }
       })
     : null
