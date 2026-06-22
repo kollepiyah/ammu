@@ -290,7 +290,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { mergeOne, queryColl } from '@/services/db'
-import { linkGoogleAccount, unlinkGoogleAccount, syncUserClaims } from '@/services/auth'
+import { linkGoogleAccount, unlinkGoogleAccount } from '@/services/authSupabase'
 import { toAuthPassword } from '@/services/authSupabase'
 import { supabase } from '@/services/supabase'
 import { uploadBase64, deleteFile } from '@/services/storage'
@@ -455,23 +455,11 @@ async function simpanSandi() {
   }
 }
 
-// v.108: jalankan write Firestore; bila kena permission-denied (token belum bawa custom
-//   claim `role` — syncUserClaims gagal saat login, mis. sinyal jelek), sync ulang claim
-//   lalu retry SEKALI. syncUserClaims juga menandai firebase_uid di dokumen (syarat ownDoc
-//   self-edit guru/santri). Gagal tetap → pesan jelas supaya user login ulang.
+// Migrasi Supabase: RLS dievaluasi per-request (auth.uid() -> profiles), tak ada
+//   propagasi custom-claim seperti Firebase -> tak perlu sync/retry. Jalankan langsung.
+//   (Nama dipertahankan agar pemanggil simpanFoto tak berubah.)
 async function writeWithClaimRetry(writeFn) {
-  try {
-    return await writeFn()
-  } catch (e) {
-    const denied =
-      e?.code === 'permission-denied' || /insufficient permissions/i.test(String(e?.message || ''))
-    if (!denied) throw e
-    const role = await syncUserClaims().catch(() => null)
-    if (!role) {
-      throw new Error('Sesi belum punya izin tulis. Logout lalu login lagi di jaringan stabil.')
-    }
-    return await writeFn()
-  }
+  return await writeFn()
 }
 
 // v.108: pilih file = STAGING saja (pratinjau). Upload baru jalan saat klik "Simpan"

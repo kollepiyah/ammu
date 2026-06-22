@@ -259,3 +259,22 @@ export async function resetUserPassword(collection, docId) {
   if (!data?.ok) throw new Error(data?.error || 'reset-gagal')
   return data
 }
+
+// --- Google OAuth: DITUNDA ke Supabase OAuth (jalur lanjutan). Stub jelas supaya
+//     UI tak lagi memanggil Firebase Auth (auth.js dihapus di F8). loginWithGoogle/
+//     linkGoogleAccount/unlinkGoogleAccount semua lempar pesan ramah; caller sudah
+//     bungkus toast. Implementasi via supabase.auth.signInWithOAuth menyusul. ---
+function _googleDisabled() {
+  const e = new Error('Login Google sementara nonaktif (sedang dimigrasikan ke Supabase).')
+  e.code = 'auth/google-disabled'
+  return e
+}
+export async function loginWithGoogle() {
+  throw _googleDisabled()
+}
+export async function linkGoogleAccount() {
+  throw _googleDisabled()
+}
+export async function unlinkGoogleAccount() {
+  throw _googleDisabled()
+}

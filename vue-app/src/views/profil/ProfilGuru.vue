@@ -446,7 +446,7 @@ import { computed, ref, watch } from 'vue'
 import { updateOne } from '@/services/db'
 import { getNamaGuruGelar, formatTanggal, hitungLamaMengajar } from '@/utils/format'
 import ProfilPengaturanSaya from './ProfilPengaturanSaya.vue'
-import { linkGoogleAccount, unlinkGoogleAccount } from '@/services/auth'
+import { linkGoogleAccount, unlinkGoogleAccount } from '@/services/authSupabase'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
 

@@ -4,7 +4,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
-import * as authService from '@/services/auth'
+import { loginWithGoogle } from '@/services/authSupabase'
 import loginBg from '@/assets/loginBg.js'
 
 // v.86.0526: full match legacy login — Google + Ingat Saya + Lupa Sandi + Copyright luar card
@@ -95,7 +95,7 @@ async function handleGoogleLogin() {
   if (isSubmitting.value) return
   isSubmitting.value = true
   try {
-    const cred = await authService.loginWithGoogle()
+    const cred = await loginWithGoogle()
     if (cred?.user) {
       await auth.loadSesiFromUser(cred.user)
       toast.success('Login Google berhasil')
