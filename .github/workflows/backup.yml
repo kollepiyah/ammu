@@ -63,7 +63,7 @@ jobs:
           FILE="ammu-supabase-${STAMP}.sql.gz"
 
           echo "Dump schema public → ${FILE}"
-          pg_dump "$SUPABASE_DB_URL" \
+          /usr/lib/postgresql/17/bin/pg_dump "$SUPABASE_DB_URL" \
             --schema=public --no-owner --no-privileges --no-acl \
             | gzip -9 > "$FILE"
           ls -lh "$FILE"
