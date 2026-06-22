@@ -17,8 +17,11 @@ export const supabase =
         auth: {
           persistSession: true,
           autoRefreshToken: true,
-          // App pakai hash-router; tak ada magic-link redirect untuk diparse.
-          detectSessionInUrl: false
+          // v.109: detectSessionInUrl FALSE (true bikin login username/WA/NIS hang krn
+          //   proses URL hash-router saat init). OAuth Google balik dgn `?code=` ditukar
+          //   MANUAL via authSupabase.exchangeOAuthCode di initAuth (lihat stores/auth.js).
+          detectSessionInUrl: false,
+          flowType: 'pkce'
         }
       })
     : null

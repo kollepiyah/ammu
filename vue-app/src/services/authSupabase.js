@@ -10,7 +10,7 @@
 // Tak ada hashing/token sendiri. Sandi user dipad 'mu_auth_'+sandi (min 6 char
 // Supabase; mirror Firebase toAuthPassword) — user tetap ketik '1234'.
 import { supabase } from './supabase'
-import { getOne } from './db'
+import { getOne, mergeOne } from './db'
 
 function _ensure() {
   if (!supabase) throw new Error('Supabase belum dikonfigurasi (.env.local).')
@@ -155,6 +155,7 @@ export async function buildSesi() {
     }
     const rs = prof.role_sistem || 'guru'
     const isPengurus = ['admin', 'admin_keuangan', 'super_admin'].includes(rs)
+    const linkedEmail = await _syncGoogleEmail('guru', g.id, g.linked_email)
     return {
       id: g.id,
       role: isPengurus ? 'admin' : 'guru',
@@ -168,6 +169,7 @@ export async function buildSesi() {
       username: g.username || '',
       wa: g.wa || '',
       foto: g.foto || '',
+      linked_email: linkedEmail || g.linked_email || '',
       akses: g.akses || {},
       auth_method: 'supabase',
       supabase_uid: uid,
@@ -184,6 +186,7 @@ export async function buildSesi() {
       e.code = 'auth/inactive'
       throw e
     }
+    const linkedEmailS = await _syncGoogleEmail('santri', s.id, s.linked_email)
     return {
       id: s.id,
       role: 'santri',
@@ -197,6 +200,7 @@ export async function buildSesi() {
       kelas: s.kelas || '',
       wali: s.wali || '',
       is_mukim: s.is_mukim === true,
+      linked_email: linkedEmailS || s.linked_email || '',
       auth_method: 'supabase',
       supabase_uid: uid,
       supabase_email: email
@@ -260,21 +264,76 @@ export async function resetUserPassword(collection, docId) {
   return data
 }
 
-// --- Google OAuth: DITUNDA ke Supabase OAuth (jalur lanjutan). Stub jelas supaya
-//     UI tak lagi memanggil Firebase Auth (auth.js dihapus di F8). loginWithGoogle/
-//     linkGoogleAccount/unlinkGoogleAccount semua lempar pesan ramah; caller sudah
-//     bungkus toast. Implementasi via supabase.auth.signInWithOAuth menyusul. ---
-function _googleDisabled() {
-  const e = new Error('Login Google sementara nonaktif (sedang dimigrasikan ke Supabase).')
-  e.code = 'auth/google-disabled'
-  return e
+// --- Google OAuth via Supabase (provider Google diaktifkan di Supabase Auth). ---
+// Alur PKCE: signInWithOAuth/linkIdentity REDIRECT ke Google, balik dgn `?code=` →
+// supabase.js detectSessionInUrl:true menukar jadi sesi → onAuthChange bangun sesi.
+// CATATAN: login via Google HANYA berhasil untuk user yang sudah MENAUTKAN Google
+//   (akun Supabase-nya punya guru_id/santri_id di profiles). Google fresh tanpa tautan
+//   → buildSesi null → gagal (memang by design: tautkan dulu dari Profil).
+function _googleRedirect() {
+  try {
+    return window.location.origin + window.location.pathname
+  } catch {
+    return undefined
+  }
 }
+
+// Sync email Google tertaut → row guru/santri (badge "tertaut" baca row, bukan identitas
+// Supabase). Dipanggil di buildSesi (titik balik OAuth). Best-effort, tak ganggu login.
+async function _syncGoogleEmail(coll, id, current) {
+  try {
+    const { data } = await supabase.auth.getUserIdentities()
+    const gi = (data?.identities || []).find((i) => i.provider === 'google')
+    const em = gi?.identity_data?.email || (gi ? 'google' : '')
+    if (em && em !== current) await mergeOne(coll, String(id), { linked_email: em })
+    return em
+  } catch {
+    return current || ''
+  }
+}
+
+/** Tukar kode OAuth (PKCE) jadi sesi — dipanggil initAuth saat balik dari Google.
+ *  Perlu krn detectSessionInUrl:false (auto-detect dimatikan supaya login biasa tak hang). */
+export async function exchangeOAuthCode(code) {
+  _ensure()
+  const { error } = await supabase.auth.exchangeCodeForSession(code)
+  if (error) throw error
+}
+
 export async function loginWithGoogle() {
-  throw _googleDisabled()
+  _ensure()
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: _googleRedirect() }
+  })
+  if (error) throw error
+  // Browser redirect ke Google; tak ada nilai balik (sesi dibangun saat kembali).
 }
+
 export async function linkGoogleAccount() {
-  throw _googleDisabled()
+  _ensure()
+  // Manual linking — WAJIB diaktifkan di Supabase: Auth → (Advanced) Allow manual linking.
+  const { error } = await supabase.auth.linkIdentity({
+    provider: 'google',
+    options: { redirectTo: _googleRedirect() }
+  })
+  if (error) throw error
+  return {} // redirect; tautan aktif saat kembali.
 }
-export async function unlinkGoogleAccount() {
-  throw _googleDisabled()
+
+export async function unlinkGoogleAccount(coll, id) {
+  _ensure()
+  const { data, error } = await supabase.auth.getUserIdentities()
+  if (error) throw error
+  const g = (data?.identities || []).find((i) => i.provider === 'google')
+  if (!g) throw new Error('Tidak ada akun Google tertaut.')
+  const { error: e2 } = await supabase.auth.unlinkIdentity(g)
+  if (e2) throw e2
+  // Bersihkan badge "tertaut" di row guru/santri (best-effort).
+  try {
+    if (coll && id) await mergeOne(coll, String(id), { linked_email: null, google_email: null })
+  } catch {
+    /* ignore */
+  }
+  return {}
 }
