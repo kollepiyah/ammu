@@ -524,7 +524,7 @@
     <UiCard
       v-show="section === 'shift'"
       title="Pengaturan Jam Shift"
-      subtitle="Jam mulai / selesai / batas terlambat — Pagi · Sore · Sekolah"
+      subtitle="Jam mulai / selesai / batas terlambat — Pagi · Sore · Sekolah · Pegawai"
       class="mb-4"
     >
       <div class="grid md:grid-cols-3 gap-4">
@@ -640,6 +640,93 @@
                 v-model="form.shiftSekolahSelesai"
                 type="time"
                 class="w-full px-2 py-1.5 text-sm border border-teal-300 rounded bg-[var(--bg-card)]"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Shift Pegawai (jam sendiri, beda dari guru). Kosong = ikut jam guru pagi/sore. -->
+      <p class="text-[11px] font-black text-amber-700 uppercase mt-4 mb-2">
+        <i class="fas fa-user-clock mr-1"></i>Shift Pegawai
+        <span class="font-normal normal-case text-[var(--text-tertiary)]"
+          >— jam khusus pegawai (kosongkan = ikut jam guru)</span
+        >
+      </p>
+      <div class="grid md:grid-cols-2 gap-4">
+        <!-- Pegawai Pagi -->
+        <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl">
+          <p class="text-xs font-black text-amber-800 uppercase mb-2">
+            <i class="fas fa-sun mr-1"></i>PEGAWAI PAGI
+          </p>
+          <div class="grid grid-cols-3 gap-2">
+            <div>
+              <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase block mb-1"
+                >Mulai</label
+              >
+              <input
+                v-model="form.shiftPegawaiPagiMulai"
+                type="time"
+                class="w-full px-2 py-1.5 text-sm border border-amber-300 rounded bg-[var(--bg-card)]"
+              />
+            </div>
+            <div>
+              <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase block mb-1"
+                >Terlambat</label
+              >
+              <input
+                v-model="form.shiftPegawaiPagiTerlambat"
+                type="time"
+                class="w-full px-2 py-1.5 text-sm border border-rose-300 rounded bg-[var(--bg-card)]"
+              />
+            </div>
+            <div>
+              <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase block mb-1"
+                >Selesai</label
+              >
+              <input
+                v-model="form.shiftPegawaiPagiSelesai"
+                type="time"
+                class="w-full px-2 py-1.5 text-sm border border-amber-300 rounded bg-[var(--bg-card)]"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Pegawai Sore -->
+        <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl">
+          <p class="text-xs font-black text-amber-800 uppercase mb-2">
+            <i class="fas fa-moon mr-1"></i>PEGAWAI SORE
+          </p>
+          <div class="grid grid-cols-3 gap-2">
+            <div>
+              <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase block mb-1"
+                >Mulai</label
+              >
+              <input
+                v-model="form.shiftPegawaiSoreMulai"
+                type="time"
+                class="w-full px-2 py-1.5 text-sm border border-amber-300 rounded bg-[var(--bg-card)]"
+              />
+            </div>
+            <div>
+              <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase block mb-1"
+                >Terlambat</label
+              >
+              <input
+                v-model="form.shiftPegawaiSoreTerlambat"
+                type="time"
+                class="w-full px-2 py-1.5 text-sm border border-rose-300 rounded bg-[var(--bg-card)]"
+              />
+            </div>
+            <div>
+              <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase block mb-1"
+                >Selesai</label
+              >
+              <input
+                v-model="form.shiftPegawaiSoreSelesai"
+                type="time"
+                class="w-full px-2 py-1.5 text-sm border border-amber-300 rounded bg-[var(--bg-card)]"
               />
             </div>
           </div>
@@ -1351,6 +1438,13 @@ function defaultForm() {
     shiftSekolahMulai: '07:00',
     shiftSekolahSelesai: '13:00',
     shiftSekolahTerlambat: '07:15',
+    // Shift Pegawai (jam sendiri). KOSONG = fallback ke jam guru pagi/sore.
+    shiftPegawaiPagiMulai: '',
+    shiftPegawaiPagiSelesai: '',
+    shiftPegawaiPagiTerlambat: '',
+    shiftPegawaiSoreMulai: '',
+    shiftPegawaiSoreSelesai: '',
+    shiftPegawaiSoreTerlambat: '',
     // v.100 Batch11: integrasi Google Sheet (Apps Script Web App)
     gsheetUrl: '',
     gsheetToken: ''

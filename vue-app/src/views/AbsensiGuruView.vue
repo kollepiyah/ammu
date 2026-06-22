@@ -629,22 +629,7 @@ async function handleImportFingerprint(ev) {
           errors.push(`Row: guru ${fpId || nama} tidak ditemukan`)
           continue
         }
-        const baseShift = thresholdBaseShift(shift)
-        const terlambatKey =
-          baseShift === 'sore'
-            ? 'shiftSoreTerlambat'
-            : baseShift === 'sekolah'
-              ? 'shiftSekolahTerlambat'
-              : 'shiftPagiTerlambat'
-        const mulaiKey =
-          baseShift === 'sore'
-            ? 'shiftSoreMulai'
-            : baseShift === 'sekolah'
-              ? 'shiftSekolahMulai'
-              : 'shiftPagiMulai'
-        const batas = String(
-          settingsStore.settings?.[terlambatKey] || settingsStore.settings?.[mulaiKey] || ''
-        ).trim()
+        const batas = shiftBatas(shift)
         let status = 'hadir'
         if (jam && batas && jam > batas) status = 'terlambat'
         const docId = `shift_${guru.id}_${tanggal}_${shift}`
@@ -738,11 +723,61 @@ const guruShifts = computed(() => {
   return m
 })
 
-// shift -> ambang jam (pegawai reuse ambang pagi/sore guru; sekolah sendiri)
-function thresholdBaseShift(shift) {
-  if (shift === 'pegawai_pagi') return 'pagi'
-  if (shift === 'pegawai_sore') return 'sore'
-  return shift
+// Setting-key per shift (mulai/terlambat/selesai). Pegawai punya jam SENDIRI;
+// 'fallback' = shift guru yg dipakai bila setelan pegawai dikosongkan.
+function shiftSettingKeys(shift) {
+  switch (shift) {
+    case 'sore':
+      return {
+        mulai: 'shiftSoreMulai',
+        terlambat: 'shiftSoreTerlambat',
+        selesai: 'shiftSoreSelesai'
+      }
+    case 'sekolah':
+      return {
+        mulai: 'shiftSekolahMulai',
+        terlambat: 'shiftSekolahTerlambat',
+        selesai: 'shiftSekolahSelesai'
+      }
+    case 'pegawai_pagi':
+      return {
+        mulai: 'shiftPegawaiPagiMulai',
+        terlambat: 'shiftPegawaiPagiTerlambat',
+        selesai: 'shiftPegawaiPagiSelesai',
+        fallback: 'pagi'
+      }
+    case 'pegawai_sore':
+      return {
+        mulai: 'shiftPegawaiSoreMulai',
+        terlambat: 'shiftPegawaiSoreTerlambat',
+        selesai: 'shiftPegawaiSoreSelesai',
+        fallback: 'sore'
+      }
+    default:
+      return {
+        mulai: 'shiftPagiMulai',
+        terlambat: 'shiftPagiTerlambat',
+        selesai: 'shiftPagiSelesai'
+      }
+  }
+}
+// Window jam shift dari settings; pegawai kosong → fallback ke jam guru pagi/sore.
+function shiftWindow(shift) {
+  const s = settingsStore.settings || {}
+  const k = shiftSettingKeys(shift)
+  const pick = (kk) => ({
+    mulai: String(s[kk.mulai] || '').trim(),
+    terlambat: String(s[kk.terlambat] || '').trim(),
+    selesai: String(s[kk.selesai] || '').trim()
+  })
+  let w = pick(k)
+  if (!w.mulai && !w.terlambat && k.fallback) w = pick(shiftSettingKeys(k.fallback))
+  return w
+}
+// Batas terlambat (string 'HH:MM'): pakai 'terlambat', else 'mulai'.
+function shiftBatas(shift) {
+  const w = shiftWindow(shift)
+  return w.terlambat || w.mulai || ''
 }
 function shiftAbbr(sh) {
   const s = String(sh || '').toLowerCase()
@@ -770,22 +805,7 @@ async function saveHarian() {
       if (!allow.has(shift)) continue
       if (!harianForm.value[g.id + '_' + shift + '_hadir']) continue
       const jam = String(harianForm.value[g.id + '_' + shift + '_jam'] || '').trim()
-      const baseShift = thresholdBaseShift(shift)
-      const terlambatKey =
-        baseShift === 'sore'
-          ? 'shiftSoreTerlambat'
-          : baseShift === 'sekolah'
-            ? 'shiftSekolahTerlambat'
-            : 'shiftPagiTerlambat'
-      const mulaiKey =
-        baseShift === 'sore'
-          ? 'shiftSoreMulai'
-          : baseShift === 'sekolah'
-            ? 'shiftSekolahMulai'
-            : 'shiftPagiMulai'
-      const batas = String(
-        settingsStore.settings?.[terlambatKey] || settingsStore.settings?.[mulaiKey] || ''
-      ).trim()
+      const batas = shiftBatas(shift)
       let status = 'hadir'
       if (jam && batas && jam > batas) status = 'terlambat'
       const docId = `shift_${g.id}_${today}_${shift}`
