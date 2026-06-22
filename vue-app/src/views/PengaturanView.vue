@@ -1266,7 +1266,7 @@ import { useLembaga } from '@/composables/useLembaga'
 import { useGoogleSheet } from '@/composables/useGoogleSheet'
 import { uploadBase64 } from '@/services/storage'
 import { setOne } from '@/services/db'
-import { toAuthPassword } from '@/services/auth'
+import { toAuthPassword } from '@/services/authSupabase'
 import {
   ArrowLeft as ArrowLeftIcon,
   Image as ImageIcon,
@@ -1577,23 +1577,21 @@ async function changeAdminPassword() {
   })
   if (ok) {
     try {
-      // v.100g: sandi admin tak lagi disimpan publik. Update Firebase Auth (sumber
-      //   kebenaran login) + salinan privat settings/admin (read:false). Apply langsung.
-      const { getAuth, updatePassword } = await import('firebase/auth')
-      const u = getAuth().currentUser
-      if (!u) throw Object.assign(new Error('no-session'), { code: 'no-session' })
-      await updatePassword(u, toAuthPassword(pwdNew.value))
-      await setOne('settings', 'admin', { password: pwdNew.value })
+      // Migrasi Supabase: sandi admin = Supabase Auth (sumber kebenaran TUNGGAL).
+      //   Tak ada lagi salinan plaintext settings/admin (sejalan S1-S4). Admin sudah
+      //   ter-autentikasi di area ini → updateUser langsung (tanpa cek sandi lama).
+      const { supabase } = await import('@/services/supabase')
+      const { error } = await supabase.auth.updateUser({ password: toAuthPassword(pwdNew.value) })
+      if (error) throw error
       pwdNew.value = ''
       pwdConfirm.value = ''
       toast.success('Password admin berhasil diganti')
     } catch (e) {
-      if (e?.code === 'auth/requires-recent-login') {
-        toast.error('Demi keamanan, logout lalu login lagi sebelum ganti sandi admin')
-      } else if (e?.code === 'no-session') {
+      const msg = String(e?.message || e || '')
+      if (/reauth|recent|session missing|not authenticated/i.test(msg)) {
         toast.error('Sesi admin tak ditemukan. Logout lalu login lagi.')
       } else {
-        toast.error('Gagal ganti sandi: ' + (e?.message || e))
+        toast.error('Gagal ganti sandi: ' + msg)
       }
     }
   }

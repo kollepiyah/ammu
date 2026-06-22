@@ -290,13 +290,9 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { mergeOne, queryColl } from '@/services/db'
-import {
-  linkGoogleAccount,
-  unlinkGoogleAccount,
-  verifyAdminPassword,
-  toAuthPassword,
-  syncUserClaims
-} from '@/services/auth'
+import { linkGoogleAccount, unlinkGoogleAccount, syncUserClaims } from '@/services/auth'
+import { toAuthPassword } from '@/services/authSupabase'
+import { supabase } from '@/services/supabase'
 import { uploadBase64, deleteFile } from '@/services/storage'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
@@ -425,55 +421,29 @@ async function simpanSandi() {
     return toast.error('Konfirmasi tidak cocok')
   busy.value = true
   try {
-    if (props.role === 'admin') {
-      // v.100g: validasi sandi lama via server (settings/admin tak lagi public-read).
-      const ok = await verifyAdminPassword(formSandi.value.lama)
-      if (!ok) {
-        toast.error('Password lama salah')
-        return
-      }
-      // Sync Firebase Auth DULU (sumber kebenaran login). Kalau gagal → batalkan,
-      //   jangan biarkan settings/admin desync dengan password Auth.
-      try {
-        const { getAuth, updatePassword } = await import('firebase/auth')
-        const u = getAuth().currentUser
-        if (!u) throw Object.assign(new Error('no-session'), { code: 'no-session' })
-        await updatePassword(u, toAuthPassword(formSandi.value.baru))
-      } catch (e) {
-        if (e?.code === 'auth/requires-recent-login') {
-          toast.error('Demi keamanan, logout lalu login lagi sebelum ganti sandi admin')
-        } else if (e?.code === 'no-session') {
-          toast.error('Sesi admin tak ditemukan. Logout lalu login lagi.')
-        } else {
-          toast.error('Gagal sinkron sandi: ' + (e?.message || e))
-        }
-        return
-      }
-      // Auth sukses → simpan salinan privat (settings/admin, read:false, write signedIn).
-      await mergeOne('settings', 'admin', { password: formSandi.value.baru })
-    } else {
-      // v.102: guru/santri ganti sandi via Firebase Auth (sumber kebenaran login),
-      //   BUKAN field Firestore plaintext. Reauth dgn sandi lama → updatePassword.
-      try {
-        const { getAuth, updatePassword, reauthenticateWithCredential, EmailAuthProvider } =
-          await import('firebase/auth')
-        const u = getAuth().currentUser
-        if (!u || !u.email) throw Object.assign(new Error('no-session'), { code: 'no-session' })
-        const cred = EmailAuthProvider.credential(u.email, toAuthPassword(formSandi.value.lama))
-        await reauthenticateWithCredential(u, cred)
-        await updatePassword(u, toAuthPassword(formSandi.value.baru))
-      } catch (e) {
-        if (e?.code === 'auth/wrong-password' || e?.code === 'auth/invalid-credential') {
-          toast.error('Password lama salah')
-        } else if (e?.code === 'auth/requires-recent-login') {
-          toast.error('Demi keamanan, logout lalu login lagi sebelum ganti sandi')
-        } else if (e?.code === 'no-session') {
-          toast.error('Sesi tak ditemukan. Logout lalu login lagi.')
-        } else {
-          toast.error('Gagal ganti sandi: ' + (e?.message || e))
-        }
-        return
-      }
+    // Migrasi Supabase: sandi = Supabase Auth (sumber kebenaran TUNGGAL, semua peran).
+    //   Verifikasi sandi lama via re-sign-in (gagal = sandi lama salah) → updateUser.
+    //   Tak ada lagi salinan plaintext settings/admin maupun field Firestore (S1-S4).
+    const { data: ures } = await supabase.auth.getUser()
+    const u = ures?.user
+    if (!u?.email) {
+      toast.error('Sesi tak ditemukan. Logout lalu login lagi.')
+      return
+    }
+    const { error: reauthErr } = await supabase.auth.signInWithPassword({
+      email: u.email,
+      password: toAuthPassword(formSandi.value.lama)
+    })
+    if (reauthErr) {
+      toast.error('Password lama salah')
+      return
+    }
+    const { error: updErr } = await supabase.auth.updateUser({
+      password: toAuthPassword(formSandi.value.baru)
+    })
+    if (updErr) {
+      toast.error('Gagal ganti sandi: ' + (updErr.message || updErr))
+      return
     }
     toast.success('Password berhasil diganti')
     closeModal()
