@@ -4,7 +4,7 @@
 //   Token disimpan ke santri/{id}.fcm_token (role santri) atau guru/{id}.fcm_token (guru/admin).
 //   Migrasi Supabase: token kini ditulis ke Supabase via db.js (masuk data jsonb) — dibaca
 //   Edge Function dispatch-push. FCM (firebaseApp/messaging) tetap = transport push saja.
-import { mergeOne } from '@/services/db'
+import { supabase } from '@/services/supabase'
 // v.96.0626 perf: firebase/messaging di-LAZY (dynamic import di registerWeb) -> keluar dari boot bundle
 import { firebaseApp } from '@/services/firebase'
 import { useAuthStore } from '@/stores/auth'
@@ -47,7 +47,14 @@ export function usePushNotifications() {
     const td = targetDoc()
     if (!t || !td) return
     try {
-      await mergeOne(td.coll, td.id, { fcm_token: t, fcm_token_at: new Date().toISOString() })
+      // v.109: RPC kolom-scoped (bukan mergeOne upsert) — lolos RLS utk santri/wali
+      //   termasuk anak yang di-switch. Lihat migration save_push_token_rpc.
+      const { error } = await supabase.rpc('save_push_token', {
+        p_coll: td.coll,
+        p_id: td.id,
+        p_token: t
+      })
+      if (error) throw error
     } catch (e) {
       console.warn('[push] saveToken gagal:', e?.message || e)
     }
@@ -57,7 +64,7 @@ export function usePushNotifications() {
     const td = targetDoc()
     if (!td) return
     try {
-      await mergeOne(td.coll, td.id, { fcm_token: null })
+      await supabase.rpc('save_push_token', { p_coll: td.coll, p_id: td.id, p_token: null })
     } catch (e) {
       /* ignore */
     }

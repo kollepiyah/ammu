@@ -151,13 +151,13 @@ try {
   fs.copyFileSync(MIN, SRC)
   log(`✓ Minified legacy disalin ke / (root) — Vue tetap accessible di /vue/`)
 
-  log('Step 4: Run firebase deploy — 2 site: main (Vue ammuonline) + psb + firestore rules')
+  log('Step 4: Run firebase deploy — 2 site: main (Vue ammuonline) + psb')
   // v.20.0526: Multi-site hosting
   // - hosting:main → site `ammuonline` (Vue di public/vue/) → ammuonline.web.app
   // - hosting:psb  → site `psb` (public/psb/) → ammuonline-psb.web.app
   // v.87.0526: hosting:legacy (portal-mambaul-ulum) DIHAPUS dari deploy — legacy sudah tidak dipakai.
-  // v.20.15.0526: deploy firestore rules juga (kalau ada perubahan koleksi/rules baru)
-  run('firebase deploy --only hosting:main,hosting:psb,firestore:rules')
+  // v.109: firestore:rules DIHAPUS dari deploy — app sudah full Supabase (Firestore tak dipakai).
+  run('firebase deploy --only hosting:main,hosting:psb')
 
   log('Step 5: Restore original index.html (untuk dev)')
   restore()

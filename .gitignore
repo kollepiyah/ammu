@@ -78,6 +78,8 @@ service-account*.json
 google-services.json
 GoogleService-Info.plist
 firebase-adminsdk-*.json
+*firebase-adminsdk-*.json
+*-adminsdk-*.json
 secrets/
 .secrets/
 
