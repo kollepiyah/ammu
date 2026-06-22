@@ -608,8 +608,12 @@ async function handleImportFingerprint(ev) {
         if (m) tanggal = `${m[3]}-${m[2]}-${m[1]}`
         let guru = null
         if (fpId) {
+          // match PIN: AMMU simpan PIN fingerprint di kolom `id_fingerprint`
+          // (fingerprint_id/fp_id = alias legacy). trim supaya aman spasi.
           guru = guruRaw.value.find(
-            (g) => String(g.fingerprint_id || g.fp_id || '') === String(fpId)
+            (g) =>
+              String(g.id_fingerprint || g.fingerprint_id || g.fp_id || '').trim() ===
+              String(fpId).trim()
           )
         }
         if (!guru && nama) {
