@@ -1,5 +1,5 @@
 // v.21.104.0527 — Audit log helper utk operasi sensitif (bulk delete keuangan).
-// Tulis ke koleksi 'audit_log' (sudah ada di Firestore rules).
+// Tulis ke tabel 'audit_log' (Supabase via adapter db.js).
 //
 // Penggunaan:
 //   await writeAuditLog({
@@ -9,8 +9,7 @@
 //     ids: ['bi_123', 'bi_456'],
 //     detail: { trx_ids: [...] }   // opsional, free-form
 //   })
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore'
-import { db } from '@/services/firebase'
+import { setOne, serverTimestamp } from '@/services/db'
 
 export async function writeAuditLog({
   operator = 'unknown',
@@ -31,7 +30,7 @@ export async function writeAuditLog({
       timestamp: serverTimestamp(),
       detail: detail || null
     }
-    await setDoc(doc(db, 'audit_log', id), payload)
+    await setOne('audit_log', id, payload)
     return true
   } catch (e) {
     // Jangan ganggu UX kalau audit log gagal — cuma log warning

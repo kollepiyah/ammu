@@ -3,7 +3,7 @@
 // Mirror pattern useSantri/useGuru
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { storeToRefs } from 'pinia'
-import { subscribeColl } from '@/services/firestore'
+import { subscribeColl } from '@/services/db'
 import { useCollectionsStore } from '@/stores/collections'
 import { useAuthStore } from '@/stores/auth'
 
@@ -44,7 +44,10 @@ export function useKeuangan() {
     const _periodeNow = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`
     const totalBisyarohBulan = gaji.value
       .filter((g) => String(g.periode || '') === _periodeNow)
-      .reduce((sum, g) => sum + (Number(g.bisyaroh_pokok) || 0) + (Number(g.bisyaroh_tambahan) || 0), 0)
+      .reduce(
+        (sum, g) => sum + (Number(g.bisyaroh_pokok) || 0) + (Number(g.bisyaroh_tambahan) || 0),
+        0
+      )
     return {
       tagihanCount: tagihanActive.length,
       totalTagihan,
@@ -85,7 +88,13 @@ export function useKeuangan() {
   })
 
   onUnmounted(() => {
-    for (const u of unsubs) { if (u) { try { u() } catch (e) {} } }
+    for (const u of unsubs) {
+      if (u) {
+        try {
+          u()
+        } catch (e) {}
+      }
+    }
   })
 
   return {

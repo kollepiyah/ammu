@@ -3,8 +3,7 @@
 // cetak ulang struk (PDF ber-KOP + dot-matrix).
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { collection, query, orderBy, limit, getDocs, doc, deleteDoc, updateDoc } from 'firebase/firestore'
-import { db } from '@/services/firebase'
+import { queryColl, getAll, deleteOne } from '@/services/db'
 import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
@@ -38,7 +37,7 @@ async function hapusTrx(t) {
     const tgts = entries.value.filter((e) => e.trx_id === t.trx_id)
     for (const e of tgts) {
       try {
-        await deleteDoc(doc(db, 'keuangan_buku_induk', String(e.id)))
+        await deleteOne('keuangan_buku_induk', String(e.id), { sesi: auth.sesiAktif })
       } catch (er) {
         console.warn('[hapusTrx] fail', e.id, er.message)
       }
@@ -72,13 +71,19 @@ async function hapusTrxTerpilih() {
   if (keys.length === 0) return
   const tgt = transaksi.value.filter((t) => keys.includes(String(t.key)))
   const totalRec = tgt.reduce((a, t) => a + t.items.length, 0)
-  if (!confirm(`Hapus ${tgt.length} transaksi POS terpilih (${totalRec} record di buku induk)?\n\nTidak bisa di-undo. Tagihan TIDAK auto-revert.`)) return
-  let ok = 0, fail = 0
+  if (
+    !confirm(
+      `Hapus ${tgt.length} transaksi POS terpilih (${totalRec} record di buku induk)?\n\nTidak bisa di-undo. Tagihan TIDAK auto-revert.`
+    )
+  )
+    return
+  let ok = 0,
+    fail = 0
   const trxIds = tgt.map((t) => t.trx_id)
   const recIds = entries.value.filter((e) => trxIds.includes(e.trx_id)).map((e) => e.id)
   for (const id of recIds) {
     try {
-      await deleteDoc(doc(db, 'keuangan_buku_induk', String(id)))
+      await deleteOne('keuangan_buku_induk', String(id), { sesi: auth.sesiAktif })
       ok++
     } catch (e) {
       fail++
@@ -105,7 +110,20 @@ const santriMap = ref({}) // id -> {lembaga, kelas, nis}
 const guruTtdMap = ref({}) // nama -> tanda_tangan URL (utk auto-isi TTD Penerima di struk PDF)
 const search = ref('')
 // v.108: filter tahun / bulan / hari
-const BULAN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember']
+const BULAN = [
+  'Januari',
+  'Februari',
+  'Maret',
+  'April',
+  'Mei',
+  'Juni',
+  'Juli',
+  'Agustus',
+  'September',
+  'Oktober',
+  'November',
+  'Desember'
+]
 const filterYear = ref(new Date().getFullYear())
 const filterMonth = ref(0) // 0 = semua bulan
 const filterDay = ref(0) // 0 = semua tanggal
@@ -125,26 +143,31 @@ onMounted(async () => {
     return
   }
   try {
-    const snap = await getDocs(
-      query(collection(db, 'keuangan_buku_induk'), orderBy('createdAt', 'desc'), limit(400))
+    entries.value = await queryColl(
+      'keuangan_buku_induk',
+      [['sumber', '==', 'pos_santri']],
+      [['createdAt', 'desc']],
+      400
     )
-    entries.value = snap.docs
-      .map((d) => ({ id: d.id, ...d.data() }))
-      .filter((t) => t.sumber === 'pos_santri')
     // lookup santri utk lembaga/kelas
-    const sSnap = await getDocs(collection(db, 'santri'))
+    const sList = await getAll('santri')
     const m = {}
-    for (const d of sSnap.docs) {
-      const s = d.data()
-      m[d.id] = { lembaga: s.lembaga || '', kelas: s.kelas || '', lembaga_sekolah: s.lembaga_sekolah || '', kelas_sekolah: s.kelas_sekolah || '', nis: s.nis || '', wali: s.wali || s.nama_wali || s.nama_ayah || (s.ayah && s.ayah.nama) || '' }
+    for (const s of sList) {
+      m[s.id] = {
+        lembaga: s.lembaga || '',
+        kelas: s.kelas || '',
+        lembaga_sekolah: s.lembaga_sekolah || '',
+        kelas_sekolah: s.kelas_sekolah || '',
+        nis: s.nis || '',
+        wali: s.wali || s.nama_wali || s.nama_ayah || (s.ayah && s.ayah.nama) || ''
+      }
     }
     santriMap.value = m
     // v.21.91.0527: guruTtdMap (nama -> tanda_tangan) utk auto-TTD di reprint struk PDF
     try {
-      const gSnap = await getDocs(collection(db, 'guru'))
+      const gList = await getAll('guru')
       const gm = {}
-      for (const d of gSnap.docs) {
-        const g = d.data()
+      for (const g of gList) {
         if (g.nama && g.tanda_tangan) gm[g.nama] = g.tanda_tangan
       }
       guruTtdMap.value = gm
@@ -157,6 +180,15 @@ onMounted(async () => {
     loading.value = false
   }
 })
+
+// v.F6e: epoch dari createdAt — Supabase simpan ISO string (shim serverTimestamp),
+//   tetap dukung bentuk legacy Firestore Timestamp { seconds }.
+function tsEpoch(c) {
+  if (!c) return 0
+  if (typeof c === 'object' && c.seconds != null) return Number(c.seconds) * 1000
+  const t = new Date(c).getTime()
+  return Number.isNaN(t) ? 0 : t
+}
 
 // v.95.0626: ekstrak periode bersih dari keterangan buku induk verbose ("jenis — nama (nis) — periode")
 function extractPeriode(ket) {
@@ -205,8 +237,10 @@ const transaksi = computed(() => {
   list = list.filter((t) => {
     const tg = String(t.tanggal || '')
     if (filterYear.value && tg.slice(0, 4) !== String(filterYear.value)) return false
-    if (filterMonth.value > 0 && tg.slice(5, 7) !== String(filterMonth.value).padStart(2, '0')) return false
-    if (filterDay.value > 0 && tg.slice(8, 10) !== String(filterDay.value).padStart(2, '0')) return false
+    if (filterMonth.value > 0 && tg.slice(5, 7) !== String(filterMonth.value).padStart(2, '0'))
+      return false
+    if (filterDay.value > 0 && tg.slice(8, 10) !== String(filterDay.value).padStart(2, '0'))
+      return false
     return true
   })
   // search nama
@@ -214,8 +248,8 @@ const transaksi = computed(() => {
   if (kw) list = list.filter((t) => String(t.santri_nama).toLowerCase().includes(kw))
   // urut terbaru
   return list.sort((a, b) => {
-    const ta = a.createdAt?.seconds || 0
-    const tb = b.createdAt?.seconds || 0
+    const ta = tsEpoch(a.createdAt)
+    const tb = tsEpoch(b.createdAt)
     if (tb !== ta) return tb - ta
     return String(b.tanggal).localeCompare(String(a.tanggal))
   })
@@ -256,7 +290,10 @@ async function cetakPdf(t) {
 async function cetakDot(t) {
   try {
     const s = settingsStore.settings || {}
-    const res = await printRaw({ base64: buildStrukSlipEscpBase64(toTrx(t), s), deviceName: getDefaultPrinter() || undefined })
+    const res = await printRaw({
+      base64: buildStrukSlipEscpBase64(toTrx(t), s),
+      deviceName: getDefaultPrinter() || undefined
+    })
     if (res && res.ok === false) throw new Error(res.error || 'Print gagal')
     toast.success('Struk dicetak ke printer')
   } catch (e) {
@@ -267,7 +304,11 @@ async function cetakDot(t) {
 function fmtTgl(t) {
   if (!t) return '—'
   try {
-    return new Date(t).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
+    return new Date(t).toLocaleDateString('id-ID', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    })
   } catch {
     return t
   }
@@ -277,13 +318,19 @@ function fmtTgl(t) {
 <template>
   <div class="p-3 md:p-5 space-y-4">
     <!-- Header -->
-    <div class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm">
+    <div
+      class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
+    >
       <div class="flex items-center justify-between gap-2 flex-wrap">
         <div>
-          <h2 class="text-lg md:text-xl font-black text-[var(--text-primary)] flex items-center gap-2">
+          <h2
+            class="text-lg md:text-xl font-black text-[var(--text-primary)] flex items-center gap-2"
+          >
             <i class="fas fa-receipt text-teal-600"></i>Riwayat Transaksi POS
           </h2>
-          <p class="text-xs text-[var(--text-secondary)] mt-0.5">Cetak ulang struk pembayaran santri.</p>
+          <p class="text-xs text-[var(--text-secondary)] mt-0.5">
+            Cetak ulang struk pembayaran santri.
+          </p>
         </div>
         <button
           type="button"
@@ -305,10 +352,14 @@ function fmtTgl(t) {
 
     <template v-else>
       <!-- Filter -->
-      <div class="bg-[var(--bg-card)] rounded-2xl p-3 md:p-4 border border-[var(--border-subtle)] shadow-sm">
+      <div
+        class="bg-[var(--bg-card)] rounded-2xl p-3 md:p-4 border border-[var(--border-subtle)] shadow-sm"
+      >
         <div class="flex flex-col md:flex-row gap-2">
           <div class="relative flex-1">
-            <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] text-sm"></i>
+            <i
+              class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] text-sm"
+            ></i>
             <input
               v-model="search"
               type="search"
@@ -340,19 +391,32 @@ function fmtTgl(t) {
       </div>
 
       <!-- Loading -->
-      <div v-if="loading" class="bg-[var(--bg-card)] rounded-2xl p-10 border border-[var(--border-subtle)] text-center">
+      <div
+        v-if="loading"
+        class="bg-[var(--bg-card)] rounded-2xl p-10 border border-[var(--border-subtle)] text-center"
+      >
         <i class="fas fa-spinner fa-spin text-2xl text-teal-600 mb-2"></i>
         <p class="text-sm text-[var(--text-secondary)]">Memuat riwayat...</p>
       </div>
 
       <!-- List -->
-      <div v-else class="bg-[var(--bg-card)] rounded-2xl p-3 md:p-4 border border-[var(--border-subtle)] shadow-sm">
+      <div
+        v-else
+        class="bg-[var(--bg-card)] rounded-2xl p-3 md:p-4 border border-[var(--border-subtle)] shadow-sm"
+      >
         <div class="flex items-center justify-between mb-3">
-          <span class="text-xs font-bold text-[var(--text-secondary)]">{{ transaksi.length }} transaksi</span>
-          <span class="text-xs font-black text-emerald-600">Total: {{ fmtRpStruk(totalTampil) }}</span>
+          <span class="text-xs font-bold text-[var(--text-secondary)]"
+            >{{ transaksi.length }} transaksi</span
+          >
+          <span class="text-xs font-black text-emerald-600"
+            >Total: {{ fmtRpStruk(totalTampil) }}</span
+          >
         </div>
 
-        <p v-if="transaksi.length === 0" class="text-center text-[var(--text-tertiary)] py-8 text-sm">
+        <p
+          v-if="transaksi.length === 0"
+          class="text-center text-[var(--text-tertiary)] py-8 text-sm"
+        >
           Tidak ada transaksi.
         </p>
 
@@ -361,7 +425,9 @@ function fmtTgl(t) {
           v-if="isAdmin && transaksi.length > 0"
           class="flex items-center justify-between gap-2 mb-2 px-2"
         >
-          <label class="flex items-center gap-2 text-[11px] font-bold text-[var(--text-secondary)] cursor-pointer">
+          <label
+            class="flex items-center gap-2 text-[11px] font-bold text-[var(--text-secondary)] cursor-pointer"
+          >
             <input
               type="checkbox"
               :checked="selectedTrx.size === transaksi.length && transaksi.length > 0"
@@ -396,7 +462,9 @@ function fmtTgl(t) {
                 title="Pilih transaksi"
               />
               <div class="min-w-0 flex-1">
-                <p class="text-sm font-bold text-[var(--text-primary)] truncate">{{ t.santri_nama }}</p>
+                <p class="text-sm font-bold text-[var(--text-primary)] truncate">
+                  {{ t.santri_nama }}
+                </p>
                 <p class="text-[10px] text-[var(--text-secondary)] truncate">
                   {{ fmtTgl(t.tanggal) }}<span v-if="t.lembaga"> · {{ t.lembaga }}</span
                   ><span v-if="t.kelas"> · {{ t.kelas }}</span> · {{ t.operator }}
