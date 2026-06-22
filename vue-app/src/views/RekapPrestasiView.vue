@@ -1059,75 +1059,73 @@
       </div>
     </template>
   </div>
-    <!-- v.107: modal koreksi prestasi bulanan (super_admin) -->
+  <!-- v.107: modal koreksi prestasi bulanan (super_admin) -->
+  <div
+    v-if="editP"
+    class="fixed inset-0 z-[100] bg-black/40 flex items-center justify-center p-4"
+    @click.self="editP = null"
+  >
     <div
-      v-if="editP"
-      class="fixed inset-0 z-[100] bg-black/40 flex items-center justify-center p-4"
-      @click.self="editP = null"
+      class="bg-[var(--bg-card)] rounded-2xl p-4 w-full max-w-xs shadow-xl border border-[var(--border-subtle)]"
     >
-      <div
-        class="bg-[var(--bg-card)] rounded-2xl p-4 w-full max-w-xs shadow-xl border border-[var(--border-subtle)]"
-      >
-        <h3 class="text-sm font-bold text-[var(--text-primary)] mb-3">
-          Koreksi Prestasi — {{ editP.label }}
-        </h3>
-        <div class="space-y-2">
-          <label class="block text-[11px] font-semibold text-[var(--text-secondary)]"
-            >Awal
-            <input
-              v-model="editP.awal"
-              type="number"
-              class="mt-0.5 w-full px-2.5 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)]"
-            />
-          </label>
-          <label class="block text-[11px] font-semibold text-[var(--text-secondary)]"
-            >Akhir
-            <input
-              v-model="editP.akhir"
-              type="number"
-              class="mt-0.5 w-full px-2.5 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)]"
-            />
-          </label>
-          <label class="block text-[11px] font-semibold text-[var(--text-secondary)]"
-            >Total
-            <input
-              v-model="editP.total"
-              type="number"
-              class="mt-0.5 w-full px-2.5 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)]"
-            />
-          </label>
-          <label class="block text-[11px] font-semibold text-[var(--text-secondary)]"
-            >Juz (opsional)
-            <input
-              v-model="editP.juz"
-              type="text"
-              class="mt-0.5 w-full px-2.5 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)]"
-            />
-          </label>
-        </div>
-        <div class="flex justify-end gap-2 mt-4">
-          <button
-            @click="editP = null"
-            class="h-9 px-3 rounded-xl text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200"
-          >
-            Batal
-          </button>
-          <button
-            @click="saveEditPrestasi()"
-            class="h-9 px-3 rounded-xl text-xs font-bold bg-teal-600 text-white hover:bg-teal-700"
-          >
-            Simpan
-          </button>
-        </div>
+      <h3 class="text-sm font-bold text-[var(--text-primary)] mb-3">
+        Koreksi Prestasi — {{ editP.label }}
+      </h3>
+      <div class="space-y-2">
+        <label class="block text-[11px] font-semibold text-[var(--text-secondary)]"
+          >Awal
+          <input
+            v-model="editP.awal"
+            type="number"
+            class="mt-0.5 w-full px-2.5 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)]"
+          />
+        </label>
+        <label class="block text-[11px] font-semibold text-[var(--text-secondary)]"
+          >Akhir
+          <input
+            v-model="editP.akhir"
+            type="number"
+            class="mt-0.5 w-full px-2.5 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)]"
+          />
+        </label>
+        <label class="block text-[11px] font-semibold text-[var(--text-secondary)]"
+          >Total
+          <input
+            v-model="editP.total"
+            type="number"
+            class="mt-0.5 w-full px-2.5 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)]"
+          />
+        </label>
+        <label class="block text-[11px] font-semibold text-[var(--text-secondary)]"
+          >Juz (opsional)
+          <input
+            v-model="editP.juz"
+            type="text"
+            class="mt-0.5 w-full px-2.5 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)]"
+          />
+        </label>
+      </div>
+      <div class="flex justify-end gap-2 mt-4">
+        <button
+          @click="editP = null"
+          class="h-9 px-3 rounded-xl text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200"
+        >
+          Batal
+        </button>
+        <button
+          @click="saveEditPrestasi()"
+          class="h-9 px-3 rounded-xl text-xs font-bold bg-teal-600 text-white hover:bg-teal-700"
+        >
+          Simpan
+        </button>
       </div>
     </div>
-  </template>
+  </div>
+</template>
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, reactive, watch } from 'vue'
-import { subscribeColl, deleteOne } from '@/services/firestore'
-import { db } from '@/services/firebase'
-import { doc, setDoc, updateDoc } from 'firebase/firestore'
+import { subscribeColl, deleteOne, updateOne, mergeOne } from '@/services/db'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
 import { useExcel } from '@/composables/useExcel'
@@ -1208,7 +1206,7 @@ async function saveEditPrestasi() {
   const e = editP.value
   if (!e) return
   try {
-    await updateDoc(doc(db, 'riwayat_prestasi', String(e.id)), {
+    await updateOne('riwayat_prestasi', String(e.id), {
       awal: e.awal === '' ? null : Number(e.awal),
       akhir: e.akhir === '' ? null : Number(e.akhir),
       total: e.total === '' ? null : Number(e.total),
@@ -1560,23 +1558,19 @@ async function simpanRekap() {
         if (e.total !== undefined) payload.prestasi_total = e.total
       }
       if (Object.keys(payload).length === 0) continue
-      promises.push(updateDoc(doc(db, 'santri', String(id)), payload))
+      promises.push(updateOne('santri', String(id), payload))
       // v.87.0526: event notif prestasi (1 per santri / bulan berjalan) -> Notif Center wali.
       const _periode = new Date().toISOString().slice(0, 7)
       const _npId = `np_${id}_${_periode}`
       promises.push(
-        setDoc(
-          doc(db, 'notif_prestasi', _npId),
-          {
-            id: _npId,
-            santri_id: String(id),
-            santri_nama: s.nama || '',
-            total: String(payload.prestasi_total ?? e.total ?? ''),
-            periode: _periode,
-            createdAt: new Date().toISOString()
-          },
-          { merge: true }
-        )
+        mergeOne('notif_prestasi', _npId, {
+          id: _npId,
+          santri_id: String(id),
+          santri_nama: s.nama || '',
+          total: String(payload.prestasi_total ?? e.total ?? ''),
+          periode: _periode,
+          createdAt: new Date().toISOString()
+        })
       )
       // v.100d: snapshot prestasi BULANAN (periode = bulan/tahun terpilih) → submenu Riwayat
       const _rpAwal = e.awal !== undefined ? e.awal : s.prestasi_awal || ''
@@ -1590,24 +1584,20 @@ async function simpanRekap() {
       const _rpJuz = s.lembaga === 'PTPT' ? (e.juz !== undefined ? e.juz : s.juz || '') : ''
       const _rpId = `rp_${id}_${periodeSel.value}`
       promises.push(
-        setDoc(
-          doc(db, 'riwayat_prestasi', _rpId),
-          {
-            id: _rpId,
-            santri_id: String(id),
-            santri_nama: s.nama || '',
-            lembaga: s.lembaga || '',
-            kelas: s.kelas || '',
-            periode: periodeSel.value,
-            bulan_label: bulanLabelSel.value,
-            awal: String(_rpAwal || ''),
-            akhir: String(_rpAkhir || ''),
-            total: String(_rpTotal || ''),
-            juz: String(_rpJuz || ''),
-            updatedAt: new Date().toISOString()
-          },
-          { merge: true }
-        )
+        mergeOne('riwayat_prestasi', _rpId, {
+          id: _rpId,
+          santri_id: String(id),
+          santri_nama: s.nama || '',
+          lembaga: s.lembaga || '',
+          kelas: s.kelas || '',
+          periode: periodeSel.value,
+          bulan_label: bulanLabelSel.value,
+          awal: String(_rpAwal || ''),
+          akhir: String(_rpAkhir || ''),
+          total: String(_rpTotal || ''),
+          juz: String(_rpJuz || ''),
+          updatedAt: new Date().toISOString()
+        })
       )
     }
     await Promise.all(promises)
@@ -1932,42 +1922,34 @@ async function confirmImportRekap() {
     for (const it of items) {
       importRekapProgress.value = { i: importRekapProgress.value.i + 1, total: items.length }
       try {
-        await updateDoc(doc(db, 'santri', String(it.santriId)), it.payload)
+        await updateOne('santri', String(it.santriId), it.payload)
         // event notif prestasi (sama dgn simpanRekap) → Notif Center wali
         const _npId = `np_${it.santriId}_${_periode}`
-        await setDoc(
-          doc(db, 'notif_prestasi', _npId),
-          {
-            id: _npId,
-            santri_id: String(it.santriId),
-            santri_nama: it.nama || '',
-            total: String(it.payload.prestasi_total ?? it.totalIn ?? ''),
-            periode: _periode,
-            createdAt: new Date().toISOString()
-          },
-          { merge: true }
-        )
+        await mergeOne('notif_prestasi', _npId, {
+          id: _npId,
+          santri_id: String(it.santriId),
+          santri_nama: it.nama || '',
+          total: String(it.payload.prestasi_total ?? it.totalIn ?? ''),
+          periode: _periode,
+          createdAt: new Date().toISOString()
+        })
         // v.100d: snapshot prestasi BULANAN (periode = bulan/tahun terpilih di layar)
         const _sImp = santriRaw.value.find((x) => String(x.id) === String(it.santriId))
         const _rpId = `rp_${it.santriId}_${periodeSel.value}`
-        await setDoc(
-          doc(db, 'riwayat_prestasi', _rpId),
-          {
-            id: _rpId,
-            santri_id: String(it.santriId),
-            santri_nama: it.nama || '',
-            lembaga: it.lembaga || _sImp?.lembaga || '',
-            kelas: _sImp?.kelas || '',
-            periode: periodeSel.value,
-            bulan_label: bulanLabelSel.value,
-            awal: String(it.payload.prestasi_awal ?? _sImp?.prestasi_awal ?? ''),
-            akhir: String(it.payload.prestasi_akhir ?? _sImp?.prestasi_akhir ?? ''),
-            total: String(it.payload.prestasi_total ?? it.totalIn ?? _sImp?.prestasi_total ?? ''),
-            juz: String(it.payload.juz ?? ''),
-            updatedAt: new Date().toISOString()
-          },
-          { merge: true }
-        )
+        await mergeOne('riwayat_prestasi', _rpId, {
+          id: _rpId,
+          santri_id: String(it.santriId),
+          santri_nama: it.nama || '',
+          lembaga: it.lembaga || _sImp?.lembaga || '',
+          kelas: _sImp?.kelas || '',
+          periode: periodeSel.value,
+          bulan_label: bulanLabelSel.value,
+          awal: String(it.payload.prestasi_awal ?? _sImp?.prestasi_awal ?? ''),
+          akhir: String(it.payload.prestasi_akhir ?? _sImp?.prestasi_akhir ?? ''),
+          total: String(it.payload.prestasi_total ?? it.totalIn ?? _sImp?.prestasi_total ?? ''),
+          juz: String(it.payload.juz ?? ''),
+          updatedAt: new Date().toISOString()
+        })
         ok++
       } catch (err) {
         fail++
