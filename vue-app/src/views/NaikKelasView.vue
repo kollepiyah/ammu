@@ -128,10 +128,7 @@
         </h3>
         <div class="grid grid-cols-2 gap-2">
           <button
-            @click="
-              mutasiKategori = 'qiraati'
-              mutasiLembaga = ''
-            "
+            @click="setMutasiKategori('qiraati')"
             :class="[
               'px-3 py-3 rounded-xl text-sm font-black border transition cursor-pointer',
               mutasiKategori === 'qiraati'
@@ -142,10 +139,7 @@
             <i class="fas fa-book-quran mr-1"></i>Lembaga Qiraati
           </button>
           <button
-            @click="
-              mutasiKategori = 'sekolah'
-              mutasiLembaga = ''
-            "
+            @click="setMutasiKategori('sekolah')"
             :class="[
               'px-3 py-3 rounded-xl text-sm font-black border transition cursor-pointer',
               mutasiKategori === 'sekolah'
@@ -279,10 +273,7 @@
       <!-- v.99: kategori Qiraati / Sekolah -->
       <div class="flex gap-2 mb-3">
         <button
-          @click="
-            kenaikanKategori = 'qiraati'
-            filterLembaga = ''
-          "
+          @click="setKenaikanKategori('qiraati')"
           :class="[
             'flex-1 px-3 py-2 rounded-xl text-xs font-black border transition cursor-pointer',
             kenaikanKategori === 'qiraati'
@@ -293,10 +284,7 @@
           <i class="fas fa-book-quran mr-1"></i>Lembaga Qiraati
         </button>
         <button
-          @click="
-            kenaikanKategori = 'sekolah'
-            filterLembaga = ''
-          "
+          @click="setKenaikanKategori('sekolah')"
           :class="[
             'flex-1 px-3 py-2 rounded-xl text-xs font-black border transition cursor-pointer',
             kenaikanKategori === 'sekolah'
@@ -419,10 +407,7 @@
       <!-- v.100e: filter lembaga Riwayat = KARTU IKON (samakan dgn Form Kenaikan) -->
       <div class="flex gap-2 mb-3">
         <button
-          @click="
-            riwayatKategori = 'qiraati'
-            riwayatLembaga = ''
-          "
+          @click="setRiwayatKategori('qiraati')"
           :class="[
             'flex-1 px-3 py-2 rounded-xl text-xs font-black border transition cursor-pointer',
             riwayatKategori === 'qiraati'
@@ -433,10 +418,7 @@
           <i class="fas fa-book-quran mr-1"></i>Lembaga Qiraati
         </button>
         <button
-          @click="
-            riwayatKategori = 'sekolah'
-            riwayatLembaga = ''
-          "
+          @click="setRiwayatKategori('sekolah')"
           :class="[
             'flex-1 px-3 py-2 rounded-xl text-xs font-black border transition cursor-pointer',
             riwayatKategori === 'sekolah'
@@ -1372,6 +1354,11 @@ const searchFormSantri = ref('')
 const filterLembaga = ref('')
 // v.99: kenaikan kategori (Qiraati / Sekolah) — sekolah pakai lembaga_sekolah (SMP/SMA = sub-tier PKBM)
 const kenaikanKategori = ref('qiraati')
+// F6e: handler tunggal (hindari @click multi-statement yg prettier semi:false pecah → invalid expr)
+function setKenaikanKategori(kat) {
+  kenaikanKategori.value = kat
+  filterLembaga.value = ''
+}
 const SEKOLAH_KENAIKAN = ['TK', 'SDI', 'SMP', 'SMA']
 const kenaikanLembagaOptions = computed(() =>
   kenaikanKategori.value === 'sekolah' ? SEKOLAH_KENAIKAN : LEMBAGA_KENAIKAN_LIST
@@ -1447,6 +1434,11 @@ const mutasiAlasanLain = ref('')
 const mutasiSearch = ref('')
 const mutasiShowKeluar = ref(false)
 const mutasiSaving = ref(false)
+// F6e: handler tunggal (hindari @click multi-statement yg prettier semi:false pecah → invalid expr)
+function setMutasiKategori(kat) {
+  mutasiKategori.value = kat
+  mutasiLembaga.value = ''
+}
 const QIRAATI_MUT = ['TPQ Pagi', 'TPQ Sore', 'Pra PTPT', 'PTPT', 'PPPH']
 const SEKOLAH_MUT = ['TK', 'SDI', 'SMP', 'SMA']
 const mutasiLembagaOptions = computed(() => {
@@ -1714,6 +1706,11 @@ const filteredFormSantri = computed(() => {
 // ────────── Riwayat tab ──────────
 const riwayatLembaga = ref('')
 const riwayatKategori = ref('qiraati') // v.100e: kategori filter Riwayat (samakan dgn Form Kenaikan)
+// F6e: handler tunggal (hindari @click multi-statement yg prettier semi:false pecah → invalid expr)
+function setRiwayatKategori(kat) {
+  riwayatKategori.value = kat
+  riwayatLembaga.value = ''
+}
 const riwayatLembagaOptions = computed(() =>
   riwayatKategori.value === 'sekolah' ? SEKOLAH_KENAIKAN : LEMBAGA_KENAIKAN_LIST
 )
