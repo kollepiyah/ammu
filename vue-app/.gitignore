@@ -1,0 +1,9 @@
+node_modules
+dist
+.DS_Store
+*.log
+.env.local
+.env.*.local
+
+# Audit 08Jun2026: electron/app = mirror dist (robocopy /MIR), regenerated tiap build
+electron/app/

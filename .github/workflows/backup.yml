@@ -1,0 +1,77 @@
+name: Backup Supabase → Google Drive
+
+# Backup harian DB Supabase: pg_dump (lewat SESSION POOLER :5432) → gzip → rclone ke
+# Google Drive. Retensi 14 hari. DORMANT-AMAN: bila secret belum diisi, job skip rapi
+# (tidak error / tidak spam email).
+#
+# Secret (Settings > Secrets and variables > Actions):
+#   SUPABASE_DB_URL : connection string SESSION POOLER (port 5432), mis.
+#       postgresql://postgres.<ref>:<password>@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres
+#   GDRIVE_TOKEN    : token rclone remote Google Drive (JSON {"access_token":...,"refresh_token":...,...})
+#   GDRIVE_FOLDER   : (opsional) folder tujuan di Drive. Default: ammu-backups
+
+on:
+  schedule:
+    - cron: '0 19 * * *' # 19:00 UTC = 02:00 WIB tiap hari
+  workflow_dispatch: {} # tombol jalankan manual
+
+concurrency:
+  group: supabase-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cek secret (dormant kalau kosong)
+        id: guard
+        env:
+          DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          GTOKEN: ${{ secrets.GDRIVE_TOKEN }}
+        run: |
+          if [ -z "$DB_URL" ] || [ -z "$GTOKEN" ]; then
+            echo "::notice::Secret SUPABASE_DB_URL / GDRIVE_TOKEN belum diisi — backup di-skip (pipeline dormant)."
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install PostgreSQL client 17 + rclone
+        if: steps.guard.outputs.ok == 'true'
+        run: |
+          set -euo pipefail
+          curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+            | sudo gpg --dearmor -o /usr/share/keyrings/pgdg.gpg
+          echo "deb [signed-by=/usr/share/keyrings/pgdg.gpg] http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" \
+            | sudo tee /etc/apt/sources.list.d/pgdg.list >/dev/null
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client-17
+          curl -fsSL https://rclone.org/install.sh | sudo bash
+
+      - name: Dump → gzip → upload ke Drive
+        if: steps.guard.outputs.ok == 'true'
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          GDRIVE_FOLDER: ${{ secrets.GDRIVE_FOLDER }}
+          RCLONE_CONFIG_GDRIVE_TYPE: drive
+          RCLONE_CONFIG_GDRIVE_SCOPE: drive
+          RCLONE_CONFIG_GDRIVE_TOKEN: ${{ secrets.GDRIVE_TOKEN }}
+        run: |
+          set -euo pipefail
+          FOLDER="${GDRIVE_FOLDER:-ammu-backups}"
+          STAMP="$(date -u +%Y%m%d-%H%M%S)"
+          FILE="ammu-supabase-${STAMP}.sql.gz"
+
+          echo "Dump schema public → ${FILE}"
+          pg_dump "$SUPABASE_DB_URL" \
+            --schema=public --no-owner --no-privileges --no-acl \
+            | gzip -9 > "$FILE"
+          ls -lh "$FILE"
+
+          echo "Upload → gdrive:${FOLDER}/"
+          rclone copy "$FILE" "gdrive:${FOLDER}/" --drive-use-trash=false
+
+          echo "Prune backup > 14 hari di gdrive:${FOLDER}/"
+          rclone delete "gdrive:${FOLDER}/" --min-age 14d --drive-use-trash=false || true
+
+          echo "Backup selesai."

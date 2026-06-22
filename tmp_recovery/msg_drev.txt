@@ -1,0 +1,11 @@
+fix: REVERT Exec D read-tighten + fix audit_log public + meta mobile-web-app-capable
+
+ROOT CAUSE: admin built-in TIDAK pakai Firebase Auth (loginUnified admin -> user:null),
+jadi request.auth==null -> SEMUA rule `signedIn()` MENOLAK admin (gejala: audit_log error).
+Anon-signin pun trivial -> signedIn() keamanan semu. Jadi tighten read malah mematahkan admin.
+
+- firestore.rules: 21 collection read signedIn() -> if true (revert keuangan/rapor/absensi/santri/guru
+  + audit_log yg pre-existing). App balik jalan utk admin.
+- vue-app/index.html: +meta mobile-web-app-capable (fix deprecation warning).
+- CF findUserByLogin + client findUserByLoginInput DIBIARKAN (harmless; login coba CF -> fallback direct).
+- PROPER SECURITY = Opsi 3 RBAC custom claims (admin + semua user Firebase Auth + role token) = PASCA-LAUNCH.

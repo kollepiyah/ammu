@@ -1,0 +1,5 @@
+feat(diniyah): mapel Diniyah PER-KELAS (I-XII), bukan per-jenjang
+
+- util jenjang.js: mapelDiniyahFor(kelas, map) key per-kelas + helper jenjangFromKelas; fallback ke per-jenjang lama (SDI/SMP/SMA) + legacy PKBM utk kompat data lama
+- LembagaDetailView: UI field-list mapel PER KELAS (dari lembagaData.kelas), + FIX loadRekapMapel yang sebelumnya tak pernah dipanggil (watch kelas+setting+section)
+- RaporView buildDiniyahSchemaFromSetting + RekapDiniyahView getMapelForSantri/mapelList: kolom mapel per kelas (kelas_sekolah)

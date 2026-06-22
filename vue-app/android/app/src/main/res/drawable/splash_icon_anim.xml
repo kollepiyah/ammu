@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- v.91.0626: animasi ikon splash (zoom/pop) untuk Android 12+ windowSplashScreenAnimatedIcon.
+     Ikon NYATA (bukan transparan) -> tak akan jadi ikon launcher di HP manapun.
+     Frame 0 = logo penuh (72% + opacity penuh) -> kalau ada HP yg tak memutar animasi,
+     tetap tampil logo wajar (bukan rusak). 14 frame x 60ms = 840ms (pelan). oneshot. -->
+<animation-list xmlns:android="http://schemas.android.com/apk/res/android" android:oneshot="true">
+    <item android:drawable="@drawable/splash_anim_00" android:duration="60" />
+    <item android:drawable="@drawable/splash_anim_01" android:duration="60" />
+    <item android:drawable="@drawable/splash_anim_02" android:duration="60" />
+    <item android:drawable="@drawable/splash_anim_03" android:duration="60" />
+    <item android:drawable="@drawable/splash_anim_04" android:duration="60" />
+    <item android:drawable="@drawable/splash_anim_05" android:duration="60" />
+    <item android:drawable="@drawable/splash_anim_06" android:duration="60" />
+    <item android:drawable="@drawable/splash_anim_07" android:duration="60" />
+    <item android:drawable="@drawable/splash_anim_08" android:duration="60" />
+    <item android:drawable="@drawable/splash_anim_09" android:duration="60" />
+    <item android:drawable="@drawable/splash_anim_10" android:duration="60" />
+    <item android:drawable="@drawable/splash_anim_11" android:duration="60" />
+    <item android:drawable="@drawable/splash_anim_12" android:duration="60" />
+    <item android:drawable="@drawable/splash_anim_13" android:duration="900" />
+</animation-list>

@@ -1,0 +1,5 @@
+﻿fix(profil+santri): Edit Data Saya persist di view + tombol edit Data Santri rapi
+
+- ProfilGuru/ProfilSantri: setelah updateDoc, Object.assign objek props lokal -> view langsung reflect data tersimpan (sebelumnya revert/'kembali default'; data SUDAH ke Firestore, hanya tampilan stale).
+- SantriView: baris tombol aksi (Reset Sandi/Non-aktifkan/Edit/Hapus) dipisah border-top + spacing biar tak menempel/overlap dg no WA.
+Build vite OK.

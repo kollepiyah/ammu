@@ -1,0 +1,5 @@
+feat(statistik): tombol "Bersihkan guru invalid" di diagnostik Kelas Total
+
+- buang nilai sampah (boolean true/false, 'true'/'false', kosong) dari guru_pagi/sore/guru/guru_sekolah santri
+- SANTRI TIDAK dihapus — cuma field guru sampah dibuang (setDoc merge, idempotent)
+- fix akar: 'true' nyasar di guru_sekolah (data lama) bikin kelas yatim phantom

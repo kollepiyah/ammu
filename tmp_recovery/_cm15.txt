@@ -1,0 +1,1 @@
+﻿docs(handoff): tangkap batch baru kyai (7 item: dashboard, splash 3-platform, pembayaran-merge, izin android, perf) + analisis tiap item

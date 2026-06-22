@@ -1,0 +1,42 @@
+=== BRANCH === 
+feature/vue-migration
+=== STATUS SHORT === 
+ M PROJECT-KNOWLEDGE-BASE.md
+ M firebase.json
+ M firestore.rules
+ M public/dist/tailwind.css
+ M scripts/build-aab.cjs
+ M tmp_recovery/_git_status.cmd
+ M tmp_recovery/_gitstatus.txt
+ M vue-app/package-lock.json
+ M vue-app/package.json
+ M vue-app/src/assets/main.css
+ M vue-app/src/components/layout/AppLayout.vue
+ M vue-app/src/components/layout/AppSidebar.vue
+ M vue-app/src/components/pos/ModalPOS.vue
+ M vue-app/src/composables/useExcel.js
+ M vue-app/src/composables/usePushNotifications.js
+ M vue-app/src/composables/useStatistikScope.js
+ M vue-app/src/main.js
+ M vue-app/src/services/firebase.js
+ M vue-app/src/services/pdf.js
+ M vue-app/src/utils/escpImage.js
+ M vue-app/src/utils/raporPdf.js
+ M vue-app/src/utils/strukBuilder.js
+ M vue-app/src/views/BukuIndukView.vue
+ M vue-app/src/views/KeuanganDashboardView.vue
+ M vue-app/src/views/PosSantriView.vue
+ M vue-app/src/views/RaporView.vue
+ M vue-app/src/views/RiwayatPosView.vue
+ M vue-app/src/views/StatistikView.vue
+ M vue-app/src/views/TabunganView.vue
+ M vue-app/vite.config.js
+?? AUDIT-COWORK-08JUN2026-MENYELURUH.md
+?? REKAP-TASK-POS-TABUNGAN.md
+?? design_handoff_ammu_desktop/
+?? firestore.rules.stage2-proposed
+?? tmp_recovery/_commit_task9_higiene.cmd
+=== LAST 3 COMMITS === 
+f4662b8 feat(rapor): identitas 2 kolom rata kiri (Nama Santri), tabel rata-rata full width, KOP 2 logo fallback, predikat editable (label+min), KKM Diniyah editable di Mata Pelajaran
+9e4d4b3 feat(rapor): hapus paksa Adab (strip + migrasi override lama), margin 1.5cm, rapikan identitas/kepribadian/tanggal, editor Lembaga auto-skema default + Mata Pelajaran (isi default), predikat info read-only (ACF cleanup), Diniyah Sumatif/Akhir + auto rekap bulanan, PPPH 4 kitab, editor nilai inline, TTD nama/EKGQ/ttd auto
+692337e feat(rapor): redesign Qiraati & Diniyah - identitas NISN/Kelas gabungan (kiri-kiri/kanan-kanan), predikat aksara Arab Mumtaz/Jayyid/Maqbul/Rasib, hapus Adab, PPPH 4 kitab, PTPT Tgl Khotam, Diniyah Sumatif/Akhir terpisah (Sumatif auto rata-rata rekap bulanan) + Predikat + tabel compact, absensi auto bulanan, editor nilai inline, preview=PDF (TTD/kepribadian/KOP), TTD nama+EKGQ+tanda tangan auto akun guru, label Kepala SDI/PKBM & PJ PPPH, editor template Lembaga/Pengaturan disamakan

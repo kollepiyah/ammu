@@ -71,20 +71,26 @@ function hijriFull(d) {
   return `${toArabicDigit(h.day)} ${NAMA_BULAN_ARAB[h.month - 1] || ''} ${toArabicDigit(h.year)}`
 }
 function rangeText(k) {
+  // v.01.0526: Range tanggal pakai Hijri Arabic (konsisten dengan tanggal tunggal)
   if (!k.tgl_akhir || k.tgl_akhir === k.tgl_mulai) return ''
   const a = new Date(k.tgl_mulai)
   const b = new Date(k.tgl_akhir)
   if (isNaN(a) || isNaN(b)) return ''
-  return `${a.getDate()}/${String(a.getMonth() + 1).padStart(2, '0')} – ${b.getDate()}/${String(b.getMonth() + 1).padStart(2, '0')}/${b.getFullYear()}`
+  const hA = masehiToHijri(a)
+  const hB = masehiToHijri(b)
+  // Kalau bulan & tahun Hijri sama: "X – Y bulan tahun"
+  if (hA.month === hB.month && hA.year === hB.year) {
+    return `${toArabicDigit(hA.day)} – ${toArabicDigit(hB.day)} ${NAMA_BULAN_ARAB[hA.month - 1] || ''} ${toArabicDigit(hA.year)}`
+  }
+  // Beda bulan/tahun: full keduanya
+  return `${toArabicDigit(hA.day)} ${NAMA_BULAN_ARAB[hA.month - 1] || ''} – ${toArabicDigit(hB.day)} ${NAMA_BULAN_ARAB[hB.month - 1] || ''} ${toArabicDigit(hB.year)}`
 }
 </script>
 
 <template>
+  <!-- v.52.0526: Header internal dihapus — parent kalender-card sudah carry title + Lihat semua link.
+       Reduce visual redundancy + hindari double "Lihat semua" button di portrait viewport. -->
   <div class="ammu-kal">
-    <div class="hdr">
-      <h3 class="ttl"><i class="far fa-calendar-alt"></i>KALENDER PENDIDIKAN</h3>
-      <button type="button" class="lihat" @click="$emit('lihat-semua')">Lihat semua</button>
-    </div>
     <div v-if="sorted.length === 0" class="empty">
       <i class="far fa-calendar-times"></i>
       <p>Belum ada agenda</p>
@@ -111,9 +117,12 @@ function rangeText(k) {
   font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
   background: linear-gradient(135deg, #0f766e 0%, #115e59 100%);
   border-radius: 0.875rem;
-  padding: 0.625rem 0.75rem;
+  /* v.52.0526: padding lebih lega supaya item tidak ke-clip di portrait */
+  padding: 0.75rem;
   color: white;
   height: 100%;
+  /* v.58.0526: fix miss-align — pastikan widget fill parent kalender-card (syncHeights JS) */
+  min-height: 100%;
   display: flex;
   flex-direction: column;
   box-shadow: 0 2px 4px rgb(0 0 0 / 0.08);
@@ -178,6 +187,8 @@ function rangeText(k) {
   flex-direction: column;
   gap: 0.375rem;
   flex: 1;
+  /* v.58.0526: min-height:0 supaya flex shrink work + list scrollable kalau item banyak */
+  min-height: 0;
   max-height: 220px;
   overflow-y: auto;
   scrollbar-width: thin;
@@ -193,8 +204,9 @@ function rangeText(k) {
 .agenda {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.375rem 0.5rem;
+  gap: 0.625rem;
+  /* v.52.0526: padding lebih lega + judul break-word supaya tidak clip ellipsis terus */
+  padding: 0.5rem 0.625rem;
   border-radius: 0.5rem;
   background: rgba(19, 78, 74, 0.15);
   border: 1px solid rgba(19, 78, 74, 0.25);
@@ -241,14 +253,17 @@ function rangeText(k) {
   min-width: 0;
 }
 .judul {
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 700;
   color: white;
-  margin: 0 0 1px;
-  line-height: 1.15;
+  margin: 0 0 2px;
+  line-height: 1.25;
+  /* v.52.0526: judul boleh wrap 2 baris di portrait kalau panjang */
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  word-break: break-word;
 }
 .hijri {
   font-size: 10px;

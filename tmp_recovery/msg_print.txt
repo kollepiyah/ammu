@@ -1,0 +1,9 @@
+feat(POS/print): tombol "Cetak Langsung" (silent) di toast POS + menu Electron "Pengaturan Printer"
+
+- strukBuilder: +buildStrukHtml(trx, settings) -> HTML struk utk silent print
+- useDesktopPrint: +getDefaultPrinter/setDefaultPrinter (localStorage 'ammu_default_printer') + onOpenPrinterSettings
+- PosSantriView: tombol "Cetak Langsung" (khusus Desktop) -> printStruk silent ke printer default, tanpa dialog
+- PrinterSettingsModal.vue (BARU): pilih printer dari listPrinters + simpan default
+- App.vue: render modal (listen event menu electron)
+- electron preload.ts: expose onOpenPrinterSettings; index.ts: +menu "Printer > Pengaturan Printer" -> send('open-printer-settings')
+- print:struk IPC sudah honor deviceName -> printer default terpakai

@@ -1,0 +1,22 @@
+[feature/vue-migration ef2db0e] feat(splash): branding 'Powered by Bakafrawi' + fade-out (Android SplashScreen API, v.90)
+ 7 files changed, 43 insertions(+), 1 deletion(-)
+ create mode 100644 vue-app/android/app/src/main/res/drawable-hdpi/splash_branding.png
+ create mode 100644 vue-app/android/app/src/main/res/drawable-mdpi/splash_branding.png
+ create mode 100644 vue-app/android/app/src/main/res/drawable-xhdpi/splash_branding.png
+ create mode 100644 vue-app/android/app/src/main/res/drawable-xxhdpi/splash_branding.png
+ create mode 100644 vue-app/android/app/src/main/res/drawable-xxxhdpi/splash_branding.png
+----LOG---- 
+commit ef2db0e45a23ae0b7c8e8578dfc06b1b157fcc9b
+Author: Kyai Rahman Fanani <lexanoisgroup3@gmail.com>
+Date:   Tue Jun 2 08:12:16 2026 +0700
+
+    feat(splash): branding 'Powered by Bakafrawi' + fade-out (Android SplashScreen API, v.90)
+
+ .../src/main/java/app/ammu/id/MainActivity.java    |  42 ++++++++++++++++++++-
+ .../src/main/res/drawable-hdpi/splash_branding.png | Bin 0 -> 35809 bytes
+ .../src/main/res/drawable-mdpi/splash_branding.png | Bin 0 -> 19540 bytes
+ .../main/res/drawable-xhdpi/splash_branding.png    | Bin 0 -> 53628 bytes
+ .../main/res/drawable-xxhdpi/splash_branding.png   | Bin 0 -> 93721 bytes
+ .../main/res/drawable-xxxhdpi/splash_branding.png  | Bin 0 -> 139996 bytes
+ vue-app/android/app/src/main/res/values/styles.xml |   2 +
+ 7 files changed, 43 insertions(+), 1 deletion(-)

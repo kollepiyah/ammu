@@ -1,0 +1,6 @@
+[feature/vue-migration f63651a] ﻿feat(android): RECOVER widget homescreen Jam Hijri (hilang sejak git reset, dari d3d60f7 v.82)
+ 6 files changed, 276 insertions(+)
+ create mode 100644 vue-app/android/app/src/main/java/app/ammu/id/widgets/JamHijriWidget.kt
+ create mode 100644 vue-app/android/app/src/main/res/drawable/widget_bg.xml
+ create mode 100644 vue-app/android/app/src/main/res/layout/widget_jam_hijri.xml
+ create mode 100644 vue-app/android/app/src/main/res/xml/widget_jam_hijri_info.xml

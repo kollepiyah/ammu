@@ -1,0 +1,4 @@
+fix(release): AAB versionCode 7 -> 89 (Play Store tolak <88; code 88 sudah di-upload)
+
+- gradle versionCode 89 (harus > 88 yg sudah ada di track). versionName TETAP "v.07.0626" (tampilan).
+- versionCode (counter Play Store) & versionName (display) sengaja decoupled.

@@ -1,0 +1,613 @@
+<template>
+  <div class="p-3 md:p-5 max-w-5xl mx-auto space-y-4">
+    <div
+      v-if="!isDesktop"
+      class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm"
+    >
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div>
+          <h1 class="text-base md:text-lg font-black">
+            <i class="fas fa-file-invoice-dollar text-cyan-500 mr-2"></i>Tagihan Santri
+          </h1>
+          <p class="text-xs text-[var(--text-secondary)] mt-0.5">Daftar tagihan + status bayar</p>
+        </div>
+        <div class="flex gap-2">
+          <div class="px-3 py-1.5 rounded-full bg-cyan-50 border border-cyan-200 text-xs">
+            <span class="text-cyan-700 font-bold">{{ stats.totalTagihan }}</span>
+            <span class="text-[var(--text-secondary)]">tagihan</span>
+          </div>
+          <div class="px-3 py-1.5 rounded-full bg-rose-50 border border-rose-200 text-xs">
+            <span class="text-rose-700 font-bold">{{ fmtRp(stats.totalTunggakan) }}</span>
+            <span class="text-[var(--text-secondary)]">tunggakan</span>
+          </div>
+          <!-- v.87.0526: santri/wali — ikon Riwayat pembayaran (alur 1 pintu, ganti tab) -->
+          <button
+            v-if="isSantriRole"
+            @click="goRiwayat"
+            aria-label="Riwayat pembayaran"
+            title="Riwayat pembayaran"
+            class="flex items-center justify-center w-8 h-8 rounded-full border border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-slate-50 dark:hover:bg-slate-700/40 text-xs font-black transition cursor-pointer"
+          >
+            <i class="fas fa-history"></i>
+          </button>
+          <!-- v.87.0526: santri/wali — setoran/bayar di luar tagihan (kategori bebas). Tagihan = 1 pintu pembayaran. -->
+          <button
+            v-if="isSantriRole"
+            @click="goSetoranLain"
+            class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black px-3 py-1.5 rounded-full shadow"
+          >
+            <i class="fas fa-paper-plane mr-1"></i>Setoran Lain
+          </button>
+          <button
+            v-if="isFullAccess"
+            @click="openModalNew"
+            class="bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-black px-3 py-1.5 rounded-full shadow"
+          >
+            <i class="fas fa-plus mr-1"></i>Tambah Tagihan
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div
+      class="bg-[var(--bg-card)] rounded-2xl p-3 border border-[var(--border-subtle)] shadow-sm grid grid-cols-1 md:grid-cols-3 gap-2"
+    >
+      <input
+        v-model="search"
+        type="text"
+        placeholder="Cari nama / kategori..."
+        class="px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)]"
+      />
+      <select
+        v-model="filterStatus"
+        class="px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)]"
+      >
+        <option value="">Semua status</option>
+        <option value="lunas">Lunas</option>
+        <option value="belum">Belum bayar</option>
+        <option value="cicil">Cicilan</option>
+      </select>
+      <select
+        v-model="filterKategori"
+        class="px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)]"
+      >
+        <option value="">Semua kategori</option>
+        <option v-for="k in uniqueKategori" :key="k" :value="k">{{ k }}</option>
+      </select>
+    </div>
+
+    <!-- v.21.100.0527: bulk action bar (super_admin) -->
+    <div
+      v-if="isAdmin && filteredItems.length > 0"
+      class="bg-[var(--bg-card)] rounded-2xl p-2 border border-[var(--border-subtle)] shadow-sm flex items-center justify-between gap-2"
+    >
+      <label
+        class="flex items-center gap-2 text-[11px] font-bold text-[var(--text-secondary)] cursor-pointer"
+      >
+        <input
+          type="checkbox"
+          :checked="selectedTagihan.size === filteredItems.length && filteredItems.length > 0"
+          @change="toggleSemuaTagihan"
+          class="w-4 h-4 accent-rose-600"
+        />Pilih semua ({{ filteredItems.length }})
+      </label>
+      <button
+        v-if="selectedTagihan.size > 0"
+        @click="hapusTagihanTerpilih"
+        class="text-[11px] font-black bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-lg"
+      >
+        <i class="fas fa-trash mr-1"></i>Hapus Terpilih ({{ selectedTagihan.size }})
+      </button>
+    </div>
+
+    <div v-if="loading" class="bg-[var(--bg-card)] rounded-2xl p-10 text-center">
+      <i class="fas fa-spinner fa-spin text-cyan-500 text-3xl"></i>
+    </div>
+    <div
+      v-else-if="filteredItems.length === 0"
+      class="bg-[var(--bg-card)] rounded-2xl p-10 border border-dashed border-[var(--border-default)] text-center"
+    >
+      <i class="fas fa-inbox text-[var(--text-tertiary)] text-3xl mb-2"></i>
+      <p class="text-sm text-[var(--text-secondary)] italic">Belum ada tagihan.</p>
+    </div>
+    <div v-else class="space-y-2">
+      <div
+        v-for="t in filteredItems"
+        :key="t.id"
+        class="bg-[var(--bg-card)] rounded-xl p-3 border border-[var(--border-subtle)] shadow-sm"
+      >
+        <div class="flex items-center gap-3">
+          <input
+            v-if="isAdmin"
+            type="checkbox"
+            :checked="selectedTagihan.has(String(t.id))"
+            @change="toggleTagihanSel(t.id)"
+            class="w-4 h-4 accent-rose-600 flex-shrink-0"
+            title="Pilih tagihan"
+          />
+          <div
+            :class="[
+              'w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0',
+              statusBg(t)
+            ]"
+          >
+            <i class="fas fa-file-invoice text-white"></i>
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-bold truncate">
+              {{
+                isSantriRole
+                  ? (t.kategori || 'Tagihan') + (t.periode ? ' · ' + t.periode : '')
+                  : t.santri_nama || getNamaSantri(t.santri_id)
+              }}
+            </p>
+            <p class="text-[10px] text-[var(--text-secondary)]">
+              {{
+                isSantriRole
+                  ? 'Jatuh tempo: ' + fmtTgl(t.jatuh_tempo)
+                  : (t.kategori || '-') + ' · ' + (t.periode || '-') + ' · ' + fmtTgl(t.jatuh_tempo)
+              }}
+            </p>
+          </div>
+          <div class="text-right">
+            <p class="text-sm font-black" :class="statusText(t)">{{ fmtRp(getSisa(t)) }}</p>
+            <span
+              :class="[
+                'inline-block text-[9px] font-bold px-2 py-0.5 rounded-full mt-0.5',
+                statusBadge(t).cls
+              ]"
+              >{{ statusBadge(t).label }}</span
+            >
+          </div>
+          <!-- v.21.115.0528: bayar=isFullAccess (admin keuangan boleh), delete=isAdmin saja (super_admin) — konsisten dengan bulk delete -->
+          <button
+            v-if="isFullAccess"
+            @click="openBayar(t)"
+            aria-label="Bayar tagihan"
+            title="Bayar"
+            class="text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 p-2 rounded transition"
+          >
+            <i class="fas fa-money-bill-wave"></i>
+          </button>
+          <button
+            v-if="isAdmin"
+            @click="deleteTagihan(t)"
+            aria-label="Hapus tagihan"
+            title="Hapus (super admin only)"
+            class="text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/30 p-2 rounded transition"
+          >
+            <i class="fas fa-trash"></i>
+          </button>
+          <!-- v.86.0526: santri/wali bayar tagihan belum lunas via transfer (deep-link) -->
+          <button
+            v-if="isSantriRole && getSisa(t) > 0"
+            @click="goBayar(t)"
+            aria-label="Bayar tagihan"
+            title="Bayar via transfer"
+            class="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-black transition cursor-pointer flex-shrink-0"
+          >
+            <i class="fas fa-money-bill-wave"></i>Bayar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Input -->
+    <div
+      v-if="modalOpen"
+      class="fixed inset-0 z-50 bg-slate-900/60 flex items-center justify-center p-4"
+      @click.self="modalOpen = false"
+    >
+      <div class="bg-[var(--bg-card)] rounded-2xl shadow-2xl max-w-md w-full p-5">
+        <h3 class="text-base font-black mb-3">
+          <i class="fas fa-file-invoice text-cyan-500 mr-1"></i
+          >{{ modalMode === 'bayar' ? 'Bayar Tagihan' : 'Tambah Tagihan' }}
+        </h3>
+        <div v-if="modalMode === 'new'" class="space-y-2">
+          <select
+            v-model="modalSantriId"
+            class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)]"
+          >
+            <option value="">-- Pilih santri --</option>
+            <option v-for="s in santriList" :key="s.id" :value="s.id">{{ s.nama }}</option>
+          </select>
+          <input
+            v-model="modalKategori"
+            type="text"
+            class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)]"
+          />
+          <input
+            v-model="modalPeriode"
+            type="text"
+            class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)]"
+          />
+          <input
+            v-model.number="modalNominal"
+            type="number"
+            min="0"
+            class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] text-right font-bold"
+          />
+          <input
+            v-model="modalJatuhTempo"
+            type="date"
+            class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)]"
+          />
+        </div>
+        <div v-else class="space-y-2">
+          <p class="text-xs">
+            Tagihan: <b>{{ modalTagihan?.santri_nama }}</b> ({{ modalTagihan?.kategori }})
+          </p>
+          <p class="text-xs">
+            Sisa: <b class="text-rose-700">{{ fmtRp(getSisa(modalTagihan || {})) }}</b>
+          </p>
+          <input
+            v-model.number="modalBayarNominal"
+            type="number"
+            min="0"
+            class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] text-right font-bold"
+          />
+          <input
+            v-model="modalCatatan"
+            type="text"
+            class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)]"
+          />
+        </div>
+        <div class="mt-4 flex gap-2">
+          <button
+            @click="modalOpen = false"
+            class="flex-1 px-4 py-2 bg-slate-200 hover:bg-slate-300 text-[var(--text-primary)] font-bold rounded-xl text-sm"
+          >
+            Batal
+          </button>
+          <button
+            @click="simpanModal"
+            :disabled="saving"
+            class="flex-1 px-4 py-2 bg-cyan-600 hover:bg-cyan-700 disabled:opacity-50 text-white font-bold rounded-xl text-sm"
+          >
+            {{ saving ? 'Menyimpan...' : 'Simpan' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useDesktopShell } from '@/composables/useDesktopShell'
+import { definePageActions } from '@/composables/useRibbonContext'
+// v.91.0626: deleteOne = backup audit_log dulu. serverTimestamp = shim ISO string (db.js).
+import { subscribeColl, setOne, mergeOne, deleteOne, serverTimestamp } from '@/services/db'
+import { useAuthStore } from '@/stores/auth'
+import { useToast } from '@/composables/useToast'
+import { useConfirm } from '@/composables/useConfirm'
+import { fmtRp, fmtTgl } from '@/utils/format'
+import { isSuperAdmin } from '@/utils/roleScope'
+import { writeAuditLog } from '@/utils/auditLog'
+
+const auth = useAuthStore()
+const toast = useToast()
+const confirmDlg = useConfirm()
+const tagihanRaw = ref([])
+const santriList = ref([])
+const santriMap = computed(() => {
+  const m = new Map()
+  for (const s of santriList.value) m.set(String(s.id), s)
+  return m
+})
+const loading = ref(true)
+const search = ref('')
+const filterStatus = ref('')
+const filterKategori = ref('')
+let unsubTagihan = null
+let unsubSantri = null
+
+const isFullAccess = computed(() => {
+  const s = auth.sesiAktif
+  if (!s) return false
+  return (
+    s.role === 'admin' ||
+    s.id === 'admin' ||
+    ['super_admin', 'admin', 'admin_keuangan'].includes(s.role_sistem)
+  )
+})
+// v.21.100.0527: super_admin only — bulk hapus tagihan
+const isAdmin = computed(() => isSuperAdmin(auth.sesiAktif))
+const selectedTagihan = ref(new Set())
+function toggleTagihanSel(id) {
+  const ns = new Set(selectedTagihan.value)
+  const sid = String(id)
+  if (ns.has(sid)) ns.delete(sid)
+  else ns.add(sid)
+  selectedTagihan.value = ns
+}
+function toggleSemuaTagihan() {
+  if (selectedTagihan.value.size === filteredItems.value.length && filteredItems.value.length > 0) {
+    selectedTagihan.value = new Set()
+  } else {
+    selectedTagihan.value = new Set(filteredItems.value.map((t) => String(t.id)))
+  }
+}
+async function hapusTagihanTerpilih() {
+  if (!isAdmin.value) return
+  const ids = Array.from(selectedTagihan.value)
+  if (ids.length === 0) return
+  if (!confirm(`Hapus ${ids.length} tagihan terpilih?\n\nTidak bisa di-undo.`)) return
+  let ok = 0,
+    fail = 0
+  for (const id of ids) {
+    try {
+      await deleteOne('keuangan_tagihan', id)
+      ok++
+    } catch (e) {
+      fail++
+      console.warn('[bulkHapusTagihan]', id, e.message)
+    }
+  }
+  selectedTagihan.value = new Set()
+  // v.21.104.0527: audit log
+  await writeAuditLog({
+    operator: auth.sesiAktif?.nama || auth.sesiAktif?.guru || 'Admin',
+    action: 'bulk_delete',
+    target: 'keuangan_tagihan',
+    ids,
+    detail: { ok, fail }
+  })
+  if (fail > 0) toast.warning(`${ok} dihapus, ${fail} gagal — cek console`)
+  else toast.success(`${ok} tagihan dihapus`)
+}
+
+function getNamaSantri(id) {
+  return santriMap.value.get(String(id))?.nama || '(unknown)'
+}
+
+function getSisa(t) {
+  const total = Number(t.nominal || 0)
+  const bayar = Number(t.bayar || t.dibayar || 0) // v.95.0626: fallback 'dibayar' biar cicil pasti terbaca
+  return Math.max(0, total - bayar)
+}
+
+function statusBg(t) {
+  const k = statusBadge(t).key
+  if (k === 'lunas') return 'bg-emerald-500'
+  if (k === 'nunggak') return 'bg-rose-500'
+  return 'bg-amber-500'
+}
+function statusText(t) {
+  const s = getSisa(t)
+  if (s === 0) return 'text-emerald-700'
+  if (Number(t.bayar || 0) > 0) return 'text-cyan-700'
+  return 'text-rose-700'
+}
+function statusLabel(t) {
+  const s = getSisa(t)
+  if (s === 0) return 'Lunas'
+  if (Number(t.bayar || 0) > 0) return 'Cicilan'
+  return 'Belum bayar'
+}
+// v.91.0626: badge status sadar jatuh tempo — Lunas / Jatuh tempo / Nunggak (lewat tempo)
+function statusBadge(t) {
+  if (getSisa(t) === 0)
+    return {
+      key: 'lunas',
+      label: 'Lunas',
+      cls: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
+    }
+  const jt = String(t.jatuh_tempo || '').slice(0, 10)
+  const today = new Date().toISOString().slice(0, 10)
+  if (jt && jt < today)
+    return {
+      key: 'nunggak',
+      label: 'Nunggak',
+      cls: 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300'
+    }
+  return {
+    key: 'tempo',
+    label: 'Jatuh tempo',
+    cls: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
+  }
+}
+
+// v.86.0526: santri/wali bayar tagihan belum lunas -> deep-link ke PembayaranView (tab transfer, prefill)
+const router = useRouter()
+const isSantriRole = computed(() => auth.sesiAktif?.role === 'santri')
+function goBayar(t) {
+  router.push({
+    path: '/pembayaran',
+    query: {
+      tab: 'transfer',
+      santri: String(t.santri_id || ''),
+      nominal: String(getSisa(t) || ''),
+      kategori: String(t.kategori || ''),
+      tagihan_id: String(t.id || '')
+    }
+  })
+}
+// v.87.0526: setoran/bayar di luar tagihan (kategori bebas) — pintu pembayaran tetap di menu Tagihan
+function goSetoranLain() {
+  router.push({ path: '/pembayaran', query: { tab: 'transfer' } })
+}
+// v.87.0526: buka Riwayat pembayaran (ikon jam) — mode riwayat di PembayaranView
+function goRiwayat() {
+  router.push({ path: '/pembayaran', query: { view: 'riwayat' } })
+}
+
+// v.86.0526 FIX PRIVACY: santri/wali hanya lihat tagihan dirinya sendiri (anak terpilih), bukan semua santri.
+const baseTagihan = computed(() => {
+  let arr = tagihanRaw.value.filter(Boolean)
+  if (auth.sesiAktif?.role === 'santri') {
+    const myId = String(auth.sesiAktif?.id || '')
+    arr = arr.filter((t) => String(t.santri_id) === myId)
+  }
+  return arr
+})
+
+const filteredItems = computed(() => {
+  let list = [...baseTagihan.value]
+  if (filterStatus.value === 'lunas') list = list.filter((t) => getSisa(t) === 0)
+  else if (filterStatus.value === 'belum')
+    list = list.filter((t) => getSisa(t) > 0 && Number(t.bayar || 0) === 0)
+  else if (filterStatus.value === 'cicil')
+    list = list.filter((t) => Number(t.bayar || 0) > 0 && getSisa(t) > 0)
+  if (filterKategori.value)
+    list = list.filter((t) => String(t.kategori || '') === filterKategori.value)
+  const kw = search.value.trim().toLowerCase()
+  if (kw)
+    list = list.filter(
+      (t) =>
+        String(t.santri_nama || getNamaSantri(t.santri_id) || '')
+          .toLowerCase()
+          .includes(kw) ||
+        String(t.kategori || '')
+          .toLowerCase()
+          .includes(kw)
+    )
+  return list.sort((a, b) => String(b.jatuh_tempo || '').localeCompare(String(a.jatuh_tempo || '')))
+})
+
+const uniqueKategori = computed(() =>
+  [...new Set(baseTagihan.value.map((t) => t.kategori).filter(Boolean))].sort()
+)
+
+const stats = computed(() => ({
+  totalTagihan: baseTagihan.value.length,
+  totalTunggakan: baseTagihan.value.reduce((s, t) => s + getSisa(t), 0)
+}))
+
+const modalOpen = ref(false)
+const modalMode = ref('new')
+const modalTagihan = ref(null)
+const modalSantriId = ref('')
+const modalKategori = ref('')
+const modalPeriode = ref('')
+const modalNominal = ref(0)
+const modalJatuhTempo = ref('')
+const modalBayarNominal = ref(0)
+const modalCatatan = ref('')
+const saving = ref(false)
+
+function openModalNew() {
+  modalMode.value = 'new'
+  modalSantriId.value = ''
+  modalKategori.value = ''
+  modalPeriode.value = ''
+  modalNominal.value = 0
+  modalJatuhTempo.value = new Date().toISOString().slice(0, 10)
+  modalOpen.value = true
+}
+function openBayar(t) {
+  modalMode.value = 'bayar'
+  modalTagihan.value = t
+  modalBayarNominal.value = getSisa(t)
+  modalCatatan.value = ''
+  modalOpen.value = true
+}
+
+async function simpanModal() {
+  saving.value = true
+  try {
+    if (modalMode.value === 'new') {
+      if (!modalSantriId.value || !modalNominal.value) {
+        toast.warning('Lengkapi data')
+        return
+      }
+      const id = `tagihan_${modalSantriId.value}_${Date.now()}`
+      const santri = santriMap.value.get(String(modalSantriId.value))
+      await setOne('keuangan_tagihan', id, {
+        id,
+        santri_id: modalSantriId.value,
+        santri_nama: santri?.nama || '',
+        kategori: modalKategori.value,
+        periode: modalPeriode.value,
+        nominal: Number(modalNominal.value),
+        bayar: 0,
+        // v.21.104.0527: set status supaya POS deteksi sbg tunggakan
+        status: 'belum',
+        jatuh_tempo: modalJatuhTempo.value,
+        createdAt: serverTimestamp()
+      })
+      toast.success('Tagihan tersimpan')
+    } else {
+      const t = modalTagihan.value
+      const newBayar = Number(t.bayar || 0) + Number(modalBayarNominal.value || 0)
+      // v.21.104.0527: update status sesuai sisa supaya POS akurat
+      const totalT = Number(t.nominal || 0)
+      const sisa = Math.max(0, totalT - newBayar)
+      const statusBaru = sisa === 0 && totalT > 0 ? 'lunas' : newBayar > 0 ? 'partial' : 'belum'
+      await mergeOne('keuangan_tagihan', String(t.id), {
+        bayar: newBayar,
+        status: statusBaru,
+        _last_bayar_at: serverTimestamp()
+      })
+      // Tulis ke keuangan_pembayaran log
+      await setOne('keuangan_pembayaran', `pay_${t.id}_${Date.now()}`, {
+        tagihan_id: t.id,
+        santri_id: t.santri_id,
+        santri_nama: t.santri_nama,
+        nominal: Number(modalBayarNominal.value),
+        catatan: modalCatatan.value,
+        tanggal: new Date().toISOString().slice(0, 10),
+        createdAt: serverTimestamp()
+      })
+      toast.success('Pembayaran tersimpan')
+    }
+    modalOpen.value = false
+  } catch (e) {
+    toast.error('Gagal: ' + (e?.message || e))
+  } finally {
+    saving.value = false
+  }
+}
+
+async function deleteTagihan(t) {
+  const ok = await confirmDlg({
+    title: 'Hapus tagihan?',
+    message: `Hapus tagihan ${t.santri_nama}?`,
+    confirmText: 'Hapus',
+    danger: true
+  })
+  if (!ok) return
+  try {
+    await deleteOne('keuangan_tagihan', t.id)
+    toast.success('Tagihan dihapus')
+  } catch (e) {
+    toast.error('Gagal: ' + (e?.message || e))
+  }
+}
+
+onMounted(() => {
+  unsubTagihan = subscribeColl('keuangan_tagihan', (docs) => {
+    tagihanRaw.value = docs
+    loading.value = false
+  })
+  unsubSantri = subscribeColl('santri', (docs) => {
+    santriList.value = docs
+  })
+})
+onUnmounted(() => {
+  if (unsubTagihan) {
+    try {
+      unsubTagihan()
+    } catch (e) {}
+  }
+  if (unsubSantri) {
+    try {
+      unsubSantri()
+    } catch (e) {}
+  }
+})
+
+// v.98 full-native (Electron): header in-page disembunyikan, aksi -> grup pita "Aksi Halaman"
+const { isElectron: isDesktop } = useDesktopShell()
+definePageActions(() => {
+  const acts = []
+  if (isFullAccess.value)
+    acts.push({ label: 'Tambah Tagihan', icon: 'plus', primary: true, on: openModalNew })
+  if (isSantriRole.value) {
+    acts.push({ label: 'Setoran Lain', icon: 'send', on: goSetoranLain })
+    acts.push({ label: 'Riwayat', icon: 'refresh', on: goRiwayat })
+  }
+  return acts
+})
+</script>

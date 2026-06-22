@@ -1,0 +1,51 @@
+{
+  "name": "portal-mu-vue",
+  "version": "108.0626",
+  "private": true,
+  "type": "module",
+  "description": "Portal MU Vue 3 SPA — Full migration dari index.html legacy.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "build:electron": "vite build --base=./",
+    "preview": "vite preview",
+    "lint": "eslint src/ --ext .vue,.js"
+  },
+  "dependencies": {
+    "@capacitor-firebase/app-check": "^8.3.0",
+    "@capacitor/android": "^8.3.4",
+    "@capacitor/app": "^8.1.0",
+    "@capacitor/core": "^8.3.4",
+    "@capacitor/filesystem": "^8.1.2",
+    "@capacitor/haptics": "^8.0.2",
+    "@capacitor/ios": "^8.3.4",
+    "@capacitor/keyboard": "^8.0.3",
+    "@capacitor/local-notifications": "^8.2.0",
+    "@capacitor/network": "^8.0.1",
+    "@capacitor/push-notifications": "^8.1.1",
+    "@capacitor/share": "^8.0.1",
+    "@capacitor/splash-screen": "^8.0.1",
+    "@capacitor/status-bar": "^8.0.2",
+    "@supabase/supabase-js": "^2.108.2",
+    "@tanstack/vue-query": "^5.101.0",
+    "chart.js": "^4.5.1",
+    "exceljs": "^4.4.0",
+    "firebase": "^12.14.0",
+    "jspdf": "^2.5.1",
+    "jspdf-autotable": "^3.5.31",
+    "lucide-vue-next": "^0.460.0",
+    "pinia": "^2.2.6",
+    "vue": "^3.5.13",
+    "vue-advanced-cropper": "^2.8.9",
+    "vue-chartjs": "^5.3.3",
+    "vue-router": "^4.4.5"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.3.4",
+    "@vitejs/plugin-vue": "^5.2.1",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.15",
+    "vite": "^6.0.7"
+  }
+}

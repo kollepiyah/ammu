@@ -1,0 +1,5 @@
+
+> ammu-online-desktop@99.0.626 build
+> tsc
+
+TSC_EXITCODE=0 

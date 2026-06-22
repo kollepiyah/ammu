@@ -1,0 +1,2943 @@
+import {
+  I as Dt,
+  a2 as de,
+  K as ue,
+  ae as pe,
+  ab as be,
+  Q as I,
+  h as o,
+  e as a,
+  ar as Q,
+  aj as st,
+  F as g,
+  U as _,
+  k as Rt,
+  g as x,
+  E as j,
+  j as w,
+  a4 as d,
+  ak as ce,
+  d as c,
+  ac as me,
+  L as i,
+  a7 as nt
+} from './index-CPbTnm_Q.js'
+import { u as ge } from './useSantri-BrAe1mw4.js'
+import { u as he } from './useLembaga-8ypq4SFU.js'
+import { u as fe } from './useGuru-BEk_ofri.js'
+import { u as ke } from './useToast-BjwjYk11.js'
+import { _ as qt } from './UiActionCard-Dvt1p0z7.js'
+const ve = { class: 'p-4 md:p-6 max-w-5xl mx-auto' },
+  xe = {
+    key: 0,
+    class:
+      'bg-emerald-50/40 dark:bg-slate-800 rounded-2xl p-5 md:p-6 border border-emerald-100 dark:border-slate-700 shadow-sm'
+  },
+  _e = { class: 'grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3 mb-4' },
+  ye = ['value'],
+  we = { class: 'grid grid-cols-2 gap-2 md:gap-3' },
+  Se = {
+    key: 1,
+    class:
+      'bg-emerald-50/40 dark:bg-slate-800 rounded-2xl p-5 md:p-6 border border-emerald-100 dark:border-slate-700 shadow-sm'
+  },
+  Le = { class: 'flex items-center gap-3 mb-4' },
+  Ae = { class: 'text-lg md:text-xl font-black text-slate-800 dark:text-white leading-tight' },
+  Ke = { class: 'text-xs md:text-sm text-slate-500 dark:text-slate-400 mt-0.5' },
+  Pe = { key: 0, class: 'grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3' },
+  Ie = ['onClick'],
+  Te = { class: 'text-sm md:text-base font-black leading-tight drop-shadow-sm' },
+  Ce = { class: 'text-[10px] text-white/90 font-medium leading-snug' },
+  je = { key: 1 },
+  Ne = { key: 0, class: 'text-center py-8 text-xs text-slate-400 italic' },
+  $e = { key: 1, class: 'grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-3' },
+  De = ['onClick'],
+  Re = { class: 'text-sm md:text-base font-black leading-tight drop-shadow-sm' },
+  qe = { class: 'text-[10px] text-white/90 font-medium leading-snug' },
+  Fe = { key: 2, class: 'space-y-4' },
+  Ee = {
+    class:
+      'bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-5 border border-slate-200 dark:border-slate-700 shadow-sm'
+  },
+  Be = { class: 'flex items-center justify-between gap-3 flex-wrap mb-3' },
+  ze = { class: 'flex items-center gap-2' },
+  He = { class: 'text-base md:text-lg font-black text-slate-800 dark:text-white' },
+  Je = { class: 'text-[10px] text-slate-400 font-bold' },
+  Me = { class: 'grid grid-cols-1 md:grid-cols-2 gap-2' },
+  Ue = ['value'],
+  Ge = {
+    key: 0,
+    class:
+      'bg-white dark:bg-slate-800 rounded-2xl p-10 border border-dashed border-slate-300 text-center'
+  },
+  Qe = { class: 'text-sm font-bold text-slate-700 dark:text-slate-300' },
+  Ve = { class: 'text-xs text-slate-500 mt-1' },
+  Oe = { key: 1, class: 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-3' },
+  Ye = ['onClick'],
+  We = {
+    class:
+      'flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white font-bold text-sm'
+  },
+  Xe = { class: 'flex-1 min-w-0' },
+  Ze = { class: 'text-sm font-bold text-slate-800 dark:text-white truncate' },
+  ta = ['title'],
+  ea = { class: 'text-[10px] text-slate-500 dark:text-slate-400 truncate' },
+  aa = { class: 'font-bold' },
+  la = { key: 0, class: 'ml-1' },
+  ra = { key: 1, class: 'ml-1 text-purple-600 font-bold' },
+  sa = { key: 3, class: 'space-y-4' },
+  na = {
+    class:
+      'no-print bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-5 border border-slate-200 dark:border-slate-700 shadow-sm'
+  },
+  oa = { class: 'flex items-center justify-between gap-3 flex-wrap' },
+  ia = { class: 'flex items-center gap-2' },
+  da = { class: 'text-base md:text-lg font-black text-slate-800 dark:text-white' },
+  ua = {
+    key: 0,
+    class:
+      'mt-2 pt-2 border-t border-slate-100 dark:border-slate-700 flex items-center gap-2 flex-wrap'
+  },
+  pa = ['onClick'],
+  ba = {
+    key: 0,
+    id: 'rapor-print-area',
+    class:
+      'bg-white text-slate-900 rounded-2xl border border-slate-200 shadow-sm p-8 print:shadow-none print:border-0 print:rounded-none print:p-6 relative overflow-hidden',
+    style: { 'font-family': "'Times New Roman', Times, serif" }
+  },
+  ca = {
+    key: 0,
+    'aria-hidden': 'true',
+    class: 'absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden',
+    style: { 'z-index': '0' }
+  },
+  ma = ['src'],
+  ga = { class: 'relative', style: { 'z-index': '1' } },
+  ha = { class: 'w-full border-b-2 border-black pb-1.5 mb-2' },
+  fa = { class: 'w-[95px] text-center align-middle' },
+  ka = ['src'],
+  va = { class: 'text-center align-middle px-2 py-0.5' },
+  xa = { key: 0, class: 'text-[14px] font-normal uppercase leading-tight' },
+  _a = { key: 1, class: 'text-[22px] font-bold uppercase leading-tight' },
+  ya = { key: 2, class: 'text-[12px] font-normal leading-tight text-slate-700' },
+  wa = { key: 3, class: 'text-[12px] font-normal leading-tight text-slate-700' },
+  Sa = { class: 'w-[95px] text-center align-middle' },
+  La = ['src'],
+  Aa = { class: 'text-center text-[13px] font-bold underline my-2.5 leading-snug' },
+  Ka = { class: 'w-full text-[11px] mb-2' },
+  Pa = { key: 0 },
+  Ia = { class: 'py-0.5' },
+  Ta = { class: 'py-0.5' },
+  Ca = { class: 'py-0.5', colspan: '4' },
+  ja = { key: 1 },
+  Na = { class: 'py-0.5' },
+  $a = { class: 'py-0.5' },
+  Da = { class: 'py-0.5', colspan: '4' },
+  Ra = { key: 0, class: 'mt-3' },
+  qa = { class: 'w-full border-collapse text-[9px] leading-snug' },
+  Fa = { class: 'bg-slate-200' },
+  Ea = ['rowspan'],
+  Ba = ['rowspan'],
+  za = { class: 'border border-black px-1 py-1.5 align-middle' },
+  Ha = { class: 'border border-black px-1 py-1.5 text-center align-middle' },
+  Ja = { class: 'border border-black px-1 py-1.5 text-center font-bold align-middle' },
+  Ma = { class: 'bg-slate-100' },
+  Ua = ['colspan'],
+  Ga = { class: 'bg-amber-50' },
+  Qa = ['colspan'],
+  Va = { class: 'border border-black px-1 py-1 text-center font-bold' },
+  Oa = { key: 1, class: 'mt-3' },
+  Ya = {
+    key: 0,
+    class:
+      'text-[11px] italic text-slate-500 border border-dashed border-slate-300 rounded p-3 text-center'
+  },
+  Wa = { key: 1, class: 'w-full border-collapse text-[11px]' },
+  Xa = { class: 'border border-black px-2 py-1.5 text-center font-bold' },
+  Za = { class: 'border border-black px-2 py-1.5' },
+  tl = { class: 'border border-black px-2 py-1.5 text-center' },
+  el = { class: 'border border-black px-2 py-1.5 text-center' },
+  al = { class: 'border border-black px-2 py-1.5 text-center' },
+  ll = { key: 2, class: 'overflow-x-auto' },
+  rl = { class: 'text-[11px] font-bold text-slate-600 mb-1 px-1' },
+  sl = { class: 'border-collapse text-[10px] md:text-[11px] w-full min-w-[600px] table-fixed' },
+  nl = { class: 'bg-slate-100' },
+  ol = ['colspan'],
+  il = { key: 1, rowspan: '2', class: 'border border-slate-500 px-1.5 py-1 align-middle' },
+  dl = ['rowspan'],
+  ul = { class: 'border border-slate-500 px-1.5 py-1 text-center font-bold' },
+  pl = { key: 0 },
+  bl = ['colspan'],
+  cl = { key: 3 },
+  ml = {
+    class:
+      'text-center font-bold bg-slate-100 border border-slate-500 px-2 py-1 text-[11px] uppercase'
+  },
+  gl = { key: 0, class: 'w-full border-collapse text-[10px]' },
+  hl = { class: 'bg-slate-100' },
+  fl = { key: 0 },
+  kl = { rowspan: '2', class: 'border border-slate-500 px-1 py-1 w-[50px] align-middle' },
+  vl = ['colspan'],
+  xl = { key: 1, rowspan: '2', class: 'border border-slate-500 px-1 py-1 align-middle' },
+  _l = { key: 1 },
+  yl = { key: 2 },
+  wl = { class: 'border border-slate-500 px-1 py-1 w-[50px]' },
+  Sl = { class: 'border border-slate-500 px-1 py-1 text-center font-bold' },
+  Ll = { key: 1, class: 'w-full border-collapse text-[10px]' },
+  Al = { class: 'bg-slate-100' },
+  Kl = {
+    key: 4,
+    class:
+      'text-[11px] italic text-slate-500 my-3 border border-dashed border-slate-300 rounded p-3 text-center'
+  },
+  Pl = { class: 'w-full border-collapse text-[11px] mt-3' },
+  Il = { class: 'border border-slate-500 px-1.5 py-1 text-center font-bold' },
+  Tl = { class: 'w-full text-[10px] mt-2' },
+  Cl = { class: 'align-top w-1/2 pr-3' },
+  jl = { class: 'my-0.5' },
+  Nl = { class: 'my-0.5' },
+  $l = { class: 'my-0.5' },
+  Dl = { class: 'align-top w-1/2' },
+  Rl = { class: 'my-0.5' },
+  ql = { class: 'my-0.5' },
+  Fl = { class: 'my-0.5' },
+  El = { class: 'border border-slate-500 p-1.5 mt-2 text-[10px] min-h-[18mm]' },
+  Bl = { class: 'm-0 whitespace-pre-line' },
+  zl = { class: 'mt-8 text-[10px]' },
+  Hl = { class: 'w-full text-center' },
+  Jl = { class: 'w-1/3' },
+  Ml = { style: { height: '60px', 'vertical-align': 'bottom' } },
+  Ul = ['src'],
+  Gl = ['src'],
+  Ql = { class: 'underline font-bold' },
+  Vl = { class: 'underline font-bold' },
+  Ol = { class: 'underline font-bold' },
+  Yl = { class: 'text-[9px] text-slate-600' },
+  rr = {
+    __name: 'RaporView',
+    setup(Wl) {
+      var $t
+      const L = ke(),
+        Ft = me(),
+        ot = I([])
+      let V = null
+      ;(Dt(() => {
+        V = de('rapor_semester', (e) => {
+          ot.value = e || []
+        })
+      }),
+        ue(() => {
+          if (V)
+            try {
+              V()
+            } catch {}
+        }))
+      const { santriRaw: O, getRapors: B } = ge(),
+        { lembagaRaw: z } = he(),
+        { guruRaw: Y } = fe(),
+        A = pe(),
+        K = be(),
+        it = c(() => {
+          var e, t, s, r
+          return (
+            ((e = K.sesiAktif) == null ? void 0 : e.role) === 'guru' &&
+            ((t = K.sesiAktif) == null ? void 0 : t.role_sistem) !== 'super_admin' &&
+            ((s = K.sesiAktif) == null ? void 0 : s.role_sistem) !== 'admin' &&
+            ((r = K.sesiAktif) == null ? void 0 : r.role_sistem) !== 'admin_keuangan'
+          )
+        }),
+        W = c(() => {
+          var e
+          return ((e = K.sesiAktif) == null ? void 0 : e.role) === 'santri'
+        }),
+        y = I('picker'),
+        k = I(''),
+        S = I(''),
+        X = [
+          {
+            id: 'TPQ Pagi',
+            label: 'TPQ Pagi',
+            subtitle: "Taman Pendidikan Al-Qur'an",
+            icon: 'fa-mosque',
+            gradient: 'from-emerald-500 to-emerald-700'
+          },
+          {
+            id: 'TPQ Sore',
+            label: 'TPQ Sore',
+            subtitle: "Taman Pendidikan Al-Qur'an",
+            icon: 'fa-mosque',
+            gradient: 'from-teal-500 to-teal-700'
+          },
+          {
+            id: 'Pra PTPT',
+            label: 'Pra PTPT',
+            subtitle: 'Pra Tahfizh',
+            icon: 'fa-book-quran',
+            gradient: 'from-blue-500 to-blue-700'
+          },
+          {
+            id: 'PTPT',
+            label: 'PTPT',
+            subtitle: 'Pasca TPQ Program Tahfizh',
+            icon: 'fa-book-quran',
+            gradient: 'from-purple-500 to-purple-700'
+          },
+          {
+            id: 'PPPH',
+            label: 'PPPH',
+            subtitle: 'Pasca PTPT Program Hadits',
+            icon: 'fa-book-bookmark',
+            gradient: 'from-amber-500 to-amber-700'
+          }
+        ],
+        H = new Date(),
+        N = I(`${H.getFullYear()}-${H.getFullYear() + 1}`),
+        $ = I(H.getMonth() < 6 ? 'Genap' : 'Ganjil'),
+        Et = c(() => {
+          const e = H.getFullYear()
+          return [`${e - 1}-${e}`, `${e}-${e + 1}`, `${e + 1}-${e + 2}`]
+        }),
+        D = I(''),
+        R = I(''),
+        F = I(W.value ? String((($t = K.sesiAktif) == null ? void 0 : $t.id) || '') : ''),
+        Z = c(() => {
+          var s, r
+          const e = String(S.value || '')
+            .toLowerCase()
+            .trim()
+          if (!e) return []
+          let t = O.value.filter((n) => n.aktif !== !1)
+          if (k.value === 'qiraati')
+            if (e === 'tpq pagi' || e === 'tpq sore') {
+              const n = e === 'tpq pagi' ? 'pagi' : 'sore'
+              t = t.filter((l) => {
+                const u = String(l.lembaga || '')
+                    .toLowerCase()
+                    .trim(),
+                  p = String(l.shift || '')
+                    .toLowerCase()
+                    .trim()
+                return (u === 'tpq' && p === n) || u === e
+              })
+            } else
+              e === 'pra ptpt'
+                ? (t = t.filter((n) => {
+                    const l = String(n.lembaga || '')
+                      .toLowerCase()
+                      .trim()
+                    return l === 'pra ptpt' || l === 'pra-ptpt' || l === 'pra_ptpt'
+                  }))
+                : e === 'ppph'
+                  ? (t = t.filter((n) => {
+                      const l = String(n.lembaga || '')
+                        .toLowerCase()
+                        .trim()
+                      return l === 'ppph' || l === 'p3h'
+                    }))
+                  : (t = t.filter(
+                      (n) =>
+                        String(n.lembaga || '')
+                          .toLowerCase()
+                          .trim() === e
+                    ))
+          else
+            t = t.filter((n) => {
+              const l = String(n.lembaga_sekolah || '')
+                  .toLowerCase()
+                  .trim(),
+                u = String(n.lembaga || '')
+                  .toLowerCase()
+                  .trim()
+              return l === e || (!l && u === e)
+            })
+          if (it.value) {
+            const n = String(((s = K.sesiAktif) == null ? void 0 : s.id) || '').toLowerCase(),
+              l = String(((r = K.sesiAktif) == null ? void 0 : r.nama) || '')
+                .toLowerCase()
+                .trim()
+            t = t.filter((u) => {
+              const p = [u.guru, u.guru_pagi, u.guru_sore]
+                  .flat()
+                  .filter(Boolean)
+                  .map((h) => String(h).toLowerCase().trim()),
+                v = [u.guru_id, u.guru_pagi_id, u.guru_sore_id]
+                  .filter(Boolean)
+                  .map((h) => String(h).toLowerCase())
+              return p.includes(l) || v.includes(n)
+            })
+          }
+          if (
+            (D.value && (t = t.filter((n) => String(n.kelas || '') === D.value)), R.value.trim())
+          ) {
+            const n = R.value.trim().toLowerCase()
+            t = t.filter((l) =>
+              String(l.nama || '')
+                .toLowerCase()
+                .includes(n)
+            )
+          }
+          return t.sort(
+            (n, l) =>
+              String(n.kelas || '').localeCompare(String(l.kelas || '')) ||
+              String(n.nama || '').localeCompare(String(l.nama || ''))
+          )
+        }),
+        Bt = c(() => {
+          const e = String(S.value || '')
+              .toLowerCase()
+              .trim(),
+            t = new Set()
+          return (
+            O.value.forEach((s) => {
+              const r = String(s.lembaga || '')
+                  .toLowerCase()
+                  .trim(),
+                n = String(s.lembaga_sekolah || '')
+                  .toLowerCase()
+                  .trim()
+              ;(k.value === 'qiraati' ? r === e : n === e || (!n && r === e)) &&
+                s.kelas &&
+                t.add(String(s.kelas))
+            }),
+            [...t].sort()
+          )
+        }),
+        b = c(() => O.value.find((e) => String(e.id) === String(F.value)) || null),
+        dt = c(() => {
+          if (!b.value) return []
+          const e = B(b.value) || [],
+            t = String(S.value || '')
+              .toLowerCase()
+              .trim()
+          return e.filter(
+            (s) =>
+              String(s.lembaga || '')
+                .toLowerCase()
+                .trim() !== t
+          )
+        })
+      function zt(e) {
+        ;((k.value = e.jenis), (S.value = e.lembaga), (y.value = 'detail'))
+      }
+      const T = c(() => {
+          const e = A.settings || {}
+          let t = {}
+          if (b.value) {
+            const s = String(b.value.lembaga || '')
+              .toLowerCase()
+              .trim()
+            t =
+              (z.value || []).find(
+                (r) =>
+                  String(r.lembaga || '')
+                    .toLowerCase()
+                    .trim() === s
+              ) || {}
+          }
+          return {
+            line1: t.kop_line1 || e.kopLine1 || '',
+            line2: t.kop_line2 || e.kopLine2 || 'PONDOK PESANTREN MAMBAUL ULUM',
+            line3: t.kop_line3 || e.kopLine3 || '',
+            line4: t.kop_line4 || e.kopLine4 || '',
+            pengasuh: e.namaPengasuh || ''
+          }
+        }),
+        Ht = c(() =>
+          new Intl.DateTimeFormat('id-ID', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric'
+          }).format(new Date())
+        ),
+        ut = c(() => {
+          const e = A.settings || {}
+          return k.value === 'diniyah'
+            ? e.logoKop || e.logoUrl || '/logo.png'
+            : e.logoQiraati || '/logo.png'
+        }),
+        pt = c(() => {
+          var r
+          const e = b.value
+          if (!e) return ''
+          const t = String(k.value === 'diniyah' ? e.lembaga_sekolah || '' : e.lembaga || '')
+            .toLowerCase()
+            .trim()
+          return (
+            (
+              (z.value || []).find(
+                (n) =>
+                  String(n.lembaga || '')
+                    .toLowerCase()
+                    .trim() === t
+              ) || {}
+            ).kop_logo ||
+            ((r = A.settings) == null ? void 0 : r.logoUrl) ||
+            ''
+          )
+        })
+      function bt(e) {
+        return String(e || '')
+          .toLowerCase()
+          .replace(/\b\w/g, (t) => t.toUpperCase())
+      }
+      const ct = c(() => {
+          const e = A.settings || {}
+          return k.value === 'diniyah' ? e.bgRaporDiniyah || '' : e.bgRaporTPQ || ''
+        }),
+        mt = c(() => {
+          const e = Kt.value
+          if (!e || e === '-') return ''
+          const t = (Y.value || []).find(
+            (s) => String(s.nama || '').toLowerCase() === String(e).toLowerCase()
+          )
+          return (
+            (t == null ? void 0 : t.tanda_tangan) ||
+            (t == null ? void 0 : t.ttd_url) ||
+            (t == null ? void 0 : t.ttd) ||
+            ''
+          )
+        }),
+        gt = c(() => {
+          const t = (Y.value || []).find((s) => {
+            const r = String(s.role_sistem || '').toLowerCase(),
+              n = String(s.jabatan || '').toLowerCase()
+            return (
+              r === 'super_admin' || r === 'admin' || n.includes('kepala') || n.includes('pengasuh')
+            )
+          })
+          return (
+            (t == null ? void 0 : t.tanda_tangan) ||
+            (t == null ? void 0 : t.ttd_url) ||
+            (t == null ? void 0 : t.ttd) ||
+            ''
+          )
+        }),
+        ht = [
+          { id: 'fashohah', label: 'Fashohah' },
+          { id: 'tartil', label: 'Tartil' },
+          { id: 'tahfizh_juz_30', label: 'Tahfizh Juz 30' },
+          { id: 'ghorib', label: 'Ghorib' },
+          { id: 'tajwid', label: 'Tajwid' },
+          { id: 'doa_harian', label: 'Doa Harian' },
+          { id: 'adab', label: 'Adab' }
+        ]
+      function ft(e) {
+        const t = String(e || '')
+          .toLowerCase()
+          .trim()
+        if (t === 'pra ptpt' || t === 'p3h') {
+          const s = [
+              { id: 'kh_I', labelKhotam: 'Khotam I', multiplier: 2 },
+              { id: 'kh_II', labelKhotam: 'Khotam II', multiplier: 2 },
+              { id: 'kh_III', labelKhotam: 'Khotam III', multiplier: 2 }
+            ],
+            r = [
+              { id: 'kh_I', labelKhotam: 'Khotam I', multiplier: 3 },
+              { id: 'kh_II', labelKhotam: 'Khotam II', multiplier: 3 },
+              { id: 'kh_III', labelKhotam: 'Khotam III', multiplier: 3 }
+            ],
+            n = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI'].map((l) => ({
+              id: `kh_${l}`,
+              labelKhotam: `Khotam ${l}`,
+              multiplier: 3
+            }))
+          return {
+            perLevel: !0,
+            fieldsNilai: ht,
+            levels: [
+              {
+                id: 'lvl_1',
+                label: 'Level 1',
+                levelBaca: '½ Juz',
+                targetKhotam: '½ Juz',
+                khotamList: s
+              },
+              {
+                id: 'lvl_2',
+                label: 'Level 2',
+                levelBaca: '1 Juz',
+                targetKhotam: '1 Juz',
+                khotamList: s
+              },
+              {
+                id: 'lvl_3',
+                label: 'Level 3',
+                levelBaca: '1½ Juz',
+                targetKhotam: '1½ Juz',
+                khotamList: s
+              },
+              {
+                id: 'lvl_4',
+                label: 'Level 4',
+                levelBaca: '2 Juz',
+                targetKhotam: '2 Juz',
+                khotamList: r
+              },
+              {
+                id: 'lvl_5',
+                label: 'Level 5',
+                levelBaca: '3 Juz',
+                targetKhotam: '3 Juz',
+                khotamList: n
+              }
+            ]
+          }
+        }
+        if (t === 'ptpt' || t === 'ppph') {
+          const s = [
+              { id: 'istimror', label: 'Istimror', type: 'number', group: 'Kualitas Hafalan' },
+              { id: 'kelancaran', label: 'Kelancaran', type: 'number', group: 'Kualitas Hafalan' },
+              { id: 'fashohah', label: 'Fashohah', type: 'number', group: 'Kualitas Bacaan' },
+              { id: 'tajwid', label: 'Tajwid', type: 'number', group: 'Kualitas Bacaan' },
+              { id: 'adab', label: 'Adab', type: 'number' },
+              { id: 'predikat', label: 'Predikat', type: 'auto_predikat', source: 'avg' }
+            ],
+            r = []
+          for (let n = 1; n <= 6; n++) {
+            const l = (n - 1) * 5 + 1
+            for (let u = l; u <= l + 4; u++) r.push({ kelas: 'Kelas ' + n, juz: 'Juz ' + u })
+          }
+          return { tableLayout: 'kelasJuz', fields: s, rows: r }
+        }
+        return t === 'tpq' || t === 'tpq sore' || t === 'tpq pagi'
+          ? {
+              sections: [
+                {
+                  id: 'jilid',
+                  title: 'Jilid',
+                  rows: ['1A', '1B', '2A', '2B', '3A', '3B', '4A', '4B', '5A', '5B'],
+                  fields: [
+                    { id: 'tgl_khotam', label: 'Tanggal Khotam Jilid', type: 'date' },
+                    {
+                      id: 'doa_harian',
+                      label: 'Doa Harian',
+                      type: 'text',
+                      group: 'Materi Tambahan'
+                    },
+                    {
+                      id: 'surat_pendek',
+                      label: 'Surat-Surat Pendek',
+                      type: 'text',
+                      group: 'Materi Tambahan'
+                    },
+                    { id: 'adab', label: 'Adab', type: 'number' },
+                    { id: 'predikat', label: 'Predikat', type: 'auto_predikat', source: 'adab' }
+                  ]
+                },
+                {
+                  id: 'imtas',
+                  title: 'Kelas Persiapan IMTAS',
+                  rows: [],
+                  fields: [
+                    { id: 'fashohah', label: 'Fashohah', type: 'number' },
+                    { id: 'tartil', label: 'Tartil', type: 'number' },
+                    { id: 'ghorib', label: 'Ghorib', type: 'number' },
+                    { id: 'tajwid', label: 'Tajwid', type: 'number' },
+                    {
+                      id: 'doa_harian',
+                      label: 'Doa Harian',
+                      type: 'text',
+                      group: 'Materi Tambahan'
+                    },
+                    {
+                      id: 'surat_pendek',
+                      label: 'Surat-Surat Pendek',
+                      type: 'text',
+                      group: 'Materi Tambahan'
+                    },
+                    { id: 'adab', label: 'Adab', type: 'number' },
+                    { id: 'predikat', label: 'Predikat', type: 'auto_predikat', source: 'avg' }
+                  ]
+                },
+                {
+                  id: 'khotaman',
+                  title: 'Kelas Persiapan Khotaman',
+                  rows: [],
+                  fields: [
+                    { id: 'tgl_imtas', label: 'Tanggal IMTAS', type: 'date' },
+                    { id: 'fashohah', label: 'Fashohah', type: 'number' },
+                    { id: 'tartil', label: 'Tartil', type: 'number' },
+                    { id: 'ghorib', label: 'Ghorib', type: 'number' },
+                    { id: 'tajwid', label: 'Tajwid', type: 'number' },
+                    {
+                      id: 'doa_harian',
+                      label: 'Doa Harian',
+                      type: 'text',
+                      group: 'Materi Tambahan'
+                    },
+                    {
+                      id: 'surat_pendek',
+                      label: 'Surat-Surat Pendek',
+                      type: 'text',
+                      group: 'Materi Tambahan'
+                    },
+                    { id: 'adab', label: 'Adab', type: 'number' },
+                    { id: 'predikat', label: 'Predikat', type: 'auto_predikat', source: 'avg' }
+                  ]
+                }
+              ]
+            }
+          : {
+              perKelas: !0,
+              jenjang: [
+                {
+                  kelas: 'I',
+                  mapel: [
+                    { id: 'tauhid', nama: 'TAUHID', kkm: 80 },
+                    { id: 'fiqih', nama: 'FIQIH', kkm: 80 },
+                    { id: 'akhlaq', nama: 'AKHLAQ', kkm: 80 }
+                  ]
+                },
+                {
+                  kelas: 'II',
+                  mapel: [
+                    { id: 'tauhid', nama: 'TAUHID', kkm: 80 },
+                    { id: 'fiqih', nama: 'FIQIH', kkm: 80 },
+                    { id: 'akhlaq', nama: 'AKHLAQ', kkm: 80 },
+                    { id: 'tarikh', nama: 'TARIKH', kkm: 80 }
+                  ]
+                }
+              ]
+            }
+      }
+      const m = c(() => {
+          var l
+          if (!b.value) return {}
+          const e = b.value.lembaga || '',
+            t = ((l = A.settings) == null ? void 0 : l.raporSchemas) || {},
+            s = String(e).toLowerCase().trim()
+          let r = null
+          const n = Object.keys(t)
+          if (s === 'tpq pagi' || s === 'tpq sore') {
+            const u = n.find((p) => String(p).toLowerCase().trim() === 'tpq')
+            u && (r = t[u])
+          }
+          if (!r) {
+            const u = n.find((p) => String(p).toLowerCase().trim() === s)
+            u && (r = t[u])
+          }
+          if (r && Object.keys(r).length > 0) {
+            const u = s === 'ptpt' || s === 'ppph' || s === 'p3h',
+              p =
+                r.perKelas &&
+                Array.isArray(r.jenjang) &&
+                r.jenjang.some(
+                  (v) =>
+                    Array.isArray(v.mapel) &&
+                    v.mapel.some((h) => /juz/i.test(String(h.id || h.nama || '')))
+                )
+            return u && p ? ft(e) : r
+          }
+          return ft(k.value === 'diniyah' ? 'diniyah' : e)
+        }),
+        Jt = c(() => (Array.isArray(m.value.sections) ? m.value.sections : [])),
+        q = c(() =>
+          Array.isArray(m.value.fieldsNilai) && m.value.fieldsNilai.length
+            ? m.value.fieldsNilai
+            : ht
+        ),
+        J = c(() => {
+          if (!m.value.perKelas || !b.value) return null
+          const e = b.value.kelas_sekolah || ''
+          return (
+            (m.value.jenjang || []).find((t) => t.kelas === e) || (m.value.jenjang || [])[0] || null
+          )
+        })
+      function kt(e) {
+        return Array.isArray(e == null ? void 0 : e.fields) && e.fields.some((t) => t && t.group)
+      }
+      function Mt(e) {
+        const t = [],
+          s = (e == null ? void 0 : e.fields) || []
+        let r = 0
+        for (; r < s.length; ) {
+          const n = s[r]
+          if (n.group) {
+            let l = 1,
+              u = r + 1
+            for (; u < s.length && s[u].group === n.group; ) (l++, u++)
+            ;(t.push({ group: n.group, span: l }), (r = u))
+          } else (t.push({ label: n.label }), r++)
+        }
+        return t
+      }
+      function vt(e) {
+        const t = String((e == null ? void 0 : e.id) || '').toLowerCase()
+        return t === 'jilid'
+          ? 'Jilid'
+          : t === 'imtas' || t === 'khotaman'
+            ? 'Periode'
+            : t.startsWith('kelas_')
+              ? 'Kelas'
+              : (e == null ? void 0 : e.title) || 'Item'
+      }
+      function Ut(e) {
+        return ((e == null ? void 0 : e.fields) || []).filter((t) => t && t.group)
+      }
+      const P = c(() => {
+          if (!b.value) return null
+          const e = `${N.value}_${$.value}`.replace(/[^a-zA-Z0-9_]/g, '_'),
+            t = k.value === 'diniyah' ? 'Diniyah' : b.value.lembaga || '',
+            s = `rapor_${b.value.id}_${t}_${e}`
+          return ot.value.find((r) => r.id === s) || null
+        }),
+        tt = c(() => {
+          var e
+          return ((e = P.value) == null ? void 0 : e.absensi) || { sakit: 0, izin: 0, alpa: 0 }
+        }),
+        et = c(() => {
+          var e
+          return (
+            ((e = P.value) == null ? void 0 : e.kepribadian) || {
+              kelakuan: 'Baik',
+              kerajinan: 'Baik',
+              kebersihan: 'Baik'
+            }
+          )
+        }),
+        Gt = c(() => {
+          var e
+          return ((e = P.value) == null ? void 0 : e.catatan) || ''
+        }),
+        Qt = c(() => {
+          var t, s, r
+          const e = (t = P.value) == null ? void 0 : t.rata_rata
+          if (e && Number(e) > 0) return e
+          if (m.value.perKelas && J.value) {
+            const n = ((s = P.value) == null ? void 0 : s.data_nilai) || {},
+              l = ((r = b.value) == null ? void 0 : r.kelas_sekolah) || ''
+            let u = 0,
+              p = 0
+            return (
+              (J.value.mapel || []).forEach((v) => {
+                const h = v.id || E(v.nama),
+                  f = Number(n[`dn__${l}__${h}__akhir`])
+                !isNaN(f) && f > 0 && ((u += f), p++)
+              }),
+              p > 0 ? u / p : 0
+            )
+          }
+          return (m.value.perLevel && Yt.value) || 0
+        })
+      function xt(e, t) {
+        const s = b.value
+        if (!(s != null && s.kartu_kenaikan)) return ''
+        const r = s.lembaga || '',
+          n = s.kartu_kenaikan || {}
+        let l = n[r]
+        if (!l) {
+          const f = Object.keys(n).find(
+            (C) => String(C).toLowerCase().trim() === String(r).toLowerCase().trim()
+          )
+          l = f ? n[f] : null
+        }
+        if (!l || typeof l != 'object') return ''
+        const u = l[e] || l[String(e).toLowerCase()] || {}
+        if (typeof u != 'object') return ''
+        if (u[t]) return u[t]
+        if (u.ceremonial) return u.ceremonial
+        const p = Array.isArray(u.entries) ? u.entries : [],
+          v = p.find(
+            (f) => (f == null ? void 0 : f.itemId) === t && (f == null ? void 0 : f.tanggal)
+          )
+        if (v) return v.tanggal
+        const h = p.find((f) => (f == null ? void 0 : f.tanggal))
+        return (h == null ? void 0 : h.tanggal) || ''
+      }
+      function M(e) {
+        var t, s
+        if (e && e.endsWith('__tgl_khotam')) {
+          const r = e.split('__')
+          if (r.length === 4) {
+            const n = xt(r[1], r[2])
+            if (n) return n
+          }
+        }
+        return (s = (t = P.value) == null ? void 0 : t.data_nilai) == null ? void 0 : s[e]
+      }
+      function Vt(e) {
+        if (!e) return ''
+        try {
+          return new Date(e).toLocaleDateString('id-ID', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+          })
+        } catch {
+          return String(e)
+        }
+      }
+      function E(e) {
+        return String(e || '')
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '_')
+          .replace(/^_|_$/g, '')
+      }
+      const Ot = [
+        { min: 85, max: 100, label: 'A' },
+        { min: 70, max: 84, label: 'B' },
+        { min: 55, max: 69, label: 'C' },
+        { min: 0, max: 54, label: 'D' }
+      ]
+      function U(e) {
+        var n
+        const t =
+            (n = A.settings) != null && n.predikatRules && A.settings.predikatRules.length > 0
+              ? A.settings.predikatRules
+              : Ot,
+          s = Number(e)
+        if (isNaN(s)) return '-'
+        const r = t.find((l) => s >= Number(l.min) && s <= Number(l.max))
+        return r ? r.label : '-'
+      }
+      function _t(e, t) {
+        var l
+        const s = ((l = P.value) == null ? void 0 : l.data_nilai) || {}
+        let r = 0,
+          n = 0
+        return (
+          q.value.forEach((u) => {
+            const p = Number(s[`pra__${e}__${t}__${u.id}`])
+            !isNaN(p) && p > 0 && ((r += p), n++)
+          }),
+          n > 0 ? r / n : null
+        )
+      }
+      function yt(e, t) {
+        var l
+        const s = ((l = P.value) == null ? void 0 : l.data_nilai) || {}
+        let r = 0,
+          n = !1
+        return (
+          q.value.forEach((u) => {
+            const p = Number(s[`pra__${e}__${t}__${u.id}`])
+            !isNaN(p) && p > 0 && ((r += p), (n = !0))
+          }),
+          n ? r : null
+        )
+      }
+      function wt(e) {
+        return e == null || isNaN(e) ? '-' : String(Math.round(Number(e)))
+      }
+      const Yt = c(() => {
+          const e = []
+          return (
+            (m.value.levels || []).forEach((t) => {
+              ;(t.khotamList || []).forEach((s) => {
+                const r = _t(t.id, s.id)
+                r !== null && e.push(r)
+              })
+            }),
+            e.length === 0 ? null : e.reduce((t, s) => t + s, 0) / e.length
+          )
+        }),
+        Wt = c(() => {
+          let e = 0,
+            t = !1
+          return (
+            (m.value.levels || []).forEach((s) => {
+              ;(s.khotamList || []).forEach((r) => {
+                const n = yt(s.id, r.id)
+                n !== null && ((e += n), (t = !0))
+              })
+            }),
+            t ? e : null
+          )
+        }),
+        Xt = c(() => {
+          let e = 0
+          return (
+            (m.value.levels || []).forEach((t) => {
+              ;(t.khotamList || []).forEach((s) => {
+                _t(t.id, s.id) !== null && e++
+              })
+            }),
+            e
+          )
+        })
+      function St(e, t, s) {
+        var u, p
+        const r = ((u = P.value) == null ? void 0 : u.data_nilai) || {},
+          n = t ? `${e}__${t}__${s.id}` : `${e}__${s.id}`
+        let l = r[n]
+        if (s.type === 'auto_predikat') {
+          if (s.source === 'avg') {
+            const v = (
+              ((p = Jt.value.find((C) => C.id === e)) == null ? void 0 : p.fields) || []
+            ).filter((C) => C.type === 'number')
+            let h = 0,
+              f = 0
+            return (
+              v.forEach((C) => {
+                const ie = t ? `${e}__${t}__${C.id}` : `${e}__${C.id}`,
+                  rt = Number(r[ie] || 0)
+                !isNaN(rt) && rt > 0 && ((h += rt), f++)
+              }),
+              f > 0 ? U(h / f) : '-'
+            )
+          }
+          if (s.source) {
+            const v = t ? `${e}__${t}__${s.source}` : `${e}__${s.source}`,
+              h = Number(r[v] || 0)
+            return h > 0 ? U(h) : '-'
+          }
+          return '-'
+        }
+        if (s.type === 'date') {
+          if (!l && t) {
+            const v = xt(t, s.id)
+            v && (l = v)
+          }
+          if (l)
+            try {
+              return new Date(l).toLocaleDateString('id-ID')
+            } catch {
+              return l
+            }
+        }
+        return l == null || l === '' ? '' : String(l)
+      }
+      function at(e) {
+        return `flat__${E(e.kelas)}__${E(e.juz)}`
+      }
+      function Zt(e, t) {
+        var l
+        if (!e || !t) return '-'
+        const s = `${at(e)}__${t.id}`,
+          r = ((l = P.value) == null ? void 0 : l.data_nilai) || {}
+        let n = r[s]
+        if (t.type === 'auto_predikat') {
+          if (t.source === 'avg') {
+            const u = (m.value.fields || []).filter((h) => h.type === 'number')
+            let p = 0,
+              v = 0
+            return (
+              u.forEach((h) => {
+                const f = Number(r[`${at(e)}__${h.id}`] || 0)
+                !isNaN(f) && f > 0 && ((p += f), v++)
+              }),
+              v > 0 ? U(p / v) : '-'
+            )
+          }
+          if (t.source) {
+            const u = Number(r[`${at(e)}__${t.source}`] || 0)
+            return u > 0 ? U(u) : '-'
+          }
+          return '-'
+        }
+        return n == null || n === '' ? '' : String(n)
+      }
+      const te = c(() => {
+          const e = m.value.fields || [],
+            t = []
+          let s = 0
+          for (; s < e.length; ) {
+            const r = e[s]
+            if (r.group) {
+              let n = 1,
+                l = s + 1
+              for (; l < e.length && e[l].group === r.group; ) (n++, l++)
+              ;(t.push({ group: r.group, span: n }), (s = l))
+            } else (t.push({ label: r.label }), s++)
+          }
+          return t
+        }),
+        ee = c(() => (m.value.fields || []).filter((e) => e && e.group))
+      function lt(e) {
+        const t = String(e || '').match(/(\d+)/)
+        return t ? parseInt(t[1], 10) : 0
+      }
+      const G = c(() => {
+          if (m.value.tableLayout !== 'kelasJuz') return []
+          const e = m.value.rows || [],
+            t = b.value
+          if (!t) return e
+          const s = lt(t.kelas) || lt(t.kelas_sekolah)
+          return s
+            ? e.filter((r) => {
+                const n = lt(r.kelas)
+                return n > 0 && n <= s
+              })
+            : e
+        }),
+        Lt = c(() => {
+          const e = G.value || [],
+            t = {}
+          let s = 0
+          for (; s < e.length; ) {
+            let r = s
+            for (; r < e.length && e[r].kelas === e[s].kelas; ) r++
+            t[s] = { isFirst: !0, rowspan: r - s }
+            for (let n = s + 1; n < r; n++) t[n] = { isFirst: !1, rowspan: 0 }
+            s = r
+          }
+          return t
+        })
+      function ae(e) {
+        var t
+        return ((t = Lt.value[e]) == null ? void 0 : t.isFirst) === !0
+      }
+      function le(e) {
+        var t
+        return ((t = Lt.value[e]) == null ? void 0 : t.rowspan) || 1
+      }
+      const At = c(() => {
+          var r, n
+          const e = b.value
+          if (!e) return ((r = A.settings) == null ? void 0 : r.namaPengasuh) || ''
+          const t = String(k.value === 'diniyah' ? e.lembaga_sekolah || '' : e.lembaga || '')
+              .toLowerCase()
+              .trim(),
+            s =
+              (z.value || []).find(
+                (l) =>
+                  String(l.lembaga || '')
+                    .toLowerCase()
+                    .trim() === t
+              ) || {}
+          return (
+            s.kepala_lembaga ||
+            s.kepala_sekolah ||
+            s.kepala ||
+            ((n = A.settings) == null ? void 0 : n.namaPengasuh) ||
+            ''
+          )
+        }),
+        re = c(() => {
+          const e = b.value
+          if (!e) return 'Kepala'
+          const t = String(k.value === 'diniyah' ? e.lembaga_sekolah || '' : e.lembaga || '')
+            .toLowerCase()
+            .trim()
+          return t === 'tpq pagi' || t === 'tpq sore' || t === 'tpq' || t === 'pra ptpt'
+            ? 'Kepala TPQ'
+            : t === 'ptpt'
+              ? 'PJ PTPT'
+              : t === 'ppph' || t === 'p3h'
+                ? 'PJ PPPH'
+                : 'Kepala Sekolah'
+        }),
+        Kt = c(() => {
+          const e = b.value
+          return (e && (Array.isArray(e.guru) ? e.guru.join(', ') : e.guru)) || '-'
+        })
+      function Pt(e) {
+        if (!e) return null
+        const t = String(e).toLowerCase().trim()
+        return (
+          (Y.value || []).find(
+            (s) =>
+              String(s.nama || '')
+                .toLowerCase()
+                .trim() === t
+          ) || null
+        )
+      }
+      const It = c(() => {
+          const e = b.value
+          if (!e) return ''
+          const t = Array.isArray(e.guru) ? e.guru : e.guru ? [e.guru] : []
+          for (const s of t) {
+            const r = Pt(s),
+              n =
+                (r == null ? void 0 : r.nrg) ||
+                (r == null ? void 0 : r.ekgq) ||
+                (r == null ? void 0 : r.no_ekgq) ||
+                (r == null ? void 0 : r.nip) ||
+                ''
+            if (n) return n
+          }
+          return ''
+        }),
+        Tt = c(() => {
+          const e = At.value
+          if (!e) return ''
+          const t = Pt(e)
+          return (
+            (t == null ? void 0 : t.nrg) ||
+            (t == null ? void 0 : t.ekgq) ||
+            (t == null ? void 0 : t.no_ekgq) ||
+            (t == null ? void 0 : t.nip) ||
+            ''
+          )
+        })
+      function Ct(e) {
+        ;((k.value = e), (y.value = 'lembaga'), (D.value = ''), (R.value = ''), (F.value = ''))
+      }
+      const jt = c(() => {
+        const e = ['sdi', 'pkbm'],
+          t = (z.value || []).filter((r) => {
+            const n = String(r.lembaga || r.nama || '')
+              .toLowerCase()
+              .trim()
+            return e.includes(n)
+          })
+        t.length === 0 &&
+          e.forEach((r) => t.push({ lembaga: r.toUpperCase(), id: r.toUpperCase() }))
+        const s = [
+          'from-blue-500 to-blue-700',
+          'from-indigo-500 to-indigo-700',
+          'from-violet-500 to-violet-700',
+          'from-purple-500 to-purple-700',
+          'from-pink-500 to-fuchsia-700',
+          'from-rose-500 to-rose-700',
+          'from-cyan-500 to-cyan-700'
+        ]
+        return t.map((r, n) => ({
+          id: r.lembaga || r.nama,
+          label: r.lembaga || r.nama,
+          subtitle: r.jenjang || r.deskripsi || 'Sekolah Formal',
+          icon: 'fa-school',
+          gradient: s[n % s.length]
+        }))
+      })
+      function Nt(e) {
+        ;((S.value = e), (y.value = 'santri'), (F.value = ''), (R.value = ''), (D.value = ''))
+      }
+      function se(e) {
+        ;((F.value = String(e.id)), (y.value = 'detail'))
+      }
+      function ne() {
+        ;((y.value = 'santri'), (F.value = ''))
+      }
+      async function oe() {
+        var e, t
+        if (b.value)
+          try {
+            ;(await new Promise((s) => setTimeout(s, 50)),
+              window.print(),
+              (e = L == null ? void 0 : L.success) == null ||
+                e.call(L, 'Dialog cetak dibuka — pilih "Save as PDF" untuk simpan PDF'))
+          } catch (s) {
+            ;(t = L == null ? void 0 : L.error) == null ||
+              t.call(L, 'Gagal cetak: ' + (s.message || s))
+          }
+      }
+      return (
+        Dt(() => {
+          var t, s
+          const e = String(Ft.query.kategori || '').toLowerCase()
+          if ((e === 'qiraati' || e === 'diniyah') && W.value) {
+            k.value = e
+            const r = String(((t = K.sesiAktif) == null ? void 0 : t.lembaga) || '').trim()
+            if (e === 'qiraati') {
+              const n = X.find((l) => l.id.toLowerCase() === r.toLowerCase())
+              n ? ((S.value = n.id), (y.value = 'detail')) : (y.value = 'lembaga')
+            } else ((S.value = 'Diniyah'), (y.value = 'detail'))
+          }
+          if (it.value && y.value === 'picker') {
+            const r = String(((s = K.sesiAktif) == null ? void 0 : s.lembaga) || '').trim(),
+              n = X.find((l) => l.id.toLowerCase() === r.toLowerCase())
+            n
+              ? ((k.value = 'qiraati'), (S.value = n.id), (y.value = 'santri'))
+              : r && ((k.value = 'diniyah'), (S.value = r), (y.value = 'santri'))
+          }
+        }),
+        (e, t) => {
+          var s, r, n
+          return (
+            i(),
+            o('div', ve, [
+              y.value === 'picker'
+                ? (i(),
+                  o('div', xe, [
+                    t[13] ||
+                      (t[13] = a(
+                        'div',
+                        { class: 'flex items-start gap-3 mb-4' },
+                        [
+                          a('i', {
+                            class:
+                              'fas fa-graduation-cap text-emerald-700 dark:text-emerald-300 text-2xl'
+                          }),
+                          a('div', null, [
+                            a(
+                              'h2',
+                              {
+                                class:
+                                  'text-lg md:text-xl font-black text-slate-800 dark:text-white leading-tight'
+                              },
+                              'Rapor Semester'
+                            ),
+                            a(
+                              'p',
+                              {
+                                class:
+                                  'text-xs md:text-sm text-slate-500 dark:text-slate-400 mt-0.5'
+                              },
+                              ' Pilih lembaga untuk mengelola data rapor santri. '
+                            )
+                          ])
+                        ],
+                        -1
+                      )),
+                    a('div', _e, [
+                      Q(
+                        a(
+                          'select',
+                          {
+                            'onUpdate:modelValue': t[0] || (t[0] = (l) => (N.value = l)),
+                            class:
+                              'px-4 py-3 text-sm font-bold border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-white'
+                          },
+                          [
+                            (i(!0),
+                            o(
+                              g,
+                              null,
+                              _(
+                                Et.value,
+                                (l) => (i(), o('option', { key: l, value: l }, d(l), 9, ye))
+                              ),
+                              128
+                            ))
+                          ],
+                          512
+                        ),
+                        [[st, N.value]]
+                      ),
+                      Q(
+                        a(
+                          'select',
+                          {
+                            'onUpdate:modelValue': t[1] || (t[1] = (l) => ($.value = l)),
+                            class:
+                              'px-4 py-3 text-sm font-bold border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-white'
+                          },
+                          [
+                            ...(t[10] ||
+                              (t[10] = [
+                                a('option', { value: 'Ganjil' }, 'Ganjil', -1),
+                                a('option', { value: 'Genap' }, 'Genap', -1)
+                              ]))
+                          ],
+                          512
+                        ),
+                        [[st, $.value]]
+                      )
+                    ]),
+                    a('div', we, [
+                      Rt(qt, {
+                        icon: 'fas fa-mosque',
+                        title: 'Rapor Qiraati',
+                        subtitle: 'TPQ Sore · Pra PTPT · PTPT · PPPH',
+                        gradient: 'from-emerald-500 to-emerald-700',
+                        onClick: t[2] || (t[2] = (l) => Ct('qiraati'))
+                      }),
+                      Rt(qt, {
+                        icon: 'fas fa-book-open',
+                        title: 'Rapor Diniyah',
+                        subtitle: 'Mata pelajaran agama',
+                        gradient: 'from-blue-500 to-indigo-700',
+                        onClick: t[3] || (t[3] = (l) => Ct('diniyah'))
+                      })
+                    ]),
+                    x('', !0)
+                  ]))
+                : y.value === 'lembaga'
+                  ? (i(),
+                    o('div', Se, [
+                      a('div', Le, [
+                        a(
+                          'button',
+                          {
+                            onClick: t[6] || (t[6] = (l) => (y.value = 'picker')),
+                            class:
+                              'text-xs font-bold px-2 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 transition cursor-pointer',
+                            title: 'Kembali'
+                          },
+                          [
+                            ...(t[14] ||
+                              (t[14] = [a('i', { class: 'fas fa-arrow-left' }, null, -1)]))
+                          ]
+                        ),
+                        a('div', null, [
+                          a('h2', Ae, [
+                            a(
+                              'i',
+                              {
+                                class: j([
+                                  'fas mr-2',
+                                  k.value === 'qiraati'
+                                    ? 'fa-mosque text-emerald-700'
+                                    : 'fa-book-open text-blue-700'
+                                ])
+                              },
+                              null,
+                              2
+                            ),
+                            w(' Rapor ' + d(k.value === 'qiraati' ? 'Qiraati' : 'Diniyah'), 1)
+                          ]),
+                          a(
+                            'p',
+                            Ke,
+                            ' Pilih ' +
+                              d(k.value === 'qiraati' ? 'lembaga Qiraati' : 'sekolah formal') +
+                              '. ',
+                            1
+                          )
+                        ])
+                      ]),
+                      k.value === 'qiraati'
+                        ? (i(),
+                          o('div', Pe, [
+                            (i(),
+                            o(
+                              g,
+                              null,
+                              _(X, (l) =>
+                                a(
+                                  'button',
+                                  {
+                                    key: l.id,
+                                    onClick: (u) => Nt(l.id),
+                                    class: j([
+                                      'group relative overflow-hidden bg-gradient-to-br rounded-xl p-2.5 md:p-3 text-left text-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 ease-out cursor-pointer flex flex-col gap-1',
+                                      l.gradient
+                                    ])
+                                  },
+                                  [
+                                    a(
+                                      'i',
+                                      {
+                                        class: j([
+                                          'fas',
+                                          l.icon,
+                                          'text-base md:text-lg drop-shadow'
+                                        ])
+                                      },
+                                      null,
+                                      2
+                                    ),
+                                    a('h3', Te, d(l.label), 1),
+                                    a('p', Ce, d(l.subtitle), 1)
+                                  ],
+                                  10,
+                                  Ie
+                                )
+                              ),
+                              64
+                            ))
+                          ]))
+                        : k.value === 'diniyah'
+                          ? (i(),
+                            o('div', je, [
+                              jt.value.length === 0
+                                ? (i(),
+                                  o('div', Ne, [
+                                    ...(t[15] ||
+                                      (t[15] = [
+                                        a(
+                                          'i',
+                                          {
+                                            class:
+                                              'fas fa-school text-3xl text-slate-300 dark:text-slate-600 block mb-2'
+                                          },
+                                          null,
+                                          -1
+                                        ),
+                                        w(
+                                          ' Belum ada sekolah formal terdaftar. Tambah lembaga tipe "Formal" di Master Data > Lembaga. ',
+                                          -1
+                                        )
+                                      ]))
+                                  ]))
+                                : (i(),
+                                  o('div', $e, [
+                                    (i(!0),
+                                    o(
+                                      g,
+                                      null,
+                                      _(
+                                        jt.value,
+                                        (l) => (
+                                          i(),
+                                          o(
+                                            'button',
+                                            {
+                                              key: l.id,
+                                              onClick: (u) => Nt(l.id),
+                                              class: j([
+                                                'group relative overflow-hidden bg-gradient-to-br rounded-xl p-3 md:p-4 text-left text-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 ease-out cursor-pointer flex flex-col gap-1',
+                                                l.gradient
+                                              ])
+                                            },
+                                            [
+                                              a(
+                                                'i',
+                                                {
+                                                  class: j([
+                                                    'fas',
+                                                    l.icon,
+                                                    'text-base md:text-lg drop-shadow'
+                                                  ])
+                                                },
+                                                null,
+                                                2
+                                              ),
+                                              a('h3', Re, d(l.label), 1),
+                                              a('p', qe, d(l.subtitle), 1)
+                                            ],
+                                            10,
+                                            De
+                                          )
+                                        )
+                                      ),
+                                      128
+                                    ))
+                                  ]))
+                            ]))
+                          : x('', !0)
+                    ]))
+                  : y.value === 'santri'
+                    ? (i(),
+                      o('div', Fe, [
+                        a('div', Ee, [
+                          a('div', Be, [
+                            a('div', ze, [
+                              a(
+                                'button',
+                                {
+                                  onClick: t[7] || (t[7] = (l) => (y.value = 'lembaga')),
+                                  class:
+                                    'text-xs font-bold px-2 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition cursor-pointer',
+                                  title: 'Kembali'
+                                },
+                                [
+                                  ...(t[16] ||
+                                    (t[16] = [a('i', { class: 'fas fa-arrow-left' }, null, -1)]))
+                                ]
+                              ),
+                              a('h2', He, [
+                                a(
+                                  'i',
+                                  {
+                                    class: j([
+                                      'fas',
+                                      k.value === 'qiraati'
+                                        ? 'fa-mosque text-emerald-600'
+                                        : 'fa-book-open text-blue-600',
+                                      'mr-1'
+                                    ])
+                                  },
+                                  null,
+                                  2
+                                ),
+                                w(' ' + d(S.value) + ' · ' + d(N.value) + ' ' + d($.value), 1)
+                              ])
+                            ]),
+                            a('span', Je, d(Z.value.length) + ' santri', 1)
+                          ]),
+                          a('div', Me, [
+                            Q(
+                              a(
+                                'input',
+                                {
+                                  'onUpdate:modelValue': t[8] || (t[8] = (l) => (R.value = l)),
+                                  type: 'search',
+                                  placeholder: 'Cari nama santri...',
+                                  class:
+                                    'text-xs px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white'
+                                },
+                                null,
+                                512
+                              ),
+                              [[ce, R.value]]
+                            ),
+                            Q(
+                              a(
+                                'select',
+                                {
+                                  'onUpdate:modelValue': t[9] || (t[9] = (l) => (D.value = l)),
+                                  class:
+                                    'text-xs px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-800 dark:text-white'
+                                },
+                                [
+                                  t[17] || (t[17] = a('option', { value: '' }, 'Semua Kelas', -1)),
+                                  (i(!0),
+                                  o(
+                                    g,
+                                    null,
+                                    _(
+                                      Bt.value,
+                                      (l) => (
+                                        i(),
+                                        o('option', { key: l, value: l }, 'Kelas ' + d(l), 9, Ue)
+                                      )
+                                    ),
+                                    128
+                                  ))
+                                ],
+                                512
+                              ),
+                              [[st, D.value]]
+                            )
+                          ])
+                        ]),
+                        Z.value.length === 0
+                          ? (i(),
+                            o('div', Ge, [
+                              t[18] ||
+                                (t[18] = a(
+                                  'i',
+                                  {
+                                    class: 'fas fa-users-slash text-slate-300 text-4xl block mb-2'
+                                  },
+                                  null,
+                                  -1
+                                )),
+                              a('p', Qe, 'Belum ada santri di ' + d(S.value), 1),
+                              a(
+                                'p',
+                                Ve,
+                                'Tambah santri lewat Master Data > Data Santri dengan lembaga "' +
+                                  d(S.value) +
+                                  '".',
+                                1
+                              )
+                            ]))
+                          : (i(),
+                            o('div', Oe, [
+                              (i(!0),
+                              o(
+                                g,
+                                null,
+                                _(
+                                  Z.value,
+                                  (l) => (
+                                    i(),
+                                    o(
+                                      'button',
+                                      {
+                                        key: l.id,
+                                        onClick: (u) => se(l),
+                                        class:
+                                          'bg-white dark:bg-slate-800 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 border border-slate-200 dark:border-slate-700 rounded-xl p-3 md:p-4 text-left transition cursor-pointer flex items-center gap-3'
+                                      },
+                                      [
+                                        a('div', We, d((l.nama || '?').charAt(0).toUpperCase()), 1),
+                                        a('div', Xe, [
+                                          a('p', Ze, [
+                                            w(d(l.nama) + ' ', 1),
+                                            nt(B)(l).length > 1
+                                              ? (i(),
+                                                o(
+                                                  'span',
+                                                  {
+                                                    key: 0,
+                                                    class:
+                                                      'ml-1 text-[9px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-bold align-middle',
+                                                    title: `Santri ini punya ${nt(B)(l).length} rapor`
+                                                  },
+                                                  [
+                                                    t[19] ||
+                                                      (t[19] = a(
+                                                        'i',
+                                                        { class: 'fas fa-layer-group mr-0.5' },
+                                                        null,
+                                                        -1
+                                                      )),
+                                                    w(d(nt(B)(l).length) + ' rapor ', 1)
+                                                  ],
+                                                  8,
+                                                  ta
+                                                ))
+                                              : x('', !0)
+                                          ]),
+                                          a('p', ea, [
+                                            a('span', aa, d(l.lembaga || '-'), 1),
+                                            w(' · Kelas ' + d(l.kelas || '-') + ' ', 1),
+                                            l.nis
+                                              ? (i(), o('span', la, '· NIS ' + d(l.nis), 1))
+                                              : x('', !0),
+                                            l.is_mukim ? (i(), o('span', ra, '· MUKIM')) : x('', !0)
+                                          ])
+                                        ]),
+                                        t[20] ||
+                                          (t[20] = a(
+                                            'i',
+                                            {
+                                              class: 'fas fa-chevron-right text-slate-400 text-xs'
+                                            },
+                                            null,
+                                            -1
+                                          ))
+                                      ],
+                                      8,
+                                      Ye
+                                    )
+                                  )
+                                ),
+                                128
+                              ))
+                            ]))
+                      ]))
+                    : y.value === 'detail'
+                      ? (i(),
+                        o('div', sa, [
+                          a('div', na, [
+                            a('div', oa, [
+                              a('div', ia, [
+                                a(
+                                  'button',
+                                  {
+                                    onClick: ne,
+                                    class:
+                                      'text-xs font-bold px-2 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition cursor-pointer',
+                                    title: 'Kembali'
+                                  },
+                                  [
+                                    ...(t[21] ||
+                                      (t[21] = [a('i', { class: 'fas fa-arrow-left' }, null, -1)]))
+                                  ]
+                                ),
+                                a('h2', da, [
+                                  a(
+                                    'i',
+                                    {
+                                      class: j([
+                                        'fas',
+                                        k.value === 'qiraati'
+                                          ? 'fa-mosque text-emerald-600'
+                                          : 'fa-book-open text-blue-600',
+                                        'mr-1'
+                                      ])
+                                    },
+                                    null,
+                                    2
+                                  ),
+                                  w(
+                                    ' ' +
+                                      d((s = b.value) == null ? void 0 : s.nama) +
+                                      ' · ' +
+                                      d(S.value) +
+                                      ' · ' +
+                                      d(N.value) +
+                                      ' ' +
+                                      d($.value),
+                                    1
+                                  )
+                                ])
+                              ]),
+                              b.value && !W.value
+                                ? (i(),
+                                  o(
+                                    'button',
+                                    {
+                                      key: 0,
+                                      onClick: oe,
+                                      class:
+                                        'text-xs font-bold px-3 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white transition cursor-pointer'
+                                    },
+                                    [
+                                      ...(t[22] ||
+                                        (t[22] = [
+                                          a('i', { class: 'fas fa-print mr-1' }, null, -1),
+                                          w('Cetak / Simpan PDF ', -1)
+                                        ]))
+                                    ]
+                                  ))
+                                : x('', !0)
+                            ]),
+                            b.value && dt.value.length > 0
+                              ? (i(),
+                                o('div', ua, [
+                                  t[23] ||
+                                    (t[23] = a(
+                                      'span',
+                                      {
+                                        class:
+                                          'text-[10px] font-bold text-slate-500 uppercase tracking-wider'
+                                      },
+                                      [
+                                        a('i', { class: 'fas fa-layer-group mr-1 text-amber-600' }),
+                                        w('Rapor lain: ')
+                                      ],
+                                      -1
+                                    )),
+                                  (i(!0),
+                                  o(
+                                    g,
+                                    null,
+                                    _(
+                                      dt.value,
+                                      (l) => (
+                                        i(),
+                                        o(
+                                          'button',
+                                          {
+                                            key: l.lembaga,
+                                            onClick: (u) => zt(l),
+                                            class:
+                                              'text-[11px] font-bold px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 transition cursor-pointer'
+                                          },
+                                          [
+                                            a(
+                                              'i',
+                                              {
+                                                class: j([
+                                                  'fas',
+                                                  l.jenis === 'qiraati'
+                                                    ? 'fa-mosque'
+                                                    : 'fa-book-open',
+                                                  'mr-1'
+                                                ])
+                                              },
+                                              null,
+                                              2
+                                            ),
+                                            w(
+                                              d(l.lembaga) +
+                                                ' (' +
+                                                d(l.jenis === 'qiraati' ? 'Qiraati' : 'Diniyah') +
+                                                ') ',
+                                              1
+                                            )
+                                          ],
+                                          8,
+                                          pa
+                                        )
+                                      )
+                                    ),
+                                    128
+                                  ))
+                                ]))
+                              : x('', !0)
+                          ]),
+                          b.value
+                            ? (i(),
+                              o('div', ba, [
+                                ct.value
+                                  ? (i(),
+                                    o('div', ca, [
+                                      a(
+                                        'img',
+                                        {
+                                          src: ct.value,
+                                          alt: '',
+                                          style: {
+                                            width: '50%',
+                                            height: 'auto',
+                                            opacity: '0.1',
+                                            'object-fit': 'contain',
+                                            '-webkit-print-color-adjust': 'exact',
+                                            'print-color-adjust': 'exact'
+                                          }
+                                        },
+                                        null,
+                                        8,
+                                        ma
+                                      )
+                                    ]))
+                                  : x('', !0),
+                                a('div', ga, [
+                                  a('table', ha, [
+                                    a('tr', null, [
+                                      a('td', fa, [
+                                        ut.value
+                                          ? (i(),
+                                            o(
+                                              'img',
+                                              {
+                                                key: 0,
+                                                src: ut.value,
+                                                class:
+                                                  'inline-block w-[85px] h-[85px] object-contain',
+                                                alt: 'Logo kiri'
+                                              },
+                                              null,
+                                              8,
+                                              ka
+                                            ))
+                                          : x('', !0)
+                                      ]),
+                                      a('td', va, [
+                                        T.value.line1
+                                          ? (i(), o('div', xa, d(T.value.line1), 1))
+                                          : x('', !0),
+                                        T.value.line2
+                                          ? (i(), o('div', _a, d(T.value.line2), 1))
+                                          : x('', !0),
+                                        T.value.line3
+                                          ? (i(), o('div', ya, d(bt(T.value.line3)), 1))
+                                          : x('', !0),
+                                        T.value.line4
+                                          ? (i(), o('div', wa, d(bt(T.value.line4)), 1))
+                                          : x('', !0)
+                                      ]),
+                                      a('td', Sa, [
+                                        pt.value
+                                          ? (i(),
+                                            o(
+                                              'img',
+                                              {
+                                                key: 0,
+                                                src: pt.value,
+                                                class:
+                                                  'inline-block w-[85px] h-[85px] object-contain',
+                                                alt: 'Logo kanan'
+                                              },
+                                              null,
+                                              8,
+                                              La
+                                            ))
+                                          : x('', !0)
+                                      ])
+                                    ])
+                                  ]),
+                                  a('h2', Aa, [
+                                    w(
+                                      d(
+                                        k.value === 'diniyah'
+                                          ? 'LAPORAN HASIL BELAJAR DINIYAH PESERTA DIDIK'
+                                          : 'SURAT KETERANGAN HASIL PENDIDIKAN'
+                                      ) + ' ',
+                                      1
+                                    ),
+                                    k.value === 'diniyah'
+                                      ? (i(),
+                                        o(
+                                          g,
+                                          { key: 0 },
+                                          [
+                                            t[24] || (t[24] = a('br', null, null, -1)),
+                                            w('TAHUN PELAJARAN ' + d(N.value), 1)
+                                          ],
+                                          64
+                                        ))
+                                      : x('', !0)
+                                  ]),
+                                  a('table', Ka, [
+                                    k.value === 'diniyah'
+                                      ? (i(),
+                                        o('tbody', Pa, [
+                                          a('tr', null, [
+                                            t[25] ||
+                                              (t[25] = a(
+                                                'td',
+                                                { class: 'w-[120px] py-0.5' },
+                                                'No. Induk',
+                                                -1
+                                              )),
+                                            t[26] ||
+                                              (t[26] = a('td', { class: 'w-[10px]' }, ':', -1)),
+                                            a('td', Ia, d(b.value.nis || '-'), 1),
+                                            t[27] ||
+                                              (t[27] = a(
+                                                'td',
+                                                { class: 'w-[120px]' },
+                                                'Kelas',
+                                                -1
+                                              )),
+                                            t[28] ||
+                                              (t[28] = a('td', { class: 'w-[10px]' }, ':', -1)),
+                                            a('td', null, d(b.value.kelas_sekolah || '-'), 1)
+                                          ]),
+                                          a('tr', null, [
+                                            t[29] ||
+                                              (t[29] = a('td', { class: 'py-0.5' }, 'Nama', -1)),
+                                            t[30] || (t[30] = a('td', null, ':', -1)),
+                                            a('td', Ta, d(b.value.nama), 1),
+                                            t[31] || (t[31] = a('td', null, 'Semester', -1)),
+                                            t[32] || (t[32] = a('td', null, ':', -1)),
+                                            a('td', null, d($.value), 1)
+                                          ]),
+                                          a('tr', null, [
+                                            t[33] ||
+                                              (t[33] = a('td', { class: 'py-0.5' }, 'Lembaga', -1)),
+                                            t[34] || (t[34] = a('td', null, ':', -1)),
+                                            a(
+                                              'td',
+                                              Ca,
+                                              d(b.value.lembaga_sekolah || b.value.lembaga || '-'),
+                                              1
+                                            )
+                                          ])
+                                        ]))
+                                      : (i(),
+                                        o('tbody', ja, [
+                                          a('tr', null, [
+                                            t[35] ||
+                                              (t[35] = a(
+                                                'td',
+                                                { class: 'w-[120px] py-0.5' },
+                                                'Nama Santri',
+                                                -1
+                                              )),
+                                            t[36] ||
+                                              (t[36] = a('td', { class: 'w-[10px]' }, ':', -1)),
+                                            a('td', Na, d(b.value.nama), 1),
+                                            t[37] ||
+                                              (t[37] = a(
+                                                'td',
+                                                { class: 'w-[120px]' },
+                                                'Tahun Pelajaran',
+                                                -1
+                                              )),
+                                            t[38] ||
+                                              (t[38] = a('td', { class: 'w-[10px]' }, ':', -1)),
+                                            a('td', null, d(N.value), 1)
+                                          ]),
+                                          a('tr', null, [
+                                            t[39] ||
+                                              (t[39] = a('td', { class: 'py-0.5' }, 'Lembaga', -1)),
+                                            t[40] || (t[40] = a('td', null, ':', -1)),
+                                            a('td', $a, d(b.value.lembaga || '-'), 1),
+                                            t[41] || (t[41] = a('td', null, 'Semester', -1)),
+                                            t[42] || (t[42] = a('td', null, ':', -1)),
+                                            a('td', null, d($.value), 1)
+                                          ]),
+                                          a('tr', null, [
+                                            t[43] ||
+                                              (t[43] = a('td', { class: 'py-0.5' }, 'Kelas', -1)),
+                                            t[44] || (t[44] = a('td', null, ':', -1)),
+                                            a(
+                                              'td',
+                                              Da,
+                                              d(b.value.kelas_sekolah || b.value.kelas || '-'),
+                                              1
+                                            )
+                                          ])
+                                        ]))
+                                  ]),
+                                  m.value.perLevel
+                                    ? (i(),
+                                      o('div', Ra, [
+                                        a('table', qa, [
+                                          a('thead', Fa, [
+                                            a('tr', null, [
+                                              t[45] ||
+                                                (t[45] = a(
+                                                  'th',
+                                                  {
+                                                    class:
+                                                      'border border-black px-1 py-1.5 w-[30px] align-middle'
+                                                  },
+                                                  'Kelas',
+                                                  -1
+                                                )),
+                                              t[46] ||
+                                                (t[46] = a(
+                                                  'th',
+                                                  {
+                                                    class:
+                                                      'border border-black px-1 py-1.5 w-[55px] align-middle'
+                                                  },
+                                                  'Level Baca',
+                                                  -1
+                                                )),
+                                              t[47] ||
+                                                (t[47] = a(
+                                                  'th',
+                                                  {
+                                                    class:
+                                                      'border border-black px-1 py-1.5 text-left align-middle'
+                                                  },
+                                                  'Target Khotam',
+                                                  -1
+                                                )),
+                                              t[48] ||
+                                                (t[48] = a(
+                                                  'th',
+                                                  {
+                                                    class:
+                                                      'border border-black px-1 py-1.5 w-[65px] align-middle'
+                                                  },
+                                                  'Tgl Khotam',
+                                                  -1
+                                                )),
+                                              (i(!0),
+                                              o(
+                                                g,
+                                                null,
+                                                _(
+                                                  q.value,
+                                                  (l) => (
+                                                    i(),
+                                                    o(
+                                                      'th',
+                                                      {
+                                                        key: l.id,
+                                                        class:
+                                                          'border border-black px-1 py-1.5 align-middle'
+                                                      },
+                                                      d(l.label),
+                                                      1
+                                                    )
+                                                  )
+                                                ),
+                                                128
+                                              )),
+                                              t[49] ||
+                                                (t[49] = a(
+                                                  'th',
+                                                  {
+                                                    class:
+                                                      'border border-black px-1 py-1.5 w-[55px] align-middle'
+                                                  },
+                                                  'Jumlah',
+                                                  -1
+                                                ))
+                                            ])
+                                          ]),
+                                          a('tbody', null, [
+                                            (i(!0),
+                                            o(
+                                              g,
+                                              null,
+                                              _(
+                                                m.value.levels || [],
+                                                (l, u) => (
+                                                  i(),
+                                                  o(
+                                                    g,
+                                                    { key: l.id },
+                                                    [
+                                                      (i(!0),
+                                                      o(
+                                                        g,
+                                                        null,
+                                                        _(
+                                                          l.khotamList || [],
+                                                          (p, v) => (
+                                                            i(),
+                                                            o('tr', { key: p.id }, [
+                                                              v === 0
+                                                                ? (i(),
+                                                                  o(
+                                                                    'td',
+                                                                    {
+                                                                      key: 0,
+                                                                      rowspan: (l.khotamList || [])
+                                                                        .length,
+                                                                      class:
+                                                                        'border border-black px-1 py-1.5 text-center font-bold align-middle'
+                                                                    },
+                                                                    d(u + 1),
+                                                                    9,
+                                                                    Ea
+                                                                  ))
+                                                                : x('', !0),
+                                                              v === 0
+                                                                ? (i(),
+                                                                  o(
+                                                                    'td',
+                                                                    {
+                                                                      key: 1,
+                                                                      rowspan: (l.khotamList || [])
+                                                                        .length,
+                                                                      class:
+                                                                        'border border-black px-1 py-1.5 text-center align-middle'
+                                                                    },
+                                                                    d(l.levelBaca || l.label || ''),
+                                                                    9,
+                                                                    Ba
+                                                                  ))
+                                                                : x('', !0),
+                                                              a(
+                                                                'td',
+                                                                za,
+                                                                d(p.labelKhotam || p.id) +
+                                                                  ' (' +
+                                                                  d(p.multiplier || 2) +
+                                                                  'x)',
+                                                                1
+                                                              ),
+                                                              a(
+                                                                'td',
+                                                                Ha,
+                                                                d(
+                                                                  Vt(
+                                                                    M(
+                                                                      `pra__${l.id}__${p.id}__tgl_khotam`
+                                                                    )
+                                                                  )
+                                                                ),
+                                                                1
+                                                              ),
+                                                              (i(!0),
+                                                              o(
+                                                                g,
+                                                                null,
+                                                                _(
+                                                                  q.value,
+                                                                  (h) => (
+                                                                    i(),
+                                                                    o(
+                                                                      'td',
+                                                                      {
+                                                                        key: h.id,
+                                                                        class:
+                                                                          'border border-black px-1 py-1.5 text-center align-middle'
+                                                                      },
+                                                                      d(
+                                                                        M(
+                                                                          `pra__${l.id}__${p.id}__${h.id}`
+                                                                        ) || ''
+                                                                      ),
+                                                                      1
+                                                                    )
+                                                                  )
+                                                                ),
+                                                                128
+                                                              )),
+                                                              a('td', Ja, d(wt(yt(l.id, p.id))), 1)
+                                                            ])
+                                                          )
+                                                        ),
+                                                        128
+                                                      ))
+                                                    ],
+                                                    64
+                                                  )
+                                                )
+                                              ),
+                                              128
+                                            ))
+                                          ]),
+                                          a('tfoot', null, [
+                                            a('tr', Ma, [
+                                              t[50] ||
+                                                (t[50] = a(
+                                                  'td',
+                                                  {
+                                                    colspan: '3',
+                                                    class:
+                                                      'border border-black px-1 py-1 font-bold text-left'
+                                                  },
+                                                  'Jumlah Khotam',
+                                                  -1
+                                                )),
+                                              a(
+                                                'td',
+                                                {
+                                                  colspan: q.value.length + 2,
+                                                  class:
+                                                    'border border-black px-1 py-1 text-center font-bold'
+                                                },
+                                                d(Xt.value) + ' Khotam',
+                                                9,
+                                                Ua
+                                              )
+                                            ]),
+                                            a('tr', Ga, [
+                                              a(
+                                                'td',
+                                                {
+                                                  colspan: q.value.length + 4,
+                                                  class:
+                                                    'border border-black px-1 py-1 font-bold text-left'
+                                                },
+                                                'Total Jumlah',
+                                                8,
+                                                Qa
+                                              ),
+                                              a('td', Va, d(wt(Wt.value)), 1)
+                                            ])
+                                          ])
+                                        ])
+                                      ]))
+                                    : m.value.perKelas
+                                      ? (i(),
+                                        o('div', Oa, [
+                                          J.value
+                                            ? (i(),
+                                              o('table', Wa, [
+                                                t[51] ||
+                                                  (t[51] = a(
+                                                    'thead',
+                                                    { class: 'bg-blue-100' },
+                                                    [
+                                                      a('tr', null, [
+                                                        a(
+                                                          'th',
+                                                          {
+                                                            class:
+                                                              'border border-black px-2 py-1.5 w-[40px]'
+                                                          },
+                                                          'NO'
+                                                        ),
+                                                        a(
+                                                          'th',
+                                                          {
+                                                            class:
+                                                              'border border-black px-2 py-1.5 text-left'
+                                                          },
+                                                          'MATA PELAJARAN'
+                                                        ),
+                                                        a(
+                                                          'th',
+                                                          {
+                                                            class:
+                                                              'border border-black px-2 py-1.5 w-[50px]'
+                                                          },
+                                                          'KKM'
+                                                        ),
+                                                        a(
+                                                          'th',
+                                                          {
+                                                            class: 'border border-black px-2 py-1.5'
+                                                          },
+                                                          'NILAI RATA-RATA SUMATIF'
+                                                        ),
+                                                        a(
+                                                          'th',
+                                                          {
+                                                            class: 'border border-black px-2 py-1.5'
+                                                          },
+                                                          'NILAI SUMATIF AKHIR SEMESTER'
+                                                        )
+                                                      ])
+                                                    ],
+                                                    -1
+                                                  )),
+                                                a('tbody', null, [
+                                                  (i(!0),
+                                                  o(
+                                                    g,
+                                                    null,
+                                                    _(
+                                                      J.value.mapel || [],
+                                                      (l, u) => (
+                                                        i(),
+                                                        o('tr', { key: l.id || u }, [
+                                                          a('td', Xa, d(u + 1), 1),
+                                                          a('td', Za, d(l.nama), 1),
+                                                          a('td', tl, d(l.kkm || 80), 1),
+                                                          a(
+                                                            'td',
+                                                            el,
+                                                            d(
+                                                              M(
+                                                                `dn__${b.value.kelas_sekolah}__${l.id || E(l.nama)}__sumatif`
+                                                              ) || '-'
+                                                            ),
+                                                            1
+                                                          ),
+                                                          a(
+                                                            'td',
+                                                            al,
+                                                            d(
+                                                              M(
+                                                                `dn__${b.value.kelas_sekolah}__${l.id || E(l.nama)}__akhir`
+                                                              ) || '-'
+                                                            ),
+                                                            1
+                                                          )
+                                                        ])
+                                                      )
+                                                    ),
+                                                    128
+                                                  ))
+                                                ])
+                                              ]))
+                                            : (i(),
+                                              o(
+                                                'div',
+                                                Ya,
+                                                ' Jenjang "' +
+                                                  d(b.value.kelas_sekolah || '-') +
+                                                  '" belum dikonfigurasi schema-nya. ',
+                                                1
+                                              ))
+                                        ]))
+                                      : m.value.tableLayout === 'kelasJuz' &&
+                                          (m.value.rows || []).length
+                                        ? (i(),
+                                          o('div', ll, [
+                                            a('div', rl, [
+                                              t[52] ||
+                                                (t[52] = a(
+                                                  'i',
+                                                  {
+                                                    class: 'fas fa-info-circle text-blue-500 mr-1'
+                                                  },
+                                                  null,
+                                                  -1
+                                                )),
+                                              t[53] ||
+                                                (t[53] = a(
+                                                  'span',
+                                                  { class: 'text-emerald-700' },
+                                                  'KUMULATIF',
+                                                  -1
+                                                )),
+                                              w(
+                                                ' — ' +
+                                                  d(G.value.length) +
+                                                  ' baris (Kelas 1 s/d ' +
+                                                  d(
+                                                    ((r = b.value) == null ? void 0 : r.kelas) ||
+                                                      '—'
+                                                  ) +
+                                                  ') ',
+                                                1
+                                              )
+                                            ]),
+                                            a('table', sl, [
+                                              a('thead', nl, [
+                                                a('tr', null, [
+                                                  t[54] ||
+                                                    (t[54] = a(
+                                                      'th',
+                                                      {
+                                                        rowspan: '2',
+                                                        class:
+                                                          'border border-slate-500 px-1.5 py-1 align-middle'
+                                                      },
+                                                      'Kelas',
+                                                      -1
+                                                    )),
+                                                  t[55] ||
+                                                    (t[55] = a(
+                                                      'th',
+                                                      {
+                                                        rowspan: '2',
+                                                        class:
+                                                          'border border-slate-500 px-1.5 py-1 align-middle'
+                                                      },
+                                                      'Juz',
+                                                      -1
+                                                    )),
+                                                  (i(!0),
+                                                  o(
+                                                    g,
+                                                    null,
+                                                    _(
+                                                      te.value,
+                                                      (l, u) => (
+                                                        i(),
+                                                        o(
+                                                          g,
+                                                          { key: u },
+                                                          [
+                                                            l.group
+                                                              ? (i(),
+                                                                o(
+                                                                  'th',
+                                                                  {
+                                                                    key: 0,
+                                                                    colspan: l.span,
+                                                                    class:
+                                                                      'border border-slate-500 px-1.5 py-1'
+                                                                  },
+                                                                  d(l.group),
+                                                                  9,
+                                                                  ol
+                                                                ))
+                                                              : (i(), o('th', il, d(l.label), 1))
+                                                          ],
+                                                          64
+                                                        )
+                                                      )
+                                                    ),
+                                                    128
+                                                  ))
+                                                ]),
+                                                a('tr', null, [
+                                                  (i(!0),
+                                                  o(
+                                                    g,
+                                                    null,
+                                                    _(
+                                                      ee.value,
+                                                      (l) => (
+                                                        i(),
+                                                        o(
+                                                          'th',
+                                                          {
+                                                            key: l.id,
+                                                            class:
+                                                              'border border-slate-500 px-1.5 py-1'
+                                                          },
+                                                          d(l.label),
+                                                          1
+                                                        )
+                                                      )
+                                                    ),
+                                                    128
+                                                  ))
+                                                ])
+                                              ]),
+                                              a('tbody', null, [
+                                                (i(!0),
+                                                o(
+                                                  g,
+                                                  null,
+                                                  _(
+                                                    G.value,
+                                                    (l, u) => (
+                                                      i(),
+                                                      o('tr', { key: u }, [
+                                                        ae(u)
+                                                          ? (i(),
+                                                            o(
+                                                              'td',
+                                                              {
+                                                                key: 0,
+                                                                rowspan: le(u),
+                                                                class:
+                                                                  'border border-slate-500 px-1.5 py-1 text-center font-black bg-slate-50 align-middle'
+                                                              },
+                                                              d(l.kelas),
+                                                              9,
+                                                              dl
+                                                            ))
+                                                          : x('', !0),
+                                                        a('td', ul, d(l.juz), 1),
+                                                        (i(!0),
+                                                        o(
+                                                          g,
+                                                          null,
+                                                          _(
+                                                            m.value.fields || [],
+                                                            (p) => (
+                                                              i(),
+                                                              o(
+                                                                'td',
+                                                                {
+                                                                  key: p.id,
+                                                                  class:
+                                                                    'border border-slate-500 px-1.5 py-1 text-center'
+                                                                },
+                                                                d(Zt(l, p)),
+                                                                1
+                                                              )
+                                                            )
+                                                          ),
+                                                          128
+                                                        ))
+                                                      ])
+                                                    )
+                                                  ),
+                                                  128
+                                                )),
+                                                G.value.length === 0
+                                                  ? (i(),
+                                                    o('tr', pl, [
+                                                      a(
+                                                        'td',
+                                                        {
+                                                          colspan:
+                                                            2 + (m.value.fields || []).length,
+                                                          class:
+                                                            'border border-slate-300 px-2 py-3 text-center text-slate-400 italic text-[11px]'
+                                                        },
+                                                        [
+                                                          ...(t[56] ||
+                                                            (t[56] = [
+                                                              w(
+                                                                ' Tidak ada baris untuk kelas santri ini. Cek field ',
+                                                                -1
+                                                              ),
+                                                              a('code', null, 'kelas', -1),
+                                                              w(' di data santri. ', -1)
+                                                            ]))
+                                                        ],
+                                                        8,
+                                                        bl
+                                                      )
+                                                    ]))
+                                                  : x('', !0)
+                                              ])
+                                            ])
+                                          ]))
+                                        : (m.value.sections || []).length > 0
+                                          ? (i(),
+                                            o('div', cl, [
+                                              (i(!0),
+                                              o(
+                                                g,
+                                                null,
+                                                _(
+                                                  m.value.sections || [],
+                                                  (l) => (
+                                                    i(),
+                                                    o('div', { key: l.id, class: 'mt-3' }, [
+                                                      a('div', ml, d(l.title), 1),
+                                                      l.rows && l.rows.length > 0
+                                                        ? (i(),
+                                                          o('table', gl, [
+                                                            a('thead', hl, [
+                                                              kt(l)
+                                                                ? (i(),
+                                                                  o('tr', fl, [
+                                                                    a('th', kl, d(vt(l)), 1),
+                                                                    (i(!0),
+                                                                    o(
+                                                                      g,
+                                                                      null,
+                                                                      _(
+                                                                        Mt(l),
+                                                                        (u, p) => (
+                                                                          i(),
+                                                                          o(
+                                                                            g,
+                                                                            { key: p },
+                                                                            [
+                                                                              u.group
+                                                                                ? (i(),
+                                                                                  o(
+                                                                                    'th',
+                                                                                    {
+                                                                                      key: 0,
+                                                                                      colspan:
+                                                                                        u.span,
+                                                                                      class:
+                                                                                        'border border-slate-500 px-1 py-1'
+                                                                                    },
+                                                                                    d(u.group),
+                                                                                    9,
+                                                                                    vl
+                                                                                  ))
+                                                                                : (i(),
+                                                                                  o(
+                                                                                    'th',
+                                                                                    xl,
+                                                                                    d(u.label),
+                                                                                    1
+                                                                                  ))
+                                                                            ],
+                                                                            64
+                                                                          )
+                                                                        )
+                                                                      ),
+                                                                      128
+                                                                    ))
+                                                                  ]))
+                                                                : x('', !0),
+                                                              kt(l)
+                                                                ? (i(),
+                                                                  o('tr', _l, [
+                                                                    (i(!0),
+                                                                    o(
+                                                                      g,
+                                                                      null,
+                                                                      _(
+                                                                        Ut(l),
+                                                                        (u) => (
+                                                                          i(),
+                                                                          o(
+                                                                            'th',
+                                                                            {
+                                                                              key: u.id,
+                                                                              class:
+                                                                                'border border-slate-500 px-1 py-1'
+                                                                            },
+                                                                            d(u.label),
+                                                                            1
+                                                                          )
+                                                                        )
+                                                                      ),
+                                                                      128
+                                                                    ))
+                                                                  ]))
+                                                                : (i(),
+                                                                  o('tr', yl, [
+                                                                    a('th', wl, d(vt(l)), 1),
+                                                                    (i(!0),
+                                                                    o(
+                                                                      g,
+                                                                      null,
+                                                                      _(
+                                                                        l.fields,
+                                                                        (u) => (
+                                                                          i(),
+                                                                          o(
+                                                                            'th',
+                                                                            {
+                                                                              key: u.id,
+                                                                              class:
+                                                                                'border border-slate-500 px-1 py-1'
+                                                                            },
+                                                                            d(u.label),
+                                                                            1
+                                                                          )
+                                                                        )
+                                                                      ),
+                                                                      128
+                                                                    ))
+                                                                  ]))
+                                                            ]),
+                                                            a('tbody', null, [
+                                                              (i(!0),
+                                                              o(
+                                                                g,
+                                                                null,
+                                                                _(
+                                                                  l.rows,
+                                                                  (u) => (
+                                                                    i(),
+                                                                    o('tr', { key: u }, [
+                                                                      a('td', Sl, d(u), 1),
+                                                                      (i(!0),
+                                                                      o(
+                                                                        g,
+                                                                        null,
+                                                                        _(
+                                                                          l.fields,
+                                                                          (p) => (
+                                                                            i(),
+                                                                            o(
+                                                                              'td',
+                                                                              {
+                                                                                key: p.id,
+                                                                                class:
+                                                                                  'border border-slate-500 px-1 py-1 text-center'
+                                                                              },
+                                                                              d(St(l.id, u, p)),
+                                                                              1
+                                                                            )
+                                                                          )
+                                                                        ),
+                                                                        128
+                                                                      ))
+                                                                    ])
+                                                                  )
+                                                                ),
+                                                                128
+                                                              ))
+                                                            ])
+                                                          ]))
+                                                        : (i(),
+                                                          o('table', Ll, [
+                                                            a('thead', Al, [
+                                                              a('tr', null, [
+                                                                (i(!0),
+                                                                o(
+                                                                  g,
+                                                                  null,
+                                                                  _(
+                                                                    l.fields,
+                                                                    (u) => (
+                                                                      i(),
+                                                                      o(
+                                                                        'th',
+                                                                        {
+                                                                          key: u.id,
+                                                                          class:
+                                                                            'border border-slate-500 px-1 py-1'
+                                                                        },
+                                                                        d(u.label),
+                                                                        1
+                                                                      )
+                                                                    )
+                                                                  ),
+                                                                  128
+                                                                ))
+                                                              ])
+                                                            ]),
+                                                            a('tbody', null, [
+                                                              a('tr', null, [
+                                                                (i(!0),
+                                                                o(
+                                                                  g,
+                                                                  null,
+                                                                  _(
+                                                                    l.fields,
+                                                                    (u) => (
+                                                                      i(),
+                                                                      o(
+                                                                        'td',
+                                                                        {
+                                                                          key: u.id,
+                                                                          class:
+                                                                            'border border-slate-500 px-1 py-1 text-center'
+                                                                        },
+                                                                        d(St(l.id, null, u)),
+                                                                        1
+                                                                      )
+                                                                    )
+                                                                  ),
+                                                                  128
+                                                                ))
+                                                              ])
+                                                            ])
+                                                          ]))
+                                                    ])
+                                                  )
+                                                ),
+                                                128
+                                              ))
+                                            ]))
+                                          : (i(),
+                                            o(
+                                              'div',
+                                              Kl,
+                                              ' Schema rapor untuk lembaga "' +
+                                                d(b.value.lembaga) +
+                                                '" belum dikonfigurasi. Setup di Pengaturan Web > Schema Rapor. ',
+                                              1
+                                            )),
+                                  a('table', Pl, [
+                                    a('tr', null, [
+                                      t[57] ||
+                                        (t[57] = a(
+                                          'td',
+                                          {
+                                            class:
+                                              'border border-slate-500 px-1.5 py-1 bg-slate-100 font-bold text-center',
+                                            style: { width: '60%' }
+                                          },
+                                          'Rata-rata Nilai',
+                                          -1
+                                        )),
+                                      a('td', Il, d(Number(Qt.value).toFixed(2)), 1)
+                                    ])
+                                  ]),
+                                  a('table', Tl, [
+                                    a('tr', null, [
+                                      a('td', Cl, [
+                                        t[58] ||
+                                          (t[58] = a(
+                                            'p',
+                                            { class: 'font-bold mb-1' },
+                                            'ABSENSI :',
+                                            -1
+                                          )),
+                                        a('p', jl, '1. Sakit : ' + d(tt.value.sakit || 0), 1),
+                                        a('p', Nl, '2. Izin : ' + d(tt.value.izin || 0), 1),
+                                        a('p', $l, '3. Alpa : ' + d(tt.value.alpa || 0), 1)
+                                      ]),
+                                      a('td', Dl, [
+                                        t[59] ||
+                                          (t[59] = a(
+                                            'p',
+                                            { class: 'font-bold mb-1' },
+                                            'NILAI KEPRIBADIAN',
+                                            -1
+                                          )),
+                                        a(
+                                          'p',
+                                          Rl,
+                                          'Kelakuan : ' + d(et.value.kelakuan || 'Baik'),
+                                          1
+                                        ),
+                                        a(
+                                          'p',
+                                          ql,
+                                          'Kerajinan : ' + d(et.value.kerajinan || 'Baik'),
+                                          1
+                                        ),
+                                        a(
+                                          'p',
+                                          Fl,
+                                          'Kebersihan : ' + d(et.value.kebersihan || 'Baik'),
+                                          1
+                                        )
+                                      ])
+                                    ])
+                                  ]),
+                                  a('div', El, [
+                                    t[60] ||
+                                      (t[60] = a(
+                                        'p',
+                                        { class: 'font-bold mb-1' },
+                                        'Catatan untuk santri / orang tua :',
+                                        -1
+                                      )),
+                                    a('p', Bl, d(Gt.value), 1)
+                                  ]),
+                                  a('div', zl, [
+                                    a('table', Hl, [
+                                      a('tr', null, [
+                                        t[61] || (t[61] = a('td', { class: 'w-1/3' }, null, -1)),
+                                        t[62] || (t[62] = a('td', { class: 'w-1/3' }, null, -1)),
+                                        a('td', Jl, 'Sidoarjo, ' + d(Ht.value), 1)
+                                      ]),
+                                      a('tr', null, [
+                                        t[63] || (t[63] = a('td', null, 'Wali Santri', -1)),
+                                        t[64] || (t[64] = a('td', null, 'Guru Kelas', -1)),
+                                        a('td', null, d(re.value), 1)
+                                      ]),
+                                      a('tr', Ml, [
+                                        t[65] || (t[65] = a('td', null, null, -1)),
+                                        a('td', null, [
+                                          mt.value
+                                            ? (i(),
+                                              o(
+                                                'img',
+                                                {
+                                                  key: 0,
+                                                  src: mt.value,
+                                                  alt: 'TTD Guru',
+                                                  style: {
+                                                    display: 'inline-block',
+                                                    'max-width': '120px',
+                                                    'max-height': '60px',
+                                                    'object-fit': 'contain'
+                                                  }
+                                                },
+                                                null,
+                                                8,
+                                                Ul
+                                              ))
+                                            : x('', !0)
+                                        ]),
+                                        a('td', null, [
+                                          gt.value
+                                            ? (i(),
+                                              o(
+                                                'img',
+                                                {
+                                                  key: 0,
+                                                  src: gt.value,
+                                                  alt: 'TTD Kepala',
+                                                  style: {
+                                                    display: 'inline-block',
+                                                    'max-width': '120px',
+                                                    'max-height': '60px',
+                                                    'object-fit': 'contain'
+                                                  }
+                                                },
+                                                null,
+                                                8,
+                                                Gl
+                                              ))
+                                            : x('', !0)
+                                        ])
+                                      ]),
+                                      a('tr', null, [
+                                        a('td', null, [
+                                          a(
+                                            'span',
+                                            Ql,
+                                            d(
+                                              ((n = b.value) == null ? void 0 : n.wali) ||
+                                                '..............................'
+                                            ),
+                                            1
+                                          )
+                                        ]),
+                                        a('td', null, [
+                                          a('span', Vl, d(Kt.value || '..........'), 1)
+                                        ]),
+                                        a('td', null, [
+                                          a(
+                                            'span',
+                                            Ol,
+                                            d(At.value || '..............................'),
+                                            1
+                                          )
+                                        ])
+                                      ]),
+                                      a('tr', Yl, [
+                                        t[66] || (t[66] = a('td', null, null, -1)),
+                                        a('td', null, d(It.value ? 'EKGQ: ' + It.value : ''), 1),
+                                        a('td', null, d(Tt.value ? 'EKGQ: ' + Tt.value : ''), 1)
+                                      ])
+                                    ])
+                                  ])
+                                ])
+                              ]))
+                            : x('', !0)
+                        ]))
+                      : x('', !0)
+            ])
+          )
+        }
+      )
+    }
+  }
+export { rr as default }

@@ -1,0 +1,4 @@
+fix(psb): samakan KOP & font dgn main site (1 Juni)
+
+- N8: KOP PSB -> kop umum (YAYASAN AL MANSHUR / PONDOK PESANTREN MAMBAUL ULUM / alamat & telp umum)
+- N9: font PSB -> 'Plus Jakarta Sans' (style.css) + load Google Fonts di index.html (match main site)

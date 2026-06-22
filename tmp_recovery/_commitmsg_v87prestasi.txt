@@ -1,0 +1,8 @@
+feat(notif): notif prestasi — event notif_prestasi saat input nilai + rule
+
+- firestore.rules: tambah koleksi notif_prestasi (read public, create/update/delete signedIn).
+- RekapPrestasiView.simpanRekap: tulis event notif_prestasi per santri (1 per bulan berjalan) saat simpan nilai.
+  (nilai prestasi sendiri tetap tersimpan di doc santri seperti semula; ini hanya event ringan untuk notif.)
+- useNotifications: getPrestasi() subscribe notif_prestasi -> wali/santri (anaknya). Tambah ke items + markAllRead/clearAll.
+
+v.87.0526. vite build exit 0. Rules WAJIB di-deploy (firebase:deploy sudah include firestore:rules). Belum push.

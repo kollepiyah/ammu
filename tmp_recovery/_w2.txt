@@ -1,0 +1,23 @@
+==== rev-parse + type d3d60f7 ==== 
+d3d60f738ef187f49f2ca68d71dac957c98c5f5f
+commit
+ 
+==== grep appwidget di d3d60f7 (matches) ==== 
+d3d60f7:ANDROID_WIDGET_TODO.md:24:│   ├── JamHijriWidget.kt          # AppWidgetProvider untuk jam
+d3d60f7:ANDROID_WIDGET_TODO.md:25:│   └── KalenderWidget.kt          # AppWidgetProvider untuk agenda
+d3d60f7:ANDROID_WIDGET_TODO.md:65:- Jam Hijri widget: ~2 jam (layout + AppWidgetProvider + AlarmManager update)
+d3d60f7:vue-app/android/app/src/main/AndroidManifest.xml:40:                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+d3d60f7:vue-app/android/app/src/main/AndroidManifest.xml:44:                android:name="android.appwidget.provider"
+d3d60f7:vue-app/android/app/src/main/java/app/ammu/id/widgets/JamHijriWidget.kt:5:import android.appwidget.AppWidgetManager
+d3d60f7:vue-app/android/app/src/main/java/app/ammu/id/widgets/JamHijriWidget.kt:6:import android.appwidget.AppWidgetProvider
+d3d60f7:vue-app/android/app/src/main/java/app/ammu/id/widgets/JamHijriWidget.kt:30:class JamHijriWidget : AppWidgetProvider() {
+d3d60f7:vue-app/android/app/src/main/java/app/ammu/id/widgets/JamHijriWidget.kt:52:            val mgr = AppWidgetManager.getInstance(context)
+d3d60f7:vue-app/android/app/src/main/java/app/ammu/id/widgets/JamHijriWidget.kt:53:            val ids = mgr.getAppWidgetIds(ComponentName(context, JamHijriWidget::class.java))
+d3d60f7:vue-app/android/app/src/main/java/app/ammu/id/widgets/JamHijriWidget.kt:59:        private fun updateWidget(context: Context, manager: AppWidgetManager, widgetId: Int) {
+d3d60f7:vue-app/android/app/src/main/java/app/ammu/id/widgets/JamHijriWidget.kt:93:            manager.updateAppWidget(widgetId, views)
+d3d60f7:vue-app/android/app/src/main/java/app/ammu/id/widgets/JamHijriWidget.kt:119:        appWidgetManager: AppWidgetManager,
+d3d60f7:vue-app/android/app/src/main/java/app/ammu/id/widgets/JamHijriWidget.kt:120:        appWidgetIds: IntArray
+d3d60f7:vue-app/android/app/src/main/java/app/ammu/id/widgets/JamHijriWidget.kt:122:        for (id in appWidgetIds) {
+d3d60f7:vue-app/android/app/src/main/java/app/ammu/id/widgets/JamHijriWidget.kt:123:            updateWidget(context, appWidgetManager, id)
+d3d60f7:vue-app/android/app/src/main/res/xml/widget_jam_hijri_info.xml:2:<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+DONE 

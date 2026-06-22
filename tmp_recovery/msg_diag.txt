@@ -1,0 +1,5 @@
+feat(statistik): diagnostik Kelas Total — rincian kombo + flag guru yatim (deteksi sampah)
+
+- klik kartu KELAS TOTAL -> panel rincian: tiap baris = kombinasi guru x lembaga x kelas (santri aktif punya guru) = persis penyumbang angka Kelas Total
+- flag "yatim" = guru tak ada di daftar guru AKTIF -> kandidat SAMPAH (santri nyantol ke guru lama/terhapus/nonaktif)
+- read-only (tak auto-hapus); admin lihat & perbaiki manual (edit santri ganti guru / hapus santri sampah)

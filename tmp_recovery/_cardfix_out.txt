@@ -1,0 +1,3 @@
+[feature/vue-migration 2c06a71] fix(profil): seluruh card santri/guru clickable (abaikan tombol/link/checkbox) + sembunyikan Pengaturan Profil saat readonly
+ 4 files changed, 24 insertions(+), 13 deletions(-)
+2c06a71 fix(profil): seluruh card santri/guru clickable (abaikan tombol/link/checkbox) + sembunyikan Pengaturan Profil saat readonly

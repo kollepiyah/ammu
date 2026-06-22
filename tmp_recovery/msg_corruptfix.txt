@@ -1,0 +1,5 @@
+fix(corrupt): strip trailing NULL bytes di 3 view (korupsi mount, konten utuh)
+
+- PengaturanView.vue (29 NUL), PosSantriView.vue (8), PpdbAdminView.vue (3)
+- NUL hanya menumpuk di ekor setelah </script>; konten SFC utuh, NUL=0 setelah strip
+- ditemukan saat audit menyeluruh 1 Juni (grep deteksi "binary file")

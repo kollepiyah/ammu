@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- v.94.0626 (refine): gradient teal + pola wajik mint — PERSIS kartu Hijri beranda
+     (DashboardJamHijri.vue: gradient 135deg #0F766E->#134E4A + pattern diamond #5EEAD4 ~10%). -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <corners android:radius="20dp" />
+            <gradient
+                android:startColor="#0F766E"
+                android:endColor="#134E4A"
+                android:angle="315" />
+        </shape>
+    </item>
+    <item>
+        <bitmap
+            android:src="@drawable/widget_hijri_pattern"
+            android:tileMode="repeat"
+            android:gravity="fill" />
+    </item>
+</layer-list>

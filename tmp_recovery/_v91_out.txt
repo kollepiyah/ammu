@@ -1,0 +1,22 @@
+[feature/vue-migration 056f79e] feat(v.91): bump v.91.0626 (vc91) + search santri di Kelas + indikator offline topbar + badge status tagihan (Lunas/Tempo/Nunggak)
+ 12 files changed, 69 insertions(+), 19 deletions(-)
+----LOG---- 
+commit 056f79e65237075fefeb2efd0de6f02d375d6f61
+Author: Kyai Rahman Fanani <lexanoisgroup3@gmail.com>
+Date:   Tue Jun 2 08:32:15 2026 +0700
+
+    feat(v.91): bump v.91.0626 (vc91) + search santri di Kelas + indikator offline topbar + badge status tagihan (Lunas/Tempo/Nunggak)
+
+ package.json                                 |  2 +-
+ vue-app/android/app/build.gradle             |  6 +++---
+ vue-app/electron/package.json                |  2 +-
+ vue-app/package.json                         |  2 +-
+ vue-app/src/components/layout/AppHeader.vue  | 25 +++++++++++++++++++++++--
+ vue-app/src/components/layout/AppSidebar.vue |  2 +-
+ vue-app/src/main.js                          |  2 +-
+ vue-app/src/views/DashboardView.vue          |  2 +-
+ vue-app/src/views/KelasGuruView.vue          | 21 ++++++++++++++++++++-
+ vue-app/src/views/LoginView.vue              |  2 +-
+ vue-app/src/views/PpdbAdminView.vue          |  2 +-
+ vue-app/src/views/TagihanView.vue            | 20 +++++++++++++++-----
+ 12 files changed, 69 insertions(+), 19 deletions(-)

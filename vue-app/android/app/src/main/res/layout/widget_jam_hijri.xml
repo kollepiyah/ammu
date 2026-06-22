@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- v.94.0626 (refine): kompak (tinggi dikurangi) + bg gradient+pola = kartu Hijri beranda. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:padding="12dp"
+    android:background="@drawable/widget_bg">
+
+    <!-- Kiri: hari + Hijri + Masehi -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/widget_hari"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="HARI"
+            android:textColor="#CCFBF1"
+            android:textSize="9sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.1"
+            android:paddingLeft="7dp"
+            android:paddingRight="7dp"
+            android:paddingTop="2dp"
+            android:paddingBottom="2dp"
+            android:background="@drawable/widget_chip" />
+
+        <TextView
+            android:id="@+id/widget_tanggal_hijri"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="—"
+            android:textColor="#CCFBF1"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textDirection="rtl"
+            android:gravity="start" />
+
+        <TextView
+            android:id="@+id/widget_tanggal_masehi"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:text="—"
+            android:textColor="#E6FFFFFF"
+            android:textSize="11sp"
+            android:textStyle="italic" />
+    </LinearLayout>
+
+    <!-- Kanan: WIB + jam -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="end"
+        android:layout_marginStart="8dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="WIB"
+            android:textColor="#5EEAD4"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.15" />
+
+        <TextView
+            android:id="@+id/widget_jam"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="00:00"
+            android:textColor="#FFFFFF"
+            android:textSize="28sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+</LinearLayout>

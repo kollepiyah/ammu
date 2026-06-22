@@ -1,0 +1,8 @@
+feat(v.100) Batch9: form kenaikan sekolah tampil data sekolah + backstage Printer penuh gaya Office
+
+- NaikKelasView: identitas form ("Saat ini") & label baris list ikut KATEGORI — mode sekolah baca lembaga_sekolah/kelas_sekolah (sebelumnya selalu lembaga/kelas ngaji -> tampak "membaca data Qiraati" walau simpan sudah benar). Sort list kategori sekolah pakai field sekolah.
+- RibbonBackstage rail Printer: pengaturan PENUH di backstage (gaya Word/Excel) — daftar printer Windows (listPrinters, auto-refresh saat dibuka + Deteksi Ulang), pilih printer, Simpan Default (setDefaultPrinter), Tes Cetak ESC/P raster (printRaw + buildStrukSlipEscpBase64). Tombol event modal dihapus dari backstage; PrinterSettingsModal tetap utk POS/Keuangan.
+
+Verify: _run_vite.cmd VITE_EXITCODE=0. Vue source murni (Electron-only efek backstage; NaikKelas netral utk Qiraati).
+
+Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>

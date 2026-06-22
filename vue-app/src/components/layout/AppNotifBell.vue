@@ -1,0 +1,214 @@
+<template>
+  <div class="relative" data-notif-bell>
+    <!-- v.21.115.0528: tap target w-9 → w-10 (40px) — mobile-friendly per design-tokens -->
+    <button
+      type="button"
+      @click="toggle"
+      aria-label="Notifikasi"
+      class="relative w-10 h-10 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center transition cursor-pointer"
+    >
+      <i class="fas fa-bell text-[var(--text-secondary)] text-base"></i>
+      <span
+        v-if="unreadCount > 0"
+        class="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-600 text-white text-[9px] font-black flex items-center justify-center shadow"
+      >
+        {{ unreadCount > 99 ? '99+' : unreadCount }}
+      </span>
+    </button>
+
+    <!-- Dropdown — v.90.0626: mobile teleport ke body biar center & memanjang ke bawah -->
+    <Teleport to="body" :disabled="!isMobile">
+    <transition
+      enter-active-class="transition ease-out duration-150"
+      enter-from-class="opacity-0 scale-95"
+      enter-to-class="opacity-100 scale-100"
+      leave-active-class="transition ease-in duration-100"
+      leave-from-class="opacity-100 scale-100"
+      leave-to-class="opacity-0 scale-95"
+    >
+      <div
+        v-if="open"
+        data-notif-panel
+        class="fixed left-1/2 -translate-x-1/2 top-[4.5rem] w-[calc(100vw-1.5rem)] max-w-sm max-h-[calc(100dvh-6rem)] flex flex-col md:absolute md:left-auto md:right-0 md:translate-x-0 md:top-full md:mt-2 md:w-96 md:max-h-[80vh] bg-[var(--bg-card)] rounded-2xl shadow-2xl border border-[var(--border-subtle)] z-50 overflow-hidden origin-top md:origin-top-right"
+      >
+        <div class="px-4 py-3 border-b border-[var(--border-subtle)] flex items-center justify-between gap-2">
+          <h3 class="text-sm font-black"><i class="fas fa-bell mr-1.5 text-cyan-600"></i>Notifikasi</h3>
+          <!-- v.73.0526: tombol mark + clear -->
+          <div class="flex gap-3">
+            <button
+              v-if="unreadCount > 0"
+              @click="markAndClose"
+              class="text-[10px] font-bold text-cyan-600 hover:underline"
+            >
+              <i class="fas fa-check mr-0.5"></i>Tandai dibaca
+            </button>
+            <button
+              v-if="items.length > 0"
+              @click="clearAndClose"
+              class="text-[10px] font-bold text-rose-600 hover:underline"
+              title="Sembunyikan semua notifikasi saat ini"
+            >
+              <i class="fas fa-broom mr-0.5"></i>Bersihkan
+            </button>
+          </div>
+        </div>
+
+        <div class="flex gap-1 px-3 py-2 border-b border-[var(--border-subtle)]">
+          <button
+            @click="activeTab = 'unread'"
+            :class="['flex-1 py-1.5 text-xs font-black rounded-lg transition', activeTab === 'unread' ? 'bg-cyan-600 text-white' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-card-elevated)]']"
+          >
+            Belum dibaca ({{ unreadCount }})
+          </button>
+          <button
+            @click="activeTab = 'all'"
+            :class="['flex-1 py-1.5 text-xs font-black rounded-lg transition', activeTab === 'all' ? 'bg-cyan-600 text-white' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-card-elevated)]']"
+          >
+            Semua ({{ items.length }})
+          </button>
+        </div>
+
+        <div class="flex-1 min-h-0 overflow-y-auto">
+          <div v-if="visibleList.length === 0" class="p-8 text-center text-xs text-[var(--text-tertiary)] italic">
+            <i class="far fa-bell-slash text-2xl mb-2 block"></i>
+            {{ activeTab === 'unread' ? 'Tidak ada notifikasi baru' : 'Belum ada notifikasi' }}
+          </div>
+          <div v-else class="divide-y divide-slate-100 dark:divide-slate-700">
+            <button
+              v-for="it in visibleList"
+              :key="it.id + '-' + it.jenis"
+              type="button"
+              @click="bukaItem(it)"
+              class="w-full text-left p-3 hover:bg-slate-50 dark:hover:bg-slate-900/30 transition flex items-start gap-3"
+            >
+              <!-- v.71.0526: thumbnail image untuk notif post, fallback ke icon round -->
+              <img
+                v-if="it.thumbnail"
+                :src="it.thumbnail"
+                alt=""
+                class="flex-shrink-0 w-10 h-10 rounded-lg object-cover border border-slate-200 dark:border-slate-700"
+                @error="$event.target.style.display='none'"
+              />
+              <div
+                v-else
+                :class="['flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center', colorBg(it.color)]"
+              >
+                <i :class="['fas text-sm', it.icon || 'fa-bell', colorText(it.color)]"></i>
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="text-xs font-black text-[var(--text-primary)] truncate">{{ it.judul }}</p>
+                <p v-if="it.body" class="text-[11px] text-[var(--text-secondary)] line-clamp-2">{{ it.body }}</p>
+                <p class="text-[10px] text-[var(--text-tertiary)] mt-0.5">{{ fmtRelative(it.ts) }}</p>
+              </div>
+            </button>
+          </div>
+        </div>
+      </div>
+    </transition>
+    </Teleport>
+  </div>
+</template>
+
+<script setup>
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { useRouter } from 'vue-router'
+import { useNotifications } from '@/composables/useNotifications'
+import { setupLocalNotif, pushFromItems } from '@/composables/useLocalNotif'
+
+const router = useRouter()
+const { items, itemsUnread, unreadCount, markAllRead, clearAll } = useNotifications()
+
+// v.87.0526: mirror feed notif -> OS notifications (status bar HP). No-op di web / kalau plugin belum di-install.
+watch(items, (val) => { try { pushFromItems(val) } catch { /* ignore */ } })
+
+const open = ref(false)
+const activeTab = ref('unread')
+
+// v.90.0626: deteksi mobile -> Teleport panel ke body (lepas dari containing-block
+//   backdrop-filter header) supaya fixed benar2 ter-center; desktop tetap anchored ke bell.
+const isMobile = ref(false)
+function syncIsMobile() {
+  try {
+    isMobile.value = window.matchMedia('(max-width: 767px)').matches
+  } catch {
+    isMobile.value = false
+  }
+}
+
+const visibleList = computed(() => activeTab.value === 'unread' ? itemsUnread.value : items.value)
+
+function toggle() { open.value = !open.value }
+
+function bukaItem(it) {
+  open.value = false
+  // Mark all read saat klik item (UX: anggap user sudah lihat)
+  markAllRead()
+  if (it.link) {
+    try { router.push(it.link) } catch { /* ignore */ }
+  }
+}
+
+function markAndClose() {
+  markAllRead()
+}
+
+// v.73.0526: bersihkan semua notif + tutup dropdown
+async function clearAndClose() {
+  await clearAll()
+  open.value = false
+}
+
+function colorBg(c) {
+  switch (c) {
+    case 'cyan': return 'bg-cyan-100 dark:bg-cyan-900/40'
+    case 'emerald': return 'bg-emerald-100 dark:bg-emerald-900/40'
+    case 'amber': return 'bg-amber-100 dark:bg-amber-900/40'
+    case 'teal': return 'bg-teal-100 dark:bg-teal-900/40'
+    case 'rose': return 'bg-rose-100 dark:bg-rose-900/40'
+    case 'blue': return 'bg-blue-100 dark:bg-blue-900/40'
+    default: return 'bg-slate-100 dark:bg-slate-800'
+  }
+}
+function colorText(c) {
+  switch (c) {
+    case 'cyan': return 'text-cyan-700 dark:text-cyan-300'
+    case 'emerald': return 'text-emerald-700 dark:text-emerald-300'
+    case 'amber': return 'text-amber-700 dark:text-amber-300'
+    case 'teal': return 'text-teal-700 dark:text-teal-300'
+    case 'rose': return 'text-rose-700 dark:text-rose-300'
+    case 'blue': return 'text-blue-700 dark:text-blue-300'
+    default: return 'text-slate-700 dark:text-slate-300'
+  }
+}
+
+function fmtRelative(ts) {
+  if (!ts) return '-'
+  const diff = Date.now() - ts
+  if (diff < 60_000) return 'baru saja'
+  if (diff < 3600_000) return `${Math.floor(diff / 60_000)} menit lalu`
+  if (diff < 86400_000) return `${Math.floor(diff / 3600_000)} jam lalu`
+  if (diff < 7 * 86400_000) return `${Math.floor(diff / 86400_000)} hari lalu`
+  try {
+    return new Date(ts).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
+  } catch { return '-' }
+}
+
+// Close on outside click — v.90.0626: panel bisa ter-teleport ke body, cek bell + panel
+function onDocClick(e) {
+  if (!open.value) return
+  const inBell = e.target.closest('[data-notif-bell]')
+  const inPanel = e.target.closest('[data-notif-panel]')
+  if (!inBell && !inPanel) open.value = false
+}
+onMounted(() => {
+  document.addEventListener('click', onDocClick)
+  syncIsMobile()
+  window.addEventListener('resize', syncIsMobile)
+  // v.87.0526: minta izin notif HP + listener tap-to-open (native only; no-op di web/desktop)
+  setupLocalNotif(router)
+})
+onUnmounted(() => {
+  document.removeEventListener('click', onDocClick)
+  window.removeEventListener('resize', syncIsMobile)
+})
+</script>

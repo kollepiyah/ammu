@@ -1,0 +1,7 @@
+fix(keuangan): perhitungan dashboard — tabungan terpisah + net + bisyaroh bulan ini
+
+- useKeuangan.stats: totalTabunganSantri = NET (setor - tarik), bukan sum(t.saldo) yang tidak ada
+  di doc transaksi; totalBisyarohBulan = filter ke periode bulan berjalan (sebelumnya sum SEMUA periode)
+- KeuanganDashboardView: exclude sumber tabungan_santri/tabungan_guru dari pemasukan/pengeluaran/saldo
+  (monthlyData) + breakdown pengeluaran. Tabungan TERPISAH dari kas pondok (kyai req).
+- BukuIndukView sudah exclude tabungan (verified, tidak diubah).

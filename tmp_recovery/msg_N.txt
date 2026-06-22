@@ -1,0 +1,6 @@
+fix(batch-N 1 Juni): KOP revert + santri rapor tanpa filter + login error inline + hapus placeholder contoh
+
+- N1 LembagaDetailView: wire loadPengaturan via watch(lembagaData, immediate) — sebelumnya TAK PERNAH dipanggil -> KOP per-lembaga balik default tiap refresh
+- N5 RaporView: santri/wali auto-buka rapor sendiri (skip picker kategori/lembaga, langsung view detail)
+- N3 LoginView: error login inline merah (loginError) selain toast — jelas saat sandi salah
+- N7: hapus 18 placeholder contoh fiktif (cth: Ust Ahmad Sholeh dll) -> label generik

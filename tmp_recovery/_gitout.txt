@@ -1,0 +1,1028 @@
+On branch feature/vue-migration
+Changes not staged for commit:
+  (use "git add/rm <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+  (commit or discard the untracked or modified content in submodules)
+	modified:   HANDOFF-v86-PENDING-RECOVERY.md
+	modified:   PROJECT-KNOWLEDGE-BASE.md
+	modified:   Portal MU (modified content)
+	modified:   public/dist/tailwind.css
+	deleted:    public/psb/assets/index-DG7xk6V0.js
+	deleted:    public/psb/assets/index-DGBJMIIK.css
+	modified:   public/psb/index.html
+	deleted:    public/vue/assets/AbsensiGuruView-B9lB71ao.js
+	deleted:    public/vue/assets/AbsensiSantriView-ON3_FOp4.js
+	modified:   public/vue/assets/AppLayout-DnqScTxq.css
+	deleted:    public/vue/assets/AppLayout-q6e2sMMm.js
+	deleted:    public/vue/assets/BisyarohView-CLtXExr0.js
+	deleted:    public/vue/assets/BukuIndukView-D7VjStNW.js
+	deleted:    public/vue/assets/CapaianPrestasiView-Cec8QD7k.js
+	deleted:    public/vue/assets/DashboardView-BR_Upz1K.js
+	modified:   public/vue/assets/DashboardView-CsugeZA2.css
+	deleted:    public/vue/assets/FieldSchemaView-DKzr6xrI.js
+	deleted:    public/vue/assets/GuruFormView-DCZUklAH.js
+	deleted:    public/vue/assets/GuruView-CbmttSY_.js
+	deleted:    public/vue/assets/HutangPiutangView-DFfB0J99.js
+	deleted:    public/vue/assets/InputBulananView-BLVJbTAo.js
+	modified:   public/vue/assets/InputBulananView-BPfVFNv0.css
+	deleted:    public/vue/assets/KalenderKegiatanView-BanVt94Y.js
+	deleted:    public/vue/assets/KegiatanPesantrenView-DY0WmZVz.js
+	deleted:    public/vue/assets/KelasView-C1lBPKWP.js
+	deleted:    public/vue/assets/KeuanganDashboardView-BZI8Mpzz.js
+	deleted:    public/vue/assets/KritikSaranView-BbCulTpV.js
+	deleted:    public/vue/assets/LaporanKeuanganView-G6nnLhcM.js
+	deleted:    public/vue/assets/LembagaDetailView-BRszPeRQ.js
+	deleted:    public/vue/assets/LembagaFormView-DRKIV7Gm.js
+	deleted:    public/vue/assets/LoginView-C298sAAq.js
+	deleted:    public/vue/assets/MasterDataView-DmRu9rW-.js
+	deleted:    public/vue/assets/MasterFormBridgeView-DCbaBQCS.js
+	deleted:    public/vue/assets/NaikKelasView-DJxIcwmq.js
+	deleted:    public/vue/assets/NaikKelasView-DWO6tiTe.css
+	deleted:    public/vue/assets/PembayaranView-dcfnvXXz.js
+	deleted:    public/vue/assets/PengaturanKeuanganView-D1QJnqEy.js
+	deleted:    public/vue/assets/PengaturanView-B-AeEnLh.js
+	deleted:    public/vue/assets/PersonalView-BNC8-gXl.js
+	deleted:    public/vue/assets/PosSantriView-CNx5BYlg.js
+	modified:   public/vue/assets/PosSantriView-D0BGwg6s.css
+	deleted:    public/vue/assets/PostsView-DyvXEcbs.css
+	deleted:    public/vue/assets/PostsView-hMpSfsFF.js
+	deleted:    public/vue/assets/PpdbAdminView-fevlyMAk.js
+	deleted:    public/vue/assets/PpdbDetailView-V05NtQrW.js
+	deleted:    public/vue/assets/PpdbFormView-BLOgXpqE.js
+	deleted:    public/vue/assets/ProfilView-IX64P8Me.js
+	deleted:    public/vue/assets/RaporView-D7-C7Ycw.js
+	deleted:    public/vue/assets/RaporView-Xmtq30Xl.css
+	deleted:    public/vue/assets/RekapDiniyahView-Al4pS5u3.js
+	deleted:    public/vue/assets/RekapPrestasiView-jsiaqVg9.js
+	deleted:    public/vue/assets/RiwayatPosView-IUTH2wOK.js
+	deleted:    public/vue/assets/RiwayatSantriView-3ojJRX3C.js
+	deleted:    public/vue/assets/SantriFormView-CCo3jMv5.js
+	deleted:    public/vue/assets/SantriView-DwBm-9rj.js
+	deleted:    public/vue/assets/SkeletonCard-CE_seKdW.js
+	deleted:    public/vue/assets/StatistikView-CnqDO8sZ.js
+	deleted:    public/vue/assets/SupervisiView-Z8pqlr6T.js
+	deleted:    public/vue/assets/TabunganView-D8GhxVlq.js
+	deleted:    public/vue/assets/TagihanView-CXCjyOWX.js
+	deleted:    public/vue/assets/UiActionCard-BKREPQLV.js
+	deleted:    public/vue/assets/UiButton-Pf0pozjA.js
+	modified:   public/vue/assets/_plugin-vue_export-helper-DlAUqK2U.js
+	deleted:    public/vue/assets/auditLog-CCzFu1T_.js
+	modified:   public/vue/assets/format-hvvLOU_z.js
+	modified:   public/vue/assets/hijri-BQdwk8_X.js
+	deleted:    public/vue/assets/index-CyLZ5V3H.css
+	deleted:    public/vue/assets/index-eg9ALmb_.js
+	modified:   public/vue/assets/logo-CxXS7KxG.js
+	modified:   public/vue/assets/pdf-CfElz_X6.js
+	deleted:    public/vue/assets/pdfBuilder-UgG-fR_z.js
+	modified:   public/vue/assets/roleScope-DKDRDRJj.js
+	modified:   public/vue/assets/santriSort-DP3NNiLp.js
+	deleted:    public/vue/assets/storage-Cc3s7tzB.js
+	deleted:    public/vue/assets/strukBuilder-DSGagWgm.js
+	deleted:    public/vue/assets/useConfirm-B3bPngUC.js
+	deleted:    public/vue/assets/useExcel-CfMuM0d2.js
+	deleted:    public/vue/assets/useGuru-CmSKkIKT.js
+	deleted:    public/vue/assets/useKegiatan-DSIOb0u0.js
+	deleted:    public/vue/assets/useKeuangan-BJmRxFCS.js
+	deleted:    public/vue/assets/useLembaga-BhzViRyS.js
+	deleted:    public/vue/assets/useMenus-CX5aWToi.js
+	deleted:    public/vue/assets/useSantri-cITX6raH.js
+	deleted:    public/vue/assets/useToast-D2cA42_z.js
+	modified:   public/vue/index.html
+	deleted:    public/vue/vue/assets/AbsensiGuruView-BrPtDHyP.js
+	deleted:    public/vue/vue/assets/AbsensiGuruView-D7lqEPGt.js
+	deleted:    public/vue/vue/assets/AbsensiGuruView-DtE-zO7N.js
+	deleted:    public/vue/vue/assets/AbsensiGuruView-WjFS86J3.js
+	deleted:    public/vue/vue/assets/AbsensiSantriView-BPRvzMYv.js
+	deleted:    public/vue/vue/assets/AbsensiSantriView-BQ3W_l6b.js
+	deleted:    public/vue/vue/assets/AbsensiSantriView-CrV9cwe1.js
+	deleted:    public/vue/vue/assets/AbsensiSantriView-PGpFKSlj.js
+	deleted:    public/vue/vue/assets/AppLayout-BfJn4qAs.js
+	deleted:    public/vue/vue/assets/AppLayout-C_sdyhn_.js
+	deleted:    public/vue/vue/assets/AppLayout-CsHHe0aK.js
+	deleted:    public/vue/vue/assets/AppLayout-Cy55l9NA.css
+	deleted:    public/vue/vue/assets/AppLayout-Dcxr8d5b.js
+	deleted:    public/vue/vue/assets/AppLayout-ZTOXoeTP.css
+	deleted:    public/vue/vue/assets/BisyarohView-CGrSsXBu.js
+	deleted:    public/vue/vue/assets/BisyarohView-Qu41cbLi.js
+	deleted:    public/vue/vue/assets/BisyarohView-lED4dEPT.js
+	deleted:    public/vue/vue/assets/BisyarohView-lHahPC9A.js
+	deleted:    public/vue/vue/assets/BukuIndukView-BG-wgMDO.js
+	deleted:    public/vue/vue/assets/BukuIndukView-BOdC4uFm.js
+	deleted:    public/vue/vue/assets/BukuIndukView-MPdgQHvY.js
+	deleted:    public/vue/vue/assets/BukuIndukView-a6ztePPt.js
+	deleted:    public/vue/vue/assets/CapaianPrestasiView-BUg-PtUR.js
+	deleted:    public/vue/vue/assets/CapaianPrestasiView-DMzKknjm.js
+	deleted:    public/vue/vue/assets/CapaianPrestasiView-DZHUENFn.js
+	deleted:    public/vue/vue/assets/CapaianPrestasiView-DretK5Uz.js
+	deleted:    public/vue/vue/assets/DashboardView-294U-w72.js
+	deleted:    public/vue/vue/assets/DashboardView-B1l9MSnG.css
+	deleted:    public/vue/vue/assets/DashboardView-BgMn9qEQ.js
+	deleted:    public/vue/vue/assets/DashboardView-BpLwM2aA.js
+	deleted:    public/vue/vue/assets/DashboardView-DsXSjBA0.js
+	deleted:    public/vue/vue/assets/FieldSchemaView-C9ZIS9Gz.js
+	deleted:    public/vue/vue/assets/FieldSchemaView-CTu8vQU2.js
+	deleted:    public/vue/vue/assets/FieldSchemaView-CVR0Opq_.js
+	deleted:    public/vue/vue/assets/FieldSchemaView-DYGyJr3e.js
+	deleted:    public/vue/vue/assets/GuruFormView-BLIgJz0D.js
+	deleted:    public/vue/vue/assets/GuruFormView-DOel6svH.js
+	deleted:    public/vue/vue/assets/GuruFormView-DvpRqSTO.js
+	deleted:    public/vue/vue/assets/GuruFormView-fyt9QLwJ.js
+	deleted:    public/vue/vue/assets/GuruView-BE2XpYXc.js
+	deleted:    public/vue/vue/assets/GuruView-BppFPOOf.js
+	deleted:    public/vue/vue/assets/GuruView-Cd4C75it.js
+	deleted:    public/vue/vue/assets/GuruView-DobD6FGj.js
+	deleted:    public/vue/vue/assets/HutangPiutangView-9yvxxiJg.js
+	deleted:    public/vue/vue/assets/HutangPiutangView-BLuY-yID.js
+	deleted:    public/vue/vue/assets/HutangPiutangView-BNxDIlCa.js
+	deleted:    public/vue/vue/assets/HutangPiutangView-D-3JZwW_.js
+	deleted:    public/vue/vue/assets/InputBulananView-BTH4H3bK.js
+	deleted:    public/vue/vue/assets/InputBulananView-BijP5N0L.js
+	deleted:    public/vue/vue/assets/InputBulananView-DL8FmSPf.js
+	deleted:    public/vue/vue/assets/InputBulananView-RD-QbSRd.js
+	deleted:    public/vue/vue/assets/KalenderKegiatanView-58gWloJ5.js
+	deleted:    public/vue/vue/assets/KalenderKegiatanView-B_PQLujo.js
+	deleted:    public/vue/vue/assets/KalenderKegiatanView-C9KII6Hg.js
+	deleted:    public/vue/vue/assets/KalenderKegiatanView-Dn_r6wlq.js
+	deleted:    public/vue/vue/assets/KegiatanPesantrenView-8EOkZUeo.js
+	deleted:    public/vue/vue/assets/KegiatanPesantrenView-BZlH4RVB.js
+	deleted:    public/vue/vue/assets/KegiatanPesantrenView-CP76PxlU.js
+	deleted:    public/vue/vue/assets/KegiatanPesantrenView-CojOMvh6.js
+	deleted:    public/vue/vue/assets/KelasView-Beul3qkG.js
+	deleted:    public/vue/vue/assets/KelasView-C2-n2x7d.js
+	deleted:    public/vue/vue/assets/KelasView-CAwVikjY.js
+	deleted:    public/vue/vue/assets/KelasView-rcKdlzNh.js
+	deleted:    public/vue/vue/assets/KeuanganDashboardView-BcYNxO2q.js
+	deleted:    public/vue/vue/assets/KeuanganDashboardView-ChHFM8Cg.js
+	deleted:    public/vue/vue/assets/KeuanganDashboardView-CrDNKGrM.js
+	deleted:    public/vue/vue/assets/KeuanganDashboardView-iRWVKnkf.js
+	deleted:    public/vue/vue/assets/KritikSaranView-9HkmsXvt.js
+	deleted:    public/vue/vue/assets/KritikSaranView-BdZ1SAMN.js
+	deleted:    public/vue/vue/assets/KritikSaranView-BfYgbdlD.js
+	deleted:    public/vue/vue/assets/KritikSaranView-DqQTi6Eo.js
+	deleted:    public/vue/vue/assets/LaporanKeuanganView-CH49bd_o.js
+	deleted:    public/vue/vue/assets/LaporanKeuanganView-CxdRImaR.js
+	deleted:    public/vue/vue/assets/LaporanKeuanganView-DSZ7dQ9I.js
+	deleted:    public/vue/vue/assets/LaporanKeuanganView-R0bilfqB.js
+	deleted:    public/vue/vue/assets/LembagaDetailView-B14wZV8f.js
+	deleted:    public/vue/vue/assets/LembagaDetailView-B8NRArXm.js
+	deleted:    public/vue/vue/assets/LembagaDetailView-UJDGqxPd.js
+	deleted:    public/vue/vue/assets/LembagaDetailView-sKB5VICe.js
+	deleted:    public/vue/vue/assets/LembagaFormView-BYgB1-ZJ.js
+	deleted:    public/vue/vue/assets/LembagaFormView-BfhOETno.js
+	deleted:    public/vue/vue/assets/LembagaFormView-CYnb22cw.js
+	deleted:    public/vue/vue/assets/LembagaFormView-DgbcQt5y.js
+	deleted:    public/vue/vue/assets/LembagaView-0bJYh5uh.js
+	deleted:    public/vue/vue/assets/LembagaView-B6uXDW0M.js
+	deleted:    public/vue/vue/assets/LembagaView-CbcnA-0Y.js
+	deleted:    public/vue/vue/assets/LembagaView-CiTE2NqE.js
+	deleted:    public/vue/vue/assets/LoginView-BMrdVA9B.js
+	deleted:    public/vue/vue/assets/LoginView-B_8B1LeX.js
+	deleted:    public/vue/vue/assets/LoginView-CofSv8YK.js
+	deleted:    public/vue/vue/assets/LoginView-vO_P-EY1.js
+	deleted:    public/vue/vue/assets/MasterDataView-CparqS4L.js
+	deleted:    public/vue/vue/assets/MasterDataView-CqKYqd9y.js
+	deleted:    public/vue/vue/assets/MasterDataView-Cu5heSH3.js
+	deleted:    public/vue/vue/assets/MasterDataView-DmhVkGhk.js
+	deleted:    public/vue/vue/assets/MasterFormBridgeView-Bi2a8n74.js
+	deleted:    public/vue/vue/assets/MasterFormBridgeView-DblENlxp.js
+	deleted:    public/vue/vue/assets/MasterFormBridgeView-DnPo78gC.js
+	deleted:    public/vue/vue/assets/MasterFormBridgeView-Dz1FoORd.js
+	deleted:    public/vue/vue/assets/NaikKelasView-BcF9-Zzm.js
+	deleted:    public/vue/vue/assets/NaikKelasView-DuGwGNZ7.js
+	deleted:    public/vue/vue/assets/NaikKelasView-Z5ox3jE4.js
+	deleted:    public/vue/vue/assets/NaikKelasView-v_97yGG2.js
+	deleted:    public/vue/vue/assets/PembayaranView-Bj3bg8ej.js
+	deleted:    public/vue/vue/assets/PembayaranView-CTbuP2eJ.js
+	deleted:    public/vue/vue/assets/PembayaranView-D5nzTmc1.js
+	deleted:    public/vue/vue/assets/PembayaranView-bwnlf5gs.js
+	deleted:    public/vue/vue/assets/PengaturanKeuanganView-BTJZxhXl.js
+	deleted:    public/vue/vue/assets/PengaturanKeuanganView-BZnbPFBF.js
+	deleted:    public/vue/vue/assets/PengaturanKeuanganView-C4Qq_qp1.js
+	deleted:    public/vue/vue/assets/PengaturanKeuanganView-DUumPCUG.js
+	deleted:    public/vue/vue/assets/PengaturanView-3Rssnfls.js
+	deleted:    public/vue/vue/assets/PengaturanView-DilA45eV.js
+	deleted:    public/vue/vue/assets/PengaturanView-DpikK3gS.js
+	deleted:    public/vue/vue/assets/PengaturanView-yQJ45MRY.js
+	deleted:    public/vue/vue/assets/PersonalView-BoKKevDZ.js
+	deleted:    public/vue/vue/assets/PersonalView-Dy5XXQNL.js
+	deleted:    public/vue/vue/assets/PersonalView-Xwgzw2P-.js
+	deleted:    public/vue/vue/assets/PersonalView-l0ilfTRc.js
+	deleted:    public/vue/vue/assets/PosSantriView-B13uLp0J.css
+	deleted:    public/vue/vue/assets/PosSantriView-C1sJbAvl.js
+	deleted:    public/vue/vue/assets/PosSantriView-D9elucin.js
+	deleted:    public/vue/vue/assets/PosSantriView-DefwthUo.js
+	deleted:    public/vue/vue/assets/PosSantriView-oE6eBbMf.js
+	deleted:    public/vue/vue/assets/PostsView-C2Vzf9Z6.js
+	deleted:    public/vue/vue/assets/PostsView-Dcl45a9-.js
+	deleted:    public/vue/vue/assets/PostsView-aZfGuHJf.js
+	deleted:    public/vue/vue/assets/PostsView-za7uw2WL.js
+	deleted:    public/vue/vue/assets/PpdbAdminView-BhWvQKYi.js
+	deleted:    public/vue/vue/assets/PpdbAdminView-BpxH11Qq.js
+	deleted:    public/vue/vue/assets/PpdbAdminView-D9RdFFe7.js
+	deleted:    public/vue/vue/assets/PpdbAdminView-d1nwrchv.js
+	deleted:    public/vue/vue/assets/PpdbDetailView-CsBdiHAS.js
+	deleted:    public/vue/vue/assets/PpdbDetailView-Da1__3vM.js
+	deleted:    public/vue/vue/assets/PpdbDetailView-DlEpqNBx.js
+	deleted:    public/vue/vue/assets/PpdbDetailView-LcYHrnFS.js
+	deleted:    public/vue/vue/assets/PpdbFormView-BlcP9SDA.js
+	deleted:    public/vue/vue/assets/PpdbFormView-XZvn1CoE.js
+	deleted:    public/vue/vue/assets/PpdbFormView-_D9ObGJ_.js
+	deleted:    public/vue/vue/assets/PpdbFormView-ixigk2Lh.js
+	deleted:    public/vue/vue/assets/ProfilView-BdeY3q9Q.js
+	deleted:    public/vue/vue/assets/ProfilView-ByPRx-Ag.js
+	deleted:    public/vue/vue/assets/ProfilView-DVH7wHtA.js
+	deleted:    public/vue/vue/assets/ProfilView-DYHDD1fu.js
+	deleted:    public/vue/vue/assets/RaporView-BMhFNNHZ.js
+	deleted:    public/vue/vue/assets/RaporView-CWGcp5hc.js
+	deleted:    public/vue/vue/assets/RaporView-CmC7Vmqv.js
+	deleted:    public/vue/vue/assets/RaporView-LlO9J8zB.js
+	deleted:    public/vue/vue/assets/RekapDiniyahView-CT0uXE2u.js
+	deleted:    public/vue/vue/assets/RekapDiniyahView-CUHaUfZS.js
+	deleted:    public/vue/vue/assets/RekapDiniyahView-DztUXovv.js
+	deleted:    public/vue/vue/assets/RekapDiniyahView-MbSGa1iu.js
+	deleted:    public/vue/vue/assets/RekapPrestasiView-BS47ghpV.js
+	deleted:    public/vue/vue/assets/RekapPrestasiView-BuLpvyE1.js
+	deleted:    public/vue/vue/assets/RekapPrestasiView-CZ7_3cp1.js
+	deleted:    public/vue/vue/assets/RekapPrestasiView-DNHejcXZ.js
+	deleted:    public/vue/vue/assets/SantriFormView-CfcclXW4.js
+	deleted:    public/vue/vue/assets/SantriFormView-CmuRMTjG.js
+	deleted:    public/vue/vue/assets/SantriFormView-epVOY8Cj.js
+	deleted:    public/vue/vue/assets/SantriFormView-keyuCpXn.js
+	deleted:    public/vue/vue/assets/SantriView-BxvIr04n.js
+	deleted:    public/vue/vue/assets/SantriView-CIbSBbcv.js
+	deleted:    public/vue/vue/assets/SantriView-Cf5z3KHX.js
+	deleted:    public/vue/vue/assets/SantriView-DXaRQx4s.js
+	deleted:    public/vue/vue/assets/StatistikView-BLYoFko2.js
+	deleted:    public/vue/vue/assets/StatistikView-DN_d9mi2.js
+	deleted:    public/vue/vue/assets/StatistikView-DdT_GZSb.js
+	deleted:    public/vue/vue/assets/StatistikView-QSqrVMH0.js
+	deleted:    public/vue/vue/assets/TabunganView-14_uV8ir.js
+	deleted:    public/vue/vue/assets/TabunganView-BU_6HtXE.js
+	deleted:    public/vue/vue/assets/TabunganView-BwuoAWNq.js
+	deleted:    public/vue/vue/assets/TabunganView-DcwzaTEQ.js
+	deleted:    public/vue/vue/assets/TagihanView-BSauVWyL.js
+	deleted:    public/vue/vue/assets/TagihanView-CMzPQskv.js
+	deleted:    public/vue/vue/assets/TagihanView-D3qSLmYg.js
+	deleted:    public/vue/vue/assets/TagihanView-DkyVrbsH.js
+	deleted:    public/vue/vue/assets/UiActionCard-ATgfcsBp.js
+	deleted:    public/vue/vue/assets/_plugin-vue_export-helper-DlAUqK2U.js
+	deleted:    public/vue/vue/assets/createLucideIcon-C2QWWNlY.js
+	deleted:    public/vue/vue/assets/createLucideIcon-DAsRVc6I.js
+	deleted:    public/vue/vue/assets/createLucideIcon-Da2JYNaz.js
+	deleted:    public/vue/vue/assets/format-CgTEi-wW.js
+	deleted:    public/vue/vue/assets/hijri-BQdwk8_X.js
+	deleted:    public/vue/vue/assets/index-1lqaMLN_.css
+	deleted:    public/vue/vue/assets/index-B6x-8Tk8.js
+	deleted:    public/vue/vue/assets/index-BQToRogx.js
+	deleted:    public/vue/vue/assets/index-CP0SBlEC.css
+	deleted:    public/vue/vue/assets/index-CuLAC-G6.css
+	deleted:    public/vue/vue/assets/index-DG__Az-f.js
+	deleted:    public/vue/vue/assets/index-YSp6aJ5f.js
+	deleted:    public/vue/vue/assets/kenaikan-DcnKGnb3.js
+	deleted:    public/vue/vue/assets/logo-CxXS7KxG.js
+	deleted:    public/vue/vue/assets/pdf-BHE_UDq-.js
+	deleted:    public/vue/vue/assets/storage-BEj4epjk.js
+	deleted:    public/vue/vue/assets/storage-CUEc4bEJ.js
+	deleted:    public/vue/vue/assets/storage-DKmrpbMO.js
+	deleted:    public/vue/vue/assets/storage-DTqjubjg.js
+	deleted:    public/vue/vue/assets/useConfirm-BsItqGu1.js
+	deleted:    public/vue/vue/assets/useConfirm-Bz07_i41.js
+	deleted:    public/vue/vue/assets/useConfirm-Ch1Rv2TC.js
+	deleted:    public/vue/vue/assets/useConfirm-DJc5jH4E.js
+	deleted:    public/vue/vue/assets/useExcel-CZDOI6AT.js
+	deleted:    public/vue/vue/assets/useGuru-CBhZcR59.js
+	deleted:    public/vue/vue/assets/useGuru-DN4MtfPD.js
+	deleted:    public/vue/vue/assets/useGuru-IV--Qr3o.js
+	deleted:    public/vue/vue/assets/useGuru-cfD6phTs.js
+	deleted:    public/vue/vue/assets/useKeuangan-B-FpIeMx.js
+	deleted:    public/vue/vue/assets/useKeuangan-Bz7HUSB_.js
+	deleted:    public/vue/vue/assets/useKeuangan-CSPK74hU.js
+	deleted:    public/vue/vue/assets/useKeuangan-CymcOZlI.js
+	deleted:    public/vue/vue/assets/useLembaga-BGrRoFMr.js
+	deleted:    public/vue/vue/assets/useLembaga-C1swPaUN.js
+	deleted:    public/vue/vue/assets/useLembaga-CjCVfoch.js
+	deleted:    public/vue/vue/assets/useLembaga-Dw12oxfd.js
+	deleted:    public/vue/vue/assets/useMenus-96G3Mp5a.js
+	deleted:    public/vue/vue/assets/useMenus-BdIPdVGf.js
+	deleted:    public/vue/vue/assets/useMenus-Cvbfafuf.js
+	deleted:    public/vue/vue/assets/useMenus-DQs7D3iG.js
+	deleted:    public/vue/vue/assets/useSantri-BNp-xneZ.js
+	deleted:    public/vue/vue/assets/useSantri-BiXNgS2R.js
+	deleted:    public/vue/vue/assets/useSantri-CXLma0sq.js
+	deleted:    public/vue/vue/assets/useSantri-YmxNfUz_.js
+	deleted:    public/vue/vue/assets/useToast-BI4ag8cn.js
+	deleted:    public/vue/vue/assets/useToast-CNOs5U3a.js
+	deleted:    public/vue/vue/assets/useToast-D6bPUuTp.js
+	deleted:    public/vue/vue/assets/useToast-NFGRoaYW.js
+	deleted:    public/vue/vue/bakafrawi-logo.png
+	deleted:    public/vue/vue/fonts/ScheherazadeNew-SemiBold.ttf
+	deleted:    public/vue/vue/fonts/ScheherazadeNew-SemiBold.woff2
+	deleted:    public/vue/vue/index.html
+	deleted:    public/vue/vue/logo.png
+	deleted:    public/vue/vue/vue/assets/AbsensiGuruView-BrPtDHyP.js
+	deleted:    public/vue/vue/vue/assets/AbsensiGuruView-DtE-zO7N.js
+	deleted:    public/vue/vue/vue/assets/AbsensiGuruView-WjFS86J3.js
+	deleted:    public/vue/vue/vue/assets/AbsensiSantriView-BQ3W_l6b.js
+	deleted:    public/vue/vue/vue/assets/AbsensiSantriView-CrV9cwe1.js
+	deleted:    public/vue/vue/vue/assets/AbsensiSantriView-PGpFKSlj.js
+	deleted:    public/vue/vue/vue/assets/AppLayout-C_sdyhn_.js
+	deleted:    public/vue/vue/vue/assets/AppLayout-CsHHe0aK.js
+	deleted:    public/vue/vue/vue/assets/AppLayout-Cy55l9NA.css
+	deleted:    public/vue/vue/vue/assets/AppLayout-Dcxr8d5b.js
+	deleted:    public/vue/vue/vue/assets/AppLayout-ZTOXoeTP.css
+	deleted:    public/vue/vue/vue/assets/BisyarohView-CGrSsXBu.js
+	deleted:    public/vue/vue/vue/assets/BisyarohView-Qu41cbLi.js
+	deleted:    public/vue/vue/vue/assets/BisyarohView-lHahPC9A.js
+	deleted:    public/vue/vue/vue/assets/BukuIndukView-BG-wgMDO.js
+	deleted:    public/vue/vue/vue/assets/BukuIndukView-BOdC4uFm.js
+	deleted:    public/vue/vue/vue/assets/BukuIndukView-a6ztePPt.js
+	deleted:    public/vue/vue/vue/assets/CapaianPrestasiView-BUg-PtUR.js
+	deleted:    public/vue/vue/vue/assets/CapaianPrestasiView-DZHUENFn.js
+	deleted:    public/vue/vue/vue/assets/CapaianPrestasiView-DretK5Uz.js
+	deleted:    public/vue/vue/vue/assets/DashboardView-B1l9MSnG.css
+	deleted:    public/vue/vue/vue/assets/DashboardView-BgMn9qEQ.js
+	deleted:    public/vue/vue/vue/assets/DashboardView-BpLwM2aA.js
+	deleted:    public/vue/vue/vue/assets/DashboardView-DsXSjBA0.js
+	deleted:    public/vue/vue/vue/assets/FieldSchemaView-C9ZIS9Gz.js
+	deleted:    public/vue/vue/vue/assets/FieldSchemaView-CVR0Opq_.js
+	deleted:    public/vue/vue/vue/assets/FieldSchemaView-DYGyJr3e.js
+	deleted:    public/vue/vue/vue/assets/GuruFormView-BLIgJz0D.js
+	deleted:    public/vue/vue/vue/assets/GuruFormView-DOel6svH.js
+	deleted:    public/vue/vue/vue/assets/GuruFormView-fyt9QLwJ.js
+	deleted:    public/vue/vue/vue/assets/GuruView-BE2XpYXc.js
+	deleted:    public/vue/vue/vue/assets/GuruView-BppFPOOf.js
+	deleted:    public/vue/vue/vue/assets/GuruView-DobD6FGj.js
+	deleted:    public/vue/vue/vue/assets/HutangPiutangView-9yvxxiJg.js
+	deleted:    public/vue/vue/vue/assets/HutangPiutangView-BLuY-yID.js
+	deleted:    public/vue/vue/vue/assets/HutangPiutangView-D-3JZwW_.js
+	deleted:    public/vue/vue/vue/assets/InputBulananView-BTH4H3bK.js
+	deleted:    public/vue/vue/vue/assets/InputBulananView-DL8FmSPf.js
+	deleted:    public/vue/vue/vue/assets/InputBulananView-RD-QbSRd.js
+	deleted:    public/vue/vue/vue/assets/KalenderKegiatanView-58gWloJ5.js
+	deleted:    public/vue/vue/vue/assets/KalenderKegiatanView-C9KII6Hg.js
+	deleted:    public/vue/vue/vue/assets/KalenderKegiatanView-Dn_r6wlq.js
+	deleted:    public/vue/vue/vue/assets/KegiatanPesantrenView-8EOkZUeo.js
+	deleted:    public/vue/vue/vue/assets/KegiatanPesantrenView-BZlH4RVB.js
+	deleted:    public/vue/vue/vue/assets/KegiatanPesantrenView-CP76PxlU.js
+	deleted:    public/vue/vue/vue/assets/KelasView-Beul3qkG.js
+	deleted:    public/vue/vue/vue/assets/KelasView-C2-n2x7d.js
+	deleted:    public/vue/vue/vue/assets/KelasView-rcKdlzNh.js
+	deleted:    public/vue/vue/vue/assets/KeuanganDashboardView-BcYNxO2q.js
+	deleted:    public/vue/vue/vue/assets/KeuanganDashboardView-ChHFM8Cg.js
+	deleted:    public/vue/vue/vue/assets/KeuanganDashboardView-iRWVKnkf.js
+	deleted:    public/vue/vue/vue/assets/KritikSaranView-9HkmsXvt.js
+	deleted:    public/vue/vue/vue/assets/KritikSaranView-BfYgbdlD.js
+	deleted:    public/vue/vue/vue/assets/KritikSaranView-DqQTi6Eo.js
+	deleted:    public/vue/vue/vue/assets/LaporanKeuanganView-CH49bd_o.js
+	deleted:    public/vue/vue/vue/assets/LaporanKeuanganView-CxdRImaR.js
+	deleted:    public/vue/vue/vue/assets/LaporanKeuanganView-R0bilfqB.js
+	deleted:    public/vue/vue/vue/assets/LembagaDetailView-B14wZV8f.js
+	deleted:    public/vue/vue/vue/assets/LembagaDetailView-B8NRArXm.js
+	deleted:    public/vue/vue/vue/assets/LembagaDetailView-UJDGqxPd.js
+	deleted:    public/vue/vue/vue/assets/LembagaFormView-BYgB1-ZJ.js
+	deleted:    public/vue/vue/vue/assets/LembagaFormView-BfhOETno.js
+	deleted:    public/vue/vue/vue/assets/LembagaFormView-DgbcQt5y.js
+	deleted:    public/vue/vue/vue/assets/LembagaView-0bJYh5uh.js
+	deleted:    public/vue/vue/vue/assets/LembagaView-B6uXDW0M.js
+	deleted:    public/vue/vue/vue/assets/LembagaView-CbcnA-0Y.js
+	deleted:    public/vue/vue/vue/assets/LoginView-BMrdVA9B.js
+	deleted:    public/vue/vue/vue/assets/LoginView-B_8B1LeX.js
+	deleted:    public/vue/vue/vue/assets/LoginView-CofSv8YK.js
+	deleted:    public/vue/vue/vue/assets/MasterDataView-CparqS4L.js
+	deleted:    public/vue/vue/vue/assets/MasterDataView-Cu5heSH3.js
+	deleted:    public/vue/vue/vue/assets/MasterDataView-DmhVkGhk.js
+	deleted:    public/vue/vue/vue/assets/MasterFormBridgeView-Bi2a8n74.js
+	deleted:    public/vue/vue/vue/assets/MasterFormBridgeView-DblENlxp.js
+	deleted:    public/vue/vue/vue/assets/MasterFormBridgeView-DnPo78gC.js
+	deleted:    public/vue/vue/vue/assets/NaikKelasView-BcF9-Zzm.js
+	deleted:    public/vue/vue/vue/assets/NaikKelasView-DuGwGNZ7.js
+	deleted:    public/vue/vue/vue/assets/NaikKelasView-Z5ox3jE4.js
+	deleted:    public/vue/vue/vue/assets/PembayaranView-CTbuP2eJ.js
+	deleted:    public/vue/vue/vue/assets/PembayaranView-D5nzTmc1.js
+	deleted:    public/vue/vue/vue/assets/PembayaranView-bwnlf5gs.js
+	deleted:    public/vue/vue/vue/assets/PengaturanKeuanganView-BZnbPFBF.js
+	deleted:    public/vue/vue/vue/assets/PengaturanKeuanganView-C4Qq_qp1.js
+	deleted:    public/vue/vue/vue/assets/PengaturanKeuanganView-DUumPCUG.js
+	deleted:    public/vue/vue/vue/assets/PengaturanView-3Rssnfls.js
+	deleted:    public/vue/vue/vue/assets/PengaturanView-DilA45eV.js
+	deleted:    public/vue/vue/vue/assets/PengaturanView-DpikK3gS.js
+	deleted:    public/vue/vue/vue/assets/PersonalView-BoKKevDZ.js
+	deleted:    public/vue/vue/vue/assets/PersonalView-Xwgzw2P-.js
+	deleted:    public/vue/vue/vue/assets/PersonalView-l0ilfTRc.js
+	deleted:    public/vue/vue/vue/assets/PosSantriView-B13uLp0J.css
+	deleted:    public/vue/vue/vue/assets/PosSantriView-C1sJbAvl.js
+	deleted:    public/vue/vue/vue/assets/PosSantriView-D9elucin.js
+	deleted:    public/vue/vue/vue/assets/PosSantriView-DefwthUo.js
+	deleted:    public/vue/vue/vue/assets/PostsView-C2Vzf9Z6.js
+	deleted:    public/vue/vue/vue/assets/PostsView-aZfGuHJf.js
+	deleted:    public/vue/vue/vue/assets/PostsView-za7uw2WL.js
+	deleted:    public/vue/vue/vue/assets/PpdbAdminView-BhWvQKYi.js
+	deleted:    public/vue/vue/vue/assets/PpdbAdminView-BpxH11Qq.js
+	deleted:    public/vue/vue/vue/assets/PpdbAdminView-d1nwrchv.js
+	deleted:    public/vue/vue/vue/assets/PpdbDetailView-CsBdiHAS.js
+	deleted:    public/vue/vue/vue/assets/PpdbDetailView-Da1__3vM.js
+	deleted:    public/vue/vue/vue/assets/PpdbDetailView-DlEpqNBx.js
+	deleted:    public/vue/vue/vue/assets/PpdbFormView-BlcP9SDA.js
+	deleted:    public/vue/vue/vue/assets/PpdbFormView-XZvn1CoE.js
+	deleted:    public/vue/vue/vue/assets/PpdbFormView-ixigk2Lh.js
+	deleted:    public/vue/vue/vue/assets/ProfilView-BdeY3q9Q.js
+	deleted:    public/vue/vue/vue/assets/ProfilView-DVH7wHtA.js
+	deleted:    public/vue/vue/vue/assets/ProfilView-DYHDD1fu.js
+	deleted:    public/vue/vue/vue/assets/RaporView-CWGcp5hc.js
+	deleted:    public/vue/vue/vue/assets/RaporView-CmC7Vmqv.js
+	deleted:    public/vue/vue/vue/assets/RaporView-LlO9J8zB.js
+	deleted:    public/vue/vue/vue/assets/RekapDiniyahView-CT0uXE2u.js
+	deleted:    public/vue/vue/vue/assets/RekapDiniyahView-DztUXovv.js
+	deleted:    public/vue/vue/vue/assets/RekapDiniyahView-MbSGa1iu.js
+	deleted:    public/vue/vue/vue/assets/RekapPrestasiView-BS47ghpV.js
+	deleted:    public/vue/vue/vue/assets/RekapPrestasiView-CZ7_3cp1.js
+	deleted:    public/vue/vue/vue/assets/RekapPrestasiView-DNHejcXZ.js
+	deleted:    public/vue/vue/vue/assets/SantriFormView-CfcclXW4.js
+	deleted:    public/vue/vue/vue/assets/SantriFormView-epVOY8Cj.js
+	deleted:    public/vue/vue/vue/assets/SantriFormView-keyuCpXn.js
+	deleted:    public/vue/vue/vue/assets/SantriView-CIbSBbcv.js
+	deleted:    public/vue/vue/vue/assets/SantriView-Cf5z3KHX.js
+	deleted:    public/vue/vue/vue/assets/SantriView-DXaRQx4s.js
+	deleted:    public/vue/vue/vue/assets/StatistikView-BLYoFko2.js
+	deleted:    public/vue/vue/vue/assets/StatistikView-DdT_GZSb.js
+	deleted:    public/vue/vue/vue/assets/StatistikView-QSqrVMH0.js
+	deleted:    public/vue/vue/vue/assets/TabunganView-BU_6HtXE.js
+	deleted:    public/vue/vue/vue/assets/TabunganView-BwuoAWNq.js
+	deleted:    public/vue/vue/vue/assets/TabunganView-DcwzaTEQ.js
+	deleted:    public/vue/vue/vue/assets/TagihanView-BSauVWyL.js
+	deleted:    public/vue/vue/vue/assets/TagihanView-CMzPQskv.js
+	deleted:    public/vue/vue/vue/assets/TagihanView-DkyVrbsH.js
+	deleted:    public/vue/vue/vue/assets/_plugin-vue_export-helper-DlAUqK2U.js
+	deleted:    public/vue/vue/vue/assets/createLucideIcon-C2QWWNlY.js
+	deleted:    public/vue/vue/vue/assets/createLucideIcon-DAsRVc6I.js
+	deleted:    public/vue/vue/vue/assets/format-CgTEi-wW.js
+	deleted:    public/vue/vue/vue/assets/hijri-BQdwk8_X.js
+	deleted:    public/vue/vue/vue/assets/index-1lqaMLN_.css
+	deleted:    public/vue/vue/vue/assets/index-B6x-8Tk8.js
+	deleted:    public/vue/vue/vue/assets/index-BQToRogx.js
+	deleted:    public/vue/vue/vue/assets/index-CP0SBlEC.css
+	deleted:    public/vue/vue/vue/assets/index-YSp6aJ5f.js
+	deleted:    public/vue/vue/vue/assets/kenaikan-DcnKGnb3.js
+	deleted:    public/vue/vue/vue/assets/logo-CxXS7KxG.js
+	deleted:    public/vue/vue/vue/assets/pdf-BHE_UDq-.js
+	deleted:    public/vue/vue/vue/assets/storage-BEj4epjk.js
+	deleted:    public/vue/vue/vue/assets/storage-DKmrpbMO.js
+	deleted:    public/vue/vue/vue/assets/storage-DTqjubjg.js
+	deleted:    public/vue/vue/vue/assets/useConfirm-BsItqGu1.js
+	deleted:    public/vue/vue/vue/assets/useConfirm-Bz07_i41.js
+	deleted:    public/vue/vue/vue/assets/useConfirm-Ch1Rv2TC.js
+	deleted:    public/vue/vue/vue/assets/useExcel-CZDOI6AT.js
+	deleted:    public/vue/vue/vue/assets/useGuru-CBhZcR59.js
+	deleted:    public/vue/vue/vue/assets/useGuru-DN4MtfPD.js
+	deleted:    public/vue/vue/vue/assets/useGuru-IV--Qr3o.js
+	deleted:    public/vue/vue/vue/assets/useKeuangan-B-FpIeMx.js
+	deleted:    public/vue/vue/vue/assets/useKeuangan-CSPK74hU.js
+	deleted:    public/vue/vue/vue/assets/useKeuangan-CymcOZlI.js
+	deleted:    public/vue/vue/vue/assets/useLembaga-BGrRoFMr.js
+	deleted:    public/vue/vue/vue/assets/useLembaga-C1swPaUN.js
+	deleted:    public/vue/vue/vue/assets/useLembaga-CjCVfoch.js
+	deleted:    public/vue/vue/vue/assets/useMenus-BdIPdVGf.js
+	deleted:    public/vue/vue/vue/assets/useMenus-Cvbfafuf.js
+	deleted:    public/vue/vue/vue/assets/useMenus-DQs7D3iG.js
+	deleted:    public/vue/vue/vue/assets/useSantri-BNp-xneZ.js
+	deleted:    public/vue/vue/vue/assets/useSantri-CXLma0sq.js
+	deleted:    public/vue/vue/vue/assets/useSantri-YmxNfUz_.js
+	deleted:    public/vue/vue/vue/assets/useToast-BI4ag8cn.js
+	deleted:    public/vue/vue/vue/assets/useToast-D6bPUuTp.js
+	deleted:    public/vue/vue/vue/assets/useToast-NFGRoaYW.js
+	deleted:    public/vue/vue/vue/bakafrawi-logo.png
+	deleted:    public/vue/vue/vue/fonts/ScheherazadeNew-SemiBold.ttf
+	deleted:    public/vue/vue/vue/fonts/ScheherazadeNew-SemiBold.woff2
+	deleted:    public/vue/vue/vue/index.html
+	deleted:    public/vue/vue/vue/logo.png
+	deleted:    public/vue/vue/vue/vue/assets/AbsensiGuruView-DtE-zO7N.js
+	deleted:    public/vue/vue/vue/vue/assets/AbsensiGuruView-WjFS86J3.js
+	deleted:    public/vue/vue/vue/vue/assets/AbsensiSantriView-BQ3W_l6b.js
+	deleted:    public/vue/vue/vue/vue/assets/AbsensiSantriView-CrV9cwe1.js
+	deleted:    public/vue/vue/vue/vue/assets/AppLayout-CsHHe0aK.js
+	deleted:    public/vue/vue/vue/vue/assets/AppLayout-Cy55l9NA.css
+	deleted:    public/vue/vue/vue/vue/assets/AppLayout-Dcxr8d5b.js
+	deleted:    public/vue/vue/vue/vue/assets/AppLayout-ZTOXoeTP.css
+	deleted:    public/vue/vue/vue/vue/assets/BisyarohView-CGrSsXBu.js
+	deleted:    public/vue/vue/vue/vue/assets/BisyarohView-Qu41cbLi.js
+	deleted:    public/vue/vue/vue/vue/assets/BukuIndukView-BG-wgMDO.js
+	deleted:    public/vue/vue/vue/vue/assets/BukuIndukView-BOdC4uFm.js
+	deleted:    public/vue/vue/vue/vue/assets/CapaianPrestasiView-BUg-PtUR.js
+	deleted:    public/vue/vue/vue/vue/assets/CapaianPrestasiView-DZHUENFn.js
+	deleted:    public/vue/vue/vue/vue/assets/DashboardView-B1l9MSnG.css
+	deleted:    public/vue/vue/vue/vue/assets/DashboardView-BgMn9qEQ.js
+	deleted:    public/vue/vue/vue/vue/assets/DashboardView-BpLwM2aA.js
+	deleted:    public/vue/vue/vue/vue/assets/FieldSchemaView-C9ZIS9Gz.js
+	deleted:    public/vue/vue/vue/vue/assets/FieldSchemaView-CVR0Opq_.js
+	deleted:    public/vue/vue/vue/vue/assets/GuruFormView-BLIgJz0D.js
+	deleted:    public/vue/vue/vue/vue/assets/GuruFormView-DOel6svH.js
+	deleted:    public/vue/vue/vue/vue/assets/GuruView-BE2XpYXc.js
+	deleted:    public/vue/vue/vue/vue/assets/GuruView-BppFPOOf.js
+	deleted:    public/vue/vue/vue/vue/assets/HutangPiutangView-9yvxxiJg.js
+	deleted:    public/vue/vue/vue/vue/assets/HutangPiutangView-BLuY-yID.js
+	deleted:    public/vue/vue/vue/vue/assets/InputBulananView-BTH4H3bK.js
+	deleted:    public/vue/vue/vue/vue/assets/InputBulananView-DL8FmSPf.js
+	deleted:    public/vue/vue/vue/vue/assets/KalenderKegiatanView-C9KII6Hg.js
+	deleted:    public/vue/vue/vue/vue/assets/KalenderKegiatanView-Dn_r6wlq.js
+	deleted:    public/vue/vue/vue/vue/assets/KegiatanPesantrenView-8EOkZUeo.js
+	deleted:    public/vue/vue/vue/vue/assets/KegiatanPesantrenView-CP76PxlU.js
+	deleted:    public/vue/vue/vue/vue/assets/KelasView-Beul3qkG.js
+	deleted:    public/vue/vue/vue/vue/assets/KelasView-C2-n2x7d.js
+	deleted:    public/vue/vue/vue/vue/assets/KeuanganDashboardView-ChHFM8Cg.js
+	deleted:    public/vue/vue/vue/vue/assets/KeuanganDashboardView-iRWVKnkf.js
+	deleted:    public/vue/vue/vue/vue/assets/KritikSaranView-9HkmsXvt.js
+	deleted:    public/vue/vue/vue/vue/assets/KritikSaranView-BfYgbdlD.js
+	deleted:    public/vue/vue/vue/vue/assets/LaporanKeuanganView-CH49bd_o.js
+	deleted:    public/vue/vue/vue/vue/assets/LaporanKeuanganView-CxdRImaR.js
+	deleted:    public/vue/vue/vue/vue/assets/LembagaDetailView-B14wZV8f.js
+	deleted:    public/vue/vue/vue/vue/assets/LembagaDetailView-B8NRArXm.js
+	deleted:    public/vue/vue/vue/vue/assets/LembagaFormView-BfhOETno.js
+	deleted:    public/vue/vue/vue/vue/assets/LembagaFormView-DgbcQt5y.js
+	deleted:    public/vue/vue/vue/vue/assets/LembagaView-0bJYh5uh.js
+	deleted:    public/vue/vue/vue/vue/assets/LembagaView-CbcnA-0Y.js
+	deleted:    public/vue/vue/vue/vue/assets/LoginView-BMrdVA9B.js
+	deleted:    public/vue/vue/vue/vue/assets/LoginView-B_8B1LeX.js
+	deleted:    public/vue/vue/vue/vue/assets/MasterDataView-CparqS4L.js
+	deleted:    public/vue/vue/vue/vue/assets/MasterDataView-Cu5heSH3.js
+	deleted:    public/vue/vue/vue/vue/assets/MasterFormBridgeView-DblENlxp.js
+	deleted:    public/vue/vue/vue/vue/assets/MasterFormBridgeView-DnPo78gC.js
+	deleted:    public/vue/vue/vue/vue/assets/NaikKelasView-DuGwGNZ7.js
+	deleted:    public/vue/vue/vue/vue/assets/NaikKelasView-Z5ox3jE4.js
+	deleted:    public/vue/vue/vue/vue/assets/PembayaranView-D5nzTmc1.js
+	deleted:    public/vue/vue/vue/vue/assets/PembayaranView-bwnlf5gs.js
+	deleted:    public/vue/vue/vue/vue/assets/PengaturanKeuanganView-BZnbPFBF.js
+	deleted:    public/vue/vue/vue/vue/assets/PengaturanKeuanganView-C4Qq_qp1.js
+	deleted:    public/vue/vue/vue/vue/assets/PengaturanView-DilA45eV.js
+	deleted:    public/vue/vue/vue/vue/assets/PengaturanView-DpikK3gS.js
+	deleted:    public/vue/vue/vue/vue/assets/PersonalView-BoKKevDZ.js
+	deleted:    public/vue/vue/vue/vue/assets/PersonalView-l0ilfTRc.js
+	deleted:    public/vue/vue/vue/vue/assets/PosSantriView-B13uLp0J.css
+	deleted:    public/vue/vue/vue/vue/assets/PosSantriView-D9elucin.js
+	deleted:    public/vue/vue/vue/vue/assets/PosSantriView-DefwthUo.js
+	deleted:    public/vue/vue/vue/vue/assets/PostsView-aZfGuHJf.js
+	deleted:    public/vue/vue/vue/vue/assets/PostsView-za7uw2WL.js
+	deleted:    public/vue/vue/vue/vue/assets/PpdbAdminView-BhWvQKYi.js
+	deleted:    public/vue/vue/vue/vue/assets/PpdbAdminView-BpxH11Qq.js
+	deleted:    public/vue/vue/vue/vue/assets/PpdbDetailView-CsBdiHAS.js
+	deleted:    public/vue/vue/vue/vue/assets/PpdbDetailView-DlEpqNBx.js
+	deleted:    public/vue/vue/vue/vue/assets/PpdbFormView-BlcP9SDA.js
+	deleted:    public/vue/vue/vue/vue/assets/PpdbFormView-ixigk2Lh.js
+	deleted:    public/vue/vue/vue/vue/assets/ProfilView-DVH7wHtA.js
+	deleted:    public/vue/vue/vue/vue/assets/ProfilView-DYHDD1fu.js
+	deleted:    public/vue/vue/vue/vue/assets/RaporView-CWGcp5hc.js
+	deleted:    public/vue/vue/vue/vue/assets/RaporView-CmC7Vmqv.js
+	deleted:    public/vue/vue/vue/vue/assets/RekapDiniyahView-DztUXovv.js
+	deleted:    public/vue/vue/vue/vue/assets/RekapDiniyahView-MbSGa1iu.js
+	deleted:    public/vue/vue/vue/vue/assets/RekapPrestasiView-BS47ghpV.js
+	deleted:    public/vue/vue/vue/vue/assets/RekapPrestasiView-CZ7_3cp1.js
+	deleted:    public/vue/vue/vue/vue/assets/SantriFormView-CfcclXW4.js
+	deleted:    public/vue/vue/vue/vue/assets/SantriFormView-epVOY8Cj.js
+	deleted:    public/vue/vue/vue/vue/assets/SantriView-CIbSBbcv.js
+	deleted:    public/vue/vue/vue/vue/assets/SantriView-DXaRQx4s.js
+	deleted:    public/vue/vue/vue/vue/assets/StatistikView-BLYoFko2.js
+	deleted:    public/vue/vue/vue/vue/assets/StatistikView-DdT_GZSb.js
+	deleted:    public/vue/vue/vue/vue/assets/TabunganView-BU_6HtXE.js
+	deleted:    public/vue/vue/vue/vue/assets/TabunganView-DcwzaTEQ.js
+	deleted:    public/vue/vue/vue/vue/assets/TagihanView-BSauVWyL.js
+	deleted:    public/vue/vue/vue/vue/assets/TagihanView-DkyVrbsH.js
+	deleted:    public/vue/vue/vue/vue/assets/_plugin-vue_export-helper-DlAUqK2U.js
+	deleted:    public/vue/vue/vue/vue/assets/createLucideIcon-C2QWWNlY.js
+	deleted:    public/vue/vue/vue/vue/assets/format-CgTEi-wW.js
+	deleted:    public/vue/vue/vue/vue/assets/hijri-BQdwk8_X.js
+	deleted:    public/vue/vue/vue/vue/assets/index-1lqaMLN_.css
+	deleted:    public/vue/vue/vue/vue/assets/index-BQToRogx.js
+	deleted:    public/vue/vue/vue/vue/assets/index-CP0SBlEC.css
+	deleted:    public/vue/vue/vue/vue/assets/index-YSp6aJ5f.js
+	deleted:    public/vue/vue/vue/vue/assets/kenaikan-DcnKGnb3.js
+	deleted:    public/vue/vue/vue/vue/assets/logo-CxXS7KxG.js
+	deleted:    public/vue/vue/vue/vue/assets/pdf-BHE_UDq-.js
+	deleted:    public/vue/vue/vue/vue/assets/storage-DKmrpbMO.js
+	deleted:    public/vue/vue/vue/vue/assets/storage-DTqjubjg.js
+	deleted:    public/vue/vue/vue/vue/assets/useConfirm-BsItqGu1.js
+	deleted:    public/vue/vue/vue/vue/assets/useConfirm-Bz07_i41.js
+	deleted:    public/vue/vue/vue/vue/assets/useExcel-CZDOI6AT.js
+	deleted:    public/vue/vue/vue/vue/assets/useGuru-CBhZcR59.js
+	deleted:    public/vue/vue/vue/vue/assets/useGuru-DN4MtfPD.js
+	deleted:    public/vue/vue/vue/vue/assets/useKeuangan-B-FpIeMx.js
+	deleted:    public/vue/vue/vue/vue/assets/useKeuangan-CSPK74hU.js
+	deleted:    public/vue/vue/vue/vue/assets/useLembaga-C1swPaUN.js
+	deleted:    public/vue/vue/vue/vue/assets/useLembaga-CjCVfoch.js
+	deleted:    public/vue/vue/vue/vue/assets/useMenus-BdIPdVGf.js
+	deleted:    public/vue/vue/vue/vue/assets/useMenus-DQs7D3iG.js
+	deleted:    public/vue/vue/vue/vue/assets/useSantri-BNp-xneZ.js
+	deleted:    public/vue/vue/vue/vue/assets/useSantri-YmxNfUz_.js
+	deleted:    public/vue/vue/vue/vue/assets/useToast-D6bPUuTp.js
+	deleted:    public/vue/vue/vue/vue/assets/useToast-NFGRoaYW.js
+	deleted:    public/vue/vue/vue/vue/bakafrawi-logo.png
+	deleted:    public/vue/vue/vue/vue/fonts/ScheherazadeNew-SemiBold.ttf
+	deleted:    public/vue/vue/vue/vue/fonts/ScheherazadeNew-SemiBold.woff2
+	deleted:    public/vue/vue/vue/vue/index.html
+	deleted:    public/vue/vue/vue/vue/logo.png
+	deleted:    public/vue/vue/vue/vue/vue/assets/AbsensiGuruView-DtE-zO7N.js
+	deleted:    public/vue/vue/vue/vue/vue/assets/AbsensiSantriView-BQ3W_l6b.js
+	deleted:    public/vue/vue/vue/vue/vue/assets/AppLayout-CsHHe0aK.js
+	deleted:    public/vue/vue/vue/vue/vue/assets/AppLayout-ZTOXoeTP.css
+	deleted:    public/vue/vue/vue/vue/vue/assets/BisyarohView-CGrSsXBu.js
+	deleted:    public/vue/vue/vue/vue/vue/assets/BukuIndukView-BG-wgMDO.js
+	deleted:    public/vue/vue/vue/vue/vue/assets/CapaianPrestasiView-DZHUENFn.js
+	deleted:    public/vue/vue/vue/vue/vue/assets/DashboardView-B1l9MSnG.css
+	deleted:    public/vue/vue/vue/vue/vue/assets/DashboardView-BgMn9qEQ.js
+	deleted:    public/vue/vue/vue/vue/vue/assets/FieldSchemaView-CVR0Opq_.js
+	deleted:    public/vue/vue/vue/vue/vue/assets/GuruFormView-DOel6svH.js
+	deleted:    public/vue/vue/vue/vue/vue/assets/GuruView-BE2XpYXc.js
+	deleted:    public/vue/vue/vue/vue/vue/assets/HutangPiutangView-BLuY-yID.js
+	deleted:    public/vue/vue/vue/vue/vue/assets/InputBulananView-BTH4H3bK.js
+	deleted:    public/vue/vue/vue/vue/vue/assets/KalenderKegiatanView-C9KII6Hg.js
+	deleted:    public/vue/vue/vue/vue/vue/assets/KegiatanPesantrenView-CP76PxlU.js
+	deleted:    public/vue/vue/vue/vue/vue/assets/KelasView-C2-n2x7d.js
+	deleted:    public/vue/vue/vue/vue/vue/assets/KeuanganDashboardView-iRWVKnkf.js
+	deleted:    public/vue/vue/vue/vue/vue/assets/KritikSaranView-BfYgbdlD.js
+	deleted:    public/vue/vue/vue/vue/vue/assets/LaporanKeuanganView-CH49bd_o.js
+	deleted:    public/vue/vue/vue/vue/vue/assets/LembagaDetailView-B8NRArXm.js
+	deleted:    public/vue/vue/vue/vue/vue/assets/LembagaFormView-DgbcQt5y.js
+	deleted:    public/vue/vue/vue/vue/vue/assets/LembagaView-CbcnA-0Y.js
+	deleted:    public/vue/vue/vue/vue/vue/assets/LoginView-B_8B1LeX.js
+	deleted:    public/vue/vue/vue/vue/vue/assets/MasterDataView-Cu5heSH3.js
+	deleted:    public/vue/vue/vue/vue/vue/assets/MasterFormBridgeView-DnPo78gC.js
+	deleted:    public/vue/vue/vue/vue/vue/assets/NaikKelasView-DuGwGNZ7.js
+	deleted:    public/vue/vue/vue/vue/vue/assets/PembayaranView-bwnlf5gs.js
+	deleted:    public/vue/vue/vue/vue/vue/assets/PengaturanKeuanganView-C4Qq_qp1.js
+	deleted:    public/vue/vue/vue/vue/vue/assets/PengaturanView-DilA45eV.js
+	deleted:    public/vue/vue/vue/vue/vue/assets/PersonalView-l0ilfTRc.js
+	deleted:    public/vue/vue/vue/vue/vue/assets/PosSantriView-B13uLp0J.css
+	deleted:    public/vue/vue/vue/vue/vue/assets/PosSantriView-D9elucin.js
+	deleted:    public/vue/vue/vue/vue/vue/assets/PostsView-aZfGuHJf.js
+	deleted:    public/vue/vue/vue/vue/vue/assets/PpdbAdminView-BhWvQKYi.js
+	deleted:    public/vue/vue/vue/vue/vue/assets/PpdbDetailView-DlEpqNBx.js
+	deleted:    public/vue/vue/vue/vue/vue/assets/PpdbFormView-ixigk2Lh.js
+	deleted:    public/vue/vue/vue/vue/vue/assets/ProfilView-DVH7wHtA.js
+	deleted:    public/vue/vue/vue/vue/vue/assets/RaporView-CmC7Vmqv.js
+	deleted:    public/vue/vue/vue/vue/vue/assets/RekapDiniyahView-DztUXovv.js
+	deleted:    public/vue/vue/vue/vue/vue/assets/RekapPrestasiView-BS47ghpV.js
+	deleted:    public/vue/vue/vue/vue/vue/assets/SantriFormView-epVOY8Cj.js
+	deleted:    public/vue/vue/vue/vue/vue/assets/SantriView-DXaRQx4s.js
+	deleted:    public/vue/vue/vue/vue/vue/assets/StatistikView-DdT_GZSb.js
+	deleted:    public/vue/vue/vue/vue/vue/assets/TabunganView-BU_6HtXE.js
+	deleted:    public/vue/vue/vue/vue/vue/assets/TagihanView-BSauVWyL.js
+	deleted:    public/vue/vue/vue/vue/vue/assets/_plugin-vue_export-helper-DlAUqK2U.js
+	deleted:    public/vue/vue/vue/vue/vue/assets/format-CgTEi-wW.js
+	deleted:    public/vue/vue/vue/vue/vue/assets/hijri-BQdwk8_X.js
+	deleted:    public/vue/vue/vue/vue/vue/assets/index-CP0SBlEC.css
+	deleted:    public/vue/vue/vue/vue/vue/assets/index-YSp6aJ5f.js
+	deleted:    public/vue/vue/vue/vue/vue/assets/kenaikan-DcnKGnb3.js
+	deleted:    public/vue/vue/vue/vue/vue/assets/logo-CxXS7KxG.js
+	deleted:    public/vue/vue/vue/vue/vue/assets/pdf-BHE_UDq-.js
+	deleted:    public/vue/vue/vue/vue/vue/assets/storage-DKmrpbMO.js
+	deleted:    public/vue/vue/vue/vue/vue/assets/useConfirm-Bz07_i41.js
+	deleted:    public/vue/vue/vue/vue/vue/assets/useExcel-CZDOI6AT.js
+	deleted:    public/vue/vue/vue/vue/vue/assets/useGuru-DN4MtfPD.js
+	deleted:    public/vue/vue/vue/vue/vue/assets/useKeuangan-CSPK74hU.js
+	deleted:    public/vue/vue/vue/vue/vue/assets/useLembaga-C1swPaUN.js
+	deleted:    public/vue/vue/vue/vue/vue/assets/useMenus-BdIPdVGf.js
+	deleted:    public/vue/vue/vue/vue/vue/assets/useSantri-BNp-xneZ.js
+	deleted:    public/vue/vue/vue/vue/vue/assets/useToast-D6bPUuTp.js
+	deleted:    public/vue/vue/vue/vue/vue/bakafrawi-logo.png
+	deleted:    public/vue/vue/vue/vue/vue/fonts/ScheherazadeNew-SemiBold.ttf
+	deleted:    public/vue/vue/vue/vue/vue/fonts/ScheherazadeNew-SemiBold.woff2
+	deleted:    public/vue/vue/vue/vue/vue/index.html
+	deleted:    public/vue/vue/vue/vue/vue/logo.png
+	modified:   scripts/build-aab.cjs
+	deleted:    vue-app-psb/dist/assets/index-BJdn9wcb.css
+	deleted:    vue-app-psb/dist/assets/index-BOmTLt9n.js
+	modified:   vue-app-psb/dist/index.html
+	modified:   vue-app-psb/package-lock.json
+	modified:   vue-app/android/.idea/deploymentTargetSelector.xml
+	modified:   vue-app/android/.idea/misc.xml
+	modified:   vue-app/android/app/capacitor.build.gradle
+	modified:   vue-app/android/app/src/main/res/drawable-land-hdpi/splash.png
+	modified:   vue-app/android/app/src/main/res/drawable-land-mdpi/splash.png
+	modified:   vue-app/android/app/src/main/res/drawable-land-xhdpi/splash.png
+	modified:   vue-app/android/app/src/main/res/drawable-land-xxhdpi/splash.png
+	modified:   vue-app/android/app/src/main/res/drawable-land-xxxhdpi/splash.png
+	modified:   vue-app/android/app/src/main/res/drawable-port-hdpi/splash.png
+	modified:   vue-app/android/app/src/main/res/drawable-port-mdpi/splash.png
+	modified:   vue-app/android/app/src/main/res/drawable-port-xhdpi/splash.png
+	modified:   vue-app/android/app/src/main/res/drawable-port-xxhdpi/splash.png
+	modified:   vue-app/android/app/src/main/res/drawable-port-xxxhdpi/splash.png
+	modified:   vue-app/android/app/src/main/res/drawable/splash.png
+	modified:   vue-app/android/app/src/main/res/xml/file_paths.xml
+	modified:   vue-app/android/build.gradle
+	modified:   vue-app/android/capacitor.settings.gradle
+	modified:   vue-app/android/gradle.properties
+	modified:   vue-app/android/gradle/wrapper/gradle-wrapper.properties
+	modified:   vue-app/capacitor.config.json
+	deleted:    vue-app/capacitor.config.ts
+	modified:   vue-app/electron/build/index.js
+	modified:   vue-app/ios/App/Podfile
+	modified:   vue-app/package-lock.json
+	modified:   vue-app/src/App.vue
+	modified:   vue-app/src/assets/main.css
+	modified:   vue-app/src/composables/useNativeDownload.js
+	modified:   vue-app/src/stores/auth.js
+	modified:   vue-app/src/utils/strukBuilder.js
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	Splashscreen/
+	public/psb/assets/index-BLdHXdje.js
+	public/psb/assets/index-BcCjX7Jb.css
+	public/splash-landscape-dark.png
+	public/splash-landscape-light.png
+	public/splash-portrait-dark.png
+	public/splash-portrait-light.png
+	public/vue/apple-touch-icon-180.png
+	public/vue/apple-touch-icon.png
+	public/vue/assets/AbsensiGuruView-D4Ecpnx7.js
+	public/vue/assets/AbsensiSantriView-Bk3dDL5Y.js
+	public/vue/assets/AppLayout-BffB-L-l.js
+	public/vue/assets/BisyarohView-BokqFtDT.js
+	public/vue/assets/BukuIndukView-wLQXMFfe.js
+	public/vue/assets/CapaianPrestasiView-C39_fjEi.js
+	public/vue/assets/DashboardView-BSVoUc8V.js
+	public/vue/assets/FieldSchemaView--QB44n5o.js
+	public/vue/assets/GuruFormView-C8Wt0v1v.js
+	public/vue/assets/GuruView-CzMN4xdQ.js
+	public/vue/assets/HutangPiutangView-OydJapnS.js
+	public/vue/assets/InputBulananView-C8ICFEgN.js
+	public/vue/assets/KalenderKegiatanView-BCR5VTtN.js
+	public/vue/assets/KegiatanPesantrenView-CYruBFeL.js
+	public/vue/assets/KelasView-CtxzqmGV.js
+	public/vue/assets/KeuanganDashboardView-Gawp2-EU.js
+	public/vue/assets/KritikSaranView-D47uA0-J.js
+	public/vue/assets/LaporanKeuanganView-CrF-_Gdy.js
+	public/vue/assets/LembagaDetailView-C9LWQ-nn.js
+	public/vue/assets/LembagaFormView-aAohIJiA.js
+	public/vue/assets/LoginView-BGz6oRsH.js
+	public/vue/assets/MasterDataView-R71by19l.js
+	public/vue/assets/MasterFormBridgeView-BVgoLDUZ.js
+	public/vue/assets/NaikKelasView-CSuWslKs.css
+	public/vue/assets/NaikKelasView-Chf59N5_.js
+	public/vue/assets/PembayaranPendingView-yK3cqXiX.js
+	public/vue/assets/PembayaranView-BYDVxXYz.js
+	public/vue/assets/PengaturanKeuanganView-DQTHtgYO.js
+	public/vue/assets/PengaturanView-Q1vlLdNl.js
+	public/vue/assets/PersonalView-BYaBzGjJ.js
+	public/vue/assets/PosSantriView-v9SG4thy.js
+	public/vue/assets/PostsView-Dtk26hG-.css
+	public/vue/assets/PostsView-Ypn4FUXt.js
+	public/vue/assets/PpdbAdminView-hqXX1i49.js
+	public/vue/assets/PpdbDetailView-BUQXRIFK.js
+	public/vue/assets/PpdbFormView-OofDl_bq.js
+	public/vue/assets/ProfilView-tP2skoFf.js
+	public/vue/assets/RaporView-BXcMaluh.css
+	public/vue/assets/RaporView-L1tbSG8N.js
+	public/vue/assets/RekapDiniyahView-hJi8h-en.js
+	public/vue/assets/RekapPrestasiView-Cq1G4tYc.js
+	public/vue/assets/RiwayatPosView-Bm5EEt1n.js
+	public/vue/assets/RiwayatSantriView-BuMz2pNz.js
+	public/vue/assets/SantriFormView-Bs2vORgX.js
+	public/vue/assets/SantriView-DKuJRyjr.js
+	public/vue/assets/SkeletonCard-Cc1w4FrN.js
+	public/vue/assets/StatistikView-BDcdAe0T.js
+	public/vue/assets/SupervisiView-Dd1cEjta.js
+	public/vue/assets/TabunganView-4x2M1pun.js
+	public/vue/assets/TagihanView-C-p8VLtc.js
+	public/vue/assets/UiActionCard-BjSgzp0d.js
+	public/vue/assets/UiButton-DTYd7cFG.js
+	public/vue/assets/auditLog-MapZc2Gm.js
+	public/vue/assets/collections-BFdE5FOC.js
+	public/vue/assets/index-BUXP2fN-.css
+	public/vue/assets/index-DfATisQy.js
+	public/vue/assets/pdfBuilder-dWsu83pZ.js
+	public/vue/assets/storage-BYnupjeK.js
+	public/vue/assets/strukBuilder-CJQce64j.js
+	public/vue/assets/useConfirm-C2yRMq3r.js
+	public/vue/assets/useExcel-3YmFm7w3.js
+	public/vue/assets/useGuru-TDDjjWCH.js
+	public/vue/assets/useKegiatan-DIvpKeIS.js
+	public/vue/assets/useKeuangan--qL4iVgV.js
+	public/vue/assets/useLembaga-DLbVnl06.js
+	public/vue/assets/useMenus-CYnQLiXa.js
+	public/vue/assets/useNativeDownload-BFFJR_ST.js
+	public/vue/assets/useSantri-B1EmeiNm.js
+	public/vue/assets/useToast-CA0b17Bu.js
+	public/vue/assets/useWaliChildren-CySIkqCQ.js
+	public/vue/assets/vendor-Dz-iX1ke.js
+	public/vue/assets/vendor-charts-vDQlx7Ec.js
+	public/vue/assets/vendor-firebase-BaLxkzBu.js
+	public/vue/favicon-192.png
+	public/vue/favicon-32.png
+	public/vue/favicon.ico
+	public/vue/icon-192-maskable.png
+	public/vue/icon-192.png
+	public/vue/icon-512-maskable.png
+	public/vue/icon-512-transparent.png
+	public/vue/icon-512.png
+	public/vue/manifest.json
+	public/vue/manifest.webmanifest
+	public/vue/pwa-192.png
+	public/vue/pwa-512.png
+	public/vue/splash-landscape-dark.png
+	public/vue/splash-landscape-light.png
+	public/vue/splash-portrait-dark.png
+	public/vue/splash-portrait-light.png
+	tmp_recovery/_add2_err.txt
+	tmp_recovery/_add2_out.txt
+	tmp_recovery/_add3_err.txt
+	tmp_recovery/_add3_out.txt
+	tmp_recovery/_add4_err.txt
+	tmp_recovery/_add4_out.txt
+	tmp_recovery/_add5_err.txt
+	tmp_recovery/_add5_out.txt
+	tmp_recovery/_add6_err.txt
+	tmp_recovery/_add6_out.txt
+	tmp_recovery/_add7_err.txt
+	tmp_recovery/_add7_out.txt
+	tmp_recovery/_add_err.txt
+	tmp_recovery/_add_out.txt
+	tmp_recovery/_app2_err.txt
+	tmp_recovery/_app2_out.txt
+	tmp_recovery/_app3_err.txt
+	tmp_recovery/_app3_out.txt
+	tmp_recovery/_app4_err.txt
+	tmp_recovery/_app4_out.txt
+	tmp_recovery/_app_err.txt
+	tmp_recovery/_app_out.txt
+	tmp_recovery/_c1.txt
+	tmp_recovery/_c2.txt
+	tmp_recovery/_cm10.txt
+	tmp_recovery/_cm11.txt
+	tmp_recovery/_cm12.txt
+	tmp_recovery/_cm13.txt
+	tmp_recovery/_cm14.txt
+	tmp_recovery/_cm15.txt
+	tmp_recovery/_cm16.txt
+	tmp_recovery/_cm2.txt
+	tmp_recovery/_cm3.txt
+	tmp_recovery/_cm4.txt
+	tmp_recovery/_cm5.txt
+	tmp_recovery/_cm6.txt
+	tmp_recovery/_cm7.txt
+	tmp_recovery/_cm8.txt
+	tmp_recovery/_cm9.txt
+	tmp_recovery/_commit2_err.txt
+	tmp_recovery/_commit2_out.txt
+	tmp_recovery/_commit3_err.txt
+	tmp_recovery/_commit3_out.txt
+	tmp_recovery/_commit4_err.txt
+	tmp_recovery/_commit4_out.txt
+	tmp_recovery/_commit5_err.txt
+	tmp_recovery/_commit5_out.txt
+	tmp_recovery/_commit6_err.txt
+	tmp_recovery/_commit6_out.txt
+	tmp_recovery/_commit7_err.txt
+	tmp_recovery/_commit7_out.txt
+	tmp_recovery/_commit_ALL_1juni.cmd
+	tmp_recovery/_commit_B_perf.cmd
+	tmp_recovery/_commit_N1357.cmd
+	tmp_recovery/_commit_cleanup.cmd
+	tmp_recovery/_commit_corruptfix.cmd
+	tmp_recovery/_commit_err.txt
+	tmp_recovery/_commit_out.txt
+	tmp_recovery/_commit_psb.cmd
+	tmp_recovery/_commitmsg.txt
+	tmp_recovery/_commitmsg_v87b23.txt
+	tmp_recovery/_commitmsg_v87deploy2.txt
+	tmp_recovery/_commitmsg_v87docs.txt
+	tmp_recovery/_commitmsg_v87notif.txt
+	tmp_recovery/_commitmsg_v87pay.txt
+	tmp_recovery/_commitmsg_v87prestasi.txt
+	tmp_recovery/_commitmsg_v87splash.txt
+	tmp_recovery/_dc_commit.cmd
+	tmp_recovery/_dep_check.txt
+	tmp_recovery/_dep_err.txt
+	tmp_recovery/_dump_widget.cmd
+	tmp_recovery/_eb_code.txt
+	tmp_recovery/_eb_err.txt
+	tmp_recovery/_eb_out.txt
+	tmp_recovery/_ga.txt
+	tmp_recovery/_gae.txt
+	tmp_recovery/_gc.txt
+	tmp_recovery/_gc10.txt
+	tmp_recovery/_gc11.txt
+	tmp_recovery/_gc12.txt
+	tmp_recovery/_gc13.txt
+	tmp_recovery/_gc14.txt
+	tmp_recovery/_gc14b.txt
+	tmp_recovery/_gc14e.txt
+	tmp_recovery/_gc15.txt
+	tmp_recovery/_gc16.txt
+	tmp_recovery/_gc2.txt
+	tmp_recovery/_gc3.txt
+	tmp_recovery/_gc4.txt
+	tmp_recovery/_gc5.txt
+	tmp_recovery/_gc6.txt
+	tmp_recovery/_gc7.txt
+	tmp_recovery/_gc8.txt
+	tmp_recovery/_gc9.txt
+	tmp_recovery/_gce.txt
+	tmp_recovery/_gce2.txt
+	tmp_recovery/_gce3.txt
+	tmp_recovery/_git_w2.cmd
+	tmp_recovery/_git_w3.cmd
+	tmp_recovery/_git_widget.cmd
+	tmp_recovery/_gitlog.txt
+	tmp_recovery/_gitlog_err.txt
+	tmp_recovery/_gitout.txt
+	tmp_recovery/_gitstatus.txt
+	tmp_recovery/_gitstatus_err.txt
+	tmp_recovery/_gl.txt
+	tmp_recovery/_gl2.txt
+	tmp_recovery/_gl3.txt
+	tmp_recovery/_gle.txt
+	tmp_recovery/_gs.txt
+	tmp_recovery/_gse.txt
+	tmp_recovery/_gshead.txt
+	tmp_recovery/_gst.txt
+	tmp_recovery/_gv.txt
+	tmp_recovery/_h.txt
+	tmp_recovery/_log2.txt
+	tmp_recovery/_log2_err.txt
+	tmp_recovery/_log3.txt
+	tmp_recovery/_log3_err.txt
+	tmp_recovery/_log3b.txt
+	tmp_recovery/_log3b_err.txt
+	tmp_recovery/_log5.txt
+	tmp_recovery/_log5_err.txt
+	tmp_recovery/_log6.txt
+	tmp_recovery/_log6_err.txt
+	tmp_recovery/_log7.txt
+	tmp_recovery/_log7_err.txt
+	tmp_recovery/_lost.txt
+	tmp_recovery/_lost_e.txt
+	tmp_recovery/_npm.txt
+	tmp_recovery/_npme.txt
+	tmp_recovery/_ns.txt
+	tmp_recovery/_nse.txt
+	tmp_recovery/_nv.txt
+	tmp_recovery/_pf.txt
+	tmp_recovery/_pfe.txt
+	tmp_recovery/_psblog.txt
+	tmp_recovery/_rec_err.txt
+	tmp_recovery/_rec_pembayaran.vue
+	tmp_recovery/_rec_pending.vue
+	tmp_recovery/_recerr.txt
+	tmp_recovery/_remove_deadfiles.cmd
+	tmp_recovery/_restore_widget.cmd
+	tmp_recovery/_rf.txt
+	tmp_recovery/_rp_err.txt
+	tmp_recovery/_run_electron.cmd
+	tmp_recovery/_run_tsc_electron.cmd
+	tmp_recovery/_run_vite.cmd
+	tmp_recovery/_show82.txt
+	tmp_recovery/_show82full.txt
+	tmp_recovery/_st.txt
+	tmp_recovery/_tree82.txt
+	tmp_recovery/_treeHEAD.txt
+	tmp_recovery/_tsc_e.txt
+	tmp_recovery/_tsc_err3.txt
+	tmp_recovery/_tsc_o.txt
+	tmp_recovery/_tsc_out.txt
+	tmp_recovery/_tsc_out2.txt
+	tmp_recovery/_tsc_out3.txt
+	tmp_recovery/_tscx.txt
+	tmp_recovery/_tscx_exit.txt
+	tmp_recovery/_vite_err.txt
+	tmp_recovery/_vite_out.txt
+	tmp_recovery/_w2.txt
+	tmp_recovery/_w2.txt.full
+	tmp_recovery/_w2.txt.stat
+	tmp_recovery/_w3.txt
+	tmp_recovery/_w3.txt.head
+	tmp_recovery/_w3.txt.tree
+	tmp_recovery/_w_parent.txt
+	tmp_recovery/_w_pick.txt
+	tmp_recovery/_widget.txt
+	tmp_recovery/_widget.txt.tree
+	tmp_recovery/msg_B.txt
+	tmp_recovery/msg_N.txt
+	tmp_recovery/msg_cleanup.txt
+	tmp_recovery/msg_corruptfix.txt
+	tmp_recovery/msg_deadfiles.txt
+	tmp_recovery/msg_deployfix.txt
+	tmp_recovery/msg_psb.txt
+	tmp_recovery/msg_quickwins.txt
+	tmp_recovery/widget82/
+	vue-app-psb/dist/assets/index-BLdHXdje.js
+	vue-app-psb/dist/assets/index-BcCjX7Jb.css
+	vue-app/android/app/release/
+	vue-app/android/app/src/main/res/drawable-land-night-hdpi/
+	vue-app/android/app/src/main/res/drawable-land-night-mdpi/
+	vue-app/android/app/src/main/res/drawable-land-night-xhdpi/
+	vue-app/android/app/src/main/res/drawable-land-night-xxhdpi/
+	vue-app/android/app/src/main/res/drawable-land-night-xxxhdpi/
+	vue-app/android/app/src/main/res/drawable-night/
+	vue-app/android/app/src/main/res/drawable-port-night-hdpi/
+	vue-app/android/app/src/main/res/drawable-port-night-mdpi/
+	vue-app/android/app/src/main/res/drawable-port-night-xhdpi/
+	vue-app/android/app/src/main/res/drawable-port-night-xxhdpi/
+	vue-app/android/app/src/main/res/drawable-port-night-xxxhdpi/
+	vue-app/electron/app/
+	vue-app/electron/assets/
+	vue-app/electron/build/preload.js
+
+no changes added to commit (use "git add" and/or "git commit -a")
+=== LOG === 
+946ca7e feat(psb): header 2 logo kiri-kanan (logoQiraati/logoKop dari settings, match rapor)
+da0d448 fix(psb): samakan KOP & font dgn main site (1 Juni)
+f18c8f7 fix(batch-N 1 Juni): KOP revert + santri rapor tanpa filter + login error inline + hapus placeholder contoh

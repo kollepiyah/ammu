@@ -1,0 +1,292 @@
+// v.21.25.0526 — pdfBuilder helper umum (jsPDF + jspdf-autotable)
+// Menggantikan html2canvas approach yang sering blank.
+//
+// Font policy (LOCKED):
+//   - 'rapor'   → times (Times New Roman)
+//   - 'umum'    → helvetica (default)
+//   - 'thermal' → courier (monospace, thermal printer)
+//
+// API:
+//   const doc = await createPdf({ kind, orientation, format, kop })
+//   drawKopLetterhead(doc, kop, opts)
+//   drawSignature(doc, { nama, jabatan, tempat, tanggal, x, y })
+//   drawTable(doc, opts)  // wrapper autoTable
+//   doc.save('filename.pdf')
+
+import { jsPDFFromCDN, imageToDataURL } from '@/services/pdf'
+import { muassisDataUrl, MUASSIS_RATIO } from './kopMuassis' // v.100: baris-1 KOP = gambar muassis
+
+/**
+ * v.21.92.0527: Helper kanonik bangun kop dari settings.
+ * Priority logo: logoKop > kop_logo > kopLogo > logoUrl (selaras Pengaturan Web).
+ */
+export function buildKopFromSettings(s = {}) {
+  return {
+    logoUrl: s.logoKop || s.kop_logo || s.kopLogo || s.logoUrl || '',
+    line1: s.kopLine1 || 'YAYASAN MAMBAUL ULUM',
+    line2: s.kopLine2 || 'PONDOK PESANTREN MAMBAUL ULUM',
+    line3: s.kopLine3 || '',
+    line4: s.kopLine4 || '',
+    line5: s.kopLine5 || ''
+  }
+}
+
+const FONT_MAP = {
+  rapor: 'times',
+  umum: 'helvetica',
+  thermal: 'courier'
+}
+
+/**
+ * Create a new jsPDF instance with sensible defaults.
+ * @param {object} opts
+ * @param {'rapor'|'umum'|'thermal'} opts.kind
+ * @param {'p'|'l'} [opts.orientation]
+ * @param {string} [opts.format]  e.g. 'a4', 'letter', 'a5', [w,h] mm
+ * @returns {Promise<any>} jsPDF instance
+ */
+export async function createPdf({ kind = 'umum', orientation = 'p', format = 'F4' } = {}) {
+  const jsPDF = await jsPDFFromCDN()
+  // v.21.93.0527: alias F4/Folio (215x330mm) — bukan preset bawaan jsPDF
+  let fmt = format
+  if (typeof format === 'string' && /^(f4|folio)$/i.test(format)) {
+    fmt = [215, 330]
+  }
+  const doc = new jsPDF({ orientation, unit: 'mm', format: fmt })
+  const font = FONT_MAP[kind] || 'helvetica'
+  doc.setFont(font, 'normal')
+  doc._kindMU = kind
+  doc._fontMU = font
+  return doc
+}
+
+/**
+ * Letterhead/KOP block. Optional logo (URL or data URL).
+ * v.21.92.0527: KOP rata kiri — logo kiri, teks judul mulai di sebelah kanan logo,
+ * sesuai contoh struk Yayasan. Berlaku utk semua PDF kecuali rapor/kartu kenaikan/
+ * rekap prestasi (yg pakai KOP per-lembaga sendiri).
+ * @param {any} doc
+ * @param {object} kop  { logoUrl, line1, line2, line3, line4, line5 }
+ * @param {object} [opts] { y, withLine }
+ * @returns {Promise<number>} y position after the kop
+ */
+export async function drawKopLetterhead(doc, kop = {}, opts = {}) {
+  const font = doc._fontMU || 'helvetica'
+  const startY = opts.y ?? 10
+  const pageW = doc.internal.pageSize.getWidth()
+  let y = startY
+  const LOGO_SIZE = 22
+
+  // v.21.92.0527: KOP rata kiri — judul mulai di sebelah kanan logo.
+  // Hierarki: L1 kecil (Yayasan), L2 BESAR bold (Pondok Pesantren), L3 alamat, L4-L5 telp/email.
+  // v.100b: L1 = GAMBAR kaligrafi muassis (tinggi 9mm, file ter-crop) RAPAT ke L2 (off 3mm);
+  //   teks digambar DULU supaya tinggi blok diketahui → logo dicenter vertikal terhadap blok.
+  //   Fallback (gambar gagal) = teks kop.line1, off=0 (layout lama persis).
+  const subLines = [kop.line4, kop.line5].filter(Boolean)
+  const textX = kop.logoUrl ? 12 + LOGO_SIZE + 6 : 12
+  doc.setFont(font, 'bold')
+  let off = 0
+  const muassis = await muassisDataUrl()
+  if (muassis) {
+    const muH = 9
+    const muW = muH * MUASSIS_RATIO // ≈ 81mm
+    try { doc.addImage(muassis, 'PNG', textX, y + 0.5, muW, muH, undefined, 'FAST') } catch (_e) {}
+    off = 3 // gambar bawah y+9.5 → L2 baseline y+16 (rapat, gap visual <1mm)
+  } else if (kop.line1) {
+    doc.setFontSize(11)
+    doc.text(String(kop.line1), textX, y + 5)
+  }
+  doc.setFontSize(16)
+  if (kop.line2) {
+    doc.text(String(kop.line2), textX, y + 13 + off)
+  }
+  doc.setFont(font, 'normal')
+  doc.setFontSize(9)
+  if (kop.line3) {
+    doc.text(String(kop.line3), textX, y + 19 + off)
+  }
+  let yy = y + 23 + off
+  for (const sl of subLines) {
+    doc.text(String(sl), textX, yy)
+    yy += 4
+  }
+
+  // Logo (kiri) — digambar terakhir, dicenter vertikal terhadap tinggi blok teks KOP
+  let hasLogo = false
+  const contentBottom = subLines.length
+    ? yy - 4 + 1.5
+    : kop.line3 ? y + 19 + off + 1.5 : kop.line2 ? y + 13 + off + 1.5 : y + 10.5
+  if (kop.logoUrl) {
+    try {
+      const dataUrl = kop.logoUrl.startsWith('data:') ? kop.logoUrl : await imageToDataURL(kop.logoUrl)
+      if (dataUrl) {
+        const logoY = startY + Math.max(0, (contentBottom - startY - LOGO_SIZE) / 2)
+        doc.addImage(dataUrl, 'PNG', 12, logoY, LOGO_SIZE, LOGO_SIZE, undefined, 'FAST')
+        hasLogo = true
+      }
+    } catch { /* ignore */ }
+  }
+
+  // Pastikan KOP setidaknya setinggi logo
+  y = Math.max(yy, y + (hasLogo ? LOGO_SIZE + 2 : 25) + off)
+  // Garis pemisah
+  if (opts.withLine !== false) {
+    doc.setLineWidth(0.4)
+    doc.line(12, y + 1, pageW - 12, y + 1)
+    doc.setLineWidth(0.2)
+    doc.line(12, y + 2.2, pageW - 12, y + 2.2)
+    y += 4
+  }
+  return y
+}
+
+/**
+ * Tanda tangan footer.
+ * @param {any} doc
+ * @param {object} opts { nama, jabatan, tempat, tanggal, y, x, align }
+ */
+export function drawSignature(doc, opts = {}) {
+  const font = doc._fontMU || 'helvetica'
+  const pageW = doc.internal.pageSize.getWidth()
+  const pageH = doc.internal.pageSize.getHeight()
+  const align = opts.align || 'right'
+  const x = opts.x ?? (align === 'right' ? pageW - 50 : 25)
+  const y = opts.y ?? pageH - 40
+  doc.setFont(font, 'normal')
+  doc.setFontSize(10)
+  if (opts.tempat || opts.tanggal) {
+    const tl = [opts.tempat, opts.tanggal].filter(Boolean).join(', ')
+    doc.text(tl, x, y, { align })
+  }
+  if (opts.jabatan) {
+    doc.text(String(opts.jabatan), x, y + 6, { align })
+  }
+  if (opts.ttdImg) {
+    try {
+      const ttdW = 28, ttdH = 14
+      const ix = align === 'right' ? x - ttdW : x
+      doc.addImage(opts.ttdImg, 'PNG', ix, y + 8, ttdW, ttdH, undefined, 'FAST')
+    } catch { /* ignore */ }
+  }
+  doc.setFont(font, 'bold')
+  if (opts.nama) {
+    doc.text(String(opts.nama), x, y + 26, { align })
+  }
+  doc.setFont(font, 'normal')
+  if (opts.nip) {
+    doc.setFontSize(9)
+    doc.text(String(opts.nip), x, y + 30, { align })
+  }
+}
+
+/**
+ * Wrapper autoTable dengan font default sesuai kind.
+ * @param {any} doc
+ * @param {object} opts  autoTable options + { kind override }
+ */
+export function drawTable(doc, opts = {}) {
+  if (typeof doc.autoTable !== 'function') {
+    throw new Error('jspdf-autotable plugin tidak ke-load')
+  }
+  const font = doc._fontMU || 'helvetica'
+  const merged = {
+    theme: 'grid',
+    styles: { font, fontSize: 9, cellPadding: 1.5, textColor: 20, lineColor: 80, lineWidth: 0.1, ...(opts.styles || {}) },
+    headStyles: { font, fontStyle: 'bold', fillColor: [16, 122, 87], textColor: 255, halign: 'center', ...(opts.headStyles || {}) },
+    bodyStyles: { ...(opts.bodyStyles || {}) },
+    alternateRowStyles: { fillColor: [245, 248, 246], ...(opts.alternateRowStyles || {}) },
+    margin: { left: 12, right: 12, ...(opts.margin || {}) },
+    ...opts
+  }
+  doc.autoTable(merged)
+}
+
+/** Helper: get current Y after last table. */
+export function lastTableY(doc) {
+  return doc.lastAutoTable ? doc.lastAutoTable.finalY : 0
+}
+
+/**
+ * Helper: draw title (centered).
+ */
+export function drawTitle(doc, text, opts = {}) {
+  const font = doc._fontMU || 'helvetica'
+  const pageW = doc.internal.pageSize.getWidth()
+  doc.setFont(font, 'bold')
+  doc.setFontSize(opts.size || 14)
+  doc.text(String(text), pageW / 2, opts.y || 30, { align: 'center' })
+  doc.setFont(font, 'normal')
+}
+
+/**
+ * Save & download. Returns blob URL for preview if requested.
+ * v.71.0526: Async — pakai saveBlob (native Filesystem + share di Capacitor, browser download di web).
+ */
+export async function savePdf(doc, filename = 'document.pdf', { preview = false } = {}) {
+  if (preview) {
+    const blob = doc.output('blob')
+    // v.94.0626: di Electron Desktop, window.open(blob) TIDAK bisa render PDF
+    //   (muncul dialog cetak "tidak mendukung pratinjau"). Pakai printPdfPreview ->
+    //   jendela Chrome PDF viewer (pratinjau asli, bisa langsung cetak dari situ).
+    try {
+      const { isElectron, printPdfPreview } = await import('@/composables/useDesktopPrint')
+      if (isElectron()) {
+        await printPdfPreview(blob)
+        return ''
+      }
+    } catch (e) {
+      /* fallback ke window.open di bawah */
+    }
+    const url = URL.createObjectURL(blob)
+    window.open(url, '_blank')
+    return url
+  }
+  const { saveBlob } = await import('@/composables/useNativeDownload')
+  await saveBlob(doc.output('blob'), filename)
+}
+
+/**
+ * Convenience: build a simple table-based PDF in one call.
+ * Useful for daftar/listing exports (santri/guru/dll).
+ */
+export async function buildListPdf({
+  kind = 'umum',
+  orientation = 'l',
+  format = 'F4',
+  kop = null,
+  title = '',
+  columns = [],
+  rows = [],
+  signature = null,
+  filename = 'list.pdf'
+}) {
+  const doc = await createPdf({ kind, orientation, format })
+  let y = 10
+  if (kop) y = await drawKopLetterhead(doc, kop, { y })
+  if (title) {
+    drawTitle(doc, title, { y: y + 8, size: 12 })
+    y += 12
+  }
+  // Convert columns to autotable head/body
+  const head = [columns.map((c) => c.header || c.label || c.key)]
+  const body = rows.map((r) => columns.map((c) => {
+    const v = typeof c.format === 'function' ? c.format(r[c.key], r) : r[c.key]
+    return v == null ? '' : String(v)
+  }))
+  // v.93.0626: skala lebar kolom supaya tabel SAMA LEBAR dgn KOP (pageW-24) & center (margin default 12/12).
+  const _availW = doc.internal.pageSize.getWidth() - 24
+  const _sumW = columns.reduce((s, c) => s + (Number(c.width) || 0), 0)
+  const _scale = _sumW > 0 ? _availW / _sumW : 1
+  drawTable(doc, {
+    startY: y + 4,
+    head,
+    body,
+    tableWidth: _availW,
+    columnStyles: columns.reduce((acc, c, i) => { if (c.width) acc[i] = { cellWidth: Math.round(Number(c.width) * _scale * 100) / 100 }; return acc }, {})
+  })
+  if (signature) {
+    drawSignature(doc, signature)
+  }
+  savePdf(doc, filename)
+  return doc
+}

@@ -1,0 +1,4 @@
+==== d3d60f7: semua file di bawah widgets/ + res widget + TODO ==== 
+DONE-TREE 
+==== HEAD tree (utk bandingkan) ==== 
+DONE 

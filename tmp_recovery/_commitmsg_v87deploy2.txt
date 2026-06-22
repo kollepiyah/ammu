@@ -1,0 +1,7 @@
+chore(deploy): deploy 2 site (ammuonline main + psb) + build/sync PSB
+
+- deploy-minified.cjs: tambah Step 0d -> build vue-app-psb + sync ke public/psb.
+- firebase deploy --only hosting:main,hosting:psb,firestore:rules (legacy tetap SKIP).
+- log akhir tampilkan URL ammuonline + ammuonline-psb.
+
+v.87.0526. node --check OK. Belum push.

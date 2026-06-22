@@ -1,0 +1,22 @@
+[feature/vue-migration ab4cd1b] fix(diniyah+auth+ux): KOP/guru sekolah, anon-auth admin, toast global, jabatan master
+ 6 files changed, 88 insertions(+), 13 deletions(-)
+----LOG---- 
+commit ab4cd1b479d7183d4303d7e5f9e6335c49e151be
+Author: Kyai Rahman Fanani <lexanoisgroup3@gmail.com>
+Date:   Mon Jun 1 19:33:26 2026 +0700
+
+    fix(diniyah+auth+ux): KOP/guru sekolah, anon-auth admin, toast global, jabatan master
+    
+    - Rapor Diniyah: KOP + Guru Kelas dari lembaga SEKOLAH (lembaga_sekolah/guru_sekolah), bukan ngaji PTPT (RaporView kop/findLembagaObjFor/namaGuru/card + raporPdf drawSignBlocks)
+    - Auth: admin built-in dapat sesi Firebase Anonymous -> request.auth != null -> rules signedIn() read/write jalan (stores/auth.js). WAJIB aktifkan provider Anonymous di Firebase Console
+    - firestore.rules: read publik kritik_saran/supervisi_catatan/user_notif_state (anti-race + admin built-in)
+    - ToastStack di-mount GLOBAL di App.vue (sebelumnya tak pernah dipasang -> toast tidak muncul di mana pun)
+    - Dropdown jabatan guru: JABATAN_OPTIONS hardcoded hanya fallback kalau master/lembaga kosong (useGuruForm)
+
+ firestore.rules                        | 10 ++++--
+ vue-app/src/App.vue                    |  3 ++
+ vue-app/src/composables/useGuruForm.js | 13 ++++---
+ vue-app/src/stores/auth.js             | 62 ++++++++++++++++++++++++++++++++--
+ vue-app/src/utils/raporPdf.js          |  8 +++--
+ vue-app/src/views/RaporView.vue        |  5 ++-
+ 6 files changed, 88 insertions(+), 13 deletions(-)

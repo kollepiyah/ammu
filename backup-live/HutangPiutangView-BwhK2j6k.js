@@ -1,0 +1,913 @@
+import {
+  ab as Z,
+  I as W,
+  a2 as X,
+  K as Y,
+  ae as ee,
+  h as u,
+  e,
+  j as b,
+  E as y,
+  a4 as o,
+  g as N,
+  F as V,
+  a7 as x,
+  ar as i,
+  ak as m,
+  aj as M,
+  U as te,
+  f as ae,
+  at as se,
+  T as le,
+  d as f,
+  Q as p,
+  P as ne,
+  a8 as P,
+  q as _,
+  l as S,
+  Z as oe,
+  L as r,
+  n as re
+} from './index-CPbTnm_Q.js'
+import { u as de } from './useExcel-D_0sjauS.js'
+import { u as ue } from './useToast-BjwjYk11.js'
+import { a as v, b as $ } from './format-BMPXVxa_.js'
+const ie = { class: 'p-3 md:p-5 max-w-6xl mx-auto space-y-4' },
+  pe = {
+    class:
+      'bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-5 border border-slate-200 dark:border-slate-700 shadow-sm'
+  },
+  ge = { class: 'flex flex-col md:flex-row md:items-center md:justify-between gap-3' },
+  be = { class: 'flex gap-2 flex-wrap' },
+  xe = ['disabled'],
+  me = {
+    key: 0,
+    class:
+      'bg-white dark:bg-slate-800 rounded-2xl p-10 border border-dashed border-rose-300 text-center'
+  },
+  ce = { class: 'grid grid-cols-1 md:grid-cols-3 gap-3' },
+  ke = {
+    class:
+      'bg-rose-50 dark:bg-rose-900/20 rounded-xl p-4 border border-rose-200 dark:border-rose-700'
+  },
+  fe = { class: 'text-lg font-black text-rose-800 dark:text-rose-200 mt-1' },
+  ve = {
+    class:
+      'bg-amber-50 dark:bg-amber-900/20 rounded-xl p-4 border border-amber-200 dark:border-amber-700'
+  },
+  we = { class: 'text-lg font-black text-amber-800 dark:text-amber-200 mt-1' },
+  he = {
+    class:
+      'bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-4 border border-emerald-200 dark:border-emerald-700'
+  },
+  ye = { class: 'text-lg font-black text-emerald-800 dark:text-emerald-200 mt-1' },
+  _e = {
+    class:
+      'bg-white dark:bg-slate-800 rounded-2xl p-3 md:p-4 border border-slate-200 dark:border-slate-700 shadow-sm'
+  },
+  Se = { class: 'grid grid-cols-1 md:grid-cols-2 gap-2' },
+  je = { key: 0, class: 'bg-white dark:bg-slate-800 rounded-2xl p-10 text-center' },
+  Le = {
+    key: 1,
+    class:
+      'bg-white dark:bg-slate-800 rounded-2xl p-10 border border-dashed border-slate-300 text-center'
+  },
+  Te = {
+    key: 2,
+    class:
+      'bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden'
+  },
+  De = { class: 'w-full text-xs' },
+  Ce = { class: 'px-3 py-2 whitespace-nowrap' },
+  Ne = { class: 'px-3 py-2 font-bold text-slate-800 dark:text-white' },
+  He = { class: 'px-3 py-2 text-slate-600 dark:text-slate-300' },
+  Ue = {
+    class: 'px-3 py-2 text-right font-black text-rose-700 dark:text-rose-400 whitespace-nowrap'
+  },
+  Be = { class: 'px-3 py-2 text-center text-[11px]' },
+  Ve = { class: 'px-3 py-2 text-center' },
+  Me = { class: 'px-3 py-2 text-center' },
+  Pe = { class: 'flex gap-1 justify-center' },
+  $e = ['onClick'],
+  Ae = ['onClick'],
+  Ee = ['onClick'],
+  Ke = {
+    class:
+      'bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full border-t-8 border-rose-500'
+  },
+  Oe = {
+    class:
+      'flex justify-between items-center border-b border-slate-100 dark:border-slate-700 px-5 py-4'
+  },
+  Ie = { class: 'text-base font-black text-slate-800 dark:text-white' },
+  Je = { class: 'p-5 space-y-3' },
+  Fe = { class: 'grid grid-cols-2 gap-3' },
+  Ge = {
+    class:
+      'px-5 py-4 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 flex justify-end gap-2 rounded-b-2xl'
+  },
+  Re = ['disabled'],
+  Xe = {
+    __name: 'HutangPiutangView',
+    setup(ze) {
+      const A = Z(),
+        d = ue(),
+        c = p([]),
+        j = p(!0)
+      let L = null
+      const w = p(''),
+        T = p(''),
+        D = f(() => {
+          const a = A.sesiAktif,
+            t = (a == null ? void 0 : a.role_sistem) || ''
+          return (
+            (a == null ? void 0 : a.role) === 'admin' ||
+            ['admin', 'admin_keuangan', 'super_admin'].includes(t)
+          )
+        }),
+        H = f(() => {
+          let a = [...c.value]
+          ;(w.value === 'belum' && (a = a.filter((s) => s.status !== 'lunas')),
+            w.value === 'lunas' && (a = a.filter((s) => s.status === 'lunas')))
+          const t = T.value.trim().toLowerCase()
+          return (
+            t &&
+              (a = a.filter(
+                (s) =>
+                  String(s.kepada || '')
+                    .toLowerCase()
+                    .includes(t) ||
+                  String(s.keterangan || '')
+                    .toLowerCase()
+                    .includes(t)
+              )),
+            a.sort((s, n) => (n.tanggal || '').localeCompare(s.tanggal || ''))
+          )
+        }),
+        E = f(() =>
+          c.value
+            .filter((a) => a.status !== 'lunas')
+            .reduce((a, t) => a + (Number(t.nominal) || 0), 0)
+        ),
+        K = f(() =>
+          c.value
+            .filter((a) => a.status === 'lunas')
+            .reduce((a, t) => a + (Number(t.nominal) || 0), 0)
+        ),
+        O = f(() => {
+          const a = new Date(),
+            t = new Date(a.getTime() + 10080 * 60 * 1e3)
+          return c.value
+            .filter((s) => s.status !== 'lunas' && s.jatuh_tempo && new Date(s.jatuh_tempo) <= t)
+            .reduce((s, n) => s + (Number(n.nominal) || 0), 0)
+        }),
+        C = p(!1),
+        k = p(!1),
+        l = ne({
+          id: null,
+          tanggal: '',
+          kepada: '',
+          keterangan: '',
+          nominal: 0,
+          jatuh_tempo: '',
+          status: 'belum'
+        })
+      function U() {
+        ;((l.id = null),
+          (l.tanggal = new Date().toISOString().slice(0, 10)),
+          (l.kepada = ''),
+          (l.keterangan = ''),
+          (l.nominal = 0),
+          (l.jatuh_tempo = ''),
+          (l.status = 'belum'))
+      }
+      function B(a = null) {
+        ;(a
+          ? ((l.id = a.id),
+            (l.tanggal = a.tanggal || ''),
+            (l.kepada = a.kepada || ''),
+            (l.keterangan = a.keterangan || ''),
+            (l.nominal = Number(a.nominal) || 0),
+            (l.jatuh_tempo = a.jatuh_tempo || ''),
+            (l.status = a.status || 'belum'))
+          : U(),
+          (C.value = !0))
+      }
+      function h() {
+        ;((C.value = !1), U())
+      }
+      async function I() {
+        if (!l.kepada.trim()) {
+          d.warning('Kepada wajib diisi')
+          return
+        }
+        if (!l.nominal || l.nominal <= 0) {
+          d.warning('Nominal harus > 0')
+          return
+        }
+        k.value = !0
+        try {
+          const a = {
+            tanggal: l.tanggal || new Date().toISOString().slice(0, 10),
+            kepada: l.kepada.trim(),
+            keterangan: l.keterangan.trim(),
+            nominal: Number(l.nominal) || 0,
+            jatuh_tempo: l.jatuh_tempo || '',
+            status: l.status || 'belum'
+          }
+          if (l.id) (await P(_(S, 'keuangan_hutang', String(l.id)), a), d.success('Diperbarui'))
+          else {
+            const t = `htg_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`
+            ;(await oe(_(S, 'keuangan_hutang', t), {
+              id: t,
+              ...a,
+              createdAt: new Date().toISOString()
+            }),
+              d.success('Hutang baru tersimpan'))
+          }
+          h()
+        } catch (a) {
+          d.error('Gagal: ' + (a.message || a))
+        } finally {
+          k.value = !1
+        }
+      }
+      async function J(a) {
+        if (confirm(`Tandai LUNAS hutang ke ${a.kepada} sebesar ${v(a.nominal)}?`))
+          try {
+            ;(await P(_(S, 'keuangan_hutang', String(a.id)), {
+              status: 'lunas',
+              tanggal_lunas: new Date().toISOString().slice(0, 10)
+            }),
+              d.success('Ditandai lunas'))
+          } catch (t) {
+            d.error('Gagal: ' + t.message)
+          }
+      }
+      async function F(a) {
+        if (confirm(`Hapus hutang ke ${a.kepada}?`))
+          try {
+            ;(await re(_(S, 'keuangan_hutang', String(a.id))), d.success('Dihapus'))
+          } catch (t) {
+            d.error('Gagal: ' + t.message)
+          }
+      }
+      function G(a) {
+        if (a.status === 'lunas' || !a.jatuh_tempo) return !1
+        const t = Date.now() + 10080 * 60 * 1e3
+        return new Date(a.jatuh_tempo).getTime() <= t
+      }
+      ;(W(() => {
+        if (!D.value) {
+          j.value = !1
+          return
+        }
+        L = X('keuangan_hutang', (a) => {
+          ;((c.value = a), (j.value = !1))
+        })
+      }),
+        Y(() => {
+          if (L)
+            try {
+              L()
+            } catch {}
+        }))
+      const g = p(!1),
+        { exportStyled: R } = de(),
+        z = ee()
+      async function q() {
+        if (!g.value) {
+          g.value = !0
+          try {
+            const t = (
+                (typeof filteredHutang < 'u' && filteredHutang.value) ||
+                (typeof hutangRaw < 'u' && hutangRaw.value) ||
+                []
+              ).map((n, Q) => ({
+                no: Q + 1,
+                tgl_hutang: n.tanggal || n.tgl_hutang || '',
+                kepada: n.kepada || '',
+                keterangan: n.keterangan || '',
+                nominal: n.nominal || 0,
+                jatuh_tempo: n.jatuh_tempo || '',
+                status: n.status || 'Belum Lunas',
+                tanggal_lunas: n.tanggal_lunas || ''
+              })),
+              s = z.settings || {}
+            await R(t, {
+              filename: `hutang_piutang_${new Date().toISOString().slice(0, 10)}.xlsx`,
+              sheetName: 'Hutang Piutang',
+              kop: [
+                s.kopLine1 || '',
+                s.kopLine2 || 'PONDOK PESANTREN MAMBAUL ULUM',
+                s.kopLine3 || '',
+                s.kopLine4 || ''
+              ],
+              subtitle: `Hutang Piutang — ${t.length} item`,
+              columns: [
+                { key: 'no', header: 'No', width: 5 },
+                { key: 'tgl_hutang', header: 'Tgl Hutang', width: 12 },
+                { key: 'kepada', header: 'Kepada', width: 24 },
+                { key: 'keterangan', header: 'Keterangan', width: 32 },
+                { key: 'nominal', header: 'Nominal', width: 14 },
+                { key: 'jatuh_tempo', header: 'Jatuh Tempo', width: 12 },
+                { key: 'status', header: 'Status', width: 12 },
+                { key: 'tanggal_lunas', header: 'Tgl Lunas', width: 12 }
+              ]
+            })
+          } catch (a) {
+            typeof d < 'u' && d.error('Gagal: ' + (a.message || a))
+          } finally {
+            g.value = !1
+          }
+        }
+      }
+      return (a, t) => (
+        r(),
+        u('div', ie, [
+          e('div', pe, [
+            e('div', ge, [
+              t[10] ||
+                (t[10] = e(
+                  'div',
+                  null,
+                  [
+                    e(
+                      'h1',
+                      { class: 'text-xl md:text-2xl font-black text-slate-800 dark:text-white' },
+                      [
+                        e('i', { class: 'fas fa-hand-holding-usd text-rose-600 mr-2' }),
+                        b('Hutang Piutang ')
+                      ]
+                    ),
+                    e(
+                      'p',
+                      { class: 'text-xs text-slate-500 mt-0.5' },
+                      'Pencatatan hutang pondok ke pihak luar atau personil.'
+                    )
+                  ],
+                  -1
+                )),
+              e('div', be, [
+                e(
+                  'button',
+                  {
+                    onClick: q,
+                    disabled: g.value,
+                    class:
+                      'px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold cursor-pointer'
+                  },
+                  [
+                    e(
+                      'i',
+                      {
+                        class: y(['fas', g.value ? 'fa-spinner fa-spin' : 'fa-file-excel', 'mr-1'])
+                      },
+                      null,
+                      2
+                    ),
+                    b(o(g.value ? '...' : 'Ekspor Excel'), 1)
+                  ],
+                  8,
+                  xe
+                ),
+                D.value
+                  ? (r(),
+                    u(
+                      'button',
+                      {
+                        key: 0,
+                        onClick: t[0] || (t[0] = (s) => B()),
+                        class:
+                          'px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold cursor-pointer'
+                      },
+                      [
+                        ...(t[9] ||
+                          (t[9] = [
+                            e('i', { class: 'fas fa-plus mr-1' }, null, -1),
+                            b('Tambah Hutang ', -1)
+                          ]))
+                      ]
+                    ))
+                  : N('', !0)
+              ])
+            ])
+          ]),
+          D.value
+            ? (r(),
+              u(
+                V,
+                { key: 1 },
+                [
+                  e('div', ce, [
+                    e('div', ke, [
+                      t[12] ||
+                        (t[12] = e(
+                          'p',
+                          {
+                            class:
+                              'text-[10px] font-black text-rose-700 dark:text-rose-300 uppercase tracking-wider'
+                          },
+                          'Total Belum Lunas',
+                          -1
+                        )),
+                      e('p', fe, o(x(v)(E.value)), 1)
+                    ]),
+                    e('div', ve, [
+                      t[13] ||
+                        (t[13] = e(
+                          'p',
+                          {
+                            class:
+                              'text-[10px] font-black text-amber-700 dark:text-amber-300 uppercase tracking-wider'
+                          },
+                          'Jatuh Tempo <7 Hari',
+                          -1
+                        )),
+                      e('p', we, o(x(v)(O.value)), 1)
+                    ]),
+                    e('div', he, [
+                      t[14] ||
+                        (t[14] = e(
+                          'p',
+                          {
+                            class:
+                              'text-[10px] font-black text-emerald-700 dark:text-emerald-300 uppercase tracking-wider'
+                          },
+                          'Total Lunas',
+                          -1
+                        )),
+                      e('p', ye, o(x(v)(K.value)), 1)
+                    ])
+                  ]),
+                  e('div', _e, [
+                    e('div', Se, [
+                      i(
+                        e(
+                          'input',
+                          {
+                            'onUpdate:modelValue': t[1] || (t[1] = (s) => (T.value = s)),
+                            type: 'search',
+                            placeholder: 'Cari kepada / keterangan...',
+                            class:
+                              'px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-800 dark:text-white'
+                          },
+                          null,
+                          512
+                        ),
+                        [[m, T.value]]
+                      ),
+                      i(
+                        e(
+                          'select',
+                          {
+                            'onUpdate:modelValue': t[2] || (t[2] = (s) => (w.value = s)),
+                            class:
+                              'px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-800 dark:text-white'
+                          },
+                          [
+                            ...(t[15] ||
+                              (t[15] = [
+                                e('option', { value: '' }, 'Semua status', -1),
+                                e('option', { value: 'belum' }, 'Belum Lunas', -1),
+                                e('option', { value: 'lunas' }, 'Lunas', -1)
+                              ]))
+                          ],
+                          512
+                        ),
+                        [[M, w.value]]
+                      )
+                    ])
+                  ]),
+                  j.value
+                    ? (r(),
+                      u('div', je, [
+                        ...(t[16] ||
+                          (t[16] = [
+                            e(
+                              'i',
+                              { class: 'fas fa-spinner fa-spin text-rose-500 text-2xl' },
+                              null,
+                              -1
+                            )
+                          ]))
+                      ]))
+                    : H.value.length === 0
+                      ? (r(),
+                        u('div', Le, [
+                          ...(t[17] ||
+                            (t[17] = [
+                              e(
+                                'i',
+                                { class: 'fas fa-inbox text-slate-300 text-4xl mb-2' },
+                                null,
+                                -1
+                              ),
+                              e(
+                                'p',
+                                { class: 'text-sm text-slate-500 italic' },
+                                'Belum ada catatan hutang.',
+                                -1
+                              )
+                            ]))
+                        ]))
+                      : (r(),
+                        u('div', Te, [
+                          e('table', De, [
+                            t[21] ||
+                              (t[21] = e(
+                                'thead',
+                                {
+                                  class:
+                                    'bg-slate-100 dark:bg-slate-900/40 text-[10px] font-black uppercase tracking-widest'
+                                },
+                                [
+                                  e('tr', null, [
+                                    e('th', { class: 'px-3 py-2.5 text-left' }, 'Tgl Hutang'),
+                                    e('th', { class: 'px-3 py-2.5 text-left' }, 'Kepada'),
+                                    e('th', { class: 'px-3 py-2.5 text-left' }, 'Keterangan'),
+                                    e('th', { class: 'px-3 py-2.5 text-right' }, 'Nominal'),
+                                    e('th', { class: 'px-3 py-2.5 text-center' }, 'Jatuh Tempo'),
+                                    e('th', { class: 'px-3 py-2.5 text-center' }, 'Status'),
+                                    e('th', { class: 'px-3 py-2.5 text-center' }, 'Aksi')
+                                  ])
+                                ],
+                                -1
+                              )),
+                            e('tbody', null, [
+                              (r(!0),
+                              u(
+                                V,
+                                null,
+                                te(
+                                  H.value,
+                                  (s) => (
+                                    r(),
+                                    u(
+                                      'tr',
+                                      {
+                                        key: s.id,
+                                        class: y([
+                                          'border-t border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900/30',
+                                          G(s) ? 'bg-amber-50/40' : ''
+                                        ])
+                                      },
+                                      [
+                                        e('td', Ce, o(x($)(s.tanggal)), 1),
+                                        e('td', Ne, o(s.kepada), 1),
+                                        e('td', He, o(s.keterangan), 1),
+                                        e('td', Ue, o(x(v)(s.nominal)), 1),
+                                        e(
+                                          'td',
+                                          Be,
+                                          o(s.jatuh_tempo ? x($)(s.jatuh_tempo) : '-'),
+                                          1
+                                        ),
+                                        e('td', Ve, [
+                                          e(
+                                            'span',
+                                            {
+                                              class: y([
+                                                'text-[10px] font-black px-2 py-0.5 rounded uppercase',
+                                                s.status === 'lunas'
+                                                  ? 'bg-emerald-100 text-emerald-700'
+                                                  : 'bg-rose-100 text-rose-700'
+                                              ])
+                                            },
+                                            o(s.status === 'lunas' ? 'Lunas' : 'Belum Lunas'),
+                                            3
+                                          )
+                                        ]),
+                                        e('td', Me, [
+                                          e('div', Pe, [
+                                            s.status !== 'lunas'
+                                              ? (r(),
+                                                u(
+                                                  'button',
+                                                  {
+                                                    key: 0,
+                                                    onClick: (n) => J(s),
+                                                    class:
+                                                      'text-[10px] font-bold px-2 py-1 rounded bg-emerald-100 hover:bg-emerald-200 text-emerald-700'
+                                                  },
+                                                  [
+                                                    ...(t[18] ||
+                                                      (t[18] = [
+                                                        e(
+                                                          'i',
+                                                          { class: 'fas fa-check mr-0.5' },
+                                                          null,
+                                                          -1
+                                                        ),
+                                                        b('Lunas', -1)
+                                                      ]))
+                                                  ],
+                                                  8,
+                                                  $e
+                                                ))
+                                              : N('', !0),
+                                            e(
+                                              'button',
+                                              {
+                                                onClick: (n) => B(s),
+                                                class:
+                                                  'text-[10px] font-bold px-2 py-1 rounded bg-blue-100 hover:bg-blue-200 text-blue-700'
+                                              },
+                                              [
+                                                ...(t[19] ||
+                                                  (t[19] = [
+                                                    e('i', { class: 'fas fa-edit' }, null, -1)
+                                                  ]))
+                                              ],
+                                              8,
+                                              Ae
+                                            ),
+                                            e(
+                                              'button',
+                                              {
+                                                onClick: (n) => F(s),
+                                                class:
+                                                  'text-[10px] font-bold px-2 py-1 rounded bg-rose-100 hover:bg-rose-200 text-rose-700'
+                                              },
+                                              [
+                                                ...(t[20] ||
+                                                  (t[20] = [
+                                                    e('i', { class: 'fas fa-trash' }, null, -1)
+                                                  ]))
+                                              ],
+                                              8,
+                                              Ee
+                                            )
+                                          ])
+                                        ])
+                                      ],
+                                      2
+                                    )
+                                  )
+                                ),
+                                128
+                              ))
+                            ])
+                          ])
+                        ]))
+                ],
+                64
+              ))
+            : (r(),
+              u('div', me, [
+                ...(t[11] ||
+                  (t[11] = [
+                    e('i', { class: 'fas fa-lock text-rose-300 text-4xl mb-3' }, null, -1),
+                    e(
+                      'p',
+                      { class: 'text-sm font-bold text-slate-700 dark:text-slate-300' },
+                      'Akses Keuangan terbatas',
+                      -1
+                    )
+                  ]))
+              ])),
+          (r(),
+          ae(le, { to: 'body' }, [
+            C.value
+              ? (r(),
+                u(
+                  'div',
+                  {
+                    key: 0,
+                    class:
+                      'fixed inset-0 z-[9999] bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-3',
+                    onClick: se(h, ['self'])
+                  },
+                  [
+                    e('div', Ke, [
+                      e('header', Oe, [
+                        e('h3', Ie, [
+                          t[22] ||
+                            (t[22] = e(
+                              'i',
+                              { class: 'fas fa-hand-holding-usd mr-2 text-rose-600' },
+                              null,
+                              -1
+                            )),
+                          b(o(l.id ? 'Edit Hutang' : 'Tambah Hutang'), 1)
+                        ]),
+                        e(
+                          'button',
+                          {
+                            onClick: h,
+                            class:
+                              'text-slate-400 hover:text-red-500 text-2xl font-bold w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center cursor-pointer'
+                          },
+                          '×'
+                        )
+                      ]),
+                      e('div', Je, [
+                        e('div', null, [
+                          t[23] ||
+                            (t[23] = e(
+                              'label',
+                              {
+                                class: 'text-[10px] font-bold text-slate-500 uppercase block mb-1'
+                              },
+                              'Tanggal',
+                              -1
+                            )),
+                          i(
+                            e(
+                              'input',
+                              {
+                                'onUpdate:modelValue': t[3] || (t[3] = (s) => (l.tanggal = s)),
+                                type: 'date',
+                                class:
+                                  'w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white'
+                              },
+                              null,
+                              512
+                            ),
+                            [[m, l.tanggal]]
+                          )
+                        ]),
+                        e('div', null, [
+                          t[24] ||
+                            (t[24] = e(
+                              'label',
+                              {
+                                class: 'text-[10px] font-bold text-slate-500 uppercase block mb-1'
+                              },
+                              'Kepada *',
+                              -1
+                            )),
+                          i(
+                            e(
+                              'input',
+                              {
+                                'onUpdate:modelValue': t[4] || (t[4] = (s) => (l.kepada = s)),
+                                type: 'text',
+                                placeholder: 'Nama pihak / personil',
+                                class:
+                                  'w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white'
+                              },
+                              null,
+                              512
+                            ),
+                            [[m, l.kepada]]
+                          )
+                        ]),
+                        e('div', null, [
+                          t[25] ||
+                            (t[25] = e(
+                              'label',
+                              {
+                                class: 'text-[10px] font-bold text-slate-500 uppercase block mb-1'
+                              },
+                              'Keterangan',
+                              -1
+                            )),
+                          i(
+                            e(
+                              'textarea',
+                              {
+                                'onUpdate:modelValue': t[5] || (t[5] = (s) => (l.keterangan = s)),
+                                rows: '2',
+                                placeholder: 'Untuk apa...',
+                                class:
+                                  'w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white resize-none'
+                              },
+                              null,
+                              512
+                            ),
+                            [[m, l.keterangan]]
+                          )
+                        ]),
+                        e('div', Fe, [
+                          e('div', null, [
+                            t[26] ||
+                              (t[26] = e(
+                                'label',
+                                {
+                                  class: 'text-[10px] font-bold text-slate-500 uppercase block mb-1'
+                                },
+                                'Nominal *',
+                                -1
+                              )),
+                            i(
+                              e(
+                                'input',
+                                {
+                                  'onUpdate:modelValue': t[6] || (t[6] = (s) => (l.nominal = s)),
+                                  type: 'number',
+                                  min: '0',
+                                  class:
+                                    'w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white'
+                                },
+                                null,
+                                512
+                              ),
+                              [[m, l.nominal, void 0, { number: !0 }]]
+                            )
+                          ]),
+                          e('div', null, [
+                            t[27] ||
+                              (t[27] = e(
+                                'label',
+                                {
+                                  class: 'text-[10px] font-bold text-slate-500 uppercase block mb-1'
+                                },
+                                'Jatuh Tempo',
+                                -1
+                              )),
+                            i(
+                              e(
+                                'input',
+                                {
+                                  'onUpdate:modelValue':
+                                    t[7] || (t[7] = (s) => (l.jatuh_tempo = s)),
+                                  type: 'date',
+                                  class:
+                                    'w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white'
+                                },
+                                null,
+                                512
+                              ),
+                              [[m, l.jatuh_tempo]]
+                            )
+                          ])
+                        ]),
+                        e('div', null, [
+                          t[29] ||
+                            (t[29] = e(
+                              'label',
+                              {
+                                class: 'text-[10px] font-bold text-slate-500 uppercase block mb-1'
+                              },
+                              'Status',
+                              -1
+                            )),
+                          i(
+                            e(
+                              'select',
+                              {
+                                'onUpdate:modelValue': t[8] || (t[8] = (s) => (l.status = s)),
+                                class:
+                                  'w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white'
+                              },
+                              [
+                                ...(t[28] ||
+                                  (t[28] = [
+                                    e('option', { value: 'belum' }, 'Belum Lunas', -1),
+                                    e('option', { value: 'lunas' }, 'Lunas', -1)
+                                  ]))
+                              ],
+                              512
+                            ),
+                            [[M, l.status]]
+                          )
+                        ])
+                      ]),
+                      e('footer', Ge, [
+                        e(
+                          'button',
+                          {
+                            onClick: h,
+                            class:
+                              'px-4 py-2 text-sm font-bold rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700'
+                          },
+                          'Batal'
+                        ),
+                        e(
+                          'button',
+                          {
+                            onClick: I,
+                            disabled: k.value,
+                            class:
+                              'px-5 py-2 text-sm font-black rounded-xl bg-rose-600 hover:bg-rose-700 text-white shadow-md disabled:opacity-50'
+                          },
+                          [
+                            e(
+                              'i',
+                              {
+                                class: y([
+                                  'fas',
+                                  k.value ? 'fa-spinner fa-spin' : 'fa-save',
+                                  'mr-1'
+                                ])
+                              },
+                              null,
+                              2
+                            ),
+                            b(o(k.value ? 'Menyimpan...' : 'Simpan'), 1)
+                          ],
+                          8,
+                          Re
+                        )
+                      ])
+                    ])
+                  ]
+                ))
+              : N('', !0)
+          ]))
+        ])
+      )
+    }
+  }
+export { Xe as default }

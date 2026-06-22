@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- v.94.0626: chip hari (mint transparan) — match chip "KAMIS" di kartu beranda -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <corners android:radius="6dp" />
+    <solid android:color="#335EEAD4" />
+    <stroke android:width="1dp" android:color="#665EEAD4" />
+</shape>

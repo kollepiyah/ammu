@@ -78,6 +78,8 @@ service-account*.json
 google-services.json
 GoogleService-Info.plist
 firebase-adminsdk-*.json
+*firebase-adminsdk-*.json
+*-adminsdk-*.json
 secrets/
 .secrets/
 
@@ -130,3 +132,30 @@ AUTO-SESSION-REPORT.md
 deployed-firestore.rules.txt
 deployed-firestore.rules.tmp
 AUDIT-FINAL.md
+
+# === Audit 08Jun2026 (v.96.0626): stop-track build/deploy output + signing keys ===
+# public/vue = output build Vue (regenerated oleh scripts/deploy-minified.cjs Step 0b)
+public/vue/
+# Signing keystore — JANGAN commit (repo publik kollepiyah/ammu)
+*.keystore
+ammu-app.keystore*
+
+# v.99 (11 Jun 2026): artefak data lokal (PII / Power Query) — JANGAN commit ke repo publik
+DATA SANTRI AUTO (siap Power Query).xlsx
+Kode Power Query (M) - DataSantri.txt
+
+# === v.100h cleanup (15 Jun 2026): stop-track output build + scratch ===
+# Output build Vue (di-regenerate deploy pipeline; psb di-copy ke public/psb)
+vue-app/dist/
+vue-app-psb/dist/
+# tmp_recovery = scratch: file pesan commit, log build, dump preview
+tmp_recovery/_msg_*.txt
+tmp_recovery/*.log
+tmp_recovery/_vite_*.txt
+tmp_recovery/_psb_build.log
+tmp_recovery/_preview_*.py
+tmp_recovery/_gen_*.py
+tmp_recovery/_stat_preview.png
+
+# public/psb = artefak deploy (di-regenerate Step 0d deploy-minified dari vue-app-psb)
+public/psb/

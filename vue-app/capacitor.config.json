@@ -1,0 +1,52 @@
+{
+  "appId": "app.ammu.id",
+  "appName": "Ammu Online",
+  "webDir": "dist",
+  "bundledWebRuntime": false,
+  "android": {
+    "backgroundColor": "#0F766E",
+    "allowMixedContent": false,
+    "captureInput": true
+  },
+  "ios": {
+    "backgroundColor": "#0F766E",
+    "contentInset": "always",
+    "scrollEnabled": true
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 2000,
+      "launchAutoHide": true,
+      "launchFadeOutDuration": 300,
+      "backgroundColor": "#F2FEF9",
+      "androidSplashResourceName": "splash",
+      "androidScaleType": "CENTER",
+      "showSpinner": false,
+      "androidSpinnerStyle": "large",
+      "iosSpinnerStyle": "small",
+      "spinnerColor": "#FFFFFF"
+    },
+    "StatusBar": {
+      "style": "LIGHT",
+      "overlay": true
+    },
+    "Keyboard": {
+      "resize": "body",
+      "style": "DARK",
+      "resizeOnFullScreen": true
+    },
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_ammu",
+      "iconColor": "#0F766E"
+    },
+    "FirebaseAuthentication": {
+      "skipNativeAuth": true,
+      "providers": ["google.com"]
+    }
+  },
+  "server": {
+    "androidScheme": "https",
+    "iosScheme": "capacitor",
+    "cleartext": false
+  }
+}

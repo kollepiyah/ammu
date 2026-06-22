@@ -1,6 +1,11 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: ['./public/**/*.{html,js}', './vue-widgets/src/**/*.{vue,js}'],
+  content: [
+    './public/**/*.{html,js}',
+    './vue-widgets/src/**/*.{vue,js}',
+    './vue-app/src/**/*.{vue,js,ts}',
+    './vue-app/index.html'
+  ],
   darkMode: 'class',
   theme: {
     extend: {
@@ -21,8 +26,8 @@ export default {
         sidebar: { DEFAULT: '#0a3d35', dark: '#073127', light: '#0e4d44' }
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
-        arabic: ['"Noto Naskh Arabic"', '"Amiri"', 'serif']
+        sans: ['"Plus Jakarta Sans"', 'Inter', 'system-ui', 'sans-serif'],
+        arabic: ['"Scheherazade New"', '"Noto Naskh Arabic"', '"Amiri"', 'serif']
       }
     }
   },

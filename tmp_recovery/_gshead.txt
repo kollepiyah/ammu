@@ -1,0 +1,621 @@
+eb9acff feat(v.86.0526): electron native header, PWA, splash, perf, pembayaran-pending
+ AUDIT-v86.0526-AGENT.md                            |  197 +
+ storage.rules                                      |   10 +
+ vue-app/android/.idea/planningMode.xml             |   10 +
+ vue-app/android/app/src/main/res/values/styles.xml |    7 +-
+ vue-app/electron/live-runner.js                    |   70 +
+ vue-app/electron/package.json                      |   84 +
+ vue-app/electron/src/index.ts                      |  488 +++
+ vue-app/electron/src/preload.ts                    |   38 +
+ vue-app/electron/tsconfig.json                     |   17 +
+ vue-app/index.html                                 |   63 +-
+ vue-app/public/apple-touch-icon.png                |  Bin 0 -> 23046 bytes
+ vue-app/public/manifest.webmanifest                |   19 +
+ vue-app/public/pwa-192.png                         |  Bin 0 -> 24291 bytes
+ vue-app/public/pwa-512.png                         |  Bin 0 -> 160936 bytes
+ vue-app/public/splash-landscape-dark.png           |  Bin 0 -> 75623 bytes
+ vue-app/public/splash-landscape-light.png          |  Bin 0 -> 78896 bytes
+ vue-app/public/splash-portrait-dark.png            |  Bin 0 -> 105617 bytes
+ vue-app/public/splash-portrait-light.png           |  Bin 0 -> 109059 bytes
+ .../public/vue/assets/AbsensiGuruView-BrPtDHyP.js  |    0
+ .../public/vue/assets/AbsensiGuruView-D7lqEPGt.js  |    1 -
+ .../public/vue/assets/AbsensiGuruView-DtE-zO7N.js  |    0
+ .../public/vue/assets/AbsensiGuruView-WjFS86J3.js  |    0
+ .../vue/assets/AbsensiSantriView-BPRvzMYv.js       |    1 -
+ .../vue/assets/AbsensiSantriView-BQ3W_l6b.js       |    0
+ .../vue/assets/AbsensiSantriView-CrV9cwe1.js       |    0
+ .../vue/assets/AbsensiSantriView-PGpFKSlj.js       |    0
+ vue-app/public/vue/assets/AppLayout-BfJn4qAs.js    |    6 -
+ vue-app/public/vue/assets/AppLayout-C_sdyhn_.js    |    0
+ vue-app/public/vue/assets/AppLayout-CsHHe0aK.js    |    0
+ vue-app/public/vue/assets/AppLayout-Cy55l9NA.css   |    1 -
+ vue-app/public/vue/assets/AppLayout-Dcxr8d5b.js    |    0
+ vue-app/public/vue/assets/AppLayout-ZTOXoeTP.css   |    0
+ vue-app/public/vue/assets/BisyarohView-CGrSsXBu.js |    0
+ vue-app/public/vue/assets/BisyarohView-Qu41cbLi.js |    0
+ vue-app/public/vue/assets/BisyarohView-lED4dEPT.js |    2 -
+ vue-app/public/vue/assets/BisyarohView-lHahPC9A.js |    0
+ .../public/vue/assets/BukuIndukView-BG-wgMDO.js    |    0
+ .../public/vue/assets/BukuIndukView-BOdC4uFm.js    |    0
+ .../public/vue/assets/BukuIndukView-MPdgQHvY.js    |    1 -
+ .../public/vue/assets/BukuIndukView-a6ztePPt.js    |    0
+ .../vue/assets/CapaianPrestasiView-BUg-PtUR.js     |    0
+ .../vue/assets/CapaianPrestasiView-DMzKknjm.js     |    1 -
+ .../vue/assets/CapaianPrestasiView-DZHUENFn.js     |    0
+ .../vue/assets/CapaianPrestasiView-DretK5Uz.js     |    0
+ .../public/vue/assets/DashboardView-294U-w72.js    |    1 -
+ .../public/vue/assets/DashboardView-B1l9MSnG.css   |    1 -
+ .../public/vue/assets/DashboardView-BgMn9qEQ.js    |    0
+ .../public/vue/assets/DashboardView-BpLwM2aA.js    |    0
+ .../public/vue/assets/DashboardView-DsXSjBA0.js    |    0
+ .../public/vue/assets/FieldSchemaView-C9ZIS9Gz.js  |    0
+ .../public/vue/assets/FieldSchemaView-CTu8vQU2.js  |    2 -
+ .../public/vue/assets/FieldSchemaView-CVR0Opq_.js  |    0
+ .../public/vue/assets/FieldSchemaView-DYGyJr3e.js  |    0
+ vue-app/public/vue/assets/GuruFormView-BLIgJz0D.js |    0
+ vue-app/public/vue/assets/GuruFormView-DOel6svH.js |    0
+ vue-app/public/vue/assets/GuruFormView-DvpRqSTO.js |    1 -
+ vue-app/public/vue/assets/GuruFormView-fyt9QLwJ.js |    0
+ vue-app/public/vue/assets/GuruView-BE2XpYXc.js     |    0
+ vue-app/public/vue/assets/GuruView-BppFPOOf.js     |    0
+ vue-app/public/vue/assets/GuruView-Cd4C75it.js     |    1 -
+ vue-app/public/vue/assets/GuruView-DobD6FGj.js     |    0
+ .../vue/assets/HutangPiutangView-9yvxxiJg.js       |    0
+ .../vue/assets/HutangPiutangView-BLuY-yID.js       |    0
+ .../vue/assets/HutangPiutangView-BNxDIlCa.js       |    1 -
+ .../vue/assets/HutangPiutangView-D-3JZwW_.js       |    0
+ .../public/vue/assets/InputBulananView-BTH4H3bK.js |    0
+ .../public/vue/assets/InputBulananView-BijP5N0L.js |    1 -
+ .../public/vue/assets/InputBulananView-DL8FmSPf.js |    0
+ .../public/vue/assets/InputBulananView-RD-QbSRd.js |    0
+ .../vue/assets/KalenderKegiatanView-58gWloJ5.js    |    0
+ .../vue/assets/KalenderKegiatanView-B_PQLujo.js    |    5 -
+ .../vue/assets/KalenderKegiatanView-C9KII6Hg.js    |    0
+ .../vue/assets/KalenderKegiatanView-Dn_r6wlq.js    |    0
+ .../vue/assets/KegiatanPesantrenView-8EOkZUeo.js   |    0
+ .../vue/assets/KegiatanPesantrenView-BZlH4RVB.js   |    0
+ .../vue/assets/KegiatanPesantrenView-CP76PxlU.js   |    0
+ .../vue/assets/KegiatanPesantrenView-CojOMvh6.js   |    1 -
+ vue-app/public/vue/assets/KelasView-Beul3qkG.js    |    0
+ vue-app/public/vue/assets/KelasView-C2-n2x7d.js    |    0
+ vue-app/public/vue/assets/KelasView-CAwVikjY.js    |    1 -
+ vue-app/public/vue/assets/KelasView-rcKdlzNh.js    |    0
+ .../vue/assets/KeuanganDashboardView-BcYNxO2q.js   |    0
+ .../vue/assets/KeuanganDashboardView-ChHFM8Cg.js   |    0
+ .../vue/assets/KeuanganDashboardView-CrDNKGrM.js   |    1 -
+ .../vue/assets/KeuanganDashboardView-iRWVKnkf.js   |    0
+ .../public/vue/assets/KritikSaranView-9HkmsXvt.js  |    0
+ .../public/vue/assets/KritikSaranView-BdZ1SAMN.js  |    3 -
+ .../public/vue/assets/KritikSaranView-BfYgbdlD.js  |    0
+ .../public/vue/assets/KritikSaranView-DqQTi6Eo.js  |    0
+ .../vue/assets/LaporanKeuanganView-CH49bd_o.js     |    0
+ .../vue/assets/LaporanKeuanganView-CxdRImaR.js     |    0
+ .../vue/assets/LaporanKeuanganView-DSZ7dQ9I.js     |    1 -
+ .../vue/assets/LaporanKeuanganView-R0bilfqB.js     |    0
+ .../vue/assets/LembagaDetailView-B14wZV8f.js       |    0
+ .../vue/assets/LembagaDetailView-B8NRArXm.js       |    0
+ .../vue/assets/LembagaDetailView-UJDGqxPd.js       |    0
+ .../vue/assets/LembagaDetailView-sKB5VICe.js       |    3 -
+ .../public/vue/assets/LembagaFormView-BYgB1-ZJ.js  |    0
+ .../public/vue/assets/LembagaFormView-BfhOETno.js  |    0
+ .../public/vue/assets/LembagaFormView-CYnb22cw.js  |    1 -
+ .../public/vue/assets/LembagaFormView-DgbcQt5y.js  |    0
+ vue-app/public/vue/assets/LembagaView-0bJYh5uh.js  |    0
+ vue-app/public/vue/assets/LembagaView-B6uXDW0M.js  |    0
+ vue-app/public/vue/assets/LembagaView-CbcnA-0Y.js  |    0
+ vue-app/public/vue/assets/LembagaView-CiTE2NqE.js  |    1 -
+ vue-app/public/vue/assets/LoginView-BMrdVA9B.js    |    0
+ vue-app/public/vue/assets/LoginView-B_8B1LeX.js    |    0
+ vue-app/public/vue/assets/LoginView-CofSv8YK.js    |    0
+ vue-app/public/vue/assets/LoginView-vO_P-EY1.js    |    1 -
+ .../public/vue/assets/MasterDataView-CparqS4L.js   |    0
+ .../public/vue/assets/MasterDataView-CqKYqd9y.js   |    2 -
+ .../public/vue/assets/MasterDataView-Cu5heSH3.js   |    0
+ .../public/vue/assets/MasterDataView-DmhVkGhk.js   |    0
+ .../vue/assets/MasterFormBridgeView-Bi2a8n74.js    |    0
+ .../vue/assets/MasterFormBridgeView-DblENlxp.js    |    0
+ .../vue/assets/MasterFormBridgeView-DnPo78gC.js    |    0
+ .../vue/assets/MasterFormBridgeView-Dz1FoORd.js    |    1 -
+ .../public/vue/assets/NaikKelasView-BcF9-Zzm.js    |    0
+ .../public/vue/assets/NaikKelasView-DuGwGNZ7.js    |    0
+ .../public/vue/assets/NaikKelasView-Z5ox3jE4.js    |    0
+ .../public/vue/assets/NaikKelasView-v_97yGG2.js    |    1 -
+ .../public/vue/assets/PembayaranView-Bj3bg8ej.js   |    1 -
+ .../public/vue/assets/PembayaranView-CTbuP2eJ.js   |    0
+ .../public/vue/assets/PembayaranView-D5nzTmc1.js   |    0
+ .../public/vue/assets/PembayaranView-bwnlf5gs.js   |    0
+ .../vue/assets/PengaturanKeuanganView-BTJZxhXl.js  |    1 -
+ .../vue/assets/PengaturanKeuanganView-BZnbPFBF.js  |    0
+ .../vue/assets/PengaturanKeuanganView-C4Qq_qp1.js  |    0
+ .../vue/assets/PengaturanKeuanganView-DUumPCUG.js  |    0
+ .../public/vue/assets/PengaturanView-3Rssnfls.js   |    0
+ .../public/vue/assets/PengaturanView-DilA45eV.js   |    0
+ .../public/vue/assets/PengaturanView-DpikK3gS.js   |    0
+ .../public/vue/assets/PengaturanView-yQJ45MRY.js   |   31 -
+ vue-app/public/vue/assets/PersonalView-BoKKevDZ.js |    0
+ vue-app/public/vue/assets/PersonalView-Dy5XXQNL.js |    1 -
+ vue-app/public/vue/assets/PersonalView-Xwgzw2P-.js |    0
+ vue-app/public/vue/assets/PersonalView-l0ilfTRc.js |    0
+ .../public/vue/assets/PosSantriView-B13uLp0J.css   |    1 -
+ .../public/vue/assets/PosSantriView-C1sJbAvl.js    |    0
+ .../public/vue/assets/PosSantriView-D9elucin.js    |    0
+ .../public/vue/assets/PosSantriView-DefwthUo.js    |    0
+ .../public/vue/assets/PosSantriView-oE6eBbMf.js    |    1 -
+ vue-app/public/vue/assets/PostsView-C2Vzf9Z6.js    |    0
+ vue-app/public/vue/assets/PostsView-Dcl45a9-.js    |    1 -
+ vue-app/public/vue/assets/PostsView-aZfGuHJf.js    |    0
+ vue-app/public/vue/assets/PostsView-za7uw2WL.js    |    0
+ .../public/vue/assets/PpdbAdminView-BhWvQKYi.js    |    0
+ .../public/vue/assets/PpdbAdminView-BpxH11Qq.js    |    0
+ .../public/vue/assets/PpdbAdminView-D9RdFFe7.js    |    1 -
+ .../public/vue/assets/PpdbAdminView-d1nwrchv.js    |    0
+ .../public/vue/assets/PpdbDetailView-CsBdiHAS.js   |    0
+ .../public/vue/assets/PpdbDetailView-Da1__3vM.js   |    0
+ .../public/vue/assets/PpdbDetailView-DlEpqNBx.js   |    0
+ .../public/vue/assets/PpdbDetailView-LcYHrnFS.js   |    1 -
+ vue-app/public/vue/assets/PpdbFormView-BlcP9SDA.js |    0
+ vue-app/public/vue/assets/PpdbFormView-XZvn1CoE.js |    0
+ vue-app/public/vue/assets/PpdbFormView-_D9ObGJ_.js |    1 -
+ vue-app/public/vue/assets/PpdbFormView-ixigk2Lh.js |    0
+ vue-app/public/vue/assets/ProfilView-BdeY3q9Q.js   |    0
+ vue-app/public/vue/assets/ProfilView-ByPRx-Ag.js   |    1 -
+ vue-app/public/vue/assets/ProfilView-DVH7wHtA.js   |    0
+ vue-app/public/vue/assets/ProfilView-DYHDD1fu.js   |    0
+ vue-app/public/vue/assets/RaporView-BMhFNNHZ.js    |    1 -
+ vue-app/public/vue/assets/RaporView-CWGcp5hc.js    |    0
+ vue-app/public/vue/assets/RaporView-CmC7Vmqv.js    |    0
+ vue-app/public/vue/assets/RaporView-LlO9J8zB.js    |    0
+ .../public/vue/assets/RekapDiniyahView-CT0uXE2u.js |    0
+ .../public/vue/assets/RekapDiniyahView-CUHaUfZS.js |    1 -
+ .../public/vue/assets/RekapDiniyahView-DztUXovv.js |    0
+ .../public/vue/assets/RekapDiniyahView-MbSGa1iu.js |    0
+ .../vue/assets/RekapPrestasiView-BS47ghpV.js       |    0
+ .../vue/assets/RekapPrestasiView-BuLpvyE1.js       |    1 -
+ .../vue/assets/RekapPrestasiView-CZ7_3cp1.js       |    0
+ .../vue/assets/RekapPrestasiView-DNHejcXZ.js       |    0
+ .../public/vue/assets/SantriFormView-CfcclXW4.js   |    0
+ .../public/vue/assets/SantriFormView-CmuRMTjG.js   |    1 -
+ .../public/vue/assets/SantriFormView-epVOY8Cj.js   |    0
+ .../public/vue/assets/SantriFormView-keyuCpXn.js   |    0
+ vue-app/public/vue/assets/SantriView-BxvIr04n.js   |    1 -
+ vue-app/public/vue/assets/SantriView-CIbSBbcv.js   |    0
+ vue-app/public/vue/assets/SantriView-Cf5z3KHX.js   |    0
+ vue-app/public/vue/assets/SantriView-DXaRQx4s.js   |    0
+ .../public/vue/assets/StatistikView-BLYoFko2.js    |    0
+ .../public/vue/assets/StatistikView-DN_d9mi2.js    |    1 -
+ .../public/vue/assets/StatistikView-DdT_GZSb.js    |    0
+ .../public/vue/assets/StatistikView-QSqrVMH0.js    |    0
+ vue-app/public/vue/assets/TabunganView-14_uV8ir.js |    1 -
+ vue-app/public/vue/assets/TabunganView-BU_6HtXE.js |    0
+ vue-app/public/vue/assets/TabunganView-BwuoAWNq.js |    0
+ vue-app/public/vue/assets/TabunganView-DcwzaTEQ.js |    0
+ vue-app/public/vue/assets/TagihanView-BSauVWyL.js  |    0
+ vue-app/public/vue/assets/TagihanView-CMzPQskv.js  |    0
+ vue-app/public/vue/assets/TagihanView-D3qSLmYg.js  |    1 -
+ vue-app/public/vue/assets/TagihanView-DkyVrbsH.js  |    0
+ vue-app/public/vue/assets/UiActionCard-ATgfcsBp.js |    1 -
+ .../assets/_plugin-vue_export-helper-DlAUqK2U.js   |    1 -
+ .../public/vue/assets/createLucideIcon-C2QWWNlY.js |    0
+ .../public/vue/assets/createLucideIcon-DAsRVc6I.js |    0
+ .../public/vue/assets/createLucideIcon-Da2JYNaz.js |   21 -
+ vue-app/public/vue/assets/format-CgTEi-wW.js       |    1 -
+ vue-app/public/vue/assets/hijri-BQdwk8_X.js        |    1 -
+ vue-app/public/vue/assets/index-1lqaMLN_.css       |    0
+ vue-app/public/vue/assets/index-B6x-8Tk8.js        |    0
+ vue-app/public/vue/assets/index-BQToRogx.js        |    0
+ vue-app/public/vue/assets/index-CP0SBlEC.css       |    0
+ vue-app/public/vue/assets/index-CuLAC-G6.css       |    1 -
+ vue-app/public/vue/assets/index-DG__Az-f.js        | 4605 --------------------
+ vue-app/public/vue/assets/index-YSp6aJ5f.js        |    0
+ vue-app/public/vue/assets/kenaikan-DcnKGnb3.js     |    1 -
+ vue-app/public/vue/assets/logo-CxXS7KxG.js         |    1 -
+ vue-app/public/vue/assets/pdf-BHE_UDq-.js          |    0
+ vue-app/public/vue/assets/storage-BEj4epjk.js      |    0
+ vue-app/public/vue/assets/storage-CUEc4bEJ.js      |    1 -
+ vue-app/public/vue/assets/storage-DKmrpbMO.js      |    0
+ vue-app/public/vue/assets/storage-DTqjubjg.js      |    0
+ vue-app/public/vue/assets/useConfirm-BsItqGu1.js   |    0
+ vue-app/public/vue/assets/useConfirm-Bz07_i41.js   |    0
+ vue-app/public/vue/assets/useConfirm-Ch1Rv2TC.js   |    0
+ vue-app/public/vue/assets/useConfirm-DJc5jH4E.js   |    1 -
+ vue-app/public/vue/assets/useExcel-CZDOI6AT.js     |    1 -
+ vue-app/public/vue/assets/useGuru-CBhZcR59.js      |    0
+ vue-app/public/vue/assets/useGuru-DN4MtfPD.js      |    0
+ vue-app/public/vue/assets/useGuru-IV--Qr3o.js      |    0
+ vue-app/public/vue/assets/useGuru-cfD6phTs.js      |    1 -
+ vue-app/public/vue/assets/useKeuangan-B-FpIeMx.js  |    0
+ vue-app/public/vue/assets/useKeuangan-Bz7HUSB_.js  |    1 -
+ vue-app/public/vue/assets/useKeuangan-CSPK74hU.js  |    0
+ vue-app/public/vue/assets/useKeuangan-CymcOZlI.js  |    0
+ vue-app/public/vue/assets/useLembaga-BGrRoFMr.js   |    0
+ vue-app/public/vue/assets/useLembaga-C1swPaUN.js   |    0
+ vue-app/public/vue/assets/useLembaga-CjCVfoch.js   |    0
+ vue-app/public/vue/assets/useLembaga-Dw12oxfd.js   |    1 -
+ vue-app/public/vue/assets/useMenus-96G3Mp5a.js     |    1 -
+ vue-app/public/vue/assets/useMenus-BdIPdVGf.js     |    0
+ vue-app/public/vue/assets/useMenus-Cvbfafuf.js     |    0
+ vue-app/public/vue/assets/useMenus-DQs7D3iG.js     |    0
+ vue-app/public/vue/assets/useSantri-BNp-xneZ.js    |    0
+ vue-app/public/vue/assets/useSantri-BiXNgS2R.js    |    1 -
+ vue-app/public/vue/assets/useSantri-CXLma0sq.js    |    0
+ vue-app/public/vue/assets/useSantri-YmxNfUz_.js    |    0
+ vue-app/public/vue/assets/useToast-BI4ag8cn.js     |    0
+ vue-app/public/vue/assets/useToast-CNOs5U3a.js     |    1 -
+ vue-app/public/vue/assets/useToast-D6bPUuTp.js     |    0
+ vue-app/public/vue/assets/useToast-NFGRoaYW.js     |    0
+ vue-app/public/vue/bakafrawi-logo.png              |  Bin 64315 -> 0 bytes
+ .../public/vue/fonts/ScheherazadeNew-SemiBold.ttf  |  Bin 585664 -> 0 bytes
+ .../vue/fonts/ScheherazadeNew-SemiBold.woff2       |  Bin 147508 -> 0 bytes
+ vue-app/public/vue/index.html                      |   40 -
+ vue-app/public/vue/logo.png                        |  Bin 83294 -> 0 bytes
+ .../vue/vue/assets/AbsensiGuruView-BrPtDHyP.js     |    1 -
+ .../vue/vue/assets/AbsensiGuruView-DtE-zO7N.js     |    0
+ .../vue/vue/assets/AbsensiGuruView-WjFS86J3.js     |    0
+ .../vue/vue/assets/AbsensiSantriView-BQ3W_l6b.js   |    0
+ .../vue/vue/assets/AbsensiSantriView-CrV9cwe1.js   |    0
+ .../vue/vue/assets/AbsensiSantriView-PGpFKSlj.js   |    1 -
+ .../public/vue/vue/assets/AppLayout-C_sdyhn_.js    |    6 -
+ .../public/vue/vue/assets/AppLayout-CsHHe0aK.js    |    0
+ .../public/vue/vue/assets/AppLayout-Cy55l9NA.css   |    1 -
+ .../public/vue/vue/assets/AppLayout-Dcxr8d5b.js    |    0
+ .../public/vue/vue/assets/AppLayout-ZTOXoeTP.css   |    0
+ .../public/vue/vue/assets/BisyarohView-CGrSsXBu.js |    0
+ .../public/vue/vue/assets/BisyarohView-Qu41cbLi.js |    0
+ .../public/vue/vue/assets/BisyarohView-lHahPC9A.js |    2 -
+ .../vue/vue/assets/BukuIndukView-BG-wgMDO.js       |    0
+ .../vue/vue/assets/BukuIndukView-BOdC4uFm.js       |    0
+ .../vue/vue/assets/BukuIndukView-a6ztePPt.js       |    1 -
+ .../vue/vue/assets/CapaianPrestasiView-BUg-PtUR.js |    0
+ .../vue/vue/assets/CapaianPrestasiView-DZHUENFn.js |    0
+ .../vue/vue/assets/CapaianPrestasiView-DretK5Uz.js |    1 -
+ .../vue/vue/assets/DashboardView-B1l9MSnG.css      |    1 -
+ .../vue/vue/assets/DashboardView-BgMn9qEQ.js       |    0
+ .../vue/vue/assets/DashboardView-BpLwM2aA.js       |    0
+ .../vue/vue/assets/DashboardView-DsXSjBA0.js       |    1 -
+ .../vue/vue/assets/FieldSchemaView-C9ZIS9Gz.js     |    0
+ .../vue/vue/assets/FieldSchemaView-CVR0Opq_.js     |    0
+ .../vue/vue/assets/FieldSchemaView-DYGyJr3e.js     |    2 -
+ .../public/vue/vue/assets/GuruFormView-BLIgJz0D.js |    0
+ .../public/vue/vue/assets/GuruFormView-DOel6svH.js |    0
+ .../public/vue/vue/assets/GuruFormView-fyt9QLwJ.js |    1 -
+ vue-app/public/vue/vue/assets/GuruView-BE2XpYXc.js |    0
+ vue-app/public/vue/vue/assets/GuruView-BppFPOOf.js |    0
+ vue-app/public/vue/vue/assets/GuruView-DobD6FGj.js |    1 -
+ .../vue/vue/assets/HutangPiutangView-9yvxxiJg.js   |    0
+ .../vue/vue/assets/HutangPiutangView-BLuY-yID.js   |    0
+ .../vue/vue/assets/HutangPiutangView-D-3JZwW_.js   |    1 -
+ .../vue/vue/assets/InputBulananView-BTH4H3bK.js    |    0
+ .../vue/vue/assets/InputBulananView-DL8FmSPf.js    |    0
+ .../vue/vue/assets/InputBulananView-RD-QbSRd.js    |    1 -
+ .../vue/assets/KalenderKegiatanView-58gWloJ5.js    |    5 -
+ .../vue/assets/KalenderKegiatanView-C9KII6Hg.js    |    0
+ .../vue/assets/KalenderKegiatanView-Dn_r6wlq.js    |    0
+ .../vue/assets/KegiatanPesantrenView-8EOkZUeo.js   |    0
+ .../vue/assets/KegiatanPesantrenView-BZlH4RVB.js   |    1 -
+ .../vue/assets/KegiatanPesantrenView-CP76PxlU.js   |    0
+ .../public/vue/vue/assets/KelasView-Beul3qkG.js    |    0
+ .../public/vue/vue/assets/KelasView-C2-n2x7d.js    |    0
+ .../public/vue/vue/assets/KelasView-rcKdlzNh.js    |    1 -
+ .../vue/assets/KeuanganDashboardView-BcYNxO2q.js   |    1 -
+ .../vue/assets/KeuanganDashboardView-ChHFM8Cg.js   |    0
+ .../vue/assets/KeuanganDashboardView-iRWVKnkf.js   |    0
+ .../vue/vue/assets/KritikSaranView-9HkmsXvt.js     |    0
+ .../vue/vue/assets/KritikSaranView-BfYgbdlD.js     |    0
+ .../vue/vue/assets/KritikSaranView-DqQTi6Eo.js     |    3 -
+ .../vue/vue/assets/LaporanKeuanganView-CH49bd_o.js |    0
+ .../vue/vue/assets/LaporanKeuanganView-CxdRImaR.js |    0
+ .../vue/vue/assets/LaporanKeuanganView-R0bilfqB.js |    1 -
+ .../vue/vue/assets/LembagaDetailView-B14wZV8f.js   |    0
+ .../vue/vue/assets/LembagaDetailView-B8NRArXm.js   |    0
+ .../vue/vue/assets/LembagaDetailView-UJDGqxPd.js   |    1 -
+ .../vue/vue/assets/LembagaFormView-BYgB1-ZJ.js     |    1 -
+ .../vue/vue/assets/LembagaFormView-BfhOETno.js     |    0
+ .../vue/vue/assets/LembagaFormView-DgbcQt5y.js     |    0
+ .../public/vue/vue/assets/LembagaView-0bJYh5uh.js  |    0
+ .../public/vue/vue/assets/LembagaView-B6uXDW0M.js  |    1 -
+ .../public/vue/vue/assets/LembagaView-CbcnA-0Y.js  |    0
+ .../public/vue/vue/assets/LoginView-BMrdVA9B.js    |    0
+ .../public/vue/vue/assets/LoginView-B_8B1LeX.js    |    0
+ .../public/vue/vue/assets/LoginView-CofSv8YK.js    |    1 -
+ .../vue/vue/assets/MasterDataView-CparqS4L.js      |    0
+ .../vue/vue/assets/MasterDataView-Cu5heSH3.js      |    0
+ .../vue/vue/assets/MasterDataView-DmhVkGhk.js      |    2 -
+ .../vue/assets/MasterFormBridgeView-Bi2a8n74.js    |    1 -
+ .../vue/assets/MasterFormBridgeView-DblENlxp.js    |    0
+ .../vue/assets/MasterFormBridgeView-DnPo78gC.js    |    0
+ .../vue/vue/assets/NaikKelasView-BcF9-Zzm.js       |    1 -
+ .../vue/vue/assets/NaikKelasView-DuGwGNZ7.js       |    0
+ .../vue/vue/assets/NaikKelasView-Z5ox3jE4.js       |    0
+ .../vue/vue/assets/PembayaranView-CTbuP2eJ.js      |    1 -
+ .../vue/vue/assets/PembayaranView-D5nzTmc1.js      |    0
+ .../vue/vue/assets/PembayaranView-bwnlf5gs.js      |    0
+ .../vue/assets/PengaturanKeuanganView-BZnbPFBF.js  |    0
+ .../vue/assets/PengaturanKeuanganView-C4Qq_qp1.js  |    0
+ .../vue/assets/PengaturanKeuanganView-DUumPCUG.js  |    1 -
+ .../vue/vue/assets/PengaturanView-3Rssnfls.js      |   31 -
+ .../vue/vue/assets/PengaturanView-DilA45eV.js      |    0
+ .../vue/vue/assets/PengaturanView-DpikK3gS.js      |    0
+ .../public/vue/vue/assets/PersonalView-BoKKevDZ.js |    0
+ .../public/vue/vue/assets/PersonalView-Xwgzw2P-.js |    1 -
+ .../public/vue/vue/assets/PersonalView-l0ilfTRc.js |    0
+ .../vue/vue/assets/PosSantriView-B13uLp0J.css      |    1 -
+ .../vue/vue/assets/PosSantriView-C1sJbAvl.js       |    1 -
+ .../vue/vue/assets/PosSantriView-D9elucin.js       |    0
+ .../vue/vue/assets/PosSantriView-DefwthUo.js       |    0
+ .../public/vue/vue/assets/PostsView-C2Vzf9Z6.js    |    1 -
+ .../public/vue/vue/assets/PostsView-aZfGuHJf.js    |    0
+ .../public/vue/vue/assets/PostsView-za7uw2WL.js    |    0
+ .../vue/vue/assets/PpdbAdminView-BhWvQKYi.js       |    0
+ .../vue/vue/assets/PpdbAdminView-BpxH11Qq.js       |    0
+ .../vue/vue/assets/PpdbAdminView-d1nwrchv.js       |    1 -
+ .../vue/vue/assets/PpdbDetailView-CsBdiHAS.js      |    0
+ .../vue/vue/assets/PpdbDetailView-Da1__3vM.js      |    1 -
+ .../vue/vue/assets/PpdbDetailView-DlEpqNBx.js      |    0
+ .../public/vue/vue/assets/PpdbFormView-BlcP9SDA.js |    0
+ .../public/vue/vue/assets/PpdbFormView-XZvn1CoE.js |    1 -
+ .../public/vue/vue/assets/PpdbFormView-ixigk2Lh.js |    0
+ .../public/vue/vue/assets/ProfilView-BdeY3q9Q.js   |    1 -
+ .../public/vue/vue/assets/ProfilView-DVH7wHtA.js   |    0
+ .../public/vue/vue/assets/ProfilView-DYHDD1fu.js   |    0
+ .../public/vue/vue/assets/RaporView-CWGcp5hc.js    |    0
+ .../public/vue/vue/assets/RaporView-CmC7Vmqv.js    |    0
+ .../public/vue/vue/assets/RaporView-LlO9J8zB.js    |   10 -
+ .../vue/vue/assets/RekapDiniyahView-CT0uXE2u.js    |    1 -
+ .../vue/vue/assets/RekapDiniyahView-DztUXovv.js    |    0
+ .../vue/vue/assets/RekapDiniyahView-MbSGa1iu.js    |    0
+ .../vue/vue/assets/RekapPrestasiView-BS47ghpV.js   |    0
+ .../vue/vue/assets/RekapPrestasiView-CZ7_3cp1.js   |    0
+ .../vue/vue/assets/RekapPrestasiView-DNHejcXZ.js   |    1 -
+ .../vue/vue/assets/SantriFormView-CfcclXW4.js      |    0
+ .../vue/vue/assets/SantriFormView-epVOY8Cj.js      |    0
+ .../vue/vue/assets/SantriFormView-keyuCpXn.js      |    1 -
+ .../public/vue/vue/assets/SantriView-CIbSBbcv.js   |    0
+ .../public/vue/vue/assets/SantriView-Cf5z3KHX.js   |    1 -
+ .../public/vue/vue/assets/SantriView-DXaRQx4s.js   |    0
+ .../vue/vue/assets/StatistikView-BLYoFko2.js       |    0
+ .../vue/vue/assets/StatistikView-DdT_GZSb.js       |    0
+ .../vue/vue/assets/StatistikView-QSqrVMH0.js       |    1 -
+ .../public/vue/vue/assets/TabunganView-BU_6HtXE.js |    0
+ .../public/vue/vue/assets/TabunganView-BwuoAWNq.js |    1 -
+ .../public/vue/vue/assets/TabunganView-DcwzaTEQ.js |    0
+ .../public/vue/vue/assets/TagihanView-BSauVWyL.js  |    0
+ .../public/vue/vue/assets/TagihanView-CMzPQskv.js  |    1 -
+ .../public/vue/vue/assets/TagihanView-DkyVrbsH.js  |    0
+ .../assets/_plugin-vue_export-helper-DlAUqK2U.js   |    1 -
+ .../vue/vue/assets/createLucideIcon-C2QWWNlY.js    |    0
+ .../vue/vue/assets/createLucideIcon-DAsRVc6I.js    |   21 -
+ vue-app/public/vue/vue/assets/format-CgTEi-wW.js   |    1 -
+ vue-app/public/vue/vue/assets/hijri-BQdwk8_X.js    |    1 -
+ vue-app/public/vue/vue/assets/index-1lqaMLN_.css   |    1 -
+ vue-app/public/vue/vue/assets/index-B6x-8Tk8.js    | 4605 --------------------
+ vue-app/public/vue/vue/assets/index-BQToRogx.js    |    0
+ vue-app/public/vue/vue/assets/index-CP0SBlEC.css   |    0
+ vue-app/public/vue/vue/assets/index-YSp6aJ5f.js    |    0
+ vue-app/public/vue/vue/assets/kenaikan-DcnKGnb3.js |    1 -
+ vue-app/public/vue/vue/assets/logo-CxXS7KxG.js     |    1 -
+ vue-app/public/vue/vue/assets/pdf-BHE_UDq-.js      |    1 -
+ vue-app/public/vue/vue/assets/storage-BEj4epjk.js  |    1 -
+ vue-app/public/vue/vue/assets/storage-DKmrpbMO.js  |    0
+ vue-app/public/vue/vue/assets/storage-DTqjubjg.js  |    0
+ .../public/vue/vue/assets/useConfirm-BsItqGu1.js   |    0
+ .../public/vue/vue/assets/useConfirm-Bz07_i41.js   |    0
+ .../public/vue/vue/assets/useConfirm-Ch1Rv2TC.js   |    1 -
+ vue-app/public/vue/vue/assets/useExcel-CZDOI6AT.js |    1 -
+ vue-app/public/vue/vue/assets/useGuru-CBhZcR59.js  |    0
+ vue-app/public/vue/vue/assets/useGuru-DN4MtfPD.js  |    0
+ vue-app/public/vue/vue/assets/useGuru-IV--Qr3o.js  |    1 -
+ .../public/vue/vue/assets/useKeuangan-B-FpIeMx.js  |    0
+ .../public/vue/vue/assets/useKeuangan-CSPK74hU.js  |    0
+ .../public/vue/vue/assets/useKeuangan-CymcOZlI.js  |    1 -
+ .../public/vue/vue/assets/useLembaga-BGrRoFMr.js   |    1 -
+ .../public/vue/vue/assets/useLembaga-C1swPaUN.js   |    0
+ .../public/vue/vue/assets/useLembaga-CjCVfoch.js   |    0
+ vue-app/public/vue/vue/assets/useMenus-BdIPdVGf.js |    0
+ vue-app/public/vue/vue/assets/useMenus-Cvbfafuf.js |    1 -
+ vue-app/public/vue/vue/assets/useMenus-DQs7D3iG.js |    0
+ .../public/vue/vue/assets/useSantri-BNp-xneZ.js    |    0
+ .../public/vue/vue/assets/useSantri-CXLma0sq.js    |    1 -
+ .../public/vue/vue/assets/useSantri-YmxNfUz_.js    |    0
+ vue-app/public/vue/vue/assets/useToast-BI4ag8cn.js |    1 -
+ vue-app/public/vue/vue/assets/useToast-D6bPUuTp.js |    0
+ vue-app/public/vue/vue/assets/useToast-NFGRoaYW.js |    0
+ vue-app/public/vue/vue/bakafrawi-logo.png          |  Bin 64315 -> 0 bytes
+ .../vue/vue/fonts/ScheherazadeNew-SemiBold.ttf     |  Bin 585664 -> 0 bytes
+ .../vue/vue/fonts/ScheherazadeNew-SemiBold.woff2   |  Bin 147508 -> 0 bytes
+ vue-app/public/vue/vue/index.html                  |   40 -
+ vue-app/public/vue/vue/logo.png                    |  Bin 83294 -> 0 bytes
+ .../vue/vue/vue/assets/AbsensiGuruView-DtE-zO7N.js |    0
+ .../vue/vue/vue/assets/AbsensiGuruView-WjFS86J3.js |    1 -
+ .../vue/vue/assets/AbsensiSantriView-BQ3W_l6b.js   |    0
+ .../vue/vue/assets/AbsensiSantriView-CrV9cwe1.js   |    1 -
+ .../vue/vue/vue/assets/AppLayout-CsHHe0aK.js       |    0
+ .../vue/vue/vue/assets/AppLayout-Cy55l9NA.css      |    1 -
+ .../vue/vue/vue/assets/AppLayout-Dcxr8d5b.js       |    6 -
+ .../vue/vue/vue/assets/AppLayout-ZTOXoeTP.css      |    0
+ .../vue/vue/vue/assets/BisyarohView-CGrSsXBu.js    |    0
+ .../vue/vue/vue/assets/BisyarohView-Qu41cbLi.js    |    2 -
+ .../vue/vue/vue/assets/BukuIndukView-BG-wgMDO.js   |    0
+ .../vue/vue/vue/assets/BukuIndukView-BOdC4uFm.js   |    1 -
+ .../vue/vue/assets/CapaianPrestasiView-BUg-PtUR.js |    1 -
+ .../vue/vue/assets/CapaianPrestasiView-DZHUENFn.js |    0
+ .../vue/vue/vue/assets/DashboardView-B1l9MSnG.css  |    1 -
+ .../vue/vue/vue/assets/DashboardView-BgMn9qEQ.js   |    0
+ .../vue/vue/vue/assets/DashboardView-BpLwM2aA.js   |    1 -
+ .../vue/vue/vue/assets/FieldSchemaView-C9ZIS9Gz.js |    2 -
+ .../vue/vue/vue/assets/FieldSchemaView-CVR0Opq_.js |    0
+ .../vue/vue/vue/assets/GuruFormView-BLIgJz0D.js    |    1 -
+ .../vue/vue/vue/assets/GuruFormView-DOel6svH.js    |    0
+ .../public/vue/vue/vue/assets/GuruView-BE2XpYXc.js |    0
+ .../public/vue/vue/vue/assets/GuruView-BppFPOOf.js |    1 -
+ .../vue/vue/assets/HutangPiutangView-9yvxxiJg.js   |    1 -
+ .../vue/vue/assets/HutangPiutangView-BLuY-yID.js   |    0
+ .../vue/vue/assets/InputBulananView-BTH4H3bK.js    |    0
+ .../vue/vue/assets/InputBulananView-DL8FmSPf.js    |    1 -
+ .../vue/assets/KalenderKegiatanView-C9KII6Hg.js    |    0
+ .../vue/assets/KalenderKegiatanView-Dn_r6wlq.js    |    5 -
+ .../vue/assets/KegiatanPesantrenView-8EOkZUeo.js   |    1 -
+ .../vue/assets/KegiatanPesantrenView-CP76PxlU.js   |    0
+ .../vue/vue/vue/assets/KelasView-Beul3qkG.js       |    1 -
+ .../vue/vue/vue/assets/KelasView-C2-n2x7d.js       |    0
+ .../vue/assets/KeuanganDashboardView-ChHFM8Cg.js   |    1 -
+ .../vue/assets/KeuanganDashboardView-iRWVKnkf.js   |    0
+ .../vue/vue/vue/assets/KritikSaranView-9HkmsXvt.js |    3 -
+ .../vue/vue/vue/assets/KritikSaranView-BfYgbdlD.js |    0
+ .../vue/vue/assets/LaporanKeuanganView-CH49bd_o.js |    0
+ .../vue/vue/assets/LaporanKeuanganView-CxdRImaR.js |    1 -
+ .../vue/vue/assets/LembagaDetailView-B14wZV8f.js   |    1 -
+ .../vue/vue/assets/LembagaDetailView-B8NRArXm.js   |    0
+ .../vue/vue/vue/assets/LembagaFormView-BfhOETno.js |    1 -
+ .../vue/vue/vue/assets/LembagaFormView-DgbcQt5y.js |    0
+ .../vue/vue/vue/assets/LembagaView-0bJYh5uh.js     |    1 -
+ .../vue/vue/vue/assets/LembagaView-CbcnA-0Y.js     |    0
+ .../vue/vue/vue/assets/LoginView-BMrdVA9B.js       |    1 -
+ .../vue/vue/vue/assets/LoginView-B_8B1LeX.js       |    0
+ .../vue/vue/vue/assets/MasterDataView-CparqS4L.js  |    2 -
+ .../vue/vue/vue/assets/MasterDataView-Cu5heSH3.js  |    0
+ .../vue/assets/MasterFormBridgeView-DblENlxp.js    |    1 -
+ .../vue/assets/MasterFormBridgeView-DnPo78gC.js    |    0
+ .../vue/vue/vue/assets/NaikKelasView-DuGwGNZ7.js   |    0
+ .../vue/vue/vue/assets/NaikKelasView-Z5ox3jE4.js   |    1 -
+ .../vue/vue/vue/assets/PembayaranView-D5nzTmc1.js  |    1 -
+ .../vue/vue/vue/assets/PembayaranView-bwnlf5gs.js  |    0
+ .../vue/assets/PengaturanKeuanganView-BZnbPFBF.js  |    1 -
+ .../vue/assets/PengaturanKeuanganView-C4Qq_qp1.js  |    0
+ .../vue/vue/vue/assets/PengaturanView-DilA45eV.js  |    0
+ .../vue/vue/vue/assets/PengaturanView-DpikK3gS.js  |   31 -
+ .../vue/vue/vue/assets/PersonalView-BoKKevDZ.js    |    1 -
+ .../vue/vue/vue/assets/PersonalView-l0ilfTRc.js    |    0
+ .../vue/vue/vue/assets/PosSantriView-B13uLp0J.css  |    1 -
+ .../vue/vue/vue/assets/PosSantriView-D9elucin.js   |    0
+ .../vue/vue/vue/assets/PosSantriView-DefwthUo.js   |    1 -
+ .../vue/vue/vue/assets/PostsView-aZfGuHJf.js       |    0
+ .../vue/vue/vue/assets/PostsView-za7uw2WL.js       |    1 -
+ .../vue/vue/vue/assets/PpdbAdminView-BhWvQKYi.js   |    0
+ .../vue/vue/vue/assets/PpdbAdminView-BpxH11Qq.js   |    1 -
+ .../vue/vue/vue/assets/PpdbDetailView-CsBdiHAS.js  |    1 -
+ .../vue/vue/vue/assets/PpdbDetailView-DlEpqNBx.js  |    0
+ .../vue/vue/vue/assets/PpdbFormView-BlcP9SDA.js    |    1 -
+ .../vue/vue/vue/assets/PpdbFormView-ixigk2Lh.js    |    0
+ .../vue/vue/vue/assets/ProfilView-DVH7wHtA.js      |    0
+ .../vue/vue/vue/assets/ProfilView-DYHDD1fu.js      |    1 -
+ .../vue/vue/vue/assets/RaporView-CWGcp5hc.js       |   10 -
+ .../vue/vue/vue/assets/RaporView-CmC7Vmqv.js       |    0
+ .../vue/vue/assets/RekapDiniyahView-DztUXovv.js    |    0
+ .../vue/vue/assets/RekapDiniyahView-MbSGa1iu.js    |    1 -
+ .../vue/vue/assets/RekapPrestasiView-BS47ghpV.js   |    0
+ .../vue/vue/assets/RekapPrestasiView-CZ7_3cp1.js   |    1 -
+ .../vue/vue/vue/assets/SantriFormView-CfcclXW4.js  |    1 -
+ .../vue/vue/vue/assets/SantriFormView-epVOY8Cj.js  |    0
+ .../vue/vue/vue/assets/SantriView-CIbSBbcv.js      |    1 -
+ .../vue/vue/vue/assets/SantriView-DXaRQx4s.js      |    0
+ .../vue/vue/vue/assets/StatistikView-BLYoFko2.js   |    1 -
+ .../vue/vue/vue/assets/StatistikView-DdT_GZSb.js   |    0
+ .../vue/vue/vue/assets/TabunganView-BU_6HtXE.js    |    0
+ .../vue/vue/vue/assets/TabunganView-DcwzaTEQ.js    |    1 -
+ .../vue/vue/vue/assets/TagihanView-BSauVWyL.js     |    0
+ .../vue/vue/vue/assets/TagihanView-DkyVrbsH.js     |    1 -
+ .../assets/_plugin-vue_export-helper-DlAUqK2U.js   |    1 -
+ .../vue/vue/assets/createLucideIcon-C2QWWNlY.js    |   21 -
+ .../public/vue/vue/vue/assets/format-CgTEi-wW.js   |    1 -
+ .../public/vue/vue/vue/assets/hijri-BQdwk8_X.js    |    1 -
+ .../public/vue/vue/vue/assets/index-1lqaMLN_.css   |    1 -
+ .../public/vue/vue/vue/assets/index-BQToRogx.js    | 4605 --------------------
+ .../public/vue/vue/vue/assets/index-CP0SBlEC.css   |    0
+ .../public/vue/vue/vue/assets/index-YSp6aJ5f.js    |    0
+ .../public/vue/vue/vue/assets/kenaikan-DcnKGnb3.js |    1 -
+ vue-app/public/vue/vue/vue/assets/logo-CxXS7KxG.js |    1 -
+ vue-app/public/vue/vue/vue/assets/pdf-BHE_UDq-.js  |    1 -
+ .../public/vue/vue/vue/assets/storage-DKmrpbMO.js  |    0
+ .../public/vue/vue/vue/assets/storage-DTqjubjg.js  |    1 -
+ .../vue/vue/vue/assets/useConfirm-BsItqGu1.js      |    1 -
+ .../vue/vue/vue/assets/useConfirm-Bz07_i41.js      |    0
+ .../public/vue/vue/vue/assets/useExcel-CZDOI6AT.js |    1 -
+ .../public/vue/vue/vue/assets/useGuru-CBhZcR59.js  |    1 -
+ .../public/vue/vue/vue/assets/useGuru-DN4MtfPD.js  |    0
+ .../vue/vue/vue/assets/useKeuangan-B-FpIeMx.js     |    1 -
+ .../vue/vue/vue/assets/useKeuangan-CSPK74hU.js     |    0
+ .../vue/vue/vue/assets/useLembaga-C1swPaUN.js      |    0
+ .../vue/vue/vue/assets/useLembaga-CjCVfoch.js      |    1 -
+ .../public/vue/vue/vue/assets/useMenus-BdIPdVGf.js |    0
+ .../public/vue/vue/vue/assets/useMenus-DQs7D3iG.js |    1 -
+ .../vue/vue/vue/assets/useSantri-BNp-xneZ.js       |    0
+ .../vue/vue/vue/assets/useSantri-YmxNfUz_.js       |    1 -
+ .../public/vue/vue/vue/assets/useToast-D6bPUuTp.js |    0
+ .../public/vue/vue/vue/assets/useToast-NFGRoaYW.js |    1 -
+ vue-app/public/vue/vue/vue/bakafrawi-logo.png      |  Bin 64315 -> 0 bytes
+ .../vue/vue/vue/fonts/ScheherazadeNew-SemiBold.ttf |  Bin 585664 -> 0 bytes
+ .../vue/vue/fonts/ScheherazadeNew-SemiBold.woff2   |  Bin 147508 -> 0 bytes
+ vue-app/public/vue/vue/vue/index.html              |   40 -
+ vue-app/public/vue/vue/vue/logo.png                |  Bin 83294 -> 0 bytes
+ .../vue/vue/vue/assets/AbsensiGuruView-DtE-zO7N.js |    1 -
+ .../vue/vue/assets/AbsensiSantriView-BQ3W_l6b.js   |    1 -
+ .../vue/vue/vue/vue/assets/AppLayout-CsHHe0aK.js   |    1 -
+ .../vue/vue/vue/vue/assets/AppLayout-ZTOXoeTP.css  |    1 -
+ .../vue/vue/vue/assets/BisyarohView-CGrSsXBu.js    |    2 -
+ .../vue/vue/vue/assets/BukuIndukView-BG-wgMDO.js   |    1 -
+ .../vue/vue/assets/CapaianPrestasiView-DZHUENFn.js |    1 -
+ .../vue/vue/vue/assets/DashboardView-B1l9MSnG.css  |    1 -
+ .../vue/vue/vue/assets/DashboardView-BgMn9qEQ.js   |    1 -
+ .../vue/vue/vue/assets/FieldSchemaView-CVR0Opq_.js |    2 -
+ .../vue/vue/vue/assets/GuruFormView-DOel6svH.js    |    1 -
+ .../vue/vue/vue/vue/assets/GuruView-BE2XpYXc.js    |    1 -
+ .../vue/vue/assets/HutangPiutangView-BLuY-yID.js   |    1 -
+ .../vue/vue/assets/InputBulananView-BTH4H3bK.js    |    1 -
+ .../vue/assets/KalenderKegiatanView-C9KII6Hg.js    |    5 -
+ .../vue/assets/KegiatanPesantrenView-CP76PxlU.js   |    1 -
+ .../vue/vue/vue/vue/assets/KelasView-C2-n2x7d.js   |    1 -
+ .../vue/assets/KeuanganDashboardView-iRWVKnkf.js   |    1 -
+ .../vue/vue/vue/assets/KritikSaranView-BfYgbdlD.js |    3 -
+ .../vue/vue/assets/LaporanKeuanganView-CH49bd_o.js |    1 -
+ .../vue/vue/assets/LembagaDetailView-B8NRArXm.js   |    1 -
+ .../vue/vue/vue/assets/LembagaFormView-DgbcQt5y.js |    1 -
+ .../vue/vue/vue/vue/assets/LembagaView-CbcnA-0Y.js |    1 -
+ .../vue/vue/vue/vue/assets/LoginView-B_8B1LeX.js   |    1 -
+ .../vue/vue/vue/assets/MasterDataView-Cu5heSH3.js  |    2 -
+ .../vue/assets/MasterFormBridgeView-DnPo78gC.js    |    1 -
+ .../vue/vue/vue/assets/NaikKelasView-DuGwGNZ7.js   |    1 -
+ .../vue/vue/vue/assets/PembayaranView-bwnlf5gs.js  |    1 -
+ .../vue/assets/PengaturanKeuanganView-C4Qq_qp1.js  |    1 -
+ .../vue/vue/vue/assets/PengaturanView-DilA45eV.js  |   51 -
+ .../vue/vue/vue/assets/PersonalView-l0ilfTRc.js    |    1 -
+ .../vue/vue/vue/assets/PosSantriView-B13uLp0J.css  |    1 -
+ .../vue/vue/vue/assets/PosSantriView-D9elucin.js   |    1 -
+ .../vue/vue/vue/vue/assets/PostsView-aZfGuHJf.js   |    1 -
+ .../vue/vue/vue/assets/PpdbAdminView-BhWvQKYi.js   |    1 -
+ .../vue/vue/vue/assets/PpdbDetailView-DlEpqNBx.js  |    1 -
+ .../vue/vue/vue/assets/PpdbFormView-ixigk2Lh.js    |    1 -
+ .../vue/vue/vue/vue/assets/ProfilView-DVH7wHtA.js  |    1 -
+ .../vue/vue/vue/vue/assets/RaporView-CmC7Vmqv.js   |   10 -
+ .../vue/vue/assets/RekapDiniyahView-DztUXovv.js    |    1 -
+ .../vue/vue/assets/RekapPrestasiView-BS47ghpV.js   |    1 -
+ .../vue/vue/vue/assets/SantriFormView-epVOY8Cj.js  |    1 -
+ .../vue/vue/vue/vue/assets/SantriView-DXaRQx4s.js  |    1 -
+ .../vue/vue/vue/assets/StatistikView-DdT_GZSb.js   |    1 -
+ .../vue/vue/vue/assets/TabunganView-BU_6HtXE.js    |    1 -
+ .../vue/vue/vue/vue/assets/TagihanView-BSauVWyL.js |    1 -
+ .../assets/_plugin-vue_export-helper-DlAUqK2U.js   |    1 -
+ .../vue/vue/vue/vue/assets/format-CgTEi-wW.js      |    1 -
+ .../vue/vue/vue/vue/assets/hijri-BQdwk8_X.js       |    1 -
+ .../vue/vue/vue/vue/assets/index-CP0SBlEC.css      |    1 -
+ .../vue/vue/vue/vue/assets/index-YSp6aJ5f.js       | 4605 --------------------
+ .../vue/vue/vue/vue/assets/kenaikan-DcnKGnb3.js    |    1 -
+ .../public/vue/vue/vue/vue/assets/logo-CxXS7KxG.js |    1 -
+ .../public/vue/vue/vue/vue/assets/pdf-BHE_UDq-.js  |    1 -
+ .../vue/vue/vue/vue/assets/storage-DKmrpbMO.js     |    1 -
+ .../vue/vue/vue/vue/assets/useConfirm-Bz07_i41.js  |    1 -
+ .../vue/vue/vue/vue/assets/useExcel-CZDOI6AT.js    |    1 -
+ .../vue/vue/vue/vue/assets/useGuru-DN4MtfPD.js     |    1 -
+ .../vue/vue/vue/vue/assets/useKeuangan-CSPK74hU.js |    1 -
+ .../vue/vue/vue/vue/assets/useLembaga-C1swPaUN.js  |    1 -
+ .../vue/vue/vue/vue/assets/useMenus-BdIPdVGf.js    |    1 -
+ .../vue/vue/vue/vue/assets/useSantri-BNp-xneZ.js   |    1 -
+ .../vue/vue/vue/vue/assets/useToast-D6bPUuTp.js    |    1 -
+ vue-app/public/vue/vue/vue/vue/bakafrawi-logo.png  |  Bin 64315 -> 0 bytes
+ .../vue/vue/vue/fonts/ScheherazadeNew-SemiBold.ttf |  Bin 585664 -> 0 bytes
+ .../vue/vue/fonts/ScheherazadeNew-SemiBold.woff2   |  Bin 147508 -> 0 bytes
+ vue-app/public/vue/vue/vue/vue/index.html          |   40 -
+ vue-app/public/vue/vue/vue/vue/logo.png            |  Bin 83294 -> 0 bytes
+ vue-app/src/router/index.js                        |    4 +
+ vue-app/src/views/PembayaranPendingView.vue        |   80 +
+ vue-app/vite.config.js                             |   15 +-
+ 619 files changed, 1085 insertions(+), 19128 deletions(-)

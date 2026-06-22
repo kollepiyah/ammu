@@ -28,13 +28,14 @@
 // - Free quota: 2 juta invocations/bulan, 400.000 GB-detik (cukup besar)
 // ====================================================================
 
-const { onDocumentCreated } = require('firebase-functions/v2/firestore')
+const { onDocumentCreated, onDocumentUpdated } = require('firebase-functions/v2/firestore')
 const { onRequest } = require('firebase-functions/v2/https')
 const { onSchedule } = require('firebase-functions/v2/scheduler')
 const { defineSecret } = require('firebase-functions/params')
 const { initializeApp } = require('firebase-admin/app')
 const { getMessaging } = require('firebase-admin/messaging')
-const { getFirestore } = require('firebase-admin/firestore')
+const { getFirestore, FieldValue } = require('firebase-admin/firestore')
+const { getAuth } = require('firebase-admin/auth')
 const logger = require('firebase-functions/logger')
 
 // v.108.31: Iframely API key as Secret (modern, future-proof, no deprecation)
@@ -44,6 +45,80 @@ const iframelyKey = defineSecret('IFRAMELY_KEY')
 initializeApp()
 const messaging = getMessaging()
 const db = getFirestore()
+
+// v.95.0626: resolve daftar fcm_token dari `target` (server-side, lebih aman & skalabel).
+//   target: 'semua' | {type:'santri',id} | {type:'wa',wa} | {type:'lembaga',lembaga} | {type:'guru',nama}
+// v.100: normalisasi nama utk pembanding keluarga (dipakai guard fan-out same-wa di branch santri).
+function _normNama(s) {
+  return String(s || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '')
+}
+async function resolveTokensByTarget(target) {
+  const tokens = new Set()
+  const addTok = (snap) =>
+    snap.forEach((d) => {
+      const t = d.data().fcm_token
+      if (t) tokens.add(t)
+    })
+  try {
+    const t = target || 'semua'
+    if (t === 'semua' || t === 'all' || t.type === 'all') {
+      addTok(await db.collection('santri').where('fcm_token', '!=', null).get())
+      addTok(await db.collection('guru').where('fcm_token', '!=', null).get())
+    } else if (t === 'admin' || t.type === 'admin') {
+      // v.95.0626c: HANYA admin verifikator (admin/admin_keuangan/super_admin) — bukan wali pengirim
+      addTok(
+        await db
+          .collection('guru')
+          .where('role_sistem', 'in', ['admin', 'admin_keuangan', 'super_admin'])
+          .get()
+      )
+    } else if (t === 'santri_semua' || t.type === 'santri_all') {
+      // v.95.0626d: broadcast ke SEMUA wali/santri saja (tanpa guru) — utk notif tagihan bulanan
+      addTok(await db.collection('santri').where('fcm_token', '!=', null).get())
+    } else if (t.type === 'santri' && t.id) {
+      const sdoc = await db.collection('santri').doc(String(t.id)).get()
+      if (sdoc.exists) {
+        const sd = sdoc.data()
+        if (sd.fcm_token) tokens.add(sd.fcm_token)
+        // device wali bisa login sebagai anak lain (wa sama) -> ikutkan, TAPI hanya SE-KELUARGA
+        //   (nik_ayah / nama_ayah sama dgn santri target). Cegah notif bocor ke keluarga lain
+        //   yg nomor WA-nya kebetulan tertukar/sama. Tanpa data ayah -> konservatif (token sendiri saja).
+        if (sd.wa && String(sd.wa).trim().length >= 8) {
+          const nikAyah = _digitsOnly(sd.nik_ayah || (sd.ayah && sd.ayah.nik))
+          const namaAyah = _normNama(sd.nama_ayah || (sd.ayah && sd.ayah.nama))
+          if (nikAyah || namaAyah) {
+            const sib = await db.collection('santri').where('wa', '==', sd.wa).get()
+            sib.forEach((d) => {
+              const x = d.data()
+              if (!x.fcm_token) return
+              const xnik = _digitsOnly(x.nik_ayah || (x.ayah && x.ayah.nik))
+              const xnama = _normNama(x.nama_ayah || (x.ayah && x.ayah.nama))
+              if (
+                (nikAyah && xnik && xnik === nikAyah) ||
+                (namaAyah && xnama && xnama === namaAyah)
+              ) {
+                tokens.add(x.fcm_token)
+              }
+            })
+          }
+        }
+      }
+    } else if (t.type === 'wa' && t.wa && String(t.wa).trim().length >= 8) {
+      addTok(await db.collection('santri').where('wa', '==', t.wa).get())
+    } else if (t.type === 'lembaga' && t.lembaga) {
+      addTok(await db.collection('santri').where('lembaga', '==', t.lembaga).get())
+      addTok(await db.collection('santri').where('lembaga_sekolah', '==', t.lembaga).get())
+      addTok(await db.collection('guru').where('lembaga', '==', t.lembaga).get())
+    } else if (t.type === 'guru' && t.nama) {
+      addTok(await db.collection('guru').where('nama', '==', t.nama).get())
+    }
+  } catch (e) {
+    logger.warn('resolveTokensByTarget:', e?.message || e)
+  }
+  return [...tokens]
+}
 
 // ====================================================================
 // FUNCTION 1: NOTIFICATION DISPATCHER
@@ -67,29 +142,37 @@ exports.kirimNotifikasiMassal = onDocumentCreated(
       return
     }
 
-    const tokens = data.tokens || []
+    // v.95.0626: pakai tokens eksplisit kalau ada; kalau tidak, resolve dari `target` (server-side)
+    let tokens = Array.isArray(data.tokens) ? data.tokens.filter(Boolean) : []
+    if (tokens.length === 0) tokens = await resolveTokensByTarget(data.target)
     if (tokens.length === 0) {
       await snap.ref.update({ status: 'failed', error: 'No tokens' })
       return
     }
 
     // Build message
+    // v.100: teruskan `link` (utk tap->buka halaman) + stringify target (FCM data hanya boleh string,
+    //   target event individual berupa objek {type,id} -> kalau tak di-stringify, send GAGAL).
+    const _link = String(data.link || '/')
+    const _hashLink = '/#' + (_link.startsWith('#') ? _link.slice(1) : _link)
     const message = {
       notification: {
         title: data.judul || 'Mambaul Ulum',
         body: data.pesan || ''
       },
       data: {
-        target: data.target || 'semua',
+        target:
+          typeof data.target === 'string' ? data.target : JSON.stringify(data.target || 'semua'),
         sender: data.sender || 'Admin',
-        timestamp: data.timestamp || new Date().toISOString()
+        timestamp: data.timestamp || new Date().toISOString(),
+        link: _link
       },
       webpush: {
         notification: {
           icon: '/icon-192.png',
-          badge: '/icon-72.png'
+          badge: '/icon-192.png'
         },
-        fcmOptions: { link: '/' }
+        fcmOptions: { link: _hashLink }
       }
     }
 
@@ -152,6 +235,220 @@ exports.kirimNotifikasiMassal = onDocumentCreated(
     })
 
     logger.info(`Notif ${notifId}: ${sukses} sukses, ${gagal} gagal`)
+  }
+)
+
+// ====================================================================
+// v.95.0626 — AUTO-PUSH per event (enqueue ke notif_queue -> dikirim kirimNotifikasiMassal)
+// ====================================================================
+
+// Pengumuman baru (beranda_post) -> broadcast ke SEMUA.
+exports.onBerandaPostCreated = onDocumentCreated(
+  {
+    document: 'beranda_post/{id}',
+    region: 'asia-southeast2',
+    timeoutSeconds: 60,
+    memory: '256MiB'
+  },
+  async (event) => {
+    const p = event.data?.data()
+    if (!p) return
+    await db.collection('notif_queue').add({
+      judul: p.judul ? `Pengumuman: ${p.judul}` : 'Pengumuman Baru',
+      pesan: String(p.isi || p.judul || '').slice(0, 140),
+      target: 'semua',
+      link: '/posts',
+      sender: p.author || p.penulis || 'Admin',
+      status: 'pending',
+      timestamp: new Date().toISOString()
+    })
+  }
+)
+
+// Tagihan INDIVIDUAL baru -> push ke wali. Skip BULK (auto_generate/generate_khusus) biar tak flood.
+exports.onTagihanCreated = onDocumentCreated(
+  {
+    document: 'keuangan_tagihan/{id}',
+    region: 'asia-southeast2',
+    timeoutSeconds: 60,
+    memory: '256MiB'
+  },
+  async (event) => {
+    const t = event.data?.data()
+    if (!t || !t.santri_id) return
+    const sumber = String(t.sumber || '')
+    if (sumber === 'auto_generate' || sumber === 'generate_khusus') return // bulk -> jangan spam
+    // v.100: tagihan yang LAHIR sudah lunas (mis. bayar-di-muka via POS, dibayar di loket) jangan
+    //   kirim notif "Tagihan Baru" — wali sudah membayarnya langsung, notif "tagihan baru" menyesatkan.
+    if (String(t.status || '').toLowerCase() === 'lunas') return
+    const rp = new Intl.NumberFormat('id-ID').format(Number(t.nominal || 0))
+    await db.collection('notif_queue').add({
+      judul: 'Tagihan Baru',
+      pesan: `${t.santri_nama ? t.santri_nama + ' · ' : ''}${t.kategori || 'Tagihan'}${t.periode ? ' · ' + t.periode : ''} · Rp ${rp}`,
+      target: { type: 'santri', id: String(t.santri_id) },
+      link: '/tagihan',
+      sender: 'Sistem',
+      status: 'pending',
+      timestamp: new Date().toISOString()
+    })
+  }
+)
+
+// Pembayaran transfer terverifikasi -> push ke wali (saat status berubah jadi 'verified').
+exports.onPembayaranVerified = onDocumentUpdated(
+  {
+    document: 'pembayaran_transfer_pending/{id}',
+    region: 'asia-southeast2',
+    timeoutSeconds: 60,
+    memory: '256MiB'
+  },
+  async (event) => {
+    const before = event.data?.before?.data() || {}
+    const after = event.data?.after?.data() || {}
+    if (after.status !== 'verified' || before.status === after.status) return
+    if (!after.santri_id) return
+    const rp = new Intl.NumberFormat('id-ID').format(Number(after.nominal || 0))
+    await db.collection('notif_queue').add({
+      judul: 'Pembayaran Terverifikasi',
+      pesan: `${after.santri_nama ? after.santri_nama + ' · ' : ''}${after.kategori || 'Pembayaran'} Rp ${rp} sudah diverifikasi. Terima kasih.`,
+      target: { type: 'santri', id: String(after.santri_id) },
+      link: '/tagihan',
+      sender: 'Admin',
+      status: 'pending',
+      timestamp: new Date().toISOString()
+    })
+  }
+)
+
+// Kenaikan jilid/kelas/khotam (riwayat_kenaikan) -> push "tertarget" ke wali (event, bukan input massal).
+exports.onKenaikanCreated = onDocumentCreated(
+  {
+    document: 'riwayat_kenaikan/{id}',
+    region: 'asia-southeast2',
+    timeoutSeconds: 60,
+    memory: '256MiB'
+  },
+  async (event) => {
+    const r = event.data?.data()
+    if (!r || !r.santri_id) return
+    const tujuan = `${r.ke_lembaga || ''} ${r.ke_kelas || ''}`.trim()
+    const _nm = r.santri_nama ? String(r.santri_nama) : 'Ananda'
+    await db.collection('notif_queue').add({
+      judul: 'Selamat, Naik Tingkat! 🎉',
+      pesan: tujuan ? `${_nm} naik ke ${tujuan}.` : `${_nm} telah naik tingkat. Selamat!`,
+      target: { type: 'santri', id: String(r.santri_id) },
+      link: '/capaian-prestasi',
+      sender: 'Pondok',
+      status: 'pending',
+      timestamp: new Date().toISOString()
+    })
+  }
+)
+
+// v.100: Rekap prestasi baru (notif_prestasi) -> push "tertarget" ke wali.
+//   Doc id = np_<santriId>_<YYYY-MM> (1 per santri/bulan) -> onCreate = 1x/bulan, tak spam
+//   (re-impor di bulan sama = update, tak memicu push lagi).
+exports.onPrestasiCreated = onDocumentCreated(
+  {
+    document: 'notif_prestasi/{id}',
+    region: 'asia-southeast2',
+    timeoutSeconds: 60,
+    memory: '256MiB'
+  },
+  async (event) => {
+    const p = event.data?.data()
+    if (!p || !p.santri_id) return
+    const nm = p.santri_nama ? String(p.santri_nama) : 'Ananda'
+    const tot = String(p.total || '').trim()
+    await db.collection('notif_queue').add({
+      judul: 'Prestasi Diperbarui',
+      pesan: tot
+        ? `${nm} · nilai prestasi bulan ini: ${tot}`
+        : `${nm} · rekap prestasi bulan ini sudah dinilai.`,
+      target: { type: 'santri', id: String(p.santri_id) },
+      link: '/capaian-prestasi',
+      sender: 'Pondok',
+      status: 'pending',
+      timestamp: new Date().toISOString()
+    })
+  }
+)
+
+// v.100: Tes Kenaikan Qiraati — ajuan baru (status 'diajukan') -> push ke Kepala/PJ lembaga.
+//   kepala_nama di-resolve di app saat ajukan (target type 'guru' by nama).
+exports.onTesKenaikanCreated = onDocumentCreated(
+  {
+    document: 'tes_kenaikan/{id}',
+    region: 'asia-southeast2',
+    timeoutSeconds: 60,
+    memory: '256MiB'
+  },
+  async (event) => {
+    const t = event.data?.data()
+    if (!t || t.status !== 'diajukan' || !t.kepala_nama) return // tanpa kepala teridentifikasi -> hanya in-app
+    const nm = t.nama_cache ? String(t.nama_cache) : 'Santri'
+    await db.collection('notif_queue').add({
+      judul: 'Ajuan Tes Kenaikan',
+      pesan: `${nm} diajukan tes${t.target ? ' ke ' + t.target : ''}${t.guru_nama ? ' oleh ' + t.guru_nama : ''}.`,
+      target: { type: 'guru', nama: String(t.kepala_nama) },
+      link: '/tes-kenaikan',
+      sender: 'Pondok',
+      status: 'pending',
+      timestamp: new Date().toISOString()
+    })
+  }
+)
+
+// v.100: Hasil tes diputuskan kepala -> LULUS push Wali + Guru; tidak lulus/ditolak push Guru saja.
+//   Guard: hanya saat status berubah & ada `penguji` (skip pembatalan pengaju yg tak set penguji).
+exports.onTesKenaikanDecided = onDocumentUpdated(
+  {
+    document: 'tes_kenaikan/{id}',
+    region: 'asia-southeast2',
+    timeoutSeconds: 60,
+    memory: '256MiB'
+  },
+  async (event) => {
+    const before = event.data?.before?.data() || {}
+    const after = event.data?.after?.data() || {}
+    if (before.status === after.status || !after.penguji) return // tak berubah / batal pengaju -> skip
+    const nm = after.nama_cache ? String(after.nama_cache) : 'Ananda'
+    const tgt = after.target || 'tingkat berikutnya'
+    if (after.status === 'lulus') {
+      if (after.santri_id) {
+        await db.collection('notif_queue').add({
+          judul: 'Lulus Tes Kenaikan! 🎉',
+          pesan: `${nm} dinyatakan LULUS dan siap naik ke ${tgt}.`,
+          target: { type: 'santri', id: String(after.santri_id) },
+          link: '/capaian-prestasi',
+          sender: 'Pondok',
+          status: 'pending',
+          timestamp: new Date().toISOString()
+        })
+      }
+      if (after.guru_nama) {
+        await db.collection('notif_queue').add({
+          judul: 'Hasil Tes: Lulus',
+          pesan: `${nm} LULUS — siap naik ke ${tgt}.`,
+          target: { type: 'guru', nama: String(after.guru_nama) },
+          link: '/tes-kenaikan',
+          sender: 'Pondok',
+          status: 'pending',
+          timestamp: new Date().toISOString()
+        })
+      }
+    } else if ((after.status === 'tidak_lulus' || after.status === 'ditolak') && after.guru_nama) {
+      const lbl = after.status === 'tidak_lulus' ? 'Belum lulus' : 'Ditolak'
+      await db.collection('notif_queue').add({
+        judul: `Hasil Tes: ${lbl}`,
+        pesan: `${nm} → ${lbl}${after.catatan_hasil ? ' · ' + after.catatan_hasil : ''}.`,
+        target: { type: 'guru', nama: String(after.guru_nama) },
+        link: '/tes-kenaikan',
+        sender: 'Pondok',
+        status: 'pending',
+        timestamp: new Date().toISOString()
+      })
+    }
   }
 )
 
@@ -449,5 +746,1225 @@ exports.cleanupAuditLog = onSchedule(
       `[cleanupAuditLog] SELESAI. Total ${totalDeleted} record dihapus (>${RETENSI_HARI} hari).`
     )
     return null
+  }
+)
+
+// ====================================================================
+// v.07.0626 (Exec D Opsi 2): findUserByLogin — lookup user SERVER-SIDE (Admin SDK)
+//   Tujuan: client tak perlu baca/enumerasi koleksi guru/santri -> PII santri (NIK/ortu)
+//   tak world-readable. Port logika persis dari client findUserByLoginInput.
+//   Response PII di-STRIP (cuma kirim field yang dibutuhkan login). { user: {...}|null }.
+//   Client tetap punya FALLBACK direct-read kalau function gagal (login tak patah).
+// ====================================================================
+// v.100f: WAJIB strip 'password' (kredensial plaintext) + 'linked_email' (email Google PII).
+//   Sebelumnya bocor: GET findUserByLogin?input=<nama/NIS/WA> balas password plaintext.
+//   Client TIDAK butuh password dari sini (lazy-migration akun baru selalu default '1234';
+//   akun ber-password lain pasti sudah punya akun Auth → sign-in duluan, tak masuk lazy-migration).
+const _STRIP_PII = [
+  'password',
+  'linked_email',
+  'nik',
+  'no_kk',
+  'ayah',
+  'ibu',
+  'nama_ayah',
+  'nik_ayah',
+  'pekerjaan_ayah',
+  'pendidikan_ayah',
+  'hp_ayah',
+  'nama_ibu',
+  'nik_ibu',
+  'pekerjaan_ibu',
+  'pendidikan_ibu',
+  'hp_ibu',
+  'alamat',
+  'alamat_dusun',
+  'alamat_rt',
+  'alamat_rw',
+  'alamat_desa',
+  'alamat_kecamatan',
+  'alamat_kabupaten',
+  'alamat_provinsi',
+  'tempat_lahir',
+  'nama_panggilan',
+  'asal_sekolah',
+  'penghasilan_ortu',
+  'catatan_riwayat_pribadi',
+  'riwayat'
+]
+function _stripPII(o) {
+  const c = { ...o }
+  for (const k of _STRIP_PII) delete c[k]
+  return c
+}
+
+exports.findUserByLogin = onRequest(
+  { region: 'us-central1', timeoutSeconds: 20, memory: '256MiB', cors: true },
+  async (req, res) => {
+    try {
+      const input = String(
+        (req.query && req.query.input) || (req.body && req.body.input) || ''
+      ).trim()
+      if (!input) {
+        res.json({ user: null })
+        return
+      }
+      const u = input
+      const uLower = u.toLowerCase()
+      const uDigits = u.replace(/\D/g, '')
+      const fdb = getFirestore()
+
+      let adminUser = 'adminmu'
+      try {
+        const ws = await fdb.collection('settings').doc('web').get()
+        if (ws.exists && ws.data() && ws.data().adminUsername) adminUser = ws.data().adminUsername
+      } catch (e) {
+        /* default adminmu */
+      }
+      if (uLower === 'adminmu' || uLower === String(adminUser).toLowerCase()) {
+        res.json({
+          user: {
+            source: 'admin',
+            data: { id: 'admin', username: adminUser },
+            authKey: String(adminUser).toLowerCase()
+          }
+        })
+        return
+      }
+
+      let guruDoc = null
+      let gq = await fdb.collection('guru').where('username', '==', u).limit(1).get()
+      if (!gq.empty) guruDoc = gq.docs[0]
+      if (!guruDoc && uDigits.length >= 8) {
+        gq = await fdb.collection('guru').where('wa', '==', uDigits).limit(1).get()
+        if (!gq.empty) guruDoc = gq.docs[0]
+      }
+      if (!guruDoc && /[a-z]/i.test(u)) {
+        const all = await fdb.collection('guru').get()
+        guruDoc = all.docs.find((d) => String(d.data().username || '').toLowerCase() === uLower)
+      }
+      if (guruDoc) {
+        const g = { id: guruDoc.id, ...guruDoc.data() }
+        const wa = String(g.wa || '').replace(/\D/g, '')
+        const authKey = wa.length >= 8 ? wa : g.username || String(g.id)
+        res.json({ user: { source: 'guru', data: _stripPII(g), authKey } })
+        return
+      }
+
+      let santriDoc = null
+      let sq = await fdb.collection('santri').where('username', '==', u).limit(1).get()
+      if (!sq.empty) santriDoc = sq.docs[0]
+      if (!santriDoc && uDigits.length >= 8) {
+        sq = await fdb.collection('santri').where('wa', '==', uDigits).limit(1).get()
+        if (!sq.empty) santriDoc = sq.docs[0]
+      }
+      if (!santriDoc) {
+        sq = await fdb.collection('santri').where('nis', '==', u).limit(1).get()
+        if (!sq.empty) santriDoc = sq.docs[0]
+      }
+      if (!santriDoc && /[a-z]/i.test(u)) {
+        const all = await fdb.collection('santri').get()
+        santriDoc = all.docs.find((d) => String(d.data().username || '').toLowerCase() === uLower)
+      }
+      if (santriDoc) {
+        const s = { id: santriDoc.id, ...santriDoc.data() }
+        const wa = String(s.wa || '').replace(/\D/g, '')
+        const authKey = wa.length >= 8 ? wa : s.username || s.nis || String(s.id)
+        res.json({ user: { source: 'santri', data: _stripPII(s), authKey } })
+        return
+      }
+
+      res.json({ user: null })
+    } catch (e) {
+      logger.error('[findUserByLogin] error', e)
+      res.status(500).json({ error: String((e && e.message) || e) })
+    }
+  }
+)
+
+// ====================================================================
+// v.100g (security): verifyAdminPassword — validasi sandi admin SERVER-SIDE.
+//   Tujuan: tutup paparan `adminPassword` yang sebelumnya public-read di
+//   settings (siapa pun ber-apiKey bisa baca sandi admin → login super_admin).
+//   Admin SDK bypass rules → tetap baca settings/admin walau rules read:false.
+//   Mode:
+//     - POST { password } / GET ?password=  → { ok: boolean }
+//     - GET ?migrate=1 (tanpa sandi)        → pindahkan adminPassword dari
+//       settings/general|web (publik) ke settings/admin.password, lalu HAPUS
+//       dari doc publik. Idempoten. Jalankan SEKALI setelah client baru live.
+//   Sumber sandi (prioritas): settings/admin → settings/general → settings/web → '1234'.
+// ====================================================================
+exports.verifyAdminPassword = onRequest(
+  { region: 'us-central1', timeoutSeconds: 20, memory: '256MiB', cors: true },
+  async (req, res) => {
+    try {
+      const [adminSnap, generalSnap, webSnap] = await Promise.all([
+        db
+          .collection('settings')
+          .doc('admin')
+          .get()
+          .catch(() => null),
+        db
+          .collection('settings')
+          .doc('general')
+          .get()
+          .catch(() => null),
+        db
+          .collection('settings')
+          .doc('web')
+          .get()
+          .catch(() => null)
+      ])
+      const adminData = (adminSnap && adminSnap.exists && adminSnap.data()) || {}
+      const generalData = (generalSnap && generalSnap.exists && generalSnap.data()) || {}
+      const webData = (webSnap && webSnap.exists && webSnap.data()) || {}
+
+      const fromPublic = generalData.adminPassword || webData.adminPassword || null
+      const stored = adminData.password || adminData.adminPassword || fromPublic || '1234'
+
+      const isMigrate =
+        (req.query && req.query.migrate === '1') || (req.body && req.body.migrate === true)
+      if (isMigrate) {
+        // 1) seed settings/admin.password kalau belum ada
+        const adminHasPass = !!(adminData.password || adminData.adminPassword)
+        if (!adminHasPass && fromPublic) {
+          await db
+            .collection('settings')
+            .doc('admin')
+            .set({ password: fromPublic }, { merge: true })
+        }
+        // 2) hapus adminPassword plaintext dari doc PUBLIK (web/general)
+        const ops = []
+        if ('adminPassword' in generalData) {
+          ops.push(
+            db.collection('settings').doc('general').update({ adminPassword: FieldValue.delete() })
+          )
+        }
+        if ('adminPassword' in webData) {
+          ops.push(
+            db.collection('settings').doc('web').update({ adminPassword: FieldValue.delete() })
+          )
+        }
+        await Promise.all(ops)
+        res.json({ migrated: true, seeded: !adminHasPass && !!fromPublic, cleaned: ops.length })
+        return
+      }
+
+      const password = String(
+        (req.body && req.body.password) || (req.query && req.query.password) || ''
+      )
+      if (!password) {
+        res.status(400).json({ ok: false, error: 'no-password' })
+        return
+      }
+      res.json({ ok: password === String(stored) })
+    } catch (e) {
+      logger.error('[verifyAdminPassword] error', e)
+      res.status(500).json({ ok: false, error: String((e && e.message) || e) })
+    }
+  }
+)
+
+// ====================================================================
+// v.102 (security): stripPlaintextPasswords — HAPUS field `password` plaintext dari
+//   SEMUA doc koleksi `santri` + `guru`. Legacy: login kini pakai Firebase Auth
+//   (sandi awal '1234' via lazy-migration), field Firestore tak lagi dibaca utk auth.
+//   Admin SDK bypass rules → tetap bisa update walau read/write rule ketat. Idempoten.
+//   Guard: ?password=<sandi admin> (divalidasi via settings/admin, sama spt verifyAdminPassword).
+//   Mode: GET/POST { password } → { ok, stripped: { santri, guru } }.
+//   DEPLOY: firebase deploy --only functions:stripPlaintextPasswords
+//   JALANKAN SEKALI: GET .../stripPlaintextPasswords?password=<sandiadmin>
+// ====================================================================
+exports.stripPlaintextPasswords = onRequest(
+  { region: 'us-central1', timeoutSeconds: 120, memory: '256MiB', cors: true },
+  async (req, res) => {
+    try {
+      const password = String(
+        (req.body && req.body.password) || (req.query && req.query.password) || ''
+      )
+      const adminSnap = await db
+        .collection('settings')
+        .doc('admin')
+        .get()
+        .catch(() => null)
+      const adminData = (adminSnap && adminSnap.exists && adminSnap.data()) || {}
+      const stored = adminData.password || adminData.adminPassword || '1234'
+      if (!password || password !== String(stored)) {
+        res.status(403).json({ ok: false, error: 'forbidden' })
+        return
+      }
+      const result = {}
+      for (const coll of ['santri', 'guru']) {
+        const snap = await db.collection(coll).get()
+        let stripped = 0
+        let batch = db.batch()
+        let n = 0
+        for (const docSnap of snap.docs) {
+          if ('password' in docSnap.data()) {
+            batch.update(docSnap.ref, { password: FieldValue.delete() })
+            stripped++
+            n++
+            if (n >= 400) {
+              await batch.commit()
+              batch = db.batch()
+              n = 0
+            }
+          }
+        }
+        if (n > 0) await batch.commit()
+        result[coll] = stripped
+      }
+      res.json({ ok: true, stripped: result })
+    } catch (e) {
+      logger.error('[stripPlaintextPasswords] error', e)
+      res.status(500).json({ ok: false, error: String((e && e.message) || e) })
+    }
+  }
+)
+
+// ====================================================================
+// v.102 S4a (RBAC): syncUserClaims — set custom claim `role` di token Firebase Auth
+//   (enforce per-role di firestore.rules = S4b). Verifikasi ID token pemanggil
+//   (Authorization: Bearer <token>), tentukan role server-side:
+//     - email = adminUsername/adminmu  -> 'super_admin'
+//     - doc guru (firebase_uid == uid).role_sistem -> super_admin|admin|admin_keuangan|guru
+//     - doc santri (firebase_uid == uid) -> 'santri'
+//   setCustomUserClaims(uid, {role}). Idempoten; client lalu getIdToken(true).
+//   DEPLOY: firebase deploy --only functions:syncUserClaims
+// ====================================================================
+exports.syncUserClaims = onRequest(
+  { region: 'us-central1', timeoutSeconds: 20, memory: '256MiB', cors: true },
+  async (req, res) => {
+    try {
+      const authz = String(req.headers.authorization || req.headers.Authorization || '')
+      const m = authz.match(/^Bearer\s+(.+)$/i)
+      if (!m) {
+        res.status(401).json({ ok: false, error: 'no-token' })
+        return
+      }
+      let decoded
+      try {
+        decoded = await getAuth().verifyIdToken(m[1])
+      } catch (e) {
+        res.status(401).json({ ok: false, error: 'invalid-token' })
+        return
+      }
+      const uid = decoded.uid
+      const email = String(decoded.email || '').toLowerCase()
+      const localPart = email.split('@')[0]
+
+      let adminUser = 'adminmu'
+      try {
+        const ws = await db.collection('settings').doc('web').get()
+        if (ws.exists && ws.data() && ws.data().adminUsername) {
+          adminUser = String(ws.data().adminUsername).toLowerCase()
+        }
+      } catch (e) {
+        /* default adminmu */
+      }
+
+      // localPart = authKey email (= wa digits ATAU username ATAU nis ATAU id).
+      const isDigits = /^\d{8,}$/.test(localPart)
+      async function _findIn(coll) {
+        // robust: firebase_uid -> username -> (nis utk santri) -> wa
+        let q = await db.collection(coll).where('firebase_uid', '==', uid).limit(1).get()
+        if (!q.empty) return q.docs[0]
+        q = await db.collection(coll).where('username', '==', localPart).limit(1).get()
+        if (!q.empty) return q.docs[0]
+        if (coll === 'santri') {
+          q = await db.collection(coll).where('nis', '==', localPart).limit(1).get()
+          if (!q.empty) return q.docs[0]
+        }
+        if (isDigits) {
+          q = await db.collection(coll).where('wa', '==', localPart).limit(1).get()
+          if (!q.empty) return q.docs[0]
+        }
+        return null
+      }
+
+      let role = null
+      let supervisi = false
+      if (localPart === adminUser || localPart === 'adminmu' || localPart === 'admin') {
+        role = 'super_admin'
+      } else {
+        const gdoc = await _findIn('guru')
+        if (gdoc) {
+          const data = gdoc.data()
+          const rs = String(data.role_sistem || 'guru')
+          role = ['super_admin', 'admin', 'admin_keuangan'].includes(rs) ? rs : 'guru'
+          // claim supervisi dari jabatan (Direktur/Supervisor) — utk rule supervisi_catatan
+          supervisi = /direktur|supervisor|supervisi/i.test(String(data.jabatan || ''))
+          // tag firebase_uid server-side (Admin SDK) → utk rule ownDoc (self-edit profil)
+          if (data.firebase_uid !== uid) {
+            try {
+              await gdoc.ref.update({ firebase_uid: uid })
+            } catch (e) {
+              /* best-effort */
+            }
+          }
+        } else {
+          const sdoc = await _findIn('santri')
+          if (sdoc) {
+            role = 'santri'
+            if (sdoc.data().firebase_uid !== uid) {
+              try {
+                await sdoc.ref.update({ firebase_uid: uid })
+              } catch (e) {
+                /* best-effort */
+              }
+            }
+          }
+        }
+      }
+
+      if (!role) {
+        // diagnosa sementara (admin-gated, pre-launch): tampilkan identitas yg tak ketemu
+        res.status(403).json({ ok: false, error: 'role-not-found', uid, email, localPart })
+        return
+      }
+      const claims = { role }
+      if (supervisi) claims.supervisi = true
+      await getAuth().setCustomUserClaims(uid, claims)
+      res.json({ ok: true, role, supervisi })
+    } catch (e) {
+      logger.error('[syncUserClaims] error', e)
+      res.status(500).json({ ok: false, error: String((e && e.message) || e) })
+    }
+  }
+)
+
+// ====================================================================
+// v.105 (S1 lanjut): resetUserPassword — reset sandi guru/santri ke '1234'
+//   LEWAT Firebase Auth (Admin SDK), BUKAN tulis field `password` plaintext ke
+//   Firestore. Field `password` itu vestigial (di-strip findUserByLogin, TAK
+//   dipakai login) → tulis '1234' ke situ = no-op utk user yg sudah migrasi
+//   (sandi asli di Firebase Auth). Fungsi ini reset sandi Auth yang benar +
+//   bersihkan sisa field plaintext.
+//   GUARD: pemanggil WAJIB super_admin (verify ID token + claim role).
+//   Target di-resolve via firebase_uid (utama) / email authKey@ammu.local (fallback).
+//   DEPLOY: firebase deploy --only functions:resetUserPassword
+// ====================================================================
+const _RESET_AUTH_DOMAIN = '@ammu.local'
+const _RESET_LEGACY_DOMAINS = ['@portal-mu.local']
+const _RESET_DEFAULT_PASS = 'mu_auth_1234' // = toAuthPassword('1234') di client
+function _resetSanitizeLocalPart(input) {
+  return String(input || '').toLowerCase().replace(/[^a-z0-9._-]/g, '')
+}
+exports.resetUserPassword = onRequest(
+  { region: 'us-central1', timeoutSeconds: 30, memory: '256MiB', cors: true },
+  async (req, res) => {
+    try {
+      // 1) Pemanggil WAJIB super_admin
+      const authz = String(req.headers.authorization || req.headers.Authorization || '')
+      const m = authz.match(/^Bearer\s+(.+)$/i)
+      if (!m) { res.status(401).json({ ok: false, error: 'no-token' }); return }
+      let decoded
+      try { decoded = await getAuth().verifyIdToken(m[1]) }
+      catch (e) { res.status(401).json({ ok: false, error: 'invalid-token' }); return }
+      if (decoded.role !== 'super_admin') {
+        res.status(403).json({ ok: false, error: 'forbidden' })
+        return
+      }
+
+      // 2) Validasi input
+      const collection = String((req.body && req.body.collection) || '')
+      const docId = String((req.body && req.body.docId) || '')
+      if (!['santri', 'guru'].includes(collection) || !docId) {
+        res.status(400).json({ ok: false, error: 'bad-input' })
+        return
+      }
+
+      // 3) Baca doc target
+      const ref = db.collection(collection).doc(docId)
+      const snap = await ref.get()
+      if (!snap.exists) { res.status(404).json({ ok: false, error: 'not-found' }); return }
+      const data = snap.data() || {}
+
+      // 4) Resolve akun Auth target → reset password ke '1234'
+      let didResetAuth = false
+      let targetUid = data.firebase_uid || null
+      if (!targetUid) {
+        const wa = String(data.wa || '').replace(/\D/g, '')
+        const authKey = wa.length >= 8
+          ? wa
+          : (data.username || (collection === 'santri' ? data.nis : '') || docId)
+        const clean = _resetSanitizeLocalPart(authKey)
+        if (clean) {
+          const emails = [_RESET_AUTH_DOMAIN, ..._RESET_LEGACY_DOMAINS].map((d) => clean + d)
+          for (const em of emails) {
+            try { const u = await getAuth().getUserByEmail(em); targetUid = u.uid; break }
+            catch (e) { /* coba domain lain */ }
+          }
+        }
+      }
+      if (targetUid) {
+        try {
+          await getAuth().updateUser(targetUid, { password: _RESET_DEFAULT_PASS })
+          didResetAuth = true
+        } catch (e) {
+          // belum ada akun Auth → lazy-migration default '1234' saat login pertama
+          logger.warn('[resetUserPassword] updateUser gagal:', e && e.message)
+        }
+      }
+
+      // 5) Hapus sisa field password plaintext (vestigial) di doc
+      try { await ref.update({ password: FieldValue.delete() }) } catch (e) { /* best-effort */ }
+
+      res.json({ ok: true, didResetAuth })
+    } catch (e) {
+      logger.error('[resetUserPassword] error', e)
+      res.status(500).json({ ok: false, error: String((e && e.message) || e) })
+    }
+  }
+)
+
+// ====================================================================
+// v.102 A2 (ANALITIK): analyticsQuery — jembatan App -> BigQuery.
+//   App TAK query BigQuery langsung (butuh kredensial). Fungsi ini: verifikasi ID token,
+//   wajib role admin/super_admin, jalankan SQL WHITELIST (client cuma kirim nama laporan
+//   + filter terbatas, BUKAN SQL bebas). Sumber: dataset firestore_export (stream A1).
+//   DEPLOY: firebase deploy --only functions:analyticsQuery
+//   (deploy meng-install dep @google-cloud/bigquery otomatis di cloud build)
+// ====================================================================
+const _BQ_PROJECT = 'portal-mambaul-ulum'
+const _BQ_DS = 'firestore_export'
+let _bqClient = null
+function _bq() {
+  if (!_bqClient) {
+    const { BigQuery } = require('@google-cloud/bigquery')
+    _bqClient = new BigQuery()
+  }
+  return _bqClient
+}
+// Whitelist laporan (SQL ditetapkan server; param di-parameterize, anti-injection).
+const _ANALYTICS = {
+  // ---- SANTRI ----
+  santri_per_lembaga: {
+    sql:
+      "SELECT IFNULL(JSON_VALUE(data,'$.lembaga'),'(tanpa lembaga)') AS label, COUNT(*) AS value " +
+      'FROM `' + _BQ_PROJECT + '.' + _BQ_DS + '.santri_raw_latest` ' +
+      "WHERE data IS NOT NULL AND IFNULL(JSON_VALUE(data,'$.aktif'),'true') != 'false' " +
+      'GROUP BY label ORDER BY value DESC',
+    params: []
+  },
+  santri_mukim: {
+    sql:
+      "SELECT CASE WHEN JSON_VALUE(data,'$.is_mukim')='true' THEN 'Mukim' ELSE 'Non-mukim' END AS label, COUNT(*) AS value " +
+      'FROM `' + _BQ_PROJECT + '.' + _BQ_DS + '.santri_raw_latest` ' +
+      "WHERE data IS NOT NULL AND IFNULL(JSON_VALUE(data,'$.aktif'),'true') != 'false' " +
+      'GROUP BY label ORDER BY label',
+    params: []
+  },
+  // ---- KEUANGAN (buku induk) ----
+  keuangan_ringkas: {
+    sql:
+      "SELECT SUM(CASE WHEN JSON_VALUE(data,'$.tipe')='masuk' THEN CAST(JSON_VALUE(data,'$.nominal') AS NUMERIC) ELSE 0 END) AS masuk, " +
+      "SUM(CASE WHEN JSON_VALUE(data,'$.tipe')='keluar' THEN CAST(JSON_VALUE(data,'$.nominal') AS NUMERIC) ELSE 0 END) AS keluar " +
+      'FROM `' + _BQ_PROJECT + '.' + _BQ_DS + '.keuangan_buku_induk_raw_latest` ' +
+      'WHERE data IS NOT NULL',
+    params: []
+  },
+  keuangan_bulanan: {
+    sql:
+      "SELECT FORMAT_DATE('%Y-%m', SAFE.PARSE_DATE('%Y-%m-%d', JSON_VALUE(data,'$.tanggal'))) AS bulan, " +
+      "SUM(CASE WHEN JSON_VALUE(data,'$.tipe')='masuk' THEN CAST(JSON_VALUE(data,'$.nominal') AS NUMERIC) ELSE 0 END) AS masuk, " +
+      "SUM(CASE WHEN JSON_VALUE(data,'$.tipe')='keluar' THEN CAST(JSON_VALUE(data,'$.nominal') AS NUMERIC) ELSE 0 END) AS keluar " +
+      'FROM `' + _BQ_PROJECT + '.' + _BQ_DS + '.keuangan_buku_induk_raw_latest` ' +
+      "WHERE data IS NOT NULL AND SAFE.PARSE_DATE('%Y-%m-%d', JSON_VALUE(data,'$.tanggal')) BETWEEN DATE(@year,1,1) AND DATE(@year,12,31) " +
+      'GROUP BY bulan ORDER BY bulan',
+    params: [{ name: 'year', type: 'INT64', from: 'year', def: () => new Date().getFullYear() }]
+  },
+  // ---- AKADEMIK ----
+  akademik_tes_status: {
+    sql:
+      "SELECT IFNULL(JSON_VALUE(data,'$.status'),'(tanpa status)') AS label, COUNT(*) AS value " +
+      'FROM `' + _BQ_PROJECT + '.' + _BQ_DS + '.tes_kenaikan_raw_latest` ' +
+      'WHERE data IS NOT NULL GROUP BY label ORDER BY value DESC',
+    params: []
+  },
+  akademik_rapor_per_lembaga: {
+    sql:
+      "SELECT IFNULL(JSON_VALUE(data,'$.lembaga'),'(tanpa lembaga)') AS label, COUNT(*) AS value " +
+      'FROM `' + _BQ_PROJECT + '.' + _BQ_DS + '.rapor_semester_raw_latest` ' +
+      'WHERE data IS NOT NULL GROUP BY label ORDER BY value DESC',
+    params: []
+  },
+  // ---- ABSENSI ----
+  absensi_ngaji_bulanan: {
+    sql:
+      "SELECT JSON_VALUE(data,'$.periode') AS bulan, " +
+      "SUM(SAFE_CAST(JSON_VALUE(data,'$.hadir') AS INT64)) AS hadir, " +
+      "SUM(SAFE_CAST(JSON_VALUE(data,'$.sakit') AS INT64)) AS sakit, " +
+      "SUM(SAFE_CAST(JSON_VALUE(data,'$.izin') AS INT64)) AS izin, " +
+      "SUM(SAFE_CAST(JSON_VALUE(data,'$.alpa') AS INT64)) AS alpa " +
+      'FROM `' + _BQ_PROJECT + '.' + _BQ_DS + '.absensi_santri_ngaji_bulanan_raw_latest` ' +
+      "WHERE data IS NOT NULL AND SUBSTR(JSON_VALUE(data,'$.periode'),1,4) = CAST(@year AS STRING) " +
+      'GROUP BY bulan ORDER BY bulan',
+    params: [{ name: 'year', type: 'INT64', from: 'year', def: () => new Date().getFullYear() }]
+  },
+  absensi_sekolah_bulanan: {
+    sql:
+      "SELECT JSON_VALUE(data,'$.periode') AS bulan, " +
+      "SUM(SAFE_CAST(JSON_VALUE(data,'$.hadir') AS INT64)) AS hadir, " +
+      "SUM(SAFE_CAST(JSON_VALUE(data,'$.sakit') AS INT64)) AS sakit, " +
+      "SUM(SAFE_CAST(JSON_VALUE(data,'$.izin') AS INT64)) AS izin, " +
+      "SUM(SAFE_CAST(JSON_VALUE(data,'$.alpa') AS INT64)) AS alpa " +
+      'FROM `' + _BQ_PROJECT + '.' + _BQ_DS + '.absensi_santri_sekolah_bulanan_raw_latest` ' +
+      "WHERE data IS NOT NULL AND SUBSTR(JSON_VALUE(data,'$.periode'),1,4) = CAST(@year AS STRING) " +
+      'GROUP BY bulan ORDER BY bulan',
+    params: [{ name: 'year', type: 'INT64', from: 'year', def: () => new Date().getFullYear() }]
+  },
+  // ---- PEGAWAI ----
+  pegawai_per_lembaga: {
+    sql:
+      "SELECT IFNULL(JSON_VALUE(data,'$.lembaga'),'(tanpa lembaga)') AS label, COUNT(*) AS value " +
+      'FROM `' + _BQ_PROJECT + '.' + _BQ_DS + '.guru_raw_latest` ' +
+      'WHERE data IS NOT NULL GROUP BY label ORDER BY value DESC',
+    params: []
+  },
+  pegawai_per_jabatan: {
+    sql:
+      "SELECT IFNULL(JSON_VALUE(data,'$.jabatan'),'(tanpa jabatan)') AS label, COUNT(*) AS value " +
+      'FROM `' + _BQ_PROJECT + '.' + _BQ_DS + '.guru_raw_latest` ' +
+      'WHERE data IS NOT NULL GROUP BY label ORDER BY value DESC',
+    params: []
+  },
+  pegawai_gaji_bulanan: {
+    sql:
+      "SELECT JSON_VALUE(data,'$.periode') AS bulan, " +
+      "SUM(SAFE_CAST(JSON_VALUE(data,'$.total_pemasukan') AS NUMERIC) - IFNULL(SAFE_CAST(JSON_VALUE(data,'$.total_potongan') AS NUMERIC),0)) AS bersih " +
+      'FROM `' + _BQ_PROJECT + '.' + _BQ_DS + '.keuangan_gaji_raw_latest` ' +
+      "WHERE data IS NOT NULL AND SUBSTR(JSON_VALUE(data,'$.periode'),1,4) = CAST(@year AS STRING) " +
+      'GROUP BY bulan ORDER BY bulan',
+    params: [{ name: 'year', type: 'INT64', from: 'year', def: () => new Date().getFullYear() }]
+  }
+}
+
+exports.analyticsQuery = onRequest(
+  { region: 'us-central1', timeoutSeconds: 60, memory: '512MiB', cors: true },
+  async (req, res) => {
+    try {
+      const authz = String(req.headers.authorization || req.headers.Authorization || '')
+      const m = authz.match(/^Bearer\s+(.+)$/i)
+      if (!m) {
+        res.status(401).json({ ok: false, error: 'no-token' })
+        return
+      }
+      let decoded
+      try {
+        decoded = await getAuth().verifyIdToken(m[1])
+      } catch (e) {
+        res.status(401).json({ ok: false, error: 'invalid-token' })
+        return
+      }
+      const role = decoded.role || ''
+      if (!['super_admin', 'admin'].includes(role)) {
+        res.status(403).json({ ok: false, error: 'forbidden' })
+        return
+      }
+
+      const name = String((req.query && req.query.report) || (req.body && req.body.report) || '')
+      const rep = _ANALYTICS[name]
+      if (!rep) {
+        res.status(400).json({ ok: false, error: 'unknown-report' })
+        return
+      }
+
+      const params = {}
+      const types = {}
+      for (const p of rep.params || []) {
+        let v = (req.query && req.query[p.from]) != null ? req.query[p.from] : req.body && req.body[p.from]
+        if (v === undefined || v === null || v === '') v = p.def ? p.def() : null
+        if (p.type === 'INT64') v = parseInt(v, 10)
+        params[p.name] = v
+        types[p.name] = p.type
+      }
+
+      const [rows] = await _bq().query({
+        query: rep.sql,
+        params,
+        types,
+        location: 'asia-southeast2'
+      })
+      res.json({ ok: true, report: name, rows })
+    } catch (e) {
+      logger.error('[analyticsQuery] error', e)
+      res.status(500).json({ ok: false, error: String((e && e.message) || e) })
+    }
+  }
+)
+
+// ====================================================================
+// FUNCTION 5 (v.95.0626): AUTO-GENERATE TAGIHAN BULANAN — jadwal harian, IDEMPOTENT
+//   Replikasi server-side dari tombol manual "autoGenerate" (PengaturanKeuanganView).
+//   - Jalan tiap hari 01:00 WIB. Buat tagihan bulan berjalan utk jenis ber-flag
+//     auto_generate=true. Dedup (santri_id + kategori + periode) -> aman walau jalan
+//     tiap hari: run pertama tiap bulan yang membuat, sisanya skip.
+//   - Nominal: 4-lapis (per-santri -> per-kelas -> per-lembaga -> default), persis client.
+//   - jatuh_tempo = tahun-bulan-<keu_jatuh_tempo> (mis. 2026-06-10).
+//   - Kill-switch: settings/general.keu_auto_generate_cron === false -> SKIP (tanpa hapus
+//     tombol manual; tombol manual tetap utk uji coba).
+//   - Setelah generate, enqueue 1 notif broadcast "Tagihan bulan ini terbit" (tidak spam).
+//
+// DEPLOY: firebase deploy --only functions:autoGenerateTagihanBulanan
+// VERIFIKASI: Firebase Console -> Cloud Scheduler -> job ...autoGenerateTagihanBulanan...
+// TEST MANUAL: Cloud Scheduler -> RUN NOW (atau pakai tombol manual di app).
+// ====================================================================
+const _BULAN_NM = [
+  'Januari',
+  'Februari',
+  'Maret',
+  'April',
+  'Mei',
+  'Juni',
+  'Juli',
+  'Agustus',
+  'September',
+  'Oktober',
+  'November',
+  'Desember'
+]
+
+exports.autoGenerateTagihanBulanan = onSchedule(
+  {
+    schedule: 'every day 01:00',
+    timeZone: 'Asia/Jakarta',
+    region: 'asia-southeast2',
+    timeoutSeconds: 540,
+    memory: '512MiB'
+  },
+  async () => {
+    // 1) Settings (sumber sama dgn tombol manual: settings/general)
+    let s = {}
+    try {
+      const sd = await db.collection('settings').doc('general').get()
+      if (sd.exists) s = sd.data() || {}
+    } catch (e) {
+      logger.warn('[autoGenTagihan] baca settings gagal:', e?.message || e)
+    }
+    if (s.keu_auto_generate_cron === false) {
+      logger.info('[autoGenTagihan] kill-switch OFF (keu_auto_generate_cron=false) — skip.')
+      return null
+    }
+    const jenisAuto = (Array.isArray(s.keuTagihanJenis) ? s.keuTagihanJenis : []).filter(
+      (j) => j && j.auto_generate && String(j.label || '').trim()
+    )
+    if (jenisAuto.length === 0) {
+      logger.info('[autoGenTagihan] tidak ada jenis ber-flag auto_generate — skip.')
+      return null
+    }
+    const jtDay = String(s.keu_jatuh_tempo || 10).padStart(2, '0')
+
+    // 2) Santri aktif
+    const sSnap = await db.collection('santri').get()
+    const santriAktif = sSnap.docs
+      .map((d) => ({ id: d.id, ...d.data() }))
+      .filter((x) => x.aktif !== false)
+
+    // 3) Periode bulan berjalan (zona Jakarta)
+    const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Jakarta' }))
+    const periode = `${_BULAN_NM[now.getMonth()]} ${now.getFullYear()}`
+    const ym = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}`
+    const jt = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${jtDay}`
+
+    // 4) Dedup: cukup baca tagihan periode ini saja (hemat, single-field index otomatis)
+    const existing = new Set()
+    try {
+      const tSnap = await db.collection('keuangan_tagihan').where('periode', '==', periode).get()
+      tSnap.forEach((d) => {
+        const t = d.data()
+        existing.add(`${String(t.santri_id)}__${String(t.kategori || t.jenis || '').toLowerCase()}`)
+      })
+    } catch (e) {
+      logger.warn('[autoGenTagihan] baca tagihan existing gagal:', e?.message || e)
+    }
+
+    let created = 0,
+      skipped = 0,
+      errCount = 0
+    let batch = db.batch()
+    let inBatch = 0
+    const commit = async () => {
+      if (inBatch > 0) {
+        await batch.commit()
+        batch = db.batch()
+        inBatch = 0
+      }
+    }
+
+    for (const j of jenisAuto) {
+      const wl = Array.isArray(j.lembaga_only) ? j.lembaga_only.filter(Boolean) : []
+      for (const sx of santriAktif) {
+        if (wl.length > 0 && !(wl.includes(sx.lembaga) || wl.includes(sx.lembaga_sekolah))) continue
+        const dupKey = `${String(sx.id)}__${String(j.label || '').toLowerCase()}`
+        if (existing.has(dupKey)) {
+          skipped++
+          continue
+        }
+        // 4-lapis lookup: per-santri -> per-kelas -> per-lembaga -> default
+        let nominal = Number((j.nominal_per_santri || {})[String(sx.id)] || 0)
+        if (nominal === 0) {
+          const perK = j.nominal_per_kelas || {}
+          for (const [lemb, ks] of [
+            [sx.lembaga, sx.kelas],
+            [sx.lembaga_sekolah, sx.kelas_sekolah]
+          ]) {
+            if (!lemb) continue
+            const v = Number((perK[lemb] || {})[ks] || 0)
+            if (v > 0) {
+              nominal = v
+              break
+            }
+          }
+        }
+        if (nominal === 0) {
+          const perL = j.nominal_per_lembaga || {}
+          nominal =
+            Number(perL[sx.lembaga] || perL[sx.lembaga_sekolah] || 0) ||
+            Number(j.nominal_default || 0)
+        }
+        if (nominal <= 0) {
+          skipped++
+          continue
+        }
+        try {
+          const id = `tagihan_${sx.id}_${j.id}_${ym}`
+          batch.set(db.collection('keuangan_tagihan').doc(id), {
+            id,
+            santri_id: String(sx.id),
+            santri_nama: sx.nama || '',
+            kategori: j.label || j.id || 'Tagihan',
+            periode,
+            nominal,
+            bayar: 0,
+            status: 'belum',
+            jatuh_tempo: jt,
+            sumber: 'auto_generate',
+            created_at: FieldValue.serverTimestamp()
+          })
+          existing.add(dupKey)
+          created++
+          inBatch++
+          if (inBatch >= 450) await commit()
+        } catch (e) {
+          errCount++
+          logger.warn('[autoGenTagihan]', sx.nama, e?.message || e)
+        }
+      }
+    }
+    await commit()
+
+    // Broadcast 1 notif kalau ada tagihan baru (onTagihanCreated skip sumber=auto_generate, jadi tak flood)
+    if (created > 0) {
+      try {
+        await db.collection('notif_queue').add({
+          judul: 'Tagihan Bulan Ini Terbit',
+          pesan: `Tagihan ${periode} sudah terbit. Cek menu Tagihan & Pembayaran.`,
+          target: 'santri_semua', // v.95.0626d: hanya wali/santri, bukan guru
+
+          link: '/tagihan',
+          sender: 'Sistem',
+          status: 'pending',
+          timestamp: new Date().toISOString()
+        })
+      } catch (e) {
+        logger.warn('[autoGenTagihan] enqueue notif gagal:', e?.message || e)
+      }
+    }
+
+    logger.info(
+      `[autoGenTagihan] periode=${periode} jt=${jt} created=${created} skipped=${skipped} err=${errCount}`
+    )
+    return null
+  }
+)
+
+// ====================================================================
+// FUNCTION 6 (v.97.0626): BMT PETA — WEBHOOK KONFIRMASI PEMBAYARAN VA (santri)
+//   STUB/KERANGKA — AMAN DIDEPLOY. Default DRY-RUN: TIDAK menulis Firestore sampai
+//     (a) settings/general.bmt_webhook_enabled === true, DAN
+//     (b) secret BMT_WEBHOOK_SECRET sudah di-set.
+//   Saat ENABLED: catat pembayaran ke keuangan_buku_induk + alokasikan ke tagihan santri,
+//   IDEMPOTEN via bmt_trx_id (1 transaksi diproses sekali).
+//   Format payload & autentikasi FINAL MENGIKUTI SPEC BMT — lihat bagian bertanda TODO(BMT).
+//
+// SETUP & DEPLOY:
+//   firebase functions:secrets:set BMT_WEBHOOK_SECRET   (paste secret saat prompt)
+//   firebase deploy --only functions:bmtPaymentWebhook
+// URL endpoint (berikan ke BMT):
+//   https://asia-southeast2-<projectId>.cloudfunctions.net/bmtPaymentWebhook
+// ====================================================================
+const bmtWebhookSecret = defineSecret('BMT_WEBHOOK_SECRET')
+
+function _digitsOnly(s) {
+  return String(s || '').replace(/\D/g, '')
+}
+
+exports.bmtPaymentWebhook = onRequest(
+  {
+    region: 'asia-southeast2',
+    timeoutSeconds: 60,
+    memory: '256MiB',
+    cors: false,
+    secrets: [bmtWebhookSecret]
+  },
+  async (req, res) => {
+    try {
+      if (req.method !== 'POST') {
+        res.status(405).json({ ok: false, error: 'POST only' })
+        return
+      }
+
+      // 1) AUTENTIKASI — verifikasi secret/tanda tangan dari BMT.
+      //    TODO(BMT): ganti ke skema final BMT (HMAC signature + timestamp, IP allowlist, dll).
+      const secret = (bmtWebhookSecret.value && bmtWebhookSecret.value()) || ''
+      const provided = String(req.get('x-bmt-signature') || req.get('authorization') || '').replace(
+        /^Bearer\s+/i,
+        ''
+      )
+      if (!secret) {
+        res.status(503).json({ ok: false, error: 'webhook belum dikonfigurasi (secret kosong)' })
+        return
+      }
+      if (!provided || provided !== secret) {
+        res.status(401).json({ ok: false, error: 'unauthorized' })
+        return
+      }
+
+      // 2) PARSE payload — TODO(BMT): sesuaikan nama field dgn spesifikasi BMT.
+      const b = req.body || {}
+      const vaNumber = _digitsOnly(b.va_number || b.virtual_account || b.va)
+      const amount = Number(b.amount || b.nominal || 0)
+      const bmtTrxId = String(b.bmt_trx_id || b.trx_id || b.reference_id || '')
+      const paidAt = String(b.paid_at || b.payment_time || new Date().toISOString())
+      const channel = String(b.channel || b.payment_channel || 'bmt')
+      if (!vaNumber || !(amount > 0) || !bmtTrxId) {
+        res
+          .status(400)
+          .json({ ok: false, error: 'payload tidak lengkap (butuh va_number, amount, bmt_trx_id)' })
+        return
+      }
+
+      // 3) Settings + kill-switch (DRY-RUN default).
+      let s = {}
+      try {
+        const sd = await db.collection('settings').doc('general').get()
+        if (sd.exists) s = sd.data() || {}
+      } catch (e) {
+        /* default */
+      }
+      const enabled = s.bmt_webhook_enabled === true
+      const prefix = _digitsOnly(s.bmt_va_prefix)
+
+      // 4) Resolusi santri dari VA: cocokkan field va_bmt, lalu fallback strip-prefix -> nis.
+      let santri = null
+      try {
+        let q = await db.collection('santri').where('va_bmt', '==', vaNumber).limit(1).get()
+        if (q.empty && prefix && vaNumber.startsWith(prefix)) {
+          const nis = vaNumber.slice(prefix.length)
+          q = await db.collection('santri').where('nis', '==', nis).limit(1).get()
+        }
+        if (!q.empty) santri = { id: q.docs[0].id, ...q.docs[0].data() }
+      } catch (e) {
+        logger.warn('[bmtWebhook] resolve santri:', e?.message || e)
+      }
+
+      // 5) DRY-RUN: kalau belum enabled, jangan tulis apa pun — cuma log & ack (utk uji koneksi BMT).
+      if (!enabled) {
+        logger.info(
+          `[bmtWebhook] DRY-RUN va=${vaNumber} amount=${amount} trx=${bmtTrxId} santri=${santri ? santri.id : '?'}`
+        )
+        res.json({
+          ok: true,
+          mode: 'dry-run',
+          resolved_santri: santri ? santri.nama || santri.id : null,
+          note: 'set settings.bmt_webhook_enabled=true utk aktifkan pencatatan'
+        })
+        return
+      }
+
+      // 6) IDEMPOTEN: 1 bmt_trx_id diproses sekali.
+      const logRef = db.collection('bmt_payment_log').doc(bmtTrxId)
+      if ((await logRef.get()).exists) {
+        res.json({ ok: true, duplicate: true })
+        return
+      }
+
+      if (!santri) {
+        await logRef.set({
+          status: 'unmatched',
+          va_number: vaNumber,
+          amount,
+          paid_at: paidAt,
+          channel,
+          created_at: FieldValue.serverTimestamp()
+        })
+        res
+          .status(202)
+          .json({
+            ok: true,
+            matched: false,
+            note: 'VA tak cocok santri — dicatat sbg unmatched utk ditinjau admin'
+          })
+        return
+      }
+
+      // 7) Catat kas masuk (buku induk) + alokasi ke tagihan belum lunas (tertua dulu).
+      //    TODO(BMT/kyai): konfirmasi aturan alokasi & nilai status final ('lunas'/'sebagian').
+      const tgl = String(paidAt).slice(0, 10)
+      const biId = `bmtva_${bmtTrxId}`
+      const batch = db.batch()
+      batch.set(db.collection('keuangan_buku_induk').doc(biId), {
+        id: biId,
+        tipe: 'masuk',
+        keterangan: `Pembayaran VA — ${santri.nama || santri.id} — ${channel}`,
+        nominal: amount,
+        tanggal: tgl,
+        sumber: 'bmt_va',
+        santri_id: String(santri.id),
+        bmt_trx_id: bmtTrxId,
+        created_at: FieldValue.serverTimestamp()
+      })
+      let sisa = amount
+      try {
+        const tq = await db
+          .collection('keuangan_tagihan')
+          .where('santri_id', '==', String(santri.id))
+          .get()
+        const belum = tq.docs
+          .map((d) => ({ id: d.id, ...d.data() }))
+          .filter((t) => String(t.status || 'belum') !== 'lunas')
+          .sort((a, b) => String(a.jatuh_tempo || '').localeCompare(String(b.jatuh_tempo || '')))
+        for (const t of belum) {
+          if (sisa <= 0) break
+          const kurang = Number(t.nominal || 0) - Number(t.bayar || 0)
+          if (kurang <= 0) continue
+          const bayar = Math.min(sisa, kurang)
+          const nb = Number(t.bayar || 0) + bayar
+          batch.update(db.collection('keuangan_tagihan').doc(t.id), {
+            bayar: nb,
+            status: nb >= Number(t.nominal || 0) ? 'lunas' : 'sebagian',
+            sumber_bayar: 'bmt_va',
+            updated_at: FieldValue.serverTimestamp()
+          })
+          sisa -= bayar
+        }
+      } catch (e) {
+        logger.warn('[bmtWebhook] alokasi tagihan:', e?.message || e)
+      }
+
+      batch.set(logRef, {
+        status: 'processed',
+        va_number: vaNumber,
+        amount,
+        sisa_tak_teralokasi: sisa,
+        santri_id: String(santri.id),
+        bmt_trx_id: bmtTrxId,
+        paid_at: paidAt,
+        channel,
+        created_at: FieldValue.serverTimestamp()
+      })
+      await batch.commit()
+
+      try {
+        await db.collection('notif_queue').add({
+          judul: 'Pembayaran Diterima',
+          pesan: `Pembayaran Rp ${new Intl.NumberFormat('id-ID').format(amount)} via VA sudah diterima. Terima kasih.`,
+          target: { type: 'santri', id: String(santri.id) },
+          link: '/tagihan',
+          sender: 'Sistem',
+          status: 'pending',
+          timestamp: new Date().toISOString()
+        })
+      } catch (e) {
+        /* notif best-effort */
+      }
+
+      logger.info(
+        `[bmtWebhook] processed trx=${bmtTrxId} santri=${santri.id} amount=${amount} sisa=${sisa}`
+      )
+      res.json({
+        ok: true,
+        processed: true,
+        santri: santri.nama || santri.id,
+        allocated: amount - sisa,
+        unallocated: sisa
+      })
+    } catch (e) {
+      logger.error('[bmtWebhook] error', e)
+      res.status(500).json({ ok: false, error: String((e && e.message) || e) })
+    }
+  }
+)
+
+// ====================================================================
+// FUNCTION 7 (v.97.0626): BMT PETA — PENCAIRAN BISYAROH (disbursement, pondok -> guru)
+//   STUB/KERANGKA Model B — AMAN. Default DRY-RUN: TIDAK memerintahkan transfer & TIDAK
+//   menulis Firestore sampai (a) settings/general.bmt_disburse_enabled === true DAN
+//   (b) secret BMT_DISBURSE_SECRET di-set. Bahkan saat enabled, fungsi TIDAK pernah mengaku
+//   sukses sebelum API BMT benar2 disambung (lihat TODO(BMT)) — jadi tak akan mencatat
+//   pencairan yang tak terjadi.
+//   Body: { periode, items:[{ slip_id, guru_id, rek_bmt, nominal }] }.
+//   Idempoten via bmt_disburse_log/<slip_id>. FALLBACK (Model A) = konfirmasi manual di
+//   UI BisyarohView (admin transfer sendiri di BMT) — fungsi ini tak dipakai pada Model A.
+//
+// SETUP & DEPLOY:
+//   firebase functions:secrets:set BMT_DISBURSE_SECRET
+//   firebase deploy --only functions:bmtDisbursementBatch
+// ====================================================================
+const bmtDisburseSecret = defineSecret('BMT_DISBURSE_SECRET')
+
+exports.bmtDisbursementBatch = onRequest(
+  {
+    region: 'asia-southeast2',
+    timeoutSeconds: 120,
+    memory: '256MiB',
+    cors: false,
+    secrets: [bmtDisburseSecret]
+  },
+  async (req, res) => {
+    try {
+      if (req.method !== 'POST') {
+        res.status(405).json({ ok: false, error: 'POST only' })
+        return
+      }
+
+      // 1) AUTENTIKASI pemanggil. TODO: ganti ke verifikasi sesi admin yang kuat.
+      const secret = (bmtDisburseSecret.value && bmtDisburseSecret.value()) || ''
+      const provided = String(req.get('authorization') || '').replace(/^Bearer\s+/i, '')
+      if (!secret) {
+        res
+          .status(503)
+          .json({ ok: false, error: 'disbursement belum dikonfigurasi (secret kosong)' })
+        return
+      }
+      if (!provided || provided !== secret) {
+        res.status(401).json({ ok: false, error: 'unauthorized' })
+        return
+      }
+
+      // 2) PARSE daftar pencairan.
+      const items = Array.isArray(req.body && req.body.items) ? req.body.items : []
+      const periode = String((req.body && req.body.periode) || '')
+      if (items.length === 0) {
+        res.status(400).json({ ok: false, error: 'items kosong' })
+        return
+      }
+      const norm = items.map((it) => ({
+        slip_id: String(it.slip_id || ''),
+        guru_id: it.guru_id != null ? it.guru_id : '',
+        rek_bmt: String(it.rek_bmt || '').replace(/\s+/g, ''),
+        nominal: Number(it.nominal || 0)
+      }))
+      const invalid = norm.filter((it) => !it.slip_id || !it.rek_bmt || !(it.nominal > 0))
+
+      // 3) Settings + kill-switch (DRY-RUN default).
+      let s = {}
+      try {
+        const sd = await db.collection('settings').doc('general').get()
+        if (sd.exists) s = sd.data() || {}
+      } catch (e) {
+        /* default */
+      }
+      const enabled = s.bmt_disburse_enabled === true
+
+      // 4) DRY-RUN: validasi & rencana saja, tanpa transfer/tulis.
+      if (!enabled) {
+        const total = norm.reduce((a, it) => a + (it.nominal > 0 ? it.nominal : 0), 0)
+        logger.info(
+          `[bmtDisburse] DRY-RUN periode=${periode} items=${norm.length} invalid=${invalid.length} total=${total}`
+        )
+        res.json({
+          ok: true,
+          mode: 'dry-run',
+          count: norm.length,
+          invalid: invalid.length,
+          total,
+          note: 'set settings.bmt_disburse_enabled=true + sambungkan API BMT utk eksekusi nyata'
+        })
+        return
+      }
+      if (invalid.length > 0) {
+        res
+          .status(400)
+          .json({ ok: false, error: 'ada item tak valid (slip_id/rek_bmt/nominal)', invalid })
+        return
+      }
+
+      // 5) EKSEKUSI per item (idempoten via bmt_disburse_log/<slip_id>).
+      const results = []
+      for (const it of norm) {
+        const logRef = db.collection('bmt_disburse_log').doc(it.slip_id)
+        if ((await logRef.get()).exists) {
+          results.push({ slip_id: it.slip_id, status: 'duplicate' })
+          continue
+        }
+
+        // --- TODO(BMT): panggil API disbursement BMT (pondok rek -> it.rek_bmt, it.nominal) ---
+        //   const bmtResp = await callBmtDisbursementApi(it)  // implementasi mengikuti spec BMT
+        //   const sukses = !!bmtResp.success; const trxId = String(bmtResp.trx_id || '')
+        // Selama API belum tersambung, JANGAN mengaku sukses (cegah pencatatan pencairan palsu):
+        const sukses = false
+        const trxId = ''
+
+        if (!sukses) {
+          results.push({
+            slip_id: it.slip_id,
+            status: 'pending_api',
+            note: 'API BMT belum terhubung'
+          })
+          continue
+        }
+
+        // (Saat API tersedia) catat kas keluar + tandai slip + log idempoten.
+        const tgl = new Date().toISOString().slice(0, 10)
+        const biId = `gaji_${it.slip_id}`
+        const batch = db.batch()
+        batch.set(db.collection('keuangan_buku_induk').doc(biId), {
+          id: biId,
+          tipe: 'keluar',
+          nominal: it.nominal,
+          tanggal: tgl,
+          keterangan: `Bisyaroh ${periode} — guru ${it.guru_id}`,
+          sumber: 'gaji',
+          kategori: 'Bisyaroh',
+          guru_id: it.guru_id,
+          slip_id: it.slip_id,
+          metode: 'bmt_api',
+          bmt_trx_id: trxId,
+          created_at: FieldValue.serverTimestamp()
+        })
+        batch.set(
+          db.collection('keuangan_gaji').doc(it.slip_id),
+          {
+            status_cair: 'cair',
+            dicairkan_at: FieldValue.serverTimestamp(),
+            dicairkan_via: 'bmt_api',
+            bmt_trx_id: trxId,
+            buku_induk_id: biId
+          },
+          { merge: true }
+        )
+        batch.set(logRef, {
+          status: 'processed',
+          slip_id: it.slip_id,
+          guru_id: it.guru_id,
+          nominal: it.nominal,
+          bmt_trx_id: trxId,
+          created_at: FieldValue.serverTimestamp()
+        })
+        await batch.commit()
+        results.push({ slip_id: it.slip_id, status: 'processed', bmt_trx_id: trxId })
+      }
+
+      res.json({
+        ok: true,
+        processed: results.filter((r) => r.status === 'processed').length,
+        results
+      })
+    } catch (e) {
+      logger.error('[bmtDisburse] error', e)
+      res.status(500).json({ ok: false, error: String((e && e.message) || e) })
+    }
   }
 )

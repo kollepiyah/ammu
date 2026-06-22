@@ -1,0 +1,10 @@
+feat(v.100) Batch8 FINAL: re-audit lolos + P9 dead slip builders + bump vc100
+
+- Re-audit regresi pasca Batch 1-8: anti-bocor v.98 utuh (GlobalSearch scoped, canView ProfilDetail), StatistikLembagaDetail ter-scope (scopedSantriAll + noSantri), useDataAudit murni computed (nol listener), cleanup audit_log MasterDataView selamat, referensi util migrasi terhapus NIHIL, setWindowOpenHandler sinkron src/build.
+- P9: hapus dead cetakStrukDotMatrix + buildStrukEscposBase64 (strukBuilder.js) + rapikan import PosSantriView. buildStrukHtml/Wide/Text TETAP (dipakai cetak non-9.5 + PDF).
+- BUMP v.100.0626 (vc 99->100) di 13 titik: build.gradle, package.json root+vue-app, electron/package.json, main.js Sentry, footer LoginView/DashboardView/PpdbAdminView/AppSidebar, fallback RibbonStatusBar/RibbonBackstage/BantuanView.
+- Update KB + rekap: Batch 1-8 SELESAI; pending kyai = ship (deploy web + AAB vc100 + electron:publish + push).
+
+Verify: _run_vite.cmd VITE_EXITCODE=0. Rules & functions tidak berubah.
+
+Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>

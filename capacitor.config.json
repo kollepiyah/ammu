@@ -1,6 +1,6 @@
 {
-  "appId": "app.ammu.twa",
-  "appName": "Ammu App",
+  "appId": "app.ammu.id",
+  "appName": "Ammu Online",
   "webDir": "public",
   "bundledWebRuntime": false,
   "android": {
@@ -9,5 +9,48 @@
       "keystoreAlias": "ammu-app"
     }
   },
-  "server": { "androidScheme": "https" }
+  "server": {
+    "url": "https://ammuonline.web.app",
+    "androidScheme": "https",
+    "allowNavigation": [
+      "ammuonline.web.app",
+      "ammuonline.firebaseapp.com",
+      "portal-mambaul-ulum.web.app",
+      "portal-mambaul-ulum.firebaseapp.com",
+      "*.firebaseio.com",
+      "*.googleapis.com",
+      "*.gstatic.com",
+      "firebasestorage.googleapis.com",
+      "accounts.google.com",
+      "fonts.googleapis.com",
+      "fonts.gstatic.com",
+      "cdn.jsdelivr.net",
+      "cdnjs.cloudflare.com",
+      "unpkg.com",
+      "browser.sentry-cdn.com",
+      "*.ingest.sentry.io",
+      "*.ingest.us.sentry.io"
+    ]
+  },
+  "plugins": {
+    "PushNotifications": {
+      "presentationOptions": ["badge", "sound", "alert"]
+    },
+    "SplashScreen": {
+      "launchShowDuration": 1500,
+      "launchAutoHide": true,
+      "backgroundColor": "#F2FEF9",
+      "androidSplashResourceName": "splash",
+      "androidScaleType": "CENTER_INSIDE",
+      "showSpinner": false,
+      "splashFullScreen": true,
+      "splashImmersive": false,
+      "fadeOutDuration": 400
+    },
+    "StatusBar": {
+      "style": "LIGHT",
+      "backgroundColor": "#0f766e",
+      "overlaysWebView": false
+    }
+  }
 }

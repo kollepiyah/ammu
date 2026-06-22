@@ -1,0 +1,36 @@
+[feature/vue-migration f863998] feat(rapor): identitas 2 kolom rata kiri (Nama Santri) + geser kanan, KOP Diniyah logo kiri = logo pondok (2 logo selalu muncul, fallback), KOP line 4 huruf kecil (email), rata-rata sumatif bisa override manual (kosong=auto rekap bulanan), tabel Nilai Rata-rata full-width; bump display v97.0626; update PROJECT-KNOWLEDGE-BASE (recap rapor redesign full-ACF)
+ 6 files changed, 220 insertions(+), 18 deletions(-)
+=== RESULT === 
+f863998 feat(rapor): identitas 2 kolom rata kiri (Nama Santri) + geser kanan, KOP Diniyah logo kiri = logo pondok (2 logo selalu muncul, fallback), KOP line 4 huruf kecil (email), rata-rata sumatif bisa override manual (kosong=auto rekap bulanan), tabel Nilai Rata-rata full-width; bump display v97.0626; update PROJECT-KNOWLEDGE-BASE (recap rapor redesign full-ACF)
+ M firebase.json
+ M firestore.rules
+ M public/dist/tailwind.css
+ M scripts/build-aab.cjs
+ M tmp_recovery/_git_status.cmd
+ M tmp_recovery/_gitstatus.txt
+ M vue-app/package-lock.json
+ M vue-app/src/assets/main.css
+ M vue-app/src/components/layout/AppLayout.vue
+ M vue-app/src/components/pos/ModalPOS.vue
+ M vue-app/src/composables/useExcel.js
+ M vue-app/src/composables/usePushNotifications.js
+ M vue-app/src/composables/useStatistikScope.js
+ M vue-app/src/services/firebase.js
+ M vue-app/src/services/pdf.js
+ M vue-app/src/utils/escpImage.js
+ M vue-app/src/utils/strukBuilder.js
+ M vue-app/src/views/BukuIndukView.vue
+ M vue-app/src/views/KeuanganDashboardView.vue
+ M vue-app/src/views/PosSantriView.vue
+ M vue-app/src/views/RiwayatPosView.vue
+ M vue-app/src/views/StatistikView.vue
+ M vue-app/src/views/TabunganView.vue
+ M vue-app/vite.config.js
+?? AUDIT-COWORK-08JUN2026-MENYELURUH.md
+?? REKAP-TASK-POS-TABUNGAN.md
+?? design_handoff_ammu_desktop/
+?? firestore.rules.stage2-proposed
+?? tmp_recovery/_commit_msg.txt
+?? tmp_recovery/_commit_task9_higiene.cmd
+?? tmp_recovery/_git_commit.cmd
+?? tmp_recovery/_gitcommit.txt

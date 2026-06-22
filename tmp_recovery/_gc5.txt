@@ -1,0 +1,2 @@
+[feature/vue-migration 5385350] ﻿fix(rbac): Kepala Lembaga/PJ discope ke se-group lembaganya (sebelumnya lihat SEMUA santri)
+ 1 file changed, 10 insertions(+), 6 deletions(-)

@@ -1,0 +1,18 @@
+5b6f6ff fix(ui+splash): bottom-nav safe-area, splash Android crop-safe, ikon search mobile, layout inset
+562f347 docs(kb): recap sesi v.91.0626 (bottom nav, notif page, global search, profil detail, badge tagihan) untuk sesi baru
+2c06a71 fix(profil): seluruh card santri/guru clickable (abaikan tombol/link/checkbox) + sembunyikan Pengaturan Profil saat readonly
+bb7f042 feat(profil): klik nama/avatar santri-guru -> halaman profil read-only + prestasi (noSantri); global search -> profil detail
+cfc4259 feat(search): global search header (admin/guru) - bar desktop + ikon/overlay mobile, cari santri+guru, prefill list via ?q=
+db285c7 feat(mobile): bottom nav 5 tab (Android/PWA+mobile) + halaman Notifikasi penuh; bell pindah dari topbar di mobile
+f009f14 feat(santri): hapus 'Lihat Rapor' di Capaian Prestasi + guard /rapor noSantri + poles judul kartu tagihan santri
+056f79e feat(v.91): bump v.91.0626 (vc91) + search santri di Kelas + indikator offline topbar + badge status tagihan (Lunas/Tempo/Nunggak)
+cf08fbb docs(kb): recap sesi v.90.0626 (diniyah per-kelas, anon-auth, toast, splash, jabatan) untuk sesi berikutnya
+ef2db0e feat(splash): branding 'Powered by Bakafrawi' + fade-out (Android SplashScreen API, v.90)
+50bbac0 chore(release): bump versionName v.90.0626 (versionCode 90)
+fe0cad4 feat(diniyah): mapel Diniyah PER-KELAS (I-XII), bukan per-jenjang
+ab4cd1b fix(diniyah+auth+ux): KOP/guru sekolah, anon-auth admin, toast global, jabatan master
+14e34b6 fix(rapor-diniyah): label+KOP pakai lembaga sekolah (bukan ngaji PTPT) + input mapel field add/remove (array)
+ef648da feat(diniyah): mapel per-jenjang SDI/SMP/SMA (Rekap+Rapor) + fix filter Rekap Diniyah via route.query + Rapor PKBM konsisten + notif dropdown Teleport center
+b7b3164 fix(android): splash native desain Ammu (light/dark, semua ukuran) + buang ikon robot Android 12
+906ebfc fix(android): splash native desain Ammu (light/dark, semua ukuran) + buang ikon robot Android 12
+e110e1d fix(kelas-guru): tombol Simpan Penugasan tidak berfungsi — bungkus String(s.id)

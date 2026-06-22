@@ -1,0 +1,11 @@
+refactor(deadcode): hapus 8 file composable/util 0-import (audit 1 Juni)
+
+Semua terverifikasi superseded/obsolete — TIDAK ada fitur hilang (penggantinya ada):
+- useDiniyahSchema -> LembagaDetailView + settings.raporSchemas
+- useFieldSchema   -> ACF editor di LembagaDetailView (Custom Fields)
+- useFormValidation-> tak pernah diadopsi (form validate inline)
+- useKelas         -> KelasView baca lembaga.kelas inline
+- usePrinter       -> jsPDF + useDesktopPrint
+- useRapor         -> RaporView inline (subscribe rapor_semester sendiri)
+- rekapBulanan     -> RekapPrestasiView computedTotal inline
+- v21_61_pkbm_split-> obsolete (kontradiksi canonical: PKBM = sub-tier SMP/SMA, bukan split lembaga)

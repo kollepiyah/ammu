@@ -1,0 +1,5 @@
+fix(kelas-guru): tombol Simpan Penugasan tidak berfungsi — bungkus String(s.id)
+
+- KelasGuruView pakai s.id MENTAH (numerik) di updateOne('santri', s.id, ...) -> doc(db,'santri',<number>) THROW (doc ID wajib string) -> simpan() masuk catch -> gagal diam. Ini satu-satunya penulis santri yg lupa String() (12 penulis lain sudah String()).
+- FIX: String(s.id) di 4 call site (L222/225/234/238).
+- HARDEN: updateOne() helper doc(db, coll, id) -> String(id) defensif, cegah bug sejenis di view lain.

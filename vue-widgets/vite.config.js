@@ -17,7 +17,9 @@ export default defineConfig({
   },
   build: {
     outDir: resolve(__dirname, '../public/dist'),
-    emptyOutDir: true,
+    // v.56.0526: JANGAN empty — emptyOutDir wipe tailwind.css yang di-build sebelumnya
+    // (root cause MIME type error /dist/tailwind.css = text/html karena file missing)
+    emptyOutDir: false,
     lib: {
       entry: resolve(__dirname, 'src/main.js'),
       name: 'AmmuWidgets',

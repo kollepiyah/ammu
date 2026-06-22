@@ -1,0 +1,906 @@
+<template>
+  <!-- v.21.84.0527: Personal — data statistik pribadi guru/pegawai (kehadiran + bisyaroh) -->
+  <div class="p-3 md:p-5 space-y-4">
+    <!-- Header -->
+    <div
+      v-if="!isDesktop"
+      class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm"
+    >
+      <h1 class="text-base md:text-lg font-black">
+        <i class="fas fa-id-badge text-teal-600 mr-2"></i>Personal
+      </h1>
+      <p class="text-xs text-[var(--text-secondary)] mt-0.5">
+        {{ auth.sesiAktif?.nama || '-' }} ·
+        {{ guru?.jabatan || auth.sesiAktif?.jabatan || 'Guru/Pegawai' }}
+      </p>
+    </div>
+
+    <!-- Ringkasan stat pribadi -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div
+        class="bg-gradient-to-br from-emerald-500 to-teal-700 rounded-2xl p-4 text-white shadow-sm"
+      >
+        <p class="text-[10px] uppercase font-black text-white/85">Bisyaroh Bulan Ini</p>
+        <p class="text-2xl font-black mt-1 !text-white">
+          {{ fmtRp(slipBulanIni?.take_home || 0) }}
+        </p>
+        <p class="text-[10px] text-white/80 mt-1">
+          {{ slipBulanIni ? 'Sudah diterbitkan' : 'Belum diterbitkan' }}
+        </p>
+      </div>
+      <div class="bg-gradient-to-br from-teal-600 to-teal-800 rounded-2xl p-4 text-white shadow-sm">
+        <p class="text-[10px] uppercase font-black text-white/85">Lama Mengabdi</p>
+        <p class="text-2xl font-black mt-1 !text-white">{{ lamaMengajar }}</p>
+        <p class="text-[10px] text-white/80 mt-1">Sejak {{ guru?.tanggal_tugas || '-' }}</p>
+      </div>
+    </div>
+
+    <!-- Kehadiran Saya Bulan Ini -->
+    <div
+      class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
+    >
+      <h3
+        class="text-xs md:text-sm font-black text-[var(--text-primary)] uppercase tracking-widest mb-3 border-b border-[var(--border-subtle)] pb-2"
+      >
+        <i class="fas fa-clipboard-check text-emerald-600 mr-2"></i>Kehadiran — {{ bulanLabel }}
+      </h3>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-center">
+        <div
+          class="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl py-3 border border-emerald-100 dark:border-emerald-800"
+        >
+          <p
+            class="text-[9px] font-black text-emerald-700 dark:text-emerald-300 uppercase tracking-wider"
+          >
+            Hadir
+          </p>
+          <p class="text-2xl font-black text-emerald-700 dark:text-emerald-300 mt-1">
+            {{ kehadiran.hadir }}
+          </p>
+        </div>
+        <div
+          class="bg-cyan-50 dark:bg-cyan-900/20 rounded-xl py-3 border border-cyan-100 dark:border-cyan-800"
+        >
+          <p
+            class="text-[9px] font-black text-cyan-700 dark:text-cyan-300 uppercase tracking-wider"
+          >
+            Sakit
+          </p>
+          <p class="text-2xl font-black text-cyan-700 dark:text-cyan-300 mt-1">
+            {{ kehadiran.sakit }}
+          </p>
+        </div>
+        <div
+          class="bg-cyan-50 dark:bg-cyan-900/20 rounded-xl py-3 border border-cyan-100 dark:border-cyan-800"
+        >
+          <p
+            class="text-[9px] font-black text-cyan-700 dark:text-cyan-300 uppercase tracking-wider"
+          >
+            Izin
+          </p>
+          <p class="text-2xl font-black text-cyan-700 dark:text-cyan-300 mt-1">
+            {{ kehadiran.izin }}
+          </p>
+        </div>
+        <div
+          class="bg-rose-50 dark:bg-rose-900/20 rounded-xl py-3 border border-rose-100 dark:border-rose-800"
+        >
+          <p
+            class="text-[9px] font-black text-rose-700 dark:text-rose-300 uppercase tracking-wider"
+          >
+            Alpa
+          </p>
+          <p class="text-2xl font-black text-rose-700 dark:text-rose-300 mt-1">
+            {{ kehadiran.alpa }}
+          </p>
+        </div>
+      </div>
+      <p
+        v-if="kehadiran.total === 0"
+        class="text-[11px] text-[var(--text-tertiary)] italic text-center mt-3"
+      >
+        Belum ada data absensi bulan ini.
+      </p>
+    </div>
+
+    <!-- v.100d: Izin & Sakit (pengajuan mandiri) -->
+    <div
+      class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
+    >
+      <div
+        class="flex items-center justify-between mb-3 border-b border-[var(--border-subtle)] pb-2"
+      >
+        <h3
+          class="text-xs md:text-sm font-black text-[var(--text-primary)] uppercase tracking-widest"
+        >
+          <i class="fas fa-calendar-minus text-cyan-600 mr-2"></i>Izin &amp; Sakit
+        </h3>
+        <button
+          @click="openIzinForm"
+          class="text-[11px] font-bold bg-cyan-600 hover:bg-cyan-700 text-white px-3 py-1.5 rounded-lg transition cursor-pointer"
+        >
+          <i class="fas fa-plus mr-1"></i>Ajukan
+        </button>
+      </div>
+      <div
+        v-if="myIzin.length === 0"
+        class="text-[11px] text-[var(--text-tertiary)] italic text-center py-3"
+      >
+        Belum ada pengajuan izin/sakit.
+      </div>
+      <div v-else class="space-y-2">
+        <div
+          v-for="a in myIzin"
+          :key="a.id"
+          class="flex items-center justify-between gap-3 bg-[var(--bg-card-elevated)] rounded-xl p-2.5 border border-[var(--border-subtle)]"
+        >
+          <div class="min-w-0">
+            <p class="text-sm font-bold text-[var(--text-primary)]">
+              {{ jenisIzinLabel(a.jenis) }} · {{ rangeLabel(a) }}
+            </p>
+            <p class="text-[10px] text-[var(--text-secondary)]">
+              Shift {{ shiftsLabel(a.shifts)
+              }}<span v-if="a.keterangan"> · {{ a.keterangan }}</span>
+            </p>
+            <p v-if="a.catatan_putus" class="text-[10px] text-[var(--text-tertiary)] italic">
+              {{ a.catatan_putus }}
+            </p>
+          </div>
+          <div class="flex flex-col items-end gap-1 flex-shrink-0">
+            <span
+              :class="[
+                'text-[10px] font-black px-2 py-0.5 rounded-full',
+                statusIzinClass(a.status)
+              ]"
+              >{{ statusIzinLabel(a.status) }}</span
+            >
+            <button
+              v-if="a.status === 'diajukan'"
+              @click="batalIzin(a)"
+              class="text-[10px] font-bold text-rose-600 hover:underline"
+            >
+              Batalkan
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- v.100d: Persetujuan Izin & Sakit (Kepala/PJ/admin) -->
+    <div
+      v-if="izinIsApprover"
+      class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
+    >
+      <h3
+        class="text-xs md:text-sm font-black text-[var(--text-primary)] uppercase tracking-widest mb-3 border-b border-[var(--border-subtle)] pb-2"
+      >
+        <i class="fas fa-user-check text-emerald-600 mr-2"></i>Persetujuan Izin &amp; Sakit
+        <span
+          v-if="izinAntrian.length"
+          class="ml-1 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-amber-500 text-white text-[10px] align-middle"
+          >{{ izinAntrian.length }}</span
+        >
+      </h3>
+      <div
+        v-if="izinAntrian.length === 0"
+        class="text-[11px] text-[var(--text-tertiary)] italic text-center py-2"
+      >
+        Tak ada pengajuan menunggu.
+      </div>
+      <div v-else class="space-y-2">
+        <div
+          v-for="a in izinAntrian"
+          :key="a.id"
+          class="bg-[var(--bg-card-elevated)] rounded-xl p-2.5 border border-[var(--border-subtle)]"
+        >
+          <p class="text-sm font-bold text-[var(--text-primary)]">
+            {{ a.guru_nama }}
+            <span class="text-[10px] font-normal text-[var(--text-secondary)]"
+              >· {{ a.lembaga || '-' }}</span
+            >
+          </p>
+          <p class="text-[11px] text-[var(--text-secondary)]">
+            {{ jenisIzinLabel(a.jenis) }} · {{ rangeLabel(a) }} · Shift {{ shiftsLabel(a.shifts) }}
+          </p>
+          <p v-if="a.keterangan" class="text-[10px] text-[var(--text-tertiary)] italic">
+            {{ a.keterangan }}
+          </p>
+          <div class="flex gap-2 mt-2">
+            <button
+              @click="setujuiIzin(a)"
+              :disabled="izinBusyId === a.id"
+              class="flex-1 text-[11px] font-black bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white px-3 py-1.5 rounded-lg"
+            >
+              <i class="fas fa-check mr-1"></i>Setujui
+            </button>
+            <button
+              @click="tolakIzin(a)"
+              :disabled="izinBusyId === a.id"
+              class="text-[11px] font-black bg-[var(--bg-muted)] text-rose-600 border border-[var(--border-subtle)] px-3 py-1.5 rounded-lg"
+            >
+              <i class="fas fa-times mr-1"></i>Tolak
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Riwayat Slip Bisyaroh -->
+    <div
+      class="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)] shadow-sm overflow-hidden"
+    >
+      <div class="px-4 py-3 border-b border-[var(--border-subtle)]">
+        <h3 class="text-sm font-black text-[var(--text-primary)]">
+          <i class="fas fa-history text-teal-600 mr-1.5"></i>Riwayat Slip Bisyaroh {{ tahunIni }}
+        </h3>
+      </div>
+      <div
+        v-if="slipTahunIni.length === 0"
+        class="p-8 text-center text-sm text-[var(--text-secondary)] italic"
+      >
+        Belum ada slip bisyaroh.
+      </div>
+      <div v-else class="divide-y divide-[var(--border-subtle)]">
+        <div
+          v-for="g in slipTahunIni"
+          :key="g.id"
+          class="p-3 flex items-center justify-between gap-3"
+        >
+          <div class="min-w-0">
+            <p class="text-sm font-bold text-[var(--text-primary)]">{{ g.periode }}</p>
+            <p class="text-[10px] text-[var(--text-secondary)]">
+              {{ g.lembaga || '-' }} · {{ g.jabatan || '-' }}
+            </p>
+          </div>
+          <div class="flex items-center gap-2 flex-shrink-0">
+            <p class="text-sm font-black text-emerald-700 dark:text-emerald-300">
+              {{ fmtRp(g.take_home || 0) }}
+            </p>
+            <button
+              @click="openSlip(g)"
+              class="w-8 h-8 rounded-lg bg-teal-100 hover:bg-teal-200 dark:bg-teal-900/40 dark:hover:bg-teal-900/60 text-teal-700 dark:text-teal-300 flex items-center justify-center transition cursor-pointer"
+              title="Lihat detail slip"
+            >
+              <i class="fas fa-eye text-xs"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL DETAIL SLIP BISYAROH -->
+    <div
+      v-if="slipOpen"
+      class="fixed inset-0 z-50 bg-slate-900/70 flex items-center justify-center p-4 backdrop-blur-sm"
+      @click.self="slipOpen = false"
+    >
+      <div
+        class="bg-[var(--bg-card)] rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto"
+      >
+        <div class="bg-gradient-to-br from-emerald-500 to-teal-700 p-5 text-white">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-[10px] uppercase font-black text-white/85 tracking-wider">
+                Slip Bisyaroh
+              </p>
+              <h3 class="text-lg font-black !text-white mt-0.5">{{ slipDetail?.periode }}</h3>
+            </div>
+            <button
+              @click="slipOpen = false"
+              class="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition cursor-pointer"
+            >
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          <p class="text-xs text-white/90 mt-2">
+            {{ slipDetail?.guru_nama || auth.sesiAktif?.nama }}
+          </p>
+          <p class="text-[11px] text-white/80">
+            {{ slipDetail?.lembaga || '-' }} · {{ slipDetail?.jabatan || '-' }}
+          </p>
+        </div>
+        <div class="p-5 space-y-3">
+          <div>
+            <p
+              class="text-[11px] font-black text-[var(--text-secondary)] uppercase tracking-wider mb-2"
+            >
+              Rincian
+            </p>
+            <div v-if="slipLineItems.length > 0" class="space-y-1.5">
+              <div
+                v-for="(li, i) in slipLineItems"
+                :key="i"
+                class="flex items-center justify-between text-sm"
+              >
+                <span class="text-[var(--text-secondary)]"
+                  >{{ li.label || 'Bisyaroh'
+                  }}<span
+                    v-if="li.lembaga && li.lembaga !== '-'"
+                    class="text-[var(--text-tertiary)]"
+                  >
+                    · {{ li.lembaga }}</span
+                  ></span
+                >
+                <span class="font-bold text-[var(--text-primary)]">{{
+                  fmtRp(li.nominal || 0)
+                }}</span>
+              </div>
+            </div>
+            <div v-else class="space-y-1.5">
+              <div v-if="slipDetail?.bisyaroh_pokok" class="flex justify-between text-sm">
+                <span class="text-[var(--text-secondary)]">Bisyaroh Pokok</span>
+                <span class="font-bold text-[var(--text-primary)]">{{
+                  fmtRp(slipDetail.bisyaroh_pokok)
+                }}</span>
+              </div>
+              <div v-if="slipDetail?.bisyaroh_sekolah" class="flex justify-between text-sm">
+                <span class="text-[var(--text-secondary)]">Bisyaroh Sekolah</span>
+                <span class="font-bold text-[var(--text-primary)]">{{
+                  fmtRp(slipDetail.bisyaroh_sekolah)
+                }}</span>
+              </div>
+              <div v-if="slipDetail?.bisyaroh_tambahan" class="flex justify-between text-sm">
+                <span class="text-[var(--text-secondary)]">Bisyaroh Tambahan</span>
+                <span class="font-bold text-[var(--text-primary)]">{{
+                  fmtRp(slipDetail.bisyaroh_tambahan)
+                }}</span>
+              </div>
+            </div>
+          </div>
+          <div class="border-t border-[var(--border-subtle)] pt-3 space-y-1.5">
+            <div class="flex justify-between text-sm">
+              <span class="text-[var(--text-secondary)]">Total Pemasukan</span>
+              <span class="font-bold text-[var(--text-primary)]">{{
+                fmtRp(slipDetail?.total_pemasukan || slipDetail?.take_home || 0)
+              }}</span>
+            </div>
+            <div v-if="slipDetail?.total_potongan" class="flex justify-between text-sm">
+              <span class="text-rose-600 dark:text-rose-400">Potongan</span>
+              <span class="font-bold text-rose-600 dark:text-rose-400"
+                >- {{ fmtRp(slipDetail.total_potongan) }}</span
+              >
+            </div>
+          </div>
+          <div
+            class="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-3 flex justify-between items-center border border-emerald-100 dark:border-emerald-800"
+          >
+            <span
+              class="text-sm font-black text-emerald-700 dark:text-emerald-300 uppercase tracking-wide"
+              >Take Home</span
+            >
+            <span class="text-lg font-black text-emerald-700 dark:text-emerald-300">{{
+              fmtRp(slipDetail?.take_home || 0)
+            }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- v.100d: Modal Ajukan Izin/Sakit -->
+    <div
+      v-if="izinFormOpen"
+      class="fixed inset-0 z-50 bg-slate-900/70 flex items-center justify-center p-4 backdrop-blur-sm"
+      @click.self="izinFormOpen = false"
+    >
+      <div
+        class="bg-[var(--bg-card)] rounded-2xl shadow-2xl max-w-sm w-full max-h-[90vh] overflow-y-auto"
+      >
+        <div class="p-4 border-b border-[var(--border-subtle)] flex items-center justify-between">
+          <h3 class="text-sm font-black text-[var(--text-primary)]">
+            <i class="fas fa-calendar-minus text-cyan-600 mr-1.5"></i>Ajukan Izin / Sakit
+          </h3>
+          <button
+            @click="izinFormOpen = false"
+            class="text-[var(--text-tertiary)] hover:text-rose-600"
+          >
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="p-4 space-y-3 text-sm">
+          <div>
+            <label class="block text-[10px] font-black uppercase text-[var(--text-secondary)] mb-1"
+              >Jenis</label
+            >
+            <select
+              v-model="izinForm.jenis"
+              class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] outline-none focus:ring-2 focus:ring-cyan-500"
+            >
+              <option value="izin">Izin</option>
+              <option value="sakit">Sakit</option>
+            </select>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label
+                class="block text-[10px] font-black uppercase text-[var(--text-secondary)] mb-1"
+                >Mulai</label
+              >
+              <input
+                type="date"
+                v-model="izinForm.tgl_mulai"
+                class="w-full px-2.5 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] outline-none focus:ring-2 focus:ring-cyan-500"
+              />
+            </div>
+            <div>
+              <label
+                class="block text-[10px] font-black uppercase text-[var(--text-secondary)] mb-1"
+                >Selesai</label
+              >
+              <input
+                type="date"
+                v-model="izinForm.tgl_selesai"
+                :min="izinForm.tgl_mulai"
+                class="w-full px-2.5 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] outline-none focus:ring-2 focus:ring-cyan-500"
+              />
+            </div>
+          </div>
+          <div>
+            <label class="block text-[10px] font-black uppercase text-[var(--text-secondary)] mb-1"
+              >Shift</label
+            >
+            <div class="flex flex-wrap gap-2">
+              <button
+                v-for="sh in ['pagi', 'sore', 'sekolah']"
+                :key="sh"
+                type="button"
+                @click="toggleIzinShift(sh)"
+                :class="[
+                  'px-3 py-1.5 text-xs font-bold rounded-lg border transition cursor-pointer',
+                  izinForm.shifts.includes(sh)
+                    ? 'bg-cyan-600 text-white border-cyan-600'
+                    : 'bg-[var(--bg-card-elevated)] text-[var(--text-secondary)] border-[var(--border-default)]'
+                ]"
+              >
+                {{ sh.charAt(0).toUpperCase() + sh.slice(1) }}
+              </button>
+            </div>
+          </div>
+          <div>
+            <label class="block text-[10px] font-black uppercase text-[var(--text-secondary)] mb-1"
+              >Keterangan</label
+            >
+            <textarea
+              v-model="izinForm.keterangan"
+              rows="2"
+              class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] outline-none focus:ring-2 focus:ring-cyan-500 resize-none"
+            ></textarea>
+          </div>
+        </div>
+        <div class="p-4 border-t border-[var(--border-subtle)] flex justify-end gap-2">
+          <button
+            @click="izinFormOpen = false"
+            class="px-4 py-2 text-xs font-bold rounded-lg bg-[var(--bg-muted)] text-[var(--text-secondary)]"
+          >
+            Batal
+          </button>
+          <button
+            @click="submitIzin"
+            :disabled="izinBusy"
+            class="px-4 py-2 text-xs font-black rounded-lg bg-cyan-600 hover:bg-cyan-700 text-white disabled:opacity-50"
+          >
+            <i :class="['fas', izinBusy ? 'fa-spinner fa-spin' : 'fa-paper-plane', 'mr-1']"></i
+            >Kirim
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- v.21.110.0527: Catatan Supervisi -->
+    <div
+      v-if="supervisiList.length > 0"
+      class="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)] shadow-sm overflow-hidden"
+    >
+      <div
+        class="px-4 py-3 border-b border-[var(--border-subtle)] flex items-center justify-between"
+      >
+        <h3 class="text-sm font-black">
+          <i class="fas fa-clipboard-check text-cyan-600 mr-1.5"></i>Catatan Supervisi
+        </h3>
+        <span class="text-[10px] text-[var(--text-tertiary)] font-bold"
+          >{{ supervisiList.length }} catatan</span
+        >
+      </div>
+      <div class="divide-y divide-slate-100 dark:divide-slate-700 max-h-[60vh] overflow-y-auto">
+        <div v-for="s in supervisiList" :key="s.id" class="p-3 md:p-4">
+          <div class="flex items-start justify-between gap-2 flex-wrap">
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-black">{{ s.judul }}</p>
+              <p class="text-[10px] text-[var(--text-secondary)] mt-0.5">
+                <i :class="['fas mr-1', s.target_type === 'guru' ? 'fa-user' : 'fa-school']"></i>
+                {{ s.target_type === 'guru' ? 'Untuk Anda' : `Lembaga ${s.target_nama}` }}
+                <span class="text-[var(--text-tertiary)] ml-1.5"
+                  >· dari {{ s.created_by_nama }} · {{ fmtTglSup(s.createdAt) }}</span
+                >
+              </p>
+            </div>
+            <div class="flex flex-col items-end gap-1">
+              <span
+                :class="[
+                  'text-[9px] font-black uppercase px-2 py-0.5 rounded',
+                  supPrioritasClass(s.prioritas)
+                ]"
+                >{{ s.prioritas || 'sedang' }}</span
+              >
+              <span
+                :class="[
+                  'text-[9px] font-black uppercase px-2 py-0.5 rounded',
+                  supStatusClass(s.status)
+                ]"
+                >{{ s.status || 'open' }}</span
+              >
+            </div>
+          </div>
+          <p class="text-xs mt-2 whitespace-pre-line">{{ s.catatan }}</p>
+          <p
+            v-if="s.rekomendasi"
+            class="text-xs text-cyan-700 dark:text-cyan-300 mt-1 italic whitespace-pre-line"
+          >
+            <i class="fas fa-lightbulb mr-1"></i>{{ s.rekomendasi }}
+          </p>
+          <div
+            v-if="s.respon_target"
+            class="bg-[var(--bg-card-elevated)] rounded-lg p-2 mt-2 border-l-4 border-emerald-400"
+          >
+            <p class="text-[9px] font-bold text-emerald-700 uppercase">
+              Tanggapan ({{ fmtTglSup(s.responded_at) }})
+            </p>
+            <p class="text-xs whitespace-pre-line">{{ s.respon_target }}</p>
+          </div>
+          <div v-if="s.status !== 'selesai'" class="mt-2 space-y-2">
+            <textarea
+              v-model="responText[s.id]"
+              rows="2"
+              class="w-full px-2 py-1.5 text-xs rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] outline-none focus:ring-2 focus:ring-cyan-500 resize-none"
+            ></textarea>
+            <div class="flex gap-2 flex-wrap">
+              <button
+                v-if="(s.status || 'open') === 'open'"
+                @click="updateSupervisiStatus(s, 'in_progress')"
+                class="text-[10px] font-bold bg-cyan-100 text-cyan-700 px-2.5 py-1 rounded-lg hover:bg-cyan-200"
+              >
+                <i class="fas fa-play mr-1"></i>Tandai Diproses
+              </button>
+              <button
+                @click="updateSupervisiStatus(s, 'selesai')"
+                class="text-[10px] font-bold bg-emerald-100 text-emerald-700 px-2.5 py-1 rounded-lg hover:bg-emerald-200"
+              >
+                <i class="fas fa-check mr-1"></i>Tandai Selesai
+              </button>
+              <button
+                v-if="(responText[s.id] || '').trim()"
+                @click="kirimRespon(s)"
+                class="text-[10px] font-bold bg-cyan-600 text-white px-2.5 py-1 rounded-lg hover:bg-cyan-700"
+              >
+                <i class="fas fa-paper-plane mr-1"></i>Kirim Tanggapan
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, computed, onMounted, onUnmounted, reactive } from 'vue'
+// v.F6e: adapter Supabase (serverTimestamp = shim ISO string).
+import { subscribeColl, getOne, mergeOne, serverTimestamp } from '@/services/db'
+import { useAuthStore } from '@/stores/auth'
+import { fmtRp, hitungLamaMengajar } from '@/utils/format'
+// v.21.110.0527: catatan supervisi
+import { useToast } from '@/composables/useToast'
+import { isKepalaLembaga } from '@/utils/roleScope'
+import { useDesktopShell } from '@/composables/useDesktopShell'
+import { useIzinGuru } from '@/composables/useIzinGuru' // v.100d: izin/sakit mandiri
+
+const auth = useAuthStore()
+const { isElectron: isDesktop } = useDesktopShell()
+const guru = ref(null)
+const slipRaw = ref([])
+const absensiGuru = ref([])
+let unsubSlip = null
+let unsubAbsensi = null
+// v.21.110.0527
+const toast = useToast()
+const supervisiRaw = ref([])
+const responText = reactive({})
+let unsubSupervisi = null
+
+const now = new Date()
+const tahunIni = now.getFullYear()
+const NAMA_BULAN = [
+  'Januari',
+  'Februari',
+  'Maret',
+  'April',
+  'Mei',
+  'Juni',
+  'Juli',
+  'Agustus',
+  'September',
+  'Oktober',
+  'November',
+  'Desember'
+]
+const bulanLabel = `${NAMA_BULAN[now.getMonth()]} ${tahunIni}`
+
+const lamaMengajar = computed(() => hitungLamaMengajar(guru.value?.tanggal_tugas))
+
+// === Bisyaroh ===
+const slipMine = computed(() =>
+  slipRaw.value.filter((g) => String(g.guru_id) === String(auth.sesiAktif?.id))
+)
+const slipTahunIni = computed(() => {
+  return slipMine.value
+    .filter((g) => String(g.periode || '').startsWith(String(tahunIni)))
+    .sort((a, b) => String(b.periode || '').localeCompare(String(a.periode || '')))
+})
+const slipBulanIni = computed(() => {
+  const periode = `${tahunIni}-${String(now.getMonth() + 1).padStart(2, '0')}`
+  return slipTahunIni.value.find((g) => g.periode === periode)
+})
+const totalTahunIni = computed(() =>
+  slipTahunIni.value.reduce((s, g) => s + (Number(g.take_home) || 0), 0)
+)
+
+// === Kehadiran bulan ini ===
+const kehadiran = computed(() => {
+  const id = String(auth.sesiAktif?.id || '')
+  const prefix = `${tahunIni}-${String(now.getMonth() + 1).padStart(2, '0')}-`
+  let hadir = 0,
+    sakit = 0,
+    izin = 0,
+    alpa = 0
+  for (const row of absensiGuru.value) {
+    if (!String(row.tanggal || '').startsWith(prefix)) continue
+    if (String(row.guru_id || row.guruId || '') !== id) continue
+    const st = String(row.status || '').toLowerCase()
+    if (st === 'hadir' || st === 'masuk') hadir++
+    else if (st === 'sakit') sakit++
+    else if (st === 'izin') izin++
+    else if (st === 'alpa' || st === 'alpha') alpa++
+  }
+  return { hadir, sakit, izin, alpa, total: hadir + sakit + izin + alpa }
+})
+
+// === Detail slip modal ===
+const slipOpen = ref(false)
+const slipDetail = ref(null)
+const slipLineItems = computed(() => {
+  const li = slipDetail.value?.line_items
+  return Array.isArray(li) ? li.filter((x) => Number(x?.nominal) > 0) : []
+})
+function openSlip(g) {
+  slipDetail.value = g
+  slipOpen.value = true
+}
+
+onMounted(async () => {
+  unsubSlip = subscribeColl('keuangan_gaji', (docs) => {
+    slipRaw.value = docs || []
+  })
+  unsubAbsensi = subscribeColl('absensi_shift_guru', (docs) => {
+    absensiGuru.value = docs || []
+  })
+  // v.21.110.0527: subscribe supervisi
+  unsubSupervisi = subscribeColl('supervisi_catatan', (docs) => {
+    supervisiRaw.value = docs || []
+  })
+  try {
+    guru.value = await getOne('guru', String(auth.sesiAktif?.id))
+  } catch (e) {
+    // silent
+  }
+})
+onUnmounted(() => {
+  if (unsubSlip) {
+    try {
+      unsubSlip()
+    } catch (e) {}
+  }
+  if (unsubAbsensi) {
+    try {
+      unsubAbsensi()
+    } catch (e) {}
+  }
+  if (unsubSupervisi) {
+    try {
+      unsubSupervisi()
+    } catch (e) {}
+  }
+})
+
+// v.21.110.0527: catatan supervisi yg dialamatkan ke saya
+const supervisiList = computed(() => {
+  const me = String(auth.sesiAktif?.id || '')
+  const myLembaga = String(guru.value?.lembaga || auth.sesiAktif?.lembaga || '').toLowerCase()
+  const myLembagaSekolah = String(
+    guru.value?.lembaga_sekolah || auth.sesiAktif?.lembaga_sekolah || ''
+  ).toLowerCase()
+  const isKepala = isKepalaLembaga({ ...(guru.value || {}), ...(auth.sesiAktif || {}) })
+  return [...(supervisiRaw.value || [])]
+    .filter((c) => {
+      if (!c) return false
+      // Catatan langsung ke guru saya
+      if (c.target_type === 'guru' && String(c.target_id || '') === me) return true
+      // Catatan ke lembaga & saya kepala/PJ lembaga itu
+      if (c.target_type === 'lembaga' && isKepala) {
+        const tname = String(c.target_nama || '').toLowerCase()
+        return tname === myLembaga || tname === myLembagaSekolah
+      }
+      return false
+    })
+    .sort((a, b) => {
+      // v.F6e: createdAt kini ISO string (Supabase); dukung legacy Firestore {seconds}.
+      const ep = (c) =>
+        c && typeof c === 'object' && c.seconds != null
+          ? Number(c.seconds) * 1000
+          : new Date(c || 0).getTime() || 0
+      return ep(b.createdAt) - ep(a.createdAt)
+    })
+})
+
+function fmtTglSup(ts) {
+  if (!ts) return '-'
+  try {
+    const d = ts.toDate ? ts.toDate() : new Date(ts.seconds * 1000 || ts)
+    if (isNaN(d.getTime())) return '-'
+    return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
+  } catch {
+    return '-'
+  }
+}
+function supPrioritasClass(p) {
+  if (p === 'tinggi') return 'bg-rose-100 text-rose-700'
+  if (p === 'rendah') return 'bg-slate-100 text-slate-600'
+  return 'bg-amber-100 text-amber-700'
+}
+function supStatusClass(s) {
+  if (s === 'selesai') return 'bg-emerald-100 text-emerald-700'
+  if (s === 'in_progress') return 'bg-cyan-100 text-cyan-700'
+  return 'bg-rose-100 text-rose-700'
+}
+
+async function updateSupervisiStatus(s, newStatus) {
+  try {
+    await mergeOne('supervisi_catatan', String(s.id), {
+      status: newStatus,
+      updatedAt: serverTimestamp()
+    })
+    toast.success(newStatus === 'selesai' ? 'Catatan ditandai selesai' : 'Status diperbarui')
+  } catch (e) {
+    toast.error('Gagal: ' + (e.message || e))
+  }
+}
+
+async function kirimRespon(s) {
+  const txt = String(responText[s.id] || '').trim()
+  if (!txt) return
+  try {
+    await mergeOne('supervisi_catatan', String(s.id), {
+      respon_target: txt,
+      responded_at: serverTimestamp(),
+      status: s.status === 'selesai' ? 'selesai' : 'in_progress',
+      updatedAt: serverTimestamp()
+    })
+    responText[s.id] = ''
+    toast.success('Tanggapan terkirim')
+  } catch (e) {
+    toast.error('Gagal: ' + (e.message || e))
+  }
+}
+
+// ===== v.100d: Izin/Sakit mandiri =====
+const {
+  myIzin,
+  antrian: izinAntrian,
+  isApprover: izinIsApprover,
+  ajukan: ajukanIzin,
+  batal: batalIzinReq,
+  tolak: tolakIzinReq,
+  setujui: setujuiIzinReq
+} = useIzinGuru()
+
+const izinFormOpen = ref(false)
+const izinForm = reactive({
+  jenis: 'izin',
+  tgl_mulai: '',
+  tgl_selesai: '',
+  shifts: [],
+  keterangan: ''
+})
+const izinBusy = ref(false)
+const izinBusyId = ref(null)
+
+function openIzinForm() {
+  const t = new Date().toISOString().slice(0, 10)
+  izinForm.jenis = 'izin'
+  izinForm.tgl_mulai = t
+  izinForm.tgl_selesai = t
+  izinForm.shifts = []
+  izinForm.keterangan = ''
+  izinFormOpen.value = true
+}
+function toggleIzinShift(sh) {
+  const i = izinForm.shifts.indexOf(sh)
+  if (i >= 0) izinForm.shifts.splice(i, 1)
+  else izinForm.shifts.push(sh)
+}
+async function submitIzin() {
+  if (!izinForm.tgl_mulai) {
+    toast.warning('Pilih tanggal mulai.')
+    return
+  }
+  if (!izinForm.shifts.length) {
+    toast.warning('Pilih minimal satu shift.')
+    return
+  }
+  if (izinForm.tgl_selesai && izinForm.tgl_selesai < izinForm.tgl_mulai) {
+    toast.warning('Tanggal selesai sebelum mulai.')
+    return
+  }
+  izinBusy.value = true
+  try {
+    await ajukanIzin({ ...izinForm })
+    toast.success('Pengajuan terkirim, menunggu persetujuan.')
+    izinFormOpen.value = false
+  } catch (e) {
+    toast.error('Gagal: ' + (e.message || e))
+  } finally {
+    izinBusy.value = false
+  }
+}
+async function batalIzin(a) {
+  if (!confirm(`Batalkan pengajuan ${jenisIzinLabel(a.jenis)} ${rangeLabel(a)}?`)) return
+  try {
+    await batalIzinReq(a.id)
+    toast.success('Pengajuan dibatalkan.')
+  } catch (e) {
+    toast.error('Gagal: ' + (e.message || e))
+  }
+}
+async function setujuiIzin(a) {
+  izinBusyId.value = a.id
+  try {
+    const r = await setujuiIzinReq(a, absensiGuru.value)
+    toast.success(
+      `Disetujui — ${r.written} absensi terisi${r.skipped ? `, ${r.skipped} dilewati (sudah hadir)` : ''}.`
+    )
+  } catch (e) {
+    toast.error('Gagal: ' + (e.message || e))
+  } finally {
+    izinBusyId.value = null
+  }
+}
+async function tolakIzin(a) {
+  izinBusyId.value = a.id
+  try {
+    await tolakIzinReq(a)
+    toast.success('Pengajuan ditolak.')
+  } catch (e) {
+    toast.error('Gagal: ' + (e.message || e))
+  } finally {
+    izinBusyId.value = null
+  }
+}
+function jenisIzinLabel(j) {
+  return j === 'sakit' ? 'Sakit' : 'Izin'
+}
+function statusIzinClass(s) {
+  if (s === 'disetujui') return 'bg-emerald-100 text-emerald-700'
+  if (s === 'ditolak') return 'bg-rose-100 text-rose-700'
+  return 'bg-amber-100 text-amber-700'
+}
+function statusIzinLabel(s) {
+  return s === 'disetujui' ? 'Disetujui' : s === 'ditolak' ? 'Ditolak' : 'Menunggu'
+}
+function shiftsLabel(arr) {
+  return (Array.isArray(arr) ? arr : [])
+    .map((x) => String(x).charAt(0).toUpperCase() + String(x).slice(1))
+    .join(', ')
+}
+function rangeLabel(a) {
+  return a.tgl_selesai && a.tgl_selesai !== a.tgl_mulai
+    ? `${a.tgl_mulai} – ${a.tgl_selesai}`
+    : a.tgl_mulai
+}
+</script>

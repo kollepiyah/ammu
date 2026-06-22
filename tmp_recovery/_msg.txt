@@ -1,0 +1,10 @@
+fix(v.98 audit+ship): anti-bocor guru + rules signedIn() + listener leak + vc97 + build fix isDesktop
+
+Audit menyeluruh Ribbon v.98 (A-E) + remediasi:
+- Anti-bocor (D-P0): GlobalSearch pakai daftar TER-SCOPE (santri/guru) bukan *Raw; ProfilDetailView guard canView (admin/super/keu=bebas, guru=ampuan/diri, Kepala=lembagaScopeMatches) -> tutup deep-link profil lintas-lembaga/akun.
+- Rules hardening (C-P0/D): firestore.rules 15 koleksi sensitif (keuangan_*, rapor_semester, rekap_*, supervisi_catatan, notif_prestasi, riwayat_kenaikan, audit_log, tabungan_mutasi) read:if true -> signedIn(); notif_queue read:false. Login-path (master/settings/guru/santri/lembaga/posts/kegiatan) TETAP publik.
+- Listener leak (B-P1): onUnmounted cleanup di useSantriForm.js (koleksi guru penuh), MasterDataView.vue (audit_log), KelasView.vue (master/lembaga).
+- versionCode 97 (B-P0): build.gradle vc97/vn v.97.0626; root+electron package.json; footer Login/Dashboard/PpdbAdmin.
+- Build fix (P0): hapus deklarasi GANDA isDesktop di TabunganView.vue + PosSantriView.vue (bug bawaan v.98, build:electron gagal). 31 file v.98 lain lolos compiler.
+
+Verifikasi: tmp_recovery/_run_vite.cmd VITE_EXITCODE=0.

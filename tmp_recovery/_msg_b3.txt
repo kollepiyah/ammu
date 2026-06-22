@@ -1,0 +1,7 @@
+fix(diniyah+auth+ux): KOP/guru sekolah, anon-auth admin, toast global, jabatan master
+
+- Rapor Diniyah: KOP + Guru Kelas dari lembaga SEKOLAH (lembaga_sekolah/guru_sekolah), bukan ngaji PTPT (RaporView kop/findLembagaObjFor/namaGuru/card + raporPdf drawSignBlocks)
+- Auth: admin built-in dapat sesi Firebase Anonymous -> request.auth != null -> rules signedIn() read/write jalan (stores/auth.js). WAJIB aktifkan provider Anonymous di Firebase Console
+- firestore.rules: read publik kritik_saran/supervisi_catatan/user_notif_state (anti-race + admin built-in)
+- ToastStack di-mount GLOBAL di App.vue (sebelumnya tak pernah dipasang -> toast tidak muncul di mana pun)
+- Dropdown jabatan guru: JABATAN_OPTIONS hardcoded hanya fallback kalau master/lembaga kosong (useGuruForm)

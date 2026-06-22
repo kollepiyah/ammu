@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Base application theme. -->
+    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="colorAccent">@color/colorAccent</item>
+    </style>
+
+    <style name="AppTheme.NoActionBar" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+        <item name="android:background">@null</item>
+        <!-- v.04.0526: Explicit status bar config supaya tidak overlap WebView -->
+        <item name="android:statusBarColor">@color/colorPrimary</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowFullscreen">false</item>
+        <item name="android:windowTranslucentStatus">false</item>
+        <item name="android:fitsSystemWindows">true</item>
+    </style>
+
+
+    <!-- v.31.0526: REVERT dari Theme.SplashScreen (Android 12+ API) ke Theme.AppCompat.NoActionBar.
+         Theme.SplashScreen override total launching window jadi cuma icon launcher 500ms, sehingga
+         Capacitor SplashScreen plugin (load splash.png MU) tidak pernah tampil. Pakai parent
+         standar + windowBackground=drawable/splash supaya splash.png langsung tampil di launch,
+         lalu Capacitor plugin handle hide manual (launchAutoHide=false, duration 3000ms). -->
+    <style name="AppTheme.NoActionBarLaunch" parent="Theme.AppCompat.NoActionBar">
+        <item name="android:windowBackground">@drawable/splash</item>
+        <item name="android:statusBarColor">@color/colorPrimary</item>
+        <item name="android:windowFullscreen">false</item>
+        <item name="android:fitsSystemWindows">true</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="android:windowTranslucentStatus">false</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+</resources>

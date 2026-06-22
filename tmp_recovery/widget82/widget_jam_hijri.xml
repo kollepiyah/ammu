@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="12dp"
+    android:background="@drawable/widget_bg">
+
+    <TextView
+        android:id="@+id/widget_jam"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="00:00"
+        android:textSize="36sp"
+        android:textStyle="bold"
+        android:textColor="#0F766E"
+        android:fontFamily="sans-serif" />
+
+    <TextView
+        android:id="@+id/widget_tanggal_masehi"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:text="Hari, 1 Januari 2026"
+        android:textSize="11sp"
+        android:textColor="#475569"
+        android:textStyle="bold"
+        android:fontFamily="sans-serif" />
+
+    <TextView
+        android:id="@+id/widget_tanggal_hijri"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:text="1 Muharram 1447 H"
+        android:textSize="10sp"
+        android:textColor="#0F766E"
+        android:textStyle="italic"
+        android:fontFamily="sans-serif" />
+
+</LinearLayout>

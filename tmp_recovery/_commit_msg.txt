@@ -1,0 +1,1 @@
+feat(rapor): identitas 2 kolom rata kiri (Nama Santri) + geser kanan, KOP Diniyah logo kiri = logo pondok (2 logo selalu muncul, fallback), KOP line 4 huruf kecil (email), rata-rata sumatif bisa override manual (kosong=auto rekap bulanan), tabel Nilai Rata-rata full-width; bump display v97.0626; update PROJECT-KNOWLEDGE-BASE (recap rapor redesign full-ACF)

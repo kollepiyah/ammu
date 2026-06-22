@@ -1,0 +1,10 @@
+feat(v.91): fix sidebar mobile menggantung, perf Lighthouse, audit (dead code + firestoreSafe backup), EmptyState/PageHeader + amankan WIP sesi lalu
+
+- Sidebar drawer: AppLayout root `relative` + AppSidebar inset bawah saja (akar: drawer absolute anchor ke viewport, bukan kotak app)
+- Perf: router prefetch dibatasi 9 rute + delay 4s + skip Save-Data/2g; Font Awesome & Google Fonts non-render-blocking (media-swap); + meta description (SEO)
+- Dead code dihapus: AppBreadcrumb, utils/raporCompute, stores/childPicker, KartuKenaikanMatrix/SchemaEditor
+- EmptyState diadopsi (SantriView+GuruView) + PageHeader (SantriView)
+- firestoreSafe AKTIF: deleteOne backup ke audit_log sebelum hapus (Santri single+bulk, Guru, keuangan Tagihan/BukuInduk/Tabungan/Bisyaroh/HutangPiutang) + setAuditSesi atribusi user
+- WIP sesi lalu ikut: fix auto-logout reopen (auth.js), dashboard keuangan, pull-to-refresh, gesture back, hapus breadcrumb
+
+Detail: AUDIT-COWORK-03JUN2026.md. Semua lolos vite build.

@@ -1,0 +1,8 @@
+perf(store): listener Firestore terpusat — fix duplicate full-collection listeners (audit 1 Juni)
+
+- stores/collections.js BARU: subscribe santri/guru/keuangan_buku_induk 1x se-sesi (idempotent, hidup se-sesi)
+- migrasi 5 composable -> baca ref shared via storeToRefs + collections.ensure():
+  useSantri, useGuru, useAbsensi, useKeuangan (ensure dalam guard isFullAccess), useLembaga
+- public API composable TIDAK berubah (semua View tetap jalan tanpa diubah)
+- santri listener berkurang (was 13 panggilan, layer composable kini 1 via store), guru (was 8)
+- Fase 2 (belum, opsional): useNotifications buku_induk (role-gated) + 7 view subscribe santri langsung

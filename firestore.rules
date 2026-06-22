@@ -1,26 +1,26 @@
 // ============================================================================
 // FIREBASE FIRESTORE RULES — MAMBAUL ULUM
 // v.108.44 — B2 Tightening (Firebase Auth based)
+// + v.102 S3/S4b (RBAC custom claims): read PII tutup (signedIn), write/delete per-role.
 // ============================================================================
 //
 // CHANGELOG:
 // - v.108.44 (2026-05-13): Migrate dari permissive `allow write: if true`
-//   ke `allow write: if request.auth != null`. Setelah B1 Firebase Auth migration
-//   sukses, semua user yang interact app pasti signed in via Firebase Auth.
-//   Anonymous DevTools attacker tidak bisa write lagi.
+//   ke `allow write: if request.auth != null`.
+// - v.102 S3 (2026-06-16): santri/guru read -> signedIn() (tutup PII publik).
+// - v.102 S4b (2026-06-16): write/delete per-role via custom claim `role`
+//   (di-set Cloud Function syncUserClaims). DELETE = super_admin saja.
 //
-// PRINSIP RULES BARU:
-//   - READ: tetap public/permissive untuk login lookup (anonymous read tetap OK)
-//     karena saat lazy migration login, signIn fail dulu (anonymous), perlu
-//     baca db_guru/db_santri untuk verify password lama.
-//   - WRITE: WAJIB Firebase Auth signed in (request.auth != null).
-//     Plus validasi struktur data tetap dipertahankan.
-//   - DELETE: WAJIB Firebase Auth signed in.
+// PERAN (claim `role`):
+//   super_admin   : semua (tulis/edit/HAPUS).
+//   admin (biasa) : tulis+edit umum/master/konten (TIDAK hapus, TIDAK keuangan).
+//   admin_keuangan: tulis+edit keuangan (TIDAK hapus).
+//   guru          : tulis+edit data akademik/absensi santri.
+//   santri        : baca + edit profil sendiri (foto/username) saja.
+//   supervisi=true (claim, dari jabatan Direktur/Supervisor): tulis supervisi_catatan.
+//   Akun tanpa claim (self-register nyeleneh) -> role()='' -> gagal semua gerbang.
 //
-// CARA BYPASS YANG SAH (untuk admin SDK / Cloud Function):
-//   - Cloud Function dengan Admin SDK bypass rules secara native.
-//   - Backend lain (Cloud Run) bisa via service account.
-//
+// Admin SDK / Cloud Function bypass rules secara native.
 // ============================================================================
 
 rules_version = '2';
@@ -36,41 +36,37 @@ service cloud.firestore {
     }
     function signedIn() { return request.auth != null; }
 
-    match /master/{docId} {
-      allow read: if true;
-      allow write: if signedIn();
+    // v.102 S4b RBAC: role dari custom claim (null-safe).
+    function role() { return signedIn() ? request.auth.token.role : ''; }
+    function isSuper() { return role() == 'super_admin'; }
+    function canManage() { return role() in ['super_admin', 'admin']; }              // tulis/edit umum/master/konten
+    function canKeuangan() { return role() in ['super_admin', 'admin_keuangan']; }   // keuangan
+    function canAkademik() { return role() in ['super_admin', 'admin', 'guru']; }    // data akademik/absensi santri
+    function canSupervisi() { return isSuper() || (signedIn() && request.auth.token.supervisi == true); }
+    function isStaff() { return role() in ['super_admin', 'admin', 'admin_keuangan', 'guru']; }
+    // self-edit: pemilik doc (firebase_uid == uid), TANPA boleh ubah field privilese.
+    function ownDoc() { return signedIn() && resource.data.firebase_uid == request.auth.uid; }
+    function privUnchanged() {
+      return request.resource.data.get('firebase_uid', '') == resource.data.get('firebase_uid', '')
+        && request.resource.data.get('role_sistem', '') == resource.data.get('role_sistem', '')
+        && request.resource.data.get('jabatan', '') == resource.data.get('jabatan', '');
+    }
+    function uidUnchanged() {
+      return request.resource.data.get('firebase_uid', '') == resource.data.get('firebase_uid', '');
     }
 
-    match /settings/{docId} {
-      allow read: if true;
-      allow write: if signedIn()
-                   && request.resource.data.keys().hasAll(['adminPassword'])
-                   && request.resource.data.adminPassword is string
-                   && request.resource.data.adminPassword.size() >= 1
-                   && request.resource.data.adminPassword.size() <= 200;
-    }
-
-    match /guru/{docId} {
-      allow read: if true;
-      allow create, update: if signedIn()
-        && request.resource.data.id is number
+    function guruValid() {
+      return (request.resource.data.id is number || request.resource.data.id is string)
         && request.resource.data.nama is string
         && request.resource.data.nama.size() >= 1
         && request.resource.data.nama.size() <= 200
-        && request.resource.data.password is string
-        && request.resource.data.password.size() >= 1
-        && request.resource.data.password.size() <= 200
         && (
           !('role_sistem' in request.resource.data)
           || request.resource.data.role_sistem in ['guru_biasa', 'user', 'admin', 'admin_keuangan', 'super_admin']
         );
-      allow delete: if signedIn();
     }
-
-    match /santri/{docId} {
-      allow read: if true;
-      allow create, update: if signedIn()
-        && request.resource.data.id is number
+    function santriValid() {
+      return (request.resource.data.id is number || request.resource.data.id is string)
         && request.resource.data.nama is string
         && request.resource.data.nama.size() >= 1
         && request.resource.data.nama.size() <= 200
@@ -78,69 +74,84 @@ service cloud.firestore {
           !('aktif' in request.resource.data)
           || request.resource.data.aktif is bool
         );
-      allow delete: if signedIn();
+    }
+
+    match /master/{docId} {
+      allow read: if true;
+      allow create, update: if canManage();
+      allow delete: if isSuper();
+    }
+
+    match /settings/{docId} {
+      // v.100g: tutup baca PUBLIK doc 'admin' (sandi admin). web/general tetap publik (branding/login lookup).
+      allow read: if docId != 'admin';
+      allow create, update: if canManage();
+      allow delete: if isSuper();
+    }
+
+    match /guru/{docId} {
+      allow read: if signedIn(); // S3 (v.102): tutup read publik (PII guru); scope per-role di app
+      allow create: if canManage() && guruValid();
+      // update: pengurus (canManage) ATAU pemilik (self-edit foto/username, TANPA ubah role_sistem/jabatan)
+      allow update: if guruValid() && (canManage() || (ownDoc() && privUnchanged()));
+      allow delete: if isSuper();
+    }
+
+    match /santri/{docId} {
+      allow read: if signedIn(); // S3 (v.102): tutup read publik (PII anak+wali); scope per-role di app
+      allow create: if canManage() && santriValid();
+      allow update: if santriValid() && (canManage() || (ownDoc() && uidUnchanged()));
+      allow delete: if isSuper();
     }
 
     match /absensi/{docId} {
-      allow read: if true;
-      allow write: if signedIn();
+      allow read: if signedIn(); // v.105 audit: tutup read publik (PII + status kehadiran santri)
+      allow create, update: if canAkademik();
+      allow delete: if isSuper();
     }
 
     match /keuangan_tagihan/{docId} {
-      allow read: if true;
-      allow create, update: if signedIn()
-        && request.resource.data.id is string
-        && request.resource.data.santri_id is number
-        && request.resource.data.jenis_id is string
-        && isPositive(request.resource.data.nominal_total)
-        && isPositive(request.resource.data.nominal_terbayar)
-        && request.resource.data.status in ['belum', 'partial', 'lunas']
-        && request.resource.data.nominal_terbayar <= request.resource.data.nominal_total;
-      allow delete: if signedIn();
-    }
-
-    match /keuangan_transaksi/{docId} {
-      allow read: if true;
-      allow create: if signedIn()
-        && request.resource.data.id is string
-        && request.resource.data.no_struk is string
-        && request.resource.data.santri_id is number
-        && isValidDate(request.resource.data.tanggal)
-        && isPositive(request.resource.data.total_tagihan)
-        && isPositive(request.resource.data.total_bayar)
-        && request.resource.data.items is list
-        && request.resource.data.items.size() >= 1
-        && request.resource.data.items.size() <= 50;
-      allow update, delete: if false;
+      allow read: if signedIn(); // v.98 hardening
+      allow create, update: if canKeuangan()
+        && (!('nominal' in request.resource.data) || request.resource.data.nominal is number)
+        && (!('santri_id' in request.resource.data) || request.resource.data.santri_id is string || request.resource.data.santri_id is number);
+      allow delete: if isSuper();
     }
 
     match /keuangan_tabungan_santri/{docId} {
-      allow read: if true;
-      allow create: if signedIn()
+      allow read: if signedIn(); // v.98 hardening
+      allow create: if canKeuangan()
         && request.resource.data.id is string
-        && request.resource.data.santri_id is number
         && request.resource.data.jenis in ['setor', 'tarik']
         && request.resource.data.nominal is number
         && request.resource.data.nominal > 0
         && isValidDate(request.resource.data.tanggal);
-      allow update, delete: if false;
+      allow update: if canKeuangan()
+        && request.resource.data.jenis in ['setor', 'tarik']
+        && request.resource.data.nominal is number
+        && request.resource.data.nominal > 0;
+      allow delete: if isSuper();
     }
 
-    match /keuangan_tabungan_guru/{docId} {
-      allow read: if true;
-      allow create: if signedIn()
+    // v.95.0626: Uang Saku santri ma'had — sama persis dgn tabungan (koleksi terpisah)
+    match /keuangan_uang_saku_santri/{docId} {
+      allow read: if signedIn(); // v.98 hardening
+      allow create: if canKeuangan()
         && request.resource.data.id is string
-        && request.resource.data.guru_id is number
         && request.resource.data.jenis in ['setor', 'tarik']
         && request.resource.data.nominal is number
         && request.resource.data.nominal > 0
         && isValidDate(request.resource.data.tanggal);
-      allow update, delete: if false;
+      allow update: if canKeuangan()
+        && request.resource.data.jenis in ['setor', 'tarik']
+        && request.resource.data.nominal is number
+        && request.resource.data.nominal > 0;
+      allow delete: if isSuper();
     }
 
     match /keuangan_gaji/{docId} {
-      allow read: if true;
-      allow create, update: if signedIn()
+      allow read: if signedIn(); // v.98 hardening: bisyaroh guru — jangan terbaca publik
+      allow create, update: if canKeuangan()
         && request.resource.data.id is string
         && request.resource.data.guru_id is number
         && request.resource.data.periode is string
@@ -150,25 +161,12 @@ service cloud.firestore {
         && isPositive(request.resource.data.total_potongan)
         && request.resource.data.tunjangan_list is list
         && request.resource.data.potongan_list is list;
-      allow delete: if false;
-    }
-
-    match /keuangan_hutang/{docId} {
-      allow read: if true;
-      allow create, update: if signedIn()
-        && request.resource.data.id is string
-        && request.resource.data.kepada is string
-        && request.resource.data.kepada.size() >= 1
-        && request.resource.data.nominal is number
-        && request.resource.data.nominal > 0
-        && request.resource.data.status in ['belum', 'lunas']
-        && isValidDate(request.resource.data.tanggal);
-      allow delete: if signedIn();
+      allow delete: if isSuper();
     }
 
     match /keuangan_buku_induk/{docId} {
-      allow read: if true;
-      allow create: if signedIn()
+      allow read: if signedIn(); // v.98 hardening
+      allow create: if canKeuangan()
         && request.resource.data.id is string
         && request.resource.data.tipe in ['masuk', 'keluar']
         && request.resource.data.nominal is number
@@ -176,9 +174,15 @@ service cloud.firestore {
         && isValidDate(request.resource.data.tanggal)
         && request.resource.data.keterangan is string
         && request.resource.data.keterangan.size() >= 1
-        && request.resource.data.sumber in ['manual', 'pos_santri', 'tabungan_santri', 'tabungan_guru', 'gaji', 'hutang'];
-      allow update: if false;
-      allow delete: if signedIn() && resource.data.sumber in ['manual', 'gaji', 'pos_santri', 'tabungan_santri', 'tabungan_guru', 'hutang'];
+        && request.resource.data.sumber in ['manual', 'pos_santri', 'tabungan_santri', 'tabungan_guru', 'gaji', 'hutang', 'transfer_verified'];
+      allow update: if canKeuangan()
+        && request.resource.data.tipe in ['masuk', 'keluar']
+        && request.resource.data.nominal is number
+        && request.resource.data.nominal > 0
+        && isValidDate(request.resource.data.tanggal)
+        && request.resource.data.keterangan is string
+        && request.resource.data.keterangan.size() >= 1;
+      allow delete: if isSuper() && resource.data.sumber in ['manual', 'gaji', 'pos_santri', 'tabungan_santri', 'tabungan_guru', 'hutang', 'transfer_verified'];
     }
 
     match /link_preview_cache/{cacheId} {
@@ -188,88 +192,129 @@ service cloud.firestore {
 
     match /beranda_post/{docId} {
       allow read: if true;
-      allow create, update: if signedIn()
+      // v.102 S4b: post/kegiatan = admin + super_admin (bukan guru)
+      allow create, update: if canManage()
         && request.resource.data.id is string
-        && request.resource.data.judul is string
-        && request.resource.data.judul.size() >= 1
-        && request.resource.data.judul.size() <= 200
-        && request.resource.data.isi is string
-        && request.resource.data.isi.size() <= 5000;
-      allow delete: if signedIn();
+        && (
+          !('judul' in request.resource.data)
+          || (request.resource.data.judul is string && request.resource.data.judul.size() <= 200)
+        )
+        && (
+          !('isi' in request.resource.data)
+          || (request.resource.data.isi is string && request.resource.data.isi.size() <= 5000)
+        );
+      allow delete: if isSuper();
+
+      match /reactions/{userId} {
+        allow read: if true;
+        allow write: if signedIn(); // like/react: semua user (termasuk santri)
+      }
     }
 
     match /kegiatan/{docId} {
       allow read: if true;
-      allow create, update: if signedIn()
+      allow create, update: if canManage()
         && request.resource.data.id is string
         && request.resource.data.judul is string
         && request.resource.data.judul.size() >= 1
         && isValidDate(request.resource.data.tgl_mulai);
-      allow delete: if signedIn();
+      allow delete: if isSuper();
     }
 
-    // Kritik saran: CREATE tetap allow anonymous (santri/wali boleh kirim tanpa login)
+    // Kritik saran: CREATE tetap anonim (santri/wali boleh kirim tanpa login)
     match /kritik_saran/{docId} {
-      allow read: if signedIn();
+      allow read: if signedIn(); // v.105 audit: hanya pengurus baca masukan (CREATE tetap anonim, lihat bawah)
       allow create: if
         request.resource.data.pesan is string
         && request.resource.data.pesan.size() >= 1
         && request.resource.data.pesan.size() <= 2000;
-      allow update, delete: if signedIn();
+      allow update: if canManage();
+      allow delete: if isSuper();
     }
 
     match /profil_pesantren/{docId} {
       allow read: if true;
-      allow write: if signedIn();
+      allow create, update: if canManage();
+      allow delete: if isSuper();
     }
 
     match /absensi_kegiatan/{docId} {
-      allow read: if true;
-      allow write: if signedIn();
+      allow read: if signedIn(); // v.105 audit: tutup read publik
+      allow create, update: if canAkademik();
+      allow delete: if isSuper();
     }
 
     match /absensi_shift_guru/{docId} {
-      allow read: if true;
-      allow write: if signedIn();
+      allow read: if signedIn(); // v.105 audit: tutup read publik
+      allow create, update: if canAkademik();
+      allow delete: if isSuper();
     }
 
     match /notif_queue/{docId} {
-      allow read: if signedIn();
-      allow create: if signedIn()
+      allow read: if false; // v.98 hardening: buffer dispatch server-only (pesan + token FCM)
+      allow create: if isStaff()
         && request.resource.data.judul is string
         && request.resource.data.pesan is string;
-      allow update, delete: if signedIn();
+      allow update, delete: if isStaff();
     }
 
     match /audit_log/{docId} {
-      allow read: if signedIn();
-      allow create: if signedIn();
+      allow read: if signedIn(); // v.98 hardening
+      allow create: if signedIn(); // append-only oleh user yang beraksi
       allow update, delete: if false;
     }
 
     match /rapor_semester/{docId} {
-      allow read: if true;
-      allow create, update: if signedIn()
+      allow read: if signedIn(); // v.98 hardening: nilai rapor santri
+      allow create, update: if canAkademik()
         && request.resource.data.santri_id != null
         && request.resource.data.lembaga is string;
-      allow delete: if signedIn();
+      allow delete: if isSuper();
     }
 
     match /rekap_diniyah/{docId} {
+      allow read: if signedIn(); // v.98 hardening
+      allow create, update: if canAkademik() && request.resource.data.santri_id != null;
+      allow delete: if isSuper();
+    }
+
+    match /rekap_prestasi/{docId} {
+      allow read: if signedIn(); // v.98 hardening
+      allow create, update: if canAkademik();
+      allow delete: if isSuper();
+    }
+
+    // PSB Pendaftaran Santri Baru — CREATE publik (formulir tanpa login)
+    match /psb_pendaftaran/{docId} {
+      allow read: if signedIn(); // v.105 audit: PII pendaftar; form publik HANYA create (lihat bawah)
+      allow create: if request.resource.data.nama is string
+        && request.resource.data.nama.size() >= 1
+        && request.resource.data.nama.size() <= 200;
+      allow update: if canManage();
+      allow delete: if isSuper();
+    }
+
+    match /lembaga/{docId} {
       allow read: if true;
-      allow create, update: if signedIn() && request.resource.data.santri_id != null;
-      allow delete: if signedIn();
+      allow create, update: if canManage();
+      allow delete: if isSuper();
+    }
+
+    match /tabungan_mutasi/{docId} {
+      allow read: if signedIn(); // v.98 hardening
+      allow create, update: if canKeuangan();
+      allow delete: if isSuper();
     }
 
     match /absensi_santri_sekolah/{docId} {
-      allow read: if true;
+      allow read: if signedIn(); // v.105 audit: tutup read publik (PII + kehadiran)
       allow create, update: if false;
-      allow delete: if signedIn();
+      allow delete: if isSuper();
     }
 
     match /absensi_santri_sekolah_bulanan/{docId} {
-      allow read: if true;
-      allow create, update: if signedIn()
+      allow read: if signedIn(); // v.105 audit: tutup read publik (PII + kehadiran)
+      allow create, update: if canAkademik()
         && request.resource.data.santri_id != null
         && request.resource.data.periode is string
         && request.resource.data.periode.matches('^[0-9]{4}-(0[1-9]|1[0-2])$')
@@ -277,19 +322,162 @@ service cloud.firestore {
         && request.resource.data.izin is number && request.resource.data.izin >= 0
         && request.resource.data.alpa is number && request.resource.data.alpa >= 0
         && request.resource.data.hadir is number && request.resource.data.hadir >= 0;
-      allow delete: if signedIn();
+      allow delete: if isSuper();
+    }
+
+    // Absensi ngaji bulanan (Qiraati — input manual guru)
+    match /absensi_santri_ngaji_bulanan/{docId} {
+      allow read: if signedIn(); // v.105 audit: tutup read publik (PII + kehadiran)
+      allow create, update: if canAkademik()
+        && request.resource.data.santri_id != null
+        && request.resource.data.periode is string
+        && request.resource.data.periode.matches('^[0-9]{4}-(0[1-9]|1[0-2])$')
+        && request.resource.data.sakit is number && request.resource.data.sakit >= 0
+        && request.resource.data.izin is number && request.resource.data.izin >= 0
+        && request.resource.data.alpa is number && request.resource.data.alpa >= 0
+        && request.resource.data.hadir is number && request.resource.data.hadir >= 0;
+      allow delete: if isSuper();
     }
 
     match /riwayat_kenaikan/{docId} {
-      allow read: if true;
-      allow create, update: if signedIn();
-      allow delete: if signedIn();
+      allow read: if signedIn(); // v.98 hardening
+      allow create, update: if canAkademik();
+      allow delete: if isSuper();
     }
 
     match /backup_hapus/{docId} {
       allow read: if signedIn();
-      allow create: if signedIn();
+      allow create: if isStaff();
       allow update, delete: if false;
+    }
+
+    // posts (Ammu Channel) — admin + super_admin kelola
+    match /posts/{docId} {
+      allow read: if true;
+      allow create, update: if canManage();
+      allow delete: if isSuper();
+
+      match /reactions/{userId} {
+        allow read: if true;
+        allow write: if signedIn();
+      }
+    }
+
+    match /keuangan_hutang_piutang/{docId} {
+      allow read: if signedIn(); // v.98 hardening
+      allow create, update: if canKeuangan()
+        && (!('nominal' in request.resource.data) || request.resource.data.nominal is number);
+      allow delete: if isSuper();
+    }
+
+    match /keuangan_pembayaran/{docId} {
+      allow read: if signedIn(); // v.98 hardening
+      allow create, update: if canKeuangan()
+        && (!('nominal' in request.resource.data) || request.resource.data.nominal is number);
+      allow delete: if isSuper();
+    }
+
+    // Absensi guru (fingerprint + manual entry)
+    match /absensi_guru/{docId} {
+      allow read: if signedIn(); // v.105 audit: tutup read publik (PII + kehadiran guru)
+      allow create, update: if canAkademik();
+      allow delete: if isSuper();
+    }
+
+    // Kegiatan pesantren — admin kelola
+    match /kegiatan_pesantren/{docId} {
+      allow read: if true;
+      allow create, update: if canManage();
+      allow delete: if isSuper();
+    }
+
+    match /kegiatan_master/{docId} {
+      allow read: if true;
+      allow create, update: if canManage();
+      allow delete: if isSuper();
+    }
+
+    // Pembayaran konfirmasi (wali upload bukti, admin/keuangan verify)
+    match /pembayaran_konfirmasi/{docId} {
+      allow read: if signedIn();
+      allow create: if signedIn() // wali (santri) kirim konfirmasi
+        && request.resource.data.santri_id is number
+        && request.resource.data.nominal is number
+        && request.resource.data.nominal > 0
+        && request.resource.data.status in ['pending']
+        && request.resource.data.tanggal_transfer is string;
+      allow update: if canKeuangan(); // verifikasi
+      allow delete: if canKeuangan();
+    }
+
+    // Catatan supervisi (Direktur/Supervisor -> guru/lembaga)
+    match /supervisi_catatan/{docId} {
+      allow read: if signedIn(); // v.98 hardening
+      allow create, update: if canSupervisi()
+        && request.resource.data.id is string
+        && request.resource.data.target_type in ['guru', 'lembaga']
+        && request.resource.data.target_id is string
+        && request.resource.data.judul is string
+        && request.resource.data.catatan is string
+        && request.resource.data.judul.size() <= 300
+        && request.resource.data.catatan.size() <= 20000;
+      allow delete: if isSuper();
+    }
+
+    // Per-user notif state (last_seen per kategori) — self, semua role
+    match /user_notif_state/{userId} {
+      allow read: if true;
+      allow write: if signedIn();
+    }
+
+    match /pengaturan_keuangan/{docId} {
+      allow read: if signedIn(); // v.105 audit: tutup read publik (konfigurasi keuangan)
+      allow create, update: if canKeuangan();
+      allow delete: if isSuper();
+    }
+
+    match /scheduled_jobs/{docId} {
+      allow read: if signedIn();
+      allow create, update: if isStaff();
+      allow delete: if isSuper();
+    }
+
+    // Bukti transfer pembayaran (wali upload -> admin/keuangan verifikasi)
+    match /pembayaran_transfer_pending/{docId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.nominal is number
+        && request.resource.data.nominal > 0
+        && request.resource.data.status == 'pending';
+      allow update, delete: if canKeuangan();
+    }
+
+    // Notif prestasi (event saat input nilai prestasi)
+    match /notif_prestasi/{docId} {
+      allow read: if signedIn(); // v.98 hardening
+      allow create, update: if canAkademik();
+      allow delete: if isSuper();
+    }
+
+    // Riwayat prestasi BULANAN
+    match /riwayat_prestasi/{docId} {
+      allow read: if signedIn();
+      allow create, update: if canAkademik();
+      allow delete: if isSuper();
+    }
+
+    // Izin/Sakit guru (guru ajukan -> Kepala/PJ setujui)
+    match /izin_guru/{docId} {
+      allow read: if signedIn();
+      allow create, update: if canAkademik();
+      allow delete: if isSuper();
+    }
+
+    // Tes Kenaikan Qiraati (guru ajukan -> kepala/PJ uji)
+    match /tes_kenaikan/{docId} {
+      allow read: if signedIn();
+      allow create, update: if canAkademik();
+      allow delete: if isSuper();
     }
 
     // Default deny untuk collection lain

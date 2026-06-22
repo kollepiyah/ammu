@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#0F766E</color>
+    <color name="colorPrimaryDark">#115E59</color>
+    <color name="colorAccent">#2DD4BF</color>
+    <!-- v.20.0526: Splash background mint green (match brand) -->
+    <color name="splashBg">#F2FEF9</color>
+    <!-- v.100: warna aksen ikon notifikasi (FCM default_notification_color + LocalNotifications) -->
+    <color name="ammu_notif_accent">#0F766E</color>
+</resources>

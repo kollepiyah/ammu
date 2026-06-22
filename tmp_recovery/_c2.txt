@@ -1,0 +1,221 @@
+14cb922 fix(v.83.0526): Android persist auth + statusbar theme + splash WA/IG + manifest deploy
+ .agents/skills/developing-genkit-dart/SKILL.md     |  114 +-
+ .../developing-genkit-dart/references/genkit.md    |  760 ++--
+ .../references/genkit_anthropic.md                 |   82 +-
+ .../references/genkit_chrome.md                    |   46 +-
+ .../references/genkit_firebase_ai.md               |   46 +-
+ .../references/genkit_google_genai.md              |  190 +-
+ .../references/genkit_mcp.md                       |  230 +-
+ .../references/genkit_middleware.md                |  168 +-
+ .../references/genkit_openai.md                    |  108 +-
+ .../references/genkit_shelf.md                     |  118 +-
+ .../references/schemantic.md                       |  272 +-
+ .agents/skills/developing-genkit-go/SKILL.md       |  198 +-
+ .../references/flows-and-http.md                   |  366 +-
+ .../developing-genkit-go/references/generation.md  |  352 +-
+ .../references/getting-started.md                  |  280 +-
+ .../developing-genkit-go/references/middleware.md  |  726 ++--
+ .../developing-genkit-go/references/prompts.md     |  512 +--
+ .../developing-genkit-go/references/providers.md   |  314 +-
+ .../developing-genkit-go/references/tools.md       |  356 +-
+ .agents/skills/developing-genkit-js/SKILL.md       |  224 +-
+ .../references/best-practices.md                   |   62 +-
+ .../references/common-errors.md                    |  264 +-
+ .../references/docs-and-cli.md                     |  122 +-
+ .../developing-genkit-js/references/examples.md    |  314 +-
+ .../developing-genkit-js/references/setup.md       |   92 +-
+ .agents/skills/developing-genkit-python/SKILL.md   |  112 +-
+ .../references/common-errors.md                    |  164 +-
+ .../references/dev-workflow.md                     |  180 +-
+ .../references/dotprompt.md                        |  218 +-
+ .../developing-genkit-python/references/evals.md   |  178 +-
+ .../references/examples.md                         |  342 +-
+ .../developing-genkit-python/references/fastapi.md |  494 +--
+ .../developing-genkit-python/references/setup.md   |   80 +-
+ .agents/skills/firebase-ai-logic-basics/SKILL.md   |  246 +-
+ .../references/flutter_setup.md                    |  164 +-
+ .../references/ios_setup.md                        |  286 +-
+ .../references/usage_patterns_android.md           |  304 +-
+ .../references/usage_patterns_web.md               |  348 +-
+ .../skills/firebase-app-hosting-basics/SKILL.md    |  116 +-
+ .../references/cli_commands.md                     |  140 +-
+ .../references/configuration.md                    |  102 +-
+ .../references/emulation.md                        |   94 +-
+ .agents/skills/firebase-auth-basics/SKILL.md       |  192 +-
+ .../references/client_sdk_android.md               |  314 +-
+ .../references/client_sdk_web.md                   |  574 +--
+ .../references/flutter_setup.md                    |  196 +-
+ .../firebase-auth-basics/references/ios_setup.md   |  140 +-
+ .../references/security_rules.md                   |   76 +-
+ .agents/skills/firebase-basics/SKILL.md            |  214 +-
+ .../firebase-basics/references/android_setup.md    |   68 +-
+ .../references/firebase-cli-guide.md               |   32 +-
+ .../references/firebase-service-init.md            |   36 +-
+ .../firebase-basics/references/flutter_setup.md    |  204 +-
+ .../skills/firebase-basics/references/ios_setup.md |  168 +-
+ .../firebase-basics/references/local-env-setup.md  |  112 +-
+ .../references/refresh/android_studio.md           |   54 +-
+ .../references/refresh/antigravity.md              |   92 +-
+ .../firebase-basics/references/refresh/claude.md   |   18 +-
+ .../references/refresh/gemini-cli.md               |   22 +-
+ .../references/refresh/other-agents.md             |   96 +-
+ .../references/setup/android_studio.md             |   38 +-
+ .../references/setup/antigravity.md                |  126 +-
+ .../references/setup/claude_code.md                |   60 +-
+ .../firebase-basics/references/setup/cursor.md     |  126 +-
+ .../firebase-basics/references/setup/gemini_cli.md |   78 +-
+ .../references/setup/github_copilot.md             |  140 +-
+ .../references/setup/other_agents.md               |  130 +-
+ .../skills/firebase-basics/references/web_setup.md |  138 +-
+ .agents/skills/firebase-crashlytics/SKILL.md       |   68 +-
+ .../references/android_setup.md                    |  244 +-
+ .../firebase-crashlytics/references/ios_setup.md   |  162 +-
+ .agents/skills/firebase-data-connect/SKILL.md      |  308 +-
+ .agents/skills/firebase-data-connect/examples.md   | 1258 +++---
+ .../firebase-data-connect/reference/advanced.md    |  606 +--
+ .../firebase-data-connect/reference/config.md      |  534 +--
+ .../firebase-data-connect/reference/native_sql.md  |  244 +-
+ .../firebase-data-connect/reference/operations.md  |  752 ++--
+ .../firebase-data-connect/reference/realtime.md    |  358 +-
+ .../firebase-data-connect/reference/schema.md      |  556 +--
+ .../reference/sdk_admin_node.md                    |  242 +-
+ .../firebase-data-connect/reference/sdk_android.md |  214 +-
+ .../firebase-data-connect/reference/sdk_flutter.md |  232 +-
+ .../firebase-data-connect/reference/sdk_ios.md     |  280 +-
+ .../firebase-data-connect/reference/sdk_web.md     |  248 +-
+ .../firebase-data-connect/reference/security.md    |  578 +--
+ .agents/skills/firebase-data-connect/templates.md  |  634 +--
+ .agents/skills/firebase-firestore/SKILL.md         |  132 +-
+ .../references/enterprise/android_sdk_usage.md     |  284 +-
+ .../references/enterprise/data_model.md            |  132 +-
+ .../references/enterprise/flutter_setup.md         |  344 +-
+ .../references/enterprise/indexes.md               |  270 +-
+ .../references/enterprise/ios_setup.md             |  324 +-
+ .../references/enterprise/provisioning.md          |  234 +-
+ .../references/enterprise/python_sdk_usage.md      |  276 +-
+ .../references/enterprise/security_rules.md        | 1138 ++---
+ .../references/enterprise/web_sdk_usage.md         |  254 +-
+ .../references/standard/android_sdk_usage.md       |  378 +-
+ .../references/standard/flutter_setup.md           |  336 +-
+ .../references/standard/indexes.md                 |  226 +-
+ .../references/standard/ios_setup.md               |  292 +-
+ .../references/standard/provisioning.md            |  204 +-
+ .../references/standard/security_rules.md          | 1138 ++---
+ .../references/standard/web_sdk_usage.md           |  384 +-
+ .agents/skills/firebase-hosting-basics/SKILL.md    |   92 +-
+ .../references/configuration.md                    |  202 +-
+ .../references/deploying.md                        |   78 +-
+ .../firebase-security-rules-auditor/SKILL.md       |   88 +-
+ .agents/skills/xcode-project-setup/SKILL.md        |  174 +-
+ .../scripts/xcode_spm_setup/.gitignore             |   18 +-
+ .../scripts/xcode_spm_setup/Package.resolved       |   82 +-
+ .../scripts/xcode_spm_setup/Package.swift          |   34 +-
+ .../scripts/xcode_spm_setup/Sources/main.swift     |  464 +--
+ .gitignore                                         |  262 +-
+ .idea/.gitignore                                   |    6 +-
+ .idea/Portal MU.iml                                |   16 +-
+ .idea/caches/deviceStreaming.xml                   | 4360 ++++++++++----------
+ .idea/markdown.xml                                 |   14 +-
+ .idea/misc.xml                                     |   10 +-
+ .idea/modules.xml                                  |   14 +-
+ .idea/vcs.xml                                      |   10 +-
+ AUTO-SESSION-REPORT.md                             |  113 -
+ C4-REPORT.md                                       |  458 +-
+ android/.idea/.gitignore                           |    6 +-
+ android/.idea/AndroidProjectSystem.xml             |   10 +-
+ android/.idea/appInsightsSettings.xml              |   80 +-
+ android/.idea/compiler.xml                         |   10 +-
+ android/.idea/deploymentTargetSelector.xml         |   20 +-
+ android/.idea/migrations.xml                       |   18 +-
+ android/.idea/planningMode.xml                     |   20 +-
+ android/.idea/runConfigurations.xml                |   32 +-
+ android/gradlew.bat                                |  184 +-
+ firestore.indexes.json                             |    8 +-
+ key.properties                                     |    6 +-
+ public/bg-pesantren.jpg                            |  Bin 692571 -> 0 bytes
+ public/vue/apple-touch-icon-180.png                |  Bin 0 -> 24812 bytes
+ public/vue/dark/apple-touch-icon-180.png           |  Bin 0 -> 22611 bytes
+ public/vue/dark/favicon-192.png                    |  Bin 0 -> 24777 bytes
+ public/vue/dark/favicon-32.png                     |  Bin 0 -> 1754 bytes
+ public/vue/dark/icon-192-maskable.png              |  Bin 0 -> 25694 bytes
+ public/vue/dark/icon-192.png                       |  Bin 0 -> 24777 bytes
+ public/vue/dark/icon-512-maskable.png              |  Bin 0 -> 82560 bytes
+ public/vue/dark/icon-512.png                       |  Bin 0 -> 79014 bytes
+ public/vue/favicon-192.png                         |  Bin 0 -> 27084 bytes
+ public/vue/favicon-32.png                          |  Bin 0 -> 1808 bytes
+ public/vue/favicon.ico                             |  Bin 0 -> 69242 bytes
+ public/vue/icon-192-maskable.png                   |  Bin 0 -> 28319 bytes
+ public/vue/icon-192.png                            |  Bin 0 -> 27084 bytes
+ public/vue/icon-512-maskable.png                   |  Bin 0 -> 90752 bytes
+ public/vue/icon-512-transparent.png                |  Bin 0 -> 83357 bytes
+ public/vue/icon-512.png                            |  Bin 0 -> 87132 bytes
+ public/vue/manifest.json                           |   78 +
+ public/vue/splash/iphone-1125x2436-dark.png        |  Bin 0 -> 166559 bytes
+ public/vue/splash/iphone-1125x2436.png             |  Bin 0 -> 177722 bytes
+ public/vue/splash/iphone-1170x2532-dark.png        |  Bin 0 -> 178028 bytes
+ public/vue/splash/iphone-1170x2532.png             |  Bin 0 -> 189224 bytes
+ public/vue/splash/iphone-1179x2556-dark.png        |  Bin 0 -> 181349 bytes
+ public/vue/splash/iphone-1179x2556.png             |  Bin 0 -> 191737 bytes
+ public/vue/splash/iphone-1206x2622-dark.png        |  Bin 0 -> 187644 bytes
+ public/vue/splash/iphone-1206x2622.png             |  Bin 0 -> 202071 bytes
+ public/vue/splash/iphone-1242x2688-dark.png        |  Bin 0 -> 193807 bytes
+ public/vue/splash/iphone-1242x2688.png             |  Bin 0 -> 210570 bytes
+ public/vue/splash/iphone-1284x2778-dark.png        |  Bin 0 -> 204957 bytes
+ public/vue/splash/iphone-1284x2778.png             |  Bin 0 -> 219467 bytes
+ public/vue/splash/iphone-1290x2796-dark.png        |  Bin 0 -> 205070 bytes
+ public/vue/splash/iphone-1290x2796.png             |  Bin 0 -> 219946 bytes
+ public/vue/splash/iphone-1320x2868-dark.png        |  Bin 0 -> 217359 bytes
+ public/vue/splash/iphone-1320x2868.png             |  Bin 0 -> 231029 bytes
+ public/vue/splash/iphone-828x1792-dark.png         |  Bin 0 -> 106695 bytes
+ public/vue/splash/iphone-828x1792.png              |  Bin 0 -> 113951 bytes
+ scripts/deploy-minified.cjs                        |   36 +
+ tools/verify-firebase-rules.ps1                    |  126 +-
+ vue-app/android/.gitignore                         |    2 +-
+ vue-app/android/.idea/.gitignore                   |    6 +-
+ vue-app/android/.idea/AndroidProjectSystem.xml     |   10 +-
+ vue-app/android/.idea/compiler.xml                 |   10 +-
+ vue-app/android/.idea/deploymentTargetSelector.xml |   20 +-
+ vue-app/android/.idea/migrations.xml               |   18 +-
+ vue-app/android/.idea/runConfigurations.xml        |   32 +-
+ vue-app/android/gradlew.bat                        |  188 +-
+ vue-app/capacitor.config.json                      |    2 +-
+ vue-app/index.html                                 |   79 +-
+ vue-app/src/App.vue                                |   10 +-
+ vue-app/src/composables/useNotifications.js        |  200 -
+ vue-app/src/composables/useSantriForm.js           |  136 +-
+ vue-app/src/composables/useWaliChildren.js         |  Bin 3597 -> 3210 bytes
+ vue-app/src/main.js                                |   41 +-
+ vue-app/src/router/index.js                        |   34 +-
+ vue-app/src/services/firebase.js                   |   39 +-
+ vue-app/src/stores/auth.js                         |   67 +-
+ vue-app/src/stores/ui.js                           |   26 +-
+ vue-app/src/utils/pdfBuilder.js                    |   26 +-
+ vue-app/src/utils/predikat.js                      |   37 +-
+ vue-app/src/utils/raporPdf.js                      |   28 +-
+ vue-app/src/utils/strukBuilder.js                  |   43 +-
+ vue-app/src/views/AbsensiGuruView.vue              |    9 +-
+ vue-app/src/views/CapaianPrestasiView.vue          |   57 +-
+ vue-app/src/views/DashboardView.vue                |  Bin 2326 -> 2323 bytes
+ vue-app/src/views/GuruFormView.vue                 |  140 +-
+ vue-app/src/views/GuruView.vue                     |   13 +-
+ vue-app/src/views/KalenderKegiatanView.vue         |   13 +-
+ vue-app/src/views/LembagaDetailView.vue            |   15 +-
+ vue-app/src/views/LembagaFormView.vue              |   53 +-
+ vue-app/src/views/LoginView.vue                    |   46 +-
+ vue-app/src/views/MasterDataView.vue               |    6 +-
+ vue-app/src/views/NaikKelasView.vue                |   86 +-
+ vue-app/src/views/PembayaranPendingView.vue        |   33 +-
+ vue-app/src/views/PembayaranView.vue               |  478 ++-
+ vue-app/src/views/PengaturanView.vue               |  299 +-
+ vue-app/src/views/PostsView.vue                    |   16 +-
+ vue-app/src/views/ProfilView.vue                   |   29 +-
+ vue-app/src/views/RaporView.vue                    |  449 +-
+ vue-app/src/views/SantriFormView.vue               |  222 +-
+ vue-app/src/views/SantriView.vue                   |   16 +-
+ vue-app/src/views/StatistikView.vue                |    1 -
+ vue-app/src/views/TabunganView.vue                 |   43 +-
+ vue-app/src/views/TagihanView.vue                  |   33 +-
+ vue-app/src/views/profil/ProfilGuru.vue            |  269 +-
+ vue-app/src/views/profil/ProfilPengaturanSaya.vue  |   83 +-
+ vue-app/src/views/profil/ProfilSantri.vue          |  289 +-
+ 219 files changed, 20521 insertions(+), 17552 deletions(-)

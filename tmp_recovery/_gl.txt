@@ -1,0 +1,3 @@
+ca86068 ﻿docs(handoff): dashboard keuangan calc fix + verifikasi admin_keuangan + splash electron pending
+002aa13 fix(keuangan): perhitungan dashboard — tabungan terpisah + net + bisyaroh bulan ini
+da4731b docs: update HANDOFF — merge polish done + RBAC finding + sisa scoping per jabatan

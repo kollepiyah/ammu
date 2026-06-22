@@ -1,151 +1,120 @@
-# PENDING TASKS — Portal MU (14 Mei 2026)
+# Portal MU — Pending Fixes (per Kyai 21 Mei 2026 sore, post-rollback)
 
-**Owner:** Kyai Gus Rahman Fanani
-**Last session ended:** 13 Mei 2026 ~02:50 (sesi maraton B0+B1+B2+UX)
-**Current state:** Stable di commit `82ef813` (pushed to GitHub `kollepiyah/ammu`)
-**Live version:** `v.108.51.0513-toast-compact` / SW `v249-0513-toast-compact`
+**Bundle live aktif:** `index-CPbTnm_Q.js` (versi rollback, fitur lengkap)
+**Source code local:** versi minimal (rusak), JANGAN deploy lagi sampai code di-rebuild dari source asli.
 
 ---
 
-## ⚠️ WAJIB BACA DULU sebelum eksekusi
+## A. Kenaikan / Mutasi (NaikKelasView)
 
-1. **File `D:\Aplikasi Project\Portal MU\public\index.html` BERUKURAN 1.79MB.** Edit/Write/sed -i langsung ke mount **bisa truncate file dengan tambah null bytes**. Sudah terjadi 4x di sesi sebelumnya.
+- **A1.** Santri TPQ (TPQ Pagi / TPQ Sore / Pra PTPT) data tidak terbaca di tab Form Kenaikan.
+  - Kemungkinan: filter lembaga case mismatch (TPQ vs `TPQ Pagi`/shift) atau santri belum punya field `lembaga` yang match.
 
-   **Pattern AMAN untuk file >500KB di Windows mount:**
-   ```bash
-   python3 -c "
-   content = open('/sessions/.../mount/path/file').read()
-   # modify content...
-   open('/tmp/output.html', 'w').write(content)
-   "
-   node --check /tmp/output.html  # validate
-   cp /tmp/output.html /sessions/.../mount/path/file
-   # VERIFY: wc -c + tail -c 50 + grep null
-   wc -c /sessions/.../mount/path/file
-   tail -c 50 /sessions/.../mount/path/file
-   python3 -c "print(open('...', 'rb').read().count(b'\\x00'))"
-   ```
+- **A2.** Klik tombol "Proses Naik" → tanggal **tidak auto input** di kartu kenaikan + di tab Riwayat tidak terbaca.
+  - Save flow harus update `santri.kartu_kenaikan[lembaga][kelas][item_id] = tanggal` + push ke `santri.riwayat[]` agar tab Riwayat baca.
 
-2. **Husky pre-commit hook AKTIF** — prettier akan reject file dengan null bytes / syntax error. Setiap commit harus pass prettier.
-
-3. **Memory wajib baca:** `feedback_lessons_13_mei_2026.md`, `portal_mu_project.md`, `feedback_write_tool_windows_mount.md`, `feedback_python_overwrite_windows_mount.md`.
-
-4. **Auth scheme aktif:** Login user pakai username/WA, internal pakai `<sanitized>@portal-mu.local`. Password di-padding dengan `mu_auth_` prefix sebelum Firebase Auth.
-
-5. **Firestore Rules:** WRITE/DELETE butuh `request.auth != null`. READ tetap public.
+- **A3.** Santri PTPT naik Juz → catatan & rekomendasi guru **harus tampil di dashboard akun santri** (login sebagai santri).
+  - PersonalView / DashboardView mode `role=santri` perlu render catatan terbaru.
 
 ---
 
-## ✅ AUTO-EXECUTABLE (tidak butuh konfirmasi Kyai)
+## B. Rekap Prestasi (RekapPrestasiView)
 
-### A1. Audit + generate report code health
-**Effort:** 30 menit. **Risk:** Zero (read-only).
+- **B1.** Santri TPQ (PAGI / SORE / Pra PTPT) data tidak terbaca.
 
-Generate `D:\Aplikasi Project\Portal MU\AUDIT-REPORT.md` berisi:
-- Total LOC index.html (~24000 baris)
-- Function count + duplikasi pattern
-- Dead code candidates (function tidak pernah dipanggil)
-- TODO/FIXME yang masih ada
-- Komentar versi lama yang tertinggal (v.85-v.107 dll)
-- Coverage Firebase Auth migration (function mana yang masih pakai password Firestore lama)
+- **B2.** Filter Lembaga **Rekap Qiraati** → hanya muncul lembaga Qiraati:
+  - TPQ Pagi · TPQ Sore · Pra PTPT · PTPT · PPPH
 
-Tools: grep, awk, python script untuk parse.
+- **B3.** Filter Lembaga **Rekap Diniyah** → hanya muncul lembaga sekolah (SDI, PKBM).
 
-### A2. Cleanup comment versi outdated (BATCH KECIL)
-**Effort:** 20 menit. **Risk:** Low (regex hanya hapus comment).
+- **B4.** Santri TK **tidak punya pelajaran diniyah** → exclude dari rekap diniyah.
 
-Cari comment seperti `// v.108.43` `// v.108.30 fix:` yang sudah outdated.
-**HATI-HATI:** jangan hapus comment yang explain logic. Hanya hapus comment yang isinya "v.108.xx fix berikut:" tanpa konten substantif.
-
-**Pattern aman:**
-- `// v.108\.\d+:?\s*$` (comment versi saja tanpa konten)
-- `// v.108\.\d+ DEPRECATED` (yang sudah obsolete)
-
-Skip: `// v.108.xx: explanation here` (ada konten).
-
-### A3. Update README.md + CHANGELOG.md
-**Effort:** 20 menit. **Risk:** Zero.
-
-- Tambah section "v.108.51 Changes (13 Mei 2026)" di CHANGELOG.md
-- Update README.md kalau ada info Firebase Auth yang outdated
-- Dokumentasikan helper functions baru (`buildAuthEmail`, `_toAuthPassword`, `_provisionAuthForUser`, dll)
-
-### A4. B3 Palette continuation (HATI-HATI — file size sensitif)
-**Effort:** 1-2 jam. **Risk:** MEDIUM (file truncation risk).
-
-Sisa `bg-blue-50/100/200` (84 occurrences) — replace selektif ke `bg-teal-50/100/200` di area yang konsisten dengan brand. **HATI-HATI:** beberapa `bg-blue-50` mungkin info badge — leave them.
-
-**Pattern aman:**
-1. Python script untuk identify context masing-masing `bg-blue-XX`
-2. Replace HANYA yang di komponen "action area" (tombol, header card)
-3. SKIP yang di info badge/notif
-4. **WAJIB**: tulis ke `/tmp` first, validate, baru `cp` ke mount
-5. **WAJIB**: verify size + tail setelah cp
-
-Kalau file truncate ≥3x dalam 1 sesi, **STOP B3 task dan lanjut task lain**.
-
-### A5. Optimize manifest.json + favicon check
-**Effort:** 15 menit. **Risk:** Zero.
-
-- Pastikan semua icon path valid
-- Tambah `theme_color` consistent dengan brand teal
-- Validate JSON syntax
-
-### A6. Verify Firebase deployed rules vs file
-**Effort:** 10 menit. **Risk:** Zero.
-
-Run `firebase firestore:rules:get` (kalau available) atau check Firebase Console manual.
-Bandingkan dengan `firestore.rules` di repo. Document any drift.
+- **B5.** Pelajaran diniyah hanya untuk **SDI dan PKBM**. Mata pelajaran berbeda per jenjang kelas — sediakan UI untuk Kyai edit manual mapel per jenjang.
 
 ---
 
-## ⚠️ BUTUH KONFIRMASI KYAI (skip kalau auto-run)
+## C. Rapor Qiraati (RaporView)
 
-### B1. Cloud Function: admin reset password user lain
-**Why pending:** Butuh Admin SDK + deploy Cloud Function. Ada cost implication.
+- **C1.** Santri TPQ (PAGI / SORE / Pra PTPT) data tidak terbaca.
 
-### B2. Modal Swal style elegant (re-attempt)
-**Why pending:** Sebelumnya gagal (OK button stuck). Pendekatan baru: `customClass` per-modal scoped, BUKAN global override.
+- **C2.** Tanggal Lulus / Naik Kelas / Jilid / Juz di rapor → **auto input dari `santri.riwayat[]`** kenaikan.
 
-### B3. Vue 3 + Capacitor migration (Batch C)
-**Why pending:** Roadmap 5-6 bulan, butuh decision Kyai.
+- **C3.** Santri PTPT kelas 2 → rapor sekarang tampil tabel kelas 1-2. Yang **benar = KUMULATIF (1 sampai kelas aktif)**. Label kelas di header rapor sudah benar (kelas 2).
 
-### B4. Refactor monolith index.html (24000 lines)
-**Why pending:** Major undertaking, risk regression tinggi.
+- **C4.** Absensi rapor → **auto rekap dari absensi bulanan** (sum H/S/I/A semester), tetap bisa di-edit manual.
 
-### B5. Database migration (kalau ada schema baru)
-**Why pending:** Butuh review per perubahan.
+- **C5.** Penilaian rapor (nilai item per mapel/jilid) → diisi manual.
 
 ---
 
-## 🎯 DEFINITION OF DONE untuk auto-session
+## D. Rapor Diniyah (RaporDiniyahView)
 
-Untuk SETIAP task auto-executable:
-1. Run task end-to-end
-2. Validate (node --check untuk JS, JSON parse untuk JSON, prettier --check untuk format)
-3. Verify file integrity (size + tail + null bytes check)
-4. Commit dengan message yang descriptive
-5. Push to `origin/main`
+- **D1.** Hanya untuk santri **SDI dan PKBM**. Hide / disable untuk lembaga lain.
 
-Final report: `D:\Aplikasi Project\Portal MU\AUTO-SESSION-REPORT.md` berisi:
-- Tasks dikerjakan + status (sukses/skip/fail)
-- File yang berubah
-- Commits yang dibuat
-- Issues yang ditemukan (kalau ada, untuk follow-up Kyai)
+- **D2.** Mata pelajaran berbeda per jenjang kelas — Kyai edit manual lewat UI Pengaturan Diniyah per jenjang (sama mekanisme dengan B5).
 
 ---
 
-## 🛑 STOP CRITERIA
+## E. Absensi Santri (AbsensiSantriView)
 
-Auto-session HARUS STOP & log issue kalau:
-1. File `index.html` truncate ≥3x dalam 1 sesi → switch ke task lain yang tidak edit file besar
-2. Husky pre-commit gagal ≥3x → debug & report
-3. git push gagal → report network/auth issue
-4. Task butuh keputusan Kyai → skip & log
+- **E1.** Hanya untuk santri **non-mukim** (status tempat = PP / fullday). Filter santri mukim out.
 
-**JANGAN:**
-- Deploy ke Firebase tanpa konfirmasi (jaga production)
-- Edit firestore.rules tanpa careful review
-- Ubah auth flow yang sudah jalan
-- Force push atau rewrite git history
-- Hapus file yang ada di .gitignore tanpa konfirmasi
+- **E2.** Auto rekap ke rapor per **semester** (H/S/I/A total). Tambah **tombol "Generate ke Rapor"** untuk push hasil rekap ke RaporView.
+
+- **E3.** Absen **bulanan**, bukan harian. Input per santri per bulan.
+
+- **E4.** Semua data santri **tidak terbaca** di menu Absensi → fix data source / filter.
+
+- **E5.** Tambah menu **Impor / Ekspor Excel dan PDF**.
+
+---
+
+## F. Kegiatan Pesantren
+
+OK — hanya untuk santri Ma'had (sudah benar).
+
+---
+
+## G. PSB (Penerimaan Santri Baru)
+
+- **G1.** Semua fitur **ACF dan CRUD PSB** → pindahkan ke halaman **PSB Admin** (`/psb`). Saat ini berada di Pengaturan per lembaga.
+
+- **G2.** Termasuk **Upload Syarat & Ketentuan + Info Pembayaran** per lembaga → pindah ke PSB Admin.
+
+- **G3.** Form PSB public (`https://ammuonline-psb.web.app/`):
+  - Step 1: pilih **Tipe Santri** (Ma'had / Non Mukim / Fullday)
+  - Step 2: field pilih **Lembaga** (tampil di bawah Tipe Santri)
+
+- **G4.** Filter Lembaga di field pilih lembaga ada **2 grup**:
+  - **Lembaga Qiraati** (TPQ Pagi / TPQ Sore / Pra PTPT / PTPT / PPPH)
+  - **Lembaga Sekolah** (TK A / TK B / SDI / PKBM)
+
+  Conditional: jika **TPQ Pagi** dipilih → **tidak perlu** isi field lembaga sekolah.
+
+- **G5.** Bug saat ini: field pilih lembaga muncul **semua** (termasuk Yayasan). Fix sesuai G3-G4 — hanya muncul Qiraati + Sekolah yang relevan.
+
+- **G6.** Setelah Tipe Santri + Lembaga dipilih → di samping field **auto detect Syarat & Ketentuan + Informasi Pembayaran** sesuai lembaga:
+  - Tampilkan **2 baris label**: "Syarat & Ketentuan" dan "Informasi Pembayaran"
+  - **Icon mata** (`fas fa-eye`) di samping label
+  - Klik icon mata → muncul **popup modal** menampilkan gambar / PDF yang di-upload Admin di halaman PSB Admin (G2)
+
+---
+
+## Catatan Implementasi
+
+**Source code state (21 Mei 2026 sore):**
+- `vue-app/src/` = versi minimal rewrites (tidak punya fitur live).
+- `vue-app/src.minimal-backup-v21.32/` = backup before recovery batches.
+- Bundle live `index-CPbTnm_Q.js` di `public/vue/` = versi original yang harus dipertahankan sampai source asli direstore atau di-rebuild.
+
+**Rekomendasi:**
+1. **JANGAN deploy** dari source local saat ini.
+2. Restore source asli dari Firebase backup / cache developer / repo branch sebelum truncation.
+3. Setelah source bener, baru apply fix per item A-G di atas.
+4. Build → sync `public/vue/` → deploy → test live.
+
+**Workflow per session:**
+- Per item ambil 1-3 issue (jangan banyak sekaligus).
+- Setelah modify source → build ke `/tmp/dist` (Windows mount EPERM).
+- Test di Chrome lokal sebelum deploy.
+- Commit per item ke git dengan message jelas.
