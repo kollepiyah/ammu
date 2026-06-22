@@ -36,7 +36,8 @@
             class="text-[10px] font-bold text-emerald-700 bg-emerald-50 dark:bg-emerald-900/30 dark:text-emerald-300 px-2 py-1 rounded-full whitespace-nowrap"
             title="Transaksi POS hari ini"
           >
-            <i class="fas fa-receipt mr-1"></i>Hari ini: {{ todayStats.count }} · {{ fmtRp(todayStats.total) }}
+            <i class="fas fa-receipt mr-1"></i>Hari ini: {{ todayStats.count }} ·
+            {{ fmtRp(todayStats.total) }}
           </span>
         </div>
       </div>
@@ -103,7 +104,10 @@
       v-if="isAdminKeu && !loading"
       class="bg-[var(--bg-card)] rounded-2xl p-3 md:p-4 border border-[var(--border-subtle)] shadow-sm"
     >
-      <p v-if="filteredSantri.length === 0" class="text-center text-[var(--text-tertiary)] py-6 text-sm">
+      <p
+        v-if="filteredSantri.length === 0"
+        class="text-center text-[var(--text-tertiary)] py-6 text-sm"
+      >
         Tidak ada santri yang cocok.
       </p>
       <div v-else class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
@@ -135,7 +139,10 @@
           <i class="fas fa-chevron-right text-[var(--text-tertiary)] text-xs"></i>
         </button>
       </div>
-      <p v-if="filteredSantri.length === 50" class="text-center text-[10px] text-[var(--text-tertiary)] mt-3">
+      <p
+        v-if="filteredSantri.length === 50"
+        class="text-center text-[10px] text-[var(--text-tertiary)] mt-3"
+      >
         Menampilkan 50 santri pertama — refine pencarian untuk lihat lainnya
       </p>
     </div>
@@ -193,23 +200,18 @@ import { useRoute, useRouter } from 'vue-router'
 import { useDesktopShell } from '@/composables/useDesktopShell'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
-import {
-  collection,
-  query,
-  where,
-  orderBy,
-  limit,
-  getDocs,
-  setDoc,
-  updateDoc,
-  doc,
-  serverTimestamp
-} from 'firebase/firestore'
-import { db } from '@/services/firebase'
+// v.F6e: adapter Supabase (serverTimestamp = shim ISO string).
+import { getAll, getOne, queryColl, setOne, updateOne, serverTimestamp } from '@/services/db'
 import { sortSantri } from '@/utils/santriSort'
 import { cetakStrukPdf, cetakStrukSlipPdf, buildStrukHtml } from '@/utils/strukBuilder'
 import { buildStrukSlipEscpBase64 } from '@/utils/escpImage'
-import { isElectron, printStruk, printRaw, printPdf, getDefaultPrinter } from '@/composables/useDesktopPrint'
+import {
+  isElectron,
+  printStruk,
+  printRaw,
+  printPdf,
+  getDefaultPrinter
+} from '@/composables/useDesktopPrint'
 import { terbilangRupiah } from '@/utils/terbilang'
 import { useSettingsStore } from '@/stores/settings'
 import ModalPOS from '@/components/pos/ModalPOS.vue'
@@ -281,18 +283,16 @@ onMounted(async () => {
   }
   try {
     // Load santri
-    const snap = await getDocs(collection(db, 'santri'))
-    santriList.value = sortSantri(
-      snap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((s) => s.aktif !== false)
-    )
+    const sList = await getAll('santri')
+    santriList.value = sortSantri(sList.filter((s) => s.aktif !== false))
 
     // Load transaksi terakhir POS Santri (utk histori + ringkasan harian)
-    const histSnap = await getDocs(
-      query(collection(db, 'keuangan_buku_induk'), orderBy('createdAt', 'desc'), limit(80))
+    const posTx = await queryColl(
+      'keuangan_buku_induk',
+      [['sumber', '==', 'pos_santri']],
+      [['createdAt', 'desc']],
+      80
     )
-    const posTx = histSnap.docs
-      .map((d) => ({ id: d.id, ...d.data() }))
-      .filter((t) => t.sumber === 'pos_santri')
     histori.value = posTx.slice(0, 5)
     const hariIni = new Date().toISOString().split('T')[0]
     const txToday = posTx.filter((t) => t.tanggal === hariIni)
@@ -307,17 +307,12 @@ onMounted(async () => {
     try {
       const myId = auth.sesiAktif?.id
       if (myId) {
-        const gSnap = await getDocs(
-          query(collection(db, 'guru'), where('id', '==', String(myId)), limit(1))
-        )
-        let ttd = ''
-        if (!gSnap.empty) ttd = gSnap.docs[0].data().tanda_tangan || ''
+        const gRow = await getOne('guru', String(myId))
+        let ttd = gRow?.tanda_tangan || ''
         if (!ttd) {
-          const all = await getDocs(query(collection(db, 'guru'), limit(500)))
-          const me = all.docs.find(
-            (d) => String(d.data().id) === String(myId) || d.data().nama === operatorName.value
-          )
-          ttd = me?.data().tanda_tangan || ''
+          const all = await getAll('guru')
+          const me = all.find((g) => String(g.id) === String(myId) || g.nama === operatorName.value)
+          ttd = me?.tanda_tangan || ''
         }
         operatorTtdUrl.value = ttd || ''
       }
@@ -327,10 +322,9 @@ onMounted(async () => {
 
     // Load tunggakan map (count + total per santri_id)
     try {
-      const tagSnap = await getDocs(collection(db, 'keuangan_tagihan'))
+      const tagihanAll = await getAll('keuangan_tagihan')
       const map = {}
-      for (const t of tagSnap.docs) {
-        const data = t.data()
+      for (const data of tagihanAll) {
         const status = String(data.status || 'belum').toLowerCase()
         if (status !== 'belum' && status !== 'partial') continue
         const sid = data.santri_id
@@ -380,7 +374,20 @@ const filteredSantri = computed(() => {
 })
 
 // v.95.0626: derive periode tagihan -> "Juni 2026" dari periode/bulan/jatuh_tempo (utk rincian struk)
-const _BLN_ID = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember']
+const _BLN_ID = [
+  'Januari',
+  'Februari',
+  'Maret',
+  'April',
+  'Mei',
+  'Juni',
+  'Juli',
+  'Agustus',
+  'September',
+  'Oktober',
+  'November',
+  'Desember'
+]
 function _namaBulan(n) {
   const i = parseInt(n, 10) - 1
   return _BLN_ID[i] || ''
@@ -396,7 +403,7 @@ function periodeTagihan(t) {
   if (t.bulan) {
     const bln = /^\d+$/.test(String(t.bulan).trim()) ? _namaBulan(t.bulan) : String(t.bulan).trim()
     const thn = t.tahun || (String(t.jatuh_tempo || '').match(/^(\d{4})/) || [])[1] || ''
-    if (bln) return (thn ? bln + ' ' + thn : bln)
+    if (bln) return thn ? bln + ' ' + thn : bln
   }
   // jatuh_tempo "2026-06-05" -> "Juni 2026"
   m = String(t.jatuh_tempo || '').match(/^(\d{4})-(\d{2})/)
@@ -412,16 +419,16 @@ async function openModal(s) {
   pendingTagihan.value = []
   prepaidPeriodes.value = []
   try {
-    const tagCol = collection(db, 'keuangan_tagihan')
     // v.95.0626: FIX tagihan khusus tak muncul di POS — cocokkan santri_id sbg STRING (+ NUMBER bila numerik),
     //   tanpa limit, supaya SAMA dgn yg dilihat akun wali (yg pakai String(santri_id)).
     const sid = String(s.id)
     const seen = new Map()
-    const qs = [getDocs(query(tagCol, where('santri_id', '==', sid)))]
+    const qs = [queryColl('keuangan_tagihan', [['santri_id', '==', sid]])]
     const sidNum = Number(sid)
-    if (!Number.isNaN(sidNum) && String(sidNum) === sid) qs.push(getDocs(query(tagCol, where('santri_id', '==', sidNum))))
+    if (!Number.isNaN(sidNum) && String(sidNum) === sid)
+      qs.push(queryColl('keuangan_tagihan', [['santri_id', '==', sidNum]]))
     const snaps = await Promise.all(qs)
-    for (const snp of snaps) for (const d of snp.docs) seen.set(d.id, { id: d.id, ...d.data() })
+    for (const rows of snaps) for (const t of rows) seen.set(t.id, t)
     const pending = [...seen.values()]
       .filter((t) => t.status === 'belum' || t.status === 'partial')
       .sort((a, b) => (a.jatuh_tempo || '').localeCompare(b.jatuh_tempo || ''))
@@ -442,7 +449,12 @@ async function openModal(s) {
     })
     prepaidPeriodes.value = [...seen.values()]
       .filter((t) => t.periode_kode)
-      .map((t) => ({ jenis: String(t.jenis_label || t.jenis_id || t.kategori || '').toLowerCase().trim(), periode: String(t.periode_kode) }))
+      .map((t) => ({
+        jenis: String(t.jenis_label || t.jenis_id || t.kategori || '')
+          .toLowerCase()
+          .trim(),
+        periode: String(t.periode_kode)
+      }))
   } catch (e) {
     console.warn('[pos] load tagihan fail:', e.message)
   } finally {
@@ -501,7 +513,7 @@ async function handleSimpan(payload) {
         wali: waliNama,
         createdAt: serverTimestamp()
       }
-      writes.push(setDoc(doc(db, 'keuangan_buku_induk', id), docData))
+      writes.push(setOne('keuangan_buku_induk', id, docData))
       histori.value.unshift(docData)
       totalMasuk += Number(item.nominal || 0)
       // v.21.87.0527: tagihan → lunas penuh atau partial (bayar sebagian)
@@ -518,11 +530,17 @@ async function handleSimpan(payload) {
               dibayar_via: 'pos_santri',
               operator_pelunasan: op
             }
-          : { status: 'partial', bayar: newDibayar, dibayar: newDibayar, dibayar_via: 'pos_santri', operator_pelunasan: op }
+          : {
+              status: 'partial',
+              bayar: newDibayar,
+              dibayar: newDibayar,
+              dibayar_via: 'pos_santri',
+              operator_pelunasan: op
+            }
         if (isLunas) lunasCount++
         else partialCount++
         writes.push(
-          updateDoc(doc(db, 'keuangan_tagihan', item.tagihan_id), upd).catch((e) => {
+          updateOne('keuangan_tagihan', item.tagihan_id, upd).catch((e) => {
             console.warn('[pos] update tagihan fail:', item.tagihan_id, e.message)
             tagUpdErr = e.message || String(e)
           })
@@ -531,7 +549,7 @@ async function handleSimpan(payload) {
         // v.108: bayar di muka — tagihan bulan depan belum ada, buat baru langsung LUNAS
         const tagId = `tagihan_${payload.santri_id}_${Date.now()}_${Math.floor(Math.random() * 1000)}`
         writes.push(
-          setDoc(doc(db, 'keuangan_tagihan', tagId), {
+          setOne('keuangan_tagihan', tagId, {
             id: tagId,
             santri_id: payload.santri_id,
             santri_nama: payload.santri_nama,
@@ -558,7 +576,8 @@ async function handleSimpan(payload) {
     }
     await Promise.all(writes)
     // v.95.0626: kalau update tagihan gagal (mis. dok tak ada / izin), beri tahu — jangan diam (bug cicil tetap 1jt)
-    if (tagUpdErr) toast.error('Pembayaran tercatat, TAPI sisa tagihan GAGAL diperbarui: ' + tagUpdErr)
+    if (tagUpdErr)
+      toast.error('Pembayaran tercatat, TAPI sisa tagihan GAGAL diperbarui: ' + tagUpdErr)
     if (histori.value.length > 5) histori.value = histori.value.slice(0, 5)
     // Update ringkasan harian
     todayStats.value = {
@@ -642,7 +661,10 @@ async function cetakLangsung() {
     if (paper === '9.5') {
       // v.96.0626: cetak GRAFIS RASTER via ESC/P (bypass driver Windows -> TANPA feed 5cm, tetap Arial).
       //   Slip dirender ke canvas lalu dikirim sbg bit-image ESC/P langsung ke printer (print:raw).
-      const res = await printRaw({ base64: buildStrukSlipEscpBase64(lastTrx.value, s), deviceName: printerName || undefined })
+      const res = await printRaw({
+        base64: buildStrukSlipEscpBase64(lastTrx.value, s),
+        deviceName: printerName || undefined
+      })
       if (res && res.ok === false) throw new Error(res.error || 'Print gagal')
     } else {
       const html = buildStrukHtml(lastTrx.value, s)
