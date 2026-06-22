@@ -5,7 +5,7 @@
 // Subscribe ke 'general' real-time supaya kalibrasi Hijri / kop / logo update otomatis di Vue.
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { getOne, mergeOne, subscribeDoc } from '@/services/firestore'
+import { getOne, mergeOne, subscribeDoc } from '@/services/db'
 
 const SETTINGS_DOC_ID_VUE = 'web' // Firestore: settings/web (Vue Pengaturan PoC)
 const SETTINGS_DOC_ID_LEGACY = 'general' // Firestore: settings/general (legacy Pengaturan Web — source of truth)
@@ -29,9 +29,9 @@ const DEFAULT_SETTINGS = {
   fiturNotifikasi: true,
   namaChannel: 'Al Manshur Channel',
   // v.21.10.0526: Ma'had tagihan template + sub-kategori (kyai spec final)
-  mahad_tagihan_template: [],  // [{ kategori: 'makan', nominal_default: 0 }]
-  mahad_sub_kategori: [],       // ['makan', 'listrik', 'air', dst]
-  tarif_fullday_default: 0,     // Fullday extra fix nominal (admin input)
+  mahad_tagihan_template: [], // [{ kategori: 'makan', nominal_default: 0 }]
+  mahad_sub_kategori: [], // ['makan', 'listrik', 'air', dst]
+  tarif_fullday_default: 0, // Fullday extra fix nominal (admin input)
   // v.100 Batch11: integrasi Google Sheet (Apps Script Web App) — kirim laporan rapi mirip PDF
   gsheetUrl: '',
   gsheetToken: ''
@@ -44,12 +44,14 @@ export const useSettingsStore = defineStore('settings', () => {
   let unsubscribe = null
 
   // Getters
-  const kopLines = computed(() => [
-    settings.value.kopLine1,
-    settings.value.kopLine2,
-    settings.value.kopLine3,
-    settings.value.kopLine4
-  ].filter(Boolean))
+  const kopLines = computed(() =>
+    [
+      settings.value.kopLine1,
+      settings.value.kopLine2,
+      settings.value.kopLine3,
+      settings.value.kopLine4
+    ].filter(Boolean)
+  )
 
   // v.61.0526: Track 2 subscription handles (web + general docs)
   let unsubscribeGeneral = null

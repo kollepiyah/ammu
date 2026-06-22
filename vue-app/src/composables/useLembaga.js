@@ -3,7 +3,7 @@
 // v.20.15.0526: Fix subscription — legacy simpan di master/lembaga doc (.list), bukan koleksi terpisah
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { storeToRefs } from 'pinia'
-import { subscribeDoc } from '@/services/firestore'
+import { subscribeDoc } from '@/services/db'
 import { useCollectionsStore } from '@/stores/collections'
 import { useAuthStore } from '@/stores/auth'
 // v.100: urutan lembaga canonical = sumber tunggal di utils/santriSort
@@ -57,7 +57,9 @@ export const LEMBAGA_CANON_ALL = (() => {
   return out
 })()
 function _lkey(s) {
-  return String(s == null ? '' : s).toLowerCase().replace(/[^a-z0-9]/g, '')
+  return String(s == null ? '' : s)
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '')
 }
 // alias umum (tulisan beda) → kanonik. SMP/SMA = sub-tier PKBM → dipetakan ke 'PKBM'.
 const _LEMBAGA_ALIAS = {
@@ -106,7 +108,8 @@ export function getLembagaBroadGroup(namaLembaga) {
 //   Dipakai untuk scoping Kepala Lembaga di Data Santri + view akademik (kyai: "Kepala = lembaganya").
 export function lembagaScopeMatches(userLembaga, targetLembaga) {
   if (!userLembaga || !targetLembaga) return false
-  if (String(userLembaga).toLowerCase().trim() === String(targetLembaga).toLowerCase().trim()) return true
+  if (String(userLembaga).toLowerCase().trim() === String(targetLembaga).toLowerCase().trim())
+    return true
   const uFam = getLembagaGroup(userLembaga) // family key kalau userLembaga = variant
   if (uFam) return getLembagaGroup(targetLembaga) === uFam // scope se-family
   // userLembaga bukan variant → mungkin label broad ('Qiraati'/'Sekolah') atau family key
@@ -126,8 +129,11 @@ export const PKBM_SUB_TIERS = {
 export function getPkbmSubTier(kelas) {
   if (kelas === null || kelas === undefined || kelas === '') return null
   let k = String(kelas).toUpperCase().trim()
-  k = k.replace(/^(KELAS|KLS|TINGKAT)\s+/, '').replace(/^(SMP|SMA)\s*[-\s]*/, '').trim()
-  const arab = { '7': 'VII', '8': 'VIII', '9': 'IX', '10': 'X', '11': 'XI', '12': 'XII' }
+  k = k
+    .replace(/^(KELAS|KLS|TINGKAT)\s+/, '')
+    .replace(/^(SMP|SMA)\s*[-\s]*/, '')
+    .trim()
+  const arab = { 7: 'VII', 8: 'VIII', 9: 'IX', 10: 'X', 11: 'XI', 12: 'XII' }
   if (arab[k]) k = arab[k]
   if (PKBM_SUB_TIERS.SMP.includes(k)) return 'SMP'
   if (PKBM_SUB_TIERS.SMA.includes(k)) return 'SMA'
@@ -300,7 +306,9 @@ export function useLembaga() {
 
   onUnmounted(() => {
     if (unsubLembaga) {
-      try { unsubLembaga() } catch (e) {}
+      try {
+        unsubLembaga()
+      } catch (e) {}
     }
   })
 

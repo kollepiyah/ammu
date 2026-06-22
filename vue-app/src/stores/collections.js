@@ -3,7 +3,7 @@
 // Store ini subscribe 1x per collection (idempotent, hidup se-sesi); composable baca ref shared.
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { subscribeColl } from '@/services/firestore'
+import { subscribeColl } from '@/services/db'
 
 export const useCollectionsStore = defineStore('collections', () => {
   const santri = ref([])
