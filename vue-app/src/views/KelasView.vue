@@ -45,17 +45,18 @@
 // v.21.71.0526: PKBM SMP/SMA sub-tier label
 import { formatKelasLabel } from '@/composables/useLembaga'
 import { ref, onMounted, onUnmounted } from 'vue'
-import { doc, getDoc, onSnapshot } from 'firebase/firestore'
-import { db } from '@/services/firebase'
+import { subscribeDoc } from '@/services/db'
 import { useDesktopShell } from '@/composables/useDesktopShell'
 const lembagaList = ref([])
 const { isElectron: isDesktop } = useDesktopShell()
 let unsub = null
 onMounted(() => {
-  unsub = onSnapshot(doc(db, 'master', 'lembaga'), (snap) => {
-    lembagaList.value = Array.isArray(snap.data()?.list) ? snap.data().list : []
+  unsub = subscribeDoc('master', 'lembaga', (m) => {
+    lembagaList.value = Array.isArray(m?.list) ? m.list : []
   })
 })
 // v.98: cleanup listener master/lembaga (cegah leak tiap navigasi ke/dari Kelas)
-onUnmounted(() => { if (unsub) unsub() })
+onUnmounted(() => {
+  if (unsub) unsub()
+})
 </script>

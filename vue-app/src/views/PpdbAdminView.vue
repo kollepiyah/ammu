@@ -310,7 +310,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
-import { subscribeColl, updateOne, deleteOne, subscribeDoc, mergeOne } from '@/services/firestore'
+import { subscribeColl, updateOne, deleteOne, subscribeDoc, mergeOne } from '@/services/db'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'

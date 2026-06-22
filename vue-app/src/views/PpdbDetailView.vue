@@ -14,7 +14,9 @@
           </h1>
           <p class="text-xs text-[var(--text-secondary)] mt-0.5">
             No. Pendaftaran:
-            <span class="font-bold text-[var(--text-primary)]">{{ pendaftar.no_pendaftaran || '—' }}</span>
+            <span class="font-bold text-[var(--text-primary)]">{{
+              pendaftar.no_pendaftaran || '—'
+            }}</span>
             &middot; Tgl Daftar:
             <span class="font-bold text-[var(--text-primary)]">{{
               fmtTgl(pendaftar.tanggal_daftar || pendaftar.tgl_daftar)
@@ -138,7 +140,9 @@
                 >
                   {{ item.type || 'text' }}
                 </span>
-                <p class="text-[11px] font-bold text-[var(--text-secondary)] uppercase tracking-wide">
+                <p
+                  class="text-[11px] font-bold text-[var(--text-secondary)] uppercase tracking-wide"
+                >
                   {{ item.label || item.key }}
                 </p>
               </div>
@@ -278,9 +282,7 @@
 <script setup>
 import { ref, computed, defineComponent, h, onMounted, onUnmounted } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
-import { doc, onSnapshot } from 'firebase/firestore'
-import { db } from '@/services/firebase'
-import { updateOne, addOne, getAll } from '@/services/firestore'
+import { subscribeDoc, updateOne, addOne, getAll } from '@/services/db'
 import { nextNisForNew } from '@/utils/nisGenerator' // v.100 Batch14: NIS PSB = append (lanjut NNNN)
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
@@ -324,24 +326,21 @@ const InfoRow = defineComponent({
   props: ['label', 'value'],
   setup(props) {
     return () =>
-      h(
-        'div',
-        { class: 'flex items-baseline gap-2 py-1 border-b border-[var(--border-subtle)]' },
-        [
-          h(
-            'span',
-            {
-              class: 'text-[11px] font-bold text-[var(--text-secondary)] uppercase tracking-wide min-w-[120px]'
-            },
-            props.label + ':'
-          ),
-          h(
-            'span',
-            { class: 'text-sm text-slate-800 dark:text-slate-200 flex-1 break-words' },
-            props.value || '—'
-          )
-        ]
-      )
+      h('div', { class: 'flex items-baseline gap-2 py-1 border-b border-[var(--border-subtle)]' }, [
+        h(
+          'span',
+          {
+            class:
+              'text-[11px] font-bold text-[var(--text-secondary)] uppercase tracking-wide min-w-[120px]'
+          },
+          props.label + ':'
+        ),
+        h(
+          'span',
+          { class: 'text-sm text-slate-800 dark:text-slate-200 flex-1 break-words' },
+          props.value || '—'
+        )
+      ])
   }
 })
 
@@ -350,31 +349,45 @@ const DocPreview = defineComponent({
   setup(props) {
     return () => {
       const isImg = props.url && /\.(png|jpe?g|webp|gif)$/i.test(props.url)
-      return h('div', { class: 'bg-[var(--bg-card-elevated)] rounded-xl p-3 border border-[var(--border-subtle)]' }, [
-        h('p', { class: 'text-[11px] font-bold uppercase text-[var(--text-secondary)] mb-2' }, props.label),
-        props.url
-          ? h('a', { href: props.url, target: '_blank', class: 'block' }, [
-              isImg
-                ? h('img', {
-                    src: props.url,
-                    class: 'w-full h-40 object-contain bg-[var(--bg-card)] rounded-lg'
-                  })
-                : h(
-                    'div',
-                    {
-                      class:
-                        'w-full h-40 flex items-center justify-center bg-[var(--bg-card)] rounded-lg text-teal-600'
-                    },
-                    [h('i', { class: 'fas fa-file-pdf text-4xl' })]
-                  ),
-              h(
+      return h(
+        'div',
+        {
+          class: 'bg-[var(--bg-card-elevated)] rounded-xl p-3 border border-[var(--border-subtle)]'
+        },
+        [
+          h(
+            'p',
+            { class: 'text-[11px] font-bold uppercase text-[var(--text-secondary)] mb-2' },
+            props.label
+          ),
+          props.url
+            ? h('a', { href: props.url, target: '_blank', class: 'block' }, [
+                isImg
+                  ? h('img', {
+                      src: props.url,
+                      class: 'w-full h-40 object-contain bg-[var(--bg-card)] rounded-lg'
+                    })
+                  : h(
+                      'div',
+                      {
+                        class:
+                          'w-full h-40 flex items-center justify-center bg-[var(--bg-card)] rounded-lg text-teal-600'
+                      },
+                      [h('i', { class: 'fas fa-file-pdf text-4xl' })]
+                    ),
+                h(
+                  'p',
+                  { class: 'text-[10px] text-teal-600 text-center mt-1 hover:underline' },
+                  'Klik untuk lihat full'
+                )
+              ])
+            : h(
                 'p',
-                { class: 'text-[10px] text-teal-600 text-center mt-1 hover:underline' },
-                'Klik untuk lihat full'
+                { class: 'text-xs text-[var(--text-tertiary)] italic text-center py-8' },
+                'Tidak ada file'
               )
-            ])
-          : h('p', { class: 'text-xs text-[var(--text-tertiary)] italic text-center py-8' }, 'Tidak ada file')
-      ])
+        ]
+      )
     }
   }
 })
@@ -530,10 +543,30 @@ async function convertToSantri() {
       wa: p.wa || p.wa_wali || p.telp_ayah || '',
       wa_wali: p.wa_wali || '',
       // Ortu — flat + nested (kompat ProfilSantri view + edit)
-      nama_ayah: p.nama_ayah || '', nik_ayah: p.nik_ayah || '', pekerjaan_ayah: p.pekerjaan_ayah || '', pendidikan_ayah: p.pendidikan_ayah || '', hp_ayah: p.hp_ayah || p.telp_ayah || '',
-      nama_ibu: p.nama_ibu || '', nik_ibu: p.nik_ibu || '', pekerjaan_ibu: p.pekerjaan_ibu || '', pendidikan_ibu: p.pendidikan_ibu || '', hp_ibu: p.hp_ibu || p.telp_ibu || '',
-      ayah: { nama: p.nama_ayah || '', nik: p.nik_ayah || '', pekerjaan: p.pekerjaan_ayah || '', pendidikan: p.pendidikan_ayah || '', telp: p.telp_ayah || p.hp_ayah || '' },
-      ibu: { nama: p.nama_ibu || '', nik: p.nik_ibu || '', pekerjaan: p.pekerjaan_ibu || '', pendidikan: p.pendidikan_ibu || '', telp: p.telp_ibu || p.hp_ibu || '' },
+      nama_ayah: p.nama_ayah || '',
+      nik_ayah: p.nik_ayah || '',
+      pekerjaan_ayah: p.pekerjaan_ayah || '',
+      pendidikan_ayah: p.pendidikan_ayah || '',
+      hp_ayah: p.hp_ayah || p.telp_ayah || '',
+      nama_ibu: p.nama_ibu || '',
+      nik_ibu: p.nik_ibu || '',
+      pekerjaan_ibu: p.pekerjaan_ibu || '',
+      pendidikan_ibu: p.pendidikan_ibu || '',
+      hp_ibu: p.hp_ibu || p.telp_ibu || '',
+      ayah: {
+        nama: p.nama_ayah || '',
+        nik: p.nik_ayah || '',
+        pekerjaan: p.pekerjaan_ayah || '',
+        pendidikan: p.pendidikan_ayah || '',
+        telp: p.telp_ayah || p.hp_ayah || ''
+      },
+      ibu: {
+        nama: p.nama_ibu || '',
+        nik: p.nik_ibu || '',
+        pekerjaan: p.pekerjaan_ibu || '',
+        pendidikan: p.pendidikan_ibu || '',
+        telp: p.telp_ibu || p.hp_ibu || ''
+      },
       aktif: true,
       psb_id: docId.value,
       audit: {
@@ -547,7 +580,9 @@ async function convertToSantri() {
       try {
         const allSantri = await getAll('santri')
         payload.nis = nextNisForNew(allSantri, payload.tgl_lahir)
-      } catch (e) { /* gagal hitung → biarkan No. Induk kosong, bisa digenerate via impor */ }
+      } catch (e) {
+        /* gagal hitung → biarkan No. Induk kosong, bisa digenerate via impor */
+      }
     }
     await addOne('santri', payload)
     await updateOne('psb_pendaftaran', docId.value, {
@@ -588,22 +623,15 @@ function fmtTgl(v) {
 
 onMounted(() => {
   if (!docId.value) return
-  unsubDoc = onSnapshot(
-    doc(db, 'psb_pendaftaran', docId.value),
-    (snap) => {
-      if (snap.exists()) {
-        pendaftar.value = { id: snap.id, ...snap.data() }
-      } else {
-        pendaftar.value = {}
-        toast.error('Pendaftar tidak ditemukan')
-      }
-      loading.value = false
-    },
-    (e) => {
-      toast.error('Gagal load: ' + (e.message || e))
-      loading.value = false
+  unsubDoc = subscribeDoc('psb_pendaftaran', docId.value, (d) => {
+    if (d) {
+      pendaftar.value = d
+    } else {
+      pendaftar.value = {}
+      toast.error('Pendaftar tidak ditemukan')
     }
-  )
+    loading.value = false
+  })
 })
 
 onUnmounted(() => {

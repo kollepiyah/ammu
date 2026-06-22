@@ -415,8 +415,7 @@
 <script setup>
 import { ref, computed, watch, reactive } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { setDoc, doc } from 'firebase/firestore'
-import { db } from '@/services/firebase'
+import { mergeOne } from '@/services/db'
 import { useSettingsStore } from '@/stores/settings'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
@@ -461,8 +460,8 @@ function mulaiEditKontak() {
   editKontak.value = true
 }
 async function _saveSettings(patch) {
-  await setDoc(doc(db, 'settings', 'general'), patch, { merge: true })
-  await setDoc(doc(db, 'settings', 'web'), patch, { merge: true })
+  await mergeOne('settings', 'general', patch)
+  await mergeOne('settings', 'web', patch)
 }
 async function simpanKontak() {
   try {

@@ -2,9 +2,7 @@
 // v.21.85.0527: Kelola Jabatan (ACF + CRUD) — sub-menu Master Data > Lembaga > Jabatan
 // Model master/jabatan: { list: [string...] (kompat lama), items: [{nama, tipe_pegawai, tipe_lembaga}] }
 import { ref, computed, onMounted, onUnmounted, reactive } from 'vue'
-import { subscribeDoc } from '@/services/firestore'
-import { doc, setDoc } from 'firebase/firestore'
-import { db } from '@/services/firebase'
+import { subscribeDoc, mergeOne } from '@/services/db'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
 
@@ -67,7 +65,11 @@ function normalize(data) {
     // Upgrade dari list strings → items (infer default)
     return rawList
       .filter(Boolean)
-      .map((nama) => ({ nama: String(nama).trim(), tipe_pegawai: 'guru_pegawai', tipe_lembaga: 'lembaga' }))
+      .map((nama) => ({
+        nama: String(nama).trim(),
+        tipe_pegawai: 'guru_pegawai',
+        tipe_lembaga: 'lembaga'
+      }))
   }
   return null
 }
@@ -95,10 +97,15 @@ onUnmounted(() => {
 // Tulis ke Firestore: simpan items + sync list (kompat reader lama yg pakai .list)
 async function persist(arr) {
   const list = arr.map((it) => it.nama)
-  await setDoc(doc(db, 'master', 'jabatan'), { items: arr, list }, { merge: true })
+  await mergeOne('master', 'jabatan', { items: arr, list })
 }
 
-const form = reactive({ nama: '', tipe_pegawai: 'guru_pegawai', tipe_lembaga: 'lembaga', idx: null })
+const form = reactive({
+  nama: '',
+  tipe_pegawai: 'guru_pegawai',
+  tipe_lembaga: 'lembaga',
+  idx: null
+})
 const saving = ref(false)
 
 function resetForm() {
@@ -184,8 +191,8 @@ const sorted = computed(() =>
         <i class="fas fa-id-badge text-teal-500 mr-2"></i>Kelola Jabatan
       </h1>
       <p class="text-xs text-[var(--text-secondary)] mt-0.5">
-        Master jabatan untuk dropdown Data Guru/Pegawai. Atur tipe pegawai &amp; apakah jabatan perlu
-        lembaga.
+        Master jabatan untuk dropdown Data Guru/Pegawai. Atur tipe pegawai &amp; apakah jabatan
+        perlu lembaga.
       </p>
     </div>
 
@@ -194,7 +201,9 @@ const sorted = computed(() =>
       class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm space-y-3"
     >
       <h3 class="text-sm font-black text-[var(--text-primary)]">
-        <i :class="['fas', form.idx !== null ? 'fa-edit' : 'fa-plus-circle', 'text-teal-600 mr-1']"></i>
+        <i
+          :class="['fas', form.idx !== null ? 'fa-edit' : 'fa-plus-circle', 'text-teal-600 mr-1']"
+        ></i>
         {{ form.idx !== null ? 'Edit Jabatan' : 'Tambah Jabatan' }}
       </h3>
       <div>
@@ -259,7 +268,13 @@ const sorted = computed(() =>
           :disabled="saving"
           class="bg-teal-600 hover:bg-teal-700 text-white font-bold px-4 py-2 rounded-lg text-xs disabled:opacity-50"
         >
-          <i :class="['fas', saving ? 'fa-spinner fa-spin' : form.idx !== null ? 'fa-save' : 'fa-plus', 'mr-1']"></i>
+          <i
+            :class="[
+              'fas',
+              saving ? 'fa-spinner fa-spin' : form.idx !== null ? 'fa-save' : 'fa-plus',
+              'mr-1'
+            ]"
+          ></i>
           {{ form.idx !== null ? 'Update' : 'Tambah' }}
         </button>
         <button
@@ -274,9 +289,7 @@ const sorted = computed(() =>
     </div>
 
     <!-- List -->
-    <div
-      class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm"
-    >
+    <div class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm">
       <div class="flex items-center justify-between mb-3">
         <h3 class="text-sm font-black text-[var(--text-primary)]">
           <i class="fas fa-list text-teal-600 mr-1"></i>Daftar Jabatan
@@ -285,7 +298,10 @@ const sorted = computed(() =>
           >{{ sorted.length }} jabatan</span
         >
       </div>
-      <div v-if="sorted.length === 0" class="text-center text-[var(--text-tertiary)] italic text-xs py-6">
+      <div
+        v-if="sorted.length === 0"
+        class="text-center text-[var(--text-tertiary)] italic text-xs py-6"
+      >
         <i class="fas fa-inbox text-3xl text-[var(--border-default)] block mb-2"></i>
         Belum ada jabatan. Tambah via form di atas.
       </div>

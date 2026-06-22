@@ -324,10 +324,7 @@
       class="mb-4"
     >
       <div class="grid md:grid-cols-2 gap-3">
-        <UiInput
-          v-model="form.adminUsername"
-          label="Username Admin Built-in"
-        />
+        <UiInput v-model="form.adminUsername" label="Username Admin Built-in" />
       </div>
       <form
         @submit.prevent="changeAdminPassword"
@@ -1268,7 +1265,7 @@ import { useConfirm } from '@/composables/useConfirm'
 import { useLembaga } from '@/composables/useLembaga'
 import { useGoogleSheet } from '@/composables/useGoogleSheet'
 import { uploadBase64 } from '@/services/storage'
-import { setOne } from '@/services/firestore'
+import { setOne } from '@/services/db'
 import { toAuthPassword } from '@/services/auth'
 import {
   ArrowLeft as ArrowLeftIcon,

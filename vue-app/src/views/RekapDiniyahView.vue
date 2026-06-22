@@ -50,25 +50,38 @@
     </div>
 
     <!-- v.90.0626: Filter Jenjang Diniyah (SDI/SMP/SMA) — hidden kalau dipanggil dari Rekap Prestasi (route query) -->
-    <div v-if="!forcedFromRoute" class="bg-[var(--bg-card)] rounded-2xl p-3 md:p-4 border border-[var(--border-subtle)] shadow-sm">
-      <p class="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-widest mb-2">Filter Jenjang Diniyah</p>
+    <div
+      v-if="!forcedFromRoute"
+      class="bg-[var(--bg-card)] rounded-2xl p-3 md:p-4 border border-[var(--border-subtle)] shadow-sm"
+    >
+      <p class="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-widest mb-2">
+        Filter Jenjang Diniyah
+      </p>
       <div class="grid grid-cols-4 gap-2">
         <button
           @click="filterJenjang = ''"
           :class="[
             'px-3 py-2 text-xs font-black rounded-xl transition cursor-pointer shadow-sm',
-            filterJenjang === '' ? 'bg-slate-700 text-white' : 'bg-[var(--bg-muted)] text-[var(--text-primary)] hover:bg-slate-200'
+            filterJenjang === ''
+              ? 'bg-slate-700 text-white'
+              : 'bg-[var(--bg-muted)] text-[var(--text-primary)] hover:bg-slate-200'
           ]"
-        >Semua</button>
+        >
+          Semua
+        </button>
         <button
           v-for="j in DINIYAH_JENJANG"
           :key="j"
           @click="filterJenjang = j"
           :class="[
             'px-3 py-2 text-xs font-black rounded-xl transition cursor-pointer shadow-sm',
-            filterJenjang === j ? 'bg-cyan-600 text-white' : 'bg-cyan-50 text-cyan-800 hover:bg-cyan-100'
+            filterJenjang === j
+              ? 'bg-cyan-600 text-white'
+              : 'bg-cyan-50 text-cyan-800 hover:bg-cyan-100'
           ]"
-        >{{ j }}</button>
+        >
+          {{ j }}
+        </button>
       </div>
     </div>
 
@@ -84,116 +97,129 @@
         </p>
       </div>
       <template v-else>
-      <div v-if="!isMobile" class="overflow-x-auto">
-        <table class="w-full text-xs border-collapse">
-          <thead class="bg-[var(--bg-muted)] sticky top-0">
-            <tr>
-              <th
-                class="py-2 px-2 border border-[var(--border-default)] text-left font-black uppercase text-[10px] sticky left-0 bg-[var(--bg-muted)] z-10"
+        <div v-if="!isMobile" class="overflow-x-auto">
+          <table class="w-full text-xs border-collapse">
+            <thead class="bg-[var(--bg-muted)] sticky top-0">
+              <tr>
+                <th
+                  class="py-2 px-2 border border-[var(--border-default)] text-left font-black uppercase text-[10px] sticky left-0 bg-[var(--bg-muted)] z-10"
+                >
+                  Nama
+                </th>
+                <th
+                  class="py-2 px-2 border border-[var(--border-default)] text-center font-black uppercase text-[10px]"
+                >
+                  Lembaga
+                </th>
+                <th
+                  class="py-2 px-2 border border-[var(--border-default)] text-center font-black uppercase text-[10px]"
+                >
+                  Kelas
+                </th>
+                <th
+                  v-for="m in mapelList"
+                  :key="m"
+                  class="py-2 px-2 border border-[var(--border-default)] text-center font-black uppercase text-[10px] bg-cyan-100 text-cyan-900 dark:bg-cyan-900/50 dark:text-cyan-200"
+                >
+                  {{ m }}
+                </th>
+                <th
+                  class="py-2 px-2 border border-[var(--border-default)] text-center font-black uppercase text-[10px] bg-cyan-50 text-cyan-800"
+                >
+                  Rata2
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="s in filteredSantri"
+                :key="s.id"
+                class="hover:bg-slate-50 dark:hover:bg-slate-700/30"
               >
-                Nama
-              </th>
-              <th
-                class="py-2 px-2 border border-[var(--border-default)] text-center font-black uppercase text-[10px]"
+                <td
+                  class="py-1.5 px-2 border border-[var(--border-default)] font-bold text-[var(--text-primary)] sticky left-0 bg-[var(--bg-card)]"
+                >
+                  {{ s.nama }}
+                </td>
+                <td
+                  class="py-1.5 px-2 border border-[var(--border-default)] text-center text-[11px] text-[var(--text-secondary)]"
+                >
+                  {{ s.lembaga_sekolah || '-' }}
+                </td>
+                <td
+                  class="py-1.5 px-2 border border-[var(--border-default)] text-center text-[11px] text-[var(--text-secondary)]"
+                >
+                  {{ s.kelas_sekolah || '-' }}
+                </td>
+                <td
+                  v-for="m in mapelList"
+                  :key="m"
+                  class="py-0.5 px-1 border border-[var(--border-default)]"
+                >
+                  <input
+                    type="text"
+                    inputmode="numeric"
+                    :value="getCell(s.id, m)"
+                    @change="(ev) => saveCell(s.id, m, ev.target.value)"
+                    class="w-full text-center text-[11px] py-1 px-1 border-0 outline-none bg-transparent focus:bg-cyan-50 dark:focus:bg-cyan-900/30 dark:text-white"
+                  />
+                </td>
+                <td
+                  :class="[
+                    'py-1.5 px-2 border border-[var(--border-default)] text-center font-black bg-cyan-50 dark:bg-cyan-900/20',
+                    rataColor(rataNilai(s.id))
+                  ]"
+                >
+                  {{ rataNilai(s.id) }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Mobile: kartu per santri (header + grid input mapel) -->
+        <div v-if="isMobile" class="space-y-2.5">
+          <div
+            v-for="s in filteredSantri"
+            :key="s.id"
+            class="bg-[var(--bg-card)] rounded-xl border border-[var(--border-subtle)] shadow-sm p-3"
+          >
+            <div class="flex items-center justify-between gap-2 mb-2.5">
+              <div class="min-w-0">
+                <p class="text-sm font-bold text-[var(--text-primary)] truncate">{{ s.nama }}</p>
+                <p class="text-[10px] text-[var(--text-secondary)]">
+                  {{ s.lembaga_sekolah || '-' }} &middot; {{ s.kelas_sekolah || '-' }}
+                </p>
+              </div>
+              <span
+                :class="[
+                  'text-[11px] font-black px-2.5 py-1 rounded-lg bg-cyan-50 dark:bg-cyan-900/20 flex-shrink-0',
+                  rataColor(rataNilai(s.id))
+                ]"
               >
-                Lembaga
-              </th>
-              <th
-                class="py-2 px-2 border border-[var(--border-default)] text-center font-black uppercase text-[10px]"
-              >
-                Kelas
-              </th>
-              <th
+                Rata2 {{ rataNilai(s.id) }}
+              </span>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <label
                 v-for="m in mapelList"
                 :key="m"
-                class="py-2 px-2 border border-[var(--border-default)] text-center font-black uppercase text-[10px] bg-cyan-100 text-cyan-900 dark:bg-cyan-900/50 dark:text-cyan-200"
+                class="flex items-center justify-between gap-2 bg-[var(--bg-muted)] rounded-lg pl-2.5 pr-1 py-1"
               >
-                {{ m }}
-              </th>
-              <th
-                class="py-2 px-2 border border-[var(--border-default)] text-center font-black uppercase text-[10px] bg-cyan-50 text-cyan-800"
-              >
-                Rata2
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr
-              v-for="s in filteredSantri"
-              :key="s.id"
-              class="hover:bg-slate-50 dark:hover:bg-slate-700/30"
-            >
-              <td
-                class="py-1.5 px-2 border border-[var(--border-default)] font-bold text-[var(--text-primary)] sticky left-0 bg-[var(--bg-card)]"
-              >
-                {{ s.nama }}
-              </td>
-              <td
-                class="py-1.5 px-2 border border-[var(--border-default)] text-center text-[11px] text-[var(--text-secondary)]"
-              >
-                {{ s.lembaga_sekolah || '-' }}
-              </td>
-              <td
-                class="py-1.5 px-2 border border-[var(--border-default)] text-center text-[11px] text-[var(--text-secondary)]"
-              >
-                {{ s.kelas_sekolah || '-' }}
-              </td>
-              <td v-for="m in mapelList" :key="m" class="py-0.5 px-1 border border-[var(--border-default)]">
+                <span class="text-[11px] font-bold text-[var(--text-secondary)] truncate">{{
+                  m
+                }}</span>
                 <input
                   type="text"
                   inputmode="numeric"
                   :value="getCell(s.id, m)"
                   @change="(ev) => saveCell(s.id, m, ev.target.value)"
-                  class="w-full text-center text-[11px] py-1 px-1 border-0 outline-none bg-transparent focus:bg-cyan-50 dark:focus:bg-cyan-900/30 dark:text-white"
+                  class="w-12 flex-shrink-0 text-center text-sm font-bold py-1.5 rounded-md border border-[var(--border-default)] bg-[var(--bg-card)] outline-none focus:ring-2 focus:ring-cyan-500 dark:text-white"
                 />
-              </td>
-              <td
-                :class="[
-                  'py-1.5 px-2 border border-[var(--border-default)] text-center font-black bg-cyan-50 dark:bg-cyan-900/20',
-                  rataColor(rataNilai(s.id))
-                ]"
-              >
-                {{ rataNilai(s.id) }}
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <!-- Mobile: kartu per santri (header + grid input mapel) -->
-      <div v-if="isMobile" class="space-y-2.5">
-        <div
-          v-for="s in filteredSantri"
-          :key="s.id"
-          class="bg-[var(--bg-card)] rounded-xl border border-[var(--border-subtle)] shadow-sm p-3"
-        >
-          <div class="flex items-center justify-between gap-2 mb-2.5">
-            <div class="min-w-0">
-              <p class="text-sm font-bold text-[var(--text-primary)] truncate">{{ s.nama }}</p>
-              <p class="text-[10px] text-[var(--text-secondary)]">{{ s.lembaga_sekolah || '-' }} &middot; {{ s.kelas_sekolah || '-' }}</p>
+              </label>
             </div>
-            <span :class="['text-[11px] font-black px-2.5 py-1 rounded-lg bg-cyan-50 dark:bg-cyan-900/20 flex-shrink-0', rataColor(rataNilai(s.id))]">
-              Rata2 {{ rataNilai(s.id) }}
-            </span>
-          </div>
-          <div class="grid grid-cols-2 gap-2">
-            <label
-              v-for="m in mapelList"
-              :key="m"
-              class="flex items-center justify-between gap-2 bg-[var(--bg-muted)] rounded-lg pl-2.5 pr-1 py-1"
-            >
-              <span class="text-[11px] font-bold text-[var(--text-secondary)] truncate">{{ m }}</span>
-              <input
-                type="text"
-                inputmode="numeric"
-                :value="getCell(s.id, m)"
-                @change="(ev) => saveCell(s.id, m, ev.target.value)"
-                class="w-12 flex-shrink-0 text-center text-sm font-bold py-1.5 rounded-md border border-[var(--border-default)] bg-[var(--bg-card)] outline-none focus:ring-2 focus:ring-cyan-500 dark:text-white"
-              />
-            </label>
           </div>
         </div>
-      </div>
       </template>
     </div>
 
@@ -208,9 +234,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { subscribeColl } from '@/services/firestore'
-import { doc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore'
-import { db } from '@/services/firebase'
+import { subscribeColl, setOne, updateOne, serverTimestamp } from '@/services/db'
 import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
@@ -355,7 +379,9 @@ const filteredSantri = computed(() => {
     )
   }
   if (filterJenjang.value) {
-    list = list.filter((s) => diniyahJenjang(s.lembaga_sekolah, s.kelas_sekolah) === filterJenjang.value)
+    list = list.filter(
+      (s) => diniyahJenjang(s.lembaga_sekolah, s.kelas_sekolah) === filterJenjang.value
+    )
   }
   if (filterKelas.value) list = list.filter((s) => s.kelas_sekolah === filterKelas.value)
   const kw = search.value.trim().toLowerCase()
@@ -414,12 +440,12 @@ async function saveCell(santriId, mapel, value) {
     const existing = findRekap(santriId)
     const newData = { ...(existing?.data || {}), [key]: value }
     if (existing) {
-      await updateDoc(doc(db, 'rekap_diniyah', docId), {
+      await updateOne('rekap_diniyah', docId, {
         data: newData,
         updated_at: serverTimestamp()
       })
     } else {
-      await setDoc(doc(db, 'rekap_diniyah', docId), {
+      await setOne('rekap_diniyah', docId, {
         id: docId,
         santri_id: santriId,
         periode: periodKey.value,
