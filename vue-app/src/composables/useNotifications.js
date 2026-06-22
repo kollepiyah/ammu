@@ -18,9 +18,7 @@
 // Notif baru = item.createdAt > last_seen_per_jenis[jenis]
 
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
-import { doc, setDoc } from 'firebase/firestore'
-import { db } from '@/services/firebase'
-import { subscribeColl, subscribeDoc } from '@/services/firestore'
+import { subscribeColl, subscribeDoc, mergeOne } from '@/services/db'
 import { useAuthStore } from '@/stores/auth'
 import { isKepalaLembaga } from '@/utils/roleScope'
 import { lembagaScopeMatches } from '@/composables/useLembaga' // v.100: scope kepala utk notif tes kenaikan
@@ -36,10 +34,10 @@ export function useNotifications() {
   const slipRaw = ref([])
   // v.87.0526: sumber notif baru
   const tagihanRaw = ref([])
-  const liburRaw = ref([])     // dari koleksi `kegiatan` (filter tipe === 'libur')
-  const kenaikanRaw = ref([])  // dari koleksi `riwayat_kenaikan` (event ditulis saat PROSES NAIK)
-  const prestasiRaw = ref([])  // dari koleksi `notif_prestasi` (event ditulis saat input nilai prestasi)
-  const tesRaw = ref([])       // v.100: dari koleksi `tes_kenaikan` (ajuan + hasil tes)
+  const liburRaw = ref([]) // dari koleksi `kegiatan` (filter tipe === 'libur')
+  const kenaikanRaw = ref([]) // dari koleksi `riwayat_kenaikan` (event ditulis saat PROSES NAIK)
+  const prestasiRaw = ref([]) // dari koleksi `notif_prestasi` (event ditulis saat input nilai prestasi)
+  const tesRaw = ref([]) // v.100: dari koleksi `tes_kenaikan` (ajuan + hasil tes)
   const notifState = ref({})
 
   // unsub list
@@ -52,7 +50,12 @@ export function useNotifications() {
   function tsMs(ts) {
     if (!ts) return 0
     if (ts.seconds != null) return ts.seconds * 1000
-    if (ts.toDate) try { return ts.toDate().getTime() } catch { return 0 }
+    if (ts.toDate)
+      try {
+        return ts.toDate().getTime()
+      } catch {
+        return 0
+      }
     if (typeof ts === 'number') return ts
     const d = new Date(ts)
     if (!isNaN(d.getTime())) return d.getTime()
@@ -113,28 +116,36 @@ export function useNotifications() {
       icon: 'fa-bullhorn',
       color: 'teal',
       // v.71.0526: thumbnail image untuk notif post (1 image pertama kalau ada)
-      thumbnail: Array.isArray(p.gambar_urls) && p.gambar_urls.length > 0
-        ? p.gambar_urls[0]
-        : (p.thumbnail || p.image_url || '')
+      thumbnail:
+        Array.isArray(p.gambar_urls) && p.gambar_urls.length > 0
+          ? p.gambar_urls[0]
+          : p.thumbnail || p.image_url || ''
     }))
   }
 
   function getPembayaran() {
     if (role.value !== 'santri') return []
     const me = userId.value
-    return bukuIndukRaw.value
-      // v.87.0526: sertakan transfer yang sudah diverifikasi admin (selain tunai POS)
-      .filter((r) => (r.sumber === 'pos_santri' || r.sumber === 'transfer_verified') && String(r.santri_id) === me)
-      .map((r) => ({
-        id: r.id || r._id,
-        jenis: 'pembayaran',
-        judul: r.sumber === 'transfer_verified' ? 'Transfer terverifikasi' : 'Pembayaran berhasil',
-        body: `${r.kategori || 'Pembayaran'} · Rp ${new Intl.NumberFormat('id-ID').format(Number(r.nominal || 0))}`,
-        ts: tsMs(r.createdAt || r.created_at),
-        link: '/pembayaran',
-        icon: 'fa-receipt',
-        color: 'emerald'
-      }))
+    return (
+      bukuIndukRaw.value
+        // v.87.0526: sertakan transfer yang sudah diverifikasi admin (selain tunai POS)
+        .filter(
+          (r) =>
+            (r.sumber === 'pos_santri' || r.sumber === 'transfer_verified') &&
+            String(r.santri_id) === me
+        )
+        .map((r) => ({
+          id: r.id || r._id,
+          jenis: 'pembayaran',
+          judul:
+            r.sumber === 'transfer_verified' ? 'Transfer terverifikasi' : 'Pembayaran berhasil',
+          body: `${r.kategori || 'Pembayaran'} · Rp ${new Intl.NumberFormat('id-ID').format(Number(r.nominal || 0))}`,
+          ts: tsMs(r.createdAt || r.created_at),
+          link: '/pembayaran',
+          icon: 'fa-receipt',
+          color: 'emerald'
+        }))
+    )
   }
 
   function getBisyaroh() {
@@ -158,19 +169,23 @@ export function useNotifications() {
   function getTagihan() {
     if (role.value !== 'santri') return []
     const me = userId.value
-    return tagihanRaw.value
-      // v.100: jangan tampilkan sbg "Tagihan baru" jika tagihan LAHIR sudah lunas (bayar-di-muka POS).
-      .filter((t) => String(t.santri_id) === me && String(t.status || '').toLowerCase() !== 'lunas')
-      .map((t) => ({
-        id: t.id || t._id,
-        jenis: 'tagihan',
-        judul: 'Tagihan baru',
-        body: `${t.kategori || 'Tagihan'} · Rp ${new Intl.NumberFormat('id-ID').format(Number(t.nominal || 0))}`,
-        ts: tsMs(t.createdAt || t.created_at),
-        link: '/tagihan',
-        icon: 'fa-file-invoice-dollar',
-        color: 'rose'
-      }))
+    return (
+      tagihanRaw.value
+        // v.100: jangan tampilkan sbg "Tagihan baru" jika tagihan LAHIR sudah lunas (bayar-di-muka POS).
+        .filter(
+          (t) => String(t.santri_id) === me && String(t.status || '').toLowerCase() !== 'lunas'
+        )
+        .map((t) => ({
+          id: t.id || t._id,
+          jenis: 'tagihan',
+          judul: 'Tagihan baru',
+          body: `${t.kategori || 'Tagihan'} · Rp ${new Intl.NumberFormat('id-ID').format(Number(t.nominal || 0))}`,
+          ts: tsMs(t.createdAt || t.created_at),
+          link: '/tagihan',
+          icon: 'fa-file-invoice-dollar',
+          color: 'rose'
+        }))
+    )
   }
 
   // v.87.0526: Hari libur dari admin — KECUALI libur_nasional → semua role (sesuai audience kegiatan)
@@ -246,7 +261,11 @@ export function useNotifications() {
         out.push({
           id: 'tesres_' + (a.id || a._id),
           jenis: 'tes',
-          judul: lulus ? 'Tes: Lulus' : a.status === 'ditolak' ? 'Tes: Ditolak' : 'Tes: Belum Lulus',
+          judul: lulus
+            ? 'Tes: Lulus'
+            : a.status === 'ditolak'
+              ? 'Tes: Ditolak'
+              : 'Tes: Belum Lulus',
           body: `${a.nama_cache || ''}${a.target ? ' → ' + a.target : ''}`.trim(),
           ts: tsMs(a.tgl_hasil || a._ts),
           link: '/tes-kenaikan',
@@ -332,8 +351,16 @@ export function useNotifications() {
   // v.87.0526: semua jenis (termasuk tagihan/libur/kenaikan)
   function allSeenNow(now) {
     return {
-      supervisi: now, kritik: now, post: now, pembayaran: now, bisyaroh: now,
-      tagihan: now, libur: now, kenaikan: now, prestasi: now, tes: now
+      supervisi: now,
+      kritik: now,
+      post: now,
+      pembayaran: now,
+      bisyaroh: now,
+      tagihan: now,
+      libur: now,
+      kenaikan: now,
+      prestasi: now,
+      tes: now
     }
   }
 
@@ -342,11 +369,10 @@ export function useNotifications() {
     const now = Date.now()
     const next = allSeenNow(now)
     try {
-      await setDoc(
-        doc(db, 'user_notif_state', userId.value),
-        { last_seen_per_jenis: next, updated_at: new Date() },
-        { merge: true }
-      )
+      await mergeOne('user_notif_state', userId.value, {
+        last_seen_per_jenis: next,
+        updated_at: new Date().toISOString()
+      })
       notifState.value = { ...notifState.value, last_seen_per_jenis: next }
     } catch (e) {
       console.warn('[useNotifications] markAllRead gagal:', e?.message || e)
@@ -358,15 +384,11 @@ export function useNotifications() {
     if (!userId.value) return
     const now = Date.now()
     try {
-      await setDoc(
-        doc(db, 'user_notif_state', userId.value),
-        {
-          cleared_at: now,
-          last_seen_per_jenis: allSeenNow(now),
-          updated_at: new Date()
-        },
-        { merge: true }
-      )
+      await mergeOne('user_notif_state', userId.value, {
+        cleared_at: now,
+        last_seen_per_jenis: allSeenNow(now),
+        updated_at: new Date().toISOString()
+      })
       notifState.value = { ...notifState.value, cleared_at: now }
     } catch (e) {
       console.warn('[useNotifications] clearAll gagal:', e?.message || e)
@@ -375,30 +397,81 @@ export function useNotifications() {
 
   onMounted(() => {
     if (!auth.sesiAktif) return
-    unsubs.push(subscribeColl('supervisi_catatan', (docs) => { supervisiRaw.value = docs || [] }))
-    unsubs.push(subscribeColl('kritik_saran', (docs) => { kritikRaw.value = docs || [] }))
-    unsubs.push(subscribeColl('beranda_post', (docs) => { postRaw.value = docs || [] }))
+    unsubs.push(
+      subscribeColl('supervisi_catatan', (docs) => {
+        supervisiRaw.value = docs || []
+      })
+    )
+    unsubs.push(
+      subscribeColl('kritik_saran', (docs) => {
+        kritikRaw.value = docs || []
+      })
+    )
+    unsubs.push(
+      subscribeColl('beranda_post', (docs) => {
+        postRaw.value = docs || []
+      })
+    )
     if (role.value === 'santri' || role.value === 'admin') {
-      unsubs.push(subscribeColl('keuangan_buku_induk', (docs) => { bukuIndukRaw.value = docs || [] }))
+      unsubs.push(
+        subscribeColl('keuangan_buku_induk', (docs) => {
+          bukuIndukRaw.value = docs || []
+        })
+      )
       // v.87.0526: tagihan baru + event kenaikan (untuk wali/santri; admin lihat semua)
-      unsubs.push(subscribeColl('keuangan_tagihan', (docs) => { tagihanRaw.value = docs || [] }))
-      unsubs.push(subscribeColl('riwayat_kenaikan', (docs) => { kenaikanRaw.value = docs || [] }))
-      unsubs.push(subscribeColl('notif_prestasi', (docs) => { prestasiRaw.value = docs || [] }))
+      unsubs.push(
+        subscribeColl('keuangan_tagihan', (docs) => {
+          tagihanRaw.value = docs || []
+        })
+      )
+      unsubs.push(
+        subscribeColl('riwayat_kenaikan', (docs) => {
+          kenaikanRaw.value = docs || []
+        })
+      )
+      unsubs.push(
+        subscribeColl('notif_prestasi', (docs) => {
+          prestasiRaw.value = docs || []
+        })
+      )
     }
     if (role.value === 'guru' || role.value === 'admin') {
-      unsubs.push(subscribeColl('keuangan_gaji', (docs) => { slipRaw.value = docs || [] }))
+      unsubs.push(
+        subscribeColl('keuangan_gaji', (docs) => {
+          slipRaw.value = docs || []
+        })
+      )
     }
     // v.87.0526: hari libur (kegiatan) — semua role
-    unsubs.push(subscribeColl('kegiatan', (docs) => { liburRaw.value = docs || [] }))
+    unsubs.push(
+      subscribeColl('kegiatan', (docs) => {
+        liburRaw.value = docs || []
+      })
+    )
     // v.100: tes kenaikan — semua role (filter per-role di getTesKenaikan)
-    unsubs.push(subscribeColl('tes_kenaikan', (docs) => { tesRaw.value = docs || [] }))
+    unsubs.push(
+      subscribeColl('tes_kenaikan', (docs) => {
+        tesRaw.value = docs || []
+      })
+    )
     if (userId.value) {
-      unsubs.push(subscribeDoc('user_notif_state', userId.value, (d) => { notifState.value = d || {} }))
+      unsubs.push(
+        subscribeDoc('user_notif_state', userId.value, (d) => {
+          notifState.value = d || {}
+        })
+      )
     }
   })
 
   onUnmounted(() => {
-    for (const u of unsubs) { if (u) try { u() } catch { /* ignore */ } }
+    for (const u of unsubs) {
+      if (u)
+        try {
+          u()
+        } catch {
+          /* ignore */
+        }
+    }
   })
 
   return {

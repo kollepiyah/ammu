@@ -1,9 +1,7 @@
 // useGuruForm — manage guru CRUD form state
 // Phase 5.13b (v.41.0526) — port logic legacy simpanGuru + editAdminGuru
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { setDoc, doc, getDoc, collection, onSnapshot } from 'firebase/firestore'
-import { db } from '@/services/firebase'
-import { subscribeDoc, getAll } from '@/services/firestore'
+import { getOne, mergeOne, subscribeDoc, getAll } from '@/services/db'
 import { nextNigForNew } from '@/utils/nigGenerator' // v.100 Batch16: NIG guru baru = append (lanjut NNN)
 import { useToast } from '@/composables/useToast'
 import { useAuthStore } from '@/stores/auth'
@@ -269,8 +267,16 @@ export function useGuruForm() {
   // v.99: BUTUH LEMBAGA dari master/jabatan items[].tipe_lembaga (kyai: "mana jabatan yg butuh lembaga dan tidak").
   //   Fallback: JABATAN_NO_LEMBAGA hardcoded → 'non-lembaga'; selain itu → 'lembaga'.
   const jabatanTipeLembaga = computed(() => {
-    const j = String(form.value.jabatan || '').toLowerCase().trim()
-    const item = jabatanItemsFromMaster.value.find((it) => it && String(it.nama || '').toLowerCase().trim() === j)
+    const j = String(form.value.jabatan || '')
+      .toLowerCase()
+      .trim()
+    const item = jabatanItemsFromMaster.value.find(
+      (it) =>
+        it &&
+        String(it.nama || '')
+          .toLowerCase()
+          .trim() === j
+    )
     if (item && item.tipe_lembaga) return item.tipe_lembaga
     if (JABATAN_NO_LEMBAGA.some((n) => String(n).toLowerCase() === j)) return 'non-lembaga'
     return 'lembaga'
@@ -297,12 +303,11 @@ export function useGuruForm() {
     isLoading.value = true
     errorMsg.value = null
     try {
-      const snap = await getDoc(doc(db, 'guru', String(id)))
-      if (!snap.exists()) {
+      const g = await getOne('guru', String(id))
+      if (!g) {
         errorMsg.value = 'Guru tidak ditemukan'
         return
       }
-      const g = snap.data()
       form.value = {
         id: g.id,
         nama: g.nama || '',
@@ -360,7 +365,10 @@ export function useGuruForm() {
   async function propagateGuruRename(oldNama, newNama) {
     try {
       const allSantri = await getAll('santri')
-      const eq = (v) => String(v || '').trim().toLowerCase() === String(oldNama).trim().toLowerCase()
+      const eq = (v) =>
+        String(v || '')
+          .trim()
+          .toLowerCase() === String(oldNama).trim().toLowerCase()
       let count = 0
       for (const s of allSantri) {
         const patch = {}
@@ -374,7 +382,7 @@ export function useGuruForm() {
           patch.guru_sekolah = newNama
         }
         if (Object.keys(patch).length) {
-          await setDoc(doc(db, 'santri', String(s.id)), patch, { merge: true })
+          await mergeOne('santri', String(s.id), patch)
           count++
         }
       }
@@ -425,9 +433,8 @@ export function useGuruForm() {
       let _oldNama = '' // v.100e: nama guru SEBELUM edit (deteksi rename → propagasi ke santri)
       if (editingId.value) {
         try {
-          const oldSnap = await getDoc(doc(db, 'guru', String(editingId.value)))
-          if (oldSnap.exists()) {
-            const old = oldSnap.data()
+          const old = await getOne('guru', String(editingId.value))
+          if (old) {
             _oldNama = old.nama || ''
             data.foto = old.foto || ''
             data.username = old.username || defaultUsername
@@ -453,11 +460,17 @@ export function useGuruForm() {
         try {
           const allGuru = await getAll('guru')
           data.nig = nextNigForNew(allGuru, data.tanggal_tugas)
-        } catch (e) { /* gagal hitung → biarkan kosong, bisa digenerate via impor/tombol */ }
+        } catch (e) {
+          /* gagal hitung → biarkan kosong, bisa digenerate via impor/tombol */
+        }
       }
-      await setDoc(doc(db, 'guru', String(data.id)), data, { merge: true })
+      await mergeOne('guru', String(data.id), data)
       // v.100e: rename guru → perbarui nama tersimpan di referensi santri (denormalisasi)
-      if (editingId.value && _oldNama && _oldNama.trim().toLowerCase() !== String(data.nama).trim().toLowerCase()) {
+      if (
+        editingId.value &&
+        _oldNama &&
+        _oldNama.trim().toLowerCase() !== String(data.nama).trim().toLowerCase()
+      ) {
         await propagateGuruRename(_oldNama, data.nama)
       }
       toast.success(editingId.value ? 'Data guru diupdate' : 'Guru baru disimpan')
@@ -472,9 +485,8 @@ export function useGuruForm() {
 
   // v.21.22.0526: Lembaga di doc master/lembaga (list), bukan collection
   onMounted(() => {
-    unsubLembaga = onSnapshot(doc(db, 'master', 'lembaga'), (snap) => {
-      const data = snap.data()
-      lembagaRaw.value = Array.isArray(data?.list) ? data.list : []
+    unsubLembaga = subscribeDoc('master', 'lembaga', (m) => {
+      lembagaRaw.value = Array.isArray(m?.list) ? m.list : []
     })
     _unsubJabatan = subscribeDoc('master', 'jabatan', (docData) => {
       jabatanFromMaster.value = Array.isArray(docData?.list) ? docData.list : []

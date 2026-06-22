@@ -2,19 +2,17 @@
 // Phase 5.13c (v.42.0526)
 // v.20.18.0526: Refactor CRUD ke master/lembaga doc (.list array) match legacy schema
 import { ref, computed, onMounted } from 'vue'
-import { setDoc, doc, getDoc, deleteDoc, updateDoc } from 'firebase/firestore'
-import { db } from '@/services/firebase'
+import { getOne, mergeOne } from '@/services/db'
 import { useToast } from '@/composables/useToast'
 
 // Helper: read full lembaga list dari master/lembaga doc
 async function _readLembagaList() {
-  const snap = await getDoc(doc(db, 'master', 'lembaga'))
-  if (!snap.exists()) return []
-  return Array.isArray(snap.data().list) ? snap.data().list : []
+  const m = await getOne('master', 'lembaga')
+  return Array.isArray(m?.list) ? m.list : []
 }
-// Helper: write full lembaga list ke master/lembaga doc
+// Helper: write full lembaga list ke master/lembaga doc (deep-merge ganti array list)
 async function _writeLembagaList(list) {
-  await setDoc(doc(db, 'master', 'lembaga'), { list }, { merge: true })
+  await mergeOne('master', 'lembaga', { list })
 }
 
 function emptyForm() {
@@ -66,7 +64,9 @@ export function useLembagaForm() {
       const list = await _readLembagaList()
       // id format: slug nama lembaga ATAU langsung nama lembaga
       const l = list.find((x) => {
-        const slug = String(x.lembaga || '').replace(/[^a-zA-Z0-9]/g, '_').toLowerCase()
+        const slug = String(x.lembaga || '')
+          .replace(/[^a-zA-Z0-9]/g, '_')
+          .toLowerCase()
         return slug === String(id) || x.lembaga === id
       })
       if (!l) {
@@ -80,7 +80,11 @@ export function useLembagaForm() {
         kelas: Array.isArray(l.kelas) ? [...l.kelas] : [],
         // v.21.23.0526: load jabatan per-lembaga (normalize: string lama → {nama, tipe:'guru'})
         jabatan: Array.isArray(l.jabatan)
-          ? l.jabatan.map((j) => (typeof j === 'string' ? { nama: j, tipe: 'guru' } : { nama: j.nama || '', tipe: j.tipe || 'guru' }))
+          ? l.jabatan.map((j) =>
+              typeof j === 'string'
+                ? { nama: j, tipe: 'guru' }
+                : { nama: j.nama || '', tipe: j.tipe || 'guru' }
+            )
           : [],
         shift_count: l.shift_count || 1,
         kop_logo: l.kop_logo || '',
@@ -176,7 +180,11 @@ export function useLembagaForm() {
         // v.21.23.0526: save jabatan per-lembaga (normalize ke {nama, tipe})
         jabatan: Array.isArray(f.jabatan)
           ? f.jabatan
-              .map((j) => (typeof j === 'string' ? { nama: j, tipe: 'guru' } : { nama: String(j.nama || '').trim(), tipe: j.tipe || 'guru' }))
+              .map((j) =>
+                typeof j === 'string'
+                  ? { nama: j, tipe: 'guru' }
+                  : { nama: String(j.nama || '').trim(), tipe: j.tipe || 'guru' }
+              )
               .filter((j) => j.nama)
           : [],
         shift_count: f.shift_count || 1
@@ -191,7 +199,9 @@ export function useLembagaForm() {
       if (editingId.value) {
         // UPDATE: find by current name OR slug
         const idx = list.findIndex((x) => {
-          const slug = String(x.lembaga || '').replace(/[^a-zA-Z0-9]/g, '_').toLowerCase()
+          const slug = String(x.lembaga || '')
+            .replace(/[^a-zA-Z0-9]/g, '_')
+            .toLowerCase()
           return x.lembaga === editingId.value || slug === String(editingId.value)
         })
         if (idx >= 0) list[idx] = { ...list[idx], ...data }
@@ -218,15 +228,25 @@ export function useLembagaForm() {
 
   async function deleteLembaga() {
     if (!editingId.value) return false
-    if (!confirm(`Hapus lembaga "${form.value.lembaga}" beserta ${form.value.kelas.length} kelas? Santri/guru yang ter-link akan jadi orphan (perlu remap manual).`)) {
+    if (
+      !confirm(
+        `Hapus lembaga "${form.value.lembaga}" beserta ${form.value.kelas.length} kelas? Santri/guru yang ter-link akan jadi orphan (perlu remap manual).`
+      )
+    ) {
       return false
     }
     isSaving.value = true
     try {
       const list = await _readLembagaList()
       const filtered = list.filter((x) => {
-        const slug = String(x.lembaga || '').replace(/[^a-zA-Z0-9]/g, '_').toLowerCase()
-        return x.lembaga !== editingId.value && slug !== String(editingId.value) && x.lembaga !== form.value.lembaga
+        const slug = String(x.lembaga || '')
+          .replace(/[^a-zA-Z0-9]/g, '_')
+          .toLowerCase()
+        return (
+          x.lembaga !== editingId.value &&
+          slug !== String(editingId.value) &&
+          x.lembaga !== form.value.lembaga
+        )
       })
       await _writeLembagaList(filtered)
       toast.success('Lembaga dihapus')

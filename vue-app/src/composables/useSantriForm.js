@@ -1,8 +1,7 @@
 // useSantriForm — manage santri CRUD form state (create + edit)
 // Phase 5.13 (v.40.0526) — port logic legacy simpanSantri + editAdminSantri
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
-import { setDoc, doc, collection, getDoc, getDocs, onSnapshot } from 'firebase/firestore'
-import { db } from '@/services/firebase'
+import { getOne, mergeOne, subscribeColl, subscribeDoc } from '@/services/db'
 import { useToast } from '@/composables/useToast'
 import { toTitleCase, normalizeWA } from '@/utils/format'
 
@@ -41,10 +40,23 @@ function emptyForm() {
     no_kk: '',
     asal_sekolah: '',
     penghasilan_ortu: '',
-    alamat_dusun: '', alamat_rt: '', alamat_rw: '',
-    alamat_desa: '', alamat_kecamatan: '', alamat_kabupaten: '', alamat_provinsi: '',
-    nama_ayah: '', nik_ayah: '', pekerjaan_ayah: '', pendidikan_ayah: '', hp_ayah: '',
-    nama_ibu: '', nik_ibu: '', pekerjaan_ibu: '', pendidikan_ibu: '', hp_ibu: '',
+    alamat_dusun: '',
+    alamat_rt: '',
+    alamat_rw: '',
+    alamat_desa: '',
+    alamat_kecamatan: '',
+    alamat_kabupaten: '',
+    alamat_provinsi: '',
+    nama_ayah: '',
+    nik_ayah: '',
+    pekerjaan_ayah: '',
+    pendidikan_ayah: '',
+    hp_ayah: '',
+    nama_ibu: '',
+    nik_ibu: '',
+    pekerjaan_ibu: '',
+    pendidikan_ibu: '',
+    hp_ibu: '',
     custom_fields: {}
   }
 }
@@ -105,11 +117,17 @@ export function useSantriForm() {
   //   (BUKAN legacy 'ngaji'/'ngaji_sekolah'/'sekolah'). Filter lama pakai nilai legacy → daftar guru
   //   KOSONG di form santri (akar "data guru tidak terbaca"). Terima BARU + legacy + kosong.
   function _isGuruMengajar(g) {
-    const t = String(g.tipe_pegawai || '').toLowerCase().trim()
+    const t = String(g.tipe_pegawai || '')
+      .toLowerCase()
+      .trim()
     return !t || ['guru', 'pegawai_guru', 'ngaji', 'ngaji_sekolah', 'sekolah'].includes(t)
   }
   function _isAktifGuru(g) {
-    return String(g.status || 'Aktif').toLowerCase().trim() === 'aktif'
+    return (
+      String(g.status || 'Aktif')
+        .toLowerCase()
+        .trim() === 'aktif'
+    )
   }
 
   // Guru list filtered by lembaga (untuk multi-select guru pengajar Qiraati)
@@ -125,7 +143,10 @@ export function useSantriForm() {
     const ls = form.value.lembaga_sekolah
     if (!ls) return []
     return guruRaw.value
-      .filter((g) => _isAktifGuru(g) && _isGuruMengajar(g) && (g.lembaga_sekolah === ls || g.lembaga === ls))
+      .filter(
+        (g) =>
+          _isAktifGuru(g) && _isGuruMengajar(g) && (g.lembaga_sekolah === ls || g.lembaga === ls)
+      )
       .sort((a, b) => String(a.nama || '').localeCompare(String(b.nama || ''), 'id'))
   })
 
@@ -137,21 +158,30 @@ export function useSantriForm() {
     return (map && map[kelasNama]) || null
   }
   // Prefill guru Qiraati dari default kelas bila kosong (non-destruktif; nilai tersimpan menang).
-  watch(() => [form.value.lembaga, form.value.kelas], () => {
-    const def = _kelasGuruDefault(form.value.lembaga, form.value.kelas)
-    if (!def) return
-    if (!form.value.guru_pagi && def.guru_pagi) form.value.guru_pagi = def.guru_pagi
-    if (!form.value.guru_sore && def.guru_sore) form.value.guru_sore = def.guru_sore
-  })
-  // Prefill guru sekolah dari default kelas bila kosong.
-  watch(() => [form.value.lembaga_sekolah, form.value.kelas_sekolah], () => {
-    const def = _kelasGuruDefault(form.value.lembaga_sekolah, form.value.kelas_sekolah)
-    if (!def) return
-    const arr = Array.isArray(def.guru_sekolah) ? def.guru_sekolah.filter(Boolean) : []
-    if (arr.length && (!Array.isArray(form.value.guru_sekolah) || form.value.guru_sekolah.length === 0)) {
-      form.value.guru_sekolah = [...arr]
+  watch(
+    () => [form.value.lembaga, form.value.kelas],
+    () => {
+      const def = _kelasGuruDefault(form.value.lembaga, form.value.kelas)
+      if (!def) return
+      if (!form.value.guru_pagi && def.guru_pagi) form.value.guru_pagi = def.guru_pagi
+      if (!form.value.guru_sore && def.guru_sore) form.value.guru_sore = def.guru_sore
     }
-  })
+  )
+  // Prefill guru sekolah dari default kelas bila kosong.
+  watch(
+    () => [form.value.lembaga_sekolah, form.value.kelas_sekolah],
+    () => {
+      const def = _kelasGuruDefault(form.value.lembaga_sekolah, form.value.kelas_sekolah)
+      if (!def) return
+      const arr = Array.isArray(def.guru_sekolah) ? def.guru_sekolah.filter(Boolean) : []
+      if (
+        arr.length &&
+        (!Array.isArray(form.value.guru_sekolah) || form.value.guru_sekolah.length === 0)
+      ) {
+        form.value.guru_sekolah = [...arr]
+      }
+    }
+  )
 
   // ============== ACTIONS ==============
 
@@ -169,12 +199,11 @@ export function useSantriForm() {
     isLoading.value = true
     errorMsg.value = null
     try {
-      const snap = await getDoc(doc(db, 'santri', String(id)))
-      if (!snap.exists()) {
+      const s = await getOne('santri', String(id))
+      if (!s) {
         errorMsg.value = 'Santri tidak ditemukan'
         return
       }
-      const s = snap.data()
       // v.21.23.0526: Migrate lembaga_sekolah lama (TK A/TK B) → umbrella TK + kelas TK A/TK B
       let _lemSek = s.lembaga_sekolah || ''
       let _kelSek = s.kelas_sekolah || ''
@@ -215,9 +244,13 @@ export function useSantriForm() {
         no_kk: s.no_kk || '',
         asal_sekolah: s.asal_sekolah || '',
         penghasilan_ortu: s.penghasilan_ortu || '',
-        alamat_dusun: s.alamat_dusun || '', alamat_rt: s.alamat_rt || '', alamat_rw: s.alamat_rw || '',
-        alamat_desa: s.alamat_desa || '', alamat_kecamatan: s.alamat_kecamatan || '',
-        alamat_kabupaten: s.alamat_kabupaten || '', alamat_provinsi: s.alamat_provinsi || '',
+        alamat_dusun: s.alamat_dusun || '',
+        alamat_rt: s.alamat_rt || '',
+        alamat_rw: s.alamat_rw || '',
+        alamat_desa: s.alamat_desa || '',
+        alamat_kecamatan: s.alamat_kecamatan || '',
+        alamat_kabupaten: s.alamat_kabupaten || '',
+        alamat_provinsi: s.alamat_provinsi || '',
         nama_ayah: s.nama_ayah || (s.ayah && s.ayah.nama) || '',
         nik_ayah: s.nik_ayah || (s.ayah && s.ayah.nik) || '',
         pekerjaan_ayah: s.pekerjaan_ayah || (s.ayah && s.ayah.pekerjaan) || '',
@@ -292,22 +325,48 @@ export function useSantriForm() {
         // v.21.13.0526: + is_fullday + catatan_riwayat + tgl/alasan keluar
         is_fullday: !!f.is_fullday,
         catatan_riwayat_pribadi: f.catatan_riwayat_pribadi || '',
-        tgl_keluar: f.aktif === false ? (f.tgl_keluar || '') : '',
-        alasan_keluar: f.aktif === false ? (f.alasan_keluar || '') : '',
+        tgl_keluar: f.aktif === false ? f.tgl_keluar || '' : '',
+        alasan_keluar: f.aktif === false ? f.alasan_keluar || '' : '',
         // v.89 (N4): biodata + ortu + alamat detail (match PSB)
         tempat_lahir: f.tempat_lahir || '',
         nama_panggilan: f.nama_panggilan || '',
         no_kk: f.no_kk || '',
         asal_sekolah: f.asal_sekolah || '',
         penghasilan_ortu: f.penghasilan_ortu || '',
-        alamat: f.alamat || [f.alamat_dusun, f.alamat_desa, f.alamat_kecamatan].filter(Boolean).join(', '),
-        alamat_dusun: f.alamat_dusun || '', alamat_rt: f.alamat_rt || '', alamat_rw: f.alamat_rw || '',
-        alamat_desa: f.alamat_desa || '', alamat_kecamatan: f.alamat_kecamatan || '',
-        alamat_kabupaten: f.alamat_kabupaten || '', alamat_provinsi: f.alamat_provinsi || '',
-        nama_ayah: f.nama_ayah || '', nik_ayah: f.nik_ayah || '', pekerjaan_ayah: f.pekerjaan_ayah || '', pendidikan_ayah: f.pendidikan_ayah || '', hp_ayah: f.hp_ayah || '',
-        nama_ibu: f.nama_ibu || '', nik_ibu: f.nik_ibu || '', pekerjaan_ibu: f.pekerjaan_ibu || '', pendidikan_ibu: f.pendidikan_ibu || '', hp_ibu: f.hp_ibu || '',
-        ayah: { nama: f.nama_ayah || '', nik: f.nik_ayah || '', pekerjaan: f.pekerjaan_ayah || '', pendidikan: f.pendidikan_ayah || '', telp: f.hp_ayah || '' },
-        ibu: { nama: f.nama_ibu || '', nik: f.nik_ibu || '', pekerjaan: f.pekerjaan_ibu || '', pendidikan: f.pendidikan_ibu || '', telp: f.hp_ibu || '' },
+        alamat:
+          f.alamat ||
+          [f.alamat_dusun, f.alamat_desa, f.alamat_kecamatan].filter(Boolean).join(', '),
+        alamat_dusun: f.alamat_dusun || '',
+        alamat_rt: f.alamat_rt || '',
+        alamat_rw: f.alamat_rw || '',
+        alamat_desa: f.alamat_desa || '',
+        alamat_kecamatan: f.alamat_kecamatan || '',
+        alamat_kabupaten: f.alamat_kabupaten || '',
+        alamat_provinsi: f.alamat_provinsi || '',
+        nama_ayah: f.nama_ayah || '',
+        nik_ayah: f.nik_ayah || '',
+        pekerjaan_ayah: f.pekerjaan_ayah || '',
+        pendidikan_ayah: f.pendidikan_ayah || '',
+        hp_ayah: f.hp_ayah || '',
+        nama_ibu: f.nama_ibu || '',
+        nik_ibu: f.nik_ibu || '',
+        pekerjaan_ibu: f.pekerjaan_ibu || '',
+        pendidikan_ibu: f.pendidikan_ibu || '',
+        hp_ibu: f.hp_ibu || '',
+        ayah: {
+          nama: f.nama_ayah || '',
+          nik: f.nik_ayah || '',
+          pekerjaan: f.pekerjaan_ayah || '',
+          pendidikan: f.pendidikan_ayah || '',
+          telp: f.hp_ayah || ''
+        },
+        ibu: {
+          nama: f.nama_ibu || '',
+          nik: f.nik_ibu || '',
+          pekerjaan: f.pekerjaan_ibu || '',
+          pendidikan: f.pendidikan_ibu || '',
+          telp: f.hp_ibu || ''
+        },
         custom_fields: f.custom_fields || {},
         // v.102: field `password` plaintext DIHAPUS — login pakai Firebase Auth (sandi awal '1234' via lazy-migration)
         foto: '',
@@ -319,9 +378,8 @@ export function useSantriForm() {
       // Kalau edit, preserve existing fields
       if (editingId.value) {
         try {
-          const oldSnap = await getDoc(doc(db, 'santri', String(editingId.value)))
-          if (oldSnap.exists()) {
-            const old = oldSnap.data()
+          const old = await getOne('santri', String(editingId.value))
+          if (old) {
             data.foto = old.foto || ''
             data.riwayat = old.riwayat || []
             data.prestasi_awal = old.prestasi_awal || ''
@@ -329,11 +387,13 @@ export function useSantriForm() {
             data.prestasi_total = old.prestasi_total || ''
             data.username = old.username || defaultUsername
           }
-        } catch (e) { /* ignore */ }
+        } catch (e) {
+          /* ignore */
+        }
       }
       // v.99: merge:true — jangan menimpa/hapus field tersimpan yg tak ada di payload
       //   (mis. wa_2, psb_id, shift_qiraati, lembaga_refs) saat edit santri.
-      await setDoc(doc(db, 'santri', String(data.id)), data, { merge: true })
+      await mergeOne('santri', String(data.id), data)
       toast.success(editingId.value ? 'Data santri diupdate' : 'Santri baru disimpan')
       return true
     } catch (e) {
@@ -346,12 +406,11 @@ export function useSantriForm() {
 
   // v.21.22.0526: Lembaga ada di doc master/lembaga (list array), bukan collection lembaga/
   onMounted(() => {
-    unsubLembaga = onSnapshot(doc(db, 'master', 'lembaga'), (snap) => {
-      const data = snap.data()
-      lembagaRaw.value = Array.isArray(data?.list) ? data.list : []
+    unsubLembaga = subscribeDoc('master', 'lembaga', (m) => {
+      lembagaRaw.value = Array.isArray(m?.list) ? m.list : []
     })
-    unsubGuru = onSnapshot(collection(db, 'guru'), (snap) => {
-      guruRaw.value = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+    unsubGuru = subscribeColl('guru', (docs) => {
+      guruRaw.value = docs
     })
   })
 
@@ -394,7 +453,10 @@ function calcAge(tglLahir) {
   let m = now.getMonth() - d.getMonth()
   let day = now.getDate() - d.getDate()
   if (day < 0) m--
-  if (m < 0) { y--; m += 12 }
+  if (m < 0) {
+    y--
+    m += 12
+  }
   return `${y} thn ${m} bln`
 }
 function calcAgeAt(tglLahir, tglRef) {
@@ -404,6 +466,9 @@ function calcAgeAt(tglLahir, tglRef) {
   if (isNaN(d.getTime()) || isNaN(r.getTime())) return ''
   let y = r.getFullYear() - d.getFullYear()
   let m = r.getMonth()
-  if (m < 0) { y--; m += 12 }
+  if (m < 0) {
+    y--
+    m += 12
+  }
   return `${y} thn ${m} bln`
 }
