@@ -50,19 +50,60 @@
     </div>
 
     <!-- Diagnostik Kelas Total (klik kartu KELAS TOTAL) -->
-    <div v-if="showKpi && isAdminMode && showKelasDetail" class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm">
+    <div
+      v-if="showKpi && isAdminMode && showKelasDetail"
+      class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm"
+    >
       <div class="flex items-center justify-between mb-2">
-        <h4 class="text-sm font-black text-[var(--text-primary)]"><i class="fas fa-door-open text-cyan-600 mr-1"></i>Rincian Kelas Total ({{ kelasCount }})</h4>
+        <h4 class="text-sm font-black text-[var(--text-primary)]">
+          <i class="fas fa-door-open text-cyan-600 mr-1"></i>Rincian Kelas Total ({{ kelasCount }})
+        </h4>
         <div class="flex items-center gap-2">
-          <button type="button" @click="bersihkanGuruInvalid" :disabled="bersihRunning" class="text-[11px] font-bold text-white bg-rose-600 hover:bg-rose-700 disabled:opacity-50 px-3 py-1.5 rounded-lg"><i class="fas fa-broom mr-1"></i>Bersihkan guru invalid</button>
-          <button type="button" @click="showKelasDetail = false" class="text-[var(--text-tertiary)] hover:text-rose-600"><i class="fas fa-times"></i></button>
+          <button
+            type="button"
+            @click="bersihkanGuruInvalid"
+            :disabled="bersihRunning"
+            class="text-[11px] font-bold text-white bg-rose-600 hover:bg-rose-700 disabled:opacity-50 px-3 py-1.5 rounded-lg"
+          >
+            <i class="fas fa-broom mr-1"></i>Bersihkan guru invalid
+          </button>
+          <button
+            type="button"
+            @click="showKelasDetail = false"
+            class="text-[var(--text-tertiary)] hover:text-rose-600"
+          >
+            <i class="fas fa-times"></i>
+          </button>
         </div>
       </div>
-      <p class="text-[11px] text-[var(--text-secondary)] mb-2">1 baris = kombinasi <b>guru x lembaga x kelas</b> (santri aktif yg punya guru). <span class="text-rose-600 font-bold">guru yatim</span> = guru tak ada di daftar guru aktif, kemungkinan SAMPAH (santri masih nyantol ke guru lama/terhapus). Perbaiki: edit santri tsb ganti gurunya, atau hapus santri sampah.</p>
+      <p class="text-[11px] text-[var(--text-secondary)] mb-2">
+        1 baris = kombinasi <b>guru x lembaga x kelas</b> (santri aktif yg punya guru).
+        <span class="text-rose-600 font-bold">guru yatim</span> = guru tak ada di daftar guru aktif,
+        kemungkinan SAMPAH (santri masih nyantol ke guru lama/terhapus). Perbaiki: edit santri tsb
+        ganti gurunya, atau hapus santri sampah.
+      </p>
       <div class="space-y-1 max-h-72 overflow-auto">
-        <div v-for="(k, i) in kelasDetail" :key="i" :class="['flex items-center justify-between gap-2 text-xs px-3 py-1.5 rounded-lg', k.orphan ? 'bg-rose-50 dark:bg-rose-900/30 border border-rose-200 dark:border-rose-700' : 'bg-slate-50 dark:bg-slate-800']">
-          <span class="truncate"><b>{{ k.lembaga }}</b> &middot; {{ k.kelas }} &middot; {{ k.guru }} <span class="text-[var(--text-tertiary)]">({{ k.jml }} santri &middot; {{ k.jenis }})</span></span>
-          <span v-if="k.orphan" class="text-[10px] font-bold text-rose-700 dark:text-rose-300 whitespace-nowrap"><i class="fas fa-triangle-exclamation mr-0.5"></i>yatim</span>
+        <div
+          v-for="(k, i) in kelasDetail"
+          :key="i"
+          :class="[
+            'flex items-center justify-between gap-2 text-xs px-3 py-1.5 rounded-lg',
+            k.orphan
+              ? 'bg-rose-50 dark:bg-rose-900/30 border border-rose-200 dark:border-rose-700'
+              : 'bg-slate-50 dark:bg-slate-800'
+          ]"
+        >
+          <span class="truncate"
+            ><b>{{ k.lembaga }}</b> &middot; {{ k.kelas }} &middot; {{ k.guru }}
+            <span class="text-[var(--text-tertiary)]"
+              >({{ k.jml }} santri &middot; {{ k.jenis }})</span
+            ></span
+          >
+          <span
+            v-if="k.orphan"
+            class="text-[10px] font-bold text-rose-700 dark:text-rose-300 whitespace-nowrap"
+            ><i class="fas fa-triangle-exclamation mr-0.5"></i>yatim</span
+          >
         </div>
       </div>
     </div>
@@ -87,7 +128,9 @@
             class="font-black text-[var(--text-primary)] text-sm uppercase tracking-wider mb-3 flex items-center justify-between gap-2"
           >
             <span class="truncate">{{ lem.nama }}</span>
-            <i class="fas fa-chevron-right text-[10px] text-[var(--text-tertiary)] flex-shrink-0"></i>
+            <i
+              class="fas fa-chevron-right text-[10px] text-[var(--text-tertiary)] flex-shrink-0"
+            ></i>
           </h4>
           <div class="grid grid-cols-3 gap-2 text-center">
             <div
@@ -125,9 +168,7 @@
       </h3>
       <div class="space-y-2">
         <div v-for="dist in distribusiLembaga" :key="dist.nama" class="flex items-center gap-3">
-          <p
-            class="text-xs font-bold text-[var(--text-primary)] w-32 truncate flex-shrink-0"
-          >
+          <p class="text-xs font-bold text-[var(--text-primary)] w-32 truncate flex-shrink-0">
             {{ dist.nama }}
           </p>
           <div class="flex-1 bg-[var(--bg-muted)] rounded-full h-5 overflow-hidden">
@@ -157,8 +198,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useSantri } from '@/composables/useSantri'
 import { useGuru } from '@/composables/useGuru'
 import { useLembaga, getPkbmSubTier } from '@/composables/useLembaga'
-import { doc, setDoc } from 'firebase/firestore'
-import { db } from '@/services/firebase'
+import { mergeOne } from '@/services/db'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
 import { isFullFilterRole } from '@/utils/roleScope'
@@ -211,19 +251,35 @@ const kelasCount = computed(() => {
   const set = new Set()
   for (const s of scopedSantriAll.value) {
     if (s.aktif === false) continue
-    const lembNgaji = String(s.lembaga || '').trim().toLowerCase()
-    const kelasNgaji = String(s.kelas || '').trim().toLowerCase()
+    const lembNgaji = String(s.lembaga || '')
+      .trim()
+      .toLowerCase()
+    const kelasNgaji = String(s.kelas || '')
+      .trim()
+      .toLowerCase()
     if (lembNgaji && kelasNgaji) {
       const guruNgaji = [s.guru_pagi, s.guru_sore, s.guru]
-        .map((g) => String(g || '').trim().toLowerCase())
+        .map((g) =>
+          String(g || '')
+            .trim()
+            .toLowerCase()
+        )
         .filter(Boolean)
       for (const g of guruNgaji) set.add(`${g}|${lembNgaji}|${kelasNgaji}`)
     }
-    const lembSek = String(s.lembaga_sekolah || '').trim().toLowerCase()
-    const kelasSek = String(s.kelas_sekolah || '').trim().toLowerCase()
+    const lembSek = String(s.lembaga_sekolah || '')
+      .trim()
+      .toLowerCase()
+    const kelasSek = String(s.kelas_sekolah || '')
+      .trim()
+      .toLowerCase()
     if (lembSek && kelasSek) {
       const guruSek = (Array.isArray(s.guru_sekolah) ? s.guru_sekolah : [])
-        .map((g) => String(g || '').trim().toLowerCase())
+        .map((g) =>
+          String(g || '')
+            .trim()
+            .toLowerCase()
+        )
         .filter(Boolean)
       for (const g of guruSek) set.add(`${g}|${lembSek}|${kelasSek}`)
     }
@@ -252,19 +308,46 @@ const kelasDetail = computed(() => {
     if (s.aktif === false) continue
     const sid = String(s.id)
     const addK = (guru, lemb, kelas, jenis) => {
-      const g = String(guru || '').trim(), l = String(lemb || '').trim(), k = String(kelas || '').trim()
+      const g = String(guru || '').trim(),
+        l = String(lemb || '').trim(),
+        k = String(kelas || '').trim()
       if (!g || !l || !k) return
       const key = g.toLowerCase() + '|' + l.toLowerCase() + '|' + k.toLowerCase()
       if (!m.has(key)) m.set(key, { guru: g, lembaga: l, kelas: k, jenis, ids: new Set() })
       m.get(key).ids.add(sid)
     }
-    new Set([s.guru_pagi, s.guru_sore, s.guru].map((x) => String(x || '').trim()).filter(Boolean)).forEach((g) => addK(g, s.lembaga, s.kelas, 'Ngaji'))
-    new Set((Array.isArray(s.guru_sekolah) ? s.guru_sekolah : []).map((x) => String(x || '').trim()).filter(Boolean)).forEach((g) => addK(g, s.lembaga_sekolah, s.kelas_sekolah, 'Sekolah'))
+    new Set(
+      [s.guru_pagi, s.guru_sore, s.guru].map((x) => String(x || '').trim()).filter(Boolean)
+    ).forEach((g) => addK(g, s.lembaga, s.kelas, 'Ngaji'))
+    new Set(
+      (Array.isArray(s.guru_sekolah) ? s.guru_sekolah : [])
+        .map((x) => String(x || '').trim())
+        .filter(Boolean)
+    ).forEach((g) => addK(g, s.lembaga_sekolah, s.kelas_sekolah, 'Sekolah'))
   }
-  const aktif = new Set(guruRaw.value.filter((g) => isGuruAktif(g.status)).map((g) => String(g.nama || '').trim().toLowerCase()))
+  const aktif = new Set(
+    guruRaw.value
+      .filter((g) => isGuruAktif(g.status))
+      .map((g) =>
+        String(g.nama || '')
+          .trim()
+          .toLowerCase()
+      )
+  )
   return [...m.values()]
-    .map((x) => ({ guru: x.guru, lembaga: x.lembaga, kelas: x.kelas, jenis: x.jenis, jml: x.ids.size, orphan: !aktif.has(x.guru.toLowerCase()) }))
-    .sort((a, b) => Number(b.orphan) - Number(a.orphan) || (a.lembaga + a.kelas).localeCompare(b.lembaga + b.kelas))
+    .map((x) => ({
+      guru: x.guru,
+      lembaga: x.lembaga,
+      kelas: x.kelas,
+      jenis: x.jenis,
+      jml: x.ids.size,
+      orphan: !aktif.has(x.guru.toLowerCase())
+    }))
+    .sort(
+      (a, b) =>
+        Number(b.orphan) - Number(a.orphan) ||
+        (a.lembaga + a.kelas).localeCompare(b.lembaga + b.kelas)
+    )
 })
 
 // v.07.0626: bersihkan field guru invalid (boolean true/false / 'true' / kosong) dari santri.
@@ -274,48 +357,81 @@ async function bersihkanGuruInvalid() {
     const upd = {}
     let changed = false
     if (Array.isArray(s.guru_sekolah)) {
-      const cleaned = s.guru_sekolah.filter((g) => typeof g === 'string' && g.trim() !== '' && g !== 'true' && g !== 'false')
-      if (cleaned.length !== s.guru_sekolah.length) { upd.guru_sekolah = cleaned; changed = true }
-    } else if (s.guru_sekolah !== undefined && (typeof s.guru_sekolah !== 'string' || s.guru_sekolah === 'true' || s.guru_sekolah === 'false')) {
-      upd.guru_sekolah = []; changed = true
+      const cleaned = s.guru_sekolah.filter(
+        (g) => typeof g === 'string' && g.trim() !== '' && g !== 'true' && g !== 'false'
+      )
+      if (cleaned.length !== s.guru_sekolah.length) {
+        upd.guru_sekolah = cleaned
+        changed = true
+      }
+    } else if (
+      s.guru_sekolah !== undefined &&
+      (typeof s.guru_sekolah !== 'string' ||
+        s.guru_sekolah === 'true' ||
+        s.guru_sekolah === 'false')
+    ) {
+      upd.guru_sekolah = []
+      changed = true
     }
     for (const f of ['guru_pagi', 'guru_sore', 'guru']) {
-      if (s[f] === true || s[f] === false || s[f] === 'true' || s[f] === 'false') { upd[f] = ''; changed = true }
+      if (s[f] === true || s[f] === false || s[f] === 'true' || s[f] === 'false') {
+        upd[f] = ''
+        changed = true
+      }
     }
     if (changed) targets.push({ id: s.id, upd })
   }
-  if (targets.length === 0) { toast.success('Tidak ada guru invalid. Data sudah bersih.'); return }
+  if (targets.length === 0) {
+    toast.success('Tidak ada guru invalid. Data sudah bersih.')
+    return
+  }
   const ok = await confirmDlg({
     title: 'Bersihkan guru invalid?',
-    message: targets.length + ' santri akan dibersihkan field gurunya dari nilai sampah (true/false/kosong). Santri TIDAK dihapus, hanya field guru sampah yang dibuang. Idempotent.',
+    message:
+      targets.length +
+      ' santri akan dibersihkan field gurunya dari nilai sampah (true/false/kosong). Santri TIDAK dihapus, hanya field guru sampah yang dibuang. Idempotent.',
     confirmText: 'Bersihkan',
     danger: true
   })
   if (!ok) return
   bersihRunning.value = true
-  let okc = 0, fail = 0
+  let okc = 0,
+    fail = 0
   try {
     for (const t of targets) {
-      try { await setDoc(doc(db, 'santri', String(t.id)), t.upd, { merge: true }); okc++ } catch (e) { fail++ }
+      try {
+        await mergeOne('santri', String(t.id), t.upd)
+        okc++
+      } catch (e) {
+        fail++
+      }
     }
-    toast.success('Bersih: ' + okc + ' santri diperbaiki' + (fail ? (', ' + fail + ' gagal') : ''))
-  } finally { bersihRunning.value = false }
+    toast.success('Bersih: ' + okc + ' santri diperbaiki' + (fail ? ', ' + fail + ' gagal' : ''))
+  } finally {
+    bersihRunning.value = false
+  }
 }
 
 // ---- ADMIN: Distribusi santri per lembaga (bar) ----------------------------
 const distribusiLembaga = computed(() => {
   if (role.value !== 'admin') return []
   const map = {}
-  const add = (k) => { const key = String(k || '').trim(); if (key) map[key] = (map[key] || 0) + 1 }
+  const add = (k) => {
+    const key = String(k || '').trim()
+    if (key) map[key] = (map[key] || 0) + 1
+  }
   scopedSantriAll.value
     .filter((s) => s.aktif !== false)
     .forEach((s) => {
       // v.98.0626: hitung lembaga ngaji + lembaga FORMAL (sekolah). PKBM dipecah SMP/SMA.
       let any = false
-      if (String(s.lembaga || '').trim()) { add(s.lembaga); any = true }
+      if (String(s.lembaga || '').trim()) {
+        add(s.lembaga)
+        any = true
+      }
       const ls = String(s.lembaga_sekolah || '').trim()
       if (ls) {
-        add(ls.toUpperCase() === 'PKBM' ? (getPkbmSubTier(s.kelas_sekolah) || 'PKBM') : ls)
+        add(ls.toUpperCase() === 'PKBM' ? getPkbmSubTier(s.kelas_sekolah) || 'PKBM' : ls)
         any = true
       }
       if (!any) add('(Tanpa Lembaga)')
@@ -332,8 +448,16 @@ const distribusiLembaga = computed(() => {
 
 // ---- ADMIN: Statistik per lembaga (kelas + santri + guru) ------------------
 const URUTAN_LEMBAGA = [
-  'TPQ Pagi', 'TPQ Sore', 'Pra PTPT', 'PTPT', 'PPPH',
-  'TK', 'SDI', 'SMP', 'SMA', 'PKBM'
+  'TPQ Pagi',
+  'TPQ Sore',
+  'Pra PTPT',
+  'PTPT',
+  'PPPH',
+  'TK',
+  'SDI',
+  'SMP',
+  'SMA',
+  'PKBM'
 ]
 function isSekolahLembaga(nama) {
   const n = String(nama || '').toUpperCase()
@@ -341,74 +465,106 @@ function isSekolahLembaga(nama) {
 }
 const statistikLembaga = computed(() => {
   if (!isAdminMode.value) return []
-  const lembList = (lembagaRaw.value || []).filter((l) => Array.isArray(l.kelas) && l.kelas.length > 0)
+  const lembList = (lembagaRaw.value || []).filter(
+    (l) => Array.isArray(l.kelas) && l.kelas.length > 0
+  )
   // v.99: guru PKBM TIDAK displit SMP/SMA — guru tetap di unit PKBM (master).
-  const guruPkbmTotal = guruRaw.value.filter((g) =>
-    isGuruAktif(g.status) &&
-    (String(g.lembaga_sekolah || '').trim().toUpperCase() === 'PKBM' ||
-      String(g.lembaga || '').trim().toUpperCase() === 'PKBM')
+  const guruPkbmTotal = guruRaw.value.filter(
+    (g) =>
+      isGuruAktif(g.status) &&
+      (String(g.lembaga_sekolah || '')
+        .trim()
+        .toUpperCase() === 'PKBM' ||
+        String(g.lembaga || '')
+          .trim()
+          .toUpperCase() === 'PKBM')
   ).length
   const buildPkbmTier = (tier) => {
     const sl = scopedSantriAll.value.filter((s) => {
       if (s.aktif === false) return false
-      const isPk = String(s.lembaga_sekolah || '').trim().toUpperCase() === 'PKBM' ||
-        String(s.lembaga || '').trim().toUpperCase() === 'PKBM'
+      const isPk =
+        String(s.lembaga_sekolah || '')
+          .trim()
+          .toUpperCase() === 'PKBM' ||
+        String(s.lembaga || '')
+          .trim()
+          .toUpperCase() === 'PKBM'
       return isPk && getPkbmSubTier(s.kelas_sekolah || s.kelas) === tier
     })
     const kg = new Set()
     for (const s of sl) {
-      const kls = String(s.kelas_sekolah || '').trim().toLowerCase()
-      for (const g of (Array.isArray(s.guru_sekolah) ? s.guru_sekolah : [])) {
-        const t = String(g || '').trim().toLowerCase()
+      const kls = String(s.kelas_sekolah || '')
+        .trim()
+        .toLowerCase()
+      for (const g of Array.isArray(s.guru_sekolah) ? s.guru_sekolah : []) {
+        const t = String(g || '')
+          .trim()
+          .toLowerCase()
         if (t && kls) kg.add(t + '|' + kls)
       }
     }
     return { nama: tier, kelas: kg.size, santri: sl.length, guru: guruPkbmTotal }
   }
-  return lembList
-    .map((l) => {
-      const nama = l.lembaga || l.nama
-      const namaNorm = String(nama || '').trim().toLowerCase()
-      const isSekolah = isSekolahLembaga(nama)
-      const matchLemb = (val) => String(val || '').trim().toLowerCase() === namaNorm
-      const santriList = scopedSantriAll.value.filter(
-        (s) => (matchLemb(s.lembaga) || matchLemb(s.lembaga_sekolah)) && s.aktif !== false
-      )
-      const kelasGuruSet = new Set()
-      for (const s of santriList) {
-        if (isSekolah) {
-          const kls = String(s.kelas_sekolah || '').trim().toLowerCase()
-          const arr = Array.isArray(s.guru_sekolah) ? s.guru_sekolah : []
-          for (const g of arr) {
-            const t = String(g || '').trim().toLowerCase()
-            if (t && kls) kelasGuruSet.add(t + '|' + kls)
+  return (
+    lembList
+      .map((l) => {
+        const nama = l.lembaga || l.nama
+        const namaNorm = String(nama || '')
+          .trim()
+          .toLowerCase()
+        const isSekolah = isSekolahLembaga(nama)
+        const matchLemb = (val) =>
+          String(val || '')
+            .trim()
+            .toLowerCase() === namaNorm
+        const santriList = scopedSantriAll.value.filter(
+          (s) => (matchLemb(s.lembaga) || matchLemb(s.lembaga_sekolah)) && s.aktif !== false
+        )
+        const kelasGuruSet = new Set()
+        for (const s of santriList) {
+          if (isSekolah) {
+            const kls = String(s.kelas_sekolah || '')
+              .trim()
+              .toLowerCase()
+            const arr = Array.isArray(s.guru_sekolah) ? s.guru_sekolah : []
+            for (const g of arr) {
+              const t = String(g || '')
+                .trim()
+                .toLowerCase()
+              if (t && kls) kelasGuruSet.add(t + '|' + kls)
+            }
+          } else {
+            const kls = String(s.kelas || '')
+              .trim()
+              .toLowerCase()
+            const gp = String(s.guru_pagi || '')
+              .trim()
+              .toLowerCase()
+            const gs = String(s.guru_sore || '')
+              .trim()
+              .toLowerCase()
+            if (gp && kls) kelasGuruSet.add(gp + '|' + kls)
+            if (gs && kls) kelasGuruSet.add(gs + '|' + kls)
           }
-        } else {
-          const kls = String(s.kelas || '').trim().toLowerCase()
-          const gp = String(s.guru_pagi || '').trim().toLowerCase()
-          const gs = String(s.guru_sore || '').trim().toLowerCase()
-          if (gp && kls) kelasGuruSet.add(gp + '|' + kls)
-          if (gs && kls) kelasGuruSet.add(gs + '|' + kls)
         }
-      }
-      const santriCount = santriList.length
-      const guruCount = guruRaw.value.filter(
-        (g) =>
-          (matchLemb(g.lembaga) || matchLemb(g.lembaga_sekolah)) && isGuruAktif(g.status)
-      ).length
-      return { nama, kelas: kelasGuruSet.size, santri: santriCount, guru: guruCount }
-    })
-    // v.98.0626: ganti kartu PKBM jadi 2 kartu SMP & SMA
-    .flatMap((row) =>
-      String(row.nama).trim().toLowerCase() === 'pkbm'
-        ? [buildPkbmTier('SMP'), buildPkbmTier('SMA')]
-        : [row]
-    )
-    .sort((a, b) => {
-      const ia = URUTAN_LEMBAGA.indexOf(a.nama)
-      const ib = URUTAN_LEMBAGA.indexOf(b.nama)
-      return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib)
-    })
+        const santriCount = santriList.length
+        const guruCount = guruRaw.value.filter(
+          (g) => (matchLemb(g.lembaga) || matchLemb(g.lembaga_sekolah)) && isGuruAktif(g.status)
+        ).length
+        return { nama, kelas: kelasGuruSet.size, santri: santriCount, guru: guruCount }
+      })
+      // v.98.0626: ganti kartu PKBM jadi 2 kartu SMP & SMA
+      .flatMap((row) =>
+        String(row.nama).trim().toLowerCase() === 'pkbm'
+          ? [buildPkbmTier('SMP'), buildPkbmTier('SMA')]
+          : [row]
+      )
+      .sort((a, b) => {
+        const ia = URUTAN_LEMBAGA.indexOf(a.nama)
+        const ib = URUTAN_LEMBAGA.indexOf(b.nama)
+        return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib)
+      })
+  )
 })
 
 // v.100 Batch7 (T21): klik kartu Statistik Lembaga → halaman data kelas (guru + santri)

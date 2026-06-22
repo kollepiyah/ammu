@@ -2,9 +2,13 @@
   <!-- v.100c: Tren perkembangan capaian Qiraati (rata-rata halaman bertambah / bulan).
        Sumber: notif_prestasi (np_{santriId}_{YYYY-MM}, field total + periode). Reusable:
        StatistikView (guru/kepala, agregat) + CapaianPrestasiView (santri/wali, 1 anak). -->
-  <div class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm">
+  <div
+    class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
+  >
     <div class="flex items-center justify-between gap-2 mb-1">
-      <h3 class="text-xs md:text-sm font-black text-[var(--text-primary)] uppercase tracking-widest">
+      <h3
+        class="text-xs md:text-sm font-black text-[var(--text-primary)] uppercase tracking-widest"
+      >
         <i class="fas fa-chart-line text-teal-600 mr-2"></i>{{ title }}
       </h3>
       <span
@@ -47,10 +51,18 @@ import {
   LinearScale,
   Filler
 } from 'chart.js'
-import { collection, query, where, getDocs } from 'firebase/firestore'
-import { db } from '@/services/firebase'
+import { queryColl } from '@/services/db'
 
-ChartJS.register(Title, Tooltip, Legend, PointElement, LineElement, CategoryScale, LinearScale, Filler)
+ChartJS.register(
+  Title,
+  Tooltip,
+  Legend,
+  PointElement,
+  LineElement,
+  CategoryScale,
+  LinearScale,
+  Filler
+)
 
 const props = defineProps({
   santriIds: { type: Array, default: () => [] },
@@ -84,8 +96,8 @@ async function fetchData() {
   try {
     const all = []
     for (const part of chunk(ids, 10)) {
-      const snap = await getDocs(query(collection(db, 'notif_prestasi'), where('santri_id', 'in', part)))
-      snap.forEach((d) => all.push(d.data()))
+      const partRows = await queryColl('notif_prestasi', [['santri_id', 'in', part]])
+      for (const r of partRows) all.push(r)
     }
     rows.value = all
   } catch (_e) {
@@ -147,7 +159,9 @@ const delta = computed(() => {
   if (series.value.length < 2) return null
   return Math.round((series.value[series.value.length - 1].avg - series.value[0].avg) * 10) / 10
 })
-const deltaLabel = computed(() => (delta.value == null ? '' : `${delta.value >= 0 ? '+' : ''}${delta.value}`))
+const deltaLabel = computed(() =>
+  delta.value == null ? '' : `${delta.value >= 0 ? '+' : ''}${delta.value}`
+)
 const deltaUp = computed(() => (delta.value ?? 0) >= 0)
 const deltaCls = computed(() =>
   deltaUp.value
@@ -162,7 +176,11 @@ const chartOptions = {
   plugins: { legend: { display: false } },
   scales: {
     x: { ticks: { autoSkip: false, maxRotation: 45, font: { size: 9 } }, grid: { display: false } },
-    y: { beginAtZero: true, ticks: { font: { size: 9 } }, grid: { color: 'rgba(136,135,128,0.15)' } }
+    y: {
+      beginAtZero: true,
+      ticks: { font: { size: 9 } },
+      grid: { color: 'rgba(136,135,128,0.15)' }
+    }
   }
 }
 </script>

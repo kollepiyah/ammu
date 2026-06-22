@@ -6,14 +6,15 @@
 //   tapi lembaga_sekolah TK — bentrok jam pagi (flag cek-manual, default TIDAK dicentang).
 //   Scan = report-only. Apply = updateDoc parsial per santri + backup nilai LAMA ke
 //   audit_log (aksi 'update', bisa dipulihkan manual). Saran lembaga (rule A) EDITABLE.
-import { doc, setDoc, updateDoc } from 'firebase/firestore'
-import { db } from '@/services/firebase'
+import { setOne, updateOne } from '@/services/db'
 
 export const LEMBAGA_QIRAATI_OPSI = ['TPQ Pagi', 'TPQ Sore', 'Pra PTPT', 'PTPT', 'PPPH']
 const SEKOLAH_VALID = ['tk', 'sdi', 'pkbm', 'smp', 'sma']
 
 function low(v) {
-  return String(v == null ? '' : v).trim().toLowerCase()
+  return String(v == null ? '' : v)
+    .trim()
+    .toLowerCase()
 }
 function isTpqFamily(lmb) {
   return low(lmb).startsWith('tpq')
@@ -116,26 +117,33 @@ export async function applyLembagaFix(items = [], opts = {}) {
   let fail = 0
   const errors = []
   for (const it of items) {
-    const patch = it.type === 'kelas_lembaga' ? { lembaga: it.saranLembaga || '' } : { ...(it.patch || {}) }
-    if (!Object.keys(patch).length) { i++; continue }
+    const patch =
+      it.type === 'kelas_lembaga' ? { lembaga: it.saranLembaga || '' } : { ...(it.patch || {}) }
+    if (!Object.keys(patch).length) {
+      i++
+      continue
+    }
     try {
       const before = {}
       for (const k of Object.keys(patch)) {
         before[k] = k === 'lembaga' ? it.lembaga : it[k]
       }
       const auditId = `upd_santri_${it.id}_${Date.now()}`
-      await setDoc(doc(db, 'audit_log', auditId), {
+      await setOne('audit_log', auditId, {
         id: auditId,
         aksi: 'update',
         collection: 'santri',
         doc_id: String(it.id),
-        data_snapshot: JSON.stringify({ nama: it.nama, sebelum: before, sesudah: patch }).slice(0, 50000),
+        data_snapshot: JSON.stringify({ nama: it.nama, sebelum: before, sesudah: patch }).slice(
+          0,
+          50000
+        ),
         alasan: 'Migrasi Lembaga (fix salah impor): ' + (it.alasan || it.type),
         user_id: String(sesi?.id || 'unknown'),
         user_nama: sesi?.nama || sesi?.guru || 'unknown',
         timestamp: new Date().toISOString()
       }).catch(() => {})
-      await updateDoc(doc(db, 'santri', String(it.id)), patch)
+      await updateOne('santri', String(it.id), patch)
       ok++
     } catch (e) {
       fail++

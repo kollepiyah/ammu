@@ -11,8 +11,7 @@
 //   CATATAN: NIS = field, BUKAN doc id. Referensi lintas-koleksi (pembayaran/tabungan/POS/notif)
 //   pakai santri_id (doc id) → regenerate NIS aman, tak merusak riwayat. (VA BMT turunan NIS bila
 //   va_bmt belum diterbitkan — kyai aktifkan VA setelah data lengkap & NIS stabil.)
-import { updateDoc, doc, setDoc } from 'firebase/firestore'
-import { db } from '@/services/firebase'
+import { updateOne, setOne } from '@/services/db'
 
 // Normalisasi tgl_lahir ke 'YYYY-MM-DD'. Toleran 'DD/MM/YYYY' / 'YYYY-M-D' / Date. '' bila tak valid.
 export function normDob(v) {
@@ -36,7 +35,7 @@ export function ddmmyy(dobIso) {
 // NNNN tertinggi di antara NIS valid (10 digit) yang ada — basis APPEND mode PSB.
 export function maxRankOf(santriList) {
   let mx = 0
-  for (const s of (santriList || [])) {
+  for (const s of santriList || []) {
     const nis = String(s && s.nis != null ? s.nis : '')
     if (/^\d{10}$/.test(nis)) {
       const r = parseInt(nis.slice(0, 4), 10)
@@ -58,15 +57,19 @@ export function nextNisForNew(santriList, dobRaw) {
 export function planRegenerateNis(santriList) {
   const withDob = []
   const skipped = []
-  for (const s of (santriList || [])) {
+  for (const s of santriList || []) {
     if (!s || s.id == null) continue
     const dob = normDob(s.tgl_lahir)
-    if (!dob) { skipped.push({ id: String(s.id), nama: s.nama || '-' }); continue }
+    if (!dob) {
+      skipped.push({ id: String(s.id), nama: s.nama || '-' })
+      continue
+    }
     withDob.push({ id: String(s.id), nama: String(s.nama || ''), dob, oldNis: String(s.nis || '') })
   }
   withDob.sort((a, b) => {
     if (a.dob !== b.dob) return a.dob < b.dob ? -1 : 1 // tertua dulu
-    const na = a.nama.toLowerCase(), nb = b.nama.toLowerCase()
+    const na = a.nama.toLowerCase(),
+      nb = b.nama.toLowerCase()
     return na < nb ? -1 : na > nb ? 1 : 0 // seri → nama A–Z
   })
   const changes = []
@@ -74,7 +77,14 @@ export function planRegenerateNis(santriList) {
   for (const it of withDob) {
     rank++
     const newNis = String(rank).padStart(4, '0') + ddmmyy(it.dob)
-    changes.push({ id: it.id, nama: it.nama, oldNis: it.oldNis, newNis, dob: it.dob, changed: newNis !== it.oldNis })
+    changes.push({
+      id: it.id,
+      nama: it.nama,
+      oldNis: it.oldNis,
+      newNis,
+      dob: it.dob,
+      changed: newNis !== it.oldNis
+    })
   }
   return { changes, skipped, total: withDob.length, max: rank }
 }
@@ -84,11 +94,13 @@ export function planRegenerateNis(santriList) {
 export async function applyNisChanges(changes, opts = {}) {
   const { onProgress, sesi, mode = 'impor' } = opts
   const todo = (changes || []).filter((c) => c.changed && c.newNis)
-  let ok = 0, fail = 0, i = 0
+  let ok = 0,
+    fail = 0,
+    i = 0
   const errors = []
   for (const c of todo) {
     try {
-      await updateDoc(doc(db, 'santri', String(c.id)), { nis: c.newNis })
+      await updateOne('santri', String(c.id), { nis: c.newNis })
       ok++
     } catch (e) {
       fail++
@@ -100,18 +112,23 @@ export async function applyNisChanges(changes, opts = {}) {
   if (ok > 0) {
     try {
       const auditId = `gennis_${Date.now()}`
-      await setDoc(doc(db, 'audit_log', auditId), {
+      await setOne('audit_log', auditId, {
         id: auditId,
         aksi: 'generate_nis',
         collection: 'santri',
         doc_id: '(batch)',
-        data_snapshot: JSON.stringify({ mode, diubah: todo.map((c) => ({ id: c.id, nama: c.nama, dari: c.oldNis, ke: c.newNis })) }).slice(0, 50000),
+        data_snapshot: JSON.stringify({
+          mode,
+          diubah: todo.map((c) => ({ id: c.id, nama: c.nama, dari: c.oldNis, ke: c.newNis }))
+        }).slice(0, 50000),
         alasan: `Generate No. Induk otomatis (${mode}): ${ok} No. Induk diperbarui`,
         user_id: String(sesi && sesi.id != null ? sesi.id : 'unknown'),
         user_nama: (sesi && (sesi.nama || sesi.guru)) || 'unknown',
         timestamp: new Date().toISOString()
       })
-    } catch (e) { /* audit best-effort — jangan blokir */ }
+    } catch (e) {
+      /* audit best-effort — jangan blokir */
+    }
   }
   return { ok, fail, errors, changed: todo.length }
 }

@@ -11,13 +11,15 @@
 //   Strategi: per grup, pilih 1 record PRIMER (paling lengkap) → isi field kosong primer dari
 //   duplikat lain (non-destruktif terhadap data yang sudah ada) → HAPUS duplikat lain
 //   (deleteOne sudah mem-backup ke audit_log → bisa di-recover). Idempotent.
-import { setDoc, doc } from 'firebase/firestore'
-import { db } from '@/services/firebase'
-import { deleteOne } from '@/services/firestore'
+// v.F6e: deleteOne sudah mem-backup ke audit_log (db.js).
+import { mergeOne, deleteOne } from '@/services/db'
 
 function norm(v) {
   // v.100 Batch8: collapse spasi ganda/dalam supaya "Ahmad  Fauzi" == "Ahmad Fauzi"
-  return String(v == null ? '' : v).trim().toLowerCase().replace(/\s+/g, ' ')
+  return String(v == null ? '' : v)
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
 }
 function digits(v) {
   return String(v == null ? '' : v).replace(/\D/g, '')
@@ -83,12 +85,25 @@ function diffPhone(a, b) {
 // Apakah d & primary kemungkinan ORANG YANG SAMA (nama sudah sama di grup ini)?
 function santriSamePerson(p, d) {
   // konflik keras → pasti beda orang
-  if (diffText(p.nis, d.nis) || diffText(p.nisn, d.nisn) || diffText(p.nik, d.nik) || diffText(p.tgl_lahir, d.tgl_lahir)) return false
+  if (
+    diffText(p.nis, d.nis) ||
+    diffText(p.nisn, d.nisn) ||
+    diffText(p.nik, d.nik) ||
+    diffText(p.tgl_lahir, d.tgl_lahir)
+  )
+    return false
   // butuh ≥1 sinyal penguat. v.100 Batch12 (kyai): WA-wali SENGAJA TIDAK dipakai sbg sinyal —
   //   wali multi-anak berbagi 1 nomor WA, jadi WA sama ≠ orang yang sama.
-  if (eqText(p.nis, d.nis) || eqText(p.nisn, d.nisn) || eqText(p.nik, d.nik) || eqText(p.tgl_lahir, d.tgl_lahir)) return true
+  if (
+    eqText(p.nis, d.nis) ||
+    eqText(p.nisn, d.nisn) ||
+    eqText(p.nik, d.nik) ||
+    eqText(p.tgl_lahir, d.tgl_lahir)
+  )
+    return true
   if (eqText(p.lembaga, d.lembaga) && eqText(p.kelas, d.kelas)) return true
-  if (eqText(p.lembaga_sekolah, d.lembaga_sekolah) && eqText(p.kelas_sekolah, d.kelas_sekolah)) return true
+  if (eqText(p.lembaga_sekolah, d.lembaga_sekolah) && eqText(p.kelas_sekolah, d.kelas_sekolah))
+    return true
   return false
 }
 function guruSamePerson(p, d) {
@@ -141,10 +156,26 @@ function buildPlan({ santriList = [], guruList = [] }) {
     }
   }
   // pass 1-2: identitas unik (selalu gabung)
-  addSantriGroups(groupBy(santriList.filter((s) => norm(s.nis)), (s) => 'nis:' + norm(s.nis)))
-  addSantriGroups(groupBy(santriList.filter((s) => norm(s.nisn)), (s) => 'nisn:' + norm(s.nisn)))
+  addSantriGroups(
+    groupBy(
+      santriList.filter((s) => norm(s.nis)),
+      (s) => 'nis:' + norm(s.nis)
+    )
+  )
+  addSantriGroups(
+    groupBy(
+      santriList.filter((s) => norm(s.nisn)),
+      (s) => 'nisn:' + norm(s.nisn)
+    )
+  )
   // pass 3 (v.100): NAMA sama + sinyal penguat
-  addSantriGroups(groupBy(santriList.filter((s) => norm(s.nama)), (s) => 'nama:' + norm(s.nama)), santriSamePerson)
+  addSantriGroups(
+    groupBy(
+      santriList.filter((s) => norm(s.nama)),
+      (s) => 'nama:' + norm(s.nama)
+    ),
+    santriSamePerson
+  )
 
   function addGuruGroups(groups, filterFn = null) {
     for (const g of groups) {
@@ -158,8 +189,19 @@ function buildPlan({ santriList = [], guruList = [] }) {
     }
   }
   // pass 1: WA sama (identitas, kanonik 0/62/+62). pass 2 (v.100): NAMA sama + sinyal penguat.
-  addGuruGroups(groupBy(guruList.filter((x) => canonPhone(x.wa).length >= 10), (x) => 'wa:' + canonPhone(x.wa)))
-  addGuruGroups(groupBy(guruList.filter((x) => norm(x.nama)), (x) => 'nama:' + norm(x.nama)), guruSamePerson)
+  addGuruGroups(
+    groupBy(
+      guruList.filter((x) => canonPhone(x.wa).length >= 10),
+      (x) => 'wa:' + canonPhone(x.wa)
+    )
+  )
+  addGuruGroups(
+    groupBy(
+      guruList.filter((x) => norm(x.nama)),
+      (x) => 'nama:' + norm(x.nama)
+    ),
+    guruSamePerson
+  )
   return plan
 }
 
@@ -203,11 +245,7 @@ export async function mergeGroupManual(coll, items, opts = {}) {
   const errors = []
   if (Object.keys(patch).length) {
     try {
-      await setDoc(
-        doc(db, coll, String(primary.id)),
-        { ...patch, id: primary.id, nama: primary.nama },
-        { merge: true }
-      )
+      await mergeOne(coll, String(primary.id), { ...patch, id: primary.id, nama: primary.nama })
       ok++
     } catch (e) {
       fail++
@@ -249,11 +287,11 @@ export async function runDedupe({ santriList = [], guruList = [] } = {}, opts = 
     // 1) isi field kosong primer dari duplikat (merge non-destruktif)
     if (Object.keys(p.patch).length) {
       try {
-        await setDoc(
-          doc(db, p.coll, String(p.primary.id)),
-          { ...p.patch, id: p.primary.id, nama: p.primary.nama },
-          { merge: true }
-        )
+        await mergeOne(p.coll, String(p.primary.id), {
+          ...p.patch,
+          id: p.primary.id,
+          nama: p.primary.nama
+        })
         ok++
       } catch (e) {
         fail++

@@ -14,7 +14,9 @@
           @click="range = r.id"
           :class="[
             'px-3 py-1 rounded-md text-[11px] font-bold transition',
-            range === r.id ? 'bg-[var(--color-primary)] text-white shadow' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+            range === r.id
+              ? 'bg-[var(--color-primary)] text-white shadow'
+              : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
           ]"
         >
           {{ r.label }}
@@ -24,7 +26,9 @@
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
       <!-- Perkembangan Capaian Prestasi -->
-      <div class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm">
+      <div
+        class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm"
+      >
         <div class="flex items-center justify-between mb-2">
           <h4 class="text-xs font-black text-[var(--text-primary)] uppercase tracking-wider">
             <i class="fas fa-trophy text-amber-500 mr-1"></i>Perkembangan Capaian Prestasi
@@ -33,62 +37,98 @@
         </div>
         <div class="relative h-60">
           <Line v-if="chartCapaian" :data="chartCapaian" :options="optLine" />
-          <div v-else class="absolute inset-0 flex items-center justify-center text-center text-xs text-[var(--text-tertiary)] italic px-4">
+          <div
+            v-else
+            class="absolute inset-0 flex items-center justify-center text-center text-xs text-[var(--text-tertiary)] italic px-4"
+          >
             Belum ada data capaian
           </div>
         </div>
       </div>
 
       <!-- Perkembangan Kehadiran Guru -->
-      <div class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm">
+      <div
+        class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm"
+      >
         <div class="flex items-center justify-between mb-2">
           <h4 class="text-xs font-black text-[var(--text-primary)] uppercase tracking-wider">
             <i class="fas fa-user-check text-emerald-600 mr-1"></i>Perkembangan Kehadiran Guru
           </h4>
-          <span class="text-[10px] text-[var(--text-tertiary)] font-bold">hadir / {{ bucketUnit }}</span>
+          <span class="text-[10px] text-[var(--text-tertiary)] font-bold"
+            >hadir / {{ bucketUnit }}</span
+          >
         </div>
         <div class="relative h-60">
           <Line v-if="chartKehadiran" :data="chartKehadiran" :options="optLine" />
-          <div v-else class="absolute inset-0 flex items-center justify-center text-xs text-[var(--text-tertiary)] italic">Belum ada data absensi</div>
+          <div
+            v-else
+            class="absolute inset-0 flex items-center justify-center text-xs text-[var(--text-tertiary)] italic"
+          >
+            Belum ada data absensi
+          </div>
         </div>
       </div>
 
       <!-- Perkembangan Arus Kas -->
-      <div class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm">
+      <div
+        class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm"
+      >
         <div class="flex items-center justify-between mb-2">
           <h4 class="text-xs font-black text-[var(--text-primary)] uppercase tracking-wider">
             <i class="fas fa-coins text-cyan-600 mr-1"></i>Perkembangan Arus Kas
           </h4>
-          <span class="text-[10px] text-[var(--text-tertiary)] font-bold">per {{ bucketUnit }}</span>
+          <span class="text-[10px] text-[var(--text-tertiary)] font-bold"
+            >per {{ bucketUnit }}</span
+          >
         </div>
         <div class="relative h-60">
           <Line v-if="chartKas" :data="chartKas" :options="optLineCurrency" />
-          <div v-else class="absolute inset-0 flex items-center justify-center text-xs text-[var(--text-tertiary)] italic">Belum ada data keuangan</div>
+          <div
+            v-else
+            class="absolute inset-0 flex items-center justify-center text-xs text-[var(--text-tertiary)] italic"
+          >
+            Belum ada data keuangan
+          </div>
         </div>
       </div>
 
       <!-- Perkembangan Jumlah Santri Masuk -->
-      <div class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm">
+      <div
+        class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm"
+      >
         <div class="flex items-center justify-between mb-2">
           <h4 class="text-xs font-black text-[var(--text-primary)] uppercase tracking-wider">
             <i class="fas fa-user-plus text-teal-600 mr-1"></i>Perkembangan Jumlah Santri
           </h4>
-          <span class="text-[10px] text-[var(--text-tertiary)] font-bold">santri masuk / {{ bucketUnit }}</span>
+          <span class="text-[10px] text-[var(--text-tertiary)] font-bold"
+            >santri masuk / {{ bucketUnit }}</span
+          >
         </div>
         <div class="relative h-60">
           <Line v-if="chartSantriMasuk" :data="chartSantriMasuk" :options="optLine" />
-          <div v-else class="absolute inset-0 flex items-center justify-center text-center text-xs text-[var(--text-tertiary)] italic px-4">Belum ada data tanggal masuk santri</div>
+          <div
+            v-else
+            class="absolute inset-0 flex items-center justify-center text-center text-xs text-[var(--text-tertiary)] italic px-4"
+          >
+            Belum ada data tanggal masuk santri
+          </div>
         </div>
       </div>
 
       <!-- Kenaikan Tes per Lembaga — 1 card/lembaga, stacked Lulus vs Belum Lulus per kelas -->
       <div class="lg:col-span-2 pt-1">
         <h4 class="text-xs font-black text-[var(--text-primary)] uppercase tracking-wider">
-          <i class="fas fa-arrow-up-right-dots text-[var(--color-primary)] mr-1"></i>Kenaikan Tes per Lembaga
-          <span class="text-[10px] text-[var(--text-tertiary)] font-bold normal-case ml-1">per kelas · {{ rangeLabel }}</span>
+          <i class="fas fa-arrow-up-right-dots text-[var(--color-primary)] mr-1"></i>Kenaikan Tes
+          per Lembaga
+          <span class="text-[10px] text-[var(--text-tertiary)] font-bold normal-case ml-1"
+            >per kelas · {{ rangeLabel }}</span
+          >
         </h4>
       </div>
-      <div v-if="tesByLembaga.length === 0" class="lg:col-span-2 bg-[var(--bg-card)] rounded-2xl p-6 border border-[var(--border-subtle)] shadow-sm text-center text-xs text-[var(--text-tertiary)] italic">
+      <div
+        v-if="tesByLembaga.length === 0"
+        class="lg:col-span-2 bg-[var(--bg-card)] rounded-2xl p-6 border border-[var(--border-subtle)] shadow-sm text-center text-xs text-[var(--text-tertiary)] italic"
+      >
         Belum ada hasil tes (lulus/belum) pada rentang ini
       </div>
       <div
@@ -97,10 +137,14 @@
         class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm"
       >
         <div class="flex items-center justify-between mb-2">
-          <h4 class="text-xs font-black text-[var(--text-primary)] uppercase tracking-wider truncate">
+          <h4
+            class="text-xs font-black text-[var(--text-primary)] uppercase tracking-wider truncate"
+          >
             <i class="fas fa-clipboard-check text-emerald-600 mr-1"></i>{{ t.lembaga }}
           </h4>
-          <span class="text-[10px] text-[var(--text-tertiary)] font-bold whitespace-nowrap">{{ t.lulusTotal }} naik · {{ t.kelulusan }}%</span>
+          <span class="text-[10px] text-[var(--text-tertiary)] font-bold whitespace-nowrap"
+            >{{ t.lulusTotal }} naik · {{ t.kelulusan }}%</span
+          >
         </div>
         <div class="relative h-56">
           <Bar :data="t.data" :options="optTesStacked" />
@@ -124,14 +168,30 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { Bar, Line } from 'vue-chartjs'
 import {
-  Chart as ChartJS, Title, Tooltip, Legend,
-  BarElement, CategoryScale, LinearScale, PointElement, LineElement, Filler
+  Chart as ChartJS,
+  Title,
+  Tooltip,
+  Legend,
+  BarElement,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Filler
 } from 'chart.js'
-import { subscribeColl } from '@/services/firestore'
-import { collection, getDocs } from 'firebase/firestore'
-import { db } from '@/services/firebase'
+import { subscribeColl, getAll } from '@/services/db'
 
-ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale, PointElement, LineElement, Filler)
+ChartJS.register(
+  Title,
+  Tooltip,
+  Legend,
+  BarElement,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Filler
+)
 
 // santriList dari StatistikView (scopedSantriAll) — utk grafik santri masuk
 const props = defineProps({ santriList: { type: Array, default: () => [] } })
@@ -157,28 +217,52 @@ const unsubs = []
 
 onMounted(async () => {
   unsubs.push(
-    subscribeColl('absensi_guru', (docs) => { absensiGuru.value = docs }),
-    subscribeColl('keuangan_buku_induk', (docs) => { bukuInduk.value = docs }),
-    subscribeColl('tes_kenaikan', (docs) => { tesList.value = docs })
+    subscribeColl('absensi_guru', (docs) => {
+      absensiGuru.value = docs
+    }),
+    subscribeColl('keuangan_buku_induk', (docs) => {
+      bukuInduk.value = docs
+    }),
+    subscribeColl('tes_kenaikan', (docs) => {
+      tesList.value = docs
+    })
   )
   // notif_prestasi: ambil sekali (agregat bulanan, hemat reads vs subscribe)
   try {
-    const snap = await getDocs(collection(db, 'notif_prestasi'))
-    const out = []
-    snap.forEach((d) => out.push(d.data()))
-    prestasiRows.value = out
-  } catch (e) { prestasiRows.value = [] }
+    prestasiRows.value = await getAll('notif_prestasi')
+  } catch (e) {
+    prestasiRows.value = []
+  }
 })
-onUnmounted(() => { for (const u of unsubs) { try { u && u() } catch (e) {} } })
+onUnmounted(() => {
+  for (const u of unsubs) {
+    try {
+      u && u()
+    } catch (e) {}
+  }
+})
 
 // ---- Helpers ---------------------------------------------------------------
 const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des']
-const COLORS = ['#10b981', '#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#ef4444', '#84cc16']
+const COLORS = [
+  '#10b981',
+  '#06b6d4',
+  '#3b82f6',
+  '#8b5cf6',
+  '#ec4899',
+  '#f59e0b',
+  '#ef4444',
+  '#84cc16'
+]
 const pad = (n) => String(n).padStart(2, '0')
 
 function toDate(s) {
   if (!s) return null
-  if (s && typeof s.toDate === 'function') { try { return s.toDate() } catch (e) {} } // Firestore Timestamp
+  if (s && typeof s.toDate === 'function') {
+    try {
+      return s.toDate()
+    } catch (e) {}
+  } // Firestore Timestamp
   const str = String(s).trim()
   let m = str.match(/^(\d{4})-(\d{2})-(\d{2})/) // YYYY-MM-DD
   if (m) return new Date(+m[1], +m[2] - 1, +m[3])
@@ -195,14 +279,20 @@ const buckets = computed(() => {
   if (isMonthly.value) {
     for (let i = 11; i >= 0; i--) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
-      out.push({ key: `${d.getFullYear()}-${pad(d.getMonth() + 1)}`, label: `${MON[d.getMonth()]} ${String(d.getFullYear()).slice(2)}` })
+      out.push({
+        key: `${d.getFullYear()}-${pad(d.getMonth() + 1)}`,
+        label: `${MON[d.getMonth()]} ${String(d.getFullYear()).slice(2)}`
+      })
     }
   } else {
     const days = RANGE_DAYS[range.value]
     for (let i = days - 1; i >= 0; i--) {
       const d = new Date(now)
       d.setDate(d.getDate() - i)
-      out.push({ key: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`, label: `${d.getDate()}/${d.getMonth() + 1}` })
+      out.push({
+        key: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`,
+        label: `${d.getDate()}/${d.getMonth() + 1}`
+      })
     }
   }
   return out
@@ -239,11 +329,22 @@ const chartCapaian = computed(() => {
   const periods = Object.keys(byP).sort().slice(-capaianMonths.value)
   if (periods.length < 1) return null // v.103: tampil walau baru 1 bulan terisi
   return {
-    labels: periods.map((p) => { const [y, m] = p.split('-'); return `${MON[+m - 1]} ${y.slice(2)}` }),
-    datasets: [{
-      label: 'Rata-rata capaian', data: periods.map((p) => Math.round((byP[p].s / byP[p].c) * 10) / 10),
-      borderColor: '#8b5cf6', backgroundColor: 'rgba(139,92,246,0.14)', tension: 0.35, fill: true, pointRadius: 3, pointBackgroundColor: '#8b5cf6'
-    }]
+    labels: periods.map((p) => {
+      const [y, m] = p.split('-')
+      return `${MON[+m - 1]} ${y.slice(2)}`
+    }),
+    datasets: [
+      {
+        label: 'Rata-rata capaian',
+        data: periods.map((p) => Math.round((byP[p].s / byP[p].c) * 10) / 10),
+        borderColor: '#8b5cf6',
+        backgroundColor: 'rgba(139,92,246,0.14)',
+        tension: 0.35,
+        fill: true,
+        pointRadius: 3,
+        pointBackgroundColor: '#8b5cf6'
+      }
+    ]
   }
 })
 
@@ -261,7 +362,18 @@ const chartKehadiran = computed(() => {
   if (!hadir.some((v) => v)) return null
   return {
     labels: bk.map((b) => b.label),
-    datasets: [{ label: 'Kehadiran', data: hadir, borderColor: '#0F6E56', backgroundColor: 'rgba(29,158,117,0.14)', tension: 0.3, fill: true, pointRadius: ptRadius.value, pointBackgroundColor: '#0F6E56' }]
+    datasets: [
+      {
+        label: 'Kehadiran',
+        data: hadir,
+        borderColor: '#0F6E56',
+        backgroundColor: 'rgba(29,158,117,0.14)',
+        tension: 0.3,
+        fill: true,
+        pointRadius: ptRadius.value,
+        pointBackgroundColor: '#0F6E56'
+      }
+    ]
   }
 })
 
@@ -286,8 +398,24 @@ const chartKas = computed(() => {
   return {
     labels: bk.map((b) => b.label),
     datasets: [
-      { label: 'Pemasukan', data: masuk, borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.15)', tension: 0.3, fill: true, pointRadius: ptRadius.value },
-      { label: 'Pengeluaran', data: keluar, borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.15)', tension: 0.3, fill: true, pointRadius: ptRadius.value }
+      {
+        label: 'Pemasukan',
+        data: masuk,
+        borderColor: '#10b981',
+        backgroundColor: 'rgba(16,185,129,0.15)',
+        tension: 0.3,
+        fill: true,
+        pointRadius: ptRadius.value
+      },
+      {
+        label: 'Pengeluaran',
+        data: keluar,
+        borderColor: '#ef4444',
+        backgroundColor: 'rgba(239,68,68,0.15)',
+        tension: 0.3,
+        fill: true,
+        pointRadius: ptRadius.value
+      }
     ]
   }
 })
@@ -297,7 +425,7 @@ const chartSantriMasuk = computed(() => {
   const bk = buckets.value
   const idx = bucketIndex.value
   const cnt = new Array(bk.length).fill(0)
-  for (const s of (props.santriList || [])) {
+  for (const s of props.santriList || []) {
     const k = bucketKey(toDate(s.tgl_masuk || s.tanggal_masuk))
     if (k == null || !(k in idx)) continue
     cnt[idx[k]]++
@@ -305,7 +433,18 @@ const chartSantriMasuk = computed(() => {
   if (!cnt.some((v) => v)) return null
   return {
     labels: bk.map((b) => b.label),
-    datasets: [{ label: 'Santri masuk', data: cnt, borderColor: '#06b6d4', backgroundColor: 'rgba(6,182,212,0.15)', tension: 0.3, fill: true, pointRadius: ptRadius.value, pointBackgroundColor: '#06b6d4' }]
+    datasets: [
+      {
+        label: 'Santri masuk',
+        data: cnt,
+        borderColor: '#06b6d4',
+        backgroundColor: 'rgba(6,182,212,0.15)',
+        tension: 0.3,
+        fill: true,
+        pointRadius: ptRadius.value,
+        pointBackgroundColor: '#06b6d4'
+      }
+    ]
   }
 })
 
@@ -329,7 +468,9 @@ const tesByLembaga = computed(() => {
   }
   const out = []
   for (const [lemb, kelasMap] of Object.entries(byLemb)) {
-    const kelasKeys = Object.keys(kelasMap).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
+    const kelasKeys = Object.keys(kelasMap).sort((a, b) =>
+      a.localeCompare(b, undefined, { numeric: true })
+    )
     if (!kelasKeys.length) continue
     const lulusTotal = kelasKeys.reduce((s, k) => s + kelasMap[k].lulus, 0)
     const belumTotal = kelasKeys.reduce((s, k) => s + kelasMap[k].belum, 0)
@@ -341,8 +482,16 @@ const tesByLembaga = computed(() => {
       data: {
         labels: kelasKeys,
         datasets: [
-          { label: 'Lulus', data: kelasKeys.map((k) => kelasMap[k].lulus), backgroundColor: '#10b981' },
-          { label: 'Belum Lulus', data: kelasKeys.map((k) => kelasMap[k].belum), backgroundColor: '#f59e0b' }
+          {
+            label: 'Lulus',
+            data: kelasKeys.map((k) => kelasMap[k].lulus),
+            backgroundColor: '#10b981'
+          },
+          {
+            label: 'Belum Lulus',
+            data: kelasKeys.map((k) => kelasMap[k].belum),
+            backgroundColor: '#f59e0b'
+          }
         ]
       }
     })
@@ -351,22 +500,50 @@ const tesByLembaga = computed(() => {
 })
 
 // ---- Chart options ---------------------------------------------------------
-const xScale = { ticks: { autoSkip: true, maxTicksLimit: 12, maxRotation: 0, font: { size: 9 } }, grid: { display: false } }
+const xScale = {
+  ticks: { autoSkip: true, maxTicksLimit: 12, maxRotation: 0, font: { size: 9 } },
+  grid: { display: false }
+}
 const optLine = {
-  responsive: true, maintainAspectRatio: false,
+  responsive: true,
+  maintainAspectRatio: false,
   plugins: { legend: { display: false } },
-  scales: { x: xScale, y: { beginAtZero: true, ticks: { font: { size: 9 }, precision: 0 }, grid: { color: 'rgba(136,135,128,0.15)' } } }
+  scales: {
+    x: xScale,
+    y: {
+      beginAtZero: true,
+      ticks: { font: { size: 9 }, precision: 0 },
+      grid: { color: 'rgba(136,135,128,0.15)' }
+    }
+  }
 }
 const optLineCurrency = {
-  responsive: true, maintainAspectRatio: false,
+  responsive: true,
+  maintainAspectRatio: false,
   plugins: {
     legend: { position: 'bottom', labels: { font: { size: 10 }, boxWidth: 10 } },
-    tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: Rp ${new Intl.NumberFormat('id-ID').format(ctx.parsed.y)}` } }
+    tooltip: {
+      callbacks: {
+        label: (ctx) =>
+          `${ctx.dataset.label}: Rp ${new Intl.NumberFormat('id-ID').format(ctx.parsed.y)}`
+      }
+    }
   },
-  scales: { x: xScale, y: { beginAtZero: true, ticks: { font: { size: 9 }, callback: (v) => 'Rp ' + new Intl.NumberFormat('id-ID', { notation: 'compact' }).format(v) }, grid: { color: 'rgba(136,135,128,0.15)' } } }
+  scales: {
+    x: xScale,
+    y: {
+      beginAtZero: true,
+      ticks: {
+        font: { size: 9 },
+        callback: (v) => 'Rp ' + new Intl.NumberFormat('id-ID', { notation: 'compact' }).format(v)
+      },
+      grid: { color: 'rgba(136,135,128,0.15)' }
+    }
+  }
 }
 const optTesStacked = {
-  responsive: true, maintainAspectRatio: false,
+  responsive: true,
+  maintainAspectRatio: false,
   plugins: { legend: { position: 'bottom', labels: { font: { size: 10 }, boxWidth: 10 } } },
   scales: {
     x: { stacked: true, ticks: { font: { size: 9 } }, grid: { display: false } },
