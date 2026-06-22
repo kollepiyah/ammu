@@ -129,7 +129,7 @@
         <div class="grid grid-cols-2 gap-2">
           <button
             @click="
-              mutasiKategori = 'qiraati';
+              mutasiKategori = 'qiraati'
               mutasiLembaga = ''
             "
             :class="[
@@ -143,7 +143,7 @@
           </button>
           <button
             @click="
-              mutasiKategori = 'sekolah';
+              mutasiKategori = 'sekolah'
               mutasiLembaga = ''
             "
             :class="[
@@ -280,7 +280,7 @@
       <div class="flex gap-2 mb-3">
         <button
           @click="
-            kenaikanKategori = 'qiraati';
+            kenaikanKategori = 'qiraati'
             filterLembaga = ''
           "
           :class="[
@@ -294,7 +294,7 @@
         </button>
         <button
           @click="
-            kenaikanKategori = 'sekolah';
+            kenaikanKategori = 'sekolah'
             filterLembaga = ''
           "
           :class="[
@@ -420,7 +420,7 @@
       <div class="flex gap-2 mb-3">
         <button
           @click="
-            riwayatKategori = 'qiraati';
+            riwayatKategori = 'qiraati'
             riwayatLembaga = ''
           "
           :class="[
@@ -434,7 +434,7 @@
         </button>
         <button
           @click="
-            riwayatKategori = 'sekolah';
+            riwayatKategori = 'sekolah'
             riwayatLembaga = ''
           "
           :class="[
@@ -1304,18 +1304,17 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, reactive, computed, onUnmounted, watch } from 'vue'
 import { useDesktopShell } from '@/composables/useDesktopShell'
 import { definePageActions } from '@/composables/useRibbonContext'
-import { collection, doc, getDocs, setDoc, updateDoc, query, where } from 'firebase/firestore'
-import { db } from '@/services/firebase'
-import { deleteOne } from '@/services/firestore'
+import { queryColl, setOne, mergeOne, updateOne, deleteOne } from '@/services/db'
 import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
 import { isSuperAdmin } from '@/utils/roleScope'
 import { useGuru } from '@/composables/useGuru'
+import { useSantri } from '@/composables/useSantri'
 import { useExcel } from '@/composables/useExcel'
 import { useGoogleSheet } from '@/composables/useGoogleSheet' // v.100 Batch12: ekspor ke Google Sheet
 import { useLembaga, getPkbmSubTier } from '@/composables/useLembaga'
@@ -1365,8 +1364,10 @@ const guruTipe = computed(() => deteksiTipeGuru(santriList.value, myNamaGuru.val
 const guruDual = computed(() => guruTipe.value.qiraati && guruTipe.value.sekolah)
 
 // ────────── STATE: santri list ──────────
-const santriList = ref([])
-const loadingSantri = ref(true)
+// v.F6e (Supabase): baca santri dari STORE terpusat (useSantri → collections.ensure), SAMA
+//   seperti useGuru di atas & semua view lain. Store di-populate shell pasca-auth (resilient
+//   thd race init), pengganti getAll one-shot di onMounted yang bisa balik 0 saat sesi blm siap.
+const { santriRaw: santriList, loading: loadingSantri } = useSantri()
 const searchFormSantri = ref('')
 const filterLembaga = ref('')
 // v.99: kenaikan kategori (Qiraati / Sekolah) — sekolah pakai lembaga_sekolah (SMP/SMA = sub-tier PKBM)
@@ -1514,15 +1515,11 @@ async function keluarkanSantri(s) {
   }
   mutasiSaving.value = true
   try {
-    await setDoc(
-      doc(db, 'santri', String(s.id)),
-      {
-        aktif: false,
-        tgl_keluar: mutasiTgl.value || new Date().toISOString().slice(0, 10),
-        alasan_keluar: alasan
-      },
-      { merge: true }
-    )
+    await mergeOne('santri', String(s.id), {
+      aktif: false,
+      tgl_keluar: mutasiTgl.value || new Date().toISOString().slice(0, 10),
+      alasan_keluar: alasan
+    })
     s.aktif = false
     s.tgl_keluar = mutasiTgl.value
     s.alasan_keluar = alasan
@@ -1537,11 +1534,7 @@ async function keluarkanSantri(s) {
 async function reaktifSantri(s) {
   mutasiSaving.value = true
   try {
-    await setDoc(
-      doc(db, 'santri', String(s.id)),
-      { aktif: true, tgl_keluar: '', alasan_keluar: '' },
-      { merge: true }
-    )
+    await mergeOne('santri', String(s.id), { aktif: true, tgl_keluar: '', alasan_keluar: '' })
     s.aktif = true
     s.tgl_keluar = ''
     s.alasan_keluar = ''
@@ -2033,8 +2026,8 @@ async function saveSchema() {
   try {
     const all = { ...(settingsStore.settings?.kartuKenaikanSchema || {}) }
     all[pengaturanLembaga.value] = JSON.parse(JSON.stringify(schemaDraft.value))
-    await setDoc(doc(db, 'settings', 'general'), { kartuKenaikanSchema: all }, { merge: true })
-    await setDoc(doc(db, 'settings', 'web'), { kartuKenaikanSchema: all }, { merge: true })
+    await mergeOne('settings', 'general', { kartuKenaikanSchema: all })
+    await mergeOne('settings', 'web', { kartuKenaikanSchema: all })
     settingsStore.settings.kartuKenaikanSchema = all
     toast.success('Schema kartu kenaikan tersimpan')
   } catch (e) {
@@ -2071,16 +2064,8 @@ async function saveKop() {
     }
     all1[pengaturanLembaga.value] = payload
     all2[pengaturanLembaga.value] = payload
-    await setDoc(
-      doc(db, 'settings', 'general'),
-      { kopKartuKenaikan: all1, kartuKenaikanKop: all2 },
-      { merge: true }
-    )
-    await setDoc(
-      doc(db, 'settings', 'web'),
-      { kopKartuKenaikan: all1, kartuKenaikanKop: all2 },
-      { merge: true }
-    )
+    await mergeOne('settings', 'general', { kopKartuKenaikan: all1, kartuKenaikanKop: all2 })
+    await mergeOne('settings', 'web', { kopKartuKenaikan: all1, kartuKenaikanKop: all2 })
     settingsStore.settings.kopKartuKenaikan = all1
     settingsStore.settings.kartuKenaikanKop = all2
     toast.success(`KOP ${pengaturanLembaga.value} tersimpan`)
@@ -2145,7 +2130,7 @@ async function saveKartu() {
       ...(kartuSantri.value.kartu_kenaikan || {}),
       [kartuLembaga.value]: cellData.value
     }
-    await updateDoc(doc(db, 'santri', String(sid)), { kartu_kenaikan: merged })
+    await updateOne('santri', String(sid), { kartu_kenaikan: merged })
     kartuSantri.value.kartu_kenaikan = merged
     const idx = santriList.value.findIndex((x) => x.id === sid)
     if (idx >= 0) santriList.value[idx].kartu_kenaikan = merged
@@ -2626,11 +2611,11 @@ async function saveFormKenaikanSekolah() {
     payload.riwayat_kenaikan = Array.isArray(s.riwayat_kenaikan)
       ? [...s.riwayat_kenaikan, rkEntry]
       : [rkEntry]
-    await updateDoc(doc(db, 'santri', String(s.id)), payload)
+    await updateOne('santri', String(s.id), payload)
     // Event kenaikan (sumber notif wali). Best-effort.
     try {
       const evId = `rk_${s.id}_${Date.now()}`
-      await setDoc(doc(db, 'riwayat_kenaikan', evId), {
+      await setOne('riwayat_kenaikan', evId, {
         id: evId,
         santri_id: String(s.id),
         santri_nama: s.nama || '',
@@ -2775,18 +2760,15 @@ async function batalKenaikanTerakhir(s) {
       }
       patch.riwayat = r
     }
-    await updateDoc(doc(db, 'santri', String(s.id)), patch)
+    await updateOne('santri', String(s.id), patch)
     Object.assign(s, patch)
     const idx = santriList.value.findIndex((x) => String(x.id) === String(s.id))
     if (idx >= 0) Object.assign(santriList.value[idx], patch)
     // hapus event doc riwayat_kenaikan TERBARU milik santri ini (backup ke audit_log)
     try {
-      const snap = await getDocs(
-        query(collection(db, 'riwayat_kenaikan'), where('santri_id', '==', String(s.id)))
+      const evs = (await queryColl('riwayat_kenaikan', [['santri_id', '==', String(s.id)]])).sort(
+        (a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || ''))
       )
-      const evs = snap.docs
-        .map((d) => ({ id: d.id, ...d.data() }))
-        .sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')))
       if (evs[0]) {
         await deleteOne('riwayat_kenaikan', evs[0].id, {
           alasan: 'Batalkan kenaikan terakhir (super_admin)'
@@ -3232,23 +3214,9 @@ async function eksporKartuPdf() {
   }
 }
 
-// ────────── Lifecycle: load santri ──────────
+// ────────── Lifecycle ──────────
 // v.100d: badge "siap naik" dihapus — Lulus tes kini langsung menaikkan santri (lihat TesKenaikanView).
-
-onMounted(async () => {
-  if (!isAdmin.value && !isGuru.value && !isSantriRole.value) {
-    loadingSantri.value = false
-    return
-  }
-  try {
-    const snap = await getDocs(collection(db, 'santri'))
-    santriList.value = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
-  } catch (e) {
-    toast.error('Gagal load santri: ' + e.message)
-  } finally {
-    loadingSantri.value = false
-  }
-})
+// v.F6e: load santri dipindah ke store terpusat (useSantri, lihat STATE di atas).
 </script>
 
 <style scoped>

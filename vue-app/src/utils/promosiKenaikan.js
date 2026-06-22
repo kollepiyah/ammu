@@ -2,8 +2,7 @@
 //   Diekstrak apa-adanya dari NaikKelasView.saveFormKenaikan + resolveKenaikanSchemaPath (perilaku TAK berubah);
 //   `settings` & `lembagaList` yang dulu ref view, kini parameter.
 import { getKartuKenaikanSchema } from './kenaikan'
-import { db } from '@/services/firebase'
-import { doc, setDoc, updateDoc } from 'firebase/firestore'
+import { setOne, updateOne } from '@/services/db'
 
 // v.21.75: Resolve kelas label dari Form Kenaikan ke schema {kelasId, itemId}
 // PTPT: {kelas: "Kelas 1", juz: "5"} → {kelasId: "kelas_1", itemId: "juz_5"}
@@ -20,10 +19,14 @@ export function resolveKenaikanSchemaPath(lembaga, kelasLabel, juzNum, khotamKe,
   if (kelasEntry) {
     let itemId = null
     if (juzNum) {
-      const it = kelasEntry.items.find((i) => i.label === `Juz ${juzNum}` || i.id === `juz_${juzNum}`)
+      const it = kelasEntry.items.find(
+        (i) => i.label === `Juz ${juzNum}` || i.id === `juz_${juzNum}`
+      )
       itemId = it?.id || null
     } else if (khotamKe) {
-      const it = kelasEntry.items.find((i) => i.label === khotamKe || i.label === String(khotamKe).toUpperCase())
+      const it = kelasEntry.items.find(
+        (i) => i.label === khotamKe || i.label === String(khotamKe).toUpperCase()
+      )
       itemId = it?.id || null
     } else if (kelasEntry.items.length === 1) {
       itemId = kelasEntry.items[0].id
@@ -137,7 +140,11 @@ export function buildKenaikanQiraatiPayload(s, opts = {}, ctx = {}) {
     const lmbgB = (lmbBaru || '').toUpperCase()
     const klsB = (klsBaru || '').toLowerCase()
     // 1) Persiapan Khotaman → Pra PTPT (level 1)
-    if (klsL.includes('persiapan khotaman') && lmbgB.includes('PRA PTPT') && klsB.includes('level 1')) {
+    if (
+      klsL.includes('persiapan khotaman') &&
+      lmbgB.includes('PRA PTPT') &&
+      klsB.includes('level 1')
+    ) {
       riwayat.push({
         tanggal: todayId,
         tgl_naik: today,
@@ -145,7 +152,12 @@ export function buildKenaikanQiraatiPayload(s, opts = {}, ctx = {}) {
       })
     }
     // 2) Pra PTPT level 5 → PTPT kelas 1
-    else if (lmbgL.includes('PRA PTPT') && klsL.includes('level 5') && lmbgB === 'PTPT' && klsB.includes('kelas 1')) {
+    else if (
+      lmbgL.includes('PRA PTPT') &&
+      klsL.includes('level 5') &&
+      lmbgB === 'PTPT' &&
+      klsB.includes('kelas 1')
+    ) {
       riwayat.push({
         tanggal: todayId,
         tgl_naik: today,
@@ -154,8 +166,12 @@ export function buildKenaikanQiraatiPayload(s, opts = {}, ctx = {}) {
     }
     // 3) PTPT (kelas terakhir) → lembaga lain
     else if (lmbgL === 'PTPT' && lmbgB !== 'PTPT' && lmbgB !== '') {
-      const lembagaPTPT = (lembagaList || []).find((l) => String(l.lembaga || '').toUpperCase() === 'PTPT')
-      const klsListPTPT = (lembagaPTPT && (lembagaPTPT.kelas_list || lembagaPTPT.kelas)) || ['Kelas 6']
+      const lembagaPTPT = (lembagaList || []).find(
+        (l) => String(l.lembaga || '').toUpperCase() === 'PTPT'
+      )
+      const klsListPTPT = (lembagaPTPT && (lembagaPTPT.kelas_list || lembagaPTPT.kelas)) || [
+        'Kelas 6'
+      ]
       const kelasTerakhirPTPT = klsListPTPT[klsListPTPT.length - 1] || 'Kelas 6'
       if ((s.kelas || '').toLowerCase() === String(kelasTerakhirPTPT).toLowerCase()) {
         riwayat.push({
@@ -180,7 +196,9 @@ export function buildKenaikanQiraatiPayload(s, opts = {}, ctx = {}) {
     khotam_ke: khotamKe || '',
     juz: lmbBaru === 'PTPT' ? `JUZ ${opts.juz}` : ''
   }
-  payload.riwayat_kenaikan = Array.isArray(s.riwayat_kenaikan) ? [...s.riwayat_kenaikan, rkEntry] : [rkEntry]
+  payload.riwayat_kenaikan = Array.isArray(s.riwayat_kenaikan)
+    ? [...s.riwayat_kenaikan, rkEntry]
+    : [rkEntry]
 
   return { payload, rkEntry }
 }
@@ -190,10 +208,10 @@ export function buildKenaikanQiraatiPayload(s, opts = {}, ctx = {}) {
  * (sumber notif untuk wali; best-effort — kegagalan event tak menggagalkan kenaikan).
  */
 export async function writeKenaikan(s, payload, rkEntry) {
-  await updateDoc(doc(db, 'santri', String(s.id)), payload)
+  await updateOne('santri', String(s.id), payload)
   try {
     const evId = `rk_${s.id}_${Date.now()}`
-    await setDoc(doc(db, 'riwayat_kenaikan', evId), {
+    await setOne('riwayat_kenaikan', evId, {
       id: evId,
       santri_id: String(s.id),
       santri_nama: s.nama || '',
