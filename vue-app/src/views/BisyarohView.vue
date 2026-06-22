@@ -721,10 +721,8 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useDesktopShell } from '@/composables/useDesktopShell'
 import { definePageActions } from '@/composables/useRibbonContext'
-import { subscribeColl } from '@/services/firestore'
-import { doc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore'
-import { deleteOne } from '@/services/firestore' // v.91.0626: hapus = backup audit_log dulu
-import { db } from '@/services/firebase'
+// v.91.0626: deleteOne = backup audit_log dulu. serverTimestamp = shim ISO string (db.js).
+import { subscribeColl, setOne, mergeOne, deleteOne, serverTimestamp } from '@/services/db'
 import { useAuthStore } from '@/stores/auth'
 import { isSuperAdmin } from '@/utils/roleScope'
 import { writeAuditLog } from '@/utils/auditLog'
@@ -926,7 +924,7 @@ async function cairkanTerpilih() {
       const th = _slipTakeHome(s)
       const metode = String(s.metode_cair || '') === 'cash' ? 'tunai' : 'bmt'
       const biId = `gaji_${s.id}`
-      await setDoc(doc(db, 'keuangan_buku_induk', biId), {
+      await setOne('keuangan_buku_induk', biId, {
         id: biId,
         tipe: 'keluar',
         nominal: th,
@@ -941,17 +939,13 @@ async function cairkanTerpilih() {
         operator,
         created_at: serverTimestamp()
       })
-      await setDoc(
-        doc(db, 'keuangan_gaji', String(s.id)),
-        {
-          status_cair: 'cair',
-          dicairkan_at: serverTimestamp(),
-          dicairkan_by: operator,
-          dicairkan_via: metode === 'tunai' ? 'cash' : 'bmt_manual',
-          buku_induk_id: biId
-        },
-        { merge: true }
-      )
+      await mergeOne('keuangan_gaji', String(s.id), {
+        status_cair: 'cair',
+        dicairkan_at: serverTimestamp(),
+        dicairkan_by: operator,
+        dicairkan_via: metode === 'tunai' ? 'cash' : 'bmt_manual',
+        buku_induk_id: biId
+      })
       ok++
     } catch (e) {
       fail++
@@ -979,7 +973,7 @@ async function tandaiMetode(metode) {
   let ok = 0
   for (const id of ids) {
     try {
-      await setDoc(doc(db, 'keuangan_gaji', String(id)), { metode_cair: val }, { merge: true })
+      await mergeOne('keuangan_gaji', String(id), { metode_cair: val })
       ok++
     } catch (e) {
       console.warn('[tandaiMetode]', id, e.message)
@@ -1438,7 +1432,7 @@ async function saveSlipSingle() {
       .reduce((s, li) => s + li.nominal, 0)
     const potongan = Number(form.value.total_potongan) || 0
     const totalIn = pokok + sekolah + tambahan
-    await setDoc(doc(db, 'keuangan_gaji', slipId), {
+    await setOne('keuangan_gaji', slipId, {
       id: slipId,
       no_bukti: genBisyarohNo(),
       guru_id: Number(selectedGuru.value.id) || selectedGuru.value.id,
@@ -1632,7 +1626,7 @@ async function bulkGenerate() {
         const totalPotongan = ptList.reduce((s, p) => s + p.nominal, 0)
         const totalIn = pokok + sekolah
         const totalSlip = totalIn + Number(bonus.total || 0) + totalTunjangan
-        await setDoc(doc(db, 'keuangan_gaji', slipId), {
+        await setOne('keuangan_gaji', slipId, {
           id: slipId,
           no_bukti: genBisyarohNo(bulkSeq++),
           guru_id: Number(g.id) || g.id,
