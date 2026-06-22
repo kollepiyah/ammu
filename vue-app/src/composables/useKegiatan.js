@@ -1,8 +1,7 @@
 // useKegiatan — subscribe kegiatan collection real-time + CRUD
 // Port dari legacy db_kegiatan + simpanKegiatan/hapusKegiatan/editKegiatan
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { collection, onSnapshot, doc, setDoc, deleteDoc } from 'firebase/firestore'
-import { db } from '@/services/firebase'
+import { subscribeColl, setOne, deleteOne } from '@/services/db'
 import { useAuthStore } from '@/stores/auth'
 
 export function useKegiatan() {
@@ -14,17 +13,10 @@ export function useKegiatan() {
 
   function start() {
     try {
-      unsub = onSnapshot(
-        collection(db, 'kegiatan'),
-        (snap) => {
-          kegiatanRaw.value = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
-          loading.value = false
-        },
-        (err) => {
-          error.value = err
-          loading.value = false
-        }
-      )
+      unsub = subscribeColl('kegiatan', (docs) => {
+        kegiatanRaw.value = docs
+        loading.value = false
+      })
     } catch (err) {
       error.value = err
       loading.value = false
@@ -65,12 +57,12 @@ export function useKegiatan() {
       dibuat_oleh: auth.sesiAktif?.nama || 'Admin',
       timestamp: new Date().toISOString()
     }
-    await setDoc(doc(db, 'kegiatan', id), payload)
+    await setOne('kegiatan', id, payload)
     return payload
   }
 
   async function hapusKegiatan(id) {
-    await deleteDoc(doc(db, 'kegiatan', id))
+    await deleteOne('kegiatan', id, { sesi: auth.sesiAktif })
   }
 
   onMounted(start)

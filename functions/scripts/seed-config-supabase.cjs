@@ -25,14 +25,28 @@ const SANDI = process.env.ADMIN_SANDI || '1234'
 
 // cfg per tabel (cermin db.js SPECIAL/COLS): { pk, json, cols }
 const CFG = {
+  // -- config / fondasi --
   lembaga: { pk: 'id', json: 'data', cols: ['nama', 'urutan'] },
   master: { pk: 'key', json: 'value', cols: [] },
   settings: { pk: 'key', json: 'value', cols: [] },
   profil_pesantren: { pk: 'id', json: 'data', cols: [] },
   pengaturan_keuangan: { pk: 'id', json: 'data', cols: [] },
-  kegiatan_master: { pk: 'id', json: 'data', cols: [] }
+  kegiatan_master: { pk: 'id', json: 'data', cols: [] },
+  // -- konten / sosial --
+  beranda_post: { pk: 'id', json: 'data', cols: ['judul', 'isi'] },
+  posts: { pk: 'id', json: 'data', cols: ['judul', 'isi'] },
+  kegiatan: { pk: 'id', json: 'data', cols: ['judul', 'tgl_mulai'] },
+  kegiatan_pesantren: { pk: 'id', json: 'data', cols: ['judul'] },
+  kritik_saran: { pk: 'id', json: 'data', cols: ['pesan'] },
+  post_reactions: { pk: 'id', json: 'data', cols: [] },
+  user_notif_state: { pk: 'id', json: 'data', cols: [] }
 }
-const COLLECTIONS = Object.keys(CFG)
+const GROUPS = {
+  config: ['lembaga', 'master', 'settings', 'profil_pesantren', 'pengaturan_keuangan', 'kegiatan_master'],
+  content: ['beranda_post', 'posts', 'kegiatan', 'kegiatan_pesantren', 'kritik_saran', 'post_reactions', 'user_notif_state']
+}
+const GROUP = (process.argv.find((a) => a.startsWith('--group=')) || '--group=config').split('=')[1]
+const COLLECTIONS = GROUPS[GROUP] || GROUPS.config
 
 // ---- baca kredensial Supabase dari vue-app/.env.local ----------------------
 function loadEnvLocal() {
@@ -114,7 +128,7 @@ async function main() {
   admin.initializeApp({ credential: admin.credential.applicationDefault(), projectId: PROJECT })
   const fsdb = admin.firestore()
 
-  console.log(`MODE: ${CONFIRM ? 'EKSEKUSI (--confirm)' : 'DRY-RUN'}  | project ${PROJECT}`)
+  console.log(`MODE: ${CONFIRM ? 'EKSEKUSI (--confirm)' : 'DRY-RUN'}  | grup ${GROUP}  | project ${PROJECT}`)
   const tok = CONFIRM ? await supaToken(env) : null
   let grand = 0
   for (const table of COLLECTIONS) {

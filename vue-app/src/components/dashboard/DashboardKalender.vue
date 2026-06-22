@@ -9,9 +9,7 @@
       <h3 class="text-sm font-black text-slate-700 dark:text-slate-200 uppercase tracking-widest">
         <i class="fas fa-calendar-alt text-cyan-500 mr-2"></i>Kalender Pendidikan
       </h3>
-      <span class="text-[11px] font-bold text-teal-600 hover:text-teal-700">
-        Lihat semua →
-      </span>
+      <span class="text-[11px] font-bold text-teal-600 hover:text-teal-700"> Lihat semua → </span>
     </div>
 
     <!-- Loading -->
@@ -44,7 +42,9 @@
           <p class="text-[9px] font-black bg-rose-500 text-white py-0.5 uppercase tracking-wider">
             {{ formatBulanShort(item.tgl_mulai) }}
           </p>
-          <p class="text-base font-black text-rose-700 dark:text-rose-300 bg-white dark:bg-slate-800 py-0.5">
+          <p
+            class="text-base font-black text-rose-700 dark:text-rose-300 bg-white dark:bg-slate-800 py-0.5"
+          >
             {{ formatHari(item.tgl_mulai) }}
           </p>
         </div>
@@ -63,7 +63,7 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
-import { subscribeColl } from '@/services/firestore'
+import { subscribeColl } from '@/services/db'
 import { BULAN_ID_SHORT } from '@/utils/format'
 import { pushWidgetData } from '@/composables/useWidgetSync'
 
@@ -105,7 +105,8 @@ function formatRangeText(item) {
     return `${start.getDate()} ${BULAN_ID_SHORT[start.getMonth()]} ${start.getFullYear()}`
   }
   const end = new Date(item.tgl_selesai)
-  if (isNaN(end)) return `${start.getDate()} ${BULAN_ID_SHORT[start.getMonth()]} ${start.getFullYear()}`
+  if (isNaN(end))
+    return `${start.getDate()} ${BULAN_ID_SHORT[start.getMonth()]} ${start.getFullYear()}`
   if (start.getMonth() === end.getMonth() && start.getFullYear() === end.getFullYear()) {
     return `${start.getDate()}-${end.getDate()} ${BULAN_ID_SHORT[start.getMonth()]} ${start.getFullYear()}`
   }
@@ -132,7 +133,9 @@ onMounted(() => {
 
 onUnmounted(() => {
   if (unsubscribe) {
-    try { unsubscribe() } catch (e) {}
+    try {
+      unsubscribe()
+    } catch (e) {}
     unsubscribe = null
   }
 })

@@ -2,19 +2,31 @@
   <!-- v.21.84.0527: Kritik & Saran — match legacy (form sesi + admin reply + self-list) -->
   <div class="p-3 md:p-5 space-y-4">
     <!-- Header -->
-    <div v-if="!isDesktop" class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm">
+    <div
+      v-if="!isDesktop"
+      class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm"
+    >
       <h1 class="text-base md:text-lg font-black">
         <i class="fas fa-comment-dots text-teal-600 mr-2"></i>Kritik &amp; Saran
       </h1>
       <p class="text-xs text-[var(--text-secondary)] mt-0.5">
-        {{ isAdmin ? 'Inbox kritik & saran dari santri/wali/guru' : 'Sampaikan kritik, saran, atau apresiasi Anda' }}
+        {{
+          isAdmin
+            ? 'Inbox kritik & saran dari santri/wali/guru'
+            : 'Sampaikan kritik, saran, atau apresiasi Anda'
+        }}
       </p>
     </div>
 
     <!-- FORM KIRIM (semua user) -->
-    <div class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm space-y-3">
+    <div
+      class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm space-y-3"
+    >
       <div>
-        <label class="block text-[11px] font-black text-[var(--text-primary)] uppercase tracking-wider mb-2">Kategori</label>
+        <label
+          class="block text-[11px] font-black text-[var(--text-primary)] uppercase tracking-wider mb-2"
+          >Kategori</label
+        >
         <select
           v-model="form.kategori"
           class="w-full px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-input)] focus:ring-2 focus:ring-teal-500 outline-none"
@@ -26,14 +38,19 @@
         </select>
       </div>
       <div>
-        <label class="block text-[11px] font-black text-[var(--text-primary)] uppercase tracking-wider mb-2">Pesan</label>
+        <label
+          class="block text-[11px] font-black text-[var(--text-primary)] uppercase tracking-wider mb-2"
+          >Pesan</label
+        >
         <textarea
           v-model="form.pesan"
           rows="4"
           maxlength="1000"
           class="w-full px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-input)] focus:ring-2 focus:ring-teal-500 outline-none resize-none"
         ></textarea>
-        <p class="text-[10px] text-[var(--text-tertiary)] text-right mt-1">{{ form.pesan.length }}/1000 karakter</p>
+        <p class="text-[10px] text-[var(--text-tertiary)] text-right mt-1">
+          {{ form.pesan.length }}/1000 karakter
+        </p>
       </div>
       <button
         @click="kirim"
@@ -52,12 +69,17 @@
         <h2 class="text-sm font-black text-[var(--text-primary)] uppercase tracking-wider">
           <i class="fas fa-inbox text-teal-600 mr-1.5"></i>Inbox Pesan
         </h2>
-        <span class="text-[11px] font-bold text-teal-700 bg-teal-100 dark:bg-teal-900/40 dark:text-teal-300 px-2.5 py-1 rounded-full">
+        <span
+          class="text-[11px] font-bold text-teal-700 bg-teal-100 dark:bg-teal-900/40 dark:text-teal-300 px-2.5 py-1 rounded-full"
+        >
           {{ items.length }} pesan
         </span>
       </div>
 
-      <div v-if="loading" class="bg-[var(--bg-card)] rounded-2xl p-10 text-center border border-[var(--border-subtle)]">
+      <div
+        v-if="loading"
+        class="bg-[var(--bg-card)] rounded-2xl p-10 text-center border border-[var(--border-subtle)]"
+      >
         <i class="fas fa-spinner fa-spin text-teal-500 text-3xl"></i>
       </div>
       <div
@@ -75,8 +97,13 @@
         >
           <div class="flex justify-between items-start gap-2 mb-2">
             <div class="min-w-0">
-              <p class="text-xs font-black text-[var(--text-primary)] flex items-center gap-1.5 flex-wrap">
-                <span>{{ kategoriIcon(k.kategori) }} {{ (k.kategori || 'lainnya').toUpperCase() }}</span>
+              <p
+                class="text-xs font-black text-[var(--text-primary)] flex items-center gap-1.5 flex-wrap"
+              >
+                <span
+                  >{{ kategoriIcon(k.kategori) }}
+                  {{ (k.kategori || 'lainnya').toUpperCase() }}</span
+                >
                 <span
                   :class="[
                     'text-[9px] font-bold px-2 py-0.5 rounded-full',
@@ -89,26 +116,46 @@
                 </span>
               </p>
               <p class="text-[10px] text-[var(--text-secondary)] mt-0.5">
-                {{ k.pengirim_nama || 'Anonim' }} &middot; {{ roleLabel(k.pengirim_role) }}{{ k.pengirim_lembaga && k.pengirim_lembaga !== '-' ? ' · ' + k.pengirim_lembaga : '' }}
+                {{ k.pengirim_nama || 'Anonim' }} &middot; {{ roleLabel(k.pengirim_role)
+                }}{{
+                  k.pengirim_lembaga && k.pengirim_lembaga !== '-' ? ' · ' + k.pengirim_lembaga : ''
+                }}
               </p>
             </div>
-            <span class="text-[10px] text-[var(--text-tertiary)] whitespace-nowrap">{{ formatTgl(k.tanggal) }}</span>
+            <span class="text-[10px] text-[var(--text-tertiary)] whitespace-nowrap">{{
+              formatTgl(k.tanggal)
+            }}</span>
           </div>
           <p class="text-sm text-[var(--text-primary)] whitespace-pre-line">{{ k.pesan }}</p>
 
-          <div v-if="k.reply" class="mt-3 bg-teal-50 dark:bg-teal-900/20 border-l-4 border-teal-500 p-3 rounded-r-lg">
-            <p class="text-[10px] font-black text-teal-700 dark:text-teal-300 uppercase tracking-wide mb-1">
-              <i class="fas fa-reply mr-1"></i>Balasan Admin{{ k.reply_at ? ' · ' + formatTgl(k.reply_at) : '' }}
+          <div
+            v-if="k.reply"
+            class="mt-3 bg-teal-50 dark:bg-teal-900/20 border-l-4 border-teal-500 p-3 rounded-r-lg"
+          >
+            <p
+              class="text-[10px] font-black text-teal-700 dark:text-teal-300 uppercase tracking-wide mb-1"
+            >
+              <i class="fas fa-reply mr-1"></i>Balasan Admin{{
+                k.reply_at ? ' · ' + formatTgl(k.reply_at) : ''
+              }}
             </p>
             <p class="text-xs text-[var(--text-primary)] whitespace-pre-line">{{ k.reply }}</p>
-            <p v-if="k.reply_by" class="text-[9px] text-[var(--text-tertiary)] mt-1 italic">&mdash; {{ k.reply_by }}</p>
+            <p v-if="k.reply_by" class="text-[9px] text-[var(--text-tertiary)] mt-1 italic">
+              &mdash; {{ k.reply_by }}
+            </p>
           </div>
 
           <div class="flex gap-3 mt-3 justify-end">
-            <button @click="openReply(k)" class="text-[11px] text-teal-700 dark:text-teal-300 hover:underline cursor-pointer font-bold">
+            <button
+              @click="openReply(k)"
+              class="text-[11px] text-teal-700 dark:text-teal-300 hover:underline cursor-pointer font-bold"
+            >
               <i class="fas fa-reply mr-1"></i>{{ k.reply ? 'Edit Balasan' : 'Balas' }}
             </button>
-            <button @click="deleteItem(k)" class="text-[11px] text-rose-600 hover:underline cursor-pointer font-bold">
+            <button
+              @click="deleteItem(k)"
+              class="text-[11px] text-rose-600 hover:underline cursor-pointer font-bold"
+            >
               <i class="fas fa-trash mr-1"></i>Hapus
             </button>
           </div>
@@ -134,13 +181,20 @@
           class="bg-[var(--bg-card-elevated)] border border-[var(--border-subtle)] p-3 rounded-xl"
         >
           <div class="flex justify-between items-start mb-1">
-            <p class="text-xs font-bold text-[var(--text-primary)]">{{ kategoriIcon(k.kategori) }} {{ (k.kategori || 'lainnya').toUpperCase() }}</p>
+            <p class="text-xs font-bold text-[var(--text-primary)]">
+              {{ kategoriIcon(k.kategori) }} {{ (k.kategori || 'lainnya').toUpperCase() }}
+            </p>
             <span class="text-[10px] text-[var(--text-tertiary)]">{{ formatTgl(k.tanggal) }}</span>
           </div>
           <p class="text-xs text-[var(--text-secondary)] whitespace-pre-line">{{ k.pesan }}</p>
-          <div v-if="k.reply" class="mt-2 bg-teal-50 dark:bg-teal-900/20 border-l-4 border-teal-500 p-2 rounded-r-lg">
+          <div
+            v-if="k.reply"
+            class="mt-2 bg-teal-50 dark:bg-teal-900/20 border-l-4 border-teal-500 p-2 rounded-r-lg"
+          >
             <p class="text-[10px] font-black text-teal-700 dark:text-teal-300 uppercase mb-1">
-              <i class="fas fa-reply mr-1"></i>Balasan Admin{{ k.reply_at ? ' · ' + formatTgl(k.reply_at) : '' }}
+              <i class="fas fa-reply mr-1"></i>Balasan Admin{{
+                k.reply_at ? ' · ' + formatTgl(k.reply_at) : ''
+              }}
             </p>
             <p class="text-xs text-[var(--text-primary)] whitespace-pre-line">{{ k.reply }}</p>
           </div>
@@ -161,8 +215,11 @@
         <h3 class="text-base font-black">
           <i class="fas fa-reply text-teal-600 mr-2"></i>Balas Pesan
         </h3>
-        <div class="bg-[var(--bg-muted)] border border-[var(--border-subtle)] p-2.5 rounded-lg text-xs text-[var(--text-secondary)] max-h-24 overflow-y-auto whitespace-pre-line">
-          <span class="font-bold">{{ replyTarget?.pengirim_nama || 'Anonim' }}:</span> {{ replyTarget?.pesan }}
+        <div
+          class="bg-[var(--bg-muted)] border border-[var(--border-subtle)] p-2.5 rounded-lg text-xs text-[var(--text-secondary)] max-h-24 overflow-y-auto whitespace-pre-line"
+        >
+          <span class="font-bold">{{ replyTarget?.pengirim_nama || 'Anonim' }}:</span>
+          {{ replyTarget?.pesan }}
         </div>
         <textarea
           v-model="replyText"
@@ -194,9 +251,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { subscribeColl } from '@/services/firestore'
-import { doc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore'
-import { db } from '@/services/firebase'
+import { subscribeColl, setOne, mergeOne, deleteOne, serverTimestamp } from '@/services/db'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
@@ -216,13 +271,15 @@ let unsub = null
 const isAdmin = computed(() => {
   const s = auth.sesiAktif
   if (!s) return false
-  return s.role === 'admin' || s.id === 'admin' || ['super_admin', 'admin', 'admin_keuangan'].includes(s.role_sistem)
+  return (
+    s.role === 'admin' ||
+    s.id === 'admin' ||
+    ['super_admin', 'admin', 'admin_keuangan'].includes(s.role_sistem)
+  )
 })
 
 const myId = computed(() => String(auth.sesiAktif?.id || ''))
-const myMsgs = computed(() =>
-  items.value.filter((k) => String(k.pengirim_id) === myId.value)
-)
+const myMsgs = computed(() => items.value.filter((k) => String(k.pengirim_id) === myId.value))
 
 const KATEGORI_ICON = { saran: '💡', kritik: '📣', apresiasi: '🙏', lainnya: '💬' }
 function kategoriIcon(k) {
@@ -251,7 +308,7 @@ async function kirim() {
   try {
     const sesi = auth.sesiAktif
     const id = `ks_${Date.now()}_${sesi?.id || 'anon'}`
-    await setDoc(doc(db, 'kritik_saran', id), {
+    await setOne('kritik_saran', id, {
       id,
       kategori: form.value.kategori,
       pesan: form.value.pesan.trim(),
@@ -282,7 +339,7 @@ async function deleteItem(k) {
   })
   if (!ok) return
   try {
-    await deleteDoc(doc(db, 'kritik_saran', String(k.id)))
+    await deleteOne('kritik_saran', String(k.id), { sesi: auth.sesiAktif })
     toast.success('Pesan dihapus')
   } catch (e) {
     toast.error('Gagal: ' + (e?.message || e))
@@ -312,15 +369,11 @@ async function saveReply() {
   savingReply.value = true
   try {
     const sesi = auth.sesiAktif
-    await setDoc(
-      doc(db, 'kritik_saran', String(replyTarget.value.id)),
-      {
-        reply: replyText.value.trim(),
-        reply_at: new Date().toISOString(),
-        reply_by: sesi?.nama || sesi?.username || 'Admin'
-      },
-      { merge: true }
-    )
+    await mergeOne('kritik_saran', String(replyTarget.value.id), {
+      reply: replyText.value.trim(),
+      reply_at: new Date().toISOString(),
+      reply_by: sesi?.nama || sesi?.username || 'Admin'
+    })
     toast.success('Balasan terkirim')
     closeReply()
   } catch (e) {
@@ -332,11 +385,17 @@ async function saveReply() {
 
 onMounted(() => {
   unsub = subscribeColl('kritik_saran', (docs) => {
-    items.value = docs.sort((a, b) => String(b.tanggal || '').localeCompare(String(a.tanggal || '')))
+    items.value = docs.sort((a, b) =>
+      String(b.tanggal || '').localeCompare(String(a.tanggal || ''))
+    )
     loading.value = false
   })
 })
 onUnmounted(() => {
-  if (unsub) { try { unsub() } catch (e) {} }
+  if (unsub) {
+    try {
+      unsub()
+    } catch (e) {}
+  }
 })
 </script>
