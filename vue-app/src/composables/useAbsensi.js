@@ -1,5 +1,6 @@
-// useAbsensi — list absensi guru + santri realtime
-// Phase 5.16/17 (v.39.0526)
+// useAbsensi — list absensi shift guru (koleksi absensi_shift_guru) realtime
+// Phase 5.16/17 (v.39.0526). v.110: sumber dibetulkan absensi -> absensi_shift_guru
+// (view tulis ke absensi_shift_guru; fingerprint/izin/manual semua ke sana) + filterStatus.
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { subscribeColl } from '@/services/db'
@@ -36,6 +37,7 @@ export function useAbsensi() {
   const selectedMonth = ref(new Date().getMonth() + 1)
   const filterGuru = ref('')
   const filterShift = ref('')
+  const filterStatus = ref('')
 
   const isFullAccess = computed(() => {
     const s = auth.sesiAktif
@@ -59,6 +61,9 @@ export function useAbsensi() {
     }
     if (filterShift.value) {
       list = list.filter((a) => String(a.shift || '').toLowerCase() === filterShift.value)
+    }
+    if (filterStatus.value) {
+      list = list.filter((a) => String(a.status || 'hadir').toLowerCase() === filterStatus.value)
     }
     return list.sort((a, b) => (b.tanggal || '').localeCompare(a.tanggal || ''))
   })
@@ -102,7 +107,7 @@ export function useAbsensi() {
 
   onMounted(() => {
     unsubs.push(
-      subscribeColl('absensi', (docs) => {
+      subscribeColl('absensi_shift_guru', (docs) => {
         absensi.value = docs
         loading.value = false
       })
@@ -131,6 +136,7 @@ export function useAbsensi() {
     selectedMonth,
     filterGuru,
     filterShift,
+    filterStatus,
     stats,
     isFullAccess,
     getNamaGuru,

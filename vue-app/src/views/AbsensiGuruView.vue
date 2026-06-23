@@ -60,7 +60,7 @@
       <div
         class="bg-[var(--bg-card)] rounded-2xl p-3 md:p-4 border border-[var(--border-subtle)] shadow-sm"
       >
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-2">
           <select
             v-model.number="selectedYear"
             class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none"
@@ -91,11 +91,21 @@
             <option value="pegawai_pagi">Pegawai Pagi</option>
             <option value="pegawai_sore">Pegawai Sore</option>
           </select>
+          <select
+            v-model="filterStatus"
+            class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none"
+          >
+            <option value="">Semua status</option>
+            <option value="hadir">Hadir</option>
+            <option value="terlambat">Terlambat</option>
+            <option value="izin">Izin</option>
+            <option value="sakit">Sakit</option>
+          </select>
         </div>
       </div>
 
       <!-- Tabs -->
-      <div class="grid grid-cols-3 gap-2 md:gap-3">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
         <button
           @click="tabMode = 'harian'"
           :class="[
@@ -139,6 +149,19 @@
           </h3>
           <p class="hidden md:block text-[10px] text-white/85 font-medium leading-snug">
             Upload .xlsx/.csv device
+          </p>
+        </button>
+        <button
+          @click="tabMode = 'riwayat'"
+          :class="[
+            'group relative overflow-hidden bg-gradient-to-br from-indigo-500 dark:from-indigo-700 to-indigo-700 dark:to-indigo-900 rounded-xl p-2.5 md:p-3 text-left text-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col gap-1 cursor-pointer',
+            tabMode === 'riwayat' ? 'ring-2 ring-white/70 ring-offset-1 ring-offset-cyan-50' : ''
+          ]"
+        >
+          <i class="fas fa-history text-base md:text-lg drop-shadow"></i>
+          <h3 class="text-[11px] md:text-xs font-black leading-tight drop-shadow-sm">Riwayat</h3>
+          <p class="hidden md:block text-[10px] text-white/85 font-medium leading-snug">
+            Daftar absen per scan
           </p>
         </button>
       </div>
@@ -472,23 +495,15 @@
         </div>
       </div>
 
-      <!-- TAB lain (list view) -->
-      <div
-        v-else-if="
-          tabMode !== 'bulanan' &&
-          tabMode !== 'rekap' &&
-          tabMode !== 'impor' &&
-          tabMode !== 'harian'
-        "
-        class="space-y-2"
-      >
+      <!-- TAB: Riwayat (daftar absensi per record, terbaru dulu) -->
+      <div v-else-if="tabMode === 'riwayat'" class="space-y-2">
         <div
           v-if="filteredAbsensi.length === 0"
           class="bg-[var(--bg-card)] rounded-2xl p-10 border border-dashed border-[var(--border-default)] text-center"
         >
           <i class="fas fa-calendar-times text-[var(--text-tertiary)] text-4xl mb-3"></i>
           <p class="text-sm font-bold text-slate-700 dark:text-[var(--text-tertiary)]">
-            Tidak ada absensi
+            Tidak ada riwayat absensi pada filter ini
           </p>
         </div>
         <div
@@ -510,12 +525,24 @@
               {{ shiftAbbr(a.shift) }}
             </div>
             <div class="flex-1 min-w-0">
-              <p class="text-sm font-bold text-[var(--text-primary)] truncate">
-                {{ getNamaGuru(a.guru_id || a.guruId) }}
-              </p>
-              <p class="text-[11px] text-[var(--text-secondary)]">
-                {{ a.tanggal }} &middot; Shift {{ a.shift }}
-                <span v-if="a.jam_masuk" class="ml-1">&middot; {{ a.jam_masuk }}</span>
+              <div class="flex items-center justify-between gap-2">
+                <p class="text-sm font-bold text-[var(--text-primary)] truncate">
+                  {{ getNamaGuru(a.guru_id || a.guruId) }}
+                </p>
+                <span :class="statusInfo(a.status).cls">{{ statusInfo(a.status).label }}</span>
+              </div>
+              <p
+                class="text-[11px] text-[var(--text-secondary)] mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5"
+              >
+                <span>{{ formatTgl(a.tanggal) }}</span>
+                <span class="text-[var(--text-tertiary)]">&middot;</span>
+                <span>{{ shiftLabel(a.shift) }}</span>
+                <span v-if="a.jam"><i class="far fa-clock mr-0.5"></i>{{ a.jam }}</span>
+                <span
+                  class="ml-auto px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-700/50 text-[9px] font-bold text-[var(--text-secondary)] whitespace-nowrap"
+                >
+                  <i class="fas fa-tag mr-0.5"></i>{{ sourceLabel(a.source) }}
+                </span>
               </p>
             </div>
           </div>
@@ -550,6 +577,7 @@ const {
   selectedMonth,
   filterGuru,
   filterShift,
+  filterStatus,
   stats,
   isFullAccess,
   getNamaGuru,
@@ -787,6 +815,61 @@ function shiftAbbr(sh) {
   if (s === 'pegawai_pagi') return 'PgP'
   if (s === 'pegawai_sore') return 'PgS'
   return '?'
+}
+
+// ===== Helper tampilan Riwayat =====
+function shiftLabel(sh) {
+  const s = String(sh || '').toLowerCase()
+  return (SHIFT_COLS.find((c) => c.key === s) || {}).label || sh || '-'
+}
+function statusInfo(status) {
+  const s = String(status || 'hadir').toLowerCase()
+  const base = 'px-2 py-0.5 rounded-full text-[10px] font-black whitespace-nowrap shrink-0 '
+  if (s === 'terlambat')
+    return {
+      label: 'Terlambat',
+      cls: base + 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-300'
+    }
+  if (s === 'izin')
+    return {
+      label: 'Izin',
+      cls: base + 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
+    }
+  if (s === 'sakit')
+    return {
+      label: 'Sakit',
+      cls: base + 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
+    }
+  if (s === 'alpha' || s === 'alpa')
+    return {
+      label: 'Alpha',
+      cls: base + 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300'
+    }
+  return {
+    label: 'Hadir',
+    cls: base + 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
+  }
+}
+function sourceLabel(src) {
+  const s = String(src || '').toLowerCase()
+  if (s === 'fingerprint') return 'Fingerprint'
+  if (s === 'fingerprint_import') return 'Impor FP'
+  if (s === 'manual_harian') return 'Input manual'
+  if (s === 'pengajuan_guru') return 'Izin/Pengajuan'
+  return src || 'manual'
+}
+function formatTgl(t) {
+  const s = String(t || '')
+  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/)
+  if (!m) return s || '-'
+  const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]))
+  if (isNaN(d.getTime())) return s
+  return d.toLocaleDateString('id-ID', {
+    weekday: 'short',
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric'
+  })
 }
 
 // =====================================================
