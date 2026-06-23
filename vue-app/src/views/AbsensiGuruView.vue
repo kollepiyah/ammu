@@ -426,12 +426,6 @@
                 <th class="p-1 text-center font-black text-cyan-700 bg-cyan-50">T</th>
                 <th class="p-1 text-center font-black text-cyan-700 bg-cyan-50">I/S</th>
                 <th class="p-1 text-center font-black text-rose-700 bg-rose-50">A</th>
-                <th
-                  class="p-1 text-center font-black text-emerald-800 bg-emerald-100 border-l border-[var(--border-subtle)]"
-                  title="Dibayar = Hadir + Terlambat (yang dihitung bisyaroh)"
-                >
-                  Bayar
-                </th>
               </tr>
             </thead>
             <tbody>
@@ -440,7 +434,11 @@
                 :key="'r' + row.g.id + '_' + row.shift"
                 class="border-b border-[var(--border-subtle)] hover:bg-slate-50 dark:hover:bg-slate-700/30"
               >
-                <td class="p-1.5 sticky left-0 bg-[var(--bg-card)] z-[1]">
+                <td
+                  v-if="row.isFirst"
+                  :rowspan="row.span"
+                  class="p-1.5 sticky left-0 bg-[var(--bg-card)] z-[1] align-middle"
+                >
                   <div
                     class="font-black text-[var(--text-primary)] text-[11px] md:text-xs truncate"
                   >
@@ -486,11 +484,6 @@
                 </td>
                 <td class="p-1 text-center font-black text-rose-700 bg-rose-50/50">
                   {{ countAlpha(row.g.id, row.shift) }}
-                </td>
-                <td
-                  class="p-1 text-center font-black text-emerald-800 bg-emerald-100/60 border-l border-[var(--border-subtle)]"
-                >
-                  {{ countStatus(row.g.id, row.shift, ['hadir', 'terlambat']) }}
                 </td>
               </tr>
             </tbody>
@@ -1226,11 +1219,11 @@ const rekapRows = computed(() => {
   const rows = []
   for (const g of guruAktif.value) {
     const shifts = shiftsForGuru(g)
-    for (const key of order) {
-      if (!shifts.has(key)) continue
-      if (only && key !== only) continue
-      rows.push({ g, shift: key })
-    }
+    const keys = order.filter((k) => shifts.has(k) && (!only || k === only))
+    keys.forEach((key, idx) => {
+      // nama guru di-merge (rowspan) sekali per guru: isFirst + jumlah baris (span)
+      rows.push({ g, shift: key, isFirst: idx === 0, span: keys.length })
+    })
   }
   return rows
 })
@@ -1341,7 +1334,6 @@ function buildRekapExport() {
   columns.push({ key: 'T', header: 'T', width: 5 })
   columns.push({ key: 'IS', header: 'I/S', width: 5 })
   columns.push({ key: 'A', header: 'A', width: 5 })
-  columns.push({ key: 'Bayar', header: 'Dibayar', width: 8 })
   const rows = rekapRows.value.map(({ g, shift }) => {
     const r = { nama: g.nama, shift: shiftLabel(shift), lembaga: g.lembaga || g.unit || '-' }
     for (let d = 1; d <= days; d++) r['d' + d] = cellText(g.id, shift, d)
@@ -1349,7 +1341,6 @@ function buildRekapExport() {
     r.T = countStatus(g.id, shift, ['terlambat'])
     r.IS = countStatus(g.id, shift, ['izin', 'sakit'])
     r.A = countAlpha(g.id, shift)
-    r.Bayar = r.H + r.T
     return r
   })
   return { columns, rows }
