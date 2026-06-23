@@ -332,14 +332,31 @@ export async function queryColl(collectionName, filters = [], orders = [], limit
   return rows.map((r) => _flatten(collectionName, r))
 }
 
+/** Tulis 1 baris penuh: UPDATE bila row SUDAH ADA, INSERT bila BELUM.
+ *  Mengganti upsert(onConflict) tunggal yang SELALU memicu kebijakan RLS INSERT
+ *  (mis. guru_ins = auth_can_manage, admin-only) walau cuma meng-update — itu
+ *  bikin 403 "new row violates RLS" saat guru/santri edit BARIS-NYA SENDIRI
+ *  (yang seharusnya lolos kebijakan *_upd_self UPDATE, bukan INSERT). */
+async function _putRow(collectionName, id, fullDoc, exists) {
+  const { pk } = _cfg(collectionName)
+  const row = _split(collectionName, { ...fullDoc, id })
+  if (exists) {
+    const upd = { ...row }
+    delete upd[pk] // jangan ubah pk
+    const { error } = await supabase.from(collectionName).update(upd).eq(pk, String(id))
+    if (error) throw error
+  } else {
+    const { error } = await supabase.from(collectionName).insert(row)
+    if (error) throw error
+  }
+}
+
 /** Set (overwrite) dokumen. HATI-HATI: menimpa SELURUH dokumen. Untuk update
- *  sebagian field pakai mergeOne. */
+ *  sebagian field pakai mergeOne. Existence-aware (UPDATE/INSERT, lihat _putRow). */
 export async function setOne(collectionName, id, data) {
   _ensure()
-  const { pk } = _cfg(collectionName)
-  const row = _split(collectionName, { ...data, id })
-  const { error } = await supabase.from(collectionName).upsert(row, { onConflict: pk })
-  if (error) throw error
+  const exists = !!(await getOne(collectionName, id))
+  await _putRow(collectionName, id, data, exists)
 }
 
 /** Set/merge sebagian field (deep-merge, pertahankan field lain + buat bila belum
@@ -348,7 +365,7 @@ export async function mergeOne(collectionName, id, data) {
   _ensure()
   const existing = await getOne(collectionName, id)
   const merged = existing ? _deepMerge(existing, data) : { ...data }
-  await setOne(collectionName, id, merged)
+  await _putRow(collectionName, id, merged, !!existing)
 }
 
 /** Update partial fields (shallow, cermin updateDoc: ganti field top-level yang
@@ -368,7 +385,7 @@ export async function updateOne(collectionName, id, partial) {
   }
   const existing = await getOne(collectionName, id)
   const merged = { ...(existing || {}), ...partial } // shallow (semantik updateDoc)
-  await setOne(collectionName, id, merged)
+  await _putRow(collectionName, id, merged, !!existing)
 }
 
 /** Add dokumen baru. Pakai id dari data kalau ada, jika tidak generate. Return id. */
