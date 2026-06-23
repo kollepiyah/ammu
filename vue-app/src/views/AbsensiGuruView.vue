@@ -217,6 +217,94 @@
             Excel XLSX atau CSV diterima.
           </p>
         </div>
+
+        <!-- v.110: SET PIN / FINGERPRINT ID MASSAL dari file master mesin -->
+        <div class="mt-6 pt-5 border-t border-[var(--border-subtle)]">
+          <h3 class="text-sm md:text-base font-black text-[var(--text-primary)] mb-1">
+            <i class="fas fa-id-badge text-indigo-600 mr-2"></i>Set PIN (Fingerprint ID) Massal
+          </h3>
+          <p class="text-xs text-[var(--text-secondary)] mb-3">
+            Upload file <strong>master karyawan</strong> dari mesin (kolom <code>Nama</code> +
+            <code>ID Karyawan</code>) untuk mengisi <code>id_fingerprint</code> tiap guru otomatis
+            (cocok by nama). Pratinjau dulu — tak ada yang ditulis sebelum Anda konfirmasi.
+          </p>
+          <div class="flex items-center gap-2 flex-wrap">
+            <input
+              ref="fileInputPin"
+              type="file"
+              accept=".xlsx,.csv"
+              class="hidden"
+              @change="handlePinFile"
+            />
+            <button
+              @click="$refs.fileInputPin.click()"
+              class="h-9 px-3 inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold"
+            >
+              <i class="fas fa-folder-open"></i>Pilih File Karyawan
+            </button>
+            <span v-if="pinFileName" class="text-[11px] text-[var(--text-secondary)] font-bold">
+              <i class="fas fa-file-excel mr-1"></i>{{ pinFileName }}
+            </span>
+          </div>
+
+          <div v-if="pinRows.length" class="mt-4">
+            <div class="flex items-center justify-between flex-wrap gap-2 mb-2">
+              <p class="text-[11px] text-[var(--text-secondary)]">
+                <span class="font-black text-emerald-600">{{ pinToApply.length }}</span> akan di-set
+                · <span class="font-bold">{{ pinRows.length }}</span> baris terbaca
+              </p>
+              <button
+                @click="applyPinMapping"
+                :disabled="pinApplying || pinToApply.length === 0"
+                class="h-9 px-4 inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold"
+              >
+                <i :class="['fas', pinApplying ? 'fa-spinner fa-spin' : 'fa-check']"></i>
+                {{ pinApplying ? 'Menyimpan...' : `Terapkan (${pinToApply.length})` }}
+              </button>
+            </div>
+            <div class="overflow-x-auto rounded-xl border border-[var(--border-subtle)]">
+              <table class="w-full text-[11px] border-collapse">
+                <thead>
+                  <tr class="bg-[var(--bg-muted)] text-[var(--text-primary)]">
+                    <th class="p-2 text-left font-black">Nama (file)</th>
+                    <th class="p-2 text-center font-black">PIN</th>
+                    <th class="p-2 text-left font-black">Guru (app)</th>
+                    <th class="p-2 text-center font-black">Status</th>
+                    <th class="p-2 text-left font-black">Catatan</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    v-for="(r, i) in pinRows"
+                    :key="'pin' + i"
+                    class="border-t border-[var(--border-subtle)]"
+                  >
+                    <td class="p-2 text-[var(--text-primary)]">{{ r.namaFile || '-' }}</td>
+                    <td class="p-2 text-center font-mono font-bold">{{ r.pin || '-' }}</td>
+                    <td class="p-2 text-[var(--text-secondary)]">{{ r.guru?.nama || '—' }}</td>
+                    <td class="p-2 text-center">
+                      <span
+                        :class="[
+                          'inline-block px-2 py-0.5 rounded-full text-[10px] font-black',
+                          r.status === 'set'
+                            ? 'bg-emerald-100 text-emerald-700'
+                            : r.status === 'sama'
+                              ? 'bg-slate-100 text-slate-600'
+                              : r.status === 'konflik'
+                                ? 'bg-amber-100 text-amber-700'
+                                : 'bg-rose-100 text-rose-700'
+                        ]"
+                      >
+                        {{ r.status }}
+                      </span>
+                    </td>
+                    <td class="p-2 text-[var(--text-tertiary)] text-[10px]">{{ r.note }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- LOADING -->
@@ -559,7 +647,7 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
-import { setOne } from '@/services/db'
+import { setOne, updateOne } from '@/services/db'
 import { useAbsensi } from '@/composables/useAbsensi'
 import { useExcel } from '@/composables/useExcel'
 import { useGoogleSheet } from '@/composables/useGoogleSheet' // v.100 Batch12: ekspor ke Google Sheet
@@ -636,12 +724,11 @@ async function handleImportFingerprint(ev) {
         if (m) tanggal = `${m[3]}-${m[2]}-${m[1]}`
         let guru = null
         if (fpId) {
-          // match PIN: AMMU simpan PIN fingerprint di kolom `id_fingerprint`
-          // (fingerprint_id/fp_id = alias legacy). trim supaya aman spasi.
+          // match PIN: AMMU simpan PIN fingerprint di kolom riil `id_fingerprint`
+          // (fingerprint_id/fp_id = alias legacy). trim sekali, aman spasi.
+          const fpKey = String(fpId).trim()
           guru = guruRaw.value.find(
-            (g) =>
-              String(g.id_fingerprint || g.fingerprint_id || g.fp_id || '').trim() ===
-              String(fpId).trim()
+            (g) => String(g.id_fingerprint || g.fingerprint_id || g.fp_id || '').trim() === fpKey
           )
         }
         if (!guru && nama) {
@@ -689,6 +776,126 @@ async function handleImportFingerprint(ev) {
   } finally {
     importing.value = false
     ev.target.value = ''
+  }
+}
+
+// =====================================================
+// SET PIN / FINGERPRINT ID MASSAL (dari file master mesin)
+// v.110: upload ekspor "Karyawan" mesin (Nama + ID Karyawan) -> set guru.id_fingerprint.
+//   Preview-konfirmasi dulu (tak nulis buta); nama ganda di-flag utk set manual.
+// =====================================================
+const pinFileName = ref('')
+const pinApplying = ref(false)
+const pinRows = ref([]) // [{ pin, namaFile, guru, status, note }]
+
+function _normNama(s) {
+  return String(s || '')
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+async function handlePinFile(ev) {
+  const file = ev.target.files?.[0]
+  if (!file) return
+  pinFileName.value = file.name
+  pinRows.value = []
+  try {
+    const rows = await importFile(file)
+    if (!rows.length) {
+      toast.warning('File kosong / tidak ada data')
+      return
+    }
+    // peta nama -> daftar guru (deteksi nama ganda di data app)
+    const guruByNama = new Map()
+    for (const g of guruRaw.value) {
+      const k = _normNama(g.nama)
+      if (!k) continue
+      if (!guruByNama.has(k)) guruByNama.set(k, [])
+      guruByNama.get(k).push(g)
+    }
+    // hitung kemunculan nama di FILE (deteksi duplikat antar-baris, mis. "Siti Fatimah" 2 PIN)
+    const namaCountFile = {}
+    for (const r of rows) {
+      const nm = _normNama(r['Nama'] || r['Name'] || r['nama'] || r['NAMA'])
+      if (nm) namaCountFile[nm] = (namaCountFile[nm] || 0) + 1
+    }
+    const out = []
+    for (const r of rows) {
+      const pin = String(
+        r['ID Karyawan'] ||
+          r['ID'] ||
+          r['PIN'] ||
+          r['Pin'] ||
+          r['id_fingerprint'] ||
+          r['fingerprint_id'] ||
+          ''
+      ).trim()
+      const namaFile = String(r['Nama'] || r['Name'] || r['nama'] || r['NAMA'] || '').trim()
+      if (!pin && !namaFile) continue
+      const nk = _normNama(namaFile)
+      const matches = guruByNama.get(nk) || []
+      let status
+      let note
+      let guru = null
+      if (!pin) {
+        status = 'skip'
+        note = 'PIN kosong'
+      } else if (matches.length === 0) {
+        status = 'notfound'
+        note = 'Nama tak ada di data guru'
+      } else if (matches.length > 1 || (namaCountFile[nk] || 0) > 1) {
+        status = 'konflik'
+        note = 'Nama ganda — set manual via form guru'
+      } else {
+        guru = matches[0]
+        const cur = String(guru.id_fingerprint || guru.fingerprint_id || guru.fp_id || '').trim()
+        if (cur === pin) {
+          status = 'sama'
+          note = 'Sudah sesuai'
+        } else {
+          status = 'set'
+          note = cur ? `Ganti ${cur} → ${pin}` : 'Set baru'
+        }
+      }
+      out.push({ pin, namaFile, guru, status, note })
+    }
+    pinRows.value = out
+  } catch (e) {
+    toast.error('Parse gagal: ' + (e.message || e))
+  } finally {
+    ev.target.value = ''
+  }
+}
+
+const pinToApply = computed(() => pinRows.value.filter((r) => r.status === 'set'))
+
+async function applyPinMapping() {
+  const list = pinToApply.value
+  if (!list.length) {
+    toast.warning('Tidak ada PIN untuk diterapkan')
+    return
+  }
+  pinApplying.value = true
+  let ok = 0
+  let err = 0
+  try {
+    for (const r of list) {
+      try {
+        await updateOne('guru', r.guru.id, { id_fingerprint: r.pin })
+        r.guru.id_fingerprint = r.pin // refresh lokal (guru bukan realtime di store)
+        r.status = 'sama'
+        r.note = 'Tersimpan'
+        ok++
+      } catch (e) {
+        r.note = 'Gagal: ' + (e.message || e)
+        err++
+      }
+    }
+    if (ok) toast.success(`PIN tersimpan: ${ok} guru${err ? `, ${err} gagal` : ''}`)
+    else toast.error(`Gagal menyimpan PIN (${err})`)
+  } finally {
+    pinApplying.value = false
   }
 }
 
