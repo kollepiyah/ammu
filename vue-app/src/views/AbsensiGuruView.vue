@@ -377,12 +377,12 @@
         </div>
 
         <div
-          v-if="guruAktif.length === 0"
+          v-if="rekapRows.length === 0"
           class="bg-[var(--bg-card)] rounded-2xl p-10 border border-dashed border-[var(--border-default)] text-center"
         >
           <i class="fas fa-calendar-times text-[var(--text-tertiary)] text-4xl mb-3"></i>
           <p class="text-sm font-bold text-slate-700 dark:text-[var(--text-tertiary)]">
-            Tidak ada guru aktif
+            Tidak ada baris rekap (cek filter shift / guru aktif)
           </p>
         </div>
 
@@ -394,12 +394,17 @@
             <thead>
               <tr class="bg-[var(--bg-muted)] text-[var(--text-primary)] sticky top-0">
                 <th
-                  class="p-1.5 text-left font-black uppercase tracking-wider sticky left-0 bg-[var(--bg-muted)] z-10 min-w-[180px]"
+                  class="p-1.5 text-left font-black uppercase tracking-wider sticky left-0 bg-[var(--bg-muted)] z-10 min-w-[150px]"
                 >
                   Nama Guru
                 </th>
                 <th
-                  class="p-1.5 text-center font-black uppercase tracking-wider bg-[var(--bg-muted)] z-10 min-w-[70px]"
+                  class="p-1.5 text-center font-black uppercase tracking-wider bg-[var(--bg-muted)] z-10 min-w-[64px]"
+                >
+                  Shift
+                </th>
+                <th
+                  class="p-1.5 text-center font-black uppercase tracking-wider bg-[var(--bg-muted)] z-10 min-w-[60px]"
                 >
                   FP ID
                 </th>
@@ -420,51 +425,72 @@
                 </th>
                 <th class="p-1 text-center font-black text-cyan-700 bg-cyan-50">T</th>
                 <th class="p-1 text-center font-black text-cyan-700 bg-cyan-50">I/S</th>
+                <th class="p-1 text-center font-black text-rose-700 bg-rose-50">A</th>
+                <th
+                  class="p-1 text-center font-black text-emerald-800 bg-emerald-100 border-l border-[var(--border-subtle)]"
+                  title="Dibayar = Hadir + Terlambat (yang dihitung bisyaroh)"
+                >
+                  Bayar
+                </th>
               </tr>
             </thead>
             <tbody>
               <tr
-                v-for="g in guruAktif"
-                :key="'r' + g.id"
+                v-for="row in rekapRows"
+                :key="'r' + row.g.id + '_' + row.shift"
                 class="border-b border-[var(--border-subtle)] hover:bg-slate-50 dark:hover:bg-slate-700/30"
               >
                 <td class="p-1.5 sticky left-0 bg-[var(--bg-card)] z-[1]">
                   <div
                     class="font-black text-[var(--text-primary)] text-[11px] md:text-xs truncate"
                   >
-                    {{ g.nama }}
+                    {{ row.g.nama }}
                   </div>
                   <div class="text-[9px] text-[var(--text-secondary)] truncate">
-                    {{ g.lembaga || g.unit || '-' }}
+                    {{ row.g.lembaga || row.g.unit || '-' }}
                   </div>
+                </td>
+                <td class="p-1.5 text-center border-l border-[var(--border-subtle)]">
+                  <span
+                    class="inline-block px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-700 text-[9px] font-black text-slate-700 dark:text-slate-200 whitespace-nowrap"
+                    >{{ shiftLabel(row.shift) }}</span
+                  >
                 </td>
                 <td
                   class="p-1.5 text-center text-[10px] font-bold text-[var(--text-secondary)] border-l border-[var(--border-subtle)]"
                 >
-                  {{ g.fingerprint_id || g.fp_id || g.id_fingerprint || '-' }}
+                  {{ row.g.fingerprint_id || row.g.fp_id || row.g.id_fingerprint || '-' }}
                 </td>
                 <td
                   v-for="d in daysInMonth"
-                  :key="g.id + '_' + d"
+                  :key="row.g.id + '_' + row.shift + '_' + d"
                   class="p-0.5 text-center border-l border-[var(--border-subtle)]"
                 >
                   <span
                     :class="[
-                      cellClass(g.id, d),
+                      cellClass(row.g.id, row.shift, d),
                       'inline-block w-5 h-5 leading-5 rounded text-[9px] font-bold'
                     ]"
-                    :title="cellTitle(g.id, d)"
-                    >{{ cellText(g.id, d) }}</span
+                    :title="cellTitle(row.g.id, row.shift, d)"
+                    >{{ cellText(row.g.id, row.shift, d) }}</span
                   >
                 </td>
                 <td class="p-1 text-center font-black text-emerald-700 bg-emerald-50/50">
-                  {{ countStatus(g.id, ['hadir']) }}
+                  {{ countStatus(row.g.id, row.shift, ['hadir']) }}
                 </td>
                 <td class="p-1 text-center font-black text-cyan-700 bg-cyan-50/50">
-                  {{ countStatus(g.id, ['terlambat']) }}
+                  {{ countStatus(row.g.id, row.shift, ['terlambat']) }}
                 </td>
                 <td class="p-1 text-center font-black text-cyan-700 bg-cyan-50/50">
-                  {{ countStatus(g.id, ['izin', 'sakit']) }}
+                  {{ countStatus(row.g.id, row.shift, ['izin', 'sakit']) }}
+                </td>
+                <td class="p-1 text-center font-black text-rose-700 bg-rose-50/50">
+                  {{ countAlpha(row.g.id, row.shift) }}
+                </td>
+                <td
+                  class="p-1 text-center font-black text-emerald-800 bg-emerald-100/60 border-l border-[var(--border-subtle)]"
+                >
+                  {{ countStatus(row.g.id, row.shift, ['hadir', 'terlambat']) }}
                 </td>
               </tr>
             </tbody>
@@ -1188,19 +1214,40 @@ function isHariLibur(d) {
 }
 
 // =====================================================
-// MATRIX REKAP BULANAN
+// MATRIX REKAP BULANAN — per (guru × shift)
+// Selaras dgn bisyaroh yg dihitung per shift (BisyarohView bonusKehadiran):
+// tiap shift jadi baris sendiri, tidak diratakan jadi 1 status/hari.
 // =====================================================
-const absensiByGuruDay = computed(() => {
+// Satu baris utk tiap shift yg BERLAKU bagi guru (shiftsForGuru), urut SHIFT_COLS.
+// filterShift mempersempit ke shift terpilih.
+const rekapRows = computed(() => {
+  const order = SHIFT_COLS.map((c) => c.key)
+  const only = String(filterShift.value || '').toLowerCase()
+  const rows = []
+  for (const g of guruAktif.value) {
+    const shifts = shiftsForGuru(g)
+    for (const key of order) {
+      if (!shifts.has(key)) continue
+      if (only && key !== only) continue
+      rows.push({ g, shift: key })
+    }
+  }
+  return rows
+})
+
+// Index absensi per (guru + shift + hari) — TANPA meratakan antar-shift.
+const absensiByGuruShiftDay = computed(() => {
   const map = {}
   for (const a of filteredAbsensi.value) {
     const tgl = String(a.tanggal || '')
     const d = parseInt(tgl.slice(8, 10), 10)
     if (!d) continue
-    const key = String(a.guru_id || a.guruId || '') + '_' + d
+    const sh = String(a.shift || '').toLowerCase()
+    const key = String(a.guru_id || a.guruId || '') + '_' + sh + '_' + d
     if (!map[key]) {
       map[key] = a
     } else {
-      // Pick highest-priority status (terlambat > hadir > izin/sakit)
+      // Duplikat shift+hari yg sama (jarang): pilih status prioritas tertinggi.
       const prio = (s) => (s === 'terlambat' ? 3 : s === 'hadir' ? 2 : 1)
       if (prio(String(a.status || 'hadir')) > prio(String(map[key].status || 'hadir'))) {
         map[key] = a
@@ -1210,14 +1257,18 @@ const absensiByGuruDay = computed(() => {
   return map
 })
 
-function getAbsensiCell(guruId, d) {
-  return absensiByGuruDay.value[guruId + '_' + d] || null
+function getAbsensiCell(guruId, shift, d) {
+  return absensiByGuruShiftDay.value[guruId + '_' + shift + '_' + d] || null
 }
 
-function cellText(guruId, d) {
+function cellText(guruId, shift, d) {
   if (isHariLibur(d)) return 'L'
-  const a = getAbsensiCell(guruId, d)
-  if (!a) return ''
+  const a = getAbsensiCell(guruId, shift, d)
+  if (!a) {
+    // kosong & hari sudah lewat = alpha; hari depan = belum terjadi (kosong)
+    const today = new Date().toISOString().slice(0, 10)
+    return isoDateOf(d) <= today ? 'A' : ''
+  }
   const s = String(a.status || 'hadir').toLowerCase()
   if (s === 'terlambat') return 'T'
   if (s === 'izin') return 'I'
@@ -1225,9 +1276,9 @@ function cellText(guruId, d) {
   return 'H'
 }
 
-function cellClass(guruId, d) {
+function cellClass(guruId, shift, d) {
   if (isHariLibur(d)) return 'bg-rose-200 text-rose-800'
-  const a = getAbsensiCell(guruId, d)
+  const a = getAbsensiCell(guruId, shift, d)
   if (!a) {
     const today = new Date().toISOString().slice(0, 10)
     return isoDateOf(d) <= today
@@ -1240,20 +1291,35 @@ function cellClass(guruId, d) {
   return 'bg-emerald-200 text-emerald-800'
 }
 
-function cellTitle(guruId, d) {
+function cellTitle(guruId, shift, d) {
   const iso = isoDateOf(d)
   if (isHariLibur(d)) return iso + ' — Libur'
-  const a = getAbsensiCell(guruId, d)
-  if (!a) return iso + ' — (kosong)'
-  return `${iso} — ${a.status || 'hadir'}${a.jam ? ' (' + a.jam + ')' : ''}${a.shift ? ' [' + a.shift + ']' : ''}`
+  const a = getAbsensiCell(guruId, shift, d)
+  if (!a) {
+    const today = new Date().toISOString().slice(0, 10)
+    return iso + (iso <= today ? ' — Alpha' : ' — (belum)') + ' [' + shiftLabel(shift) + ']'
+  }
+  return `${iso} — ${a.status || 'hadir'}${a.jam ? ' (' + a.jam + ')' : ''} [${shiftLabel(shift)}]`
 }
 
-function countStatus(guruId, statuses) {
+function countStatus(guruId, shift, statuses) {
   let n = 0
   for (let d = 1; d <= daysInMonth.value; d++) {
     if (isHariLibur(d)) continue
-    const a = getAbsensiCell(guruId, d)
+    const a = getAbsensiCell(guruId, shift, d)
     if (a && statuses.includes(String(a.status || 'hadir').toLowerCase())) n++
+  }
+  return n
+}
+
+// Alpha = hari kerja (non-libur) yg sudah lewat tanpa record utk shift ini.
+function countAlpha(guruId, shift) {
+  const today = new Date().toISOString().slice(0, 10)
+  let n = 0
+  for (let d = 1; d <= daysInMonth.value; d++) {
+    if (isHariLibur(d)) continue
+    if (isoDateOf(d) > today) continue
+    if (!getAbsensiCell(guruId, shift, d)) n++
   }
   return n
 }
@@ -1261,34 +1327,42 @@ function countStatus(guruId, statuses) {
 // =====================================================
 // EXPORT EXCEL
 // =====================================================
+// Bangun kolom + baris rekap PER (guru × shift) — dipakai bareng oleh
+// Excel, Google Sheet, dan PDF agar formatnya selalu sinkron dgn layar.
+function buildRekapExport() {
+  const days = daysInMonth.value
+  const columns = [
+    { key: 'nama', header: 'Nama Guru', width: 22 },
+    { key: 'shift', header: 'Shift', width: 10 },
+    { key: 'lembaga', header: 'Lembaga', width: 14 }
+  ]
+  for (let d = 1; d <= days; d++) columns.push({ key: 'd' + d, header: String(d), width: 4 })
+  columns.push({ key: 'H', header: 'H', width: 5 })
+  columns.push({ key: 'T', header: 'T', width: 5 })
+  columns.push({ key: 'IS', header: 'I/S', width: 5 })
+  columns.push({ key: 'A', header: 'A', width: 5 })
+  columns.push({ key: 'Bayar', header: 'Dibayar', width: 8 })
+  const rows = rekapRows.value.map(({ g, shift }) => {
+    const r = { nama: g.nama, shift: shiftLabel(shift), lembaga: g.lembaga || g.unit || '-' }
+    for (let d = 1; d <= days; d++) r['d' + d] = cellText(g.id, shift, d)
+    r.H = countStatus(g.id, shift, ['hadir'])
+    r.T = countStatus(g.id, shift, ['terlambat'])
+    r.IS = countStatus(g.id, shift, ['izin', 'sakit'])
+    r.A = countAlpha(g.id, shift)
+    r.Bayar = r.H + r.T
+    return r
+  })
+  return { columns, rows }
+}
+
 async function exportRekapExcel() {
   try {
-    const days = daysInMonth.value
-    const columns = [
-      { key: 'nama', header: 'Nama Guru', width: 28 },
-      { key: 'lembaga', header: 'Lembaga', width: 16 }
-    ]
-    for (let d = 1; d <= days; d++) {
-      columns.push({ key: 'd' + d, header: String(d), width: 4 })
-    }
-    columns.push({ key: 'H', header: 'H', width: 5 })
-    columns.push({ key: 'T', header: 'T', width: 5 })
-    columns.push({ key: 'IS', header: 'I/S', width: 5 })
-
-    const rows = guruAktif.value.map((g) => {
-      const r = { nama: g.nama, lembaga: g.lembaga || g.unit || '-' }
-      for (let d = 1; d <= days; d++) r['d' + d] = cellText(g.id, d)
-      r.H = countStatus(g.id, ['hadir'])
-      r.T = countStatus(g.id, ['terlambat'])
-      r.IS = countStatus(g.id, ['izin', 'sakit'])
-      return r
-    })
-
+    const { columns, rows } = buildRekapExport()
     await exportSimple(rows, {
       filename: `Rekap_Absensi_Guru_${selectedYear.value}_${String(selectedMonth.value).padStart(2, '0')}.xlsx`,
       sheetName: 'Rekap',
       columns,
-      title: `REKAP ABSENSI GURU — ${getBulanLabel(selectedMonth.value).toUpperCase()} ${selectedYear.value}`
+      title: `REKAP ABSENSI GURU (per shift) — ${getBulanLabel(selectedMonth.value).toUpperCase()} ${selectedYear.value}`
     })
     toast.success('Excel berhasil di-ekspor')
   } catch (e) {
@@ -1305,34 +1379,18 @@ async function kirimAbsensiGsheet() {
   }
   sendingGsheet.value = true
   try {
-    const days = daysInMonth.value
-    const columns = [
-      { key: 'nama', header: 'Nama Guru', width: 28 },
-      { key: 'lembaga', header: 'Lembaga', width: 16 }
-    ]
-    for (let d = 1; d <= days; d++) columns.push({ key: 'd' + d, header: String(d), width: 4 })
-    columns.push({ key: 'H', header: 'H', width: 5 })
-    columns.push({ key: 'T', header: 'T', width: 5 })
-    columns.push({ key: 'IS', header: 'I/S', width: 5 })
-    const rows = guruAktif.value.map((g) => {
-      const r = { nama: g.nama, lembaga: g.lembaga || g.unit || '-' }
-      for (let d = 1; d <= days; d++) r['d' + d] = cellText(g.id, d)
-      r.H = countStatus(g.id, ['hadir'])
-      r.T = countStatus(g.id, ['terlambat'])
-      r.IS = countStatus(g.id, ['izin', 'sakit'])
-      return r
-    })
+    const { columns, rows } = buildRekapExport()
     const ss = settingsStore.settings || {}
-    const judul = `REKAP ABSENSI GURU — ${getBulanLabel(selectedMonth.value).toUpperCase()} ${selectedYear.value}`
+    const judul = `REKAP ABSENSI GURU (per shift) — ${getBulanLabel(selectedMonth.value).toUpperCase()} ${selectedYear.value}`
     const { url } = await sendToSheet({
       rows,
       title: `Rekap Absensi Guru ${selectedYear.value}-${String(selectedMonth.value).padStart(2, '0')}`,
       sheetName: 'Rekap Absensi',
       kop: [ss.kopLine1 || 'PONDOK PESANTREN MAMBAUL ULUM', judul].filter(Boolean),
-      subtitle: `${rows.length} guru`,
+      subtitle: `${rows.length} baris (guru × shift)`,
       columns
     })
-    toast.success(`${rows.length} guru terkirim ke Google Sheet.`)
+    toast.success(`${rows.length} baris terkirim ke Google Sheet.`)
     try {
       window.open(url, '_blank')
     } catch (e) {
@@ -1352,28 +1410,12 @@ async function exportRekapPdf() {
   try {
     const jsPDF = await jsPDFFromCDN()
     const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' })
-    const days = daysInMonth.value
-    const head = [
-      [
-        'Nama Guru',
-        'Lembaga',
-        ...Array.from({ length: days }, (_, i) => String(i + 1)),
-        'H',
-        'T',
-        'I/S'
-      ]
-    ]
-    const body = guruAktif.value.map((g) => {
-      const row = [g.nama, g.lembaga || g.unit || '-']
-      for (let d = 1; d <= days; d++) row.push(cellText(g.id, d))
-      row.push(countStatus(g.id, ['hadir']))
-      row.push(countStatus(g.id, ['terlambat']))
-      row.push(countStatus(g.id, ['izin', 'sakit']))
-      return row
-    })
+    const { columns, rows } = buildRekapExport()
+    const head = [columns.map((c) => c.header)]
+    const body = rows.map((r) => columns.map((c) => r[c.key]))
     doc.setFontSize(11)
     doc.text(
-      `REKAP ABSENSI GURU — ${getBulanLabel(selectedMonth.value).toUpperCase()} ${selectedYear.value}`,
+      `REKAP ABSENSI GURU (per shift) — ${getBulanLabel(selectedMonth.value).toUpperCase()} ${selectedYear.value}`,
       40,
       28
     )
@@ -1384,7 +1426,8 @@ async function exportRekapPdf() {
       styles: { fontSize: 6, cellPadding: 1.5, halign: 'center' },
       columnStyles: {
         0: { halign: 'left', cellPadding: { left: 6, top: 1.5, bottom: 1.5, right: 1.5 } },
-        1: { halign: 'left' }
+        1: { halign: 'left' },
+        2: { halign: 'left' }
       },
       headStyles: { fillColor: [16, 185, 129], textColor: 255, fontStyle: 'bold' }
     })
