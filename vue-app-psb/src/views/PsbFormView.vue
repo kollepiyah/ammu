@@ -636,8 +636,8 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { db } from '../services/firebase'
-import { doc, getDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore'
+// F6 cutover: pendaftaran + baca master/settings kini ke SUPABASE (bukan Firestore).
+import { sbSelectValue, sbInsert, genId } from '../services/supabasePsb'
 
 const TIPE_OPTIONS = [
   { value: 'mahad', label: "Ma'had (Mukim)", icon: 'fa-bed', desc: 'Tinggal di asrama 24 jam' },
@@ -788,19 +788,19 @@ async function onSubmit() {
   submitting.value = true
   try {
     const noPdf = 'PSB-' + Date.now()
-    const payload = {
+    // Bentuk HYBRID (cermin db.js app utama): nama = kolom riil (dicek RLS psb_ins 1..200),
+    //   sisanya -> data jsonb. created_at diisi default DB. Admin baca via db.js flatten.
+    const data = {
       no_pendaftaran: noPdf,
       ...form.value,
-      nama: nama, // ensure trimmed string for Firestore rule (size >= 1)
+      nama,
       lembaga_tujuan: form.value.lembaga_qiraati,
       is_mukim: form.value.tipe_santri === 'mahad',
       is_fullday: form.value.tipe_santri === 'fullday',
       tahunAjaran: tahunAjaran.value,
-      status: 'pending',
-      created_at: serverTimestamp()
+      status: 'pending'
     }
-    // Match exactly with firestore.rules: match /psb_pendaftaran/{docId}
-    await addDoc(collection(db, 'psb_pendaftaran'), payload)
+    await sbInsert('psb_pendaftaran', { id: genId(), nama, data })
     noPendaftaran.value = noPdf
     submitted.value = true
     showTerms.value = false // v.100g: tutup modal syarat setelah sukses kirim
@@ -809,9 +809,9 @@ async function onSubmit() {
     console.error('[onSubmit]', e)
     // v.21.50: Better error message — distinguish network/permission/validation
     const msg = String(e?.message || '')
-    if (msg.includes('permission-denied')) {
-      errorMsg.value = 'Akses Firestore ditolak. Hubungi admin pondok.'
-    } else if (msg.includes('unavailable') || msg.includes('network')) {
+    if (e?.status === 401 || e?.status === 403 || /permission|rls|denied/i.test(msg)) {
+      errorMsg.value = 'Akses ditolak server. Hubungi admin pondok.'
+    } else if (/failed to fetch|network|unavailable|timeout/i.test(msg)) {
       errorMsg.value = 'Koneksi internet bermasalah. Coba lagi.'
     } else {
       errorMsg.value = 'Gagal kirim pendaftaran: ' + (msg || 'unknown error')
@@ -835,17 +835,15 @@ onMounted(async () => {
   const m = new Date().getMonth() + 1
   tahunAjaran.value = m >= 7 ? `${y}/${y + 1}` : `${y - 1}/${y}`
   try {
-    const snap = await getDoc(doc(db, 'master', 'lembaga'))
-    lembagaRaw.value = Array.isArray(snap.data()?.list) ? snap.data().list : []
+    const lem = await sbSelectValue('master', 'lembaga')
+    lembagaRaw.value = Array.isArray(lem?.list) ? lem.list : []
   } catch (e) {}
   try {
     // v.100g: Syarat & Info Pembayaran per lembaga (di-upload admin via PSB admin)
-    const pa = await getDoc(doc(db, 'settings', 'psb_assets'))
-    psbAssets.value = pa.exists() ? pa.data() || {} : {}
+    psbAssets.value = (await sbSelectValue('settings', 'psb_assets')) || {}
   } catch (e) {}
   try {
-    const st = await getDoc(doc(db, 'settings', 'general'))
-    const d = st.data() || {}
+    const d = (await sbSelectValue('settings', 'general')) || {}
     logoKiri.value = d.logoQiraati || ''
     logoKanan.value = d.logoKop || d.logoUrl || ''
   } catch (e) {}
