@@ -62,12 +62,36 @@ Setsetan PER-PC (localStorage) — enable auto-sync hanya di PC station; PC lain
 
 ## Fase 4 — build & uji
 
-- Build: `cd vue-app/electron && npm run electron:make` (NSIS → `dist/AmmuOnline-Setup.exe`).
-  - ⚠️ **GOTCHA build di worktree:** `vue-app/electron/node_modules` harus **junction** ke main-worktree:
-    `New-Item -ItemType Junction -Path "<wt>\vue-app\electron\node_modules" -Target "D:\Aplikasi Project\Portal MU\vue-app\electron\node_modules"`
-  - `build/*.js` IKUT di-track git + di-prettier saat pre-commit.
-- Uji E2E in-app: buka AMMU Desktop → Pengaturan → Mesin Absensi → "Sinkron sekarang" → cek `absensi_shift_guru` di Supabase.
-- Setelah lolos: pensiunkan `fp_sync.py` + hapus Task Scheduler "AMMU Fingerprint Sync".
+### Verifikasi build statis ✅ (sesi quizzical-torvalds, 24 Jun)
+- **Renderer**: `cd vue-app && npm run build:electron` → exit 0, chunk `MesinAbsensiView` ter-emit.
+- **Main process**: `cd vue-app/electron && npm run build` (tsc) → exit 0. `fingerprint-sync.ts` +
+  handler IPC `fingerprint:read-attlog` + preload compile bersih; `build/*.js` konsisten dgn `src/`.
+- Sisa = uji **runtime** (butuh PC ber-Personnel + MySQL `att_log`) — TAK bisa dari worktree sesi.
+
+### Build installer (DARI MAIN WORKTREE, bukan worktree sesi Claude)
+⚠️ **GOTCHA `.env.local`** (sama prinsip dgn deploy): `npm run build:electron` membaca
+`vue-app/.env.local` (URL+anon key Supabase). Worktree sesi Claude **tak punya** `.env.local` →
+renderer bundle tanpa config Supabase → app Electron rusak (gagal login/konek). **Build installer
+WAJIB dari `D:\Aplikasi Project\Portal MU` (main).**
+
+Langkah (seperti build v109):
+1. `cd vue-app && npm run build:electron` (renderer → `dist/`, baca `.env.local`).
+2. Copy `vue-app/dist/*` → `vue-app/electron/app/` (renderer yg di-load `app/index.html`).
+3. `cd vue-app/electron && npm run electron:make` (tsc + electron-builder NSIS → `dist/AmmuOnline-Setup.exe`).
+   - Junction `electron/node_modules` kalau di worktree; `build/*.js` di-track + prettier saat pre-commit.
+
+### Uji E2E in-app (di PC station ber-Personnel)
+1. Install `AmmuOnline-Setup.exe`, login admin/super_admin.
+2. Pengaturan (Desktop) → kartu **Mesin Absensi** → halaman `/mesin-absensi`.
+3. Isi/biarkan path Personnel default → klik **"Sinkron sekarang"**.
+4. **Lolos bila**: toast sukses + ringkasan (`written/scan/...`) masuk akal & baris `absensi_shift_guru`
+   di Supabase cocok dgn hasil `fp_sync.py` (bandingkan 1 hari). Lalu uji **auto-sync** (toggle ON,
+   interval 5 mnt, tunggu 1 tick → status "otomatis").
+5. Negatif: PIN tak dikenal muncul di ringkasan; baris `izin`/`sakit` tak tertimpa.
+
+### Pensiun jembatan (HANYA setelah E2E lolos + auto-sync stabil ≥1 hari)
+- Disable/hapus Task Scheduler **"AMMU Fingerprint Sync"**; arsipkan `C:\Users\Lenovo\fp_sync.py`.
+- Update memory `project_fingerprint_integration` → sumber sync = modul in-app Electron.
 
 ## Jembatan SEMENTARA (masih jalan, JANGAN dimatikan dulu)
 
