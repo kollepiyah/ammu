@@ -159,6 +159,18 @@
           </div>
         </template>
 
+        <div v-if="isSuper" class="fp-danger-row">
+          <button
+            type="button"
+            class="fp-btn-danger"
+            :disabled="store.running"
+            @click="hapusRiwayat"
+          >
+            Hapus riwayat scan
+          </button>
+          <span class="fp-hint">Hapus hasil sinkron fingerprint — reset untuk uji coba.</span>
+        </div>
+
         <p class="fp-foot">
           Sumber scan: MySQL Fingerspot Personnel (<code>att_log</code>). Mesin → Personnel
           (auto-download) → Ammu. Setelan IP/jam mesin diatur di aplikasi Personnel.
@@ -178,12 +190,15 @@ import RibbonIcon from '@/components/ribbon/RibbonIcon.vue'
 import { useDesktopShell } from '@/composables/useDesktopShell'
 import { useFingerprintStore } from '@/stores/fingerprint'
 import { useUiStore } from '@/stores/ui'
+import { useAuthStore } from '@/stores/auth'
 
 const DEFAULT_PATH = 'C:\\Program Files (x86)\\Fingerspot Personnel'
 
 const { isElectron } = useDesktopShell()
 const store = useFingerprintStore()
-const { toast } = useUiStore()
+const { toast, confirm } = useUiStore()
+const auth = useAuthStore()
+const isSuper = computed(() => auth.sesiAktif?.role_sistem === 'super_admin')
 
 // Path: edit lokal, commit saat blur/enter (jarang diubah).
 const pathInput = ref(store.personnelDir)
@@ -215,6 +230,25 @@ async function syncNow() {
       `Sinkron selesai — ${res.written} ditulis dari ${res.scan} scan` +
         (tk ? ` · ${tk} PIN tak dikenal` : '')
     )
+  }
+}
+
+// Reset uji coba: hapus semua absensi hasil sinkron fingerprint (super_admin only).
+async function hapusRiwayat() {
+  const ok = await confirm({
+    title: 'Hapus riwayat scan?',
+    message:
+      'Semua absensi hasil sinkron fingerprint (otomatis) akan dihapus permanen. ' +
+      'Izin/sakit & input manual TIDAK ikut terhapus. Dipakai untuk reset saat uji coba.',
+    confirmText: 'Hapus',
+    danger: true
+  })
+  if (!ok) return
+  try {
+    const n = await store.hapusHasilScan()
+    toast.success(`${n} baris riwayat scan dihapus`)
+  } catch (e) {
+    toast.error('Gagal hapus riwayat: ' + ((e && e.message) || e))
   }
 }
 
@@ -461,5 +495,38 @@ function fmtWaktu(iso) {
   font-size: 11.5px;
   line-height: 1.5;
   color: var(--rb-text-dim);
+}
+/* danger: reset riwayat scan (super_admin) */
+.fp-danger-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--rb-divider);
+}
+.fp-btn-danger {
+  flex: none;
+  height: 30px;
+  padding: 0 13px;
+  border: 1px solid color-mix(in srgb, #dc2626 45%, transparent);
+  border-radius: 7px;
+  background: color-mix(in srgb, #dc2626 8%, transparent);
+  color: #b91c1c;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+}
+.fp-btn-danger:hover {
+  background: color-mix(in srgb, #dc2626 16%, transparent);
+}
+.fp-btn-danger:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.fp-danger-row .fp-hint {
+  margin-top: 0;
 }
 </style>
