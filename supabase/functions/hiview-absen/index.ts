@@ -11,10 +11,15 @@
 // -> tulis absensi_shift_guru (source 'hiview'). GUARD: jangan timpa izin/sakit;
 // scan TERAWAL menang (idempoten: scan ulang shift sama yg jam >= tersimpan -> skip).
 //
+// BALASAN: mesin Hikvision MENILAI ISI body (ResponseStatus dgn statusCode=1=OK),
+// bukan cuma HTTP 200. Tiap jalur "sukses/diabaikan" WAJIB balas isapiOk(); kalau
+// balas JSON biasa, layar mesin tampil "Gagal melaporkan kedatangan" walau event
+// sudah diterima & ditulis. Hanya 401/405/500 yg sengaja "gagal" (biar mesin retry).
+//
 // DEPLOY: supabase functions deploy hiview-absen --no-verify-jwt
 // SECRET: supabase secrets set HIVIEW_PUSH_SECRET="<8-16 char>"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { handlePreflight, json } from '../_shared/cors.ts'
+import { corsHeaders, handlePreflight, json } from '../_shared/cors.ts'
 import { deriveShift, statusFor } from './shiftDerive.ts'
 
 const SECRET = Deno.env.get('HIVIEW_PUSH_SECRET') || ''
@@ -39,6 +44,38 @@ function authorized(req: Request): boolean {
     }
   }
   return false
+}
+
+// Balasan SUKSES untuk mesin: ISAPI ResponseStatus dgn statusCode 1 (OK). Hikvision
+// MENILAI ISI body (bukan cuma HTTP 200) -> tanpa statusCode 1 mesin anggap GAGAL.
+// Cerminkan format request: JSON_ResponseStatus bila request JSON, selain itu
+// XML_ResponseStatus (paling kompatibel utk POST multipart/form-data atau teks).
+function isapiOk(req: Request): Response {
+  let path = '/'
+  try {
+    path = new URL(req.url).pathname
+  } catch {
+    /* ignore */
+  }
+  const ct = (req.headers.get('content-type') || '').toLowerCase()
+  if (ct.includes('application/json')) {
+    return new Response(
+      JSON.stringify({ requestURL: path, statusCode: 1, statusString: 'OK', subStatusCode: 'ok' }),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  }
+  const xml =
+    `<?xml version="1.0" encoding="UTF-8"?>\n` +
+    `<ResponseStatus version="2.0" xmlns="http://www.std-cgi.org/ver20/XMLSchema">\n` +
+    `  <requestURL>${path}</requestURL>\n` +
+    `  <statusCode>1</statusCode>\n` +
+    `  <statusString>OK</statusString>\n` +
+    `  <subStatusCode>ok</subStatusCode>\n` +
+    `</ResponseStatus>`
+  return new Response(xml, {
+    status: 200,
+    headers: { ...corsHeaders, 'Content-Type': 'application/xml' }
+  })
 }
 
 // Ambil JSON event dari body (multipart/form-data, application/json, atau teks).
@@ -113,7 +150,21 @@ Deno.serve(async (req) => {
   // Health/handshake (GET, tanpa auth) — biar "uji koneksi" mesin tampil OK.
   if (req.method === 'GET') return json({ ok: true, service: 'hiview-absen' })
   if (req.method !== 'POST') return json({ ok: false, error: 'method' }, 405)
-  if (!authorized(req)) return json({ ok: false, error: 'unauthorized' }, 401)
+  if (!authorized(req)) {
+    // Diagnostik 401 (TANPA bocorkan nilai secret — hanya panjang/keberadaan).
+    try {
+      const u = new URL(req.url)
+      const k = u.searchParams.get('k')
+      const hasBasic = (req.headers.get('authorization') || '').toLowerCase().startsWith('basic ')
+      console.log(
+        `[hiview] 401 path=${u.pathname} k=${k === null ? 'ABSENT' : 'len' + k.length} ` +
+          `secretLen=${SECRET.length} kMatch=${k === SECRET} basicAuth=${hasBasic}`
+      )
+    } catch {
+      /* ignore */
+    }
+    return json({ ok: false, error: 'unauthorized' }, 401)
+  }
 
   const ev = await readEventJson(req)
   const ace = ev?.AccessControllerEvent || ev?.accessControllerEvent || null
@@ -121,14 +172,18 @@ Deno.serve(async (req) => {
   const empNo = String(ace?.employeeNoString ?? ace?.employeeNo ?? '').trim()
   const dateTime = String(ev?.dateTime || ace?.time || ace?.dateTime || '').trim()
 
-  // Hanya event autentikasi orang (major 5 + ada employeeNo). Sisanya diabaikan (200,
-  // supaya mesin tak retry-storm & tak tampil "gagal").
+  // Hanya event autentikasi orang (major 5 + ada employeeNo). Sisanya diabaikan
+  // (isapiOk: balas statusCode 1 supaya mesin tak retry-storm & tak tampil "gagal").
   if (!ace || major !== 5 || !empNo) {
     const reason = !ace ? 'no-event' : major !== 5 ? `major=${major}` : 'no-employee'
-    return json({ ok: true, ignored: true, reason })
+    console.log(`[hiview] diabaikan reason=${reason}`)
+    return isapiOk(req)
   }
   const t = toWib(dateTime)
-  if (!t) return json({ ok: true, ignored: true, reason: 'bad-datetime', dateTime })
+  if (!t) {
+    console.log(`[hiview] bad-datetime: ${dateTime}`)
+    return isapiOk(req)
+  }
 
   try {
     const db = createClient(
@@ -143,12 +198,15 @@ Deno.serve(async (req) => {
     const guru = flattenGuru(gRow)
     if (!guru) {
       console.log(`[hiview] employeeNo ${empNo} tak terdaftar (guru.id_fingerprint)`)
-      return json({ ok: true, unknown: empNo })
+      return isapiOk(req)
     }
 
     const settings = await fetchSettings(db)
     const shift = deriveShift(t.hhmm, guru, settings)
-    if (!shift) return json({ ok: true, outOfWindow: true, guru: guru.nama, jam: t.hhmm })
+    if (!shift) {
+      console.log(`[hiview] outOfWindow ${guru.nama} jam=${t.hhmm}`)
+      return isapiOk(req)
+    }
     const status = statusFor(t.hhmm, shift, settings)
 
     const docId = `shift_${guru.id}_${t.date}_${shift}`
@@ -160,11 +218,16 @@ Deno.serve(async (req) => {
     if (exRow) {
       const ex = { ...(exRow.data || {}), ...exRow }
       const exst = String(ex.status || '').toLowerCase()
-      if (exst === 'izin' || exst === 'sakit') return json({ ok: true, skip: 'izin/sakit', docId })
+      if (exst === 'izin' || exst === 'sakit') {
+        console.log(`[hiview] skip izin/sakit ${docId}`)
+        return isapiOk(req)
+      }
       const exjam = String(ex.jam || '')
       // scan terdahulu (<=) menang: idempoten + tak tertimpa jam belakangan.
-      if (exjam && exjam <= t.hhmm)
-        return json({ ok: true, skip: 'scan-terdahulu-menang', existing: exjam, docId })
+      if (exjam && exjam <= t.hhmm) {
+        console.log(`[hiview] skip scan-terdahulu-menang existing=${exjam} ${docId}`)
+        return isapiOk(req)
+      }
     }
 
     const rowData = {
@@ -185,7 +248,7 @@ Deno.serve(async (req) => {
       if (error) throw error
     }
     console.log(`[hiview] ${guru.nama} ${t.date} ${t.hhmm} ${shift}/${status}`)
-    return json({ ok: true, written: true, guru: guru.nama, tanggal: t.date, jam: t.hhmm, shift, status })
+    return isapiOk(req)
   } catch (e) {
     // 500 -> beri kesempatan mesin retry (error transien DB/jaringan).
     console.error('[hiview] error:', (e as Error)?.message || e)

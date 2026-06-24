@@ -145,21 +145,43 @@ dgn Revo) → satu peta ID untuk dua mesin. employeeNo tak terdaftar → event d
 | URL | `/functions/v1/hiview-absen?k=<HIVIEW_PUSH_SECRET>` |
 | Auth | **none** (secret sudah di query `?k=`) |
 
-> Alternatif auth: set User/Password (password = `HIVIEW_PUSH_SECRET`, 8-16 char) — fungsi
-> juga menerima Basic-auth. URL `?k=` lebih disukai (hindari isu header Authorization di gateway).
+> ⚠️ **WAJIB secret PENDEK (≤16 char alfanumerik).** Field URL Hikvision **memotong** URL panjang
+> → `?k=` terkirim ke-truncate → fungsi balas **401**. Ini bug nyata 24 Jun (secret 40-char hex
+> kepotong). Kalau sudah `200` di dashboard Invocations tapi semula 401, ini biang keroknya.
+>
+> Alternatif auth: set User/Password (password = `HIVIEW_PUSH_SECRET`) — fungsi juga menerima Basic-auth.
 
 Setara via ISAPI (`PUT /ISAPI/Event/notification/httpHosts/1`) — bisa dikerjakan dari PC
 sejaringan saat mesin masih di LAN setup (sebelum dipindah).
 
-### c. Matikan pelaporan lama (penyebab "Gagal melaporkan kedatangan")
-ISUP / Platform Attendance yg menunjuk server `0.0.0.0` bikin mesin gagal lapor tiap scan.
-Matikan ISUP (Network → Device Access → ISUP → Enable OFF) bila tak dipakai; cukup HTTP Listening.
+### c. Hilangkan pesan "Gagal melaporkan kedatangan" di layar mesin
+**PENYEBAB UTAMA (terverifikasi 25 Jun): `Remote Verification` = ON.** Di
+**Configuration → Access Control → tab `Terminal Parameters`** ada toggle **Remote Verification**.
+ON = mesin menyerahkan keputusan lolos/tidaknya **tiap scan** ke server/platform & menunggu vonisnya.
+Kita TIDAK menjalankan platform verifikasi (fungsi ini cuma *listening*/lapor) → vonis tak pernah
+datang → layar tampil **GAGAL** (HiView menerjemahkan jadi "Gagal melaporkan kedatangan").
+**FIX: Remote Verification → OFF → Save.** Aman: guru sudah ter-enroll di mesin → verifikasi jalan
+**LOKAL** → akses tetap kebuka & event tetap di-push via HTTP Listening.
+Gejala khas: data tetap masuk + Invocations `200` **tapi** layar tetap "gagal" — karena pesan ini
+lahir dari Remote Verification, BUKAN dari ACK HTTP Listening.
 
-### d. Uji di LAN setup DULU sebelum mesin dipindah
-1. `GET` URL fungsi → `{ok:true,service:"hiview-absen"}`.
-2. Scan 1 guru ter-enroll → cek row `absensi_shift_guru` (source `hiview`) di Supabase + toast
-   mesin jadi sukses. **Titik kritis: TLS mesin→supabase.co** (kalau gagal, fallback relay).
-3. Logs: `supabase functions logs hiview-absen` (lihat `[hiview]` written/unknown/outOfWindow).
+**Pendukung (sudah di kode):** Hikvision menilai ISI balasan listening, bukan cuma HTTP 200 — fungsi
+WAJIB balas ISAPI `ResponseStatus` dgn `statusCode 1` (OK). Dipasang via helper `isapiOk()` (cermin
+XML/JSON sesuai request) di tiap jalur sukses/skip → bikin tombol **Test** UI listening hijau & cegah
+retry-storm. Hanya `401/405/500` yg sengaja non-OK.
+
+**Tersangka sekunder** (kalau masih muncul): channel **Platform Attendance** / **Time and Attendance**
+(Configuration → Platform Attendance / menu Time and Attendance → OFF) & **ISUP** (Network → Device
+Access → ISUP → Enable OFF) bila menunjuk server tak valid.
+
+### d. Uji & diagnosa (dashboard, BUKAN CLI)
+> CLI `supabase` v2.x **tidak punya** `functions logs`. Pakai **Dashboard → Edge Functions →
+> hiview-absen → Invocations / Logs**.
+1. `GET` URL fungsi → `{ok:true,service:"hiview-absen"}` (health, tanpa auth).
+2. Scan 1 guru ter-enroll → buka **Invocations**: `401`=secret salah/kepotong (lihat ⚠️ §b),
+   `200`=OK. TLS mesin→`*.supabase.co` (Cloudflare) **terbukti jalan** 24 Jun — relay TIDAK perlu.
+3. Verifikasi tulis: **Table Editor → `absensi_shift_guru`** filter `source=hiview`, atau tab **Logs**
+   cari `[hiview]` (written / `tak terdaftar`=employeeNo≠id_fingerprint / outOfWindow).
 
 ### e. Catatan / risiko
 - **Best-effort**: kalau internet mesin putus / fungsi 5xx, event **bisa tak terkirim**
