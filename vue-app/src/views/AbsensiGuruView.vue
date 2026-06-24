@@ -652,6 +652,14 @@
                 </span>
               </p>
             </div>
+            <button
+              v-if="canHapusAbsen"
+              @click="hapusAbsen(a)"
+              title="Hapus catatan absen ini (super admin)"
+              class="flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/30 transition"
+            >
+              <i class="fas fa-trash text-xs"></i>
+            </button>
           </div>
         </div>
       </div>
@@ -666,7 +674,9 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
-import { setOne, updateOne } from '@/services/db'
+import { setOne, updateOne, deleteOne } from '@/services/db'
+import { isSuperAdmin } from '@/utils/roleScope'
+import { useAuthStore } from '@/stores/auth'
 import { useAbsensi } from '@/composables/useAbsensi'
 import { useExcel } from '@/composables/useExcel'
 import { useGoogleSheet } from '@/composables/useGoogleSheet' // v.100 Batch12: ekspor ke Google Sheet
@@ -698,6 +708,22 @@ const { isConfigured: gsheetConfigured, sendToSheet } = useGoogleSheet()
 const sendingGsheet = ref(false)
 const settingsStore = useSettingsStore()
 const toast = useToast()
+const authStore = useAuthStore()
+// v.110: hapus catatan absensi — super_admin only (konsisten kebijakan hapus data lain).
+const canHapusAbsen = computed(() => isSuperAdmin(authStore.sesiAktif || {}))
+async function hapusAbsen(a) {
+  if (!canHapusAbsen.value || !a?.id) return
+  const nama = getNamaGuru(a.guru_id || a.guruId)
+  const detail = `${nama} — ${formatTgl(a.tanggal)} ${shiftLabel(a.shift)}${a.jam ? ' (' + a.jam + ')' : ''}`
+  if (!confirm(`Hapus catatan absen ini?\n\n${detail}\n\nTindakan ini tidak bisa dibatalkan.`))
+    return
+  try {
+    await deleteOne('absensi_shift_guru', a.id, { alasan: 'Hapus riwayat absen (super_admin)' })
+    toast.success('Catatan absen dihapus')
+  } catch (e) {
+    toast.error('Gagal hapus: ' + (e.message || e))
+  }
+}
 // v.21.114.0528: kegiatan composable utk derive hari libur dari event multi-day
 const { kegiatanRaw } = useKegiatan()
 
