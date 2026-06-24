@@ -593,12 +593,27 @@ const rekapFiltered = computed(() => {
   return list.sort((a, b) => sortByCreatedAt(b, a))
 })
 
+// v.110: data Supabase = createdAt ISO string. Dulu sort cuma baca .seconds (Firestore)
+//   -> ISO jadi 0 -> tak tersortir. epochOf dukung ISO | epoch(ms/s) | Timestamp lama | Date.
+function epochOf(v) {
+  if (v == null || v === '') return 0
+  if (typeof v === 'number') return v < 1e12 ? v * 1000 : v
+  if (typeof v === 'string') {
+    const t = Date.parse(v)
+    return isNaN(t) ? 0 : t
+  }
+  if (typeof v === 'object') {
+    if (v.seconds != null) return Number(v.seconds) * 1000
+    if (typeof v.toDate === 'function') {
+      const d = v.toDate()
+      return d ? d.getTime() : 0
+    }
+    if (v instanceof Date) return v.getTime()
+  }
+  return 0
+}
 function sortByCreatedAt(a, b) {
-  const ta =
-    a.createdAt?.seconds || (a.createdAt instanceof Date ? a.createdAt.getTime() / 1000 : 0)
-  const tb =
-    b.createdAt?.seconds || (b.createdAt instanceof Date ? b.createdAt.getTime() / 1000 : 0)
-  return ta - tb
+  return epochOf(a.createdAt ?? a.created_at) - epochOf(b.createdAt ?? b.created_at)
 }
 
 function fmtTgl(ts) {

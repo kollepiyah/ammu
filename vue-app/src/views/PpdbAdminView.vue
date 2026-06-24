@@ -298,7 +298,7 @@
         </div>
 
         <p class="text-center text-[10px] text-[var(--text-tertiary)] pt-2">
-          <i class="fas fa-circle-info mr-1"></i>{{ filteredPpdb.length }} pendaftar · v.109.0626
+          <i class="fas fa-circle-info mr-1"></i>{{ filteredPpdb.length }} pendaftar · v.110.0626
         </p>
       </div>
       <!-- /blok Riwayat -->
@@ -419,12 +419,21 @@ const filteredPpdb = computed(() => {
           .toLowerCase()
           .includes(kw)
     )
-  return list.sort((a, b) =>
-    String(b.created_at?.seconds || b.no_pendaftaran || '').localeCompare(
-      String(a.created_at?.seconds || a.no_pendaftaran || '')
-    )
-  )
+  return list.sort((a, b) => ppdbEpoch(b) - ppdbEpoch(a))
 })
+
+// v.110: created_at Supabase = ISO string (dulu baca .seconds Firestore -> selalu fallback
+//   no_pendaftaran). Urut newest-first via epoch; fallback no_pendaftaran 'PSB-<ms>'.
+function ppdbEpoch(p) {
+  const c = p?.created_at
+  if (typeof c === 'string') {
+    const t = Date.parse(c)
+    if (!isNaN(t)) return t
+  }
+  if (c && typeof c === 'object' && c.seconds != null) return Number(c.seconds) * 1000
+  const n = Number(String(p?.no_pendaftaran || '').replace(/\D/g, ''))
+  return isNaN(n) ? 0 : n
+}
 
 function statusBg(s) {
   const st = String(s || 'pending').toLowerCase()

@@ -266,7 +266,8 @@ export async function resetUserPassword(collection, docId) {
 
 // --- Google OAuth via Supabase (provider Google diaktifkan di Supabase Auth). ---
 // Alur PKCE: signInWithOAuth/linkIdentity REDIRECT ke Google, balik dgn `?code=` →
-// supabase.js detectSessionInUrl:true menukar jadi sesi → onAuthChange bangun sesi.
+// detectSessionInUrl:FALSE (supabase.js) → ditukar MANUAL via exchangeOAuthCode di initAuth
+// (stores/auth.js Step 0) → onAuthChange bangun sesi.
 // CATATAN: login via Google HANYA berhasil untuk user yang sudah MENAUTKAN Google
 //   (akun Supabase-nya punya guru_id/santri_id di profiles). Google fresh tanpa tautan
 //   → buildSesi null → gagal (memang by design: tautkan dulu dari Profil).

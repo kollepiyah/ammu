@@ -138,6 +138,9 @@ const SPECIAL = {
 
 // Realtime HANYA whitelist (mirror migrations/...realtime_grants). Selain ini:
 // subscribe* = fetch sekali lalu unsubscribe no-op (keputusan final F2).
+// WAJIB CERMIN DB: tiap entri HARUS juga ada di publication supabase_realtime (ALTER
+// PUBLICATION) — kalau tidak, channel subscribe tapi DB tak pernah kirim event (live diam).
+// v.110: +keuangan_tagihan, +pembayaran_transfer_pending, +absensi_shift_guru.
 const REALTIME = new Set([
   'beranda_post',
   'posts',
@@ -151,7 +154,10 @@ const REALTIME = new Set([
   'kritik_saran',
   'supervisi_catatan',
   'absensi_guru',
-  'keuangan_buku_induk'
+  'keuangan_buku_induk',
+  'keuangan_tagihan',
+  'pembayaran_transfer_pending',
+  'absensi_shift_guru'
 ])
 
 function _cfg(table) {
