@@ -200,6 +200,28 @@
           <i class="fas fa-info-circle mr-1"></i>Nominal default akan auto-isi di ModalPOS saat klik
           preset jenis. Set 0 kalau nominal variabel.
         </p>
+        <!-- v.110: template + impor jenis pembayaran (TU isi, admin tinggal impor) -->
+        <div class="flex flex-wrap gap-2 mb-2">
+          <button
+            @click="unduhTemplateJenis"
+            type="button"
+            class="inline-flex items-center gap-1.5 text-[11px] font-bold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-900/30 px-3 py-1.5 rounded-lg hover:bg-teal-100 dark:hover:bg-teal-900/50"
+          >
+            <i class="fas fa-download"></i>Unduh Template
+          </button>
+          <label
+            class="inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/30 px-3 py-1.5 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-900/50 cursor-pointer"
+          >
+            <i class="fas fa-file-import"></i>{{ imporJenisBusy ? 'Mengimpor…' : 'Impor' }}
+            <input
+              type="file"
+              accept=".xlsx,.xls"
+              class="hidden"
+              @change="imporJenis"
+              :disabled="imporJenisBusy"
+            />
+          </label>
+        </div>
         <div class="space-y-1.5 mb-2">
           <div
             v-for="(jenis, idx) in jenisList"
@@ -512,12 +534,34 @@
       </div>
 
       <div>
-        <div class="flex justify-between items-start mb-2">
+        <div class="flex justify-between items-start mb-2 gap-2">
           <h4
             class="font-black text-slate-700 dark:text-[var(--text-tertiary)] text-[11px] uppercase tracking-wider"
           >
             Bisyaroh Pokok Per Guru/Pegawai (Flat Bulanan)
           </h4>
+          <!-- v.110: template + impor bisyaroh pegawai (TU isi, admin tinggal impor) -->
+          <div class="flex gap-1.5 flex-shrink-0">
+            <button
+              @click="unduhTemplateBisyaroh"
+              type="button"
+              class="inline-flex items-center gap-1.5 text-[10px] font-bold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-900/30 px-2.5 py-1.5 rounded-lg hover:bg-teal-100 dark:hover:bg-teal-900/50 whitespace-nowrap"
+            >
+              <i class="fas fa-download"></i>Template
+            </button>
+            <label
+              class="inline-flex items-center gap-1.5 text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/30 px-2.5 py-1.5 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-900/50 cursor-pointer whitespace-nowrap"
+            >
+              <i class="fas fa-file-import"></i>{{ imporBisyarohBusy ? 'Impor…' : 'Impor' }}
+              <input
+                type="file"
+                accept=".xlsx,.xls"
+                class="hidden"
+                @change="imporBisyaroh"
+                :disabled="imporBisyarohBusy"
+              />
+            </label>
+          </div>
         </div>
         <p class="text-[10px] text-[var(--text-tertiary)] italic mb-2">
           Pokok = bayar tetap. Tambahan dari shift = otomatis dari absensi.
@@ -1241,6 +1285,7 @@ import { useSettingsStore } from '@/stores/settings'
 import { useGuru } from '@/composables/useGuru'
 import { useLembaga } from '@/composables/useLembaga'
 import { useToast } from '@/composables/useToast'
+import { useExcel } from '@/composables/useExcel'
 
 const settingsStore = useSettingsStore()
 const { guruRaw } = useGuru()
@@ -1293,6 +1338,10 @@ const filterLembaga = ref('')
 const generating = ref(false)
 const saving = ref(false)
 const jenisList = ref([])
+// v.110: Excel template + impor (jenis pembayaran & bisyaroh pegawai)
+const { exportSimple, importFile } = useExcel()
+const imporJenisBusy = ref(false)
+const imporBisyarohBusy = ref(false)
 
 const form = reactive({
   keu_jatuh_tempo: 10,
@@ -1835,6 +1884,177 @@ async function simpan() {
 function reset() {
   loadFromSettings()
   toast.info('Form direset')
+}
+
+// ============================================================================
+// v.110: Template + Impor — Jenis Pembayaran & Bisyaroh Pegawai (TU isi, admin impor).
+//   Impor TIDAK auto-simpan: mengisi form → Kyai cek → klik "Simpan Semua".
+//   Jenis = MERGE by id/label (pertahankan override per-lembaga/kelas/santri).
+//   Bisyaroh = cocokkan by ID (fallback nama) → set pokok pondok/sekolah per guru.
+// ============================================================================
+// Ambil nilai kolom by header (case-insensitive, dukung beberapa alias).
+function pickCol(obj, names) {
+  const map = {}
+  for (const k of Object.keys(obj || {})) map[String(k).trim().toLowerCase()] = obj[k]
+  for (const n of names) {
+    const v = map[n]
+    if (v !== undefined && v !== null && String(v).trim() !== '') return v
+  }
+  return ''
+}
+
+function unduhTemplateJenis() {
+  const rows = jenisList.value.map((j) => ({
+    label: j.label || '',
+    nominal: Number(j.nominal_default || 0) || 0,
+    auto: j.auto_generate ? 'Ya' : 'Tidak'
+  }))
+  exportSimple(rows, {
+    filename: 'template_jenis_pembayaran.xlsx',
+    sheetName: 'Jenis Pembayaran',
+    title: 'Template Jenis Pembayaran — Ammu',
+    columns: [
+      { key: 'label', header: 'Label', width: 32 },
+      { key: 'nominal', header: 'Nominal Default', width: 18 },
+      { key: 'auto', header: 'Auto Generate (Ya/Tidak)', width: 24 }
+    ]
+  })
+}
+
+async function imporJenis(ev) {
+  const file = ev.target.files?.[0]
+  if (!file) return
+  imporJenisBusy.value = true
+  try {
+    const rows = await importFile(file)
+    if (!rows.length) {
+      toast.warning('File kosong / tidak ada data')
+      return
+    }
+    let imported = 0
+    const next = [...jenisList.value]
+    for (const r of rows) {
+      const label = String(pickCol(r, ['label', 'jenis', 'nama', 'jenis pembayaran']) || '').trim()
+      if (!label) continue
+      const nominal = parseRp(pickCol(r, ['nominal default', 'nominal_default', 'nominal']))
+      const autoStr = String(
+        pickCol(r, ['auto generate (ya/tidak)', 'auto generate', 'auto', 'auto_generate']) || ''
+      )
+        .trim()
+        .toLowerCase()
+      const auto = ['ya', 'yes', 'true', '1', 'y', 'v'].includes(autoStr)
+      const id = slugId(label)
+      const ex = next.find(
+        (t) => t.id === id || String(t.label || '').toLowerCase() === label.toLowerCase()
+      )
+      if (ex) {
+        // update label/nominal/auto — PERTAHANKAN override per-lembaga/kelas/santri & whitelist.
+        ex.label = label
+        ex.nominal_default = nominal
+        ex.auto_generate = auto
+      } else {
+        next.push({
+          id,
+          label,
+          nominal_default: nominal,
+          nominal_per_lembaga: {},
+          lembaga_only: [],
+          nominal_per_kelas: {},
+          nominal_per_santri: {},
+          auto_generate: auto,
+          _expanded: false
+        })
+      }
+      imported++
+    }
+    jenisList.value = next
+    form.keu_jenis_tagihan = next.map((t) => t.label)
+    toast.success(`${imported} jenis diimpor. Cek lalu klik "Simpan Semua".`)
+  } catch (e) {
+    toast.error('Gagal impor jenis: ' + (e.message || e))
+  } finally {
+    imporJenisBusy.value = false
+    ev.target.value = ''
+  }
+}
+
+// Pegawai aktif (sumber template bisyaroh; pre-isi id+nama biar TU tinggal isi nominal).
+function _guruAktifSorted() {
+  return (guruRaw.value || [])
+    .filter((g) => String(g.status || 'Aktif').toLowerCase() === 'aktif')
+    .sort((a, b) => String(a.nama || '').localeCompare(String(b.nama || '')))
+}
+
+function unduhTemplateBisyaroh() {
+  const rows = _guruAktifSorted().map((g) => ({
+    id: String(g.id),
+    nama: g.nama || '',
+    lembaga: g.lembaga || g.lembaga_sekolah || '',
+    pondok: parseRp(form.keu_bisyaroh_pokok[g.id] || '') || '',
+    sekolah: parseRp(form.keu_bisyaroh_sekolah[g.id] || '') || ''
+  }))
+  exportSimple(rows, {
+    filename: 'template_bisyaroh_pegawai.xlsx',
+    sheetName: 'Bisyaroh Pegawai',
+    title: 'Template Bisyaroh Pokok Pegawai — Ammu (JANGAN ubah/hapus kolom ID)',
+    columns: [
+      { key: 'id', header: 'ID', width: 16 },
+      { key: 'nama', header: 'Nama', width: 28 },
+      { key: 'lembaga', header: 'Lembaga', width: 22 },
+      { key: 'pondok', header: 'Pokok Pondok', width: 16 },
+      { key: 'sekolah', header: 'Pokok Sekolah', width: 16 }
+    ]
+  })
+}
+
+async function imporBisyaroh(ev) {
+  const file = ev.target.files?.[0]
+  if (!file) return
+  imporBisyarohBusy.value = true
+  try {
+    const rows = await importFile(file)
+    if (!rows.length) {
+      toast.warning('File kosong / tidak ada data')
+      return
+    }
+    const byId = {}
+    const byNama = {}
+    for (const g of guruRaw.value || []) {
+      byId[String(g.id)] = g
+      byNama[
+        String(g.nama || '')
+          .trim()
+          .toLowerCase()
+      ] = g
+    }
+    let ok = 0
+    let miss = 0
+    for (const r of rows) {
+      const id = String(pickCol(r, ['id', 'guru_id', 'id guru']) || '').trim()
+      const nama = String(pickCol(r, ['nama', 'nama guru', 'nama pegawai']) || '').trim()
+      const g = (id && byId[id]) || (nama && byNama[nama.toLowerCase()]) || null
+      if (!g) {
+        miss++
+        continue
+      }
+      const sid = String(g.id)
+      const pondok = parseRp(pickCol(r, ['pokok pondok', 'pondok', 'pokok']))
+      const sekolah = parseRp(pickCol(r, ['pokok sekolah', 'sekolah']))
+      if (pondok > 0) form.keu_bisyaroh_pokok[sid] = fmtRp(pondok)
+      else delete form.keu_bisyaroh_pokok[sid]
+      if (sekolah > 0) form.keu_bisyaroh_sekolah[sid] = fmtRp(sekolah)
+      else delete form.keu_bisyaroh_sekolah[sid]
+      ok++
+    }
+    toast.success(
+      `${ok} pegawai diimpor${miss ? `, ${miss} baris tak cocok (ID/nama)` : ''}. Cek lalu klik "Simpan Semua".`
+    )
+  } catch (e) {
+    toast.error('Gagal impor bisyaroh: ' + (e.message || e))
+  } finally {
+    imporBisyarohBusy.value = false
+    ev.target.value = ''
+  }
 }
 
 // v.21.104.0527: implementasi Vue (gantikan legacy window.autoGenerateSyahriyahManual).
