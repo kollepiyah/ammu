@@ -623,27 +623,25 @@ async function generateKeRapor() {
       const hadir = hadirOf(s.id)
       const lembagaRapor = kategori.value === 'ngaji' ? s.lembaga || '' : s.lembaga_sekolah || ''
       const docId = `rapor_${s.id}_${lembagaRapor}_${periodKey}`
-      await setDoc(
-        doc(db, 'rapor_semester', docId),
-        {
-          santri_id: String(s.id),
-          santri_nama: s.nama || '',
-          lembaga: lembagaRapor,
-          tahunAjaran,
-          semester,
-          absensi: {
-            sakit,
-            izin,
-            alpa,
-            hadir,
-            total: sakit + izin + alpa + hadir,
-            _generatedFrom: COLL.value,
-            _generatedAt: new Date().toISOString(),
-            _periodGenerated: `${BULAN[m - 1]} ${y}`
-          }
-        },
-        { merge: true }
-      )
+      // F6e: setDoc(merge:true) Firestore -> mergeOne (deep-merge Supabase via db.js).
+      //   setDoc/doc/db tak pernah di-import di file ini -> dulu ReferenceError diam (gagal senyap).
+      await mergeOne('rapor_semester', docId, {
+        santri_id: String(s.id),
+        santri_nama: s.nama || '',
+        lembaga: lembagaRapor,
+        tahunAjaran,
+        semester,
+        absensi: {
+          sakit,
+          izin,
+          alpa,
+          hadir,
+          total: sakit + izin + alpa + hadir,
+          _generatedFrom: COLL.value,
+          _generatedAt: new Date().toISOString(),
+          _periodGenerated: `${BULAN[m - 1]} ${y}`
+        }
+      })
       count++
     }
     toast.success(`Absensi ${count} santri ter-generate ke rapor (${semester} ${tahunAjaran})`)

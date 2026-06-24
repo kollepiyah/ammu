@@ -139,21 +139,14 @@ async function initSentry() {
       await new Promise((r) => setTimeout(r, 100))
     }
     if (!window.Sentry) return
-    // 3) Override dari Firestore bila admin set (opsional, non-blocking).
-    try {
-      const { db } = await import('@/services/firebase')
-      const { doc, getDoc } = await import('firebase/firestore')
-      const snap = await getDoc(doc(db, 'settings', 'general'))
-      const fsDsn = snap.exists() ? (snap.data()?.sentryDsn || '').trim() : ''
-      if (fsDsn) dsn = fsDsn
-    } catch {
-      /* abaikan — pakai env/default */
-    }
+    // v.110: override DSN dari Firestore DIBUANG (migrasi Supabase). Dulu import('firebase/
+    //   firestore') di sini menyeret SELURUH SDK Firestore ke vendor-firebase (~+300KB) PADAHAL
+    //   db tak lagi di-ekspor firebase.js -> blok selalu gagal (di-catch). DSN cukup env/default.
     if (!dsn) return
     window.Sentry.init({
       dsn,
       tracesSampleRate: 0.1,
-      release: 'portal-mu@109.0626',
+      release: 'portal-mu@110.0626',
       environment: window.location.hostname.includes('localhost') ? 'dev' : 'prod'
     })
     // eslint-disable-next-line no-console
