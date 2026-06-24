@@ -12,6 +12,7 @@ import * as os from 'os'
 import { execFile } from 'child_process'
 import { autoUpdater } from 'electron-updater'
 import unhandled from 'electron-unhandled'
+import { readAttLog } from './fingerprint-sync'
 
 unhandled()
 
@@ -572,6 +573,18 @@ ipcMain.handle('print:pdf-preview', async (_event, payload: { pdfBase64: string 
     return { ok: true }
   } catch (e: any) {
     if (win) try { win.close() } catch {}
+    return { ok: false, error: e?.message || String(e) }
+  }
+})
+
+// ─── IPC: Fingerprint sync (Fase 1) ─────────────────────────────────────────────
+// Baca att_log dari Fingerspot Personnel (MySQL fin_pro) via mysqld throwaway read-only.
+// Renderer: window.electronAPI.readAttLog({ personnelDir }) → { ok, rows, count } | { ok:false, error }
+ipcMain.handle('fingerprint:read-attlog', async (_event, config: { personnelDir?: string } = {}) => {
+  try {
+    const rows = await readAttLog(config || {})
+    return { ok: true, rows, count: rows.length }
+  } catch (e: any) {
     return { ok: false, error: e?.message || String(e) }
   }
 })

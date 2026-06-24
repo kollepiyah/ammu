@@ -53,6 +53,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onUpdateStatus: (cb: (s: any) => void) => ipcRenderer.on('update:status', (_e, s) => cb(s)),
   onUpdateProgress: (cb: (p: any) => void) => ipcRenderer.on('update:progress', (_e, p) => cb(p)),
 
+  // Fingerprint sync (Fase 1): baca att_log dari Fingerspot Personnel (MySQL throwaway read-only)
+  readAttLog: (config?: { personnelDir?: string }) =>
+    ipcRenderer.invoke('fingerprint:read-attlog', config || {}),
+
   // Platform info
   platform: process.platform,
   isElectron: true,
