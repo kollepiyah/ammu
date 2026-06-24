@@ -7,7 +7,13 @@
     </div>
 
     <div class="rb-help-grid">
-      <button v-for="c in cards" :key="c.title" class="rb-help-card" type="button" @click="router.push(c.to)">
+      <button
+        v-for="c in cards"
+        :key="c.title"
+        class="rb-help-card"
+        type="button"
+        @click="router.push(c.to)"
+      >
         <div class="hi"><RibbonIcon :name="c.icon" :size="20" /></div>
         <h4>{{ c.title }}</h4>
         <p>{{ c.desc }}</p>
@@ -23,23 +29,77 @@ import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import RibbonIcon from '@/components/ribbon/RibbonIcon.vue'
 import { useAuthStore } from '@/stores/auth'
+import { useDesktopShell } from '@/composables/useDesktopShell'
 
 const router = useRouter()
 const auth = useAuthStore()
+const { isElectron } = useDesktopShell()
 const isSuper = computed(() => auth.sesiAktif?.role_sistem === 'super_admin')
 
 const allCards = [
-  { icon: 'layers', title: 'Master Data', desc: 'CRUD lembaga, guru/pegawai, santri, tahun pelajaran, audit log.', to: '/master-data', need: 'super' },
-  { icon: 'grid', title: 'Kelola Field & ACF', desc: 'Atur custom field (ACF) & urutan field formulir santri/guru.', to: '/field-schema', need: 'super' },
-  { icon: 'book', title: 'Mapel Lembaga Formal', desc: 'Atur mata pelajaran per kelas untuk lembaga formal.', to: '/mapel-lembaga', need: 'admin' },
-  { icon: 'wallet', title: 'Pengaturan Keuangan', desc: 'Jatuh tempo, jenis tagihan, bisyaroh shift & pokok.', to: '/keu-pengaturan', need: 'keuangan' },
-  { icon: 'gear', title: 'Pengaturan Sistem', desc: 'Identitas, KOP surat, logo, tema, kalibrasi hijri, password admin.', to: '/pengaturan-web', need: 'admin' },
-  { icon: 'calendar', title: 'Kegiatan Pesantren', desc: 'Kelola agenda & kegiatan pondok.', to: '/kegiatan-pesantren', need: 'admin' },
-  { icon: 'clipboard', title: 'PSB', desc: 'Penerimaan santri baru & konversi ke santri.', to: '/psb', need: 'admin' }
+  {
+    icon: 'layers',
+    title: 'Master Data',
+    desc: 'CRUD lembaga, guru/pegawai, santri, tahun pelajaran, audit log.',
+    to: '/master-data',
+    need: 'super'
+  },
+  {
+    icon: 'grid',
+    title: 'Kelola Field & ACF',
+    desc: 'Atur custom field (ACF) & urutan field formulir santri/guru.',
+    to: '/field-schema',
+    need: 'super'
+  },
+  {
+    icon: 'book',
+    title: 'Mapel Lembaga Formal',
+    desc: 'Atur mata pelajaran per kelas untuk lembaga formal.',
+    to: '/mapel-lembaga',
+    need: 'admin'
+  },
+  {
+    icon: 'wallet',
+    title: 'Pengaturan Keuangan',
+    desc: 'Jatuh tempo, jenis tagihan, bisyaroh shift & pokok.',
+    to: '/keu-pengaturan',
+    need: 'keuangan'
+  },
+  {
+    icon: 'gear',
+    title: 'Pengaturan Sistem',
+    desc: 'Identitas, KOP surat, logo, tema, kalibrasi hijri, password admin.',
+    to: '/pengaturan-web',
+    need: 'admin'
+  },
+  // Electron-only: butuh bridge ke Fingerspot Personnel di PC station.
+  {
+    icon: 'clock',
+    title: 'Mesin Absensi',
+    desc: 'Sinkron scan sidik jari (Fingerspot) ke absensi guru + jadwal otomatis.',
+    to: '/mesin-absensi',
+    need: 'admin',
+    electronOnly: true
+  },
+  {
+    icon: 'calendar',
+    title: 'Kegiatan Pesantren',
+    desc: 'Kelola agenda & kegiatan pondok.',
+    to: '/kegiatan-pesantren',
+    need: 'admin'
+  },
+  {
+    icon: 'clipboard',
+    title: 'PSB',
+    desc: 'Penerimaan santri baru & konversi ke santri.',
+    to: '/psb',
+    need: 'admin'
+  }
 ]
 
 const cards = computed(() =>
   allCards.filter((c) => {
+    if (c.electronOnly && !isElectron.value) return false
     if (c.need === 'super') return isSuper.value
     if (c.need === 'keuangan') return auth.cekHakAkses('akses_keuangan')
     return auth.isAdmin

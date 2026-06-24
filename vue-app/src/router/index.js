@@ -2,6 +2,7 @@
 // Routes mirror legacy showPage() IDs
 import { createRouter, createWebHashHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useDesktopShell } from '@/composables/useDesktopShell'
 
 // Lazy-load views supaya initial bundle kecil
 const LoginView = () => import('@/views/LoginView.vue')
@@ -89,6 +90,8 @@ const KelasGuruView = () => import('@/views/KelasGuruView.vue')
 // v.98: halaman khusus Electron — Mapel lembaga formal + Pengaturan (hub full-CRUD/ACF)
 const MapelDesktopView = () => import('@/views/MapelDesktopView.vue')
 const PengaturanDesktopView = () => import('@/views/PengaturanDesktopView.vue')
+// Fase 3 — sinkron mesin fingerprint (Electron-only, dibuka dari hub Pengaturan Desktop)
+const MesinAbsensiView = () => import('@/views/MesinAbsensiView.vue')
 // v.98: halaman impor kegiatan kalender via Excel
 const ImporKalenderView = () => import('@/views/ImporKalenderView.vue')
 const BantuanView = () => import('@/views/BantuanView.vue')
@@ -110,41 +113,132 @@ const routes = [
       { path: 'beranda', name: 'beranda', component: BerandaDesktopView, meta: { noSantri: true } },
       { path: 'bantuan', name: 'bantuan', component: BantuanView },
       // v.102 A3: Laporan/Analitik (BigQuery) — admin/super_admin only
-      { path: 'laporan', name: 'laporan', component: () => import('@/views/LaporanView.vue'), meta: { admin: true, noSantri: true } },
-      { path: 'modul/:judul', name: 'ribbon-modul', component: RibbonPlaceholderView, meta: { noSantri: true } },
+      {
+        path: 'laporan',
+        name: 'laporan',
+        component: () => import('@/views/LaporanView.vue'),
+        meta: { admin: true, noSantri: true }
+      },
+      {
+        path: 'modul/:judul',
+        name: 'ribbon-modul',
+        component: RibbonPlaceholderView,
+        meta: { noSantri: true }
+      },
       { path: 'profil', name: 'profil', component: ProfilView },
       { path: 'notifikasi', name: 'notifikasi', component: NotifikasiView },
-      { path: 'profil/:tipe/:id', name: 'profil-detail', component: ProfilDetailView, meta: { noSantri: true } },
+      {
+        path: 'profil/:tipe/:id',
+        name: 'profil-detail',
+        component: ProfilDetailView,
+        meta: { noSantri: true }
+      },
       // v.98: ?kelola=1 -> mode 'master' (CRUD langsung di Electron, tak view-only). Web tanpa query = view.
-      { path: 'santri', name: 'santri', component: SantriView, props: (route) => ({ mode: route.query.kelola === '1' ? 'master' : 'view' }) },
+      {
+        path: 'santri',
+        name: 'santri',
+        component: SantriView,
+        props: (route) => ({ mode: route.query.kelola === '1' ? 'master' : 'view' })
+      },
       // Phase 5.13: Full CRUD form Vue
       { path: 'santri/new', name: 'santri-new', component: SantriFormView, meta: { admin: true } },
-      { path: 'santri/:id/edit', name: 'santri-edit', component: SantriFormView, meta: { admin: true } },
+      {
+        path: 'santri/:id/edit',
+        name: 'santri-edit',
+        component: SantriFormView,
+        meta: { admin: true }
+      },
       // Phase 5.6-5.8: Master Data
-      { path: 'guru', name: 'guru', component: GuruView, meta: { admin: true }, props: (route) => ({ mode: route.query.kelola === '1' ? 'master' : 'view' }) },
+      {
+        path: 'guru',
+        name: 'guru',
+        component: GuruView,
+        meta: { admin: true },
+        props: (route) => ({ mode: route.query.kelola === '1' ? 'master' : 'view' })
+      },
       { path: 'guru/new', name: 'guru-new', component: GuruFormView, meta: { admin: true } },
       { path: 'guru/:id/edit', name: 'guru-edit', component: GuruFormView, meta: { admin: true } },
       // v.21.27.0526: /lembaga redirect ke /master-data?tab=lembaga (konsolidasi single source)
-      { path: 'lembaga', name: 'lembaga', redirect: { path: '/master-data', query: { tab: 'lembaga' } } },
-      { path: 'lembaga/new', name: 'lembaga-new', component: LembagaFormView, meta: { admin: true } },
-      { path: 'lembaga/:id/edit', name: 'lembaga-edit', component: LembagaFormView, meta: { admin: true } },
-      { path: 'lembaga/:id', name: 'lembaga-detail', component: LembagaDetailView, meta: { admin: true } },
+      {
+        path: 'lembaga',
+        name: 'lembaga',
+        redirect: { path: '/master-data', query: { tab: 'lembaga' } }
+      },
+      {
+        path: 'lembaga/new',
+        name: 'lembaga-new',
+        component: LembagaFormView,
+        meta: { admin: true }
+      },
+      {
+        path: 'lembaga/:id/edit',
+        name: 'lembaga-edit',
+        component: LembagaFormView,
+        meta: { admin: true }
+      },
+      {
+        path: 'lembaga/:id',
+        name: 'lembaga-detail',
+        component: LembagaDetailView,
+        meta: { admin: true }
+      },
       { path: 'kelas', name: 'kelas', component: KelasView, meta: { admin: true } },
       // v.98: assign guru+santri (pita Pendidikan -> Kelas)
       { path: 'kelas-guru', name: 'kelas-guru', component: KelasGuruView, meta: { admin: true } },
       // v.98: halaman khusus Electron — Mapel lembaga formal + Pengaturan (hub)
-      { path: 'mapel-lembaga', name: 'mapel-lembaga', component: MapelDesktopView, meta: { admin: true } },
-      { path: 'pengaturan-desktop', name: 'pengaturan-desktop', component: PengaturanDesktopView, meta: { admin: true } },
-      { path: 'impor-kalender', name: 'impor-kalender', component: ImporKalenderView, meta: { admin: true } },
+      {
+        path: 'mapel-lembaga',
+        name: 'mapel-lembaga',
+        component: MapelDesktopView,
+        meta: { admin: true }
+      },
+      {
+        path: 'pengaturan-desktop',
+        name: 'pengaturan-desktop',
+        component: PengaturanDesktopView,
+        meta: { admin: true }
+      },
+      {
+        path: 'mesin-absensi',
+        name: 'mesin-absensi',
+        component: MesinAbsensiView,
+        meta: { admin: true, electronOnly: true }
+      },
+      {
+        path: 'impor-kalender',
+        name: 'impor-kalender',
+        component: ImporKalenderView,
+        meta: { admin: true }
+      },
       // Phase 5.9: Edit/Tambah bridge ke legacy (full form di legacy index.html)
-      { path: 'master-form/:entity', name: 'master-form', component: MasterFormBridgeView, meta: { admin: true } },
+      {
+        path: 'master-form/:entity',
+        name: 'master-form',
+        component: MasterFormBridgeView,
+        meta: { admin: true }
+      },
       // Phase 5.10 + 5.11: Field Order + ACF Custom Field schema editor
-      { path: 'field-schema', name: 'field-schema', component: FieldSchemaView, meta: { admin: true } },
+      {
+        path: 'field-schema',
+        name: 'field-schema',
+        component: FieldSchemaView,
+        meta: { admin: true }
+      },
       // Batch 3 Phase 5.12-5.18: Keuangan + Rapor + Kritik
       // v.21.115.0528: meta.keuangan = perlu cekHakAkses('akses_keuangan') — admin biasa diblok per kyai spec.
-      { path: 'keuangan', name: 'keuangan', component: KeuanganDashboardView, meta: { keuangan: true } },
+      {
+        path: 'keuangan',
+        name: 'keuangan',
+        component: KeuanganDashboardView,
+        meta: { keuangan: true }
+      },
       // v.98: dasbor keuangan versi desktop/Ribbon (kartu + grafik + donut + Transaksi Terakhir)
-      { path: 'keuangan-desktop', name: 'keuangan-desktop', component: KeuanganDesktopView, meta: { keuangan: true } },
+      {
+        path: 'keuangan-desktop',
+        name: 'keuangan-desktop',
+        component: KeuanganDesktopView,
+        meta: { keuangan: true }
+      },
       // v.20.6.0526: Tagihan accessible santri (lihat tunggakan + riwayat pembayaran)
       { path: 'tagihan', name: 'tagihan', component: TagihanView },
       // v.20.12.0526: Pembayaran santri/wali — placeholder fitur 2-jalur
@@ -152,10 +246,25 @@ const routes = [
       // v.86.0526: daftar pembayaran pending (status=pending di pembayaran_konfirmasi)
       { path: 'pembayaran-pending', name: 'pembayaran-pending', component: PembayaranPendingView },
       // v.55.0526: POS Santri page — wire ModalPOS untuk transaksi cepat
-      { path: 'pos-santri', name: 'pos-santri', component: PosSantriView, meta: { keuangan: true } },
-      { path: 'pos-riwayat', name: 'pos-riwayat', component: RiwayatPosView, meta: { keuangan: true } },
+      {
+        path: 'pos-santri',
+        name: 'pos-santri',
+        component: PosSantriView,
+        meta: { keuangan: true }
+      },
+      {
+        path: 'pos-riwayat',
+        name: 'pos-riwayat',
+        component: RiwayatPosView,
+        meta: { keuangan: true }
+      },
       // v.21.101.0527: Ekspor riwayat per santri (Tagihan + Pembayaran + Tabungan)
-      { path: 'riwayat-santri', name: 'riwayat-santri', component: RiwayatSantriView, meta: { keuangan: true } },
+      {
+        path: 'riwayat-santri',
+        name: 'riwayat-santri',
+        component: RiwayatSantriView,
+        meta: { keuangan: true }
+      },
       // v.20.6.0526: Tabungan — santri boleh lihat tabungannya sendiri (no meta gate, view-level filter scope ke santri_id sendiri)
       { path: 'tabungan', name: 'tabungan', component: TabunganView },
       // v.95.0626: Uang Saku santri ma'had — reuse TabunganView (mode='uangsaku', koleksi keuangan_uang_saku_santri)
@@ -166,43 +275,129 @@ const routes = [
       { path: 'rapor', name: 'rapor', component: RaporView, meta: { noSantri: true } },
       // v.20.6.0526: Naik Kelas — guru juga boleh akses (proses kenaikan santri kelasnya)
       { path: 'naik-kelas', name: 'naik-kelas', component: NaikKelasView, alias: '/kenaikan' },
-      { path: 'tes-kenaikan', name: 'tes-kenaikan', component: TesKenaikanView, meta: { noSantri: true } },
-      { path: 'absensi-guru', name: 'absensi-guru', component: AbsensiGuruView, meta: { admin: true } },
+      {
+        path: 'tes-kenaikan',
+        name: 'tes-kenaikan',
+        component: TesKenaikanView,
+        meta: { noSantri: true }
+      },
+      {
+        path: 'absensi-guru',
+        name: 'absensi-guru',
+        component: AbsensiGuruView,
+        meta: { admin: true }
+      },
       { path: 'absensi-santri', name: 'absensi-santri', component: AbsensiSantriView },
       { path: 'posts', name: 'posts', component: PostsView, alias: '/mading' },
       // Phase 5.14: Buku Induk + Phase 5.20: PSB admin
       // v.21.115.0528: keuangan-related routes pakai meta.keuangan (per kyai role spec)
-      { path: 'buku-induk', name: 'buku-induk', component: BukuIndukView, meta: { keuangan: true } },
+      {
+        path: 'buku-induk',
+        name: 'buku-induk',
+        component: BukuIndukView,
+        meta: { keuangan: true }
+      },
       // v.72.15.0526: Hutang Piutang
-      { path: 'hutang-piutang', name: 'hutang-piutang', component: HutangPiutangView, meta: { keuangan: true } },
-      { path: 'laporan-keuangan', name: 'laporan-keuangan', component: LaporanKeuanganView, meta: { keuangan: true } },
+      {
+        path: 'hutang-piutang',
+        name: 'hutang-piutang',
+        component: HutangPiutangView,
+        meta: { keuangan: true }
+      },
+      {
+        path: 'laporan-keuangan',
+        name: 'laporan-keuangan',
+        component: LaporanKeuanganView,
+        meta: { keuangan: true }
+      },
       { path: 'psb', name: 'psb', component: PsbAdminView, meta: { admin: true } },
       { path: 'psb/:id', name: 'psb-detail', component: PsbDetailView, meta: { admin: true } },
       { path: 'kritik-saran', name: 'kritik-saran', component: KritikSaranView },
-      { path: 'pengaturan-web', name: 'pengaturan-web', component: PengaturanView, meta: { admin: true } },
+      {
+        path: 'pengaturan-web',
+        name: 'pengaturan-web',
+        component: PengaturanView,
+        meta: { admin: true }
+      },
       // v.70.0526: Pengaturan Keuangan full Vue
       // v.21.115.0528: keuangan meta gate
-      { path: 'keu-pengaturan', name: 'keu-pengaturan', component: PengaturanKeuanganView, meta: { keuangan: true }, alias: '/pengaturan-keuangan' },
+      {
+        path: 'keu-pengaturan',
+        name: 'keu-pengaturan',
+        component: PengaturanKeuanganView,
+        meta: { keuangan: true },
+        alias: '/pengaturan-keuangan'
+      },
       // v.72.1.0526: Kegiatan Pesantren full Vue
-      { path: 'kegiatan-pesantren', name: 'kegiatan-pesantren', component: KegiatanPesantrenView, meta: { admin: true } },
+      {
+        path: 'kegiatan-pesantren',
+        name: 'kegiatan-pesantren',
+        component: KegiatanPesantrenView,
+        meta: { admin: true }
+      },
       // v.66.0526: Batch B — Kalender Kegiatan + Statistik full Vue
-      { path: 'kalender', name: 'kalender', component: KalenderKegiatanView, alias: '/kalender-kegiatan' },
+      {
+        path: 'kalender',
+        name: 'kalender',
+        component: KalenderKegiatanView,
+        alias: '/kalender-kegiatan'
+      },
       // v.86.0526: santri diblok dari statistik agregat -> redirect ke Capaian Prestasi (statistik pribadi digabung di sana)
       { path: 'statistik', name: 'statistik', component: StatistikView, meta: { noSantri: true } },
       // v.95.0626: detail dari kartu statistik (admin/kepala) — santri berprestasi + guru belum input
-      { path: 'statistik/santri/:id', name: 'statistik-santri', component: StatistikSantriDetailView, meta: { noSantri: true } },
-      { path: 'statistik/guru-belum-input', name: 'guru-belum-input', component: GuruBelumInputView, meta: { noSantri: true } },
+      {
+        path: 'statistik/santri/:id',
+        name: 'statistik-santri',
+        component: StatistikSantriDetailView,
+        meta: { noSantri: true }
+      },
+      {
+        path: 'statistik/guru-belum-input',
+        name: 'guru-belum-input',
+        component: GuruBelumInputView,
+        meta: { noSantri: true }
+      },
       // v.100 Batch7 (T21): halaman data kelas per lembaga (guru + santri)
-      { path: 'statistik/lembaga/:nama', name: 'statistik-lembaga', component: StatistikLembagaDetailView, meta: { noSantri: true } },
+      {
+        path: 'statistik/lembaga/:nama',
+        name: 'statistik-lembaga',
+        component: StatistikLembagaDetailView,
+        meta: { noSantri: true }
+      },
       // v.20.6.0526: Input Bulanan + Rekap Prestasi/Diniyah — guru boleh akses (input nilai santri kelasnya)
       // v.21.114.0528: Input Bulanan + Rekap Prestasi/Diniyah — block santri access (kyai req — santri cukup lihat data dirinya di Capaian Prestasi)
-      { path: 'input-bulanan', name: 'input-bulanan', component: InputBulananView, meta: { noSantri: true } },
-      { path: 'rekap-prestasi', name: 'rekap-prestasi', component: RekapPrestasiView, meta: { noSantri: true } },
-      { path: 'rekap-diniyah', name: 'rekap-diniyah', component: RekapDiniyahView, meta: { noSantri: true } },
+      {
+        path: 'input-bulanan',
+        name: 'input-bulanan',
+        component: InputBulananView,
+        meta: { noSantri: true }
+      },
+      {
+        path: 'rekap-prestasi',
+        name: 'rekap-prestasi',
+        component: RekapPrestasiView,
+        meta: { noSantri: true }
+      },
+      {
+        path: 'rekap-diniyah',
+        name: 'rekap-diniyah',
+        component: RekapDiniyahView,
+        meta: { noSantri: true }
+      },
       // v.21.19.0526: Master Data HANYA super_admin (kyai req)
-      { path: 'master-data', name: 'master-data', component: MasterDataView, meta: { admin: true, roleSistem: 'super_admin' } },
+      {
+        path: 'master-data',
+        name: 'master-data',
+        component: MasterDataView,
+        meta: { admin: true, roleSistem: 'super_admin' }
+      },
       // F3 (migrasi Supabase): alat impor master Excel -> Supabase (super_admin)
-      { path: 'impor-supabase', name: 'impor-supabase', component: () => import('@/views/ImporSupabaseView.vue'), meta: { admin: true, roleSistem: 'super_admin', noSantri: true } },
+      {
+        path: 'impor-supabase',
+        name: 'impor-supabase',
+        component: () => import('@/views/ImporSupabaseView.vue'),
+        meta: { admin: true, roleSistem: 'super_admin', noSantri: true }
+      },
       // v.20.13.0526: Capaian Prestasi (santri only — merged Dashboard + Pendidikan menu)
       { path: 'capaian-prestasi', name: 'capaian-prestasi', component: CapaianPrestasiView },
       // v.20.18.0526: Personal page admin (statistik kehadiran + slip bisyaroh personal)
@@ -229,10 +424,17 @@ router.beforeEach(async (to, from, next) => {
   if (to.meta?.public || PUBLIC_PATHS.includes(to.path)) return next()
   // Wait Firebase Auth + admin restore selesai (max 3s safety timeout di store)
   if (auth.authReady) {
-    try { await auth.authReady } catch (e) { /* ignore */ }
+    try {
+      await auth.authReady
+    } catch (e) {
+      /* ignore */
+    }
   }
   if (!auth.isLoggedIn) return next({ name: 'login', query: { redirect: to.fullPath } })
   if (to.meta?.admin && !auth.isAdmin) return next({ name: 'dashboard' })
+  // electronOnly gate — modul yg butuh bridge desktop (Mesin Absensi) tak tampil di web/HP.
+  if (to.meta?.electronOnly && !useDesktopShell().isElectron.value)
+    return next({ name: 'dashboard' })
   // v.21.19.0526: roleSistem gate — kalau route butuh super_admin tapi user bukan, redirect
   if (to.meta?.roleSistem && auth.sesiAktif?.role_sistem !== to.meta.roleSistem) {
     return next({ name: 'dashboard' })
@@ -258,10 +460,25 @@ function _prefetchAllChunks() {
   if (_preloadDone) return
   _preloadDone = true
   // v.91.0626 PERF: skip prefetch di koneksi lambat / Save-Data (hemat kuota HP).
-  try { const _c = navigator.connection; if (_c && (_c.saveData || /(^|-)2g/.test(_c.effectiveType || ''))) return } catch (e) { /* ignore */ }
+  try {
+    const _c = navigator.connection
+    if (_c && (_c.saveData || /(^|-)2g/.test(_c.effectiveType || ''))) return
+  } catch (e) {
+    /* ignore */
+  }
   // v.91.0626 PERF: prefetch DIBATASI ke rute paling sering dibuka saja (bukan SEMUA ~50 chunk).
   // Sebelumnya prefetch semua -> network tak pernah idle -> Lighthouse "page loaded too slowly" + boros data.
-  const _commonNames = new Set(['dashboard', 'santri', 'guru', 'tagihan', 'profil', 'notifikasi', 'capaian-prestasi', 'keuangan', 'personal'])
+  const _commonNames = new Set([
+    'dashboard',
+    'santri',
+    'guru',
+    'tagihan',
+    'profil',
+    'notifikasi',
+    'capaian-prestasi',
+    'keuangan',
+    'personal'
+  ])
   const allRoutes = router.getRoutes().filter((r) => _commonNames.has(r.name))
   // Prefetch dalam batch 3 sekaligus per idle cycle supaya tidak block UI
   let i = 0
@@ -272,7 +489,11 @@ function _prefetchAllChunks() {
     batch.forEach((r) => {
       const comp = r.components?.default
       if (typeof comp === 'function') {
-        try { comp() } catch (e) { /* ignore */ }
+        try {
+          comp()
+        } catch (e) {
+          /* ignore */
+        }
       }
     })
     // Jadwalkan batch berikutnya saat idle (atau microtask kalau idle callback tidak tersedia)

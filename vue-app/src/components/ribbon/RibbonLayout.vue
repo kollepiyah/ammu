@@ -33,9 +33,11 @@ import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 import { useUiStore } from '@/stores/ui'
 import { useRibbonNav } from '@/composables/useRibbonNav'
 import { useUpdater } from '@/composables/useUpdater'
+import { useFingerprintStore } from '@/stores/fingerprint'
 
 const ui = useUiStore()
 useUpdater().wire() // v.98: dengarkan status auto-update (in-app)
+useFingerprintStore().init() // Fase 3: resume scheduler sinkron fingerprint pasca-restart (Electron-only shell)
 const route = useRoute()
 const router = useRouter()
 const { tabs, activeTabId, activeTabObj, selectTab, onItem, refreshNonce, density } = useRibbonNav()

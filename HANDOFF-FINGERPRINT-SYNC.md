@@ -14,7 +14,7 @@ Scheduler) ke **dalam app AMMU Desktop (Electron)**, supaya PC baru cukup instal
 |------|-----|--------|--------|
 | 1 | Main process baca `att_log` (IPC `fingerprint:read-attlog`) | ✅ SELESAI | `8c5dd46` |
 | 2 | Composable sync + util shift (terverifikasi = `fp_sync.py`) | ✅ SELESAI | `2ecf97b` |
-| 3 | UI Pengaturan (path/jadwal/status + tombol "Sinkron sekarang") + scheduler | ⏳ TODO | — |
+| 3 | UI Pengaturan (path/jadwal/status + tombol "Sinkron sekarang") + scheduler | ✅ SELESAI | (sesi quizzical-torvalds) |
 | 4 | Build installer + uji E2E in-app + pensiun `fp_sync.py` | ⏳ TODO (butuh PC ber-Personnel) | — |
 
 ## Arsitektur final
@@ -39,15 +39,26 @@ Personnel **wajib** (jembatan protokol proprietary Revo — decode sendiri sudah
 - `vue-app/src/utils/shiftDerive.js` — logika shift PURE bersama (cermin AbsensiGuruView + fp_sync.py)
 - `vue-app/src/composables/useFingerprintSync.js` — `sync({personnelDir, commit})` → ringkasan
 
-## Fase 3 — rencana (lanjutan)
+## Fase 3 — SELESAI (sesi quizzical-torvalds, 24 Jun)
 
-1. **UI** di `vue-app/src/views/PengaturanDesktopView.vue` (tab/seksi "Mesin Absensi"), tampil HANYA di Electron (`useDesktopShell().isElectron`):
-   - Field **path install Personnel** (default `C:\Program Files (x86)\Fingerspot Personnel`).
-   - Toggle **auto-sync** + **interval menit**.
-   - Tombol **"Sinkron sekarang"** → `useFingerprintSync().sync({personnelDir})`, tampilkan ringkasan (`written`, `skipIzin`, `takKenal`, `luar`).
-   - **Status**: terakhir sync (waktu + hasil).
-   - Simpan config: localStorage / `settings` store / electron-store.
-2. **Scheduler**: `setInterval` di renderer saat auto-sync aktif (app desktop = station, selalu buka), ATAU timer di main process + IPC `fingerprint:tick`.
+UI dibuka dari hub **Pengaturan Desktop** (card "Mesin Absensi", Electron-only) → halaman
+`/mesin-absensi`. Build `npm run build:electron` exit 0, chunk MesinAbsensiView ter-emit.
+
+File baru/diubah:
+- `vue-app/src/stores/fingerprint.js` — **BARU**. Pinia store: config (personnelDir/autoSync/intervalMin,
+  persist localStorage `ammu_fp_sync_cfg`) + status (running/lastSyncAt/lastResult/lastError/lastTrigger) +
+  **scheduler `setInterval`**. Scheduler hidup di STORE (singleton) bukan di view → auto-sync tetap jalan
+  walau pindah halaman. Default auto-sync **OFF** (hanya PC station yg di-enable manual). `runNow(trigger)`
+  anti-overlap (guard `running`), tak melempar (error → `lastError`). `init()` 1× dari RibbonLayout.
+- `vue-app/src/views/MesinAbsensiView.vue` — **BARU**. UI tipis di atas store: input path (commit on blur),
+  toggle auto-sync + interval (min 5 mnt), tombol "Sinkron sekarang" (+toast), status terakhir, ringkasan
+  (written/scan/skipIzin/skipSame/luar/takKenal) + tabel baris ditulis. Di web → notice "hanya di Desktop".
+- `vue-app/src/views/PengaturanDesktopView.vue` — +card "Mesin Absensi" (flag `electronOnly`, di-gate `isElectron`).
+- `vue-app/src/router/index.js` — +route `mesin-absensi` (lazy, meta admin).
+- `vue-app/src/components/ribbon/RibbonLayout.vue` — `useFingerprintStore().init()` (resume auto-sync pasca-restart; root Electron-only).
+
+Catatan: scheduler tick pertama menunggu 1 interval (TIDAK sync saat init) → hindari race dgn login/sesi.
+Setsetan PER-PC (localStorage) — enable auto-sync hanya di PC station; PC lain biarkan OFF.
 
 ## Fase 4 — build & uji
 
@@ -73,9 +84,9 @@ Personnel **wajib** (jembatan protokol proprietary Revo — decode sendiri sudah
 
 ## Prompt siap-tempel untuk sesi baru
 
-> Lanjutkan **Fase 3** modul sync fingerprint di AMMU Desktop (Electron). Baca dulu
-> `HANDOFF-FINGERPRINT-SYNC.md` di root repo + commit `8c5dd46` (F1) & `2ecf97b` (F2) di
-> branch `claude/busy-buck-5feb10`. Fase 1 (main `readAttLog`) & Fase 2 (composable
-> `useFingerprintSync` + util `shiftDerive`) sudah selesai & terverifikasi. Kerjakan Fase 3:
-> UI Pengaturan (path Personnel + jadwal + status + tombol "Sinkron sekarang") di
-> `PengaturanDesktopView.vue` + scheduler internal. Panggil Kyai, bahasa Indonesia ringkas.
+> Lanjutkan **Fase 4** modul sync fingerprint di AMMU Desktop (Electron). Baca dulu
+> `HANDOFF-FINGERPRINT-SYNC.md` di root repo. Fase 1-3 selesai & build hijau (UI Mesin Absensi
+> + store scheduler `stores/fingerprint.js` + view `MesinAbsensiView.vue`). Kerjakan Fase 4 di
+> **PC ber-Personnel**: `cd vue-app/electron && npm run electron:make` (junction node_modules dulu),
+> uji E2E in-app (Pengaturan → Mesin Absensi → "Sinkron sekarang" → cek `absensi_shift_guru`),
+> lalu pensiunkan `fp_sync.py` + hapus Task Scheduler "AMMU Fingerprint Sync". Panggil Kyai, ringkas.
