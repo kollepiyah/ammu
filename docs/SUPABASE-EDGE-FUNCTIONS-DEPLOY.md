@@ -16,6 +16,7 @@ supabase functions deploy reset-user-password          # wajib JWT (verifikasi p
 supabase functions deploy get-link-preview --no-verify-jwt
 supabase functions deploy dispatch-push       --no-verify-jwt
 supabase functions deploy auto-generate-tagihan --no-verify-jwt
+supabase functions deploy hiview-absen        --no-verify-jwt   # webhook mesin HiView (lihat §8)
 ```
 
 > `--no-verify-jwt` = fungsi dipanggil oleh pg_cron/anon (bukan sesi user). Keamanan
@@ -31,6 +32,10 @@ supabase secrets set FCM_SERVICE_ACCOUNT="$(cat path/ke/service-account.json)"
 
 # (opsional) Iframely utk pratinjau link sosial-media
 supabase secrets set IFRAMELY_KEY="<api-key-iframely>"
+
+# Webhook mesin HiView — secret bersama (8-16 char, alfanumerik). Dipakai di query
+# `?k=` URL listening mesin & sbg password Basic-auth. JANGAN commit nilai aslinya.
+supabase secrets set HIVIEW_PUSH_SECRET="<8-16-char-secret>"
 ```
 
 `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` otomatis tersedia di
@@ -99,6 +104,7 @@ Lihat run: `select * from cron.job_run_details order by start_time desc limit 20
 | get-link-preview | `GET .../functions/v1/get-link-preview?url=https://example.com` → JSON title/description. |
 | auto-generate-tagihan | `select net.http_post(... '/functions/v1/auto-generate-tagihan' ...)` manual → cek `keuangan_tagihan` periode bulan ini. |
 | trigger enqueue | Insert `beranda_post` → muncul row `notif_queue` baru (status pending). |
+| hiview-absen | `GET .../functions/v1/hiview-absen` → `{ok:true,service:"hiview-absen"}`. Lalu scan di mesin → row `absensi_shift_guru` (source `hiview`) muncul. Lihat §8. |
 
 ## 7. Catatan / risiko
 
@@ -110,3 +116,56 @@ Lihat run: `select * from cron.job_run_details order by start_time desc limit 20
   `PengaturanKeuanganView.autoGenerate`. Uji 1× agar dedup konsisten dgn generate manual.
 - **bmtPaymentWebhook**: belum diport (DRY-RUN, tunggu spec BMT).
 - **analyticsQuery** (BigQuery): di luar scope migrasi DB; tetap di Firebase bila masih dipakai.
+
+---
+
+## 8. Mesin HiView (HIK-FRT24-FW) — push absensi guru tanpa PC
+
+Mesin di lokasi **tanpa PC**: tiap scan, mesin POST event ke Edge Function `hiview-absen`
+via **HTTPS** (fitur **HTTP Listening** / ISAPI event notification). Tak perlu PC station
+seperti jalur Fingerspot Revo (yang PULL via app Desktop).
+
+```
+Mesin HiView (WiFi internet) ──HTTPS POST AccessControllerEvent──▶ /functions/v1/hiview-absen ──▶ absensi_shift_guru (source 'hiview')
+```
+
+**Prasyarat:** fungsi sudah deploy (§1) + `HIVIEW_PUSH_SECRET` ter-set (§2).
+URL fungsi: `https://rzwefjilxzsqlokkwiyt.supabase.co/functions/v1/hiview-absen`
+
+### a. Enroll guru di mesin
+Tiap guru di-enroll (wajah/sidik) dengan **employeeNo = `guru.id_fingerprint`** (PIN sama
+dgn Revo) → satu peta ID untuk dua mesin. employeeNo tak terdaftar → event di-skip (dilog).
+
+### b. Setel HTTP Listening (Web UI mesin: Network → Network Service → HTTP(S) → HTTP Listening)
+| Field | Nilai |
+|---|---|
+| Protokol | **HTTPS** |
+| Event Alarm IP/Domain Name | `rzwefjilxzsqlokkwiyt.supabase.co` |
+| Port | `443` |
+| URL | `/functions/v1/hiview-absen?k=<HIVIEW_PUSH_SECRET>` |
+| Auth | **none** (secret sudah di query `?k=`) |
+
+> Alternatif auth: set User/Password (password = `HIVIEW_PUSH_SECRET`, 8-16 char) — fungsi
+> juga menerima Basic-auth. URL `?k=` lebih disukai (hindari isu header Authorization di gateway).
+
+Setara via ISAPI (`PUT /ISAPI/Event/notification/httpHosts/1`) — bisa dikerjakan dari PC
+sejaringan saat mesin masih di LAN setup (sebelum dipindah).
+
+### c. Matikan pelaporan lama (penyebab "Gagal melaporkan kedatangan")
+ISUP / Platform Attendance yg menunjuk server `0.0.0.0` bikin mesin gagal lapor tiap scan.
+Matikan ISUP (Network → Device Access → ISUP → Enable OFF) bila tak dipakai; cukup HTTP Listening.
+
+### d. Uji di LAN setup DULU sebelum mesin dipindah
+1. `GET` URL fungsi → `{ok:true,service:"hiview-absen"}`.
+2. Scan 1 guru ter-enroll → cek row `absensi_shift_guru` (source `hiview`) di Supabase + toast
+   mesin jadi sukses. **Titik kritis: TLS mesin→supabase.co** (kalau gagal, fallback relay).
+3. Logs: `supabase functions logs hiview-absen` (lihat `[hiview]` written/unknown/outOfWindow).
+
+### e. Catatan / risiko
+- **Best-effort**: kalau internet mesin putus / fungsi 5xx, event **bisa tak terkirim**
+  (mesin simpan di log lokal ≤150rb event; bisa direkonsiliasi manual via ISAPI `AcsEvent`
+  kalau sewaktu-waktu perlu). Cocok utk absensi guru.
+- **Dedup vs Revo**: docId sama (`shift_<guru>_<tgl>_<shift>`) → dua mesin nyatu 1 baris;
+  guard **scan-terawal-menang** + tak timpa `izin`/`sakit`.
+- **Jam mesin WIB**: pastikan tanggal/jam & timezone mesin benar (fungsi konversi ke
+  Asia/Jakarta, tapi jam mesin yg salah = shift salah).
