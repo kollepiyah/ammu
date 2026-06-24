@@ -50,7 +50,9 @@ const NaikKelasView = () => import('@/views/NaikKelasView.vue')
 const TesKenaikanView = () => import('@/views/TesKenaikanView.vue')
 // v.66.0526: Kalender Kegiatan + Dashboard Statistik full Vue (Batch B)
 const KalenderKegiatanView = () => import('@/views/KalenderKegiatanView.vue')
-const StatistikView = () => import('@/views/StatistikView.vue')
+// v.110: hub Dasbor Statistik — gabung dasbor (Ringkasan) + Laporan/Analitik (satu deret tab).
+// StatistikView & LaporanView kini di-render di dalam StatistikHubView (bukan route langsung).
+const StatistikHubView = () => import('@/views/StatistikHubView.vue')
 // v.95.0626: detail statistik — santri berprestasi + daftar guru belum input
 const StatistikSantriDetailView = () => import('@/views/StatistikSantriDetailView.vue')
 const GuruBelumInputView = () => import('@/views/GuruBelumInputView.vue')
@@ -112,13 +114,8 @@ const routes = [
       // v.98: ribbon-native — Home desktop (dua dasbor) + Bantuan + placeholder modul
       { path: 'beranda', name: 'beranda', component: BerandaDesktopView, meta: { noSantri: true } },
       { path: 'bantuan', name: 'bantuan', component: BantuanView },
-      // v.102 A3: Laporan/Analitik (BigQuery) — admin/super_admin only
-      {
-        path: 'laporan',
-        name: 'laporan',
-        component: () => import('@/views/LaporanView.vue'),
-        meta: { admin: true, noSantri: true }
-      },
+      // v.110: Laporan/Analitik digabung ke Dasbor Statistik (/statistik). Redirect tautan lama.
+      { path: 'laporan', name: 'laporan', redirect: { name: 'statistik' } },
       {
         path: 'modul/:judul',
         name: 'ribbon-modul',
@@ -343,7 +340,12 @@ const routes = [
         alias: '/kalender-kegiatan'
       },
       // v.86.0526: santri diblok dari statistik agregat -> redirect ke Capaian Prestasi (statistik pribadi digabung di sana)
-      { path: 'statistik', name: 'statistik', component: StatistikView, meta: { noSantri: true } },
+      {
+        path: 'statistik',
+        name: 'statistik',
+        component: StatistikHubView,
+        meta: { noSantri: true }
+      },
       // v.95.0626: detail dari kartu statistik (admin/kepala) — santri berprestasi + guru belum input
       {
         path: 'statistik/santri/:id',

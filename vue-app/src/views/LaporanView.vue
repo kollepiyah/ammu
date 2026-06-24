@@ -1,7 +1,9 @@
 <template>
-  <!-- v.102 A3: Laporan/Analitik (sumber: BigQuery via Cloud Function analyticsQuery) -->
-  <div class="p-3 md:p-5 max-w-6xl mx-auto space-y-4">
-    <div>
+  <!-- v.102 A3: Laporan/Analitik (sumber: Supabase RPC analytics_query, F9).
+       v.110: bisa di-embed di Dasbor Statistik (prop embedded → sembunyikan header & tab
+       internal; tab dikontrol parent via activeTab). -->
+  <div :class="['max-w-6xl mx-auto space-y-4', embedded ? 'px-3 md:px-5 pb-5' : 'p-3 md:p-5']">
+    <div v-if="!embedded">
       <h1 class="text-xl md:text-2xl font-black text-[var(--text-primary)]">
         <i class="fas fa-chart-bar text-teal-600 mr-2"></i>Laporan &amp; Analitik
       </h1>
@@ -10,8 +12,8 @@
       </p>
     </div>
 
-    <!-- Tabs -->
-    <div class="flex gap-2 flex-wrap">
+    <!-- Tabs (disembunyikan saat embedded — tab dikontrol Dasbor Statistik) -->
+    <div v-if="!embedded" class="flex gap-2 flex-wrap">
       <button
         v-for="t in tabs"
         :key="t.id"
@@ -137,15 +139,6 @@
           <div v-else :class="emptyCls">Belum ada data</div>
         </div>
       </div>
-      <div :class="cardCls">
-        <h3 :class="titleCls">
-          <i class="fas fa-graduation-cap text-teal-600 mr-1"></i>Rapor Terbit per Lembaga
-        </h3>
-        <div class="relative h-72">
-          <Bar v-if="cRaporLembaga" :data="cRaporLembaga" :options="optBar" />
-          <div v-else :class="emptyCls">Belum ada data</div>
-        </div>
-      </div>
     </div>
     <!-- v.103: distribusi capaian prestasi (PTPT & PPPH) realtime + ekspor -->
     <DistribusiPrestasi v-show="tab === 'akademik'" />
@@ -186,15 +179,6 @@
             <div v-else :class="emptyCls">Belum ada data</div>
           </div>
         </div>
-        <div :class="cardCls">
-          <h3 :class="titleCls">
-            <i class="fas fa-user-tie text-teal-600 mr-1"></i>Pegawai per Jabatan
-          </h3>
-          <div class="relative h-72">
-            <Bar v-if="cPegJabatan" :data="cPegJabatan" :options="optBar" />
-            <div v-else :class="emptyCls">Belum ada data</div>
-          </div>
-        </div>
       </div>
       <div :class="cardCls">
         <h3 :class="titleCls">
@@ -212,7 +196,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { Bar, Doughnut, Line } from 'vue-chartjs'
 import {
   Chart as ChartJS,
@@ -247,6 +231,12 @@ ChartJS.register(
   Filler
 )
 
+// v.110: bisa di-embed di Dasbor Statistik (tab dikontrol parent via activeTab).
+const props = defineProps({
+  embedded: { type: Boolean, default: false },
+  activeTab: { type: String, default: '' }
+})
+
 const tabs = [
   { id: 'santri', label: 'Santri', icon: 'fa-users' },
   { id: 'keuangan', label: 'Keuangan', icon: 'fa-coins' },
@@ -254,7 +244,7 @@ const tabs = [
   { id: 'absensi', label: 'Absensi', icon: 'fa-clipboard-user' },
   { id: 'pegawai', label: 'Pegawai', icon: 'fa-chalkboard-teacher' }
 ]
-const tab = ref('santri')
+const tab = ref(props.embedded && props.activeTab ? props.activeTab : 'santri')
 const loading = ref(false)
 const error = ref('')
 const usesYear = computed(() => ['keuangan', 'absensi', 'pegawai'].includes(tab.value))
@@ -345,12 +335,10 @@ const cSantriLembaga = ref(null),
   cSantriMukim = ref(null)
 const ringkas = ref({ masuk: 0, keluar: 0 }),
   cKeuBulanan = ref(null)
-const cTesStatus = ref(null),
-  cRaporLembaga = ref(null)
+const cTesStatus = ref(null)
 const cAbsNgaji = ref(null),
   cAbsSekolah = ref(null)
 const cPegLembaga = ref(null),
-  cPegJabatan = ref(null),
   cGajiBulanan = ref(null)
 
 async function run(fn) {
@@ -409,17 +397,13 @@ const loadKeuangan = () =>
   })
 const loadAkademik = () =>
   run(async () => {
-    const [t, r] = await Promise.all([
-      analyticsQuery('akademik_tes_status'),
-      analyticsQuery('akademik_rapor_per_lembaga')
-    ])
+    const t = await analyticsQuery('akademik_tes_status')
     cTesStatus.value = t.length
       ? {
           labels: t.map((x) => x.label),
           datasets: [{ data: t.map((x) => num(x.value)), backgroundColor: COLORS }]
         }
       : null
-    cRaporLembaga.value = catChart(r)
   })
 const loadAbsensi = () =>
   run(async () => {
@@ -432,13 +416,11 @@ const loadAbsensi = () =>
   })
 const loadPegawai = () =>
   run(async () => {
-    const [l, j, g] = await Promise.all([
+    const [l, g] = await Promise.all([
       analyticsQuery('pegawai_per_lembaga'),
-      analyticsQuery('pegawai_per_jabatan'),
       analyticsQuery('pegawai_gaji_bulanan', { year: year.value })
     ])
     cPegLembaga.value = catChart(l)
-    cPegJabatan.value = catChart(j)
     cGajiBulanan.value = g.length
       ? {
           labels: g.map((b) => monthLabel(b.bulan)),
@@ -468,7 +450,20 @@ function setTab(id) {
 function reloadActive() {
   LOADERS[tab.value]()
 }
-onMounted(loadSantri)
+onMounted(() => {
+  if (props.embedded) {
+    if (props.activeTab) setTab(props.activeTab)
+  } else {
+    loadSantri()
+  }
+})
+// Parent (Dasbor Statistik) ganti tab → muat ulang data tab itu.
+watch(
+  () => props.activeTab,
+  (v) => {
+    if (props.embedded && v && v !== tab.value) setTab(v)
+  }
+)
 
 // chart options
 const optBar = {

@@ -155,33 +155,6 @@
         </div>
       </div>
     </div>
-
-    <!-- ADMIN: Distribusi Santri per Lembaga (bar chart) -->
-    <div
-      v-if="showLembaga && isAdminMode && distribusiLembaga.length > 0"
-      class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
-    >
-      <h3
-        class="text-xs md:text-sm font-black text-[var(--text-primary)] uppercase tracking-widest mb-3 border-b border-[var(--border-subtle)] pb-2"
-      >
-        <i class="fas fa-chart-bar text-emerald-600 mr-2"></i>Distribusi Santri per Lembaga
-      </h3>
-      <div class="space-y-2">
-        <div v-for="dist in distribusiLembaga" :key="dist.nama" class="flex items-center gap-3">
-          <p class="text-xs font-bold text-[var(--text-primary)] w-32 truncate flex-shrink-0">
-            {{ dist.nama }}
-          </p>
-          <div class="flex-1 bg-[var(--bg-muted)] rounded-full h-5 overflow-hidden">
-            <div
-              class="h-full bg-gradient-to-r from-emerald-400 dark:from-emerald-700 to-emerald-600 dark:to-emerald-800 flex items-center justify-end px-2 text-[10px] font-black text-white transition-all"
-              :style="{ width: dist.pct + '%' }"
-            >
-              {{ dist.count }}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 
@@ -411,40 +384,6 @@ async function bersihkanGuruInvalid() {
     bersihRunning.value = false
   }
 }
-
-// ---- ADMIN: Distribusi santri per lembaga (bar) ----------------------------
-const distribusiLembaga = computed(() => {
-  if (role.value !== 'admin') return []
-  const map = {}
-  const add = (k) => {
-    const key = String(k || '').trim()
-    if (key) map[key] = (map[key] || 0) + 1
-  }
-  scopedSantriAll.value
-    .filter((s) => s.aktif !== false)
-    .forEach((s) => {
-      // v.98.0626: hitung lembaga ngaji + lembaga FORMAL (sekolah). PKBM dipecah SMP/SMA.
-      let any = false
-      if (String(s.lembaga || '').trim()) {
-        add(s.lembaga)
-        any = true
-      }
-      const ls = String(s.lembaga_sekolah || '').trim()
-      if (ls) {
-        add(ls.toUpperCase() === 'PKBM' ? getPkbmSubTier(s.kelas_sekolah) || 'PKBM' : ls)
-        any = true
-      }
-      if (!any) add('(Tanpa Lembaga)')
-    })
-  const max = Math.max(...Object.values(map), 1)
-  return Object.entries(map)
-    .map(([nama, count]) => ({
-      nama,
-      count,
-      pct: Math.max(8, Math.round((count / max) * 100))
-    }))
-    .sort((a, b) => b.count - a.count)
-})
 
 // ---- ADMIN: Statistik per lembaga (kelas + santri + guru) ------------------
 const URUTAN_LEMBAGA = [
