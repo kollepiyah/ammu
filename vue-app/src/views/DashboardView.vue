@@ -49,7 +49,7 @@ const isAdmin = computed(() => auth.isAdmin || auth.sesiAktif?.role === 'admin')
     <DashboardPosts />
 
     <p class="text-center text-[10px] text-slate-400 dark:text-[var(--text-secondary)] pt-2">
-      <i class="fas fa-circle-info mr-1"></i>Portal MU · v.109.0626
+      <i class="fas fa-circle-info mr-1"></i>Portal MU · v.110.0626
     </p>
   </div>
 </template>
