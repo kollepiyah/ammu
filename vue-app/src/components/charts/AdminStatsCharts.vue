@@ -27,7 +27,11 @@
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
       <!-- Perkembangan Capaian Prestasi -->
       <div
-        class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm"
+        v-if="show('capaian')"
+        :class="[
+          'bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm',
+          { 'lg:col-span-2': soloLine }
+        ]"
       >
         <div class="flex items-center justify-between mb-2">
           <h4 class="text-xs font-black text-[var(--text-primary)] uppercase tracking-wider">
@@ -48,7 +52,11 @@
 
       <!-- Perkembangan Kehadiran Guru -->
       <div
-        class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm"
+        v-if="show('kehadiran')"
+        :class="[
+          'bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm',
+          { 'lg:col-span-2': soloLine }
+        ]"
       >
         <div class="flex items-center justify-between mb-2">
           <h4 class="text-xs font-black text-[var(--text-primary)] uppercase tracking-wider">
@@ -71,7 +79,11 @@
 
       <!-- Perkembangan Arus Kas -->
       <div
-        class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm"
+        v-if="show('kas')"
+        :class="[
+          'bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm',
+          { 'lg:col-span-2': soloLine }
+        ]"
       >
         <div class="flex items-center justify-between mb-2">
           <h4 class="text-xs font-black text-[var(--text-primary)] uppercase tracking-wider">
@@ -94,7 +106,11 @@
 
       <!-- Perkembangan Jumlah Santri Masuk -->
       <div
-        class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm"
+        v-if="show('santri')"
+        :class="[
+          'bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm',
+          { 'lg:col-span-2': soloLine }
+        ]"
       >
         <div class="flex items-center justify-between mb-2">
           <h4 class="text-xs font-black text-[var(--text-primary)] uppercase tracking-wider">
@@ -116,7 +132,7 @@
       </div>
 
       <!-- Kenaikan Tes per Lembaga — 1 card/lembaga, stacked Lulus vs Belum Lulus per kelas -->
-      <div class="lg:col-span-2 pt-1">
+      <div v-if="show('kenaikan')" class="lg:col-span-2 pt-1">
         <h4 class="text-xs font-black text-[var(--text-primary)] uppercase tracking-wider">
           <i class="fas fa-arrow-up-right-dots text-[var(--color-primary)] mr-1"></i>Kenaikan Tes
           per Lembaga
@@ -126,7 +142,7 @@
         </h4>
       </div>
       <div
-        v-if="tesByLembaga.length === 0"
+        v-if="show('kenaikan') && tesByLembaga.length === 0"
         class="lg:col-span-2 bg-[var(--bg-card)] rounded-2xl p-6 border border-[var(--border-subtle)] shadow-sm text-center text-xs text-[var(--text-tertiary)] italic"
       >
         Belum ada hasil tes (lulus/belum) pada rentang ini
@@ -193,8 +209,17 @@ ChartJS.register(
   Filler
 )
 
-// santriList dari StatistikView (scopedSantriAll) — utk grafik santri masuk
-const props = defineProps({ santriList: { type: Array, default: () => [] } })
+// santriList dari parent (scopedSantriAll) — utk grafik santri masuk
+const props = defineProps({
+  santriList: { type: Array, default: () => [] },
+  // v.110: pilih grafik yg dirender + di-fetch per tab (capaian|kehadiran|kas|santri|kenaikan).
+  //   Default = semua (kompatibel pemakaian lama). Tiap tab kirim subset → hemat reads.
+  only: { type: Array, default: () => ['capaian', 'kehadiran', 'kas', 'santri', 'kenaikan'] }
+})
+const show = (k) => props.only.includes(k)
+// solo line-chart → full width (hindari 1 kolom kosong di tab yg cuma 1 grafik garis)
+const LINE_KEYS = ['capaian', 'kehadiran', 'kas', 'santri']
+const soloLine = computed(() => LINE_KEYS.filter((k) => props.only.includes(k)).length === 1)
 
 // ---- Rentang waktu ---------------------------------------------------------
 const RANGES = [
@@ -216,22 +241,35 @@ const prestasiRows = ref([]) // notif_prestasi: { santri_id, total, periode }
 const unsubs = []
 
 onMounted(async () => {
-  unsubs.push(
-    subscribeColl('absensi_guru', (docs) => {
-      absensiGuru.value = docs
-    }),
-    subscribeColl('keuangan_buku_induk', (docs) => {
-      bukuInduk.value = docs
-    }),
-    subscribeColl('tes_kenaikan', (docs) => {
-      tesList.value = docs
-    })
-  )
+  // v.110: subscribe HANYA data grafik yg aktif di tab ini (hemat reads).
+  if (show('kehadiran')) {
+    unsubs.push(
+      subscribeColl('absensi_guru', (docs) => {
+        absensiGuru.value = docs
+      })
+    )
+  }
+  if (show('kas')) {
+    unsubs.push(
+      subscribeColl('keuangan_buku_induk', (docs) => {
+        bukuInduk.value = docs
+      })
+    )
+  }
+  if (show('kenaikan')) {
+    unsubs.push(
+      subscribeColl('tes_kenaikan', (docs) => {
+        tesList.value = docs
+      })
+    )
+  }
   // notif_prestasi: ambil sekali (agregat bulanan, hemat reads vs subscribe)
-  try {
-    prestasiRows.value = await getAll('notif_prestasi')
-  } catch (e) {
-    prestasiRows.value = []
+  if (show('capaian')) {
+    try {
+      prestasiRows.value = await getAll('notif_prestasi')
+    } catch (e) {
+      prestasiRows.value = []
+    }
   }
 })
 onUnmounted(() => {

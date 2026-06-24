@@ -448,13 +448,14 @@
     </div>
 
     <!-- ============================================================
-         ADMIN: KPI ringkas (Total Santri/Guru/Lembaga/Kelas) + Grafik Perkembangan.
-         v.103: KPI dikembalikan ke dasbor (kyai req — at-a-glance cocok di sini).
-         Alert operasional, distribusi capaian, grid/distribusi per-lembaga tetap di
-         Laporan (components/statistik/*).
+         ADMIN: Ringkasan = potret cepat. KPI (Santri/Guru/Lembaga/Kelas) +
+         Statistik Lembaga (grid per-lembaga) + grafik Kenaikan Tes per lembaga.
+         v.110: grafik perkembangan lain pindah ke tab domain di Laporan
+         (kehadiran→Pegawai, kas→Keuangan, capaian/santri→Santri).
          ============================================================ -->
     <RingkasanSantriLembaga v-if="isAdminMode" section="kpi" />
-    <AdminStatsCharts v-if="isAdminMode" :santri-list="scopedSantriAll" />
+    <RingkasanSantriLembaga v-if="isAdminMode" section="lembaga" />
+    <AdminStatsCharts v-if="isAdminMode" :only="['kenaikan']" class="mt-4" />
 
     <!-- ============================================================
          GURU: Statistik Pengajaran + Kehadiran + Kelas Saya
@@ -705,14 +706,15 @@ import { useSantri } from '@/composables/useSantri'
 import { useGuru } from '@/composables/useGuru'
 import { formatKelasLabel } from '@/composables/useLembaga'
 import { subscribeColl } from '@/services/db'
-import AdminStatsCharts from '@/components/charts/AdminStatsCharts.vue'
+import AdminStatsCharts from '@/components/charts/AdminStatsCharts.vue' // v.110: grafik Kenaikan Tes di Ringkasan
 import TrenCapaianChart from '@/components/charts/TrenCapaianChart.vue' // v.100c: Opsi A — tren capaian
 import RingkasanSantriLembaga from '@/components/statistik/RingkasanSantriLembaga.vue' // v.103: KPI ringkas di dasbor
 // v.21.107.0527: gating role konsisten (admin/super_admin/admin_keuangan)
 import { isFullFilterRole, isKepalaLembaga } from '@/utils/roleScope'
 import { juzNum } from '@/utils/format' // v.100e: normalisasi tampilan juz (anti dobel "Juz JUZ n")
-// v.103 "rapikan dashboard": KPI/alert/distribusi/per-lembaga admin DIPINDAH ke Laporan
-// (components/statistik/*). Di sini cukup scope utk AdminStatsCharts & TrenCapaian guru.
+// v.110: Ringkasan admin = KPI + Statistik Lembaga + grafik Kenaikan Tes (potret cepat).
+// Grafik perkembangan lain (kehadiran/kas/capaian/santri) pindah ke tab domain di Laporan.
+// Scope di sini cukup utk TrenCapaian guru/kepala (scopedSantriAktif).
 import { useStatistikScope } from '@/composables/useStatistikScope'
 
 // Logo dipakai sebagai watermark di greeting santri (dari public/)
@@ -742,10 +744,9 @@ const role = computed(() => auth.sesiAktif?.role || 'guest')
 const isAdminMode = computed(() => isFullFilterRole(auth.sesiAktif))
 const loadingAny = computed(() => loadingSantri.value || loadingGuru.value)
 
-// v.103: scope dipakai utk AdminStatsCharts (scopedSantriAll) & TrenCapaian guru/kepala
-//   (scopedSantriAktif). KPI/alert/distribusi/per-lembaga admin sudah pindah ke Laporan
-//   (components/statistik/{RingkasanSantriLembaga,DistribusiPrestasi,OperasionalGuru}.vue).
-const { scopedSantriAktif, scopedSantriAll } = useStatistikScope()
+// v.110: scopedSantriAktif dipakai TrenCapaian guru/kepala. scopedSantriAll (utk
+//   AdminStatsCharts/Grafik Perkembangan) dipindah ke LaporanView — kini di tab Santri.
+const { scopedSantriAktif } = useStatistikScope()
 
 // ---- Helpers ---------------------------------------------------------------
 // parseNum: dipakai section santri (selisih/status prestasi)

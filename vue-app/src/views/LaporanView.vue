@@ -55,7 +55,9 @@
     </div>
 
     <!-- ===== SANTRI ===== -->
-    <!-- v.103: KPI ringkas dipindah ke dasbor (/statistik). Di sini chart BigQuery + breakdown lembaga. -->
+    <!-- v.110: tab Santri = chart komposisi (BigQuery) + Grafik Perkembangan santri
+         (Capaian Prestasi & Jumlah Santri). KPI ringkas pindah ke tab Ringkasan;
+         kehadiran guru→Pegawai, arus kas→Keuangan, kenaikan tes→Akademik. -->
     <div v-show="!loading && tab === 'santri'" class="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <div :class="cardCls">
         <h3 :class="titleCls">
@@ -74,8 +76,12 @@
         </div>
       </div>
     </div>
-    <!-- v.103: breakdown per-lembaga (grid + distribusi bar) di BAWAH chart -->
-    <RingkasanSantriLembaga section="lembaga" v-show="tab === 'santri'" />
+    <!-- v.110: Grafik Perkembangan santri — Capaian Prestasi & Jumlah Santri (30/90hr/tahunan) -->
+    <AdminStatsCharts
+      v-show="tab === 'santri'"
+      :only="['capaian', 'santri']"
+      :santri-list="scopedSantriAll"
+    />
 
     <!-- ===== KEUANGAN ===== -->
     <div v-show="!loading && tab === 'keuangan'" class="space-y-4">
@@ -117,16 +123,10 @@
           </div>
         </div>
       </div>
-      <div :class="cardCls">
-        <h3 :class="titleCls">
-          <i class="fas fa-coins text-cyan-600 mr-1"></i>Arus Kas per Bulan ({{ year }})
-        </h3>
-        <div class="relative h-80">
-          <Line v-if="cKeuBulanan" :data="cKeuBulanan" :options="optCurrency" />
-          <div v-else :class="emptyCls">Belum ada transaksi tahun ini</div>
-        </div>
-      </div>
     </div>
+    <!-- v.110: Arus Kas = grafik "Perkembangan Arus Kas" realtime (30/90hr/tahunan) saja,
+         gantikan rekap BigQuery per-bulan (kyai req). KPI kas di atas tetap. -->
+    <AdminStatsCharts v-show="tab === 'keuangan'" :only="['kas']" />
 
     <!-- ===== AKADEMIK ===== -->
     <div v-show="!loading && tab === 'akademik'" class="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -142,6 +142,8 @@
     </div>
     <!-- v.103: distribusi capaian prestasi (PTPT & PPPH) realtime + ekspor -->
     <DistribusiPrestasi v-show="tab === 'akademik'" />
+    <!-- v.110: Kenaikan Tes per Lembaga (stacked Lulus vs Belum Lulus, per kelas) -->
+    <AdminStatsCharts v-show="tab === 'akademik'" :only="['kenaikan']" />
 
     <!-- ===== ABSENSI ===== -->
     <div v-show="!loading && tab === 'absensi'" class="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -192,6 +194,8 @@
         </div>
       </div>
     </div>
+    <!-- v.110: Perkembangan Kehadiran Guru realtime (30/90hr/tahunan) -->
+    <AdminStatsCharts v-show="tab === 'pegawai'" :only="['kehadiran']" />
   </div>
 </template>
 
@@ -214,9 +218,12 @@ import {
 import { analyticsQuery } from '@/services/analytics'
 // v.103 "rapikan dashboard": section non-grafik admin dari StatistikView dilebur ke
 // tab terkait (Firestore-realtime, terpisah dari gate loading BigQuery di bawah).
-import RingkasanSantriLembaga from '@/components/statistik/RingkasanSantriLembaga.vue'
 import DistribusiPrestasi from '@/components/statistik/DistribusiPrestasi.vue'
 import OperasionalGuru from '@/components/statistik/OperasionalGuru.vue'
+// v.110: Grafik Perkembangan dipecah per-tab via prop `only` (kas→Keuangan,
+// kenaikan→Akademik, kehadiran→Pegawai, capaian/santri→Santri). KPI ringkas balik ke Ringkasan.
+import AdminStatsCharts from '@/components/charts/AdminStatsCharts.vue'
+import { useStatistikScope } from '@/composables/useStatistikScope'
 
 ChartJS.register(
   Title,
@@ -236,6 +243,9 @@ const props = defineProps({
   embedded: { type: Boolean, default: false },
   activeTab: { type: String, default: '' }
 })
+
+// v.110: sumber santri ter-scope utk AdminStatsCharts (Grafik Perkembangan) di tab Santri
+const { scopedSantriAll } = useStatistikScope()
 
 const tabs = [
   { id: 'santri', label: 'Santri', icon: 'fa-users' },
@@ -333,8 +343,7 @@ const absChart = (rows) =>
 // chart refs
 const cSantriLembaga = ref(null),
   cSantriMukim = ref(null)
-const ringkas = ref({ masuk: 0, keluar: 0 }),
-  cKeuBulanan = ref(null)
+const ringkas = ref({ masuk: 0, keluar: 0 })
 const cTesStatus = ref(null)
 const cAbsNgaji = ref(null),
   cAbsSekolah = ref(null)
@@ -369,31 +378,11 @@ const loadSantri = () =>
   })
 const loadKeuangan = () =>
   run(async () => {
-    const [r, m] = await Promise.all([
-      analyticsQuery('keuangan_ringkas'),
-      analyticsQuery('keuangan_bulanan', { year: year.value })
-    ])
+    // v.110: cukup ringkasan kas (KPI Total Masuk/Keluar/Saldo). Grafik "Arus Kas per Bulan"
+    //   (keuangan_bulanan) diganti "Perkembangan Arus Kas" realtime (AdminStatsCharts only=['kas']).
+    const r = await analyticsQuery('keuangan_ringkas')
     const x = r[0] || {}
     ringkas.value = { masuk: num(x.masuk), keluar: num(x.keluar) }
-    cKeuBulanan.value = m.length
-      ? {
-          labels: m.map((b) => monthLabel(b.bulan)),
-          datasets: [
-            lineDs(
-              'Masuk',
-              m.map((b) => num(b.masuk)),
-              '#10b981',
-              true
-            ),
-            lineDs(
-              'Keluar',
-              m.map((b) => num(b.keluar)),
-              '#ef4444',
-              true
-            )
-          ]
-        }
-      : null
   })
 const loadAkademik = () =>
   run(async () => {
