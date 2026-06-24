@@ -365,7 +365,8 @@
                     {{ s.nama }}
                   </h3>
                   <p class="text-[11px] text-[var(--text-secondary)] mt-0.5">
-                    No. Induk: {{ s.nis || '-' }} · {{ s.jk === 'L' ? 'Laki-laki' : 'Perempuan' }}
+                    No. Induk: {{ s.nis || '-' }} · {{ s.jk === 'L' ? 'Laki-laki' : 'Perempuan'
+                    }}<span v-if="usiaKini(s.tgl_lahir)"> · {{ usiaKini(s.tgl_lahir) }}</span>
                   </p>
                 </div>
                 <!-- v.21.12.0526: Ma'had / Fullday / Tidak Aktif / (PP tanpa label) -->
@@ -490,6 +491,7 @@ const props = defineProps({ mode: { type: String, default: 'view' } })
 const isMasterMode = computed(() => props.mode === 'master')
 // v.21.13b.0526: + toTitleCase + normalizeWA + parseMultipleWA (v.21.22b dual WA)
 import { getNamaGuruGelar, toTitleCase, normalizeWA, parseMultipleWA, juzNum } from '@/utils/format'
+import { usiaKini } from '@/utils/usia' // umur santri auto dari tgl lahir (card + ekspor)
 import { useExcel } from '@/composables/useExcel'
 import { useGoogleSheet } from '@/composables/useGoogleSheet'
 import { buildListPdf, buildKopFromSettings } from '@/utils/pdfBuilder'
@@ -844,6 +846,7 @@ async function cetakPdf() {
       nama: s.nama || '',
       nis: s.nis || '',
       jk: s.jk || '',
+      usia: usiaKini(s.tgl_lahir),
       lembaga: s.lembaga || '',
       kelas: s.kelas || '',
       wa: s.wa || ''
@@ -859,6 +862,7 @@ async function cetakPdf() {
         { key: 'nama', header: 'Nama Santri', width: 60 },
         { key: 'nis', header: 'No. Induk', width: 25 },
         { key: 'jk', header: 'JK', width: 12 },
+        { key: 'usia', header: 'Usia', width: 22 },
         { key: 'lembaga', header: 'Lembaga', width: 35 },
         { key: 'kelas', header: 'Kelas', width: 25 },
         { key: 'wa', header: 'No. WA', width: 35 }
@@ -887,6 +891,7 @@ async function kirimGoogleSheet() {
       nama: s.nama || '',
       nis: s.nis || '',
       jk: s.jk || '',
+      usia: usiaKini(s.tgl_lahir),
       lembaga: s.lembaga || '',
       kelas: s.kelas || '',
       lembaga_sekolah: s.lembaga_sekolah || '',
@@ -908,6 +913,7 @@ async function kirimGoogleSheet() {
         { key: 'nama', header: 'Nama Santri', width: 28 },
         { key: 'nis', header: 'No. Induk', width: 14 },
         { key: 'jk', header: 'L/P', width: 6 },
+        { key: 'usia', header: 'Usia', width: 10 },
         { key: 'lembaga', header: 'Lembaga Qiraati', width: 16 },
         { key: 'kelas', header: 'Kelas', width: 14 },
         { key: 'lembaga_sekolah', header: 'Lembaga Sekolah', width: 16 },
@@ -946,6 +952,7 @@ async function exportSantriExcel() {
       jk: s.jk || '',
       tempat_lahir: s.tempat_lahir || '',
       tgl_lahir: s.tgl_lahir || '',
+      usia: usiaKini(s.tgl_lahir),
       tgl_masuk: s.tgl_masuk || '',
       no_kk: s.no_kk || '',
       wali: s.nama_wali || s.wali || '',
@@ -1007,6 +1014,7 @@ async function exportSantriExcel() {
         { key: 'jk', header: 'L/P', width: 5 },
         { key: 'tempat_lahir', header: 'Tempat Lahir', width: 14 },
         { key: 'tgl_lahir', header: 'Tgl Lahir (DD/MM/YYYY)', width: 14 },
+        { key: 'usia', header: 'Usia (auto)', width: 10 },
         { key: 'tgl_masuk', header: 'Tgl Masuk (DD/MM/YYYY)', width: 14 },
         { key: 'no_kk', header: 'No KK', width: 18 },
         { key: 'wali', header: 'Nama Wali', width: 22 },

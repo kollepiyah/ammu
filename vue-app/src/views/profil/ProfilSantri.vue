@@ -107,6 +107,15 @@
                 <span class="text-[var(--text-secondary)] font-bold">Tgl Masuk:</span
                 ><span class="font-black">{{ santri?.tgl_masuk || '-' }}</span>
               </li>
+              <li
+                v-if="usiaPada(santri?.tgl_lahir, santri?.tgl_masuk)"
+                class="flex justify-between"
+              >
+                <span class="text-[var(--text-secondary)] font-bold">Usia Saat Masuk:</span
+                ><span class="font-black">{{
+                  usiaPada(santri?.tgl_lahir, santri?.tgl_masuk)
+                }}</span>
+              </li>
             </ul>
           </div>
           <div
@@ -487,6 +496,7 @@ import { mergeOne } from '@/services/db'
 import { useToast } from '@/composables/useToast'
 import ProfilPengaturanSaya from './ProfilPengaturanSaya.vue'
 import { juzNum } from '@/utils/format' // v.100e: normalisasi tampilan juz (anti dobel "Juz JUZ n")
+import { usiaPada } from '@/utils/usia' // umur santri saat masuk (tgl lahir → tgl masuk)
 
 const props = defineProps({
   santri: { type: Object, required: true },
