@@ -6,8 +6,8 @@ import { useCollectionsStore } from '@/stores/collections'
 import { useAuthStore } from '@/stores/auth'
 // v.21.10.0526: Import lembaga helpers
 import { getLembagaGroup } from './useLembaga'
-// v.100: urutan lembaga canonical (sumber tunggal)
-import { lembagaRank } from '@/utils/santriSort'
+// v.110: sortGuru — urutan Qiraati→Sekolah→Pegawai→nama A–Z (sumber tunggal)
+import { sortGuru } from '@/utils/santriSort'
 
 // Helper: derive guru.lembaga_refs dari legacy fields + jabatan_tambahan
 // 1 guru bisa multi-lembaga (mis: Admin Yayasan + Guru TPQ).
@@ -36,10 +36,13 @@ function deriveGuruLembagaRefs(g) {
   // Jabatan tambahan (legacy): mungkin ref ke lembaga lain (Admin Yayasan dst)
   if (Array.isArray(g.jabatan_tambahan) && g.jabatan_tambahan.length > 0) {
     for (const jt of g.jabatan_tambahan) {
-      if (typeof jt === 'string' && jt && !refs.some(r => r.jabatan_di_sini === jt)) {
+      if (typeof jt === 'string' && jt && !refs.some((r) => r.jabatan_di_sini === jt)) {
         // Heuristic: jabatan Admin/PJ/Supervisi → Yayasan, Keamanan/Kebersihan → Sarana Prasarana
-        const lembagaTambahan = /admin|supervisi|pj/i.test(jt) ? 'Yayasan' :
-                                 /keamanan|kebersihan/i.test(jt) ? 'Sarana Prasarana' : null
+        const lembagaTambahan = /admin|supervisi|pj/i.test(jt)
+          ? 'Yayasan'
+          : /keamanan|kebersihan/i.test(jt)
+            ? 'Sarana Prasarana'
+            : null
         if (lembagaTambahan) {
           refs.push({ group: 'non-lembaga', lembaga: lembagaTambahan, jabatan_di_sini: jt })
         }
@@ -53,9 +56,9 @@ function deriveGuruLembagaRefs(g) {
 function isKepalaLembaga(g, namaLembaga = null) {
   const refs = deriveGuruLembagaRefs(g)
   if (namaLembaga) {
-    return refs.some(r => r.lembaga === namaLembaga && /kepala/i.test(r.jabatan_di_sini || ''))
+    return refs.some((r) => r.lembaga === namaLembaga && /kepala/i.test(r.jabatan_di_sini || ''))
   }
-  return refs.some(r => /kepala/i.test(r.jabatan_di_sini || ''))
+  return refs.some((r) => /kepala/i.test(r.jabatan_di_sini || ''))
 }
 
 export function useGuru() {
@@ -93,12 +96,16 @@ export function useGuru() {
     // Status filter
     if (filterStatus.value === 'aktif') {
       list = list.filter((g) => {
-        const st = String(g.status || 'Aktif').toLowerCase().trim()
+        const st = String(g.status || 'Aktif')
+          .toLowerCase()
+          .trim()
         return st === 'aktif'
       })
     } else if (filterStatus.value === 'tidak_aktif') {
       list = list.filter((g) => {
-        const st = String(g.status || 'Aktif').toLowerCase().trim()
+        const st = String(g.status || 'Aktif')
+          .toLowerCase()
+          .trim()
         return st !== 'aktif'
       })
     }
@@ -108,10 +115,18 @@ export function useGuru() {
     if (kw) {
       list = list.filter(
         (g) =>
-          String(g.nama || '').toLowerCase().includes(kw) ||
-          String(g.wa || '').toLowerCase().includes(kw) ||
-          String(g.jabatan || '').toLowerCase().includes(kw) ||
-          String(g.username || '').toLowerCase().includes(kw)
+          String(g.nama || '')
+            .toLowerCase()
+            .includes(kw) ||
+          String(g.wa || '')
+            .toLowerCase()
+            .includes(kw) ||
+          String(g.jabatan || '')
+            .toLowerCase()
+            .includes(kw) ||
+          String(g.username || '')
+            .toLowerCase()
+            .includes(kw)
       )
     }
 
@@ -131,20 +146,17 @@ export function useGuru() {
       list = list.filter((g) => g.jabatan === filterJabatan.value)
     }
 
-    // v.100: Sort canonical — lembaga (Qiraati dulu, lembaga ngaji ATAU sekolah) → nama A–Z
-    return list.sort((a, b) => {
-      const la = lembagaRank(a.lembaga || a.lembaga_sekolah)
-      const lb = lembagaRank(b.lembaga || b.lembaga_sekolah)
-      if (la !== lb) return la - lb
-      return String(a.nama || '').localeCompare(String(b.nama || ''), 'id')
-    })
+    // v.110: Sort canonical — Qiraati (TPQ Pagi→PPPH) → Sekolah (TK→PKBM) → Pegawai → nama A–Z
+    return sortGuru(list)
   })
 
   // Stats berbasis seluruh data (bukan filter)
   const stats = computed(() => {
     const all = guruRaw.value.filter(Boolean)
     const aktif = all.filter((g) => {
-      const st = String(g.status || 'Aktif').toLowerCase().trim()
+      const st = String(g.status || 'Aktif')
+        .toLowerCase()
+        .trim()
       return st === 'aktif'
     })
     const perLembaga = aktif.reduce((acc, g) => {

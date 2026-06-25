@@ -281,8 +281,24 @@ export function useGuruForm() {
     if (JABATAN_NO_LEMBAGA.some((n) => String(n).toLowerCase() === j)) return 'non-lembaga'
     return 'lembaga'
   })
-  const butuhLembaga = computed(() => jabatanTipeLembaga.value !== 'non-lembaga')
-  // Lembaga (Qiraati & Sekolah) tampil & disimpan HANYA bila jabatan butuh lembaga.
+  // v.110.0625: PENGAJAR tetap butuh lembaga walau JABATAN UTAMA non-lembaga (mis. Direktur + jabatan tambahan Guru).
+  //   Pemicu: tipe_pegawai 'guru'/'pegawai_guru' (dual role) ATAU jabatan tambahan termasuk grup guru.
+  const isPengajar = computed(() => {
+    const tipe = String(form.value.tipe_pegawai || '').toLowerCase()
+    if (tipe === 'guru' || tipe === 'pegawai_guru') return true
+    const jt = String(form.value.jabatan_tambahan || '').trim()
+    if (
+      jt &&
+      (JABATAN_GURU_GROUP.some((n) => n.toLowerCase() === jt.toLowerCase()) || /guru/i.test(jt))
+    )
+      return true
+    return false
+  })
+  // Butuh lembaga bila: jabatan utama butuh lembaga, ATAU orangnya mengajar (dual-role / jabatan tambahan guru).
+  const butuhLembaga = computed(
+    () => jabatanTipeLembaga.value !== 'non-lembaga' || isPengajar.value
+  )
+  // Lembaga (Qiraati & Sekolah) tampil & disimpan bila butuh lembaga.
   const showLembagaSekolah = computed(() => butuhLembaga.value)
   const showLembagaQiraati = computed(() => butuhLembaga.value)
 

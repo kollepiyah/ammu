@@ -15,10 +15,19 @@ function deriveSantriLembagaRefs(s) {
   if (Array.isArray(s.lembaga_refs) && s.lembaga_refs.length > 0) return s.lembaga_refs
   const refs = []
   if (s.lembaga) {
-    refs.push({ group: getLembagaGroup(s.lembaga) || 'qiraati', lembaga: s.lembaga, shift: s.shift_qiraati || null, kelas: s.kelas || null })
+    refs.push({
+      group: getLembagaGroup(s.lembaga) || 'qiraati',
+      lembaga: s.lembaga,
+      shift: s.shift_qiraati || null,
+      kelas: s.kelas || null
+    })
   }
   if (s.lembaga_sekolah && s.lembaga_sekolah !== s.lembaga) {
-    refs.push({ group: getLembagaGroup(s.lembaga_sekolah) || 'sekolah', lembaga: s.lembaga_sekolah, kelas: s.kelas_sekolah || null })
+    refs.push({
+      group: getLembagaGroup(s.lembaga_sekolah) || 'sekolah',
+      lembaga: s.lembaga_sekolah,
+      kelas: s.kelas_sekolah || null
+    })
   }
   if (s.is_mukim) {
     refs.unshift({ group: 'mahad', lembaga: "Ma'had" })
@@ -63,7 +72,9 @@ export function useSantri() {
     // Role filter — v.21.10.0526: pakai lembagaScopeMatches untuk Kepala Lembaga scoping (lihat semua di lembaga-nya), guru biasa lihat kelasnya
     if (!isFullAccess.value) {
       const user = auth.sesiAktif
-      const myNama = String(user?.guru || user?.nama || '').trim().toLowerCase()
+      const myNama = String(user?.guru || user?.nama || '')
+        .trim()
+        .toLowerCase()
       if (!myNama) return []
       // Kepala Lembaga: filter santri yang lembaga-nya = lembaga kepala-nya (via lembagaScopeMatches)
       const jabL = String(user?.jabatan || '').toLowerCase()
@@ -72,19 +83,29 @@ export function useSantri() {
         // v.86.0526: Kepala/PJ = se-lembaganya (kyai "se-group"). lembagaScopeMatches handle
         //   variant/family (TPQ Sore→TPQ Pagi/Sore/Pra PTPT) MAUPUN label broad ('Qiraati'→semua qiraati).
         if (isKepala) {
-          return lembagaScopeMatches(user?.lembaga, s.lembaga) || lembagaScopeMatches(user?.lembaga, s.lembaga_sekolah)
+          return (
+            lembagaScopeMatches(user?.lembaga, s.lembaga) ||
+            lembagaScopeMatches(user?.lembaga, s.lembaga_sekolah)
+          )
         }
-        const gp = String(s.guru_pagi || '').trim().toLowerCase()
-        const gs = String(s.guru_sore || '').trim().toLowerCase()
-        const gOld = String(s.guru || '').trim().toLowerCase()
+        const gp = String(s.guru_pagi || '')
+          .trim()
+          .toLowerCase()
+        const gs = String(s.guru_sore || '')
+          .trim()
+          .toLowerCase()
+        const gOld = String(s.guru || '')
+          .trim()
+          .toLowerCase()
         const gsek = Array.isArray(s.guru_sekolah)
-          ? s.guru_sekolah.map((x) => String(x || '').trim().toLowerCase())
+          ? s.guru_sekolah.map((x) =>
+              String(x || '')
+                .trim()
+                .toLowerCase()
+            )
           : []
         return (
-          gp === myNama ||
-          gs === myNama ||
-          (gOld === myNama && !gp && !gs) ||
-          gsek.includes(myNama)
+          gp === myNama || gs === myNama || (gOld === myNama && !gp && !gs) || gsek.includes(myNama)
         )
       })
     }
@@ -94,9 +115,15 @@ export function useSantri() {
     if (kw) {
       list = list.filter(
         (s) =>
-          String(s.nama || '').toLowerCase().includes(kw) ||
-          String(s.nis || '').toLowerCase().includes(kw) ||
-          String(s.wali || '').toLowerCase().includes(kw)
+          String(s.nama || '')
+            .toLowerCase()
+            .includes(kw) ||
+          String(s.nis || '')
+            .toLowerCase()
+            .includes(kw) ||
+          String(s.wali || '')
+            .toLowerCase()
+            .includes(kw)
       )
     }
 
@@ -109,7 +136,9 @@ export function useSantri() {
           const isPkbm =
             String(s.lembaga_sekolah || '').toUpperCase() === 'PKBM' ||
             String(s.lembaga || '').toUpperCase() === 'PKBM'
-          return isPkbm && getPkbmSubTier(String(s.kelas_sekolah || s.kelas || '').toUpperCase()) === fl
+          return (
+            isPkbm && getPkbmSubTier(String(s.kelas_sekolah || s.kelas || '').toUpperCase()) === fl
+          )
         })
       } else {
         list = list.filter((s) => s.lembaga === fl || s.lembaga_sekolah === fl)
@@ -118,20 +147,24 @@ export function useSantri() {
 
     // Kelas filter
     if (filterKelas.value) {
-      list = list.filter((s) => s.kelas === filterKelas.value || s.kelas_sekolah === filterKelas.value)
+      list = list.filter(
+        (s) => s.kelas === filterKelas.value || s.kelas_sekolah === filterKelas.value
+      )
     }
 
     // v.21.12.0526: Ma'had / Fullday / Pulang Pergi
     if (filterMukim.value === 'mukim') list = list.filter((s) => s.is_mukim === true)
-    else if (filterMukim.value === 'fullday') list = list.filter((s) => !s.is_mukim && s.is_fullday === true)
-    else if (filterMukim.value === 'non-mukim') list = list.filter((s) => !s.is_mukim && !s.is_fullday)
+    else if (filterMukim.value === 'fullday')
+      list = list.filter((s) => !s.is_mukim && s.is_fullday === true)
+    else if (filterMukim.value === 'non-mukim')
+      list = list.filter((s) => !s.is_mukim && !s.is_fullday)
 
     // v.21.12.0526: Status aktif filter
     if (filterStatus.value === 'aktif') list = list.filter((s) => s.aktif !== false)
     else if (filterStatus.value === 'tidak_aktif') list = list.filter((s) => s.aktif === false)
 
-    // v.100 Batch10: Data Santri urut lembaga→NAMA A–Z (kyai; kelas impor tak seragam bikin urutan tampak acak)
-    return sortSantri(list, { byNama: true })
+    // v.110.0625: Data Santri ikut aturan global — lembaga → kelas → USIA (muda→tua) → nama
+    return sortSantri(list)
   })
 
   // Stats
@@ -183,9 +216,13 @@ export function useSantri() {
       const NO_RAPOR_LEMBAGA = new Set(['tpq pagi', 'tk'])
       const refs = deriveSantriLembagaRefs(s)
       const rapors = []
-      const qiraati = refs.find((r) => r.group === 'qiraati' && !NO_RAPOR_LEMBAGA.has(String(r.lembaga || '').toLowerCase()))
+      const qiraati = refs.find(
+        (r) => r.group === 'qiraati' && !NO_RAPOR_LEMBAGA.has(String(r.lembaga || '').toLowerCase())
+      )
       if (qiraati) rapors.push({ jenis: 'qiraati', lembaga: qiraati.lembaga })
-      const sekolah = refs.find((r) => r.group === 'sekolah' && !NO_RAPOR_LEMBAGA.has(String(r.lembaga || '').toLowerCase()))
+      const sekolah = refs.find(
+        (r) => r.group === 'sekolah' && !NO_RAPOR_LEMBAGA.has(String(r.lembaga || '').toLowerCase())
+      )
       if (sekolah) rapors.push({ jenis: 'diniyah', lembaga: sekolah.lembaga })
       return rapors
     }

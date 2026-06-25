@@ -1,21 +1,8 @@
-# SPEC: Edit Field Order (Santri + Guru + Lembaga + Kelas)
+# SPEC: Edit Field Order Santri
 
-> **Status:** ✅ APPROVED kyai (16 Mei 2026)
-> **Prioritas:** DEFER — implement SETELAH bug-bug v.20+ stable
-> **Versi target:** v.21+ atau pasca-stable
-> **Estimasi kerja:** 3-4 hari (4 forms × ~6-8 jam per form, plus UI shared component)
-
----
-
-## DECISION FINAL (kyai jawab 16 Mei 2026)
-
-| # | Pertanyaan | Jawaban |
-|---|---|---|
-| 1 | MVP scope (cuma reorder) atau langsung hide/show juga? | **MVP only (reorder)** — hide/show defer ke batch berikutnya |
-| 2 | Drag-drop saja atau plus tombol up/down? | **Drag-drop saja** |
-| 3 | Apakah perlu untuk form Guru + Lembaga + Kelas juga? | **YA — semua 4 form** |
-| 4 | Storage global (settings/web) atau per-admin? | **Global** (konsisten antar admin) |
-| 5 | Urgency? | **DEFER** — setelah bug-bug fix stable |
+> **Status:** DRAFT (perlu kyai approve sebelum implement)
+> **Versi target:** v.21.0526+
+> **Estimasi kerja:** 1-2 hari (UI drag-drop + logic + smoke test)
 
 ---
 
@@ -36,18 +23,11 @@ Sekarang urutan fixed di HTML (NIS, Nama, JK, dst). Admin pondok mungkin punya p
 - ✅ Reset ke default order (tombol "Reset")
 - ✅ Live preview perubahan order tanpa save (preview dulu, save kalau OK)
 
-### SCOPE FINAL (4 form):
-- ✅ Santri (~18 field)
-- ✅ Guru/Pegawai (~14 field)
-- ✅ Lembaga (~6 field)
-- ✅ Kelas (~4 field)
-
-Strategy: bikin shared component `_renderFieldOrderUI(formKey)`, kemudian config per-form.
-
 ### Yang TIDAK termasuk MVP (defer batch lain):
 - ❌ Hide/show field (admin disable field tertentu)
 - ❌ Required/optional toggle (admin set field wajib atau tidak)
 - ❌ Custom field tambahan (admin tambah field baru selain default)
+- ❌ Same feature untuk form Guru, Lembaga, dll (nanti per-batch)
 
 ---
 
@@ -80,56 +60,55 @@ Form Tambah Santri sekarang punya 18 field:
 
 ## STORAGE FORMAT
 
-Firestore: `settings/web` (global)
+Firestore: `settings/web`
 
 ```json
 {
   ...other settings,
-  "fieldOrder": {
-    "santri": ["nama_santri", "nis_santri", "jk_santri", ...],
-    "guru":   ["nama_guru", "jabatan_guru", "lembaga_guru", ...],
-    "lembaga":["lembaga", "kelas", "kop_logo", ...],
-    "kelas":  ["nama_kelas", "lembaga", "kapasitas", ...]
-  }
+  "santriFieldOrder": [
+    "nama_santri",
+    "nis_santri",
+    "jk_santri",
+    "tgl_lahir",
+    ...
+  ]
 }
 ```
 
-Per-form key. Jika `fieldOrder.<form>` tidak ada, pakai default order dari schema hardcoded.
+Jika `santriFieldOrder` tidak ada di settings (admin belum pernah edit), pakai default order dari spec ini.
 
 ---
 
 ## UI MOCKUP
 
-**Pengaturan Web** → tab baru **"Urutan Field"** dengan sub-tabs 4 form
+**Pengaturan Web** → tab baru **"Urutan Field"**
 
 ```
-┌─────────────────────────────────────────────────────┐
-│  Urutan Field                                       │
-│  ───────────────────────────────────────────────── │
-│  [ Santri ][ Guru ][ Lembaga ][ Kelas ]            │  ← sub-tab
-│  ───────────────────────────────────────────────── │
-│  Tarik & lepas (drag-drop) untuk atur urutan        │
-│  ───────────────────────────────────────────────── │
-│                                                     │
-│  ☰  Nama Santri          [Wajib]                   │
-│  ☰  NIS                  [Wajib]                   │
-│  ☰  Jenis Kelamin        [Wajib]                   │
-│  ☰  Tanggal Lahir                                  │
-│  ☰  Usia (auto)                                    │
-│  ☰  Tanggal Masuk                                  │
-│  ...                                                │
-│                                                     │
-│  ┌─────────────┐ ┌─────────────────────────┐       │
-│  │  Reset      │ │  Simpan Urutan          │       │
-│  └─────────────┘ └─────────────────────────┘       │
-└─────────────────────────────────────────────────────┘
+┌───────────────────────────────────────────────┐
+│  Urutan Field Form Santri                     │
+│  ─────────────────────────────────────────── │
+│  Tarik & lepas (drag-drop) untuk atur urutan  │
+│  ─────────────────────────────────────────── │
+│                                               │
+│  ☰  Nama Santri          [Wajib]      🔼 🔽  │
+│  ☰  NIS                  [Wajib]      🔼 🔽  │
+│  ☰  Jenis Kelamin        [Wajib]      🔼 🔽  │
+│  ☰  Tanggal Lahir                     🔼 🔽  │
+│  ☰  Usia (auto)                       🔼 🔽  │
+│  ☰  Tanggal Masuk                     🔼 🔽  │
+│  ...                                          │
+│                                               │
+│  ┌─────────────┐ ┌─────────────────────────┐ │
+│  │  Reset      │ │  Simpan Urutan          │ │
+│  └─────────────┘ └─────────────────────────┘ │
+└───────────────────────────────────────────────┘
 ```
 
-**Interaksi (drag-drop saja, per kyai approve):**
-- Drag handle `☰` di kiri (touch-friendly, pakai pointer events API atau library)
-- Sub-tab switch ganti form yang di-edit
-- Tombol "Reset" → restore default order untuk form aktif
-- Tombol "Simpan Urutan" → write ke Firestore key `fieldOrder.<form>`
+**Interaksi:**
+- Drag handle `☰` di kiri (touch-friendly)
+- Atau tombol panah `🔼 🔽` di kanan untuk reorder satu langkah (alternatif drag, lebih reliable di mobile)
+- Tombol "Reset" → restore default order
+- Tombol "Simpan Urutan" → write ke Firestore
 
 ---
 
@@ -187,37 +166,10 @@ function getEffectiveSantriOrder() {
 
 ---
 
-## TRIGGER IMPLEMENT
+## QUESTION KE KYAI (untuk approve):
 
-Kyai bilang "setelah bug-bug fix saja". Saya akan tahan implement sampai:
-1. Bug v.20.0526 (splash + toast + bg-pesantren) confirmed CLEAR oleh kyai/tester
-2. Atau kyai eksplisit bilang "gas feature edit field order sekarang"
-
-Sebelum trigger, fokus: monitoring Sentry + fix bug ad-hoc dari tester report.
-
-## PLAN IMPLEMENTASI (saat trigger nyala)
-
-### Fase 1: Shared component (~4 jam)
-- `_renderFieldOrderUI(formKey)` — render list field schema + drag-drop handler
-- `getFieldOrder(formKey)` / `saveFieldOrder(formKey, arr)` — Firestore helper
-- HTML5 drag API native (no library) — pointer events untuk mobile
-
-### Fase 2: Santri form (~4 jam)
-- Define `DEFAULT_SANTRI_FIELDS` array dengan 18 field metadata
-- Refactor static HTML form → dynamic render via `_renderSantriField(key)`
-- Test simpanSantri tetap work dengan order baru
-
-### Fase 3: Guru form (~3 jam)
-- Define `DEFAULT_GURU_FIELDS` (~14 field)
-- Refactor form-guru → dynamic render
-- Test simpanGuru
-
-### Fase 4: Lembaga + Kelas form (~3 jam)
-- Define schemas, refactor forms
-- Test save
-
-### Fase 5: UI Pengaturan Web (~2 jam)
-- Tab baru "Urutan Field" dengan sub-tabs 4 form
-- Wire ke shared component
-- Reset button + Save button
-
+1. Apakah scope MVP cukup (cuma reorder, tidak hide/show)? Atau langsung implement hide/show juga di v.21? IYA
+2. Drag-drop saja, atau tambah tombol up/down sebagai alternatif? drag drop saja
+3. Apakah feature ini perlu juga untuk form Guru + Lembaga + Kelas? Atau Santri dulu saja? perlu
+4. Storage di `settings/web` (global semua admin pakai order sama) atau per-admin (kyai punya order sendiri, admin lain bisa beda)? global supaya konsisten.
+5. Urgensinya seberapa tinggi? Bisa dikerjakan setelah bug-bug v.20 stable, atau prioritas tinggi sekarang? setelah bug-bug fix saja
