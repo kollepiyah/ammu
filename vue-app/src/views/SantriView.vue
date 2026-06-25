@@ -859,18 +859,19 @@ async function cetakPdf() {
       format: 'a4',
       kop,
       title: 'DAFTAR SANTRI',
-      // v.110.0625: +Lembaga Sekolah & Kelas Sekolah (lebar auto-skala ke lebar halaman di buildListPdf)
+      // v.110.0626: kolom Nama dilebarkan; header sekolah dipendekkan "Sekolah"/"Kelas"
+      //   (width = bobot relatif, auto-skala ke lebar halaman di buildListPdf).
       columns: [
-        { key: 'no', header: 'No', width: 10 },
-        { key: 'nama', header: 'Nama Santri', width: 52 },
+        { key: 'no', header: 'No', width: 8 },
+        { key: 'nama', header: 'Nama Santri', width: 64 },
         { key: 'nis', header: 'No. Induk', width: 22 },
-        { key: 'jk', header: 'JK', width: 10 },
-        { key: 'usia', header: 'Usia', width: 18 },
-        { key: 'lembaga', header: 'Lembaga', width: 28 },
+        { key: 'jk', header: 'JK', width: 8 },
+        { key: 'usia', header: 'Usia', width: 16 },
+        { key: 'lembaga', header: 'Lembaga', width: 24 },
         { key: 'kelas', header: 'Kelas', width: 18 },
-        { key: 'lembaga_sekolah', header: 'Lembaga Sekolah', width: 30 },
-        { key: 'kelas_sekolah', header: 'Kelas Sekolah', width: 22 },
-        { key: 'wa', header: 'No. WA', width: 30 }
+        { key: 'lembaga_sekolah', header: 'Sekolah', width: 20 },
+        { key: 'kelas_sekolah', header: 'Kelas', width: 12 },
+        { key: 'wa', header: 'No. WA', width: 26 }
       ],
       rows,
       filename: `daftar-santri-${new Date().toISOString().slice(0, 10)}.pdf`
