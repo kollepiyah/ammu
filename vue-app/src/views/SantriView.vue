@@ -849,6 +849,8 @@ async function cetakPdf() {
       usia: usiaKini(s.tgl_lahir),
       lembaga: s.lembaga || '',
       kelas: s.kelas || '',
+      lembaga_sekolah: s.lembaga_sekolah || '',
+      kelas_sekolah: s.kelas_sekolah || '',
       wa: s.wa || ''
     }))
     await buildListPdf({
@@ -857,15 +859,18 @@ async function cetakPdf() {
       format: 'a4',
       kop,
       title: 'DAFTAR SANTRI',
+      // v.110.0625: +Lembaga Sekolah & Kelas Sekolah (lebar auto-skala ke lebar halaman di buildListPdf)
       columns: [
-        { key: 'no', header: 'No', width: 12 },
-        { key: 'nama', header: 'Nama Santri', width: 60 },
-        { key: 'nis', header: 'No. Induk', width: 25 },
-        { key: 'jk', header: 'JK', width: 12 },
-        { key: 'usia', header: 'Usia', width: 22 },
-        { key: 'lembaga', header: 'Lembaga', width: 35 },
-        { key: 'kelas', header: 'Kelas', width: 25 },
-        { key: 'wa', header: 'No. WA', width: 35 }
+        { key: 'no', header: 'No', width: 10 },
+        { key: 'nama', header: 'Nama Santri', width: 52 },
+        { key: 'nis', header: 'No. Induk', width: 22 },
+        { key: 'jk', header: 'JK', width: 10 },
+        { key: 'usia', header: 'Usia', width: 18 },
+        { key: 'lembaga', header: 'Lembaga', width: 28 },
+        { key: 'kelas', header: 'Kelas', width: 18 },
+        { key: 'lembaga_sekolah', header: 'Lembaga Sekolah', width: 30 },
+        { key: 'kelas_sekolah', header: 'Kelas Sekolah', width: 22 },
+        { key: 'wa', header: 'No. WA', width: 30 }
       ],
       rows,
       filename: `daftar-santri-${new Date().toISOString().slice(0, 10)}.pdf`
