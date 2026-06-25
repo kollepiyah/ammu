@@ -137,10 +137,13 @@ const SPECIAL = {
 }
 
 // Realtime HANYA whitelist (mirror migrations/...realtime_grants). Selain ini:
-// subscribe* = fetch sekali lalu unsubscribe no-op (keputusan final F2).
+// subscribe* = fetch sekali lalu unsubscribe no-op.
 // WAJIB CERMIN DB: tiap entri HARUS juga ada di publication supabase_realtime (ALTER
 // PUBLICATION) — kalau tidak, channel subscribe tapi DB tak pernah kirim event (live diam).
 // v.110: +keuangan_tagihan, +pembayaran_transfer_pending, +absensi_shift_guru.
+// v.110.0625: pulihkan perilaku onSnapshot lama (edit langsung tampil tanpa refresh) —
+//   tambah master-data + transaksional yang di-subscribe (santri/guru/master/dst).
+//   Skip audit_log (log append-heavy). Cermin migration ...realtime_add_master_data.sql.
 const REALTIME = new Set([
   'beranda_post',
   'posts',
@@ -157,7 +160,28 @@ const REALTIME = new Set([
   'keuangan_buku_induk',
   'keuangan_tagihan',
   'pembayaran_transfer_pending',
-  'absensi_shift_guru'
+  'absensi_shift_guru',
+  // v.110.0625 — master data & config
+  'santri',
+  'guru',
+  'master',
+  'lembaga',
+  'settings',
+  // v.110.0625 — akademik & izin
+  'izin_guru',
+  'rapor_semester',
+  'rekap_diniyah',
+  // v.110.0625 — keuangan transaksional
+  'keuangan_gaji',
+  'keuangan_hutang_piutang',
+  'keuangan_tabungan_santri',
+  'keuangan_uang_saku_santri',
+  // v.110.0625 — konten & PSB
+  'kegiatan',
+  'psb_pendaftaran',
+  // v.110.0625 — rekap absensi bulanan (bukan raw harian)
+  'absensi_santri_ngaji_bulanan',
+  'absensi_santri_sekolah_bulanan'
 ])
 
 function _cfg(table) {
