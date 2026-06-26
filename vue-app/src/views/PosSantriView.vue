@@ -81,6 +81,13 @@
           <option value="">Semua Lembaga</option>
           <option v-for="lb in lembagaList" :key="lb" :value="lb">{{ lb }}</option>
         </select>
+        <select
+          v-model="filterSekolah"
+          class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none"
+        >
+          <option value="">Semua Sekolah</option>
+          <option v-for="sk in sekolahList" :key="sk" :value="sk">{{ sk }}</option>
+        </select>
         <label
           class="flex items-center gap-1.5 text-xs font-bold text-rose-700 bg-rose-50 px-3 py-2.5 rounded-xl border border-rose-200 cursor-pointer hover:bg-rose-100"
         >
@@ -224,6 +231,7 @@ const santriList = ref([])
 const loading = ref(true)
 const search = ref('')
 const filterLembaga = ref('')
+const filterSekolah = ref('') // v.110.0626: filter lembaga sekolah (formal) — terpisah dari lembaga ngaji
 const selectedSantri = ref(null)
 const modalOpen = ref(false)
 const histori = ref([])
@@ -237,16 +245,18 @@ function syncFiltersFromQuery() {
   _syncingQuery = true
   search.value = _route.query.q != null ? String(_route.query.q) : ''
   filterLembaga.value = _route.query.lembaga != null ? String(_route.query.lembaga) : ''
+  filterSekolah.value = _route.query.sekolah != null ? String(_route.query.sekolah) : ''
   filterTunggakan.value = _route.query.tunggakan === '1'
   _syncingQuery = false
 }
 syncFiltersFromQuery()
 watch(() => _route.query, syncFiltersFromQuery)
-watch([search, filterLembaga, filterTunggakan], () => {
+watch([search, filterLembaga, filterSekolah, filterTunggakan], () => {
   if (_syncingQuery) return
   const q = {}
   if (search.value) q.q = search.value
   if (filterLembaga.value) q.lembaga = filterLembaga.value
+  if (filterSekolah.value) q.sekolah = filterSekolah.value
   if (filterTunggakan.value) q.tunggakan = '1'
   _router.replace({ query: q }).catch(() => {})
 })
@@ -350,9 +360,15 @@ const lembagaList = computed(() => {
   return Array.from(set).sort()
 })
 
+const sekolahList = computed(() => {
+  const set = new Set(santriList.value.map((s) => s.lembaga_sekolah).filter(Boolean))
+  return Array.from(set).sort()
+})
+
 const filteredSantri = computed(() => {
   let list = santriList.value
   if (filterLembaga.value) list = list.filter((s) => s.lembaga === filterLembaga.value)
+  if (filterSekolah.value) list = list.filter((s) => s.lembaga_sekolah === filterSekolah.value)
   if (filterTunggakan.value) list = list.filter((s) => (tunggakanMap.value[s.id]?.count || 0) > 0)
   const q = search.value.trim().toLowerCase()
   if (q) {
