@@ -12,6 +12,24 @@
       </p>
     </div>
 
+    <!-- v.110.0626: Tab navigasi — pecah 7 area jadi 5 tab, tampil 1 per tab (anti-bingung). -->
+    <div class="flex gap-1.5 overflow-x-auto hide-scrollbar -mx-1 px-1 pb-0.5">
+      <button
+        v-for="tb in TABS"
+        :key="tb.id"
+        type="button"
+        @click="setTab(tb.id)"
+        :class="[
+          'shrink-0 h-9 px-3.5 inline-flex items-center gap-1.5 rounded-xl text-xs font-bold transition',
+          activeTab === tb.id
+            ? 'bg-[var(--color-primary)] text-white shadow-sm'
+            : 'bg-[var(--bg-card)] text-[var(--text-secondary)] border border-[var(--border-subtle)] hover:bg-[var(--bg-card-elevated)]'
+        ]"
+      >
+        <i :class="['fas', tb.icon]"></i>{{ tb.t }}
+      </button>
+    </div>
+
     <!-- Pembayaran & Jatuh Tempo (T14: section-aware — tagihan/struk vs syahriyah) -->
     <div
       v-show="secVisible('tagihan') || secVisible('syahriyah')"
@@ -253,7 +271,7 @@
                 "
                 class="col-span-1 text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/30 px-2 py-1 rounded text-xs"
               >
-                <i :class="['fas', jenis._expanded ? 'fa-chevron-up' : 'fa-building']"></i>
+                <i :class="['fas', jenis._expanded ? 'fa-chevron-up' : 'fa-sliders-h']"></i>
               </button>
               <button
                 @click="removeJenis(idx)"
@@ -264,6 +282,15 @@
                 <i class="fas fa-trash"></i>
               </button>
             </div>
+            <!-- v.110.0626: entry JELAS ke nominal khusus (discoverability per-santri) -->
+            <button
+              v-if="!jenis._expanded"
+              type="button"
+              @click="toggleExpandJenis(jenis)"
+              class="mt-1.5 inline-flex items-center gap-1.5 text-[10px] font-bold text-teal-700 dark:text-teal-300 hover:underline"
+            >
+              <i class="fas fa-sliders-h"></i>Atur nominal khusus (per lembaga / kelas / santri)
+            </button>
             <!-- v.21.100.0527: Whitelist + override per-lembaga + per-kelas -->
             <div
               v-if="jenis._expanded"
@@ -626,7 +653,7 @@
 
     <!-- Kategori Transaksi -->
     <div
-      v-show="!focusSection"
+      v-show="activeTab === 'kategori'"
       class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
     >
       <h3
@@ -920,7 +947,7 @@
 
     <!-- Bank -->
     <div
-      v-show="!focusSection"
+      v-show="activeTab === 'bank'"
       class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
     >
       <h3
@@ -967,7 +994,7 @@
 
     <!-- v.97.0626: Integrasi BMT PETA (Virtual Account) -->
     <div
-      v-show="!focusSection"
+      v-show="activeTab === 'bank'"
       class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
     >
       <h3
@@ -1296,29 +1323,57 @@ const route = useRoute()
 // v.100 (Batch 4, Electron): pita Keuangan memecah Pengaturan jadi tombol → buka view ini dgn
 // ?section=tagihan|syahriyah|bisyaroh untuk fokus 1 area. Tanpa query (web/Android) tampil PENUH.
 const focusSection = computed(() => String(route.query.section || ''))
+
+// v.110.0626: navigasi TAB (web) — pecah 7 section jadi 5 area, tampil 1 per tab (anti-bingung).
+//   Deep-link Electron ?section=tagihan|syahriyah|bisyaroh tetap jalan (di-map ke tab).
+const TABS = [
+  { id: 'tagihan', t: 'Tagihan', icon: 'fa-file-invoice-dollar' },
+  { id: 'jenis', t: 'Jenis Pembayaran', icon: 'fa-list-ul' },
+  { id: 'bisyaroh', t: 'Bisyaroh', icon: 'fa-hand-holding-usd' },
+  { id: 'kategori', t: 'Kategori', icon: 'fa-tags' },
+  { id: 'bank', t: 'Bank & VA', icon: 'fa-university' }
+]
+function _tabFromSection(sec) {
+  if (sec === 'syahriyah') return 'jenis'
+  if (sec === 'bisyaroh') return 'bisyaroh'
+  if (sec === 'tagihan') return 'tagihan'
+  return ''
+}
+const activeTab = ref(_tabFromSection(focusSection.value) || 'tagihan')
+function setTab(id) {
+  activeTab.value = id
+}
+// secVisible: blok lama (tagihan/syahriyah/bisyaroh) kini ikut TAB aktif.
 function secVisible(name) {
-  return !focusSection.value || focusSection.value === name
+  if (name === 'tagihan') return activeTab.value === 'tagihan'
+  if (name === 'syahriyah') return activeTab.value === 'jenis'
+  if (name === 'bisyaroh') return activeTab.value === 'bisyaroh'
+  return activeTab.value === name
 }
 const sectionMeta = computed(() => {
-  if (focusSection.value === 'tagihan')
-    return {
+  const m = {
+    tagihan: {
       t: 'Buat / Generate Tagihan',
-      s: 'Generate tagihan bulanan & tagihan khusus (infaq/iuran), atur jatuh tempo & struk.'
-    }
-  if (focusSection.value === 'syahriyah')
-    return {
-      t: 'Pengaturan Syahriyah Santri',
-      s: 'Atur jenis & nominal syahriyah, whitelist + override per lembaga/kelas/santri.'
-    }
-  if (focusSection.value === 'bisyaroh')
-    return {
-      t: 'Pengaturan Bisyaroh Guru/Pegawai',
+      s: 'Generate tagihan bulanan & khusus (infaq/iuran), atur jatuh tempo & struk.'
+    },
+    jenis: {
+      t: 'Jenis Pembayaran Santri',
+      s: 'Atur jenis & nominal — default, lalu khusus per lembaga / kelas / santri.'
+    },
+    bisyaroh: {
+      t: 'Bisyaroh Guru/Pegawai',
       s: 'Bisyaroh shift & pokok, plus master tunjangan & potongan.'
+    },
+    kategori: {
+      t: 'Kategori Transaksi Manual',
+      s: 'Kategori pemasukan & pengeluaran untuk Buku Induk.'
+    },
+    bank: {
+      t: 'Bank & Virtual Account',
+      s: 'Rekening bank pondok & integrasi BMT PETA (VA).'
     }
-  return {
-    t: 'Pengaturan Keuangan',
-    s: 'Atur tanggal jatuh tempo, jenis tagihan, bisyaroh shift & bisyaroh pokok.'
   }
+  return m[activeTab.value] || m.tagihan
 })
 
 // v.94.0626: buka modal Pengaturan Printer (deteksi printer Windows). PrinterSettingsModal global dengar event ini.
