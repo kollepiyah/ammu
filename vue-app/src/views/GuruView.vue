@@ -550,6 +550,7 @@ import EmptyState from '@/components/layout/EmptyState.vue' // v.91.0626: empty-
 // v.21.11.0526: + deleteOne untuk delete & bulk delete
 import {
   mergeOne,
+  addOne,
   updateOne,
   deleteOne,
   subscribeDoc,
@@ -1370,18 +1371,14 @@ async function confirmImportGuru() {
   try {
     for (const item of importPreviewGuru.value.rows) {
       try {
-        const numId = item.existingId
-          ? Number(item.existingId) ||
-            Number(String(item.existingId).replace(/\D/g, '')) ||
-            Date.now() + ok
-          : Date.now() + ok
+        // v.110.0626 FIX duplikat: id Supabase = TEKS — JANGAN coerce ke Number (id beda →
+        //   mergeOne nulis baris baru = DUPLIKAT). Existing → update pakai id apa adanya;
+        //   baru → addOne.
         // v.105: TANPA field `password` plaintext — guru impor login dgn '1234' via
         //   lazy-migration default (findUserByLogin strip password; field tak dipakai login).
-        await mergeOne('guru', String(numId), {
-          id: numId,
-          ...item.data,
-          _imported_v21_26_at: serverTimestamp()
-        })
+        const payload = { ...item.data, _imported_v21_26_at: serverTimestamp() }
+        if (item.existingId) await mergeOne('guru', String(item.existingId), payload)
+        else await addOne('guru', payload)
         ok++
       } catch (e) {
         fail++

@@ -503,7 +503,7 @@ import SkeletonCard from '@/components/layout/SkeletonCard.vue'
 import EmptyState from '@/components/layout/EmptyState.vue' // v.91.0626
 import PageHeader from '@/components/layout/PageHeader.vue' // v.91.0626
 // v.91.0626: deleteOne = backup ke audit_log dulu. serverTimestamp = shim ISO (db.js).
-import { mergeOne, deleteOne, getAll, serverTimestamp } from '@/services/db'
+import { mergeOne, addOne, deleteOne, getAll, serverTimestamp } from '@/services/db'
 import { resetUserPassword } from '@/services/authSupabase' // reset sandi via Edge Function (super_admin)
 import { planRegenerateNis, applyNisChanges } from '@/utils/nisGenerator' // v.100 Batch14: auto-NIS pasca impor (reshuffle tgl lahir tertua)
 
@@ -1378,16 +1378,13 @@ async function confirmImportSantri() {
   try {
     for (const item of importPreview.value.rows) {
       try {
-        const numId = item.existingId
-          ? Number(item.existingId) ||
-            Number(String(item.existingId).replace(/\D/g, '')) ||
-            Date.now() + ok
-          : Date.now() + ok
-        await mergeOne('santri', String(numId), {
-          id: numId,
-          ...item.data,
-          _imported_v21_26_at: serverTimestamp()
-        })
+        // v.110.0626 FIX duplikat: id Supabase = TEKS alfanumerik (mis. _genId / id Firestore
+        //   hasil migrasi). JANGAN coerce ke Number — Number() bikin id BEDA dari record asli →
+        //   mergeOne nulis baris baru = DUPLIKAT. Existing → update pakai id apa adanya;
+        //   baru → addOne (generate id sendiri).
+        const payload = { ...item.data, _imported_v21_26_at: serverTimestamp() }
+        if (item.existingId) await mergeOne('santri', String(item.existingId), payload)
+        else await addOne('santri', payload)
         ok++
       } catch (e) {
         fail++
