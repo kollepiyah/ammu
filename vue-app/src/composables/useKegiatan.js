@@ -44,7 +44,8 @@ export function useKegiatan() {
   })
 
   async function simpanKegiatan(data) {
-    const id = data.id || `kg_${Date.now()}`
+    // v.110.0626: fallback id + suffix acak → cegah tabrakan bila dipanggil massal tanpa id eksplisit
+    const id = data.id || `kg_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`
     const payload = {
       id,
       judul: data.judul || '',
