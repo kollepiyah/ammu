@@ -76,6 +76,8 @@ const COLS = {
   keuangan_buku_induk: ['tipe', 'sumber', 'nominal', 'tanggal', 'keterangan'],
   keuangan_tabungan_santri: ['santri_id', 'jenis', 'nominal', 'tanggal'],
   keuangan_uang_saku_santri: ['santri_id', 'jenis', 'nominal', 'tanggal'],
+  // keranjang/niat-bayar VA BMT (items+santri_nama -> data jsonb; created_by default DB)
+  keuangan_va_intent: ['santri_id', 'va', 'total', 'status'],
   keuangan_gaji: [
     'guru_id',
     'periode',
@@ -176,6 +178,7 @@ const REALTIME = new Set([
   'keuangan_hutang_piutang',
   'keuangan_tabungan_santri',
   'keuangan_uang_saku_santri',
+  'keuangan_va_intent',
   // v.110.0625 — konten & PSB
   'kegiatan',
   'psb_pendaftaran',

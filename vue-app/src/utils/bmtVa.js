@@ -36,3 +36,28 @@ export function formatVa(va) {
 export function isBmtAktif(settings) {
   return !!(settings && settings.bmt_aktif === true)
 }
+
+/**
+ * Reverse-lookup VA -> santri (kebalikan computeVaSantri). Dipakai webhook/simulasi
+ * & UI rekonsiliasi admin untuk memetakan laporan BMT ("VA X bayar N") ke santri.
+ * Prioritas: cocok `santri.va_bmt` eksplisit, lalu prefix + NIS/ID (santriVaKey).
+ * @param {string} va           nomor VA dari laporan BMT
+ * @param {Array}  santriList   daftar dokumen santri
+ * @param {object} settings     settings keuangan (bmt_va_prefix)
+ * @returns {object|null} santri cocok, atau null
+ */
+export function findSantriByVa(va, santriList, settings) {
+  const clean = String(va || '').replace(/\s+/g, '')
+  if (!clean || !Array.isArray(santriList)) return null
+  // 1) VA eksplisit tersimpan di santri
+  const explicit = santriList.find(
+    (s) => s && s.va_bmt && String(s.va_bmt).replace(/\s+/g, '') === clean
+  )
+  if (explicit) return explicit
+  // 2) prefix + NIS/ID
+  const prefix = String((settings || {}).bmt_va_prefix || '').replace(/\s+/g, '')
+  if (!prefix || !clean.startsWith(prefix)) return null
+  const key = clean.slice(prefix.length)
+  if (!key) return null
+  return santriList.find((s) => santriVaKey(s) === key) || null
+}
