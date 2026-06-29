@@ -3,6 +3,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { subscribeColl, addOne, updateOne, mergeOne } from '@/services/db'
 import { useAuthStore } from '@/stores/auth'
+import { useSettingsStore } from '@/stores/settings'
 import { isSuperAdmin, isAdminBiasa, isAdminKeuangan, isKepalaLembaga } from '@/utils/roleScope'
 import { lembagaScopeMatches } from '@/composables/useLembaga'
 
@@ -21,8 +22,16 @@ function dateRange(start, end) {
 
 export function useIzinGuru() {
   const auth = useAuthStore()
+  const settings = useSettingsStore()
   const izinRaw = ref([])
   let unsub = null
+
+  // Kategori cuti + kuota hari/tahun — di-set super_admin di Pengaturan (settings.cuti_kategori).
+  // Bentuk item: { id, nama, kuota_hari } (kuota_hari 0 / kosong = tak terbatas).
+  const cutiKategori = computed(() => {
+    const arr = settings.settings?.cuti_kategori
+    return Array.isArray(arr) ? arr : []
+  })
 
   const sesi = computed(() => auth.sesiAktif || {})
   const myId = computed(() => String(sesi.value.id != null ? sesi.value.id : ''))
@@ -52,17 +61,21 @@ export function useIzinGuru() {
     sortNewest(izinRaw.value.filter((a) => a.status !== 'diajukan' && inScope(a)))
   )
 
-  // Guru ajukan izin/sakit. payload: { jenis, keterangan, tgl_mulai, tgl_selesai, shifts[] }.
+  // Guru ajukan izin/sakit/cuti. payload: { jenis, kategori?, keterangan, tgl_mulai,
+  //   tgl_selesai, shifts[], lampiran_url? }. kategori hanya relevan untuk jenis 'cuti'.
   async function ajukan(payload) {
     const now = new Date()
     const shifts =
       Array.isArray(payload.shifts) && payload.shifts.length ? payload.shifts : ['pagi', 'sore']
+    const jenis = ['izin', 'sakit', 'cuti'].includes(payload.jenis) ? payload.jenis : 'izin'
     return addOne('izin_guru', {
       guru_id: myId.value,
       guru_nama: myNama.value,
       lembaga: myLembaga.value,
-      jenis: payload.jenis === 'sakit' ? 'sakit' : 'izin',
+      jenis,
+      kategori: jenis === 'cuti' ? String(payload.kategori || '') : '',
       keterangan: String(payload.keterangan || ''),
+      lampiran_url: String(payload.lampiran_url || ''),
       tgl_mulai: payload.tgl_mulai,
       tgl_selesai: payload.tgl_selesai || payload.tgl_mulai,
       shifts,
@@ -70,6 +83,25 @@ export function useIzinGuru() {
       tgl_daftar: now.toISOString(),
       _ts: now.getTime()
     })
+  }
+
+  // Hitung kuota cuti per pegawai per kategori per tahun (dari pengajuan disetujui).
+  //   Return { kuota, terpakai, sisa }. sisa=null bila kuota 0 (tak terbatas).
+  function kuotaCuti(guruId, kategoriId, year) {
+    const y = year || new Date().getFullYear()
+    const kat = cutiKategori.value.find((k) => String(k.id) === String(kategoriId))
+    const kuota = Number(kat?.kuota_hari || 0)
+    const used = new Set()
+    for (const a of izinRaw.value) {
+      if (a.jenis !== 'cuti' || a.status !== 'disetujui') continue
+      if (String(a.guru_id || '') !== String(guruId)) continue
+      if (String(a.kategori || '') !== String(kategoriId)) continue
+      for (const d of dateRange(a.tgl_mulai, a.tgl_selesai)) {
+        if (String(d).slice(0, 4) === String(y)) used.add(d)
+      }
+    }
+    const terpakai = used.size
+    return { kuota, terpakai, sisa: kuota > 0 ? Math.max(0, kuota - terpakai) : null }
   }
 
   // Pengaju: batalkan selagi masih 'diajukan'.
@@ -114,7 +146,7 @@ export function useIzinGuru() {
           guru_nama: a.guru_nama || '',
           tanggal: tgl,
           shift: sh,
-          status: a.jenis === 'sakit' ? 'sakit' : 'izin',
+          status: a.jenis === 'sakit' ? 'sakit' : a.jenis === 'cuti' ? 'cuti' : 'izin',
           keterangan: a.keterangan || '',
           source: 'pengajuan_guru',
           izin_id: String(a.id),
@@ -153,6 +185,8 @@ export function useIzinGuru() {
     isApprover,
     isAdmin,
     isKepala,
+    cutiKategori,
+    kuotaCuti,
     ajukan,
     batal,
     tolak,

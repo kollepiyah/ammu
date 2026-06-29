@@ -100,6 +100,7 @@
             <option value="terlambat">Terlambat</option>
             <option value="izin">Izin</option>
             <option value="sakit">Sakit</option>
+            <option value="cuti">Cuti</option>
           </select>
         </div>
       </div>
@@ -326,7 +327,7 @@
               >&#9632; Terlambat</span
             >
             <span class="px-2 py-0.5 rounded bg-cyan-100 text-cyan-800 font-bold"
-              >&#9632; Izin/Sakit</span
+              >&#9632; Izin/Sakit/Cuti</span
             >
             <span class="px-2 py-0.5 rounded bg-rose-100 text-rose-800 font-bold"
               >&#9632; Alpha</span
@@ -424,7 +425,7 @@
                   H
                 </th>
                 <th class="p-1 text-center font-black text-cyan-700 bg-cyan-50">T</th>
-                <th class="p-1 text-center font-black text-cyan-700 bg-cyan-50">I/S</th>
+                <th class="p-1 text-center font-black text-cyan-700 bg-cyan-50">I/S/C</th>
                 <th class="p-1 text-center font-black text-rose-700 bg-rose-50">A</th>
               </tr>
             </thead>
@@ -480,7 +481,7 @@
                   {{ countStatus(row.g.id, row.shift, ['terlambat']) }}
                 </td>
                 <td class="p-1 text-center font-black text-cyan-700 bg-cyan-50/50">
-                  {{ countStatus(row.g.id, row.shift, ['izin', 'sakit']) }}
+                  {{ countStatus(row.g.id, row.shift, ['izin', 'sakit', 'cuti']) }}
                 </td>
                 <td class="p-1 text-center font-black text-rose-700 bg-rose-50/50">
                   {{ countAlpha(row.g.id, row.shift) }}
@@ -1092,6 +1093,11 @@ function statusInfo(status) {
       label: 'Sakit',
       cls: base + 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
     }
+  if (s === 'cuti')
+    return {
+      label: 'Cuti',
+      cls: base + 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300'
+    }
   if (s === 'alpha' || s === 'alpa')
     return {
       label: 'Alpha',
@@ -1292,6 +1298,7 @@ function cellText(guruId, shift, d) {
   if (s === 'terlambat') return 'T'
   if (s === 'izin') return 'I'
   if (s === 'sakit') return 'S'
+  if (s === 'cuti') return 'C'
   return 'H'
 }
 
@@ -1307,6 +1314,7 @@ function cellClass(guruId, shift, d) {
   const s = String(a.status || 'hadir').toLowerCase()
   if (s === 'terlambat') return 'bg-cyan-200 text-cyan-800'
   if (s === 'izin' || s === 'sakit') return 'bg-cyan-200 text-cyan-800'
+  if (s === 'cuti') return 'bg-violet-200 text-violet-800'
   return 'bg-emerald-200 text-emerald-800'
 }
 
@@ -1358,14 +1366,14 @@ function buildRekapExport() {
   for (let d = 1; d <= days; d++) columns.push({ key: 'd' + d, header: String(d), width: 4 })
   columns.push({ key: 'H', header: 'H', width: 5 })
   columns.push({ key: 'T', header: 'T', width: 5 })
-  columns.push({ key: 'IS', header: 'I/S', width: 5 })
+  columns.push({ key: 'IS', header: 'I/S/C', width: 5 })
   columns.push({ key: 'A', header: 'A', width: 5 })
   const rows = rekapRows.value.map(({ g, shift }) => {
     const r = { nama: g.nama, shift: shiftLabel(shift), lembaga: g.lembaga || g.unit || '-' }
     for (let d = 1; d <= days; d++) r['d' + d] = cellText(g.id, shift, d)
     r.H = countStatus(g.id, shift, ['hadir'])
     r.T = countStatus(g.id, shift, ['terlambat'])
-    r.IS = countStatus(g.id, shift, ['izin', 'sakit'])
+    r.IS = countStatus(g.id, shift, ['izin', 'sakit', 'cuti'])
     r.A = countAlpha(g.id, shift)
     return r
   })

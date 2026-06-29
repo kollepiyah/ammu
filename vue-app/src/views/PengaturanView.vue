@@ -739,6 +739,65 @@
     </UiCard>
 
     <!-- ============================================================
+         SECTION: Kategori Cuti & Kuota (super_admin)
+         ============================================================ -->
+    <UiCard
+      v-show="section === 'cuti'"
+      title="Kategori Cuti & Kuota"
+      subtitle="Jenis cuti pegawai + jatah hari per tahun (0 = tak terbatas). Dipakai di menu Perizinan & Cuti."
+      class="mb-4"
+    >
+      <div class="space-y-2">
+        <div
+          v-for="(k, idx) in form.cuti_kategori"
+          :key="k.id || idx"
+          class="flex items-center gap-2 bg-[var(--bg-card-elevated)] rounded-xl px-3 py-2"
+        >
+          <input
+            v-model="k.nama"
+            type="text"
+            placeholder="Nama kategori (mis. Cuti Tahunan)"
+            class="flex-1 px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)] text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-violet-500"
+          />
+          <div class="flex items-center gap-1 shrink-0">
+            <input
+              v-model.number="k.kuota_hari"
+              type="number"
+              min="0"
+              class="w-20 px-2 py-2 text-sm text-right rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)] text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-violet-500"
+            />
+            <span class="text-[10px] text-[var(--text-secondary)]">hari/th</span>
+          </div>
+          <button
+            @click="form.cuti_kategori.splice(idx, 1)"
+            class="text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/30 px-2 py-2 rounded-lg shrink-0"
+            title="Hapus kategori"
+          >
+            <i class="fas fa-trash"></i>
+          </button>
+        </div>
+        <p
+          v-if="!form.cuti_kategori.length"
+          class="text-xs text-[var(--text-tertiary)] italic text-center py-3"
+        >
+          Belum ada kategori cuti. Tambah di bawah (mis. Cuti Tahunan, Melahirkan, Menikah).
+        </p>
+      </div>
+      <button
+        @click="addCutiKategori"
+        class="mt-2 inline-flex items-center gap-1.5 text-xs font-bold text-violet-700 dark:text-violet-300 bg-violet-50 dark:bg-violet-900/30 px-3 py-2 rounded-lg hover:bg-violet-100 dark:hover:bg-violet-900/50"
+      >
+        <i class="fas fa-plus"></i>Tambah Kategori
+      </button>
+      <p class="text-[10px] text-[var(--text-secondary)] italic mt-3">
+        <i class="fas fa-info-circle mr-1"></i>Kuota = jatah hari per tahun per pegawai. Sisa
+        dihitung otomatis dari pengajuan cuti yang <b>disetujui</b>. Melebihi kuota = peringatan
+        (penyetuju tetap bisa menyetujui). Hari cuti tidak mendapat bonus shift, sama seperti
+        izin/sakit.
+      </p>
+    </UiCard>
+
+    <!-- ============================================================
          SECTION: Schema Rekap Diniyah (default + override per kelas)
          ============================================================ -->
     <UiCard
@@ -1403,6 +1462,8 @@ function defaultForm() {
     namaPengasuh: '',
     rekapSchemaDiniyah: ['Aqidah Akhlak', 'Fiqh', 'Tarikh', 'Bahasa Arab'],
     rekapSchemaDiniyahPerKelas: {},
+    // Kategori cuti pegawai + kuota hari/tahun (0 = tak terbatas). Dipakai useIzinGuru.
+    cuti_kategori: [],
     postinganHanyaAdmin: false,
     postinganAutoApprove: true,
     postinganMaxImages: 5,
@@ -1509,6 +1570,12 @@ const tabs = [
     label: 'Jam Shift',
     icon: 'fa-clock',
     gradient: 'from-cyan-500 dark:from-cyan-700 to-cyan-700 dark:to-cyan-900'
+  },
+  {
+    id: 'cuti',
+    label: 'Cuti & Izin',
+    icon: 'fa-calendar-minus',
+    gradient: 'from-violet-500 dark:from-violet-700 to-violet-700 dark:to-violet-900'
   },
   {
     id: 'postingan',
@@ -2012,6 +2079,12 @@ function buildLevel(id, label, baca, khotamCount, multiplier) {
 // ============================================================
 // Save all + Reset form
 // ============================================================
+function addCutiKategori() {
+  if (!Array.isArray(form.value.cuti_kategori)) form.value.cuti_kategori = []
+  form.value.cuti_kategori.push({ id: 'cuti_' + Date.now(), nama: '', kuota_hari: 12 })
+  dirty.value = true
+}
+
 function resetForm() {
   hydrateForm()
   toast.info('Form di-reset dari state tersimpan')

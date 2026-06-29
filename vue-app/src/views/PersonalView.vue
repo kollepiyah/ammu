@@ -112,7 +112,7 @@
         <h3
           class="text-xs md:text-sm font-black text-[var(--text-primary)] uppercase tracking-widest"
         >
-          <i class="fas fa-calendar-minus text-cyan-600 mr-2"></i>Izin &amp; Sakit
+          <i class="fas fa-calendar-minus text-cyan-600 mr-2"></i>Perizinan &amp; Cuti
         </h3>
         <button
           @click="openIzinForm"
@@ -125,7 +125,7 @@
         v-if="myIzin.length === 0"
         class="text-[11px] text-[var(--text-tertiary)] italic text-center py-3"
       >
-        Belum ada pengajuan izin/sakit.
+        Belum ada pengajuan izin / sakit / cuti.
       </div>
       <div v-else class="space-y-2">
         <div
@@ -135,12 +135,24 @@
         >
           <div class="min-w-0">
             <p class="text-sm font-bold text-[var(--text-primary)]">
-              {{ jenisIzinLabel(a.jenis) }} · {{ rangeLabel(a) }}
+              {{ jenisIzinLabel(a.jenis)
+              }}<span v-if="a.jenis === 'cuti' && a.kategori" class="text-violet-600">
+                ({{ cutiKatNama(a.kategori) }})</span
+              >
+              · {{ rangeLabel(a) }}
             </p>
             <p class="text-[10px] text-[var(--text-secondary)]">
               Shift {{ shiftsLabel(a.shifts)
               }}<span v-if="a.keterangan"> · {{ a.keterangan }}</span>
             </p>
+            <a
+              v-if="a.lampiran_url"
+              :href="a.lampiran_url"
+              target="_blank"
+              rel="noopener"
+              class="text-[10px] font-bold text-cyan-600 hover:underline"
+              ><i class="fas fa-paperclip mr-0.5"></i>Lihat lampiran</a
+            >
             <p v-if="a.catatan_putus" class="text-[10px] text-[var(--text-tertiary)] italic">
               {{ a.catatan_putus }}
             </p>
@@ -173,7 +185,7 @@
       <h3
         class="text-xs md:text-sm font-black text-[var(--text-primary)] uppercase tracking-widest mb-3 border-b border-[var(--border-subtle)] pb-2"
       >
-        <i class="fas fa-user-check text-emerald-600 mr-2"></i>Persetujuan Izin &amp; Sakit
+        <i class="fas fa-user-check text-emerald-600 mr-2"></i>Persetujuan Perizinan &amp; Cuti
         <span
           v-if="izinAntrian.length"
           class="ml-1 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-amber-500 text-white text-[10px] align-middle"
@@ -199,11 +211,31 @@
             >
           </p>
           <p class="text-[11px] text-[var(--text-secondary)]">
-            {{ jenisIzinLabel(a.jenis) }} · {{ rangeLabel(a) }} · Shift {{ shiftsLabel(a.shifts) }}
+            {{ jenisIzinLabel(a.jenis)
+            }}<span v-if="a.jenis === 'cuti' && a.kategori" class="text-violet-600">
+              ({{ cutiKatNama(a.kategori) }})</span
+            >
+            · {{ rangeLabel(a) }} · Shift {{ shiftsLabel(a.shifts) }}
+          </p>
+          <p
+            v-if="cutiSisa(a) && cutiSisa(a).sisa !== null"
+            class="text-[10px] font-bold"
+            :class="cutiSisa(a).sisa <= 0 ? 'text-rose-600' : 'text-[var(--text-secondary)]'"
+          >
+            <i class="fas fa-info-circle mr-0.5"></i>Sisa kuota: {{ cutiSisa(a).sisa }} /
+            {{ cutiSisa(a).kuota }} hari
           </p>
           <p v-if="a.keterangan" class="text-[10px] text-[var(--text-tertiary)] italic">
             {{ a.keterangan }}
           </p>
+          <a
+            v-if="a.lampiran_url"
+            :href="a.lampiran_url"
+            target="_blank"
+            rel="noopener"
+            class="text-[10px] font-bold text-cyan-600 hover:underline"
+            ><i class="fas fa-paperclip mr-0.5"></i>Lihat lampiran</a
+          >
           <div class="flex gap-2 mt-2">
             <button
               @click="setujuiIzin(a)"
@@ -386,7 +418,7 @@
       >
         <div class="p-4 border-b border-[var(--border-subtle)] flex items-center justify-between">
           <h3 class="text-sm font-black text-[var(--text-primary)]">
-            <i class="fas fa-calendar-minus text-cyan-600 mr-1.5"></i>Ajukan Izin / Sakit
+            <i class="fas fa-calendar-minus text-cyan-600 mr-1.5"></i>Ajukan Izin / Sakit / Cuti
           </h3>
           <button
             @click="izinFormOpen = false"
@@ -406,7 +438,39 @@
             >
               <option value="izin">Izin</option>
               <option value="sakit">Sakit</option>
+              <option value="cuti">Cuti</option>
             </select>
+          </div>
+          <!-- Kategori cuti + sisa kuota (hanya jenis cuti) -->
+          <div v-if="izinForm.jenis === 'cuti'">
+            <label class="block text-[10px] font-black uppercase text-[var(--text-secondary)] mb-1"
+              >Kategori Cuti</label
+            >
+            <select
+              v-model="izinForm.kategori"
+              class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] outline-none focus:ring-2 focus:ring-cyan-500"
+            >
+              <option value="">— Pilih kategori —</option>
+              <option v-for="k in cutiKategori" :key="k.id" :value="k.id">{{ k.nama }}</option>
+            </select>
+            <p v-if="!cutiKategori.length" class="text-[10px] text-amber-600 italic mt-1">
+              <i class="fas fa-exclamation-triangle mr-1"></i>Belum ada kategori cuti — hubungi
+              admin untuk mengaturnya.
+            </p>
+            <p
+              v-else-if="izinKuota"
+              class="text-[10px] mt-1"
+              :class="izinOverKuota ? 'text-rose-600 font-bold' : 'text-[var(--text-secondary)]'"
+            >
+              <i class="fas fa-info-circle mr-1"></i>
+              <template v-if="izinKuota.sisa === null">Kategori ini tanpa batas kuota.</template>
+              <template v-else
+                >Sisa kuota: <b>{{ izinKuota.sisa }}</b> / {{ izinKuota.kuota }} hari · diajukan
+                {{ izinJumlahHari }} hari<span v-if="izinOverKuota">
+                  — melebihi sisa</span
+                ></template
+              >
+            </p>
           </div>
           <div class="grid grid-cols-2 gap-2">
             <div>
@@ -463,6 +527,24 @@
               rows="2"
               class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] outline-none focus:ring-2 focus:ring-cyan-500 resize-none"
             ></textarea>
+          </div>
+          <!-- Lampiran opsional (surat dokter / keterangan) -->
+          <div>
+            <label class="block text-[10px] font-black uppercase text-[var(--text-secondary)] mb-1"
+              >Lampiran (opsional)</label
+            >
+            <input
+              type="file"
+              accept="image/*,application/pdf"
+              @change="onPickLampiran"
+              class="block w-full text-[11px] text-[var(--text-secondary)] file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-[11px] file:font-bold file:bg-cyan-50 file:text-cyan-700 cursor-pointer"
+            />
+            <p v-if="izinForm.lampiran_name" class="text-[10px] text-emerald-600 mt-1">
+              <i class="fas fa-paperclip mr-1"></i>{{ izinForm.lampiran_name }}
+            </p>
+            <p class="text-[10px] text-[var(--text-tertiary)] italic mt-0.5">
+              Foto/PDF, maks 2 MB (mis. surat dokter / keterangan).
+            </p>
           </div>
         </div>
         <div class="p-4 border-t border-[var(--border-subtle)] flex justify-end gap-2">
@@ -584,6 +666,7 @@
 import { ref, computed, onMounted, onUnmounted, reactive } from 'vue'
 // v.F6e: adapter Supabase (serverTimestamp = shim ISO string).
 import { subscribeColl, getOne, mergeOne, serverTimestamp } from '@/services/db'
+import { uploadBase64 } from '@/services/storage'
 import { useAuthStore } from '@/stores/auth'
 import { fmtRp, hitungLamaMengajar } from '@/utils/format'
 // v.21.110.0527: catatan supervisi
@@ -794,6 +877,8 @@ const {
   myIzin,
   antrian: izinAntrian,
   isApprover: izinIsApprover,
+  cutiKategori,
+  kuotaCuti,
   ajukan: ajukanIzin,
   batal: batalIzinReq,
   tolak: tolakIzinReq,
@@ -803,10 +888,14 @@ const {
 const izinFormOpen = ref(false)
 const izinForm = reactive({
   jenis: 'izin',
+  kategori: '',
   tgl_mulai: '',
   tgl_selesai: '',
   shifts: [],
-  keterangan: ''
+  keterangan: '',
+  lampiran_dataUrl: '',
+  lampiran_isPdf: false,
+  lampiran_name: ''
 })
 const izinBusy = ref(false)
 const izinBusyId = ref(null)
@@ -814,11 +903,67 @@ const izinBusyId = ref(null)
 function openIzinForm() {
   const t = new Date().toISOString().slice(0, 10)
   izinForm.jenis = 'izin'
+  izinForm.kategori = ''
   izinForm.tgl_mulai = t
   izinForm.tgl_selesai = t
   izinForm.shifts = []
   izinForm.keterangan = ''
+  izinForm.lampiran_dataUrl = ''
+  izinForm.lampiran_isPdf = false
+  izinForm.lampiran_name = ''
   izinFormOpen.value = true
+}
+
+// nama kategori cuti dari id (untuk tampilan)
+function cutiKatNama(id) {
+  const k = cutiKategori.value.find((x) => String(x.id) === String(id))
+  return k ? k.nama : id || '-'
+}
+// kuota cuti satu pengajuan (untuk approver) — { kuota, terpakai, sisa } atau null
+function cutiSisa(a) {
+  if (a.jenis !== 'cuti' || !a.kategori) return null
+  return kuotaCuti(String(a.guru_id || ''), a.kategori, new Date().getFullYear())
+}
+// sisa kuota kategori terpilih (untuk pengaju = dirinya sendiri)
+const izinKuota = computed(() => {
+  if (izinForm.jenis !== 'cuti' || !izinForm.kategori) return null
+  const gid = String(auth.sesiAktif?.id || '')
+  return kuotaCuti(gid, izinForm.kategori, new Date().getFullYear())
+})
+// perkiraan jumlah hari yang diajukan (untuk cek over-kuota)
+const izinJumlahHari = computed(() => {
+  if (!izinForm.tgl_mulai) return 0
+  const s = new Date(izinForm.tgl_mulai + 'T00:00:00')
+  const e = new Date((izinForm.tgl_selesai || izinForm.tgl_mulai) + 'T00:00:00')
+  if (isNaN(s) || isNaN(e) || e < s) return 1
+  return Math.min(60, Math.round((e - s) / 86400000) + 1)
+})
+const izinOverKuota = computed(
+  () =>
+    izinKuota.value && izinKuota.value.sisa !== null && izinJumlahHari.value > izinKuota.value.sisa
+)
+
+function onPickLampiran(ev) {
+  const file = ev.target.files?.[0]
+  if (!file) return
+  if (file.size > 2 * 1024 * 1024) {
+    toast.error('Lampiran maks 2 MB.')
+    ev.target.value = ''
+    return
+  }
+  const isPdf = file.type === 'application/pdf'
+  if (!file.type.startsWith('image/') && !isPdf) {
+    toast.error('Lampiran harus JPG / PNG / PDF.')
+    ev.target.value = ''
+    return
+  }
+  const reader = new FileReader()
+  reader.onload = () => {
+    izinForm.lampiran_dataUrl = String(reader.result || '')
+    izinForm.lampiran_isPdf = isPdf
+    izinForm.lampiran_name = file.name
+  }
+  reader.readAsDataURL(file)
 }
 function toggleIzinShift(sh) {
   const i = izinForm.shifts.indexOf(sh)
@@ -830,6 +975,10 @@ async function submitIzin() {
     toast.warning('Pilih tanggal mulai.')
     return
   }
+  if (izinForm.jenis === 'cuti' && cutiKategori.value.length && !izinForm.kategori) {
+    toast.warning('Pilih kategori cuti.')
+    return
+  }
   if (!izinForm.shifts.length) {
     toast.warning('Pilih minimal satu shift.')
     return
@@ -838,9 +987,32 @@ async function submitIzin() {
     toast.warning('Tanggal selesai sebelum mulai.')
     return
   }
+  // Over-kuota = peringatan (tetap boleh diajukan; super_admin yang putuskan).
+  if (izinOverKuota.value) {
+    toast.warning(
+      `Melebihi sisa kuota (${izinKuota.value.sisa} hari). Pengajuan tetap dikirim untuk ditinjau.`
+    )
+  }
   izinBusy.value = true
   try {
-    await ajukanIzin({ ...izinForm })
+    let lampiran_url = ''
+    if (izinForm.lampiran_dataUrl) {
+      const ext = izinForm.lampiran_isPdf ? 'pdf' : 'jpg'
+      lampiran_url = await uploadBase64(
+        `izin_lampiran/izin_${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`,
+        izinForm.lampiran_dataUrl,
+        izinForm.lampiran_isPdf ? 'application/pdf' : 'image/jpeg'
+      )
+    }
+    await ajukanIzin({
+      jenis: izinForm.jenis,
+      kategori: izinForm.kategori,
+      tgl_mulai: izinForm.tgl_mulai,
+      tgl_selesai: izinForm.tgl_selesai,
+      shifts: izinForm.shifts,
+      keterangan: izinForm.keterangan,
+      lampiran_url
+    })
     toast.success('Pengajuan terkirim, menunggu persetujuan.')
     izinFormOpen.value = false
   } catch (e) {
@@ -883,7 +1055,7 @@ async function tolakIzin(a) {
   }
 }
 function jenisIzinLabel(j) {
-  return j === 'sakit' ? 'Sakit' : 'Izin'
+  return j === 'sakit' ? 'Sakit' : j === 'cuti' ? 'Cuti' : 'Izin'
 }
 function statusIzinClass(s) {
   if (s === 'disetujui') return 'bg-emerald-100 text-emerald-700'
