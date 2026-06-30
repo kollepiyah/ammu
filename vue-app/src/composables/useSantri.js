@@ -7,6 +7,8 @@ import { useAuthStore } from '@/stores/auth'
 import { getLembagaGroup, lembagaScopeMatches, getPkbmSubTier } from './useLembaga'
 // v.21.86.0527: Sort konsisten lembaga→kelas→nama (berlaku di semua halaman via composable)
 import { sortSantri } from '@/utils/santriSort'
+// v.111: scope Gedung (akademik per gedung + filter Pra PTPT/PTPT)
+import { isGedungScoped, gedungOf } from '@/utils/gedung'
 
 // Helper: derive santri.lembaga_refs dari legacy fields
 // Santri reguler: 1 ref. Santri mukim: 3 refs (Ma'had + Qiraati + Sekolah).
@@ -51,6 +53,9 @@ export function useSantri() {
   const filterMukim = ref('')
   // v.21.12.0526: + filterStatus (aktif/tidak_aktif/all)
   const filterStatus = ref('aktif')
+  // v.111: filter Gedung & PJ PTPT (pisah Pra PTPT per gedung & PTPT per PJ — "gak campur")
+  const filterGedung = ref('')
+  const filterPjPtpt = ref('')
 
   // Role-based access
   // v.20.25.0526: include Kepala Lembaga (kyai req — guru dengan jabatan "Kepala" lihat semua santri)
@@ -110,6 +115,12 @@ export function useSantri() {
       })
     }
 
+    // v.111: auto-scope Gedung — user ber-gedung (admin keuangan) hanya lihat santri gedungnya
+    if (isGedungScoped(auth.sesiAktif)) {
+      const myG = gedungOf(auth.sesiAktif)
+      list = list.filter((s) => String(s.gedung || '').trim() === myG)
+    }
+
     // Search filter
     const kw = search.value.trim().toLowerCase()
     if (kw) {
@@ -150,6 +161,14 @@ export function useSantri() {
       list = list.filter(
         (s) => s.kelas === filterKelas.value || s.kelas_sekolah === filterKelas.value
       )
+    }
+
+    // v.111: filter Gedung (manual) + PJ PTPT — pisah Pra PTPT/PTPT yang tercampur
+    if (filterGedung.value) {
+      list = list.filter((s) => String(s.gedung || '').trim() === filterGedung.value)
+    }
+    if (filterPjPtpt.value) {
+      list = list.filter((s) => String(s.pj_ptpt || '').trim() === filterPjPtpt.value)
     }
 
     // v.21.12.0526: Ma'had / Fullday / Pulang Pergi
@@ -206,6 +225,8 @@ export function useSantri() {
     filterKelas,
     filterMukim,
     filterStatus,
+    filterGedung,
+    filterPjPtpt,
     stats,
     isFullAccess,
     getGuruInfo,

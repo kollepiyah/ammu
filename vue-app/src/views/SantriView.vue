@@ -285,6 +285,28 @@
           <option value="tidak_aktif">Tidak aktif / Keluar</option>
         </select>
       </div>
+      <!-- v.111: filter Gedung & PJ PTPT — pisah Pra PTPT per gedung / PTPT per PJ ("gak campur") -->
+      <div
+        v-if="gedungOptions.length || pjPtptOptions.length"
+        class="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2"
+      >
+        <select
+          v-if="gedungOptions.length"
+          v-model="filterGedung"
+          class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none"
+        >
+          <option value="">Semua gedung</option>
+          <option v-for="g in gedungOptions" :key="g" :value="g">{{ g }}</option>
+        </select>
+        <select
+          v-if="pjPtptOptions.length"
+          v-model="filterPjPtpt"
+          class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none"
+        >
+          <option value="">Semua PJ PTPT</option>
+          <option v-for="p in pjPtptOptions" :key="p" :value="p">PJ: {{ p }}</option>
+        </select>
+      </div>
       <!-- v.21.22c.0526: Select-all (Master mode only) -->
       <div
         v-if="isMasterMode && isFullAccess && santri.length > 0"
@@ -483,6 +505,7 @@ import { definePageActions } from '@/composables/useRibbonContext'
 import { useSantri } from '@/composables/useSantri'
 import { getPkbmSubTier, canonLembaga } from '@/composables/useLembaga' // v.99: PKBM -> SMP/SMA; v.100: auto-deteksi nama lembaga kanonik
 import { sortLembagaNames } from '@/utils/santriSort' // v.100 Batch10: urutan canonical dropdown lembaga
+import { gedungList } from '@/utils/gedung' // v.111: filter Gedung (pisah Pra PTPT per gedung)
 import { useAuthStore } from '@/stores/auth'
 import { ownsNgaji, ownsSekolah, deteksiTipeGuru } from '@/utils/guruScope' // v.100b: pisah santri qiraati/sekolah utk guru dual
 
@@ -528,9 +551,22 @@ const {
   filterLembaga,
   filterMukim,
   filterStatus,
+  filterGedung,
+  filterPjPtpt,
   stats,
   isFullAccess
 } = useSantri()
+
+// v.111: opsi filter Gedung (master) + PJ PTPT (distinct dari santri) — pisah Pra PTPT/PTPT
+const gedungOptions = computed(() => gedungList(settingsStore.settings || {}))
+const pjPtptOptions = computed(() => {
+  const set = new Set()
+  for (const s of santriRaw.value || []) {
+    const p = String(s.pj_ptpt || '').trim()
+    if (p) set.add(p)
+  }
+  return [...set].sort((a, b) => a.localeCompare(b, 'id'))
+})
 
 // v.107: filter <-> URL query — pertahankan filter saat "back" dari halaman detail/profil.
 //   Baca query saat mount + saat berubah (dukung global-search header ?q= + pita ?tempat=).
