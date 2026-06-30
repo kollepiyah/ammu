@@ -50,6 +50,13 @@ dan santri Pra PTPT/PTPT tidak lagi campur antar kelompok. Tanpa migrasi DB.
 - **Bisyaroh / gaji guru tetap GLOBAL** (tidak ter-scope) — sesuai kebijakan.
 - Versi aplikasi web dinaikkan `v.1.1.1` → `v.1.1.2` (sekaligus menyamakan git dengan rilis live).
 
+### Fixed (Perbaikan)
+
+- **Data guru/santri kosong padahal "seolah login"** — auto-recovery sesi Supabase "zombie":
+  saat token (refresh) mati, app kini otomatis membersihkan sesi basi & mengarahkan ke halaman
+  login ("Sesi berakhir — silakan masuk kembali") alih-alih menampilkan data kosong. Sebelumnya
+  harus logout/login atau hard refresh manual.
+
 ### Catatan
 
 - Super admin & akun admin keuangan **tanpa gedung** tetap melihat semua data (tidak ada yang hilang).
