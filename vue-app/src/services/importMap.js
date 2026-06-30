@@ -55,7 +55,8 @@ export function parseDate(v) {
   // 'DD/MM/YYYY' atau 'D/M/YYYY' (opsional jam)
   m = s.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})/)
   if (m) {
-    const d = m[1].padStart(2, '0'), mo = m[2].padStart(2, '0')
+    const d = m[1].padStart(2, '0'),
+      mo = m[2].padStart(2, '0')
     return `${m[3]}-${mo}-${d}`
   }
   return ''
@@ -97,7 +98,10 @@ export function mapSantriRow(r) {
   const guruSore = titleCase(pick(r, 'Guru Sore'))
   const guruSekolahRaw = pick(r, 'Guru Sekolah (pisah |)', 'Guru Sekolah')
   const guruSekolah = guruSekolahRaw
-    ? guruSekolahRaw.split('|').map((x) => titleCase(x)).filter(Boolean)
+    ? guruSekolahRaw
+        .split('|')
+        .map((x) => titleCase(x))
+        .filter(Boolean)
     : []
 
   const ayah = {
@@ -143,19 +147,32 @@ export function mapSantriRow(r) {
       guru_sore: guruSore,
       guru: guruPagi || guruSore, // kompat field tunggal
       guru_sekolah: guruSekolah,
+      // v.111: penataan administrasi — gedung (scope keuangan+akademik) & PJ PTPT
+      gedung: pick(r, 'Gedung'),
+      pj_ptpt: pick(r, 'PJ PTPT', 'PJ Ptpt', 'PJ_PTPT'),
       asal_sekolah: titleCase(pick(r, 'Asal Sekolah')),
       penghasilan_ortu: pick(r, 'Penghasilan Ortu', 'Penghasilan Ortu / Wali'),
-      nama_ayah: ayah.nama, nik_ayah: ayah.nik, pendidikan_ayah: ayah.pendidikan,
-      pekerjaan_ayah: ayah.pekerjaan, hp_ayah: ayah.telp,
-      nama_ibu: ibu.nama, nik_ibu: ibu.nik, pendidikan_ibu: ibu.pendidikan,
-      pekerjaan_ibu: ibu.pekerjaan, hp_ibu: ibu.telp,
-      ayah, ibu,
+      nama_ayah: ayah.nama,
+      nik_ayah: ayah.nik,
+      pendidikan_ayah: ayah.pendidikan,
+      pekerjaan_ayah: ayah.pekerjaan,
+      hp_ayah: ayah.telp,
+      nama_ibu: ibu.nama,
+      nik_ibu: ibu.nik,
+      pendidikan_ibu: ibu.pendidikan,
+      pekerjaan_ibu: ibu.pekerjaan,
+      hp_ibu: ibu.telp,
+      ayah,
+      ibu,
       alamat: cellText(pick(r, 'Alamat')),
       alamat_detail: {
         dusun: cellText(pick(r, 'Dusun/Jalan')),
-        rt: cellText(pick(r, 'RT')), rw: cellText(pick(r, 'RW')),
-        desa: titleCase(pick(r, 'Desa')), kecamatan: titleCase(pick(r, 'Kecamatan')),
-        kabupaten: titleCase(pick(r, 'Kabupaten')), provinsi: titleCase(pick(r, 'Provinsi'))
+        rt: cellText(pick(r, 'RT')),
+        rw: cellText(pick(r, 'RW')),
+        desa: titleCase(pick(r, 'Desa')),
+        kecamatan: titleCase(pick(r, 'Kecamatan')),
+        kabupaten: titleCase(pick(r, 'Kabupaten')),
+        provinsi: titleCase(pick(r, 'Provinsi'))
       },
       catatan_riwayat_pribadi: cellText(pick(r, 'Catatan Riwayat Pribadi (Mukim)')),
       tgl_keluar: parseDate(pick(r, 'Tgl Keluar (DD/MM/YYYY)')),
@@ -168,11 +185,17 @@ export function mapSantriRow(r) {
 // ---- mapper guru ----------------------------------------------------------
 const _ROLE_SISTEM = new Set(['user', 'guru_biasa', 'admin', 'admin_keuangan', 'super_admin'])
 export function mapGuruRow(r) {
-  const nama = titleCase(pick(r, 'Nama Guru (Dengan Gelar)', 'Nama Lengkap (Dengan Gelar)', 'Nama Guru', 'nama'))
+  const nama = titleCase(
+    pick(r, 'Nama Guru (Dengan Gelar)', 'Nama Lengkap (Dengan Gelar)', 'Nama Guru', 'nama')
+  )
   if (!nama) return null
   const nik = pick(r, 'NIK')
   const id = nik || 'g_' + hashKey(_low(nama))
-  let roleSistem = pick(r, 'Role Sistem (user/admin/admin_keuangan/super_admin)', 'Role Sistem').toLowerCase()
+  let roleSistem = pick(
+    r,
+    'Role Sistem (user/admin/admin_keuangan/super_admin)',
+    'Role Sistem'
+  ).toLowerCase()
   if (!_ROLE_SISTEM.has(roleSistem)) roleSistem = 'user'
 
   return {
@@ -184,9 +207,12 @@ export function mapGuruRow(r) {
     jabatan_tambahan: titleCase(pick(r, 'Jabatan Tambahan')),
     lembaga: pick(r, 'Lembaga', 'Lembaga Qiraati'),
     lembaga_sekolah: pick(r, 'Lembaga Sekolah'),
-    tipe_pegawai: (pick(r, 'Tipe Pegawai (guru/pegawai/pegawai_guru)', 'Tipe Pegawai', 'Tipe') || 'guru').toLowerCase(),
+    tipe_pegawai: (
+      pick(r, 'Tipe Pegawai (guru/pegawai/pegawai_guru)', 'Tipe Pegawai', 'Tipe') || 'guru'
+    ).toLowerCase(),
     shift: (pick(r, 'Shift (pagi/sore/pagi_sore)', 'Shift') || '').toLowerCase(),
-    status: (pick(r, 'Status') || 'aktif').toLowerCase() === 'tidak aktif' ? 'Tidak Aktif' : 'aktif',
+    status:
+      (pick(r, 'Status') || 'aktif').toLowerCase() === 'tidak aktif' ? 'Tidak Aktif' : 'aktif',
     username: pick(r, 'Username (opsional)', 'Username').toLowerCase(),
     wa: normWa(pick(r, 'WA', 'No WhatsApp', 'WhatsApp')),
     role_sistem: roleSistem,
@@ -236,11 +262,19 @@ export function parseRows(rawRows, type) {
   const mapper = _MAPPERS[type]
   if (!mapper) throw new Error('importMap: type tak dikenal: ' + type)
   const seen = new Map()
-  let skipped = 0, duplicates = 0
+  let skipped = 0,
+    duplicates = 0
   for (const raw of rawRows) {
     const mapped = mapper(raw)
-    if (!mapped) { skipped++; continue }
-    if (seen.has(mapped.id)) { duplicates++; seen.set(mapped.id, mapped); continue } // last-wins
+    if (!mapped) {
+      skipped++
+      continue
+    }
+    if (seen.has(mapped.id)) {
+      duplicates++
+      seen.set(mapped.id, mapped)
+      continue
+    } // last-wins
     seen.set(mapped.id, mapped)
   }
   return { rows: [...seen.values()], skipped, duplicates, total: rawRows.length }

@@ -490,6 +490,7 @@ async function lfixApply() {
 
 const TABS = [
   { id: 'lembaga', label: 'Lembaga/Divisi', icon: 'fa-sitemap', color: 'blue' },
+  { id: 'gedung', label: 'Gedung', icon: 'fa-building', color: 'teal' },
   { id: 'tp', label: 'Tahun Pelajaran', icon: 'fa-calendar', color: 'orange' },
   { id: 'guru', label: 'Guru/Pegawai', icon: 'fa-user-tie', color: 'purple' },
   { id: 'santri', label: 'Data Santri', icon: 'fa-user-graduate', color: 'teal' },
@@ -616,6 +617,71 @@ async function hapusTp(idx) {
     await mergeOne('settings', 'general', { master_tp: arr })
     await mergeOne('settings', 'web', { master_tp: arr })
     settings.settings.master_tp = arr
+    toast.success('Dihapus')
+  } catch (e) {
+    toast.error('Gagal: ' + (e.message || e))
+  }
+}
+
+// v.111: KELOLA GEDUNG (penataan administrasi: scope keuangan Buku Kas + akademik)
+const gedungMaster = computed(() => {
+  const arr = settings.settings?.gedung_list
+  return Array.isArray(arr) && arr.length ? arr : ['Gedung TPQ Pagi', 'Gedung Induk']
+})
+const gedungForm = reactive({ value: '', idx: null })
+const savingGedung = ref(false)
+function editGedung(idx) {
+  gedungForm.value = gedungMaster.value[idx] || ''
+  gedungForm.idx = idx
+}
+function resetGedung() {
+  gedungForm.value = ''
+  gedungForm.idx = null
+}
+async function _saveGedung(arr) {
+  await mergeOne('settings', 'general', { gedung_list: arr })
+  await mergeOne('settings', 'web', { gedung_list: arr })
+  settings.settings.gedung_list = arr
+}
+async function simpanGedung() {
+  if (!gedungForm.value.trim()) {
+    toast.warning('Nama gedung wajib diisi')
+    return
+  }
+  savingGedung.value = true
+  try {
+    const arr = [...gedungMaster.value]
+    if (gedungForm.idx !== null) {
+      arr[gedungForm.idx] = gedungForm.value.trim()
+    } else {
+      if (arr.includes(gedungForm.value.trim())) {
+        toast.warning('Gedung sudah ada')
+        return
+      }
+      arr.push(gedungForm.value.trim())
+    }
+    await _saveGedung(arr)
+    toast.success(gedungForm.idx !== null ? 'Diperbarui' : 'Tersimpan')
+    resetGedung()
+  } catch (e) {
+    toast.error('Gagal: ' + (e.message || e))
+  } finally {
+    savingGedung.value = false
+  }
+}
+async function hapusGedung(idx) {
+  const ok = await confirmDlg({
+    title: 'Hapus Gedung?',
+    message: `Gedung "${gedungMaster.value[idx]}" akan dihapus. Santri yang sudah ter-assign tak otomatis berubah.`,
+    confirmText: 'Hapus',
+    cancelText: 'Batal',
+    danger: true
+  })
+  if (!ok) return
+  try {
+    const arr = [...gedungMaster.value]
+    arr.splice(idx, 1)
+    await _saveGedung(arr)
     toast.success('Dihapus')
   } catch (e) {
     toast.error('Gagal: ' + (e.message || e))
@@ -1280,6 +1346,71 @@ async function simpanPengaturanRekap() {
               @click="hapusTp(idx)"
               aria-label="Hapus Tahun Pelajaran"
               title="Hapus Tahun Pelajaran"
+              class="text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 px-2 py-1 rounded text-xs"
+            >
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+        </li>
+      </ul>
+    </div>
+
+    <!-- TAB: GEDUNG (v.111 — penataan administrasi scope keuangan + akademik) -->
+    <div
+      v-else-if="activeTab === 'gedung'"
+      class="bg-white dark:bg-slate-800 rounded-2xl p-5 md:p-6 border border-slate-200 dark:border-slate-700 shadow-sm"
+    >
+      <p class="text-sm font-black text-teal-700 dark:text-teal-300 mb-1">
+        <i class="fas fa-building text-teal-600 mr-1"></i>Kelola Gedung
+      </p>
+      <p class="text-xs text-slate-700 dark:text-slate-300 mb-3">
+        Gedung menentukan scope admin keuangan (Buku Kas) &amp; akademik tiap santri. Isi field
+        "Gedung" per santri di Data Santri atau lewat template impor.
+      </p>
+      <div class="flex gap-2 mb-3">
+        <input
+          v-model="gedungForm.value"
+          type="text"
+          placeholder="mis. Gedung TPQ Pagi"
+          class="flex-1 px-3 py-2 text-sm rounded-lg border border-teal-300 bg-white dark:bg-slate-900 text-slate-800 dark:text-white"
+        />
+        <button
+          @click="simpanGedung"
+          :disabled="savingGedung"
+          class="bg-teal-600 hover:bg-teal-700 text-white text-sm font-bold px-4 py-2 rounded-lg disabled:opacity-50"
+        >
+          <i class="fas fa-save mr-1"></i>{{ gedungForm.idx !== null ? 'Update' : 'Tambah' }}
+        </button>
+        <button
+          v-if="gedungForm.idx !== null"
+          @click="resetGedung"
+          class="bg-slate-300 hover:bg-slate-400 text-slate-700 text-sm font-bold px-3 py-2 rounded-lg"
+        >
+          Batal
+        </button>
+      </div>
+      <ul class="space-y-2">
+        <li
+          v-for="(g, idx) in gedungMaster"
+          :key="idx"
+          class="flex justify-between items-center bg-slate-50 dark:bg-slate-900 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700"
+        >
+          <span class="text-sm font-bold text-slate-800 dark:text-white">
+            <i class="fas fa-building text-teal-500 mr-2"></i>{{ g }}
+          </span>
+          <div class="flex gap-1">
+            <button
+              @click="editGedung(idx)"
+              aria-label="Edit Gedung"
+              title="Edit Gedung"
+              class="text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/30 px-2 py-1 rounded text-xs"
+            >
+              <i class="fas fa-edit"></i>
+            </button>
+            <button
+              @click="hapusGedung(idx)"
+              aria-label="Hapus Gedung"
+              title="Hapus Gedung"
               class="text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 px-2 py-1 rounded text-xs"
             >
               <i class="fas fa-times"></i>

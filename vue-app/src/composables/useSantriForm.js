@@ -3,7 +3,9 @@
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { getOne, mergeOne, subscribeColl, subscribeDoc } from '@/services/db'
 import { useToast } from '@/composables/useToast'
+import { useSettingsStore } from '@/stores/settings'
 import { toTitleCase, normalizeWA } from '@/utils/format'
+import { gedungList } from '@/utils/gedung'
 
 function emptyForm() {
   return {
@@ -19,6 +21,9 @@ function emptyForm() {
     lembaga: '',
     kelas: '',
     juz: '',
+    // v.111: penataan administrasi — gedung (scope keuangan+akademik) & PJ PTPT (khusus PTPT)
+    gedung: '',
+    pj_ptpt: '',
     lembaga_sekolah: '',
     kelas_sekolah: '',
     guru_pagi: '',
@@ -63,6 +68,7 @@ function emptyForm() {
 
 export function useSantriForm() {
   const toast = useToast()
+  const settings = useSettingsStore()
   const form = ref(emptyForm())
   const lembagaRaw = ref([])
   const guruRaw = ref([])
@@ -150,6 +156,16 @@ export function useSantriForm() {
       .sort((a, b) => String(a.nama || '').localeCompare(String(b.nama || ''), 'id'))
   })
 
+  // v.111: opsi Gedung (master administrasi) + kandidat PJ PTPT (guru aktif di PTPT)
+  const gedungOptions = computed(() => gedungList(settings.settings || {}))
+  const pjPtptOptions = computed(() =>
+    guruRaw.value
+      .filter((g) => _isAktifGuru(g) && String(g.lembaga || '') === 'PTPT')
+      .map((g) => g.nama)
+      .filter(Boolean)
+      .sort((a, b) => String(a).localeCompare(String(b), 'id'))
+  )
+
   // v.99: default guru per kelas (master/lembaga.kelas_guru) — sumber sama dgn halaman Kelas & Guru.
   function _kelasGuruDefault(lembagaNama, kelasNama) {
     if (!lembagaNama || !kelasNama) return null
@@ -224,6 +240,8 @@ export function useSantriForm() {
         lembaga: s.lembaga || '',
         kelas: s.kelas || '',
         juz: s.juz || '',
+        gedung: s.gedung || '',
+        pj_ptpt: s.pj_ptpt || '',
         lembaga_sekolah: _lemSek,
         kelas_sekolah: _kelSek,
         guru_pagi: s.guru_pagi || (s.guru && !s.guru_sore ? s.guru : ''),
@@ -320,6 +338,9 @@ export function useSantriForm() {
         guru_sore: f.guru_sore,
         guru: f.guru_pagi || f.guru_sore, // backward compat
         juz: f.lembaga === 'PTPT' ? String(f.juz || '').toUpperCase() : '-',
+        // v.111: gedung (semua santri) + pj_ptpt (hanya bermakna utk PTPT)
+        gedung: String(f.gedung || '').trim(),
+        pj_ptpt: f.lembaga === 'PTPT' ? String(f.pj_ptpt || '').trim() : '',
         aktif: f.aktif,
         is_mukim: f.is_mukim,
         // v.21.13.0526: + is_fullday + catatan_riwayat + tgl/alasan keluar
@@ -436,6 +457,8 @@ export function useSantriForm() {
     lembagaSekolahOptions,
     guruByLembaga,
     guruByLembagaSekolah,
+    gedungOptions,
+    pjPtptOptions,
     resetForm,
     loadSantri,
     validate,

@@ -532,6 +532,37 @@
             />
           </div>
         </div>
+        <!-- v.111: Gedung (scope admin keuangan & akademik) + PJ PTPT (khusus PTPT) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+          <div>
+            <label class="block text-xs font-bold text-teal-700 mb-1 uppercase"
+              >Gedung
+              <span class="text-[9px] text-[var(--text-tertiary)] normal-case"
+                >(scope admin keuangan &amp; akademik)</span
+              ></label
+            >
+            <select
+              v-model="form.gedung"
+              class="w-full px-3 py-2 text-sm rounded-xl border-2 border-teal-400 bg-teal-50 cursor-pointer focus:ring-2 focus:ring-teal-500 outline-none"
+            >
+              <option value="">-- Pilih Gedung --</option>
+              <option v-for="g in gedungOptions" :key="g" :value="g">{{ g }}</option>
+            </select>
+          </div>
+          <div v-if="form.lembaga === 'PTPT'">
+            <label class="block text-xs font-bold text-teal-700 mb-1 uppercase">PJ PTPT</label>
+            <input
+              v-model="form.pj_ptpt"
+              type="text"
+              list="pjPtptList"
+              placeholder="Nama PJ PTPT"
+              class="w-full px-3 py-2 text-sm rounded-xl border-2 border-teal-400 bg-teal-50 text-teal-800 focus:ring-2 focus:ring-teal-500 outline-none"
+            />
+            <datalist id="pjPtptList">
+              <option v-for="p in pjPtptOptions" :key="p" :value="p" />
+            </datalist>
+          </div>
+        </div>
         <div class="mt-3">
           <label class="block text-xs font-black text-teal-700 mb-1 uppercase"
             >Guru Pengajar *
@@ -688,6 +719,8 @@ const {
   lembagaSekolahOptions,
   guruByLembaga,
   guruByLembagaSekolah,
+  gedungOptions,
+  pjPtptOptions,
   loadSantri,
   resetForm,
   save
