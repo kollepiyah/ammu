@@ -680,6 +680,7 @@ import { useToast } from '@/composables/useToast'
 // v.21.115.0528: useConfirm utk replace window.confirm native
 import { useConfirm } from '@/composables/useConfirm'
 import { useKeuangan } from '@/composables/useKeuangan'
+import { useGedungScope } from '@/composables/useGedungScope'
 import { fmtRp, fmtTgl } from '@/utils/format'
 import { cetakSlipTabunganPdf, exportRekapTabunganPdf } from '@/utils/strukBuilder'
 import { buildSlipTabunganEscpBase64 } from '@/utils/escpImage'
@@ -688,6 +689,8 @@ import { useExcel } from '@/composables/useExcel'
 import { useRoute } from 'vue-router'
 
 const { tabunganSantri, loading, isFullAccess, getNamaSantri, santriRaw } = useKeuangan()
+// v.111: scope Gedung — admin keuangan ber-gedung hanya kelola santri gedungnya
+const { allowSantri } = useGedungScope()
 // v.95.0626: mode dari route — 'uangsaku' (menu terpisah, koleksi sendiri, santri ma'had/mukim) atau default 'tabungan'
 const route = useRoute()
 const isUangSaku = computed(
@@ -731,6 +734,7 @@ const mutYears = computed(() => {
 })
 const mutasiFiltered = computed(() =>
   mutasiSource.value
+    .filter((m) => allowSantri(m.santri_id || m.santriId))
     .filter((m) => {
       const tg = String(m.tanggal || '')
       if (mutFilterYear.value && tg.slice(0, 4) !== String(mutFilterYear.value)) return false
@@ -830,7 +834,8 @@ const aggregated = computed(() => {
     const tgl = String(t.tanggal || '')
     if (tgl && tgl > map[sid].terakhir_update) map[sid].terakhir_update = tgl
   }
-  return Object.values(map)
+  // v.111: scope Gedung — hanya santri gedung admin (tak ter-scope → semua)
+  return Object.values(map).filter((t) => allowSantri(t.santri_id))
 })
 
 const filteredItems = computed(() => {
@@ -975,6 +980,7 @@ const santriOptions = computed(() =>
   sortSantri(
     (santriRaw.value || [])
       .filter((s) => s.aktif !== false && (!isUangSaku.value || s.is_mukim === true))
+      .filter((s) => allowSantri(s.id)) // v.111: scope Gedung
       .map((s) => ({ id: s.id, nama: s.nama, lembaga: s.lembaga, kelas: s.kelas }))
   ).slice(0, 200)
 )

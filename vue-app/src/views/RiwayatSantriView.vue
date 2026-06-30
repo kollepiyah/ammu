@@ -192,6 +192,7 @@ import { subscribeColl, getAll } from '@/services/db'
 import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
+import { useGedungScope } from '@/composables/useGedungScope'
 import { sortSantri } from '@/utils/santriSort'
 import { cetakRiwayatSantriPdf, buildKopFromSettings } from '@/utils/riwayatSantriPdf'
 
@@ -213,6 +214,8 @@ const BULAN = [
 const auth = useAuthStore()
 const settings = useSettingsStore()
 const toast = useToast()
+// v.111: scope Gedung — admin keuangan ber-gedung hanya lihat santri gedungnya
+const { allowSantri } = useGedungScope()
 
 const isFullAccess = computed(() => {
   const s = auth.sesiAktif
@@ -256,7 +259,7 @@ const tahunOptions = computed(() => {
 })
 
 const filteredSantri = computed(() => {
-  let list = santriRaw.value.filter((s) => s.aktif !== false)
+  let list = santriRaw.value.filter((s) => s.aktif !== false && allowSantri(s.id))
   if (selectedLembaga.value) {
     list = list.filter(
       (s) => s.lembaga === selectedLembaga.value || s.lembaga_sekolah === selectedLembaga.value

@@ -221,11 +221,14 @@ import {
 } from '@/composables/useDesktopPrint'
 import { terbilangRupiah } from '@/utils/terbilang'
 import { useSettingsStore } from '@/stores/settings'
+import { useGedungScope } from '@/composables/useGedungScope'
 import ModalPOS from '@/components/pos/ModalPOS.vue'
 
 const auth = useAuthStore()
 const toast = useToast()
 const settingsStore = useSettingsStore()
+// v.111: scope Gedung — admin keuangan ber-gedung hanya transaksi santri gedungnya
+const { allowSantri } = useGedungScope()
 
 const santriList = ref([])
 const loading = ref(true)
@@ -366,7 +369,7 @@ const sekolahList = computed(() => {
 })
 
 const filteredSantri = computed(() => {
-  let list = santriList.value
+  let list = santriList.value.filter((s) => allowSantri(s.id)) // v.111: scope Gedung
   if (filterLembaga.value) list = list.filter((s) => s.lembaga === filterLembaga.value)
   if (filterSekolah.value) list = list.filter((s) => s.lembaga_sekolah === filterSekolah.value)
   if (filterTunggakan.value) list = list.filter((s) => (tunggakanMap.value[s.id]?.count || 0) > 0)

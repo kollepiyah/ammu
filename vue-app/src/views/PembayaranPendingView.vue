@@ -276,9 +276,12 @@ import { subscribeColl, setOne, deleteOne, getOne, queryColl, updateOne } from '
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
+import { useGedungScope } from '@/composables/useGedungScope'
 import { fmtRp, fmtTgl } from '@/utils/format'
 
 const auth = useAuthStore()
+// v.111: scope Gedung — admin keuangan ber-gedung hanya verifikasi santri gedungnya
+const { allowSantri } = useGedungScope()
 const toast = useToast()
 const confirm = useConfirm()
 
@@ -309,23 +312,26 @@ const tabs = [
   }
 ]
 
+// v.111: scope Gedung — basis semua hitungan = pending milik gedung admin
+const scopedPending = computed(() => pendingRaw.value.filter((p) => allowSantri(p.santri_id)))
+
 const filteredItems = computed(() => {
-  return pendingRaw.value
+  return scopedPending.value
     .filter((p) => (p.status || 'pending') === filterStatus.value)
     .sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')))
 })
 
 const pendingCount = computed(
-  () => pendingRaw.value.filter((p) => (p.status || 'pending') === 'pending').length
+  () => scopedPending.value.filter((p) => (p.status || 'pending') === 'pending').length
 )
 const totalPending = computed(() =>
-  pendingRaw.value
+  scopedPending.value
     .filter((p) => (p.status || 'pending') === 'pending')
     .reduce((s, p) => s + (Number(p.nominal) || 0), 0)
 )
 
 function countByStatus(s) {
-  return pendingRaw.value.filter((p) => (p.status || 'pending') === s).length
+  return scopedPending.value.filter((p) => (p.status || 'pending') === s).length
 }
 
 function cleanWa(wa) {
