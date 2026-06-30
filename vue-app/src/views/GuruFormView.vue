@@ -332,6 +332,23 @@
               </option>
             </select>
           </div>
+          <!-- v.111: Gedung yang dikelola admin keuangan (scope Buku Kas) -->
+          <div v-if="isSuperAdmin && form.role_sistem === 'admin_keuangan'">
+            <label class="block text-xs font-bold text-teal-700 mb-1 uppercase"
+              >Gedung (scope Buku Kas)</label
+            >
+            <select
+              v-model="form.gedung"
+              class="w-full px-3 py-2 text-sm rounded-xl border border-teal-300 bg-teal-50 focus:ring-2 focus:ring-teal-500 outline-none"
+            >
+              <option value="">-- Semua (tak ter-scope) --</option>
+              <option v-for="g in gedungOptions" :key="g" :value="g">{{ g }}</option>
+            </select>
+            <p class="text-[10px] text-[var(--text-tertiary)] mt-1 italic">
+              Kosong = lihat semua gedung. Pilih satu agar admin ini hanya pegang Buku Kas gedung
+              tersebut.
+            </p>
+          </div>
         </div>
       </div>
 
@@ -388,6 +405,7 @@ const {
   lembagaSekolahOptions,
   jabatanOptionsFiltered,
   isSuperAdmin,
+  gedungOptions,
   loadGuru,
   resetForm,
   save

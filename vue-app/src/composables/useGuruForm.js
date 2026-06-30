@@ -5,7 +5,9 @@ import { getOne, mergeOne, subscribeDoc, getAll } from '@/services/db'
 import { nextNigForNew } from '@/utils/nigGenerator' // v.100 Batch16: NIG guru baru = append (lanjut NNN)
 import { useToast } from '@/composables/useToast'
 import { useAuthStore } from '@/stores/auth'
+import { useSettingsStore } from '@/stores/settings'
 import { toTitleCase, normalizeWA } from '@/utils/format'
+import { gedungList } from '@/utils/gedung'
 
 function emptyForm() {
   return {
@@ -29,6 +31,8 @@ function emptyForm() {
     shift: 'pagi_sore',
     shift_pegawai: 'pagi_sore', // v.99: shift kerja PEGAWAI (terpisah dari shift mengajar Qiraati) — utk dual-role
     role_sistem: 'user',
+    // v.111: gedung yang dikelola (khusus admin_keuangan → scope Buku Kas + akademik)
+    gedung: '',
     custom_fields: {}
   }
 }
@@ -305,6 +309,10 @@ export function useGuruForm() {
   // Apakah user current admin (untuk show role_sistem option)
   const isSuperAdmin = computed(() => auth.sesiAktif?.role_sistem === 'super_admin')
 
+  // v.111: opsi Gedung (utk picker saat role_sistem = admin_keuangan)
+  const settings = useSettingsStore()
+  const gedungOptions = computed(() => gedungList(settings.settings || {}))
+
   function resetForm() {
     form.value = emptyForm()
     editingId.value = null
@@ -350,6 +358,7 @@ export function useGuruForm() {
         shift: g.shift || 'pagi_sore',
         shift_pegawai: g.shift_pegawai || 'pagi_sore', // v.99: shift kerja pegawai (dual-role)
         role_sistem: g.role_sistem || 'user',
+        gedung: g.gedung || '',
         custom_fields: g.custom_fields || {}
       }
       editingId.value = String(id)
@@ -441,6 +450,8 @@ export function useGuruForm() {
         shift: f.shift,
         shift_pegawai: f.shift_pegawai || 'pagi_sore', // v.99: shift kerja pegawai (dual-role)
         role_sistem: isSuperAdmin.value ? f.role_sistem : 'user',
+        // v.111: gedung hanya bermakna utk admin_keuangan; selain itu kosongkan
+        gedung: isSuperAdmin.value && f.role_sistem === 'admin_keuangan' ? f.gedung || '' : '',
         custom_fields: f.custom_fields || {},
         // v.102: field `password` plaintext DIHAPUS — login pakai Firebase Auth (sandi awal '1234' via lazy-migration)
         foto: ''
@@ -547,6 +558,7 @@ export function useGuruForm() {
     showLembagaQiraati,
     butuhLembaga,
     isSuperAdmin,
+    gedungOptions,
     resetForm,
     loadGuru,
     validate,

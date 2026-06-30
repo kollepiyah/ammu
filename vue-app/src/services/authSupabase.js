@@ -166,6 +166,8 @@ export async function buildSesi() {
       jk: g.jk || '',
       jabatan: g.jabatan || '',
       jabatan_tambahan: g.jabatan_tambahan || '',
+      // v.111: gedung yang dikelola admin keuangan (scope Buku Kas + akademik)
+      gedung: g.gedung || '',
       username: g.username || '',
       wa: g.wa || '',
       foto: g.foto || '',
