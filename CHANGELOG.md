@@ -21,6 +21,44 @@ Versioning: `v.{nomor-urut}.{MMDDtahunmu}` (mis: `v.108.0527`)
 
 ---
 
+## [v.1.1.2] — 2026-06-30 — Sistem "Gedung" (Pemisahan Keuangan & Akademik per Unit)
+
+Memecah administrasi keuangan & akademik menjadi beberapa **Gedung** (unit), sehingga
+2 admin keuangan yang berbeda tempat bisa pegang kas & laporan sendiri tanpa tercampur,
+dan santri Pra PTPT/PTPT tidak lagi campur antar kelompok. Tanpa migrasi DB.
+
+### Added (Fitur Baru)
+
+- **Dimensi "Gedung"** — penanda unit per santri (field `gedung`, diisi manual atau lewat
+  template impor) yang menyetir scope keuangan **dan** akademik. Master Gedung dikelola di
+  **Master Data → Gedung** (default: _Gedung TPQ Pagi_ & _Gedung Induk_, bisa ditambah).
+- **PJ PTPT** — field penanggung jawab PTPT per santri (khusus PTPT, ada di template impor) →
+  tiap PJ bisa memfilter santrinya.
+- **Buku Kas per gedung** — tiap admin keuangan hanya melihat & input kas gedungnya;
+  **Buku Induk** (gabungan seluruh gedung) khusus **super admin**.
+- **Filter Gedung & PJ PTPT** di Data Santri — memisahkan Pra PTPT (Usia Dini vs lainnya)
+  & PTPT per PJ agar tidak tercampur.
+- **Assign gedung ke akun admin keuangan** (Data Guru → role Admin Keuangan); kosong = lihat semua.
+
+### Changed (Perubahan)
+
+- **Keuangan ter-scope per gedung** — POS Santri, Tabungan, Uang Saku, Verifikasi Transfer,
+  Riwayat Santri, Generate Tagihan, Dashboard & Laporan Keuangan otomatis tersaring ke gedung
+  admin keuangan yang login.
+- **Uang ikut gedung santri** (online = offline) — pembayaran/tabungan selalu masuk kas yang benar.
+- **Data Santri (akademik) ter-scope per gedung** untuk akun ber-gedung.
+- **Bisyaroh / gaji guru tetap GLOBAL** (tidak ter-scope) — sesuai kebijakan.
+- Versi aplikasi web dinaikkan `v.1.1.1` → `v.1.1.2` (sekaligus menyamakan git dengan rilis live).
+
+### Catatan
+
+- Super admin & akun admin keuangan **tanpa gedung** tetap melihat semua data (tidak ada yang hilang).
+- Field `gedung`/`pj_ptpt` disimpan di kolom `data` jsonb → **tanpa migrasi database**.
+- View akademik lain (Rekap/Rapor/Absensi/Naik Kelas) belum ikut auto-scope gedung; pemisahan
+  Pra PTPT tetap tersedia via filter Gedung di Data Santri.
+
+---
+
 ## [v.109.23.0515] — 2026-05-14 — Font Elegant + Icon Maskable Polish
 
 **SW_VERSION:** `v312-0515-elmessiri-spectral`
