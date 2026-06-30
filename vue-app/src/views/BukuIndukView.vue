@@ -22,11 +22,15 @@
             <h1
               class="text-base md:text-lg font-black text-[var(--text-primary)] whitespace-nowrap"
             >
-              <i class="fas fa-book text-cyan-500 mr-1"></i>Buku Induk (General Ledger)
+              <i class="fas fa-book text-cyan-500 mr-1"></i>{{ pageTitle }}
             </h1>
             <p class="text-[11px] text-[var(--text-secondary)] mt-0.5">
-              Pusat data arus kas keluar/masuk seluruh lembaga · {{ getBulanLabel(selectedMonth) }}
-              {{ selectedYear }}
+              {{
+                gedungScoped
+                  ? 'Arus kas gedung Anda'
+                  : 'Pusat data arus kas keluar/masuk seluruh lembaga'
+              }}
+              · {{ getBulanLabel(selectedMonth) }} {{ selectedYear }}
             </p>
           </div>
           <!-- v.21.113.0528: tombol aksi grup kanan — Ekspor/Input/Cetak konsisten h-9 px-3 rounded-xl -->
@@ -466,6 +470,7 @@ import {
 } from '@/services/db'
 import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
+import { useGedungScope } from '@/composables/useGedungScope'
 import { useToast } from '@/composables/useToast'
 import { useExcel } from '@/composables/useExcel'
 import { useGoogleSheet } from '@/composables/useGoogleSheet' // v.100 Batch12: ekspor ke Google Sheet
@@ -485,6 +490,12 @@ const { isConfigured: gsheetConfigured, sendToSheet } = useGoogleSheet()
 const sendingGsheet = ref(false)
 // v.21.98.0527: super_admin only — bisa hapus record buku induk
 const isAdmin = computed(() => isSuperAdmin(auth.sesiAktif))
+
+// v.111: scope Gedung — admin keuangan ber-gedung hanya lihat Buku Kas-nya.
+const { scoped: gedungScoped, myGedung, allowRow } = useGedungScope()
+const pageTitle = computed(() =>
+  gedungScoped.value ? `Buku Kas — ${myGedung.value}` : 'Buku Induk (General Ledger)'
+)
 
 // v.21.103.0527: reprint struk untuk record POS — group by trx_id
 async function cetakUlangStruk(b, mode = 'pdf') {
@@ -732,6 +743,8 @@ async function simpanInputManual() {
         keterangan: inputForm.keterangan.trim(),
         nominal: Number(inputForm.nominal) || 0,
         sumber: 'manual',
+        // v.111: kas manual masuk ke gedung admin pencatat ('' utk super_admin = level induk)
+        gedung: myGedung.value || '',
         operator: auth.sesiAktif?.nama || auth.sesiAktif?.guru || 'Admin',
         createdAt: serverTimestamp()
       }
@@ -807,6 +820,8 @@ const filteredBuku = computed(() => {
     if (kat === 'tabungan' || sumber === 'tabungan' || sumber.includes('tabungan')) return false
     return true
   })
+  // v.111: scope Gedung — admin keuangan ber-gedung hanya lihat baris gedungnya (Buku Kas)
+  if (gedungScoped.value) list = list.filter(allowRow)
   // Filter by year/month
   if (selectedMonth.value > 0) {
     const ym = `${selectedYear.value}-${String(selectedMonth.value).padStart(2, '0')}`
