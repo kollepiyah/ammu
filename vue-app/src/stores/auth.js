@@ -12,6 +12,8 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import * as authSupabase from '@/services/authSupabase'
 import { mergeOne, setAuditSesi } from '@/services/db'
+import { useCollectionsStore } from '@/stores/collections'
+import { useToast } from '@/composables/useToast'
 
 const SESI_STORAGE_KEY = 'portalMu_sesiAdminBuiltIn'
 
@@ -98,6 +100,13 @@ export const useAuthStore = defineStore('auth', () => {
   const authReady = new Promise((resolve) => {
     _authReadyResolve = resolve
   })
+  // v.111: dedupe reload koleksi terpusat (santri/guru/bukuInduk) per-uid supaya
+  // TOKEN_REFRESHED berkala tak memicu refetch tiap kali.
+  let _lastCollUid = null
+  // v.111b: auto-recovery sesi "zombie" (refresh_token mati → onAuthChange user=null
+  //   padahal sesiAktif terisi dari localStorage = "login tapi data kosong").
+  let _loggingOut = false // tekan deteksi zombie selama logout DISENGAJA
+  let _zombieHandled = false // one-shot supaya recover sekali per sesi-mati
 
   // Getters
   const isLoggedIn = computed(() => sesiAktif.value !== null)
@@ -168,6 +177,14 @@ export const useAuthStore = defineStore('auth', () => {
       fbUser.value = { id: sesi.supabase_uid, email: sesi.supabase_email }
       _persistAdminSesi(sesi.id === 'admin' ? sesi : null) // clear admin localStorage utk non-admin
       _persistFullSesi(sesi) // v.91.0626: backup sesi -> fix reopen-logout
+      // v.111: token sudah menempel pasca-signIn -> refetch koleksi terpusat supaya
+      //   santri/guru/bukuInduk tak kosong tanpa hard refresh. Dedupe vs onAuthChange.
+      try {
+        _lastCollUid = sesi.supabase_uid || sesi.id || null
+        useCollectionsStore().reloadActive()
+      } catch (e) {
+        /* noop */
+      }
     } catch (e) {
       const code = e.code || ''
       let msg = e.message || String(e)
@@ -204,6 +221,7 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function logout() {
+    _loggingOut = true // v.111b: cegah _recoverZombieSession nyala saat logout disengaja
     // v.100 K1: hapus fcm_token user yang KELUAR sebelum sign-out — cegah notif anak/wali
     //   nyasar ke pengguna berikutnya di HP yang sama. Best-effort (lewat adapter Supabase).
     try {
@@ -226,6 +244,16 @@ export const useAuthStore = defineStore('auth', () => {
     fbUser.value = null
     _persistAdminSesi(null) // clear localStorage
     _persistFullSesi(null) // v.85.0526: clear backup sesi juga
+    // v.111: kosongkan koleksi terpusat (cegah data user lama bocor ke user berikut
+    //   di perangkat bersama; santri/guru/bukuInduk fresh saat login baru).
+    _lastCollUid = null
+    try {
+      useCollectionsStore().clear()
+    } catch (e) {
+      /* noop */
+    }
+    _zombieHandled = false // v.111b: reset one-shot utk sesi berikutnya
+    _loggingOut = false
   }
 
   function setSesiAktif(sesi) {
@@ -250,6 +278,41 @@ export const useAuthStore = defineStore('auth', () => {
     if (sesiAktif.value) return // sudah ada sesi
     const stored = _loadAdminSesi()
     if (stored) sesiAktif.value = stored
+  }
+
+  /**
+   * v.111b: AUTO-RECOVERY sesi "zombie" — sesiAktif terisi dari localStorage tapi Supabase
+   *   tak punya sesi valid (refresh_token mati/400). Tanpa ini: koleksi ke-RLS-filter →
+   *   "data guru/santri kosong padahal seolah login". Recover: bersihkan sesi basi + koleksi,
+   *   beri tahu user, arahkan ke /login (ambil token segar). One-shot per sesi-mati.
+   */
+  function _recoverZombieSession() {
+    if (_zombieHandled) return
+    _zombieHandled = true
+    // eslint-disable-next-line no-console
+    console.warn('[auth] Sesi Supabase zombie (token mati) — auto-logout ke halaman login.')
+    sesiAktif.value = null
+    fbUser.value = null
+    _lastCollUid = null
+    _persistAdminSesi(null)
+    _persistFullSesi(null)
+    try {
+      useCollectionsStore().clear()
+    } catch (e) {
+      /* noop */
+    }
+    try {
+      useToast().warning('Sesi berakhir — silakan masuk kembali.')
+    } catch (e) {
+      /* noop */
+    }
+    try {
+      if (!String(window.location.hash || '').includes('/login')) {
+        window.location.hash = '#/login'
+      }
+    } catch (e) {
+      /* noop */
+    }
   }
 
   /**
@@ -292,6 +355,7 @@ export const useAuthStore = defineStore('auth', () => {
     }
     authSupabase.onAuthChange(async (user) => {
       if (user) {
+        _zombieHandled = false // sesi valid lagi → izinkan deteksi zombie berikutnya
         fbUser.value = user
         try {
           // Rekonstruksi sesi bila kosong atau milik user lain (sesi basi dari localStorage).
@@ -307,9 +371,25 @@ export const useAuthStore = defineStore('auth', () => {
           // eslint-disable-next-line no-console
           console.warn('[auth.initAuth] buildSesi fail:', e?.message)
         }
+        // v.111: saat token auth siap (INITIAL_SESSION ketika sesi di-restore / SIGNED_IN
+        //   ketika login) -> refetch koleksi terpusat. Ini yang memperbaiki "data kosong
+        //   sampai hard refresh" di Android/Electron. Dedupe per-uid (TOKEN_REFRESHED skip).
+        if (_lastCollUid !== user.id) {
+          _lastCollUid = user.id
+          try {
+            useCollectionsStore().reloadActive()
+          } catch (e) {
+            /* noop */
+          }
+        }
+      } else {
+        // user null. Bedakan: (a) memang belum login (sesiAktif kosong) → biarkan, guard
+        //   arahkan ke /login; vs (b) ZOMBIE: sesiAktif terisi dari localStorage tapi
+        //   Supabase tak punya sesi (token mati). Recover HANYA bila BUKAN logout sengaja.
+        if (!_loggingOut && sesiAktif.value) {
+          _recoverZombieSession()
+        }
       }
-      // user null = belum ada sesi (first load) atau setelah signOut → biarkan sesiAktif
-      // apa adanya (logout() yang clear; admin localStorage restore tetap dihormati).
       done()
     })
 
