@@ -110,7 +110,11 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { subscribeColl } from '@/services/db'
+import { useGedungScope } from '@/composables/useGedungScope'
 import { fmtRp } from '@/utils/format'
+
+// v.111: scope Gedung — pemasukan & tabungan ke-scope; bisyaroh TIDAK (global).
+const { allowSantri, allowRow } = useGedungScope()
 
 const NAMA_BULAN = [
   'Januari',
@@ -144,11 +148,14 @@ function matchPeriode(dateStr) {
 }
 
 const pembayaranList = computed(() =>
-  pembayaranRaw.value.filter((p) => matchPeriode(p.tanggal || p.createdAt || p.created_at))
+  pembayaranRaw.value
+    .filter(allowRow) // v.111: scope Gedung
+    .filter((p) => matchPeriode(p.tanggal || p.createdAt || p.created_at))
 )
 const setorList = computed(() =>
   tabunganRaw.value.filter(
     (m) =>
+      allowSantri(m.santri_id) && // v.111: scope Gedung
       (String(m.jenis).includes('setor') || String(m.jenis).includes('bayar')) &&
       matchPeriode(m.tanggal || m.createdAt || m.created_at)
   )
@@ -156,7 +163,9 @@ const setorList = computed(() =>
 const tarikList = computed(() =>
   tabunganRaw.value.filter(
     (m) =>
-      String(m.jenis).includes('tarik') && matchPeriode(m.tanggal || m.createdAt || m.created_at)
+      allowSantri(m.santri_id) && // v.111: scope Gedung
+      String(m.jenis).includes('tarik') &&
+      matchPeriode(m.tanggal || m.createdAt || m.created_at)
   )
 )
 const bisyarohList = computed(() =>

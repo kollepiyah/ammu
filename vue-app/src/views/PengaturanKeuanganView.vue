@@ -1313,6 +1313,11 @@ import { useGuru } from '@/composables/useGuru'
 import { useLembaga } from '@/composables/useLembaga'
 import { useToast } from '@/composables/useToast'
 import { useExcel } from '@/composables/useExcel'
+import { useGedungScope } from '@/composables/useGedungScope'
+
+// v.111: scope Gedung — generate tagihan hanya untuk santri gedung admin
+const { scoped: gedungScoped, myGedung } = useGedungScope()
+const _inMyGedung = (x) => !gedungScoped.value || String(x.gedung || '').trim() === myGedung.value
 
 const settingsStore = useSettingsStore()
 const { guruRaw } = useGuru()
@@ -1725,7 +1730,9 @@ function overrideSantriCount(jenis) {
 async function loadSantriAktif() {
   if (genSantriAktif.value.length > 0) return
   try {
-    genSantriAktif.value = (await getAll('santri')).filter((x) => x.aktif !== false)
+    genSantriAktif.value = (await getAll('santri')).filter(
+      (x) => x.aktif !== false && _inMyGedung(x)
+    )
   } catch (e) {
     toast.error('Gagal memuat data santri: ' + (e.message || e))
   }
@@ -2120,7 +2127,7 @@ async function autoGenerate() {
   if (generating.value) return
   if (
     !confirm(
-      'Generate tagihan otomatis bulan ini untuk semua santri aktif?\n\nJenis ber-flag auto_generate akan di-create. Tagihan duplikat (periode sama) akan di-skip.'
+      `Generate tagihan otomatis bulan ini untuk ${gedungScoped.value ? `santri ${myGedung.value}` : 'semua santri aktif'}?\n\nJenis ber-flag auto_generate akan di-create. Tagihan duplikat (periode sama) akan di-skip.`
     )
   )
     return
@@ -2134,8 +2141,8 @@ async function autoGenerate() {
       generating.value = false
       return
     }
-    // Fetch santri aktif
-    const santriAktif = (await getAll('santri')).filter((x) => x.aktif !== false)
+    // Fetch santri aktif (v.111: ke-scope ke gedung admin keuangan)
+    const santriAktif = (await getAll('santri')).filter((x) => x.aktif !== false && _inMyGedung(x))
     // Fetch tagihan existing utk skip duplikat
     const tagihanAll = await getAll('keuangan_tagihan')
     const existing = new Set()
@@ -2291,7 +2298,9 @@ async function openGenKhusus() {
   genOpen.value = true
   // muat santri aktif sekali (untuk preview & picker individual)
   try {
-    genSantriAktif.value = (await getAll('santri')).filter((x) => x.aktif !== false)
+    genSantriAktif.value = (await getAll('santri')).filter(
+      (x) => x.aktif !== false && _inMyGedung(x)
+    )
   } catch (e) {
     toast.error('Gagal memuat data santri: ' + (e.message || e))
   }

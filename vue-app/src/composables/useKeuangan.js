@@ -6,20 +6,39 @@ import { storeToRefs } from 'pinia'
 import { subscribeColl } from '@/services/db'
 import { useCollectionsStore } from '@/stores/collections'
 import { useAuthStore } from '@/stores/auth'
+import { useGedungScope } from '@/composables/useGedungScope'
 
 export function useKeuangan() {
   const auth = useAuthStore()
-  const tagihan = ref([])
-  const tabunganSantri = ref([])
+  // v.111: raw refs (sebelum scope). Versi ter-scope diekspos sbg computed di bawah.
+  const _tagihanRaw = ref([])
+  const _tabunganRaw = ref([])
   // v.21.94.0527: tabungan_guru DIHAPUS — tabungan hanya untuk santri (kyai req)
   // v.21.104.0527: keuangan_transaksi dihapus (dead code, koleksi tidak pernah ditulis)
   const bisyaroh = ref([])
   const gaji = ref([])
   const collections = useCollectionsStore()
-  const { santri: santriRaw, guru: guruRaw, bukuInduk } = storeToRefs(collections)
+  const { santri: santriRaw, guru: guruRaw, bukuInduk: _bukuIndukRaw } = storeToRefs(collections)
   const loading = ref(true)
   const error = ref(null)
   const unsubs = []
+
+  // v.111: scope Gedung — admin keuangan ber-gedung hanya lihat tagihan/tabungan/buku-induk
+  //   gedungnya. GAJI/BISYAROH TIDAK ter-scope (keputusan kyai: bisyaroh global).
+  const { scoped: _gedungScoped, allowSantri: _allowSantri, allowRow: _allowRow } = useGedungScope()
+  const tagihan = computed(() =>
+    _gedungScoped.value
+      ? _tagihanRaw.value.filter((t) => _allowSantri(t.santri_id))
+      : _tagihanRaw.value
+  )
+  const tabunganSantri = computed(() =>
+    _gedungScoped.value
+      ? _tabunganRaw.value.filter((t) => _allowSantri(t.santri_id))
+      : _tabunganRaw.value
+  )
+  const bukuInduk = computed(() =>
+    _gedungScoped.value ? (_bukuIndukRaw.value || []).filter(_allowRow) : _bukuIndukRaw.value
+  )
 
   const isFullAccess = computed(() => {
     const s = auth.sesiAktif
@@ -75,11 +94,11 @@ export function useKeuangan() {
     // Subscribe keuangan-specific collections (tagihan/tabungan/gaji)
     unsubs.push(
       subscribeColl('keuangan_tagihan', (docs) => {
-        tagihan.value = docs
+        _tagihanRaw.value = docs
         loading.value = false
       }),
       subscribeColl('keuangan_tabungan_santri', (docs) => {
-        tabunganSantri.value = docs
+        _tabunganRaw.value = docs
       }),
       subscribeColl('keuangan_gaji', (docs) => {
         gaji.value = docs
