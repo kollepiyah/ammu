@@ -298,7 +298,7 @@
         </div>
 
         <p class="text-center text-[10px] text-[var(--text-tertiary)] pt-2">
-          <i class="fas fa-circle-info mr-1"></i>{{ filteredPpdb.length }} pendaftar · v.110.0626
+          <i class="fas fa-circle-info mr-1"></i>{{ filteredPpdb.length }} pendaftar · v.1.1.2
         </p>
       </div>
       <!-- /blok Riwayat -->

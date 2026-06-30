@@ -31,7 +31,7 @@ const lembagaName = computed(
   () => settings.settings?.namaLembaga || settings.settings?.appTitle || 'Mambaul Ulum'
 )
 // versi tampil: ambil dari settings bila ada supaya tak menambah titik bump baru di kode
-const version = computed(() => settings.settings?.appVersion || 'v.110.0626')
+const version = computed(() => settings.settings?.appVersion || 'v.1.1.2')
 
 const hijri = computed(() => {
   try {
