@@ -9,11 +9,13 @@ import { useGlondongan } from '@/composables/useGlondongan'
 import { useToast } from '@/composables/useToast'
 // Aspek nilai PTPT (sama persis dg tes PJ): Tahfizh, Istimror, Fashohah, Tajwid (0..90).
 import { tesAspekFlat, clampNilaiTes, TES_NILAI_MAX } from '@/utils/tesKenaikan'
-import { PTPT_TOTAL_KELAS } from '@/utils/glondongan'
+import { PTPT_TOTAL_KELAS, periodeBulan } from '@/utils/glondongan'
+import { useSettingsStore } from '@/stores/settings'
 
 const {
   loaded,
   rowsRaw,
+  sesi,
   myNama,
   antrianTugas,
   canAssignAny,
@@ -27,6 +29,7 @@ const {
   saveKoordinator
 } = useGlondongan()
 const toast = useToast()
+const settingsStore = useSettingsStore()
 
 // Tab awal: koordinator/PJ/super -> Penugasan; selain itu -> Tugas Menilai.
 const tab = ref(canAssignAny.value ? 'penugasan' : 'nilai')
@@ -39,6 +42,7 @@ let unsubS = null
 onMounted(() => {
   unsubG = subscribeColl('guru', (docs) => (guruRaw.value = docs || []))
   unsubS = subscribeColl('santri', (docs) => (santriRaw.value = docs || []))
+  settingsStore.subscribe() // idempotent — untuk tarif bisyaroh glondongan (tab Rekap)
 })
 onUnmounted(() => {
   if (unsubG) unsubG()
@@ -237,6 +241,37 @@ async function saveKoor() {
     savingKoor.value = false
   }
 }
+
+// ── Tab Rekap Bisyaroh (admin_keuangan / super_admin): Σ juz selesai × tarif per guru/bulan ──
+const canRekap = computed(
+  () => isSuper.value || String(sesi.value?.role_sistem || '') === 'admin_keuangan'
+)
+const tarifPerJuz = computed(() => Number(settingsStore.settings?.keu_glondongan_per_juz) || 0)
+const rekapBulan = ref(periodeBulan()) // 'YYYY-MM'
+
+function fmtRp(n) {
+  return 'Rp ' + (Number(n) || 0).toLocaleString('id-ID')
+}
+
+// Rekap per penguji untuk bulan terpilih (berdasar tgl_nilai baris 'selesai').
+const rekapRows = computed(() => {
+  const per = {}
+  for (const r of rowsRaw.value || []) {
+    if (r.status !== 'selesai') continue
+    const bln = r.tgl_nilai ? periodeBulan(new Date(r.tgl_nilai)) : ''
+    if (bln !== rekapBulan.value) continue
+    const key = String(r.penguji_id || r.penguji_nama || r.penilai_nama || '—')
+    const nama = r.penguji_nama || r.penilai_nama || '—'
+    const juzCount = Array.isArray(r.juz) ? r.juz.length : 0
+    if (!per[key]) per[key] = { key, nama, juz: 0, blok: 0 }
+    per[key].juz += juzCount
+    per[key].blok += 1
+  }
+  return Object.values(per)
+    .map((g) => ({ ...g, total: g.juz * tarifPerJuz.value }))
+    .sort((a, b) => b.total - a.total || String(a.nama).localeCompare(String(b.nama), 'id'))
+})
+const rekapTotal = computed(() => rekapRows.value.reduce((s, g) => s + g.total, 0))
 </script>
 
 <template>
@@ -308,6 +343,19 @@ async function saveKoor() {
         ]"
       >
         <i class="fas fa-user-gear mr-1"></i>Koordinator
+      </button>
+      <button
+        v-if="canRekap"
+        type="button"
+        @click="tab = 'rekap'"
+        :class="[
+          'px-3 py-2 text-xs font-bold rounded-lg border transition',
+          tab === 'rekap'
+            ? 'bg-teal-600 text-white border-teal-600'
+            : 'bg-[var(--bg-muted)] text-[var(--text-secondary)] border-[var(--border-default)]'
+        ]"
+      >
+        <i class="fas fa-money-bill-wave mr-1"></i>Rekap Bisyaroh
       </button>
     </div>
 
@@ -626,6 +674,73 @@ async function saveKoor() {
         <p class="text-[10px] text-[var(--text-tertiary)] italic">
           Kelas 1 tak punya glondongan (tak ada juz kelas lampau) — koordinatornya opsional.
         </p>
+      </div>
+    </div>
+
+    <!-- ── TAB: REKAP BISYAROH (admin_keuangan / super_admin) ── -->
+    <div
+      v-else-if="tab === 'rekap' && canRekap"
+      class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm"
+    >
+      <div class="flex items-center justify-between gap-2 mb-3 flex-wrap">
+        <h3 class="text-sm font-black text-[var(--text-primary)]">
+          <i class="fas fa-money-bill-wave text-teal-600 mr-1"></i>Rekap Bisyaroh Glondongan
+        </h3>
+        <input
+          v-model="rekapBulan"
+          type="month"
+          class="px-2.5 py-1.5 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-input)] text-[var(--text-primary)]"
+        />
+      </div>
+
+      <p v-if="tarifPerJuz === 0" class="text-[11px] text-amber-600 dark:text-amber-400 mb-2">
+        <i class="fas fa-triangle-exclamation mr-1"></i>Tarif per juz belum diatur — set di
+        Pengaturan Keuangan → Bisyaroh.
+      </p>
+      <p v-else class="text-[11px] text-[var(--text-secondary)] mb-2">
+        Tarif: <b>{{ fmtRp(tarifPerJuz) }}</b> / juz disimak.
+      </p>
+
+      <div v-if="!loaded" class="text-xs italic text-[var(--text-tertiary)] py-6 text-center">
+        <i class="fas fa-spinner fa-spin mr-1"></i>Memuat…
+      </div>
+      <div
+        v-else-if="rekapRows.length === 0"
+        class="text-xs italic text-[var(--text-tertiary)] py-6 text-center"
+      >
+        <i class="fas fa-inbox text-2xl block mb-2 text-[var(--border-default)]"></i>
+        Belum ada penilaian selesai pada bulan ini.
+      </div>
+
+      <div v-else class="overflow-x-auto -mx-1 px-1">
+        <table class="w-full text-xs border-collapse">
+          <thead>
+            <tr class="text-[var(--text-secondary)] border-b border-[var(--border-subtle)]">
+              <th class="text-left font-bold py-1.5 pr-2">Guru Penguji</th>
+              <th class="text-center font-bold py-1.5 px-2">Blok</th>
+              <th class="text-center font-bold py-1.5 px-2">Juz</th>
+              <th class="text-right font-bold py-1.5 pl-2">Bisyaroh</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="g in rekapRows" :key="g.key" class="border-b border-[var(--border-subtle)]">
+              <td class="py-1.5 pr-2 font-bold text-[var(--text-primary)]">{{ g.nama }}</td>
+              <td class="py-1.5 px-2 text-center text-[var(--text-secondary)]">{{ g.blok }}</td>
+              <td class="py-1.5 px-2 text-center text-[var(--text-secondary)]">{{ g.juz }}</td>
+              <td class="py-1.5 pl-2 text-right font-bold text-teal-700 dark:text-teal-300">
+                {{ fmtRp(g.total) }}
+              </td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr class="border-t-2 border-[var(--border-default)]">
+              <td class="py-1.5 pr-2 font-black text-[var(--text-primary)]" colspan="3">Total</td>
+              <td class="py-1.5 pl-2 text-right font-black text-[var(--text-primary)]">
+                {{ fmtRp(rekapTotal) }}
+              </td>
+            </tr>
+          </tfoot>
+        </table>
       </div>
     </div>
   </div>
