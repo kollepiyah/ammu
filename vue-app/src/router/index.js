@@ -48,6 +48,8 @@ const RiwayatSantriView = () => import('@/views/RiwayatSantriView.vue')
 const NaikKelasView = () => import('@/views/NaikKelasView.vue')
 // v.100: Tes Kenaikan Qiraati (guru ajukan → kepala/PJ uji → lulus = siap naik)
 const TesKenaikanView = () => import('@/views/TesKenaikanView.vue')
+// v.111: Glondongan PTPT (muroja'ah kumulatif — koordinator tugaskan, penguji nilai; tak ke rapor)
+const GlondonganView = () => import('@/views/GlondonganView.vue')
 // v.66.0526: Kalender Kegiatan + Dashboard Statistik full Vue (Batch B)
 const KalenderKegiatanView = () => import('@/views/KalenderKegiatanView.vue')
 // v.110: hub Dasbor Statistik — gabung dasbor (Ringkasan) + Laporan/Analitik (satu deret tab).
@@ -276,6 +278,13 @@ const routes = [
         path: 'tes-kenaikan',
         name: 'tes-kenaikan',
         component: TesKenaikanView,
+        meta: { noSantri: true }
+      },
+      // v.111: Glondongan PTPT
+      {
+        path: 'glondongan',
+        name: 'glondongan',
+        component: GlondonganView,
         meta: { noSantri: true }
       },
       {

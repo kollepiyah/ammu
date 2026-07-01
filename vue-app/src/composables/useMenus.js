@@ -111,6 +111,17 @@ const ALL_MENUS = [
     available: true,
     featureFlag: 'fiturTesKenaikan'
   },
+  // v.111: Glondongan PTPT — koordinator/PJ/super tugaskan penguji, guru nilai per juz.
+  //   Gate kasar admin+guru; scope halus (koordinator/penguji/catatan) di dalam view.
+  {
+    group: 'Pendidikan',
+    name: 'Glondongan PTPT',
+    path: '/glondongan',
+    icon: 'fa-people-arrows',
+    roles: ['admin', 'guru'],
+    available: true,
+    featureFlag: 'fiturGlondongan'
+  },
   {
     group: 'Pendidikan',
     name: 'Rekap Prestasi',
