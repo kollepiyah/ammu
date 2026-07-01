@@ -7,9 +7,20 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { subscribeColl } from '@/services/db'
 import { useGlondongan } from '@/composables/useGlondongan'
 import { useToast } from '@/composables/useToast'
+// Aspek nilai PTPT (sama persis dg tes PJ): Tahfizh, Istimror, Fashohah, Tajwid (0..90).
+import { tesAspekFlat, clampNilaiTes, TES_NILAI_MAX } from '@/utils/tesKenaikan'
 
-const { loaded, antrianTugas, canAssignAny, myKoordinatorKelas, isPjPtpt, isSuper, tugaskan } =
-  useGlondongan()
+const {
+  loaded,
+  antrianTugas,
+  canAssignAny,
+  myKoordinatorKelas,
+  isPjPtpt,
+  isSuper,
+  tugaskan,
+  tugasNilaiSaya,
+  simpanNilai
+} = useGlondongan()
 const toast = useToast()
 
 // Tab awal: koordinator/PJ/super -> Penugasan; selain itu -> Tugas Menilai.
@@ -76,6 +87,60 @@ function juzLabel(row) {
   return row.juz_dari === row.juz_sampai
     ? `Juz ${row.juz_dari}`
     : `Juz ${row.juz_dari}–${row.juz_sampai}`
+}
+
+// ── Tab Tugas Menilai: input nilai per juz + catatan ──
+const PTPT_ASPEK = tesAspekFlat({ lembaga: 'PTPT' }) // [{ key, label }]
+const NILAI_MAX = TES_NILAI_MAX
+const openId = ref('') // baris yang terbuka (accordion)
+const drafts = ref({}) // { [rowId]: { nilai: {<juz>:{aspek:val}}, catatan } }
+const savingNilaiId = ref('')
+
+function tipeLabel(row) {
+  return row.tipe === 'berjalan' ? 'Review juz berjalan' : 'Glondongan'
+}
+
+function toggleNilai(row) {
+  if (openId.value === row.id) {
+    openId.value = ''
+    return
+  }
+  openId.value = row.id
+  if (!drafts.value[row.id]) {
+    const nilai = {}
+    for (const j of row.juz || []) {
+      nilai[j] = {}
+      for (const a of PTPT_ASPEK) {
+        const cur = row.nilai && row.nilai[j] ? row.nilai[j][a.key] : undefined
+        nilai[j][a.key] = cur === undefined || cur === null ? '' : cur
+      }
+    }
+    drafts.value[row.id] = { nilai, catatan: row.catatan || '' }
+  }
+}
+
+async function saveNilai(row) {
+  const d = drafts.value[row.id]
+  if (!d) return
+  const nilai = {}
+  for (const j of row.juz || []) {
+    const per = {}
+    for (const a of PTPT_ASPEK) {
+      const v = clampNilaiTes(d.nilai?.[j]?.[a.key])
+      if (v !== null) per[a.key] = v
+    }
+    if (Object.keys(per).length) nilai[j] = per
+  }
+  savingNilaiId.value = row.id
+  try {
+    await simpanNilai(row.id, nilai, d.catatan)
+    toast.success('Nilai tersimpan — blok selesai')
+    openId.value = ''
+  } catch (e) {
+    toast.error('Gagal simpan nilai: ' + (e.message || e))
+  } finally {
+    savingNilaiId.value = ''
+  }
 }
 </script>
 
@@ -214,13 +279,119 @@ function juzLabel(row) {
       </p>
     </div>
 
-    <!-- ── TAB: TUGAS MENILAI (Task #5) ── -->
+    <!-- ── TAB: TUGAS MENILAI ── -->
     <div
       v-else-if="tab === 'nilai'"
-      class="bg-[var(--bg-card)] rounded-2xl p-6 border border-[var(--border-subtle)] shadow-sm text-center"
+      class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm"
     >
-      <i class="fas fa-pen-to-square text-3xl text-[var(--border-default)] block mb-2"></i>
-      <p class="text-xs italic text-[var(--text-tertiary)]">Panel input nilai sedang disiapkan.</p>
+      <h3 class="text-sm font-black text-[var(--text-primary)] mb-3">
+        <i class="fas fa-pen-to-square text-teal-600 mr-1"></i>Tugas Menilai Saya
+      </h3>
+
+      <div v-if="!loaded" class="text-xs italic text-[var(--text-tertiary)] py-6 text-center">
+        <i class="fas fa-spinner fa-spin mr-1"></i>Memuat…
+      </div>
+      <div
+        v-else-if="tugasNilaiSaya.length === 0"
+        class="text-xs italic text-[var(--text-tertiary)] py-6 text-center"
+      >
+        <i class="fas fa-clipboard-check text-2xl block mb-2 text-[var(--border-default)]"></i>
+        Belum ada tugas menilai untuk Anda.
+      </div>
+
+      <ul v-else class="space-y-2">
+        <li
+          v-for="row in tugasNilaiSaya"
+          :key="row.id"
+          class="rounded-xl border border-[var(--border-default)] bg-[var(--bg-muted)] overflow-hidden"
+        >
+          <button
+            type="button"
+            @click="toggleNilai(row)"
+            class="w-full flex items-center justify-between gap-2 p-3 text-left"
+          >
+            <div class="min-w-0">
+              <p class="text-sm font-bold text-[var(--text-primary)] truncate">
+                {{ row.nama_cache || '—' }}
+              </p>
+              <p class="text-[11px] text-[var(--text-secondary)] mt-0.5">
+                <span
+                  :class="[
+                    'px-1.5 py-0.5 rounded text-[10px] font-bold mr-1',
+                    row.tipe === 'berjalan'
+                      ? 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300'
+                      : 'bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300'
+                  ]"
+                  >{{ tipeLabel(row) }}</span
+                >
+                Kelas {{ row.kelas_asal }} · {{ juzLabel(row) }}
+                <span class="text-[var(--text-tertiary)]">· tes Juz {{ row.juz_target }}</span>
+              </p>
+            </div>
+            <i
+              :class="[
+                'fas text-[var(--text-tertiary)]',
+                openId === row.id ? 'fa-chevron-up' : 'fa-chevron-down'
+              ]"
+            ></i>
+          </button>
+
+          <div v-if="openId === row.id && drafts[row.id]" class="px-3 pb-3">
+            <div class="overflow-x-auto -mx-1 px-1">
+              <table class="w-full text-xs border-collapse">
+                <thead>
+                  <tr class="text-[var(--text-secondary)]">
+                    <th class="text-left font-bold py-1 pr-2">Juz</th>
+                    <th
+                      v-for="a in PTPT_ASPEK"
+                      :key="a.key"
+                      class="font-bold py-1 px-1 text-center"
+                    >
+                      {{ a.label }}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="j in row.juz" :key="j" class="border-t border-[var(--border-subtle)]">
+                    <td class="py-1 pr-2 font-bold text-[var(--text-primary)] whitespace-nowrap">
+                      Juz {{ j }}
+                    </td>
+                    <td v-for="a in PTPT_ASPEK" :key="a.key" class="py-1 px-1 text-center">
+                      <input
+                        v-model.number="drafts[row.id].nilai[j][a.key]"
+                        type="number"
+                        min="0"
+                        :max="NILAI_MAX"
+                        class="w-14 px-1.5 py-1 text-center rounded-md border border-[var(--border-default)] bg-[var(--bg-input)] text-[var(--text-primary)]"
+                      />
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p class="text-[10px] text-[var(--text-tertiary)] mt-1">
+              Skala 0–{{ NILAI_MAX }} per aspek. Kosongkan bila belum dinilai.
+            </p>
+
+            <textarea
+              v-model="drafts[row.id].catatan"
+              rows="2"
+              placeholder="Catatan evaluasi (opsional)…"
+              class="w-full mt-2 px-2.5 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-input)] text-[var(--text-primary)]"
+            ></textarea>
+
+            <button
+              type="button"
+              @click="saveNilai(row)"
+              :disabled="savingNilaiId === row.id"
+              class="w-full mt-2 bg-teal-600 hover:bg-teal-700 text-white font-bold py-2.5 rounded-xl disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              <i :class="['fas', savingNilaiId === row.id ? 'fa-spinner fa-spin' : 'fa-check']"></i>
+              {{ savingNilaiId === row.id ? 'Menyimpan…' : 'Simpan & Selesai' }}
+            </button>
+          </div>
+        </li>
+      </ul>
     </div>
 
     <!-- ── TAB: CATATAN (Task #6) ── -->
