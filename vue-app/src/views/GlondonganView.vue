@@ -3,12 +3,13 @@
 //   - Penugasan   : koordinator kelas asal / PJ PTPT / super_admin tunjuk guru penguji blok 'menunggu'.
 //   - Tugas Menilai: guru yang ditugaskan input nilai per juz + catatan (Task #5).
 //   - Catatan     : guru kelas + PJ lihat catatan evaluasi (Task #6).
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { subscribeColl } from '@/services/db'
 import { useGlondongan } from '@/composables/useGlondongan'
 import { useToast } from '@/composables/useToast'
 // Aspek nilai PTPT (sama persis dg tes PJ): Tahfizh, Istimror, Fashohah, Tajwid (0..90).
 import { tesAspekFlat, clampNilaiTes, TES_NILAI_MAX } from '@/utils/tesKenaikan'
+import { PTPT_TOTAL_KELAS } from '@/utils/glondongan'
 
 const {
   loaded,
@@ -17,11 +18,13 @@ const {
   antrianTugas,
   canAssignAny,
   myKoordinatorKelas,
+  koordinatorMap,
   isPjPtpt,
   isSuper,
   tugaskan,
   tugasNilaiSaya,
-  simpanNilai
+  simpanNilai,
+  saveKoordinator
 } = useGlondongan()
 const toast = useToast()
 
@@ -208,6 +211,32 @@ function nilaiJuzText(nilaiJuz) {
   if (!nilaiJuz) return ''
   return PTPT_ASPEK.map((a) => `${a.label} ${nilaiJuz[a.key] ?? '–'}`).join(' · ')
 }
+
+// ── Tab Koordinator (super_admin): set guru koordinator per kelas asal (Task #7a) ──
+const KELAS_LIST = Array.from({ length: PTPT_TOTAL_KELAS }, (_, i) => i + 1) // [1..6]
+const koorDraft = ref({}) // { "1": guruId, ... }
+const savingKoor = ref(false)
+// Sinkronkan draft tiap map dari master/lembaga berubah (mis. realtime / muat awal).
+watch(
+  koordinatorMap,
+  (m) => {
+    const d = {}
+    for (const c of KELAS_LIST) d[String(c)] = String((m && m[String(c)]) || '')
+    koorDraft.value = d
+  },
+  { immediate: true }
+)
+async function saveKoor() {
+  savingKoor.value = true
+  try {
+    await saveKoordinator(koorDraft.value)
+    toast.success('Koordinator kelas tersimpan')
+  } catch (e) {
+    toast.error('Gagal simpan koordinator: ' + (e.message || e))
+  } finally {
+    savingKoor.value = false
+  }
+}
 </script>
 
 <template>
@@ -266,6 +295,19 @@ function nilaiJuzText(nilaiJuz) {
         ]"
       >
         <i class="fas fa-clipboard-list mr-1"></i>Catatan
+      </button>
+      <button
+        v-if="isSuper"
+        type="button"
+        @click="tab = 'koordinator'"
+        :class="[
+          'px-3 py-2 text-xs font-bold rounded-lg border transition',
+          tab === 'koordinator'
+            ? 'bg-teal-600 text-white border-teal-600'
+            : 'bg-[var(--bg-muted)] text-[var(--text-secondary)] border-[var(--border-default)]'
+        ]"
+      >
+        <i class="fas fa-user-gear mr-1"></i>Koordinator
       </button>
     </div>
 
@@ -462,7 +504,7 @@ function nilaiJuzText(nilaiJuz) {
 
     <!-- ── TAB: CATATAN ── -->
     <div
-      v-else
+      v-else-if="tab === 'catatan'"
       class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm"
     >
       <div class="flex items-center justify-between gap-2 mb-3 flex-wrap">
@@ -535,6 +577,56 @@ function nilaiJuzText(nilaiJuz) {
           </div>
         </li>
       </ul>
+    </div>
+
+    <!-- ── TAB: KOORDINATOR (super_admin) ── -->
+    <div
+      v-else-if="tab === 'koordinator' && isSuper"
+      class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm"
+    >
+      <h3 class="text-sm font-black text-[var(--text-primary)] mb-1">
+        <i class="fas fa-user-gear text-teal-600 mr-1"></i>Koordinator Kelas PTPT
+      </h3>
+      <p class="text-xs text-[var(--text-secondary)] mb-3">
+        Guru yang berhak menugaskan penguji glondongan untuk blok tiap kelas asal.
+      </p>
+
+      <div
+        v-if="guruPtpt.length === 0"
+        class="text-xs italic text-amber-600 dark:text-amber-400 py-4 text-center"
+      >
+        <i class="fas fa-triangle-exclamation mr-1"></i>Belum ada guru PTPT aktif untuk dipilih.
+      </div>
+
+      <div v-else class="space-y-2">
+        <div
+          v-for="c in KELAS_LIST"
+          :key="c"
+          class="grid grid-cols-[80px_1fr] gap-2 items-center p-2 rounded-xl border border-[var(--border-default)] bg-[var(--bg-muted)]"
+        >
+          <span class="text-sm font-bold text-teal-700 dark:text-teal-300">Kelas {{ c }}</span>
+          <select
+            v-model="koorDraft[String(c)]"
+            class="px-2.5 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-input)] text-[var(--text-primary)] cursor-pointer"
+          >
+            <option value="">— belum ditetapkan —</option>
+            <option v-for="g in guruPtpt" :key="g.id" :value="String(g.id)">{{ g.nama }}</option>
+          </select>
+        </div>
+
+        <button
+          type="button"
+          @click="saveKoor"
+          :disabled="savingKoor"
+          class="w-full mt-2 bg-teal-600 hover:bg-teal-700 text-white font-bold py-2.5 rounded-xl disabled:opacity-50 flex items-center justify-center gap-2"
+        >
+          <i :class="['fas', savingKoor ? 'fa-spinner fa-spin' : 'fa-floppy-disk']"></i>
+          {{ savingKoor ? 'Menyimpan…' : 'Simpan Koordinator' }}
+        </button>
+        <p class="text-[10px] text-[var(--text-tertiary)] italic">
+          Kelas 1 tak punya glondongan (tak ada juz kelas lampau) — koordinatornya opsional.
+        </p>
+      </div>
     </div>
   </div>
 </template>
