@@ -12,6 +12,8 @@ import { tesAspekFlat, clampNilaiTes, TES_NILAI_MAX } from '@/utils/tesKenaikan'
 
 const {
   loaded,
+  rowsRaw,
+  myNama,
   antrianTugas,
   canAssignAny,
   myKoordinatorKelas,
@@ -26,14 +28,18 @@ const toast = useToast()
 // Tab awal: koordinator/PJ/super -> Penugasan; selain itu -> Tugas Menilai.
 const tab = ref(canAssignAny.value ? 'penugasan' : 'nilai')
 
-// ── Guru PTPT aktif (kandidat penguji) ──
+// ── Guru PTPT aktif (kandidat penguji) + santri (map guru kelas utk tab Catatan) ──
 const guruRaw = ref([])
+const santriRaw = ref([])
 let unsubG = null
+let unsubS = null
 onMounted(() => {
   unsubG = subscribeColl('guru', (docs) => (guruRaw.value = docs || []))
+  unsubS = subscribeColl('santri', (docs) => (santriRaw.value = docs || []))
 })
 onUnmounted(() => {
   if (unsubG) unsubG()
+  if (unsubS) unsubS()
 })
 const guruPtpt = computed(() =>
   (guruRaw.value || [])
@@ -141,6 +147,66 @@ async function saveNilai(row) {
   } finally {
     savingNilaiId.value = ''
   }
+}
+
+// ── Tab Catatan: evaluasi per santri (guru kelas: santri ampuannya; PJ/super: semua) ──
+const canSeeAllCatatan = computed(() => isPjPtpt.value || isSuper.value)
+const catatanSearch = ref('')
+
+// santri.id yang guru kelasnya = saya (match nama guru_pagi/sore/guru).
+const mySantriIds = computed(() => {
+  const me = myNama.value.toLowerCase()
+  const ids = new Set()
+  if (!me) return ids
+  for (const s of santriRaw.value || []) {
+    const guru = [s.guru_pagi, s.guru_sore, s.guru].map((x) =>
+      String(x || '')
+        .toLowerCase()
+        .trim()
+    )
+    if (guru.includes(me)) ids.add(String(s.id))
+  }
+  return ids
+})
+
+const catatanGroups = computed(() => {
+  let rows = rowsRaw.value || []
+  if (!canSeeAllCatatan.value) rows = rows.filter((r) => mySantriIds.value.has(String(r.santri_id)))
+  const map = {}
+  for (const r of rows) {
+    const sid = String(r.santri_id)
+    if (!map[sid]) map[sid] = { santri_id: sid, nama: r.nama_cache || '—', rows: [] }
+    map[sid].rows.push(r)
+  }
+  let groups = Object.values(map).map((g) => ({
+    ...g,
+    rows: g.rows.slice().sort((a, b) => (a.kelas_asal || 0) - (b.kelas_asal || 0))
+  }))
+  const kw = catatanSearch.value.trim().toLowerCase()
+  if (kw) groups = groups.filter((g) => g.nama.toLowerCase().includes(kw))
+  return groups.sort((a, b) => String(a.nama).localeCompare(String(b.nama), 'id'))
+})
+
+const STATUS_BADGE = {
+  menunggu: {
+    label: 'Menunggu penugasan',
+    cls: 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300'
+  },
+  ditugaskan: {
+    label: 'Belum dinilai',
+    cls: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
+  },
+  selesai: {
+    label: 'Selesai',
+    cls: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
+  }
+}
+function statusBadge(s) {
+  return STATUS_BADGE[s] || STATUS_BADGE.menunggu
+}
+function nilaiJuzText(nilaiJuz) {
+  if (!nilaiJuz) return ''
+  return PTPT_ASPEK.map((a) => `${a.label} ${nilaiJuz[a.key] ?? '–'}`).join(' · ')
 }
 </script>
 
@@ -394,15 +460,81 @@ async function saveNilai(row) {
       </ul>
     </div>
 
-    <!-- ── TAB: CATATAN (Task #6) ── -->
+    <!-- ── TAB: CATATAN ── -->
     <div
       v-else
-      class="bg-[var(--bg-card)] rounded-2xl p-6 border border-[var(--border-subtle)] shadow-sm text-center"
+      class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm"
     >
-      <i class="fas fa-clipboard-list text-3xl text-[var(--border-default)] block mb-2"></i>
-      <p class="text-xs italic text-[var(--text-tertiary)]">
-        Panel catatan evaluasi sedang disiapkan.
-      </p>
+      <div class="flex items-center justify-between gap-2 mb-3 flex-wrap">
+        <h3 class="text-sm font-black text-[var(--text-primary)]">
+          <i class="fas fa-clipboard-list text-teal-600 mr-1"></i>Catatan Evaluasi
+        </h3>
+        <span class="text-[11px] text-[var(--text-secondary)]">{{
+          canSeeAllCatatan ? 'Semua santri PTPT' : 'Santri ampuan Anda'
+        }}</span>
+      </div>
+
+      <input
+        v-if="catatanGroups.length || catatanSearch"
+        v-model="catatanSearch"
+        type="search"
+        placeholder="Cari nama santri…"
+        class="w-full mb-3 px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-input)] text-[var(--text-primary)]"
+      />
+
+      <div v-if="!loaded" class="text-xs italic text-[var(--text-tertiary)] py-6 text-center">
+        <i class="fas fa-spinner fa-spin mr-1"></i>Memuat…
+      </div>
+      <div
+        v-else-if="catatanGroups.length === 0"
+        class="text-xs italic text-[var(--text-tertiary)] py-6 text-center"
+      >
+        <i class="fas fa-inbox text-2xl block mb-2 text-[var(--border-default)]"></i>
+        Belum ada catatan glondongan.
+      </div>
+
+      <ul v-else class="space-y-3">
+        <li
+          v-for="g in catatanGroups"
+          :key="g.santri_id"
+          class="p-3 rounded-xl border border-[var(--border-default)] bg-[var(--bg-muted)]"
+        >
+          <p class="text-sm font-bold text-[var(--text-primary)] mb-2">{{ g.nama }}</p>
+          <div class="space-y-2">
+            <div
+              v-for="r in g.rows"
+              :key="r.id"
+              class="text-[11px] border-l-2 pl-2 border-[var(--border-default)]"
+            >
+              <p class="flex items-center gap-1 flex-wrap">
+                <span class="font-bold text-[var(--text-primary)]"
+                  >{{ tipeLabel(r) }} · Kelas {{ r.kelas_asal }} · {{ juzLabel(r) }}</span
+                >
+                <span
+                  :class="[
+                    'px-1.5 py-0.5 rounded text-[10px] font-bold',
+                    statusBadge(r.status).cls
+                  ]"
+                  >{{ statusBadge(r.status).label }}</span
+                >
+              </p>
+              <div v-if="r.status === 'selesai'" class="mt-1 space-y-0.5">
+                <p v-for="j in r.juz" :key="j" class="text-[var(--text-tertiary)]">
+                  <span class="font-bold text-[var(--text-secondary)]">Juz {{ j }}:</span>
+                  {{ nilaiJuzText(r.nilai && r.nilai[j]) || '—' }}
+                </p>
+              </div>
+              <p v-if="r.catatan" class="mt-1 text-[var(--text-primary)] italic">
+                <i class="fas fa-quote-left text-[9px] mr-1 text-[var(--text-tertiary)]"></i
+                >{{ r.catatan }}
+              </p>
+              <p v-if="r.penilai_nama" class="mt-0.5 text-[10px] text-[var(--text-tertiary)]">
+                oleh {{ r.penilai_nama }}
+              </p>
+            </div>
+          </div>
+        </li>
+      </ul>
     </div>
   </div>
 </template>
