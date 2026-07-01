@@ -558,6 +558,24 @@
             class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)] font-bold"
           />
         </div>
+        <!-- v.111: bisyaroh Tes Glondongan PTPT — per juz disimak (rekap di layar Glondongan) -->
+        <div class="md:col-span-2">
+          <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block">
+            Bisyaroh Glondongan PTPT — per Juz Disimak
+          </label>
+          <input
+            v-model="form.keu_glondongan_per_juz"
+            @input="onFmtChange($event, 'keu_glondongan_per_juz')"
+            type="text"
+            inputmode="numeric"
+            placeholder="mis. 5.000"
+            class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)] font-bold"
+          />
+          <p class="text-[10px] text-[var(--text-tertiary)] italic mt-1">
+            Tarif per juz yang disimak penguji glondongan/berjalan. Rekap per guru/bulan ada di
+            layar Glondongan PTPT (admin).
+          </p>
+        </div>
       </div>
 
       <div>
@@ -1419,6 +1437,7 @@ const form = reactive({
   keu_bisyaroh_sekolah_shift: '',
   keu_bisyaroh_pegawai_pagi: '',
   keu_bisyaroh_pegawai_sore: '',
+  keu_glondongan_per_juz: '', // v.111: bisyaroh tes glondongan PTPT per juz disimak
   keu_bisyaroh_pokok: {},
   keu_bisyaroh_sekolah: {},
   keu_kategori_masuk: [],
@@ -1557,6 +1576,7 @@ function loadFromSettings() {
   form.keu_bisyaroh_sekolah_shift = fmtRp(s.keu_bisyaroh_sekolah_shift || 0)
   form.keu_bisyaroh_pegawai_pagi = fmtRp(s.keu_bisyaroh_pegawai_pagi || 0)
   form.keu_bisyaroh_pegawai_sore = fmtRp(s.keu_bisyaroh_pegawai_sore || 0)
+  form.keu_glondongan_per_juz = fmtRp(s.keu_glondongan_per_juz || 0)
   form.keu_bisyaroh_pokok = { ...(s.keu_bisyaroh_pokok || {}) }
   form.keu_bisyaroh_sekolah = { ...(s.keu_bisyaroh_sekolah || {}) }
   for (const k of Object.keys(form.keu_bisyaroh_pokok)) {
@@ -1899,6 +1919,7 @@ async function simpan() {
       keu_bisyaroh_sekolah_shift: parseRp(form.keu_bisyaroh_sekolah_shift),
       keu_bisyaroh_pegawai_pagi: parseRp(form.keu_bisyaroh_pegawai_pagi),
       keu_bisyaroh_pegawai_sore: parseRp(form.keu_bisyaroh_pegawai_sore),
+      keu_glondongan_per_juz: parseRp(form.keu_glondongan_per_juz),
       keu_bisyaroh_pokok: {},
       keu_bisyaroh_sekolah: {},
       keu_kategori_masuk: form.keu_kategori_masuk.filter((t) => t.trim()),
