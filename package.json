@@ -24,6 +24,7 @@
     "cap:run": "npx cap run android",
     "build:aab": "node scripts/build-aab.cjs",
     "build:apk": "node scripts/build-apk.cjs",
+    "electron:release": "node scripts/electron-release.cjs",
     "deploy:full": "npm run firebase:deploy && npm run build:aab",
     "prepare": "husky"
   },
