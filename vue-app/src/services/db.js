@@ -108,6 +108,17 @@ const COLS = {
   notif_prestasi: ['santri_id'],
   riwayat_kenaikan: ['santri_id', 'tanggal'],
   tes_kenaikan: ['santri_id', 'lembaga', 'status'],
+  // Tes Glondongan PTPT (muroja'ah kumulatif) — 1 baris = 1 blok. data jsonb ekor:
+  //   { nama_cache, juz_dari, juz_sampai, nilai:{<juz>:{tahfizh,istimror,fashohah,tajwid}}, catatan, penguji_nama, ditugaskan_oleh, tgl_* }
+  tes_glondongan: [
+    'santri_id',
+    'ajuan_id',
+    'tipe',
+    'kelas_asal',
+    'status',
+    'penguji_id',
+    'periode'
+  ],
   izin_guru: ['guru_id', 'status'],
   supervisi_catatan: ['target_type', 'target_id', 'judul', 'catatan'],
   // -- konten & sistem --
@@ -155,6 +166,7 @@ const REALTIME = new Set([
   'notif_prestasi',
   'riwayat_kenaikan',
   'tes_kenaikan',
+  'tes_glondongan',
   'user_notif_state',
   'kritik_saran',
   'supervisi_catatan',
