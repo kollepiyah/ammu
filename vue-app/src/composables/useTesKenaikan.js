@@ -7,6 +7,8 @@ import { subscribeColl, addOne, updateOne, deleteOne } from '@/services/db'
 import { useAuthStore } from '@/stores/auth'
 import { isSuperAdmin, isAdminBiasa, isAdminKeuangan, isKepalaLembaga } from '@/utils/roleScope'
 import { lembagaScopeMatches } from '@/composables/useLembaga'
+// v.111: rumus pembagian glondongan PTPT (spawn baris tes_glondongan saat ajukan juz)
+import { splitGlondongan, testedJuz, periodeBulan } from '@/utils/glondongan'
 
 export function useTesKenaikan() {
   const auth = useAuthStore()
@@ -82,7 +84,7 @@ export function useTesKenaikan() {
       })
       const now = new Date()
       try {
-        await addOne('tes_kenaikan', {
+        const ajuanId = await addOne('tes_kenaikan', {
           santri_id: String(s.id),
           nama_cache: s.nama || '',
           lembaga: s.lembaga || '',
@@ -99,12 +101,93 @@ export function useTesKenaikan() {
           batch_id: batchId
         })
         ok++
+        // v.111: PTPT jenis 'juz' -> spawn baris glondongan + review juz berjalan.
+        //   Best-effort: kegagalan di sini TIDAK menggagalkan ajuan tes kenaikan utama.
+        if (
+          String(s.lembaga || '')
+            .trim()
+            .toUpperCase() === 'PTPT' &&
+          (it.jenis || '') === 'juz'
+        ) {
+          try {
+            await spawnGlondongan(ajuanId, s, now, guruList)
+          } catch (e) {
+            // eslint-disable-next-line no-console
+            console.warn('[glondongan] spawn gagal:', e?.message || e)
+          }
+        }
       } catch (e) {
         fail++
         errors.push(`${s.nama || s.id}: ${e.message || e}`)
       }
     }
     return { ok, fail, skipped, errors }
+  }
+
+  // v.111: buat baris tes_glondongan untuk 1 ajuan PTPT juz (spawn saat ajukanBatch).
+  //   - berjalan  : juz kelas berjalan di bawah target -> guru kelas santri (langsung 'ditugaskan').
+  //   - glondongan: blok 5-juz per kelas asal (kumulatif) -> 'menunggu' penugasan koordinator/PJ/super_admin.
+  //   Nilai per juz (format PJ) TAK masuk rapor — murni catatan evaluasi.
+  async function spawnGlondongan(ajuanId, s, now, guruList = []) {
+    const T = testedJuz(s)
+    const split = splitGlondongan(T)
+    if (!split.ok) return // juz tak valid / di luar 1..30 -> tak ada glondongan
+    const base = {
+      ajuan_id: String(ajuanId),
+      santri_id: String(s.id),
+      nama_cache: s.nama || '',
+      lembaga: 'PTPT',
+      kelas_santri: s.kelas || '',
+      juz_target: T,
+      periode: periodeBulan(now),
+      nilai: {},
+      catatan: '',
+      tgl_daftar: now.toISOString(),
+      _ts: now.getTime()
+    }
+    const rows = []
+    // Review juz kelas berjalan (guru kelas santri) — hanya bila ada juz di bawah target.
+    if (split.berjalan.juz.length) {
+      const guruKelasNama = String(
+        s.guru_pagi || s.guru || s.guru_sore || myNama.value || ''
+      ).trim()
+      const gk = (guruList || []).find((g) => String(g.nama || '').trim() === guruKelasNama)
+      rows.push({
+        ...base,
+        tipe: 'berjalan',
+        kelas_asal: split.kelas,
+        juz_dari: split.berjalan.juz[0],
+        juz_sampai: split.berjalan.juz[split.berjalan.juz.length - 1],
+        juz: split.berjalan.juz,
+        status: 'ditugaskan', // langsung ke guru kelas santri (tanpa koordinator)
+        penguji_id: gk ? String(gk.id) : '',
+        penguji_nama: guruKelasNama,
+        ditugaskan_oleh: 'auto'
+      })
+    }
+    // Glondongan per blok kelas asal (kelas lampau) — menunggu penugasan.
+    for (const blk of split.glondongan) {
+      rows.push({
+        ...base,
+        tipe: 'glondongan',
+        kelas_asal: blk.kelas_asal,
+        juz_dari: blk.juz_dari,
+        juz_sampai: blk.juz_sampai,
+        juz: blk.juz,
+        status: 'menunggu',
+        penguji_id: '',
+        penguji_nama: '',
+        ditugaskan_oleh: ''
+      })
+    }
+    for (const r of rows) {
+      try {
+        await addOne('tes_glondongan', r)
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.warn('[glondongan] insert baris gagal:', e?.message || e)
+      }
+    }
   }
 
   // Penguji: tetapkan hasil. status: 'lulus' | 'tidak_lulus' | 'ditolak'.
