@@ -5,12 +5,25 @@ import { terbilangRupiah } from './terbilang'
 import { muassisDataUrlSync, MUASSIS_URL } from '@/utils/kopMuassis' // v.100: baris-1 KOP = gambar muassis
 
 const BULAN_NM = [
-  'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+  'Januari',
+  'Februari',
+  'Maret',
+  'April',
+  'Mei',
+  'Juni',
+  'Juli',
+  'Agustus',
+  'September',
+  'Oktober',
+  'November',
+  'Desember'
 ]
 
 function esc(t) {
-  return String(t == null ? '' : t).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]))
+  return String(t == null ? '' : t).replace(
+    /[&<>]/g,
+    (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]
+  )
 }
 function fmtNum(n) {
   return new Intl.NumberFormat('id-ID').format(Math.round(Number(n) || 0))
@@ -43,12 +56,24 @@ function kopHtml(s = {}) {
   const muSrc = muassisDataUrlSync() || MUASSIS_URL
   return (
     '<div style="text-align:center;border-bottom:2px solid #0f766e;padding-bottom:9px;margin-bottom:11px;">' +
-    (logo ? '<img src="' + esc(logo) + '" alt="logo" style="height:46px;margin-bottom:5px;object-fit:contain;" />' : '') +
+    (logo
+      ? '<img src="' +
+        esc(logo) +
+        '" alt="logo" style="height:46px;margin-bottom:5px;object-fit:contain;" />'
+      : '') +
     (muSrc
-      ? '<img src="' + muSrc + '" alt="" style="height:26px;margin:0 auto 2px;display:block;object-fit:contain;" />'
-      : '<div style="font-weight:800;font-size:16px;color:#0f766e;line-height:1.2;">' + l1 + '</div>') +
-    '<div style="font-weight:700;font-size:13px;line-height:1.2;">' + l2 + '</div>' +
-    addr.map((a) => '<div style="font-size:10.5px;color:#555;line-height:1.3;">' + a + '</div>').join('') +
+      ? '<img src="' +
+        muSrc +
+        '" alt="" style="height:26px;margin:0 auto 2px;display:block;object-fit:contain;" />'
+      : '<div style="font-weight:800;font-size:16px;color:#0f766e;line-height:1.2;">' +
+        l1 +
+        '</div>') +
+    '<div style="font-weight:700;font-size:13px;line-height:1.2;">' +
+    l2 +
+    '</div>' +
+    addr
+      .map((a) => '<div style="font-size:10.5px;color:#555;line-height:1.3;">' + a + '</div>')
+      .join('') +
     '</div>'
   )
 }
@@ -57,14 +82,19 @@ function titleHtml(txt) {
   return (
     '<div style="text-align:center;margin:2px 0 12px;">' +
     '<span style="display:inline-block;border:1.5px solid #334155;border-radius:5px;padding:3px 18px;font-weight:800;letter-spacing:1px;font-size:12.5px;">' +
-    esc(txt) + '</span></div>'
+    esc(txt) +
+    '</span></div>'
   )
 }
 
 function infoRow(label, val) {
   return (
-    '<tr><td style="padding:1.5px 0;white-space:nowrap;vertical-align:top;color:#475569;">' + esc(label) + '</td>' +
-    '<td style="padding:1.5px 0 1.5px 6px;vertical-align:top;">: ' + esc(val) + '</td></tr>'
+    '<tr><td style="padding:1.5px 0;white-space:nowrap;vertical-align:top;color:#475569;">' +
+    esc(label) +
+    '</td>' +
+    '<td style="padding:1.5px 0 1.5px 6px;vertical-align:top;">: ' +
+    esc(val) +
+    '</td></tr>'
   )
 }
 
@@ -72,7 +102,8 @@ function wrap(inner) {
   return (
     '<div style="background:#fff;color:#1a1a1a;font-family:Arial,Helvetica,sans-serif;' +
     'max-width:480px;margin:0 auto;padding:18px 20px;font-size:12.5px;line-height:1.45;">' +
-    inner + '</div>'
+    inner +
+    '</div>'
   )
 }
 
@@ -86,10 +117,15 @@ export function buildReceiptStrukHtml(trx = {}, s = {}) {
     .map(
       (it, i) =>
         '<tr>' +
-        '<td style="border:1px solid #cbd5e1;padding:4px 6px;text-align:center;">' + (i + 1) + '</td>' +
+        '<td style="border:1px solid #cbd5e1;padding:4px 6px;text-align:center;">' +
+        (i + 1) +
+        '</td>' +
         '<td style="border:1px solid #cbd5e1;padding:4px 6px;">' +
-        esc(String(it.jenis || '-') + (it.keterangan ? ' (' + it.keterangan + ')' : '')) + '</td>' +
-        '<td style="border:1px solid #cbd5e1;padding:4px 6px;text-align:right;white-space:nowrap;">' + fmtRp(it.nominal) + '</td>' +
+        esc(String(it.jenis || '-') + (it.keterangan ? ' (' + it.keterangan + ')' : '')) +
+        '</td>' +
+        '<td style="border:1px solid #cbd5e1;padding:4px 6px;text-align:right;white-space:nowrap;">' +
+        fmtRp(it.nominal) +
+        '</td>' +
         '</tr>'
     )
     .join('')
@@ -99,36 +135,49 @@ export function buildReceiptStrukHtml(trx = {}, s = {}) {
     kopHtml(s) +
     titleHtml('BUKTI PEMBAYARAN') +
     '<table style="width:100%;font-size:12px;border-collapse:collapse;"><tr>' +
-      '<td style="vertical-align:top;width:54%;"><table style="border-collapse:collapse;">' +
-        infoRow('Diterima dari', trx.santri_nama || '-') +
-        infoRow('No. Induk', trx.santri_nis || '-') +
-        infoRow('Kelas', kelas) +
-        infoRow('Terbilang', terb) +
-      '</table></td>' +
-      '<td style="vertical-align:top;"><table style="border-collapse:collapse;">' +
-        infoRow('Tgl. Bayar', fmtTgl(trx.tanggal)) +
-        infoRow('No. Transaksi', trx.no_struk || '-') +
-        infoRow('Metode', trx.metode || 'TUNAI') +
-        infoRow('Petugas', trx.operator || '-') +
-        infoRow('Status Siswa', trx.status_siswa || 'Aktif') +
-      '</table></td>' +
+    '<td style="vertical-align:top;width:54%;"><table style="border-collapse:collapse;">' +
+    infoRow('Diterima dari', trx.santri_nama || '-') +
+    infoRow('No. Induk', trx.santri_nis || '-') +
+    infoRow('Kelas', kelas) +
+    infoRow('Terbilang', terb) +
+    '</table></td>' +
+    '<td style="vertical-align:top;"><table style="border-collapse:collapse;">' +
+    infoRow('Tgl. Bayar', fmtTgl(trx.tanggal)) +
+    infoRow('No. Transaksi', trx.no_struk || '-') +
+    infoRow('Metode', trx.metode || 'TUNAI') +
+    infoRow('Petugas', trx.operator || '-') +
+    infoRow('Status Siswa', trx.status_siswa || 'Aktif') +
+    '</table></td>' +
     '</tr></table>' +
     '<div style="margin:10px 0 5px;">Dengan rincian pembayaran sebagai berikut :</div>' +
     '<table style="width:100%;border-collapse:collapse;font-size:12px;">' +
-      '<thead><tr style="background:#f0fdfa;">' +
-        '<th style="border:1px solid #cbd5e1;padding:4px 6px;width:30px;">No</th>' +
-        '<th style="border:1px solid #cbd5e1;padding:4px 6px;text-align:left;">Jenis Pembayaran</th>' +
-        '<th style="border:1px solid #cbd5e1;padding:4px 6px;width:96px;">Nominal</th>' +
-      '</tr></thead><tbody>' + (items || '<tr><td colspan="3" style="border:1px solid #cbd5e1;padding:6px;text-align:center;color:#94a3b8;">—</td></tr>') + '</tbody>' +
+    '<thead><tr style="background:#f0fdfa;">' +
+    '<th style="border:1px solid #cbd5e1;padding:4px 6px;width:30px;">No</th>' +
+    '<th style="border:1px solid #cbd5e1;padding:4px 6px;text-align:left;">Jenis Pembayaran</th>' +
+    '<th style="border:1px solid #cbd5e1;padding:4px 6px;width:96px;">Nominal</th>' +
+    '</tr></thead><tbody>' +
+    (items ||
+      '<tr><td colspan="3" style="border:1px solid #cbd5e1;padding:6px;text-align:center;color:#94a3b8;">—</td></tr>') +
+    '</tbody>' +
     '</table>' +
     '<table style="width:100%;margin-top:10px;font-size:12.5px;"><tr><td style="width:50%;"></td><td><table style="width:100%;border-collapse:collapse;">' +
-      '<tr><td style="text-align:right;font-weight:800;padding:1.5px 0;">Jumlah Rp.</td><td style="text-align:right;font-weight:800;white-space:nowrap;padding:1.5px 0 1.5px 10px;">' + fmtNum(trx.total) + '</td></tr>' +
-      '<tr><td style="text-align:right;padding:1.5px 0;">Pembayaran Rp.</td><td style="text-align:right;white-space:nowrap;padding:1.5px 0 1.5px 10px;">' + fmtNum(trx.bayar) + '</td></tr>' +
-      '<tr><td style="text-align:right;padding:1.5px 0;">Kembali Rp.</td><td style="text-align:right;white-space:nowrap;padding:1.5px 0 1.5px 10px;">' + fmtNum(trx.kembali) + '</td></tr>' +
+    '<tr><td style="text-align:right;font-weight:800;padding:1.5px 0;">Jumlah Rp.</td><td style="text-align:right;font-weight:800;white-space:nowrap;padding:1.5px 0 1.5px 10px;">' +
+    fmtNum(trx.total) +
+    '</td></tr>' +
+    '<tr><td style="text-align:right;padding:1.5px 0;">Pembayaran Rp.</td><td style="text-align:right;white-space:nowrap;padding:1.5px 0 1.5px 10px;">' +
+    fmtNum(trx.bayar) +
+    '</td></tr>' +
+    '<tr><td style="text-align:right;padding:1.5px 0;">Kembali Rp.</td><td style="text-align:right;white-space:nowrap;padding:1.5px 0 1.5px 10px;">' +
+    fmtNum(trx.kembali) +
+    '</td></tr>' +
     '</table></td></tr></table>' +
     '<table style="width:100%;margin-top:14px;text-align:center;font-size:12px;"><tr>' +
-      '<td style="width:50%;">Penyetor,<div style="height:42px;"></div>( ' + (penyetor ? esc(penyetor) : '..........') + ' )</td>' +
-      '<td style="width:50%;">Penerima,<div style="height:42px;"></div>( ' + esc(trx.operator || '') + ' )</td>' +
+    '<td style="width:50%;">Penyetor,<div style="height:42px;"></div>( ' +
+    (penyetor ? esc(penyetor) : '..........') +
+    ' )</td>' +
+    '<td style="width:50%;">Penerima,<div style="height:42px;"></div>( ' +
+    esc(trx.operator || '') +
+    ' )</td>' +
     '</tr></table>'
 
   return wrap(inner)
@@ -139,57 +188,97 @@ export function buildSlipBisyarohHtml(slip = {}, s = {}) {
   const li = Array.isArray(slip.line_items) ? slip.line_items : []
   const bonus = slip.bonus_kehadiran || {}
   const bonusTotal = Number(bonus.total || 0)
-  const pemasukan = Number(slip.total_pemasukan || 0) ||
-    (Number(slip.bisyaroh_pokok || 0) + Number(slip.bisyaroh_sekolah || 0) + Number(slip.bisyaroh_tambahan || 0) + bonusTotal)
+  const pemasukan =
+    Number(slip.total_pemasukan || 0) ||
+    Number(slip.bisyaroh_pokok || 0) +
+      Number(slip.bisyaroh_sekolah || 0) +
+      Number(slip.bisyaroh_tambahan || 0) +
+      bonusTotal
   const potongan = Number(slip.total_potongan || 0)
-  const take = Number(slip.take_home || 0) || (pemasukan - potongan)
+  const take = Number(slip.take_home || 0) || pemasukan - potongan
 
   const rows = []
   for (const it of li) {
     rows.push(
       '<tr>' +
-      '<td style="border:1px solid #cbd5e1;padding:4px 6px;">' + esc(it.label || 'Bisyaroh') + (it.lembaga && it.lembaga !== '-' ? ' <span style="color:#64748b;">(' + esc(it.lembaga) + ')</span>' : '') + '</td>' +
-      '<td style="border:1px solid #cbd5e1;padding:4px 6px;text-align:right;white-space:nowrap;">' + fmtRp(it.nominal) + '</td>' +
-      '</tr>'
+        '<td style="border:1px solid #cbd5e1;padding:4px 6px;">' +
+        esc(it.label || 'Bisyaroh') +
+        (it.lembaga && it.lembaga !== '-'
+          ? ' <span style="color:#64748b;">(' + esc(it.lembaga) + ')</span>'
+          : '') +
+        '</td>' +
+        '<td style="border:1px solid #cbd5e1;padding:4px 6px;text-align:right;white-space:nowrap;">' +
+        fmtRp(it.nominal) +
+        '</td>' +
+        '</tr>'
     )
   }
   if (bonusTotal > 0) {
     rows.push(
       '<tr><td style="border:1px solid #cbd5e1;padding:4px 6px;">Bonus Kehadiran</td>' +
-      '<td style="border:1px solid #cbd5e1;padding:4px 6px;text-align:right;white-space:nowrap;">' + fmtRp(bonusTotal) + '</td></tr>'
+        '<td style="border:1px solid #cbd5e1;padding:4px 6px;text-align:right;white-space:nowrap;">' +
+        fmtRp(bonusTotal) +
+        '</td></tr>'
     )
   }
-  const body = rows.join('') || '<tr><td colspan="2" style="border:1px solid #cbd5e1;padding:6px;text-align:center;color:#94a3b8;">—</td></tr>'
+  // v.111: bisyaroh Tes Glondongan PTPT (per juz disimak) — snapshot saat slip di-generate.
+  const glond = slip.bonus_glondongan || {}
+  const glondTotal = Number(glond.total || 0)
+  if (glondTotal > 0) {
+    const juz = Number(glond.juz || 0)
+    rows.push(
+      '<tr><td style="border:1px solid #cbd5e1;padding:4px 6px;">Bisyaroh Glondongan PTPT' +
+        (juz ? ' <span style="color:#64748b;">(' + juz + ' juz)</span>' : '') +
+        '</td>' +
+        '<td style="border:1px solid #cbd5e1;padding:4px 6px;text-align:right;white-space:nowrap;">' +
+        fmtRp(glondTotal) +
+        '</td></tr>'
+    )
+  }
+  const body =
+    rows.join('') ||
+    '<tr><td colspan="2" style="border:1px solid #cbd5e1;padding:6px;text-align:center;color:#94a3b8;">—</td></tr>'
 
   const inner =
     kopHtml(s) +
     titleHtml('SLIP BISYAROH') +
     '<table style="width:100%;font-size:12px;border-collapse:collapse;margin-bottom:4px;"><tr>' +
-      '<td style="vertical-align:top;width:54%;"><table style="border-collapse:collapse;">' +
-        infoRow('Nama', slip.guru_nama || '-') +
-        infoRow('Lembaga', slip.lembaga || '-') +
-        infoRow('Jabatan', slip.jabatan || 'Guru') +
-      '</table></td>' +
-      '<td style="vertical-align:top;"><table style="border-collapse:collapse;">' +
-        infoRow('Periode', fmtPeriode(slip.periode)) +
-        infoRow('No. Slip', slip.no_bukti || slip.id || '-') +
-      '</table></td>' +
+    '<td style="vertical-align:top;width:54%;"><table style="border-collapse:collapse;">' +
+    infoRow('Nama', slip.guru_nama || '-') +
+    infoRow('Lembaga', slip.lembaga || '-') +
+    infoRow('Jabatan', slip.jabatan || 'Guru') +
+    '</table></td>' +
+    '<td style="vertical-align:top;"><table style="border-collapse:collapse;">' +
+    infoRow('Periode', fmtPeriode(slip.periode)) +
+    infoRow('No. Slip', slip.no_bukti || slip.id || '-') +
+    '</table></td>' +
     '</tr></table>' +
     '<div style="margin:10px 0 5px;">Rincian bisyaroh :</div>' +
     '<table style="width:100%;border-collapse:collapse;font-size:12px;">' +
-      '<thead><tr style="background:#f0fdfa;">' +
-        '<th style="border:1px solid #cbd5e1;padding:4px 6px;text-align:left;">Keterangan</th>' +
-        '<th style="border:1px solid #cbd5e1;padding:4px 6px;width:110px;">Nominal</th>' +
-      '</tr></thead><tbody>' + body + '</tbody>' +
+    '<thead><tr style="background:#f0fdfa;">' +
+    '<th style="border:1px solid #cbd5e1;padding:4px 6px;text-align:left;">Keterangan</th>' +
+    '<th style="border:1px solid #cbd5e1;padding:4px 6px;width:110px;">Nominal</th>' +
+    '</tr></thead><tbody>' +
+    body +
+    '</tbody>' +
     '</table>' +
     '<table style="width:100%;margin-top:10px;font-size:12.5px;"><tr><td style="width:45%;"></td><td><table style="width:100%;border-collapse:collapse;">' +
-      '<tr><td style="text-align:right;padding:1.5px 0;">Total Pemasukan</td><td style="text-align:right;white-space:nowrap;padding:1.5px 0 1.5px 10px;">' + fmtRp(pemasukan) + '</td></tr>' +
-      '<tr><td style="text-align:right;padding:1.5px 0;">Potongan</td><td style="text-align:right;white-space:nowrap;padding:1.5px 0 1.5px 10px;">' + (potongan > 0 ? '- ' : '') + fmtRp(potongan) + '</td></tr>' +
-      '<tr><td style="text-align:right;font-weight:800;border-top:1.5px solid #334155;padding:3px 0 1.5px;">Take Home</td><td style="text-align:right;font-weight:800;white-space:nowrap;border-top:1.5px solid #334155;padding:3px 0 1.5px 10px;color:#0f766e;">' + fmtRp(take) + '</td></tr>' +
+    '<tr><td style="text-align:right;padding:1.5px 0;">Total Pemasukan</td><td style="text-align:right;white-space:nowrap;padding:1.5px 0 1.5px 10px;">' +
+    fmtRp(pemasukan) +
+    '</td></tr>' +
+    '<tr><td style="text-align:right;padding:1.5px 0;">Potongan</td><td style="text-align:right;white-space:nowrap;padding:1.5px 0 1.5px 10px;">' +
+    (potongan > 0 ? '- ' : '') +
+    fmtRp(potongan) +
+    '</td></tr>' +
+    '<tr><td style="text-align:right;font-weight:800;border-top:1.5px solid #334155;padding:3px 0 1.5px;">Take Home</td><td style="text-align:right;font-weight:800;white-space:nowrap;border-top:1.5px solid #334155;padding:3px 0 1.5px 10px;color:#0f766e;">' +
+    fmtRp(take) +
+    '</td></tr>' +
     '</table></td></tr></table>' +
     '<table style="width:100%;margin-top:14px;text-align:center;font-size:12px;"><tr>' +
-      '<td style="width:50%;">Penerima,<div style="height:42px;"></div>( ' + esc(slip.guru_nama || '') + ' )</td>' +
-      '<td style="width:50%;">Bendahara,<div style="height:42px;"></div>( .......................... )</td>' +
+    '<td style="width:50%;">Penerima,<div style="height:42px;"></div>( ' +
+    esc(slip.guru_nama || '') +
+    ' )</td>' +
+    '<td style="width:50%;">Bendahara,<div style="height:42px;"></div>( .......................... )</td>' +
     '</tr></table>'
 
   return wrap(inner)

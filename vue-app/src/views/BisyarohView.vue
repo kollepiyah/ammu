@@ -283,6 +283,26 @@
                   Keuangan.
                 </p>
               </div>
+              <!-- v.111: Bisyaroh Glondongan PTPT auto (per juz disimak) -->
+              <div
+                v-if="bisyarohGlondongan.total > 0 || bisyarohGlondongan.juz > 0"
+                class="bg-teal-50 dark:bg-teal-900/20 rounded-lg px-3 py-2 border border-teal-200"
+              >
+                <div class="flex items-center justify-between gap-2 flex-wrap">
+                  <p class="text-xs font-black text-teal-800">
+                    <i class="fas fa-people-arrows mr-1"></i>Bisyaroh Glondongan PTPT (otomatis)
+                  </p>
+                  <p class="text-base font-black text-teal-900">
+                    {{ fmtRp(bisyarohGlondongan.total) }}
+                  </p>
+                </div>
+                <p class="text-[10px] text-teal-700 mt-0.5">
+                  <b>{{ bisyarohGlondongan.juz }} juz</b> disimak ({{
+                    bisyarohGlondongan.blok
+                  }}
+                  blok) × Rp{{ Number(bisyarohGlondongan.tarif).toLocaleString('id-ID') }}
+                </p>
+              </div>
               <button
                 @click="addLineItem"
                 class="text-[10px] font-bold text-emerald-700 hover:text-emerald-900 px-2 py-1"
@@ -733,6 +753,7 @@ import { useToast } from '@/composables/useToast'
 import { useGoogleSheet } from '@/composables/useGoogleSheet' // v.100 Batch12: ekspor ke Google Sheet
 import { useExcel } from '@/composables/useExcel'
 import { fmtRp, getNamaGuruGelar } from '@/utils/format'
+import { periodeBulan } from '@/utils/glondongan' // v.111: bisyaroh tes glondongan PTPT
 import ReceiptModal from '@/components/ReceiptModal.vue'
 import { buildSlipBisyarohHtml } from '@/utils/receiptHtml'
 import { cetakSlipBisyarohPdf, exportRekapBisyarohPdf } from '@/utils/strukBuilder'
@@ -742,9 +763,15 @@ const { guruRaw, deriveGuruLembagaRefs } = useGuru()
 // v.21.103.0527: absensi shift guru utk hitung bonus kehadiran otomatis (pagi/sore/sekolah)
 const absensiShift = ref([])
 let unsubAbsensi = null
+// v.111: baris tes_glondongan (bisyaroh per juz disimak) — snapshot ke slip saat generate.
+const glondonganRows = ref([])
+let unsubGlondongan = null
 onMounted(() => {
   unsubAbsensi = subscribeColl('absensi_shift_guru', (docs) => {
     absensiShift.value = docs || []
+  })
+  unsubGlondongan = subscribeColl('tes_glondongan', (docs) => {
+    glondonganRows.value = docs || []
   })
 })
 onUnmounted(() => {
@@ -755,7 +782,41 @@ onUnmounted(() => {
       /* ignore */
     }
   }
+  if (unsubGlondongan) {
+    try {
+      unsubGlondongan()
+    } catch {
+      /* ignore */
+    }
+  }
 })
+
+// v.111: hitung bisyaroh glondongan 1 guru utk 1 periode ('YYYY-MM').
+//   Σ juz dari baris 'selesai' (match penguji_id, fallback penguji_nama) × tarif per juz.
+function hitungGlondonganGuru(guruId, guruNama, periode, settings) {
+  const tarif = Number((settings || {}).keu_glondongan_per_juz || 0) || 0
+  const gid = String(guruId == null ? '' : guruId)
+  const gnama = String(guruNama || '')
+    .trim()
+    .toLowerCase()
+  let juz = 0
+  let blok = 0
+  for (const r of glondonganRows.value || []) {
+    if (r.status !== 'selesai') continue
+    const bln = r.tgl_nilai ? periodeBulan(new Date(r.tgl_nilai)) : ''
+    if (bln !== periode) continue
+    const pid = String(r.penguji_id || '')
+    const match = pid
+      ? pid === gid
+      : String(r.penguji_nama || r.penilai_nama || '')
+          .trim()
+          .toLowerCase() === gnama
+    if (!match) continue
+    juz += Array.isArray(r.juz) ? r.juz.length : 0
+    blok += 1
+  }
+  return { juz, blok, tarif, total: juz * tarif }
+}
 const auth = useAuthStore()
 const settingsStore = useSettingsStore()
 // v.21.99.0527: super_admin only — hapus slip bisyaroh (koreksi data)
@@ -1382,6 +1443,18 @@ const bonusKehadiran = computed(() => {
   return out
 })
 
+// v.111: bisyaroh glondongan guru terpilih utk periode form (preview single-mode).
+const bisyarohGlondongan = computed(() => {
+  if (!selectedGuru.value) return { juz: 0, blok: 0, tarif: 0, total: 0 }
+  const periode = `${tahun.value}-${String(bulan.value).padStart(2, '0')}`
+  return hitungGlondonganGuru(
+    selectedGuru.value.id,
+    selectedGuru.value.nama,
+    periode,
+    settingsStore.settings || {}
+  )
+})
+
 const takeHome = computed(() => {
   const totalIn = (form.value.line_items || []).reduce(
     (sum, li) => sum + (Number(li.nominal) || 0),
@@ -1389,8 +1462,10 @@ const takeHome = computed(() => {
   )
   // v.21.103.0527: bonus kehadiran (auto dari absen) + potongan manual
   const bonus = bonusKehadiran.value.total
+  // v.111: + bisyaroh glondongan (auto dari tes_glondongan)
+  const glond = bisyarohGlondongan.value.total
   const totalOut = Number(form.value.total_potongan) || 0
-  return totalIn + bonus - totalOut
+  return totalIn + bonus + glond - totalOut
 })
 
 const saving = ref(false)
@@ -1432,6 +1507,13 @@ async function saveSlipSingle() {
       .reduce((s, li) => s + li.nominal, 0)
     const potongan = Number(form.value.total_potongan) || 0
     const totalIn = pokok + sekolah + tambahan
+    // v.111: snapshot bisyaroh glondongan (Σ juz selesai × tarif) periode ini
+    const glond = hitungGlondonganGuru(
+      selectedGuru.value.id,
+      selectedGuru.value.nama,
+      periode,
+      settingsStore.settings || {}
+    )
     await setOne('keuangan_gaji', slipId, {
       id: slipId,
       no_bukti: genBisyarohNo(),
@@ -1458,9 +1540,16 @@ async function saveSlipSingle() {
         tarif_pegawai_sore: Number(bonus.tarif_pegawai_sore || 0),
         total: Number(bonus.total || 0)
       },
-      total_pemasukan: totalIn + Number(bonus.total || 0),
+      // v.111: snapshot bisyaroh glondongan PTPT (per juz disimak)
+      bonus_glondongan: {
+        juz: Number(glond.juz || 0),
+        blok: Number(glond.blok || 0),
+        tarif: Number(glond.tarif || 0),
+        total: Number(glond.total || 0)
+      },
+      total_pemasukan: totalIn + Number(bonus.total || 0) + Number(glond.total || 0),
       total_potongan: potongan,
-      take_home: totalIn + Number(bonus.total || 0) - potongan,
+      take_home: totalIn + Number(bonus.total || 0) + Number(glond.total || 0) - potongan,
       tunjangan_list: [],
       potongan_list: [],
       updated_at: serverTimestamp()
@@ -1624,8 +1713,11 @@ async function bulkGenerate() {
         }))
         const totalTunjangan = tjList.reduce((s, t) => s + t.nominal, 0)
         const totalPotongan = ptList.reduce((s, p) => s + p.nominal, 0)
+        // v.111: snapshot bisyaroh glondongan per guru periode ini
+        const glond = hitungGlondonganGuru(g.id, g.nama, periode, settings)
         const totalIn = pokok + sekolah
-        const totalSlip = totalIn + Number(bonus.total || 0) + totalTunjangan
+        const totalSlip =
+          totalIn + Number(bonus.total || 0) + Number(glond.total || 0) + totalTunjangan
         await setOne('keuangan_gaji', slipId, {
           id: slipId,
           no_bukti: genBisyarohNo(bulkSeq++),
@@ -1638,6 +1730,12 @@ async function bulkGenerate() {
           bisyaroh_sekolah: sekolah,
           bisyaroh_tambahan: 0,
           bonus_kehadiran: bonus,
+          bonus_glondongan: {
+            juz: Number(glond.juz || 0),
+            blok: Number(glond.blok || 0),
+            tarif: Number(glond.tarif || 0),
+            total: Number(glond.total || 0)
+          },
           total_pemasukan: totalSlip,
           total_potongan: totalPotongan,
           take_home: totalSlip - totalPotongan,
