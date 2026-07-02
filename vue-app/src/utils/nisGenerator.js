@@ -4,9 +4,11 @@
 //   Format No. Induk = NNNN + DDMMYY (10 digit). Contoh 0001120399 = urutan 0001, lahir 12-03-99.
 //     - NNNN  : nomor urut GLOBAL berdasar tgl lahir TERTUA→termuda; seri (tgl sama) → nama A–Z.
 //     - DDMMYY: tgl lahir santri itu sendiri (dari tgl_lahir 'YYYY-MM-DD').
-//   MODE IMPOR : re-sort & assign ulang SEMUA santri (reshuffle NNNN menyesuaikan tgl lahir tertua).
-//   MODE PSB   : APPEND — santri baru meneruskan NNNN berikutnya (max+1), TANPA reshuffle (kyai:
-//                "kalau dari PSB tetap meneruskan, walau lebih tua").
+//   MODE IMPOR/PSB/FORM (v.111): APPEND — No. Induk lama TETAP; santri baru meneruskan NNNN
+//                berikutnya (max+1) TANPA reshuffle. Kyai: "data sudah lengkap → No. Induk tetap,
+//                santri baru/impor baru lanjut nomornya" (& PSB: "tetap meneruskan walau lebih tua").
+//   MODE MANUAL: planRegenerateNis (super admin, Master Data) masih bisa reshuffle SEMUA bila
+//                sengaja dipanggil — opt-in dgn preview+konfirmasi, bukan otomatis.
 //   Santri tanpa tgl lahir valid → DILEWATI (NIS lama dibiarkan apa adanya).
 //   CATATAN: NIS = field, BUKAN doc id. Referensi lintas-koleksi (pembayaran/tabungan/POS/notif)
 //   pakai santri_id (doc id) → regenerate NIS aman, tak merusak riwayat. (VA BMT turunan NIS bila
@@ -50,6 +52,47 @@ export function nextNisForNew(santriList, dobRaw) {
   const d = ddmmyy(normDob(dobRaw))
   if (!d) return ''
   return String(maxRankOf(santriList) + 1).padStart(4, '0') + d
+}
+
+// MODE APPEND (v.111): No. Induk lama TETAP; hanya santri yang BELUM punya No. Induk yang
+//   diberi nomor, MELANJUTKAN dari NNNN tertinggi (max+1, max+2, …) — TANPA reshuffle santri
+//   lama. Dipakai pasca impor (kyai: "data sudah lengkap → No. Induk tetap; impor baru lanjut").
+//   Yang baru diurut tgl lahir TERTUA→termuda lalu nama A–Z agar nomor batch tetap rapi.
+//   Return { changes:[{id,nama,oldNis,newNis,dob,changed}], skipped, total, base, max }
+export function planAppendNis(santriList) {
+  const base = maxRankOf(santriList)
+  const needy = []
+  const skipped = []
+  for (const s of santriList || []) {
+    if (!s || s.id == null) continue
+    if (String(s.nis || '').trim()) continue // sudah punya No. Induk → biarkan TETAP
+    const dob = normDob(s.tgl_lahir)
+    if (!dob) {
+      skipped.push({ id: String(s.id), nama: s.nama || '-' })
+      continue
+    }
+    needy.push({ id: String(s.id), nama: String(s.nama || ''), dob })
+  }
+  needy.sort((a, b) => {
+    if (a.dob !== b.dob) return a.dob < b.dob ? -1 : 1 // tertua dulu
+    const na = a.nama.toLowerCase(),
+      nb = b.nama.toLowerCase()
+    return na < nb ? -1 : na > nb ? 1 : 0 // seri → nama A–Z
+  })
+  const changes = []
+  let rank = base
+  for (const it of needy) {
+    rank++
+    changes.push({
+      id: it.id,
+      nama: it.nama,
+      oldNis: '',
+      newNis: String(rank).padStart(4, '0') + ddmmyy(it.dob),
+      dob: it.dob,
+      changed: true
+    })
+  }
+  return { changes, skipped, total: needy.length, base, max: rank }
 }
 
 // MODE IMPOR: rencana re-generate SEMUA (tanpa menulis).

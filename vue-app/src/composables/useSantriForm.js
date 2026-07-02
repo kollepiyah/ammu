@@ -1,11 +1,12 @@
 // useSantriForm — manage santri CRUD form state (create + edit)
 // Phase 5.13 (v.40.0526) — port logic legacy simpanSantri + editAdminSantri
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
-import { getOne, mergeOne, subscribeColl, subscribeDoc } from '@/services/db'
+import { getOne, mergeOne, getAll, subscribeColl, subscribeDoc } from '@/services/db'
 import { useToast } from '@/composables/useToast'
 import { useSettingsStore } from '@/stores/settings'
 import { toTitleCase, normalizeWA } from '@/utils/format'
 import { gedungList } from '@/utils/gedung'
+import { nextNisForNew } from '@/utils/nisGenerator' // v.111: santri baru = No. Induk lanjut (append)
 
 function emptyForm() {
   return {
@@ -312,11 +313,21 @@ export function useSantriForm() {
     try {
       const f = form.value
       const id = editingId.value || Date.now()
+      // v.111: santri BARU tanpa No. Induk manual → beri nomor LANJUTAN (max+1), No. Induk
+      //   lama tidak pernah diubah. Kalau edit / sudah diisi manual → pakai apa adanya.
+      let nisFinal = String(f.nis || '').trim()
+      if (!editingId.value && !nisFinal) {
+        try {
+          nisFinal = nextNisForNew(await getAll('santri'), f.tgl_lahir) || ''
+        } catch (e) {
+          /* gagal fetch → biarkan kosong, bisa digenerate nanti */
+        }
+      }
       const waVal = String(f.wa_wali || '').replace(/\D/g, '')
-      const defaultUsername = waVal && waVal.length >= 8 ? waVal : f.nis || 'S' + id
+      const defaultUsername = waVal && waVal.length >= 8 ? waVal : nisFinal || 'S' + id
       const data = {
         id: editingId.value ? Number(editingId.value) || editingId.value : id,
-        nis: f.nis,
+        nis: nisFinal,
         nisn: f.nisn || '',
         nis_sekolah: String(f.nis_sekolah || '').trim(), // v.100: NIS Dinas (manual)
         nik: String(f.nik || '').trim(), // v.99: simpan NIK santri

@@ -535,7 +535,7 @@ import {
   applyImportFields
 } from '@/services/santriFields'
 import { resetUserPassword } from '@/services/authSupabase' // reset sandi via Edge Function (super_admin)
-import { planRegenerateNis, applyNisChanges } from '@/utils/nisGenerator' // v.100 Batch14: auto-NIS pasca impor (reshuffle tgl lahir tertua)
+import { planAppendNis, applyNisChanges } from '@/utils/nisGenerator' // v.111: auto-NIS pasca impor = APPEND (No. Induk lama tetap; baru lanjut nomor)
 
 const exporting = ref(false)
 const importing = ref(false)
@@ -1135,8 +1135,11 @@ async function confirmImportSantri() {
         //   mergeOne nulis baris baru = DUPLIKAT. Existing → update pakai id apa adanya;
         //   baru → addOne (generate id sendiri).
         const payload = { ...item.data, _imported_v21_26_at: serverTimestamp() }
-        if (item.existingId) await mergeOne('santri', String(item.existingId), payload)
-        else await addOne('santri', payload)
+        if (item.existingId) {
+          // v.111: JANGAN timpa No. Induk lama dgn kosong — No. Induk santri lama TETAP
+          if (!String(payload.nis || '').trim()) delete payload.nis
+          await mergeOne('santri', String(item.existingId), payload)
+        } else await addOne('santri', payload)
         ok++
       } catch (e) {
         fail++
@@ -1144,17 +1147,20 @@ async function confirmImportSantri() {
       }
     }
     toast.success(`Impor selesai: ${ok} OK, ${fail} gagal`)
-    // v.100 Batch14: regenerate No. Induk otomatis (IMPOR = reshuffle SEMUA santri by tgl lahir tertua → nama A–Z)
+    // v.111: No. Induk lama TETAP — hanya santri baru (No. Induk kosong) yg diberi nomor,
+    //   MELANJUTKAN dari No. tertinggi (append, urut tgl lahir tertua → nama A–Z).
     try {
       const fresh = await getAll('santri')
-      const plan = planRegenerateNis(fresh)
+      const plan = planAppendNis(fresh)
       const res = await applyNisChanges(plan.changes, { sesi: authStore?.sesiAktif, mode: 'impor' })
-      let msg = `No. Induk digenerate ulang: ${res.changed} diperbarui`
+      let msg = res.changed
+        ? `No. Induk baru untuk ${res.changed} santri (lanjut dari No. ${String(plan.base).padStart(4, '0')})`
+        : 'Semua santri sudah punya No. Induk — tidak ada perubahan'
       if (plan.skipped.length) msg += `, ${plan.skipped.length} tanpa tgl lahir (dilewati)`
       if (res.fail) msg += `, ${res.fail} gagal`
       toast.success(msg)
     } catch (e) {
-      toast.warning('No. Induk gagal digenerate ulang: ' + (e.message || e))
+      toast.warning('No. Induk gagal diproses: ' + (e.message || e))
     }
     importPreview.value = null
   } catch (e) {
