@@ -21,6 +21,42 @@ Versioning: `v.{nomor-urut}.{MMDDtahunmu}` (mis: `v.108.0527`)
 
 ---
 
+## [v.1.1.3] — 2026-07-02 — Tes Glondongan PTPT
+
+Menambah alur penilaian **Tes Glondongan PTPT**: muroja'ah kumulatif juz kelas lampau
+sebelum santri naik juz, terpisah dari tes juz berjalan. Sekaligus menyamakan versi semua
+platform (web/PWA/Electron/Android) ke `v.1.1.3` dan menambal kolom template impor santri.
+
+### Added (Fitur Baru)
+
+- **Tes Glondongan PTPT** — saat santri mengajukan tes juz, baris glondongan otomatis
+  dibuat: PJ menguji juz tersebut (→ rapor), guru kelas menguji juz kelas berjalan, dan
+  glondongan menguji **semua** juz kelas lampau (blok 5-juz per kelas asal, ditugaskan
+  **koordinator kelas asal**). Tabel baru `tes_glondongan`.
+- **Tab Penugasan / Tugas Menilai / Catatan** — koordinator meng-assign penilai; penilai
+  input nilai per juz (format PJ) + catatan evaluasi per santri.
+- **Bisyaroh glondongan per juz** — tarif `keu_glondongan_per_juz` di **Pengaturan Keuangan**
+  (tab Bisyaroh), **Rekap Bisyaroh** (Σ juz selesai × tarif) untuk admin keuangan/super admin,
+  dan integrasi ke **slip gaji** guru (snapshot + take-home + receipt/PDF).
+- **Kolom `Gedung` & `PJ PTPT` di template impor/ekspor santri** — sebelumnya field ada di
+  form tapi ketinggalan di template. Ditambah `services/santriFields.js` sebagai **sumber
+  tunggal** definisi kolom (template + ekspor + impor) → field baru cukup 1 entri, otomatis
+  terdeteksi di ketiga tempat.
+
+### Changed (Perubahan)
+
+- **Versi semua platform disamakan** ke `v.1.1.3` / `versionCode 113` (web, PWA, Electron,
+  Android, dan lockfile root/vue yang sebelumnya masih skema lama `99.0626`/`110.0626`).
+- Nilai glondongan & juz berjalan = **catatan evaluasi** (tidak masuk rapor), selalu lulus;
+  hanya juz yang diuji PJ yang masuk rapor.
+
+### Catatan
+
+- Tabel `tes_glondongan` perlu `supabase db push` sebelum fitur Glondongan aktif penuh.
+- Bisyaroh glondongan bersifat **global** (tidak ter-scope gedung), konsisten dgn kebijakan gaji.
+
+---
+
 ## [v.1.1.2] — 2026-06-30 — Sistem "Gedung" (Pemisahan Keuangan & Akademik per Unit)
 
 Memecah administrasi keuangan & akademik menjadi beberapa **Gedung** (unit), sehingga
