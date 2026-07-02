@@ -155,13 +155,14 @@ export const useAuthStore = defineStore('auth', () => {
    * Peran dipetakan server-side oleh trigger handle_new_user (migration 07).
    * Catatan: `persistent` (ingat saya) kini no-op — Supabase selalu persistSession.
    */
-  async function login(input, password, persistent = true) {
+  async function login(input, password, persistent = true, source = null) {
     isLoading.value = true
     error.value = null
     try {
       // 1) Auth Supabase: resolve canonical auth_key -> signIn (lazy signUp bila baru).
       //    Status aktif/nonaktif & sandi salah dilempar di sini (auth/inactive, auth/wrong-password).
-      await authSupabase.loginUnified(input, password)
+      //    `source` ('guru'|'santri'|null) memisahkan jalur login guru/pegawai vs santri/wali.
+      await authSupabase.loginUnified(input, password, source)
 
       // 2) Bangun sesiAktif dari profiles + guru/santri (bentuk identik store lama).
       const sesi = _finalizeSesi(await authSupabase.buildSesi())

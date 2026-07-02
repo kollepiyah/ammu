@@ -71,6 +71,23 @@ const loginError = ref('')
 const showPassword = ref(false)
 const ingatSaya = ref(true) // default tetap login di perangkat ini
 
+// v.111: pisah jalur login guru/pegawai vs santri/wali — atasi 1 WA dipakai guru
+//   yang juga wali santri. Ingat pilihan terakhir; pertama kali default 'guru'.
+const loginMode = ref(localStorage.getItem('ammu_login_mode') === 'santri' ? 'santri' : 'guru')
+const isSantriMode = computed(() => loginMode.value === 'santri')
+function setLoginMode(m) {
+  loginMode.value = m
+  try {
+    localStorage.setItem('ammu_login_mode', m)
+  } catch (e) {
+    /* ignore */
+  }
+}
+const usernameLabel = computed(() => (isSantriMode.value ? 'No. Induk / WA Wali' : 'Username / WA'))
+const usernamePlaceholder = computed(() =>
+  isSantriMode.value ? 'No. Induk santri atau WA wali' : 'Username atau nomor WA'
+)
+
 async function handleLogin() {
   if (!username.value || !password.value) {
     toast.error('Username dan kata sandi wajib diisi')
@@ -79,7 +96,12 @@ async function handleLogin() {
   isSubmitting.value = true
   loginError.value = ''
   try {
-    await auth.login(username.value.trim().toLowerCase(), password.value, ingatSaya.value)
+    await auth.login(
+      username.value.trim().toLowerCase(),
+      password.value,
+      ingatSaya.value,
+      loginMode.value
+    )
     toast.success('Login berhasil')
     const redirect = route.query.redirect || '/dashboard'
     router.push(redirect)
@@ -209,12 +231,42 @@ function bukaWaAdmin() {
         </div>
 
         <form @submit.prevent="handleLogin" class="space-y-3" autocomplete="on">
-          <!-- Username -->
+          <!-- v.111: pilih jalur login — Santri/Wali vs Guru/Pegawai (1 WA bisa dipakai keduanya) -->
+          <div
+            class="flex gap-1 p-1 rounded-xl bg-black/5 dark:bg-white/10 border border-[var(--border-default)]"
+          >
+            <button
+              type="button"
+              @click="setLoginMode('santri')"
+              :class="
+                isSantriMode
+                  ? 'bg-teal-600 text-white shadow'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+              "
+              class="flex-1 py-2 rounded-lg text-xs font-bold transition"
+            >
+              <i class="fas fa-user-graduate mr-1.5"></i>Santri / Wali
+            </button>
+            <button
+              type="button"
+              @click="setLoginMode('guru')"
+              :class="
+                !isSantriMode
+                  ? 'bg-teal-600 text-white shadow'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+              "
+              class="flex-1 py-2 rounded-lg text-xs font-bold transition"
+            >
+              <i class="fas fa-chalkboard-user mr-1.5"></i>Guru / Pegawai
+            </button>
+          </div>
+
+          <!-- Username / identitas (adaptif per mode) -->
           <div>
             <label
               class="block text-[9px] font-bold text-[var(--text-primary)] mb-1 uppercase tracking-wide"
             >
-              Username
+              {{ usernameLabel }}
             </label>
             <div class="relative">
               <i
@@ -223,7 +275,7 @@ function bukaWaAdmin() {
               <input
                 v-model="username"
                 type="text"
-                placeholder="Masukkan username"
+                :placeholder="usernamePlaceholder"
                 autocomplete="username"
                 autocapitalize="none"
                 autocorrect="off"

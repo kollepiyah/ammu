@@ -35,11 +35,14 @@ export function buildAuthEmail(authKey) {
   return clean ? clean + AUTH_EMAIL_DOMAIN : null
 }
 
-/** Resolusi login pra-auth via RPC. Return { source, auth_key, active } | null. */
-export async function resolveLogin(input) {
+/** Resolusi login pra-auth via RPC. `source` opsional: 'guru' | 'santri' | null
+ *  (memisahkan jalur login guru/pegawai vs santri/wali saat 1 WA dipakai keduanya).
+ *  Return { source, auth_key, active } | null. */
+export async function resolveLogin(input, source = null) {
   _ensure()
   const { data, error } = await supabase.rpc('resolve_login', {
-    p_input: String(input || '').trim()
+    p_input: String(input || '').trim(),
+    p_source: source || null
   })
   if (error) throw error
   return data || null
@@ -55,11 +58,17 @@ function _isInvalidCred(error) {
  * loginUnified — resolve -> signIn -> (lazy) signUp. Return { source, user, session }.
  * Lempar error kode 'auth/not-found' | 'auth/inactive' | 'auth/wrong-password'.
  */
-export async function loginUnified(input, password) {
+export async function loginUnified(input, password, source = null) {
   _ensure()
-  const info = await resolveLogin(input)
+  const info = await resolveLogin(input, source)
   if (!info) {
-    const e = new Error('Username tidak ditemukan.')
+    const e = new Error(
+      source === 'santri'
+        ? 'Santri/wali tidak ditemukan. Coba No. Induk atau WA wali.'
+        : source === 'guru'
+          ? 'Guru/pegawai tidak ditemukan. Coba username atau WA.'
+          : 'Username tidak ditemukan.'
+    )
     e.code = 'auth/not-found'
     throw e
   }
