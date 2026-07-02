@@ -1,6 +1,6 @@
 {
   "name": "ammu-online-desktop",
-  "version": "1.1.3",
+  "version": "1.1.4",
   "description": "Ammu Online — Pondok Pesantren Mambaul Ulum (Desktop)",
   "author": "Pondok Pesantren Mambaul Ulum",
   "main": "build/index.js",

@@ -21,6 +21,39 @@ Versioning: `v.{nomor-urut}.{MMDDtahunmu}` (mis: `v.108.0527`)
 
 ---
 
+## [v.1.1.4] — 2026-07-02 — Pisah Login Santri/Wali & No. Induk Tetap
+
+Perbaikan administrasi & pengalaman login: identitas No. Induk santri dikunci
+(tak lagi acak ulang), template impor lengkap, dan layar login memisahkan jalur
+santri/wali dari guru/pegawai untuk mengatasi 1 nomor WA yang dipakai keduanya.
+
+### Added (Fitur Baru)
+
+- **Toggle login "Santri / Wali" vs "Guru / Pegawai"** — 1 nomor WA bisa dipakai
+  guru yang juga wali santri. Sebelumnya WA selalu masuk ke akun guru (prioritas)
+  sehingga akun anak tak terjangkau; kini wali pilih tab "Santri/Wali" lalu ketik
+  WA/No. Induk → masuk sisi santri, dan dropdown "ganti anak" (multi-anak) yang
+  sudah ada bisa dipakai. Pilihan tab diingat per perangkat.
+- **Kolom `Gedung` & `PJ PTPT` di template impor/ekspor santri** — via registry
+  `services/santriFields.js` (sumber tunggal kolom template/ekspor/impor).
+
+### Changed (Perubahan)
+
+- **No. Induk santri jadi TETAP** — pasca impor tidak lagi reshuffle SEMUA nomor.
+  Santri yang sudah punya No. Induk dibiarkan; hanya santri baru (impor/form) yang
+  diberi nomor **melanjutkan** dari No. tertinggi (max+1), urut tgl lahir tertua.
+  Impor juga tidak menimpa No. Induk lama dengan sel kosong.
+- Versi semua platform → `v.1.1.4` / `versionCode 114`.
+
+### Catatan
+
+- Login: perubahan RPC `resolve_login` (param sumber) — **`supabase db push` DULU,
+  baru deploy web** (client baru butuh RPC 2-argumen; aman-mundur untuk client lama).
+- Tool manual "Generate No. Induk" (Master Data, super admin) tetap bisa reshuffle
+  penuh secara opt-in (preview + konfirmasi), bukan otomatis.
+
+---
+
 ## [v.1.1.3] — 2026-07-02 — Tes Glondongan PTPT
 
 Menambah alur penilaian **Tes Glondongan PTPT**: muroja'ah kumulatif juz kelas lampau
