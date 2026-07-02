@@ -5,6 +5,31 @@
 let _loadedPromise = null
 
 /**
+ * v.111: unwrap nilai sel ExcelJS dengan TAHAN-BANTING.
+ * Primitif (number/string/boolean) & Date DIBIARKAN apa adanya (konsumen impor
+ * lain—Absensi/Tabungan/Keuangan—mengandalkan angka tetap angka).
+ * Hanya OBJEK yang dirapikan agar TIDAK PERNAH bocor jadi "[object Object]":
+ *   - hyperlink { text, hyperlink }         -> text
+ *   - formula  { formula, result }          -> result (di-unwrap lagi)
+ *   - richText { richText:[{text},…] }      -> gabungan text
+ *   - array/spill anchor { formula, ref, shareType } tanpa result, atau objek lain -> ''
+ * (Kasus nyata: sheet "DATA UTAMA" pakai 1 formula array dinamis LET+SORTBY yang
+ *  nyebar ke seluruh sheet; sel anchor kebaca sbg objek formula → dulu jadi "[object Object]".)
+ */
+function unwrapCellValue(v, depth = 0) {
+  if (v === null || v === undefined) return v
+  if (typeof v !== 'object') return v // number/string/boolean → apa adanya
+  if (v instanceof Date) return v
+  if (depth > 4) return '' // jaga-jaga rekursi
+  if ('richText' in v && Array.isArray(v.richText))
+    return v.richText.map((r) => r?.text ?? '').join('')
+  if ('text' in v) return unwrapCellValue(v.text, depth + 1)
+  if ('result' in v) return unwrapCellValue(v.result, depth + 1)
+  if ('hyperlink' in v) return '' // hyperlink tanpa text
+  return '' // formula array/spill anchor / objek tak dikenal → jangan bocor
+}
+
+/**
  * v.21.25.0526: CDN-first. Local /vue/exceljs.min.js sebagai fallback (kalau offline/blocked).
  * Sebelumnya local-first → MIME 'text/html' karena rewrite rule.
  */
@@ -212,7 +237,7 @@ export function useExcel() {
     // Step 2: Read headers from detected row
     const headers = []
     ws.getRow(bestHeaderRow).eachCell((cell, colNumber) => {
-      headers[colNumber - 1] = String(cell.value || `col${colNumber}`).trim()
+      headers[colNumber - 1] = String(unwrapCellValue(cell.value) || `col${colNumber}`).trim()
     })
 
     // Step 3: Read data from rows AFTER header row
@@ -221,10 +246,7 @@ export function useExcel() {
       if (rowNumber <= bestHeaderRow) return
       const obj = {}
       row.eachCell((cell, colNumber) => {
-        let v = cell.value
-        if (v && typeof v === 'object' && 'text' in v) v = v.text
-        if (v && typeof v === 'object' && 'result' in v) v = v.result
-        obj[headers[colNumber - 1]] = v
+        obj[headers[colNumber - 1]] = unwrapCellValue(cell.value)
       })
       if (
         Object.values(obj).some((v) => v !== undefined && v !== null && String(v).trim() !== '')

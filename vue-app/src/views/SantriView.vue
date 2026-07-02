@@ -1045,6 +1045,13 @@ async function onImportSantri(e) {
       updateCount = 0,
       skipCount = 0
     const allMapped = []
+    // v.111: normalisasi nomor identitas (NIS/NIS Sekolah). Sumber Excel yg pakai
+    //   formula array (SORTBY atas sel kosong) menghasilkan angka 0 untuk sel kosong
+    //   → jangan simpan "0" sbg No. Induk. "0"/0/kosong → '' (biar auto-NIS yg isi).
+    function _idNum(v) {
+      const s = String(v ?? '').trim()
+      return s === '0' ? '' : s
+    }
     function _pick(row, ...aliases) {
       for (const alias of aliases) {
         if (row[alias] !== undefined && row[alias] !== null && row[alias] !== '') return row[alias]
@@ -1069,13 +1076,12 @@ async function onImportSantri(e) {
         continue
       }
       const nama = toTitleCase(namaRaw)
-      const nis = String(
-        (hasNoIndukCol ? _pick(r, 'No. Induk', 'No Induk', 'no_induk') : _pick(r, 'NIS', 'nis')) ||
-          ''
-      ).trim()
-      const nisSekolah = String(
-        (hasNoIndukCol ? _pick(r, 'NIS', 'nis') : _pick(r, 'NIS Dinas', 'nis_sekolah')) || ''
-      ).trim()
+      const nis = _idNum(
+        hasNoIndukCol ? _pick(r, 'No. Induk', 'No Induk', 'no_induk') : _pick(r, 'NIS', 'nis')
+      )
+      const nisSekolah = _idNum(
+        hasNoIndukCol ? _pick(r, 'NIS', 'nis') : _pick(r, 'NIS Dinas', 'nis_sekolah')
+      )
       // v.100 Batch12: auto-deteksi nama lembaga ke bentuk kanonik ("PRA PTPT" -> "Pra PTPT", dst)
       const lembaga = canonLembaga(_pick(r, 'Lembaga Qiraati', 'Lembaga', 'lembaga'))
       const kelas = String(_pick(r, 'Kelas Qiraati', 'Kelas', 'kelas') || '').trim()
