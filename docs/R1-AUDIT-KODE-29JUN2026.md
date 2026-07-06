@@ -189,3 +189,15 @@ Sisi terima (`usePushNotifications`): Capacitor `register()` → FCM token → R
 - **Glondongan:** `splitGlondongan` benar (trace juz 1/6/30, tanpa off-by-one); `spawnGlondongan` bersih (berjalan→auto guru kelas, glondongan→menunggu, best-effort). Minor: dobel-submit = set paralel (tied ajuan); orphan bila ajuan dihapus (low-harm). **Runtime E2E butuh setup data:** guru ber-`lembaga='PTPT'` (agar muncul di picker pengajar) + set koordinator kelas — belum bisa dijalankan live (santri belum diimpor).
 - **Naik kelas:** `writeKenaikan` = `updateOne` (patch, bukan overwrite); auto-catatan transisi benar; **undo-cascade super_admin-only** + backup audit_log.
 - **Keuangan:** Buku Induk vs Tabungan koleksi TERPISAH (tabungan NET, tak masuk agregat induk); bayar=admin_keuangan, hapus=super_admin; cicilan + transfer-verify + POS.
+
+### G. Verifikasi live Supabase (6 Jul, probe REST login demoplay)
+| Cek | Hasil | Arti |
+|-----|-------|------|
+| `analytics_query('pegawai_per_lembaga')` | ✅ data (PTPT 36, Pra PTPT 13, … = 76 guru) | **Fix analytics pegawai #1 SUDAH ter-apply & jalan** (bug casing → sudah `[]` bila belum) |
+| `analytics_query('pegawai_per_jabatan')` | ✅ data (Guru 61, …) | idem |
+| `analytics_query('santri_per_lembaga')` | `[]` | benar — santri belum diimpor (kontrol RPC OK) |
+| `rpc/auth_owns_santri` | PGRST202 not-found | **W1 benar BELUM ter-apply** (staged di git, apply setelah import) |
+| `OPTIONS /functions/v1/dispatch-push` | HTTP 200 | **Edge Function dispatch-push TER-DEPLOY** |
+| pg_cron schedule (dispatch tiap menit) + secret `FCM_SERVICE_ACCOUNT` | ⚠️ tak bisa dicek via REST | **Kyai cek Dashboard:** Database→Cron (job `dispatch-push`) + Edge Functions→Secrets. Uji cepat: buat 1 pengumuman → push muncul <1 mnt di HP ber-app. |
+
+**Kesimpulan verifikasi:** 2 migration tracked (analytics + guard) sudah live → **tak perlu `db push` untuk itu**. W1 sengaja belum. Notif: fungsi ter-deploy; sisa tinggal pastikan cron+secret aktif (dashboard, ~2 mnt).
