@@ -514,6 +514,13 @@ async function handleSimpan(payload) {
     let lunasCount = 0
     let partialCount = 0
     let totalMasuk = 0
+    // Resolusi Pos Dana (Uang Kegiatan/Buku) dari jenis pembayaran → tag baris buku induk.
+    // Pembayaran tetap masuk keuangan_buku_induk (ikut total); pos hanya penyaring rekap.
+    const posByLabel = {}
+    for (const j of settingsStore.settings?.keuTagihanJenis || []) {
+      const lbl = String(j?.label || j?.nama || j?.id || '').trim()
+      if (lbl && j?.pos) posByLabel[lbl] = String(j.pos)
+    }
     for (const item of payload.items) {
       const id = `pos_${Date.now()}_${Math.floor(Math.random() * 1000)}`
       const docData = {
@@ -532,6 +539,8 @@ async function handleSimpan(payload) {
         wali: waliNama,
         createdAt: serverTimestamp()
       }
+      // tag pos bila jenis ini tergolong Uang Kegiatan/Buku (tetap terhitung di Buku Induk)
+      if (posByLabel[item.jenis]) docData.pos = posByLabel[item.jenis]
       writes.push(setOne('keuangan_buku_induk', id, docData))
       histori.value.unshift(docData)
       totalMasuk += Number(item.nominal || 0)

@@ -282,6 +282,25 @@ const ALL_MENUS = [
     available: true,
     perm: 'akses_keuangan'
   },
+  // Uang Kegiatan & Uang Buku — rekap pos (kantong dana) di atas buku induk
+  {
+    group: 'Keuangan',
+    name: 'Uang Kegiatan',
+    path: '/uang-kegiatan',
+    icon: 'fa-calendar-check',
+    roles: ['admin'],
+    available: true,
+    perm: 'akses_keuangan'
+  },
+  {
+    group: 'Keuangan',
+    name: 'Uang Buku',
+    path: '/uang-buku',
+    icon: 'fa-book-open',
+    roles: ['admin'],
+    available: true,
+    perm: 'akses_keuangan'
+  },
   // v.86.0526: Verifikasi bukti transfer wali (superadmin/admin_keuangan)
   {
     group: 'Keuangan',

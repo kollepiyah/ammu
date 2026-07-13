@@ -18,17 +18,37 @@ const TABS = [
     groups: [
       {
         label: 'Postingan',
-        items: [{ type: 'large', icon: 'broadcast', label: 'Ammu\nChannel', to: '/posts', accent: true }]
+        items: [
+          { type: 'large', icon: 'broadcast', label: 'Ammu\nChannel', to: '/posts', accent: true }
+        ]
       },
       { label: 'Waktu & Kalender', items: [{ type: 'clock' }] },
       {
         label: 'Akses Akademik',
         items: [
-          { type: 'large', icon: 'chart-pie', label: 'Dasbor\nStatistik', to: '/statistik', gate: 'noSantri' },
+          {
+            type: 'large',
+            icon: 'chart-pie',
+            label: 'Dasbor\nStatistik',
+            to: '/statistik',
+            gate: 'noSantri'
+          },
           { type: 'large', icon: 'calendar', label: 'Kalender\nKegiatan', to: '/kalender' },
           { type: 'small', icon: 'user', label: 'Profil Saya', to: '/profil' },
-          { type: 'small', icon: 'clipboard', label: 'Data Supervisi', to: '/supervisi', gate: 'supervisi' },
-          { type: 'small', icon: 'users', label: 'Data Santri', to: '/santri?kelola=1', gate: 'noSantri' }
+          {
+            type: 'small',
+            icon: 'clipboard',
+            label: 'Data Supervisi',
+            to: '/supervisi',
+            gate: 'supervisi'
+          },
+          {
+            type: 'small',
+            icon: 'users',
+            label: 'Data Santri',
+            to: '/santri?kelola=1',
+            gate: 'noSantri'
+          }
         ]
       },
       {
@@ -50,32 +70,92 @@ const TABS = [
       {
         label: 'Data Induk',
         items: [
-          { type: 'large', icon: 'users', label: 'Data\nSantri', to: '/santri?kelola=1', accent: true },
-          { type: 'large', icon: 'user', label: 'Data\nGuru', to: '/guru?kelola=1&tipe=guru', gate: 'admin' },
-          { type: 'small', icon: 'user', label: 'Data Pegawai', to: '/guru?kelola=1&tipe=pegawai', gate: 'admin' },
-          { type: 'small', icon: 'mosque', label: "Data Ma'had", to: '/santri?kelola=1&tempat=mukim', gate: 'admin' }
+          {
+            type: 'large',
+            icon: 'users',
+            label: 'Data\nSantri',
+            to: '/santri?kelola=1',
+            accent: true
+          },
+          {
+            type: 'large',
+            icon: 'user',
+            label: 'Data\nGuru',
+            to: '/guru?kelola=1&tipe=guru',
+            gate: 'admin'
+          },
+          {
+            type: 'small',
+            icon: 'user',
+            label: 'Data Pegawai',
+            to: '/guru?kelola=1&tipe=pegawai',
+            gate: 'admin'
+          },
+          {
+            type: 'small',
+            icon: 'mosque',
+            label: "Data Ma'had",
+            to: '/santri?kelola=1&tempat=mukim',
+            gate: 'admin'
+          }
         ]
       },
       {
         label: 'Akademik',
         items: [
-          { type: 'large', icon: 'users', label: 'Kelas\n(Guru-Santri)', to: '/kelas-guru', gate: 'admin' },
+          {
+            type: 'large',
+            icon: 'users',
+            label: 'Kelas\n(Guru-Santri)',
+            to: '/kelas-guru',
+            gate: 'admin'
+          },
           { type: 'small', icon: 'book', label: 'Mapel', to: '/mapel-lembaga', gate: 'admin' },
           { type: 'small', icon: 'trophy', label: 'Nilai / Rapor', to: '/rapor' },
           { type: 'small', icon: 'check', label: 'Absensi', to: '/absensi-santri' },
           // v.100 Batch14: Absensi Guru (admin-only) sebelumnya yatim di Electron — ada di menu web, tak ada tombol pita
-          { type: 'small', icon: 'clipboard', label: 'Absensi Guru', to: '/absensi-guru', gate: 'admin' }
+          {
+            type: 'small',
+            icon: 'clipboard',
+            label: 'Absensi Guru',
+            to: '/absensi-guru',
+            gate: 'admin'
+          }
         ]
       },
       {
         label: 'Lembaga & Kenaikan',
         items: [
-          { type: 'large', icon: 'mosque', label: 'Master\nLembaga', to: '/master-data?tab=lembaga', gate: 'superadmin' },
+          {
+            type: 'large',
+            icon: 'mosque',
+            label: 'Master\nLembaga',
+            to: '/master-data?tab=lembaga',
+            gate: 'superadmin'
+          },
           { type: 'large', icon: 'chart-line', label: 'Kenaikan\n/ Mutasi', to: '/naik-kelas' },
-          { type: 'small', icon: 'calendar', label: 'Tahun Ajaran', to: '/master-data?tab=tp', gate: 'superadmin' },
-          { type: 'small', icon: 'clock', label: 'Semester', to: '/master-data?tab=tp', gate: 'superadmin' },
+          {
+            type: 'small',
+            icon: 'calendar',
+            label: 'Tahun Ajaran',
+            to: '/master-data?tab=tp',
+            gate: 'superadmin'
+          },
+          {
+            type: 'small',
+            icon: 'clock',
+            label: 'Semester',
+            to: '/master-data?tab=tp',
+            gate: 'superadmin'
+          },
           // v.100 Batch14: Audit Data (Kesehatan Data/Migrate/Gabung/Generate NIS) sebelumnya yatim di Electron — tab-bar disembunyikan (T22), tak ada tombol pita
-          { type: 'small', icon: 'shield', label: 'Audit Data', to: '/master-data?tab=audit', gate: 'superadmin' }
+          {
+            type: 'small',
+            icon: 'shield',
+            label: 'Audit Data',
+            to: '/master-data?tab=audit',
+            gate: 'superadmin'
+          }
         ]
       },
       {
@@ -85,7 +165,13 @@ const TABS = [
           { type: 'small', icon: 'calendar-days', label: 'Kalender', to: '/kalender' },
           { type: 'small', icon: 'chart-line', label: 'Rekap Nilai', to: '/rekap-prestasi' },
           // v.100 Batch16: Kegiatan Pesantren (agenda pondok) — sebelumnya hanya via Pengaturan Desktop, kini tombol pita langsung
-          { type: 'small', icon: 'megaphone', label: 'Kegiatan Pesantren', to: '/kegiatan-pesantren', gate: 'admin' }
+          {
+            type: 'small',
+            icon: 'megaphone',
+            label: 'Kegiatan Pesantren',
+            to: '/kegiatan-pesantren',
+            gate: 'admin'
+          }
         ]
       }
     ]
@@ -102,7 +188,12 @@ const TABS = [
           { type: 'large', icon: 'layers', label: 'POS\nSantri', to: '/pos-santri', accent: true },
           { type: 'large', icon: 'file', label: 'Tagihan\nAktif', to: '/tagihan' },
           // T6: Buat Tagihan → halaman Generate Tagihan Khusus (modal auto-buka via ?gen=1)
-          { type: 'small', icon: 'edit', label: 'Buat Tagihan', to: '/keu-pengaturan?section=tagihan&gen=1' },
+          {
+            type: 'small',
+            icon: 'edit',
+            label: 'Buat Tagihan',
+            to: '/keu-pengaturan?section=tagihan&gen=1'
+          },
           { type: 'small', icon: 'bell', label: 'Verifikasi Bayar', to: '/pembayaran-pending' }
         ]
       },
@@ -120,13 +211,20 @@ const TABS = [
           { type: 'large', icon: 'doc', label: 'Slip\nBisyaroh', to: '/bisyaroh' },
           { type: 'small', icon: 'users', label: 'Hutang Piutang', to: '/hutang-piutang' },
           // T7: Pengaturan Bisyaroh → halaman fokus bisyaroh guru/pegawai
-          { type: 'small', icon: 'gear', label: 'Pengaturan Bisyaroh', to: '/keu-pengaturan?section=bisyaroh' }
+          {
+            type: 'small',
+            icon: 'gear',
+            label: 'Pengaturan Bisyaroh',
+            to: '/keu-pengaturan?section=bisyaroh'
+          }
         ]
       },
       {
         label: 'Buku & Laporan',
         items: [
           { type: 'large', icon: 'book', label: 'Buku\nInduk', to: '/buku-induk' },
+          { type: 'small', icon: 'file', label: 'Uang Kegiatan', to: '/uang-kegiatan' },
+          { type: 'small', icon: 'book', label: 'Uang Buku', to: '/uang-buku' },
           { type: 'small', icon: 'chart-line', label: 'Laporan', to: '/laporan-keuangan' },
           { type: 'small', icon: 'download', label: 'Riwayat Santri', to: '/riwayat-santri' }
         ]
@@ -137,8 +235,18 @@ const TABS = [
         items: [
           { type: 'large', icon: 'gear', label: 'Pengaturan\nKeuangan', to: '/keu-pengaturan' },
           // T8: Pengaturan Syahriyah santri → halaman fokus
-          { type: 'small', icon: 'file', label: 'Syahriyah Santri', to: '/keu-pengaturan?section=syahriyah' },
-          { type: 'small', icon: 'printer', label: 'Tagihan & Struk', to: '/keu-pengaturan?section=tagihan' }
+          {
+            type: 'small',
+            icon: 'file',
+            label: 'Syahriyah Santri',
+            to: '/keu-pengaturan?section=syahriyah'
+          },
+          {
+            type: 'small',
+            icon: 'printer',
+            label: 'Tagihan & Struk',
+            to: '/keu-pengaturan?section=tagihan'
+          }
         ]
       }
     ]
@@ -153,7 +261,13 @@ const TABS = [
       {
         label: 'Pendaftaran',
         items: [
-          { type: 'large', icon: 'clipboard', label: 'Riwayat\nPendaftaran', to: '/psb?section=riwayat', accent: true },
+          {
+            type: 'large',
+            icon: 'clipboard',
+            label: 'Riwayat\nPendaftaran',
+            to: '/psb?section=riwayat',
+            accent: true
+          },
           { type: 'small', icon: 'send', label: 'Pratinjau Form', to: '/psb-form' }
         ]
       },
@@ -161,7 +275,12 @@ const TABS = [
         label: 'Berkas & Info',
         items: [
           { type: 'large', icon: 'file', label: 'Upload\nSyarat', to: '/psb?section=syarat' },
-          { type: 'large', icon: 'wallet', label: 'Info\nPembayaran', to: '/psb?section=pembayaran' }
+          {
+            type: 'large',
+            icon: 'wallet',
+            label: 'Info\nPembayaran',
+            to: '/psb?section=pembayaran'
+          }
         ]
       }
     ]
@@ -190,7 +309,13 @@ const TABS = [
         items: [
           { type: 'large', icon: 'user', label: 'Profil\nSaya', to: '/profil', accent: true },
           { type: 'small', icon: 'layers', label: 'Personal', to: '/personal', gate: 'noSantri' },
-          { type: 'small', icon: 'chart-pie', label: 'Statistik Kelas', to: '/statistik', gate: 'noSantri' }
+          {
+            type: 'small',
+            icon: 'chart-pie',
+            label: 'Statistik Kelas',
+            to: '/statistik',
+            gate: 'noSantri'
+          }
         ]
       },
       {
@@ -198,7 +323,13 @@ const TABS = [
         items: [
           { type: 'large', icon: 'bell', label: 'Notifikasi', to: '/notifikasi' },
           { type: 'small', icon: 'comment', label: 'Kritik & Saran', to: '/kritik-saran' },
-          { type: 'small', icon: 'clipboard', label: 'Catatan Supervisi', to: '/supervisi', gate: 'supervisi' }
+          {
+            type: 'small',
+            icon: 'clipboard',
+            label: 'Catatan Supervisi',
+            to: '/supervisi',
+            gate: 'supervisi'
+          }
         ]
       },
       {
@@ -211,7 +342,14 @@ const TABS = [
       {
         label: 'Sistem',
         items: [
-          { type: 'large', icon: 'gear', label: 'Pengaturan', to: '/pengaturan-desktop', accent: true, gate: 'admin' },
+          {
+            type: 'large',
+            icon: 'gear',
+            label: 'Pengaturan',
+            to: '/pengaturan-desktop',
+            accent: true,
+            gate: 'admin'
+          },
           { type: 'large', icon: 'logout', label: 'Keluar', action: 'logout' }
         ]
       }
@@ -225,7 +363,15 @@ const TABS = [
     groups: [
       {
         label: 'Supervisi',
-        items: [{ type: 'large', icon: 'clipboard', label: 'Data\nSupervisi', to: '/supervisi', accent: true }]
+        items: [
+          {
+            type: 'large',
+            icon: 'clipboard',
+            label: 'Data\nSupervisi',
+            to: '/supervisi',
+            accent: true
+          }
+        ]
       },
       {
         label: 'Catatan',
@@ -272,18 +418,56 @@ const TABS = [
 const TAB_PATHS = {
   home: ['/dashboard', '/beranda', '/statistik', '/kalender'],
   pendidikan: [
-    '/santri', '/guru', '/kelas', '/kelas-guru', '/mapel-lembaga', '/rapor', '/absensi-santri', '/absensi-guru',
-    '/naik-kelas', '/rekap-prestasi', '/rekap-diniyah', '/input-bulanan',
-    '/master-data', '/kegiatan-pesantren', '/statistik', '/kalender'
+    '/santri',
+    '/guru',
+    '/kelas',
+    '/kelas-guru',
+    '/mapel-lembaga',
+    '/rapor',
+    '/absensi-santri',
+    '/absensi-guru',
+    '/naik-kelas',
+    '/rekap-prestasi',
+    '/rekap-diniyah',
+    '/input-bulanan',
+    '/master-data',
+    '/kegiatan-pesantren',
+    '/statistik',
+    '/kalender'
   ],
   psb: ['/psb'],
   keuangan: [
-    '/keuangan', '/keuangan-desktop', '/tagihan', '/pembayaran', '/pembayaran-pending', '/tabungan',
-    '/uang-saku', '/bisyaroh', '/buku-induk', '/laporan-keuangan', '/hutang-piutang',
-    '/keu-pengaturan', '/pos-santri', '/pos-riwayat', '/riwayat-santri'
+    '/keuangan',
+    '/keuangan-desktop',
+    '/tagihan',
+    '/pembayaran',
+    '/pembayaran-pending',
+    '/tabungan',
+    '/uang-saku',
+    '/bisyaroh',
+    '/buku-induk',
+    '/uang-kegiatan',
+    '/uang-buku',
+    '/laporan-keuangan',
+    '/hutang-piutang',
+    '/keu-pengaturan',
+    '/pos-santri',
+    '/pos-riwayat',
+    '/riwayat-santri'
   ],
   saluran: ['/posts'],
-  personal: ['/personal', '/profil', '/notifikasi', '/kritik-saran', '/capaian-prestasi', '/statistik', '/pengaturan-desktop', '/pengaturan-web', '/field-schema', '/supervisi'],
+  personal: [
+    '/personal',
+    '/profil',
+    '/notifikasi',
+    '/kritik-saran',
+    '/capaian-prestasi',
+    '/statistik',
+    '/pengaturan-desktop',
+    '/pengaturan-web',
+    '/field-schema',
+    '/supervisi'
+  ],
   supervisi: ['/supervisi'],
   bantuan: ['/bantuan']
 }

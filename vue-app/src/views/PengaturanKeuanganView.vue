@@ -282,6 +282,21 @@
                 <i class="fas fa-trash"></i>
               </button>
             </div>
+            <!-- Pos Dana: tandai jenis ini masuk rekap Uang Kegiatan / Uang Buku (otomatis saat dibayar via POS) -->
+            <div class="mt-1.5 flex items-center gap-2">
+              <span class="text-[10px] font-bold text-[var(--text-secondary)] whitespace-nowrap">
+                <i class="fas fa-folder-tree mr-1"></i>Pos Dana:
+              </span>
+              <select
+                v-model="jenis.pos"
+                class="text-[10px] font-bold text-[var(--text-primary)] bg-[var(--bg-card)] border border-[var(--border-default)] rounded px-2 py-1 outline-none"
+                title="Jika bukan Kas Umum, pembayaran jenis ini otomatis masuk rekap pos terkait (tetap terhitung di Buku Induk)"
+              >
+                <option value="">Kas Umum</option>
+                <option value="kegiatan">Uang Kegiatan</option>
+                <option value="buku">Uang Buku</option>
+              </select>
+            </div>
             <!-- v.110.0626: entry JELAS ke nominal khusus (discoverability per-santri) -->
             <button
               v-if="!jenis._expanded"
@@ -1498,6 +1513,8 @@ function loadFromSettings() {
                 ? { ...t.nominal_per_santri }
                 : _emptyMap(),
             auto_generate: !!t.auto_generate,
+            // pos dana: '' (kas umum) | 'kegiatan' | 'buku' — penyaring rekap Uang Kegiatan/Buku
+            pos: t.pos || '',
             _expanded: false
           }
         : {
@@ -1661,6 +1678,7 @@ function addJenis() {
     lembaga_only: [],
     nominal_per_kelas: {},
     auto_generate: false,
+    pos: '',
     _expanded: false
   })
   newJenis.value = ''
@@ -1898,7 +1916,8 @@ async function simpan() {
           nominal_per_kelas: perK,
           nominal_per_santri: perS,
           lembaga_only: wl,
-          auto_generate: !!t.auto_generate
+          auto_generate: !!t.auto_generate,
+          pos: t.pos || ''
         }
       })
     const payload = {

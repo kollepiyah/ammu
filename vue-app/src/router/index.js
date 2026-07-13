@@ -33,6 +33,8 @@ const LembagaDetailView = () => import('@/views/LembagaDetailView.vue')
 const AbsensiSantriView = () => import('@/views/AbsensiSantriView.vue')
 const PostsView = () => import('@/views/PostsView.vue')
 const BukuIndukView = () => import('@/views/BukuIndukView.vue')
+// Uang Kegiatan & Uang Buku — pos (kantong dana) di atas ledger buku induk (1 komponen, 2 route)
+const UangPosView = () => import('@/views/UangPosView.vue')
 const LaporanKeuanganView = () => import('@/views/LaporanKeuanganView.vue')
 const PsbFormView = () => import('@/views/PpdbFormView.vue')
 const PsbAdminView = () => import('@/views/PpdbAdminView.vue')
@@ -302,6 +304,19 @@ const routes = [
         name: 'buku-induk',
         component: BukuIndukView,
         meta: { keuangan: true }
+      },
+      // Uang Kegiatan & Uang Buku — rekap pos, transaksi tetap di keuangan_buku_induk
+      {
+        path: 'uang-kegiatan',
+        name: 'uang-kegiatan',
+        component: UangPosView,
+        meta: { keuangan: true, pos: 'kegiatan' }
+      },
+      {
+        path: 'uang-buku',
+        name: 'uang-buku',
+        component: UangPosView,
+        meta: { keuangan: true, pos: 'buku' }
       },
       // v.72.15.0526: Hutang Piutang
       {
