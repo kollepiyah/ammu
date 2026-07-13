@@ -21,6 +21,35 @@ Versioning: `v.{nomor-urut}.{MMDDtahunmu}` (mis: `v.108.0527`)
 
 ---
 
+## [v.1.1.6] — 2026-07-13 — Uang Kegiatan & Uang Buku
+
+Dua pos dana baru di Keuangan: **Uang Kegiatan** dan **Uang Buku**. Masing-masing
+punya rekap saldo tersendiri + input keluar/masuk manual, dan pemasukannya bisa
+otomatis dari pembayaran POS — namun semua tetap tercatat & terhitung di Buku Induk.
+
+### Added (Fitur Baru)
+
+- **Menu "Uang Kegiatan" & "Uang Buku"** — rekap "pos/kantong dana" di atas ledger
+  Buku Induk. Tiap pos punya kartu saldo (masuk/keluar/saldo), tabel transaksi, dan
+  input keluar/masuk manual. Satu komponen (`UangPosView`) dipakai dua route.
+- **"Pos Dana" per Jenis Pembayaran** (Pengaturan Keuangan → Jenis Pembayaran) —
+  tandai sebuah jenis sebagai Kas Umum / Uang Kegiatan / Uang Buku. Saat dibayar via
+  POS, pemasukannya otomatis masuk rekap pos terkait.
+
+### Changed (Perubahan)
+
+- Pembayaran POS kini ikut menandai `pos` pada baris Buku Induk bila jenisnya
+  tergolong Uang Kegiatan/Buku (tanpa dobel-hitung; total tetap di Buku Induk).
+- Versi semua platform → `v.1.1.6` / `versionCode 116` (vc115 dilewati — dicadangkan
+  branch fitur lain yang belum dirilis).
+
+### Catatan
+
+- Tanpa migration/RLS/realtime baru — pos disimpan di kolom `data` jsonb tabel
+  `keuangan_buku_induk` yang sudah ada. Scope pos ikut Buku Induk (per-gedung).
+
+---
+
 ## [v.1.1.4] — 2026-07-02 — Pisah Login Santri/Wali & No. Induk Tetap
 
 Perbaikan administrasi & pengalaman login: identitas No. Induk santri dikunci
