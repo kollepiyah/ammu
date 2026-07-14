@@ -117,6 +117,7 @@ function rebuild() {
     nominal_asli: Number(t.nominal || 0),
     nominal_penuh: Number(t.nominal_penuh || t.nominal || 0),
     dibayar_lama: Number(t.dibayar_lama || 0),
+    pos: t.pos || '',
     keterangan: t.keterangan || ''
   }))
   extraItems.value = []
@@ -289,7 +290,8 @@ function simpan() {
       tagihan_id: r.tagihan_id || null,
       nominal_asli: Number(r.nominal_asli),
       nominal_penuh: Number(r.nominal_penuh),
-      dibayar_lama: Number(r.dibayar_lama)
+      dibayar_lama: Number(r.dibayar_lama),
+      pos: r.pos || ''
     })),
     ...extraItems.value.map((e) => ({
       jenis: e.jenis,

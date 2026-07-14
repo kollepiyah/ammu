@@ -462,6 +462,8 @@ async function openModal(s) {
         nominal: Math.max(0, penuh - dibayar),
         nominal_penuh: penuh,
         dibayar_lama: dibayar,
+        // pos dana eksplisit dari tagihan (mis. generate khusus) → dibawa ke buku induk saat bayar
+        pos: t.pos || '',
         // v.95.0626: utamakan periode bersih "Juni 2026" utk rincian struk
         keterangan: periodeTagihan(t) || t.keterangan || ''
       }
@@ -539,8 +541,9 @@ async function handleSimpan(payload) {
         wali: waliNama,
         createdAt: serverTimestamp()
       }
-      // tag pos bila jenis ini tergolong Uang Kegiatan/Buku (tetap terhitung di Buku Induk)
-      if (posByLabel[item.jenis]) docData.pos = posByLabel[item.jenis]
+      // tag pos: utamakan pos eksplisit dari tagihan (generate khusus), fallback dari jenis
+      const _pos = item.pos || posByLabel[item.jenis] || ''
+      if (_pos) docData.pos = _pos
       writes.push(setOne('keuangan_buku_induk', id, docData))
       histori.value.unshift(docData)
       totalMasuk += Number(item.nominal || 0)

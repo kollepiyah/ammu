@@ -1140,6 +1140,19 @@
           class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)] mb-2"
         />
 
+        <!-- Pos Dana: tagihan ini masuk rekap Uang Kegiatan/Buku saat dibayar (auto dari jenis) -->
+        <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block">
+          Pos Dana
+        </label>
+        <select
+          v-model="genPos"
+          class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)] mb-2"
+        >
+          <option value="">Kas Umum</option>
+          <option value="kegiatan">Uang Kegiatan</option>
+          <option value="buku">Uang Buku</option>
+        </select>
+
         <!-- Nominal + jatuh tempo -->
         <div class="grid grid-cols-2 gap-2 mb-2">
           <div>
@@ -2299,6 +2312,7 @@ const genOpen = ref(false)
 const genBusy = ref(false)
 const genJenisId = ref('')
 const genKategori = ref('')
+const genPos = ref('') // pos dana tagihan ('' = kas umum | 'kegiatan' | 'buku'), auto dari jenis
 const genNominal = ref(0)
 const genNominalFmt = ref('')
 const genPakaiNominalJenis = ref(false)
@@ -2330,6 +2344,7 @@ async function openGenKhusus() {
   // reset state tiap buka
   genJenisId.value = ''
   genKategori.value = ''
+  genPos.value = ''
   genNominal.value = 0
   genNominalFmt.value = ''
   genPakaiNominalJenis.value = false
@@ -2356,6 +2371,7 @@ function onGenPickJenis() {
   const j = jenisList.value.find((x) => x.id === genJenisId.value)
   if (j) {
     genKategori.value = j.label || ''
+    genPos.value = j.pos || ''
     if (Number(j.nominal_default) > 0) {
       genNominal.value = Number(j.nominal_default)
       genNominalFmt.value = fmtRp(j.nominal_default)
@@ -2543,6 +2559,7 @@ async function doGenKhusus() {
           nominal,
           bayar: 0,
           status: 'belum',
+          pos: genPos.value || '',
           jatuh_tempo: genJatuhTempo.value || '',
           sumber: 'generate_khusus',
           created_at: serverTimestamp()
