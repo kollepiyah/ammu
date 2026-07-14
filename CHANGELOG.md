@@ -43,10 +43,24 @@ otomatis dari pembayaran POS — namun semua tetap tercatat & terhitung di Buku 
 - Versi semua platform → `v.1.1.6` / `versionCode 116` (vc115 dilewati — dicadangkan
   branch fitur lain yang belum dirilis).
 
+### Fixed (Perbaikan)
+
+- **Pengaturan Keuangan "balik ke default setelah refresh"** — form dimuat sebelum
+  store settings selesai fetch dari DB (`onMounted` tak `await settingsStore.load()`),
+  jadi refresh langsung di halaman ini menampilkan nilai basi walau data sudah
+  tersimpan. Kini await load dulu (samakan dengan halaman Pengaturan lain).
+- **Bendahara (`admin_keuangan`) gagal simpan pengaturan diam-diam** — RLS tabel
+  `settings` hanya mengizinkan super_admin/admin menulis (UPDATE ditolak → 0 baris,
+  tanpa error). Ditambah izin `auth_can_keuangan()` (kecuali key `admin`) via migration
+  `20260714120000_settings_write_keuangan.sql`.
+
 ### Catatan
 
-- Tanpa migration/RLS/realtime baru — pos disimpan di kolom `data` jsonb tabel
-  `keuangan_buku_induk` yang sudah ada. Scope pos ikut Buku Induk (per-gedung).
+- Fitur Uang Kegiatan/Buku: pos disimpan di kolom `data` jsonb `keuangan_buku_induk`
+  yang sudah ada (tanpa tabel baru). Scope pos ikut Buku Induk (per-gedung).
+- **Deploy:** ada 1 migration RLS `settings` (fix bendahara) → jalankan
+  `supabase db push` DULU, baru deploy web. Rebuild AAB/Electron untuk bawa fix load
+  ke native/desktop.
 
 ---
 

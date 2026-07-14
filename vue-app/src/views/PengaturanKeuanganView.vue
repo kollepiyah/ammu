@@ -1631,7 +1631,13 @@ function loadFromSettings() {
   form.bmt_va_prefix = s.bmt_va_prefix || ''
 }
 
-onMounted(() => {
+onMounted(async () => {
+  // FIX bug "balik ke default setelah refresh": pastikan store ter-load dari DB
+  // TERBARU dulu. main.js hanya settingsStore.subscribe() (fetch async), jadi refresh
+  // LANGSUNG di halaman ini bisa jalan sebelum data DB tiba → loadFromSettings membaca
+  // store basi → nominal/jenis balik default walau DB sudah tersimpan. (Halaman
+  // Pengaturan lain sudah await load — samakan.)
+  await settingsStore.load()
   loadFromSettings()
   // T6: tombol pita "Buat Tagihan" buka langsung modal Generate Tagihan Khusus
   if (route.query.gen) {
