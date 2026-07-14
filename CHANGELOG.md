@@ -21,7 +21,7 @@ Versioning: `v.{nomor-urut}.{MMDDtahunmu}` (mis: `v.108.0527`)
 
 ---
 
-## [v.1.1.6] — 2026-07-13 — Uang Kegiatan & Uang Buku
+## [v.1.1.7] — 2026-07-14 — Uang Kegiatan & Uang Buku + Editor Keuangan
 
 Dua pos dana baru di Keuangan: **Uang Kegiatan** dan **Uang Buku**. Masing-masing
 punya rekap saldo tersendiri + input keluar/masuk manual, dan pemasukannya bisa
@@ -35,13 +35,17 @@ otomatis dari pembayaran POS — namun semua tetap tercatat & terhitung di Buku 
 - **"Pos Dana" per Jenis Pembayaran** (Pengaturan Keuangan → Jenis Pembayaran) —
   tandai sebuah jenis sebagai Kas Umum / Uang Kegiatan / Uang Buku. Saat dibayar via
   POS, pemasukannya otomatis masuk rekap pos terkait.
+- **Pos Dana juga di Generate Tagihan Khusus** — dropdown Pos Dana (auto dari jenis),
+  tersimpan di tagihan; saat dibayar otomatis masuk rekap posnya (walau kategori manual).
+- **Editor Kategori Tabungan** (Pengaturan Keuangan → tab Kategori) — tambah/hapus/
+  rename kategori tabungan + nominal default (dipakai menu Tabungan → Input Mutasi).
 
 ### Changed (Perubahan)
 
 - Pembayaran POS kini ikut menandai `pos` pada baris Buku Induk bila jenisnya
   tergolong Uang Kegiatan/Buku (tanpa dobel-hitung; total tetap di Buku Induk).
-- Versi semua platform → `v.1.1.6` / `versionCode 116` (vc115 dilewati — dicadangkan
-  branch fitur lain yang belum dirilis).
+- Versi semua platform → `v.1.1.7` / `versionCode 117` (vc115 & vc116 dilewati — belum
+  pernah dirilis ke Play).
 
 ### Fixed (Perbaikan)
 

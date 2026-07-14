@@ -146,7 +146,7 @@ async function initSentry() {
     window.Sentry.init({
       dsn,
       tracesSampleRate: 0.1,
-      release: 'portal-mu@1.1.6',
+      release: 'portal-mu@1.1.7',
       environment: window.location.hostname.includes('localhost') ? 'dev' : 'prod'
     })
     // eslint-disable-next-line no-console
