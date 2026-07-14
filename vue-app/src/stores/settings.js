@@ -41,6 +41,9 @@ export const useSettingsStore = defineStore('settings', () => {
   const settings = ref({ ...DEFAULT_SETTINGS })
   const isLoading = ref(false)
   const error = ref(null)
+  // true HANYA setelah settings sekali berhasil dibaca dari DB. Selama false,
+  // `settings` masih DEFAULT_SETTINGS — bukan nilai asli — jadi HARAM ditulis balik (lihat save()).
+  const isLoaded = ref(false)
   let unsubscribe = null
 
   // Getters
@@ -59,14 +62,38 @@ export const useSettingsStore = defineStore('settings', () => {
   // Actions
   // v.47.0526: silent retry on offline error — Firestore akan delivery via subscribe() saat reconnect
   // v.61.0526: Load BOTH settings/general (legacy source of truth) + settings/web (Vue PoC), merge keduanya
+
+  // Promise load yang sedang berjalan, dipakai untuk dedup.
+  //
+  // FIX bug "edit apapun lalu refresh balik ke default": dedup dulu `if (isLoading.value) return`,
+  // yang membuat pemanggil yang meng-`await load()` LANGSUNG lanjut tanpa menunggu fetch selesai,
+  // lalu menghidrasi form dari store yang masih DEFAULT_SETTINGS. main.js menembak load() tanpa
+  // await tepat sebelum app.mount(), jadi view yang mount saat boot SELALU kena. Paling parah di
+  // Electron: bundle di-load dari file:// (disk lokal) sehingga boot mendahului fetch jaringan,
+  // bikin race-nya kalah terus. Antre ke promise yang sama, jangan kabur.
+  let _inflight = null
+
   async function load(retryCount = 0) {
-    if (isLoading.value) return // dedup parallel calls
+    if (_inflight) return _inflight
+    _inflight = _doLoad(retryCount)
+    try {
+      return await _inflight
+    } finally {
+      _inflight = null
+    }
+  }
+
+  async function _doLoad(retryCount) {
     isLoading.value = true
     error.value = null
     try {
+      // getOne pakai maybeSingle(): baris yang memang TIDAK ADA -> null tanpa error. Jadi
+      // error di sini = baca GAGAL (jaringan/RLS/sesi mati). Dulu di-`.catch(() => null)`,
+      // sehingga gagal-baca tak bisa dibedakan dari baris-kosong dan settings ditimpa
+      // DEFAULT_SETTINGS diam-diam — jalur KEDUA menuju gejala "balik ke default".
       const [legacyData, vueData] = await Promise.all([
-        getOne('settings', SETTINGS_DOC_ID_LEGACY).catch(() => null),
-        getOne('settings', SETTINGS_DOC_ID_VUE).catch(() => null)
+        getOne('settings', SETTINGS_DOC_ID_LEGACY),
+        getOne('settings', SETTINGS_DOC_ID_VUE)
       ])
       // Merge: DEFAULT < vueData < legacyData (legacy menang karena live source of truth)
       settings.value = {
@@ -74,12 +101,18 @@ export const useSettingsStore = defineStore('settings', () => {
         ...(vueData || {}),
         ...(legacyData || {})
       }
+      isLoaded.value = true
     } catch (e) {
-      const isOffline = e?.code === 'unavailable' || /offline/i.test(e?.message || '')
+      // Regex diperluas: kode 'unavailable' itu istilah Firestore & tak pernah cocok dgn error
+      // Supabase, jadi retry-nya dulu praktis mati. Error jaringan supabase-js datang sbg
+      // "Failed to fetch"/"NetworkError". Selain jaringan (mis. ditolak RLS) JANGAN diulang —
+      // hasilnya akan sama saja dan cuma menunda pesan error ke user.
+      const isOffline =
+        e?.code === 'unavailable' || /offline|failed to fetch|network/i.test(e?.message || '')
       if (isOffline && retryCount < 2) {
         isLoading.value = false
-        setTimeout(() => load(retryCount + 1), 1500)
-        return
+        await new Promise((r) => setTimeout(r, 1500))
+        return _doLoad(retryCount + 1)
       }
       error.value = e.message || String(e)
       if (!isOffline) {
@@ -123,6 +156,16 @@ export const useSettingsStore = defineStore('settings', () => {
   }
 
   async function save(patch) {
+    // `merged` di bawah dibangun DI ATAS settings.value, dan mergeOne menimpakannya ke DB.
+    // Kalau store belum pernah ter-load, settings.value masih DEFAULT_SETTINGS -> menyimpan
+    // SATU field akan ikut menimpa ~25 field lain di DB (kopLine1, alamat, dst) dengan default.
+    // Muat dulu; kalau tetap gagal, batalkan daripada merusak data tersimpan.
+    if (!isLoaded.value) await load()
+    if (!isLoaded.value) {
+      throw new Error(
+        'Pengaturan belum termuat dari server — penyimpanan dibatalkan supaya nilai yang sudah ada tidak tertimpa default. Periksa koneksi lalu coba lagi.'
+      )
+    }
     isLoading.value = true
     error.value = null
     try {
@@ -153,6 +196,7 @@ export const useSettingsStore = defineStore('settings', () => {
   return {
     settings,
     isLoading,
+    isLoaded,
     error,
     kopLines,
     load,
