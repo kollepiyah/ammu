@@ -778,6 +778,60 @@
           </div>
         </div>
       </div>
+
+      <!-- Kategori Tabungan (dipakai di menu Tabungan → Input Mutasi) -->
+      <div class="mt-5 pt-4 border-t border-[var(--border-subtle)]">
+        <h4 class="font-black text-[var(--text-primary)] text-[11px] uppercase tracking-wider mb-1">
+          <i class="fas fa-wallet text-teal-600 mr-1"></i>Kategori Tabungan
+        </h4>
+        <p class="text-[10px] text-[var(--text-secondary)] italic mb-2">
+          Muncul di menu Tabungan → Input Mutasi (dropdown Kategori). Nominal default opsional
+          (auto-isi saat kategori dipilih).
+        </p>
+        <div class="space-y-1.5 mb-2">
+          <div
+            v-for="(kat, idx) in form.keu_tabungan_kategori"
+            :key="idx"
+            class="grid grid-cols-[1fr_7rem_auto] gap-2 items-center bg-slate-50 dark:bg-slate-700/30 px-3 py-2 rounded-lg"
+          >
+            <input
+              v-model="kat.label"
+              type="text"
+              placeholder="Nama kategori"
+              class="bg-transparent text-xs font-bold text-[var(--text-primary)] outline-none border-b border-[var(--border-default)] pb-1"
+            />
+            <input
+              v-model.number="kat.nominal_default"
+              type="number"
+              min="0"
+              placeholder="0"
+              title="Nominal default (opsional)"
+              class="text-xs font-bold text-[var(--text-primary)] bg-[var(--bg-card)] border border-[var(--border-default)] rounded px-2 py-1 text-right outline-none"
+            />
+            <button
+              @click="removeTabunganKat(idx)"
+              class="text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 px-2 rounded text-xs"
+            >
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        </div>
+        <div class="flex gap-2">
+          <input
+            v-model="newKatTabungan"
+            @keyup.enter="addTabunganKat"
+            type="text"
+            placeholder="Tambah kategori tabungan…"
+            class="flex-1 px-3 py-2 text-xs border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
+          />
+          <button
+            @click="addTabunganKat"
+            class="bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-bold px-3 py-2 rounded-lg text-xs"
+          >
+            <i class="fas fa-plus"></i>
+          </button>
+        </div>
+      </div>
     </div>
 
     <!-- Master Tunjangan -->
@@ -1439,6 +1493,7 @@ function bukaPengaturanPrinter() {
 const newJenis = ref('')
 const newKatMasuk = ref('')
 const newKatKeluar = ref('')
+const newKatTabungan = ref('') // input tambah kategori tabungan
 const searchGuru = ref('')
 const filterLembaga = ref('')
 const generating = ref(false)
@@ -1470,6 +1525,7 @@ const form = reactive({
   keu_bisyaroh_sekolah: {},
   keu_kategori_masuk: [],
   keu_kategori_keluar: [],
+  keu_tabungan_kategori: [], // {id,label,nominal_default} -> settings.keuTabunganKategori
   master_tunjangan: [],
   master_potongan: [],
   bank_nama: '',
@@ -1622,6 +1678,20 @@ function loadFromSettings() {
   form.keu_kategori_keluar = Array.isArray(s.keu_kategori_keluar)
     ? [...s.keu_kategori_keluar]
     : ['Operasional', 'Konsumsi', 'Listrik/Air', 'Perbaikan']
+  // Kategori Tabungan (dibaca TabunganView). Fallback 4 default supaya bisa langsung diedit.
+  form.keu_tabungan_kategori =
+    Array.isArray(s.keuTabunganKategori) && s.keuTabunganKategori.length > 0
+      ? s.keuTabunganKategori.map((k) => ({
+          id: k.id || slugId(k.label || k.nama || ''),
+          label: k.label || k.nama || '',
+          nominal_default: Number(k.nominal_default || k.nominal || 0) || 0
+        }))
+      : [
+          { id: 'umum', label: 'Umum', nominal_default: 0 },
+          { id: 'sukarela', label: 'Sukarela', nominal_default: 0 },
+          { id: 'wisuda', label: 'Wisuda', nominal_default: 0 },
+          { id: 'rihlah', label: 'Rihlah', nominal_default: 0 }
+        ]
   // v.95.0626: + guru_ids (scope per guru/pegawai; kosong = semua)
   const _mapMaster = (t) => ({
     nama: t.nama || '',
@@ -1816,6 +1886,28 @@ function removeKategori(kind, idx) {
   ;(kind === 'masuk' ? form.keu_kategori_masuk : form.keu_kategori_keluar).splice(idx, 1)
 }
 
+function addTabunganKat() {
+  const v = newKatTabungan.value.trim()
+  if (!v) return
+  if (
+    form.keu_tabungan_kategori.some(
+      (k) =>
+        String(k.label || '')
+          .trim()
+          .toLowerCase() === v.toLowerCase()
+    )
+  ) {
+    toast.warning('Kategori tabungan sudah ada')
+    return
+  }
+  form.keu_tabungan_kategori.push({ id: slugId(v), label: v, nominal_default: 0 })
+  newKatTabungan.value = ''
+}
+
+function removeTabunganKat(idx) {
+  form.keu_tabungan_kategori.splice(idx, 1)
+}
+
 function addMaster(kind) {
   ;(kind === 'tunjangan' ? form.master_tunjangan : form.master_potongan).push({
     nama: '',
@@ -1962,6 +2054,13 @@ async function simpan() {
       keu_bisyaroh_sekolah: {},
       keu_kategori_masuk: form.keu_kategori_masuk.filter((t) => t.trim()),
       keu_kategori_keluar: form.keu_kategori_keluar.filter((t) => t.trim()),
+      keuTabunganKategori: form.keu_tabungan_kategori
+        .filter((k) => String(k.label || '').trim())
+        .map((k) => ({
+          id: k.id || slugId(k.label),
+          label: String(k.label).trim(),
+          nominal_default: Number(k.nominal_default || 0) || 0
+        })),
       master_tunjangan: form.master_tunjangan
         .filter((t) => t.nama.trim())
         .map((t) => ({
