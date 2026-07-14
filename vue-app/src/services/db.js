@@ -388,8 +388,22 @@ async function _putRow(collectionName, id, fullDoc, exists) {
   if (exists) {
     const upd = { ...row }
     delete upd[pk] // jangan ubah pk
-    const { error } = await supabase.from(collectionName).update(upd).eq(pk, String(id))
+    // .select(pk) supaya baris yang BERUBAH ikut terbaca. UPDATE yang ditolak kebijakan RLS
+    // TIDAK memberi error — PostgREST cuma balas 204/0 baris — jadi tanpa cek ini penolakan
+    // lolos sebagai "sukses", UI bilang tersimpan, lalu data tampak "balik ke nilai lama"
+    // sesudah refresh. Aman: _putRow(exists=true) hanya dicapai setelah getOne() berhasil,
+    // jadi baris ini pasti lolos kebijakan SELECT.
+    const { data, error } = await supabase
+      .from(collectionName)
+      .update(upd)
+      .eq(pk, String(id))
+      .select(pk)
     if (error) throw error
+    if (!data || data.length === 0) {
+      throw new Error(
+        `Gagal menyimpan ${collectionName}/${id}: tak ada baris yang berubah (kemungkinan ditolak RLS / hak akses kurang).`
+      )
+    }
   } else {
     const { error } = await supabase.from(collectionName).insert(row)
     if (error) throw error
