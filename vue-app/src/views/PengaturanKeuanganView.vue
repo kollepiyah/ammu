@@ -282,7 +282,8 @@
                 <i class="fas fa-trash"></i>
               </button>
             </div>
-            <!-- Pos Dana: tandai jenis ini masuk rekap Uang Kegiatan / Uang Buku (otomatis saat dibayar via POS) -->
+            <!-- Pos Dana: tandai jenis ini masuk rekap Uang Kegiatan / Uang Buku / Tabungan Wajib
+                 (otomatis saat dibayar via POS) -->
             <div class="mt-1.5 flex items-center gap-2">
               <span class="text-[10px] font-bold text-[var(--text-secondary)] whitespace-nowrap">
                 <i class="fas fa-folder-tree mr-1"></i>Pos Dana:
@@ -295,6 +296,7 @@
                 <option value="">Kas Umum</option>
                 <option value="kegiatan">Uang Kegiatan</option>
                 <option value="buku">Uang Buku</option>
+                <option value="tabungan_wajib">Tabungan Wajib</option>
               </select>
             </div>
             <!-- v.110.0626: entry JELAS ke nominal khusus (discoverability per-santri) -->
@@ -1194,7 +1196,8 @@
           class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)] mb-2"
         />
 
-        <!-- Pos Dana: tagihan ini masuk rekap Uang Kegiatan/Buku saat dibayar (auto dari jenis) -->
+        <!-- Pos Dana: tagihan ini masuk rekap Uang Kegiatan/Buku/Tabungan Wajib saat dibayar
+             (auto dari jenis). Tabungan Wajib: generate hanya utk santri kelas akhir. -->
         <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block">
           Pos Dana
         </label>
@@ -1205,6 +1208,7 @@
           <option value="">Kas Umum</option>
           <option value="kegiatan">Uang Kegiatan</option>
           <option value="buku">Uang Buku</option>
+          <option value="tabungan_wajib">Tabungan Wajib</option>
         </select>
 
         <!-- Nominal + jatuh tempo -->
@@ -1582,7 +1586,7 @@ function loadFromSettings() {
                 ? { ...t.nominal_per_santri }
                 : _emptyMap(),
             auto_generate: !!t.auto_generate,
-            // pos dana: '' (kas umum) | 'kegiatan' | 'buku' — penyaring rekap Uang Kegiatan/Buku
+            // pos dana: '' (kas umum) | 'kegiatan' | 'buku' | 'tabungan_wajib' — penyaring rekap pos
             pos: t.pos || '',
             _expanded: false
           }
@@ -2411,7 +2415,8 @@ const genOpen = ref(false)
 const genBusy = ref(false)
 const genJenisId = ref('')
 const genKategori = ref('')
-const genPos = ref('') // pos dana tagihan ('' = kas umum | 'kegiatan' | 'buku'), auto dari jenis
+// pos dana tagihan ('' = kas umum | 'kegiatan' | 'buku' | 'tabungan_wajib'), auto dari jenis
+const genPos = ref('')
 const genNominal = ref(0)
 const genNominalFmt = ref('')
 const genPakaiNominalJenis = ref(false)

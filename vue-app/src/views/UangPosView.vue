@@ -343,7 +343,11 @@ const { scoped: gedungScoped, myGedung, allowRow } = useGedungScope()
 
 const POS_META = {
   kegiatan: { label: 'Uang Kegiatan', icon: 'fa-calendar-check' },
-  buku: { label: 'Uang Buku', icon: 'fa-book-open' }
+  buku: { label: 'Uang Buku', icon: 'fa-book-open' },
+  // Tabungan Wajib = dana kegiatan kelulusan: TAK bisa ditarik, dibelanjakan pesantren —
+  // jadi pos di atas buku induk (spt Uang Kegiatan), BUKAN tabungan santri yg bisa ditarik
+  // (itu keuangan_tabungan_santri, lihat TabunganView).
+  tabungan_wajib: { label: 'Tabungan Wajib', icon: 'fa-graduation-cap' }
 }
 const posKey = computed(() => String(route.meta?.pos || 'kegiatan'))
 const posMeta = computed(() => POS_META[posKey.value] || POS_META.kegiatan)

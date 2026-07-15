@@ -318,6 +318,12 @@ const routes = [
         component: UangPosView,
         meta: { keuangan: true, pos: 'buku' }
       },
+      {
+        path: 'tabungan-wajib',
+        name: 'tabungan-wajib',
+        component: UangPosView,
+        meta: { keuangan: true, pos: 'tabungan_wajib' }
+      },
       // v.72.15.0526: Hutang Piutang
       {
         path: 'hutang-piutang',

@@ -282,12 +282,21 @@ const ALL_MENUS = [
     available: true,
     perm: 'akses_keuangan'
   },
-  // Uang Kegiatan & Uang Buku — rekap pos (kantong dana) di atas buku induk
+  // Uang Kegiatan, Uang Buku & Tabungan Wajib — rekap pos (kantong dana) di atas buku induk
   {
     group: 'Keuangan',
     name: 'Uang Kegiatan',
     path: '/uang-kegiatan',
     icon: 'fa-calendar-check',
+    roles: ['admin'],
+    available: true,
+    perm: 'akses_keuangan'
+  },
+  {
+    group: 'Keuangan',
+    name: 'Tabungan Wajib',
+    path: '/tabungan-wajib',
+    icon: 'fa-graduation-cap',
     roles: ['admin'],
     available: true,
     perm: 'akses_keuangan'

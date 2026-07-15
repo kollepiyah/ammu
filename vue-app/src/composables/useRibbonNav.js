@@ -225,6 +225,7 @@ const TABS = [
           { type: 'large', icon: 'book', label: 'Buku\nInduk', to: '/buku-induk' },
           { type: 'small', icon: 'file', label: 'Uang Kegiatan', to: '/uang-kegiatan' },
           { type: 'small', icon: 'book', label: 'Uang Buku', to: '/uang-buku' },
+          { type: 'small', icon: 'wallet', label: 'Tabungan Wajib', to: '/tabungan-wajib' },
           { type: 'small', icon: 'chart-line', label: 'Laporan', to: '/laporan-keuangan' },
           { type: 'small', icon: 'download', label: 'Riwayat Santri', to: '/riwayat-santri' }
         ]
@@ -448,6 +449,7 @@ const TAB_PATHS = {
     '/buku-induk',
     '/uang-kegiatan',
     '/uang-buku',
+    '/tabungan-wajib',
     '/laporan-keuangan',
     '/hutang-piutang',
     '/keu-pengaturan',
