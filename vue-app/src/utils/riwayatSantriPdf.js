@@ -14,13 +14,27 @@ import {
   savePdf,
   buildKopFromSettings
 } from './pdfBuilder'
+import { terbayarDari } from './tagihan'
 
 function fmtRp(n) {
   const v = Number(n || 0)
   return 'Rp ' + new Intl.NumberFormat('id-ID').format(Math.round(v))
 }
 
-const BULAN_ID = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember']
+const BULAN_ID = [
+  'Januari',
+  'Februari',
+  'Maret',
+  'April',
+  'Mei',
+  'Juni',
+  'Juli',
+  'Agustus',
+  'September',
+  'Oktober',
+  'November',
+  'Desember'
+]
 
 function fmtTgl(d) {
   if (!d) return '-'
@@ -79,7 +93,13 @@ function toDate(v) {
 
 function getDocDate(doc, kind) {
   if (kind === 'tagihan') {
-    return toDate(doc.jatuh_tempo) || toDate(doc.tanggal) || toDate(doc.created_at) || toDate(doc.createdAt) || null
+    return (
+      toDate(doc.jatuh_tempo) ||
+      toDate(doc.tanggal) ||
+      toDate(doc.created_at) ||
+      toDate(doc.createdAt) ||
+      null
+    )
   }
   return toDate(doc.tanggal) || toDate(doc.created_at) || toDate(doc.createdAt) || null
 }
@@ -186,10 +206,12 @@ export async function cetakRiwayatSantriPdf({
     doc.text('Tidak ada tagihan pada periode ini.', 14, y + 4)
     y += 6
   } else {
-    let totalT = 0, totalB = 0, totalS = 0
+    let totalT = 0,
+      totalB = 0,
+      totalS = 0
     const rows = tagihanFiltered.map((t, i) => {
       const tot = Number(t.nominal || t.nominal_total || 0)
-      const byr = Number(t.bayar || t.nominal_terbayar || 0)
+      const byr = terbayarDari(t)
       const sis = Math.max(0, tot - byr)
       totalT += tot
       totalB += byr
@@ -212,13 +234,15 @@ export async function cetakRiwayatSantriPdf({
       startY: y + 2,
       head: [['No', 'Kategori', 'Periode', 'Jatuh Tempo', 'Tagihan', 'Bayar', 'Sisa', 'Status']],
       body: rows,
-      foot: [[
-        { content: 'TOTAL', colSpan: 4, styles: { halign: 'right', fontStyle: 'bold' } },
-        { content: fmtRp(totalT), styles: { halign: 'right', fontStyle: 'bold' } },
-        { content: fmtRp(totalB), styles: { halign: 'right', fontStyle: 'bold' } },
-        { content: fmtRp(totalS), styles: { halign: 'right', fontStyle: 'bold' } },
-        ''
-      ]],
+      foot: [
+        [
+          { content: 'TOTAL', colSpan: 4, styles: { halign: 'right', fontStyle: 'bold' } },
+          { content: fmtRp(totalT), styles: { halign: 'right', fontStyle: 'bold' } },
+          { content: fmtRp(totalB), styles: { halign: 'right', fontStyle: 'bold' } },
+          { content: fmtRp(totalS), styles: { halign: 'right', fontStyle: 'bold' } },
+          ''
+        ]
+      ],
       styles: { fontSize: 8 },
       columnStyles: {
         0: { cellWidth: 8, halign: 'center' },
@@ -240,7 +264,10 @@ export async function cetakRiwayatSantriPdf({
     })
   const trxList = groupTrx(pembayaranFiltered)
 
-  if (y > 240) { doc.addPage(); y = 14 }
+  if (y > 240) {
+    doc.addPage()
+    y = 14
+  }
   doc.setFont(doc._fontMU || 'helvetica', 'bold')
   doc.setFontSize(11)
   doc.text('B. PEMBAYARAN (POS)', 12, y + 4)
@@ -255,17 +282,32 @@ export async function cetakRiwayatSantriPdf({
     let grand = 0
     const rows = trxList.map((t, i) => {
       grand += t.total
-      const itemsStr = t.items.map((it) => `${it.jenis} ${fmtRp(it.nominal).replace('Rp ', '')}`).join('; ')
-      return [String(i + 1), fmtTgl(t.tanggal), t.no_struk || t.trx_id, itemsStr, t.operator, fmtRp(t.total)]
+      const itemsStr = t.items
+        .map((it) => `${it.jenis} ${fmtRp(it.nominal).replace('Rp ', '')}`)
+        .join('; ')
+      return [
+        String(i + 1),
+        fmtTgl(t.tanggal),
+        t.no_struk || t.trx_id,
+        itemsStr,
+        t.operator,
+        fmtRp(t.total)
+      ]
     })
     drawTable(doc, {
       startY: y + 2,
       head: [['No', 'Tanggal', 'No. Struk', 'Item', 'Operator', 'Total']],
       body: rows,
-      foot: [[
-        { content: 'TOTAL PEMBAYARAN', colSpan: 5, styles: { halign: 'right', fontStyle: 'bold' } },
-        { content: fmtRp(grand), styles: { halign: 'right', fontStyle: 'bold' } }
-      ]],
+      foot: [
+        [
+          {
+            content: 'TOTAL PEMBAYARAN',
+            colSpan: 5,
+            styles: { halign: 'right', fontStyle: 'bold' }
+          },
+          { content: fmtRp(grand), styles: { halign: 'right', fontStyle: 'bold' } }
+        ]
+      ],
       styles: { fontSize: 8 },
       columnStyles: {
         0: { cellWidth: 8, halign: 'center' },
@@ -291,7 +333,10 @@ export async function cetakRiwayatSantriPdf({
       return (da?.getTime() || 0) - (db?.getTime() || 0)
     })
 
-  if (y > 240) { doc.addPage(); y = 14 }
+  if (y > 240) {
+    doc.addPage()
+    y = 14
+  }
   doc.setFont(doc._fontMU || 'helvetica', 'bold')
   doc.setFontSize(11)
   doc.text('C. MUTASI TABUNGAN', 12, y + 4)
@@ -303,12 +348,19 @@ export async function cetakRiwayatSantriPdf({
     doc.text('Tidak ada mutasi tabungan pada periode ini.', 14, y + 4)
     y += 6
   } else {
-    let saldo = 0, totalSetor = 0, totalTarik = 0
+    let saldo = 0,
+      totalSetor = 0,
+      totalTarik = 0
     const rows = tabunganFiltered.map((m, i) => {
       const nom = Number(m.nominal || 0)
       const isSetor = (m.jenis || '').toLowerCase() === 'setor'
-      if (isSetor) { saldo += nom; totalSetor += nom }
-      else { saldo -= nom; totalTarik += nom }
+      if (isSetor) {
+        saldo += nom
+        totalSetor += nom
+      } else {
+        saldo -= nom
+        totalTarik += nom
+      }
       return [
         String(i + 1),
         fmtTgl(m.tanggal),
@@ -324,13 +376,15 @@ export async function cetakRiwayatSantriPdf({
       startY: y + 2,
       head: [['No', 'Tanggal', 'Jenis', 'Kategori', 'Setor', 'Tarik', 'Saldo', 'Catatan']],
       body: rows,
-      foot: [[
-        { content: 'TOTAL', colSpan: 4, styles: { halign: 'right', fontStyle: 'bold' } },
-        { content: fmtRp(totalSetor), styles: { halign: 'right', fontStyle: 'bold' } },
-        { content: fmtRp(totalTarik), styles: { halign: 'right', fontStyle: 'bold' } },
-        { content: fmtRp(saldo), styles: { halign: 'right', fontStyle: 'bold' } },
-        ''
-      ]],
+      foot: [
+        [
+          { content: 'TOTAL', colSpan: 4, styles: { halign: 'right', fontStyle: 'bold' } },
+          { content: fmtRp(totalSetor), styles: { halign: 'right', fontStyle: 'bold' } },
+          { content: fmtRp(totalTarik), styles: { halign: 'right', fontStyle: 'bold' } },
+          { content: fmtRp(saldo), styles: { halign: 'right', fontStyle: 'bold' } },
+          ''
+        ]
+      ],
       styles: { fontSize: 8 },
       columnStyles: {
         0: { cellWidth: 8, halign: 'center' },
@@ -344,10 +398,17 @@ export async function cetakRiwayatSantriPdf({
     y = lastTableY(doc) + 4
   }
 
-  if (y > 250) { doc.addPage(); y = 14 }
+  if (y > 250) {
+    doc.addPage()
+    y = 14
+  }
   doc.setFont(doc._fontMU || 'helvetica', 'italic')
   doc.setFontSize(8)
-  doc.text(`Dicetak: ${new Date().toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'short' })}`, 12, y + 6)
+  doc.text(
+    `Dicetak: ${new Date().toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'short' })}`,
+    12,
+    y + 6
+  )
 
   const stats = {
     tagihan: tagihanFiltered.length,

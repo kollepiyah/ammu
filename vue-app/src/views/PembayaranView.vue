@@ -674,6 +674,7 @@ import { useToast } from '@/composables/useToast'
 import { useWaliChildren } from '@/composables/useWaliChildren'
 import { uploadBase64 } from '@/services/storage'
 import { fmtRp, fmtTgl } from '@/utils/format'
+import { sisaTagihan } from '@/utils/tagihan'
 import ReceiptModal from '@/components/ReceiptModal.vue'
 import { buildReceiptStrukHtml } from '@/utils/receiptHtml'
 import { cetakStrukPdf } from '@/utils/strukBuilder'
@@ -774,9 +775,9 @@ const cartUangSaku = ref(0)
 const creatingIntent = ref(false)
 let unsubIntent = null
 
-// sisa tagihan = nominal - sudah dibayar (mirror getSisa TagihanView: data.bayar/dibayar)
+// sisa tagihan = nominal - sudah terbayar (satu sumber logika: utils/tagihan)
 function getSisaVa(t) {
-  return Math.max(0, Number(t.nominal || 0) - Number(t.bayar || t.dibayar || 0))
+  return sisaTagihan(t)
 }
 // tagihan belum-lunas santri terpilih (tertua dulu)
 const vaTagihanList = computed(() => {

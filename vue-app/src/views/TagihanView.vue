@@ -283,6 +283,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
 import { fmtRp, fmtTgl } from '@/utils/format'
+import { terbayarDari, sisaTagihan, statusTagihan } from '@/utils/tagihan'
 import { isSuperAdmin } from '@/utils/roleScope'
 import { writeAuditLog } from '@/utils/auditLog'
 
@@ -363,9 +364,7 @@ function getNamaSantri(id) {
 }
 
 function getSisa(t) {
-  const total = Number(t.nominal || 0)
-  const bayar = Number(t.bayar || t.dibayar || 0) // v.95.0626: fallback 'dibayar' biar cicil pasti terbaca
-  return Math.max(0, total - bayar)
+  return sisaTagihan(t)
 }
 
 function statusBg(t) {
@@ -377,13 +376,13 @@ function statusBg(t) {
 function statusText(t) {
   const s = getSisa(t)
   if (s === 0) return 'text-emerald-700'
-  if (Number(t.bayar || 0) > 0) return 'text-cyan-700'
+  if (terbayarDari(t) > 0) return 'text-cyan-700'
   return 'text-rose-700'
 }
 function statusLabel(t) {
   const s = getSisa(t)
   if (s === 0) return 'Lunas'
-  if (Number(t.bayar || 0) > 0) return 'Cicilan'
+  if (terbayarDari(t) > 0) return 'Cicilan'
   return 'Belum bayar'
 }
 // v.91.0626: badge status sadar jatuh tempo — Lunas / Jatuh tempo / Nunggak (lewat tempo)
@@ -447,9 +446,9 @@ const filteredItems = computed(() => {
   let list = [...baseTagihan.value]
   if (filterStatus.value === 'lunas') list = list.filter((t) => getSisa(t) === 0)
   else if (filterStatus.value === 'belum')
-    list = list.filter((t) => getSisa(t) > 0 && Number(t.bayar || 0) === 0)
+    list = list.filter((t) => getSisa(t) > 0 && terbayarDari(t) === 0)
   else if (filterStatus.value === 'cicil')
-    list = list.filter((t) => Number(t.bayar || 0) > 0 && getSisa(t) > 0)
+    list = list.filter((t) => terbayarDari(t) > 0 && getSisa(t) > 0)
   if (filterKategori.value)
     list = list.filter((t) => String(t.kategori || '') === filterKategori.value)
   const kw = search.value.trim().toLowerCase()
@@ -521,7 +520,7 @@ async function simpanModal() {
         kategori: modalKategori.value,
         periode: modalPeriode.value,
         nominal: Number(modalNominal.value),
-        bayar: 0,
+        terbayar: 0,
         // v.21.104.0527: set status supaya POS deteksi sbg tunggakan
         status: 'belum',
         jatuh_tempo: modalJatuhTempo.value,
@@ -530,13 +529,11 @@ async function simpanModal() {
       toast.success('Tagihan tersimpan')
     } else {
       const t = modalTagihan.value
-      const newBayar = Number(t.bayar || 0) + Number(modalBayarNominal.value || 0)
+      const newBayar = terbayarDari(t) + Number(modalBayarNominal.value || 0)
       // v.21.104.0527: update status sesuai sisa supaya POS akurat
-      const totalT = Number(t.nominal || 0)
-      const sisa = Math.max(0, totalT - newBayar)
-      const statusBaru = sisa === 0 && totalT > 0 ? 'lunas' : newBayar > 0 ? 'partial' : 'belum'
+      const statusBaru = statusTagihan(t.nominal, newBayar)
       await mergeOne('keuangan_tagihan', String(t.id), {
-        bayar: newBayar,
+        terbayar: newBayar,
         status: statusBaru,
         _last_bayar_at: serverTimestamp()
       })

@@ -278,6 +278,7 @@ import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
 import { useGedungScope } from '@/composables/useGedungScope'
 import { fmtRp, fmtTgl } from '@/utils/format'
+import { terbayarDari, sisaTagihan, statusTagihan } from '@/utils/tagihan'
 
 const auth = useAuthStore()
 // v.111: scope Gedung — admin keuangan ber-gedung hanya verifikasi santri gedungnya
@@ -417,10 +418,6 @@ async function saveEdit() {
     savingEdit.value = false
   }
 }
-function sisaTagihan(t) {
-  return (Number(t.nominal) || 0) - (Number(t.bayar || t.dibayar) || 0)
-}
-
 async function verifyTransfer(p) {
   const ok = await confirm({
     title: 'Verifikasi Transfer',
@@ -468,13 +465,10 @@ async function verifyTransfer(p) {
         const tg = await getOne('keuangan_tagihan', String(p.tagihan_id))
         const applied = Array.isArray(tg?.applied_transfer_refs) ? tg.applied_transfer_refs : []
         if (tg && !applied.includes(p.id)) {
-          const newBayar = (Number(tg.bayar) || 0) + Number(p.nominal || 0)
-          const penuh = Number(tg.nominal || 0)
-          const statusBaru =
-            penuh > 0 && newBayar >= penuh - 0.5 ? 'lunas' : newBayar > 0 ? 'partial' : 'belum'
+          const newBayar = terbayarDari(tg) + Number(p.nominal || 0)
+          const statusBaru = statusTagihan(tg.nominal, newBayar)
           await updateOne('keuangan_tagihan', String(p.tagihan_id), {
-            bayar: newBayar,
-            dibayar: newBayar,
+            terbayar: newBayar,
             status: statusBaru,
             last_payment_at: new Date().toISOString(),
             last_payment_ref: buId,

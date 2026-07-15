@@ -210,6 +210,7 @@ import { useToast } from '@/composables/useToast'
 // v.F6e: adapter Supabase (serverTimestamp = shim ISO string).
 import { getAll, getOne, queryColl, setOne, updateOne, serverTimestamp } from '@/services/db'
 import { sortSantri } from '@/utils/santriSort'
+import { terbayarDari, sisaTagihan } from '@/utils/tagihan'
 import { cetakStrukPdf, cetakStrukSlipPdf, buildStrukHtml } from '@/utils/strukBuilder'
 import { buildStrukSlipEscpBase64 } from '@/utils/escpImage'
 import {
@@ -344,8 +345,7 @@ onMounted(async () => {
         if (!sid) continue
         if (!map[sid]) map[sid] = { count: 0, total: 0 }
         map[sid].count++
-        // v.21.104.0527: pakai field 'bayar' (selaras TagihanView), fallback 'dibayar' utk legacy
-        map[sid].total += Number(data.nominal || 0) - Number(data.bayar || data.dibayar || 0)
+        map[sid].total += sisaTagihan(data)
       }
       tunggakanMap.value = map
     } catch (e) {
@@ -454,8 +454,7 @@ async function openModal(s) {
     // v.21.87.0527: kirim sisa (remaining) + meta utk pembayaran sebagian (partial)
     pendingTagihan.value = pending.map((t) => {
       const penuh = Number(t.nominal || 0)
-      // v.21.104.0527: pakai 'bayar' fallback 'dibayar'
-      const dibayar = Number(t.bayar || t.dibayar || 0)
+      const dibayar = terbayarDari(t)
       return {
         tagihan_id: t.id,
         jenis: t.jenis_label || t.jenis_id || t.kategori || 'Tagihan',
@@ -559,16 +558,14 @@ async function handleSimpan(payload) {
         const upd = isLunas
           ? {
               status: 'lunas',
-              bayar: penuh || newDibayar,
-              dibayar: penuh || newDibayar,
+              terbayar: penuh || newDibayar,
               tanggal_lunas: tanggal,
               dibayar_via: 'pos_santri',
               operator_pelunasan: op
             }
           : {
               status: 'partial',
-              bayar: newDibayar,
-              dibayar: newDibayar,
+              terbayar: newDibayar,
               dibayar_via: 'pos_santri',
               operator_pelunasan: op
             }
@@ -592,8 +589,7 @@ async function handleSimpan(payload) {
             periode: item.periode_label || item.periode,
             periode_kode: item.periode,
             nominal: Number(item.nominal),
-            bayar: Number(item.nominal),
-            dibayar: Number(item.nominal),
+            terbayar: Number(item.nominal),
             status: 'lunas',
             jatuh_tempo: item.periode + '-10',
             tanggal_lunas: tanggal,
