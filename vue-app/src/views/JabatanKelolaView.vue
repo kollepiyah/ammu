@@ -63,27 +63,35 @@ function normalize(data) {
   }
   if (rawList.length > 0) {
     // Upgrade dari list strings → items (infer default)
-    return rawList
-      .filter(Boolean)
-      .map((nama) => ({
-        nama: String(nama).trim(),
-        tipe_pegawai: 'guru_pegawai',
-        tipe_lembaga: 'lembaga'
-      }))
+    return rawList.filter(Boolean).map((nama) => ({
+      nama: String(nama).trim(),
+      tipe_pegawai: 'guru_pegawai',
+      tipe_lembaga: 'lembaga'
+    }))
   }
   return null
 }
 
 onMounted(() => {
   _unsub = subscribeDoc('master', 'jabatan', (data) => {
-    const norm = normalize(data)
-    if (norm && norm.length > 0) {
-      items.value = norm
-    } else {
-      // Seed default (idempotent — hanya bila kosong)
+    // Seed HANYA saat dokumennya memang BELUM ADA. Syarat lama ("norm kosong") ikut memicu
+    // seed pada dokumen yang ADA tapi daftarnya kosong — mis. sesudah jabatan TERAKHIR
+    // dihapus (hapus() -> persist([]) -> realtime balik ke sini), atau saat 1 entri cacat
+    // tanpa nama tersaring habis oleh normalize(). Akibatnya 17 default muncul lagi DAN
+    // ditulis balik ke DB: "hapus semua jabatan" jadi mustahil & kustomisasi tertimpa.
+    // master_sel = using(true) (baca publik), jadi null di sini benar-benar berarti
+    // "baris tak ada" — bukan "ditolak RLS".
+    if (data === null) {
       items.value = [...DEFAULT_ITEMS]
-      persist(DEFAULT_ITEMS).catch(() => {})
+      persist(DEFAULT_ITEMS).catch((e) => {
+        // Jangan ditelan: view ini super_admin-only & master_upd = auth_can_manage(), jadi
+        // gagal di sini sinyal nyata (dulu .catch(() => {}) -> daftar tampak ter-seed di
+        // layar padahal DB tak berubah).
+        toast.error('Gagal menyiapkan jabatan default: ' + (e?.message || e))
+      })
+      return
     }
+    items.value = normalize(data) || []
   })
 })
 onUnmounted(() => {
