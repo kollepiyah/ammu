@@ -5,10 +5,21 @@
   "targets": {
     "portal-mambaul-ulum": {
       "hosting": {
-        "main": ["ammuonline"],
-        "legacy": ["portal-mambaul-ulum"],
-        "psb": ["ammuonline-psb"]
+        "main": [
+          "ammuonline"
+        ],
+        "legacy": [
+          "portal-mambaul-ulum"
+        ],
+        "psb": [
+          "ammuonline-psb"
+        ]
       }
+    }
+  },
+  "etags": {
+    "portal-mambaul-ulum": {
+      "extensionInstances": {}
     }
   }
 }
