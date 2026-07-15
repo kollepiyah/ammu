@@ -523,6 +523,7 @@ async function handleSimpan(payload) {
       const lbl = String(j?.label || j?.nama || j?.id || '').trim()
       if (lbl && j?.pos) posByLabel[lbl] = String(j.pos)
     }
+    const tabWajibItems = [] // item pos 'tabungan_wajib' -> picu push ke wali (lihat setelah writes)
     for (const item of payload.items) {
       const id = `pos_${Date.now()}_${Math.floor(Math.random() * 1000)}`
       const docData = {
@@ -544,6 +545,9 @@ async function handleSimpan(payload) {
       // tag pos: utamakan pos eksplisit dari tagihan (generate khusus), fallback dari jenis
       const _pos = item.pos || posByLabel[item.jenis] || ''
       if (_pos) docData.pos = _pos
+      // Tabungan Wajib (dana kelulusan): wali diberi tahu. Pos lain tidak — utk syahriyah dsb
+      // walinya justru sedang di depan kasir, push cuma jadi berisik.
+      if (_pos === 'tabungan_wajib') tabWajibItems.push(item)
       writes.push(setOne('keuangan_buku_induk', id, docData))
       histori.value.unshift(docData)
       totalMasuk += Number(item.nominal || 0)
@@ -606,6 +610,31 @@ async function handleSimpan(payload) {
       }
     }
     await Promise.all(writes)
+    // Push ke WALI utk setoran Tabungan Wajib (dana kelulusan): yang menyetor sering santrinya,
+    // jadi wali perlu diberi tahu. target {type:'santri',id} -> dispatch-push me-resolve token
+    // santri + wali (via pencocokan WA/ayah). Sengaja SETELAH writes sukses: jangan kabari
+    // wali kalau pencatatannya sendiri gagal.
+    if (tabWajibItems.length) {
+      const _totalTw = tabWajibItems.reduce((a, i) => a + Number(i.nominal || 0), 0)
+      const _nid = `ntf_tw_${trxId}`
+      try {
+        await setOne('notif_queue', _nid, {
+          id: _nid,
+          judul: 'Setoran Tabungan Wajib diterima',
+          pesan: `Setoran Tabungan Wajib a.n. ${payload.santri_nama} sebesar ${fmtRp(_totalTw)} telah diterima. Terima kasih.`,
+          kategori: 'pembayaran',
+          target: { type: 'santri', id: String(payload.santri_id) },
+          link: '/tabungan-wajib',
+          ref_id: trxId,
+          dibaca: false,
+          status: 'pending',
+          created_at: new Date().toISOString()
+        })
+      } catch (e) {
+        // best-effort: pembayaran SUDAH tercatat, jangan gagalkan transaksi gara-gara notif
+        console.warn('[pos] notif tabungan wajib gagal:', e?.message || e)
+      }
+    }
     // v.95.0626: kalau update tagihan gagal (mis. dok tak ada / izin), beri tahu — jangan diam (bug cicil tetap 1jt)
     if (tagUpdErr)
       toast.error('Pembayaran tercatat, TAPI sisa tagihan GAGAL diperbarui: ' + tagUpdErr)
