@@ -432,15 +432,31 @@ export async function mergeOne(collectionName, id, data) {
  *  tanpa read); kalau menyentuh ekor jsonb -> read-modify-write. */
 export async function updateOne(collectionName, id, partial) {
   _ensure()
-  const { pk, cols } = _cfg(collectionName)
+  const { pk, json, cols } = _cfg(collectionName)
   const allCols = Object.keys(partial).every((k) => k === 'id' || k === pk || cols.includes(k))
   if (allCols) {
     const row = _split(collectionName, partial)
     delete row[pk] // jangan ubah pk
-    delete row[_cfg(collectionName).json]
-    const { error } = await supabase.from(collectionName).update(row).eq(pk, String(id))
+    delete row[json]
+    // .select(pk) supaya baris yang BERUBAH ikut terbaca — alasan sama dgn _putRow: UPDATE
+    // yang ditolak kebijakan RLS TIDAK memberi error, PostgREST cuma balas 204/0 baris.
+    const { data, error } = await supabase
+      .from(collectionName)
+      .update(row)
+      .eq(pk, String(id))
+      .select(pk)
     if (error) throw error
-    return
+    if (data && data.length > 0) return
+    // 0 baris DI SINI ambigu — beda dgn _putRow(exists=true) yang sudah lolos getOne dulu:
+    // (a) baris memang tak ada, atau (b) ada tapi UPDATE ditolak RLS. Satu getOne memisahkan
+    // keduanya supaya pesannya tidak menyesatkan. Keduanya WAJIB throw: diam-diam no-op =
+    // pemanggil kira tersimpan, lalu data tampak "balik" sesudah refresh.
+    const existing = await getOne(collectionName, id)
+    throw new Error(
+      existing
+        ? `Gagal menyimpan ${collectionName}/${id}: tak ada baris yang berubah (kemungkinan ditolak RLS / hak akses kurang).`
+        : `Gagal menyimpan ${collectionName}/${id}: baris tidak ditemukan (mungkin sudah dihapus, atau tak terbaca karena RLS).`
+    )
   }
   const existing = await getOne(collectionName, id)
   const merged = { ...(existing || {}), ...partial } // shallow (semantik updateDoc)
