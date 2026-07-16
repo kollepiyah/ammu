@@ -38,7 +38,11 @@ android {
     buildTypes {
         release {
             signingConfig signingConfigs.release
-            minifyEnabled false
+            // v.1.1.x: R8 code shrinking + optimization ON (Play "pengoptimalan R8").
+            //   Keep-rules Capacitor/plugin/JS-bridge/custom-plugin ada di proguard-rules.pro.
+            //   WAJIB uji AAB di HP (fingerprint/login Google/notif/widget) sebelum rilis Play.
+            //   shrinkResources SENGAJA belum diaktifkan — nyalakan setelah code-shrink terbukti stabil.
+            minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             // v.99: sertakan simbol debug native ke AAB -> stack trace crash native
             //   terbaca di Play Console (hilangkan warning "belum upload simbol debug").
