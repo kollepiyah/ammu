@@ -240,8 +240,28 @@
             />
           </label>
         </div>
-        <!-- v.1.1.x: model tabel (gaya Braja Soft) + tombol Tambah/Ubah/Hapus + dialog -->
-        <div class="flex justify-end mb-2">
+        <!-- v.1.1.x: model tabel (gaya Braja Soft) + Tahun Ajaran + Salin + Tambah/Ubah/Hapus + dialog -->
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="text-[11px] font-bold text-[var(--text-secondary)] whitespace-nowrap">
+              <i class="fas fa-calendar-alt mr-1 text-teal-500"></i>Tahun Ajaran
+            </span>
+            <select
+              v-model="taAktif"
+              class="text-xs font-bold text-[var(--text-primary)] bg-[var(--bg-card-elevated)] border border-[var(--border-default)] rounded-lg px-2 py-1.5 outline-none"
+            >
+              <option v-for="ta in TA_LIST" :key="ta" :value="ta">
+                {{ ta }}{{ ta === taBerjalan ? ' — berjalan' : '' }}
+              </option>
+            </select>
+            <button
+              @click="salinTahunAjaran"
+              class="inline-flex items-center gap-1.5 text-[11px] font-bold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-900/30 px-3 py-1.5 rounded-lg hover:bg-teal-100 dark:hover:bg-teal-900/50"
+              title="Salin semua jenis + tarif ke tahun ajaran berikutnya"
+            >
+              <i class="fas fa-copy"></i>Salin ke {{ taBerikut }}
+            </button>
+          </div>
           <button
             @click="openJenisBaru"
             class="inline-flex items-center gap-1.5 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-bold px-4 py-2 rounded-lg text-xs"
@@ -1527,7 +1547,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 // v.F6e: adapter Supabase (serverTimestamp = shim ISO string).
 import { getAll, setOne, mergeOne, serverTimestamp } from '@/services/db'
@@ -1627,6 +1647,26 @@ const dlgIsNew = ref(false)
 const dlgIdx = ref(-1)
 const dlgJenis = ref(null)
 const dlgTarif = ref(false)
+// v.1.1.x: jenis pembayaran per Tahun Ajaran (Braja "Daftar Jenis Biaya per Tahun Pelajaran")
+const jenisByTA = ref({}) // { '2026/2027': [ ...jenis ] }
+const taAktif = ref('')
+const taBerjalan = computed(() => {
+  const d = new Date()
+  const y = d.getFullYear()
+  return d.getMonth() >= 6 ? `${y}/${y + 1}` : `${y - 1}/${y}` // Juli = awal tahun ajaran
+})
+const taBerikut = computed(() => {
+  const a =
+    Number(String(taAktif.value || taBerjalan.value).split('/')[0]) || new Date().getFullYear()
+  return `${a + 1}/${a + 2}`
+})
+const TA_LIST = computed(() => {
+  const set = new Set(Object.keys(jenisByTA.value))
+  set.add(taBerjalan.value)
+  const a = Number(taBerjalan.value.split('/')[0])
+  set.add(`${a + 1}/${a + 2}`)
+  return [...set].sort()
+})
 // v.110: Excel template + impor (jenis pembayaran & bisyaroh pegawai)
 const { exportSimple, importFile } = useExcel()
 const imporJenisBusy = ref(false)
@@ -1788,8 +1828,25 @@ function loadFromSettings() {
   arr.forEach((j) => {
     if (!j.frekuensi) j.frekuensi = j.auto_generate ? 'bulanan' : 'manual'
   })
-  jenisList.value = arr
-  form.keu_jenis_tagihan = arr.map((t) => t.label)
+  // v.1.1.x: jenis per Tahun Ajaran. Pakai byTA baru bila ada; else migrasi legacy → byTA[TA berjalan].
+  const rawByTA = s.keuTagihanJenisByTA
+  const nextByTA = {}
+  if (rawByTA && typeof rawByTA === 'object' && Object.keys(rawByTA).length > 0) {
+    for (const [ta, list] of Object.entries(rawByTA)) {
+      const norm = (Array.isArray(list) ? list : []).map(normalizeJenisRaw)
+      if (!norm.find((t) => t.id === 'syahriyah'))
+        norm.unshift(
+          normalizeJenisRaw({ id: 'syahriyah', label: 'Syahriyah', frekuensi: 'bulanan' })
+        )
+      nextByTA[ta] = norm
+    }
+  }
+  const taNow = taBerjalan.value
+  if (!nextByTA[taNow]) nextByTA[taNow] = arr // migrasi dari keuTagihanJenis (global) lama
+  jenisByTA.value = nextByTA
+  taAktif.value = taNow
+  jenisList.value = nextByTA[taNow]
+  form.keu_jenis_tagihan = jenisList.value.map((t) => t.label)
 
   form.keu_bisyaroh_pagi = fmtRp(s.keu_bisyaroh_pagi || 0)
   form.keu_bisyaroh_sore = fmtRp(s.keu_bisyaroh_sore || 0)
@@ -2089,58 +2146,65 @@ const filteredGuru = computed(() => {
   return list.sort((a, b) => String(a.nama || '').localeCompare(String(b.nama || '')))
 })
 
+// v.1.1.x: serialize satu daftar jenis (dipakai per Tahun Ajaran saat Simpan Semua)
+function serializeJenisList(list) {
+  return (list || [])
+    .filter((t) => String(t.label || '').trim())
+    .map((t) => {
+      const perL = {}
+      if (t.nominal_per_lembaga && typeof t.nominal_per_lembaga === 'object') {
+        for (const [k, v] of Object.entries(t.nominal_per_lembaga)) {
+          const n = Number(v) || 0
+          if (n > 0) perL[k] = n
+        }
+      }
+      const perK = {}
+      if (t.nominal_per_kelas && typeof t.nominal_per_kelas === 'object') {
+        for (const [lemb, kelasMap] of Object.entries(t.nominal_per_kelas)) {
+          if (!kelasMap || typeof kelasMap !== 'object') continue
+          const inner = {}
+          for (const [kls, val] of Object.entries(kelasMap)) {
+            const n = Number(val) || 0
+            if (n > 0) inner[kls] = n
+          }
+          if (Object.keys(inner).length > 0) perK[lemb] = inner
+        }
+      }
+      const perS = {}
+      if (t.nominal_per_santri && typeof t.nominal_per_santri === 'object') {
+        for (const [sid, v] of Object.entries(t.nominal_per_santri)) {
+          const n = Number(v) || 0
+          if (n > 0) perS[String(sid)] = n
+        }
+      }
+      const wl = Array.isArray(t.lembaga_only)
+        ? t.lembaga_only.filter((x) => String(x || '').trim())
+        : []
+      const frekuensi = t.frekuensi || (t.auto_generate ? 'bulanan' : 'manual')
+      return {
+        id: t.id || slugId(t.label),
+        label: String(t.label || '').trim(),
+        nominal_default: Number(t.nominal_default || 0) || 0,
+        nominal_per_lembaga: perL,
+        nominal_per_kelas: perK,
+        nominal_per_santri: perS,
+        lembaga_only: wl,
+        frekuensi,
+        auto_generate: frekuensi === 'bulanan',
+        pos: t.pos || ''
+      }
+    })
+}
+
 async function simpan() {
   saving.value = true
   try {
-    const jenis = jenisList.value
-      .filter((t) => String(t.label || '').trim())
-      .map((t) => {
-        // v.21.97.0527: simpan nominal_per_lembaga (override per lembaga).
-        const perL = {}
-        if (t.nominal_per_lembaga && typeof t.nominal_per_lembaga === 'object') {
-          for (const [k, v] of Object.entries(t.nominal_per_lembaga)) {
-            const n = Number(v) || 0
-            if (n > 0) perL[k] = n
-          }
-        }
-        // v.21.100.0527: serialize nominal_per_kelas — buang yg 0
-        const perK = {}
-        if (t.nominal_per_kelas && typeof t.nominal_per_kelas === 'object') {
-          for (const [lemb, kelasMap] of Object.entries(t.nominal_per_kelas)) {
-            if (!kelasMap || typeof kelasMap !== 'object') continue
-            const inner = {}
-            for (const [kls, val] of Object.entries(kelasMap)) {
-              const n = Number(val) || 0
-              if (n > 0) inner[kls] = n
-            }
-            if (Object.keys(inner).length > 0) perK[lemb] = inner
-          }
-        }
-        // v.95.0626: serialize nominal_per_santri (buang yg 0)
-        const perS = {}
-        if (t.nominal_per_santri && typeof t.nominal_per_santri === 'object') {
-          for (const [sid, v] of Object.entries(t.nominal_per_santri)) {
-            const n = Number(v) || 0
-            if (n > 0) perS[String(sid)] = n
-          }
-        }
-        const wl = Array.isArray(t.lembaga_only)
-          ? t.lembaga_only.filter((x) => String(x || '').trim())
-          : []
-        return {
-          id: t.id || slugId(t.label),
-          label: String(t.label || '').trim(),
-          nominal_default: Number(t.nominal_default || 0) || 0,
-          nominal_per_lembaga: perL,
-          nominal_per_kelas: perK,
-          nominal_per_santri: perS,
-          lembaga_only: wl,
-          // v.1.1.x: frekuensi = sumber kebenaran; auto_generate diturunkan (backward compat cron/generator)
-          frekuensi: t.frekuensi || (t.auto_generate ? 'bulanan' : 'manual'),
-          auto_generate: (t.frekuensi || (t.auto_generate ? 'bulanan' : 'manual')) === 'bulanan',
-          pos: t.pos || ''
-        }
-      })
+    // v.1.1.x: serialize semua Tahun Ajaran; global keuTagihanJenis = TA berjalan (konsumen lama tak berubah)
+    const byTA = {}
+    for (const [ta, list] of Object.entries(jenisByTA.value)) {
+      byTA[ta] = serializeJenisList(list)
+    }
+    const jenis = byTA[taBerjalan.value] || serializeJenisList(jenisList.value)
     const payload = {
       keu_jatuh_tempo: form.keu_jatuh_tempo,
       keu_auto_generate_cron: form.keu_auto_generate_cron,
@@ -2153,6 +2217,7 @@ async function simpan() {
         ? Number(form.posStrukLeftMm)
         : 0,
       keuTagihanJenis: jenis,
+      keuTagihanJenisByTA: byTA,
       keu_jenis_tagihan: jenis.map((t) => t.label),
       keu_bisyaroh_pagi: parseRp(form.keu_bisyaroh_pagi),
       keu_bisyaroh_sore: parseRp(form.keu_bisyaroh_sore),
@@ -2308,6 +2373,77 @@ function simpanJenisDialog() {
   dlgOpen.value = false
   toast.info('Perubahan siap — klik "Simpan Semua" untuk menyimpan permanen.')
 }
+
+// ==== v.1.1.x: Jenis per Tahun Ajaran + "Salin ke tahun berikutnya" (Braja Copy) ====
+function normalizeJenisRaw(t) {
+  if (typeof t !== 'object' || t === null) {
+    return {
+      id: slugId(t),
+      label: String(t || ''),
+      nominal_default: 0,
+      nominal_per_lembaga: {},
+      lembaga_only: [],
+      nominal_per_kelas: {},
+      nominal_per_santri: {},
+      frekuensi: 'manual',
+      auto_generate: false,
+      pos: '',
+      _expanded: false
+    }
+  }
+  const frekuensi = t.frekuensi || (t.auto_generate ? 'bulanan' : 'manual')
+  return {
+    id: t.id || slugId(t.label || t.nama || ''),
+    label: t.label || t.nama || '',
+    nominal_default: Number(t.nominal_default || t.nominal || 0) || 0,
+    nominal_per_lembaga:
+      t.nominal_per_lembaga && typeof t.nominal_per_lembaga === 'object'
+        ? { ...t.nominal_per_lembaga }
+        : {},
+    lembaga_only: Array.isArray(t.lembaga_only) ? [...t.lembaga_only] : [],
+    nominal_per_kelas:
+      t.nominal_per_kelas && typeof t.nominal_per_kelas === 'object'
+        ? JSON.parse(JSON.stringify(t.nominal_per_kelas))
+        : {},
+    nominal_per_santri:
+      t.nominal_per_santri && typeof t.nominal_per_santri === 'object'
+        ? { ...t.nominal_per_santri }
+        : {},
+    frekuensi,
+    auto_generate: frekuensi === 'bulanan',
+    pos: t.pos || '',
+    _expanded: false
+  }
+}
+function ensureTA(ta) {
+  if (!jenisByTA.value[ta]) {
+    jenisByTA.value[ta] = [
+      normalizeJenisRaw({ id: 'syahriyah', label: 'Syahriyah', frekuensi: 'bulanan' })
+    ]
+  }
+  return jenisByTA.value[ta]
+}
+function salinTahunAjaran() {
+  const src = jenisByTA.value[taAktif.value] || []
+  const target = taBerikut.value
+  if (
+    Array.isArray(jenisByTA.value[target]) &&
+    jenisByTA.value[target].length > 0 &&
+    !confirm(
+      `Tahun ${target} sudah punya ${jenisByTA.value[target].length} jenis. Timpa dengan salinan dari ${taAktif.value}?`
+    )
+  )
+    return
+  jenisByTA.value[target] = JSON.parse(JSON.stringify(src))
+  taAktif.value = target // watch → jenisList ikut pindah
+  toast.success(`Jenis disalin ke ${target}. Edit seperlunya lalu klik "Simpan Semua".`)
+}
+// Ganti Tahun Ajaran aktif → jenisList ikut (arsip per-TA). form label ikut disegarkan.
+watch(taAktif, (ta) => {
+  if (!ta) return
+  jenisList.value = ensureTA(ta)
+  form.keu_jenis_tagihan = jenisList.value.map((t) => t.label)
+})
 
 // ============================================================================
 // v.110: Template + Impor — Jenis Pembayaran & Bisyaroh Pegawai (TU isi, admin impor).
@@ -2525,8 +2661,8 @@ async function autoGenerate() {
     return
   generating.value = true
   try {
-    // v.1.1.x: proses jenis bulanan + tahunan (manual dilewati)
-    const jenisAuto = (jenisList.value || []).filter(
+    // v.1.1.x: proses jenis bulanan + tahunan (manual dilewati) — pakai jenis TAHUN AJARAN BERJALAN
+    const jenisAuto = (jenisByTA.value[taBerjalan.value] || jenisList.value || []).filter(
       (j) =>
         (j.frekuensi === 'bulanan' || j.frekuensi === 'tahunan') && String(j.label || '').trim()
     )
