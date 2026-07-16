@@ -21,6 +21,55 @@ Versioning: `v.{nomor-urut}.{MMDDtahunmu}` (mis: `v.108.0527`)
 
 ---
 
+## [v.1.1.8] — 2026-07-15 — Audit: tutup kebocoran era-Firestore + benahi jalur simpan
+
+Rilis hasil audit menyeluruh. Tidak ada fitur baru — isinya menutup satu kebocoran
+data yang nyata dan membenahi jalur simpan yang bisa gagal diam-diam.
+
+### Security (Keamanan)
+
+- **Cloud Functions & extensions era-Firestore DICOPOT** (56 fungsi → 0). Sisa migrasi
+  Supabase yang ternyata masih ter-deploy — dan sebagian bocor:
+  - `findUserByLogin` membalas record guru penuh (nama, WA, jabatan, `role_sistem`,
+    `firebase_uid`) **tanpa autentikasi apa pun**, CORS terbuka. Jalur santri identik.
+    Bonus: full-collection scan tanpa limit pada input tak-cocok = vektor biaya/DoS anonim.
+  - `verifyAdminPassword` = oracle brute-force sandi tanpa rate-limit; `?migrate=1` menulis
+    ke Firestore tanpa sandi sama sekali.
+  - `stripPlaintextPasswords` = batch update massal, tanpa auth, sandi fallback `'1234'`.
+  - Ikut mati: 2 cron yang masih menulis ke Firestore yatim tiap bulan, dan 9 extensions
+    BigQuery (37 fungsi) yang sumbernya Firestore mati. Dataset BigQuery historis aman.
+- `firebase.json` tak lagi mendaftarkan `functions` → `firebase deploy` polos tak bisa
+  membangkitkannya kembali. Firebase kini **Hosting + FCM saja**.
+
+### Fixed (Perbaikan)
+
+- **Simpan yang ditolak RLS tak lagi lolos sebagai "sukses".** PostgREST tak memberi error
+  saat RLS menolak UPDATE (cuma 204/0 baris), dan jalur cepat `db.js updateOne` tak
+  memeriksanya — jadi UI bilang tersimpan, lalu data tampak "balik" sesudah refresh.
+  Ironisnya pemanggil sudah siap menangani gagal, tapi justru menghitungnya sebagai sukses
+  (mis. generator NIS, ubah status guru, batalkan tagihan VA).
+- **`updateOne` tak lagi meng-UPSERT baris tak-ada** → tak bisa lagi melahirkan stub row
+  cacat. Kedua jalur (kolom riil & jsonb) kini berperilaku sama; `mergeOne` sengaja tetap
+  boleh membuat baris (kontraknya cermin `setDoc(merge:true)`).
+- **Kolom `terbayar` jadi sumber kebenaran** — sebelumnya tak pernah diisi siapa pun (semua
+  menulis `bayar`/`dibayar` ke jsonb), jadi selalu 0 dan laporan SQL yang mempercayainya
+  akan diam-diam salah. Tampilan aplikasi tidak berubah.
+- **Kelola Jabatan**: menghapus jabatan terakhir tak lagi memunculkan (dan menulis balik)
+  17 jabatan default, sehingga daftar yang sengaja dikosongkan tidak tertimpa.
+- `.husky/pre-commit` tak lagi memblokir **penghapusan** file sensitif (yang berbahaya itu
+  menambah, bukan membuang).
+
+### Notes (Catatan Rilis)
+
+- ⚠️ **`supabase db push` WAJIB dijalankan LEBIH DULU**, sebelum deploy web/Electron —
+  migrasi `20260715120000` mem-backfill kolom `terbayar` dari jsonb. Kalau terbalik,
+  tagihan lama sempat terbaca `terbayar = 0` (helper punya fallback, tapi jangan diandalkan).
+- `bayar`/`dibayar` lama di jsonb sengaja TIDAK dihapus — jaring pengaman untuk Electron
+  yang masih memuat snapshot bundle lama. Bersihkan di rilis berikutnya.
+- Uji tumbuh 53 → 76 (pertama kalinya `db.js` punya tes).
+
+---
+
 ## [v.1.1.7] — 2026-07-14 — Uang Kegiatan & Uang Buku + Editor Keuangan
 
 Dua pos dana baru di Keuangan: **Uang Kegiatan** dan **Uang Buku**. Masing-masing
