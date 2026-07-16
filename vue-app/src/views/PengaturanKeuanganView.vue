@@ -240,262 +240,91 @@
             />
           </label>
         </div>
-        <div class="space-y-1.5 mb-2">
-          <div
-            v-for="(jenis, idx) in jenisList"
-            :key="idx"
-            class="bg-slate-50 dark:bg-slate-700/30 px-3 py-2 rounded-lg"
-          >
-            <div class="grid grid-cols-12 gap-2 items-center">
-              <input
-                v-model="jenis.label"
-                type="text"
-                class="col-span-5 bg-transparent text-sm font-bold text-[var(--text-primary)] outline-none border-b border-[var(--border-default)] pb-1"
-              />
-              <input
-                v-model.number="jenis.nominal_default"
-                type="number"
-                min="0"
-                class="col-span-3 bg-[var(--bg-card)] text-xs font-bold text-[var(--text-primary)] outline-none border border-[var(--border-default)] rounded px-2 py-1"
-              />
-              <label
-                class="col-span-2 flex items-center gap-1 text-[10px] font-bold text-[var(--text-secondary)]"
-              >
-                <input v-model="jenis.auto_generate" type="checkbox" class="w-3 h-3" />
-                Auto
-              </label>
-              <button
-                @click="toggleExpandJenis(jenis)"
-                :title="
-                  jenis._expanded ? 'Tutup override' : 'Atur nominal per lembaga/kelas/santri'
-                "
-                class="col-span-1 text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/30 px-2 py-1 rounded text-xs"
-              >
-                <i :class="['fas', jenis._expanded ? 'fa-chevron-up' : 'fa-sliders-h']"></i>
-              </button>
-              <button
-                @click="removeJenis(idx)"
-                :disabled="jenis.id === 'syahriyah'"
-                :title="jenis.id === 'syahriyah' ? 'Protected - jenis dasar' : 'Hapus'"
-                class="col-span-1 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 px-2 py-1 rounded text-xs disabled:opacity-30 disabled:cursor-not-allowed"
-              >
-                <i class="fas fa-trash"></i>
-              </button>
-            </div>
-            <!-- Pos Dana: tandai jenis ini masuk rekap Uang Kegiatan / Uang Buku / Tabungan Wajib
-                 (otomatis saat dibayar via POS) -->
-            <div class="mt-1.5 flex items-center gap-2">
-              <span class="text-[10px] font-bold text-[var(--text-secondary)] whitespace-nowrap">
-                <i class="fas fa-folder-tree mr-1"></i>Pos Dana:
-              </span>
-              <select
-                v-model="jenis.pos"
-                class="text-[10px] font-bold text-[var(--text-primary)] bg-[var(--bg-card)] border border-[var(--border-default)] rounded px-2 py-1 outline-none"
-                title="Jika bukan Kas Umum, pembayaran jenis ini otomatis masuk rekap pos terkait (tetap terhitung di Buku Induk)"
-              >
-                <option value="">Kas Umum</option>
-                <option value="kegiatan">Uang Kegiatan</option>
-                <option value="buku">Uang Buku</option>
-                <option value="tabungan_wajib">Tabungan Wajib</option>
-              </select>
-            </div>
-            <!-- v.110.0626: entry JELAS ke nominal khusus (discoverability per-santri) -->
-            <button
-              v-if="!jenis._expanded"
-              type="button"
-              @click="toggleExpandJenis(jenis)"
-              class="mt-1.5 inline-flex items-center gap-1.5 text-[10px] font-bold text-teal-700 dark:text-teal-300 hover:underline"
-            >
-              <i class="fas fa-sliders-h"></i>Atur nominal khusus (per lembaga / kelas / santri)
-            </button>
-            <!-- v.21.100.0527: Whitelist + override per-lembaga + per-kelas -->
-            <div
-              v-if="jenis._expanded"
-              class="mt-2 pt-2 border-t border-[var(--border-subtle)] space-y-3"
-            >
-              <!-- 1) Whitelist lembaga -->
-              <div>
-                <p class="text-[10px] text-[var(--text-secondary)] italic mb-1">
-                  <i class="fas fa-filter mr-1"></i>Hanya untuk lembaga ini (kosong = semua
-                  lembaga):
-                </p>
-                <div class="flex flex-wrap gap-1.5">
-                  <label
-                    v-for="lemb in lembagaRaw || []"
-                    :key="`${jenis.id}_wl_${lemb.lembaga}`"
-                    class="inline-flex items-center gap-1 text-[10px] font-bold cursor-pointer bg-[var(--bg-card)] px-2 py-1 rounded border border-[var(--border-default)]"
-                  >
-                    <input
-                      type="checkbox"
-                      :checked="
-                        Array.isArray(jenis.lembaga_only) &&
-                        jenis.lembaga_only.includes(lemb.lembaga)
-                      "
-                      @change="toggleLembagaOnly(jenis, lemb.lembaga)"
-                      class="w-3 h-3 accent-teal-600"
-                    />
-                    {{ lemb.lembaga }}
-                  </label>
-                </div>
-                <p
-                  v-if="Array.isArray(jenis.lembaga_only) && jenis.lembaga_only.length > 0"
-                  class="text-[9px] text-teal-600 mt-1"
-                >
-                  <i class="fas fa-check-circle"></i> Hanya muncul di POS untuk:
-                  {{ jenis.lembaga_only.join(', ') }}
-                </p>
-              </div>
-
-              <!-- 2) Override per-lembaga -->
-              <div>
-                <p class="text-[10px] text-[var(--text-secondary)] italic mb-1.5">
-                  <i class="fas fa-building mr-1"></i>Nominal per lembaga (override default). Kosong
-                  / 0 = pakai default.
-                </p>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                  <div
-                    v-for="lemb in lembagaScope(jenis)"
-                    :key="`${jenis.id}_pl_${lemb.lembaga}`"
-                    class="flex items-center gap-2 bg-[var(--bg-card)] rounded px-2 py-1"
-                  >
-                    <span
-                      class="text-[10px] font-bold text-[var(--text-secondary)] flex-1 truncate"
-                      >{{ lemb.lembaga }}</span
-                    >
-                    <input
-                      :value="jenis.nominal_per_lembaga?.[lemb.lembaga] || ''"
-                      @input="
-                        jenis.nominal_per_lembaga = {
-                          ...(jenis.nominal_per_lembaga || {}),
-                          [lemb.lembaga]: Number($event.target.value) || 0
-                        }
-                      "
-                      type="number"
-                      min="0"
-                      :placeholder="String(jenis.nominal_default || 0)"
-                      class="w-28 text-xs font-bold text-[var(--text-primary)] outline-none border border-[var(--border-default)] rounded px-2 py-1 text-right"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <!-- 3) Override per-kelas (paling spesifik) -->
-              <div>
-                <p class="text-[10px] text-[var(--text-secondary)] italic mb-1.5">
-                  <i class="fas fa-layer-group mr-1"></i>Nominal per kelas (paling spesifik,
-                  mengalahkan per-lembaga). Kosong = pakai per-lembaga / default.
-                </p>
-                <div class="space-y-2">
-                  <div
-                    v-for="lemb in lembagaScope(jenis)"
-                    :key="`${jenis.id}_pk_${lemb.lembaga}`"
-                    class="bg-[var(--bg-card)] rounded p-2 border border-[var(--border-subtle)]"
-                  >
-                    <p class="text-[10px] font-black text-[var(--text-secondary)] mb-1">
-                      {{ lemb.lembaga }}
-                    </p>
-                    <div
-                      v-if="kelasOfLembaga(lemb).length === 0"
-                      class="text-[9px] text-[var(--text-tertiary)] italic"
-                    >
-                      Lembaga ini belum punya kelas
-                    </div>
-                    <div v-else class="grid grid-cols-2 md:grid-cols-3 gap-1.5">
-                      <div
-                        v-for="kls in kelasOfLembaga(lemb)"
-                        :key="`${jenis.id}_pk_${lemb.lembaga}_${kls}`"
-                        class="flex items-center gap-1.5"
-                      >
-                        <span
-                          class="text-[9px] font-bold text-[var(--text-secondary)] w-12 truncate"
-                          >{{ kls }}</span
-                        >
-                        <input
-                          :value="(jenis.nominal_per_kelas?.[lemb.lembaga] || {})[kls] || ''"
-                          @input="setNominalKelas(jenis, lemb.lembaga, kls, $event.target.value)"
-                          type="number"
-                          min="0"
-                          :placeholder="
-                            String(
-                              (jenis.nominal_per_lembaga || {})[lemb.lembaga] ||
-                                jenis.nominal_default ||
-                                0
-                            )
-                          "
-                          class="flex-1 text-[10px] font-bold text-[var(--text-primary)] outline-none border border-[var(--border-default)] rounded px-1.5 py-0.5 text-right"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <!-- v.95.0626: override nominal per SANTRI (santri yg bayar syahriyahnya beda) -->
-              <div>
-                <p class="text-[10px] text-[var(--text-secondary)] italic mb-1">
-                  <i class="fas fa-user-tag mr-1"></i>Nominal khusus per santri (yg bayarnya beda) —
-                  <b>{{ overrideSantriCount(jenis) }}</b> di-set:
-                </p>
-                <input
-                  v-model="perSantriSearch[jenis.id]"
-                  type="text"
-                  placeholder="cari nama / No. Induk santri..."
-                  class="w-full px-2 py-1 text-xs border border-[var(--border-default)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)] mb-1.5"
-                />
-                <div class="space-y-1 max-h-48 overflow-y-auto">
-                  <div
-                    v-for="s in santriCariFor(jenis)"
-                    :key="`${jenis.id}_ps_${s.id}`"
-                    class="flex items-center gap-2 bg-[var(--bg-card)] rounded px-2 py-1 border border-[var(--border-subtle)]"
-                  >
-                    <span class="flex-1 text-[10px] font-bold text-[var(--text-primary)] truncate"
-                      >{{ s.nama }}
-                      <span class="text-[var(--text-tertiary)] font-normal">{{
-                        s.nis || '-'
-                      }}</span></span
-                    >
-                    <input
-                      :value="(jenis.nominal_per_santri || {})[String(s.id)] || ''"
-                      @input="setNominalSantri(jenis, s.id, $event.target.value)"
-                      type="number"
-                      min="0"
-                      :placeholder="String(jenis.nominal_default || 0)"
-                      class="w-24 text-[10px] font-bold text-[var(--text-primary)] outline-none border border-[var(--border-default)] rounded px-1.5 py-0.5 text-right"
-                    />
-                  </div>
-                  <p
-                    v-if="santriCariFor(jenis).length === 0"
-                    class="text-[9px] text-[var(--text-tertiary)] italic px-1 py-1"
-                  >
-                    {{
-                      perSantriSearch[jenis.id]
-                        ? 'Santri tidak ditemukan.'
-                        : 'Ketik nama/No. Induk untuk set nominal khusus. Yang sudah di-set muncul di sini.'
-                    }}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-          <p
-            v-if="jenisList.length === 0"
-            class="text-xs text-[var(--text-tertiary)] italic text-center py-2"
-          >
-            Belum ada jenis tagihan. Tambah di bawah.
-          </p>
-        </div>
-        <div class="flex gap-2">
-          <input
-            v-model="newJenis"
-            @keyup.enter="addJenis"
-            type="text"
-            class="flex-1 px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
-          />
+        <!-- v.1.1.x: model tabel (gaya Braja Soft) + tombol Tambah/Ubah/Hapus + dialog -->
+        <div class="flex justify-end mb-2">
           <button
-            @click="addJenis"
-            class="bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-bold px-4 py-2 rounded-lg text-xs whitespace-nowrap"
+            @click="openJenisBaru"
+            class="inline-flex items-center gap-1.5 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-bold px-4 py-2 rounded-lg text-xs"
           >
-            <i class="fas fa-plus mr-1"></i>Tambah
+            <i class="fas fa-plus"></i>Tambah Jenis
           </button>
+        </div>
+        <div
+          class="border border-[var(--border-subtle)] rounded-xl overflow-hidden overflow-x-auto"
+        >
+          <table class="w-full text-sm min-w-[660px]">
+            <thead>
+              <tr
+                class="bg-[var(--bg-card-elevated)] text-[10px] uppercase tracking-wider text-[var(--text-secondary)]"
+              >
+                <th class="text-left px-3 py-2.5 font-black w-10">No</th>
+                <th class="text-left px-3 py-2.5 font-black">Nama Jenis</th>
+                <th class="text-left px-3 py-2.5 font-black">Pos Dana</th>
+                <th class="text-right px-3 py-2.5 font-black">Nominal Default</th>
+                <th class="text-left px-3 py-2.5 font-black">Penagihan</th>
+                <th class="text-left px-3 py-2.5 font-black">Tarif Khusus</th>
+                <th class="text-center px-3 py-2.5 font-black w-20">Aksi</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-[var(--border-subtle)]">
+              <tr
+                v-for="(jenis, idx) in jenisList"
+                :key="jenis.id || idx"
+                class="hover:bg-[var(--bg-card-elevated)] transition"
+              >
+                <td class="px-3 py-2 text-[var(--text-tertiary)]">{{ idx + 1 }}</td>
+                <td class="px-3 py-2 font-bold text-[var(--text-primary)]">{{ jenis.label }}</td>
+                <td class="px-3 py-2 text-[var(--text-secondary)] text-xs">
+                  {{ posLabel(jenis.pos) }}
+                </td>
+                <td class="px-3 py-2 text-right font-bold text-[var(--text-primary)]">
+                  <span v-if="Number(jenis.nominal_default) > 0"
+                    >Rp {{ Number(jenis.nominal_default).toLocaleString('id-ID') }}</span
+                  >
+                  <span v-else class="text-[var(--text-tertiary)] font-normal italic"
+                    >variabel</span
+                  >
+                </td>
+                <td class="px-3 py-2">
+                  <span
+                    :class="[
+                      'text-[11px] font-bold px-2 py-0.5 rounded-md whitespace-nowrap',
+                      frekMeta(jenis.frekuensi).cls
+                    ]"
+                    >{{ frekMeta(jenis.frekuensi).label }}</span
+                  >
+                </td>
+                <td class="px-3 py-2 text-[11px] text-[var(--text-secondary)]">
+                  <span v-if="tarifKhususInfo(jenis)">{{ tarifKhususInfo(jenis) }}</span>
+                  <span v-else class="text-[var(--text-tertiary)]">—</span>
+                </td>
+                <td class="px-3 py-2">
+                  <div class="flex items-center justify-center gap-1">
+                    <button
+                      @click="openJenisDialog(jenis)"
+                      class="w-7 h-7 rounded-lg border border-[var(--border-default)] text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/30 flex items-center justify-center"
+                      title="Ubah"
+                    >
+                      <i class="fas fa-pen text-xs"></i>
+                    </button>
+                    <button
+                      @click="removeJenis(idx)"
+                      :disabled="jenis.id === 'syahriyah'"
+                      :title="jenis.id === 'syahriyah' ? 'Jenis dasar — tak bisa dihapus' : 'Hapus'"
+                      class="w-7 h-7 rounded-lg border border-[var(--border-default)] text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
+                      <i class="fas fa-trash text-xs"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              <tr v-if="jenisList.length === 0">
+                <td colspan="7" class="text-center text-[var(--text-tertiary)] italic py-4">
+                  Belum ada jenis pembayaran. Klik "Tambah Jenis".
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
@@ -1156,6 +985,296 @@
       </button>
     </div>
 
+    <!-- v.1.1.x: Dialog Tambah/Ubah Jenis Pembayaran (model tabel gaya Braja Soft) -->
+    <div
+      v-if="dlgOpen && dlgJenis"
+      class="fixed inset-0 z-50 bg-slate-900/60 flex items-center justify-center p-4"
+      @click.self="dlgOpen = false"
+    >
+      <div
+        class="bg-[var(--bg-card)] rounded-2xl shadow-2xl max-w-xl w-full max-h-[90vh] overflow-y-auto"
+      >
+        <div
+          class="flex items-center justify-between px-5 py-4 border-b border-[var(--border-subtle)]"
+        >
+          <h3 class="text-base font-black">
+            <i class="fas fa-file-invoice-dollar text-teal-500 mr-1.5"></i
+            >{{ dlgIsNew ? 'Tambah' : 'Ubah' }} Jenis Pembayaran
+          </h3>
+          <button
+            @click="dlgOpen = false"
+            class="text-[var(--text-secondary)] hover:text-rose-500 p-1"
+            aria-label="Tutup"
+          >
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="p-5 space-y-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
+                >Nama Jenis</label
+              >
+              <input
+                v-model="dlgJenis.label"
+                type="text"
+                placeholder="mis. Syahriyah"
+                class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)] font-bold"
+              />
+            </div>
+            <div>
+              <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
+                >Pos Dana</label
+              >
+              <select
+                v-model="dlgJenis.pos"
+                class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
+              >
+                <option value="">Kas Umum</option>
+                <option value="kegiatan">Uang Kegiatan</option>
+                <option value="buku">Uang Buku</option>
+                <option value="tabungan_wajib">Tabungan Wajib</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
+              >Nominal Default (Rp) — 0 = variabel</label
+            >
+            <input
+              v-model.number="dlgJenis.nominal_default"
+              type="number"
+              min="0"
+              class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)] font-bold text-right"
+            />
+          </div>
+          <div>
+            <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
+              >Penagihan</label
+            >
+            <div class="grid grid-cols-3 gap-1.5">
+              <button
+                v-for="opt in [
+                  { v: 'bulanan', l: 'Auto · bulanan', i: 'fa-calendar-day' },
+                  { v: 'tahunan', l: 'Tahunan', i: 'fa-calendar' },
+                  { v: 'manual', l: 'Manual', i: 'fa-hand-pointer' }
+                ]"
+                :key="opt.v"
+                type="button"
+                @click="dlgJenis.frekuensi = opt.v"
+                :class="[
+                  'py-2 rounded-lg text-xs font-bold border transition',
+                  dlgJenis.frekuensi === opt.v
+                    ? 'bg-teal-600 text-white border-teal-600'
+                    : 'border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-elevated)]'
+                ]"
+              >
+                <i :class="['fas', opt.i, 'mr-1']"></i>{{ opt.l }}
+              </button>
+            </div>
+            <p class="text-[10px] text-[var(--text-secondary)] mt-1 italic">
+              <i class="fas fa-info-circle mr-1"></i>Bulanan = tagihan otomatis tiap bulan · Tahunan
+              = sekali per tahun ajaran · Manual = hanya saat ditagih/dibayar.
+            </p>
+          </div>
+          <!-- Tarif Khusus (collapsible) — dipindah dari list lama -->
+          <div class="border-t border-[var(--border-subtle)] pt-3">
+            <button
+              type="button"
+              @click="dlgTarif = !dlgTarif"
+              class="w-full flex items-center justify-between text-left"
+            >
+              <span class="text-xs font-black text-[var(--text-primary)]">
+                <i class="fas fa-sliders-h text-teal-500 mr-1.5"></i>Tarif Khusus per lembaga /
+                kelas / santri
+                <span
+                  v-if="tarifKhususInfo(dlgJenis)"
+                  class="ml-1 text-[10px] font-bold text-teal-600"
+                  >({{ tarifKhususInfo(dlgJenis) }})</span
+                >
+              </span>
+              <i
+                :class="[
+                  'fas',
+                  dlgTarif ? 'fa-chevron-up' : 'fa-chevron-down',
+                  'text-[var(--text-secondary)]'
+                ]"
+              ></i>
+            </button>
+            <div v-if="dlgTarif" class="mt-3 space-y-3">
+              <!-- 1) Whitelist lembaga -->
+              <div>
+                <p class="text-[10px] text-[var(--text-secondary)] italic mb-1">
+                  <i class="fas fa-filter mr-1"></i>Hanya untuk lembaga ini (kosong = semua
+                  lembaga):
+                </p>
+                <div class="flex flex-wrap gap-1.5">
+                  <label
+                    v-for="lemb in lembagaRaw || []"
+                    :key="`dlg_wl_${lemb.lembaga}`"
+                    class="inline-flex items-center gap-1 text-[10px] font-bold cursor-pointer bg-[var(--bg-card-elevated)] px-2 py-1 rounded border border-[var(--border-default)]"
+                  >
+                    <input
+                      type="checkbox"
+                      :checked="
+                        Array.isArray(dlgJenis.lembaga_only) &&
+                        dlgJenis.lembaga_only.includes(lemb.lembaga)
+                      "
+                      @change="toggleLembagaOnly(dlgJenis, lemb.lembaga)"
+                      class="w-3 h-3 accent-teal-600"
+                    />
+                    {{ lemb.lembaga }}
+                  </label>
+                </div>
+              </div>
+              <!-- 2) Override per-lembaga -->
+              <div>
+                <p class="text-[10px] text-[var(--text-secondary)] italic mb-1.5">
+                  <i class="fas fa-building mr-1"></i>Nominal per lembaga (kosong / 0 = pakai
+                  default).
+                </p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                  <div
+                    v-for="lemb in lembagaScope(dlgJenis)"
+                    :key="`dlg_pl_${lemb.lembaga}`"
+                    class="flex items-center gap-2 bg-[var(--bg-card-elevated)] rounded px-2 py-1"
+                  >
+                    <span
+                      class="text-[10px] font-bold text-[var(--text-secondary)] flex-1 truncate"
+                      >{{ lemb.lembaga }}</span
+                    >
+                    <input
+                      :value="dlgJenis.nominal_per_lembaga?.[lemb.lembaga] || ''"
+                      @input="
+                        dlgJenis.nominal_per_lembaga = {
+                          ...(dlgJenis.nominal_per_lembaga || {}),
+                          [lemb.lembaga]: Number($event.target.value) || 0
+                        }
+                      "
+                      type="number"
+                      min="0"
+                      :placeholder="String(dlgJenis.nominal_default || 0)"
+                      class="w-28 text-xs font-bold text-[var(--text-primary)] outline-none border border-[var(--border-default)] rounded px-2 py-1 text-right"
+                    />
+                  </div>
+                </div>
+              </div>
+              <!-- 3) Override per-kelas -->
+              <div>
+                <p class="text-[10px] text-[var(--text-secondary)] italic mb-1.5">
+                  <i class="fas fa-layer-group mr-1"></i>Nominal per kelas (paling spesifik).
+                </p>
+                <div class="space-y-2">
+                  <div
+                    v-for="lemb in lembagaScope(dlgJenis)"
+                    :key="`dlg_pk_${lemb.lembaga}`"
+                    class="bg-[var(--bg-card-elevated)] rounded p-2 border border-[var(--border-subtle)]"
+                  >
+                    <p class="text-[10px] font-black text-[var(--text-secondary)] mb-1">
+                      {{ lemb.lembaga }}
+                    </p>
+                    <div
+                      v-if="kelasOfLembaga(lemb).length === 0"
+                      class="text-[9px] text-[var(--text-tertiary)] italic"
+                    >
+                      Lembaga ini belum punya kelas
+                    </div>
+                    <div v-else class="grid grid-cols-2 md:grid-cols-3 gap-1.5">
+                      <div
+                        v-for="kls in kelasOfLembaga(lemb)"
+                        :key="`dlg_pk_${lemb.lembaga}_${kls}`"
+                        class="flex items-center gap-1.5"
+                      >
+                        <span
+                          class="text-[9px] font-bold text-[var(--text-secondary)] w-12 truncate"
+                          >{{ kls }}</span
+                        >
+                        <input
+                          :value="(dlgJenis.nominal_per_kelas?.[lemb.lembaga] || {})[kls] || ''"
+                          @input="setNominalKelas(dlgJenis, lemb.lembaga, kls, $event.target.value)"
+                          type="number"
+                          min="0"
+                          :placeholder="
+                            String(
+                              (dlgJenis.nominal_per_lembaga || {})[lemb.lembaga] ||
+                                dlgJenis.nominal_default ||
+                                0
+                            )
+                          "
+                          class="flex-1 text-[10px] font-bold text-[var(--text-primary)] outline-none border border-[var(--border-default)] rounded px-1.5 py-0.5 text-right"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <!-- 4) Override per-santri -->
+              <div>
+                <p class="text-[10px] text-[var(--text-secondary)] italic mb-1">
+                  <i class="fas fa-user-tag mr-1"></i>Nominal khusus per santri —
+                  <b>{{ overrideSantriCount(dlgJenis) }}</b> di-set:
+                </p>
+                <input
+                  v-model="perSantriSearch[dlgJenis.id]"
+                  type="text"
+                  placeholder="cari nama / No. Induk santri..."
+                  class="w-full px-2 py-1 text-xs border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)] mb-1.5"
+                />
+                <div class="space-y-1 max-h-48 overflow-y-auto">
+                  <div
+                    v-for="s in santriCariFor(dlgJenis)"
+                    :key="`dlg_ps_${s.id}`"
+                    class="flex items-center gap-2 bg-[var(--bg-card-elevated)] rounded px-2 py-1 border border-[var(--border-subtle)]"
+                  >
+                    <span class="flex-1 text-[10px] font-bold text-[var(--text-primary)] truncate"
+                      >{{ s.nama }}
+                      <span class="text-[var(--text-tertiary)] font-normal">{{
+                        s.nis || '-'
+                      }}</span></span
+                    >
+                    <input
+                      :value="(dlgJenis.nominal_per_santri || {})[String(s.id)] || ''"
+                      @input="setNominalSantri(dlgJenis, s.id, $event.target.value)"
+                      type="number"
+                      min="0"
+                      :placeholder="String(dlgJenis.nominal_default || 0)"
+                      class="w-24 text-[10px] font-bold text-[var(--text-primary)] outline-none border border-[var(--border-default)] rounded px-1.5 py-0.5 text-right"
+                    />
+                  </div>
+                  <p
+                    v-if="santriCariFor(dlgJenis).length === 0"
+                    class="text-[9px] text-[var(--text-tertiary)] italic px-1 py-1"
+                  >
+                    {{
+                      perSantriSearch[dlgJenis.id]
+                        ? 'Santri tidak ditemukan.'
+                        : 'Ketik nama/No. Induk untuk set nominal khusus.'
+                    }}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div
+          class="flex justify-end gap-2 px-5 py-4 border-t border-[var(--border-subtle)] bg-[var(--bg-card-elevated)] rounded-b-2xl"
+        >
+          <button
+            @click="dlgOpen = false"
+            class="px-4 py-2 text-sm font-bold rounded-lg border border-[var(--border-default)] text-[var(--text-secondary)]"
+          >
+            Batal
+          </button>
+          <button
+            @click="simpanJenisDialog"
+            class="px-4 py-2 text-sm font-bold rounded-lg bg-teal-600 hover:bg-teal-700 text-white inline-flex items-center gap-1.5"
+          >
+            <i class="fas fa-check"></i>{{ dlgIsNew ? 'Tambah' : 'Simpan' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- v.94.0626: Modal Generate Tagihan Khusus (infaq/iuran, target fleksibel) -->
     <div
       v-if="genOpen"
@@ -1494,7 +1613,6 @@ function bukaPengaturanPrinter() {
   }
 }
 
-const newJenis = ref('')
 const newKatMasuk = ref('')
 const newKatKeluar = ref('')
 const newKatTabungan = ref('') // input tambah kategori tabungan
@@ -1503,6 +1621,12 @@ const filterLembaga = ref('')
 const generating = ref(false)
 const saving = ref(false)
 const jenisList = ref([])
+// v.1.1.x: dialog Tambah/Ubah jenis (model tabel gaya Braja Soft)
+const dlgOpen = ref(false)
+const dlgIsNew = ref(false)
+const dlgIdx = ref(-1)
+const dlgJenis = ref(null)
+const dlgTarif = ref(false)
 // v.110: Excel template + impor (jenis pembayaran & bisyaroh pegawai)
 const { exportSimple, importFile } = useExcel()
 const imporJenisBusy = ref(false)
@@ -1586,6 +1710,8 @@ function loadFromSettings() {
                 ? { ...t.nominal_per_santri }
                 : _emptyMap(),
             auto_generate: !!t.auto_generate,
+            // v.1.1.x: frekuensi penagihan (bulanan/tahunan/manual) — migrasi dari auto_generate lama
+            frekuensi: t.frekuensi || (t.auto_generate ? 'bulanan' : 'manual'),
             // pos dana: '' (kas umum) | 'kegiatan' | 'buku' | 'tabungan_wajib' — penyaring rekap pos
             pos: t.pos || '',
             _expanded: false
@@ -1658,6 +1784,10 @@ function loadFromSettings() {
       _expanded: false
     })
   }
+  // v.1.1.x: pastikan tiap jenis punya frekuensi (fallback dari auto_generate lama)
+  arr.forEach((j) => {
+    if (!j.frekuensi) j.frekuensi = j.auto_generate ? 'bulanan' : 'manual'
+  })
   jenisList.value = arr
   form.keu_jenis_tagihan = arr.map((t) => t.label)
 
@@ -1755,28 +1885,6 @@ function onFmtMapChange(e, key, id) {
   form[key][id] = fmtRp(e.target.value)
 }
 
-function addJenis() {
-  const s = newJenis.value.trim()
-  if (!s) return
-  const id = slugId(s)
-  if (jenisList.value.find((t) => t.id === id || t.label === s)) {
-    toast.warning('Jenis tagihan sudah ada')
-    return
-  }
-  jenisList.value.push({
-    id,
-    label: s,
-    nominal_default: 0,
-    nominal_per_lembaga: {},
-    lembaga_only: [],
-    nominal_per_kelas: {},
-    auto_generate: false,
-    pos: '',
-    _expanded: false
-  })
-  newJenis.value = ''
-}
-
 function removeJenis(idx) {
   const j = jenisList.value[idx]
   if (j?.id === 'syahriyah') {
@@ -1867,10 +1975,6 @@ async function loadSantriAktif() {
   } catch (e) {
     toast.error('Gagal memuat data santri: ' + (e.message || e))
   }
-}
-function toggleExpandJenis(jenis) {
-  jenis._expanded = !jenis._expanded
-  if (jenis._expanded) loadSantriAktif()
 }
 
 function addKategori(kind) {
@@ -2031,7 +2135,9 @@ async function simpan() {
           nominal_per_kelas: perK,
           nominal_per_santri: perS,
           lembaga_only: wl,
-          auto_generate: !!t.auto_generate,
+          // v.1.1.x: frekuensi = sumber kebenaran; auto_generate diturunkan (backward compat cron/generator)
+          frekuensi: t.frekuensi || (t.auto_generate ? 'bulanan' : 'manual'),
+          auto_generate: (t.frekuensi || (t.auto_generate ? 'bulanan' : 'manual')) === 'bulanan',
           pos: t.pos || ''
         }
       })
@@ -2110,6 +2216,99 @@ function reset() {
   toast.info('Form direset')
 }
 
+// ==== v.1.1.x: Dialog Tambah/Ubah jenis pembayaran (model tabel gaya Braja Soft) ====
+const POS_LABELS = {
+  '': 'Kas Umum',
+  kegiatan: 'Uang Kegiatan',
+  buku: 'Uang Buku',
+  tabungan_wajib: 'Tabungan Wajib'
+}
+function posLabel(p) {
+  return POS_LABELS[p || ''] || 'Kas Umum'
+}
+function frekMeta(f) {
+  if (f === 'bulanan')
+    return {
+      label: 'Auto · bulanan',
+      cls: 'bg-teal-50 text-teal-700 dark:bg-teal-900/30 dark:text-teal-200'
+    }
+  if (f === 'tahunan')
+    return {
+      label: 'Tahunan',
+      cls: 'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-200'
+    }
+  return {
+    label: 'Manual',
+    cls: 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-200'
+  }
+}
+// Ringkasan tarif khusus utk kolom tabel ('' kalau tak ada override)
+function tarifKhususInfo(j) {
+  const nl = Object.values(j.nominal_per_lembaga || {}).filter((v) => Number(v) > 0).length
+  const nk = Object.values(j.nominal_per_kelas || {}).reduce(
+    (a, m) => a + Object.values(m || {}).filter((v) => Number(v) > 0).length,
+    0
+  )
+  const ns = Object.values(j.nominal_per_santri || {}).filter((v) => Number(v) > 0).length
+  const wl = (j.lembaga_only || []).length
+  const parts = []
+  if (wl) parts.push(`${wl} lembaga`)
+  if (nl) parts.push(`${nl} tarif/lembaga`)
+  if (nk) parts.push(`${nk} tarif/kelas`)
+  if (ns) parts.push(`${ns} santri`)
+  return parts.join(' · ')
+}
+function openJenisDialog(j) {
+  dlgIdx.value = jenisList.value.indexOf(j)
+  dlgIsNew.value = false
+  dlgJenis.value = JSON.parse(JSON.stringify(j)) // edit pada SALINAN → Batal benar-benar batal
+  dlgTarif.value = false
+  loadSantriAktif() // muat santri utk picker Tarif Khusus per-santri
+  dlgOpen.value = true
+}
+function openJenisBaru() {
+  dlgIdx.value = -1
+  dlgIsNew.value = true
+  dlgJenis.value = {
+    id: '',
+    label: '',
+    nominal_default: 0,
+    nominal_per_lembaga: {},
+    lembaga_only: [],
+    nominal_per_kelas: {},
+    nominal_per_santri: {},
+    frekuensi: 'manual',
+    pos: '',
+    _expanded: false
+  }
+  dlgTarif.value = false
+  loadSantriAktif() // muat santri utk picker Tarif Khusus per-santri
+  dlgOpen.value = true
+}
+function simpanJenisDialog() {
+  const j = dlgJenis.value
+  if (!j) return
+  const label = String(j.label || '').trim()
+  if (!label) {
+    toast.warning('Nama jenis wajib diisi')
+    return
+  }
+  j.label = label
+  if (!j.id) j.id = slugId(label)
+  if (dlgIsNew.value) {
+    if (jenisList.value.some((x) => x.id === j.id)) {
+      toast.warning(`Jenis "${label}" sudah ada`)
+      return
+    }
+    jenisList.value.push(j)
+  } else if (dlgIdx.value >= 0) {
+    jenisList.value.splice(dlgIdx.value, 1, j)
+  }
+  form.keu_jenis_tagihan = jenisList.value.map((t) => t.label)
+  dlgOpen.value = false
+  toast.info('Perubahan siap — klik "Simpan Semua" untuk menyimpan permanen.')
+}
+
 // ============================================================================
 // v.110: Template + Impor — Jenis Pembayaran & Bisyaroh Pegawai (TU isi, admin impor).
 //   Impor TIDAK auto-simpan: mengisi form → Kyai cek → klik "Simpan Semua".
@@ -2130,8 +2329,9 @@ function pickCol(obj, names) {
 function unduhTemplateJenis() {
   const rows = jenisList.value.map((j) => ({
     label: j.label || '',
+    pos: posLabel(j.pos),
     nominal: Number(j.nominal_default || 0) || 0,
-    auto: j.auto_generate ? 'Ya' : 'Tidak'
+    penagihan: j.frekuensi || 'manual'
   }))
   exportSimple(rows, {
     filename: 'template_jenis_pembayaran.xlsx',
@@ -2139,8 +2339,9 @@ function unduhTemplateJenis() {
     title: 'Template Jenis Pembayaran — Ammu',
     columns: [
       { key: 'label', header: 'Label', width: 32 },
+      { key: 'pos', header: 'Pos Dana', width: 20 },
       { key: 'nominal', header: 'Nominal Default', width: 18 },
-      { key: 'auto', header: 'Auto Generate (Ya/Tidak)', width: 24 }
+      { key: 'penagihan', header: 'Penagihan (bulanan/tahunan/manual)', width: 30 }
     ]
   })
 }
@@ -2161,22 +2362,49 @@ async function imporJenis(ev) {
       const label = String(pickCol(r, ['label', 'jenis', 'nama', 'jenis pembayaran']) || '').trim()
       if (!label) continue
       const nominal = parseRp(pickCol(r, ['nominal default', 'nominal_default', 'nominal']))
+      // v.1.1.x: Penagihan (bulanan/tahunan/manual). Fallback ke kolom "Auto" lama (Ya→bulanan).
+      const penStr = String(
+        pickCol(r, ['penagihan (bulanan/tahunan/manual)', 'penagihan', 'frekuensi']) || ''
+      )
+        .trim()
+        .toLowerCase()
       const autoStr = String(
         pickCol(r, ['auto generate (ya/tidak)', 'auto generate', 'auto', 'auto_generate']) || ''
       )
         .trim()
         .toLowerCase()
-      const auto = ['ya', 'yes', 'true', '1', 'y', 'v'].includes(autoStr)
+      let frekuensi = null
+      if (['bulanan', 'bulan', 'monthly'].includes(penStr)) frekuensi = 'bulanan'
+      else if (['tahunan', 'tahun', 'yearly', 'annual'].includes(penStr)) frekuensi = 'tahunan'
+      else if (['manual', 'insidental', 'tidak'].includes(penStr)) frekuensi = 'manual'
+      else if (['ya', 'yes', 'true', '1', 'y', 'v'].includes(autoStr)) frekuensi = 'bulanan'
+      else if (autoStr) frekuensi = 'manual'
+      // Pos Dana (kosong = jangan ubah yang lama)
+      const posStr = String(pickCol(r, ['pos dana', 'pos', 'pos_dana']) || '')
+        .trim()
+        .toLowerCase()
+      let pos = null
+      if (posStr) {
+        if (posStr.includes('kegiatan')) pos = 'kegiatan'
+        else if (posStr.includes('buku')) pos = 'buku'
+        else if (posStr.includes('tabungan')) pos = 'tabungan_wajib'
+        else pos = ''
+      }
       const id = slugId(label)
       const ex = next.find(
         (t) => t.id === id || String(t.label || '').toLowerCase() === label.toLowerCase()
       )
       if (ex) {
-        // update label/nominal/auto — PERTAHANKAN override per-lembaga/kelas/santri & whitelist.
+        // update label/nominal/frekuensi/pos — PERTAHANKAN override per-lembaga/kelas/santri & whitelist.
         ex.label = label
         ex.nominal_default = nominal
-        ex.auto_generate = auto
+        if (frekuensi != null) {
+          ex.frekuensi = frekuensi
+          ex.auto_generate = frekuensi === 'bulanan'
+        }
+        if (pos != null) ex.pos = pos
       } else {
+        const fr = frekuensi || 'manual'
         next.push({
           id,
           label,
@@ -2185,7 +2413,9 @@ async function imporJenis(ev) {
           lembaga_only: [],
           nominal_per_kelas: {},
           nominal_per_santri: {},
-          auto_generate: auto,
+          frekuensi: fr,
+          auto_generate: fr === 'bulanan',
+          pos: pos || '',
           _expanded: false
         })
       }
@@ -2289,17 +2519,19 @@ async function autoGenerate() {
   if (generating.value) return
   if (
     !confirm(
-      `Generate tagihan otomatis bulan ini untuk ${gedungScoped.value ? `santri ${myGedung.value}` : 'semua santri aktif'}?\n\nJenis ber-flag auto_generate akan di-create. Tagihan duplikat (periode sama) akan di-skip.`
+      `Generate tagihan untuk ${gedungScoped.value ? `santri ${myGedung.value}` : 'semua santri aktif'}?\n\nJenis "bulanan" → periode bulan ini. Jenis "tahunan" → tahun ajaran berjalan. Tagihan duplikat (periode sama) di-skip.`
     )
   )
     return
   generating.value = true
   try {
+    // v.1.1.x: proses jenis bulanan + tahunan (manual dilewati)
     const jenisAuto = (jenisList.value || []).filter(
-      (j) => j.auto_generate && String(j.label || '').trim()
+      (j) =>
+        (j.frekuensi === 'bulanan' || j.frekuensi === 'tahunan') && String(j.label || '').trim()
     )
     if (jenisAuto.length === 0) {
-      toast.warning('Tidak ada jenis tagihan dengan flag auto_generate.')
+      toast.warning('Tidak ada jenis "bulanan" / "tahunan" untuk di-generate.')
       generating.value = false
       return
     }
@@ -2327,12 +2559,19 @@ async function autoGenerate() {
       'November',
       'Desember'
     ]
-    const periode = `${BULAN_NM[now.getMonth()]} ${now.getFullYear()}`
-    const jt = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(form.keu_jatuh_tempo || 10).padStart(2, '0')}`
+    // Periode bulanan (bulan ini) + periode tahunan (tahun ajaran berjalan, Juli–Juni)
+    const periodeBulan = `${BULAN_NM[now.getMonth()]} ${now.getFullYear()}`
+    const jtBulan = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(form.keu_jatuh_tempo || 10).padStart(2, '0')}`
+    const taStart = now.getMonth() >= 6 ? now.getFullYear() : now.getFullYear() - 1
+    const periodeTahun = `TA ${taStart}/${taStart + 1}`
+    const jtTahun = `${taStart}-12-${String(form.keu_jatuh_tempo || 10).padStart(2, '0')}`
     let created = 0,
       skipped = 0,
       errCount = 0
     for (const j of jenisAuto) {
+      const tahunan = j.frekuensi === 'tahunan'
+      const periode = tahunan ? periodeTahun : periodeBulan
+      const jt = tahunan ? jtTahun : jtBulan
       const wl = Array.isArray(j.lembaga_only) ? j.lembaga_only.filter(Boolean) : []
       for (const sx of santriAktif) {
         // whitelist gating
@@ -2371,7 +2610,10 @@ async function autoGenerate() {
           continue
         }
         try {
-          const id = `tagihan_${sx.id}_${j.id}_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}`
+          const idPeriode = tahunan
+            ? `TA${taStart}`
+            : `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}`
+          const id = `tagihan_${sx.id}_${j.id}_${idPeriode}`
           await setOne('keuangan_tagihan', id, {
             id,
             santri_id: String(sx.id),
