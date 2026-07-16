@@ -9,7 +9,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 //   jalur cepat: from(t).update(row).eq(pk,id).select(pk)
 // `select` melayani keduanya, dibedakan lewat `mode` (di-reset setelah dipakai update).
 function makeSupabase({ updateData = [], updateError = null, existingRow = null } = {}) {
-  const spy = { updateRow: null, eqArgs: null, getOneCalls: 0 }
+  const spy = { updateRow: null, eqArgs: null, getOneCalls: 0, insertCalls: 0, insertRow: null }
   let mode = null
   const b = {}
   b.from = () => b
@@ -33,7 +33,11 @@ function makeSupabase({ updateData = [], updateError = null, existingRow = null 
     spy.getOneCalls++
     return Promise.resolve({ data: existingRow, error: null })
   }
-  b.insert = () => Promise.resolve({ error: null })
+  b.insert = (row) => {
+    spy.insertCalls++
+    spy.insertRow = row
+    return Promise.resolve({ error: null })
+  }
   return { b, spy }
 }
 
@@ -44,7 +48,7 @@ vi.mock('../../vue-app/src/services/supabase', () => ({
   }
 }))
 
-const { updateOne } = await import('../../vue-app/src/services/db.js')
+const { updateOne, mergeOne } = await import('../../vue-app/src/services/db.js')
 
 describe('updateOne — jalur cepat (partial = kolom riil semua)', () => {
   beforeEach(() => {
@@ -88,5 +92,44 @@ describe('updateOne — jalur cepat (partial = kolom riil semua)', () => {
     await expect(updateOne('keuangan_va_intent', 'i1', { status: 'dibatalkan' })).rejects.toThrow(
       /ditolak RLS|hak akses/i
     )
+  })
+})
+
+// `catatan_x` sengaja TIDAK ada di COLS.guru -> partial menyentuh ekor jsonb -> jalur lambat.
+describe('updateOne — jalur lambat (menyentuh ekor jsonb): TIDAK upsert', () => {
+  beforeEach(() => {
+    current = makeSupabase()
+  })
+
+  it('baris ADA -> read-modify-write jalan normal', async () => {
+    current = makeSupabase({ existingRow: { id: 'g1', nama: 'Ahmad' }, updateData: [{ id: 'g1' }] })
+    await expect(updateOne('guru', 'g1', { catatan_x: 'halo' })).resolves.toBeUndefined()
+    expect(current.spy.insertCalls).toBe(0) // baris ada => UPDATE, bukan INSERT
+  })
+
+  it('baris TIDAK ada -> THROW, dan JANGAN bikin stub row (dulu diam-diam INSERT)', async () => {
+    current = makeSupabase({ existingRow: null })
+    await expect(updateOne('guru', 'g-hilang', { catatan_x: 'halo' })).rejects.toThrow(
+      /tidak ditemukan/i
+    )
+    // inti regresi: stub {id, catatan_x} tanpa kolom wajib TIDAK boleh lahir
+    expect(current.spy.insertCalls).toBe(0)
+  })
+
+  it('pesannya SAMA dgn jalur cepat — satu perilaku, tak peduli jenis field', async () => {
+    current = makeSupabase({ existingRow: null, updateData: [] })
+    const cepat = await updateOne('guru', 'x', { status: 'Aktif' }).catch((e) => e.message)
+    current = makeSupabase({ existingRow: null })
+    const lambat = await updateOne('guru', 'x', { catatan_x: 'y' }).catch((e) => e.message)
+    expect(cepat).toBe(lambat)
+  })
+})
+
+describe('mergeOne — kontraknya MEMANG boleh membuat baris (cermin setDoc merge:true)', () => {
+  it('baris tak ada -> INSERT, JANGAN ikut diketatkan seperti updateOne', async () => {
+    // Penjaga regresi: RekapDiniyahView/JabatanKelolaView mengandalkan ini untuk seed.
+    current = makeSupabase({ existingRow: null })
+    await expect(mergeOne('master', 'jabatan', { items: [] })).resolves.toBeUndefined()
+    expect(current.spy.insertCalls).toBe(1)
   })
 })

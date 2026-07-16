@@ -429,7 +429,14 @@ export async function mergeOne(collectionName, id, data) {
 
 /** Update partial fields (shallow, cermin updateDoc: ganti field top-level yang
  *  diberikan, sisanya tetap). Field kolom-riil murni -> UPDATE langsung (cepat,
- *  tanpa read); kalau menyentuh ekor jsonb -> read-modify-write. */
+ *  tanpa read); kalau menyentuh ekor jsonb -> read-modify-write.
+ *
+ *  TIDAK meng-UPSERT: baris yang tak ada -> throw (cermin updateDoc Firestore yang
+ *  melempar NOT_FOUND). Dulu jalur jsonb diam-diam INSERT sehingga `updateOne` pada
+ *  baris terhapus/salah-id membuat STUB row cacat (cuma field partial, tanpa kolom
+ *  wajib) yang lalu gagal validasi di tempat lain. Semua pemanggil diaudit: tak ada
+ *  yang memakai updateOne untuk MEMBUAT baris — yang perlu itu pakai setOne/mergeOne
+ *  (mis. RekapDiniyahView `if (existing) updateOne else setOne`). */
 export async function updateOne(collectionName, id, partial) {
   _ensure()
   const { pk, json, cols } = _cfg(collectionName)
@@ -459,8 +466,16 @@ export async function updateOne(collectionName, id, partial) {
     )
   }
   const existing = await getOne(collectionName, id)
-  const merged = { ...(existing || {}), ...partial } // shallow (semantik updateDoc)
-  await _putRow(collectionName, id, merged, !!existing)
+  if (!existing) {
+    // Sengaja SAMA dgn pesan jalur cepat di atas: satu perilaku, tak peduli field-nya
+    // kolom riil atau ekor jsonb. (getOne pakai maybeSingle -> null juga bila SELECT
+    // ditolak RLS; pesannya sengaja menyebut dua kemungkinan itu.)
+    throw new Error(
+      `Gagal menyimpan ${collectionName}/${id}: baris tidak ditemukan (mungkin sudah dihapus, atau tak terbaca karena RLS).`
+    )
+  }
+  const merged = { ...existing, ...partial } // shallow (semantik updateDoc)
+  await _putRow(collectionName, id, merged, true)
 }
 
 /** Add dokumen baru. Pakai id dari data kalau ada, jika tidak generate. Return id. */
