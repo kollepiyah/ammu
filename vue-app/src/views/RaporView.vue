@@ -2452,9 +2452,10 @@ function absensiBulananSumFor(s, isDiniyah) {
   for (const pr of semesterPeriodes('-')) {
     const d = src.find((a) => a.id === `${s.id}_${pr}`)
     if (!d) continue
-    out.sakit += Number(d.sakit) || 0
-    out.izin += Number(d.izin) || 0
-    out.alpa += Number(d.alpa) || 0
+    // Ngaji: kolom tetap = sesi Pagi, *_sore = sesi Sore → digabung (sekolah tak punya *_sore = 0).
+    out.sakit += (Number(d.sakit) || 0) + (Number(d.sakit_sore) || 0)
+    out.izin += (Number(d.izin) || 0) + (Number(d.izin_sore) || 0)
+    out.alpa += (Number(d.alpa) || 0) + (Number(d.alpa_sore) || 0)
   }
   return out
 }

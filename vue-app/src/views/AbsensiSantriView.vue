@@ -1,5 +1,6 @@
 <template>
   <!-- v.21.84.0527: Absensi Santri — input manual bulanan, 2 kategori (Ngaji/Sekolah), autofill rapor -->
+  <!-- Ngaji: 2 sesi (Pagi=kolom tetap, Sore=*_sore di data jsonb). Sekolah: 1 sesi. Rapor=gabungan Pagi+Sore. -->
   <div class="p-3 md:p-5 space-y-4">
     <!-- LAYER 1: LANDING -->
     <div
@@ -202,7 +203,8 @@
 
       <!-- Filters + Hari Efektif -->
       <div
-        class="bg-white dark:bg-slate-800 rounded-2xl p-3 md:p-4 border border-slate-200 dark:border-slate-700 shadow-sm grid grid-cols-2 md:grid-cols-4 gap-2"
+        class="bg-white dark:bg-slate-800 rounded-2xl p-3 md:p-4 border border-slate-200 dark:border-slate-700 shadow-sm grid grid-cols-2 gap-2"
+        :class="isNgaji ? 'md:grid-cols-5' : 'md:grid-cols-4'"
       >
         <select
           v-model.number="selectedMonth"
@@ -217,11 +219,39 @@
           <option v-for="y in TAHUN_LIST" :key="y" :value="y">{{ y }}</option>
         </select>
         <div
-          class="flex items-center gap-2 px-3 py-2 text-sm rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900"
+          class="flex items-center gap-2 px-3 py-2 text-sm rounded-xl border bg-white dark:bg-slate-900"
+          :class="
+            isNgaji
+              ? 'border-amber-300 dark:border-amber-600'
+              : 'border-slate-300 dark:border-slate-600'
+          "
         >
-          <span class="text-[11px] font-bold text-slate-500 whitespace-nowrap">Hari Efektif</span>
+          <span
+            class="text-[11px] font-bold whitespace-nowrap"
+            :class="isNgaji ? 'text-amber-600 dark:text-amber-400' : 'text-slate-500'"
+          >
+            <i v-if="isNgaji" class="fas fa-sun mr-0.5"></i
+            >{{ isNgaji ? 'H. Efektif Pagi' : 'Hari Efektif' }}
+          </span>
           <input
             v-model.number="hariEfektif"
+            type="number"
+            min="0"
+            max="31"
+            class="w-full text-center font-bold bg-transparent outline-none text-slate-800 dark:text-white"
+          />
+        </div>
+        <div
+          v-if="isNgaji"
+          class="flex items-center gap-2 px-3 py-2 text-sm rounded-xl border border-indigo-300 dark:border-indigo-600 bg-white dark:bg-slate-900"
+        >
+          <span
+            class="text-[11px] font-bold text-indigo-500 dark:text-indigo-400 whitespace-nowrap"
+          >
+            <i class="fas fa-moon mr-0.5"></i>H. Efektif Sore
+          </span>
+          <input
+            v-model.number="hariEfektifSore"
             type="number"
             min="0"
             max="31"
@@ -242,7 +272,15 @@
       >
         <div class="text-[11px] text-slate-500 dark:text-slate-400">
           <i class="fas fa-info-circle mr-1 text-teal-500"></i>
-          Isi <b>Sakit</b>/<b>Izin</b>/<b>Alfa</b>. Hadir auto = Hari Efektif − (S+I+A).
+          <template v-if="isNgaji"
+            >Isi <b>S/I/A</b> tiap sesi <b class="text-amber-600 dark:text-amber-400">Pagi</b> &amp;
+            <b class="text-indigo-600 dark:text-indigo-400">Sore</b>. Hadir auto = H. Efektif −
+            (S+I+A) per sesi.</template
+          >
+          <template v-else
+            >Isi <b>Sakit</b>/<b>Izin</b>/<b>Alfa</b>. Hadir auto = Hari Efektif −
+            (S+I+A).</template
+          >
         </div>
         <div class="flex gap-2">
           <button
@@ -289,19 +327,53 @@
         <div class="overflow-x-auto">
           <table class="w-full text-sm">
             <thead>
+              <!-- Baris grup sesi (khusus ngaji): Pagi | Sore -->
+              <tr
+                v-if="isNgaji"
+                class="bg-slate-50 dark:bg-slate-900/40 text-[11px] uppercase tracking-wider"
+              >
+                <th class="px-4 py-2"></th>
+                <th class="px-2 py-2"></th>
+                <th
+                  colspan="4"
+                  class="text-center px-2 py-2 font-black text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20"
+                >
+                  <i class="fas fa-sun mr-1"></i>Pagi
+                </th>
+                <th
+                  colspan="4"
+                  class="text-center px-2 py-2 font-black text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-900/20 border-l border-l-slate-200 dark:border-l-slate-700"
+                >
+                  <i class="fas fa-moon mr-1"></i>Sore
+                </th>
+              </tr>
               <tr
                 class="bg-slate-50 dark:bg-slate-900/40 text-[11px] uppercase tracking-wider text-slate-500"
               >
                 <th class="text-left px-4 py-3 font-bold">Nama Santri</th>
                 <th class="text-center px-2 py-3 font-bold">Kelas</th>
-                <th class="text-center px-2 py-3 font-bold w-20">Sakit</th>
-                <th class="text-center px-2 py-3 font-bold w-20">Izin</th>
-                <th class="text-center px-2 py-3 font-bold w-20">Alfa</th>
+                <th class="text-center px-2 py-3 font-bold w-16">Sakit</th>
+                <th class="text-center px-2 py-3 font-bold w-16">Izin</th>
+                <th class="text-center px-2 py-3 font-bold w-16">Alfa</th>
                 <th
-                  class="text-center px-2 py-3 font-bold w-20 bg-emerald-50 dark:bg-emerald-900/20"
+                  class="text-center px-2 py-3 font-bold w-16 bg-emerald-50 dark:bg-emerald-900/20"
                 >
                   Hadir
                 </th>
+                <template v-if="isNgaji">
+                  <th
+                    class="text-center px-2 py-3 font-bold w-16 border-l border-l-slate-200 dark:border-l-slate-700"
+                  >
+                    Sakit
+                  </th>
+                  <th class="text-center px-2 py-3 font-bold w-16">Izin</th>
+                  <th class="text-center px-2 py-3 font-bold w-16">Alfa</th>
+                  <th
+                    class="text-center px-2 py-3 font-bold w-16 bg-emerald-50 dark:bg-emerald-900/20"
+                  >
+                    Hadir
+                  </th>
+                </template>
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
@@ -341,6 +413,38 @@
                 >
                   {{ hadirOf(s.id) }}
                 </td>
+                <!-- Sesi Sore (khusus ngaji) -->
+                <template v-if="isNgaji">
+                  <td class="px-2 py-2 border-l border-l-slate-200 dark:border-l-slate-700">
+                    <input
+                      v-model.number="getRow(s.id).sakit_sore"
+                      type="number"
+                      min="0"
+                      class="w-full text-center bg-cyan-50 dark:bg-cyan-900/20 text-cyan-900 dark:text-cyan-200 rounded p-1 text-xs font-bold border border-cyan-200 dark:border-cyan-700 outline-none focus:ring-2 focus:ring-cyan-400"
+                    />
+                  </td>
+                  <td class="px-2 py-2">
+                    <input
+                      v-model.number="getRow(s.id).izin_sore"
+                      type="number"
+                      min="0"
+                      class="w-full text-center bg-teal-50 dark:bg-teal-900/20 text-teal-900 dark:text-teal-200 rounded p-1 text-xs font-bold border border-teal-200 dark:border-teal-700 outline-none focus:ring-2 focus:ring-teal-400"
+                    />
+                  </td>
+                  <td class="px-2 py-2">
+                    <input
+                      v-model.number="getRow(s.id).alfa_sore"
+                      type="number"
+                      min="0"
+                      class="w-full text-center bg-rose-50 dark:bg-rose-900/20 text-rose-900 dark:text-rose-200 rounded p-1 text-xs font-bold border border-rose-200 dark:border-rose-700 outline-none focus:ring-2 focus:ring-rose-400"
+                    />
+                  </td>
+                  <td
+                    class="text-center px-2 py-2 font-black text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/20"
+                  >
+                    {{ hadirSoreOf(s.id) }}
+                  </td>
+                </template>
               </tr>
             </tbody>
           </table>
@@ -438,7 +542,8 @@ const kategori = ref('') // 'ngaji' | 'sekolah'
 const selectedLembaga = ref('')
 const selectedYear = ref(_now.getFullYear())
 const selectedMonth = ref(_now.getMonth() + 1)
-const hariEfektif = ref(24)
+const hariEfektif = ref(24) // sesi Pagi (dan sesi tunggal utk sekolah)
+const hariEfektifSore = ref(24) // sesi Sore (khusus ngaji)
 const search = ref('')
 
 const santriRaw = ref([])
@@ -453,6 +558,8 @@ const COLL = computed(() =>
 const periode = computed(
   () => `${selectedYear.value}-${String(selectedMonth.value).padStart(2, '0')}`
 )
+// Ngaji = 2 sesi (Pagi/Sore). Sekolah = 1 sesi. Dipakai template & simpan/generate.
+const isNgaji = computed(() => kategori.value === 'ngaji')
 
 function pilihKategori(k) {
   kategori.value = k
@@ -539,14 +646,24 @@ const filteredSantri = computed(() => {
 // Input rows state (santriId → {sakit, izin, alfa})
 const rows = reactive({})
 function getRow(id) {
-  if (!rows[id]) rows[id] = { sakit: 0, izin: 0, alfa: 0 }
+  if (!rows[id])
+    rows[id] = { sakit: 0, izin: 0, alfa: 0, sakit_sore: 0, izin_sore: 0, alfa_sore: 0 }
   return rows[id]
 }
+// Hadir sesi Pagi (dan sesi tunggal utk sekolah)
 function hadirOf(id) {
   const r = getRow(id)
   const h =
     (Number(hariEfektif.value) || 0) -
     ((Number(r.sakit) || 0) + (Number(r.izin) || 0) + (Number(r.alfa) || 0))
+  return Math.max(0, h)
+}
+// Hadir sesi Sore (khusus ngaji)
+function hadirSoreOf(id) {
+  const r = getRow(id)
+  const h =
+    (Number(hariEfektifSore.value) || 0) -
+    ((Number(r.sakit_sore) || 0) + (Number(r.izin_sore) || 0) + (Number(r.alfa_sore) || 0))
   return Math.max(0, h)
 }
 
@@ -560,7 +677,11 @@ function loadRows() {
     rows[String(a.santri_id)] = {
       sakit: Number(a.sakit) || 0,
       izin: Number(a.izin) || 0,
-      alfa: Number(a.alpa) || 0
+      alfa: Number(a.alpa) || 0,
+      // sesi Sore (ngaji) — di data jsonb; absen utk sekolah → default 0
+      sakit_sore: Number(a.sakit_sore) || 0,
+      izin_sore: Number(a.izin_sore) || 0,
+      alfa_sore: Number(a.alpa_sore) || 0
     }
   }
 }
@@ -578,7 +699,7 @@ async function simpanSemua() {
       const alpa = Number(r.alfa) || 0
       const hadir = hadirOf(s.id)
       const docId = `${s.id}_${periode.value}`
-      await mergeOne(COLL.value, docId, {
+      const payload = {
         id: docId,
         santri_id: String(s.id),
         santri_nama: s.nama || '',
@@ -592,7 +713,16 @@ async function simpanSemua() {
         alpa,
         hadir,
         updated_at: serverTimestamp()
-      })
+      }
+      // Ngaji: sesi Pagi = kolom tetap di atas; sesi Sore = field *_sore (masuk data jsonb).
+      if (isNgaji.value) {
+        payload.hari_efektif_sore = Number(hariEfektifSore.value) || 0
+        payload.sakit_sore = Number(r.sakit_sore) || 0
+        payload.izin_sore = Number(r.izin_sore) || 0
+        payload.alpa_sore = Number(r.alfa_sore) || 0
+        payload.hadir_sore = hadirSoreOf(s.id)
+      }
+      await mergeOne(COLL.value, docId, payload)
       count++
     }
     toast.success(
@@ -617,10 +747,11 @@ async function generateKeRapor() {
     let count = 0
     for (const s of filteredSantri.value) {
       const r = getRow(s.id)
-      const sakit = Number(r.sakit) || 0
-      const izin = Number(r.izin) || 0
-      const alpa = Number(r.alfa) || 0
-      const hadir = hadirOf(s.id)
+      // Ngaji: absensi rapor = gabungan sesi Pagi + Sore (keputusan "digabung"). Sekolah: sesi tunggal.
+      const sakit = (Number(r.sakit) || 0) + (isNgaji.value ? Number(r.sakit_sore) || 0 : 0)
+      const izin = (Number(r.izin) || 0) + (isNgaji.value ? Number(r.izin_sore) || 0 : 0)
+      const alpa = (Number(r.alfa) || 0) + (isNgaji.value ? Number(r.alfa_sore) || 0 : 0)
+      const hadir = hadirOf(s.id) + (isNgaji.value ? hadirSoreOf(s.id) : 0)
       const lembagaRapor = kategori.value === 'ngaji' ? s.lembaga || '' : s.lembaga_sekolah || ''
       const docId = `rapor_${s.id}_${lembagaRapor}_${periodKey}`
       // F6e: setDoc(merge:true) Firestore -> mergeOne (deep-merge Supabase via db.js).
