@@ -667,11 +667,17 @@ function hadirSoreOf(id) {
   return Math.max(0, h)
 }
 
-// Load existing absensi untuk periode + isi rows
+// Load existing absensi untuk periode + isi rows.
+// Hari Efektif tersimpan per baris tapi 1 nilai global/periode. Di-hydrate ke input HANYA
+// saat pindah periode/kategori (bukan tiap echo realtime) supaya ketikan HE yang belum
+// disimpan tak ketimpa. _heKey ditandai HANYA setelah berhasil hydrate (tahan race data async).
+let _heKey = ''
 function loadRows() {
   // reset
   for (const k in rows) delete rows[k]
   const pfx = periode.value
+  const hydrateHE = _heKey !== `${kategori.value}::${pfx}`
+  let heLoaded = false
   for (const a of absRaw.value) {
     if (String(a.periode) !== pfx) continue
     rows[String(a.santri_id)] = {
@@ -682,6 +688,13 @@ function loadRows() {
       sakit_sore: Number(a.sakit_sore) || 0,
       izin_sore: Number(a.izin_sore) || 0,
       alfa_sore: Number(a.alpa_sore) || 0
+    }
+    // Muat Hari Efektif dari baris tersimpan pertama (nilai global periode).
+    if (hydrateHE && !heLoaded && a.hari_efektif != null && a.hari_efektif !== '') {
+      hariEfektif.value = Number(a.hari_efektif) || 0
+      if (isNgaji.value) hariEfektifSore.value = Number(a.hari_efektif_sore) || 0
+      heLoaded = true
+      _heKey = `${kategori.value}::${pfx}`
     }
   }
 }
