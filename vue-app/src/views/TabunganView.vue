@@ -268,7 +268,13 @@
         <div
           v-for="t in filteredItems"
           :key="t.santri_id"
-          class="bg-[var(--bg-card)] rounded-xl p-3 border border-emerald-200 dark:border-emerald-700 shadow-sm"
+          @click="selectSantri(t.santri_id)"
+          :class="[
+            'rounded-xl p-3 border shadow-sm cursor-pointer transition bg-[var(--bg-card)]',
+            selectedSantriId === String(t.santri_id)
+              ? 'border-emerald-500 ring-2 ring-emerald-400'
+              : 'border-emerald-200 dark:border-emerald-700 hover:border-emerald-400'
+          ]"
         >
           <div class="flex items-center gap-3">
             <div
@@ -293,14 +299,14 @@
             </p>
             <div class="flex gap-1">
               <button
-                @click="openModal(t.santri_id, 'setor')"
+                @click.stop="openModal(t.santri_id, 'setor')"
                 class="bg-emerald-100 hover:bg-emerald-200 text-emerald-700 text-[10px] font-black px-2 py-1 rounded"
                 title="Setor"
               >
                 <i class="fas fa-plus"></i>
               </button>
               <button
-                @click="openModal(t.santri_id, 'tarik')"
+                @click.stop="openModal(t.santri_id, 'tarik')"
                 class="bg-rose-100 hover:bg-rose-200 text-rose-700 text-[10px] font-black px-2 py-1 rounded"
                 title="Tarik"
               >
@@ -308,6 +314,160 @@
               </button>
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- v.1.1.x: Buku Besar per santri (master-detail gaya Braja) -->
+      <div
+        v-if="selectedSantriId && selectedSantri"
+        class="bg-[var(--bg-card)] rounded-2xl border border-emerald-200 dark:border-emerald-700 shadow-sm overflow-hidden"
+      >
+        <div
+          class="px-4 md:px-5 py-3 border-b border-[var(--border-subtle)] flex items-center justify-between flex-wrap gap-2"
+        >
+          <div class="flex items-center gap-3">
+            <div
+              class="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 flex items-center justify-center"
+            >
+              <i class="fas fa-book"></i>
+            </div>
+            <div>
+              <h3 class="text-sm font-black text-[var(--text-primary)]">
+                {{
+                  getNamaSantri(selectedSantriId) !== '(unknown)'
+                    ? getNamaSantri(selectedSantriId)
+                    : selectedSantri.nama
+                }}
+              </h3>
+              <p class="text-[10px] text-[var(--text-secondary)]">
+                <span v-if="selectedSantri.nis">NIS {{ selectedSantri.nis }} · </span
+                >{{ selectedSantri.lembaga || ''
+                }}<span v-if="selectedSantri.kelas"> / {{ selectedSantri.kelas }}</span>
+              </p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 flex-wrap">
+            <div
+              class="px-3 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-700 text-xs"
+            >
+              <span class="text-[10px] text-[var(--text-secondary)] font-bold mr-1">Saldo</span>
+              <span class="text-emerald-700 dark:text-emerald-300 font-black">{{
+                fmtRp(ledgerTotals.saldo)
+              }}</span>
+            </div>
+            <button
+              @click="openModal(selectedSantriId, 'setor')"
+              class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black px-3 py-1.5 rounded-lg"
+            >
+              <i class="fas fa-plus mr-1"></i>Setor
+            </button>
+            <button
+              @click="openModal(selectedSantriId, 'tarik')"
+              class="bg-rose-600 hover:bg-rose-700 text-white text-xs font-black px-3 py-1.5 rounded-lg"
+            >
+              <i class="fas fa-minus mr-1"></i>Tarik
+            </button>
+            <button
+              @click="selectedSantriId = ''"
+              class="text-[var(--text-tertiary)] hover:text-[var(--text-primary)] px-2 py-1.5"
+              title="Tutup"
+            >
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+        </div>
+        <div
+          v-if="ledgerMutasi.length === 0"
+          class="p-8 text-center text-xs text-[var(--text-tertiary)] italic"
+        >
+          Belum ada transaksi {{ pageTitle.toLowerCase() }} untuk santri ini.
+        </div>
+        <div v-else class="overflow-x-auto">
+          <table class="w-full text-sm min-w-[680px]">
+            <thead
+              class="bg-[var(--bg-card-elevated)] text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-wider"
+            >
+              <tr>
+                <th class="px-3 py-2 text-left w-10">No</th>
+                <th class="px-3 py-2 text-left">Tanggal</th>
+                <th class="px-3 py-2 text-left">Keterangan</th>
+                <th class="px-3 py-2 text-left">Petugas</th>
+                <th class="px-3 py-2 text-right">Setoran</th>
+                <th class="px-3 py-2 text-right">Penarikan</th>
+                <th class="px-3 py-2 text-right">Saldo</th>
+                <th class="px-3 py-2 w-12"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="m in ledgerMutasi"
+                :key="m.id"
+                class="border-t border-[var(--border-subtle)] hover:bg-slate-50 dark:hover:bg-slate-900/30"
+              >
+                <td class="px-3 py-2 text-[var(--text-tertiary)]">{{ m._no }}</td>
+                <td class="px-3 py-2 text-[11px] text-[var(--text-secondary)] whitespace-nowrap">
+                  {{ fmtTgl(m.tanggal) }}
+                </td>
+                <td class="px-3 py-2 text-[11px]">
+                  <span
+                    :class="[
+                      'inline-block text-[9px] font-black uppercase px-1.5 py-0.5 rounded mr-1',
+                      m._setor ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'
+                    ]"
+                    >{{ m._setor ? 'Setor' : 'Tarik' }}</span
+                  >
+                  <span class="text-[var(--text-secondary)]">{{
+                    m.catatan || m.kategori || '-'
+                  }}</span>
+                </td>
+                <td class="px-3 py-2 text-[11px] text-[var(--text-secondary)] whitespace-nowrap">
+                  {{ m.operator || '-' }}
+                </td>
+                <td class="px-3 py-2 text-right font-black text-emerald-700 whitespace-nowrap">
+                  {{ m._setor ? fmtRp(m._setor) : '—' }}
+                </td>
+                <td class="px-3 py-2 text-right font-black text-rose-700 whitespace-nowrap">
+                  {{ m._tarik ? fmtRp(m._tarik) : '—' }}
+                </td>
+                <td
+                  class="px-3 py-2 text-right font-bold text-[var(--text-primary)] whitespace-nowrap"
+                >
+                  {{ fmtRp(m._saldo) }}
+                </td>
+                <td class="px-3 py-2 text-right whitespace-nowrap">
+                  <button
+                    @click="cetakSlip(m)"
+                    class="text-[10px] text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 px-1.5 py-1 rounded"
+                    title="Cetak slip"
+                  >
+                    <i class="fas fa-receipt"></i>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr
+                class="border-t-2 border-[var(--border-default)] bg-[var(--bg-card-elevated)] font-black"
+              >
+                <td
+                  colspan="4"
+                  class="px-3 py-2.5 text-right text-[11px] uppercase text-[var(--text-secondary)]"
+                >
+                  Total
+                </td>
+                <td class="px-3 py-2.5 text-right text-emerald-700 whitespace-nowrap">
+                  {{ fmtRp(ledgerTotals.setor) }}
+                </td>
+                <td class="px-3 py-2.5 text-right text-rose-700 whitespace-nowrap">
+                  {{ fmtRp(ledgerTotals.tarik) }}
+                </td>
+                <td class="px-3 py-2.5 text-right text-emerald-700 whitespace-nowrap">
+                  {{ fmtRp(ledgerTotals.saldo) }}
+                </td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
         </div>
       </div>
     </template>
@@ -863,6 +1023,49 @@ const orphanStats = computed(() => {
 const totalSaldoFmt = computed(() =>
   fmtRp(aggregated.value.reduce((s, t) => s + (Number(t.saldo) || 0), 0))
 )
+
+// v.1.1.x: master-detail (gaya Braja) — pilih santri → buku besar (ledger) tabungannya
+const selectedSantriId = ref('')
+function selectSantri(id) {
+  selectedSantriId.value = selectedSantriId.value === String(id) ? '' : String(id)
+}
+const selectedSantri = computed(
+  () => (santriRaw.value || []).find((s) => String(s.id) === String(selectedSantriId.value)) || null
+)
+const ledgerMutasi = computed(() => {
+  const sid = String(selectedSantriId.value || '')
+  if (!sid) return []
+  const list = (mutasiSource.value || [])
+    .filter((m) => String(m.santri_id || m.santriId || '') === sid)
+    .sort((a, b) => {
+      const ta = String(a.tanggal || ''),
+        tb = String(b.tanggal || '')
+      if (ta !== tb) return ta < tb ? -1 : 1 // kronologis (saldo berjalan)
+      return String(a.createdAt || a.id || '') < String(b.createdAt || b.id || '') ? -1 : 1
+    })
+  let saldo = 0
+  return list.map((m, i) => {
+    const nominal = Number(m.nominal) || 0
+    const setor = String(m.jenis || '').toLowerCase() === 'setor'
+    saldo += setor ? nominal : -nominal
+    return {
+      ...m,
+      _no: i + 1,
+      _setor: setor ? nominal : 0,
+      _tarik: setor ? 0 : nominal,
+      _saldo: saldo
+    }
+  })
+})
+const ledgerTotals = computed(() => {
+  let setor = 0,
+    tarik = 0
+  for (const m of ledgerMutasi.value) {
+    setor += m._setor
+    tarik += m._tarik
+  }
+  return { setor, tarik, saldo: setor - tarik }
+})
 
 // Orphan cleanup
 const orphanCleaning = ref(false)
