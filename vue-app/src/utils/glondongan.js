@@ -68,40 +68,46 @@ export function periodeBulan(d = new Date()) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Koordinator kelas — disimpan di master/lembaga PTPT:
-//   koordinator_kelas = { "1": <guruId>, "2": <guruId>, ... }  (key = nomor kelas 1..6)
-//   Nilai = guru id (sesi.id) supaya stabil (bukan nama). Diatur super_admin (Task #7).
+// Koordinator glondongan — per KATEGORI santri (bukan lagi per kelas asal 1..6).
+//   Disimpan di master/lembaga PTPT:
+//     koordinator_glondongan = { mahad: [<guruId>,…], nonmahad: [<guruId>,…] }
+//   Kategori dari santri.is_mukim: mukim -> 'mahad', selain -> 'nonmahad'.
+//   Tiap kategori boleh diisi BEBERAPA guru koordinator (multi). Diatur super_admin.
+//   Nilai = guru id (sesi.id) supaya stabil (bukan nama).
 // ─────────────────────────────────────────────────────────────────────────────
 export const PTPT_LEMBAGA = 'PTPT'
+export const KATEGORI_GLONDONGAN = ['mahad', 'nonmahad']
+export const KATEGORI_LABEL = { mahad: 'Ma’had', nonmahad: 'Selain Ma’had' }
 
 function _ptptObj(lembagaList) {
   return (lembagaList || []).find((l) => (l.lembaga || l.nama) === PTPT_LEMBAGA) || null
 }
 
-// Map koordinator { [kelasNo]: guruId }. Selalu objek (mungkin kosong).
-export function getKoordinatorMap(lembagaList) {
+// Kategori 'mahad' | 'nonmahad' dari flag mukim (santri.is_mukim / baris.mukim).
+export function kategoriMukim(mukim) {
+  return mukim ? 'mahad' : 'nonmahad'
+}
+
+// Map koordinator { mahad:[guruId], nonmahad:[guruId] } — selalu objek dg array (mungkin kosong).
+export function getKoordinatorGlondongan(lembagaList) {
   const o = _ptptObj(lembagaList)
-  const m = o && o.koordinator_kelas
-  return m && typeof m === 'object' ? m : {}
+  const m = (o && o.koordinator_glondongan) || {}
+  const norm = (v) => (Array.isArray(v) ? v.map((x) => String(x)).filter(Boolean) : [])
+  return { mahad: norm(m.mahad), nonmahad: norm(m.nonmahad) }
 }
 
-// guruId koordinator kelas C (1..6). '' bila belum diset.
-export function koordinatorOf(kelasNo, lembagaList) {
-  const m = getKoordinatorMap(lembagaList)
-  return String(m[String(kelasNo)] || '')
-}
-
-// Daftar nomor kelas yang dikoordinatori guru ini (sesiId = sesi.id / guru id).
-export function kelasKoordinatori(sesiId, lembagaList) {
+// Kategori yang dikoordinatori guru ini (sesiId) — subset dari KATEGORI_GLONDONGAN.
+export function kategoriKoordinatori(sesiId, lembagaList) {
   const me = String(sesiId || '')
   if (!me) return []
-  const m = getKoordinatorMap(lembagaList)
-  const out = []
-  for (let c = 1; c <= PTPT_TOTAL_KELAS; c++) if (String(m[String(c)] || '') === me) out.push(c)
-  return out
+  const m = getKoordinatorGlondongan(lembagaList)
+  return KATEGORI_GLONDONGAN.filter((k) => m[k].includes(me))
 }
 
-// Apakah guru ini koordinator kelas C?
-export function isKoordinatorKelas(sesiId, kelasNo, lembagaList) {
-  return !!sesiId && koordinatorOf(kelasNo, lembagaList) === String(sesiId)
+// Apakah guru ini koordinator kategori tsb ('mahad' | 'nonmahad')?
+export function isKoordinatorKategori(sesiId, kategori, lembagaList) {
+  const me = String(sesiId || '')
+  if (!me) return false
+  const m = getKoordinatorGlondongan(lembagaList)
+  return (m[kategori] || []).includes(me)
 }

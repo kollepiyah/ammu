@@ -9,7 +9,7 @@ import { useGlondongan } from '@/composables/useGlondongan'
 import { useToast } from '@/composables/useToast'
 // Aspek nilai PTPT (sama persis dg tes PJ): Tahfizh, Istimror, Fashohah, Tajwid (0..90).
 import { tesAspekFlat, clampNilaiTes, TES_NILAI_MAX } from '@/utils/tesKenaikan'
-import { PTPT_TOTAL_KELAS, periodeBulan } from '@/utils/glondongan'
+import { KATEGORI_GLONDONGAN, KATEGORI_LABEL, periodeBulan } from '@/utils/glondongan'
 import { useSettingsStore } from '@/stores/settings'
 
 const {
@@ -19,8 +19,8 @@ const {
   myNama,
   antrianTugas,
   canAssignAny,
-  myKoordinatorKelas,
-  koordinatorMap,
+  myKategori,
+  koordinatorGlondongan,
   isPjPtpt,
   isSuper,
   tugaskan,
@@ -64,11 +64,18 @@ const guruPtpt = computed(() =>
 
 // Konteks peran (ditampilkan di header Penugasan).
 const scopeLabel = computed(() => {
-  if (isSuper.value) return 'Super Admin — semua kelas'
-  if (isPjPtpt.value) return 'PJ PTPT — semua kelas'
-  const ks = myKoordinatorKelas.value
-  return ks.length ? `Koordinator Kelas ${ks.join(', ')}` : 'Tanpa scope penugasan'
+  if (isSuper.value) return 'Super Admin — semua kategori'
+  if (isPjPtpt.value) return 'PJ PTPT — semua kategori'
+  const ks = myKategori.value
+  return ks.length
+    ? 'Koordinator ' + ks.map((k) => KATEGORI_LABEL[k]).join(' & ')
+    : 'Tanpa scope penugasan'
 })
+
+// Label kategori ('Ma’had'/'Selain Ma’had') dari baris glondongan (baris.mukim).
+function kategoriLabel(row) {
+  return KATEGORI_LABEL[row && row.mukim ? 'mahad' : 'nonmahad']
+}
 
 // ── Aksi tugaskan ──
 const pick = ref({}) // { [rowId]: guruId }
@@ -216,25 +223,35 @@ function nilaiJuzText(nilaiJuz) {
   return PTPT_ASPEK.map((a) => `${a.label} ${nilaiJuz[a.key] ?? '–'}`).join(' · ')
 }
 
-// ── Tab Koordinator (super_admin): set guru koordinator per kelas asal (Task #7a) ──
-const KELAS_LIST = Array.from({ length: PTPT_TOTAL_KELAS }, (_, i) => i + 1) // [1..6]
-const koorDraft = ref({}) // { "1": guruId, ... }
+// ── Tab Koordinator (super_admin): set guru koordinator per KATEGORI (multi-guru) ──
+const KATEGORI_LIST = KATEGORI_GLONDONGAN // ['mahad','nonmahad']
+const koorDraft = ref({ mahad: [], nonmahad: [] }) // { mahad:[guruId], nonmahad:[guruId] }
 const savingKoor = ref(false)
 // Sinkronkan draft tiap map dari master/lembaga berubah (mis. realtime / muat awal).
 watch(
-  koordinatorMap,
+  koordinatorGlondongan,
   (m) => {
-    const d = {}
-    for (const c of KELAS_LIST) d[String(c)] = String((m && m[String(c)]) || '')
-    koorDraft.value = d
+    koorDraft.value = {
+      mahad: [...((m && m.mahad) || [])],
+      nonmahad: [...((m && m.nonmahad) || [])]
+    }
   },
-  { immediate: true }
+  { immediate: true, deep: true }
 )
+function isKoorChecked(kategori, guruId) {
+  return (koorDraft.value[kategori] || []).includes(String(guruId))
+}
+// Toggle 1 guru pada kategori tertentu (multi-guru per kategori).
+function toggleKoor(kategori, guruId) {
+  const id = String(guruId)
+  const cur = koorDraft.value[kategori] || []
+  koorDraft.value[kategori] = cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]
+}
 async function saveKoor() {
   savingKoor.value = true
   try {
     await saveKoordinator(koorDraft.value)
-    toast.success('Koordinator kelas tersimpan')
+    toast.success('Koordinator glondongan tersimpan')
   } catch (e) {
     toast.error('Gagal simpan koordinator: ' + (e.message || e))
   } finally {
@@ -397,8 +414,17 @@ const rekapTotal = computed(() => rekapRows.value.reduce((s, g) => s + g.total, 
         >
           <div class="flex items-start justify-between gap-2 flex-wrap">
             <div class="min-w-0">
-              <p class="text-sm font-bold text-[var(--text-primary)] truncate">
-                {{ row.nama_cache || '—' }}
+              <p class="text-sm font-bold text-[var(--text-primary)] flex items-center gap-1.5">
+                <span class="truncate">{{ row.nama_cache || '—' }}</span>
+                <span
+                  :class="[
+                    'px-1.5 py-0.5 rounded text-[10px] font-bold shrink-0',
+                    row.mukim
+                      ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300'
+                      : 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300'
+                  ]"
+                  >{{ kategoriLabel(row) }}</span
+                >
               </p>
               <p class="text-[11px] text-[var(--text-secondary)]">
                 Blok <b class="text-teal-700 dark:text-teal-300">Kelas {{ row.kelas_asal }}</b> ·
@@ -633,10 +659,11 @@ const rekapTotal = computed(() => rekapRows.value.reduce((s, g) => s + g.total, 
       class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm"
     >
       <h3 class="text-sm font-black text-[var(--text-primary)] mb-1">
-        <i class="fas fa-user-gear text-teal-600 mr-1"></i>Koordinator Kelas PTPT
+        <i class="fas fa-user-gear text-teal-600 mr-1"></i>Koordinator Glondongan PTPT
       </h3>
       <p class="text-xs text-[var(--text-secondary)] mb-3">
-        Guru yang berhak menugaskan penguji glondongan untuk blok tiap kelas asal.
+        Guru yang berhak menugaskan penguji glondongan, dibagi per kategori santri. Tiap kategori
+        boleh diisi lebih dari satu guru.
       </p>
 
       <div
@@ -646,33 +673,60 @@ const rekapTotal = computed(() => rekapRows.value.reduce((s, g) => s + g.total, 
         <i class="fas fa-triangle-exclamation mr-1"></i>Belum ada guru PTPT aktif untuk dipilih.
       </div>
 
-      <div v-else class="space-y-2">
+      <div v-else class="space-y-3">
         <div
-          v-for="c in KELAS_LIST"
-          :key="c"
-          class="grid grid-cols-[80px_1fr] gap-2 items-center p-2 rounded-xl border border-[var(--border-default)] bg-[var(--bg-muted)]"
+          v-for="k in KATEGORI_LIST"
+          :key="k"
+          class="p-3 rounded-xl border border-[var(--border-default)] bg-[var(--bg-muted)]"
         >
-          <span class="text-sm font-bold text-teal-700 dark:text-teal-300">Kelas {{ c }}</span>
-          <select
-            v-model="koorDraft[String(c)]"
-            class="px-2.5 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-input)] text-[var(--text-primary)] cursor-pointer"
-          >
-            <option value="">— belum ditetapkan —</option>
-            <option v-for="g in guruPtpt" :key="g.id" :value="String(g.id)">{{ g.nama }}</option>
-          </select>
+          <div class="flex items-center justify-between gap-2 mb-2">
+            <span class="text-sm font-bold text-teal-700 dark:text-teal-300">
+              <i
+                :class="[
+                  'fas mr-1',
+                  k === 'mahad' ? 'fa-house-chimney' : 'fa-person-walking-arrow-right'
+                ]"
+              ></i>
+              {{ KATEGORI_LABEL[k] }}
+            </span>
+            <span class="text-[10px] text-[var(--text-tertiary)]"
+              >{{ (koorDraft[k] || []).length }} guru</span
+            >
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+            <label
+              v-for="g in guruPtpt"
+              :key="g.id"
+              class="flex items-center gap-2 px-2.5 py-2 rounded-lg border cursor-pointer text-sm transition"
+              :class="
+                isKoorChecked(k, g.id)
+                  ? 'border-teal-500 bg-teal-50 dark:bg-teal-900/30 text-teal-800 dark:text-teal-200 font-bold'
+                  : 'border-[var(--border-default)] bg-[var(--bg-input)] text-[var(--text-primary)]'
+              "
+            >
+              <input
+                type="checkbox"
+                class="accent-teal-600"
+                :checked="isKoorChecked(k, g.id)"
+                @change="toggleKoor(k, g.id)"
+              />
+              <span class="truncate">{{ g.nama }}</span>
+            </label>
+          </div>
         </div>
 
         <button
           type="button"
           @click="saveKoor"
           :disabled="savingKoor"
-          class="w-full mt-2 bg-teal-600 hover:bg-teal-700 text-white font-bold py-2.5 rounded-xl disabled:opacity-50 flex items-center justify-center gap-2"
+          class="w-full mt-1 bg-teal-600 hover:bg-teal-700 text-white font-bold py-2.5 rounded-xl disabled:opacity-50 flex items-center justify-center gap-2"
         >
           <i :class="['fas', savingKoor ? 'fa-spinner fa-spin' : 'fa-floppy-disk']"></i>
           {{ savingKoor ? 'Menyimpan…' : 'Simpan Koordinator' }}
         </button>
         <p class="text-[10px] text-[var(--text-tertiary)] italic">
-          Kelas 1 tak punya glondongan (tak ada juz kelas lampau) — koordinatornya opsional.
+          Kategori diambil dari data <b>Mukim/Ma'had</b> santri. Santri yang belum diset mukim
+          dihitung <b>Selain Ma'had</b>.
         </p>
       </div>
     </div>

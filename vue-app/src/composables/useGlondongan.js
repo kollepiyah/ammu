@@ -1,6 +1,6 @@
 // v.111: useGlondongan — koleksi `tes_glondongan` (real-time) + scope per-peran + aksi.
 //   Peran & hak:
-//     - Menugaskan penguji blok glondongan : Koordinator kelas asal · PJ PTPT · super_admin.
+//     - Menugaskan penguji blok glondongan : Koordinator kategori santri (Ma'had/Selain) · PJ PTPT · super_admin.
 //     - Menilai (input nilai per juz+catatan): guru yang DITUGASKAN (glondongan) atau
 //       guru kelas santri (baris 'berjalan', auto-assigned).
 //     - Baca catatan evaluasi              : guru kelas santri + PJ (via view Task #6).
@@ -10,11 +10,12 @@ import { subscribeColl, subscribeDoc, updateOne, deleteOne, getOne, mergeOne } f
 import { useAuthStore } from '@/stores/auth'
 import { isSuperAdmin } from '@/utils/roleScope'
 import {
-  kelasKoordinatori,
-  isKoordinatorKelas,
-  getKoordinatorMap,
-  PTPT_LEMBAGA,
-  PTPT_TOTAL_KELAS
+  kategoriKoordinatori,
+  isKoordinatorKategori,
+  getKoordinatorGlondongan,
+  kategoriMukim,
+  KATEGORI_GLONDONGAN,
+  PTPT_LEMBAGA
 } from '@/utils/glondongan'
 
 // PJ PTPT = jabatan kepala/PJ/pengasuh DAN lembaga = PTPT.
@@ -43,19 +44,19 @@ export function useGlondongan() {
 
   const isSuper = computed(() => isSuperAdmin(sesi.value))
   const isPjPtpt = computed(() => _isPjPtpt(sesi.value))
-  // Nomor kelas (1..6) yang saya koordinatori.
-  const myKoordinatorKelas = computed(() => kelasKoordinatori(myId.value, lembagaList.value))
-  // Map { [kelasNo]: guruId } koordinator kelas PTPT (dari master/lembaga). Task #7a.
-  const koordinatorMap = computed(() => getKoordinatorMap(lembagaList.value))
+  // Kategori ('mahad'/'nonmahad') yang saya koordinatori (bisa keduanya / kosong).
+  const myKategori = computed(() => kategoriKoordinatori(myId.value, lembagaList.value))
+  // Map { mahad:[guruId], nonmahad:[guruId] } koordinator glondongan PTPT (dari master/lembaga).
+  const koordinatorGlondongan = computed(() => getKoordinatorGlondongan(lembagaList.value))
 
-  // Boleh menugaskan penguji untuk blok kelas asal C? (koordinator C / PJ PTPT / super_admin).
-  function canAssign(kelasAsal) {
+  // Boleh menugaskan penguji utk baris ini? (koordinator kategori santri / PJ PTPT / super_admin).
+  function canAssign(row) {
     if (isSuper.value || isPjPtpt.value) return true
-    return isKoordinatorKelas(myId.value, kelasAsal, lembagaList.value)
+    return isKoordinatorKategori(myId.value, kategoriMukim(row?.mukim), lembagaList.value)
   }
   // Boleh melihat antrian penugasan sama sekali?
   const canAssignAny = computed(
-    () => isSuper.value || isPjPtpt.value || myKoordinatorKelas.value.length > 0
+    () => isSuper.value || isPjPtpt.value || myKategori.value.length > 0
   )
 
   const sortNewest = (arr) => [...arr].sort((a, b) => (b._ts || 0) - (a._ts || 0))
@@ -64,7 +65,7 @@ export function useGlondongan() {
   const antrianTugas = computed(() =>
     sortNewest(
       rowsRaw.value.filter(
-        (r) => r.tipe === 'glondongan' && r.status === 'menunggu' && canAssign(r.kelas_asal)
+        (r) => r.tipe === 'glondongan' && r.status === 'menunggu' && canAssign(r)
       )
     )
   )
@@ -130,19 +131,20 @@ export function useGlondongan() {
     await deleteOne('tes_glondongan', id, { alasan: 'Hapus baris tes glondongan (super_admin)' })
   }
 
-  // super_admin: simpan map koordinator kelas ke master/lembaga PTPT (Task #7a).
-  //   map = { "1": guruId, ... } (key = nomor kelas 1..6; entri kosong dibuang).
+  // super_admin: simpan koordinator glondongan per kategori ke master/lembaga PTPT.
+  //   map = { mahad:[guruId,…], nonmahad:[guruId,…] } (id kosong/duplikat dibuang).
   async function saveKoordinator(map) {
     const clean = {}
-    for (let c = 1; c <= PTPT_TOTAL_KELAS; c++) {
-      const v = String((map && map[String(c)]) || '').trim()
-      if (v) clean[String(c)] = v
+    for (const k of KATEGORI_GLONDONGAN) {
+      const arr = Array.isArray(map && map[k]) ? map[k] : []
+      clean[k] = [...new Set(arr.map((x) => String(x || '').trim()).filter(Boolean))]
     }
     const m = await getOne('master', 'lembaga')
     const list = Array.isArray(m?.list) ? m.list.slice() : []
     const idx = list.findIndex((l) => (l.lembaga || l.nama) === PTPT_LEMBAGA)
-    if (idx >= 0) list[idx] = { ...list[idx], koordinator_kelas: clean }
-    else list.push({ lembaga: PTPT_LEMBAGA, koordinator_kelas: clean })
+    // Tulis field baru + kosongkan field lama koordinator_kelas biar tak ada 2 sumber.
+    if (idx >= 0) list[idx] = { ...list[idx], koordinator_glondongan: clean, koordinator_kelas: {} }
+    else list.push({ lembaga: PTPT_LEMBAGA, koordinator_glondongan: clean })
     await mergeOne('master', 'lembaga', { list })
   }
 
@@ -172,8 +174,8 @@ export function useGlondongan() {
     myNama,
     isSuper,
     isPjPtpt,
-    myKoordinatorKelas,
-    koordinatorMap,
+    myKategori,
+    koordinatorGlondongan,
     canAssign,
     canAssignAny,
     antrianTugas,

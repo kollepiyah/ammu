@@ -138,6 +138,7 @@ export function useTesKenaikan() {
       nama_cache: s.nama || '',
       lembaga: 'PTPT',
       kelas_santri: s.kelas || '',
+      mukim: !!s.is_mukim, // kategori koordinator: true -> Ma'had, false -> Selain Ma'had
       juz_target: T,
       periode: periodeBulan(now),
       nilai: {},
