@@ -137,8 +137,36 @@
               (kerja umum/yayasan).
             </p>
           </div>
+          <!-- v.1.1.9: Jabatan terikat unit (master/jabatan units[]) → Unit Tugas menggantikan
+               dua dropdown lembaga. 1 unit = terisi otomatis; >1 = Kyai pilih. Jabatan global
+               (mis. "Guru", units kosong) tetap pakai dropdown Qiraati/Sekolah di bawah. -->
+          <div v-if="jabatanPunyaUnit" class="md:col-span-2">
+            <label class="block text-xs font-bold text-indigo-600 mb-1 uppercase"
+              >Unit / Lembaga Tugas</label
+            >
+            <div
+              v-if="unitsJabatan.length === 1"
+              class="flex items-center gap-2 px-3 py-2 text-sm rounded-xl border-2 border-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-800 dark:text-indigo-200 font-bold"
+            >
+              <i class="fas fa-building"></i>{{ unitsJabatan[0] }}
+              <span class="ml-auto text-[10px] font-normal opacity-70">otomatis dari jabatan</span>
+            </div>
+            <select
+              v-else
+              v-model="unitTerpilih"
+              class="w-full px-3 py-2 text-sm rounded-xl border-2 border-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 focus:ring-2 focus:ring-indigo-500 outline-none"
+            >
+              <option value="">-- Pilih unit --</option>
+              <option v-for="u in unitsJabatan" :key="u" :value="u">{{ u }}</option>
+            </select>
+            <p class="text-[10px] text-[var(--text-secondary)] italic mt-1">
+              <i class="fas fa-info-circle mr-1"></i>Ditentukan jabatan <b>{{ form.jabatan }}</b> di
+              Master Data &rsaquo; Jabatan.
+            </p>
+          </div>
+
           <!-- Guru / Pegawai+Guru mode: lembaga fields (optional, pilih salah satu atau keduanya) -->
-          <template v-if="showLembagaQiraati || showLembagaSekolah">
+          <template v-else-if="showLembagaQiraati || showLembagaSekolah">
             <div v-if="showLembagaQiraati">
               <label class="block text-xs font-bold text-teal-700 mb-1 uppercase"
                 >Lembaga Qiraati</label
@@ -410,10 +438,17 @@ const {
   shiftOptions,
   toggleShift,
   syncShiftIdsKeTipe,
+  unitsJabatan,
+  jabatanPunyaUnit,
+  unitTerpilih,
+  syncUnitKeJabatan,
   loadGuru,
   resetForm,
   save
 } = useGuruForm()
+
+// v.1.1.9: jabatan menentukan unit tugas → lembaga terisi/dibatasi otomatis.
+watch(() => [form.value.jabatan, form.value.jabatan_tambahan], syncUnitKeJabatan)
 
 // v.99: show/butuh lembaga dari JABATAN (master/jabatan tipe_lembaga) — bukan tipe_pegawai
 const isJabatanNoLembaga = computed(() => !butuhLembaga.value)

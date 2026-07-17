@@ -11,6 +11,8 @@ import { gedungList } from '@/utils/gedung'
 // v.1.1.9: shift ikut master; shiftsForGuru dipakai utk menurunkan centangan awal data lama.
 import { shiftsForGuru } from '@/utils/shiftDerive'
 import { shiftList, shiftIdsToLegacy } from '@/utils/shiftMaster'
+// v.1.1.9: unit tugas dari master/jabatan (ganti tebakan regex lama)
+import { unitsOfGuru, fieldForUnit } from '@/utils/jabatanUnit'
 
 function emptyForm() {
   return {
@@ -150,6 +152,49 @@ export function useGuruForm() {
   })
 
   const lembagaSekolahOptions = computed(() => ['TK', 'SDI', 'PKBM'])
+
+  // ── v.1.1.9: Unit tugas dari master/jabatan (items[].units) ──────────────
+  // Gabungan unit jabatan utama + tambahan. [] = GLOBAL (jabatan "Guru") → pakai
+  // dropdown Qiraati/Sekolah seperti biasa. Ada isinya → lembaga guru dikunci/dibatasi
+  // ke unit itu, menggantikan tebakan regex lama di useGuru.deriveGuruLembagaRefs.
+  const unitsJabatan = computed(() =>
+    unitsOfGuru(jabatanItemsFromMaster.value, form.value.jabatan, form.value.jabatan_tambahan)
+  )
+  const jabatanPunyaUnit = computed(() => unitsJabatan.value.length > 0)
+
+  // Unit yang sedang terpilih — dibaca dari field mana pun yang menampungnya.
+  const unitTerpilih = computed({
+    get() {
+      const cand = [form.value.lembaga, form.value.lembaga_sekolah].filter(Boolean)
+      return (
+        cand.find((c) =>
+          unitsJabatan.value.some((u) => u.toLowerCase() === String(c).toLowerCase())
+        ) || ''
+      )
+    },
+    set(v) {
+      const nama = String(v || '')
+      form.value.lembaga = ''
+      form.value.lembaga_sekolah = ''
+      if (!nama) return
+      form.value[fieldForUnit(lembagaRaw.value, nama)] = nama
+    }
+  })
+
+  // Jabatan berubah → selaraskan lembaga dgn unit jabatan.
+  //   1 unit  → terisi OTOMATIS (mis. Keamanan → Sarana & Prasarana).
+  //   >1 unit → biarkan Kyai pilih; buang pilihan yang tak lagi sah.
+  //   global  → jangan sentuh apa pun.
+  function syncUnitKeJabatan() {
+    const units = unitsJabatan.value
+    if (units.length === 0) return
+    if (units.length === 1) {
+      unitTerpilih.value = units[0]
+      return
+    }
+    const cur = unitTerpilih.value
+    if (cur && !units.some((u) => u.toLowerCase() === cur.toLowerCase())) unitTerpilih.value = ''
+  }
 
   // v.21.17b.0526: Jabatan dinamis dari master/jabatan Firestore doc (legacy fallback)
   const jabatanFromMaster = ref([])
@@ -592,6 +637,10 @@ export function useGuruForm() {
     JABATAN_PEGAWAI_GROUP,
     lembagaPondokOptions,
     lembagaSekolahOptions,
+    unitsJabatan,
+    jabatanPunyaUnit,
+    unitTerpilih,
+    syncUnitKeJabatan,
     jabatanOptionsDynamic,
     jabatanOptionsFiltered,
     showLembagaSekolah,
