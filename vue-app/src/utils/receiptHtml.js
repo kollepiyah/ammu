@@ -187,7 +187,11 @@ export function buildReceiptStrukHtml(trx = {}, s = {}) {
 export function buildSlipBisyarohHtml(slip = {}, s = {}) {
   const li = Array.isArray(slip.line_items) ? slip.line_items : []
   const bonus = slip.bonus_kehadiran || {}
-  const bonusTotal = Number(bonus.total || 0)
+  // v.1.1.9: slip baru menaruh bonus kehadiran sbg baris line_items (jenis '× hadir') DAN
+  //   meringkasnya di bonus_kehadiran utk rekap/dasbor. Jangan render dua-duanya — baris
+  //   ringkas hanya utk slip LAMA yang line_items-nya belum memuat bonus.
+  const bonusDiLineItems = li.some((x) => x && x.kategori === 'bonus')
+  const bonusTotal = bonusDiLineItems ? 0 : Number(bonus.total || 0)
   const pemasukan =
     Number(slip.total_pemasukan || 0) ||
     Number(slip.bisyaroh_pokok || 0) +

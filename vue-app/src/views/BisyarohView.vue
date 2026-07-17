@@ -230,57 +230,23 @@
                   <i class="fas fa-times"></i>
                 </button>
               </div>
-              <!-- v.21.103.0527: Bonus Kehadiran auto (pagi/sore/sekolah) -->
+              <!-- v.1.1.9: rincian kehadiran = INFO. Bonus kehadiran sendiri sudah jadi
+                   baris line item di atas (Jenis Bisyaroh ber-hitungan "× hadir"). -->
               <div
+                v-if="rincianHadir.length > 0"
                 class="bg-cyan-50 dark:bg-cyan-900/20 rounded-lg px-3 py-2 border border-cyan-200"
               >
-                <div class="flex items-center justify-between gap-2 flex-wrap mb-1.5">
-                  <p class="text-xs font-black text-cyan-800">
-                    <i class="fas fa-bolt mr-1"></i>Bonus Kehadiran (otomatis dari absensi)
-                  </p>
-                  <p class="text-base font-black text-cyan-900">
-                    {{ fmtRp(bonusKehadiran.total) }}
-                  </p>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-1.5 text-[10px] text-cyan-700">
-                  <div>
-                    Pagi: <b>{{ bonusKehadiran.hadir_pagi }}x</b> × Rp{{
-                      Number(bonusKehadiran.tarif_pagi).toLocaleString('id-ID')
-                    }}
-                    = {{ fmtRp(bonusKehadiran.total_pagi) }}
-                  </div>
-                  <div>
-                    Sore: <b>{{ bonusKehadiran.hadir_sore }}x</b> × Rp{{
-                      Number(bonusKehadiran.tarif_sore).toLocaleString('id-ID')
-                    }}
-                    = {{ fmtRp(bonusKehadiran.total_sore) }}
-                  </div>
-                  <div>
-                    Sekolah: <b>{{ bonusKehadiran.hadir_sekolah }}x</b> × Rp{{
-                      Number(bonusKehadiran.tarif_sekolah).toLocaleString('id-ID')
-                    }}
-                    = {{ fmtRp(bonusKehadiran.total_sekolah) }}
-                  </div>
-                  <div
-                    v-if="bonusKehadiran.hadir_pegawai_pagi || bonusKehadiran.tarif_pegawai_pagi"
-                  >
-                    Pegawai Pagi: <b>{{ bonusKehadiran.hadir_pegawai_pagi }}x</b> × Rp{{
-                      Number(bonusKehadiran.tarif_pegawai_pagi).toLocaleString('id-ID')
-                    }}
-                    = {{ fmtRp(bonusKehadiran.total_pegawai_pagi) }}
-                  </div>
-                  <div
-                    v-if="bonusKehadiran.hadir_pegawai_sore || bonusKehadiran.tarif_pegawai_sore"
-                  >
-                    Pegawai Sore: <b>{{ bonusKehadiran.hadir_pegawai_sore }}x</b> × Rp{{
-                      Number(bonusKehadiran.tarif_pegawai_sore).toLocaleString('id-ID')
-                    }}
-                    = {{ fmtRp(bonusKehadiran.total_pegawai_sore) }}
-                  </div>
+                <p class="text-xs font-black text-cyan-800 mb-1">
+                  <i class="fas fa-calendar-check mr-1"></i>Kehadiran periode ini
+                </p>
+                <div class="flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-cyan-700">
+                  <span v-for="r in rincianHadir" :key="r.shift">
+                    {{ r.label }}: <b>{{ r.jml }}×</b>
+                  </span>
                 </div>
                 <p class="text-[9px] text-cyan-600 italic mt-1">
-                  Tidak hadir = tidak dapat bonus (bukan dipotong). Atur tarif di Pengaturan
-                  Keuangan.
+                  Tidak hadir = tidak dapat bonus (bukan dipotong). Nominalnya diatur di Pengaturan
+                  Keuangan &rsaquo; Bisyaroh sebagai jenis "× hadir".
                 </p>
               </div>
               <!-- v.111: Bisyaroh Glondongan PTPT auto (per juz disimak) -->
@@ -742,7 +708,24 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useDesktopShell } from '@/composables/useDesktopShell'
 import { definePageActions } from '@/composables/useRibbonContext'
 // v.91.0626: deleteOne = backup audit_log dulu. serverTimestamp = shim ISO string (db.js).
-import { subscribeColl, setOne, mergeOne, deleteOne, serverTimestamp } from '@/services/db'
+import {
+  subscribeColl,
+  subscribeDoc,
+  setOne,
+  mergeOne,
+  deleteOne,
+  serverTimestamp
+} from '@/services/db'
+import { useLembaga } from '@/composables/useLembaga'
+// v.1.1.9: engine Jenis Bisyaroh + label shift dari master
+import {
+  jenisBisyarohList,
+  barisBisyaroh,
+  refsUntukScope,
+  ringkasSlip
+} from '@/utils/bisyarohScope'
+import { shiftsForGuru } from '@/utils/shiftDerive'
+import { shiftLabelOf } from '@/utils/shiftMaster'
 import { useAuthStore } from '@/stores/auth'
 import { isSuperAdmin } from '@/utils/roleScope'
 import { writeAuditLog } from '@/utils/auditLog'
@@ -760,6 +743,11 @@ import { cetakSlipBisyarohPdf, exportRekapBisyarohPdf } from '@/utils/strukBuild
 
 const { gaji, loading } = useKeuangan()
 const { guruRaw, deriveGuruLembagaRefs } = useGuru()
+// v.1.1.9: Jenis Bisyaroh ber-scope (jabatan × lembaga × shift) — ganti map pokok
+//   per guru + 5 tarif shift global.
+const { lembagaRaw } = useLembaga()
+const jabatanItems = ref([])
+let unsubJabatan = null
 // v.21.103.0527: absensi shift guru utk hitung bonus kehadiran otomatis (pagi/sore/sekolah)
 const absensiShift = ref([])
 let unsubAbsensi = null
@@ -773,6 +761,10 @@ onMounted(() => {
   unsubGlondongan = subscribeColl('tes_glondongan', (docs) => {
     glondonganRows.value = docs || []
   })
+  // v.1.1.9: master jabatan (units[]) utk derivasi tempat tugas pd pencocokan scope
+  unsubJabatan = subscribeDoc('master', 'jabatan', (d) => {
+    jabatanItems.value = Array.isArray(d?.items) ? d.items : []
+  })
 })
 onUnmounted(() => {
   if (unsubAbsensi) {
@@ -785,6 +777,13 @@ onUnmounted(() => {
   if (unsubGlondongan) {
     try {
       unsubGlondongan()
+    } catch {
+      /* ignore */
+    }
+  }
+  if (unsubJabatan) {
+    try {
+      unsubJabatan()
     } catch {
       /* ignore */
     }
@@ -1269,37 +1268,52 @@ const filteredGuru = computed(() => {
 const selectedGuru = ref(null)
 const form = ref({ line_items: [], total_potongan: 0 })
 
-function buildLineItemsFromGuru(g) {
-  const refs = deriveGuruLembagaRefs(g) || []
-  const items = []
-  for (const r of refs) {
-    let kategori = 'ngaji'
-    let label = `Bisyaroh Ngaji (${r.lembaga})`
-    if (r.group === 'sekolah') {
-      kategori = 'sekolah'
-      label = `Bisyaroh Sekolah (${r.lembaga})`
-    } else if (r.group === 'mahad') {
-      kategori = 'mahad'
-      label = "Bisyaroh Ma'had"
-    } else if (r.group === 'non-lembaga') {
-      kategori = 'admin'
-      label = `Bisyaroh ${r.lembaga}${r.jabatan_di_sini ? ' — ' + r.jabatan_di_sini : ''}`
-    }
-    items.push({
-      kategori,
-      lembaga: r.lembaga || '-',
-      label,
-      nominal: 0
-    })
+// v.1.1.9: hitung SEMUA hadir per shift utk 1 guru pada 1 periode ('YYYY-MM').
+//   Dulu 5 shift di-hardcode; kini apa pun shift-nya (termasuk shift buatan Kyai).
+function hadirPerShiftGuru(guruId, periode) {
+  const out = {}
+  const gid = String(guruId)
+  for (const a of absensiShift.value || []) {
+    if (String(a.guru_id) !== gid) continue
+    if (!String(a.tanggal || '').startsWith(periode)) continue
+    const st = String(a.status || '').toLowerCase()
+    if (st !== 'hadir' && st !== 'terlambat') continue
+    const sh = String(a.shift || '').toLowerCase()
+    if (!sh) continue
+    out[sh] = (out[sh] || 0) + 1
   }
-  if (items.length === 0) {
-    items.push({
-      kategori: 'ngaji',
-      lembaga: g.lembaga || '-',
-      label: 'Bisyaroh Pokok',
-      nominal: 0
-    })
+  return out
+}
+
+// v.1.1.9: konteks pencocokan scope 1 guru — tempat tugas + shift + kehadiran.
+function ctxGuru(g, periode) {
+  const s = settingsStore.settings || {}
+  return {
+    refs: refsUntukScope(
+      deriveGuruLembagaRefs(g, {
+        jabatanItems: jabatanItems.value,
+        lembagaList: lembagaRaw.value
+      }),
+      g
+    ),
+    shiftIds: shiftsForGuru(g, s),
+    hadirPerShift: hadirPerShiftGuru(g.id, periode)
   }
+}
+
+// v.1.1.9: baris slip dari Jenis Bisyaroh ber-scope (jabatan × lembaga × shift).
+//   Dulu: 1 baris kosong per tempat tugas + nominal diketik tangan per guru, lalu
+//   bonus kehadiran dihitung terpisah dari 5 tarif global. Kini keduanya jadi satu
+//   daftar jenis; nominal ditentukan lembaga & tugas.
+function buildLineItemsFromGuru(g, periode) {
+  const jenis = jenisBisyarohList(settingsStore.settings || {})
+  const items = barisBisyaroh(jenis, ctxGuru(g, periode)).map((b) => ({
+    kategori: b.kategori,
+    lembaga: b.lembaga,
+    label: b.hitungan === 'per_hadir' ? `${b.label} (${b.qty}× ${fmtRp(b.tarif)})` : b.label,
+    nominal: b.nominal,
+    jenis_id: b.jenis_id
+  }))
   return items
 }
 
@@ -1320,61 +1334,41 @@ function pilihGuru(g) {
   const existing = gaji.value.find(
     (x) => String(x.guru_id) === String(g.id) && x.periode === periode
   )
+  // Slip yang SUDAH ada dibuka apa adanya — nominal yang pernah Kyai timpa manual
+  // tak boleh ditimpa balik oleh hasil hitung ulang.
   if (existing && Array.isArray(existing.line_items) && existing.line_items.length > 0) {
     form.value = {
       line_items: existing.line_items.map((li) => ({
         kategori: li.kategori || 'ngaji',
         lembaga: li.lembaga || '-',
         label: li.label || 'Bisyaroh',
-        nominal: Number(li.nominal || 0)
+        nominal: Number(li.nominal || 0),
+        jenis_id: li.jenis_id || ''
       })),
       total_potongan: Number(existing.total_potongan || 0)
     }
-  } else if (existing) {
-    // Legacy slip → reconstruct line_items dari struktur lama
-    const items = buildLineItemsFromGuru(g)
-    const itemNgaji = items.find((it) => it.kategori === 'ngaji' || it.kategori === 'mahad')
-    if (itemNgaji) itemNgaji.nominal = Number(existing.bisyaroh_pokok || 0)
-    const itemSekolah = items.find((it) => it.kategori === 'sekolah')
-    if (itemSekolah) itemSekolah.nominal = Number(existing.bisyaroh_sekolah || 0)
-    if (Number(existing.bisyaroh_tambahan || 0) > 0) {
-      items.push({
-        kategori: 'tambahan',
-        lembaga: '-',
-        label: 'Tambahan Shift (OP+OS)',
-        nominal: Number(existing.bisyaroh_tambahan)
-      })
-    }
-    // v.95.0626: tunjangan dari slip (bulk) -> tampil di editor
-    for (const tj of Array.isArray(existing.tunjangan_list) ? existing.tunjangan_list : []) {
-      items.push({
-        kategori: 'tunjangan',
-        lembaga: '-',
-        label: tj.label || 'Tunjangan',
-        nominal: Number(tj.nominal) || 0
-      })
-    }
-    form.value = {
-      line_items: items,
-      total_potongan: Number(existing.total_potongan || 0)
-    }
-  } else {
-    // v.95.0626: slip baru — auto-isi tunjangan/potongan per-guru dari master (scope guru_ids; kosong = semua)
-    const items = buildLineItemsFromGuru(g)
-    for (const t of applicableMaster('master_tunjangan', g)) {
-      items.push({
-        kategori: 'tunjangan',
-        lembaga: '-',
-        label: t.nama || 'Tunjangan',
-        nominal: Number(t.nominal) || 0
-      })
-    }
-    const potonganAuto = applicableMaster('master_potongan', g).reduce(
-      (s, p) => s + (Number(p.nominal) || 0),
-      0
-    )
-    form.value = { line_items: items, total_potongan: potonganAuto }
+    return
   }
+  // v.1.1.9: slip baru (atau slip legacy tanpa line_items) → hitung dari Jenis Bisyaroh.
+  //   Slip legacy TIDAK lagi direkonstruksi dari bisyaroh_pokok/sekolah/tambahan: angka
+  //   itu lahir dari model per-guru yang sudah dihapus, jadi menyalinnya balik = memanen
+  //   nominal yang tak punya jenis. Riwayat slip lamanya sendiri tetap utuh.
+  const items = buildLineItemsFromGuru(g, periode)
+  // master tunjangan/potongan per-guru (scope guru_ids) — sengaja TIDAK dilebur ke Jenis
+  // Bisyaroh (keputusan Kyai), jadi tetap ditambahkan di sini.
+  for (const t of applicableMaster('master_tunjangan', g)) {
+    items.push({
+      kategori: 'tunjangan',
+      lembaga: '-',
+      label: t.nama || 'Tunjangan',
+      nominal: Number(t.nominal) || 0
+    })
+  }
+  const potonganAuto = applicableMaster('master_potongan', g).reduce(
+    (s, p) => s + (Number(p.nominal) || 0),
+    0
+  )
+  form.value = { line_items: items, total_potongan: potonganAuto }
 }
 
 function addLineItem() {
@@ -1386,61 +1380,17 @@ function addLineItem() {
   })
 }
 
-// v.21.103.0527: hitung bonus kehadiran otomatis dari absensi_shift_guru
-// 3 shift: pagi, sore, sekolah. hadir = status in [hadir, terlambat].
-const bonusKehadiran = computed(() => {
-  const out = {
-    hadir_pagi: 0,
-    hadir_sore: 0,
-    hadir_sekolah: 0,
-    hadir_pegawai_pagi: 0,
-    hadir_pegawai_sore: 0,
-    tarif_pagi: 0,
-    tarif_sore: 0,
-    tarif_sekolah: 0,
-    tarif_pegawai_pagi: 0,
-    tarif_pegawai_sore: 0,
-    total_pagi: 0,
-    total_sore: 0,
-    total_sekolah: 0,
-    total_pegawai_pagi: 0,
-    total_pegawai_sore: 0,
-    total: 0
-  }
-  if (!selectedGuru.value) return out
+// v.1.1.9: rincian kehadiran guru terpilih — INFO saja (tak dijumlahkan ke take-home).
+//   Bonus kehadiran kini jadi baris line item dari Jenis Bisyaroh ber-hitungan '× hadir',
+//   jadi tak lagi dihitung terpisah dari 5 tarif global.
+const rincianHadir = computed(() => {
+  if (!selectedGuru.value) return []
   const periode = `${tahun.value}-${String(bulan.value).padStart(2, '0')}`
-  const gid = String(selectedGuru.value.id)
-  for (const a of absensiShift.value) {
-    if (String(a.guru_id) !== gid) continue
-    const tgl = String(a.tanggal || '')
-    if (!tgl.startsWith(periode)) continue
-    const status = String(a.status || '').toLowerCase()
-    if (status !== 'hadir' && status !== 'terlambat') continue
-    const sh = String(a.shift || '').toLowerCase()
-    if (sh === 'pagi') out.hadir_pagi += 1
-    else if (sh === 'sore') out.hadir_sore += 1
-    else if (sh === 'sekolah') out.hadir_sekolah += 1
-    else if (sh === 'pegawai_pagi') out.hadir_pegawai_pagi += 1
-    else if (sh === 'pegawai_sore') out.hadir_pegawai_sore += 1
-  }
-  const sset = settingsStore.settings || {}
-  out.tarif_pagi = Number(sset.keu_bisyaroh_pagi || 0) || 0
-  out.tarif_sore = Number(sset.keu_bisyaroh_sore || 0) || 0
-  out.tarif_sekolah = Number(sset.keu_bisyaroh_sekolah_shift || 0) || 0
-  out.tarif_pegawai_pagi = Number(sset.keu_bisyaroh_pegawai_pagi || 0) || 0
-  out.tarif_pegawai_sore = Number(sset.keu_bisyaroh_pegawai_sore || 0) || 0
-  out.total_pagi = out.hadir_pagi * out.tarif_pagi
-  out.total_sore = out.hadir_sore * out.tarif_sore
-  out.total_sekolah = out.hadir_sekolah * out.tarif_sekolah
-  out.total_pegawai_pagi = out.hadir_pegawai_pagi * out.tarif_pegawai_pagi
-  out.total_pegawai_sore = out.hadir_pegawai_sore * out.tarif_pegawai_sore
-  out.total =
-    out.total_pagi +
-    out.total_sore +
-    out.total_sekolah +
-    out.total_pegawai_pagi +
-    out.total_pegawai_sore
-  return out
+  const per = hadirPerShiftGuru(selectedGuru.value.id, periode)
+  const s = settingsStore.settings || {}
+  return Object.entries(per)
+    .map(([shift, jml]) => ({ shift, label: shiftLabelOf(s, shift), jml }))
+    .sort((a, b) => a.label.localeCompare(b.label, 'id'))
 })
 
 // v.111: bisyaroh glondongan guru terpilih utk periode form (preview single-mode).
@@ -1456,16 +1406,16 @@ const bisyarohGlondongan = computed(() => {
 })
 
 const takeHome = computed(() => {
+  // v.1.1.9: bonus kehadiran SUDAH jadi baris line_items (jenis '× hadir'), jadi
+  //   tak ditambahkan lagi terpisah — dulu ada `+ bonusKehadiran.total` di sini.
   const totalIn = (form.value.line_items || []).reduce(
     (sum, li) => sum + (Number(li.nominal) || 0),
     0
   )
-  // v.21.103.0527: bonus kehadiran (auto dari absen) + potongan manual
-  const bonus = bonusKehadiran.value.total
-  // v.111: + bisyaroh glondongan (auto dari tes_glondongan)
+  // v.111: + bisyaroh glondongan (auto dari tes_glondongan, dihitung per juz)
   const glond = bisyarohGlondongan.value.total
   const totalOut = Number(form.value.total_potongan) || 0
-  return totalIn + bonus + glond - totalOut
+  return totalIn + glond - totalOut
 })
 
 const saving = ref(false)
@@ -1488,25 +1438,18 @@ async function saveSlipSingle() {
   try {
     const periode = `${tahun.value}-${String(bulan.value).padStart(2, '0')}`
     const slipId = `gaji_${selectedGuru.value.id}_${periode}`
-    // v.21.103.0527: snapshot bonus kehadiran saat save
-    const bonus = bonusKehadiran.value
     const lineItems = (form.value.line_items || []).map((li) => ({
       kategori: li.kategori || 'ngaji',
       lembaga: li.lembaga || '-',
       label: li.label || 'Bisyaroh',
-      nominal: Number(li.nominal) || 0
+      nominal: Number(li.nominal) || 0,
+      jenis_id: li.jenis_id || ''
     }))
-    const pokok = lineItems
-      .filter((li) => li.kategori === 'ngaji' || li.kategori === 'mahad')
-      .reduce((s, li) => s + li.nominal, 0)
-    const sekolah = lineItems
-      .filter((li) => li.kategori === 'sekolah')
-      .reduce((s, li) => s + li.nominal, 0)
-    const tambahan = lineItems
-      .filter((li) => li.kategori === 'tambahan' || li.kategori === 'admin')
-      .reduce((s, li) => s + li.nominal, 0)
+    // v.1.1.9: ringkasan turunan dari line_items — tiap baris masuk TEPAT SATU ember
+    //   (pokok / sekolah / tambahan / bonus / tunjangan) supaya rekap PDF yang
+    //   menjumlahkan kolom-kolom itu tidak dobel.
+    const rk = ringkasSlip(lineItems)
     const potongan = Number(form.value.total_potongan) || 0
-    const totalIn = pokok + sekolah + tambahan
     // v.111: snapshot bisyaroh glondongan (Σ juz selesai × tarif) periode ini
     const glond = hitungGlondonganGuru(
       selectedGuru.value.id,
@@ -1523,23 +1466,12 @@ async function saveSlipSingle() {
       jabatan: selectedGuru.value.jabatan || '',
       periode,
       line_items: lineItems,
-      bisyaroh_pokok: pokok,
-      bisyaroh_sekolah: sekolah,
-      bisyaroh_tambahan: tambahan,
-      // v.21.103.0527: snapshot bonus kehadiran (auto dari absensi_shift_guru)
-      bonus_kehadiran: {
-        hadir_pagi: Number(bonus.hadir_pagi || 0),
-        hadir_sore: Number(bonus.hadir_sore || 0),
-        hadir_sekolah: Number(bonus.hadir_sekolah || 0),
-        hadir_pegawai_pagi: Number(bonus.hadir_pegawai_pagi || 0),
-        hadir_pegawai_sore: Number(bonus.hadir_pegawai_sore || 0),
-        tarif_pagi: Number(bonus.tarif_pagi || 0),
-        tarif_sore: Number(bonus.tarif_sore || 0),
-        tarif_sekolah: Number(bonus.tarif_sekolah || 0),
-        tarif_pegawai_pagi: Number(bonus.tarif_pegawai_pagi || 0),
-        tarif_pegawai_sore: Number(bonus.tarif_pegawai_sore || 0),
-        total: Number(bonus.total || 0)
-      },
+      bisyaroh_pokok: rk.pokok,
+      bisyaroh_sekolah: rk.sekolah,
+      bisyaroh_tambahan: rk.tambahan,
+      // v.1.1.9: bonus kehadiran kini turunan dari baris jenis '× hadir' (dulu dari
+      //   5 tarif global). Tetap ditulis supaya rekap PDF & dasbor tak perlu diubah.
+      bonus_kehadiran: { total: rk.bonusTotal, rincian: rk.bonusRincian },
       // v.111: snapshot bisyaroh glondongan PTPT (per juz disimak)
       bonus_glondongan: {
         juz: Number(glond.juz || 0),
@@ -1547,10 +1479,10 @@ async function saveSlipSingle() {
         tarif: Number(glond.tarif || 0),
         total: Number(glond.total || 0)
       },
-      total_pemasukan: totalIn + Number(bonus.total || 0) + Number(glond.total || 0),
+      total_pemasukan: rk.totalIn + Number(glond.total || 0),
       total_potongan: potongan,
-      take_home: totalIn + Number(bonus.total || 0) + Number(glond.total || 0) - potongan,
-      tunjangan_list: [],
+      take_home: rk.totalIn + Number(glond.total || 0) - potongan,
+      tunjangan_list: rk.tunjanganList,
       potongan_list: [],
       updated_at: serverTimestamp()
     })
@@ -1646,78 +1578,35 @@ async function bulkGenerate() {
   bulkLog.value = []
   const periode = `${tahun.value}-${String(bulan.value).padStart(2, '0')}`
   const settings = settingsStore.settings || {}
-  const mapPokok = settings.keu_bisyaroh_pokok || {}
-  const mapSekolah = settings.keu_bisyaroh_sekolah || {}
   try {
-    // v.21.104.0527: hitung bonus kehadiran per guru dari absensi_shift_guru
-    // (selaras dgn single-mode supaya take_home konsisten)
-    const tarifPagi = Number(settings.keu_bisyaroh_pagi || 0) || 0
-    const tarifSore = Number(settings.keu_bisyaroh_sore || 0) || 0
-    const tarifSekolah = Number(settings.keu_bisyaroh_sekolah_shift || 0) || 0
-    const tarifPegPagi = Number(settings.keu_bisyaroh_pegawai_pagi || 0) || 0
-    const tarifPegSore = Number(settings.keu_bisyaroh_pegawai_sore || 0) || 0
-    function hitungBonusGuru(guruId) {
-      let hp = 0,
-        hs = 0,
-        hsk = 0,
-        hpp = 0,
-        hps = 0
-      const gid = String(guruId)
-      for (const a of absensiShift.value || []) {
-        if (String(a.guru_id) !== gid) continue
-        const tgl = String(a.tanggal || '')
-        if (!tgl.startsWith(periode)) continue
-        const st = String(a.status || '').toLowerCase()
-        if (st !== 'hadir' && st !== 'terlambat') continue
-        const sh = String(a.shift || '').toLowerCase()
-        if (sh === 'pagi') hp++
-        else if (sh === 'sore') hs++
-        else if (sh === 'sekolah') hsk++
-        else if (sh === 'pegawai_pagi') hpp++
-        else if (sh === 'pegawai_sore') hps++
-      }
-      const tp = hp * tarifPagi
-      const ts = hs * tarifSore
-      const tsk = hsk * tarifSekolah
-      const tpp = hpp * tarifPegPagi
-      const tps = hps * tarifPegSore
-      return {
-        hadir_pagi: hp,
-        hadir_sore: hs,
-        hadir_sekolah: hsk,
-        hadir_pegawai_pagi: hpp,
-        hadir_pegawai_sore: hps,
-        tarif_pagi: tarifPagi,
-        tarif_sore: tarifSore,
-        tarif_sekolah: tarifSekolah,
-        tarif_pegawai_pagi: tarifPegPagi,
-        tarif_pegawai_sore: tarifPegSore,
-        total: tp + ts + tsk + tpp + tps
-      }
-    }
+    // v.1.1.9: bulk memakai buildLineItemsFromGuru() yang SAMA dengan mode per-guru,
+    //   supaya keduanya mustahil berbeda hasil. Dulu bulk punya salinan hitungan
+    //   sendiri (5 tarif shift hardcoded + map pokok per guru) yang harus diselaraskan
+    //   manual dengan single-mode.
     let bulkSeq = 0
     for (const g of bulkTargets.value) {
       try {
         const slipId = `gaji_${g.id}_${periode}`
-        const pokok = Number(mapPokok[g.id] || 0)
-        const sekolah = Number(mapSekolah[g.id] || 0)
-        const bonus = hitungBonusGuru(g.id)
+        // Baris dari Jenis Bisyaroh ber-scope — sumber yang sama dgn editor per-guru.
+        const lineItems = buildLineItemsFromGuru(g, periode)
         // v.95.0626: tunjangan & potongan per-guru dari master (scope guru_ids; kosong = semua)
-        const tjList = applicableMaster('master_tunjangan', g).map((t) => ({
-          label: t.nama || 'Tunjangan',
-          nominal: Number(t.nominal) || 0
-        }))
         const ptList = applicableMaster('master_potongan', g).map((p) => ({
           label: p.nama || 'Potongan',
           nominal: Number(p.nominal) || 0
         }))
-        const totalTunjangan = tjList.reduce((s, t) => s + t.nominal, 0)
+        for (const t of applicableMaster('master_tunjangan', g)) {
+          lineItems.push({
+            kategori: 'tunjangan',
+            lembaga: '-',
+            label: t.nama || 'Tunjangan',
+            nominal: Number(t.nominal) || 0
+          })
+        }
         const totalPotongan = ptList.reduce((s, p) => s + p.nominal, 0)
+        const rk = ringkasSlip(lineItems)
         // v.111: snapshot bisyaroh glondongan per guru periode ini
         const glond = hitungGlondonganGuru(g.id, g.nama, periode, settings)
-        const totalIn = pokok + sekolah
-        const totalSlip =
-          totalIn + Number(bonus.total || 0) + Number(glond.total || 0) + totalTunjangan
+        const totalSlip = rk.totalIn + Number(glond.total || 0)
         await setOne('keuangan_gaji', slipId, {
           id: slipId,
           no_bukti: genBisyarohNo(bulkSeq++),
@@ -1726,10 +1615,13 @@ async function bulkGenerate() {
           lembaga: g.lembaga || '',
           jabatan: g.jabatan || '',
           periode,
-          bisyaroh_pokok: pokok,
-          bisyaroh_sekolah: sekolah,
-          bisyaroh_tambahan: 0,
-          bonus_kehadiran: bonus,
+          // v.1.1.9: bulk kini menulis line_items juga — dulu tidak, sehingga membuka
+          //   slip hasil bulk di editor memicu jalur rekonstruksi legacy.
+          line_items: lineItems,
+          bisyaroh_pokok: rk.pokok,
+          bisyaroh_sekolah: rk.sekolah,
+          bisyaroh_tambahan: rk.tambahan,
+          bonus_kehadiran: { total: rk.bonusTotal, rincian: rk.bonusRincian },
           bonus_glondongan: {
             juz: Number(glond.juz || 0),
             blok: Number(glond.blok || 0),
@@ -1739,14 +1631,12 @@ async function bulkGenerate() {
           total_pemasukan: totalSlip,
           total_potongan: totalPotongan,
           take_home: totalSlip - totalPotongan,
-          tunjangan_list: tjList,
+          tunjangan_list: rk.tunjanganList,
           potongan_list: ptList,
           generated_via: 'bulk',
           updated_at: serverTimestamp()
         })
-        bulkLog.value.push(
-          `OK ${g.nama} -> ${fmtRp(totalSlip - totalPotongan)} (bonus ${fmtRp(bonus.total)})`
-        )
+        bulkLog.value.push(`OK ${g.nama} -> ${fmtRp(totalSlip - totalPotongan)}`)
       } catch (e) {
         bulkLog.value.push(`ER ${g.nama} -> ${e.message}`)
       }

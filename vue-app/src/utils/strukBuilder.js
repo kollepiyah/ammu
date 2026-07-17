@@ -405,7 +405,12 @@ export async function cetakSlipBisyarohPdf(slip = {}, settings = {}, { preview =
   y += 3
 
   const li = Array.isArray(slip.line_items) ? slip.line_items : []
-  const bonusTotal = Number((slip.bonus_kehadiran || {}).total || 0)
+  // v.1.1.9: slip baru menaruh bonus kehadiran sbg baris line_items (jenis '× hadir') DAN
+  //   meringkasnya di bonus_kehadiran utk rekap/dasbor. Baris ringkas di bawah hanya utk
+  //   slip LAMA yang line_items-nya belum memuat bonus — kalau tidak, tercetak dua kali.
+  const bonusTotal = li.some((x) => x && x.kategori === 'bonus')
+    ? 0
+    : Number((slip.bonus_kehadiran || {}).total || 0)
   const body = li.map((it) => [
     String(it.label || 'Bisyaroh') +
       (it.lembaga && it.lembaga !== '-' ? ' (' + it.lembaga + ')' : ''),
