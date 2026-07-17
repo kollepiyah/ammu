@@ -441,11 +441,13 @@
                   >
                     Sekolah: {{ g.lembaga_sekolah }}
                   </span>
+                  <!-- v.1.1.9: label shift dari MASTER via shift_ids (dulu g.shift mentah —
+                       kini field itu cuma cermin utk fp_sync, isinya bisa 'kosong'). -->
                   <span
-                    v-if="g.shift"
+                    v-if="shiftLabelGuru(g)"
                     class="text-[10px] bg-cyan-50 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-700 px-2 py-0.5 rounded font-bold uppercase"
                   >
-                    Shift: {{ g.shift.replace('_', '+') }}
+                    Shift: {{ shiftLabelGuru(g) }}
                   </span>
                   <span
                     v-if="g.role_sistem && g.role_sistem !== 'user'"
@@ -570,6 +572,9 @@ import {
   parseMultipleWA
 } from '@/utils/format'
 import { sortLembagaNames } from '@/utils/santriSort' // v.100 Batch10: urutan canonical dropdown lembaga
+// v.1.1.9: label shift kartu guru ikut master (sumber tunggal aturan shift)
+import { shiftsForGuru } from '@/utils/shiftDerive'
+import { shiftLabelOf } from '@/utils/shiftMaster'
 
 const {
   guru,
@@ -626,6 +631,17 @@ watch([search, filterLembaga, filterJabatan, filterStatus], () => {
   if (filterStatus.value && filterStatus.value !== 'aktif') q.status = filterStatus.value
   router.replace({ query: q }).catch(() => {})
 })
+// v.1.1.9: label shift utk kartu guru — dari MASTER lewat shiftsForGuru (sumber tunggal),
+//   bukan lagi g.shift mentah. g.shift kini sekadar cermin utk fp_sync dan bisa berisi
+//   'kosong' (penanda "tak ada shift") yang tak layak dipajang.
+const _settingsShift = useSettingsStore()
+function shiftLabelGuru(g) {
+  const s = _settingsShift.settings || {}
+  const ids = [...shiftsForGuru(g, s)]
+  if (ids.length === 0) return ''
+  return ids.map((id) => shiftLabelOf(s, id)).join(' + ')
+}
+
 // v.98: pita "Data Guru" (?tipe=guru) vs "Data Pegawai" (?tipe=pegawai) — pisah guru vs pegawai non-guru.
 // Heuristik (belum ada field eksplisit): jabatan mengandung guru/ustadz/pengajar/mudarris/wali kelas/kepala
 // dianggap GURU; selain itu PEGAWAI. Ganti regex / pakai field khusus bila kyai mau klasifikasi lain.
