@@ -376,9 +376,9 @@
           >
             <p class="text-xs text-emerald-800">
               <i class="fas fa-info-circle mr-1"></i>Target:
-              <b>{{ bulkTargets.length }} guru</b> akan di-generate slip-nya. Nominal pokok/sekolah
-              dari Pengaturan Keuangan → Bisyaroh Pokok per Guru. Yang sudah punya slip periode ini
-              akan di-OVERWRITE.
+              <b>{{ bulkTargets.length }} guru</b> akan di-generate slip-nya. Nominal dari
+              <b>Jenis Bisyaroh</b> ber-scope + master tunjangan/potongan (Pengaturan Keuangan).
+              Yang sudah punya slip periode ini akan di-OVERWRITE.
             </p>
           </div>
           <button
@@ -410,6 +410,43 @@
             >
               {{ line }}
             </p>
+          </div>
+
+          <!-- v.1.1.9: Tunjangan & Potongan bulanan via Excel (per periode terpilih) -->
+          <div class="mt-4 pt-4 border-t border-[var(--border-subtle)]">
+            <p
+              class="text-[11px] font-black text-[var(--text-primary)] uppercase tracking-wider mb-1"
+            >
+              <i class="fas fa-file-excel text-emerald-600 mr-1"></i>Tunjangan &amp; Potongan
+              Bulanan
+            </p>
+            <p class="text-[10px] text-[var(--text-secondary)] mb-2">
+              Unduh template berisi daftar guru untuk periode
+              <b>{{ BULAN_NAMES[bulan - 1] }} {{ tahun }}</b
+              >, isi kolom Tunjangan/Potongan, lalu impor. Slip guru yang diisi akan di-generate
+              ulang + ditambah nominal itu.
+            </p>
+            <div class="flex gap-2 flex-wrap">
+              <button
+                @click="unduhTemplateBulanan"
+                type="button"
+                class="inline-flex items-center gap-1.5 text-[11px] font-bold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-900/30 px-3 py-2 rounded-lg hover:bg-teal-100 dark:hover:bg-teal-900/50"
+              >
+                <i class="fas fa-download"></i>Template {{ BULAN_NAMES[bulan - 1] }}
+              </button>
+              <label
+                class="inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/30 px-3 py-2 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-900/50 cursor-pointer"
+              >
+                <i class="fas fa-file-import"></i>{{ imporBulananBusy ? 'Mengimpor…' : 'Impor' }}
+                <input
+                  type="file"
+                  accept=".xlsx,.xls"
+                  class="hidden"
+                  @change="imporBulanan"
+                  :disabled="imporBulananBusy"
+                />
+              </label>
+            </div>
           </div>
         </div>
       </div>
@@ -453,6 +490,15 @@
             >
               <i :class="['fas', exportingRekap ? 'fa-spinner fa-spin' : 'fa-file-pdf']"></i>Export
               PDF
+            </button>
+            <!-- v.1.1.9: ekspor rekap slip ke Excel (sesuai filter periode) -->
+            <button
+              @click="exportRekapSlipExcel"
+              :disabled="filteredSlips.length === 0"
+              title="Ekspor rekap slip ke Excel (sesuai filter periode)"
+              class="text-[10px] font-black bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white px-2.5 py-1 rounded-lg flex items-center gap-1"
+            >
+              <i class="fas fa-file-excel"></i>Export Excel
             </button>
             <!-- v.97.0626: ekspor daftar pencairan via BMT (Excel) untuk disetor ke BMT -->
             <button
@@ -1566,6 +1612,70 @@ const bulkTargets = computed(() => {
   return list
 })
 
+// v.1.1.9: payload slip bersama utk bulk & impor bulanan — supaya sumber hitungnya SATU.
+//   extra = { tunjanganExtra:[{label,nominal}], potonganExtra:[{label,nominal}], via }.
+//   Baris dari Jenis Bisyaroh + master tunjangan/potongan (scope) + penyesuaian per bulan.
+function buildSlipPayload(g, periode, seq, extra = {}) {
+  const settings = settingsStore.settings || {}
+  const lineItems = buildLineItemsFromGuru(g, periode)
+  const ptList = applicableMaster('master_potongan', g).map((p) => ({
+    label: p.nama || 'Potongan',
+    nominal: Number(p.nominal) || 0
+  }))
+  for (const t of applicableMaster('master_tunjangan', g)) {
+    lineItems.push({
+      kategori: 'tunjangan',
+      lembaga: '-',
+      label: t.nama || 'Tunjangan',
+      nominal: Number(t.nominal) || 0
+    })
+  }
+  for (const t of extra.tunjanganExtra || []) {
+    if (Number(t.nominal) > 0)
+      lineItems.push({
+        kategori: 'tunjangan',
+        lembaga: '-',
+        label: t.label || 'Tunjangan',
+        nominal: Number(t.nominal) || 0
+      })
+  }
+  const extraPot = (extra.potonganExtra || [])
+    .map((p) => ({ label: p.label || 'Potongan', nominal: Number(p.nominal) || 0 }))
+    .filter((p) => p.nominal > 0)
+  const allPot = [...ptList, ...extraPot]
+  const totalPotongan = allPot.reduce((s, p) => s + p.nominal, 0)
+  const rk = ringkasSlip(lineItems)
+  const glond = hitungGlondonganGuru(g.id, g.nama, periode, settings)
+  const totalSlip = rk.totalIn + Number(glond.total || 0)
+  return {
+    id: `gaji_${g.id}_${periode}`,
+    no_bukti: genBisyarohNo(seq),
+    guru_id: Number(g.id) || g.id,
+    guru_nama: g.nama,
+    lembaga: g.lembaga || '',
+    jabatan: g.jabatan || '',
+    periode,
+    line_items: lineItems,
+    bisyaroh_pokok: rk.pokok,
+    bisyaroh_sekolah: rk.sekolah,
+    bisyaroh_tambahan: rk.tambahan,
+    bonus_kehadiran: { total: rk.bonusTotal, rincian: rk.bonusRincian },
+    bonus_glondongan: {
+      juz: Number(glond.juz || 0),
+      blok: Number(glond.blok || 0),
+      tarif: Number(glond.tarif || 0),
+      total: Number(glond.total || 0)
+    },
+    total_pemasukan: totalSlip,
+    total_potongan: totalPotongan,
+    take_home: totalSlip - totalPotongan,
+    tunjangan_list: rk.tunjanganList,
+    potongan_list: allPot,
+    generated_via: extra.via || 'bulk',
+    updated_at: serverTimestamp()
+  }
+}
+
 async function bulkGenerate() {
   if (
     !confirm(
@@ -1577,66 +1687,13 @@ async function bulkGenerate() {
   bulkDone.value = 0
   bulkLog.value = []
   const periode = `${tahun.value}-${String(bulan.value).padStart(2, '0')}`
-  const settings = settingsStore.settings || {}
   try {
-    // v.1.1.9: bulk memakai buildLineItemsFromGuru() yang SAMA dengan mode per-guru,
-    //   supaya keduanya mustahil berbeda hasil. Dulu bulk punya salinan hitungan
-    //   sendiri (5 tarif shift hardcoded + map pokok per guru) yang harus diselaraskan
-    //   manual dengan single-mode.
     let bulkSeq = 0
     for (const g of bulkTargets.value) {
       try {
-        const slipId = `gaji_${g.id}_${periode}`
-        // Baris dari Jenis Bisyaroh ber-scope — sumber yang sama dgn editor per-guru.
-        const lineItems = buildLineItemsFromGuru(g, periode)
-        // v.95.0626: tunjangan & potongan per-guru dari master (scope guru_ids; kosong = semua)
-        const ptList = applicableMaster('master_potongan', g).map((p) => ({
-          label: p.nama || 'Potongan',
-          nominal: Number(p.nominal) || 0
-        }))
-        for (const t of applicableMaster('master_tunjangan', g)) {
-          lineItems.push({
-            kategori: 'tunjangan',
-            lembaga: '-',
-            label: t.nama || 'Tunjangan',
-            nominal: Number(t.nominal) || 0
-          })
-        }
-        const totalPotongan = ptList.reduce((s, p) => s + p.nominal, 0)
-        const rk = ringkasSlip(lineItems)
-        // v.111: snapshot bisyaroh glondongan per guru periode ini
-        const glond = hitungGlondonganGuru(g.id, g.nama, periode, settings)
-        const totalSlip = rk.totalIn + Number(glond.total || 0)
-        await setOne('keuangan_gaji', slipId, {
-          id: slipId,
-          no_bukti: genBisyarohNo(bulkSeq++),
-          guru_id: Number(g.id) || g.id,
-          guru_nama: g.nama,
-          lembaga: g.lembaga || '',
-          jabatan: g.jabatan || '',
-          periode,
-          // v.1.1.9: bulk kini menulis line_items juga — dulu tidak, sehingga membuka
-          //   slip hasil bulk di editor memicu jalur rekonstruksi legacy.
-          line_items: lineItems,
-          bisyaroh_pokok: rk.pokok,
-          bisyaroh_sekolah: rk.sekolah,
-          bisyaroh_tambahan: rk.tambahan,
-          bonus_kehadiran: { total: rk.bonusTotal, rincian: rk.bonusRincian },
-          bonus_glondongan: {
-            juz: Number(glond.juz || 0),
-            blok: Number(glond.blok || 0),
-            tarif: Number(glond.tarif || 0),
-            total: Number(glond.total || 0)
-          },
-          total_pemasukan: totalSlip,
-          total_potongan: totalPotongan,
-          take_home: totalSlip - totalPotongan,
-          tunjangan_list: rk.tunjanganList,
-          potongan_list: ptList,
-          generated_via: 'bulk',
-          updated_at: serverTimestamp()
-        })
-        bulkLog.value.push(`OK ${g.nama} -> ${fmtRp(totalSlip - totalPotongan)}`)
+        const payload = buildSlipPayload(g, periode, bulkSeq++, { via: 'bulk' })
+        await setOne('keuangan_gaji', payload.id, payload)
+        bulkLog.value.push(`OK ${g.nama} -> ${fmtRp(payload.take_home)}`)
       } catch (e) {
         bulkLog.value.push(`ER ${g.nama} -> ${e.message}`)
       }
@@ -1647,6 +1704,171 @@ async function bulkGenerate() {
     toast.error('Bulk generate gagal: ' + (e.message || e))
   } finally {
     bulkRunning.value = false
+  }
+}
+
+// ── v.1.1.9: Excel bulanan di menu Bisyaroh ──
+// Ekspor rekap slip periode (sesuai filter Riwayat) + template/impor potongan &
+// tunjangan per guru untuk 1 periode. Impor = generate slip guru tsb dgn penyesuaian.
+const { exportSimple, importFile } = useExcel()
+const imporBulananBusy = ref(false)
+const _pick = (obj, names) => {
+  const map = {}
+  for (const k of Object.keys(obj || {})) map[String(k).trim().toLowerCase()] = obj[k]
+  for (const n of names) {
+    const v = map[n]
+    if (v !== undefined && v !== null && String(v).trim() !== '') return v
+  }
+  return ''
+}
+const _parseRp = (v) => parseInt(String(v == null ? '' : v).replace(/[^0-9]/g, '')) || 0
+
+async function exportRekapSlipExcel() {
+  const slips = filteredSlips.value || []
+  if (!slips.length) {
+    toast.warning('Tidak ada slip untuk diekspor.')
+    return
+  }
+  const rows = slips.map((s, i) => ({
+    no: i + 1,
+    nama: s.guru_nama || guruNamaById(s.guru_id),
+    lembaga: s.lembaga || '',
+    jabatan: s.jabatan || '',
+    periode: s.periode || '',
+    pokok: Number(s.bisyaroh_pokok || 0),
+    sekolah: Number(s.bisyaroh_sekolah || 0),
+    tambahan: Number(s.bisyaroh_tambahan || 0),
+    glondongan: Number((s.bonus_glondongan || {}).total || 0),
+    potongan: Number(s.total_potongan || 0),
+    take_home: Number(s.take_home || 0)
+  }))
+  const per = filterPeriode.value || rows[0]?.periode || 'semua'
+  try {
+    await exportSimple(rows, {
+      filename: `Rekap_Bisyaroh_${per}.xlsx`,
+      sheetName: 'Rekap Bisyaroh',
+      title: `Rekap Slip Bisyaroh — ${per}`,
+      columns: [
+        { key: 'no', header: 'No', width: 6 },
+        { key: 'nama', header: 'Nama', width: 28 },
+        { key: 'lembaga', header: 'Lembaga', width: 18 },
+        { key: 'jabatan', header: 'Jabatan', width: 18 },
+        { key: 'periode', header: 'Periode', width: 12 },
+        { key: 'pokok', header: 'Pokok', width: 14 },
+        { key: 'sekolah', header: 'Sekolah', width: 14 },
+        { key: 'tambahan', header: 'Tambahan/Bonus', width: 16 },
+        { key: 'glondongan', header: 'Glondongan', width: 14 },
+        { key: 'potongan', header: 'Potongan', width: 14 },
+        { key: 'take_home', header: 'Take Home', width: 16 }
+      ]
+    })
+    toast.success(`Rekap ${rows.length} slip diekspor.`)
+  } catch (e) {
+    toast.error('Gagal ekspor: ' + (e.message || e))
+  }
+}
+
+function unduhTemplateBulanan() {
+  const periode = `${tahun.value}-${String(bulan.value).padStart(2, '0')}`
+  const rows = bulkTargets.value.map((g) => ({
+    id: String(g.id),
+    nama: g.nama || '',
+    lembaga: g.lembaga || g.lembaga_sekolah || '',
+    tunjangan: '',
+    potongan: '',
+    keterangan: ''
+  }))
+  if (rows.length === 0) {
+    toast.warning('Tidak ada guru pada filter tipe ini.')
+    return
+  }
+  exportSimple(rows, {
+    filename: `tunjangan_potongan_${periode}.xlsx`,
+    sheetName: 'Bulanan',
+    title: `Tunjangan & Potongan Bulanan — ${periode} (JANGAN ubah kolom ID)`,
+    columns: [
+      { key: 'id', header: 'ID', width: 16 },
+      { key: 'nama', header: 'Nama', width: 28 },
+      { key: 'lembaga', header: 'Lembaga', width: 18 },
+      { key: 'tunjangan', header: 'Tunjangan (Rp)', width: 16 },
+      { key: 'potongan', header: 'Potongan (Rp)', width: 16 },
+      { key: 'keterangan', header: 'Keterangan', width: 24 }
+    ]
+  })
+}
+
+async function imporBulanan(ev) {
+  const file = ev.target.files?.[0]
+  if (!file) return
+  imporBulananBusy.value = true
+  try {
+    const rows = await importFile(file)
+    if (!rows.length) {
+      toast.warning('File kosong / tidak ada data')
+      return
+    }
+    const periode = `${tahun.value}-${String(bulan.value).padStart(2, '0')}`
+    const byId = {}
+    const byNama = {}
+    for (const g of guruRaw.value || []) {
+      byId[String(g.id)] = g
+      byNama[
+        String(g.nama || '')
+          .trim()
+          .toLowerCase()
+      ] = g
+    }
+    // Kumpulkan dulu target (guru + nominal) supaya bisa konfirmasi jumlahnya.
+    const targets = []
+    let miss = 0
+    for (const r of rows) {
+      const id = String(_pick(r, ['id', 'guru_id']) || '').trim()
+      const nama = String(_pick(r, ['nama', 'nama guru']) || '').trim()
+      const g = (id && byId[id]) || (nama && byNama[nama.toLowerCase()]) || null
+      const tunj = _parseRp(_pick(r, ['tunjangan (rp)', 'tunjangan']))
+      const pot = _parseRp(_pick(r, ['potongan (rp)', 'potongan']))
+      if (!g) {
+        if (tunj || pot) miss++
+        continue
+      }
+      if (tunj <= 0 && pot <= 0) continue
+      const ket = String(_pick(r, ['keterangan']) || '').trim()
+      targets.push({ g, tunj, pot, ket })
+    }
+    if (targets.length === 0) {
+      toast.info(
+        `Tidak ada baris berisi tunjangan/potongan${miss ? ` (${miss} guru tak cocok)` : ''}.`
+      )
+      return
+    }
+    if (
+      !confirm(
+        `Terapkan ke ${targets.length} slip periode ${periode}?\n\nSlip guru tsb akan di-GENERATE ULANG dari Jenis Bisyaroh + master, lalu ditambah tunjangan/potongan dari Excel. Penyesuaian manual sebelumnya pada slip itu tergantikan.`
+      )
+    )
+      return
+    let ok = 0
+    let seq = 0
+    for (const t of targets) {
+      try {
+        const payload = buildSlipPayload(t.g, periode, seq++, {
+          via: 'impor_bulanan',
+          tunjanganExtra:
+            t.tunj > 0 ? [{ label: t.ket || 'Tunjangan (impor)', nominal: t.tunj }] : [],
+          potonganExtra: t.pot > 0 ? [{ label: t.ket || 'Potongan (impor)', nominal: t.pot }] : []
+        })
+        await setOne('keuangan_gaji', payload.id, payload)
+        ok++
+      } catch (e) {
+        console.warn('[imporBulanan]', t.g?.nama, e.message)
+      }
+    }
+    toast.success(`${ok} slip diperbarui${miss ? `, ${miss} guru tak cocok (ID/nama)` : ''}.`)
+  } catch (e) {
+    toast.error('Gagal impor: ' + (e.message || e))
+  } finally {
+    imporBulananBusy.value = false
+    ev.target.value = ''
   }
 }
 
