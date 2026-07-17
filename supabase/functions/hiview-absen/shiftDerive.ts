@@ -1,28 +1,39 @@
 // shiftDerive (Edge) — PORT VERBATIM dari vue-app/src/utils/shiftDerive.js.
-// Aturan shift = MILIK AMMU (settings); mesin cuma kirim timestamp. Dipakai
-// Edge Function hiview-absen agar derivasi shift IDENTIK dengan app + fp_sync.py.
-// Bila shiftDerive.js berubah, SINKRONKAN file ini.
+// Aturan shift = MILIK AMMU (master shift di settings, lihat shiftMaster.ts); mesin
+// cuma kirim timestamp. Dipakai Edge Function hiview-absen agar derivasi shift IDENTIK
+// dengan app + fp_sync.py. Bila shiftDerive.js berubah, SINKRONKAN file ini.
+
+import { normHHMM, shiftList, type ShiftItem, type SettingsLike } from './shiftMaster.ts'
+
+export type { SettingsLike }
+export { normHHMM }
 
 export interface GuruLike {
   tipe_pegawai?: string
   shift?: string
   shift_pegawai?: string
+  shift_ids?: string[]
   lembaga_sekolah?: string
   [k: string]: unknown
 }
-export type SettingsLike = Record<string, unknown>
-interface SettingKeys {
-  mulai: string
-  terlambat: string
-  selesai: string
-  fallback?: string
+
+// Shift mana yang berlaku utk seorang guru/pegawai.
+//   Sumber utama : g.shift_ids[] — pilihan EKSPLISIT, satu daftar untuk guru & pegawai.
+//   Data lama    : tanpa shift_ids → diturunkan dari tipe_pegawai + shift/shift_pegawai.
+// Shift yang sudah dihapus dari master otomatis gugur (di-filter ke daftar master).
+export function shiftsForGuru(g: GuruLike, settings: SettingsLike): Set<string> {
+  const list = shiftList(settings)
+  const ids = Array.isArray(g?.shift_ids) ? g.shift_ids.map(String).filter(Boolean) : null
+  if (ids && ids.length > 0) {
+    return new Set(list.filter((sh) => ids.includes(sh.id)).map((sh) => sh.id))
+  }
+  return shiftsForGuruLegacy(g, list)
 }
 
-// Prioritas saat 1 jam scan jatuh di >1 window (mis. pagi & pegawai_pagi overlap).
-export const SHIFT_PRIORITY = ['pagi', 'pegawai_pagi', 'sekolah', 'sore', 'pegawai_sore']
-
-// Shift mana yang berlaku utk seorang guru/pegawai (gating per tipe & shift).
-export function shiftsForGuru(g: GuruLike): Set<string> {
+// Derivasi data LAMA (belum punya shift_ids). Meniru aturan v.99 PERSIS supaya absensi
+// guru yang belum disunting tidak berubah. Hanya mengenali 5 shift bawaan.
+function shiftsForGuruLegacy(g: GuruLike, list: ShiftItem[]): Set<string> {
+  const punya = (id: string) => list.some((x) => x.id === id)
   const tipe = String(g?.tipe_pegawai || 'guru')
     .toLowerCase()
     .trim()
@@ -31,103 +42,59 @@ export function shiftsForGuru(g: GuruLike): Set<string> {
   const shiftField = String(g?.shift || 'pagi_sore').toLowerCase()
   const hasSekolah = !!(g?.lembaga_sekolah && String(g.lembaga_sekolah).trim())
   const set = new Set<string>()
-  if (hasGuru && shiftField.includes('pagi')) set.add('pagi')
-  if (hasGuru && shiftField.includes('sore')) set.add('sore')
-  if (hasGuru && hasSekolah) set.add('sekolah')
+  if (hasGuru && shiftField.includes('pagi') && punya('pagi')) set.add('pagi')
+  if (hasGuru && shiftField.includes('sore') && punya('sore')) set.add('sore')
+  if (hasGuru && hasSekolah && punya('sekolah')) set.add('sekolah')
   if (hasPegawai) {
     const sp = String((hasGuru ? g?.shift_pegawai : g?.shift) || 'pagi_sore').toLowerCase()
-    if (sp.includes('pagi')) set.add('pegawai_pagi')
-    if (sp.includes('sore')) set.add('pegawai_sore')
+    if (sp.includes('pagi') && punya('pegawai_pagi')) set.add('pegawai_pagi')
+    if (sp.includes('sore') && punya('pegawai_sore')) set.add('pegawai_sore')
   }
   return set
 }
 
-// Setting-key per shift (mulai/terlambat/selesai). Pegawai punya jam SENDIRI;
-// 'fallback' = shift guru yg dipakai bila setelan pegawai dikosongkan.
-export function shiftSettingKeys(shift: string): SettingKeys {
-  switch (shift) {
-    case 'sore':
-      return { mulai: 'shiftSoreMulai', terlambat: 'shiftSoreTerlambat', selesai: 'shiftSoreSelesai' }
-    case 'sekolah':
-      return {
-        mulai: 'shiftSekolahMulai',
-        terlambat: 'shiftSekolahTerlambat',
-        selesai: 'shiftSekolahSelesai'
-      }
-    case 'pegawai_pagi':
-      return {
-        mulai: 'shiftPegawaiPagiMulai',
-        terlambat: 'shiftPegawaiPagiTerlambat',
-        selesai: 'shiftPegawaiPagiSelesai',
-        fallback: 'pagi'
-      }
-    case 'pegawai_sore':
-      return {
-        mulai: 'shiftPegawaiSoreMulai',
-        terlambat: 'shiftPegawaiSoreTerlambat',
-        selesai: 'shiftPegawaiSoreSelesai',
-        fallback: 'sore'
-      }
-    default:
-      return { mulai: 'shiftPagiMulai', terlambat: 'shiftPagiTerlambat', selesai: 'shiftPagiSelesai' }
+// Window jam 1 shift dari daftar master yang sudah dinormalisasi.
+function windowFrom(
+  id: string,
+  list: ShiftItem[]
+): { mulai: string; terlambat: string; selesai: string } {
+  const sh = list.find((x) => x.id === String(id || ''))
+  if (!sh) return { mulai: '', terlambat: '', selesai: '' }
+  // Jam dikosongkan → ikut shift fallback (pegawai → jam guru pagi/sore).
+  if (!sh.mulai && !sh.terlambat && sh.fallback) {
+    const f = list.find((x) => x.id === sh.fallback)
+    if (f) return { mulai: f.mulai, terlambat: f.terlambat, selesai: f.selesai }
   }
+  return { mulai: sh.mulai, terlambat: sh.terlambat, selesai: sh.selesai }
 }
 
-// Normalisasi 'H:MM' / 'HH.MM' -> 'HH:MM' (zero-pad). null bila tak valid.
-export function normHHMM(v: unknown): string | null {
-  const s = String(v || '')
-    .trim()
-    .replace('.', ':')
-  if (!s || !s.includes(':')) return null
-  const [h, m] = s.split(':')
-  const hi = parseInt(h, 10)
-  const mi = parseInt(m, 10)
-  if (Number.isNaN(hi) || Number.isNaN(mi)) return null
-  return String(hi).padStart(2, '0') + ':' + String(mi).padStart(2, '0')
-}
-
-// Window jam shift dari settings; pegawai kosong -> fallback ke jam guru pagi/sore.
+// Window jam shift dari settings; jam pegawai kosong → fallback ke jam guru.
 export function shiftWindow(
   shift: string,
   settings: SettingsLike
 ): { mulai: string; terlambat: string; selesai: string } {
-  const s = settings || {}
-  const k = shiftSettingKeys(shift)
-  const pick = (kk: SettingKeys) => ({
-    mulai: String(s[kk.mulai] || '').trim(),
-    terlambat: String(s[kk.terlambat] || '').trim(),
-    selesai: String(s[kk.selesai] || '').trim()
-  })
-  let w = pick(k)
-  if (!w.mulai && !w.terlambat && k.fallback) w = pick(shiftSettingKeys(k.fallback))
-  return w
+  return windowFrom(shift, shiftList(settings))
 }
 
-// Batas terlambat ('HH:MM' ternormalisasi): pakai 'terlambat', else 'mulai'. '' bila tak ada.
+// Batas terlambat ('HH:MM'): pakai 'terlambat', else 'mulai'. '' bila tak ada.
 export function shiftBatas(shift: string, settings: SettingsLike): string {
   const w = shiftWindow(shift, settings)
-  return normHHMM(w.terlambat) || normHHMM(w.mulai) || ''
+  return w.terlambat || w.mulai || ''
 }
 
-// Derive shift utk jam scan 'HH:MM' + guru + settings. return key shift atau
-// null (di luar semua window milik guru). Overlap -> menang SHIFT_PRIORITY.
+// Derive shift utk jam scan 'HH:MM' + guru + settings. return id shift atau
+// null (di luar semua window milik guru). Overlap → menang `urutan` terkecil.
 export function deriveShift(hhmm: string, g: GuruLike, settings: SettingsLike): string | null {
   const t = normHHMM(hhmm)
   if (!t) return null
-  const cands: string[] = []
-  for (const sh of shiftsForGuru(g)) {
-    const w = shiftWindow(sh, settings)
-    const mulai = normHHMM(w.mulai)
-    const selesai = normHHMM(w.selesai)
-    if (mulai && selesai && mulai <= t && t <= selesai) cands.push(sh)
+  const list = shiftList(settings) // sudah terurut `urutan`
+  const milik = shiftsForGuru(g, settings)
+  for (const sh of list) {
+    if (!milik.has(sh.id)) continue
+    const w = windowFrom(sh.id, list)
+    if (w.mulai && w.selesai && w.mulai <= t && t <= w.selesai) return sh.id
   }
-  if (!cands.length) return null
-  cands.sort((a, b) => {
-    const ia = SHIFT_PRIORITY.indexOf(a)
-    const ib = SHIFT_PRIORITY.indexOf(b)
-    return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib)
-  })
-  return cands[0]
+  return null
 }
 
 // Status hadir/terlambat dari jam scan vs batas shift.

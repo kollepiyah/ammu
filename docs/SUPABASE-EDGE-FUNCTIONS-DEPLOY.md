@@ -132,6 +132,16 @@ Mesin HiView (WiFi internet) ──HTTPS POST AccessControllerEvent──▶ /fu
 **Prasyarat:** fungsi sudah deploy (§1) + `HIVIEW_PUSH_SECRET` ter-set (§2).
 URL fungsi: `https://rzwefjilxzsqlokkwiyt.supabase.co/functions/v1/hiview-absen`
 
+> **Aturan shift (v.1.1.9).** `shiftDerive.ts` + `shiftMaster.ts` di folder fungsi ini
+> adalah PORT dari `vue-app/src/utils/`. Bila file `src/utils/shift*.js` berubah,
+> sinkronkan port-nya lalu **deploy ulang** — kalau tidak, HiView menurunkan shift dengan
+> aturan lama sementara app memakai aturan baru.
+>
+> Wajib deploy ulang bila Kyai memakai **shift buatan sendiri** atau **shift_ids** di form
+> guru: versi lama hanya mengenal 5 shift bawaan lewat field `shift`/`shift_pegawai`.
+> Selama masih 5 shift bawaan, versi lama tetap benar — app menuliskan cermin
+> `shift`/`shift_pegawai` untuk itu (lihat `shiftIdsToLegacy`).
+
 ### a. Enroll guru di mesin
 Tiap guru di-enroll (wajah/sidik) dengan **employeeNo = `guru.id_fingerprint`** (PIN sama
 dgn Revo) → satu peta ID untuk dua mesin. employeeNo tak terdaftar → event di-skip (dilog).
