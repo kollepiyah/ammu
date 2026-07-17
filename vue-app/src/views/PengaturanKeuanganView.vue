@@ -366,13 +366,35 @@
           <i class="fas fa-info-circle mr-1"></i>Kriteria yang dikosongkan
           <b>tidak menyaring</b> (berlaku semua). Semua jenis yang cocok dijumlahkan.
         </p>
-        <button
-          @click="openJenisBisyarohBaru"
-          type="button"
-          class="inline-flex items-center gap-1.5 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-bold px-4 py-2 rounded-lg text-xs"
-        >
-          <i class="fas fa-plus"></i>Tambah Jenis Bisyaroh
-        </button>
+        <div class="flex items-center gap-1.5 flex-wrap">
+          <button
+            @click="unduhTemplateJenisBisyaroh"
+            type="button"
+            class="inline-flex items-center gap-1.5 text-[10px] font-bold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-900/30 px-2.5 py-2 rounded-lg hover:bg-teal-100 dark:hover:bg-teal-900/50"
+            title="Unduh Excel (berisi data saat ini — bisa diisi lalu diimpor)"
+          >
+            <i class="fas fa-file-excel"></i>Template
+          </button>
+          <label
+            class="inline-flex items-center gap-1.5 text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/30 px-2.5 py-2 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-900/50 cursor-pointer"
+          >
+            <i class="fas fa-file-import"></i>{{ imporJenisBsyBusy ? 'Impor…' : 'Impor' }}
+            <input
+              type="file"
+              accept=".xlsx,.xls"
+              class="hidden"
+              @change="imporJenisBisyaroh"
+              :disabled="imporJenisBsyBusy"
+            />
+          </label>
+          <button
+            @click="openJenisBisyarohBaru"
+            type="button"
+            class="inline-flex items-center gap-1.5 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-bold px-4 py-2 rounded-lg text-xs"
+          >
+            <i class="fas fa-plus"></i>Tambah
+          </button>
+        </div>
       </div>
       <div class="border border-[var(--border-subtle)] rounded-xl overflow-hidden overflow-x-auto">
         <table class="w-full text-sm min-w-[720px]">
@@ -820,22 +842,49 @@
       v-show="secVisible('bisyaroh')"
       class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
     >
-      <div class="flex items-center justify-between gap-2 mb-2">
+      <div class="flex items-center justify-between gap-2 mb-2 flex-wrap">
         <h3
           class="text-xs md:text-sm font-black text-[var(--text-primary)] uppercase tracking-widest"
         >
           <i :class="['fas mr-1', cfg.ikon]"></i>{{ cfg.judul }}
         </h3>
-        <button
-          @click="openMasterBaru(cfg.kind)"
-          type="button"
-          class="inline-flex items-center gap-1.5 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-bold px-4 py-2 rounded-lg text-xs"
-        >
-          <i class="fas fa-plus"></i>Tambah
-        </button>
+        <div class="flex items-center gap-1.5 flex-wrap">
+          <!-- Template & Impor mencakup Tunjangan + Potongan sekaligus → tampil sekali (di kartu Tunjangan) -->
+          <button
+            v-if="cfg.kind === 'tunjangan'"
+            @click="unduhTemplateMasterTP"
+            type="button"
+            class="inline-flex items-center gap-1.5 text-[10px] font-bold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-900/30 px-2.5 py-2 rounded-lg hover:bg-teal-100 dark:hover:bg-teal-900/50"
+            title="Unduh Excel Tunjangan + Potongan (berisi data saat ini)"
+          >
+            <i class="fas fa-file-excel"></i>Template
+          </button>
+          <label
+            v-if="cfg.kind === 'tunjangan'"
+            class="inline-flex items-center gap-1.5 text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/30 px-2.5 py-2 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-900/50 cursor-pointer"
+          >
+            <i class="fas fa-file-import"></i>{{ imporMasterBusy ? 'Impor…' : 'Impor' }}
+            <input
+              type="file"
+              accept=".xlsx,.xls"
+              class="hidden"
+              @change="imporMasterTP"
+              :disabled="imporMasterBusy"
+            />
+          </label>
+          <button
+            @click="openMasterBaru(cfg.kind)"
+            type="button"
+            class="inline-flex items-center gap-1.5 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-bold px-4 py-2 rounded-lg text-xs"
+          >
+            <i class="fas fa-plus"></i>Tambah
+          </button>
+        </div>
       </div>
       <p class="text-[10px] text-[var(--text-tertiary)] italic mb-2">
-        Otomatis terisi di slip bisyaroh guru sesuai scope.
+        Otomatis terisi di slip bisyaroh guru sesuai scope.<span v-if="cfg.kind === 'tunjangan'">
+          Template &amp; Impor di sini mencakup Tunjangan + Potongan sekaligus.</span
+        >
       </p>
       <div class="border border-[var(--border-subtle)] rounded-xl overflow-hidden overflow-x-auto">
         <table class="w-full text-sm min-w-[480px]">
@@ -2401,6 +2450,226 @@ function simpanMaster() {
   else list.splice(dlgMasterIdx.value, 1, entry)
   dlgMasterOpen.value = false
   toast.info('Perubahan siap — klik "Simpan Semua" untuk menyimpan permanen.')
+}
+
+// ── v.1.1.9: Excel Jenis Bisyaroh + Tunjangan/Potongan (template = juga berfungsi
+//   sebagai ekspor karena berisi data saat ini; impor MENGGABUNG by nama/id, tak
+//   menghapus yang tak ada di file). ──
+const csvArr = (v) =>
+  String(v == null ? '' : v)
+    .split(/[;,]/)
+    .map((x) => x.trim())
+    .filter(Boolean)
+const imporJenisBsyBusy = ref(false)
+const imporMasterBusy = ref(false)
+
+function unduhTemplateJenisBisyaroh() {
+  const rows = jenisBisyarohList.value.map((j) => ({
+    nama: j.label,
+    hitungan: j.hitungan,
+    nominal: Number(j.nominal || 0),
+    jabatan: (j.scope.jabatan || []).join(', '),
+    lembaga: (j.scope.lembaga || []).join(', '),
+    shift: (j.scope.shift || []).map(shiftLabelById).join(', '),
+    aktif: j.aktif === false ? 'tidak' : 'ya'
+  }))
+  if (rows.length === 0)
+    rows.push(
+      {
+        nama: 'Contoh: Pokok Guru PTPT',
+        hitungan: 'flat',
+        nominal: 500000,
+        jabatan: 'Guru',
+        lembaga: 'PTPT',
+        shift: '',
+        aktif: 'ya'
+      },
+      {
+        nama: 'Contoh: Bonus Hadir Pagi',
+        hitungan: 'per_hadir',
+        nominal: 10000,
+        jabatan: '',
+        lembaga: '',
+        shift: 'Pagi',
+        aktif: 'ya'
+      }
+    )
+  exportSimple(rows, {
+    filename: 'jenis_bisyaroh.xlsx',
+    sheetName: 'Jenis Bisyaroh',
+    title: 'Jenis Bisyaroh — Ammu (scope dikosongkan = berlaku semua)',
+    columns: [
+      { key: 'nama', header: 'Nama', width: 30 },
+      { key: 'hitungan', header: 'Hitungan (flat/per_hadir)', width: 22 },
+      { key: 'nominal', header: 'Nominal', width: 14 },
+      { key: 'jabatan', header: 'Jabatan (pisah koma)', width: 24 },
+      { key: 'lembaga', header: 'Lembaga (pisah koma)', width: 24 },
+      { key: 'shift', header: 'Shift (pisah koma)', width: 20 },
+      { key: 'aktif', header: 'Aktif (ya/tidak)', width: 14 }
+    ]
+  })
+}
+
+async function imporJenisBisyaroh(ev) {
+  const file = ev.target.files?.[0]
+  if (!file) return
+  imporJenisBsyBusy.value = true
+  try {
+    const rows = await importFile(file)
+    if (!rows.length) {
+      toast.warning('File kosong / tidak ada data')
+      return
+    }
+    // shift: terima label ATAU id
+    const shiftMap = {}
+    for (const s of shiftScopeOptions.value) {
+      shiftMap[String(s.label).toLowerCase()] = s.id
+      shiftMap[String(s.id).toLowerCase()] = s.id
+    }
+    const next = [...jenisBisyarohList.value]
+    let imported = 0
+    for (const r of rows) {
+      const nama = String(pickCol(r, ['nama', 'label', 'jenis']) || '').trim()
+      if (!nama || /^contoh:/i.test(nama)) continue
+      const hitStr = String(
+        pickCol(r, ['hitungan (flat/per_hadir)', 'hitungan', 'cara hitung']) || ''
+      ).toLowerCase()
+      const hitungan = hitStr.includes('hadir') ? 'per_hadir' : 'flat'
+      const nominal = parseRp(pickCol(r, ['nominal', 'tarif']))
+      const shift = csvArr(pickCol(r, ['shift (pisah koma)', 'shift']))
+        .map((x) => shiftMap[x.toLowerCase()] || slugJenisId(x))
+        .filter(Boolean)
+      const aktifStr = String(pickCol(r, ['aktif (ya/tidak)', 'aktif']) || 'ya').toLowerCase()
+      const entry = normalizeJenisBisyaroh({
+        id: slugJenisId(nama),
+        label: nama,
+        hitungan,
+        nominal,
+        scope: {
+          jabatan: csvArr(pickCol(r, ['jabatan (pisah koma)', 'jabatan'])),
+          lembaga: csvArr(pickCol(r, ['lembaga (pisah koma)', 'lembaga'])),
+          shift
+        },
+        aktif: !['tidak', 'no', 'nonaktif', '0', 'n'].includes(aktifStr)
+      })
+      if (!entry.id) continue
+      const i = next.findIndex((x) => x.id === entry.id)
+      if (i >= 0) next[i] = entry
+      else next.push(entry)
+      imported++
+    }
+    jenisBisyarohList.value = next
+    toast.success(`${imported} jenis bisyaroh diimpor. Cek lalu klik "Simpan Semua".`)
+  } catch (e) {
+    toast.error('Gagal impor: ' + (e.message || e))
+  } finally {
+    imporJenisBsyBusy.value = false
+    ev.target.value = ''
+  }
+}
+
+function _guruNamaByIds(ids) {
+  if (!Array.isArray(ids) || ids.length === 0) return 'Semua'
+  return ids
+    .map((id) => (guruRaw.value || []).find((g) => String(g.id) === String(id))?.nama || id)
+    .join(', ')
+}
+function unduhTemplateMasterTP() {
+  const rows = []
+  for (const t of form.master_tunjangan)
+    rows.push({
+      tipe: 'tunjangan',
+      nama: t.nama,
+      nominal: Number(t.nominal || 0),
+      guru: _guruNamaByIds(t.guru_ids)
+    })
+  for (const p of form.master_potongan)
+    rows.push({
+      tipe: 'potongan',
+      nama: p.nama,
+      nominal: Number(p.nominal || 0),
+      guru: _guruNamaByIds(p.guru_ids)
+    })
+  if (rows.length === 0)
+    rows.push(
+      { tipe: 'tunjangan', nama: 'Contoh: Transport', nominal: 100000, guru: 'Semua' },
+      { tipe: 'potongan', nama: 'Contoh: Kasbon', nominal: 50000, guru: 'Nama Guru A, Nama Guru B' }
+    )
+  exportSimple(rows, {
+    filename: 'tunjangan_potongan.xlsx',
+    sheetName: 'Tunjangan & Potongan',
+    title: 'Tunjangan & Potongan — Ammu (Guru: "Semua" atau nama pisah koma)',
+    columns: [
+      { key: 'tipe', header: 'Tipe (tunjangan/potongan)', width: 24 },
+      { key: 'nama', header: 'Nama', width: 28 },
+      { key: 'nominal', header: 'Nominal', width: 14 },
+      { key: 'guru', header: 'Guru (Semua / nama pisah koma)', width: 38 }
+    ]
+  })
+}
+async function imporMasterTP(ev) {
+  const file = ev.target.files?.[0]
+  if (!file) return
+  imporMasterBusy.value = true
+  try {
+    const rows = await importFile(file)
+    if (!rows.length) {
+      toast.warning('File kosong / tidak ada data')
+      return
+    }
+    const guruByNama = {}
+    for (const g of guruRaw.value || [])
+      guruByNama[
+        String(g.nama || '')
+          .trim()
+          .toLowerCase()
+      ] = String(g.id)
+    const incTunj = []
+    const incPot = []
+    let miss = 0
+    for (const r of rows) {
+      const nama = String(pickCol(r, ['nama']) || '').trim()
+      if (!nama || /^contoh:/i.test(nama)) continue
+      const isPot = String(pickCol(r, ['tipe (tunjangan/potongan)', 'tipe']) || 'tunjangan')
+        .toLowerCase()
+        .includes('poton')
+      const nominal = parseRp(pickCol(r, ['nominal']))
+      const guruStr = String(pickCol(r, ['guru (semua / nama pisah koma)', 'guru']) || '').trim()
+      const guru_ids = []
+      if (guruStr && guruStr.toLowerCase() !== 'semua') {
+        for (const nm of csvArr(guruStr)) {
+          const id = guruByNama[nm.toLowerCase()]
+          if (id) guru_ids.push(id)
+          else miss++
+        }
+      }
+      ;(isPot ? incPot : incTunj).push({ nama, nominal, guru_ids: [...new Set(guru_ids)] })
+    }
+    const mergeByNama = (existing, incoming) => {
+      const out = existing.map((x) => ({ ...x }))
+      for (const e of incoming) {
+        const i = out.findIndex(
+          (x) =>
+            String(x.nama || '')
+              .trim()
+              .toLowerCase() === e.nama.toLowerCase()
+        )
+        if (i >= 0) out[i] = e
+        else out.push(e)
+      }
+      return out
+    }
+    form.master_tunjangan = mergeByNama(form.master_tunjangan, incTunj)
+    form.master_potongan = mergeByNama(form.master_potongan, incPot)
+    toast.success(
+      `${incTunj.length} tunjangan + ${incPot.length} potongan diimpor${miss ? `, ${miss} nama guru tak cocok` : ''}. Klik "Simpan Semua".`
+    )
+  } catch (e) {
+    toast.error('Gagal impor: ' + (e.message || e))
+  } finally {
+    imporMasterBusy.value = false
+    ev.target.value = ''
+  }
 }
 
 // v.1.1.x: serialize satu daftar jenis (dipakai per Tahun Ajaran saat Simpan Semua)
