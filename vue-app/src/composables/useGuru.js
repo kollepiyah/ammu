@@ -5,19 +5,50 @@ import { storeToRefs } from 'pinia'
 import { useCollectionsStore } from '@/stores/collections'
 import { useAuthStore } from '@/stores/auth'
 // v.21.10.0526: Import lembaga helpers
-import { getLembagaGroup } from './useLembaga'
+import { getLembagaGroup, LEMBAGA_GROUPS } from './useLembaga'
+// v.1.1.9: unit tugas per jabatan (master/jabatan) — ganti tebakan regex lama
+import { unitsOfJabatan, namaLembaga } from '@/utils/jabatanUnit'
 // v.110: sortGuru — urutan Qiraati→Sekolah→Pegawai→nama A–Z (sumber tunggal)
 import { sortGuru } from '@/utils/santriSort'
 
-// Helper: derive guru.lembaga_refs dari legacy fields + jabatan_tambahan
-// 1 guru bisa multi-lembaga (mis: Admin Yayasan + Guru TPQ).
-function deriveGuruLembagaRefs(g) {
+// Group tempat tugas ('qiraati' | 'sekolah' | 'mahad' | 'non-lembaga') dari nama lembaga.
+// v.1.1.9: baca master/lembaga `tipe` DULU (data — kenal lembaga yang Kyai tambah sendiri),
+//   baru fallback konstanta LEMBAGA_GROUPS.
+// BUG LAMA: dulu ditulis `getLembagaGroup(nama) || 'sekolah'` — getLembagaGroup mengembalikan
+//   KUNCI GRUP ('SDI'), bukan group ('sekolah'), sehingga cek `r.group === 'sekolah'` di
+//   BisyarohView selalu meleset → baris sekolah dilabeli "Bisyaroh Ngaji (SDI)" & masuk pos
+//   pokok, bukan pos sekolah.
+function groupOfLembaga(nama, lembagaList) {
+  const k = String(nama || '')
+    .trim()
+    .toLowerCase()
+  if (!k) return 'non-lembaga'
+  const l = (Array.isArray(lembagaList) ? lembagaList : []).find(
+    (x) => namaLembaga(x).toLowerCase() === k
+  )
+  const t = String(l?.tipe || '')
+    .trim()
+    .toLowerCase()
+  if (t === 'formal') return 'sekolah'
+  if (t === 'qiraati') return 'qiraati'
+  if (t === 'non lembaga') return 'non-lembaga'
+  const gk = getLembagaGroup(nama)
+  return (gk && LEMBAGA_GROUPS[gk]?.group) || 'non-lembaga'
+}
+
+// Helper: derive guru.lembaga_refs dari legacy fields + jabatan_tambahan.
+// 1 guru bisa multi-lembaga (mis: Admin Yayasan + Guru TPQ) → tiap ref = 1 tempat tugas
+// = 1 baris pokok di slip bisyaroh.
+// opts.jabatanItems = master/jabatan items[] (unit per jabatan); opts.lembagaList = master/lembaga.list.
+function deriveGuruLembagaRefs(g, opts = {}) {
   if (Array.isArray(g.lembaga_refs) && g.lembaga_refs.length > 0) return g.lembaga_refs
+  const jabatanItems = opts.jabatanItems || []
+  const lembagaList = opts.lembagaList || []
   const refs = []
   // Primary lembaga
   if (g.lembaga) {
     refs.push({
-      group: getLembagaGroup(g.lembaga) || 'qiraati',
+      group: groupOfLembaga(g.lembaga, lembagaList),
       lembaga: g.lembaga,
       shift: g.shift || null,
       jabatan_di_sini: g.jabatan || 'Guru',
@@ -27,26 +58,32 @@ function deriveGuruLembagaRefs(g) {
   // Lembaga sekolah (kalau beda dari lembaga utama)
   if (g.lembaga_sekolah && g.lembaga_sekolah !== g.lembaga) {
     refs.push({
-      group: getLembagaGroup(g.lembaga_sekolah) || 'sekolah',
+      group: groupOfLembaga(g.lembaga_sekolah, lembagaList),
       lembaga: g.lembaga_sekolah,
       jabatan_di_sini: g.jabatan_sekolah || 'Guru',
       kelas_diajar: Array.isArray(g.kelas_diajar_sekolah) ? g.kelas_diajar_sekolah : []
     })
   }
-  // Jabatan tambahan (legacy): mungkin ref ke lembaga lain (Admin Yayasan dst)
-  if (Array.isArray(g.jabatan_tambahan) && g.jabatan_tambahan.length > 0) {
-    for (const jt of g.jabatan_tambahan) {
-      if (typeof jt === 'string' && jt && !refs.some((r) => r.jabatan_di_sini === jt)) {
-        // Heuristic: jabatan Admin/PJ/Supervisi → Yayasan, Keamanan/Kebersihan → Sarana Prasarana
-        const lembagaTambahan = /admin|supervisi|pj/i.test(jt)
-          ? 'Yayasan'
-          : /keamanan|kebersihan/i.test(jt)
-            ? 'Sarana Prasarana'
-            : null
-        if (lembagaTambahan) {
-          refs.push({ group: 'non-lembaga', lembaga: lembagaTambahan, jabatan_di_sini: jt })
-        }
-      }
+  // Jabatan tambahan → unit dari master/jabatan.
+  // v.1.1.9: dua perbaikan sekaligus —
+  //   (1) form guru menyimpan jabatan_tambahan sebagai STRING, tapi blok lama dijaga
+  //       Array.isArray() sehingga TAK PERNAH jalan (heuristiknya dead code);
+  //   (2) unit tak lagi ditebak regex (/admin|supervisi|pj/→Yayasan dst) tapi diambil
+  //       dari units[] jabatan yang Kyai atur sendiri.
+  const jtRaw = g.jabatan_tambahan
+  const jtList = (Array.isArray(jtRaw) ? jtRaw : [jtRaw]).filter(
+    (x) => typeof x === 'string' && x.trim()
+  )
+  for (const jt of jtList) {
+    const nama = jt.trim()
+    if (refs.some((r) => r.jabatan_di_sini === nama)) continue
+    for (const unit of unitsOfJabatan(jabatanItems, nama)) {
+      if (refs.some((r) => r.lembaga === unit && r.jabatan_di_sini === nama)) continue
+      refs.push({
+        group: groupOfLembaga(unit, lembagaList),
+        lembaga: unit,
+        jabatan_di_sini: nama
+      })
     }
   }
   return refs
