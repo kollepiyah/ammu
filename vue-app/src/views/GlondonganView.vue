@@ -7,6 +7,7 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { subscribeColl } from '@/services/db'
 import { useGlondongan } from '@/composables/useGlondongan'
 import { useToast } from '@/composables/useToast'
+import { useConfirm } from '@/composables/useConfirm'
 // Aspek nilai PTPT (sama persis dg tes PJ): Tahfizh, Istimror, Fashohah, Tajwid (0..90).
 import { tesAspekFlat, clampNilaiTes, TES_NILAI_MAX } from '@/utils/tesKenaikan'
 import { KATEGORI_GLONDONGAN, KATEGORI_LABEL, periodeBulan } from '@/utils/glondongan'
@@ -26,9 +27,47 @@ const {
   tugaskan,
   tugasNilaiSaya,
   simpanNilai,
-  saveKoordinator
+  saveKoordinator,
+  // v.1.1.9: hapus baris (super_admin). Sudah ada di composable sejak v.111 tapi
+  //   tak pernah dipasang ke UI — jadi data uji glondongan tak bisa dibersihkan.
+  canCrud,
+  hapus
 } = useGlondongan()
 const toast = useToast()
+const confirmDlg = useConfirm()
+
+// Hapus 1 baris tes glondongan (koreksi / bersihkan data uji).
+// ConfirmDialog merender message pakai v-html → escape nilai dari data, pisah baris dgn <br>.
+const _esc = (v) =>
+  String(v == null ? '' : v).replace(
+    /[&<>"']/g,
+    (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]
+  )
+const hapusId = ref('')
+async function hapusRow(r) {
+  if (!canCrud.value || !r) return
+  const ok = await confirmDlg({
+    title: 'Hapus baris glondongan?',
+    message:
+      `<b>${_esc(r.nama_cache || 'Santri')}</b> — ${_esc(tipeLabel(r))} · Kelas ${_esc(r.kelas_asal)} · ${_esc(juzLabel(r))}` +
+      (r.status === 'selesai'
+        ? '<br><br>Baris ini <b>sudah dinilai</b>. Bisyaroh glondongan pengujinya ikut berkurang di slip yang belum digenerate.'
+        : '') +
+      '<br><br>Tidak bisa di-undo.',
+    confirmText: 'Hapus',
+    danger: true
+  })
+  if (!ok) return
+  hapusId.value = String(r.id)
+  try {
+    await hapus(r.id)
+    toast.success('Baris glondongan dihapus')
+  } catch (e) {
+    toast.error('Gagal hapus: ' + (e.message || e))
+  } finally {
+    hapusId.value = ''
+  }
+}
 const settingsStore = useSettingsStore()
 
 // Tab awal: koordinator/PJ/super -> Penugasan; selain itu -> Tugas Menilai.
@@ -450,6 +489,20 @@ const rekapTotal = computed(() => rekapRows.value.reduce((s, g) => s + g.total, 
               <i :class="['fas mr-1', savingId === row.id ? 'fa-spinner fa-spin' : 'fa-check']"></i
               >Tugaskan
             </button>
+            <!-- v.1.1.9: hapus blok yang salah terbentuk (super_admin) -->
+            <button
+              v-if="canCrud"
+              type="button"
+              @click="hapusRow(row)"
+              :disabled="hapusId === String(row.id)"
+              title="Hapus blok ini (super admin)"
+              aria-label="Hapus blok glondongan"
+              class="shrink-0 px-2.5 py-2 text-xs font-bold rounded-lg border border-[var(--border-default)] text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 disabled:opacity-40"
+            >
+              <i
+                :class="['fas', hapusId === String(row.id) ? 'fa-spinner fa-spin' : 'fa-trash']"
+              ></i>
+            </button>
           </div>
         </li>
       </ul>
@@ -633,6 +686,23 @@ const rekapTotal = computed(() => rekapRows.value.reduce((s, g) => s + g.total, 
                   ]"
                   >{{ statusBadge(r.status).label }}</span
                 >
+                <!-- v.1.1.9: hapus baris (super_admin) — koreksi / bersihkan data uji -->
+                <button
+                  v-if="canCrud"
+                  type="button"
+                  @click="hapusRow(r)"
+                  :disabled="hapusId === String(r.id)"
+                  title="Hapus baris ini (super admin)"
+                  aria-label="Hapus baris glondongan"
+                  class="ml-auto shrink-0 w-6 h-6 rounded-lg border border-[var(--border-default)] text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 flex items-center justify-center disabled:opacity-40"
+                >
+                  <i
+                    :class="[
+                      'fas text-[10px]',
+                      hapusId === String(r.id) ? 'fa-spinner fa-spin' : 'fa-trash'
+                    ]"
+                  ></i>
+                </button>
               </p>
               <div v-if="r.status === 'selesai'" class="mt-1 space-y-0.5">
                 <p v-for="j in r.juz" :key="j" class="text-[var(--text-tertiary)]">
