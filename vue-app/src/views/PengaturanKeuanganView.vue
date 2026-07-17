@@ -797,200 +797,243 @@
       </div>
     </div>
 
-    <!-- Master Tunjangan -->
+    <!-- v.1.1.9: Master Tunjangan & Potongan — tabel + dialog (ganti layout inline lama
+         yang field nama-nya transparan/tak kelihatan & pemilih guru sesak). -->
     <div
+      v-for="cfg in [
+        {
+          kind: 'tunjangan',
+          list: form.master_tunjangan,
+          judul: 'Master Tunjangan',
+          ikon: 'fa-plus-circle text-emerald-600',
+          nomCls: 'text-emerald-700 dark:text-emerald-300'
+        },
+        {
+          kind: 'potongan',
+          list: form.master_potongan,
+          judul: 'Master Potongan',
+          ikon: 'fa-minus-circle text-rose-600',
+          nomCls: 'text-rose-700 dark:text-rose-300'
+        }
+      ]"
+      :key="cfg.kind"
       v-show="secVisible('bisyaroh')"
       class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
     >
-      <div
-        class="flex items-center justify-between border-b border-[var(--border-subtle)] pb-2 mb-3"
-      >
+      <div class="flex items-center justify-between gap-2 mb-2">
         <h3
           class="text-xs md:text-sm font-black text-[var(--text-primary)] uppercase tracking-widest"
         >
-          <i class="fas fa-plus-circle text-emerald-600 mr-1"></i>Master Tunjangan
+          <i :class="['fas mr-1', cfg.ikon]"></i>{{ cfg.judul }}
         </h3>
         <button
-          @click="addMaster('tunjangan')"
-          class="bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-bold px-3 py-1.5 rounded-lg text-xs"
+          @click="openMasterBaru(cfg.kind)"
+          type="button"
+          class="inline-flex items-center gap-1.5 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-bold px-4 py-2 rounded-lg text-xs"
         >
-          <i class="fas fa-plus mr-1"></i>Tambah
+          <i class="fas fa-plus"></i>Tambah
         </button>
       </div>
       <p class="text-[10px] text-[var(--text-tertiary)] italic mb-2">
-        Tunjangan otomatis terisi di slip gaji guru sesuai scope.
+        Otomatis terisi di slip bisyaroh guru sesuai scope.
       </p>
-      <div
-        v-if="form.master_tunjangan.length === 0"
-        class="text-xs text-[var(--text-tertiary)] italic text-center py-3"
-      >
-        Belum ada master tunjangan.
-      </div>
-      <div v-else class="space-y-1.5">
-        <div
-          v-for="(item, idx) in form.master_tunjangan"
-          :key="idx"
-          class="bg-emerald-50 dark:bg-emerald-900/20 px-3 py-2 rounded-lg space-y-1.5"
-        >
-          <div class="grid grid-cols-[1fr_120px_30px_30px] gap-2 items-center">
-            <input
-              v-model="item.nama"
-              type="text"
-              class="bg-transparent text-xs font-bold text-[var(--text-primary)] outline-none"
-            />
-            <input
-              v-model="item.nominalFmt"
-              @input="onMasterFmtChange(item, $event)"
-              type="text"
-              inputmode="numeric"
-              class="bg-transparent text-xs text-right font-bold text-emerald-800 dark:text-emerald-200 outline-none border border-emerald-300 dark:border-emerald-700 rounded px-2 py-1"
-            />
-            <button
-              @click="item._guruExpanded = !item._guruExpanded"
-              :title="masterScopeLabel(item)"
-              class="text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/30 px-1 py-1 rounded text-xs"
+      <div class="border border-[var(--border-subtle)] rounded-xl overflow-hidden overflow-x-auto">
+        <table class="w-full text-sm min-w-[480px]">
+          <thead>
+            <tr
+              class="bg-[var(--bg-card-elevated)] text-[10px] uppercase tracking-wider text-[var(--text-secondary)]"
             >
-              <i class="fas fa-user-tag"></i>
-            </button>
-            <button
-              @click="removeMaster('tunjangan', idx)"
-              class="text-rose-600 hover:bg-rose-50 px-1 py-1 rounded text-xs"
+              <th class="text-left px-3 py-2.5 font-black w-10">No</th>
+              <th class="text-left px-3 py-2.5 font-black">Nama</th>
+              <th class="text-right px-3 py-2.5 font-black">Nominal</th>
+              <th class="text-left px-3 py-2.5 font-black">Berlaku</th>
+              <th class="text-center px-3 py-2.5 font-black w-20">Aksi</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-[var(--border-subtle)]">
+            <tr
+              v-for="(item, idx) in cfg.list"
+              :key="idx"
+              class="hover:bg-[var(--bg-card-elevated)] transition"
             >
-              <i class="fas fa-trash"></i>
-            </button>
-          </div>
-          <div class="text-[9px] text-[var(--text-tertiary)]">
-            <i class="fas fa-filter mr-1"></i>Berlaku:
-            <b class="text-[var(--text-secondary)]">{{ masterScopeLabel(item) }}</b>
-          </div>
-          <div
-            v-if="item._guruExpanded"
-            class="border-t border-emerald-200 dark:border-emerald-800 pt-1.5"
-          >
-            <input
-              v-model="item._guruSearch"
-              type="text"
-              placeholder="cari guru/pegawai..."
-              class="w-full px-2 py-1 text-[11px] border border-[var(--border-default)] rounded bg-[var(--bg-card)] text-[var(--text-primary)] mb-1"
-            />
-            <div class="max-h-40 overflow-y-auto space-y-0.5">
-              <label
-                v-for="g in masterGuruCari(item)"
-                :key="`${idx}_tg_${g.id}`"
-                class="flex items-center gap-1.5 text-[10px] cursor-pointer px-1 py-0.5 rounded hover:bg-[var(--bg-card)]"
-              >
-                <input
-                  type="checkbox"
-                  :checked="(item.guru_ids || []).map(String).includes(String(g.id))"
-                  @change="toggleGuruMaster(item, g.id)"
-                  class="w-3 h-3"
-                />
-                <span class="font-bold text-[var(--text-primary)] truncate">{{ g.nama }}</span>
-              </label>
-            </div>
-            <p class="text-[9px] text-[var(--text-tertiary)] italic mt-1">
-              Tidak pilih satupun = berlaku semua guru/pegawai.
-            </p>
-          </div>
-        </div>
+              <td class="px-3 py-2 text-[var(--text-tertiary)]">{{ idx + 1 }}</td>
+              <td class="px-3 py-2 font-bold text-[var(--text-primary)]">
+                {{ item.nama || '(tanpa nama)' }}
+              </td>
+              <td :class="['px-3 py-2 text-right font-bold', cfg.nomCls]">
+                Rp {{ Number(item.nominal || 0).toLocaleString('id-ID') }}
+              </td>
+              <td class="px-3 py-2 text-[11px] text-[var(--text-secondary)]">
+                {{ masterScopeLabel(item) }}
+              </td>
+              <td class="px-3 py-2">
+                <div class="flex items-center justify-center gap-1">
+                  <button
+                    @click="openMasterDialog(cfg.kind, item, idx)"
+                    type="button"
+                    class="w-7 h-7 rounded-lg border border-[var(--border-default)] text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/30 flex items-center justify-center"
+                    title="Ubah"
+                  >
+                    <i class="fas fa-pen text-xs"></i>
+                  </button>
+                  <button
+                    @click="removeMaster(cfg.kind, idx)"
+                    type="button"
+                    class="w-7 h-7 rounded-lg border border-[var(--border-default)] text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 flex items-center justify-center"
+                    title="Hapus"
+                  >
+                    <i class="fas fa-trash text-xs"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            <tr v-if="cfg.list.length === 0">
+              <td colspan="5" class="text-center text-[var(--text-tertiary)] italic py-5">
+                Belum ada. Klik "Tambah".
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
-    <!-- Master Potongan -->
+    <!-- Dialog Tambah/Ubah Tunjangan/Potongan -->
     <div
-      v-show="secVisible('bisyaroh')"
-      class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
+      v-if="dlgMasterOpen && dlgMaster"
+      class="fixed inset-0 z-50 bg-slate-900/60 flex items-center justify-center p-4"
+      @click.self="dlgMasterOpen = false"
     >
       <div
-        class="flex items-center justify-between border-b border-[var(--border-subtle)] pb-2 mb-3"
+        class="bg-[var(--bg-card)] rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto"
       >
-        <h3
-          class="text-xs md:text-sm font-black text-[var(--text-primary)] uppercase tracking-widest"
-        >
-          <i class="fas fa-minus-circle text-rose-600 mr-1"></i>Master Potongan
-        </h3>
-        <button
-          @click="addMaster('potongan')"
-          class="bg-rose-600 hover:bg-rose-700 text-white font-bold px-3 py-1.5 rounded-lg text-xs"
-        >
-          <i class="fas fa-plus mr-1"></i>Tambah
-        </button>
-      </div>
-      <p class="text-[10px] text-[var(--text-tertiary)] italic mb-2">
-        Potongan otomatis terisi di slip gaji guru sesuai scope.
-      </p>
-      <div
-        v-if="form.master_potongan.length === 0"
-        class="text-xs text-[var(--text-tertiary)] italic text-center py-3"
-      >
-        Belum ada master potongan.
-      </div>
-      <div v-else class="space-y-1.5">
         <div
-          v-for="(item, idx) in form.master_potongan"
-          :key="idx"
-          class="bg-rose-50 dark:bg-rose-900/20 px-3 py-2 rounded-lg space-y-1.5"
+          class="flex items-center justify-between px-5 py-4 border-b border-[var(--border-subtle)]"
         >
-          <div class="grid grid-cols-[1fr_120px_30px_30px] gap-2 items-center">
-            <input
-              v-model="item.nama"
-              type="text"
-              class="bg-transparent text-xs font-bold text-[var(--text-primary)] outline-none"
-            />
-            <input
-              v-model="item.nominalFmt"
-              @input="onMasterFmtChange(item, $event)"
-              type="text"
-              inputmode="numeric"
-              class="bg-transparent text-xs text-right font-bold text-rose-800 dark:text-rose-200 outline-none border border-rose-300 dark:border-rose-700 rounded px-2 py-1"
-            />
-            <button
-              @click="item._guruExpanded = !item._guruExpanded"
-              :title="masterScopeLabel(item)"
-              class="text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/30 px-1 py-1 rounded text-xs"
-            >
-              <i class="fas fa-user-tag"></i>
-            </button>
-            <button
-              @click="removeMaster('potongan', idx)"
-              class="text-rose-600 hover:bg-rose-50 px-1 py-1 rounded text-xs"
-            >
-              <i class="fas fa-trash"></i>
-            </button>
-          </div>
-          <div class="text-[9px] text-[var(--text-tertiary)]">
-            <i class="fas fa-filter mr-1"></i>Berlaku:
-            <b class="text-[var(--text-secondary)]">{{ masterScopeLabel(item) }}</b>
-          </div>
-          <div
-            v-if="item._guruExpanded"
-            class="border-t border-rose-200 dark:border-rose-800 pt-1.5"
+          <h3 class="text-base font-black">
+            <i
+              :class="[
+                'fas mr-1.5',
+                dlgMasterKind === 'tunjangan'
+                  ? 'fa-plus-circle text-emerald-600'
+                  : 'fa-minus-circle text-rose-600'
+              ]"
+            ></i
+            >{{ dlgMasterIsNew ? 'Tambah' : 'Ubah' }}
+            {{ dlgMasterKind === 'tunjangan' ? 'Tunjangan' : 'Potongan' }}
+          </h3>
+          <button
+            @click="dlgMasterOpen = false"
+            class="text-[var(--text-secondary)] hover:text-rose-500 p-1"
+            aria-label="Tutup"
           >
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="p-5 space-y-3">
+          <div>
+            <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
+              >Nama {{ dlgMasterKind === 'tunjangan' ? 'Tunjangan' : 'Potongan' }}</label
+            >
             <input
-              v-model="item._guruSearch"
+              v-model="dlgMaster.nama"
               type="text"
-              placeholder="cari guru/pegawai..."
-              class="w-full px-2 py-1 text-[11px] border border-[var(--border-default)] rounded bg-[var(--bg-card)] text-[var(--text-primary)] mb-1"
+              :placeholder="
+                dlgMasterKind === 'tunjangan' ? 'mis. Tunjangan Transport' : 'mis. Kasbon'
+              "
+              class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)] font-bold"
             />
-            <div class="max-h-40 overflow-y-auto space-y-0.5">
-              <label
-                v-for="g in masterGuruCari(item)"
-                :key="`${idx}_pg_${g.id}`"
-                class="flex items-center gap-1.5 text-[10px] cursor-pointer px-1 py-0.5 rounded hover:bg-[var(--bg-card)]"
-              >
-                <input
-                  type="checkbox"
-                  :checked="(item.guru_ids || []).map(String).includes(String(g.id))"
-                  @change="toggleGuruMaster(item, g.id)"
-                  class="w-3 h-3"
-                />
-                <span class="font-bold text-[var(--text-primary)] truncate">{{ g.nama }}</span>
-              </label>
-            </div>
-            <p class="text-[9px] text-[var(--text-tertiary)] italic mt-1">
-              Tidak pilih satupun = berlaku semua guru/pegawai.
-            </p>
           </div>
+          <div>
+            <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
+              >Nominal (Rp)</label
+            >
+            <input
+              v-model.number="dlgMaster.nominal"
+              type="number"
+              min="0"
+              class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)] font-bold text-right"
+            />
+          </div>
+          <div class="border-t border-[var(--border-subtle)] pt-3">
+            <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1.5 block"
+              >Berlaku Untuk</label
+            >
+            <div class="grid grid-cols-2 gap-1.5 mb-2">
+              <button
+                type="button"
+                @click="dlgMaster.guru_ids = []"
+                :class="[
+                  'py-2 rounded-lg text-xs font-bold border transition',
+                  dlgMaster.guru_ids.length === 0
+                    ? 'bg-teal-600 text-white border-teal-600'
+                    : 'border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-elevated)]'
+                ]"
+              >
+                Semua guru/pegawai
+              </button>
+              <button
+                type="button"
+                @click="dlgMasterPilih = true"
+                :class="[
+                  'py-2 rounded-lg text-xs font-bold border transition',
+                  dlgMaster.guru_ids.length > 0
+                    ? 'bg-teal-600 text-white border-teal-600'
+                    : 'border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-elevated)]'
+                ]"
+              >
+                Guru tertentu ({{ dlgMaster.guru_ids.length }})
+              </button>
+            </div>
+            <div v-if="dlgMaster.guru_ids.length > 0 || dlgMasterPilih">
+              <input
+                v-model="dlgMasterSearch"
+                type="text"
+                placeholder="Cari nama guru/pegawai…"
+                class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)] mb-1.5"
+              />
+              <div
+                class="max-h-52 overflow-y-auto space-y-0.5 border border-[var(--border-subtle)] rounded-lg p-1.5"
+              >
+                <label
+                  v-for="g in dlgMasterGuruCari"
+                  :key="g.id"
+                  class="flex items-center gap-2 text-xs cursor-pointer px-2 py-1.5 rounded hover:bg-[var(--bg-card-elevated)]"
+                >
+                  <input
+                    type="checkbox"
+                    :checked="dlgMaster.guru_ids.map(String).includes(String(g.id))"
+                    @change="toggleGuruDlg(g.id)"
+                    class="w-4 h-4 accent-teal-600"
+                  />
+                  <span class="font-bold text-[var(--text-primary)] truncate">{{ g.nama }}</span>
+                  <span class="text-[10px] text-[var(--text-tertiary)] ml-auto">{{
+                    g.lembaga || g.lembaga_sekolah || '-'
+                  }}</span>
+                </label>
+              </div>
+              <p class="text-[10px] text-[var(--text-tertiary)] italic mt-1">
+                Kosongkan semua centang = kembali ke "Semua guru/pegawai".
+              </p>
+            </div>
+          </div>
+        </div>
+        <div
+          class="flex justify-end gap-2 px-5 py-3 border-t border-[var(--border-subtle)] bg-[var(--bg-card-elevated)] rounded-b-2xl"
+        >
+          <button
+            type="button"
+            @click="dlgMasterOpen = false"
+            class="px-4 py-2 text-xs font-bold rounded-lg border border-[var(--border-default)] text-[var(--text-secondary)]"
+          >
+            Batal
+          </button>
+          <button
+            type="button"
+            @click="simpanMaster"
+            class="px-4 py-2 text-xs font-black rounded-lg bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white"
+          >
+            <i class="fas fa-check mr-1"></i>Terapkan
+          </button>
         </div>
       </div>
     </div>
@@ -2092,13 +2135,11 @@ function loadFromSettings() {
           { id: 'rihlah', label: 'Rihlah', nominal_default: 0 }
         ]
   // v.95.0626: + guru_ids (scope per guru/pegawai; kosong = semua)
+  // v.1.1.9: field inline lama (nominalFmt/_guruExpanded/_guruSearch) dibuang — kini pakai dialog.
   const _mapMaster = (t) => ({
     nama: t.nama || '',
-    nominal: t.nominal || 0,
-    nominalFmt: fmtRp(t.nominal || 0),
-    guru_ids: Array.isArray(t.guru_ids) ? t.guru_ids.map(String) : [],
-    _guruExpanded: false,
-    _guruSearch: ''
+    nominal: Number(t.nominal) || 0,
+    guru_ids: Array.isArray(t.guru_ids) ? t.guru_ids.map(String) : []
   })
   form.master_tunjangan = Array.isArray(s.master_tunjangan)
     ? s.master_tunjangan.map(_mapMaster)
@@ -2277,27 +2318,27 @@ function removeTabunganKat(idx) {
   form.keu_tabungan_kategori.splice(idx, 1)
 }
 
-function addMaster(kind) {
-  ;(kind === 'tunjangan' ? form.master_tunjangan : form.master_potongan).push({
-    nama: '',
-    nominal: 0,
-    nominalFmt: '',
-    guru_ids: [],
-    _guruExpanded: false,
-    _guruSearch: ''
-  })
+function masterScopeLabel(item) {
+  const n = Array.isArray(item.guru_ids) ? item.guru_ids.length : 0
+  return n === 0 ? 'Semua guru/pegawai' : n + ' guru dipilih'
 }
-// v.95.0626: scope master tunjangan/potongan per guru
-function toggleGuruMaster(item, guruId) {
-  const sid = String(guruId)
-  const cur = Array.isArray(item.guru_ids) ? item.guru_ids.map(String) : []
-  const i = cur.indexOf(sid)
-  if (i >= 0) cur.splice(i, 1)
-  else cur.push(sid)
-  item.guru_ids = cur
+
+function removeMaster(kind, idx) {
+  ;(kind === 'tunjangan' ? form.master_tunjangan : form.master_potongan).splice(idx, 1)
 }
-function masterGuruCari(item) {
-  const kw = String(item._guruSearch || '')
+
+// v.1.1.9: dialog Tambah/Ubah Tunjangan/Potongan (ganti edit inline yg field nama-nya
+//   tak kelihatan & pemilih guru sesak).
+const dlgMasterOpen = ref(false)
+const dlgMasterKind = ref('tunjangan')
+const dlgMasterIdx = ref(-1)
+const dlgMasterIsNew = ref(false)
+const dlgMaster = ref(null)
+const dlgMasterSearch = ref('')
+const dlgMasterPilih = ref(false) // buka daftar guru walau belum ada yg dipilih
+
+const dlgMasterGuruCari = computed(() => {
+  const kw = String(dlgMasterSearch.value || '')
     .trim()
     .toLowerCase()
   let list = (guruRaw.value || []).filter(
@@ -2309,21 +2350,57 @@ function masterGuruCari(item) {
         .toLowerCase()
         .includes(kw)
     )
-  return list.sort((a, b) => String(a.nama || '').localeCompare(String(b.nama || ''))).slice(0, 60)
-}
-function masterScopeLabel(item) {
-  const n = Array.isArray(item.guru_ids) ? item.guru_ids.length : 0
-  return n === 0 ? 'Semua guru/pegawai' : n + ' guru dipilih'
-}
+  return list.sort((a, b) => String(a.nama || '').localeCompare(String(b.nama || ''))).slice(0, 80)
+})
 
-function removeMaster(kind, idx) {
-  ;(kind === 'tunjangan' ? form.master_tunjangan : form.master_potongan).splice(idx, 1)
+function openMasterBaru(kind) {
+  dlgMasterKind.value = kind
+  dlgMasterIsNew.value = true
+  dlgMasterIdx.value = -1
+  dlgMaster.value = { nama: '', nominal: 0, guru_ids: [] }
+  dlgMasterSearch.value = ''
+  dlgMasterPilih.value = false
+  dlgMasterOpen.value = true
 }
-
-function onMasterFmtChange(item, e) {
-  const n = parseInt(String(e.target.value).replace(/\D/g, '')) || 0
-  item.nominal = n
-  item.nominalFmt = n === 0 ? '' : n.toLocaleString('id-ID')
+function openMasterDialog(kind, item, idx) {
+  dlgMasterKind.value = kind
+  dlgMasterIsNew.value = false
+  dlgMasterIdx.value = idx
+  dlgMaster.value = {
+    nama: item.nama || '',
+    nominal: Number(item.nominal) || 0,
+    guru_ids: Array.isArray(item.guru_ids) ? item.guru_ids.map(String) : []
+  }
+  dlgMasterSearch.value = ''
+  dlgMasterPilih.value = false
+  dlgMasterOpen.value = true
+}
+function toggleGuruDlg(guruId) {
+  const sid = String(guruId)
+  const cur = dlgMaster.value.guru_ids.map(String)
+  const i = cur.indexOf(sid)
+  if (i >= 0) cur.splice(i, 1)
+  else cur.push(sid)
+  dlgMaster.value.guru_ids = cur
+}
+function simpanMaster() {
+  const m = dlgMaster.value
+  if (!m) return
+  const nama = String(m.nama || '').trim()
+  if (!nama) {
+    toast.warning('Nama wajib diisi')
+    return
+  }
+  const entry = {
+    nama,
+    nominal: Number(m.nominal) || 0,
+    guru_ids: [...new Set(m.guru_ids.map(String))]
+  }
+  const list = dlgMasterKind.value === 'tunjangan' ? form.master_tunjangan : form.master_potongan
+  if (dlgMasterIsNew.value) list.push(entry)
+  else list.splice(dlgMasterIdx.value, 1, entry)
+  dlgMasterOpen.value = false
+  toast.info('Perubahan siap — klik "Simpan Semua" untuk menyimpan permanen.')
 }
 
 // v.1.1.x: serialize satu daftar jenis (dipakai per Tahun Ajaran saat Simpan Semua)
