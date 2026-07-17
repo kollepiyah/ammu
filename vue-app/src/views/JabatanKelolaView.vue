@@ -1,13 +1,22 @@
 <script setup>
 // v.21.85.0527: Kelola Jabatan (ACF + CRUD) — sub-menu Master Data > Lembaga > Jabatan
-// Model master/jabatan: { list: [string...] (kompat lama), items: [{nama, tipe_pegawai, tipe_lembaga}] }
+// Model master/jabatan: { list: [string...] (kompat lama),
+//   items: [{nama, tipe_pegawai, tipe_lembaga, units:[]}] }
+// v.1.1.9: + units[] — unit/lembaga tempat jabatan ini bertugas. Kosong = global
+//   (jabatan "Guru"). Lihat utils/jabatanUnit.js.
 import { ref, computed, onMounted, onUnmounted, reactive } from 'vue'
 import { subscribeDoc, mergeOne } from '@/services/db'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
+import { namaLembaga, normalizeUnits } from '@/utils/jabatanUnit'
 
 const toast = useToast()
 const confirmDlg = useConfirm()
+
+// v.1.1.9: opsi unit = master/lembaga.list (sumber sebenarnya; termasuk lembaga yang
+//   ditambah belakangan). Konstanta LEMBAGA_GROUPS di useLembaga.js sengaja TIDAK dipakai.
+const unitOptions = ref([])
+let _unsubLembaga = null
 
 const TIPE_PEGAWAI = [
   { value: 'guru_pegawai', label: 'Guru & Pegawai', icon: 'fa-users' },
@@ -53,11 +62,13 @@ function normalize(data) {
       .filter((it) => it && (it.nama || typeof it === 'string'))
       .map((it) =>
         typeof it === 'string'
-          ? { nama: it, tipe_pegawai: 'guru_pegawai', tipe_lembaga: 'lembaga' }
+          ? { nama: it, tipe_pegawai: 'guru_pegawai', tipe_lembaga: 'lembaga', units: [] }
           : {
               nama: String(it.nama || '').trim(),
               tipe_pegawai: it.tipe_pegawai || 'guru_pegawai',
-              tipe_lembaga: it.tipe_lembaga || 'lembaga'
+              tipe_lembaga: it.tipe_lembaga || 'lembaga',
+              // v.1.1.9: data lama tak punya units → [] = global (perilaku sekarang).
+              units: normalizeUnits(it.units)
             }
       )
   }
@@ -66,7 +77,8 @@ function normalize(data) {
     return rawList.filter(Boolean).map((nama) => ({
       nama: String(nama).trim(),
       tipe_pegawai: 'guru_pegawai',
-      tipe_lembaga: 'lembaga'
+      tipe_lembaga: 'lembaga',
+      units: []
     }))
   }
   return null
@@ -93,11 +105,21 @@ onMounted(() => {
     }
     items.value = normalize(data) || []
   })
+  // v.1.1.9: opsi unit dari master/lembaga (sumber sebenarnya, ikut lembaga yang Kyai tambah).
+  _unsubLembaga = subscribeDoc('master', 'lembaga', (doc) => {
+    const list = Array.isArray(doc?.list) ? doc.list : []
+    unitOptions.value = list.map(namaLembaga).filter(Boolean)
+  })
 })
 onUnmounted(() => {
   if (_unsub) {
     try {
       _unsub()
+    } catch (e) {}
+  }
+  if (_unsubLembaga) {
+    try {
+      _unsubLembaga()
     } catch (e) {}
   }
 })
@@ -112,6 +134,7 @@ const form = reactive({
   nama: '',
   tipe_pegawai: 'guru_pegawai',
   tipe_lembaga: 'lembaga',
+  units: [],
   idx: null
 })
 const saving = ref(false)
@@ -120,6 +143,7 @@ function resetForm() {
   form.nama = ''
   form.tipe_pegawai = 'guru_pegawai'
   form.tipe_lembaga = 'lembaga'
+  form.units = []
   form.idx = null
 }
 function editItem(idx) {
@@ -128,7 +152,19 @@ function editItem(idx) {
   form.nama = it.nama
   form.tipe_pegawai = it.tipe_pegawai || 'guru_pegawai'
   form.tipe_lembaga = it.tipe_lembaga || 'lembaga'
+  form.units = normalizeUnits(it.units)
   form.idx = idx
+}
+
+function toggleUnit(nama) {
+  const cur = [...form.units]
+  const i = cur.findIndex((x) => x.toLowerCase() === String(nama).toLowerCase())
+  if (i >= 0) cur.splice(i, 1)
+  else cur.push(nama)
+  form.units = cur
+}
+function unitDipilih(nama) {
+  return form.units.some((x) => x.toLowerCase() === String(nama).toLowerCase())
 }
 
 async function simpan() {
@@ -146,7 +182,12 @@ async function simpan() {
   saving.value = true
   try {
     const arr = [...items.value]
-    const entry = { nama, tipe_pegawai: form.tipe_pegawai, tipe_lembaga: form.tipe_lembaga }
+    const entry = {
+      nama,
+      tipe_pegawai: form.tipe_pegawai,
+      tipe_lembaga: form.tipe_lembaga,
+      units: normalizeUnits(form.units)
+    }
     if (form.idx !== null) arr[form.idx] = entry
     else arr.push(entry)
     await persist(arr)
@@ -269,6 +310,48 @@ const sorted = computed(() =>
           </div>
         </div>
       </div>
+      <!-- v.1.1.9: Unit/Lembaga tempat jabatan ini bertugas -->
+      <div>
+        <label class="text-[11px] font-bold text-[var(--text-secondary)] uppercase block mb-1"
+          >Unit / Lembaga Tugas</label
+        >
+        <div
+          v-if="unitOptions.length === 0"
+          class="text-xs italic text-[var(--text-tertiary)] py-2"
+        >
+          Belum ada lembaga di Master Data › Lembaga.
+        </div>
+        <div v-else class="flex flex-wrap gap-1.5">
+          <button
+            v-for="u in unitOptions"
+            :key="u"
+            type="button"
+            @click="toggleUnit(u)"
+            :class="[
+              'px-2.5 py-1.5 text-xs font-bold rounded-lg border transition cursor-pointer',
+              unitDipilih(u)
+                ? 'bg-indigo-600 text-white border-indigo-700'
+                : 'bg-[var(--bg-card)] text-[var(--text-secondary)] border-[var(--border-default)] hover:bg-indigo-50 dark:hover:bg-indigo-900/30'
+            ]"
+          >
+            <i :class="['fas mr-1', unitDipilih(u) ? 'fa-check' : 'fa-building']"></i>{{ u }}
+          </button>
+        </div>
+        <p class="text-[10px] text-[var(--text-tertiary)] italic mt-1.5">
+          <i class="fas fa-info-circle mr-1"></i>
+          <b v-if="form.units.length === 0">Tak ada yang dipilih = global</b>
+          <span v-if="form.units.length === 0">
+            — jabatan ini bebas di lembaga mana pun (untuk jabatan "Guru").</span
+          >
+          <span v-else-if="form.units.length === 1">
+            Lembaga guru/pegawai akan <b>terisi otomatis</b> ke {{ form.units[0] }} saat jabatan ini
+            dipilih.</span
+          >
+          <span v-else>
+            Pilihan lembaga guru/pegawai dibatasi ke {{ form.units.length }} unit ini.</span
+          >
+        </p>
+      </div>
       <div class="flex gap-2 pt-1">
         <button
           type="button"
@@ -330,6 +413,18 @@ const sorted = computed(() =>
               <span
                 class="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-cyan-100 dark:bg-cyan-900/40 text-cyan-700 dark:text-cyan-300"
                 >{{ labelLembaga(j.tipe_lembaga) }}</span
+              >
+              <!-- v.1.1.9: unit tugas — kosong = global -->
+              <span
+                v-if="(j.units || []).length === 0"
+                class="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300"
+                >Global</span
+              >
+              <span
+                v-for="u in j.units || []"
+                :key="j.nama + '-' + u"
+                class="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300"
+                >{{ u }}</span
               >
             </div>
           </div>
