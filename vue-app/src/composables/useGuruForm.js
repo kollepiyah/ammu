@@ -419,6 +419,9 @@ export function useGuruForm() {
         // v.100 Batch11: EKGQ → NIG (Nomor Induk Guru). Field baru `nig`, fallback baca data lama.
         no_nig: g.nig || g.ekgq || g.no_ekgq || g.no_syahadah || '',
         wa: g.wa || '',
+        // v.1.1.9: rek_bmt DULU tak dimuat/disimpan form (bug: ketik di form → hilang).
+        //   Fallback baca `no_rek_bmt` (dipakai jalur impor mapGuruRow lama).
+        rek_bmt: g.rek_bmt || g.no_rek_bmt || '',
         status: g.status || 'Aktif',
         id_fingerprint: g.id_fingerprint || '',
         // v.21.18.0526: migrate old tipe values (ngaji/sekolah/ngaji_sekolah/admin) → new (guru/pegawai/pegawai_guru)
@@ -524,6 +527,8 @@ export function useGuruForm() {
         wa: normalizeWA(f.wa), // v.99: auto leading-0
         username: defaultUsername,
         status: f.status,
+        // v.1.1.9: rek_bmt (tujuan transfer bisyaroh via BMT) — DULU tak ikut disimpan.
+        rek_bmt: String(f.rek_bmt || '').trim(),
         id_fingerprint: f.id_fingerprint || '',
         tipe_pegawai: f.tipe_pegawai,
         // v.1.1.9: shift_ids = sumber kebenaran. shift & shift_pegawai TETAP DITULIS

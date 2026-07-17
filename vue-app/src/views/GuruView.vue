@@ -865,7 +865,7 @@ function _buildExcelRows(list) {
     lembaga_sekolah: g.lembaga_sekolah || '',
     tanggal_tugas: g.tanggal_tugas || '',
     nig: g.nig || g.ekgq || g.no_ekgq || g.no_syahadah || '',
-    rek_bmt: g.rek_bmt || '',
+    rek_bmt: g.rek_bmt || g.no_rek_bmt || '', // v.1.1.9: fallback field lama
     pendidikan: g.pendidikan_terakhir || '',
     wa: g.wa || g.no_wa || '',
     alamat: g.alamat || '',

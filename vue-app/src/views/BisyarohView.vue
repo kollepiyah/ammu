@@ -1108,7 +1108,7 @@ async function exportLaporanBmt() {
     return {
       no: i + 1,
       nama: s.guru_nama || g.nama || '',
-      rek_bmt: g.rek_bmt || '',
+      rek_bmt: g.rek_bmt || g.no_rek_bmt || '',
       nominal: _slipTakeHome(s),
       periode: s.periode || ''
     }
@@ -1164,7 +1164,7 @@ async function kirimBmtGsheet() {
       return {
         no: i + 1,
         nama: s.guru_nama || g.nama || '',
-        rek_bmt: g.rek_bmt || '',
+        rek_bmt: g.rek_bmt || g.no_rek_bmt || '',
         nominal: _slipTakeHome(s),
         periode: s.periode || ''
       }
@@ -1729,19 +1729,25 @@ async function exportRekapSlipExcel() {
     toast.warning('Tidak ada slip untuk diekspor.')
     return
   }
-  const rows = slips.map((s, i) => ({
-    no: i + 1,
-    nama: s.guru_nama || guruNamaById(s.guru_id),
-    lembaga: s.lembaga || '',
-    jabatan: s.jabatan || '',
-    periode: s.periode || '',
-    pokok: Number(s.bisyaroh_pokok || 0),
-    sekolah: Number(s.bisyaroh_sekolah || 0),
-    tambahan: Number(s.bisyaroh_tambahan || 0),
-    glondongan: Number((s.bonus_glondongan || {}).total || 0),
-    potongan: Number(s.total_potongan || 0),
-    take_home: Number(s.take_home || 0)
-  }))
+  const guruById = (id) => (guruRaw.value || []).find((g) => String(g.id) === String(id)) || {}
+  const rows = slips.map((s, i) => {
+    const g = guruById(s.guru_id)
+    return {
+      no: i + 1,
+      nama: s.guru_nama || guruNamaById(s.guru_id),
+      // v.1.1.9: rekening BMT tujuan transfer (fallback field lama no_rek_bmt)
+      rek_bmt: g.rek_bmt || g.no_rek_bmt || '',
+      lembaga: s.lembaga || '',
+      jabatan: s.jabatan || '',
+      periode: s.periode || '',
+      pokok: Number(s.bisyaroh_pokok || 0),
+      sekolah: Number(s.bisyaroh_sekolah || 0),
+      tambahan: Number(s.bisyaroh_tambahan || 0),
+      glondongan: Number((s.bonus_glondongan || {}).total || 0),
+      potongan: Number(s.total_potongan || 0),
+      take_home: Number(s.take_home || 0)
+    }
+  })
   const per = filterPeriode.value || rows[0]?.periode || 'semua'
   try {
     await exportSimple(rows, {
@@ -1751,6 +1757,7 @@ async function exportRekapSlipExcel() {
       columns: [
         { key: 'no', header: 'No', width: 6 },
         { key: 'nama', header: 'Nama', width: 28 },
+        { key: 'rek_bmt', header: 'No. Rekening BMT', width: 22 },
         { key: 'lembaga', header: 'Lembaga', width: 18 },
         { key: 'jabatan', header: 'Jabatan', width: 18 },
         { key: 'periode', header: 'Periode', width: 12 },

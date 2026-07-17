@@ -226,7 +226,8 @@ export function mapGuruRow(r) {
       tgl_lahir: parseDate(pick(r, 'Tgl Lahir (DD/MM/YYYY)', 'Tgl Lahir')),
       tanggal_tugas: parseDate(pick(r, 'Tanggal Tugas (DD/MM/YYYY)', 'Tanggal Tugas')),
       nig: pick(r, 'NIG'),
-      no_rek_bmt: pick(r, 'No Rek BMT'),
+      // v.1.1.9: samakan ke `rek_bmt` (dulu `no_rek_bmt` → tak terbaca ekspor BMT & form guru)
+      rek_bmt: pick(r, 'No Rek BMT'),
       pendidikan: pick(r, 'Pendidikan Terakhir'),
       alamat: cellText(pick(r, 'Alamat')),
       akses: {}
