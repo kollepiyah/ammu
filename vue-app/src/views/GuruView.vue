@@ -1334,6 +1334,11 @@ async function onImportGuru(e) {
           shift: String(_pick(r, 'Shift (pagi/sore/pagi_sore)', 'Shift', 'shift') || 'pagi_sore')
             .trim()
             .toLowerCase(),
+          // v.1.1.9: kolom Excel hanya mengenal shift lama (pagi/sore/pagi_sore), jadi impor
+          //   MENGOSONGKAN shift_ids — kalau tidak, shift_ids hasil suntingan form akan menang
+          //   dan kolom Shift di Excel diam-diam tak berefek. Kosong = shift diturunkan dari
+          //   field `shift` di atas (jalur data lama). Atur shift baru lewat form guru.
+          shift_ids: [],
           role_sistem: String(
             _pick(
               r,

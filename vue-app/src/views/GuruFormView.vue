@@ -128,28 +128,14 @@
               </label>
             </div>
           </div>
-          <!-- v.21.24d.0526: Pegawai mode — boleh pilih shift juga (kyai req), tetap tanpa lembaga -->
           <div
             v-if="form.tipe_pegawai === 'pegawai'"
-            class="md:col-span-2 bg-[var(--bg-card-elevated)] rounded-lg p-3 space-y-2"
+            class="md:col-span-2 bg-[var(--bg-card-elevated)] rounded-lg p-3"
           >
             <p class="text-xs text-[var(--text-secondary)] italic">
               <i class="fas fa-info-circle mr-1"></i>Tipe <b>Pegawai</b> tidak perlu pilih lembaga
               (kerja umum/yayasan).
             </p>
-            <div>
-              <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase"
-                >Shift Kerja</label
-              >
-              <select
-                v-model="form.shift"
-                class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-cyan-500 outline-none"
-              >
-                <option v-for="s in SHIFT_OPTIONS" :key="`peg-${s.value}`" :value="s.value">
-                  {{ s.label }}
-                </option>
-              </select>
-            </div>
           </div>
           <!-- Guru / Pegawai+Guru mode: lembaga fields (optional, pilih salah satu atau keduanya) -->
           <template v-if="showLembagaQiraati || showLembagaSekolah">
@@ -177,44 +163,60 @@
                 <option v-for="l in lembagaSekolahOptions" :key="l" :value="l">{{ l }}</option>
               </select>
             </div>
-            <div v-if="form.lembaga">
-              <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase"
-                >Shift Qiraati</label
-              >
-              <select
-                v-model="form.shift"
-                class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-cyan-500 outline-none"
-              >
-                <option v-for="s in SHIFT_OPTIONS" :key="s.value" :value="s.value">
-                  {{ s.label }}
-                </option>
-              </select>
-            </div>
             <p class="md:col-span-2 text-[10px] text-[var(--text-secondary)] italic">
               <i class="fas fa-info-circle mr-1"></i>Boleh pilih Qiraati saja, Sekolah saja, atau
               keduanya (kalau ngajar di 2 lembaga).
             </p>
           </template>
-          <!-- v.99: Shift kerja PEGAWAI utk dual-role (terpisah dari Shift Qiraati/mengajar) -->
-          <div
-            v-if="form.tipe_pegawai === 'pegawai_guru'"
-            class="md:col-span-2 bg-[var(--bg-card-elevated)] rounded-lg p-3 space-y-1.5"
-          >
-            <label class="block text-xs font-bold text-indigo-600 mb-1 uppercase"
-              >Shift Kerja (Pegawai)</label
+
+          <!-- v.1.1.9: Shift Tugas — satu daftar centang dari Master Shift, menggantikan
+               3 dropdown lama (Shift Kerja / Shift Qiraati / Shift Kerja Pegawai) yang
+               semuanya menulis ke field `shift` & `shift_pegawai` yang artinya berganti
+               tergantung tipe pegawai. Kini eksplisit: centang = shift yang dia jalani. -->
+          <div class="md:col-span-2 bg-[var(--bg-card-elevated)] rounded-lg p-3 space-y-2">
+            <div class="flex items-center justify-between gap-2 flex-wrap">
+              <label class="block text-xs font-bold text-indigo-600 uppercase">Shift Tugas</label>
+              <RouterLink
+                to="/pengaturan?section=shift"
+                class="text-[10px] font-bold text-teal-600 hover:underline"
+              >
+                <i class="fas fa-cog mr-1"></i>Kelola daftar shift
+              </RouterLink>
+            </div>
+            <div
+              v-if="shiftOptions.length === 0"
+              class="text-xs text-[var(--text-tertiary)] italic"
             >
-            <select
-              v-model="form.shift_pegawai"
-              class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-indigo-500 outline-none"
-            >
-              <option v-for="s in SHIFT_OPTIONS" :key="`pegdual-${s.value}`" :value="s.value">
-                {{ s.label }}
-              </option>
-            </select>
+              Belum ada shift untuk tipe ini. Tambahkan di Pengaturan &rsaquo; Master Shift.
+            </div>
+            <div v-else class="grid grid-cols-2 md:grid-cols-3 gap-1.5">
+              <label
+                v-for="s in shiftOptions"
+                :key="s.id"
+                :class="[
+                  'flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition text-xs',
+                  (form.shift_ids || []).includes(s.id)
+                    ? 'bg-indigo-50 dark:bg-indigo-900/30 border-indigo-400 text-indigo-800 dark:text-indigo-200 font-bold'
+                    : 'border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-[var(--bg-card)]'
+                ]"
+              >
+                <input
+                  type="checkbox"
+                  :checked="(form.shift_ids || []).includes(s.id)"
+                  @change="toggleShift(s.id)"
+                  class="w-4 h-4 accent-indigo-600"
+                />
+                <span class="min-w-0">
+                  {{ s.label }}
+                  <span class="block text-[9px] font-normal opacity-70">
+                    {{ s.untuk === 'pegawai' ? 'kerja' : 'mengajar' }}
+                  </span>
+                </span>
+              </label>
+            </div>
             <p class="text-[10px] text-[var(--text-secondary)] italic">
-              <i class="fas fa-info-circle mr-1"></i><b>Shift Qiraati</b> = jadwal mengajar;
-              <b>Shift Kerja</b> = jadwal sebagai pegawai. Menentukan kolom absensi Peg. Pagi/Sore
-              &amp; bonus.
+              <i class="fas fa-info-circle mr-1"></i>Menentukan kolom absensi &amp; bonus kehadiran
+              di slip bisyaroh. Tak dicentang = tidak diabsen di shift itu.
             </p>
           </div>
           <div>
@@ -382,13 +384,12 @@
 
 <script setup>
 import { onMounted, watch, computed } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute, useRouter, RouterLink } from 'vue-router'
 import {
   useGuruForm,
   JABATAN_OPTIONS,
   JABATAN_NO_LEMBAGA,
   TIPE_PEGAWAI_OPTIONS,
-  SHIFT_OPTIONS,
   ROLE_SISTEM_OPTIONS
 } from '@/composables/useGuruForm'
 
@@ -406,6 +407,9 @@ const {
   jabatanOptionsFiltered,
   isSuperAdmin,
   gedungOptions,
+  shiftOptions,
+  toggleShift,
+  syncShiftIdsKeTipe,
   loadGuru,
   resetForm,
   save
@@ -423,8 +427,13 @@ watch(
     if (newTipe === 'pegawai') {
       form.value.lembaga = ''
       form.value.lembaga_sekolah = ''
-      form.value.shift = ''
     }
+    // v.1.1.9: buang shift yang tak lagi ditawarkan utk tipe ini.
+    //   Dulu di sini ada `form.value.shift = ''` — padahal utk tipe 'pegawai' field itu
+    //   JUSTRU shift kerjanya, dan dropdown-nya tak punya opsi kosong. Kalau admin tak
+    //   sadar memilih ulang, tersimpan '' → pembaca legacy menerjemahkannya 'pagi_sore'
+    //   → pegawai shift pagi dihitung hadir 2 shift (bonus dobel di slip bisyaroh).
+    syncShiftIdsKeTipe()
   }
 )
 

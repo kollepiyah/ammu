@@ -143,6 +143,33 @@ export function shiftsUntuk(settings, untuk) {
   return shiftList(settings).filter((x) => x.untuk === u)
 }
 
+// Penanda "tak ada shift pagi/sore" utk field lama g.shift/g.shift_pegawai.
+// JANGAN dikosongkan: pembaca legacy (fp_sync.py & shiftsForGuruLegacy) menerjemahkan
+// string kosong jadi default 'pagi_sore' — itulah asal bug pegawai dapat bonus 2 shift.
+// Nilai ini sengaja tak mengandung substring 'pagi'/'sore' sehingga terbaca "tak ada".
+export const SHIFT_LEGACY_KOSONG = 'kosong'
+
+// Cermin shift_ids[] → field lama g.shift / g.shift_pegawai, supaya fp_sync.py (replika
+// Python yang belum mengenal shift_ids) menurunkan shift yang SAMA. Mengikuti cara baca
+// fp_sync: pegawai murni baca g.shift, dual-role baca g.shift_pegawai.
+// Batas yang diketahui: hanya 5 shift bawaan yang punya padanan. Shift baru tak tercermin,
+// dan 'sekolah' di sisi fp_sync tetap ikut ada/tidaknya lembaga_sekolah.
+export function shiftIdsToLegacy(ids, tipePegawai) {
+  const set = new Set((Array.isArray(ids) ? ids : []).map(String))
+  const tipe = String(tipePegawai || 'guru')
+    .toLowerCase()
+    .trim()
+  const hasPegawai = tipe.includes('pegawai')
+  const hasGuru = !hasPegawai || tipe.includes('guru')
+  const gabung = (pagi, sore) =>
+    pagi && sore ? 'pagi_sore' : pagi ? 'pagi' : sore ? 'sore' : SHIFT_LEGACY_KOSONG
+  const sGuru = gabung(set.has('pagi'), set.has('sore'))
+  const sPegawai = gabung(set.has('pegawai_pagi'), set.has('pegawai_sore'))
+  if (hasGuru && hasPegawai) return { shift: sGuru, shift_pegawai: sPegawai }
+  if (hasPegawai) return { shift: sPegawai, shift_pegawai: SHIFT_LEGACY_KOSONG }
+  return { shift: sGuru, shift_pegawai: SHIFT_LEGACY_KOSONG }
+}
+
 // Cermin balik ke setting-key lama utk 5 shift bawaan (fp_sync.py membacanya).
 // Shift baru dilewati — tak punya padanan legacy.
 export function shiftMasterToLegacy(list) {

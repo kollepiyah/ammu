@@ -8,6 +8,9 @@ import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
 import { toTitleCase, normalizeWA } from '@/utils/format'
 import { gedungList } from '@/utils/gedung'
+// v.1.1.9: shift ikut master; shiftsForGuru dipakai utk menurunkan centangan awal data lama.
+import { shiftsForGuru } from '@/utils/shiftDerive'
+import { shiftList, shiftIdsToLegacy } from '@/utils/shiftMaster'
 
 function emptyForm() {
   return {
@@ -28,8 +31,10 @@ function emptyForm() {
     status: 'Aktif',
     id_fingerprint: '',
     tipe_pegawai: 'guru',
-    shift: 'pagi_sore',
-    shift_pegawai: 'pagi_sore', // v.99: shift kerja PEGAWAI (terpisah dari shift mengajar Qiraati) — utk dual-role
+    // v.1.1.9: shift_ids[] = SUMBER KEBENARAN, satu daftar utk shift mengajar & kerja.
+    //   Menggantikan pasangan shift/shift_pegawai yang artinya berganti-ganti tergantung
+    //   tipe_pegawai. Keduanya masih DITULIS sbg cermin (lihat save) demi fp_sync.py.
+    shift_ids: [],
     role_sistem: 'user',
     // v.111: gedung yang dikelola (khusus admin_keuangan → scope Buku Kas + akademik)
     gedung: '',
@@ -107,11 +112,8 @@ export const TIPE_PEGAWAI_OPTIONS = [
   { value: 'pegawai_guru', label: 'Pegawai + Guru (dual role)' }
 ]
 
-export const SHIFT_OPTIONS = [
-  { value: 'pagi', label: 'Pagi saja' },
-  { value: 'sore', label: 'Sore saja' },
-  { value: 'pagi_sore', label: 'Pagi + Sore' }
-]
+// v.1.1.9: konstanta SHIFT_OPTIONS (pagi/sore/pagi_sore) DIHAPUS — pilihan shift kini
+//   dari master (lihat shiftOptions di useGuruForm), supaya shift buatan sendiri ikut muncul.
 
 export const ROLE_SISTEM_OPTIONS = [
   { value: 'user', label: 'User Biasa' },
@@ -313,6 +315,33 @@ export function useGuruForm() {
   const settings = useSettingsStore()
   const gedungOptions = computed(() => gedungList(settings.settings || {}))
 
+  // v.1.1.9: pilihan shift dari MASTER, disaring per tipe pegawai —
+  //   guru → shift 'guru' (mengajar); pegawai → shift 'pegawai' (kerja); dual-role → dua-duanya.
+  const shiftOptions = computed(() => {
+    const all = shiftList(settings.settings || {})
+    const tipe = String(form.value.tipe_pegawai || 'guru').toLowerCase()
+    if (tipe === 'pegawai_guru') return all
+    if (tipe === 'pegawai') return all.filter((s) => s.untuk === 'pegawai')
+    return all.filter((s) => s.untuk === 'guru')
+  })
+
+  function toggleShift(id) {
+    const cur = Array.isArray(form.value.shift_ids) ? [...form.value.shift_ids] : []
+    const i = cur.indexOf(id)
+    if (i >= 0) cur.splice(i, 1)
+    else cur.push(id)
+    form.value.shift_ids = cur
+  }
+
+  // Ganti tipe pegawai → buang shift yang tak lagi ditawarkan (mis. guru→pegawai:
+  //   shift mengajar gugur). Dulu ini `form.shift = ''` yang justru MENGOSONGKAN input
+  //   shift kerja pegawai yang baru mau diisi → tersimpan '' → pembaca legacy
+  //   menerjemahkannya 'pagi_sore' → pegawai shift pagi dihitung hadir 2 shift.
+  function syncShiftIdsKeTipe() {
+    const boleh = new Set(shiftOptions.value.map((s) => s.id))
+    form.value.shift_ids = (form.value.shift_ids || []).filter((id) => boleh.has(id))
+  }
+
   function resetForm() {
     form.value = emptyForm()
     editingId.value = null
@@ -355,8 +384,13 @@ export function useGuruForm() {
           if (['guru', 'pegawai', 'pegawai_guru'].includes(old)) return old
           return 'guru'
         })(),
-        shift: g.shift || 'pagi_sore',
-        shift_pegawai: g.shift_pegawai || 'pagi_sore', // v.99: shift kerja pegawai (dual-role)
+        // v.1.1.9: data lama belum punya shift_ids → turunkan dari shift/shift_pegawai
+        //   lewat shiftsForGuru (sumber tunggal), jadi centangan awal = shift yg selama
+        //   ini memang berlaku bagi dia.
+        shift_ids:
+          Array.isArray(g.shift_ids) && g.shift_ids.length > 0
+            ? g.shift_ids.map(String)
+            : [...shiftsForGuru(g, settings.settings || {})],
         role_sistem: g.role_sistem || 'user',
         gedung: g.gedung || '',
         custom_fields: g.custom_fields || {}
@@ -447,8 +481,12 @@ export function useGuruForm() {
         status: f.status,
         id_fingerprint: f.id_fingerprint || '',
         tipe_pegawai: f.tipe_pegawai,
-        shift: f.shift,
-        shift_pegawai: f.shift_pegawai || 'pagi_sore', // v.99: shift kerja pegawai (dual-role)
+        // v.1.1.9: shift_ids = sumber kebenaran. shift & shift_pegawai TETAP DITULIS
+        //   sebagai cermin — fp_sync.py (replika Python di luar repo) masih membacanya
+        //   dan belum mengenal shift_ids. Cermin kosong = 'kosong', bukan '' (string
+        //   kosong ditafsirkan pembaca legacy jadi 'pagi_sore' → bonus 2 shift).
+        shift_ids: [...(f.shift_ids || [])],
+        ...shiftIdsToLegacy(f.shift_ids, f.tipe_pegawai),
         role_sistem: isSuperAdmin.value ? f.role_sistem : 'user',
         // v.111: gedung hanya bermakna utk admin_keuangan; selain itu kosongkan
         gedung: isSuperAdmin.value && f.role_sistem === 'admin_keuangan' ? f.gedung || '' : '',
@@ -546,7 +584,9 @@ export function useGuruForm() {
     editingId,
     JABATAN_OPTIONS,
     TIPE_PEGAWAI_OPTIONS,
-    SHIFT_OPTIONS,
+    shiftOptions,
+    toggleShift,
+    syncShiftIdsKeTipe,
     ROLE_SISTEM_OPTIONS,
     JABATAN_GURU_GROUP,
     JABATAN_PEGAWAI_GROUP,
