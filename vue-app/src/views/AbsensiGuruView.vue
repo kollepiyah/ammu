@@ -85,11 +85,9 @@
             class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none"
           >
             <option value="">Semua shift</option>
-            <option value="pagi">Pagi saja</option>
-            <option value="sore">Sore saja</option>
-            <option value="sekolah">Sekolah saja</option>
-            <option value="pegawai_pagi">Pegawai Pagi</option>
-            <option value="pegawai_sore">Pegawai Sore</option>
+            <option v-for="col in SHIFT_COLS" :key="'f-' + col.key" :value="col.key">
+              {{ col.label }}
+            </option>
           </select>
           <select
             v-model="filterStatus"
@@ -683,6 +681,10 @@ import { useExcel } from '@/composables/useExcel'
 import { useGoogleSheet } from '@/composables/useGoogleSheet' // v.100 Batch12: ekspor ke Google Sheet
 import { useToast } from '@/composables/useToast'
 import { useSettingsStore } from '@/stores/settings'
+// v.1.1.9: aturan shift = shiftDerive.js (sumber tunggal, dipakai sync mesin juga).
+//   Dulu view ini punya SALINAN sendiri yang harus disamakan manual — sudah dihapus.
+import { shiftsForGuru, shiftBatas as shiftBatasOf } from '@/utils/shiftDerive'
+import { shiftList, shiftLabelOf } from '@/utils/shiftMaster'
 import { jsPDFFromCDN } from '@/services/pdf'
 // v.21.114.0528: pakai kegiatan composable utk derive hari libur dari event multi-day
 import { useKegiatan } from '@/composables/useKegiatan'
@@ -964,116 +966,47 @@ const guruAktif = computed(() =>
     .sort((a, b) => String(a.nama || '').localeCompare(String(b.nama || ''), 'id'))
 )
 
-// v.99: kolom shift absensi (guru mengajar + PEGAWAI pisah pagi/sore, tarif beda di Pengaturan).
-const SHIFT_COLS = [
-  { key: 'pagi', label: 'Pagi' },
-  { key: 'sore', label: 'Sore' },
-  { key: 'sekolah', label: 'Sekolah' },
-  { key: 'pegawai_pagi', label: 'Peg. Pagi' },
-  { key: 'pegawai_sore', label: 'Peg. Sore' }
-]
+// v.1.1.9: kolom shift IKUT MASTER (settings.shiftMaster) — dulu array hardcoded 5 shift.
+//   Label kolom pegawai disingkat spy header tabel tetap muat.
+const SHIFT_COLS = computed(() =>
+  shiftList(settingsStore.settings || {}).map((sh) => ({
+    key: sh.id,
+    label:
+      sh.id === 'pegawai_pagi' ? 'Peg. Pagi' : sh.id === 'pegawai_sore' ? 'Peg. Sore' : sh.label
+  }))
+)
 
-// Shift mana yang berlaku utk seorang guru/pegawai (gating per tipe & shift):
-//   guru -> shift mengajar (pagi/sore sesuai field shift) + Sekolah bila punya lembaga_sekolah;
-//   pegawai -> Peg. Pagi/Sore; dual-role (pegawai_guru) -> keduanya.
-function shiftsForGuru(g) {
-  const tipe = String(g?.tipe_pegawai || 'guru')
-    .toLowerCase()
-    .trim()
-  const hasPegawai = tipe.includes('pegawai')
-  const hasGuru = !hasPegawai || tipe.includes('guru') // pegawai murni=false; guru/dual/legacy=true
-  const shiftField = String(g?.shift || 'pagi_sore').toLowerCase()
-  const hasSekolah = !!(g?.lembaga_sekolah && String(g.lembaga_sekolah).trim())
-  const set = new Set()
-  if (hasGuru && shiftField.includes('pagi')) set.add('pagi')
-  if (hasGuru && shiftField.includes('sore')) set.add('sore')
-  if (hasGuru && hasSekolah) set.add('sekolah')
-  if (hasPegawai) {
-    // v.99: kolom pegawai mengikuti SHIFT KERJA — pegawai murni pakai g.shift, dual-role pakai g.shift_pegawai.
-    //   Default 'pagi_sore' (data lama tanpa shift_pegawai) -> dua kolom (tak ada regresi).
-    const sp = String((hasGuru ? g?.shift_pegawai : g?.shift) || 'pagi_sore').toLowerCase()
-    if (sp.includes('pagi')) set.add('pegawai_pagi')
-    if (sp.includes('sore')) set.add('pegawai_sore')
-  }
-  return set
-}
-// peta id -> array shift (reaktif, dipakai di template form harian)
+// peta id -> array shift (reaktif, dipakai di template form harian).
+// Aturan shift-nya sendiri milik shiftDerive.js (sumber tunggal, dipakai sync mesin juga).
 const guruShifts = computed(() => {
+  const s = settingsStore.settings || {}
   const m = {}
-  for (const g of guruAktif.value) m[g.id] = [...shiftsForGuru(g)]
+  for (const g of guruAktif.value) m[g.id] = [...shiftsForGuru(g, s)]
   return m
 })
 
-// Setting-key per shift (mulai/terlambat/selesai). Pegawai punya jam SENDIRI;
-// 'fallback' = shift guru yg dipakai bila setelan pegawai dikosongkan.
-function shiftSettingKeys(shift) {
-  switch (shift) {
-    case 'sore':
-      return {
-        mulai: 'shiftSoreMulai',
-        terlambat: 'shiftSoreTerlambat',
-        selesai: 'shiftSoreSelesai'
-      }
-    case 'sekolah':
-      return {
-        mulai: 'shiftSekolahMulai',
-        terlambat: 'shiftSekolahTerlambat',
-        selesai: 'shiftSekolahSelesai'
-      }
-    case 'pegawai_pagi':
-      return {
-        mulai: 'shiftPegawaiPagiMulai',
-        terlambat: 'shiftPegawaiPagiTerlambat',
-        selesai: 'shiftPegawaiPagiSelesai',
-        fallback: 'pagi'
-      }
-    case 'pegawai_sore':
-      return {
-        mulai: 'shiftPegawaiSoreMulai',
-        terlambat: 'shiftPegawaiSoreTerlambat',
-        selesai: 'shiftPegawaiSoreSelesai',
-        fallback: 'sore'
-      }
-    default:
-      return {
-        mulai: 'shiftPagiMulai',
-        terlambat: 'shiftPagiTerlambat',
-        selesai: 'shiftPagiSelesai'
-      }
-  }
-}
-// Window jam shift dari settings; pegawai kosong → fallback ke jam guru pagi/sore.
-function shiftWindow(shift) {
-  const s = settingsStore.settings || {}
-  const k = shiftSettingKeys(shift)
-  const pick = (kk) => ({
-    mulai: String(s[kk.mulai] || '').trim(),
-    terlambat: String(s[kk.terlambat] || '').trim(),
-    selesai: String(s[kk.selesai] || '').trim()
-  })
-  let w = pick(k)
-  if (!w.mulai && !w.terlambat && k.fallback) w = pick(shiftSettingKeys(k.fallback))
-  return w
-}
-// Batas terlambat (string 'HH:MM'): pakai 'terlambat', else 'mulai'.
-function shiftBatas(shift) {
-  const w = shiftWindow(shift)
-  return w.terlambat || w.mulai || ''
+const shiftBatas = (shift) => shiftBatasOf(shift, settingsStore.settings || {})
+
+// Inisial utk lencana bulat di Riwayat. 5 bawaan dipertahankan (Sore=S vs Sekolah=Sk);
+// shift baru → 2 huruf pertama labelnya.
+const ABBR_BAWAAN = {
+  pagi: 'P',
+  sore: 'S',
+  sekolah: 'Sk',
+  pegawai_pagi: 'PgP',
+  pegawai_sore: 'PgS'
 }
 function shiftAbbr(sh) {
   const s = String(sh || '').toLowerCase()
-  if (s === 'pagi') return 'P'
-  if (s === 'sore') return 'S'
-  if (s === 'sekolah') return 'Sk'
-  if (s === 'pegawai_pagi') return 'PgP'
-  if (s === 'pegawai_sore') return 'PgS'
-  return '?'
+  if (ABBR_BAWAAN[s]) return ABBR_BAWAAN[s]
+  const label = shiftLabelOf(settingsStore.settings || {}, s)
+  return label && label !== s ? label.slice(0, 2) : '?'
 }
 
 // ===== Helper tampilan Riwayat =====
 function shiftLabel(sh) {
   const s = String(sh || '').toLowerCase()
-  return (SHIFT_COLS.find((c) => c.key === s) || {}).label || sh || '-'
+  return (SHIFT_COLS.value.find((c) => c.key === s) || {}).label || sh || '-'
 }
 function statusInfo(status) {
   const s = String(status || 'hadir').toLowerCase()
@@ -1141,9 +1074,9 @@ async function saveHarian() {
   const today = new Date().toISOString().slice(0, 10)
   const writes = []
   for (const g of guruAktif.value) {
-    const allow = shiftsForGuru(g)
-    for (const shift of ['pagi', 'sore', 'sekolah', 'pegawai_pagi', 'pegawai_sore']) {
-      if (!allow.has(shift)) continue
+    // v.1.1.9: iterasi shift MILIK guru (ikut master), bukan lagi 5 shift hardcoded.
+    const allow = shiftsForGuru(g, settingsStore.settings || {})
+    for (const shift of allow) {
       if (!harianForm.value[g.id + '_' + shift + '_hadir']) continue
       const jam = String(harianForm.value[g.id + '_' + shift + '_jam'] || '').trim()
       const batas = shiftBatas(shift)
@@ -1246,11 +1179,11 @@ function isHariLibur(d) {
 // Satu baris utk tiap shift yg BERLAKU bagi guru (shiftsForGuru), urut SHIFT_COLS.
 // filterShift mempersempit ke shift terpilih.
 const rekapRows = computed(() => {
-  const order = SHIFT_COLS.map((c) => c.key)
+  const order = SHIFT_COLS.value.map((c) => c.key)
   const only = String(filterShift.value || '').toLowerCase()
   const rows = []
   for (const g of guruAktif.value) {
-    const shifts = shiftsForGuru(g)
+    const shifts = shiftsForGuru(g, settingsStore.settings || {})
     const keys = order.filter((k) => shifts.has(k) && (!only || k === only))
     keys.forEach((key, idx) => {
       // nama guru di-merge (rowspan) sekali per guru: isFirst + jumlah baris (span)
