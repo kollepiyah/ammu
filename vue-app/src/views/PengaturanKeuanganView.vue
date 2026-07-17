@@ -359,179 +359,291 @@
       >
         <i class="fas fa-hand-holding-usd text-cyan-600 mr-1"></i>Bisyaroh Guru/Pegawai
       </h3>
+      <!-- v.1.1.9: Jenis Bisyaroh — MENGGANTIKAN 5 tarif shift global + 75 baris pokok per guru.
+           Nominal kini ditentukan lembaga & tugas, bukan diketik per orang. -->
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+        <p class="text-[11px] text-[var(--text-secondary)] italic">
+          <i class="fas fa-info-circle mr-1"></i>Kriteria yang dikosongkan
+          <b>tidak menyaring</b> (berlaku semua). Semua jenis yang cocok dijumlahkan.
+        </p>
+        <button
+          @click="openJenisBisyarohBaru"
+          type="button"
+          class="inline-flex items-center gap-1.5 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-bold px-4 py-2 rounded-lg text-xs"
+        >
+          <i class="fas fa-plus"></i>Tambah Jenis Bisyaroh
+        </button>
+      </div>
+      <div class="border border-[var(--border-subtle)] rounded-xl overflow-hidden overflow-x-auto">
+        <table class="w-full text-sm min-w-[720px]">
+          <thead>
+            <tr
+              class="bg-[var(--bg-card-elevated)] text-[10px] uppercase tracking-wider text-[var(--text-secondary)]"
+            >
+              <th class="text-left px-3 py-2.5 font-black w-10">No</th>
+              <th class="text-left px-3 py-2.5 font-black">Nama Jenis</th>
+              <th class="text-left px-3 py-2.5 font-black">Hitungan</th>
+              <th class="text-left px-3 py-2.5 font-black">Jabatan</th>
+              <th class="text-left px-3 py-2.5 font-black">Lembaga</th>
+              <th class="text-left px-3 py-2.5 font-black">Shift</th>
+              <th class="text-right px-3 py-2.5 font-black">Nominal</th>
+              <th class="text-center px-3 py-2.5 font-black w-20">Aksi</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-[var(--border-subtle)]">
+            <tr
+              v-for="(j, idx) in jenisBisyarohList"
+              :key="j.id || idx"
+              :class="[
+                'hover:bg-[var(--bg-card-elevated)] transition',
+                j.aktif ? '' : 'opacity-50'
+              ]"
+            >
+              <td class="px-3 py-2 text-[var(--text-tertiary)]">{{ idx + 1 }}</td>
+              <td class="px-3 py-2 font-bold text-[var(--text-primary)]">
+                {{ j.label }}
+                <span v-if="!j.aktif" class="text-[9px] font-normal italic">(nonaktif)</span>
+              </td>
+              <td class="px-3 py-2">
+                <span
+                  :class="[
+                    'text-[11px] font-bold px-2 py-0.5 rounded-md whitespace-nowrap',
+                    j.hitungan === 'per_hadir'
+                      ? 'bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-200'
+                      : 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-200'
+                  ]"
+                  >{{ j.hitungan === 'per_hadir' ? '× hadir' : 'Flat' }}</span
+                >
+              </td>
+              <td class="px-3 py-2 text-[11px] text-[var(--text-secondary)]">
+                {{ scopeText(j.scope.jabatan) }}
+              </td>
+              <td class="px-3 py-2 text-[11px] text-[var(--text-secondary)]">
+                {{ scopeText(j.scope.lembaga) }}
+              </td>
+              <td class="px-3 py-2 text-[11px] text-[var(--text-secondary)]">
+                {{ scopeText(j.scope.shift.map(shiftLabelById)) }}
+              </td>
+              <td class="px-3 py-2 text-right font-bold text-[var(--text-primary)]">
+                Rp {{ Number(j.nominal).toLocaleString('id-ID') }}
+              </td>
+              <td class="px-3 py-2">
+                <div class="flex items-center justify-center gap-1">
+                  <button
+                    @click="openJenisBisyarohDialog(j, idx)"
+                    type="button"
+                    class="w-7 h-7 rounded-lg border border-[var(--border-default)] text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/30 flex items-center justify-center"
+                    title="Ubah"
+                  >
+                    <i class="fas fa-pen text-xs"></i>
+                  </button>
+                  <button
+                    @click="hapusJenisBisyaroh(idx)"
+                    type="button"
+                    class="w-7 h-7 rounded-lg border border-[var(--border-default)] text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 flex items-center justify-center"
+                    title="Hapus"
+                  >
+                    <i class="fas fa-trash text-xs"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            <tr v-if="jenisBisyarohList.length === 0">
+              <td colspan="8" class="text-center text-[var(--text-tertiary)] italic py-6">
+                Belum ada Jenis Bisyaroh. Klik "Tambah Jenis Bisyaroh" — mis. "Bisyaroh Pokok Guru
+                PTPT" (Flat, jabatan Guru + lembaga PTPT) atau "Bonus Kehadiran Pagi" (× hadir,
+                shift Pagi).
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
       <div
-        class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4 pb-4 border-b border-[var(--border-subtle)]"
+        v-if="tumpangTindihJenis.length > 0"
+        class="mt-2 text-[11px] bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-200 rounded-lg px-3 py-2"
       >
-        <div>
-          <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block">
-            Bisyaroh per Shift Pagi (otomatis dari absensi)
-          </label>
-          <input
-            v-model="form.keu_bisyaroh_pagi"
-            @input="onFmtChange($event, 'keu_bisyaroh_pagi')"
-            type="text"
-            inputmode="numeric"
-            class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)] font-bold"
-          />
-        </div>
-        <div>
-          <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block">
-            Bisyaroh per Shift Sore (otomatis dari absensi)
-          </label>
-          <input
-            v-model="form.keu_bisyaroh_sore"
-            @input="onFmtChange($event, 'keu_bisyaroh_sore')"
-            type="text"
-            inputmode="numeric"
-            class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)] font-bold"
-          />
-        </div>
-        <!-- v.21.103.0527: shift sekolah utk guru sekolah -->
-        <div>
-          <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block">
-            Bisyaroh per Shift Sekolah (otomatis dari absensi)
-          </label>
-          <input
-            v-model="form.keu_bisyaroh_sekolah_shift"
-            @input="onFmtChange($event, 'keu_bisyaroh_sekolah_shift')"
-            type="text"
-            inputmode="numeric"
-            class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)] font-bold"
-          />
-        </div>
-        <!-- v.99: bonus kehadiran khusus PEGAWAI (tarif beda dari guru) — pisah pagi & sore -->
-        <div>
-          <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block">
-            Bisyaroh per Shift Pegawai — Pagi (otomatis dari absensi)
-          </label>
-          <input
-            v-model="form.keu_bisyaroh_pegawai_pagi"
-            @input="onFmtChange($event, 'keu_bisyaroh_pegawai_pagi')"
-            type="text"
-            inputmode="numeric"
-            class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)] font-bold"
-          />
-        </div>
-        <div>
-          <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block">
-            Bisyaroh per Shift Pegawai — Sore (otomatis dari absensi)
-          </label>
-          <input
-            v-model="form.keu_bisyaroh_pegawai_sore"
-            @input="onFmtChange($event, 'keu_bisyaroh_pegawai_sore')"
-            type="text"
-            inputmode="numeric"
-            class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)] font-bold"
-          />
-        </div>
-        <!-- v.111: bisyaroh Tes Glondongan PTPT — per juz disimak (rekap di layar Glondongan) -->
-        <div class="md:col-span-2">
-          <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block">
-            Bisyaroh Glondongan PTPT — per Juz Disimak
-          </label>
-          <input
-            v-model="form.keu_glondongan_per_juz"
-            @input="onFmtChange($event, 'keu_glondongan_per_juz')"
-            type="text"
-            inputmode="numeric"
-            placeholder="mis. 5.000"
-            class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)] font-bold"
-          />
-          <p class="text-[10px] text-[var(--text-tertiary)] italic mt-1">
-            Tarif per juz yang disimak penguji glondongan/berjalan. Rekap per guru/bulan ada di
-            layar Glondongan PTPT (admin).
-          </p>
-        </div>
+        <i class="fas fa-triangle-exclamation mr-1"></i>
+        <b>Tumpang tindih:</b> lebih dari satu jenis "× hadir" mengenai shift yang sama — nominalnya
+        <b>dijumlahkan</b>, bukan saling menimpa.
+        <span v-for="t in tumpangTindihJenis" :key="t.shift" class="block ml-4">
+          · {{ shiftLabelById(t.shift) }}: {{ t.labels.join(' + ') }}
+        </span>
       </div>
 
-      <div>
-        <div class="flex justify-between items-start mb-2 gap-2">
-          <h4
-            class="font-black text-slate-700 dark:text-[var(--text-tertiary)] text-[11px] uppercase tracking-wider"
+      <!-- Glondongan PTPT tetap terpisah: dihitung per JUZ disimak, bukan per shift/tugas -->
+      <div class="mt-4 pt-4 border-t border-[var(--border-subtle)]">
+        <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block">
+          Bisyaroh Glondongan PTPT — per Juz Disimak
+        </label>
+        <input
+          v-model="form.keu_glondongan_per_juz"
+          @input="onFmtChange($event, 'keu_glondongan_per_juz')"
+          type="text"
+          inputmode="numeric"
+          placeholder="mis. 5.000"
+          class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)] font-bold"
+        />
+        <p class="text-[10px] text-[var(--text-tertiary)] italic mt-1">
+          Tarif per juz yang disimak penguji glondongan/berjalan — di luar Jenis Bisyaroh karena
+          dihitung per juz, bukan per tugas/shift. Rekap ada di layar Glondongan PTPT.
+        </p>
+      </div>
+    </div>
+
+    <!-- v.1.1.9: Dialog Tambah/Ubah Jenis Bisyaroh -->
+    <div
+      v-if="dlgJbOpen && dlgJb"
+      class="fixed inset-0 z-50 bg-slate-900/60 flex items-center justify-center p-4"
+      @click.self="dlgJbOpen = false"
+    >
+      <div
+        class="bg-[var(--bg-card)] rounded-2xl shadow-2xl max-w-xl w-full max-h-[90vh] overflow-y-auto"
+      >
+        <div
+          class="flex items-center justify-between px-5 py-4 border-b border-[var(--border-subtle)]"
+        >
+          <h3 class="text-base font-black">
+            <i class="fas fa-hand-holding-usd text-cyan-500 mr-1.5"></i
+            >{{ dlgJbIsNew ? 'Tambah' : 'Ubah' }} Jenis Bisyaroh
+          </h3>
+          <button
+            @click="dlgJbOpen = false"
+            class="text-[var(--text-secondary)] hover:text-rose-500 p-1"
+            aria-label="Tutup"
           >
-            Bisyaroh Pokok Per Guru/Pegawai (Flat Bulanan)
-          </h4>
-          <!-- v.110: template + impor bisyaroh pegawai (TU isi, admin tinggal impor) -->
-          <div class="flex gap-1.5 flex-shrink-0">
-            <button
-              @click="unduhTemplateBisyaroh"
-              type="button"
-              class="inline-flex items-center gap-1.5 text-[10px] font-bold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-900/30 px-2.5 py-1.5 rounded-lg hover:bg-teal-100 dark:hover:bg-teal-900/50 whitespace-nowrap"
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="p-5 space-y-3">
+          <div>
+            <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
+              >Nama Jenis</label
             >
-              <i class="fas fa-download"></i>Template
-            </button>
-            <label
-              class="inline-flex items-center gap-1.5 text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/30 px-2.5 py-1.5 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-900/50 cursor-pointer whitespace-nowrap"
-            >
-              <i class="fas fa-file-import"></i>{{ imporBisyarohBusy ? 'Impor…' : 'Impor' }}
+            <input
+              v-model="dlgJb.label"
+              type="text"
+              placeholder="mis. Bisyaroh Pokok Guru PTPT"
+              class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)] font-bold"
+            />
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
+                >Cara Hitung</label
+              >
+              <div class="grid grid-cols-2 gap-1.5">
+                <button
+                  v-for="o in HITUNGAN_OPTIONS"
+                  :key="o.value"
+                  type="button"
+                  @click="dlgJb.hitungan = o.value"
+                  :class="[
+                    'py-2 rounded-lg text-xs font-bold border transition',
+                    dlgJb.hitungan === o.value
+                      ? 'bg-teal-600 text-white border-teal-600'
+                      : 'border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-elevated)]'
+                  ]"
+                >
+                  {{ o.label }}
+                </button>
+              </div>
+            </div>
+            <div>
+              <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
+                >Nominal (Rp)</label
+              >
               <input
-                type="file"
-                accept=".xlsx,.xls"
-                class="hidden"
-                @change="imporBisyaroh"
-                :disabled="imporBisyarohBusy"
+                v-model.number="dlgJb.nominal"
+                type="number"
+                min="0"
+                class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)] font-bold text-right"
               />
+            </div>
+          </div>
+          <p class="text-[10px] text-[var(--text-secondary)] italic">
+            <i class="fas fa-info-circle mr-1"></i>
+            {{
+              dlgJb.hitungan === 'per_hadir'
+                ? 'Dikali jumlah hadir shift dari absensi. Shift dikosongkan = semua shift orang itu dijumlahkan.'
+                : 'Dibayar sekali per bulan bila cocok scope.'
+            }}
+          </p>
+          <div class="border-t border-[var(--border-subtle)] pt-3 space-y-3">
+            <p class="text-[10px] font-black text-[var(--text-secondary)] uppercase">
+              Berlaku Untuk — kosongkan = semua
+            </p>
+            <div>
+              <label class="text-[10px] font-bold text-[var(--text-secondary)] mb-1 block"
+                >Jabatan</label
+              >
+              <div class="flex flex-wrap gap-1">
+                <button
+                  v-for="j in jabatanScopeOptions"
+                  :key="'sj-' + j"
+                  type="button"
+                  @click="toggleScope('jabatan', j)"
+                  :class="chipCls(dlgJb.scope.jabatan.includes(j))"
+                >
+                  {{ j }}
+                </button>
+              </div>
+            </div>
+            <div>
+              <label class="text-[10px] font-bold text-[var(--text-secondary)] mb-1 block"
+                >Lembaga / Unit</label
+              >
+              <div class="flex flex-wrap gap-1">
+                <button
+                  v-for="l in lembagaScopeOptions"
+                  :key="'sl-' + l"
+                  type="button"
+                  @click="toggleScope('lembaga', l)"
+                  :class="chipCls(dlgJb.scope.lembaga.includes(l))"
+                >
+                  {{ l }}
+                </button>
+              </div>
+            </div>
+            <div>
+              <label class="text-[10px] font-bold text-[var(--text-secondary)] mb-1 block"
+                >Shift</label
+              >
+              <div class="flex flex-wrap gap-1">
+                <button
+                  v-for="s in shiftScopeOptions"
+                  :key="'ss-' + s.id"
+                  type="button"
+                  @click="toggleScope('shift', s.id)"
+                  :class="chipCls(dlgJb.scope.shift.includes(s.id))"
+                >
+                  {{ s.label }}
+                </button>
+              </div>
+            </div>
+            <label class="flex items-center gap-2 text-xs font-bold cursor-pointer pt-1">
+              <input type="checkbox" v-model="dlgJb.aktif" class="w-4 h-4 accent-teal-600" />
+              Aktif — ikut dihitung saat generate slip
             </label>
           </div>
         </div>
-        <p class="text-[10px] text-[var(--text-tertiary)] italic mb-2">
-          Pokok = bayar tetap. Tambahan dari shift = otomatis dari absensi.
-        </p>
-        <div class="grid grid-cols-1 md:grid-cols-[1fr_140px] gap-2 mb-3">
-          <input
-            v-model="searchGuru"
-            type="text"
-            placeholder="Cari nama guru..."
-            class="px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
-          />
-          <select
-            v-model="filterLembaga"
-            class="px-3 py-2 text-xs border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
+        <div
+          class="flex justify-end gap-2 px-5 py-3 border-t border-[var(--border-subtle)] bg-[var(--bg-card-elevated)] rounded-b-2xl"
+        >
+          <button
+            type="button"
+            @click="dlgJbOpen = false"
+            class="px-4 py-2 text-xs font-bold rounded-lg border border-[var(--border-default)] text-[var(--text-secondary)]"
           >
-            <option value="">Semua Lembaga</option>
-            <option v-for="l in lembagaOptions" :key="l" :value="l">{{ l }}</option>
-          </select>
+            Batal
+          </button>
+          <button
+            type="button"
+            @click="simpanJenisBisyaroh"
+            class="px-4 py-2 text-xs font-black rounded-lg bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white"
+          >
+            <i class="fas fa-check mr-1"></i>Terapkan
+          </button>
         </div>
-        <div class="space-y-1.5 max-h-96 overflow-y-auto custom-scrollbar">
-          <div
-            v-for="g in filteredGuru"
-            :key="g.id"
-            class="grid grid-cols-[1fr_120px_120px] gap-2 items-center bg-slate-50 dark:bg-slate-700/30 px-3 py-2 rounded-lg"
-          >
-            <div class="min-w-0">
-              <p class="text-xs font-bold text-[var(--text-primary)] truncate">{{ g.nama }}</p>
-              <p class="text-[10px] text-[var(--text-secondary)] truncate">
-                {{ g.lembaga || '-' }}
-              </p>
-            </div>
-            <input
-              v-model="form.keu_bisyaroh_pokok[g.id]"
-              @input="onFmtMapChange($event, 'keu_bisyaroh_pokok', g.id)"
-              type="text"
-              inputmode="numeric"
-              title="Pokok Pondok"
-              class="px-2 py-1.5 text-xs text-right font-bold border border-[var(--border-default)] rounded bg-white dark:bg-slate-900 text-[var(--text-primary)]"
-            />
-            <input
-              v-model="form.keu_bisyaroh_sekolah[g.id]"
-              @input="onFmtMapChange($event, 'keu_bisyaroh_sekolah', g.id)"
-              type="text"
-              inputmode="numeric"
-              title="Pokok Sekolah (terpisah)"
-              class="px-2 py-1.5 text-xs text-right font-bold border border-emerald-300 dark:border-emerald-700 rounded bg-emerald-50 dark:bg-emerald-900/20 text-emerald-800 dark:text-emerald-200"
-            />
-          </div>
-          <p
-            v-if="filteredGuru.length === 0"
-            class="text-xs text-[var(--text-tertiary)] italic text-center py-4"
-          >
-            Tidak ada guru cocok filter.
-          </p>
-        </div>
-        <p class="text-[10px] text-[var(--text-tertiary)] italic mt-2">
-          Kolom kiri = Pokok Pondok &middot; Kolom kanan emerald = Pokok Sekolah (flat per guru per
-          bulan)
-        </p>
       </div>
     </div>
 
@@ -1547,10 +1659,20 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, watch, onMounted } from 'vue'
+import { ref, reactive, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 // v.F6e: adapter Supabase (serverTimestamp = shim ISO string).
-import { getAll, setOne, mergeOne, serverTimestamp } from '@/services/db'
+import { getAll, setOne, mergeOne, serverTimestamp, subscribeDoc } from '@/services/db'
+// v.1.1.9: Jenis Bisyaroh ber-scope (ganti 5 tarif shift global + map pokok per guru)
+import {
+  jenisBisyarohList as bacaJenisBisyaroh,
+  normalizeJenisBisyaroh,
+  slugJenisId,
+  cekTumpangTindih,
+  HITUNGAN_OPTIONS
+} from '@/utils/bisyarohScope'
+import { shiftList, shiftLabelOf } from '@/utils/shiftMaster'
+import { namaLembaga } from '@/utils/jabatanUnit'
 import { useSettingsStore } from '@/stores/settings'
 import { useGuru } from '@/composables/useGuru'
 import { useLembaga } from '@/composables/useLembaga'
@@ -1565,6 +1687,23 @@ const _inMyGedung = (x) => !gedungScoped.value || String(x.gedung || '').trim() 
 const settingsStore = useSettingsStore()
 const { guruRaw } = useGuru()
 const { lembagaRaw } = useLembaga()
+// v.1.1.9: jabatan (+units) utk opsi scope Jenis Bisyaroh
+const jabatanItems = ref([])
+let _unsubJabatanKeu = null
+onMounted(() => {
+  _unsubJabatanKeu = subscribeDoc('master', 'jabatan', (d) => {
+    jabatanItems.value = Array.isArray(d?.items) ? d.items : []
+  })
+})
+onUnmounted(() => {
+  if (_unsubJabatanKeu) {
+    try {
+      _unsubJabatanKeu()
+    } catch (e) {
+      /* ignore */
+    }
+  }
+})
 const toast = useToast()
 const route = useRoute()
 
@@ -1636,11 +1775,95 @@ function bukaPengaturanPrinter() {
 const newKatMasuk = ref('')
 const newKatKeluar = ref('')
 const newKatTabungan = ref('') // input tambah kategori tabungan
-const searchGuru = ref('')
-const filterLembaga = ref('')
 const generating = ref(false)
 const saving = ref(false)
 const jenisList = ref([])
+
+// ── v.1.1.9: Jenis Bisyaroh (settings.keuBisyarohJenis) ────────────────────
+// Menggantikan 5 tarif shift global + map pokok per guru. Lihat utils/bisyarohScope.js.
+const jenisBisyarohList = ref([])
+const dlgJbOpen = ref(false)
+const dlgJbIsNew = ref(false)
+const dlgJbIdx = ref(-1)
+const dlgJb = ref(null)
+
+const scopeText = (arr) => (!arr || arr.length === 0 ? '—' : arr.join(', '))
+const chipCls = (aktif) =>
+  [
+    'px-2 py-1 rounded-md text-[11px] font-bold border transition',
+    aktif
+      ? 'bg-teal-600 text-white border-teal-600'
+      : 'border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-elevated)]'
+  ].join(' ')
+
+// Opsi scope: jabatan dari master/jabatan, lembaga dari master/lembaga, shift dari Master Shift.
+const jabatanScopeOptions = computed(() => {
+  const items = jabatanItems.value || []
+  const names = items.map((x) => String(x?.nama || '').trim()).filter(Boolean)
+  return [...new Set(names)].sort((a, b) => a.localeCompare(b, 'id'))
+})
+const lembagaScopeOptions = computed(() =>
+  (lembagaRaw.value || []).map(namaLembaga).filter(Boolean)
+)
+const shiftScopeOptions = computed(() => shiftList(settingsStore.settings || {}))
+const shiftLabelById = (id) => shiftLabelOf(settingsStore.settings || {}, id)
+
+// Peringatan: >1 jenis '× hadir' mengenai shift yang sama → nominal DIJUMLAHKAN.
+const tumpangTindihJenis = computed(() =>
+  cekTumpangTindih(jenisBisyarohList.value, new Set(shiftScopeOptions.value.map((s) => s.id)))
+)
+
+function openJenisBisyarohBaru() {
+  dlgJbIsNew.value = true
+  dlgJbIdx.value = -1
+  dlgJb.value = normalizeJenisBisyaroh({ label: '', hitungan: 'flat', nominal: 0, aktif: true })
+  dlgJbOpen.value = true
+}
+function openJenisBisyarohDialog(j, idx) {
+  dlgJbIsNew.value = false
+  dlgJbIdx.value = idx
+  dlgJb.value = normalizeJenisBisyaroh(JSON.parse(JSON.stringify(j)))
+  dlgJbOpen.value = true
+}
+function toggleScope(kunci, nilai) {
+  const cur = [...(dlgJb.value.scope[kunci] || [])]
+  const i = cur.indexOf(nilai)
+  if (i >= 0) cur.splice(i, 1)
+  else cur.push(nilai)
+  dlgJb.value.scope[kunci] = cur
+}
+function simpanJenisBisyaroh() {
+  const j = dlgJb.value
+  if (!j) return
+  const label = String(j.label || '').trim()
+  if (!label) {
+    toast.warning('Nama jenis wajib diisi')
+    return
+  }
+  // Id dikunci setelah dibuat — dipakai slip lama utk melacak asal baris.
+  const next = normalizeJenisBisyaroh({ ...j, label, id: j.id || slugJenisId(label) })
+  if (!next.id) {
+    toast.warning('Nama jenis harus mengandung huruf/angka')
+    return
+  }
+  const bentrok = jenisBisyarohList.value.some((x, i) => x.id === next.id && i !== dlgJbIdx.value)
+  if (bentrok) {
+    toast.warning(`Jenis "${label}" sudah ada`)
+    return
+  }
+  if (dlgJbIsNew.value) jenisBisyarohList.value.push(next)
+  else jenisBisyarohList.value.splice(dlgJbIdx.value, 1, next)
+  dlgJbOpen.value = false
+  toast.info('Perubahan siap — klik "Simpan Semua" untuk menyimpan permanen.')
+}
+function hapusJenisBisyaroh(idx) {
+  const j = jenisBisyarohList.value[idx]
+  if (!j) return
+  if (!confirm(`Hapus Jenis Bisyaroh "${j.label}"?\n\nSlip yang sudah digenerate tidak berubah.`))
+    return
+  jenisBisyarohList.value.splice(idx, 1)
+}
+
 // v.1.1.x: dialog Tambah/Ubah jenis (model tabel gaya Braja Soft)
 const dlgOpen = ref(false)
 const dlgIsNew = ref(false)
@@ -1670,7 +1893,6 @@ const TA_LIST = computed(() => {
 // v.110: Excel template + impor (jenis pembayaran & bisyaroh pegawai)
 const { exportSimple, importFile } = useExcel()
 const imporJenisBusy = ref(false)
-const imporBisyarohBusy = ref(false)
 
 const form = reactive({
   keu_jatuh_tempo: 10,
@@ -1683,14 +1905,10 @@ const form = reactive({
   posStrukTopMm: 2,
   posStrukLeftMm: 0, // v.96.0626: geser kanan (center) utk cetak grafis ESC/P
   keu_jenis_tagihan: [],
-  keu_bisyaroh_pagi: '',
-  keu_bisyaroh_sore: '',
-  keu_bisyaroh_sekolah_shift: '',
-  keu_bisyaroh_pegawai_pagi: '',
-  keu_bisyaroh_pegawai_sore: '',
+  // v.1.1.9: 5 tarif shift global (keu_bisyaroh_pagi/sore/sekolah_shift/pegawai_*)
+  //   + map pokok per guru (keu_bisyaroh_pokok/keu_bisyaroh_sekolah) DIHAPUS —
+  //   diganti settings.keuBisyarohJenis ber-scope. Lihat utils/bisyarohScope.js.
   keu_glondongan_per_juz: '', // v.111: bisyaroh tes glondongan PTPT per juz disimak
-  keu_bisyaroh_pokok: {},
-  keu_bisyaroh_sekolah: {},
   keu_kategori_masuk: [],
   keu_kategori_keluar: [],
   keu_tabungan_kategori: [], // {id,label,nominal_default} -> settings.keuTabunganKategori
@@ -1716,6 +1934,9 @@ function slugId(s) {
 
 function loadFromSettings() {
   const s = settingsStore.settings || {}
+  // v.1.1.9: Jenis Bisyaroh. Belum ada → [] (SENGAJA tak di-seed dari tarif lama:
+  //   jangan memunculkan nominal yang tak pernah Kyai setujui di tabel baru).
+  jenisBisyarohList.value = bacaJenisBisyaroh(s)
   form.keu_jatuh_tempo = s.keu_jatuh_tempo || 10
   form.keu_auto_generate_cron = s.keu_auto_generate_cron !== false // default ON
   form.posStrukPaper = s.posStrukPaper || '9.5'
@@ -1848,20 +2069,7 @@ function loadFromSettings() {
   jenisList.value = nextByTA[taNow]
   form.keu_jenis_tagihan = jenisList.value.map((t) => t.label)
 
-  form.keu_bisyaroh_pagi = fmtRp(s.keu_bisyaroh_pagi || 0)
-  form.keu_bisyaroh_sore = fmtRp(s.keu_bisyaroh_sore || 0)
-  form.keu_bisyaroh_sekolah_shift = fmtRp(s.keu_bisyaroh_sekolah_shift || 0)
-  form.keu_bisyaroh_pegawai_pagi = fmtRp(s.keu_bisyaroh_pegawai_pagi || 0)
-  form.keu_bisyaroh_pegawai_sore = fmtRp(s.keu_bisyaroh_pegawai_sore || 0)
   form.keu_glondongan_per_juz = fmtRp(s.keu_glondongan_per_juz || 0)
-  form.keu_bisyaroh_pokok = { ...(s.keu_bisyaroh_pokok || {}) }
-  form.keu_bisyaroh_sekolah = { ...(s.keu_bisyaroh_sekolah || {}) }
-  for (const k of Object.keys(form.keu_bisyaroh_pokok)) {
-    form.keu_bisyaroh_pokok[k] = fmtRp(form.keu_bisyaroh_pokok[k] || 0)
-  }
-  for (const k of Object.keys(form.keu_bisyaroh_sekolah)) {
-    form.keu_bisyaroh_sekolah[k] = fmtRp(form.keu_bisyaroh_sekolah[k] || 0)
-  }
 
   form.keu_kategori_masuk = Array.isArray(s.keu_kategori_masuk)
     ? [...s.keu_kategori_masuk]
@@ -1936,10 +2144,6 @@ function parseRp(v) {
 
 function onFmtChange(e, key) {
   form[key] = fmtRp(e.target.value)
-}
-
-function onFmtMapChange(e, key, id) {
-  form[key][id] = fmtRp(e.target.value)
 }
 
 function removeJenis(idx) {
@@ -2122,30 +2326,6 @@ function onMasterFmtChange(item, e) {
   item.nominalFmt = n === 0 ? '' : n.toLocaleString('id-ID')
 }
 
-const lembagaOptions = computed(() =>
-  (lembagaRaw.value || []).map((l) => l.lembaga).filter(Boolean)
-)
-
-const filteredGuru = computed(() => {
-  let list = (guruRaw.value || []).filter(
-    (g) => String(g.status || 'Aktif').toLowerCase() === 'aktif'
-  )
-  if (filterLembaga.value) {
-    list = list.filter(
-      (g) => g.lembaga === filterLembaga.value || g.lembaga_sekolah === filterLembaga.value
-    )
-  }
-  if (searchGuru.value.trim()) {
-    const kw = searchGuru.value.trim().toLowerCase()
-    list = list.filter((g) =>
-      String(g.nama || '')
-        .toLowerCase()
-        .includes(kw)
-    )
-  }
-  return list.sort((a, b) => String(a.nama || '').localeCompare(String(b.nama || '')))
-})
-
 // v.1.1.x: serialize satu daftar jenis (dipakai per Tahun Ajaran saat Simpan Semua)
 function serializeJenisList(list) {
   return (list || [])
@@ -2219,14 +2399,11 @@ async function simpan() {
       keuTagihanJenis: jenis,
       keuTagihanJenisByTA: byTA,
       keu_jenis_tagihan: jenis.map((t) => t.label),
-      keu_bisyaroh_pagi: parseRp(form.keu_bisyaroh_pagi),
-      keu_bisyaroh_sore: parseRp(form.keu_bisyaroh_sore),
-      keu_bisyaroh_sekolah_shift: parseRp(form.keu_bisyaroh_sekolah_shift),
-      keu_bisyaroh_pegawai_pagi: parseRp(form.keu_bisyaroh_pegawai_pagi),
-      keu_bisyaroh_pegawai_sore: parseRp(form.keu_bisyaroh_pegawai_sore),
+      // v.1.1.9: Jenis Bisyaroh ber-scope menggantikan 5 tarif shift global +
+      //   map pokok per guru. Tarif & map lama SENGAJA TIDAK ditulis lagi (Kyai:
+      //   "hapus total") — BisyarohView kini menghitung dari daftar ini.
+      keuBisyarohJenis: jenisBisyarohList.value.map(normalizeJenisBisyaroh),
       keu_glondongan_per_juz: parseRp(form.keu_glondongan_per_juz),
-      keu_bisyaroh_pokok: {},
-      keu_bisyaroh_sekolah: {},
       keu_kategori_masuk: form.keu_kategori_masuk.filter((t) => t.trim()),
       keu_kategori_keluar: form.keu_kategori_keluar.filter((t) => t.trim()),
       keuTabunganKategori: form.keu_tabungan_kategori
@@ -2257,14 +2434,6 @@ async function simpan() {
       bmt_aktif: !!form.bmt_aktif,
       bmt_nama: String(form.bmt_nama || '').trim(),
       bmt_va_prefix: String(form.bmt_va_prefix || '').trim()
-    }
-    for (const [k, v] of Object.entries(form.keu_bisyaroh_pokok)) {
-      const n = parseRp(v)
-      if (n > 0) payload.keu_bisyaroh_pokok[k] = n
-    }
-    for (const [k, v] of Object.entries(form.keu_bisyaroh_sekolah)) {
-      const n = parseRp(v)
-      if (n > 0) payload.keu_bisyaroh_sekolah[k] = n
     }
     await mergeOne('settings', 'general', payload)
     await mergeOne('settings', 'web', payload)
@@ -2568,84 +2737,9 @@ async function imporJenis(ev) {
   }
 }
 
-// Pegawai aktif (sumber template bisyaroh; pre-isi id+nama biar TU tinggal isi nominal).
-function _guruAktifSorted() {
-  return (guruRaw.value || [])
-    .filter((g) => String(g.status || 'Aktif').toLowerCase() === 'aktif')
-    .sort((a, b) => String(a.nama || '').localeCompare(String(b.nama || '')))
-}
-
-function unduhTemplateBisyaroh() {
-  const rows = _guruAktifSorted().map((g) => ({
-    id: String(g.id),
-    nama: g.nama || '',
-    lembaga: g.lembaga || g.lembaga_sekolah || '',
-    pondok: parseRp(form.keu_bisyaroh_pokok[g.id] || '') || '',
-    sekolah: parseRp(form.keu_bisyaroh_sekolah[g.id] || '') || ''
-  }))
-  exportSimple(rows, {
-    filename: 'template_bisyaroh_pegawai.xlsx',
-    sheetName: 'Bisyaroh Pegawai',
-    title: 'Template Bisyaroh Pokok Pegawai — Ammu (JANGAN ubah/hapus kolom ID)',
-    columns: [
-      { key: 'id', header: 'ID', width: 16 },
-      { key: 'nama', header: 'Nama', width: 28 },
-      { key: 'lembaga', header: 'Lembaga', width: 22 },
-      { key: 'pondok', header: 'Pokok Pondok', width: 16 },
-      { key: 'sekolah', header: 'Pokok Sekolah', width: 16 }
-    ]
-  })
-}
-
-async function imporBisyaroh(ev) {
-  const file = ev.target.files?.[0]
-  if (!file) return
-  imporBisyarohBusy.value = true
-  try {
-    const rows = await importFile(file)
-    if (!rows.length) {
-      toast.warning('File kosong / tidak ada data')
-      return
-    }
-    const byId = {}
-    const byNama = {}
-    for (const g of guruRaw.value || []) {
-      byId[String(g.id)] = g
-      byNama[
-        String(g.nama || '')
-          .trim()
-          .toLowerCase()
-      ] = g
-    }
-    let ok = 0
-    let miss = 0
-    for (const r of rows) {
-      const id = String(pickCol(r, ['id', 'guru_id', 'id guru']) || '').trim()
-      const nama = String(pickCol(r, ['nama', 'nama guru', 'nama pegawai']) || '').trim()
-      const g = (id && byId[id]) || (nama && byNama[nama.toLowerCase()]) || null
-      if (!g) {
-        miss++
-        continue
-      }
-      const sid = String(g.id)
-      const pondok = parseRp(pickCol(r, ['pokok pondok', 'pondok', 'pokok']))
-      const sekolah = parseRp(pickCol(r, ['pokok sekolah', 'sekolah']))
-      if (pondok > 0) form.keu_bisyaroh_pokok[sid] = fmtRp(pondok)
-      else delete form.keu_bisyaroh_pokok[sid]
-      if (sekolah > 0) form.keu_bisyaroh_sekolah[sid] = fmtRp(sekolah)
-      else delete form.keu_bisyaroh_sekolah[sid]
-      ok++
-    }
-    toast.success(
-      `${ok} pegawai diimpor${miss ? `, ${miss} baris tak cocok (ID/nama)` : ''}. Cek lalu klik "Simpan Semua".`
-    )
-  } catch (e) {
-    toast.error('Gagal impor bisyaroh: ' + (e.message || e))
-  } finally {
-    imporBisyarohBusy.value = false
-    ev.target.value = ''
-  }
-}
+// v.1.1.9: Template + impor Excel "Bisyaroh Pokok Pegawai" DIHAPUS bersama model
+//   per-guru-nya. Nominal kini ditentukan lembaga & tugas lewat Jenis Bisyaroh, jadi
+//   tak ada lagi 75 baris nominal per orang yang perlu diisi TU di Excel.
 
 // v.21.104.0527: implementasi Vue (gantikan legacy window.autoGenerateSyahriyahManual).
 // Generate tagihan utk jenis ber-auto_generate=true (default: Syahriyah)
