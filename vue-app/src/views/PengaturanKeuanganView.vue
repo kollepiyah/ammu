@@ -786,7 +786,9 @@
       class="fixed inset-0 z-50 bg-slate-900/60 flex items-center justify-center p-4"
       @click.self="dlgBebanOpen = false"
     >
-      <div class="bg-[var(--bg-card)] rounded-2xl shadow-2xl max-w-md w-full">
+      <div
+        class="bg-[var(--bg-card)] rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto"
+      >
         <div
           class="flex items-center justify-between px-5 py-4 border-b border-[var(--border-subtle)]"
         >

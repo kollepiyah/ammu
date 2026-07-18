@@ -635,9 +635,11 @@
       class="fixed inset-0 z-50 bg-slate-900/60 flex items-center justify-center p-4"
       @click.self="dlgShiftOpen = false"
     >
-      <div class="bg-[var(--bg-card)] rounded-2xl shadow-2xl max-w-md w-full">
+      <div
+        class="bg-[var(--bg-card)] rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] flex flex-col"
+      >
         <div
-          class="flex items-center justify-between px-5 py-4 border-b border-[var(--border-subtle)]"
+          class="flex items-center justify-between px-5 py-4 border-b border-[var(--border-subtle)] shrink-0"
         >
           <h3 class="text-base font-black">
             <i class="fas fa-user-clock text-teal-500 mr-1.5"></i
@@ -651,7 +653,7 @@
             <i class="fas fa-times"></i>
           </button>
         </div>
-        <div class="p-5 space-y-3">
+        <div class="p-5 space-y-3 overflow-y-auto flex-1 min-h-0">
           <div>
             <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
               >Nama Shift</label
@@ -804,7 +806,7 @@
           </div>
         </div>
         <div
-          class="flex justify-end gap-2 px-5 py-3 border-t border-[var(--border-subtle)] bg-[var(--bg-card-elevated)] rounded-b-2xl"
+          class="flex justify-end gap-2 px-5 py-3 border-t border-[var(--border-subtle)] bg-[var(--bg-card-elevated)] rounded-b-2xl shrink-0"
         >
           <button
             type="button"
