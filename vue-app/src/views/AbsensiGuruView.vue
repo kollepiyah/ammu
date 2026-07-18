@@ -352,6 +352,17 @@
             </router-link>
             <!-- v.21.115.0528: standardize per design-tokens — h-9 px-3 rounded-xl -->
             <button
+              v-if="isFullAccess"
+              @click="sinkronGabungan(false)"
+              :disabled="syncingGabungan"
+              aria-label="Sinkron hadir sekolah otomatis untuk guru gabungan"
+              title="Buat 'hadir sekolah' otomatis dari scan pagi untuk guru gabungan (Qiraati pagi + sekolah)"
+              class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-violet-600 hover:bg-violet-700 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer"
+            >
+              <i :class="['fas', syncingGabungan ? 'fa-spinner fa-spin' : 'fa-user-group']"></i
+              >{{ syncingGabungan ? 'Menyinkron...' : 'Sinkron Gabungan' }}
+            </button>
+            <button
               @click="isiPulangMassal"
               :disabled="isiPulangBusy"
               aria-label="Isi jam pulang default untuk baris hadir yang belum ada pulang"
@@ -737,12 +748,14 @@ import { useSettingsStore } from '@/stores/settings'
 //   Dulu view ini punya SALINAN sendiri yang harus disamakan manual — sudah dihapus.
 import { shiftsForGuru, shiftBatas as shiftBatasOf } from '@/utils/shiftDerive'
 import { shiftList, shiftLabelOf, shiftById } from '@/utils/shiftMaster'
+import { materialisasiHadirIkut } from '@/utils/absensiMaterialize'
 import { jsPDFFromCDN } from '@/services/pdf'
 // v.21.114.0528: pakai kegiatan composable utk derive hari libur dari event multi-day
 import { useKegiatan } from '@/composables/useKegiatan'
 
 const {
   filteredAbsensi,
+  absensi,
   guruRaw,
   loading,
   selectedYear,
@@ -1220,6 +1233,45 @@ async function isiPulangMassal() {
     isiPulangBusy.value = false
   }
 }
+
+// =====================================================
+// GURU GABUNGAN OTOMATIS (Bagian B) — materialisasi baris "hadir sekolah"
+// dari scan pagi (config shift hadir_ikut). Baris FISIK biasa → bonus tak berubah.
+// Pakai `absensi` (TAK terfilter) agar tak menimpa baris izin/manual tersembunyi.
+// =====================================================
+const syncingGabungan = ref(false)
+function bulanIniRows() {
+  const ym = `${selectedYear.value}-${String(selectedMonth.value).padStart(2, '0')}`
+  return absensi.value.filter((a) => String(a.tanggal || '').slice(0, 7) === ym)
+}
+async function sinkronGabungan(silent = false) {
+  if (syncingGabungan.value || !isFullAccess.value) return
+  syncingGabungan.value = true
+  try {
+    const n = await materialisasiHadirIkut(
+      guruAktif.value,
+      bulanIniRows(),
+      settingsStore.settings || {},
+      setOne
+    )
+    if (n > 0) toast.success(`${n} "hadir sekolah" otomatis dibuat dari scan pagi (guru gabungan)`)
+    else if (!silent)
+      toast.info('Semua guru gabungan sudah tercatat — tak ada yang perlu disinkron')
+  } catch (e) {
+    if (!silent) toast.error('Gagal sinkron gabungan: ' + (e.message || e))
+  } finally {
+    syncingGabungan.value = false
+  }
+}
+// Auto-sinkron saat data siap / periode berganti (best-effort; ada tombol manual juga).
+// Sumber watch TAK termasuk `absensi`, jadi penulisan kita sendiri tak memicu ulang (anti-loop).
+watch(
+  [selectedYear, selectedMonth, loading, () => guruAktif.value.length],
+  () => {
+    if (!loading.value && guruAktif.value.length) sinkronGabungan(true)
+  },
+  { immediate: true }
+)
 
 // =====================================================
 // HARI LIBUR — v.21.114.0528: kelola pindah ke Kalender Kegiatan

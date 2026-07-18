@@ -750,7 +750,7 @@
 <script setup>
 // BisyarohView — slip bisyaroh guru/pegawai
 // v.21.10+ line_items system, bulk generate dari settings, kirim WA slip
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useDesktopShell } from '@/composables/useDesktopShell'
 import { definePageActions } from '@/composables/useRibbonContext'
 // v.91.0626: deleteOne = backup audit_log dulu. serverTimestamp = shim ISO string (db.js).
@@ -772,6 +772,7 @@ import {
 } from '@/utils/bisyarohScope'
 import { shiftsForGuru } from '@/utils/shiftDerive'
 import { shiftLabelOf } from '@/utils/shiftMaster'
+import { materialisasiHadirIkut } from '@/utils/absensiMaterialize'
 import { useAuthStore } from '@/stores/auth'
 import { isSuperAdmin } from '@/utils/roleScope'
 import { writeAuditLog } from '@/utils/auditLog'
@@ -1439,6 +1440,38 @@ const rincianHadir = computed(() => {
     .sort((a, b) => a.label.localeCompare(b.label, 'id'))
 })
 
+// v.1.1.x: materialisasi "hadir sekolah" guru gabungan (Bagian B) SEBELUM hitung bonus,
+// agar preview & slip generate konsisten. Idempoten + create-only (util absensiMaterialize) →
+// baris FISIK, jadi hadirPerShiftGuru tak berubah. Pakai absensiShift (koleksi penuh).
+const _gabunganBusy = ref(false)
+async function materialisasiGabunganPeriode(periode) {
+  if (_gabunganBusy.value) return 0
+  _gabunganBusy.value = true
+  try {
+    const rows = (absensiShift.value || []).filter(
+      (a) => String(a.tanggal || '').slice(0, 7) === periode
+    )
+    const guruAktifList = (guruRaw.value || []).filter(
+      (g) => String(g.status || 'Aktif').toLowerCase() === 'aktif'
+    )
+    return await materialisasiHadirIkut(guruAktifList, rows, settingsStore.settings || {}, setOne)
+  } catch {
+    return 0
+  } finally {
+    _gabunganBusy.value = false
+  }
+}
+// Auto saat periode/data siap. Idempoten → konvergen (run sesudah tulis hanya no-op);
+// guard re-entrancy cegah tumpang-tindih. Membuat preview rincianHadir akurat.
+watch(
+  [tahun, bulan, () => (absensiShift.value || []).length, () => (guruRaw.value || []).length],
+  () => {
+    if (!(guruRaw.value || []).length) return
+    materialisasiGabunganPeriode(`${tahun.value}-${String(bulan.value).padStart(2, '0')}`)
+  },
+  { immediate: true }
+)
+
 // v.111: bisyaroh glondongan guru terpilih utk periode form (preview single-mode).
 const bisyarohGlondongan = computed(() => {
   if (!selectedGuru.value) return { juz: 0, blok: 0, tarif: 0, total: 0 }
@@ -1688,6 +1721,9 @@ async function bulkGenerate() {
   bulkLog.value = []
   const periode = `${tahun.value}-${String(bulan.value).padStart(2, '0')}`
   try {
+    // Bagian B: pastikan "hadir sekolah" guru gabungan sudah materialisasi SEBELUM hitung bonus.
+    const nGab = await materialisasiGabunganPeriode(periode)
+    if (nGab > 0) bulkLog.value.push(`Sinkron gabungan: ${nGab} hadir sekolah otomatis dibuat`)
     let bulkSeq = 0
     for (const g of bulkTargets.value) {
       try {
@@ -1815,6 +1851,8 @@ async function imporBulanan(ev) {
       return
     }
     const periode = `${tahun.value}-${String(bulan.value).padStart(2, '0')}`
+    // Bagian B: pastikan hadir sekolah guru gabungan sudah ada sebelum hitung slip impor.
+    await materialisasiGabunganPeriode(periode)
     const byId = {}
     const byNama = {}
     for (const g of guruRaw.value || []) {
