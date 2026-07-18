@@ -333,6 +333,9 @@
             <span class="px-2 py-0.5 rounded bg-rose-100 text-rose-800 font-bold"
               >&#9632; Libur</span
             >
+            <span class="px-2 py-0.5 rounded bg-amber-100 text-amber-800 font-bold"
+              >&#9679; Belum Pulang</span
+            >
           </div>
           <!-- v.103b: mobile = toolbar 1-baris scroll-samping; desktop wrap normal -->
           <div
@@ -348,6 +351,18 @@
               <i class="fas fa-calendar-plus"></i> Atur Libur di Kalender
             </router-link>
             <!-- v.21.115.0528: standardize per design-tokens — h-9 px-3 rounded-xl -->
+            <button
+              @click="isiPulangMassal"
+              :disabled="isiPulangBusy"
+              aria-label="Isi jam pulang default untuk baris hadir yang belum ada pulang"
+              title="Isi jam pulang default (dari Pengaturan shift) untuk semua baris hadir yang belum absen pulang di bulan ini"
+              class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer"
+            >
+              <i
+                :class="['fas', isiPulangBusy ? 'fa-spinner fa-spin' : 'fa-right-from-bracket']"
+              ></i
+              >{{ isiPulangBusy ? 'Mengisi...' : 'Isi Pulang Default' }}
+            </button>
             <button
               @click="exportRekapExcel"
               aria-label="Ekspor rekap absensi guru Excel"
@@ -461,7 +476,7 @@
                 <td
                   v-for="d in daysInMonth"
                   :key="row.g.id + '_' + row.shift + '_' + d"
-                  class="p-0.5 text-center border-l border-[var(--border-subtle)]"
+                  class="p-0.5 text-center border-l border-[var(--border-subtle)] relative"
                 >
                   <span
                     :class="[
@@ -471,6 +486,11 @@
                     :title="cellTitle(row.g.id, row.shift, d)"
                     >{{ cellText(row.g.id, row.shift, d) }}</span
                   >
+                  <span
+                    v-if="pulangPending(row.g.id, row.shift, d)"
+                    class="absolute top-0.5 right-1 w-1.5 h-1.5 rounded-full bg-amber-400 ring-1 ring-white dark:ring-slate-800"
+                    title="Belum absen pulang"
+                  ></span>
                 </td>
                 <td class="p-1 text-center font-black text-emerald-700 bg-emerald-50/50">
                   {{ countStatus(row.g.id, row.shift, ['hadir']) }}
@@ -533,7 +553,7 @@
                         ? 'text-teal-700 dark:text-teal-300'
                         : 'text-cyan-700 dark:text-cyan-300'
                   "
-                  colspan="2"
+                  colspan="3"
                 >
                   {{ col.label }}
                 </th>
@@ -542,7 +562,8 @@
                 <th></th>
                 <template v-for="col in SHIFT_COLS" :key="'hj-' + col.key">
                   <th class="p-1 text-[10px] font-bold">Hadir</th>
-                  <th class="p-1 text-[10px] font-bold">Jam</th>
+                  <th class="p-1 text-[10px] font-bold">Masuk</th>
+                  <th class="p-1 text-[10px] font-bold">Pulang</th>
                 </template>
               </tr>
             </thead>
@@ -554,7 +575,7 @@
                   {{ g.nama }}
                 </td>
                 <template v-for="col in SHIFT_COLS" :key="col.key + g.id">
-                  <td colspan="2" class="p-1">
+                  <td colspan="3" class="p-1">
                     <div
                       v-if="(guruShifts[g.id] || []).includes(col.key)"
                       class="flex items-center gap-1 justify-center"
@@ -562,13 +583,22 @@
                       <input
                         type="checkbox"
                         v-model="harianForm[g.id + '_' + col.key + '_hadir']"
+                        @change="onHadirToggle(g.id, col.key)"
                         class="w-4 h-4 accent-teal-600 cursor-pointer"
                       />
                       <input
                         v-if="harianForm[g.id + '_' + col.key + '_hadir']"
                         v-model="harianForm[g.id + '_' + col.key + '_jam']"
                         type="time"
+                        title="Jam masuk"
                         class="text-[10px] px-1 py-0.5 border border-[var(--border-default)] rounded bg-[var(--bg-card)]"
+                      />
+                      <input
+                        v-if="harianForm[g.id + '_' + col.key + '_hadir']"
+                        v-model="harianForm[g.id + '_' + col.key + '_pulang']"
+                        type="time"
+                        title="Jam pulang (opsional, hanya dicatat)"
+                        class="text-[10px] px-1 py-0.5 border border-amber-300 dark:border-amber-700 rounded bg-[var(--bg-card)]"
                       />
                     </div>
                     <div v-else class="text-center text-[var(--text-tertiary)] text-[10px]">·</div>
@@ -576,7 +606,10 @@
                 </template>
               </tr>
               <tr v-if="guruAktif.length === 0">
-                <td colspan="11" class="text-center text-[var(--text-tertiary)] italic py-6">
+                <td
+                  :colspan="SHIFT_COLS.length * 3 + 1"
+                  class="text-center text-[var(--text-tertiary)] italic py-6"
+                >
                   Tidak ada guru aktif
                 </td>
               </tr>
@@ -645,6 +678,25 @@
                 <span>{{ shiftLabel(a.shift) }}</span>
                 <span v-if="a.jam"><i class="far fa-clock mr-0.5"></i>{{ a.jam }}</span>
                 <span
+                  v-if="['hadir', 'terlambat'].includes(String(a.status || 'hadir').toLowerCase())"
+                  class="inline-flex items-center gap-1"
+                  :class="
+                    a.jam_pulang
+                      ? 'text-[var(--text-secondary)]'
+                      : 'text-amber-600 dark:text-amber-400'
+                  "
+                >
+                  <i class="fas fa-right-from-bracket text-[9px]" title="Jam pulang"></i>
+                  <input
+                    type="time"
+                    :value="a.jam_pulang || ''"
+                    @change="(e) => setPulang(a, e.target.value)"
+                    title="Jam pulang (hanya dicatat, tak memengaruhi hadir)"
+                    class="text-[10px] w-[78px] px-1 py-0.5 border border-amber-300 dark:border-amber-700 rounded bg-[var(--bg-card)]"
+                  />
+                  <span v-if="!a.jam_pulang" class="text-[9px] font-bold">belum pulang</span>
+                </span>
+                <span
                   class="ml-auto px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-700/50 text-[9px] font-bold text-[var(--text-secondary)] whitespace-nowrap"
                 >
                   <i class="fas fa-tag mr-0.5"></i>{{ sourceLabel(a.source) }}
@@ -673,7 +725,7 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
-import { setOne, updateOne, deleteOne } from '@/services/db'
+import { setOne, updateOne, deleteOne, mergeOne } from '@/services/db'
 import { isSuperAdmin } from '@/utils/roleScope'
 import { useAuthStore } from '@/stores/auth'
 import { useAbsensi } from '@/composables/useAbsensi'
@@ -684,7 +736,7 @@ import { useSettingsStore } from '@/stores/settings'
 // v.1.1.9: aturan shift = shiftDerive.js (sumber tunggal, dipakai sync mesin juga).
 //   Dulu view ini punya SALINAN sendiri yang harus disamakan manual — sudah dihapus.
 import { shiftsForGuru, shiftBatas as shiftBatasOf } from '@/utils/shiftDerive'
-import { shiftList, shiftLabelOf } from '@/utils/shiftMaster'
+import { shiftList, shiftLabelOf, shiftById } from '@/utils/shiftMaster'
 import { jsPDFFromCDN } from '@/services/pdf'
 // v.21.114.0528: pakai kegiatan composable utk derive hari libur dari event multi-day
 import { useKegiatan } from '@/composables/useKegiatan'
@@ -1079,6 +1131,7 @@ async function saveHarian() {
     for (const shift of allow) {
       if (!harianForm.value[g.id + '_' + shift + '_hadir']) continue
       const jam = String(harianForm.value[g.id + '_' + shift + '_jam'] || '').trim()
+      const jamPulang = String(harianForm.value[g.id + '_' + shift + '_pulang'] || '').trim()
       const batas = shiftBatas(shift)
       let status = 'hadir'
       if (jam && batas && jam > batas) status = 'terlambat'
@@ -1089,6 +1142,8 @@ async function saveHarian() {
         guru_nama: g.nama,
         tanggal: today,
         jam: jam || '',
+        // jam_pulang hanya dicatat (tak memengaruhi status hadir).
+        jam_pulang: jamPulang,
         shift: shift,
         status: status,
         source: 'manual_harian',
@@ -1109,6 +1164,60 @@ async function saveHarian() {
     toast.error('Gagal: ' + (e.message || e))
   } finally {
     savingHarian.value = false
+  }
+}
+
+// =====================================================
+// ABSEN PULANG (Bagian A) — jam_pulang HANYA DICATAT (tak nge-gate hadir/bonus).
+// Berlaku semua shift. mergeOne dipakai agar jam masuk/status/source baris terjaga.
+// =====================================================
+function pulangDefaultOf(shift) {
+  return shiftById(settingsStore.settings || {}, shift)?.pulang_default || ''
+}
+// Prefill jam pulang default saat "Hadir" dicentang (Input Harian).
+function onHadirToggle(gid, shift) {
+  const k = gid + '_' + shift
+  if (harianForm.value[k + '_hadir'] && !harianForm.value[k + '_pulang']) {
+    const pd = pulangDefaultOf(shift)
+    if (pd) harianForm.value[k + '_pulang'] = pd
+  }
+}
+// Set/ubah jam pulang 1 baris yang SUDAH ada (mergeOne = update parsial).
+async function setPulang(a, value) {
+  if (!a?.id) return
+  const jamPulang = String(value || '').trim()
+  try {
+    await mergeOne('absensi_shift_guru', a.id, { jam_pulang: jamPulang })
+    toast.success(jamPulang ? `Jam pulang ${jamPulang} tersimpan` : 'Jam pulang dikosongkan')
+  } catch (e) {
+    toast.error('Gagal simpan pulang: ' + (e.message || e))
+  }
+}
+// Isi jam pulang default massal untuk baris hadir/terlambat yg belum ada pulang (bulan terfilter).
+const isiPulangBusy = ref(false)
+async function isiPulangMassal() {
+  const targets = filteredAbsensi.value.filter((a) => {
+    const s = String(a.status || 'hadir').toLowerCase()
+    if (s !== 'hadir' && s !== 'terlambat') return false
+    if (String(a.jam_pulang || '').trim()) return false
+    return !!pulangDefaultOf(a.shift)
+  })
+  if (!targets.length) {
+    toast.info('Tak ada baris perlu diisi (atau shift belum punya Jam Pulang Default)')
+    return
+  }
+  if (!confirm(`Isi jam pulang default untuk ${targets.length} baris hadir yang masih kosong?`))
+    return
+  isiPulangBusy.value = true
+  try {
+    for (const a of targets) {
+      await mergeOne('absensi_shift_guru', a.id, { jam_pulang: pulangDefaultOf(a.shift) })
+    }
+    toast.success(`${targets.length} jam pulang terisi (default)`)
+  } catch (e) {
+    toast.error('Gagal isi massal: ' + (e.message || e))
+  } finally {
+    isiPulangBusy.value = false
   }
 }
 
@@ -1259,7 +1368,23 @@ function cellTitle(guruId, shift, d) {
     const today = new Date().toISOString().slice(0, 10)
     return iso + (iso <= today ? ' — Alpha' : ' — (belum)') + ' [' + shiftLabel(shift) + ']'
   }
-  return `${iso} — ${a.status || 'hadir'}${a.jam ? ' (' + a.jam + ')' : ''} [${shiftLabel(shift)}]`
+  const st = String(a.status || 'hadir').toLowerCase()
+  const perluPulang = st === 'hadir' || st === 'terlambat'
+  const pulangTxt = perluPulang
+    ? a.jam_pulang
+      ? ' · pulang ' + a.jam_pulang
+      : ' · belum pulang'
+    : ''
+  return `${iso} — ${a.status || 'hadir'}${a.jam ? ' (' + a.jam + ')' : ''}${pulangTxt} [${shiftLabel(shift)}]`
+}
+
+// Baris hadir/terlambat yg belum ada jam_pulang → penanda "belum pulang" (info, tak nge-gate).
+function pulangPending(guruId, shift, d) {
+  const a = getAbsensiCell(guruId, shift, d)
+  if (!a) return false
+  const s = String(a.status || 'hadir').toLowerCase()
+  if (s !== 'hadir' && s !== 'terlambat') return false
+  return !String(a.jam_pulang || '').trim()
 }
 
 function countStatus(guruId, shift, statuses) {
