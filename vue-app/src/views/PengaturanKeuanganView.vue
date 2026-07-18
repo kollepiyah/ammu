@@ -679,6 +679,201 @@
       </div>
     </div>
 
+    <!-- Beban Mengajar Sekolah (dasar bisyaroh per_jp) -->
+    <div
+      v-show="activeTab === 'beban'"
+      class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
+    >
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+        <div>
+          <h3
+            class="text-xs md:text-sm font-black text-[var(--text-primary)] uppercase tracking-widest"
+          >
+            <i class="fas fa-book text-teal-600 mr-1"></i>Beban Mengajar Sekolah
+          </h3>
+          <p class="text-[11px] text-[var(--text-secondary)] mt-1">
+            Mapel &amp; JP tiap guru per lembaga. Jadi dasar bisyaroh <b>per JP</b> (Jenis Bisyaroh
+            hitungan "× JP"). Mapel diketik bebas (bukan dari rapor). Total:
+            <b>{{ bebanTotalJP }}</b> JP.
+          </p>
+        </div>
+        <div class="flex items-center gap-2">
+          <label
+            class="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-2 rounded-lg text-xs cursor-pointer"
+            :class="imporBebanBusy ? 'opacity-50 pointer-events-none' : ''"
+          >
+            <i :class="['fas', imporBebanBusy ? 'fa-spinner fa-spin' : 'fa-file-import']"></i>Impor
+            <input type="file" accept=".xlsx,.xls,.csv" class="hidden" @change="imporBebanExcel" />
+          </label>
+          <button
+            @click="exportBebanExcel"
+            type="button"
+            class="inline-flex items-center gap-1.5 border border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-elevated)] font-bold px-3 py-2 rounded-lg text-xs"
+          >
+            <i class="fas fa-file-export"></i>Ekspor
+          </button>
+          <button
+            @click="openBebanBaru"
+            type="button"
+            class="inline-flex items-center gap-1.5 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-bold px-4 py-2 rounded-lg text-xs"
+          >
+            <i class="fas fa-plus"></i>Tambah
+          </button>
+        </div>
+      </div>
+      <div class="border border-[var(--border-subtle)] rounded-xl overflow-hidden overflow-x-auto">
+        <table class="w-full text-sm min-w-[640px]">
+          <thead>
+            <tr
+              class="bg-[var(--bg-card-elevated)] text-[10px] uppercase tracking-wider text-[var(--text-secondary)]"
+            >
+              <th class="text-left px-3 py-2.5 font-black w-10">No</th>
+              <th class="text-left px-3 py-2.5 font-black">Guru</th>
+              <th class="text-left px-3 py-2.5 font-black">Lembaga</th>
+              <th class="text-left px-3 py-2.5 font-black">Mapel</th>
+              <th class="text-right px-3 py-2.5 font-black w-16">JP</th>
+              <th class="text-center px-3 py-2.5 font-black w-20">Aksi</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-[var(--border-subtle)]">
+            <tr
+              v-for="(b, idx) in bebanMengajarList"
+              :key="idx"
+              class="hover:bg-[var(--bg-card-elevated)] transition"
+            >
+              <td class="px-3 py-2 text-[var(--text-tertiary)]">{{ idx + 1 }}</td>
+              <td class="px-3 py-2 font-bold text-[var(--text-primary)]">
+                {{ namaGuruById(b.guru_id) }}
+              </td>
+              <td class="px-3 py-2 text-[var(--text-secondary)]">{{ b.lembaga || '-' }}</td>
+              <td class="px-3 py-2 text-[var(--text-secondary)]">{{ b.mapel || '-' }}</td>
+              <td class="px-3 py-2 text-right font-mono font-bold">{{ b.jp }}</td>
+              <td class="px-3 py-2">
+                <div class="flex items-center justify-center gap-1">
+                  <button
+                    type="button"
+                    @click="openBebanDialog(b, idx)"
+                    class="w-7 h-7 rounded-lg border border-[var(--border-default)] text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/30 flex items-center justify-center"
+                    title="Ubah"
+                  >
+                    <i class="fas fa-pen text-xs"></i>
+                  </button>
+                  <button
+                    type="button"
+                    @click="hapusBeban(idx)"
+                    class="w-7 h-7 rounded-lg border border-[var(--border-default)] text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 flex items-center justify-center"
+                    title="Hapus"
+                  >
+                    <i class="fas fa-trash text-xs"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            <tr v-if="bebanMengajarList.length === 0">
+              <td colspan="6" class="text-center text-[var(--text-tertiary)] italic py-6">
+                Belum ada beban mengajar. Klik "Tambah" atau "Impor" (kolom: guru_id/nama, lembaga,
+                mapel, jp).
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Dialog Tambah/Ubah Beban Mengajar -->
+    <div
+      v-if="dlgBebanOpen && dlgBeban"
+      class="fixed inset-0 z-50 bg-slate-900/60 flex items-center justify-center p-4"
+      @click.self="dlgBebanOpen = false"
+    >
+      <div class="bg-[var(--bg-card)] rounded-2xl shadow-2xl max-w-md w-full">
+        <div
+          class="flex items-center justify-between px-5 py-4 border-b border-[var(--border-subtle)]"
+        >
+          <h3 class="text-base font-black">
+            <i class="fas fa-book text-teal-500 mr-1.5"></i>{{ dlgBebanIsNew ? 'Tambah' : 'Ubah' }}
+            Beban Mengajar
+          </h3>
+          <button
+            @click="dlgBebanOpen = false"
+            class="text-[var(--text-secondary)] hover:text-rose-500 p-1"
+            aria-label="Tutup"
+          >
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="p-5 space-y-3">
+          <div>
+            <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
+              >Guru</label
+            >
+            <select
+              v-model="dlgBeban.guru_id"
+              class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
+            >
+              <option value="">— pilih guru —</option>
+              <option v-for="g in guruAktifOptions" :key="g.id" :value="String(g.id)">
+                {{ g.nama }}
+              </option>
+            </select>
+          </div>
+          <div>
+            <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
+              >Lembaga (sekolah)</label
+            >
+            <select
+              v-model="dlgBeban.lembaga"
+              class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
+            >
+              <option value="">— pilih lembaga —</option>
+              <option v-for="l in lembagaScopeOptions" :key="l" :value="l">{{ l }}</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
+              >Mata Pelajaran</label
+            >
+            <input
+              v-model="dlgBeban.mapel"
+              type="text"
+              placeholder="mis. Matematika"
+              class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
+            />
+          </div>
+          <div>
+            <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
+              >Jumlah JP (jam pelajaran / minggu)</label
+            >
+            <input
+              v-model.number="dlgBeban.jp"
+              type="number"
+              min="0"
+              step="0.5"
+              class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)] font-bold"
+            />
+          </div>
+        </div>
+        <div
+          class="flex justify-end gap-2 px-5 py-3 border-t border-[var(--border-subtle)] bg-[var(--bg-card-elevated)] rounded-b-2xl"
+        >
+          <button
+            type="button"
+            @click="dlgBebanOpen = false"
+            class="px-4 py-2 text-xs font-bold rounded-lg border border-[var(--border-default)] text-[var(--text-secondary)]"
+          >
+            Batal
+          </button>
+          <button
+            type="button"
+            @click="simpanBeban"
+            class="px-4 py-2 text-xs font-black rounded-lg bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white"
+          >
+            <i class="fas fa-check mr-1"></i>Terapkan
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Kategori Transaksi -->
     <div
       v-show="activeTab === 'kategori'"
@@ -1819,6 +2014,7 @@ const TABS = [
   { id: 'tagihan', t: 'Tagihan', icon: 'fa-file-invoice-dollar' },
   { id: 'jenis', t: 'Jenis Pembayaran', icon: 'fa-list-ul' },
   { id: 'bisyaroh', t: 'Bisyaroh', icon: 'fa-hand-holding-usd' },
+  { id: 'beban', t: 'Beban Mengajar', icon: 'fa-book' },
   { id: 'kategori', t: 'Kategori', icon: 'fa-tags' },
   { id: 'bank', t: 'Bank & VA', icon: 'fa-university' }
 ]
@@ -1966,6 +2162,130 @@ function hapusJenisBisyaroh(idx) {
   jenisBisyarohList.value.splice(idx, 1)
 }
 
+// ==== v.1.1.x: Beban Mengajar Sekolah — dasar bisyaroh per_jp ====
+// settings.bebanMengajar[] = { guru_id, lembaga, mapel(teks bebas), jp }.
+const bebanMengajarList = ref([])
+const dlgBebanOpen = ref(false)
+const dlgBebanIsNew = ref(false)
+const dlgBebanIdx = ref(-1)
+const dlgBeban = ref(null)
+const imporBebanBusy = ref(false)
+
+const guruAktifOptions = computed(() =>
+  (guruRaw.value || [])
+    .filter((g) => String(g.status || 'Aktif').toLowerCase() === 'aktif')
+    .slice()
+    .sort((a, b) => String(a.nama || '').localeCompare(String(b.nama || ''), 'id'))
+)
+function namaGuruById(id) {
+  return (guruRaw.value || []).find((g) => String(g.id) === String(id))?.nama || String(id || '-')
+}
+const bebanTotalJP = computed(() =>
+  bebanMengajarList.value.reduce((s, b) => s + (Number(b.jp) || 0), 0)
+)
+
+function openBebanBaru() {
+  dlgBebanIsNew.value = true
+  dlgBebanIdx.value = -1
+  dlgBeban.value = { guru_id: '', lembaga: '', mapel: '', jp: null }
+  dlgBebanOpen.value = true
+}
+function openBebanDialog(b, idx) {
+  dlgBebanIsNew.value = false
+  dlgBebanIdx.value = idx
+  dlgBeban.value = { ...b }
+  dlgBebanOpen.value = true
+}
+function simpanBeban() {
+  const b = dlgBeban.value
+  if (!b) return
+  if (!String(b.guru_id || '').trim()) return toast.warning('Pilih guru dulu')
+  if (!(Number(b.jp) > 0)) return toast.warning('JP harus lebih dari 0')
+  const row = {
+    guru_id: String(b.guru_id),
+    lembaga: String(b.lembaga || '').trim(),
+    mapel: String(b.mapel || '').trim(),
+    jp: Number(b.jp) || 0
+  }
+  if (dlgBebanIsNew.value) bebanMengajarList.value.push(row)
+  else bebanMengajarList.value.splice(dlgBebanIdx.value, 1, row)
+  dlgBebanOpen.value = false
+  toast.info('Perubahan siap — klik "Simpan Semua" untuk menyimpan permanen.')
+}
+function hapusBeban(idx) {
+  const b = bebanMengajarList.value[idx]
+  if (!b) return
+  if (!confirm(`Hapus beban ${namaGuruById(b.guru_id)} — ${b.mapel || b.lembaga} (${b.jp} JP)?`))
+    return
+  bebanMengajarList.value.splice(idx, 1)
+}
+async function exportBebanExcel() {
+  const rows = bebanMengajarList.value.map((b) => ({
+    guru_id: b.guru_id,
+    nama: namaGuruById(b.guru_id),
+    lembaga: b.lembaga,
+    mapel: b.mapel,
+    jp: Number(b.jp) || 0
+  }))
+  await exportSimple(rows, {
+    filename: 'Beban_Mengajar_Sekolah.xlsx',
+    sheetName: 'Beban',
+    columns: [
+      { key: 'guru_id', header: 'Guru ID', width: 12 },
+      { key: 'nama', header: 'Nama', width: 28 },
+      { key: 'lembaga', header: 'Lembaga', width: 14 },
+      { key: 'mapel', header: 'Mapel', width: 24 },
+      { key: 'jp', header: 'JP', width: 8 }
+    ],
+    title: 'BEBAN MENGAJAR SEKOLAH (per JP)'
+  })
+}
+async function imporBebanExcel(ev) {
+  const file = ev.target.files?.[0]
+  if (!file) return
+  imporBebanBusy.value = true
+  try {
+    const rows = await importFile(file)
+    const byNama = {}
+    for (const g of guruRaw.value || [])
+      byNama[
+        String(g.nama || '')
+          .trim()
+          .toLowerCase()
+      ] = g
+    let ok = 0
+    let miss = 0
+    for (const r of rows) {
+      const id = String(pickCol(r, ['guru_id', 'id']) || '').trim()
+      const nama = String(pickCol(r, ['nama', 'nama guru']) || '').trim()
+      const g =
+        (id && (guruRaw.value || []).find((x) => String(x.id) === id)) ||
+        byNama[nama.toLowerCase()] ||
+        null
+      const jp = Number(parseRp(pickCol(r, ['jp', 'jumlah jp']))) || 0
+      if (!g || jp <= 0) {
+        miss++
+        continue
+      }
+      bebanMengajarList.value.push({
+        guru_id: String(g.id),
+        lembaga: String(pickCol(r, ['lembaga']) || '').trim(),
+        mapel: String(pickCol(r, ['mapel', 'mata pelajaran']) || '').trim(),
+        jp
+      })
+      ok++
+    }
+    toast.success(
+      `${ok} baris beban diimpor${miss ? `, ${miss} dilewati` : ''}. Klik "Simpan Semua".`
+    )
+  } catch (e) {
+    toast.error('Gagal impor: ' + (e.message || e))
+  } finally {
+    imporBebanBusy.value = false
+    ev.target.value = ''
+  }
+}
+
 // v.1.1.x: dialog Tambah/Ubah jenis (model tabel gaya Braja Soft)
 const dlgOpen = ref(false)
 const dlgIsNew = ref(false)
@@ -2039,6 +2359,14 @@ function loadFromSettings() {
   // v.1.1.9: Jenis Bisyaroh. Belum ada → [] (SENGAJA tak di-seed dari tarif lama:
   //   jangan memunculkan nominal yang tak pernah Kyai setujui di tabel baru).
   jenisBisyarohList.value = bacaJenisBisyaroh(s)
+  bebanMengajarList.value = Array.isArray(s.bebanMengajar)
+    ? s.bebanMengajar.map((b) => ({
+        guru_id: String(b.guru_id ?? ''),
+        lembaga: String(b.lembaga ?? ''),
+        mapel: String(b.mapel ?? ''),
+        jp: Number(b.jp) || 0
+      }))
+    : []
   form.keu_jatuh_tempo = s.keu_jatuh_tempo || 10
   form.keu_auto_generate_cron = s.keu_auto_generate_cron !== false // default ON
   form.posStrukPaper = s.posStrukPaper || '9.5'
@@ -2768,6 +3096,15 @@ async function simpan() {
       //   map pokok per guru. Tarif & map lama SENGAJA TIDAK ditulis lagi (Kyai:
       //   "hapus total") — BisyarohView kini menghitung dari daftar ini.
       keuBisyarohJenis: jenisBisyarohList.value.map(normalizeJenisBisyaroh),
+      // v.1.1.x: master beban mengajar (dasar bisyaroh sekolah per_jp).
+      bebanMengajar: bebanMengajarList.value
+        .filter((b) => String(b.guru_id || '').trim() && Number(b.jp) > 0)
+        .map((b) => ({
+          guru_id: String(b.guru_id),
+          lembaga: String(b.lembaga || '').trim(),
+          mapel: String(b.mapel || '').trim(),
+          jp: Number(b.jp) || 0
+        })),
       keu_glondongan_per_juz: parseRp(form.keu_glondongan_per_juz),
       keu_kategori_masuk: form.keu_kategori_masuk.filter((t) => t.trim()),
       keu_kategori_keluar: form.keu_kategori_keluar.filter((t) => t.trim()),
