@@ -94,6 +94,13 @@ export function normalizeShift(raw) {
   const hadirIkut = (Array.isArray(r.hadir_ikut) ? r.hadir_ikut : def?.hadir_ikut || [])
     .map(slugShiftId)
     .filter((x) => x && x !== id)
+  // lembaga: batasi shift ke lembaga tertentu (nama lembaga). KOSONG = berlaku semua lembaga.
+  // Dipakai memfilter pilihan shift di form guru. APP-ONLY (port Deno tak membawanya).
+  const lembaga = [
+    ...new Set(
+      (Array.isArray(r.lembaga) ? r.lembaga : []).map((x) => String(x || '').trim()).filter(Boolean)
+    )
+  ]
   return {
     id,
     label: String(r.label || def?.label || id || '').trim(),
@@ -104,6 +111,7 @@ export function normalizeShift(raw) {
     // jam pulang default (opsional) utk prefill/isi-massal absen pulang — tak nge-gate hadir.
     pulang_default: normHHMM(r.pulang_default) || '',
     hadir_ikut: [...new Set(hadirIkut)],
+    lembaga,
     urutan: Number(r.urutan) > 0 ? Number(r.urutan) : 99,
     // fallback milik shift bawaan (pegawai → jam guru) — tak bisa diubah lewat UI.
     fallback: bawaan ? def.fallback || '' : '',

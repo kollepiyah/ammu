@@ -365,9 +365,35 @@ export function useGuruForm() {
   const shiftOptions = computed(() => {
     const all = shiftList(settings.settings || {})
     const tipe = String(form.value.tipe_pegawai || 'guru').toLowerCase()
-    if (tipe === 'pegawai_guru') return all
-    if (tipe === 'pegawai') return all.filter((s) => s.untuk === 'pegawai')
-    return all.filter((s) => s.untuk === 'guru')
+    const byTipe =
+      tipe === 'pegawai_guru'
+        ? all
+        : tipe === 'pegawai'
+          ? all.filter((s) => s.untuk === 'pegawai')
+          : all.filter((s) => s.untuk === 'guru')
+    // v.1.1.x: shift ber-scope lembaga hanya muncul bila cocok lembaga guru (kosong = semua).
+    //   Shift yg SUDAH terpilih tetap tampil (agar bisa di-uncheck walau lembaga berubah).
+    const lembagaGuru = new Set(
+      [form.value.lembaga, form.value.lembaga_sekolah]
+        .map((x) =>
+          String(x || '')
+            .trim()
+            .toLowerCase()
+        )
+        .filter(Boolean)
+    )
+    const dipilih = new Set((form.value.shift_ids || []).map(String))
+    return byTipe.filter((s) => {
+      if (!Array.isArray(s.lembaga) || s.lembaga.length === 0) return true
+      if (dipilih.has(String(s.id))) return true
+      return s.lembaga.some((l) =>
+        lembagaGuru.has(
+          String(l || '')
+            .trim()
+            .toLowerCase()
+        )
+      )
+    })
   })
 
   function toggleShift(id) {

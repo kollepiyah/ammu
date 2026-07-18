@@ -773,6 +773,35 @@
               bila tak perlu.
             </p>
           </div>
+          <div v-if="(lembagaRaw || []).length">
+            <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
+              >Khusus Lembaga (kosong = semua)</label
+            >
+            <div class="flex flex-wrap gap-1.5">
+              <label
+                v-for="l in lembagaRaw"
+                :key="l.lembaga"
+                class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-lg border cursor-pointer"
+                :class="
+                  dlgShift.lembaga.includes(l.lembaga)
+                    ? 'border-cyan-400 bg-cyan-50 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-300 font-bold'
+                    : 'border-[var(--border-default)] text-[var(--text-secondary)]'
+                "
+              >
+                <input
+                  type="checkbox"
+                  :value="l.lembaga"
+                  v-model="dlgShift.lembaga"
+                  class="accent-cyan-500"
+                />
+                {{ l.lembaga }}
+              </label>
+            </div>
+            <p class="text-[10px] text-[var(--text-tertiary)] italic mt-1">
+              Bila diisi, shift ini hanya muncul di form guru lembaga tersebut. Kosongkan = berlaku
+              semua lembaga.
+            </p>
+          </div>
         </div>
         <div
           class="flex justify-end gap-2 px-5 py-3 border-t border-[var(--border-subtle)] bg-[var(--bg-card-elevated)] rounded-b-2xl"
@@ -2194,7 +2223,11 @@ function openShiftDialog(sh, idx) {
   dlgShiftIsNew.value = false
   dlgShiftIdx.value = idx
   // Salin array hadir_ikut agar edit di dialog tak memutasi form.shiftMaster sebelum "Terapkan".
-  dlgShift.value = { ...sh, hadir_ikut: [...(sh.hadir_ikut || [])] }
+  dlgShift.value = {
+    ...sh,
+    hadir_ikut: [...(sh.hadir_ikut || [])],
+    lembaga: [...(sh.lembaga || [])]
+  }
   dlgShiftOpen.value = true
 }
 
