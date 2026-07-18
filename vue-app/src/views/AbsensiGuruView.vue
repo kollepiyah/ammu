@@ -104,7 +104,7 @@
       </div>
 
       <!-- Tabs -->
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
+      <div class="grid grid-cols-2 md:grid-cols-5 gap-2 md:gap-3">
         <button
           @click="tabMode = 'harian'"
           :class="[
@@ -161,6 +161,19 @@
           <h3 class="text-[11px] md:text-xs font-black leading-tight drop-shadow-sm">Riwayat</h3>
           <p class="hidden md:block text-[10px] text-white/85 font-medium leading-snug">
             Daftar absen per scan
+          </p>
+        </button>
+        <button
+          @click="tabMode = 'rekapunit'"
+          :class="[
+            'group relative overflow-hidden bg-gradient-to-br from-violet-500 dark:from-violet-700 to-violet-700 dark:to-violet-900 rounded-xl p-2.5 md:p-3 text-left text-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col gap-1 cursor-pointer',
+            tabMode === 'rekapunit' ? 'ring-2 ring-white/70 ring-offset-1 ring-offset-cyan-50' : ''
+          ]"
+        >
+          <i class="fas fa-layer-group text-base md:text-lg drop-shadow"></i>
+          <h3 class="text-[11px] md:text-xs font-black leading-tight drop-shadow-sm">Rekap Unit</h3>
+          <p class="hidden md:block text-[10px] text-white/85 font-medium leading-snug">
+            Per lembaga, mingguan/bulanan
           </p>
         </button>
       </div>
@@ -726,7 +739,227 @@
         </div>
       </div>
 
-      <p class="text-center text-[10px] text-[var(--text-tertiary)] pt-2">
+      <!-- TAB: Rekap Unit (Kelompok → Lembaga, mingguan/bulanan) -->
+      <div v-else-if="tabMode === 'rekapunit'" class="space-y-3">
+        <div
+          class="bg-[var(--bg-card)] rounded-2xl p-3 md:p-4 border border-[var(--border-subtle)] shadow-sm flex flex-wrap items-center gap-3 justify-between"
+        >
+          <div class="flex flex-wrap items-center gap-2">
+            <div
+              class="inline-flex rounded-xl border border-[var(--border-default)] overflow-hidden"
+            >
+              <button
+                @click="rekapMode = 'mingguan'"
+                :class="[
+                  'px-3 h-9 text-xs font-black transition',
+                  rekapMode === 'mingguan'
+                    ? 'bg-violet-600 text-white'
+                    : 'bg-[var(--bg-card)] text-[var(--text-secondary)]'
+                ]"
+              >
+                Mingguan
+              </button>
+              <button
+                @click="rekapMode = 'bulanan'"
+                :class="[
+                  'px-3 h-9 text-xs font-black transition',
+                  rekapMode === 'bulanan'
+                    ? 'bg-violet-600 text-white'
+                    : 'bg-[var(--bg-card)] text-[var(--text-secondary)]'
+                ]"
+              >
+                Bulanan
+              </button>
+            </div>
+            <template v-if="rekapMode === 'mingguan'">
+              <button
+                @click="gantiMingguRekap(-1)"
+                class="h-9 w-9 rounded-lg border border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-elevated)]"
+                title="Minggu sebelumnya"
+              >
+                <i class="fas fa-chevron-left"></i>
+              </button>
+              <input
+                type="date"
+                v-model="rekapAnchor"
+                class="h-9 px-2 text-xs rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
+              />
+              <button
+                @click="gantiMingguRekap(1)"
+                class="h-9 w-9 rounded-lg border border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-elevated)]"
+                title="Minggu berikutnya"
+              >
+                <i class="fas fa-chevron-right"></i>
+              </button>
+            </template>
+            <template v-else>
+              <select
+                v-model.number="selectedMonth"
+                class="h-9 px-2 text-xs rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
+              >
+                <option v-for="(b, i) in BULAN" :key="i" :value="i + 1">{{ b }}</option>
+              </select>
+              <input
+                type="number"
+                v-model.number="selectedYear"
+                class="h-9 w-20 px-2 text-xs rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
+              />
+            </template>
+            <span class="text-xs font-bold text-[var(--text-secondary)]">
+              {{ rekapPeriode.label }} &middot; {{ rekapUnitData.jmlHariKerja }} hari kerja
+            </span>
+          </div>
+          <!-- slot tombol ekspor (Commit 6) -->
+          <div class="flex items-center gap-2" data-rekap-actions></div>
+        </div>
+
+        <div
+          v-if="rekapUnitData.groups.length === 0"
+          class="bg-[var(--bg-card)] rounded-2xl p-10 border border-dashed border-[var(--border-default)] text-center"
+        >
+          <i class="fas fa-layer-group text-[var(--text-tertiary)] text-4xl mb-3"></i>
+          <p class="text-sm font-bold text-slate-700 dark:text-[var(--text-tertiary)]">
+            Tidak ada data pada periode ini
+          </p>
+        </div>
+        <div
+          v-else
+          class="bg-[var(--bg-card)] rounded-2xl p-2 md:p-3 border border-[var(--border-subtle)] shadow-sm overflow-x-auto"
+        >
+          <table class="w-full text-[11px] border-collapse">
+            <thead>
+              <tr class="bg-[var(--bg-muted)] text-[var(--text-primary)]">
+                <th class="p-2 text-left font-black uppercase tracking-wider min-w-[150px]">
+                  Nama / Lembaga
+                </th>
+                <th class="p-2 text-center font-black uppercase">Shift</th>
+                <th class="p-2 text-center font-black text-emerald-700" title="Hadir">H</th>
+                <th class="p-2 text-center font-black text-cyan-700" title="Terlambat">T</th>
+                <th class="p-2 text-center font-black text-amber-700" title="Izin">I</th>
+                <th class="p-2 text-center font-black text-amber-700" title="Sakit">S</th>
+                <th class="p-2 text-center font-black text-violet-700" title="Cuti">C</th>
+                <th class="p-2 text-center font-black text-rose-700" title="Alpha">A</th>
+                <th class="p-2 text-center font-black text-amber-600" title="Belum absen pulang">
+                  Blm Plg
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <template v-for="grp in rekapUnitData.groups" :key="grp.key">
+                <tr class="bg-violet-100 dark:bg-violet-900/40">
+                  <td
+                    colspan="2"
+                    class="p-2 font-black text-violet-800 dark:text-violet-200 uppercase text-[10px] tracking-wider"
+                  >
+                    {{ grp.kelompok }}
+                  </td>
+                  <td class="p-2 text-center font-black text-violet-800 dark:text-violet-200">
+                    {{ grp.sub.H }}
+                  </td>
+                  <td class="p-2 text-center font-black text-violet-800 dark:text-violet-200">
+                    {{ grp.sub.T }}
+                  </td>
+                  <td class="p-2 text-center font-black text-violet-800 dark:text-violet-200">
+                    {{ grp.sub.I }}
+                  </td>
+                  <td class="p-2 text-center font-black text-violet-800 dark:text-violet-200">
+                    {{ grp.sub.S }}
+                  </td>
+                  <td class="p-2 text-center font-black text-violet-800 dark:text-violet-200">
+                    {{ grp.sub.C }}
+                  </td>
+                  <td class="p-2 text-center font-black text-violet-800 dark:text-violet-200">
+                    {{ grp.sub.A }}
+                  </td>
+                  <td class="p-2 text-center font-black text-violet-800 dark:text-violet-200">
+                    {{ grp.sub.belumPulang }}
+                  </td>
+                </tr>
+                <template v-for="lem in grp.lembagaList" :key="grp.key + '_' + lem.lembaga">
+                  <tr class="bg-[var(--bg-card-elevated)]">
+                    <td
+                      colspan="9"
+                      class="px-2 py-1 font-black text-[var(--text-secondary)] text-[10px]"
+                    >
+                      <i class="fas fa-building text-[9px] mr-1"></i>{{ lem.lembaga }}
+                    </td>
+                  </tr>
+                  <tr
+                    v-for="row in lem.rows"
+                    :key="row.guru.id + '_' + row.shift"
+                    class="border-b border-[var(--border-subtle)] hover:bg-slate-50 dark:hover:bg-slate-700/30"
+                  >
+                    <td class="p-2 pl-4 font-bold text-[var(--text-primary)]">
+                      {{ row.guru.nama }}
+                    </td>
+                    <td class="p-2 text-center">
+                      <span
+                        class="inline-block px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-700 text-[9px] font-black text-slate-700 dark:text-slate-200 whitespace-nowrap"
+                        >{{ shiftLabel(row.shift) }}</span
+                      >
+                    </td>
+                    <td class="p-2 text-center font-bold text-emerald-700">{{ row.H }}</td>
+                    <td class="p-2 text-center font-bold text-cyan-700">{{ row.T }}</td>
+                    <td class="p-2 text-center text-amber-700">{{ row.I }}</td>
+                    <td class="p-2 text-center text-amber-700">{{ row.S }}</td>
+                    <td class="p-2 text-center text-violet-700">{{ row.C }}</td>
+                    <td class="p-2 text-center font-bold text-rose-700">{{ row.A }}</td>
+                    <td
+                      class="p-2 text-center"
+                      :class="
+                        row.belumPulang ? 'text-amber-600 font-bold' : 'text-[var(--text-tertiary)]'
+                      "
+                    >
+                      {{ row.belumPulang }}
+                    </td>
+                  </tr>
+                  <tr
+                    class="border-b-2 border-[var(--border-default)] bg-slate-50 dark:bg-slate-800/40"
+                  >
+                    <td
+                      class="p-1.5 pl-4 text-right font-black text-[10px] text-[var(--text-secondary)]"
+                      colspan="2"
+                    >
+                      Subtotal {{ lem.lembaga }}
+                    </td>
+                    <td class="p-1.5 text-center font-black text-emerald-700">{{ lem.sub.H }}</td>
+                    <td class="p-1.5 text-center font-black text-cyan-700">{{ lem.sub.T }}</td>
+                    <td class="p-1.5 text-center font-black text-amber-700">{{ lem.sub.I }}</td>
+                    <td class="p-1.5 text-center font-black text-amber-700">{{ lem.sub.S }}</td>
+                    <td class="p-1.5 text-center font-black text-violet-700">{{ lem.sub.C }}</td>
+                    <td class="p-1.5 text-center font-black text-rose-700">{{ lem.sub.A }}</td>
+                    <td class="p-1.5 text-center font-black text-amber-600">
+                      {{ lem.sub.belumPulang }}
+                    </td>
+                  </tr>
+                </template>
+              </template>
+              <tr class="bg-violet-600 text-white">
+                <td colspan="2" class="p-2 font-black uppercase text-[10px] tracking-wider">
+                  Total Keseluruhan
+                </td>
+                <td class="p-2 text-center font-black">{{ rekapUnitData.grand.H }}</td>
+                <td class="p-2 text-center font-black">{{ rekapUnitData.grand.T }}</td>
+                <td class="p-2 text-center font-black">{{ rekapUnitData.grand.I }}</td>
+                <td class="p-2 text-center font-black">{{ rekapUnitData.grand.S }}</td>
+                <td class="p-2 text-center font-black">{{ rekapUnitData.grand.C }}</td>
+                <td class="p-2 text-center font-black">{{ rekapUnitData.grand.A }}</td>
+                <td class="p-2 text-center font-black">{{ rekapUnitData.grand.belumPulang }}</td>
+              </tr>
+            </tbody>
+          </table>
+          <p class="text-[10px] text-[var(--text-tertiary)] italic mt-2">
+            H=Hadir &middot; T=Terlambat &middot; I=Izin &middot; S=Sakit &middot; C=Cuti &middot;
+            A=Alpha &middot; Blm Plg=hadir tanpa absen pulang. Jumat &amp; hari libur kalender
+            dikecualikan.
+          </p>
+        </div>
+      </div>
+
+      <p
+        v-if="tabMode !== 'rekapunit'"
+        class="text-center text-[10px] text-[var(--text-tertiary)] pt-2"
+      >
         <i class="fas fa-circle-info mr-1"></i>
         {{ filteredAbsensi.length }} absensi
       </p>
@@ -749,6 +982,17 @@ import { useSettingsStore } from '@/stores/settings'
 import { shiftsForGuru, shiftBatas as shiftBatasOf } from '@/utils/shiftDerive'
 import { shiftList, shiftLabelOf, shiftById } from '@/utils/shiftMaster'
 import { materialisasiHadirIkut } from '@/utils/absensiMaterialize'
+import { getLembagaBroadGroup, canonLembaga } from '@/composables/useLembaga'
+import {
+  indexAbsensiHarian,
+  hitungSel,
+  rentangMinggu,
+  rentangBulan,
+  tanggalRentang,
+  geserMinggu,
+  selKosong,
+  tambahSel
+} from '@/utils/absensiRekap'
 import { jsPDFFromCDN } from '@/services/pdf'
 // v.21.114.0528: pakai kegiatan composable utk derive hari libur dari event multi-day
 import { useKegiatan } from '@/composables/useKegiatan'
@@ -1330,6 +1574,98 @@ function isHariLibur(d) {
   if (dow === 5 && settingsStore.settings?.liburJumat !== false) return true
   if (hariLibur.value.includes(iso)) return true
   return liburEventDates.value.has(iso)
+}
+
+// =====================================================
+// REKAP KELOMPOK → LEMBAGA (Bagian C) — mingguan (Sen–Min) / bulanan, hierarki.
+// Atribusi per shift: 'sekolah' → lembaga_sekolah; lainnya → lembaga.
+// Kelompok (broad) dari master lembaga (getLembagaBroadGroup).
+// =====================================================
+const rekapMode = ref('mingguan')
+const rekapAnchor = ref(new Date().toISOString().slice(0, 10)) // tanggal acuan mingguan
+const KELOMPOK_ORDER = ['qiraati', 'sekolah', 'mahad', 'non-lembaga', 'lainnya']
+const KELOMPOK_LABEL = {
+  qiraati: 'Qiraati',
+  sekolah: 'Sekolah',
+  mahad: "Ma'had",
+  'non-lembaga': 'Non-Lembaga',
+  lainnya: 'Lainnya'
+}
+
+// Libur berbasis ISO (isHariLibur hanya per hari-dalam-bulan berjalan).
+function isLiburIso(iso) {
+  const s = settingsStore.settings || {}
+  const [y, m, d] = String(iso).split('-').map(Number)
+  const dow = new Date(y, m - 1, d).getDay()
+  if (dow === 5 && s.liburJumat !== false) return true
+  if ((hariLibur.value || []).includes(iso)) return true
+  return liburEventDates.value.has(iso)
+}
+
+const rekapPeriode = computed(() => {
+  if (rekapMode.value === 'mingguan') {
+    const { start, end } = rentangMinggu(rekapAnchor.value)
+    return { start, end, label: `${formatTgl(start)} – ${formatTgl(end)}` }
+  }
+  const { start, end } = rentangBulan(selectedYear.value, selectedMonth.value)
+  return { start, end, label: `${getBulanLabel(selectedMonth.value)} ${selectedYear.value}` }
+})
+const rekapTanggalKerja = computed(() =>
+  tanggalRentang(rekapPeriode.value.start, rekapPeriode.value.end).filter((iso) => !isLiburIso(iso))
+)
+
+function lembagaOfShift(g, shift) {
+  const sh = String(shift).toLowerCase()
+  const raw = sh === 'sekolah' ? g.lembaga_sekolah || g.lembaga : g.lembaga || g.lembaga_sekolah
+  return canonLembaga(raw || '') || '(Tanpa Lembaga)'
+}
+function kelompokKeyOf(lembaga) {
+  return getLembagaBroadGroup(lembaga) || 'lainnya'
+}
+
+const rekapUnitData = computed(() => {
+  const idx = indexAbsensiHarian(absensi.value || [])
+  const kerja = rekapTanggalKerja.value
+  const today = new Date().toISOString().slice(0, 10)
+  const s = settingsStore.settings || {}
+  const km = new Map() // kelompokKey -> Map(lembaga -> {lembaga, rows, sub})
+  for (const g of guruAktif.value) {
+    for (const shift of shiftsForGuru(g, s)) {
+      const sel = hitungSel(idx, g.id, shift, kerja, today)
+      if (sel.total === 0) continue // tak ada aktivitas & bukan hari kerja lewat → lewati
+      const lembaga = lembagaOfShift(g, shift)
+      const kk = kelompokKeyOf(lembaga)
+      if (!km.has(kk)) km.set(kk, new Map())
+      const lm = km.get(kk)
+      if (!lm.has(lembaga)) lm.set(lembaga, { lembaga, rows: [], sub: selKosong() })
+      const b = lm.get(lembaga)
+      b.rows.push({ guru: g, shift, ...sel })
+      tambahSel(b.sub, sel)
+    }
+  }
+  const groups = []
+  const grand = selKosong()
+  for (const kk of KELOMPOK_ORDER) {
+    if (!km.has(kk)) continue
+    const lembagaList = [...km.get(kk).values()].sort((a, b) =>
+      a.lembaga.localeCompare(b.lembaga, 'id')
+    )
+    const ksub = selKosong()
+    for (const l of lembagaList) {
+      l.rows.sort(
+        (a, b) =>
+          String(a.guru.nama).localeCompare(String(b.guru.nama), 'id') ||
+          String(a.shift).localeCompare(b.shift)
+      )
+      tambahSel(ksub, l.sub)
+    }
+    tambahSel(grand, ksub)
+    groups.push({ key: kk, kelompok: KELOMPOK_LABEL[kk] || kk, sub: ksub, lembagaList })
+  }
+  return { groups, grand, jmlHariKerja: kerja.length }
+})
+function gantiMingguRekap(n) {
+  rekapAnchor.value = geserMinggu(rekapAnchor.value, n)
 }
 
 // =====================================================
