@@ -809,8 +809,13 @@
               {{ rekapPeriode.label }} &middot; {{ rekapUnitData.jmlHariKerja }} hari kerja
             </span>
           </div>
-          <!-- slot tombol ekspor (Commit 6) -->
-          <div class="flex items-center gap-2" data-rekap-actions></div>
+          <button
+            @click="exportRekapUnitExcel"
+            aria-label="Ekspor rekap absensi per lembaga ke Excel"
+            class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition cursor-pointer"
+          >
+            <i class="fas fa-file-excel"></i>Excel
+          </button>
         </div>
 
         <div
@@ -1666,6 +1671,80 @@ const rekapUnitData = computed(() => {
 })
 function gantiMingguRekap(n) {
   rekapAnchor.value = geserMinggu(rekapAnchor.value, n)
+}
+
+// Ekspor Excel rekap unit (Bagian C-2) — flat: baris data + subtotal lembaga + grand total.
+function buildRekapUnitExport() {
+  const columns = [
+    { key: 'kelompok', header: 'Kelompok', width: 14 },
+    { key: 'lembaga', header: 'Lembaga', width: 16 },
+    { key: 'nama', header: 'Nama Guru', width: 24 },
+    { key: 'shift', header: 'Shift', width: 10 },
+    { key: 'H', header: 'H', width: 5 },
+    { key: 'T', header: 'T', width: 5 },
+    { key: 'I', header: 'I', width: 5 },
+    { key: 'S', header: 'S', width: 5 },
+    { key: 'C', header: 'C', width: 5 },
+    { key: 'A', header: 'A', width: 5 },
+    { key: 'belumPulang', header: 'Blm Pulang', width: 11 }
+  ]
+  const rows = []
+  const selRow = (extra, sel) => ({
+    kelompok: '',
+    lembaga: '',
+    nama: '',
+    shift: '',
+    H: sel.H,
+    T: sel.T,
+    I: sel.I,
+    S: sel.S,
+    C: sel.C,
+    A: sel.A,
+    belumPulang: sel.belumPulang,
+    ...extra
+  })
+  for (const grp of rekapUnitData.value.groups) {
+    for (const lem of grp.lembagaList) {
+      for (const r of lem.rows) {
+        rows.push({
+          kelompok: grp.kelompok,
+          lembaga: lem.lembaga,
+          nama: r.guru.nama,
+          shift: shiftLabel(r.shift),
+          H: r.H,
+          T: r.T,
+          I: r.I,
+          S: r.S,
+          C: r.C,
+          A: r.A,
+          belumPulang: r.belumPulang
+        })
+      }
+      rows.push(selRow({ nama: `Subtotal ${lem.lembaga}` }, lem.sub))
+    }
+  }
+  rows.push(selRow({ nama: 'TOTAL KESELURUHAN' }, rekapUnitData.value.grand))
+  return { columns, rows }
+}
+
+async function exportRekapUnitExcel() {
+  try {
+    const { columns, rows } = buildRekapUnitExport()
+    if (rows.length <= 1) {
+      toast.warning('Tidak ada data untuk diekspor')
+      return
+    }
+    const modeLabel = rekapMode.value === 'mingguan' ? 'Mingguan' : 'Bulanan'
+    await exportSimple(rows, {
+      filename: `Rekap_Absensi_${modeLabel}_${rekapPeriode.value.start}_sd_${rekapPeriode.value.end}.xlsx`,
+      sheetName: 'Rekap Unit',
+      columns,
+      title: `REKAP ABSENSI ${modeLabel.toUpperCase()} PER LEMBAGA — ${rekapPeriode.value.label} (${rekapUnitData.value.jmlHariKerja} hari kerja)`
+    })
+    toast.success('Rekap Excel diunduh')
+  } catch (e) {
+    toast.error('Gagal ekspor: ' + (e.message || e))
+  }
 }
 
 // =====================================================
