@@ -9,9 +9,9 @@
 // Tulis pakai source 'fingerprint' (auto) — beda dari 'fingerprint_import' (impor xlsx manual).
 // Logika = CERMIN AbsensiGuruView.importFingerprint + fp_sync.py (jembatan sementara).
 
-import { getAll, getOne, setOne } from '@/services/db'
+import { getAll, getOne, setOne, mergeOne } from '@/services/db'
 import { useSettingsStore } from '@/stores/settings'
-import { deriveShift, statusFor } from '@/utils/shiftDerive'
+import { deriveShift, statusFor, shiftsForGuru, shiftWindow } from '@/utils/shiftDerive'
 
 // timestamp att_log 'YYYY-MM-DD HH:MM:SS' (WIB lokal, tanpa 'Z') → { date, hhmm, full }.
 function splitTs(ts) {
@@ -53,8 +53,10 @@ export function useFingerprintSync() {
       if (pin) byPin[pin] = g
     }
 
-    // agregasi per (pin, tanggal, shift) → scan TERAWAL = jam masuk
+    // agregasi per (pin, tanggal, shift) → scan TERAWAL = jam masuk.
+    // Scan DI LUAR window masuk dikumpulkan sbg kandidat PULANG per (pin, tanggal).
     const agg = {}
+    const pulangScans = {} // pin|date -> { g, date, times:[hhmm] }
     const takKenal = new Set()
     let luar = 0
     for (const r of scans) {
@@ -69,6 +71,9 @@ export function useFingerprintSync() {
       const sh = deriveShift(parts.hhmm, g, settings)
       if (!sh) {
         luar++
+        const pk = pin + '|' + parts.date
+        if (!pulangScans[pk]) pulangScans[pk] = { g, date: parts.date, times: [] }
+        pulangScans[pk].times.push(parts.hhmm)
         continue
       }
       const key = pin + '|' + parts.date + '|' + sh
@@ -116,10 +121,53 @@ export function useFingerprintSync() {
       rows.push({ nama: a.g.nama, tanggal: a.date, shift: a.sh, jam: a.hhmm, status })
     }
 
+    // ── Pass PULANG: scan di luar window = pulang → tempel ke baris masuk (hadir/terlambat)
+    // pada shift dgn `selesai` TERBESAR yang ≤ jam scan (shift yg ditinggalkan). Berlaku semua
+    // shift (ngaji pagi/sore-saja jg scan 2×). HANYA MENCATAT jam_pulang (MAX, mergeOne — jaga
+    // jam/status masuk). Jalan SESUDAH tulis masuk agar baris terbaru terbaca.
+    let pulangWritten = 0
+    for (const pk of Object.keys(pulangScans)) {
+      const { g, date, times } = pulangScans[pk]
+      const shiftRows = {}
+      for (const sh of shiftsForGuru(g, settings)) {
+        const docId = 'shift_' + g.id + '_' + date + '_' + sh
+        const row = await getOne('absensi_shift_guru', docId)
+        if (!row) continue
+        const st = String(row.status || '').toLowerCase()
+        if (st !== 'hadir' && st !== 'terlambat') continue
+        const selesai = String(shiftWindow(sh, settings)?.selesai || '')
+        if (!selesai) continue
+        shiftRows[sh] = { docId, selesai, exPulang: String(row.jam_pulang || '') }
+      }
+      const perShiftMax = {} // shift → jam pulang MAX
+      for (const hhmm of times) {
+        let target = ''
+        let bestSelesai = ''
+        for (const sh of Object.keys(shiftRows)) {
+          const selesai = shiftRows[sh].selesai
+          if (selesai > hhmm) continue // pulang harus SETELAH shift bubar
+          if (selesai > bestSelesai) {
+            bestSelesai = selesai
+            target = sh
+          }
+        }
+        if (!target) continue
+        if (!perShiftMax[target] || hhmm > perShiftMax[target]) perShiftMax[target] = hhmm
+      }
+      for (const sh of Object.keys(perShiftMax)) {
+        const { docId, exPulang } = shiftRows[sh]
+        const jamPulang = perShiftMax[sh]
+        if (exPulang && exPulang >= jamPulang) continue // sudah ada pulang lebih akhir
+        if (commit) await mergeOne('absensi_shift_guru', docId, { jam_pulang: jamPulang })
+        pulangWritten++
+      }
+    }
+
     return {
       scan: scans.length,
       kandidat: Object.keys(agg).length,
       written,
+      pulangWritten,
       skipIzin,
       skipSame,
       takKenal: [...takKenal],

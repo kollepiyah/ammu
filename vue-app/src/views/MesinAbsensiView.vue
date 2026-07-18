@@ -102,6 +102,10 @@
               <b>{{ store.lastResult.written }}</b>
               <span>ditulis</span>
             </div>
+            <div class="fp-stat" :class="{ 'fp-ok': store.lastResult.pulangWritten }">
+              <b>{{ store.lastResult.pulangWritten || 0 }}</b>
+              <span>pulang dicatat</span>
+            </div>
             <div class="fp-stat">
               <b>{{ store.lastResult.scan }}</b>
               <span>scan dibaca</span>
@@ -227,7 +231,9 @@ async function syncNow() {
   } else if (res) {
     const tk = (res.takKenal || []).length
     toast.success(
-      `Sinkron selesai — ${res.written} ditulis dari ${res.scan} scan` +
+      `Sinkron selesai — ${res.written} ditulis` +
+        (res.pulangWritten ? ` · ${res.pulangWritten} pulang` : '') +
+        ` dari ${res.scan} scan` +
         (tk ? ` · ${tk} PIN tak dikenal` : '')
     )
   }

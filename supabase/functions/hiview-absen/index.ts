@@ -20,7 +20,7 @@
 // SECRET: supabase secrets set HIVIEW_PUSH_SECRET="<8-16 char>"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders, handlePreflight, json } from '../_shared/cors.ts'
-import { deriveShift, statusFor } from './shiftDerive.ts'
+import { deriveShift, statusFor, shiftWindow, shiftsForGuru } from './shiftDerive.ts'
 
 const SECRET = Deno.env.get('HIVIEW_PUSH_SECRET') || ''
 
@@ -143,6 +143,56 @@ async function fetchSettings(db: any): Promise<Record<string, unknown>> {
   return { ...(w.data?.value || {}), ...(g.data?.value || {}) }
 }
 
+// Scan DI LUAR semua window masuk = ABSEN PULANG. Tempel jam_pulang ke baris masuk
+// (hadir/terlambat) hari ini milik guru, pada shift dgn `selesai` TERBESAR yang ≤ jam scan
+// (= shift yg sedang ditinggalkan). Berlaku SEMUA shift (ngaji pagi/sore-saja jg scan 2×).
+// jam_pulang = MAX (idempoten). HANYA MENCATAT — tak mengubah status/hadir. Gagal = log saja
+// (jangan bikin mesin retry-storm); pemanggil tetap balas isapiOk.
+// deno-lint-ignore no-explicit-any
+async function catatPulang(db: any, guru: any, settings: any, t: { date: string; hhmm: string }) {
+  try {
+    const milik = shiftsForGuru(guru, settings)
+    if (!milik || milik.size === 0) return
+    const { data: rows } = await db
+      .from('absensi_shift_guru')
+      .select('*')
+      .eq('guru_id', String(guru.id))
+      .eq('periode', t.date.slice(0, 7))
+    // baris masuk hari ini (hadir/terlambat) milik shift si guru
+    let target: any = null
+    let bestSelesai = ''
+    for (const r of rows || []) {
+      const d = { ...(r.data || {}), ...r }
+      if (String(d.tanggal || '') !== t.date) continue
+      const st = String(d.status || '').toLowerCase()
+      if (st !== 'hadir' && st !== 'terlambat') continue
+      const sh = String(d.shift || '').toLowerCase()
+      if (!milik.has(sh)) continue
+      const selesai = String(shiftWindow(sh, settings)?.selesai || '')
+      if (!selesai || selesai > t.hhmm) continue // pulang harus SETELAH shift bubar
+      if (selesai > bestSelesai) {
+        bestSelesai = selesai
+        target = r
+      }
+    }
+    if (!target) {
+      console.log(`[hiview] pulang: tak ada shift cocok ${guru.nama} jam=${t.hhmm}`)
+      return
+    }
+    const cur = { ...(target.data || {}) }
+    const exPulang = String(cur.jam_pulang || '')
+    if (exPulang && exPulang >= t.hhmm) return // sudah ada pulang lebih akhir → MAX
+    const { error } = await db
+      .from('absensi_shift_guru')
+      .update({ data: { ...cur, jam_pulang: t.hhmm } })
+      .eq('id', target.id)
+    if (error) throw error
+    console.log(`[hiview] PULANG ${guru.nama} ${t.date} ${t.hhmm} → ${cur.shift}`)
+  } catch (e) {
+    console.error('[hiview] pulang error:', (e as Error)?.message || e)
+  }
+}
+
 Deno.serve(async (req) => {
   const pre = handlePreflight(req)
   if (pre) return pre
@@ -204,7 +254,8 @@ Deno.serve(async (req) => {
     const settings = await fetchSettings(db)
     const shift = deriveShift(t.hhmm, guru, settings)
     if (!shift) {
-      console.log(`[hiview] outOfWindow ${guru.nama} jam=${t.hhmm}`)
+      // Di luar window masuk → coba catat sebagai absen pulang (scan ke-2).
+      await catatPulang(db, guru, settings, t)
       return isapiOk(req)
     }
     const status = statusFor(t.hhmm, shift, settings)
