@@ -432,9 +432,17 @@
                     'text-[11px] font-bold px-2 py-0.5 rounded-md whitespace-nowrap',
                     j.hitungan === 'per_hadir'
                       ? 'bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-200'
-                      : 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-200'
+                      : j.hitungan === 'per_jp'
+                        ? 'bg-violet-100 text-violet-800 dark:bg-violet-900/40 dark:text-violet-200'
+                        : 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-200'
                   ]"
-                  >{{ j.hitungan === 'per_hadir' ? '× hadir' : 'Flat' }}</span
+                  >{{
+                    j.hitungan === 'per_hadir'
+                      ? '× hadir'
+                      : j.hitungan === 'per_jp'
+                        ? '× JP'
+                        : 'Flat'
+                  }}</span
                 >
               </td>
               <td class="px-3 py-2 text-[11px] text-[var(--text-secondary)]">
@@ -587,7 +595,9 @@
             {{
               dlgJb.hitungan === 'per_hadir'
                 ? 'Dikali jumlah hadir shift dari absensi. Shift dikosongkan = semua shift orang itu dijumlahkan.'
-                : 'Dibayar sekali per bulan bila cocok scope.'
+                : dlgJb.hitungan === 'per_jp'
+                  ? 'Bisyaroh sekolah = JP guru di lembaga (menu Beban Mengajar) × nominal (tarif/JP) × persen kehadiran sekolah (prorata). Isi scope lembaga.'
+                  : 'Dibayar sekali per bulan bila cocok scope.'
             }}
           </p>
           <div class="border-t border-[var(--border-subtle)] pt-3 space-y-3">
@@ -2500,7 +2510,7 @@ function unduhTemplateJenisBisyaroh() {
     title: 'Jenis Bisyaroh — Ammu (scope dikosongkan = berlaku semua)',
     columns: [
       { key: 'nama', header: 'Nama', width: 30 },
-      { key: 'hitungan', header: 'Hitungan (flat/per_hadir)', width: 22 },
+      { key: 'hitungan', header: 'Hitungan (flat/per_hadir/per_jp)', width: 26 },
       { key: 'nominal', header: 'Nominal', width: 14 },
       { key: 'jabatan', header: 'Jabatan (pisah koma)', width: 24 },
       { key: 'lembaga', header: 'Lembaga (pisah koma)', width: 24 },
@@ -2532,9 +2542,18 @@ async function imporJenisBisyaroh(ev) {
       const nama = String(pickCol(r, ['nama', 'label', 'jenis']) || '').trim()
       if (!nama || /^contoh:/i.test(nama)) continue
       const hitStr = String(
-        pickCol(r, ['hitungan (flat/per_hadir)', 'hitungan', 'cara hitung']) || ''
+        pickCol(r, [
+          'hitungan (flat/per_hadir/per_jp)',
+          'hitungan (flat/per_hadir)',
+          'hitungan',
+          'cara hitung'
+        ]) || ''
       ).toLowerCase()
-      const hitungan = hitStr.includes('hadir') ? 'per_hadir' : 'flat'
+      const hitungan = hitStr.includes('jp')
+        ? 'per_jp'
+        : hitStr.includes('hadir')
+          ? 'per_hadir'
+          : 'flat'
       const nominal = parseRp(pickCol(r, ['nominal', 'tarif']))
       const shift = csvArr(pickCol(r, ['shift (pisah koma)', 'shift']))
         .map((x) => shiftMap[x.toLowerCase()] || slugJenisId(x))
