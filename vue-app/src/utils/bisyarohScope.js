@@ -20,9 +20,16 @@
 // tersembunyi. Konsekuensinya jenis global + jenis khusus utk shift yang sama akan
 // DIJUMLAHKAN (bukan saling menimpa) — pakai cekTumpangTindih() untuk memperingatkan.
 
+import { canonLembaga } from '@/composables/useLembaga'
+
 export const HITUNGAN_OPTIONS = [
   { value: 'flat', label: 'Flat / bulan', hint: 'Sekali per bulan bila cocok scope' },
-  { value: 'per_hadir', label: '× kehadiran', hint: 'Dikali jumlah hadir shift dari absensi' }
+  { value: 'per_hadir', label: '× kehadiran', hint: 'Dikali jumlah hadir shift dari absensi' },
+  {
+    value: 'per_jp',
+    label: '× JP (prorata hadir)',
+    hint: 'JP mapel guru × tarif × persen kehadiran sekolah (Beban Mengajar)'
+  }
 ]
 
 const _key = (v) =>
@@ -47,7 +54,7 @@ export function normalizeJenisBisyaroh(raw) {
   return {
     id,
     label: String(r.label || '').trim() || id,
-    hitungan: r.hitungan === 'per_hadir' ? 'per_hadir' : 'flat',
+    hitungan: ['per_hadir', 'per_jp'].includes(r.hitungan) ? r.hitungan : 'flat',
     nominal: Number(r.nominal) > 0 ? Number(r.nominal) : 0,
     scope: {
       jabatan: _arr(s.jabatan),
@@ -136,13 +143,15 @@ export function barisBisyaroh(jenisList, ctx) {
     const kategori =
       j.hitungan === 'per_hadir'
         ? 'bonus'
-        : ref?.group === 'sekolah'
+        : j.hitungan === 'per_jp'
           ? 'sekolah'
-          : ref?.group === 'mahad'
-            ? 'mahad'
-            : ref?.group === 'non-lembaga'
-              ? 'admin'
-              : 'ngaji'
+          : ref?.group === 'sekolah'
+            ? 'sekolah'
+            : ref?.group === 'mahad'
+              ? 'mahad'
+              : ref?.group === 'non-lembaga'
+                ? 'admin'
+                : 'ngaji'
     if (j.hitungan === 'per_hadir') {
       const qty = hadirUntuk(j, ctx?.hadirPerShift)
       out.push({
@@ -154,6 +163,22 @@ export function barisBisyaroh(jenisList, ctx) {
         qty,
         tarif: j.nominal,
         nominal: qty * j.nominal
+      })
+    } else if (j.hitungan === 'per_jp') {
+      // JP guru di lembaga tempat jenis ini cocok × tarif/JP × faktor kehadiran sekolah (prorata).
+      const jp = Number(ctx?.bebanJPByLembaga?.[canonLembaga(ref?.lembaga || '')] || 0)
+      const rawFaktor = Number(ctx?.faktorHadirSekolah)
+      const faktor = Number.isFinite(rawFaktor) ? rawFaktor : 1
+      out.push({
+        jenis_id: j.id,
+        kategori,
+        lembaga,
+        label: j.label,
+        hitungan: 'per_jp',
+        qty: jp,
+        tarif: j.nominal,
+        faktor,
+        nominal: Math.round(jp * j.nominal * faktor)
       })
     } else {
       out.push({
