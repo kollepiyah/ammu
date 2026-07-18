@@ -573,6 +573,11 @@
                   class="ml-1 text-[9px] font-black bg-teal-100 text-teal-800 px-1.5 py-0.5 rounded uppercase"
                   >Baru</span
                 >
+                <span
+                  v-if="sh.hadir_ikut && sh.hadir_ikut.length"
+                  class="block text-[9px] text-teal-600 dark:text-teal-400 italic font-sans font-normal"
+                  >&#8618; hadir ikut {{ sh.hadir_ikut.map(shiftLabelById).join(', ') }}</span
+                >
               </td>
               <td class="px-3 py-2 text-[var(--text-secondary)] text-xs">
                 {{ sh.untuk === 'pegawai' ? 'Pegawai' : 'Guru' }}
@@ -585,6 +590,11 @@
                   v-if="!sh.mulai && !sh.terlambat && sh.fallback"
                   class="block text-[9px] text-[var(--text-tertiary)] italic font-sans"
                   >ikut jam {{ sh.fallback }}</span
+                >
+                <span
+                  v-if="sh.pulang_default"
+                  class="block text-[9px] text-[var(--text-tertiary)] italic font-sans"
+                  >pulang ~{{ sh.pulang_default }}</span
                 >
               </td>
               <td class="px-3 py-2">
@@ -718,6 +728,49 @@
             />
             <p class="text-[10px] text-[var(--text-tertiary)] italic mt-1">
               Angka kecil menang bila jam scan masuk ke lebih dari satu shift.
+            </p>
+          </div>
+          <div>
+            <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
+              >Jam Pulang Default (opsional)</label
+            >
+            <input
+              v-model="dlgShift.pulang_default"
+              type="time"
+              class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)] font-mono"
+            />
+            <p class="text-[10px] text-[var(--text-tertiary)] italic mt-1">
+              Untuk prefill &amp; isi-massal absen pulang. Tidak memengaruhi status hadir.
+            </p>
+          </div>
+          <div v-if="shiftLainOptions.length">
+            <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
+              >Hadir Otomatis Ikut Shift</label
+            >
+            <div class="flex flex-wrap gap-1.5">
+              <label
+                v-for="o in shiftLainOptions"
+                :key="o.id"
+                class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-lg border cursor-pointer"
+                :class="
+                  dlgShift.hadir_ikut.includes(o.id)
+                    ? 'border-teal-400 bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 font-bold'
+                    : 'border-[var(--border-default)] text-[var(--text-secondary)]'
+                "
+              >
+                <input
+                  type="checkbox"
+                  :value="o.id"
+                  v-model="dlgShift.hadir_ikut"
+                  class="accent-teal-500"
+                />
+                {{ o.label }}
+              </label>
+            </div>
+            <p class="text-[10px] text-[var(--text-tertiary)] italic mt-1">
+              Guru yang hadir di shift tercentang otomatis dianggap hadir di shift ini — mis.
+              <b>Sekolah</b> ikut <b>Pagi</b> (guru gabungan cukup 1&times; scan pagi). Kosongkan
+              bila tak perlu.
             </p>
           </div>
         </div>
@@ -2118,6 +2171,14 @@ const dlgShift = ref(null)
 const dlgShiftIdx = ref(-1)
 const dlgShiftIsNew = ref(false)
 
+// Shift lain (utk pilihan hadir_ikut) — kecuali shift yang sedang diedit.
+const shiftLainOptions = computed(() =>
+  (form.value.shiftMaster || []).filter((s) => s.id && s.id !== dlgShift.value?.id)
+)
+function shiftLabelById(id) {
+  return (form.value.shiftMaster || []).find((s) => s.id === id)?.label || id
+}
+
 function openShiftBaru() {
   dlgShiftIsNew.value = true
   dlgShiftIdx.value = -1
@@ -2132,7 +2193,8 @@ function openShiftBaru() {
 function openShiftDialog(sh, idx) {
   dlgShiftIsNew.value = false
   dlgShiftIdx.value = idx
-  dlgShift.value = { ...sh }
+  // Salin array hadir_ikut agar edit di dialog tak memutasi form.shiftMaster sebelum "Terapkan".
+  dlgShift.value = { ...sh, hadir_ikut: [...(sh.hadir_ikut || [])] }
   dlgShiftOpen.value = true
 }
 
