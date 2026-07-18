@@ -503,19 +503,24 @@
             >
             <div class="flex flex-wrap gap-2">
               <button
-                v-for="sh in ['pagi', 'sore', 'sekolah']"
-                :key="sh"
+                v-for="sh in izinShiftOptions"
+                :key="sh.id"
                 type="button"
-                @click="toggleIzinShift(sh)"
+                @click="toggleIzinShift(sh.id)"
                 :class="[
                   'px-3 py-1.5 text-xs font-bold rounded-lg border transition cursor-pointer',
-                  izinForm.shifts.includes(sh)
+                  izinForm.shifts.includes(sh.id)
                     ? 'bg-cyan-600 text-white border-cyan-600'
                     : 'bg-[var(--bg-card-elevated)] text-[var(--text-secondary)] border-[var(--border-default)]'
                 ]"
               >
-                {{ sh.charAt(0).toUpperCase() + sh.slice(1) }}
+                {{ sh.label }}
               </button>
+              <span
+                v-if="!izinShiftOptions.length"
+                class="text-[11px] text-[var(--text-tertiary)] italic"
+                >Belum ada shift pada data guru.</span
+              >
             </div>
           </div>
           <div>
@@ -674,8 +679,19 @@ import { useToast } from '@/composables/useToast'
 import { isKepalaLembaga } from '@/utils/roleScope'
 import { useDesktopShell } from '@/composables/useDesktopShell'
 import { useIzinGuru } from '@/composables/useIzinGuru' // v.100d: izin/sakit mandiri
+import { useSettingsStore } from '@/stores/settings'
+import { shiftsForGuru } from '@/utils/shiftDerive'
+import { shiftLabelOf } from '@/utils/shiftMaster'
 
 const auth = useAuthStore()
+const settingsStore = useSettingsStore()
+// v.1.1.x: shift picker izin/cuti ikut shift MILIK guru (termasuk shift custom),
+//   bukan lagi hardcode pagi/sore/sekolah.
+const izinShiftOptions = computed(() => {
+  const s = settingsStore.settings || {}
+  const g = guru.value || auth.sesiAktif || {}
+  return [...shiftsForGuru(g, s)].map((id) => ({ id, label: shiftLabelOf(s, id) }))
+})
 const { isElectron: isDesktop } = useDesktopShell()
 const guru = ref(null)
 const slipRaw = ref([])
