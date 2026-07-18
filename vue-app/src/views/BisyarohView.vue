@@ -773,6 +773,9 @@ import {
 import { shiftsForGuru } from '@/utils/shiftDerive'
 import { shiftLabelOf } from '@/utils/shiftMaster'
 import { materialisasiHadirIkut } from '@/utils/absensiMaterialize'
+import { jpByLembagaForGuru } from '@/utils/bebanMengajar'
+import { hariKerjaCount } from '@/utils/hariKerja'
+import { useKegiatan } from '@/composables/useKegiatan'
 import { useAuthStore } from '@/stores/auth'
 import { isSuperAdmin } from '@/utils/roleScope'
 import { writeAuditLog } from '@/utils/auditLog'
@@ -865,6 +868,29 @@ function hitungGlondonganGuru(guruId, guruNama, periode, settings) {
 }
 const auth = useAuthStore()
 const settingsStore = useSettingsStore()
+// v.1.1.x: event libur (multi-day) → Set 'YYYY-MM-DD' utk denominator hari kerja (prorata per_jp).
+const { kegiatanRaw } = useKegiatan()
+const liburEventSet = computed(() => {
+  const set = new Set()
+  for (const k of kegiatanRaw.value || []) {
+    if (k.tipe !== 'libur' && k.tipe !== 'libur_nasional') continue
+    const start = k.tgl_mulai
+    const end = k.tgl_akhir || k.tgl_mulai
+    if (!start) continue
+    const sd = new Date(start)
+    const ed = new Date(end)
+    if (isNaN(sd.getTime()) || isNaN(ed.getTime())) continue
+    const cur = new Date(sd)
+    while (cur <= ed) {
+      const y = cur.getFullYear()
+      const m = String(cur.getMonth() + 1).padStart(2, '0')
+      const d = String(cur.getDate()).padStart(2, '0')
+      set.add(`${y}-${m}-${d}`)
+      cur.setDate(cur.getDate() + 1)
+    }
+  }
+  return set
+})
 // v.21.99.0527: super_admin only — hapus slip bisyaroh (koreksi data)
 const isAdmin = computed(() => isSuperAdmin(auth.sesiAktif))
 
@@ -1332,6 +1358,24 @@ function hadirPerShiftGuru(guruId, periode) {
   return out
 }
 
+// v.1.1.x: faktor prorata bisyaroh sekolah (per_jp) = (hadir+terlambat shift 'sekolah')
+//   ÷ hari kerja periode. Hanya hadir+terlambat (izin/sakit/cuti/alpa mengurangi). Cap 1.
+//   Numerator pakai shift id 'sekolah' (shift sekolah bawaan).
+function faktorHadirSekolah(g, periode) {
+  const [y, m] = String(periode).split('-').map(Number)
+  if (!y || !m) return 1
+  const hadir = Number(hadirPerShiftGuru(g.id, periode).sekolah || 0)
+  const s = settingsStore.settings || {}
+  const akhir = `${y}-${String(m).padStart(2, '0')}-${String(new Date(y, m, 0).getDate()).padStart(2, '0')}`
+  const hk = hariKerjaCount(`${periode}-01`, akhir, {
+    liburJumat: s.liburJumat,
+    hariLiburList: Array.isArray(s.hariLibur) ? s.hariLibur : [],
+    liburEventSet: liburEventSet.value,
+    todayIso: new Date().toISOString().slice(0, 10)
+  })
+  return Math.min(1, hadir / Math.max(hk, 1))
+}
+
 // v.1.1.9: konteks pencocokan scope 1 guru — tempat tugas + shift + kehadiran.
 function ctxGuru(g, periode) {
   const s = settingsStore.settings || {}
@@ -1344,7 +1388,10 @@ function ctxGuru(g, periode) {
       g
     ),
     shiftIds: shiftsForGuru(g, s),
-    hadirPerShift: hadirPerShiftGuru(g.id, periode)
+    hadirPerShift: hadirPerShiftGuru(g.id, periode),
+    // per_jp (bisyaroh sekolah): JP per lembaga + faktor prorata kehadiran sekolah.
+    bebanJPByLembaga: jpByLembagaForGuru(s, g.id),
+    faktorHadirSekolah: faktorHadirSekolah(g, periode)
   }
 }
 
@@ -1357,7 +1404,12 @@ function buildLineItemsFromGuru(g, periode) {
   const items = barisBisyaroh(jenis, ctxGuru(g, periode)).map((b) => ({
     kategori: b.kategori,
     lembaga: b.lembaga,
-    label: b.hitungan === 'per_hadir' ? `${b.label} (${b.qty}× ${fmtRp(b.tarif)})` : b.label,
+    label:
+      b.hitungan === 'per_hadir'
+        ? `${b.label} (${b.qty}× ${fmtRp(b.tarif)})`
+        : b.hitungan === 'per_jp'
+          ? `${b.label} (${b.qty} JP × ${fmtRp(b.tarif)} × ${Math.round((b.faktor ?? 1) * 100)}%)`
+          : b.label,
     nominal: b.nominal,
     jenis_id: b.jenis_id
   }))
