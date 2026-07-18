@@ -698,6 +698,13 @@
           </p>
         </div>
         <div class="flex items-center gap-2">
+          <button
+            @click="unduhTemplateBeban"
+            type="button"
+            class="inline-flex items-center gap-1.5 border border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-elevated)] font-bold px-3 py-2 rounded-lg text-xs"
+          >
+            <i class="fas fa-file-download"></i>Template
+          </button>
           <label
             class="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-2 rounded-lg text-xs cursor-pointer"
             :class="imporBebanBusy ? 'opacity-50 pointer-events-none' : ''"
@@ -2220,6 +2227,38 @@ function hapusBeban(idx) {
   if (!confirm(`Hapus beban ${namaGuruById(b.guru_id)} — ${b.mapel || b.lembaga} (${b.jp} JP)?`))
     return
   bebanMengajarList.value.splice(idx, 1)
+}
+const BEBAN_COLS = [
+  { key: 'guru_id', header: 'Guru ID', width: 12 },
+  { key: 'nama', header: 'Nama', width: 28 },
+  { key: 'lembaga', header: 'Lembaga', width: 14 },
+  { key: 'mapel', header: 'Mapel', width: 24 },
+  { key: 'jp', header: 'JP', width: 8 }
+]
+async function unduhTemplateBeban() {
+  // Contoh format — 1 baris = 1 guru + 1 mapel + JP. Isi guru_id ATAU nama (persis).
+  const contoh = [
+    {
+      guru_id: '',
+      nama: '(nama guru persis / atau isi Guru ID)',
+      lembaga: 'SDI',
+      mapel: 'Matematika',
+      jp: 10
+    },
+    {
+      guru_id: '',
+      nama: '(nama guru persis / atau isi Guru ID)',
+      lembaga: 'SDI',
+      mapel: 'IPA',
+      jp: 8
+    }
+  ]
+  await exportSimple(contoh, {
+    filename: 'Template_Beban_Mengajar.xlsx',
+    sheetName: 'Beban',
+    columns: BEBAN_COLS,
+    title: 'TEMPLATE BEBAN MENGAJAR — 1 baris = 1 guru + 1 mapel + JP (isi guru_id ATAU nama)'
+  })
 }
 async function exportBebanExcel() {
   const rows = bebanMengajarList.value.map((b) => ({

@@ -670,11 +670,43 @@
           </p>
         </div>
         <div
+          v-if="canHapusAbsen && filteredAbsensi.length"
+          class="bg-[var(--bg-card)] rounded-xl p-2.5 border border-[var(--border-subtle)] shadow-sm flex flex-wrap items-center gap-3 justify-between"
+        >
+          <label
+            class="inline-flex items-center gap-2 text-xs font-bold text-[var(--text-secondary)] cursor-pointer"
+          >
+            <input
+              type="checkbox"
+              :checked="allAbsenSelected"
+              @change="toggleSelectAllAbsen"
+              class="w-4 h-4 accent-rose-600"
+            />
+            Pilih semua ({{ filteredAbsensi.length }})
+          </label>
+          <button
+            @click="hapusTerpilihAbsen"
+            :disabled="!selectedAbsen.size || bulkDeleting"
+            class="inline-flex items-center gap-1.5 bg-rose-600 hover:bg-rose-700 disabled:opacity-40 text-white text-xs font-bold px-3 py-2 rounded-lg cursor-pointer"
+          >
+            <i :class="['fas', bulkDeleting ? 'fa-spinner fa-spin' : 'fa-trash']"></i>
+            Hapus Terpilih ({{ selectedAbsen.size }})
+          </button>
+        </div>
+        <div
           v-for="a in filteredAbsensi"
           :key="a.id"
           class="bg-[var(--bg-card)] rounded-xl p-3 border border-[var(--border-subtle)] shadow-sm"
         >
           <div class="flex items-center gap-3">
+            <input
+              v-if="canHapusAbsen"
+              type="checkbox"
+              :checked="selectedAbsen.has(a.id)"
+              @change="toggleSelectAbsen(a.id)"
+              class="w-4 h-4 accent-rose-600 flex-shrink-0"
+              title="Pilih untuk hapus massal"
+            />
             <div
               :class="[
                 'flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold text-[11px]',
@@ -1039,6 +1071,52 @@ async function hapusAbsen(a) {
     toast.success('Catatan absen dihapus')
   } catch (e) {
     toast.error('Gagal hapus: ' + (e.message || e))
+  }
+}
+
+// Hapus massal riwayat absen (super_admin). Pilihan via checkbox di kartu Riwayat.
+const selectedAbsen = ref(new Set())
+const bulkDeleting = ref(false)
+const allAbsenSelected = computed(
+  () =>
+    filteredAbsensi.value.length > 0 &&
+    filteredAbsensi.value.every((a) => selectedAbsen.value.has(a.id))
+)
+function toggleSelectAbsen(id) {
+  if (selectedAbsen.value.has(id)) selectedAbsen.value.delete(id)
+  else selectedAbsen.value.add(id)
+}
+function toggleSelectAllAbsen() {
+  if (allAbsenSelected.value) selectedAbsen.value.clear()
+  else for (const a of filteredAbsensi.value) selectedAbsen.value.add(a.id)
+}
+async function hapusTerpilihAbsen() {
+  if (!canHapusAbsen.value || !selectedAbsen.value.size) return
+  const ids = [...selectedAbsen.value]
+  if (
+    !confirm(`Hapus ${ids.length} catatan absen terpilih?\n\nTindakan ini tidak bisa dibatalkan.`)
+  )
+    return
+  bulkDeleting.value = true
+  let ok = 0
+  let gagal = 0
+  try {
+    for (const id of ids) {
+      try {
+        await deleteOne('absensi_shift_guru', id, {
+          alasan: 'Hapus massal riwayat absen (super_admin)'
+        })
+        selectedAbsen.value.delete(id)
+        ok++
+      } catch {
+        gagal++
+      }
+    }
+    toast[gagal ? 'warning' : 'success'](
+      `${ok} catatan absen dihapus${gagal ? `, ${gagal} gagal` : ''}`
+    )
+  } finally {
+    bulkDeleting.value = false
   }
 }
 // v.21.114.0528: kegiatan composable utk derive hari libur dari event multi-day
