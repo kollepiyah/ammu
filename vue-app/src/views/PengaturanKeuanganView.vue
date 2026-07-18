@@ -652,6 +652,68 @@
                 </button>
               </div>
             </div>
+            <div>
+              <label class="text-[10px] font-bold text-[var(--text-secondary)] mb-1 block"
+                >Per Orang (guru)</label
+              >
+              <div class="grid grid-cols-2 gap-1.5 mb-1.5">
+                <button
+                  type="button"
+                  @click="semuaGuruJb"
+                  :class="[
+                    'py-1.5 rounded-lg text-xs font-bold border transition',
+                    (dlgJb.scope.guru_ids || []).length === 0
+                      ? 'bg-teal-600 text-white border-teal-600'
+                      : 'border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-elevated)]'
+                  ]"
+                >
+                  Semua (ikut scope di atas)
+                </button>
+                <button
+                  type="button"
+                  @click="dlgJbPilihGuru = true"
+                  :class="[
+                    'py-1.5 rounded-lg text-xs font-bold border transition',
+                    (dlgJb.scope.guru_ids || []).length > 0
+                      ? 'bg-teal-600 text-white border-teal-600'
+                      : 'border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-elevated)]'
+                  ]"
+                >
+                  Orang tertentu ({{ (dlgJb.scope.guru_ids || []).length }})
+                </button>
+              </div>
+              <div v-if="(dlgJb.scope.guru_ids || []).length > 0 || dlgJbPilihGuru">
+                <input
+                  v-model="dlgJbGuruSearch"
+                  type="text"
+                  placeholder="Cari nama guru/pegawai…"
+                  class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)] mb-1.5"
+                />
+                <div
+                  class="max-h-44 overflow-y-auto space-y-0.5 border border-[var(--border-subtle)] rounded-lg p-1.5"
+                >
+                  <label
+                    v-for="g in dlgJbGuruCari"
+                    :key="g.id"
+                    class="flex items-center gap-2 text-xs cursor-pointer px-2 py-1.5 rounded hover:bg-[var(--bg-card-elevated)]"
+                  >
+                    <input
+                      type="checkbox"
+                      :checked="(dlgJb.scope.guru_ids || []).map(String).includes(String(g.id))"
+                      @change="toggleGuruJb(g.id)"
+                      class="w-4 h-4 accent-teal-600"
+                    />
+                    <span class="font-bold text-[var(--text-primary)] truncate">{{ g.nama }}</span>
+                    <span class="text-[10px] text-[var(--text-tertiary)] ml-auto">{{
+                      g.lembaga || g.lembaga_sekolah || '-'
+                    }}</span>
+                  </label>
+                </div>
+                <p class="text-[10px] text-[var(--text-tertiary)] italic mt-1">
+                  Kosongkan semua centang = "Semua" (pakai scope jabatan/lembaga/shift di atas).
+                </p>
+              </div>
+            </div>
             <label class="flex items-center gap-2 text-xs font-bold cursor-pointer pt-1">
               <input type="checkbox" v-model="dlgJb.aktif" class="w-4 h-4 accent-teal-600" />
               Aktif — ikut dihitung saat generate slip
@@ -2120,16 +2182,50 @@ const tumpangTindihJenis = computed(() =>
   cekTumpangTindih(jenisBisyarohList.value, new Set(shiftScopeOptions.value.map((s) => s.id)))
 )
 
+// v.1.1.x: scope per-orang (guru tertentu) utk Jenis Bisyaroh. Kosong = pakai scope lain.
+const dlgJbPilihGuru = ref(false)
+const dlgJbGuruSearch = ref('')
+const dlgJbGuruCari = computed(() => {
+  const kw = String(dlgJbGuruSearch.value || '')
+    .trim()
+    .toLowerCase()
+  let list = (guruRaw.value || []).filter(
+    (g) => String(g.status || 'Aktif').toLowerCase() === 'aktif'
+  )
+  if (kw)
+    list = list.filter((g) =>
+      String(g.nama || '')
+        .toLowerCase()
+        .includes(kw)
+    )
+  return list.sort((a, b) => String(a.nama || '').localeCompare(String(b.nama || ''))).slice(0, 80)
+})
+function toggleGuruJb(guruId) {
+  const sid = String(guruId)
+  const cur = (dlgJb.value.scope.guru_ids || []).map(String)
+  const i = cur.indexOf(sid)
+  if (i >= 0) cur.splice(i, 1)
+  else cur.push(sid)
+  dlgJb.value.scope.guru_ids = cur
+}
+function semuaGuruJb() {
+  dlgJb.value.scope.guru_ids = []
+  dlgJbPilihGuru.value = false
+}
 function openJenisBisyarohBaru() {
   dlgJbIsNew.value = true
   dlgJbIdx.value = -1
   dlgJb.value = normalizeJenisBisyaroh({ label: '', hitungan: 'flat', nominal: 0, aktif: true })
+  dlgJbPilihGuru.value = false
+  dlgJbGuruSearch.value = ''
   dlgJbOpen.value = true
 }
 function openJenisBisyarohDialog(j, idx) {
   dlgJbIsNew.value = false
   dlgJbIdx.value = idx
   dlgJb.value = normalizeJenisBisyaroh(JSON.parse(JSON.stringify(j)))
+  dlgJbPilihGuru.value = false
+  dlgJbGuruSearch.value = ''
   dlgJbOpen.value = true
 }
 function toggleScope(kunci, nilai) {

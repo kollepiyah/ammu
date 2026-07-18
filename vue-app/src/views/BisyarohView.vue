@@ -1387,6 +1387,7 @@ function ctxGuru(g, periode) {
       }),
       g
     ),
+    guruId: String(g.id),
     shiftIds: shiftsForGuru(g, s),
     hadirPerShift: hadirPerShiftGuru(g.id, periode),
     // per_jp (bisyaroh sekolah): JP per lembaga + faktor prorata kehadiran sekolah.

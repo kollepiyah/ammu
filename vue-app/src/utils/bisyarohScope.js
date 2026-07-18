@@ -59,7 +59,9 @@ export function normalizeJenisBisyaroh(raw) {
     scope: {
       jabatan: _arr(s.jabatan),
       lembaga: _arr(s.lembaga),
-      shift: _arr(s.shift)
+      shift: _arr(s.shift),
+      // guru_ids: batasi ke orang tertentu (kosong = semua). Filter AND dgn scope lain.
+      guru_ids: _arr(s.guru_ids)
     },
     aktif: r.aktif !== false
   }
@@ -94,6 +96,10 @@ export function refsUntukScope(refs, guru) {
 export function jenisKenaGuru(j, ctx) {
   if (!j || j.aktif === false) return false
   const s = j.scope || {}
+  // guru_ids diisi → hanya orang itu (kosong = semua). Filter paling spesifik, cek dulu.
+  if (s.guru_ids && s.guru_ids.length > 0) {
+    if (!s.guru_ids.map(String).includes(String(ctx?.guruId ?? ''))) return false
+  }
   const refs = ctx?.refs || []
   // jabatan & lembaga harus cocok pada SATU tempat tugas yang sama.
   const adaRef = refs.some(
