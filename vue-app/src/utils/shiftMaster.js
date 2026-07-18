@@ -56,10 +56,12 @@ const LEGACY_KEYS = {
 // 5 shift bawaan. `urutan` = prioritas saat 1 jam scan jatuh di >1 window —
 // URUTAN INI SENGAJA SAMA dengan konstanta SHIFT_PRIORITY lama.
 // `fallback` = shift yang jamnya dipakai bila jam sendiri dikosongkan (pegawai → guru).
+// `hadir_ikut` = shift SUMBER yang bila guru hadir di sana, otomatis meng-hadir-kan
+// shift ini (guru gabungan: 1 scan pagi → hadir sekolah juga). Default sekolah ← pagi.
 export const SHIFT_BAWAAN = [
   { id: 'pagi', label: 'Pagi', untuk: 'guru', urutan: 1, fallback: '' },
   { id: 'pegawai_pagi', label: 'Pegawai Pagi', untuk: 'pegawai', urutan: 2, fallback: 'pagi' },
-  { id: 'sekolah', label: 'Sekolah', untuk: 'guru', urutan: 3, fallback: '' },
+  { id: 'sekolah', label: 'Sekolah', untuk: 'guru', urutan: 3, fallback: '', hadir_ikut: ['pagi'] },
   { id: 'sore', label: 'Sore', untuk: 'guru', urutan: 4, fallback: '' },
   { id: 'pegawai_sore', label: 'Pegawai Sore', untuk: 'pegawai', urutan: 5, fallback: 'sore' }
 ]
@@ -85,6 +87,13 @@ export function normalizeShift(raw) {
   const id = slugShiftId(r.id || r.label || '')
   const bawaan = BAWAAN_IDS.has(id)
   const def = bawaan ? SHIFT_BAWAAN.find((b) => b.id === id) : null
+  // hadir_ikut: array eksplisit (termasuk []) DIHORMATI; bila field absen, pakai seed
+  // bawaan (data 'sekolah' lama tanpa field → ['pagi']). Self-reference dibuang.
+  // CATATAN: field pulang_default & hadir_ikut ini APP-ONLY — port Deno shiftMaster.ts
+  // sengaja tak membawanya (edge hiview hanya butuh derivasi masuk, tak baca keduanya).
+  const hadirIkut = (Array.isArray(r.hadir_ikut) ? r.hadir_ikut : def?.hadir_ikut || [])
+    .map(slugShiftId)
+    .filter((x) => x && x !== id)
   return {
     id,
     label: String(r.label || def?.label || id || '').trim(),
@@ -92,6 +101,9 @@ export function normalizeShift(raw) {
     mulai: normHHMM(r.mulai) || '',
     terlambat: normHHMM(r.terlambat) || '',
     selesai: normHHMM(r.selesai) || '',
+    // jam pulang default (opsional) utk prefill/isi-massal absen pulang — tak nge-gate hadir.
+    pulang_default: normHHMM(r.pulang_default) || '',
+    hadir_ikut: [...new Set(hadirIkut)],
     urutan: Number(r.urutan) > 0 ? Number(r.urutan) : 99,
     // fallback milik shift bawaan (pegawai → jam guru) — tak bisa diubah lewat UI.
     fallback: bawaan ? def.fallback || '' : '',
