@@ -149,6 +149,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useGuru } from '@/composables/useGuru'
 import { useLembaga, getPkbmSubTier } from '@/composables/useLembaga'
 import { useStatistikScope } from '@/composables/useStatistikScope'
+import { kelasKeyQiraati, kelasKeySekolah } from '@/utils/kelasHitung'
 import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
 import {
@@ -184,6 +185,9 @@ function guruLabelOf(g) {
   if (gp && gs) return gp === gs ? `Guru Pagi/Sore: ${gp}` : `Pagi: ${gp} · Sore: ${gs}`
   if (gp) return `Guru Pagi: ${gp}`
   if (gs) return `Guru Sore: ${gs}`
+  // Field `guru` lama (pra guru_pagi/guru_sore) — dulu tak pernah dilabeli sehingga
+  //   grupnya tampil "belum ada guru" padahal gurunya ada.
+  if (g.guruLegacy) return `Guru: ${g.guruLegacy}`
   return '— belum ada guru —'
 }
 
@@ -215,21 +219,31 @@ const groups = computed(() => {
     )
   })
   // kelas → guruKey → grup
+  // v.1.1.9: kunci grup diambil dari utils/kelasHitung (SATU fungsi dgn dasbor), bukan
+  //   dirakit di sini lagi — dulu dua tempat merakit sendiri lalu angkanya beda
+  //   (dasbor 50 vs halaman ini 38 di PTPT). Dua beda yang menyebabkannya:
+  //   (a) kunci lokal MENGABAIKAN field `guru` lama -> semua santri yang cuma punya
+  //       `guru` tergabung jadi satu grup '||' per kelas (kurang hitung);
+  //   (b) kunci lokal tak menormalkan spasi/kapital -> 'Ali' vs 'ali ' terpisah (lebih hitung).
+  //   Santri yang TAK punya kunci (tanpa guru / tanpa kelas) TETAP ditampilkan lewat
+  //   bucket cadangan supaya datanya kelihatan & bisa dibetulkan, tapi `dihitung:false`
+  //   sehingga tidak menambah angka "N kelas".
   const byKelas = new Map()
   for (const s of list) {
     const kls = (isSek ? s.kelas_sekolah || s.kelas : s.kelas) || '-'
-    let key,
-      gp = '',
+    const kunci = isSek ? kelasKeySekolah(s) : kelasKeyQiraati(s)
+    let gp = '',
       gs = '',
+      gLegacy = '',
       gsek = []
     if (isSek) {
       gsek = (Array.isArray(s.guru_sekolah) ? s.guru_sekolah : []).filter(Boolean)
-      key = gsek.slice().sort().join(' & ') || '—'
     } else {
       gp = s.guru_pagi || ''
       gs = s.guru_sore || ''
-      key = gp + '||' + gs
+      if (!gp && !gs) gLegacy = s.guru || ''
     }
+    const key = kunci || `__lain__|${kls}|${gp}||${gs}|${gsek.slice().sort().join(' & ')}`
     if (!byKelas.has(kls)) byKelas.set(kls, new Map())
     const gmap = byKelas.get(kls)
     if (!gmap.has(key))
@@ -238,17 +252,17 @@ const groups = computed(() => {
         key: kls + '#' + key,
         guruPagi: gp,
         guruSore: gs,
+        guruLegacy: gLegacy,
         guruSekolah: gsek,
+        dihitung: !!kunci,
         santri: []
       })
-    gmap
-      .get(key)
-      .santri.push({
-        id: String(s.id),
-        nama: s.nama || '-',
-        juz: s.juz && s.juz !== '-' ? s.juz : '',
-        capaian: s.prestasi_total || ''
-      })
+    gmap.get(key).santri.push({
+      id: String(s.id),
+      nama: s.nama || '-',
+      juz: s.juz && s.juz !== '-' ? s.juz : '',
+      capaian: s.prestasi_total || ''
+    })
   }
   const out = []
   const kelasKeys = [...byKelas.keys()].sort((a, b) =>
@@ -269,8 +283,9 @@ const groups = computed(() => {
 
 const totalSantri = computed(() => groups.value.reduce((n, g) => n + g.santri.length, 0))
 // v.1.1.9: kelas = 1 ROMBEL = 1 grup (kelas x pasangan guru), bukan kelas jenjang.
-//   `groups` sudah dikelompokkan begitu, jadi badge ini = jumlah tabel di ekspor PDF.
-const kelasCount = computed(() => groups.value.length)
+//   Hanya grup ber-kunci sah yang dihitung (grup "belum ada guru" tetap TAMPIL agar
+//   datanya bisa dibetulkan, tapi tak menambah angka) — supaya sama persis dgn dasbor.
+const kelasCount = computed(() => groups.value.filter((g) => g.dihitung).length)
 const totalGuru = computed(() => {
   const set = new Set()
   for (const g of groups.value) {
@@ -278,6 +293,9 @@ const totalGuru = computed(() => {
     else {
       if (g.guruPagi) set.add(g.guruPagi)
       if (g.guruSore) set.add(g.guruSore)
+      // v.1.1.9: field `guru` lama ikut dihitung — dulu terlewat sehingga jumlah
+      //   guru di halaman ini lebih kecil dari kenyataan.
+      if (g.guruLegacy) set.add(g.guruLegacy)
     }
   }
   return set.size
