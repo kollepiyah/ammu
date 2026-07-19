@@ -56,7 +56,9 @@
     >
       <div class="flex items-center justify-between mb-2">
         <h4 class="text-sm font-black text-[var(--text-primary)]">
-          <i class="fas fa-door-open text-cyan-600 mr-1"></i>Rincian Kelas Total ({{ kelasCount }})
+          <i class="fas fa-door-open text-cyan-600 mr-1"></i>Rincian Guru &times; Kelas ({{
+            kelasDetail.length
+          }})
         </h4>
         <div class="flex items-center gap-2">
           <button
@@ -77,7 +79,9 @@
         </div>
       </div>
       <p class="text-[11px] text-[var(--text-secondary)] mb-2">
-        1 baris = kombinasi <b>guru x lembaga x kelas</b> (santri aktif yg punya guru).
+        1 baris = kombinasi <b>guru x lembaga x kelas</b> (santri aktif yg punya guru) — daftar ini
+        untuk melacak guru yatim, jadi tiap guru dipisah. KPI <b>Kelas Total</b> di atas berbeda:
+        pasangan guru pagi+sore dihitung <b>1 kelas</b>.
         <span class="text-rose-600 font-bold">guru yatim</span> = guru tak ada di daftar guru aktif,
         kemungkinan SAMPAH (santri masih nyantol ke guru lama/terhapus). Perbaiki: edit santri tsb
         ganti gurunya, atau hapus santri sampah.
@@ -176,6 +180,7 @@ import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
 import { isFullFilterRole } from '@/utils/roleScope'
 import { useStatistikScope } from '@/composables/useStatistikScope'
+import { hitungKelas } from '@/utils/kelasHitung'
 
 // v.103: section = 'all' (default) | 'kpi' (KPI + diagnostik) | 'lembaga' (grid + bar).
 //   Dipakai LaporanView utk menaruh KPI di ATAS chart & breakdown lembaga di BAWAH chart.
@@ -219,46 +224,10 @@ const lembagaCount = computed(() => {
   return set.size
 })
 
-// v.87.0526: Kelas = DISTINCT (guru × lembaga × kelas) dari santri yg punya guru.
-const kelasCount = computed(() => {
-  const set = new Set()
-  for (const s of scopedSantriAll.value) {
-    if (s.aktif === false) continue
-    const lembNgaji = String(s.lembaga || '')
-      .trim()
-      .toLowerCase()
-    const kelasNgaji = String(s.kelas || '')
-      .trim()
-      .toLowerCase()
-    if (lembNgaji && kelasNgaji) {
-      const guruNgaji = [s.guru_pagi, s.guru_sore, s.guru]
-        .map((g) =>
-          String(g || '')
-            .trim()
-            .toLowerCase()
-        )
-        .filter(Boolean)
-      for (const g of guruNgaji) set.add(`${g}|${lembNgaji}|${kelasNgaji}`)
-    }
-    const lembSek = String(s.lembaga_sekolah || '')
-      .trim()
-      .toLowerCase()
-    const kelasSek = String(s.kelas_sekolah || '')
-      .trim()
-      .toLowerCase()
-    if (lembSek && kelasSek) {
-      const guruSek = (Array.isArray(s.guru_sekolah) ? s.guru_sekolah : [])
-        .map((g) =>
-          String(g || '')
-            .trim()
-            .toLowerCase()
-        )
-        .filter(Boolean)
-      for (const g of guruSek) set.add(`${g}|${lembSek}|${kelasSek}`)
-    }
-  }
-  return set.size
-})
+// v.1.1.9: kelas = 1 ROMBEL per (pasangan) guru — guru_pagi+guru_sore sepasang = 1 kelas.
+//   Dulu tiap guru dihitung sendiri sehingga 1 rombel pagi+sore terhitung 2.
+//   Definisi tunggal di utils/kelasHitung.js.
+const kelasCount = computed(() => hitungKelas(scopedSantriAll.value))
 
 const totalSantriDisplay = computed(() => santriAktif.value)
 const labelSantri = computed(() =>

@@ -17,9 +17,18 @@
       </p>
       <h2 class="text-xl md:text-2xl font-black mt-1">{{ namaLembaga }}</h2>
       <div class="flex flex-wrap items-center gap-2 mt-3">
-        <span class="bg-white/20 backdrop-blur-sm text-white text-[11px] font-black px-3 py-1 rounded-full">{{ kelasCount }} kelas</span>
-        <span class="bg-white/20 backdrop-blur-sm text-white text-[11px] font-black px-3 py-1 rounded-full">{{ totalSantri }} santri</span>
-        <span class="bg-white/20 backdrop-blur-sm text-white text-[11px] font-black px-3 py-1 rounded-full">{{ totalGuru }} guru</span>
+        <span
+          class="bg-white/20 backdrop-blur-sm text-white text-[11px] font-black px-3 py-1 rounded-full"
+          >{{ kelasCount }} kelas</span
+        >
+        <span
+          class="bg-white/20 backdrop-blur-sm text-white text-[11px] font-black px-3 py-1 rounded-full"
+          >{{ totalSantri }} santri</span
+        >
+        <span
+          class="bg-white/20 backdrop-blur-sm text-white text-[11px] font-black px-3 py-1 rounded-full"
+          >{{ totalGuru }} guru</span
+        >
         <button
           v-if="groups.length"
           @click="exportPdf"
@@ -37,7 +46,9 @@
       class="bg-[var(--bg-card)] rounded-2xl p-10 text-center border border-dashed border-[var(--border-default)]"
     >
       <i class="fas fa-inbox text-[var(--text-tertiary)] text-3xl mb-2"></i>
-      <p class="text-sm text-[var(--text-secondary)] italic">Belum ada santri aktif di lembaga ini.</p>
+      <p class="text-sm text-[var(--text-secondary)] italic">
+        Belum ada santri aktif di lembaga ini.
+      </p>
     </div>
 
     <!-- Per kelas → per pasangan guru -->
@@ -47,7 +58,9 @@
       class="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)] shadow-sm overflow-hidden"
     >
       <!-- Header grup -->
-      <div class="flex items-center justify-between gap-2 flex-wrap p-3 md:p-4 bg-[var(--bg-muted)] border-b border-[var(--border-subtle)]">
+      <div
+        class="flex items-center justify-between gap-2 flex-wrap p-3 md:p-4 bg-[var(--bg-muted)] border-b border-[var(--border-subtle)]"
+      >
         <div class="min-w-0">
           <h3 class="text-sm md:text-base font-black text-[var(--text-primary)]">
             <i class="fas fa-door-open text-teal-600 mr-1.5"></i>{{ kelasLabel }} {{ g.kelas }}
@@ -56,7 +69,9 @@
             <i class="fas fa-chalkboard-teacher mr-1"></i>{{ g.guruLabel }}
           </p>
         </div>
-        <span class="text-[11px] font-black text-[var(--text-secondary)] bg-[var(--bg-card)] px-2.5 py-1 rounded-full border border-[var(--border-subtle)] flex-shrink-0">
+        <span
+          class="text-[11px] font-black text-[var(--text-secondary)] bg-[var(--bg-card)] px-2.5 py-1 rounded-full border border-[var(--border-subtle)] flex-shrink-0"
+        >
           Total Santri: {{ g.santri.length }}
         </span>
       </div>
@@ -65,7 +80,9 @@
       <div class="hidden md:block overflow-x-auto">
         <table class="w-full text-xs">
           <thead>
-            <tr class="text-left text-[var(--text-secondary)] border-b border-[var(--border-subtle)]">
+            <tr
+              class="text-left text-[var(--text-secondary)] border-b border-[var(--border-subtle)]"
+            >
               <th class="px-3 py-2 font-black w-10">No</th>
               <th class="px-3 py-2 font-black">Nama Santri</th>
               <th v-if="isJuz" class="px-3 py-2 font-black w-16 text-center">Juz</th>
@@ -80,7 +97,12 @@
             >
               <td class="px-3 py-2 text-[var(--text-tertiary)] font-bold">{{ i + 1 }}.</td>
               <td class="px-3 py-2">
-                <button @click="goSantri(s.id)" class="font-bold text-[var(--text-primary)] hover:text-teal-600 hover:underline text-left cursor-pointer">{{ s.nama }}</button>
+                <button
+                  @click="goSantri(s.id)"
+                  class="font-bold text-[var(--text-primary)] hover:text-teal-600 hover:underline text-left cursor-pointer"
+                >
+                  {{ s.nama }}
+                </button>
               </td>
               <td v-if="isJuz" class="px-3 py-2 text-center font-bold">{{ s.juz || '-' }}</td>
               <td class="px-3 py-2 text-[var(--text-secondary)]">{{ s.capaian || '-' }}</td>
@@ -96,14 +118,21 @@
             @click="goSantri(s.id)"
             class="w-full flex items-center gap-3 px-4 py-3 text-left active:bg-teal-50/60 dark:active:bg-teal-900/20 transition"
           >
-            <span class="text-[11px] font-black text-[var(--text-tertiary)] w-5 flex-shrink-0">{{ i + 1 }}</span>
+            <span class="text-[11px] font-black text-[var(--text-tertiary)] w-5 flex-shrink-0">{{
+              i + 1
+            }}</span>
             <span class="flex-1 min-w-0">
-              <span class="block text-sm font-bold text-[var(--text-primary)] truncate">{{ s.nama }}</span>
+              <span class="block text-sm font-bold text-[var(--text-primary)] truncate">{{
+                s.nama
+              }}</span>
               <span class="block text-[11px] text-[var(--text-secondary)] mt-0.5">
-                Capaian: {{ s.capaian || '-' }}<template v-if="isJuz"> &middot; Juz {{ s.juz || '-' }}</template>
+                Capaian: {{ s.capaian || '-'
+                }}<template v-if="isJuz"> &middot; Juz {{ s.juz || '-' }}</template>
               </span>
             </span>
-            <i class="fas fa-chevron-right text-[11px] text-[var(--text-tertiary)] flex-shrink-0"></i>
+            <i
+              class="fas fa-chevron-right text-[11px] text-[var(--text-tertiary)] flex-shrink-0"
+            ></i>
           </button>
         </li>
       </ul>
@@ -123,7 +152,13 @@ import { useStatistikScope } from '@/composables/useStatistikScope'
 import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
 import {
-  createPdf, drawKopLetterhead, drawTable, drawTitle, lastTableY, savePdf, buildKopFromSettings
+  createPdf,
+  drawKopLetterhead,
+  drawTable,
+  drawTitle,
+  lastTableY,
+  savePdf,
+  buildKopFromSettings
 } from '@/utils/pdfBuilder'
 
 const route = useRoute()
@@ -144,7 +179,8 @@ const kelasLabel = 'Kelas'
 // Label grup guru: Qiraati = pasangan pagi/sore; Sekolah = daftar guru_sekolah.
 function guruLabelOf(g) {
   if (g.guruSekolah && g.guruSekolah.length) return 'Guru: ' + g.guruSekolah.join(', ')
-  const gp = g.guruPagi, gs = g.guruSore
+  const gp = g.guruPagi,
+    gs = g.guruSore
   if (gp && gs) return gp === gs ? `Guru Pagi/Sore: ${gp}` : `Pagi: ${gp} · Sore: ${gs}`
   if (gp) return `Guru Pagi: ${gp}`
   if (gs) return `Guru Sore: ${gs}`
@@ -159,17 +195,33 @@ const groups = computed(() => {
   const isSek = isSekolah.value
   const list = (scopedSantriAll.value || []).filter((s) => {
     if (s.aktif === false) return false
-    if (!isSek) return String(s.lembaga || '').trim().toLowerCase() === nm.toLowerCase()
+    if (!isSek)
+      return (
+        String(s.lembaga || '')
+          .trim()
+          .toLowerCase() === nm.toLowerCase()
+      )
     if (up === 'SMP' || up === 'SMA') {
-      return String(s.lembaga_sekolah || '').trim().toUpperCase() === 'PKBM' && getPkbmSubTier(s.kelas_sekolah || s.kelas) === up
+      return (
+        String(s.lembaga_sekolah || '')
+          .trim()
+          .toUpperCase() === 'PKBM' && getPkbmSubTier(s.kelas_sekolah || s.kelas) === up
+      )
     }
-    return String(s.lembaga_sekolah || '').trim().toUpperCase() === up
+    return (
+      String(s.lembaga_sekolah || '')
+        .trim()
+        .toUpperCase() === up
+    )
   })
   // kelas → guruKey → grup
   const byKelas = new Map()
   for (const s of list) {
     const kls = (isSek ? s.kelas_sekolah || s.kelas : s.kelas) || '-'
-    let key, gp = '', gs = '', gsek = []
+    let key,
+      gp = '',
+      gs = '',
+      gsek = []
     if (isSek) {
       gsek = (Array.isArray(s.guru_sekolah) ? s.guru_sekolah : []).filter(Boolean)
       key = gsek.slice().sort().join(' & ') || '—'
@@ -180,13 +232,32 @@ const groups = computed(() => {
     }
     if (!byKelas.has(kls)) byKelas.set(kls, new Map())
     const gmap = byKelas.get(kls)
-    if (!gmap.has(key)) gmap.set(key, { kelas: kls, key: kls + '#' + key, guruPagi: gp, guruSore: gs, guruSekolah: gsek, santri: [] })
-    gmap.get(key).santri.push({ id: String(s.id), nama: s.nama || '-', juz: s.juz && s.juz !== '-' ? s.juz : '', capaian: s.prestasi_total || '' })
+    if (!gmap.has(key))
+      gmap.set(key, {
+        kelas: kls,
+        key: kls + '#' + key,
+        guruPagi: gp,
+        guruSore: gs,
+        guruSekolah: gsek,
+        santri: []
+      })
+    gmap
+      .get(key)
+      .santri.push({
+        id: String(s.id),
+        nama: s.nama || '-',
+        juz: s.juz && s.juz !== '-' ? s.juz : '',
+        capaian: s.prestasi_total || ''
+      })
   }
   const out = []
-  const kelasKeys = [...byKelas.keys()].sort((a, b) => String(a).localeCompare(String(b), 'id', { numeric: true }))
+  const kelasKeys = [...byKelas.keys()].sort((a, b) =>
+    String(a).localeCompare(String(b), 'id', { numeric: true })
+  )
   for (const k of kelasKeys) {
-    const grps = [...byKelas.get(k).values()].sort((a, b) => guruLabelOf(a).localeCompare(guruLabelOf(b), 'id'))
+    const grps = [...byKelas.get(k).values()].sort((a, b) =>
+      guruLabelOf(a).localeCompare(guruLabelOf(b), 'id')
+    )
     for (const g of grps) {
       g.guruLabel = guruLabelOf(g)
       g.santri.sort((a, b) => String(a.nama).localeCompare(String(b.nama), 'id'))
@@ -197,12 +268,17 @@ const groups = computed(() => {
 })
 
 const totalSantri = computed(() => groups.value.reduce((n, g) => n + g.santri.length, 0))
-const kelasCount = computed(() => new Set(groups.value.map((g) => g.kelas)).size)
+// v.1.1.9: kelas = 1 ROMBEL = 1 grup (kelas x pasangan guru), bukan kelas jenjang.
+//   `groups` sudah dikelompokkan begitu, jadi badge ini = jumlah tabel di ekspor PDF.
+const kelasCount = computed(() => groups.value.length)
 const totalGuru = computed(() => {
   const set = new Set()
   for (const g of groups.value) {
     if (g.guruSekolah && g.guruSekolah.length) g.guruSekolah.forEach((x) => set.add(x))
-    else { if (g.guruPagi) set.add(g.guruPagi); if (g.guruSore) set.add(g.guruSore) }
+    else {
+      if (g.guruPagi) set.add(g.guruPagi)
+      if (g.guruSore) set.add(g.guruSore)
+    }
   }
   return set.size
 })
@@ -225,10 +301,15 @@ async function exportPdf() {
       ? [['No', 'Nama Santri', 'Juz', 'Total Capaian Terakhir']]
       : [['No', 'Nama Santri', 'Total Capaian Terakhir']]
     for (const g of groups.value) {
-      if (y > pageH - 35) { doc.addPage(); y = 15 }
-      doc.setFont(font, 'bold'); doc.setFontSize(10)
+      if (y > pageH - 35) {
+        doc.addPage()
+        y = 15
+      }
+      doc.setFont(font, 'bold')
+      doc.setFontSize(10)
       doc.text(`${kelasLabel} ${g.kelas} · ${g.guruLabel}`, 12, y)
-      doc.setFont(font, 'normal'); doc.setFontSize(9)
+      doc.setFont(font, 'normal')
+      doc.setFontSize(9)
       doc.text(`Total Santri: ${g.santri.length}`, pageW - 12, y, { align: 'right' })
       const body = g.santri.map((st, i) =>
         isJuz.value
@@ -241,7 +322,11 @@ async function exportPdf() {
         body,
         styles: { fontSize: 9, cellPadding: 1.4 },
         columnStyles: isJuz.value
-          ? { 0: { cellWidth: 12, halign: 'center' }, 2: { cellWidth: 16, halign: 'center' }, 3: { cellWidth: 42 } }
+          ? {
+              0: { cellWidth: 12, halign: 'center' },
+              2: { cellWidth: 16, halign: 'center' },
+              3: { cellWidth: 42 }
+            }
           : { 0: { cellWidth: 12, halign: 'center' }, 2: { cellWidth: 50 } }
       })
       y = lastTableY(doc) + 7
@@ -255,7 +340,9 @@ async function exportPdf() {
   }
 }
 
-function goSantri(id) { if (id) router.push(`/profil/santri/${id}`) }
+function goSantri(id) {
+  if (id) router.push(`/profil/santri/${id}`)
+}
 function goBack() {
   if (window.history.length > 1) router.back()
   else router.push('/statistik')
