@@ -853,6 +853,50 @@
           </tbody>
         </table>
       </div>
+
+      <!-- Hari Aktif Sekolah per Lembaga (penyebut prorata "× JP") -->
+      <div v-if="bebanLembagaList.length" class="mt-4 border-t border-[var(--border-subtle)] pt-3">
+        <p class="text-xs font-black text-[var(--text-primary)] mb-1">
+          <i class="fas fa-calendar-week text-teal-600 mr-1.5"></i>Hari Aktif Sekolah per Lembaga
+        </p>
+        <p class="text-[11px] text-[var(--text-secondary)] mb-2 italic">
+          Untuk prorata "× JP" — penyebut kehadiran ikut hari aktif tiap lembaga (mis. lembaga 5
+          hari). Kosong = ikut umum (semua kecuali Jumat). Libur kalender tetap dikurangi.
+        </p>
+        <div class="space-y-1.5">
+          <div
+            v-for="l in bebanLembagaList"
+            :key="'ha-' + l"
+            class="flex flex-wrap items-center gap-2 py-1.5 border-b border-[var(--border-subtle)] last:border-0"
+          >
+            <span class="text-xs font-bold text-[var(--text-primary)] min-w-[110px]">{{ l }}</span>
+            <div class="flex flex-wrap gap-1">
+              <button
+                v-for="(hl, d) in HARI_LABELS"
+                :key="l + '-' + d"
+                type="button"
+                @click="toggleHariAktif(l, d)"
+                :class="[
+                  'px-2 py-1 rounded-lg text-[11px] font-bold border transition',
+                  hariAktifArr(l).includes(d)
+                    ? 'bg-teal-600 text-white border-teal-600'
+                    : 'border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-elevated)]'
+                ]"
+              >
+                {{ hl.slice(0, 3) }}
+              </button>
+            </div>
+            <span
+              v-if="!hariAktifArr(l).length"
+              class="text-[10px] text-[var(--text-tertiary)] italic ml-1"
+              >ikut umum (kecuali Jumat)</span
+            >
+            <span v-else class="text-[10px] text-teal-700 dark:text-teal-300 font-bold ml-1"
+              >{{ hariAktifArr(l).length }} hari/minggu</span
+            >
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Dialog Tambah/Ubah Beban Mengajar -->
@@ -2295,6 +2339,30 @@ const bebanTotalJP = computed(() =>
   bebanMengajarList.value.reduce((s, b) => s + (Number(b.jp) || 0), 0)
 )
 
+// v.1.1.x: hari aktif sekolah per lembaga (getDay 0=Ahad..6=Sabtu) → penyebut prorata per_jp.
+//   settings.hariAktifLembaga = { [lembaga]: [0,1,2,3,4] }. Kosong = ikut global (kecuali Jumat).
+const hariAktifLembaga = ref({})
+const HARI_LABELS = ['Ahad', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu']
+// Lembaga yang muncul di Beban Mengajar (yang perlu diatur hari aktifnya).
+const bebanLembagaList = computed(() => {
+  const set = new Set()
+  for (const b of bebanMengajarList.value) {
+    const l = String(b.lembaga || '').trim()
+    if (l) set.add(l)
+  }
+  return [...set].sort((a, b) => a.localeCompare(b, 'id'))
+})
+function hariAktifArr(lembaga) {
+  return Array.isArray(hariAktifLembaga.value[lembaga]) ? hariAktifLembaga.value[lembaga] : []
+}
+function toggleHariAktif(lembaga, d) {
+  const cur = hariAktifArr(lembaga).slice()
+  const i = cur.indexOf(d)
+  if (i >= 0) cur.splice(i, 1)
+  else cur.push(d)
+  hariAktifLembaga.value = { ...hariAktifLembaga.value, [lembaga]: cur.sort((a, b) => a - b) }
+}
+
 function openBebanBaru() {
   dlgBebanIsNew.value = true
   dlgBebanIdx.value = -1
@@ -2510,6 +2578,8 @@ function loadFromSettings() {
         jp: Number(b.jp) || 0
       }))
     : []
+  hariAktifLembaga.value =
+    s.hariAktifLembaga && typeof s.hariAktifLembaga === 'object' ? { ...s.hariAktifLembaga } : {}
   form.keu_jatuh_tempo = s.keu_jatuh_tempo || 10
   form.keu_auto_generate_cron = s.keu_auto_generate_cron !== false // default ON
   form.posStrukPaper = s.posStrukPaper || '9.5'
@@ -3251,6 +3321,15 @@ async function simpan() {
           mapel: String(b.mapel || '').trim(),
           jp: Number(b.jp) || 0
         })),
+      // v.1.1.x: hari aktif per lembaga (penyebut prorata per_jp). Simpan yg terisi saja.
+      hariAktifLembaga: Object.fromEntries(
+        Object.entries(hariAktifLembaga.value)
+          .map(([k, v]) => [
+            k,
+            (Array.isArray(v) ? v : []).map(Number).filter((n) => n >= 0 && n <= 6)
+          ])
+          .filter(([, v]) => v.length)
+      ),
       keu_glondongan_per_juz: parseRp(form.keu_glondongan_per_juz),
       keu_kategori_masuk: form.keu_kategori_masuk.filter((t) => t.trim()),
       keu_kategori_keluar: form.keu_kategori_keluar.filter((t) => t.trim()),
