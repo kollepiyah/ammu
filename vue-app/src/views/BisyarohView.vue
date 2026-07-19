@@ -762,7 +762,7 @@ import {
   deleteOne,
   serverTimestamp
 } from '@/services/db'
-import { useLembaga } from '@/composables/useLembaga'
+import { useLembaga, canonLembaga } from '@/composables/useLembaga'
 // v.1.1.9: engine Jenis Bisyaroh + label shift dari master
 import {
   jenisBisyarohList,
@@ -771,7 +771,7 @@ import {
   ringkasSlip
 } from '@/utils/bisyarohScope'
 import { shiftsForGuru } from '@/utils/shiftDerive'
-import { shiftLabelOf } from '@/utils/shiftMaster'
+import { shiftLabelOf, shiftList } from '@/utils/shiftMaster'
 import { materialisasiHadirIkut } from '@/utils/absensiMaterialize'
 import { jpByLembagaForGuru, jpPerHariForGuru, jpDiajarPeriode } from '@/utils/bebanMengajar'
 import { tanggalRentang } from '@/utils/absensiRekap'
@@ -1376,13 +1376,26 @@ function liburSetPeriode() {
   for (const iso of liburEventSet.value || []) set.add(iso)
   return set
 }
-// Tanggal guru HADIR/terlambat di shift 'sekolah' pada periode → Set ISO.
-function tanggalHadirSekolah(guruId, periode) {
+// Shift yang dipakai sbg KEHADIRAN untuk 1 lembaga = shift yang kolom "Khusus Lembaga"-nya
+//   memuat lembaga itu (Pengaturan › Master Shift). Belum diatur → fallback id bawaan 'sekolah'
+//   supaya struktur lama tetap jalan.
+function shiftIdsUntukLembaga(lembaga) {
+  const target = canonLembaga(lembaga || '')
+  const ids = shiftList(settingsStore.settings || {})
+    .filter((sh) =>
+      (Array.isArray(sh.lembaga) ? sh.lembaga : []).some((x) => canonLembaga(x) === target)
+    )
+    .map((sh) => String(sh.id).toLowerCase())
+  return ids.length ? ids : ['sekolah']
+}
+// Tanggal guru HADIR/terlambat di shift-shift tsb pada periode → Set ISO.
+function tanggalHadirSekolah(guruId, periode, shiftIds) {
   const gid = String(guruId)
+  const ids = new Set((shiftIds && shiftIds.length ? shiftIds : ['sekolah']).map(String))
   const out = new Set()
   for (const a of absensiShift.value || []) {
     if (String(a.guru_id) !== gid) continue
-    if (String(a.shift || '').toLowerCase() !== 'sekolah') continue
+    if (!ids.has(String(a.shift || '').toLowerCase())) continue
     const st = String(a.status || '').toLowerCase()
     if (st !== 'hadir' && st !== 'terlambat') continue // izin/sakit/cuti/alpa → JP hangus
     const tgl = String(a.tanggal || '')
@@ -1399,13 +1412,13 @@ function ctxGuru(g, periode) {
   // OPSI C: JP yang benar-benar diajar per lembaga = jadwal per hari × kehadiran harian.
   const tgls = tanggalPeriode(periode)
   const libur = liburSetPeriode()
-  const hadirSet = tanggalHadirSekolah(g.id, periode)
   const jpDiajarByLembaga = {}
   for (const lem of Object.keys(bebanJP)) {
+    // Kehadiran diambil dari shift yang ber-scope lembaga ini (fallback 'sekolah').
     jpDiajarByLembaga[lem] = jpDiajarPeriode({
       jpPerHari: jpPerHariForGuru(s, g.id, lem),
       tanggalList: tgls,
-      hadirSet,
+      hadirSet: tanggalHadirSekolah(g.id, periode, shiftIdsUntukLembaga(lem)),
       liburSet: libur
     })
   }
