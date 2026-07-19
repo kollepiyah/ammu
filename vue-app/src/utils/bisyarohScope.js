@@ -27,8 +27,8 @@ export const HITUNGAN_OPTIONS = [
   { value: 'per_hadir', label: '× kehadiran', hint: 'Dikali jumlah hadir shift dari absensi' },
   {
     value: 'per_jp',
-    label: '× JP (prorata hadir)',
-    hint: 'JP mapel guru × tarif × persen kehadiran sekolah (Beban Mengajar)'
+    label: '× JP diajar',
+    hint: 'Tarif × JP yang BENAR-BENAR diajar bulan itu (jadwal mapel per hari × kehadiran)'
   },
   {
     value: 'per_shift',
@@ -186,23 +186,22 @@ export function barisBisyaroh(jenisList, ctx) {
         nominal: qty * j.nominal
       })
     } else if (j.hitungan === 'per_jp') {
-      // JP guru di lembaga tempat jenis ini cocok × tarif/JP × faktor kehadiran sekolah (prorata).
+      // Opsi C: bayar per JP yang BENAR-BENAR diajar bulan itu = jadwal mapel per hari
+      //   (Beban Mengajar) × kehadiran harian. Hari tak terjadwal tak menghukum.
       const lem = canonLembaga(ref?.lembaga || '')
-      const jp = Number(ctx?.bebanJPByLembaga?.[lem] || 0)
-      // Faktor PER LEMBAGA (penyebut ikut hari aktif lembaga); fallback skalar lama.
-      const fMap = ctx?.faktorHadirSekolahByLembaga
-      const rawFaktor = Number(fMap && lem in fMap ? fMap[lem] : ctx?.faktorHadirSekolah)
-      const faktor = Number.isFinite(rawFaktor) ? rawFaktor : 1
+      const info = ctx?.jpDiajarByLembaga?.[lem] || {}
+      const qty = Number(info.diajar) || 0
+      const terjadwal = Number(info.terjadwal) || 0
       out.push({
         jenis_id: j.id,
         kategori,
         lembaga,
         label: j.label,
         hitungan: 'per_jp',
-        qty: jp,
+        qty,
+        terjadwal,
         tarif: j.nominal,
-        faktor,
-        nominal: Math.round(jp * j.nominal * faktor)
+        nominal: qty * j.nominal
       })
     } else if (j.hitungan === 'per_shift') {
       // Pokok per shift: nominal × jumlah shift guru yg cocok (pagi+sore = 2×).
