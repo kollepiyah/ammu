@@ -119,6 +119,10 @@ const COLS = {
     'penguji_id',
     'periode'
   ],
+  // Ceremonial PTPT — 1 baris = 1 SESI. data jsonb ekor:
+  //   { judul, jam_selesai, tempat, catatan, peserta:[{santri_id,nama,kelas,juz,ajuan_id,tgl_lulus_pj}],
+  //     penyimak_guru:[{id,nama}], penyimak_santri:[{id,nama}], dibuat_oleh, tgl_buat }
+  ceremonial_ptpt: ['tanggal', 'jam_mulai', 'status', 'periode'],
   izin_guru: ['guru_id', 'status'],
   supervisi_catatan: ['target_type', 'target_id', 'judul', 'catatan'],
   // -- konten & sistem --
@@ -167,6 +171,7 @@ const REALTIME = new Set([
   'riwayat_kenaikan',
   'tes_kenaikan',
   'tes_glondongan',
+  'ceremonial_ptpt',
   'user_notif_state',
   'kritik_saran',
   'supervisi_catatan',

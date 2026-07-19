@@ -122,6 +122,17 @@ const ALL_MENUS = [
     available: true,
     featureFlag: 'fiturGlondongan'
   },
+  // v.1.1.9: Ceremonial PTPT — jadwal sesi + penyimak. Gate kasar admin+guru;
+  //   hak MENJADWAL (super_admin + PJ PTPT) dicek di dalam view (canKelola).
+  {
+    group: 'Pendidikan',
+    name: 'Ceremonial PTPT',
+    path: '/ceremonial',
+    icon: 'fa-award',
+    roles: ['admin', 'guru'],
+    available: true,
+    featureFlag: 'fiturCeremonial'
+  },
   {
     group: 'Pendidikan',
     name: 'Rekap Prestasi',
