@@ -104,7 +104,7 @@
           <i class="fas fa-cog text-sm"></i>Pengaturan
         </button>
         <button
-          v-if="isAdmin"
+          v-if="canKelola"
           @click="activeTab = 'mutasi'"
           :class="[
             'flex-1 whitespace-nowrap px-3 md:px-4 py-2 md:py-2.5 text-xs md:text-sm font-black transition cursor-pointer rounded-xl flex items-center justify-center gap-1.5',
@@ -119,7 +119,7 @@
     </div>
 
     <!-- v.99: SUB-MENU MUTASI (keluar) — kategori → filter lembaga → list santri → keluarkan -->
-    <div v-if="isAdmin && activeTab === 'mutasi'" class="space-y-3">
+    <div v-if="canKelola && activeTab === 'mutasi'" class="space-y-3">
       <div
         class="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)] shadow-sm p-4"
       >
@@ -1340,6 +1340,11 @@ const isGuru = computed(() => {
   return sa?.role === 'guru' && sa?.role_sistem !== 'super_admin' && sa?.id !== 'admin'
 })
 const isSantriRole = computed(() => authStore.sesiAktif?.role === 'santri')
+// v.1.1.9: guru kelas boleh Form Kenaikan & Mutasi untuk SANTRI AMPUANNYA saja.
+//   Batasnya dari 2 lapis: (1) `santriList` sudah discope useSantri (guru hanya lihat
+//   santri kelasnya), (2) RLS `santri_upd_pengampu` (migrasi 20260719120000) menolak
+//   UPDATE santri yang bukan ampuannya. Tab "Pengaturan" TETAP admin-only.
+const canKelola = computed(() => isAdmin.value || isGuru.value)
 // v.100b: tipe guru (Qiraati / Sekolah) dari assignment santri → toggle kategori untuk guru dual-role.
 const myNamaGuru = computed(() => authStore.sesiAktif?.guru || authStore.sesiAktif?.nama || '')
 const guruTipe = computed(() => deteksiTipeGuru(santriList.value, myNamaGuru.value))
@@ -1401,7 +1406,7 @@ definePageActions(() => {
         activeTab.value = 'pengaturan'
       }
     })
-  if (isAdmin.value)
+  if (canKelola.value)
     acts.push({
       label: 'Mutasi',
       icon: 'logout',
