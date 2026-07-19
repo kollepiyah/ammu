@@ -103,12 +103,13 @@ export function useTesKenaikan() {
   }
 
   // Ajukan batch. items: [{ santri, jenis, target }]. guruList utk resolve kepala (push Fase B).
-  //   Return { ok, fail, skipped, errors }.
+  //   Return { ok, fail, skipped, glondonganGagal, errors }.
   async function ajukanBatch(items, guruList = []) {
     const batchId = 'tes_' + Date.now()
     let ok = 0,
       fail = 0,
-      skipped = 0
+      skipped = 0,
+      glondonganGagal = 0
     const errors = []
     for (const it of items || []) {
       const s = it.santri
@@ -146,7 +147,9 @@ export function useTesKenaikan() {
         })
         ok++
         // v.111: PTPT jenis 'juz' -> spawn baris glondongan + review juz berjalan.
-        //   Best-effort: kegagalan di sini TIDAK menggagalkan ajuan tes kenaikan utama.
+        //   Kegagalan di sini TIDAK menggagalkan ajuan tes kenaikan utama, tapi
+        //   dihitung & dilaporkan (lihat spawnGlondongan) — baris yang tak lahir
+        //   mengunci gerbang PJ selamanya.
         if (
           String(s.lembaga || '')
             .trim()
@@ -154,10 +157,12 @@ export function useTesKenaikan() {
           (it.jenis || '') === 'juz'
         ) {
           try {
-            await spawnGlondongan(ajuanId, s, now, guruList)
+            const g = await spawnGlondongan(ajuanId, s, now, guruList)
+            glondonganGagal += g.gagal
+            errors.push(...g.errors)
           } catch (e) {
-            // eslint-disable-next-line no-console
-            console.warn('[glondongan] spawn gagal:', e?.message || e)
+            glondonganGagal++
+            errors.push(`${s.nama || s.id}: baris glondongan gagal dibuat — ${e?.message || e}`)
           }
         }
       } catch (e) {
@@ -165,7 +170,7 @@ export function useTesKenaikan() {
         errors.push(`${s.nama || s.id}: ${e.message || e}`)
       }
     }
-    return { ok, fail, skipped, errors }
+    return { ok, fail, skipped, glondonganGagal, errors }
   }
 
   // v.111: buat baris tes_glondongan untuk 1 ajuan PTPT juz (spawn saat ajukanBatch).
@@ -228,20 +233,29 @@ export function useTesKenaikan() {
     }
     return rows
   }
+  // Return { dibuat, gagal, errors }. Kegagalan TIDAK menggagalkan ajuan tes kenaikan
+  //   utama, tapi WAJIB sampai ke pengaju: baris yang tak lahir membuat
+  //   gerbangGlondongan() mengunci PJ SELAMANYA tanpa jejak (dulu cuma console.warn).
   async function spawnGlondongan(ajuanId, s, now, guruList = []) {
+    let dibuat = 0
+    const errors = []
     for (const r of _buildGlondonganRows(ajuanId, s, now, guruList)) {
       try {
         await addOne('tes_glondongan', r)
+        dibuat++
       } catch (e) {
-        // eslint-disable-next-line no-console
-        console.warn('[glondongan] insert baris gagal:', e?.message || e)
+        const blok = r.tipe === 'berjalan' ? 'juz berjalan' : `blok kelas ${r.kelas_asal}`
+        errors.push(`${s.nama || s.id} (${blok}): ${e?.message || e}`)
       }
     }
+    return { dibuat, gagal: errors.length, errors }
   }
   // v.111.x: buat ULANG baris yang HILANG (spawn gagal / santri lama) tanpa menyentuh yg sudah ada.
-  //   s = objek santri (utk juz/mukim/guru kelas). Return jumlah baris baru dibuat.
+  //   s = objek santri (utk juz/mukim/guru kelas). Return { dibuat, gagal, errors } —
+  //   kegagalan JANGAN disembunyikan: 0 dibuat karena ditolak RLS vs 0 karena memang
+  //   tak ada yang kurang itu dua hal yang sangat berbeda bagi pemakainya.
   async function buatUlangGlondongan(ajuan, s, guruList = []) {
-    if (!ajuan?.id || !s) return 0
+    if (!ajuan?.id || !s) return { dibuat: 0, gagal: 0, errors: [] }
     const existing = glondonganByAjuan.value[String(ajuan.id)] || []
     const punya = (r) =>
       existing.some(
@@ -252,17 +266,18 @@ export function useTesKenaikan() {
     const rows = _buildGlondonganRows(String(ajuan.id), s, new Date(), guruList).filter(
       (r) => !punya(r)
     )
-    let n = 0
+    let dibuat = 0
+    const errors = []
     for (const r of rows) {
       try {
         await addOne('tes_glondongan', r)
-        n++
+        dibuat++
       } catch (e) {
-        // eslint-disable-next-line no-console
-        console.warn('[glondongan] buat ulang gagal:', e?.message || e)
+        const blok = r.tipe === 'berjalan' ? 'juz berjalan' : `blok kelas ${r.kelas_asal}`
+        errors.push(`${blok}: ${e?.message || e}`)
       }
     }
-    return n
+    return { dibuat, gagal: errors.length, errors }
   }
 
   // Penguji: tetapkan hasil. status: 'lulus' | 'tidak_lulus' | 'ditolak'.

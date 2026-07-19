@@ -798,10 +798,16 @@ async function buatUlangGlond(a) {
       kelas: a.kelas_asal,
       juz: a.juz_asal
     }
-    const n = await buatUlangGlondongan(a, s, guruRaw.value || [])
-    toast[n ? 'success' : 'info'](
-      n ? `${n} baris glondongan/berjalan dibuat ulang` : 'Tidak ada baris yang perlu dibuat'
-    )
+    const r = await buatUlangGlondongan(a, s, guruRaw.value || [])
+    if (r.gagal) {
+      toast.error(`${r.dibuat} dibuat, ${r.gagal} GAGAL — ${r.errors[0] || 'periksa hak akses'}`)
+    } else {
+      toast[r.dibuat ? 'success' : 'info'](
+        r.dibuat
+          ? `${r.dibuat} baris glondongan/berjalan dibuat ulang`
+          : 'Tidak ada baris yang perlu dibuat'
+      )
+    }
   } catch (e) {
     toast.error('Gagal buat ulang: ' + (e.message || e))
   } finally {
@@ -1080,7 +1086,10 @@ async function submitAjukan() {
     let msg = `${res.ok} ajuan terkirim`
     if (res.skipped) msg += `, ${res.skipped} dilewati (sudah ada ajuan)`
     if (res.fail) msg += `, ${res.fail} gagal`
-    res.fail ? toast.warning(msg) : toast.success(msg)
+    // v.1.1.9: baris glondongan yang tak lahir akan mengunci gerbang PJ selamanya —
+    //   jangan biarkan senyap seperti dulu (console.warn saja).
+    if (res.glondonganGagal) msg += `, ${res.glondonganGagal} baris glondongan GAGAL dibuat`
+    res.fail || res.glondonganGagal ? toast.warning(msg) : toast.success(msg)
     // reset centang yang sukses
     for (const it of items) if (sel[it.santri.id]) sel[it.santri.id].checked = false
     if (res.ok) activeTab.value = 'status'
