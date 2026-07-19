@@ -187,8 +187,11 @@ export function barisBisyaroh(jenisList, ctx) {
       })
     } else if (j.hitungan === 'per_jp') {
       // JP guru di lembaga tempat jenis ini cocok × tarif/JP × faktor kehadiran sekolah (prorata).
-      const jp = Number(ctx?.bebanJPByLembaga?.[canonLembaga(ref?.lembaga || '')] || 0)
-      const rawFaktor = Number(ctx?.faktorHadirSekolah)
+      const lem = canonLembaga(ref?.lembaga || '')
+      const jp = Number(ctx?.bebanJPByLembaga?.[lem] || 0)
+      // Faktor PER LEMBAGA (penyebut ikut hari aktif lembaga); fallback skalar lama.
+      const fMap = ctx?.faktorHadirSekolahByLembaga
+      const rawFaktor = Number(fMap && lem in fMap ? fMap[lem] : ctx?.faktorHadirSekolah)
       const faktor = Number.isFinite(rawFaktor) ? rawFaktor : 1
       out.push({
         jenis_id: j.id,

@@ -33,3 +33,23 @@ export function jpByLembagaForGuru(settings, guruId) {
   }
   return out
 }
+
+// Hari aktif sekolah per lembaga (getDay 0=Ahad..6=Sabtu) → settings.hariAktifLembaga
+//   = { [lembaga]: [0,1,2,3,4] }. Dipakai sbg PENYEBUT prorata per_jp (beda per lembaga,
+//   mis. lembaga 5-hari). Tak diatur/kosong → null (pakai default global: semua kecuali Jumat).
+export function hariAktifOf(settings, lembaga) {
+  const map = (settings || {}).hariAktifLembaga || {}
+  const canon = canonLembaga(lembaga || '')
+  let arr = map[canon]
+  if (!Array.isArray(arr)) {
+    const lk = String(canon).toLowerCase()
+    for (const [k, v] of Object.entries(map)) {
+      if (canonLembaga(k).toLowerCase() === lk) {
+        arr = v
+        break
+      }
+    }
+  }
+  if (!Array.isArray(arr) || !arr.length) return null
+  return [...new Set(arr.map(Number).filter((n) => n >= 0 && n <= 6))]
+}

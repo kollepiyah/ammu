@@ -773,7 +773,7 @@ import {
 import { shiftsForGuru } from '@/utils/shiftDerive'
 import { shiftLabelOf } from '@/utils/shiftMaster'
 import { materialisasiHadirIkut } from '@/utils/absensiMaterialize'
-import { jpByLembagaForGuru } from '@/utils/bebanMengajar'
+import { jpByLembagaForGuru, hariAktifOf } from '@/utils/bebanMengajar'
 import { hariKerjaCount } from '@/utils/hariKerja'
 import { useKegiatan } from '@/composables/useKegiatan'
 import { useAuthStore } from '@/stores/auth'
@@ -1362,17 +1362,19 @@ function hadirPerShiftGuru(guruId, periode) {
 // v.1.1.x: faktor prorata bisyaroh sekolah (per_jp) = (hadir+terlambat shift 'sekolah')
 //   ÷ hari kerja periode. Hanya hadir+terlambat (izin/sakit/cuti/alpa mengurangi). Cap 1.
 //   Numerator pakai shift id 'sekolah' (shift sekolah bawaan).
-function faktorHadirSekolah(g, periode) {
+function faktorHadirSekolah(g, periode, lembaga = '') {
   const [y, m] = String(periode).split('-').map(Number)
   if (!y || !m) return 1
   const hadir = Number(hadirPerShiftGuru(g.id, periode).sekolah || 0)
   const s = settingsStore.settings || {}
   const akhir = `${y}-${String(m).padStart(2, '0')}-${String(new Date(y, m, 0).getDate()).padStart(2, '0')}`
+  // Penyebut ikut HARI AKTIF lembaga (mis. 5-hari); tak diatur → global (kecuali Jumat).
   const hk = hariKerjaCount(`${periode}-01`, akhir, {
     liburJumat: s.liburJumat,
     hariLiburList: Array.isArray(s.hariLibur) ? s.hariLibur : [],
     liburEventSet: liburEventSet.value,
-    todayIso: new Date().toISOString().slice(0, 10)
+    todayIso: new Date().toISOString().slice(0, 10),
+    hariAktif: hariAktifOf(s, lembaga)
   })
   return Math.min(1, hadir / Math.max(hk, 1))
 }
@@ -1380,6 +1382,10 @@ function faktorHadirSekolah(g, periode) {
 // v.1.1.9: konteks pencocokan scope 1 guru — tempat tugas + shift + kehadiran.
 function ctxGuru(g, periode) {
   const s = settingsStore.settings || {}
+  const bebanJP = jpByLembagaForGuru(s, g.id)
+  // Faktor prorata PER LEMBAGA (penyebut = hari aktif lembaga, mis. 5-hari).
+  const faktorByLembaga = {}
+  for (const lem of Object.keys(bebanJP)) faktorByLembaga[lem] = faktorHadirSekolah(g, periode, lem)
   return {
     refs: refsUntukScope(
       deriveGuruLembagaRefs(g, {
@@ -1391,9 +1397,10 @@ function ctxGuru(g, periode) {
     guruId: String(g.id),
     shiftIds: shiftsForGuru(g, s),
     hadirPerShift: hadirPerShiftGuru(g.id, periode),
-    // per_jp (bisyaroh sekolah): JP per lembaga + faktor prorata kehadiran sekolah.
-    bebanJPByLembaga: jpByLembagaForGuru(s, g.id),
-    faktorHadirSekolah: faktorHadirSekolah(g, periode)
+    // per_jp (bisyaroh sekolah): JP per lembaga + faktor prorata kehadiran sekolah per lembaga.
+    bebanJPByLembaga: bebanJP,
+    faktorHadirSekolahByLembaga: faktorByLembaga,
+    faktorHadirSekolah: faktorHadirSekolah(g, periode) // fallback global (kompat)
   }
 }
 
