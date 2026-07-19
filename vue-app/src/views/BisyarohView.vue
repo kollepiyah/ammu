@@ -773,8 +773,8 @@ import {
 import { shiftsForGuru } from '@/utils/shiftDerive'
 import { shiftLabelOf } from '@/utils/shiftMaster'
 import { materialisasiHadirIkut } from '@/utils/absensiMaterialize'
-import { jpByLembagaForGuru, hariAktifOf } from '@/utils/bebanMengajar'
-import { hariKerjaCount } from '@/utils/hariKerja'
+import { jpByLembagaForGuru, jpPerHariForGuru, jpDiajarPeriode } from '@/utils/bebanMengajar'
+import { tanggalRentang } from '@/utils/absensiRekap'
 import { useKegiatan } from '@/composables/useKegiatan'
 import { useAuthStore } from '@/stores/auth'
 import { isSuperAdmin } from '@/utils/roleScope'
@@ -1359,33 +1359,56 @@ function hadirPerShiftGuru(guruId, periode) {
   return out
 }
 
-// v.1.1.x: faktor prorata bisyaroh sekolah (per_jp) = (hadir+terlambat shift 'sekolah')
-//   ÷ hari kerja periode. Hanya hadir+terlambat (izin/sakit/cuti/alpa mengurangi). Cap 1.
-//   Numerator pakai shift id 'sekolah' (shift sekolah bawaan).
-function faktorHadirSekolah(g, periode, lembaga = '') {
+// v.1.1.x OPSI C — bisyaroh sekolah = tarif × JP yang BENAR-BENAR diajar.
+//   Tanggal periode s/d hari ini (slip bulan berjalan tak menghitung hari depan).
+function tanggalPeriode(periode) {
   const [y, m] = String(periode).split('-').map(Number)
-  if (!y || !m) return 1
-  const hadir = Number(hadirPerShiftGuru(g.id, periode).sekolah || 0)
-  const s = settingsStore.settings || {}
+  if (!y || !m) return []
   const akhir = `${y}-${String(m).padStart(2, '0')}-${String(new Date(y, m, 0).getDate()).padStart(2, '0')}`
-  // Penyebut ikut HARI AKTIF lembaga (mis. 5-hari); tak diatur → global (kecuali Jumat).
-  const hk = hariKerjaCount(`${periode}-01`, akhir, {
-    liburJumat: s.liburJumat,
-    hariLiburList: Array.isArray(s.hariLibur) ? s.hariLibur : [],
-    liburEventSet: liburEventSet.value,
-    todayIso: new Date().toISOString().slice(0, 10),
-    hariAktif: hariAktifOf(s, lembaga)
-  })
-  return Math.min(1, hadir / Math.max(hk, 1))
+  const today = new Date().toISOString().slice(0, 10)
+  return tanggalRentang(`${periode}-01`, today < akhir ? today : akhir)
+}
+// Libur = tanggal libur manual + event kalender. Jumat SENGAJA tidak dianggap libur di sini:
+//   jadwal mengajar per hari sudah menentukan guru mengajar hari apa saja (sekolah bisa Sen–Sab).
+function liburSetPeriode() {
+  const s = settingsStore.settings || {}
+  const set = new Set(Array.isArray(s.hariLibur) ? s.hariLibur.map(String) : [])
+  for (const iso of liburEventSet.value || []) set.add(iso)
+  return set
+}
+// Tanggal guru HADIR/terlambat di shift 'sekolah' pada periode → Set ISO.
+function tanggalHadirSekolah(guruId, periode) {
+  const gid = String(guruId)
+  const out = new Set()
+  for (const a of absensiShift.value || []) {
+    if (String(a.guru_id) !== gid) continue
+    if (String(a.shift || '').toLowerCase() !== 'sekolah') continue
+    const st = String(a.status || '').toLowerCase()
+    if (st !== 'hadir' && st !== 'terlambat') continue // izin/sakit/cuti/alpa → JP hangus
+    const tgl = String(a.tanggal || '')
+    if (!tgl.startsWith(periode)) continue
+    out.add(tgl.slice(0, 10))
+  }
+  return out
 }
 
 // v.1.1.9: konteks pencocokan scope 1 guru — tempat tugas + shift + kehadiran.
 function ctxGuru(g, periode) {
   const s = settingsStore.settings || {}
-  const bebanJP = jpByLembagaForGuru(s, g.id)
-  // Faktor prorata PER LEMBAGA (penyebut = hari aktif lembaga, mis. 5-hari).
-  const faktorByLembaga = {}
-  for (const lem of Object.keys(bebanJP)) faktorByLembaga[lem] = faktorHadirSekolah(g, periode, lem)
+  const bebanJP = jpByLembagaForGuru(s, g.id) // JP mingguan (info) + daftar lembaga guru ini
+  // OPSI C: JP yang benar-benar diajar per lembaga = jadwal per hari × kehadiran harian.
+  const tgls = tanggalPeriode(periode)
+  const libur = liburSetPeriode()
+  const hadirSet = tanggalHadirSekolah(g.id, periode)
+  const jpDiajarByLembaga = {}
+  for (const lem of Object.keys(bebanJP)) {
+    jpDiajarByLembaga[lem] = jpDiajarPeriode({
+      jpPerHari: jpPerHariForGuru(s, g.id, lem),
+      tanggalList: tgls,
+      hadirSet,
+      liburSet: libur
+    })
+  }
   return {
     refs: refsUntukScope(
       deriveGuruLembagaRefs(g, {
@@ -1397,10 +1420,9 @@ function ctxGuru(g, periode) {
     guruId: String(g.id),
     shiftIds: shiftsForGuru(g, s),
     hadirPerShift: hadirPerShiftGuru(g.id, periode),
-    // per_jp (bisyaroh sekolah): JP per lembaga + faktor prorata kehadiran sekolah per lembaga.
+    // per_jp (bisyaroh sekolah, opsi C): JP mingguan (info) + JP benar-benar diajar.
     bebanJPByLembaga: bebanJP,
-    faktorHadirSekolahByLembaga: faktorByLembaga,
-    faktorHadirSekolah: faktorHadirSekolah(g, periode) // fallback global (kompat)
+    jpDiajarByLembaga
   }
 }
 
@@ -1417,7 +1439,7 @@ function buildLineItemsFromGuru(g, periode) {
       b.hitungan === 'per_hadir'
         ? `${b.label} (${b.qty}× ${fmtRp(b.tarif)})`
         : b.hitungan === 'per_jp'
-          ? `${b.label} (${b.qty} JP × ${fmtRp(b.tarif)} × ${Math.round((b.faktor ?? 1) * 100)}%)`
+          ? `${b.label} (${b.qty}${b.terjadwal ? ' dari ' + b.terjadwal : ''} JP diajar × ${fmtRp(b.tarif)})`
           : b.hitungan === 'per_shift'
             ? `${b.label} (${b.qty} shift × ${fmtRp(b.tarif)})`
             : b.label,
