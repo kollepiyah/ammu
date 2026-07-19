@@ -289,18 +289,33 @@
           rows="1"
           class="w-full mt-2 px-2.5 py-1.5 text-xs rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none resize-none"
         ></textarea>
+        <div
+          v-if="gerbangAntrian[a.id] && gerbangAntrian[a.id].terkunci"
+          class="mt-2 px-3 py-2 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 text-[11px] text-amber-800 dark:text-amber-200"
+        >
+          <i class="fas fa-lock mr-1"></i>
+          <b>Belum bisa dites PJ</b> — belum disimak: {{ pendingLabel(gerbangAntrian[a.id]) }}.
+          <button
+            v-if="gerbangAntrian[a.id].adaBarisHilang"
+            @click="buatUlangGlond(a)"
+            :disabled="buatUlangBusy === a.id"
+            class="ml-1 underline font-bold hover:text-amber-900 dark:hover:text-amber-100 disabled:opacity-50"
+          >
+            {{ buatUlangBusy === a.id ? 'membuat…' : 'buat ulang baris' }}
+          </button>
+        </div>
         <div class="flex gap-2 mt-2">
           <button
             @click="openLulus(a)"
-            :disabled="busyId === a.id"
-            class="flex-1 px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-black"
+            :disabled="busyId === a.id || (gerbangAntrian[a.id] && gerbangAntrian[a.id].terkunci)"
+            class="flex-1 px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-black"
           >
             <i class="fas fa-check mr-1"></i>Lulus
           </button>
           <button
             @click="decide(a, 'tidak_lulus')"
-            :disabled="busyId === a.id"
-            class="flex-1 px-3 py-2 rounded-lg bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white text-xs font-black"
+            :disabled="busyId === a.id || (gerbangAntrian[a.id] && gerbangAntrian[a.id].terkunci)"
+            class="flex-1 px-3 py-2 rounded-lg bg-amber-500 hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-black"
           >
             <i class="fas fa-redo mr-1"></i>Belum Lulus
           </button>
@@ -694,8 +709,45 @@ const {
   hasOpenAjuan,
   canCrud,
   resetAjuan,
-  hapusAjuan
+  hapusAjuan,
+  gerbangFor,
+  buatUlangGlondongan
 } = useTesKenaikan()
+
+// v.111.x GERBANG glondongan: status per ajuan antrian + buat-ulang baris hilang.
+const gerbangAntrian = computed(() => {
+  const m = {}
+  for (const a of antrian.value) m[a.id] = gerbangFor(a)
+  return m
+})
+function pendingLabel(g) {
+  return (g?.pending || [])
+    .map(
+      (p) =>
+        `${p.tipe === 'berjalan' ? 'berjalan' : 'glondongan'} juz ${p.juz_dari}–${p.juz_sampai}`
+    )
+    .join(', ')
+}
+const buatUlangBusy = ref(null)
+async function buatUlangGlond(a) {
+  buatUlangBusy.value = a.id
+  try {
+    const s = (santri.value || []).find((x) => String(x.id) === String(a.santri_id)) || {
+      id: a.santri_id,
+      nama: a.nama_cache,
+      kelas: a.kelas_asal,
+      juz: a.juz_asal
+    }
+    const n = await buatUlangGlondongan(a, s, guruRaw.value || [])
+    toast[n ? 'success' : 'info'](
+      n ? `${n} baris glondongan/berjalan dibuat ulang` : 'Tidak ada baris yang perlu dibuat'
+    )
+  } catch (e) {
+    toast.error('Gagal buat ulang: ' + (e.message || e))
+  } finally {
+    buatUlangBusy.value = null
+  }
+}
 
 // v.107 CRUD (super_admin): uji ulang (reset → antrian utk dinilai ulang) + hapus record.
 async function ujiUlang(a) {
@@ -1166,6 +1218,11 @@ async function submitLulus() {
   const a = lulusFor.value
   const s = lulusSantri.value
   if (!a) return
+  // GERBANG: jangan tulis kenaikan bila glondongan/berjalan belum selesai (cegah race).
+  if (gerbangFor(a).terkunci) {
+    toast.error('Glondongan/berjalan belum selesai disimak — belum bisa meluluskan.')
+    return
+  }
   if (!s) {
     toast.error('Data santri belum termuat.')
     return
