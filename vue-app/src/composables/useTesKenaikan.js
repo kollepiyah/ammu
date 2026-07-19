@@ -71,15 +71,35 @@ export function useTesKenaikan() {
     return m
   })
   // Gerbang PJ: hanya PTPT jenis 'juz'. Lainnya tak pernah terkunci.
+  //   terkunci = glondongan/berjalan belum 'selesai' ATAU guru kelas belum klik 'Siap Tes'.
   function gerbangFor(ajuan) {
-    const kosong = { terkunci: false, pending: [], adaBarisHilang: false }
+    const kosong = {
+      berlaku: false,
+      terkunci: false,
+      glondonganTerkunci: false,
+      siapTes: true,
+      pending: [],
+      adaBarisHilang: false
+    }
     if (!ajuan) return kosong
     const isPtptJuz =
       String(ajuan.lembaga || '')
         .trim()
         .toUpperCase() === 'PTPT' && (ajuan.jenis || '') === 'juz'
     if (!isPtptJuz) return kosong
-    return gerbangGlondongan(ajuan.juz_asal, glondonganByAjuan.value[String(ajuan.id)] || [])
+    const g = gerbangGlondongan(ajuan.juz_asal, glondonganByAjuan.value[String(ajuan.id)] || [])
+    const siapTes = !!ajuan.siap_tes
+    return {
+      ...g,
+      berlaku: true,
+      glondonganTerkunci: g.terkunci,
+      siapTes,
+      terkunci: g.terkunci || !siapTes
+    }
+  }
+  // Guru kelas / pengaju: tandai santri SIAP dites PJ (setelah glondongan+berjalan selesai).
+  async function setSiapTes(ajuanId, val = true) {
+    await updateOne('tes_kenaikan', String(ajuanId), { siap_tes: !!val })
   }
 
   // Ajukan batch. items: [{ santri, jenis, target }]. guruList utk resolve kepala (push Fase B).
@@ -346,6 +366,7 @@ export function useTesKenaikan() {
     // v.111.x gerbang glondongan PJ
     glondonganByAjuan,
     gerbangFor,
-    buatUlangGlondongan
+    buatUlangGlondongan,
+    setSiapTes
   }
 }

@@ -196,6 +196,43 @@
             </button>
           </div>
         </div>
+        <!-- Siap Tes (guru kelas) — hanya PTPT juz yang masih diajukan -->
+        <div
+          v-if="a.status === 'diajukan' && gerbangMy[a.id] && gerbangMy[a.id].berlaku"
+          class="mt-2 pt-2 border-t border-[var(--border-subtle)] flex flex-wrap items-center gap-2 text-[11px]"
+        >
+          <template v-if="gerbangMy[a.id].glondonganTerkunci">
+            <span class="text-amber-700 dark:text-amber-300">
+              <i class="fas fa-hourglass-half mr-1"></i>Menunggu simakan:
+              {{ pendingLabel(gerbangMy[a.id]) }}
+            </span>
+          </template>
+          <template v-else-if="gerbangMy[a.id].siapTes">
+            <span class="text-emerald-700 dark:text-emerald-300 font-bold">
+              <i class="fas fa-circle-check mr-1"></i>Sudah ditandai SIAP dites PJ
+            </span>
+            <button
+              @click="toggleSiapTes(a, false)"
+              :disabled="siapTesBusy === a.id"
+              class="text-rose-600 hover:underline font-bold disabled:opacity-50"
+            >
+              batal
+            </button>
+          </template>
+          <template v-else>
+            <span class="text-[var(--text-secondary)]"
+              >Semua sudah disimak. Tandai santri siap dites PJ:</span
+            >
+            <button
+              @click="toggleSiapTes(a, true)"
+              :disabled="siapTesBusy === a.id"
+              class="px-3 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white font-black"
+            >
+              <i class="fas fa-flag-checkered mr-1"></i
+              >{{ siapTesBusy === a.id ? '...' : 'Siap Tes' }}
+            </button>
+          </template>
+        </div>
       </div>
     </div>
 
@@ -294,15 +331,19 @@
           class="mt-2 px-3 py-2 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 text-[11px] text-amber-800 dark:text-amber-200"
         >
           <i class="fas fa-lock mr-1"></i>
-          <b>Belum bisa dites PJ</b> — belum disimak: {{ pendingLabel(gerbangAntrian[a.id]) }}.
-          <button
-            v-if="gerbangAntrian[a.id].adaBarisHilang"
-            @click="buatUlangGlond(a)"
-            :disabled="buatUlangBusy === a.id"
-            class="ml-1 underline font-bold hover:text-amber-900 dark:hover:text-amber-100 disabled:opacity-50"
-          >
-            {{ buatUlangBusy === a.id ? 'membuat…' : 'buat ulang baris' }}
-          </button>
+          <b>Belum bisa dites PJ</b> —
+          <template v-if="gerbangAntrian[a.id].glondonganTerkunci">
+            belum disimak: {{ pendingLabel(gerbangAntrian[a.id]) }}.
+            <button
+              v-if="gerbangAntrian[a.id].adaBarisHilang"
+              @click="buatUlangGlond(a)"
+              :disabled="buatUlangBusy === a.id"
+              class="ml-1 underline font-bold hover:text-amber-900 dark:hover:text-amber-100 disabled:opacity-50"
+            >
+              {{ buatUlangBusy === a.id ? 'membuat…' : 'buat ulang baris' }}
+            </button>
+          </template>
+          <template v-else>menunggu guru kelas menekan tombol "Siap Tes".</template>
         </div>
         <div class="flex gap-2 mt-2">
           <button
@@ -711,7 +752,8 @@ const {
   resetAjuan,
   hapusAjuan,
   gerbangFor,
-  buatUlangGlondongan
+  buatUlangGlondongan,
+  setSiapTes
 } = useTesKenaikan()
 
 // v.111.x GERBANG glondongan: status per ajuan antrian + buat-ulang baris hilang.
@@ -727,6 +769,24 @@ function pendingLabel(g) {
         `${p.tipe === 'berjalan' ? 'berjalan' : 'glondongan'} juz ${p.juz_dari}–${p.juz_sampai}`
     )
     .join(', ')
+}
+// Gerbang utk ajuan SAYA (tab Status) — utk tombol "Siap Tes" guru kelas.
+const gerbangMy = computed(() => {
+  const m = {}
+  for (const a of myAjuan.value) m[a.id] = gerbangFor(a)
+  return m
+})
+const siapTesBusy = ref(null)
+async function toggleSiapTes(a, val) {
+  siapTesBusy.value = a.id
+  try {
+    await setSiapTes(a.id, val)
+    toast.success(val ? 'Santri ditandai SIAP dites PJ' : 'Tanda siap dibatalkan')
+  } catch (e) {
+    toast.error('Gagal: ' + (e.message || e))
+  } finally {
+    siapTesBusy.value = null
+  }
 }
 const buatUlangBusy = ref(null)
 async function buatUlangGlond(a) {
