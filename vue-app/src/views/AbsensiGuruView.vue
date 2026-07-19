@@ -1573,14 +1573,20 @@ function bulanIniRows() {
 }
 async function sinkronGabungan(silent = false) {
   if (syncingGabungan.value || !isFullAccess.value) return
+  const s = settingsStore.settings || {}
+  // Guard: tanpa shift ber-"Hadir Otomatis Ikut Shift", fitur ini diam-diam TAK melakukan apa pun.
+  //   Dulu tampil "sudah tercatat" (menyesatkan) — kini beri peringatan yang bisa ditindaklanjuti.
+  const adaTarget = shiftList(s).some((sh) => (sh.hadir_ikut || []).length)
+  if (!adaTarget) {
+    if (!silent)
+      toast.warning(
+        'Belum ada shift yang di-set "Hadir Otomatis Ikut Shift" (Pengaturan › Master Shift). Hadir sekolah guru gabungan TIDAK akan dibuat otomatis.'
+      )
+    return
+  }
   syncingGabungan.value = true
   try {
-    const n = await materialisasiHadirIkut(
-      guruAktif.value,
-      bulanIniRows(),
-      settingsStore.settings || {},
-      setOne
-    )
+    const n = await materialisasiHadirIkut(guruAktif.value, bulanIniRows(), s, setOne)
     if (n > 0) toast.success(`${n} "hadir sekolah" otomatis dibuat dari scan pagi (guru gabungan)`)
     else if (!silent)
       toast.info('Semua guru gabungan sudah tercatat — tak ada yang perlu disinkron')
