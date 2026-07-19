@@ -13,8 +13,17 @@ import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
 import { PTPT_LEMBAGA } from '@/utils/glondongan'
 
-const { loaded, sesiList, canKelola, isSuper, kandidatPeserta, simpanSesi, setStatus, hapusSesi } =
-  useCeremonial()
+const {
+  loaded,
+  sesiList,
+  sesi: sesiAkun, // sesi AKUN (bukan sesi ceremonial) — dinamai ulang agar tak rancu
+  canKelola,
+  isSuper,
+  kandidatPeserta,
+  simpanSesi,
+  setStatus,
+  hapusSesi
+} = useCeremonial()
 const { ajuanRaw } = useTesKenaikan()
 const { guruRaw } = useGuru()
 const { santriRaw } = useSantri()
@@ -28,11 +37,48 @@ const STATUS_CLS = {
   batal: 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300'
 }
 
+// Nama santri ampuan SAYA (cermin scoping guru di useSantri: guru_pagi/guru_sore/
+//   guru lama/guru_sekolah). Dipakai membatasi jadwal yang tampil untuk guru biasa.
+const santriAmpuanIds = computed(() => {
+  const nama = String(sesiAkun.value.guru || sesiAkun.value.nama || '')
+    .trim()
+    .toLowerCase()
+  const set = new Set()
+  if (!nama) return set
+  for (const s of santriRaw.value) {
+    if (s.aktif === false) continue
+    const cocokTunggal = [s.guru_pagi, s.guru_sore, s.guru].some(
+      (g) =>
+        String(g || '')
+          .trim()
+          .toLowerCase() === nama
+    )
+    const cocokSekolah = (Array.isArray(s.guru_sekolah) ? s.guru_sekolah : []).some(
+      (g) =>
+        String(g || '')
+          .trim()
+          .toLowerCase() === nama
+    )
+    if (cocokTunggal || cocokSekolah) set.add(String(s.id))
+  }
+  return set
+})
+
+// Penjadwal (super_admin/PJ/koordinator) lihat SEMUA sesi; guru biasa hanya sesi
+//   yang memuat santri ampuannya (permintaan Kyai 19 Jul).
+const sesiTerlihat = computed(() => {
+  if (canKelola.value) return sesiList.value
+  const mine = santriAmpuanIds.value
+  return sesiList.value.filter((s) =>
+    (Array.isArray(s.peserta) ? s.peserta : []).some((p) => mine.has(String(p.santri_id)))
+  )
+})
+
 const filterStatus = ref('')
 const sesiTampil = computed(() =>
   filterStatus.value
-    ? sesiList.value.filter((s) => s.status === filterStatus.value)
-    : sesiList.value
+    ? sesiTerlihat.value.filter((s) => s.status === filterStatus.value)
+    : sesiTerlihat.value
 )
 
 // Guru PTPT dulu (paling sering jadi penyimak), sisanya tetap bisa dipilih.
@@ -222,8 +268,14 @@ function jamRange(s) {
       </p>
       <h2 class="text-xl md:text-2xl font-black mt-1">Ceremonial PTPT</h2>
       <p class="text-[11px] opacity-90 mt-1">
-        Jadwal sesi ceremonial santri yang sudah lulus tes PJ — atur waktu, penyimak guru, dan
-        penyimak santri.
+        <template v-if="canKelola">
+          Jadwal sesi ceremonial santri yang sudah lulus tes PJ — atur waktu, penyimak guru, dan
+          penyimak santri.
+        </template>
+        <template v-else>
+          Jadwal &amp; riwayat ceremonial santri kelas ampuan. Sesi yang tak memuat santri kelas
+          ampuan tidak ditampilkan.
+        </template>
       </p>
       <button
         v-if="canKelola"
@@ -263,7 +315,13 @@ function jamRange(s) {
     >
       <i class="fas fa-calendar-day text-[var(--text-tertiary)] text-3xl mb-2"></i>
       <p class="text-sm text-[var(--text-secondary)] italic">
-        {{ filterStatus ? 'Tidak ada sesi dengan status ini.' : 'Belum ada sesi ceremonial.' }}
+        {{
+          filterStatus
+            ? 'Tidak ada sesi dengan status ini.'
+            : canKelola
+              ? 'Belum ada sesi ceremonial.'
+              : 'Belum ada sesi ceremonial yang memuat santri kelas ampuan.'
+        }}
       </p>
     </div>
 

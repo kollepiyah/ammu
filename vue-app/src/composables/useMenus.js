@@ -120,7 +120,8 @@ const ALL_MENUS = [
     icon: 'fa-people-arrows',
     roles: ['admin', 'guru'],
     available: true,
-    featureFlag: 'fiturGlondongan'
+    featureFlag: 'fiturGlondongan',
+    unitOnly: 'PTPT'
   },
   // v.1.1.9: Ceremonial PTPT — jadwal sesi + penyimak. Gate kasar admin+guru;
   //   hak MENJADWAL (super_admin + PJ PTPT) dicek di dalam view (canKelola).
@@ -131,7 +132,8 @@ const ALL_MENUS = [
     icon: 'fa-award',
     roles: ['admin', 'guru'],
     available: true,
-    featureFlag: 'fiturCeremonial'
+    featureFlag: 'fiturCeremonial',
+    unitOnly: 'PTPT'
   },
   {
     group: 'Pendidikan',
@@ -402,6 +404,26 @@ const ALL_MENUS = [
   }
 ]
 
+// v.1.1.9: menu ber-`unitOnly` (mis. 'PTPT') hanya tampil untuk pegawai unit itu.
+//   Admin/super_admin/admin_keuangan TETAP melihat semua unit (mereka lintas lembaga).
+//   Dicocokkan ke lembaga MAUPUN lembaga_sekolah akun.
+//   CATATAN: gerbangnya sebatas TAMPILAN menu — rute & datanya tak ikut dikunci,
+//   jadi guru luar unit yang ditugaskan (mis. penguji glondongan) tetap bisa
+//   membuka lewat URL langsung dan tak kehilangan tugasnya.
+function cocokUnit(sesi, unit) {
+  const rs = sesi?.role_sistem || ''
+  if (sesi?.role === 'admin' || ['admin', 'super_admin', 'admin_keuangan'].includes(rs)) return true
+  const u = String(unit || '')
+    .trim()
+    .toUpperCase()
+  return [sesi?.lembaga, sesi?.lembaga_sekolah].some(
+    (v) =>
+      String(v || '')
+        .trim()
+        .toUpperCase() === u
+  )
+}
+
 /**
  * useMenus() — return computed menus filtered by current user's role + permissions.
  * Grouped by .group field.
@@ -416,6 +438,8 @@ export function useMenus() {
     if (!role) return []
     const s = settings.settings || {}
     return ALL_MENUS.filter((m) => {
+      // v.1.1.9: gerbang unit (PTPT dst) — sebelum cabang peran mana pun.
+      if (m.unitOnly && !cocokUnit(auth.sesiAktif, m.unitOnly)) return false
       // v.95.0626 (kyai req): admin_keuangan = akses DATA setara guru (Data Santri + kelas, Rekap,
       // Rapor, Absensi Santri, dll) + SEMUA menu Keuangan; sembunyikan menu admin-only non-keuangan
       // (Data Guru, Absensi Guru, Kegiatan Pesantren, PSB, Master Data).

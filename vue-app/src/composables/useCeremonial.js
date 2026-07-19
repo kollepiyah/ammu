@@ -1,13 +1,15 @@
 // v.1.1.9: useCeremonial — koleksi `ceremonial_ptpt` (real-time) + kandidat peserta + aksi.
 //   1 baris = 1 SESI ceremonial (kelas 1 cukup 1 sesi, kelas 2 dipecah 2 sesi), jadi
 //   peserta / penyimak guru / penyimak santri semuanya ARRAY di dalam 1 sesi.
-//   Penjadwal: super_admin + PJ PTPT (RLS-nya sendiri Archetype B — lihat migrasi
-//   20260719130000; pembatasan PJ ditegakkan di sini, pola sama dgn useGlondongan).
+//   Penjadwal: super_admin + PJ PTPT + KOORDINATOR GLONDONGAN. RLS tabelnya sendiri
+//   Archetype B (lihat migrasi 20260719130000) — pembatasan peran ditegakkan di sini,
+//   pola sama dgn canAssign useGlondongan. Guru lain: lihat-saja, dan hanya sesi yang
+//   memuat santri ampuannya (disaring di CeremonialView).
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { subscribeColl, setOne, updateOne, deleteOne } from '@/services/db'
+import { subscribeColl, subscribeDoc, setOne, updateOne, deleteOne } from '@/services/db'
 import { useAuthStore } from '@/stores/auth'
 import { isSuperAdmin } from '@/utils/roleScope'
-import { PTPT_LEMBAGA, periodeBulan } from '@/utils/glondongan'
+import { PTPT_LEMBAGA, periodeBulan, kategoriKoordinatori } from '@/utils/glondongan'
 
 // PJ PTPT = jabatan kepala/PJ/pengasuh DAN lembaga = PTPT (mirror useGlondongan._isPjPtpt).
 function _isPjPtpt(sesi) {
@@ -58,14 +60,23 @@ export function pilihKandidat(ajuanList, terjadwal) {
 export function useCeremonial() {
   const auth = useAuthStore()
   const rowsRaw = ref([])
+  const lembagaList = ref([])
   const loaded = ref(false)
   let unsub = null
+  let unsubL = null
 
   const sesi = computed(() => auth.sesiAktif || {})
+  const myId = computed(() => String(sesi.value.id != null ? sesi.value.id : ''))
   const myNama = computed(() => String(sesi.value.nama || sesi.value.guru || '').trim())
   const isSuper = computed(() => isSuperAdmin(sesi.value))
-  // Boleh menjadwal / ubah / hapus sesi.
-  const canKelola = computed(() => isSuper.value || _isPjPtpt(sesi.value))
+  const isPjPtpt = computed(() => _isPjPtpt(sesi.value))
+  // Koordinator glondongan (kategori Ma'had / Selain) dari master/lembaga PTPT.
+  const isKoordinator = computed(
+    () => kategoriKoordinatori(myId.value, lembagaList.value).length > 0
+  )
+  // Boleh menjadwal / ubah / hapus sesi — super_admin, PJ PTPT, ATAU koordinator
+  //   glondongan (keputusan Kyai 19 Jul; semula PJ+super saja).
+  const canKelola = computed(() => isSuper.value || isPjPtpt.value || isKoordinator.value)
 
   // Sesi terbaru dulu (tanggal + jam).
   const sesiList = computed(() =>
@@ -136,9 +147,13 @@ export function useCeremonial() {
       rowsRaw.value = docs || []
       loaded.value = true
     })
+    unsubL = subscribeDoc('master', 'lembaga', (doc) => {
+      lembagaList.value = Array.isArray(doc?.list) ? doc.list : []
+    })
   })
   onUnmounted(() => {
     if (unsub) unsub()
+    if (unsubL) unsubL()
   })
 
   return {
@@ -146,8 +161,11 @@ export function useCeremonial() {
     rowsRaw,
     sesiList,
     sesi,
+    myId,
     myNama,
     isSuper,
+    isPjPtpt,
+    isKoordinator,
     canKelola,
     santriTerjadwal,
     kandidatPeserta,
