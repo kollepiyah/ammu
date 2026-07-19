@@ -62,6 +62,61 @@ export function testedJuz(santri) {
   return juzNum(santri)
 }
 
+/**
+ * Gerbang PJ PTPT: PJ tak boleh mengetes (Lulus/Belum Lulus) sebelum SEMUA glondongan
+ * + berjalan yang seharusnya ada sudah 'selesai' (disimak & dinilai).
+ * ROBUST: dihitung dari RUMUS (splitGlondongan) — baris yang seharusnya ada tapi belum
+ * dibuat/selesai tetap membuat terkunci (spawn gagal / santri lama tak bocor).
+ * @param {number} juzTes - juz santri saat ini (juz_asal / tes_kenaikan.juz_asal).
+ * @param {Array} barisAjuan - baris tes_glondongan milik ajuan ini.
+ * @returns {{terkunci:boolean, pending:Array, adaBarisHilang:boolean}}
+ *   pending[] = potongan (berjalan/glondongan blok) yang belum 'selesai', dg juz & status
+ *   ('menunggu'|'ditugaskan'|'belum_ada'). adaBarisHilang = ada potongan tanpa baris sama sekali.
+ */
+export function gerbangGlondongan(juzTes, barisAjuan) {
+  const split = splitGlondongan(juzTes)
+  const rows = Array.isArray(barisAjuan) ? barisAjuan : []
+  const pending = []
+  let adaBarisHilang = false
+  if (!split.ok) return { terkunci: false, pending, adaBarisHilang }
+
+  const isSelesai = (r) => r && String(r.status || '').toLowerCase() === 'selesai'
+
+  // Juz kelas berjalan (guru kelas) — bila ada juz di bawah target.
+  if (split.berjalan.juz.length) {
+    const r = rows.find((x) => String(x.tipe) === 'berjalan')
+    if (!isSelesai(r)) {
+      if (!r) adaBarisHilang = true
+      pending.push({
+        tipe: 'berjalan',
+        kelas_asal: split.kelas,
+        juz_dari: split.berjalan.juz[0],
+        juz_sampai: split.berjalan.juz[split.berjalan.juz.length - 1],
+        juz: split.berjalan.juz,
+        status: r ? String(r.status || '') : 'belum_ada'
+      })
+    }
+  }
+  // Glondongan blok per kelas asal (kelas lampau).
+  for (const blk of split.glondongan) {
+    const r = rows.find(
+      (x) => String(x.tipe) === 'glondongan' && Number(x.kelas_asal) === blk.kelas_asal
+    )
+    if (!isSelesai(r)) {
+      if (!r) adaBarisHilang = true
+      pending.push({
+        tipe: 'glondongan',
+        kelas_asal: blk.kelas_asal,
+        juz_dari: blk.juz_dari,
+        juz_sampai: blk.juz_sampai,
+        juz: blk.juz,
+        status: r ? String(r.status || '') : 'belum_ada'
+      })
+    }
+  }
+  return { terkunci: pending.length > 0, pending, adaBarisHilang }
+}
+
 // Periode bulan 'YYYY-MM' (default now) — dipakai rekap bisyaroh bulanan. Cermin useKeuangan.
 export function periodeBulan(d = new Date()) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
