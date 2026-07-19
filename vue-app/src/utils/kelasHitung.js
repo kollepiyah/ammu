@@ -1,42 +1,42 @@
 // v.1.1.9 — SUMBER TUNGGAL definisi "1 kelas" untuk statistik.
 //
-// Keputusan Kyai: kelas dihitung PER GURU (rombel), BUKAN per "kelas jenjang".
-//   Qiraati : guru_pagi + guru_sore yang SEPASANG (mengampu rombel yang sama) =
-//             **1 kelas**, walau namanya berbeda. Sebelumnya tiap guru dihitung
-//             sendiri -> 1 rombel pagi+sore terhitung 2 kelas (bug yang dilaporkan,
-//             paling kentara di PTPT).
-//   Sekolah : himpunan guru_sekolah[] pada kelas_sekolah yang sama = 1 kelas.
+// Keputusan Kyai (revisi 19 Jul): **kelas ditentukan NAMA GURU saja, jenjang kelas
+//   TIDAK ikut menentukan.** Sebab satu rombel bisa berisi santri campur jenjang —
+//   mis. Ust. Muin mengampu santri kelas 1 DAN 2 sekaligus; itu tetap **1 kelas**,
+//   bukan 2. Berlaku untuk SEMUA unit (PTPT, TPQ, dst).
+//   Qiraati : pasangan guru_pagi + guru_sore = 1 kelas (walau namanya berbeda);
+//             field `guru` lama dipakai bila keduanya kosong.
+//   Sekolah : himpunan guru_sekolah[] = 1 kelas.
 //
-// Format kunci SENGAJA sama dengan grouping di StatistikLembagaDetailView.vue
-//   (`gp + '||' + gs` / `guruSekolah.sort().join(' & ')`) supaya badge "N kelas"
-//   di halaman detail = jumlah tabel di ekspor PDF-nya. Jangan diubah sepihak.
+// Riwayat: versi pertama memakai `kelas|guru` (jenjang ikut) — itu memecah rombel
+//   campuran jadi beberapa kelas. Jangan dihidupkan lagi.
+//
+// SEMUA penghitung kelas WAJIB lewat sini. Sudah 2 kali angka melenceng gara-gara
+//   ada file yang merakit kuncinya sendiri (useStatistikDashboard, lalu grid kartu
+//   di RingkasanSantriLembaga). Kalau butuh hitung kelas: impor, jangan tulis ulang.
 
 const norm = (v) =>
   String(v ?? '')
     .trim()
     .toLowerCase()
 
-// Kunci rombel Qiraati 1 santri (tanpa lembaga). '' bila kelas/guru kosong.
+// Kunci rombel Qiraati 1 santri (tanpa lembaga). '' bila TAK ADA GURU.
 export function kelasKeyQiraati(s) {
-  const kls = norm(s?.kelas)
-  if (!kls) return ''
   const gp = norm(s?.guru_pagi)
   const gs = norm(s?.guru_sore)
   // `guru` = field lama (pra guru_pagi/guru_sore); dipakai hanya bila keduanya kosong.
   const pasangan = gp || gs ? `${gp}||${gs}` : norm(s?.guru)
   if (!pasangan || pasangan === '||') return ''
-  return `${kls}|${pasangan}`
+  return pasangan
 }
 
-// Kunci rombel Sekolah 1 santri (tanpa lembaga). '' bila kelas/guru kosong.
+// Kunci rombel Sekolah 1 santri (tanpa lembaga). '' bila TAK ADA GURU.
 export function kelasKeySekolah(s) {
-  const kls = norm(s?.kelas_sekolah)
-  if (!kls) return ''
   const guru = [
     ...new Set((Array.isArray(s?.guru_sekolah) ? s.guru_sekolah : []).map(norm).filter(Boolean))
   ].sort()
   if (!guru.length) return ''
-  return `${kls}|${guru.join(' & ')}`
+  return guru.join(' & ')
 }
 
 // Semua kunci kelas milik 1 santri, ber-prefix lembaga (santri bisa punya 2:

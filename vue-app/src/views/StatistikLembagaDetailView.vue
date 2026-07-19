@@ -218,16 +218,14 @@ const groups = computed(() => {
         .toUpperCase() === up
     )
   })
-  // kelas → guruKey → grup
+  // guruKey → grup (1 grup = 1 rombel = 1 kelas)
   // v.1.1.9: kunci grup diambil dari utils/kelasHitung (SATU fungsi dgn dasbor), bukan
-  //   dirakit di sini lagi — dulu dua tempat merakit sendiri lalu angkanya beda
-  //   (dasbor 50 vs halaman ini 38 di PTPT). Dua beda yang menyebabkannya:
-  //   (a) kunci lokal MENGABAIKAN field `guru` lama -> semua santri yang cuma punya
-  //       `guru` tergabung jadi satu grup '||' per kelas (kurang hitung);
-  //   (b) kunci lokal tak menormalkan spasi/kapital -> 'Ali' vs 'ali ' terpisah (lebih hitung).
-  //   Santri yang TAK punya kunci (tanpa guru / tanpa kelas) TETAP ditampilkan lewat
-  //   bucket cadangan supaya datanya kelihatan & bisa dibetulkan, tapi `dihitung:false`
-  //   sehingga tidak menambah angka "N kelas".
+  //   dirakit di sini lagi — dulu tiap tempat merakit sendiri lalu angkanya melenceng.
+  //   Kunci = NAMA GURU saja; jenjang TIDAK ikut, karena 1 guru bisa mengampu santri
+  //   campur jenjang (Ust. Muin: kelas 1 + 2 = tetap 1 kelas). Jenjang dikumpulkan
+  //   jadi label ("1, 2") lewat Set `jenjang`.
+  //   Santri TANPA guru TETAP ditampilkan lewat bucket cadangan supaya datanya
+  //   kelihatan & bisa dibetulkan, tapi `dihitung:false` -> tak menambah angka.
   const byKelas = new Map()
   for (const s of list) {
     const kls = (isSek ? s.kelas_sekolah || s.kelas : s.kelas) || '-'
@@ -243,13 +241,11 @@ const groups = computed(() => {
       gs = s.guru_sore || ''
       if (!gp && !gs) gLegacy = s.guru || ''
     }
-    const key = kunci || `__lain__|${kls}|${gp}||${gs}|${gsek.slice().sort().join(' & ')}`
-    if (!byKelas.has(kls)) byKelas.set(kls, new Map())
-    const gmap = byKelas.get(kls)
-    if (!gmap.has(key))
-      gmap.set(key, {
-        kelas: kls,
-        key: kls + '#' + key,
+    const key = kunci || `__lain__|${gp}||${gs}|${gsek.slice().sort().join(' & ')}`
+    if (!byKelas.has(key))
+      byKelas.set(key, {
+        key,
+        jenjang: new Set(),
         guruPagi: gp,
         guruSore: gs,
         guruLegacy: gLegacy,
@@ -257,7 +253,8 @@ const groups = computed(() => {
         dihitung: !!kunci,
         santri: []
       })
-    gmap.get(key).santri.push({
+    byKelas.get(key).jenjang.add(kls)
+    byKelas.get(key).santri.push({
       id: String(s.id),
       nama: s.nama || '-',
       juz: s.juz && s.juz !== '-' ? s.juz : '',
@@ -265,12 +262,19 @@ const groups = computed(() => {
     })
   }
   const out = []
-  const kelasKeys = [...byKelas.keys()].sort((a, b) =>
-    String(a).localeCompare(String(b), 'id', { numeric: true })
-  )
-  for (const k of kelasKeys) {
-    const grps = [...byKelas.get(k).values()].sort((a, b) =>
-      guruLabelOf(a).localeCompare(guruLabelOf(b), 'id')
+  {
+    // Jenjang jadi LABEL saja (bisa lebih dari satu: "1, 2" utk rombel campuran),
+    //   bukan lagi penentu grup. Urutkan grup menurut jenjang terkecil lalu guru.
+    const grps = [...byKelas.values()].map((g) => ({
+      ...g,
+      kelas: [...g.jenjang]
+        .sort((a, b) => String(a).localeCompare(String(b), 'id', { numeric: true }))
+        .join(', ')
+    }))
+    grps.sort(
+      (a, b) =>
+        String(a.kelas).localeCompare(String(b.kelas), 'id', { numeric: true }) ||
+        guruLabelOf(a).localeCompare(guruLabelOf(b), 'id')
     )
     for (const g of grps) {
       g.guruLabel = guruLabelOf(g)
@@ -282,7 +286,7 @@ const groups = computed(() => {
 })
 
 const totalSantri = computed(() => groups.value.reduce((n, g) => n + g.santri.length, 0))
-// v.1.1.9: kelas = 1 ROMBEL = 1 grup (kelas x pasangan guru), bukan kelas jenjang.
+// v.1.1.9: kelas = 1 ROMBEL = 1 grup = 1 (pasangan) GURU; jenjang tak ikut menentukan.
 //   Hanya grup ber-kunci sah yang dihitung (grup "belum ada guru" tetap TAMPIL agar
 //   datanya bisa dibetulkan, tapi tak menambah angka) — supaya sama persis dgn dasbor.
 const kelasCount = computed(() => groups.value.filter((g) => g.dihitung).length)
