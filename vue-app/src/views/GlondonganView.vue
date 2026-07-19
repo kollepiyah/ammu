@@ -314,6 +314,7 @@ const rekapRows = computed(() => {
   const per = {}
   for (const r of rowsRaw.value || []) {
     if (r.status !== 'selesai') continue
+    if (String(r.tipe) !== 'glondongan') continue // berjalan (guru kelas) TIDAK dibayar
     const bln = r.tgl_nilai ? periodeBulan(new Date(r.tgl_nilai)) : ''
     if (bln !== rekapBulan.value) continue
     const key = String(r.penguji_id || r.penguji_nama || r.penilai_nama || '—')

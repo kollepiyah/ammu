@@ -852,6 +852,7 @@ function hitungGlondonganGuru(guruId, guruNama, periode, settings) {
   let blok = 0
   for (const r of glondonganRows.value || []) {
     if (r.status !== 'selesai') continue
+    if (String(r.tipe) !== 'glondongan') continue // berjalan (juz kelas sendiri) TIDAK dibayar
     const bln = r.tgl_nilai ? periodeBulan(new Date(r.tgl_nilai)) : ''
     if (bln !== periode) continue
     const pid = String(r.penguji_id || '')
