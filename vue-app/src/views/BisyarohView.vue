@@ -1411,7 +1411,9 @@ function buildLineItemsFromGuru(g, periode) {
         ? `${b.label} (${b.qty}× ${fmtRp(b.tarif)})`
         : b.hitungan === 'per_jp'
           ? `${b.label} (${b.qty} JP × ${fmtRp(b.tarif)} × ${Math.round((b.faktor ?? 1) * 100)}%)`
-          : b.label,
+          : b.hitungan === 'per_shift'
+            ? `${b.label} (${b.qty} shift × ${fmtRp(b.tarif)})`
+            : b.label,
     nominal: b.nominal,
     jenis_id: b.jenis_id
   }))

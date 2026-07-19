@@ -29,6 +29,11 @@ export const HITUNGAN_OPTIONS = [
     value: 'per_jp',
     label: '× JP (prorata hadir)',
     hint: 'JP mapel guru × tarif × persen kehadiran sekolah (Beban Mengajar)'
+  },
+  {
+    value: 'per_shift',
+    label: '× Shift',
+    hint: 'Nominal × jumlah shift guru yang cocok (mengajar pagi+sore = 2×)'
   }
 ]
 
@@ -54,7 +59,7 @@ export function normalizeJenisBisyaroh(raw) {
   return {
     id,
     label: String(r.label || '').trim() || id,
-    hitungan: ['per_hadir', 'per_jp'].includes(r.hitungan) ? r.hitungan : 'flat',
+    hitungan: ['per_hadir', 'per_jp', 'per_shift'].includes(r.hitungan) ? r.hitungan : 'flat',
     nominal: Number(r.nominal) > 0 ? Number(r.nominal) : 0,
     scope: {
       jabatan: _arr(s.jabatan),
@@ -135,6 +140,16 @@ function hadirUntuk(j, hadirPerShift) {
   return n
 }
 
+// Jumlah SHIFT guru yang cocok scope.shift (kosong = semua shift guru). Utk hitungan per_shift.
+//   Guru mengajar pagi+sore, jenis scope [pagi,sore] → 2. Pokok jadi dikali jumlah shift.
+function jumlahShiftCocok(j, shiftIds) {
+  let n = 0
+  for (const sh of shiftIds || []) {
+    if (cocokKriteria(j.scope?.shift, sh)) n++
+  }
+  return n
+}
+
 // Baris slip bisyaroh utk 1 guru. Tiap jenis yang cocok = 1 baris.
 //   ctx = { refs, shiftIds, hadirPerShift: { pagi: 20, ... } }
 // return [{ jenis_id, kategori, lembaga, label, nominal, hitungan, qty, tarif }]
@@ -185,6 +200,19 @@ export function barisBisyaroh(jenisList, ctx) {
         tarif: j.nominal,
         faktor,
         nominal: Math.round(jp * j.nominal * faktor)
+      })
+    } else if (j.hitungan === 'per_shift') {
+      // Pokok per shift: nominal × jumlah shift guru yg cocok (pagi+sore = 2×).
+      const qty = jumlahShiftCocok(j, ctx?.shiftIds)
+      out.push({
+        jenis_id: j.id,
+        kategori,
+        lembaga,
+        label: j.label,
+        hitungan: 'per_shift',
+        qty,
+        tarif: j.nominal,
+        nominal: qty * j.nominal
       })
     } else {
       out.push({
