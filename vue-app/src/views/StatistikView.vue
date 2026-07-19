@@ -617,7 +617,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
           <div
             v-for="k in kelasSaya"
-            :key="k.lembaga + '_' + k.kelas"
+            :key="k.key"
             class="flex items-center justify-between gap-3 bg-cyan-50 dark:bg-cyan-900/20 rounded-xl p-3 border border-cyan-100 dark:border-cyan-800"
           >
             <div class="flex-1 min-w-0">
@@ -711,6 +711,7 @@ import TrenCapaianChart from '@/components/charts/TrenCapaianChart.vue' // v.100
 import RingkasanSantriLembaga from '@/components/statistik/RingkasanSantriLembaga.vue' // v.103: KPI ringkas di dasbor
 // v.21.107.0527: gating role konsisten (admin/super_admin/admin_keuangan)
 import { isFullFilterRole, isKepalaLembaga } from '@/utils/roleScope'
+import { kelasKeyQiraati, kelasKeySekolah } from '@/utils/kelasHitung'
 import { juzNum } from '@/utils/format' // v.100e: normalisasi tampilan juz (anti dobel "Juz JUZ n")
 // v.110: Ringkasan admin = KPI + Statistik Lembaga + grafik Kenaikan Tes (potret cepat).
 // Grafik perkembangan lain (kehadiran/kas/capaian/santri) pindah ke tab domain di Laporan.
@@ -885,43 +886,53 @@ const guruProfile = computed(() => {
 const guruLembaga = computed(() => guruProfile.value?.lembaga || '-')
 const guruJabatan = computed(() => guruProfile.value?.jabatan || 'Guru')
 
+// v.1.1.9: "Kelas Diampu" mengikuti definisi tunggal utils/kelasHitung — kunci = (pasangan)
+//   GURU, jenjang TIDAK ikut. Dulu dikunci `lembaga_kelas` sehingga guru dgn santri
+//   campur jenjang (mis. Ust. Muin: kelas 1 + 2 di PTPT) terhitung 2 kelas, padahal 1.
+//   Sisi ngaji & sekolah dihitung TERPISAH: baru jadi 2 kalau guru itu memang juga
+//   mengajar sekolah. Jenjang dikumpulkan jadi label ("Kelas 1, 2").
+//   Sisi sekolah juga kini memakai lembaga_sekolah/kelas_sekolah — dulu keliru
+//   melabelinya dengan lembaga & kelas Qiraati santri.
 const kelasSaya = computed(() => {
   if (role.value !== 'guru') return []
-  const guruName = String(auth.sesiAktif?.guru || auth.sesiAktif?.nama || '')
-    .toLowerCase()
-    .trim()
+  const norm = (v) =>
+    String(v ?? '')
+      .toLowerCase()
+      .trim()
+  const guruName = norm(auth.sesiAktif?.guru || auth.sesiAktif?.nama)
   if (!guruName) return []
   const map = new Map()
+  const tambah = (lembaga, kunci, jenjang, sisi) => {
+    const key = `${norm(lembaga)}|${sisi}|${kunci}`
+    if (!map.has(key))
+      map.set(key, { key, lembaga: lembaga || '-', sisi, jenjang: new Set(), santriCount: 0 })
+    const it = map.get(key)
+    it.jenjang.add(String(jenjang || '-').trim() || '-')
+    it.santriCount++
+  }
   for (const s of santriRaw.value) {
     if (s.aktif === false) continue
-    const gp = String(s.guru_pagi || '')
-      .toLowerCase()
-      .trim()
-    const gs = String(s.guru_sore || '')
-      .toLowerCase()
-      .trim()
-    const g = String(s.guru || '')
-      .toLowerCase()
-      .trim()
-    const gsek = Array.isArray(s.guru_sekolah)
-      ? s.guru_sekolah.map((x) =>
-          String(x || '')
-            .toLowerCase()
-            .trim()
-        )
-      : []
-    if (gp !== guruName && gs !== guruName && g !== guruName && !gsek.includes(guruName)) continue
-    const key = `${s.lembaga || '-'}_${s.kelas || '-'}`
-    if (!map.has(key)) {
-      map.set(key, { lembaga: s.lembaga || '-', kelas: s.kelas || '-', santriCount: 0 })
+    if ([s.guru_pagi, s.guru_sore, s.guru].some((g) => norm(g) === guruName)) {
+      const k = kelasKeyQiraati(s)
+      if (k) tambah(s.lembaga, k, s.kelas, 'ngaji')
     }
-    map.get(key).santriCount++
+    if ((Array.isArray(s.guru_sekolah) ? s.guru_sekolah : []).some((g) => norm(g) === guruName)) {
+      const k = kelasKeySekolah(s)
+      if (k) tambah(s.lembaga_sekolah, k, s.kelas_sekolah, 'sekolah')
+    }
   }
-  return [...map.values()].sort(
-    (a, b) =>
-      String(a.lembaga).localeCompare(String(b.lembaga)) ||
-      String(a.kelas).localeCompare(String(b.kelas))
-  )
+  return [...map.values()]
+    .map((x) => ({
+      ...x,
+      kelas: [...x.jenjang]
+        .sort((a, b) => String(a).localeCompare(String(b), 'id', { numeric: true }))
+        .join(', ')
+    }))
+    .sort(
+      (a, b) =>
+        String(a.lembaga).localeCompare(String(b.lembaga)) ||
+        String(a.kelas).localeCompare(String(b.kelas), 'id', { numeric: true })
+    )
 })
 
 // v.21.84.0527: Breakdown Qiraati vs Sekolah santri yang diampu guru
