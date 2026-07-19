@@ -180,7 +180,7 @@ import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
 import { isFullFilterRole } from '@/utils/roleScope'
 import { useStatistikScope } from '@/composables/useStatistikScope'
-import { hitungKelas } from '@/utils/kelasHitung'
+import { hitungKelas, hitungKelasLembaga } from '@/utils/kelasHitung'
 
 // v.103: section = 'all' (default) | 'kpi' (KPI + diagnostik) | 'lembaga' (grid + bar).
 //   Dipakai LaporanView utk menaruh KPI di ATAS chart & breakdown lembaga di BAWAH chart.
@@ -399,19 +399,14 @@ const statistikLembaga = computed(() => {
           .toUpperCase() === 'PKBM'
       return isPk && getPkbmSubTier(s.kelas_sekolah || s.kelas) === tier
     })
-    const kg = new Set()
-    for (const s of sl) {
-      const kls = String(s.kelas_sekolah || '')
-        .trim()
-        .toLowerCase()
-      for (const g of Array.isArray(s.guru_sekolah) ? s.guru_sekolah : []) {
-        const t = String(g || '')
-          .trim()
-          .toLowerCase()
-        if (t && kls) kg.add(t + '|' + kls)
-      }
+    // v.1.1.9: sumber hitung sama (utils/kelasHitung) — dulu tiap guru mapel jadi
+    //   baris sendiri sehingga 1 kelas dgn 3 guru terhitung 3 kelas.
+    return {
+      nama: tier,
+      kelas: hitungKelasLembaga(sl, 'sekolah'),
+      santri: sl.length,
+      guru: guruPkbmTotal
     }
-    return { nama: tier, kelas: kg.size, santri: sl.length, guru: guruPkbmTotal }
   }
   return (
     lembList
@@ -428,38 +423,15 @@ const statistikLembaga = computed(() => {
         const santriList = scopedSantriAll.value.filter(
           (s) => (matchLemb(s.lembaga) || matchLemb(s.lembaga_sekolah)) && s.aktif !== false
         )
-        const kelasGuruSet = new Set()
-        for (const s of santriList) {
-          if (isSekolah) {
-            const kls = String(s.kelas_sekolah || '')
-              .trim()
-              .toLowerCase()
-            const arr = Array.isArray(s.guru_sekolah) ? s.guru_sekolah : []
-            for (const g of arr) {
-              const t = String(g || '')
-                .trim()
-                .toLowerCase()
-              if (t && kls) kelasGuruSet.add(t + '|' + kls)
-            }
-          } else {
-            const kls = String(s.kelas || '')
-              .trim()
-              .toLowerCase()
-            const gp = String(s.guru_pagi || '')
-              .trim()
-              .toLowerCase()
-            const gs = String(s.guru_sore || '')
-              .trim()
-              .toLowerCase()
-            if (gp && kls) kelasGuruSet.add(gp + '|' + kls)
-            if (gs && kls) kelasGuruSet.add(gs + '|' + kls)
-          }
-        }
+        // v.1.1.9: SATU fungsi dgn KPI di atas & halaman detail (utils/kelasHitung).
+        //   Logika lama di sini menambahkan guru pagi DAN guru sore sebagai baris
+        //   terpisah -> 1 rombel berpasangan terhitung 2 kelas (PTPT 50, padahal 38).
+        const kelasCountLembaga = hitungKelasLembaga(santriList, isSekolah ? 'sekolah' : 'qiraati')
         const santriCount = santriList.length
         const guruCount = guruRaw.value.filter(
           (g) => (matchLemb(g.lembaga) || matchLemb(g.lembaga_sekolah)) && isGuruAktif(g.status)
         ).length
-        return { nama, kelas: kelasGuruSet.size, santri: santriCount, guru: guruCount }
+        return { nama, kelas: kelasCountLembaga, santri: santriCount, guru: guruCount }
       })
       // v.98.0626: ganti kartu PKBM jadi 2 kartu SMP & SMA
       .flatMap((row) =>
