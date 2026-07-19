@@ -8,10 +8,18 @@ import { canonLembaga } from '@/composables/useLembaga'
 export function normalizeBeban(row) {
   const r = row || {}
   const jp = Number(r.jp)
+  // hari = weekday getDay 0=Ahad..6=Sabtu tempat mapel ini diajar. jp = JP PER PERTEMUAN
+  //   (per hari), jadi beban mingguan mapel = jp × jumlah hari.
+  const hari = Array.isArray(r.hari)
+    ? [...new Set(r.hari.map(Number).filter((n) => Number.isInteger(n) && n >= 0 && n <= 6))].sort(
+        (a, b) => a - b
+      )
+    : []
   return {
     guru_id: String(r.guru_id ?? r.guruId ?? '').trim(),
     lembaga: canonLembaga(r.lembaga || ''),
     mapel: String(r.mapel || '').trim(),
+    hari,
     jp: Number.isFinite(jp) && jp > 0 ? jp : 0
   }
 }
@@ -22,16 +30,57 @@ export function bebanList(settings) {
   return (Array.isArray(raw) ? raw : []).map(normalizeBeban).filter((b) => b.guru_id && b.jp > 0)
 }
 
-// Total JP per lembaga untuk 1 guru → { [lembaga]: totalJP }.
+// Total JP MINGGUAN per lembaga untuk 1 guru → { [lembaga]: jpMingguan }.
+//   jpMingguan = Σ (jp per pertemuan × jumlah hari mapel itu diajar). Utk tampilan/ringkasan.
 export function jpByLembagaForGuru(settings, guruId) {
   const gid = String(guruId)
   const out = {}
   for (const b of bebanList(settings)) {
     if (b.guru_id !== gid) continue
     const key = b.lembaga || '-'
-    out[key] = (out[key] || 0) + b.jp
+    out[key] = (out[key] || 0) + b.jp * (b.hari.length || 0)
   }
   return out
+}
+
+// Jadwal JP per HARI (weekday) utk 1 guru di 1 lembaga → { [weekday 0..6]: totalJP }.
+//   Dijumlah lintas mapel yang diajar di hari itu.
+export function jpPerHariForGuru(settings, guruId, lembaga) {
+  const gid = String(guruId)
+  const lem = canonLembaga(lembaga || '')
+  const out = {}
+  for (const b of bebanList(settings)) {
+    if (b.guru_id !== gid || b.lembaga !== lem) continue
+    for (const h of b.hari) out[h] = (out[h] || 0) + b.jp
+  }
+  return out
+}
+
+function _dow(iso) {
+  const [y, m, d] = String(iso).split('-').map(Number)
+  return new Date(y, m - 1, d).getDay()
+}
+
+/**
+ * JP yang BENAR-BENAR diajar dalam satu periode (opsi C — bayar per JP per pertemuan).
+ * Tiap tanggal: lewati bila libur; ambil JP terjadwal di weekday itu (0 = guru tak mengajar
+ * hari itu → dilewati, TIDAK dianggap absen); bila guru HADIR pada tanggal itu → JP dihitung.
+ * @returns {{diajar:number, terjadwal:number}} JP diajar & JP seharusnya (utk info).
+ */
+export function jpDiajarPeriode({ jpPerHari, tanggalList, hadirSet, liburSet } = {}) {
+  const jph = jpPerHari || {}
+  const hadir = hadirSet instanceof Set ? hadirSet : new Set(hadirSet || [])
+  const libur = liburSet instanceof Set ? liburSet : new Set(liburSet || [])
+  let diajar = 0
+  let terjadwal = 0
+  for (const iso of tanggalList || []) {
+    if (libur.has(iso)) continue
+    const jp = Number(jph[_dow(iso)] || 0)
+    if (!jp) continue // tak terjadwal hari itu → bukan absen
+    terjadwal += jp
+    if (hadir.has(iso)) diajar += jp
+  }
+  return { diajar, terjadwal }
 }
 
 // Hari aktif sekolah per lembaga (getDay 0=Ahad..6=Sabtu) → settings.hariAktifLembaga
