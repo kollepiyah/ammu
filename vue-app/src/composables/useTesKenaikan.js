@@ -8,13 +8,15 @@ import { useAuthStore } from '@/stores/auth'
 import { isSuperAdmin, isAdminBiasa, isAdminKeuangan, isKepalaLembaga } from '@/utils/roleScope'
 import { lembagaScopeMatches } from '@/composables/useLembaga'
 // v.111: rumus pembagian glondongan PTPT (spawn baris tes_glondongan saat ajukan juz)
-import { splitGlondongan, testedJuz, periodeBulan } from '@/utils/glondongan'
+import { splitGlondongan, testedJuz, periodeBulan, gerbangGlondongan } from '@/utils/glondongan'
 
 export function useTesKenaikan() {
   const auth = useAuthStore()
   const ajuanRaw = ref([])
+  const glondonganRaw = ref([]) // v.111.x: baris tes_glondongan (utk gerbang PJ)
   const loaded = ref(false)
   let unsub = null
+  let unsubGl = null
 
   const sesi = computed(() => auth.sesiAktif || {})
   const myId = computed(() => String(sesi.value.id != null ? sesi.value.id : ''))
@@ -56,6 +58,28 @@ export function useTesKenaikan() {
   function hasOpenAjuan(santriId) {
     const sid = String(santriId)
     return ajuanRaw.value.some((a) => String(a.santri_id) === sid && a.status === 'diajukan')
+  }
+
+  // v.111.x: baris glondongan per ajuan_id (utk gerbang PJ).
+  const glondonganByAjuan = computed(() => {
+    const m = {}
+    for (const r of glondonganRaw.value || []) {
+      const k = String(r.ajuan_id || '')
+      if (!k) continue
+      ;(m[k] || (m[k] = [])).push(r)
+    }
+    return m
+  })
+  // Gerbang PJ: hanya PTPT jenis 'juz'. Lainnya tak pernah terkunci.
+  function gerbangFor(ajuan) {
+    const kosong = { terkunci: false, pending: [], adaBarisHilang: false }
+    if (!ajuan) return kosong
+    const isPtptJuz =
+      String(ajuan.lembaga || '')
+        .trim()
+        .toUpperCase() === 'PTPT' && (ajuan.jenis || '') === 'juz'
+    if (!isPtptJuz) return kosong
+    return gerbangGlondongan(ajuan.juz_asal, glondonganByAjuan.value[String(ajuan.id)] || [])
   }
 
   // Ajukan batch. items: [{ santri, jenis, target }]. guruList utk resolve kepala (push Fase B).
@@ -128,10 +152,11 @@ export function useTesKenaikan() {
   //   - berjalan  : juz kelas berjalan di bawah target -> guru kelas santri (langsung 'ditugaskan').
   //   - glondongan: blok 5-juz per kelas asal (kumulatif) -> 'menunggu' penugasan koordinator/PJ/super_admin.
   //   Nilai per juz (format PJ) TAK masuk rapor — murni catatan evaluasi.
-  async function spawnGlondongan(ajuanId, s, now, guruList = []) {
+  // Bangun baris tes_glondongan (berjalan + glondongan blok) utk 1 ajuan.
+  function _buildGlondonganRows(ajuanId, s, now, guruList = []) {
     const T = testedJuz(s)
     const split = splitGlondongan(T)
-    if (!split.ok) return // juz tak valid / di luar 1..30 -> tak ada glondongan
+    if (!split.ok) return [] // juz tak valid / di luar 1..30
     const base = {
       ajuan_id: String(ajuanId),
       santri_id: String(s.id),
@@ -181,7 +206,10 @@ export function useTesKenaikan() {
         ditugaskan_oleh: ''
       })
     }
-    for (const r of rows) {
+    return rows
+  }
+  async function spawnGlondongan(ajuanId, s, now, guruList = []) {
+    for (const r of _buildGlondonganRows(ajuanId, s, now, guruList)) {
       try {
         await addOne('tes_glondongan', r)
       } catch (e) {
@@ -190,10 +218,48 @@ export function useTesKenaikan() {
       }
     }
   }
+  // v.111.x: buat ULANG baris yang HILANG (spawn gagal / santri lama) tanpa menyentuh yg sudah ada.
+  //   s = objek santri (utk juz/mukim/guru kelas). Return jumlah baris baru dibuat.
+  async function buatUlangGlondongan(ajuan, s, guruList = []) {
+    if (!ajuan?.id || !s) return 0
+    const existing = glondonganByAjuan.value[String(ajuan.id)] || []
+    const punya = (r) =>
+      existing.some(
+        (x) =>
+          String(x.tipe) === String(r.tipe) &&
+          (r.tipe === 'berjalan' || Number(x.kelas_asal) === Number(r.kelas_asal))
+      )
+    const rows = _buildGlondonganRows(String(ajuan.id), s, new Date(), guruList).filter(
+      (r) => !punya(r)
+    )
+    let n = 0
+    for (const r of rows) {
+      try {
+        await addOne('tes_glondongan', r)
+        n++
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.warn('[glondongan] buat ulang gagal:', e?.message || e)
+      }
+    }
+    return n
+  }
 
   // Penguji: tetapkan hasil. status: 'lulus' | 'tidak_lulus' | 'ditolak'.
   //   nilai = { aspekKey: angka 0–90 } (v.100d) — opsional, disimpan apa adanya.
   async function putuskan(id, status, catatan = '', nilai = null) {
+    // v.111.x GERBANG: PJ tak boleh mengetes (Lulus/Belum Lulus) sebelum glondongan+berjalan
+    //   'selesai'. Tolak/Batal (status lain) tetap boleh.
+    if (status === 'lulus' || status === 'tidak_lulus') {
+      const ajuan = ajuanRaw.value.find((a) => String(a.id) === String(id))
+      if (gerbangFor(ajuan).terkunci) {
+        const err = new Error(
+          'Glondongan/berjalan belum selesai disimak — PJ belum bisa mengetes santri ini.'
+        )
+        err.code = 'GERBANG_GLONDONGAN'
+        throw err
+      }
+    }
     const patch = {
       status,
       catatan_hasil: String(catatan || ''),
@@ -250,9 +316,14 @@ export function useTesKenaikan() {
       }))
       loaded.value = true
     })
+    // v.111.x: baris glondongan (utk gerbang PJ + buat-ulang).
+    unsubGl = subscribeColl('tes_glondongan', (docs) => {
+      glondonganRaw.value = docs || []
+    })
   })
   onUnmounted(() => {
     if (unsub) unsub()
+    if (unsubGl) unsubGl()
   })
 
   return {
@@ -271,6 +342,10 @@ export function useTesKenaikan() {
     canCrud,
     editAjuan,
     resetAjuan,
-    hapusAjuan
+    hapusAjuan,
+    // v.111.x gerbang glondongan PJ
+    glondonganByAjuan,
+    gerbangFor,
+    buatUlangGlondongan
   }
 }
