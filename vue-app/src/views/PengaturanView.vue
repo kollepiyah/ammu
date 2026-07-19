@@ -610,9 +610,8 @@
                   <button
                     type="button"
                     @click="hapusShift(idx)"
-                    :disabled="sh.bawaan"
-                    :title="sh.bawaan ? 'Shift bawaan — tak bisa dihapus' : 'Hapus'"
-                    class="w-7 h-7 rounded-lg border border-[var(--border-default)] text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed"
+                    :title="sh.bawaan ? 'Hapus shift bawaan (hati-hati)' : 'Hapus'"
+                    class="w-7 h-7 rounded-lg border border-[var(--border-default)] text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 flex items-center justify-center"
                   >
                     <i class="fas fa-trash text-xs"></i>
                   </button>
@@ -671,15 +670,15 @@
             >
             <select
               v-model="dlgShift.untuk"
-              :disabled="dlgShift.bawaan"
-              class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)] disabled:opacity-60"
+              class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
             >
               <option v-for="o in SHIFT_UNTUK_OPTIONS" :key="o.value" :value="o.value">
                 {{ o.label }}
               </option>
             </select>
             <p v-if="dlgShift.bawaan" class="text-[10px] text-[var(--text-tertiary)] italic mt-1">
-              Shift bawaan — hanya jam &amp; namanya yang bisa diubah.
+              Shift bawaan (id <b>{{ dlgShift.id }}</b> dikenali fp_sync.py). Nama, jam, dan "Untuk"
+              bebas diubah — <b>id tetap</b> supaya absensi lama tak yatim.
             </p>
           </div>
           <div class="grid grid-cols-3 gap-2">
@@ -1705,7 +1704,9 @@ function hydrateForm() {
   }
   // v.1.1.9: seed master shift dari form (BUKAN dari `s`) supaya jam default defaultForm()
   //   ikut terpakai saat settings masih kosong — tampilan sama seperti 5 kartu jam lama.
-  form.value.shiftMaster = shiftList({ ...form.value, shiftMaster: s.shiftMaster })
+  form.value.shiftMaster = bersihkanHadirIkut(
+    shiftList({ ...form.value, shiftMaster: s.shiftMaster })
+  )
   dirty.value = false
 }
 
@@ -2202,6 +2203,16 @@ const dlgShift = ref(null)
 const dlgShiftIdx = ref(-1)
 const dlgShiftIsNew = ref(false)
 
+// Buang referensi hadir_ikut ke shift yang sudah TAK ADA (mis. sesudah rename/hapus) —
+//   kalau dibiarkan, materialisasi hadir otomatis diam-diam tak jalan.
+function bersihkanHadirIkut(list) {
+  const ada = new Set((list || []).map((x) => String(x.id)))
+  for (const x of list || []) {
+    if (Array.isArray(x.hadir_ikut)) x.hadir_ikut = x.hadir_ikut.filter((v) => ada.has(String(v)))
+  }
+  return list
+}
+
 // Shift lain (utk pilihan hadir_ikut) — kecuali shift yang sedang diedit.
 const shiftLainOptions = computed(() =>
   (form.value.shiftMaster || []).filter((s) => s.id && s.id !== dlgShift.value?.id)
@@ -2235,14 +2246,26 @@ function openShiftDialog(sh, idx) {
 
 function hapusShift(idx) {
   const sh = (form.value.shiftMaster || [])[idx]
-  if (!sh || sh.bawaan) return
+  if (!sh) return
+  // v.1.1.x: shift BAWAAN kini boleh dihapus juga (Kyai atur strukturnya sendiri),
+  //   tapi diberi peringatan tambahan: id bawaan dipakai cermin legacy fp_sync.py.
+  const extra = sh.bawaan
+    ? `\n\nPERHATIAN: ini shift BAWAAN (id "${sh.id}"). Mesin REVO lewat fp_sync.py hanya mengenal id bawaan — setelah dihapus, jalur itu tak lagi punya jam untuk shift ini (sync Desktop & HiView tetap jalan).`
+    : ''
   if (
     !confirm(
-      `Hapus shift "${sh.label}"?\n\nAbsensi lama dengan shift ini tetap tersimpan, tapi tidak lagi muncul di kolom absensi & bonus kehadiran.`
+      `Hapus shift "${sh.label}"?\n\nAbsensi lama dengan shift ini tetap tersimpan, tapi tidak lagi muncul di kolom absensi & bonus kehadiran. Guru yang memilih shift ini otomatis kehilangan shift tsb.${extra}`
     )
   )
     return
+  const hapusId = String(sh.id || '')
   form.value.shiftMaster.splice(idx, 1)
+  // Bersihkan referensi menggantung di hadir_ikut shift lain.
+  for (const x of form.value.shiftMaster || []) {
+    if (Array.isArray(x.hadir_ikut) && x.hadir_ikut.includes(hapusId)) {
+      x.hadir_ikut = x.hadir_ikut.filter((v) => v !== hapusId)
+    }
+  }
   dirty.value = true
 }
 
@@ -2281,7 +2304,9 @@ function simpanShiftDialog() {
 // Shift baru tak punya padanan legacy — sengaja dilewati.
 function buildPayload() {
   const payload = { ...form.value }
-  payload.shiftMaster = (form.value.shiftMaster || []).map(normalizeShift).filter((x) => x.id)
+  payload.shiftMaster = bersihkanHadirIkut(
+    (form.value.shiftMaster || []).map(normalizeShift).filter((x) => x.id)
+  )
   Object.assign(payload, shiftMasterToLegacy(payload.shiftMaster))
   return payload
 }
