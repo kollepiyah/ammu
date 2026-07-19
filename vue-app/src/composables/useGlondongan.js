@@ -6,7 +6,15 @@
 //     - Baca catatan evaluasi              : guru kelas santri + PJ (via view Task #6).
 //   Nilai glondongan/berjalan TAK masuk rapor (murni catatan evaluasi).
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { subscribeColl, subscribeDoc, updateOne, deleteOne, getOne, mergeOne } from '@/services/db'
+import {
+  subscribeColl,
+  subscribeDoc,
+  updateOne,
+  deleteOne,
+  getOne,
+  mergeOne,
+  setOne
+} from '@/services/db'
 import { useAuthStore } from '@/stores/auth'
 import { isSuperAdmin } from '@/utils/roleScope'
 import {
@@ -103,6 +111,32 @@ export function useGlondongan() {
       ditugaskan_oleh: myNama.value,
       tgl_tugas: new Date().toISOString()
     })
+    // v.1.1.9: antre PUSH ke HP penguji (dibaca Edge Function dispatch-push, cron tiap menit).
+    //   Best-effort: gagal antre TIDAK menggagalkan penugasan.
+    try {
+      const r = rowsRaw.value.find((x) => String(x.id) === String(id))
+      const pid = String(penguji?.id || '')
+      if (r && pid) {
+        const juzTxt =
+          r.juz_dari === r.juz_sampai ? `juz ${r.juz_dari}` : `juz ${r.juz_dari}–${r.juz_sampai}`
+        const nid = `ntf_glond_${id}`
+        await setOne('notif_queue', nid, {
+          id: nid,
+          judul: 'Tugas Menyimak Glondongan',
+          pesan: `Anda ditugaskan menyimak ${r.nama_cache || 'santri'} — ${juzTxt}.`,
+          kategori: 'glondongan',
+          target: { type: 'guru', id: pid },
+          link: '/glondongan',
+          ref_id: String(id),
+          dibaca: false,
+          status: 'pending',
+          created_at: new Date().toISOString()
+        })
+      }
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.warn('[glondongan] antre push gagal:', e?.message || e)
+    }
   }
   // Batalkan penugasan (kembali ke antrian 'menunggu').
   async function batalTugas(id) {

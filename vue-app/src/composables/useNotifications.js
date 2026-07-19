@@ -20,7 +20,7 @@
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { subscribeColl, subscribeDoc, mergeOne } from '@/services/db'
 import { useAuthStore } from '@/stores/auth'
-import { isKepalaLembaga } from '@/utils/roleScope'
+import { isKepalaLembaga, isSuperAdmin } from '@/utils/roleScope'
 import { lembagaScopeMatches } from '@/composables/useLembaga' // v.100: scope kepala utk notif tes kenaikan
 
 export function useNotifications() {
@@ -38,6 +38,7 @@ export function useNotifications() {
   const kenaikanRaw = ref([]) // dari koleksi `riwayat_kenaikan` (event ditulis saat PROSES NAIK)
   const prestasiRaw = ref([]) // dari koleksi `notif_prestasi` (event ditulis saat input nilai prestasi)
   const tesRaw = ref([]) // v.100: dari koleksi `tes_kenaikan` (ajuan + hasil tes)
+  const glondRaw = ref([]) // v.1.1.9: dari koleksi `tes_glondongan` (tugas menyimak)
   const notifState = ref({})
 
   // unsub list
@@ -273,11 +274,12 @@ export function useNotifications() {
           color: lulus ? 'teal' : 'amber'
         })
       }
-      // sbg PENGUJI (kepala/PJ scoped, admin semua): ajuan baru menunggu tes
-      if (isAdminRole.value || isKepalaLembaga(sesi)) {
+      // sbg PENGUJI — v.1.1.9: HANYA super_admin (semua lembaga) + Kepala/PJ (lembaganya saja).
+      //   Dulu semua role 'admin' kebagian → notif tes membanjiri admin biasa/keuangan.
+      if (isSuperAdmin(sesi) || isKepalaLembaga(sesi)) {
         for (const a of tesRaw.value) {
           if (a.status !== 'diajukan') continue
-          if (!isAdminRole.value && !lembagaScopeMatches(sesi.lembaga, a.lembaga)) continue
+          if (!isSuperAdmin(sesi) && !lembagaScopeMatches(sesi.lembaga, a.lembaga)) continue
           out.push({
             id: 'tesreq_' + (a.id || a._id),
             jenis: 'tes',
@@ -309,6 +311,57 @@ export function useNotifications() {
     return out
   }
 
+  // v.1.1.9: Tes Glondongan PTPT. Sumber: koleksi `tes_glondongan`.
+  //   Guru penyimak → blok yang DITUGASKAN ke dia. super_admin + Kepala/PJ PTPT → blok
+  //   'menunggu' yang perlu ditugaskan. Selain itu TIDAK dapat notif.
+  function getGlondongan() {
+    const sesi = auth.sesiAktif || {}
+    const me = userId.value
+    const out = []
+    if (role.value !== 'guru' && role.value !== 'admin') return out
+    const juzTxt = (r) =>
+      r.juz_dari === r.juz_sampai ? `juz ${r.juz_dari}` : `juz ${r.juz_dari}–${r.juz_sampai}`
+    // 1) Tugas menyimak untuk SAYA
+    for (const r of glondRaw.value) {
+      if (r.status !== 'ditugaskan') continue
+      const mine =
+        String(r.penguji_id || '') === me ||
+        (!r.penguji_id && String(r.penguji_nama || '').trim() === String(sesi.nama || '').trim())
+      if (!mine) continue
+      out.push({
+        id: 'glondtug_' + (r.id || r._id),
+        jenis: 'glondongan',
+        judul:
+          r.tipe === 'berjalan' ? 'Tugas Menyimak (juz berjalan)' : 'Tugas Menyimak Glondongan',
+        body: `${r.nama_cache || ''} — ${juzTxt(r)}`.trim(),
+        ts: tsMs(r.tgl_tugas || r._ts),
+        link: '/glondongan',
+        icon: 'fa-headphones',
+        color: 'violet'
+      })
+    }
+    // 2) Blok menunggu penugasan → super_admin + Kepala/PJ (scope PTPT)
+    if (
+      isSuperAdmin(sesi) ||
+      (isKepalaLembaga(sesi) && lembagaScopeMatches(sesi.lembaga, 'PTPT'))
+    ) {
+      for (const r of glondRaw.value) {
+        if (r.status !== 'menunggu' || r.tipe !== 'glondongan') continue
+        out.push({
+          id: 'glondwait_' + (r.id || r._id),
+          jenis: 'glondongan',
+          judul: 'Glondongan Perlu Penguji',
+          body: `${r.nama_cache || ''} — ${juzTxt(r)}`.trim(),
+          ts: tsMs(r.tgl_daftar || r._ts),
+          link: '/glondongan',
+          icon: 'fa-user-plus',
+          color: 'amber'
+        })
+      }
+    }
+    return out
+  }
+
   // v.73.0526: cleared_at = timestamp setelah user klik "Bersihkan semua".
   // Notif dengan ts <= cleared_at di-hide dari list (per-user state).
   const clearedAt = computed(() => Number(notifState.value?.cleared_at || 0))
@@ -325,7 +378,8 @@ export function useNotifications() {
       ...getLibur(),
       ...getKenaikan(),
       ...getPrestasi(),
-      ...getTesKenaikan()
+      ...getTesKenaikan(),
+      ...getGlondongan()
     ]
     const clearTs = clearedAt.value
     return all
@@ -454,6 +508,14 @@ export function useNotifications() {
         tesRaw.value = docs || []
       })
     )
+    // v.1.1.9: tugas menyimak glondongan — HANYA guru/admin (santri/wali tak berkepentingan)
+    if (role.value === 'guru' || role.value === 'admin') {
+      unsubs.push(
+        subscribeColl('tes_glondongan', (docs) => {
+          glondRaw.value = docs || []
+        })
+      )
+    }
     if (userId.value) {
       unsubs.push(
         subscribeDoc('user_notif_state', userId.value, (d) => {
