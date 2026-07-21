@@ -68,3 +68,25 @@ export function isGuruAktif(g) {
 export function guruAktifSaja(list) {
   return (list || []).filter(isGuruAktif)
 }
+
+/**
+ * v.1.2.0 — Santri ini SUDAH punya guru untuk kategori tsb?
+ *   'ngaji'   : guru_pagi / guru_sore / guru (field lama pra-pasangan)
+ *   'sekolah' : guru_sekolah[] terisi
+ *
+ * Dipakai layar Assign Guru Kelas untuk menyembunyikan santri yang sudah terurus
+ * (Kyai 22 Jul 2026). Pengecekan WAJIB per-kategori: kalau dicampur, santri yang
+ * punya guru ngaji tak akan pernah bisa di-assign guru sekolah — dan karena hampir
+ * semua santri punya guru ngaji, daftar sekolah akan kosong melompong.
+ */
+export function punyaGuruKategori(s, kategori) {
+  if (kategori === 'sekolah') {
+    const gs = Array.isArray(s?.guru_sekolah)
+      ? s.guru_sekolah
+      : s?.guru_sekolah
+        ? [s.guru_sekolah]
+        : []
+    return gs.some((x) => _lower(x))
+  }
+  return !!(_lower(s?.guru_pagi) || _lower(s?.guru_sore) || _lower(s?.guru))
+}

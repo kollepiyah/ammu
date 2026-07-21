@@ -16,6 +16,7 @@ import { sortSantri, sortLembagaNames } from '@/utils/santriSort'
 import { useExcel } from '@/composables/useExcel'
 import { toTitleCase } from '@/utils/format'
 import { bestNameMatch } from '@/utils/fuzzyMatch' // v.100 Batch12: cocokkan nama mirip saat impor
+import { punyaGuruKategori } from '@/utils/guruScope' // v.1.2.0: sembunyikan santri yang sudah berguru
 
 const toast = useToast()
 const { exportStyled, importFile } = useExcel()
@@ -206,17 +207,31 @@ const santriKandidat = computed(() => {
   )
   return sortSantri(list, { lembagaField: 'lembaga_sekolah', kelasField: 'kelas_sekolah' })
 })
+// v.1.2.0 (Kyai 22 Jul): santri yang SUDAH punya guru tak usah muncul lagi saat
+//   meng-assign guru baru — daftarnya jadi sisa yang benar-benar belum terurus.
+//   Dicek PER KATEGORI: sedang assign ngaji -> lihat guru ngajinya saja; assign
+//   sekolah -> lihat guru sekolahnya saja. Kalau dicampur, santri yang punya guru
+//   ngaji tak akan pernah bisa di-assign guru sekolah (dan hampir semua santri
+//   punya guru ngaji, jadi daftar sekolah bakal kosong melompong).
+const sudahPunyaGuru = (s) => punyaGuruKategori(s, kategori.value)
+// Jalan keluar: kalau guru santri SALAH dan perlu diganti, ia harus bisa dimunculkan
+//   lagi — tanpa ini layar assign jadi buntu untuk koreksi.
+const tampilkanSudahBerguru = ref(false)
+const santriSudahBerguru = computed(() => santriKandidat.value.filter(sudahPunyaGuru))
+
 const santriKandidatTampil = computed(() => {
+  let list = santriKandidat.value
+  if (!tampilkanSudahBerguru.value) list = list.filter((s) => !sudahPunyaGuru(s))
   const kw = santriSearch.value.trim().toLowerCase()
-  if (!kw) return santriKandidat.value
-  return santriKandidat.value.filter((s) =>
+  if (!kw) return list
+  return list.filter((s) =>
     String(s.nama || '')
       .toLowerCase()
       .includes(kw)
   )
 })
 const jumlahDipilih = computed(
-  () => santriKandidat.value.filter((s) => checked.value.has(s.id)).length
+  () => santriKandidatTampil.value.filter((s) => checked.value.has(s.id)).length
 )
 const adaGuruDipilih = computed(() =>
   kategori.value === 'ngaji'
@@ -236,7 +251,7 @@ function pilihKelas(k) {
     guruSekolah1.value = arr[0] || ''
     guruSekolah2.value = arr[1] || ''
   }
-  checked.value = new Set(santriKandidat.value.map((s) => s.id))
+  checked.value = new Set(santriKandidatTampil.value.map((s) => s.id))
 }
 
 function toggle(id) {
@@ -246,7 +261,7 @@ function toggle(id) {
   checked.value = set
 }
 function selectAll() {
-  checked.value = new Set(santriKandidat.value.map((s) => s.id))
+  checked.value = new Set(santriKandidatTampil.value.map((s) => s.id))
 }
 function selectNone() {
   checked.value = new Set()
@@ -792,7 +807,23 @@ async function onImportAssign(e) {
         <p class="text-[11px] text-[var(--text-secondary)]">
           Centang santri kelas ini.
           <span class="text-teal-600 font-bold">{{ jumlahDipilih }}</span> /
-          {{ santriKandidat.length }} dipilih.
+          {{ santriKandidatTampil.length }} dipilih.
+          <!-- v.1.2.0: santri yang sudah punya guru disembunyikan; beri jalan keluar
+               supaya guru yang SALAH masih bisa dikoreksi lewat layar ini. -->
+          <template v-if="santriSudahBerguru.length">
+            <br />
+            <span class="text-[var(--text-tertiary)]">
+              {{ santriSudahBerguru.length }} santri disembunyikan (sudah punya guru
+              {{ kategori === 'ngaji' ? 'ngaji' : 'sekolah' }}).
+            </span>
+            <button
+              type="button"
+              @click="tampilkanSudahBerguru = !tampilkanSudahBerguru"
+              class="font-bold text-teal-700 dark:text-teal-300 hover:underline ml-1"
+            >
+              {{ tampilkanSudahBerguru ? 'sembunyikan lagi' : 'tampilkan' }}
+            </button>
+          </template>
         </p>
         <div class="flex gap-2">
           <button

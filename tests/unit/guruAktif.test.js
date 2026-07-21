@@ -7,7 +7,7 @@
 //   2. CeremonialView memakai `status !== 'Non-Aktif'`, padahal string itu TAK PERNAH
 //      ditulis siapa pun. Nilai asli: 'Aktif' (form) / 'aktif' (impor) / 'Tidak Aktif'.
 import { describe, it, expect } from 'vitest'
-import { isGuruAktif, guruAktifSaja } from '@/utils/guruScope'
+import { isGuruAktif, guruAktifSaja, punyaGuruKategori } from '@/utils/guruScope'
 
 describe('isGuruAktif', () => {
   it("'Aktif' (ditulis form guru) = aktif", () => {
@@ -66,5 +66,49 @@ describe('guruAktifSaja', () => {
   it('daftar kosong / null aman', () => {
     expect(guruAktifSaja([])).toEqual([])
     expect(guruAktifSaja(null)).toEqual([])
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Kyai (22 Jul 2026): "di assign guru (kelas), jika santri sudah punya guru baik
+// sekolah atau ngaji, jangan muncul lagi namanya ketika saya assign untuk guru baru."
+//
+// Pengecekan WAJIB per-kategori. Kalau dicampur, santri yang punya guru ngaji tak
+// akan pernah bisa di-assign guru sekolah — dan karena hampir semua santri punya
+// guru ngaji, daftar sekolah bakal kosong melompong.
+// ─────────────────────────────────────────────────────────────────────────────
+describe('punyaGuruKategori', () => {
+  it('ngaji: guru_pagi ATAU guru_sore terisi = sudah punya', () => {
+    expect(punyaGuruKategori({ guru_pagi: 'Bu A' }, 'ngaji')).toBe(true)
+    expect(punyaGuruKategori({ guru_sore: 'Bu B' }, 'ngaji')).toBe(true)
+  })
+
+  it('ngaji: field `guru` lama ikut dihitung', () => {
+    expect(punyaGuruKategori({ guru: 'Ust. Lama' }, 'ngaji')).toBe(true)
+  })
+
+  it('sekolah: guru_sekolah[] terisi = sudah punya', () => {
+    expect(punyaGuruKategori({ guru_sekolah: ['Ust. C'] }, 'sekolah')).toBe(true)
+    expect(punyaGuruKategori({ guru_sekolah: 'Ust. C' }, 'sekolah')).toBe(true)
+  })
+
+  it('KUNCI: dua kategori tidak saling mempengaruhi', () => {
+    const s = { guru_pagi: 'Bu A', guru_sekolah: [] }
+    expect(punyaGuruKategori(s, 'ngaji')).toBe(true)
+    // Punya guru ngaji TIDAK boleh membuatnya dianggap sudah punya guru sekolah.
+    expect(punyaGuruKategori(s, 'sekolah')).toBe(false)
+  })
+
+  it('kebalikannya juga', () => {
+    const s = { guru_sekolah: ['Ust. C'] }
+    expect(punyaGuruKategori(s, 'sekolah')).toBe(true)
+    expect(punyaGuruKategori(s, 'ngaji')).toBe(false)
+  })
+
+  it('nilai kosong / spasi tidak dianggap punya guru', () => {
+    expect(punyaGuruKategori({ guru_pagi: '', guru_sore: '  ' }, 'ngaji')).toBe(false)
+    expect(punyaGuruKategori({ guru_sekolah: ['', '  '] }, 'sekolah')).toBe(false)
+    expect(punyaGuruKategori({}, 'ngaji')).toBe(false)
+    expect(punyaGuruKategori(null, 'sekolah')).toBe(false)
   })
 })
