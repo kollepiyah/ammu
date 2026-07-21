@@ -773,6 +773,7 @@ import {
 import { shiftsForGuru } from '@/utils/shiftDerive'
 import { shiftLabelOf, shiftList } from '@/utils/shiftMaster'
 import { materialisasiHadirIkut } from '@/utils/absensiMaterialize'
+import { guruAktifSaja } from '@/utils/guruScope' // v.1.2.0: sumber tunggal penyaring status guru
 import { jpByLembagaForGuru, jpPerHariForGuru, jpDiajarPeriode } from '@/utils/bebanMengajar'
 import { tanggalRentang } from '@/utils/absensiRekap'
 import { useKegiatan } from '@/composables/useKegiatan'
@@ -1315,9 +1316,7 @@ function guruTipeLabel(g) {
 }
 
 const filteredGuru = computed(() => {
-  let list = (guruRaw.value || []).filter(
-    (g) => String(g.status || 'Aktif').toLowerCase() === 'aktif'
-  )
+  let list = guruAktifSaja(guruRaw.value)
   const q = searchGuru.value.trim().toLowerCase()
   if (q) {
     list = list.filter((g) =>
@@ -1549,9 +1548,7 @@ async function materialisasiGabunganPeriode(periode) {
     const rows = (absensiShift.value || []).filter(
       (a) => String(a.tanggal || '').slice(0, 7) === periode
     )
-    const guruAktifList = (guruRaw.value || []).filter(
-      (g) => String(g.status || 'Aktif').toLowerCase() === 'aktif'
-    )
+    const guruAktifList = guruAktifSaja(guruRaw.value)
     return await materialisasiHadirIkut(guruAktifList, rows, settingsStore.settings || {}, setOne)
   } catch {
     return 0
@@ -1727,9 +1724,7 @@ const bulkDone = ref(0)
 const bulkLog = ref([])
 
 const bulkTargets = computed(() => {
-  let list = (guruRaw.value || []).filter(
-    (g) => String(g.status || 'Aktif').toLowerCase() === 'aktif'
-  )
+  let list = guruAktifSaja(guruRaw.value)
   if (bulkTipe.value !== 'semua') {
     list = list.filter((g) => {
       const isNgaji = !!(g.lembaga && g.lembaga !== 'Yayasan')

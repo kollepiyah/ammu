@@ -70,6 +70,65 @@ describe('guruAktifSaja', () => {
 })
 
 // ─────────────────────────────────────────────────────────────────────────────
+// KONSOLIDASI BisyarohView (22 Jul 2026) — bukti kesetaraan sebelum menyentuh uang.
+//
+// Tiga penyaring di BisyarohView (filteredGuru, materialisasiGabunganPeriode,
+// bulkTargets) memakai pola TANPA `.trim()`:
+//     String(g.status || 'Aktif').toLowerCase() === 'aktif'
+// Menggantinya dengan isGuruAktif() otomatis MENAMBAH `.trim()`. Ketiganya
+// menyetir perhitungan bisyaroh, jadi kesetaraannya wajib DIBUKTIKAN, bukan
+// diyakini.
+//
+// `.trim()` cuma berpengaruh kalau status punya spasi di ujung. Audit SELURUH
+// penulis guru.status di aplikasi menunjukkan itu tak terjangkau:
+//   useGuruForm.js:33          -> 'Aktif' (default guru baru)
+//   GuruFormView.vue:349       -> <select> 'Aktif' / 'Tidak Aktif'
+//   GuruView.bulkSetStatus     -> 'Aktif' / 'Non-aktif'
+//   GuruView.toggleAktifGuru   -> 'Aktif' / 'Non-aktif'
+//   importMap.js:220           -> 'aktif' / 'Tidak Aktif' (literal ternary)
+//   GuruView.vue:1305 (impor)  -> String(...).trim() — sudah dipangkas di hulu
+// Tes ini mengunci audit tsb: kalau kelak ada penulis baru yang meloloskan spasi,
+// daftar di bawah harus bertambah dan kesetaraannya diperiksa ulang.
+// ─────────────────────────────────────────────────────────────────────────────
+describe('isGuruAktif setara dengan penyaring lama BisyarohView', () => {
+  // Salinan PERSIS predikat lama di BisyarohView sebelum konsolidasi.
+  const predikatLamaBisyaroh = (g) => String(g.status || 'Aktif').toLowerCase() === 'aktif'
+
+  // Tiap nilai yang benar-benar bisa mendarat di kolom `status` lewat aplikasi.
+  // Jalur impor Excel meneruskan isi sel apa adanya (sudah di-trim), jadi string
+  // sembarang seperti 'Cuti' ikut mungkin — dan wajib diputus sama oleh keduanya.
+  const NILAI_TERTULIS_APP = [
+    'Aktif',
+    'aktif',
+    'AKTIF',
+    'Tidak Aktif',
+    'tidak aktif',
+    'Non-aktif',
+    'Non-Aktif',
+    'Cuti',
+    '',
+    null,
+    undefined
+  ]
+
+  it('putusan lama === putusan helper untuk SEMUA nilai yang bisa ditulis aplikasi', () => {
+    for (const status of NILAI_TERTULIS_APP) {
+      expect({ status, aktif: isGuruAktif({ status }) }).toEqual({
+        status,
+        aktif: predikatLamaBisyaroh({ status })
+      })
+    }
+  })
+
+  it('SATU-SATUNYA selisih: status berspasi — dan itu tak terjangkau jalur tulis app', () => {
+    // Perilaku lama membuang guru ini dari bisyaroh diam-diam; helper mengikutkannya,
+    // sama seperti AbsensiGuruView/GuruView yang memang sudah memangkas spasi.
+    expect(predikatLamaBisyaroh({ status: 'Aktif ' })).toBe(false)
+    expect(isGuruAktif({ status: 'Aktif ' })).toBe(true)
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Kyai (22 Jul 2026): "di assign guru (kelas), jika santri sudah punya guru baik
 // sekolah atau ngaji, jangan muncul lagi namanya ketika saya assign untuk guru baru."
 //
