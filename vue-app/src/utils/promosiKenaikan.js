@@ -97,8 +97,25 @@ export function buildKenaikanQiraatiPayload(s, opts = {}, ctx = {}) {
   const kk = { ...(s.kartu_kenaikan || {}) }
   const lmb = opts.lembaga
   const kls = opts.kelas
-  if (lmb && kls) {
-    const resolved = resolveKenaikanSchemaPath(lmb, kls, opts.juz, opts.khotam_ke, settings)
+
+  // v.1.1.9 FIX (Kyai 21 Jul 2026) — kartu PTPT dicap SATU KOLOM TERLALU KANAN.
+  //   `opts.juz` = juz TUJUAN (santri tes juz 10 -> target juz 11), dan dulu itu yang
+  //   dipakai mencap kartu, sehingga lulus tes juz 10 mengisi kolom "Juz 11".
+  //   Keputusan Kyai: tanggal di kolom "Juz N" = TANGGAL LULUS TES JUZ N.
+  //   Jadi yang dicap adalah juz yang BARU SAJA LULUS = opts.juz - 1, dan blok
+  //   kelasnya ikut juz itu (juz 10 -> Kelas 2), BUKAN kelas tujuan (Kelas 3) —
+  //   kalau kelasnya tak ikut digeser, item juz_10 tak ada di blok Kelas 3 dan
+  //   capnya hilang diam-diam.
+  //   juz tujuan 1 (belum pernah lulus juz apa pun) -> tak ada yang dicap.
+  const juzTujuan = Number(opts.juz)
+  const isPtptJuz = lmb === 'PTPT' && Number.isFinite(juzTujuan) && juzTujuan > 0
+  const juzLulus = isPtptJuz ? juzTujuan - 1 : NaN
+  const adaCap = !isPtptJuz || juzLulus >= 1
+  const klsCap = isPtptJuz && juzLulus >= 1 ? `Kelas ${Math.ceil(juzLulus / 5)}` : kls
+  const juzCap = isPtptJuz ? (juzLulus >= 1 ? String(juzLulus) : '') : opts.juz
+
+  if (lmb && kls && adaCap) {
+    const resolved = resolveKenaikanSchemaPath(lmb, klsCap, juzCap, opts.khotam_ke, settings)
     if (resolved.kelasId) {
       if (!kk[lmb]) kk[lmb] = {}
       if (!kk[lmb][resolved.kelasId]) kk[lmb][resolved.kelasId] = {}
@@ -120,7 +137,7 @@ export function buildKenaikanQiraatiPayload(s, opts = {}, ctx = {}) {
       payload.kartu_kenaikan = kk
     } else {
       if (!kk[lmb]) kk[lmb] = {}
-      if (!kk[lmb][kls]) kk[lmb][kls] = {}
+      if (!kk[lmb][klsCap]) kk[lmb][klsCap] = {}
       // v.100e: ceremonial diisi MANUAL (tidak auto-stamp di sini).
       payload.kartu_kenaikan = kk
     }
