@@ -1360,6 +1360,10 @@ import { ref, reactive, computed, onUnmounted, watch } from 'vue'
 import { useDesktopShell } from '@/composables/useDesktopShell'
 import { definePageActions } from '@/composables/useRibbonContext'
 import { queryColl, setOne, mergeOne, updateOne, deleteOne } from '@/services/db'
+// v.1.1.9: masa tempuh per juz di kartu kenaikan PTPT (definisi "hari aktif" sama
+//   dengan menu Tes Kenaikan — kalender minus Jumat minus libur Kalender Kegiatan).
+import { hariEfektif } from '@/utils/masaTempuh'
+import { expandLiburDates } from '@/utils/liburNasional'
 import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
@@ -3109,23 +3113,64 @@ async function eksporKartuPdf() {
           ['TGL MASUK', s.tgl_masuk || '-'],
           ['ALAMAT', (s.alamat || '-').toUpperCase()]
         ]
+    // v.1.1.9: rapikan blok identitas — titik dua disejajarkan dari label TERPANJANG
+    //   (dulu dipaku di x=38; label "GURU KELAS" hampir menyentuhnya), jarak baris
+    //   sedikit dilonggarkan, dan nilainya di-bold supaya beda tegas dari labelnya.
+    const labelW = Math.max(...identitasRows.map(([k]) => doc.getTextWidth(k)))
+    const colonX = 14 + labelW + 3
     for (const [k, v] of identitasRows) {
+      doc.setFont('helvetica', 'normal')
       doc.text(k, 14, yId)
-      doc.text(':', 38, yId)
-      doc.text(String(v), 41, yId)
-      yId += 4.8
+      doc.text(':', colonX, yId)
+      doc.setFont('helvetica', 'bold')
+      doc.text(String(v), colonX + 3, yId)
+      yId += 5.2
     }
+    doc.setFont('helvetica', 'normal')
 
     // v.21.73: Conditional layout — PTPT pakai MATRIX 3 kelas/blok (match kartu fisik PTPT MU)
     const tableStartY = yId + 4
 
     if (kartuLembaga.value === 'PTPT') {
+      // ── v.1.1.9 (Kyai): MASA TEMPUH per juz, satu baris tipis di bawah tanggal ──
+      //   Dihitung dari TANGGAL DI KARTU INI sendiri (bukan tes_kenaikan) supaya angkanya
+      //   selalu cocok dengan tanggal yang tercetak persis di atasnya — dan tetap jalan
+      //   untuk santri lama yang kartunya diisi manual tanpa baris tes_kenaikan.
+      //   Definisi "hari aktif" sama dengan di menu Tes Kenaikan: hari kalender dikurangi
+      //   Jumat (settings.liburJumat) dan tanggal libur Kalender Kegiatan.
+      const tglJuz = {} // { <juz>: 'YYYY-MM-DD' }
+      for (let k = 1; k <= 6; k++) {
+        const kData = data[`kelas_${k}`] || {}
+        for (let j = (k - 1) * 5 + 1; j <= k * 5; j++) {
+          const v = kData[`juz_${j}`]
+          const t = typeof v === 'object' ? v?.tanggal || v?.tgl || '' : v || ''
+          if (t) tglJuz[j] = String(t).slice(0, 10)
+        }
+      }
+      // Libur kalender: ambil sekali saat ekspor (view ini tak berlangganan `kegiatan`).
+      let liburSet = new Set()
+      try {
+        liburSet = expandLiburDates(await queryColl('kegiatan'))
+      } catch (_e) {
+        /* tanpa kalender: cukup buang Jumat — jangan gagalkan cetak kartu */
+      }
+      const optHari = { libur: liburSet, liburJumat: settingsObj.liburJumat !== false }
+      // masaJuz[j] = hari efektif sejak juz BERTANGGAL sebelumnya. Juz pertama = null.
+      const masaJuz = {}
+      let prevJuz = 0
+      for (let j = 1; j <= 30; j++) {
+        if (!tglJuz[j]) continue
+        if (prevJuz) masaJuz[j] = hariEfektif(tglJuz[prevJuz], tglJuz[j], optHari)
+        prevJuz = j
+      }
+
       // Matrix PTPT: 6 kelas dibagi 2 blok (Kelas 1-3 + Kelas 4-6), masing-masing 15 juz
       const buildBlok = (kelasStart) => {
         const headers = []
         const subHeaders = []
         const juzRow = []
         const tanggalRow = []
+        const masaRow = []
         for (let k = kelasStart; k < kelasStart + 3; k++) {
           headers.push({
             content: `Kelas ${k}`,
@@ -3144,6 +3189,7 @@ async function eksporKartuPdf() {
             const v = kData[`juz_${j}`]
             const tgl = typeof v === 'object' ? v?.tanggal || v?.tgl || '' : v || ''
             tanggalRow.push(tgl ? formatDate(tgl) : '')
+            masaRow.push(Number.isFinite(masaJuz[j]) ? String(masaJuz[j]) : '')
           }
         }
         const cerRow = []
@@ -3157,7 +3203,8 @@ async function eksporKartuPdf() {
             styles: { halign: 'left', fontStyle: 'normal', fontSize: 9 }
           })
         }
-        return { head: [headers, subHeaders, juzRow], body: [tanggalRow, cerRow] }
+        // Baris 1 = tanggal (tinggi, tulis tangan) · baris 2 = masa tempuh · baris 3 = ceremonial
+        return { head: [headers, subHeaders, juzRow], body: [tanggalRow, masaRow, cerRow] }
       }
 
       const cellW = 182 / 15
@@ -3171,6 +3218,8 @@ async function eksporKartuPdf() {
           fontSize: 10,
           cellPadding: 1.5,
           lineColor: [80, 80, 80],
+          // v.1.1.9: SATU ketebalan garis untuk seluruh kartu. Dulu body 0.2 & head 0.25 —
+          //   bedanya tipis tapi bikin kotak header terlihat "dobel" di cetakan.
           lineWidth: 0.2,
           textColor: [0, 0, 0],
           valign: 'middle'
@@ -3182,7 +3231,7 @@ async function eksporKartuPdf() {
           fontStyle: 'bold',
           halign: 'center',
           lineColor: [80, 80, 80],
-          lineWidth: 0.25
+          lineWidth: 0.2
         },
         bodyStyles: { fillColor: [255, 255, 255], textColor: [0, 0, 0] },
         columnStyles: colStyles,
@@ -3193,10 +3242,15 @@ async function eksporKartuPdf() {
       const pageH = doc.internal.pageSize.getHeight()
       const bottomMargin = 14
       const availableH = pageH - tableStartY - bottomMargin
-      // Per blok struktur: 3 header rows (~7mm each = 21) + 1 body row + 1 ceremonial row (~6mm) + gap (4mm) = ~31mm + body
-      // 2 blok: 2 × (31mm + body) + 4mm gap-between = 62 + 2×body + 4 = 66 + 2body
-      // Solve: 66 + 2body = availableH → body = (availableH - 66) / 2
-      const bodyRowH = Math.max(25, Math.min(60, (availableH - 70) / 2))
+      // Per blok: 3 baris header (~7mm) + baris tanggal + baris masa tempuh (~5mm) +
+      //   baris ceremonial (~6mm). Dua blok + jarak antar-blok.
+      const MASA_H = 5 // tinggi baris masa tempuh
+      const GAP_BLOK = 6 // v.1.1.9: jarak antar blok 4 -> 6mm supaya tak terlihat dempet
+      const overheadPerBlok = 21 + MASA_H + 6
+      const availForBody = availableH - (2 * overheadPerBlok + GAP_BLOK)
+      // v.1.1.9: batas atas 60 -> 38mm. Baris tulis-tangan tetap ada, tapi kartu tak lagi
+      //   didominasi ruang kosong seperti keluhan Kyai. Batas bawah 22mm masih cukup ditulisi.
+      const bodyRowH = Math.max(22, Math.min(38, availForBody / 2))
 
       // v.107: baris tanggal (body row 0) digambar VERTIKAL (rotate down, -90°) — kolom Juz sempit,
       //   DD-MM-YYYY tak muat horizontal. didParseCell kosongkan teks default; didDrawCell gambar manual.
@@ -3210,6 +3264,16 @@ async function eksporKartuPdf() {
               : String(d.cell.text || '').trim()
             d.cell._vtext = t
             if (t) d.cell.text = [''] // jangan gambar horizontal; vertikal di didDrawCell
+          }
+          // v.1.1.9: baris MASA TEMPUH — tipis, angka kecil, abu-abu supaya jelas ini
+          //   keterangan turunan, bukan isian yang harus ditulis tangan.
+          if (d.section === 'body' && d.row.index === 1) {
+            d.cell.styles.minCellHeight = MASA_H
+            d.cell.styles.halign = 'center'
+            d.cell.styles.valign = 'middle'
+            d.cell.styles.fontSize = 7
+            d.cell.styles.cellPadding = 0.6
+            d.cell.styles.textColor = [90, 90, 90]
           }
         },
         didDrawCell: (d) => {
@@ -3245,11 +3309,23 @@ async function eksporKartuPdf() {
       const blokB = buildBlok(4)
       drawTable(doc, {
         ...commonOpts,
-        startY: lastY + 4,
+        startY: lastY + GAP_BLOK,
         head: blokB.head,
         body: blokB.body,
         ...dateCellHooks
       })
+
+      // Keterangan baris masa tempuh — tanpa ini angka "42" tak jelas satuannya.
+      doc.setFont('helvetica', 'italic')
+      doc.setFontSize(7.5)
+      doc.setTextColor(90, 90, 90)
+      doc.text(
+        'Angka kecil di bawah tanggal = masa tempuh (hari aktif) sejak juz sebelumnya; Jumat & libur kalender tidak dihitung.',
+        14,
+        doc.lastAutoTable.finalY + 4
+      )
+      doc.setTextColor(0, 0, 0)
+      doc.setFont('helvetica', 'normal')
     } else {
       // Flat layout dengan rowspan kelas (TPQ, Pra PTPT, PPPH)
       const pageH = doc.internal.pageSize.getHeight()
