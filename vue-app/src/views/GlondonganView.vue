@@ -122,10 +122,35 @@ const guruPtpt = computed(() =>
 //   `bukaSemua` = jalan keluar kalau daftar penyimak belum diisi / butuh guru lain
 //   mendadak, supaya penugasan tak pernah macet total.
 const bukaSemuaGuru = ref({}) // { [rowId]: true }
-function pengujiOptions(row) {
-  if (bukaSemuaGuru.value[row.id]) return guruPtpt.value
-  const terdaftar = guruPtpt.value.filter((g) => bolehMenyimak(g.id, row))
-  return terdaftar.length ? terdaftar : guruPtpt.value
+
+// v.1.2.0 (Kyai): guru kelas santri itu sendiri BOLEH menyimak glondongan santrinya.
+//   Dibatasi ke guru PTPT aktif — RLS `tes_glondongan_upd` mensyaratkan penguji
+//   terpasang juga `auth_guru_di_lembaga('PTPT')`, jadi menawarkan guru non-PTPT
+//   hanya akan berujung 403 saat dia menyimpan nilai.
+function guruKelasPtptSantri(santriId) {
+  const nama = new Set(guruKelasSantri(santriId).map((g) => g.nama.toLowerCase()))
+  return guruPtpt.value.filter((g) =>
+    nama.has(
+      String(g.nama || '')
+        .trim()
+        .toLowerCase()
+    )
+  )
+}
+
+// Pilihan penguji, dikelompokkan supaya koordinator paham asal-usul tiap nama.
+function pengujiGroups(row) {
+  if (bukaSemuaGuru.value[row.id]) return [{ label: 'Semua guru PTPT', guru: guruPtpt.value }]
+  const kelas = guruKelasPtptSantri(row.santri_id)
+  const idKelas = new Set(kelas.map((g) => String(g.id)))
+  const terdaftar = guruPtpt.value.filter(
+    (g) => bolehMenyimak(g.id, row) && !idKelas.has(String(g.id))
+  )
+  const groups = []
+  if (terdaftar.length) groups.push({ label: `Penyimak ${kategoriLabel(row)}`, guru: terdaftar })
+  if (kelas.length) groups.push({ label: 'Guru kelas santri ini', guru: kelas })
+  // Belum ada penyimak terdaftar & santri tanpa guru kelas -> jangan buntu.
+  return groups.length ? groups : [{ label: 'Semua guru PTPT', guru: guruPtpt.value }]
 }
 // Daftar penyimak kategori ini memang kosong? (bedakan dari "sengaja dibuka semua")
 function penyimakKosong(row) {
@@ -614,6 +639,31 @@ const rekapTotal = computed(() => rekapRows.value.reduce((s, g) => s + g.total, 
                 {{ juzLabel(row) }}
                 <span class="text-[var(--text-tertiary)]">· utk tes Juz {{ row.juz_target }}</span>
               </p>
+              <!-- v.1.2.0 (Kyai): guru kelas ditampilkan sejak di ANTRIAN, supaya
+                   koordinator tahu siapa pengampunya sebelum menunjuk penyimak. -->
+              <p class="text-[10px] mt-0.5 flex items-center gap-1 flex-wrap">
+                <span class="text-[var(--text-tertiary)]">Guru kelas:</span>
+                <template v-if="guruKelasSantri(row.santri_id).length">
+                  <span
+                    v-for="g in guruKelasSantri(row.santri_id)"
+                    :key="g.nama"
+                    class="inline-flex items-center gap-1"
+                  >
+                    <b class="text-[var(--text-secondary)]">{{ g.nama }}</b>
+                    <a
+                      v-if="waLink(g.wa)"
+                      :href="waLink(g.wa)"
+                      target="_blank"
+                      rel="noopener"
+                      class="px-1 py-0.5 rounded font-bold bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-300"
+                      :aria-label="`WhatsApp ${g.nama}`"
+                    >
+                      <i class="fab fa-whatsapp"></i>
+                    </a>
+                  </span>
+                </template>
+                <span v-else class="italic text-[var(--text-tertiary)]">—</span>
+              </p>
             </div>
           </div>
           <div class="flex items-center gap-2 mt-2">
@@ -622,9 +672,9 @@ const rekapTotal = computed(() => rekapRows.value.reduce((s, g) => s + g.total, 
               class="flex-1 min-w-0 px-2.5 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-input)] text-[var(--text-primary)] cursor-pointer"
             >
               <option value="">— pilih guru penguji —</option>
-              <option v-for="g in pengujiOptions(row)" :key="g.id" :value="g.id">
-                {{ g.nama }}
-              </option>
+              <optgroup v-for="grp in pengujiGroups(row)" :key="grp.label" :label="grp.label">
+                <option v-for="g in grp.guru" :key="g.id" :value="g.id">{{ g.nama }}</option>
+              </optgroup>
             </select>
             <button
               type="button"
