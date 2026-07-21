@@ -181,6 +181,16 @@
             <p v-if="a.catatan_hasil" class="text-[11px] text-[var(--text-tertiary)] mt-1 italic">
               Catatan: {{ a.catatan_hasil }}
             </p>
+            <!-- v.1.1.9: masa tempuh juz PTPT. Tab Riwayat hanya untuk penguji, jadi
+                 tanpa ini GURU KELAS (pengaju) tak pernah melihatnya — padahal Kyai
+                 minta tampil di guru kelas DAN PJ. -->
+            <p
+              v-if="masaTempuhText(a)"
+              class="text-[10px] mt-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded font-bold bg-indigo-50 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300"
+              title="Hari efektif sejak lulus juz sebelumnya (Jumat & libur kalender tidak dihitung)"
+            >
+              <i class="fas fa-hourglass-half"></i>Masa tempuh: {{ masaTempuhText(a) }}
+            </p>
           </div>
           <div class="flex flex-col items-end gap-1.5 flex-shrink-0">
             <span
