@@ -10,6 +10,7 @@ import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
 // Aspek nilai PTPT (sama persis dg tes PJ): Tahfizh, Istimror, Fashohah, Tajwid (0..90).
 import { tesAspekFlat, clampNilaiTes, TES_NILAI_MAX } from '@/utils/tesKenaikan'
+import { waLink } from '@/utils/format' // v.1.1.9: tautan kontak penyimak / guru kelas
 import {
   KATEGORI_LABEL,
   CAKUPAN_OPTS,
@@ -25,6 +26,7 @@ const {
   sesi,
   myNama,
   antrianTugas,
+  sudahDitugaskan, // v.1.1.9: blok ber-penyimak (kontak WA)
   canAssignAny,
   myKategori,
   koordinatorGlondongan,
@@ -34,6 +36,7 @@ const {
   isAmpuanSaya, // v.1.1.9: scope PJ — hanya santri ampuannya
   isSuper,
   tugaskan,
+  batalTugas,
   tugasNilaiSaya,
   simpanNilai,
   savePeran,
@@ -125,6 +128,49 @@ function penyimakKosong(row) {
   return !guruPtpt.value.some((g) => bolehMenyimak(g.id, row))
 }
 
+// ── v.1.1.9: kontak (Kyai 21 Jul) — "tugas menyimak glondongan saya ingin tertera
+//    no WA penyimak, guru kelas, dan santri."
+//    Kartu Penugasan  -> penyimak + WA-nya (koordinator gampang menghubungi).
+//    Kartu Tugas Menilai -> guru kelas santri + WA-nya (penyimak koordinasi ke sana).
+const guruByNama = computed(() => {
+  const m = new Map()
+  for (const g of guruRaw.value || []) {
+    const n = String(g.nama || '')
+      .trim()
+      .toLowerCase()
+    if (n) m.set(n, g)
+  }
+  return m
+})
+const santriById = computed(() => {
+  const m = new Map()
+  for (const s of santriRaw.value || []) m.set(String(s.id), s)
+  return m
+})
+function guruDariNama(nama) {
+  return (
+    guruByNama.value.get(
+      String(nama || '')
+        .trim()
+        .toLowerCase()
+    ) || null
+  )
+}
+/** Guru kelas (pagi & sore) santri baris ini -> [{ nama, wa }]. */
+function guruKelasSantri(santriId) {
+  const s = santriById.value.get(String(santriId))
+  if (!s) return []
+  const nama = [s.guru_pagi, s.guru_sore, s.guru].map((x) => String(x || '').trim()).filter(Boolean)
+  const unik = [...new Set(nama)]
+  return unik.map((n) => ({ nama: n, wa: guruDariNama(n)?.wa || '' }))
+}
+/** Penyimak baris ini -> { nama, wa }. Cari guru by id dulu, jatuh ke nama. */
+function penyimakBaris(row) {
+  const byId = (guruRaw.value || []).find((g) => String(g.id) === String(row?.penguji_id || ''))
+  const g = byId || guruDariNama(row?.penguji_nama)
+  return { nama: row?.penguji_nama || g?.nama || '—', wa: g?.wa || '' }
+}
+
 // Konteks peran (ditampilkan di header Penugasan).
 const scopeLabel = computed(() => {
   if (isSuper.value) return 'Super Admin — semua kategori'
@@ -171,6 +217,20 @@ function juzLabel(row) {
   return row.juz_dari === row.juz_sampai
     ? `Juz ${row.juz_dari}`
     : `Juz ${row.juz_dari}–${row.juz_sampai}`
+}
+
+// v.1.1.9: lepas penugasan → blok kembali ke antrian 'menunggu'.
+const batalId = ref('')
+async function batalTugasRow(row) {
+  batalId.value = String(row.id)
+  try {
+    await batalTugas(row.id)
+    toast.success('Penugasan dibatalkan — blok kembali ke antrian')
+  } catch (e) {
+    toast.error('Gagal membatalkan: ' + (e.message || e))
+  } finally {
+    batalId.value = ''
+  }
 }
 
 // ── Tab Tugas Menilai: input nilai per juz + catatan ──
@@ -591,6 +651,86 @@ const rekapTotal = computed(() => rekapRows.value.reduce((s, g) => s + g.total, 
       >
         <i class="fas fa-triangle-exclamation mr-1"></i>Belum ada guru PTPT aktif untuk dipilih.
       </p>
+
+      <!-- v.1.1.9: blok yang sudah punya penyimak — beserta kontaknya. Dulu tab ini
+           hanya menampilkan yang 'menunggu', jadi tak ada tempat melihat siapa
+           penyimaknya, apalagi menghubunginya. -->
+      <div v-if="sudahDitugaskan.length" class="mt-5 pt-4 border-t border-[var(--border-subtle)]">
+        <h4 class="text-xs font-black text-[var(--text-primary)] mb-2">
+          <i class="fas fa-user-check text-teal-600 mr-1"></i>Sudah Ditugaskan ({{
+            sudahDitugaskan.length
+          }})
+        </h4>
+        <ul class="space-y-2">
+          <li
+            v-for="row in sudahDitugaskan"
+            :key="row.id"
+            class="p-3 rounded-xl border border-[var(--border-default)] bg-[var(--bg-muted)]"
+          >
+            <p class="text-sm font-bold text-[var(--text-primary)] truncate">
+              {{ row.nama_cache || '—' }}
+            </p>
+            <p class="text-[11px] text-[var(--text-secondary)]">
+              Blok <b class="text-teal-700 dark:text-teal-300">Kelas {{ row.kelas_asal }}</b> ·
+              {{ juzLabel(row) }} · {{ kategoriLabel(row) }}
+            </p>
+
+            <!-- Penyimak + WA -->
+            <p class="text-[11px] mt-1.5 flex items-center gap-1.5 flex-wrap">
+              <span class="text-[var(--text-tertiary)]">Penyimak:</span>
+              <b class="text-[var(--text-primary)]">{{ penyimakBaris(row).nama }}</b>
+              <a
+                v-if="waLink(penyimakBaris(row).wa)"
+                :href="waLink(penyimakBaris(row).wa)"
+                target="_blank"
+                rel="noopener"
+                class="px-1.5 py-0.5 rounded font-bold bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-300"
+              >
+                <i class="fab fa-whatsapp mr-1"></i>{{ penyimakBaris(row).wa }}
+              </a>
+              <span v-else class="text-[10px] italic text-[var(--text-tertiary)]"
+                >(no WA belum diisi)</span
+              >
+            </p>
+
+            <!-- Guru kelas santri + WA -->
+            <p class="text-[11px] mt-1 flex items-center gap-1.5 flex-wrap">
+              <span class="text-[var(--text-tertiary)]">Guru kelas:</span>
+              <template v-if="guruKelasSantri(row.santri_id).length">
+                <span
+                  v-for="g in guruKelasSantri(row.santri_id)"
+                  :key="g.nama"
+                  class="inline-flex items-center gap-1"
+                >
+                  <b class="text-[var(--text-primary)]">{{ g.nama }}</b>
+                  <a
+                    v-if="waLink(g.wa)"
+                    :href="waLink(g.wa)"
+                    target="_blank"
+                    rel="noopener"
+                    class="px-1.5 py-0.5 rounded font-bold bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-300"
+                  >
+                    <i class="fab fa-whatsapp"></i>
+                  </a>
+                </span>
+              </template>
+              <span v-else class="text-[10px] italic text-[var(--text-tertiary)]">—</span>
+            </p>
+
+            <button
+              type="button"
+              @click="batalTugasRow(row)"
+              :disabled="batalId === String(row.id)"
+              class="mt-2 text-[10px] font-bold text-rose-600 hover:underline disabled:opacity-40"
+            >
+              <i
+                :class="['fas mr-1', batalId === String(row.id) ? 'fa-spinner fa-spin' : 'fa-undo']"
+              ></i
+              >Batalkan penugasan
+            </button>
+          </li>
+        </ul>
+      </div>
     </div>
 
     <!-- ── TAB: TUGAS MENILAI ── -->
@@ -640,6 +780,31 @@ const rekapTotal = computed(() => rekapRows.value.reduce((s, g) => s + g.total, 
                 >
                 Kelas {{ row.kelas_asal }} · {{ juzLabel(row) }}
                 <span class="text-[var(--text-tertiary)]">· tes Juz {{ row.juz_target }}</span>
+              </p>
+              <!-- v.1.1.9: guru kelas santri + WA, supaya penyimak bisa koordinasi -->
+              <p
+                v-if="guruKelasSantri(row.santri_id).length"
+                class="text-[10px] mt-0.5 flex items-center gap-1 flex-wrap"
+                @click.stop
+              >
+                <span class="text-[var(--text-tertiary)]">Guru kelas:</span>
+                <span
+                  v-for="g in guruKelasSantri(row.santri_id)"
+                  :key="g.nama"
+                  class="inline-flex items-center gap-1"
+                >
+                  <b class="text-[var(--text-secondary)]">{{ g.nama }}</b>
+                  <a
+                    v-if="waLink(g.wa)"
+                    :href="waLink(g.wa)"
+                    target="_blank"
+                    rel="noopener"
+                    class="px-1 py-0.5 rounded font-bold bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-300"
+                    :aria-label="`WhatsApp ${g.nama}`"
+                  >
+                    <i class="fab fa-whatsapp"></i>
+                  </a>
+                </span>
               </p>
             </div>
             <i

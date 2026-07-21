@@ -1,11 +1,31 @@
 // Formatting utilities — port dari legacy
 const BULAN_ID = [
-  'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+  'Januari',
+  'Februari',
+  'Maret',
+  'April',
+  'Mei',
+  'Juni',
+  'Juli',
+  'Agustus',
+  'September',
+  'Oktober',
+  'November',
+  'Desember'
 ]
 const BULAN_ID_SHORT = [
-  'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
-  'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des'
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'Mei',
+  'Jun',
+  'Jul',
+  'Agt',
+  'Sep',
+  'Okt',
+  'Nov',
+  'Des'
 ]
 
 /** Format Rupiah. */
@@ -72,7 +92,10 @@ export function juzNum(v) {
  */
 export function toTitleCase(str) {
   if (!str) return ''
-  return String(str).trim().toLowerCase().replace(/(^|[\s,.\-])(\w)/g, (m, sep, c) => sep + c.toUpperCase())
+  return String(str)
+    .trim()
+    .toLowerCase()
+    .replace(/(^|[\s,.\-])(\w)/g, (m, sep, c) => sep + c.toUpperCase())
 }
 
 /** Hapus gelar dari nama guru ('Ustadz Ahmad' → 'Ahmad'). */
@@ -150,6 +173,18 @@ export function parseMultipleWA(raw) {
     if (norm && norm.length >= 8 && !result.includes(norm)) result.push(norm)
   }
   return result
+}
+
+/**
+ * v.1.1.9: Tautan wa.me dari nomor apa pun ('' bila nomor tak layak).
+ * wa.me minta format internasional TANPA '+' → 0812… jadi 62812…
+ * `pesan` opsional untuk teks awal chat.
+ */
+export function waLink(raw, pesan = '') {
+  const lokal = normalizeWA(raw) // selalu berawalan '0'
+  if (!lokal || lokal.length < 8) return ''
+  const intl = '62' + lokal.slice(1)
+  return `https://wa.me/${intl}${pesan ? `?text=${encodeURIComponent(pesan)}` : ''}`
 }
 
 export { BULAN_ID, BULAN_ID_SHORT }

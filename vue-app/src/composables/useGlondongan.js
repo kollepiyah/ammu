@@ -92,6 +92,17 @@ export function useGlondongan() {
     )
   )
 
+  // v.1.1.9: blok yang SUDAH ditugaskan & boleh saya kelola — dulu tab Penugasan
+  //   hanya menampilkan yang 'menunggu', jadi koordinator tak punya tempat untuk
+  //   melihat siapa penyimaknya (dan menghubunginya).
+  const sudahDitugaskan = computed(() =>
+    sortNewest(
+      rowsRaw.value.filter(
+        (r) => r.tipe === 'glondongan' && r.status === 'ditugaskan' && canAssign(r)
+      )
+    )
+  )
+
   // Tugas menilai SAYA: baris 'ditugaskan' ke saya (penguji glondongan atau guru kelas berjalan).
   const tugasNilaiSaya = computed(() =>
     sortNewest(
@@ -255,6 +266,7 @@ export function useGlondongan() {
     canAssign,
     canAssignAny,
     antrianTugas,
+    sudahDitugaskan, // v.1.1.9: blok ber-penyimak (utk kontak WA di tab Penugasan)
     tugasNilaiSaya,
     catatanSantri,
     rowsByAjuan,
