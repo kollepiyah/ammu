@@ -106,6 +106,69 @@ Lihat run: `select * from cron.job_run_details order by start_time desc limit 20
 | trigger enqueue | Insert `beranda_post` → muncul row `notif_queue` baru (status pending). |
 | hiview-absen | `GET .../functions/v1/hiview-absen` → `{ok:true,service:"hiview-absen"}`. Lalu scan di mesin → row `absensi_shift_guru` (source `hiview`) muncul. Lihat §8. |
 
+## 6b. Triase "push tak muncul di HP, hanya notif dalam aplikasi"
+
+Gejala ini dilaporkan Kyai 21 Jul 2026. Notif **dalam aplikasi** (lonceng) dihitung dari
+data biasa, jadi ia tetap jalan walau push mati total — jangan dipakai sebagai bukti
+bahwa push berfungsi.
+
+**Yang sudah dipastikan BUKAN penyebabnya** (dicek 21 Jul):
+- Edge Function `dispatch-push` **ter-deploy** (OPTIONS balas 200; nama palsu balas 404).
+- Sisi klien **benar**: `POST_NOTIFICATIONS` ada di manifest, izin diminta,
+  channel `ammu_default` dibuat, `register()` dipanggil, token disimpan lewat RPC
+  `save_push_token` (RPC ada di remote — anon ditolak 401, memang begitu desainnya).
+
+**Tersangka utama: cron & secret TIDAK ikut `supabase db push`.** Keduanya sengaja
+dipasang MANUAL (butuh service-role key yang tak boleh masuk repo), jadi database yang
+migrasinya 100% sinkron pun bisa tetap tak pernah mengirim push.
+
+Jalankan di **Dashboard SQL** — urut, berhenti di temuan pertama:
+
+```sql
+-- 1) Sebaran status antrian. Ini yang paling menentukan.
+select data->>'status' as status, count(*) from public.notif_queue group by 1;
+```
+
+| Hasil | Artinya | Tindakan |
+|---|---|---|
+| semua `pending` | cron TIDAK pernah memanggil dispatch-push | lanjut ke (2) |
+| banyak `failed` + `error` = `No tokens` | cron jalan, tapi tak ada token FCM tersimpan | lanjut ke (4) |
+| ada `sent` | FCM sudah dikirim — masalahnya di sisi HP, bukan server | lanjut ke (5) |
+
+```sql
+-- 2) Cron terjadwal & aktif?
+select jobname, schedule, active from cron.job;
+-- 3) Cron-nya sukses atau gagal?
+select jobname, status, return_message, start_time
+from cron.job_run_details order by start_time desc limit 20;
+```
+
+Bila `dispatch-push-every-min` **tidak ada** -> jalankan §5. Bila ada tapi
+`return_message` berisi error, biasanya URL/service-key di Vault belum diisi (§4).
+
+Bila cron sukses tapi antrian tetap `failed`, cek secret FCM:
+`supabase secrets list` — harus ada `FCM_SERVICE_ACCOUNT`. Tanpa itu fungsi balas
+`{ok:false, error:"FCM_SERVICE_ACCOUNT invalid: ..."}` pada SETIAP run.
+
+```sql
+-- 4) Ada token FCM tersimpan?
+select
+  (select count(*) from public.guru   where data->>'fcm_token' is not null) as guru_bertoken,
+  (select count(*) from public.santri where data->>'fcm_token' is not null) as santri_bertoken;
+```
+
+Nol berarti belum ada perangkat yang mendaftar: token baru tersimpan setelah user
+**login di APK native** dan **mengizinkan notifikasi**. Uji dari browser/Electron tak
+akan pernah mengisinya.
+
+**(5) Sudah `sent` tapi HP tetap sepi** — periksa di perangkat: izin notifikasi aplikasi,
+penghemat baterai/"batasi aktivitas latar" (paling sering di HP Xiaomi/Oppo/Vivo), dan
+apakah APK yang terpasang memang build yang sudah memuat `usePushNotifications`.
+
+> Uji manual dispatch (HATI-HATI: benar-benar MENGIRIM semua antrian pending ke HP
+> penerima) — `select net.http_post(...'/functions/v1/dispatch-push'...)`, lalu ulangi
+> query (1) dan lihat apakah `pending` berpindah ke `sent`/`failed`.
+
 ## 7. Catatan / risiko
 
 - **Latensi push**: cron tiap menit → push tertunda ≤60 dtk (Firestore dulu instan).
