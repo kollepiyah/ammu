@@ -896,35 +896,44 @@
                     >
                       {{ schema.itemHeader || 'Item' }}
                     </div>
-                    <table class="w-full text-[10px]">
-                      <thead>
-                        <tr class="bg-[var(--bg-card)]">
-                          <th
-                            v-for="it in k.items"
-                            :key="it.id"
-                            class="border border-[var(--border-default)] px-1 py-1 font-bold text-center text-[var(--text-primary)]"
-                          >
-                            {{ it.label }}
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr class="bg-[var(--bg-card)]">
-                          <td
-                            v-for="it in k.items"
-                            :key="it.id"
-                            class="border border-[var(--border-default)] px-1 py-1"
-                          >
-                            <input
-                              type="date"
-                              :value="getCell(k.id, it.id)"
-                              @input="(e) => setCell(k.id, it.id, e.target.value)"
-                              class="w-full text-[9px] py-0.5 px-1 border-0 outline-none bg-transparent text-[var(--text-primary)]"
-                            />
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
+                    <!-- v.1.1.9 FIX (Kyai): juz TERAKHIR tiap kelas tak tampil.
+                         `input[type=date]` punya lebar minimum bawaan browser (~120px),
+                         jadi 5 kolom melebihi lebar blok; pembungkus ber-overflow-hidden
+                         lalu MEMOTONGNYA diam-diam — tanpa scrollbar, jadi tak kelihatan
+                         ada yang hilang. Sekarang: table-fixed (5 kolom bagi rata) +
+                         pembungkus sendiri yang bisa digeser, supaya kalau pun sempit
+                         datanya tetap bisa dicapai, bukan lenyap. -->
+                    <div class="overflow-x-auto">
+                      <table class="w-full table-fixed min-w-[300px] text-[10px]">
+                        <thead>
+                          <tr class="bg-[var(--bg-card)]">
+                            <th
+                              v-for="it in k.items"
+                              :key="it.id"
+                              class="border border-[var(--border-default)] px-1 py-1 font-bold text-center text-[var(--text-primary)]"
+                            >
+                              {{ it.label }}
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr class="bg-[var(--bg-card)]">
+                            <td
+                              v-for="it in k.items"
+                              :key="it.id"
+                              class="border border-[var(--border-default)] px-0.5 py-1"
+                            >
+                              <input
+                                type="date"
+                                :value="getCell(k.id, it.id)"
+                                @input="(e) => setCell(k.id, it.id, e.target.value)"
+                                class="w-full min-w-0 text-[9px] py-0.5 px-0.5 border-0 outline-none bg-transparent text-[var(--text-primary)]"
+                              />
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
                     <!-- Ceremonial -->
                     <div
                       v-if="k.ceremonial"
