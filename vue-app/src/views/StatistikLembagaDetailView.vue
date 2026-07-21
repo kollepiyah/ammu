@@ -147,7 +147,7 @@
 import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useGuru } from '@/composables/useGuru'
-import { useLembaga, getPkbmSubTier } from '@/composables/useLembaga'
+import { useLembaga, getPkbmSubTier, isSekolahLembaga } from '@/composables/useLembaga'
 import { useStatistikScope } from '@/composables/useStatistikScope'
 import { kelasKeyQiraati, kelasKeySekolah } from '@/utils/kelasHitung'
 import { useSettingsStore } from '@/stores/settings'
@@ -168,11 +168,14 @@ const { scopedSantriAll } = useStatistikScope()
 const settingsStore = useSettingsStore()
 const toast = useToast()
 useGuru()
-useLembaga()
+const { lembagaRaw } = useLembaga()
 
 const namaLembaga = computed(() => String(route.params.nama || '').trim())
-const _SEKOLAH_NAMA = ['TK', 'SDI', 'SMP', 'SMA', 'PKBM']
-const isSekolah = computed(() => _SEKOLAH_NAMA.includes(namaLembaga.value.toUpperCase()))
+// v.1.2.1: sekolah dibaca dari master/lembaga (tipe 'Formal'), dulu daftar nama
+//   hardcoded ['TK','SDI','SMP','SMA','PKBM'] — sekolah tambahan Kyai tak dikenali.
+//   SMP/SMA di sini = baris sub-tier PKBM dari dashboard; keduanya tetap kebaca
+//   lewat alias canonLembaga.
+const isSekolah = computed(() => isSekolahLembaga(namaLembaga.value, lembagaRaw.value))
 // Kolom Juz hanya untuk PTPT (santri ngaji per-juz).
 const isJuz = computed(() => namaLembaga.value.toUpperCase() === 'PTPT')
 const kelasLabel = 'Kelas'

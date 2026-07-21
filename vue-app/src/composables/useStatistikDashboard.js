@@ -6,7 +6,7 @@
 import { computed } from 'vue'
 import { useStatistikScope } from './useStatistikScope'
 import { useGuru } from './useGuru'
-import { useLembaga, getPkbmSubTier } from './useLembaga'
+import { useLembaga, getPkbmSubTier, isSekolahLembaga } from './useLembaga'
 import { hitungKelas, hitungKelasLembaga } from '@/utils/kelasHitung'
 
 const URUTAN_LEMBAGA = [
@@ -23,10 +23,6 @@ const URUTAN_LEMBAGA = [
 ]
 const isGuruAktif = (status) =>
   !status || ['aktif', 'tetap', 'kontrak'].includes(String(status).toLowerCase())
-function isSekolahLembaga(nama) {
-  const n = String(nama || '').toUpperCase()
-  return ['TK', 'SDI', 'MI', 'MTS', 'MA', 'SMP', 'SMA', 'PKBM'].some((s) => n.includes(s))
-}
 
 export function useStatistikDashboard() {
   const { isAdminMode, scopedSantriAll } = useStatistikScope()
@@ -95,7 +91,10 @@ export function useStatistikDashboard() {
         const namaNorm = String(nama || '')
           .trim()
           .toLowerCase()
-        const isSekolah = isSekolahLembaga(nama)
+        // v.1.2.1: baca tipe/group dari master (bukan cocok-substring nama) — sekolah
+        //   yang Kyai tambah sendiri kini ikut terhitung, dan "Ma'had" tak lagi
+        //   salah dianggap sekolah karena mengandung "MA".
+        const isSekolah = isSekolahLembaga(nama, lembagaRaw.value)
         const matchLemb = (val) =>
           String(val || '')
             .trim()

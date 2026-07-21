@@ -174,7 +174,7 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useSantri } from '@/composables/useSantri'
 import { useGuru } from '@/composables/useGuru'
-import { useLembaga, getPkbmSubTier } from '@/composables/useLembaga'
+import { useLembaga, getPkbmSubTier, isSekolahLembaga } from '@/composables/useLembaga'
 import { mergeOne } from '@/services/db'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
@@ -367,10 +367,6 @@ const URUTAN_LEMBAGA = [
   'SMA',
   'PKBM'
 ]
-function isSekolahLembaga(nama) {
-  const n = String(nama || '').toUpperCase()
-  return ['TK', 'SDI', 'MI', 'MTS', 'MA', 'SMP', 'SMA', 'PKBM'].some((s) => n.includes(s))
-}
 const statistikLembaga = computed(() => {
   if (!isAdminMode.value) return []
   const lembList = (lembagaRaw.value || []).filter(
@@ -415,7 +411,8 @@ const statistikLembaga = computed(() => {
         const namaNorm = String(nama || '')
           .trim()
           .toLowerCase()
-        const isSekolah = isSekolahLembaga(nama)
+        // v.1.2.1: baca tipe/group dari master (bukan cocok-substring nama).
+        const isSekolah = isSekolahLembaga(nama, lembagaRaw.value)
         const matchLemb = (val) =>
           String(val || '')
             .trim()
