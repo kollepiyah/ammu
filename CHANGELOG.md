@@ -36,6 +36,18 @@ Rilis perbaikan. Tanpa migrasi DB, tanpa perubahan skema.
 - **Ma'had tak lagi salah dihitung sekolah** di statistik — pencocokan lama berbasis
   substring, dan `"MA'HAD"` mengandung `"MA"`.
 
+### Android
+
+- **Target Android 16 (API 36).** Google Play menolak update aplikasi yang target API-nya
+  lebih lama dari 1 tahun; tenggatnya 31 Agustus 2026 dan AMMU masih di API 35. Capacitor
+  8.4.2 sebenarnya sudah default ke 36 — yang menahan di 35 justru `variables.gradle`
+  proyek. Tiga perubahan perilaku Android 16 yang ikut menyala sudah diperiksa dan tak ada
+  yang perlu ditambal: edge-to-edge (sudah dipasang penuh sejak v.1.1.x, tak ada
+  `windowOptOutEdgeToEdgeEnforcement`), predictive back (`@capacitor/app` memakai
+  `OnBackPressedDispatcher` AndroidX, bukan `onBackPressed()` lawas), dan pengabaian kunci
+  orientasi di layar besar (manifest memang tak pernah mengunci orientasi).
+  versionCode tetap 121 — vc121 belum pernah diupload, jadi tak perlu nomor baru.
+
 ### Changed (Penyederhanaan)
 
 - **Beban Mengajar Sekolah cukup diisi JP per minggu per guru.** Dulu satu baris = satu

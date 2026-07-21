@@ -1,7 +1,17 @@
 ext {
     minSdkVersion = 23
-    compileSdkVersion = 35
-    targetSdkVersion = 35
+    // v.1.2.1: Play mewajibkan target Android 16 (API 36) — tenggat 31 Agu 2026.
+    //   Capacitor 8.4.2 SUDAH default ke 36; berkas inilah yang menahannya di 35.
+    //   Perubahan perilaku Android 16 yang menyala saat target 36, sudah dicek:
+    //     - edge-to-edge dipaksa: styles.xml tak punya windowOptOutEdgeToEdgeEnforcement,
+    //       dan edge-to-edge penuh sudah dipasang sejak v.1.1.x → aman.
+    //     - predictive back menyala default: @capacitor/app memakai
+    //       OnBackPressedDispatcher (AndroidX), bukan onBackPressed() lawas → listener
+    //       'backButton' tetap terpanggil.
+    //     - kunci orientasi diabaikan di layar besar: manifest memang tak mengunci
+    //       screenOrientation → tak ada yang berubah.
+    compileSdkVersion = 36
+    targetSdkVersion = 36
     androidxActivityVersion = '1.9.2'
     androidxAppCompatVersion = '1.7.0'
     androidxCoordinatorLayoutVersion = '1.2.0'
