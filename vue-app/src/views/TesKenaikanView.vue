@@ -206,6 +206,65 @@
             </button>
           </div>
         </div>
+        <!-- v.1.1.9: kontak wali + penyimak glondongan, untuk guru kelas PENGAJU.
+             Dulu guru pengaju tak punya jalan sama sekali untuk tahu siapa penyimak
+             santrinya, apalagi menghubunginya. -->
+        <div
+          v-if="waliInfo(a) || penyimakGlondonganAjuan(a).length"
+          class="mt-2 pt-2 border-t border-[var(--border-subtle)] space-y-1"
+        >
+          <p v-if="waliInfo(a)" class="text-[11px] flex items-center gap-1.5 flex-wrap">
+            <span class="text-[var(--text-tertiary)]">Wali:</span>
+            <b class="text-[var(--text-primary)]">{{ waliInfo(a).nama }}</b>
+            <a
+              v-if="waLink(waliInfo(a).wa)"
+              :href="waLink(waliInfo(a).wa)"
+              target="_blank"
+              rel="noopener"
+              class="px-1.5 py-0.5 rounded font-bold bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-300"
+            >
+              <i class="fab fa-whatsapp mr-1"></i>{{ waliInfo(a).wa }}
+            </a>
+            <span v-else class="text-[10px] italic text-[var(--text-tertiary)]"
+              >(no WA belum diisi)</span
+            >
+          </p>
+
+          <div v-if="penyimakGlondonganAjuan(a).length" class="text-[11px]">
+            <span class="text-[var(--text-tertiary)]">Penyimak glondongan:</span>
+            <p
+              v-for="p in penyimakGlondonganAjuan(a)"
+              :key="p.id"
+              class="flex items-center gap-1.5 flex-wrap mt-0.5 pl-2"
+            >
+              <span class="text-[var(--text-tertiary)]">{{ p.blok }}:</span>
+              <template v-if="p.nama">
+                <b class="text-[var(--text-primary)]">{{ p.nama }}</b>
+                <a
+                  v-if="waLink(p.wa)"
+                  :href="waLink(p.wa)"
+                  target="_blank"
+                  rel="noopener"
+                  class="px-1.5 py-0.5 rounded font-bold bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-300"
+                >
+                  <i class="fab fa-whatsapp mr-1"></i>{{ p.wa }}
+                </a>
+                <span v-else class="text-[10px] italic text-[var(--text-tertiary)]"
+                  >(no WA belum diisi)</span
+                >
+                <span
+                  v-if="p.status === 'selesai'"
+                  class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
+                  >selesai</span
+                >
+              </template>
+              <span v-else class="italic text-amber-700 dark:text-amber-300">
+                menunggu penugasan koordinator
+              </span>
+            </p>
+          </div>
+        </div>
+
         <!-- Siap Tes (guru kelas) — hanya PTPT juz yang masih diajukan -->
         <div
           v-if="a.status === 'diajukan' && gerbangMy[a.id] && gerbangMy[a.id].berlaku"
@@ -743,7 +802,7 @@ import { getOne, mergeOne, subscribeColl } from '@/services/db' // v.100d: muat 
 import { buildKenaikanQiraatiPayload, writeKenaikan } from '@/utils/promosiKenaikan' // v.100d
 import { buildTesRaporFeed, currentRaporPeriode } from '@/utils/tesRaporFeed' // v.100d Fase 3: nilai tes → rapor
 import { buildListPdf } from '@/utils/pdfBuilder' // v.100d Fase 5: cetak daftar/rekap tes PDF
-import { juzNum } from '@/utils/format' // v.100e: normalisasi tampilan juz (anti dobel "Juz JUZ n")
+import { juzNum, waLink } from '@/utils/format' // v.100e: normalisasi juz · v.1.1.9: kontak WA
 // v.1.1.9: masa tempuh antar-juz PTPT (hari efektif lembaga) — tampil di guru kelas & PJ.
 import { masaTempuhJuz, labelMasaTempuh } from '@/utils/masaTempuh'
 import { expandLiburDates } from '@/utils/liburNasional'
@@ -785,6 +844,7 @@ const {
   resetAjuan,
   hapusAjuan,
   gerbangFor,
+  glondonganByAjuan, // v.1.1.9: baris glondongan per ajuan — utk kontak penyimak
   buatUlangGlondongan,
   setSiapTes
 } = useTesKenaikan()
@@ -809,6 +869,69 @@ const gerbangMy = computed(() => {
   for (const a of myAjuan.value) m[a.id] = gerbangFor(a)
   return m
 })
+
+// ── v.1.1.9 (Kyai 21 Jul): guru kelas yang MENGAJUKAN perlu bisa menghubungi ──
+//   (a) wali santrinya, dan (b) penyimak glondongan begitu ditugaskan koordinator.
+//   Sebelumnya guru pengaju tak punya jalan sama sekali untuk tahu siapa penyimaknya.
+const santriById = computed(() => {
+  const m = new Map()
+  for (const s of santri.value || []) m.set(String(s.id), s)
+  return m
+})
+const guruById = computed(() => {
+  const m = new Map()
+  for (const g of guruRaw.value || []) m.set(String(g.id), g)
+  return m
+})
+const guruByNama = computed(() => {
+  const m = new Map()
+  for (const g of guruRaw.value || []) {
+    const n = String(g.nama || '')
+      .trim()
+      .toLowerCase()
+    if (n) m.set(n, g)
+  }
+  return m
+})
+
+/** { nama, wa } wali santri ajuan ini. */
+function waliInfo(a) {
+  const s = santriById.value.get(String(a?.santri_id))
+  if (!s) return null
+  const nama = String(s.wali || s.nama_wali || '').trim()
+  const wa = String(s.wa || '').trim()
+  return nama || wa ? { nama: nama || '—', wa } : null
+}
+
+/**
+ * Baris penyimak glondongan untuk 1 ajuan — hanya blok 'glondongan' (yang ditunjuk
+ * koordinator). Baris 'berjalan' dilewati: itu tugas guru kelas sendiri, tak perlu
+ * dihubungi. Belum ditugaskan → penyimak null supaya UI bilang "menunggu koordinator".
+ */
+function penyimakGlondonganAjuan(a) {
+  const rows = glondonganByAjuan.value[String(a?.id)] || []
+  return rows
+    .filter((r) => String(r.tipe) === 'glondongan')
+    .slice()
+    .sort((x, y) => Number(x.kelas_asal || 0) - Number(y.kelas_asal || 0))
+    .map((r) => {
+      const g =
+        guruById.value.get(String(r.penguji_id || '')) ||
+        guruByNama.value.get(
+          String(r.penguji_nama || '')
+            .trim()
+            .toLowerCase()
+        )
+      const nama = String(r.penguji_nama || g?.nama || '').trim()
+      return {
+        id: String(r.id),
+        blok: `Kelas ${r.kelas_asal} · Juz ${r.juz_dari}–${r.juz_sampai}`,
+        status: String(r.status || ''),
+        nama,
+        wa: g?.wa || ''
+      }
+    })
+}
 const siapTesBusy = ref(null)
 async function toggleSiapTes(a, val) {
   siapTesBusy.value = a.id
