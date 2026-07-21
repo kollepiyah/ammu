@@ -538,15 +538,39 @@ export function santriToExportRow(s, i) {
   return row
 }
 
+/** Sel Excel dianggap KOSONG bila null/undefined/spasi saja. `false` dan `0`
+ *  BUKAN kosong — itu nilai sungguhan (mis. "Status Aktif" diisi `false`). */
+export function selKosong(v) {
+  return v === null || v === undefined || String(v).trim() === ''
+}
+
 /**
  * Isi objek `data` payload impor dari 1 baris Excel `r`, memakai fungsi `pick`
  * milik view (alias + fallback lowercase). Field `manual`/`exportOnly` di-skip
  * (ditangani khusus di view: nis/nama/lembaga/kelas/wali).
+ *
+ * ATURAN GABUNG (keputusan Kyai 21 Jul 2026): sel KOSONG di file TIDAK menimpa
+ * nilai lama — fieldnya dilewati sama sekali sehingga `mergeOne` mempertahankan
+ * isi yang sudah ada. Sel TERISI tetap menimpa seperti biasa.
+ *
+ * Lahir dari bug nyata: impor file parsial menghapus kolom yang sudah terisi.
+ * Dua file untuk santri yang sama — file A (guru ngaji terisi, guru sekolah
+ * kosong) lalu file B (kebalikannya) — membuat file B menulis `guru_pagi: ''`
+ * yang menimpa isi file A, karena `pick` mengembalikan '' untuk kolom yang tak
+ * ada DAN `mergeOne` mengganti primitif. Akibatnya impor terakhir selalu
+ * "memenangkan" kolom kosongnya.
+ *
+ * Efek samping yang disengaja: menghapus isi field lewat impor (mengosongkan
+ * sel) TIDAK lagi bisa — kosongkan lewat form santri. Itu pertukaran yang
+ * dipilih: kehilangan data diam-diam jauh lebih mahal daripada satu suntingan
+ * manual.
  */
 export function applyImportFields(data, r, pick) {
   for (const f of SANTRI_FIELDS) {
     if (f.manual || f.exportOnly || !f.imp) continue
-    f.imp(data, pick(r, f.header, ...(f.aliases || [])))
+    const v = pick(r, f.header, ...(f.aliases || []))
+    if (selKosong(v)) continue
+    f.imp(data, v)
   }
   return data
 }

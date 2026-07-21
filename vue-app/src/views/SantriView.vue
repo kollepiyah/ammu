@@ -173,6 +173,14 @@
               <p class="text-2xl font-black text-rose-700">{{ importPreview.skipCount }}</p>
             </div>
           </div>
+          <p
+            class="mb-3 rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-700 px-2.5 py-2 text-[11px] text-amber-800 dark:text-amber-200"
+          >
+            <i class="fas fa-circle-info mr-1"></i>
+            <b>Kolom kosong di file tidak menimpa data lama.</b> Jadi impor file yang hanya berisi
+            sebagian kolom (mis. guru sekolah saja) aman — guru ngaji yang sudah terisi tetap utuh.
+            Untuk <i>mengosongkan</i> sebuah field, sunting lewat form santri.
+          </p>
           <table class="w-full border border-[var(--border-subtle)]">
             <thead class="bg-[var(--bg-muted)]">
               <tr>
@@ -1097,11 +1105,19 @@ async function onImportSantri(e) {
       else updateCount++
       // v.111: field non-manual (biodata/ortu/alamat/status/Gedung/PJ PTPT/dst) diisi
       // dari registry santriFields → tambah field master cukup 1 entri di sana.
-      const data = { nis, nama, lembaga, kelas }
-      if (hasNoIndukCol) data.nis_sekolah = nisSekolah // template lama tak punya kolom NIS Dinas → jangan timpa
-      data.wali = toTitleCase(_pick(r, 'Nama Wali', 'Wali', 'wali') || '')
+      // ATURAN GABUNG (Kyai 21 Jul 2026): kolom KOSONG di file jangan menimpa nilai
+      //   lama. Field registry ditangani applyImportFields; field `manual` di bawah
+      //   ini harus dijaga di sini juga — dulu `lembaga`/`kelas`/`wali` kosong ikut
+      //   tertulis dan menghapus data santri yang sudah lengkap.
+      const wali = toTitleCase(_pick(r, 'Nama Wali', 'Wali', 'wali') || '')
+      const data = { nama }
+      if (nis) data.nis = nis
+      if (hasNoIndukCol && nisSekolah) data.nis_sekolah = nisSekolah // template lama tak punya kolom NIS Dinas → jangan timpa
+      if (lembaga) data.lembaga = lembaga
+      if (kelas) data.kelas = kelas
+      if (wali) data.wali = wali
       applyImportFields(data, r, _pick)
-      data.custom_fields = {}
+      if (action === 'new') data.custom_fields = {} // santri baru: inisialisasi; pd update = no-op
       allMapped.push({
         existingId: idx >= 0 ? existing[idx].id : null,
         action,
@@ -1109,7 +1125,7 @@ async function onImportSantri(e) {
         nis,
         lembaga,
         kelas,
-        wali: data.wali,
+        wali,
         data
       })
     }
