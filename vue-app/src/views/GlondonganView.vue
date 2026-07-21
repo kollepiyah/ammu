@@ -184,6 +184,15 @@ function guruDariNama(nama) {
     ) || null
   )
 }
+/**
+ * v.1.2.1 (Kyai 22 Jul): PJ PTPT santri baris ini (kolom santri.pj_ptpt). '' bila kosong.
+ *   Ada >1 PJ PTPT, jadi koordinator perlu tahu blok ini di bawah PJ siapa sebelum
+ *   menunjuk penyimak. santri_id sudah dibawa tiap baris glondongan.
+ */
+function pjSantri(row) {
+  const s = santriById.value.get(String(row?.santri_id))
+  return String(s?.pj_ptpt || '').trim()
+}
 /** Guru kelas (pagi & sore) santri baris ini -> [{ nama, wa }]. */
 function guruKelasSantri(santriId) {
   const s = santriById.value.get(String(santriId))
@@ -621,7 +630,9 @@ const rekapTotal = computed(() => rekapRows.value.reduce((s, g) => s + g.total, 
         >
           <div class="flex items-start justify-between gap-2 flex-wrap">
             <div class="min-w-0">
-              <p class="text-sm font-bold text-[var(--text-primary)] flex items-center gap-1.5">
+              <p
+                class="text-sm font-bold text-[var(--text-primary)] flex items-center gap-1.5 flex-wrap"
+              >
                 <span class="truncate">{{ row.nama_cache || '—' }}</span>
                 <span
                   :class="[
@@ -631,6 +642,13 @@ const rekapTotal = computed(() => rekapRows.value.reduce((s, g) => s + g.total, 
                       : 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300'
                   ]"
                   >{{ kategoriLabel(row) }}</span
+                >
+                <!-- v.1.2.1 (Kyai): label PJ PTPT — ada >1 PJ, koordinator perlu tahu blok ini
+                     milik PJ siapa. Sembunyi bila santri belum berlabel PJ. -->
+                <span
+                  v-if="pjSantri(row)"
+                  class="px-1.5 py-0.5 rounded text-[10px] font-bold shrink-0 bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300"
+                  >PJ: {{ pjSantri(row) }}</span
                 >
               </p>
               <p class="text-[11px] text-[var(--text-secondary)]">
@@ -758,8 +776,16 @@ const rekapTotal = computed(() => rekapRows.value.reduce((s, g) => s + g.total, 
             :key="row.id"
             class="p-3 rounded-xl border border-[var(--border-default)] bg-[var(--bg-muted)]"
           >
-            <p class="text-sm font-bold text-[var(--text-primary)] truncate">
-              {{ row.nama_cache || '—' }}
+            <p
+              class="text-sm font-bold text-[var(--text-primary)] flex items-center gap-1.5 flex-wrap"
+            >
+              <span class="truncate">{{ row.nama_cache || '—' }}</span>
+              <!-- v.1.2.1 (Kyai): label PJ PTPT juga di daftar sudah-ditugaskan, biar konsisten. -->
+              <span
+                v-if="pjSantri(row)"
+                class="px-1.5 py-0.5 rounded text-[10px] font-bold shrink-0 bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300"
+                >PJ: {{ pjSantri(row) }}</span
+              >
             </p>
             <p class="text-[11px] text-[var(--text-secondary)]">
               Blok <b class="text-teal-700 dark:text-teal-300">Kelas {{ row.kelas_asal }}</b> ·
