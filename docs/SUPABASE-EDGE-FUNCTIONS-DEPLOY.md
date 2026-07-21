@@ -139,12 +139,21 @@ select data->>'status' as status, count(*) from public.notif_queue group by 1;
 -- 2) Cron terjadwal & aktif?
 select jobname, schedule, active from cron.job;
 -- 3) Cron-nya sukses atau gagal?
-select jobname, status, return_message, start_time
-from cron.job_run_details order by start_time desc limit 20;
+--    `cron.job_run_details` TIDAK punya kolom jobname (itu milik cron.job) —
+--    wajib di-join lewat jobid. Tanpa join: ERROR 42703 column "jobname" does not exist.
+select j.jobname, d.status, d.return_message, d.start_time
+from cron.job_run_details d
+join cron.job j on j.jobid = d.jobid
+order by d.start_time desc limit 20;
 ```
 
 Bila `dispatch-push-every-min` **tidak ada** -> jalankan §5. Bila ada tapi
 `return_message` berisi error, biasanya URL/service-key di Vault belum diisi (§4).
+
+> §4 gagal `duplicate key ... secrets_name_idx`? Berarti secret-nya SUDAH ada —
+> lewati §4, langsung §5. Untuk mengganti nilainya (mis. sesudah rotasi kunci):
+> `select vault.update_secret((select id from vault.secrets where name='service_role_key'), '<KUNCI_BARU>');`
+> Cek dulu: `select name from vault.secrets;`
 
 Bila cron sukses tapi antrian tetap `failed`, cek secret FCM:
 `supabase secrets list` — harus ada `FCM_SERVICE_ACCOUNT`. Tanpa itu fungsi balas
