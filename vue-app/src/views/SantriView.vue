@@ -261,8 +261,9 @@
           class="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition"
         />
       </div>
-      <!-- v.97.0626: filter dropdown (lembaga Qiraati + Sekolah, status tempat, status aktif) -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-2 mt-2">
+      <!-- v.1.2.0 (Kyai): akun GURU cukup cari nama — deretan filter ini hanya untuk
+           admin. Untuk guru, pemisahan Qiraati/Sekolah ditangani sub-tab di bawah. -->
+      <div v-if="isFullAccess" class="grid grid-cols-1 md:grid-cols-3 gap-2 mt-2">
         <select
           v-model="filterLembaga"
           class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none"
@@ -295,7 +296,7 @@
       </div>
       <!-- v.111: filter Gedung & PJ PTPT — pisah Pra PTPT per gedung / PTPT per PJ ("gak campur") -->
       <div
-        v-if="gedungOptions.length || pjPtptOptions.length"
+        v-if="isFullAccess && (gedungOptions.length || pjPtptOptions.length)"
         class="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2"
       >
         <select
@@ -315,6 +316,27 @@
           <option v-for="p in pjPtptOptions" :key="p" :value="p">PJ: {{ p }}</option>
         </select>
       </div>
+      <!-- v.1.2.0: sub-tab Qiraati / Sekolah — muncul hanya bila akun ini memang
+           menaungi KEDUA sisi (mis. kepala lembaga sekolah yang juga guru qiraati). -->
+      <div v-if="punyaDuaSisi" class="flex gap-2 mt-3">
+        <button
+          v-for="t in [
+            { v: 'qiraati', l: 'Qiraati', n: jumlahSisi.qiraati },
+            { v: 'sekolah', l: 'Sekolah', n: jumlahSisi.sekolah }
+          ]"
+          :key="t.v"
+          @click="sisiTab = t.v"
+          :class="[
+            'flex-1 px-3 py-2 rounded-xl text-xs font-black border transition cursor-pointer',
+            sisiTab === t.v
+              ? 'bg-teal-600 text-white border-teal-700'
+              : 'bg-white dark:bg-slate-900 text-[var(--text-secondary)] border-[var(--border-default)]'
+          ]"
+        >
+          {{ t.l }} ({{ t.n }})
+        </button>
+      </div>
+
       <!-- v.21.22c.0526: Select-all (Master mode only) -->
       <div
         v-if="isMasterMode && isFullAccess && santri.length > 0"
@@ -515,7 +537,8 @@ import { getPkbmSubTier, canonLembaga } from '@/composables/useLembaga' // v.99:
 import { sortLembagaNames } from '@/utils/santriSort' // v.100 Batch10: urutan canonical dropdown lembaga
 import { gedungList } from '@/utils/gedung' // v.111: filter Gedung (pisah Pra PTPT per gedung)
 import { useAuthStore } from '@/stores/auth'
-import { ownsNgaji, ownsSekolah, deteksiTipeGuru } from '@/utils/guruScope' // v.100b: pisah santri qiraati/sekolah utk guru dual
+import { ownsNgaji, ownsSekolah } from '@/utils/guruScope' // v.100b: pisah santri qiraati/sekolah
+import { lembagaScopeMatches } from '@/composables/useLembaga' // v.1.2.0: scope kepala lembaga
 
 // v.21.17c.0526: mode prop — 'view' (sidebar, default) atau 'master' (di Master Data tab, full CRUD)
 const props = defineProps({ mode: { type: String, default: 'view' } })
@@ -610,33 +633,56 @@ watch([search, filterLembaga, filterMukim, filterStatus], () => {
   router.replace({ query: q }).catch(() => {})
 })
 
-// v.100b: guru DUAL-role (Qiraati + Sekolah) → pisah daftar jadi 2 section.
-//   Tipe dideteksi dari SELURUH santri (santriRaw), tak terpengaruh filter/cari aktif.
+// ── v.1.2.0 (Kyai 21 Jul): pisah Qiraati / Sekolah pakai SUB-TAB, bukan dua section
+//    bertumpuk. Alasannya kasus nyata: "ada kepala lembaga sekolah yg juga guru
+//    qiraati" — daftarnya tercampur dan sulit dibaca.
+//
+//    Kuncinya: santri digolongkan menurut SISI MANA ia masuk ke daftar SAYA, bukan
+//    menurut sifat santrinya. Satu santri bisa ikut ngaji DAN sekolah, jadi partisi
+//    per-santri tak masuk akal — yang dipartisi adalah alasan ia terlihat oleh saya:
+//      Qiraati : saya pengampu ngajinya, ATAU (kepala) lembaga ngajinya se-scope saya
+//      Sekolah : saya guru sekolahnya,   ATAU (kepala) lembaga sekolahnya se-scope saya
+//    Dengan begitu kepala sekolah merangkap guru qiraati melihat kelas ngajinya di tab
+//    Qiraati dan santri sekolahnya di tab Sekolah — tak pernah tercampur.
 const myNamaGuru = computed(() => authStore.sesiAktif?.guru || authStore.sesiAktif?.nama || '')
-const guruDual = computed(() => {
-  if (isFullAccess.value) return false
-  const t = deteksiTipeGuru(santriRaw.value, myNamaGuru.value)
-  return t.qiraati && t.sekolah
+const myLembagaAkun = computed(() => authStore.sesiAktif?.lembaga || '')
+const isKepalaScope = computed(() => {
+  const j = String(authStore.sesiAktif?.jabatan || '').toLowerCase()
+  return j.includes('kepala') || j.includes('pj') || j.includes('pengasuh')
 })
-// Daftar tampil + peta header section (pada santri pertama tiap grup). Non-dual → list apa adanya.
-const guruDisplay = computed(() => {
-  if (!guruDual.value) return { rows: santri.value, headerById: {} }
-  const nm = myNamaGuru.value
-  const ngaji = [],
-    sekolah = []
-  for (const s of santri.value) {
-    if (ownsNgaji(s, nm)) ngaji.push(s)
-    else if (ownsSekolah(s, nm)) sekolah.push(s)
-    else ngaji.push(s)
+function sisiQiraati(s) {
+  if (ownsNgaji(s, myNamaGuru.value)) return true
+  return isKepalaScope.value && lembagaScopeMatches(myLembagaAkun.value, s.lembaga)
+}
+function sisiSekolah(s) {
+  if (ownsSekolah(s, myNamaGuru.value)) return true
+  return isKepalaScope.value && lembagaScopeMatches(myLembagaAkun.value, s.lembaga_sekolah)
+}
+
+const sisiTab = ref('qiraati')
+// Hitung dari SELURUH santri dalam scope (santriRaw), bukan hasil pencarian — kalau
+//   tidak, sub-tab akan muncul-hilang mengikuti kata kunci.
+const jumlahSisi = computed(() => {
+  if (isFullAccess.value) return { qiraati: 0, sekolah: 0 }
+  let q = 0,
+    k = 0
+  for (const s of santriRaw.value || []) {
+    if (s.aktif === false) continue
+    if (sisiQiraati(s)) q++
+    if (sisiSekolah(s)) k++
   }
-  const headerById = {}
-  if (ngaji.length) headerById[ngaji[0].id] = `Santri Qiraati Saya (${ngaji.length})`
-  if (sekolah.length) headerById[sekolah[0].id] = `Santri Kelas Sekolah Saya (${sekolah.length})`
-  return { rows: [...ngaji, ...sekolah], headerById }
+  return { qiraati: q, sekolah: k }
 })
-const santriRows = computed(() => guruDisplay.value.rows)
-function sectionHeaderFor(s) {
-  return guruDisplay.value.headerById[String(s.id)] || guruDisplay.value.headerById[s.id] || null
+const punyaDuaSisi = computed(
+  () => !isFullAccess.value && jumlahSisi.value.qiraati > 0 && jumlahSisi.value.sekolah > 0
+)
+const santriRows = computed(() => {
+  if (!punyaDuaSisi.value) return santri.value
+  return santri.value.filter(sisiTab.value === 'qiraati' ? sisiQiraati : sisiSekolah)
+})
+// Header section lama tak dipakai lagi — pemisahnya kini sub-tab.
+function sectionHeaderFor() {
+  return null
 }
 
 // v.98 full-native (Electron): header in-page disembunyikan, aksi pindah ke grup pita "Aksi Halaman"
