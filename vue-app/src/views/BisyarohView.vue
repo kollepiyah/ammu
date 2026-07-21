@@ -1442,6 +1442,13 @@ function ctxGuru(g, periode) {
 //   Dulu: 1 baris kosong per tempat tugas + nominal diketik tangan per guru, lalu
 //   bonus kehadiran dihitung terpisah dari 5 tarif global. Kini keduanya jadi satu
 //   daftar jenis; nominal ditentukan lembaga & tugas.
+// v.1.2.1: JP kini hasil bagi (jp_minggu ÷ hari aktif) → kerap pecahan. Tampilkan
+//   ala Indonesia & buang desimal nol, supaya label slip tak berbunyi "20.83 JP".
+const _fmtJP = new Intl.NumberFormat('id-ID', { maximumFractionDigits: 2 })
+function fmtJP(n) {
+  return _fmtJP.format(Number(n) || 0)
+}
+
 function buildLineItemsFromGuru(g, periode) {
   const jenis = jenisBisyarohList(settingsStore.settings || {})
   const items = barisBisyaroh(jenis, ctxGuru(g, periode)).map((b) => ({
@@ -1451,7 +1458,7 @@ function buildLineItemsFromGuru(g, periode) {
       b.hitungan === 'per_hadir'
         ? `${b.label} (${b.qty}× ${fmtRp(b.tarif)})`
         : b.hitungan === 'per_jp'
-          ? `${b.label} (${b.qty}${b.terjadwal ? ' dari ' + b.terjadwal : ''} JP diajar × ${fmtRp(b.tarif)})`
+          ? `${b.label} (${fmtJP(b.qty)}${b.terjadwal ? ' dari ' + fmtJP(b.terjadwal) : ''} JP diajar × ${fmtRp(b.tarif)})`
           : b.hitungan === 'per_shift'
             ? `${b.label} (${b.qty} shift × ${fmtRp(b.tarif)})`
             : b.label,

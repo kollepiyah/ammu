@@ -760,10 +760,11 @@
             <i class="fas fa-book text-teal-600 mr-1"></i>Beban Mengajar Sekolah
           </h3>
           <p class="text-[11px] text-[var(--text-secondary)] mt-1">
-            Jadwal mengajar tiap guru: mapel, <b>hari</b>, dan <b>JP per pertemuan</b>. Bisyaroh
-            sekolah = tarif × JP yang <b>benar-benar diajar</b> (Jenis Bisyaroh "× JP diajar") —
-            hari yang tak dijadwalkan tidak dihitung absen. Mapel diketik bebas (bukan dari rapor).
-            Total: <b>{{ bebanTotalJP }}</b> JP/minggu.
+            Cukup isi <b>JP per minggu</b> tiap guru di tiap sekolah — tak perlu dirinci per mapel.
+            Bisyaroh sekolah = tarif × JP yang <b>benar-benar diajar</b> (Jenis Bisyaroh "× JP
+            diajar"). JP dibagi rata ke hari aktif sekolah, jadi guru yang tidak masuk terpotong
+            porsi hari itu; hari libur & di luar hari aktif tidak dihitung absen. Total:
+            <b>{{ bebanTotalJP }}</b> JP/minggu.
           </p>
         </div>
         <div class="flex items-center gap-2">
@@ -806,9 +807,7 @@
               <th class="text-left px-3 py-2.5 font-black w-10">No</th>
               <th class="text-left px-3 py-2.5 font-black">Guru</th>
               <th class="text-left px-3 py-2.5 font-black">Lembaga</th>
-              <th class="text-left px-3 py-2.5 font-black">Mapel</th>
-              <th class="text-left px-3 py-2.5 font-black">Hari</th>
-              <th class="text-right px-3 py-2.5 font-black w-20">JP/hari</th>
+              <th class="text-right px-3 py-2.5 font-black w-28">JP/minggu</th>
               <th class="text-center px-3 py-2.5 font-black w-20">Aksi</th>
             </tr>
           </thead>
@@ -823,18 +822,7 @@
                 {{ namaGuruById(b.guru_id) }}
               </td>
               <td class="px-3 py-2 text-[var(--text-secondary)]">{{ b.lembaga || '-' }}</td>
-              <td class="px-3 py-2 text-[var(--text-secondary)]">{{ b.mapel || '-' }}</td>
-              <td
-                class="px-3 py-2 text-[11px]"
-                :class="
-                  (b.hari || []).length
-                    ? 'text-[var(--text-secondary)]'
-                    : 'text-amber-600 font-bold'
-                "
-              >
-                {{ (b.hari || []).length ? labelHari(b.hari) : 'belum diisi!' }}
-              </td>
-              <td class="px-3 py-2 text-right font-mono font-bold">{{ b.jp }}</td>
+              <td class="px-3 py-2 text-right font-mono font-bold">{{ b.jp_minggu }}</td>
               <td class="px-3 py-2">
                 <div class="flex items-center justify-center gap-1">
                   <button
@@ -857,13 +845,63 @@
               </td>
             </tr>
             <tr v-if="bebanMengajarList.length === 0">
-              <td colspan="7" class="text-center text-[var(--text-tertiary)] italic py-6">
+              <td colspan="5" class="text-center text-[var(--text-tertiary)] italic py-6">
                 Belum ada beban mengajar. Klik "Tambah" atau "Impor" (kolom: guru_id/nama, lembaga,
-                mapel, hari, jp).
+                jp_minggu).
               </td>
             </tr>
           </tbody>
         </table>
+      </div>
+
+      <!-- v.1.2.1: hari aktif = PENYEBUT prorata JP. Cukup diatur sekali per sekolah. -->
+      <div class="mt-4 pt-4 border-t border-[var(--border-subtle)]">
+        <h4
+          class="text-[11px] font-black text-[var(--text-primary)] uppercase tracking-widest mb-1"
+        >
+          <i class="fas fa-calendar-week text-teal-600 mr-1"></i>Hari Aktif Sekolah
+        </h4>
+        <p class="text-[11px] text-[var(--text-secondary)] mb-3">
+          Hari sekolah benar-benar masuk. Dipakai membagi JP/minggu jadi JP per hari — hari yang
+          <b>tidak</b> dicentang tak pernah dihitung sebagai absen. Kalau tak diatur, dianggap semua
+          hari kecuali Jumat.
+        </p>
+        <div
+          v-if="sekolahLembagaList.length === 0"
+          class="text-xs text-[var(--text-tertiary)] italic"
+        >
+          Belum ada lembaga bertipe "Formal (Sekolah)" di Master Data.
+        </div>
+        <div v-else class="space-y-2">
+          <div
+            v-for="lemb in sekolahLembagaList"
+            :key="'ha-' + lemb"
+            class="flex flex-wrap items-center gap-2"
+          >
+            <span class="text-xs font-bold text-[var(--text-primary)] w-24 shrink-0">{{
+              lemb
+            }}</span>
+            <div class="flex flex-wrap gap-1">
+              <button
+                v-for="(hl, d) in HARI_LABELS"
+                :key="'ha-' + lemb + '-' + d"
+                type="button"
+                @click="toggleHariAktif(lemb, d)"
+                :class="[
+                  'px-2.5 py-1.5 rounded-lg text-[11px] font-bold border transition',
+                  hariAktifFor(lemb).includes(d)
+                    ? 'bg-teal-600 text-white border-teal-600'
+                    : 'border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-elevated)]'
+                ]"
+              >
+                {{ hl.slice(0, 3) }}
+              </button>
+            </div>
+            <span class="text-[10px] text-[var(--text-tertiary)] italic"
+              >{{ hariAktifFor(lemb).length }} hari/minggu</span
+            >
+          </div>
+        </div>
       </div>
     </div>
 
@@ -920,54 +958,19 @@
           </div>
           <div>
             <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
-              >Mata Pelajaran</label
+              >Jam Pelajaran per Minggu</label
             >
             <input
-              v-model="dlgBeban.mapel"
-              type="text"
-              placeholder="mis. Matematika"
-              class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
-            />
-          </div>
-          <div>
-            <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
-              >Diajar Hari Apa</label
-            >
-            <div class="flex flex-wrap gap-1">
-              <button
-                v-for="(hl, d) in HARI_LABELS"
-                :key="'hb-' + d"
-                type="button"
-                @click="toggleHariBeban(d)"
-                :class="[
-                  'px-2.5 py-1.5 rounded-lg text-[11px] font-bold border transition',
-                  (dlgBeban.hari || []).includes(d)
-                    ? 'bg-teal-600 text-white border-teal-600'
-                    : 'border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-elevated)]'
-                ]"
-              >
-                {{ hl.slice(0, 3) }}
-              </button>
-            </div>
-            <p class="text-[10px] text-[var(--text-tertiary)] italic mt-1">
-              Pilih hari mapel ini diajar. Hari yang tak dipilih tidak dihitung (guru tak dianggap
-              absen).
-            </p>
-          </div>
-          <div>
-            <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
-              >JP per pertemuan (tiap hari terpilih)</label
-            >
-            <input
-              v-model.number="dlgBeban.jp"
+              v-model.number="dlgBeban.jp_minggu"
               type="number"
               min="0"
               step="0.5"
+              placeholder="mis. 24"
               class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)] font-bold"
             />
             <p class="text-[10px] text-[var(--text-tertiary)] italic mt-1">
-              Total mingguan = JP × jumlah hari =
-              <b>{{ (Number(dlgBeban.jp) || 0) * (dlgBeban.hari || []).length }} JP/minggu</b>
+              Total JP guru ini di sekolah tsb dalam sepekan — gabungan semua mapel, tak perlu
+              dirinci. {{ rincianPerHariBeban }}
             </p>
           </div>
         </div>
@@ -2090,7 +2093,8 @@ import { shiftList, shiftLabelOf } from '@/utils/shiftMaster'
 import { namaLembaga } from '@/utils/jabatanUnit'
 import { useSettingsStore } from '@/stores/settings'
 import { useGuru } from '@/composables/useGuru'
-import { useLembaga } from '@/composables/useLembaga'
+import { useLembaga, isSekolahLembaga } from '@/composables/useLembaga'
+import { HARI_AKTIF_DEFAULT } from '@/utils/bebanMengajar' // v.1.2.1: penyebut prorata JP
 import { useToast } from '@/composables/useToast'
 import { useExcel } from '@/composables/useExcel'
 import { useGedungScope } from '@/composables/useGedungScope'
@@ -2332,51 +2336,76 @@ const guruAktifOptions = computed(() =>
 function namaGuruById(id) {
   return (guruRaw.value || []).find((g) => String(g.id) === String(id))?.nama || String(id || '-')
 }
-// Total JP MINGGUAN semua baris = Σ (JP per pertemuan × jumlah hari).
+// Total JP MINGGUAN semua baris.
 const bebanTotalJP = computed(() =>
-  bebanMengajarList.value.reduce(
-    (s, b) => s + (Number(b.jp) || 0) * ((b.hari || []).length || 0),
-    0
-  )
+  bebanMengajarList.value.reduce((s, b) => s + (Number(b.jp_minggu) || 0), 0)
 )
 
-// v.1.1.x OPSI C: hari mengajar per baris beban (getDay 0=Ahad..6=Sabtu).
 const HARI_LABELS = ['Ahad', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu']
-function labelHari(hari) {
-  const arr = Array.isArray(hari) ? hari : []
-  return arr.length ? arr.map((d) => HARI_LABELS[d]?.slice(0, 3) || d).join(', ') : '-'
+
+// v.1.2.1 HARI AKTIF SEKOLAH (settings.hariAktifLembaga = { [lembaga]: [0..6] }).
+//   Ini PENYEBUT prorata: JP/hari = jp_minggu ÷ jumlah hari aktif. Kunci settings-nya
+//   sudah lama ada di bebanMengajar.js tapi TAK PERNAH punya UI, jadi selalu jatuh ke
+//   default "semua kecuali Jumat" — termasuk Ahad. Untuk sekolah yang libur Ahad itu
+//   berarti guru kehilangan porsi 1 hari tiap pekan diam-diam. Karena ini menyetir
+//   uang, hari aktif WAJIB bisa Kyai atur — cukup sekali per sekolah, bukan per guru.
+const hariAktifLembagaMap = ref({})
+const sekolahLembagaList = computed(() =>
+  (lembagaRaw.value || [])
+    .filter((l) => !l.tk_group && isSekolahLembaga(namaLembaga(l), lembagaRaw.value))
+    .map((l) => namaLembaga(l))
+    .filter(Boolean)
+)
+function hariAktifFor(lemb) {
+  const cur = hariAktifLembagaMap.value[lemb]
+  return Array.isArray(cur) && cur.length ? cur : HARI_AKTIF_DEFAULT
 }
-function toggleHariBeban(d) {
-  if (!dlgBeban.value) return
-  const cur = Array.isArray(dlgBeban.value.hari) ? dlgBeban.value.hari.slice() : []
+function toggleHariAktif(lemb, d) {
+  const cur = hariAktifFor(lemb).slice()
   const i = cur.indexOf(d)
   if (i >= 0) cur.splice(i, 1)
   else cur.push(d)
-  dlgBeban.value.hari = cur.sort((a, b) => a - b)
+  if (!cur.length) return toast.warning('Minimal satu hari aktif — kalau nol, JP tak bisa dibagi')
+  hariAktifLembagaMap.value = {
+    ...hariAktifLembagaMap.value,
+    [lemb]: cur.sort((a, b) => a - b)
+  }
 }
+
+// Pratinjau di dialog: JP/minggu yang diketik → berapa JP per hari aktif.
+const rincianPerHariBeban = computed(() => {
+  const b = dlgBeban.value
+  const jpm = Number(b?.jp_minggu) || 0
+  const lemb = String(b?.lembaga || '').trim()
+  if (!jpm || !lemb) return ''
+  const n = hariAktifFor(lemb).length
+  if (!n) return ''
+  const per = Math.round((jpm / n) * 100) / 100
+  return `Dibagi ${n} hari aktif ${lemb} → ±${per} JP/hari.`
+})
 
 function openBebanBaru() {
   dlgBebanIsNew.value = true
   dlgBebanIdx.value = -1
-  dlgBeban.value = { guru_id: '', lembaga: '', mapel: '', hari: [], jp: null }
+  dlgBeban.value = { guru_id: '', lembaga: '', jp_minggu: null }
   dlgBebanOpen.value = true
 }
 function openBebanDialog(b, idx) {
   dlgBebanIsNew.value = false
   dlgBebanIdx.value = idx
-  dlgBeban.value = { ...b, hari: Array.isArray(b.hari) ? [...b.hari] : [] }
+  dlgBeban.value = { ...b }
   dlgBebanOpen.value = true
 }
 function simpanBeban() {
   const b = dlgBeban.value
   if (!b) return
   if (!String(b.guru_id || '').trim()) return toast.warning('Pilih guru dulu')
-  if (!(Number(b.jp) > 0)) return toast.warning('JP harus lebih dari 0')
+  if (!String(b.lembaga || '').trim()) return toast.warning('Pilih lembaga (sekolah) dulu')
+  if (!(Number(b.jp_minggu) > 0)) return toast.warning('JP per minggu harus lebih dari 0')
   const row = {
     guru_id: String(b.guru_id),
     lembaga: String(b.lembaga || '').trim(),
-    mapel: String(b.mapel || '').trim(),
-    jp: Number(b.jp) || 0
+    jp_minggu: Number(b.jp_minggu) || 0
   }
   if (dlgBebanIsNew.value) bebanMengajarList.value.push(row)
   else bebanMengajarList.value.splice(dlgBebanIdx.value, 1, row)
@@ -2386,7 +2415,11 @@ function simpanBeban() {
 function hapusBeban(idx) {
   const b = bebanMengajarList.value[idx]
   if (!b) return
-  if (!confirm(`Hapus beban ${namaGuruById(b.guru_id)} — ${b.mapel || b.lembaga} (${b.jp} JP)?`))
+  if (
+    !confirm(
+      `Hapus beban ${namaGuruById(b.guru_id)} — ${b.lembaga || '-'} (${b.jp_minggu} JP/minggu)?`
+    )
+  )
     return
   bebanMengajarList.value.splice(idx, 1)
 }
@@ -2394,53 +2427,29 @@ const BEBAN_COLS = [
   { key: 'guru_id', header: 'Guru ID', width: 12 },
   { key: 'nama', header: 'Nama', width: 28 },
   { key: 'lembaga', header: 'Lembaga', width: 14 },
-  { key: 'mapel', header: 'Mapel', width: 24 },
-  { key: 'hari', header: 'Hari (pisah koma)', width: 24 },
-  { key: 'jp', header: 'JP per hari', width: 12 }
+  { key: 'jp_minggu', header: 'JP per minggu', width: 14 }
 ]
-// 'Sen, Rab' → [1,3]. Terima nama hari (Ahad/Ahd/Minggu/Sen/...) atau angka 0-6.
-function parseHari(txt) {
-  const out = []
-  for (const part of String(txt || '').split(/[,;/|]+/)) {
-    const t = part.trim().toLowerCase()
-    if (!t) continue
-    const n = Number(t)
-    if (Number.isInteger(n) && n >= 0 && n <= 6) {
-      out.push(n)
-      continue
-    }
-    const idx = HARI_LABELS.findIndex((h) => h.toLowerCase().startsWith(t.slice(0, 3)))
-    if (idx >= 0) out.push(idx)
-    else if (t.startsWith('ming')) out.push(0) // "Minggu" = Ahad
-  }
-  return [...new Set(out)].sort((a, b) => a - b)
-}
 async function unduhTemplateBeban() {
-  // 1 baris = 1 guru + 1 mapel + hari diajar + JP per pertemuan.
+  // v.1.2.1: 1 baris = 1 guru + 1 sekolah + total JP sepekan (tak lagi per mapel/hari).
   const contoh = [
     {
       guru_id: '',
       nama: '(nama guru persis / atau isi Guru ID)',
       lembaga: 'SDI',
-      mapel: 'Matematika',
-      hari: 'Sen, Rab',
-      jp: 2
+      jp_minggu: 24
     },
     {
       guru_id: '',
       nama: '(nama guru persis / atau isi Guru ID)',
-      lembaga: 'SDI',
-      mapel: 'IPA',
-      hari: 'Sel',
-      jp: 3
+      lembaga: 'PKBM',
+      jp_minggu: 12
     }
   ]
   await exportSimple(contoh, {
     filename: 'Template_Beban_Mengajar.xlsx',
     sheetName: 'Beban',
     columns: BEBAN_COLS,
-    title:
-      'TEMPLATE BEBAN MENGAJAR — 1 baris = 1 guru + 1 mapel; Hari = hari diajar (pisah koma), JP = per pertemuan'
+    title: 'TEMPLATE BEBAN MENGAJAR — 1 baris = 1 guru di 1 sekolah; JP = total sepekan'
   })
 }
 async function exportBebanExcel() {
@@ -2448,15 +2457,13 @@ async function exportBebanExcel() {
     guru_id: b.guru_id,
     nama: namaGuruById(b.guru_id),
     lembaga: b.lembaga,
-    mapel: b.mapel,
-    hari: labelHari(b.hari),
-    jp: Number(b.jp) || 0
+    jp_minggu: Number(b.jp_minggu) || 0
   }))
   await exportSimple(rows, {
     filename: 'Beban_Mengajar_Sekolah.xlsx',
     sheetName: 'Beban',
     columns: BEBAN_COLS,
-    title: 'BEBAN MENGAJAR SEKOLAH (JP per pertemuan × hari diajar)'
+    title: 'BEBAN MENGAJAR SEKOLAH (JP per minggu per guru)'
   })
 }
 async function imporBebanExcel(ev) {
@@ -2481,7 +2488,12 @@ async function imporBebanExcel(ev) {
         (id && (guruRaw.value || []).find((x) => String(x.id) === id)) ||
         byNama[nama.toLowerCase()] ||
         null
-      const jp = Number(parseRp(pickCol(r, ['jp', 'jumlah jp']))) || 0
+      // v.1.2.1: kolom utama `jp_minggu`. Nama lama ('jp'/'jumlah jp') tetap diterima
+      //   supaya file lama yang sudah terlanjur dibuat Kyai tak langsung ditolak.
+      const jp =
+        Number(
+          parseRp(pickCol(r, ['jp_minggu', 'jp per minggu', 'jp/minggu', 'jp', 'jumlah jp']))
+        ) || 0
       if (!g || jp <= 0) {
         miss++
         continue
@@ -2489,9 +2501,7 @@ async function imporBebanExcel(ev) {
       bebanMengajarList.value.push({
         guru_id: String(g.id),
         lembaga: String(pickCol(r, ['lembaga']) || '').trim(),
-        mapel: String(pickCol(r, ['mapel', 'mata pelajaran']) || '').trim(),
-        hari: parseHari(pickCol(r, ['hari (pisah koma)', 'hari', 'hari diajar'])),
-        jp
+        jp_minggu: jp
       })
       ok++
     }
@@ -2579,15 +2589,27 @@ function loadFromSettings() {
   // v.1.1.9: Jenis Bisyaroh. Belum ada → [] (SENGAJA tak di-seed dari tarif lama:
   //   jangan memunculkan nominal yang tak pernah Kyai setujui di tabel baru).
   jenisBisyarohList.value = bacaJenisBisyaroh(s)
+  // v.1.2.1: bentuk baru { guru_id, lembaga, jp_minggu }. Baris bentuk LAMA
+  //   ({ jp per pertemuan, hari[] }) dibaca-mundur jadi jp_minggu = jp × jumlah hari,
+  //   sama persis dengan cara lama menghitungnya — jadi angkanya tak berubah.
   bebanMengajarList.value = Array.isArray(s.bebanMengajar)
-    ? s.bebanMengajar.map((b) => ({
-        guru_id: String(b.guru_id ?? ''),
-        lembaga: String(b.lembaga ?? ''),
-        mapel: String(b.mapel ?? ''),
-        hari: Array.isArray(b.hari) ? b.hari.map(Number).filter((n) => n >= 0 && n <= 6) : [],
-        jp: Number(b.jp) || 0
-      }))
+    ? s.bebanMengajar.map((b) => {
+        let jpm = Number(b.jp_minggu)
+        if (!Number.isFinite(jpm) || jpm <= 0) {
+          const hariLama = Array.isArray(b.hari)
+            ? b.hari.map(Number).filter((n) => Number.isInteger(n) && n >= 0 && n <= 6)
+            : []
+          jpm = (Number(b.jp) || 0) * hariLama.length
+        }
+        return {
+          guru_id: String(b.guru_id ?? ''),
+          lembaga: String(b.lembaga ?? ''),
+          jp_minggu: jpm > 0 ? jpm : 0
+        }
+      })
     : []
+  hariAktifLembagaMap.value =
+    s.hariAktifLembaga && typeof s.hariAktifLembaga === 'object' ? { ...s.hariAktifLembaga } : {}
   form.keu_jatuh_tempo = s.keu_jatuh_tempo || 10
   form.keu_auto_generate_cron = s.keu_auto_generate_cron !== false // default ON
   form.posStrukPaper = s.posStrukPaper || '9.5'
@@ -3320,18 +3342,17 @@ async function simpan() {
       //   map pokok per guru. Tarif & map lama SENGAJA TIDAK ditulis lagi (Kyai:
       //   "hapus total") — BisyarohView kini menghitung dari daftar ini.
       keuBisyarohJenis: jenisBisyarohList.value.map(normalizeJenisBisyaroh),
-      // v.1.1.x: master beban mengajar (dasar bisyaroh sekolah per_jp).
+      // v.1.2.1: master beban mengajar (dasar bisyaroh sekolah per_jp) — JP per MINGGU
+      //   per guru per sekolah. Kolom mapel & hari dibuang.
       bebanMengajar: bebanMengajarList.value
-        .filter((b) => String(b.guru_id || '').trim() && Number(b.jp) > 0)
+        .filter((b) => String(b.guru_id || '').trim() && Number(b.jp_minggu) > 0)
         .map((b) => ({
           guru_id: String(b.guru_id),
           lembaga: String(b.lembaga || '').trim(),
-          mapel: String(b.mapel || '').trim(),
-          hari: (Array.isArray(b.hari) ? b.hari : [])
-            .map(Number)
-            .filter((n) => Number.isInteger(n) && n >= 0 && n <= 6),
-          jp: Number(b.jp) || 0
+          jp_minggu: Number(b.jp_minggu) || 0
         })),
+      // v.1.2.1: hari aktif sekolah = PENYEBUT prorata JP (JP/hari = jp_minggu ÷ n hari).
+      hariAktifLembaga: hariAktifLembagaMap.value,
       keu_glondongan_per_juz: parseRp(form.keu_glondongan_per_juz),
       keu_kategori_masuk: form.keu_kategori_masuk.filter((t) => t.trim()),
       keu_kategori_keluar: form.keu_kategori_keluar.filter((t) => t.trim()),

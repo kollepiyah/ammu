@@ -28,7 +28,7 @@ export const HITUNGAN_OPTIONS = [
   {
     value: 'per_jp',
     label: '× JP diajar',
-    hint: 'Tarif × JP yang BENAR-BENAR diajar bulan itu (jadwal mapel per hari × kehadiran)'
+    hint: 'Tarif × JP yang BENAR-BENAR diajar bulan itu (JP/minggu disebar ke hari aktif × kehadiran)'
   },
   {
     value: 'per_shift',
@@ -186,8 +186,9 @@ export function barisBisyaroh(jenisList, ctx) {
         nominal: qty * j.nominal
       })
     } else if (j.hitungan === 'per_jp') {
-      // Opsi C: bayar per JP yang BENAR-BENAR diajar bulan itu = jadwal mapel per hari
-      //   (Beban Mengajar) × kehadiran harian. Hari tak terjadwal tak menghukum.
+      // Bayar per JP yang BENAR-BENAR diajar bulan itu = JP mingguan (Beban Mengajar)
+      //   disebar rata ke hari aktif lembaga × kehadiran harian. Hari di luar hari
+      //   aktif tak menghukum.
       const lem = canonLembaga(ref?.lembaga || '')
       const info = ctx?.jpDiajarByLembaga?.[lem] || {}
       const qty = Number(info.diajar) || 0
@@ -201,7 +202,10 @@ export function barisBisyaroh(jenisList, ctx) {
         qty,
         terjadwal,
         tarif: j.nominal,
-        nominal: qty * j.nominal
+        // v.1.2.1: JP kini hasil pembagian (jp_minggu ÷ hari aktif) sehingga kerap
+        //   pecahan — pembulatan ditahan sampai UJUNG, ke rupiah utuh. Hanya cabang
+        //   per_jp yang bisa pecahan; per_hadir & per_shift qty-nya selalu bulat.
+        nominal: Math.round(qty * j.nominal)
       })
     } else if (j.hitungan === 'per_shift') {
       // Pokok per shift: nominal × jumlah shift guru yg cocok (pagi+sore = 2×).

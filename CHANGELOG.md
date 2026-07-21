@@ -36,6 +36,16 @@ Rilis perbaikan. Tanpa migrasi DB, tanpa perubahan skema.
 - **Ma'had tak lagi salah dihitung sekolah** di statistik — pencocokan lama berbasis
   substring, dan `"MA'HAD"` mengandung `"MA"`.
 
+### Changed (Penyederhanaan)
+
+- **Beban Mengajar Sekolah cukup diisi JP per minggu per guru.** Dulu satu baris = satu
+  mapel + daftar hari + JP per pertemuan, sehingga seorang guru bisa perlu 6–8 baris. Kini
+  satu baris = guru + sekolah + total JP sepekan. JP dibagi rata ke **Hari Aktif Sekolah**
+  (pengaturan baru, sekali per sekolah) sehingga pemotongan saat guru tak masuk tetap jalan.
+- **Bug ikutan: baris yang diinput manual selalu bisyarohnya Rp 0.** Dialog "Tambah" punya
+  pilihan hari, tapi fungsi simpannya menjatuhkan field itu — JP mingguan jadi `jp × 0`.
+  Hanya baris hasil Impor Excel yang selamat. Hilang sendiri karena kolom hari dibuang.
+
 ### Changed (Konsolidasi)
 
 - Penyaring status guru `String(g.status || 'Aktif').toLowerCase().trim() === 'aktif'` yang
