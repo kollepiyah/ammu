@@ -21,6 +21,40 @@ Versioning: `v.{nomor-urut}.{MMDDtahunmu}` (mis: `v.108.0527`)
 
 ---
 
+## [v.1.2.1] — 2026-07-22 — Lembaga sekolah baru dikenali; penyaring guru & lembaga jadi satu sumber
+
+Rilis perbaikan. Tanpa migrasi DB, tanpa perubahan skema.
+
+### Fixed (Perbaikan)
+
+- **Lembaga sekolah yang baru ditambah akhirnya terdeteksi sekolah.** Aplikasi mencocokkan
+  NAMA lembaga ke daftar hardcoded `['TK','SDI','MI','MTS','MA','SMP','SMA','PKBM']`, padahal
+  penanda yang diisi di Master Data adalah tipe **"Formal (Sekolah)"**. Akibatnya lembaga di
+  luar daftar itu tak pernah muncul di dropdown Lembaga Sekolah (form guru & santri), tak
+  terhitung di statistik, dan tak ada di pilihan Kenaikan / Mutasi / Assign Guru Kelas.
+  Deteksi kini membaca Master Data dulu: `tipe` → `group` → konstanta sebagai cadangan.
+- **Ma'had tak lagi salah dihitung sekolah** di statistik — pencocokan lama berbasis
+  substring, dan `"MA'HAD"` mengandung `"MA"`.
+
+### Changed (Konsolidasi)
+
+- Penyaring status guru `String(g.status || 'Aktif').toLowerCase().trim() === 'aktif'` yang
+  tersalin di 7 tempat kini menunjuk satu sumber `isGuruAktif` / `guruAktifSaja`. Duplikasi
+  inilah yang dulu melahirkan bug Ceremonial (`status !== 'Non-Aktif'` — string yang tak
+  pernah ditulis siapa pun, jadi penyaringnya tak pernah bekerja berbulan-bulan).
+- Deteksi lembaga qiraati/sekolah dipusatkan ke `groupOfLembaga` / `isSekolahLembaga` /
+  `sekolahTierList` di `composables/useLembaga.js`.
+- 30 tes baru mengunci keduanya, termasuk bukti kesetaraan sebelum/sesudah untuk jalur
+  bisyaroh dan untuk daftar kenaikan sekolah.
+
+### Belum dikerjakan
+
+- **Rekap Diniyah** masih terkunci ke `['SDI','PKBM']` di 4 tempat. "Diniyah" bukan sinonim
+  "sekolah" (TK sekolah tapi tak menerbitkan Diniyah) dan Master Data belum punya penanda
+  "lembaga ini menerbitkan rapor Diniyah" — butuh keputusan, bukan sekadar konsolidasi.
+
+---
+
 ## [v.1.2.0] — 2026-07-21 — PTPT: scope PJ, urutan glondongan, notifikasi & perbaikan impor
 
 Rilis fitur PTPT + sejumlah bug senyap yang ditemukan sambil jalan. Tanpa migrasi DB
