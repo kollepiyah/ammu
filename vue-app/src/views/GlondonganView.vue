@@ -11,6 +11,7 @@ import { useConfirm } from '@/composables/useConfirm'
 // Aspek nilai PTPT (sama persis dg tes PJ): Tahfizh, Istimror, Fashohah, Tajwid (0..90).
 import { tesAspekFlat, clampNilaiTes, TES_NILAI_MAX } from '@/utils/tesKenaikan'
 import { waLink } from '@/utils/format' // v.1.1.9: tautan kontak penyimak / guru kelas
+import { isGuruAktif } from '@/utils/guruScope' // v.1.2.0: sumber tunggal penyaring status guru
 import {
   KATEGORI_LABEL,
   CAKUPAN_OPTS,
@@ -107,9 +108,7 @@ const guruPtpt = computed(() =>
   (guruRaw.value || [])
     .filter(
       (g) =>
-        String(g.status || 'Aktif')
-          .toLowerCase()
-          .trim() === 'aktif' &&
+        isGuruAktif(g) &&
         String(g.lembaga || '')
           .trim()
           .toUpperCase() === 'PTPT'

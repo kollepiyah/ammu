@@ -16,7 +16,7 @@ import { sortSantri, sortLembagaNames } from '@/utils/santriSort'
 import { useExcel } from '@/composables/useExcel'
 import { toTitleCase } from '@/utils/format'
 import { bestNameMatch } from '@/utils/fuzzyMatch' // v.100 Batch12: cocokkan nama mirip saat impor
-import { punyaGuruKategori } from '@/utils/guruScope' // v.1.2.0: sembunyikan santri yang sudah berguru
+import { punyaGuruKategori, isGuruAktif } from '@/utils/guruScope' // v.1.2.0: sembunyikan santri yang sudah berguru + penyaring status guru
 
 const toast = useToast()
 const { exportStyled, importFile } = useExcel()
@@ -166,11 +166,7 @@ const guruForLembaga = computed(() => {
     .toLowerCase()
     .trim()
   let list = (guruRaw.value || []).filter((g) => {
-    const aktif =
-      String(g.status || 'Aktif')
-        .toLowerCase()
-        .trim() === 'aktif'
-    if (!aktif) return false
+    if (!isGuruAktif(g)) return false
     const gl = String(g.lembaga || '')
       .toLowerCase()
       .trim()

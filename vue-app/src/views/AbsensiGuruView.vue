@@ -1019,6 +1019,7 @@ import { useSettingsStore } from '@/stores/settings'
 import { shiftsForGuru, shiftBatas as shiftBatasOf } from '@/utils/shiftDerive'
 import { shiftList, shiftLabelOf, shiftById } from '@/utils/shiftMaster'
 import { materialisasiHadirIkut } from '@/utils/absensiMaterialize'
+import { guruAktifSaja } from '@/utils/guruScope' // v.1.2.0: sumber tunggal penyaring status guru
 import { getLembagaBroadGroup, canonLembaga } from '@/composables/useLembaga'
 import {
   indexAbsensiHarian,
@@ -1348,14 +1349,9 @@ const tahunOptions = computed(() => {
 })
 
 const guruAktif = computed(() =>
-  guruRaw.value
-    .filter(
-      (g) =>
-        String(g.status || 'Aktif')
-          .toLowerCase()
-          .trim() === 'aktif'
-    )
-    .sort((a, b) => String(a.nama || '').localeCompare(String(b.nama || ''), 'id'))
+  guruAktifSaja(guruRaw.value).sort((a, b) =>
+    String(a.nama || '').localeCompare(String(b.nama || ''), 'id')
+  )
 )
 
 // v.1.1.9: kolom shift IKUT MASTER (settings.shiftMaster) — dulu array hardcoded 5 shift.

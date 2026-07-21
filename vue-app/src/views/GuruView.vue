@@ -415,7 +415,7 @@
                     </p>
                   </div>
                   <span
-                    v-if="isAktif(g)"
+                    v-if="isGuruAktif(g)"
                     class="text-[9px] bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700 px-2 py-0.5 rounded font-black uppercase tracking-wider flex-shrink-0"
                   >
                     Aktif
@@ -496,13 +496,15 @@
                     @click="toggleAktifGuru(g)"
                     :class="[
                       'text-[10px] font-bold hover:underline',
-                      isAktif(g)
+                      isGuruAktif(g)
                         ? 'text-cyan-700 dark:text-cyan-300'
                         : 'text-emerald-700 dark:text-emerald-300'
                     ]"
                   >
-                    <i :class="['fas', isAktif(g) ? 'fa-toggle-off' : 'fa-toggle-on', 'mr-1']"></i
-                    >{{ isAktif(g) ? 'Non-aktifkan' : 'Aktifkan' }}
+                    <i
+                      :class="['fas', isGuruAktif(g) ? 'fa-toggle-off' : 'fa-toggle-on', 'mr-1']"
+                    ></i
+                    >{{ isGuruAktif(g) ? 'Non-aktifkan' : 'Aktifkan' }}
                   </button>
                   <router-link
                     :to="`/guru/${g.id}/edit?from=master`"
@@ -575,6 +577,7 @@ import { sortLembagaNames } from '@/utils/santriSort' // v.100 Batch10: urutan c
 // v.1.1.9: label shift kartu guru ikut master (sumber tunggal aturan shift)
 import { shiftsForGuru } from '@/utils/shiftDerive'
 import { shiftLabelOf } from '@/utils/shiftMaster'
+import { isGuruAktif } from '@/utils/guruScope' // v.1.2.0: sumber tunggal penyaring status guru
 
 const {
   guru,
@@ -738,13 +741,6 @@ const hasFilter = computed(
     filterStatus.value !== 'aktif'
 )
 
-function isAktif(g) {
-  return (
-    String(g.status || 'Aktif')
-      .toLowerCase()
-      .trim() === 'aktif'
-  )
-}
 function cleanWa(wa) {
   return String(wa || '')
     .replace(/[^0-9]/g, '')
@@ -1104,7 +1100,7 @@ async function resetSandiGuru(g) {
 }
 
 async function toggleAktifGuru(g) {
-  const wasAktif = isAktif(g)
+  const wasAktif = isGuruAktif(g)
   const newStatus = wasAktif ? 'Non-aktif' : 'Aktif'
   const ok = await confirmDialog({
     title: `${wasAktif ? 'Non-aktifkan' : 'Aktifkan'} ${g.nama}?`,
