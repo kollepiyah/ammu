@@ -28,6 +28,7 @@ supabase functions deploy hiview-absen        --no-verify-jwt   # webhook mesin 
 ```bash
 # Service-account Firebase (FCM HTTP v1) — ambil dari Firebase Console > Project Settings
 #   > Service accounts > Generate new private key (JSON). 1 baris.
+# bash / macOS / Linux:
 supabase secrets set FCM_SERVICE_ACCOUNT="$(cat path/ke/service-account.json)"
 
 # (opsional) Iframely utk pratinjau link sosial-media
@@ -37,6 +38,24 @@ supabase secrets set IFRAMELY_KEY="<api-key-iframely>"
 # `?k=` URL listening mesin & sbg password Basic-auth. JANGAN commit nilai aslinya.
 supabase secrets set HIVIEW_PUSH_SECRET="<8-16-char-secret>"
 ```
+
+> **WINDOWS / PowerShell — JANGAN pakai baris bash di atas.** `$(cat ...)` tidak
+> dieksekusi PowerShell, jadi yang tersimpan bukan JSON yang sah dan dispatch-push
+> membalas `500 {"ok":false,"error":"FCM_SERVICE_ACCOUNT invalid: Expected property ..."}`
+> di SETIAP run cron. Ini sudah pernah memakan waktu (21 Jul 2026).
+> JSON juga WAJIB dipadatkan jadi satu baris — `private_key` penuh newline yang
+> merusak nilai env.
+>
+> ```powershell
+> $json = Get-Content -Raw .\service-account.json | ConvertFrom-Json | ConvertTo-Json -Compress -Depth 10
+> Set-Content -Path .cm.env -Value "FCM_SERVICE_ACCOUNT=$json" -NoNewline -Encoding utf8
+> supabase secrets set --env-file .cm.env
+> Remove-Item .cm.env   # berisi kunci privat Firebase — jangan ditinggal
+> ```
+>
+> Verifikasi TANPA mengirim notifikasi: tunggu 1 menit lalu
+> `select status_code, content::text from net._http_response order by created desc limit 3;`
+> — cari `200 {"ok":true,"processed":0}`.
 
 `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` otomatis tersedia di
 runtime Edge Function — tak perlu di-set.
