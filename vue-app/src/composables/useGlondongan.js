@@ -18,6 +18,7 @@ import {
   isPenyimakKategori,
   kategoriMukim,
   buatScopePj,
+  isBarisTerbuka,
   KATEGORI_GLONDONGAN,
   PTPT_LEMBAGA
 } from '@/utils/glondongan'
@@ -114,10 +115,37 @@ export function useGlondongan() {
     return n
   }
 
-  // Antrian penugasan: baris glondongan 'menunggu' yang boleh SAYA tugaskan.
+  // v.1.1.9: blok dikerjakan BERURUTAN dari kelas asal terkecil (Kyai 21 Jul).
+  //   Aturannya di utils/glondongan.isBarisTerbuka — dihitung dari RUMUS, bukan dari
+  //   baris yang kebetulan ada, supaya blok yang gagal ter-spawn tidak membocorkan urutan.
+  const barisPerAjuan = computed(() => {
+    const m = {}
+    for (const r of rows.value) {
+      const k = String(r.ajuan_id || '')
+      if (!k) continue
+      ;(m[k] || (m[k] = [])).push(r)
+    }
+    return m
+  })
+  function terbuka(r) {
+    return isBarisTerbuka(r, barisPerAjuan.value[String(r?.ajuan_id || '')] || [])
+  }
+
+  // Antrian penugasan: baris glondongan 'menunggu' yang boleh SAYA tugaskan DAN
+  //   sudah gilirannya (blok kelas sebelumnya selesai).
   const antrianTugas = computed(() =>
     sortNewest(
-      rows.value.filter((r) => r.tipe === 'glondongan' && r.status === 'menunggu' && canAssign(r))
+      rows.value.filter(
+        (r) => r.tipe === 'glondongan' && r.status === 'menunggu' && canAssign(r) && terbuka(r)
+      )
+    )
+  )
+
+  // Blok yang boleh saya tugaskan tapi BELUM gilirannya — dipakai UI memberi tahu
+  //   "N blok lain menunggu giliran", supaya hilangnya blok tidak terasa misterius.
+  const antrianTertunda = computed(() =>
+    rows.value.filter(
+      (r) => r.tipe === 'glondongan' && r.status === 'menunggu' && canAssign(r) && !terbuka(r)
     )
   )
 
@@ -131,13 +159,31 @@ export function useGlondongan() {
   )
 
   // Tugas menilai SAYA: baris 'ditugaskan' ke saya (penguji glondongan atau guru kelas berjalan).
+  //   v.1.1.9: hanya yang SUDAH GILIRANNYA. Baris 'berjalan' (guru kelas) dibuat
+  //   ber-status 'ditugaskan' sejak awal, jadi tanpa gerbang ini guru kelas bisa
+  //   menilainya duluan — padahal Kyai minta ia menunggu semua glondongan selesai.
   const tugasNilaiSaya = computed(() =>
     sortNewest(
       rows.value.filter(
         (r) =>
           r.status === 'ditugaskan' &&
           (String(r.penguji_id || '') === myId.value ||
-            (!r.penguji_id && String(r.penguji_nama || '').trim() === myNama.value))
+            (!r.penguji_id && String(r.penguji_nama || '').trim() === myNama.value)) &&
+          terbuka(r)
+      )
+    )
+  )
+
+  // Tugas saya yang masih MENUNGGU giliran — supaya penyimak/guru kelas tahu tugasnya
+  //   ada tapi belum waktunya, bukan mengira tak kebagian.
+  const tugasMenunggu = computed(() =>
+    sortNewest(
+      rows.value.filter(
+        (r) =>
+          r.status === 'ditugaskan' &&
+          (String(r.penguji_id || '') === myId.value ||
+            (!r.penguji_id && String(r.penguji_nama || '').trim() === myNama.value)) &&
+          !terbuka(r)
       )
     )
   )
@@ -302,6 +348,8 @@ export function useGlondongan() {
     canAssign,
     canAssignAny,
     antrianTugas,
+    antrianTertunda, // v.1.1.9: blok yang belum gilirannya
+    tugasMenunggu,
     sudahDitugaskan, // v.1.1.9: blok ber-penyimak (utk kontak WA di tab Penugasan)
     tugasNilaiSaya,
     catatanSantri,

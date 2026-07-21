@@ -28,6 +28,8 @@ const {
   sesi,
   myNama,
   antrianTugas,
+  antrianTertunda, // v.1.1.9: blok belum giliran (keterangan di tab Penugasan)
+  tugasMenunggu,
   sudahDitugaskan, // v.1.1.9: blok ber-penyimak (kontak WA)
   canAssignAny,
   myKategori,
@@ -681,6 +683,17 @@ const rekapTotal = computed(() => rekapRows.value.reduce((s, g) => s + g.total, 
         <i class="fas fa-triangle-exclamation mr-1"></i>Belum ada guru PTPT aktif untuk dipilih.
       </p>
 
+      <!-- v.1.1.9: blok yang belum gilirannya sengaja DISEMBUNYIKAN (Kyai: kelas 1 dulu,
+           setelah lulus baru kelas 2). Tanpa keterangan ini blok terasa hilang. -->
+      <p
+        v-if="antrianTertunda.length"
+        class="mt-3 text-[10px] text-[var(--text-tertiary)] italic border-t border-[var(--border-subtle)] pt-2"
+      >
+        <i class="fas fa-lock mr-1"></i><b>{{ antrianTertunda.length }} blok</b> belum ditampilkan —
+        menunggu blok kelas sebelumnya selesai disimak. Glondongan dikerjakan berurutan dari kelas
+        terkecil.
+      </p>
+
       <!-- v.1.1.9: blok yang sudah punya penyimak — beserta kontaknya. Dulu tab ini
            hanya menampilkan yang 'menunggu', jadi tak ada tempat melihat siapa
            penyimaknya, apalagi menghubunginya. -->
@@ -780,6 +793,33 @@ const rekapTotal = computed(() => rekapRows.value.reduce((s, g) => s + g.total, 
       >
         <i class="fas fa-clipboard-check text-2xl block mb-2 text-[var(--border-default)]"></i>
         Belum ada tugas menilai untuk Anda.
+      </div>
+
+      <!-- v.1.1.9: tugas yang sudah ditugaskan tapi belum gilirannya. Ditampilkan sebagai
+           keterangan (bukan disembunyikan diam-diam) supaya penyimak / guru kelas tahu
+           tugasnya ADA, cuma belum waktunya. -->
+      <div
+        v-if="tugasMenunggu.length"
+        class="mt-3 rounded-xl border border-[var(--border-default)] bg-[var(--bg-muted)] p-3"
+      >
+        <p class="text-[11px] font-bold text-[var(--text-secondary)] mb-1.5">
+          <i class="fas fa-hourglass-half mr-1"></i>Menunggu giliran ({{ tugasMenunggu.length }})
+        </p>
+        <p
+          v-for="row in tugasMenunggu"
+          :key="row.id"
+          class="text-[11px] text-[var(--text-tertiary)]"
+        >
+          {{ row.nama_cache || '—' }} · {{ tipeLabel(row) }} · {{ juzLabel(row) }}
+          <span class="italic">
+            —
+            {{
+              row.tipe === 'berjalan'
+                ? 'menunggu semua glondongan selesai'
+                : 'menunggu blok kelas sebelumnya selesai'
+            }}
+          </span>
+        </p>
       </div>
 
       <ul v-else class="space-y-2">

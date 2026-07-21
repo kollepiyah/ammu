@@ -117,6 +117,49 @@ export function gerbangGlondongan(juzTes, barisAjuan) {
   return { terkunci: pending.length > 0, pending, adaBarisHilang }
 }
 
+/**
+ * v.1.1.9 (Kyai 21 Jul 2026): "jika santri glondongannya banyak (mis: kelas 1-2) maka
+ * di penugasan tampilkan kelas 1 dulu, setelah lulus baru tampil kelas 2 dst, review
+ * juz berjalan juga harus menunggu semua glondongan selesai."
+ *
+ * Jadi blok dikerjakan BERURUTAN dari kelas asal terkecil:
+ *   - blok glondongan kelas N terbuka bila SEMUA blok kelas < N sudah 'selesai';
+ *   - baris 'berjalan' (review juz kelas berjalan) terbuka bila SEMUA glondongan selesai.
+ *
+ * Daftar blok yang HARUS ada dihitung dari RUMUS (splitGlondongan atas `juz_target`),
+ * bukan dari baris yang kebetulan ada — sama seperti gerbangGlondongan. Kalau baris
+ * kelas 1 gagal ter-spawn, kelas 2 TETAP terkunci; kalau diambil dari baris yang ada,
+ * blok hilang itu akan terlewat begitu saja dan urutannya bocor.
+ *
+ * @param {Object} row - baris tes_glondongan yang mau dicek.
+ * @param {Array} barisAjuan - SEMUA baris milik ajuan yang sama.
+ * @returns {boolean} true = sudah giliran baris ini.
+ */
+export function isBarisTerbuka(row, barisAjuan) {
+  const rows = Array.isArray(barisAjuan) ? barisAjuan : []
+  const tipe = String(row?.tipe || '')
+  if (tipe !== 'glondongan' && tipe !== 'berjalan') return true
+
+  const split = splitGlondongan(Number(row?.juz_target))
+  const kelasWajib = split.ok
+    ? split.glondongan.map((b) => b.kelas_asal)
+    : rows
+        .filter((r) => String(r.tipe) === 'glondongan')
+        .map((r) => Number(r.kelas_asal))
+        .filter(Number.isFinite)
+
+  const kelasSelesai = (c) => {
+    const r = rows.find((x) => String(x.tipe) === 'glondongan' && Number(x.kelas_asal) === c)
+    return !!r && String(r.status || '').toLowerCase() === 'selesai'
+  }
+
+  if (tipe === 'berjalan') return kelasWajib.every(kelasSelesai)
+
+  const k = Number(row?.kelas_asal)
+  if (!Number.isFinite(k)) return true
+  return kelasWajib.filter((c) => c < k).every(kelasSelesai)
+}
+
 // Periode bulan 'YYYY-MM' (default now) — dipakai rekap bisyaroh bulanan. Cermin useKeuangan.
 export function periodeBulan(d = new Date()) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
