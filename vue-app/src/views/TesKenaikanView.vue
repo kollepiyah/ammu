@@ -101,44 +101,29 @@
                   <i class="fas fa-hourglass-half mr-1"></i>Sudah ada ajuan menunggu tes
                 </p>
 
-                <!-- Kontrol jenis + target (muncul saat dicentang) -->
-                <div v-if="sel[s.id]?.checked" class="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  <div v-if="jenisOptionsFor(s).length > 1">
-                    <label
-                      class="block text-[10px] font-black text-[var(--text-secondary)] uppercase mb-1"
-                      >Jenis kenaikan</label
-                    >
-                    <select
-                      :value="sel[s.id].jenis"
-                      @change="onJenis(s, $event.target.value)"
-                      class="w-full px-2.5 py-2 text-xs rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none"
-                    >
-                      <option
-                        v-for="j in jenisOptionsFor(s)"
-                        :key="j.value"
-                        :value="j.value"
-                        :disabled="j.value === 'kelas' && !canNaikKelasPtpt(s)"
-                      >
-                        {{ j.label
-                        }}{{
-                          j.value === 'kelas' && !canNaikKelasPtpt(s) ? ' — blm juz akhir' : ''
-                        }}
-                      </option>
-                    </select>
-                  </div>
-                  <div :class="jenisOptionsFor(s).length > 1 ? '' : 'sm:col-span-2'">
-                    <label
-                      class="block text-[10px] font-black text-[var(--text-secondary)] uppercase mb-1"
-                      >Target tujuan</label
-                    >
-                    <select
-                      v-model="sel[s.id].target"
-                      class="w-full px-2.5 py-2 text-xs rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none"
-                    >
-                      <option value="" disabled>— pilih target —</option>
-                      <option v-for="t in targetOptionsFor(s)" :key="t" :value="t">{{ t }}</option>
-                    </select>
-                  </div>
+                <!-- Target tujuan (muncul saat dicentang).
+                     v.1.1.9: dropdown "Jenis kenaikan" DIHAPUS — tiap lembaga cuma punya
+                     satu jenis, dan PTPT kini selalu 'juz' (kenaikan kelas turun otomatis
+                     dari juz: juz 11 -> Kelas 3). Satu pilihan yang tak pernah diganti
+                     hanya menambah langkah. -->
+                <div v-if="sel[s.id]?.checked" class="mt-2">
+                  <label
+                    class="block text-[10px] font-black text-[var(--text-secondary)] uppercase mb-1"
+                    >Target tujuan</label
+                  >
+                  <select
+                    v-model="sel[s.id].target"
+                    class="w-full px-2.5 py-2 text-xs rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none"
+                  >
+                    <option value="" disabled>— pilih target —</option>
+                    <option v-for="t in targetOptionsFor(s)" :key="t" :value="t">{{ t }}</option>
+                  </select>
+                  <p
+                    v-if="s.lembaga === 'PTPT'"
+                    class="text-[10px] text-[var(--text-tertiary)] mt-1"
+                  >
+                    Kelas PTPT ikut juz otomatis — mis. lulus juz 10 → juz 11 → Kelas 3.
+                  </p>
                 </div>
               </div>
             </div>
@@ -815,7 +800,6 @@ import {
   tesJenisOptions,
   tesTargetOptions,
   tesTargetDefault,
-  canNaikKelasPtpt,
   STATUS_LABEL,
   tesAspekGroups,
   tesAspekFlat,
@@ -1223,18 +1207,15 @@ const activeTab = ref(isPenguji.value ? 'antrian' : 'ajukan')
 
 // ----- Tab Ajukan: state seleksi per santri -----
 const sel = reactive({})
-function jenisOptionsFor(s) {
-  return tesJenisOptions(s.lembaga)
-}
 function targetOptionsFor(s) {
   return tesTargetOptions(s, sel[s.id]?.jenis, settings.value)
 }
+// v.1.1.9: jenis tak lagi dipilih pengguna — tiap lembaga punya SATU jenis
+//   (PTPT selalu 'juz'; kenaikan kelasnya turun otomatis dari juz). Jenisnya tetap
+//   disimpan di record supaya data lama & baru sebentuk.
 function ensureSel(s) {
   if (!sel[s.id]) {
-    const jenisList = tesJenisOptions(s.lembaga)
-    // default jenis: untuk PTPT pilih 'juz' (kelas hanya bila juz akhir)
-    let jenis = jenisList[0]?.value || ''
-    if (s.lembaga === 'PTPT') jenis = 'juz'
+    const jenis = s.lembaga === 'PTPT' ? 'juz' : tesJenisOptions(s.lembaga)[0]?.value || ''
     sel[s.id] = { checked: false, jenis, target: tesTargetDefault(s, jenis, settings.value) }
   }
   return sel[s.id]
@@ -1242,11 +1223,6 @@ function ensureSel(s) {
 function toggle(s) {
   const st = ensureSel(s)
   st.checked = !st.checked
-}
-function onJenis(s, jenis) {
-  const st = ensureSel(s)
-  st.jenis = jenis
-  st.target = tesTargetDefault(s, jenis, settings.value)
 }
 const checkedCount = computed(() => Object.values(sel).filter((x) => x.checked).length)
 

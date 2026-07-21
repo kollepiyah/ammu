@@ -22,11 +22,11 @@ export function tesJenisOptions(lembaga) {
   const l = String(lembaga || '').trim()
   if (l === 'TPQ Pagi' || l === 'TPQ Sore') return [{ value: 'jilid', label: 'Naik Jilid' }]
   if (l === 'Pra PTPT') return [{ value: 'khotam', label: 'Naik Khotam' }] // v.100d
-  if (l === 'PTPT')
-    return [
-      { value: 'juz', label: 'Naik Juz' },
-      { value: 'kelas', label: 'Naik Kelas (setelah ceremonial)' }
-    ]
+  // v.1.1.9 (Kyai 21 Jul 2026): PTPT hanya 'juz'. Jenis 'kelas' DIHAPUS dari pilihan —
+  //   kenaikan kelas PTPT sekarang turun otomatis dari juz (juz 11 -> Kelas 3), jadi
+  //   tak perlu ajuan terpisah. Nilai 'kelas' tetap DIKENAL di tempat lain
+  //   (tesTargetOptions/tesTargetDefault/prefillNaik) supaya record LAMA tetap terbaca.
+  if (l === 'PTPT') return [{ value: 'juz', label: 'Naik Juz' }]
   if (l === 'PPPH') return [{ value: 'level', label: 'Naik Level' }]
   return []
 }
@@ -46,7 +46,8 @@ export function canNaikKelasPtpt(s) {
 function flattenItems(lembaga, settings) {
   const sch = getKartuKenaikanSchema(lembaga, settings)
   const out = []
-  for (const k of sch.kelasList || []) for (const it of k.items || []) out.push(String(it.label || it.id))
+  for (const k of sch.kelasList || [])
+    for (const it of k.items || []) out.push(String(it.label || it.id))
   return out
 }
 // Label kelas/level dari schema (dipakai jenis 'kelas' & 'level').
@@ -80,7 +81,9 @@ export function tesTargetDefault(santri, jenis, settings) {
   }
   if (jenis === 'kelas') {
     // Kelas berikutnya dari kelas santri sekarang (cari label yang cocok, ambil next).
-    const cur = String(santri?.kelas || '').trim().toLowerCase()
+    const cur = String(santri?.kelas || '')
+      .trim()
+      .toLowerCase()
     const idx = opts.findIndex((o) => o.toLowerCase() === cur)
     if (idx >= 0 && idx < opts.length - 1) return opts[idx + 1]
     // fallback: dari juz → kelas berikutnya (juz 5 = kelas 1 → Kelas 2)
@@ -93,7 +96,9 @@ export function tesTargetDefault(santri, jenis, settings) {
     return ''
   }
   // jilid / level: cari posisi santri.kelas di list → ambil berikutnya
-  const cur = String(santri?.kelas || '').trim().toLowerCase()
+  const cur = String(santri?.kelas || '')
+    .trim()
+    .toLowerCase()
   const idx = opts.findIndex((o) => o.toLowerCase() === cur)
   if (idx >= 0 && idx < opts.length - 1) return opts[idx + 1]
   return ''
@@ -131,21 +136,46 @@ export function tesAspekGroups(santri) {
   const A = (key, label, toRapor = true) => ({ key, label, toRapor })
   if (l === 'TPQ Pagi' || l === 'TPQ Sore' || l === 'TPQ') {
     if (_tpqIsKpi(santri)) {
-      return [{ group: '', aspek: [
-        A('fashohah', 'Fashohah'), A('tartil', 'Tartil'), A('ghorib', 'Ghorib'),
-        A('tajwid', 'Tajwid'), A('doa_harian', 'Doa Harian'), A('surat_pendek', 'Surat Pendek')
-      ] }]
+      return [
+        {
+          group: '',
+          aspek: [
+            A('fashohah', 'Fashohah'),
+            A('tartil', 'Tartil'),
+            A('ghorib', 'Ghorib'),
+            A('tajwid', 'Tajwid'),
+            A('doa_harian', 'Doa Harian'),
+            A('surat_pendek', 'Surat Pendek')
+          ]
+        }
+      ]
     }
-    return [{ group: '', aspek: [
-      A('fashohah', 'Fashohah', false), A('tartil', 'Tartil', false),
-      A('doa_harian', 'Doa Harian', true), A('surat_pendek', 'Surat Pendek', true)
-    ] }]
+    return [
+      {
+        group: '',
+        aspek: [
+          A('fashohah', 'Fashohah', false),
+          A('tartil', 'Tartil', false),
+          A('doa_harian', 'Doa Harian', true),
+          A('surat_pendek', 'Surat Pendek', true)
+        ]
+      }
+    ]
   }
   if (l === 'Pra PTPT') {
-    return [{ group: '', aspek: [
-      A('fashohah', 'Fashohah'), A('tartil', 'Tartil'), A('tahfizh_juz30', 'Tahfizh Juz 30'),
-      A('ghorib', 'Ghorib'), A('tajwid', 'Tajwid'), A('doa_harian', 'Doa Harian')
-    ] }]
+    return [
+      {
+        group: '',
+        aspek: [
+          A('fashohah', 'Fashohah'),
+          A('tartil', 'Tartil'),
+          A('tahfizh_juz30', 'Tahfizh Juz 30'),
+          A('ghorib', 'Ghorib'),
+          A('tajwid', 'Tajwid'),
+          A('doa_harian', 'Doa Harian')
+        ]
+      }
+    ]
   }
   if (l === 'PTPT') {
     return [
@@ -155,8 +185,14 @@ export function tesAspekGroups(santri) {
   }
   if (l === 'PPPH' || l === 'P3H') {
     return [
-      { group: "Hafalan Al-Qur'an", aspek: [A('tahfizh', 'Tahfizh'), A('fashohah', 'Fashohah'), A('tartil', 'Tartil')] },
-      { group: 'Hafalan Hadits', aspek: [A('ketepatan_matan', 'Ketepatan Matan'), A('pemahaman_sanad', 'Pemahaman Sanad')] }
+      {
+        group: "Hafalan Al-Qur'an",
+        aspek: [A('tahfizh', 'Tahfizh'), A('fashohah', 'Fashohah'), A('tartil', 'Tartil')]
+      },
+      {
+        group: 'Hafalan Hadits',
+        aspek: [A('ketepatan_matan', 'Ketepatan Matan'), A('pemahaman_sanad', 'Pemahaman Sanad')]
+      }
     ]
   }
   return []
