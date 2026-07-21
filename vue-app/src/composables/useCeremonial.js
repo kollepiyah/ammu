@@ -44,6 +44,30 @@ const norm = (v) =>
 //
 //   `terjadwal` menerima Map<santriId, jumlahSesi> (dipakai sekarang) atau Set
 //   (bentuk lama) — Set dianggap 1 sesi.
+// Nomor juz dari nilai apa pun ('JUZ 10' | '10' | 10) → number, NaN bila tak terbaca.
+const _juz = (v) => {
+  const m = String(v ?? '').match(/\d+/)
+  return m ? parseInt(m[0], 10) : NaN
+}
+
+/**
+ * Layak ceremonial? (Kyai 21 Jul 2026: "santri yg sudah lulus tes juz terakhir kelas
+ * di PJ atau mau naik kelas ada cerem")
+ *
+ * Kelas PTPT = 5 juz, jadi juz TERAKHIR tiap kelas = kelipatan 5 (5,10,15,20,25,30).
+ * Yang dites adalah `juz_asal` (juz santri saat mengajukan); `target` = juz tujuan
+ * (T+1). Jadi patokannya juz_asal, BUKAN target — kalau salah pakai target, yang
+ * terjaring malah santri yang baru MULAI kelas baru.
+ *
+ * Record LAMA berjenis 'kelas' (ajuan "Naik Kelas" terpisah, sudah dihapus dari
+ * pilihan) tetap dianggap layak supaya riwayat lama tak hilang dari daftar.
+ */
+export function layakCeremonial(a) {
+  if (norm(a?.jenis) === 'kelas') return true
+  const t = _juz(a?.juz_asal)
+  return Number.isFinite(t) && t > 0 && t % 5 === 0
+}
+
 export function pilihKandidat(ajuanList, terjadwal) {
   const hitungSesi = (sid) => {
     const k = String(sid)
@@ -55,6 +79,10 @@ export function pilihKandidat(ajuanList, terjadwal) {
   for (const a of arr(ajuanList)) {
     if (String(a?.status) !== 'lulus') continue
     if (norm(a?.lembaga) !== norm(PTPT_LEMBAGA)) continue
+    // v.1.2.0: hanya yang lulus juz TERAKHIR kelasnya — itulah yang mengantar naik
+    //   kelas. Dulu SEMUA kelulusan juz jadi kandidat, jadi daftarnya kebanjiran
+    //   santri yang belum waktunya ceremonial.
+    if (!layakCeremonial(a)) continue
     const sid = String(a.santri_id || '')
     if (!sid) continue
     const prev = perSantri.get(sid)
@@ -66,6 +94,12 @@ export function pilihKandidat(ajuanList, terjadwal) {
       nama: a.nama_cache || '',
       kelas: a.kelas_asal || '',
       juz: a.target || a.juz_asal || '',
+      // v.1.2.0: juz yang BARU LULUS + kelas tujuan sesudah ceremonial — dipakai
+      //   label daftar kandidat ("Lulus Juz 10 -> Kelas 3").
+      juz_lulus: Number.isFinite(_juz(a.juz_asal)) ? _juz(a.juz_asal) : null,
+      kelas_tujuan: Number.isFinite(_juz(a.juz_asal))
+        ? `Kelas ${Math.floor(_juz(a.juz_asal) / 5) + 1}`
+        : '',
       ajuan_id: String(a.id),
       tgl_lulus_pj: a.tgl_hasil || '',
       penguji: a.penguji || '',

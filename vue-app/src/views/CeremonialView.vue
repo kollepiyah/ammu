@@ -83,6 +83,49 @@ const sesiTerlihat = computed(() => {
   return sesiList.value.filter((s) => punyaKelas(s) || (isPjPtpt.value && sesiMenyangkutAmpuan(s)))
 })
 
+// ── v.1.2.0 (Kyai 21 Jul): daftar KANDIDAT otomatis + pisah sudah/belum dijadwalkan,
+//    supaya penjadwalan tak lagi manual satu per satu. ──────────────────────────
+const tab = ref('kandidat') // 'kandidat' | 'sesi' — mulai dari yang perlu ditindak
+const kandidatTab = ref('belum') // 'belum' | 'sudah'
+// Kandidat penuh (tak terpengaruh isi dialog) — dasar kedua sub-tab & badge.
+const kandidatSemua = computed(() => {
+  let list = kandidatPeserta(ajuanRaw.value)
+  if (!isSuper.value && !isKoordinator.value && isPjPtpt.value) {
+    list = list.filter((k) => isAmpuanSaya.value(k.santri_id))
+  }
+  return list
+})
+const kandidatBelum = computed(() => kandidatSemua.value.filter((k) => !k.sesi_terjadwal))
+const kandidatSudah = computed(() => kandidatSemua.value.filter((k) => k.sesi_terjadwal))
+const kandidatAktif = computed(() =>
+  kandidatTab.value === 'belum' ? kandidatBelum.value : kandidatSudah.value
+)
+
+// Pilihan borongan (hanya di sub-tab "Belum").
+const pilihMassal = ref([])
+const adaPilih = (id) => pilihMassal.value.includes(String(id))
+function togglePilih(id) {
+  const s = String(id)
+  const i = pilihMassal.value.indexOf(s)
+  if (i >= 0) pilihMassal.value.splice(i, 1)
+  else pilihMassal.value.push(s)
+}
+const semuaTerpilih = computed(
+  () => kandidatBelum.value.length > 0 && pilihMassal.value.length === kandidatBelum.value.length
+)
+function toggleSemua() {
+  pilihMassal.value = semuaTerpilih.value ? [] : kandidatBelum.value.map((k) => String(k.santri_id))
+}
+// Buka dialog sesi baru dengan peserta SUDAH TERISI — inti "tidak manual satu-satu".
+function jadwalkanTerpilih() {
+  const pilih = new Set(pilihMassal.value)
+  const peserta = kandidatBelum.value.filter((k) => pilih.has(String(k.santri_id)))
+  if (!peserta.length) return
+  bukaBaru()
+  form.value.peserta = peserta.map((k) => ({ ...k }))
+  pilihMassal.value = []
+}
+
 const filterStatus = ref('')
 const sesiTampil = computed(() =>
   filterStatus.value
@@ -141,12 +184,9 @@ const form = ref(formKosong())
 // Kandidat = lulus tes PJ & belum dijadwalkan. Saat MENGUBAH sesi, peserta sesi itu
 //   sendiri harus tetap muncul supaya bisa dicentang/dilepas.
 const kandidat = computed(() => {
-  let dasar = kandidatPeserta(ajuanRaw.value)
-  // v.1.1.9: PJ menjadwal hanya untuk santri AMPUANNYA. super_admin & koordinator
-  //   tetap melihat semua kandidat.
-  if (!isSuper.value && !isKoordinator.value && isPjPtpt.value) {
-    dasar = dasar.filter((k) => isAmpuanSaya.value(k.santri_id))
-  }
+  // v.1.2.0: satu sumber dengan daftar kandidat di layar (kandidatSemua) — scope PJ
+  //   & saringan "juz terakhir kelas" sudah diterapkan di sana.
+  const dasar = kandidatSemua.value
   const sudah = new Set(dasar.map((k) => k.santri_id))
   const tambahan = (form.value.peserta || []).filter((p) => !sudah.has(String(p.santri_id)))
   return [...tambahan, ...dasar].sort((a, b) => String(a.nama).localeCompare(String(b.nama), 'id'))
@@ -316,164 +356,285 @@ function jamRange(s) {
       </button>
     </div>
 
-    <!-- Filter status -->
-    <div class="flex gap-1.5 overflow-x-auto custom-scrollbar">
+    <!-- v.1.2.0: tab utama — Kandidat (perlu ditindak) vs Sesi (jadwal yang sudah ada) -->
+    <div class="flex gap-1.5">
       <button
-        v-for="f in [
-          { v: '', l: 'Semua' },
-          { v: 'terjadwal', l: 'Terjadwal' },
-          { v: 'selesai', l: 'Selesai' },
-          { v: 'batal', l: 'Batal' }
+        v-for="t in [
+          { v: 'kandidat', l: 'Kandidat', n: kandidatBelum.length },
+          { v: 'sesi', l: 'Sesi Terjadwal', n: 0 }
         ]"
-        :key="f.v"
-        @click="filterStatus = f.v"
+        :key="t.v"
+        @click="tab = t.v"
         :class="[
-          'px-3 py-1.5 rounded-xl text-xs font-black border transition cursor-pointer whitespace-nowrap',
-          filterStatus === f.v
+          'px-3.5 py-2 rounded-xl text-xs font-black border transition cursor-pointer',
+          tab === t.v
             ? 'bg-teal-600 text-white border-teal-700'
             : 'bg-[var(--bg-card)] text-[var(--text-secondary)] border-[var(--border-default)] hover:bg-teal-50 dark:hover:bg-teal-900/30'
         ]"
       >
-        {{ f.l }}
+        {{ t.l }}
+        <span v-if="t.n" class="ml-1 px-1.5 rounded-full bg-amber-500 text-white text-[10px]">{{
+          t.n
+        }}</span>
       </button>
     </div>
 
-    <!-- Empty -->
-    <div
-      v-if="loaded && sesiTampil.length === 0"
-      class="bg-[var(--bg-card)] rounded-2xl p-10 text-center border border-dashed border-[var(--border-default)]"
-    >
-      <i class="fas fa-calendar-day text-[var(--text-tertiary)] text-3xl mb-2"></i>
-      <p class="text-sm text-[var(--text-secondary)] italic">
-        {{
-          filterStatus
-            ? 'Tidak ada sesi dengan status ini.'
-            : canKelola
-              ? 'Belum ada sesi ceremonial.'
-              : 'Belum ada sesi ceremonial yang memuat santri kelas ampuan.'
-        }}
-      </p>
-    </div>
-
-    <!-- Daftar sesi -->
-    <div
-      v-for="s in sesiTampil"
-      :key="s.id"
-      class="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)] shadow-sm overflow-hidden"
-    >
-      <div
-        class="flex items-start justify-between gap-2 flex-wrap p-3 md:p-4 bg-[var(--bg-muted)] border-b border-[var(--border-subtle)]"
-      >
-        <div class="min-w-0">
-          <h3 class="text-sm md:text-base font-black text-[var(--text-primary)]">
-            <i class="fas fa-calendar-day text-teal-600 mr-1.5"></i>{{ judulSesi(s) }}
-          </h3>
-          <p class="text-[11px] font-bold text-[var(--text-secondary)] mt-0.5">
-            {{ fmtTgl(s.tanggal) }}<span v-if="jamRange(s)"> &middot; {{ jamRange(s) }}</span
-            ><span v-if="s.tempat"> &middot; {{ s.tempat }}</span>
-          </p>
-        </div>
-        <div class="flex items-center gap-1.5 flex-shrink-0">
-          <span
-            :class="[
-              'text-[10px] font-black px-2.5 py-1 rounded-full',
-              STATUS_CLS[s.status] || STATUS_CLS.terjadwal
-            ]"
-            >{{ STATUS_LABEL[s.status] || s.status }}</span
-          >
-          <button
-            v-if="canKelola"
-            @click="bukaUbah(s)"
-            class="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-teal-600 hover:bg-teal-700 text-white"
-          >
-            <i class="fas fa-pen mr-1"></i>Ubah
-          </button>
-          <!-- v.1.1.9: notif dikirim otomatis saat sesi DIBUAT. Menyunting sesi tidak
-               mengirim ulang (biar tak membanjiri); kalau jadwal berubah, pakai ini. -->
-          <button
-            v-if="canKelola && s.status === 'terjadwal'"
-            @click="kirimUlang(s)"
-            :disabled="kirimId === String(s.id)"
-            title="Kirim ulang notifikasi ke penyimak & peserta"
-            class="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white disabled:opacity-50"
-          >
-            <i
-              :class="['fas mr-1', kirimId === String(s.id) ? 'fa-spinner fa-spin' : 'fa-bell']"
-            ></i
-            >Notif
-          </button>
-          <button
-            v-if="canKelola && s.status !== 'selesai'"
-            @click="ubahStatus(s, 'selesai')"
-            class="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-slate-600 hover:bg-slate-700 text-white"
-          >
-            <i class="fas fa-check mr-1"></i>Selesai
-          </button>
-          <button
-            v-if="isSuper"
-            @click="hapus(s)"
-            class="text-[11px] font-bold px-2 py-1 rounded-lg bg-rose-600 hover:bg-rose-700 text-white"
-            aria-label="Hapus sesi"
-          >
-            <i class="fas fa-trash"></i>
-          </button>
-        </div>
+    <!-- ══════════ TAB KANDIDAT ══════════ -->
+    <div v-if="tab === 'kandidat'" class="space-y-3">
+      <div class="flex gap-1.5">
+        <button
+          v-for="t in [
+            { v: 'belum', l: 'Belum Dijadwalkan', n: kandidatBelum.length },
+            { v: 'sudah', l: 'Sudah Dijadwalkan', n: kandidatSudah.length }
+          ]"
+          :key="t.v"
+          @click="kandidatTab = t.v"
+          :class="[
+            'px-3 py-1.5 rounded-lg text-[11px] font-bold border transition cursor-pointer',
+            kandidatTab === t.v
+              ? 'bg-[var(--bg-card-elevated)] text-[var(--text-primary)] border-teal-500'
+              : 'bg-[var(--bg-card)] text-[var(--text-secondary)] border-[var(--border-default)]'
+          ]"
+        >
+          {{ t.l }} ({{ t.n }})
+        </button>
       </div>
 
-      <div class="p-3 md:p-4 space-y-3">
-        <!-- Penyimak -->
-        <div class="grid md:grid-cols-2 gap-2">
-          <div class="rounded-xl bg-[var(--bg-muted)] px-3 py-2">
-            <p class="text-[10px] font-black uppercase text-[var(--text-tertiary)]">
-              <i class="fas fa-chalkboard-teacher mr-1"></i>Penyimak Guru
-            </p>
-            <p class="text-xs font-bold text-[var(--text-primary)] mt-0.5">
-              {{ (s.penyimak_guru || []).map((g) => g.nama).join(', ') || '—' }}
-            </p>
-          </div>
-          <div class="rounded-xl bg-[var(--bg-muted)] px-3 py-2">
-            <p class="text-[10px] font-black uppercase text-[var(--text-tertiary)]">
-              <i class="fas fa-user-graduate mr-1"></i>Penyimak Santri
-            </p>
-            <p class="text-xs font-bold text-[var(--text-primary)] mt-0.5">
-              {{ (s.penyimak_santri || []).map((g) => g.nama).join(', ') || '—' }}
-            </p>
-          </div>
-        </div>
+      <p class="text-[11px] text-[var(--text-secondary)] px-1">
+        Santri yang <b>lulus tes juz terakhir kelasnya</b> di PJ otomatis masuk daftar ini —
+        merekalah yang akan naik kelas sesudah ceremonial.
+      </p>
 
-        <!-- Peserta + TGL LULUS PJ -->
-        <div>
-          <p class="text-[10px] font-black uppercase text-[var(--text-tertiary)] mb-1">
-            <i class="fas fa-users mr-1"></i>Peserta ({{ (s.peserta || []).length }})
-          </p>
-          <ul class="space-y-1">
-            <li
-              v-for="(p, i) in s.peserta || []"
-              :key="p.santri_id"
-              class="flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800"
-            >
-              <span class="text-[10px] font-black text-[var(--text-tertiary)] w-5 flex-shrink-0"
-                >{{ i + 1 }}.</span
-              >
-              <span class="flex-1 min-w-0">
-                <span class="block font-bold text-[var(--text-primary)] truncate">{{
-                  p.nama
-                }}</span>
-                <span class="block text-[10px] text-[var(--text-secondary)]">
-                  <template v-if="p.kelas">Kelas {{ p.kelas }} &middot; </template>
-                  <template v-if="p.juz">Juz {{ p.juz }} &middot; </template>
-                  Lulus PJ: <b>{{ fmtTglLulus(p.tgl_lulus_pj) }}</b>
-                </span>
-              </span>
-            </li>
-          </ul>
-        </div>
-
-        <p v-if="s.catatan" class="text-[11px] text-[var(--text-secondary)] italic">
-          <i class="fas fa-note-sticky mr-1"></i>{{ s.catatan }}
+      <div
+        v-if="kandidatAktif.length === 0"
+        class="bg-[var(--bg-card)] rounded-2xl p-8 border border-dashed border-[var(--border-default)] text-center"
+      >
+        <i class="fas fa-user-check text-[var(--text-tertiary)] text-2xl mb-2"></i>
+        <p class="text-sm text-[var(--text-secondary)] italic">
+          {{
+            kandidatTab === 'belum'
+              ? 'Tidak ada santri yang menunggu dijadwalkan.'
+              : 'Belum ada kandidat yang masuk sesi.'
+          }}
         </p>
       </div>
+
+      <div v-else class="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)] p-3">
+        <label
+          v-if="canKelola && kandidatTab === 'belum'"
+          class="flex items-center gap-2 pb-2 mb-2 border-b border-[var(--border-subtle)] cursor-pointer"
+        >
+          <input
+            type="checkbox"
+            :checked="semuaTerpilih"
+            @change="toggleSemua"
+            class="w-4 h-4 accent-teal-600"
+          />
+          <span class="text-[11px] font-bold text-[var(--text-secondary)]">Pilih semua</span>
+        </label>
+
+        <div
+          v-for="k in kandidatAktif"
+          :key="k.santri_id"
+          class="flex items-center gap-2 py-1.5 border-b border-[var(--border-subtle)] last:border-0"
+        >
+          <input
+            v-if="canKelola && kandidatTab === 'belum'"
+            type="checkbox"
+            :checked="adaPilih(k.santri_id)"
+            @change="togglePilih(k.santri_id)"
+            class="w-4 h-4 accent-teal-600 flex-shrink-0"
+          />
+          <span class="flex-1 min-w-0">
+            <span class="block text-xs font-bold text-[var(--text-primary)] truncate">{{
+              k.nama
+            }}</span>
+            <span class="block text-[10px] text-[var(--text-secondary)]">
+              <template v-if="k.juz_lulus">Lulus Juz {{ k.juz_lulus }} &middot; </template>
+              <template v-if="k.kelas_tujuan">menuju {{ k.kelas_tujuan }} &middot; </template>
+              Lulus PJ: {{ fmtTglLulus(k.tgl_lulus_pj) }}
+            </span>
+          </span>
+          <span
+            v-if="k.sesi_terjadwal"
+            class="shrink-0 text-[9px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
+            >{{ k.sesi_terjadwal }} sesi</span
+          >
+        </div>
+      </div>
+
+      <!-- Jadwalkan borongan -->
+      <div v-if="canKelola && pilihMassal.length" class="sticky bottom-3 flex justify-end">
+        <button
+          @click="jadwalkanTerpilih"
+          class="inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white font-black text-xs px-4 py-2.5 rounded-xl shadow-lg"
+        >
+          <i class="fas fa-calendar-plus"></i>Jadwalkan {{ pilihMassal.length }} santri sekaligus
+        </button>
+      </div>
     </div>
+
+    <!-- ══════════ TAB SESI ══════════ -->
+    <template v-else>
+      <!-- Filter status -->
+      <div class="flex gap-1.5 overflow-x-auto custom-scrollbar">
+        <button
+          v-for="f in [
+            { v: '', l: 'Semua' },
+            { v: 'terjadwal', l: 'Terjadwal' },
+            { v: 'selesai', l: 'Selesai' },
+            { v: 'batal', l: 'Batal' }
+          ]"
+          :key="f.v"
+          @click="filterStatus = f.v"
+          :class="[
+            'px-3 py-1.5 rounded-xl text-xs font-black border transition cursor-pointer whitespace-nowrap',
+            filterStatus === f.v
+              ? 'bg-teal-600 text-white border-teal-700'
+              : 'bg-[var(--bg-card)] text-[var(--text-secondary)] border-[var(--border-default)] hover:bg-teal-50 dark:hover:bg-teal-900/30'
+          ]"
+        >
+          {{ f.l }}
+        </button>
+      </div>
+
+      <!-- Empty -->
+      <div
+        v-if="loaded && sesiTampil.length === 0"
+        class="bg-[var(--bg-card)] rounded-2xl p-10 text-center border border-dashed border-[var(--border-default)]"
+      >
+        <i class="fas fa-calendar-day text-[var(--text-tertiary)] text-3xl mb-2"></i>
+        <p class="text-sm text-[var(--text-secondary)] italic">
+          {{
+            filterStatus
+              ? 'Tidak ada sesi dengan status ini.'
+              : canKelola
+                ? 'Belum ada sesi ceremonial.'
+                : 'Belum ada sesi ceremonial yang memuat santri kelas ampuan.'
+          }}
+        </p>
+      </div>
+
+      <!-- Daftar sesi -->
+      <div
+        v-for="s in sesiTampil"
+        :key="s.id"
+        class="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)] shadow-sm overflow-hidden"
+      >
+        <div
+          class="flex items-start justify-between gap-2 flex-wrap p-3 md:p-4 bg-[var(--bg-muted)] border-b border-[var(--border-subtle)]"
+        >
+          <div class="min-w-0">
+            <h3 class="text-sm md:text-base font-black text-[var(--text-primary)]">
+              <i class="fas fa-calendar-day text-teal-600 mr-1.5"></i>{{ judulSesi(s) }}
+            </h3>
+            <p class="text-[11px] font-bold text-[var(--text-secondary)] mt-0.5">
+              {{ fmtTgl(s.tanggal) }}<span v-if="jamRange(s)"> &middot; {{ jamRange(s) }}</span
+              ><span v-if="s.tempat"> &middot; {{ s.tempat }}</span>
+            </p>
+          </div>
+          <div class="flex items-center gap-1.5 flex-shrink-0">
+            <span
+              :class="[
+                'text-[10px] font-black px-2.5 py-1 rounded-full',
+                STATUS_CLS[s.status] || STATUS_CLS.terjadwal
+              ]"
+              >{{ STATUS_LABEL[s.status] || s.status }}</span
+            >
+            <button
+              v-if="canKelola"
+              @click="bukaUbah(s)"
+              class="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-teal-600 hover:bg-teal-700 text-white"
+            >
+              <i class="fas fa-pen mr-1"></i>Ubah
+            </button>
+            <!-- v.1.1.9: notif dikirim otomatis saat sesi DIBUAT. Menyunting sesi tidak
+               mengirim ulang (biar tak membanjiri); kalau jadwal berubah, pakai ini. -->
+            <button
+              v-if="canKelola && s.status === 'terjadwal'"
+              @click="kirimUlang(s)"
+              :disabled="kirimId === String(s.id)"
+              title="Kirim ulang notifikasi ke penyimak & peserta"
+              class="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white disabled:opacity-50"
+            >
+              <i
+                :class="['fas mr-1', kirimId === String(s.id) ? 'fa-spinner fa-spin' : 'fa-bell']"
+              ></i
+              >Notif
+            </button>
+            <button
+              v-if="canKelola && s.status !== 'selesai'"
+              @click="ubahStatus(s, 'selesai')"
+              class="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-slate-600 hover:bg-slate-700 text-white"
+            >
+              <i class="fas fa-check mr-1"></i>Selesai
+            </button>
+            <button
+              v-if="isSuper"
+              @click="hapus(s)"
+              class="text-[11px] font-bold px-2 py-1 rounded-lg bg-rose-600 hover:bg-rose-700 text-white"
+              aria-label="Hapus sesi"
+            >
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="p-3 md:p-4 space-y-3">
+          <!-- Penyimak -->
+          <div class="grid md:grid-cols-2 gap-2">
+            <div class="rounded-xl bg-[var(--bg-muted)] px-3 py-2">
+              <p class="text-[10px] font-black uppercase text-[var(--text-tertiary)]">
+                <i class="fas fa-chalkboard-teacher mr-1"></i>Penyimak Guru
+              </p>
+              <p class="text-xs font-bold text-[var(--text-primary)] mt-0.5">
+                {{ (s.penyimak_guru || []).map((g) => g.nama).join(', ') || '—' }}
+              </p>
+            </div>
+            <div class="rounded-xl bg-[var(--bg-muted)] px-3 py-2">
+              <p class="text-[10px] font-black uppercase text-[var(--text-tertiary)]">
+                <i class="fas fa-user-graduate mr-1"></i>Penyimak Santri
+              </p>
+              <p class="text-xs font-bold text-[var(--text-primary)] mt-0.5">
+                {{ (s.penyimak_santri || []).map((g) => g.nama).join(', ') || '—' }}
+              </p>
+            </div>
+          </div>
+
+          <!-- Peserta + TGL LULUS PJ -->
+          <div>
+            <p class="text-[10px] font-black uppercase text-[var(--text-tertiary)] mb-1">
+              <i class="fas fa-users mr-1"></i>Peserta ({{ (s.peserta || []).length }})
+            </p>
+            <ul class="space-y-1">
+              <li
+                v-for="(p, i) in s.peserta || []"
+                :key="p.santri_id"
+                class="flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800"
+              >
+                <span class="text-[10px] font-black text-[var(--text-tertiary)] w-5 flex-shrink-0"
+                  >{{ i + 1 }}.</span
+                >
+                <span class="flex-1 min-w-0">
+                  <span class="block font-bold text-[var(--text-primary)] truncate">{{
+                    p.nama
+                  }}</span>
+                  <span class="block text-[10px] text-[var(--text-secondary)]">
+                    <template v-if="p.kelas">Kelas {{ p.kelas }} &middot; </template>
+                    <template v-if="p.juz">Juz {{ p.juz }} &middot; </template>
+                    Lulus PJ: <b>{{ fmtTglLulus(p.tgl_lulus_pj) }}</b>
+                  </span>
+                </span>
+              </li>
+            </ul>
+          </div>
+
+          <p v-if="s.catatan" class="text-[11px] text-[var(--text-secondary)] italic">
+            <i class="fas fa-note-sticky mr-1"></i>{{ s.catatan }}
+          </p>
+        </div>
+      </div>
+    </template>
 
     <!-- Dialog jadwal sesi -->
     <div
