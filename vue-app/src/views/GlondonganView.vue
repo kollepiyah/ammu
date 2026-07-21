@@ -10,7 +10,13 @@ import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
 // Aspek nilai PTPT (sama persis dg tes PJ): Tahfizh, Istimror, Fashohah, Tajwid (0..90).
 import { tesAspekFlat, clampNilaiTes, TES_NILAI_MAX } from '@/utils/tesKenaikan'
-import { KATEGORI_GLONDONGAN, KATEGORI_LABEL, periodeBulan } from '@/utils/glondongan'
+import {
+  KATEGORI_LABEL,
+  CAKUPAN_OPTS,
+  peranKeBaris,
+  barisKePeran,
+  periodeBulan
+} from '@/utils/glondongan'
 import { useSettingsStore } from '@/stores/settings'
 
 const {
@@ -22,13 +28,15 @@ const {
   canAssignAny,
   myKategori,
   koordinatorGlondongan,
+  penyimakGlondongan, // v.1.1.9: daftar penyimak per kategori
+  bolehMenyimak,
   isPjPtpt,
   isAmpuanSaya, // v.1.1.9: scope PJ — hanya santri ampuannya
   isSuper,
   tugaskan,
   tugasNilaiSaya,
   simpanNilai,
-  saveKoordinator,
+  savePeran,
   // v.1.1.9: hapus baris (super_admin). Sudah ada di composable sejak v.111 tapi
   //   tak pernah dipasang ke UI — jadi data uji glondongan tak bisa dibersihkan.
   canCrud,
@@ -101,6 +109,21 @@ const guruPtpt = computed(() =>
     )
     .sort((a, b) => String(a.nama || '').localeCompare(String(b.nama || ''), 'id'))
 )
+
+// v.1.1.9: kandidat penguji disaring ke PENYIMAK kategori baris ini (Kyai 21 Jul).
+//   Sebelumnya SIAPA PUN guru PTPT aktif bisa ditunjuk — tanpa pembatas sama sekali.
+//   `bukaSemua` = jalan keluar kalau daftar penyimak belum diisi / butuh guru lain
+//   mendadak, supaya penugasan tak pernah macet total.
+const bukaSemuaGuru = ref({}) // { [rowId]: true }
+function pengujiOptions(row) {
+  if (bukaSemuaGuru.value[row.id]) return guruPtpt.value
+  const terdaftar = guruPtpt.value.filter((g) => bolehMenyimak(g.id, row))
+  return terdaftar.length ? terdaftar : guruPtpt.value
+}
+// Daftar penyimak kategori ini memang kosong? (bedakan dari "sengaja dibuka semua")
+function penyimakKosong(row) {
+  return !guruPtpt.value.some((g) => bolehMenyimak(g.id, row))
+}
 
 // Konteks peran (ditampilkan di header Penugasan).
 const scopeLabel = computed(() => {
@@ -275,37 +298,53 @@ function nilaiJuzText(nilaiJuz) {
   return PTPT_ASPEK.map((a) => `${a.label} ${nilaiJuz[a.key] ?? '–'}`).join(' · ')
 }
 
-// ── Tab Koordinator (super_admin): set guru koordinator per KATEGORI (multi-guru) ──
-const KATEGORI_LIST = KATEGORI_GLONDONGAN // ['mahad','nonmahad']
-const koorDraft = ref({ mahad: [], nonmahad: [] }) // { mahad:[guruId], nonmahad:[guruId] }
+// ── Tab Peran (super_admin): KOORDINATOR & PENYIMAK, masing-masing baris
+//    [pilih guru ▾] [cakupan ▾]. Kyai 21 Jul 2026: "Pemilihan kordinator glondongan
+//    pakai dropdown saja" + "yg menyimak glondongan juga harus dipilih, untuk ma'had
+//    atau selainnya. jadi bukan hanya kordinator."
+//    Bentuk SIMPAN di DB tetap map per kategori → data koordinator lama tetap terbaca.
+const koorRows = ref([]) // [{ guru_id, cakupan }]
+const penyimakRows = ref([])
 const savingKoor = ref(false)
-// Sinkronkan draft tiap map dari master/lembaga berubah (mis. realtime / muat awal).
+
+// Sinkronkan draft tiap map dari master/lembaga berubah (realtime / muat awal).
 watch(
   koordinatorGlondongan,
   (m) => {
-    koorDraft.value = {
-      mahad: [...((m && m.mahad) || [])],
-      nonmahad: [...((m && m.nonmahad) || [])]
-    }
+    koorRows.value = peranKeBaris(m)
   },
   { immediate: true, deep: true }
 )
-function isKoorChecked(kategori, guruId) {
-  return (koorDraft.value[kategori] || []).includes(String(guruId))
+watch(
+  penyimakGlondongan,
+  (m) => {
+    penyimakRows.value = peranKeBaris(m)
+  },
+  { immediate: true, deep: true }
+)
+
+function tambahBaris(rows) {
+  rows.push({ guru_id: '', cakupan: 'both' })
 }
-// Toggle 1 guru pada kategori tertentu (multi-guru per kategori).
-function toggleKoor(kategori, guruId) {
-  const id = String(guruId)
-  const cur = koorDraft.value[kategori] || []
-  koorDraft.value[kategori] = cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]
+function hapusBaris(rows, i) {
+  rows.splice(i, 1)
 }
-async function saveKoor() {
+// Guru yang sudah dipakai baris LAIN — disembunyikan supaya tak ada baris kembar.
+function guruTersedia(rows, i) {
+  const dipakai = new Set(rows.filter((_, idx) => idx !== i).map((r) => String(r.guru_id || '')))
+  return guruPtpt.value.filter((g) => !dipakai.has(String(g.id)))
+}
+
+async function savePeranSemua() {
   savingKoor.value = true
   try {
-    await saveKoordinator(koorDraft.value)
-    toast.success('Koordinator glondongan tersimpan')
+    await savePeran({
+      koordinator: barisKePeran(koorRows.value),
+      penyimak: barisKePeran(penyimakRows.value)
+    })
+    toast.success('Peran glondongan tersimpan')
   } catch (e) {
-    toast.error('Gagal simpan koordinator: ' + (e.message || e))
+    toast.error('Gagal simpan peran: ' + (e.message || e))
   } finally {
     savingKoor.value = false
   }
@@ -412,7 +451,7 @@ const rekapTotal = computed(() => rekapRows.value.reduce((s, g) => s + g.total, 
             : 'bg-[var(--bg-muted)] text-[var(--text-secondary)] border-[var(--border-default)]'
         ]"
       >
-        <i class="fas fa-user-gear mr-1"></i>Koordinator
+        <i class="fas fa-user-gear mr-1"></i>Peran
       </button>
       <button
         v-if="canRekap"
@@ -492,7 +531,9 @@ const rekapTotal = computed(() => rekapRows.value.reduce((s, g) => s + g.total, 
               class="flex-1 min-w-0 px-2.5 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-input)] text-[var(--text-primary)] cursor-pointer"
             >
               <option value="">— pilih guru penguji —</option>
-              <option v-for="g in guruPtpt" :key="g.id" :value="g.id">{{ g.nama }}</option>
+              <option v-for="g in pengujiOptions(row)" :key="g.id" :value="g.id">
+                {{ g.nama }}
+              </option>
             </select>
             <button
               type="button"
@@ -518,6 +559,30 @@ const rekapTotal = computed(() => rekapRows.value.reduce((s, g) => s + g.total, 
               ></i>
             </button>
           </div>
+          <!-- v.1.1.9: keterangan saringan penyimak + jalan keluar -->
+          <p class="text-[10px] mt-1">
+            <span v-if="penyimakKosong(row)" class="text-amber-600 dark:text-amber-400">
+              <i class="fas fa-triangle-exclamation mr-1"></i>Belum ada penyimak
+              {{ kategoriLabel(row) }} terdaftar — semua guru PTPT ditampilkan. Atur di tab
+              <b>Peran</b>.
+            </span>
+            <button
+              v-else-if="!bukaSemuaGuru[row.id]"
+              type="button"
+              @click="bukaSemuaGuru[row.id] = true"
+              class="text-[var(--text-tertiary)] hover:underline"
+            >
+              Hanya penyimak {{ kategoriLabel(row) }} · tampilkan semua guru PTPT
+            </button>
+            <button
+              v-else
+              type="button"
+              @click="bukaSemuaGuru[row.id] = false"
+              class="text-[var(--text-tertiary)] hover:underline"
+            >
+              Menampilkan semua guru PTPT · kembali ke penyimak {{ kategoriLabel(row) }}
+            </button>
+          </p>
         </li>
       </ul>
       <p
@@ -737,17 +802,16 @@ const rekapTotal = computed(() => rekapRows.value.reduce((s, g) => s + g.total, 
       </ul>
     </div>
 
-    <!-- ── TAB: KOORDINATOR (super_admin) ── -->
+    <!-- ── TAB: PERAN (super_admin) — koordinator & penyimak glondongan ── -->
     <div
       v-else-if="tab === 'koordinator' && isSuper"
       class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm"
     >
       <h3 class="text-sm font-black text-[var(--text-primary)] mb-1">
-        <i class="fas fa-user-gear text-teal-600 mr-1"></i>Koordinator Glondongan PTPT
+        <i class="fas fa-user-gear text-teal-600 mr-1"></i>Peran Glondongan PTPT
       </h3>
       <p class="text-xs text-[var(--text-secondary)] mb-3">
-        Guru yang berhak menugaskan penguji glondongan, dibagi per kategori santri. Tiap kategori
-        boleh diisi lebih dari satu guru.
+        Dua daftar terpisah. Satu guru boleh masuk keduanya.
       </p>
 
       <div
@@ -757,60 +821,90 @@ const rekapTotal = computed(() => rekapRows.value.reduce((s, g) => s + g.total, 
         <i class="fas fa-triangle-exclamation mr-1"></i>Belum ada guru PTPT aktif untuk dipilih.
       </div>
 
-      <div v-else class="space-y-3">
+      <div v-else class="space-y-4">
+        <!-- Baris peran dipakai dua kali: koordinator & penyimak -->
         <div
-          v-for="k in KATEGORI_LIST"
-          :key="k"
+          v-for="blok in [
+            {
+              rows: koorRows,
+              judul: 'Koordinator',
+              ket: 'Berhak MENUGASKAN penguji glondongan.',
+              ikon: 'fa-user-gear'
+            },
+            {
+              rows: penyimakRows,
+              judul: 'Penyimak',
+              ket: 'Boleh DITUGASKAN menyimak glondongan.',
+              ikon: 'fa-headphones'
+            }
+          ]"
+          :key="blok.judul"
           class="p-3 rounded-xl border border-[var(--border-default)] bg-[var(--bg-muted)]"
         >
-          <div class="flex items-center justify-between gap-2 mb-2">
+          <div class="flex items-center justify-between gap-2 mb-1">
             <span class="text-sm font-bold text-teal-700 dark:text-teal-300">
-              <i
-                :class="[
-                  'fas mr-1',
-                  k === 'mahad' ? 'fa-house-chimney' : 'fa-person-walking-arrow-right'
-                ]"
-              ></i>
-              {{ KATEGORI_LABEL[k] }}
+              <i :class="['fas mr-1', blok.ikon]"></i>{{ blok.judul }}
             </span>
-            <span class="text-[10px] text-[var(--text-tertiary)]"
-              >{{ (koorDraft[k] || []).length }} guru</span
-            >
+            <span class="text-[10px] text-[var(--text-tertiary)]">{{ blok.rows.length }} guru</span>
           </div>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-            <label
-              v-for="g in guruPtpt"
-              :key="g.id"
-              class="flex items-center gap-2 px-2.5 py-2 rounded-lg border cursor-pointer text-sm transition"
-              :class="
-                isKoorChecked(k, g.id)
-                  ? 'border-teal-500 bg-teal-50 dark:bg-teal-900/30 text-teal-800 dark:text-teal-200 font-bold'
-                  : 'border-[var(--border-default)] bg-[var(--bg-input)] text-[var(--text-primary)]'
-              "
-            >
-              <input
-                type="checkbox"
-                class="accent-teal-600"
-                :checked="isKoorChecked(k, g.id)"
-                @change="toggleKoor(k, g.id)"
-              />
-              <span class="truncate">{{ g.nama }}</span>
-            </label>
+          <p class="text-[10px] text-[var(--text-tertiary)] mb-2">{{ blok.ket }}</p>
+
+          <div
+            v-if="blok.rows.length === 0"
+            class="text-[11px] italic text-[var(--text-tertiary)] py-2"
+          >
+            Belum ada. Klik "Tambah" di bawah.
           </div>
+
+          <div v-for="(r, i) in blok.rows" :key="i" class="flex items-center gap-2 mb-1.5">
+            <select
+              v-model="r.guru_id"
+              class="flex-1 min-w-0 px-2.5 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-input)] text-[var(--text-primary)] cursor-pointer"
+            >
+              <option value="">— pilih guru —</option>
+              <option v-for="g in guruTersedia(blok.rows, i)" :key="g.id" :value="String(g.id)">
+                {{ g.nama }}
+              </option>
+            </select>
+            <select
+              v-model="r.cakupan"
+              class="w-36 shrink-0 px-2 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-input)] text-[var(--text-primary)] cursor-pointer"
+            >
+              <option v-for="c in CAKUPAN_OPTS" :key="c.value" :value="c.value">
+                {{ c.label }}
+              </option>
+            </select>
+            <button
+              type="button"
+              @click="hapusBaris(blok.rows, i)"
+              :aria-label="`Hapus baris ${blok.judul}`"
+              class="shrink-0 px-2.5 py-2 text-xs rounded-lg border border-[var(--border-default)] text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30"
+            >
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+
+          <button
+            type="button"
+            @click="tambahBaris(blok.rows)"
+            class="mt-1 text-xs font-bold text-teal-700 dark:text-teal-300 hover:underline"
+          >
+            <i class="fas fa-plus mr-1"></i>Tambah {{ blok.judul.toLowerCase() }}
+          </button>
         </div>
 
         <button
           type="button"
-          @click="saveKoor"
+          @click="savePeranSemua"
           :disabled="savingKoor"
-          class="w-full mt-1 bg-teal-600 hover:bg-teal-700 text-white font-bold py-2.5 rounded-xl disabled:opacity-50 flex items-center justify-center gap-2"
+          class="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-2.5 rounded-xl disabled:opacity-50 flex items-center justify-center gap-2"
         >
           <i :class="['fas', savingKoor ? 'fa-spinner fa-spin' : 'fa-floppy-disk']"></i>
-          {{ savingKoor ? 'Menyimpan…' : 'Simpan Koordinator' }}
+          {{ savingKoor ? 'Menyimpan…' : 'Simpan Peran' }}
         </button>
         <p class="text-[10px] text-[var(--text-tertiary)] italic">
-          Kategori diambil dari data <b>Mukim/Ma'had</b> santri. Santri yang belum diset mukim
-          dihitung <b>Selain Ma'had</b>.
+          Cakupan diambil dari data <b>Mukim/Ma'had</b> santri. Santri yang belum diset mukim
+          dihitung <b>Selain Ma'had</b>. Baris tanpa guru terpilih diabaikan saat menyimpan.
         </p>
       </div>
     </div>

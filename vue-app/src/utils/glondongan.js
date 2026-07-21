@@ -143,12 +143,79 @@ export function kategoriMukim(mukim) {
   return mukim ? 'mahad' : 'nonmahad'
 }
 
-// Map koordinator { mahad:[guruId], nonmahad:[guruId] } — selalu objek dg array (mungkin kosong).
-export function getKoordinatorGlondongan(lembagaList) {
+// Baca 1 map peran dari master/lembaga PTPT -> { mahad:[guruId], nonmahad:[guruId] }.
+//   Selalu objek dengan array (mungkin kosong), nilai selalu string.
+function _bacaPeran(lembagaList, field) {
   const o = _ptptObj(lembagaList)
-  const m = (o && o.koordinator_glondongan) || {}
+  const m = (o && o[field]) || {}
   const norm = (v) => (Array.isArray(v) ? v.map((x) => String(x)).filter(Boolean) : [])
   return { mahad: norm(m.mahad), nonmahad: norm(m.nonmahad) }
+}
+
+// Map koordinator { mahad:[guruId], nonmahad:[guruId] } — yang berhak MENUGASKAN.
+export function getKoordinatorGlondongan(lembagaList) {
+  return _bacaPeran(lembagaList, 'koordinator_glondongan')
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PENYIMAK glondongan — v.1.1.9. Kyai (21 Jul 2026): "yg menyimak glondongan juga
+//   harus dipilih, untuk ma'had atau selainnya. jadi bukan hanya kordinator."
+//
+//   Daftar TERPISAH dari koordinator (bentuk sama), disimpan berdampingan di
+//   master/lembaga PTPT sebagai `penyimak_glondongan`. Terpisah supaya satu guru
+//   bisa jadi koordinator DAN penyimak sekaligus tanpa saling mengunci.
+//
+//   Dipakai menyaring dropdown "pilih guru penguji" di tab Penugasan. Sebelum ini
+//   SIAPA PUN guru PTPT aktif bisa ditunjuk — tanpa pembatas sama sekali.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Map penyimak { mahad:[guruId], nonmahad:[guruId] } — yang boleh DITUGASKAN menyimak.
+export function getPenyimakGlondongan(lembagaList) {
+  return _bacaPeran(lembagaList, 'penyimak_glondongan')
+}
+
+// Apakah guru ini terdaftar sebagai penyimak kategori tsb ('mahad' | 'nonmahad')?
+export function isPenyimakKategori(guruId, kategori, lembagaList) {
+  const id = String(guruId || '')
+  if (!id) return false
+  return (getPenyimakGlondongan(lembagaList)[kategori] || []).includes(id)
+}
+
+// ── Bentuk BARIS untuk UI: [{ guru_id, cakupan }] dengan cakupan 'mahad' |
+//    'nonmahad' | 'both'. Bentuk SIMPAN di DB tetap map per kategori (tak berubah),
+//    jadi data koordinator yang sudah ada tetap terbaca — cuma tampilannya baru.
+export const CAKUPAN_OPTS = [
+  { value: 'mahad', label: KATEGORI_LABEL.mahad },
+  { value: 'nonmahad', label: KATEGORI_LABEL.nonmahad },
+  { value: 'both', label: 'Keduanya' }
+]
+
+/** map { mahad:[], nonmahad:[] } -> [{ guru_id, cakupan }] */
+export function peranKeBaris(map) {
+  const m = {
+    mahad: Array.isArray(map?.mahad) ? map.mahad.map(String) : [],
+    nonmahad: Array.isArray(map?.nonmahad) ? map.nonmahad.map(String) : []
+  }
+  const ids = [...new Set([...m.mahad, ...m.nonmahad])]
+  return ids.map((guru_id) => {
+    const a = m.mahad.includes(guru_id)
+    const b = m.nonmahad.includes(guru_id)
+    return { guru_id, cakupan: a && b ? 'both' : a ? 'mahad' : 'nonmahad' }
+  })
+}
+
+/** [{ guru_id, cakupan }] -> map { mahad:[], nonmahad:[] }. Baris tanpa guru dibuang;
+ *  guru yang tercantum dua kali digabung (tak jadi duplikat). */
+export function barisKePeran(rows) {
+  const out = { mahad: [], nonmahad: [] }
+  for (const r of rows || []) {
+    const id = String(r?.guru_id || '').trim()
+    if (!id) continue
+    const c = String(r?.cakupan || '')
+    if ((c === 'mahad' || c === 'both') && !out.mahad.includes(id)) out.mahad.push(id)
+    if ((c === 'nonmahad' || c === 'both') && !out.nonmahad.includes(id)) out.nonmahad.push(id)
+  }
+  return out
 }
 
 // Kategori yang dikoordinatori guru ini (sesiId) — subset dari KATEGORI_GLONDONGAN.

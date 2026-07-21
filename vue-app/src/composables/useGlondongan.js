@@ -21,6 +21,8 @@ import {
   kategoriKoordinatori,
   isKoordinatorKategori,
   getKoordinatorGlondongan,
+  getPenyimakGlondongan,
+  isPenyimakKategori,
   kategoriMukim,
   buatScopePj,
   KATEGORI_GLONDONGAN,
@@ -58,6 +60,12 @@ export function useGlondongan() {
   const myKategori = computed(() => kategoriKoordinatori(myId.value, lembagaList.value))
   // Map { mahad:[guruId], nonmahad:[guruId] } koordinator glondongan PTPT (dari master/lembaga).
   const koordinatorGlondongan = computed(() => getKoordinatorGlondongan(lembagaList.value))
+  // v.1.1.9: daftar PENYIMAK per kategori — menyaring kandidat penguji di tab Penugasan.
+  const penyimakGlondongan = computed(() => getPenyimakGlondongan(lembagaList.value))
+  // Guru ini boleh menyimak baris tsb? (kategori mukim santri baris itu)
+  function bolehMenyimak(guruId, row) {
+    return isPenyimakKategori(guruId, kategoriMukim(row?.mukim), lembagaList.value)
+  }
 
   // v.1.1.9: scope PJ — "PJ hanya bisa melihat santri ampuannya" (Kyai 21 Jul 2026).
   //   PJ PTPT kini >1 orang; tiap PJ dibatasi ke santri berlabel pj_ptpt = namanya.
@@ -178,20 +186,32 @@ export function useGlondongan() {
     await deleteOne('tes_glondongan', id, { alasan: 'Hapus baris tes glondongan (super_admin)' })
   }
 
-  // super_admin: simpan koordinator glondongan per kategori ke master/lembaga PTPT.
-  //   map = { mahad:[guruId,…], nonmahad:[guruId,…] } (id kosong/duplikat dibuang).
-  async function saveKoordinator(map) {
+  function _bersihkanPeran(map) {
     const clean = {}
     for (const k of KATEGORI_GLONDONGAN) {
       const arr = Array.isArray(map && map[k]) ? map[k] : []
       clean[k] = [...new Set(arr.map((x) => String(x || '').trim()).filter(Boolean))]
     }
+    return clean
+  }
+
+  // super_admin: simpan peran glondongan ke master/lembaga PTPT.
+  //   v.1.1.9: dua daftar TERPISAH — koordinator (yang menugaskan) & penyimak (yang
+  //   boleh ditugaskan menyimak). Keduanya { mahad:[guruId], nonmahad:[guruId] }.
+  //   `penyimak` boleh dihilangkan (undefined) → daftar penyimak tidak disentuh.
+  async function savePeran({ koordinator, penyimak } = {}) {
     const m = await getOne('master', 'lembaga')
     const list = Array.isArray(m?.list) ? m.list.slice() : []
     const idx = list.findIndex((l) => (l.lembaga || l.nama) === PTPT_LEMBAGA)
-    // Tulis field baru + kosongkan field lama koordinator_kelas biar tak ada 2 sumber.
-    if (idx >= 0) list[idx] = { ...list[idx], koordinator_glondongan: clean, koordinator_kelas: {} }
-    else list.push({ lembaga: PTPT_LEMBAGA, koordinator_glondongan: clean })
+    const patch = {}
+    if (koordinator) {
+      patch.koordinator_glondongan = _bersihkanPeran(koordinator)
+      // Kosongkan field lama koordinator_kelas biar tak ada 2 sumber kebenaran.
+      patch.koordinator_kelas = {}
+    }
+    if (penyimak) patch.penyimak_glondongan = _bersihkanPeran(penyimak)
+    if (idx >= 0) list[idx] = { ...list[idx], ...patch }
+    else list.push({ lembaga: PTPT_LEMBAGA, ...patch })
     await mergeOne('master', 'lembaga', { list })
   }
 
@@ -224,6 +244,8 @@ export function useGlondongan() {
     isAmpuanSaya, // v.1.1.9: predikat scope PJ (santriId) => boolean
     myKategori,
     koordinatorGlondongan,
+    penyimakGlondongan, // v.1.1.9: daftar penyimak per kategori
+    bolehMenyimak,
     canAssign,
     canAssignAny,
     antrianTugas,
@@ -235,6 +257,6 @@ export function useGlondongan() {
     simpanNilai,
     canCrud,
     hapus,
-    saveKoordinator
+    savePeran
   }
 }
