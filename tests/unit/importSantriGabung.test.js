@@ -7,7 +7,7 @@
 //   2. `mergeOne` (db.js `_deepMerge`) mengganti PRIMITIF — jadi '' menang atas nilai lama.
 // Aturan sekarang: sel kosong → field dilewati; sel terisi → tetap menimpa.
 import { describe, it, expect } from 'vitest'
-import { applyImportFields, selKosong } from '@/services/santriFields'
+import { applyImportFields, selKosong, petakanNomorIdentitas } from '@/services/santriFields'
 
 // Cermin `_pick` milik SantriView.onImportSantri (alias + fallback lowercase).
 function pick(row, ...aliases) {
@@ -100,5 +100,56 @@ describe('applyImportFields — sel kosong tidak menimpa', () => {
   it('baris kosong melompong menghasilkan payload kosong (tak menghapus apa pun)', () => {
     const payload = applyImportFields({}, { 'Guru Pagi': '', Gedung: null }, pick)
     expect(Object.keys(payload)).toHaveLength(0)
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Laporan Kyai (21 Jul 2026): "data impor xlsx lama yg belum ada kolom no induk
+// tapi sudah saya isi NIS, nis malah menimpa kolom no induk, padahal no induk itu
+// di generate oleh aplikasi."
+//
+// Dulu ada heuristik: file tanpa kolom 'No. Induk' -> kolom 'NIS' dianggap nomor
+// pondok dan ditulis ke `nis`. Meleset untuk file yang kolom NIS-nya berisi NIS
+// DINAS -> menimpa No. Induk hasil generate aplikasi.
+// ─────────────────────────────────────────────────────────────────────────────
+describe('petakanNomorIdentitas', () => {
+  it('SKENARIO KYAI: file lama tanpa kolom No. Induk → nis TIDAK diisi dari NIS', () => {
+    const out = petakanNomorIdentitas({ NIS: '0060200412' }, pick)
+    expect(out.nis).toBe('') // '' = jangan sentuh No. Induk hasil generate
+    expect(out.nis_sekolah).toBe('0060200412')
+  })
+
+  it('template baru: tiap kolom ke fieldnya sendiri', () => {
+    const out = petakanNomorIdentitas({ 'No. Induk': '03.00472', NIS: '0060200412' }, pick)
+    expect(out.nis).toBe('03.00472')
+    expect(out.nis_sekolah).toBe('0060200412')
+  })
+
+  it('alias No. Induk dikenali', () => {
+    expect(petakanNomorIdentitas({ 'No Induk': '123' }, pick).nis).toBe('123')
+    expect(petakanNomorIdentitas({ no_induk: '123' }, pick).nis).toBe('123')
+  })
+
+  it('alias NIS Dinas dikenali', () => {
+    expect(petakanNomorIdentitas({ 'NIS Dinas': '999' }, pick).nis_sekolah).toBe('999')
+    expect(petakanNomorIdentitas({ nis_sekolah: '999' }, pick).nis_sekolah).toBe('999')
+  })
+
+  it('"0" dari formula Excel dianggap kosong, bukan nomor', () => {
+    // Sumber Excel ber-formula SORTBY atas sel kosong menghasilkan angka 0.
+    const out = petakanNomorIdentitas({ 'No. Induk': 0, NIS: '0' }, pick)
+    expect(out.nis).toBe('')
+    expect(out.nis_sekolah).toBe('')
+  })
+
+  it('baris tanpa kolom nomor sama sekali → dua-duanya ""', () => {
+    const out = petakanNomorIdentitas({ 'Nama Santri': 'Fulan' }, pick)
+    expect(out).toEqual({ nis: '', nis_sekolah: '' })
+  })
+
+  it('No. Induk terisi TIDAK tertukar ke nis_sekolah', () => {
+    // Penjaga arah pemetaan — kalau tertukar, nomor pondok jadi NIS Dinas.
+    const out = petakanNomorIdentitas({ 'No. Induk': '03.00472' }, pick)
+    expect(out.nis_sekolah).toBe('')
   })
 })

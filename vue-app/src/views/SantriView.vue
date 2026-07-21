@@ -540,7 +540,8 @@ import {
   santriTemplateColumns,
   santriExportColumns,
   santriToExportRow,
-  applyImportFields
+  applyImportFields,
+  petakanNomorIdentitas
 } from '@/services/santriFields'
 import { resetUserPassword } from '@/services/authSupabase' // reset sandi via Edge Function (super_admin)
 import { planAppendNis, applyNisChanges } from '@/utils/nisGenerator' // v.111: auto-NIS pasca impor = APPEND (No. Induk lama tetap; baru lanjut nomor)
@@ -1053,13 +1054,7 @@ async function onImportSantri(e) {
       updateCount = 0,
       skipCount = 0
     const allMapped = []
-    // v.111: normalisasi nomor identitas (NIS/NIS Sekolah). Sumber Excel yg pakai
-    //   formula array (SORTBY atas sel kosong) menghasilkan angka 0 untuk sel kosong
-    //   → jangan simpan "0" sbg No. Induk. "0"/0/kosong → '' (biar auto-NIS yg isi).
-    function _idNum(v) {
-      const s = String(v ?? '').trim()
-      return s === '0' ? '' : s
-    }
+    // v.1.1.9: normalisasi "0" -> '' pindah ke petakanNomorIdentitas (santriFields).
     function _pick(row, ...aliases) {
       for (const alias of aliases) {
         if (row[alias] !== undefined && row[alias] !== null && row[alias] !== '') return row[alias]
@@ -1072,11 +1067,18 @@ async function onImportSantri(e) {
       }
       return ''
     }
-    // v.100: template BARU punya kolom 'No. Induk' (auto pondok) + 'NIS' (NIS Dinas manual).
-    //   Template LAMA hanya punya 'NIS' = nomor auto pondok → tetap dipetakan ke field nis (No. Induk).
-    const hasNoIndukCol = rows.some((row) =>
-      Object.keys(row).some((k) => String(k).toLowerCase().replace(/[\s.]/g, '') === 'noinduk')
-    )
+    // Pemetaan nomor identitas (v.1.1.9 — laporan Kyai 21 Jul 2026):
+    //   'No. Induk' -> santri.nis          = nomor pondok, DIGENERATE APLIKASI (planAppendNis)
+    //   'NIS'       -> santri.nis_sekolah  = NIS Dinas, diisi manual
+    //
+    // DULU ada heuristik `hasNoIndukCol`: kalau file tak punya kolom 'No. Induk',
+    // kolom 'NIS' dianggap nomor pondok dan ditulis ke `nis`. Itu meleset untuk file
+    // Excel lama Kyai yang kolom NIS-nya berisi NIS DINAS — akibatnya NIS Dinas
+    // MENIMPA No. Induk yang sudah digenerate aplikasi.
+    //
+    // Sekarang tanpa tebak-tebakan: tiap kolom dipetakan ke field-nya sendiri, dan
+    // `nis` HANYA ditulis bila kolom 'No. Induk' benar-benar terisi — jadi impor tak
+    // akan pernah lagi menimpa nomor pondok hasil generate.
     for (const r of rows) {
       const namaRaw = String(_pick(r, 'Nama Santri', 'Nama', 'NAMA', 'nama') || '').trim()
       if (!namaRaw) {
@@ -1084,12 +1086,10 @@ async function onImportSantri(e) {
         continue
       }
       const nama = toTitleCase(namaRaw)
-      const nis = _idNum(
-        hasNoIndukCol ? _pick(r, 'No. Induk', 'No Induk', 'no_induk') : _pick(r, 'NIS', 'nis')
-      )
-      const nisSekolah = _idNum(
-        hasNoIndukCol ? _pick(r, 'NIS', 'nis') : _pick(r, 'NIS Dinas', 'nis_sekolah')
-      )
+      // Nomor identitas: 'No. Induk' -> nis (pondok, generate app) · 'NIS' -> nis_sekolah
+      //   (Dinas). Fungsi murni di santriFields supaya bisa diuji — pemetaan ini sudah
+      //   dua kali jadi sumber bug.
+      const { nis, nis_sekolah: nisSekolah } = petakanNomorIdentitas(r, _pick)
       // v.100 Batch12: auto-deteksi nama lembaga ke bentuk kanonik ("PRA PTPT" -> "Pra PTPT", dst)
       const lembaga = canonLembaga(_pick(r, 'Lembaga Qiraati', 'Lembaga', 'lembaga'))
       const kelas = String(_pick(r, 'Kelas Qiraati', 'Kelas', 'kelas') || '').trim()
@@ -1111,8 +1111,8 @@ async function onImportSantri(e) {
       //   tertulis dan menghapus data santri yang sudah lengkap.
       const wali = toTitleCase(_pick(r, 'Nama Wali', 'Wali', 'wali') || '')
       const data = { nama }
-      if (nis) data.nis = nis
-      if (hasNoIndukCol && nisSekolah) data.nis_sekolah = nisSekolah // template lama tak punya kolom NIS Dinas → jangan timpa
+      if (nis) data.nis = nis // kosong = jangan sentuh No. Induk hasil generate app
+      if (nisSekolah) data.nis_sekolah = nisSekolah
       if (lembaga) data.lembaga = lembaga
       if (kelas) data.kelas = kelas
       if (wali) data.wali = wali

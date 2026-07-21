@@ -544,6 +544,38 @@ export function selKosong(v) {
   return v === null || v === undefined || String(v).trim() === ''
 }
 
+/** Nomor identitas '0' / 0 / kosong -> '' (sumber Excel ber-formula SORTBY atas sel
+ *  kosong menghasilkan angka 0 — jangan sampai tersimpan sebagai nomor). */
+function _nomor(v) {
+  const s = String(v ?? '').trim()
+  return s === '0' ? '' : s
+}
+
+/**
+ * Petakan dua nomor identitas dari 1 baris Excel.
+ *   'No. Induk' -> nis         = nomor pondok, DIGENERATE APLIKASI (planAppendNis)
+ *   'NIS'       -> nis_sekolah = NIS Dinas, diisi manual
+ *
+ * Keduanya '' bila kolomnya tak ada / kosong — pemanggil WAJIB memperlakukan ''
+ * sebagai "jangan sentuh", bukan "kosongkan".
+ *
+ * RIWAYAT BUG (Kyai 21 Jul 2026): dulu ada heuristik — kalau file tak punya kolom
+ * 'No. Induk', kolom 'NIS' dianggap nomor pondok dan ditulis ke `nis`. Itu meleset
+ * untuk file Excel lama yang kolom NIS-nya berisi NIS DINAS: NIS Dinas MENIMPA
+ * No. Induk yang sudah digenerate aplikasi. Sekarang tanpa tebak-tebakan — tiap
+ * kolom ke field-nya sendiri. Jangan hidupkan lagi heuristiknya.
+ *
+ * @param {Object} row - baris mentah Excel.
+ * @param {Function} pick - pengambil sel milik view (alias + fallback lowercase).
+ * @returns {{ nis: string, nis_sekolah: string }}
+ */
+export function petakanNomorIdentitas(row, pick) {
+  return {
+    nis: _nomor(pick(row, 'No. Induk', 'No Induk', 'no_induk')),
+    nis_sekolah: _nomor(pick(row, 'NIS', 'nis', 'NIS Dinas', 'nis_sekolah'))
+  }
+}
+
 /**
  * Isi objek `data` payload impor dari 1 baris Excel `r`, memakai fungsi `pick`
  * milik view (alias + fallback lowercase). Field `manual`/`exportOnly` di-skip
