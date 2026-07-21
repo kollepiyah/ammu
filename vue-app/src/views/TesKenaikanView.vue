@@ -422,6 +422,14 @@
               Pengaju: {{ a.guru_nama || '-' }} · Penguji: {{ a.penguji || '-' }} ·
               {{ fmtTgl(a.tgl_hasil) }}
             </p>
+            <!-- v.1.1.9: masa tempuh antar-juz PTPT (hari efektif sejak lulus juz sebelumnya) -->
+            <p
+              v-if="masaTempuhText(a)"
+              class="text-[10px] mt-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded font-bold bg-indigo-50 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300"
+              title="Hari efektif sejak lulus juz sebelumnya (Jumat & libur kalender tidak dihitung)"
+            >
+              <i class="fas fa-hourglass-half"></i>Masa tempuh: {{ masaTempuhText(a) }}
+            </p>
             <p v-if="a.catatan_hasil" class="text-[11px] text-[var(--text-tertiary)] mt-1 italic">
               Catatan: {{ a.catatan_hasil }}
             </p>
@@ -706,16 +714,19 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import { useSantri } from '@/composables/useSantri'
 import { useTesKenaikan } from '@/composables/useTesKenaikan'
 import { useAuthStore } from '@/stores/auth' // v.100d: nama guru utk scope ngaji-only
 import { ownsNgaji } from '@/utils/guruScope' // v.100d
-import { getOne, mergeOne } from '@/services/db' // v.100d: muat dokumen santri penuh utk auto-naik
+import { getOne, mergeOne, subscribeColl } from '@/services/db' // v.100d: muat dokumen santri penuh utk auto-naik
 import { buildKenaikanQiraatiPayload, writeKenaikan } from '@/utils/promosiKenaikan' // v.100d
 import { buildTesRaporFeed, currentRaporPeriode } from '@/utils/tesRaporFeed' // v.100d Fase 3: nilai tes → rapor
 import { buildListPdf } from '@/utils/pdfBuilder' // v.100d Fase 5: cetak daftar/rekap tes PDF
 import { juzNum } from '@/utils/format' // v.100e: normalisasi tampilan juz (anti dobel "Juz JUZ n")
+// v.1.1.9: masa tempuh antar-juz PTPT (hari efektif lembaga) — tampil di guru kelas & PJ.
+import { masaTempuhJuz, labelMasaTempuh } from '@/utils/masaTempuh'
+import { expandLiburDates } from '@/utils/liburNasional'
 import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
@@ -740,6 +751,7 @@ const settingsStore = useSettingsStore()
 
 const { santri, search, guruRaw } = useSantri()
 const {
+  ajuanRaw, // v.1.1.9: sumber riwayat lulus utk masa tempuh (jangan pakai `riwayat` yg sudah discope UI)
   myAjuan,
   antrian,
   riwayat,
@@ -879,6 +891,36 @@ function matchAjuanFilter(a) {
 }
 const antrianView = computed(() => antrian.value.filter(matchAjuanFilter))
 const riwayatView = computed(() => riwayat.value.filter(matchAjuanFilter))
+
+// ── v.1.1.9: masa tempuh antar-juz PTPT ──────────────────────────────────────
+//   Kyai: "tes kenaikan antar juz ada masa tempuh ketika lulus tes dan tampil di
+//   guru kelas dan PJ, dihitung dari hari aktif antara juz sebelumnya dg juz yg
+//   dites." Hari aktif = hari efektif lembaga (kalender − Jumat − libur kalender).
+//   Dihitung saat ditampilkan (bukan disimpan) supaya berlaku juga utk tes lama.
+const kegiatanRaw = ref([])
+let unsubKegiatan = null
+onMounted(() => {
+  unsubKegiatan = subscribeColl('kegiatan', (docs) => (kegiatanRaw.value = docs || []))
+})
+onUnmounted(() => {
+  if (unsubKegiatan) unsubKegiatan()
+})
+const liburSet = computed(() => expandLiburDates(kegiatanRaw.value))
+const masaTempuhOpts = computed(() => ({
+  libur: liburSet.value,
+  // Cermin AbsensiGuruView: Jumat libur kecuali settings.liburJumat === false.
+  liburJumat: settingsStore.settings?.liburJumat !== false
+}))
+// Teks siap tampil utk 1 ajuan; '' = tak perlu ditampilkan (bukan PTPT-juz / belum lulus).
+function masaTempuhText(a) {
+  if (String(a?.lembaga || '').toUpperCase() !== 'PTPT') return ''
+  if (String(a?.jenis || '') !== 'juz') return ''
+  if (String(a?.status || '') !== 'lulus') return ''
+  const mt = masaTempuhJuz(ajuanRaw.value, a, masaTempuhOpts.value)
+  // Juz pertama → '—' (tak ada pembanding). Tetap ditampilkan supaya jelas
+  // "belum ada data", bukan hilang tanpa keterangan.
+  return labelMasaTempuh(mt)
+}
 
 // v.100d Fase 5: statistik/rekap tes (hormati filter aktif) — diajukan/lulus/belum/tolak + % kelulusan + per lembaga.
 const statsRekap = computed(() => {
