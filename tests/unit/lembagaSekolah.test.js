@@ -8,7 +8,13 @@
 //   1. lembaga baru di luar daftar (mis. "SMK") TAK PERNAH dikenali sekolah;
 //   2. cocok-substring bikin "Ma'had" DIANGGAP sekolah — ia mengandung "MA".
 import { describe, it, expect } from 'vitest'
-import { groupOfLembaga, isSekolahLembaga } from '@/composables/useLembaga'
+import {
+  groupOfLembaga,
+  isSekolahLembaga,
+  sekolahTierList,
+  DEFAULT_LEMBAGA_SEED
+} from '@/composables/useLembaga'
+import { LEMBAGA_KENAIKAN_SEKOLAH } from '@/utils/kenaikan'
 
 // Bentuk baris master/lembaga yang nyata di lapangan:
 //   - baris SEED lama  -> punya `group`, sering TANPA `tipe`
@@ -82,6 +88,53 @@ describe('groupOfLembaga — urutan baca: tipe → group → konstanta', () => {
     expect(isSekolahLembaga('SMP', MASTER)).toBe(true)
     expect(isSekolahLembaga('SMA', MASTER)).toBe(true)
     expect(isSekolahLembaga('SD', MASTER)).toBe(true) // alias SDI
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// sekolahTierList menggantikan konstanta ['TK','SDI','SMP','SMA'] yang dulu disalin
+// di TIGA tempat NaikKelasView (SEKOLAH_KENAIKAN, SEKOLAH_MUT, LEMBAGA_KENAIKAN_SEKOLAH)
+// dan menyetir dropdown kenaikan/mutasi/riwayat + label "Kelulusan vs Ceremonial".
+// Kesetaraan untuk data seed WAJIB dibuktikan, bukan diklaim.
+// ─────────────────────────────────────────────────────────────────────────────
+describe('sekolahTierList — pengganti konstanta kenaikan sekolah', () => {
+  it('KUNCI: untuk DEFAULT_LEMBAGA_SEED hasilnya PERSIS LEMBAGA_KENAIKAN_SEKOLAH', () => {
+    // Nilai DAN urutan harus sama — dropdown kenaikan memakai urutan ini apa adanya.
+    expect(sekolahTierList(DEFAULT_LEMBAGA_SEED)).toEqual(LEMBAGA_KENAIKAN_SEKOLAH)
+  })
+
+  it('PKBM dipecah jadi sub-tier SMP & SMA, payungnya sendiri tidak ikut', () => {
+    const out = sekolahTierList(DEFAULT_LEMBAGA_SEED)
+    expect(out).toContain('SMP')
+    expect(out).toContain('SMA')
+    expect(out).not.toContain('PKBM')
+  })
+
+  it('SKENARIO KYAI: sekolah tambahan ikut muncul, yang lama tetap utuh', () => {
+    const out = sekolahTierList([...DEFAULT_LEMBAGA_SEED, { lembaga: 'SMK', tipe: 'Formal' }])
+    expect(out).toEqual([...LEMBAGA_KENAIKAN_SEKOLAH, 'SMK'])
+  })
+
+  it('lembaga non-sekolah tak ikut terseret', () => {
+    const out = sekolahTierList([
+      ...DEFAULT_LEMBAGA_SEED,
+      { lembaga: 'Koperasi', tipe: 'Non Lembaga' },
+      { lembaga: 'Madrasah Diniyah', tipe: 'Qiraati' }
+    ])
+    expect(out).toEqual(LEMBAGA_KENAIKAN_SEKOLAH)
+  })
+
+  it('varian di bawah payung TK (tk_group) dilewati', () => {
+    const out = sekolahTierList([
+      ...DEFAULT_LEMBAGA_SEED,
+      { lembaga: 'TK A', tk_group: 'TK', tipe: 'Formal' }
+    ])
+    expect(out).toEqual(LEMBAGA_KENAIKAN_SEKOLAH)
+  })
+
+  it('master kosong → daftar kosong (pemanggil yang pasang fallback konstanta)', () => {
+    expect(sekolahTierList([])).toEqual([])
+    expect(sekolahTierList(null)).toEqual([])
   })
 })
 

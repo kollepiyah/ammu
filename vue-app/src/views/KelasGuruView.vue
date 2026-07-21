@@ -17,6 +17,7 @@ import { useExcel } from '@/composables/useExcel'
 import { toTitleCase } from '@/utils/format'
 import { bestNameMatch } from '@/utils/fuzzyMatch' // v.100 Batch12: cocokkan nama mirip saat impor
 import { punyaGuruKategori, isGuruAktif } from '@/utils/guruScope' // v.1.2.0: sembunyikan santri yang sudah berguru + penyaring status guru
+import { groupOfLembaga } from '@/composables/useLembaga' // v.1.2.1: sumber tunggal deteksi qiraati/sekolah
 
 const toast = useToast()
 const { exportStyled, importFile } = useExcel()
@@ -89,22 +90,18 @@ const SEKOLAH = ['TK', 'SDI', 'PKBM']
 
 const lembagaOptions = computed(() => {
   const names = (lembagaRaw.value || []).map((l) => l.lembaga || l.nama).filter(Boolean)
+  // v.1.2.1: pakai groupOfLembaga (tipe → group → konstanta). Dulu blok ini membaca
+  //   `group` lalu jatuh ke daftar nama hardcoded — dan lembaga tambahan Kyai TAK
+  //   punya `group` (form cuma menulis `tipe`), jadi sekolah baru tak pernah muncul.
+  const pilih = (target) => names.filter((n) => groupOfLembaga(n, lembagaRaw.value) === target)
   if (kategori.value === 'ngaji') {
-    const list = names.filter((n) => {
-      const g = (lembagaRaw.value.find((l) => (l.lembaga || l.nama) === n) || {}).group
-      if (g) return g === 'qiraati'
-      return QIRAATI.includes(n)
-    })
+    const list = pilih('qiraati')
     return sortLembagaNames(
       list.length ? [...new Set(list)] : QIRAATI.filter((n) => n !== 'P3H' && n !== 'TPQ')
     )
   }
   if (kategori.value === 'sekolah') {
-    const list = names.filter((n) => {
-      const g = (lembagaRaw.value.find((l) => (l.lembaga || l.nama) === n) || {}).group
-      if (g) return g === 'sekolah'
-      return SEKOLAH.includes(n)
-    })
+    const list = pilih('sekolah')
     return sortLembagaNames(list.length ? [...new Set(list)] : SEKOLAH)
   }
   return []

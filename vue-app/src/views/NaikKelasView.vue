@@ -1382,7 +1382,7 @@ import { useGuru } from '@/composables/useGuru'
 import { useSantri } from '@/composables/useSantri'
 import { useExcel } from '@/composables/useExcel'
 import { useGoogleSheet } from '@/composables/useGoogleSheet' // v.100 Batch12: ekspor ke Google Sheet
-import { useLembaga, getPkbmSubTier } from '@/composables/useLembaga'
+import { useLembaga, getPkbmSubTier, sekolahTierList } from '@/composables/useLembaga'
 import { sortSantri } from '@/utils/santriSort'
 import {
   LEMBAGA_KENAIKAN_LIST,
@@ -1449,14 +1449,29 @@ function setKenaikanKategori(kat) {
   kenaikanKategori.value = kat
   filterLembaga.value = ''
 }
-const SEKOLAH_KENAIKAN = ['TK', 'SDI', 'SMP', 'SMA']
+/**
+ * v.1.2.1 — daftar lembaga SEKOLAH untuk kenaikan, DIBACA dari master/lembaga
+ * (tipe 'Formal'). Dulu konstanta ['TK','SDI','SMP','SMA'] di tiga tempat, jadi
+ * sekolah yang Kyai tambah sendiri tak pernah muncul di dropdown mana pun.
+ *
+ * PKBM tetap dipecah jadi dua sub-tier SMP & SMA — kenaikan sekolah dipilih per
+ * tingkat, bukan per lembaga payung.
+ *
+ * Untuk data seed sekarang (TK, SDI, PKBM) hasilnya PERSIS sama dengan konstanta
+ * lama LEMBAGA_KENAIKAN_SEKOLAH, urutan ikut sama. Dijaga tes di
+ * tests/unit/lembagaSekolah.test.js.
+ */
+const sekolahKenaikanList = computed(() => {
+  const list = sekolahTierList(lembagaRaw.value)
+  return list.length ? list : LEMBAGA_KENAIKAN_SEKOLAH
+})
 const kenaikanLembagaOptions = computed(() =>
-  kenaikanKategori.value === 'sekolah' ? SEKOLAH_KENAIKAN : LEMBAGA_KENAIKAN_LIST
+  kenaikanKategori.value === 'sekolah' ? sekolahKenaikanList.value : LEMBAGA_KENAIKAN_LIST
 )
 // v.100 Batch6: Pengaturan KOP/Schema kini mencakup lembaga Qiraati + Sekolah
 const pengaturanLembagaList = computed(() => [
   ...LEMBAGA_KENAIKAN_LIST,
-  ...LEMBAGA_KENAIKAN_SEKOLAH
+  ...sekolahKenaikanList.value
 ])
 const activeTab = ref('form')
 
@@ -1530,7 +1545,6 @@ function setMutasiKategori(kat) {
   mutasiLembaga.value = ''
 }
 const QIRAATI_MUT = ['TPQ Pagi', 'TPQ Sore', 'Pra PTPT', 'PTPT', 'PPPH']
-const SEKOLAH_MUT = ['TK', 'SDI', 'SMP', 'SMA']
 const mutasiLembagaOptions = computed(() => {
   if (mutasiKategori.value === 'qiraati') {
     const fromM = (lembagaRaw.value || [])
@@ -1538,7 +1552,7 @@ const mutasiLembagaOptions = computed(() => {
       .map((l) => l.lembaga)
     return fromM.length ? [...new Set(fromM)] : QIRAATI_MUT
   }
-  if (mutasiKategori.value === 'sekolah') return SEKOLAH_MUT
+  if (mutasiKategori.value === 'sekolah') return sekolahKenaikanList.value
   return []
 })
 function mutasiMatch(s) {
@@ -1746,7 +1760,9 @@ const filteredFormSantri = computed(() => {
         .trim()
       return (lmb === 'PPPH' || lmb === 'P3H') && s.aktif !== false
     })
-  } else if (['TK', 'SDI', 'SMP', 'SMA', 'PKBM'].includes(fl)) {
+  } else if (fl === 'PKBM' || sekolahKenaikanList.value.includes(fl)) {
+    // v.1.2.1: 'PKBM' dicek terpisah — sekolahKenaikanList memecahnya jadi SMP/SMA,
+    //   sementara nilai filter bisa saja 'PKBM' (lembaga payungnya).
     // v.99: kenaikan lembaga SEKOLAH — match lembaga_sekolah (SMP/SMA = sub-tier PKBM dari kelas)
     list = santriList.value.filter((s) => {
       if (s.aktif === false) return false
@@ -1802,7 +1818,7 @@ function setRiwayatKategori(kat) {
   riwayatLembaga.value = ''
 }
 const riwayatLembagaOptions = computed(() =>
-  riwayatKategori.value === 'sekolah' ? SEKOLAH_KENAIKAN : LEMBAGA_KENAIKAN_LIST
+  riwayatKategori.value === 'sekolah' ? sekolahKenaikanList.value : LEMBAGA_KENAIKAN_LIST
 )
 const riwayatSearch = ref('')
 const riwayatList = computed(() => {
@@ -1839,7 +1855,7 @@ const riwayatList = computed(() => {
     list = santriList.value.filter(
       (s) => (s.lembaga === 'PPPH' || s.lembaga === 'P3H') && s.aktif !== false
     )
-  } else if (LEMBAGA_KENAIKAN_SEKOLAH.includes(riwayatLembaga.value)) {
+  } else if (sekolahKenaikanList.value.includes(riwayatLembaga.value)) {
     // v.100 Batch6: riwayat lembaga SEKOLAH — match lembaga_sekolah (SMP/SMA = sub-tier PKBM dari kelas)
     const rl = riwayatLembaga.value
     list = santriList.value.filter((s) => {
@@ -1864,7 +1880,7 @@ const riwayatList = computed(() => {
   //   Sekolah → guru_sekolah; Qiraati → guru ngaji.
   if (isGuru.value) {
     const nm = myNamaGuru.value
-    const isSek = LEMBAGA_KENAIKAN_SEKOLAH.includes(riwayatLembaga.value)
+    const isSek = sekolahKenaikanList.value.includes(riwayatLembaga.value)
     list = list.filter((s) => (isSek ? ownsSekolah(s, nm) : ownsNgaji(s, nm)))
   }
   if (riwayatSearch.value) {
@@ -2176,7 +2192,7 @@ const savingKartu = ref(false)
 const kopHeader = computed(() => getKopKartuLembaga(kartuLembaga.value, settingsStore.settings))
 // v.100 Batch6: kartu lembaga sekolah → ceremonial ditampilkan sebagai "Kelulusan"
 const kartuCeremonialLabel = computed(() =>
-  LEMBAGA_KENAIKAN_SEKOLAH.includes(kartuLembaga.value) ? 'Kelulusan' : 'Ceremonial'
+  sekolahKenaikanList.value.includes(kartuLembaga.value) ? 'Kelulusan' : 'Ceremonial'
 )
 
 function openKartu(s) {
@@ -2377,7 +2393,7 @@ const savingForm = ref(false)
 // v.100 Batch6: mode form sekolah (kenaikan kelas sekolah, bukan jilid/juz Qiraati)
 const formIsSekolah = ref(false)
 const formLembagaOptions = computed(() =>
-  formIsSekolah.value ? LEMBAGA_KENAIKAN_SEKOLAH : LEMBAGA_KENAIKAN_LIST
+  formIsSekolah.value ? sekolahKenaikanList.value : LEMBAGA_KENAIKAN_LIST
 )
 // v.100 Batch9: identitas form & label baris ikut KATEGORI — mode sekolah baca
 //   lembaga_sekolah/kelas_sekolah (sebelumnya selalu lembaga/kelas ngaji → form sekolah
@@ -3016,7 +3032,7 @@ async function eksporKartuPdf() {
     const _kop = kopHeader.value
     const settingsObj = settingsStore.settings || {}
     // v.100 Batch6: kartu lembaga SEKOLAH — identitas pakai kelas_sekolah + guru sekolah, ceremonial = Kelulusan
-    const isSekolahKartu = LEMBAGA_KENAIKAN_SEKOLAH.includes(kartuLembaga.value)
+    const isSekolahKartu = sekolahKenaikanList.value.includes(kartuLembaga.value)
     // Build rows: one row per (kelas, item) combo so the matrix is flattened
     const rows = []
     for (const k of sch.kelasList || []) {

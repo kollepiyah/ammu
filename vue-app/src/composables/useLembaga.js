@@ -152,6 +152,28 @@ export function isSekolahLembaga(nama, lembagaList) {
   return groupOfLembaga(nama, lembagaList) === 'sekolah'
 }
 
+/**
+ * v.1.2.1 — Daftar sekolah untuk KENAIKAN/MUTASI: nama dari master/lembaga
+ * (tipe 'Formal'), dengan PKBM dipecah jadi dua sub-tier SMP & SMA — kenaikan
+ * sekolah dipilih per tingkat, bukan per lembaga payung.
+ *
+ * Menggantikan konstanta ['TK','SDI','SMP','SMA'] yang dulu disalin di tiga tempat
+ * NaikKelasView. Untuk DEFAULT_LEMBAGA_SEED hasilnya PERSIS sama dengan konstanta
+ * LEMBAGA_KENAIKAN_SEKOLAH (nilai & urutan) — dijaga tes di lembagaSekolah.test.js.
+ * Baris varian TK (tk_group) dilewati: ia kelas di bawah payung "TK".
+ */
+export function sekolahTierList(lembagaList) {
+  const out = []
+  for (const l of Array.isArray(lembagaList) ? lembagaList : []) {
+    if (l?.tk_group) continue
+    const n = namaLembaga(l)
+    if (!n || !isSekolahLembaga(n, lembagaList)) continue
+    if (n.toUpperCase() === 'PKBM') out.push('SMP', 'SMA')
+    else out.push(n)
+  }
+  return [...new Set(out)]
+}
+
 // v.86.0526: cek apakah Kepala/PJ (lembaga = userLembaga) berhak melihat target_lembaga.
 //   - userLembaga variant/family (mis 'TPQ Sore' / 'TPQ') → scope SE-FAMILY (TPQ Pagi+Sore+Pra PTPT).
 //   - userLembaga label broad (mis 'Qiraati') → scope SE-BROAD-GROUP (semua qiraati).
