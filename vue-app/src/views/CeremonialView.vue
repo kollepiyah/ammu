@@ -540,7 +540,7 @@ function jamRange(s) {
               v-if="!kandidatTampil.length"
               class="text-[11px] text-[var(--text-tertiary)] italic px-1 py-2"
             >
-              Belum ada santri PTPT yang lulus tes PJ dan belum dijadwalkan.
+              Belum ada santri PTPT yang lulus tes PJ.
             </p>
             <div v-else class="max-h-40 overflow-y-auto space-y-1">
               <label
@@ -555,9 +555,19 @@ function jamRange(s) {
                   class="w-4 h-4 accent-teal-600 flex-shrink-0"
                 />
                 <span class="flex-1 min-w-0">
-                  <span class="block text-xs font-bold text-[var(--text-primary)] truncate">{{
-                    k.nama
-                  }}</span>
+                  <span class="flex items-center gap-1.5">
+                    <span class="text-xs font-bold text-[var(--text-primary)] truncate">{{
+                      k.nama
+                    }}</span>
+                    <!-- v.1.1.9: santri boleh masuk beberapa sesi — tandai supaya
+                         penjadwal sadar, bukan disembunyikan seperti dulu. -->
+                    <span
+                      v-if="k.sesi_terjadwal"
+                      class="shrink-0 px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300"
+                      :title="`Sudah masuk ${k.sesi_terjadwal} sesi ceremonial lain`"
+                      >sudah di {{ k.sesi_terjadwal }} sesi</span
+                    >
+                  </span>
                   <span class="block text-[10px] text-[var(--text-secondary)]">
                     <template v-if="k.kelas">Kelas {{ k.kelas }} &middot; </template>
                     <template v-if="k.juz">Juz {{ k.juz }} &middot; </template>

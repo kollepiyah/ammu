@@ -31,10 +31,25 @@ const norm = (v) =>
     .toLowerCase()
 
 // Kandidat peserta dari baris tes_kenaikan (MURNI — dipisah supaya bisa diuji).
-//   Ambil ajuan LULUS TERBARU per santri PTPT, buang yang sudah dijadwalkan.
+//   Ambil ajuan LULUS TERBARU per santri PTPT.
 //   tgl_lulus_pj = tes_kenaikan.tgl_hasil (tanggal keputusan PJ) -> poin 2 Kyai.
+//
+// v.1.1.9 (Kyai 21 Jul 2026): "setiap santri itu bisa ceremonial di beberapa sesi,
+//   mis: ceremonial kelas 2 itu ada 2 sesi jadi harusnya bisa dijadwal sesi sampai
+//   banyak." Dulu santri yang sudah masuk 1 sesi DIBUANG dari daftar kandidat, jadi
+//   mustahil menambahkannya ke sesi kedua. Sekarang tetap muncul, cuma ditandai
+//   `sesi_terjadwal` (berapa sesi yang sudah memuatnya) supaya penjadwal tetap sadar
+//   dan tidak mendobelkan tanpa sengaja.
+//
+//   `terjadwal` menerima Map<santriId, jumlahSesi> (dipakai sekarang) atau Set
+//   (bentuk lama) — Set dianggap 1 sesi.
 export function pilihKandidat(ajuanList, terjadwal) {
-  const sudah = terjadwal instanceof Set ? terjadwal : new Set(arr(terjadwal).map(String))
+  const hitungSesi = (sid) => {
+    const k = String(sid)
+    if (terjadwal instanceof Map) return Number(terjadwal.get(k) || 0)
+    if (terjadwal instanceof Set) return terjadwal.has(k) ? 1 : 0
+    return 0
+  }
   const perSantri = new Map()
   for (const a of arr(ajuanList)) {
     if (String(a?.status) !== 'lulus') continue
@@ -45,7 +60,6 @@ export function pilihKandidat(ajuanList, terjadwal) {
     if (!prev || String(a.tgl_hasil || '') > String(prev.tgl_hasil || '')) perSantri.set(sid, a)
   }
   return [...perSantri.values()]
-    .filter((a) => !sudah.has(String(a.santri_id)))
     .map((a) => ({
       santri_id: String(a.santri_id),
       nama: a.nama_cache || '',
@@ -53,7 +67,8 @@ export function pilihKandidat(ajuanList, terjadwal) {
       juz: a.target || a.juz_asal || '',
       ajuan_id: String(a.id),
       tgl_lulus_pj: a.tgl_hasil || '',
-      penguji: a.penguji || ''
+      penguji: a.penguji || '',
+      sesi_terjadwal: hitungSesi(a.santri_id) // 0 = belum pernah dijadwal
     }))
     .sort((x, y) => String(x.nama).localeCompare(String(y.nama), 'id'))
 }
@@ -101,14 +116,18 @@ export function useCeremonial() {
     )
   )
 
-  // santri_id yang SUDAH masuk salah satu sesi (agar tak dijadwal dobel).
+  // v.1.1.9: BERAPA sesi (bukan lagi "sudah/belum") yang memuat tiap santri —
+  //   santri boleh ceremonial di beberapa sesi, angkanya cuma dipakai sebagai
+  //   penanda di UI. Map<santriId, jumlahSesi>; sesi 'batal' tidak dihitung.
   const santriTerjadwal = computed(() => {
-    const set = new Set()
+    const map = new Map()
     for (const r of rowsRaw.value) {
       if (r.status === 'batal') continue
-      for (const p of arr(r.peserta)) set.add(String(p.santri_id))
+      // Satu sesi hanya dihitung sekali per santri, walau pesertanya kembar.
+      const unik = new Set(arr(r.peserta).map((p) => String(p.santri_id)))
+      for (const sid of unik) map.set(sid, (map.get(sid) || 0) + 1)
     }
-    return set
+    return map
   })
 
   // Kandidat peserta (ajuanList = useTesKenaikan.ajuanRaw). Logika di pilihKandidat().
