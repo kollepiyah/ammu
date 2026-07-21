@@ -479,7 +479,11 @@
               Guru Sekolah
               <span class="text-[9px] text-[var(--text-tertiary)] normal-case">(max 2)</span>
             </label>
-            <MultiSelectGuruSekolah v-model="form.guru_sekolah" :guruList="guruByLembagaSekolah" />
+            <MultiSelectGuruSekolah
+              v-model="form.guru_sekolah"
+              :guruList="guruByLembagaSekolah"
+              :lembaga="form.lembaga_sekolah"
+            />
           </div>
         </div>
       </div>

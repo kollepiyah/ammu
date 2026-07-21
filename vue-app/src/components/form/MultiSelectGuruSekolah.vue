@@ -6,7 +6,12 @@
       class="w-full px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-left flex items-center justify-between transition hover:bg-[var(--bg-muted)]"
     >
       <span class="text-[var(--text-primary)] truncate">{{ summary }}</span>
-      <i :class="['fas text-[var(--text-secondary)] text-xs', isOpen ? 'fa-chevron-up' : 'fa-chevron-down']"></i>
+      <i
+        :class="[
+          'fas text-[var(--text-secondary)] text-xs',
+          isOpen ? 'fa-chevron-up' : 'fa-chevron-down'
+        ]"
+      ></i>
     </button>
 
     <div
@@ -22,8 +27,11 @@
         />
       </div>
       <div class="flex-1 overflow-y-auto p-2 space-y-1">
-        <p v-if="filteredGurus.length === 0" class="text-xs text-[var(--text-tertiary)] italic text-center py-3">
-          {{ search ? 'Tidak ada cocok' : 'Pilih lembaga sekolah dulu' }}
+        <p
+          v-if="filteredGurus.length === 0"
+          class="text-xs text-[var(--text-tertiary)] italic text-center py-3 px-2 leading-relaxed"
+        >
+          {{ pesanKosong }}
         </p>
         <label
           v-for="g in filteredGurus"
@@ -58,7 +66,9 @@ import { useToast } from '@/composables/useToast'
 
 const props = defineProps({
   modelValue: { type: Array, default: () => [] }, // array nama guru
-  guruList: { type: Array, default: () => [] }
+  guruList: { type: Array, default: () => [] },
+  // v.1.2.1: lembaga yang sedang terpilih — HANYA untuk pesan kosong yang jujur.
+  lembaga: { type: String, default: '' }
 })
 const emit = defineEmits(['update:modelValue'])
 
@@ -69,7 +79,21 @@ const search = ref('')
 const filteredGurus = computed(() => {
   const kw = search.value.trim().toLowerCase()
   if (!kw) return props.guruList
-  return props.guruList.filter((g) => String(g.nama || '').toLowerCase().includes(kw))
+  return props.guruList.filter((g) =>
+    String(g.nama || '')
+      .toLowerCase()
+      .includes(kw)
+  )
+})
+
+// v.1.2.1 (Kyai 22 Jul): dulu pesannya SELALU "Pilih lembaga sekolah dulu", padahal
+//   lembaga sudah dipilih — yang benar-benar terjadi: belum ada guru terdaftar di
+//   lembaga itu. Terlihat saat Kyai menambah sekolah baru "Kelas Baca": lembaganya
+//   sudah dipilih, tapi belum ada guru yang ditugaskan ke sana.
+const pesanKosong = computed(() => {
+  if (search.value.trim()) return 'Tidak ada nama yang cocok'
+  if (!String(props.lembaga || '').trim()) return 'Pilih lembaga sekolah dulu'
+  return `Belum ada guru di ${props.lembaga}. Atur dulu di Data Guru → kolom "Lembaga Sekolah".`
 })
 
 const summary = computed(() => {

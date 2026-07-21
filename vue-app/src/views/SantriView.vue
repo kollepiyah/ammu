@@ -449,8 +449,12 @@
                   class="text-[10px] bg-cyan-50 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-700 px-2 py-0.5 rounded font-bold"
                   >Sekolah: {{ s.kelas_sekolah }}</span
                 >
+                <!-- v.1.2.1: '-' = penanda TANPA juz yang ditulis form santri untuk lembaga
+                     non-PTPT (useSantriForm: `juz: f.lembaga === 'PTPT' ? … : '-'`). Dulu di sini
+                     hanya dicek truthy, jadi setiap santri non-PTPT yang PERNAH DIEDIT mendadak
+                     dapat label "Juz" kosong. Lima view lain sudah memakai penjaga ini. -->
                 <span
-                  v-if="s.juz"
+                  v-if="s.juz && s.juz !== '-'"
                   class="text-[10px] bg-rose-50 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-700 px-2 py-0.5 rounded font-bold"
                   >Juz {{ juzNum(s.juz) }}</span
                 >

@@ -149,10 +149,24 @@ export function useSantriForm() {
   }
 
   // Guru list filtered by lembaga (untuk multi-select guru pengajar Qiraati)
+  // v.1.2.1: cocokkan nama lembaga abai huruf besar/kecil & spasi ujung. Dulu `===`
+  //   persis, padahal impor guru dari Excel meneruskan isi sel apa adanya — satu guru
+  //   yang lembaganya diketik "kelas baca" tak akan pernah muncul di dropdown "Kelas
+  //   Baca". Normalisasi ini hanya MENAMBAH kecocokan, tak pernah membuang.
+  const _samaLembaga = (a, b) =>
+    String(a || '')
+      .trim()
+      .toLowerCase() ===
+    String(b || '')
+      .trim()
+      .toLowerCase()
+
   const guruByLembaga = computed(() => {
     if (!form.value.lembaga) return []
     return guruRaw.value
-      .filter((g) => _isAktifGuru(g) && _isGuruMengajar(g) && g.lembaga === form.value.lembaga)
+      .filter(
+        (g) => _isAktifGuru(g) && _isGuruMengajar(g) && _samaLembaga(g.lembaga, form.value.lembaga)
+      )
       .sort((a, b) => String(a.nama || '').localeCompare(String(b.nama || ''), 'id'))
   })
 
@@ -163,7 +177,9 @@ export function useSantriForm() {
     return guruRaw.value
       .filter(
         (g) =>
-          _isAktifGuru(g) && _isGuruMengajar(g) && (g.lembaga_sekolah === ls || g.lembaga === ls)
+          _isAktifGuru(g) &&
+          _isGuruMengajar(g) &&
+          (_samaLembaga(g.lembaga_sekolah, ls) || _samaLembaga(g.lembaga, ls))
       )
       .sort((a, b) => String(a.nama || '').localeCompare(String(b.nama || ''), 'id'))
   })
