@@ -21,6 +21,64 @@ Versioning: `v.{nomor-urut}.{MMDDtahunmu}` (mis: `v.108.0527`)
 
 ---
 
+## [v.1.2.0] — 2026-07-21 — PTPT: scope PJ, urutan glondongan, notifikasi & perbaikan impor
+
+Rilis fitur PTPT + sejumlah bug senyap yang ditemukan sambil jalan. Tanpa migrasi DB
+kecuali satu: tabel `pengaduan` (fitur lama yang ternyata tak pernah masuk `main`).
+
+### Added (Fitur baru)
+
+- **PJ PTPT hanya melihat santri ampuannya** di Tes Kenaikan, Glondongan, dan Ceremonial
+  (label `santri.pj_ptpt`). PJ kini lebih dari satu orang. super_admin tetap melihat semua;
+  koordinator tetap per kategori mukim; peran boleh menumpuk (haknya digabung).
+- **Masa tempuh antar-juz PTPT** — hari efektif lembaga (kalender minus Jumat minus libur
+  Kalender Kegiatan) antara lulus juz sebelumnya dan juz ini. Tampil untuk guru kelas
+  (tab Status Ajuan) dan PJ (tab Riwayat), serta per juz di kartu kenaikan.
+- **Tab Peran Glondongan** — dua daftar terpisah, Koordinator (yang menugaskan) dan
+  **Penyimak** (yang boleh ditugaskan menyimak), masing-masing per cakupan Ma'had /
+  Selain Ma'had / Keduanya. Dropdown penguji kini disaring ke penyimak kategori santrinya;
+  sebelumnya siapa pun guru PTPT aktif bisa ditunjuk tanpa pembatas.
+- **Glondongan dikerjakan berurutan** dari kelas asal terkecil; review juz berjalan menunggu
+  semua glondongan selesai.
+- **Kontak di tempat yang tepat** — WA penyimak & guru kelas di menu Glondongan; WA wali &
+  penyimak glondongan di kartu ajuan milik guru pengaju.
+- **Notifikasi** ke santri yang dijadwal glondongan, serta ke penyimak guru, penyimak santri,
+  dan peserta ceremonial (+ tombol kirim ulang bila jadwal berubah).
+- **Santri boleh dijadwal di beberapa sesi ceremonial** (kelas 2 memang dipecah 2 sesi).
+- **1 kelas Qiraati = sepasang guru** (pagi & sore) di form naik kelas — dropdownnya kini
+  menampilkan dua nama sekaligus sebagai satu pilihan.
+- Ekspor PDF kelas per lembaga menampilkan sisi ngaji **dan** sekolah sekaligus (lembaga,
+  kelas, juz, guru).
+- **Layanan Pengaduan** dipasang ulang ke `main` — fitur 6 Jul yang ternyata tak pernah
+  di-merge sehingga tak pernah ter-deploy.
+
+### Fixed (Perbaikan)
+
+- **Impor santri tak lagi menghapus kolom yang sudah terisi.** Kolom kosong di file kini
+  dilewati, bukan menimpa dengan string kosong. Ikut tertutup dua kehilangan data senyap:
+  kolom L/P kosong dulu mengubah **semua santri jadi laki-laki**, dan Status Aktif kosong
+  **menghidupkan kembali** santri yang sudah dinonaktifkan.
+- **NIS Dinas tak lagi menimpa No. Induk** yang digenerate aplikasi. Heuristik lama menebak
+  kolom `NIS` sebagai nomor pondok bila file tak punya kolom `No. Induk`.
+- **Kartu kenaikan PTPT tak lagi bergeser satu kolom.** Lulus tes juz 10 dulu mencap kolom
+  Juz 11 (juz tujuan). Sekarang mencap juz yang benar-benar lulus, di blok kelas yang benar.
+- **Juz terakhir tiap kelas tak lagi terpotong** di editor kartu — input tanggal punya lebar
+  minimum bawaan browser dan pembungkusnya memotong diam-diam tanpa scrollbar.
+- **Pindah guru saat naik kelas kini berefek.** Dulu hanya field `guru` yang ditulis,
+  sedangkan statistik & filter ampuan membaca `guru_pagi`/`guru_sore`.
+- **Push glondongan tak pernah terkirim.** Target `{type:'guru', id}` tak dikenali
+  `dispatch-push` yang hanya menerima `nama`, jadi tiap penugasan berakhir
+  `failed: No tokens` tanpa ada yang tahu.
+- **Baris glondongan yatim** setelah tes dihapus — `ajuan_id` hanya FK logis tanpa cascade.
+  Selain namanya nyangkut, baris yatim berstatus selesai **masih ikut terhitung bisyaroh**.
+
+### Changed (Perubahan)
+
+- Pilihan "jenis kenaikan" dihapus dari tab Ajukan — kelas PTPT turun otomatis dari juz.
+  Record lama berjenis `kelas` tetap terbaca.
+
+---
+
 ## [v.1.1.8] — 2026-07-15 — Audit: tutup kebocoran era-Firestore + benahi jalur simpan
 
 Rilis hasil audit menyeluruh. Tidak ada fitur baru — isinya menutup satu kebocoran
