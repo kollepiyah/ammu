@@ -16,8 +16,22 @@ type Row = { id: string; judul: string | null; pesan: string | null; data: Recor
 
 const normNama = (s: unknown) => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '')
 const digits = (s: unknown) => String(s || '').replace(/\D/g, '')
-const tokenOf = (r: { data?: Record<string, unknown> }) =>
-  (r.data && (r.data.fcm_token as string)) || ''
+// v.1.2.0: satu akun boleh punya BANYAK perangkat (HP + PWA + tablet).
+//   `fcm_tokens` = daftar semua token hidup; `fcm_token` = yang terbaru (invarian
+//   dijaga RPC save_push_token & pembersihan token invalid di bawah, supaya filter
+//   `data->>fcm_token is not null` tetap menjaring setiap baris yang punya token).
+const tokensOf = (r: { data?: Record<string, unknown> }): string[] => {
+  const d = (r.data || {}) as Record<string, unknown>
+  const out: string[] = []
+  const arr = Array.isArray(d.fcm_tokens) ? (d.fcm_tokens as unknown[]) : []
+  for (const t of arr) {
+    const s = String(t || '').trim()
+    if (s) out.push(s)
+  }
+  const single = String(d.fcm_token || '').trim()
+  if (single && !out.includes(single)) out.push(single)
+  return out
+}
 
 // ---- FCM HTTP v1: OAuth access token dari service-account (RS256 JWT) ----------
 function pemToArrayBuffer(pem: string): ArrayBuffer {
@@ -70,8 +84,7 @@ async function resolveTokens(db: any, target: any): Promise<string[]> {
   const tokens = new Set<string>()
   const add = (rows: Array<{ data?: Record<string, unknown> }> | null) =>
     (rows || []).forEach((r) => {
-      const t = tokenOf(r)
-      if (t) tokens.add(t)
+      for (const t of tokensOf(r)) tokens.add(t)
     })
   const withTok = (tbl: string) => db.from(tbl).select('id, data').not('data->>fcm_token', 'is', null)
 
@@ -89,8 +102,7 @@ async function resolveTokens(db: any, target: any): Promise<string[]> {
     } else if (t?.type === 'santri' && t.id) {
       const { data: sdoc } = await db.from('santri').select('id, wa, data').eq('id', String(t.id)).maybeSingle()
       if (sdoc) {
-        const tk = tokenOf(sdoc)
-        if (tk) tokens.add(tk)
+        for (const tk of tokensOf(sdoc)) tokens.add(tk)
         const ayah = (sdoc.data?.ayah || {}) as Record<string, unknown>
         const nikAyah = digits(sdoc.data?.nik_ayah ?? ayah.nik)
         const namaAyah = normNama(sdoc.data?.nama_ayah ?? ayah.nama)
@@ -101,8 +113,7 @@ async function resolveTokens(db: any, target: any): Promise<string[]> {
             const xnik = digits(x.data?.nik_ayah ?? xa.nik)
             const xnama = normNama(x.data?.nama_ayah ?? xa.nama)
             if ((nikAyah && xnik === nikAyah) || (namaAyah && xnama === namaAyah)) {
-              const tt = tokenOf(x)
-              if (tt) tokens.add(tt)
+              for (const tt of tokensOf(x)) tokens.add(tt)
             }
           })
         }
@@ -219,13 +230,30 @@ Deno.serve(async (req) => {
       })
     }
 
-    // Bersihkan token invalid dari santri/guru (data->>fcm_token).
+    // Bersihkan token invalid dari santri/guru.
+    //   v.1.2.0 multi-perangkat: buang dari `fcm_tokens` DAN dari `fcm_token`.
+    //   Invarian yang WAJIB dijaga: `fcm_token` = token hidup terbaru. Kalau hanya
+    //   `fcm_token` yang dihapus sementara daftar masih berisi, baris itu lolos dari
+    //   filter `data->>fcm_token is not null` di resolveTokens dan perangkat yang
+    //   masih sah ikut berhenti menerima push.
     for (const bad of invalid) {
       for (const tbl of ['santri', 'guru']) {
-        const { data: hit } = await db.from(tbl).select('id, data').eq('data->>fcm_token', bad).limit(5)
+        const { data: hit } = await db
+          .from(tbl)
+          .select('id, data')
+          .or(`data->>fcm_token.eq.${bad},data->fcm_tokens.cs.["${bad}"]`)
+          .limit(20)
         for (const h of hit || []) {
-          const nd = { ...(h.data || {}) }
-          delete nd.fcm_token
+          const nd = { ...(h.data || {}) } as Record<string, unknown>
+          const sisa = (Array.isArray(nd.fcm_tokens) ? (nd.fcm_tokens as unknown[]) : [])
+            .map((x) => String(x || '').trim())
+            .filter((x) => x && x !== bad)
+          nd.fcm_tokens = sisa
+          if (String(nd.fcm_token || '').trim() === bad) {
+            // token terbaru yang mati -> promosikan sisa paling belakang (terbaru).
+            if (sisa.length) nd.fcm_token = sisa[sisa.length - 1]
+            else delete nd.fcm_token
+          }
           await db.from(tbl).update({ data: nd }).eq('id', h.id)
         }
       }

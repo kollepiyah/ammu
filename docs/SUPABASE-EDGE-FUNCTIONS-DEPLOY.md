@@ -151,10 +151,12 @@ Bila cron sukses tapi antrian tetap `failed`, cek secret FCM:
 `{ok:false, error:"FCM_SERVICE_ACCOUNT invalid: ..."}` pada SETIAP run.
 
 ```sql
--- 4) Ada token FCM tersimpan?
+-- 4) Ada token FCM tersimpan? (v.1.2.0: `fcm_tokens` = daftar semua perangkat)
 select
-  (select count(*) from public.guru   where data->>'fcm_token' is not null) as guru_bertoken,
-  (select count(*) from public.santri where data->>'fcm_token' is not null) as santri_bertoken;
+  (select count(*) from public.guru   where jsonb_array_length(coalesce(data->'fcm_tokens','[]'::jsonb)) > 0) as guru_bertoken,
+  (select count(*) from public.santri where jsonb_array_length(coalesce(data->'fcm_tokens','[]'::jsonb)) > 0) as santri_bertoken,
+  (select coalesce(sum(jsonb_array_length(coalesce(data->'fcm_tokens','[]'::jsonb))), 0)
+     from public.guru) as total_perangkat_guru;
 ```
 
 Nol berarti belum ada perangkat yang mendaftar: token baru tersimpan setelah user
