@@ -23,6 +23,7 @@ const {
   myKategori,
   koordinatorGlondongan,
   isPjPtpt,
+  isAmpuanSaya, // v.1.1.9: scope PJ — hanya santri ampuannya
   isSuper,
   tugaskan,
   tugasNilaiSaya,
@@ -104,11 +105,12 @@ const guruPtpt = computed(() =>
 // Konteks peran (ditampilkan di header Penugasan).
 const scopeLabel = computed(() => {
   if (isSuper.value) return 'Super Admin — semua kategori'
-  if (isPjPtpt.value) return 'PJ PTPT — semua kategori'
   const ks = myKategori.value
-  return ks.length
-    ? 'Koordinator ' + ks.map((k) => KATEGORI_LABEL[k]).join(' & ')
-    : 'Tanpa scope penugasan'
+  const bagian = []
+  // v.1.1.9: PJ tak lagi "semua kategori" — dibatasi ke santri ampuannya (pj_ptpt).
+  if (isPjPtpt.value) bagian.push('PJ PTPT — santri ampuan')
+  if (ks.length) bagian.push('Koordinator ' + ks.map((k) => KATEGORI_LABEL[k]).join(' & '))
+  return bagian.length ? bagian.join(' · ') : 'Tanpa scope penugasan'
 })
 
 // Label kategori ('Ma’had'/'Selain Ma’had') dari baris glondongan (baris.mukim).
@@ -202,8 +204,12 @@ async function saveNilai(row) {
   }
 }
 
-// ── Tab Catatan: evaluasi per santri (guru kelas: santri ampuannya; PJ/super: semua) ──
-const canSeeAllCatatan = computed(() => isPjPtpt.value || isSuper.value)
+// ── Tab Catatan: evaluasi per santri ──
+//   super_admin : semua santri.
+//   PJ PTPT     : santri AMPUANNYA saja (pj_ptpt = namanya) — v.1.1.9, dulu semua.
+//   Guru kelas  : santri kelasnya.
+//   PJ yang juga pegang kelas dapat gabungan keduanya.
+const canSeeAllCatatan = computed(() => isSuper.value)
 const catatanSearch = ref('')
 
 // santri.id yang guru kelasnya = saya (match nama guru_pagi/sore/guru).
@@ -222,9 +228,16 @@ const mySantriIds = computed(() => {
   return ids
 })
 
+// Boleh lihat catatan santri ini? (gabungan hak guru kelas + hak PJ atas ampuannya)
+function bolehLihatCatatan(santriId) {
+  if (canSeeAllCatatan.value) return true
+  if (mySantriIds.value.has(String(santriId))) return true
+  return isPjPtpt.value && isAmpuanSaya.value(santriId)
+}
+
 const catatanGroups = computed(() => {
   let rows = rowsRaw.value || []
-  if (!canSeeAllCatatan.value) rows = rows.filter((r) => mySantriIds.value.has(String(r.santri_id)))
+  rows = rows.filter((r) => bolehLihatCatatan(r.santri_id))
   const map = {}
   for (const r of rows) {
     const sid = String(r.santri_id)

@@ -19,6 +19,10 @@ const {
   sesi: sesiAkun, // sesi AKUN (bukan sesi ceremonial) — dinamai ulang agar tak rancu
   canKelola,
   isSuper,
+  isPjPtpt, // v.1.1.9: PJ dibatasi ke santri ampuannya
+  isKoordinator,
+  isAmpuanSaya,
+  sesiMenyangkutAmpuan,
   kandidatPeserta,
   simpanSesi,
   setStatus,
@@ -64,14 +68,18 @@ const santriAmpuanIds = computed(() => {
   return set
 })
 
-// Penjadwal (super_admin/PJ/koordinator) lihat SEMUA sesi; guru biasa hanya sesi
-//   yang memuat santri ampuannya (permintaan Kyai 19 Jul).
+// Siapa lihat sesi apa:
+//   super_admin & koordinator : SEMUA sesi.
+//   PJ PTPT                   : hanya sesi yang memuat santri AMPUANNYA (pj_ptpt =
+//                               namanya) — v.1.1.9, dulu ikut lihat semua.
+//   Guru biasa                : hanya sesi yang memuat santri kelas ampuannya.
+//   Peran menumpuk → gabungan (mis. PJ yang juga pegang kelas).
 const sesiTerlihat = computed(() => {
-  if (canKelola.value) return sesiList.value
+  if (isSuper.value || isKoordinator.value) return sesiList.value
   const mine = santriAmpuanIds.value
-  return sesiList.value.filter((s) =>
+  const punyaKelas = (s) =>
     (Array.isArray(s.peserta) ? s.peserta : []).some((p) => mine.has(String(p.santri_id)))
-  )
+  return sesiList.value.filter((s) => punyaKelas(s) || (isPjPtpt.value && sesiMenyangkutAmpuan(s)))
 })
 
 const filterStatus = ref('')
@@ -132,7 +140,12 @@ const form = ref(formKosong())
 // Kandidat = lulus tes PJ & belum dijadwalkan. Saat MENGUBAH sesi, peserta sesi itu
 //   sendiri harus tetap muncul supaya bisa dicentang/dilepas.
 const kandidat = computed(() => {
-  const dasar = kandidatPeserta(ajuanRaw.value)
+  let dasar = kandidatPeserta(ajuanRaw.value)
+  // v.1.1.9: PJ menjadwal hanya untuk santri AMPUANNYA. super_admin & koordinator
+  //   tetap melihat semua kandidat.
+  if (!isSuper.value && !isKoordinator.value && isPjPtpt.value) {
+    dasar = dasar.filter((k) => isAmpuanSaya.value(k.santri_id))
+  }
   const sudah = new Set(dasar.map((k) => k.santri_id))
   const tambahan = (form.value.peserta || []).filter((p) => !sudah.has(String(p.santri_id)))
   return [...tambahan, ...dasar].sort((a, b) => String(a.nama).localeCompare(String(b.nama), 'id'))

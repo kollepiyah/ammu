@@ -373,6 +373,16 @@
 
     <!-- ============ TAB: RIWAYAT (kepala/admin) ============ -->
     <div v-else-if="activeTab === 'riwayat'" class="space-y-2">
+      <!-- v.1.1.9: PJ PTPT dibatasi ke santri ampuannya. Tanpa pesan ini, santri yang
+           label "PJ PTPT"-nya belum diisi akan tampak HILANG tanpa keterangan. -->
+      <div
+        v-if="diluarAmpuan"
+        class="rounded-xl border border-amber-300 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-700 px-3 py-2 text-[11px] text-amber-800 dark:text-amber-200"
+      >
+        <i class="fas fa-user-shield mr-1"></i>
+        <b>{{ diluarAmpuan }} ajuan PTPT</b> tidak ditampilkan karena bukan santri ampuan Anda.
+        Kalau ada santri yang seharusnya masuk, isi kolom <b>PJ PTPT</b> di data santrinya.
+      </div>
       <!-- v.100d: filter Lembaga/Jenis/Cari -->
       <div
         class="bg-[var(--bg-card)] rounded-2xl p-2.5 border border-[var(--border-subtle)] shadow-sm flex flex-wrap gap-2"
@@ -752,6 +762,7 @@ const settingsStore = useSettingsStore()
 const { santri, search, guruRaw } = useSantri()
 const {
   ajuanRaw, // v.1.1.9: sumber riwayat lulus utk masa tempuh (jangan pakai `riwayat` yg sudah discope UI)
+  diluarAmpuan, // v.1.1.9: ajuan PTPT di luar ampuan PJ — dipakai pesan di bawah
   myAjuan,
   antrian,
   riwayat,

@@ -8,7 +8,15 @@ import { useAuthStore } from '@/stores/auth'
 import { isSuperAdmin, isAdminBiasa, isAdminKeuangan, isKepalaLembaga } from '@/utils/roleScope'
 import { lembagaScopeMatches } from '@/composables/useLembaga'
 // v.111: rumus pembagian glondongan PTPT (spawn baris tes_glondongan saat ajukan juz)
-import { splitGlondongan, testedJuz, periodeBulan, gerbangGlondongan } from '@/utils/glondongan'
+import {
+  splitGlondongan,
+  testedJuz,
+  periodeBulan,
+  gerbangGlondongan,
+  buatScopePj,
+  PTPT_LEMBAGA
+} from '@/utils/glondongan'
+import { useSantri } from '@/composables/useSantri'
 
 export function useTesKenaikan() {
   const auth = useAuthStore()
@@ -30,12 +38,43 @@ export function useTesKenaikan() {
   // Penguji = kepala/PJ (scoped lembaganya) atau admin (semua).
   const isPenguji = computed(() => isAdmin.value || isKepala.value)
 
+  // v.1.1.9: scope PJ PTPT — "PJ hanya bisa melihat santri ampuannya" (Kyai 21 Jul
+  //   2026). PJ PTPT kini >1 orang. Sumber santri = pinia collections store, jadi
+  //   TIDAK menambah langganan.
+  const { santriRaw } = useSantri()
+  const isAmpuanSaya = computed(() => buatScopePj(santriRaw.value, myNama.value))
+
   // Apakah ajuan masuk scope penguji ini? (admin = semua; kepala = se-lembaganya)
   function inScope(a) {
     if (isAdmin.value) return true
-    if (isKepala.value) return lembagaScopeMatches(myLembaga.value, a.lembaga)
-    return false
+    if (!isKepala.value) return false
+    if (!lembagaScopeMatches(myLembaga.value, a.lembaga)) return false
+    // Penyempitan KHUSUS PTPT: kepala/PJ PTPT hanya santri ampuannya. Kepala
+    //   lembaga lain TIDAK berubah — mereka tetap lihat se-lembaganya.
+    if (
+      String(a.lembaga || '')
+        .trim()
+        .toUpperCase() === PTPT_LEMBAGA
+    ) {
+      return isAmpuanSaya.value(a.santri_id)
+    }
+    return true
   }
+
+  // Ajuan PTPT yang DISEMBUNYIKAN oleh scope PJ di atas. Dipakai UI untuk memberi
+  //   tahu "ada N ajuan di luar ampuan Anda" — tanpa ini, santri yang label
+  //   `pj_ptpt`-nya belum diisi tampak HILANG begitu saja.
+  const diluarAmpuan = computed(() => {
+    if (isAdmin.value || !isKepala.value) return 0
+    return ajuanRaw.value.filter(
+      (a) =>
+        String(a.lembaga || '')
+          .trim()
+          .toUpperCase() === PTPT_LEMBAGA &&
+        lembagaScopeMatches(myLembaga.value, a.lembaga) &&
+        !isAmpuanSaya.value(a.santri_id)
+    ).length
+  })
 
   const sortNewest = (arr) => [...arr].sort((a, b) => (b._ts || 0) - (a._ts || 0))
 
@@ -370,6 +409,8 @@ export function useTesKenaikan() {
     isPenguji,
     isAdmin,
     isKepala,
+    isAmpuanSaya, // v.1.1.9: predikat scope PJ (santriId) => boolean
+    diluarAmpuan, // jumlah ajuan PTPT yang disembunyikan scope PJ (utk pesan UI)
     hasOpenAjuan,
     ajukanBatch,
     putuskan,

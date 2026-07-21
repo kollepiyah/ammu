@@ -9,7 +9,8 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { subscribeColl, subscribeDoc, setOne, updateOne, deleteOne } from '@/services/db'
 import { useAuthStore } from '@/stores/auth'
 import { isSuperAdmin } from '@/utils/roleScope'
-import { PTPT_LEMBAGA, periodeBulan, kategoriKoordinatori } from '@/utils/glondongan'
+import { PTPT_LEMBAGA, periodeBulan, kategoriKoordinatori, buatScopePj } from '@/utils/glondongan'
+import { useSantri } from '@/composables/useSantri'
 
 // PJ PTPT = jabatan kepala/PJ/pengasuh DAN lembaga = PTPT (mirror useGlondongan._isPjPtpt).
 function _isPjPtpt(sesi) {
@@ -77,6 +78,19 @@ export function useCeremonial() {
   // Boleh menjadwal / ubah / hapus sesi — super_admin, PJ PTPT, ATAU koordinator
   //   glondongan (keputusan Kyai 19 Jul; semula PJ+super saja).
   const canKelola = computed(() => isSuper.value || isPjPtpt.value || isKoordinator.value)
+
+  // v.1.1.9: scope PJ — "PJ hanya bisa melihat santri ampuannya" (Kyai 21 Jul 2026).
+  //   Sumber santri = pinia collections store, jadi TIDAK menambah langganan.
+  const { santriRaw } = useSantri()
+  const isAmpuanSaya = computed(() => buatScopePj(santriRaw.value, myNama.value))
+  // Sesi ini menyangkut santri ampuan saya? (peserta ATAU penyimak santri).
+  function sesiMenyangkutAmpuan(row) {
+    const cek = isAmpuanSaya.value
+    return (
+      arr(row?.peserta).some((p) => cek(p?.santri_id)) ||
+      arr(row?.penyimak_santri).some((p) => cek(p?.id ?? p?.santri_id))
+    )
+  }
 
   // Sesi terbaru dulu (tanggal + jam).
   const sesiList = computed(() =>
@@ -167,6 +181,8 @@ export function useCeremonial() {
     isPjPtpt,
     isKoordinator,
     canKelola,
+    isAmpuanSaya, // v.1.1.9: predikat scope PJ (santriId) => boolean
+    sesiMenyangkutAmpuan,
     santriTerjadwal,
     kandidatPeserta,
     simpanSesi,

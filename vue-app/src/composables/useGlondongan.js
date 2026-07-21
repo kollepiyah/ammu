@@ -22,9 +22,11 @@ import {
   isKoordinatorKategori,
   getKoordinatorGlondongan,
   kategoriMukim,
+  buatScopePj,
   KATEGORI_GLONDONGAN,
   PTPT_LEMBAGA
 } from '@/utils/glondongan'
+import { useSantri } from '@/composables/useSantri'
 
 // PJ PTPT = jabatan kepala/PJ/pengasuh DAN lembaga = PTPT.
 function _isPjPtpt(sesi) {
@@ -57,9 +59,20 @@ export function useGlondongan() {
   // Map { mahad:[guruId], nonmahad:[guruId] } koordinator glondongan PTPT (dari master/lembaga).
   const koordinatorGlondongan = computed(() => getKoordinatorGlondongan(lembagaList.value))
 
-  // Boleh menugaskan penguji utk baris ini? (koordinator kategori santri / PJ PTPT / super_admin).
+  // v.1.1.9: scope PJ — "PJ hanya bisa melihat santri ampuannya" (Kyai 21 Jul 2026).
+  //   PJ PTPT kini >1 orang; tiap PJ dibatasi ke santri berlabel pj_ptpt = namanya.
+  //   Sumber santri = pinia collections store (useSantri), jadi TIDAK menambah langganan.
+  const { santriRaw } = useSantri()
+  const isAmpuanSaya = computed(() => buatScopePj(santriRaw.value, myNama.value))
+
+  // Boleh menugaskan penguji utk baris ini?
+  //   super_admin  : semua baris.
+  //   PJ PTPT      : hanya baris santri AMPUANNYA (dulu: semua baris).
+  //   Koordinator  : baris sesuai kategori mukim santri — TIDAK diubah.
+  //   Peran bisa menumpuk (PJ merangkap koordinator) → hak-nya gabungan.
   function canAssign(row) {
-    if (isSuper.value || isPjPtpt.value) return true
+    if (isSuper.value) return true
+    if (isPjPtpt.value && isAmpuanSaya.value(row?.santri_id)) return true
     return isKoordinatorKategori(myId.value, kategoriMukim(row?.mukim), lembagaList.value)
   }
   // Boleh melihat antrian penugasan sama sekali?
@@ -208,6 +221,7 @@ export function useGlondongan() {
     myNama,
     isSuper,
     isPjPtpt,
+    isAmpuanSaya, // v.1.1.9: predikat scope PJ (santriId) => boolean
     myKategori,
     koordinatorGlondongan,
     canAssign,

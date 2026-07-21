@@ -166,3 +166,42 @@ export function isKoordinatorKategori(sesiId, kategori, lembagaList) {
   const m = getKoordinatorGlondongan(lembagaList)
   return (m[kategori] || []).includes(me)
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Scope PJ PTPT — "PJ hanya bisa melihat santri ampuannya" (Kyai, 21 Jul 2026).
+//   PJ PTPT sekarang lebih dari satu orang dan bisa bertambah, jadi tiap PJ
+//   dibatasi ke santri yang label `pj_ptpt`-nya = namanya.
+//
+//   `santri.pj_ptpt` menyimpan NAMA (teks bebas, diisi lewat form/impor), bukan
+//   id guru. Karena itu pencocokan dinormalisasi: huruf kecil + spasi dirapatkan,
+//   supaya "Ust.  Fulan " tetap cocok dengan "Ust. Fulan". Tetap rapuh kalau nama
+//   guru diubah — kalau itu jadi masalah, pindahkan pj_ptpt ke id guru.
+//
+//   Penegakan di UI, BUKAN RLS — sama dengan keputusan sebelumnya untuk hak
+//   jadwal ceremonial. RLS tabelnya tetap Archetype B.
+// ─────────────────────────────────────────────────────────────────────────────
+const _normNama = (v) =>
+  String(v ?? '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+
+/**
+ * Predikat "santri ini ampuan PJ bernama X", dibangun dari daftar santri.
+ * @param {Array} santriList - daftar santri (id + pj_ptpt).
+ * @param {string} namaPj - nama PJ yang login.
+ * @returns {(santriId:any)=>boolean} selalu false bila nama PJ kosong.
+ */
+export function buatScopePj(santriList, namaPj) {
+  const target = _normNama(namaPj)
+  const map = new Map()
+  for (const s of santriList || []) {
+    if (!s) continue
+    map.set(String(s.id), _normNama(s.pj_ptpt))
+  }
+  return (santriId) => {
+    if (!target) return false
+    const v = map.get(String(santriId))
+    return !!v && v === target
+  }
+}
