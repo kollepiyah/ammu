@@ -376,7 +376,22 @@ export function useTesKenaikan() {
     })
   }
   // Hard-delete record (backup ke audit_log dulu via deleteOne).
+  //   v.1.1.9: IKUT hapus baris tes_glondongan miliknya. `ajuan_id` cuma FK LOGIS
+  //   (tak ada `references` / ON DELETE CASCADE di migrasi 20260701100000), jadi tanpa
+  //   ini barisnya jadi YATIM: tesnya hilang tapi nama santri masih nongol di menu
+  //   Glondongan — persis keluhan Kyai. Cascade di aplikasi, bukan migrasi, supaya tak
+  //   perlu db push dan tetap tercatat di audit_log.
   async function hapusAjuan(id) {
+    const anak = (glondonganRaw.value || []).filter((r) => String(r.ajuan_id || '') === String(id))
+    for (const r of anak) {
+      // Best-effort per baris: satu yang gagal jangan menahan penghapusan ajuannya.
+      try {
+        await deleteOne('tes_glondongan', r.id, { alasan: 'Ikut terhapus dgn ajuan tes kenaikan' })
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.warn('[tes] gagal hapus baris glondongan', r.id, e?.message || e)
+      }
+    }
     await deleteOne('tes_kenaikan', id, { alasan: 'Hapus record tes kenaikan (super_admin)' })
   }
 

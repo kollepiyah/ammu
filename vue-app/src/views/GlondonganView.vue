@@ -22,7 +22,9 @@ import { useSettingsStore } from '@/stores/settings'
 
 const {
   loaded,
-  rowsRaw,
+  rows, // v.1.1.9: baris glondongan TANPA yang yatim (ajuannya sudah dihapus)
+  barisYatim,
+  bersihkanYatim,
   sesi,
   myNama,
   antrianTugas,
@@ -169,6 +171,34 @@ function penyimakBaris(row) {
   const byId = (guruRaw.value || []).find((g) => String(g.id) === String(row?.penguji_id || ''))
   const g = byId || guruDariNama(row?.penguji_nama)
   return { nama: row?.penguji_nama || g?.nama || '—', wa: g?.wa || '' }
+}
+
+// v.1.1.9: baris yatim = ajuan tesnya sudah dihapus. Sejak cascade dipasang tak akan
+//   ada yang baru; tombol ini untuk membersihkan sisa penghapusan LAMA. Baris yatim
+//   sudah otomatis tak tampil & tak ikut Rekap Bisyaroh — ini sekadar merapikan DB.
+const bersihBusy = ref(false)
+async function bersihkanYatimKlik() {
+  const n = barisYatim.value.length
+  if (!n) return
+  const ok = await confirmDlg({
+    title: 'Bersihkan baris glondongan yatim?',
+    message:
+      `<b>${n} baris</b> glondongan tak lagi punya ajuan tes (tesnya sudah dihapus).` +
+      '<br><br>Baris ini sudah tidak tampil & tidak ikut dihitung bisyaroh. Menghapusnya hanya merapikan data.' +
+      '<br><br>Tidak bisa di-undo.',
+    confirmText: 'Bersihkan',
+    danger: true
+  })
+  if (!ok) return
+  bersihBusy.value = true
+  try {
+    const n2 = await bersihkanYatim()
+    toast.success(`${n2} baris yatim dibersihkan`)
+  } catch (e) {
+    toast.error('Gagal membersihkan: ' + (e.message || e))
+  } finally {
+    bersihBusy.value = false
+  }
 }
 
 // Konteks peran (ditampilkan di header Penugasan).
@@ -319,10 +349,9 @@ function bolehLihatCatatan(santriId) {
 }
 
 const catatanGroups = computed(() => {
-  let rows = rowsRaw.value || []
-  rows = rows.filter((r) => bolehLihatCatatan(r.santri_id))
+  const daftar = (rows.value || []).filter((r) => bolehLihatCatatan(r.santri_id))
   const map = {}
-  for (const r of rows) {
+  for (const r of daftar) {
     const sid = String(r.santri_id)
     if (!map[sid]) map[sid] = { santri_id: sid, nama: r.nama_cache || '—', rows: [] }
     map[sid].rows.push(r)
@@ -424,7 +453,7 @@ function fmtRp(n) {
 // Rekap per penguji untuk bulan terpilih (berdasar tgl_nilai baris 'selesai').
 const rekapRows = computed(() => {
   const per = {}
-  for (const r of rowsRaw.value || []) {
+  for (const r of rows.value || []) {
     if (r.status !== 'selesai') continue
     if (String(r.tipe) !== 'glondongan') continue // berjalan (guru kelas) TIDAK dibayar
     const bln = r.tgl_nilai ? periodeBulan(new Date(r.tgl_nilai)) : ''
@@ -978,6 +1007,25 @@ const rekapTotal = computed(() => rekapRows.value.reduce((s, g) => s + g.total, 
       <p class="text-xs text-[var(--text-secondary)] mb-3">
         Dua daftar terpisah. Satu guru boleh masuk keduanya.
       </p>
+
+      <!-- v.1.1.9: sisa baris yatim dari penghapusan tes sebelum cascade dipasang -->
+      <div
+        v-if="barisYatim.length"
+        class="mb-3 rounded-xl border border-amber-300 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-700 px-3 py-2 flex items-center justify-between gap-2 flex-wrap"
+      >
+        <span class="text-[11px] text-amber-800 dark:text-amber-200">
+          <i class="fas fa-broom mr-1"></i><b>{{ barisYatim.length }} baris</b> glondongan tak punya
+          ajuan tes lagi (tesnya sudah dihapus). Sudah disembunyikan &amp; tak dihitung bisyaroh.
+        </span>
+        <button
+          type="button"
+          @click="bersihkanYatimKlik"
+          :disabled="bersihBusy"
+          class="shrink-0 px-2.5 py-1.5 text-[11px] font-bold rounded-lg bg-amber-600 hover:bg-amber-700 text-white disabled:opacity-50"
+        >
+          <i :class="['fas mr-1', bersihBusy ? 'fa-spinner fa-spin' : 'fa-broom']"></i>Bersihkan
+        </button>
+      </div>
 
       <div
         v-if="guruPtpt.length === 0"

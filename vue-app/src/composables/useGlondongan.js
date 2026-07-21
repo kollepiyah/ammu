@@ -83,12 +83,41 @@ export function useGlondongan() {
 
   const sortNewest = (arr) => [...arr].sort((a, b) => (b._ts || 0) - (a._ts || 0))
 
+  // ── v.1.1.9: buang baris YATIM (Kyai: "sudah hapus tes santri A, tapi di glondongan
+  //    masih ada namanya"). `tes_glondongan.ajuan_id` cuma FK LOGIS — tanpa ON DELETE
+  //    CASCADE — jadi menghapus tes_kenaikan meninggalkan barisnya menggantung.
+  //    Menyaringnya BUKAN sekadar kosmetik: baris yatim ber-status 'selesai' tetap ikut
+  //    terhitung di Rekap Bisyaroh, artinya pengujinya dibayar untuk tes yang sudah batal.
+  //    ajuanIds null = belum termuat → JANGAN sembunyikan apa pun (kalau tidak, sekejap
+  //    setelah buka layar semua baris terlihat yatim).
+  const ajuanIds = ref(null)
+  let unsubA = null
+  const rows = computed(() => {
+    const ids = ajuanIds.value
+    if (!ids) return rowsRaw.value
+    return rowsRaw.value.filter((r) => !r.ajuan_id || ids.has(String(r.ajuan_id)))
+  })
+  const barisYatim = computed(() => {
+    const ids = ajuanIds.value
+    if (!ids) return []
+    return rowsRaw.value.filter((r) => r.ajuan_id && !ids.has(String(r.ajuan_id)))
+  })
+
+  // super_admin: buang baris yatim yang terlanjur ada (dari penghapusan tes sebelum
+  //   cascade dipasang). Mengembalikan jumlah yang berhasil dihapus.
+  async function bersihkanYatim() {
+    let n = 0
+    for (const r of barisYatim.value) {
+      await deleteOne('tes_glondongan', r.id, { alasan: 'Baris glondongan yatim (ajuan tak ada)' })
+      n++
+    }
+    return n
+  }
+
   // Antrian penugasan: baris glondongan 'menunggu' yang boleh SAYA tugaskan.
   const antrianTugas = computed(() =>
     sortNewest(
-      rowsRaw.value.filter(
-        (r) => r.tipe === 'glondongan' && r.status === 'menunggu' && canAssign(r)
-      )
+      rows.value.filter((r) => r.tipe === 'glondongan' && r.status === 'menunggu' && canAssign(r))
     )
   )
 
@@ -97,16 +126,14 @@ export function useGlondongan() {
   //   melihat siapa penyimaknya (dan menghubunginya).
   const sudahDitugaskan = computed(() =>
     sortNewest(
-      rowsRaw.value.filter(
-        (r) => r.tipe === 'glondongan' && r.status === 'ditugaskan' && canAssign(r)
-      )
+      rows.value.filter((r) => r.tipe === 'glondongan' && r.status === 'ditugaskan' && canAssign(r))
     )
   )
 
   // Tugas menilai SAYA: baris 'ditugaskan' ke saya (penguji glondongan atau guru kelas berjalan).
   const tugasNilaiSaya = computed(() =>
     sortNewest(
-      rowsRaw.value.filter(
+      rows.value.filter(
         (r) =>
           r.status === 'ditugaskan' &&
           (String(r.penguji_id || '') === myId.value ||
@@ -118,12 +145,12 @@ export function useGlondongan() {
   // Catatan evaluasi 1 santri (semua tipe, terbaru dulu) — untuk panel guru kelas / PJ.
   function catatanSantri(santriId) {
     const sid = String(santriId)
-    return sortNewest(rowsRaw.value.filter((r) => String(r.santri_id) === sid))
+    return sortNewest(rows.value.filter((r) => String(r.santri_id) === sid))
   }
   // Baris untuk 1 ajuan tes_kenaikan.
   function rowsByAjuan(ajuanId) {
     const aid = String(ajuanId)
-    return sortNewest(rowsRaw.value.filter((r) => String(r.ajuan_id) === aid))
+    return sortNewest(rows.value.filter((r) => String(r.ajuan_id) === aid))
   }
 
   // ── Aksi ──
@@ -244,15 +271,24 @@ export function useGlondongan() {
     unsubL = subscribeDoc('master', 'lembaga', (doc) => {
       lembagaList.value = Array.isArray(doc?.list) ? doc.list : []
     })
+    // v.1.1.9: id ajuan yang MASIH ADA — dipakai membuang baris glondongan yatim.
+    //   Hanya id-nya yang disimpan (bukan seluruh dokumen) supaya ringan.
+    unsubA = subscribeColl('tes_kenaikan', (docs) => {
+      ajuanIds.value = new Set((docs || []).map((d) => String(d.id)))
+    })
   })
   onUnmounted(() => {
     if (unsub) unsub()
     if (unsubL) unsubL()
+    if (unsubA) unsubA()
   })
 
   return {
     loaded,
-    rowsRaw,
+    rowsRaw, // mentah (termasuk yatim) — pemakai UI sebaiknya pakai `rows`
+    rows, // v.1.1.9: sudah dibuang baris yatimnya
+    barisYatim,
+    bersihkanYatim,
     sesi,
     myId,
     myNama,
