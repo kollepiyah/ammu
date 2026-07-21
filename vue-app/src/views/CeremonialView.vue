@@ -12,6 +12,7 @@ import { useSantri } from '@/composables/useSantri'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
 import { PTPT_LEMBAGA } from '@/utils/glondongan'
+import { guruAktifSaja } from '@/utils/guruScope' // v.1.2.0: buang guru nonaktif
 
 const {
   loaded,
@@ -139,8 +140,10 @@ const guruOptions = computed(() => {
     String(g.lembaga || '')
       .trim()
       .toUpperCase() === PTPT_LEMBAGA
-  return [...guruRaw.value]
-    .filter((g) => g.status !== 'Non-Aktif')
+  // v.1.2.0: dulu `status !== 'Non-Aktif'` — string itu TAK PERNAH ditulis siapa pun
+  //   (nilai asli: 'Aktif'/'aktif'/'Tidak Aktif'), jadi penyaringnya tak pernah bekerja.
+  return guruAktifSaja(guruRaw.value)
+    .slice()
     .sort(
       (a, b) =>
         Number(isPtpt(b)) - Number(isPtpt(a)) ||

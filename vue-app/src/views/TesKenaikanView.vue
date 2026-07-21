@@ -782,7 +782,7 @@ import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import { useSantri } from '@/composables/useSantri'
 import { useTesKenaikan } from '@/composables/useTesKenaikan'
 import { useAuthStore } from '@/stores/auth' // v.100d: nama guru utk scope ngaji-only
-import { ownsNgaji } from '@/utils/guruScope' // v.100d
+import { ownsNgaji, guruAktifSaja } from '@/utils/guruScope' // v.100d
 import { getOne, mergeOne, subscribeColl } from '@/services/db' // v.100d: muat dokumen santri penuh utk auto-naik
 import { buildKenaikanQiraatiPayload, writeKenaikan } from '@/utils/promosiKenaikan' // v.100d
 import { buildTesRaporFeed, currentRaporPeriode } from '@/utils/tesRaporFeed' // v.100d Fase 3: nilai tes → rapor
@@ -1378,7 +1378,8 @@ function juzOptionsNaik() {
   return Array.from({ length: 5 }, (_, i) => start + i)
 }
 function guruOptionsFor(lembaga) {
-  return (guruRaw.value || [])
+  // v.1.2.0: buang guru NONAKTIF — dulu hanya lembaga yang disaring.
+  return guruAktifSaja(guruRaw.value)
     .filter((g) => g.lembaga === lembaga || g.lembaga_sekolah === lembaga)
     .map((g) => g.nama)
     .filter(Boolean)

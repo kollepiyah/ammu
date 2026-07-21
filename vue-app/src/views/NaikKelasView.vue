@@ -1396,7 +1396,7 @@ import {
   resolveKenaikanSchemaPath
 } from '@/utils/promosiKenaikan' // v.100d: logika naik bersama
 import { juzNum } from '@/utils/format' // v.100e: normalisasi tampilan juz (anti dobel "Juz JUZ n")
-import { ownsNgaji, ownsSekolah, deteksiTipeGuru } from '@/utils/guruScope' // v.100b: scope guru qiraati/sekolah
+import { ownsNgaji, ownsSekolah, deteksiTipeGuru, guruAktifSaja } from '@/utils/guruScope' // v.100b: scope guru qiraati/sekolah
 // v.1.1.9: 1 kelas Qiraati = sepasang guru (pagi & sore) — dropdown menampilkan 2 nama.
 import { pasanganQiraati, cariPasangan, labelPasangan } from '@/utils/pasanganGuru'
 import { buildListPdf, createPdf, drawTable, savePdf } from '@/utils/pdfBuilder'
@@ -2552,7 +2552,7 @@ const guruOptions = computed(() => {
   if (formIsSekolah.value) {
     const m = String(lmb).toUpperCase().trim()
     const target = m === 'SMP' || m === 'SMA' ? 'PKBM' : m
-    return (guruRaw.value || [])
+    return guruAktifSaja(guruRaw.value)
       .filter(
         (g) =>
           String(g.lembaga_sekolah || '')
@@ -2565,7 +2565,9 @@ const guruOptions = computed(() => {
       .map((g) => g.nama)
       .filter(Boolean)
   }
-  return (guruRaw.value || [])
+  // v.1.2.0: guru NONAKTIF tak lagi ikut muncul — dulu penyaringnya lembaga saja,
+  //   jadi nama guru lama terus nongol di dropdown "pilih guru pengajar".
+  return guruAktifSaja(guruRaw.value)
     .filter((g) => g.lembaga === lmb || g.lembaga_sekolah === lmb)
     .map((g) => g.nama)
     .filter(Boolean)
