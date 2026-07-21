@@ -25,6 +25,7 @@ const {
   sesiMenyangkutAmpuan,
   kandidatPeserta,
   simpanSesi,
+  kirimUlangNotif, // v.1.1.9
   setStatus,
   hapusSesi
 } = useCeremonial()
@@ -225,6 +226,22 @@ async function ubahStatus(s, status) {
     toast.error(`Gagal: ${e?.message || e}`)
   }
 }
+
+// v.1.1.9: kirim ulang notifikasi sesi (dipakai kalau jadwal/tempat berubah —
+//   menyunting sesi sengaja TIDAK mengirim ulang otomatis).
+const kirimId = ref('')
+async function kirimUlang(s) {
+  kirimId.value = String(s.id)
+  try {
+    const n = await kirimUlangNotif(s.id)
+    if (n) toast.success(`Notifikasi dikirim ke ${n} penerima.`)
+    else toast.warning('Tidak ada penerima — sesi belum punya penyimak/peserta.')
+  } catch (e) {
+    toast.error(`Gagal kirim notifikasi: ${e?.message || e}`)
+  } finally {
+    kirimId.value = ''
+  }
+}
 async function hapus(s) {
   const ok = await confirmDlg({
     title: 'Hapus sesi ceremonial?',
@@ -370,6 +387,20 @@ function jamRange(s) {
             class="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-teal-600 hover:bg-teal-700 text-white"
           >
             <i class="fas fa-pen mr-1"></i>Ubah
+          </button>
+          <!-- v.1.1.9: notif dikirim otomatis saat sesi DIBUAT. Menyunting sesi tidak
+               mengirim ulang (biar tak membanjiri); kalau jadwal berubah, pakai ini. -->
+          <button
+            v-if="canKelola && s.status === 'terjadwal'"
+            @click="kirimUlang(s)"
+            :disabled="kirimId === String(s.id)"
+            title="Kirim ulang notifikasi ke penyimak & peserta"
+            class="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white disabled:opacity-50"
+          >
+            <i
+              :class="['fas mr-1', kirimId === String(s.id) ? 'fa-spinner fa-spin' : 'fa-bell']"
+            ></i
+            >Notif
           </button>
           <button
             v-if="canKelola && s.status !== 'selesai'"

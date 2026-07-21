@@ -6,15 +6,8 @@
 //     - Baca catatan evaluasi              : guru kelas santri + PJ (via view Task #6).
 //   Nilai glondongan/berjalan TAK masuk rapor (murni catatan evaluasi).
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import {
-  subscribeColl,
-  subscribeDoc,
-  updateOne,
-  deleteOne,
-  getOne,
-  mergeOne,
-  setOne
-} from '@/services/db'
+import { subscribeColl, subscribeDoc, updateOne, deleteOne, getOne, mergeOne } from '@/services/db'
+import { antreNotifBanyak, targetGuru, targetSantri } from '@/services/notif'
 import { useAuthStore } from '@/stores/auth'
 import { isSuperAdmin } from '@/utils/roleScope'
 import {
@@ -132,32 +125,45 @@ export function useGlondongan() {
       ditugaskan_oleh: myNama.value,
       tgl_tugas: new Date().toISOString()
     })
-    // v.1.1.9: antre PUSH ke HP penguji (dibaca Edge Function dispatch-push, cron tiap menit).
-    //   Best-effort: gagal antre TIDAK menggagalkan penugasan.
-    try {
-      const r = rowsRaw.value.find((x) => String(x.id) === String(id))
-      const pid = String(penguji?.id || '')
-      if (r && pid) {
-        const juzTxt =
-          r.juz_dari === r.juz_sampai ? `juz ${r.juz_dari}` : `juz ${r.juz_dari}–${r.juz_sampai}`
-        const nid = `ntf_glond_${id}`
-        await setOne('notif_queue', nid, {
-          id: nid,
-          judul: 'Tugas Menyimak Glondongan',
-          pesan: `Anda ditugaskan menyimak ${r.nama_cache || 'santri'} — ${juzTxt}.`,
-          kategori: 'glondongan',
-          target: { type: 'guru', id: pid },
-          link: '/glondongan',
-          ref_id: String(id),
-          dibaca: false,
-          status: 'pending',
-          created_at: new Date().toISOString()
-        })
-      }
-    } catch (e) {
-      // eslint-disable-next-line no-console
-      console.warn('[glondongan] antre push gagal:', e?.message || e)
+    // Antre PUSH ke penguji DAN santri (dibaca Edge Function dispatch-push, cron
+    //   tiap menit). Best-effort: gagal antre TIDAK menggagalkan penugasan.
+    //
+    // v.1.1.9 FIX: dulu target-nya `{ type:'guru', id }` — dispatch-push hanya
+    //   mengenal `{ type:'guru', nama }`, jadi TIDAK ADA cabang yang cocok dan setiap
+    //   penugasan berakhir 'failed: No tokens' tanpa ada yang tahu. Sekarang lewat
+    //   targetGuru() yang mengirim nama + id sekaligus.
+    const r = rowsRaw.value.find((x) => String(x.id) === String(id))
+    if (!r) return
+    const juzTxt =
+      r.juz_dari === r.juz_sampai ? `juz ${r.juz_dari}` : `juz ${r.juz_dari}–${r.juz_sampai}`
+    const namaSantri = r.nama_cache || 'santri'
+    const antrean = []
+    if (penguji?.id || penguji?.nama) {
+      antrean.push({
+        prefix: 'ntf_glond_guru',
+        judul: 'Tugas Menyimak Glondongan',
+        pesan: `Anda ditugaskan menyimak ${namaSantri} — ${juzTxt}.`,
+        kategori: 'glondongan',
+        target: targetGuru(penguji),
+        link: '/glondongan',
+        ref_id: String(id)
+      })
     }
+    // v.1.1.9 (Kyai 21 Jul): santri yang dijadwal glondongan ikut diberi tahu.
+    if (r.santri_id) {
+      antrean.push({
+        prefix: 'ntf_glond_santri',
+        judul: 'Jadwal Menyimak Glondongan',
+        pesan: `${namaSantri} dijadwalkan menyimak ${juzTxt} bersama ${
+          penguji?.nama || 'guru penyimak'
+        }.`,
+        kategori: 'glondongan',
+        target: targetSantri(r.santri_id),
+        link: '/glondongan',
+        ref_id: String(id)
+      })
+    }
+    await antreNotifBanyak(antrean)
   }
   // Batalkan penugasan (kembali ke antrian 'menunggu').
   async function batalTugas(id) {

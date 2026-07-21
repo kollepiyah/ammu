@@ -7,6 +7,7 @@
 //   memuat santri ampuannya (disaring di CeremonialView).
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { subscribeColl, subscribeDoc, setOne, updateOne, deleteOne } from '@/services/db'
+import { antreNotifBanyak, targetGuru, targetSantri } from '@/services/notif'
 import { useAuthStore } from '@/stores/auth'
 import { isSuperAdmin } from '@/utils/roleScope'
 import { PTPT_LEMBAGA, periodeBulan, kategoriKoordinatori, buatScopePj } from '@/utils/glondongan'
@@ -162,8 +163,67 @@ export function useCeremonial() {
         dibuat_oleh: myNama.value,
         tgl_buat: new Date().toISOString()
       })
+      // v.1.1.9 (Kyai 21 Jul): "notifikasi untuk guru dan santri penyimak ceremonial".
+      //   HANYA saat sesi DIBUAT. Menyunting sesi tidak mengirim ulang — kalau tidak,
+      //   tiap perbaikan kecil (typo tempat) membanjiri semua penerima. Untuk
+      //   perubahan jadwal ada tombol "Kirim ulang notifikasi" di UI.
+      await kirimNotifSesi(body)
     }
     return id
+  }
+
+  // Susun teks & antre notifikasi 1 sesi ke penyimak guru, penyimak santri, dan
+  //   peserta. Best-effort — gagal kirim TIDAK menggagalkan penyimpanan sesi.
+  //   Dipakai simpanSesi (sesi baru) dan tombol kirim ulang di UI.
+  async function kirimNotifSesi(sesiRow) {
+    const s = sesiRow || {}
+    const kapan = [s.tanggal, s.jam_mulai].filter(Boolean).join(' ')
+    const dimana = s.tempat ? ` di ${s.tempat}` : ''
+    const judulSesi = s.judul ? `${s.judul} — ` : ''
+    const ekor = `${judulSesi}${kapan}${dimana}.`
+    const antrean = []
+
+    for (const g of arr(s.penyimak_guru)) {
+      antrean.push({
+        prefix: 'ntf_crm_guru',
+        judul: 'Tugas Menyimak Ceremonial',
+        pesan: `Anda ditugaskan menyimak ceremonial PTPT. ${ekor}`,
+        kategori: 'ceremonial',
+        target: targetGuru(g),
+        link: '/ceremonial',
+        ref_id: String(s.id || '')
+      })
+    }
+    for (const p of arr(s.penyimak_santri)) {
+      antrean.push({
+        prefix: 'ntf_crm_penyimak',
+        judul: 'Tugas Menyimak Ceremonial',
+        pesan: `Anda ditugaskan menyimak ceremonial PTPT. ${ekor}`,
+        kategori: 'ceremonial',
+        target: targetSantri(p?.id ?? p?.santri_id),
+        link: '/ceremonial',
+        ref_id: String(s.id || '')
+      })
+    }
+    for (const p of arr(s.peserta)) {
+      antrean.push({
+        prefix: 'ntf_crm_peserta',
+        judul: 'Jadwal Ceremonial',
+        pesan: `${p?.nama || 'Santri'} dijadwalkan ceremonial PTPT. ${ekor}`,
+        kategori: 'ceremonial',
+        target: targetSantri(p?.santri_id),
+        link: '/ceremonial',
+        ref_id: String(s.id || '')
+      })
+    }
+    return antreNotifBanyak(antrean)
+  }
+
+  // Kirim ulang notifikasi sesi yang SUDAH ada (mis. jadwalnya berubah).
+  async function kirimUlangNotif(sesiId) {
+    const row = rowsRaw.value.find((r) => String(r.id) === String(sesiId))
+    if (!row) throw new Error('Sesi tidak ditemukan.')
+    return kirimNotifSesi(row)
   }
 
   async function setStatus(id, status) {
@@ -205,6 +265,7 @@ export function useCeremonial() {
     santriTerjadwal,
     kandidatPeserta,
     simpanSesi,
+    kirimUlangNotif, // v.1.1.9: kirim ulang notif sesi (mis. jadwal berubah)
     setStatus,
     hapusSesi
   }

@@ -113,8 +113,13 @@ async function resolveTokens(db: any, target: any): Promise<string[]> {
       add((await withTok('santri').eq('lembaga', t.lembaga)).data)
       add((await withTok('santri').eq('lembaga_sekolah', t.lembaga)).data)
       add((await withTok('guru').eq('lembaga', t.lembaga)).data)
-    } else if (t?.type === 'guru' && t.nama) {
-      add((await withTok('guru').eq('nama', t.nama)).data)
+    } else if (t?.type === 'guru' && (t.nama || t.id)) {
+      // v.1.1.9: dulu HANYA `nama` yang dikenal. Pemanggil yang mengirim
+      //   { type:'guru', id } (mis. penugasan glondongan) tidak cocok cabang mana pun
+      //   -> tokens kosong -> baris ditandai 'failed: No tokens' TANPA ada yang tahu.
+      //   Sekarang dua-duanya diterima; klien mengirim keduanya sekaligus.
+      if (t.nama) add((await withTok('guru').eq('nama', t.nama)).data)
+      if (t.id) add((await withTok('guru').eq('id', String(t.id))).data)
     }
   } catch (e) {
     console.warn('resolveTokens:', (e as Error)?.message || e)
