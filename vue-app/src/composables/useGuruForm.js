@@ -12,7 +12,8 @@ import { gedungList } from '@/utils/gedung'
 import { shiftsForGuru } from '@/utils/shiftDerive'
 import { shiftList, shiftIdsToLegacy } from '@/utils/shiftMaster'
 // v.1.1.9: unit tugas dari master/jabatan (ganti tebakan regex lama)
-import { unitsOfGuru, fieldForUnit } from '@/utils/jabatanUnit'
+import { unitsOfGuru, fieldForUnit, namaLembaga } from '@/utils/jabatanUnit'
+import { isSekolahLembaga } from '@/composables/useLembaga' // v.1.2.1: sumber tunggal deteksi sekolah
 
 function emptyForm() {
   return {
@@ -154,7 +155,19 @@ export function useGuruForm() {
     return base
   })
 
-  const lembagaSekolahOptions = computed(() => ['TK', 'SDI', 'PKBM'])
+  // v.1.2.1: daftar sekolah DIBACA dari master/lembaga (tipe 'Formal'), dulu literal
+  //   ['TK','SDI','PKBM'] — sekolah yang Kyai tambah sendiri tak pernah muncul di sini.
+  //   Baris varian TK (tk_group) dilewati: ia kelas di bawah payung "TK", bukan lembaga
+  //   tersendiri — samakan dengan kelasSekolahOptions. Fallback hanya dipakai selama
+  //   master/lembaga belum termuat.
+  const SEKOLAH_FALLBACK = ['TK', 'SDI', 'PKBM']
+  const lembagaSekolahOptions = computed(() => {
+    const fromMaster = lembagaRaw.value
+      .filter((l) => !l.tk_group && isSekolahLembaga(namaLembaga(l), lembagaRaw.value))
+      .map((l) => namaLembaga(l))
+      .filter(Boolean)
+    return fromMaster.length > 0 ? fromMaster : SEKOLAH_FALLBACK
+  })
 
   // ── v.1.1.9: Unit tugas dari master/jabatan (items[].units) ──────────────
   // Gabungan unit jabatan utama + tambahan. [] = GLOBAL (jabatan "Guru") → pakai

@@ -7,6 +7,8 @@ import { useSettingsStore } from '@/stores/settings'
 import { toTitleCase, normalizeWA } from '@/utils/format'
 import { gedungList } from '@/utils/gedung'
 import { nextNisForNew } from '@/utils/nisGenerator' // v.111: santri baru = No. Induk lanjut (append)
+import { namaLembaga } from '@/utils/jabatanUnit'
+import { isSekolahLembaga } from '@/composables/useLembaga' // v.1.2.1: sumber tunggal deteksi sekolah
 
 function emptyForm() {
   return {
@@ -117,8 +119,17 @@ export function useSantriForm() {
       .map((l) => l.lembaga)
   )
 
-  // Lembaga sekolah (formal: TK umbrella, SDI, PKBM) — TK menggabung TK A+B
-  const lembagaSekolahOptions = computed(() => ['TK', 'SDI', 'PKBM'])
+  // Lembaga sekolah (formal) — TK menggabung TK A+B lewat payung "TK".
+  // v.1.2.1: DIBACA dari master/lembaga (tipe 'Formal'), dulu literal ['TK','SDI','PKBM']
+  //   sehingga sekolah yang Kyai tambah sendiri tak pernah muncul di dropdown ini.
+  const SEKOLAH_FALLBACK = ['TK', 'SDI', 'PKBM']
+  const lembagaSekolahOptions = computed(() => {
+    const fromMaster = lembagaRaw.value
+      .filter((l) => !l.tk_group && isSekolahLembaga(namaLembaga(l), lembagaRaw.value))
+      .map((l) => namaLembaga(l))
+      .filter(Boolean)
+    return fromMaster.length > 0 ? fromMaster : SEKOLAH_FALLBACK
+  })
 
   // v.99: helper taksonomi tipe_pegawai — useGuruForm kini simpan 'guru'|'pegawai'|'pegawai_guru'
   //   (BUKAN legacy 'ngaji'/'ngaji_sekolah'/'sekolah'). Filter lama pakai nilai legacy → daftar guru

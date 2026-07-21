@@ -8,6 +8,8 @@ import { useCollectionsStore } from '@/stores/collections'
 import { useAuthStore } from '@/stores/auth'
 // v.100: urutan lembaga canonical = sumber tunggal di utils/santriSort
 import { lembagaRank } from '@/utils/santriSort'
+// v.1.2.1: baris master/lembaga bisa {lembaga} atau {nama} — pakai pembaca yang sama
+import { namaLembaga } from '@/utils/jabatanUnit'
 
 // v.21.10.0526: Lembaga hierarchy — group → variants (kyai spec final)
 export const LEMBAGA_GROUPS = {
@@ -100,6 +102,54 @@ export function getLembagaBroadGroup(namaLembaga) {
   const low = String(namaLembaga).toLowerCase().trim()
   if (['qiraati', 'sekolah', 'mahad', 'non-lembaga'].includes(low)) return low // label broad langsung
   return null
+}
+
+/**
+ * v.1.2.1 — SUMBER TUNGGAL: group tempat tugas dari NAMA lembaga.
+ *   'qiraati' | 'sekolah' | 'mahad' | 'non-lembaga'
+ *
+ * Kyai (22 Jul 2026): "saya menambah lembaga sekolah baru tapi tidak terdeteksi sekolah."
+ * Akarnya: deteksi "ini sekolah" tersebar sebagai daftar NAMA hardcoded
+ * (`['TK','SDI','MI','MTS','MA','SMP','SMA','PKBM'].some((s) => n.includes(s))`), padahal
+ * penanda yang Kyai isi di Master Data adalah `tipe: 'Formal'`. Dua akibatnya:
+ *   - lembaga baru di luar daftar (mis. "SMK") TAK PERNAH dikenali sekolah;
+ *   - cocok-substring bikin "Ma'had" salah dianggap sekolah (mengandung "MA").
+ *
+ * Urutan baca WAJIB data-dulu, konstanta-belakangan:
+ *   1. `tipe`  — diisi Kyai di form Master Data › Lembaga ('Formal'|'Qiraati'|'Non Lembaga').
+ *   2. `group` — HANYA ada di baris hasil DEFAULT_LEMBAGA_SEED; form TIDAK pernah
+ *                menulis field ini, jadi lembaga tambahan Kyai tak punya.
+ *   3. LEMBAGA_GROUPS — fallback terakhir kalau master/lembaga belum termuat atau
+ *                nama tak terdaftar. Lewat canonLembaga() supaya alias ikut kebaca
+ *                ('SMP'/'SMA' → PKBM, 'SD' → SDI).
+ *
+ * CATATAN Ma'had: form lembaga cuma punya 3 tipe, tak ada "Ma'had". Kalau baris Ma'had
+ * disunting lalu disimpan, ia ikut dapat `tipe` (default 'Qiraati') dan langkah 1 menang
+ * atas `group: 'mahad'`. Perilaku ini SAMA dengan groupOfLembaga lama di useGuru.js —
+ * sengaja tak diubah di sini supaya konsolidasi tetap murni.
+ */
+export function groupOfLembaga(nama, lembagaList) {
+  const k = _lkey(nama)
+  if (!k) return 'non-lembaga'
+  const row = (Array.isArray(lembagaList) ? lembagaList : []).find(
+    (x) => _lkey(namaLembaga(x)) === k
+  )
+  // 1. tipe (data yang Kyai isi sendiri)
+  const t = _lkey(row?.tipe)
+  if (t === 'formal') return 'sekolah'
+  if (t === 'qiraati') return 'qiraati'
+  if (t === 'nonlembaga') return 'non-lembaga'
+  // 2. group (baris seed lama)
+  const g = _lkey(row?.group)
+  if (g === 'sekolah' || g === 'qiraati' || g === 'mahad') return g
+  if (g === 'nonlembaga') return 'non-lembaga'
+  // 3. konstanta
+  return getLembagaBroadGroup(canonLembaga(nama)) || 'non-lembaga'
+}
+
+/** v.1.2.1 — Lembaga ini SEKOLAH formal? Sumber tunggal, ganti daftar nama hardcoded. */
+export function isSekolahLembaga(nama, lembagaList) {
+  return groupOfLembaga(nama, lembagaList) === 'sekolah'
 }
 
 // v.86.0526: cek apakah Kepala/PJ (lembaga = userLembaga) berhak melihat target_lembaga.
