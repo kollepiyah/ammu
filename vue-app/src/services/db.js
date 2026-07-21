@@ -133,6 +133,7 @@ const COLS = {
   kegiatan_master: [],
   profil_pesantren: [],
   kritik_saran: ['pesan'],
+  pengaduan: ['pesan'],
   psb_pendaftaran: ['nama'],
   notif_queue: ['judul', 'pesan'],
   audit_log: ['aksi', 'collection', 'doc_id', 'user_id'],
@@ -149,7 +150,7 @@ const SPECIAL = {
   profiles: {
     pk: 'id',
     json: 'akses',
-    cols: ['login_key', 'role', 'role_sistem', 'supervisi', 'santri_id', 'guru_id']
+    cols: ['login_key', 'role', 'role_sistem', 'supervisi', 'pengaduan', 'santri_id', 'guru_id']
   }
 }
 
@@ -174,6 +175,7 @@ const REALTIME = new Set([
   'ceremonial_ptpt',
   'user_notif_state',
   'kritik_saran',
+  'pengaduan',
   'supervisi_catatan',
   'absensi_guru',
   'keuangan_buku_induk',

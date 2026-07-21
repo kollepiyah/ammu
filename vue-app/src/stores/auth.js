@@ -142,6 +142,19 @@ export const useAuthStore = defineStore('auth', () => {
       )
         return true
     }
+    // Layanan Pengaduan: super/admin sudah true di atas; KORLAP (Koordinator
+    // Lapangan) via jabatan/jabatan_tambahan (cermin pola akses_supervisi).
+    if (perm === 'akses_pengaduan') {
+      const a = String(s.jabatan || '').toLowerCase()
+      const b = String(s.jabatan_tambahan || '').toLowerCase()
+      if (
+        a.includes('koordinator lapangan') ||
+        a.includes('korlap') ||
+        b.includes('koordinator lapangan') ||
+        b.includes('korlap')
+      )
+        return true
+    }
     // Granular per-user akses map
     return s.akses?.[perm] === true
   }

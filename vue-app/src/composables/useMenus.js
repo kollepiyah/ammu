@@ -382,6 +382,18 @@ const ALL_MENUS = [
     available: true,
     featureFlag: 'fiturKritikSaran'
   },
+  // Layanan Pengaduan — menu terbuka semua role (semua bisa kirim); inbox +
+  // tindak-lanjut digating DI DALAM view via cekHakAkses('akses_pengaduan')
+  // (super/admin/KORLAP). Pola sama Kritik & Saran.
+  {
+    group: 'Komunikasi',
+    name: 'Layanan Pengaduan',
+    path: '/pengaduan',
+    icon: 'fa-triangle-exclamation',
+    roles: ['admin', 'guru', 'santri'],
+    available: true,
+    featureFlag: 'fiturPengaduan'
+  },
 
   // GROUP: SISTEM (admin only)
   {

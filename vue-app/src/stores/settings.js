@@ -26,6 +26,7 @@ const DEFAULT_SETTINGS = {
   fiturBeranda: true,
   fiturKalender: true,
   fiturKritikSaran: true,
+  fiturPengaduan: true,
   fiturNotifikasi: true,
   namaChannel: 'Al Manshur Channel',
   // v.21.10.0526: Ma'had tagihan template + sub-kategori (kyai spec final)

@@ -459,6 +459,12 @@
         <label
           class="flex items-center gap-2 cursor-pointer p-2 hover:bg-[var(--bg-card-elevated)] rounded"
         >
+          <input v-model="form.fiturPengaduan" type="checkbox" class="w-4 h-4 accent-teal-600" />
+          Layanan Pengaduan
+        </label>
+        <label
+          class="flex items-center gap-2 cursor-pointer p-2 hover:bg-[var(--bg-card-elevated)] rounded"
+        >
           <input v-model="form.fiturNotifikasi" type="checkbox" class="w-4 h-4 accent-teal-600" />
           Notifikasi FCM
           <span class="text-[10px] text-[var(--text-tertiary)] italic"
@@ -1581,6 +1587,7 @@ function defaultForm() {
     fiturBeranda: true,
     fiturKalender: true,
     fiturKritikSaran: true,
+    fiturPengaduan: true,
     fiturNotifikasi: true,
     autoNotifPostingan: true,
     softDelete: false,

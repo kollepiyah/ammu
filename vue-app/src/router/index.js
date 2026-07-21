@@ -25,6 +25,7 @@ const TabunganView = () => import('@/views/TabunganView.vue')
 const BisyarohView = () => import('@/views/BisyarohView.vue')
 // v.21.109.0527: RaporBridgeView dihapus (orphan)
 const KritikSaranView = () => import('@/views/KritikSaranView.vue')
+const PengaduanView = () => import('@/views/PengaduanView.vue')
 const AbsensiGuruView = () => import('@/views/AbsensiGuruView.vue')
 const SantriFormView = () => import('@/views/SantriFormView.vue')
 const GuruFormView = () => import('@/views/GuruFormView.vue')
@@ -348,6 +349,7 @@ const routes = [
       { path: 'psb', name: 'psb', component: PsbAdminView, meta: { admin: true } },
       { path: 'psb/:id', name: 'psb-detail', component: PsbDetailView, meta: { admin: true } },
       { path: 'kritik-saran', name: 'kritik-saran', component: KritikSaranView },
+      { path: 'pengaduan', name: 'pengaduan', component: PengaduanView },
       {
         path: 'pengaturan-web',
         name: 'pengaturan-web',

@@ -61,6 +61,8 @@ export const JABATAN_OPTIONS = [
   'Admin Yayasan',
   // v.21.109.0527: Direktur/Supervisor — akses menu Data Supervisi
   'Direktur/Supervisor',
+  // Koordinator Lapangan (KORLAP) — akses baca Layanan Pengaduan
+  'Koordinator Lapangan',
   'Pengasuh',
   'Keamanan',
   'Kebersihan'
@@ -72,6 +74,7 @@ export const JABATAN_NO_LEMBAGA = [
   'Admin Yayasan',
   // v.21.109.0527: Direktur/Supervisor lintas lembaga (no-lembaga)
   'Direktur/Supervisor',
+  'Koordinator Lapangan',
   'Pengasuh',
   'Keamanan',
   'Kebersihan',

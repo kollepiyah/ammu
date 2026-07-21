@@ -324,6 +324,7 @@ const TABS = [
         items: [
           { type: 'large', icon: 'bell', label: 'Notifikasi', to: '/notifikasi' },
           { type: 'small', icon: 'comment', label: 'Kritik & Saran', to: '/kritik-saran' },
+          { type: 'small', icon: 'shield', label: 'Layanan Pengaduan', to: '/pengaduan' },
           {
             type: 'small',
             icon: 'clipboard',
@@ -463,6 +464,7 @@ const TAB_PATHS = {
     '/profil',
     '/notifikasi',
     '/kritik-saran',
+    '/pengaduan',
     '/capaian-prestasi',
     '/statistik',
     '/pengaturan-desktop',
