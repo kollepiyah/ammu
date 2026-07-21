@@ -177,6 +177,8 @@ const isSekolah = computed(() => _SEKOLAH_NAMA.includes(namaLembaga.value.toUppe
 const isJuz = computed(() => namaLembaga.value.toUpperCase() === 'PTPT')
 const kelasLabel = 'Kelas'
 
+const _teks = (v) => String(v ?? '').trim()
+
 // Label grup guru: Qiraati = pasangan pagi/sore; Sekolah = daftar guru_sekolah.
 function guruLabelOf(g) {
   if (g.guruSekolah && g.guruSekolah.length) return 'Guru: ' + g.guruSekolah.join(', ')
@@ -254,11 +256,24 @@ const groups = computed(() => {
         santri: []
       })
     byKelas.get(key).jenjang.add(kls)
+    // v.1.1.9 (Kyai): ekspor PDF menampilkan KEDUA sisi — ngaji & sekolah — supaya
+    //   dari daftar SDI pun kelihatan lembaga/kelas/juz/guru ngaji santrinya, dan
+    //   sebaliknya. Field-nya diambil di sini sekali, dipakai ekspor (UI tak berubah).
+    const guruNgaji = [...new Set([s.guru_pagi, s.guru_sore, s.guru].map(_teks).filter(Boolean))]
+    const guruSek = [
+      ...new Set((Array.isArray(s.guru_sekolah) ? s.guru_sekolah : [s.guru_sekolah]).map(_teks))
+    ].filter(Boolean)
     byKelas.get(key).santri.push({
       id: String(s.id),
       nama: s.nama || '-',
       juz: s.juz && s.juz !== '-' ? s.juz : '',
-      capaian: s.prestasi_total || ''
+      capaian: s.prestasi_total || '',
+      lembagaQiraati: _teks(s.lembaga),
+      kelasQiraati: _teks(s.kelas),
+      lembagaSekolah: _teks(s.lembaga_sekolah),
+      kelasSekolah: _teks(s.kelas_sekolah),
+      guruNgaji: guruNgaji.join(', '),
+      guruSekolah: guruSek.join(', ')
     })
   }
   const out = []
@@ -312,16 +327,31 @@ async function exportPdf() {
   exporting.value = true
   try {
     const s = settingsStore.settings || {}
-    const doc = await createPdf({ kind: 'umum', orientation: 'p', format: 'F4' })
+    // v.1.1.9: LANDSCAPE — kolomnya kini 10 (ngaji + sekolah sekaligus), tak muat potret.
+    const doc = await createPdf({ kind: 'umum', orientation: 'l', format: 'F4' })
     const font = doc._fontMU || 'helvetica'
     const pageW = doc.internal.pageSize.getWidth()
     const pageH = doc.internal.pageSize.getHeight()
     let y = await drawKopLetterhead(doc, buildKopFromSettings(s), { y: 10 })
     drawTitle(doc, `DATA KELAS — ${namaLembaga.value.toUpperCase()}`, { y: y + 7, size: 13 })
     y += 12
-    const head = isJuz.value
-      ? [['No', 'Nama Santri', 'Juz', 'Total Capaian Terakhir']]
-      : [['No', 'Nama Santri', 'Total Capaian Terakhir']]
+    // v.1.1.9 (permintaan Kyai): tampilkan lembaga & kelas KEDUA sisi, Juz (PTPT),
+    //   serta guru ngaji & guru sekolah. Kolom Juz SELALU ada — dari daftar sekolah
+    //   pun juz santri PTPT harus kelihatan; santri non-PTPT terisi '-'.
+    const head = [
+      [
+        'No',
+        'Nama Santri',
+        'Lembaga Ngaji',
+        'Kelas Ngaji',
+        'Juz',
+        'Guru Ngaji',
+        'Lembaga Sekolah',
+        'Kelas Sekolah',
+        'Guru Sekolah',
+        'Capaian Terakhir'
+      ]
+    ]
     for (const g of groups.value) {
       if (y > pageH - 35) {
         doc.addPage()
@@ -333,23 +363,35 @@ async function exportPdf() {
       doc.setFont(font, 'normal')
       doc.setFontSize(9)
       doc.text(`Total Santri: ${g.santri.length}`, pageW - 12, y, { align: 'right' })
-      const body = g.santri.map((st, i) =>
-        isJuz.value
-          ? [i + 1, st.nama, st.juz || '-', st.capaian || '-']
-          : [i + 1, st.nama, st.capaian || '-']
-      )
+      const body = g.santri.map((st, i) => [
+        i + 1,
+        st.nama,
+        st.lembagaQiraati || '-',
+        st.kelasQiraati || '-',
+        st.juz || '-',
+        st.guruNgaji || '-',
+        st.lembagaSekolah || '-',
+        st.kelasSekolah || '-',
+        st.guruSekolah || '-',
+        st.capaian || '-'
+      ])
       drawTable(doc, {
         startY: y + 2,
         head,
         body,
-        styles: { fontSize: 9, cellPadding: 1.4 },
-        columnStyles: isJuz.value
-          ? {
-              0: { cellWidth: 12, halign: 'center' },
-              2: { cellWidth: 16, halign: 'center' },
-              3: { cellWidth: 42 }
-            }
-          : { 0: { cellWidth: 12, halign: 'center' }, 2: { cellWidth: 50 } }
+        styles: { fontSize: 7.5, cellPadding: 1.1, overflow: 'linebreak' },
+        columnStyles: {
+          0: { cellWidth: 9, halign: 'center' }, // No
+          1: { cellWidth: 48 }, // Nama Santri
+          2: { cellWidth: 22 }, // Lembaga Ngaji
+          3: { cellWidth: 20 }, // Kelas Ngaji
+          4: { cellWidth: 11, halign: 'center' }, // Juz
+          5: { cellWidth: 40 }, // Guru Ngaji (bisa 2 nama pagi+sore)
+          6: { cellWidth: 22 }, // Lembaga Sekolah
+          7: { cellWidth: 20 }, // Kelas Sekolah
+          8: { cellWidth: 40 }, // Guru Sekolah (bisa >1)
+          9: { cellWidth: 26 } // Capaian Terakhir
+        }
       })
       y = lastTableY(doc) + 7
     }
