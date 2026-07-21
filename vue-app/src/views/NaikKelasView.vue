@@ -1191,18 +1191,88 @@
               </div>
 
               <div>
-                <label
-                  class="block text-xs font-black text-cyan-800 dark:text-cyan-300 mb-1 uppercase tracking-wide"
-                >
-                  Guru Kelas Baru (Perbarui Jika Pindah Kelas)
-                </label>
+                <div class="flex items-center justify-between gap-2 mb-1">
+                  <label
+                    class="block text-xs font-black text-cyan-800 dark:text-cyan-300 uppercase tracking-wide"
+                  >
+                    {{ formIsSekolah ? 'Guru Kelas Baru' : 'Kelas Baru (Pasangan Guru)' }}
+                  </label>
+                  <!-- Qiraati: 1 kelas = sepasang guru (pagi & sore). "Atur sendiri" untuk
+                       pasangan yang belum pernah ada di data santri. -->
+                  <button
+                    v-if="!formIsSekolah"
+                    type="button"
+                    @click="guruManual = !guruManual"
+                    class="text-[10px] font-bold text-cyan-700 dark:text-cyan-300 hover:underline"
+                  >
+                    {{ guruManual ? '← Pilih dari daftar kelas' : 'Atur sendiri…' }}
+                  </button>
+                </div>
+
+                <!-- Sekolah: tetap satu guru (wali kelas) -->
                 <select
+                  v-if="formIsSekolah"
                   v-model="formData.guru"
                   class="w-full px-3 py-2 text-sm border border-cyan-300 dark:border-cyan-700 rounded-lg bg-cyan-50 dark:bg-cyan-900/20 text-cyan-900 dark:text-cyan-100 cursor-pointer"
                 >
                   <option value="">-- Pilih Guru --</option>
                   <option v-for="g in guruOptions" :key="g" :value="g">{{ g }}</option>
                 </select>
+
+                <!-- Qiraati, mode daftar: 1 baris = 1 kelas (dua nama sekaligus) -->
+                <template v-else-if="!guruManual">
+                  <select
+                    v-model="pasanganKey"
+                    class="w-full px-3 py-2 text-sm border border-cyan-300 dark:border-cyan-700 rounded-lg bg-cyan-50 dark:bg-cyan-900/20 text-cyan-900 dark:text-cyan-100 cursor-pointer"
+                  >
+                    <option value="">-- Pilih Kelas --</option>
+                    <option v-for="p in pasanganOptions" :key="p.key" :value="p.key">
+                      {{ p.label }} · {{ p.jumlah }} santri
+                    </option>
+                  </select>
+                  <p
+                    v-if="pasanganOptions.length === 0"
+                    class="text-[10px] italic text-amber-600 dark:text-amber-400 mt-1"
+                  >
+                    <i class="fas fa-triangle-exclamation mr-1"></i>Belum ada kelas berguru di
+                    {{ formData.lembaga || 'lembaga ini' }} — pakai <b>Atur sendiri</b>.
+                  </p>
+                </template>
+
+                <!-- Qiraati, mode manual: pagi & sore terpisah -->
+                <div v-else class="grid grid-cols-2 gap-2">
+                  <div>
+                    <label class="block text-[10px] font-bold text-[var(--text-secondary)] mb-0.5"
+                      >Guru Pagi</label
+                    >
+                    <select
+                      v-model="formData.guru_pagi"
+                      class="w-full px-2 py-2 text-sm border border-cyan-300 dark:border-cyan-700 rounded-lg bg-cyan-50 dark:bg-cyan-900/20 text-cyan-900 dark:text-cyan-100 cursor-pointer"
+                    >
+                      <option value="">— kosong —</option>
+                      <option v-for="g in guruOptions" :key="g" :value="g">{{ g }}</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="block text-[10px] font-bold text-[var(--text-secondary)] mb-0.5"
+                      >Guru Sore</label
+                    >
+                    <select
+                      v-model="formData.guru_sore"
+                      class="w-full px-2 py-2 text-sm border border-cyan-300 dark:border-cyan-700 rounded-lg bg-cyan-50 dark:bg-cyan-900/20 text-cyan-900 dark:text-cyan-100 cursor-pointer"
+                    >
+                      <option value="">— kosong —</option>
+                      <option v-for="g in guruOptions" :key="g" :value="g">{{ g }}</option>
+                    </select>
+                  </div>
+                </div>
+
+                <p
+                  v-if="!formIsSekolah && (formData.guru_pagi || formData.guru_sore)"
+                  class="text-[10px] text-[var(--text-secondary)] mt-1"
+                >
+                  Akan disimpan: <b>{{ pasanganTerpilihLabel }}</b>
+                </p>
               </div>
 
               <div
@@ -1314,6 +1384,8 @@ import {
 } from '@/utils/promosiKenaikan' // v.100d: logika naik bersama
 import { juzNum } from '@/utils/format' // v.100e: normalisasi tampilan juz (anti dobel "Juz JUZ n")
 import { ownsNgaji, ownsSekolah, deteksiTipeGuru } from '@/utils/guruScope' // v.100b: scope guru qiraati/sekolah
+// v.1.1.9: 1 kelas Qiraati = sepasang guru (pagi & sore) — dropdown menampilkan 2 nama.
+import { pasanganQiraati, cariPasangan, labelPasangan } from '@/utils/pasanganGuru'
 import { buildListPdf, createPdf, drawTable, savePdf } from '@/utils/pdfBuilder'
 import { imageToDataURL } from '@/services/pdf'
 
@@ -2280,7 +2352,9 @@ const formData = ref({
   kelas_sekolah: '',
   lembaga: '',
   kelas: '',
-  guru: '',
+  guru: '', // sekolah: wali kelas · qiraati: cermin field lama (= guru_pagi || guru_sore)
+  guru_pagi: '', // v.1.1.9: pasangan guru Qiraati (1 kelas = pagi + sore)
+  guru_sore: '',
   juz: '',
   khotam_ke: '',
   catatan: '',
@@ -2430,6 +2504,34 @@ const juzRangeForKelas = computed(() => {
   return Array.from({ length: 5 }, (_, i) => start + i)
 })
 
+// ── v.1.1.9: pasangan guru Qiraati (1 kelas = guru pagi + guru sore) ──────────
+//   Kyai: "guru yg berpasangan (pagi & sore berbeda guru) itu jadi satu kelas,
+//   jadi pilihnya juga ada muncul 2 nama." Daftar pasangan diturunkan dari data
+//   santri (utils/pasanganGuru) — tanpa master baru yang harus dirawat manual.
+const guruManual = ref(false) // true = atur guru pagi/sore sendiri
+const pasanganOptions = computed(() =>
+  formIsSekolah.value ? [] : pasanganQiraati(santriList.value, { lembaga: formData.value.lembaga })
+)
+// Nilai <option> pasangan; menulis balik ke formData.guru_pagi/guru_sore.
+const pasanganKey = computed({
+  get() {
+    const p = pasanganOptions.value.find(
+      (x) =>
+        x.guru_pagi === (formData.value.guru_pagi || '') &&
+        x.guru_sore === (formData.value.guru_sore || '')
+    )
+    return p ? p.key : ''
+  },
+  set(key) {
+    const p = cariPasangan(pasanganOptions.value, key)
+    formData.value.guru_pagi = p ? p.guru_pagi : ''
+    formData.value.guru_sore = p ? p.guru_sore : ''
+  }
+})
+const pasanganTerpilihLabel = computed(() =>
+  labelPasangan({ guru_pagi: formData.value.guru_pagi, guru_sore: formData.value.guru_sore })
+)
+
 const guruOptions = computed(() => {
   const lmb = formData.value.lembaga
   if (!lmb) return []
@@ -2515,16 +2617,24 @@ function openFormKenaikan(s) {
       }
     }
   }
+  const guruLama = Array.isArray(s.guru) ? s.guru[0] || '' : s.guru || ''
+  const pagiLama = String(s.guru_pagi || '').trim()
+  const soreLama = String(s.guru_sore || '').trim()
   formData.value = {
     tanggal: new Date().toISOString().slice(0, 10),
     kelas_sekolah: s.kelas_sekolah || '',
     lembaga: matched, // auto-fill current lembaga
     kelas: resolvedKelas, // auto-fill current kelas (PTPT/Pra PTPT normalized)
-    guru: Array.isArray(s.guru) ? s.guru[0] || '' : s.guru || '',
+    guru: guruLama,
+    // v.1.1.9: pasangan guru saat ini jadi nilai awal. `guru` lama dianggap guru
+    //   PAGI bila pagi & sore kosong (asumsi sama dgn useSantriForm & pasanganGuru).
+    guru_pagi: pagiLama || (!soreLama && guruLama ? guruLama : ''),
+    guru_sore: soreLama,
     juz: s.juz ? String(s.juz).replace(/\D/g, '') : '',
     khotam_ke: '',
     catatan: ''
   }
+  guruManual.value = false
   formOpen.value = true
 }
 
@@ -2680,6 +2790,10 @@ async function saveFormKenaikan() {
       juz: formData.value.juz,
       khotam_ke: formData.value.khotam_ke,
       guru: formData.value.guru || '',
+      // v.1.1.9: pasangan guru ikut disimpan — tanpa ini `guru_pagi`/`guru_sore`
+      //   tetap nilai lama dan "pindah guru" tak berefek di statistik & filter ampuan.
+      guru_pagi: formData.value.guru_pagi || '',
+      guru_sore: formData.value.guru_sore || '',
       kelas_sekolah: formData.value.kelas_sekolah || '',
       catatan: formData.value.catatan || ''
     }

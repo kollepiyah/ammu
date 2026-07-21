@@ -2,6 +2,7 @@
 //   Diekstrak apa-adanya dari NaikKelasView.saveFormKenaikan + resolveKenaikanSchemaPath (perilaku TAK berubah);
 //   `settings` & `lembagaList` yang dulu ref view, kini parameter.
 import { getKartuKenaikanSchema } from './kenaikan'
+import { labelPasangan } from './pasanganGuru'
 import { setOne, updateOne } from '@/services/db'
 
 // v.21.75: Resolve kelas label dari Form Kenaikan ke schema {kelasId, itemId}
@@ -53,7 +54,8 @@ export function resolveKenaikanSchemaPath(lembaga, kelasLabel, juzNum, khotamKe,
 /**
  * Bangun payload kenaikan Qiraati (PURE — tak menulis Firestore).
  * @param {Object} s - dokumen santri (sumber kelas/lembaga/riwayat lama).
- * @param {Object} opts - { lembaga, kelas, juz, khotam_ke, guru, kelas_sekolah, catatan }.
+ * @param {Object} opts - { lembaga, kelas, juz, khotam_ke, guru, guru_pagi, guru_sore,
+ *                          kelas_sekolah, catatan }.
  * @param {Object} ctx - { settings, lembagaList }.
  * @returns {{ payload: Object, rkEntry: Object }}
  */
@@ -64,11 +66,26 @@ export function buildKenaikanQiraatiPayload(s, opts = {}, ctx = {}) {
   const klsBaru = opts.kelas || ''
   const khotamKe = lmbBaru.toLowerCase().trim() === 'pra ptpt' ? opts.khotam_ke || '' : ''
 
+  // v.1.1.9 FIX: dulu kenaikan HANYA menulis `guru`, sedangkan guru_pagi/guru_sore
+  //   dibiarkan nilai LAMA. Padahal kelasKeyQiraati (statistik) dan semua filter
+  //   ampuan membaca guru_pagi/guru_sore duluan — jadi "pindah guru" praktis tak
+  //   berefek: santri tetap terhitung di kelas guru lama. Sekarang pasangannya
+  //   ditulis utuh, dan `guru` dipertahankan sebagai cermin field lama.
+  const pagi = String(opts.guru_pagi ?? '').trim()
+  const sore = String(opts.guru_sore ?? '').trim()
+  const adaPasangan = !!(pagi || sore)
+
   const payload = {
     kelas_sekolah: opts.kelas_sekolah || '',
     lembaga: opts.lembaga || '',
     kelas: opts.kelas || '',
-    guru: opts.guru || ''
+    guru: (adaPasangan ? pagi || sore : opts.guru) || ''
+  }
+  // Hanya sentuh pasangan bila pemanggil memang memilih guru — jangan mengosongkan
+  // assignment yang sudah ada waktu form dibiarkan kosong.
+  if (adaPasangan) {
+    payload.guru_pagi = pagi
+    payload.guru_sore = sore
   }
   if (opts.lembaga === 'PTPT' && opts.juz) {
     payload.juz = `JUZ ${opts.juz}`
@@ -119,7 +136,12 @@ export function buildKenaikanQiraatiPayload(s, opts = {}, ctx = {}) {
   let ket = `${aksi} ke ${lmbBaru} Kelas ${klsBaru}`
   if (lmbBaru === 'PTPT' && opts.juz) ket += ` (Juz ${opts.juz})`
   if (lmbBaru === 'Pra PTPT' && khotamKe) ket += ` (Khotam ${khotamKe})`
-  if (opts.guru) ket += ` | Guru: ${opts.guru}`
+  // Riwayat mencatat PASANGAN ("A & B"), bukan satu nama — supaya jejak pindah kelas
+  //   terbaca utuh waktu ditelusuri belakangan.
+  const guruTeks = adaPasangan
+    ? labelPasangan({ guru_pagi: pagi, guru_sore: sore })
+    : opts.guru || ''
+  if (guruTeks) ket += ` | Guru: ${guruTeks}`
 
   if (fromKls !== toKls || opts.juz || khotamKe) {
     riwayat.push({
@@ -131,7 +153,7 @@ export function buildKenaikanQiraatiPayload(s, opts = {}, ctx = {}) {
       kelas_to: toKls,
       juz: opts.juz ? `JUZ ${opts.juz}` : null,
       catatan: opts.catatan || '',
-      guru: opts.guru || ''
+      guru: guruTeks
     })
 
     // PATCH v.21.50 — Auto-catatan transisi penting (Poin 13 legacy)
