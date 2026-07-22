@@ -479,6 +479,20 @@
                   <i class="fab fa-whatsapp"></i>{{ s.wa }}
                 </a>
               </div>
+              <!-- v.1.2.1 (Kyai): guru boleh perbaiki data KELAS santri ampuannya (impor salah). -->
+              <div
+                v-if="!isFullAccess"
+                class="mt-2 pt-2 border-t border-[var(--border-subtle)] flex justify-end"
+              >
+                <button
+                  type="button"
+                  @click.stop="bukaEditKelas(s)"
+                  class="text-[10px] text-teal-700 dark:text-teal-300 hover:underline font-bold"
+                  title="Perbaiki Lembaga/Kelas Qiraati & Sekolah (dan Juz PTPT)"
+                >
+                  <i class="fas fa-graduation-cap mr-1"></i>Edit Kelas
+                </button>
+              </div>
               <!-- v.21.24.0526: Edit/Reset Sandi/Toggle Aktif/Delete (Master mode only) -->
               <!-- v.86.0526: pisah dari baris data (border-top + pt) biar tombol tidak menempel/overlap dg no WA -->
               <div
@@ -528,6 +542,15 @@
     <p class="text-center text-[10px] text-slate-400 dark:text-[var(--text-secondary)] pt-2">
       <i class="fas fa-circle-info mr-1"></i>Menampilkan {{ santri.length }} santri · v.74.0526
     </p>
+
+    <!-- v.1.2.1 (Kyai): dialog edit kelas santri utk guru (perbaiki impor salah).
+         v-if: komponen (beserta langganan useSantriForm) hanya hidup saat mengedit. -->
+    <EditKelasSantriDialog
+      v-if="editKelasSantri"
+      :open="true"
+      :santri="editKelasSantri"
+      @close="editKelasSantri = null"
+    />
   </div>
 </template>
 
@@ -560,6 +583,7 @@ import { useConfirm } from '@/composables/useConfirm'
 import SkeletonCard from '@/components/layout/SkeletonCard.vue'
 import EmptyState from '@/components/layout/EmptyState.vue' // v.91.0626
 import PageHeader from '@/components/layout/PageHeader.vue' // v.91.0626
+import EditKelasSantriDialog from '@/components/form/EditKelasSantriDialog.vue' // v.1.2.1: edit kelas oleh guru
 // v.91.0626: deleteOne = backup ke audit_log dulu. serverTimestamp = shim ISO (db.js).
 import { mergeOne, addOne, deleteOne, getAll, serverTimestamp } from '@/services/db'
 // v.111: registry field santri = sumber tunggal template/ekspor/impor (auto-detect field baru)
@@ -735,6 +759,12 @@ definePageActions(() => {
 function goProfil(s, e) {
   if (e && e.target && e.target.closest('button, a, input, label')) return
   router.push('/profil/santri/' + s.id)
+}
+
+// v.1.2.1 (Kyai): guru buka dialog edit kelas santri ampuannya (perbaiki impor salah).
+const editKelasSantri = ref(null)
+function bukaEditKelas(s) {
+  editKelasSantri.value = s
 }
 
 // v.21.11.0526: Bulk selection state
