@@ -505,10 +505,23 @@
           >
             <div class="flex items-center justify-between gap-2 p-3">
               <div class="flex-1 min-w-0">
-                <p class="text-sm font-bold text-[var(--text-primary)] truncate">
-                  {{ s.nama }}
+                <p
+                  class="text-sm font-bold text-[var(--text-primary)] truncate flex items-center gap-1.5"
+                >
+                  <span class="truncate">{{ s.nama }}</span>
+                  <!-- v.1.2.2 (Kyai): santri yang sudah pindah lembaga tapi kartunya di
+                       lembaga ini masih ada isinya. Ditandai supaya tak dikira santri aktif. -->
+                  <span
+                    v-if="isAlumniRiwayat(s)"
+                    class="shrink-0 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300"
+                    title="Sudah pindah lembaga — kartu di lembaga ini tetap bisa dibuka"
+                    >Alumni</span
+                  >
                 </p>
                 <p class="text-[11px] text-[var(--text-secondary)] truncate">
+                  <span v-if="isAlumniRiwayat(s)" class="text-[var(--text-tertiary)]"
+                    >sekarang:
+                  </span>
                   {{ s.lembaga }}{{ s.kelas ? ' · ' + s.kelas : '' }}
                   <span class="ml-1 text-emerald-600 font-bold">
                     · {{ countTanggalTerisi(s, riwayatLembaga) }} tanggal terisi
@@ -584,6 +597,16 @@
             </div>
           </div>
         </div>
+        <!-- v.1.2.2 (Kyai): keterangan alumni — kartunya memang tersimpan per lembaga,
+             jadi santri yang sudah pindah tetap bisa dibuka kartunya di sini. -->
+        <p
+          v-if="riwayatAlumniCount"
+          class="mt-2 text-[10px] text-[var(--text-tertiary)] italic border-t border-[var(--border-subtle)] pt-2"
+        >
+          <i class="fas fa-graduation-cap mr-1"></i><b>{{ riwayatAlumniCount }} santri</b> sudah
+          pindah ke lembaga lain, tapi kartu kenaikannya di {{ riwayatLembaga }} tetap tersimpan dan
+          bisa dibuka.
+        </p>
       </template>
       <p v-else class="text-center text-[var(--text-tertiary)] italic text-xs py-8">
         <i
@@ -1390,6 +1413,8 @@ import {
   getKartuKenaikanSchema,
   getKopKartuLembaga
 } from '@/utils/kenaikan'
+// v.1.2.2: jejak kartu per lembaga — dipakai memunculkan "alumni" di tab Riwayat.
+import { countTanggalKartu, countCatatanKartu, adaJejakKartu } from '@/utils/kartuJejak'
 import {
   buildKenaikanQiraatiPayload,
   writeKenaikan,
@@ -1821,105 +1846,111 @@ const riwayatLembagaOptions = computed(() =>
   riwayatKategori.value === 'sekolah' ? sekolahKenaikanList.value : LEMBAGA_KENAIKAN_LIST
 )
 const riwayatSearch = ref('')
-const riwayatList = computed(() => {
-  if (!riwayatLembaga.value) return []
-  let list
+
+// Santri ini SEKARANG ada di lembaga tsb? (dipisah jadi predikat supaya penanda
+// "alumni" di bawah memakai aturan pencocokan yang PERSIS sama, tak mungkin beda)
+function cocokLembagaRiwayat(s, rl) {
+  if (!s || s.aktif === false) return false
   // v.21.74: shift-aware untuk TPQ Pagi/Sore (santri.lembaga = 'TPQ' + shift, atau langsung 'TPQ Pagi'/'TPQ Sore')
-  if (riwayatLembaga.value === 'TPQ Pagi') {
-    list = santriList.value.filter(
-      (s) =>
-        s.aktif !== false &&
-        (s.lembaga === 'TPQ Pagi' ||
-          (s.lembaga === 'TPQ' &&
-            String(s.shift || '')
-              .toLowerCase()
-              .trim() === 'pagi'))
+  if (rl === 'TPQ Pagi') {
+    return (
+      s.lembaga === 'TPQ Pagi' ||
+      (s.lembaga === 'TPQ' &&
+        String(s.shift || '')
+          .toLowerCase()
+          .trim() === 'pagi')
     )
-  } else if (riwayatLembaga.value === 'TPQ Sore') {
-    list = santriList.value.filter(
-      (s) =>
-        s.aktif !== false &&
-        (s.lembaga === 'TPQ Sore' ||
-          (s.lembaga === 'TPQ' &&
-            String(s.shift || '')
-              .toLowerCase()
-              .trim() === 'sore'))
+  }
+  if (rl === 'TPQ Sore') {
+    return (
+      s.lembaga === 'TPQ Sore' ||
+      (s.lembaga === 'TPQ' &&
+        String(s.shift || '')
+          .toLowerCase()
+          .trim() === 'sore')
     )
-  } else if (riwayatLembaga.value === 'TPQ') {
-    list = santriList.value.filter(
-      (s) =>
-        (s.lembaga === 'TPQ Pagi' || s.lembaga === 'TPQ Sore' || s.lembaga === 'TPQ') &&
-        s.aktif !== false
-    )
-  } else if (riwayatLembaga.value === 'PPPH') {
-    list = santriList.value.filter(
-      (s) => (s.lembaga === 'PPPH' || s.lembaga === 'P3H') && s.aktif !== false
-    )
-  } else if (sekolahKenaikanList.value.includes(riwayatLembaga.value)) {
+  }
+  if (rl === 'TPQ') {
+    return s.lembaga === 'TPQ Pagi' || s.lembaga === 'TPQ Sore' || s.lembaga === 'TPQ'
+  }
+  if (rl === 'PPPH') return s.lembaga === 'PPPH' || s.lembaga === 'P3H'
+  if (sekolahKenaikanList.value.includes(rl)) {
     // v.100 Batch6: riwayat lembaga SEKOLAH — match lembaga_sekolah (SMP/SMA = sub-tier PKBM dari kelas)
-    const rl = riwayatLembaga.value
-    list = santriList.value.filter((s) => {
-      if (s.aktif === false) return false
-      if (rl === 'SMP' || rl === 'SMA') {
-        return (
-          String(s.lembaga_sekolah || '')
-            .toUpperCase()
-            .trim() === 'PKBM' && getPkbmSubTier(s.kelas_sekolah || s.kelas) === rl
-        )
-      }
+    if (rl === 'SMP' || rl === 'SMA') {
       return (
         String(s.lembaga_sekolah || '')
           .toUpperCase()
-          .trim() === rl
+          .trim() === 'PKBM' && getPkbmSubTier(s.kelas_sekolah || s.kelas) === rl
       )
-    })
-  } else {
-    list = santriList.value.filter((s) => s.lembaga === riwayatLembaga.value && s.aktif !== false)
+    }
+    return (
+      String(s.lembaga_sekolah || '')
+        .toUpperCase()
+        .trim() === rl
+    )
   }
+  return s.lembaga === rl
+}
+
+// v.1.2.2 (Kyai 22 Jul 2026) — "kalau santri pindah lembaga apakah data riwayatnya
+//   masih tercatat?" Tercatat: `kartu_kenaikan` disimpan PER LEMBAGA dan kunci lama
+//   tak pernah dihapus. Tapi daftar ini dulu menyaring santri ke lembaga SEKARANG,
+//   jadi begitu santri naik ke lembaga berikutnya kartu lamanya tak punya pintu
+//   masuk sama sekali. Sekarang santri yang punya JEJAK kartu di lembaga terpilih
+//   tetap muncul, ditandai "alumni".
+// Ada isi kartu (tanggal/catatan) di lembaga ini? Blok kosong TIDAK dihitung —
+// kalau tidak, santri yang sekadar lewat ikut memenuhi daftar. Aturan hitungnya
+// SATU SUMBER dengan angka yang tampil di baris (utils/kartuJejak).
+function jejakKartu(s, rl) {
+  return adaJejakKartu(s?.kartu_kenaikan, rl)
+}
+function isAlumniRiwayat(s) {
+  return !!riwayatLembaga.value && !cocokLembagaRiwayat(s, riwayatLembaga.value)
+}
+const riwayatAlumniCount = computed(() => riwayatList.value.filter(isAlumniRiwayat).length)
+
+const riwayatList = computed(() => {
+  const rl = riwayatLembaga.value
+  if (!rl) return []
+  let list = santriList.value.filter((s) => cocokLembagaRiwayat(s, rl))
+  // Alumni: sudah pindah lembaga tapi kartunya di lembaga ini masih ada isinya.
+  //   `aktif !== false` tetap dihormati, sama seperti daftar aktifnya.
+  const sudah = new Set(list.map((s) => String(s.id)))
+  let alumni = santriList.value.filter(
+    (s) => s && s.aktif !== false && !sudah.has(String(s.id)) && jejakKartu(s, rl)
+  )
   // v.100c-fix: GURU hanya lihat santri ampuannya di riwayat (sebelumnya tampil SEMUA santri lembaga).
   //   Sekolah → guru_sekolah; Qiraati → guru ngaji.
   if (isGuru.value) {
     const nm = myNamaGuru.value
     const isSek = sekolahKenaikanList.value.includes(riwayatLembaga.value)
-    list = list.filter((s) => (isSek ? ownsSekolah(s, nm) : ownsNgaji(s, nm)))
+    const punya = (s) => (isSek ? ownsSekolah(s, nm) : ownsNgaji(s, nm))
+    list = list.filter(punya)
+    alumni = alumni.filter(punya)
   }
   if (riwayatSearch.value) {
     const kw = riwayatSearch.value.toLowerCase()
-    list = list.filter((s) =>
+    const cocok = (s) =>
       String(s.nama || '')
         .toLowerCase()
         .includes(kw)
-    )
+    list = list.filter(cocok)
+    alumni = alumni.filter(cocok)
   }
-  return sortSantri(list, { lembagaField: 'lembaga', kelasField: 'kelas' })
+  const urut = (arr) => sortSantri(arr, { lembagaField: 'lembaga', kelasField: 'kelas' })
+  // Alumni diurutkan sendiri & ditaruh PALING BAWAH — kalau ikut diurutkan bersama,
+  // mereka menyelip di tengah santri aktif dan daftarnya jadi membingungkan.
+  return alumni.length ? [...urut(list), ...urut(alumni)] : urut(list)
 })
 
+// v.1.2.2: hitungannya pindah ke utils/kartuJejak (pure + teruji); di sini tinggal
+//   pembungkus supaya pemanggil di template tak berubah.
 function countTanggalTerisi(s, lembaga) {
-  const block = s.kartu_kenaikan?.[lembaga]
-  if (!block) return 0
-  let n = 0
-  for (const kls of Object.values(block)) {
-    if (!kls || typeof kls !== 'object') continue
-    for (const v of Object.values(kls)) {
-      if (v) n++
-    }
-  }
-  return n
+  return countTanggalKartu(s?.kartu_kenaikan, lembaga)
 }
 
 function countCatatan(s, lembaga) {
-  const block = s.kartu_kenaikan?.[lembaga]
-  if (!block) return 0
-  let n = 0
-  for (const kls of Object.values(block)) {
-    if (!kls || typeof kls !== 'object') continue
-    if (Array.isArray(kls.entries)) {
-      n += kls.entries.filter((e) => e && e.text).length
-    }
-    if (typeof kls.catatan === 'string' && kls.catatan.trim()) n++
-    if (typeof kls.rekomendasi === 'string' && kls.rekomendasi.trim()) n++
-  }
-  return n
+  return countCatatanKartu(s?.kartu_kenaikan, lembaga)
 }
 
 function latestCatatan(s, lembaga, max = 3) {
