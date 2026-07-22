@@ -45,8 +45,26 @@ di-redeploy (`supabase functions deploy hiview-absen --no-verify-jwt`).
   sampai level RLS (`auth_is_pj_lembaga`), dan murni mempersempit — tak ada PJ sah yang
   kehilangan akses.
 
+- **Dropdown "Kelas/tingkat tujuan" & "Khotam ke" di Lulus & Naikkan tampil kosong.** Kedua
+  daftar itu hardcoded dan sudah tak cocok dengan data: Master Data menulis `Level ½ Juz` …
+  `Level 3 Juz` (PTPT `1`..`6`) sedangkan kode menawarkan `Level 1`..`Level 5`
+  (`Kelas 1`..`Kelas 6`), dan khotam dipatok I..V padahal Level 3 Juz punya I..IX. Daftar
+  kini dibaca dari `master/lembaga.kelas_list` + kartu kenaikan; daftar lama tinggal jadi
+  cadangan bila Master Data kosong. **Catatan: Naik Kelas (menu terpisah) masih memakai
+  daftar hardcoded yang sama** — belum disentuh karena di luar lingkup laporan.
+- **Kartu kenaikan Pra PTPT tak pernah tercap.** Label jenjang di Master Data
+  (`Level 3 Juz`) berbeda bentuk dari label kartu (`Level 5 (3 Juz)`), sehingga pencarian
+  blok kartu selalu gagal dan capnya dilewatkan diam-diam. Ditambah pencocokan cadangan
+  lewat urutan/index (hanya jalan bila pencocokan label gagal dan jumlah jenjangnya sama).
+
 ### Added (Fitur baru)
 
+- **Santri yang menamatkan jenjang terakhir naik ke lembaga berikutnya.** Rantai qiraati
+  TPQ Pagi/Sore → Pra PTPT → PTPT → PPPH. Syaratnya dua, bukan satu: kelas asalnya jenjang
+  terakhir lembaga itu **dan** target tesnya item terakhir jenjang itu — jadi `Level 3 Juz`
+  + `Khotam IX` pindah ke PTPT, sedangkan `Level 3 Juz` + `Khotam V` tetap di Pra PTPT.
+  Dialog Lulus & Naikkan kini punya pilihan **Lembaga tujuan** (bisa dikoreksi), penegasan
+  saat berpindah lembaga, dan pilihan **PJ PTPT** saat tujuannya PTPT.
 - **Penugasan glondongan menyembunyikan penyimak yang masih bertugas.** Guru yang masih
   memegang blok ber-status "ditugaskan" tak lagi muncul di dropdown penugasan, lengkap
   dengan keterangan berapa nama yang disembunyikan. Tombol "tampilkan semua guru PTPT"
