@@ -749,7 +749,15 @@
                 <span>{{ formatTgl(a.tanggal) }}</span>
                 <span class="text-[var(--text-tertiary)]">&middot;</span>
                 <span>{{ shiftLabel(a.shift) }}</span>
-                <span v-if="a.jam"><i class="far fa-clock mr-0.5"></i>{{ a.jam }}</span>
+                <!-- v.1.2.1 (Kyai): baris gabungan tak menampilkan jam masuk — angka itu jam
+                     scan NGAJI, bukan jam masuk sekolah. Tampilan saja; datanya utuh. -->
+                <span
+                  v-if="isAutoGabungan(a)"
+                  class="text-[var(--text-tertiary)]"
+                  title="Ikut scan ngaji pagi — jam masuk sekolah tak dicatat terpisah"
+                  ><i class="far fa-clock mr-0.5"></i>—</span
+                >
+                <span v-else-if="a.jam"><i class="far fa-clock mr-0.5"></i>{{ a.jam }}</span>
                 <span
                   v-if="['hadir', 'terlambat'].includes(String(a.status || 'hadir').toLowerCase())"
                   class="inline-flex items-center gap-1"
@@ -1458,6 +1466,11 @@ function sourceLabel(src) {
   if (s === 'auto_gabungan') return 'Gabungan (ikut ngaji)'
   return src || 'manual'
 }
+// v.1.2.1 (Kyai): baris sekolah auto dari scan ngaji pagi. Jam-nya = jam scan ngaji,
+//   jadi TAMPILAN jam masuk sekolah dikosongkan ('—'). Data tak disentuh.
+function isAutoGabungan(a) {
+  return String(a?.source || '').toLowerCase() === 'auto_gabungan'
+}
 function formatTgl(t) {
   const s = String(t || '')
   const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/)
@@ -2073,7 +2086,8 @@ function buildRiwayatPdfRows() {
       nama: getNamaGuru(a.guru_id || a.guruId),
       tanggal: formatTgl(a.tanggal),
       shift: shiftLabel(a.shift),
-      masuk: a.jam || '-',
+      // v.1.2.1: baris gabungan → jam masuk sekolah dikosongkan (jam itu scan ngaji).
+      masuk: isAutoGabungan(a) ? '—' : a.jam || '-',
       pulang: a.jam_pulang || '—',
       status: statusInfo(a.status).label,
       sumber: sourceLabel(a.source)
