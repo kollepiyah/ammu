@@ -301,6 +301,57 @@ export function isPenyimakKategori(guruId, kategori, lembagaList) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// v.1.2.1 (Kyai 22 Jul 2026): rekap capaian penyimak per bulan.
+//   SUMBER TUNGGAL dua rekap di GlondonganView: "Rekap Bisyaroh" (bernominal,
+//   admin_keuangan/super) dan "Rekap Penyimak" (tanpa nominal, koordinator boleh
+//   lihat) — supaya angka blok/juz keduanya tak mungkin berbeda.
+//
+//   Yang dihitung: baris 'selesai' bertipe 'glondongan' yang `tgl_nilai`-nya jatuh
+//   di bulan terpilih. Baris 'berjalan' (guru kelas) DIKECUALIKAN — sama seperti
+//   aturan bisyaroh: yang dibayar/dinilai capaiannya hanya penyimak glondongan.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Agregasi per penguji untuk 1 bulan.
+ * @param {Array} rows baris tes_glondongan (sudah bebas baris yatim).
+ * @param {string} bulan 'YYYY-MM'.
+ * @returns {Array<{key,nama,blok,juz,santri,santriIds}>} belum terurut.
+ */
+export function agregatPenyimakGlondongan(rows, bulan) {
+  const per = {}
+  for (const r of rows || []) {
+    if (!r || r.status !== 'selesai') continue
+    if (String(r.tipe) !== 'glondongan') continue
+    const bln = r.tgl_nilai ? periodeBulan(new Date(r.tgl_nilai)) : ''
+    if (bln !== bulan) continue
+    const key = String(r.penguji_id || r.penguji_nama || r.penilai_nama || '—')
+    const nama = r.penguji_nama || r.penilai_nama || '—'
+    if (!per[key]) per[key] = { key, nama, blok: 0, juz: 0, _santri: new Set() }
+    per[key].juz += Array.isArray(r.juz) ? r.juz.length : 0
+    per[key].blok += 1
+    if (r.santri_id) per[key]._santri.add(String(r.santri_id))
+  }
+  return Object.values(per).map(({ _santri, ...g }) => ({
+    ...g,
+    santri: _santri.size,
+    santriIds: [..._santri]
+  }))
+}
+
+/** Total lintas penguji. Santri dihitung UNIK (disimak 2 penyimak ≠ 2 santri). */
+export function totalPenyimakGlondongan(agregat) {
+  const santri = new Set()
+  let blok = 0
+  let juz = 0
+  for (const g of agregat || []) {
+    blok += Number(g?.blok) || 0
+    juz += Number(g?.juz) || 0
+    for (const s of g?.santriIds || []) santri.add(s)
+  }
+  return { blok, juz, santri: santri.size }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // v.1.2.1 (Kyai 22 Jul 2026): "jika koordinator akan menugaskan guru penyimak,
 //   nama guru yg sudah bertugas (belum selesai) jangan muncul di dropdown
 //   penugasan." — cegah penyimak dobel-tugas sebelum blok lamanya rampung.

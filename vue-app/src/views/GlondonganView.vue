@@ -10,7 +10,8 @@ import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
 // Aspek nilai PTPT (sama persis dg tes PJ): Tahfizh, Istimror, Fashohah, Tajwid (0..90).
 import { tesAspekFlat, clampNilaiTes, TES_NILAI_MAX } from '@/utils/tesKenaikan'
-import { waLink } from '@/utils/format' // v.1.1.9: tautan kontak penyimak / guru kelas
+import { waLink, BULAN_ID } from '@/utils/format' // v.1.1.9: tautan kontak penyimak / guru kelas
+import { jsPDFFromCDN } from '@/services/pdf' // v.1.2.1: ekspor PDF rekap
 import { isGuruAktif } from '@/utils/guruScope' // v.1.2.0: sumber tunggal penyaring status guru
 import {
   KATEGORI_LABEL,
@@ -21,7 +22,9 @@ import {
   buatPetaPjSantri,
   jabatanAdalahPj,
   hitungTugasAktif,
-  jumlahTugasAktif
+  jumlahTugasAktif,
+  agregatPenyimakGlondongan,
+  totalPenyimakGlondongan
 } from '@/utils/glondongan'
 import { useSettingsStore } from '@/stores/settings'
 
@@ -576,26 +579,117 @@ function fmtRp(n) {
   return 'Rp ' + (Number(n) || 0).toLocaleString('id-ID')
 }
 
-// Rekap per penguji untuk bulan terpilih (berdasar tgl_nilai baris 'selesai').
-const rekapRows = computed(() => {
-  const per = {}
-  for (const r of rows.value || []) {
-    if (r.status !== 'selesai') continue
-    if (String(r.tipe) !== 'glondongan') continue // berjalan (guru kelas) TIDAK dibayar
-    const bln = r.tgl_nilai ? periodeBulan(new Date(r.tgl_nilai)) : ''
-    if (bln !== rekapBulan.value) continue
-    const key = String(r.penguji_id || r.penguji_nama || r.penilai_nama || '—')
-    const nama = r.penguji_nama || r.penilai_nama || '—'
-    const juzCount = Array.isArray(r.juz) ? r.juz.length : 0
-    if (!per[key]) per[key] = { key, nama, juz: 0, blok: 0 }
-    per[key].juz += juzCount
-    per[key].blok += 1
-  }
-  return Object.values(per)
+// Label bulan 'YYYY-MM' → 'Juli 2026' (judul PDF & keterangan layar).
+function labelBulan(ym) {
+  const [y, m] = String(ym || '').split('-')
+  const i = Number(m) - 1
+  return BULAN_ID[i] ? `${BULAN_ID[i]} ${y}` : String(ym || '-')
+}
+
+// Agregasi per penguji untuk bulan terpilih — util murni (utils/glondongan), dipakai
+//   BERSAMA oleh Rekap Bisyaroh & Rekap Penyimak supaya angkanya tak mungkin beda.
+const agregatPenyimak = computed(() => agregatPenyimakGlondongan(rows.value, rekapBulan.value))
+const byNamaId = (a, b) => String(a.nama).localeCompare(String(b.nama), 'id')
+
+const rekapRows = computed(() =>
+  agregatPenyimak.value
     .map((g) => ({ ...g, total: g.juz * tarifPerJuz.value }))
-    .sort((a, b) => b.total - a.total || String(a.nama).localeCompare(String(b.nama), 'id'))
-})
+    .sort((a, b) => b.total - a.total || byNamaId(a, b))
+)
 const rekapTotal = computed(() => rekapRows.value.reduce((s, g) => s + g.total, 0))
+
+// ── Tab Rekap Penyimak (koordinator/PJ/super + admin_keuangan): TANPA nominal ──
+// v.1.2.1 (Kyai 22 Jul): koordinator perlu melihat capaian penyimak, tapi tarif
+//   bisyaroh bukan urusannya — jadi tabel yang sama tanpa kolom rupiah.
+const canRekapPenyimak = computed(() => canAssignAny.value || canRekap.value)
+const rekapPenyimakRows = computed(() =>
+  [...agregatPenyimak.value].sort((a, b) => b.juz - a.juz || b.blok - a.blok || byNamaId(a, b))
+)
+const rekapPenyimakTotal = computed(() => totalPenyimakGlondongan(agregatPenyimak.value))
+
+// ── Ekspor PDF (pola sama dg Rekap Absensi Guru: judul + autoTable + saveBlob) ──
+async function cetakPdf({ judul, subjudul, columns, body, foot, namaFile }) {
+  const jsPDF = await jsPDFFromCDN()
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' })
+  doc.setFontSize(11)
+  doc.text(judul, 40, 28)
+  doc.setFontSize(8)
+  doc.text(subjudul, 40, 42)
+  doc.autoTable({
+    head: [columns.map((c) => c.header)],
+    body,
+    foot: foot ? [foot] : undefined,
+    startY: 54,
+    styles: { fontSize: 8, cellPadding: 3 },
+    columnStyles: Object.fromEntries(
+      columns.map((c, i) => [i, { halign: c.align || 'left', cellWidth: c.width || 'auto' }])
+    ),
+    headStyles: { fillColor: [13, 148, 136], textColor: 255, fontStyle: 'bold' },
+    footStyles: { fillColor: [241, 245, 249], textColor: 30, fontStyle: 'bold' }
+  })
+  const { saveBlob } = await import('@/composables/useNativeDownload')
+  await saveBlob(doc.output('blob'), namaFile)
+}
+
+const KOLOM_PENYIMAK = [
+  { key: 'no', header: 'No', align: 'center', width: 28 },
+  { key: 'nama', header: 'Guru Penyimak' },
+  { key: 'blok', header: 'Blok', align: 'center', width: 45 },
+  { key: 'juz', header: 'Juz', align: 'center', width: 45 },
+  { key: 'santri', header: 'Santri', align: 'center', width: 45 }
+]
+
+async function exportRekapPenyimakPdf() {
+  if (!rekapPenyimakRows.value.length) {
+    toast.warning('Tidak ada data untuk diekspor')
+    return
+  }
+  try {
+    const t = rekapPenyimakTotal.value
+    await cetakPdf({
+      judul: `REKAP PENYIMAK GLONDONGAN PTPT — ${labelBulan(rekapBulan.value).toUpperCase()}`,
+      subjudul: `${rekapPenyimakRows.value.length} penyimak · ${t.blok} blok · ${t.juz} juz · ${t.santri} santri`,
+      columns: KOLOM_PENYIMAK,
+      body: rekapPenyimakRows.value.map((g, i) => [i + 1, g.nama, g.blok, g.juz, g.santri]),
+      foot: ['', 'Total', t.blok, t.juz, t.santri],
+      namaFile: `Rekap_Penyimak_Glondongan_${rekapBulan.value}.pdf`
+    })
+    toast.success('PDF berhasil di-ekspor')
+  } catch (e) {
+    toast.error('Gagal ekspor PDF: ' + (e.message || e))
+  }
+}
+
+async function exportRekapBisyarohPdf() {
+  if (!rekapRows.value.length) {
+    toast.warning('Tidak ada data untuk diekspor')
+    return
+  }
+  try {
+    await cetakPdf({
+      judul: `REKAP BISYAROH GLONDONGAN PTPT — ${labelBulan(rekapBulan.value).toUpperCase()}`,
+      subjudul: `Tarif ${fmtRp(tarifPerJuz.value)} / juz disimak · ${rekapRows.value.length} penguji`,
+      // header kolom nama disamakan dengan tabel layarnya sendiri ("Guru Penguji")
+      columns: [
+        ...KOLOM_PENYIMAK.map((c) => (c.key === 'nama' ? { ...c, header: 'Guru Penguji' } : c)),
+        { key: 'total', header: 'Bisyaroh', align: 'right', width: 80 }
+      ],
+      body: rekapRows.value.map((g, i) => [i + 1, g.nama, g.blok, g.juz, g.santri, fmtRp(g.total)]),
+      foot: [
+        '',
+        'Total',
+        rekapPenyimakTotal.value.blok,
+        rekapPenyimakTotal.value.juz,
+        rekapPenyimakTotal.value.santri,
+        fmtRp(rekapTotal.value)
+      ],
+      namaFile: `Rekap_Bisyaroh_Glondongan_${rekapBulan.value}.pdf`
+    })
+    toast.success('PDF berhasil di-ekspor')
+  } catch (e) {
+    toast.error('Gagal ekspor PDF: ' + (e.message || e))
+  }
+}
 </script>
 
 <template>
@@ -667,6 +761,20 @@ const rekapTotal = computed(() => rekapRows.value.reduce((s, g) => s + g.total, 
         ]"
       >
         <i class="fas fa-user-gear mr-1"></i>Peran
+      </button>
+      <!-- v.1.2.1 (Kyai): rekap capaian penyimak — koordinator/PJ ikut boleh lihat -->
+      <button
+        v-if="canRekapPenyimak"
+        type="button"
+        @click="tab = 'rekappenyimak'"
+        :class="[
+          'px-3 py-2 text-xs font-bold rounded-lg border transition',
+          tab === 'rekappenyimak'
+            ? 'bg-teal-600 text-white border-teal-600'
+            : 'bg-[var(--bg-muted)] text-[var(--text-secondary)] border-[var(--border-default)]'
+        ]"
+      >
+        <i class="fas fa-chart-simple mr-1"></i>Rekap Penyimak
       </button>
       <button
         v-if="canRekap"
@@ -1420,6 +1528,96 @@ const rekapTotal = computed(() => rekapRows.value.reduce((s, g) => s + g.total, 
       </div>
     </div>
 
+    <!-- ── TAB: REKAP PENYIMAK (koordinator/PJ/super + admin_keuangan) — TANPA nominal ── -->
+    <div
+      v-else-if="tab === 'rekappenyimak' && canRekapPenyimak"
+      class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm"
+    >
+      <div class="flex items-center justify-between gap-2 mb-3 flex-wrap">
+        <h3 class="text-sm font-black text-[var(--text-primary)]">
+          <i class="fas fa-chart-simple text-teal-600 mr-1"></i>Rekap Penyimak Glondongan
+        </h3>
+        <div class="flex items-center gap-2">
+          <input
+            v-model="rekapBulan"
+            type="month"
+            aria-label="Filter bulan rekap penyimak"
+            class="px-2.5 py-1.5 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-input)] text-[var(--text-primary)]"
+          />
+          <button
+            type="button"
+            @click="exportRekapPenyimakPdf"
+            :disabled="!rekapPenyimakRows.length"
+            aria-label="Ekspor rekap penyimak glondongan ke PDF"
+            title="Ekspor PDF rekap penyimak bulan ini"
+            class="px-3 py-1.5 text-xs font-bold rounded-lg bg-rose-600 hover:bg-rose-700 text-white disabled:opacity-40 whitespace-nowrap"
+          >
+            <i class="fas fa-file-pdf mr-1"></i>PDF
+          </button>
+        </div>
+      </div>
+
+      <p class="text-[11px] text-[var(--text-secondary)] mb-2">
+        Blok yang <b>selesai disimak</b> pada {{ labelBulan(rekapBulan) }}. Tanpa nominal — untuk
+        pemantauan capaian penyimak.
+      </p>
+
+      <div v-if="!loaded" class="text-xs italic text-[var(--text-tertiary)] py-6 text-center">
+        <i class="fas fa-spinner fa-spin mr-1"></i>Memuat…
+      </div>
+      <div
+        v-else-if="rekapPenyimakRows.length === 0"
+        class="text-xs italic text-[var(--text-tertiary)] py-6 text-center"
+      >
+        <i class="fas fa-inbox text-2xl block mb-2 text-[var(--border-default)]"></i>
+        Belum ada penilaian selesai pada bulan ini.
+      </div>
+
+      <div v-else class="overflow-x-auto -mx-1 px-1">
+        <table class="w-full text-xs border-collapse">
+          <thead>
+            <tr class="text-[var(--text-secondary)] border-b border-[var(--border-subtle)]">
+              <th class="text-left font-bold py-1.5 pr-2">Guru Penyimak</th>
+              <th class="text-center font-bold py-1.5 px-2">Blok</th>
+              <th class="text-center font-bold py-1.5 px-2">Juz</th>
+              <th class="text-center font-bold py-1.5 pl-2">Santri</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              v-for="g in rekapPenyimakRows"
+              :key="g.key"
+              class="border-b border-[var(--border-subtle)]"
+            >
+              <td class="py-1.5 pr-2 font-bold text-[var(--text-primary)]">{{ g.nama }}</td>
+              <td class="py-1.5 px-2 text-center text-[var(--text-secondary)]">{{ g.blok }}</td>
+              <td class="py-1.5 px-2 text-center font-bold text-teal-700 dark:text-teal-300">
+                {{ g.juz }}
+              </td>
+              <td class="py-1.5 pl-2 text-center text-[var(--text-secondary)]">{{ g.santri }}</td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr class="border-t-2 border-[var(--border-default)]">
+              <td class="py-1.5 pr-2 font-black text-[var(--text-primary)]">Total</td>
+              <td class="py-1.5 px-2 text-center font-black text-[var(--text-primary)]">
+                {{ rekapPenyimakTotal.blok }}
+              </td>
+              <td class="py-1.5 px-2 text-center font-black text-[var(--text-primary)]">
+                {{ rekapPenyimakTotal.juz }}
+              </td>
+              <td class="py-1.5 pl-2 text-center font-black text-[var(--text-primary)]">
+                {{ rekapPenyimakTotal.santri }}
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+        <p class="text-[10px] text-[var(--text-tertiary)] italic mt-2">
+          Total santri dihitung unik — santri yang disimak dua penyimak tak terhitung dua kali.
+        </p>
+      </div>
+    </div>
+
     <!-- ── TAB: REKAP BISYAROH (admin_keuangan / super_admin) ── -->
     <div
       v-else-if="tab === 'rekap' && canRekap"
@@ -1429,11 +1627,25 @@ const rekapTotal = computed(() => rekapRows.value.reduce((s, g) => s + g.total, 
         <h3 class="text-sm font-black text-[var(--text-primary)]">
           <i class="fas fa-money-bill-wave text-teal-600 mr-1"></i>Rekap Bisyaroh Glondongan
         </h3>
-        <input
-          v-model="rekapBulan"
-          type="month"
-          class="px-2.5 py-1.5 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-input)] text-[var(--text-primary)]"
-        />
+        <div class="flex items-center gap-2">
+          <input
+            v-model="rekapBulan"
+            type="month"
+            aria-label="Filter bulan rekap bisyaroh"
+            class="px-2.5 py-1.5 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-input)] text-[var(--text-primary)]"
+          />
+          <!-- v.1.2.1 (Kyai): ekspor PDF rekap bisyaroh -->
+          <button
+            type="button"
+            @click="exportRekapBisyarohPdf"
+            :disabled="!rekapRows.length"
+            aria-label="Ekspor rekap bisyaroh glondongan ke PDF"
+            title="Ekspor PDF rekap bisyaroh bulan ini"
+            class="px-3 py-1.5 text-xs font-bold rounded-lg bg-rose-600 hover:bg-rose-700 text-white disabled:opacity-40 whitespace-nowrap"
+          >
+            <i class="fas fa-file-pdf mr-1"></i>PDF
+          </button>
+        </div>
       </div>
 
       <p v-if="tarifPerJuz === 0" class="text-[11px] text-amber-600 dark:text-amber-400 mb-2">
@@ -1462,6 +1674,8 @@ const rekapTotal = computed(() => rekapRows.value.reduce((s, g) => s + g.total, 
               <th class="text-left font-bold py-1.5 pr-2">Guru Penguji</th>
               <th class="text-center font-bold py-1.5 px-2">Blok</th>
               <th class="text-center font-bold py-1.5 px-2">Juz</th>
+              <!-- v.1.2.1: kolom Santri disamakan dengan Rekap Penyimak & PDF -->
+              <th class="text-center font-bold py-1.5 px-2">Santri</th>
               <th class="text-right font-bold py-1.5 pl-2">Bisyaroh</th>
             </tr>
           </thead>
@@ -1470,6 +1684,7 @@ const rekapTotal = computed(() => rekapRows.value.reduce((s, g) => s + g.total, 
               <td class="py-1.5 pr-2 font-bold text-[var(--text-primary)]">{{ g.nama }}</td>
               <td class="py-1.5 px-2 text-center text-[var(--text-secondary)]">{{ g.blok }}</td>
               <td class="py-1.5 px-2 text-center text-[var(--text-secondary)]">{{ g.juz }}</td>
+              <td class="py-1.5 px-2 text-center text-[var(--text-secondary)]">{{ g.santri }}</td>
               <td class="py-1.5 pl-2 text-right font-bold text-teal-700 dark:text-teal-300">
                 {{ fmtRp(g.total) }}
               </td>
@@ -1477,7 +1692,7 @@ const rekapTotal = computed(() => rekapRows.value.reduce((s, g) => s + g.total, 
           </tbody>
           <tfoot>
             <tr class="border-t-2 border-[var(--border-default)]">
-              <td class="py-1.5 pr-2 font-black text-[var(--text-primary)]" colspan="3">Total</td>
+              <td class="py-1.5 pr-2 font-black text-[var(--text-primary)]" colspan="4">Total</td>
               <td class="py-1.5 pl-2 text-right font-black text-[var(--text-primary)]">
                 {{ fmtRp(rekapTotal) }}
               </td>
