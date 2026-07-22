@@ -10,7 +10,7 @@ import { sortSantri } from '@/utils/santriSort'
 // v.111: scope Gedung (akademik per gedung + filter Pra PTPT/PTPT)
 import { isGedungScoped, gedungOf } from '@/utils/gedung'
 // v.1.2.1: scope PJ PTPT — santri ampuan diturunkan dari guru pengajar (peta pj_guru)
-import { buatPetaPjSantri } from '@/utils/glondongan'
+import { buatPetaPjSantri, isPjLembaga, PTPT_LEMBAGA } from '@/utils/glondongan'
 import { usePjGuru } from './usePjGuru'
 
 // Helper: derive santri.lembaga_refs dari legacy fields
@@ -102,11 +102,10 @@ export function useSantri() {
       //   (guru pengajarnya di bawah PJ ini, via peta pj_guru; cadangan label pj_ptpt).
       //   PENGAMAN: kalau peta & label dua-duanya belum diisi (ampuan 0), jatuh ke scope
       //   lembaga LAMA supaya PJ tak melihat layar kosong sebelum sempat menata pembagian.
-      const isPjPtpt =
-        isKepala &&
-        String(user?.lembaga || '')
-          .trim()
-          .toUpperCase() === 'PTPT'
+      // v.1.2.2: PJ PTPT dipakai aturan ketat isPjLembaga (jabatan wajib menyebut lembaga).
+      //   `isKepala` di bawah SENGAJA tetap longgar — itu scope "Kepala Lembaga" umum,
+      //   Kepala SDI memang harus tetap melihat santri lembaganya sendiri.
+      const isPjPtpt = isPjLembaga(user, PTPT_LEMBAGA)
       const namaPj = _normPj(user?.guru || user?.nama)
       const ampuanIds = isPjPtpt
         ? new Set(

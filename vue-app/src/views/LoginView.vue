@@ -511,7 +511,7 @@ function bukaWaAdmin() {
       <p class="text-[11px] text-white/90 font-bold uppercase tracking-wider drop-shadow">
         © {{ new Date().getFullYear() }} Pondok Pesantren Mambaul Ulum
       </p>
-      <p class="text-[11px] text-white/80 font-bold tracking-widest mt-1 drop-shadow">v.1.2.1</p>
+      <p class="text-[11px] text-white/80 font-bold tracking-widest mt-1 drop-shadow">v.1.2.2</p>
     </div>
   </div>
 </template>

@@ -20,21 +20,17 @@ import {
   buatScopePj,
   getPjGuru,
   isBarisTerbuka,
+  isPjLembaga,
   KATEGORI_GLONDONGAN,
   PTPT_LEMBAGA
 } from '@/utils/glondongan'
 import { useSantri } from '@/composables/useSantri'
 
-// PJ PTPT = jabatan kepala/PJ/pengasuh DAN lembaga = PTPT.
+// PJ PTPT — v.1.2.2: satu aturan di utils/glondongan.isPjLembaga (jabatan wajib
+//   MENYEBUT lembaganya). Dulu inline & cuma cari kata 'kepala|pj|pengasuh',
+//   sehingga Kepala lembaga LAIN yang ditempatkan di PTPT ikut jadi PJ PTPT.
 function _isPjPtpt(sesi) {
-  const j = `${sesi?.jabatan || ''} ${sesi?.jabatan_tambahan || ''}`.toLowerCase()
-  const isKepala = /(^|\s)(kepala|pj|pengasuh)(\s|$)/.test(j)
-  return (
-    isKepala &&
-    String(sesi?.lembaga || '')
-      .trim()
-      .toUpperCase() === 'PTPT'
-  )
+  return isPjLembaga(sesi, PTPT_LEMBAGA)
 }
 
 export function useGlondongan() {

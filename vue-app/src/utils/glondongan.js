@@ -231,9 +231,39 @@ export function getPjGuru(lembagaList) {
   return out
 }
 
-// Jabatan ini tergolong PJ/Kepala/Pengasuh? (dipakai mendaftar kandidat PJ di UI)
-export function jabatanAdalahPj(jabatan) {
-  return /(^|\s)(kepala|pj|pengasuh)(\s|$)/.test(String(jabatan || '').toLowerCase())
+/**
+ * Orang ini PJ/Kepala LEMBAGA tsb?
+ *
+ * v.1.2.2 (Kyai 22 Jul 2026): "ada 1 guru yg bukan PJ tapi di peran glondongan
+ *   terdeteksi PJ". Aturan lama cuma mencari KATA 'kepala|pj|pengasuh' di jabatan
+ *   lalu mencocokkan field `lembaga`. Akibatnya **Kepala SDI yang ditempatkan di
+ *   PTPT ikut terbaca PJ PTPT** — padahal ia kepala lembaga LAIN yang kebetulan
+ *   mengajar di PTPT. Hal yang sama menimpa 'Kepala TK', 'PJ PPPH', 'Pengasuh'.
+ *
+ * Aturan sekarang: jabatannya harus MENYEBUT lembaga itu — persis 'PJ <lembaga>'
+ * atau 'Kepala <lembaga>' — DAN field `lembaga` orangnya tetap harus cocok
+ * (gerbang lama dipertahankan, jadi aturan ini murni MEMPERSEMPIT, tak pernah
+ * memberi hak baru ke siapa pun).
+ *
+ *   'PJ PTPT'    @PTPT + 'PTPT' -> true
+ *   'Kepala SDI' @PTPT + 'PTPT' -> false   ← inti perbaikan
+ *   'Pengasuh'   @PTPT + 'PTPT' -> false   (tak menyebut lembaga apa pun)
+ *
+ * `jabatan` & `jabatan_tambahan` diperiksa TERPISAH — menggabungnya dengan spasi
+ * bisa memunculkan kecocokan palsu yang melintasi batas kedua field.
+ *
+ * @param {{jabatan?:string, jabatan_tambahan?:string, lembaga?:string}} orang guru/sesi.
+ * @param {string} lembaga nama lembaga yang ditanyakan (mis. 'PTPT').
+ */
+export function isPjLembaga(orang, lembaga) {
+  const L = _normNama(lembaga)
+  if (!L) return false
+  if (_normNama(orang?.lembaga) !== L) return false
+  for (const j of [orang?.jabatan, orang?.jabatan_tambahan]) {
+    const m = _normNama(j).match(/^(kepala|pj)\s+(.+)$/)
+    if (m && m[2] === L) return true
+  }
+  return false
 }
 
 /**

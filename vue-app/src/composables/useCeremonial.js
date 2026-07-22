@@ -15,20 +15,14 @@ import {
   periodeBulan,
   kategoriKoordinatori,
   buatScopePj,
-  getPjGuru
+  getPjGuru,
+  isPjLembaga
 } from '@/utils/glondongan'
 import { useSantri } from '@/composables/useSantri'
 
-// PJ PTPT = jabatan kepala/PJ/pengasuh DAN lembaga = PTPT (mirror useGlondongan._isPjPtpt).
+// PJ PTPT — v.1.2.2: satu aturan di utils/glondongan.isPjLembaga (mirror useGlondongan._isPjPtpt).
 function _isPjPtpt(sesi) {
-  const j = `${sesi?.jabatan || ''} ${sesi?.jabatan_tambahan || ''}`.toLowerCase()
-  const isKepala = /(^|\s)(kepala|pj|pengasuh)(\s|$)/.test(j)
-  return (
-    isKepala &&
-    String(sesi?.lembaga || '')
-      .trim()
-      .toUpperCase() === PTPT_LEMBAGA
-  )
+  return isPjLembaga(sesi, PTPT_LEMBAGA)
 }
 
 const arr = (v) => (Array.isArray(v) ? v : [])

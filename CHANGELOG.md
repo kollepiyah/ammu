@@ -21,6 +21,45 @@ Versioning: `v.{nomor-urut}.{MMDDtahunmu}` (mis: `v.108.0527`)
 
 ---
 
+## [v.1.2.2] — 2026-07-22 — Absen pulang per shift, penugasan glondongan, rekap penyimak
+
+Rilis perbaikan + fitur. **Ada 1 migrasi DB** (`20260722120000_auth_is_pj_lembaga_ketat`) —
+jalankan `supabase db push` SEBELUM deploy web. Edge Function `hiview-absen` WAJIB
+di-redeploy (`supabase functions deploy hiview-absen --no-verify-jwt`).
+
+### Fixed (Perbaikan)
+
+- **Ceklok pulang sebelum shift bubar akhirnya tercatat.** Riwayat absen menulis "belum
+  pulang" padahal gurunya sudah scan pulang. Sebabnya window jam MASUK sebuah shift
+  membentang `mulai`..`selesai` (sengaja lebar supaya yang telat tetap tercatat hadir),
+  jadi scan pulang yang terjadi sebelum shift bubar masih jatuh di dalam window shift-nya
+  sendiri — kalah dari scan terawal lalu dibuang diam-diam. Pass pulang pun mensyaratkan
+  "pulang harus setelah shift bubar", sehingga pulang lebih awal tak pernah tercatat.
+  Aturan baru (`utils/shiftDerive.pilihShiftPulang`): pulang menempel ke shift yang PALING
+  BELAKANGAN dimasuki, minimal 30 menit sesudah jam masuknya (penjaga anti scan-dobel).
+  Berlaku di sync Ammu Desktop (Fingerspot Revo) maupun Edge Function HiView.
+- **Kepala lembaga lain tak lagi terbaca sebagai PJ PTPT.** Aturan lama cuma mencari kata
+  `kepala|pj|pengasuh` di jabatan lalu mencocokkan field lembaga — sehingga guru berjabatan
+  **"Kepala SDI"** yang ditempatkan di PTPT ikut terdaftar sebagai PJ PTPT di tab Peran.
+  Sekarang jabatannya wajib MENYEBUT lembaganya (`PJ PTPT` / `Kepala PTPT`). Diperketat
+  sampai level RLS (`auth_is_pj_lembaga`), dan murni mempersempit — tak ada PJ sah yang
+  kehilangan akses.
+
+### Added (Fitur baru)
+
+- **Penugasan glondongan menyembunyikan penyimak yang masih bertugas.** Guru yang masih
+  memegang blok ber-status "ditugaskan" tak lagi muncul di dropdown penugasan, lengkap
+  dengan keterangan berapa nama yang disembunyikan. Tombol "tampilkan semua guru PTPT"
+  kini selalu tersedia sebagai jalan keluar — di mode itu yang sibuk ikut tampil dengan
+  label "sedang menyimak N blok", jadi dobel-tugas tak pernah terjadi diam-diam.
+- **Tab Rekap Penyimak Glondongan** — seperti Rekap Bisyaroh tapi tanpa nominal, sehingga
+  koordinator & PJ boleh melihatnya. Kolom Penyimak / Blok / Juz / Santri, filter bulan,
+  ekspor PDF.
+- **Ekspor PDF di Rekap Bisyaroh Glondongan.** Kolom Santri ikut ditambahkan ke tabel
+  layarnya supaya layar & PDF sinkron; total santri dihitung unik.
+
+---
+
 ## [v.1.2.1] — 2026-07-22 — Lembaga sekolah baru dikenali; penyaring guru & lembaga jadi satu sumber
 
 Rilis perbaikan. Tanpa migrasi DB, tanpa perubahan skema.
@@ -406,12 +445,12 @@ Cycle besar v.109.1 → v.109.23, ringkas dari 23 micro-release jadi 1 entry REA
 
 ### Cumulative metrics (vs v.108.51)
 
-| Metric | v.108.51 | v.109.23 | Δ |
-|---|---|---|---|
-| index.html size | ~1.79 MB | ~1.85 MB | +60 KB |
-| LOC | ~37k | ~43.5k | +6.5k |
-| Function count | ~600 | 658 | +58 |
-| Custom DOM modals (Swal-free) | 0 | 2 | +2 (logout, cetakStrukPOS) |
+| Metric                        | v.108.51 | v.109.23 | Δ                          |
+| ----------------------------- | -------- | -------- | -------------------------- |
+| index.html size               | ~1.79 MB | ~1.85 MB | +60 KB                     |
+| LOC                           | ~37k     | ~43.5k   | +6.5k                      |
+| Function count                | ~600     | 658      | +58                        |
+| Custom DOM modals (Swal-free) | 0        | 2        | +2 (logout, cetakStrukPOS) |
 
 ### Skipped (deferred ke v.110.x)
 

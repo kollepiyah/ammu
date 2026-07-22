@@ -5,7 +5,7 @@
 // santri DITURUNKAN dari guru pengajarnya (guru_pagi/sore/guru): guru itu di bawah PJ
 // mana. Kalau gurunya tak ada di peta, jatuh ke label lama santri.pj_ptpt.
 import { describe, it, expect } from 'vitest'
-import { getPjGuru, jabatanAdalahPj, buatPetaPjSantri, buatScopePj } from '@/utils/glondongan'
+import { getPjGuru, isPjLembaga, buatPetaPjSantri, buatScopePj } from '@/utils/glondongan'
 
 // Guru: dua PJ (g-syar, g-anwar) + empat pengajar.
 const GURU = [
@@ -50,16 +50,51 @@ describe('getPjGuru — baca peta dari master/lembaga PTPT', () => {
   })
 })
 
-describe('jabatanAdalahPj', () => {
-  it('kepala / pj / pengasuh = PJ', () => {
-    expect(jabatanAdalahPj('PJ PTPT')).toBe(true)
-    expect(jabatanAdalahPj('Kepala TPQ')).toBe(true)
-    expect(jabatanAdalahPj('Pengasuh')).toBe(true)
+// Kyai (22 Jul 2026): "ada 1 guru yg bukan PJ tapi di peran glondongan terdeteksi
+// PJ". Aturan LAMA (jabatanAdalahPj) cuma mencari kata 'kepala|pj|pengasuh' lalu
+// mencocokkan field `lembaga` — jadi Kepala lembaga LAIN yang ditempatkan di PTPT
+// ikut terbaca PJ PTPT. Sekarang jabatannya harus MENYEBUT lembaga itu.
+describe('isPjLembaga — PJ lembaga tertentu', () => {
+  const di = (jabatan, jabatan_tambahan = '') => ({ jabatan, jabatan_tambahan, lembaga: 'PTPT' })
+
+  it('jabatan menyebut lembaganya = PJ', () => {
+    expect(isPjLembaga(di('PJ PTPT'), 'PTPT')).toBe(true)
+    expect(isPjLembaga(di('Kepala PTPT'), 'PTPT')).toBe(true)
+    expect(isPjLembaga(di('Guru', 'PJ PTPT'), 'PTPT')).toBe(true) // lewat jabatan_tambahan
+    expect(isPjLembaga(di('pj  ptpt'), 'ptpt')).toBe(true) // spasi ganda & huruf besar-kecil
   })
-  it('guru biasa BUKAN PJ (dan "pjok" dst tak salah tangkap)', () => {
-    expect(jabatanAdalahPj('Guru')).toBe(false)
-    expect(jabatanAdalahPj('')).toBe(false)
-    expect(jabatanAdalahPj('Wali Kelas')).toBe(false)
+
+  it('BUG KYAI: kepala lembaga LAIN yang ditempatkan di PTPT bukan PJ PTPT', () => {
+    // data sungguhan: jabatan 'Kepala SDI', jabatan_tambahan 'Guru', lembaga 'PTPT'
+    expect(isPjLembaga(di('Kepala SDI', 'Guru'), 'PTPT')).toBe(false)
+    expect(isPjLembaga(di('Kepala TK', 'Guru'), 'PTPT')).toBe(false)
+    expect(isPjLembaga(di('PJ PPPH'), 'PTPT')).toBe(false)
+    expect(isPjLembaga(di('PJ Administrasi'), 'PTPT')).toBe(false)
+  })
+
+  it('jabatan tanpa nama lembaga bukan PJ lembaga mana pun', () => {
+    expect(isPjLembaga(di('Pengasuh'), 'PTPT')).toBe(false)
+    expect(isPjLembaga(di('Kepala'), 'PTPT')).toBe(false)
+    expect(isPjLembaga(di('Guru'), 'PTPT')).toBe(false)
+    expect(isPjLembaga(di('Wali Kelas'), 'PTPT')).toBe(false)
+  })
+
+  it('field lembaga guru tetap wajib cocok (gerbang lama dipertahankan)', () => {
+    expect(isPjLembaga({ jabatan: 'PJ PTPT', lembaga: 'SDI' }, 'PTPT')).toBe(false)
+    expect(isPjLembaga({ jabatan: 'PJ PTPT', lembaga: '' }, 'PTPT')).toBe(false)
+  })
+
+  it('lembaga lain tetap punya PJ-nya sendiri', () => {
+    expect(isPjLembaga({ jabatan: 'Kepala PKBM', lembaga: 'PKBM' }, 'PKBM')).toBe(true)
+    expect(
+      isPjLembaga({ jabatan: 'Pengasuh', jabatan_tambahan: 'PJ PPPH', lembaga: 'PPPH' }, 'PPPH')
+    ).toBe(true)
+  })
+
+  it('input kosong/rusak → false (bukan lempar)', () => {
+    expect(isPjLembaga(null, 'PTPT')).toBe(false)
+    expect(isPjLembaga(di('PJ PTPT'), '')).toBe(false)
+    expect(isPjLembaga({}, 'PTPT')).toBe(false)
   })
 })
 

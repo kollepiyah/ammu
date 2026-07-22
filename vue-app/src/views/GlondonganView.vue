@@ -20,7 +20,8 @@ import {
   barisKePeran,
   periodeBulan,
   buatPetaPjSantri,
-  jabatanAdalahPj,
+  isPjLembaga,
+  PTPT_LEMBAGA,
   hitungTugasAktif,
   jumlahTugasAktif,
   agregatPenyimakGlondongan,
@@ -519,10 +520,10 @@ watch(
   },
   { immediate: true, deep: true }
 )
-// Kandidat PJ = guru PTPT aktif berjabatan Kepala/PJ/Pengasuh.
-const pjPtptList = computed(() =>
-  guruPtpt.value.filter((g) => jabatanAdalahPj(`${g.jabatan || ''} ${g.jabatan_tambahan || ''}`))
-)
+// Kandidat PJ = guru PTPT aktif yang jabatannya MENYEBUT PTPT ('PJ PTPT'/'Kepala PTPT').
+// v.1.2.2 (Kyai 22 Jul): dulu cukup ada kata 'kepala|pj|pengasuh', sehingga Kepala
+//   lembaga LAIN yang ditempatkan di PTPT ikut terdaftar sebagai PJ PTPT.
+const pjPtptList = computed(() => guruPtpt.value.filter((g) => isPjLembaga(g, PTPT_LEMBAGA)))
 function guruDiPj(pjId, guruId) {
   return (pjGuruDraft.value[String(pjId)] || []).map(String).includes(String(guruId))
 }
