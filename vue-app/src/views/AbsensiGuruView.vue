@@ -866,17 +866,35 @@
               {{ rekapPeriode.label }} &middot; {{ rekapUnitData.jmlHariKerja }} hari kerja
             </span>
           </div>
-          <button
-            @click="exportRekapUnitExcel"
-            aria-label="Ekspor rekap absensi per lembaga ke Excel"
-            class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition cursor-pointer"
-          >
-            <i class="fas fa-file-excel"></i>Excel
-          </button>
+          <div class="flex flex-wrap items-center gap-2">
+            <!-- v.1.2.1: filter lembaga → ekspor PDF/Excel terpisah per lembaga -->
+            <select
+              v-model="filterLembagaRekap"
+              aria-label="Filter lembaga rekap unit"
+              class="h-9 px-2 text-xs rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)] cursor-pointer max-w-[160px]"
+            >
+              <option value="">Semua lembaga</option>
+              <option v-for="l in rekapLembagaOptions" :key="l" :value="l">{{ l }}</option>
+            </select>
+            <button
+              @click="exportRekapUnitExcel"
+              aria-label="Ekspor rekap absensi per lembaga ke Excel"
+              class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition cursor-pointer"
+            >
+              <i class="fas fa-file-excel"></i>Excel
+            </button>
+            <button
+              @click="exportRekapUnitPdf"
+              aria-label="Ekspor rekap absensi per lembaga ke PDF"
+              class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold transition cursor-pointer"
+            >
+              <i class="fas fa-file-pdf"></i>PDF
+            </button>
+          </div>
         </div>
 
         <div
-          v-if="rekapUnitData.groups.length === 0"
+          v-if="rekapUnitView.groups.length === 0"
           class="bg-[var(--bg-card)] rounded-2xl p-10 border border-dashed border-[var(--border-default)] text-center"
         >
           <i class="fas fa-layer-group text-[var(--text-tertiary)] text-4xl mb-3"></i>
@@ -907,7 +925,7 @@
               </tr>
             </thead>
             <tbody>
-              <template v-for="grp in rekapUnitData.groups" :key="grp.key">
+              <template v-for="grp in rekapUnitView.groups" :key="grp.key">
                 <tr class="bg-violet-100 dark:bg-violet-900/40">
                   <td
                     colspan="2"
@@ -1000,20 +1018,20 @@
                 <td colspan="2" class="p-2 font-black uppercase text-[10px] tracking-wider">
                   Total Keseluruhan
                 </td>
-                <td class="p-2 text-center font-black">{{ rekapUnitData.grand.H }}</td>
-                <td class="p-2 text-center font-black">{{ rekapUnitData.grand.T }}</td>
-                <td class="p-2 text-center font-black">{{ rekapUnitData.grand.I }}</td>
-                <td class="p-2 text-center font-black">{{ rekapUnitData.grand.S }}</td>
-                <td class="p-2 text-center font-black">{{ rekapUnitData.grand.C }}</td>
-                <td class="p-2 text-center font-black">{{ rekapUnitData.grand.A }}</td>
-                <td class="p-2 text-center font-black">{{ rekapUnitData.grand.belumPulang }}</td>
+                <td class="p-2 text-center font-black">{{ rekapUnitView.grand.H }}</td>
+                <td class="p-2 text-center font-black">{{ rekapUnitView.grand.T }}</td>
+                <td class="p-2 text-center font-black">{{ rekapUnitView.grand.I }}</td>
+                <td class="p-2 text-center font-black">{{ rekapUnitView.grand.S }}</td>
+                <td class="p-2 text-center font-black">{{ rekapUnitView.grand.C }}</td>
+                <td class="p-2 text-center font-black">{{ rekapUnitView.grand.A }}</td>
+                <td class="p-2 text-center font-black">{{ rekapUnitView.grand.belumPulang }}</td>
               </tr>
             </tbody>
           </table>
           <p class="text-[10px] text-[var(--text-tertiary)] italic mt-2">
             H=Hadir &middot; T=Terlambat &middot; I=Izin &middot; S=Sakit &middot; C=Cuti &middot;
-            A=Alpha &middot; Blm Plg=hadir tanpa absen pulang. Jumat &amp; hari libur kalender
-            dikecualikan.
+            A=Alpha &middot; Blm Plg=hadir tanpa absen pulang. Hari efektif Senin–Sabtu; Ahad/Minggu
+            &amp; hari libur kalender dikecualikan.
           </p>
         </div>
       </div>
@@ -1640,7 +1658,7 @@ watch(
 // HARI LIBUR — v.21.114.0528: kelola pindah ke Kalender Kegiatan
 // Sumber: (a) settings.hariLibur (legacy backward-compat single-day toggles)
 //         (b) kegiatan_kalender events dengan tipe='libur'|'libur_nasional' (multi-day)
-// Mahari libur Jumat tetap honor settings.liburJumat default true
+// Libur mingguan = AHAD/Minggu (v.1.2.1, Kyai). Tanggal libur khusus tetap dari (a)/(b).
 // =====================================================
 const hariLibur = ref([])
 
@@ -1687,10 +1705,19 @@ function isoDateOf(d) {
   return `${y}-${m}-${String(d).padStart(2, '0')}`
 }
 
+// v.1.2.1 (Kyai 22 Jul): hari efektif SENIN–SABTU; AHAD/Minggu (getDay 0) libur mingguan.
+//   Dulu JUMAT (getDay 5, settings.liburJumat) yang dianggap libur — keliru untuk pesantren
+//   ini: Minggu terhitung hari kerja → semua guru dianggap ALPA tiap Minggu (kolom A
+//   membengkak, mis. 333). Jumat kini hari kerja. Tanggal libur khusus tetap dari
+//   Kalender Kegiatan / settings.hariLibur.
+function isLiburMingguan(dow) {
+  return dow === 0
+}
+
 function isHariLibur(d) {
   const iso = isoDateOf(d)
   const dow = new Date(selectedYear.value, selectedMonth.value - 1, d).getDay()
-  if (dow === 5 && settingsStore.settings?.liburJumat !== false) return true
+  if (isLiburMingguan(dow)) return true
   if (hariLibur.value.includes(iso)) return true
   return liburEventDates.value.has(iso)
 }
@@ -1713,10 +1740,9 @@ const KELOMPOK_LABEL = {
 
 // Libur berbasis ISO (isHariLibur hanya per hari-dalam-bulan berjalan).
 function isLiburIso(iso) {
-  const s = settingsStore.settings || {}
   const [y, m, d] = String(iso).split('-').map(Number)
   const dow = new Date(y, m - 1, d).getDay()
-  if (dow === 5 && s.liburJumat !== false) return true
+  if (isLiburMingguan(dow)) return true // v.1.2.1: Ahad/Minggu libur (dulu Jumat)
   if ((hariLibur.value || []).includes(iso)) return true
   return liburEventDates.value.has(iso)
 }
@@ -1787,6 +1813,32 @@ function gantiMingguRekap(n) {
   rekapAnchor.value = geserMinggu(rekapAnchor.value, n)
 }
 
+// v.1.2.1 (Kyai 22 Jul): filter Lembaga di Rekap Unit — supaya bisa ekspor PDF terpisah
+//   per lembaga. Kosong = semua lembaga. Opsi diambil dari lembaga yang benar-benar ada.
+const filterLembagaRekap = ref('')
+const rekapLembagaOptions = computed(() => {
+  const set = new Set()
+  for (const grp of rekapUnitData.value.groups)
+    for (const lem of grp.lembagaList) set.add(lem.lembaga)
+  return [...set].sort((a, b) => a.localeCompare(b, 'id'))
+})
+// rekapUnitData yang sudah dipangkas ke lembaga terpilih (+ grand dihitung ulang).
+const rekapUnitView = computed(() => {
+  const f = String(filterLembagaRekap.value || '').trim()
+  if (!f) return rekapUnitData.value
+  const groups = []
+  const grand = selKosong()
+  for (const grp of rekapUnitData.value.groups) {
+    const lembagaList = grp.lembagaList.filter((l) => l.lembaga === f)
+    if (!lembagaList.length) continue
+    const sub = selKosong()
+    for (const l of lembagaList) tambahSel(sub, l.sub)
+    tambahSel(grand, sub)
+    groups.push({ ...grp, lembagaList, sub })
+  }
+  return { groups, grand, jmlHariKerja: rekapUnitData.value.jmlHariKerja }
+})
+
 // Ekspor Excel rekap unit (Bagian C-2) — flat: baris data + subtotal lembaga + grand total.
 function buildRekapUnitExport() {
   const columns = [
@@ -1817,7 +1869,8 @@ function buildRekapUnitExport() {
     belumPulang: sel.belumPulang,
     ...extra
   })
-  for (const grp of rekapUnitData.value.groups) {
+  // v.1.2.1: pakai view TERFILTER (lembaga terpilih) supaya Excel & PDF sama-sama terpisah.
+  for (const grp of rekapUnitView.value.groups) {
     for (const lem of grp.lembagaList) {
       for (const r of lem.rows) {
         rows.push({
@@ -1837,8 +1890,102 @@ function buildRekapUnitExport() {
       rows.push(selRow({ nama: `Subtotal ${lem.lembaga}` }, lem.sub))
     }
   }
-  rows.push(selRow({ nama: 'TOTAL KESELURUHAN' }, rekapUnitData.value.grand))
+  rows.push(selRow({ nama: 'TOTAL KESELURUHAN' }, rekapUnitView.value.grand))
   return { columns, rows }
+}
+
+// v.1.2.1 (Kyai 22 Jul): ekspor PDF Rekap Unit — hormati filter lembaga (PDF terpisah).
+async function exportRekapUnitPdf() {
+  try {
+    const view = rekapUnitView.value
+    if (!view.groups.length) {
+      toast.warning('Tidak ada data untuk diekspor')
+      return
+    }
+    const jsPDF = await jsPDFFromCDN()
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' })
+    const head = [
+      ['Kelompok', 'Lembaga', 'Nama Guru', 'Shift', 'H', 'T', 'I', 'S', 'C', 'A', 'Blm Plg']
+    ]
+    const body = []
+    for (const grp of view.groups) {
+      for (const lem of grp.lembagaList) {
+        for (const r of lem.rows) {
+          body.push([
+            grp.kelompok,
+            lem.lembaga,
+            r.guru.nama,
+            shiftLabel(r.shift),
+            r.H,
+            r.T,
+            r.I,
+            r.S,
+            r.C,
+            r.A,
+            r.belumPulang
+          ])
+        }
+        const s = lem.sub
+        body.push([
+          '',
+          `Subtotal ${lem.lembaga}`,
+          '',
+          '',
+          s.H,
+          s.T,
+          s.I,
+          s.S,
+          s.C,
+          s.A,
+          s.belumPulang
+        ])
+      }
+    }
+    const g = view.grand
+    body.push(['', 'TOTAL KESELURUHAN', '', '', g.H, g.T, g.I, g.S, g.C, g.A, g.belumPulang])
+    const judul = filterLembagaRekap.value ? ` — ${filterLembagaRekap.value}` : ''
+    doc.setFontSize(11)
+    doc.text(`REKAP ABSENSI GURU PER UNIT${judul}`, 40, 26)
+    doc.setFontSize(8)
+    doc.text(
+      `${rekapPeriode.value.label} · ${rekapUnitData.value.jmlHariKerja} hari kerja (Sen–Sab, Ahad libur) · H=Hadir T=Terlambat I=Izin S=Sakit C=Cuti A=Alpa · Blm Plg=belum absen pulang`,
+      40,
+      40
+    )
+    doc.autoTable({
+      head,
+      body,
+      startY: 50,
+      styles: { fontSize: 7, cellPadding: 2 },
+      columnStyles: {
+        4: { halign: 'center' },
+        5: { halign: 'center' },
+        6: { halign: 'center' },
+        7: { halign: 'center' },
+        8: { halign: 'center' },
+        9: { halign: 'center' },
+        10: { halign: 'center' }
+      },
+      headStyles: { fillColor: [124, 58, 237], textColor: 255, fontStyle: 'bold' },
+      didParseCell: (data) => {
+        const label = String(data.row.raw?.[1] || '')
+        if (label.startsWith('Subtotal') || label === 'TOTAL KESELURUHAN') {
+          data.cell.styles.fontStyle = 'bold'
+        }
+      }
+    })
+    const { saveBlob } = await import('@/composables/useNativeDownload')
+    const slug = filterLembagaRekap.value
+      ? '_' + filterLembagaRekap.value.replace(/[^a-zA-Z0-9]+/g, '')
+      : ''
+    await saveBlob(
+      doc.output('blob'),
+      `Rekap_Absensi_Unit${slug}_${rekapPeriode.value.start}_sd_${rekapPeriode.value.end}.pdf`
+    )
+    toast.success('PDF berhasil di-ekspor')
+  } catch (e) {
+    toast.error('Gagal ekspor PDF: ' + (e.message || e))
+  }
 }
 
 async function exportRekapUnitExcel() {
