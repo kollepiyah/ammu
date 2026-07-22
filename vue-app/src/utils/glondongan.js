@@ -300,6 +300,48 @@ export function isPenyimakKategori(guruId, kategori, lembagaList) {
   return (getPenyimakGlondongan(lembagaList)[kategori] || []).includes(id)
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// v.1.2.1 (Kyai 22 Jul 2026): "jika koordinator akan menugaskan guru penyimak,
+//   nama guru yg sudah bertugas (belum selesai) jangan muncul di dropdown
+//   penugasan." — cegah penyimak dobel-tugas sebelum blok lamanya rampung.
+//
+//   SIBUK = punya baris glondongan ber-status 'ditugaskan' (belum 'selesai').
+//   Baris tipe 'berjalan' SENGAJA tidak dihitung: itu tugas guru kelas yang lahir
+//   otomatis saat tes diajukan dan menunggu SELURUH glondongan rampung — kalau
+//   ikut dihitung, hampir semua guru kelas akan hilang dari dropdown selamanya.
+//   Blok yang belum gilirannya TETAP dihitung sibuk (gurunya sudah dibooking).
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Hitung tugas glondongan yang belum selesai per penguji.
+ * @param {Array} rows baris tes_glondongan (sudah bebas baris yatim).
+ * @returns {{byId: Map<string,number>, byNama: Map<string,number>}} jumlah blok aktif.
+ *   Diindeks dua-duanya karena baris lama bisa hanya menyimpan nama penguji.
+ */
+export function hitungTugasAktif(rows) {
+  const byId = new Map()
+  const byNama = new Map()
+  const bump = (map, key) => {
+    if (key) map.set(key, (map.get(key) || 0) + 1)
+  }
+  for (const r of rows || []) {
+    if (String(r?.tipe || '') !== 'glondongan') continue
+    if (String(r?.status || '') !== 'ditugaskan') continue
+    bump(byId, String(r.penguji_id ?? '').trim())
+    bump(byNama, _normNama(r.penguji_nama))
+  }
+  return { byId, byNama }
+}
+
+/** Berapa blok glondongan yang sedang dipegang guru ini (0 = bebas). */
+export function jumlahTugasAktif(guru, peta) {
+  if (!guru || !peta) return 0
+  const id = String(guru.id ?? '').trim()
+  const viaId = id ? peta.byId.get(id) : 0
+  if (viaId) return viaId
+  return peta.byNama.get(_normNama(guru.nama)) || 0
+}
+
 // ── Bentuk BARIS untuk UI: [{ guru_id, cakupan }] dengan cakupan 'mahad' |
 //    'nonmahad' | 'both'. Bentuk SIMPAN di DB tetap map per kategori (tak berubah),
 //    jadi data koordinator yang sudah ada tetap terbaca — cuma tampilannya baru.

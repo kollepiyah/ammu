@@ -19,7 +19,9 @@ import {
   barisKePeran,
   periodeBulan,
   buatPetaPjSantri,
-  jabatanAdalahPj
+  jabatanAdalahPj,
+  hitungTugasAktif,
+  jumlahTugasAktif
 } from '@/utils/glondongan'
 import { useSettingsStore } from '@/stores/settings'
 
@@ -141,7 +143,8 @@ function guruKelasPtptSantri(santriId) {
 }
 
 // Pilihan penguji, dikelompokkan supaya koordinator paham asal-usul tiap nama.
-function pengujiGroups(row) {
+// DASAR = sebelum saringan "sedang bertugas" (aturan asal-usul, v.1.1.9).
+function pengujiGroupsDasar(row) {
   if (bukaSemuaGuru.value[row.id]) return [{ label: 'Semua guru PTPT', guru: guruPtpt.value }]
   const kelas = guruKelasPtptSantri(row.santri_id)
   const idKelas = new Set(kelas.map((g) => String(g.id)))
@@ -153,6 +156,37 @@ function pengujiGroups(row) {
   if (kelas.length) groups.push({ label: 'Guru kelas santri ini', guru: kelas })
   // Belum ada penyimak terdaftar & santri tanpa guru kelas -> jangan buntu.
   return groups.length ? groups : [{ label: 'Semua guru PTPT', guru: guruPtpt.value }]
+}
+
+// v.1.2.1 (Kyai 22 Jul): guru yang masih memegang blok glondongan BELUM SELESAI
+//   tak ditawarkan lagi. Dihitung dari SELURUH baris (RLS select = semua staf),
+//   jadi blok di luar scope koordinator ini pun ikut membuat gurunya "sibuk".
+const tugasAktifPeta = computed(() => hitungTugasAktif(rows.value))
+function tugasAktif(g) {
+  return jumlahTugasAktif(g, tugasAktifPeta.value)
+}
+function labelPenguji(g) {
+  const n = tugasAktif(g)
+  return n ? `${g.nama} · sedang menyimak ${n} blok` : g.nama
+}
+
+function pengujiGroups(row) {
+  // `bukaSemua` = jalan keluar sadar: tampilkan juga yang sedang bertugas, tapi
+  // dengan label jumlah bloknya supaya dobel-tugas tak pernah terjadi diam-diam.
+  if (bukaSemuaGuru.value[row.id]) return pengujiGroupsDasar(row)
+  return pengujiGroupsDasar(row)
+    .map((grp) => ({ ...grp, guru: grp.guru.filter((g) => !tugasAktif(g)) }))
+    .filter((grp) => grp.guru.length)
+}
+
+// Berapa kandidat yang disembunyikan karena sedang bertugas (keterangan di UI).
+function sibukTersembunyi(row) {
+  if (bukaSemuaGuru.value[row.id]) return 0
+  const ids = new Set()
+  for (const grp of pengujiGroupsDasar(row)) {
+    for (const g of grp.guru) if (tugasAktif(g)) ids.add(String(g.id))
+  }
+  return ids.size
 }
 // Daftar penyimak kategori ini memang kosong? (bedakan dari "sengaja dibuka semua")
 function penyimakKosong(row) {
@@ -268,6 +302,13 @@ async function assign(row) {
   const g = guruPtpt.value.find((x) => String(x.id) === String(guruId))
   if (!g) {
     toast.warning('Guru tidak ditemukan')
+    return
+  }
+  // v.1.2.1: guru bisa baru kebagian blok lain (realtime) SESUDAH dipilih — namanya
+  //   lenyap dari dropdown tapi pilihannya masih tersimpan di `pick`. Tahan di sini.
+  if (!bukaSemuaGuru.value[row.id] && tugasAktif(g)) {
+    toast.warning(`${g.nama} sedang menyimak blok lain — pilih guru lain`)
+    delete pick.value[row.id]
     return
   }
   savingId.value = row.id
@@ -738,9 +779,17 @@ const rekapTotal = computed(() => rekapRows.value.reduce((s, g) => s + g.total, 
               v-model="pick[row.id]"
               class="flex-1 min-w-0 px-2.5 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-input)] text-[var(--text-primary)] cursor-pointer"
             >
-              <option value="">— pilih guru penguji —</option>
+              <option value="">
+                {{
+                  pengujiGroups(row).length
+                    ? '— pilih guru penguji —'
+                    : '— tak ada penyimak yang senggang —'
+                }}
+              </option>
               <optgroup v-for="grp in pengujiGroups(row)" :key="grp.label" :label="grp.label">
-                <option v-for="g in grp.guru" :key="g.id" :value="g.id">{{ g.nama }}</option>
+                <option v-for="g in grp.guru" :key="g.id" :value="g.id">
+                  {{ labelPenguji(g) }}
+                </option>
               </optgroup>
             </select>
             <button
@@ -767,20 +816,37 @@ const rekapTotal = computed(() => rekapRows.value.reduce((s, g) => s + g.total, 
               ></i>
             </button>
           </div>
-          <!-- v.1.1.9: keterangan saringan penyimak + jalan keluar -->
+          <!-- v.1.2.1 (Kyai): guru yang masih memegang blok belum selesai disembunyikan.
+               Disebutkan JUMLAHNYA supaya hilangnya nama tidak terasa misterius. -->
+          <p
+            v-if="sibukTersembunyi(row)"
+            class="text-[10px] mt-1 text-[var(--text-tertiary)] italic"
+          >
+            <i class="fas fa-user-clock mr-1"></i><b>{{ sibukTersembunyi(row) }} guru</b> tak
+            ditampilkan — masih menyimak blok yang belum selesai.
+          </p>
+          <!-- v.1.1.9: keterangan saringan penyimak -->
+          <p v-if="penyimakKosong(row)" class="text-[10px] mt-1 text-amber-600 dark:text-amber-400">
+            <i class="fas fa-triangle-exclamation mr-1"></i>Belum ada penyimak
+            {{ kategoriLabel(row) }} terdaftar — semua guru PTPT ditampilkan. Atur di tab
+            <b>Peran</b>.
+          </p>
+          <!-- Jalan keluar: SELALU tersedia (dulu tersembunyi saat belum ada penyimak
+               terdaftar) — kalau tidak, penugasan bisa buntu total ketika semua kandidat
+               sedang bertugas. -->
           <p class="text-[10px] mt-1">
-            <span v-if="penyimakKosong(row)" class="text-amber-600 dark:text-amber-400">
-              <i class="fas fa-triangle-exclamation mr-1"></i>Belum ada penyimak
-              {{ kategoriLabel(row) }} terdaftar — semua guru PTPT ditampilkan. Atur di tab
-              <b>Peran</b>.
-            </span>
             <button
-              v-else-if="!bukaSemuaGuru[row.id]"
+              v-if="!bukaSemuaGuru[row.id]"
               type="button"
               @click="bukaSemuaGuru[row.id] = true"
               class="text-[var(--text-tertiary)] hover:underline"
             >
-              Hanya penyimak {{ kategoriLabel(row) }} · tampilkan semua guru PTPT
+              <template v-if="penyimakKosong(row)">
+                Tampilkan juga guru yang sedang bertugas
+              </template>
+              <template v-else>
+                Hanya penyimak {{ kategoriLabel(row) }} yang senggang · tampilkan semua guru PTPT
+              </template>
             </button>
             <button
               v-else
@@ -788,7 +854,8 @@ const rekapTotal = computed(() => rekapRows.value.reduce((s, g) => s + g.total, 
               @click="bukaSemuaGuru[row.id] = false"
               class="text-[var(--text-tertiary)] hover:underline"
             >
-              Menampilkan semua guru PTPT · kembali ke penyimak {{ kategoriLabel(row) }}
+              Menampilkan semua guru PTPT (termasuk yang sedang bertugas) · kembali ke penyimak
+              {{ kategoriLabel(row) }} yang senggang
             </button>
           </p>
         </li>
