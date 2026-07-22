@@ -669,6 +669,23 @@
             Tidak ada riwayat absensi pada filter ini
           </p>
         </div>
+        <!-- v.1.2.1: ekspor PDF Riwayat per unit (jam masuk & pulang) -->
+        <div
+          v-if="filteredAbsensi.length"
+          class="bg-[var(--bg-card)] rounded-xl p-2.5 border border-[var(--border-subtle)] shadow-sm flex flex-wrap items-center gap-3 justify-between"
+        >
+          <span class="text-xs font-bold text-[var(--text-secondary)]">
+            <i class="fas fa-list-check mr-1"></i>{{ filteredAbsensi.length }} record
+          </span>
+          <button
+            @click="exportRiwayatPdf"
+            aria-label="Ekspor riwayat absensi per unit ke PDF"
+            title="Ekspor PDF per unit — jam masuk & jam pulang"
+            class="inline-flex items-center gap-1.5 bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold px-3 py-2 rounded-lg cursor-pointer"
+          >
+            <i class="fas fa-file-pdf"></i>PDF per Unit
+          </button>
+        </div>
         <div
           v-if="canHapusAbsen && filteredAbsensi.length"
           class="bg-[var(--bg-card)] rounded-xl p-2.5 border border-[var(--border-subtle)] shadow-sm flex flex-wrap items-center gap-3 justify-between"
@@ -1433,8 +1450,12 @@ function sourceLabel(src) {
   const s = String(src || '').toLowerCase()
   if (s === 'fingerprint') return 'Fingerprint'
   if (s === 'fingerprint_import') return 'Impor FP'
+  if (s === 'hiview') return 'HiView'
   if (s === 'manual_harian') return 'Input manual'
   if (s === 'pengajuan_guru') return 'Izin/Pengajuan'
+  // v.1.2.1: perjelas — baris sekolah yang OTOMATIS terisi dari scan ngaji pagi guru
+  //   gabungan (jam masuknya = jam scan ngaji, bukan jam masuk sekolah).
+  if (s === 'auto_gabungan') return 'Gabungan (ikut ngaji)'
   return src || 'manual'
 }
 function formatTgl(t) {
@@ -2036,6 +2057,84 @@ async function kirimAbsensiGsheet() {
 // =====================================================
 // EXPORT PDF
 // =====================================================
+// v.1.2.1 (Kyai 22 Jul): ekspor PDF Riwayat absensi PER UNIT dengan JAM MASUK & PULANG.
+//   Baris = record absensi terfilter (bulan/shift/status/guru yang sedang tampil),
+//   dikelompokkan per unit (lembaga per shift, sama seperti Rekap Unit) → nama → tanggal.
+function buildRiwayatPdfRows() {
+  const gById = new Map((guruRaw.value || []).map((g) => [String(g.id), g]))
+  const rows = (filteredAbsensi.value || []).map((a) => {
+    const g = gById.get(String(a.guru_id || a.guruId)) || {}
+    const lembaga = lembagaOfShift(g, a.shift)
+    return {
+      _lembaga: lembaga,
+      _nama: getNamaGuru(a.guru_id || a.guruId),
+      _tgl: String(a.tanggal || ''),
+      lembaga,
+      nama: getNamaGuru(a.guru_id || a.guruId),
+      tanggal: formatTgl(a.tanggal),
+      shift: shiftLabel(a.shift),
+      masuk: a.jam || '-',
+      pulang: a.jam_pulang || '—',
+      status: statusInfo(a.status).label,
+      sumber: sourceLabel(a.source)
+    }
+  })
+  rows.sort(
+    (x, y) =>
+      x._lembaga.localeCompare(y._lembaga, 'id') ||
+      x._nama.localeCompare(y._nama, 'id') ||
+      x._tgl.localeCompare(y._tgl)
+  )
+  return rows
+}
+
+async function exportRiwayatPdf() {
+  try {
+    const rows = buildRiwayatPdfRows()
+    if (!rows.length) {
+      toast.warning('Tidak ada data untuk diekspor')
+      return
+    }
+    const jsPDF = await jsPDFFromCDN()
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' })
+    const columns = [
+      { key: 'lembaga', header: 'Unit/Lembaga' },
+      { key: 'nama', header: 'Nama Guru' },
+      { key: 'tanggal', header: 'Tanggal' },
+      { key: 'shift', header: 'Shift' },
+      { key: 'masuk', header: 'Jam Masuk' },
+      { key: 'pulang', header: 'Jam Pulang' },
+      { key: 'status', header: 'Status' },
+      { key: 'sumber', header: 'Sumber' }
+    ]
+    doc.setFontSize(11)
+    doc.text(
+      `RIWAYAT ABSENSI GURU PER UNIT — ${getBulanLabel(selectedMonth.value).toUpperCase()} ${selectedYear.value}`,
+      40,
+      28
+    )
+    doc.autoTable({
+      head: [columns.map((c) => c.header)],
+      body: rows.map((r) => columns.map((c) => r[c.key])),
+      startY: 40,
+      styles: { fontSize: 7, cellPadding: 2.5 },
+      columnStyles: {
+        4: { halign: 'center' }, // Jam Masuk
+        5: { halign: 'center' } // Jam Pulang
+      },
+      headStyles: { fillColor: [8, 145, 178], textColor: 255, fontStyle: 'bold' }
+    })
+    const { saveBlob } = await import('@/composables/useNativeDownload')
+    await saveBlob(
+      doc.output('blob'),
+      `Riwayat_Absensi_Guru_${selectedYear.value}_${String(selectedMonth.value).padStart(2, '0')}.pdf`
+    )
+    toast.success('PDF berhasil di-ekspor')
+  } catch (e) {
+    toast.error('Gagal ekspor PDF: ' + (e.message || e))
+  }
+}
+
 async function exportRekapPdf() {
   try {
     const jsPDF = await jsPDFFromCDN()
