@@ -11,7 +11,7 @@
 
 import { getAll, getOne, setOne, mergeOne } from '@/services/db'
 import { useSettingsStore } from '@/stores/settings'
-import { deriveShift, statusFor, shiftsForGuru, shiftWindow } from '@/utils/shiftDerive'
+import { deriveShift, statusFor, shiftsForGuru, pilihShiftPulang } from '@/utils/shiftDerive'
 
 // timestamp att_log 'YYYY-MM-DD HH:MM:SS' (WIB lokal, tanpa 'Z') → { date, hhmm, full }.
 function splitTs(ts) {
@@ -54,11 +54,19 @@ export function useFingerprintSync() {
     }
 
     // agregasi per (pin, tanggal, shift) → scan TERAWAL = jam masuk.
-    // Scan DI LUAR window masuk dikumpulkan sbg kandidat PULANG per (pin, tanggal).
+    // SEMUA scan lain hari itu jadi kandidat PULANG per (pin, tanggal) — baik yang
+    // di luar window masuk MAUPUN yang masih di dalam window shift-nya sendiri
+    // (pulang sebelum shift bubar). Dulu yang kedua dibuang diam-diam, itulah asal
+    // baris "belum pulang" padahal gurunya sudah ceklok pulang. (Kyai, 22 Jul 2026)
     const agg = {}
     const pulangScans = {} // pin|date -> { g, date, times:[hhmm] }
     const takKenal = new Set()
     let luar = 0
+    const catatKandidatPulang = (pin, g, date, hhmm) => {
+      const pk = pin + '|' + date
+      if (!pulangScans[pk]) pulangScans[pk] = { g, date, times: [] }
+      pulangScans[pk].times.push(hhmm)
+    }
     for (const r of scans) {
       const pin = String(r.device_pin || '').trim()
       const parts = splitTs(r.timestamp)
@@ -71,14 +79,20 @@ export function useFingerprintSync() {
       const sh = deriveShift(parts.hhmm, g, settings)
       if (!sh) {
         luar++
-        const pk = pin + '|' + parts.date
-        if (!pulangScans[pk]) pulangScans[pk] = { g, date: parts.date, times: [] }
-        pulangScans[pk].times.push(parts.hhmm)
+        catatKandidatPulang(pin, g, parts.date, parts.hhmm)
         continue
       }
       const key = pin + '|' + parts.date + '|' + sh
-      if (!(key in agg) || parts.full < agg[key].full) {
+      if (!(key in agg)) {
         agg[key] = { g, sh, date: parts.date, hhmm: parts.hhmm, full: parts.full }
+        continue
+      }
+      if (parts.full < agg[key].full) {
+        // scan ini lebih awal → jadi jam masuk; yang lama turun jadi kandidat pulang.
+        catatKandidatPulang(pin, g, parts.date, agg[key].hhmm)
+        agg[key] = { g, sh, date: parts.date, hhmm: parts.hhmm, full: parts.full }
+      } else {
+        catatKandidatPulang(pin, g, parts.date, parts.hhmm)
       }
     }
 
@@ -121,38 +135,28 @@ export function useFingerprintSync() {
       rows.push({ nama: a.g.nama, tanggal: a.date, shift: a.sh, jam: a.hhmm, status })
     }
 
-    // ── Pass PULANG: scan di luar window = pulang → tempel ke baris masuk (hadir/terlambat)
-    // pada shift dgn `selesai` TERBESAR yang ≤ jam scan (shift yg ditinggalkan). Berlaku semua
-    // shift (ngaji pagi/sore-saja jg scan 2×). HANYA MENCATAT jam_pulang (MAX, mergeOne — jaga
-    // jam/status masuk). Jalan SESUDAH tulis masuk agar baris terbaru terbaca.
+    // ── Pass PULANG: kandidat pulang → tempel ke baris masuk (hadir/terlambat) pada shift
+    // yang PALING BELAKANGAN dimasuki (utils/shiftDerive.pilihShiftPulang). Berlaku semua
+    // shift (ngaji pagi/sore-saja jg scan 2×). HANYA MENCATAT jam_pulang (MAX, mergeOne —
+    // jaga jam/status masuk). Jalan SESUDAH tulis masuk agar baris terbaru terbaca.
     let pulangWritten = 0
     for (const pk of Object.keys(pulangScans)) {
       const { g, date, times } = pulangScans[pk]
       const shiftRows = {}
+      const barisMasuk = []
       for (const sh of shiftsForGuru(g, settings)) {
         const docId = 'shift_' + g.id + '_' + date + '_' + sh
         const row = await getOne('absensi_shift_guru', docId)
         if (!row) continue
-        const st = String(row.status || '').toLowerCase()
-        if (st !== 'hadir' && st !== 'terlambat') continue
-        const selesai = String(shiftWindow(sh, settings)?.selesai || '')
-        if (!selesai) continue
-        shiftRows[sh] = { docId, selesai, exPulang: String(row.jam_pulang || '') }
+        shiftRows[sh] = { docId, exPulang: String(row.jam_pulang || '') }
+        barisMasuk.push({ shift: sh, jam: String(row.jam || ''), status: row.status })
       }
       const perShiftMax = {} // shift → jam pulang MAX
       for (const hhmm of times) {
-        let target = ''
-        let bestSelesai = ''
-        for (const sh of Object.keys(shiftRows)) {
-          const selesai = shiftRows[sh].selesai
-          if (selesai > hhmm) continue // pulang harus SETELAH shift bubar
-          if (selesai > bestSelesai) {
-            bestSelesai = selesai
-            target = sh
-          }
+        for (const sh of pilihShiftPulang(hhmm, barisMasuk, settings)) {
+          if (!shiftRows[sh]) continue
+          if (!perShiftMax[sh] || hhmm > perShiftMax[sh]) perShiftMax[sh] = hhmm
         }
-        if (!target) continue
-        if (!perShiftMax[target] || hhmm > perShiftMax[target]) perShiftMax[target] = hhmm
       }
       for (const sh of Object.keys(perShiftMax)) {
         const { docId, exPulang } = shiftRows[sh]

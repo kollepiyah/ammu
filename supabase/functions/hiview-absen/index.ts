@@ -20,7 +20,7 @@
 // SECRET: supabase secrets set HIVIEW_PUSH_SECRET="<8-16 char>"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders, handlePreflight, json } from '../_shared/cors.ts'
-import { deriveShift, statusFor, shiftWindow, shiftsForGuru } from './shiftDerive.ts'
+import { deriveShift, statusFor, pilihShiftPulang, shiftsForGuru } from './shiftDerive.ts'
 
 const SECRET = Deno.env.get('HIVIEW_PUSH_SECRET') || ''
 
@@ -143,11 +143,12 @@ async function fetchSettings(db: any): Promise<Record<string, unknown>> {
   return { ...(w.data?.value || {}), ...(g.data?.value || {}) }
 }
 
-// Scan DI LUAR semua window masuk = ABSEN PULANG. Tempel jam_pulang ke baris masuk
-// (hadir/terlambat) hari ini milik guru, pada shift dgn `selesai` TERBESAR yang ≤ jam scan
-// (= shift yg sedang ditinggalkan). Berlaku SEMUA shift (ngaji pagi/sore-saja jg scan 2×).
-// jam_pulang = MAX (idempoten). HANYA MENCATAT — tak mengubah status/hadir. Gagal = log saja
-// (jangan bikin mesin retry-storm); pemanggil tetap balas isapiOk.
+// Scan ke-2 dst = ABSEN PULANG. Tempel jam_pulang ke baris masuk (hadir/terlambat) hari
+// ini milik guru, pada shift yang PALING BELAKANGAN dimasuki (shiftDerive.pilihShiftPulang).
+// Berlaku SEMUA shift (ngaji pagi/sore-saja jg scan 2×) dan tak lagi mensyaratkan shift-nya
+// sudah bubar — pulang lebih awal pun tercatat. jam_pulang = MAX (idempoten). HANYA MENCATAT
+// — tak mengubah status/hadir. Gagal = log saja (jangan bikin mesin retry-storm); pemanggil
+// tetap balas isapiOk.
 // deno-lint-ignore no-explicit-any
 async function catatPulang(db: any, guru: any, settings: any, t: { date: string; hhmm: string }) {
   try {
@@ -158,36 +159,36 @@ async function catatPulang(db: any, guru: any, settings: any, t: { date: string;
       .select('*')
       .eq('guru_id', String(guru.id))
       .eq('periode', t.date.slice(0, 7))
-    // baris masuk hari ini (hadir/terlambat) milik shift si guru
-    let target: any = null
-    let bestSelesai = ''
+    // baris masuk hari ini milik shift si guru → kandidat sasaran pulang
+    // deno-lint-ignore no-explicit-any
+    const rowByShift: Record<string, any> = {}
+    const barisMasuk: { shift: string; jam: string; status: string }[] = []
     for (const r of rows || []) {
       const d = { ...(r.data || {}), ...r }
       if (String(d.tanggal || '') !== t.date) continue
-      const st = String(d.status || '').toLowerCase()
-      if (st !== 'hadir' && st !== 'terlambat') continue
       const sh = String(d.shift || '').toLowerCase()
-      if (!milik.has(sh)) continue
-      const selesai = String(shiftWindow(sh, settings)?.selesai || '')
-      if (!selesai || selesai > t.hhmm) continue // pulang harus SETELAH shift bubar
-      if (selesai > bestSelesai) {
-        bestSelesai = selesai
-        target = r
-      }
+      if (!sh || !milik.has(sh)) continue
+      rowByShift[sh] = r
+      barisMasuk.push({ shift: sh, jam: String(d.jam || ''), status: String(d.status || '') })
     }
-    if (!target) {
+    const targets = pilihShiftPulang(t.hhmm, barisMasuk, settings)
+    if (!targets.length) {
       console.log(`[hiview] pulang: tak ada shift cocok ${guru.nama} jam=${t.hhmm}`)
       return
     }
-    const cur = { ...(target.data || {}) }
-    const exPulang = String(cur.jam_pulang || '')
-    if (exPulang && exPulang >= t.hhmm) return // sudah ada pulang lebih akhir → MAX
-    const { error } = await db
-      .from('absensi_shift_guru')
-      .update({ data: { ...cur, jam_pulang: t.hhmm } })
-      .eq('id', target.id)
-    if (error) throw error
-    console.log(`[hiview] PULANG ${guru.nama} ${t.date} ${t.hhmm} → ${cur.shift}`)
+    for (const sh of targets) {
+      const target = rowByShift[sh]
+      if (!target) continue
+      const cur = { ...(target.data || {}) }
+      const exPulang = String(cur.jam_pulang || '')
+      if (exPulang && exPulang >= t.hhmm) continue // sudah ada pulang lebih akhir → MAX
+      const { error } = await db
+        .from('absensi_shift_guru')
+        .update({ data: { ...cur, jam_pulang: t.hhmm } })
+        .eq('id', target.id)
+      if (error) throw error
+      console.log(`[hiview] PULANG ${guru.nama} ${t.date} ${t.hhmm} → ${sh}`)
+    }
   } catch (e) {
     console.error('[hiview] pulang error:', (e as Error)?.message || e)
   }
@@ -274,9 +275,13 @@ Deno.serve(async (req) => {
         return isapiOk(req)
       }
       const exjam = String(ex.jam || '')
-      // scan terdahulu (<=) menang: idempoten + tak tertimpa jam belakangan.
+      // scan terdahulu (<=) menang sbg jam MASUK: idempoten + tak tertimpa jam belakangan.
+      // Scan belakangan itu sendiri = kandidat PULANG — window masuk membentang sampai
+      // shift bubar, jadi ceklok pulang sebelum bubar jatuh di window ini juga. Dulu
+      // langsung dibuang → baris tetap "belum pulang". (Kyai, 22 Jul 2026)
       if (exjam && exjam <= t.hhmm) {
-        console.log(`[hiview] skip scan-terdahulu-menang existing=${exjam} ${docId}`)
+        console.log(`[hiview] scan-ke-2 dalam window ${docId} existing=${exjam} → coba pulang`)
+        await catatPulang(db, guru, settings, t)
         return isapiOk(req)
       }
     }
