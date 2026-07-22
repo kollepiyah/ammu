@@ -17,7 +17,9 @@ import {
   CAKUPAN_OPTS,
   peranKeBaris,
   barisKePeran,
-  periodeBulan
+  periodeBulan,
+  buatPetaPjSantri,
+  jabatanAdalahPj
 } from '@/utils/glondongan'
 import { useSettingsStore } from '@/stores/settings'
 
@@ -36,6 +38,7 @@ const {
   myKategori,
   koordinatorGlondongan,
   penyimakGlondongan, // v.1.1.9: daftar penyimak per kategori
+  pjGuru, // v.1.2.1: peta pembagian santri per PJ
   bolehMenyimak,
   isPjPtpt,
   isAmpuanSaya, // v.1.1.9: scope PJ — hanya santri ampuannya
@@ -185,13 +188,14 @@ function guruDariNama(nama) {
   )
 }
 /**
- * v.1.2.1 (Kyai 22 Jul): PJ PTPT santri baris ini (kolom santri.pj_ptpt). '' bila kosong.
- *   Ada >1 PJ PTPT, jadi koordinator perlu tahu blok ini di bawah PJ siapa sebelum
- *   menunjuk penyimak. santri_id sudah dibawa tiap baris glondongan.
+ * v.1.2.1 (Kyai 22 Jul): NAMA PJ PTPT santri baris ini. Ada >1 PJ, jadi koordinator
+ *   perlu tahu blok ini di bawah PJ siapa sebelum menunjuk penyimak.
+ *   PJ diturunkan dari guru pengajar santri via peta pj_guru (label pj_ptpt cadangan) —
+ *   satu sumber dengan scope isAmpuanSaya, jadi label & scope tak mungkin beda.
  */
+const petaPjSantri = computed(() => buatPetaPjSantri(santriRaw.value, guruRaw.value, pjGuru.value))
 function pjSantri(row) {
-  const s = santriById.value.get(String(row?.santri_id))
-  return String(s?.pj_ptpt || '').trim()
+  return String(petaPjSantri.value.get(String(row?.santri_id)) || '').trim()
 }
 /** Guru kelas (pagi & sore) santri baris ini -> [{ nama, wa }]. */
 function guruKelasSantri(santriId) {
@@ -459,12 +463,58 @@ function guruTersedia(rows, i) {
   return guruPtpt.value.filter((g) => !dipakai.has(String(g.id)))
 }
 
+// ── v.1.2.1: Pembagian Santri per PJ (Kyai 22 Jul) — tiap PJ punya daftar GURU;
+//    santri ikut PJ dari gurunya. Draft { [pjId]: [guruId] } disinkronkan dari peta.
+const pjGuruDraft = ref({})
+watch(
+  pjGuru,
+  (m) => {
+    const out = {}
+    for (const [k, v] of Object.entries(m || {})) out[k] = (Array.isArray(v) ? v : []).map(String)
+    pjGuruDraft.value = out
+  },
+  { immediate: true, deep: true }
+)
+// Kandidat PJ = guru PTPT aktif berjabatan Kepala/PJ/Pengasuh.
+const pjPtptList = computed(() =>
+  guruPtpt.value.filter((g) => jabatanAdalahPj(`${g.jabatan || ''} ${g.jabatan_tambahan || ''}`))
+)
+function guruDiPj(pjId, guruId) {
+  return (pjGuruDraft.value[String(pjId)] || []).map(String).includes(String(guruId))
+}
+// PJ lain (nama) yang sedang memegang guru ini — untuk keterangan "pindah".
+function pjLainDariGuru(pjId, guruId) {
+  for (const [k, gids] of Object.entries(pjGuruDraft.value)) {
+    if (String(k) === String(pjId)) continue
+    if ((gids || []).map(String).includes(String(guruId))) {
+      return guruPtpt.value.find((g) => String(g.id) === String(k))?.nama || 'PJ lain'
+    }
+  }
+  return ''
+}
+// Centang/lepas — satu guru cuma boleh di bawah SATU PJ, jadi mencentang di sini
+//   otomatis melepasnya dari PJ mana pun sebelumnya.
+function toggleGuruPj(pjId, guruId) {
+  const gid = String(guruId)
+  const wasHere = guruDiPj(pjId, gid)
+  const draft = {}
+  for (const [k, gids] of Object.entries(pjGuruDraft.value)) {
+    draft[k] = (gids || []).map(String).filter((x) => x !== gid)
+  }
+  if (!wasHere) {
+    const key = String(pjId)
+    draft[key] = [...(draft[key] || []), gid]
+  }
+  pjGuruDraft.value = draft
+}
+
 async function savePeranSemua() {
   savingKoor.value = true
   try {
     await savePeran({
       koordinator: barisKePeran(koorRows.value),
-      penyimak: barisKePeran(penyimakRows.value)
+      penyimak: barisKePeran(penyimakRows.value),
+      pjGuru: pjGuruDraft.value
     })
     toast.success('Peran glondongan tersimpan')
   } catch (e) {
@@ -1219,6 +1269,72 @@ const rekapTotal = computed(() => rekapRows.value.reduce((s, g) => s + g.total, 
           >
             <i class="fas fa-plus mr-1"></i>Tambah {{ blok.judul.toLowerCase() }}
           </button>
+        </div>
+
+        <!-- v.1.2.1: Pembagian Santri per PJ — tiap PJ punya daftar GURU; santri ikut
+             PJ dari gurunya (guru pengajar). Kyai: "pilih PJ, gurunya ini ini ini." -->
+        <div
+          class="p-3 rounded-xl border border-violet-300 dark:border-violet-700 bg-violet-50/60 dark:bg-violet-900/20"
+        >
+          <div class="flex items-center justify-between gap-2 mb-1">
+            <span class="text-sm font-bold text-violet-700 dark:text-violet-300">
+              <i class="fas fa-people-arrows mr-1"></i>Pembagian Santri per PJ
+            </span>
+          </div>
+          <p class="text-[10px] text-[var(--text-tertiary)] mb-2">
+            Centang guru di bawah tiap PJ. Santri otomatis ikut PJ dari guru pengajarnya (Pagi/Sore)
+            — tak perlu diisi satu-satu. Satu guru hanya boleh di bawah satu PJ.
+          </p>
+
+          <div
+            v-if="pjPtptList.length === 0"
+            class="text-[11px] italic text-amber-600 dark:text-amber-400 py-2"
+          >
+            <i class="fas fa-triangle-exclamation mr-1"></i>Belum ada guru PTPT berjabatan
+            Kepala/PJ/Pengasuh. Atur jabatannya dulu di Data Guru.
+          </div>
+
+          <div v-else class="space-y-3">
+            <div
+              v-for="pj in pjPtptList"
+              :key="'pj-' + pj.id"
+              class="rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)] p-2.5"
+            >
+              <div class="flex items-center gap-1.5 mb-1.5">
+                <span
+                  class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300"
+                  >PJ</span
+                >
+                <span class="text-sm font-bold text-[var(--text-primary)]">{{ pj.nama }}</span>
+                <span class="text-[10px] text-[var(--text-tertiary)] ml-auto"
+                  >{{ (pjGuruDraft[String(pj.id)] || []).length }} guru</span
+                >
+              </div>
+              <div class="flex flex-wrap gap-1.5">
+                <button
+                  v-for="g in guruPtpt"
+                  :key="'pjg-' + pj.id + '-' + g.id"
+                  type="button"
+                  @click="toggleGuruPj(pj.id, g.id)"
+                  :title="
+                    pjLainDariGuru(pj.id, g.id)
+                      ? `Sekarang di bawah ${pjLainDariGuru(pj.id, g.id)} — klik untuk pindah ke sini`
+                      : ''
+                  "
+                  :class="[
+                    'px-2 py-1 rounded-lg text-[11px] font-bold border transition',
+                    guruDiPj(pj.id, g.id)
+                      ? 'bg-violet-600 text-white border-violet-600'
+                      : pjLainDariGuru(pj.id, g.id)
+                        ? 'border-[var(--border-default)] text-[var(--text-tertiary)] opacity-60 hover:opacity-100'
+                        : 'border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-elevated)]'
+                  ]"
+                >
+                  <i v-if="guruDiPj(pj.id, g.id)" class="fas fa-check mr-1"></i>{{ g.nama }}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
 
         <button

@@ -18,6 +18,7 @@ import {
   isPenyimakKategori,
   kategoriMukim,
   buatScopePj,
+  getPjGuru,
   isBarisTerbuka,
   KATEGORI_GLONDONGAN,
   PTPT_LEMBAGA
@@ -62,10 +63,19 @@ export function useGlondongan() {
   }
 
   // v.1.1.9: scope PJ — "PJ hanya bisa melihat santri ampuannya" (Kyai 21 Jul 2026).
-  //   PJ PTPT kini >1 orang; tiap PJ dibatasi ke santri berlabel pj_ptpt = namanya.
+  //   PJ PTPT kini >1 orang; tiap PJ dibatasi ke santri ampuannya.
   //   Sumber santri = pinia collections store (useSantri), jadi TIDAK menambah langganan.
-  const { santriRaw } = useSantri()
-  const isAmpuanSaya = computed(() => buatScopePj(santriRaw.value, myNama.value))
+  const { santriRaw, guruRaw } = useSantri()
+  // v.1.2.1: peta pembagian santri per PJ ({ [pjGuruId]: [guruId] }) dari master/lembaga.
+  const pjGuru = computed(() => getPjGuru(lembagaList.value))
+  // v.1.2.1: PJ efektif santri kini DITURUNKAN dari guru pengajarnya via pjGuru
+  //   (label pj_ptpt jadi cadangan). Peta kosong → jatuh mulus ke perilaku label lama.
+  const isAmpuanSaya = computed(() =>
+    buatScopePj(santriRaw.value, myNama.value, {
+      guruList: guruRaw.value,
+      pjGuru: pjGuru.value
+    })
+  )
 
   // Boleh menugaskan penguji utk baris ini?
   //   super_admin  : semua baris.
@@ -285,11 +295,34 @@ export function useGlondongan() {
     return clean
   }
 
+  // v.1.2.1: rapikan peta pj_guru { [pjId]: [guruId] } — id string, unik, buang kosong,
+  //   dan JAGA agar satu guru cuma di bawah SATU PJ (yang pertama menang) supaya PJ
+  //   efektif santri tak ambigu.
+  function _bersihkanPjGuru(map) {
+    const out = {}
+    const dipakai = new Set()
+    for (const [pjId, gids] of Object.entries(map || {})) {
+      const key = String(pjId || '').trim()
+      if (!key) continue
+      const arr = []
+      for (const g of Array.isArray(gids) ? gids : []) {
+        const id = String(g || '').trim()
+        if (!id || dipakai.has(id) || arr.includes(id)) continue
+        arr.push(id)
+        dipakai.add(id)
+      }
+      if (arr.length) out[key] = arr
+    }
+    return out
+  }
+
   // super_admin: simpan peran glondongan ke master/lembaga PTPT.
   //   v.1.1.9: dua daftar TERPISAH — koordinator (yang menugaskan) & penyimak (yang
   //   boleh ditugaskan menyimak). Keduanya { mahad:[guruId], nonmahad:[guruId] }.
   //   `penyimak` boleh dihilangkan (undefined) → daftar penyimak tidak disentuh.
-  async function savePeran({ koordinator, penyimak } = {}) {
+  //   v.1.2.1: + `pjGuru` — peta { [pjGuruId]: [guruId,…] } pembagian santri per PJ.
+  //   undefined → tidak disentuh, sama seperti penyimak.
+  async function savePeran({ koordinator, penyimak, pjGuru } = {}) {
     const m = await getOne('master', 'lembaga')
     const list = Array.isArray(m?.list) ? m.list.slice() : []
     const idx = list.findIndex((l) => (l.lembaga || l.nama) === PTPT_LEMBAGA)
@@ -300,6 +333,7 @@ export function useGlondongan() {
       patch.koordinator_kelas = {}
     }
     if (penyimak) patch.penyimak_glondongan = _bersihkanPeran(penyimak)
+    if (pjGuru) patch.pj_guru = _bersihkanPjGuru(pjGuru)
     if (idx >= 0) list[idx] = { ...list[idx], ...patch }
     else list.push({ lembaga: PTPT_LEMBAGA, ...patch })
     await mergeOne('master', 'lembaga', { list })
@@ -344,6 +378,7 @@ export function useGlondongan() {
     myKategori,
     koordinatorGlondongan,
     penyimakGlondongan, // v.1.1.9: daftar penyimak per kategori
+    pjGuru, // v.1.2.1: peta { [pjGuruId]: [guruId] } pembagian santri per PJ
     bolehMenyimak,
     canAssign,
     canAssignAny,

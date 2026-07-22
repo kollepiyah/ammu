@@ -597,19 +597,14 @@ const {
   filterGedung,
   filterPjPtpt,
   stats,
-  isFullAccess
+  isFullAccess,
+  pjPtptDistinct
 } = useSantri()
 
-// v.111: opsi filter Gedung (master) + PJ PTPT (distinct dari santri) — pisah Pra PTPT/PTPT
+// v.111: opsi filter Gedung (master) + PJ PTPT — pisah Pra PTPT/PTPT.
+// v.1.2.1: opsi PJ ikut PJ EFEKTIF (dari guru) supaya sama dengan penyaringannya.
 const gedungOptions = computed(() => gedungList(settingsStore.settings || {}))
-const pjPtptOptions = computed(() => {
-  const set = new Set()
-  for (const s of santriRaw.value || []) {
-    const p = String(s.pj_ptpt || '').trim()
-    if (p) set.add(p)
-  }
-  return [...set].sort((a, b) => a.localeCompare(b, 'id'))
-})
+const pjPtptOptions = pjPtptDistinct
 
 // v.107: filter <-> URL query — pertahankan filter saat "back" dari halaman detail/profil.
 //   Baca query saat mount + saat berubah (dukung global-search header ?q= + pita ?tempat=).

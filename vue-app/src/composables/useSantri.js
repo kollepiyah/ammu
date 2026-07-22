@@ -9,6 +9,9 @@ import { getLembagaGroup, lembagaScopeMatches, getPkbmSubTier } from './useLemba
 import { sortSantri } from '@/utils/santriSort'
 // v.111: scope Gedung (akademik per gedung + filter Pra PTPT/PTPT)
 import { isGedungScoped, gedungOf } from '@/utils/gedung'
+// v.1.2.1: scope PJ PTPT — santri ampuan diturunkan dari guru pengajar (peta pj_guru)
+import { buatPetaPjSantri } from '@/utils/glondongan'
+import { usePjGuru } from './usePjGuru'
 
 // Helper: derive santri.lembaga_refs dari legacy fields
 // Santri reguler: 1 ref. Santri mukim: 3 refs (Ma'had + Qiraati + Sekolah).
@@ -45,6 +48,17 @@ export function useSantri() {
   const lembagaList = ref([])
   const loading = computed(() => !collections.isLoaded('santri'))
   const error = ref(null)
+  // v.1.2.1: peta pembagian santri per PJ (shared, 1 listener se-sesi).
+  const { pjGuru } = usePjGuru()
+  // santriId -> NAMA PJ efektif (dari guru pengajar, cadangan label pj_ptpt).
+  const petaPjSantri = computed(() =>
+    buatPetaPjSantri(santriRaw.value, guruRaw.value, pjGuru.value)
+  )
+  const _normPj = (v) =>
+    String(v ?? '')
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, ' ')
 
   // Search & filter state
   const search = ref('')
@@ -82,9 +96,28 @@ export function useSantri() {
         .toLowerCase()
       if (!myNama) return []
       // Kepala Lembaga: filter santri yang lembaga-nya = lembaga kepala-nya (via lembagaScopeMatches)
-      const jabL = String(user?.jabatan || '').toLowerCase()
-      const isKepala = jabL.includes('kepala') || jabL.includes('pj') || jabL.includes('pengasuh')
+      const jabL = `${user?.jabatan || ''} ${user?.jabatan_tambahan || ''}`.toLowerCase()
+      const isKepala = /(^|\s)(kepala|pj|pengasuh)(\s|$)/.test(jabL)
+      // v.1.2.1 (Kyai 22 Jul): PJ PTPT tak lagi lihat SEMUA PTPT — hanya santri ampuannya
+      //   (guru pengajarnya di bawah PJ ini, via peta pj_guru; cadangan label pj_ptpt).
+      //   PENGAMAN: kalau peta & label dua-duanya belum diisi (ampuan 0), jatuh ke scope
+      //   lembaga LAMA supaya PJ tak melihat layar kosong sebelum sempat menata pembagian.
+      const isPjPtpt =
+        isKepala &&
+        String(user?.lembaga || '')
+          .trim()
+          .toUpperCase() === 'PTPT'
+      const namaPj = _normPj(user?.guru || user?.nama)
+      const ampuanIds = isPjPtpt
+        ? new Set(
+            santriRaw.value
+              .filter((s) => s && _normPj(petaPjSantri.value.get(String(s.id))) === namaPj)
+              .map((s) => String(s.id))
+          )
+        : null
+      const pakaiScopePj = isPjPtpt && ampuanIds && ampuanIds.size > 0
       list = list.filter((s) => {
+        if (pakaiScopePj) return ampuanIds.has(String(s.id))
         // v.86.0526: Kepala/PJ = se-lembaganya (kyai "se-group"). lembagaScopeMatches handle
         //   variant/family (TPQ Sore→TPQ Pagi/Sore/Pra PTPT) MAUPUN label broad ('Qiraati'→semua qiraati).
         if (isKepala) {
@@ -168,7 +201,9 @@ export function useSantri() {
       list = list.filter((s) => String(s.gedung || '').trim() === filterGedung.value)
     }
     if (filterPjPtpt.value) {
-      list = list.filter((s) => String(s.pj_ptpt || '').trim() === filterPjPtpt.value)
+      // v.1.2.1: filter admin ikut PJ EFEKTIF (dari guru), bukan label pj_ptpt mentah.
+      const t = _normPj(filterPjPtpt.value)
+      list = list.filter((s) => _normPj(petaPjSantri.value.get(String(s.id))) === t)
     }
 
     // v.21.12.0526: Ma'had / Fullday / Pulang Pergi
@@ -197,6 +232,17 @@ export function useSantri() {
       return acc
     }, {})
   }))
+
+  // v.1.2.1: daftar nama PJ EFEKTIF yang ada (dari guru-derivasi + label cadangan) —
+  //   dipakai dropdown filter admin supaya opsi & penyaringan sama-sama pakai PJ efektif.
+  const pjPtptDistinct = computed(() => {
+    const set = new Set()
+    for (const v of petaPjSantri.value.values()) {
+      const p = String(v || '').trim()
+      if (p) set.add(p)
+    }
+    return [...set].sort((a, b) => a.localeCompare(b, 'id'))
+  })
 
   // Helper: dapatkan nama guru pagi/sore terformat
   function getGuruInfo(santriItem) {
@@ -229,6 +275,7 @@ export function useSantri() {
     filterPjPtpt,
     stats,
     isFullAccess,
+    pjPtptDistinct, // v.1.2.1: nama PJ efektif utk dropdown filter
     getGuruInfo,
     // v.21.10.0526: lembaga_refs + rapor list per santri
     deriveSantriLembagaRefs,

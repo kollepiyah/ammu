@@ -10,7 +10,13 @@ import { subscribeColl, subscribeDoc, setOne, updateOne, deleteOne } from '@/ser
 import { antreNotifBanyak, targetGuru, targetSantri } from '@/services/notif'
 import { useAuthStore } from '@/stores/auth'
 import { isSuperAdmin } from '@/utils/roleScope'
-import { PTPT_LEMBAGA, periodeBulan, kategoriKoordinatori, buatScopePj } from '@/utils/glondongan'
+import {
+  PTPT_LEMBAGA,
+  periodeBulan,
+  kategoriKoordinatori,
+  buatScopePj,
+  getPjGuru
+} from '@/utils/glondongan'
 import { useSantri } from '@/composables/useSantri'
 
 // PJ PTPT = jabatan kepala/PJ/pengasuh DAN lembaga = PTPT (mirror useGlondongan._isPjPtpt).
@@ -131,8 +137,15 @@ export function useCeremonial() {
 
   // v.1.1.9: scope PJ — "PJ hanya bisa melihat santri ampuannya" (Kyai 21 Jul 2026).
   //   Sumber santri = pinia collections store, jadi TIDAK menambah langganan.
-  const { santriRaw } = useSantri()
-  const isAmpuanSaya = computed(() => buatScopePj(santriRaw.value, myNama.value))
+  const { santriRaw, guruRaw } = useSantri()
+  // v.1.2.1: PJ efektif diturunkan dari guru pengajar (peta pj_guru); label cadangan.
+  const pjGuru = computed(() => getPjGuru(lembagaList.value))
+  const isAmpuanSaya = computed(() =>
+    buatScopePj(santriRaw.value, myNama.value, {
+      guruList: guruRaw.value,
+      pjGuru: pjGuru.value
+    })
+  )
   // Sesi ini menyangkut santri ampuan saya? (peserta ATAU penyimak santri).
   function sesiMenyangkutAmpuan(row) {
     const cek = isAmpuanSaya.value

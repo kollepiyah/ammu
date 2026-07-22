@@ -201,6 +201,82 @@ export function getKoordinatorGlondongan(lembagaList) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Pembagian santri per PJ PTPT — v.1.2.1. Kyai (22 Jul 2026): "ada 2 PJ di PTPT …
+//   bisakah misal saya pilih PJ Syarifatun, gurunya adalah ini ini ini?"
+//
+//   Peta `pj_guru = { [pjGuruId]: [guruId,…] }` di master/lembaga PTPT — tiap PJ
+//   punya daftar GURU (pengajar) di bawahnya. Nilai = guru id (stabil, bukan nama),
+//   sama seperti koordinator/penyimak.
+//
+//   PJ efektif seorang santri DITURUNKAN dari guru pengajarnya (guru_pagi/sore/guru):
+//   guru itu di bawah PJ mana. Jadi Kyai cukup memetakan guru→PJ sekali; santri baru
+//   yang diampu guru itu langsung ikut PJ-nya tanpa disentuh satu-satu. Kalau guru
+//   santri tak ada di peta mana pun, jatuh ke label lama `santri.pj_ptpt` (cadangan).
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Baca peta { [pjGuruId]: [guruId,…] } dari master/lembaga PTPT. Nilai selalu array
+//   string unik; key PJ kosong dibuang.
+export function getPjGuru(lembagaList) {
+  const o = _ptptObj(lembagaList)
+  const m = (o && o.pj_guru) || {}
+  const out = {}
+  for (const [pjId, gids] of Object.entries(m)) {
+    const key = String(pjId || '').trim()
+    if (!key) continue
+    const arr = [
+      ...new Set((Array.isArray(gids) ? gids : []).map((x) => String(x)).filter(Boolean))
+    ]
+    out[key] = arr
+  }
+  return out
+}
+
+// Jabatan ini tergolong PJ/Kepala/Pengasuh? (dipakai mendaftar kandidat PJ di UI)
+export function jabatanAdalahPj(jabatan) {
+  return /(^|\s)(kepala|pj|pengasuh)(\s|$)/.test(String(jabatan || '').toLowerCase())
+}
+
+/**
+ * Peta santriId -> NAMA PJ efektif.
+ *   1. Turunkan dari guru pengajar santri (guru_pagi/sore/guru) via `pjGuruMap`.
+ *   2. Tak ketemu -> label lama `santri.pj_ptpt` (cadangan, supaya data lama tetap jalan).
+ * Nama guru di santri dicocokkan ke id lewat `guruList` (nama dinormalisasi).
+ * Catatan: bila satu guru terlanjur terdaftar di >1 PJ, yang terakhir menang — UI
+ *   mencegah ini, tapi util tetap deterministik.
+ */
+export function buatPetaPjSantri(santriList, guruList, pjGuruMap) {
+  const idKeNama = new Map()
+  const namaKeId = new Map()
+  for (const g of guruList || []) {
+    const id = String(g?.id ?? '').trim()
+    const nm = String(g?.nama || '').trim()
+    if (id) idKeNama.set(id, nm)
+    if (nm) namaKeId.set(_normNama(nm), id)
+  }
+  const guruKePj = new Map() // guruId -> nama PJ
+  for (const [pjId, gids] of Object.entries(pjGuruMap || {})) {
+    const pjNama = idKeNama.get(String(pjId)) || ''
+    if (!pjNama) continue
+    for (const gid of Array.isArray(gids) ? gids : []) guruKePj.set(String(gid), pjNama)
+  }
+  const out = new Map()
+  for (const s of santriList || []) {
+    if (!s) continue
+    let pj = ''
+    for (const nm of [s.guru_pagi, s.guru_sore, s.guru]) {
+      const gid = namaKeId.get(_normNama(nm))
+      if (gid && guruKePj.has(gid)) {
+        pj = guruKePj.get(gid)
+        break
+      }
+    }
+    if (!pj) pj = String(s.pj_ptpt || '').trim() // cadangan: label per-santri lama
+    out.set(String(s.id), pj)
+  }
+  return out
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // PENYIMAK glondongan — v.1.1.9. Kyai (21 Jul 2026): "yg menyimak glondongan juga
 //   harus dipilih, untuk ma'had atau selainnya. jadi bukan hanya kordinator."
 //
@@ -300,14 +376,22 @@ const _normNama = (v) =>
  * Predikat "santri ini ampuan PJ bernama X", dibangun dari daftar santri.
  * @param {Array} santriList - daftar santri (id + pj_ptpt).
  * @param {string} namaPj - nama PJ yang login.
+ * @param {{guruList?:Array, pjGuru?:object}} [opts] - v.1.2.1: bila diberi, PJ santri
+ *   DITURUNKAN dari gurunya via peta pj_guru (label pj_ptpt jadi cadangan). Tanpa opts,
+ *   perilaku LAMA murni-label (dipakai tes lama & pemanggil yang belum dimutakhirkan).
  * @returns {(santriId:any)=>boolean} selalu false bila nama PJ kosong.
  */
-export function buatScopePj(santriList, namaPj) {
+export function buatScopePj(santriList, namaPj, opts) {
   const target = _normNama(namaPj)
+  const peta =
+    opts && (opts.guruList || opts.pjGuru)
+      ? buatPetaPjSantri(santriList, opts.guruList, opts.pjGuru)
+      : null
   const map = new Map()
   for (const s of santriList || []) {
     if (!s) continue
-    map.set(String(s.id), _normNama(s.pj_ptpt))
+    const pj = peta ? peta.get(String(s.id)) : s.pj_ptpt
+    map.set(String(s.id), _normNama(pj))
   }
   return (santriId) => {
     if (!target) return false
