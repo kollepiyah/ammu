@@ -3,6 +3,7 @@
 //   `settings` & `lembagaList` yang dulu ref view, kini parameter.
 import { getKartuKenaikanSchema } from './kenaikan'
 import { labelPasangan } from './pasanganGuru'
+import { jenjangLembaga, indexJenjang } from './jenjangQiraati' // v.1.2.2: jodohkan label master ↔ kartu
 import { setOne, updateOne } from '@/services/db'
 
 // v.21.75: Resolve kelas label dari Form Kenaikan ke schema {kelasId, itemId}
@@ -10,7 +11,14 @@ import { setOne, updateOne } from '@/services/db'
 // Pra PTPT: {kelas: "Level 1", khotam_ke: "I"} → {kelasId: "lvl_1", itemId: "kh_I"}
 // TPQ: {kelas: "Jilid 1A"} → {kelasId: "jilid_1", itemId: "1A"}
 // PPPH: {kelas: "Level 1 (Arba'in Nawawi)"} → {kelasId: "lvl_1", itemId: "arb_done"}
-export function resolveKenaikanSchemaPath(lembaga, kelasLabel, juzNum, khotamKe, settings) {
+export function resolveKenaikanSchemaPath(
+  lembaga,
+  kelasLabel,
+  juzNum,
+  khotamKe,
+  settings,
+  lembagaList
+) {
   if (!lembaga || !kelasLabel) return { kelasId: null, itemId: null }
   const schema = getKartuKenaikanSchema(lembaga, settings)
   if (!schema || !Array.isArray(schema.kelasList)) return { kelasId: null, itemId: null }
@@ -45,6 +53,30 @@ export function resolveKenaikanSchemaPath(lembaga, kelasLabel, juzNum, khotamKe,
       if (kelasLabel === cand1 || kelasLabel === cand2 || kelasLabel === cand3) {
         return { kelasId: parent.id, itemId: it.id }
       }
+    }
+  }
+
+  // 3) v.1.2.2 — jodohkan lewat INDEX bila labelnya beda BENTUK.
+  //    master/lembaga menamai jenjang 'Level 3 Juz' / PTPT '3', sedangkan kartu memakai
+  //    'Level 5 (3 Juz)' / 'Kelas 3'. Urutannya sama, jadi index-lah penghubungnya.
+  //    HANYA jalan kalau dua langkah di atas gagal (dulu: gagal = kartu tak tercap
+  //    diam-diam) dan jumlah jenjangnya sama — kalau beda, tak ada dasar menjodohkan.
+  if (Array.isArray(lembagaList) && lembagaList.length) {
+    const jenjang = jenjangLembaga(lembaga, lembagaList)
+    const i = indexJenjang(jenjang, kelasLabel)
+    if (i >= 0 && jenjang.length === schema.kelasList.length) {
+      const k = schema.kelasList[i]
+      const items = Array.isArray(k?.items) ? k.items : []
+      const cocok = (it) => {
+        const lbl = String(it?.label ?? '')
+          .trim()
+          .toLowerCase()
+        if (juzNum) return lbl === `juz ${juzNum}`.toLowerCase() || it?.id === `juz_${juzNum}`
+        if (khotamKe) return lbl === String(khotamKe).trim().toLowerCase()
+        return false
+      }
+      const it = juzNum || khotamKe ? items.find(cocok) : items.length === 1 ? items[0] : null
+      return { kelasId: k?.id || null, itemId: it?.id || null }
     }
   }
 
@@ -90,6 +122,9 @@ export function buildKenaikanQiraatiPayload(s, opts = {}, ctx = {}) {
   if (opts.lembaga === 'PTPT' && opts.juz) {
     payload.juz = `JUZ ${opts.juz}`
   }
+  // v.1.2.2: label PJ PTPT — diisi saat santri MASUK PTPT dari lembaga sebelumnya.
+  //   Hanya ditulis bila pemanggil memang memilih; jangan mengosongkan label yang ada.
+  if (String(opts.pj_ptpt ?? '').trim()) payload.pj_ptpt = String(opts.pj_ptpt).trim()
   const today = new Date().toISOString().slice(0, 10)
   const todayId = new Date().toLocaleDateString('id-ID')
 
@@ -115,7 +150,14 @@ export function buildKenaikanQiraatiPayload(s, opts = {}, ctx = {}) {
   const juzCap = isPtptJuz ? (juzLulus >= 1 ? String(juzLulus) : '') : opts.juz
 
   if (lmb && kls && adaCap) {
-    const resolved = resolveKenaikanSchemaPath(lmb, klsCap, juzCap, opts.khotam_ke, settings)
+    const resolved = resolveKenaikanSchemaPath(
+      lmb,
+      klsCap,
+      juzCap,
+      opts.khotam_ke,
+      settings,
+      lembagaList
+    )
     if (resolved.kelasId) {
       if (!kk[lmb]) kk[lmb] = {}
       if (!kk[lmb][resolved.kelasId]) kk[lmb][resolved.kelasId] = {}

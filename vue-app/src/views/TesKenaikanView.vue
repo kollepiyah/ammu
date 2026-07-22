@@ -693,6 +693,30 @@
             <i class="fas fa-spinner fa-spin mr-1"></i>Memuat data santri…
           </div>
           <template v-else>
+            <!-- v.1.2.2 (Kyai): santri yang menamatkan jenjang TERAKHIR lembaganya naik ke
+                 lembaga berikutnya. Ditegaskan supaya perpindahan tak terjadi diam-diam. -->
+            <div
+              v-if="naikForm.pindah"
+              class="rounded-xl border border-teal-300 dark:border-teal-700 bg-teal-50 dark:bg-teal-900/30 p-2.5 text-[11px] text-teal-800 dark:text-teal-200"
+            >
+              <i class="fas fa-arrow-up-right-dots mr-1"></i>
+              <b>Tamat {{ lulusFor.lembaga }}</b> — ini jenjang terakhirnya, jadi tujuannya
+              <b>pindah ke {{ naikForm.lembaga }}</b
+              >. Pilih kelas & guru barunya di bawah.
+            </div>
+            <div>
+              <label
+                class="block text-[10px] font-black uppercase text-[var(--text-secondary)] mb-1"
+                >Lembaga tujuan</label
+              >
+              <select
+                v-model="naikForm.lembaga"
+                @change="onLembagaTujuanChange"
+                class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none"
+              >
+                <option v-for="l in lembagaTujuanOptions" :key="l" :value="l">{{ l }}</option>
+              </select>
+            </div>
             <div>
               <label
                 class="block text-[10px] font-black uppercase text-[var(--text-secondary)] mb-1"
@@ -707,6 +731,13 @@
                   {{ k }}
                 </option>
               </select>
+              <p
+                v-if="canonKelasOptions(naikForm.lembaga).length === 0"
+                class="text-[10px] text-amber-600 dark:text-amber-400 mt-1"
+              >
+                <i class="fas fa-triangle-exclamation mr-1"></i>Lembaga ini belum punya daftar kelas
+                di Master Data.
+              </p>
             </div>
             <div v-if="naikForm.lembaga === 'PTPT'">
               <label
@@ -733,8 +764,30 @@
                 class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none"
               >
                 <option value="">—</option>
-                <option v-for="r in KHOTAM_ROMAWI" :key="r" :value="r">Khotam {{ r }}</option>
+                <option v-for="r in khotamOptions" :key="r" :value="r">Khotam {{ r }}</option>
               </select>
+            </div>
+            <!-- v.1.2.2 (Kyai): santri yang masuk PTPT butuh PJ — ada lebih dari satu PJ PTPT
+                 dan pembagian santri mengikuti PJ-nya. -->
+            <div v-if="naikForm.lembaga === 'PTPT'">
+              <label
+                class="block text-[10px] font-black uppercase text-[var(--text-secondary)] mb-1"
+                >PJ PTPT</label
+              >
+              <select
+                v-model="naikForm.pj_ptpt"
+                class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none"
+              >
+                <option value="">— belum ditentukan —</option>
+                <option v-for="p in pjPtptOptions" :key="p" :value="p">{{ p }}</option>
+              </select>
+              <p
+                v-if="pjPtptOptions.length === 0"
+                class="text-[10px] text-amber-600 dark:text-amber-400 mt-1"
+              >
+                <i class="fas fa-triangle-exclamation mr-1"></i>Belum ada guru berjabatan
+                <b>PJ PTPT</b> di lembaga PTPT.
+              </p>
             </div>
             <div>
               <label
@@ -792,6 +845,16 @@ import { juzNum, waLink } from '@/utils/format' // v.100e: normalisasi juz · v.
 import { masaTempuhJuz, labelMasaTempuh } from '@/utils/masaTempuh'
 import { expandLiburDates } from '@/utils/liburNasional'
 import { useSettingsStore } from '@/stores/settings'
+import { useLembaga } from '@/composables/useLembaga' // v.1.2.2: master/lembaga (daftar jenjang)
+// v.1.2.2 (Kyai 22 Jul): jenjang terakhir sebuah lembaga → naik ke lembaga berikutnya.
+import {
+  jenjangLembaga,
+  indexJenjang,
+  itemJenjang,
+  tujuanNaikLembaga,
+  RANTAI_QIRAATI
+} from '@/utils/jenjangQiraati'
+import { isPjLembaga } from '@/utils/glondongan' // v.1.2.2: kandidat PJ PTPT
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
 import { useDesktopShell } from '@/composables/useDesktopShell'
@@ -812,6 +875,8 @@ const toast = useToast()
 const confirmDlg = useConfirm()
 const settingsStore = useSettingsStore()
 
+// v.1.2.2: daftar jenjang & rantai lembaga qiraati dibaca dari master/lembaga.
+const { lembagaRaw } = useLembaga()
 const { santri, search, guruRaw } = useSantri()
 const {
   ajuanRaw, // v.1.1.9: sumber riwayat lulus utk masa tempuh (jangan pakai `riwayat` yg sudah discope UI)
@@ -1333,40 +1398,59 @@ async function decide(a, status) {
 // ----- v.100d: Lulus → naik otomatis (modal: konfirmasi tujuan + pilih guru) -----
 const lulusFor = ref(null)
 const lulusSantri = ref(null)
-const naikForm = reactive({ lembaga: '', kelas: '', juz: '', khotam_ke: '', guru: '' })
+const naikForm = reactive({
+  lembaga: '',
+  kelas: '',
+  juz: '',
+  khotam_ke: '',
+  guru: '',
+  pj_ptpt: '',
+  pindah: false // v.1.2.2: tujuannya lembaga BERIKUTNYA (bukan naik di lembaga sendiri)
+})
 const naikBusy = ref(false)
-const KHOTAM_ROMAWI = ['I', 'II', 'III', 'IV', 'V']
+const KHOTAM_ROMAWI = ['I', 'II', 'III', 'IV', 'V'] // cadangan bila kartu belum punya item
 
+// v.1.2.2 (Kyai 22 Jul): daftar jenjang DIBACA dari master/lembaga — di sanalah jenjang
+//   sungguhan tertulis ('Level ½ Juz' … 'Level 3 Juz', PTPT '1'..'6'). Daftar hardcoded
+//   lama sudah tak cocok dengan data, itulah sebabnya dropdown ini tampil KOSONG.
+//   utils/jenjangQiraati tetap menyimpan daftar lama sebagai cadangan.
 function canonKelasOptions(lembaga) {
-  const lmb = String(lembaga || '')
-    .toLowerCase()
-    .trim()
-  if (lmb === 'tpq' || lmb === 'tpq pagi' || lmb === 'tpq sore')
-    return [
-      'Jilid 1A',
-      'Jilid 1B',
-      'Jilid 1C',
-      'Jilid 2A',
-      'Jilid 2B',
-      'Jilid 3A',
-      'Jilid 3B',
-      'Jilid 4A',
-      'Jilid 4B',
-      'Jilid 5A',
-      'Jilid 5B',
-      'KPI',
-      'Persiapan Khotaman'
-    ]
-  if (lmb === 'pra ptpt') return ['Level 1', 'Level 2', 'Level 3', 'Level 4', 'Level 5']
-  if (lmb === 'ptpt') return ['Kelas 1', 'Kelas 2', 'Kelas 3', 'Kelas 4', 'Kelas 5', 'Kelas 6']
-  if (lmb === 'ppph' || lmb === 'p3h')
-    return [
-      "Level 1 (Arba'in Nawawi)",
-      'Level 2 (Riyadhus Sholihin)',
-      'Level 3 (Shahih Bukhari)',
-      'Level 4 (Shahih Muslim)'
-    ]
-  return []
+  return jenjangLembaga(lembaga, lembagaRaw.value)
+}
+// Pilihan khotam mengikuti kartu kenaikan jenjang terpilih (Level 3 Juz → I..IX);
+// dulu dipatok I..V sehingga 'Khotam IX' tak pernah bisa dipilih.
+const khotamOptions = computed(() => {
+  const items = itemJenjang(naikForm.lembaga, naikForm.kelas, {
+    lembagaList: lembagaRaw.value,
+    settings: settings.value
+  })
+  return items.length ? items : KHOTAM_ROMAWI
+})
+// Kandidat PJ PTPT — dipakai saat santri MASUK PTPT dari lembaga sebelumnya.
+const pjPtptOptions = computed(() =>
+  guruAktifSaja(guruRaw.value)
+    .filter((g) => isPjLembaga(g, 'PTPT'))
+    .map((g) => g.nama)
+    .filter(Boolean)
+)
+// Pilihan lembaga tujuan = rantai qiraati yang memang ada di Master Data. Ditampilkan
+// walau tak pindah, supaya Kepala/PJ bisa mengoreksi tebakan sistem.
+const lembagaTujuanOptions = computed(() => {
+  const ada = new Set(
+    (lembagaRaw.value || []).map((l) => String(l?.lembaga || l?.nama || '').trim()).filter(Boolean)
+  )
+  const out = RANTAI_QIRAATI.filter((l) => ada.has(l))
+  const asal = String(lulusFor.value?.lembaga || '').trim()
+  if (asal && !out.includes(asal)) out.unshift(asal)
+  return out
+})
+// Ganti lembaga tujuan manual → kelas/juz/khotam ikut disetel ulang ke lembaga itu.
+function onLembagaTujuanChange() {
+  const opts = canonKelasOptions(naikForm.lembaga)
+  if (!opts.includes(naikForm.kelas)) naikForm.kelas = opts[0] || ''
+  naikForm.juz = naikForm.lembaga === 'PTPT' ? '1' : ''
+  naikForm.khotam_ke = ''
+  naikForm.pindah = naikForm.lembaga !== (lulusFor.value?.lembaga || '')
 }
 function juzOptionsNaik() {
   const m = String(naikForm.kelas || '').match(/(\d+)/)
@@ -1385,8 +1469,31 @@ function guruOptionsFor(lembaga) {
 }
 // Tebakan tujuan dari target tes (Kepala bisa koreksi via dropdown).
 function prefillNaik(a) {
+  const ctx = { lembagaList: lembagaRaw.value, settings: settings.value }
+
+  // v.1.2.2 (Kyai 22 Jul): santri yang MENAMATKAN lembaganya — jenjang terakhir DAN
+  //   item terakhir jenjang itu (mis. Pra PTPT 'Level 3 Juz' + 'Khotam IX') — tujuannya
+  //   lembaga BERIKUTNYA (TPQ → Pra PTPT → PTPT → PPPH), bukan jenjang di lembaga lama.
+  const naik = tujuanNaikLembaga(a, ctx)
+  if (naik) {
+    const items = itemJenjang(naik.lembaga, naik.kelas, ctx)
+    return {
+      lembaga: naik.lembaga,
+      kelas: naik.kelas,
+      juz: naik.lembaga === 'PTPT' ? '1' : '',
+      khotam: naik.lembaga === 'Pra PTPT' ? items[0] || '' : '',
+      pindah: true
+    }
+  }
+
+  // Naik di dalam lembaga sendiri — perilaku lama, tapi kelasnya diresolusi ke daftar
+  //   jenjang NYATA (master) supaya nilai hasil tebakan benar-benar ada di dropdown.
   const lmb = a.lembaga
   const opts = canonKelasOptions(lmb)
+  const pilih = (v) => {
+    const i = indexJenjang(opts, v)
+    return i >= 0 ? opts[i] : ''
+  }
   const t = String(a.target || '')
   let kelas = '',
     juz = '',
@@ -1395,10 +1502,10 @@ function prefillNaik(a) {
     if (a.jenis === 'juz') {
       const m = t.match(/(\d+)/)
       juz = m ? m[1] : ''
-      if (juz) kelas = `Kelas ${Math.ceil(Number(juz) / 5)}`
+      if (juz) kelas = opts[Math.ceil(Number(juz) / 5) - 1] || ''
     } else {
-      kelas = opts.find((o) => o.toLowerCase() === t.toLowerCase()) || t
-      const m = kelas.match(/(\d+)/)
+      kelas = pilih(t) || t
+      const m = String(kelas).match(/(\d+)/)
       if (m) juz = String((Number(m[1]) - 1) * 5 + 1)
     }
   } else if (lmb === 'Pra PTPT') {
@@ -1406,20 +1513,17 @@ function prefillNaik(a) {
       .replace(/khotam\s*/i, '')
       .trim()
       .toUpperCase()
-    kelas =
-      opts.find((o) => o.toLowerCase() === String(a.kelas_asal || '').toLowerCase()) ||
-      a.kelas_asal ||
-      ''
+    kelas = pilih(a.kelas_asal) || a.kelas_asal || ''
   } else if (lmb === 'PPPH' || lmb === 'P3H') {
-    kelas = opts.find((o) => o.toLowerCase() === t.toLowerCase()) || t
+    kelas = pilih(t) || t
   } else {
     const tu = t.toUpperCase()
-    if (/^\d[A-C]$/i.test(t)) kelas = `Jilid ${tu}`
-    else if (tu.includes('IMTAS')) kelas = 'KPI'
-    else if (tu.includes('KHOTAM')) kelas = 'Persiapan Khotaman'
-    else kelas = opts.find((o) => o.toLowerCase() === t.toLowerCase()) || t
+    if (/^\d[A-C]$/i.test(t)) kelas = pilih(`Jilid ${tu}`) || `Jilid ${tu}`
+    else if (tu.includes('IMTAS')) kelas = pilih('KPI') || 'KPI'
+    else if (tu.includes('KHOTAM')) kelas = pilih('Persiapan Khotaman') || 'Persiapan Khotaman'
+    else kelas = pilih(t) || t
   }
-  return { kelas, juz, khotam }
+  return { lembaga: lmb, kelas, juz, khotam, pindah: false }
 }
 async function openLulus(a) {
   lulusFor.value = a
@@ -1429,14 +1533,26 @@ async function openLulus(a) {
   naikForm.juz = ''
   naikForm.khotam_ke = ''
   naikForm.guru = ''
+  naikForm.pj_ptpt = ''
+  naikForm.pindah = false
   try {
     const s = await getOne('santri', String(a.santri_id))
     lulusSantri.value = s
     const pre = prefillNaik(a)
+    naikForm.lembaga = pre.lembaga || a.lembaga || ''
     naikForm.kelas = pre.kelas
     naikForm.juz = pre.juz
     naikForm.khotam_ke = pre.khotam
-    naikForm.guru = s ? (Array.isArray(s.guru) ? s.guru[0] || '' : s.guru || '') : ''
+    naikForm.pindah = !!pre.pindah
+    // Pindah lembaga = pindah kelas & guru; jangan bawa guru lama sebagai tebakan.
+    naikForm.guru = pre.pindah
+      ? ''
+      : s
+        ? Array.isArray(s.guru)
+          ? s.guru[0] || ''
+          : s.guru || ''
+        : ''
+    naikForm.pj_ptpt = String(s?.pj_ptpt || '').trim()
   } catch (e) {
     toast.error('Gagal memuat data santri: ' + (e.message || e))
   }
@@ -1470,12 +1586,16 @@ async function submitLulus() {
       juz: naikForm.lembaga === 'PTPT' ? naikForm.juz : '',
       khotam_ke: naikForm.lembaga === 'Pra PTPT' ? naikForm.khotam_ke : '',
       guru: naikForm.guru || '',
+      // v.1.2.2: label PJ hanya relevan di PTPT (santri yang baru masuk PTPT).
+      pj_ptpt: naikForm.lembaga === 'PTPT' ? naikForm.pj_ptpt || '' : '',
       kelas_sekolah: s.kelas_sekolah || '',
       catatan: catatan[a.id] || ''
     }
     const { payload, rkEntry } = buildKenaikanQiraatiPayload(s, opts, {
       settings: settings.value,
-      lembagaList: []
+      // v.1.2.2: dulu selalu [] — akibatnya kartu kenaikan Pra PTPT tak pernah tercap
+      //   (label master 'Level 3 Juz' ≠ label kartu 'Level 5 (3 Juz)').
+      lembagaList: lembagaRaw.value
     })
     await writeKenaikan(s, payload, rkEntry)
     const nilaiObj = collectNilai(a)
@@ -1505,7 +1625,11 @@ async function submitLulus() {
     }
     delete catatan[a.id]
     delete nilai[a.id]
-    toast.success(`${a.nama_cache} LULUS & dinaikkan ke ${naikForm.kelas}.`)
+    toast.success(
+      naikForm.pindah
+        ? `${a.nama_cache} LULUS & pindah ke ${naikForm.lembaga} — ${naikForm.kelas}.`
+        : `${a.nama_cache} LULUS & dinaikkan ke ${naikForm.kelas}.`
+    )
     closeLulus()
   } catch (e) {
     toast.error('Gagal proses lulus: ' + (e.message || e))
