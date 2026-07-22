@@ -1,9 +1,9 @@
 // v.1.1.9 — Masa tempuh juz PTPT: berapa HARI EFEKTIF dilalui santri antara lulus
 //   juz sebelumnya dan lulus juz yang baru dites.
 //
-// Keputusan Kyai (21 Jul 2026):
+// Keputusan Kyai (21 Jul 2026, direvisi 22 Jul):
 //   - "hari aktif" = HARI EFEKTIF LEMBAGA: hari kalender dikurangi libur mingguan
-//     (Jumat, ikut settings.liburJumat) dan tanggal libur di Kalender Kegiatan.
+//     (AHAD/Minggu — dulu Jumat) dan tanggal libur di Kalender Kegiatan.
 //     BUKAN hari hadir santri — absensi ngaji cuma tersimpan per BULAN
 //     (absensi_santri_ngaji_bulanan), jadi angka per-santri hanya bisa ditaksir
 //     prorata. Hari efektif persis per-hari dan sama untuk semua santri.
@@ -44,8 +44,8 @@ function isoOf(dt) {
  *
  * @param {string} tglAwal  - 'YYYY-MM-DD' (boleh ISO penuh, di-slice).
  * @param {string} tglAkhir - 'YYYY-MM-DD'.
- * @param {Object} opts - { libur: Set<'YYYY-MM-DD'>, liburJumat: boolean }.
- *                        liburJumat default TRUE (cermin settings.liburJumat).
+ * @param {Object} opts - { libur: Set<'YYYY-MM-DD'>, liburMingguan: boolean }.
+ *   v.1.2.1: libur mingguan = AHAD/Minggu (dulu Jumat). liburMingguan default TRUE.
  * @returns {number|null} null bila tanggal tak terbaca.
  */
 export function hariEfektif(tglAwal, tglAkhir, opts = {}) {
@@ -53,7 +53,7 @@ export function hariEfektif(tglAwal, tglAkhir, opts = {}) {
   const b = toParts(tglAkhir)
   if (!a || !b) return null
   const libur = opts.libur instanceof Set ? opts.libur : new Set(opts.libur || [])
-  const liburJumat = opts.liburJumat !== false
+  const liburMingguan = opts.liburMingguan !== false
   const cur = new Date(a.y, a.mo - 1, a.d)
   const end = new Date(b.y, b.mo - 1, b.d)
   if (end <= cur) return 0
@@ -61,8 +61,8 @@ export function hariEfektif(tglAwal, tglAkhir, opts = {}) {
   let n = 0
   let guard = 0
   while (cur <= end && guard++ < MAX_HARI) {
-    const jumat = cur.getDay() === 5
-    if (!(liburJumat && jumat) && !libur.has(isoOf(cur))) n++
+    const ahad = cur.getDay() === 0 // v.1.2.1: Ahad/Minggu libur mingguan (dulu Jumat)
+    if (!(liburMingguan && ahad) && !libur.has(isoOf(cur))) n++
     cur.setDate(cur.getDate() + 1)
   }
   return n

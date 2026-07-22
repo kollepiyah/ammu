@@ -2,34 +2,35 @@
 // tempuh ketika lulus tes... dihitung dari hari aktif antara juz sebelumnya dg juz
 // yg dites."
 //
-// "Hari aktif" = HARI EFEKTIF LEMBAGA (kalender minus Jumat minus libur kalender),
+// "Hari aktif" = HARI EFEKTIF LEMBAGA (kalender minus AHAD/Minggu minus libur kalender),
 // bukan hari hadir santri — absensi ngaji hanya tersimpan per bulan.
+// v.1.2.1 (Kyai 22 Jul): libur mingguan Ahad/Minggu (dulu Jumat).
 import { describe, it, expect } from 'vitest'
 import { hariEfektif, masaTempuhJuz, riwayatLulusJuz, labelMasaTempuh } from '@/utils/masaTempuh'
 
-// 2026-01-01 = Kamis. Jadi 2026-01-02 Jumat, 01-09 Jumat, dst.
+// 2026-01-01 = Kamis → 01-02 Jum, 01-03 Sab, 01-04 AHAD, 01-05 Sen … 01-11 Ahad.
 describe('hariEfektif', () => {
   it('hari lulus juz LAMA tidak ikut dihitung (eksklusif), hari lulus baru ikut', () => {
-    // Kam 1 → Sab 3: yang dihitung 2 (Jum, libur) + 3 (Sab) = 1 hari.
-    expect(hariEfektif('2026-01-01', '2026-01-03')).toBe(1)
+    // Kam 1 → Sab 3: dihitung 02 (Jum) + 03 (Sab) = 2 (Jumat kini hari kerja, tak ada Ahad).
+    expect(hariEfektif('2026-01-01', '2026-01-03')).toBe(2)
   })
 
-  it('Jumat dibuang secara default (settings.liburJumat)', () => {
-    // 01-01 Kam → 01-08 Kam = 7 hari kalender, 1 Jumat (01-02) → 6.
+  it('Ahad/Minggu dibuang secara default', () => {
+    // 01-01 Kam → 01-08 Kam = 7 hari kalender, 1 Ahad (01-04) → 6.
     expect(hariEfektif('2026-01-01', '2026-01-08')).toBe(6)
   })
 
-  it('liburJumat:false → Jumat ikut dihitung', () => {
-    expect(hariEfektif('2026-01-01', '2026-01-08', { liburJumat: false })).toBe(7)
+  it('liburMingguan:false → Ahad ikut dihitung', () => {
+    expect(hariEfektif('2026-01-01', '2026-01-08', { liburMingguan: false })).toBe(7)
   })
 
   it('tanggal libur kalender ikut dibuang', () => {
-    const libur = new Set(['2026-01-05', '2026-01-06'])
+    const libur = new Set(['2026-01-05', '2026-01-06']) // Sen, Sel (hari kerja)
     expect(hariEfektif('2026-01-01', '2026-01-08', { libur })).toBe(4)
   })
 
-  it('libur yang jatuh di Jumat tidak dihitung dua kali', () => {
-    const libur = new Set(['2026-01-02']) // Jumat
+  it('libur yang jatuh di Ahad tidak dihitung dua kali', () => {
+    const libur = new Set(['2026-01-04']) // Ahad
     expect(hariEfektif('2026-01-01', '2026-01-08', { libur })).toBe(6)
   })
 
@@ -89,7 +90,7 @@ describe('masaTempuhJuz', () => {
 
   it('menghitung dari lulus juz sebelumnya ke lulus juz ini', () => {
     const mt = masaTempuhJuz([a1, a2], a2)
-    expect(mt.hari).toBe(6) // 7 hari kalender - 1 Jumat
+    expect(mt.hari).toBe(6) // 7 hari kalender - 1 Ahad (01-04)
     expect(mt.dari).toBe('2026-01-01')
     expect(mt.sampai).toBe('2026-01-08')
     expect(mt.juz_dari).toBe('5')

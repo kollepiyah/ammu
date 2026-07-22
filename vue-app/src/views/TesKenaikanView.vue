@@ -1035,9 +1035,8 @@ onUnmounted(() => {
 })
 const liburSet = computed(() => expandLiburDates(kegiatanRaw.value))
 const masaTempuhOpts = computed(() => ({
-  libur: liburSet.value,
-  // Cermin AbsensiGuruView: Jumat libur kecuali settings.liburJumat === false.
-  liburJumat: settingsStore.settings?.liburJumat !== false
+  libur: liburSet.value
+  // v.1.2.1: libur mingguan = Ahad/Minggu (default ON di hariEfektif). Dulu Jumat.
 }))
 // Teks siap tampil utk 1 ajuan; '' = tak perlu ditampilkan (bukan PTPT-juz / belum lulus).
 function masaTempuhText(a) {

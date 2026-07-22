@@ -3164,7 +3164,7 @@ async function eksporKartuPdf() {
       //   selalu cocok dengan tanggal yang tercetak persis di atasnya — dan tetap jalan
       //   untuk santri lama yang kartunya diisi manual tanpa baris tes_kenaikan.
       //   Definisi "hari aktif" sama dengan di menu Tes Kenaikan: hari kalender dikurangi
-      //   Jumat (settings.liburJumat) dan tanggal libur Kalender Kegiatan.
+      //   AHAD/Minggu (v.1.2.1, dulu Jumat) dan tanggal libur Kalender Kegiatan.
       const tglJuz = {} // { <juz>: 'YYYY-MM-DD' }
       for (let k = 1; k <= 6; k++) {
         const kData = data[`kelas_${k}`] || {}
@@ -3179,9 +3179,10 @@ async function eksporKartuPdf() {
       try {
         liburSet = expandLiburDates(await queryColl('kegiatan'))
       } catch (_e) {
-        /* tanpa kalender: cukup buang Jumat — jangan gagalkan cetak kartu */
+        /* tanpa kalender: cukup buang Ahad/Minggu — jangan gagalkan cetak kartu */
       }
-      const optHari = { libur: liburSet, liburJumat: settingsObj.liburJumat !== false }
+      // v.1.2.1: libur mingguan = Ahad (default ON di hariEfektif).
+      const optHari = { libur: liburSet }
       // masaJuz[j] = hari efektif sejak juz BERTANGGAL sebelumnya. Juz pertama = null.
       const masaJuz = {}
       let prevJuz = 0

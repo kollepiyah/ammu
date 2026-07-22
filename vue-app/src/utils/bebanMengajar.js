@@ -14,9 +14,11 @@
 // dan pemotongan per hari tetap jalan tanpa Kyai perlu mengisi hari sama sekali.
 import { canonLembaga } from '@/composables/useLembaga'
 
-// Hari aktif sekolah bila settings.hariAktifLembaga belum diatur: semua KECUALI Jumat.
-// (0=Ahad … 6=Sabtu)
-export const HARI_AKTIF_DEFAULT = [0, 1, 2, 3, 4, 6]
+// Hari aktif sekolah bila settings.hariAktifLembaga belum diatur.
+// v.1.2.1 (Kyai 22 Jul): hari efektif SENIN–SABTU; AHAD/Minggu libur. Dulu default
+//   semua KECUALI Jumat ([0,1,2,3,4,6]) — keliru untuk pesantren ini (Minggu ikut
+//   terhitung, Jumat dibuang). (0=Ahad … 6=Sabtu → aktif 1..6, Minggu(0) libur.)
+export const HARI_AKTIF_DEFAULT = [1, 2, 3, 4, 5, 6]
 
 export function normalizeBeban(row) {
   const r = row || {}

@@ -72,15 +72,16 @@ describe('jpByLembagaForGuru', () => {
 describe('jpPerHariForGuru — JP mingguan dibagi rata ke hari aktif', () => {
   const s = S([{ guru_id: 'g1', lembaga: 'SDI', jp_minggu: 24 }])
 
-  it('tanpa pengaturan hari aktif → default semua KECUALI Jumat', () => {
+  it('tanpa pengaturan hari aktif → default semua KECUALI Ahad/Minggu', () => {
     const per = jpPerHariForGuru(s, 'g1', 'SDI')
     expect(
       Object.keys(per)
         .map(Number)
         .sort((a, b) => a - b)
     ).toEqual(HARI_AKTIF_DEFAULT)
-    expect(per[5]).toBeUndefined() // Jumat
-    expect(per[1]).toBe(4) // 24 ÷ 6 hari
+    expect(per[0]).toBeUndefined() // Ahad/Minggu libur
+    expect(per[5]).toBe(4) // Jumat kini hari kerja
+    expect(per[1]).toBe(4) // 24 ÷ 6 hari (Sen–Sab)
   })
 
   it('hari aktif per lembaga dipakai sebagai penyebut', () => {
@@ -120,7 +121,7 @@ describe('jpDiajarPeriode — pemotongan karena tidak masuk', () => {
     '2026-01-10',
     '2026-01-11'
   ]
-  // 24 JP/minggu, hari aktif default (6 hari, tanpa Jumat) → 4 JP/hari.
+  // 24 JP/minggu, hari aktif default (6 hari Sen–Sab, tanpa Ahad) → 4 JP/hari.
   const jpPerHari = jpPerHariForGuru(
     S([{ guru_id: 'g1', lembaga: 'SDI', jp_minggu: 24 }]),
     'g1',
@@ -128,30 +129,30 @@ describe('jpDiajarPeriode — pemotongan karena tidak masuk', () => {
   )
 
   it('hadir semua hari aktif → dapat JP mingguan PENUH', () => {
-    const hadir = SEPEKAN.filter((d) => d !== '2026-01-09') // Jumat memang tak aktif
+    const hadir = SEPEKAN.filter((d) => d !== '2026-01-11') // Ahad memang tak aktif
     const r = jpDiajarPeriode({ jpPerHari, tanggalList: SEPEKAN, hadirSet: hadir })
     expect(r.terjadwal).toBe(24)
     expect(r.diajar).toBe(24)
   })
 
   it('bolos 1 hari → terpotong tepat porsi hari itu', () => {
-    const hadir = SEPEKAN.filter((d) => d !== '2026-01-09' && d !== '2026-01-06')
+    const hadir = SEPEKAN.filter((d) => d !== '2026-01-11' && d !== '2026-01-06') // Ahad + bolos Selasa
     const r = jpDiajarPeriode({ jpPerHari, tanggalList: SEPEKAN, hadirSet: hadir })
     expect(r.terjadwal).toBe(24)
     expect(r.diajar).toBe(20) // 24 − 4
   })
 
-  it('KUNCI: Jumat (di luar hari aktif) TIDAK dihitung absen', () => {
-    // Guru tak pernah hadir hari Jumat, dan itu tak boleh mengurangi apa pun —
+  it('KUNCI: Ahad (di luar hari aktif) TIDAK dihitung absen', () => {
+    // Guru tak pernah hadir hari Ahad, dan itu tak boleh mengurangi apa pun —
     // baik JP terjadwal maupun JP diajar.
-    const hadir = SEPEKAN.filter((d) => d !== '2026-01-09')
+    const hadir = SEPEKAN.filter((d) => d !== '2026-01-11')
     const r = jpDiajarPeriode({ jpPerHari, tanggalList: SEPEKAN, hadirSet: hadir })
     expect(r.terjadwal).toBe(24) // bukan 28
     expect(r.diajar).toBe(24)
   })
 
   it('hari libur dilewati — tak mengurangi hak, tak jadi utang', () => {
-    const hadir = SEPEKAN.filter((d) => d !== '2026-01-09' && d !== '2026-01-07')
+    const hadir = SEPEKAN.filter((d) => d !== '2026-01-11' && d !== '2026-01-07') // Ahad + Rabu libur
     const r = jpDiajarPeriode({
       jpPerHari,
       tanggalList: SEPEKAN,
@@ -171,7 +172,7 @@ describe('jpDiajarPeriode — pemotongan karena tidak masuk', () => {
   it('JP pecahan dibulatkan 2 desimal (bukan 20.833333333333336)', () => {
     // 25 JP ÷ 6 hari aktif = 4,1666… — tanpa pembulatan, label slip jadi berantakan.
     const jph = jpPerHariForGuru(S([{ guru_id: 'g1', lembaga: 'SDI', jp_minggu: 25 }]), 'g1', 'SDI')
-    const hadir = SEPEKAN.filter((d) => d !== '2026-01-09' && d !== '2026-01-06')
+    const hadir = SEPEKAN.filter((d) => d !== '2026-01-11' && d !== '2026-01-06') // Ahad + bolos Selasa
     const r = jpDiajarPeriode({ jpPerHari: jph, tanggalList: SEPEKAN, hadirSet: hadir })
     expect(r.terjadwal).toBe(25)
     expect(r.diajar).toBe(20.83)
