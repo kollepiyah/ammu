@@ -76,18 +76,31 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
-    <!-- v.87.0526 (recovered): widget Jam Hijri update tiap menit via AlarmManager -->
-    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
-    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+    <!-- v.1.2.2 (audit 23 Jul 2026): SCHEDULE_EXACT_ALARM + USE_EXACT_ALARM DIHAPUS.
+         USE_EXACT_ALARM adalah izin TERBATAS Google Play — hanya untuk aplikasi yang
+         fungsi INTINYA jam alarm, timer, atau kalender. Ammu = manajemen pesantren,
+         jelas tak memenuhi; izin ini dipakai widget Jam Hijri (update tiap menit),
+         yang bukan alasan sah. Aman dilepas TANPA ubah kode Java: scheduleNextUpdate()
+         di JamHijriWidget sudah membungkus setExact() dengan try/catch SecurityException
+         lalu jatuh ke set() inexact, ditambah updatePeriodMillis 30 menit di
+         widget_jam_hijri_info.xml sebagai jaring. Praktisnya tak terasa: alarm inexact
+         baru molor saat perangkat Doze — dan saat itu layar mati, widgetnya tak dilihat.
+         JANGAN tambah kembali. -->
     <!-- v.85.0526: storage permissions untuk PDF export (Capacitor Filesystem + Share) -->
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
     <!-- v.103b: READ_MEDIA_IMAGES/VIDEO DIHAPUS (kebijakan Google Play "Penggunaan izin foto & video
          tidak valid"). App hanya pilih gambar sesekali (logo/foto profil/dokumen) lewat <input type="file">
          WebView = file chooser/photo picker sistem, yg TIDAK butuh izin ini. Jangan tambah kembali. -->
-    <!-- Camera + microphone untuk foto profil (opsional) -->
-    <uses-permission android:name="android.permission.CAMERA" />
-    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <!-- v.1.2.2 (audit 23 Jul 2026): CAMERA + uses-feature camera DIHAPUS — izin
+         MENGANGGUR. Plugin @capacitor/camera tidak terpasang dan tak ada satu pun
+         pemakaian kamera di vue-app/src (nol hasil utk Camera/getUserMedia/capture=).
+         Foto profil & logo dipilih lewat <input type="file"> = photo picker sistem,
+         yang tak butuh izin apa pun. Persis pola READ_MEDIA_IMAGES di v.103b.
+         Izin menganggur tetap tampil di halaman Play Store sbg "meminta akses kamera"
+         dan mengundang pertanyaan kebijakan. Tambahkan HANYA bila benar-benar memakai
+         kamera in-app (mis. memasang @capacitor/camera). -->
+
     <!-- v.87.0526: notifikasi (Android 13+) — wajib utk request izin runtime LocalNotifications -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- v.93.0626: eksplisitkan permission yg sebelumnya hanya ter-merge dari library plugin -->
