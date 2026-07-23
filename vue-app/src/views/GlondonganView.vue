@@ -711,13 +711,13 @@ async function exportRekapBisyarohPdf() {
       <button
         v-if="canAssignAny"
         type="button"
-        @click="tab = 'penugasan'"
         :class="[
           'px-3 py-2 text-xs font-bold rounded-lg border transition',
           tab === 'penugasan'
             ? 'bg-teal-600 text-white border-teal-600'
             : 'bg-[var(--bg-muted)] text-[var(--text-secondary)] border-[var(--border-default)]'
         ]"
+        @click="tab = 'penugasan'"
       >
         <i class="fas fa-user-plus mr-1"></i>Penugasan
         <span
@@ -728,38 +728,38 @@ async function exportRekapBisyarohPdf() {
       </button>
       <button
         type="button"
-        @click="tab = 'nilai'"
         :class="[
           'px-3 py-2 text-xs font-bold rounded-lg border transition',
           tab === 'nilai'
             ? 'bg-teal-600 text-white border-teal-600'
             : 'bg-[var(--bg-muted)] text-[var(--text-secondary)] border-[var(--border-default)]'
         ]"
+        @click="tab = 'nilai'"
       >
         <i class="fas fa-pen-to-square mr-1"></i>Tugas Menilai
       </button>
       <button
         type="button"
-        @click="tab = 'catatan'"
         :class="[
           'px-3 py-2 text-xs font-bold rounded-lg border transition',
           tab === 'catatan'
             ? 'bg-teal-600 text-white border-teal-600'
             : 'bg-[var(--bg-muted)] text-[var(--text-secondary)] border-[var(--border-default)]'
         ]"
+        @click="tab = 'catatan'"
       >
         <i class="fas fa-clipboard-list mr-1"></i>Catatan
       </button>
       <button
         v-if="isSuper"
         type="button"
-        @click="tab = 'koordinator'"
         :class="[
           'px-3 py-2 text-xs font-bold rounded-lg border transition',
           tab === 'koordinator'
             ? 'bg-teal-600 text-white border-teal-600'
             : 'bg-[var(--bg-muted)] text-[var(--text-secondary)] border-[var(--border-default)]'
         ]"
+        @click="tab = 'koordinator'"
       >
         <i class="fas fa-user-gear mr-1"></i>Peran
       </button>
@@ -767,26 +767,26 @@ async function exportRekapBisyarohPdf() {
       <button
         v-if="canRekapPenyimak"
         type="button"
-        @click="tab = 'rekappenyimak'"
         :class="[
           'px-3 py-2 text-xs font-bold rounded-lg border transition',
           tab === 'rekappenyimak'
             ? 'bg-teal-600 text-white border-teal-600'
             : 'bg-[var(--bg-muted)] text-[var(--text-secondary)] border-[var(--border-default)]'
         ]"
+        @click="tab = 'rekappenyimak'"
       >
         <i class="fas fa-chart-simple mr-1"></i>Rekap Penyimak
       </button>
       <button
         v-if="canRekap"
         type="button"
-        @click="tab = 'rekap'"
         :class="[
           'px-3 py-2 text-xs font-bold rounded-lg border transition',
           tab === 'rekap'
             ? 'bg-teal-600 text-white border-teal-600'
             : 'bg-[var(--bg-muted)] text-[var(--text-secondary)] border-[var(--border-default)]'
         ]"
+        @click="tab = 'rekap'"
       >
         <i class="fas fa-money-bill-wave mr-1"></i>Rekap Bisyaroh
       </button>
@@ -903,9 +903,9 @@ async function exportRekapBisyarohPdf() {
             </select>
             <button
               type="button"
-              @click="assign(row)"
               :disabled="savingId === row.id || !pick[row.id]"
               class="px-3 py-2 text-xs font-bold rounded-lg bg-teal-600 hover:bg-teal-700 text-white disabled:opacity-50 whitespace-nowrap"
+              @click="assign(row)"
             >
               <i :class="['fas mr-1', savingId === row.id ? 'fa-spinner fa-spin' : 'fa-check']"></i
               >Tugaskan
@@ -914,11 +914,11 @@ async function exportRekapBisyarohPdf() {
             <button
               v-if="canCrud"
               type="button"
-              @click="hapusRow(row)"
               :disabled="hapusId === String(row.id)"
               title="Hapus blok ini (super admin)"
               aria-label="Hapus blok glondongan"
               class="shrink-0 px-2.5 py-2 text-xs font-bold rounded-lg border border-[var(--border-default)] text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 disabled:opacity-40"
+              @click="hapusRow(row)"
             >
               <i
                 :class="['fas', hapusId === String(row.id) ? 'fa-spinner fa-spin' : 'fa-trash']"
@@ -947,8 +947,8 @@ async function exportRekapBisyarohPdf() {
             <button
               v-if="!bukaSemuaGuru[row.id]"
               type="button"
-              @click="bukaSemuaGuru[row.id] = true"
               class="text-[var(--text-tertiary)] hover:underline"
+              @click="bukaSemuaGuru[row.id] = true"
             >
               <template v-if="penyimakKosong(row)">
                 Tampilkan juga guru yang sedang bertugas
@@ -960,8 +960,8 @@ async function exportRekapBisyarohPdf() {
             <button
               v-else
               type="button"
-              @click="bukaSemuaGuru[row.id] = false"
               class="text-[var(--text-tertiary)] hover:underline"
+              @click="bukaSemuaGuru[row.id] = false"
             >
               Menampilkan semua guru PTPT (termasuk yang sedang bertugas) · kembali ke penyimak
               {{ kategoriLabel(row) }} yang senggang
@@ -1062,9 +1062,9 @@ async function exportRekapBisyarohPdf() {
 
             <button
               type="button"
-              @click="batalTugasRow(row)"
               :disabled="batalId === String(row.id)"
               class="mt-2 text-[10px] font-bold text-rose-600 hover:underline disabled:opacity-40"
+              @click="batalTugasRow(row)"
             >
               <i
                 :class="['fas mr-1', batalId === String(row.id) ? 'fa-spinner fa-spin' : 'fa-undo']"
@@ -1131,8 +1131,8 @@ async function exportRekapBisyarohPdf() {
         >
           <button
             type="button"
-            @click="toggleNilai(row)"
             class="w-full flex items-center justify-between gap-2 p-3 text-left"
+            @click="toggleNilai(row)"
           >
             <div class="min-w-0">
               <p class="text-sm font-bold text-[var(--text-primary)] truncate">
@@ -1231,9 +1231,9 @@ async function exportRekapBisyarohPdf() {
 
             <button
               type="button"
-              @click="saveNilai(row)"
               :disabled="savingNilaiId === row.id"
               class="w-full mt-2 bg-teal-600 hover:bg-teal-700 text-white font-bold py-2.5 rounded-xl disabled:opacity-50 flex items-center justify-center gap-2"
+              @click="saveNilai(row)"
             >
               <i :class="['fas', savingNilaiId === row.id ? 'fa-spinner fa-spin' : 'fa-check']"></i>
               {{ savingNilaiId === row.id ? 'Menyimpan…' : 'Simpan & Selesai' }}
@@ -1304,11 +1304,11 @@ async function exportRekapBisyarohPdf() {
                 <button
                   v-if="canCrud"
                   type="button"
-                  @click="hapusRow(r)"
                   :disabled="hapusId === String(r.id)"
                   title="Hapus baris ini (super admin)"
                   aria-label="Hapus baris glondongan"
                   class="ml-auto shrink-0 w-6 h-6 rounded-lg border border-[var(--border-default)] text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 flex items-center justify-center disabled:opacity-40"
+                  @click="hapusRow(r)"
                 >
                   <i
                     :class="[
@@ -1360,9 +1360,9 @@ async function exportRekapBisyarohPdf() {
         </span>
         <button
           type="button"
-          @click="bersihkanYatimKlik"
           :disabled="bersihBusy"
           class="shrink-0 px-2.5 py-1.5 text-[11px] font-bold rounded-lg bg-amber-600 hover:bg-amber-700 text-white disabled:opacity-50"
+          @click="bersihkanYatimKlik"
         >
           <i :class="['fas mr-1', bersihBusy ? 'fa-spinner fa-spin' : 'fa-broom']"></i>Bersihkan
         </button>
@@ -1430,9 +1430,9 @@ async function exportRekapBisyarohPdf() {
             </select>
             <button
               type="button"
-              @click="hapusBaris(blok.rows, i)"
               :aria-label="`Hapus baris ${blok.judul}`"
               class="shrink-0 px-2.5 py-2 text-xs rounded-lg border border-[var(--border-default)] text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30"
+              @click="hapusBaris(blok.rows, i)"
             >
               <i class="fas fa-trash"></i>
             </button>
@@ -1440,8 +1440,8 @@ async function exportRekapBisyarohPdf() {
 
           <button
             type="button"
-            @click="tambahBaris(blok.rows)"
             class="mt-1 text-xs font-bold text-teal-700 dark:text-teal-300 hover:underline"
+            @click="tambahBaris(blok.rows)"
           >
             <i class="fas fa-plus mr-1"></i>Tambah {{ blok.judul.toLowerCase() }}
           </button>
@@ -1491,7 +1491,6 @@ async function exportRekapBisyarohPdf() {
                   v-for="g in guruPtpt"
                   :key="'pjg-' + pj.id + '-' + g.id"
                   type="button"
-                  @click="toggleGuruPj(pj.id, g.id)"
                   :title="
                     pjLainDariGuru(pj.id, g.id)
                       ? `Sekarang di bawah ${pjLainDariGuru(pj.id, g.id)} — klik untuk pindah ke sini`
@@ -1505,6 +1504,7 @@ async function exportRekapBisyarohPdf() {
                         ? 'border-[var(--border-default)] text-[var(--text-tertiary)] opacity-60 hover:opacity-100'
                         : 'border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-elevated)]'
                   ]"
+                  @click="toggleGuruPj(pj.id, g.id)"
                 >
                   <i v-if="guruDiPj(pj.id, g.id)" class="fas fa-check mr-1"></i>{{ g.nama }}
                 </button>
@@ -1515,9 +1515,9 @@ async function exportRekapBisyarohPdf() {
 
         <button
           type="button"
-          @click="savePeranSemua"
           :disabled="savingKoor"
           class="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-2.5 rounded-xl disabled:opacity-50 flex items-center justify-center gap-2"
+          @click="savePeranSemua"
         >
           <i :class="['fas', savingKoor ? 'fa-spinner fa-spin' : 'fa-floppy-disk']"></i>
           {{ savingKoor ? 'Menyimpan…' : 'Simpan Peran' }}
@@ -1547,11 +1547,11 @@ async function exportRekapBisyarohPdf() {
           />
           <button
             type="button"
-            @click="exportRekapPenyimakPdf"
             :disabled="!rekapPenyimakRows.length"
             aria-label="Ekspor rekap penyimak glondongan ke PDF"
             title="Ekspor PDF rekap penyimak bulan ini"
             class="px-3 py-1.5 text-xs font-bold rounded-lg bg-rose-600 hover:bg-rose-700 text-white disabled:opacity-40 whitespace-nowrap"
+            @click="exportRekapPenyimakPdf"
           >
             <i class="fas fa-file-pdf mr-1"></i>PDF
           </button>
@@ -1638,11 +1638,11 @@ async function exportRekapBisyarohPdf() {
           <!-- v.1.2.1 (Kyai): ekspor PDF rekap bisyaroh -->
           <button
             type="button"
-            @click="exportRekapBisyarohPdf"
             :disabled="!rekapRows.length"
             aria-label="Ekspor rekap bisyaroh glondongan ke PDF"
             title="Ekspor PDF rekap bisyaroh bulan ini"
             class="px-3 py-1.5 text-xs font-bold rounded-lg bg-rose-600 hover:bg-rose-700 text-white disabled:opacity-40 whitespace-nowrap"
+            @click="exportRekapBisyarohPdf"
           >
             <i class="fas fa-file-pdf mr-1"></i>PDF
           </button>

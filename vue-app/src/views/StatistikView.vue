@@ -40,8 +40,8 @@
           >No. Induk: {{ santriProfile.nis }}</span
         >
         <button
-          @click="gotoProfil"
           class="ml-2 mt-3 inline-flex items-center gap-1.5 bg-[var(--bg-card)]/15 hover:bg-[var(--bg-card)]/25 backdrop-blur-sm text-white text-xs font-bold px-3 py-1.5 rounded-lg transition cursor-pointer"
+          @click="gotoProfil"
         >
           <i class="fas fa-id-card"></i>Lihat Data Diri
         </button>
@@ -204,8 +204,8 @@
         class="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)] shadow-sm overflow-hidden"
       >
         <button
-          @click="toggleSection('rekap')"
           class="w-full px-4 md:px-5 py-3 md:py-4 flex items-center justify-between gap-3 hover:bg-slate-50 dark:hover:bg-slate-900/30 transition cursor-pointer"
+          @click="toggleSection('rekap')"
         >
           <div class="flex items-center gap-3 min-w-0">
             <div
@@ -250,8 +250,8 @@
         class="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)] shadow-sm overflow-hidden"
       >
         <button
-          @click="toggleSection('statistik')"
           class="w-full px-4 md:px-5 py-3 md:py-4 flex items-center justify-between gap-3 hover:bg-slate-50 dark:hover:bg-slate-900/30 transition cursor-pointer"
+          @click="toggleSection('statistik')"
         >
           <div class="flex items-center gap-3 min-w-0">
             <div
@@ -346,8 +346,8 @@
         class="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)] shadow-sm overflow-hidden"
       >
         <button
-          @click="toggleSection('kartu')"
           class="w-full px-4 md:px-5 py-3 md:py-4 flex items-center justify-between gap-3 hover:bg-slate-50 dark:hover:bg-slate-900/30 transition cursor-pointer"
+          @click="toggleSection('kartu')"
         >
           <div class="flex items-center gap-3 min-w-0">
             <div
@@ -404,8 +404,8 @@
         class="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)] shadow-sm overflow-hidden"
       >
         <button
-          @click="toggleSection('rapor')"
           class="w-full px-4 md:px-5 py-3 md:py-4 flex items-center justify-between gap-3 hover:bg-slate-50 dark:hover:bg-slate-900/30 transition cursor-pointer"
+          @click="toggleSection('rapor')"
         >
           <div class="flex items-center gap-3 min-w-0">
             <div
@@ -639,7 +639,7 @@
         <p class="text-[11px] text-teal-700 dark:text-teal-300">
           <i class="fas fa-info-circle mr-1"></i>Data kehadiran &amp; slip bisyaroh pribadi Anda ada
           di menu
-          <button @click="$router.push('/personal')" class="font-black underline cursor-pointer">
+          <button class="font-black underline cursor-pointer" @click="$router.push('/personal')">
             Personal</button
           >.
         </p>

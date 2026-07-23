@@ -29,7 +29,7 @@
       <p class="text-sm text-[var(--text-secondary)] font-bold">Memuat data guru...</p>
     </div>
 
-    <form v-else @submit.prevent="onSubmit" class="space-y-4">
+    <form v-else class="space-y-4" @submit.prevent="onSubmit">
       <!-- Identitas -->
       <div
         class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
@@ -231,8 +231,8 @@
                 <input
                   type="checkbox"
                   :checked="(form.shift_ids || []).includes(s.id)"
-                  @change="toggleShift(s.id)"
                   class="w-4 h-4 accent-indigo-600"
+                  @change="toggleShift(s.id)"
                 />
                 <span class="min-w-0">
                   {{ s.label }}

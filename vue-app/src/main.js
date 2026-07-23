@@ -77,7 +77,6 @@ function revealSplash() {
 try {
   app.mount('#app')
 } catch (mountErr) {
-  // eslint-disable-next-line no-console
   console.error('[main.js] Vue app.mount FAIL:', mountErr)
 }
 
@@ -114,7 +113,6 @@ if (IS_NATIVE) {
   // FALLBACK: kalau ada apa-apa yg block, force-hide splash max 6 detik
   setTimeout(() => {
     if (!document.body.classList.contains('app-running')) {
-      // eslint-disable-next-line no-console
       console.warn('[main.js] Splash fallback hide @ 6s — Vue mount mungkin stuck')
       hideSplash()
     }
@@ -149,10 +147,9 @@ async function initSentry() {
       release: 'portal-mu@1.2.2',
       environment: window.location.hostname.includes('localhost') ? 'dev' : 'prod'
     })
-    // eslint-disable-next-line no-console
+
     console.log('[main.js] Sentry initialized')
   } catch (e) {
-    // eslint-disable-next-line no-console
     console.warn('[main.js] Sentry init skipped:', e.message)
   }
 }

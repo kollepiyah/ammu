@@ -196,9 +196,9 @@ function bukaWaAdmin() {
         <!-- Login dengan Google -->
         <button
           type="button"
-          @click="handleGoogleLogin"
           :disabled="isSubmitting"
           class="w-full bg-[var(--bg-card)] border border-[var(--border-default)] hover:bg-[var(--bg-card-elevated)] disabled:opacity-50 text-[var(--text-primary)] font-bold py-2.5 rounded-xl shadow-sm cursor-pointer flex justify-center items-center gap-2 transition text-sm"
+          @click="handleGoogleLogin"
         >
           <svg class="w-4 h-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <path
@@ -230,32 +230,32 @@ function bukaWaAdmin() {
           <div class="flex-1 h-px bg-slate-300"></div>
         </div>
 
-        <form @submit.prevent="handleLogin" class="space-y-3" autocomplete="on">
+        <form class="space-y-3" autocomplete="on" @submit.prevent="handleLogin">
           <!-- v.111: pilih jalur login — Santri/Wali vs Guru/Pegawai (1 WA bisa dipakai keduanya) -->
           <div
             class="flex gap-1 p-1 rounded-xl bg-black/5 dark:bg-white/10 border border-[var(--border-default)]"
           >
             <button
               type="button"
-              @click="setLoginMode('santri')"
               :class="
                 isSantriMode
                   ? 'bg-teal-600 text-white shadow'
                   : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
               "
               class="flex-1 py-2 rounded-lg text-xs font-bold transition"
+              @click="setLoginMode('santri')"
             >
               <i class="fas fa-user-graduate mr-1.5"></i>Santri / Wali
             </button>
             <button
               type="button"
-              @click="setLoginMode('guru')"
               :class="
                 !isSantriMode
                   ? 'bg-teal-600 text-white shadow'
                   : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
               "
               class="flex-1 py-2 rounded-lg text-xs font-bold transition"
+              @click="setLoginMode('guru')"
             >
               <i class="fas fa-chalkboard-user mr-1.5"></i>Guru / Pegawai
             </button>
@@ -307,10 +307,10 @@ function bukaWaAdmin() {
               />
               <button
                 type="button"
-                @click="showPassword = !showPassword"
                 class="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition cursor-pointer"
                 :aria-label="showPassword ? 'Sembunyikan sandi' : 'Tampilkan sandi'"
                 tabindex="-1"
+                @click="showPassword = !showPassword"
               >
                 <i :class="['fas', showPassword ? 'fa-eye-slash' : 'fa-eye', 'text-xs']"></i>
               </button>
@@ -356,8 +356,8 @@ function bukaWaAdmin() {
         <div class="flex justify-end items-center text-[10px]">
           <button
             type="button"
-            @click="handleLupaSandi"
             class="text-cyan-600 hover:text-cyan-800 font-bold cursor-pointer underline"
+            @click="handleLupaSandi"
           >
             Lupa Sandi?
           </button>
@@ -396,8 +396,8 @@ function bukaWaAdmin() {
     >
       <div class="bg-[var(--bg-card)] rounded-2xl shadow-2xl max-w-md w-full p-6 relative">
         <button
-          @click="showLupaSandi = false"
           class="absolute top-3 right-3 text-[var(--text-tertiary)] hover:text-rose-600 text-lg cursor-pointer"
+          @click="showLupaSandi = false"
         >
           <i class="fas fa-times"></i>
         </button>
@@ -426,14 +426,14 @@ function bukaWaAdmin() {
         <div class="mt-4 flex gap-2">
           <button
             v-if="adminWaPondok"
-            @click="bukaWaAdmin"
             class="flex-1 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-bold py-2.5 rounded-xl text-sm cursor-pointer transition"
+            @click="bukaWaAdmin"
           >
             <i class="fab fa-whatsapp mr-1"></i>Hubungi Admin via WA
           </button>
           <button
-            @click="showLupaSandi = false"
             class="flex-1 bg-slate-200 hover:bg-slate-300 text-[var(--text-primary)] font-bold py-2.5 rounded-xl text-sm cursor-pointer transition"
+            @click="showLupaSandi = false"
           >
             <i class="fas fa-check mr-1"></i>Mengerti
           </button>
@@ -465,9 +465,9 @@ function bukaWaAdmin() {
           <div class="relative">
             <button
               type="button"
-              @click="showDesktopMenu = !showDesktopMenu"
               aria-label="Unduh installer Desktop"
               class="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-md bg-gradient-to-br from-cyan-500/80 to-sky-600/80 hover:from-cyan-400 hover:to-sky-500 border border-cyan-300/30 shadow-sm hover:shadow-md transition cursor-pointer group"
+              @click="showDesktopMenu = !showDesktopMenu"
             >
               <i class="fas fa-desktop text-white text-sm group-hover:scale-110 transition"></i>
               <span class="text-[10px] text-white font-bold tracking-wide">Desktop</span>
@@ -481,8 +481,8 @@ function bukaWaAdmin() {
                 :href="downloadDesktopUrl"
                 target="_blank"
                 rel="noopener"
-                @click="showDesktopMenu = false"
                 class="flex items-center gap-1.5 px-2.5 py-1.5 hover:bg-white/10 transition cursor-pointer"
+                @click="showDesktopMenu = false"
               >
                 <i class="fab fa-windows text-cyan-300 text-[11px]"></i>
                 <span class="text-[10px] text-white font-bold">Windows 10/11</span>
@@ -491,8 +491,8 @@ function bukaWaAdmin() {
                 :href="downloadDesktopWin7Url"
                 target="_blank"
                 rel="noopener"
-                @click="showDesktopMenu = false"
                 class="flex items-center gap-1.5 px-2.5 py-1.5 hover:bg-white/10 transition cursor-pointer border-t border-white/10"
+                @click="showDesktopMenu = false"
               >
                 <i class="fab fa-windows text-amber-300 text-[11px]"></i>
                 <span class="text-[10px] text-white font-bold">Windows 7</span>

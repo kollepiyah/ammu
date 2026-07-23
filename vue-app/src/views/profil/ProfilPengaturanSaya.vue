@@ -13,11 +13,11 @@
       <button
         v-for="item in items"
         :key="item.id"
-        @click="openModal(item.id)"
         :class="[
           'group bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-2xl p-4 text-left transition cursor-pointer',
           colorMap[item.color].hoverBg
         ]"
+        @click="openModal(item.id)"
       >
         <i
           :class="[
@@ -83,9 +83,9 @@
             <input
               type="file"
               accept="image/*"
-              @change="onPickFoto"
               :disabled="fotoState.uploading"
               class="w-full text-sm"
+              @change="onPickFoto"
             />
             <p class="text-[10px] text-[var(--text-secondary)] italic mt-2">JPG/PNG, maks 2MB</p>
             <div v-if="fotoState.dataUrl" class="mt-3">
@@ -108,9 +108,9 @@
             <h3 class="text-lg font-black mb-3">Ganti Username</h3>
             <input
               v-model="usernameState.value"
-              @blur="cekUsername"
               type="text"
               class="w-full px-3 py-2 border border-[var(--border-default)] rounded-lg text-sm"
+              @blur="cekUsername"
             />
             <p v-if="usernameState.checking" class="text-xs text-[var(--text-secondary)] mt-2">
               Cek...
@@ -155,9 +155,9 @@
             <input
               type="file"
               accept="image/*"
-              @change="onPickTtd"
               :disabled="ttdState.uploading"
               class="w-full text-sm"
+              @change="onPickTtd"
             />
             <p class="text-[10px] text-[var(--text-secondary)] italic mt-2">
               PNG transparan disarankan, maks 1MB
@@ -181,17 +181,17 @@
             </p>
             <button
               v-if="entity?.linked_email"
-              @click="onUnlinkGoogle"
               :disabled="googleBusy"
               class="mt-3 w-full bg-slate-600 text-white py-2 rounded-lg font-bold text-sm disabled:opacity-50"
+              @click="onUnlinkGoogle"
             >
               <i class="fas fa-unlink mr-2"></i>{{ googleBusy ? 'Memutus...' : 'Putuskan Tautan' }}
             </button>
             <button
               v-else
-              @click="onLinkGoogle"
               :disabled="googleBusy"
               class="mt-3 w-full bg-rose-600 text-white py-2 rounded-lg font-bold text-sm disabled:opacity-50"
+              @click="onLinkGoogle"
             >
               <i class="fab fa-google mr-2"></i
               >{{ googleBusy ? 'Menghubungkan...' : 'Connect dengan Google' }}
@@ -227,56 +227,56 @@
 
           <div class="flex justify-end gap-2 mt-5 pt-3 border-t border-[var(--border-subtle)]">
             <button
-              @click="closeModal"
               class="px-4 py-2 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--bg-muted)] rounded-lg"
+              @click="closeModal"
             >
               Batal
             </button>
             <button
               v-if="activeModal === 'sandi'"
-              @click="simpanSandi"
               :disabled="busy"
               class="px-4 py-2 text-sm font-bold bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg disabled:opacity-50"
+              @click="simpanSandi"
             >
               Simpan
             </button>
             <button
               v-else-if="activeModal === 'username'"
-              @click="simpanUsername"
               :disabled="busy"
               class="px-4 py-2 text-sm font-bold bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg disabled:opacity-50"
+              @click="simpanUsername"
             >
               Simpan
             </button>
             <button
               v-else-if="activeModal === 'wa' || activeModal === 'wa_wali'"
-              @click="simpanWa"
               :disabled="busy"
               class="px-4 py-2 text-sm font-bold bg-green-600 hover:bg-green-700 text-white rounded-lg disabled:opacity-50"
+              @click="simpanWa"
             >
               Simpan
             </button>
             <button
               v-else-if="activeModal === 'notif'"
-              @click="simpanNotif"
               :disabled="busy"
               class="px-4 py-2 text-sm font-bold bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg disabled:opacity-50"
+              @click="simpanNotif"
             >
               Simpan
             </button>
             <button
               v-else-if="activeModal === 'ekgq'"
-              @click="simpanEkgq"
               :disabled="busy"
               class="px-4 py-2 text-sm font-bold bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white rounded-lg disabled:opacity-50"
+              @click="simpanEkgq"
             >
               Simpan
             </button>
             <button
               v-else-if="activeModal === 'foto'"
-              @click="simpanFoto"
               :disabled="busy || fotoState.uploading || !fotoState.dataUrl"
               class="px-4 py-2 text-sm font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg disabled:opacity-50"
+              @click="simpanFoto"
             >
               {{ fotoState.uploading ? 'Menyimpan...' : 'Simpan' }}
             </button>

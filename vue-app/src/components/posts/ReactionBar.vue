@@ -4,7 +4,6 @@
     <button
       v-for="r in REACTIONS"
       :key="r.emoji"
-      @click="toggleReaction(r.emoji)"
       :class="[
         'flex items-center gap-1 px-2 py-1 rounded-full text-xs transition-all',
         myReaction === r.emoji
@@ -12,6 +11,7 @@
           : 'bg-[var(--bg-muted)] text-[var(--text-secondary)] hover:bg-slate-200 dark:hover:bg-slate-600/40'
       ]"
       :title="r.label"
+      @click="toggleReaction(r.emoji)"
     >
       <span class="text-base leading-none">{{ r.emoji }}</span>
       <span v-if="counts[r.emoji]" class="font-bold text-[10px]">{{ counts[r.emoji] }}</span>

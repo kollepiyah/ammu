@@ -28,8 +28,8 @@
             type="file"
             accept=".xlsx,.xls"
             class="hidden"
-            @change="onFile"
             :disabled="parsing || importing"
+            @change="onFile"
           />
         </label>
         <span class="text-xs text-[var(--text-secondary)]"

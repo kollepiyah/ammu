@@ -550,9 +550,9 @@ async function onImportAssign(e) {
           <!-- v.100 Batch10: impor massal assign guru (data baru & banyak) -->
           <button
             type="button"
-            @click="downloadTemplateAssign"
             :disabled="exportingTpl"
             class="text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 px-3 py-1.5 rounded-lg"
+            @click="downloadTemplateAssign"
           >
             <i :class="['fas mr-1', exportingTpl ? 'fa-spinner fa-spin' : 'fa-file-arrow-down']"></i
             >Template Assign
@@ -573,15 +573,15 @@ async function onImportAssign(e) {
               type="file"
               accept=".xlsx,.xls"
               class="hidden"
-              @change="onImportAssign"
               :disabled="importingAssign"
+              @change="onImportAssign"
             />
           </label>
           <button
             v-if="kategori"
             type="button"
-            @click="reset"
             class="text-xs font-bold text-[var(--text-secondary)] bg-[var(--bg-muted)] hover:bg-slate-300 dark:hover:bg-slate-600 px-3 py-1.5 rounded-lg"
+            @click="reset"
           >
             <i class="fas fa-rotate-left mr-1"></i>Mulai Ulang
           </button>
@@ -593,8 +593,8 @@ async function onImportAssign(e) {
     <div v-if="!kategori" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
       <button
         type="button"
-        @click="kategori = 'ngaji'"
         class="bg-gradient-to-br from-teal-500 to-teal-700 text-white rounded-2xl p-5 text-left shadow-sm hover:shadow-md hover:-translate-y-0.5 transition cursor-pointer"
+        @click="kategori = 'ngaji'"
       >
         <i class="fas fa-book-quran text-2xl mb-2 drop-shadow"></i>
         <h3 class="text-base font-black">Ngaji (Qiraati)</h3>
@@ -602,8 +602,8 @@ async function onImportAssign(e) {
       </button>
       <button
         type="button"
-        @click="kategori = 'sekolah'"
         class="bg-gradient-to-br from-cyan-500 to-cyan-700 text-white rounded-2xl p-5 text-left shadow-sm hover:shadow-md hover:-translate-y-0.5 transition cursor-pointer"
+        @click="kategori = 'sekolah'"
       >
         <i class="fas fa-school text-2xl mb-2 drop-shadow"></i>
         <h3 class="text-base font-black">Sekolah (Formal)</h3>
@@ -625,8 +625,8 @@ async function onImportAssign(e) {
         </h3>
         <button
           type="button"
-          @click="kategori = ''"
           class="text-[11px] font-bold text-[var(--text-secondary)] hover:underline"
+          @click="kategori = ''"
         >
           <i class="fas fa-arrow-left mr-1"></i>Kembali
         </button>
@@ -642,8 +642,8 @@ async function onImportAssign(e) {
           v-for="l in lembagaOptions"
           :key="l"
           type="button"
-          @click="selectedLembaga = l"
           class="px-3 py-3 text-sm font-bold rounded-xl border border-[var(--border-default)] bg-[var(--bg-muted)] text-[var(--text-primary)] hover:bg-teal-50 dark:hover:bg-teal-900/30 hover:border-teal-400 transition cursor-pointer"
+          @click="selectedLembaga = l"
         >
           {{ l }}
         </button>
@@ -662,8 +662,8 @@ async function onImportAssign(e) {
         </h3>
         <button
           type="button"
-          @click="backToLembaga"
           class="text-[11px] font-bold text-[var(--text-secondary)] hover:underline"
+          @click="backToLembaga"
         >
           <i class="fas fa-arrow-left mr-1"></i>Ganti Lembaga
         </button>
@@ -679,8 +679,8 @@ async function onImportAssign(e) {
           v-for="k in kelasOptions"
           :key="k"
           type="button"
-          @click="pilihKelas(k)"
           class="px-3 py-3 text-sm font-bold rounded-xl border border-[var(--border-default)] bg-[var(--bg-muted)] text-[var(--text-primary)] hover:bg-teal-50 dark:hover:bg-teal-900/30 hover:border-teal-400 transition cursor-pointer"
+          @click="pilihKelas(k)"
         >
           {{ k }}
         </button>
@@ -694,9 +694,9 @@ async function onImportAssign(e) {
         />
         <button
           type="button"
-          @click="tambahKelas"
           :disabled="addingKelas || !newKelas.trim()"
           class="px-3 py-2 text-xs font-bold rounded-lg bg-teal-600 hover:bg-teal-700 text-white disabled:opacity-50"
+          @click="tambahKelas"
         >
           <i :class="['fas', addingKelas ? 'fa-spinner fa-spin' : 'fa-plus']" class="mr-1"></i
           >Tambah
@@ -716,8 +716,8 @@ async function onImportAssign(e) {
         </h3>
         <button
           type="button"
-          @click="backToKelas"
           class="text-[11px] font-bold text-[var(--text-secondary)] hover:underline"
+          @click="backToKelas"
         >
           <i class="fas fa-arrow-left mr-1"></i>Ganti Kelas
         </button>
@@ -811,8 +811,8 @@ async function onImportAssign(e) {
             </span>
             <button
               type="button"
-              @click="tampilkanSudahBerguru = !tampilkanSudahBerguru"
               class="font-bold text-teal-700 dark:text-teal-300 hover:underline ml-1"
+              @click="tampilkanSudahBerguru = !tampilkanSudahBerguru"
             >
               {{ tampilkanSudahBerguru ? 'sembunyikan lagi' : 'tampilkan' }}
             </button>
@@ -821,15 +821,15 @@ async function onImportAssign(e) {
         <div class="flex gap-2">
           <button
             type="button"
-            @click="selectAll"
             class="text-[11px] font-bold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-900/30 px-2.5 py-1 rounded-lg"
+            @click="selectAll"
           >
             <i class="fas fa-check-double mr-1"></i>Semua
           </button>
           <button
             type="button"
-            @click="selectNone"
             class="text-[11px] font-bold text-[var(--text-secondary)] bg-[var(--bg-muted)] px-2.5 py-1 rounded-lg"
+            @click="selectNone"
           >
             <i class="fas fa-xmark mr-1"></i>Kosong
           </button>
@@ -861,13 +861,13 @@ async function onImportAssign(e) {
         <li
           v-for="s in santriKandidatTampil"
           :key="s.id"
-          @click="toggle(s.id)"
           :class="[
             'flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer border transition',
             checked.has(s.id)
               ? 'bg-teal-50 dark:bg-teal-900/30 border-teal-300'
               : 'bg-[var(--bg-muted)] border-transparent hover:border-[var(--border-default)]'
           ]"
+          @click="toggle(s.id)"
         >
           <i
             :class="[
@@ -886,9 +886,9 @@ async function onImportAssign(e) {
 
       <button
         type="button"
-        @click="simpan"
         :disabled="saving || !adaGuruDipilih"
         class="w-full mt-4 bg-teal-600 hover:bg-teal-700 text-white font-black py-3 rounded-xl shadow-md disabled:opacity-50 flex items-center justify-center gap-2"
+        @click="simpan"
       >
         <i :class="['fas', saving ? 'fa-spinner fa-spin' : 'fa-save']"></i>
         {{ saving ? 'Menyimpan...' : 'SIMPAN PENUGASAN' }}

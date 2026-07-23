@@ -30,8 +30,8 @@
       <div v-else-if="mySantri">
         <p class="text-xs text-[var(--text-secondary)] mb-3">Kartu Kenaikan untuk:</p>
         <button
-          @click="openKartu(mySantri)"
           class="w-full bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-hover)] hover:from-emerald-600 dark:from-emerald-800 hover:to-teal-800 text-white rounded-xl p-4 flex items-center justify-between gap-3 cursor-pointer shadow-md hover:shadow-lg transition"
+          @click="openKartu(mySantri)"
         >
           <div class="text-left flex-1 min-w-0">
             <p class="text-base font-black truncate">{{ mySantri.nama }}</p>
@@ -69,49 +69,49 @@
     >
       <div class="flex gap-1.5 overflow-x-auto custom-scrollbar">
         <button
-          @click="activeTab = 'form'"
           :class="[
             'flex-1 whitespace-nowrap px-3 md:px-4 py-2 md:py-2.5 text-xs md:text-sm font-black transition cursor-pointer rounded-xl flex items-center justify-center gap-1.5',
             activeTab === 'form'
               ? 'bg-teal-600 text-white shadow-md'
               : 'text-[var(--text-secondary)] hover:bg-teal-50 hover:text-teal-700'
           ]"
+          @click="activeTab = 'form'"
         >
           <i class="fas fa-edit text-sm"></i>Form Kenaikan
         </button>
         <button
           v-if="isAdmin || isGuru"
-          @click="activeTab = 'riwayat'"
           :class="[
             'flex-1 whitespace-nowrap px-3 md:px-4 py-2 md:py-2.5 text-xs md:text-sm font-black transition cursor-pointer rounded-xl flex items-center justify-center gap-1.5',
             activeTab === 'riwayat'
               ? 'bg-cyan-600 text-white shadow-md'
               : 'text-[var(--text-secondary)] hover:bg-cyan-50 hover:text-cyan-700'
           ]"
+          @click="activeTab = 'riwayat'"
         >
           <i class="fas fa-id-card text-sm"></i>Riwayat Kenaikan
         </button>
         <button
           v-if="isAdmin"
-          @click="activeTab = 'pengaturan'"
           :class="[
             'flex-1 whitespace-nowrap px-3 md:px-4 py-2 md:py-2.5 text-xs md:text-sm font-black transition cursor-pointer rounded-xl flex items-center justify-center gap-1.5',
             activeTab === 'pengaturan'
               ? 'bg-emerald-600 text-white shadow-md'
               : 'text-[var(--text-secondary)] hover:bg-emerald-50 hover:text-emerald-700'
           ]"
+          @click="activeTab = 'pengaturan'"
         >
           <i class="fas fa-cog text-sm"></i>Pengaturan
         </button>
         <button
           v-if="canKelola"
-          @click="activeTab = 'mutasi'"
           :class="[
             'flex-1 whitespace-nowrap px-3 md:px-4 py-2 md:py-2.5 text-xs md:text-sm font-black transition cursor-pointer rounded-xl flex items-center justify-center gap-1.5',
             activeTab === 'mutasi'
               ? 'bg-amber-600 text-white shadow-md'
               : 'text-[var(--text-secondary)] hover:bg-amber-50 hover:text-amber-700'
           ]"
+          @click="activeTab = 'mutasi'"
         >
           <i class="fas fa-right-from-bracket text-sm"></i>Mutasi
         </button>
@@ -128,24 +128,24 @@
         </h3>
         <div class="grid grid-cols-2 gap-2">
           <button
-            @click="setMutasiKategori('qiraati')"
             :class="[
               'px-3 py-3 rounded-xl text-sm font-black border transition cursor-pointer',
               mutasiKategori === 'qiraati'
                 ? 'bg-teal-600 text-white border-teal-700'
                 : 'bg-[var(--bg-muted)] text-[var(--text-primary)] border-[var(--border-default)] hover:bg-teal-50 dark:hover:bg-teal-900/30'
             ]"
+            @click="setMutasiKategori('qiraati')"
           >
             <i class="fas fa-book-quran mr-1"></i>Lembaga Qiraati
           </button>
           <button
-            @click="setMutasiKategori('sekolah')"
             :class="[
               'px-3 py-3 rounded-xl text-sm font-black border transition cursor-pointer',
               mutasiKategori === 'sekolah'
                 ? 'bg-cyan-600 text-white border-cyan-700'
                 : 'bg-[var(--bg-muted)] text-[var(--text-primary)] border-[var(--border-default)] hover:bg-cyan-50 dark:hover:bg-cyan-900/30'
             ]"
+            @click="setMutasiKategori('sekolah')"
           >
             <i class="fas fa-school mr-1"></i>Lembaga Sekolah
           </button>
@@ -211,8 +211,8 @@
             class="inline-flex items-center gap-2 text-[11px] font-bold text-[var(--text-secondary)] cursor-pointer"
           >
             <input
-              type="checkbox"
               v-model="mutasiShowKeluar"
+              type="checkbox"
               class="w-4 h-4 accent-amber-600"
             />Tampilkan yang sudah keluar
           </label>
@@ -240,17 +240,17 @@
             </div>
             <button
               v-if="!mutasiShowKeluar"
-              @click="keluarkanSantri(s)"
               :disabled="mutasiSaving"
               class="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-amber-600 hover:bg-amber-700 text-white disabled:opacity-50 flex-shrink-0"
+              @click="keluarkanSantri(s)"
             >
               <i class="fas fa-right-from-bracket mr-1"></i>Keluarkan
             </button>
             <button
               v-else
-              @click="reaktifSantri(s)"
               :disabled="mutasiSaving"
               class="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-50 flex-shrink-0"
+              @click="reaktifSantri(s)"
             >
               <i class="fas fa-rotate-left mr-1"></i>Aktifkan
             </button>
@@ -273,24 +273,24 @@
       <!-- v.99: kategori Qiraati / Sekolah -->
       <div class="flex gap-2 mb-3">
         <button
-          @click="setKenaikanKategori('qiraati')"
           :class="[
             'flex-1 px-3 py-2 rounded-xl text-xs font-black border transition cursor-pointer',
             kenaikanKategori === 'qiraati'
               ? 'bg-teal-600 text-white border-teal-700'
               : 'bg-[var(--bg-muted)] text-[var(--text-primary)] border-[var(--border-default)] hover:bg-teal-50 dark:hover:bg-teal-900/30'
           ]"
+          @click="setKenaikanKategori('qiraati')"
         >
           <i class="fas fa-book-quran mr-1"></i>Lembaga Qiraati
         </button>
         <button
-          @click="setKenaikanKategori('sekolah')"
           :class="[
             'flex-1 px-3 py-2 rounded-xl text-xs font-black border transition cursor-pointer',
             kenaikanKategori === 'sekolah'
               ? 'bg-cyan-600 text-white border-cyan-700'
               : 'bg-[var(--bg-muted)] text-[var(--text-primary)] border-[var(--border-default)] hover:bg-cyan-50 dark:hover:bg-cyan-900/30'
           ]"
+          @click="setKenaikanKategori('sekolah')"
         >
           <i class="fas fa-school mr-1"></i>Lembaga Sekolah
         </button>
@@ -302,11 +302,11 @@
         <button
           v-for="l in kenaikanLembagaOptions"
           :key="l"
-          @click="filterLembaga = l"
           :class="[
             'flex flex-col items-center justify-center gap-1.5 px-2 py-3 rounded-xl transition cursor-pointer shadow-sm active:scale-95',
             filterLembaga === l ? lembagaColor(l, true) : lembagaColor(l, false)
           ]"
+          @click="filterLembaga = l"
         >
           <i :class="['fas', lembagaIcon(l), 'text-xl']"></i>
           <span class="text-[11px] font-black leading-tight text-center">{{ l }}</span>
@@ -322,24 +322,24 @@
       <!-- v.100b: toggle kategori untuk guru dual-role (Qiraati + Sekolah) -->
       <div v-if="isGuru && guruDual" class="flex gap-2 mb-3">
         <button
-          @click="kenaikanKategori = 'qiraati'"
           :class="[
             'flex-1 px-3 py-2 rounded-xl text-xs font-black border transition cursor-pointer',
             kenaikanKategori === 'qiraati'
               ? 'bg-teal-600 text-white border-teal-700'
               : 'bg-[var(--bg-muted)] text-[var(--text-primary)] border-[var(--border-default)] hover:bg-teal-50 dark:hover:bg-teal-900/30'
           ]"
+          @click="kenaikanKategori = 'qiraati'"
         >
           <i class="fas fa-book-quran mr-1"></i>Santri Qiraati
         </button>
         <button
-          @click="kenaikanKategori = 'sekolah'"
           :class="[
             'flex-1 px-3 py-2 rounded-xl text-xs font-black border transition cursor-pointer',
             kenaikanKategori === 'sekolah'
               ? 'bg-cyan-600 text-white border-cyan-700'
               : 'bg-[var(--bg-muted)] text-[var(--text-primary)] border-[var(--border-default)] hover:bg-cyan-50 dark:hover:bg-cyan-900/30'
           ]"
+          @click="kenaikanKategori = 'sekolah'"
         >
           <i class="fas fa-school mr-1"></i>Kelas Sekolah
         </button>
@@ -381,16 +381,16 @@
           </div>
           <div class="flex items-center gap-1.5 flex-shrink-0">
             <button
-              @click="openFormKenaikan(s)"
               class="bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-black px-3 py-2 rounded-lg text-xs cursor-pointer flex items-center gap-1.5 uppercase tracking-wider shadow-sm hover:shadow-md transition"
               title="Proses Naik (form sederhana)"
+              @click="openFormKenaikan(s)"
             >
               <i class="fas fa-arrow-up"></i>PROSES NAIK
             </button>
             <button
-              @click="openKartu(s)"
               class="bg-cyan-600 hover:bg-cyan-700 text-white font-black px-2.5 py-2 rounded-lg text-xs cursor-pointer flex items-center gap-1 shadow-sm hover:shadow-md transition"
               title="Lihat Kartu Kenaikan (matrix lengkap)"
+              @click="openKartu(s)"
             >
               <i class="fas fa-id-card"></i>
             </button>
@@ -407,24 +407,24 @@
       <!-- v.100e: filter lembaga Riwayat = KARTU IKON (samakan dgn Form Kenaikan) -->
       <div class="flex gap-2 mb-3">
         <button
-          @click="setRiwayatKategori('qiraati')"
           :class="[
             'flex-1 px-3 py-2 rounded-xl text-xs font-black border transition cursor-pointer',
             riwayatKategori === 'qiraati'
               ? 'bg-teal-600 text-white border-teal-700'
               : 'bg-[var(--bg-muted)] text-[var(--text-primary)] border-[var(--border-default)] hover:bg-teal-50 dark:hover:bg-teal-900/30'
           ]"
+          @click="setRiwayatKategori('qiraati')"
         >
           <i class="fas fa-book-quran mr-1"></i>Lembaga Qiraati
         </button>
         <button
-          @click="setRiwayatKategori('sekolah')"
           :class="[
             'flex-1 px-3 py-2 rounded-xl text-xs font-black border transition cursor-pointer',
             riwayatKategori === 'sekolah'
               ? 'bg-cyan-600 text-white border-cyan-700'
               : 'bg-[var(--bg-muted)] text-[var(--text-primary)] border-[var(--border-default)] hover:bg-cyan-50 dark:hover:bg-cyan-900/30'
           ]"
+          @click="setRiwayatKategori('sekolah')"
         >
           <i class="fas fa-school mr-1"></i>Lembaga Sekolah
         </button>
@@ -436,11 +436,11 @@
         <button
           v-for="l in riwayatLembagaOptions"
           :key="l"
-          @click="riwayatLembaga = l"
           :class="[
             'flex flex-col items-center justify-center gap-1.5 px-2 py-3 rounded-xl transition cursor-pointer shadow-sm active:scale-95',
             riwayatLembaga === l ? lembagaColor(l, true) : lembagaColor(l, false)
           ]"
+          @click="riwayatLembaga = l"
         >
           <i :class="['fas', lembagaIcon(l), 'text-xl']"></i>
           <span class="text-[11px] font-black leading-tight text-center">{{ l }}</span>
@@ -460,30 +460,30 @@
           class="flex flex-nowrap md:flex-wrap items-center gap-2 overflow-x-auto md:overflow-visible hide-scrollbar [&>*]:shrink-0 md:[&>*]:shrink -mx-1 px-1 sm:mx-0 sm:px-0"
         >
           <button
-            @click="exportRiwayatExcel"
             :disabled="exportingExcel"
             aria-label="Ekspor riwayat naik kelas ke Excel"
             class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold disabled:opacity-50 transition cursor-pointer"
+            @click="exportRiwayatExcel"
           >
             <i :class="['fas', exportingExcel ? 'fa-spinner fa-spin' : 'fa-file-excel']"></i>
             {{ exportingExcel ? 'Mengeksport…' : 'Excel' }}
           </button>
           <button
             v-if="gsheetConfigured()"
-            @click="kirimRiwayatGsheet"
             :disabled="sendingGsheet"
             aria-label="Kirim riwayat naik kelas ke Google Sheet"
             class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold disabled:opacity-50 transition cursor-pointer"
+            @click="kirimRiwayatGsheet"
           >
             <i :class="['fas', sendingGsheet ? 'fa-spinner fa-spin' : 'fa-table']"></i>
             {{ sendingGsheet ? 'Mengirim…' : 'Google Sheet' }}
           </button>
           <button
-            @click="exportRiwayatPdf"
             :disabled="exportingPdf"
             aria-label="Cetak riwayat naik kelas PDF"
             title="Cetak PDF Daftar Riwayat"
             class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold disabled:opacity-50 transition cursor-pointer"
+            @click="exportRiwayatPdf"
           >
             <i :class="['fas', exportingPdf ? 'fa-spinner fa-spin' : 'fa-file-pdf']"></i>
             {{ exportingPdf ? 'Mencetak…' : 'PDF' }}
@@ -528,9 +528,9 @@
                   </span>
                   <button
                     v-if="countCatatan(s, riwayatLembaga) > 0"
-                    @click="toggleExpand(s.id)"
                     class="ml-2 inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full bg-cyan-100 hover:bg-cyan-200 text-cyan-700 cursor-pointer transition"
                     :title="expanded.has(s.id) ? 'Sembunyikan catatan' : 'Lihat catatan'"
+                    @click="toggleExpand(s.id)"
                   >
                     <i
                       :class="['fas', expanded.has(s.id) ? 'fa-chevron-up' : 'fa-comment-dots']"
@@ -540,21 +540,21 @@
                 </p>
               </div>
               <button
+                class="bg-cyan-600 hover:bg-cyan-700 text-white font-bold px-3 py-1.5 rounded-lg text-xs cursor-pointer flex items-center gap-1 flex-shrink-0"
                 @click="
                   () => {
                     filterLembaga = riwayatLembaga
                     openKartu(s)
                   }
                 "
-                class="bg-cyan-600 hover:bg-cyan-700 text-white font-bold px-3 py-1.5 rounded-lg text-xs cursor-pointer flex items-center gap-1 flex-shrink-0"
               >
                 <i class="fas fa-eye"></i>Lihat
               </button>
               <button
                 v-if="canCrud && (s.riwayat_kenaikan || []).length"
-                @click="batalKenaikanTerakhir(s)"
                 class="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold px-3 py-1.5 rounded-lg text-xs cursor-pointer flex items-center gap-1 flex-shrink-0"
                 title="Batalkan kenaikan terakhir (super_admin)"
+                @click="batalKenaikanTerakhir(s)"
               >
                 <i class="fas fa-rotate-left"></i>Batal
               </button>
@@ -629,13 +629,13 @@
         <button
           v-for="l in pengaturanLembagaList"
           :key="l"
-          @click="selectPengaturanLembaga(l)"
           :class="[
             'bg-white dark:bg-slate-900 border-2 rounded-xl p-3 md:p-4 text-center font-black transition cursor-pointer shadow-sm',
             pengaturanLembaga === l
               ? 'border-cyan-500 text-cyan-700 dark:text-cyan-300 bg-cyan-50 dark:bg-cyan-900/30 ring-2 ring-cyan-200'
               : 'border-[var(--border-subtle)] text-slate-700 dark:text-[var(--text-tertiary)] hover:border-cyan-300 hover:bg-cyan-50/50'
           ]"
+          @click="selectPengaturanLembaga(l)"
         >
           <p class="text-sm md:text-base">{{ l }}</p>
         </button>
@@ -699,9 +699,9 @@
             </div>
             <div class="flex justify-end mt-3">
               <button
-                @click="saveKop"
                 :disabled="savingKop"
                 class="bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-bold px-4 py-2 rounded-lg text-xs cursor-pointer disabled:opacity-50"
+                @click="saveKop"
               >
                 <i :class="['fas', savingKop ? 'fa-spinner fa-spin' : 'fa-save', 'mr-1']"></i>
                 {{ savingKop ? 'Menyimpan...' : 'Simpan KOP' }}
@@ -719,15 +719,15 @@
               </h4>
               <div class="flex gap-1">
                 <button
-                  @click="resetSchema"
                   class="text-[10px] font-bold px-2 py-1 rounded bg-cyan-100 text-cyan-800 hover:bg-cyan-200"
+                  @click="resetSchema"
                 >
                   <i class="fas fa-undo mr-0.5"></i>Reset Default
                 </button>
                 <button
-                  @click="saveSchema"
                   :disabled="savingSchema"
                   class="text-[10px] font-black px-3 py-1 rounded bg-cyan-600 hover:bg-cyan-700 text-white disabled:opacity-50"
+                  @click="saveSchema"
                 >
                   <i :class="['fas', savingSchema ? 'fa-spinner fa-spin' : 'fa-save', 'mr-1']"></i>
                   Simpan Schema
@@ -753,8 +753,8 @@
                   Daftar Kelas/Level/Jilid:
                 </p>
                 <button
-                  @click="addKelas"
                   class="text-[10px] bg-teal-200 hover:bg-teal-300 text-teal-800 font-bold px-2 py-0.5 rounded"
+                  @click="addKelas"
                 >
                   <i class="fas fa-plus mr-0.5"></i>Tambah Kelas
                 </button>
@@ -782,9 +782,9 @@
                     Ceremonial
                   </label>
                   <button
-                    @click="schemaDraft.kelasList.splice(ki, 1)"
                     class="text-rose-500 hover:bg-rose-50 text-xs px-1.5 rounded"
                     title="Hapus kelas"
+                    @click="schemaDraft.kelasList.splice(ki, 1)"
                   >
                     <i class="fas fa-trash"></i>
                   </button>
@@ -803,16 +803,16 @@
                         v-model="it.label"
                         class="bg-transparent border-0 outline-none text-[11px] w-14"
                       />
-                      <button @click="k.items.splice(ii, 1)" class="text-rose-400 text-[10px]">
+                      <button class="text-rose-400 text-[10px]" @click="k.items.splice(ii, 1)">
                         <i class="fas fa-times"></i>
                       </button>
                     </span>
                     <button
+                      class="bg-teal-200 hover:bg-teal-300 text-teal-800 text-[10px] font-bold px-2 py-0.5 rounded"
                       @click="
                         (k.items = k.items || []) &&
                         k.items.push({ id: 'it_' + Date.now(), label: '' })
                       "
-                      class="bg-teal-200 hover:bg-teal-300 text-teal-800 text-[10px] font-bold px-2 py-0.5 rounded"
                     >
                       + Item
                     </button>
@@ -949,8 +949,8 @@
                               <input
                                 type="date"
                                 :value="getCell(k.id, it.id)"
-                                @input="(e) => setCell(k.id, it.id, e.target.value)"
                                 class="w-full min-w-0 text-[9px] py-0.5 px-0.5 border-0 outline-none bg-transparent text-[var(--text-primary)]"
+                                @input="(e) => setCell(k.id, it.id, e.target.value)"
                               />
                             </td>
                           </tr>
@@ -968,8 +968,8 @@
                       <input
                         type="date"
                         :value="getCeremonial(k.id)"
-                        @input="(e) => setCeremonial(k.id, e.target.value)"
                         class="flex-1 py-0.5 px-1 text-[10px] border border-cyan-200 dark:border-cyan-700 rounded bg-white dark:bg-slate-900 text-[var(--text-primary)]"
+                        @input="(e) => setCeremonial(k.id, e.target.value)"
                       />
                     </div>
                     <!-- Catatan & Rekomendasi per kelas -->
@@ -985,8 +985,8 @@
                         </p>
                         <button
                           type="button"
-                          @click="() => toggleNoteForm(k.id)"
                           class="text-[9px] font-bold px-2 py-1 rounded bg-cyan-600 hover:bg-cyan-700 text-white cursor-pointer"
+                          @click="() => toggleNoteForm(k.id)"
                         >
                           <i class="fas fa-plus mr-0.5"></i>Tambah
                         </button>
@@ -1028,15 +1028,15 @@
                         <div class="flex justify-end gap-1">
                           <button
                             type="button"
-                            @click="() => toggleNoteForm(k.id)"
                             class="text-[9px] font-bold px-2 py-1 rounded bg-slate-200 dark:bg-slate-700 text-[var(--text-primary)]"
+                            @click="() => toggleNoteForm(k.id)"
                           >
                             Batal
                           </button>
                           <button
                             type="button"
-                            @click="() => saveNoteEntry(k.id)"
                             class="text-[9px] font-bold px-2 py-1 rounded bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white"
+                            @click="() => saveNoteEntry(k.id)"
                           >
                             <i class="fas fa-check mr-0.5"></i>Simpan Entry
                           </button>
@@ -1075,9 +1075,9 @@
                           </div>
                           <button
                             type="button"
-                            @click="() => removeEntry(k.id, ci)"
                             class="text-rose-500 hover:text-rose-700 text-[10px] flex-shrink-0"
                             title="Hapus entry"
+                            @click="() => removeEntry(k.id, ci)"
                           >
                             <i class="fas fa-times"></i>
                           </button>
@@ -1105,26 +1105,26 @@
               class="px-4 md:px-6 py-3 border-t border-[var(--border-subtle)] bg-[var(--bg-card-elevated)] flex items-center justify-end gap-2 rounded-b-2xl"
             >
               <button
-                @click="closeKartu"
                 class="px-4 py-2 text-sm font-bold rounded-xl bg-slate-200 dark:bg-slate-700 text-[var(--text-primary)] hover:bg-slate-300 dark:hover:bg-slate-600 cursor-pointer"
+                @click="closeKartu"
               >
                 Batal
               </button>
               <!-- v.21.115.0528: standardize per design-tokens — Ekspor PDF cyan -->
               <button
-                @click="eksporKartuPdf"
                 :disabled="exportingKartuPdf"
                 aria-label="Ekspor kartu kenaikan PDF A4"
                 title="Download Kartu Kenaikan sebagai PDF (A4 portrait)"
                 class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer no-print"
+                @click="eksporKartuPdf"
               >
                 <i :class="['fas', exportingKartuPdf ? 'fa-spinner fa-spin' : 'fa-file-pdf']"></i>
                 {{ exportingKartuPdf ? 'Mengekspor…' : 'Ekspor PDF' }}
               </button>
               <button
-                @click="saveKartu"
                 :disabled="savingKartu"
                 class="px-4 py-2 text-sm font-black rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white disabled:opacity-50 cursor-pointer flex items-center gap-1.5 no-print"
+                @click="saveKartu"
               >
                 <i :class="['fas', savingKartu ? 'fa-spinner fa-spin' : 'fa-save']"></i>
                 {{ savingKartu ? 'Menyimpan...' : 'Simpan Kartu' }}
@@ -1153,8 +1153,8 @@
                 <i class="fas fa-arrow-up mr-2 text-cyan-600"></i>Form Kenaikan
               </h3>
               <button
-                @click="formOpen = false"
                 class="text-[var(--text-tertiary)] hover:text-rose-500 text-2xl font-bold w-8 h-8 rounded-full bg-[var(--bg-muted)] flex items-center justify-center cursor-pointer"
+                @click="formOpen = false"
               >
                 ×
               </button>
@@ -1234,8 +1234,8 @@
                   <button
                     v-if="!formIsSekolah"
                     type="button"
-                    @click="guruManual = !guruManual"
                     class="text-[10px] font-bold text-cyan-700 dark:text-cyan-300 hover:underline"
+                    @click="guruManual = !guruManual"
                   >
                     {{ guruManual ? '← Pilih dari daftar kelas' : 'Atur sendiri…' }}
                   </button>
@@ -1364,16 +1364,16 @@
             >
               <button
                 type="button"
-                @click="formOpen = false"
                 class="text-xs font-bold px-4 py-2 rounded-lg bg-slate-200 hover:bg-slate-300 dark:bg-slate-600 dark:hover:bg-slate-500 text-[var(--text-primary)] cursor-pointer"
+                @click="formOpen = false"
               >
                 Batal
               </button>
               <button
                 type="button"
-                @click="saveFormKenaikan"
                 :disabled="savingForm"
                 class="text-xs font-black px-4 py-2 rounded-lg bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
+                @click="saveFormKenaikan"
               >
                 <i v-if="savingForm" class="fas fa-spinner fa-spin"></i>
                 <i v-else class="fas fa-check"></i>

@@ -52,9 +52,9 @@
         </p>
       </div>
       <button
-        @click="kirim"
         :disabled="!form.pesan.trim() || saving"
         class="w-full px-4 py-2.5 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl text-sm shadow-sm transition cursor-pointer flex items-center justify-center gap-2"
+        @click="kirim"
       >
         <i v-if="saving" class="fas fa-spinner fa-spin"></i>
         <i v-else class="fas fa-paper-plane"></i>
@@ -80,13 +80,13 @@
         <button
           v-for="f in FILTER_TABS"
           :key="f.key"
-          @click="filterStatus = f.key"
           :class="[
             'text-[11px] font-bold px-3 py-1.5 rounded-full border transition cursor-pointer',
             filterStatus === f.key
               ? 'bg-amber-600 text-white border-amber-600'
               : 'bg-[var(--bg-card)] text-[var(--text-secondary)] border-[var(--border-default)] hover:bg-[var(--bg-card-elevated)]'
           ]"
+          @click="filterStatus = f.key"
         >
           {{ f.label }} ({{ countByStatus(f.key) }})
         </button>
@@ -160,21 +160,21 @@
           <div class="flex gap-2 mt-3 items-center justify-end flex-wrap">
             <select
               :value="k.status || 'baru'"
-              @change="setStatus(k, $event.target.value)"
               class="text-[11px] px-2 py-1 rounded-lg border border-[var(--border-default)] bg-[var(--bg-input)] text-[var(--text-primary)] cursor-pointer"
+              @change="setStatus(k, $event.target.value)"
             >
               <option v-for="s in STATUS" :key="s.key" :value="s.key">Status: {{ s.label }}</option>
             </select>
             <button
-              @click="openReply(k)"
               class="text-[11px] text-amber-700 dark:text-amber-300 hover:underline cursor-pointer font-bold"
+              @click="openReply(k)"
             >
               <i class="fas fa-reply mr-1"></i
               >{{ k.reply ? 'Edit Tindak Lanjut' : 'Tindak Lanjut' }}
             </button>
             <button
-              @click="deleteItem(k)"
               class="text-[11px] text-rose-600 hover:underline cursor-pointer font-bold"
+              @click="deleteItem(k)"
             >
               <i class="fas fa-trash mr-1"></i>Hapus
             </button>
@@ -257,15 +257,15 @@
         ></textarea>
         <div class="flex gap-2">
           <button
-            @click="closeReply()"
             class="flex-1 px-4 py-2.5 bg-[var(--bg-muted)] hover:bg-slate-300 dark:hover:bg-slate-600 text-[var(--text-primary)] font-bold rounded-xl text-sm transition cursor-pointer"
+            @click="closeReply()"
           >
             Batal
           </button>
           <button
-            @click="saveReply"
             :disabled="replyText.trim().length < 3 || savingReply"
             class="flex-1 px-4 py-2.5 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl text-sm transition cursor-pointer flex items-center justify-center gap-2"
+            @click="saveReply"
           >
             <i v-if="savingReply" class="fas fa-spinner fa-spin"></i>
             <i v-else class="fas fa-paper-plane"></i>

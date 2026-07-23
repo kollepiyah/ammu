@@ -245,13 +245,11 @@ export const useAuthStore = defineStore('auth', () => {
         await mergeOne(coll, String(s.id), { fcm_token: null })
       }
     } catch (e) {
-      // eslint-disable-next-line no-console
       console.warn('[auth.logout] clear fcm_token gagal:', e?.message || e)
     }
     try {
       await authSupabase.signOut()
     } catch (e) {
-      // eslint-disable-next-line no-console
       console.warn('[auth.logout] signOut Supabase gagal:', e?.message || e)
     }
     sesiAktif.value = null
@@ -303,7 +301,7 @@ export const useAuthStore = defineStore('auth', () => {
   function _recoverZombieSession() {
     if (_zombieHandled) return
     _zombieHandled = true
-    // eslint-disable-next-line no-console
+
     console.warn('[auth] Sesi Supabase zombie (token mati) — auto-logout ke halaman login.')
     sesiAktif.value = null
     fbUser.value = null
@@ -345,7 +343,6 @@ export const useAuthStore = defineStore('auth', () => {
         window.history.replaceState({}, '', _clean)
       }
     } catch (e) {
-      // eslint-disable-next-line no-console
       console.warn('[auth.initAuth] OAuth code exchange gagal:', e?.message || e)
     }
     // Step 1: restore cepat dari localStorage (sync)
@@ -382,7 +379,6 @@ export const useAuthStore = defineStore('auth', () => {
             }
           }
         } catch (e) {
-          // eslint-disable-next-line no-console
           console.warn('[auth.initAuth] buildSesi fail:', e?.message)
         }
         // v.111: saat token auth siap (INITIAL_SESSION ketika sesi di-restore / SIGNED_IN

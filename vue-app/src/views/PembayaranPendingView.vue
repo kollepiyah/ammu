@@ -31,11 +31,11 @@
         <button
           v-for="t in tabs"
           :key="t.id"
-          @click="filterStatus = t.id"
           :class="[
             'flex-1 px-3 py-2 text-xs font-black rounded-xl transition cursor-pointer',
             filterStatus === t.id ? t.activeClass : 'text-[var(--text-secondary)] hover:bg-slate-50'
           ]"
+          @click="filterStatus = t.id"
         >
           <i :class="['fas', t.icon, 'mr-1']"></i>{{ t.label }} ({{ countByStatus(t.id) }})
         </button>
@@ -131,50 +131,50 @@
           class="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-[var(--border-subtle)]"
         >
           <button
-            @click="openBukti(p)"
             class="px-3 py-1.5 text-xs font-bold bg-cyan-100 dark:bg-cyan-900/40 hover:bg-cyan-200 text-cyan-700 dark:text-cyan-300 rounded-lg cursor-pointer"
+            @click="openBukti(p)"
           >
             <i class="fas fa-eye mr-1"></i>Lihat Bukti
           </button>
           <button
-            @click="openEdit(p)"
             class="px-3 py-1.5 text-xs font-bold bg-amber-100 dark:bg-amber-900/40 hover:bg-amber-200 text-amber-700 dark:text-amber-300 rounded-lg cursor-pointer"
+            @click="openEdit(p)"
           >
             <i class="fas fa-link mr-1"></i>Edit / Link Tagihan
           </button>
           <button
-            @click="hapusTransfer(p)"
             title="Hapus record"
             class="px-2.5 py-1.5 text-xs font-bold bg-rose-50 dark:bg-rose-900/30 hover:bg-rose-100 text-rose-600 rounded-lg cursor-pointer"
+            @click="hapusTransfer(p)"
           >
             <i class="fas fa-trash"></i>
           </button>
           <button
-            @click="verifyTransfer(p)"
             :disabled="busyIds.has(p.id)"
             class="ml-auto px-4 py-1.5 text-xs font-black bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-lg cursor-pointer"
+            @click="verifyTransfer(p)"
           >
             <i :class="['fas', busyIds.has(p.id) ? 'fa-spinner fa-spin' : 'fa-check', 'mr-1']"></i
             >Verifikasi
           </button>
           <button
-            @click="rejectTransfer(p)"
             :disabled="busyIds.has(p.id)"
             class="px-4 py-1.5 text-xs font-black bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white rounded-lg cursor-pointer"
+            @click="rejectTransfer(p)"
           >
             <i class="fas fa-times mr-1"></i>Tolak
           </button>
         </div>
         <div v-else class="flex gap-2 mt-2">
           <button
-            @click="openBukti(p)"
             class="px-3 py-1.5 text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg cursor-pointer"
+            @click="openBukti(p)"
           >
             <i class="fas fa-eye mr-1"></i>Lihat Bukti
           </button>
           <button
-            @click="hapusTransfer(p)"
             class="ml-auto px-3 py-1.5 text-xs font-bold bg-rose-50 dark:bg-rose-900/30 hover:bg-rose-100 text-rose-600 rounded-lg cursor-pointer"
+            @click="hapusTransfer(p)"
           >
             <i class="fas fa-trash mr-1"></i>Hapus
           </button>
@@ -249,15 +249,15 @@
         </div>
         <div class="flex gap-2 pt-2">
           <button
-            @click="editModal = false"
             class="flex-1 px-4 py-2 text-sm font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-200 rounded-xl"
+            @click="editModal = false"
           >
             Batal
           </button>
           <button
-            @click="saveEdit"
             :disabled="savingEdit"
             class="flex-1 px-4 py-2 text-sm font-black bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white rounded-xl"
+            @click="saveEdit"
           >
             <i :class="['fas', savingEdit ? 'fa-spinner fa-spin' : 'fa-save', 'mr-1']"></i>Simpan
           </button>

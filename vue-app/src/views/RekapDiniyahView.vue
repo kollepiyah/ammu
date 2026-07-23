@@ -59,26 +59,26 @@
       </p>
       <div class="grid grid-cols-4 gap-2">
         <button
-          @click="filterJenjang = ''"
           :class="[
             'px-3 py-2 text-xs font-black rounded-xl transition cursor-pointer shadow-sm',
             filterJenjang === ''
               ? 'bg-slate-700 text-white'
               : 'bg-[var(--bg-muted)] text-[var(--text-primary)] hover:bg-slate-200'
           ]"
+          @click="filterJenjang = ''"
         >
           Semua
         </button>
         <button
           v-for="j in DINIYAH_JENJANG"
           :key="j"
-          @click="filterJenjang = j"
           :class="[
             'px-3 py-2 text-xs font-black rounded-xl transition cursor-pointer shadow-sm',
             filterJenjang === j
               ? 'bg-cyan-600 text-white'
               : 'bg-cyan-50 text-cyan-800 hover:bg-cyan-100'
           ]"
+          @click="filterJenjang = j"
         >
           {{ j }}
         </button>
@@ -160,8 +160,8 @@
                     type="text"
                     inputmode="numeric"
                     :value="getCell(s.id, m)"
-                    @change="(ev) => saveCell(s.id, m, ev.target.value)"
                     class="w-full text-center text-[11px] py-1 px-1 border-0 outline-none bg-transparent focus:bg-cyan-50 dark:focus:bg-cyan-900/30 dark:text-white"
+                    @change="(ev) => saveCell(s.id, m, ev.target.value)"
                   />
                 </td>
                 <td
@@ -213,8 +213,8 @@
                   type="text"
                   inputmode="numeric"
                   :value="getCell(s.id, m)"
-                  @change="(ev) => saveCell(s.id, m, ev.target.value)"
                   class="w-12 flex-shrink-0 text-center text-sm font-bold py-1.5 rounded-md border border-[var(--border-default)] bg-[var(--bg-card)] outline-none focus:ring-2 focus:ring-cyan-500 dark:text-white"
+                  @change="(ev) => saveCell(s.id, m, ev.target.value)"
                 />
               </label>
             </div>

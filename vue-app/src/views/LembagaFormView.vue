@@ -29,7 +29,7 @@
       <p class="text-sm text-[var(--text-secondary)] font-bold">Memuat data lembaga...</p>
     </div>
 
-    <form v-else @submit.prevent="onSubmit" class="space-y-4">
+    <form v-else class="space-y-4" @submit.prevent="onSubmit">
       <!-- Identitas lembaga -->
       <div
         class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
@@ -90,15 +90,15 @@
         <div class="flex gap-2 mb-3">
           <input
             v-model="newKelasInput"
-            @keydown.enter.prevent="onAddKelas"
             type="text"
             placeholder="Ketik nama kelas, lalu Enter"
             class="flex-1 px-3 py-2 text-sm rounded-xl border border-teal-300 bg-[var(--bg-card)] focus:ring-2 focus:ring-teal-500 outline-none"
+            @keydown.enter.prevent="onAddKelas"
           />
           <button
             type="button"
-            @click="onAddKelas"
             class="px-4 py-2 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-bold rounded-xl text-sm transition"
+            @click="onAddKelas"
           >
             <i class="fas fa-plus mr-1"></i>Tambah
           </button>
@@ -124,26 +124,26 @@
             <button
               type="button"
               :disabled="idx === 0"
-              @click="moveKelas(idx, idx - 1)"
               class="w-7 h-7 rounded-lg bg-[var(--bg-muted)] hover:bg-slate-200 disabled:opacity-30 text-[var(--text-secondary)] text-xs transition"
               title="Naik"
+              @click="moveKelas(idx, idx - 1)"
             >
               <i class="fas fa-chevron-up"></i>
             </button>
             <button
               type="button"
               :disabled="idx === form.kelas.length - 1"
-              @click="moveKelas(idx, idx + 1)"
               class="w-7 h-7 rounded-lg bg-[var(--bg-muted)] hover:bg-slate-200 disabled:opacity-30 text-[var(--text-secondary)] text-xs transition"
               title="Turun"
+              @click="moveKelas(idx, idx + 1)"
             >
               <i class="fas fa-chevron-down"></i>
             </button>
             <button
               type="button"
-              @click="removeKelas(idx)"
               class="w-7 h-7 rounded-lg bg-rose-100 hover:bg-rose-200 text-rose-600 text-xs transition"
               title="Hapus kelas"
+              @click="removeKelas(idx)"
             >
               <i class="fas fa-trash"></i>
             </button>
@@ -209,9 +209,9 @@
         <button
           v-if="editingId"
           type="button"
-          @click="onDelete"
           :disabled="isSaving"
           class="px-4 py-3 bg-rose-100 hover:bg-rose-200 disabled:opacity-50 text-rose-700 font-bold rounded-xl text-sm shadow-md transition"
+          @click="onDelete"
         >
           <i class="fas fa-trash mr-1"></i>Hapus
         </button>

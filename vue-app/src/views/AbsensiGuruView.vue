@@ -106,11 +106,11 @@
       <!-- Tabs -->
       <div class="grid grid-cols-2 md:grid-cols-5 gap-2 md:gap-3">
         <button
-          @click="tabMode = 'harian'"
           :class="[
             'group relative overflow-hidden bg-gradient-to-br from-teal-500 dark:from-teal-700 to-teal-700 dark:to-teal-900 rounded-xl p-2.5 md:p-3 text-left text-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col gap-1 cursor-pointer',
             tabMode === 'harian' ? 'ring-2 ring-white/70 ring-offset-1 ring-offset-cyan-50' : ''
           ]"
+          @click="tabMode = 'harian'"
         >
           <i class="fas fa-calendar-check text-base md:text-lg drop-shadow"></i>
           <h3 class="text-[11px] md:text-xs font-black leading-tight drop-shadow-sm">
@@ -121,11 +121,11 @@
           </p>
         </button>
         <button
-          @click="tabMode = 'bulanan'"
           :class="[
             'group relative overflow-hidden bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-hover)] rounded-xl p-2.5 md:p-3 text-left text-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col gap-1 cursor-pointer',
             tabMode === 'bulanan' ? 'ring-2 ring-white/70 ring-offset-1 ring-offset-cyan-50' : ''
           ]"
+          @click="tabMode = 'bulanan'"
         >
           <i class="fas fa-calendar-alt text-base md:text-lg drop-shadow"></i>
           <h3 class="text-[11px] md:text-xs font-black leading-tight drop-shadow-sm">
@@ -136,11 +136,11 @@
           </p>
         </button>
         <button
-          @click="tabMode = 'impor'"
           :class="[
             'group relative overflow-hidden bg-gradient-to-br from-cyan-500 dark:from-cyan-700 to-cyan-700 dark:to-cyan-900 rounded-xl p-2.5 md:p-3 text-left text-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col gap-1 cursor-pointer',
             tabMode === 'impor' ? 'ring-2 ring-white/70 ring-offset-1 ring-offset-cyan-50' : ''
           ]"
+          @click="tabMode = 'impor'"
         >
           <i class="fas fa-fingerprint text-base md:text-lg drop-shadow"></i>
           <h3 class="text-[11px] md:text-xs font-black leading-tight drop-shadow-sm">
@@ -151,11 +151,11 @@
           </p>
         </button>
         <button
-          @click="tabMode = 'riwayat'"
           :class="[
             'group relative overflow-hidden bg-gradient-to-br from-indigo-500 dark:from-indigo-700 to-indigo-700 dark:to-indigo-900 rounded-xl p-2.5 md:p-3 text-left text-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col gap-1 cursor-pointer',
             tabMode === 'riwayat' ? 'ring-2 ring-white/70 ring-offset-1 ring-offset-cyan-50' : ''
           ]"
+          @click="tabMode = 'riwayat'"
         >
           <i class="fas fa-history text-base md:text-lg drop-shadow"></i>
           <h3 class="text-[11px] md:text-xs font-black leading-tight drop-shadow-sm">Riwayat</h3>
@@ -164,11 +164,11 @@
           </p>
         </button>
         <button
-          @click="tabMode = 'rekapunit'"
           :class="[
             'group relative overflow-hidden bg-gradient-to-br from-violet-500 dark:from-violet-700 to-violet-700 dark:to-violet-900 rounded-xl p-2.5 md:p-3 text-left text-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col gap-1 cursor-pointer',
             tabMode === 'rekapunit' ? 'ring-2 ring-white/70 ring-offset-1 ring-offset-cyan-50' : ''
           ]"
+          @click="tabMode = 'rekapunit'"
         >
           <i class="fas fa-layer-group text-base md:text-lg drop-shadow"></i>
           <h3 class="text-[11px] md:text-xs font-black leading-tight drop-shadow-sm">Rekap Unit</h3>
@@ -206,8 +206,8 @@
             @change="handleImportFingerprint"
           />
           <button
-            @click="$refs.fileInputAbsen.click()"
             class="bg-cyan-600 hover:bg-cyan-700 text-white font-bold px-4 py-2 rounded-lg text-xs"
+            @click="$refs.fileInputAbsen.click()"
           >
             <i class="fas fa-folder-open mr-1"></i>Pilih File
           </button>
@@ -249,8 +249,8 @@
               @change="handlePinFile"
             />
             <button
-              @click="$refs.fileInputPin.click()"
               class="h-9 px-3 inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold"
+              @click="$refs.fileInputPin.click()"
             >
               <i class="fas fa-folder-open"></i>Pilih File Karyawan
             </button>
@@ -266,9 +266,9 @@
                 · <span class="font-bold">{{ pinRows.length }}</span> baris terbaca
               </p>
               <button
-                @click="applyPinMapping"
                 :disabled="pinApplying || pinToApply.length === 0"
                 class="h-9 px-4 inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold"
+                @click="applyPinMapping"
               >
                 <i :class="['fas', pinApplying ? 'fa-spinner fa-spin' : 'fa-check']"></i>
                 {{ pinApplying ? 'Menyimpan...' : `Terapkan (${pinToApply.length})` }}
@@ -366,21 +366,21 @@
             <!-- v.21.115.0528: standardize per design-tokens — h-9 px-3 rounded-xl -->
             <button
               v-if="isFullAccess"
-              @click="sinkronGabungan(false)"
               :disabled="syncingGabungan"
               aria-label="Sinkron hadir sekolah otomatis untuk guru gabungan"
               title="Buat 'hadir sekolah' otomatis dari scan pagi untuk guru gabungan (Qiraati pagi + sekolah)"
               class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-violet-600 hover:bg-violet-700 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer"
+              @click="sinkronGabungan(false)"
             >
               <i :class="['fas', syncingGabungan ? 'fa-spinner fa-spin' : 'fa-user-group']"></i
               >{{ syncingGabungan ? 'Menyinkron...' : 'Sinkron Gabungan' }}
             </button>
             <button
-              @click="isiPulangMassal"
               :disabled="isiPulangBusy"
               aria-label="Isi jam pulang default untuk baris hadir yang belum ada pulang"
               title="Isi jam pulang default (dari Pengaturan shift) untuk semua baris hadir yang belum absen pulang di bulan ini"
               class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer"
+              @click="isiPulangMassal"
             >
               <i
                 :class="['fas', isiPulangBusy ? 'fa-spinner fa-spin' : 'fa-right-from-bracket']"
@@ -388,26 +388,26 @@
               >{{ isiPulangBusy ? 'Mengisi...' : 'Isi Pulang Default' }}
             </button>
             <button
-              @click="exportRekapExcel"
               aria-label="Ekspor rekap absensi guru Excel"
               class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition cursor-pointer"
+              @click="exportRekapExcel"
             >
               <i class="fas fa-file-excel"></i>Excel
             </button>
             <button
               v-if="gsheetConfigured()"
-              @click="kirimAbsensiGsheet"
               :disabled="sendingGsheet"
               aria-label="Kirim rekap absensi guru ke Google Sheet"
               class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer"
+              @click="kirimAbsensiGsheet"
             >
               <i :class="['fas', sendingGsheet ? 'fa-spinner fa-spin' : 'fa-table']"></i
               >{{ sendingGsheet ? 'Mengirim...' : 'Google Sheet' }}
             </button>
             <button
-              @click="exportRekapPdf"
               aria-label="Cetak rekap absensi guru PDF"
               class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold transition cursor-pointer"
+              @click="exportRekapPdf"
             >
               <i class="fas fa-file-pdf"></i>PDF
             </button>
@@ -605,10 +605,10 @@
                       class="flex items-center gap-1 justify-center"
                     >
                       <input
-                        type="checkbox"
                         v-model="harianForm[g.id + '_' + col.key + '_hadir']"
-                        @change="onHadirToggle(g.id, col.key)"
+                        type="checkbox"
                         class="w-4 h-4 accent-teal-600 cursor-pointer"
+                        @change="onHadirToggle(g.id, col.key)"
                       />
                       <input
                         v-if="harianForm[g.id + '_' + col.key + '_hadir']"
@@ -648,9 +648,9 @@
             Auto-status: jam &gt; batas terlambat (Pengaturan Web &rarr; Jam Shift) = "terlambat".
           </p>
           <button
-            @click="saveHarian"
             :disabled="savingHarian || !hasAnyHadir"
             class="bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] disabled:opacity-50 text-white text-xs font-black px-4 py-2 rounded-lg cursor-pointer flex items-center gap-1.5"
+            @click="saveHarian"
           >
             <i :class="['fas', savingHarian ? 'fa-spinner fa-spin' : 'fa-save']"></i>
             {{ savingHarian ? 'Menyimpan...' : 'Simpan Absensi Hari Ini' }}
@@ -678,10 +678,10 @@
             <i class="fas fa-list-check mr-1"></i>{{ filteredAbsensi.length }} record
           </span>
           <button
-            @click="exportRiwayatPdf"
             aria-label="Ekspor riwayat absensi per unit ke PDF"
             title="Ekspor PDF per unit — jam masuk & jam pulang"
             class="inline-flex items-center gap-1.5 bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold px-3 py-2 rounded-lg cursor-pointer"
+            @click="exportRiwayatPdf"
           >
             <i class="fas fa-file-pdf"></i>PDF per Unit
           </button>
@@ -696,15 +696,15 @@
             <input
               type="checkbox"
               :checked="allAbsenSelected"
-              @change="toggleSelectAllAbsen"
               class="w-4 h-4 accent-rose-600"
+              @change="toggleSelectAllAbsen"
             />
             Pilih semua ({{ filteredAbsensi.length }})
           </label>
           <button
-            @click="hapusTerpilihAbsen"
             :disabled="!selectedAbsen.size || bulkDeleting"
             class="inline-flex items-center gap-1.5 bg-rose-600 hover:bg-rose-700 disabled:opacity-40 text-white text-xs font-bold px-3 py-2 rounded-lg cursor-pointer"
+            @click="hapusTerpilihAbsen"
           >
             <i :class="['fas', bulkDeleting ? 'fa-spinner fa-spin' : 'fa-trash']"></i>
             Hapus Terpilih ({{ selectedAbsen.size }})
@@ -720,9 +720,9 @@
               v-if="canHapusAbsen"
               type="checkbox"
               :checked="selectedAbsen.has(a.id)"
-              @change="toggleSelectAbsen(a.id)"
               class="w-4 h-4 accent-rose-600 flex-shrink-0"
               title="Pilih untuk hapus massal"
+              @change="toggleSelectAbsen(a.id)"
             />
             <div
               :class="[
@@ -771,9 +771,9 @@
                   <input
                     type="time"
                     :value="a.jam_pulang || ''"
-                    @change="(e) => setPulang(a, e.target.value)"
                     title="Jam pulang (hanya dicatat, tak memengaruhi hadir)"
                     class="text-[10px] w-[78px] px-1 py-0.5 border border-amber-300 dark:border-amber-700 rounded bg-[var(--bg-card)]"
+                    @change="(e) => setPulang(a, e.target.value)"
                   />
                   <span v-if="!a.jam_pulang" class="text-[9px] font-bold">belum pulang</span>
                 </span>
@@ -786,9 +786,9 @@
             </div>
             <button
               v-if="canHapusAbsen"
-              @click="hapusAbsen(a)"
               title="Hapus catatan absen ini (super admin)"
               class="flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/30 transition"
+              @click="hapusAbsen(a)"
             >
               <i class="fas fa-trash text-xs"></i>
             </button>
@@ -806,45 +806,45 @@
               class="inline-flex rounded-xl border border-[var(--border-default)] overflow-hidden"
             >
               <button
-                @click="rekapMode = 'mingguan'"
                 :class="[
                   'px-3 h-9 text-xs font-black transition',
                   rekapMode === 'mingguan'
                     ? 'bg-violet-600 text-white'
                     : 'bg-[var(--bg-card)] text-[var(--text-secondary)]'
                 ]"
+                @click="rekapMode = 'mingguan'"
               >
                 Mingguan
               </button>
               <button
-                @click="rekapMode = 'bulanan'"
                 :class="[
                   'px-3 h-9 text-xs font-black transition',
                   rekapMode === 'bulanan'
                     ? 'bg-violet-600 text-white'
                     : 'bg-[var(--bg-card)] text-[var(--text-secondary)]'
                 ]"
+                @click="rekapMode = 'bulanan'"
               >
                 Bulanan
               </button>
             </div>
             <template v-if="rekapMode === 'mingguan'">
               <button
-                @click="gantiMingguRekap(-1)"
                 class="h-9 w-9 rounded-lg border border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-elevated)]"
                 title="Minggu sebelumnya"
+                @click="gantiMingguRekap(-1)"
               >
                 <i class="fas fa-chevron-left"></i>
               </button>
               <input
-                type="date"
                 v-model="rekapAnchor"
+                type="date"
                 class="h-9 px-2 text-xs rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
               />
               <button
-                @click="gantiMingguRekap(1)"
                 class="h-9 w-9 rounded-lg border border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-elevated)]"
                 title="Minggu berikutnya"
+                @click="gantiMingguRekap(1)"
               >
                 <i class="fas fa-chevron-right"></i>
               </button>
@@ -857,8 +857,8 @@
                 <option v-for="(b, i) in BULAN" :key="i" :value="i + 1">{{ b }}</option>
               </select>
               <input
-                type="number"
                 v-model.number="selectedYear"
+                type="number"
                 class="h-9 w-20 px-2 text-xs rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
               />
             </template>
@@ -877,16 +877,16 @@
               <option v-for="l in rekapLembagaOptions" :key="l" :value="l">{{ l }}</option>
             </select>
             <button
-              @click="exportRekapUnitExcel"
               aria-label="Ekspor rekap absensi per lembaga ke Excel"
               class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition cursor-pointer"
+              @click="exportRekapUnitExcel"
             >
               <i class="fas fa-file-excel"></i>Excel
             </button>
             <button
-              @click="exportRekapUnitPdf"
               aria-label="Ekspor rekap absensi per lembaga ke PDF"
               class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold transition cursor-pointer"
+              @click="exportRekapUnitPdf"
             >
               <i class="fas fa-file-pdf"></i>PDF
             </button>

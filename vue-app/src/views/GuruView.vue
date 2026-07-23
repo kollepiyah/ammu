@@ -69,27 +69,27 @@
               class="flex flex-nowrap md:flex-wrap gap-2 items-center [&>*]:shrink-0 md:[&>*]:shrink"
             >
               <button
-                @click="printPage"
                 aria-label="Cetak daftar guru PDF"
                 class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold transition cursor-pointer no-print"
+                @click="printPage"
               >
                 <i class="fas fa-file-pdf"></i>Cetak PDF
               </button>
               <button
-                @click="exportGuruExcel"
                 :disabled="exporting"
                 aria-label="Ekspor daftar guru Excel"
                 class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer"
+                @click="exportGuruExcel"
               >
                 <i :class="['fas', exporting ? 'fa-spinner fa-spin' : 'fa-file-excel']"></i
                 >{{ exporting ? 'Ekspor...' : 'Ekspor Excel' }}
               </button>
               <button
                 v-if="gsheetConfigured()"
-                @click="kirimGuruGsheet"
                 :disabled="sendingGsheet"
                 aria-label="Kirim daftar guru ke Google Sheet"
                 class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer"
+                @click="kirimGuruGsheet"
               >
                 <i :class="['fas', sendingGsheet ? 'fa-spinner fa-spin' : 'fa-table']"></i
                 >{{ sendingGsheet ? 'Mengirim...' : 'Google Sheet' }}
@@ -104,8 +104,8 @@
               </router-link>
               <template v-if="isMasterMode">
                 <button
-                  @click="downloadTemplateGuru"
                   class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold transition cursor-pointer"
+                  @click="downloadTemplateGuru"
                 >
                   <i class="fas fa-download"></i>Template
                 </button>
@@ -118,8 +118,8 @@
                     type="file"
                     accept=".xlsx,.xls"
                     class="hidden"
-                    @change="onImportGuru"
                     :disabled="importingGuru"
+                    @change="onImportGuru"
                   />
                 </label>
                 <router-link
@@ -148,8 +148,8 @@
               {{ importPreviewGuru.rows.length }} baris
             </h3>
             <button
-              @click="importPreviewGuru = null"
               class="text-[var(--text-tertiary)] hover:text-rose-600 text-xl"
+              @click="importPreviewGuru = null"
             >
               <i class="fas fa-times"></i>
             </button>
@@ -213,15 +213,15 @@
           </div>
           <div class="p-4 border-t border-[var(--border-subtle)] flex justify-end gap-2">
             <button
-              @click="importPreviewGuru = null"
               class="px-4 py-2 text-xs font-bold rounded-lg bg-slate-200 hover:bg-slate-300"
+              @click="importPreviewGuru = null"
             >
               Batal
             </button>
             <button
-              @click="confirmImportGuru"
               :disabled="importingGuru"
               class="px-4 py-2 text-xs font-bold rounded-lg bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white disabled:opacity-50"
+              @click="confirmImportGuru"
             >
               <i :class="['fas', importingGuru ? 'fa-spinner fa-spin' : 'fa-check', 'mr-1']"></i
               >{{
@@ -284,23 +284,23 @@
           ><i class="fas fa-check-square mr-1"></i>{{ selectedCount }} terpilih</span
         >
         <button
-          @click="bulkSetStatus('Aktif')"
           :disabled="bulkSaving"
           class="h-8 px-3 inline-flex items-center gap-1 rounded-lg bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] disabled:opacity-50 text-white text-[11px] font-bold transition cursor-pointer"
+          @click="bulkSetStatus('Aktif')"
         >
           <i class="fas fa-check"></i>Set Aktif
         </button>
         <button
-          @click="bulkSetStatus('Non-aktif')"
           :disabled="bulkSaving"
           class="h-8 px-3 inline-flex items-center gap-1 rounded-lg bg-cyan-600 hover:bg-cyan-700 disabled:opacity-50 text-white text-[11px] font-bold transition cursor-pointer"
+          @click="bulkSetStatus('Non-aktif')"
         >
           <i class="fas fa-user-slash"></i>Set Non-aktif
         </button>
         <button
-          @click="bulkDeleteGuru"
           :disabled="bulkSaving"
           class="h-8 px-3 inline-flex items-center gap-1 rounded-lg bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white text-[11px] font-bold transition cursor-pointer"
+          @click="bulkDeleteGuru"
         >
           <i class="fas fa-trash"></i>Hapus
         </button>
@@ -317,16 +317,16 @@
             <option value="super_admin">super_admin</option>
           </select>
           <button
-            @click="bulkSetRole"
             :disabled="bulkSaving"
             class="ml-1 px-2 py-0.5 rounded bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white text-[10px] font-bold cursor-pointer"
+            @click="bulkSetRole"
           >
             Set Role
           </button>
         </label>
         <button
-          @click="clearSelection"
           class="h-8 px-3 inline-flex items-center gap-1 rounded-lg bg-slate-200 hover:bg-slate-300 text-[var(--text-primary)] text-[11px] font-bold transition cursor-pointer ml-auto"
+          @click="clearSelection"
         >
           <i class="fas fa-times"></i>Batal
         </button>
@@ -342,8 +342,8 @@
             type="checkbox"
             :checked="isAllVisibleSelected"
             :indeterminate.prop="isSomeVisibleSelected"
-            @change="toggleSelectAllVisible"
             class="w-4 h-4 rounded border-[var(--border-default)] text-teal-600 focus:ring-teal-500 cursor-pointer"
+            @change="toggleSelectAllVisible"
           />
           <span class="text-[11px] font-bold text-[var(--text-secondary)]"
             >Pilih semua ({{ guru.length }})</span
@@ -377,13 +377,13 @@
           <div
             v-for="g in guruShown"
             :key="g.id"
-            @click="goProfil(g, $event)"
             :class="[
               'bg-[var(--bg-card)] rounded-xl p-3 md:p-4 border shadow-sm hover:shadow-md transition cursor-pointer',
               selected.has(String(g.id))
                 ? 'border-teal-400 ring-2 ring-teal-100 dark:ring-teal-900/40'
                 : 'border-[var(--border-subtle)]'
             ]"
+            @click="goProfil(g, $event)"
           >
             <div class="flex items-start gap-3">
               <!-- v.21.22c.0526: Checkbox (Master mode only) -->
@@ -391,8 +391,8 @@
                 v-if="isMasterMode"
                 type="checkbox"
                 :checked="selected.has(String(g.id))"
-                @change="toggleSelect(g.id)"
                 class="flex-shrink-0 mt-2 w-4 h-4 rounded border-[var(--border-default)] text-teal-600 focus:ring-teal-500 cursor-pointer"
+                @change="toggleSelect(g.id)"
               />
               <!-- Avatar -->
               <div
@@ -486,20 +486,20 @@
                 >
                   <!-- v.21.24.0526: Reset Sandi tombol -->
                   <button
-                    @click="resetSandiGuru(g)"
                     class="text-[10px] text-cyan-700 dark:text-cyan-300 hover:underline font-bold"
                     title="Reset sandi ke 1234"
+                    @click="resetSandiGuru(g)"
                   >
                     <i class="fas fa-key mr-1"></i>Reset Sandi
                   </button>
                   <button
-                    @click="toggleAktifGuru(g)"
                     :class="[
                       'text-[10px] font-bold hover:underline',
                       isGuruAktif(g)
                         ? 'text-cyan-700 dark:text-cyan-300'
                         : 'text-emerald-700 dark:text-emerald-300'
                     ]"
+                    @click="toggleAktifGuru(g)"
                   >
                     <i
                       :class="['fas', isGuruAktif(g) ? 'fa-toggle-off' : 'fa-toggle-on', 'mr-1']"
@@ -513,8 +513,8 @@
                     <i class="fas fa-edit mr-1"></i>Edit
                   </router-link>
                   <button
-                    @click="deleteGuru(g)"
                     class="text-[10px] text-rose-700 dark:text-rose-300 hover:underline font-bold"
+                    @click="deleteGuru(g)"
                   >
                     <i class="fas fa-trash mr-1"></i>Hapus
                   </button>

@@ -59,24 +59,24 @@
       <!-- v.79.0526: tab toggle Lihat / Edit Profil Saya — v.91.0626: sembunyi saat readonly -->
       <div v-if="!readonly" class="px-4 pt-4 flex gap-2 border-b border-[var(--border-subtle)]">
         <button
-          @click="mode = 'view'"
           :class="[
             'px-3 py-2 text-xs font-bold rounded-t-lg transition cursor-pointer',
             mode === 'view'
               ? 'bg-teal-100 dark:bg-teal-900/40 text-teal-700 border-b-2 border-teal-500 -mb-px'
               : 'text-[var(--text-secondary)] hover:bg-[var(--bg-muted)]'
           ]"
+          @click="mode = 'view'"
         >
           <i class="fas fa-id-card mr-1"></i>Data Profil
         </button>
         <button
-          @click="mode = 'edit'"
           :class="[
             'px-3 py-2 text-xs font-bold rounded-t-lg transition cursor-pointer',
             mode === 'edit'
               ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 border-b-2 border-emerald-500 -mb-px'
               : 'text-[var(--text-secondary)] hover:bg-[var(--bg-muted)]'
           ]"
+          @click="mode = 'edit'"
         >
           <i class="fas fa-edit mr-1"></i>Edit Data Saya
         </button>
@@ -409,15 +409,15 @@
 
         <div class="flex gap-2 sticky bottom-3">
           <button
-            @click="mode = 'view'"
             class="flex-1 px-4 py-3 bg-[var(--bg-muted)] hover:bg-slate-200 text-slate-700 dark:text-[var(--text-tertiary)] font-bold rounded-xl text-sm shadow-md transition"
+            @click="mode = 'view'"
           >
             <i class="fas fa-times mr-1"></i>Batal
           </button>
           <button
-            @click="saveProfile"
             :disabled="isSaving"
             class="flex-1 px-4 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold rounded-xl text-sm shadow-md transition"
+            @click="saveProfile"
           >
             <i :class="['fas', isSaving ? 'fa-spinner fa-spin' : 'fa-save', 'mr-1']"></i
             >{{ isSaving ? 'Menyimpan...' : 'Simpan Profil' }}

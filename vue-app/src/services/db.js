@@ -210,7 +210,6 @@ function _cfg(table) {
   if (SPECIAL[table]) return SPECIAL[table]
   const cols = COLS[table]
   if (!cols && import.meta.env.DEV) {
-    // eslint-disable-next-line no-console
     console.warn(
       `[db] tabel "${table}" tak ada di peta skema — semua field non-id masuk ke data jsonb.`
     )
@@ -326,7 +325,7 @@ async function _pageAll(build) {
   const PAGE = 1000
   let from = 0
   const out = []
-  // eslint-disable-next-line no-constant-condition
+
   while (true) {
     const { data, error } = await build().range(from, from + PAGE - 1)
     if (error) throw error
@@ -522,7 +521,6 @@ async function _backupHapus(collectionName, id, snapshot, alasan, sesi) {
     )
     return auditId
   } catch (e) {
-    // eslint-disable-next-line no-console
     console.warn('[db] backup audit_log gagal:', e?.message || e)
     return null
   }

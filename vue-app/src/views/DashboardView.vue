@@ -36,8 +36,8 @@ const isAdmin = computed(() => auth.isAdmin || auth.sesiAktif?.role === 'admin')
     <!-- v.72.7: Buat Postingan kecilin (admin only) -->
     <button
       v-if="isAdmin"
-      @click="goPosts"
       class="w-full bg-gradient-to-br from-teal-600 dark:from-teal-800 to-emerald-700 dark:to-emerald-900 rounded-xl px-4 py-2.5 text-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition flex items-center justify-between gap-3 cursor-pointer"
+      @click="goPosts"
     >
       <span class="flex items-center gap-2 text-sm font-bold">
         <i class="fas fa-bullhorn text-white/90"></i>Buat Postingan

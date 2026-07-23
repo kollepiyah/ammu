@@ -29,24 +29,24 @@
           class="flex flex-nowrap gap-2 border-b border-[var(--border-subtle)] mt-4 overflow-x-auto hide-scrollbar [&>*]:shrink-0"
         >
           <button
-            @click="mainTab = 'generate'"
             :class="[
               'px-4 py-2.5 text-xs font-black uppercase tracking-wider border-b-2 whitespace-nowrap cursor-pointer transition',
               mainTab === 'generate'
                 ? 'border-emerald-500 text-emerald-700'
                 : 'border-transparent text-[var(--text-secondary)] hover:text-emerald-700'
             ]"
+            @click="mainTab = 'generate'"
           >
             <i class="fas fa-file-invoice-dollar mr-1"></i>Generate Slip Bisyaroh
           </button>
           <button
-            @click="mainTab = 'riwayat'"
             :class="[
               'px-4 py-2.5 text-xs font-black uppercase tracking-wider border-b-2 whitespace-nowrap cursor-pointer transition',
               mainTab === 'riwayat'
                 ? 'border-emerald-500 text-emerald-700'
                 : 'border-transparent text-[var(--text-secondary)] hover:text-emerald-700'
             ]"
+            @click="mainTab = 'riwayat'"
           >
             <i class="fas fa-history mr-1"></i>Riwayat Slip
           </button>
@@ -60,24 +60,24 @@
           class="bg-[var(--bg-card)] rounded-2xl p-2 border border-[var(--border-subtle)] shadow-sm flex gap-1"
         >
           <button
-            @click="subTab = 'single'"
             :class="[
               'flex-1 px-4 py-2 text-xs font-black uppercase tracking-wider rounded-lg transition cursor-pointer',
               subTab === 'single'
                 ? 'bg-emerald-600 text-white'
                 : 'text-[var(--text-secondary)] hover:bg-emerald-50'
             ]"
+            @click="subTab = 'single'"
           >
             <i class="fas fa-user mr-1"></i>Per Guru
           </button>
           <button
-            @click="subTab = 'bulk'"
             :class="[
               'flex-1 px-4 py-2 text-xs font-black uppercase tracking-wider rounded-lg transition cursor-pointer',
               subTab === 'bulk'
                 ? 'bg-emerald-600 text-white'
                 : 'text-[var(--text-secondary)] hover:bg-emerald-50'
             ]"
+            @click="subTab = 'bulk'"
           >
             <i class="fas fa-users mr-1"></i>Bulk Generate
           </button>
@@ -99,13 +99,13 @@
               <button
                 v-for="t in TIPE_OPTIONS"
                 :key="t.value"
-                @click="filterTipe = t.value"
                 :class="[
                   'px-3 py-1.5 text-xs font-bold rounded-lg cursor-pointer transition',
                   filterTipe === t.value
                     ? 'bg-emerald-600 text-white'
                     : 'bg-slate-200 text-[var(--text-primary)] hover:bg-slate-300'
                 ]"
+                @click="filterTipe = t.value"
               >
                 {{ t.label }}
               </button>
@@ -172,13 +172,13 @@
               <button
                 v-for="g in filteredGuru"
                 :key="g.id"
-                @click="pilihGuru(g)"
                 :class="[
                   'text-left px-3 py-2 rounded-lg border-2 cursor-pointer transition',
                   selectedGuru?.id === g.id
                     ? 'bg-emerald-50 border-emerald-500 text-emerald-900'
                     : 'bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600 hover:bg-emerald-50'
                 ]"
+                @click="pilihGuru(g)"
               >
                 <p class="font-bold text-sm">{{ g.nama }}</p>
                 <p class="text-[10px] text-[var(--text-secondary)]">
@@ -223,9 +223,9 @@
                   class="text-sm px-2 py-1.5 border border-[var(--border-default)] rounded-lg bg-[var(--bg-card)] text-right"
                 />
                 <button
-                  @click="form.line_items.splice(idx, 1)"
                   class="text-rose-500 hover:text-rose-700 text-xs"
                   title="Hapus line item"
+                  @click="form.line_items.splice(idx, 1)"
                 >
                   <i class="fas fa-times"></i>
                 </button>
@@ -270,8 +270,8 @@
                 </p>
               </div>
               <button
-                @click="addLineItem"
                 class="text-[10px] font-bold text-emerald-700 hover:text-emerald-900 px-2 py-1"
+                @click="addLineItem"
               >
                 <i class="fas fa-plus mr-1"></i>Tambah Line Item Manual
               </button>
@@ -299,9 +299,9 @@
                 <span class="text-lg">{{ fmtRp(takeHome) }}</span>
               </p>
               <button
-                @click="saveSlipSingle"
                 :disabled="saving"
                 class="bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-xs font-black px-5 py-2 rounded-lg shadow disabled:opacity-50 cursor-pointer"
+                @click="saveSlipSingle"
               >
                 <i class="fas fa-save mr-1"></i>
                 {{ saving ? 'Menyimpan...' : 'Simpan Slip' }}
@@ -332,13 +332,13 @@
               <button
                 v-for="t in TIPE_OPTIONS"
                 :key="'bulk-' + t.value"
-                @click="bulkTipe = t.value"
                 :class="[
                   'px-3 py-1.5 text-xs font-bold rounded-lg cursor-pointer transition',
                   bulkTipe === t.value
                     ? 'bg-emerald-600 text-white'
                     : 'bg-slate-200 text-[var(--text-primary)] hover:bg-slate-300'
                 ]"
+                @click="bulkTipe = t.value"
               >
                 {{ t.label }}
               </button>
@@ -382,9 +382,9 @@
             </p>
           </div>
           <button
-            @click="bulkGenerate"
             :disabled="bulkRunning || bulkTargets.length === 0"
             class="w-full bg-gradient-to-r from-emerald-600 dark:from-emerald-800 to-teal-600 dark:to-teal-800 hover:from-emerald-700 dark:from-emerald-900 hover:to-teal-700 dark:to-teal-900 text-white text-sm font-black py-3 rounded-xl shadow-md disabled:opacity-50 cursor-pointer transition"
+            @click="bulkGenerate"
           >
             <i :class="['fas', bulkRunning ? 'fa-spinner fa-spin' : 'fa-bolt', 'mr-2']"></i>
             {{
@@ -428,9 +428,9 @@
             </p>
             <div class="flex gap-2 flex-wrap">
               <button
-                @click="unduhTemplateBulanan"
                 type="button"
                 class="inline-flex items-center gap-1.5 text-[11px] font-bold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-900/30 px-3 py-2 rounded-lg hover:bg-teal-100 dark:hover:bg-teal-900/50"
+                @click="unduhTemplateBulanan"
               >
                 <i class="fas fa-download"></i>Template {{ BULAN_NAMES[bulan - 1] }}
               </button>
@@ -442,8 +442,8 @@
                   type="file"
                   accept=".xlsx,.xls"
                   class="hidden"
-                  @change="imporBulanan"
                   :disabled="imporBulananBusy"
+                  @change="imporBulanan"
                 />
               </label>
             </div>
@@ -483,39 +483,39 @@
             >
             <!-- v.95.0626: ekspor PDF rekap riwayat (terfilter periode) -->
             <button
-              @click="exportRekap"
               :disabled="exportingRekap || filteredSlips.length === 0"
               title="Ekspor PDF rekap slip (sesuai filter periode)"
               class="text-[10px] font-black bg-cyan-600 hover:bg-cyan-700 disabled:opacity-50 text-white px-2.5 py-1 rounded-lg flex items-center gap-1"
+              @click="exportRekap"
             >
               <i :class="['fas', exportingRekap ? 'fa-spinner fa-spin' : 'fa-file-pdf']"></i>Export
               PDF
             </button>
             <!-- v.1.1.9: ekspor rekap slip ke Excel (sesuai filter periode) -->
             <button
-              @click="exportRekapSlipExcel"
               :disabled="filteredSlips.length === 0"
               title="Ekspor rekap slip ke Excel (sesuai filter periode)"
               class="text-[10px] font-black bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white px-2.5 py-1 rounded-lg flex items-center gap-1"
+              @click="exportRekapSlipExcel"
             >
               <i class="fas fa-file-excel"></i>Export Excel
             </button>
             <!-- v.97.0626: ekspor daftar pencairan via BMT (Excel) untuk disetor ke BMT -->
             <button
               v-if="isAdminKeu && filteredSlips.length > 0"
-              @click="exportLaporanBmt"
               title="Ekspor daftar pencairan via BMT (Excel) — slip non-cash di filter periode ini"
               class="text-[10px] font-black bg-indigo-600 hover:bg-indigo-700 text-white px-2.5 py-1 rounded-lg flex items-center gap-1"
+              @click="exportLaporanBmt"
             >
               <i class="fas fa-file-excel"></i>Laporan BMT
             </button>
             <!-- v.100 Batch12: kirim Laporan BMT ke Google Sheet (mirip PDF) -->
             <button
               v-if="isAdminKeu && filteredSlips.length > 0 && gsheetConfigured()"
-              @click="kirimBmtGsheet"
               :disabled="sendingGsheetBmt"
               title="Kirim daftar pencairan via BMT ke Google Sheet"
               class="text-[10px] font-black bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white px-2.5 py-1 rounded-lg flex items-center gap-1"
+              @click="kirimBmtGsheet"
             >
               <i :class="['fas', sendingGsheetBmt ? 'fa-spinner fa-spin' : 'fa-table']"></i>Sheet
               BMT
@@ -528,15 +528,15 @@
               <input
                 type="checkbox"
                 :checked="selectedSlip.size === filteredSlips.length && filteredSlips.length > 0"
-                @change="toggleSemuaSlip"
                 class="w-4 h-4 accent-rose-600"
+                @change="toggleSemuaSlip"
               />Pilih semua
             </label>
             <button
               v-if="isAdminKeu && selectedSlip.size > 0"
-              @click="cairkanTerpilih"
               title="Catat pencairan ke Buku Induk (setelah transfer ke rekening BMT guru)"
               class="text-[10px] font-black bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1 rounded-lg"
+              @click="cairkanTerpilih"
             >
               <i class="fas fa-money-check-alt mr-1"></i>Cairkan &amp; Catat ({{
                 selectedSlip.size
@@ -544,24 +544,24 @@
             </button>
             <button
               v-if="isAdminKeu && selectedSlip.size > 0"
-              @click="tandaiMetode('cash')"
               title="Tandai slip terpilih dibayar Cash (tidak masuk laporan BMT)"
               class="text-[10px] font-black bg-amber-500 hover:bg-amber-600 text-white px-2.5 py-1 rounded-lg"
+              @click="tandaiMetode('cash')"
             >
               <i class="fas fa-money-bill-wave mr-1"></i>Tandai Cash
             </button>
             <button
               v-if="isAdminKeu && selectedSlip.size > 0"
-              @click="tandaiMetode('bmt')"
               title="Kembalikan slip terpilih ke metode BMT"
               class="text-[10px] font-black bg-slate-500 hover:bg-slate-600 text-white px-2.5 py-1 rounded-lg"
+              @click="tandaiMetode('bmt')"
             >
               <i class="fas fa-university mr-1"></i>Tandai BMT
             </button>
             <button
               v-if="isAdmin && selectedSlip.size > 0"
-              @click="hapusSlipTerpilih"
               class="text-[10px] font-black bg-rose-600 hover:bg-rose-700 text-white px-2.5 py-1 rounded-lg"
+              @click="hapusSlipTerpilih"
             >
               <i class="fas fa-trash mr-1"></i>Hapus Terpilih ({{ selectedSlip.size }})
             </button>
@@ -585,9 +585,9 @@
                 v-if="isAdmin"
                 type="checkbox"
                 :checked="selectedSlip.has(String(slip.id))"
-                @change="toggleSlipSel(slip.id)"
                 class="w-4 h-4 accent-rose-600 flex-shrink-0"
                 title="Pilih slip"
+                @change="toggleSlipSel(slip.id)"
               />
               <div
                 class="flex-shrink-0 w-10 h-10 rounded-full bg-cyan-100 text-cyan-700 flex items-center justify-center"
@@ -616,25 +616,25 @@
                 ><i class="fas fa-check"></i> Cair</span
               >
               <button
-                @click="openSlipReceipt(slip)"
                 title="Lihat slip bisyaroh"
                 aria-label="Lihat slip bisyaroh"
                 class="text-[10px] font-bold px-2 py-1 rounded bg-cyan-100 text-cyan-700 hover:bg-cyan-200 transition cursor-pointer"
+                @click="openSlipReceipt(slip)"
               >
                 <i class="fas fa-eye"></i>
               </button>
               <button
-                @click="kirimWA(slip)"
                 title="Kirim slip via WhatsApp"
                 class="text-[10px] font-bold px-2 py-1 rounded bg-emerald-100 text-emerald-700 hover:bg-emerald-200 transition cursor-pointer"
+                @click="kirimWA(slip)"
               >
                 <i class="fab fa-whatsapp mr-1"></i>Kirim
               </button>
               <button
                 v-if="isAdmin"
-                @click="hapusSlip(slip)"
                 title="Hapus slip (super admin)"
                 class="text-[10px] font-bold px-2 py-1 rounded bg-rose-100 text-rose-600 hover:bg-rose-200 transition cursor-pointer"
+                @click="hapusSlip(slip)"
               >
                 <i class="fas fa-trash"></i>
               </button>
@@ -710,10 +710,10 @@
                 >Take Home {{ fmtRp(slip.take_home) }}</span
               >
               <button
-                @click="openSlipReceipt(slip)"
                 title="Lihat slip"
                 aria-label="Lihat slip bisyaroh"
                 class="w-7 h-7 flex-shrink-0 rounded-full border border-[var(--border-default)] text-cyan-600 hover:bg-cyan-50 dark:hover:bg-cyan-900/30 flex items-center justify-center transition cursor-pointer"
+                @click="openSlipReceipt(slip)"
               >
                 <i class="fas fa-eye text-xs"></i>
               </button>

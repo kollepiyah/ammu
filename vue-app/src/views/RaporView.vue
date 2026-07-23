@@ -66,9 +66,9 @@
     >
       <div class="flex items-center gap-3 mb-4">
         <button
-          @click="view = 'picker'"
           class="text-xs font-bold px-2 py-1.5 rounded-lg bg-[var(--bg-muted)] hover:bg-slate-200 transition cursor-pointer"
           title="Kembali"
+          @click="view = 'picker'"
         >
           <i class="fas fa-arrow-left"></i>
         </button>
@@ -93,11 +93,11 @@
         <button
           v-for="l in QIRAATI_LEMBAGA"
           :key="l.id"
-          @click="pilihLembaga(l.id)"
           :class="[
             'group relative overflow-hidden bg-gradient-to-br rounded-xl p-2.5 md:p-3 text-left text-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 ease-out cursor-pointer flex flex-col gap-1',
             l.gradient
           ]"
+          @click="pilihLembaga(l.id)"
         >
           <i :class="['fas', l.icon, 'text-base md:text-lg drop-shadow']"></i>
           <h3 class="text-sm md:text-base font-black leading-tight drop-shadow-sm">
@@ -123,11 +123,11 @@
           <button
             v-for="l in diniyahLembaga"
             :key="l.id"
-            @click="pilihLembaga(l.lembaga || l.id, l.jenjang)"
             :class="[
               'group relative overflow-hidden bg-gradient-to-br rounded-xl p-3 md:p-4 text-left text-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 ease-out cursor-pointer flex flex-col gap-1',
               l.gradient
             ]"
+            @click="pilihLembaga(l.lembaga || l.id, l.jenjang)"
           >
             <i :class="['fas', l.icon, 'text-base md:text-lg drop-shadow']"></i>
             <h3 class="text-sm md:text-base font-black leading-tight drop-shadow-sm">
@@ -147,9 +147,9 @@
         <div class="flex items-center justify-between gap-3 flex-wrap mb-3">
           <div class="flex items-center gap-2">
             <button
-              @click="view = isFullFilter ? 'lembaga' : 'picker'"
               class="text-xs font-bold px-2 py-1.5 rounded-lg bg-[var(--bg-muted)] hover:bg-slate-200 dark:hover:bg-slate-600 transition cursor-pointer"
               title="Kembali"
+              @click="view = isFullFilter ? 'lembaga' : 'picker'"
             >
               <i class="fas fa-arrow-left"></i>
             </button>
@@ -208,8 +208,8 @@
       >
         <div class="flex items-center gap-2 flex-wrap">
           <button
-            @click="toggleSelectAll"
             class="text-xs font-bold px-3 py-1.5 rounded-lg bg-[var(--bg-muted)] hover:bg-[var(--color-primary-soft)] transition cursor-pointer text-[var(--text-primary)]"
+            @click="toggleSelectAll"
           >
             <i
               :class="[
@@ -235,20 +235,20 @@
           >
             <i class="fas fa-calendar-day text-cyan-600"></i>Tgl terbit:
             <input
-              type="date"
               v-model="tglTerbit"
-              @change="saveTglTerbit"
+              type="date"
               title="Tanggal terbit rapor — berlaku semua santri periode ini (kosong = hari ini)"
               class="text-xs px-2 py-1 border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
+              @change="saveTglTerbit"
             />
           </label>
         </div>
         <button
           v-if="selectedSantriIds.size > 0 && !isDesktop"
-          @click="exportPdfBatch"
           :disabled="exportingBatch"
           aria-label="Ekspor batch rapor PDF"
           class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer"
+          @click="exportPdfBatch"
         >
           <i :class="['fas', exportingBatch ? 'fa-spinner fa-spin' : 'fa-file-pdf']"></i>
           {{ exportingBatch ? 'Mengekspor...' : `Ekspor PDF (${selectedSantriIds.size})` }}
@@ -274,13 +274,13 @@
             v-if="!isSantri"
             type="checkbox"
             :checked="selectedSantriIds.has(String(s.id))"
-            @click.stop="toggleSelect(s)"
             class="w-5 h-5 accent-[var(--color-primary)] cursor-pointer flex-shrink-0"
             :title="`Pilih ${s.nama} untuk ekspor batch`"
+            @click.stop="toggleSelect(s)"
           />
           <button
-            @click="pilihSantri(s)"
             class="flex-1 min-w-0 text-left flex items-center gap-3 cursor-pointer"
+            @click="pilihSantri(s)"
           >
             <div
               class="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 dark:from-emerald-700 to-emerald-600 dark:to-emerald-800 flex items-center justify-center text-white font-bold text-sm"
@@ -323,9 +323,9 @@
           <div class="flex items-center gap-2">
             <button
               v-if="!isSantri"
-              @click="kembaliSantri"
               class="text-xs font-bold px-2 py-1.5 rounded-lg bg-[var(--bg-muted)] hover:bg-slate-200 dark:hover:bg-slate-600 transition cursor-pointer"
               title="Kembali"
+              @click="kembaliSantri"
             >
               <i class="fas fa-arrow-left"></i>
             </button>
@@ -349,40 +349,40 @@
             >
               <i class="fas fa-calendar-day text-cyan-600"></i>Tgl:
               <input
-                type="date"
                 v-model="tglTerbit"
-                @change="saveTglTerbit"
+                type="date"
                 title="Tanggal terbit rapor — berlaku semua santri periode ini (kosong = hari ini)"
                 class="text-xs px-2 py-1.5 border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
+                @change="saveTglTerbit"
               />
             </label>
             <button
               v-if="!editMode"
-              @click="startEdit"
               class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition cursor-pointer"
+              @click="startEdit"
             >
               <i class="fas fa-pen-to-square"></i>Isi / Edit Rapor
             </button>
             <template v-else>
               <button
-                @click="simpanRapor"
                 :disabled="savingRapor"
                 class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer"
+                @click="simpanRapor"
               >
                 <i :class="['fas', savingRapor ? 'fa-spinner fa-spin' : 'fa-save']"></i
                 >{{ savingRapor ? 'Menyimpan...' : 'Simpan' }}
               </button>
               <button
-                @click="cancelEdit"
                 class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold transition cursor-pointer"
+                @click="cancelEdit"
               >
                 Batal
               </button>
             </template>
             <button
-              @click="exportPdfSingle()"
               aria-label="Ekspor rapor PDF santri ini"
               class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold transition cursor-pointer"
+              @click="exportPdfSingle()"
             >
               <i class="fas fa-file-pdf"></i>Ekspor PDF
             </button>
@@ -407,8 +407,8 @@
           <button
             v-for="r in raporLain"
             :key="r.lembaga"
-            @click="switchRapor(r)"
             class="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-cyan-50 hover:bg-cyan-100 text-cyan-800 border border-cyan-200 transition cursor-pointer"
+            @click="switchRapor(r)"
           >
             <i :class="['fas', r.jenis === 'qiraati' ? 'fa-mosque' : 'fa-book-open', 'mr-1']"></i>
             {{ r.lembaga }} ({{ r.jenis === 'qiraati' ? 'Qiraati' : 'Diniyah' }})
@@ -445,9 +445,9 @@
               >
             </h4>
             <button
-              @click="saveKkm"
               :disabled="savingKkm"
               class="h-8 px-3 inline-flex items-center gap-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white text-[11px] font-bold transition cursor-pointer"
+              @click="saveKkm"
             >
               <i :class="['fas', savingKkm ? 'fa-spinner fa-spin' : 'fa-save']"></i>Simpan KKM
             </button>
@@ -458,10 +458,10 @@
                 nm
               }}</span>
               <input
+                v-model.number="kkmDraft[i]"
                 type="number"
                 min="0"
                 max="100"
-                v-model.number="kkmDraft[i]"
                 class="text-xs px-2 py-1 border border-[var(--border-default)] rounded bg-[var(--bg-card-elevated)] text-[var(--text-primary)] text-center font-bold"
               />
             </label>
@@ -494,8 +494,8 @@
                 />
                 <input
                   v-else
-                  :type="f.type === 'date' ? 'date' : f.type === 'number' ? 'number' : 'text'"
                   v-model="draft.data_nilai[f.key]"
+                  :type="f.type === 'date' ? 'date' : f.type === 'number' ? 'number' : 'text'"
                   :placeholder="f.placeholder || ''"
                   class="text-xs px-2 py-1 border border-[var(--border-default)] rounded bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
                 />
@@ -513,27 +513,27 @@
               <label class="flex flex-col gap-0.5">
                 <span class="text-[10px] text-[var(--text-tertiary)]">Sakit</span>
                 <input
+                  v-model="draft.absensi.sakit"
                   type="number"
                   min="0"
-                  v-model="draft.absensi.sakit"
                   class="text-xs px-2 py-1 border border-[var(--border-default)] rounded bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
                 />
               </label>
               <label class="flex flex-col gap-0.5">
                 <span class="text-[10px] text-[var(--text-tertiary)]">Izin</span>
                 <input
+                  v-model="draft.absensi.izin"
                   type="number"
                   min="0"
-                  v-model="draft.absensi.izin"
                   class="text-xs px-2 py-1 border border-[var(--border-default)] rounded bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
                 />
               </label>
               <label class="flex flex-col gap-0.5">
                 <span class="text-[10px] text-[var(--text-tertiary)]">Alpa</span>
                 <input
+                  v-model="draft.absensi.alpa"
                   type="number"
                   min="0"
-                  v-model="draft.absensi.alpa"
                   class="text-xs px-2 py-1 border border-[var(--border-default)] rounded bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
                 />
               </label>
@@ -578,15 +578,15 @@
 
         <div class="flex items-center gap-2 justify-end">
           <button
-            @click="cancelEdit"
             class="h-9 px-3 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold cursor-pointer"
+            @click="cancelEdit"
           >
             Batal
           </button>
           <button
-            @click="simpanRapor"
             :disabled="savingRapor"
             class="h-9 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold cursor-pointer"
+            @click="simpanRapor"
           >
             <i :class="['fas', savingRapor ? 'fa-spinner fa-spin' : 'fa-save', 'mr-1']"></i
             >{{ savingRapor ? 'Menyimpan...' : 'Simpan Rapor' }}

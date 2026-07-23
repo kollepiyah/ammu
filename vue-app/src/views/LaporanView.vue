@@ -17,13 +17,13 @@
       <button
         v-for="t in tabs"
         :key="t.id"
-        @click="setTab(t.id)"
         class="px-4 py-2 rounded-xl text-sm font-bold transition"
         :class="
           tab === t.id
             ? 'bg-teal-600 text-white shadow'
             : 'bg-[var(--bg-card)] text-[var(--text-secondary)] border border-[var(--border-subtle)]'
         "
+        @click="setTab(t.id)"
       >
         <i :class="['fas', t.icon, 'mr-1']"></i>{{ t.label }}
       </button>
@@ -34,8 +34,8 @@
       <label class="text-xs font-bold text-[var(--text-secondary)]">Tahun</label>
       <select
         v-model.number="year"
-        @change="reloadActive"
         class="px-3 py-1.5 rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)] text-sm"
+        @change="reloadActive"
       >
         <option v-for="y in years" :key="y" :value="y">{{ y }}</option>
       </select>

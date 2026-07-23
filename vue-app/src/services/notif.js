@@ -69,7 +69,6 @@ export async function antreNotifAman(o) {
   try {
     return await antreNotif(o)
   } catch (e) {
-    // eslint-disable-next-line no-console
     console.warn('[notif] gagal antre:', e?.message || e)
     return null
   }

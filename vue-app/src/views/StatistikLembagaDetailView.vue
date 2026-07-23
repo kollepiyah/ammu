@@ -2,8 +2,8 @@
   <div class="p-4 md:p-6 max-w-4xl mx-auto space-y-4">
     <!-- Back -->
     <button
-      @click="goBack"
       class="inline-flex items-center gap-1.5 text-xs font-bold text-[var(--text-secondary)] hover:text-teal-600 transition cursor-pointer"
+      @click="goBack"
     >
       <i class="fas fa-arrow-left"></i>Kembali
     </button>
@@ -31,9 +31,9 @@
         >
         <button
           v-if="groups.length"
-          @click="exportPdf"
           :disabled="exporting"
           class="ml-auto inline-flex items-center gap-1.5 bg-white/90 hover:bg-white disabled:opacity-50 text-teal-700 text-[11px] font-black px-3 py-1.5 rounded-lg shadow-sm transition"
+          @click="exportPdf"
         >
           <i :class="['fas', exporting ? 'fa-spinner fa-spin' : 'fa-file-pdf']"></i>Ekspor PDF
         </button>
@@ -98,8 +98,8 @@
               <td class="px-3 py-2 text-[var(--text-tertiary)] font-bold">{{ i + 1 }}.</td>
               <td class="px-3 py-2">
                 <button
-                  @click="goSantri(s.id)"
                   class="font-bold text-[var(--text-primary)] hover:text-teal-600 hover:underline text-left cursor-pointer"
+                  @click="goSantri(s.id)"
                 >
                   {{ s.nama }}
                 </button>
@@ -115,8 +115,8 @@
       <ul class="md:hidden divide-y divide-[var(--border-subtle)]">
         <li v-for="(s, i) in g.santri" :key="s.id">
           <button
-            @click="goSantri(s.id)"
             class="w-full flex items-center gap-3 px-4 py-3 text-left active:bg-teal-50/60 dark:active:bg-teal-900/20 transition"
+            @click="goSantri(s.id)"
           >
             <span class="text-[11px] font-black text-[var(--text-tertiary)] w-5 flex-shrink-0">{{
               i + 1

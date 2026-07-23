@@ -331,7 +331,7 @@ function onBackdrop(e) {
               <i :class="savedTrx ? 'fas fa-check-circle' : 'fas fa-cash-register'"></i
               >{{ savedTrx ? 'Pembayaran Berhasil' : 'POS Pembayaran' }}
             </h2>
-            <button type="button" class="mclose" @click="close" aria-label="Tutup">
+            <button type="button" class="mclose" aria-label="Tutup" @click="close">
               <i class="fas fa-times"></i>
             </button>
           </div>
@@ -408,7 +408,7 @@ function onBackdrop(e) {
                     class="inp-nom"
                     :title="`Sisa: ${fmtRp(r.nominal_asli)}`"
                   />
-                  <button type="button" class="rm" @click="removeTagihan(r.key)" aria-label="Hapus">
+                  <button type="button" class="rm" aria-label="Hapus" @click="removeTagihan(r.key)">
                     <i class="fas fa-times"></i>
                   </button>
                 </div>
@@ -425,7 +425,7 @@ function onBackdrop(e) {
                     <input v-else v-model="item.keterangan" class="cart-ket-input" />
                   </div>
                   <input v-model.number="item.nominal" type="number" class="inp-nom" />
-                  <button type="button" class="rm" @click="removeItem(item.id)" aria-label="Hapus">
+                  <button type="button" class="rm" aria-label="Hapus" @click="removeItem(item.id)">
                     <i class="fas fa-times"></i>
                   </button>
                 </div>

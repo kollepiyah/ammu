@@ -16,9 +16,9 @@
         </h3>
         <button
           type="button"
-          @click="$emit('close')"
           aria-label="Tutup"
           class="text-[var(--text-tertiary)] hover:text-[var(--text-primary)] shrink-0"
+          @click="$emit('close')"
         >
           <i class="fas fa-times"></i>
         </button>
@@ -92,16 +92,16 @@
       >
         <button
           type="button"
-          @click="$emit('close')"
           class="px-4 py-2 text-xs font-bold rounded-lg border border-[var(--border-default)] text-[var(--text-secondary)]"
+          @click="$emit('close')"
         >
           Batal
         </button>
         <button
           type="button"
-          @click="simpan"
           :disabled="saving || isLoading"
           class="px-4 py-2 text-xs font-bold rounded-lg bg-teal-600 hover:bg-teal-700 text-white disabled:opacity-50 flex items-center gap-1.5"
+          @click="simpan"
         >
           <i :class="['fas', saving ? 'fa-spinner fa-spin' : 'fa-floppy-disk']"></i>
           {{ saving ? 'Menyimpan…' : 'Simpan' }}

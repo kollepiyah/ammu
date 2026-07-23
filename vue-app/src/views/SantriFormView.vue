@@ -28,7 +28,7 @@
       <p class="text-sm text-[var(--text-secondary)] font-bold">Memuat data santri...</p>
     </div>
 
-    <form v-else @submit.prevent="onSubmit" class="space-y-4">
+    <form v-else class="space-y-4" @submit.prevent="onSubmit">
       <!-- Identitas Section -->
       <div
         class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
@@ -481,7 +481,7 @@
             </label>
             <MultiSelectGuruSekolah
               v-model="form.guru_sekolah"
-              :guruList="guruByLembagaSekolah"
+              :guru-list="guruByLembagaSekolah"
               :lembaga="form.lembaga_sekolah"
             />
           </div>
@@ -575,9 +575,9 @@
             ></label
           >
           <MultiSelectGuruPengajar
-            v-model:guruPagi="form.guru_pagi"
-            v-model:guruSore="form.guru_sore"
-            :guruList="guruByLembaga"
+            v-model:guru-pagi="form.guru_pagi"
+            v-model:guru-sore="form.guru_sore"
+            :guru-list="guruByLembaga"
           />
         </div>
       </div>

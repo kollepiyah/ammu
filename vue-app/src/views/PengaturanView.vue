@@ -29,12 +29,12 @@
       <button
         v-for="t in tabs"
         :key="t.id"
-        @click="section = t.id"
         :class="[
           'group relative overflow-hidden bg-gradient-to-br rounded-xl p-2.5 md:p-3 text-left text-white shadow-md hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 ease-out cursor-pointer flex items-center gap-2',
           t.gradient,
           section === t.id ? 'ring-2 ring-white/70 ring-offset-1 ring-offset-cyan-50' : ''
         ]"
+        @click="section = t.id"
       >
         <i :class="['fas', t.icon, 'text-base md:text-lg drop-shadow flex-shrink-0']"></i>
         <h3 class="text-[11px] md:text-xs font-black leading-tight drop-shadow-sm">
@@ -121,8 +121,8 @@
               type="file"
               accept="image/*"
               :disabled="uploading === 'logoUrl'"
-              @change="handleUpload($event, 'logoUrl', 'app_logos')"
               class="text-xs flex-1"
+              @change="handleUpload($event, 'logoUrl', 'app_logos')"
             />
           </div>
           <p class="text-[10px] text-emerald-700 italic">Tampil di sidebar + login.</p>
@@ -142,8 +142,8 @@
               type="file"
               accept="image/*"
               :disabled="uploading === 'logoKop'"
-              @change="handleUpload($event, 'logoKop', 'app_logos')"
               class="text-xs flex-1"
+              @change="handleUpload($event, 'logoKop', 'app_logos')"
             />
           </div>
           <p class="text-[10px] text-cyan-700 italic">
@@ -165,8 +165,8 @@
               type="file"
               accept="image/*"
               :disabled="uploading === 'logoQiraati'"
-              @change="handleUpload($event, 'logoQiraati', 'app_logos')"
               class="text-xs flex-1"
+              @change="handleUpload($event, 'logoQiraati', 'app_logos')"
             />
           </div>
           <p class="text-[10px] text-emerald-700 italic">Untuk header rapor + rekap Qiraati.</p>
@@ -190,14 +190,14 @@
               type="file"
               accept="image/*"
               :disabled="uploading === 'bgImage'"
-              @change="handleUpload($event, 'bgImage', 'app_bg')"
               class="text-xs flex-1"
+              @change="handleUpload($event, 'bgImage', 'app_bg')"
             />
           </div>
           <button
             v-if="form.bgImage"
-            @click="form.bgImage = ''"
             class="text-[10px] text-rose-600 font-bold underline"
+            @click="form.bgImage = ''"
           >
             <Trash2Icon class="w-3 h-3 inline" /> Hapus BG
           </button>
@@ -223,8 +223,8 @@
               type="file"
               accept="image/*"
               :disabled="uploading === 'bgRaporTPQ'"
-              @change="handleUpload($event, 'bgRaporTPQ', 'app_bg')"
               class="text-xs flex-1"
+              @change="handleUpload($event, 'bgRaporTPQ', 'app_bg')"
             />
           </div>
           <p class="text-[10px] text-teal-700 italic">
@@ -232,8 +232,8 @@
           </p>
           <button
             v-if="form.bgRaporTPQ"
-            @click="form.bgRaporTPQ = ''"
             class="text-[10px] text-rose-600 font-bold underline mt-1"
+            @click="form.bgRaporTPQ = ''"
           >
             <Trash2Icon class="w-3 h-3 inline" /> Hapus
           </button>
@@ -259,8 +259,8 @@
               type="file"
               accept="image/*"
               :disabled="uploading === 'bgRaporDiniyah'"
-              @change="handleUpload($event, 'bgRaporDiniyah', 'app_bg')"
               class="text-xs flex-1"
+              @change="handleUpload($event, 'bgRaporDiniyah', 'app_bg')"
             />
           </div>
           <p class="text-[10px] text-teal-700 italic">
@@ -268,8 +268,8 @@
           </p>
           <button
             v-if="form.bgRaporDiniyah"
-            @click="form.bgRaporDiniyah = ''"
             class="text-[10px] text-rose-600 font-bold underline mt-1"
+            @click="form.bgRaporDiniyah = ''"
           >
             <Trash2Icon class="w-3 h-3 inline" /> Hapus
           </button>
@@ -327,8 +327,8 @@
         <UiInput v-model="form.adminUsername" label="Username Admin Built-in" />
       </div>
       <form
-        @submit.prevent="changeAdminPassword"
         class="mt-4 p-3 bg-cyan-50 border border-cyan-200 rounded-lg"
+        @submit.prevent="changeAdminPassword"
       >
         <p class="text-xs font-black text-cyan-800 mb-2 uppercase">Ganti Password Admin</p>
         <input
@@ -544,8 +544,8 @@
         </p>
         <button
           type="button"
-          @click="openShiftBaru"
           class="inline-flex items-center gap-1.5 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-bold px-4 py-2 rounded-lg text-xs"
+          @click="openShiftBaru"
         >
           <i class="fas fa-plus"></i>Tambah Shift
         </button>
@@ -607,17 +607,17 @@
                 <div class="flex items-center justify-center gap-1">
                   <button
                     type="button"
-                    @click="openShiftDialog(sh, idx)"
                     class="w-7 h-7 rounded-lg border border-[var(--border-default)] text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/30 flex items-center justify-center"
                     title="Ubah"
+                    @click="openShiftDialog(sh, idx)"
                   >
                     <i class="fas fa-pen text-xs"></i>
                   </button>
                   <button
                     type="button"
-                    @click="hapusShift(idx)"
                     :title="sh.bawaan ? 'Hapus shift bawaan (hati-hati)' : 'Hapus'"
                     class="w-7 h-7 rounded-lg border border-[var(--border-default)] text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 flex items-center justify-center"
+                    @click="hapusShift(idx)"
                   >
                     <i class="fas fa-trash text-xs"></i>
                   </button>
@@ -651,9 +651,9 @@
             >{{ dlgShiftIsNew ? 'Tambah' : 'Ubah' }} Shift
           </h3>
           <button
-            @click="dlgShiftOpen = false"
             class="text-[var(--text-secondary)] hover:text-rose-500 p-1"
             aria-label="Tutup"
+            @click="dlgShiftOpen = false"
           >
             <i class="fas fa-times"></i>
           </button>
@@ -766,9 +766,9 @@
                 "
               >
                 <input
+                  v-model="dlgShift.hadir_ikut"
                   type="checkbox"
                   :value="o.id"
-                  v-model="dlgShift.hadir_ikut"
                   class="accent-teal-500"
                 />
                 {{ o.label }}
@@ -796,9 +796,9 @@
                 "
               >
                 <input
+                  v-model="dlgShift.lembaga"
                   type="checkbox"
                   :value="l.lembaga"
-                  v-model="dlgShift.lembaga"
                   class="accent-cyan-500"
                 />
                 {{ l.lembaga }}
@@ -815,15 +815,15 @@
         >
           <button
             type="button"
-            @click="dlgShiftOpen = false"
             class="px-4 py-2 text-xs font-bold rounded-lg border border-[var(--border-default)] text-[var(--text-secondary)]"
+            @click="dlgShiftOpen = false"
           >
             Batal
           </button>
           <button
             type="button"
-            @click="simpanShiftDialog"
             class="px-4 py-2 text-xs font-black rounded-lg bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white"
+            @click="simpanShiftDialog"
           >
             <i class="fas fa-check mr-1"></i>Terapkan
           </button>
@@ -862,9 +862,9 @@
             <span class="text-[10px] text-[var(--text-secondary)]">hari/th</span>
           </div>
           <button
-            @click="form.cuti_kategori.splice(idx, 1)"
             class="text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/30 px-2 py-2 rounded-lg shrink-0"
             title="Hapus kategori"
+            @click="form.cuti_kategori.splice(idx, 1)"
           >
             <i class="fas fa-trash"></i>
           </button>
@@ -877,8 +877,8 @@
         </p>
       </div>
       <button
-        @click="addCutiKategori"
         class="mt-2 inline-flex items-center gap-1.5 text-xs font-bold text-violet-700 dark:text-violet-300 bg-violet-50 dark:bg-violet-900/30 px-3 py-2 rounded-lg hover:bg-violet-100 dark:hover:bg-violet-900/50"
+        @click="addCutiKategori"
       >
         <i class="fas fa-plus"></i>Tambah Kategori
       </button>
@@ -911,8 +911,8 @@
             class="flex-1 bg-transparent text-sm font-bold text-[var(--text-primary)] outline-none"
           />
           <button
-            @click="form.rekapSchemaDiniyah.splice(idx, 1)"
             class="text-rose-600 hover:bg-rose-50 px-2 py-1 rounded text-xs cursor-pointer"
+            @click="form.rekapSchemaDiniyah.splice(idx, 1)"
           >
             <i class="fas fa-trash"></i>
           </button>
@@ -927,13 +927,13 @@
       <div class="flex gap-2">
         <input
           v-model="newMapel"
-          @keyup.enter="addMapel"
           type="text"
           class="flex-1 px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)]"
+          @keyup.enter="addMapel"
         />
         <button
-          @click="addMapel"
           class="bg-teal-600 hover:bg-teal-700 text-white font-bold px-4 py-2 rounded-lg text-xs whitespace-nowrap cursor-pointer"
+          @click="addMapel"
         >
           <i class="fas fa-plus mr-1"></i>Tambah
         </button>
@@ -961,8 +961,8 @@
             <div class="flex items-center justify-between mb-2">
               <p class="text-xs font-black text-teal-800 uppercase">&#x1F4DA; Kelas {{ kelas }}</p>
               <button
-                @click="delete form.rekapSchemaDiniyahPerKelas[kelas]"
                 class="text-rose-600 text-xs font-bold hover:bg-rose-50 px-2 py-0.5 rounded"
+                @click="delete form.rekapSchemaDiniyahPerKelas[kelas]"
               >
                 <i class="fas fa-trash mr-1"></i>Hapus kelas
               </button>
@@ -978,15 +978,15 @@
                   class="bg-transparent w-24 outline-none text-[11px]"
                 />
                 <button
-                  @click="form.rekapSchemaDiniyahPerKelas[kelas].splice(mi, 1)"
                   class="text-rose-400 text-[10px]"
+                  @click="form.rekapSchemaDiniyahPerKelas[kelas].splice(mi, 1)"
                 >
                   <i class="fas fa-times"></i>
                 </button>
               </span>
               <button
-                @click="form.rekapSchemaDiniyahPerKelas[kelas].push('Mapel Baru')"
                 class="bg-teal-200 hover:bg-teal-300 text-teal-800 text-[10px] font-bold px-2 py-0.5 rounded"
+                @click="form.rekapSchemaDiniyahPerKelas[kelas].push('Mapel Baru')"
               >
                 + Mapel
               </button>
@@ -1000,8 +1000,8 @@
             class="flex-1 px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)]"
           />
           <button
-            @click="addKelasOverride"
             class="bg-teal-600 hover:bg-teal-700 text-white font-bold px-4 py-2 rounded-lg text-xs cursor-pointer"
+            @click="addKelasOverride"
           >
             <i class="fas fa-plus mr-1"></i>Tambah Kelas
           </button>
@@ -1121,9 +1121,9 @@
         </div>
         <button
           type="button"
-          @click="tesGsheet"
           :disabled="gsheetTesting || !form.gsheetUrl"
           class="px-4 py-2 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white"
+          @click="tesGsheet"
         >
           <i :class="['fas mr-1', gsheetTesting ? 'fa-spinner fa-spin' : 'fa-vial']"></i
           >{{ gsheetTesting ? 'Menguji…' : 'Tes Koneksi' }}
@@ -1181,8 +1181,8 @@
               Setelah custom, template default tidak dipakai lagi untuk lembaga ini.
             </p>
             <button
-              @click="resetSchemaTemplate"
               class="mt-2 text-[10px] font-black px-3 py-1.5 rounded bg-cyan-600 hover:bg-cyan-700 text-white cursor-pointer"
+              @click="resetSchemaTemplate"
             >
               <i class="fas fa-undo mr-1"></i>Reset Ke Template Default
             </button>
@@ -1194,8 +1194,8 @@
             >
             <select
               :value="schemaType()"
-              @change="(ev) => initSchemaType(ev.target.value)"
               class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card)]"
+              @change="(ev) => initSchemaType(ev.target.value)"
             >
               <option value="sections">
                 TPQ — Matrix Jilid (Pra-TK, A/B/C/D/E, Tahsin, Tahfidz)
@@ -1218,7 +1218,7 @@
                 class="bg-[var(--bg-card)] border border-teal-200 px-2 py-1 rounded text-xs flex items-center gap-1"
               >
                 {{ f.label }}
-                <button @click="removeFieldNilai(fi)" class="text-rose-500 hover:text-rose-700">
+                <button class="text-rose-500 hover:text-rose-700" @click="removeFieldNilai(fi)">
                   <i class="fas fa-times text-[10px]"></i>
                 </button>
               </span>
@@ -1226,13 +1226,13 @@
             <div class="flex gap-2">
               <input
                 v-model="newField"
-                @keyup.enter="addFieldNilai"
                 type="text"
                 class="flex-1 px-2 py-1 text-xs border border-[var(--border-default)] rounded bg-[var(--bg-card)]"
+                @keyup.enter="addFieldNilai"
               />
               <button
-                @click="addFieldNilai"
                 class="bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold px-3 py-1 rounded cursor-pointer"
+                @click="addFieldNilai"
               >
                 + Tambah
               </button>
@@ -1255,8 +1255,8 @@
                     class="text-xs px-2 py-1 border border-[var(--border-default)] rounded"
                   />
                   <button
-                    @click="form.raporSchemas[raporLembaga].levels.splice(li, 1)"
                     class="text-rose-500 text-xs hover:bg-rose-50 px-2 rounded"
+                    @click="form.raporSchemas[raporLembaga].levels.splice(li, 1)"
                   >
                     <i class="fas fa-trash mr-1"></i>Hapus Level
                   </button>
@@ -1283,24 +1283,24 @@
                       title="Multiplier (2x/3x/...)"
                     />
                     <button
-                      @click="level.khotamList.splice(ki, 1)"
                       class="text-rose-500 text-[11px] hover:bg-rose-100 rounded"
                       title="Hapus khotam"
+                      @click="level.khotamList.splice(ki, 1)"
                     >
                       <i class="fas fa-times"></i>
                     </button>
                   </div>
                   <button
-                    @click="addKhotam(level)"
                     class="text-[10px] bg-teal-200 hover:bg-teal-300 text-teal-800 font-bold px-2 py-0.5 rounded"
+                    @click="addKhotam(level)"
                   >
                     <i class="fas fa-plus mr-0.5"></i>Tambah Khotam
                   </button>
                 </div>
               </div>
               <button
-                @click="addLevel"
                 class="text-xs bg-teal-100 hover:bg-teal-200 text-teal-700 font-bold px-3 py-1 rounded"
+                @click="addLevel"
               >
                 + Tambah Level
               </button>
@@ -1321,8 +1321,8 @@
                   class="text-xs font-bold px-2 py-1 border border-[var(--border-default)] rounded w-32"
                 />
                 <button
-                  @click="form.raporSchemas[raporLembaga].jenjang.splice(ji, 1)"
                   class="text-rose-500 text-xs"
+                  @click="form.raporSchemas[raporLembaga].jenjang.splice(ji, 1)"
                 >
                   <i class="fas fa-trash"></i>
                 </button>
@@ -1345,26 +1345,26 @@
                     class="w-12 text-[11px] px-1 py-0.5 border border-[var(--border-default)] rounded bg-[var(--bg-card)]"
                     title="KKM"
                   />
-                  <button @click="jen.mapel.splice(mi, 1)" class="text-rose-400 text-[10px]">
+                  <button class="text-rose-400 text-[10px]" @click="jen.mapel.splice(mi, 1)">
                     <i class="fas fa-times"></i>
                   </button>
                 </div>
               </div>
               <button
+                class="text-[10px] text-teal-700 font-bold mt-1"
                 @click="
                   () => {
                     jen.mapel = jen.mapel || []
                     jen.mapel.push({ id: 'mapel_' + Date.now(), nama: '', kkm: 80 })
                   }
                 "
-                class="text-[10px] text-teal-700 font-bold mt-1"
               >
                 + Tambah Mapel
               </button>
             </div>
             <button
-              @click="addJenjang"
               class="text-xs bg-teal-100 hover:bg-teal-200 text-teal-700 font-bold px-3 py-1 rounded"
+              @click="addJenjang"
             >
               + Tambah Jenjang
             </button>
@@ -1384,8 +1384,8 @@
                   class="text-xs font-bold px-2 py-1 border border-[var(--border-default)] rounded flex-1"
                 />
                 <button
-                  @click="form.raporSchemas[raporLembaga].sections.splice(si, 1)"
                   class="text-rose-500 text-xs hover:bg-rose-50 px-2 rounded"
+                  @click="form.raporSchemas[raporLembaga].sections.splice(si, 1)"
                 >
                   <i class="fas fa-trash"></i>
                 </button>
@@ -1404,18 +1404,18 @@
                       v-model="sec.rows[ri]"
                       class="bg-transparent border-0 outline-none text-[11px] w-16"
                     />
-                    <button @click="sec.rows.splice(ri, 1)" class="text-rose-400 text-[10px]">
+                    <button class="text-rose-400 text-[10px]" @click="sec.rows.splice(ri, 1)">
                       <i class="fas fa-times"></i>
                     </button>
                   </span>
                   <button
+                    class="bg-teal-200 hover:bg-teal-300 text-teal-800 text-[10px] font-bold px-2 py-0.5 rounded"
                     @click="
                       () => {
                         sec.rows = sec.rows || []
                         sec.rows.push('Baru')
                       }
                     "
-                    class="bg-teal-200 hover:bg-teal-300 text-teal-800 text-[10px] font-bold px-2 py-0.5 rounded"
                   >
                     + Row
                   </button>
@@ -1443,18 +1443,18 @@
                     <option value="date">Tanggal</option>
                     <option value="auto_predikat">Predikat (auto)</option>
                   </select>
-                  <button @click="sec.fields.splice(fi, 1)" class="text-rose-500 text-[11px]">
+                  <button class="text-rose-500 text-[11px]" @click="sec.fields.splice(fi, 1)">
                     <i class="fas fa-times"></i>
                   </button>
                 </div>
                 <button
+                  class="bg-teal-200 hover:bg-teal-300 text-[10px] font-bold px-2 py-0.5 rounded"
                   @click="
                     () => {
                       sec.fields = sec.fields || []
                       sec.fields.push({ id: 'f_' + Date.now(), label: 'Baru', type: 'number' })
                     }
                   "
-                  class="bg-teal-200 hover:bg-teal-300 text-[10px] font-bold px-2 py-0.5 rounded"
                 >
                   + Field
                 </button>

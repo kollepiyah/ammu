@@ -34,22 +34,22 @@
           </span>
           <button
             v-if="pendaftar.status !== 'approved'"
-            @click="updateStatus('approved')"
             class="text-xs px-3 py-1.5 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-bold rounded-lg transition"
+            @click="updateStatus('approved')"
           >
             <i class="fas fa-check mr-1"></i>Approve
           </button>
           <button
             v-if="pendaftar.status !== 'rejected'"
-            @click="updateStatus('rejected')"
             class="text-xs px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-lg transition"
+            @click="updateStatus('rejected')"
           >
             <i class="fas fa-times mr-1"></i>Reject
           </button>
           <button
             v-if="pendaftar.status === 'approved' && pendaftar.status !== 'enrolled'"
-            @click="updateStatus('enrolled')"
             class="text-xs px-3 py-1.5 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-bold rounded-lg transition"
+            @click="updateStatus('enrolled')"
           >
             <i class="fas fa-user-plus mr-1"></i>Tandai Enrolled
           </button>
@@ -152,14 +152,14 @@
             </div>
             <div class="flex flex-col gap-1">
               <button
-                @click="openEditAcf(item)"
                 class="text-[10px] px-2 py-0.5 bg-cyan-100 hover:bg-cyan-200 text-cyan-700 font-bold rounded transition"
+                @click="openEditAcf(item)"
               >
                 <i class="fas fa-pen"></i>
               </button>
               <button
-                @click="deleteAcf(item.key)"
                 class="text-[10px] px-2 py-0.5 bg-rose-100 hover:bg-rose-200 text-rose-700 font-bold rounded transition"
+                @click="deleteAcf(item.key)"
               >
                 <i class="fas fa-trash"></i>
               </button>
@@ -168,8 +168,8 @@
         </div>
         <div class="mt-3 pt-3 border-t border-dashed border-[var(--border-subtle)]">
           <button
-            @click="openAddAcf"
             class="w-full text-xs px-3 py-2 bg-teal-50 hover:bg-teal-100 text-teal-700 font-bold rounded-lg border border-dashed border-teal-300 transition"
+            @click="openAddAcf"
           >
             <i class="fas fa-plus mr-1"></i>Tambah Field
           </button>
@@ -191,9 +191,9 @@
             </p>
           </div>
           <button
-            @click="convertToSantri"
             :disabled="converting"
             class="text-xs px-4 py-2 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] disabled:bg-slate-300 text-white font-bold rounded-lg transition"
+            @click="convertToSantri"
           >
             <i class="fas fa-arrow-right-to-bracket mr-1"></i
             >{{ converting ? 'Memproses…' : 'Buat Santri' }}
@@ -262,14 +262,14 @@
         </div>
         <div class="flex justify-end gap-2 pt-2">
           <button
-            @click="acfModal.open = false"
             class="text-xs px-3 py-1.5 bg-[var(--bg-muted)] hover:bg-slate-200 text-[var(--text-primary)] font-bold rounded-lg"
+            @click="acfModal.open = false"
           >
             Batal
           </button>
           <button
-            @click="saveAcf"
             class="text-xs px-3 py-1.5 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-bold rounded-lg"
+            @click="saveAcf"
           >
             Simpan
           </button>

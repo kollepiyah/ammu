@@ -27,7 +27,6 @@ export const supabase =
     : null
 
 if (!supabase && import.meta.env.DEV) {
-  // eslint-disable-next-line no-console
   console.warn(
     '[supabase] VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY belum di-set (.env.local) — client = null (scaffold F1).'
   )

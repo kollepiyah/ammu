@@ -17,8 +17,8 @@
       <p class="text-sm font-bold text-rose-800 mb-2">Gagal memuat profil</p>
       <p class="text-xs text-rose-600">{{ error }}</p>
       <button
-        @click="loadProfil"
         class="mt-3 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-lg cursor-pointer"
+        @click="loadProfil"
       >
         <i class="fas fa-redo mr-1"></i>Coba Lagi
       </button>
@@ -131,7 +131,7 @@ async function loadProfil() {
     error.value = `Role "${s.role}" belum didukung di halaman profil`
   } catch (e) {
     error.value = e.message || String(e)
-    // eslint-disable-next-line no-console
+
     console.error('[ProfilView] load error:', e)
   } finally {
     loading.value = false

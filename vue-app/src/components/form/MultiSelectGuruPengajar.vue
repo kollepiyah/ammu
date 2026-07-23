@@ -3,8 +3,8 @@
     <!-- Trigger button -->
     <button
       type="button"
-      @click="isOpen = !isOpen"
       class="w-full px-3 py-2.5 text-sm rounded-xl border-2 border-teal-300 bg-teal-50 text-left flex items-center justify-between transition hover:bg-teal-100"
+      @click="isOpen = !isOpen"
     >
       <span class="text-[var(--text-primary)] truncate">{{ summary }}</span>
       <i :class="['fas text-teal-600 text-xs', isOpen ? 'fa-chevron-up' : 'fa-chevron-down']"></i>
@@ -26,7 +26,10 @@
       </div>
       <!-- List -->
       <div class="flex-1 overflow-y-auto p-2 space-y-1.5">
-        <p v-if="filteredGurus.length === 0" class="text-xs text-[var(--text-tertiary)] italic text-center py-3">
+        <p
+          v-if="filteredGurus.length === 0"
+          class="text-xs text-[var(--text-tertiary)] italic text-center py-3"
+        >
           {{ search ? 'Tidak ada cocok' : 'Pilih lembaga dulu' }}
         </p>
         <div
@@ -39,23 +42,25 @@
               <input
                 type="checkbox"
                 :checked="isSelected(g.nama)"
-                @change="onToggle(g.nama, $event.target.checked)"
                 class="w-4 h-4 accent-teal-600"
+                @change="onToggle(g.nama, $event.target.checked)"
               />
-              <span class="text-sm font-bold text-[var(--text-primary)] truncate">{{ g.nama }}</span>
+              <span class="text-sm font-bold text-[var(--text-primary)] truncate">{{
+                g.nama
+              }}</span>
             </label>
             <div v-if="isSelected(g.nama)" class="flex gap-1 flex-shrink-0">
               <button
                 v-for="s in shiftOptions"
                 :key="s.value"
                 type="button"
-                @click="setShift(g.nama, s.value)"
                 :class="[
                   'text-[10px] font-bold px-2 py-1 rounded border-2 transition',
                   getShift(g.nama) === s.value
                     ? s.activeClass
                     : 'bg-[var(--bg-card)] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:border-[var(--border-default)]'
                 ]"
+                @click="setShift(g.nama, s.value)"
               >
                 {{ s.label }}
               </button>
@@ -67,8 +72,8 @@
       <div class="p-2 border-t border-[var(--border-subtle)] bg-[var(--bg-card-elevated)]">
         <button
           type="button"
-          @click="isOpen = false"
           class="w-full text-xs font-bold text-teal-700 hover:text-teal-800"
+          @click="isOpen = false"
         >
           Selesai
         </button>
@@ -76,7 +81,8 @@
     </div>
 
     <p class="text-[10px] text-[var(--text-secondary)] mt-1">
-      <i class="fas fa-info-circle mr-1"></i>Max 2 guru. Klik guru → pilih shift Pagi / Sore / Pagi+Sore.
+      <i class="fas fa-info-circle mr-1"></i>Max 2 guru. Klik guru → pilih shift Pagi / Sore /
+      Pagi+Sore.
     </p>
   </div>
 </template>
@@ -106,7 +112,11 @@ const shiftOptions = [
 const filteredGurus = computed(() => {
   const kw = search.value.trim().toLowerCase()
   if (!kw) return props.guruList
-  return props.guruList.filter((g) => String(g.nama || '').toLowerCase().includes(kw))
+  return props.guruList.filter((g) =>
+    String(g.nama || '')
+      .toLowerCase()
+      .includes(kw)
+  )
 })
 
 // Computed: dari guru_pagi + guru_sore di parent, build selectedShift map
@@ -143,7 +153,8 @@ function onToggle(nama, checked) {
     return
   }
   // Check: limit 2 guru
-  const totalSelected = (props.guruPagi ? 1 : 0) + (props.guruSore && props.guruSore !== props.guruPagi ? 1 : 0)
+  const totalSelected =
+    (props.guruPagi ? 1 : 0) + (props.guruSore && props.guruSore !== props.guruPagi ? 1 : 0)
   if (totalSelected >= 2) {
     toast.warning('Maksimal 2 guru. Uncheck satu dulu.')
     return

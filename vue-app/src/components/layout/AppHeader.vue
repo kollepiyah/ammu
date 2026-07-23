@@ -7,9 +7,9 @@
     <div class="flex items-center gap-3">
       <!-- v.21.114.0528: tap target diperbesar w-10 h-10 = 40px (mobile-friendly) -->
       <button
-        @click="ui.toggleSidebar()"
         class="w-10 h-10 -ml-1 rounded-lg flex items-center justify-center text-slate-500 dark:text-slate-300 hover:text-teal-600 hover:bg-slate-100 dark:hover:bg-slate-700/50 text-xl transition cursor-pointer"
         aria-label="Toggle sidebar"
+        @click="ui.toggleSidebar()"
       >
         <i class="fas fa-bars"></i>
       </button>
@@ -48,11 +48,11 @@
     <!-- Kanan: dark toggle + dropdown profil -->
     <div class="flex items-center gap-2">
       <!-- v.86.0526: Wali multi-anak -> dropdown pilih anak; selain itu nama statis -->
-      <div v-if="isSantriRole && hasMultiple" class="relative mr-1" ref="childRef">
+      <div v-if="isSantriRole && hasMultiple" ref="childRef" class="relative mr-1">
         <button
-          @click="childOpen = !childOpen"
           class="flex items-center gap-1.5 px-2 py-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700/50 transition cursor-pointer"
           aria-label="Pilih anak"
+          @click="childOpen = !childOpen"
         >
           <span class="text-right leading-tight hidden sm:block">
             <span
@@ -84,13 +84,13 @@
             <button
               v-for="c in children"
               :key="c.id"
-              @click="pickChild(c)"
               class="w-full text-left px-4 py-2.5 text-sm font-bold flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-700 transition cursor-pointer"
               :class="
                 String(c.id) === activeId
                   ? 'text-teal-600 dark:text-teal-300'
                   : 'text-slate-700 dark:text-slate-200'
               "
+              @click="pickChild(c)"
             >
               <span
                 class="w-7 h-7 rounded-full bg-teal-100 dark:bg-teal-700 text-teal-600 dark:text-teal-200 flex items-center justify-center text-xs font-black flex-shrink-0"
@@ -124,20 +124,20 @@
 
       <!-- v.21.115.0528: tap target w-9 → w-10 (40px) — mobile-friendly per design-tokens -->
       <button
-        @click="ui.toggleDark()"
         class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 flex items-center justify-center transition cursor-pointer"
         :title="ui.isDark ? 'Mode Terang' : 'Mode Gelap'"
         aria-label="Toggle dark mode"
+        @click="ui.toggleDark()"
       >
         <i :class="['fas', ui.isDark ? 'fa-sun text-cyan-400' : 'fa-moon text-slate-600']"></i>
       </button>
 
       <!-- Profil avatar dropdown — v.21.115.0528: w-9 → w-10 (40px) -->
-      <div class="relative" ref="dropdownRef">
+      <div ref="dropdownRef" class="relative">
         <button
-          @click="dropdownOpen = !dropdownOpen"
           class="w-10 h-10 rounded-full bg-gradient-to-br from-teal-100 to-cyan-100 dark:from-teal-700 dark:to-cyan-700 hover:ring-2 hover:ring-teal-300 dark:hover:ring-teal-500 flex items-center justify-center transition cursor-pointer overflow-hidden border border-slate-200 dark:border-slate-600"
           aria-label="Menu profil"
+          @click="dropdownOpen = !dropdownOpen"
         >
           <i v-if="!fotoUrl" class="fas fa-user text-teal-600 dark:text-teal-200"></i>
           <img v-else :src="fotoUrl" alt="Foto profil" class="w-full h-full object-cover" />
@@ -166,15 +166,15 @@
               </p>
             </div>
             <button
-              @click="goProfil"
               class="w-full text-left px-4 py-2.5 text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-2 transition cursor-pointer"
+              @click="goProfil"
             >
               <i class="fas fa-user-circle text-teal-500 w-5"></i>Profil Saya
             </button>
             <button
-              @click="goPengaturan"
               v-if="auth.isAdmin"
               class="w-full text-left px-4 py-2.5 text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-2 transition cursor-pointer"
+              @click="goPengaturan"
             >
               <i class="fas fa-cog text-cyan-500 w-5"></i>Pengaturan
             </button>
@@ -182,8 +182,8 @@
             <!-- v.65.0526: link Versi Lama dihapus — full Vue migrate (Naik Kelas, POS, Rapor bridge sudah di Vue) -->
             <!-- Kalau perlu akses legacy darurat, buka /legacy/ langsung via URL bar -->
             <button
-              @click="onLogout"
               class="w-full text-left px-4 py-2.5 text-sm font-bold text-rose-700 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-900/20 flex items-center gap-2 transition cursor-pointer"
+              @click="onLogout"
             >
               <i class="fas fa-sign-out-alt w-5"></i>Keluar
             </button>

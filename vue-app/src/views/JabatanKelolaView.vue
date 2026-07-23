@@ -276,13 +276,13 @@ const sorted = computed(() =>
               v-for="t in TIPE_PEGAWAI"
               :key="t.value"
               type="button"
-              @click="form.tipe_pegawai = t.value"
               :class="[
                 'px-2.5 py-1.5 text-xs font-bold rounded-lg border transition cursor-pointer',
                 form.tipe_pegawai === t.value
                   ? 'bg-teal-600 text-white border-teal-700'
                   : 'bg-[var(--bg-card)] text-[var(--text-secondary)] border-[var(--border-default)] hover:bg-teal-50 dark:hover:bg-teal-900/30'
               ]"
+              @click="form.tipe_pegawai = t.value"
             >
               <i :class="['fas', t.icon, 'mr-1']"></i>{{ t.label }}
             </button>
@@ -297,13 +297,13 @@ const sorted = computed(() =>
               v-for="t in TIPE_LEMBAGA"
               :key="t.value"
               type="button"
-              @click="form.tipe_lembaga = t.value"
               :class="[
                 'px-2.5 py-1.5 text-xs font-bold rounded-lg border transition cursor-pointer',
                 form.tipe_lembaga === t.value
                   ? 'bg-cyan-600 text-white border-cyan-700'
                   : 'bg-[var(--bg-card)] text-[var(--text-secondary)] border-[var(--border-default)] hover:bg-cyan-50 dark:hover:bg-cyan-900/30'
               ]"
+              @click="form.tipe_lembaga = t.value"
             >
               <i :class="['fas', t.icon, 'mr-1']"></i>{{ t.label }}
             </button>
@@ -326,13 +326,13 @@ const sorted = computed(() =>
             v-for="u in unitOptions"
             :key="u"
             type="button"
-            @click="toggleUnit(u)"
             :class="[
               'px-2.5 py-1.5 text-xs font-bold rounded-lg border transition cursor-pointer',
               unitDipilih(u)
                 ? 'bg-indigo-600 text-white border-indigo-700'
                 : 'bg-[var(--bg-card)] text-[var(--text-secondary)] border-[var(--border-default)] hover:bg-indigo-50 dark:hover:bg-indigo-900/30'
             ]"
+            @click="toggleUnit(u)"
           >
             <i :class="['fas mr-1', unitDipilih(u) ? 'fa-check' : 'fa-building']"></i>{{ u }}
           </button>
@@ -355,9 +355,9 @@ const sorted = computed(() =>
       <div class="flex gap-2 pt-1">
         <button
           type="button"
-          @click="simpan"
           :disabled="saving"
           class="bg-teal-600 hover:bg-teal-700 text-white font-bold px-4 py-2 rounded-lg text-xs disabled:opacity-50"
+          @click="simpan"
         >
           <i
             :class="[
@@ -371,8 +371,8 @@ const sorted = computed(() =>
         <button
           v-if="form.idx !== null"
           type="button"
-          @click="resetForm"
           class="bg-[var(--bg-muted)] hover:bg-slate-300 dark:hover:bg-slate-600 text-[var(--text-secondary)] font-bold px-3 py-2 rounded-lg text-xs"
+          @click="resetForm"
         >
           Batal
         </button>
@@ -430,15 +430,15 @@ const sorted = computed(() =>
           </div>
           <button
             type="button"
-            @click="editItem(items.indexOf(j))"
             class="text-[10px] text-cyan-600 hover:underline font-bold"
+            @click="editItem(items.indexOf(j))"
           >
             edit
           </button>
           <button
             type="button"
-            @click="hapus(items.indexOf(j))"
             class="text-[10px] text-rose-600 hover:underline font-bold"
+            @click="hapus(items.indexOf(j))"
           >
             hapus
           </button>

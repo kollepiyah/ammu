@@ -7,13 +7,13 @@
         <button
           v-for="t in tabs"
           :key="t.id"
-          @click="tab = t.id"
           class="px-4 py-2 rounded-xl text-sm font-bold transition"
           :class="
             tab === t.id
               ? 'bg-teal-600 text-white shadow'
               : 'bg-[var(--bg-card)] text-[var(--text-secondary)] border border-[var(--border-subtle)]'
           "
+          @click="tab = t.id"
         >
           <i :class="['fas', t.icon, 'mr-1']"></i>{{ t.label }}
         </button>

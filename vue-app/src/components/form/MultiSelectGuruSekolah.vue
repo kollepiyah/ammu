@@ -2,8 +2,8 @@
   <div class="relative">
     <button
       type="button"
-      @click="isOpen = !isOpen"
       class="w-full px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-left flex items-center justify-between transition hover:bg-[var(--bg-muted)]"
+      @click="isOpen = !isOpen"
     >
       <span class="text-[var(--text-primary)] truncate">{{ summary }}</span>
       <i
@@ -41,8 +41,8 @@
           <input
             type="checkbox"
             :checked="modelValue.includes(g.nama)"
-            @change="onToggle(g.nama, $event.target.checked)"
             class="w-4 h-4 accent-cyan-600"
+            @change="onToggle(g.nama, $event.target.checked)"
           />
           <span class="text-sm text-[var(--text-primary)]">{{ g.nama }}</span>
         </label>
@@ -50,8 +50,8 @@
       <div class="p-2 border-t border-[var(--border-subtle)] bg-[var(--bg-card-elevated)]">
         <button
           type="button"
-          @click="isOpen = false"
           class="w-full text-xs font-bold text-cyan-700 hover:text-cyan-800"
+          @click="isOpen = false"
         >
           Selesai
         </button>

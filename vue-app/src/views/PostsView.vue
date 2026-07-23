@@ -14,8 +14,8 @@
       </div>
       <button
         v-if="isAdmin"
-        @click="openModal()"
         class="bg-teal-600 hover:bg-teal-700 text-white text-xs font-black px-3 py-2 rounded-full shadow flex items-center gap-1.5 transition cursor-pointer"
+        @click="openModal()"
       >
         <i class="fas fa-plus"></i>
         <span class="hidden sm:inline">Post Baru</span>
@@ -59,7 +59,7 @@
       <div
         class="bg-[var(--bg-card)] -mt-2 px-4 pb-3 rounded-b-2xl border border-t-0 border-[var(--border-subtle)]"
       >
-        <ReactionBar :postId="p.id" />
+        <ReactionBar :post-id="p.id" />
       </div>
     </div>
 
@@ -158,10 +158,10 @@
               >
                 <img :src="img.preview || img.url" class="w-full h-full object-cover" />
                 <button
-                  @click="removeImage(idx)"
                   type="button"
                   class="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-slate-900/70 hover:bg-rose-600 text-white text-[10px] flex items-center justify-center transition cursor-pointer"
                   title="Hapus gambar"
+                  @click="removeImage(idx)"
                 >
                   <i class="fas fa-times"></i>
                 </button>
@@ -172,15 +172,15 @@
           <!-- Actions -->
           <div class="flex items-center justify-end gap-2 pt-2">
             <button
-              @click="closeModal()"
               class="px-5 py-2.5 bg-[var(--bg-muted)] hover:bg-slate-300 dark:hover:bg-slate-600 text-[var(--text-primary)] font-bold rounded-xl text-sm transition cursor-pointer"
+              @click="closeModal()"
             >
               Batal
             </button>
             <button
-              @click="simpan"
               :disabled="saving || (!modalIsi && !modalJudul && modalImages.length === 0)"
               class="px-5 py-2.5 bg-teal-600 hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl text-sm transition cursor-pointer flex items-center justify-center gap-2 shadow-sm"
+              @click="simpan"
             >
               <i v-if="saving" class="fas fa-spinner fa-spin"></i>
               <i v-else class="fas fa-save"></i>

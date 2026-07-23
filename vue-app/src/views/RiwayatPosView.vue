@@ -334,8 +334,8 @@ function fmtTgl(t) {
         </div>
         <button
           type="button"
-          @click="router.push('/pos-santri')"
           class="text-xs font-bold text-teal-700 bg-teal-50 dark:bg-teal-900/30 dark:text-teal-300 px-3 py-2 rounded-xl hover:bg-teal-100"
+          @click="router.push('/pos-santri')"
         >
           <i class="fas fa-cash-register mr-1"></i>Ke Kasir POS
         </button>
@@ -431,16 +431,16 @@ function fmtTgl(t) {
             <input
               type="checkbox"
               :checked="selectedTrx.size === transaksi.length && transaksi.length > 0"
-              @change="toggleSemuaTrx"
               class="w-4 h-4 accent-rose-600"
+              @change="toggleSemuaTrx"
             />
             Pilih semua ({{ transaksi.length }})
           </label>
           <button
             v-if="selectedTrx.size > 0"
             type="button"
-            @click="hapusTrxTerpilih"
             class="text-[11px] font-black bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-lg"
+            @click="hapusTrxTerpilih"
           >
             <i class="fas fa-trash mr-1"></i>Hapus Terpilih ({{ selectedTrx.size }})
           </button>
@@ -457,9 +457,9 @@ function fmtTgl(t) {
                 v-if="isAdmin"
                 type="checkbox"
                 :checked="selectedTrx.has(String(t.key))"
-                @change="toggleTrxSel(t.key)"
                 class="w-4 h-4 mt-1 accent-rose-600 flex-shrink-0"
                 title="Pilih transaksi"
+                @change="toggleTrxSel(t.key)"
               />
               <div class="min-w-0 flex-1">
                 <p class="text-sm font-bold text-[var(--text-primary)] truncate">
@@ -485,28 +485,28 @@ function fmtTgl(t) {
                 <div class="flex gap-1 mt-1.5 justify-end">
                   <button
                     type="button"
-                    @click="cetakPdf(t)"
                     aria-label="Cetak struk PDF ber-KOP"
                     title="Cetak struk PDF ber-KOP"
                     class="text-[10px] font-bold text-cyan-700 dark:text-cyan-300 bg-cyan-50 dark:bg-cyan-900/30 px-2 py-1 rounded-lg hover:bg-cyan-100 dark:hover:bg-cyan-900/50 transition"
+                    @click="cetakPdf(t)"
                   >
                     <i class="fas fa-file-pdf mr-1"></i>PDF
                   </button>
                   <button
                     type="button"
-                    @click="cetakDot(t)"
                     aria-label="Cetak struk dot-matrix"
                     title="Cetak struk dot-matrix"
                     class="text-[10px] font-bold text-slate-700 dark:text-slate-200 bg-[var(--bg-muted)] px-2 py-1 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition"
+                    @click="cetakDot(t)"
                   >
                     <i class="fas fa-print mr-1"></i>Struk
                   </button>
                   <button
                     v-if="isAdmin"
                     type="button"
-                    @click="hapusTrx(t)"
                     class="text-[10px] font-bold text-rose-600 bg-rose-50 dark:bg-rose-900/30 px-2 py-1 rounded-lg hover:bg-rose-100"
                     title="Hapus transaksi (super admin)"
+                    @click="hapusTrx(t)"
                   >
                     <i class="fas fa-trash"></i>
                   </button>

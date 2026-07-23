@@ -153,24 +153,24 @@
             </div>
             <template v-if="!isDesktop">
               <button
-                @click="exportPdf"
                 title="Ekspor PDF rekap saldo"
                 class="bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-black px-3 py-1.5 rounded-full shadow"
+                @click="exportPdf"
               >
                 <i class="fas fa-file-pdf mr-1"></i>PDF
               </button>
               <button
-                @click="downloadTemplate"
                 title="Unduh template XLSX"
                 class="bg-slate-600 hover:bg-slate-700 text-white text-xs font-black px-3 py-1.5 rounded-full shadow"
+                @click="downloadTemplate"
               >
                 <i class="fas fa-file-download mr-1"></i>Template
               </button>
               <button
-                @click="triggerImport"
                 :disabled="importingTab"
                 title="Impor mutasi dari XLSX"
                 class="bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white text-xs font-black px-3 py-1.5 rounded-full shadow"
+                @click="triggerImport"
               >
                 <i :class="['fas mr-1', importingTab ? 'fa-spinner fa-spin' : 'fa-file-upload']"></i
                 >Impor
@@ -185,8 +185,8 @@
             />
             <template v-if="!isDesktop">
               <button
-                @click="openModal()"
                 class="bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-xs font-black px-3 py-1.5 rounded-full shadow"
+                @click="openModal()"
               >
                 <i class="fas fa-plus mr-1"></i>Input Mutasi
               </button>
@@ -240,16 +240,16 @@
           </p>
           <div class="flex gap-1.5 flex-wrap">
             <button
-              @click="dumpOrphan"
               class="text-[11px] font-bold text-rose-700 bg-[var(--bg-card)] border border-rose-300 px-2 py-1 rounded hover:bg-rose-100 cursor-pointer"
+              @click="dumpOrphan"
             >
               <i class="fas fa-terminal mr-1"></i>Dump console
             </button>
             <button
               v-if="isFullAccess"
-              @click="cleanupOrphan"
               :disabled="orphanCleaning"
               class="text-[11px] font-bold text-white bg-rose-600 hover:bg-rose-700 disabled:opacity-50 px-2 py-1 rounded cursor-pointer"
+              @click="cleanupOrphan"
             >
               <i :class="['fas', orphanCleaning ? 'fa-spinner fa-spin' : 'fa-broom', 'mr-1']"></i>
               {{ orphanCleaning ? 'Membersihkan...' : 'Hapus Mutasi Orphan' }}
@@ -268,13 +268,13 @@
         <div
           v-for="t in filteredItems"
           :key="t.santri_id"
-          @click="selectSantri(t.santri_id)"
           :class="[
             'rounded-xl p-3 border shadow-sm cursor-pointer transition bg-[var(--bg-card)]',
             selectedSantriId === String(t.santri_id)
               ? 'border-emerald-500 ring-2 ring-emerald-400'
               : 'border-emerald-200 dark:border-emerald-700 hover:border-emerald-400'
           ]"
+          @click="selectSantri(t.santri_id)"
         >
           <div class="flex items-center gap-3">
             <div
@@ -299,16 +299,16 @@
             </p>
             <div class="flex gap-1">
               <button
-                @click.stop="openModal(t.santri_id, 'setor')"
                 class="bg-emerald-100 hover:bg-emerald-200 text-emerald-700 text-[10px] font-black px-2 py-1 rounded"
                 title="Setor"
+                @click.stop="openModal(t.santri_id, 'setor')"
               >
                 <i class="fas fa-plus"></i>
               </button>
               <button
-                @click.stop="openModal(t.santri_id, 'tarik')"
                 class="bg-rose-100 hover:bg-rose-200 text-rose-700 text-[10px] font-black px-2 py-1 rounded"
                 title="Tarik"
+                @click.stop="openModal(t.santri_id, 'tarik')"
               >
                 <i class="fas fa-minus"></i>
               </button>
@@ -356,21 +356,21 @@
               }}</span>
             </div>
             <button
-              @click="openModal(selectedSantriId, 'setor')"
               class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black px-3 py-1.5 rounded-lg"
+              @click="openModal(selectedSantriId, 'setor')"
             >
               <i class="fas fa-plus mr-1"></i>Setor
             </button>
             <button
-              @click="openModal(selectedSantriId, 'tarik')"
               class="bg-rose-600 hover:bg-rose-700 text-white text-xs font-black px-3 py-1.5 rounded-lg"
+              @click="openModal(selectedSantriId, 'tarik')"
             >
               <i class="fas fa-minus mr-1"></i>Tarik
             </button>
             <button
-              @click="selectedSantriId = ''"
               class="text-[var(--text-tertiary)] hover:text-[var(--text-primary)] px-2 py-1.5"
               title="Tutup"
+              @click="selectedSantriId = ''"
             >
               <i class="fas fa-times"></i>
             </button>
@@ -436,9 +436,9 @@
                 </td>
                 <td class="px-3 py-2 text-right whitespace-nowrap">
                   <button
-                    @click="cetakSlip(m)"
                     class="text-[10px] text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 px-1.5 py-1 rounded"
                     title="Cetak slip"
+                    @click="cetakSlip(m)"
                   >
                     <i class="fas fa-receipt"></i>
                   </button>
@@ -510,8 +510,8 @@
           </span>
           <button
             v-if="selectedMutasi.size > 0"
-            @click="hapusMutasiTerpilih"
             class="text-[11px] font-black bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-lg"
+            @click="hapusMutasiTerpilih"
           >
             <i class="fas fa-trash mr-1"></i>Hapus Terpilih ({{ selectedMutasi.size }})
           </button>
@@ -548,8 +548,8 @@
                 <input
                   type="checkbox"
                   :checked="selectedMutasi.has(String(m.id))"
-                  @change="toggleMutasi(m.id)"
                   class="w-4 h-4 accent-emerald-600"
+                  @change="toggleMutasi(m.id)"
                 />
               </td>
               <td class="px-3 py-2 whitespace-nowrap text-[11px] text-[var(--text-secondary)]">
@@ -588,23 +588,23 @@
               </td>
               <td class="px-3 py-2 text-right whitespace-nowrap">
                 <button
-                  @click="cetakSlip(m)"
                   class="text-[10px] text-emerald-600 hover:bg-emerald-50 px-1.5 py-1 rounded mr-1"
                   title="Cetak slip"
+                  @click="cetakSlip(m)"
                 >
                   <i class="fas fa-receipt"></i>
                 </button>
                 <button
-                  @click="openEditMutasi(m)"
                   class="text-[10px] text-cyan-600 hover:bg-cyan-50 px-1.5 py-1 rounded mr-1"
                   title="Edit"
+                  @click="openEditMutasi(m)"
                 >
                   <i class="fas fa-edit"></i>
                 </button>
                 <button
-                  @click="hapusMutasi(m)"
                   class="text-[10px] text-rose-600 hover:bg-rose-50 px-1.5 py-1 rounded"
                   title="Hapus"
+                  @click="hapusMutasi(m)"
                 >
                   <i class="fas fa-trash"></i>
                 </button>
@@ -631,14 +631,14 @@
             <i class="fas fa-wallet text-emerald-500 mr-2"></i>Input Mutasi {{ pageTitle }}
           </h3>
           <button
-            @click="closeModal"
             class="text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
+            @click="closeModal"
           >
             <i class="fas fa-times text-lg"></i>
           </button>
         </div>
 
-        <form v-if="!savedMutasi" @submit.prevent="simpanMutasi" class="p-5 space-y-3">
+        <form v-if="!savedMutasi" class="p-5 space-y-3" @submit.prevent="simpanMutasi">
           <!-- Santri (datalist autocomplete) -->
           <div>
             <label
@@ -651,8 +651,8 @@
               list="tabungan-santri-list"
               placeholder="Ketik nama santri..."
               class="w-full mt-1 px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-emerald-500 outline-none"
-              @input="onSantriInput"
               required
+              @input="onSantriInput"
             />
             <datalist id="tabungan-santri-list">
               <option
@@ -696,8 +696,8 @@
               </label>
               <select
                 v-model="modalKategori"
-                @change="onKategoriChange"
                 class="w-full mt-1 px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-emerald-500 outline-none"
+                @change="onKategoriChange"
               >
                 <option v-for="k in kategoriOptions" :key="k.id" :value="k.id">
                   {{ k.label }}
@@ -746,8 +746,8 @@
           >
             <button
               type="button"
-              @click="closeModal"
               class="px-4 py-2 text-xs font-bold text-[var(--text-primary)] hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700 rounded-lg"
+              @click="closeModal"
             >
               Batal
             </button>
@@ -786,16 +786,16 @@
           <div class="flex flex-wrap items-center justify-center gap-2">
             <button
               type="button"
-              @click="cetakSlip(savedMutasi)"
               class="px-4 py-2 text-xs font-black bg-rose-600 hover:bg-rose-700 text-white rounded-lg"
+              @click="cetakSlip(savedMutasi)"
             >
               <i class="fas fa-file-pdf mr-1"></i>Struk PDF
             </button>
             <button
               v-if="isDesktop"
               type="button"
-              @click="cetakSlipLangsung(savedMutasi)"
               class="px-4 py-2 text-xs font-black bg-amber-500 hover:bg-amber-600 text-white rounded-lg"
+              @click="cetakSlipLangsung(savedMutasi)"
             >
               <i class="fas fa-bolt mr-1"></i>Cetak Langsung
             </button>
@@ -806,15 +806,15 @@
           >
             <button
               type="button"
-              @click="transaksiBaru"
               class="px-4 py-2 text-xs font-bold text-[var(--text-primary)] hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700 rounded-lg"
+              @click="transaksiBaru"
             >
               <i class="fas fa-plus mr-1"></i>Transaksi Baru
             </button>
             <button
               type="button"
-              @click="closeModal"
               class="px-5 py-2 text-xs font-black bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white rounded-lg"
+              @click="closeModal"
             >
               <i class="fas fa-check-double mr-1"></i>Selesai
             </button>

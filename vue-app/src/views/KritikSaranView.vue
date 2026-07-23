@@ -53,9 +53,9 @@
         </p>
       </div>
       <button
-        @click="kirim"
         :disabled="!form.pesan.trim() || saving"
         class="w-full px-4 py-2.5 bg-teal-600 hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl text-sm shadow-sm transition cursor-pointer flex items-center justify-center gap-2"
+        @click="kirim"
       >
         <i v-if="saving" class="fas fa-spinner fa-spin"></i>
         <i v-else class="fas fa-paper-plane"></i>
@@ -147,14 +147,14 @@
 
           <div class="flex gap-3 mt-3 justify-end">
             <button
-              @click="openReply(k)"
               class="text-[11px] text-teal-700 dark:text-teal-300 hover:underline cursor-pointer font-bold"
+              @click="openReply(k)"
             >
               <i class="fas fa-reply mr-1"></i>{{ k.reply ? 'Edit Balasan' : 'Balas' }}
             </button>
             <button
-              @click="deleteItem(k)"
               class="text-[11px] text-rose-600 hover:underline cursor-pointer font-bold"
+              @click="deleteItem(k)"
             >
               <i class="fas fa-trash mr-1"></i>Hapus
             </button>
@@ -229,15 +229,15 @@
         ></textarea>
         <div class="flex gap-2">
           <button
-            @click="closeReply()"
             class="flex-1 px-4 py-2.5 bg-[var(--bg-muted)] hover:bg-slate-300 dark:hover:bg-slate-600 text-[var(--text-primary)] font-bold rounded-xl text-sm transition cursor-pointer"
+            @click="closeReply()"
           >
             Batal
           </button>
           <button
-            @click="saveReply"
             :disabled="replyText.trim().length < 3 || savingReply"
             class="flex-1 px-4 py-2.5 bg-teal-600 hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl text-sm transition cursor-pointer flex items-center justify-center gap-2"
+            @click="saveReply"
           >
             <i v-if="savingReply" class="fas fa-spinner fa-spin"></i>
             <i v-else class="fas fa-paper-plane"></i>

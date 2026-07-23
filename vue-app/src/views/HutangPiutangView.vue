@@ -15,8 +15,8 @@
           </p>
         </div>
         <button
-          @click="openModal()"
           class="bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-black px-3 py-1.5 rounded-full shadow"
+          @click="openModal()"
         >
           <i class="fas fa-plus mr-1"></i>Tambah
         </button>
@@ -44,13 +44,13 @@
     >
       <div class="px-4 py-3 border-b border-[var(--border-subtle)] grid grid-cols-2 gap-2">
         <button
-          @click="filterJenis = ''"
           :class="[
             'py-1.5 text-xs font-bold rounded-lg',
             filterJenis === ''
               ? 'bg-rose-600 text-white'
               : 'bg-[var(--bg-muted)] text-[var(--text-secondary)]'
           ]"
+          @click="filterJenis = ''"
         >
           Semua ({{ items.length }})
         </button>
@@ -98,17 +98,17 @@
             </p>
           </div>
           <button
-            @click="toggleLunas(h)"
             class="text-emerald-500 hover:bg-emerald-50 p-2 rounded"
             :title="h.lunas ? 'Tandai Open' : 'Tandai Lunas'"
+            @click="toggleLunas(h)"
           >
             <i class="fas fa-check"></i>
           </button>
           <button
             v-if="isAdmin"
-            @click="deleteItem(h)"
             class="text-rose-500 hover:bg-rose-50 p-2 rounded"
             title="Hapus (super admin)"
+            @click="deleteItem(h)"
           >
             <i class="fas fa-trash"></i>
           </button>
@@ -155,15 +155,15 @@
         ></textarea>
         <div class="flex gap-2">
           <button
-            @click="modalOpen = false"
             class="flex-1 px-4 py-2 bg-slate-200 text-[var(--text-primary)] font-bold rounded-xl text-sm"
+            @click="modalOpen = false"
           >
             Batal
           </button>
           <button
-            @click="simpan"
             :disabled="saving"
             class="flex-1 px-4 py-2 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white font-bold rounded-xl text-sm"
+            @click="simpan"
           >
             {{ saving ? 'Menyimpan...' : 'Simpan' }}
           </button>

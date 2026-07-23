@@ -63,22 +63,22 @@
           <div class="flex items-center gap-2 mt-2 flex-wrap">
             <button
               type="button"
-              @click="setPresetBulanIni"
               class="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-cyan-50 text-cyan-700 hover:bg-cyan-100 border border-cyan-200"
+              @click="setPresetBulanIni"
             >
               Bulan ini
             </button>
             <button
               type="button"
-              @click="setPresetSemester"
               class="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-cyan-50 text-cyan-700 hover:bg-cyan-100 border border-cyan-200"
+              @click="setPresetSemester"
             >
               Semester ini
             </button>
             <button
               type="button"
-              @click="setPresetSetahun"
               class="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-cyan-50 text-cyan-700 hover:bg-cyan-100 border border-cyan-200"
+              @click="setPresetSetahun"
             >
               1 tahun ({{ tahunSampai }})
             </button>
@@ -151,9 +151,9 @@
             <button
               type="button"
               :disabled="busyId === s.id"
-              @click="cetakRiwayat(s)"
               aria-label="Cetak PDF riwayat santri"
               class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer"
+              @click="cetakRiwayat(s)"
             >
               <i :class="['fas', busyId === s.id ? 'fa-spinner fa-spin' : 'fa-file-pdf']"></i>
               {{ busyId === s.id ? 'Memproses...' : 'Cetak PDF' }}

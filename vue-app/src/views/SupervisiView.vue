@@ -36,13 +36,13 @@
         <button
           v-for="t in tabs"
           :key="t.id"
-          @click="activeTab = t.id"
           :class="[
             'flex-1 py-2 text-xs font-black rounded-lg transition',
             activeTab === t.id
               ? 'bg-cyan-600 text-white shadow'
               : 'text-[var(--text-secondary)] hover:bg-[var(--bg-card)]'
           ]"
+          @click="activeTab = t.id"
         >
           <i :class="['fas mr-1', t.icon]"></i>{{ t.label }}
         </button>
@@ -135,8 +135,8 @@
             <button
               type="button"
               :disabled="saving || !canSave"
-              @click="simpan"
               class="w-full bg-cyan-600 hover:bg-cyan-700 disabled:opacity-50 text-white text-sm font-black py-2 rounded-xl"
+              @click="simpan"
             >
               <i :class="['fas mr-1', saving ? 'fa-spinner fa-spin' : 'fa-save']"></i>
               {{ saving ? 'Menyimpan...' : 'Simpan Catatan' }}
@@ -218,8 +218,8 @@
             </div>
             <div class="flex gap-2 mt-2">
               <button
-                @click="hapusCatatan(r)"
                 class="text-[10px] text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 px-2 py-1 rounded"
+                @click="hapusCatatan(r)"
               >
                 <i class="fas fa-trash mr-1"></i>Hapus
               </button>

@@ -35,8 +35,8 @@
       <li
         v-for="p in posts.slice(0, 5)"
         :key="p.id"
-        @click="goToPosts(p.id)"
         class="p-3 bg-[var(--bg-card-elevated)] rounded-[var(--radius-md)] border border-[var(--border-subtle)] cursor-pointer hover:border-[var(--color-accent)] hover:shadow-[var(--shadow-md)] transition flex gap-3 items-start"
+        @click="goToPosts(p.id)"
       >
         <!-- Thumbnail (kalau ada gambar) -->
         <div
@@ -83,8 +83,8 @@
     <!-- Lihat semua link -->
     <button
       v-if="posts.length > 0"
-      @click="goToPosts()"
       class="w-full mt-3 text-[11px] font-bold text-[var(--color-primary)] hover:text-[var(--color-primary-hover)] hover:bg-[var(--color-primary-soft)] py-2 rounded-[var(--radius-md)] transition cursor-pointer"
+      @click="goToPosts()"
     >
       <i class="fas fa-arrow-right mr-1"></i>Lihat semua di {{ channelName }}
     </button>

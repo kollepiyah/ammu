@@ -8,10 +8,12 @@
     <!-- Guru belum input bulan ini (klik -> halaman detail) -->
     <button
       type="button"
-      @click="goGuruBelumInput"
       class="text-left bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm hover:shadow-md hover:-translate-y-0.5 transition cursor-pointer flex items-center gap-4"
+      @click="goGuruBelumInput"
     >
-      <div class="w-12 h-12 rounded-2xl bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center flex-shrink-0">
+      <div
+        class="w-12 h-12 rounded-2xl bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center flex-shrink-0"
+      >
         <i class="fas fa-user-clock text-amber-600 dark:text-amber-300 text-xl"></i>
       </div>
       <div class="min-w-0 flex-1">
@@ -30,19 +32,28 @@
     </button>
 
     <!-- Kelas Overload (rasio guru:santri) -->
-    <div class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm">
+    <div
+      class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
+    >
       <div class="flex items-center gap-3 mb-2">
-        <div class="w-10 h-10 rounded-xl bg-rose-100 dark:bg-rose-900/40 flex items-center justify-center flex-shrink-0">
+        <div
+          class="w-10 h-10 rounded-xl bg-rose-100 dark:bg-rose-900/40 flex items-center justify-center flex-shrink-0"
+        >
           <i class="fas fa-triangle-exclamation text-rose-600 dark:text-rose-300"></i>
         </div>
         <div class="min-w-0">
-          <p class="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-widest">Kelas Overload</p>
+          <p class="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-widest">
+            Kelas Overload
+          </p>
           <p class="text-xs font-bold text-[var(--text-primary)]">
             {{ kelasOverload.length }} kelas melebihi rasio guru:santri
           </p>
         </div>
       </div>
-      <div v-if="kelasOverload.length === 0" class="text-xs text-[var(--text-tertiary)] italic py-3 text-center">
+      <div
+        v-if="kelasOverload.length === 0"
+        class="text-xs text-[var(--text-tertiary)] italic py-3 text-center"
+      >
         Semua kelas dalam rasio ideal.
       </div>
       <div v-else class="space-y-1 max-h-52 overflow-auto">
@@ -52,7 +63,8 @@
           class="flex items-center justify-between gap-2 bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-700 rounded-lg px-3 py-1.5"
         >
           <span class="text-xs truncate">
-            <b class="text-[var(--text-primary)]">{{ k.lembaga }}</b> &middot; {{ k.kelas }} &middot; {{ k.guru }}
+            <b class="text-[var(--text-primary)]">{{ k.lembaga }}</b> &middot;
+            {{ k.kelas }} &middot; {{ k.guru }}
           </span>
           <span class="text-[10px] font-black text-rose-700 dark:text-rose-300 whitespace-nowrap">
             {{ k.jml }}/{{ k.ratio }} <span class="opacity-70">(+{{ k.lebih }})</span>
@@ -82,7 +94,20 @@ const isAdminMode = computed(() => isFullFilterRole(auth.sesiAktif))
 // v.95.0626: kartu Guru Belum Input + Kelas Overload (data ter-scope)
 const { guruBelumInput, kelasOverload, periodeKeyNow } = useStatistikScope()
 
-const _NAMA_BULAN_STAT = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember']
+const _NAMA_BULAN_STAT = [
+  'Januari',
+  'Februari',
+  'Maret',
+  'April',
+  'Mei',
+  'Juni',
+  'Juli',
+  'Agustus',
+  'September',
+  'Oktober',
+  'November',
+  'Desember'
+]
 const periodeLabel = computed(() => {
   const m = String(periodeKeyNow.value).match(/^(\d{4})_(\d{2})$/)
   return m ? `${_NAMA_BULAN_STAT[parseInt(m[2]) - 1]} ${m[1]}` : periodeKeyNow.value

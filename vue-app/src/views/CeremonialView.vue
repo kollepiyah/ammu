@@ -352,8 +352,8 @@ function jamRange(s) {
       </p>
       <button
         v-if="canKelola"
-        @click="bukaBaru"
         class="mt-3 inline-flex items-center gap-1.5 bg-white/90 hover:bg-white text-teal-700 text-[11px] font-black px-3 py-1.5 rounded-lg shadow-sm transition"
+        @click="bukaBaru"
       >
         <i class="fas fa-plus"></i>Jadwalkan Sesi
       </button>
@@ -367,13 +367,13 @@ function jamRange(s) {
           { v: 'sesi', l: 'Sesi Terjadwal', n: 0 }
         ]"
         :key="t.v"
-        @click="tab = t.v"
         :class="[
           'px-3.5 py-2 rounded-xl text-xs font-black border transition cursor-pointer',
           tab === t.v
             ? 'bg-teal-600 text-white border-teal-700'
             : 'bg-[var(--bg-card)] text-[var(--text-secondary)] border-[var(--border-default)] hover:bg-teal-50 dark:hover:bg-teal-900/30'
         ]"
+        @click="tab = t.v"
       >
         {{ t.l }}
         <span v-if="t.n" class="ml-1 px-1.5 rounded-full bg-amber-500 text-white text-[10px]">{{
@@ -391,13 +391,13 @@ function jamRange(s) {
             { v: 'sudah', l: 'Sudah Dijadwalkan', n: kandidatSudah.length }
           ]"
           :key="t.v"
-          @click="kandidatTab = t.v"
           :class="[
             'px-3 py-1.5 rounded-lg text-[11px] font-bold border transition cursor-pointer',
             kandidatTab === t.v
               ? 'bg-[var(--bg-card-elevated)] text-[var(--text-primary)] border-teal-500'
               : 'bg-[var(--bg-card)] text-[var(--text-secondary)] border-[var(--border-default)]'
           ]"
+          @click="kandidatTab = t.v"
         >
           {{ t.l }} ({{ t.n }})
         </button>
@@ -430,8 +430,8 @@ function jamRange(s) {
           <input
             type="checkbox"
             :checked="semuaTerpilih"
-            @change="toggleSemua"
             class="w-4 h-4 accent-teal-600"
+            @change="toggleSemua"
           />
           <span class="text-[11px] font-bold text-[var(--text-secondary)]">Pilih semua</span>
         </label>
@@ -445,8 +445,8 @@ function jamRange(s) {
             v-if="canKelola && kandidatTab === 'belum'"
             type="checkbox"
             :checked="adaPilih(k.santri_id)"
-            @change="togglePilih(k.santri_id)"
             class="w-4 h-4 accent-teal-600 flex-shrink-0"
+            @change="togglePilih(k.santri_id)"
           />
           <span class="flex-1 min-w-0">
             <span class="block text-xs font-bold text-[var(--text-primary)] truncate">{{
@@ -469,8 +469,8 @@ function jamRange(s) {
       <!-- Jadwalkan borongan -->
       <div v-if="canKelola && pilihMassal.length" class="sticky bottom-3 flex justify-end">
         <button
-          @click="jadwalkanTerpilih"
           class="inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white font-black text-xs px-4 py-2.5 rounded-xl shadow-lg"
+          @click="jadwalkanTerpilih"
         >
           <i class="fas fa-calendar-plus"></i>Jadwalkan {{ pilihMassal.length }} santri sekaligus
         </button>
@@ -489,13 +489,13 @@ function jamRange(s) {
             { v: 'batal', l: 'Batal' }
           ]"
           :key="f.v"
-          @click="filterStatus = f.v"
           :class="[
             'px-3 py-1.5 rounded-xl text-xs font-black border transition cursor-pointer whitespace-nowrap',
             filterStatus === f.v
               ? 'bg-teal-600 text-white border-teal-700'
               : 'bg-[var(--bg-card)] text-[var(--text-secondary)] border-[var(--border-default)] hover:bg-teal-50 dark:hover:bg-teal-900/30'
           ]"
+          @click="filterStatus = f.v"
         >
           {{ f.l }}
         </button>
@@ -546,8 +546,8 @@ function jamRange(s) {
             >
             <button
               v-if="canKelola"
-              @click="bukaUbah(s)"
               class="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-teal-600 hover:bg-teal-700 text-white"
+              @click="bukaUbah(s)"
             >
               <i class="fas fa-pen mr-1"></i>Ubah
             </button>
@@ -555,10 +555,10 @@ function jamRange(s) {
                mengirim ulang (biar tak membanjiri); kalau jadwal berubah, pakai ini. -->
             <button
               v-if="canKelola && s.status === 'terjadwal'"
-              @click="kirimUlang(s)"
               :disabled="kirimId === String(s.id)"
               title="Kirim ulang notifikasi ke penyimak & peserta"
               class="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white disabled:opacity-50"
+              @click="kirimUlang(s)"
             >
               <i
                 :class="['fas mr-1', kirimId === String(s.id) ? 'fa-spinner fa-spin' : 'fa-bell']"
@@ -567,16 +567,16 @@ function jamRange(s) {
             </button>
             <button
               v-if="canKelola && s.status !== 'selesai'"
-              @click="ubahStatus(s, 'selesai')"
               class="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-slate-600 hover:bg-slate-700 text-white"
+              @click="ubahStatus(s, 'selesai')"
             >
               <i class="fas fa-check mr-1"></i>Selesai
             </button>
             <button
               v-if="isSuper"
-              @click="hapus(s)"
               class="text-[11px] font-bold px-2 py-1 rounded-lg bg-rose-600 hover:bg-rose-700 text-white"
               aria-label="Hapus sesi"
+              @click="hapus(s)"
             >
               <i class="fas fa-trash"></i>
             </button>
@@ -656,9 +656,9 @@ function jamRange(s) {
             >{{ form.id ? 'Ubah' : 'Jadwalkan' }} Sesi Ceremonial
           </h3>
           <button
-            @click="dlgOpen = false"
             class="text-[var(--text-secondary)] hover:text-rose-500 p-1"
             aria-label="Tutup"
+            @click="dlgOpen = false"
           >
             <i class="fas fa-times"></i>
           </button>
@@ -746,8 +746,8 @@ function jamRange(s) {
                 <input
                   type="checkbox"
                   :checked="adaPeserta(k.santri_id)"
-                  @change="togglePeserta(k)"
                   class="w-4 h-4 accent-teal-600 flex-shrink-0"
+                  @change="togglePeserta(k)"
                 />
                 <span class="flex-1 min-w-0">
                   <span class="flex items-center gap-1.5">
@@ -793,8 +793,8 @@ function jamRange(s) {
                 <input
                   type="checkbox"
                   :checked="adaOrang(form.penyimak_guru, g.id)"
-                  @change="toggleOrang(form.penyimak_guru, g)"
                   class="w-4 h-4 accent-teal-600 flex-shrink-0"
+                  @change="toggleOrang(form.penyimak_guru, g)"
                 />
                 <span class="text-xs font-bold text-[var(--text-primary)] truncate">{{
                   g.nama
@@ -823,8 +823,8 @@ function jamRange(s) {
                 <input
                   type="checkbox"
                   :checked="adaOrang(form.penyimak_santri, s.id)"
-                  @change="toggleOrang(form.penyimak_santri, s)"
                   class="w-4 h-4 accent-teal-600 flex-shrink-0"
+                  @change="toggleOrang(form.penyimak_santri, s)"
                 />
                 <span class="text-xs font-bold text-[var(--text-primary)] truncate"
                   >{{ s.nama
@@ -852,15 +852,15 @@ function jamRange(s) {
           class="flex items-center justify-end gap-2 px-5 py-4 border-t border-[var(--border-subtle)] shrink-0"
         >
           <button
-            @click="dlgOpen = false"
             class="text-xs font-bold px-3 py-2 rounded-xl border border-[var(--border-default)] text-[var(--text-secondary)]"
+            @click="dlgOpen = false"
           >
             Batal
           </button>
           <button
-            @click="simpan"
             :disabled="saving"
             class="text-xs font-black px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white"
+            @click="simpan"
           >
             <i :class="['fas mr-1', saving ? 'fa-spinner fa-spin' : 'fa-save']"></i>Simpan
           </button>

@@ -86,7 +86,6 @@ export function usePushNotifications() {
       onMessage(messaging, (payload) => {
         const n = (payload && payload.notification) || {}
         try {
-          // eslint-disable-next-line no-new
           // v.95.0626c: icon-192 ADA (manifest/SW); badge diperbaiki dari /icon-72.png (tidak ter-serve) ke /icon-192.png
           new Notification(n.title || 'Mambaul Ulum', {
             body: n.body || '',

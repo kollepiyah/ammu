@@ -19,13 +19,13 @@
       <button
         v-for="t in tabs"
         :key="t.id"
-        @click="activeTab = t.id"
         :class="[
           'px-3.5 py-2 rounded-xl text-xs font-black transition',
           activeTab === t.id
             ? 'bg-teal-600 text-white shadow-sm'
             : 'bg-[var(--bg-card)] text-[var(--text-secondary)] border border-[var(--border-subtle)] hover:bg-[var(--bg-muted)]'
         ]"
+        @click="activeTab = t.id"
       >
         <i :class="['fas', t.icon, 'mr-1']"></i>{{ t.label }}
         <span
@@ -88,8 +88,8 @@
                 type="checkbox"
                 :checked="sel[s.id]?.checked"
                 :disabled="hasOpenAjuan(s.id)"
-                @change="toggle(s)"
                 class="mt-1 w-4 h-4 accent-teal-600 flex-shrink-0 disabled:opacity-40"
+                @change="toggle(s)"
               />
               <div class="flex-1 min-w-0">
                 <p class="text-sm font-bold text-[var(--text-primary)] truncate">{{ s.nama }}</p>
@@ -133,9 +133,9 @@
 
       <div v-if="checkedCount > 0" class="sticky bottom-3 flex justify-end">
         <button
-          @click="submitAjukan"
           :disabled="submitting"
           class="px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white text-sm font-black shadow-lg"
+          @click="submitAjukan"
         >
           <i :class="['fas', submitting ? 'fa-spinner fa-spin' : 'fa-paper-plane', 'mr-1.5']"></i>
           Ajukan Tes ({{ checkedCount }})
@@ -184,8 +184,8 @@
             >
             <button
               v-if="a.status === 'diajukan'"
-              @click="batalkan(a)"
               class="text-[10px] font-bold text-rose-600 hover:underline"
+              @click="batalkan(a)"
             >
               Batalkan
             </button>
@@ -266,9 +266,9 @@
               <i class="fas fa-circle-check mr-1"></i>Sudah ditandai SIAP dites PJ
             </span>
             <button
-              @click="toggleSiapTes(a, false)"
               :disabled="siapTesBusy === a.id"
               class="text-rose-600 hover:underline font-bold disabled:opacity-50"
+              @click="toggleSiapTes(a, false)"
             >
               batal
             </button>
@@ -278,9 +278,9 @@
               >Semua sudah disimak. Tandai santri siap dites PJ:</span
             >
             <button
-              @click="toggleSiapTes(a, true)"
               :disabled="siapTesBusy === a.id"
               class="px-3 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white font-black"
+              @click="toggleSiapTes(a, true)"
             >
               <i class="fas fa-flag-checkered mr-1"></i
               >{{ siapTesBusy === a.id ? '...' : 'Siap Tes' }}
@@ -367,9 +367,9 @@
                   :max="MAX_NILAI"
                   inputmode="numeric"
                   :value="getNilai(a.id, asp.key)"
-                  @input="setNilai(a.id, asp.key, $event.target.value)"
                   :placeholder="`0–${MAX_NILAI}`"
                   class="w-full px-2 py-1.5 text-xs rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none"
+                  @input="setNilai(a.id, asp.key, $event.target.value)"
                 />
               </div>
             </div>
@@ -390,9 +390,9 @@
             belum disimak: {{ pendingLabel(gerbangAntrian[a.id]) }}.
             <button
               v-if="gerbangAntrian[a.id].adaBarisHilang"
-              @click="buatUlangGlond(a)"
               :disabled="buatUlangBusy === a.id"
               class="ml-1 underline font-bold hover:text-amber-900 dark:hover:text-amber-100 disabled:opacity-50"
+              @click="buatUlangGlond(a)"
             >
               {{ buatUlangBusy === a.id ? 'membuat…' : 'buat ulang baris' }}
             </button>
@@ -401,23 +401,23 @@
         </div>
         <div class="flex gap-2 mt-2">
           <button
-            @click="openLulus(a)"
             :disabled="busyId === a.id || (gerbangAntrian[a.id] && gerbangAntrian[a.id].terkunci)"
             class="flex-1 px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-black"
+            @click="openLulus(a)"
           >
             <i class="fas fa-check mr-1"></i>Lulus
           </button>
           <button
-            @click="decide(a, 'tidak_lulus')"
             :disabled="busyId === a.id || (gerbangAntrian[a.id] && gerbangAntrian[a.id].terkunci)"
             class="flex-1 px-3 py-2 rounded-lg bg-amber-500 hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-black"
+            @click="decide(a, 'tidak_lulus')"
           >
             <i class="fas fa-redo mr-1"></i>Belum Lulus
           </button>
           <button
-            @click="decide(a, 'ditolak')"
             :disabled="busyId === a.id"
             class="px-3 py-2 rounded-lg bg-[var(--bg-muted)] hover:bg-rose-50 text-rose-600 text-xs font-black border border-[var(--border-subtle)]"
+            @click="decide(a, 'ditolak')"
           >
             <i class="fas fa-times mr-1"></i>Tolak
           </button>
@@ -520,14 +520,14 @@
           class="mt-2 pt-2 border-t border-[var(--border-subtle)] flex justify-end gap-2"
         >
           <button
-            @click="ujiUlang(a)"
             class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl text-xs font-bold bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200"
+            @click="ujiUlang(a)"
           >
             <i class="fas fa-rotate-left"></i>Uji Ulang
           </button>
           <button
-            @click="hapusRecord(a)"
             class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl text-xs font-bold bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200"
+            @click="hapusRecord(a)"
           >
             <i class="fas fa-trash"></i>Hapus
           </button>
@@ -643,17 +643,17 @@
       <!-- cetak PDF -->
       <div class="flex flex-wrap gap-2">
         <button
-          @click="cetakDaftarTes"
           :disabled="cetakBusy"
           class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 disabled:opacity-50 text-white text-xs font-bold transition"
+          @click="cetakDaftarTes"
         >
           <i :class="['fas', cetakBusy ? 'fa-spinner fa-spin' : 'fa-file-pdf']"></i>Cetak Daftar
           Antrian
         </button>
         <button
-          @click="cetakRekapHasil"
           :disabled="cetakBusy"
           class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white text-xs font-bold transition"
+          @click="cetakRekapHasil"
         >
           <i :class="['fas', cetakBusy ? 'fa-spinner fa-spin' : 'fa-file-pdf']"></i>Cetak Rekap
           Hasil
@@ -674,8 +674,8 @@
             <i class="fas fa-circle-check text-emerald-600 mr-1.5"></i>Lulus &amp; Naikkan
           </h3>
           <button
-            @click="closeLulus"
             class="text-[var(--text-tertiary)] hover:text-rose-600 text-lg"
+            @click="closeLulus"
           >
             <i class="fas fa-times"></i>
           </button>
@@ -711,8 +711,8 @@
               >
               <select
                 v-model="naikForm.lembaga"
-                @change="onLembagaTujuanChange"
                 class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none"
+                @change="onLembagaTujuanChange"
               >
                 <option v-for="l in lembagaTujuanOptions" :key="l" :value="l">{{ l }}</option>
               </select>
@@ -795,8 +795,8 @@
                 >Guru berikutnya (bila pindah kelas)</label
               >
               <input
-                list="guru-naik-list"
                 v-model="naikForm.guru"
+                list="guru-naik-list"
                 class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none"
               />
               <datalist id="guru-naik-list">
@@ -811,15 +811,15 @@
         </div>
         <div class="p-4 border-t border-[var(--border-subtle)] flex justify-end gap-2">
           <button
-            @click="closeLulus"
             class="px-4 py-2 text-xs font-bold rounded-lg bg-[var(--bg-muted)] text-[var(--text-secondary)]"
+            @click="closeLulus"
           >
             Batal
           </button>
           <button
-            @click="submitLulus"
             :disabled="naikBusy || !lulusSantri"
             class="px-4 py-2 text-xs font-black rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-50"
+            @click="submitLulus"
           >
             <i :class="['fas', naikBusy ? 'fa-spinner fa-spin' : 'fa-check', 'mr-1']"></i>Lulus
             &amp; Naikkan

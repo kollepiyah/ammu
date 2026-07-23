@@ -50,8 +50,8 @@
       <div v-if="isSuperAdmin" class="flex justify-end">
         <button
           v-if="!editPanduan"
-          @click="mulaiEditPanduan"
           class="text-xs font-bold text-[var(--color-primary)] hover:underline"
+          @click="mulaiEditPanduan"
         >
           <i class="fas fa-pen mr-1"></i>Edit Panduan
         </button>
@@ -68,9 +68,9 @@
               class="flex-1 px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] outline-none"
             />
             <button
-              @click="hapusPanduan(i)"
               class="text-rose-600 hover:text-rose-700 px-2"
               title="Hapus"
+              @click="hapusPanduan(i)"
             >
               <i class="fas fa-trash"></i>
             </button>
@@ -83,26 +83,26 @@
         </div>
         <div class="flex gap-2 flex-wrap">
           <button
-            @click="tambahPanduan"
             class="text-xs font-bold px-3 py-2 rounded-lg bg-[var(--bg-muted)]"
+            @click="tambahPanduan"
           >
             <i class="fas fa-plus mr-1"></i>Tambah
           </button>
           <button
-            @click="simpanPanduan"
             class="text-xs font-bold px-3 py-2 rounded-lg bg-[var(--color-primary)] text-white"
+            @click="simpanPanduan"
           >
             <i class="fas fa-save mr-1"></i>Simpan
           </button>
           <button
-            @click="resetPanduan"
             class="text-xs font-bold px-3 py-2 rounded-lg bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300"
+            @click="resetPanduan"
           >
             Reset bawaan
           </button>
           <button
-            @click="editPanduan = false"
             class="text-xs font-bold px-3 py-2 rounded-lg bg-[var(--bg-muted)]"
+            @click="editPanduan = false"
           >
             Tutup
           </button>
@@ -143,8 +143,8 @@
       <div v-if="isSuperAdmin" class="flex justify-end">
         <button
           v-if="!editFaq"
-          @click="mulaiEditFaq"
           class="text-xs font-bold text-[var(--color-primary)] hover:underline"
+          @click="mulaiEditFaq"
         >
           <i class="fas fa-pen mr-1"></i>Edit FAQ
         </button>
@@ -161,9 +161,9 @@
               class="flex-1 px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] outline-none"
             />
             <button
-              @click="hapusFaq(i)"
               class="text-rose-600 hover:text-rose-700 px-2"
               title="Hapus"
+              @click="hapusFaq(i)"
             >
               <i class="fas fa-trash"></i>
             </button>
@@ -176,26 +176,26 @@
         </div>
         <div class="flex gap-2 flex-wrap">
           <button
-            @click="tambahFaq"
             class="text-xs font-bold px-3 py-2 rounded-lg bg-[var(--bg-muted)]"
+            @click="tambahFaq"
           >
             <i class="fas fa-plus mr-1"></i>Tambah
           </button>
           <button
-            @click="simpanFaq"
             class="text-xs font-bold px-3 py-2 rounded-lg bg-[var(--color-primary)] text-white"
+            @click="simpanFaq"
           >
             <i class="fas fa-save mr-1"></i>Simpan
           </button>
           <button
-            @click="resetFaq"
             class="text-xs font-bold px-3 py-2 rounded-lg bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300"
+            @click="resetFaq"
           >
             Reset bawaan
           </button>
           <button
-            @click="editFaq = false"
             class="text-xs font-bold px-3 py-2 rounded-lg bg-[var(--bg-muted)]"
+            @click="editFaq = false"
           >
             Tutup
           </button>
@@ -328,8 +328,8 @@
             <i class="fas fa-headset text-[var(--color-primary)] mr-2"></i>Hubungi Admin
           </h3>
           <button
-            @click="showKontakModal = false"
             class="text-[var(--text-tertiary)] hover:text-rose-500 text-xl"
+            @click="showKontakModal = false"
           >
             <i class="fas fa-times"></i>
           </button>
@@ -355,8 +355,8 @@
           >
           <button
             v-if="isSuperAdmin"
-            @click="mulaiEditKontak"
             class="w-full text-xs font-bold text-[var(--color-primary)] hover:underline"
+            @click="mulaiEditKontak"
           >
             <i class="fas fa-pen mr-1"></i>Edit kontak admin
           </button>
@@ -394,14 +394,14 @@
           </div>
           <div class="flex gap-2 justify-end pt-1">
             <button
-              @click="editKontak = false"
               class="px-3 py-2 text-xs font-bold rounded-lg bg-[var(--bg-muted)]"
+              @click="editKontak = false"
             >
               Batal
             </button>
             <button
-              @click="simpanKontak"
               class="px-3 py-2 text-xs font-bold rounded-lg bg-[var(--color-primary)] text-white"
+              @click="simpanKontak"
             >
               <i class="fas fa-save mr-1"></i>Simpan
             </button>

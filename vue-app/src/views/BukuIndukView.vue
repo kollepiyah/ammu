@@ -39,35 +39,35 @@
             class="flex flex-nowrap md:flex-wrap items-center gap-2 overflow-x-auto md:overflow-visible hide-scrollbar [&>*]:shrink-0 md:[&>*]:shrink -mx-1 px-1 lg:mx-0 lg:px-0"
           >
             <button
-              @click="exportBukuIndukExcel"
               :disabled="exportingBI"
               aria-label="Ekspor Buku Induk ke Excel"
               class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer"
+              @click="exportBukuIndukExcel"
             >
               <i :class="['fas', exportingBI ? 'fa-spinner fa-spin' : 'fa-file-excel']"></i
               >{{ exportingBI ? 'Ekspor...' : 'Ekspor Excel' }}
             </button>
             <button
               v-if="gsheetConfigured()"
-              @click="kirimBukuGsheet"
               :disabled="sendingGsheet"
               aria-label="Kirim Buku Induk ke Google Sheet"
               class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer"
+              @click="kirimBukuGsheet"
             >
               <i :class="['fas', sendingGsheet ? 'fa-spinner fa-spin' : 'fa-table']"></i
               >{{ sendingGsheet ? 'Mengirim...' : 'Google Sheet' }}
             </button>
             <button
-              @click="bukaModalInput()"
               aria-label="Input transaksi manual"
               class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-xs font-bold transition cursor-pointer"
+              @click="bukaModalInput()"
             >
               <i class="fas fa-plus-circle"></i>Input Manual
             </button>
             <button
-              @click="cetakLaporan"
               aria-label="Cetak laporan buku induk PDF"
               class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold transition cursor-pointer"
+              @click="cetakLaporan"
             >
               <i class="fas fa-file-pdf"></i>Cetak Laporan
             </button>
@@ -117,11 +117,11 @@
       <Teleport to="body">
         <div
           v-if="modalInputOpen"
-          @click.self="modalInputOpen = false"
           class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4"
+          @click.self="modalInputOpen = false"
         >
           <div class="bg-[var(--bg-card)] rounded-2xl shadow-2xl w-full max-w-md">
-            <form @submit.prevent="simpanInputManual" class="p-5">
+            <form class="p-5" @submit.prevent="simpanInputManual">
               <h3 class="text-base font-black text-[var(--text-primary)] mb-4">
                 <i class="fas fa-plus-circle text-emerald-600 mr-2"></i>Input Transaksi Manual
               </h3>
@@ -144,25 +144,25 @@
                   <div class="grid grid-cols-2 gap-2">
                     <button
                       type="button"
-                      @click="inputForm.tipe = 'masuk'"
                       :class="[
                         'px-3 py-2 text-xs font-black rounded-lg border-2',
                         inputForm.tipe === 'masuk'
                           ? 'bg-emerald-600 text-white border-emerald-700'
                           : 'bg-[var(--bg-card)] text-emerald-700 border-emerald-300'
                       ]"
+                      @click="inputForm.tipe = 'masuk'"
                     >
                       <i class="fas fa-arrow-down mr-1"></i>Pemasukan
                     </button>
                     <button
                       type="button"
-                      @click="inputForm.tipe = 'keluar'"
                       :class="[
                         'px-3 py-2 text-xs font-black rounded-lg border-2',
                         inputForm.tipe === 'keluar'
                           ? 'bg-rose-600 text-white border-rose-700'
                           : 'bg-[var(--bg-card)] text-rose-700 border-rose-300'
                       ]"
+                      @click="inputForm.tipe = 'keluar'"
                     >
                       <i class="fas fa-arrow-up mr-1"></i>Pengeluaran
                     </button>
@@ -207,8 +207,8 @@
               >
                 <button
                   type="button"
-                  @click="modalInputOpen = false"
                   class="text-xs font-bold px-4 py-2 rounded-lg bg-[var(--bg-muted)] text-[var(--text-secondary)]"
+                  @click="modalInputOpen = false"
                 >
                   Batal
                 </button>
@@ -272,8 +272,8 @@
         </span>
         <button
           type="button"
-          @click="bersihkanResidu"
           class="text-[11px] font-black bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded-lg"
+          @click="bersihkanResidu"
         >
           <i class="fas fa-broom mr-1"></i>Bersihkan residu ({{ residuBuku.length }})
         </button>
@@ -310,15 +310,15 @@
           <div class="flex gap-2">
             <button
               type="button"
-              @click="selectedBuku = new Set()"
               class="text-[10px] font-bold px-3 py-1.5 rounded-lg bg-[var(--bg-muted)] text-[var(--text-secondary)]"
+              @click="selectedBuku = new Set()"
             >
               Batal
             </button>
             <button
               type="button"
-              @click="hapusBukuTerpilih"
               class="text-[11px] font-black bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-lg"
+              @click="hapusBukuTerpilih"
             >
               <i class="fas fa-trash mr-1"></i>Hapus Terpilih ({{ selectedBuku.size }})
             </button>
@@ -337,9 +337,9 @@
             <input
               type="checkbox"
               :checked="selectedBuku.size === filteredBuku.length && filteredBuku.length > 0"
-              @change="toggleSemuaBuku"
               class="w-4 h-4 accent-rose-600"
               title="Pilih semua"
+              @change="toggleSemuaBuku"
             />
           </span>
           <span>Tanggal</span>
@@ -365,8 +365,8 @@
               <input
                 type="checkbox"
                 :checked="selectedBuku.has(String(b.id))"
-                @change="toggleBukuSel(b.id)"
                 class="w-4 h-4 accent-rose-600"
+                @change="toggleBukuSel(b.id)"
               />
             </span>
             <span
@@ -410,36 +410,36 @@
               <button
                 v-if="b.sumber === 'pos_santri' && b.trx_id"
                 type="button"
-                @click="cetakUlangStruk(b, 'pdf')"
                 class="text-[10px] text-rose-600 hover:bg-rose-100 dark:hover:bg-rose-900/30 px-1.5 py-1 rounded"
                 title="Cetak ulang struk PDF"
+                @click="cetakUlangStruk(b, 'pdf')"
               >
                 <i class="fas fa-file-pdf"></i>
               </button>
               <button
                 v-if="b.sumber === 'pos_santri' && b.trx_id"
                 type="button"
-                @click="cetakUlangStruk(b, 'dot')"
                 class="text-[10px] text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-600 px-1.5 py-1 rounded"
                 title="Cetak ulang struk dot-matrix"
+                @click="cetakUlangStruk(b, 'dot')"
               >
                 <i class="fas fa-print"></i>
               </button>
               <button
                 v-if="isAdmin"
                 type="button"
-                @click="bukaEditBuku(b)"
                 class="text-[10px] text-cyan-600 hover:bg-cyan-100 dark:hover:bg-cyan-900/30 px-1.5 py-1 rounded"
                 title="Edit record (super admin)"
+                @click="bukaEditBuku(b)"
               >
                 <i class="fas fa-edit"></i>
               </button>
               <button
                 v-if="isAdmin"
                 type="button"
-                @click="hapusBuku(b)"
                 class="text-[10px] text-rose-600 hover:bg-rose-100 dark:hover:bg-rose-900/30 px-1.5 py-1 rounded"
                 title="Hapus record (super admin)"
+                @click="hapusBuku(b)"
               >
                 <i class="fas fa-trash"></i>
               </button>

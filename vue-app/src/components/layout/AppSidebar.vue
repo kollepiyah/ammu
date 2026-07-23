@@ -14,10 +14,10 @@
       style="padding-top: calc(2rem + env(safe-area-inset-top))"
     >
       <button
-        @click="ui.closeSidebar()"
         class="md:hidden absolute top-4 right-4 text-slate-500 hover:text-slate-700 dark:text-white/70 dark:hover:text-white text-xl"
         style="top: calc(1rem + env(safe-area-inset-top))"
         aria-label="Tutup sidebar"
+        @click="ui.closeSidebar()"
       >
         <i class="fas fa-times"></i>
       </button>
@@ -60,7 +60,6 @@
         <button
           v-for="m in items"
           :key="m.path"
-          @click="handleClick(m)"
           :class="[
             'menu-item w-full text-left px-3 py-2.5 rounded-lg transition-colors flex items-center gap-3 font-semibold text-[14px] border-l-[3px]',
             isActive(m.path)
@@ -73,6 +72,7 @@
             !m.available ? 'opacity-55' : ''
           ]"
           :title="m.available ? '' : 'Halaman ini masih di versi lama, akan dimigrasi'"
+          @click="handleClick(m)"
         >
           <i
             :class="[
@@ -111,8 +111,8 @@
 
   <div
     v-if="ui.sidebarOpen"
-    @click="ui.closeSidebar()"
     class="md:hidden fixed inset-0 bg-slate-900/50 z-40 backdrop-blur-sm"
+    @click="ui.closeSidebar()"
   ></div>
 </template>
 

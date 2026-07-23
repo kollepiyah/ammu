@@ -16,16 +16,20 @@
 -->
 <template>
   <button
-    @click="$emit('click', $event)"
     :class="[
       'group relative overflow-hidden rounded-xl p-2.5 md:p-3 text-left text-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col gap-1 cursor-pointer bg-gradient-to-br',
       gradient,
       active ? 'ring-2 ring-white/70 ring-offset-1 ring-offset-cyan-50' : ''
     ]"
+    @click="$emit('click', $event)"
   >
     <i :class="[icon, 'text-base md:text-lg drop-shadow']"></i>
-    <h3 class="text-[11px] md:text-xs font-black leading-tight drop-shadow-sm !text-white">{{ title }}</h3>
-    <p v-if="subtitle" class="hidden md:block text-[10px] text-white/85 font-medium leading-snug">{{ subtitle }}</p>
+    <h3 class="text-[11px] md:text-xs font-black leading-tight drop-shadow-sm !text-white">
+      {{ title }}
+    </h3>
+    <p v-if="subtitle" class="hidden md:block text-[10px] text-white/85 font-medium leading-snug">
+      {{ subtitle }}
+    </p>
     <slot />
   </button>
 </template>
@@ -35,7 +39,10 @@ defineProps({
   icon: { type: String, default: 'fas fa-circle' },
   title: { type: String, default: '' },
   subtitle: { type: String, default: '' },
-  gradient: { type: String, default: 'from-teal-500 dark:from-teal-700 to-teal-700 dark:to-teal-900' },
+  gradient: {
+    type: String,
+    default: 'from-teal-500 dark:from-teal-700 to-teal-700 dark:to-teal-900'
+  },
   active: { type: Boolean, default: false }
 })
 defineEmits(['click'])

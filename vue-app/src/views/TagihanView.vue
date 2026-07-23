@@ -23,25 +23,25 @@
           <!-- v.87.0526: santri/wali — ikon Riwayat pembayaran (alur 1 pintu, ganti tab) -->
           <button
             v-if="isSantriRole"
-            @click="goRiwayat"
             aria-label="Riwayat pembayaran"
             title="Riwayat pembayaran"
             class="flex items-center justify-center w-8 h-8 rounded-full border border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-slate-50 dark:hover:bg-slate-700/40 text-xs font-black transition cursor-pointer"
+            @click="goRiwayat"
           >
             <i class="fas fa-history"></i>
           </button>
           <!-- v.87.0526: santri/wali — setoran/bayar di luar tagihan (kategori bebas). Tagihan = 1 pintu pembayaran. -->
           <button
             v-if="isSantriRole"
-            @click="goSetoranLain"
             class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black px-3 py-1.5 rounded-full shadow"
+            @click="goSetoranLain"
           >
             <i class="fas fa-paper-plane mr-1"></i>Setoran Lain
           </button>
           <button
             v-if="isFullAccess"
-            @click="openModalNew"
             class="bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-black px-3 py-1.5 rounded-full shadow"
+            @click="openModalNew"
           >
             <i class="fas fa-plus mr-1"></i>Tambah Tagihan
           </button>
@@ -87,14 +87,14 @@
         <input
           type="checkbox"
           :checked="selectedTagihan.size === filteredItems.length && filteredItems.length > 0"
-          @change="toggleSemuaTagihan"
           class="w-4 h-4 accent-rose-600"
+          @change="toggleSemuaTagihan"
         />Pilih semua ({{ filteredItems.length }})
       </label>
       <button
         v-if="selectedTagihan.size > 0"
-        @click="hapusTagihanTerpilih"
         class="text-[11px] font-black bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-lg"
+        @click="hapusTagihanTerpilih"
       >
         <i class="fas fa-trash mr-1"></i>Hapus Terpilih ({{ selectedTagihan.size }})
       </button>
@@ -121,9 +121,9 @@
             v-if="isAdmin"
             type="checkbox"
             :checked="selectedTagihan.has(String(t.id))"
-            @change="toggleTagihanSel(t.id)"
             class="w-4 h-4 accent-rose-600 flex-shrink-0"
             title="Pilih tagihan"
+            @change="toggleTagihanSel(t.id)"
           />
           <div
             :class="[
@@ -162,29 +162,29 @@
           <!-- v.21.115.0528: bayar=isFullAccess (admin keuangan boleh), delete=isAdmin saja (super_admin) — konsisten dengan bulk delete -->
           <button
             v-if="isFullAccess"
-            @click="openBayar(t)"
             aria-label="Bayar tagihan"
             title="Bayar"
             class="text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 p-2 rounded transition"
+            @click="openBayar(t)"
           >
             <i class="fas fa-money-bill-wave"></i>
           </button>
           <button
             v-if="isAdmin"
-            @click="deleteTagihan(t)"
             aria-label="Hapus tagihan"
             title="Hapus (super admin only)"
             class="text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/30 p-2 rounded transition"
+            @click="deleteTagihan(t)"
           >
             <i class="fas fa-trash"></i>
           </button>
           <!-- v.86.0526: santri/wali bayar tagihan belum lunas via transfer (deep-link) -->
           <button
             v-if="isSantriRole && getSisa(t) > 0"
-            @click="goBayar(t)"
             aria-label="Bayar tagihan"
             title="Bayar via transfer"
             class="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-black transition cursor-pointer flex-shrink-0"
+            @click="goBayar(t)"
           >
             <i class="fas fa-money-bill-wave"></i>Bayar
           </button>
@@ -254,15 +254,15 @@
         </div>
         <div class="mt-4 flex gap-2">
           <button
-            @click="modalOpen = false"
             class="flex-1 px-4 py-2 bg-slate-200 hover:bg-slate-300 text-[var(--text-primary)] font-bold rounded-xl text-sm"
+            @click="modalOpen = false"
           >
             Batal
           </button>
           <button
-            @click="simpanModal"
             :disabled="saving"
             class="flex-1 px-4 py-2 bg-cyan-600 hover:bg-cyan-700 disabled:opacity-50 text-white font-bold rounded-xl text-sm"
+            @click="simpanModal"
           >
             {{ saving ? 'Menyimpan...' : 'Simpan' }}
           </button>

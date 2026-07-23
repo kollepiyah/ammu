@@ -388,7 +388,6 @@ export function useTesKenaikan() {
       try {
         await deleteOne('tes_glondongan', r.id, { alasan: 'Ikut terhapus dgn ajuan tes kenaikan' })
       } catch (e) {
-        // eslint-disable-next-line no-console
         console.warn('[tes] gagal hapus baris glondongan', r.id, e?.message || e)
       }
     }

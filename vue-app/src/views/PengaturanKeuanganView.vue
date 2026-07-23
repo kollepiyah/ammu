@@ -18,13 +18,13 @@
         v-for="tb in TABS"
         :key="tb.id"
         type="button"
-        @click="setTab(tb.id)"
         :class="[
           'shrink-0 h-9 px-3.5 inline-flex items-center gap-1.5 rounded-xl text-xs font-bold transition',
           activeTab === tb.id
             ? 'bg-[var(--color-primary)] text-white shadow-sm'
             : 'bg-[var(--bg-card)] text-[var(--text-secondary)] border border-[var(--border-subtle)] hover:bg-[var(--bg-card-elevated)]'
         ]"
+        @click="setTab(tb.id)"
       >
         <i :class="['fas', tb.icon]"></i>{{ tb.t }}
       </button>
@@ -59,9 +59,9 @@
               Auto-Generate Pembayaran
             </label>
             <button
-              @click="autoGenerate"
               :disabled="generating"
               class="w-full bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-bold py-2 rounded-lg text-sm transition cursor-pointer disabled:opacity-50"
+              @click="autoGenerate"
             >
               <i class="fas fa-sync mr-1"></i
               >{{ generating ? 'Generating...' : 'Generate Bulan Ini' }}
@@ -99,8 +99,8 @@
             Tagihan Khusus (Infaq / Iuran — sekali jalan)
           </label>
           <button
-            @click="openGenKhusus"
             class="w-full inline-flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 rounded-lg text-sm transition cursor-pointer"
+            @click="openGenKhusus"
           >
             <i class="fas fa-plus-circle"></i>Generate Tagihan Khusus
           </button>
@@ -131,8 +131,8 @@
           <!-- v.94.0626: buka Pengaturan Printer (deteksi printer terhubung Windows) -->
           <button
             type="button"
-            @click="bukaPengaturanPrinter"
             class="mt-2 inline-flex items-center gap-1.5 text-xs font-bold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-900/30 px-3 py-2 rounded-lg hover:bg-teal-100"
+            @click="bukaPengaturanPrinter"
           >
             <i class="fas fa-print"></i>Pengaturan Printer (Desktop)
           </button>
@@ -221,9 +221,9 @@
         <!-- v.110: template + impor jenis pembayaran (TU isi, admin tinggal impor) -->
         <div class="flex flex-wrap gap-2 mb-2">
           <button
-            @click="unduhTemplateJenis"
             type="button"
             class="inline-flex items-center gap-1.5 text-[11px] font-bold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-900/30 px-3 py-1.5 rounded-lg hover:bg-teal-100 dark:hover:bg-teal-900/50"
+            @click="unduhTemplateJenis"
           >
             <i class="fas fa-download"></i>Unduh Template
           </button>
@@ -235,8 +235,8 @@
               type="file"
               accept=".xlsx,.xls"
               class="hidden"
-              @change="imporJenis"
               :disabled="imporJenisBusy"
+              @change="imporJenis"
             />
           </label>
         </div>
@@ -255,16 +255,16 @@
               </option>
             </select>
             <button
-              @click="salinTahunAjaran"
               class="inline-flex items-center gap-1.5 text-[11px] font-bold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-900/30 px-3 py-1.5 rounded-lg hover:bg-teal-100 dark:hover:bg-teal-900/50"
               title="Salin semua jenis + tarif ke tahun ajaran berikutnya"
+              @click="salinTahunAjaran"
             >
               <i class="fas fa-copy"></i>Salin ke {{ taBerikut }}
             </button>
           </div>
           <button
-            @click="openJenisBaru"
             class="inline-flex items-center gap-1.5 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-bold px-4 py-2 rounded-lg text-xs"
+            @click="openJenisBaru"
           >
             <i class="fas fa-plus"></i>Tambah Jenis
           </button>
@@ -321,17 +321,17 @@
                 <td class="px-3 py-2">
                   <div class="flex items-center justify-center gap-1">
                     <button
-                      @click="openJenisDialog(jenis)"
                       class="w-7 h-7 rounded-lg border border-[var(--border-default)] text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/30 flex items-center justify-center"
                       title="Ubah"
+                      @click="openJenisDialog(jenis)"
                     >
                       <i class="fas fa-pen text-xs"></i>
                     </button>
                     <button
-                      @click="removeJenis(idx)"
                       :disabled="jenis.id === 'syahriyah'"
                       :title="jenis.id === 'syahriyah' ? 'Jenis dasar — tak bisa dihapus' : 'Hapus'"
                       class="w-7 h-7 rounded-lg border border-[var(--border-default)] text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed"
+                      @click="removeJenis(idx)"
                     >
                       <i class="fas fa-trash text-xs"></i>
                     </button>
@@ -368,10 +368,10 @@
         </p>
         <div class="flex items-center gap-1.5 flex-wrap">
           <button
-            @click="unduhTemplateJenisBisyaroh"
             type="button"
             class="inline-flex items-center gap-1.5 text-[10px] font-bold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-900/30 px-2.5 py-2 rounded-lg hover:bg-teal-100 dark:hover:bg-teal-900/50"
             title="Unduh Excel (berisi data saat ini — bisa diisi lalu diimpor)"
+            @click="unduhTemplateJenisBisyaroh"
           >
             <i class="fas fa-file-excel"></i>Template
           </button>
@@ -383,14 +383,14 @@
               type="file"
               accept=".xlsx,.xls"
               class="hidden"
-              @change="imporJenisBisyaroh"
               :disabled="imporJenisBsyBusy"
+              @change="imporJenisBisyaroh"
             />
           </label>
           <button
-            @click="openJenisBisyarohBaru"
             type="button"
             class="inline-flex items-center gap-1.5 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-bold px-4 py-2 rounded-lg text-xs"
+            @click="openJenisBisyarohBaru"
           >
             <i class="fas fa-plus"></i>Tambah
           </button>
@@ -464,18 +464,18 @@
               <td class="px-3 py-2">
                 <div class="flex items-center justify-center gap-1">
                   <button
-                    @click="openJenisBisyarohDialog(j, idx)"
                     type="button"
                     class="w-7 h-7 rounded-lg border border-[var(--border-default)] text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/30 flex items-center justify-center"
                     title="Ubah"
+                    @click="openJenisBisyarohDialog(j, idx)"
                   >
                     <i class="fas fa-pen text-xs"></i>
                   </button>
                   <button
-                    @click="hapusJenisBisyaroh(idx)"
                     type="button"
                     class="w-7 h-7 rounded-lg border border-[var(--border-default)] text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 flex items-center justify-center"
                     title="Hapus"
+                    @click="hapusJenisBisyaroh(idx)"
                   >
                     <i class="fas fa-trash text-xs"></i>
                   </button>
@@ -511,11 +511,11 @@
         </label>
         <input
           v-model="form.keu_glondongan_per_juz"
-          @input="onFmtChange($event, 'keu_glondongan_per_juz')"
           type="text"
           inputmode="numeric"
           placeholder="mis. 5.000"
           class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)] font-bold"
+          @input="onFmtChange($event, 'keu_glondongan_per_juz')"
         />
         <p class="text-[10px] text-[var(--text-tertiary)] italic mt-1">
           Tarif per juz yang disimak penguji glondongan/berjalan — di luar Jenis Bisyaroh karena
@@ -541,9 +541,9 @@
             >{{ dlgJbIsNew ? 'Tambah' : 'Ubah' }} Jenis Bisyaroh
           </h3>
           <button
-            @click="dlgJbOpen = false"
             class="text-[var(--text-secondary)] hover:text-rose-500 p-1"
             aria-label="Tutup"
+            @click="dlgJbOpen = false"
           >
             <i class="fas fa-times"></i>
           </button>
@@ -570,13 +570,13 @@
                   v-for="o in HITUNGAN_OPTIONS"
                   :key="o.value"
                   type="button"
-                  @click="dlgJb.hitungan = o.value"
                   :class="[
                     'py-2 rounded-lg text-xs font-bold border transition',
                     dlgJb.hitungan === o.value
                       ? 'bg-teal-600 text-white border-teal-600'
                       : 'border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-elevated)]'
                   ]"
+                  @click="dlgJb.hitungan = o.value"
                 >
                   {{ o.label }}
                 </button>
@@ -619,8 +619,8 @@
                   v-for="j in jabatanScopeOptions"
                   :key="'sj-' + j"
                   type="button"
-                  @click="toggleScope('jabatan', j)"
                   :class="chipCls(dlgJb.scope.jabatan.includes(j))"
+                  @click="toggleScope('jabatan', j)"
                 >
                   {{ j }}
                 </button>
@@ -635,8 +635,8 @@
                   v-for="l in lembagaScopeOptions"
                   :key="'sl-' + l"
                   type="button"
-                  @click="toggleScope('lembaga', l)"
                   :class="chipCls(dlgJb.scope.lembaga.includes(l))"
+                  @click="toggleScope('lembaga', l)"
                 >
                   {{ l }}
                 </button>
@@ -651,8 +651,8 @@
                   v-for="s in shiftScopeOptions"
                   :key="'ss-' + s.id"
                   type="button"
-                  @click="toggleScope('shift', s.id)"
                   :class="chipCls(dlgJb.scope.shift.includes(s.id))"
+                  @click="toggleScope('shift', s.id)"
                 >
                   {{ s.label }}
                 </button>
@@ -665,25 +665,25 @@
               <div class="grid grid-cols-2 gap-1.5 mb-1.5">
                 <button
                   type="button"
-                  @click="semuaGuruJb"
                   :class="[
                     'py-1.5 rounded-lg text-xs font-bold border transition',
                     (dlgJb.scope.guru_ids || []).length === 0
                       ? 'bg-teal-600 text-white border-teal-600'
                       : 'border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-elevated)]'
                   ]"
+                  @click="semuaGuruJb"
                 >
                   Semua (ikut scope di atas)
                 </button>
                 <button
                   type="button"
-                  @click="dlgJbPilihGuru = true"
                   :class="[
                     'py-1.5 rounded-lg text-xs font-bold border transition',
                     (dlgJb.scope.guru_ids || []).length > 0
                       ? 'bg-teal-600 text-white border-teal-600'
                       : 'border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-elevated)]'
                   ]"
+                  @click="dlgJbPilihGuru = true"
                 >
                   Orang tertentu ({{ (dlgJb.scope.guru_ids || []).length }})
                 </button>
@@ -706,8 +706,8 @@
                     <input
                       type="checkbox"
                       :checked="(dlgJb.scope.guru_ids || []).map(String).includes(String(g.id))"
-                      @change="toggleGuruJb(g.id)"
                       class="w-4 h-4 accent-teal-600"
+                      @change="toggleGuruJb(g.id)"
                     />
                     <span class="font-bold text-[var(--text-primary)] truncate">{{ g.nama }}</span>
                     <span class="text-[10px] text-[var(--text-tertiary)] ml-auto">{{
@@ -721,7 +721,7 @@
               </div>
             </div>
             <label class="flex items-center gap-2 text-xs font-bold cursor-pointer pt-1">
-              <input type="checkbox" v-model="dlgJb.aktif" class="w-4 h-4 accent-teal-600" />
+              <input v-model="dlgJb.aktif" type="checkbox" class="w-4 h-4 accent-teal-600" />
               Aktif — ikut dihitung saat generate slip
             </label>
           </div>
@@ -731,15 +731,15 @@
         >
           <button
             type="button"
-            @click="dlgJbOpen = false"
             class="px-4 py-2 text-xs font-bold rounded-lg border border-[var(--border-default)] text-[var(--text-secondary)]"
+            @click="dlgJbOpen = false"
           >
             Batal
           </button>
           <button
             type="button"
-            @click="simpanJenisBisyaroh"
             class="px-4 py-2 text-xs font-black rounded-lg bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white"
+            @click="simpanJenisBisyaroh"
           >
             <i class="fas fa-check mr-1"></i>Terapkan
           </button>
@@ -769,9 +769,9 @@
         </div>
         <div class="flex items-center gap-2">
           <button
-            @click="unduhTemplateBeban"
             type="button"
             class="inline-flex items-center gap-1.5 border border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-elevated)] font-bold px-3 py-2 rounded-lg text-xs"
+            @click="unduhTemplateBeban"
           >
             <i class="fas fa-file-download"></i>Template
           </button>
@@ -783,16 +783,16 @@
             <input type="file" accept=".xlsx,.xls,.csv" class="hidden" @change="imporBebanExcel" />
           </label>
           <button
-            @click="exportBebanExcel"
             type="button"
             class="inline-flex items-center gap-1.5 border border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-elevated)] font-bold px-3 py-2 rounded-lg text-xs"
+            @click="exportBebanExcel"
           >
             <i class="fas fa-file-export"></i>Ekspor
           </button>
           <button
-            @click="openBebanBaru"
             type="button"
             class="inline-flex items-center gap-1.5 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-bold px-4 py-2 rounded-lg text-xs"
+            @click="openBebanBaru"
           >
             <i class="fas fa-plus"></i>Tambah
           </button>
@@ -827,17 +827,17 @@
                 <div class="flex items-center justify-center gap-1">
                   <button
                     type="button"
-                    @click="openBebanDialog(b, idx)"
                     class="w-7 h-7 rounded-lg border border-[var(--border-default)] text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/30 flex items-center justify-center"
                     title="Ubah"
+                    @click="openBebanDialog(b, idx)"
                   >
                     <i class="fas fa-pen text-xs"></i>
                   </button>
                   <button
                     type="button"
-                    @click="hapusBeban(idx)"
                     class="w-7 h-7 rounded-lg border border-[var(--border-default)] text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 flex items-center justify-center"
                     title="Hapus"
+                    @click="hapusBeban(idx)"
                   >
                     <i class="fas fa-trash text-xs"></i>
                   </button>
@@ -886,13 +886,13 @@
                 v-for="(hl, d) in HARI_LABELS"
                 :key="'ha-' + lemb + '-' + d"
                 type="button"
-                @click="toggleHariAktif(lemb, d)"
                 :class="[
                   'px-2.5 py-1.5 rounded-lg text-[11px] font-bold border transition',
                   hariAktifFor(lemb).includes(d)
                     ? 'bg-teal-600 text-white border-teal-600'
                     : 'border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-elevated)]'
                 ]"
+                @click="toggleHariAktif(lemb, d)"
               >
                 {{ hl.slice(0, 3) }}
               </button>
@@ -922,9 +922,9 @@
             Beban Mengajar
           </h3>
           <button
-            @click="dlgBebanOpen = false"
             class="text-[var(--text-secondary)] hover:text-rose-500 p-1"
             aria-label="Tutup"
+            @click="dlgBebanOpen = false"
           >
             <i class="fas fa-times"></i>
           </button>
@@ -979,15 +979,15 @@
         >
           <button
             type="button"
-            @click="dlgBebanOpen = false"
             class="px-4 py-2 text-xs font-bold rounded-lg border border-[var(--border-default)] text-[var(--text-secondary)]"
+            @click="dlgBebanOpen = false"
           >
             Batal
           </button>
           <button
             type="button"
-            @click="simpanBeban"
             class="px-4 py-2 text-xs font-black rounded-lg bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white"
+            @click="simpanBeban"
           >
             <i class="fas fa-check mr-1"></i>Terapkan
           </button>
@@ -1025,8 +1025,8 @@
                 class="flex-1 bg-transparent text-xs font-bold text-[var(--text-primary)] outline-none"
               />
               <button
-                @click="removeKategori('masuk', idx)"
                 class="text-rose-600 hover:bg-rose-50 px-2 rounded text-xs"
+                @click="removeKategori('masuk', idx)"
               >
                 <i class="fas fa-trash"></i>
               </button>
@@ -1035,13 +1035,13 @@
           <div class="flex gap-2">
             <input
               v-model="newKatMasuk"
-              @keyup.enter="addKategori('masuk')"
               type="text"
               class="flex-1 px-3 py-2 text-xs border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
+              @keyup.enter="addKategori('masuk')"
             />
             <button
-              @click="addKategori('masuk')"
               class="bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-bold px-3 py-2 rounded-lg text-xs"
+              @click="addKategori('masuk')"
             >
               <i class="fas fa-plus"></i>
             </button>
@@ -1066,8 +1066,8 @@
                 class="flex-1 bg-transparent text-xs font-bold text-[var(--text-primary)] outline-none"
               />
               <button
-                @click="removeKategori('keluar', idx)"
                 class="text-rose-600 hover:bg-rose-50 px-2 rounded text-xs"
+                @click="removeKategori('keluar', idx)"
               >
                 <i class="fas fa-trash"></i>
               </button>
@@ -1076,13 +1076,13 @@
           <div class="flex gap-2">
             <input
               v-model="newKatKeluar"
-              @keyup.enter="addKategori('keluar')"
               type="text"
               class="flex-1 px-3 py-2 text-xs border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
+              @keyup.enter="addKategori('keluar')"
             />
             <button
-              @click="addKategori('keluar')"
               class="bg-rose-600 hover:bg-rose-700 text-white font-bold px-3 py-2 rounded-lg text-xs"
+              @click="addKategori('keluar')"
             >
               <i class="fas fa-plus"></i>
             </button>
@@ -1120,8 +1120,8 @@
               class="text-xs font-bold text-[var(--text-primary)] bg-[var(--bg-card)] border border-[var(--border-default)] rounded px-2 py-1 text-right outline-none"
             />
             <button
-              @click="removeTabunganKat(idx)"
               class="text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 px-2 rounded text-xs"
+              @click="removeTabunganKat(idx)"
             >
               <i class="fas fa-trash"></i>
             </button>
@@ -1130,14 +1130,14 @@
         <div class="flex gap-2">
           <input
             v-model="newKatTabungan"
-            @keyup.enter="addTabunganKat"
             type="text"
             placeholder="Tambah kategori tabungan…"
             class="flex-1 px-3 py-2 text-xs border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
+            @keyup.enter="addTabunganKat"
           />
           <button
-            @click="addTabunganKat"
             class="bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-bold px-3 py-2 rounded-lg text-xs"
+            @click="addTabunganKat"
           >
             <i class="fas fa-plus"></i>
           </button>
@@ -1164,8 +1164,8 @@
           nomCls: 'text-rose-700 dark:text-rose-300'
         }
       ]"
-      :key="cfg.kind"
       v-show="secVisible('bisyaroh')"
+      :key="cfg.kind"
       class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
     >
       <div class="flex items-center justify-between gap-2 mb-2 flex-wrap">
@@ -1178,10 +1178,10 @@
           <!-- Template & Impor mencakup Tunjangan + Potongan sekaligus → tampil sekali (di kartu Tunjangan) -->
           <button
             v-if="cfg.kind === 'tunjangan'"
-            @click="unduhTemplateMasterTP"
             type="button"
             class="inline-flex items-center gap-1.5 text-[10px] font-bold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-900/30 px-2.5 py-2 rounded-lg hover:bg-teal-100 dark:hover:bg-teal-900/50"
             title="Unduh Excel Tunjangan + Potongan (berisi data saat ini)"
+            @click="unduhTemplateMasterTP"
           >
             <i class="fas fa-file-excel"></i>Template
           </button>
@@ -1194,14 +1194,14 @@
               type="file"
               accept=".xlsx,.xls"
               class="hidden"
-              @change="imporMasterTP"
               :disabled="imporMasterBusy"
+              @change="imporMasterTP"
             />
           </label>
           <button
-            @click="openMasterBaru(cfg.kind)"
             type="button"
             class="inline-flex items-center gap-1.5 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-bold px-4 py-2 rounded-lg text-xs"
+            @click="openMasterBaru(cfg.kind)"
           >
             <i class="fas fa-plus"></i>Tambah
           </button>
@@ -1244,18 +1244,18 @@
               <td class="px-3 py-2">
                 <div class="flex items-center justify-center gap-1">
                   <button
-                    @click="openMasterDialog(cfg.kind, item, idx)"
                     type="button"
                     class="w-7 h-7 rounded-lg border border-[var(--border-default)] text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/30 flex items-center justify-center"
                     title="Ubah"
+                    @click="openMasterDialog(cfg.kind, item, idx)"
                   >
                     <i class="fas fa-pen text-xs"></i>
                   </button>
                   <button
-                    @click="removeMaster(cfg.kind, idx)"
                     type="button"
                     class="w-7 h-7 rounded-lg border border-[var(--border-default)] text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 flex items-center justify-center"
                     title="Hapus"
+                    @click="removeMaster(cfg.kind, idx)"
                   >
                     <i class="fas fa-trash text-xs"></i>
                   </button>
@@ -1297,9 +1297,9 @@
             {{ dlgMasterKind === 'tunjangan' ? 'Tunjangan' : 'Potongan' }}
           </h3>
           <button
-            @click="dlgMasterOpen = false"
             class="text-[var(--text-secondary)] hover:text-rose-500 p-1"
             aria-label="Tutup"
+            @click="dlgMasterOpen = false"
           >
             <i class="fas fa-times"></i>
           </button>
@@ -1336,25 +1336,25 @@
             <div class="grid grid-cols-2 gap-1.5 mb-2">
               <button
                 type="button"
-                @click="dlgMaster.guru_ids = []"
                 :class="[
                   'py-2 rounded-lg text-xs font-bold border transition',
                   dlgMaster.guru_ids.length === 0
                     ? 'bg-teal-600 text-white border-teal-600'
                     : 'border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-elevated)]'
                 ]"
+                @click="dlgMaster.guru_ids = []"
               >
                 Semua guru/pegawai
               </button>
               <button
                 type="button"
-                @click="dlgMasterPilih = true"
                 :class="[
                   'py-2 rounded-lg text-xs font-bold border transition',
                   dlgMaster.guru_ids.length > 0
                     ? 'bg-teal-600 text-white border-teal-600'
                     : 'border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-elevated)]'
                 ]"
+                @click="dlgMasterPilih = true"
               >
                 Guru tertentu ({{ dlgMaster.guru_ids.length }})
               </button>
@@ -1377,8 +1377,8 @@
                   <input
                     type="checkbox"
                     :checked="dlgMaster.guru_ids.map(String).includes(String(g.id))"
-                    @change="toggleGuruDlg(g.id)"
                     class="w-4 h-4 accent-teal-600"
+                    @change="toggleGuruDlg(g.id)"
                   />
                   <span class="font-bold text-[var(--text-primary)] truncate">{{ g.nama }}</span>
                   <span class="text-[10px] text-[var(--text-tertiary)] ml-auto">{{
@@ -1397,15 +1397,15 @@
         >
           <button
             type="button"
-            @click="dlgMasterOpen = false"
             class="px-4 py-2 text-xs font-bold rounded-lg border border-[var(--border-default)] text-[var(--text-secondary)]"
+            @click="dlgMasterOpen = false"
           >
             Batal
           </button>
           <button
             type="button"
-            @click="simpanMaster"
             class="px-4 py-2 text-xs font-black rounded-lg bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white"
+            @click="simpanMaster"
           >
             <i class="fas fa-check mr-1"></i>Terapkan
           </button>
@@ -1520,16 +1520,16 @@
       class="sticky bottom-4 z-20 flex justify-end gap-2 bg-[var(--bg-card)]/95 dark:bg-slate-800/95 backdrop-blur-sm rounded-2xl p-3 border border-[var(--border-subtle)] shadow-lg"
     >
       <button
-        @click="reset"
         :disabled="saving"
         class="text-xs font-bold px-4 py-2 rounded-lg bg-[var(--bg-muted)] text-[var(--text-primary)] hover:bg-slate-200 transition cursor-pointer disabled:opacity-50"
+        @click="reset"
       >
         <i class="fas fa-undo mr-1"></i>Reset
       </button>
       <button
-        @click="simpan"
         :disabled="saving"
         class="text-xs font-bold px-4 py-2 rounded-lg bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white transition cursor-pointer disabled:opacity-50"
+        @click="simpan"
       >
         <i class="fas fa-save mr-1"></i>{{ saving ? 'Menyimpan...' : 'Simpan Semua' }}
       </button>
@@ -1552,9 +1552,9 @@
             >{{ dlgIsNew ? 'Tambah' : 'Ubah' }} Jenis Pembayaran
           </h3>
           <button
-            @click="dlgOpen = false"
             class="text-[var(--text-secondary)] hover:text-rose-500 p-1"
             aria-label="Tutup"
+            @click="dlgOpen = false"
           >
             <i class="fas fa-times"></i>
           </button>
@@ -1611,13 +1611,13 @@
                 ]"
                 :key="opt.v"
                 type="button"
-                @click="dlgJenis.frekuensi = opt.v"
                 :class="[
                   'py-2 rounded-lg text-xs font-bold border transition',
                   dlgJenis.frekuensi === opt.v
                     ? 'bg-teal-600 text-white border-teal-600'
                     : 'border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-elevated)]'
                 ]"
+                @click="dlgJenis.frekuensi = opt.v"
               >
                 <i :class="['fas', opt.i, 'mr-1']"></i>{{ opt.l }}
               </button>
@@ -1631,8 +1631,8 @@
           <div class="border-t border-[var(--border-subtle)] pt-3">
             <button
               type="button"
-              @click="dlgTarif = !dlgTarif"
               class="w-full flex items-center justify-between text-left"
+              @click="dlgTarif = !dlgTarif"
             >
               <span class="text-xs font-black text-[var(--text-primary)]">
                 <i class="fas fa-sliders-h text-teal-500 mr-1.5"></i>Tarif Khusus per lembaga /
@@ -1670,8 +1670,8 @@
                         Array.isArray(dlgJenis.lembaga_only) &&
                         dlgJenis.lembaga_only.includes(lemb.lembaga)
                       "
-                      @change="toggleLembagaOnly(dlgJenis, lemb.lembaga)"
                       class="w-3 h-3 accent-teal-600"
+                      @change="toggleLembagaOnly(dlgJenis, lemb.lembaga)"
                     />
                     {{ lemb.lembaga }}
                   </label>
@@ -1695,16 +1695,16 @@
                     >
                     <input
                       :value="dlgJenis.nominal_per_lembaga?.[lemb.lembaga] || ''"
+                      type="number"
+                      min="0"
+                      :placeholder="String(dlgJenis.nominal_default || 0)"
+                      class="w-28 text-xs font-bold text-[var(--text-primary)] outline-none border border-[var(--border-default)] rounded px-2 py-1 text-right"
                       @input="
                         dlgJenis.nominal_per_lembaga = {
                           ...(dlgJenis.nominal_per_lembaga || {}),
                           [lemb.lembaga]: Number($event.target.value) || 0
                         }
                       "
-                      type="number"
-                      min="0"
-                      :placeholder="String(dlgJenis.nominal_default || 0)"
-                      class="w-28 text-xs font-bold text-[var(--text-primary)] outline-none border border-[var(--border-default)] rounded px-2 py-1 text-right"
                     />
                   </div>
                 </div>
@@ -1741,7 +1741,6 @@
                         >
                         <input
                           :value="(dlgJenis.nominal_per_kelas?.[lemb.lembaga] || {})[kls] || ''"
-                          @input="setNominalKelas(dlgJenis, lemb.lembaga, kls, $event.target.value)"
                           type="number"
                           min="0"
                           :placeholder="
@@ -1752,6 +1751,7 @@
                             )
                           "
                           class="flex-1 text-[10px] font-bold text-[var(--text-primary)] outline-none border border-[var(--border-default)] rounded px-1.5 py-0.5 text-right"
+                          @input="setNominalKelas(dlgJenis, lemb.lembaga, kls, $event.target.value)"
                         />
                       </div>
                     </div>
@@ -1784,11 +1784,11 @@
                     >
                     <input
                       :value="(dlgJenis.nominal_per_santri || {})[String(s.id)] || ''"
-                      @input="setNominalSantri(dlgJenis, s.id, $event.target.value)"
                       type="number"
                       min="0"
                       :placeholder="String(dlgJenis.nominal_default || 0)"
                       class="w-24 text-[10px] font-bold text-[var(--text-primary)] outline-none border border-[var(--border-default)] rounded px-1.5 py-0.5 text-right"
+                      @input="setNominalSantri(dlgJenis, s.id, $event.target.value)"
                     />
                   </div>
                   <p
@@ -1810,14 +1810,14 @@
           class="flex justify-end gap-2 px-5 py-4 border-t border-[var(--border-subtle)] bg-[var(--bg-card-elevated)] rounded-b-2xl"
         >
           <button
-            @click="dlgOpen = false"
             class="px-4 py-2 text-sm font-bold rounded-lg border border-[var(--border-default)] text-[var(--text-secondary)]"
+            @click="dlgOpen = false"
           >
             Batal
           </button>
           <button
-            @click="simpanJenisDialog"
             class="px-4 py-2 text-sm font-bold rounded-lg bg-teal-600 hover:bg-teal-700 text-white inline-flex items-center gap-1.5"
+            @click="simpanJenisDialog"
           >
             <i class="fas fa-check"></i>{{ dlgIsNew ? 'Tambah' : 'Simpan' }}
           </button>
@@ -1839,9 +1839,9 @@
             <i class="fas fa-plus-circle text-emerald-500 mr-1"></i>Generate Tagihan Khusus
           </h3>
           <button
-            @click="genOpen = false"
             class="text-[var(--text-secondary)] hover:text-rose-500 p-1"
             aria-label="Tutup"
+            @click="genOpen = false"
           >
             <i class="fas fa-times"></i>
           </button>
@@ -1853,8 +1853,8 @@
         </label>
         <select
           v-model="genJenisId"
-          @change="onGenPickJenis"
           class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)] mb-2"
+          @change="onGenPickJenis"
         >
           <option value="">— Ketik manual —</option>
           <option v-for="j in jenisList" :key="j.id" :value="j.id">{{ j.label }}</option>
@@ -1888,10 +1888,10 @@
             </label>
             <input
               :value="genNominalFmt"
-              @input="onGenNominal"
               type="text"
               inputmode="numeric"
               class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)] text-right font-bold"
+              @input="onGenNominal"
             />
           </div>
           <div>
@@ -1934,37 +1934,37 @@
         <div class="flex gap-1 mb-2 text-xs font-bold">
           <button
             type="button"
-            @click="genScope = 'all'"
             :class="[
               'flex-1 py-1.5 rounded-lg border transition',
               genScope === 'all'
                 ? 'bg-emerald-600 text-white border-emerald-600'
                 : 'border-[var(--border-default)] text-[var(--text-secondary)]'
             ]"
+            @click="genScope = 'all'"
           >
             Semua aktif
           </button>
           <button
             type="button"
-            @click="genScope = 'lembaga'"
             :class="[
               'flex-1 py-1.5 rounded-lg border transition',
               genScope === 'lembaga'
                 ? 'bg-emerald-600 text-white border-emerald-600'
                 : 'border-[var(--border-default)] text-[var(--text-secondary)]'
             ]"
+            @click="genScope = 'lembaga'"
           >
             Lembaga/Kelas
           </button>
           <button
             type="button"
-            @click="genScope = 'santri'"
             :class="[
               'flex-1 py-1.5 rounded-lg border transition',
               genScope === 'santri'
                 ? 'bg-emerald-600 text-white border-emerald-600'
                 : 'border-[var(--border-default)] text-[var(--text-secondary)]'
             ]"
+            @click="genScope = 'santri'"
           >
             Pilih santri
           </button>
@@ -1985,8 +1985,8 @@
                 <input
                   type="checkbox"
                   :checked="genLembagaSel.includes(lm)"
-                  @change="toggleGenLembaga(lm)"
                   class="w-3 h-3 accent-emerald-600"
+                  @change="toggleGenLembaga(lm)"
                 />{{ lm }}
               </label>
             </div>
@@ -2004,8 +2004,8 @@
                 <input
                   type="checkbox"
                   :checked="genKelasSel.includes(kl)"
-                  @change="toggleGenKelas(kl)"
                   class="w-3 h-3 accent-emerald-600"
+                  @change="toggleGenKelas(kl)"
                 />{{ kl }}
               </label>
             </div>
@@ -2031,8 +2031,8 @@
               <input
                 type="checkbox"
                 :checked="genSantriSel.includes(String(s.id))"
-                @change="toggleGenSantri(s.id)"
                 class="w-3.5 h-3.5 accent-emerald-600 flex-shrink-0"
+                @change="toggleGenSantri(s.id)"
               />
               <span class="font-bold text-[var(--text-primary)] truncate">{{ s.nama }}</span>
               <span class="text-[10px] text-[var(--text-secondary)] whitespace-nowrap">
@@ -2058,15 +2058,15 @@
         </div>
         <div class="flex gap-2">
           <button
-            @click="genOpen = false"
             class="flex-1 px-4 py-2 bg-slate-200 dark:bg-slate-700 text-[var(--text-primary)] font-bold rounded-xl text-sm"
+            @click="genOpen = false"
           >
             Batal
           </button>
           <button
-            @click="doGenKhusus"
             :disabled="genBusy || genTargetCount === 0"
             class="flex-1 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold rounded-xl text-sm"
+            @click="doGenKhusus"
           >
             {{ genBusy ? 'Generating...' : 'Generate' }}
           </button>

@@ -11,13 +11,13 @@
           v-for="r in RANGES"
           :key="r.id"
           type="button"
-          @click="range = r.id"
           :class="[
             'px-3 py-1 rounded-md text-[11px] font-bold transition',
             range === r.id
               ? 'bg-[var(--color-primary)] text-white shadow'
               : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
           ]"
+          @click="range = r.id"
         >
           {{ r.label }}
         </button>

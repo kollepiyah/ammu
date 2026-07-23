@@ -117,7 +117,6 @@ export const useSettingsStore = defineStore('settings', () => {
       }
       error.value = e.message || String(e)
       if (!isOffline) {
-        // eslint-disable-next-line no-console
         console.error('[settings/load]', e)
       }
     } finally {

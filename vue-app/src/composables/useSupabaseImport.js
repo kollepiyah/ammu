@@ -8,7 +8,11 @@ import { parseRows } from '@/services/importMap'
 import { supabase, isSupabaseReady } from '@/services/supabase'
 
 const TABLE = { santri: 'santri', guru: 'guru', prestasi: 'rekap_prestasi' }
-const _norm = (s) => String(s || '').toLowerCase().replace(/\s+/g, ' ').trim()
+const _norm = (s) =>
+  String(s || '')
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim()
 
 export function useSupabaseImport() {
   const { importFile } = useExcel()
@@ -19,13 +23,17 @@ export function useSupabaseImport() {
 
   /** Baca File Excel -> mapper -> preview (client-side; tak sentuh DB). */
   async function loadPreview(file, type) {
-    busy.value = true; error.value = ''; result.value = ''; preview.value = null
+    busy.value = true
+    error.value = ''
+    result.value = ''
+    preview.value = null
     try {
       const raw = await importFile(file)
       preview.value = { type, ...parseRows(raw, type) }
       return preview.value
     } catch (e) {
-      error.value = e?.message || String(e); throw e
+      error.value = e?.message || String(e)
+      throw e
     } finally {
       busy.value = false
     }
@@ -34,9 +42,12 @@ export function useSupabaseImport() {
   /** Upsert preview ke Supabase (batch). Butuh sesi admin (RLS). */
   async function commit() {
     if (!preview.value) throw new Error('Belum ada preview.')
-    if (!isSupabaseReady()) throw new Error('Supabase belum dikonfigurasi (.env.local) — aktif setelah F5.')
+    if (!isSupabaseReady())
+      throw new Error('Supabase belum dikonfigurasi (.env.local) — aktif setelah F5.')
     const { type, rows } = preview.value
-    busy.value = true; error.value = ''; result.value = ''
+    busy.value = true
+    error.value = ''
+    result.value = ''
     try {
       let toWrite = rows
       if (type === 'prestasi') {
@@ -55,7 +66,8 @@ export function useSupabaseImport() {
       result.value = `Berhasil impor ${done} baris ke "${table}".`
       return done
     } catch (e) {
-      error.value = e?.message || String(e); throw e
+      error.value = e?.message || String(e)
+      throw e
     } finally {
       busy.value = false
     }
@@ -66,9 +78,12 @@ export function useSupabaseImport() {
     const map = new Map()
     let from = 0
     const PAGE = 1000
-    // eslint-disable-next-line no-constant-condition
+
     while (true) {
-      const { data, error: e } = await supabase.from('santri').select('id,nama').range(from, from + PAGE - 1)
+      const { data, error: e } = await supabase
+        .from('santri')
+        .select('id,nama')
+        .range(from, from + PAGE - 1)
       if (e) throw e
       if (!data || data.length === 0) break
       for (const s of data) map.set(_norm(s.nama), s.id)

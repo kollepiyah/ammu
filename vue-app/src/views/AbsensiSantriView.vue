@@ -20,8 +20,8 @@
       </div>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
         <button
-          @click="pilihKategori('ngaji')"
           class="group relative overflow-hidden bg-gradient-to-br from-emerald-500 to-teal-700 hover:from-emerald-600 hover:to-teal-800 rounded-2xl p-5 text-left text-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
+          @click="pilihKategori('ngaji')"
         >
           <i class="fas fa-mosque text-2xl drop-shadow mb-2"></i>
           <h3 class="text-base md:text-lg font-black leading-tight drop-shadow-sm !text-white">
@@ -32,8 +32,8 @@
           </p>
         </button>
         <button
-          @click="pilihKategori('sekolah')"
           class="group relative overflow-hidden bg-gradient-to-br from-cyan-500 to-cyan-700 hover:from-cyan-600 hover:to-cyan-800 rounded-2xl p-5 text-left text-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
+          @click="pilihKategori('sekolah')"
         >
           <i class="fas fa-school text-2xl drop-shadow mb-2"></i>
           <h3 class="text-base md:text-lg font-black leading-tight drop-shadow-sm !text-white">
@@ -51,8 +51,8 @@
     >
       <div class="flex items-center gap-3 mb-4">
         <button
-          @click="backToLanding"
           class="text-xs font-bold px-2 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 transition cursor-pointer"
+          @click="backToLanding"
         >
           <i class="fas fa-arrow-left text-slate-600 dark:text-slate-300"></i>
         </button>
@@ -67,8 +67,8 @@
       </div>
       <div class="grid grid-cols-2 md:grid-cols-5 gap-2 md:gap-3">
         <button
-          @click="pilihLembaga('TPQ Pagi')"
           class="bg-gradient-to-br from-emerald-500 to-emerald-700 hover:shadow-md hover:-translate-y-0.5 rounded-xl p-3 text-left text-white shadow-sm transition-all cursor-pointer"
+          @click="pilihLembaga('TPQ Pagi')"
         >
           <i class="fas fa-sun text-base drop-shadow"></i>
           <h3 class="text-xs md:text-sm font-black leading-tight drop-shadow-sm !text-white mt-1">
@@ -76,8 +76,8 @@
           </h3>
         </button>
         <button
-          @click="pilihLembaga('TPQ Sore')"
           class="bg-gradient-to-br from-teal-500 to-teal-700 hover:shadow-md hover:-translate-y-0.5 rounded-xl p-3 text-left text-white shadow-sm transition-all cursor-pointer"
+          @click="pilihLembaga('TPQ Sore')"
         >
           <i class="fas fa-cloud-sun text-base drop-shadow"></i>
           <h3 class="text-xs md:text-sm font-black leading-tight drop-shadow-sm !text-white mt-1">
@@ -85,8 +85,8 @@
           </h3>
         </button>
         <button
-          @click="pilihLembaga('Pra PTPT')"
           class="bg-gradient-to-br from-teal-600 to-teal-800 hover:shadow-md hover:-translate-y-0.5 rounded-xl p-3 text-left text-white shadow-sm transition-all cursor-pointer"
+          @click="pilihLembaga('Pra PTPT')"
         >
           <i class="fas fa-book text-base drop-shadow"></i>
           <h3 class="text-xs md:text-sm font-black leading-tight drop-shadow-sm !text-white mt-1">
@@ -94,8 +94,8 @@
           </h3>
         </button>
         <button
-          @click="pilihLembaga('PTPT')"
           class="bg-gradient-to-br from-emerald-500 to-emerald-700 hover:shadow-md hover:-translate-y-0.5 rounded-xl p-3 text-left text-white shadow-sm transition-all cursor-pointer"
+          @click="pilihLembaga('PTPT')"
         >
           <i class="fas fa-quran text-base drop-shadow"></i>
           <h3 class="text-xs md:text-sm font-black leading-tight drop-shadow-sm !text-white mt-1">
@@ -103,8 +103,8 @@
           </h3>
         </button>
         <button
-          @click="pilihLembaga('PPPH')"
           class="bg-gradient-to-br from-cyan-600 to-cyan-800 hover:shadow-md hover:-translate-y-0.5 rounded-xl p-3 text-left text-white shadow-sm transition-all cursor-pointer"
+          @click="pilihLembaga('PPPH')"
         >
           <i class="fas fa-scroll text-base drop-shadow"></i>
           <h3 class="text-xs md:text-sm font-black leading-tight drop-shadow-sm !text-white mt-1">
@@ -121,8 +121,8 @@
     >
       <div class="flex items-center gap-3 mb-4">
         <button
-          @click="backToLanding"
           class="text-xs font-bold px-2 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 transition cursor-pointer"
+          @click="backToLanding"
         >
           <i class="fas fa-arrow-left text-slate-600 dark:text-slate-300"></i>
         </button>
@@ -137,24 +137,24 @@
       </div>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-2 md:gap-3">
         <button
-          @click="pilihLembaga('SDI')"
           class="bg-gradient-to-br from-cyan-500 to-cyan-700 hover:shadow-md hover:-translate-y-0.5 rounded-xl p-4 text-left text-white shadow-sm transition-all cursor-pointer"
+          @click="pilihLembaga('SDI')"
         >
           <i class="fas fa-school text-xl drop-shadow"></i>
           <h3 class="text-base font-black leading-tight drop-shadow-sm !text-white mt-1">SDI</h3>
           <p class="text-[11px] text-white/85 mt-0.5">Kelas I–VI</p>
         </button>
         <button
-          @click="pilihLembaga('SMP')"
           class="bg-gradient-to-br from-cyan-600 to-cyan-800 hover:shadow-md hover:-translate-y-0.5 rounded-xl p-4 text-left text-white shadow-sm transition-all cursor-pointer"
+          @click="pilihLembaga('SMP')"
         >
           <i class="fas fa-school-flag text-xl drop-shadow"></i>
           <h3 class="text-base font-black leading-tight drop-shadow-sm !text-white mt-1">SMP</h3>
           <p class="text-[11px] text-white/85 mt-0.5">PKBM · Kelas VII–IX</p>
         </button>
         <button
-          @click="pilihLembaga('SMA')"
           class="bg-gradient-to-br from-teal-600 to-teal-800 hover:shadow-md hover:-translate-y-0.5 rounded-xl p-4 text-left text-white shadow-sm transition-all cursor-pointer"
+          @click="pilihLembaga('SMA')"
         >
           <i class="fas fa-graduation-cap text-xl drop-shadow"></i>
           <h3 class="text-base font-black leading-tight drop-shadow-sm !text-white mt-1">SMA</h3>
@@ -167,8 +167,8 @@
     <template v-else-if="step === 'input'">
       <button
         v-if="showBackBtn"
-        @click="backToSub"
         class="inline-flex items-center gap-2 text-xs font-bold px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 transition cursor-pointer text-slate-700 dark:text-slate-200"
+        @click="backToSub"
       >
         <i class="fas fa-arrow-left"></i>
         {{ isGuru ? 'Pilih Kategori Lain' : 'Pilih Lembaga Lain' }}
@@ -284,17 +284,17 @@
         </div>
         <div class="flex gap-2">
           <button
-            @click="simpanSemua"
             :disabled="saving"
             class="px-4 py-2 text-sm font-bold rounded-lg bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white inline-flex items-center gap-1.5 transition cursor-pointer"
+            @click="simpanSemua"
           >
             <i :class="saving ? 'fas fa-spinner fa-spin' : 'fas fa-save'"></i
             >{{ saving ? 'Menyimpan...' : 'Simpan' }}
           </button>
           <button
-            @click="generateKeRapor"
             :disabled="generating"
             class="px-4 py-2 text-sm font-bold rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white inline-flex items-center gap-1.5 transition cursor-pointer"
+            @click="generateKeRapor"
           >
             <i :class="generating ? 'fas fa-spinner fa-spin' : 'fas fa-file-export'"></i
             >{{ generating ? 'Memproses...' : 'Generate ke Rapor' }}

@@ -20,12 +20,12 @@
       <button
         v-for="tab in TABS"
         :key="tab.id"
-        @click="activeTab = tab.id"
         :class="[
           'group relative overflow-hidden bg-gradient-to-br rounded-xl p-2.5 md:p-3 text-left text-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 ease-out cursor-pointer flex flex-col gap-1',
           tab.gradient,
           activeTab === tab.id ? 'ring-2 ring-white/70 ring-offset-1 ring-offset-cyan-50' : ''
         ]"
+        @click="activeTab = tab.id"
       >
         <i :class="['fas', tab.icon, 'text-base md:text-lg drop-shadow']"></i>
         <h3 class="text-[11px] md:text-xs font-black leading-tight drop-shadow-sm">
@@ -52,8 +52,8 @@
             </p>
           </div>
           <button
-            @click="openModal()"
             class="bg-cyan-600 hover:bg-cyan-700 text-white font-bold px-3 py-2 rounded-lg text-xs"
+            @click="openModal()"
           >
             <i class="fas fa-plus mr-1"></i>Tambah Kegiatan
           </button>
@@ -82,14 +82,14 @@
               </p>
             </div>
             <button
-              @click="openModal(k, idx)"
               class="text-[10px] text-cyan-600 hover:underline font-bold"
+              @click="openModal(k, idx)"
             >
               edit
             </button>
             <button
-              @click="hapusKegiatan(idx)"
               class="text-[10px] text-rose-600 hover:underline font-bold"
+              @click="hapusKegiatan(idx)"
             >
               hapus
             </button>
@@ -216,12 +216,12 @@
             ref="fileInput"
             type="file"
             accept=".xlsx,.csv"
-            @change="onFileChange"
             class="hidden"
+            @change="onFileChange"
           />
           <button
-            @click="$refs.fileInput.click()"
             class="bg-cyan-600 hover:bg-cyan-700 text-white font-bold px-4 py-2 rounded-lg text-xs"
+            @click="$refs.fileInput.click()"
           >
             <i class="fas fa-folder-open mr-1"></i>Pilih File
           </button>
@@ -274,11 +274,11 @@
     <!-- Modal Tambah/Edit Master Kegiatan -->
     <div
       v-if="modalOpen"
-      @click.self="modalOpen = false"
       class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4"
+      @click.self="modalOpen = false"
     >
       <div class="bg-[var(--bg-card)] rounded-2xl shadow-2xl w-full max-w-md">
-        <form @submit.prevent="simpanKegiatan" class="p-5">
+        <form class="p-5" @submit.prevent="simpanKegiatan">
           <h3 class="text-base font-black text-[var(--text-primary)] mb-4">
             <i
               :class="[
@@ -327,8 +327,8 @@
           >
             <button
               type="button"
-              @click="modalOpen = false"
               class="text-xs font-bold px-4 py-2 rounded-lg bg-[var(--bg-muted)] text-slate-600 dark:text-slate-200"
+              @click="modalOpen = false"
             >
               Batal
             </button>

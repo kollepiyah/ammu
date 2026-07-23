@@ -13,9 +13,9 @@
             {{ filteredSantri.length }} santri
           </span>
           <button
-            @click="simpanBatch"
             :disabled="saving || dirtyCount === 0"
             class="text-xs font-bold px-3 py-2 rounded-lg bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white transition cursor-pointer disabled:opacity-50"
+            @click="simpanBatch"
           >
             <i class="fas fa-save mr-1"></i>
             {{ saving ? 'Menyimpan...' : `Simpan${dirtyCount ? ` (${dirtyCount})` : ''}` }}
@@ -129,7 +129,7 @@
                 Tidak ada santri yang cocok dengan filter.
               </td>
             </tr>
-            <template v-else v-for="(grp, gi) in grouped" :key="gi">
+            <template v-for="(grp, gi) in grouped" v-else :key="gi">
               <tr class="bg-slate-200 dark:bg-slate-700/50">
                 <td
                   :colspan="hasPtpt ? 9 : 8"
@@ -163,8 +163,8 @@
                 >
                   <select
                     v-model="formMap[s.id].kelas_sekolah"
-                    @change="markDirty(s.id)"
                     class="w-full text-center text-[10px] font-bold p-1 rounded border border-[var(--border-default)] bg-white dark:bg-slate-900 text-[var(--text-primary)] cursor-pointer"
+                    @change="markDirty(s.id)"
                   >
                     <option value="">-</option>
                     <option v-for="k in kelasSekolahOptions" :key="k" :value="k">{{ k }}</option>
@@ -177,8 +177,8 @@
                 >
                   <select
                     v-model="formMap[s.id].kelas"
-                    @change="markDirty(s.id)"
                     class="w-full text-center text-[10px] font-bold p-1 rounded border border-[var(--border-default)] bg-white dark:bg-slate-900 text-[var(--text-primary)] cursor-pointer"
+                    @change="markDirty(s.id)"
                   >
                     <option value="">-</option>
                     <option v-for="k in kelasOptions(s.lembaga)" :key="k" :value="k">
@@ -195,13 +195,13 @@
                   <div v-if="lembagaKey(s) === 'ptpt'" class="flex items-center gap-1">
                     <input
                       v-model="formMap[s.id].juz"
-                      @input="markDirty(s.id)"
                       type="number"
                       min="1"
                       max="30"
                       inputmode="numeric"
                       :title="ptptJuzHint(s.kelas)"
                       class="flex-1 min-w-0 text-center font-black text-[11px] p-1 rounded border border-rose-300 dark:border-rose-700 bg-rose-50 dark:bg-rose-900/30 text-rose-900 dark:text-rose-200"
+                      @input="markDirty(s.id)"
                     />
                   </div>
                   <p
@@ -217,9 +217,9 @@
                 <td class="p-1 border-b border-[var(--border-subtle)]">
                   <input
                     v-model="formMap[s.id].prestasi_awal"
-                    @input="markDirty(s.id)"
                     type="text"
                     class="w-full text-center font-black text-[11px] p-1.5 rounded border border-[var(--border-default)] bg-white dark:bg-slate-900 text-[var(--text-primary)]"
+                    @input="markDirty(s.id)"
                   />
                 </td>
 
@@ -227,9 +227,9 @@
                 <td class="p-1 border-b border-[var(--border-subtle)]">
                   <input
                     v-model="formMap[s.id].prestasi_akhir"
-                    @input="markDirty(s.id)"
                     type="text"
                     class="w-full text-center font-black text-[11px] p-1.5 rounded border border-[var(--border-default)] bg-white dark:bg-slate-900 text-[var(--text-primary)]"
+                    @input="markDirty(s.id)"
                   />
                 </td>
 
@@ -250,10 +250,10 @@
                   <input
                     v-else
                     v-model="formMap[s.id].prestasi_total"
-                    @input="markDirty(s.id)"
                     type="text"
                     class="w-full text-center font-black text-[11px] p-1.5 rounded border border-cyan-300 dark:border-cyan-700 bg-cyan-50 dark:bg-cyan-900/30 text-cyan-900 dark:text-cyan-200"
                     title="Manual input"
+                    @input="markDirty(s.id)"
                   />
                 </td>
 
@@ -262,7 +262,6 @@
                   class="p-1 border-b border-[var(--border-subtle)] bg-cyan-50/30 dark:bg-cyan-900/10 text-center"
                 >
                   <button
-                    @click="openCatatan(s)"
                     :class="[
                       'inline-flex items-center justify-center w-8 h-7 rounded transition cursor-pointer',
                       formMap[s.id]?.catatan
@@ -274,6 +273,7 @@
                         ? 'Catatan: ' + formMap[s.id].catatan.slice(0, 50) + '...'
                         : 'Belum ada catatan — klik untuk tulis'
                     "
+                    @click="openCatatan(s)"
                   >
                     <i class="fas fa-eye text-[11px]"></i>
                   </button>
@@ -292,7 +292,7 @@
         >
           <i class="fas fa-inbox text-2xl block mb-2"></i>Tidak ada santri yang cocok dengan filter.
         </div>
-        <template v-else v-for="(grp, gi) in grouped" :key="'m' + gi">
+        <template v-for="(grp, gi) in grouped" v-else :key="'m' + gi">
           <p
             class="text-[11px] font-black text-[var(--text-primary)] uppercase tracking-widest px-1 pt-1"
           >
@@ -311,13 +311,13 @@
                 >
               </p>
               <button
-                @click="openCatatan(s)"
                 :class="[
                   'inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold flex-shrink-0',
                   formMap[s.id]?.catatan
                     ? 'bg-cyan-200 dark:bg-cyan-700 text-cyan-900 dark:text-cyan-100'
                     : 'bg-[var(--bg-muted)] text-[var(--text-tertiary)]'
                 ]"
+                @click="openCatatan(s)"
               >
                 <i class="fas fa-comment-dots"></i>Catatan
               </button>
@@ -330,8 +330,8 @@
                 >
                 <select
                   v-model="formMap[s.id].kelas_sekolah"
-                  @change="markDirty(s.id)"
                   class="w-full text-xs font-bold p-2 rounded-lg border border-[var(--border-default)] bg-white dark:bg-slate-900 text-[var(--text-primary)]"
+                  @change="markDirty(s.id)"
                 >
                   <option value="">-</option>
                   <option v-for="k in kelasSekolahOptions" :key="k" :value="k">{{ k }}</option>
@@ -344,8 +344,8 @@
                 >
                 <select
                   v-model="formMap[s.id].kelas"
-                  @change="markDirty(s.id)"
                   class="w-full text-xs font-bold p-2 rounded-lg border border-[var(--border-default)] bg-white dark:bg-slate-900 text-[var(--text-primary)]"
+                  @change="markDirty(s.id)"
                 >
                   <option value="">-</option>
                   <option v-for="k in kelasOptions(s.lembaga)" :key="k" :value="k">{{ k }}</option>
@@ -358,12 +358,12 @@
                 >
                 <input
                   v-model="formMap[s.id].juz"
-                  @input="markDirty(s.id)"
                   type="number"
                   min="1"
                   max="30"
                   inputmode="numeric"
                   class="w-full text-center font-black text-sm p-2 rounded-lg border border-rose-300 dark:border-rose-700 bg-rose-50 dark:bg-rose-900/30 text-rose-900 dark:text-rose-200"
+                  @input="markDirty(s.id)"
                 />
               </label>
               <label class="block">
@@ -373,10 +373,10 @@
                 >
                 <input
                   v-model="formMap[s.id].prestasi_awal"
-                  @input="markDirty(s.id)"
                   type="text"
                   inputmode="numeric"
                   class="w-full text-center font-black text-sm p-2 rounded-lg border border-[var(--border-default)] bg-white dark:bg-slate-900 text-[var(--text-primary)]"
+                  @input="markDirty(s.id)"
                 />
               </label>
               <label class="block">
@@ -386,10 +386,10 @@
                 >
                 <input
                   v-model="formMap[s.id].prestasi_akhir"
-                  @input="markDirty(s.id)"
                   type="text"
                   inputmode="numeric"
                   class="w-full text-center font-black text-sm p-2 rounded-lg border border-[var(--border-default)] bg-white dark:bg-slate-900 text-[var(--text-primary)]"
+                  @input="markDirty(s.id)"
                 />
               </label>
               <label class="block">
@@ -410,11 +410,11 @@
                 <input
                   v-else
                   v-model="formMap[s.id].prestasi_total"
-                  @input="markDirty(s.id)"
                   type="text"
                   inputmode="numeric"
                   class="w-full text-center font-black text-sm p-2 rounded-lg border border-cyan-300 dark:border-cyan-700 bg-cyan-50 dark:bg-cyan-900/30 text-cyan-900 dark:text-cyan-200"
                   title="Manual input"
+                  @input="markDirty(s.id)"
                 />
               </label>
             </div>
@@ -441,8 +441,8 @@
                 <i class="fas fa-comment-dots mr-2 text-cyan-600"></i>Catatan Bulanan
               </h3>
               <button
-                @click="showCatatan = false"
                 class="text-[var(--text-tertiary)] hover:text-rose-500 text-2xl font-bold w-8 h-8 rounded-full bg-[var(--bg-muted)] flex items-center justify-center cursor-pointer"
+                @click="showCatatan = false"
               >
                 &times;
               </button>
@@ -477,14 +477,14 @@
               class="px-5 py-4 border-t border-[var(--border-subtle)] bg-[var(--bg-card-elevated)] flex justify-end gap-2 rounded-b-2xl"
             >
               <button
-                @click="showCatatan = false"
                 class="px-4 py-2 text-sm font-bold rounded-xl bg-slate-200 dark:bg-slate-700 text-[var(--text-primary)]"
+                @click="showCatatan = false"
               >
                 Batal
               </button>
               <button
-                @click="simpanCatatan"
                 class="px-5 py-2 text-sm font-black rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white shadow-md cursor-pointer"
+                @click="simpanCatatan"
               >
                 <i class="fas fa-save mr-1"></i>Simpan Catatan
               </button>

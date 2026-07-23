@@ -53,8 +53,8 @@
             }}</code>
           </div>
           <button
-            @click="copyLink"
             class="px-3 py-1.5 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-xs font-bold rounded-lg transition"
+            @click="copyLink"
           >
             <i class="fas fa-copy mr-1"></i>Salin
           </button>
@@ -120,9 +120,9 @@
           </div>
           <button
             v-if="psbAssetLembaga"
-            @click="savePsbAssets"
             :disabled="savingAssets"
             class="px-3 py-2 text-xs font-bold rounded-lg bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white disabled:opacity-50"
+            @click="savePsbAssets"
           >
             <i class="fas fa-save mr-1"></i
             >{{ savingAssets ? 'Menyimpan...' : 'Simpan Asset Lembaga' }}
@@ -273,21 +273,21 @@
                   </RouterLink>
                   <button
                     v-if="p.status !== 'approved'"
-                    @click="updateStatus(p, 'approved')"
                     class="text-[10px] px-2.5 py-1 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 font-bold rounded transition"
+                    @click="updateStatus(p, 'approved')"
                   >
                     <i class="fas fa-check mr-1"></i>Approve
                   </button>
                   <button
                     v-if="p.status !== 'rejected'"
-                    @click="updateStatus(p, 'rejected')"
                     class="text-[10px] px-2.5 py-1 bg-rose-100 hover:bg-rose-200 text-rose-700 font-bold rounded transition"
+                    @click="updateStatus(p, 'rejected')"
                   >
                     <i class="fas fa-times mr-1"></i>Reject
                   </button>
                   <button
-                    @click="onDelete(p)"
                     class="text-[10px] px-2.5 py-1 bg-[var(--bg-muted)] hover:bg-slate-200 text-[var(--text-primary)] font-bold rounded transition"
+                    @click="onDelete(p)"
                   >
                     <i class="fas fa-trash mr-1"></i>Hapus
                   </button>

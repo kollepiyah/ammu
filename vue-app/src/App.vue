@@ -78,7 +78,6 @@ async function setupNativeIntegration() {
     ;[600, 1400, 2200, 3200].forEach((ms) => setTimeout(applyStatusBar, ms))
     watch(() => ui.isDark, applyStatusBar)
   } catch (e) {
-    // eslint-disable-next-line no-console
     console.warn('[StatusBar] plugin tidak tersedia:', e?.message || e)
   }
 
@@ -133,7 +132,6 @@ async function setupNativeIntegration() {
       router.replace('/dashboard')
     })
   } catch (e) {
-    // eslint-disable-next-line no-console
     console.warn('[BackButton] plugin tidak tersedia:', e?.message || e)
   }
 }

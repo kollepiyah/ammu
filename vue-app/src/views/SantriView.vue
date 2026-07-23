@@ -26,28 +26,28 @@
         <!-- v.21.17c.0526: View mode actions (sidebar) vs Master mode actions (Master Data) -->
         <button
           v-if="isFullAccess"
-          @click="cetakPdf"
           aria-label="Cetak daftar santri PDF"
           class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold transition cursor-pointer"
+          @click="cetakPdf"
         >
           <i class="fas fa-file-pdf"></i>Cetak PDF
         </button>
         <button
           v-if="isFullAccess"
-          @click="exportSantriExcel"
           :disabled="exporting"
           aria-label="Ekspor daftar santri Excel"
           class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer"
+          @click="exportSantriExcel"
         >
           <i :class="['fas', exporting ? 'fa-spinner fa-spin' : 'fa-file-excel']"></i
           >{{ exporting ? 'Ekspor...' : 'Ekspor Excel' }}
         </button>
         <button
           v-if="isFullAccess && gsheetConfigured()"
-          @click="kirimGoogleSheet"
           :disabled="sendingGsheet"
           aria-label="Kirim daftar santri ke Google Sheet"
           class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer"
+          @click="kirimGoogleSheet"
         >
           <i :class="['fas', sendingGsheet ? 'fa-spinner fa-spin' : 'fa-table']"></i
           >{{ sendingGsheet ? 'Mengirim...' : 'Google Sheet' }}
@@ -64,8 +64,8 @@
         <!-- Master mode: full CRUD buttons -->
         <template v-if="isFullAccess && isMasterMode">
           <button
-            @click="downloadTemplateSantri"
             class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold transition cursor-pointer"
+            @click="downloadTemplateSantri"
           >
             <i class="fas fa-download"></i>Template
           </button>
@@ -78,8 +78,8 @@
               type="file"
               accept=".xlsx,.xls"
               class="hidden"
-              @change="onImportSantri"
               :disabled="importing"
+              @change="onImportSantri"
             />
           </label>
           <router-link
@@ -110,29 +110,29 @@
         ><i class="fas fa-check-square mr-1"></i>{{ selectedCount }} terpilih</span
       >
       <button
-        @click="bulkSetStatusSantri('aktif')"
         :disabled="bulkSaving"
         class="h-8 px-3 inline-flex items-center gap-1 rounded-lg bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] disabled:opacity-50 text-white text-[11px] font-bold transition cursor-pointer"
+        @click="bulkSetStatusSantri('aktif')"
       >
         <i class="fas fa-check"></i>Set Aktif
       </button>
       <button
-        @click="bulkSetStatusSantri('tidak_aktif')"
         :disabled="bulkSaving"
         class="h-8 px-3 inline-flex items-center gap-1 rounded-lg bg-cyan-600 hover:bg-cyan-700 disabled:opacity-50 text-white text-[11px] font-bold transition cursor-pointer"
+        @click="bulkSetStatusSantri('tidak_aktif')"
       >
         <i class="fas fa-user-slash"></i>Set Non-aktif
       </button>
       <button
-        @click="bulkDelete"
         :disabled="bulkSaving"
         class="h-8 px-3 inline-flex items-center gap-1 rounded-lg bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white text-[11px] font-bold transition cursor-pointer"
+        @click="bulkDelete"
       >
         <i class="fas fa-trash"></i>Hapus
       </button>
       <button
-        @click="clearSelection"
         class="h-8 px-3 inline-flex items-center gap-1 rounded-lg bg-slate-200 hover:bg-slate-300 text-[var(--text-primary)] text-[11px] font-bold transition cursor-pointer ml-auto"
+        @click="clearSelection"
       >
         <i class="fas fa-times"></i>Batal
       </button>
@@ -152,8 +152,8 @@
             {{ importPreview.rows.length }} baris
           </h3>
           <button
-            @click="importPreview = null"
             class="text-[var(--text-tertiary)] hover:text-rose-600 text-xl"
+            @click="importPreview = null"
           >
             <i class="fas fa-times"></i>
           </button>
@@ -224,15 +224,15 @@
         </div>
         <div class="p-4 border-t border-[var(--border-subtle)] flex justify-end gap-2">
           <button
-            @click="importPreview = null"
             class="px-4 py-2 text-xs font-bold rounded-lg bg-slate-200 hover:bg-slate-300"
+            @click="importPreview = null"
           >
             Batal
           </button>
           <button
-            @click="confirmImportSantri"
             :disabled="importing"
             class="px-4 py-2 text-xs font-bold rounded-lg bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white disabled:opacity-50"
+            @click="confirmImportSantri"
           >
             <i :class="['fas', importing ? 'fa-spinner fa-spin' : 'fa-check', 'mr-1']"></i
             >{{
@@ -325,13 +325,13 @@
             { v: 'sekolah', l: 'Sekolah', n: jumlahSisi.sekolah }
           ]"
           :key="t.v"
-          @click="sisiTab = t.v"
           :class="[
             'flex-1 px-3 py-2 rounded-xl text-xs font-black border transition cursor-pointer',
             sisiTab === t.v
               ? 'bg-teal-600 text-white border-teal-700'
               : 'bg-white dark:bg-slate-900 text-[var(--text-secondary)] border-[var(--border-default)]'
           ]"
+          @click="sisiTab = t.v"
         >
           {{ t.l }} ({{ t.n }})
         </button>
@@ -347,8 +347,8 @@
             type="checkbox"
             :checked="isAllVisibleSelected"
             :indeterminate.prop="isSomeVisibleSelected"
-            @change="toggleSelectAllVisible"
             class="w-4 h-4 rounded border-[var(--border-default)] text-teal-600 focus:ring-teal-500 cursor-pointer"
+            @change="toggleSelectAllVisible"
           />
           <span class="text-[11px] font-bold text-[var(--text-secondary)]"
             >Pilih semua ({{ santri.length }})</span
@@ -392,8 +392,8 @@
           <span class="flex-1 h-px bg-[var(--border-subtle)]"></span>
         </div>
         <div
-          @click="goProfil(s, $event)"
           class="bg-[var(--bg-card)] rounded-xl p-3 md:p-4 border border-[var(--border-subtle)] shadow-sm hover:shadow-md transition cursor-pointer"
+          @click="goProfil(s, $event)"
         >
           <div class="flex items-start gap-3">
             <!-- v.21.22c.0526: Checkbox (Master mode only) -->
@@ -401,8 +401,8 @@
               v-if="isMasterMode && isFullAccess"
               type="checkbox"
               :checked="selected.has(String(s.id))"
-              @change="toggleSelect(s.id)"
               class="flex-shrink-0 mt-2 w-4 h-4 rounded border-[var(--border-default)] text-teal-600 focus:ring-teal-500 cursor-pointer"
+              @change="toggleSelect(s.id)"
             />
             <div
               class="flex-shrink-0 w-12 h-12 md:w-14 md:h-14 rounded-full bg-gradient-to-br from-cyan-100 to-cyan-100 dark:from-cyan-700 dark:to-cyan-700 border-2 border-white dark:border-slate-700 flex items-center justify-center overflow-hidden"
@@ -486,9 +486,9 @@
               >
                 <button
                   type="button"
-                  @click.stop="bukaEditKelas(s)"
                   class="text-[10px] text-teal-700 dark:text-teal-300 hover:underline font-bold"
                   title="Perbaiki Lembaga/Kelas Qiraati & Sekolah (dan Juz PTPT)"
+                  @click.stop="bukaEditKelas(s)"
                 >
                   <i class="fas fa-graduation-cap mr-1"></i>Edit Kelas
                 </button>
@@ -500,20 +500,20 @@
                 class="mt-2 pt-2 border-t border-[var(--border-subtle)] flex justify-end items-center gap-3 flex-wrap"
               >
                 <button
-                  @click="resetSandiSantri(s)"
                   class="text-[10px] text-cyan-700 dark:text-cyan-300 hover:underline font-bold"
                   title="Reset sandi ke 1234"
+                  @click="resetSandiSantri(s)"
                 >
                   <i class="fas fa-key mr-1"></i>Reset Sandi
                 </button>
                 <button
-                  @click="toggleAktifSantri(s)"
                   :class="[
                     'text-[10px] font-bold hover:underline',
                     s.aktif === false
                       ? 'text-emerald-700 dark:text-emerald-300'
                       : 'text-cyan-700 dark:text-cyan-300'
                   ]"
+                  @click="toggleAktifSantri(s)"
                 >
                   <i
                     :class="['fas', s.aktif === false ? 'fa-toggle-on' : 'fa-toggle-off', 'mr-1']"
@@ -527,8 +527,8 @@
                   <i class="fas fa-edit mr-1"></i>Edit
                 </router-link>
                 <button
-                  @click="deleteSantri(s)"
                   class="text-[10px] text-rose-700 dark:text-rose-300 hover:underline font-bold"
+                  @click="deleteSantri(s)"
                 >
                   <i class="fas fa-trash mr-1"></i>Hapus
                 </button>

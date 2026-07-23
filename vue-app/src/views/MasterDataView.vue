@@ -873,11 +873,11 @@ async function simpanPengaturanRekap() {
         <button
           v-for="tab in TABS"
           :key="tab.id"
-          @click="switchTab(tab.id)"
           :class="[
             'whitespace-nowrap h-10 px-3 text-xs font-bold transition cursor-pointer rounded-xl inline-flex items-center gap-1.5',
             tabClass(tab)
           ]"
+          @click="switchTab(tab.id)"
         >
           <i :class="['fas', tab.icon, 'text-sm']"></i>
           <span>{{ tab.label }}</span>
@@ -891,37 +891,37 @@ async function simpanPengaturanRekap() {
         class="bg-white dark:bg-slate-800 rounded-xl p-2 md:p-3 border border-slate-200 dark:border-slate-700 shadow-sm flex flex-wrap gap-2"
       >
         <button
-          @click="lembagaSubTab = 'lembaga'"
           :class="[
             'px-3 py-1.5 text-xs font-bold rounded-lg border transition cursor-pointer',
             lembagaSubTab === 'lembaga'
               ? 'bg-cyan-500 text-white border-cyan-600'
               : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-cyan-50'
           ]"
+          @click="lembagaSubTab = 'lembaga'"
         >
           <i class="fas fa-building mr-1"></i>Daftar Lembaga
         </button>
         <!-- v.21.85.0527: Kelas & Guru -->
         <button
-          @click="lembagaSubTab = 'kelas-guru'"
           :class="[
             'px-3 py-1.5 text-xs font-bold rounded-lg border transition cursor-pointer',
             lembagaSubTab === 'kelas-guru'
               ? 'bg-cyan-500 text-white border-cyan-600'
               : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-cyan-50'
           ]"
+          @click="lembagaSubTab = 'kelas-guru'"
         >
           <i class="fas fa-user-friends mr-1"></i>Kelas &amp; Guru
         </button>
         <!-- v.21.85.0527: Jabatan ACF -->
         <button
-          @click="lembagaSubTab = 'jabatan'"
           :class="[
             'px-3 py-1.5 text-xs font-bold rounded-lg border transition cursor-pointer',
             lembagaSubTab === 'jabatan'
               ? 'bg-cyan-500 text-white border-cyan-600'
               : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-cyan-50'
           ]"
+          @click="lembagaSubTab = 'jabatan'"
         >
           <i class="fas fa-id-badge mr-1"></i>Jabatan
         </button>
@@ -1007,8 +1007,8 @@ async function simpanPengaturanRekap() {
             <i class="fas fa-star mr-1 text-cyan-600"></i>Aturan Predikat Nilai
           </h5>
           <button
-            @click="tambahPredikat"
             class="text-[11px] font-bold text-cyan-600 hover:text-cyan-800 cursor-pointer"
+            @click="tambahPredikat"
           >
             <i class="fas fa-plus mr-1"></i>Tambah Aturan
           </button>
@@ -1042,9 +1042,9 @@ async function simpanPengaturanRekap() {
               class="col-span-4 px-2 py-1.5 text-xs border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-900 text-slate-800 dark:text-white"
             />
             <button
-              @click="hapusPredikat(idx)"
               class="col-span-1 text-rose-500 hover:text-rose-700 text-sm cursor-pointer"
               title="Hapus"
+              @click="hapusPredikat(idx)"
             >
               <i class="fas fa-trash"></i>
             </button>
@@ -1088,13 +1088,13 @@ async function simpanPengaturanRekap() {
           Tambah field custom di form Santri/Guru/Lembaga.
         </p>
         <button
+          class="bg-teal-600 hover:bg-teal-700 text-white font-bold px-3 py-1.5 rounded-lg text-xs cursor-pointer"
           @click="
             () => {
               activeTab = 'lembaga'
               lembagaSubTab = 'field-schema'
             }
           "
-          class="bg-teal-600 hover:bg-teal-700 text-white font-bold px-3 py-1.5 rounded-lg text-xs cursor-pointer"
         >
           <i class="fas fa-external-link-alt mr-1"></i>Buka Field Schema Editor
         </button>
@@ -1120,8 +1120,8 @@ async function simpanPengaturanRekap() {
             <input
               type="file"
               accept="image/png,image/jpeg"
-              @change="uploadBgRapor($event, 'tpq')"
               class="block w-full text-xs text-slate-600 dark:text-slate-400"
+              @change="uploadBgRapor($event, 'tpq')"
             />
             <img
               v-if="bgRaporTPQ"
@@ -1130,8 +1130,8 @@ async function simpanPengaturanRekap() {
             />
             <button
               v-if="bgRaporTPQ"
-              @click="hapusBgRapor('tpq')"
               class="text-[10px] text-rose-600 hover:text-rose-800 mt-1 cursor-pointer font-bold"
+              @click="hapusBgRapor('tpq')"
             >
               <i class="fas fa-trash mr-1"></i>Hapus
             </button>
@@ -1145,8 +1145,8 @@ async function simpanPengaturanRekap() {
             <input
               type="file"
               accept="image/png,image/jpeg"
-              @change="uploadBgRapor($event, 'diniyah')"
               class="block w-full text-xs text-slate-600 dark:text-slate-400"
+              @change="uploadBgRapor($event, 'diniyah')"
             />
             <img
               v-if="bgRaporDiniyah"
@@ -1155,8 +1155,8 @@ async function simpanPengaturanRekap() {
             />
             <button
               v-if="bgRaporDiniyah"
-              @click="hapusBgRapor('diniyah')"
               class="text-[10px] text-rose-600 hover:text-rose-800 mt-1 cursor-pointer font-bold"
+              @click="hapusBgRapor('diniyah')"
             >
               <i class="fas fa-trash mr-1"></i>Hapus
             </button>
@@ -1165,9 +1165,9 @@ async function simpanPengaturanRekap() {
       </div>
 
       <button
-        @click="simpanPengaturanRapor"
         :disabled="savingRapor"
         class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black py-3 rounded-xl shadow-md disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
+        @click="simpanPengaturanRapor"
       >
         <i :class="['fas', savingRapor ? 'fa-spinner fa-spin' : 'fa-save']"></i>
         {{ savingRapor ? 'Menyimpan...' : 'SIMPAN PENGATURAN RAPOR' }}
@@ -1229,10 +1229,10 @@ async function simpanPengaturanRekap() {
             </label>
             <textarea
               :value="getMapelDiniyah(lemb)"
-              @input="setMapelDiniyah(lemb, $event.target.value)"
               rows="2"
               :placeholder="`Default: ${DEFAULT_MAPEL_DINIYAH} (kalau kosong)`"
               class="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-800 dark:text-white resize-none"
+              @input="setMapelDiniyah(lemb, $event.target.value)"
             ></textarea>
             <p class="text-[10px] text-slate-400 italic mt-1">
               <i class="fas fa-info-circle mr-1"></i>Contoh: Nahwu, Fiqh, Tafsir, Akhlaq
@@ -1256,9 +1256,9 @@ async function simpanPengaturanRekap() {
       </div>
 
       <button
-        @click="simpanPengaturanRekap"
         :disabled="savingRekap || lembagaDiniyah.length === 0"
         class="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-black py-3 rounded-xl shadow-md disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
+        @click="simpanPengaturanRekap"
       >
         <i :class="['fas', savingRekap ? 'fa-spinner fa-spin' : 'fa-save']"></i>
         {{ savingRekap ? 'Menyimpan...' : 'SIMPAN PENGATURAN REKAP' }}
@@ -1290,16 +1290,16 @@ async function simpanPengaturanRekap() {
           class="flex-1 px-3 py-2 text-sm rounded-lg border border-cyan-300 bg-white dark:bg-slate-900 text-slate-800 dark:text-white"
         />
         <button
-          @click="simpanTp"
           :disabled="savingTp"
           class="bg-cyan-600 hover:bg-cyan-700 text-white text-sm font-bold px-4 py-2 rounded-lg disabled:opacity-50"
+          @click="simpanTp"
         >
           <i class="fas fa-save mr-1"></i>{{ tpForm.idx !== null ? 'Update' : 'Tambah' }}
         </button>
         <button
           v-if="tpForm.idx !== null"
-          @click="resetTp"
           class="bg-slate-300 hover:bg-slate-400 text-slate-700 text-sm font-bold px-3 py-2 rounded-lg"
+          @click="resetTp"
         >
           Batal
         </button>
@@ -1327,26 +1327,26 @@ async function simpanPengaturanRekap() {
           <div class="flex gap-1">
             <button
               v-if="tp !== tpAktif"
-              @click="setTpAktif(tp)"
               aria-label="Set sebagai TP Aktif"
               title="Set sebagai TP Aktif"
               class="text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 px-2 py-1 rounded text-xs font-bold"
+              @click="setTpAktif(tp)"
             >
               <i class="fas fa-check"></i>
             </button>
             <button
-              @click="editTp(idx)"
               aria-label="Edit Tahun Pelajaran"
               title="Edit Tahun Pelajaran"
               class="text-cyan-600 hover:bg-cyan-50 dark:hover:bg-cyan-900/30 px-2 py-1 rounded text-xs"
+              @click="editTp(idx)"
             >
               <i class="fas fa-edit"></i>
             </button>
             <button
-              @click="hapusTp(idx)"
               aria-label="Hapus Tahun Pelajaran"
               title="Hapus Tahun Pelajaran"
               class="text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 px-2 py-1 rounded text-xs"
+              @click="hapusTp(idx)"
             >
               <i class="fas fa-times"></i>
             </button>
@@ -1375,16 +1375,16 @@ async function simpanPengaturanRekap() {
           class="flex-1 px-3 py-2 text-sm rounded-lg border border-teal-300 bg-white dark:bg-slate-900 text-slate-800 dark:text-white"
         />
         <button
-          @click="simpanGedung"
           :disabled="savingGedung"
           class="bg-teal-600 hover:bg-teal-700 text-white text-sm font-bold px-4 py-2 rounded-lg disabled:opacity-50"
+          @click="simpanGedung"
         >
           <i class="fas fa-save mr-1"></i>{{ gedungForm.idx !== null ? 'Update' : 'Tambah' }}
         </button>
         <button
           v-if="gedungForm.idx !== null"
-          @click="resetGedung"
           class="bg-slate-300 hover:bg-slate-400 text-slate-700 text-sm font-bold px-3 py-2 rounded-lg"
+          @click="resetGedung"
         >
           Batal
         </button>
@@ -1400,18 +1400,18 @@ async function simpanPengaturanRekap() {
           </span>
           <div class="flex gap-1">
             <button
-              @click="editGedung(idx)"
               aria-label="Edit Gedung"
               title="Edit Gedung"
               class="text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/30 px-2 py-1 rounded text-xs"
+              @click="editGedung(idx)"
             >
               <i class="fas fa-edit"></i>
             </button>
             <button
-              @click="hapusGedung(idx)"
               aria-label="Hapus Gedung"
               title="Hapus Gedung"
               class="text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 px-2 py-1 rounded text-xs"
+              @click="hapusGedung(idx)"
             >
               <i class="fas fa-times"></i>
             </button>
@@ -1445,9 +1445,9 @@ async function simpanPengaturanRekap() {
             </p>
           </div>
           <button
-            @click="scanNis"
             :disabled="nisGenerating"
             class="px-3 py-1.5 bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white text-xs font-black rounded-lg whitespace-nowrap"
+            @click="scanNis"
           >
             <i class="fas fa-magnifying-glass mr-1"></i>Pratinjau
           </button>
@@ -1498,9 +1498,9 @@ async function simpanPengaturanRekap() {
           </div>
           <div class="flex items-center gap-2 flex-wrap">
             <button
-              @click="applyNis"
               :disabled="nisGenerating || !nisChangedCount"
               class="px-4 py-2 bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white text-xs font-black rounded-lg"
+              @click="applyNis"
             >
               <i :class="['fas', nisGenerating ? 'fa-spinner fa-spin' : 'fa-check', 'mr-1']"></i
               >{{
@@ -1510,9 +1510,9 @@ async function simpanPengaturanRekap() {
               }}
             </button>
             <button
-              @click="nisPlan = null"
               :disabled="nisGenerating"
               class="px-3 py-2 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-lg"
+              @click="nisPlan = null"
             >
               Batal
             </button>
@@ -1542,9 +1542,9 @@ async function simpanPengaturanRekap() {
             </p>
           </div>
           <button
-            @click="scanNig"
             :disabled="nigGenerating"
             class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-xs font-black rounded-lg whitespace-nowrap"
+            @click="scanNig"
           >
             <i class="fas fa-magnifying-glass mr-1"></i>Pratinjau
           </button>
@@ -1595,9 +1595,9 @@ async function simpanPengaturanRekap() {
           </div>
           <div class="flex items-center gap-2 flex-wrap">
             <button
-              @click="applyNig"
               :disabled="nigGenerating || !nigChangedCount"
               class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-xs font-black rounded-lg"
+              @click="applyNig"
             >
               <i :class="['fas', nigGenerating ? 'fa-spinner fa-spin' : 'fa-check', 'mr-1']"></i
               >{{
@@ -1607,9 +1607,9 @@ async function simpanPengaturanRekap() {
               }}
             </button>
             <button
-              @click="nigPlan = null"
               :disabled="nigGenerating"
               class="px-3 py-2 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-lg"
+              @click="nigPlan = null"
             >
               Batal
             </button>
@@ -1650,22 +1650,22 @@ async function simpanPengaturanRekap() {
         </div>
         <div class="flex flex-wrap items-center gap-2">
           <button
-            @click="showDupDetail = !showDupDetail"
             class="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-black rounded-lg"
+            @click="showDupDetail = !showDupDetail"
           >
             <i class="fas fa-search mr-1"></i
             >{{ showDupDetail ? 'Sembunyikan Detail' : 'Lihat Detail' }}
           </button>
           <button
-            @click="dedupeDryRun"
             class="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-black rounded-lg"
+            @click="dedupeDryRun"
           >
             <i class="fas fa-vial mr-1"></i>Dry-Run Migrate
           </button>
           <button
-            @click="dedupeExecute"
             :disabled="dedupeRunning || !dedupeScan || dedupeScan.total === 0"
             class="px-3 py-1.5 bg-rose-700 hover:bg-rose-800 disabled:opacity-50 text-white text-xs font-black rounded-lg"
+            @click="dedupeExecute"
           >
             <i class="fas fa-code-merge mr-1"></i
             >{{
@@ -1702,7 +1702,7 @@ async function simpanPengaturanRekap() {
           >
             <i class="fas fa-circle-check mr-1"></i>Tidak ada duplikat terdeteksi.
           </p>
-          <div v-for="kat in dupKategori" :key="kat.label" v-show="kat.groups.length">
+          <div v-for="kat in dupKategori" v-show="kat.groups.length" :key="kat.label">
             <p class="text-xs font-black text-slate-800 dark:text-white mb-1">
               {{ kat.label }} ({{ kat.groups.length }})
             </p>
@@ -1715,10 +1715,10 @@ async function simpanPengaturanRekap() {
                 <p class="font-bold text-rose-700 dark:text-rose-300">{{ g.count }}× sama:</p>
                 <!-- v.100 Batch9: gabung manual per-grup (utk grup yang auto-Migrate tolak, mis. NIS beda) -->
                 <button
-                  @click="gabungGrupManual(kat, g)"
                   :disabled="manualMerging !== ''"
                   class="px-2.5 py-1 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white text-[11px] font-black rounded-lg"
                   title="Gabung grup ini ke record terlengkap (lewati guard identitas — keputusan manual)"
+                  @click="gabungGrupManual(kat, g)"
                 >
                   <i class="fas fa-code-merge mr-1"></i
                   >{{
@@ -1764,15 +1764,15 @@ async function simpanPengaturanRekap() {
         </div>
         <div class="flex flex-wrap items-center gap-2">
           <button
-            @click="lfixScan"
             class="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-black rounded-lg"
+            @click="lfixScan"
           >
             <i class="fas fa-magnifying-glass mr-1"></i>Scan Salah Impor
           </button>
           <button
-            @click="lfixApply"
             :disabled="lfixRunning || !lfixFindings || lfixSelectedCount === 0"
             class="px-3 py-1.5 bg-amber-700 hover:bg-amber-800 disabled:opacity-50 text-white text-xs font-black rounded-lg"
+            @click="lfixApply"
           >
             <i class="fas fa-wand-magic-sparkles mr-1"></i
             >{{
@@ -1798,8 +1798,8 @@ async function simpanPengaturanRekap() {
             class="flex items-start gap-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-2 text-xs cursor-pointer"
           >
             <input
-              type="checkbox"
               v-model="lfixChecked[lfixKey(f)]"
+              type="checkbox"
               class="mt-0.5 accent-amber-600"
             />
             <span class="flex-1 min-w-0">
@@ -1810,9 +1810,9 @@ async function simpanPengaturanRekap() {
             <select
               v-if="f.type === 'kelas_lembaga'"
               v-model="f.saranLembaga"
-              @click.stop
               class="text-[11px] px-2 py-1 rounded-lg border border-amber-300 dark:border-amber-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white flex-shrink-0"
               title="Lembaga tujuan (bisa diubah)"
+              @click.stop
             >
               <option v-for="o in LEMBAGA_QIRAATI_OPSI" :key="o" :value="o">{{ o }}</option>
             </select>
@@ -1863,13 +1863,13 @@ async function simpanPengaturanRekap() {
           >
             <button
               type="button"
-              @click="g.items.length && toggleHealth(g.key)"
               :class="[
                 'w-full flex items-center gap-2 px-3 py-2 text-left',
                 g.items.length
                   ? 'cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900/30'
                   : 'cursor-default'
               ]"
+              @click="g.items.length && toggleHealth(g.key)"
             >
               <span
                 v-if="g.items.length"
@@ -1935,8 +1935,8 @@ async function simpanPengaturanRekap() {
             </p>
             <button
               v-if="totalFuzzy"
-              @click="showFuzzy = !showFuzzy"
               class="text-[11px] font-bold text-amber-700 dark:text-amber-300 hover:underline"
+              @click="showFuzzy = !showFuzzy"
             >
               {{ showFuzzy ? 'Sembunyikan' : 'Lihat' }}
             </button>
@@ -1962,10 +1962,10 @@ async function simpanPengaturanRekap() {
                   >
                 </p>
                 <button
-                  @click="gabungFuzzy(grp)"
                   :disabled="fuzzyMerging !== ''"
                   class="px-2 py-0.5 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white text-[10px] font-black rounded-md"
                   title="Gabung record yang dicentang ke yang terlengkap (keputusan manual, lewati guard identitas)"
+                  @click="gabungFuzzy(grp)"
                 >
                   <i class="fas fa-code-merge mr-1"></i
                   >{{ fuzzyMerging === fuzzyGrpKey(grp) ? 'Menggabung…' : 'Gabung yang dicentang' }}
@@ -1980,8 +1980,8 @@ async function simpanPengaturanRekap() {
                   <input
                     type="checkbox"
                     :checked="fuzzyChecked[it.id] !== false"
-                    @change="fuzzyChecked[it.id] = $event.target.checked"
                     class="mt-0.5 accent-rose-600 cursor-pointer"
+                    @change="fuzzyChecked[it.id] = $event.target.checked"
                   />
                   <span
                     ><span class="font-bold">{{ it.nama }}</span>

@@ -115,8 +115,8 @@
           <i class="fas fa-calendar-minus text-cyan-600 mr-2"></i>Perizinan &amp; Cuti
         </h3>
         <button
-          @click="openIzinForm"
           class="text-[11px] font-bold bg-cyan-600 hover:bg-cyan-700 text-white px-3 py-1.5 rounded-lg transition cursor-pointer"
+          @click="openIzinForm"
         >
           <i class="fas fa-plus mr-1"></i>Ajukan
         </button>
@@ -167,8 +167,8 @@
             >
             <button
               v-if="a.status === 'diajukan'"
-              @click="batalIzin(a)"
               class="text-[10px] font-bold text-rose-600 hover:underline"
+              @click="batalIzin(a)"
             >
               Batalkan
             </button>
@@ -238,16 +238,16 @@
           >
           <div class="flex gap-2 mt-2">
             <button
-              @click="setujuiIzin(a)"
               :disabled="izinBusyId === a.id"
               class="flex-1 text-[11px] font-black bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white px-3 py-1.5 rounded-lg"
+              @click="setujuiIzin(a)"
             >
               <i class="fas fa-check mr-1"></i>Setujui
             </button>
             <button
-              @click="tolakIzin(a)"
               :disabled="izinBusyId === a.id"
               class="text-[11px] font-black bg-[var(--bg-muted)] text-rose-600 border border-[var(--border-subtle)] px-3 py-1.5 rounded-lg"
+              @click="tolakIzin(a)"
             >
               <i class="fas fa-times mr-1"></i>Tolak
             </button>
@@ -288,9 +288,9 @@
               {{ fmtRp(g.take_home || 0) }}
             </p>
             <button
-              @click="openSlip(g)"
               class="w-8 h-8 rounded-lg bg-teal-100 hover:bg-teal-200 dark:bg-teal-900/40 dark:hover:bg-teal-900/60 text-teal-700 dark:text-teal-300 flex items-center justify-center transition cursor-pointer"
               title="Lihat detail slip"
+              @click="openSlip(g)"
             >
               <i class="fas fa-eye text-xs"></i>
             </button>
@@ -317,8 +317,8 @@
               <h3 class="text-lg font-black !text-white mt-0.5">{{ slipDetail?.periode }}</h3>
             </div>
             <button
-              @click="slipOpen = false"
               class="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition cursor-pointer"
+              @click="slipOpen = false"
             >
               <i class="fas fa-times"></i>
             </button>
@@ -421,8 +421,8 @@
             <i class="fas fa-calendar-minus text-cyan-600 mr-1.5"></i>Ajukan Izin / Sakit / Cuti
           </h3>
           <button
-            @click="izinFormOpen = false"
             class="text-[var(--text-tertiary)] hover:text-rose-600"
+            @click="izinFormOpen = false"
           >
             <i class="fas fa-times"></i>
           </button>
@@ -479,8 +479,8 @@
                 >Mulai</label
               >
               <input
-                type="date"
                 v-model="izinForm.tgl_mulai"
+                type="date"
                 class="w-full px-2.5 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] outline-none focus:ring-2 focus:ring-cyan-500"
               />
             </div>
@@ -490,8 +490,8 @@
                 >Selesai</label
               >
               <input
-                type="date"
                 v-model="izinForm.tgl_selesai"
+                type="date"
                 :min="izinForm.tgl_mulai"
                 class="w-full px-2.5 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] outline-none focus:ring-2 focus:ring-cyan-500"
               />
@@ -506,13 +506,13 @@
                 v-for="sh in izinShiftOptions"
                 :key="sh.id"
                 type="button"
-                @click="toggleIzinShift(sh.id)"
                 :class="[
                   'px-3 py-1.5 text-xs font-bold rounded-lg border transition cursor-pointer',
                   izinForm.shifts.includes(sh.id)
                     ? 'bg-cyan-600 text-white border-cyan-600'
                     : 'bg-[var(--bg-card-elevated)] text-[var(--text-secondary)] border-[var(--border-default)]'
                 ]"
+                @click="toggleIzinShift(sh.id)"
               >
                 {{ sh.label }}
               </button>
@@ -541,8 +541,8 @@
             <input
               type="file"
               accept="image/*,application/pdf"
-              @change="onPickLampiran"
               class="block w-full text-[11px] text-[var(--text-secondary)] file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-[11px] file:font-bold file:bg-cyan-50 file:text-cyan-700 cursor-pointer"
+              @change="onPickLampiran"
             />
             <p v-if="izinForm.lampiran_name" class="text-[10px] text-emerald-600 mt-1">
               <i class="fas fa-paperclip mr-1"></i>{{ izinForm.lampiran_name }}
@@ -554,15 +554,15 @@
         </div>
         <div class="p-4 border-t border-[var(--border-subtle)] flex justify-end gap-2">
           <button
-            @click="izinFormOpen = false"
             class="px-4 py-2 text-xs font-bold rounded-lg bg-[var(--bg-muted)] text-[var(--text-secondary)]"
+            @click="izinFormOpen = false"
           >
             Batal
           </button>
           <button
-            @click="submitIzin"
             :disabled="izinBusy"
             class="px-4 py-2 text-xs font-black rounded-lg bg-cyan-600 hover:bg-cyan-700 text-white disabled:opacity-50"
+            @click="submitIzin"
           >
             <i :class="['fas', izinBusy ? 'fa-spinner fa-spin' : 'fa-paper-plane', 'mr-1']"></i
             >Kirim
@@ -641,21 +641,21 @@
             <div class="flex gap-2 flex-wrap">
               <button
                 v-if="(s.status || 'open') === 'open'"
-                @click="updateSupervisiStatus(s, 'in_progress')"
                 class="text-[10px] font-bold bg-cyan-100 text-cyan-700 px-2.5 py-1 rounded-lg hover:bg-cyan-200"
+                @click="updateSupervisiStatus(s, 'in_progress')"
               >
                 <i class="fas fa-play mr-1"></i>Tandai Diproses
               </button>
               <button
-                @click="updateSupervisiStatus(s, 'selesai')"
                 class="text-[10px] font-bold bg-emerald-100 text-emerald-700 px-2.5 py-1 rounded-lg hover:bg-emerald-200"
+                @click="updateSupervisiStatus(s, 'selesai')"
               >
                 <i class="fas fa-check mr-1"></i>Tandai Selesai
               </button>
               <button
                 v-if="(responText[s.id] || '').trim()"
-                @click="kirimRespon(s)"
                 class="text-[10px] font-bold bg-cyan-600 text-white px-2.5 py-1 rounded-lg hover:bg-cyan-700"
+                @click="kirimRespon(s)"
               >
                 <i class="fas fa-paper-plane mr-1"></i>Kirim Tanggapan
               </button>

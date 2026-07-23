@@ -38,8 +38,8 @@
       <div
         v-if="isAdminMode"
         class="bg-gradient-to-br from-cyan-500 dark:from-cyan-700 to-cyan-700 dark:to-cyan-900 rounded-xl p-3 md:p-4 shadow-sm text-white cursor-pointer hover:brightness-95 transition"
-        @click="showKelasDetail = !showKelasDetail"
         title="Klik untuk rincian kelas"
+        @click="showKelasDetail = !showKelasDetail"
       >
         <i class="fas fa-door-open text-lg md:text-xl text-white/90"></i>
         <p class="text-2xl md:text-3xl font-black mt-1">{{ kelasCount }}</p>
@@ -63,16 +63,16 @@
         <div class="flex items-center gap-2">
           <button
             type="button"
-            @click="bersihkanGuruInvalid"
             :disabled="bersihRunning"
             class="text-[11px] font-bold text-white bg-rose-600 hover:bg-rose-700 disabled:opacity-50 px-3 py-1.5 rounded-lg"
+            @click="bersihkanGuruInvalid"
           >
             <i class="fas fa-broom mr-1"></i>Bersihkan guru invalid
           </button>
           <button
             type="button"
-            @click="showKelasDetail = false"
             class="text-[var(--text-tertiary)] hover:text-rose-600"
+            @click="showKelasDetail = false"
           >
             <i class="fas fa-times"></i>
           </button>
@@ -124,9 +124,9 @@
         <div
           v-for="lem in statistikLembaga"
           :key="lem.nama"
-          @click="goLembagaDetail(lem.nama)"
           class="bg-[var(--bg-card)] p-4 rounded-2xl border border-[var(--border-subtle)] shadow-sm border-l-4 border-l-teal-500 hover:shadow-md hover:-translate-y-0.5 transition cursor-pointer"
           title="Klik untuk buka data kelas (guru + santri)"
+          @click="goLembagaDetail(lem.nama)"
         >
           <h4
             class="font-black text-[var(--text-primary)] text-sm uppercase tracking-wider mb-3 flex items-center justify-between gap-2"

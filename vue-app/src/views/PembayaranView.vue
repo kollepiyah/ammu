@@ -26,15 +26,15 @@
       <div class="flex items-center gap-1.5 min-w-0">
         <button
           v-if="mode === 'flow' && step === 'bayar'"
-          @click="step = 'metode'"
           class="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-black text-cyan-700 hover:bg-cyan-50 dark:hover:bg-cyan-900/30 transition cursor-pointer"
+          @click="step = 'metode'"
         >
           <i class="fas fa-chevron-left"></i>Pilih metode
         </button>
         <button
           v-else-if="mode === 'riwayat'"
-          @click="mode = 'flow'"
           class="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-black text-cyan-700 hover:bg-cyan-50 dark:hover:bg-cyan-900/30 transition cursor-pointer"
+          @click="mode = 'flow'"
         >
           <i class="fas fa-chevron-left"></i>Pembayaran
         </button>
@@ -44,16 +44,16 @@
       </div>
       <button
         v-if="mode === 'flow'"
-        @click="mode = 'riwayat'"
         class="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-black text-[var(--text-secondary)] hover:bg-slate-50 dark:hover:bg-slate-700/40 transition cursor-pointer"
         aria-label="Lihat riwayat pembayaran"
+        @click="mode = 'riwayat'"
       >
         <i class="fas fa-history"></i>Riwayat
       </button>
       <button
         v-else
-        @click="mode = 'flow'"
         class="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-black text-cyan-700 hover:bg-cyan-50 dark:hover:bg-cyan-900/30 transition cursor-pointer"
+        @click="mode = 'flow'"
       >
         <i class="fas fa-credit-card"></i>Bayar
       </button>
@@ -141,10 +141,10 @@
               <p class="text-sm font-black text-emerald-700">{{ fmtRp(p.nominal) }}</p>
             </div>
             <button
-              @click="openReceipt(p)"
               aria-label="Lihat bukti pembayaran"
               title="Lihat bukti pembayaran"
               class="w-8 h-8 flex-shrink-0 rounded-full border border-[var(--border-default)] text-cyan-600 hover:bg-cyan-50 dark:hover:bg-cyan-900/30 flex items-center justify-center transition cursor-pointer"
+              @click="openReceipt(p)"
             >
               <i class="fas fa-eye text-xs"></i>
             </button>
@@ -183,7 +183,6 @@
         <button
           v-for="m in methodsSantri"
           :key="m.id"
-          @click="pilihMetode(m.id)"
           :disabled="!m.active"
           :class="[
             'w-full flex items-center gap-3 p-3 rounded-xl border text-left transition',
@@ -193,6 +192,7 @@
                 ? 'border-2 border-cyan-500 bg-cyan-50/40 dark:bg-cyan-900/20 cursor-pointer'
                 : 'border-[var(--border-default)] hover:border-cyan-300 cursor-pointer'
           ]"
+          @click="pilihMetode(m.id)"
         >
           <i
             :class="[
@@ -220,8 +220,8 @@
       </div>
 
       <button
-        @click="lanjutBayar"
         class="w-full px-5 py-3 bg-cyan-600 hover:bg-cyan-700 text-white font-black rounded-xl text-sm shadow-md transition cursor-pointer"
+        @click="lanjutBayar"
       >
         <i class="fas fa-arrow-right mr-1"></i>Lanjut
       </button>
@@ -244,9 +244,9 @@
             {{ rekInfo.bank_nomor || '— Nomor —' }}
             <button
               v-if="rekInfo.bank_nomor"
-              @click="copyToClipboard(rekInfo.bank_nomor)"
               class="ml-2 px-2 py-1 text-xs bg-white/20 hover:bg-white/30 rounded-lg backdrop-blur transition cursor-pointer"
               :title="'Salin nomor rekening'"
+              @click="copyToClipboard(rekInfo.bank_nomor)"
             >
               <i class="fas fa-copy"></i>
             </button>
@@ -354,9 +354,9 @@
             <input
               type="file"
               accept="image/*,.pdf"
-              @change="onPickBukti"
               :disabled="transferForm.uploading"
               class="w-full text-sm file:mr-3 file:px-4 file:py-2 file:rounded-lg file:border-0 file:bg-cyan-600 file:text-white file:text-xs file:font-bold file:cursor-pointer hover:file:bg-cyan-700"
+              @change="onPickBukti"
             />
             <p class="text-[10px] text-[var(--text-secondary)] italic mt-1">
               JPG / PNG / PDF, maks 2 MB. Pastikan foto bukti jelas terbaca.
@@ -382,9 +382,9 @@
         </div>
         <div class="mt-4 flex justify-end">
           <button
-            @click="submitTransfer"
             :disabled="transferForm.uploading"
             class="px-5 py-2.5 bg-cyan-600 hover:bg-cyan-700 disabled:opacity-50 text-white font-black rounded-xl text-sm shadow-md transition cursor-pointer"
+            @click="submitTransfer"
           >
             <i
               :class="[
@@ -500,8 +500,8 @@
               <input
                 type="checkbox"
                 :checked="isCarted(t)"
-                @change="toggleCart(t)"
                 class="w-4 h-4 accent-indigo-600 flex-shrink-0"
+                @change="toggleCart(t)"
               />
               <div class="flex-1 min-w-0">
                 <p class="text-xs font-bold text-[var(--text-primary)] truncate">
@@ -514,12 +514,12 @@
               <input
                 v-if="isCarted(t)"
                 :value="cartSel[t.id]"
-                @input="setCartNominal(t, $event.target.value)"
-                @click.prevent.stop
                 type="number"
                 min="0"
                 :max="getSisaVa(t)"
                 class="w-28 px-2 py-1 text-xs text-right font-bold rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)] text-[var(--text-primary)] flex-shrink-0"
+                @input="setCartNominal(t, $event.target.value)"
+                @click.prevent.stop
               />
             </label>
           </div>
@@ -549,9 +549,9 @@
               <p class="text-xl font-black text-[var(--text-primary)]">{{ fmtRp(cartTotal) }}</p>
             </div>
             <button
-              @click="buatTagihanVa"
               :disabled="cartTotal <= 0 || creatingIntent"
               class="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-black transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              @click="buatTagihanVa"
             >
               <i class="fas fa-plus-circle mr-1"></i
               >{{ creatingIntent ? 'Membuat...' : 'Buat Tagihan VA' }}
@@ -569,9 +569,9 @@
           <p class="text-2xl md:text-3xl font-black mt-1 tracking-wider drop-shadow break-all">
             {{ formatVa(vaNumber) }}
             <button
-              @click="copyToClipboard(vaNumber)"
               class="ml-2 px-2 py-1 text-xs bg-white/20 hover:bg-white/30 rounded-lg backdrop-blur transition cursor-pointer align-middle"
               :title="'Salin nomor VA'"
+              @click="copyToClipboard(vaNumber)"
             >
               <i class="fas fa-copy"></i>
             </button>
@@ -617,8 +617,8 @@
                 >
                 <button
                   v-if="i.status === 'pending'"
-                  @click="batalIntent(i)"
                   class="text-[10px] font-bold text-rose-600 hover:underline cursor-pointer"
+                  @click="batalIntent(i)"
                 >
                   Batalkan
                 </button>
@@ -634,7 +634,7 @@
           <i class="fas fa-info-circle mr-1"></i>
           <strong>Konfirmasi otomatis ({{ bmtNama || 'BMT PETA' }})</strong> — integrasi konfirmasi
           BMT sedang disiapkan. Jika butuh segera, sementara bisa pakai metode
-          <button @click="step = 'metode'" class="font-black underline cursor-pointer">
+          <button class="font-black underline cursor-pointer" @click="step = 'metode'">
             Transfer Bank</button
           >.
         </div>
