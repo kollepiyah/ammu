@@ -9,7 +9,7 @@
     "build": "vite build",
     "build:electron": "vite build --base=./",
     "preview": "vite preview",
-    "lint": "eslint src/ --ext .vue,.js"
+    "lint": "eslint src/"
   },
   "dependencies": {
     "@capacitor-firebase/app-check": "^8.3.0",
