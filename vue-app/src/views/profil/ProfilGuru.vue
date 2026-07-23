@@ -437,7 +437,15 @@
 
     <!-- v.21.26.0526: Section Kaitkan Akun Google DIHAPUS — duplikat dgn card di Pengaturan Profil grid -->
 
-    <ProfilPengaturanSaya v-if="!readonly" role="guru" :entity-id="guru?.id" :entity="guru" />
+    <!-- v.1.2.2: teruskan 'updated' ke ProfilView (pemilik objek guru) — dulu
+         ProfilPengaturanSaya memutasi prop `entity` langsung. -->
+    <ProfilPengaturanSaya
+      v-if="!readonly"
+      role="guru"
+      :entity-id="guru?.id"
+      :entity="guru"
+      @updated="$emit('updated', $event)"
+    />
   </div>
 </template>
 
@@ -446,9 +454,7 @@ import { computed, ref, watch } from 'vue'
 import { updateOne } from '@/services/db'
 import { getNamaGuruGelar, formatTanggal, hitungLamaMengajar } from '@/utils/format'
 import ProfilPengaturanSaya from './ProfilPengaturanSaya.vue'
-import { linkGoogleAccount, unlinkGoogleAccount } from '@/services/authSupabase'
 import { useToast } from '@/composables/useToast'
-import { useConfirm } from '@/composables/useConfirm'
 
 // v.79.0526: mode tab + edit profil pribadi guru
 const mode = ref('view')
@@ -469,52 +475,27 @@ const props = defineProps({
   guru: { type: Object, required: true },
   readonly: { type: Boolean, default: false }
 })
+// v.1.2.2: diteruskan dari ProfilPengaturanSaya ke ProfilView (pemilik objek guru).
+// Payload = patch parsial, mis. { foto: url }.
+defineEmits(['updated'])
 
 const toast = useToast()
-const confirmDlg = useConfirm()
-const linkBusy = ref(false)
 
-async function handleLinkGoogle() {
-  if (!props.guru?.id) return
-  linkBusy.value = true
-  try {
-    const res = await linkGoogleAccount('guru', props.guru.id)
-    if (props.guru) {
-      props.guru.linked_uid = res.uid
-      props.guru.linked_email = res.email
-    }
-    toast.success(`Akun ${res.email || 'Google'} berhasil dikaitkan`)
-  } catch (e) {
-    if (e?.code === 'auth/popup-closed-by-user') return
-    toast.error('Gagal kaitkan: ' + (e.message || e))
-  } finally {
-    linkBusy.value = false
-  }
-}
-
-async function handleUnlinkGoogle() {
-  if (!props.guru?.id) return
-  const ok = await confirmDlg({
-    title: 'Lepas kaitan Google?',
-    message: `Akun Google "${props.guru.linked_email || props.guru.linked_uid}" akan dilepas.`,
-    confirmText: 'Lepas',
-    danger: true
-  })
-  if (!ok) return
-  linkBusy.value = true
-  try {
-    await unlinkGoogleAccount('guru', props.guru.id)
-    if (props.guru) {
-      props.guru.linked_uid = null
-      props.guru.linked_email = null
-    }
-    toast.success('Akun Google dilepas')
-  } catch (e) {
-    toast.error('Gagal lepas: ' + (e.message || e))
-  } finally {
-    linkBusy.value = false
-  }
-}
+// v.1.2.2 (audit 23 Jul 2026): handleLinkGoogle & handleUnlinkGoogle DIHAPUS —
+// kode mati. Section "Kaitkan Akun Google" sudah dicabut dari template di
+// v.21.26.0526 (lihat komentar di atas </template>) karena duplikat dengan card
+// di Pengaturan Profil, tapi kedua handler-nya tertinggal dan tak pernah lagi
+// dipanggil dari mana pun. Kaitkan/lepas Google yang SUNGGUH dipakai ada di
+// ProfilPengaturanSaya.vue.
+//
+// Sekalian membuang dua cacat yang mengendap di dalamnya:
+//   · `linkGoogleAccount('guru', id)` — fungsinya tak menerima parameter apa pun
+//     dan mengembalikan {} kosong (ia me-REDIRECT ke Google; tautan baru aktif
+//     saat kembali). Jadi `res.uid`/`res.email` selalu undefined, dan baris
+//     berikutnya menuliskan undefined itu ke objek guru.
+//   · Menulis ke props.guru = mutasi prop (vue/no-mutating-props). Kebetulan
+//     "berhasil" karena objeknya dilewatkan by-reference, tapi rapuh: perubahan
+//     tak melewati pemiliknya dan bisa tertimpa saat parent me-render ulang.
 
 const namaGelar = computed(() => getNamaGuruGelar(props.guru?.nama, props.guru?.jk))
 // v.101: sembunyikan " - lembaga" kalau guru tak punya lembaga (jangan tampil "Jabatan - -")

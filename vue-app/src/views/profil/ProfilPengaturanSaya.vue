@@ -519,13 +519,17 @@ async function simpanFoto() {
     }
     // v.108: avatar pita/greeting update SEKETIKA tanpa refresh (sesiAktif.foto reaktif)
     authStore.updateSesiFoto(url)
-    // v.108: foto BESAR di halaman profil baca props.entity.foto (objek guru/santri parent).
-    //   Mutasi langsung supaya reflect tanpa refresh (pola sama Object.assign(props.guru) di
-    //   ProfilGuru). Admin pakai settings.adminFoto (sudah di-set di atas).
-    if (props.entity && props.role !== 'admin') props.entity.foto = url
     toast.success('Foto profil diupdate')
     closeModal()
-    emit('updated')
+    // v.1.2.2 (audit 23 Jul 2026): foto BESAR di halaman profil dibaca dari objek
+    //   guru/santri milik ProfilView. DULU di sini `props.entity.foto = url` —
+    //   mutasi prop (vue/no-mutating-props): kebetulan jalan karena objeknya
+    //   dilewatkan by-reference, tapi perubahan tak melewati pemiliknya dan bisa
+    //   tertimpa saat parent me-render ulang. Sekarang patch-nya dikirim ke atas
+    //   lewat 'updated' — ProfilGuru/ProfilSantri meneruskan, ProfilView yang
+    //   menyalin ke datanya. Admin tak ikut: fotonya di settings.adminFoto
+    //   (sudah di-set di atas), bukan di objek entity.
+    emit('updated', props.role !== 'admin' ? { foto: url } : undefined)
   } catch (e) {
     toast.error('Upload gagal: ' + (e.message || e))
   } finally {

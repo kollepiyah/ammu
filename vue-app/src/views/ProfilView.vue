@@ -28,10 +28,14 @@
     <ProfilAdmin v-else-if="isBuiltInAdmin && !guru && !santri" />
 
     <!-- Role: Guru (atau guru yang promoted super_admin / admin_keuangan) -->
-    <ProfilGuru v-else-if="guru" :guru="guru" />
+    <ProfilGuru v-else-if="guru" :guru="guru" @updated="onProfilUpdated('guru', $event)" />
 
     <!-- Role: Santri -->
-    <ProfilSantri v-else-if="role === 'santri' && santri" :santri="santri" />
+    <ProfilSantri
+      v-else-if="role === 'santri' && santri"
+      :santri="santri"
+      @updated="onProfilUpdated('santri', $event)"
+    />
 
     <!-- Fallback: no data found for this user -->
     <div
@@ -67,6 +71,26 @@ const guru = ref(null)
 const santri = ref(null)
 const loading = ref(true)
 const error = ref(null)
+
+/**
+ * v.1.2.2 (audit 23 Jul 2026) — terima patch dari ProfilPengaturanSaya, yang
+ * meneruskannya lewat ProfilGuru/ProfilSantri. Dipakai supaya foto profil BESAR
+ * ikut berubah seketika tanpa refresh.
+ *
+ * View inilah PEMILIK objek guru/santri (diisi getOne di loadProfil), jadi di
+ * sinilah tempat yang sah mengubahnya. Sebelumnya ProfilPengaturanSaya menulis
+ * langsung ke props.entity — mutasi prop yang kebetulan jalan karena objeknya
+ * by-reference, tapi rapuh dan dilarang vue/no-mutating-props.
+ *
+ * Objeknya DIGANTI (bukan diubah field-nya) supaya pembaca yang memegang
+ * referensi lama ikut ter-render ulang. Patch kosong/undefined diabaikan —
+ * 'updated' juga dipancarkan oleh aksi lain yang tak membawa muatan.
+ */
+function onProfilUpdated(tipe, patch) {
+  if (!patch || typeof patch !== 'object') return
+  const target = tipe === 'guru' ? guru : santri
+  if (target.value) target.value = { ...target.value, ...patch }
+}
 
 async function loadProfil() {
   loading.value = true

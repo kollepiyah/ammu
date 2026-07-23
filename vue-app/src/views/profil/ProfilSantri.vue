@@ -486,7 +486,15 @@
         </div>
       </div>
     </div>
-    <ProfilPengaturanSaya v-if="!readonly" role="santri" :entity-id="santri?.id" :entity="santri" />
+    <!-- v.1.2.2: teruskan 'updated' ke ProfilView (pemilik objek santri) — dulu
+         ProfilPengaturanSaya memutasi prop `entity` langsung. -->
+    <ProfilPengaturanSaya
+      v-if="!readonly"
+      role="santri"
+      :entity-id="santri?.id"
+      :entity="santri"
+      @updated="$emit('updated', $event)"
+    />
   </div>
 </template>
 
@@ -502,6 +510,9 @@ const props = defineProps({
   santri: { type: Object, required: true },
   readonly: { type: Boolean, default: false }
 })
+// v.1.2.2: diteruskan dari ProfilPengaturanSaya ke ProfilView (pemilik objek santri).
+// Payload = patch parsial, mis. { foto: url }.
+defineEmits(['updated'])
 const toast = useToast()
 const mode = ref('view')
 const isSaving = ref(false)
