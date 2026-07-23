@@ -159,3 +159,14 @@ tmp_recovery/_stat_preview.png
 
 # public/psb = artefak deploy (di-regenerate Step 0d deploy-minified dari vue-app-psb)
 public/psb/
+
+# === Audit 23 Jul 2026 (v.1.2.2) — timbunan lama dilepas dari git ===============
+# 1.158 berkas (58% dari yang terlacak) berupa build mati, salinan pemulihan, dan
+# cadangan. Berkasnya TETAP ada di disk dan TETAP tersimpan di riwayat git — bila
+# suatu saat perlu:  git checkout ffd59d6 -- <path>
+public/vue.old/                    # build era-Firestore, sudah mati (lihat legacy-redirect)
+tmp_recovery/                      # sisa pemulihan git reset, sudah tak relevan
+vue-app/src.minimal-backup-v21.32/ # cadangan src v21.32
+backup-live/                       # cadangan berkas live lama
+tmp_patch_bi.py                    # skrip patch sekali-pakai
+splash.duplicate-bak.png           # duplikat splash.png

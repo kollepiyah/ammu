@@ -1,4 +1,0 @@
-
-> ammu-online-desktop@87.0.526 build
-> tsc
-

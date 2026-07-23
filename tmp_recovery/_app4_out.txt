@@ -1,4 +1,0 @@
-
-[Electron] Loading file: D:\Aplikasi Project\Portal MU\vue-app\electron\dist\win-unpacked\resources\app\app\index.html
-Checking for update
-Renderer process killed - see https://www.electronjs.org/docs/tutorial/application-debugging for potential debugging information.

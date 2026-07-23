@@ -1,2 +1,0 @@
-=== RUN BUILD ===
-BUILD_EXITCODE=0
