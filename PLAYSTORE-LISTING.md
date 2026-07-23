@@ -1,8 +1,13 @@
-# 📝 Play Store Listing Copy — Ammu Online v1.0.0
+# 📝 Play Store Listing Copy — Ammu Online
 
-> **Bahasa:** Indonesia (default & only untuk v1.0.0)
+> **Bahasa:** Indonesia (default & only) — KECUALI bagian 9 "App access" yang WAJIB Inggris.
 > **Untuk:** Kyai isi di Play Console → Main store listing
 > **Update:** kalau ada fitur baru di rilis berikutnya, edit short/full description sesuai
+>
+> **⚠️ Direvisi 23 Jul 2026** sesudah update AAB ditolak Google 3× dengan alasan
+> _"Persyaratan Konsol Play: Kredensial login salah"_. Yang diperbaiki di berkas ini:
+> URL kebijakan privasi lama sudah MATI (404), dan instruksi login reviewer tidak
+> menyebut tab mana yang harus dipilih. Detail duduk perkaranya di bagian 9.
 
 ---
 
@@ -68,10 +73,10 @@ Ammu Online adalah aplikasi manajemen resmi Pondok Pesantren Mambaul Ulum Sidoar
 • Kritik & saran langsung ke pengurus
 
 🔐 Akses Aman & Terstruktur
-• Login dengan nomor WhatsApp
+• Login terpisah untuk Santri/Wali dan Guru/Pegawai
 • Sistem peran (santri, guru, pengurus, admin keuangan, super admin)
 • Hak akses sesuai jabatan
-• Data terenkripsi di server Google Firebase
+• Data tersimpan terenkripsi di server, dilindungi kebijakan akses per peran
 
 ✨ Mode Gelap & Terang
 Antarmuka dapat disesuaikan dengan preferensi mata Anda — mode gelap nyaman dipakai di malam hari.
@@ -86,14 +91,17 @@ Aplikasi ini dirancang khusus untuk kebutuhan administrasi pondok pesantren — 
 Email: lexanoisgroup3@gmail.com
 
 🔒 Privasi
-Aplikasi ini menghormati privasi pengguna. Data hanya digunakan untuk operasional pondok, tidak dibagikan ke pihak ketiga, tidak ada iklan, dan tidak ada tracking. Lihat kebijakan privasi lengkap di https://qiraati-rapor.web.app/privacy.html
+Aplikasi ini menghormati privasi pengguna. Data hanya digunakan untuk operasional pondok, tidak dibagikan ke pihak ketiga, tidak ada iklan, dan tidak ada tracking. Lihat kebijakan privasi lengkap di https://ammuonline.web.app/privacy.html
 
 ---
 
 Aplikasi ini DIKHUSUSKAN untuk civitas Pondok Pesantren Mambaul Ulum Sidoarjo. Pengguna umum di luar lingkungan pondok tidak dapat membuat akun secara mandiri.
 
-Versi 1.0.0 — Mei 2026.
 ```
+
+> 💡 Nomor versi sengaja TIDAK dicantumkan di deskripsi — kalau ditulis, ia basi tiap
+> rilis dan deskripsi harus diedit (memicu tinjauan ulang listing). Versi sudah tampil
+> otomatis di halaman Play Store.
 
 **Karakter:** ~1.850 / 4.000 max ✓
 
@@ -115,13 +123,24 @@ Versi 1.0.0 — Mei 2026.
 |---|---|
 | **Email** | lexanoisgroup3@gmail.com |
 | **Phone** | (opsional — kalau kyai mau cantumkan WA) |
-| **Website** | https://qiraati-rapor.web.app |
+| **Website** | https://ammuonline.web.app |
 
 ---
 
 ## 6. Privacy Policy
 
-**URL:** `https://qiraati-rapor.web.app/privacy.html`
+**URL:** `https://ammuonline.web.app/privacy.html`
+
+> ⚠️ **JANGAN pakai dua URL lama ini** — keduanya bikin ditolak:
+>
+> | URL lama | Status nyata (diuji 23 Jul 2026) |
+> |---|---|
+> | `qiraati-rapor.web.app/privacy.html` | **404** — project Firebase-nya sudah dihapus |
+> | `portal-mambaul-ulum.web.app/privacy.html` | 200 tapi isinya halaman _"Portal sudah pindah"_, **bukan** kebijakan privasi |
+>
+> Jebakannya: URL kedua balas 200 sehingga terlihat "hidup", padahal reviewer yang
+> membukanya tidak menemukan kebijakan privasi → tetap ditolak. Halaman yang sah
+> hanya `ammuonline.web.app/privacy.html` (sumbernya `vue-app/public/privacy.html`).
 
 ---
 
@@ -158,25 +177,77 @@ Saat isi IARC questionnaire di Play Console, jawaban template:
 
 ---
 
-## 9. App access (untuk reviewer Google)
+## 9. App access — Detail login untuk reviewer Google
 
-Field "How to access your app" di Play Console:
+**Play Console → Konten aplikasi → Akses aplikasi → "Detail login".**
+
+Tempel PERSIS teks di bawah ini. **Bahasa Inggris** — reviewer Google bukan penutur
+bahasa Indonesia, dan label tab "Santri/Wali" vs "Guru/Pegawai" tak bermakna bagi mereka.
 
 ```
-Aplikasi memerlukan akun terdaftar di sistem pondok pesantren. Untuk keperluan review Google:
+IMPORTANT: On the login screen there are two tabs.
+You MUST select the RIGHT tab labeled "Guru/Pegawai" (Staff/Teacher).
+The left tab "Santri/Wali" (Student/Parent) will NOT accept this account.
 
-Username demo: reviewer-google@portal-mu.local
-Password: (kyai isi nanti — buat akun demo readonly khusus reviewer)
-Role: admin (akses penuh untuk inspeksi)
+Username : demoplay
+Password : 1234
 
-Catatan: akun demo ini akan dinonaktifkan setelah review selesai.
+Steps:
+1. Open the app and wait for the login screen.
+2. Tap the tab "Guru/Pegawai" (the RIGHT one of the two tabs).
+3. In the field "Username / WA" type exactly: demoplay
+4. In the password field type exactly: 1234
+5. Tap "MASUK" (Sign in).
+
+Notes:
+- Type the username exactly as shown. Do NOT add "@" or any domain.
+- Do NOT use a phone number; the username above is the only valid login.
+- The app requires an internet connection.
+- This account has full super-admin access to every feature.
 ```
 
-⚠️ **Action item:** kyai BUAT akun demo reviewer sebelum upload pertama — pengurus boleh-boleh saja role admin tapi dengan password yang Google reviewer bisa pakai.
+### Kenapa 3× ditolak "Kredensial login salah"
+
+Akunnya **tidak bermasalah**. Diuji langsung ke server 23 Jul 2026, seluruh rantai lolos:
+`resolve_login` ketemu & `active:true` → sandi `1234` diterima (HTTP 200) → profil
+`super_admin` → baris guru "Demo Play" status Aktif. AAB rilis pun terbukti memuat
+URL + anon key Supabase (aplikasi tersambung normal).
+
+Yang gagal adalah **cara reviewer mengetikkannya**. Hasil uji tiap skenario:
+
+| Yang diketik reviewer | Hasil |
+|---|---|
+| `demoplay` di tab **Guru/Pegawai** | ✅ berhasil |
+| `Demoplay` / `DEMOPLAY` / ada spasi | ✅ berhasil (kapital & spasi ditoleransi) |
+| `demoplay` di tab **Santri/Wali** | ❌ gagal |
+| `085710477372` di tab **Santri/Wali** | ❌ gagal |
+| `+6285710477372` (format internasional) | ❌ gagal |
+| `6285710477372` / `85710477372` | ❌ gagal |
+| `demoplay@ammu.local` | ❌ gagal |
+
+**Tersangka utama = tab.** Di `LoginView.vue` tombol "Santri/Wali" dipasang lebih dulu,
+jadi tampil di **kiri**. Reviewer wajar mencoba tab pertama yang terlihat, gagal, lalu
+menyimpulkan kredensialnya salah — persis kalimat penolakan Google.
+
+**Tersangka kedua = format nomor WA.** Kalau nomor ditulis rapi ala internasional
+(`+62 857-1047-7372`), reviewer mengetiknya apa adanya dan PASTI gagal — sistem hanya
+menerima `085710477372`. Karena itu instruksi di atas **sengaja tidak menyebut nomor WA
+sama sekali**; cukup username `demoplay`.
+
+### Aturan main
+
+- Akun `demoplay` **JANGAN dihapus** selama aplikasi masih di Play Store — bukan hanya
+  saat review. Google meninjau ulang setiap update; akun hilang = update ditolak lagi.
+- Kalau DB Supabase di-reset, **seed ulang** akun ini (guru row + auth signUp + profile
+  super_admin), lalu uji login sebelum submit.
+- Kalau nanti tab login diubah urutan/labelnya, **teks di atas wajib ikut diperbarui**.
 
 ---
 
-## 10. Release notes (untuk v1.0.0)
+## 10. Release notes — CONTOH (dipakai saat v1.0.0)
+
+> Untuk rilis berikutnya, ambil ringkasannya dari `CHANGELOG.md` versi bersangkutan,
+> lalu tulis ulang dengan bahasa awam (bukan istilah teknis) — maksimal 500 karakter.
 
 ```
 🎉 Rilis pertama Ammu Online di Play Store!
