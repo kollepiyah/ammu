@@ -65,7 +65,25 @@ export default [
       }
     },
     rules: {
-      'no-unused-vars': 'warn',
+      // Awalan '_' = "sengaja tak dipakai" — konvensi yang SUDAH dipakai luas di
+      // repo (mis. `catch (_e)` di raporPdf/strukBuilder/useNativeDownload), jadi
+      // ESLint tinggal diajari menghormatinya alih-alih menyuruh mengubah ratusan
+      // titik kode.
+      //
+      // caughtErrors:'none' adalah TRADE-OFF SADAR. Menelan error di jalur
+      // best-effort (`} catch (e) { /* biarkan */ }`) memang pola sengaja di sini,
+      // dan penamaannya tak konsisten — sebagian '_e', sebagian 'e' polos. Dibiarkan
+      // menyala, ~180 peringatan darinya MENUTUPI ~25 variabel & impor tak terpakai
+      // yang benar-benar menandai kode mati. Sinyal yang hilang kecil (blok catch
+      // kosong tetap dijaga aturan no-empty di bawah); sinyal yang didapat besar.
+      'no-unused-vars': [
+        'warn',
+        {
+          varsIgnorePattern: '^_',
+          argsIgnorePattern: '^_',
+          caughtErrors: 'none'
+        }
+      ],
       'no-undef': 'warn',
       'vue/multi-word-component-names': 'off',
       // `} catch { /* noop */ }` adalah gaya sengaja di repo ini (best-effort yang
