@@ -184,26 +184,32 @@ Saat isi IARC questionnaire di Play Console, jawaban template:
 Tempel PERSIS teks di bawah ini. **Bahasa Inggris** — reviewer Google bukan penutur
 bahasa Indonesia, dan label tab "Santri/Wali" vs "Guru/Pegawai" tak bermakna bagi mereka.
 
+> ⚠️ **Kolom ini dibatasi 500 karakter.** Teks di bawah = **355 karakter**, muat dengan
+> lega. Kalau nanti diedit, hitung ulang — versi panjang bergaya langkah 1-5 pernah
+> tembus 724 karakter dan ditolak kolomnya.
+
 ```
-IMPORTANT: On the login screen there are two tabs.
-You MUST select the RIGHT tab labeled "Guru/Pegawai" (Staff/Teacher).
-The left tab "Santri/Wali" (Student/Parent) will NOT accept this account.
+IMPORTANT: the login screen has two tabs. You MUST tap the RIGHT tab "Guru/Pegawai" (Staff). The LEFT tab "Santri/Wali" will NOT accept this account.
 
-Username : demoplay
-Password : 1234
+Username: demoplay
+Password: 1234
 
-Steps:
-1. Open the app and wait for the login screen.
-2. Tap the tab "Guru/Pegawai" (the RIGHT one of the two tabs).
-3. In the field "Username / WA" type exactly: demoplay
-4. In the password field type exactly: 1234
-5. Tap "MASUK" (Sign in).
+Type it exactly as shown - do NOT add "@" or a domain, and do NOT use a phone number. Then tap "MASUK" (Sign in).
 
-Notes:
-- Type the username exactly as shown. Do NOT add "@" or any domain.
-- Do NOT use a phone number; the username above is the only valid login.
-- The app requires an internet connection.
-- This account has full super-admin access to every feature.
+Full super-admin access. Internet connection required.
+```
+
+Kalau perlu lebih pendek lagi (mis. harus menambah keterangan lain), versi **295 karakter**:
+
+```
+The login screen has TWO TABS. Tap the RIGHT tab "Guru/Pegawai" (Staff). The LEFT tab "Santri/Wali" will NOT accept this account.
+
+Username: demoplay
+Password: 1234
+
+Type exactly as shown - no "@", no domain, no phone number. Then tap "MASUK" (Sign in).
+
+Full super-admin access to all features.
 ```
 
 ### Kenapa 3× ditolak "Kredensial login salah"
