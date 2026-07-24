@@ -766,6 +766,8 @@ import { useIzinGuru } from '@/composables/useIzinGuru' // v.100d: izin/sakit ma
 import { useSettingsStore } from '@/stores/settings'
 import { shiftsForGuru } from '@/utils/shiftDerive'
 import { shiftLabelOf } from '@/utils/shiftMaster'
+import { buildLiburScope, liburKenaLembaga } from '@/utils/liburScope' // v.1.2.3: alpa hormati libur per lembaga
+import { canonLembaga } from '@/composables/useLembaga'
 // v.1.2.3: grafik kehadiran per bulan (KPI pribadi)
 import { Line } from 'vue-chartjs'
 import {
@@ -803,8 +805,10 @@ const { isElectron: isDesktop } = useDesktopShell()
 const guru = ref(null)
 const slipRaw = ref([])
 const absensiGuru = ref([])
+const kegiatanRaw = ref([]) // v.1.2.3: utk hitung alpa (hormati libur kalender per lembaga)
 let unsubSlip = null
 let unsubAbsensi = null
+let unsubKegiatan = null
 // v.21.110.0527
 const toast = useToast()
 const supervisiRaw = ref([])
@@ -859,23 +863,54 @@ const kehadiran = computed(() => {
     sakit = 0,
     izin = 0,
     cuti = 0,
-    alpa = 0,
     belumPulang = 0
+  // v.1.2.3: alpa TAK disimpan sebagai baris (= TIDAK ADA baris di hari kerja), jadi
+  //   TAK bisa dihitung per-baris. `filled` = slot (tanggal+shift) yang punya baris apa pun.
+  const filled = new Set()
   for (const row of absensiGuru.value) {
     if (!String(row.tanggal || '').startsWith(prefix)) continue
     if (String(row.guru_id || row.guruId || '') !== id) continue
     const st = String(row.status || '').toLowerCase()
+    const sh = String(row.shift || '').toLowerCase()
+    filled.add(String(row.tanggal).slice(0, 10) + '|' + sh)
     if (st === 'hadir' || st === 'masuk') tepat++
     else if (st === 'terlambat') terlambat++
     else if (st === 'sakit') sakit++
     else if (st === 'izin') izin++
     else if (st === 'cuti') cuti++
-    else if (st === 'alpa' || st === 'alpha') alpa++
     if (
       (st === 'hadir' || st === 'masuk' || st === 'terlambat') &&
       !String(row.jam_pulang || '').trim()
     )
       belumPulang++
+  }
+  // Alpa = slot hari kerja (Sen–Sab, non-libur, s/d hari ini) milik shift guru yang TAK
+  //   ada barisnya. Hormati libur manual global + libur kalender per lembaga shift.
+  let alpa = 0
+  const g = guru.value
+  if (g) {
+    const s = settingsStore.settings || {}
+    const shifts = [...shiftsForGuru(g, s)]
+    const liburGlobal = new Set(Array.isArray(s.hariLibur) ? s.hariLibur.map(String) : [])
+    const liburMap = buildLiburScope(kegiatanRaw.value)
+    const todayIso = new Date().toISOString().slice(0, 10)
+    const y = tahunIni
+    const mo = now.getMonth() + 1
+    const days = new Date(y, mo, 0).getDate()
+    for (let d = 1; d <= days; d++) {
+      const iso = `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+      if (iso > todayIso) break // hari depan belum terjadi
+      const dow = new Date(y, mo - 1, d).getDay()
+      if (dow === 0) continue // Ahad libur mingguan
+      if (liburGlobal.has(iso)) continue // libur manual pondok (semua lembaga)
+      for (const sh of shifts) {
+        const key = String(sh).toLowerCase()
+        const lem =
+          key === 'sekolah' ? g.lembaga_sekolah || g.lembaga : g.lembaga || g.lembaga_sekolah
+        if (liburKenaLembaga(liburMap, iso, canonLembaga(lem || ''))) continue // libur lembaga shift
+        if (!filled.has(iso + '|' + key)) alpa++
+      }
+    }
   }
   const hadir = tepat + terlambat
   const total = hadir + sakit + izin + cuti + alpa
@@ -999,6 +1034,9 @@ onMounted(async () => {
   unsubSupervisi = subscribeColl('supervisi_catatan', (docs) => {
     supervisiRaw.value = docs || []
   })
+  unsubKegiatan = subscribeColl('kegiatan', (docs) => {
+    kegiatanRaw.value = docs || []
+  })
   try {
     guru.value = await getOne('guru', String(auth.sesiAktif?.id))
   } catch (e) {
@@ -1019,6 +1057,11 @@ onUnmounted(() => {
   if (unsubSupervisi) {
     try {
       unsubSupervisi()
+    } catch (e) {}
+  }
+  if (unsubKegiatan) {
+    try {
+      unsubKegiatan()
     } catch (e) {}
   }
 })
