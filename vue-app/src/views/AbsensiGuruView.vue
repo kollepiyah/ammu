@@ -1088,6 +1088,7 @@ import {
   tambahSel
 } from '@/utils/absensiRekap'
 import { jsPDFFromCDN } from '@/services/pdf'
+import { buildLiburScope, liburKenaLembaga } from '@/utils/liburScope' // v.1.2.3: libur per lembaga
 // v.21.114.0528: pakai kegiatan composable utk derive hari libur dari event multi-day
 import { useKegiatan } from '@/composables/useKegiatan'
 
@@ -1778,27 +1779,10 @@ watch(
 )
 
 // v.21.114.0528: ekspansi event libur (multi-day) → Set of YYYY-MM-DD strings
-const liburEventDates = computed(() => {
-  const set = new Set()
-  for (const k of kegiatanRaw.value || []) {
-    if (k.tipe !== 'libur' && k.tipe !== 'libur_nasional') continue
-    const start = k.tgl_mulai
-    const end = k.tgl_akhir || k.tgl_mulai
-    if (!start) continue
-    const sd = new Date(start)
-    const ed = new Date(end)
-    if (isNaN(sd.getTime()) || isNaN(ed.getTime())) continue
-    const cur = new Date(sd)
-    while (cur <= ed) {
-      const y = cur.getFullYear()
-      const m = String(cur.getMonth() + 1).padStart(2, '0')
-      const d = String(cur.getDate()).padStart(2, '0')
-      set.add(`${y}-${m}-${d}`)
-      cur.setDate(cur.getDate() + 1)
-    }
-  }
-  return set
-})
+// v.1.2.3: libur kalender kini ber-scope lembaga (Map<iso, scope[]>). isLiburIso(iso,
+//   lembaga) menilai apakah tanggal itu libur UTK lembaga tsb. Ahad + hariLibur manual
+//   tetap global (semua lembaga).
+const liburScopeMap = computed(() => buildLiburScope(kegiatanRaw.value))
 
 const daysInMonth = computed(() => {
   const y = selectedYear.value
@@ -1821,12 +1805,10 @@ function isLiburMingguan(dow) {
   return dow === 0
 }
 
-function isHariLibur(d) {
-  const iso = isoDateOf(d)
-  const dow = new Date(selectedYear.value, selectedMonth.value - 1, d).getDay()
-  if (isLiburMingguan(dow)) return true
-  if (hariLibur.value.includes(iso)) return true
-  return liburEventDates.value.has(iso)
+// v.1.2.3: `lembaga` opsional → libur khusus lembaga (mis. sekolah libur, ngaji masuk).
+//   Tanpa lembaga = hanya libur global (Ahad/manual/event scope-kosong).
+function isHariLibur(d, lembaga) {
+  return isLiburIso(isoDateOf(d), lembaga)
 }
 
 // =====================================================
@@ -1846,12 +1828,12 @@ const KELOMPOK_LABEL = {
 }
 
 // Libur berbasis ISO (isHariLibur hanya per hari-dalam-bulan berjalan).
-function isLiburIso(iso) {
+function isLiburIso(iso, lembaga) {
   const [y, m, d] = String(iso).split('-').map(Number)
   const dow = new Date(y, m - 1, d).getDay()
   if (isLiburMingguan(dow)) return true // v.1.2.1: Ahad/Minggu libur (dulu Jumat)
-  if ((hariLibur.value || []).includes(iso)) return true
-  return liburEventDates.value.has(iso)
+  if ((hariLibur.value || []).includes(iso)) return true // libur manual pondok = global
+  return liburKenaLembaga(liburScopeMap.value, iso, lembaga) // v.1.2.3: event ber-scope lembaga
 }
 
 const rekapPeriode = computed(() => {
@@ -1862,14 +1844,15 @@ const rekapPeriode = computed(() => {
   const { start, end } = rentangBulan(selectedYear.value, selectedMonth.value)
   return { start, end, label: `${getBulanLabel(selectedMonth.value)} ${selectedYear.value}` }
 })
-const rekapTanggalKerja = computed(() =>
-  tanggalRentang(rekapPeriode.value.start, rekapPeriode.value.end).filter((iso) => !isLiburIso(iso))
-)
-
 function lembagaOfShift(g, shift) {
   const sh = String(shift).toLowerCase()
   const raw = sh === 'sekolah' ? g.lembaga_sekolah || g.lembaga : g.lembaga || g.lembaga_sekolah
   return canonLembaga(raw || '') || '(Tanpa Lembaga)'
+}
+// v.1.2.3: lembaga sebuah sel matrix (guruId + shift) — utk cek libur per lembaga.
+function lembagaCell(guruId, shift) {
+  const g = (guruRaw.value || []).find((x) => String(x.id) === String(guruId))
+  return g ? lembagaOfShift(g, shift) : ''
 }
 function kelompokKeyOf(lembaga) {
   return getLembagaBroadGroup(lembaga) || 'lainnya'
@@ -1877,15 +1860,17 @@ function kelompokKeyOf(lembaga) {
 
 const rekapUnitData = computed(() => {
   const idx = indexAbsensiHarian(absensi.value || [])
-  const kerja = rekapTanggalKerja.value
+  const range = tanggalRentang(rekapPeriode.value.start, rekapPeriode.value.end)
   const today = new Date().toISOString().slice(0, 10)
   const s = settingsStore.settings || {}
   const km = new Map() // kelompokKey -> Map(lembaga -> {lembaga, rows, sub})
   for (const g of guruAktif.value) {
     for (const shift of shiftsForGuru(g, s)) {
+      const lembaga = lembagaOfShift(g, shift)
+      // v.1.2.3: hari kerja PER LEMBAGA shift ini — libur sekolah tak meng-alpa-kan ngaji.
+      const kerja = range.filter((iso) => !isLiburIso(iso, lembaga))
       const sel = hitungSel(idx, g.id, shift, kerja, today)
       if (sel.total === 0) continue // tak ada aktivitas & bukan hari kerja lewat → lewati
-      const lembaga = lembagaOfShift(g, shift)
       const kk = kelompokKeyOf(lembaga)
       if (!km.has(kk)) km.set(kk, new Map())
       const lm = km.get(kk)
@@ -1914,7 +1899,9 @@ const rekapUnitData = computed(() => {
     tambahSel(grand, ksub)
     groups.push({ key: kk, kelompok: KELOMPOK_LABEL[kk] || kk, sub: ksub, lembagaList })
   }
-  return { groups, grand, jmlHariKerja: kerja.length }
+  // jmlHariKerja (tampilan) = hari kerja GLOBAL (libur Ahad/manual/event semua-lembaga);
+  //   libur khusus-lembaga tak dikurangi di sini karena angkanya beda per lembaga.
+  return { groups, grand, jmlHariKerja: range.filter((iso) => !isLiburIso(iso)).length }
 })
 function gantiMingguRekap(n) {
   rekapAnchor.value = geserMinggu(rekapAnchor.value, n)
@@ -2164,7 +2151,7 @@ function getAbsensiCell(guruId, shift, d) {
 }
 
 function cellText(guruId, shift, d) {
-  if (isHariLibur(d)) return 'L'
+  if (isHariLibur(d, lembagaCell(guruId, shift))) return 'L'
   const a = getAbsensiCell(guruId, shift, d)
   if (!a) {
     // kosong & hari sudah lewat = alpha; hari depan = belum terjadi (kosong)
@@ -2180,7 +2167,7 @@ function cellText(guruId, shift, d) {
 }
 
 function cellClass(guruId, shift, d) {
-  if (isHariLibur(d)) return 'bg-rose-200 text-rose-800'
+  if (isHariLibur(d, lembagaCell(guruId, shift))) return 'bg-rose-200 text-rose-800'
   const a = getAbsensiCell(guruId, shift, d)
   if (!a) {
     const today = new Date().toISOString().slice(0, 10)
@@ -2197,7 +2184,7 @@ function cellClass(guruId, shift, d) {
 
 function cellTitle(guruId, shift, d) {
   const iso = isoDateOf(d)
-  if (isHariLibur(d)) return iso + ' — Libur'
+  if (isHariLibur(d, lembagaCell(guruId, shift))) return iso + ' — Libur'
   const a = getAbsensiCell(guruId, shift, d)
   if (!a) {
     const today = new Date().toISOString().slice(0, 10)
@@ -2223,21 +2210,23 @@ function pulangPending(guruId, shift, d) {
 }
 
 function countStatus(guruId, shift, statuses) {
+  const lem = lembagaCell(guruId, shift)
   let n = 0
   for (let d = 1; d <= daysInMonth.value; d++) {
-    if (isHariLibur(d)) continue
+    if (isHariLibur(d, lem)) continue
     const a = getAbsensiCell(guruId, shift, d)
     if (a && statuses.includes(String(a.status || 'hadir').toLowerCase())) n++
   }
   return n
 }
 
-// Alpha = hari kerja (non-libur) yg sudah lewat tanpa record utk shift ini.
+// Alpha = hari kerja (non-libur utk lembaga shift ini) yg sudah lewat tanpa record.
 function countAlpha(guruId, shift) {
   const today = new Date().toISOString().slice(0, 10)
+  const lem = lembagaCell(guruId, shift)
   let n = 0
   for (let d = 1; d <= daysInMonth.value; d++) {
-    if (isHariLibur(d)) continue
+    if (isHariLibur(d, lem)) continue
     if (isoDateOf(d) > today) continue
     if (!getAbsensiCell(guruId, shift, d)) n++
   }

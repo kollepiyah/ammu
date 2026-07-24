@@ -55,6 +55,9 @@ export function useKegiatan() {
       deskripsi: data.deskripsi || '',
       // v.21.114.0528: tipe untuk bedakan kegiatan/libur/libur_nasional
       tipe: data.tipe || 'kegiatan',
+      // v.1.2.3: scope lembaga utk libur — [] = SEMUA lembaga (kompat mundur), terisi =
+      //   hanya lembaga tsb libur (mis. sekolah libur tapi ngaji tetap masuk).
+      lembaga: Array.isArray(data.lembaga) ? data.lembaga.filter(Boolean) : [],
       dibuat_oleh: auth.sesiAktif?.nama || 'Admin',
       timestamp: new Date().toISOString()
     }

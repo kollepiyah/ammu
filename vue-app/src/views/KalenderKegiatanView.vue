@@ -286,6 +286,33 @@
                 </select>
               </div>
             </div>
+            <!-- v.1.2.3: scope lembaga libur (mis. sekolah libur, ngaji masuk) -->
+            <div v-if="isLiburTipe">
+              <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1">
+                Libur untuk Lembaga
+                <span class="font-normal text-[var(--text-tertiary)]">— kosong = semua</span>
+              </label>
+              <div class="flex flex-wrap gap-1.5">
+                <button
+                  v-for="opt in LIBUR_LEMBAGA_OPSI"
+                  :key="opt"
+                  type="button"
+                  :class="[
+                    'px-2.5 py-1 rounded-full text-xs font-bold border transition',
+                    form.lembaga.includes(opt)
+                      ? 'bg-cyan-600 border-cyan-600 text-white'
+                      : 'bg-white dark:bg-slate-900 border-[var(--border-default)] text-[var(--text-secondary)] hover:border-cyan-400'
+                  ]"
+                  @click="toggleLiburLembaga(opt)"
+                >
+                  {{ opt }}
+                </button>
+              </div>
+              <p class="text-[11px] text-[var(--text-tertiary)] mt-1">
+                Kosongkan = libur semua lembaga. Pilih mis. "Sekolah" bila sekolah libur tapi ngaji
+                tetap masuk.
+              </p>
+            </div>
             <div>
               <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1"
                 >Deskripsi</label
@@ -497,8 +524,30 @@ const form = reactive({
   tgl_akhir: '',
   audience: 'semua',
   deskripsi: '',
-  tipe: 'kegiatan'
+  tipe: 'kegiatan',
+  // v.1.2.3: scope lembaga libur — [] = SEMUA (default). Broad 'Qiraati'/'Sekolah' didukung.
+  lembaga: []
 })
+
+// Opsi scope lembaga utk libur: broad (cepat) + spesifik. Kosong = semua lembaga.
+const LIBUR_LEMBAGA_OPSI = [
+  'Qiraati',
+  'Sekolah',
+  'TPQ Pagi',
+  'TPQ Sore',
+  'Pra PTPT',
+  'PTPT',
+  'PPPH',
+  'TK',
+  'SDI',
+  'PKBM'
+]
+const isLiburTipe = computed(() => form.tipe === 'libur' || form.tipe === 'libur_nasional')
+function toggleLiburLembaga(nama) {
+  const i = form.lembaga.indexOf(nama)
+  if (i >= 0) form.lembaga.splice(i, 1)
+  else form.lembaga.push(nama)
+}
 
 function openModal(k = null) {
   if (k) {
@@ -509,6 +558,7 @@ function openModal(k = null) {
     form.audience = k.audience || 'semua'
     form.deskripsi = k.deskripsi || ''
     form.tipe = k.tipe || 'kegiatan'
+    form.lembaga = Array.isArray(k.lembaga) ? [...k.lembaga] : []
   } else {
     form.id = ''
     form.judul = ''
@@ -517,6 +567,7 @@ function openModal(k = null) {
     form.audience = 'semua'
     form.deskripsi = ''
     form.tipe = 'kegiatan'
+    form.lembaga = []
   }
   modalOpen.value = true
 }

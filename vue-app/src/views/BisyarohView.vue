@@ -775,6 +775,7 @@ import { shiftLabelOf, shiftList } from '@/utils/shiftMaster'
 import { materialisasiHadirIkut } from '@/utils/absensiMaterialize'
 import { guruAktifSaja } from '@/utils/guruScope' // v.1.2.0: sumber tunggal penyaring status guru
 import { jpByLembagaForGuru, jpPerHariForGuru, jpDiajarPeriode } from '@/utils/bebanMengajar'
+import { buildLiburScope, liburKenaLembaga } from '@/utils/liburScope' // v.1.2.3: libur per lembaga
 import { tanggalRentang } from '@/utils/absensiRekap'
 import { useKegiatan } from '@/composables/useKegiatan'
 import { useAuthStore } from '@/stores/auth'
@@ -872,27 +873,9 @@ const auth = useAuthStore()
 const settingsStore = useSettingsStore()
 // v.1.1.x: event libur (multi-day) → Set 'YYYY-MM-DD' utk denominator hari kerja (prorata per_jp).
 const { kegiatanRaw } = useKegiatan()
-const liburEventSet = computed(() => {
-  const set = new Set()
-  for (const k of kegiatanRaw.value || []) {
-    if (k.tipe !== 'libur' && k.tipe !== 'libur_nasional') continue
-    const start = k.tgl_mulai
-    const end = k.tgl_akhir || k.tgl_mulai
-    if (!start) continue
-    const sd = new Date(start)
-    const ed = new Date(end)
-    if (isNaN(sd.getTime()) || isNaN(ed.getTime())) continue
-    const cur = new Date(sd)
-    while (cur <= ed) {
-      const y = cur.getFullYear()
-      const m = String(cur.getMonth() + 1).padStart(2, '0')
-      const d = String(cur.getDate()).padStart(2, '0')
-      set.add(`${y}-${m}-${d}`)
-      cur.setDate(cur.getDate() + 1)
-    }
-  }
-  return set
-})
+// v.1.2.3: libur kalender ber-scope lembaga. Bisyaroh per_jp memotong JP hanya di hari
+//   libur UTK lembaga sekolah tsb (libur sekolah tak memotong JP ngaji, dan sebaliknya).
+const liburScopeMap = computed(() => buildLiburScope(kegiatanRaw.value))
 // v.21.99.0527: super_admin only — hapus slip bisyaroh (koreksi data)
 const isAdmin = computed(() => isSuperAdmin(auth.sesiAktif))
 
@@ -1369,10 +1352,15 @@ function tanggalPeriode(periode) {
 }
 // Libur = tanggal libur manual + event kalender. Jumat SENGAJA tidak dianggap libur di sini:
 //   jadwal mengajar per hari sudah menentukan guru mengajar hari apa saja (sekolah bisa Sen–Sab).
-function liburSetPeriode() {
+// v.1.2.3: libur utk 1 LEMBAGA = hariLibur manual (global) + event kalender yang scope-nya
+//   mengenai lembaga ini (kosong = semua). Libur sekolah tak masuk set lembaga ngaji.
+function liburSetPeriode(lembaga) {
   const s = settingsStore.settings || {}
   const set = new Set(Array.isArray(s.hariLibur) ? s.hariLibur.map(String) : [])
-  for (const iso of liburEventSet.value || []) set.add(iso)
+  const map = liburScopeMap.value
+  for (const iso of map.keys()) {
+    if (liburKenaLembaga(map, iso, lembaga)) set.add(iso)
+  }
   return set
 }
 // Shift yang dipakai sbg KEHADIRAN untuk 1 lembaga = shift yang kolom "Khusus Lembaga"-nya
@@ -1410,15 +1398,15 @@ function ctxGuru(g, periode) {
   const bebanJP = jpByLembagaForGuru(s, g.id) // JP mingguan (info) + daftar lembaga guru ini
   // OPSI C: JP yang benar-benar diajar per lembaga = jadwal per hari × kehadiran harian.
   const tgls = tanggalPeriode(periode)
-  const libur = liburSetPeriode()
   const jpDiajarByLembaga = {}
   for (const lem of Object.keys(bebanJP)) {
     // Kehadiran diambil dari shift yang ber-scope lembaga ini (fallback 'sekolah').
+    //   v.1.2.3: libur PER LEMBAGA — libur sekolah tak memotong JP lembaga lain.
     jpDiajarByLembaga[lem] = jpDiajarPeriode({
       jpPerHari: jpPerHariForGuru(s, g.id, lem),
       tanggalList: tgls,
       hadirSet: tanggalHadirSekolah(g.id, periode, shiftIdsUntukLembaga(lem)),
-      liburSet: libur
+      liburSet: liburSetPeriode(lem)
     })
   }
   return {
