@@ -390,8 +390,8 @@
             <button
               v-if="canHapusAbsen"
               :disabled="rederiveBusy"
-              aria-label="Perbaiki shift baris riwayat yang usang"
-              title="Betulkan baris absen ber-shift USANG (setelah ganti/hapus shift di Master Shift): hitung ulang shift dari jam scan + shift guru sekarang, lalu pindahkan ke shift yang benar. Bulan yang sedang dipilih."
+              aria-label="Perbaiki shift baris riwayat yang bukan milik guru"
+              title="Betulkan baris absen yang shift-nya bukan milik guru (usang setelah ganti shift, atau scan tercatat di shift lain): hitung ulang shift dari jam scan + shift guru sekarang, lalu pindahkan ke shift yang benar. Bulan yang sedang dipilih."
               class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer"
               @click="perbaikiShiftRiwayat"
             >
@@ -1183,15 +1183,19 @@ async function hapusTerpilihAbsen() {
 //   ber-shift valid dibiarkan (bisa sah / hasil hadir_ikut, jangan salah-pindah).
 const rederiveBusy = ref(false)
 function _rederiveShiftRow(a) {
-  if (shiftById(settingsStore.settings || {}, a.shift)) return null // shift masih valid → biarkan
   const guru = guruRaw.value.find((g) => String(g.id) === String(a.guru_id || a.guruId))
   if (!guru) return null
+  // Baris hanya diperbaiki bila guru TIDAK memiliki shift baris ini (usang ATAU sekadar
+  //   bukan shift-nya — mis. scan pagi tercatat 'pagi' padahal guru kini di 'sekolah').
+  //   Guru yang MEMANG punya shift itu dibiarkan.
+  const milik = shiftsForGuru(guru, settingsStore.settings || {})
+  if (milik.has(String(a.shift))) return null
   const jam = String(a.jam || '').trim()
   if (!jam) return null // manual tanpa jam → tak bisa diturunkan
   const st = String(a.status || 'hadir').toLowerCase()
   if (['izin', 'sakit', 'cuti', 'alpa'].includes(st)) return null
   const benar = deriveShift(jam, guru, settingsStore.settings || {})
-  if (!benar || String(benar) === String(a.shift)) return null
+  if (!benar || String(benar) === String(a.shift)) return null // shift_ids kosong / jam di luar window → tak bisa
   return { a, from: String(a.shift || ''), to: String(benar) }
 }
 async function perbaikiShiftRiwayat() {
@@ -1203,7 +1207,7 @@ async function perbaikiShiftRiwayat() {
   }
   if (!changes.length) {
     toast.success(
-      'Tidak ada baris shift usang di bulan ini (semua sudah sesuai / tak bisa diturunkan).'
+      'Tidak ada baris yang perlu diperbaiki bulan ini (shift sudah milik guru / guru belum punya shift / jam di luar window).'
     )
     return
   }
@@ -1216,7 +1220,7 @@ async function perbaikiShiftRiwayat() {
     .join('\n')
   if (
     !confirm(
-      `Ditemukan ${changes.length} baris absen ber-shift USANG (jam scan-nya kini cocok shift lain).\n\nContoh:\n${contoh}${changes.length > 6 ? `\n…dan ${changes.length - 6} lagi` : ''}\n\nPindahkan ke shift yang benar sekarang?`
+      `Ditemukan ${changes.length} baris absen yang shift-nya BUKAN milik guru (dihitung ulang dari jam scan → shift guru sekarang).\n\nContoh:\n${contoh}${changes.length > 6 ? `\n…dan ${changes.length - 6} lagi` : ''}\n\nPindahkan ke shift yang benar sekarang?`
     )
   )
     return

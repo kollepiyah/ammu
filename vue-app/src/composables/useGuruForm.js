@@ -500,8 +500,12 @@ export function useGuruForm() {
     if (f.jabatan_tambahan && f.jabatan_tambahan === f.jabatan) {
       return 'Jabatan tambahan harus berbeda dari jabatan utama'
     }
-    // v.21.18.0526: tipe pegawai → no lembaga; tipe guru/pegawai_guru → minimal 1 lembaga
-    if (butuhLembaga.value && !f.lembaga && !f.lembaga_sekolah) {
+    // v.1.2.3: lembaga (Qiraati/Sekolah) hanya WAJIB utk PENGAJAR (isPengajar) — bukan
+    //   butuhLembaga. Bug lama: pegawai murni yang jabatannya ber-unit lembaga (mis. Admin
+    //   Keuangan → Yayasan) bikin butuhLembaga=true, padahal picker lembaga disembunyikan
+    //   utk pegawai → deadlock: wajib diisi tapi tak bisa dipilih → shift_ids tak bisa
+    //   disimpan. isPengajar sudah mencakup guru/pegawai_guru + jabatan tambahan Guru.
+    if (isPengajar.value && !f.lembaga && !f.lembaga_sekolah) {
       return 'Pilih minimal 1 lembaga (Qiraati atau Sekolah)'
     }
     if (!String(f.wa || '').trim()) return 'No WA wajib diisi'
