@@ -54,8 +54,15 @@ export function useIzinGuru() {
   const myIzin = computed(() =>
     sortNewest(izinRaw.value.filter((a) => String(a.guru_id || '') === myId.value))
   )
+  // Antrian persetujuan: request 'diajukan' yang se-scope, TAPI BUKAN milik sendiri —
+  //   approver tak boleh menyetujui izinnya sendiri. Request kepala/PJ/pegawai otomatis
+  //   naik ke admin/super_admin (Mudir/Pengasuh) yang inScope-nya true utk semua.
   const antrian = computed(() =>
-    sortNewest(izinRaw.value.filter((a) => a.status === 'diajukan' && inScope(a)))
+    sortNewest(
+      izinRaw.value.filter(
+        (a) => a.status === 'diajukan' && String(a.guru_id || '') !== myId.value && inScope(a)
+      )
+    )
   )
   const riwayat = computed(() =>
     sortNewest(izinRaw.value.filter((a) => a.status !== 'diajukan' && inScope(a)))

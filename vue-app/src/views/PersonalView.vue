@@ -44,17 +44,30 @@
       >
         <i class="fas fa-clipboard-check text-emerald-600 mr-2"></i>Kehadiran — {{ bulanLabel }}
       </h3>
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-center">
+      <!-- v.1.2.3: 6 status (tepat waktu / terlambat / sakit / izin / cuti / alpa) -->
+      <div class="grid grid-cols-3 md:grid-cols-6 gap-2 text-center">
         <div
           class="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl py-3 border border-emerald-100 dark:border-emerald-800"
         >
           <p
             class="text-[9px] font-black text-emerald-700 dark:text-emerald-300 uppercase tracking-wider"
           >
-            Hadir
+            Tepat Waktu
           </p>
           <p class="text-2xl font-black text-emerald-700 dark:text-emerald-300 mt-1">
-            {{ kehadiran.hadir }}
+            {{ kehadiran.tepat }}
+          </p>
+        </div>
+        <div
+          class="bg-amber-50 dark:bg-amber-900/20 rounded-xl py-3 border border-amber-100 dark:border-amber-800"
+        >
+          <p
+            class="text-[9px] font-black text-amber-700 dark:text-amber-300 uppercase tracking-wider"
+          >
+            Terlambat
+          </p>
+          <p class="text-2xl font-black text-amber-700 dark:text-amber-300 mt-1">
+            {{ kehadiran.terlambat }}
           </p>
         </div>
         <div
@@ -82,6 +95,18 @@
           </p>
         </div>
         <div
+          class="bg-violet-50 dark:bg-violet-900/20 rounded-xl py-3 border border-violet-100 dark:border-violet-800"
+        >
+          <p
+            class="text-[9px] font-black text-violet-700 dark:text-violet-300 uppercase tracking-wider"
+          >
+            Cuti
+          </p>
+          <p class="text-2xl font-black text-violet-700 dark:text-violet-300 mt-1">
+            {{ kehadiran.cuti }}
+          </p>
+        </div>
+        <div
           class="bg-rose-50 dark:bg-rose-900/20 rounded-xl py-3 border border-rose-100 dark:border-rose-800"
         >
           <p
@@ -94,6 +119,47 @@
           </p>
         </div>
       </div>
+      <!-- v.1.2.3: KPI ringkas absen pribadi -->
+      <div class="grid grid-cols-3 gap-2 mt-2 text-center">
+        <div class="bg-[var(--bg-muted)] rounded-xl py-2 border border-[var(--border-subtle)]">
+          <p class="text-[9px] font-black text-[var(--text-secondary)] uppercase tracking-wider">
+            Total Hadir
+          </p>
+          <p class="text-lg font-black text-[var(--text-primary)] mt-0.5">{{ kehadiran.hadir }}</p>
+        </div>
+        <div class="bg-[var(--bg-muted)] rounded-xl py-2 border border-[var(--border-subtle)]">
+          <p class="text-[9px] font-black text-[var(--text-secondary)] uppercase tracking-wider">
+            % Tepat Waktu
+          </p>
+          <p
+            :class="[
+              'text-lg font-black mt-0.5',
+              kehadiran.persenTepat >= 80
+                ? 'text-emerald-600'
+                : kehadiran.persenTepat >= 50
+                  ? 'text-amber-600'
+                  : 'text-rose-600'
+            ]"
+          >
+            {{ kehadiran.persenTepat }}%
+          </p>
+        </div>
+        <div class="bg-[var(--bg-muted)] rounded-xl py-2 border border-[var(--border-subtle)]">
+          <p class="text-[9px] font-black text-[var(--text-secondary)] uppercase tracking-wider">
+            % Kehadiran
+          </p>
+          <p class="text-lg font-black text-[var(--text-primary)] mt-0.5">
+            {{ kehadiran.persenHadir }}%
+          </p>
+        </div>
+      </div>
+      <p
+        v-if="kehadiran.belumPulang > 0"
+        class="text-[10px] text-amber-600 dark:text-amber-400 mt-2 text-center font-bold"
+      >
+        <i class="fas fa-triangle-exclamation mr-1"></i>{{ kehadiran.belumPulang }} kehadiran belum
+        absen pulang
+      </p>
       <p
         v-if="kehadiran.total === 0"
         class="text-[11px] text-[var(--text-tertiary)] italic text-center mt-3"
@@ -745,20 +811,46 @@ const totalTahunIni = computed(() =>
 const kehadiran = computed(() => {
   const id = String(auth.sesiAktif?.id || '')
   const prefix = `${tahunIni}-${String(now.getMonth() + 1).padStart(2, '0')}-`
-  let hadir = 0,
+  // v.1.2.3: pisah TEPAT WAKTU vs TERLAMBAT (dulu 'terlambat' tak masuk bucket mana pun →
+  //   hilang) + tambah cuti & belum pulang + KPI (% tepat waktu, % kehadiran).
+  let tepat = 0,
+    terlambat = 0,
     sakit = 0,
     izin = 0,
-    alpa = 0
+    cuti = 0,
+    alpa = 0,
+    belumPulang = 0
   for (const row of absensiGuru.value) {
     if (!String(row.tanggal || '').startsWith(prefix)) continue
     if (String(row.guru_id || row.guruId || '') !== id) continue
     const st = String(row.status || '').toLowerCase()
-    if (st === 'hadir' || st === 'masuk') hadir++
+    if (st === 'hadir' || st === 'masuk') tepat++
+    else if (st === 'terlambat') terlambat++
     else if (st === 'sakit') sakit++
     else if (st === 'izin') izin++
+    else if (st === 'cuti') cuti++
     else if (st === 'alpa' || st === 'alpha') alpa++
+    if (
+      (st === 'hadir' || st === 'masuk' || st === 'terlambat') &&
+      !String(row.jam_pulang || '').trim()
+    )
+      belumPulang++
   }
-  return { hadir, sakit, izin, alpa, total: hadir + sakit + izin + alpa }
+  const hadir = tepat + terlambat
+  const total = hadir + sakit + izin + cuti + alpa
+  return {
+    tepat,
+    terlambat,
+    hadir,
+    sakit,
+    izin,
+    cuti,
+    alpa,
+    belumPulang,
+    total,
+    persenTepat: hadir > 0 ? Math.round((tepat / hadir) * 100) : 0,
+    persenHadir: total > 0 ? Math.round((hadir / total) * 100) : 0
+  }
 })
 
 // === Detail slip modal ===
