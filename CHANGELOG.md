@@ -21,6 +21,39 @@ Versioning: `v.{nomor-urut}.{MMDDtahunmu}` (mis: `v.108.0527`)
 
 ---
 
+## [v.1.2.3] — 2026-07-25 — Shift kustom, libur per lembaga, KPI absen, bonus tepat waktu
+
+Rilis perbaikan + fitur. **TANPA migrasi DB** (murni frontend) — cukup deploy web.
+
+### Added (Baru)
+
+- **Impor shift kustom via NOMOR** di Data Guru (kolom `Shift (nomor, pisah |)`, mis. `1|4`);
+  kolom kosong = shift_ids TIDAK disentuh. Tombol **"Perbaiki Shift"** (super_admin, Absensi
+  Guru) membetulkan baris absen yang shift-nya bukan milik guru (hitung ulang dari jam scan).
+- **Libur per lembaga** di Kalender Kegiatan (mis. sekolah libur tapi ngaji tetap masuk) —
+  memengaruhi rekap alpa absen guru & bisyaroh per_jp.
+- Hitungan bisyaroh **"× tepat waktu"** (`per_tepat`) — hanya hadir tepat waktu (buang
+  terlambat), untuk Bonus Tepat Waktu.
+- **KPI absen pribadi** di Personal: Tepat Waktu · Terlambat · Cuti + % Tepat Waktu / %
+  Kehadiran + grafik **Kehadiran per Bulan** (8 bulan terakhir).
+
+### Fixed (Perbaikan)
+
+- Form guru **pegawai murni** (jabatan ber-unit Yayasan, mis. Admin Keuangan) tak bisa
+  disimpan karena validasi lembaga salah (`butuhLembaga` → `isPengajar`) → `shift_ids`
+  pegawai jadi kosong.
+- Impor guru dulu MENGHAPUS `shift_ids` kustom; kini kolom nomor kosong tak menyentuhnya.
+- **Kepala sekolah + guru ngaji**: Data Santri kini terpisah sub-tab Qiraati / Sekolah
+  (dulu tercampur karena sisi Sekolah dicocokkan ke lembaga ngaji akun).
+- Izin/cuti: approver **tak bisa menyetujui izinnya sendiri** (otomatis naik ke atasan).
+
+### Changed (Perubahan)
+
+- **Rekap prestasi bulanan** kini HANYA lembaga **PTPT & PPPH** (TPQ Pagi/Sore/Pra PTPT tak
+  perlu prestasi bulanan).
+
+---
+
 ## [v.1.2.2] — 2026-07-22 — Absen pulang per shift, penugasan glondongan, rekap penyimak
 
 Rilis perbaikan + fitur. **Ada 1 migrasi DB** (`20260722120000_auth_is_pj_lembaga_ketat`) —
