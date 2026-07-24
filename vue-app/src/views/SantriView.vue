@@ -564,8 +564,7 @@ import { getPkbmSubTier, canonLembaga } from '@/composables/useLembaga' // v.99:
 import { sortLembagaNames } from '@/utils/santriSort' // v.100 Batch10: urutan canonical dropdown lembaga
 import { gedungList } from '@/utils/gedung' // v.111: filter Gedung (pisah Pra PTPT per gedung)
 import { useAuthStore } from '@/stores/auth'
-import { ownsNgaji, ownsSekolah } from '@/utils/guruScope' // v.100b: pisah santri qiraati/sekolah
-import { lembagaScopeMatches } from '@/composables/useLembaga' // v.1.2.0: scope kepala lembaga
+import { ownsNgaji, ownsSekolah, headsLembaga } from '@/utils/guruScope' // v.100b/1.2.3: pisah santri qiraati/sekolah + kepala lembaga per-sisi
 
 // v.21.17c.0526: mode prop — 'view' (sidebar, default) atau 'master' (di Master Data tab, full CRUD)
 const props = defineProps({ mode: { type: String, default: 'view' } })
@@ -668,18 +667,16 @@ watch([search, filterLembaga, filterMukim, filterStatus], () => {
 //    Dengan begitu kepala sekolah merangkap guru qiraati melihat kelas ngajinya di tab
 //    Qiraati dan santri sekolahnya di tab Sekolah — tak pernah tercampur.
 const myNamaGuru = computed(() => authStore.sesiAktif?.guru || authStore.sesiAktif?.nama || '')
-const myLembagaAkun = computed(() => authStore.sesiAktif?.lembaga || '')
-const isKepalaScope = computed(() => {
-  const j = String(authStore.sesiAktif?.jabatan || '').toLowerCase()
-  return j.includes('kepala') || j.includes('pj') || j.includes('pengasuh')
-})
+// v.1.2.3: sisi ditentukan headsLembaga PER-SISI (bukan isKepalaScope + user.lembaga utk
+//   keduanya) — kepala SEKOLAH dulu tak pernah masuk sisi Sekolah karena dicocokkan ke
+//   lembaga NGAJI-nya. Kini: Qiraati = kelas ngaji ampuan sendiri ATAU kepala lembaga
+//   ngaji-nya; Sekolah = kelas sekolah ampuan sendiri ATAU kepala sekolah-nya. Kepala SDI
+//   yang juga guru ngaji: Qiraati = kelasnya, Sekolah = seluruh SDI — persis guru dual-role.
 function sisiQiraati(s) {
-  if (ownsNgaji(s, myNamaGuru.value)) return true
-  return isKepalaScope.value && lembagaScopeMatches(myLembagaAkun.value, s.lembaga)
+  return ownsNgaji(s, myNamaGuru.value) || headsLembaga(authStore.sesiAktif, s.lembaga)
 }
 function sisiSekolah(s) {
-  if (ownsSekolah(s, myNamaGuru.value)) return true
-  return isKepalaScope.value && lembagaScopeMatches(myLembagaAkun.value, s.lembaga_sekolah)
+  return ownsSekolah(s, myNamaGuru.value) || headsLembaga(authStore.sesiAktif, s.lembaga_sekolah)
 }
 
 const sisiTab = ref('qiraati')

@@ -4,13 +4,14 @@ import { storeToRefs } from 'pinia'
 import { useCollectionsStore } from '@/stores/collections'
 import { useAuthStore } from '@/stores/auth'
 // v.21.10.0526: Import LEMBAGA_GROUPS helpers untuk lembaga_refs derivation + lembagaScopeMatches scoping
-import { getLembagaGroup, lembagaScopeMatches, getPkbmSubTier } from './useLembaga'
+import { getLembagaGroup, getPkbmSubTier } from './useLembaga'
 // v.21.86.0527: Sort konsisten lembaga→kelas→nama (berlaku di semua halaman via composable)
 import { sortSantri } from '@/utils/santriSort'
 // v.111: scope Gedung (akademik per gedung + filter Pra PTPT/PTPT)
 import { isGedungScoped, gedungOf } from '@/utils/gedung'
 // v.1.2.1: scope PJ PTPT — santri ampuan diturunkan dari guru pengajar (peta pj_guru)
 import { buatPetaPjSantri, isPjLembaga, PTPT_LEMBAGA } from '@/utils/glondongan'
+import { ownsNgaji, ownsSekolah, headsLembaga } from '@/utils/guruScope'
 import { usePjGuru } from './usePjGuru'
 
 // Helper: derive santri.lembaga_refs dari legacy fields
@@ -120,9 +121,16 @@ export function useSantri() {
         // v.86.0526: Kepala/PJ = se-lembaganya (kyai "se-group"). lembagaScopeMatches handle
         //   variant/family (TPQ Sore→TPQ Pagi/Sore/Pra PTPT) MAUPUN label broad ('Qiraati'→semua qiraati).
         if (isKepala) {
+          // v.1.2.3: kepala melihat SETIAP lembaga yang JABATANNYA pimpin (headsLembaga —
+          //   ngaji via s.lembaga, sekolah via s.lembaga_sekolah). Dulu kepala SEKOLAH luput
+          //   karena keduanya dicocokkan ke user.lembaga (= lembaga NGAJI-nya), jadi santri
+          //   sekolahnya tak pernah masuk. PLUS kelas ampuannya sendiri (ownsNgaji/ownsSekolah)
+          //   utk lembaga yang ia AJAR tapi tak pimpin (mis. kepala SDI yang guru ngaji PTPT).
           return (
-            lembagaScopeMatches(user?.lembaga, s.lembaga) ||
-            lembagaScopeMatches(user?.lembaga, s.lembaga_sekolah)
+            ownsNgaji(s, myNama) ||
+            ownsSekolah(s, myNama) ||
+            headsLembaga(user, s.lembaga) ||
+            headsLembaga(user, s.lembaga_sekolah)
           )
         }
         const gp = String(s.guru_pagi || '')

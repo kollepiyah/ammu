@@ -4,11 +4,28 @@
 //     - Qiraati  : guru muncul sbg guru_pagi / guru_sore / guru (ngaji) di santri.
 //     - Sekolah  : guru muncul di guru_sekolah[] (wali kelas sekolah) di santri.
 //   Tipe guru (kyai): 1) Qiraati+Sekolah, 2) Qiraati saja, 3) Sekolah saja.
+import { lembagaScopeMatches } from '@/composables/useLembaga'
 
 function _lower(v) {
   return String(v || '')
     .toLowerCase()
     .trim()
+}
+
+// v.1.2.3 — Apakah jabatan orang ini KEPALA/PJ/PENGASUH dari lembaga `lembagaName`?
+//   Diperiksa dari NAMA lembaga yang DISEBUT jabatan/jabatan_tambahan ("Kepala SDI" →
+//   SDI). BEDA dari isPjLembaga (glondongan.js) yang MENGGERBANG field `lembaga` orang =
+//   lembaga yang ditanya: gerbang itu benar utk lembaga NGAJI, tapi salah utk kepala
+//   SEKOLAH — sebab field `lembaga` kepala sekolah = lembaga NGAJI-nya (tempat ia
+//   mengajar), sedang sekolah yang dipimpinnya ada di `lembaga_sekolah`. Jadi Kepala SDI
+//   yang juga guru ngaji PTPT: headsLembaga(dia,'SDI')=true, headsLembaga(dia,'PTPT')=false.
+export function headsLembaga(sesi, lembagaName) {
+  if (!lembagaName) return false
+  for (const j of [sesi?.jabatan, sesi?.jabatan_tambahan]) {
+    const m = _lower(j).match(/^(kepala|pj|pengasuh)\s+(.+)$/)
+    if (m && lembagaScopeMatches(m[2], lembagaName)) return true
+  }
+  return false
 }
 
 // Santri ini diampu guru `nama` sebagai guru NGAJI (Qiraati)?
