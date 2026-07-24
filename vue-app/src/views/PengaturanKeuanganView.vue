@@ -432,20 +432,24 @@
                     'text-[11px] font-bold px-2 py-0.5 rounded-md whitespace-nowrap',
                     j.hitungan === 'per_hadir'
                       ? 'bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-200'
-                      : j.hitungan === 'per_jp'
-                        ? 'bg-violet-100 text-violet-800 dark:bg-violet-900/40 dark:text-violet-200'
-                        : j.hitungan === 'per_shift'
-                          ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200'
-                          : 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-200'
+                      : j.hitungan === 'per_tepat'
+                        ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200'
+                        : j.hitungan === 'per_jp'
+                          ? 'bg-violet-100 text-violet-800 dark:bg-violet-900/40 dark:text-violet-200'
+                          : j.hitungan === 'per_shift'
+                            ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200'
+                            : 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-200'
                   ]"
                   >{{
                     j.hitungan === 'per_hadir'
                       ? '× hadir'
-                      : j.hitungan === 'per_jp'
-                        ? '× JP'
-                        : j.hitungan === 'per_shift'
-                          ? '× Shift'
-                          : 'Flat'
+                      : j.hitungan === 'per_tepat'
+                        ? '× tepat'
+                        : j.hitungan === 'per_jp'
+                          ? '× JP'
+                          : j.hitungan === 'per_shift'
+                            ? '× Shift'
+                            : 'Flat'
                   }}</span
                 >
               </td>
@@ -598,12 +602,14 @@
             <i class="fas fa-info-circle mr-1"></i>
             {{
               dlgJb.hitungan === 'per_hadir'
-                ? 'Dikali jumlah hadir shift dari absensi. Shift dikosongkan = semua shift orang itu dijumlahkan.'
-                : dlgJb.hitungan === 'per_jp'
-                  ? 'Bisyaroh sekolah = JP guru di lembaga (menu Beban Mengajar) × nominal (tarif/JP) × persen kehadiran sekolah (prorata). Isi scope lembaga.'
-                  : dlgJb.hitungan === 'per_shift'
-                    ? 'Nominal × JUMLAH shift guru yang cocok. Mengajar pagi + sore (scope Pagi,Sore) = 2× nominal. Cocok utk bisyaroh pokok per shift.'
-                    : 'Dibayar sekali per bulan bila cocok scope.'
+                ? 'Dikali jumlah hadir shift dari absensi (hadir + terlambat). Shift dikosongkan = semua shift orang itu dijumlahkan.'
+                : dlgJb.hitungan === 'per_tepat'
+                  ? 'Dikali jumlah hadir TEPAT WAKTU saja (status hadir, BUKAN terlambat). Untuk Bonus Tepat Waktu — yang terlambat tak dapat untuk shift itu.'
+                  : dlgJb.hitungan === 'per_jp'
+                    ? 'Bisyaroh sekolah = JP guru di lembaga (menu Beban Mengajar) × nominal (tarif/JP) × persen kehadiran sekolah (prorata). Isi scope lembaga.'
+                    : dlgJb.hitungan === 'per_shift'
+                      ? 'Nominal × JUMLAH shift guru yang cocok. Mengajar pagi + sore (scope Pagi,Sore) = 2× nominal. Cocok utk bisyaroh pokok per shift.'
+                      : 'Dibayar sekali per bulan bila cocok scope.'
             }}
           </p>
           <div class="border-t border-[var(--border-subtle)] pt-3 space-y-3">
@@ -3121,13 +3127,15 @@ async function imporJenisBisyaroh(ev) {
           'cara hitung'
         ]) || ''
       ).toLowerCase()
-      const hitungan = hitStr.includes('jp')
-        ? 'per_jp'
-        : hitStr.includes('shift')
-          ? 'per_shift'
-          : hitStr.includes('hadir')
-            ? 'per_hadir'
-            : 'flat'
+      const hitungan = hitStr.includes('tepat')
+        ? 'per_tepat'
+        : hitStr.includes('jp')
+          ? 'per_jp'
+          : hitStr.includes('shift')
+            ? 'per_shift'
+            : hitStr.includes('hadir')
+              ? 'per_hadir'
+              : 'flat'
       const nominal = parseRp(pickCol(r, ['nominal', 'tarif']))
       const shift = csvArr(pickCol(r, ['shift (pisah koma)', 'shift']))
         .map((x) => shiftMap[x.toLowerCase()] || slugJenisId(x))

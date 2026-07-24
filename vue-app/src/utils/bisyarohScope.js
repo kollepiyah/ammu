@@ -24,7 +24,16 @@ import { canonLembaga } from '@/composables/useLembaga'
 
 export const HITUNGAN_OPTIONS = [
   { value: 'flat', label: 'Flat / bulan', hint: 'Sekali per bulan bila cocok scope' },
-  { value: 'per_hadir', label: '× kehadiran', hint: 'Dikali jumlah hadir shift dari absensi' },
+  {
+    value: 'per_hadir',
+    label: '× kehadiran',
+    hint: 'Dikali jumlah hadir shift dari absensi (hadir + terlambat)'
+  },
+  {
+    value: 'per_tepat',
+    label: '× tepat waktu',
+    hint: 'Dikali jumlah hadir TEPAT WAKTU saja (status hadir, BUKAN terlambat) — utk bonus tepat waktu'
+  },
   {
     value: 'per_jp',
     label: '× JP diajar',
@@ -59,7 +68,9 @@ export function normalizeJenisBisyaroh(raw) {
   return {
     id,
     label: String(r.label || '').trim() || id,
-    hitungan: ['per_hadir', 'per_jp', 'per_shift'].includes(r.hitungan) ? r.hitungan : 'flat',
+    hitungan: ['per_hadir', 'per_tepat', 'per_jp', 'per_shift'].includes(r.hitungan)
+      ? r.hitungan
+      : 'flat',
     nominal: Number(r.nominal) > 0 ? Number(r.nominal) : 0,
     scope: {
       jabatan: _arr(s.jabatan),
@@ -162,7 +173,7 @@ export function barisBisyaroh(jenisList, ctx) {
     const lembaga = ref?.lembaga || '-'
     // kategori dipakai slip lama utk memisah pokok / sekolah / tambahan.
     const kategori =
-      j.hitungan === 'per_hadir'
+      j.hitungan === 'per_hadir' || j.hitungan === 'per_tepat'
         ? 'bonus'
         : j.hitungan === 'per_jp'
           ? 'sekolah'
@@ -173,14 +184,16 @@ export function barisBisyaroh(jenisList, ctx) {
               : ref?.group === 'non-lembaga'
                 ? 'admin'
                 : 'ngaji'
-    if (j.hitungan === 'per_hadir') {
-      const qty = hadirUntuk(j, ctx?.hadirPerShift)
+    if (j.hitungan === 'per_hadir' || j.hitungan === 'per_tepat') {
+      // per_tepat = hanya hadir TEPAT WAKTU (buang terlambat) → sumber hadir berbeda.
+      const src = j.hitungan === 'per_tepat' ? ctx?.hadirTepatPerShift : ctx?.hadirPerShift
+      const qty = hadirUntuk(j, src)
       out.push({
         jenis_id: j.id,
         kategori,
         lembaga,
         label: j.label,
-        hitungan: 'per_hadir',
+        hitungan: j.hitungan,
         qty,
         tarif: j.nominal,
         nominal: qty * j.nominal

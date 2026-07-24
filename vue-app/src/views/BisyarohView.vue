@@ -1341,6 +1341,22 @@ function hadirPerShiftGuru(guruId, periode) {
   return out
 }
 
+// v.1.2.3: sama, tapi HANYA hadir TEPAT WAKTU (status 'hadir', BUANG 'terlambat') —
+//   sumber hitungan bonus 'per_tepat' (Bonus Tepat Waktu). Yang terlambat tak dapat.
+function hadirTepatPerShiftGuru(guruId, periode) {
+  const out = {}
+  const gid = String(guruId)
+  for (const a of absensiShift.value || []) {
+    if (String(a.guru_id) !== gid) continue
+    if (!String(a.tanggal || '').startsWith(periode)) continue
+    if (String(a.status || '').toLowerCase() !== 'hadir') continue // tepat waktu saja
+    const sh = String(a.shift || '').toLowerCase()
+    if (!sh) continue
+    out[sh] = (out[sh] || 0) + 1
+  }
+  return out
+}
+
 // v.1.1.x OPSI C — bisyaroh sekolah = tarif × JP yang BENAR-BENAR diajar.
 //   Tanggal periode s/d hari ini (slip bulan berjalan tak menghitung hari depan).
 function tanggalPeriode(periode) {
@@ -1420,6 +1436,7 @@ function ctxGuru(g, periode) {
     guruId: String(g.id),
     shiftIds: shiftsForGuru(g, s),
     hadirPerShift: hadirPerShiftGuru(g.id, periode),
+    hadirTepatPerShift: hadirTepatPerShiftGuru(g.id, periode), // v.1.2.3: utk per_tepat
     // per_jp (bisyaroh sekolah, opsi C): JP mingguan (info) + JP benar-benar diajar.
     bebanJPByLembaga: bebanJP,
     jpDiajarByLembaga
@@ -1443,7 +1460,7 @@ function buildLineItemsFromGuru(g, periode) {
     kategori: b.kategori,
     lembaga: b.lembaga,
     label:
-      b.hitungan === 'per_hadir'
+      b.hitungan === 'per_hadir' || b.hitungan === 'per_tepat'
         ? `${b.label} (${b.qty}× ${fmtRp(b.tarif)})`
         : b.hitungan === 'per_jp'
           ? `${b.label} (${fmtJP(b.qty)}${b.terjadwal ? ' dari ' + fmtJP(b.terjadwal) : ''} JP diajar × ${fmtRp(b.tarif)})`
