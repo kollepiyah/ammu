@@ -166,6 +166,24 @@
       >
         Belum ada data absensi bulan ini.
       </p>
+      <!-- v.1.2.3: grafik KPI kehadiran per bulan (judul tanpa kata "tren") -->
+      <div class="mt-4 pt-3 border-t border-[var(--border-subtle)]">
+        <h4
+          class="text-[11px] font-black text-[var(--text-secondary)] uppercase tracking-widest mb-2"
+        >
+          <i class="fas fa-chart-line text-teal-600 mr-1.5"></i>Kehadiran per Bulan
+        </h4>
+        <div class="relative h-52">
+          <Line v-if="trenChartData" :data="trenChartData" :options="trenChartOptions" />
+          <div
+            v-else
+            class="absolute inset-0 flex flex-col items-center justify-center text-center text-[11px] text-[var(--text-tertiary)] italic px-4"
+          >
+            <i class="fas fa-chart-line text-2xl mb-2 opacity-40"></i>
+            Grafik muncul setelah ada data absensi minimal 2 bulan.
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- v.100d: Izin & Sakit (pengajuan mandiri) -->
@@ -748,6 +766,29 @@ import { useIzinGuru } from '@/composables/useIzinGuru' // v.100d: izin/sakit ma
 import { useSettingsStore } from '@/stores/settings'
 import { shiftsForGuru } from '@/utils/shiftDerive'
 import { shiftLabelOf } from '@/utils/shiftMaster'
+// v.1.2.3: grafik kehadiran per bulan (KPI pribadi)
+import { Line } from 'vue-chartjs'
+import {
+  Chart as ChartJS,
+  Title,
+  Tooltip,
+  Legend,
+  PointElement,
+  LineElement,
+  CategoryScale,
+  LinearScale,
+  Filler
+} from 'chart.js'
+ChartJS.register(
+  Title,
+  Tooltip,
+  Legend,
+  PointElement,
+  LineElement,
+  CategoryScale,
+  LinearScale,
+  Filler
+)
 
 const auth = useAuthStore()
 const settingsStore = useSettingsStore()
@@ -852,6 +893,88 @@ const kehadiran = computed(() => {
     persenHadir: total > 0 ? Math.round((hadir / total) * 100) : 0
   }
 })
+
+// v.1.2.3: KPI kehadiran per bulan (grafik) — % tepat waktu & % kehadiran, 8 bln terakhir.
+const trenKehadiran = computed(() => {
+  const id = String(auth.sesiAktif?.id || '')
+  const byMonth = {}
+  for (const row of absensiGuru.value) {
+    if (String(row.guru_id || row.guruId || '') !== id) continue
+    const p = String(row.tanggal || '').slice(0, 7)
+    if (!/^\d{4}-\d{2}$/.test(p)) continue
+    const st = String(row.status || '').toLowerCase()
+    if (!byMonth[p]) byMonth[p] = { tepat: 0, terlambat: 0, lain: 0 }
+    const b = byMonth[p]
+    if (st === 'hadir' || st === 'masuk') b.tepat++
+    else if (st === 'terlambat') b.terlambat++
+    else if (['sakit', 'izin', 'cuti', 'alpa', 'alpha'].includes(st)) b.lain++
+  }
+  return Object.keys(byMonth)
+    .sort()
+    .slice(-8)
+    .map((p) => {
+      const b = byMonth[p]
+      const hadir = b.tepat + b.terlambat
+      const total = hadir + b.lain
+      const [y, m] = p.split('-')
+      return {
+        label: `${NAMA_BULAN[Number(m) - 1].slice(0, 3)} ${y.slice(2)}`,
+        persenTepat: hadir > 0 ? Math.round((b.tepat / hadir) * 100) : 0,
+        persenHadir: total > 0 ? Math.round((hadir / total) * 100) : 0
+      }
+    })
+})
+
+const trenChartData = computed(() => {
+  const s = trenKehadiran.value
+  if (s.length < 2) return null
+  return {
+    labels: s.map((x) => x.label),
+    datasets: [
+      {
+        label: '% Tepat Waktu',
+        data: s.map((x) => x.persenTepat),
+        borderColor: '#0F6E56',
+        backgroundColor: 'rgba(29,158,117,0.14)',
+        borderWidth: 2,
+        tension: 0.35,
+        fill: true,
+        pointRadius: 3,
+        pointBackgroundColor: '#0F6E56'
+      },
+      {
+        label: '% Kehadiran',
+        data: s.map((x) => x.persenHadir),
+        borderColor: '#0891b2',
+        backgroundColor: 'rgba(8,145,178,0.08)',
+        borderWidth: 2,
+        borderDash: [5, 4],
+        tension: 0.35,
+        fill: false,
+        pointRadius: 3,
+        pointBackgroundColor: '#0891b2'
+      }
+    ]
+  }
+})
+
+const trenChartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: { legend: { display: true, labels: { boxWidth: 10, font: { size: 10 } } } },
+  scales: {
+    x: {
+      ticks: { autoSkip: false, maxRotation: 45, font: { size: 9 } },
+      grid: { display: false }
+    },
+    y: {
+      min: 0,
+      max: 100,
+      ticks: { stepSize: 25, font: { size: 9 }, callback: (v) => v + '%' },
+      grid: { color: 'rgba(136,135,128,0.15)' }
+    }
+  }
+}
 
 // === Detail slip modal ===
 const slipOpen = ref(false)

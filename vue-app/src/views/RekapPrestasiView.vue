@@ -185,9 +185,7 @@
           <h3 class="text-base md:text-lg font-black leading-tight drop-shadow-sm !text-white">
             Rekap Qiraati
           </h3>
-          <p class="text-[11px] text-white/85 font-medium mt-0.5">
-            TPQ Sore · Pra PTPT · PTPT · PPPH
-          </p>
+          <p class="text-[11px] text-white/85 font-medium mt-0.5">PTPT · PPPH</p>
         </button>
         <button
           class="group relative overflow-hidden bg-gradient-to-br from-cyan-500 dark:from-cyan-700 to-cyan-700 dark:to-cyan-900 hover:from-cyan-600 dark:from-cyan-800 hover:to-cyan-800 rounded-2xl p-5 text-left text-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
@@ -224,37 +222,8 @@
           </p>
         </div>
       </div>
-      <div class="grid grid-cols-2 md:grid-cols-5 gap-2 md:gap-3">
-        <button
-          class="bg-gradient-to-br from-emerald-500 dark:from-emerald-700 to-emerald-700 dark:to-emerald-900 hover:shadow-md hover:-translate-y-0.5 rounded-xl p-3 text-left text-white shadow-sm transition-all cursor-pointer"
-          @click="pilihLembagaInput('TPQ Pagi')"
-        >
-          <i class="fas fa-sun text-base drop-shadow"></i>
-          <h3 class="text-xs md:text-sm font-black leading-tight drop-shadow-sm !text-white mt-1">
-            TPQ Pagi
-          </h3>
-          <p class="text-[10px] text-white/85 font-medium mt-0.5">Shift pagi</p>
-        </button>
-        <button
-          class="bg-gradient-to-br from-teal-500 dark:from-teal-700 to-teal-700 dark:to-teal-900 hover:shadow-md hover:-translate-y-0.5 rounded-xl p-3 text-left text-white shadow-sm transition-all cursor-pointer"
-          @click="pilihLembagaInput('TPQ Sore')"
-        >
-          <i class="fas fa-cloud-sun text-base drop-shadow"></i>
-          <h3 class="text-xs md:text-sm font-black leading-tight drop-shadow-sm !text-white mt-1">
-            TPQ Sore
-          </h3>
-          <p class="text-[10px] text-white/85 font-medium mt-0.5">Shift sore</p>
-        </button>
-        <button
-          class="bg-gradient-to-br from-teal-600 dark:from-teal-800 to-teal-800 hover:shadow-md hover:-translate-y-0.5 rounded-xl p-3 text-left text-white shadow-sm transition-all cursor-pointer"
-          @click="pilihLembagaInput('Pra PTPT')"
-        >
-          <i class="fas fa-book text-base drop-shadow"></i>
-          <h3 class="text-xs md:text-sm font-black leading-tight drop-shadow-sm !text-white mt-1">
-            Pra PTPT
-          </h3>
-          <p class="text-[10px] text-white/85 font-medium mt-0.5">Persiapan tahfizh</p>
-        </button>
+      <!-- v.1.2.3: rekap prestasi bulanan HANYA PTPT & PPPH (TPQ Pagi/Sore/Pra PTPT tak perlu, Kyai). -->
+      <div class="grid grid-cols-2 gap-2 md:gap-3">
         <button
           class="bg-gradient-to-br from-emerald-500 dark:from-emerald-700 to-emerald-700 dark:to-emerald-900 hover:shadow-md hover:-translate-y-0.5 rounded-xl p-3 text-left text-white shadow-sm transition-all cursor-pointer"
           @click="pilihLembagaInput('PTPT')"
@@ -1143,7 +1112,9 @@ import { lembagaScopeMatches } from '@/composables/useLembaga'
 import { sortSantri } from '@/utils/santriSort'
 import { useMobileShell } from '@/composables/useMobileShell'
 
-const LEMBAGA_QIRAATI = ['TPQ Pagi', 'TPQ Sore', 'Pra PTPT', 'PTPT', 'PPPH']
+// v.1.2.3: rekap prestasi bulanan HANYA untuk PTPT & PPPH (TPQ Pagi/Sore/Pra PTPT tak
+//   perlu prestasi bulanan — Kyai). Menyetir tombol lembaga, filter, scope santri, & ekspor.
+const LEMBAGA_QIRAATI = ['PTPT', 'PPPH']
 const BULAN_LIST = [
   'Januari',
   'Februari',
@@ -1329,7 +1300,7 @@ const santriQiraati = computed(() => {
     const lmb = String(s.lembaga || '')
       .trim()
       .toLowerCase()
-    return LEMBAGA_QIRAATI.some((q) => q.toLowerCase() === lmb) || lmb === 'tpq'
+    return LEMBAGA_QIRAATI.some((q) => q.toLowerCase() === lmb)
   })
 })
 
