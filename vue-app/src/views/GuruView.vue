@@ -576,7 +576,7 @@ import {
 import { sortLembagaNames } from '@/utils/santriSort' // v.100 Batch10: urutan canonical dropdown lembaga
 // v.1.1.9: label shift kartu guru ikut master (sumber tunggal aturan shift)
 import { shiftsForGuru } from '@/utils/shiftDerive'
-import { shiftLabelOf } from '@/utils/shiftMaster'
+import { shiftLabelOf, shiftList, shiftIdsFromNomor, shiftNomorFromIds } from '@/utils/shiftMaster'
 import { isGuruAktif } from '@/utils/guruScope' // v.1.2.0: sumber tunggal penyaring status guru
 
 const {
@@ -849,6 +849,8 @@ const _authStoreGuru = _useAuthStoreGuru() // v.100 Batch16: atribusi user utk a
 
 // v.99: ekspor LENGKAP — selaras template & impor (+ jabatan tambahan, tanggal tugas, NIG, No Rek BMT, tipe/shift/role/fingerprint)
 function _buildExcelRows(list) {
+  // v.1.2.3: kolom "Shift (nomor, pisah |)" = shift_ids guru → NOMOR posisi Master Shift.
+  const _shList = shiftList(_settingsShift.settings || {})
   return list.map((g, i) => ({
     no: i + 1,
     nama: g.nama || '',
@@ -867,6 +869,7 @@ function _buildExcelRows(list) {
     alamat: g.alamat || '',
     tipe_pegawai: g.tipe_pegawai || '',
     shift: g.shift || '',
+    shift_nomor: shiftNomorFromIds(g.shift_ids, _shList),
     role_sistem: g.role_sistem || '',
     id_fingerprint: g.id_fingerprint || '',
     status: g.status || 'Aktif'
@@ -890,6 +893,7 @@ const _excelColumns = [
   { key: 'alamat', header: 'Alamat', width: 28 },
   { key: 'tipe_pegawai', header: 'Tipe Pegawai (guru/pegawai/pegawai_guru)', width: 20 },
   { key: 'shift', header: 'Shift (pagi/sore/pagi_sore)', width: 14 },
+  { key: 'shift_nomor', header: 'Shift (nomor, pisah |)', width: 18 },
   { key: 'role_sistem', header: 'Role Sistem (user/admin/admin_keuangan/super_admin)', width: 18 },
   { key: 'id_fingerprint', header: 'ID Fingerprint', width: 14 },
   { key: 'status', header: 'Status', width: 10 }
@@ -1199,6 +1203,7 @@ async function downloadTemplateGuru() {
       'Status',
       'Tipe Pegawai (guru/pegawai/pegawai_guru)',
       'Shift (pagi/sore/pagi_sore)',
+      'Shift (nomor, pisah |)',
       'ID Fingerprint',
       'Role Sistem (user/admin/admin_keuangan/super_admin)',
       'Username (opsional)',
@@ -1210,8 +1215,13 @@ async function downloadTemplateGuru() {
       // No kop+subtitle — keep headers at row 1
       columns: headers.map((h) => ({ key: h, header: h, width: Math.max(14, h.length + 2) }))
     })
+    // v.1.2.3: legenda nomor shift (posisi Master Shift) supaya Kyai tahu nomor mana =
+    //   shift apa saat mengisi kolom "Shift (nomor, pisah |)". Contoh isi: "1|4".
+    const _leg = shiftList(_settingsShift.settings || {})
+      .map((s, i) => `${i + 1}=${s.label}`)
+      .join(' · ')
     _toastExp.success(
-      'Template guru ter-download. Nama=TitleCase, Jabatan/Lembaga=UPPERCASE saat impor.'
+      `Template guru ter-download. Kolom "Shift (nomor, pisah |)" → isi NOMOR shift dipisah "|" (mis. 1|4).${_leg ? ' Nomor: ' + _leg : ''}`
     )
   } catch (e) {
     _toastExp.error('Gagal: ' + (e.message || e))
@@ -1279,6 +1289,8 @@ async function onImportGuru(e) {
       }
       return ''
     }
+    // v.1.2.3: daftar shift (terurut) utk resolusi kolom "Shift (nomor, pisah |)".
+    const _shiftListImport = shiftList(_settingsShift.settings || {})
     for (const r of rows) {
       const namaRaw = String(
         _pick(r, 'Nama Guru (Dengan Gelar)', 'Nama Guru', 'Nama', 'NAMA', 'nama') || ''
@@ -1346,11 +1358,23 @@ async function onImportGuru(e) {
           shift: String(_pick(r, 'Shift (pagi/sore/pagi_sore)', 'Shift', 'shift') || 'pagi_sore')
             .trim()
             .toLowerCase(),
-          // v.1.1.9: kolom Excel hanya mengenal shift lama (pagi/sore/pagi_sore), jadi impor
-          //   MENGOSONGKAN shift_ids — kalau tidak, shift_ids hasil suntingan form akan menang
-          //   dan kolom Shift di Excel diam-diam tak berefek. Kosong = shift diturunkan dari
-          //   field `shift` di atas (jalur data lama). Atur shift baru lewat form guru.
-          shift_ids: [],
+          // v.1.2.3: shift KUSTOM via kolom "Shift (nomor, pisah |)" → shift_ids (nomor =
+          //   POSISI shift di Pengaturan → Master Shift, mis. "1|4"). Kolom `shift` (pagi/
+          //   sore) lama tetap ditulis sbg cermin data lama. ATURAN PENTING: kolom nomor
+          //   KOSONG → shift_ids TIDAK disertakan → mergeOne mempertahankan penugasan yang
+          //   sudah diatur lewat Form Guru (dulu diMENGOSONGKAN paksa → menghapus suntingan Kyai).
+          ...((
+            _pick(r, 'Shift (nomor, pisah |)', 'Shift (nomor)', 'Shift Nomor', 'shift_nomor') || ''
+          )
+            .toString()
+            .trim()
+            ? {
+                shift_ids: shiftIdsFromNomor(
+                  _pick(r, 'Shift (nomor, pisah |)', 'Shift (nomor)', 'Shift Nomor', 'shift_nomor'),
+                  _shiftListImport
+                )
+              }
+            : {}),
           role_sistem: String(
             _pick(
               r,

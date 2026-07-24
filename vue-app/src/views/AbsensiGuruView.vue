@@ -388,6 +388,19 @@
               >{{ isiPulangBusy ? 'Mengisi...' : 'Isi Pulang Default' }}
             </button>
             <button
+              v-if="canHapusAbsen"
+              :disabled="rederiveBusy"
+              aria-label="Perbaiki shift baris riwayat yang usang"
+              title="Betulkan baris absen ber-shift USANG (setelah ganti/hapus shift di Master Shift): hitung ulang shift dari jam scan + shift guru sekarang, lalu pindahkan ke shift yang benar. Bulan yang sedang dipilih."
+              class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer"
+              @click="perbaikiShiftRiwayat"
+            >
+              <i
+                :class="['fas', rederiveBusy ? 'fa-spinner fa-spin' : 'fa-wand-magic-sparkles']"
+              ></i
+              >{{ rederiveBusy ? 'Memperbaiki...' : 'Perbaiki Shift' }}
+            </button>
+            <button
               aria-label="Ekspor rekap absensi guru Excel"
               class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition cursor-pointer"
               @click="exportRekapExcel"
@@ -1049,7 +1062,7 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
-import { setOne, updateOne, deleteOne, mergeOne } from '@/services/db'
+import { setOne, updateOne, deleteOne, mergeOne, getOne } from '@/services/db'
 import { isSuperAdmin } from '@/utils/roleScope'
 import { useAuthStore } from '@/stores/auth'
 import { useAbsensi } from '@/composables/useAbsensi'
@@ -1059,7 +1072,7 @@ import { useToast } from '@/composables/useToast'
 import { useSettingsStore } from '@/stores/settings'
 // v.1.1.9: aturan shift = shiftDerive.js (sumber tunggal, dipakai sync mesin juga).
 //   Dulu view ini punya SALINAN sendiri yang harus disamakan manual — sudah dihapus.
-import { shiftsForGuru, shiftBatas as shiftBatasOf } from '@/utils/shiftDerive'
+import { shiftsForGuru, shiftBatas as shiftBatasOf, deriveShift } from '@/utils/shiftDerive'
 import { shiftList, shiftLabelOf, shiftById } from '@/utils/shiftMaster'
 import { materialisasiHadirIkut } from '@/utils/absensiMaterialize'
 import { guruAktifSaja } from '@/utils/guruScope' // v.1.2.0: sumber tunggal penyaring status guru
@@ -1163,6 +1176,96 @@ async function hapusTerpilihAbsen() {
     bulkDeleting.value = false
   }
 }
+// v.1.2.3 (Perbaikan B) — betulkan shift baris riwayat yang USANG akibat ganti shift
+//   kustom / impor lama. Hitung ulang shift dari `jam` tersimpan + shift_ids guru
+//   SEKARANG, lalu pindahkan baris ke docId shift yang benar. super_admin only.
+//   HANYA menyentuh baris yang shift-nya sudah TAK ADA di Master Shift (usang) — baris
+//   ber-shift valid dibiarkan (bisa sah / hasil hadir_ikut, jangan salah-pindah).
+const rederiveBusy = ref(false)
+function _rederiveShiftRow(a) {
+  if (shiftById(settingsStore.settings || {}, a.shift)) return null // shift masih valid → biarkan
+  const guru = guruRaw.value.find((g) => String(g.id) === String(a.guru_id || a.guruId))
+  if (!guru) return null
+  const jam = String(a.jam || '').trim()
+  if (!jam) return null // manual tanpa jam → tak bisa diturunkan
+  const st = String(a.status || 'hadir').toLowerCase()
+  if (['izin', 'sakit', 'cuti', 'alpa'].includes(st)) return null
+  const benar = deriveShift(jam, guru, settingsStore.settings || {})
+  if (!benar || String(benar) === String(a.shift)) return null
+  return { a, from: String(a.shift || ''), to: String(benar) }
+}
+async function perbaikiShiftRiwayat() {
+  if (!canHapusAbsen.value || rederiveBusy.value) return
+  const changes = []
+  for (const a of filteredAbsensi.value || []) {
+    const c = _rederiveShiftRow(a)
+    if (c) changes.push(c)
+  }
+  if (!changes.length) {
+    toast.success(
+      'Tidak ada baris shift usang di bulan ini (semua sudah sesuai / tak bisa diturunkan).'
+    )
+    return
+  }
+  const contoh = changes
+    .slice(0, 6)
+    .map(
+      (c) =>
+        `• ${getNamaGuru(c.a.guru_id || c.a.guruId)} ${formatTgl(c.a.tanggal)}: ${c.from || '-'} → ${shiftLabel(c.to)}`
+    )
+    .join('\n')
+  if (
+    !confirm(
+      `Ditemukan ${changes.length} baris absen ber-shift USANG (jam scan-nya kini cocok shift lain).\n\nContoh:\n${contoh}${changes.length > 6 ? `\n…dan ${changes.length - 6} lagi` : ''}\n\nPindahkan ke shift yang benar sekarang?`
+    )
+  )
+    return
+  rederiveBusy.value = true
+  let ok = 0
+  let gagal = 0
+  let gabung = 0
+  try {
+    for (const c of changes) {
+      try {
+        const guruId = String(c.a.guru_id || c.a.guruId)
+        const tanggal = String(c.a.tanggal || '')
+        const newId = `shift_${guruId}_${tanggal}_${c.to}`
+        const exists = await getOne('absensi_shift_guru', newId)
+        if (!exists) {
+          await setOne('absensi_shift_guru', newId, {
+            id: newId,
+            guru_id: guruId,
+            periode: c.a.periode || tanggal.slice(0, 7),
+            guru_nama: c.a.guru_nama || getNamaGuru(guruId),
+            tanggal,
+            jam: c.a.jam,
+            shift: c.to,
+            status: c.a.status || 'hadir',
+            source: c.a.source || 'rederive',
+            ...(c.a.jam_pulang ? { jam_pulang: c.a.jam_pulang } : {})
+          })
+        } else {
+          gabung++ // baris benar sudah ada (mis. sync ulang) → cukup buang yang usang
+        }
+        if (String(c.a.id) !== newId) {
+          await deleteOne('absensi_shift_guru', c.a.id, {
+            alasan: 'Perbaiki shift riwayat (hitung ulang dari jam)'
+          })
+        }
+        ok++
+      } catch (e) {
+        gagal++
+        console.error('rederive gagal', c.a?.id, e)
+      }
+    }
+    toast[gagal ? 'warning' : 'success'](
+      `${ok} baris shift diperbaiki${gabung ? `, ${gabung} sudah ada (baris usang dibuang)` : ''}${gagal ? `, ${gagal} gagal` : ''}.`
+    )
+  } finally {
+    rederiveBusy.value = false
+  }
+}
+
 // v.21.114.0528: kegiatan composable utk derive hari libur dari event multi-day
 const { kegiatanRaw } = useKegiatan()
 

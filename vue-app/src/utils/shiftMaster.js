@@ -190,6 +190,35 @@ export function shiftIdsToLegacy(ids, tipePegawai) {
   return { shift: sGuru, shift_pegawai: SHIFT_LEGACY_KOSONG }
 }
 
+// ── Nomor shift (posisi 1-based di daftar Master Shift) ⇄ shift_ids ───────────
+// Dipakai IMPOR/EKSPOR guru: kolom Excel "Shift (nomor, pisah |)" berisi NOMOR
+// sesuai urutan tampil di Pengaturan → Master Shift (1=shift teratas, dst). Jauh
+// lebih ringkas dari mengetik label, dan langsung cocok dgn yang Kyai lihat di layar.
+// CATATAN: nomor = POSISI, jadi kalau urutan shift diubah, nomor ikut bergeser —
+// selalu ekspor ulang template setelah menata ulang Master Shift.
+
+// "1|4" / "1,4" / "1 4" → ['<id shift ke-1>','<id shift ke-4>']. Nomor di luar
+// rentang / bukan angka diabaikan. `list` = hasil shiftList(settings) (sudah terurut).
+export function shiftIdsFromNomor(input, list) {
+  const arr = Array.isArray(list) ? list : []
+  const ids = String(input == null ? '' : input)
+    .split(/[|,;/\s]+/)
+    .map((x) => parseInt(x, 10))
+    .filter((n) => Number.isInteger(n) && n >= 1 && n <= arr.length)
+    .map((n) => arr[n - 1] && arr[n - 1].id)
+    .filter(Boolean)
+  return [...new Set(ids)]
+}
+
+// Kebalikan: ['tpq_pagi','tpq_sore'] → "1|4" (posisi di `list`). Utk isi kolom
+// ekspor/template supaya Kyai lihat nomornya. Id yg tak ada di master dilewati.
+export function shiftNomorFromIds(ids, list) {
+  const arr = Array.isArray(list) ? list : []
+  const idToNo = new Map(arr.map((s, i) => [String(s.id), i + 1]))
+  const nums = (Array.isArray(ids) ? ids : []).map((id) => idToNo.get(String(id))).filter((n) => n)
+  return [...new Set(nums)].sort((a, b) => a - b).join('|')
+}
+
 // Cermin balik ke setting-key lama utk 5 shift bawaan (fp_sync.py membacanya).
 // Shift baru dilewati — tak punya padanan legacy.
 export function shiftMasterToLegacy(list) {
