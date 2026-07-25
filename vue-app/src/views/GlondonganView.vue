@@ -1089,7 +1089,7 @@ async function exportRekapBisyarohPdf() {
         <i class="fas fa-spinner fa-spin mr-1"></i>Memuat…
       </div>
       <div
-        v-else-if="tugasNilaiSaya.length === 0"
+        v-else-if="tugasNilaiSaya.length === 0 && tugasMenunggu.length === 0"
         class="text-xs italic text-[var(--text-tertiary)] py-6 text-center"
       >
         <i class="fas fa-clipboard-check text-2xl block mb-2 text-[var(--border-default)]"></i>
@@ -1123,7 +1123,10 @@ async function exportRekapBisyarohPdf() {
         </p>
       </div>
 
-      <ul v-else class="space-y-2">
+      <!-- v.1.2.4 FIX: kartu isi-nilai kini v-if MANDIRI (dulu v-else ke blok "Menunggu
+           giliran") — dulu bila ada 1 tugas belum-giliran, SEMUA kartu terbuka ikut hilang
+           walau notifnya muncul. -->
+      <ul v-if="tugasNilaiSaya.length" class="space-y-2">
         <li
           v-for="row in tugasNilaiSaya"
           :key="row.id"
