@@ -149,7 +149,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useGuru } from '@/composables/useGuru'
 import { useLembaga, getPkbmSubTier, isSekolahLembaga } from '@/composables/useLembaga'
 import { useStatistikScope } from '@/composables/useStatistikScope'
-import { kelasKeyQiraati, kelasKeySekolah } from '@/utils/kelasHitung'
+import { kelasKeySekolah, buildResolverQiraati } from '@/utils/kelasHitung'
 import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
 import {
@@ -231,10 +231,13 @@ const groups = computed(() => {
   //   jadi label ("1, 2") lewat Set `jenjang`.
   //   Santri TANPA guru TETAP ditampilkan lewat bucket cadangan supaya datanya
   //   kelihatan & bisa dibetulkan, tapi `dihitung:false` -> tak menambah angka.
+  // v.1.2.4: kunci Qiraati lewat resolver — santri pagi-saja/sore-saja nempel ke
+  //   kelas PASANGAN yang berbagi gurunya (tak jadi kartu 1-santri sendiri).
+  const keyOfQiraati = isSek ? null : buildResolverQiraati(list)
   const byKelas = new Map()
   for (const s of list) {
     const kls = (isSek ? s.kelas_sekolah || s.kelas : s.kelas) || '-'
-    const kunci = isSek ? kelasKeySekolah(s) : kelasKeyQiraati(s)
+    const kunci = isSek ? kelasKeySekolah(s) : keyOfQiraati(s)
     let gp = '',
       gs = '',
       gLegacy = '',
@@ -258,7 +261,15 @@ const groups = computed(() => {
         dihitung: !!kunci,
         santri: []
       })
-    byKelas.get(key).jenjang.add(kls)
+    // v.1.2.4: lengkapi nama pasangan dari santri mana pun di grup — santri pagi-saja
+    //   sendiri hanya membawa guru pagi; santri pasangan mengisi guru sore-nya.
+    const bucket = byKelas.get(key)
+    if (!bucket.guruPagi && gp) bucket.guruPagi = gp
+    if (!bucket.guruSore && gs) bucket.guruSore = gs
+    if (!bucket.guruLegacy && gLegacy) bucket.guruLegacy = gLegacy
+    if (isSek && (!bucket.guruSekolah || !bucket.guruSekolah.length) && gsek.length)
+      bucket.guruSekolah = gsek
+    bucket.jenjang.add(kls)
     // v.1.1.9 (Kyai): ekspor PDF menampilkan KEDUA sisi — ngaji & sekolah — supaya
     //   dari daftar SDI pun kelihatan lembaga/kelas/juz/guru ngaji santrinya, dan
     //   sebaliknya. Field-nya diambil di sini sekali, dipakai ekspor (UI tak berubah).

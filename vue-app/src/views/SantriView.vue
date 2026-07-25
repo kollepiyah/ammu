@@ -316,6 +316,18 @@
           <option v-for="p in pjPtptOptions" :key="p" :value="p">PJ: {{ p }}</option>
         </select>
       </div>
+      <!-- v.1.2.4: filter per KELAS-GURU (rombel pasangan) — pantau per kelas guru -->
+      <div v-if="isFullAccess && kelasGuruOptions.length" class="mt-2">
+        <select
+          v-model="filterKelasGuru"
+          class="w-full px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none"
+        >
+          <option value="">Semua kelas (guru)</option>
+          <option v-for="k in kelasGuruOptions" :key="k.optKey" :value="k.optKey">
+            {{ filterLembaga ? '' : k.lembaga + ' — ' }}{{ k.label }} · {{ k.jumlah }} santri
+          </option>
+        </select>
+      </div>
       <!-- v.1.2.0: sub-tab Qiraati / Sekolah — muncul hanya bila akun ini memang
            menaungi KEDUA sisi (mis. kepala lembaga sekolah yang juga guru qiraati). -->
       <div v-if="punyaDuaSisi" class="flex gap-2 mt-3">
@@ -370,10 +382,12 @@
       v-else-if="santri.length === 0"
       icon="fa-user-slash"
       :title="
-        search || filterLembaga || filterMukim ? 'Tidak ada santri yang cocok' : 'Belum ada santri'
+        search || filterLembaga || filterMukim || filterKelasGuru
+          ? 'Tidak ada santri yang cocok'
+          : 'Belum ada santri'
       "
       :description="
-        search || filterLembaga || filterMukim
+        search || filterLembaga || filterMukim || filterKelasGuru
           ? 'Coba ubah filter atau kata kunci pencarian'
           : isFullAccess
             ? 'Tambah santri pertama di Master Data'
@@ -465,6 +479,12 @@
                   :key="k"
                   class="text-[10px] bg-slate-50 dark:bg-slate-700/40 text-[var(--text-secondary)] border border-slate-200 dark:border-slate-600 px-1.5 py-0.5 rounded"
                   >{{ label }}</span
+                >
+                <!-- v.1.2.4: tanda santri yg hanya ikut pagi/sore -->
+                <span
+                  v-if="shiftNgajiLabel(s)"
+                  class="text-[10px] bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-700 px-1.5 py-0.5 rounded font-bold"
+                  >{{ shiftNgajiLabel(s) }}</span
                 >
               </div>
               <div class="flex items-center gap-2 mt-1.5 text-[11px] text-[var(--text-secondary)]">
@@ -571,6 +591,7 @@ const props = defineProps({ mode: { type: String, default: 'view' } })
 const isMasterMode = computed(() => props.mode === 'master')
 // v.21.13b.0526: + toTitleCase + normalizeWA + parseMultipleWA (v.21.22b dual WA)
 import { getNamaGuruGelar, toTitleCase, normalizeWA, juzNum } from '@/utils/format'
+import { shiftNgajiOf } from '@/utils/kelasHitung' // v.1.2.4: label shift ngaji (pagi/sore saja)
 import { usiaKini } from '@/utils/usia' // umur santri auto dari tgl lahir (card + ekspor)
 import { useExcel } from '@/composables/useExcel'
 import { useGoogleSheet } from '@/composables/useGoogleSheet'
@@ -615,6 +636,8 @@ const {
   loading,
   search,
   filterLembaga,
+  filterKelasGuru,
+  kelasGuruOptions,
   filterMukim,
   filterStatus,
   filterGedung,
@@ -653,6 +676,10 @@ watch([search, filterLembaga, filterMukim, filterStatus], () => {
   if (filterMukim.value) q.tempat = filterMukim.value
   if (filterStatus.value && filterStatus.value !== 'aktif') q.status = filterStatus.value
   router.replace({ query: q }).catch(() => {})
+})
+// v.1.2.4: ganti lembaga → reset filter Kelas-Guru (kunci rombel jadi tak relevan)
+watch(filterLembaga, () => {
+  filterKelasGuru.value = ''
 })
 
 // ── v.1.2.0 (Kyai 21 Jul): pisah Qiraati / Sekolah pakai SUB-TAB, bukan dua section
@@ -950,6 +977,15 @@ function formatGuru(s) {
   }
   if (labels.length === 0) labels.push('— Belum ada guru —')
   return labels
+}
+
+// v.1.2.4: label shift ngaji hanya bila santri HANYA ikut pagi/sore (default keduanya
+//   tak diberi chip supaya kartu tak ramai).
+function shiftNgajiLabel(s) {
+  const sh = shiftNgajiOf(s)
+  if (sh === 'pagi') return 'Pagi saja'
+  if (sh === 'sore') return 'Sore saja'
+  return ''
 }
 
 function cleanWa(wa) {

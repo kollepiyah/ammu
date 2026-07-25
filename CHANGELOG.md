@@ -21,6 +21,29 @@ Versioning: `v.{nomor-urut}.{MMDDtahunmu}` (mis: `v.108.0527`)
 
 ---
 
+## [v.1.2.4] — 2026-07-25 — Shift ngaji santri, hitung kelas pagi-saja, filter kelas-guru, agenda kalender
+
+Rilis perbaikan + fitur. **TANPA migrasi DB** (murni frontend) — cukup deploy web.
+
+### Added (Baru)
+
+- **Shift Ngaji santri** (Pagi & Sore / Pagi saja / Sore saja) di Form Santri & dialog Edit
+  Kelas + kolom impor/ekspor. Chip "Pagi saja"/"Sore saja" muncul di kartu Data Santri.
+- **Filter "Kelas (Guru)"** di Data Santri — pilih rombel (pasangan guru, mis. "Lailatul &
+  Azuma · 12 santri") untuk memantau per kelas; menyempit otomatis ke lembaga terpilih.
+- **Agenda kegiatan ber-scope lembaga** di Kalender (seperti jenis libur) — agenda yang
+  ditandai lembaga hanya tampil & dinotifikasi ke lembaga tersebut.
+
+### Fixed (Perbaikan)
+
+- **Perhitungan kelas**: santri yang hanya ikut pagi/sore (guru sisi lain sengaja dikosongkan)
+  tak lagi terpisah menjadi kelas 1-santri sendiri — kini menempel ke kelas pasangan yang
+  berbagi gurunya (`1 kelas = pasangan guru`). Berlaku di KPI Kelas Total & detail lembaga.
+- **Agenda kegiatan tak muncul di notifikasi** — dulu Notif hanya memproses tipe "libur";
+  kini agenda (tipe "kegiatan") ikut muncul sesuai audience & scope lembaga.
+
+---
+
 ## [v.1.2.3] — 2026-07-25 — Shift kustom, libur per lembaga, KPI absen, bonus tepat waktu
 
 Rilis perbaikan + fitur. **TANPA migrasi DB** (murni frontend) — cukup deploy web.

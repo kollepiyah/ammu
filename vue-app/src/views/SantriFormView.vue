@@ -580,6 +580,31 @@
             :guru-list="guruByLembaga"
           />
         </div>
+        <!-- v.1.2.4: Shift Ngaji santri — tandai yg HANYA ikut pagi/sore agar tak jadi kelas sendiri -->
+        <div class="mt-3">
+          <label class="block text-xs font-black text-teal-700 mb-1 uppercase"
+            >Shift Ngaji
+            <span class="text-[9px] text-[var(--text-tertiary)] normal-case"
+              >(pilih "Pagi/Sore saja" bila santri hanya ikut satu waktu)</span
+            ></label
+          >
+          <div class="flex gap-2">
+            <button
+              v-for="opt in SHIFT_NGAJI_OPSI"
+              :key="opt.value"
+              type="button"
+              :class="[
+                'flex-1 px-3 py-2 rounded-xl text-xs font-bold border transition cursor-pointer',
+                form.shift_ngaji === opt.value
+                  ? 'bg-teal-600 border-teal-700 text-white'
+                  : 'bg-[var(--bg-card-elevated)] border-[var(--border-default)] text-[var(--text-secondary)] hover:border-teal-400'
+              ]"
+              @click="form.shift_ngaji = opt.value"
+            >
+              {{ opt.label }}
+            </button>
+          </div>
+        </div>
       </div>
 
       <!-- Wali Section -->
@@ -729,6 +754,13 @@ const {
   resetForm,
   save
 } = useSantriForm()
+
+// v.1.2.4: opsi Shift Ngaji santri (ikut pagi/sore/keduanya)
+const SHIFT_NGAJI_OPSI = [
+  { value: 'pagi_sore', label: 'Pagi & Sore' },
+  { value: 'pagi', label: 'Pagi saja' },
+  { value: 'sore', label: 'Sore saja' }
+]
 
 // v.21.23.0526: kelas sekolah pakai kelasSekolahOptions (filter per lembaga_sekolah dari master/lembaga)
 // TK A/TK B/SDI/PKBM masing-masing punya kelas sendiri di master/lembaga

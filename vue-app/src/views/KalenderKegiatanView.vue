@@ -286,10 +286,10 @@
                 </select>
               </div>
             </div>
-            <!-- v.1.2.3: scope lembaga libur (mis. sekolah libur, ngaji masuk) -->
-            <div v-if="isLiburTipe">
+            <!-- v.1.2.3: scope lembaga libur; v.1.2.4: agenda kegiatan juga ber-scope lembaga -->
+            <div>
               <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1">
-                Libur untuk Lembaga
+                {{ form.tipe === 'kegiatan' ? 'Agenda untuk Lembaga' : 'Libur untuk Lembaga' }}
                 <span class="font-normal text-[var(--text-tertiary)]">— kosong = semua</span>
               </label>
               <div class="flex flex-wrap gap-1.5">
@@ -309,8 +309,11 @@
                 </button>
               </div>
               <p class="text-[11px] text-[var(--text-tertiary)] mt-1">
-                Kosongkan = libur semua lembaga. Pilih mis. "Sekolah" bila sekolah libur tapi ngaji
-                tetap masuk.
+                {{
+                  form.tipe === 'kegiatan'
+                    ? 'Kosongkan = agenda utk semua lembaga. Pilih mis. "PTPT" bila agenda khusus lembaga tsb (hanya tampil & dinotif ke sana).'
+                    : 'Kosongkan = libur semua lembaga. Pilih mis. "Sekolah" bila sekolah libur tapi ngaji tetap masuk.'
+                }}
               </p>
             </div>
             <div>
@@ -542,7 +545,6 @@ const LIBUR_LEMBAGA_OPSI = [
   'SDI',
   'PKBM'
 ]
-const isLiburTipe = computed(() => form.tipe === 'libur' || form.tipe === 'libur_nasional')
 function toggleLiburLembaga(nama) {
   const i = form.lembaga.indexOf(nama)
   if (i >= 0) form.lembaga.splice(i, 1)

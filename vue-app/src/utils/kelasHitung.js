@@ -20,14 +20,40 @@ const norm = (v) =>
     .trim()
     .toLowerCase()
 
-// Kunci rombel Qiraati 1 santri (tanpa lembaga). '' bila TAK ADA GURU.
-export function kelasKeyQiraati(s) {
+// v.1.2.4 — Shift ngaji santri: ikut PAGI, SORE, atau KEDUANYA. Sumber: field
+//   eksplisit `shift_ngaji` ('pagi'|'sore'|'pagi_sore'); bila kosong DISIMPULKAN
+//   dari guru pagi/sore yang terisi (kompat data lama). '' = tak ada guru.
+export function shiftNgajiOf(s) {
+  const v = norm(s?.shift_ngaji)
+  if (v === 'pagi' || v === 'sore' || v === 'pagi_sore') return v
   const gp = norm(s?.guru_pagi)
   const gs = norm(s?.guru_sore)
-  // `guru` = field lama (pra guru_pagi/guru_sore); dipakai hanya bila keduanya kosong.
-  const pasangan = gp || gs ? `${gp}||${gs}` : norm(s?.guru)
-  if (!pasangan || pasangan === '||') return ''
-  return pasangan
+  if (gp && gs) return 'pagi_sore'
+  if (gp) return 'pagi'
+  if (gs) return 'sore'
+  // legacy: hanya field `guru` → anggap pagi (selaras useSantriForm & pasanganGuru)
+  return norm(s?.guru) ? 'pagi' : ''
+}
+
+// Guru pagi & sore EFEKTIF 1 santri, menghormati shift_ngaji: santri 'pagi' tak
+//   membawa guru sore (walau kolomnya terisi), dan sebaliknya. Field `guru` lama
+//   dianggap guru pagi bila guru_pagi/guru_sore dua-duanya kosong.
+function effGuru(s) {
+  let gp = norm(s?.guru_pagi)
+  let gs = norm(s?.guru_sore)
+  if (!gp && !gs) gp = norm(s?.guru) // legacy → pagi
+  const shift = norm(s?.shift_ngaji)
+  if (shift === 'pagi') gs = ''
+  else if (shift === 'sore') gp = ''
+  return { pagi: gp, sore: gs }
+}
+
+// Kunci rombel Qiraati 1 santri (tanpa lembaga). '' bila TAK ADA GURU.
+//   Bentuk `pagi||sore`; menghormati shift (pagi-saja → `pagi||`).
+export function kelasKeyQiraati(s) {
+  const { pagi, sore } = effGuru(s)
+  if (!pagi && !sore) return ''
+  return `${pagi}||${sore}`
 }
 
 // Kunci rombel Sekolah 1 santri (tanpa lembaga). '' bila TAK ADA GURU.
@@ -50,12 +76,50 @@ export function kelasKeysOf(s) {
   return out
 }
 
-// Jumlah kelas dari daftar santri. Santri non-aktif & tanpa guru diabaikan.
-export function hitungKelas(list) {
-  const set = new Set()
+// v.1.2.4 — Resolver "1 kelas = pasangan guru" untuk SATU daftar santri.
+//   Santri PAGI-SAJA / SORE-SAJA ditempelkan ke kelas PASANGAN yang berbagi guru
+//   shift-nya (mis. santri pagi-saja gurunya "Lailatul" → masuk kelas yang guru
+//   paginya "Lailatul"), jadi ia tak lagi terpisah/terhitung sebagai kelas sendiri.
+//   Maps ber-scope lembaga supaya nama guru yang kebetulan sama di dua lembaga tak
+//   salah gabung. keyOf(s) → kunci kanonik rombel (tanpa prefix lembaga).
+export function buildResolverQiraati(list) {
+  const byPagi = new Map() // `${lembaga}||${guruPagi}` -> kunci pasangan
+  const bySore = new Map() // `${lembaga}||${guruSore}` -> kunci pasangan
   for (const s of list || []) {
     if (!s || s.aktif === false) continue
-    for (const k of kelasKeysOf(s)) set.add(k)
+    const { pagi, sore } = effGuru(s)
+    if (!pagi || !sore) continue // hanya PASANGAN penuh yang jadi jangkar
+    const lem = norm(s.lembaga)
+    const key = `${pagi}||${sore}`
+    const pk = `${lem}||${pagi}`
+    const sk = `${lem}||${sore}`
+    if (!byPagi.has(pk)) byPagi.set(pk, key)
+    if (!bySore.has(sk)) bySore.set(sk, key)
+  }
+  return function keyOf(s) {
+    const raw = kelasKeyQiraati(s)
+    if (!raw) return ''
+    const { pagi, sore } = effGuru(s)
+    const lem = norm(s?.lembaga)
+    if (pagi && !sore) return byPagi.get(`${lem}||${pagi}`) || raw
+    if (sore && !pagi) return bySore.get(`${lem}||${sore}`) || raw
+    return raw
+  }
+}
+
+// Jumlah kelas dari daftar santri. Santri non-aktif & tanpa guru diabaikan.
+//   Qiraati lewat resolver (pagi-saja nempel ke pasangan); sekolah apa adanya.
+export function hitungKelas(list) {
+  const set = new Set()
+  const keyOf = buildResolverQiraati(list)
+  for (const s of list || []) {
+    if (!s || s.aktif === false) continue
+    const lem = norm(s.lembaga)
+    const kq = keyOf(s)
+    if (kq && lem) set.add(`${lem}|${kq}`)
+    const ks = kelasKeySekolah(s)
+    const lemS = norm(s.lembaga_sekolah)
+    if (ks && lemS) set.add(`${lemS}|${ks}`)
   }
   return set.size
 }
@@ -65,9 +129,18 @@ export function hitungKelas(list) {
 //   Daftar santri sudah harus difilter ke lembaga tsb oleh pemanggil.
 export function hitungKelasLembaga(list, jenis = 'qiraati') {
   const set = new Set()
+  if (jenis === 'sekolah') {
+    for (const s of list || []) {
+      if (!s || s.aktif === false) continue
+      const k = kelasKeySekolah(s)
+      if (k) set.add(k)
+    }
+    return set.size
+  }
+  const keyOf = buildResolverQiraati(list)
   for (const s of list || []) {
     if (!s || s.aktif === false) continue
-    const k = jenis === 'sekolah' ? kelasKeySekolah(s) : kelasKeyQiraati(s)
+    const k = keyOf(s)
     if (k) set.add(k)
   }
   return set.size

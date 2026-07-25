@@ -13,6 +13,9 @@ import { isGedungScoped, gedungOf } from '@/utils/gedung'
 import { buatPetaPjSantri, isPjLembaga, PTPT_LEMBAGA } from '@/utils/glondongan'
 import { ownsNgaji, ownsSekolah, headsLembaga } from '@/utils/guruScope'
 import { usePjGuru } from './usePjGuru'
+// v.1.2.4: filter per KELAS-GURU (rombel pasangan) — resolver + label pasangan
+import { buildResolverQiraati } from '@/utils/kelasHitung'
+import { labelPasangan } from '@/utils/pasanganGuru'
 
 // Helper: derive santri.lembaga_refs dari legacy fields
 // Santri reguler: 1 ref. Santri mukim: 3 refs (Ma'had + Qiraati + Sekolah).
@@ -65,6 +68,8 @@ export function useSantri() {
   const search = ref('')
   const filterLembaga = ref('')
   const filterKelas = ref('')
+  // v.1.2.4: filter per KELAS-GURU (rombel pasangan) — nilai = `${lembaga}|${kunciRombel}`
+  const filterKelasGuru = ref('')
   const filterMukim = ref('')
   // v.21.12.0526: + filterStatus (aktif/tidak_aktif/all)
   const filterStatus = ref('aktif')
@@ -82,6 +87,46 @@ export function useSantri() {
     // v.86.0526: Kepala Lembaga/PJ/Pengasuh TIDAK lagi full-access global (kyai: "Kepala = lembaganya").
     //   Discope ke SE-GROUP lembaganya di branch scoping (isKepala) di bawah.
     return false
+  })
+
+  // v.1.2.4: indeks rombel Qiraati (pasangan guru) untuk filter Kelas-Guru.
+  //   Dibangun dari SEMUA santri aktif dalam scope; santri pagi-saja nempel ke
+  //   pasangannya (resolver). `optKey` = `${lembagaLower}|${kunciRombel}` supaya
+  //   nama guru sama di 2 lembaga tak salah gabung. Menyediakan opsi dropdown +
+  //   peta santriId→optKey untuk penyaringan.
+  const rombelIndex = computed(() => {
+    const base = santriRaw.value.filter((s) => s && s.aktif !== false)
+    const keyOf = buildResolverQiraati(base)
+    const map = new Map()
+    const idToOpt = new Map()
+    for (const s of base) {
+      const rk = keyOf(s)
+      if (!rk) continue
+      const lem = String(s.lembaga || '').trim()
+      const optKey = `${lem.toLowerCase()}|${rk}`
+      let e = map.get(optKey)
+      if (!e) {
+        e = { optKey, lembaga: lem, guru_pagi: '', guru_sore: '', jumlah: 0 }
+        map.set(optKey, e)
+      }
+      if (!e.guru_pagi && s.guru_pagi) e.guru_pagi = s.guru_pagi
+      if (!e.guru_sore && s.guru_sore) e.guru_sore = s.guru_sore
+      if (!e.guru_pagi && !e.guru_sore && s.guru) e.guru_pagi = s.guru
+      e.jumlah++
+      idToOpt.set(String(s.id), optKey)
+    }
+    for (const e of map.values()) e.label = labelPasangan(e)
+    return { map, idToOpt }
+  })
+
+  // Opsi dropdown filter Kelas-Guru — dipersempit ke lembaga terpilih bila ada.
+  const kelasGuruOptions = computed(() => {
+    const arr = [...rombelIndex.value.map.values()].filter((e) => e.label)
+    const fl = filterLembaga.value
+    const filtered = fl ? arr.filter((e) => e.lembaga === fl) : arr
+    return filtered.sort((a, b) =>
+      (a.lembaga + '|' + a.label).localeCompare(b.lembaga + '|' + b.label, 'id')
+    )
   })
 
   // Filter santri menurut role + UI filters
@@ -203,6 +248,12 @@ export function useSantri() {
       )
     }
 
+    // v.1.2.4: filter per KELAS-GURU (rombel pasangan)
+    if (filterKelasGuru.value) {
+      const idToOpt = rombelIndex.value.idToOpt
+      list = list.filter((s) => idToOpt.get(String(s.id)) === filterKelasGuru.value)
+    }
+
     // v.111: filter Gedung (manual) + PJ PTPT — pisah Pra PTPT/PTPT yang tercampur
     if (filterGedung.value) {
       list = list.filter((s) => String(s.gedung || '').trim() === filterGedung.value)
@@ -276,6 +327,8 @@ export function useSantri() {
     search,
     filterLembaga,
     filterKelas,
+    filterKelasGuru, // v.1.2.4: filter rombel pasangan guru
+    kelasGuruOptions, // v.1.2.4: opsi dropdown Kelas-Guru
     filterMukim,
     filterStatus,
     filterGedung,
