@@ -22,6 +22,7 @@ import { subscribeColl, subscribeDoc, mergeOne } from '@/services/db'
 import { useAuthStore } from '@/stores/auth'
 import { isKepalaLembaga, isSuperAdmin } from '@/utils/roleScope'
 import { lembagaScopeMatches } from '@/composables/useLembaga' // v.100: scope kepala utk notif tes kenaikan
+import { kegiatanKenaLembaga } from '@/composables/useKegiatan' // v.1.2.4: scope lembaga agenda
 
 export function useNotifications() {
   const auth = useAuthStore()
@@ -212,6 +213,31 @@ export function useNotifications() {
       }))
   }
 
+  // v.1.2.4: Agenda kegiatan (tipe 'kegiatan') → notif sesuai audience + scope lembaga.
+  //   Dulu getLibur HANYA memproses tipe 'libur' → agenda tak pernah muncul di notif.
+  function getKegiatan() {
+    const sesi = auth.sesiAktif
+    return liburRaw.value
+      .filter((k) => (k.tipe || 'kegiatan') === 'kegiatan')
+      .filter((k) => {
+        const aud = k.audience || 'semua'
+        if (aud === 'guru') return role.value === 'guru' || role.value === 'admin'
+        if (aud === 'santri') return role.value === 'santri' || role.value === 'admin'
+        return true // semua
+      })
+      .filter((k) => kegiatanKenaLembaga(k, sesi))
+      .map((k) => ({
+        id: 'keg_' + (k.id || k._id),
+        jenis: 'kegiatan',
+        judul: `Agenda: ${k.judul || 'Kegiatan'}`,
+        body: k.deskripsi || (k.tgl_mulai ? `Mulai ${k.tgl_mulai}` : ''),
+        ts: tsMs(k.timestamp || k.createdAt),
+        link: '/kalender',
+        icon: 'fa-calendar-day',
+        color: 'cyan'
+      }))
+  }
+
   // v.87.0526: Kenaikan kelas → wali/santri (anaknya). Sumber: koleksi `riwayat_kenaikan` (event).
   function getKenaikan() {
     if (role.value !== 'santri') return []
@@ -376,6 +402,7 @@ export function useNotifications() {
       ...getBisyaroh(),
       ...getTagihan(),
       ...getLibur(),
+      ...getKegiatan(),
       ...getKenaikan(),
       ...getPrestasi(),
       ...getTesKenaikan(),
@@ -412,6 +439,7 @@ export function useNotifications() {
       bisyaroh: now,
       tagihan: now,
       libur: now,
+      kegiatan: now,
       kenaikan: now,
       prestasi: now,
       tes: now

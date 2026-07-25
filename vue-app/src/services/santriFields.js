@@ -42,6 +42,20 @@ export function parseBool(v) {
   return ['true', 'ya', 'y', '1', 'aktif', 'mukim', 'fullday'].includes(s)
 }
 
+// v.1.2.4: normalisasi Shift Ngaji dari sel impor. 'pagi'/'sore'/'pagi_sore'.
+//   Kosong/ambigu → 'pagi_sore' (default: ikut keduanya). Terima varian umum.
+export function parseShiftNgaji(v) {
+  const s = String(v || '')
+    .toLowerCase()
+    .trim()
+  if (!s) return 'pagi_sore'
+  const p = s.includes('pagi')
+  const so = s.includes('sore')
+  if (p && !so) return 'pagi'
+  if (so && !p) return 'sore'
+  return 'pagi_sore'
+}
+
 // Khusus aktif — default TRUE kalau ambigu/kosong.
 export function parseAktif(v) {
   if (v === true) return true
@@ -221,6 +235,17 @@ export const SANTRI_FIELDS = [
     exp: (s) => s.guru_sore || '',
     imp: (d, v) => {
       d.guru_sore = toTitleCase(v)
+    }
+  },
+  // v.1.2.4: shift ngaji santri — 'pagi_sore' | 'pagi' | 'sore' (kosong = pagi_sore).
+  {
+    header: 'Shift Ngaji',
+    width: 14,
+    aliases: ['shift_ngaji', 'Shift'],
+    note: 'pagi_sore | pagi | sore',
+    exp: (s) => s.shift_ngaji || '',
+    imp: (d, v) => {
+      d.shift_ngaji = parseShiftNgaji(v)
     }
   },
   {

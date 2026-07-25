@@ -60,6 +60,26 @@
               <label :class="labelCls">Juz (khusus PTPT)</label>
               <input v-model="form.juz" type="text" placeholder="mis. 1" :class="inputCls" />
             </div>
+            <!-- v.1.2.4: Shift ngaji — santri pagi/sore saja tak jadi kelas sendiri -->
+            <div>
+              <label :class="labelCls">Shift Ngaji</label>
+              <div class="flex gap-1.5">
+                <button
+                  v-for="opt in SHIFT_NGAJI_OPSI"
+                  :key="opt.value"
+                  type="button"
+                  :class="[
+                    'flex-1 px-2 py-1.5 rounded-lg text-[11px] font-bold border transition',
+                    form.shift_ngaji === opt.value
+                      ? 'bg-teal-600 border-teal-700 text-white'
+                      : 'bg-[var(--bg-card-elevated)] border-[var(--border-default)] text-[var(--text-secondary)] hover:border-teal-400'
+                  ]"
+                  @click="form.shift_ngaji = opt.value"
+                >
+                  {{ opt.label }}
+                </button>
+              </div>
+            </div>
           </div>
 
           <!-- Pendidikan Sekolah -->
@@ -144,6 +164,13 @@ const {
 } = useSantriForm()
 const saving = ref(false)
 
+// v.1.2.4: opsi Shift Ngaji santri (ikut pagi/sore/keduanya)
+const SHIFT_NGAJI_OPSI = [
+  { value: 'pagi_sore', label: 'Pagi & Sore' },
+  { value: 'pagi', label: 'Pagi saja' },
+  { value: 'sore', label: 'Sore saja' }
+]
+
 const isPtpt = computed(() => String(form.value.lembaga || '').toUpperCase() === 'PTPT')
 
 const labelCls = 'block text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1'
@@ -173,7 +200,9 @@ async function simpan() {
       lembaga_sekolah: String(f.lembaga_sekolah || '').trim(),
       // '-' = konvensi "tak ada" (sama dengan useSantriForm.save).
       kelas_sekolah: String(f.kelas_sekolah || '').trim() || '-',
-      juz: lembaga.toUpperCase() === 'PTPT' ? String(f.juz || '').toUpperCase() : '-'
+      juz: lembaga.toUpperCase() === 'PTPT' ? String(f.juz || '').toUpperCase() : '-',
+      // v.1.2.4: shift ngaji (pagi_sore|pagi|sore) — penentu penggabungan kelas.
+      shift_ngaji: f.shift_ngaji || 'pagi_sore'
     })
     toast.success('Data kelas santri diperbarui')
     emit('saved')

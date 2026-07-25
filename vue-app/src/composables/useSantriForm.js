@@ -9,6 +9,7 @@ import { gedungList } from '@/utils/gedung'
 import { nextNisForNew } from '@/utils/nisGenerator' // v.111: santri baru = No. Induk lanjut (append)
 import { namaLembaga } from '@/utils/jabatanUnit'
 import { isSekolahLembaga } from '@/composables/useLembaga' // v.1.2.1: sumber tunggal deteksi sekolah
+import { shiftNgajiOf } from '@/utils/kelasHitung' // v.1.2.4: shift ngaji santri (pagi/sore/pagi_sore)
 
 function emptyForm() {
   return {
@@ -31,6 +32,10 @@ function emptyForm() {
     kelas_sekolah: '',
     guru_pagi: '',
     guru_sore: '',
+    // v.1.2.4: shift ngaji santri — 'pagi_sore' (ikut keduanya) | 'pagi' | 'sore'.
+    //   Menandai santri yang HANYA ikut pagi/sore (guru sisi lain sengaja kosong),
+    //   supaya tak terpisah jadi kelas sendiri saat dihitung.
+    shift_ngaji: 'pagi_sore',
     guru_sekolah: [],
     nama_wali: '',
     wa_wali: '',
@@ -274,6 +279,8 @@ export function useSantriForm() {
         kelas_sekolah: _kelSek,
         guru_pagi: s.guru_pagi || (s.guru && !s.guru_sore ? s.guru : ''),
         guru_sore: s.guru_sore || '',
+        // v.1.2.4: shift eksplisit bila ada, else disimpulkan dari guru terisi.
+        shift_ngaji: s.shift_ngaji || shiftNgajiOf(s) || 'pagi_sore',
         guru_sekolah: Array.isArray(s.guru_sekolah) ? s.guru_sekolah : [],
         nama_wali: s.wali || '',
         wa_wali: s.wa || '',
@@ -374,6 +381,8 @@ export function useSantriForm() {
         kelas: f.kelas,
         guru_pagi: f.guru_pagi,
         guru_sore: f.guru_sore,
+        // v.1.2.4: shift ngaji (pagi_sore|pagi|sore) — penentu penggabungan kelas.
+        shift_ngaji: f.shift_ngaji || 'pagi_sore',
         guru: f.guru_pagi || f.guru_sore, // backward compat
         juz: f.lembaga === 'PTPT' ? String(f.juz || '').toUpperCase() : '-',
         // v.111: gedung (semua santri) + pj_ptpt (hanya bermakna utk PTPT)
