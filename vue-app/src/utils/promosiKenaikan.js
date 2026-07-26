@@ -125,8 +125,16 @@ export function buildKenaikanQiraatiPayload(s, opts = {}, ctx = {}) {
   // v.1.2.2: label PJ PTPT — diisi saat santri MASUK PTPT dari lembaga sebelumnya.
   //   Hanya ditulis bila pemanggil memang memilih; jangan mengosongkan label yang ada.
   if (String(opts.pj_ptpt ?? '').trim()) payload.pj_ptpt = String(opts.pj_ptpt).trim()
-  const today = new Date().toISOString().slice(0, 10)
-  const todayId = new Date().toLocaleDateString('id-ID')
+  // v.1.2.5: tanggal lulus/naik bisa diatur penguji lewat `opts.tanggal` ('YYYY-MM-DD').
+  //   Default = hari ini (perilaku lama dipertahankan PERSIS). Dipakai untuk cap kartu
+  //   kenaikan, riwayat & tgl_naik — supaya tes yang benar terjadi di tanggal lampau
+  //   (backfill) tercatat akurat. `today` sengaja UTC-slice saat default agar identik
+  //   dengan versi lama; `todayId` lokal.
+  const tglPilih = /^\d{4}-\d{2}-\d{2}$/.test(String(opts.tanggal || '')) ? opts.tanggal : ''
+  const today = tglPilih || new Date().toISOString().slice(0, 10)
+  const todayId = tglPilih
+    ? new Date(`${tglPilih}T00:00:00`).toLocaleDateString('id-ID')
+    : new Date().toLocaleDateString('id-ID')
 
   // v.21.75: Update kartu_kenaikan via schema-aware path (kelasId.itemId = tanggal)
   const kk = { ...(s.kartu_kenaikan || {}) }

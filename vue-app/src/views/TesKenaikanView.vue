@@ -383,6 +383,22 @@
           rows="1"
           class="w-full mt-2 px-2.5 py-1.5 text-xs rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none resize-none"
         ></textarea>
+        <!-- v.1.2.5 (Kyai): tanggal lulus/naik (default hari ini). Berlaku saat LULUS —
+             menyetir cap kartu kenaikan, masa tempuh & periode rapor. Mundurkan bila tes
+             benar terjadi di tanggal lampau. Sinkron dgn field yang sama di modal Lulus. -->
+        <div class="mt-2 flex items-center gap-2">
+          <label
+            class="text-[10px] font-black uppercase text-[var(--text-secondary)] whitespace-nowrap"
+            >Tgl lulus/naik</label
+          >
+          <input
+            type="date"
+            :value="getTgl(a.id)"
+            :max="todayStr()"
+            class="px-2 py-1.5 text-xs rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none"
+            @input="setTgl(a.id, $event.target.value)"
+          />
+        </div>
         <div
           v-if="gerbangAntrian[a.id] && gerbangAntrian[a.id].terkunci"
           class="mt-2 px-3 py-2 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 text-[11px] text-amber-800 dark:text-amber-200"
@@ -808,6 +824,25 @@
                 <option v-for="g in guruOptionsFor(naikForm.lembaga)" :key="g" :value="g"></option>
               </datalist>
             </div>
+            <!-- v.1.2.5 (Kyai): tanggal lulus & naik — sinkron dgn field di kartu antrian.
+                 Menyetir cap kartu kenaikan, riwayat, tgl_naik, tgl_hasil & PERIODE RAPOR. -->
+            <div>
+              <label
+                class="block text-[10px] font-black uppercase text-[var(--text-secondary)] mb-1"
+                >Tanggal lulus &amp; naik</label
+              >
+              <input
+                type="date"
+                :value="getTgl(lulusFor.id)"
+                :max="todayStr()"
+                class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none"
+                @input="setTgl(lulusFor.id, $event.target.value)"
+              />
+              <p class="text-[10px] text-[var(--text-tertiary)] mt-1">
+                Default hari ini. Mundurkan bila tes benar terjadi di tanggal lampau — kartu
+                kenaikan, masa tempuh &amp; rapor mengikuti tanggal ini.
+              </p>
+            </div>
             <p class="text-[10px] text-[var(--text-tertiary)] italic">
               Catatan tes diambil dari kolom catatan di antrian; nilai aspek yang sudah diisi ikut
               tersimpan.
@@ -1121,7 +1156,9 @@ function masaTempuhText(a) {
 
 // v.100d Fase 5: statistik/rekap tes (hormati filter aktif) — diajukan/lulus/belum/tolak + % kelulusan + per lembaga.
 const statsRekap = computed(() => {
-  const all = [...antrianView.value, ...riwayatView.value]
+  // v.1.2.5: ajuan yang DIBATALKAN pengaju tak dihitung statistik (bukan hasil tes) —
+  //   supaya Total & % kelulusan tetap koheren dengan jumlah bucket.
+  const all = [...antrianView.value, ...riwayatView.value].filter((a) => a.status !== 'dibatalkan')
   const base = { diajukan: 0, lulus: 0, tidak_lulus: 0, ditolak: 0 }
   const tot = { ...base }
   const perLembaga = {}
@@ -1350,6 +1387,23 @@ async function batalkan(a) {
 // ----- Tab Antrian: putuskan hasil -----
 const catatan = reactive({})
 const busyId = ref(null)
+// v.1.2.5 (Kyai): tanggal lulus/naik per-kartu (default hari ini, waktu LOKAL).
+//   Dipakai HANYA saat LULUS (naik) — Belum Lulus/Tolak tetap tercatat waktu sekarang.
+//   Menyetir cap kartu kenaikan, masa tempuh juz, tgl_hasil, dan PERIODE RAPOR.
+//   Pola getter/setter selaras getNilai/setNilai supaya tak perlu pra-inisialisasi.
+const tglHasil = reactive({})
+function todayStr() {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
+    d.getDate()
+  ).padStart(2, '0')}`
+}
+function getTgl(id) {
+  return tglHasil[id] || todayStr()
+}
+function setTgl(id, v) {
+  tglHasil[id] = v || todayStr()
+}
 // v.100d: nilai aspek per ajuan (skala 0–90) — penguji isi saat menguji.
 const nilai = reactive({})
 const MAX_NILAI = TES_NILAI_MAX
@@ -1585,6 +1639,9 @@ async function submitLulus() {
   }
   naikBusy.value = true
   try {
+    // v.1.2.5: tanggal lulus/naik pilihan (default hari ini). Satu sumber untuk cap
+    //   kartu kenaikan, tgl_hasil, dan periode rapor — supaya tak saling geser.
+    const tgl = getTgl(a.id)
     const opts = {
       lembaga: naikForm.lembaga || a.lembaga || '',
       kelas: naikForm.kelas,
@@ -1594,7 +1651,8 @@ async function submitLulus() {
       // v.1.2.2: label PJ hanya relevan di PTPT (santri yang baru masuk PTPT).
       pj_ptpt: naikForm.lembaga === 'PTPT' ? naikForm.pj_ptpt || '' : '',
       kelas_sekolah: s.kelas_sekolah || '',
-      catatan: catatan[a.id] || ''
+      catatan: catatan[a.id] || '',
+      tanggal: tgl // v.1.2.5: cap kartu kenaikan & riwayat ikut tanggal ini
     }
     const { payload, rkEntry } = buildKenaikanQiraatiPayload(s, opts, {
       settings: settings.value,
@@ -1604,15 +1662,19 @@ async function submitLulus() {
     })
     await writeKenaikan(s, payload, rkEntry)
     const nilaiObj = collectNilai(a)
-    await putuskan(a.id, 'lulus', catatan[a.id] || '', nilaiObj)
-    // v.100d Fase 3: nilai tes auto → rapor (posisi yang DISELESAIKAN, periode berjalan; prefill editable)
+    await putuskan(a.id, 'lulus', catatan[a.id] || '', nilaiObj, tgl)
+    // v.100d Fase 3: nilai tes auto → rapor (posisi yang DISELESAIKAN; prefill editable).
+    //   v.1.2.5: periode rapor MENGIKUTI tanggal lulus pilihan — kalau di-mundur ke
+    //   semester lalu, nilai mendarat di rapor semester itu (bukan yang berjalan).
     try {
       const feed = buildTesRaporFeed(
         { lembaga: a.lembaga, kelas_asal: a.kelas_asal, juz_asal: a.juz_asal, target: a.target },
         nilaiObj
       )
       if (feed) {
-        const { tahunAjaran, semester, periodKey } = currentRaporPeriode()
+        const { tahunAjaran, semester, periodKey } = currentRaporPeriode(
+          new Date(`${tgl}T00:00:00`)
+        )
         const lmbKey = s.lembaga || a.lembaga || ''
         const rid = `rapor_${s.id}_${lmbKey}_${periodKey}`
         await mergeOne('rapor_semester', rid, {
@@ -1630,6 +1692,7 @@ async function submitLulus() {
     }
     delete catatan[a.id]
     delete nilai[a.id]
+    delete tglHasil[a.id] // v.1.2.5
     toast.success(
       naikForm.pindah
         ? `${a.nama_cache} LULUS & pindah ke ${naikForm.lembaga} — ${naikForm.kelas}.`
@@ -1665,6 +1728,8 @@ function statusCls(s) {
   if (s === 'lulus') return 'bg-emerald-100 text-emerald-700'
   if (s === 'tidak_lulus') return 'bg-amber-100 text-amber-700'
   if (s === 'ditolak') return 'bg-rose-100 text-rose-700'
+  // v.1.2.5: dibatalkan pengaju = netral (beda dari ditolak penguji yang merah).
+  if (s === 'dibatalkan') return 'bg-slate-200 text-slate-500'
   return 'bg-slate-100 text-slate-600'
 }
 function fmtTgl(iso) {

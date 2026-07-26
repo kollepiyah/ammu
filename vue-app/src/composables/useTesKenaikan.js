@@ -321,7 +321,7 @@ export function useTesKenaikan() {
 
   // Penguji: tetapkan hasil. status: 'lulus' | 'tidak_lulus' | 'ditolak'.
   //   nilai = { aspekKey: angka 0–90 } (v.100d) — opsional, disimpan apa adanya.
-  async function putuskan(id, status, catatan = '', nilai = null) {
+  async function putuskan(id, status, catatan = '', nilai = null, tglIso = null) {
     // v.111.x GERBANG: PJ tak boleh mengetes (Lulus/Belum Lulus) sebelum glondongan+berjalan
     //   'selesai'. Tolak/Batal (status lain) tetap boleh.
     if (status === 'lulus' || status === 'tidak_lulus') {
@@ -334,20 +334,30 @@ export function useTesKenaikan() {
         throw err
       }
     }
+    // v.1.2.5: tgl_hasil bisa diatur penguji (dipakai KHUSUS saat LULUS — lihat
+    //   TesKenaikanView). 'YYYY-MM-DD' → disimpan sbg 00:00Z tanggal itu; slice(0,10)
+    //   tetap benar untuk masa tempuh juz & fmtTgl, tanpa geser hari (jangan konstruksi
+    //   via waktu lokal lalu toISOString — bisa mundur 1 hari di WIB). Default = sekarang.
+    const tgl = /^\d{4}-\d{2}-\d{2}$/.test(String(tglIso || ''))
+      ? `${tglIso}T00:00:00.000Z`
+      : new Date().toISOString()
     const patch = {
       status,
       catatan_hasil: String(catatan || ''),
       penguji: myNama.value,
-      tgl_hasil: new Date().toISOString()
+      tgl_hasil: tgl
     }
     if (nilai && typeof nilai === 'object' && Object.keys(nilai).length) patch.nilai = nilai
     await updateOne('tes_kenaikan', id, patch)
   }
 
   // Pengaju: batalkan ajuan yang masih 'diajukan' (sebelum diuji).
+  //   v.1.2.5 (Kyai): status khusus 'dibatalkan' — BUKAN 'ditolak'. Pembatalan oleh
+  //   pengaju sendiri ≠ penolakan penguji; dibedakan supaya labelnya jujur dan tak
+  //   memicu notifikasi "Ditolak" ke pengaju (lihat useNotifications).
   async function batalAjuan(id) {
     await updateOne('tes_kenaikan', id, {
-      status: 'ditolak',
+      status: 'dibatalkan',
       catatan_hasil: 'Dibatalkan pengaju',
       tgl_hasil: new Date().toISOString()
     })

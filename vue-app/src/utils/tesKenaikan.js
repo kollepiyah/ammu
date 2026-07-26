@@ -109,7 +109,8 @@ export const STATUS_LABEL = {
   diajukan: 'Menunggu tes',
   lulus: 'Lulus — naik',
   tidak_lulus: 'Belum lulus',
-  ditolak: 'Ditolak'
+  ditolak: 'Ditolak',
+  dibatalkan: 'Dibatalkan' // v.1.2.5: dibatalkan pengaju (beda dari ditolak penguji)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

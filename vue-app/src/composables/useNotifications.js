@@ -283,7 +283,10 @@ export function useNotifications() {
     if (role.value === 'guru' || role.value === 'admin') {
       // sbg PENGAJU: ajuan saya yang sudah ada hasil
       for (const a of tesRaw.value) {
-        if (String(a.guru_id || '') !== me || a.status === 'diajukan') continue
+        // v.1.2.5: ajuan yang DIBATALKAN pengaju sendiri jangan jadi notifikasi
+        //   (tanpa ini ia jatuh ke cabang "Belum Lulus" — menyesatkan).
+        if (String(a.guru_id || '') !== me || a.status === 'diajukan' || a.status === 'dibatalkan')
+          continue
         const lulus = a.status === 'lulus'
         out.push({
           id: 'tesres_' + (a.id || a._id),

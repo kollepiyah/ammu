@@ -21,6 +21,26 @@ Versioning: `v.{nomor-urut}.{MMDDtahunmu}` (mis: `v.108.0527`)
 
 ---
 
+## [v.1.2.5] — 2026-07-26 — Tanggal lulus/naik bisa diatur di Antrian Tes + status "Dibatalkan"
+
+Rilis perbaikan kecil. **TANPA migrasi DB** (murni frontend; kolom `tes_kenaikan.status`
+sudah bertipe `text` tanpa constraint) — cukup deploy web + rebuild AAB/Electron.
+
+### Added (Baru)
+
+- **Tanggal lulus/naik dapat diatur** di Antrian Tes Kenaikan (super_admin/Kepala/PJ).
+  Field tanggal muncul di kartu antrian **dan** di modal "Lulus & Naikkan" (tersinkron),
+  default hari ini, bisa dimundurkan bila tes benar terjadi di tanggal lampau. Tanggal ini
+  menyetir **cap kartu kenaikan, riwayat, `tgl_naik`, `tgl_hasil`, masa tempuh juz**, dan
+  **periode rapor** (nilai tes mendarat di semester sesuai tanggal, bukan selalu semester
+  berjalan). Hanya berlaku untuk keputusan **Lulus**; Belum Lulus/Tolak tetap waktu sekarang.
+
+### Changed (Perubahan)
+
+- **Ajuan yang dibatalkan pengaju** kini berstatus **"Dibatalkan"** (bukan lagi "Ditolak") —
+  dibedakan dari penolakan penguji: label netral, tak memicu notifikasi "Ditolak" ke pengaju,
+  dan tak ikut dihitung di statistik/% kelulusan Rekap.
+
 ## [v.1.2.4] — 2026-07-25 — Shift ngaji santri, hitung kelas pagi-saja, filter kelas-guru, agenda kalender
 
 Rilis perbaikan + fitur. **TANPA migrasi DB** (murni frontend) — cukup deploy web.
