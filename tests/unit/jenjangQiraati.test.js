@@ -61,7 +61,10 @@ const SETTINGS = {
         {
           id: 'lvl_5',
           label: 'Level 5 (3 Juz)',
-          items: ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX'].map((l) => ({ label: l }))
+          // v.1.2.3 (Kyai 26 Jul 2026): Level 3 Juz khotam I..XI (dulu I..IX).
+          items: ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI'].map((l) => ({
+            label: l
+          }))
         }
       ]
     },
@@ -165,7 +168,9 @@ describe('itemJenjang — blok kartu dijodohkan lewat INDEX', () => {
       'VI',
       'VII',
       'VIII',
-      'IX'
+      'IX',
+      'X',
+      'XI'
     ])
     expect(itemJenjang('Pra PTPT', 'Level ½ Juz', CTX)).toEqual(['I', 'II', 'III'])
   })
@@ -183,15 +188,16 @@ describe('itemJenjang — blok kartu dijodohkan lewat INDEX', () => {
 describe('menamatkanLembaga — DUA syarat, bukan satu', () => {
   const ajuan = (o) => ({ lembaga: 'Pra PTPT', kelas_asal: 'Level 3 Juz', jenis: 'khotam', ...o })
 
-  it('KASUS KYAI: Level 3 Juz + Khotam IX → menamatkan Pra PTPT', () => {
-    expect(menamatkanLembaga(ajuan({ target: 'Khotam IX' }), CTX)).toBe(true)
-    expect(tujuanNaikLembaga(ajuan({ target: 'Khotam IX' }), CTX)).toEqual({
+  it('KASUS KYAI: Level 3 Juz + Khotam XI → menamatkan Pra PTPT', () => {
+    expect(menamatkanLembaga(ajuan({ target: 'Khotam XI' }), CTX)).toBe(true)
+    expect(tujuanNaikLembaga(ajuan({ target: 'Khotam XI' }), CTX)).toEqual({
       lembaga: 'PTPT',
       kelas: '1'
     })
   })
 
-  it('jenjang terakhir TAPI khotam belum terakhir → tetap di Pra PTPT', () => {
+  it('jenjang terakhir TAPI khotam belum terakhir (IX/V) → tetap di Pra PTPT', () => {
+    expect(menamatkanLembaga(ajuan({ target: 'Khotam IX' }), CTX)).toBe(false)
     expect(menamatkanLembaga(ajuan({ target: 'Khotam V' }), CTX)).toBe(false)
     expect(tujuanNaikLembaga(ajuan({ target: 'Khotam V' }), CTX)).toBe(null)
   })

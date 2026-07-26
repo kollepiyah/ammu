@@ -1415,6 +1415,8 @@ import {
 } from '@/utils/kenaikan'
 // v.1.2.2: jejak kartu per lembaga — dipakai memunculkan "alumni" di tab Riwayat.
 import { countTanggalKartu, countCatatanKartu, adaJejakKartu } from '@/utils/kartuJejak'
+// v.1.2.3: daftar jenjang Pra PTPT DIBACA dari master/lembaga (bukan hardcoded 'Level 1'..'Level 5').
+import { jenjangLembaga, indexJenjang } from '@/utils/jenjangQiraati'
 import {
   buildKenaikanQiraatiPayload,
   writeKenaikan,
@@ -2527,7 +2529,14 @@ const kelasOptions = computed(() => {
       'Persiapan Khotaman'
     ]
   }
-  if (lmb === 'pra ptpt') return ['Level 1', 'Level 2', 'Level 3', 'Level 4', 'Level 5']
+  if (lmb === 'pra ptpt') {
+    // v.1.2.3: nama level DIBACA dari master/lembaga (Pengaturan Lembaga) — dulu hardcoded
+    //   'Level 1'..'Level 5' yang tak cocok dengan data nyata ('Level ½ Juz'..'Level 3 Juz').
+    const dariMaster = jenjangLembaga('Pra PTPT', lembagaRaw.value)
+    return dariMaster.length
+      ? dariMaster
+      : ['Level ½ Juz', 'Level 1 Juz', 'Level 1½ Juz', 'Level 2 Juz', 'Level 3 Juz']
+  }
   if (lmb === 'ptpt') return ['Kelas 1', 'Kelas 2', 'Kelas 3', 'Kelas 4', 'Kelas 5', 'Kelas 6']
   if (lmb === 'ppph' || lmb === 'p3h')
     return [
@@ -2666,18 +2675,20 @@ function openFormKenaikan(s) {
   }
   // v.21.73: Auto-resolve kelas current untuk Pra PTPT & PTPT
   let resolvedKelas = s.kelas || ''
-  if (matched === 'PTPT' || matched === 'Pra PTPT') {
-    const num = String(s.kelas || '').match(/(\d+)/)
-    if (num) {
-      const label = matched === 'PTPT' ? 'Kelas' : 'Level'
-      // Pra PTPT format pakai range juz suffix
-      if (matched === 'Pra PTPT') {
-        const labels = ['Level 1', 'Level 2', 'Level 3', 'Level 4', 'Level 5']
-        resolvedKelas = labels[parseInt(num[1], 10) - 1] || s.kelas || ''
-      } else {
-        resolvedKelas = `${label} ${num[1]}`
-      }
+  if (matched === 'Pra PTPT') {
+    // v.1.2.3: normalkan kelas santri ke label master. Label master ('Level 3 Juz')
+    //   dibiarkan apa adanya; data lama bare ('Level 5') dipetakan lewat INDEX → 'Level 3 Juz'.
+    const list = jenjangLembaga('Pra PTPT', lembagaRaw.value)
+    const i = indexJenjang(list, s.kelas)
+    if (i >= 0) {
+      resolvedKelas = list[i]
+    } else {
+      const m = String(s.kelas || '').match(/(\d+)/)
+      resolvedKelas = (m && list[parseInt(m[1], 10) - 1]) || s.kelas || ''
     }
+  } else if (matched === 'PTPT') {
+    const num = String(s.kelas || '').match(/(\d+)/)
+    if (num) resolvedKelas = `Kelas ${num[1]}`
   }
   const guruLama = Array.isArray(s.guru) ? s.guru[0] || '' : s.guru || ''
   const pagiLama = String(s.guru_pagi || '').trim()

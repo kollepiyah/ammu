@@ -220,11 +220,12 @@ export function buildKenaikanQiraatiPayload(s, opts = {}, ctx = {}) {
     const klsL = (s.kelas || '').toLowerCase()
     const lmbgB = (lmbBaru || '').toUpperCase()
     const klsB = (klsBaru || '').toLowerCase()
-    // 1) Persiapan Khotaman → Pra PTPT (level 1)
+    // 1) Persiapan Khotaman → Pra PTPT (level pertama)
+    //    v.1.2.3: label master level pertama = 'Level ½ Juz'; 'level 1' dipertahankan utk data lama.
     if (
       klsL.includes('persiapan khotaman') &&
       lmbgB.includes('PRA PTPT') &&
-      klsB.includes('level 1')
+      (klsB === 'level 1' || klsB.includes('½ juz'))
     ) {
       riwayat.push({
         tanggal: todayId,
@@ -232,10 +233,11 @@ export function buildKenaikanQiraatiPayload(s, opts = {}, ctx = {}) {
         keterangan: `Telah LULUS IMTAS pada tanggal ${todayId}`
       })
     }
-    // 2) Pra PTPT level 5 → PTPT kelas 1
+    // 2) Pra PTPT level terakhir → PTPT kelas 1
+    //    v.1.2.3: label master level terakhir = 'Level 3 Juz'; 'level 5' dipertahankan utk data lama.
     else if (
       lmbgL.includes('PRA PTPT') &&
-      klsL.includes('level 5') &&
+      (klsL === 'level 5' || klsL.includes('3 juz')) &&
       lmbgB === 'PTPT' &&
       klsB.includes('kelas 1')
     ) {

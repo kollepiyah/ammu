@@ -94,7 +94,8 @@
               <div class="flex-1 min-w-0">
                 <p class="text-sm font-bold text-[var(--text-primary)] truncate">{{ s.nama }}</p>
                 <p class="text-[11px] text-[var(--text-secondary)]">
-                  {{ s.lembaga }}<span v-if="s.kelas"> · {{ s.kelas }}</span
+                  {{ s.lembaga
+                  }}<span v-if="s.kelas"> · {{ labelKelasPra(s.lembaga, s.kelas) }}</span
                   ><span v-if="s.juz && s.juz !== '-'"> · Juz {{ juzNum(s.juz) }}</span>
                 </p>
                 <p v-if="hasOpenAjuan(s.id)" class="text-[10px] text-amber-600 font-bold mt-0.5">
@@ -161,7 +162,8 @@
           <div class="min-w-0">
             <p class="text-sm font-bold text-[var(--text-primary)] truncate">{{ a.nama_cache }}</p>
             <p class="text-[11px] text-[var(--text-secondary)] mt-0.5">
-              {{ a.lembaga }} · {{ a.kelas_asal || '-' }} → <b>{{ a.target }}</b>
+              {{ a.lembaga }} · {{ labelKelasPra(a.lembaga, a.kelas_asal) || '-' }} →
+              <b>{{ a.target }}</b>
             </p>
             <p v-if="a.catatan_hasil" class="text-[11px] text-[var(--text-tertiary)] mt-1 italic">
               Catatan: {{ a.catatan_hasil }}
@@ -337,7 +339,8 @@
           <div class="min-w-0">
             <p class="text-sm font-bold text-[var(--text-primary)] truncate">{{ a.nama_cache }}</p>
             <p class="text-[11px] text-[var(--text-secondary)] mt-0.5">
-              {{ a.lembaga }} · {{ a.kelas_asal || '-' }} → <b>{{ a.target }}</b>
+              {{ a.lembaga }} · {{ labelKelasPra(a.lembaga, a.kelas_asal) || '-' }} →
+              <b>{{ a.target }}</b>
             </p>
             <p class="text-[10px] text-[var(--text-tertiary)] mt-0.5">
               Pengaju: {{ a.guru_nama || '-' }} · {{ fmtTgl(a.tgl_daftar) }}
@@ -480,7 +483,8 @@
           <div class="min-w-0">
             <p class="text-sm font-bold text-[var(--text-primary)] truncate">{{ a.nama_cache }}</p>
             <p class="text-[11px] text-[var(--text-secondary)] mt-0.5">
-              {{ a.lembaga }} · {{ a.kelas_asal || '-' }} → <b>{{ a.target }}</b>
+              {{ a.lembaga }} · {{ labelKelasPra(a.lembaga, a.kelas_asal) || '-' }} →
+              <b>{{ a.target }}</b>
             </p>
             <p class="text-[10px] text-[var(--text-tertiary)] mt-0.5">
               Pengaju: {{ a.guru_nama || '-' }} · Penguji: {{ a.penguji || '-' }} ·
@@ -683,7 +687,8 @@
         <div class="p-4 overflow-auto flex-1 space-y-3 text-sm">
           <p class="text-xs text-[var(--text-secondary)]">
             <b class="text-[var(--text-primary)]">{{ lulusFor.nama_cache }}</b> —
-            {{ lulusFor.lembaga }} · {{ lulusFor.kelas_asal || '-' }}
+            {{ lulusFor.lembaga }} ·
+            {{ labelKelasPra(lulusFor.lembaga, lulusFor.kelas_asal) || '-' }}
             <span class="block mt-0.5"
               >Diajukan naik ke <b>{{ lulusFor.target }}</b
               >. Konfirmasi tujuan &amp; guru berikutnya:</span
@@ -1417,8 +1422,8 @@ const KHOTAM_ROMAWI = ['I', 'II', 'III', 'IV', 'V'] // cadangan bila kartu belum
 function canonKelasOptions(lembaga) {
   return jenjangLembaga(lembaga, lembagaRaw.value)
 }
-// Pilihan khotam mengikuti kartu kenaikan jenjang terpilih (Level 3 Juz → I..IX);
-// dulu dipatok I..V sehingga 'Khotam IX' tak pernah bisa dipilih.
+// Pilihan khotam mengikuti kartu kenaikan jenjang terpilih (Level 3 Juz → I..XI);
+// dulu dipatok I..V sehingga khotam di atasnya tak pernah bisa dipilih.
 const khotamOptions = computed(() => {
   const items = itemJenjang(naikForm.lembaga, naikForm.kelas, {
     lembagaList: lembagaRaw.value,
@@ -1472,7 +1477,7 @@ function prefillNaik(a) {
   const ctx = { lembagaList: lembagaRaw.value, settings: settings.value }
 
   // v.1.2.2 (Kyai 22 Jul): santri yang MENAMATKAN lembaganya — jenjang terakhir DAN
-  //   item terakhir jenjang itu (mis. Pra PTPT 'Level 3 Juz' + 'Khotam IX') — tujuannya
+  //   item terakhir jenjang itu (mis. Pra PTPT 'Level 3 Juz' + 'Khotam XI') — tujuannya
   //   lembaga BERIKUTNYA (TPQ → Pra PTPT → PTPT → PPPH), bukan jenjang di lembaga lama.
   const naik = tujuanNaikLembaga(a, ctx)
   if (naik) {
@@ -1639,6 +1644,20 @@ async function submitLulus() {
 }
 
 // ----- helpers UI -----
+// v.1.2.3: tampilkan kelas Pra PTPT dengan nama master ('Level ½ Juz'..'Level 3 Juz').
+//   Data lama yang tersimpan bare ('Level 5') dipetakan lewat INDEX ke label master;
+//   lembaga lain / label yang sudah benar dibiarkan apa adanya.
+function labelKelasPra(lembaga, kelas) {
+  const lmb = String(lembaga || '').trim()
+  const k = String(kelas || '').trim()
+  if (lmb !== 'Pra PTPT' || !k) return k
+  const list = jenjangLembaga('Pra PTPT', lembagaRaw.value)
+  if (!list.length) return k
+  const i = indexJenjang(list, k)
+  if (i >= 0) return list[i]
+  const m = k.match(/(\d+)/)
+  return (m && list[parseInt(m[1], 10) - 1]) || k
+}
 function statusLabel(s) {
   return STATUS_LABEL[s] || s
 }

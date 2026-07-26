@@ -7,7 +7,7 @@
 // DUA SYARAT harus terpenuhi, bukan satu:
 //   1. kelas asalnya = jenjang TERAKHIR lembaga itu, DAN
 //   2. target tesnya = item TERAKHIR di jenjang itu.
-// Contoh Kyai: 'Pra PTPT · Level 3 Juz' (jenjang terakhir) + 'Khotam IX' (khotam
+// Contoh Kyai: 'Pra PTPT · Level 3 Juz' (jenjang terakhir) + 'Khotam XI' (khotam
 // terakhir level itu) → naik ke PTPT. Kalau ia baru Khotam V, ia TETAP di Level 3 Juz.
 //
 // Dua sumber nama jenjang sengaja dipisah karena bentuk labelnya memang beda:

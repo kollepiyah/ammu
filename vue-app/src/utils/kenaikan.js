@@ -10,6 +10,13 @@ function _buildJuzList(start, end) {
   return arr
 }
 
+// v.1.2.3: khotam Pra PTPT (angka romawi I..XI). id (kh_I..) DIPERTAHANKAN agar
+//   tanggal khotam yang sudah tercatat di kartu santri lama tetap terbaca.
+const _KHOTAM_ROMAWI = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI']
+function _buildKhotamList(jumlah) {
+  return _KHOTAM_ROMAWI.slice(0, jumlah).map((r) => ({ id: 'kh_' + r, label: r }))
+}
+
 export const DEFAULT_KARTU_KENAIKAN_PTPT = {
   itemHeader: 'Juz',
   kelasList: [
@@ -76,61 +83,18 @@ export const DEFAULT_KARTU_KENAIKAN_TPQ = {
   ]
 }
 
+// v.1.2.3 (Kyai 26 Jul 2026): label level DISERAGAMKAN dengan master/lembaga
+//   ('Level ½ Juz' … 'Level 3 Juz', lihat Pengaturan Lembaga) — dulu 'Level 1 (½ Juz)'.
+//   Jumlah khotam MENGIKUTI rapor (sumber yang sudah benar): Level 3 Juz = I..XI (11),
+//   bukan I..V. id (lvl_1..lvl_5) DIPERTAHANKAN agar kartu kenaikan lama tetap terbaca.
 export const DEFAULT_KARTU_KENAIKAN_PRA_PTPT = {
   itemHeader: 'Khotam',
   kelasList: [
-    {
-      id: 'lvl_1',
-      label: 'Level 1 (½ Juz)',
-      items: [
-        { id: 'kh_I', label: 'I' },
-        { id: 'kh_II', label: 'II' },
-        { id: 'kh_III', label: 'III' }
-      ],
-      ceremonial: false
-    },
-    {
-      id: 'lvl_2',
-      label: 'Level 2 (1 Juz)',
-      items: [
-        { id: 'kh_I', label: 'I' },
-        { id: 'kh_II', label: 'II' },
-        { id: 'kh_III', label: 'III' }
-      ],
-      ceremonial: false
-    },
-    {
-      id: 'lvl_3',
-      label: 'Level 3 (1½ Juz)',
-      items: [
-        { id: 'kh_I', label: 'I' },
-        { id: 'kh_II', label: 'II' },
-        { id: 'kh_III', label: 'III' }
-      ],
-      ceremonial: false
-    },
-    {
-      id: 'lvl_4',
-      label: 'Level 4 (2 Juz)',
-      items: [
-        { id: 'kh_I', label: 'I' },
-        { id: 'kh_II', label: 'II' },
-        { id: 'kh_III', label: 'III' }
-      ],
-      ceremonial: false
-    },
-    {
-      id: 'lvl_5',
-      label: 'Level 5 (3 Juz)',
-      items: [
-        { id: 'kh_I', label: 'I' },
-        { id: 'kh_II', label: 'II' },
-        { id: 'kh_III', label: 'III' },
-        { id: 'kh_IV', label: 'IV' },
-        { id: 'kh_V', label: 'V' }
-      ],
-      ceremonial: false
-    }
+    { id: 'lvl_1', label: 'Level ½ Juz', items: _buildKhotamList(3), ceremonial: false },
+    { id: 'lvl_2', label: 'Level 1 Juz', items: _buildKhotamList(3), ceremonial: false },
+    { id: 'lvl_3', label: 'Level 1½ Juz', items: _buildKhotamList(3), ceremonial: false },
+    { id: 'lvl_4', label: 'Level 2 Juz', items: _buildKhotamList(3), ceremonial: false },
+    { id: 'lvl_5', label: 'Level 3 Juz', items: _buildKhotamList(11), ceremonial: false }
   ]
 }
 
@@ -211,6 +175,17 @@ function _isValidPtptOverride(sch) {
   return total >= 30
 }
 
+// v.1.2.3: override Pra PTPT dianggap VALID hanya bila level TERAKHIR punya ≥11 khotam
+//   (kanonik Kyai: Level 3 Juz = I..XI). Override tersimpan lama (I..IX) dianggap basi →
+//   pakai default terkoreksi, jadi khotam XI langsung jalan tanpa perlu reset manual.
+//   Sejalan dengan _isValidPtptOverride (guard override PTPT basi).
+function _isValidPraPtptOverride(sch) {
+  if (!sch || !Array.isArray(sch.kelasList) || sch.kelasList.length === 0) return false
+  const last = sch.kelasList[sch.kelasList.length - 1]
+  const n = Array.isArray(last?.items) ? last.items.length : 0
+  return n >= 11
+}
+
 /**
  * Get schema kartu kenaikan untuk lembaga tertentu.
  * Cek dulu di settings.kartuKenaikanSchema[lembaga] (override admin),
@@ -226,6 +201,10 @@ export function getKartuKenaikanSchema(lembaga, settings) {
     // v.100d: guard override basi PTPT → pakai default kanonik (5 juz/kelas, 30 juz).
     if (lembaga === 'PTPT' && !_isValidPtptOverride(all[lembaga])) {
       return JSON.parse(JSON.stringify(DEFAULT_KARTU_KENAIKAN_PTPT))
+    }
+    // v.1.2.3: guard override basi Pra PTPT → pakai default kanonik (Level 3 Juz = I..XI).
+    if (lembaga === 'Pra PTPT' && !_isValidPraPtptOverride(all[lembaga])) {
+      return JSON.parse(JSON.stringify(DEFAULT_KARTU_KENAIKAN_PRA_PTPT))
     }
     return JSON.parse(JSON.stringify(all[lembaga]))
   }
