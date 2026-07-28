@@ -184,8 +184,8 @@
       :open="modalOpen"
       :santri="selectedSantri"
       :operator="operatorName"
-      :pending-tagihan="pendingTagihan"
-      :prepaid-periodes="prepaidPeriodes"
+      :all-tagihan="allTagihan"
+      :pos-payments="posPayments"
       :saved-trx="lastTrx"
       :saving="posSaving"
       :is-desktop="isDesktop"
@@ -210,7 +210,7 @@ import { useToast } from '@/composables/useToast'
 // v.F6e: adapter Supabase (serverTimestamp = shim ISO string).
 import { getAll, getOne, queryColl, setOne, updateOne, serverTimestamp } from '@/services/db'
 import { sortSantri } from '@/utils/santriSort'
-import { terbayarDari, sisaTagihan } from '@/utils/tagihan'
+import { sisaTagihan } from '@/utils/tagihan'
 import { cetakStrukPdf, cetakStrukSlipPdf, buildStrukHtml } from '@/utils/strukBuilder'
 import { buildStrukSlipEscpBase64 } from '@/utils/escpImage'
 import {
@@ -264,8 +264,9 @@ watch([search, filterLembaga, filterSekolah, filterTunggakan], () => {
   if (filterTunggakan.value) q.tunggakan = '1'
   _router.replace({ query: q }).catch(() => {})
 })
-const pendingTagihan = ref([])
-const prepaidPeriodes = ref([]) // v.96.0626 audit: periode sudah ada tagihan -> anti-dobel bayar di muka
+// v.1.2.x: matriks POS gaya Braja — kirim SEMUA tagihan santri + pembayaran POS (utk warna sel)
+const allTagihan = ref([])
+const posPayments = ref([])
 const loadingCart = ref(false)
 // v.21.87.0527: ringkasan transaksi POS hari ini
 const todayStats = ref({ count: 0, total: 0 })
@@ -392,89 +393,47 @@ const filteredSantri = computed(() => {
   return list.slice(0, 50)
 })
 
-// v.95.0626: derive periode tagihan -> "Juni 2026" dari periode/bulan/jatuh_tempo (utk rincian struk)
-const _BLN_ID = [
-  'Januari',
-  'Februari',
-  'Maret',
-  'April',
-  'Mei',
-  'Juni',
-  'Juli',
-  'Agustus',
-  'September',
-  'Oktober',
-  'November',
-  'Desember'
-]
-function _namaBulan(n) {
-  const i = parseInt(n, 10) - 1
-  return _BLN_ID[i] || ''
-}
-function periodeTagihan(t) {
-  if (!t) return ''
-  // periode "2026-06" / "2026_6" -> "Juni 2026"
-  let m = String(t.periode || '').match(/^(\d{4})[-_](\d{1,2})$/)
-  if (m) return _namaBulan(m[2]) + ' ' + m[1]
-  // periode sudah teks ("Juni 2026") -> pakai apa adanya
-  if (t.periode && /[A-Za-z]/.test(String(t.periode))) return String(t.periode).trim()
-  // bulan (angka/nama) + tahun (field tahun / dari jatuh_tempo)
-  if (t.bulan) {
-    const bln = /^\d+$/.test(String(t.bulan).trim()) ? _namaBulan(t.bulan) : String(t.bulan).trim()
-    const thn = t.tahun || (String(t.jatuh_tempo || '').match(/^(\d{4})/) || [])[1] || ''
-    if (bln) return thn ? bln + ' ' + thn : bln
-  }
-  // jatuh_tempo "2026-06-05" -> "Juni 2026"
-  m = String(t.jatuh_tempo || '').match(/^(\d{4})-(\d{2})/)
-  if (m) return _namaBulan(m[2]) + ' ' + m[1]
-  return ''
-}
-
 async function openModal(s) {
   selectedSantri.value = s
   // v.94.0626: buka selalu di mode form (bukan sisa layar sukses transaksi sebelumnya)
   lastTrx.value = null
   loadingCart.value = true
-  pendingTagihan.value = []
-  prepaidPeriodes.value = []
+  allTagihan.value = []
+  posPayments.value = []
   try {
-    // v.95.0626: FIX tagihan khusus tak muncul di POS — cocokkan santri_id sbg STRING (+ NUMBER bila numerik),
-    //   tanpa limit, supaya SAMA dgn yg dilihat akun wali (yg pakai String(santri_id)).
+    // v.1.2.x: matriks butuh SEMUA tagihan santri (segala status), bukan cuma yg nunggak.
+    //   Cocokkan santri_id sbg STRING (+ NUMBER bila numerik) — sama spt yg dilihat akun wali.
     const sid = String(s.id)
-    const seen = new Map()
-    const qs = [queryColl('keuangan_tagihan', [['santri_id', '==', sid]])]
     const sidNum = Number(sid)
-    if (!Number.isNaN(sidNum) && String(sidNum) === sid)
-      qs.push(queryColl('keuangan_tagihan', [['santri_id', '==', sidNum]]))
-    const snaps = await Promise.all(qs)
-    for (const rows of snaps) for (const t of rows) seen.set(t.id, t)
-    const pending = [...seen.values()]
-      .filter((t) => t.status === 'belum' || t.status === 'partial')
-      .sort((a, b) => (a.jatuh_tempo || '').localeCompare(b.jatuh_tempo || ''))
-    // v.21.87.0527: kirim sisa (remaining) + meta utk pembayaran sebagian (partial)
-    pendingTagihan.value = pending.map((t) => {
-      const penuh = Number(t.nominal || 0)
-      const dibayar = terbayarDari(t)
-      return {
-        tagihan_id: t.id,
-        jenis: t.jenis_label || t.jenis_id || t.kategori || 'Tagihan',
-        nominal: Math.max(0, penuh - dibayar),
-        nominal_penuh: penuh,
-        dibayar_lama: dibayar,
-        // pos dana eksplisit dari tagihan (mis. generate khusus) → dibawa ke buku induk saat bayar
-        pos: t.pos || '',
-        // v.95.0626: utamakan periode bersih "Juni 2026" utk rincian struk
-        keterangan: periodeTagihan(t) || t.keterangan || ''
-      }
-    })
-    prepaidPeriodes.value = [...seen.values()]
-      .filter((t) => t.periode_kode)
-      .map((t) => ({
-        jenis: String(t.jenis_label || t.jenis_id || t.kategori || '')
-          .toLowerCase()
-          .trim(),
-        periode: String(t.periode_kode)
-      }))
+    const numeric = !Number.isNaN(sidNum) && String(sidNum) === sid
+    const tagQs = [queryColl('keuangan_tagihan', [['santri_id', '==', sid]])]
+    if (numeric) tagQs.push(queryColl('keuangan_tagihan', [['santri_id', '==', sidNum]]))
+    const tagSnaps = await Promise.all(tagQs)
+    const seen = new Map()
+    for (const rows of tagSnaps) for (const t of rows) seen.set(t.id, t)
+    allTagihan.value = [...seen.values()]
+    // v.1.2.x: pembayaran POS santri (Buku Induk) → warnai sel bayar-muka yg TAK punya baris tagihan
+    try {
+      const payQs = [
+        queryColl('keuangan_buku_induk', [
+          ['santri_id', '==', sid],
+          ['sumber', '==', 'pos_santri']
+        ])
+      ]
+      if (numeric)
+        payQs.push(
+          queryColl('keuangan_buku_induk', [
+            ['santri_id', '==', sidNum],
+            ['sumber', '==', 'pos_santri']
+          ])
+        )
+      const paySnaps = await Promise.all(payQs)
+      const seenPay = new Map()
+      for (const rows of paySnaps) for (const p of rows) seenPay.set(p.id, p)
+      posPayments.value = [...seenPay.values()]
+    } catch (e) {
+      console.warn('[pos] load pembayaran POS fail:', e.message)
+    }
   } catch (e) {
     console.warn('[pos] load tagihan fail:', e.message)
   } finally {
@@ -485,7 +444,8 @@ async function openModal(s) {
 
 function closeModal() {
   modalOpen.value = false
-  pendingTagihan.value = []
+  allTagihan.value = []
+  posPayments.value = []
   // v.94.0626: reset transaksi terakhir + santri saat modal benar2 ditutup (selesai cetak)
   lastTrx.value = null
   selectedSantri.value = null
@@ -544,6 +504,8 @@ async function handleSimpan(payload) {
       // tag pos: utamakan pos eksplisit dari tagihan (generate khusus), fallback dari jenis
       const _pos = item.pos || posByLabel[item.jenis] || ''
       if (_pos) docData.pos = _pos
+      // v.1.2.x: penanda periode utk matriks POS mewarnai sel bayar-muka (tanpa baris tagihan)
+      if (item.periode_kode) docData.periode_kode = item.periode_kode
       // Tabungan Wajib (dana kelulusan): wali diberi tahu. Pos lain tidak — utk syahriyah dsb
       // walinya justru sedang di depan kasir, push cuma jadi berisik.
       if (_pos === 'tabungan_wajib') tabWajibItems.push(item)
@@ -577,33 +539,10 @@ async function handleSimpan(payload) {
             tagUpdErr = e.message || String(e)
           })
         )
-      } else if (item.prepay && item.periode) {
-        // v.108: bayar di muka — tagihan bulan depan belum ada, buat baru langsung LUNAS
-        const tagId = `tagihan_${payload.santri_id}_${Date.now()}_${Math.floor(Math.random() * 1000)}`
-        writes.push(
-          setOne('keuangan_tagihan', tagId, {
-            id: tagId,
-            santri_id: payload.santri_id,
-            santri_nama: payload.santri_nama,
-            kategori: item.jenis,
-            periode: item.periode_label || item.periode,
-            periode_kode: item.periode,
-            nominal: Number(item.nominal),
-            terbayar: Number(item.nominal),
-            status: 'lunas',
-            jatuh_tempo: item.periode + '-10',
-            tanggal_lunas: tanggal,
-            dibayar_via: 'pos_santri',
-            operator_pelunasan: op,
-            trx_id: trxId,
-            createdAt: serverTimestamp()
-          }).catch((e) => {
-            console.warn('[pos] buat tagihan prepay fail:', tagId, e.message)
-            tagUpdErr = e.message || String(e)
-          })
-        )
-        lunasCount++
       }
+      // v.1.2.x: item TANPA tagihan_id (sintesis / bayar di muka) → SENGAJA tidak membuat baris
+      //   keuangan_tagihan. Aturan Kyai: yang sudah lunas jangan masuk daftar tagihan. Pembayaran
+      //   cukup tercatat di Buku Induk + periode_kode; matriks POS mewarnai selnya hijau dari situ.
     }
     await Promise.all(writes)
     // Push ke WALI utk setoran Tabungan Wajib (dana kelulusan): yang menyetor sering santrinya,
@@ -677,7 +616,6 @@ async function handleSimpan(payload) {
     }
     // v.94.0626: JANGAN tutup modal — tampilkan state sukses + tombol cetak DI DALAM modal POS.
     //   (lastTrx terisi -> ModalPOS otomatis pindah ke layar sukses.)
-    pendingTagihan.value = []
   } catch (e) {
     toast.error('Gagal simpan: ' + e.message)
   } finally {
