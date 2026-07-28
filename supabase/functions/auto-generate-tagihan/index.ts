@@ -15,9 +15,25 @@ const BULAN = [
   'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
 ]
 
+// G1 (audit 29 Jul): fungsi ini --no-verify-jwt (dipanggil pg_cron), jadi PUBLIK.
+// Secret OPSIONAL: bila CRON_SECRET di-set, WAJIB cocok (query ?k= / Authorization
+// Bearer / x-cron-secret). Bila BELUM di-set → izinkan (jangan patahkan cron lama saat
+// deploy). Set secret + tambahkan header di job pg_cron untuk mengaktifkan gerbang.
+const CRON_SECRET = Deno.env.get('CRON_SECRET') || ''
+function cronAuthorized(req: Request): boolean {
+  if (!CRON_SECRET) return true
+  try {
+    if (new URL(req.url).searchParams.get('k') === CRON_SECRET) return true
+  } catch { /* ignore */ }
+  const h = req.headers.get('authorization') || ''
+  if (h === `Bearer ${CRON_SECRET}` || h === CRON_SECRET) return true
+  return (req.headers.get('x-cron-secret') || '') === CRON_SECRET
+}
+
 Deno.serve(async (req) => {
   const pre = handlePreflight(req)
   if (pre) return pre
+  if (!cronAuthorized(req)) return json({ ok: false, error: 'unauthorized' }, 401)
 
   const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
 

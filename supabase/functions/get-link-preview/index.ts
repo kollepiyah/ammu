@@ -14,6 +14,43 @@ const TTL_MS = 7 * 24 * 60 * 60 * 1000
 const SOCIAL =
   /(?:instagram\.com|tiktok\.com|facebook\.com|twitter\.com|x\.com|threads\.net|pinterest\.com)/i
 
+// A3 (audit 29 Jul): fungsi publik ini fetch URL sembarang server-side → tanpa
+// filter = SSRF/open-proxy (probe host internal / metadata cloud 169.254.169.254).
+// Blokir host loopback/privat/link-local (IP literal + hostname internal umum).
+// Catatan: DNS-rebinding (domain publik → IP privat) di luar cakupan; runtime edge
+// umumnya sudah memblok link-local, ini pertahanan-berlapis untuk kasus trivial.
+function isBlockedHost(rawHost: string): boolean {
+  const h = String(rawHost || '').toLowerCase().replace(/\.$/, '').replace(/^\[|\]$/g, '')
+  if (!h) return true
+  if (
+    h === 'localhost' ||
+    h.endsWith('.localhost') ||
+    h.endsWith('.local') ||
+    h.endsWith('.internal') ||
+    h === 'metadata.google.internal'
+  )
+    return true
+  // IPv6 loopback / link-local (fe80::) / unique-local (fc00::/7 → fc,fd)
+  if (h === '::1' || h.startsWith('fe80:') || h.startsWith('fc') || h.startsWith('fd')) return true
+  // IPv4 literal dalam rentang privat/loopback/link-local/reserved
+  const m = h.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/)
+  if (m) {
+    const a = Number(m[1]),
+      b = Number(m[2])
+    if (
+      a === 0 ||
+      a === 127 ||
+      a === 10 ||
+      (a === 172 && b >= 16 && b <= 31) ||
+      (a === 192 && b === 168) ||
+      (a === 169 && b === 254) || // link-local (metadata 169.254.169.254)
+      a >= 224 // multicast/reserved
+    )
+      return true
+  }
+  return false
+}
+
 function metaContent(html: string, patterns: RegExp[]): string {
   for (const re of patterns) {
     const m = html.match(re)
@@ -45,6 +82,10 @@ Deno.serve(async (req) => {
     }
   } catch {
     return json({ error: 'Invalid URL' }, 400)
+  }
+  // A3: tolak host internal (SSRF guard)
+  if (isBlockedHost(parsed.hostname)) {
+    return json({ error: 'Host not allowed' }, 400)
   }
 
   const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!

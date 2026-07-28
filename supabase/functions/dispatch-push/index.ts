@@ -14,6 +14,20 @@ import { handlePreflight, json } from '../_shared/cors.ts'
 
 type Row = { id: string; judul: string | null; pesan: string | null; data: Record<string, unknown> }
 
+// G1 (audit 29 Jul): --no-verify-jwt (dipanggil pg_cron/menit) → PUBLIK. Secret
+// OPSIONAL: bila CRON_SECRET di-set, WAJIB cocok; bila belum → izinkan (jangan
+// patahkan cron lama). Aktifkan dgn set secret + header di job pg_cron.
+const CRON_SECRET = Deno.env.get('CRON_SECRET') || ''
+function cronAuthorized(req: Request): boolean {
+  if (!CRON_SECRET) return true
+  try {
+    if (new URL(req.url).searchParams.get('k') === CRON_SECRET) return true
+  } catch { /* ignore */ }
+  const h = req.headers.get('authorization') || ''
+  if (h === `Bearer ${CRON_SECRET}` || h === CRON_SECRET) return true
+  return (req.headers.get('x-cron-secret') || '') === CRON_SECRET
+}
+
 const normNama = (s: unknown) => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '')
 const digits = (s: unknown) => String(s || '').replace(/\D/g, '')
 // v.1.2.0: satu akun boleh punya BANYAK perangkat (HP + PWA + tablet).
@@ -141,6 +155,7 @@ async function resolveTokens(db: any, target: any): Promise<string[]> {
 Deno.serve(async (req) => {
   const pre = handlePreflight(req)
   if (pre) return pre
+  if (!cronAuthorized(req)) return json({ ok: false, error: 'unauthorized' }, 401)
 
   const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
   const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
