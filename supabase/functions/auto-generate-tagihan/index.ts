@@ -21,9 +21,14 @@ Deno.serve(async (req) => {
 
   const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
 
-  // 1) Settings (settings.key='general' -> value jsonb)
-  const { data: srow } = await db.from('settings').select('value').eq('key', 'general').maybeSingle()
-  const s = (srow?.value || {}) as Record<string, unknown>
+  // 1) Settings — A1 (audit 29 Jul): jenis tagihan SENSITIF kini di key 'keuangan'
+  //    (finance-only RLS); flag cron/jatuh-tempo tetap di 'general'. Service-role
+  //    bypass RLS → gabung keduanya (keuangan menang utk kuncinya).
+  const [gRes, kRes] = await Promise.all([
+    db.from('settings').select('value').eq('key', 'general').maybeSingle(),
+    db.from('settings').select('value').eq('key', 'keuangan').maybeSingle()
+  ])
+  const s = { ...(gRes.data?.value || {}), ...(kRes.data?.value || {}) } as Record<string, unknown>
   if (s.keu_auto_generate_cron === false) {
     return json({ ok: true, skipped: 'kill-switch OFF' })
   }

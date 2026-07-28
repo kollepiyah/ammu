@@ -9,6 +9,21 @@ import { getOne, mergeOne, subscribeDoc } from '@/services/db'
 
 const SETTINGS_DOC_ID_VUE = 'web' // Firestore: settings/web (Vue Pengaturan PoC)
 const SETTINGS_DOC_ID_LEGACY = 'general' // Firestore: settings/general (legacy Pengaturan Web — source of truth)
+// A1 (audit 29 Jul): config keuangan SENSITIF (tarif syahriyah/bisyaroh, nominal_per_santri,
+//   beban mengajar, tunjangan/potongan per-guru) DIPISAH ke settings/keuangan yang RLS-nya
+//   HANYA {super,admin,admin_keuangan} — supaya TAK terbaca anon lewat general/web (PSB+login
+//   wajib bisa baca general → tak bisa ditutup). Store me-merge key ini ke `settings` sehingga
+//   pembaca (POS/Bisyaroh/Pengaturan) tak berubah; peran non-keuangan dapat null → key absen.
+const SETTINGS_DOC_ID_KEUANGAN = 'keuangan'
+const KEUANGAN_KEYS = [
+  'keuTagihanJenis',
+  'keuTagihanJenisByTA',
+  'keu_jenis_tagihan',
+  'keuBisyarohJenis',
+  'bebanMengajar',
+  'master_tunjangan',
+  'master_potongan'
+]
 const DEFAULT_SETTINGS = {
   // v.20.74.4.0526: Branding default "Ammu Online" (was "Portal MU" — kyai req)
   txtAppName: 'Ammu Online',
@@ -59,6 +74,8 @@ export const useSettingsStore = defineStore('settings', () => {
 
   // v.61.0526: Track 2 subscription handles (web + general docs)
   let unsubscribeGeneral = null
+  let unsubscribeKeuangan = null // A1: settings/keuangan (finance-only)
+  let _lastKeuData = null
 
   // Actions
   // v.47.0526: silent retry on offline error — Firestore akan delivery via subscribe() saat reconnect
@@ -92,16 +109,20 @@ export const useSettingsStore = defineStore('settings', () => {
       // error di sini = baca GAGAL (jaringan/RLS/sesi mati). Dulu di-`.catch(() => null)`,
       // sehingga gagal-baca tak bisa dibedakan dari baris-kosong dan settings ditimpa
       // DEFAULT_SETTINGS diam-diam — jalur KEDUA menuju gejala "balik ke default".
-      const [legacyData, vueData] = await Promise.all([
+      const [legacyData, vueData, keuData] = await Promise.all([
         getOne('settings', SETTINGS_DOC_ID_LEGACY),
-        getOne('settings', SETTINGS_DOC_ID_VUE)
+        getOne('settings', SETTINGS_DOC_ID_VUE),
+        // A1: null utk anon/peran non-keuangan (RLS filter → maybeSingle null, BUKAN error)
+        getOne('settings', SETTINGS_DOC_ID_KEUANGAN)
       ])
-      // Merge: DEFAULT < vueData < legacyData (legacy menang karena live source of truth)
+      // Merge: DEFAULT < vueData < legacyData < keuData (keuangan menang utk kuncinya sendiri)
       settings.value = {
         ...DEFAULT_SETTINGS,
         ...(vueData || {}),
-        ...(legacyData || {})
+        ...(legacyData || {}),
+        ...(keuData || {})
       }
+      _lastKeuData = keuData || null
       isLoaded.value = true
     } catch (e) {
       // Regex diperluas: kode 'unavailable' itu istilah Firestore & tak pernah cocok dgn error
@@ -135,7 +156,17 @@ export const useSettingsStore = defineStore('settings', () => {
       unsubscribeGeneral = subscribeDoc('settings', SETTINGS_DOC_ID_LEGACY, (data) => {
         if (data) {
           _lastLegacyData = data
-          // Legacy data overrides Vue (legacy = source of truth)
+          // Legacy data overrides Vue (legacy = source of truth); kunci keuangan
+          // (tak ada di general lagi) dipertahankan dari _lastKeuData.
+          settings.value = { ...settings.value, ...data, ...(_lastKeuData || {}) }
+        }
+      })
+    }
+    // A1: settings/keuangan (finance-only) — key sensitif; null utk peran lain.
+    if (!unsubscribeKeuangan) {
+      unsubscribeKeuangan = subscribeDoc('settings', SETTINGS_DOC_ID_KEUANGAN, (data) => {
+        if (data) {
+          _lastKeuData = data
           settings.value = { ...settings.value, ...data }
         }
       })
@@ -152,6 +183,10 @@ export const useSettingsStore = defineStore('settings', () => {
     if (unsubscribeGeneral) {
       unsubscribeGeneral()
       unsubscribeGeneral = null
+    }
+    if (unsubscribeKeuangan) {
+      unsubscribeKeuangan()
+      unsubscribeKeuangan = null
     }
   }
 
@@ -170,16 +205,26 @@ export const useSettingsStore = defineStore('settings', () => {
     error.value = null
     try {
       const merged = { ...settings.value, ...patch }
+      // A1: pisahkan kunci keuangan SENSITIF — JANGAN ditulis ke general/web yang
+      //   anon-readable. Kunci sensitif → settings/keuangan (finance-only).
+      const pub = { ...merged }
+      const keu = {}
+      for (const k of KEUANGAN_KEYS) {
+        if (k in merged) keu[k] = merged[k]
+        delete pub[k]
+      }
       // v.21.105.0527: save ke KEDUA doc.
       // settings/general (legacy, source of truth) supaya semua consumer
       // termasuk legacy Pengaturan Web v0 ikut update.
       // settings/web (Vue PoC) tetap sbg backup/audit.
       // Sebelumnya hanya save ke /web → legacy /general overwrite di subscribe
       // → kalibrasiHijri, kop, dll tampak "tidak tersimpan" padahal sudah.
-      await Promise.all([
-        mergeOne('settings', SETTINGS_DOC_ID_LEGACY, merged),
-        mergeOne('settings', SETTINGS_DOC_ID_VUE, merged)
-      ])
+      const writes = [
+        mergeOne('settings', SETTINGS_DOC_ID_LEGACY, pub),
+        mergeOne('settings', SETTINGS_DOC_ID_VUE, pub)
+      ]
+      if (Object.keys(keu).length) writes.push(mergeOne('settings', SETTINGS_DOC_ID_KEUANGAN, keu))
+      await Promise.all(writes)
       settings.value = merged
     } catch (e) {
       error.value = e.message || String(e)

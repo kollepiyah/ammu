@@ -3495,8 +3495,27 @@ async function simpan() {
       bmt_nama: String(form.bmt_nama || '').trim(),
       bmt_va_prefix: String(form.bmt_va_prefix || '').trim()
     }
-    await mergeOne('settings', 'general', payload)
-    await mergeOne('settings', 'web', payload)
+    // A1 (audit 29 Jul): kunci keuangan SENSITIF → settings/keuangan (finance-only),
+    //   JANGAN ke general/web yang anon-readable (PSB+login). Sinkron dgn KEUANGAN_KEYS
+    //   di stores/settings.js.
+    const KEU_KEYS = [
+      'keuTagihanJenis',
+      'keuTagihanJenisByTA',
+      'keu_jenis_tagihan',
+      'keuBisyarohJenis',
+      'bebanMengajar',
+      'master_tunjangan',
+      'master_potongan'
+    ]
+    const pub = { ...payload }
+    const keu = {}
+    for (const k of KEU_KEYS) {
+      if (k in payload) keu[k] = payload[k]
+      delete pub[k]
+    }
+    await mergeOne('settings', 'general', pub)
+    await mergeOne('settings', 'web', pub)
+    if (Object.keys(keu).length) await mergeOne('settings', 'keuangan', keu)
     toast.success('Pengaturan keuangan tersimpan')
   } catch (e) {
     toast.error('Gagal simpan: ' + (e.message || e))
