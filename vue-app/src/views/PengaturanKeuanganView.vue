@@ -69,6 +69,22 @@
           </div>
         </div>
 
+        <!-- v.1.2.x: bulan pertama pencatatan tagihan di AMMU — bulan sebelumnya tak dihitung tunggakan -->
+        <div class="mt-3">
+          <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block">
+            Mulai Tagih di AMMU (bulan pertama pencatatan)
+          </label>
+          <input
+            v-model="form.keuMulaiTagih"
+            type="month"
+            class="w-full md:w-56 px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
+          />
+          <p class="text-[11px] text-[var(--text-secondary)] mt-1 leading-snug">
+            Bulan sebelum ini tak muncul merah "belum" di POS dan tak dihitung tunggakan. Kosongkan
+            = ikut awal Tahun Ajaran berjalan.
+          </p>
+        </div>
+
         <!-- v.95.0626: kill-switch cron server auto-generate (tombol manual di atas TETAP berfungsi) -->
         <div
           class="mt-3 flex items-start gap-2 p-2.5 rounded-lg bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-700"
@@ -1707,6 +1723,30 @@
                   </label>
                 </div>
               </div>
+              <!-- 1c) v.1.2.x (Kyai): Whitelist JENIS KELAMIN (Putra/Putri) -->
+              <div>
+                <p class="text-[10px] text-[var(--text-secondary)] italic mb-1">
+                  <i class="fas fa-venus-mars mr-1"></i>Hanya untuk jenis kelamin ini (kosong =
+                  semua):
+                </p>
+                <div class="flex flex-wrap gap-1.5">
+                  <label
+                    v-for="jkOpt in JK_OPTS"
+                    :key="`dlg_jk_${jkOpt.key}`"
+                    class="inline-flex items-center gap-1 text-[10px] font-bold cursor-pointer bg-[var(--bg-card-elevated)] px-2 py-1 rounded border border-[var(--border-default)]"
+                  >
+                    <input
+                      type="checkbox"
+                      :checked="
+                        Array.isArray(dlgJenis.jk_only) && dlgJenis.jk_only.includes(jkOpt.key)
+                      "
+                      class="w-3 h-3 accent-teal-600"
+                      @change="toggleJkOnly(dlgJenis, jkOpt.key)"
+                    />
+                    {{ jkOpt.label }}
+                  </label>
+                </div>
+              </div>
               <!-- 2) Override per-lembaga -->
               <div>
                 <p class="text-[10px] text-[var(--text-secondary)] italic mb-1.5">
@@ -2126,7 +2166,12 @@ import { useGuru } from '@/composables/useGuru'
 import { useLembaga, isSekolahLembaga } from '@/composables/useLembaga'
 import { HARI_AKTIF_DEFAULT } from '@/utils/bebanMengajar' // v.1.2.1: penyebut prorata JP
 // v.1.2.6: whitelist status santri (non-mukim/ma'had/fullday) utk targeting jenis syahriyah
-import { STATUS_SANTRI_OPTS, matchStatusOnly } from '@/utils/statusSantri'
+import {
+  STATUS_SANTRI_OPTS,
+  JK_OPTS,
+  matchStatusOnly,
+  matchJenisKelamin
+} from '@/utils/statusSantri'
 import { useToast } from '@/composables/useToast'
 import { useExcel } from '@/composables/useExcel'
 import { useGedungScope } from '@/composables/useGedungScope'
@@ -2580,6 +2625,7 @@ const imporJenisBusy = ref(false)
 
 const form = reactive({
   keu_jatuh_tempo: 10,
+  keuMulaiTagih: '', // v.1.2.x: bulan pertama pencatatan tagihan (YYYY-MM); kosong = ikut awal T.A.
   keu_auto_generate_cron: true, // v.95.0626: kill-switch cron server auto-generate
   // v.21.89.0527: Lebar kertas struk POS (dot-matrix). '9.5' = Epson LX-310 continuous form (default).
   posStrukPaper: '9.5',
@@ -2643,6 +2689,7 @@ function loadFromSettings() {
   hariAktifLembagaMap.value =
     s.hariAktifLembaga && typeof s.hariAktifLembaga === 'object' ? { ...s.hariAktifLembaga } : {}
   form.keu_jatuh_tempo = s.keu_jatuh_tempo || 10
+  form.keuMulaiTagih = s.keuMulaiTagih || '' // v.1.2.x
   form.keu_auto_generate_cron = s.keu_auto_generate_cron !== false // default ON
   form.posStrukPaper = s.posStrukPaper || '9.5'
   form.posStrukSlipW = Number(s.posStrukSlipW) || 190
@@ -2668,6 +2715,8 @@ function loadFromSettings() {
             lembaga_only: Array.isArray(t.lembaga_only) ? [...t.lembaga_only] : [],
             // v.1.2.6: whitelist status santri (non_mukim/mahad/fullday)
             status_only: Array.isArray(t.status_only) ? [...t.status_only] : [],
+            // v.1.2.x: whitelist jenis kelamin (Putra=L / Putri=P)
+            jk_only: Array.isArray(t.jk_only) ? [...t.jk_only] : [],
             nominal_per_kelas:
               t.nominal_per_kelas && typeof t.nominal_per_kelas === 'object'
                 ? JSON.parse(JSON.stringify(t.nominal_per_kelas))
@@ -2874,6 +2923,14 @@ function toggleStatusOnly(jenis, statusKey) {
   const i = jenis.status_only.indexOf(statusKey)
   if (i >= 0) jenis.status_only.splice(i, 1)
   else jenis.status_only.push(statusKey)
+}
+
+// v.1.2.x: toggle JENIS KELAMIN di whitelist (L=Putra / P=Putri)
+function toggleJkOnly(jenis, jkKey) {
+  if (!Array.isArray(jenis.jk_only)) jenis.jk_only = []
+  const i = jenis.jk_only.indexOf(jkKey)
+  if (i >= 0) jenis.jk_only.splice(i, 1)
+  else jenis.jk_only.push(jkKey)
 }
 
 // v.21.100.0527: scope lembaga sesuai whitelist (jika kosong = semua)
@@ -3347,6 +3404,8 @@ function serializeJenisList(list) {
       const wlStatus = Array.isArray(t.status_only)
         ? t.status_only.filter((x) => String(x || '').trim())
         : []
+      // v.1.2.x: whitelist jenis kelamin (L/P)
+      const wlJk = Array.isArray(t.jk_only) ? t.jk_only.filter((x) => String(x || '').trim()) : []
       const frekuensi = t.frekuensi || (t.auto_generate ? 'bulanan' : 'manual')
       return {
         id: t.id || slugId(t.label),
@@ -3357,6 +3416,7 @@ function serializeJenisList(list) {
         nominal_per_santri: perS,
         lembaga_only: wl,
         status_only: wlStatus,
+        jk_only: wlJk,
         frekuensi,
         auto_generate: frekuensi === 'bulanan',
         pos: t.pos || ''
@@ -3375,6 +3435,7 @@ async function simpan() {
     const jenis = byTA[taBerjalan.value] || serializeJenisList(jenisList.value)
     const payload = {
       keu_jatuh_tempo: form.keu_jatuh_tempo,
+      keuMulaiTagih: form.keuMulaiTagih || '', // v.1.2.x: bulan pertama pencatatan tagihan
       keu_auto_generate_cron: form.keu_auto_generate_cron,
       posStrukPaper: form.posStrukPaper || '9.5',
       posStrukSlipW: Number(form.posStrukSlipW) || 190,
@@ -3511,6 +3572,7 @@ function openJenisBaru() {
     nominal_per_lembaga: {},
     lembaga_only: [],
     status_only: [], // v.1.2.6: whitelist status santri (kosong = semua)
+    jk_only: [], // v.1.2.x: whitelist jenis kelamin (kosong = semua)
     nominal_per_kelas: {},
     nominal_per_santri: {},
     frekuensi: 'manual',
@@ -3573,6 +3635,7 @@ function normalizeJenisRaw(t) {
         : {},
     lembaga_only: Array.isArray(t.lembaga_only) ? [...t.lembaga_only] : [],
     status_only: Array.isArray(t.status_only) ? [...t.status_only] : [], // v.1.2.6
+    jk_only: Array.isArray(t.jk_only) ? [...t.jk_only] : [], // v.1.2.x
     nominal_per_kelas:
       t.nominal_per_kelas && typeof t.nominal_per_kelas === 'object'
         ? JSON.parse(JSON.stringify(t.nominal_per_kelas))
@@ -3813,6 +3876,8 @@ async function autoGenerate() {
         }
         // v.1.2.6: whitelist status santri (non-mukim/ma'had/fullday) — kosong = semua
         if (!matchStatusOnly(sx, j.status_only)) continue
+        // v.1.2.x: whitelist jenis kelamin (Putra/Putri) — kosong = semua
+        if (!matchJenisKelamin(sx, j.jk_only)) continue
         const dupKey = `${String(sx.id)}__${(j.label || '').toLowerCase()}__${periode}`
         if (existing.has(dupKey)) {
           skipped++

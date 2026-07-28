@@ -9,6 +9,27 @@ export const STATUS_SANTRI_OPTS = [
   { key: 'fullday', label: 'Fullday' }
 ]
 
+// v.1.2.x (Kyai): whitelist jenis kelamin untuk jenis pembayaran — sejajar status/lembaga.
+//   Nilai cocok ke field santri.jk ('L'=Putra, 'P'=Putri). Kosong = semua.
+export const JK_OPTS = [
+  { key: 'L', label: 'Putra' },
+  { key: 'P', label: 'Putri' }
+]
+
+/**
+ * Apakah santri `s` cocok dengan whitelist jenis kelamin `jkOnly`?
+ *   - whitelist kosong / bukan array → true (berlaku SEMUA jenis kelamin).
+ *   - nilai 'L' (Putra) / 'P' (Putri) dicocokkan ke `santri.jk`.
+ * @param {Object} s - dokumen santri (dibaca field jk).
+ * @param {string[]} jkOnly - subset dari ['L','P'].
+ */
+export function matchJenisKelamin(s, jkOnly) {
+  const wl = Array.isArray(jkOnly) ? jkOnly.filter(Boolean) : []
+  if (wl.length === 0) return true
+  const jk = String((s && s.jk) || '').toUpperCase()
+  return wl.map((x) => String(x).toUpperCase()).includes(jk)
+}
+
 /**
  * Apakah santri `s` cocok dengan whitelist status `statusOnly`?
  *   - whitelist kosong / bukan array → true (berlaku untuk SEMUA status).

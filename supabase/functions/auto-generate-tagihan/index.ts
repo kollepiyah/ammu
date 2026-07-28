@@ -35,7 +35,7 @@ Deno.serve(async (req) => {
   const jtDay = String(s.keu_jatuh_tempo || 10).padStart(2, '0')
 
   // 2) Santri aktif (v.1.2.6: + is_mukim/is_fullday utk whitelist status)
-  const { data: santriRows } = await db.from('santri').select('id, nama, lembaga, kelas, lembaga_sekolah, kelas_sekolah, is_mukim, is_fullday, aktif')
+  const { data: santriRows } = await db.from('santri').select('id, nama, lembaga, kelas, lembaga_sekolah, kelas_sekolah, is_mukim, is_fullday, jk, aktif')
   const santriAktif = (santriRows || []).filter((x) => x.aktif !== false)
 
   // 3) Periode bulan berjalan (Asia/Jakarta)
@@ -57,6 +57,8 @@ Deno.serve(async (req) => {
     const wl = Array.isArray(j.lembaga_only) ? (j.lembaga_only as string[]).filter(Boolean) : []
     // v.1.2.6: whitelist STATUS santri (cermin utils/statusSantri.matchStatusOnly).
     const wlStatus = Array.isArray(j.status_only) ? (j.status_only as string[]).filter(Boolean) : []
+    // v.1.2.x: whitelist JENIS KELAMIN (cermin utils/statusSantri.matchJenisKelamin). L=Putra, P=Putri.
+    const wlJk = Array.isArray(j.jk_only) ? (j.jk_only as string[]).filter(Boolean) : []
     for (const sx of santriAktif) {
       if (wl.length > 0 && !(wl.includes(sx.lembaga) || wl.includes(sx.lembaga_sekolah))) continue
       // status: kosong = semua; antar-status OR. mahad=is_mukim, fullday=is_fullday,
@@ -68,6 +70,12 @@ Deno.serve(async (req) => {
         )
         if (!ok) continue
       }
+      // v.1.2.x: jenis kelamin — kosong = semua; cocokkan ke sx.jk (L/P)
+      if (
+        wlJk.length > 0 &&
+        !wlJk.map((x) => String(x).toUpperCase()).includes(String(sx.jk || '').toUpperCase())
+      )
+        continue
       const dupKey = `${String(sx.id)}__${String(j.label || '').toLowerCase()}`
       if (existing.has(dupKey)) { skipped++; continue }
 

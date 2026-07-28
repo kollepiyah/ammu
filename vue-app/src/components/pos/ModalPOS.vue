@@ -9,7 +9,8 @@
 //   Warna sel = gabungan tagihan nyata + catatan pembayaran POS (periode_kode) di Buku Induk.
 import { ref, computed, watch } from 'vue'
 import { useSettingsStore } from '@/stores/settings'
-import { matchStatusOnly } from '@/utils/statusSantri' // v.1.2.6: filter jenis per status santri
+// v.1.2.6: filter jenis per status santri · v.1.2.x: + filter jenis kelamin (Putra/Putri)
+import { matchStatusOnly, matchJenisKelamin } from '@/utils/statusSantri'
 import { terbayarDari } from '@/utils/tagihan'
 
 const settings = useSettingsStore()
@@ -105,6 +106,7 @@ const presetList = computed(() => {
           .trim()
         if (!lbl || lbl === 'tabungan') return false
         if (!matchStatusOnly(props.santri, j.status_only)) return false
+        if (!matchJenisKelamin(props.santri, j.jk_only)) return false // v.1.2.x: Putra/Putri
         const wl = Array.isArray(j.lembaga_only) ? j.lembaga_only.filter(Boolean) : []
         if (wl.length === 0) return true
         return wl.includes(santriLemb) || wl.includes(santriLembSekolah)
@@ -124,11 +126,17 @@ const presetList = computed(() => {
   }
   return DEFAULT_PRESET
 })
+// Scope jenis ikut filter presetList (lembaga_only + status_only + jk_only, kosong = semua).
 const jenisBulanan = computed(() => presetList.value.filter((j) => j.frekuensi === 'bulanan'))
 const jenisTahunan = computed(() => presetList.value.filter((j) => j.frekuensi === 'tahunan'))
 const jenisManual = computed(() =>
   presetList.value.filter((j) => !j.frekuensi || j.frekuensi === 'manual')
 )
+// v.1.2.x: bulan pertama pencatatan tagihan di AMMU (setelan). Sebelum ini = "belum aktif".
+const mulaiKode = computed(() => {
+  const m = String(settings.settings?.keuMulaiTagih || '').match(/^(\d{4})-(\d{2})$/)
+  return m ? `${m[1]}-${m[2]}` : ta.value.startKode
+})
 
 function fmtRp(n) {
   if (!n && n !== 0) return 'Rp 0'
@@ -246,16 +254,19 @@ const matrix = computed(() => {
         tagId = null
       }
       if (tariff <= 0 && !tg) return { key: 'mx_' + jk + '_' + mo.kode, na: true }
+      // v.1.2.x: bulan sebelum "mulai tagih" & belum ada tagihan/bayar → netral (bukan tunggakan)
+      const pre = !tg && paid <= 0 && mo.kode < mulaiKode.value
       return {
         key: 'mx_' + jk + '_' + mo.kode,
         na: false,
+        pre,
         jenis: j.label,
         ket: mo.full,
         kode: mo.kode,
         tariff,
         paid,
         sisa: Math.max(0, tariff - paid),
-        status: cellStatus(tariff, paid),
+        status: pre ? 'pre' : cellStatus(tariff, paid),
         tagId,
         pos: tg?.pos || posOf(j.label)
       }
@@ -342,7 +353,8 @@ const tunggakanLama = computed(() => {
     const st = String(t.status || 'belum').toLowerCase()
     if (st !== 'belum' && st !== 'partial') continue
     const pk = periodeKodeOf(t)
-    if (!pk || pk >= startK) continue
+    // v.1.2.x: sebelum "mulai tagih" AMMU = bukan tunggakan (belum tercatat di sini)
+    if (!pk || pk >= startK || pk < mulaiKode.value) continue
     const tariff = Number(t.nominal || 0)
     const paid = terbayarDari(t)
     out.push({
@@ -369,7 +381,8 @@ function inCart(key) {
   return cartKeys.value.has(key)
 }
 function toggleCell(d) {
-  if (!d || d.na || d.status === 'lunas' || d.status === 'lebih') return
+  if (!d || d.na || d.pre || d.status === 'pre' || d.status === 'lunas' || d.status === 'lebih')
+    return
   const i = cart.value.findIndex((c) => c.key === d.key)
   if (i >= 0) {
     cart.value.splice(i, 1)
@@ -576,6 +589,14 @@ function onBackdrop(e) {
                           <td class="jns">{{ row.jenis }}</td>
                           <td v-for="c in row.cells" :key="c.key" class="mxcell">
                             <div v-if="c.na" class="cell na">–</div>
+                            <div
+                              v-else-if="c.pre"
+                              class="cell pre"
+                              :title="c.ket + ' · belum aktif (sebelum mulai tagih)'"
+                            >
+                              {{ fmtRp(c.tariff) }}
+                              <small>blm aktif</small>
+                            </div>
                             <div
                               v-else
                               class="cell"
@@ -1113,6 +1134,23 @@ td.jns {
 .cell.na:hover {
   transform: none;
   box-shadow: none;
+}
+.cell.pre {
+  background: #f8fafc;
+  color: #94a3b8;
+  border-color: #e2e8f0;
+  border-style: dashed;
+  cursor: default;
+}
+.cell.pre:hover {
+  transform: none;
+  box-shadow: none;
+}
+:global(.dark) .cell.pre,
+.dark-mode .cell.pre {
+  background: #27272a;
+  color: #71717a;
+  border-color: #3f3f46;
 }
 .cell.pick {
   outline: 3px solid #0f766e;
