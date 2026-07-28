@@ -34,8 +34,8 @@ Deno.serve(async (req) => {
   if (jenisAuto.length === 0) return json({ ok: true, skipped: 'tidak ada jenis auto_generate' })
   const jtDay = String(s.keu_jatuh_tempo || 10).padStart(2, '0')
 
-  // 2) Santri aktif
-  const { data: santriRows } = await db.from('santri').select('id, nama, lembaga, kelas, lembaga_sekolah, kelas_sekolah, aktif')
+  // 2) Santri aktif (v.1.2.6: + is_mukim/is_fullday utk whitelist status)
+  const { data: santriRows } = await db.from('santri').select('id, nama, lembaga, kelas, lembaga_sekolah, kelas_sekolah, is_mukim, is_fullday, aktif')
   const santriAktif = (santriRows || []).filter((x) => x.aktif !== false)
 
   // 3) Periode bulan berjalan (Asia/Jakarta)
@@ -55,8 +55,19 @@ Deno.serve(async (req) => {
 
   for (const j of jenisAuto as Array<Record<string, unknown>>) {
     const wl = Array.isArray(j.lembaga_only) ? (j.lembaga_only as string[]).filter(Boolean) : []
+    // v.1.2.6: whitelist STATUS santri (cermin utils/statusSantri.matchStatusOnly).
+    const wlStatus = Array.isArray(j.status_only) ? (j.status_only as string[]).filter(Boolean) : []
     for (const sx of santriAktif) {
       if (wl.length > 0 && !(wl.includes(sx.lembaga) || wl.includes(sx.lembaga_sekolah))) continue
+      // status: kosong = semua; antar-status OR. mahad=is_mukim, fullday=is_fullday,
+      //   non_mukim = bukan mukim & bukan fullday.
+      if (wlStatus.length > 0) {
+        const mukim = !!sx.is_mukim, fullday = !!sx.is_fullday
+        const ok = wlStatus.some((st) =>
+          st === 'mahad' ? mukim : st === 'fullday' ? fullday : st === 'non_mukim' ? !mukim && !fullday : false
+        )
+        if (!ok) continue
+      }
       const dupKey = `${String(sx.id)}__${String(j.label || '').toLowerCase()}`
       if (existing.has(dupKey)) { skipped++; continue }
 

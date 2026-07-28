@@ -12,6 +12,7 @@ import { isGedungScoped, gedungOf } from '@/utils/gedung'
 // v.1.2.1: scope PJ PTPT — santri ampuan diturunkan dari guru pengajar (peta pj_guru)
 import { buatPetaPjSantri, isPjLembaga, PTPT_LEMBAGA } from '@/utils/glondongan'
 import { ownsNgaji, ownsSekolah, headsLembaga } from '@/utils/guruScope'
+import { isAdminKeuangan } from '@/utils/roleScope' // v.1.2.6: admin_keuangan discope seperti guru
 import { usePjGuru } from './usePjGuru'
 // v.1.2.4: filter per KELAS-GURU (rombel pasangan) — resolver + label pasangan
 import { buildResolverQiraati } from '@/utils/kelasHitung'
@@ -82,8 +83,13 @@ export function useSantri() {
   const isFullAccess = computed(() => {
     const s = auth.sesiAktif
     if (!s) return false
+    // v.1.2.6 (Kyai): admin_keuangan yang merangkap GURU NGAJI discope seperti guru
+    //   (santri KELASNYA saja, qiraati/sekolah) — bukan lihat-semua di menu Pendidikan.
+    //   Keuangan tetap penuh via useKeuangan (sumber & scope terpisah). Cek ini WAJIB
+    //   di atas `role==='admin'` karena admin_keuangan ber-role 'admin' (authSupabase).
+    if (isAdminKeuangan(s)) return false
     if (s.role === 'admin' || s.id === 'admin') return true
-    if (['super_admin', 'admin', 'admin_keuangan'].includes(s.role_sistem)) return true
+    if (['super_admin', 'admin'].includes(s.role_sistem)) return true
     // v.86.0526: Kepala Lembaga/PJ/Pengasuh TIDAK lagi full-access global (kyai: "Kepala = lembaganya").
     //   Discope ke SE-GROUP lembaganya di branch scoping (isKepala) di bawah.
     return false

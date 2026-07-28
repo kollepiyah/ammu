@@ -1683,6 +1683,30 @@
                   </label>
                 </div>
               </div>
+              <!-- 1b) v.1.2.6 (Kyai): Whitelist STATUS santri (non-mukim/ma'had/fullday) -->
+              <div>
+                <p class="text-[10px] text-[var(--text-secondary)] italic mb-1">
+                  <i class="fas fa-user-check mr-1"></i>Hanya untuk status santri ini (kosong =
+                  semua status):
+                </p>
+                <div class="flex flex-wrap gap-1.5">
+                  <label
+                    v-for="st in STATUS_SANTRI_OPTS"
+                    :key="`dlg_st_${st.key}`"
+                    class="inline-flex items-center gap-1 text-[10px] font-bold cursor-pointer bg-[var(--bg-card-elevated)] px-2 py-1 rounded border border-[var(--border-default)]"
+                  >
+                    <input
+                      type="checkbox"
+                      :checked="
+                        Array.isArray(dlgJenis.status_only) && dlgJenis.status_only.includes(st.key)
+                      "
+                      class="w-3 h-3 accent-teal-600"
+                      @change="toggleStatusOnly(dlgJenis, st.key)"
+                    />
+                    {{ st.label }}
+                  </label>
+                </div>
+              </div>
               <!-- 2) Override per-lembaga -->
               <div>
                 <p class="text-[10px] text-[var(--text-secondary)] italic mb-1.5">
@@ -2101,6 +2125,8 @@ import { useSettingsStore } from '@/stores/settings'
 import { useGuru } from '@/composables/useGuru'
 import { useLembaga, isSekolahLembaga } from '@/composables/useLembaga'
 import { HARI_AKTIF_DEFAULT } from '@/utils/bebanMengajar' // v.1.2.1: penyebut prorata JP
+// v.1.2.6: whitelist status santri (non-mukim/ma'had/fullday) utk targeting jenis syahriyah
+import { STATUS_SANTRI_OPTS, matchStatusOnly } from '@/utils/statusSantri'
 import { useToast } from '@/composables/useToast'
 import { useExcel } from '@/composables/useExcel'
 import { useGedungScope } from '@/composables/useGedungScope'
@@ -2640,6 +2666,8 @@ function loadFromSettings() {
                 : _emptyMap(),
             // v.21.100.0527: whitelist lembaga + nominal per kelas
             lembaga_only: Array.isArray(t.lembaga_only) ? [...t.lembaga_only] : [],
+            // v.1.2.6: whitelist status santri (non_mukim/mahad/fullday)
+            status_only: Array.isArray(t.status_only) ? [...t.status_only] : [],
             nominal_per_kelas:
               t.nominal_per_kelas && typeof t.nominal_per_kelas === 'object'
                 ? JSON.parse(JSON.stringify(t.nominal_per_kelas))
@@ -2838,6 +2866,14 @@ function toggleLembagaOnly(jenis, lembagaName) {
   const i = jenis.lembaga_only.indexOf(lembagaName)
   if (i >= 0) jenis.lembaga_only.splice(i, 1)
   else jenis.lembaga_only.push(lembagaName)
+}
+
+// v.1.2.6: toggle STATUS santri di whitelist (non_mukim/mahad/fullday)
+function toggleStatusOnly(jenis, statusKey) {
+  if (!Array.isArray(jenis.status_only)) jenis.status_only = []
+  const i = jenis.status_only.indexOf(statusKey)
+  if (i >= 0) jenis.status_only.splice(i, 1)
+  else jenis.status_only.push(statusKey)
 }
 
 // v.21.100.0527: scope lembaga sesuai whitelist (jika kosong = semua)
@@ -3307,6 +3343,10 @@ function serializeJenisList(list) {
       const wl = Array.isArray(t.lembaga_only)
         ? t.lembaga_only.filter((x) => String(x || '').trim())
         : []
+      // v.1.2.6: whitelist status santri (non_mukim/mahad/fullday)
+      const wlStatus = Array.isArray(t.status_only)
+        ? t.status_only.filter((x) => String(x || '').trim())
+        : []
       const frekuensi = t.frekuensi || (t.auto_generate ? 'bulanan' : 'manual')
       return {
         id: t.id || slugId(t.label),
@@ -3316,6 +3356,7 @@ function serializeJenisList(list) {
         nominal_per_kelas: perK,
         nominal_per_santri: perS,
         lembaga_only: wl,
+        status_only: wlStatus,
         frekuensi,
         auto_generate: frekuensi === 'bulanan',
         pos: t.pos || ''
@@ -3443,8 +3484,10 @@ function tarifKhususInfo(j) {
   )
   const ns = Object.values(j.nominal_per_santri || {}).filter((v) => Number(v) > 0).length
   const wl = (j.lembaga_only || []).length
+  const wlStatus = (j.status_only || []).length // v.1.2.6
   const parts = []
   if (wl) parts.push(`${wl} lembaga`)
+  if (wlStatus) parts.push(`${wlStatus} status`)
   if (nl) parts.push(`${nl} tarif/lembaga`)
   if (nk) parts.push(`${nk} tarif/kelas`)
   if (ns) parts.push(`${ns} santri`)
@@ -3467,6 +3510,7 @@ function openJenisBaru() {
     nominal_default: 0,
     nominal_per_lembaga: {},
     lembaga_only: [],
+    status_only: [], // v.1.2.6: whitelist status santri (kosong = semua)
     nominal_per_kelas: {},
     nominal_per_santri: {},
     frekuensi: 'manual',
@@ -3528,6 +3572,7 @@ function normalizeJenisRaw(t) {
         ? { ...t.nominal_per_lembaga }
         : {},
     lembaga_only: Array.isArray(t.lembaga_only) ? [...t.lembaga_only] : [],
+    status_only: Array.isArray(t.status_only) ? [...t.status_only] : [], // v.1.2.6
     nominal_per_kelas:
       t.nominal_per_kelas && typeof t.nominal_per_kelas === 'object'
         ? JSON.parse(JSON.stringify(t.nominal_per_kelas))
@@ -3762,10 +3807,12 @@ async function autoGenerate() {
       const jt = tahunan ? jtTahun : jtBulan
       const wl = Array.isArray(j.lembaga_only) ? j.lembaga_only.filter(Boolean) : []
       for (const sx of santriAktif) {
-        // whitelist gating
+        // whitelist gating (lembaga)
         if (wl.length > 0) {
           if (!(wl.includes(sx.lembaga) || wl.includes(sx.lembaga_sekolah))) continue
         }
+        // v.1.2.6: whitelist status santri (non-mukim/ma'had/fullday) — kosong = semua
+        if (!matchStatusOnly(sx, j.status_only)) continue
         const dupKey = `${String(sx.id)}__${(j.label || '').toLowerCase()}__${periode}`
         if (existing.has(dupKey)) {
           skipped++

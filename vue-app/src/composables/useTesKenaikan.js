@@ -5,7 +5,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { subscribeColl, addOne, updateOne, deleteOne } from '@/services/db'
 import { useAuthStore } from '@/stores/auth'
-import { isSuperAdmin, isAdminBiasa, isAdminKeuangan, isKepalaLembaga } from '@/utils/roleScope'
+import { isSuperAdmin, isAdminBiasa, isKepalaLembaga } from '@/utils/roleScope'
 import { lembagaScopeMatches } from '@/composables/useLembaga'
 // v.111: rumus pembagian glondongan PTPT (spawn baris tes_glondongan saat ajukan juz)
 import {
@@ -31,9 +31,11 @@ export function useTesKenaikan() {
   const myNama = computed(() => String(sesi.value.nama || sesi.value.guru || '').trim())
   const myLembaga = computed(() => sesi.value.lembaga || '')
 
-  const isAdmin = computed(
-    () => isSuperAdmin(sesi.value) || isAdminBiasa(sesi.value) || isAdminKeuangan(sesi.value)
-  )
+  // v.1.2.6 (Kyai): admin_keuangan TIDAK lagi penguji/admin di sini. Yang merangkap
+  //   guru ngaji tetap bisa MENGAJUKAN tes untuk santri KELASNYA (jalur pengaju,
+  //   ter-scope ownsNgaji) — bukan melihat/menguji semua santri. `isAdminKeuangan`
+  //   sengaja tak dipakai lagi di isAdmin.
+  const isAdmin = computed(() => isSuperAdmin(sesi.value) || isAdminBiasa(sesi.value))
   const isKepala = computed(() => isKepalaLembaga(sesi.value))
   // Penguji = kepala/PJ (scoped lembaganya) atau admin (semua).
   const isPenguji = computed(() => isAdmin.value || isKepala.value)

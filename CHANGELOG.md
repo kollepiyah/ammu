@@ -21,6 +21,26 @@ Versioning: `v.{nomor-urut}.{MMDDtahunmu}` (mis: `v.108.0527`)
 
 ---
 
+## [v.1.2.6] — 2026-07-27 — Filter status santri di syahriyah + scope admin keuangan
+
+Rilis perbaikan. **TANPA migrasi DB.** ⚠️ Butuh **redeploy edge function** (bukan cuma web):
+`supabase functions deploy auto-generate-tagihan --no-verify-jwt`.
+
+### Added (Baru)
+
+- **Filter status santri di Jenis Syahriyah** — tiap jenis pembayaran kini bisa ditargetkan
+  ke status santri (**Non-mukim / Ma'had / Fullday**), sejajar dengan whitelist lembaga.
+  Kosong = semua status. Berlaku di generate tagihan manual, **cron auto-generate** (edge
+  function), dan pilihan jenis di **POS Santri**. Sumber: field `is_mukim` / `is_fullday`.
+
+### Changed (Perubahan)
+
+- **Admin Keuangan yang merangkap guru ngaji** kini di menu Pendidikan hanya melihat santri
+  **KELASNYA** (qiraati/sekolah), bukan semua santri — sebelumnya keliru dapat akses penuh
+  karena ber-role 'admin'. Data keuangan tak terpengaruh (jalur `useKeuangan` terpisah).
+- **Tes Kenaikan**: admin keuangan tak lagi jadi penguji/lihat-semua. Yang merangkap guru
+  ngaji tetap bisa **mengajukan tes untuk santri kelasnya sendiri** (jalur pengaju ter-scope).
+
 ## [v.1.2.5] — 2026-07-26 — Tanggal lulus/naik bisa diatur di Antrian Tes + status "Dibatalkan"
 
 Rilis perbaikan kecil. **TANPA migrasi DB** (murni frontend; kolom `tes_kenaikan.status`

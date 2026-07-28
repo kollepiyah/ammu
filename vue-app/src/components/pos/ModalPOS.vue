@@ -5,6 +5,7 @@
 // Uang diterima: input manual + tombol cepat (uang pas / +50rb / +100rb / +200rb).
 import { ref, computed, watch } from 'vue'
 import { useSettingsStore } from '@/stores/settings'
+import { matchStatusOnly } from '@/utils/statusSantri' // v.1.2.6: filter jenis per status santri
 
 const settings = useSettingsStore()
 
@@ -51,7 +52,9 @@ const presetList = computed(() => {
           .toLowerCase()
           .trim()
         if (!lbl || lbl === 'tabungan') return false
-        // whitelist gating: kosong = semua, kalau ada → santri harus match
+        // v.1.2.6: whitelist STATUS santri (non-mukim/ma'had/fullday) — kosong = semua
+        if (!matchStatusOnly(props.santri, j.status_only)) return false
+        // whitelist gating lembaga: kosong = semua, kalau ada → santri harus match
         const wl = Array.isArray(j.lembaga_only) ? j.lembaga_only.filter(Boolean) : []
         if (wl.length === 0) return true
         return wl.includes(santriLemb) || wl.includes(santriLembSekolah)
