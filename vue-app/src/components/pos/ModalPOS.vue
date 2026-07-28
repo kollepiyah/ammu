@@ -12,6 +12,7 @@ import { useSettingsStore } from '@/stores/settings'
 // v.1.2.6: filter jenis per status santri · v.1.2.x: + filter jenis kelamin (Putra/Putri)
 import { matchStatusOnly, matchJenisKelamin } from '@/utils/statusSantri'
 import { terbayarDari } from '@/utils/tagihan'
+import { todayJakarta } from '@/utils/format'
 
 const settings = useSettingsStore()
 
@@ -496,7 +497,8 @@ function simpan() {
     kembalian: kembali.value,
     metode: metode.value,
     operator: props.operator,
-    tanggal: new Date().toISOString().split('T')[0]
+    // audit: tanggal KALENDER WIB (bukan UTC) — cegah mundur 1 hari utk transaksi dini hari
+    tanggal: todayJakarta()
   })
 }
 function onBackdrop(e) {

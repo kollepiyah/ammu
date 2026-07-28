@@ -66,6 +66,26 @@ export function fmtDateTime(d) {
   return fmtTgl(d) + ', ' + fmtJam(d)
 }
 
+/**
+ * Tanggal KALENDER Asia/Jakarta (WIB) 'YYYY-MM-DD'.
+ * WIB = UTC+7. `new Date().toISOString().slice(0,10)` memakai UTC → MUNDUR 1 hari
+ * untuk transaksi 00:00–06:59 WIB (= 17:00–23:59 UTC hari sebelumnya). Pakai helper
+ * ini untuk tanggal transaksi (POS dsb.) supaya tak salah masuk laporan harian.
+ * `d` opsional (default sekarang) — dibuat menerima argumen agar bisa diuji deterministik.
+ */
+export function todayJakarta(d = new Date()) {
+  const dt = d instanceof Date ? d : new Date(d)
+  if (isNaN(dt.getTime())) return ''
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Jakarta',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).formatToParts(dt)
+  const p = Object.fromEntries(parts.map((x) => [x.type, x.value]))
+  return `${p.year}-${p.month}-${p.day}`
+}
+
 /** Ambil angka dari string '21 (PTPT-A)' → 21. */
 export function extractNumber(s) {
   if (s == null) return 0

@@ -483,8 +483,12 @@ async function handleSimpan(payload) {
       if (lbl && j?.pos) posByLabel[lbl] = String(j.pos)
     }
     const tabWajibItems = [] // item pos 'tabungan_wajib' -> picu push ke wali (lihat setelah writes)
-    for (const item of payload.items) {
-      const id = `pos_${Date.now()}_${Math.floor(Math.random() * 1000)}`
+    for (const [itemIdx, item] of payload.items.entries()) {
+      // audit B1: id WAJIB unik per item. Dulu `pos_${Date.now()}_${rand(0..999)}` —
+      //   dalam 1 keranjang loop sinkron → Date.now() SAMA, hanya random pembeda →
+      //   tabrakan (ulang tahun) → INSERT PK dobel gagal → Promise.all reject SETELAH
+      //   sebagian tertulis = commit keuangan PARSIAL. Index item = pembeda deterministik.
+      const id = `pos_${trxId}_${itemIdx}_${Math.random().toString(36).slice(2, 7)}`
       const docData = {
         id,
         tanggal,
