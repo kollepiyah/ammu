@@ -2150,7 +2150,7 @@
 import { ref, reactive, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 // v.F6e: adapter Supabase (serverTimestamp = shim ISO string).
-import { getAll, setOne, mergeOne, serverTimestamp, subscribeDoc } from '@/services/db'
+import { getAll, queryColl, setOne, mergeOne, serverTimestamp, subscribeDoc } from '@/services/db'
 // v.1.1.9: Jenis Bisyaroh ber-scope (ganti 5 tarif shift global + map pokok per guru)
 import {
   jenisBisyarohList as bacaJenisBisyaroh,
@@ -3850,15 +3850,7 @@ async function autoGenerate() {
       generating.value = false
       return
     }
-    // Fetch santri aktif (v.111: ke-scope ke gedung admin keuangan)
-    const santriAktif = (await getAll('santri')).filter((x) => x.aktif !== false && _inMyGedung(x))
-    // Fetch tagihan existing utk skip duplikat
-    const tagihanAll = await getAll('keuangan_tagihan')
-    const existing = new Set()
-    for (const t of tagihanAll) {
-      const key = `${String(t.santri_id)}__${(t.kategori || t.jenis || '').toLowerCase()}__${t.periode || ''}`
-      existing.add(key)
-    }
+    // Periode target dihitung DULU utk membatasi fetch tagihan (D1 audit).
     const now = new Date()
     const BULAN_NM = [
       'Januari',
@@ -3876,10 +3868,23 @@ async function autoGenerate() {
     ]
     // Periode bulanan (bulan ini) + periode tahunan (tahun ajaran berjalan, Juli–Juni)
     const periodeBulan = `${BULAN_NM[now.getMonth()]} ${now.getFullYear()}`
-    const jtBulan = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(form.keu_jatuh_tempo || 10).padStart(2, '0')}`
     const taStart = now.getMonth() >= 6 ? now.getFullYear() : now.getFullYear() - 1
     const periodeTahun = `TA ${taStart}/${taStart + 1}`
+    const jtBulan = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(form.keu_jatuh_tempo || 10).padStart(2, '0')}`
     const jtTahun = `${taStart}-12-${String(form.keu_jatuh_tempo || 10).padStart(2, '0')}`
+    // Fetch santri aktif (v.111: ke-scope ke gedung admin keuangan)
+    const santriAktif = (await getAll('santri')).filter((x) => x.aktif !== false && _inMyGedung(x))
+    // D1 (audit): fetch tagihan existing HANYA utk periode yang akan digenerate
+    //   (dulu getAll seluruh riwayat → lambat saat data menumpuk). Cermin edge
+    //   auto-generate-tagihan yang sudah membatasi .eq('periode', ...).
+    const tagihanAll = await queryColl('keuangan_tagihan', [
+      ['periode', 'in', [periodeBulan, periodeTahun]]
+    ])
+    const existing = new Set()
+    for (const t of tagihanAll) {
+      const key = `${String(t.santri_id)}__${(t.kategori || t.jenis || '').toLowerCase()}__${t.periode || ''}`
+      existing.add(key)
+    }
     let created = 0,
       skipped = 0,
       errCount = 0
