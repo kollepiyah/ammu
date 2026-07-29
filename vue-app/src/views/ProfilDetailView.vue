@@ -19,13 +19,45 @@
            Full-access (super/admin) dapat pintasan ke Master Data ter-filter ke record ini
            (kartu tampil dgn Edit/Reset Sandi/Hapus/Non-aktifkan). SantriView/GuruView sudah
            baca ?q= + ?kelola=1. admin_keuangan dikecualikan (tak bisa tulis santri/guru RLS). -->
-      <div v-if="bisaKelola" class="flex justify-end">
+      <div v-if="bisaKelola" class="flex flex-wrap items-center justify-end gap-2">
+        <button
+          type="button"
+          class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold transition cursor-pointer"
+          title="Reset sandi ke 1234"
+          @click="doReset"
+        >
+          <i class="fas fa-key"></i>Reset Sandi
+        </button>
+        <button
+          type="button"
+          :class="[
+            'h-9 px-3 inline-flex items-center gap-1.5 rounded-xl text-white text-xs font-bold transition cursor-pointer',
+            isAktif ? 'bg-slate-500 hover:bg-slate-600' : 'bg-emerald-600 hover:bg-emerald-700'
+          ]"
+          @click="doToggle"
+        >
+          <i :class="['fas', isAktif ? 'fa-toggle-off' : 'fa-toggle-on']"></i
+          >{{ isAktif ? 'Non-aktifkan' : 'Aktifkan' }}
+        </button>
+        <router-link
+          :to="editLink"
+          class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold transition"
+        >
+          <i class="fas fa-edit"></i>Edit
+        </router-link>
+        <button
+          type="button"
+          class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition cursor-pointer"
+          @click="doDelete"
+        >
+          <i class="fas fa-trash"></i>Hapus
+        </button>
         <router-link
           :to="kelolaLink"
-          class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold transition"
-          :title="`Kelola ${tipe === 'guru' ? 'guru/pegawai' : 'santri'} ini di Master Data`"
+          class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-[var(--text-primary)] text-xs font-bold transition"
+          :title="`Buka ${tipe === 'guru' ? 'guru/pegawai' : 'santri'} ini di daftar Master Data`"
         >
-          <i class="fas fa-edit"></i>Kelola di Master Data
+          <i class="fas fa-list"></i>Master Data
         </router-link>
       </div>
       <ProfilGuru v-if="tipe === 'guru'" :guru="rec" readonly />
@@ -76,17 +108,31 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
-import { useRoute } from 'vue-router'
-import { getOne } from '@/services/db'
+import { useRoute, useRouter } from 'vue-router'
+import { getOne, deleteOne, mergeOne, updateOne } from '@/services/db'
+import { resetUserPassword } from '@/services/authSupabase'
 import { useAuthStore } from '@/stores/auth'
+import { useConfirm } from '@/composables/useConfirm'
+import { useToast } from '@/composables/useToast'
 import { lembagaScopeMatches } from '@/composables/useLembaga'
 import { isAdminKeuangan } from '@/utils/roleScope'
+import { isGuruAktif } from '@/utils/guruScope'
 import BackButton from '@/components/layout/BackButton.vue'
 import ProfilSantri from '@/views/profil/ProfilSantri.vue'
 import ProfilGuru from '@/views/profil/ProfilGuru.vue'
 
 const route = useRoute()
+const router = useRouter()
 const auth = useAuthStore()
+const confirm = useConfirm()
+const toast = useToast()
+// audit A6: ConfirmDialog render message via v-html → escape nama/jabatan dinamis.
+function escapeHtml(v) {
+  return String(v ?? '').replace(
+    /[&<>"']/g,
+    (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]
+  )
+}
 const tipe = computed(() => (route.params.tipe === 'guru' ? 'guru' : 'santri'))
 const id = computed(() => String(route.params.id || ''))
 const rec = ref(null)
@@ -112,6 +158,92 @@ const kelolaLink = computed(() => {
     query: { kelola: '1', q: String(r.nis || r.nama || ''), status: 'all' }
   }
 })
+
+// Status aktif (santri: boolean `aktif`; guru: string `status` via isGuruAktif).
+const isAktif = computed(() => {
+  const r = rec.value
+  if (!r) return true
+  return tipe.value === 'guru' ? isGuruAktif(r) : r.aktif !== false
+})
+const editLink = computed(() => `/${tipe.value}/${id.value}/edit?from=master`)
+
+// --- Aksi cepat (identik dgn kartu Master Data SantriView/GuruView) ---
+async function doReset() {
+  const r = rec.value
+  if (!r) return
+  const ok = await confirm({
+    title: `Reset sandi ${r.nama}?`,
+    message: `Sandi ${tipe.value === 'guru' ? 'guru' : 'santri'} "${escapeHtml(r.nama)}" akan direset ke default: 1234. Perlu ganti sandi sendiri setelah login.`,
+    confirmText: 'Reset',
+    danger: true
+  })
+  if (!ok) return
+  try {
+    await resetUserPassword(tipe.value, r.id)
+    toast.success(`Sandi ${r.nama} direset ke 1234`)
+  } catch (e) {
+    toast.error('Gagal reset: ' + (e.message || e))
+  }
+}
+async function doToggle() {
+  const r = rec.value
+  if (!r) return
+  if (tipe.value === 'guru') {
+    const wasAktif = isGuruAktif(r)
+    const newStatus = wasAktif ? 'Non-aktif' : 'Aktif'
+    const ok = await confirm({
+      title: `${wasAktif ? 'Non-aktifkan' : 'Aktifkan'} ${r.nama}?`,
+      message: `Status guru "${escapeHtml(r.nama)}" akan di-set "${newStatus}".`,
+      confirmText: wasAktif ? 'Non-aktifkan' : 'Aktifkan',
+      danger: wasAktif
+    })
+    if (!ok) return
+    try {
+      await updateOne('guru', String(r.id), { status: newStatus })
+      toast.success(`${r.nama} di-set ${newStatus}`)
+      await load()
+    } catch (e) {
+      toast.error('Gagal: ' + (e.message || e))
+    }
+  } else {
+    const newStatus = r.aktif === false
+    const ok = await confirm({
+      title: `${newStatus ? 'Aktifkan' : 'Non-aktifkan'} ${r.nama}?`,
+      message: `Status santri "${escapeHtml(r.nama)}" akan di-set ${newStatus ? 'AKTIF' : 'TIDAK AKTIF'}.`,
+      confirmText: newStatus ? 'Aktifkan' : 'Non-aktifkan',
+      danger: !newStatus
+    })
+    if (!ok) return
+    try {
+      await mergeOne('santri', String(r.id), { aktif: newStatus })
+      toast.success(`${r.nama} di-set ${newStatus ? 'AKTIF' : 'TIDAK AKTIF'}`)
+      await load()
+    } catch (e) {
+      toast.error('Gagal: ' + (e.message || e))
+    }
+  }
+}
+async function doDelete() {
+  const r = rec.value
+  if (!r) return
+  const ok = await confirm({
+    title: `Hapus ${r.nama}?`,
+    message:
+      tipe.value === 'guru'
+        ? `Guru "${escapeHtml(r.nama)}" (${escapeHtml(r.jabatan || '-')}) akan dihapus permanen. Tidak bisa di-undo.`
+        : `Santri "${escapeHtml(r.nama)}" (No. Induk: ${escapeHtml(r.nis || '-')}) akan dihapus permanen. Tidak bisa di-undo.`,
+    confirmText: 'Hapus',
+    danger: true
+  })
+  if (!ok) return
+  try {
+    await deleteOne(tipe.value, String(r.id))
+    toast.success(`${tipe.value === 'guru' ? 'Guru' : 'Santri'} "${r.nama}" dihapus`)
+    router.back()
+  } catch (e) {
+    toast.error('Gagal hapus: ' + (e.message || e))
+  }
+}
 
 // v.98 ANTI-BOCOR: guard scope — cegah buka profil di luar wewenang (deep-link/search).
 //  admin/super/admin_keuangan = bebas; guru = hanya ampuannya / dirinya; Kepala/PJ = se-lembaga.
