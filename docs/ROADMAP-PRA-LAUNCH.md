@@ -1,5 +1,21 @@
 # ROADMAP PRA-LAUNCH — Ammu Online (Portal MU)
 
+> ⚠️ **SEBAGIAN BASI (per audit 29 Jul 2026).** Arsitektur sudah berubah:
+> **Firestore + BigQuery + 56 Cloud Function DICOPOT** (commit `350f958`, 15 Jul) →
+> backend kini **Supabase** (Postgres+RLS+Edge+Storage); **Firebase = Hosting + FCM SAJA**.
+> Akibatnya:
+> - **ALUR 3 (Analitik)** kini via **RPC Supabase** (`services/analytics.js` + migrasi
+>   `analytics_rpc`), BUKAN BigQuery/Cloud Function. Bagian "Firestore = master,
+>   BigQuery = cermin" **tidak berlaku lagi**.
+> - **S5 (App Check enforce)** = **usang** — App Check kini melindungi NOL layanan
+>   (tak ada Firestore/Storage/Functions Firebase yang dipakai app; App Check tak
+>   melindungi FCM). Boleh dicoret.
+> - **E2 (VA BMT)** scaffolding kini di **Edge Function `bmt-webhook`**, bukan
+>   `functions/index.js` (folder itu diarsipkan).
+>
+> Baca bagian di bawah sebagai **catatan sejarah**; status keamanan terkini ada di
+> memori `project_security_findings` & hasil audit 29 Jul.
+
 > Disusun 16 Jun 2026. Target: **app FINAL & STABIL sebelum live ke umum**, dengan
 > **analitik bisa diakses dari dalam app**. Konteks: app **belum dipakai** (belum ada
 > user asli, belum ada data transaksi); data santri/guru hasil impor = **uji coba, aman

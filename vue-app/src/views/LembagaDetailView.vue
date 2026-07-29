@@ -1245,11 +1245,21 @@ async function onEditKelas(i) {
   list[i] = newVal.trim()
   await saveLembagaKelas(list)
 }
+// audit A6: ConfirmDialog merender `message` via v-html (sengaja — sebagian pesan
+//   pakai <b>/<br>). Data dinamis (nama kelas dari master) WAJIB di-escape agar
+//   nama ber-HTML tak jadi XSS saat dialog dibuka. (pola sama CeremonialView)
+function escapeHtml(v) {
+  return String(v ?? '').replace(
+    /[&<>"']/g,
+    (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]
+  )
+}
+
 async function onHapusKelas(i) {
   if (
     !(await confirm({
       title: 'Hapus kelas?',
-      message: `Hapus "${lembagaData.value?.kelas?.[i]}"?`,
+      message: `Hapus "${escapeHtml(lembagaData.value?.kelas?.[i])}"?`,
       danger: true
     }))
   )
@@ -1435,7 +1445,7 @@ async function resetRaporSchema() {
   if (
     !(await confirm({
       title: 'Reset schema?',
-      message: `Hapus override schema rapor ${lembagaId.value}?`,
+      message: `Hapus override schema rapor ${escapeHtml(lembagaId.value)}?`,
       danger: true
     }))
   )
