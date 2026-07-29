@@ -197,12 +197,24 @@ import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useSantri } from '@/composables/useSantri'
 import { useGuru } from '@/composables/useGuru'
+import { useAuthStore } from '@/stores/auth'
+import { isAdminKeuangan } from '@/utils/roleScope'
 
 const router = useRouter()
+const auth = useAuthStore()
 // v.98 ANTI-BOCOR: pakai list TER-SCOPE (santri/guru), bukan *Raw (mentah).
 // Guru hanya menemukan santri ampuannya; daftar guru kosong utk non-admin (useGuru.guru => []).
 const { santri: santriScoped } = useSantri()
 const { guru: guruScoped } = useGuru()
+
+// audit: full-access (super/admin, BUKAN admin_keuangan — RLS tulis santri/guru =
+//   auth_can_manage) → hasil cari LANGSUNG ke list Master Data ter-filter (bisa
+//   Edit/Reset/Hapus). Guru/scoped → profil (view). Cermin ProfilDetailView.bisaKelola.
+const bisaKelola = computed(() => {
+  const s = auth.sesiAktif
+  if (!s || isAdminKeuangan(s)) return false
+  return s.role === 'admin' || s.id === 'admin' || ['super_admin', 'admin'].includes(s.role_sistem)
+})
 
 const q = ref('')
 const open = ref(false)
@@ -268,11 +280,22 @@ function reset() {
 }
 function goSantri(s) {
   reset()
-  router.push('/profil/santri/' + s.id)
+  if (bisaKelola.value) {
+    router.push({
+      path: '/santri',
+      query: { kelola: '1', q: String(s.nis || s.nama || ''), status: 'all' }
+    })
+  } else {
+    router.push('/profil/santri/' + s.id)
+  }
 }
 function goGuru(g) {
   reset()
-  router.push('/profil/guru/' + g.id)
+  if (bisaKelola.value) {
+    router.push({ path: '/guru', query: { kelola: '1', q: String(g.nama || ''), status: 'all' } })
+  } else {
+    router.push('/profil/guru/' + g.id)
+  }
 }
 async function openMobile() {
   mobileOpen.value = true
