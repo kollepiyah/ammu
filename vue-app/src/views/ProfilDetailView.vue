@@ -15,6 +15,19 @@
       <p class="text-sm text-[var(--text-secondary)]">Data tidak ditemukan.</p>
     </div>
     <template v-else>
+      <!-- v.1.2.x (audit): profil hasil pencarian = readonly → tombol Edit/Kelola hilang.
+           Full-access (super/admin) dapat pintasan ke Master Data ter-filter ke record ini
+           (kartu tampil dgn Edit/Reset Sandi/Hapus/Non-aktifkan). SantriView/GuruView sudah
+           baca ?q= + ?kelola=1. admin_keuangan dikecualikan (tak bisa tulis santri/guru RLS). -->
+      <div v-if="bisaKelola" class="flex justify-end">
+        <router-link
+          :to="kelolaLink"
+          class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold transition"
+          :title="`Kelola ${tipe === 'guru' ? 'guru/pegawai' : 'santri'} ini di Master Data`"
+        >
+          <i class="fas fa-edit"></i>Kelola di Master Data
+        </router-link>
+      </div>
       <ProfilGuru v-if="tipe === 'guru'" :guru="rec" readonly />
       <ProfilSantri v-else :santri="rec" readonly />
 
@@ -67,6 +80,7 @@ import { useRoute } from 'vue-router'
 import { getOne } from '@/services/db'
 import { useAuthStore } from '@/stores/auth'
 import { lembagaScopeMatches } from '@/composables/useLembaga'
+import { isAdminKeuangan } from '@/utils/roleScope'
 import BackButton from '@/components/layout/BackButton.vue'
 import ProfilSantri from '@/views/profil/ProfilSantri.vue'
 import ProfilGuru from '@/views/profil/ProfilGuru.vue'
@@ -77,6 +91,27 @@ const tipe = computed(() => (route.params.tipe === 'guru' ? 'guru' : 'santri'))
 const id = computed(() => String(route.params.id || ''))
 const rec = ref(null)
 const loading = ref(true)
+
+// v.1.2.x (audit): boleh kelola master = super_admin/admin (bukan admin_keuangan — RLS
+//   santri/guru tulis = auth_can_manage). Cermin useSantri.isFullAccess.
+const bisaKelola = computed(() => {
+  const s = auth.sesiAktif
+  if (!s || !rec.value) return false
+  if (isAdminKeuangan(s)) return false
+  return s.role === 'admin' || s.id === 'admin' || ['super_admin', 'admin'].includes(s.role_sistem)
+})
+// Master Data ter-filter ke record ini (kartu tampil dgn Edit/Reset/Hapus/Toggle).
+const kelolaLink = computed(() => {
+  const r = rec.value || {}
+  // status:'all' — record non-aktif pun tetap tampil di list (filterStatus default 'aktif').
+  if (tipe.value === 'guru') {
+    return { path: '/guru', query: { kelola: '1', q: String(r.nama || ''), status: 'all' } }
+  }
+  return {
+    path: '/santri',
+    query: { kelola: '1', q: String(r.nis || r.nama || ''), status: 'all' }
+  }
+})
 
 // v.98 ANTI-BOCOR: guard scope — cegah buka profil di luar wewenang (deep-link/search).
 //  admin/super/admin_keuangan = bebas; guru = hanya ampuannya / dirinya; Kepala/PJ = se-lembaga.
