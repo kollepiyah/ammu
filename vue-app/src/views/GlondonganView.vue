@@ -11,6 +11,7 @@ import { useConfirm } from '@/composables/useConfirm'
 // Aspek nilai PTPT (sama persis dg tes PJ): Tahfizh, Istimror, Fashohah, Tajwid (0..90).
 import { tesAspekFlat, clampNilaiTes, TES_NILAI_MAX } from '@/utils/tesKenaikan'
 import { waLink, BULAN_ID } from '@/utils/format' // v.1.1.9: tautan kontak penyimak / guru kelas
+import { pesanGlondongan, pesanKontakGlondongan } from '@/utils/pesanWa' // v.1.2.6: teks WA otomatis
 import { jsPDFFromCDN } from '@/services/pdf' // v.1.2.1: ekspor PDF rekap
 import { isGuruAktif } from '@/utils/guruScope' // v.1.2.0: sumber tunggal penyaring status guru
 import {
@@ -95,6 +96,8 @@ async function hapusRow(r) {
   }
 }
 const settingsStore = useSettingsStore()
+// v.1.2.6: nama pondok utk tanda tangan pesan WA otomatis
+const pondokWa = computed(() => settingsStore.settings?.kopLine2 || 'Pondok Pesantren Mambaul Ulum')
 
 // Tab awal: koordinator/PJ/super -> Penugasan; selain itu -> Tugas Menilai.
 const tab = ref(canAssignAny.value ? 'penugasan' : 'nilai')
@@ -869,7 +872,17 @@ async function exportRekapBisyarohPdf() {
                     <b class="text-[var(--text-secondary)]">{{ g.nama }}</b>
                     <a
                       v-if="waLink(g.wa)"
-                      :href="waLink(g.wa)"
+                      :href="
+                        waLink(
+                          g.wa,
+                          pesanKontakGlondongan({
+                            guru: g.nama,
+                            santri: row.nama_cache,
+                            juz: juzLabel(row),
+                            pondok: pondokWa
+                          })
+                        )
+                      "
                       target="_blank"
                       rel="noopener"
                       class="px-1 py-0.5 rounded font-bold bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-300"
@@ -1024,7 +1037,17 @@ async function exportRekapBisyarohPdf() {
               <b class="text-[var(--text-primary)]">{{ penyimakBaris(row).nama }}</b>
               <a
                 v-if="waLink(penyimakBaris(row).wa)"
-                :href="waLink(penyimakBaris(row).wa)"
+                :href="
+                  waLink(
+                    penyimakBaris(row).wa,
+                    pesanGlondongan({
+                      guru: penyimakBaris(row).nama,
+                      santri: row.nama_cache,
+                      juz: juzLabel(row),
+                      pondok: pondokWa
+                    })
+                  )
+                "
                 target="_blank"
                 rel="noopener"
                 class="px-1.5 py-0.5 rounded font-bold bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-300"
@@ -1048,7 +1071,17 @@ async function exportRekapBisyarohPdf() {
                   <b class="text-[var(--text-primary)]">{{ g.nama }}</b>
                   <a
                     v-if="waLink(g.wa)"
-                    :href="waLink(g.wa)"
+                    :href="
+                      waLink(
+                        g.wa,
+                        pesanKontakGlondongan({
+                          guru: g.nama,
+                          santri: row.nama_cache,
+                          juz: juzLabel(row),
+                          pondok: pondokWa
+                        })
+                      )
+                    "
                     target="_blank"
                     rel="noopener"
                     class="px-1.5 py-0.5 rounded font-bold bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-300"
@@ -1169,7 +1202,17 @@ async function exportRekapBisyarohPdf() {
                   <b class="text-[var(--text-secondary)]">{{ g.nama }}</b>
                   <a
                     v-if="waLink(g.wa)"
-                    :href="waLink(g.wa)"
+                    :href="
+                      waLink(
+                        g.wa,
+                        pesanKontakGlondongan({
+                          guru: g.nama,
+                          santri: row.nama_cache,
+                          juz: juzLabel(row),
+                          pondok: pondokWa
+                        })
+                      )
+                    "
                     target="_blank"
                     rel="noopener"
                     class="px-1 py-0.5 rounded font-bold bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-300"

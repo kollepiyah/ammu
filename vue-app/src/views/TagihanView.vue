@@ -159,6 +159,18 @@
               >{{ statusBadge(t).label }}</span
             >
           </div>
+          <!-- v.1.2.6: ingatkan wali via WA (teks tagihan otomatis) — hanya tagihan belum lunas -->
+          <a
+            v-if="isFullAccess && getSisa(t) > 0 && waTagihan(t)"
+            :href="waTagihan(t)"
+            target="_blank"
+            rel="noopener"
+            aria-label="Ingatkan wali via WhatsApp"
+            title="Ingatkan wali (WA)"
+            class="text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 p-2 rounded transition"
+          >
+            <i class="fab fa-whatsapp"></i>
+          </a>
           <!-- v.21.115.0528: bayar=isFullAccess (admin keuangan boleh), delete=isAdmin saja (super_admin) — konsisten dengan bulk delete -->
           <button
             v-if="isFullAccess"
@@ -282,7 +294,9 @@ import { subscribeColl, setOne, mergeOne, deleteOne, serverTimestamp } from '@/s
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
-import { fmtRp, fmtTgl } from '@/utils/format'
+import { fmtRp, fmtTgl, waLink } from '@/utils/format'
+import { pesanTagihan } from '@/utils/pesanWa' // v.1.2.6: teks WA tagihan otomatis
+import { useSettingsStore } from '@/stores/settings'
 import { terbayarDari, sisaTagihan, statusTagihan } from '@/utils/tagihan'
 import { isSuperAdmin } from '@/utils/roleScope'
 import { writeAuditLog } from '@/utils/auditLog'
@@ -361,6 +375,24 @@ async function hapusTagihanTerpilih() {
 
 function getNamaSantri(id) {
   return santriMap.value.get(String(id))?.nama || '(unknown)'
+}
+
+// v.1.2.6: WA ingatkan wali — tautan wa.me dgn teks tagihan otomatis ('' bila no WA wali kosong).
+const settingsStore = useSettingsStore()
+const pondokWa = computed(() => settingsStore.settings?.kopLine2 || 'Pondok Pesantren Mambaul Ulum')
+function waTagihan(t) {
+  const s = santriMap.value.get(String(t.santri_id))
+  if (!waLink(s?.wa)) return ''
+  return waLink(
+    s.wa,
+    pesanTagihan({
+      nama: t.santri_nama || s?.nama || '',
+      kategori: t.kategori,
+      nominal: getSisa(t),
+      periode: t.periode,
+      pondok: pondokWa.value
+    })
+  )
 }
 
 function getSisa(t) {

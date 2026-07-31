@@ -205,7 +205,18 @@
             <b class="text-[var(--text-primary)]">{{ waliInfo(a).nama }}</b>
             <a
               v-if="waLink(waliInfo(a).wa)"
-              :href="waLink(waliInfo(a).wa)"
+              :href="
+                waLink(
+                  waliInfo(a).wa,
+                  pesanTesHasil({
+                    nama: a.nama_cache,
+                    hasil: statusLabel(a.status),
+                    asal: a.kelas_asal,
+                    target: a.target,
+                    pondok: pondokWa
+                  })
+                )
+              "
               target="_blank"
               rel="noopener"
               class="px-1.5 py-0.5 rounded font-bold bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-300"
@@ -229,7 +240,17 @@
                 <b class="text-[var(--text-primary)]">{{ p.nama }}</b>
                 <a
                   v-if="waLink(p.wa)"
-                  :href="waLink(p.wa)"
+                  :href="
+                    waLink(
+                      p.wa,
+                      pesanGlondongan({
+                        guru: p.nama,
+                        santri: a.nama_cache,
+                        juz: p.blok,
+                        pondok: pondokWa
+                      })
+                    )
+                  "
                   target="_blank"
                   rel="noopener"
                   class="px-1.5 py-0.5 rounded font-bold bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-300"
@@ -881,6 +902,7 @@ import { buildKenaikanQiraatiPayload, writeKenaikan } from '@/utils/promosiKenai
 import { buildTesRaporFeed, currentRaporPeriode } from '@/utils/tesRaporFeed' // v.100d Fase 3: nilai tes → rapor
 import { buildListPdf } from '@/utils/pdfBuilder' // v.100d Fase 5: cetak daftar/rekap tes PDF
 import { juzNum, waLink } from '@/utils/format' // v.100e: normalisasi juz · v.1.1.9: kontak WA
+import { pesanTesHasil, pesanGlondongan } from '@/utils/pesanWa' // v.1.2.6: teks WA otomatis
 // v.1.1.9: masa tempuh antar-juz PTPT (hari efektif lembaga) — tampil di guru kelas & PJ.
 import { masaTempuhJuz, labelMasaTempuh } from '@/utils/masaTempuh'
 import { expandLiburDates } from '@/utils/liburNasional'
@@ -1094,6 +1116,8 @@ async function hapusRecord(a) {
 }
 
 const settings = computed(() => settingsStore.settings || {})
+// v.1.2.6: nama pondok utk tanda tangan pesan WA
+const pondokWa = computed(() => settings.value.kopLine2 || 'Pondok Pesantren Mambaul Ulum')
 
 const auth = useAuthStore()
 const myGuruNama = computed(() => String(auth.sesiAktif?.guru || auth.sesiAktif?.nama || '').trim())

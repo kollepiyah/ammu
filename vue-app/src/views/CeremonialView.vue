@@ -13,6 +13,9 @@ import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
 import { PTPT_LEMBAGA } from '@/utils/glondongan'
 import { guruAktifSaja } from '@/utils/guruScope' // v.1.2.0: buang guru nonaktif
+import { waLink } from '@/utils/format' // v.1.2.6: tautan WA penyimak
+import { pesanCeremonial } from '@/utils/pesanWa' // v.1.2.6: teks WA otomatis
+import { useSettingsStore } from '@/stores/settings'
 
 const {
   loaded,
@@ -32,6 +35,22 @@ const {
 } = useCeremonial()
 const { ajuanRaw } = useTesKenaikan()
 const { guruRaw } = useGuru()
+const settingsStore = useSettingsStore()
+// v.1.2.6: nama pondok utk tanda tangan pesan WA + cari no WA guru penyimak
+//   (penyimak_guru hanya menyimpan nama, nomornya diambil dari daftar guru).
+const pondokWa = computed(() => settingsStore.settings?.kopLine2 || 'Pondok Pesantren Mambaul Ulum')
+function guruWaCeremonial(nama) {
+  const g = (guruRaw.value || []).find(
+    (x) =>
+      String(x.nama || '')
+        .trim()
+        .toLowerCase() ===
+      String(nama || '')
+        .trim()
+        .toLowerCase()
+  )
+  return g?.wa || ''
+}
 const { santriRaw } = useSantri()
 const toast = useToast()
 const confirmDlg = useConfirm()
@@ -590,9 +609,41 @@ function jamRange(s) {
               <p class="text-[10px] font-black uppercase text-[var(--text-tertiary)]">
                 <i class="fas fa-chalkboard-teacher mr-1"></i>Penyimak Guru
               </p>
-              <p class="text-xs font-bold text-[var(--text-primary)] mt-0.5">
-                {{ (s.penyimak_guru || []).map((g) => g.nama).join(', ') || '—' }}
-              </p>
+              <!-- v.1.2.6: tiap penyimak guru + tombol WA (teks jadwal seremonial otomatis) -->
+              <div
+                class="text-xs font-bold text-[var(--text-primary)] mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1"
+              >
+                <span v-if="!(s.penyimak_guru || []).length">—</span>
+                <span
+                  v-for="(g, gi) in s.penyimak_guru || []"
+                  :key="gi"
+                  class="inline-flex items-center gap-1"
+                >
+                  <span>{{ g.nama }}</span>
+                  <a
+                    v-if="waLink(guruWaCeremonial(g.nama))"
+                    :href="
+                      waLink(
+                        guruWaCeremonial(g.nama),
+                        pesanCeremonial({
+                          guru: g.nama,
+                          tanggal: fmtTgl(s.tanggal),
+                          jam: jamRange(s),
+                          tempat: s.tempat,
+                          jumlah: (s.peserta || []).length,
+                          pondok: pondokWa
+                        })
+                      )
+                    "
+                    target="_blank"
+                    rel="noopener"
+                    class="px-1.5 py-0.5 rounded font-bold bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-300"
+                    :aria-label="`WhatsApp ${g.nama}`"
+                  >
+                    <i class="fab fa-whatsapp"></i>
+                  </a>
+                </span>
+              </div>
             </div>
             <div class="rounded-xl bg-[var(--bg-muted)] px-3 py-2">
               <p class="text-[10px] font-black uppercase text-[var(--text-tertiary)]">
