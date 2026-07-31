@@ -73,8 +73,22 @@
             </button>
           </div>
         </div>
-        <!-- Stats row -->
-        <div class="grid grid-cols-3 gap-2 md:gap-3 mt-3">
+      </div>
+
+      <!-- v.1.2.6: Kartu Ringkasan (SELALU tampil, termasuk Electron — dulu blok stats ikut
+           disembunyikan `v-if="!isDesktop"` → saldo tak terlihat di desktop). -->
+      <div
+        class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
+      >
+        <div class="flex items-center justify-between gap-2 mb-3">
+          <h2 class="text-xs md:text-sm font-black text-[var(--text-primary)]">
+            <i class="fas fa-book text-cyan-500 mr-1"></i>{{ pageTitle }}
+          </h2>
+          <span class="text-[10px] md:text-[11px] text-[var(--text-secondary)] font-bold">
+            {{ getBulanLabel(selectedMonth) }} {{ selectedYear }}
+          </span>
+        </div>
+        <div class="grid grid-cols-3 gap-2 md:gap-3">
           <div class="bg-emerald-50 border-l-4 border-emerald-500 p-3 rounded-xl">
             <p class="text-[10px] font-bold text-emerald-700 uppercase">Total Masuk</p>
             <p class="text-base md:text-lg font-black text-emerald-800 mt-1">
@@ -87,26 +101,9 @@
               {{ fmtRp(stats.pengeluaran) }}
             </p>
           </div>
-          <div
-            :class="[
-              'p-3 rounded-xl border-l-4',
-              stats.saldo >= 0 ? 'bg-cyan-50 border-cyan-500' : 'bg-cyan-50 border-cyan-500'
-            ]"
-          >
-            <p
-              :class="[
-                'text-[10px] font-bold uppercase',
-                stats.saldo >= 0 ? 'text-cyan-700' : 'text-cyan-700'
-              ]"
-            >
-              Saldo Akhir
-            </p>
-            <p
-              :class="[
-                'text-base md:text-lg font-black mt-1',
-                stats.saldo >= 0 ? 'text-cyan-800' : 'text-cyan-800'
-              ]"
-            >
+          <div class="p-3 rounded-xl border-l-4 bg-cyan-50 border-cyan-500">
+            <p class="text-[10px] font-bold uppercase text-cyan-700">Saldo Akhir</p>
+            <p class="text-base md:text-lg font-black mt-1 text-cyan-800">
               {{ fmtRp(stats.saldo) }}
             </p>
           </div>
@@ -118,10 +115,10 @@
         <div
           v-if="modalInputOpen"
           class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4"
-          @click.self="modalInputOpen = false"
+          @click.self="tutupModalInput"
         >
           <div class="bg-[var(--bg-card)] rounded-2xl shadow-2xl w-full max-w-md">
-            <form class="p-5" @submit.prevent="simpanInputManual">
+            <form v-if="!savedKas" class="p-5" @submit.prevent="simpanInputManual">
               <h3 class="text-base font-black text-[var(--text-primary)] mb-4">
                 <i class="fas fa-plus-circle text-emerald-600 mr-2"></i>Input Transaksi Manual
               </h3>
@@ -208,7 +205,7 @@
                 <button
                   type="button"
                   class="text-xs font-bold px-4 py-2 rounded-lg bg-[var(--bg-muted)] text-[var(--text-secondary)]"
-                  @click="modalInputOpen = false"
+                  @click="tutupModalInput"
                 >
                   Batal
                 </button>
@@ -222,6 +219,57 @@
                 </button>
               </div>
             </form>
+
+            <!-- v.1.2.6 (E): panel sukses + cetak struk kas (gaya POS) -->
+            <div v-else class="p-5 space-y-4 text-center">
+              <div
+                :class="[
+                  'mx-auto w-14 h-14 rounded-full flex items-center justify-center text-2xl',
+                  savedKas.tipe === 'masuk'
+                    ? 'bg-emerald-100 text-emerald-600'
+                    : 'bg-rose-100 text-rose-600'
+                ]"
+              >
+                <i class="fas fa-check"></i>
+              </div>
+              <div>
+                <p class="text-base font-black text-[var(--text-primary)]">Transaksi tersimpan</p>
+                <p class="text-sm text-[var(--text-secondary)] mt-0.5">
+                  {{ savedKas.tipe === 'masuk' ? 'Kas Masuk' : 'Kas Keluar' }} ·
+                  {{ fmtRp(savedKas.nominal) }}
+                </p>
+                <p class="text-[11px] text-[var(--text-tertiary)] mt-0.5">
+                  {{ savedKas.keterangan }}
+                </p>
+              </div>
+              <div class="flex flex-wrap items-center justify-center gap-2">
+                <button
+                  type="button"
+                  class="px-4 py-2 text-xs font-black bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg"
+                  @click="cetakStrukKas(savedKas)"
+                >
+                  <i class="fas fa-file-pdf mr-1"></i>Cetak Struk
+                </button>
+              </div>
+              <div
+                class="flex items-center justify-center gap-2 pt-3 border-t border-[var(--border-subtle)]"
+              >
+                <button
+                  type="button"
+                  class="px-4 py-2 text-xs font-bold text-[var(--text-primary)] hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700 rounded-lg"
+                  @click="bukaModalInput"
+                >
+                  <i class="fas fa-plus mr-1"></i>Transaksi Baru
+                </button>
+                <button
+                  type="button"
+                  class="px-5 py-2 text-xs font-black bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white rounded-lg"
+                  @click="tutupModalInput"
+                >
+                  <i class="fas fa-check-double mr-1"></i>Selesai
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </Teleport>
@@ -329,8 +377,8 @@
           :class="[
             'hidden md:grid gap-2 px-4 py-2 bg-slate-50 dark:bg-slate-700 text-[10px] uppercase font-bold text-[var(--text-secondary)] tracking-wider border-b border-[var(--border-subtle)]',
             isAdmin
-              ? 'md:grid-cols-[36px_100px_1fr_120px_120px]'
-              : 'md:grid-cols-[100px_1fr_120px_120px]'
+              ? 'md:grid-cols-[32px_88px_1fr_96px_96px_150px]'
+              : 'md:grid-cols-[88px_1fr_96px_96px_150px]'
           ]"
         >
           <span v-if="isAdmin" class="text-center">
@@ -346,6 +394,7 @@
           <span>Keterangan</span>
           <span class="text-right">Masuk</span>
           <span class="text-right">Keluar</span>
+          <span class="text-right">Saldo</span>
         </div>
         <div class="divide-y divide-slate-100 dark:divide-slate-700">
           <div
@@ -354,8 +403,8 @@
             :class="[
               'px-4 py-2.5 md:grid gap-2 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition',
               isAdmin
-                ? 'md:grid-cols-[36px_100px_1fr_120px_120px]'
-                : 'md:grid-cols-[100px_1fr_120px_120px]'
+                ? 'md:grid-cols-[32px_88px_1fr_96px_96px_150px]'
+                : 'md:grid-cols-[88px_1fr_96px_96px_150px]'
             ]"
           >
             <span
@@ -391,6 +440,9 @@
               </p>
             </div>
             <div class="mt-1 md:mt-0 md:text-right">
+              <span class="md:hidden text-[10px] text-[var(--text-tertiary)] font-bold mr-1"
+                >Masuk:</span
+              >
               <span
                 v-if="b.tipe === 'masuk' || Number(b.masuk) > 0"
                 class="text-sm font-black text-emerald-700"
@@ -399,7 +451,10 @@
               </span>
               <span v-else class="text-[var(--text-tertiary)]">—</span>
             </div>
-            <div class="md:text-right flex items-center md:justify-end gap-2">
+            <div class="md:text-right">
+              <span class="md:hidden text-[10px] text-[var(--text-tertiary)] font-bold mr-1"
+                >Keluar:</span
+              >
               <span
                 v-if="b.tipe === 'keluar' || Number(b.keluar) > 0"
                 class="text-sm font-black text-rose-700"
@@ -407,6 +462,15 @@
                 {{ fmtRp(b.keluar || b.nominal) }}
               </span>
               <span v-else class="text-[var(--text-tertiary)]">—</span>
+            </div>
+            <!-- v.1.2.6: Saldo berjalan + tombol aksi (struk/edit/hapus) -->
+            <div class="mt-1 md:mt-0 md:text-right flex items-center md:justify-end gap-2">
+              <span class="md:hidden text-[10px] text-[var(--text-tertiary)] font-bold mr-1"
+                >Saldo:</span
+              >
+              <span class="text-sm font-bold text-cyan-700 dark:text-cyan-400 whitespace-nowrap">
+                {{ fmtRp(saldoOf(b)) }}
+              </span>
               <button
                 v-if="b.sumber === 'pos_santri' && b.trx_id"
                 type="button"
@@ -424,6 +488,16 @@
                 @click="cetakUlangStruk(b, 'dot')"
               >
                 <i class="fas fa-print"></i>
+              </button>
+              <!-- v.1.2.6 (E): struk untuk transaksi kas manual (masuk/keluar) -->
+              <button
+                v-if="b.sumber === 'manual'"
+                type="button"
+                class="text-[10px] text-emerald-600 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 px-1.5 py-1 rounded"
+                title="Cetak struk kas"
+                @click="cetakStrukKas(b)"
+              >
+                <i class="fas fa-receipt"></i>
               </button>
               <button
                 v-if="isAdmin"
@@ -479,7 +553,8 @@ import { buildListPdf, buildKopFromSettings } from '@/utils/pdfBuilder'
 import { isSuperAdmin } from '@/utils/roleScope'
 import { writeAuditLog } from '@/utils/auditLog'
 // v.21.103.0527: reprint struk dari BukuInduk untuk record sumber pos_santri
-import { cetakStrukPdf, cetakStrukSlipPdf } from '@/utils/strukBuilder'
+// v.1.2.6: cetakStrukKasPdf = struk BUKTI KAS MASUK/KELUAR untuk transaksi manual
+import { cetakStrukPdf, cetakStrukSlipPdf, cetakStrukKasPdf } from '@/utils/strukBuilder'
 
 const toast = useToast()
 const auth = useAuthStore()
@@ -588,6 +663,8 @@ const search = ref('')
 // v.72.16.0526: Input Manual modal
 const modalInputOpen = ref(false)
 const savingInput = ref(false)
+// v.1.2.6 (E): record kas manual yang baru tersimpan → tampil panel sukses + cetak struk
+const savedKas = ref(null)
 // v.21.99.0527: editingId untuk mode edit (super_admin koreksi nominal/keterangan)
 const editingId = ref(null)
 // v.21.100.0527: multi-select bulk delete (super_admin)
@@ -689,6 +766,7 @@ const inputForm = reactive({
 
 function bukaModalInput() {
   editingId.value = null
+  savedKas.value = null
   inputForm.tanggal = new Date().toISOString().slice(0, 10)
   inputForm.tipe = 'masuk'
   inputForm.kategori = ''
@@ -697,9 +775,28 @@ function bukaModalInput() {
   modalInputOpen.value = true
 }
 
+// v.1.2.6 (E): cetak struk BUKTI KAS untuk record buku induk manual (masuk/keluar)
+async function cetakStrukKas(b) {
+  try {
+    await cetakStrukKasPdf(b, settingsStore.settings || {})
+    toast.success('Struk kas dicetak')
+  } catch (e) {
+    console.error('[cetakStrukKas]', e)
+    toast.error('Gagal cetak struk: ' + (e.message || e))
+  }
+}
+
+// v.1.2.6 (E): tutup modal input + reset panel sukses
+function tutupModalInput() {
+  modalInputOpen.value = false
+  editingId.value = null
+  savedKas.value = null
+}
+
 // v.21.99.0527: super_admin only — buka modal edit, prefill dari record
 function bukaEditBuku(b) {
   if (!isAdmin.value) return
+  savedKas.value = null
   editingId.value = String(b.id)
   inputForm.tanggal = b.tanggal || new Date().toISOString().slice(0, 10)
   inputForm.tipe = b.tipe || (Number(b.masuk) > 0 ? 'masuk' : 'keluar')
@@ -733,6 +830,8 @@ async function simpanInputManual() {
       upd.keluar = upd.tipe === 'keluar' ? upd.nominal : 0
       await updateOne('keuangan_buku_induk', editingId.value, upd)
       toast.success('Transaksi diperbarui')
+      modalInputOpen.value = false
+      editingId.value = null
     } else {
       const id = `bi_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`
       const payload = {
@@ -752,9 +851,10 @@ async function simpanInputManual() {
       else payload.keluar = payload.nominal
       await setOne('keuangan_buku_induk', id, payload)
       toast.success('Transaksi tersimpan')
+      // v.1.2.6 (E): tampil panel sukses + tawarkan cetak struk (modal tetap terbuka)
+      savedKas.value = payload
+      editingId.value = null
     }
-    modalInputOpen.value = false
-    editingId.value = null
   } catch (e) {
     toast.error('Gagal: ' + (e.message || e))
   } finally {
@@ -872,6 +972,38 @@ const stats = computed(() => {
   }
   return { pemasukan: masuk, pengeluaran: keluar, saldo: masuk - keluar }
 })
+
+// v.1.2.6: saldo BERJALAN all-time per record (kolom Saldo + ekspor). Basis = ledger riil
+//   (tanpa residu/tabungan) dalam scope Gedung, urut kronologis naik. Filter-independent:
+//   nilai = saldo kumulatif setelah transaksi itu, apa pun filter bulan/tipe yang aktif.
+const saldoMap = computed(() => {
+  let base = bukuRaw.value.filter((b) => {
+    const kat = String(b.kategori || '').toLowerCase()
+    const sumber = String(b.sumber || '').toLowerCase()
+    if (kat === 'tabungan' || sumber === 'tabungan' || sumber.includes('tabungan')) return false
+    return /^\d{4}-\d{2}/.test(String(b.tanggal || '').trim())
+  })
+  if (gedungScoped.value) base = base.filter(allowRow)
+  base = base
+    .slice()
+    .sort(
+      (a, b) =>
+        (a.tanggal || '').localeCompare(b.tanggal || '') || (a.id || '').localeCompare(b.id || '')
+    )
+  const map = new Map()
+  let saldo = 0
+  for (const b of base) {
+    const masuk = b.tipe === 'masuk' || Number(b.masuk) > 0 ? Number(b.masuk || b.nominal) || 0 : 0
+    const keluar =
+      b.tipe === 'keluar' || Number(b.keluar) > 0 ? Number(b.keluar || b.nominal) || 0 : 0
+    saldo += masuk - keluar
+    map.set(String(b.id), saldo)
+  }
+  return map
+})
+function saldoOf(b) {
+  return saldoMap.value.get(String(b.id)) ?? 0
+}
 
 const years = computed(() => {
   const now = new Date().getFullYear()

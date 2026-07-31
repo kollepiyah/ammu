@@ -342,6 +342,77 @@ export async function cetakStrukSlipPdf(trx, settings = {}, { preview = false } 
   return doc
 }
 
+// ── 1a2) PDF BUKTI KAS MASUK / KELUAR (buku induk — transaksi manual) ──
+// v.1.2.6: struk untuk input transaksi kas manual di Buku Induk. Layout selaras cetakStrukPdf
+//   (KOP F4 + info 2 kolom + keterangan + band jumlah + ttd). rec = record keuangan_buku_induk.
+export async function cetakStrukKasPdf(rec = {}, settings = {}, { preview = true } = {}) {
+  const kop = buildKopFromSettings(settings)
+  const doc = await createPdf({ kind: 'umum', orientation: 'p', format: 'F4' })
+  const font = doc._fontMU || 'helvetica'
+  const isMasuk =
+    String(rec.tipe || (Number(rec.masuk) > 0 ? 'masuk' : 'keluar')).toLowerCase() === 'masuk'
+  const nominal = Number(rec.nominal || rec.masuk || rec.keluar || 0)
+  let y = await drawKopLetterhead(doc, kop, { y: 10 })
+  drawTitle(doc, isMasuk ? 'BUKTI KAS MASUK' : 'BUKTI KAS KELUAR', { y: y + 7, size: 13 })
+  y += 15
+
+  doc.setFontSize(9)
+  const pageW = doc.internal.pageSize.getWidth()
+  const left = 12
+  const colMid = pageW / 2 + 4
+  const terb = terbilangRupiah(nominal)
+  const tglFmt = formatTglDdMmYyyy(rec.tanggal)
+  const leftRows = [
+    ['Kategori', rec.kategori || 'Manual'],
+    ['Terbilang', terb]
+  ]
+  const rightRows = [
+    ['Tanggal', tglFmt],
+    ['No. Transaksi', rec.no_struk || rec.id || '-'],
+    ['Petugas', rec.operator || '-']
+  ]
+  const yStart = y
+  const rowH = 5
+  for (let i = 0; i < leftRows.length; i++) {
+    doc.setFont(font, 'normal')
+    doc.text(leftRows[i][0], left, yStart + i * rowH)
+    doc.text(': ' + String(leftRows[i][1]), left + 24, yStart + i * rowH)
+  }
+  for (let i = 0; i < rightRows.length; i++) {
+    doc.setFont(font, 'normal')
+    doc.text(rightRows[i][0], colMid, yStart + i * rowH)
+    doc.text(': ' + String(rightRows[i][1]), colMid + 24, yStart + i * rowH)
+  }
+  y = yStart + Math.max(leftRows.length, rightRows.length) * rowH + 4
+
+  doc.setFont(font, 'bold')
+  doc.text(isMasuk ? 'Uraian penerimaan :' : 'Uraian pengeluaran :', left, y)
+  y += 5
+  doc.setFont(font, 'normal')
+  const ketLines = doc.splitTextToSize(String(rec.keterangan || '-'), pageW - left - 12)
+  doc.text(ketLines, left, y)
+  y += ketLines.length * 5 + 4
+
+  const rightX = pageW - 12
+  doc.setFontSize(11)
+  doc.setFont(font, 'bold')
+  doc.text((isMasuk ? 'Jumlah Masuk' : 'Jumlah Keluar') + ' Rp.', rightX - 60, y)
+  doc.text(fmtNum(nominal), rightX, y, { align: 'right' })
+  y += 14
+
+  doc.setFontSize(9)
+  doc.setFont(font, 'normal')
+  doc.text(isMasuk ? 'Penyetor,' : 'Penerima,', left + 8, y)
+  doc.text('Bendahara,', pageW / 2 + 12, y)
+  y += 20
+  doc.text('( .......................... )', left + 4, y)
+  doc.text('( ' + String(rec.operator || '').trim() + ' )', pageW / 2 + 8, y)
+
+  const safe = (isMasuk ? 'kas_masuk_' : 'kas_keluar_') + (rec.tanggal || '')
+  savePdf(doc, 'struk_' + safe + '.pdf', { preview })
+  return doc
+}
+
 // ── 1b) PDF Slip Bisyaroh (guru) — match desain cetakStrukPdf (KOP F4 + tabel) ──
 export async function cetakSlipBisyarohPdf(slip = {}, settings = {}, { preview = false } = {}) {
   const kop = buildKopFromSettings(settings)
