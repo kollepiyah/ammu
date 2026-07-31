@@ -550,6 +550,14 @@
               >
                 <i class="fas fa-eye"></i>Lihat
               </button>
+              <!-- v.1.2.6 (task 3): PDF riwayat pendidikan LENGKAP (lintas lembaga) -->
+              <button
+                class="bg-teal-50 hover:bg-teal-100 text-teal-700 border border-teal-200 dark:bg-teal-900/30 dark:text-teal-300 font-bold px-3 py-1.5 rounded-lg text-xs cursor-pointer flex items-center gap-1 flex-shrink-0"
+                title="Ekspor PDF riwayat pendidikan (semua lembaga)"
+                @click="cetakRiwayatPendidikan(s)"
+              >
+                <i class="fas fa-file-pdf"></i>Riwayat
+              </button>
               <button
                 v-if="canCrud && (s.riwayat_kenaikan || []).length"
                 class="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold px-3 py-1.5 rounded-lg text-xs cursor-pointer flex items-center gap-1 flex-shrink-0"
@@ -1427,6 +1435,7 @@ import { ownsNgaji, ownsSekolah, deteksiTipeGuru, guruAktifSaja } from '@/utils/
 // v.1.1.9: 1 kelas Qiraati = sepasang guru (pagi & sore) — dropdown menampilkan 2 nama.
 import { pasanganQiraati, cariPasangan, labelPasangan } from '@/utils/pasanganGuru'
 import { buildListPdf, createPdf, drawTable, savePdf } from '@/utils/pdfBuilder'
+import { cetakRiwayatPendidikanPdf } from '@/utils/riwayatPendidikanPdf' // v.1.2.6: PDF jurnal lintas-lembaga
 import { imageToDataURL } from '@/services/pdf'
 
 const authStore = useAuthStore()
@@ -3063,6 +3072,16 @@ async function exportRiwayatPdf() {
 }
 
 // ────────── PDF Export Kartu Kenaikan per-santri ──────────
+// v.1.2.6 (task 3): PDF riwayat pendidikan lintas-lembaga (semua lembaga santri)
+async function cetakRiwayatPendidikan(s) {
+  try {
+    await cetakRiwayatPendidikanPdf(s, settingsStore.settings || {})
+    toast.success('PDF riwayat pendidikan dibuat.')
+  } catch (e) {
+    toast.error('Gagal cetak: ' + (e.message || e))
+  }
+}
+
 const exportingKartuPdf = ref(false)
 async function eksporKartuPdf() {
   if (!kartuSantri.value || !schema.value) {
