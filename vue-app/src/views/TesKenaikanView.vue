@@ -1240,28 +1240,57 @@ async function cetakRekapHasil() {
   }
   cetakBusy.value = true
   try {
-    const rows = list.map((a, i) => ({
+    // v.1.2.6: rapikan ekspor — urut tanggal (terbaru dulu), tambah kolom Nilai (rata2
+    //   aspek 0–90 yang penguji isi) + baris RINGKASAN jumlah lulus di akhir.
+    const avgNilai = (a) => {
+      const vals =
+        a.nilai && typeof a.nilai === 'object'
+          ? Object.values(a.nilai)
+              .map(Number)
+              .filter((n) => !isNaN(n))
+          : []
+      return vals.length ? String(Math.round(vals.reduce((s, x) => s + x, 0) / vals.length)) : '-'
+    }
+    const sorted = [...list].sort(
+      (a, b) =>
+        String(b.tgl_hasil || '').localeCompare(String(a.tgl_hasil || '')) ||
+        String(a.nama_cache || '').localeCompare(String(b.nama_cache || ''))
+    )
+    const rows = sorted.map((a, i) => ({
       no: i + 1,
       nama: a.nama_cache || '',
       lembaga: a.lembaga || '',
       arah: `${a.kelas_asal || '-'} → ${a.target || '-'}`,
       status: statusLabel(a.status),
+      nilai: avgNilai(a),
       penguji: a.penguji || '-',
       tgl: fmtTgl(a.tgl_hasil)
     }))
+    const lulus = sorted.filter((a) => a.status === 'lulus').length
+    rows.push({
+      no: '',
+      nama: `RINGKASAN — Lulus ${lulus} dari ${sorted.length}`,
+      lembaga: '',
+      arah: '',
+      status: '',
+      nilai: '',
+      penguji: '',
+      tgl: `${sorted.length} peserta`
+    })
     await buildListPdf({
       kind: 'umum',
       orientation: 'l',
       kop: _kopRekap(),
       title: 'REKAP HASIL TES KENAIKAN QIRAATI',
       columns: [
-        { key: 'no', header: 'No', width: 30 },
+        { key: 'no', header: 'No', width: 26 },
         { key: 'nama', header: 'Nama Santri', width: 150 },
-        { key: 'lembaga', header: 'Lembaga', width: 80 },
-        { key: 'arah', header: 'Asal → Target', width: 130 },
-        { key: 'status', header: 'Hasil', width: 90 },
-        { key: 'penguji', header: 'Penguji', width: 100 },
-        { key: 'tgl', header: 'Tanggal', width: 70 }
+        { key: 'lembaga', header: 'Lembaga', width: 74 },
+        { key: 'arah', header: 'Asal → Target', width: 120 },
+        { key: 'status', header: 'Hasil', width: 74 },
+        { key: 'nilai', header: 'Nilai', width: 44 },
+        { key: 'penguji', header: 'Penguji', width: 96 },
+        { key: 'tgl', header: 'Tanggal', width: 66 }
       ],
       rows,
       filename: 'Rekap_Hasil_Tes.pdf'
