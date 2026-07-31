@@ -672,37 +672,61 @@
             </p>
           </div>
 
-          <!-- Jenis + Kategori -->
-          <div class="grid grid-cols-2 gap-2">
-            <div>
-              <label
-                class="text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)]"
+          <!-- v.1.2.6 (C): Jenis + Kategori gaya POS — tombol/chip berwarna klik (bukan dropdown) -->
+          <div>
+            <label
+              class="text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)]"
+            >
+              Jenis
+            </label>
+            <div class="grid grid-cols-2 gap-2 mt-1">
+              <button
+                type="button"
+                :class="[
+                  'px-3 py-2.5 text-sm font-black rounded-lg border-2 transition',
+                  modalJenis === 'setor'
+                    ? 'bg-emerald-600 text-white border-emerald-700'
+                    : 'bg-[var(--bg-card)] text-emerald-700 border-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20'
+                ]"
+                @click="modalJenis = 'setor'"
               >
-                Jenis
-              </label>
-              <select
-                v-model="modalJenis"
-                class="w-full mt-1 px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-emerald-500 outline-none"
+                <i class="fas fa-arrow-down mr-1"></i>Setor
+              </button>
+              <button
+                type="button"
+                :class="[
+                  'px-3 py-2.5 text-sm font-black rounded-lg border-2 transition',
+                  modalJenis === 'tarik'
+                    ? 'bg-rose-600 text-white border-rose-700'
+                    : 'bg-[var(--bg-card)] text-rose-700 border-rose-300 hover:bg-rose-50 dark:hover:bg-rose-900/20'
+                ]"
+                @click="modalJenis = 'tarik'"
               >
-                <option value="setor">Setor</option>
-                <option value="tarik">Tarik</option>
-              </select>
+                <i class="fas fa-arrow-up mr-1"></i>Tarik
+              </button>
             </div>
-            <div>
-              <label
-                class="text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)]"
+          </div>
+          <div>
+            <label
+              class="text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)]"
+            >
+              Kategori
+            </label>
+            <div class="flex flex-wrap gap-1.5 mt-1">
+              <button
+                v-for="k in kategoriOptions"
+                :key="k.id"
+                type="button"
+                :class="[
+                  'px-3 py-1.5 text-xs font-bold rounded-full border-2 transition',
+                  modalKategori === k.id
+                    ? 'bg-[var(--color-primary)] text-white border-[var(--color-primary)]'
+                    : 'bg-[var(--bg-card)] text-[var(--text-secondary)] border-[var(--border-default)] hover:border-[var(--color-primary)]'
+                ]"
+                @click="pilihKategori(k.id)"
               >
-                Kategori
-              </label>
-              <select
-                v-model="modalKategori"
-                class="w-full mt-1 px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-emerald-500 outline-none"
-                @change="onKategoriChange"
-              >
-                <option v-for="k in kategoriOptions" :key="k.id" :value="k.id">
-                  {{ k.label }}
-                </option>
-              </select>
+                {{ k.label }}
+              </button>
             </div>
           </div>
 
@@ -1317,6 +1341,12 @@ function onKategoriChange() {
   } else {
     autoFilled.value = false
   }
+}
+
+// v.1.2.6 (C): pilih kategori via chip (gaya POS) → set + auto-fill nominal
+function pilihKategori(id) {
+  modalKategori.value = id
+  onKategoriChange()
 }
 
 // Manual edit nominal → matikan auto-fill flag
