@@ -28,8 +28,8 @@ export function pesanTagihan({ nama, kategori, nominal, periode, pondok } = {}) 
 export function pesanGlondongan({ guru, santri, juz, pondok } = {}) {
   return (
     `${SALAM}\n` +
-    `Ustadz/Ustadzah *${guru || ''}*, Antum ditugaskan menyimak *${santri || '-'}*` +
-    `${juz ? ' (' + juz + ')' : ''}. Mohon dapat dijadwalkan. Terima kasih.` +
+    `Ustadz/Ustadzah *${guru || ''}*, Anda ditugaskan menyimak *${santri || '-'}*` +
+    `${juz ? ' (' + juz + ')' : ''}. Mohon dapat dijadwalkan. Terima kasih, semoga sehat selalu.` +
     _ttd(pondok)
   )
 }
@@ -72,7 +72,7 @@ export function pesanTesPenguji({ penguji, santri, target, pondok } = {}) {
   return (
     `${SALAM}\n` +
     `Ustadz/Ustadzah *${penguji || ''}*, mohon kesediaan menguji tes kenaikan *${santri || '-'}*` +
-    `${target ? ' → ' + target : ''}. Terima kasih.` +
+    `${target ? ' → ' + target : ''}. Terima kasih, semoga sehat selalu.` +
     _ttd(pondok)
   )
 }
