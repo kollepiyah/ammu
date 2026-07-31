@@ -1288,6 +1288,7 @@
                     <select
                       v-model="formData.guru_pagi"
                       class="w-full px-2 py-2 text-sm border border-cyan-300 dark:border-cyan-700 rounded-lg bg-cyan-50 dark:bg-cyan-900/20 text-cyan-900 dark:text-cyan-100 cursor-pointer"
+                      @change="autoIsiPasanganSore"
                     >
                       <option value="">— kosong —</option>
                       <option v-for="g in guruOptions" :key="g" :value="g">{{ g }}</option>
@@ -1300,12 +1301,20 @@
                     <select
                       v-model="formData.guru_sore"
                       class="w-full px-2 py-2 text-sm border border-cyan-300 dark:border-cyan-700 rounded-lg bg-cyan-50 dark:bg-cyan-900/20 text-cyan-900 dark:text-cyan-100 cursor-pointer"
+                      @change="autoIsiPasanganPagi"
                     >
                       <option value="">— kosong —</option>
                       <option v-for="g in guruOptions" :key="g" :value="g">{{ g }}</option>
                     </select>
                   </div>
                 </div>
+                <p
+                  v-if="guruManual && !formIsSekolah"
+                  class="text-[10px] italic text-[var(--text-tertiary)] mt-1"
+                >
+                  <i class="fas fa-wand-magic-sparkles mr-1"></i>Pilih satu guru — pasangannya
+                  terisi otomatis (masih bisa diubah).
+                </p>
 
                 <p
                   v-if="!formIsSekolah && (formData.guru_pagi || formData.guru_sore)"
@@ -1433,7 +1442,14 @@ import {
 import { juzNum } from '@/utils/format' // v.100e: normalisasi tampilan juz (anti dobel "Juz JUZ n")
 import { ownsNgaji, ownsSekolah, deteksiTipeGuru, guruAktifSaja } from '@/utils/guruScope' // v.100b: scope guru qiraati/sekolah
 // v.1.1.9: 1 kelas Qiraati = sepasang guru (pagi & sore) — dropdown menampilkan 2 nama.
-import { pasanganQiraati, cariPasangan, labelPasangan } from '@/utils/pasanganGuru'
+import {
+  pasanganQiraati,
+  cariPasangan,
+  labelPasangan,
+  petaPasangan,
+  partnerSore,
+  partnerPagi
+} from '@/utils/pasanganGuru'
 import { buildListPdf, createPdf, drawTable, savePdf } from '@/utils/pdfBuilder'
 import { cetakRiwayatPendidikanPdf } from '@/utils/riwayatPendidikanPdf' // v.1.2.6: PDF jurnal lintas-lembaga
 import { imageToDataURL } from '@/services/pdf'
@@ -2612,6 +2628,25 @@ const pasanganKey = computed({
 const pasanganTerpilihLabel = computed(() =>
   labelPasangan({ guru_pagi: formData.value.guru_pagi, guru_sore: formData.value.guru_sore })
 )
+
+// v.1.2.6 (Kyai): mode "Atur sendiri" — pilih SATU guru, pasangannya terisi OTOMATIS
+//   dari peta pasangan pagi↔sore seluruh santri. Dulu harus pilih pagi & sore satu-satu
+//   tiap kali pindah ke pasangan yang belum ada di lembaga tujuan.
+const petaPasanganGuru = computed(() => petaPasangan(santriList.value))
+function autoIsiPasanganSore() {
+  const pagi = String(formData.value.guru_pagi || '').trim()
+  if (pagi && !String(formData.value.guru_sore || '').trim()) {
+    const p = partnerSore(petaPasanganGuru.value, pagi)
+    if (p) formData.value.guru_sore = p
+  }
+}
+function autoIsiPasanganPagi() {
+  const sore = String(formData.value.guru_sore || '').trim()
+  if (sore && !String(formData.value.guru_pagi || '').trim()) {
+    const p = partnerPagi(petaPasanganGuru.value, sore)
+    if (p) formData.value.guru_pagi = p
+  }
+}
 
 const guruOptions = computed(() => {
   const lmb = formData.value.lembaga

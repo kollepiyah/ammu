@@ -76,3 +76,51 @@ export function pasanganQiraati(santriList, opts = {}) {
 export function cariPasangan(list, key) {
   return (list || []).find((p) => p.key === key) || null
 }
+
+// ── v.1.2.6: peta pasangan guru (pagi↔sore) dari SELURUH data santri ─────────────
+//   Kyai: waktu memindah santri ke guru berpasangan, harus pilih pagi & sore satu-satu
+//   kalau pasangannya belum pernah ada di lembaga tujuan. Peta ini menurunkan "guru X
+//   pagi biasanya sekelas dgn guru Y sore" dari co-occurrence di semua santri, jadi
+//   memilih SATU guru bisa mengisi pasangannya OTOMATIS (mode "Atur sendiri").
+function _bump(map, k, v) {
+  let m = map.get(k)
+  if (!m) {
+    m = new Map()
+    map.set(k, m)
+  }
+  m.set(v, (m.get(v) || 0) + 1)
+}
+function _top(m) {
+  if (!m) return ''
+  let best = '',
+    bc = 0
+  for (const [k, c] of m) if (c > bc) ((bc = c), (best = k))
+  return best
+}
+
+/** Bangun peta co-occurrence pagi↔sore dari daftar santri (global, tak per-lembaga). */
+export function petaPasangan(santriList) {
+  const pagi2sore = new Map()
+  const sore2pagi = new Map()
+  for (const s of santriList || []) {
+    if (!s || s.aktif === false) continue
+    const soreRaw = bersih(s.guru_sore)
+    // Field `guru` lama = guru PAGI bila pagi & sore kosong (asumsi konsisten dgn pasanganQiraati).
+    const pagi = bersih(s.guru_pagi) || (!soreRaw && bersih(s.guru) ? bersih(s.guru) : '')
+    const sore = soreRaw
+    if (pagi && sore && norm(pagi) !== norm(sore)) {
+      _bump(pagi2sore, pagi, sore)
+      _bump(sore2pagi, sore, pagi)
+    }
+  }
+  return { pagi2sore, sore2pagi }
+}
+
+/** Guru sore yang paling sering berpasangan dgn `guruPagi` ('' bila tak ada). */
+export function partnerSore(peta, guruPagi) {
+  return _top(peta?.pagi2sore?.get(bersih(guruPagi)))
+}
+/** Guru pagi yang paling sering berpasangan dgn `guruSore` ('' bila tak ada). */
+export function partnerPagi(peta, guruSore) {
+  return _top(peta?.sore2pagi?.get(bersih(guruSore)))
+}
