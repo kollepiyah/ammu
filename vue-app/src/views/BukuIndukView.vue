@@ -867,13 +867,15 @@ async function cetakLaporan() {
   try {
     const settingsObj = settingsStore?.settings || {}
     const kop = buildKopFromSettings(settingsObj)
-    const rows = (filteredBuku.value || []).map((b, i) => ({
-      no: i + 1,
-      tanggal: b.tanggal ? formatTgl(b.tanggal) : '',
-      keterangan: b.keterangan || b.deskripsi || '',
-      tipe: b.tipe || '',
-      masuk: b.masuk ? fmtRp(b.masuk) : '',
-      keluar: b.keluar ? fmtRp(b.keluar) : ''
+    // v.1.2.6 (D): pakai buildExportRows (saldo berjalan + baris TOTAL) lalu format Rp utk PDF.
+    const rows = buildExportRows().map((r) => ({
+      no: r.no,
+      tanggal: r.tanggal ? formatTgl(r.tanggal) : '',
+      keterangan: r.keterangan,
+      tipe: r.tipe,
+      masuk: r.masuk ? fmtRp(r.masuk) : '',
+      keluar: r.keluar ? fmtRp(r.keluar) : '',
+      saldo: r.saldo != null ? fmtRp(r.saldo) : ''
     }))
     const periode =
       selectedMonth.value > 0
@@ -887,11 +889,12 @@ async function cetakLaporan() {
       title: `BUKU INDUK KEUANGAN — ${periode}`,
       columns: [
         { key: 'no', header: 'No', width: 12 },
-        { key: 'tanggal', header: 'Tanggal', width: 30 },
-        { key: 'keterangan', header: 'Keterangan', width: 90 },
-        { key: 'tipe', header: 'Tipe', width: 25 },
-        { key: 'masuk', header: 'Masuk', width: 35 },
-        { key: 'keluar', header: 'Keluar', width: 35 }
+        { key: 'tanggal', header: 'Tanggal', width: 28 },
+        { key: 'keterangan', header: 'Keterangan', width: 78 },
+        { key: 'tipe', header: 'Tipe', width: 22 },
+        { key: 'masuk', header: 'Masuk', width: 32 },
+        { key: 'keluar', header: 'Keluar', width: 32 },
+        { key: 'saldo', header: 'Saldo', width: 32 }
       ],
       rows,
       filename: `buku-induk-${periode.replace(/\s+/g, '_')}.pdf`
@@ -1029,24 +1032,50 @@ onUnmounted(() => {
   }
 })
 
-// v.21+: Export Excel Buku Induk Keuangan (kolom: no, tanggal, no_struk, keterangan, kategori, tipe, masuk, keluar, saldo)
-const exportingBI = ref(false)
-async function exportBukuIndukExcel() {
-  if (exportingBI.value) return
-  exportingBI.value = true
-  try {
-    const list = filteredBuku.value || bukuRaw.value || []
-    const rows = list.map((b, i) => ({
+// v.1.2.6 (D): baris ekspor buku induk — saldo BERJALAN per baris (saldoOf) + baris TOTAL
+//   (jumlah masuk/keluar & net periode) di akhir. Dipakai Excel + Google Sheet.
+function buildExportRows() {
+  const list = filteredBuku.value || []
+  let totMasuk = 0,
+    totKeluar = 0
+  const rows = list.map((b, i) => {
+    const masuk = Number(b.masuk || (b.tipe === 'masuk' ? b.nominal : 0) || 0)
+    const keluar = Number(b.keluar || (b.tipe === 'keluar' ? b.nominal : 0) || 0)
+    totMasuk += masuk
+    totKeluar += keluar
+    return {
       no: i + 1,
       tanggal: b.tanggal || '',
       no_struk: b.no_struk || '',
       keterangan: b.keterangan || b.deskripsi || '',
       kategori: b.kategori || '',
       tipe: b.tipe || (Number(b.masuk) > 0 ? 'Masuk' : 'Keluar'),
-      masuk: b.masuk || (b.tipe === 'masuk' ? b.nominal : 0) || 0,
-      keluar: b.keluar || (b.tipe === 'keluar' ? b.nominal : 0) || 0,
-      saldo: b.saldo || 0
-    }))
+      masuk,
+      keluar,
+      saldo: saldoOf(b)
+    }
+  })
+  rows.push({
+    no: '',
+    tanggal: '',
+    no_struk: '',
+    keterangan: `TOTAL (${list.length} transaksi)`,
+    kategori: '',
+    tipe: '',
+    masuk: totMasuk,
+    keluar: totKeluar,
+    saldo: totMasuk - totKeluar
+  })
+  return rows
+}
+
+// v.21+: Export Excel Buku Induk Keuangan (kolom: no, tanggal, no_struk, keterangan, kategori, tipe, masuk, keluar, saldo)
+const exportingBI = ref(false)
+async function exportBukuIndukExcel() {
+  if (exportingBI.value) return
+  exportingBI.value = true
+  try {
+    const rows = buildExportRows()
     const s = settingsStore.settings || {}
     await exportStyled(rows, {
       filename: `buku_induk_${new Date().toISOString().slice(0, 10)}.xlsx`,
@@ -1057,7 +1086,7 @@ async function exportBukuIndukExcel() {
         s.kopLine3 || '',
         s.kopLine4 || ''
       ],
-      subtitle: `Buku Induk Keuangan — ${rows.length} transaksi`,
+      subtitle: `Buku Induk Keuangan — ${filteredBuku.value.length} transaksi`,
       columns: [
         { key: 'no', header: 'No', width: 5 },
         { key: 'tanggal', header: 'Tanggal', width: 12 },
@@ -1086,18 +1115,7 @@ async function kirimBukuGsheet() {
   }
   sendingGsheet.value = true
   try {
-    const list = filteredBuku.value || bukuRaw.value || []
-    const rows = list.map((b, i) => ({
-      no: i + 1,
-      tanggal: b.tanggal || '',
-      no_struk: b.no_struk || '',
-      keterangan: b.keterangan || b.deskripsi || '',
-      kategori: b.kategori || '',
-      tipe: b.tipe || (Number(b.masuk) > 0 ? 'Masuk' : 'Keluar'),
-      masuk: b.masuk || (b.tipe === 'masuk' ? b.nominal : 0) || 0,
-      keluar: b.keluar || (b.tipe === 'keluar' ? b.nominal : 0) || 0,
-      saldo: b.saldo || 0
-    }))
+    const rows = buildExportRows()
     const s = settingsStore.settings || {}
     const { url } = await sendToSheet({
       rows,
@@ -1109,7 +1127,7 @@ async function kirimBukuGsheet() {
         s.kopLine3 || '',
         s.kopLine4 || ''
       ].filter(Boolean),
-      subtitle: `Buku Induk Keuangan — ${rows.length} transaksi`,
+      subtitle: `Buku Induk Keuangan — ${filteredBuku.value.length} transaksi`,
       columns: [
         { key: 'no', header: 'No', width: 5 },
         { key: 'tanggal', header: 'Tanggal', width: 12 },
@@ -1122,7 +1140,7 @@ async function kirimBukuGsheet() {
         { key: 'saldo', header: 'Saldo', width: 14 }
       ]
     })
-    toast.success(`${rows.length} transaksi terkirim ke Google Sheet.`)
+    toast.success(`${filteredBuku.value.length} transaksi terkirim ke Google Sheet.`)
     try {
       window.open(url, '_blank')
     } catch (e) {
