@@ -1800,10 +1800,11 @@ const filteredFormSantri = computed(() => {
             .trim() === 'PKBM' && getPkbmSubTier(s.kelas_sekolah || s.kelas) === fl
         )
       }
+      // v.1.2.6: case-insensitive — sekolah kustom "Kelas Baca" (mixed-case) dulu tak cocok
       return (
         String(s.lembaga_sekolah || '')
-          .toUpperCase()
-          .trim() === fl
+          .trim()
+          .toUpperCase() === String(fl).trim().toUpperCase()
       )
     })
   } else {
@@ -1885,10 +1886,12 @@ function cocokLembagaRiwayat(s, rl) {
           .trim() === 'PKBM' && getPkbmSubTier(s.kelas_sekolah || s.kelas) === rl
       )
     }
+    // v.1.2.6: bandingkan case-insensitive — sekolah kustom mixed-case ("Kelas Baca")
+    //   dulu tak muncul santrinya karena hanya sisi kiri di-uppercase (rl mentah).
     return (
       String(s.lembaga_sekolah || '')
-        .toUpperCase()
-        .trim() === rl
+        .trim()
+        .toUpperCase() === String(rl).trim().toUpperCase()
     )
   }
   return s.lembaga === rl
