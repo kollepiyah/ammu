@@ -1315,6 +1315,97 @@ async function onImportGuru(e) {
       const jabatan = String(_pick(r, 'Jabatan', 'jabatan') || 'Guru').trim()
       const lembaga = String(_pick(r, 'Lembaga', 'lembaga') || '').trim()
       const statusVal = String(_pick(r, 'Status', 'status') || 'Aktif').trim()
+      // v.1.2.6 ATURAN GABUNG (samakan dgn impor santri — lihat SantriView "ATURAN GABUNG"):
+      //   pada UPDATE, kolom KOSONG di file JANGAN menimpa nilai lama. Dulu `data` selalu
+      //   diisi ''/default paksa → mergeOne MENGHAPUS NIK / Rek BMT / ID Fingerprint dan
+      //   me-RESET Role Sistem admin jadi 'user'. Default (P/Guru/Aktif/pagi_sore/user)
+      //   kini HANYA dipakai untuk guru BARU; pada update, sel kosong dilewati.
+      const isNew = action === 'new'
+      const data = { nama }
+      const put = (key, val, def) => {
+        const v = String(val ?? '').trim()
+        if (v) data[key] = v
+        else if (isNew && def !== undefined) data[key] = def
+      }
+      put(
+        'jk',
+        String(_pick(r, 'L/P', 'JK', 'Jenis Kelamin', 'jk') || '')
+          .trim()
+          .toUpperCase()
+          .charAt(0),
+        'P'
+      )
+      put('nik', _pick(r, 'NIK', 'nik'))
+      put(
+        'tgl_lahir',
+        _parseTglGuru(_pick(r, 'Tgl Lahir (DD/MM/YYYY)', 'Tgl Lahir', 'Tanggal Lahir', 'tgl_lahir'))
+      )
+      put('jabatan', _pick(r, 'Jabatan', 'jabatan'), 'Guru')
+      put('jabatan_tambahan', _pick(r, 'Jabatan Tambahan', 'jabatan_tambahan'))
+      put('lembaga', _pick(r, 'Lembaga', 'lembaga'))
+      put('lembaga_sekolah', _pick(r, 'Lembaga Sekolah', 'lembaga_sekolah'))
+      put(
+        'tanggal_tugas',
+        _parseTglGuru(
+          _pick(r, 'Tanggal Tugas (DD/MM/YYYY)', 'Tgl Tugas', 'Tanggal Tugas', 'tanggal_tugas')
+        )
+      )
+      put('nig', _pick(r, 'NIG', 'No Syahadah', 'EKGQ', 'ekgq', 'nig'))
+      // v.99: No Rekening BMT (tujuan pencairan bisyaroh) + pendidikan + fingerprint
+      put('rek_bmt', _pick(r, 'No Rek BMT', 'Rek BMT', 'rek_bmt'))
+      put(
+        'pendidikan_terakhir',
+        _pick(r, 'Pendidikan Terakhir', 'Pendidikan', 'pendidikan_terakhir')
+      )
+      put('id_fingerprint', _pick(r, 'ID Fingerprint', 'id_fingerprint'))
+      put('wa', wa)
+      put('wa_2', waList[1] || '')
+      // username ikut WA (login) bila ada; jika WA & kolom Username kosong → jangan sentuh
+      put(
+        'username',
+        wa || String(_pick(r, 'Username (opsional)', 'Username', 'username') || '').trim()
+      )
+      put('status', _pick(r, 'Status', 'status'), 'Aktif')
+      // tipe_pegawai butuh normalisasi → hanya tulis bila kolom terisi (atau guru baru)
+      const rawTipe = _pick(
+        r,
+        'Tipe Pegawai (guru/pegawai/pegawai_guru)',
+        'Tipe Pegawai',
+        'tipe_pegawai'
+      )
+      if (String(rawTipe ?? '').trim()) data.tipe_pegawai = _normTipeGuru(rawTipe)
+      else if (isNew) data.tipe_pegawai = _normTipeGuru('')
+      put(
+        'shift',
+        String(_pick(r, 'Shift (pagi/sore/pagi_sore)', 'Shift', 'shift') || '')
+          .trim()
+          .toLowerCase(),
+        'pagi_sore'
+      )
+      // v.1.2.3: shift KUSTOM via kolom "Shift (nomor, pisah |)" → shift_ids (nomor = POSISI
+      //   shift di Pengaturan → Master Shift, mis. "1|4"). Kolom nomor KOSONG → shift_ids TIDAK
+      //   disertakan → mergeOne mempertahankan penugasan dari Form Guru.
+      const _shiftNomor = (
+        _pick(r, 'Shift (nomor, pisah |)', 'Shift (nomor)', 'Shift Nomor', 'shift_nomor') || ''
+      )
+        .toString()
+        .trim()
+      if (_shiftNomor) data.shift_ids = shiftIdsFromNomor(_shiftNomor, _shiftListImport)
+      put(
+        'role_sistem',
+        String(
+          _pick(
+            r,
+            'Role Sistem (user/admin/admin_keuangan/super_admin)',
+            'Role Sistem',
+            'role_sistem'
+          ) || ''
+        )
+          .trim()
+          .toLowerCase(),
+        'user'
+      )
+      if (isNew) data.custom_fields = {}
       allMapped.push({
         existingId: idx >= 0 ? existing[idx].id : null,
         action,
@@ -1323,70 +1414,7 @@ async function onImportGuru(e) {
         lembaga,
         wa,
         status: statusVal,
-        data: {
-          nama,
-          jk: String(_pick(r, 'L/P', 'JK', 'Jenis Kelamin', 'jk') || 'P')
-            .trim()
-            .toUpperCase()
-            .charAt(0),
-          nik: String(_pick(r, 'NIK', 'nik') || '').trim(),
-          tgl_lahir: _parseTglGuru(
-            _pick(r, 'Tgl Lahir (DD/MM/YYYY)', 'Tgl Lahir', 'Tanggal Lahir', 'tgl_lahir')
-          ),
-          jabatan,
-          jabatan_tambahan: String(_pick(r, 'Jabatan Tambahan', 'jabatan_tambahan') || '').trim(),
-          lembaga,
-          lembaga_sekolah: String(_pick(r, 'Lembaga Sekolah', 'lembaga_sekolah') || '').trim(),
-          tanggal_tugas: _parseTglGuru(
-            _pick(r, 'Tanggal Tugas (DD/MM/YYYY)', 'Tgl Tugas', 'Tanggal Tugas', 'tanggal_tugas')
-          ),
-          nig: String(_pick(r, 'NIG', 'No Syahadah', 'EKGQ', 'ekgq', 'nig') || '').trim(),
-          // v.99: No Rekening BMT (tujuan pencairan bisyaroh) + pendidikan + fingerprint
-          rek_bmt: String(_pick(r, 'No Rek BMT', 'Rek BMT', 'rek_bmt') || '').trim(),
-          pendidikan_terakhir: String(
-            _pick(r, 'Pendidikan Terakhir', 'Pendidikan', 'pendidikan_terakhir') || ''
-          ).trim(),
-          id_fingerprint: String(_pick(r, 'ID Fingerprint', 'id_fingerprint') || '').trim(),
-          wa,
-          wa_2: waList[1] || '',
-          username:
-            wa || String(_pick(r, 'Username (opsional)', 'Username', 'username') || '').trim(),
-          status: statusVal,
-          tipe_pegawai: _normTipeGuru(
-            _pick(r, 'Tipe Pegawai (guru/pegawai/pegawai_guru)', 'Tipe Pegawai', 'tipe_pegawai')
-          ),
-          shift: String(_pick(r, 'Shift (pagi/sore/pagi_sore)', 'Shift', 'shift') || 'pagi_sore')
-            .trim()
-            .toLowerCase(),
-          // v.1.2.3: shift KUSTOM via kolom "Shift (nomor, pisah |)" → shift_ids (nomor =
-          //   POSISI shift di Pengaturan → Master Shift, mis. "1|4"). Kolom `shift` (pagi/
-          //   sore) lama tetap ditulis sbg cermin data lama. ATURAN PENTING: kolom nomor
-          //   KOSONG → shift_ids TIDAK disertakan → mergeOne mempertahankan penugasan yang
-          //   sudah diatur lewat Form Guru (dulu diMENGOSONGKAN paksa → menghapus suntingan Kyai).
-          ...((
-            _pick(r, 'Shift (nomor, pisah |)', 'Shift (nomor)', 'Shift Nomor', 'shift_nomor') || ''
-          )
-            .toString()
-            .trim()
-            ? {
-                shift_ids: shiftIdsFromNomor(
-                  _pick(r, 'Shift (nomor, pisah |)', 'Shift (nomor)', 'Shift Nomor', 'shift_nomor'),
-                  _shiftListImport
-                )
-              }
-            : {}),
-          role_sistem: String(
-            _pick(
-              r,
-              'Role Sistem (user/admin/admin_keuangan/super_admin)',
-              'Role Sistem',
-              'role_sistem'
-            ) || 'user'
-          )
-            .trim()
-            .toLowerCase(),
-          custom_fields: {}
-        }
+        data
       })
     }
     importPreviewGuru.value = {
