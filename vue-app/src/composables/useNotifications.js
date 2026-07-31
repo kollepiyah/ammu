@@ -64,6 +64,37 @@ export function useNotifications() {
     return 0
   }
 
+  // v.1.2.6: Notif agenda & libur berbasis TANGGAL kegiatan, BUKAN waktu impor/pembuatan.
+  //   Dulu ts = createdAt → impor kalender 1 semester langsung membanjiri notif semuanya.
+  //   Kini hanya muncul saat H-3 s/d hari terakhir kegiatan. ts = H-3 (00:00) supaya
+  //   markAllRead (lastSeen = now) tetap bisa menandainya terbaca.
+  const _MS_HARI = 86400000
+  function _tglMs(s) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(s || ''))
+    if (!m) return NaN
+    return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])).getTime()
+  }
+  // { show, ts, label } — window notif kegiatan (H-3 s/d hari-H); label = hitung mundur.
+  function _windowKegiatan(k) {
+    const mulai = _tglMs(k.tgl_mulai)
+    if (isNaN(mulai)) return { show: false, ts: 0, label: '' }
+    const akhir = _tglMs(k.tgl_akhir) || mulai
+    const t = new Date()
+    const todayMid = new Date(t.getFullYear(), t.getMonth(), t.getDate()).getTime()
+    const h3 = mulai - 3 * _MS_HARI
+    const show = todayMid >= h3 && todayMid <= akhir
+    const hariLagi = Math.round((mulai - todayMid) / _MS_HARI)
+    const label =
+      hariLagi > 1
+        ? `H-${hariLagi}`
+        : hariLagi === 1
+          ? 'Besok'
+          : hariLagi === 0
+            ? 'Hari ini'
+            : 'Berlangsung'
+    return { show, ts: h3, label }
+  }
+
   // === Build list per kategori ===
   function getSupervisi() {
     if (!userId.value) return []
@@ -191,6 +222,7 @@ export function useNotifications() {
   }
 
   // v.87.0526: Hari libur dari admin — KECUALI libur_nasional → semua role (sesuai audience kegiatan)
+  // v.1.2.6: muncul hanya H-3 s/d hari-H (lihat _windowKegiatan), bukan saat dibuat/diimpor.
   function getLibur() {
     return liburRaw.value
       .filter((k) => k.tipe === 'libur') // exclude 'kegiatan' & 'libur_nasional'
@@ -201,41 +233,54 @@ export function useNotifications() {
         if (aud === 'santri') return role.value === 'santri' || role.value === 'admin'
         return role.value === 'admin'
       })
-      .map((k) => ({
-        id: k.id || k._id,
-        jenis: 'libur',
-        judul: `Libur: ${k.judul || 'Hari Libur'}`,
-        body: k.deskripsi || (k.tgl_mulai ? `Mulai ${k.tgl_mulai}` : ''),
-        ts: tsMs(k.timestamp || k.createdAt),
-        link: '/kalender',
-        icon: 'fa-umbrella-beach',
-        color: 'blue'
-      }))
+      .map((k) => {
+        const w = _windowKegiatan(k)
+        return {
+          id: k.id || k._id,
+          jenis: 'libur',
+          judul: `Libur: ${k.judul || 'Hari Libur'}${w.label ? ' · ' + w.label : ''}`,
+          body: k.deskripsi || (k.tgl_mulai ? `Mulai ${k.tgl_mulai}` : ''),
+          ts: w.ts,
+          _show: w.show,
+          link: '/kalender',
+          icon: 'fa-umbrella-beach',
+          color: 'blue'
+        }
+      })
+      .filter((n) => n._show && n.ts > 0)
   }
 
   // v.1.2.4: Agenda kegiatan (tipe 'kegiatan') → notif sesuai audience + scope lembaga.
   //   Dulu getLibur HANYA memproses tipe 'libur' → agenda tak pernah muncul di notif.
   function getKegiatan() {
     const sesi = auth.sesiAktif
-    return liburRaw.value
-      .filter((k) => (k.tipe || 'kegiatan') === 'kegiatan')
-      .filter((k) => {
-        const aud = k.audience || 'semua'
-        if (aud === 'guru') return role.value === 'guru' || role.value === 'admin'
-        if (aud === 'santri') return role.value === 'santri' || role.value === 'admin'
-        return true // semua
-      })
-      .filter((k) => kegiatanKenaLembaga(k, sesi))
-      .map((k) => ({
-        id: 'keg_' + (k.id || k._id),
-        jenis: 'kegiatan',
-        judul: `Agenda: ${k.judul || 'Kegiatan'}`,
-        body: k.deskripsi || (k.tgl_mulai ? `Mulai ${k.tgl_mulai}` : ''),
-        ts: tsMs(k.timestamp || k.createdAt),
-        link: '/kalender',
-        icon: 'fa-calendar-day',
-        color: 'cyan'
-      }))
+    return (
+      liburRaw.value
+        .filter((k) => (k.tipe || 'kegiatan') === 'kegiatan')
+        .filter((k) => {
+          const aud = k.audience || 'semua'
+          if (aud === 'guru') return role.value === 'guru' || role.value === 'admin'
+          if (aud === 'santri') return role.value === 'santri' || role.value === 'admin'
+          return true // semua
+        })
+        .filter((k) => kegiatanKenaLembaga(k, sesi))
+        // v.1.2.6: muncul hanya H-3 s/d hari-H (lihat _windowKegiatan), bukan saat diimpor/dibuat.
+        .map((k) => {
+          const w = _windowKegiatan(k)
+          return {
+            id: 'keg_' + (k.id || k._id),
+            jenis: 'kegiatan',
+            judul: `Agenda: ${k.judul || 'Kegiatan'}${w.label ? ' · ' + w.label : ''}`,
+            body: k.deskripsi || (k.tgl_mulai ? `Mulai ${k.tgl_mulai}` : ''),
+            ts: w.ts,
+            _show: w.show,
+            link: '/kalender',
+            icon: 'fa-calendar-day',
+            color: 'cyan'
+          }
+        })
+        .filter((n) => n._show && n.ts > 0)
+    )
   }
 
   // v.87.0526: Kenaikan kelas → wali/santri (anaknya). Sumber: koleksi `riwayat_kenaikan` (event).
