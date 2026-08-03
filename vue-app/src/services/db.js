@@ -545,9 +545,20 @@ export async function deleteOne(collectionName, id, opts = {}) {
 }
 
 // ---- realtime / subscribe -------------------------------------------------
+/** Jeda penggabungan event realtime (ms). AUDIT AGU 2026 (P4): tiap event
+ *  postgres_changes dulu memicu tarikan tabel PENUH-nya sendiri. Satu keranjang POS
+ *  3 item = 3 INSERT keuangan_buku_induk + 3 UPDATE keuangan_tagihan = 6 event ->
+ *  6x tarik-ulang tabel penuh (tagihan 2.805 baris per 3 Agu), di SETIAP komponen
+ *  yang berlangganan DAN setiap perangkat yang sedang online. Itu penyebab paling
+ *  nyata "PC kasir terasa berat sesudah menyimpan". Kini event digabung: satu
+ *  tarikan, sesaat sesudah event TERAKHIR. Efek ke pengguna cuma jeda tampil
+ *  <0,5 detik; angka uang tak tersentuh (ini murni jalur BACA). */
+const RT_DEBOUNCE_MS = 400
+
 /** Subscribe collection — return unsubscribe function.
  *  Whitelist realtime -> channel postgres_changes (refetch penuh tiap perubahan,
- *  cermin onSnapshot kirim seluruh set). Non-whitelist -> fetch sekali + no-op. */
+ *  cermin onSnapshot kirim seluruh set) tapi DIGABUNG lewat RT_DEBOUNCE_MS.
+ *  Non-whitelist -> fetch sekali + no-op. */
 export function subscribeColl(collectionName, callback, filters = [], orders = []) {
   _ensure()
   const fetchAll = () =>
@@ -560,11 +571,23 @@ export function subscribeColl(collectionName, callback, filters = [], orders = [
     return () => {} // non-whitelist: tak ada channel
   }
   fetchAll()
+  let timer = null
+  let lepas = false
+  const fetchGabung = () => {
+    if (lepas) return
+    if (timer) clearTimeout(timer)
+    timer = setTimeout(() => {
+      timer = null
+      if (!lepas) fetchAll()
+    }, RT_DEBOUNCE_MS)
+  }
   const ch = supabase
     .channel(`rt-${collectionName}-${Math.random().toString(36).slice(2, 8)}`)
-    .on('postgres_changes', { event: '*', schema: 'public', table: collectionName }, fetchAll)
+    .on('postgres_changes', { event: '*', schema: 'public', table: collectionName }, fetchGabung)
     .subscribe()
   return () => {
+    lepas = true
+    if (timer) clearTimeout(timer) // jangan tarik data untuk komponen yang sudah dilepas
     try {
       supabase.removeChannel(ch)
     } catch {
@@ -587,15 +610,29 @@ export function subscribeDoc(collectionName, id, callback) {
     return () => {}
   }
   fetchOne()
+  // Digabung sama seperti subscribeColl — 1 baris memang murah, tapi settings/master
+  // disimpan per-field sehingga satu klik "Simpan" bisa memicu beberapa event.
+  let timer = null
+  let lepas = false
+  const fetchGabung = () => {
+    if (lepas) return
+    if (timer) clearTimeout(timer)
+    timer = setTimeout(() => {
+      timer = null
+      if (!lepas) fetchOne()
+    }, RT_DEBOUNCE_MS)
+  }
   const ch = supabase
     .channel(`rt-${collectionName}-${id}-${Math.random().toString(36).slice(2, 8)}`)
     .on(
       'postgres_changes',
       { event: '*', schema: 'public', table: collectionName, filter: `${pk}=eq.${id}` },
-      fetchOne
+      fetchGabung
     )
     .subscribe()
   return () => {
+    lepas = true
+    if (timer) clearTimeout(timer)
     try {
       supabase.removeChannel(ch)
     } catch {
