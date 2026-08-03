@@ -163,6 +163,39 @@
               <option value="mahad">Ma'had (Mukim)</option>
             </select>
           </div>
+          <!-- Kyai 3 Agu: dua penanda keuangan. Diisi MANUAL — sengaja tak ditebak sistem. -->
+          <div>
+            <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase"
+              >Paket Syahriyah</label
+            >
+            <input
+              v-model.trim="form.paket_syahriyah"
+              list="paketSyahriyahList"
+              type="text"
+              placeholder="Standar / kosongkan"
+              class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none"
+            />
+            <datalist id="paketSyahriyahList">
+              <option v-for="p in paketSyahriyahOptions" :key="p" :value="p"></option>
+            </datalist>
+            <p class="text-[10px] text-[var(--text-tertiary)] mt-1">
+              Kosong = tarif biasa. Pilihannya diatur di Pengaturan Keuangan → Jenis Pembayaran.
+            </p>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase"
+              >Anak Guru/Pegawai</label
+            >
+            <label
+              class="flex items-center gap-2 px-3 py-2 rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 cursor-pointer"
+            >
+              <input v-model="form.anak_guru" type="checkbox" class="w-4 h-4 accent-teal-600" />
+              <span class="text-sm text-[var(--text-primary)]">Dapat diskon syahriyah</span>
+            </label>
+            <p class="text-[10px] text-[var(--text-tertiary)] mt-1">
+              Besaran diskonnya diatur per jenis pembayaran (persen).
+            </p>
+          </div>
           <div>
             <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase"
               >Nama Panggilan</label
@@ -749,6 +782,7 @@ const {
   guruByLembaga,
   guruByLembagaSekolah,
   gedungOptions,
+  paketSyahriyahOptions,
   pjPtptOptions,
   loadSantri,
   resetForm,

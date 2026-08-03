@@ -43,6 +43,9 @@ function emptyForm() {
     is_mukim: false,
     // v.21.13.0526: + is_fullday + catatan_riwayat_pribadi (Ma'had) + alasan/tanggal keluar
     is_fullday: false,
+    // Kyai 3 Agu: penanda keuangan manual — diskon anak guru + paket nominal pilihan.
+    anak_guru: false,
+    paket_syahriyah: '',
     catatan_riwayat_pribadi: '',
     aktif: true,
     tgl_keluar: '',
@@ -192,6 +195,23 @@ export function useSantriForm() {
 
   // v.111: opsi Gedung (master administrasi) + kandidat PJ PTPT (guru aktif di PTPT)
   const gedungOptions = computed(() => gedungList(settings.settings || {}))
+  // Kyai 3 Agu: pilihan paket syahriyah = GABUNGAN semua paket yang didefinisikan di
+  //   Pengaturan Keuangan → Jenis Pembayaran. Sengaja gabungan (bukan per jenis): satu
+  //   santri memilih SATU nama paket, dan tiap jenis memakai nominal paket bernama itu
+  //   menurut daftarnya sendiri (lihat paketNominal di utils/syahriyah.js).
+  //   Catatan RLS: keuTagihanJenis ada di settings/keuangan (finance-only). Form santri
+  //   memang rute admin (super_admin/admin/admin_keuangan) jadi terbaca; kalau suatu saat
+  //   dibuka ke peran lain, daftar ini akan kosong dan field-nya jadi teks bebas — aman.
+  const paketSyahriyahOptions = computed(() => {
+    const out = new Set()
+    for (const j of settings.settings?.keuTagihanJenis || []) {
+      for (const p of Array.isArray(j?.paket) ? j.paket : []) {
+        const label = String(p?.label || '').trim()
+        if (label) out.add(label)
+      }
+    }
+    return [...out].sort((a, b) => String(a).localeCompare(String(b), 'id'))
+  })
   const pjPtptOptions = computed(() =>
     guruRaw.value
       .filter((g) => _isAktifGuru(g) && String(g.lembaga || '') === 'PTPT')
@@ -288,6 +308,8 @@ export function useSantriForm() {
         is_mukim: !!s.is_mukim,
         // v.21.13.0526: load + is_fullday + catatan + alasan keluar
         is_fullday: !!s.is_fullday,
+        anak_guru: !!s.anak_guru,
+        paket_syahriyah: s.paket_syahriyah || '',
         catatan_riwayat_pribadi: s.catatan_riwayat_pribadi || '',
         aktif: s.aktif !== false,
         tgl_keluar: s.tgl_keluar || '',
@@ -393,6 +415,8 @@ export function useSantriForm() {
         is_mukim: f.is_mukim,
         // v.21.13.0526: + is_fullday + catatan_riwayat + tgl/alasan keluar
         is_fullday: !!f.is_fullday,
+        anak_guru: !!f.anak_guru,
+        paket_syahriyah: f.paket_syahriyah || '',
         catatan_riwayat_pribadi: f.catatan_riwayat_pribadi || '',
         tgl_keluar: f.aktif === false ? f.tgl_keluar || '' : '',
         alasan_keluar: f.aktif === false ? f.alasan_keluar || '' : '',
@@ -510,6 +534,7 @@ export function useSantriForm() {
     guruByLembaga,
     guruByLembagaSekolah,
     gedungOptions,
+    paketSyahriyahOptions,
     pjPtptOptions,
     resetForm,
     loadSantri,

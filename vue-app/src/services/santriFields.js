@@ -506,6 +506,29 @@ export const SANTRI_FIELDS = [
       d.is_fullday = parseBool(v)
     }
   },
+  // Kyai 3 Agu 2026: dua penanda keuangan yang diisi manual (bukan diturunkan sistem).
+  //   Sengaja lewat registry ini supaya sekali ditulis langsung ikut template unduh,
+  //   ekspor, DAN impor — jalur paling praktis untuk mengisi 500-an santri.
+  {
+    header: 'Anak Guru/Pegawai (true/false)',
+    width: 14,
+    aliases: ['Anak Guru', 'Anak Pegawai', 'anak_guru'],
+    note: 'penanda diskon syahriyah (persennya diatur per jenis di Pengaturan Keuangan)',
+    exp: (s) => (s.anak_guru ? 'true' : 'false'),
+    imp: (d, v) => {
+      d.anak_guru = parseBool(v)
+    }
+  },
+  {
+    header: 'Paket Syahriyah',
+    width: 18,
+    aliases: ['Paket', 'Paket Nominal', 'paket_syahriyah'],
+    note: 'nama paket persis seperti di Pengaturan Keuangan → Jenis Pembayaran',
+    exp: (s) => s.paket_syahriyah || '',
+    imp: (d, v) => {
+      d.paket_syahriyah = _s(v)
+    }
+  },
   {
     header: 'Catatan Riwayat Pribadi (Mukim)',
     width: 26,
