@@ -6,7 +6,10 @@
 //   Edge Function dispatch-push. FCM (firebaseApp/messaging) tetap = transport push saja.
 import { supabase } from '@/services/supabase'
 // v.96.0626 perf: firebase/messaging di-LAZY (dynamic import di registerWeb) -> keluar dari boot bundle
-import { firebaseApp } from '@/services/firebase'
+// AUDIT AGU 2026 (P11): `services/firebase` juga di-LAZY. Impor statisnya dulu menyeret
+//   chunk vendor-firebase (79,8 kB: @firebase/app + app-check + installations) ke muat AWAL
+//   lewat rantai App.vue -> usePushNotifications, padahal `firebaseApp` cuma dipakai di SATU
+//   baris di dalam registerWeb() (lihat getMessaging di bawah).
 import { useAuthStore } from '@/stores/auth'
 
 const CHANNEL_ID = 'ammu_default'
@@ -73,13 +76,18 @@ export function usePushNotifications() {
   // WEB push (PWA/browser) via firebase/messaging + VAPID. SW: /firebase-messaging-sw.js
   async function registerWeb() {
     try {
-      const { getMessaging, getToken, onMessage, isSupported } = await import('firebase/messaging')
+      // Gerbang murah DULU, baru unduh SDK-nya. Sebelumnya import firebase/messaging
+      // (37,8 kB) dijalankan lebih dulu lalu langsung di-buang oleh `return` di bawah —
+      // Electron & browser tanpa Notification membayarnya percuma tiap login.
       if (isElectron()) return // desktop Electron: tak ada web push
       if (!(typeof window !== 'undefined' && 'Notification' in window)) return
+      const { getMessaging, getToken, onMessage, isSupported } = await import('firebase/messaging')
       if (!(await isSupported().catch(() => false))) return
       let perm = Notification.permission
       if (perm === 'default') perm = await Notification.requestPermission()
       if (perm !== 'granted') return
+      // Init Firebase App + App Check baru DI SINI (izin notif sudah diberikan).
+      const { firebaseApp } = await import('@/services/firebase')
       const messaging = getMessaging(firebaseApp)
       const token = await getToken(messaging, { vapidKey: VAPID_KEY })
       if (token) await saveToken(token)
