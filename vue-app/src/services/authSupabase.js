@@ -316,20 +316,23 @@ export async function provisionAkunSemua(onProgress) {
   let dibuat = 0
   let dilewati = 0
   let kandidat = 0
-  const gagal = []
+  // Di-dedup per id: yang gagal tetap jadi kandidat di putaran berikutnya, jadi
+  // orang yang sama muncul sekali per putaran. Tanpa ini laporannya menyesatkan —
+  // 3 Agu 2026 tampil "18 gagal" padahal 3 orang x 6 putaran.
+  const gagalMap = new Map()
   // Batas putaran = jaring pengaman; 20 x 100 = 2.000 akun, jauh di atas kebutuhan.
   for (let i = 0; i < 20; i++) {
     const r = await provisionAkun()
     dibuat += r.dibuat || 0
     dilewati += r.dilewati || 0
     kandidat = Math.max(kandidat, r.kandidat || 0)
-    if (Array.isArray(r.gagal)) gagal.push(...r.gagal)
+    for (const g of r.gagal || []) gagalMap.set(String(g?.id ?? g?.nama ?? Math.random()), g)
     if (onProgress) onProgress({ dibuat, sisa: r.sisa || 0 })
     // Berhenti bila tak ada sisa ATAU putaran ini tak membuat apa pun (cegah
     // loop abadi kalau semua kandidat justru gagal dibuat).
     if (!r.sisa || (r.dibuat || 0) + (r.dilewati || 0) === 0) break
   }
-  return { dibuat, dilewati, kandidat, gagal }
+  return { dibuat, dilewati, kandidat, gagal: [...gagalMap.values()] }
 }
 
 /**

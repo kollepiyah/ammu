@@ -89,6 +89,23 @@ Deno.serve(async (req) => {
     let dilewati = 0
     const gagal: { id: string; nama: string; sumber: string; alasan: string }[] = []
 
+    // IZIN membuat akun BERPERAN. Trigger handle_new_user membacanya lewat
+    // _provisi_diizinkan(email) — lihat migration 20260803140000. Dulu penandanya
+    // dikirim via app_metadata, TAPI GoTrue menuliskan app_metadata di langkah
+    // TERPISAH sesudah INSERT, jadi trigger belum melihatnya dan 3 akun pengurus
+    // tertolak (terbukti 3 Agu 2026). Tabel izin tak bergantung urutan itu.
+    // Tabelnya server-only (RLS aktif tanpa policy), izinnya kedaluwarsa 10 menit.
+    await admin.from('akun_provisi_izin').delete().lt(
+      'dibuat_pada',
+      new Date(Date.now() - 10 * 60_000).toISOString()
+    )
+    if (batch.length) {
+      const { error: izinErr } = await admin
+        .from('akun_provisi_izin')
+        .upsert(batch.map((r) => ({ email: r.email })), { onConflict: 'email' })
+      if (izinErr) return json({ ok: false, error: 'izin-gagal: ' + izinErr.message }, 500)
+    }
+
     await batchJalan(batch, PARALEL, async (row: Kandidat) => {
       const { error } = await admin.auth.admin.createUser({
         email: row.email,
@@ -96,6 +113,8 @@ Deno.serve(async (req) => {
         // domain @ammu.local tak bisa menerima surel -> WAJIB dikonfirmasi langsung,
         // kalau tidak akunnya lahir "unconfirmed" dan login gagal.
         email_confirm: true,
+        // Sejak 3 Agu 2026 ini PENANDA AUDIT saja ("dibuat sistem"), bukan gerbang —
+        // gerbangnya tabel akun_provisi_izin di atas.
         app_metadata: { ammu_provisioned: true }
       })
       if (!error) {
@@ -110,6 +129,14 @@ Deno.serve(async (req) => {
       gagal.push({ id: row.ref_id, nama: row.nama, sumber: row.sumber, alasan: error.message })
       console.warn(`[provision-akun] gagal ${row.email}: ${error.message}`)
     })
+
+    // Izin dicabut segera — jangan tinggalkan jendela terbuka lebih lama dari perlu.
+    if (batch.length) {
+      await admin
+        .from('akun_provisi_izin')
+        .delete()
+        .in('email', batch.map((r) => r.email))
+    }
 
     const sisa = Math.max(0, semua.length - batch.length)
     console.log(
