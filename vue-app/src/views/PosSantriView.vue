@@ -99,7 +99,7 @@
 
     <!-- Loading -->
     <div
-      v-if="isAdminKeu && loading"
+      v-if="isAdminKeu && memuat"
       class="bg-[var(--bg-card)] rounded-2xl p-10 border border-[var(--border-subtle)] text-center"
     >
       <i class="fas fa-spinner fa-spin text-2xl text-teal-600 mb-2"></i>
@@ -108,7 +108,7 @@
 
     <!-- Santri grid -->
     <div
-      v-if="isAdminKeu && !loading"
+      v-if="isAdminKeu && !memuat"
       class="bg-[var(--bg-card)] rounded-2xl p-3 md:p-4 border border-[var(--border-subtle)] shadow-sm"
     >
       <p
@@ -203,12 +203,13 @@
 // v.21+: POS Santri — kasir cepat pembayaran tagihan/syahriyah/tabungan dengan modal cart.
 // Save ke keuangan_buku_induk (sumber='pos_santri') + auto-lunas tagihan terkait.
 import { ref, computed, onMounted, watch } from 'vue'
+import { useCollectionsStore } from '@/stores/collections' // P5b: santri/guru dari store terpusat
 import { useRoute, useRouter } from 'vue-router'
 import { useDesktopShell } from '@/composables/useDesktopShell'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
 // v.F6e: adapter Supabase (serverTimestamp = shim ISO string).
-import { getAll, getOne, queryColl, setOne, updateOne, serverTimestamp } from '@/services/db'
+import { getOne, queryColl, setOne, updateOne, serverTimestamp } from '@/services/db'
 import { sortSantri } from '@/utils/santriSort'
 import { sisaTagihan } from '@/utils/tagihan'
 // v.1.2.6: nomor struk anti-kembar + penanda transaksi unik (lihat utils/trxStruk.js)
@@ -234,7 +235,19 @@ const settingsStore = useSettingsStore()
 // v.111: scope Gedung — admin keuangan ber-gedung hanya transaksi santri gedungnya
 const { allowSantri } = useGedungScope()
 
-const santriList = ref([])
+// AUDIT AGU 2026 (P5b): daftar santri diambil dari store TERPUSAT (stores/collections)
+//   yang subscribe SEKALI per sesi + live realtime — bukan getAll penuh setiap kali
+//   halaman POS dibuka (539 baris, 580 kB mentah / 41 kB gzip, 53 field per baris).
+//   Datanya IDENTIK (store memakai select yang sama), jadi tak ada risiko field hilang;
+//   yang hilang cuma pengulangan unduhannya. Bonus di PC kasir: 539 objek reaktif tak
+//   dibuat ulang tiap kali halaman dibuka.
+const collections = useCollectionsStore()
+const santriList = computed(() =>
+  sortSantri((collections.santri || []).filter((s) => s.aktif !== false))
+)
+// Spinner ikut menunggu store: kalau tidak, daftar sempat tampil "Tidak ada santri
+// yang cocok" pada sesi yang membuka /pos-santri langsung (store belum terisi).
+const memuat = computed(() => loading.value || !collections.isLoaded('santri'))
 const loading = ref(true)
 const search = ref('')
 const filterLembaga = ref('')
@@ -298,9 +311,8 @@ onMounted(async () => {
     return
   }
   try {
-    // Load santri
-    const sList = await getAll('santri')
-    santriList.value = sortSantri(sList.filter((s) => s.aktif !== false))
+    // Santri & guru: pastikan store terpusat aktif (idempotent, hidup se-sesi).
+    collections.ensure('santri', 'guru')
 
     // Load transaksi terakhir POS Santri (utk histori + ringkasan harian)
     const posTx = await queryColl(
@@ -328,8 +340,11 @@ onMounted(async () => {
         const gRow = await getOne('guru', String(myId))
         let ttd = gRow?.tanda_tangan || ''
         if (!ttd) {
-          const all = await getAll('guru')
-          const me = all.find((g) => String(g.id) === String(myId) || g.nama === operatorName.value)
+          // dari store (sudah ada di memori) — dulu getAll('guru') penuh tiap kali
+          // operator belum punya tanda tangan, jadi terulang di SETIAP buka POS.
+          const me = (collections.guru || []).find(
+            (g) => String(g.id) === String(myId) || g.nama === operatorName.value
+          )
           ttd = me?.tanda_tangan || ''
         }
         operatorTtdUrl.value = ttd || ''

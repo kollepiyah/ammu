@@ -2,8 +2,9 @@
 // v.21.88.0527: Riwayat Transaksi POS Santri — group per transaksi (trx_id), filter tanggal + cari,
 // cetak ulang struk (PDF ber-KOP + dot-matrix).
 import { ref, computed, onMounted } from 'vue'
+import { useCollectionsStore } from '@/stores/collections' // P5b: santri/guru dari store terpusat
 import { useRouter } from 'vue-router'
-import { queryColl, getAll, deleteOne } from '@/services/db'
+import { queryColl, deleteOne } from '@/services/db'
 import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
@@ -113,8 +114,30 @@ async function hapusTrxTerpilih() {
 
 const loading = ref(true)
 const entries = ref([]) // raw buku_induk pos rows
-const santriMap = ref({}) // id -> {lembaga, kelas, nis}
-const guruTtdMap = ref({}) // nama -> tanda_tangan URL (utk auto-isi TTD Penerima di struk PDF)
+// P5b: keduanya kini TURUNAN dari store terpusat (bukan hasil getAll per buka halaman)
+const collections = useCollectionsStore()
+const santriMap = computed(() => {
+  const m = {} // id -> {lembaga, kelas, nis, wali}
+  for (const s of collections.santri || []) {
+    m[s.id] = {
+      lembaga: s.lembaga || '',
+      kelas: s.kelas || '',
+      lembaga_sekolah: s.lembaga_sekolah || '',
+      kelas_sekolah: s.kelas_sekolah || '',
+      nis: s.nis || '',
+      wali: s.wali || s.nama_wali || s.nama_ayah || (s.ayah && s.ayah.nama) || ''
+    }
+  }
+  return m
+})
+// nama -> tanda_tangan URL (utk auto-isi TTD Penerima di struk PDF)
+const guruTtdMap = computed(() => {
+  const gm = {}
+  for (const g of collections.guru || []) {
+    if (g.nama && g.tanda_tangan) gm[g.nama] = g.tanda_tangan
+  }
+  return gm
+})
 const search = ref('')
 // v.108: filter tahun / bulan / hari
 const BULAN = [
@@ -156,31 +179,11 @@ onMounted(async () => {
       [['createdAt', 'desc']],
       400
     )
-    // lookup santri utk lembaga/kelas
-    const sList = await getAll('santri')
-    const m = {}
-    for (const s of sList) {
-      m[s.id] = {
-        lembaga: s.lembaga || '',
-        kelas: s.kelas || '',
-        lembaga_sekolah: s.lembaga_sekolah || '',
-        kelas_sekolah: s.kelas_sekolah || '',
-        nis: s.nis || '',
-        wali: s.wali || s.nama_wali || s.nama_ayah || (s.ayah && s.ayah.nama) || ''
-      }
-    }
-    santriMap.value = m
-    // v.21.91.0527: guruTtdMap (nama -> tanda_tangan) utk auto-TTD di reprint struk PDF
-    try {
-      const gList = await getAll('guru')
-      const gm = {}
-      for (const g of gList) {
-        if (g.nama && g.tanda_tangan) gm[g.nama] = g.tanda_tangan
-      }
-      guruTtdMap.value = gm
-    } catch (e) {
-      /* ignore — fallback tanpa TTD */
-    }
+    // AUDIT AGU 2026 (P5b): santri & guru dari store TERPUSAT (subscribe sekali per
+    //   sesi + live) — dulu getAll penuh KEDUANYA setiap kali Riwayat dibuka
+    //   (santri 539 baris ≈ 41 kB gzip + guru ≈ 9 kB). Peta di bawah kini computed,
+    //   jadi ikut menyesuaikan sendiri saat datanya berubah.
+    collections.ensure('santri', 'guru')
   } catch (e) {
     toast.error('Gagal memuat riwayat: ' + (e.message || e))
   } finally {
