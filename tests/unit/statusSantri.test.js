@@ -6,7 +6,9 @@ import {
   matchStatusOnly,
   STATUS_SANTRI_OPTS,
   matchJenisKelamin,
-  JK_OPTS
+  JK_OPTS,
+  matchShiftNgaji,
+  SHIFT_NGAJI_OPTS
 } from '@/utils/statusSantri'
 
 const nonMukim = { id: 1, is_mukim: false, is_fullday: false }
@@ -93,5 +95,48 @@ describe('matchJenisKelamin', () => {
   it('JK_OPTS memuat Putra(L) & Putri(P)', () => {
     expect(JK_OPTS.map((o) => o.key)).toEqual(['L', 'P'])
     expect(JK_OPTS.map((o) => o.label)).toEqual(['Putra', 'Putri'])
+  })
+})
+
+// Kyai 4 Agu 2026: "syahriyah pagi untuk ngaji pagi, syahriyah sore untuk sore".
+// Pagar terpenting di sini = shift KOSONG dianggap ikut KEDUANYA. `shift_ngaji` baru terisi
+// 30% (155/524) dan sisanya dikoreksi guru kelas belakangan; kalau kosong dianggap "tidak
+// cocok", 70% santri kehilangan tagihan ngaji — pemasukan hilang, jauh lebih berbahaya
+// daripada tagihan kembar yang sekarang disaring TU.
+describe('matchShiftNgaji — whitelist shift ngaji pada jenis pembayaran', () => {
+  it('whitelist kosong = berlaku semua shift', () => {
+    expect(matchShiftNgaji({ shift_ngaji: 'pagi' }, [])).toBe(true)
+    expect(matchShiftNgaji({ shift_ngaji: 'sore' }, null)).toBe(true)
+    expect(matchShiftNgaji({}, undefined)).toBe(true)
+  })
+
+  it('cocok sesuai shift santri', () => {
+    expect(matchShiftNgaji({ shift_ngaji: 'pagi' }, ['pagi'])).toBe(true)
+    expect(matchShiftNgaji({ shift_ngaji: 'pagi' }, ['sore'])).toBe(false)
+    expect(matchShiftNgaji({ shift_ngaji: 'sore' }, ['sore'])).toBe(true)
+    expect(matchShiftNgaji({ shift_ngaji: 'sore' }, ['pagi'])).toBe(false)
+  })
+
+  it("'pagi_sore' cocok untuk dua-duanya (santri ikut dua sesi)", () => {
+    expect(matchShiftNgaji({ shift_ngaji: 'pagi_sore' }, ['pagi'])).toBe(true)
+    expect(matchShiftNgaji({ shift_ngaji: 'pagi_sore' }, ['sore'])).toBe(true)
+  })
+
+  it('shift KOSONG/ambigu dianggap ikut keduanya (jangan sampai tagihan hilang)', () => {
+    expect(matchShiftNgaji({ shift_ngaji: '' }, ['pagi'])).toBe(true)
+    expect(matchShiftNgaji({ shift_ngaji: '' }, ['sore'])).toBe(true)
+    expect(matchShiftNgaji({}, ['pagi'])).toBe(true)
+    expect(matchShiftNgaji(null, ['sore'])).toBe(true)
+    expect(matchShiftNgaji({ shift_ngaji: 'entah' }, ['pagi'])).toBe(true)
+  })
+
+  it('case-insensitive & nilai whitelist aneh diabaikan', () => {
+    expect(matchShiftNgaji({ shift_ngaji: 'PAGI' }, ['pagi'])).toBe(true)
+    expect(matchShiftNgaji({ shift_ngaji: 'Sore' }, ['SORE'])).toBe(true)
+    expect(matchShiftNgaji({ shift_ngaji: 'pagi' }, ['malam'])).toBe(false)
+  })
+
+  it('SHIFT_NGAJI_OPTS memuat pagi & sore', () => {
+    expect(SHIFT_NGAJI_OPTS.map((o) => o.key)).toEqual(['pagi', 'sore'])
   })
 })

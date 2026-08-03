@@ -56,7 +56,11 @@ Deno.serve(async (req) => {
   const jtDay = String(s.keu_jatuh_tempo || 10).padStart(2, '0')
 
   // 2) Santri aktif (v.1.2.6: + is_mukim/is_fullday utk whitelist status)
-  const { data: santriRows } = await db.from('santri').select('id, nama, lembaga, kelas, lembaga_sekolah, kelas_sekolah, is_mukim, is_fullday, jk, aktif')
+  // Kyai 4 Agu: `data` (ekor jsonb) ikut di-select karena `shift_ngaji` tinggal di situ.
+  //   SENGAJA kolom penuh, bukan alias `data->>shift_ngaji`: sintaks alias itu tak bisa diuji
+  //   dari luar, dan kalau salah SELURUH query santri gagal -> cron tak menerbitkan tagihan
+  //   sama sekali. Muatannya ~600 kB sekali sehari di sisi server — murah untuk kepastian.
+  const { data: santriRows } = await db.from('santri').select('id, nama, lembaga, kelas, lembaga_sekolah, kelas_sekolah, is_mukim, is_fullday, jk, aktif, data')
   const santriAktif = (santriRows || []).filter((x) => x.aktif !== false)
 
   // 3) Periode bulan berjalan (Asia/Jakarta)
@@ -80,6 +84,8 @@ Deno.serve(async (req) => {
     const wlStatus = Array.isArray(j.status_only) ? (j.status_only as string[]).filter(Boolean) : []
     // v.1.2.x: whitelist JENIS KELAMIN (cermin utils/statusSantri.matchJenisKelamin). L=Putra, P=Putri.
     const wlJk = Array.isArray(j.jk_only) ? (j.jk_only as string[]).filter(Boolean) : []
+    // Kyai 4 Agu: whitelist shift ngaji (pagi/sore)
+    const wlShift = Array.isArray(j.shift_only) ? (j.shift_only as string[]).filter(Boolean) : []
     for (const sx of santriAktif) {
       if (wl.length > 0 && !(wl.includes(sx.lembaga) || wl.includes(sx.lembaga_sekolah))) continue
       // status: kosong = semua; antar-status OR. mahad=is_mukim, fullday=is_fullday,
@@ -97,6 +103,23 @@ Deno.serve(async (req) => {
         !wlJk.map((x) => String(x).toUpperCase()).includes(String(sx.jk || '').toUpperCase())
       )
         continue
+      // Kyai 4 Agu: shift ngaji (pagi/sore) — "syahriyah pagi untuk ngaji pagi, sore untuk
+      //   sore". CERMIN matchShiftNgaji() di vue-app/src/utils/statusSantri.js — kalau salah
+      //   satu diubah, SINKRONKAN keduanya. shift_ngaji KOSONG/ambigu = ikut KEDUANYA (baru
+      //   30% santri terisi; menganggapnya "tak cocok" akan menghilangkan tagihan ngaji 70%
+      //   santri). `shift_ngaji` dibaca dari ekor jsonb `data`.
+      if (wlShift.length > 0) {
+        const rawShift = String((sx.data || {}).shift_ngaji || '').toLowerCase()
+        const adaPagi = rawShift.includes('pagi')
+        const adaSore = rawShift.includes('sore')
+        if (adaPagi || adaSore) {
+          const ok = wlShift.some((x) => {
+            const k = String(x).toLowerCase()
+            return (k === 'pagi' && adaPagi) || (k === 'sore' && adaSore)
+          })
+          if (!ok) continue
+        }
+      }
       const dupKey = `${String(sx.id)}__${String(j.label || '').toLowerCase()}`
       if (existing.has(dupKey)) { skipped++; continue }
 

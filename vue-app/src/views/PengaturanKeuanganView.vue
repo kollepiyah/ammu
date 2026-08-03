@@ -1827,6 +1827,38 @@
                   </label>
                 </div>
               </div>
+              <!-- 1b2) Kyai 4 Agu: Whitelist SHIFT NGAJI (pagi/sore).
+                   "syahriyah pagi untuk ngaji pagi, syahriyah sore untuk sore". Tanpa ini
+                   jenis Pagi & Sore terbit ke SEMUA santri (Agustus 2026: 513 + 909 tagihan,
+                   tumpang tindih 100%) dan TU menyaringnya manual di POS. -->
+              <div>
+                <p class="text-[10px] text-[var(--text-secondary)] italic mb-1">
+                  <i class="fas fa-clock mr-1"></i>Hanya untuk shift ngaji ini (kosong = semua
+                  shift):
+                </p>
+                <div class="flex flex-wrap gap-1.5">
+                  <label
+                    v-for="sh in SHIFT_NGAJI_OPTS"
+                    :key="`dlg_sh_${sh.key}`"
+                    class="inline-flex items-center gap-1 text-[10px] font-bold cursor-pointer bg-[var(--bg-card-elevated)] px-2 py-1 rounded border border-[var(--border-default)]"
+                  >
+                    <input
+                      type="checkbox"
+                      :checked="
+                        Array.isArray(dlgJenis.shift_only) && dlgJenis.shift_only.includes(sh.key)
+                      "
+                      class="w-3 h-3 accent-teal-600"
+                      @change="toggleShiftOnly(dlgJenis, sh.key)"
+                    />
+                    {{ sh.label }}
+                  </label>
+                </div>
+                <p class="text-[10px] text-[var(--text-tertiary)] mt-1">
+                  Santri yang <b>Shift Ngaji</b>-nya belum diisi dianggap <b>ikut keduanya</b>, jadi
+                  ia tetap tertagih — tagihannya membaik sendiri begitu guru kelas mengoreksi
+                  datanya. Aman: tak ada tagihan yang hilang di tengah jalan.
+                </p>
+              </div>
               <!-- 1c) v.1.2.x (Kyai): Whitelist JENIS KELAMIN (Putra/Putri) -->
               <div>
                 <p class="text-[10px] text-[var(--text-secondary)] italic mb-1">
@@ -2273,8 +2305,10 @@ import { HARI_AKTIF_DEFAULT } from '@/utils/bebanMengajar' // v.1.2.1: penyebut 
 import {
   STATUS_SANTRI_OPTS,
   JK_OPTS,
+  SHIFT_NGAJI_OPTS,
   matchStatusOnly,
-  matchJenisKelamin
+  matchJenisKelamin,
+  matchShiftNgaji
 } from '@/utils/statusSantri'
 import { useToast } from '@/composables/useToast'
 import { useExcel } from '@/composables/useExcel'
@@ -3053,6 +3087,14 @@ function toggleStatusOnly(jenis, statusKey) {
   else jenis.status_only.push(statusKey)
 }
 
+// Kyai 4 Agu: toggle SHIFT NGAJI di whitelist (pagi/sore)
+function toggleShiftOnly(jenis, shiftKey) {
+  if (!Array.isArray(jenis.shift_only)) jenis.shift_only = []
+  const i = jenis.shift_only.indexOf(shiftKey)
+  if (i >= 0) jenis.shift_only.splice(i, 1)
+  else jenis.shift_only.push(shiftKey)
+}
+
 // v.1.2.x: toggle JENIS KELAMIN di whitelist (L=Putra / P=Putri)
 function toggleJkOnly(jenis, jkKey) {
   if (!Array.isArray(jenis.jk_only)) jenis.jk_only = []
@@ -3534,6 +3576,10 @@ function serializeJenisList(list) {
         : []
       // v.1.2.x: whitelist jenis kelamin (L/P)
       const wlJk = Array.isArray(t.jk_only) ? t.jk_only.filter((x) => String(x || '').trim()) : []
+      // Kyai 4 Agu: whitelist SHIFT ngaji (pagi/sore) — 'syahriyah pagi untuk ngaji pagi'
+      const wlShift = Array.isArray(t.shift_only)
+        ? t.shift_only.filter((x) => String(x || '').trim())
+        : []
       const frekuensi = t.frekuensi || (t.auto_generate ? 'bulanan' : 'manual')
       // Kyai 3 Agu: paket nominal pilihan. Label WAJIB & nominal > 0 — entri setengah jadi
       //   dibuang supaya tak ada paket "hantu" yang bisa dipilih di data santri.
@@ -3562,6 +3608,7 @@ function serializeJenisList(list) {
         lembaga_only: wl,
         status_only: wlStatus,
         jk_only: wlJk,
+        shift_only: wlShift,
         paket,
         diskon_anak_guru: diskonAnakGuru,
         frekuensi,
@@ -3712,9 +3759,11 @@ function tarifKhususInfo(j) {
   const ns = Object.values(j.nominal_per_santri || {}).filter((v) => Number(v) > 0).length
   const wl = (j.lembaga_only || []).length
   const wlStatus = (j.status_only || []).length // v.1.2.6
+  const wlShift = (j.shift_only || []).length // Kyai 4 Agu
   const parts = []
   if (wl) parts.push(`${wl} lembaga`)
   if (wlStatus) parts.push(`${wlStatus} status`)
+  if (wlShift) parts.push(`shift ${(j.shift_only || []).join('+')}`)
   if (nl) parts.push(`${nl} tarif/lembaga`)
   if (nk) parts.push(`${nk} tarif/kelas`)
   if (ns) parts.push(`${ns} santri`)
@@ -3739,6 +3788,7 @@ function openJenisBaru() {
     lembaga_only: [],
     status_only: [], // v.1.2.6: whitelist status santri (kosong = semua)
     jk_only: [], // v.1.2.x: whitelist jenis kelamin (kosong = semua)
+    shift_only: [], // Kyai 4 Agu: whitelist shift ngaji pagi/sore (kosong = semua)
     nominal_per_kelas: {},
     nominal_per_santri: {},
     paket: [], // Kyai 3 Agu: paket nominal pilihan (kosong = tak ada pilihan)
@@ -3787,6 +3837,7 @@ function normalizeJenisRaw(t) {
       lembaga_only: [],
       nominal_per_kelas: {},
       nominal_per_santri: {},
+      shift_only: [],
       paket: [],
       diskon_anak_guru: 0,
       frekuensi: 'manual',
@@ -3807,6 +3858,7 @@ function normalizeJenisRaw(t) {
     lembaga_only: Array.isArray(t.lembaga_only) ? [...t.lembaga_only] : [],
     status_only: Array.isArray(t.status_only) ? [...t.status_only] : [], // v.1.2.6
     jk_only: Array.isArray(t.jk_only) ? [...t.jk_only] : [], // v.1.2.x
+    shift_only: Array.isArray(t.shift_only) ? [...t.shift_only] : [], // Kyai 4 Agu
     nominal_per_kelas:
       t.nominal_per_kelas && typeof t.nominal_per_kelas === 'object'
         ? JSON.parse(JSON.stringify(t.nominal_per_kelas))
@@ -4058,6 +4110,9 @@ async function autoGenerate() {
         if (!matchStatusOnly(sx, j.status_only)) continue
         // v.1.2.x: whitelist jenis kelamin (Putra/Putri) — kosong = semua
         if (!matchJenisKelamin(sx, j.jk_only)) continue
+        // Kyai 4 Agu: whitelist shift ngaji (pagi/sore) — kosong = semua; santri yang
+        //   shift_ngaji-nya belum diisi dianggap ikut KEDUANYA (jangan sampai tagihan hilang)
+        if (!matchShiftNgaji(sx, j.shift_only)) continue
         const dupKey = `${String(sx.id)}__${(j.label || '').toLowerCase()}__${periode}`
         if (existing.has(dupKey)) {
           skipped++

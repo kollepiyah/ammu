@@ -30,6 +30,47 @@ export function matchJenisKelamin(s, jkOnly) {
   return wl.map((x) => String(x).toUpperCase()).includes(jk)
 }
 
+// Kyai 4 Agu 2026: whitelist SHIFT NGAJI untuk jenis pembayaran — sejajar status/lembaga/JK.
+//   Latar: "syahriyah pagi untuk ngaji pagi, syahriyah sore untuk sore". Sebelum ini jenis
+//   tak punya cara menyasar shift, sehingga `Syahriyah Qiraati Pagi` DAN `... Sore` terbit
+//   ke SEMUA santri (terukur Agustus 2026: 513 + 909 tagihan, tumpang tindih 100%) dan TU
+//   menyaringnya manual di POS.
+//   CATATAN: nama lembaga "TPQ Pagi"/"TPQ Sore" BUKAN waktu — itu program pembeda usia dini
+//   vs di atas 5 tahun (koreksi Kyai). Jadi shift HANYA boleh dibaca dari `shift_ngaji`.
+export const SHIFT_NGAJI_OPTS = [
+  { key: 'pagi', label: 'Ngaji Pagi' },
+  { key: 'sore', label: 'Ngaji Sore' }
+]
+
+/**
+ * Apakah santri `s` cocok dengan whitelist shift ngaji `shiftOnly`?
+ *   - whitelist kosong / bukan array → true (berlaku SEMUA shift).
+ *   - `shift_ngaji` santri KOSONG atau ambigu → dianggap ikut KEDUANYA → true.
+ *
+ * Yang terakhir itu SENGAJA, dan penting: `shift_ngaji` baru terisi 155 dari 524 santri
+ * aktif (30%, diukur 3 Agu 2026) dan sisanya akan dikoreksi guru kelas belakangan.
+ * Menganggap kosong sebagai "tidak cocok" akan MENGHILANGKAN tagihan ngaji untuk 70%
+ * santri — kehilangan pemasukan itu jauh lebih berbahaya daripada tagihan kembar yang
+ * sekarang sudah disaring TU. Dengan aturan ini, tagihan otomatis membaik satu per satu
+ * seiring data diisi, tanpa ada yang rusak di tengah jalan.
+ * Konvensi "kosong = keduanya" sama dengan `parseShiftNgaji()` di services/santriFields.js.
+ *
+ * @param {Object} s - dokumen santri (dibaca shift_ngaji).
+ * @param {string[]} shiftOnly - subset dari ['pagi','sore'].
+ */
+export function matchShiftNgaji(s, shiftOnly) {
+  const wl = Array.isArray(shiftOnly) ? shiftOnly.filter(Boolean) : []
+  if (wl.length === 0) return true
+  const raw = String((s && s.shift_ngaji) || '').toLowerCase()
+  const pagi = raw.includes('pagi')
+  const sore = raw.includes('sore')
+  if (!pagi && !sore) return true // kosong/ambigu = ikut keduanya
+  return wl.some((x) => {
+    const k = String(x).toLowerCase()
+    return (k === 'pagi' && pagi) || (k === 'sore' && sore)
+  })
+}
+
 /**
  * Apakah santri `s` cocok dengan whitelist status `statusOnly`?
  *   - whitelist kosong / bukan array → true (berlaku untuk SEMUA status).

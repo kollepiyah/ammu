@@ -10,7 +10,7 @@
 import { ref, computed, watch } from 'vue'
 import { useSettingsStore } from '@/stores/settings'
 // v.1.2.6: filter jenis per status santri · v.1.2.x: + filter jenis kelamin (Putra/Putri)
-import { matchStatusOnly, matchJenisKelamin } from '@/utils/statusSantri'
+import { matchStatusOnly, matchJenisKelamin, matchShiftNgaji } from '@/utils/statusSantri'
 import { terbayarDari } from '@/utils/tagihan'
 import { todayJakarta } from '@/utils/format'
 
@@ -108,6 +108,10 @@ const presetList = computed(() => {
         if (!lbl || lbl === 'tabungan') return false
         if (!matchStatusOnly(props.santri, j.status_only)) return false
         if (!matchJenisKelamin(props.santri, j.jk_only)) return false // v.1.2.x: Putra/Putri
+        // Kyai 4 Agu: shift ngaji (pagi/sore) — kosong = semua. Santri yang shift_ngaji-nya
+        //   belum diisi dianggap ikut KEDUANYA, jadi selnya tetap muncul (tak ada yang hilang
+        //   dari matriks POS sebelum data dikoreksi guru kelas).
+        if (!matchShiftNgaji(props.santri, j.shift_only)) return false
         const wl = Array.isArray(j.lembaga_only) ? j.lembaga_only.filter(Boolean) : []
         if (wl.length === 0) return true
         return wl.includes(santriLemb) || wl.includes(santriLembSekolah)
