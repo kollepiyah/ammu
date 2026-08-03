@@ -108,7 +108,7 @@
             </p>
           </div>
         </div>
-        <!-- v.1.2.7: pisah uang laci vs rekening — inti laporan kas harian -->
+        <!-- v.1.2.6: pisah uang laci vs rekening — inti laporan kas harian -->
         <div class="grid grid-cols-2 gap-2 md:gap-3 mt-2">
           <div class="bg-amber-50 dark:bg-amber-900/20 border-l-4 border-amber-500 p-3 rounded-xl">
             <p class="text-[10px] font-bold text-amber-700 dark:text-amber-300 uppercase">
@@ -196,7 +196,7 @@
                     </button>
                   </div>
                 </div>
-                <!-- v.1.2.7: cara bayar dicatat eksplisit — laporan harian memisahkan
+                <!-- v.1.2.6: cara bayar dicatat eksplisit — laporan harian memisahkan
                      uang laci (tunai) dari uang rekening (transfer) -->
                 <div>
                   <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1"
@@ -352,7 +352,7 @@
             <option :value="0">Semua bulan</option>
             <option v-for="(b, i) in BULAN" :key="b" :value="i + 1">{{ b }}</option>
           </select>
-          <!-- v.1.2.7: filter HARIAN — dasar laporan kas harian. Nonaktif kalau bulan
+          <!-- v.1.2.6: filter HARIAN — dasar laporan kas harian. Nonaktif kalau bulan
                belum dipilih (tanggal tanpa bulan tak bermakna). -->
           <select
             v-model.number="selectedDay"
@@ -371,7 +371,7 @@
             <option value="masuk">Pemasukan</option>
             <option value="keluar">Pengeluaran</option>
           </select>
-          <!-- v.1.2.7: filter cara bayar (tunai/transfer) -->
+          <!-- v.1.2.6: filter cara bayar (tunai/transfer) -->
           <select
             v-model="filterMetode"
             class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-cyan-500 outline-none"
@@ -386,7 +386,7 @@
             class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-cyan-500 outline-none"
           />
         </div>
-        <!-- v.1.2.7: pintasan hari ini — laporan harian sekali klik -->
+        <!-- v.1.2.6: pintasan hari ini — laporan harian sekali klik -->
         <div class="flex items-center gap-2 mt-2">
           <button
             type="button"
@@ -531,7 +531,7 @@
                 >
                   {{ b.kategori }}
                 </span>
-                <!-- v.1.2.7: penanda cara bayar (tunai = uang laci, transfer = rekening) -->
+                <!-- v.1.2.6: penanda cara bayar (tunai = uang laci, transfer = rekening) -->
                 <span
                   :class="[
                     'ml-1 px-1.5 py-0.5 rounded font-bold',
@@ -663,7 +663,7 @@ import { useToast } from '@/composables/useToast'
 import { useExcel } from '@/composables/useExcel'
 import { useGoogleSheet } from '@/composables/useGoogleSheet' // v.100 Batch12: ekspor ke Google Sheet
 import { fmtRp, formatTanggal as formatTgl, todayJakarta } from '@/utils/format'
-// v.1.2.7: cara bayar (tunai/transfer) utk kolom + filter + subtotal laporan harian
+// v.1.2.6: cara bayar (tunai/transfer) utk kolom + filter + subtotal laporan harian
 import { metodeTransaksi, ringkasMetode, METODE_OPTS } from '@/utils/metodeBayar'
 import { buildListPdf, buildKopFromSettings } from '@/utils/pdfBuilder'
 import { isSuperAdmin } from '@/utils/roleScope'
@@ -671,7 +671,7 @@ import { writeAuditLog } from '@/utils/auditLog'
 // v.21.103.0527: reprint struk dari BukuInduk untuk record sumber pos_santri
 // v.1.2.6: cetakStrukKasPdf = struk BUKTI KAS MASUK/KELUAR untuk transaksi manual
 import { cetakStrukPdf, cetakStrukSlipPdf, cetakStrukKasPdf } from '@/utils/strukBuilder'
-// v.1.2.7: satu struk = satu TRANSAKSI (nomor struk lama bisa kembar antar santri)
+// v.1.2.6: satu struk = satu TRANSAKSI (nomor struk lama bisa kembar antar santri)
 import { kunciTransaksi } from '@/utils/trxStruk'
 
 const toast = useToast()
@@ -698,7 +698,7 @@ async function cetakUlangStruk(b, mode = 'pdf') {
     return
   }
   try {
-    // Fetch semua record dengan trx_id sama, lalu v.1.2.7: saring ke TRANSAKSI baris ini
+    // Fetch semua record dengan trx_id sama, lalu v.1.2.6: saring ke TRANSAKSI baris ini
     //   saja (kunciTransaksi) — nomor struk lama bisa kembar dgn transaksi santri lain,
     //   dulu ikut tercetak jadi satu struk gabungan.
     const sekunci = kunciTransaksi(b)
@@ -779,7 +779,7 @@ let unsub = null
 
 const selectedYear = ref(new Date().getFullYear())
 const selectedMonth = ref(new Date().getMonth() + 1) // 0 = semua bulan
-// v.1.2.7: filter harian (0 = semua tanggal) + cara bayar — untuk laporan kas harian
+// v.1.2.6: filter harian (0 = semua tanggal) + cara bayar — untuk laporan kas harian
 const selectedDay = ref(0)
 const filterMetode = ref('')
 const filterTipe = ref('')
@@ -896,7 +896,7 @@ async function bersihkanResidu() {
 const inputForm = reactive({
   tanggal: todayJakarta(),
   tipe: 'masuk',
-  metode: 'Tunai', // v.1.2.7: cara bayar kas manual
+  metode: 'Tunai', // v.1.2.6: cara bayar kas manual
   kategori: '',
   keterangan: '',
   nominal: 0
@@ -939,7 +939,7 @@ function bukaEditBuku(b) {
   editingId.value = String(b.id)
   inputForm.tanggal = b.tanggal || todayJakarta()
   inputForm.tipe = b.tipe || (Number(b.masuk) > 0 ? 'masuk' : 'keluar')
-  // v.1.2.7: cara bayar — baris lama tanpa field metode disimpulkan dari sumber
+  // v.1.2.6: cara bayar — baris lama tanpa field metode disimpulkan dari sumber
   inputForm.metode = metodeTransaksi(b)
   inputForm.kategori = b.kategori || ''
   inputForm.keterangan = b.keterangan || ''
@@ -1021,7 +1021,7 @@ async function cetakLaporan() {
       keluar: r.keluar ? fmtRp(r.keluar) : '',
       saldo: r.saldo != null ? fmtRp(r.saldo) : ''
     }))
-    // v.1.2.7: judul ikut periode aktif — termasuk tanggal saat filter harian dipakai
+    // v.1.2.6: judul ikut periode aktif — termasuk tanggal saat filter harian dipakai
     const periode = periodeLabel.value
     await buildListPdf({
       kind: 'umum',
@@ -1068,7 +1068,7 @@ const filteredBuku = computed(() => {
   })
   // v.111: scope Gedung — admin keuangan ber-gedung hanya lihat baris gedungnya (Buku Kas)
   if (gedungScoped.value) list = list.filter(allowRow)
-  // Filter by year/month (+ v.1.2.7: tanggal, utk laporan harian)
+  // Filter by year/month (+ v.1.2.6: tanggal, utk laporan harian)
   if (selectedMonth.value > 0) {
     const ym = `${selectedYear.value}-${String(selectedMonth.value).padStart(2, '0')}`
     const tgl = selectedDay.value > 0 ? `${ym}-${String(selectedDay.value).padStart(2, '0')}` : ''
@@ -1078,7 +1078,7 @@ const filteredBuku = computed(() => {
   } else {
     list = list.filter((b) => String(b.tanggal || '').startsWith(String(selectedYear.value)))
   }
-  // v.1.2.7: cara bayar
+  // v.1.2.6: cara bayar
   if (filterMetode.value) {
     list = list.filter((b) => metodeTransaksi(b) === filterMetode.value)
   }
@@ -1163,7 +1163,7 @@ const years = computed(() => {
   return [now - 2, now - 1, now, now + 1]
 })
 
-// v.1.2.7: label periode aktif — dipakai header, judul PDF/Excel, & nama berkas.
+// v.1.2.6: label periode aktif — dipakai header, judul PDF/Excel, & nama berkas.
 //   "3 Agustus 2026" | "Agustus 2026" | "Tahun 2026"
 const periodeLabel = computed(() => {
   if (selectedMonth.value === 0) return `Tahun ${selectedYear.value}`
@@ -1178,7 +1178,7 @@ const periodeSlug = computed(() => {
   return selectedDay.value > 0 ? `${ym}-${String(selectedDay.value).padStart(2, '0')}` : ym
 })
 
-// v.1.2.7: subtotal tunai vs transfer atas baris yang sedang tampil (dasar laporan harian)
+// v.1.2.6: subtotal tunai vs transfer atas baris yang sedang tampil (dasar laporan harian)
 const rekapMetode = computed(() => ringkasMetode(filteredBuku.value))
 
 onMounted(() => {
@@ -1213,14 +1213,14 @@ function buildExportRows() {
       keterangan: b.keterangan || b.deskripsi || '',
       kategori: b.kategori || '',
       tipe: b.tipe || (Number(b.masuk) > 0 ? 'Masuk' : 'Keluar'),
-      // v.1.2.7: cara bayar — kasir perlu memisahkan uang laci dari uang rekening
+      // v.1.2.6: cara bayar — kasir perlu memisahkan uang laci dari uang rekening
       metode: metodeTransaksi(b),
       masuk,
       keluar,
       saldo: saldoOf(b)
     }
   })
-  // v.1.2.7: subtotal per cara bayar SEBELUM baris TOTAL — inti laporan harian kas.
+  // v.1.2.6: subtotal per cara bayar SEBELUM baris TOTAL — inti laporan harian kas.
   const rk = ringkasMetode(list)
   for (const m of METODE_OPTS) {
     if (rk[m].masuk === 0 && rk[m].keluar === 0) continue
@@ -1261,7 +1261,7 @@ async function exportBukuIndukExcel() {
     const rows = buildExportRows()
     const s = settingsStore.settings || {}
     await exportStyled(rows, {
-      // v.1.2.7: nama berkas & subjudul ikut periode yang difilter (harian/bulanan/tahunan)
+      // v.1.2.6: nama berkas & subjudul ikut periode yang difilter (harian/bulanan/tahunan)
       filename: `buku_induk_${periodeSlug.value}.xlsx`,
       sheetName: 'Buku Induk',
       kop: [

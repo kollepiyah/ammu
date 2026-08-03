@@ -678,7 +678,7 @@ import { sisaTagihan } from '@/utils/tagihan'
 import ReceiptModal from '@/components/ReceiptModal.vue'
 import { buildReceiptStrukHtml } from '@/utils/receiptHtml'
 import { cetakStrukPdf } from '@/utils/strukBuilder'
-// v.1.2.7: kelompokkan struk per TRANSAKSI (nomor struk lama bisa kembar antar santri)
+// v.1.2.6: kelompokkan struk per TRANSAKSI (nomor struk lama bisa kembar antar santri)
 import { kunciTransaksi } from '@/utils/trxStruk'
 import { computeVaSantri, formatVa, isBmtAktif } from '@/utils/bmtVa'
 
@@ -912,7 +912,7 @@ function extractPeriode(ket) {
   return ''
 }
 function buildTrxFromGroup(p) {
-  // v.1.2.7: kunci ber-santri (trx_uid -> trx_id+santri_id) — dulu murni trx_id sehingga
+  // v.1.2.6: kunci ber-santri (trx_uid -> trx_id+santri_id) — dulu murni trx_id sehingga
   //   nomor struk yang kembar menarik baris milik santri lain ke dalam satu kwitansi.
   const key = p.trx_id ? kunciTransaksi(p) : String(p.id)
   const group = pembayaranRaw.value.filter((x) =>

@@ -211,7 +211,7 @@ import { useToast } from '@/composables/useToast'
 import { getAll, getOne, queryColl, setOne, updateOne, serverTimestamp } from '@/services/db'
 import { sortSantri } from '@/utils/santriSort'
 import { sisaTagihan } from '@/utils/tagihan'
-// v.1.2.7: nomor struk anti-kembar + penanda transaksi unik (lihat utils/trxStruk.js)
+// v.1.2.6: nomor struk anti-kembar + penanda transaksi unik (lihat utils/trxStruk.js)
 import { nomorStrukBerikutnya, buatTrxUid } from '@/utils/trxStruk'
 import { todayJakarta } from '@/utils/format'
 import { cetakStrukPdf, cetakStrukSlipPdf, buildStrukHtml } from '@/utils/strukBuilder'
@@ -310,7 +310,7 @@ onMounted(async () => {
       80
     )
     histori.value = posTx.slice(0, 5)
-    // v.1.2.7: tanggal WIB (todayJakarta), bukan toISOString() yang UTC — transaksi dini
+    // v.1.2.6: tanggal WIB (todayJakarta), bukan toISOString() yang UTC — transaksi dini
     //   hari WIB (00:00–07:00) dulu dihitung ke tanggal kemarin.
     const hariIni = todayJakarta()
     const txToday = posTx.filter((t) => t.tanggal === hariIni)
@@ -318,7 +318,7 @@ onMounted(async () => {
       count: txToday.length,
       total: txToday.reduce((s, t) => s + Number(t.nominal || 0), 0)
     }
-    // v.1.2.7: seq nomor struk TIDAK lagi di-cache di sini — dulu dihitung dari 80 baris
+    // v.1.2.6: seq nomor struk TIDAK lagi di-cache di sini — dulu dihitung dari 80 baris
     //   terakhir saja sehingga mundur & bikin nomor kembar. Sekarang dibaca dari DB tepat
     //   saat menyimpan (lihat ambilNomorStruk).
     // v.21.91.0527: ambil TTD operator dari guru.tanda_tangan utk auto-isi struk PDF
@@ -454,7 +454,7 @@ function closeModal() {
   selectedSantri.value = null
 }
 
-// v.1.2.7: nomor struk dibaca dari DB TEPAT saat menyimpan, disaring per TANGGAL transaksi
+// v.1.2.6: nomor struk dibaca dari DB TEPAT saat menyimpan, disaring per TANGGAL transaksi
 //   (kolom riil → murah). Dulu dari counter lokal yang diisi 80 baris terakhir saja: hari
 //   ramai / halaman di-remount / kasir ke-2 → seq mundur → nomor kembar → dua transaksi
 //   menyatu di Riwayat. Gagal baca → jangan tebak nomor, batalkan (uang belum tercatat).
@@ -473,7 +473,7 @@ async function handleSimpan(payload) {
     const op = payload.operator || operatorName.value
     // v.21.90.0527: format nomor struk MU-NNNddmmyy (seq harian + tgl)
     const trxId = await ambilNomorStruk(tanggal)
-    // v.1.2.7: penanda unik transaksi — dipakai mesin utk mengelompokkan struk. Nomor struk
+    // v.1.2.6: penanda unik transaksi — dipakai mesin utk mengelompokkan struk. Nomor struk
     //   tetap nomor cantik utk manusia; kalaupun dua kasir berebut nomor yang sama pada
     //   detik yang sama, strukanya TIDAK akan pernah menyatu lagi.
     const trxUid = buatTrxUid(trxId)

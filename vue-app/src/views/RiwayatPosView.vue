@@ -12,7 +12,7 @@ import { buildStrukSlipEscpBase64 } from '@/utils/escpImage'
 import { printRaw, getDefaultPrinter } from '@/composables/useDesktopPrint'
 import { isSuperAdmin } from '@/utils/roleScope'
 import { writeAuditLog } from '@/utils/auditLog'
-// v.1.2.7: kelompokkan per TRANSAKSI, bukan per nomor struk — nomor lama bisa kembar
+// v.1.2.6: kelompokkan per TRANSAKSI, bukan per nomor struk — nomor lama bisa kembar
 import { kunciTransaksi } from '@/utils/trxStruk'
 
 const router = useRouter()
@@ -36,7 +36,7 @@ async function hapusTrx(t) {
   )
     return
   try {
-    // v.1.2.7: hapus baris milik TRANSAKSI ini saja (t.ids), bukan semua baris se-trx_id —
+    // v.1.2.6: hapus baris milik TRANSAKSI ini saja (t.ids), bukan semua baris se-trx_id —
     //   nomor struk lama bisa kembar dgn transaksi santri lain.
     const idSet = new Set((t.ids || []).map(String))
     for (const id of idSet) {
@@ -83,7 +83,7 @@ async function hapusTrxTerpilih() {
     return
   let ok = 0,
     fail = 0
-  // v.1.2.7: id baris diambil dari transaksi terpilih (bukan dari trx_id — bisa kembar,
+  // v.1.2.6: id baris diambil dari transaksi terpilih (bukan dari trx_id — bisa kembar,
   //   dulu ikut menghapus transaksi santri lain yang kebetulan senomor)
   const trxIds = tgt.map((t) => t.trx_id)
   const recIds = [...new Set(tgt.flatMap((t) => (t.ids || []).map(String)))]
@@ -207,7 +207,7 @@ function extractPeriode(ket) {
   return ''
 }
 
-// v.1.2.7: group per TRANSAKSI via kunciTransaksi (trx_uid -> trx_id+santri_id -> fallback).
+// v.1.2.6: group per TRANSAKSI via kunciTransaksi (trx_uid -> trx_id+santri_id -> fallback).
 //   Dulu murni `trx_id`: nomor struk yang kembar (bug counter lokal, lihat utils/trxStruk.js)
 //   membuat transaksi dua santri berbeda menyatu jadi satu struk — item dobel, lintas
 //   lembaga, total membengkak. Kunci ber-santri memisahkannya lagi, termasuk data lama.
@@ -488,7 +488,7 @@ function fmtTgl(t) {
                   ><span v-if="t.kelas"> · {{ t.kelas }}</span> · {{ t.operator }} ·
                   {{ t.trx_id }}
                 </p>
-                <!-- v.1.2.7: warisan bug penomoran — satu nomor dipakai >1 transaksi.
+                <!-- v.1.2.6: warisan bug penomoran — satu nomor dipakai >1 transaksi.
                      Strukanya sudah dipisah per santri; nomornya saja yang kembar. -->
                 <p v-if="t.nomorKembar" class="text-[10px] font-bold text-amber-600 mt-0.5">
                   <i class="fas fa-triangle-exclamation mr-1"></i>No. struk kembar dengan transaksi
