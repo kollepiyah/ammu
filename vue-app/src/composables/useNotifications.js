@@ -17,33 +17,73 @@
 //
 // Notif baru = item.createdAt > last_seen_per_jenis[jenis]
 
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { subscribeColl, subscribeDoc, mergeOne } from '@/services/db'
 import { useAuthStore } from '@/stores/auth'
 import { isKepalaLembaga, isSuperAdmin } from '@/utils/roleScope'
 import { lembagaScopeMatches } from '@/composables/useLembaga' // v.100: scope kepala utk notif tes kenaikan
 import { kegiatanKenaLembaga } from '@/composables/useKegiatan' // v.1.2.4: scope lembaga agenda
 
+// ---------------------------------------------------------------------------
+// AUDIT AGU 2026 (P3) — state & langganan dipindah ke lingkup MODUL (dipakai
+// bersama), dulu dibuat ulang per pemakai composable.
+//
+// Masalahnya: composable ini dipakai AppNotifBell (header web/desktop) ATAU
+// BottomNav (HP) — salah satunya SELALU hidup di tiap halaman — dan tiap pemakai
+// memasang langganannya SENDIRI. Untuk peran admin itu 11 langganan tabel PENUH
+// hanya demi angka di lonceng, dan membuka /notifikasi menambah satu set lagi
+// (jadi 22). Sekarang satu set dipakai bersama, dipasang saat pemakai pertama
+// muncul dan dilepas saat pemakai terakhir hilang.
+// ---------------------------------------------------------------------------
+
+// Raw data per koleksi
+const supervisiRaw = ref([])
+const kritikRaw = ref([])
+const postRaw = ref([])
+const bukuIndukRaw = ref([])
+const slipRaw = ref([])
+// v.87.0526: sumber notif baru
+const tagihanRaw = ref([])
+const liburRaw = ref([]) // dari koleksi `kegiatan` (filter tipe === 'libur')
+const kenaikanRaw = ref([]) // dari koleksi `riwayat_kenaikan` (event ditulis saat PROSES NAIK)
+const prestasiRaw = ref([]) // dari koleksi `notif_prestasi` (event ditulis saat input nilai prestasi)
+const tesRaw = ref([]) // v.100: dari koleksi `tes_kenaikan` (ajuan + hasil tes)
+const glondRaw = ref([]) // v.1.1.9: dari koleksi `tes_glondongan` (tugas menyimak)
+const notifState = ref({})
+
+// Langganan bersama + hitungan pemakai (0 = lepas semua).
+let _unsubs = []
+let _pemakai = 0
+let _kunci = '' // tanda tangan langganan aktif: `${role}|${userId}`
+
+// Batas umur data notif. Notif = "aktivitas BARU", dan yang lebih tua sudah pasti
+// tersaring last_seen — jadi menariknya cuma memberatkan tanpa mengubah tampilan.
+// Tanpa batas ini seorang admin menarik SELURUH keuangan_tagihan (2.805 baris per
+// 3 Agu 2026) + buku induk + prestasi setiap kali halaman APA PUN dibuka.
+// SENGAJA TIDAK dipakai untuk:
+//   - `kegiatan`  : jendelanya tanggal ACARA (lihat _windowKegiatan), bukan tanggal
+//                   dibuat — libur yang dibuat 3 bulan lalu tetap harus muncul.
+//   - `tes_kenaikan` / `tes_glondongan` : tugas menggantung boleh lebih tua.
+const HARI_NOTIF = 30
+function _filterBaru() {
+  return [['created_at', '>=', new Date(Date.now() - HARI_NOTIF * 86400000).toISOString()]]
+}
+
+function _lepasSemua() {
+  for (const u of _unsubs) {
+    if (u)
+      try {
+        u()
+      } catch {
+        /* ignore */
+      }
+  }
+  _unsubs = []
+  _kunci = ''
+}
+
 export function useNotifications() {
   const auth = useAuthStore()
-
-  // Raw data per koleksi
-  const supervisiRaw = ref([])
-  const kritikRaw = ref([])
-  const postRaw = ref([])
-  const bukuIndukRaw = ref([])
-  const slipRaw = ref([])
-  // v.87.0526: sumber notif baru
-  const tagihanRaw = ref([])
-  const liburRaw = ref([]) // dari koleksi `kegiatan` (filter tipe === 'libur')
-  const kenaikanRaw = ref([]) // dari koleksi `riwayat_kenaikan` (event ditulis saat PROSES NAIK)
-  const prestasiRaw = ref([]) // dari koleksi `notif_prestasi` (event ditulis saat input nilai prestasi)
-  const tesRaw = ref([]) // v.100: dari koleksi `tes_kenaikan` (ajuan + hasil tes)
-  const glondRaw = ref([]) // v.1.1.9: dari koleksi `tes_glondongan` (tugas menyimak)
-  const notifState = ref({})
-
-  // unsub list
-  const unsubs = []
 
   const userId = computed(() => String(auth.sesiAktif?.id || ''))
   const role = computed(() => auth.sesiAktif?.role || 'guest')
@@ -525,91 +565,140 @@ export function useNotifications() {
     }
   }
 
-  onMounted(() => {
-    if (!auth.sesiAktif) return
-    unsubs.push(
-      subscribeColl('supervisi_catatan', (docs) => {
-        supervisiRaw.value = docs || []
-      })
+  // Pasang langganan BERSAMA. Dipanggil hanya oleh pemakai pertama; `baru` = batas
+  // 30 hari (lihat HARI_NOTIF) untuk tabel event yang tumbuh terus.
+  function _pasang() {
+    const baru = _filterBaru()
+    _unsubs.push(
+      subscribeColl(
+        'supervisi_catatan',
+        (docs) => {
+          supervisiRaw.value = docs || []
+        },
+        baru
+      )
     )
-    unsubs.push(
-      subscribeColl('kritik_saran', (docs) => {
-        kritikRaw.value = docs || []
-      })
+    _unsubs.push(
+      subscribeColl(
+        'kritik_saran',
+        (docs) => {
+          kritikRaw.value = docs || []
+        },
+        baru
+      )
     )
-    unsubs.push(
-      subscribeColl('beranda_post', (docs) => {
-        postRaw.value = docs || []
-      })
+    _unsubs.push(
+      subscribeColl(
+        'beranda_post',
+        (docs) => {
+          postRaw.value = docs || []
+        },
+        baru
+      )
     )
     if (role.value === 'santri' || role.value === 'admin') {
-      unsubs.push(
-        subscribeColl('keuangan_buku_induk', (docs) => {
-          bukuIndukRaw.value = docs || []
-        })
+      _unsubs.push(
+        subscribeColl(
+          'keuangan_buku_induk',
+          (docs) => {
+            bukuIndukRaw.value = docs || []
+          },
+          baru
+        )
       )
       // v.87.0526: tagihan baru + event kenaikan (untuk wali/santri; admin lihat semua)
-      unsubs.push(
-        subscribeColl('keuangan_tagihan', (docs) => {
-          tagihanRaw.value = docs || []
-        })
+      _unsubs.push(
+        subscribeColl(
+          'keuangan_tagihan',
+          (docs) => {
+            tagihanRaw.value = docs || []
+          },
+          baru
+        )
       )
-      unsubs.push(
-        subscribeColl('riwayat_kenaikan', (docs) => {
-          kenaikanRaw.value = docs || []
-        })
+      _unsubs.push(
+        subscribeColl(
+          'riwayat_kenaikan',
+          (docs) => {
+            kenaikanRaw.value = docs || []
+          },
+          baru
+        )
       )
-      unsubs.push(
-        subscribeColl('notif_prestasi', (docs) => {
-          prestasiRaw.value = docs || []
-        })
+      _unsubs.push(
+        subscribeColl(
+          'notif_prestasi',
+          (docs) => {
+            prestasiRaw.value = docs || []
+          },
+          baru
+        )
       )
     }
     if (role.value === 'guru' || role.value === 'admin') {
-      unsubs.push(
-        subscribeColl('keuangan_gaji', (docs) => {
-          slipRaw.value = docs || []
-        })
+      _unsubs.push(
+        subscribeColl(
+          'keuangan_gaji',
+          (docs) => {
+            slipRaw.value = docs || []
+          },
+          baru
+        )
       )
     }
-    // v.87.0526: hari libur (kegiatan) — semua role
-    unsubs.push(
+    // v.87.0526: hari libur (kegiatan) — semua role. TANPA batas tanggal: jendelanya
+    //   tanggal ACARA, bukan tanggal dibuat (tabelnya pun kecil).
+    _unsubs.push(
       subscribeColl('kegiatan', (docs) => {
         liburRaw.value = docs || []
       })
     )
-    // v.100: tes kenaikan — semua role (filter per-role di getTesKenaikan)
-    unsubs.push(
+    // v.100: tes kenaikan — semua role (filter per-role di getTesKenaikan).
+    //   TANPA batas tanggal: ajuan/tugas menggantung boleh lebih tua dari 30 hari.
+    _unsubs.push(
       subscribeColl('tes_kenaikan', (docs) => {
         tesRaw.value = docs || []
       })
     )
     // v.1.1.9: tugas menyimak glondongan — HANYA guru/admin (santri/wali tak berkepentingan)
     if (role.value === 'guru' || role.value === 'admin') {
-      unsubs.push(
+      _unsubs.push(
         subscribeColl('tes_glondongan', (docs) => {
           glondRaw.value = docs || []
         })
       )
     }
     if (userId.value) {
-      unsubs.push(
+      _unsubs.push(
         subscribeDoc('user_notif_state', userId.value, (d) => {
           notifState.value = d || {}
         })
       )
     }
+  }
+
+  // Ikut-tidaknya instance INI dicatat sendiri: onMounted bisa keluar lebih awal
+  // (belum ada sesi), dan tanpa penanda ini onUnmounted akan mengurangi hitungan
+  // yang tak pernah ia tambah -> langganan pemakai lain ikut dilepas.
+  let _ikut = false
+  onMounted(() => {
+    if (!auth.sesiAktif) return
+    _ikut = true
+    _pemakai++
+    // Ganti akun / ganti anak (wali) -> tanda tangan berubah -> pasang ulang.
+    const kunci = `${role.value}|${userId.value}`
+    if (_unsubs.length && _kunci !== kunci) _lepasSemua()
+    if (!_unsubs.length) {
+      _kunci = kunci
+      _pasang()
+    }
   })
 
   onUnmounted(() => {
-    for (const u of unsubs) {
-      if (u)
-        try {
-          u()
-        } catch {
-          /* ignore */
-        }
-    }
+    if (!_ikut) return
+    _ikut = false
+    _pemakai = Math.max(0, _pemakai - 1)
+    if (_pemakai === 0) _lepasSemua()
   })
 
   return {
