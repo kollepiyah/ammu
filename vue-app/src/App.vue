@@ -4,18 +4,21 @@
       <component :is="Component" />
     </transition>
   </router-view>
-  <PrinterSettingsModal />
+  <!-- AUDIT AGU 2026 (P8b): dipasang HANYA saat pengaturan printer benar-benar dibuka.
+       Dulu di-impor statis di sini, dan rantainya (escpImage -> strukBuilder -> pdfBuilder
+       + gambar kop muassis 33 kB) ikut chunk boot yang dibayar SEMUA pengguna — padahal
+       hanya kasir yang memakainya. -->
+  <component :is="PrinterModal" v-if="PrinterModal" ref="printerModalRef" />
   <!-- v.90.0626: ToastStack di-mount GLOBAL (sebelumnya tak pernah dipasang -> toast tak muncul) -->
   <ToastStack />
 </template>
 
 <script setup>
-import { watch, onMounted } from 'vue'
+import { watch, onMounted, onBeforeUnmount, nextTick, ref, shallowRef } from 'vue'
 import { useSettingsStore } from '@/stores/settings'
 import { useUiStore } from '@/stores/ui'
 import { useRouter } from 'vue-router'
 import { useToast } from '@/composables/useToast'
-import PrinterSettingsModal from '@/components/PrinterSettingsModal.vue'
 import ToastStack from '@/components/ui/ToastStack.vue'
 // v.95.0626: FCM push — daftarkan saat user login (native saja)
 import { useAuthStore } from '@/stores/auth'
@@ -137,6 +140,28 @@ async function setupNativeIntegration() {
 }
 
 onMounted(setupNativeIntegration)
+
+// --- Pengaturan printer: dipasang saat diminta saja (P8b) --------------------
+// Pembukanya = event window 'ammu:open-printer-settings' (PosSantriView +
+// PengaturanKeuanganView). Event PERTAMA tiba sebelum modalnya ada, jadi
+// diteruskan lewat show() yang di-expose; event berikutnya ditangani listener
+// milik modal itu sendiri.
+const PrinterModal = shallowRef(null)
+const printerModalRef = ref(null)
+async function bukaPengaturanPrinter() {
+  if (PrinterModal.value) return // sudah terpasang -> modalnya menangani sendiri
+  try {
+    PrinterModal.value = (await import('@/components/PrinterSettingsModal.vue')).default
+    await nextTick()
+    printerModalRef.value?.show?.()
+  } catch (e) {
+    console.warn('[App] gagal memuat pengaturan printer:', e?.message || e)
+  }
+}
+onMounted(() => window.addEventListener('ammu:open-printer-settings', bukaPengaturanPrinter))
+onBeforeUnmount(() =>
+  window.removeEventListener('ammu:open-printer-settings', bukaPengaturanPrinter)
+)
 </script>
 
 <style>

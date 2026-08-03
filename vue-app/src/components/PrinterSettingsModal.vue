@@ -171,4 +171,9 @@ function onWinOpen() {
 }
 onMounted(() => window.addEventListener('ammu:open-printer-settings', onWinOpen))
 onBeforeUnmount(() => window.removeEventListener('ammu:open-printer-settings', onWinOpen))
+// AUDIT AGU 2026 (P8b): dipanggil App.vue untuk event PERTAMA — saat itu modal ini
+//   belum terpasang (dimuat lazy) sehingga listener di atas belum ada, jadi
+//   permintaan pembukaannya diteruskan lewat sini. Event berikutnya ditangani
+//   listener sendiri seperti biasa.
+defineExpose({ show })
 </script>
