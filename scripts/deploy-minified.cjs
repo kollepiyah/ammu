@@ -45,10 +45,18 @@ try {
   log('✓ Vue dist copied → public/vue/')
 
   // v.86.0526: copy PWA assets + splash ke public/vue/ supaya Firebase main serve manifest+icons+splash
+  //
+  // ⚠️ Langkah ini menyalin dari `public/` ROOT (warisan era legacy) dan berjalan SESUDAH
+  //    cpSync(vue-app/dist) di atas — jadi untuk berkas yang ada di KEDUA tempat, versi root
+  //    MENINDIH keluaran Vite tanpa suara. Terbukti 3 Agu 2026: `bakafrawi-logo.png` sudah
+  //    diperkecil 64 kB -> 13 kB di vue-app/public, tapi yang ter-deploy tetap 64 kB.
+  //    Daftar ini karena itu HANYA untuk berkas yang memang tak ada di vue-app/public
+  //    (diperiksa 3 Agu: 14 dari 16 entri lama begitu). `logo.png` & `bakafrawi-logo.png`
+  //    DIKELUARKAN — keduanya ada di vue-app/public dan sudah ikut terbawa Vite.
+  //    Kalau menambah entri baru: pastikan berkasnya TIDAK ada di vue-app/public.
   const PWA_FILES = [
     'manifest.json', 'favicon.ico', 'favicon-32.png', 'favicon-192.png', 'apple-touch-icon-180.png',
     'icon-192.png', 'icon-512.png', 'icon-192-maskable.png', 'icon-512-maskable.png', 'icon-512-transparent.png',
-    'logo.png', 'bakafrawi-logo.png',
     'splash-portrait-light.png', 'splash-portrait-dark.png',
     'splash-landscape-light.png', 'splash-landscape-dark.png'
   ]
