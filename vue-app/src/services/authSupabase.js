@@ -275,6 +275,81 @@ export async function resetUserPassword(collection, docId) {
   return data
 }
 
+/**
+ * provisionAkun — buat akun login untuk guru/santri yang BELUM punya (K1-b).
+ * Permintaan Kyai: akun lahir bersama datanya, supaya tak perlu dibuat satu per
+ * satu dan pendaftaran mandiri boleh dimatikan tanpa ada yang terkunci.
+ *
+ * HANYA MEMBUAT yang belum ada — sandi akun yang sudah ada tak pernah disentuh
+ * (dijaga di sisi server: RPC mengecualikan yang sudah punya baris auth.users,
+ * dan Edge Function memakai createUser, bukan update).
+ *
+ * @param {{collection?:'guru'|'santri', docId?:string|number}} target kosong = sweep semua
+ * @returns {Promise<{dibuat:number, dilewati:number, gagal:Array, kandidat:number, sisa:number}>}
+ */
+export async function provisionAkun(target = {}) {
+  _ensure()
+  const body = target?.docId
+    ? { mode: 'one', collection: target.collection, docId: String(target.docId) }
+    : { mode: 'sweep' }
+  const { data, error } = await supabase.functions.invoke('provision-akun', { body })
+  if (error) {
+    let msg = error.message || 'provision-gagal'
+    try {
+      const j = await error.context?.json?.()
+      if (j?.error) msg = j.error
+    } catch {
+      /* noop */
+    }
+    throw new Error(msg)
+  }
+  if (!data?.ok) throw new Error(data?.error || 'provision-gagal')
+  return data
+}
+
+/**
+ * provisionAkunSemua — sweep berulang sampai habis (Edge Function membatasi 100
+ * akun per panggilan). Dipakai tombol "Buat akun yang belum ada" + sesudah impor.
+ * @param {(p:{dibuat:number,sisa:number})=>void} [onProgress]
+ */
+export async function provisionAkunSemua(onProgress) {
+  let dibuat = 0
+  let dilewati = 0
+  let kandidat = 0
+  const gagal = []
+  // Batas putaran = jaring pengaman; 20 x 100 = 2.000 akun, jauh di atas kebutuhan.
+  for (let i = 0; i < 20; i++) {
+    const r = await provisionAkun()
+    dibuat += r.dibuat || 0
+    dilewati += r.dilewati || 0
+    kandidat = Math.max(kandidat, r.kandidat || 0)
+    if (Array.isArray(r.gagal)) gagal.push(...r.gagal)
+    if (onProgress) onProgress({ dibuat, sisa: r.sisa || 0 })
+    // Berhenti bila tak ada sisa ATAU putaran ini tak membuat apa pun (cegah
+    // loop abadi kalau semua kandidat justru gagal dibuat).
+    if (!r.sisa || (r.dibuat || 0) + (r.dilewati || 0) === 0) break
+  }
+  return { dibuat, dilewati, kandidat, gagal }
+}
+
+/**
+ * provisionAkunSenyap — versi best-effort untuk dipasang di jalur impor/simpan.
+ * TIDAK pernah melempar & tidak menampilkan galat: kalau Edge Function belum
+ * ter-deploy atau pemanggilnya bukan admin, penyimpanan datanya TIDAK boleh
+ * gagal gara-gara pembuatan akun. Kekurangannya disapu tombol manual / panggilan
+ * berikutnya (fungsinya idempoten).
+ */
+export async function provisionAkunSenyap(target = {}) {
+  try {
+    const r = target?.docId ? await provisionAkun(target) : await provisionAkunSemua()
+    if (r?.dibuat) console.log(`[provision-akun] ${r.dibuat} akun login dibuat`)
+    return r
+  } catch (e) {
+    console.warn('[provision-akun] dilewati:', e?.message || e)
+    return null
+  }
+}
+
 // --- Google OAuth via Supabase (provider Google diaktifkan di Supabase Auth). ---
 // Alur PKCE: signInWithOAuth/linkIdentity REDIRECT ke Google, balik dgn `?code=` →
 // detectSessionInUrl:FALSE (supabase.js) → ditukar MANUAL via exchangeOAuthCode di initAuth

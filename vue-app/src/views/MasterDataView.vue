@@ -23,6 +23,7 @@ import { planRegenerateNis, applyNisChanges } from '@/utils/nisGenerator' // v.1
 import { planRegenerateNig, applyNigChanges } from '@/utils/nigGenerator' // v.100 Batch16: auto-generate NIG (manual + preview)
 import { scanLembagaFix, applyLembagaFix, LEMBAGA_QIRAATI_OPSI } from '@/utils/v100_lembagaFix'
 import { useAuthStore } from '@/stores/auth'
+import { provisionAkunSemua } from '@/services/authSupabase' // K1-b: buat akun login yang belum ada
 // v.100 Batch8: audit kesehatan data (integritas + kandidat duplikat fuzzy)
 import { useDataAudit } from '@/composables/useDataAudit'
 import { useGuru } from '@/composables/useGuru'
@@ -32,6 +33,39 @@ const router = useRouter()
 const settings = useSettingsStore()
 
 // v.20.79: M6 — Audit Log subscribe (50 latest)
+// K1-b: tombol "Buat akun yang belum ada" — jaring pengaman kalau ada baris masuk
+//   lewat jalur yang tak memanggil provision otomatis (mis. SQL/Dashboard), dan
+//   sekaligus alat backfill sekali jalan. Aman diklik berulang: Edge Function hanya
+//   MEMBUAT yang belum ada, tak pernah menyentuh sandi akun yang sudah ada.
+const provisiJalan = ref(false)
+const provisiPesan = ref('')
+async function buatAkunBelumAda() {
+  provisiJalan.value = true
+  provisiPesan.value = ''
+  try {
+    const r = await provisionAkunSemua(({ dibuat, sisa }) => {
+      provisiPesan.value = `Membuat akun… ${dibuat} selesai${sisa ? `, ${sisa} menunggu` : ''}`
+    })
+    const bagian = [`${r.dibuat} akun dibuat`]
+    if (r.dilewati) bagian.push(`${r.dilewati} sudah ada (dilewati)`)
+    if (r.gagal.length) bagian.push(`${r.gagal.length} gagal`)
+    provisiPesan.value = bagian.join(' · ')
+    if (r.gagal.length) {
+      console.warn('[provision-akun] gagal:', r.gagal)
+      toast.warning(`${r.gagal.length} akun gagal dibuat — lihat konsol untuk detail`)
+    } else if (r.dibuat) {
+      toast.success(`${r.dibuat} akun login baru dibuat (sandi awal 1234)`)
+    } else {
+      toast.info('Semua santri & guru aktif sudah punya akun login')
+    }
+  } catch (e) {
+    provisiPesan.value = ''
+    toast.error('Gagal membuat akun: ' + (e?.message || e))
+  } finally {
+    provisiJalan.value = false
+  }
+}
+
 const auditLogs = ref([])
 let _unsubAudit = null
 onMounted(() => {
@@ -1992,6 +2026,36 @@ async function simpanPengaturanRekap() {
             </div>
           </div>
         </div>
+      </div>
+
+      <!-- K1-b: buat akun login yang belum ada (jaring pengaman + backfill sekali jalan) -->
+      <div
+        class="bg-white dark:bg-slate-800 rounded-2xl p-5 md:p-6 border border-slate-200 dark:border-slate-700 shadow-sm"
+      >
+        <p class="text-sm font-black text-teal-700 dark:text-teal-300 mb-1">
+          <i class="fas fa-user-shield mr-1"></i>Akun Login
+        </p>
+        <p class="text-xs text-slate-700 dark:text-slate-300 mb-3">
+          Membuat akun login untuk santri &amp; guru/pegawai aktif yang belum punya, dengan sandi
+          awal <b>1234</b>. Akun yang <b>sudah ada tidak disentuh</b> &mdash; sandi yang pernah
+          diganti tetap aman. Biasanya berjalan otomatis sesudah impor atau simpan data; tombol ini
+          untuk menyapu sisanya.
+        </p>
+        <button
+          type="button"
+          class="px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold disabled:opacity-60"
+          :disabled="provisiJalan"
+          @click="buatAkunBelumAda"
+        >
+          <i
+            :class="provisiJalan ? 'fas fa-spinner fa-spin' : 'fas fa-user-plus'"
+            class="mr-1.5"
+          ></i>
+          {{ provisiJalan ? 'Membuat akun…' : 'Buat akun yang belum ada' }}
+        </button>
+        <p v-if="provisiPesan" class="text-xs mt-2.5 text-slate-600 dark:text-slate-300">
+          {{ provisiPesan }}
+        </p>
       </div>
 
       <!-- Audit Log table -->

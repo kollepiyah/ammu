@@ -2,6 +2,7 @@
 // Phase 5.13b (v.41.0526) — port logic legacy simpanGuru + editAdminGuru
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { getOne, mergeOne, subscribeDoc, getAll } from '@/services/db'
+import { provisionAkunSenyap } from '@/services/authSupabase' // K1-b: akun login ikut lahir
 import { nextNigForNew } from '@/utils/nigGenerator' // v.100 Batch16: NIG guru baru = append (lanjut NNN)
 import { useToast } from '@/composables/useToast'
 import { useAuthStore } from '@/stores/auth'
@@ -626,6 +627,10 @@ export function useGuruForm() {
         }
       }
       await mergeOne('guru', String(data.id), data)
+      // K1-b: akun login lahir bersama datanya (senyap — simpan tak boleh gagal
+      //   gara-gara pembuatan akun). Juga saat EDIT: kunci akun guru diturunkan
+      //   dari username/WA, jadi mengubahnya butuh akun baru.
+      provisionAkunSenyap({ collection: 'guru', docId: data.id })
       // v.100e: rename guru → perbarui nama tersimpan di referensi santri (denormalisasi)
       if (
         editingId.value &&

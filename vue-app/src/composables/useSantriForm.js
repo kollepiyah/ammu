@@ -2,6 +2,7 @@
 // Phase 5.13 (v.40.0526) — port logic legacy simpanSantri + editAdminSantri
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { getOne, mergeOne, getAll, subscribeColl, subscribeDoc } from '@/services/db'
+import { provisionAkunSenyap } from '@/services/authSupabase' // K1-b: akun login ikut lahir
 import { useToast } from '@/composables/useToast'
 import { useSettingsStore } from '@/stores/settings'
 import { toTitleCase, normalizeWA } from '@/utils/format'
@@ -462,6 +463,10 @@ export function useSantriForm() {
       // v.99: merge:true — jangan menimpa/hapus field tersimpan yg tak ada di payload
       //   (mis. wa_2, psb_id, shift_qiraati, lembaga_refs) saat edit santri.
       await mergeOne('santri', String(data.id), data)
+      // K1-b: akun login lahir bersama datanya (senyap — simpan tak boleh gagal
+      //   gara-gara pembuatan akun). Dipanggil juga saat EDIT: kunci akun santri
+      //   diturunkan dari No. Induk/WA, jadi mengubahnya butuh akun baru.
+      provisionAkunSenyap({ collection: 'santri', docId: data.id })
       toast.success(editingId.value ? 'Data santri diupdate' : 'Santri baru disimpan')
       return true
     } catch (e) {

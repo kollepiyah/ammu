@@ -614,7 +614,7 @@ import {
   applyImportFields,
   petakanNomorIdentitas
 } from '@/services/santriFields'
-import { resetUserPassword } from '@/services/authSupabase' // reset sandi via Edge Function (super_admin)
+import { resetUserPassword, provisionAkunSenyap } from '@/services/authSupabase' // reset sandi + buat akun login (Edge Function)
 import { planAppendNis, applyNisChanges } from '@/utils/nisGenerator' // v.111: auto-NIS pasca impor = APPEND (No. Induk lama tetap; baru lanjut nomor)
 
 const exporting = ref(false)
@@ -1291,6 +1291,17 @@ async function confirmImportSantri() {
       toast.success(msg)
     } catch (e) {
       toast.warning('No. Induk gagal diproses: ' + (e.message || e))
+    }
+    // K1-b: akun login lahir bersama datanya. WAJIB sesudah blok No. Induk di atas —
+    //   kunci akun santri = No. Induk (fallback digit WA), jadi provision lebih dulu
+    //   akan membuat akun ber-kunci yang sebentar lagi berubah (dan jadi yatim).
+    //   Senyap: impor TIDAK boleh gagal gara-gara pembuatan akun (mis. Edge Function
+    //   belum ter-deploy, atau pengimpor bukan admin).
+    try {
+      const _prov = await provisionAkunSenyap()
+      if (_prov?.dibuat) toast.success(`${_prov.dibuat} akun login baru dibuat`)
+    } catch (e) {
+      /* senyap */
     }
     importPreview.value = null
   } catch (e) {

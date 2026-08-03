@@ -283,6 +283,7 @@
 import { ref, computed, defineComponent, h, onMounted, onUnmounted } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { subscribeDoc, updateOne, addOne, getAll } from '@/services/db'
+import { provisionAkunSenyap } from '@/services/authSupabase' // K1-b: akun login ikut lahir
 import { nextNisForNew } from '@/utils/nisGenerator' // v.100 Batch14: NIS PSB = append (lanjut NNNN)
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
@@ -584,7 +585,10 @@ async function convertToSantri() {
         /* gagal hitung → biarkan No. Induk kosong, bisa digenerate via impor */
       }
     }
-    await addOne('santri', payload)
+    const _sidBaru = await addOne('santri', payload)
+    // K1-b: akun login lahir bersama datanya — sesudah No. Induk di atas ditetapkan
+    //   (kunci akun santri = No. Induk). Senyap: konversi tak boleh gagal gara-gara ini.
+    provisionAkunSenyap({ collection: 'santri', docId: _sidBaru })
     await updateOne('psb_pendaftaran', docId.value, {
       status: 'enrolled',
       enrolled_at: new Date().toISOString()

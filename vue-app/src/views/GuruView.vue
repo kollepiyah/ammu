@@ -561,7 +561,10 @@ import {
   getAll,
   serverTimestamp
 } from '@/services/db'
-import { resetUserPassword as _resetUserPassword } from '@/services/authSupabase' // reset sandi via Edge Function (super_admin)
+import {
+  resetUserPassword as _resetUserPassword,
+  provisionAkunSenyap
+} from '@/services/authSupabase' // reset sandi + buat akun login (Edge Function)
 import { planRegenerateNig, applyNigChanges } from '@/utils/nigGenerator' // v.100 Batch16: auto-NIG pasca impor (reshuffle tgl tugas terlama)
 import { useAuthStore as _useAuthStoreGuru } from '@/stores/auth'
 // v.21.13b.0526: + toTitleCase + normalizeWA + parseMultipleWA (dual WA)
@@ -1466,6 +1469,15 @@ async function confirmImportGuru() {
       _toastExp.success(msg)
     } catch (e) {
       _toastExp.warning('NIG gagal digenerate ulang: ' + (e.message || e))
+    }
+    // K1-b: akun login lahir bersama datanya (senyap — impor tak boleh gagal
+    //   gara-gara pembuatan akun). Guru BERPERAN hanya ter-provision bila
+    //   pengimpornya super_admin (gerbang anti-eskalasi di RPC).
+    try {
+      const _prov = await provisionAkunSenyap()
+      if (_prov?.dibuat) _toastExp.success(`${_prov.dibuat} akun login baru dibuat`)
+    } catch (e) {
+      /* senyap */
     }
     importPreviewGuru.value = null
   } catch (e) {
