@@ -1,10 +1,10 @@
 <script setup>
 // v.72.8.0526 Master Data restructure ke 7 tabs match legacy
-import { ref, computed, reactive, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, reactive, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useSettingsStore } from '@/stores/settings'
 // v.21.12.0526: + subscribeDoc untuk master/jabatan
-import { subscribeColl, subscribeDoc, mergeOne } from '@/services/db'
+import { queryColl, mergeOne } from '@/services/db'
 import { useToast } from '@/composables/useToast'
 import { useDesktopShell } from '@/composables/useDesktopShell'
 import LembagaView from './LembagaView.vue'
@@ -67,23 +67,27 @@ async function buatAkunBelumAda() {
 }
 
 const auditLogs = ref([])
-let _unsubAudit = null
-onMounted(() => {
-  _unsubAudit = subscribeColl('audit_log', (rows) => {
-    // v.100e: 2 penulis pakai format timestamp beda (Firestore Timestamp vs string ISO) →
-    //   sort lama `tb - ta` jadi NaN utk entri ISO → urutan kacau → entri hapus terbaru
-    //   terlempar dari 50 teratas ("tidak update"). auditTsMs() normalkan ke epoch ms.
-    const sorted = [...(rows || [])]
-      .sort((a, b) => auditTsMs(b.timestamp) - auditTsMs(a.timestamp))
-      .slice(0, 50)
-    auditLogs.value = sorted
-  })
-})
-// v.98: cleanup listener audit_log (cegah leak tiap mount Master Data)
+// AUDIT AGU 2026 (P6): dulu `subscribeColl('audit_log')` lalu `.slice(0, 50)` di klien.
+//   audit_log tak ada di whitelist REALTIME, jadi itu = queryColl TANPA batas →
+//   db.js _pageAll menarik 1000 baris per halaman sampai habis. Terukur 3 Agu:
+//   7.334 baris ≈ 11,7 MB (8 permintaan berurutan) hanya untuk menampilkan 50 —
+//   dan tabelnya append-only, jadi terus tumbuh. Kini 1 query, 50 baris, urut di DB
+//   pakai kolom `created_at` yang SUDAH ber-index (audit_log_created_idx).
+//   Sengaja TIDAK memakai data->>timestamp untuk order: penulis lama menyimpan
+//   Timestamp Firestore (objek) di situ, dan '{' > '2' secara teks sehingga baris
+//   TERTUA justru menang saat DESC. Urutan tampil tetap dihaluskan auditTsMs().
+async function muatAuditLog() {
+  try {
+    const rows = await queryColl('audit_log', [], [['created_at', 'desc']], 50)
+    auditLogs.value = [...(rows || [])].sort(
+      (a, b) => auditTsMs(b.timestamp) - auditTsMs(a.timestamp)
+    )
+  } catch (e) {
+    console.warn('[master-data] audit log gagal dimuat:', e?.message || e)
+  }
+}
+onMounted(muatAuditLog)
 const { isElectron: isDesktop } = useDesktopShell()
-onUnmounted(() => {
-  if (_unsubAudit) _unsubAudit()
-})
 function formatTanggal(ts) {
   if (!ts) return '-'
   try {
