@@ -340,7 +340,20 @@ onMounted(async () => {
 
     // Load tunggakan map (count + total per santri_id)
     try {
-      const tagihanAll = await getAll('keuangan_tagihan')
+      // AUDIT AGU 2026 (P5): dulu getAll (SELURUH keuangan_tagihan, 2.805 baris per
+      //   3 Agu ≈ 1,1 MB) lalu dibuang lagi di klien — padahal peta tunggakan hanya
+      //   butuh yang BELUM/PARTIAL. Penyaringannya dipindah ke DB.
+      //   Aman & EKSAK: diperiksa di data nyata 3 Agu — `status` 0 baris NULL dan 0
+      //   nilai di luar {belum, partial, lunas}, jadi `in` tak membuang baris yang
+      //   loop di bawah dulu ikut hitung. (Kalau suatu saat status boleh NULL lagi,
+      //   filter ini WAJIB dicabut: SQL membuang NULL dari `in`, sementara klien
+      //   menganggapnya 'belum' — tunggakan akan tampak lebih kecil dari kenyataan.)
+      // Kolom TETAP '*' (bukan pilih kolom): sisaTagihan -> terbayarDari punya jalur
+      //   mundur ke `data.bayar`/`data.dibayar` di ekor jsonb, dan 8 baris nyata masih
+      //   memakainya — membuang kolom `data` akan MELEBIHKAN tunggakan mereka.
+      const tagihanAll = await queryColl('keuangan_tagihan', [
+        ['status', 'in', ['belum', 'partial']]
+      ])
       const map = {}
       for (const data of tagihanAll) {
         const status = String(data.status || 'belum').toLowerCase()

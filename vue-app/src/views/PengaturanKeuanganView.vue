@@ -4194,7 +4194,13 @@ async function doGenKhusus() {
   genBusy.value = true
   try {
     // dedup: kumpulkan tagihan existing (santri+kategori+periode)
-    const tagihanAll = await getAll('keuangan_tagihan')
+    // AUDIT AGU 2026 (P5): dibatasi ke PERIODE sasaran saja — dulu getAll seluruh
+    //   tabel (2.805 baris per 3 Agu). Eksak menurut konstruksi: dupKey di bawah
+    //   selalu memuat `periode` yang sama, jadi baris periode LAIN mustahil cocok.
+    //   Ada index (periode, status) sehingga query-nya murah. Kolom tetap '*' —
+    //   kunci dedup memakai `t.kategori || t.jenis`, dan `jenis` tinggal di ekor
+    //   jsonb; membuang kolom `data` bisa membuat kunci berbeda -> tagihan DOBEL.
+    const tagihanAll = await queryColl('keuangan_tagihan', [['periode', '==', periode]])
     const existing = new Set()
     for (const t of tagihanAll) {
       existing.add(
