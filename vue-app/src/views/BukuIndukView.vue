@@ -30,7 +30,7 @@
                   ? 'Arus kas gedung Anda'
                   : 'Pusat data arus kas keluar/masuk seluruh lembaga'
               }}
-              · {{ getBulanLabel(selectedMonth) }} {{ selectedYear }}
+              · {{ periodeLabel }}
             </p>
           </div>
           <!-- v.21.113.0528: tombol aksi grup kanan — Ekspor/Input/Cetak konsisten h-9 px-3 rounded-xl -->
@@ -85,7 +85,7 @@
             <i class="fas fa-book text-cyan-500 mr-1"></i>{{ pageTitle }}
           </h2>
           <span class="text-[10px] md:text-[11px] text-[var(--text-secondary)] font-bold">
-            {{ getBulanLabel(selectedMonth) }} {{ selectedYear }}
+            {{ periodeLabel }}
           </span>
         </div>
         <div class="grid grid-cols-3 gap-2 md:gap-3">
@@ -105,6 +105,37 @@
             <p class="text-[10px] font-bold uppercase text-cyan-700">Saldo Akhir</p>
             <p class="text-base md:text-lg font-black mt-1 text-cyan-800">
               {{ fmtRp(stats.saldo) }}
+            </p>
+          </div>
+        </div>
+        <!-- v.1.2.7: pisah uang laci vs rekening — inti laporan kas harian -->
+        <div class="grid grid-cols-2 gap-2 md:gap-3 mt-2">
+          <div class="bg-amber-50 dark:bg-amber-900/20 border-l-4 border-amber-500 p-3 rounded-xl">
+            <p class="text-[10px] font-bold text-amber-700 dark:text-amber-300 uppercase">
+              <i class="fas fa-money-bill mr-1"></i>Tunai (masuk)
+            </p>
+            <p class="text-sm md:text-base font-black text-amber-800 dark:text-amber-200 mt-1">
+              {{ fmtRp(rekapMetode.Tunai.masuk) }}
+            </p>
+            <p
+              v-if="rekapMetode.Tunai.keluar > 0"
+              class="text-[10px] text-amber-700 dark:text-amber-400 mt-0.5"
+            >
+              keluar {{ fmtRp(rekapMetode.Tunai.keluar) }}
+            </p>
+          </div>
+          <div class="bg-sky-50 dark:bg-sky-900/20 border-l-4 border-sky-500 p-3 rounded-xl">
+            <p class="text-[10px] font-bold text-sky-700 dark:text-sky-300 uppercase">
+              <i class="fas fa-building-columns mr-1"></i>Transfer (masuk)
+            </p>
+            <p class="text-sm md:text-base font-black text-sky-800 dark:text-sky-200 mt-1">
+              {{ fmtRp(rekapMetode.Transfer.masuk) }}
+            </p>
+            <p
+              v-if="rekapMetode.Transfer.keluar > 0"
+              class="text-[10px] text-sky-700 dark:text-sky-400 mt-0.5"
+            >
+              keluar {{ fmtRp(rekapMetode.Transfer.keluar) }}
             </p>
           </div>
         </div>
@@ -162,6 +193,35 @@
                       @click="inputForm.tipe = 'keluar'"
                     >
                       <i class="fas fa-arrow-up mr-1"></i>Pengeluaran
+                    </button>
+                  </div>
+                </div>
+                <!-- v.1.2.7: cara bayar dicatat eksplisit — laporan harian memisahkan
+                     uang laci (tunai) dari uang rekening (transfer) -->
+                <div>
+                  <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1"
+                    >Cara Bayar *</label
+                  >
+                  <div class="grid grid-cols-2 gap-2">
+                    <button
+                      v-for="m in METODE_OPTS"
+                      :key="m"
+                      type="button"
+                      :class="[
+                        'px-3 py-2 text-xs font-black rounded-lg border-2',
+                        inputForm.metode === m
+                          ? 'bg-cyan-600 text-white border-cyan-700'
+                          : 'bg-[var(--bg-card)] text-cyan-700 border-cyan-300'
+                      ]"
+                      @click="inputForm.metode = m"
+                    >
+                      <i
+                        :class="[
+                          'fas mr-1',
+                          m === 'Transfer' ? 'fa-building-columns' : 'fa-money-bill'
+                        ]"
+                      ></i
+                      >{{ m }}
                     </button>
                   </div>
                 </div>
@@ -278,7 +338,7 @@
       <div
         class="bg-[var(--bg-card)] rounded-2xl p-3 md:p-4 border border-[var(--border-subtle)] shadow-sm"
       >
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
           <select
             v-model.number="selectedYear"
             class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-cyan-500 outline-none"
@@ -292,6 +352,17 @@
             <option :value="0">Semua bulan</option>
             <option v-for="(b, i) in BULAN" :key="b" :value="i + 1">{{ b }}</option>
           </select>
+          <!-- v.1.2.7: filter HARIAN — dasar laporan kas harian. Nonaktif kalau bulan
+               belum dipilih (tanggal tanpa bulan tak bermakna). -->
+          <select
+            v-model.number="selectedDay"
+            :disabled="selectedMonth === 0"
+            :title="selectedMonth === 0 ? 'Pilih bulan dulu' : 'Filter per tanggal'"
+            class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-cyan-500 outline-none disabled:opacity-50"
+          >
+            <option :value="0">Semua tgl</option>
+            <option v-for="d in 31" :key="d" :value="d">{{ d }}</option>
+          </select>
           <select
             v-model="filterTipe"
             class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-cyan-500 outline-none"
@@ -300,12 +371,38 @@
             <option value="masuk">Pemasukan</option>
             <option value="keluar">Pengeluaran</option>
           </select>
+          <!-- v.1.2.7: filter cara bayar (tunai/transfer) -->
+          <select
+            v-model="filterMetode"
+            class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-cyan-500 outline-none"
+          >
+            <option value="">Semua cara bayar</option>
+            <option v-for="m in METODE_OPTS" :key="m" :value="m">{{ m }}</option>
+          </select>
           <input
             v-model="search"
             type="text"
             placeholder="Cari keterangan..."
             class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-cyan-500 outline-none"
           />
+        </div>
+        <!-- v.1.2.7: pintasan hari ini — laporan harian sekali klik -->
+        <div class="flex items-center gap-2 mt-2">
+          <button
+            type="button"
+            class="text-[11px] font-bold px-2.5 py-1.5 rounded-lg bg-cyan-50 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-300 hover:bg-cyan-100"
+            @click="setHariIni"
+          >
+            <i class="fas fa-calendar-day mr-1"></i>Hari ini
+          </button>
+          <button
+            v-if="selectedDay > 0"
+            type="button"
+            class="text-[11px] font-bold px-2.5 py-1.5 rounded-lg bg-[var(--bg-muted)] text-[var(--text-secondary)] hover:bg-slate-200 dark:hover:bg-slate-600"
+            @click="selectedDay = 0"
+          >
+            <i class="fas fa-xmark mr-1"></i>Semua tanggal
+          </button>
         </div>
       </div>
 
@@ -434,6 +531,23 @@
                 >
                   {{ b.kategori }}
                 </span>
+                <!-- v.1.2.7: penanda cara bayar (tunai = uang laci, transfer = rekening) -->
+                <span
+                  :class="[
+                    'ml-1 px-1.5 py-0.5 rounded font-bold',
+                    metodeTransaksi(b) === 'Transfer'
+                      ? 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300'
+                      : 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
+                  ]"
+                >
+                  <i
+                    :class="[
+                      'fas mr-0.5',
+                      metodeTransaksi(b) === 'Transfer' ? 'fa-building-columns' : 'fa-money-bill'
+                    ]"
+                  ></i
+                  >{{ metodeTransaksi(b) }}
+                </span>
                 <span v-if="b.ref_id" class="ml-1 text-[var(--text-tertiary)]"
                   >· #{{ b.ref_id }}</span
                 >
@@ -530,7 +644,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, reactive } from 'vue'
+import { ref, computed, onMounted, onUnmounted, reactive, watch } from 'vue'
 import { useDesktopShell } from '@/composables/useDesktopShell'
 import { definePageActions } from '@/composables/useRibbonContext'
 // v.91.0626: deleteOne = backup audit_log dulu. serverTimestamp = shim ISO (db.js).
@@ -548,7 +662,9 @@ import { useGedungScope } from '@/composables/useGedungScope'
 import { useToast } from '@/composables/useToast'
 import { useExcel } from '@/composables/useExcel'
 import { useGoogleSheet } from '@/composables/useGoogleSheet' // v.100 Batch12: ekspor ke Google Sheet
-import { fmtRp, formatTanggal as formatTgl } from '@/utils/format'
+import { fmtRp, formatTanggal as formatTgl, todayJakarta } from '@/utils/format'
+// v.1.2.7: cara bayar (tunai/transfer) utk kolom + filter + subtotal laporan harian
+import { metodeTransaksi, ringkasMetode, METODE_OPTS } from '@/utils/metodeBayar'
 import { buildListPdf, buildKopFromSettings } from '@/utils/pdfBuilder'
 import { isSuperAdmin } from '@/utils/roleScope'
 import { writeAuditLog } from '@/utils/auditLog'
@@ -663,8 +779,23 @@ let unsub = null
 
 const selectedYear = ref(new Date().getFullYear())
 const selectedMonth = ref(new Date().getMonth() + 1) // 0 = semua bulan
+// v.1.2.7: filter harian (0 = semua tanggal) + cara bayar — untuk laporan kas harian
+const selectedDay = ref(0)
+const filterMetode = ref('')
 const filterTipe = ref('')
 const search = ref('')
+
+// pintasan: set filter ke tanggal hari ini (WIB)
+function setHariIni() {
+  const [y, m, d] = todayJakarta().split('-')
+  selectedYear.value = Number(y)
+  selectedMonth.value = Number(m)
+  selectedDay.value = Number(d)
+}
+// bulan diganti ke "semua bulan" -> tanggal ikut direset (kombinasi itu tak bermakna)
+watch(selectedMonth, (m) => {
+  if (m === 0) selectedDay.value = 0
+})
 
 // v.72.16.0526: Input Manual modal
 const modalInputOpen = ref(false)
@@ -763,8 +894,9 @@ async function bersihkanResidu() {
   else toast.success(`${ok} entri residu dibersihkan`)
 }
 const inputForm = reactive({
-  tanggal: new Date().toISOString().slice(0, 10),
+  tanggal: todayJakarta(),
   tipe: 'masuk',
+  metode: 'Tunai', // v.1.2.7: cara bayar kas manual
   kategori: '',
   keterangan: '',
   nominal: 0
@@ -773,8 +905,9 @@ const inputForm = reactive({
 function bukaModalInput() {
   editingId.value = null
   savedKas.value = null
-  inputForm.tanggal = new Date().toISOString().slice(0, 10)
+  inputForm.tanggal = todayJakarta()
   inputForm.tipe = 'masuk'
+  inputForm.metode = 'Tunai'
   inputForm.kategori = ''
   inputForm.keterangan = ''
   inputForm.nominal = 0
@@ -804,8 +937,10 @@ function bukaEditBuku(b) {
   if (!isAdmin.value) return
   savedKas.value = null
   editingId.value = String(b.id)
-  inputForm.tanggal = b.tanggal || new Date().toISOString().slice(0, 10)
+  inputForm.tanggal = b.tanggal || todayJakarta()
   inputForm.tipe = b.tipe || (Number(b.masuk) > 0 ? 'masuk' : 'keluar')
+  // v.1.2.7: cara bayar — baris lama tanpa field metode disimpulkan dari sumber
+  inputForm.metode = metodeTransaksi(b)
   inputForm.kategori = b.kategori || ''
   inputForm.keterangan = b.keterangan || ''
   inputForm.nominal = Number(b.nominal || b.masuk || b.keluar || 0)
@@ -828,6 +963,7 @@ async function simpanInputManual() {
       const upd = {
         tanggal: inputForm.tanggal,
         tipe: inputForm.tipe,
+        metode: inputForm.metode || 'Tunai',
         kategori: inputForm.kategori.trim() || 'Manual',
         keterangan: inputForm.keterangan.trim(),
         nominal: Number(inputForm.nominal) || 0
@@ -844,6 +980,7 @@ async function simpanInputManual() {
         id,
         tanggal: inputForm.tanggal,
         tipe: inputForm.tipe,
+        metode: inputForm.metode || 'Tunai',
         kategori: inputForm.kategori.trim() || 'Manual',
         keterangan: inputForm.keterangan.trim(),
         nominal: Number(inputForm.nominal) || 0,
@@ -879,14 +1016,13 @@ async function cetakLaporan() {
       tanggal: r.tanggal ? formatTgl(r.tanggal) : '',
       keterangan: r.keterangan,
       tipe: r.tipe,
+      metode: r.metode || '',
       masuk: r.masuk ? fmtRp(r.masuk) : '',
       keluar: r.keluar ? fmtRp(r.keluar) : '',
       saldo: r.saldo != null ? fmtRp(r.saldo) : ''
     }))
-    const periode =
-      selectedMonth.value > 0
-        ? `${BULAN[selectedMonth.value - 1]} ${selectedYear.value}`
-        : `Tahun ${selectedYear.value}`
+    // v.1.2.7: judul ikut periode aktif — termasuk tanggal saat filter harian dipakai
+    const periode = periodeLabel.value
     await buildListPdf({
       kind: 'umum',
       orientation: 'l',
@@ -895,15 +1031,16 @@ async function cetakLaporan() {
       title: `BUKU INDUK KEUANGAN — ${periode}`,
       columns: [
         { key: 'no', header: 'No', width: 12 },
-        { key: 'tanggal', header: 'Tanggal', width: 28 },
-        { key: 'keterangan', header: 'Keterangan', width: 78 },
-        { key: 'tipe', header: 'Tipe', width: 22 },
-        { key: 'masuk', header: 'Masuk', width: 32 },
-        { key: 'keluar', header: 'Keluar', width: 32 },
-        { key: 'saldo', header: 'Saldo', width: 32 }
+        { key: 'tanggal', header: 'Tanggal', width: 26 },
+        { key: 'keterangan', header: 'Keterangan', width: 70 },
+        { key: 'tipe', header: 'Tipe', width: 20 },
+        { key: 'metode', header: 'Cara Bayar', width: 24 },
+        { key: 'masuk', header: 'Masuk', width: 30 },
+        { key: 'keluar', header: 'Keluar', width: 30 },
+        { key: 'saldo', header: 'Saldo', width: 30 }
       ],
       rows,
-      filename: `buku-induk-${periode.replace(/\s+/g, '_')}.pdf`
+      filename: `buku-induk-${periodeSlug.value}.pdf`
     })
     toast.success('PDF buku induk berhasil dibuat')
   } catch (e) {
@@ -931,12 +1068,19 @@ const filteredBuku = computed(() => {
   })
   // v.111: scope Gedung — admin keuangan ber-gedung hanya lihat baris gedungnya (Buku Kas)
   if (gedungScoped.value) list = list.filter(allowRow)
-  // Filter by year/month
+  // Filter by year/month (+ v.1.2.7: tanggal, utk laporan harian)
   if (selectedMonth.value > 0) {
     const ym = `${selectedYear.value}-${String(selectedMonth.value).padStart(2, '0')}`
-    list = list.filter((b) => String(b.tanggal || '').substring(0, 7) === ym)
+    const tgl = selectedDay.value > 0 ? `${ym}-${String(selectedDay.value).padStart(2, '0')}` : ''
+    list = tgl
+      ? list.filter((b) => String(b.tanggal || '').substring(0, 10) === tgl)
+      : list.filter((b) => String(b.tanggal || '').substring(0, 7) === ym)
   } else {
     list = list.filter((b) => String(b.tanggal || '').startsWith(String(selectedYear.value)))
+  }
+  // v.1.2.7: cara bayar
+  if (filterMetode.value) {
+    list = list.filter((b) => metodeTransaksi(b) === filterMetode.value)
   }
   // Tipe
   if (filterTipe.value) {
@@ -1019,10 +1163,23 @@ const years = computed(() => {
   return [now - 2, now - 1, now, now + 1]
 })
 
-function getBulanLabel(m) {
-  if (m === 0) return 'Sepanjang tahun'
-  return BULAN[m - 1] || '-'
-}
+// v.1.2.7: label periode aktif — dipakai header, judul PDF/Excel, & nama berkas.
+//   "3 Agustus 2026" | "Agustus 2026" | "Tahun 2026"
+const periodeLabel = computed(() => {
+  if (selectedMonth.value === 0) return `Tahun ${selectedYear.value}`
+  const bulan = `${BULAN[selectedMonth.value - 1]} ${selectedYear.value}`
+  return selectedDay.value > 0 ? `${selectedDay.value} ${bulan}` : bulan
+})
+// nama berkas ekspor: buku-induk-2026-08-03 / 2026-08 / 2026
+const periodeSlug = computed(() => {
+  const y = String(selectedYear.value)
+  if (selectedMonth.value === 0) return y
+  const ym = `${y}-${String(selectedMonth.value).padStart(2, '0')}`
+  return selectedDay.value > 0 ? `${ym}-${String(selectedDay.value).padStart(2, '0')}` : ym
+})
+
+// v.1.2.7: subtotal tunai vs transfer atas baris yang sedang tampil (dasar laporan harian)
+const rekapMetode = computed(() => ringkasMetode(filteredBuku.value))
 
 onMounted(() => {
   unsub = subscribeColl('keuangan_buku_induk', (docs) => {
@@ -1052,15 +1209,34 @@ function buildExportRows() {
     return {
       no: i + 1,
       tanggal: b.tanggal || '',
-      no_struk: b.no_struk || '',
+      no_struk: b.no_struk || b.trx_id || '',
       keterangan: b.keterangan || b.deskripsi || '',
       kategori: b.kategori || '',
       tipe: b.tipe || (Number(b.masuk) > 0 ? 'Masuk' : 'Keluar'),
+      // v.1.2.7: cara bayar — kasir perlu memisahkan uang laci dari uang rekening
+      metode: metodeTransaksi(b),
       masuk,
       keluar,
       saldo: saldoOf(b)
     }
   })
+  // v.1.2.7: subtotal per cara bayar SEBELUM baris TOTAL — inti laporan harian kas.
+  const rk = ringkasMetode(list)
+  for (const m of METODE_OPTS) {
+    if (rk[m].masuk === 0 && rk[m].keluar === 0) continue
+    rows.push({
+      no: '',
+      tanggal: '',
+      no_struk: '',
+      keterangan: `SUBTOTAL ${m.toUpperCase()}`,
+      kategori: '',
+      tipe: '',
+      metode: m,
+      masuk: rk[m].masuk,
+      keluar: rk[m].keluar,
+      saldo: rk[m].masuk - rk[m].keluar
+    })
+  }
   rows.push({
     no: '',
     tanggal: '',
@@ -1068,6 +1244,7 @@ function buildExportRows() {
     keterangan: `TOTAL (${list.length} transaksi)`,
     kategori: '',
     tipe: '',
+    metode: '',
     masuk: totMasuk,
     keluar: totKeluar,
     saldo: totMasuk - totKeluar
@@ -1084,7 +1261,8 @@ async function exportBukuIndukExcel() {
     const rows = buildExportRows()
     const s = settingsStore.settings || {}
     await exportStyled(rows, {
-      filename: `buku_induk_${new Date().toISOString().slice(0, 10)}.xlsx`,
+      // v.1.2.7: nama berkas & subjudul ikut periode yang difilter (harian/bulanan/tahunan)
+      filename: `buku_induk_${periodeSlug.value}.xlsx`,
       sheetName: 'Buku Induk',
       kop: [
         s.kopLine1 || '',
@@ -1092,7 +1270,7 @@ async function exportBukuIndukExcel() {
         s.kopLine3 || '',
         s.kopLine4 || ''
       ],
-      subtitle: `Buku Induk Keuangan — ${filteredBuku.value.length} transaksi`,
+      subtitle: `Buku Induk Keuangan — ${periodeLabel.value} — ${filteredBuku.value.length} transaksi`,
       columns: [
         { key: 'no', header: 'No', width: 5 },
         { key: 'tanggal', header: 'Tanggal', width: 12 },
@@ -1100,6 +1278,7 @@ async function exportBukuIndukExcel() {
         { key: 'keterangan', header: 'Keterangan', width: 32 },
         { key: 'kategori', header: 'Kategori', width: 16 },
         { key: 'tipe', header: 'Tipe', width: 10 },
+        { key: 'metode', header: 'Cara Bayar', width: 12 },
         { key: 'masuk', header: 'Masuk', width: 14 },
         { key: 'keluar', header: 'Keluar', width: 14 },
         { key: 'saldo', header: 'Saldo', width: 14 }
@@ -1125,7 +1304,7 @@ async function kirimBukuGsheet() {
     const s = settingsStore.settings || {}
     const { url } = await sendToSheet({
       rows,
-      title: `Buku Induk ${new Date().toISOString().slice(0, 10)}`,
+      title: `Buku Induk ${periodeLabel.value}`,
       sheetName: 'Buku Induk',
       kop: [
         s.kopLine1 || '',
@@ -1133,7 +1312,7 @@ async function kirimBukuGsheet() {
         s.kopLine3 || '',
         s.kopLine4 || ''
       ].filter(Boolean),
-      subtitle: `Buku Induk Keuangan — ${filteredBuku.value.length} transaksi`,
+      subtitle: `Buku Induk Keuangan — ${periodeLabel.value} — ${filteredBuku.value.length} transaksi`,
       columns: [
         { key: 'no', header: 'No', width: 5 },
         { key: 'tanggal', header: 'Tanggal', width: 12 },
@@ -1141,6 +1320,7 @@ async function kirimBukuGsheet() {
         { key: 'keterangan', header: 'Keterangan', width: 32 },
         { key: 'kategori', header: 'Kategori', width: 16 },
         { key: 'tipe', header: 'Tipe', width: 10 },
+        { key: 'metode', header: 'Cara Bayar', width: 12 },
         { key: 'masuk', header: 'Masuk', width: 14 },
         { key: 'keluar', header: 'Keluar', width: 14 },
         { key: 'saldo', header: 'Saldo', width: 14 }
