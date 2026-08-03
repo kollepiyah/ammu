@@ -238,6 +238,99 @@ describe('penentu gabungan (K2) — otomatis + pengecualian manual', () => {
   })
 })
 
+// Bentuk NYATA di DB (dibaca 3 Agu 2026): jenis ngaji sudah terpisah "Qiraati Pagi" vs
+// "Qiraati Sore", dan sisi sekolahnya ada EMPAT jenis (SD/TK/PKBM/Kelas Baca). Karena itu
+// `gabung_ke` harus bisa berisi beberapa kandidat, dan syaratnya tak boleh bergantung
+// `shift_ngaji` (hanya 30% terisi) maupun `gedung` (isinya "wetan"/"kulon", bukan waktu).
+describe('bentuk nyata: gabung_ke banyak kandidat + syarat tanpa shift', () => {
+  // Jenis sekolah WAJIB tersasar per lembaga (nominal per-lembaga atau lembaga_only) —
+  // kalau semuanya `nominal_default` datar, keempatnya berlaku untuk semua santri dan
+  // kandidat pertama yang menang, bukan yang benar. Bentuk di bawah = bentuk nyata
+  // (448 tagihan SD vs 72 TK menunjukkan keduanya memang tersasar berbeda).
+  const sekolahSD = () => ({
+    id: 'sy_sd',
+    label: 'Syahriyah Sekolah SD',
+    nominal_per_lembaga: { SDI: 200000 }
+  })
+  const sekolahTK = () => ({
+    id: 'sy_tk',
+    label: 'Syahriyah Sekolah TK',
+    nominal_per_lembaga: { TK: 140000 }
+  })
+  const qiraatiPagi = () => ({
+    id: 'q_pagi',
+    label: 'Syahriyah Qiraati Pagi',
+    nominal_per_lembaga: { 'TPQ Pagi': 90000, PTPT: 100000, 'Pra PTPT': 90000 },
+    gabung_ke: ['Syahriyah Sekolah SD', 'Syahriyah Sekolah TK', 'Syahriyah PKBM'],
+    gabung_syarat: 'punya_sekolah'
+  })
+
+  it('memilih target sesuai sekolah santri (SD vs TK) dari daftar kandidat', () => {
+    const list = [sekolahSD(), sekolahTK(), qiraatiPagi()]
+    const anakSD = { id: 'S1', lembaga: 'PTPT', lembaga_sekolah: 'SDI', shift_ngaji: '' }
+    const anakTK = { id: 'S2', lembaga: 'Pra PTPT', lembaga_sekolah: 'TK', shift_ngaji: '' }
+    // SDI -> hanya jenis SD yang bernominal; TK -> hanya jenis TK
+    const rSD = hitungTagihan(list[0], anakSD, list)
+    expect(rSD.nominal).toBe(200000)
+    expect(rSD.komponen.map((k) => k.nominal)).toEqual([100000, 100000]) // PTPT 100rb
+    const rTK = hitungTagihan(list[1], anakTK, list)
+    expect(rTK.nominal).toBe(140000)
+    expect(rTK.komponen.map((k) => k.nominal)).toEqual([50000, 90000]) // Pra PTPT 90rb
+    // jenis ngaji tak jadi tagihan sendiri untuk keduanya
+    expect(hitungTagihan(list[2], anakSD, list)).toBeNull()
+    expect(hitungTagihan(list[2], anakTK, list)).toBeNull()
+  })
+
+  it("syarat 'punya_sekolah' jalan walau shift_ngaji KOSONG (kasus 70% data)", () => {
+    const list = [sekolahSD(), qiraatiPagi()]
+    const s = { id: 'S3', lembaga: 'PTPT', lembaga_sekolah: 'SDI' } // tanpa shift_ngaji
+    expect(syaratGabungTerpenuhi(list[1], s)).toBe(true)
+    expect(hitungTagihan(list[0], s, list).gabungan).toBe(true)
+    // tanpa sekolah -> tak digabung, ngaji ditagih sendiri
+    const tanpaSekolah = { id: 'S4', lembaga: 'PTPT' }
+    expect(hitungTagihan(list[1], tanpaSekolah, list).nominal).toBe(100000)
+  })
+
+  it("syarat 'fullday' jalan tanpa shift (Qiraati Sore -> Fullday)", () => {
+    const fullday = { id: 'fd', label: 'Fullday', nominal_default: 530000 }
+    const qiraatiSore = {
+      id: 'q_sore',
+      label: 'Syahriyah Qiraati Sore',
+      nominal_per_lembaga: { 'Pra PTPT': 90000 },
+      gabung_ke: 'Fullday',
+      gabung_syarat: 'fullday'
+    }
+    const list = [fullday, qiraatiSore]
+    const anakFullday = { id: 'F1', lembaga: 'Pra PTPT', lembaga_sekolah: 'TK', is_fullday: true }
+    const r = hitungTagihan(fullday, anakFullday, list)
+    expect(r.komponen.map((k) => k.nominal)).toEqual([440000, 90000])
+    // BUKAN fullday (mis. Zein: sekolah TK + ngaji sore) -> ngaji tetap ditagih SENDIRI
+    const zein = { id: 'Z1', lembaga: 'Pra PTPT', lembaga_sekolah: 'TK' }
+    expect(hitungTagihan(qiraatiSore, zein, list).nominal).toBe(90000)
+  })
+
+  it('tanpa gabung_syarat -> default punya_sekolah', () => {
+    const q = qiraatiPagi()
+    delete q.gabung_syarat
+    const list = [sekolahSD(), q]
+    expect(syaratGabungTerpenuhi(q, { id: 'X', lembaga_sekolah: 'SDI' })).toBe(true)
+    expect(syaratGabungTerpenuhi(q, { id: 'X' })).toBe(false)
+  })
+
+  it('whitelist lembaga pada jenis ngaji tetap gerbang pertama (cegah salah sasaran)', () => {
+    // Akar 427 tagihan kembar Agustus 2026: "Qiraati Pagi" terbit ke santri yang ngajinya
+    // SORE. Whitelist lembaga di jenis itu yang menutupnya — bukan aturan gabungan.
+    const q = qiraatiPagi()
+    q.lembaga_only = ['TPQ Pagi']
+    const list = [sekolahSD(), q]
+    const anakSore = { id: 'S5', lembaga: 'PTPT', lembaga_sekolah: 'SDI' }
+    expect(jenisBerlakuUntuk(q, anakSore)).toBe(false)
+    expect(hitungTagihan(q, anakSore, list)).toBeNull() // tak ditagih ngaji pagi sama sekali
+    expect(hitungTagihan(list[0], anakSore, list).gabungan).toBe(false) // sekolah utuh 200rb
+    expect(hitungTagihan(list[0], anakSore, list).nominal).toBe(200000)
+  })
+})
+
 describe('pagar keamanan', () => {
   it('komponen lebih besar dari total -> di-clamp, tak pernah negatif', () => {
     const s = jSekolah()

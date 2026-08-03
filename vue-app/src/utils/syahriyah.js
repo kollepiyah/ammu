@@ -43,10 +43,22 @@ function lower(v) {
 
 /** Mode gabung per santri: 'auto' (default) | 'gabung' (paksa) | 'pisah' (kecualikan). */
 export const GABUNG_MODE = ['auto', 'gabung', 'pisah']
-/** Syarat otomatis yang dikenali pada jenis ngaji (field `gabung_syarat`). */
+/**
+ * Syarat otomatis yang dikenali pada jenis ngaji (field `gabung_syarat`).
+ *
+ * DUA YANG DISARANKAN lebih dulu, dan alasannya dari data nyata (3 Agu 2026): jenis
+ * tagihannya SUDAH memisah pagi/sore sendiri ("Syahriyah Qiraati Pagi" vs "...Sore"),
+ * jadi shift tak perlu dicari lagi di data santri — dan memang tak bisa: `shift_ngaji`
+ * hanya terisi 155 dari 524 santri aktif (30%), sementara `gedung` (100% terisi) isinya
+ * nama tempat ("wetan"/"kulon"), bukan penanda waktu. Dua syarat pertama memakai field
+ * yang SELALU ada: `lembaga_sekolah` (439/524) dan `is_fullday` (boolean).
+ * Dua syarat terakhir = versi ketat, berguna nanti bila `shift_ngaji` sudah dilengkapi.
+ */
 export const GABUNG_SYARAT = [
-  { key: 'sekolah_pagi', label: 'Sekolah + ngaji pagi' },
-  { key: 'fullday_sore', label: 'Fullday + ngaji sore' }
+  { key: 'punya_sekolah', label: 'Punya sekolah formal', saran: true },
+  { key: 'fullday', label: 'Santri fullday', saran: true },
+  { key: 'sekolah_pagi', label: 'Punya sekolah + shift ngaji pagi' },
+  { key: 'fullday_sore', label: 'Fullday + shift ngaji sore' }
 ]
 
 /**
@@ -159,12 +171,21 @@ export function syaratGabungTerpenuhi(jenisNgaji, santri) {
   if (mode === 'gabung') return true
   const shift = lower(santri?.shift_ngaji)
   const lembagaNgaji = lower(santri?.lembaga)
-  const syarat = teks(jenisNgaji?.gabung_syarat) || 'sekolah_pagi'
-  if (syarat === 'fullday_sore') {
-    return santri?.is_fullday === true && (shift.includes('sore') || lembagaNgaji.includes('sore'))
-  }
   const punyaSekolah = !!teks(santri?.lembaga_sekolah)
-  return punyaSekolah && (shift.includes('pagi') || lembagaNgaji.includes('pagi'))
+  const fullday = santri?.is_fullday === true
+  // Default 'punya_sekolah': jenisnya sendiri sudah menyatakan pagi/sore, jadi yang perlu
+  // diperiksa di santri cuma "apakah dia punya sekolah". Untuk jenis SORE -> Fullday, Kyai
+  // WAJIB memilih 'fullday' (UI F2 menjadikannya pilihan wajib).
+  switch (teks(jenisNgaji?.gabung_syarat) || 'punya_sekolah') {
+    case 'fullday':
+      return fullday
+    case 'fullday_sore':
+      return fullday && (shift.includes('sore') || lembagaNgaji.includes('sore'))
+    case 'sekolah_pagi':
+      return punyaSekolah && (shift.includes('pagi') || lembagaNgaji.includes('pagi'))
+    default:
+      return punyaSekolah
+  }
 }
 
 /**
@@ -177,16 +198,31 @@ export function syaratGabungTerpenuhi(jenisNgaji, santri) {
  * jatuh kembali ke tagihan ngaji tersendiri.
  */
 export function gabungTargetFor(jenis, santri, jenisList) {
-  const ke = teks(jenis?.gabung_ke)
-  if (!ke) return null
+  // `gabung_ke` boleh BEBERAPA kandidat — satu jenis ngaji perlu menempel ke "Syahriyah
+  // Sekolah SD" ATAU "TK" ATAU "PKBM" ATAU "Kelas Baca", tergantung sekolah si santri
+  // (empat jenis itu memang ada di data nyata). Kandidat pertama yang BERLAKU untuk santri
+  // ini yang dipakai — jadi Kyai cukup menyunting satu jenis, bukan empat.
+  const kandidat = Array.isArray(jenis?.gabung_ke)
+    ? jenis.gabung_ke.map(teks).filter(Boolean)
+    : teks(jenis?.gabung_ke)
+      ? [teks(jenis.gabung_ke)]
+      : []
+  if (!kandidat.length) return null
+  // Jenis SUMBER harus berlaku untuk santri ini dulu. Tanpa cek ini, jenis yang whitelist-nya
+  // TIDAK memuat si santri (mis. "Qiraati Pagi" ber-whitelist TPQ Pagi, santrinya PTPT) tetap
+  // dihitung sebagai komponen — porsi sekolah diam-diam dialihkan ke lembaga ngaji yang
+  // seharusnya tak menerima apa pun. Ditemukan oleh tes skenario nyata.
+  if (!jenisBerlakuUntuk(jenis, santri)) return null
   if (!syaratGabungTerpenuhi(jenis, santri)) return null
   const daftar = Array.isArray(jenisList) ? jenisList : []
-  const target = daftar.find((j) => teks(j?.id) === ke || lower(j?.label) === lower(ke))
-  if (!target || teks(target.id) === teks(jenis.id)) return null // cegah menempel ke diri sendiri
-  if (!jenisBerlakuUntuk(target, santri)) return null
-  if (!nominalDasar(target, santri) && !nominalGabungan(target, santri, santri?.lembaga))
-    return null
-  return target
+  for (const ke of kandidat) {
+    const target = daftar.find((j) => teks(j?.id) === ke || lower(j?.label) === lower(ke))
+    if (!target || teks(target.id) === teks(jenis.id)) continue // jangan menempel ke diri sendiri
+    if (!jenisBerlakuUntuk(target, santri)) continue
+    if (!nominalDasar(target, santri) && !nominalGabungan(target, santri, santri?.lembaga)) continue
+    return target
+  }
+  return null
 }
 
 /** Persen diskon yang berlaku (K4): hanya untuk santri bertanda `anak_guru`. */
