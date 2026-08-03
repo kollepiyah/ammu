@@ -1649,6 +1649,110 @@
               = sekali per tahun ajaran · Manual = hanya saat ditagih/dibayar.
             </p>
           </div>
+          <!-- Kyai 3 Agu: Paket nominal pilihan + diskon anak guru (collapsible).
+               Sengaja SEKSI SENDIRI, bukan digabung ke "Tarif Khusus": ini bukan tarif
+               per lembaga/kelas/santri, melainkan pilihan yang menempel ke DATA SANTRI. -->
+          <div class="border-t border-[var(--border-subtle)] pt-3">
+            <button
+              type="button"
+              class="w-full flex items-center justify-between text-left"
+              @click="dlgPaket = !dlgPaket"
+            >
+              <span class="text-xs font-black text-[var(--text-primary)]">
+                <i class="fas fa-tags text-amber-500 mr-1.5"></i>Paket pilihan &amp; diskon anak
+                guru
+                <span
+                  v-if="paketDiskonInfo(dlgJenis)"
+                  class="ml-1 text-[10px] font-bold text-amber-600"
+                  >({{ paketDiskonInfo(dlgJenis) }})</span
+                >
+              </span>
+              <i
+                :class="[
+                  'fas',
+                  dlgPaket ? 'fa-chevron-up' : 'fa-chevron-down',
+                  'text-[var(--text-secondary)]'
+                ]"
+              ></i>
+            </button>
+            <div v-if="dlgPaket" class="mt-3 space-y-3">
+              <!-- Diskon anak guru/pegawai -->
+              <div>
+                <p class="text-[10px] text-[var(--text-secondary)] italic mb-1">
+                  <i class="fas fa-percent mr-1"></i>Diskon untuk santri bertanda
+                  <b>anak guru/pegawai</b> (0 = tak ada diskon):
+                </p>
+                <div class="flex items-center gap-2">
+                  <input
+                    v-model.number="dlgJenis.diskon_anak_guru"
+                    type="number"
+                    min="0"
+                    max="100"
+                    placeholder="0"
+                    class="w-24 px-2 py-1.5 text-xs rounded-lg border border-[var(--border-default)] bg-white dark:bg-slate-900"
+                  />
+                  <span class="text-xs font-black text-[var(--text-secondary)]">%</span>
+                </div>
+                <p class="text-[10px] text-[var(--text-tertiary)] mt-1">
+                  Penandanya diisi <b>manual</b> di data santri — bukan dicocokkan otomatis dari
+                  nama ayah, supaya diskon tak pernah diberikan/dicabut tanpa disadari.
+                </p>
+              </div>
+              <!-- Paket nominal pilihan -->
+              <div>
+                <p class="text-[10px] text-[var(--text-secondary)] italic mb-1">
+                  <i class="fas fa-list-ul mr-1"></i>Paket nominal pilihan (santri memilihnya di
+                  data santri):
+                </p>
+                <p
+                  v-if="!(dlgJenis.paket || []).length"
+                  class="text-[10px] text-[var(--text-tertiary)] italic mb-1.5"
+                >
+                  Belum ada paket — semua santri memakai tarif biasa.
+                </p>
+                <div
+                  v-for="(p, i) in dlgJenis.paket || []"
+                  :key="`dlg_pk_${i}`"
+                  class="flex items-center gap-1.5 mb-1.5"
+                >
+                  <input
+                    v-model="p.label"
+                    type="text"
+                    placeholder="Nama paket (mis. Peduli)"
+                    class="flex-1 px-2 py-1.5 text-xs rounded-lg border border-[var(--border-default)] bg-white dark:bg-slate-900"
+                  />
+                  <input
+                    v-model.number="p.nominal"
+                    type="number"
+                    min="0"
+                    placeholder="Nominal"
+                    class="w-28 px-2 py-1.5 text-xs rounded-lg border border-[var(--border-default)] bg-white dark:bg-slate-900"
+                  />
+                  <button
+                    type="button"
+                    class="px-2 py-1.5 rounded-lg bg-rose-50 dark:bg-rose-900/30 text-rose-600 hover:bg-rose-100"
+                    title="Hapus paket"
+                    @click="hapusPaket(dlgJenis, i)"
+                  >
+                    <i class="fas fa-trash text-[11px]"></i>
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  class="px-2.5 py-1.5 rounded-lg bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 text-[11px] font-bold hover:bg-amber-100"
+                  @click="tambahPaket(dlgJenis)"
+                >
+                  <i class="fas fa-plus mr-1"></i>Tambah paket
+                </button>
+                <p class="text-[10px] text-[var(--text-tertiary)] mt-1.5">
+                  Urutan menang: <b>nominal khusus per santri</b> &gt; <b>paket</b> &gt; tarif per
+                  kelas &gt; per lembaga &gt; default. Paket tanpa nama atau bernominal 0 dibuang
+                  saat disimpan.
+                </p>
+              </div>
+            </div>
+          </div>
+
           <!-- Tarif Khusus (collapsible) — dipindah dari list lama -->
           <div class="border-t border-[var(--border-subtle)] pt-3">
             <button
@@ -2599,6 +2703,30 @@ const dlgIsNew = ref(false)
 const dlgIdx = ref(-1)
 const dlgJenis = ref(null)
 const dlgTarif = ref(false)
+// Kyai 3 Agu: paket nominal pilihan (santri boleh ambil di atas standar) + diskon anak
+//   guru/pegawai. Dua-duanya BERDIRI SENDIRI, tak menyentuh penggabungan syahriyah.
+const dlgPaket = ref(false)
+function tambahPaket(j) {
+  if (!j) return
+  if (!Array.isArray(j.paket)) j.paket = []
+  j.paket.push({ id: '', label: '', nominal: 0 })
+}
+function hapusPaket(j, idx) {
+  if (!j || !Array.isArray(j.paket)) return
+  j.paket.splice(idx, 1)
+}
+/** Ringkasan untuk judul accordion — sejajar tarifKhususInfo. */
+function paketDiskonInfo(j) {
+  if (!j) return ''
+  const bits = []
+  const n = (Array.isArray(j.paket) ? j.paket : []).filter((p) =>
+    String(p?.label || '').trim()
+  ).length
+  if (n) bits.push(`${n} paket`)
+  const d = Number(j.diskon_anak_guru || 0) || 0
+  if (d > 0) bits.push(`diskon ${d}%`)
+  return bits.join(' · ')
+}
 // v.1.1.x: jenis pembayaran per Tahun Ajaran (Braja "Daftar Jenis Biaya per Tahun Pelajaran")
 const jenisByTA = ref({}) // { '2026/2027': [ ...jenis ] }
 const taAktif = ref('')
@@ -3407,6 +3535,23 @@ function serializeJenisList(list) {
       // v.1.2.x: whitelist jenis kelamin (L/P)
       const wlJk = Array.isArray(t.jk_only) ? t.jk_only.filter((x) => String(x || '').trim()) : []
       const frekuensi = t.frekuensi || (t.auto_generate ? 'bulanan' : 'manual')
+      // Kyai 3 Agu: paket nominal pilihan. Label WAJIB & nominal > 0 — entri setengah jadi
+      //   dibuang supaya tak ada paket "hantu" yang bisa dipilih di data santri.
+      //   `id` diturunkan dari label bila kosong, dan itulah yang disimpan di
+      //   santri.paket_syahriyah — jadi JANGAN ganti label sembarangan sesudah dipakai.
+      const paket = (Array.isArray(t.paket) ? t.paket : [])
+        .map((p) => {
+          const label = String(p?.label || '').trim()
+          return {
+            id: String(p?.id || '').trim() || slugId(label),
+            label,
+            nominal: Number(p?.nominal || 0) || 0
+          }
+        })
+        .filter((p) => p.label && p.nominal > 0)
+      // Diskon anak guru/pegawai (persen, 0 = tak ada). Dibatasi 0..100 di sini juga supaya
+      //   angka aneh dari impor/ketik tak lolos ke perhitungan uang.
+      const diskonAnakGuru = Math.min(100, Math.max(0, Number(t.diskon_anak_guru || 0) || 0))
       return {
         id: t.id || slugId(t.label),
         label: String(t.label || '').trim(),
@@ -3417,6 +3562,8 @@ function serializeJenisList(list) {
         lembaga_only: wl,
         status_only: wlStatus,
         jk_only: wlJk,
+        paket,
+        diskon_anak_guru: diskonAnakGuru,
         frekuensi,
         auto_generate: frekuensi === 'bulanan',
         pos: t.pos || ''
@@ -3594,11 +3741,14 @@ function openJenisBaru() {
     jk_only: [], // v.1.2.x: whitelist jenis kelamin (kosong = semua)
     nominal_per_kelas: {},
     nominal_per_santri: {},
+    paket: [], // Kyai 3 Agu: paket nominal pilihan (kosong = tak ada pilihan)
+    diskon_anak_guru: 0, // persen untuk santri bertanda anak guru/pegawai (0 = tak ada)
     frekuensi: 'manual',
     pos: '',
     _expanded: false
   }
   dlgTarif.value = false
+  dlgPaket.value = false
   loadSantriAktif() // muat santri utk picker Tarif Khusus per-santri
   dlgOpen.value = true
 }
@@ -3637,6 +3787,8 @@ function normalizeJenisRaw(t) {
       lembaga_only: [],
       nominal_per_kelas: {},
       nominal_per_santri: {},
+      paket: [],
+      diskon_anak_guru: 0,
       frekuensi: 'manual',
       auto_generate: false,
       pos: '',
@@ -3663,6 +3815,10 @@ function normalizeJenisRaw(t) {
       t.nominal_per_santri && typeof t.nominal_per_santri === 'object'
         ? { ...t.nominal_per_santri }
         : {},
+    // Kyai 3 Agu: paket nominal pilihan + diskon anak guru. Deep-copy paket supaya edit di
+    //   dialog (yang bekerja atas salinan) tak menyentuh daftar aslinya sebelum disimpan.
+    paket: Array.isArray(t.paket) ? JSON.parse(JSON.stringify(t.paket)) : [],
+    diskon_anak_guru: Number(t.diskon_anak_guru || 0) || 0,
     frekuensi,
     auto_generate: frekuensi === 'bulanan',
     pos: t.pos || '',
