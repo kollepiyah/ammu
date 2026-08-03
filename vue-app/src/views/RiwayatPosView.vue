@@ -12,6 +12,8 @@ import { buildStrukSlipEscpBase64 } from '@/utils/escpImage'
 import { printRaw, getDefaultPrinter } from '@/composables/useDesktopPrint'
 import { isSuperAdmin } from '@/utils/roleScope'
 import { writeAuditLog } from '@/utils/auditLog'
+// v.1.2.7: kelompokkan per TRANSAKSI, bukan per nomor struk — nomor lama bisa kembar
+import { kunciTransaksi } from '@/utils/trxStruk'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -34,16 +36,18 @@ async function hapusTrx(t) {
   )
     return
   try {
-    const tgts = entries.value.filter((e) => e.trx_id === t.trx_id)
-    for (const e of tgts) {
+    // v.1.2.7: hapus baris milik TRANSAKSI ini saja (t.ids), bukan semua baris se-trx_id —
+    //   nomor struk lama bisa kembar dgn transaksi santri lain.
+    const idSet = new Set((t.ids || []).map(String))
+    for (const id of idSet) {
       try {
-        await deleteOne('keuangan_buku_induk', String(e.id), { sesi: auth.sesiAktif })
+        await deleteOne('keuangan_buku_induk', id, { sesi: auth.sesiAktif })
       } catch (er) {
-        console.warn('[hapusTrx] fail', e.id, er.message)
+        console.warn('[hapusTrx] fail', id, er.message)
       }
     }
-    entries.value = entries.value.filter((e) => e.trx_id !== t.trx_id)
-    toast.success(`Transaksi ${t.trx_id} dihapus (${tgts.length} record)`)
+    entries.value = entries.value.filter((e) => !idSet.has(String(e.id)))
+    toast.success(`Transaksi ${t.trx_id} dihapus (${idSet.size} record)`)
   } catch (e) {
     toast.error('Gagal hapus: ' + (e.message || e))
   }
@@ -79,8 +83,10 @@ async function hapusTrxTerpilih() {
     return
   let ok = 0,
     fail = 0
+  // v.1.2.7: id baris diambil dari transaksi terpilih (bukan dari trx_id — bisa kembar,
+  //   dulu ikut menghapus transaksi santri lain yang kebetulan senomor)
   const trxIds = tgt.map((t) => t.trx_id)
-  const recIds = entries.value.filter((e) => trxIds.includes(e.trx_id)).map((e) => e.id)
+  const recIds = [...new Set(tgt.flatMap((t) => (t.ids || []).map(String)))]
   for (const id of recIds) {
     try {
       await deleteOne('keuangan_buku_induk', String(id), { sesi: auth.sesiAktif })
@@ -90,7 +96,8 @@ async function hapusTrxTerpilih() {
       console.warn('[bulkHapusTrx]', id, e.message)
     }
   }
-  entries.value = entries.value.filter((e) => !trxIds.includes(e.trx_id))
+  const hapusSet = new Set(recIds)
+  entries.value = entries.value.filter((e) => !hapusSet.has(String(e.id)))
   selectedTrx.value = new Set()
   // v.21.104.0527: audit log bulk delete transaksi POS
   await writeAuditLog({
@@ -200,11 +207,14 @@ function extractPeriode(ket) {
   return ''
 }
 
-// Group jadi transaksi: pakai trx_id; fallback santri_id + tanggal + operator
+// v.1.2.7: group per TRANSAKSI via kunciTransaksi (trx_uid -> trx_id+santri_id -> fallback).
+//   Dulu murni `trx_id`: nomor struk yang kembar (bug counter lokal, lihat utils/trxStruk.js)
+//   membuat transaksi dua santri berbeda menyatu jadi satu struk — item dobel, lintas
+//   lembaga, total membengkak. Kunci ber-santri memisahkannya lagi, termasuk data lama.
 const transaksi = computed(() => {
   const groups = {}
   for (const e of entries.value) {
-    const key = e.trx_id || `${e.santri_id}__${e.tanggal}__${e.operator || ''}`
+    const key = kunciTransaksi(e)
     if (!groups[key]) {
       const sm = santriMap.value[e.santri_id] || {}
       groups[key] = {
@@ -221,10 +231,14 @@ const transaksi = computed(() => {
         operator: e.operator || '-',
         penyetor: e.wali || sm.wali || '',
         createdAt: e.createdAt || null,
+        // id baris buku induk milik transaksi ini — dasar hapus (JANGAN pakai trx_id:
+        //   nomor kembar akan ikut menghapus transaksi santri lain)
+        ids: [],
         items: [],
         total: 0
       }
     }
+    groups[key].ids.push(e.id)
     groups[key].items.push({
       jenis: e.kategori || 'Pembayaran',
       nominal: Number(e.nominal || 0),
@@ -233,6 +247,10 @@ const transaksi = computed(() => {
     groups[key].total += Number(e.nominal || 0)
   }
   let list = Object.values(groups)
+  // tandai nomor struk yang dipakai >1 transaksi (warisan bug penomoran) supaya kelihatan
+  const pakai = {}
+  for (const t of list) pakai[t.trx_id] = (pakai[t.trx_id] || 0) + 1
+  for (const t of list) t.nomorKembar = pakai[t.trx_id] > 1
   // filter tahun / bulan / hari
   list = list.filter((t) => {
     const tg = String(t.tanggal || '')
@@ -467,7 +485,14 @@ function fmtTgl(t) {
                 </p>
                 <p class="text-[10px] text-[var(--text-secondary)] truncate">
                   {{ fmtTgl(t.tanggal) }}<span v-if="t.lembaga"> · {{ t.lembaga }}</span
-                  ><span v-if="t.kelas"> · {{ t.kelas }}</span> · {{ t.operator }}
+                  ><span v-if="t.kelas"> · {{ t.kelas }}</span> · {{ t.operator }} ·
+                  {{ t.trx_id }}
+                </p>
+                <!-- v.1.2.7: warisan bug penomoran — satu nomor dipakai >1 transaksi.
+                     Strukanya sudah dipisah per santri; nomornya saja yang kembar. -->
+                <p v-if="t.nomorKembar" class="text-[10px] font-bold text-amber-600 mt-0.5">
+                  <i class="fas fa-triangle-exclamation mr-1"></i>No. struk kembar dengan transaksi
+                  lain
                 </p>
                 <div class="mt-1 flex flex-wrap gap-1">
                   <span

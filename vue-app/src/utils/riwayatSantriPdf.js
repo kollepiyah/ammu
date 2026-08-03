@@ -15,6 +15,7 @@ import {
   buildKopFromSettings
 } from './pdfBuilder'
 import { terbayarDari } from './tagihan'
+import { kunciTransaksi } from './trxStruk'
 
 function fmtRp(n) {
   const v = Number(n || 0)
@@ -114,7 +115,8 @@ function inRange(date, dari, sampai) {
 function groupTrx(rows) {
   const groups = {}
   for (const r of rows) {
-    const key = r.trx_id || `${r.santri_id || r.santriId || ''}__${r.tanggal}__${r.operator || ''}`
+    // v.1.2.7: kunci ber-santri (trx_uid -> trx_id+santri_id) — nomor struk lama bisa kembar
+    const key = kunciTransaksi(r)
     if (!groups[key]) {
       groups[key] = {
         trx_id: r.trx_id || key,

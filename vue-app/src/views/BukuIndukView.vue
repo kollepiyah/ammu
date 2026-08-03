@@ -555,6 +555,8 @@ import { writeAuditLog } from '@/utils/auditLog'
 // v.21.103.0527: reprint struk dari BukuInduk untuk record sumber pos_santri
 // v.1.2.6: cetakStrukKasPdf = struk BUKTI KAS MASUK/KELUAR untuk transaksi manual
 import { cetakStrukPdf, cetakStrukSlipPdf, cetakStrukKasPdf } from '@/utils/strukBuilder'
+// v.1.2.7: satu struk = satu TRANSAKSI (nomor struk lama bisa kembar antar santri)
+import { kunciTransaksi } from '@/utils/trxStruk'
 
 const toast = useToast()
 const auth = useAuthStore()
@@ -580,8 +582,12 @@ async function cetakUlangStruk(b, mode = 'pdf') {
     return
   }
   try {
-    // Fetch semua record dengan trx_id sama
-    const items = await queryColl('keuangan_buku_induk', [['trx_id', '==', trxId]])
+    // Fetch semua record dengan trx_id sama, lalu v.1.2.7: saring ke TRANSAKSI baris ini
+    //   saja (kunciTransaksi) — nomor struk lama bisa kembar dgn transaksi santri lain,
+    //   dulu ikut tercetak jadi satu struk gabungan.
+    const sekunci = kunciTransaksi(b)
+    const semua = await queryColl('keuangan_buku_induk', [['trx_id', '==', trxId]])
+    const items = semua.filter((e) => kunciTransaksi(e) === sekunci)
     if (items.length === 0) {
       toast.warning('Data transaksi tidak ditemukan')
       return

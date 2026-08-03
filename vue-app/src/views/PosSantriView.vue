@@ -211,6 +211,9 @@ import { useToast } from '@/composables/useToast'
 import { getAll, getOne, queryColl, setOne, updateOne, serverTimestamp } from '@/services/db'
 import { sortSantri } from '@/utils/santriSort'
 import { sisaTagihan } from '@/utils/tagihan'
+// v.1.2.7: nomor struk anti-kembar + penanda transaksi unik (lihat utils/trxStruk.js)
+import { nomorStrukBerikutnya, buatTrxUid } from '@/utils/trxStruk'
+import { todayJakarta } from '@/utils/format'
 import { cetakStrukPdf, cetakStrukSlipPdf, buildStrukHtml } from '@/utils/strukBuilder'
 import { buildStrukSlipEscpBase64 } from '@/utils/escpImage'
 import {
@@ -270,8 +273,6 @@ const posPayments = ref([])
 const loadingCart = ref(false)
 // v.21.87.0527: ringkasan transaksi POS hari ini
 const todayStats = ref({ count: 0, total: 0 })
-// v.21.90.0527: counter transaksi unik hari ini (utk nomor struk MU-NNNddmmyy)
-const todayTrxCount = ref(0)
 // v.21.91.0527: TTD operator (kasir) — auto dari guru.tanda_tangan
 const operatorTtdUrl = ref('')
 // v.21.88.0527: transaksi terakhir (utk tombol cetak struk setelah simpan)
@@ -309,15 +310,17 @@ onMounted(async () => {
       80
     )
     histori.value = posTx.slice(0, 5)
-    const hariIni = new Date().toISOString().split('T')[0]
+    // v.1.2.7: tanggal WIB (todayJakarta), bukan toISOString() yang UTC — transaksi dini
+    //   hari WIB (00:00–07:00) dulu dihitung ke tanggal kemarin.
+    const hariIni = todayJakarta()
     const txToday = posTx.filter((t) => t.tanggal === hariIni)
     todayStats.value = {
       count: txToday.length,
       total: txToday.reduce((s, t) => s + Number(t.nominal || 0), 0)
     }
-    // v.21.90.0527: hitung jumlah TRANSAKSI unik (trx_id) hari ini utk seq nomor struk
-    const trxIdsToday = new Set(txToday.map((t) => t.trx_id).filter(Boolean))
-    todayTrxCount.value = trxIdsToday.size
+    // v.1.2.7: seq nomor struk TIDAK lagi di-cache di sini — dulu dihitung dari 80 baris
+    //   terakhir saja sehingga mundur & bikin nomor kembar. Sekarang dibaca dari DB tepat
+    //   saat menyimpan (lihat ambilNomorStruk).
     // v.21.91.0527: ambil TTD operator dari guru.tanda_tangan utk auto-isi struk PDF
     try {
       const myId = auth.sesiAktif?.id
@@ -451,17 +454,29 @@ function closeModal() {
   selectedSantri.value = null
 }
 
+// v.1.2.7: nomor struk dibaca dari DB TEPAT saat menyimpan, disaring per TANGGAL transaksi
+//   (kolom riil → murah). Dulu dari counter lokal yang diisi 80 baris terakhir saja: hari
+//   ramai / halaman di-remount / kasir ke-2 → seq mundur → nomor kembar → dua transaksi
+//   menyatu di Riwayat. Gagal baca → jangan tebak nomor, batalkan (uang belum tercatat).
+async function ambilNomorStruk(tanggal) {
+  const rows = await queryColl('keuangan_buku_induk', [
+    ['sumber', '==', 'pos_santri'],
+    ['tanggal', '==', tanggal]
+  ])
+  return nomorStrukBerikutnya(tanggal, rows.map((r) => r.trx_id).filter(Boolean))
+}
+
 async function handleSimpan(payload) {
   posSaving.value = true
   try {
     const tanggal = payload.tanggal
     const op = payload.operator || operatorName.value
     // v.21.90.0527: format nomor struk MU-NNNddmmyy (seq harian + tgl)
-    todayTrxCount.value += 1
-    const seq = String(todayTrxCount.value).padStart(3, '0')
-    const dt = String(tanggal || '').split('-')
-    const ddmmyy = (dt[2] || '') + (dt[1] || '') + String(dt[0] || '').slice(-2)
-    const trxId = 'MU-' + seq + ddmmyy
+    const trxId = await ambilNomorStruk(tanggal)
+    // v.1.2.7: penanda unik transaksi — dipakai mesin utk mengelompokkan struk. Nomor struk
+    //   tetap nomor cantik utk manusia; kalaupun dua kasir berebut nomor yang sama pada
+    //   detik yang sama, strukanya TIDAK akan pernah menyatu lagi.
+    const trxUid = buatTrxUid(trxId)
     const santriRef = selectedSantri.value
     // v.94.0626: nama penyetor = nama walisantri (wali -> nama_wali -> ayah)
     const waliNama =
@@ -498,6 +513,7 @@ async function handleSimpan(payload) {
         keterangan: `${item.jenis} — ${payload.santri_nama} (${payload.santri_nis || payload.santri_id})${item.keterangan ? ' — ' + item.keterangan : ''}`,
         sumber: 'pos_santri',
         trx_id: trxId,
+        trx_uid: trxUid,
         metode: payload.metode || 'Tunai',
         santri_id: payload.santri_id,
         santri_nama: payload.santri_nama,
