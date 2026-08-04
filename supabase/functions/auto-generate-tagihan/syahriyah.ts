@@ -150,9 +150,16 @@ export function syaratGabungTerpenuhi(jenisNgaji: Any, santri: Any): boolean {
   const lembagaNgaji = lower(santri?.lembaga)
   const punyaSekolah = !!teks(santri?.lembaga_sekolah)
   const fullday = santri?.is_fullday === true
+  const mukim = santri?.is_mukim === true
   switch (teks(jenisNgaji?.gabung_syarat) || 'punya_sekolah') {
     case 'fullday':
       return fullday
+    // Kyai: syahriyah pondok sudah termasuk ngaji pagi & sore untuk santri mukim.
+    case 'mahad':
+      return mukim
+    // Penyaringan diserahkan ke jenis tujuan (lihat catatan di GABUNG_SYARAT).
+    case 'target':
+      return true
     case 'fullday_sore':
       return fullday && (shift.includes('sore') || lembagaNgaji.includes('sore'))
     case 'sekolah_pagi':

@@ -157,6 +157,68 @@ describe('cermin edge (Deno) sepakat dengan utils/syahriyah.js', () => {
     }
   })
 
+  // Kyai 4 Agu 2026: "syahriyah pondok itu sudah include Syahriyah Qiraati Pagi & Sore".
+  // Dua syarat gabung BARU wajib punya kasus EKSPLISIT di sini. Sapuan semi-acak di bawah
+  // TERBUKTI tak menyentuh keduanya: cabang 'mahad' di cermin sengaja dibalik jadi
+  // `!mukim`, sapuan 400 kombinasi tetap HIJAU — kombinasi yang dibutuhkannya (mahad +
+  // mode auto + nominal target > 0 + status_only lolos) tak pernah muncul di seed itu.
+  // Jadi jangan pernah menganggap "ada sapuan acak" = cabang baru sudah terjaga.
+  it("syarat 'mahad': syahriyah pondok menyerap ngaji untuk santri MUKIM", () => {
+    const pondok = {
+      id: 'syahriyah_pondok',
+      label: 'Syahriyah Pondok',
+      nominal_per_lembaga: { 'TPQ Pagi': 300000 },
+      status_only: ['mahad'],
+      frekuensi: 'bulanan'
+    }
+    const ngaji = { ...jNgaji(), gabung_ke: ['syahriyah_pondok'], gabung_syarat: 'mahad' }
+    const daftar = [pondok, ngaji]
+
+    const mukim = santri({ is_mukim: true, lembaga_sekolah: '' })
+    const a = sama(0, mukim, daftar)
+    expect(a.gabungan).toBe(true)
+    expect(a.komponen.reduce((n, k) => n + k.nominal, 0)).toBe(a.nominal)
+    expect(sama(1, mukim, daftar)).toBeNull() // ngaji tak ditagih sendiri lagi
+
+    // Bukan mukim → pondok tak berlaku, ngaji tetap ditagih SENDIRI (bukan hilang).
+    const bukanMukim = santri({ is_mukim: false, lembaga_sekolah: '' })
+    expect(sama(0, bukanMukim, daftar)).toBeNull()
+    expect(sama(1, bukanMukim, daftar).nominal).toBe(90000)
+  })
+
+  it("syarat 'target': satu jenis ngaji menempel ke PONDOK atau SEKOLAH, tergantung santri", () => {
+    // Inilah alasan 'target' ada: `gabung_syarat` cuma SATU nilai, jadi "mukim → pondok"
+    // dan "punya sekolah → sekolah" mustahil dinyatakan lewat syarat. Penyaringnya
+    // diserahkan ke jenis tujuan (status_only / lembaga_only masing-masing).
+    const pondok = {
+      id: 'syahriyah_pondok',
+      label: 'Syahriyah Pondok',
+      nominal_per_lembaga: { 'TPQ Pagi': 300000 },
+      status_only: ['mahad'],
+      frekuensi: 'bulanan'
+    }
+    const sekolah = { ...jSekolah(), status_only: ['non_mukim'] }
+    const ngaji = {
+      ...jNgaji(),
+      gabung_ke: ['syahriyah_pondok', 'syahriyah_sekolah'], // pondok lebih dulu = prioritas
+      gabung_syarat: 'target'
+    }
+    const daftar = [pondok, sekolah, ngaji]
+
+    const mukim = santri({ is_mukim: true })
+    expect(sama(0, mukim, daftar).gabungan).toBe(true) // masuk pondok
+    expect(sama(2, mukim, daftar)).toBeNull()
+
+    const nonMukim = santri({ is_mukim: false })
+    expect(sama(0, nonMukim, daftar)).toBeNull() // pondok tak berlaku
+    expect(sama(1, nonMukim, daftar).gabungan).toBe(true) // jatuh ke sekolah
+    expect(sama(2, nonMukim, daftar)).toBeNull()
+
+    // Tak punya sekolah & tak mukim → tak ada tujuan yang berlaku → ngaji berdiri sendiri.
+    const sendiri = santri({ is_mukim: false, lembaga_sekolah: '' })
+    expect(sama(2, sendiri, daftar).nominal).toBe(90000)
+  })
+
   it('sapuan semi-acak: 400 kombinasi harus identik (termasuk jumlah komponen = nominal)', () => {
     // PRNG deterministik (jangan Math.random: tes harus bisa diulang persis).
     let seed = 20260804
@@ -167,7 +229,10 @@ describe('cermin edge (Deno) sepakat dengan utils/syahriyah.js', () => {
     const LEMB = ['SDI', 'MI', 'PKBM', '', 'entah']
     const NGJ = ['TPQ Pagi', 'PTPT', 'Pra PTPT', '']
     const SHIFT = ['pagi', 'sore', 'pagi_sore', '']
-    const SYARAT = ['punya_sekolah', 'fullday', 'sekolah_pagi', 'fullday_sore']
+    // Kyai 4 Agu: + 'mahad' (syahriyah pondok sudah termasuk ngaji) & 'target'
+    //   (penyaringan diserahkan ke jenis tujuan). Wajib ikut disapu — kalau tidak,
+    //   cabang baru di kedua berkas tak pernah dibandingkan sama sekali.
+    const SYARAT = ['punya_sekolah', 'fullday', 'mahad', 'target', 'sekolah_pagi', 'fullday_sore']
     const MODE = ['auto', 'gabung', 'pisah']
     for (let i = 0; i < 400; i++) {
       const s = jSekolah()
