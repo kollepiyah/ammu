@@ -9,6 +9,56 @@ Versioning: `v.{nomor-urut}.{MMDDtahunmu}` (mis: `v.108.0527`)
 
 ## [Unreleased]
 
+### Syahriyah gabungan + paket + diskon anak guru — SUDAH di `main`, BELUM di-deploy
+
+Aturan syahriyah di lapangan: anak yang **sekolah + ngaji** di sini, syahriyah ngajinya
+**sudah termasuk** di syahriyah sekolah (santri **fullday** sama polanya dengan ngaji sore) —
+sebelum ini ia ditagih **dua kali**. Contoh Kyai: Ahmad (TPQ Jilid 5 + SDI I) bayar 200.000
+termasuk ngaji 90.000; Zaidun (PTPT Kelas 3 + SDI II) juga 200.000 tapi komponen ngajinya
+100.000. **TANPA migrasi DB** (semua field baru di ekor jsonb).
+
+⚠️ **Deploy WAJIB dua-duanya:** web **DAN**
+`supabase functions deploy auto-generate-tagihan` — tanpa itu cron memakai logika lama dan
+hasilnya berbeda dari tombol Generate.
+
+#### Added (Baru)
+
+- **Penggabungan syahriyah** — jenis ngaji bisa disetel "digabung ke jenis lain" (boleh
+  beberapa kandidat: SD/TK/PKBM/Kelas Baca — kandidat pertama yang berlaku menang) dengan
+  syarat otomatis **Punya sekolah formal** / **Santri fullday** (versi ketat
+  `sekolah_pagi`/`fullday_sore` tersedia bila `shift_ngaji` sudah lengkap). Wali melihat
+  **satu** tagihan; saat dibayar, Buku Induk mencatat **satu baris per komponen** supaya
+  laporan per lembaga tetap akurat.
+- **Paket nominal bernama** + **diskon anak guru (persen)** per jenis pembayaran. Penanda
+  anak guru & pilihan paket diisi manual di data santri (ikut template unduh/ekspor/impor).
+- **Pengecualian manual per santri** — "Gabung Syahriyah: Otomatis / Selalu digabung /
+  Jangan digabung" di form santri + kolom impornya.
+- **Whitelist shift ngaji (pagi/sore)** pada jenis pembayaran — akar tagihan ngaji kembar.
+  Santri yang `shift_ngaji`-nya belum diisi dianggap ikut **keduanya** (baru 30% terisi;
+  menganggapnya "tak cocok" akan menghilangkan tagihan ngaji sebagian besar santri).
+- **Pratinjau Generate** — tabel santri · bruto · diskon · ditagih · rincian komponen,
+  bisa diperiksa **sebelum** tagihan terbit.
+- **Rincian di kartu tagihan & struk** — "termasuk Syahriyah Qiraati Pagi Rp 90.000" dan
+  baris diskon bila ada.
+
+#### Changed (Perubahan)
+
+- Rumus nominal jadi **satu sumber** (`utils/syahriyah.js`) untuk keempat jalur: tombol
+  Generate, cron edge function, Generate Tagihan Khusus, dan POS. Sebelumnya empat salinan
+  yang bisa menyimpang. Cermin Deno dijaga tes yang menjalankan kasus sama di kedua berkas.
+- **Sel POS = tagihan hasil generate.** POS dulu punya rumus 3 lapis sendiri sehingga
+  `nominal_per_santri` tak terbaca dan nominalnya bisa berbeda untuk santri yang sama.
+
+#### Fixed (Perbaikan)
+
+- **Konversi PSB → santri kini membawa status tinggal** (`is_mukim`/`is_fullday`). Formulir
+  PSB sudah menyimpannya, tapi konversinya tak menyalin — jadi **setiap** santri hasil PSB
+  jatuh "non-mukim", padahal whitelist status & syarat gabung fullday bergantung penuh pada
+  flag itu. Hanya berlaku untuk konversi berikutnya; santri PSB lama perlu dikoreksi lewat
+  form/impor.
+- **Cron mengisi kolom riil `terbayar`** (bukan hanya `data.bayar` legacy).
+- **Generate Tagihan Khusus kini membaca paket santri** (dulu hanya 3 lapis nominal).
+
 ### Planned
 
 - Capacitor Android first build + sideload APK
