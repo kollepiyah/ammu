@@ -15,6 +15,17 @@ import { isSuperAdmin } from '@/utils/roleScope'
 import { writeAuditLog } from '@/utils/auditLog'
 // v.1.2.6: kelompokkan per TRANSAKSI, bukan per nomor struk — nomor lama bisa kembar
 import { kunciTransaksi } from '@/utils/trxStruk'
+// v.1.2.6 (Kyai): laporan PDF harian per lembaga + berkas terpisah tunai/transfer.
+//   Pakai pembangun yang sudah dipakai Buku Induk & struk — TIDAK menambah pustaka.
+import { buildListPdf, buildKopFromSettings } from '@/utils/pdfBuilder'
+import { metodeTransaksi, METODE_OPTS } from '@/utils/metodeBayar'
+import { fmtRp, formatTanggal as formatTgl } from '@/utils/format'
+import {
+  petaKasLembaga,
+  kasLembagaBaris,
+  ringkasKasLembaga,
+  kunciLembaga
+} from '@/utils/kasLembaga'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -157,6 +168,14 @@ const BULAN = [
 const filterYear = ref(new Date().getFullYear())
 const filterMonth = ref(0) // 0 = semua bulan
 const filterDay = ref(0) // 0 = semua tanggal
+// v.1.2.6 (Kyai): kas per lembaga. Nilainya KUNCI ternormalisasi (kunciLembaga);
+//   KAS_INDUK sentinel karena kunci Kas Induk '' sudah dipakai "Semua lembaga".
+const KAS_INDUK = '__induk__'
+const filterLembaga = ref('')
+const petaKas = computed(() => petaKasLembaga(settingsStore.settings?.keuTagihanJenis || []))
+function kasLembagaDari(b) {
+  return kasLembagaBaris(b, petaKas.value)
+}
 const years = computed(() => {
   const ys = new Set()
   for (const e of entries.value) {
@@ -277,6 +296,151 @@ const transaksi = computed(() => {
 })
 
 const totalTampil = computed(() => transaksi.value.reduce((s, t) => s + t.total, 0))
+
+// ── v.1.2.6 (Kyai): laporan PDF harian per lembaga + berkas terpisah tunai/transfer ──
+// Laporannya dibangun dari BARIS kas (bukan transaksi) karena satu transaksi bisa
+//   berisi komponen dari dua lembaga (pemecahan tagihan gabungan K1) — dijumlahkan
+//   per transaksi, uangnya tak bisa dipilah per kas lembaga.
+const barisPeriode = computed(() =>
+  entries.value.filter((e) => {
+    const tg = String(e.tanggal || '')
+    if (filterYear.value && tg.slice(0, 4) !== String(filterYear.value)) return false
+    if (filterMonth.value > 0 && tg.slice(5, 7) !== String(filterMonth.value).padStart(2, '0'))
+      return false
+    if (filterDay.value > 0 && tg.slice(8, 10) !== String(filterDay.value).padStart(2, '0'))
+      return false
+    const kw = search.value.trim().toLowerCase()
+    if (
+      kw &&
+      !String(e.santri_nama || '')
+        .toLowerCase()
+        .includes(kw)
+    )
+      return false
+    return true
+  })
+)
+// Rekap kas per lembaga — kartu ringkasan + daftar opsi filter (tak ikut filter lembaga
+//   sendiri, supaya pilihannya tak lenyap begitu satu lembaga dipilih).
+const rekapLembaga = computed(() => ringkasKasLembaga(barisPeriode.value, kasLembagaDari))
+const labelLembagaAktif = computed(() => {
+  if (!filterLembaga.value) return ''
+  if (filterLembaga.value === KAS_INDUK) return 'Kas Induk'
+  return rekapLembaga.value.find((o) => o.kunci === filterLembaga.value)?.lembaga || ''
+})
+const barisLaporan = computed(() => {
+  if (!filterLembaga.value) return barisPeriode.value
+  const target = filterLembaga.value === KAS_INDUK ? '' : filterLembaga.value
+  return barisPeriode.value.filter((b) => kunciLembaga(kasLembagaDari(b)) === target)
+})
+
+// Riwayat POS hanya memuat 400 baris terakhir (queryColl di onMounted) — batas itu
+//   sengaja dipertahankan demi kecepatan muat. Tapi laporan UANG tak boleh diam-diam
+//   terpotong: kalau batasnya kena, katakan, dan tunjuk sumber yang lengkap (Buku Induk
+//   berlangganan seluruh baris).
+const POS_LIMIT = 400
+const mungkinTerpotong = computed(() => entries.value.length >= POS_LIMIT)
+
+function labelPeriode() {
+  if (!filterMonth.value) return `Tahun ${filterYear.value}`
+  const b = `${BULAN[filterMonth.value - 1]} ${filterYear.value}`
+  return filterDay.value > 0 ? `${filterDay.value} ${b}` : b
+}
+
+async function cetakLaporanPos(metodeOnly = '') {
+  try {
+    const semua = barisLaporan.value || []
+    const list = metodeOnly ? semua.filter((b) => metodeTransaksi(b) === metodeOnly) : semua
+    if (!list.length) {
+      toast.warning(
+        metodeOnly
+          ? `Tidak ada transaksi ${metodeOnly} pada filter ini.`
+          : 'Tidak ada transaksi pada filter ini.'
+      )
+      return
+    }
+    const urut = [...list].sort(
+      (a, b) =>
+        String(a.tanggal || '').localeCompare(String(b.tanggal || '')) ||
+        String(a.trx_id || '').localeCompare(String(b.trx_id || ''))
+    )
+    const sub = { Tunai: 0, Transfer: 0 }
+    let total = 0
+    const rows = urut.map((b, i) => {
+      const nom = Number(b.nominal || 0)
+      const met = metodeTransaksi(b)
+      if (sub[met] != null) sub[met] += nom
+      total += nom
+      const sm = santriMap.value[b.santri_id] || {}
+      return {
+        no: i + 1,
+        tanggal: b.tanggal ? formatTgl(b.tanggal) : '',
+        struk: b.trx_id || '',
+        santri: b.santri_nama || sm.nama || '-',
+        jenis: b.kategori || '',
+        lembaga: kasLembagaDari(b) || 'Kas Induk',
+        metode: met,
+        nominal: fmtRp(nom)
+      }
+    })
+    const barisJumlah = (label, nominal) => ({
+      no: '',
+      tanggal: '',
+      struk: '',
+      santri: label,
+      jenis: '',
+      lembaga: '',
+      metode: '',
+      nominal: fmtRp(nominal)
+    })
+    for (const m of METODE_OPTS) {
+      if (!sub[m]) continue
+      rows.push(barisJumlah(`SUBTOTAL ${m.toUpperCase()}`, sub[m]))
+    }
+    rows.push(barisJumlah(`TOTAL (${urut.length} baris)`, total))
+
+    const bagian = [labelPeriode()]
+    if (labelLembagaAktif.value) bagian.push(labelLembagaAktif.value)
+    if (metodeOnly) bagian.push(metodeOnly.toUpperCase())
+    const slug = [
+      'pos',
+      String(filterYear.value),
+      filterMonth.value > 0 ? String(filterMonth.value).padStart(2, '0') : '',
+      filterDay.value > 0 ? String(filterDay.value).padStart(2, '0') : '',
+      labelLembagaAktif.value.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+      metodeOnly.toLowerCase()
+    ]
+      .filter(Boolean)
+      .join('-')
+    await buildListPdf({
+      kind: 'umum',
+      orientation: 'l',
+      format: 'a4',
+      kop: buildKopFromSettings(settingsStore.settings || {}),
+      title: `TRANSAKSI POS SANTRI — ${bagian.join(' — ')}`,
+      columns: [
+        { key: 'no', header: 'No', width: 12 },
+        { key: 'tanggal', header: 'Tanggal', width: 26 },
+        { key: 'struk', header: 'No Struk', width: 26 },
+        { key: 'santri', header: 'Santri', width: 56 },
+        { key: 'jenis', header: 'Jenis', width: 44 },
+        { key: 'lembaga', header: 'Kas Lembaga', width: 30 },
+        { key: 'metode', header: 'Cara Bayar', width: 24 },
+        { key: 'nominal', header: 'Nominal', width: 32 }
+      ],
+      rows,
+      filename: `${slug}.pdf`
+    })
+    toast.success(metodeOnly ? `PDF POS ${metodeOnly} berhasil dibuat` : 'PDF POS berhasil dibuat')
+    if (mungkinTerpotong.value) {
+      toast.warning(
+        `Riwayat POS memuat ${POS_LIMIT} baris terakhir saja — untuk periode lama pakai laporan Buku Induk yang lengkap.`
+      )
+    }
+  } catch (e) {
+    toast.error('Gagal cetak: ' + (e?.message || e))
+  }
+}
 
 function toTrx(t) {
   return {
@@ -408,6 +572,59 @@ function fmtTgl(t) {
             <option :value="0">Semua tgl</option>
             <option v-for="d in 31" :key="d" :value="d">{{ d }}</option>
           </select>
+          <!-- v.1.2.6 (Kyai): kas lembaga — menyetir isi PDF laporan, bukan daftar struk
+               di bawah (satu transaksi bisa berisi komponen dua lembaga). -->
+          <select
+            v-model="filterLembaga"
+            class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none"
+          >
+            <option value="">Semua lembaga</option>
+            <option
+              v-for="o in rekapLembaga"
+              :key="`pfl_${o.kunci || 'induk'}`"
+              :value="o.kunci || KAS_INDUK"
+            >
+              {{ o.lembaga || 'Kas Induk' }} ({{ o.jumlah }})
+            </option>
+          </select>
+        </div>
+        <!-- v.1.2.6 (Kyai): laporan harian POS — per lembaga, dan berkas TERPISAH untuk
+             tunai vs transfer (pengecekan manual setiap hari). -->
+        <div class="flex flex-wrap items-center gap-2 mt-2">
+          <button
+            type="button"
+            class="text-[11px] font-black px-3 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white"
+            @click="cetakLaporanPos()"
+          >
+            <i class="fas fa-file-pdf mr-1"></i>PDF Laporan
+          </button>
+          <button
+            type="button"
+            class="text-[11px] font-black px-3 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white"
+            @click="cetakLaporanPos('Tunai')"
+          >
+            <i class="fas fa-money-bill mr-1"></i>PDF Tunai
+          </button>
+          <button
+            type="button"
+            class="text-[11px] font-black px-3 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white"
+            @click="cetakLaporanPos('Transfer')"
+          >
+            <i class="fas fa-building-columns mr-1"></i>PDF Transfer
+          </button>
+          <span class="text-[10px] text-[var(--text-tertiary)] font-bold">
+            {{ barisLaporan.length }} baris kas
+            <template v-if="labelLembagaAktif"> · {{ labelLembagaAktif }}</template>
+            · {{ labelPeriode() }}
+          </span>
+          <span
+            v-if="mungkinTerpotong"
+            class="text-[10px] font-bold text-amber-700 dark:text-amber-300"
+            title="Batas ini menjaga kecepatan muat halaman"
+          >
+            <i class="fas fa-triangle-exclamation mr-1"></i>hanya 400 baris terakhir — periode lama
+            pakai laporan Buku Induk
+          </span>
         </div>
       </div>
 

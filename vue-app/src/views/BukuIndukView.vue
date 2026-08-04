@@ -67,9 +67,25 @@
             <button
               aria-label="Cetak laporan buku induk PDF"
               class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold transition cursor-pointer"
-              @click="cetakLaporan"
+              @click="cetakLaporan()"
             >
               <i class="fas fa-file-pdf"></i>Cetak Laporan
+            </button>
+            <!-- v.1.2.6 (Kyai): berkas TERPISAH per cara bayar — uang laci dicocokkan ke
+                 satu kertas, mutasi rekening ke kertas lain, setiap hari. -->
+            <button
+              aria-label="Cetak laporan transaksi tunai PDF"
+              class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition cursor-pointer"
+              @click="cetakLaporan('Tunai')"
+            >
+              <i class="fas fa-money-bill"></i>PDF Tunai
+            </button>
+            <button
+              aria-label="Cetak laporan transaksi transfer PDF"
+              class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold transition cursor-pointer"
+              @click="cetakLaporan('Transfer')"
+            >
+              <i class="fas fa-building-columns"></i>PDF Transfer
             </button>
           </div>
         </div>
@@ -1092,13 +1108,28 @@ async function simpanInputManual() {
   }
 }
 
-async function cetakLaporan() {
+// v.1.2.6 (Kyai): cetak laporan. `metodeOnly` = 'Tunai' | 'Transfer' menghasilkan
+//   BERKAS TERSENDIRI berisi metode itu saja — Kyai mencocokkan uang laci dengan satu
+//   kertas dan mutasi rekening dengan kertas lain setiap hari. Kosong = apa adanya
+//   (mengikuti penyaring yang aktif, termasuk lembaga & tanggal).
+async function cetakLaporan(metodeOnly = '') {
   // v.21.25.0526: jsPDF + autoTable (drop window.print)
   try {
     const settingsObj = settingsStore?.settings || {}
     const kop = buildKopFromSettings(settingsObj)
+    const list = metodeOnly
+      ? (filteredBuku.value || []).filter((b) => metodeTransaksi(b) === metodeOnly)
+      : filteredBuku.value || []
+    if (!list.length) {
+      toast.warning(
+        metodeOnly
+          ? `Tidak ada transaksi ${metodeOnly} pada filter ini.`
+          : 'Tidak ada transaksi pada filter ini.'
+      )
+      return
+    }
     // v.1.2.6 (D): pakai buildExportRows (saldo berjalan + baris TOTAL) lalu format Rp utk PDF.
-    const rows = buildExportRows().map((r) => ({
+    const rows = buildExportRows(list).map((r) => ({
       no: r.no,
       tanggal: r.tanggal ? formatTgl(r.tanggal) : '',
       keterangan: r.keterangan,
@@ -1108,14 +1139,23 @@ async function cetakLaporan() {
       keluar: r.keluar ? fmtRp(r.keluar) : '',
       saldo: r.saldo != null ? fmtRp(r.saldo) : ''
     }))
-    // v.1.2.6: judul ikut periode aktif — termasuk tanggal saat filter harian dipakai
+    // v.1.2.6: judul ikut periode aktif — termasuk tanggal saat filter harian dipakai,
+    //   lembaga kas yang disaring, dan metode kalau ini berkas Tunai/Transfer.
     const periode = periodeLabel.value
+    const bagian = [periode]
+    if (labelLembagaAktif.value) bagian.push(labelLembagaAktif.value)
+    if (metodeOnly) bagian.push(metodeOnly.toUpperCase())
+    const judul = bagian.join(' — ')
+    const slugMetode = metodeOnly ? `-${metodeOnly.toLowerCase()}` : ''
+    const slugLemb = labelLembagaAktif.value
+      ? '-' + labelLembagaAktif.value.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+      : ''
     await buildListPdf({
       kind: 'umum',
       orientation: 'l',
       format: 'a4',
       kop,
-      title: `BUKU INDUK KEUANGAN — ${periode}`,
+      title: `BUKU INDUK KEUANGAN — ${judul}`,
       columns: [
         { key: 'no', header: 'No', width: 12 },
         { key: 'tanggal', header: 'Tanggal', width: 26 },
@@ -1127,9 +1167,11 @@ async function cetakLaporan() {
         { key: 'saldo', header: 'Saldo', width: 30 }
       ],
       rows,
-      filename: `buku-induk-${periodeSlug.value}.pdf`
+      filename: `buku-induk-${periodeSlug.value}${slugLemb}${slugMetode}.pdf`
     })
-    toast.success('PDF buku induk berhasil dibuat')
+    toast.success(
+      metodeOnly ? `PDF buku induk ${metodeOnly} berhasil dibuat` : 'PDF buku induk berhasil dibuat'
+    )
   } catch (e) {
     toast.error('Gagal cetak: ' + (e?.message || e))
   }
@@ -1220,6 +1262,13 @@ const bukuTanpaLembaga = computed(() => {
 // Rekap kas per lembaga — dipakai kartu ringkasan DAN daftar opsi filter lembaga.
 const rekapLembaga = computed(() => ringkasKasLembaga(bukuTanpaLembaga.value, kasLembagaDari))
 const opsiKasLembaga = computed(() => rekapLembaga.value)
+// Nama lembaga yang sedang disaring — judul & nama berkas laporan. '' = semua lembaga.
+const labelLembagaAktif = computed(() => {
+  if (!filterLembaga.value) return ''
+  if (filterLembaga.value === KAS_INDUK) return 'Kas Induk'
+  const hit = rekapLembaga.value.find((o) => o.kunci === filterLembaga.value)
+  return hit?.lembaga || ''
+})
 
 const filteredBuku = computed(() => {
   let list = bukuTanpaLembaga.value
@@ -1334,8 +1383,10 @@ onUnmounted(() => {
 
 // v.1.2.6 (D): baris ekspor buku induk — saldo BERJALAN per baris (saldoOf) + baris TOTAL
 //   (jumlah masuk/keluar & net periode) di akhir. Dipakai Excel + Google Sheet.
-function buildExportRows() {
-  const list = filteredBuku.value || []
+//   v.1.2.6 (Kyai): `listIn` opsional supaya cetak TUNAI / TRANSFER bisa memakai
+//   pembangun yang sama (satu bentuk laporan, bukan dua yang bisa berbeda diam-diam).
+function buildExportRows(listIn) {
+  const list = listIn || filteredBuku.value || []
   let totMasuk = 0,
     totKeluar = 0
   const rows = list.map((b, i) => {
@@ -1498,7 +1549,10 @@ definePageActions(() => {
           }
         ]
       : []),
-    { label: 'Cetak Laporan', icon: 'printer', on: cetakLaporan }
+    { label: 'Cetak Laporan', icon: 'printer', on: () => cetakLaporan() },
+    // v.1.2.6 (Kyai): berkas terpisah per cara bayar (pengecekan manual harian)
+    { label: 'PDF Tunai', icon: 'printer', on: () => cetakLaporan('Tunai') },
+    { label: 'PDF Transfer', icon: 'printer', on: () => cetakLaporan('Transfer') }
   ]
 })
 </script>
