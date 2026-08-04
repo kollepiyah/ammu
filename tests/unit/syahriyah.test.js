@@ -380,6 +380,23 @@ describe('pagar keamanan', () => {
     expect(r.komponen).toEqual([])
   })
 
+  it('whitelist SHIFT ikut ditegakkan — jenis ngaji beda shift tak boleh jadi komponen', () => {
+    // Kalau shift tak diperiksa di jenisBerlakuUntuk, "Qiraati Pagi" (shift pagi) akan
+    // dilipat ke tagihan sekolah milik anak yang ngajinya SORE → nominal ngaji nyasar.
+    const s = jSekolah()
+    const n = jNgaji()
+    n.shift_only = ['pagi']
+    n.gabung_syarat = 'punya_sekolah'
+    const list = [s, n]
+    const anakSore = ahmad({ shift_ngaji: 'sore' })
+    expect(jenisBerlakuUntuk(n, anakSore)).toBe(false)
+    expect(hitungTagihan(s, anakSore, list).gabungan).toBe(false)
+    expect(hitungTagihan(s, anakSore, list).nominal).toBe(200000)
+    expect(hitungTagihan(n, anakSore, list)).toBeNull()
+    // shift KOSONG = ikut keduanya -> tetap dilipat (jangan sampai komponen hilang)
+    expect(hitungTagihan(s, ahmad({ shift_ngaji: '' }), list).gabungan).toBe(true)
+  })
+
   it('whitelist lembaga & status tetap ditegakkan', () => {
     const s = jSekolah()
     s.lembaga_only = ['PKBM']

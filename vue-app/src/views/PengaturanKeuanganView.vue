@@ -58,6 +58,15 @@
             <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block">
               Auto-Generate Pembayaran
             </label>
+            <!-- Pratinjau DULU (Kyai 3-4 Agu): uang riil sejak 1 Agu, angkanya harus bisa
+                 diperiksa sebelum 500-an tagihan terbit. Jalur hitungnya sama persis. -->
+            <button
+              :disabled="generating || praBusy"
+              class="w-full mb-1.5 bg-[var(--bg-card-elevated)] border border-[var(--border-default)] text-[var(--text-primary)] font-bold py-2 rounded-lg text-sm transition cursor-pointer disabled:opacity-50 hover:bg-teal-50 dark:hover:bg-teal-900/20"
+              @click="pratinjauGenerate"
+            >
+              <i class="fas fa-eye mr-1"></i>{{ praBusy ? 'Menghitung...' : 'Pratinjau dulu' }}
+            </button>
             <button
               :disabled="generating"
               class="w-full bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-bold py-2 rounded-lg text-sm transition cursor-pointer disabled:opacity-50"
@@ -1557,6 +1566,115 @@
       </button>
     </div>
 
+    <!-- Kyai 3-4 Agu: PRATINJAU generate. Read-only, memakai jalur hitung yang SAMA
+         PERSIS dengan tombol Generate (autoGenerate(dryRun)) — uang riil sejak 1 Agu,
+         jadi angkanya harus bisa diperiksa sebelum 500-an tagihan terbit. -->
+    <div
+      v-if="praOpen"
+      class="fixed inset-0 z-50 bg-slate-900/60 flex items-center justify-center p-4"
+      @click.self="praOpen = false"
+    >
+      <div
+        class="bg-[var(--bg-card)] rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto"
+      >
+        <div
+          class="flex items-center justify-between px-5 py-4 border-b border-[var(--border-subtle)] sticky top-0 bg-[var(--bg-card)]"
+        >
+          <div>
+            <h3 class="text-base font-black text-[var(--text-primary)]">
+              <i class="fas fa-eye text-teal-600 mr-1.5"></i>Pratinjau Generate Tagihan
+            </h3>
+            <p class="text-[11px] text-[var(--text-secondary)] mt-0.5">
+              Belum ada yang ditulis. Periksa angkanya, baru tekan Generate.
+            </p>
+          </div>
+          <button
+            class="text-[var(--text-secondary)] hover:text-rose-600 text-xl leading-none"
+            @click="praOpen = false"
+          >
+            &times;
+          </button>
+        </div>
+        <div class="p-5 space-y-3">
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+            <div class="bg-[var(--bg-card-elevated)] rounded-xl p-3">
+              <p class="text-[10px] text-[var(--text-secondary)] uppercase font-bold">Tagihan</p>
+              <p class="text-lg font-black text-[var(--text-primary)]">{{ praRows.length }}</p>
+            </div>
+            <div class="bg-[var(--bg-card-elevated)] rounded-xl p-3">
+              <p class="text-[10px] text-[var(--text-secondary)] uppercase font-bold">Total</p>
+              <p class="text-lg font-black text-teal-700 dark:text-teal-300">
+                {{ fmtRp(praTotal) }}
+              </p>
+            </div>
+            <div class="bg-[var(--bg-card-elevated)] rounded-xl p-3">
+              <p class="text-[10px] text-[var(--text-secondary)] uppercase font-bold">Gabungan</p>
+              <p class="text-lg font-black text-indigo-700 dark:text-indigo-300">
+                {{ praGabungan }}
+              </p>
+            </div>
+            <div class="bg-[var(--bg-card-elevated)] rounded-xl p-3">
+              <p class="text-[10px] text-[var(--text-secondary)] uppercase font-bold">Diskon</p>
+              <p class="text-lg font-black text-amber-700 dark:text-amber-300">{{ praDiskon }}</p>
+            </div>
+          </div>
+          <p v-if="!praRows.length" class="text-center text-xs text-[var(--text-tertiary)] py-8">
+            Tak ada tagihan baru yang akan dibuat (semua sudah ada, atau tak ada yang cocok).
+          </p>
+          <div v-else class="overflow-x-auto">
+            <table class="w-full text-[11px]">
+              <thead>
+                <tr class="text-left text-[var(--text-secondary)] uppercase">
+                  <th class="py-1.5 pr-2">Santri</th>
+                  <th class="py-1.5 pr-2">Kategori</th>
+                  <th class="py-1.5 pr-2 text-right">Bruto</th>
+                  <th class="py-1.5 pr-2 text-right">Diskon</th>
+                  <th class="py-1.5 pr-2 text-right">Ditagih</th>
+                  <th class="py-1.5">Rincian komponen</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="r in praRows.slice(0, 300)"
+                  :key="r.id"
+                  class="border-t border-[var(--border-subtle)]"
+                >
+                  <td class="py-1.5 pr-2 font-bold text-[var(--text-primary)]">
+                    {{ r.santri_nama || r.santri_id }}
+                  </td>
+                  <td class="py-1.5 pr-2 text-[var(--text-secondary)]">{{ r.kategori }}</td>
+                  <td class="py-1.5 pr-2 text-right">
+                    {{ r.nominal_bruto ? fmtRp(r.nominal_bruto) : '—' }}
+                  </td>
+                  <td class="py-1.5 pr-2 text-right text-amber-700 dark:text-amber-300">
+                    {{ r.diskon_persen ? r.diskon_persen + '%' : '—' }}
+                  </td>
+                  <td class="py-1.5 pr-2 text-right font-black text-[var(--text-primary)]">
+                    {{ fmtRp(r.nominal) }}
+                  </td>
+                  <td class="py-1.5 text-[10px] text-[var(--text-secondary)]">
+                    <span v-if="!r.komponen">—</span>
+                    <span v-else>
+                      <span v-for="(k, ki) in r.komponen" :key="ki" class="whitespace-nowrap">
+                        {{ ki ? ' + ' : '' }}{{ k.label }} {{ fmtRp(k.nominal) }}
+                      </span>
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <p
+              v-if="praRows.length > 300"
+              class="text-center text-[10px] text-[var(--text-tertiary)] mt-2"
+            >
+              Menampilkan 300 dari {{ praRows.length }} baris — ringkasan di atas menghitung
+              semuanya.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- v.1.1.x: Dialog Tambah/Ubah Jenis Pembayaran (model tabel gaya Braja Soft) -->
     <div
       v-if="dlgOpen && dlgJenis"
@@ -2388,15 +2506,10 @@ import { useLembaga, isSekolahLembaga } from '@/composables/useLembaga'
 import { HARI_AKTIF_DEFAULT } from '@/utils/bebanMengajar' // v.1.2.1: penyebut prorata JP
 // v.1.2.6: whitelist status santri (non-mukim/ma'had/fullday) utk targeting jenis syahriyah
 // Kyai 3-4 Agu: syarat penggabungan syahriyah (sumber tunggal di utils/syahriyah.js)
-import { GABUNG_SYARAT } from '@/utils/syahriyah'
-import {
-  STATUS_SANTRI_OPTS,
-  JK_OPTS,
-  SHIFT_NGAJI_OPTS,
-  matchStatusOnly,
-  matchJenisKelamin,
-  matchShiftNgaji
-} from '@/utils/statusSantri'
+import { GABUNG_SYARAT, hitungTagihan } from '@/utils/syahriyah'
+// Hanya OPSI yang dipakai di sini (daftar centang). Matcher-nya tak lagi dipanggil langsung:
+//   seluruh aturan berlaku/tidak sudah dijalankan hitungTagihan() di utils/syahriyah.js.
+import { STATUS_SANTRI_OPTS, JK_OPTS, SHIFT_NGAJI_OPTS } from '@/utils/statusSantri'
 import { useToast } from '@/composables/useToast'
 import { useExcel } from '@/composables/useExcel'
 import { useGedungScope } from '@/composables/useGedungScope'
@@ -2831,6 +2944,30 @@ const dlgPaket = ref(false)
 //   atau PTPT (100rb)" — jenis ngaji tak ditagih sendiri, nominalnya jadi KOMPONEN di dalam
 //   tagihan sekolah/fullday, dan saat dibayar dipecah kembali per lembaga di Buku Induk.
 const dlgGabung = ref(false)
+// Pratinjau generate (read-only). Memanggil autoGenerate(true) — jalur hitung SAMA PERSIS.
+const praOpen = ref(false)
+const praBusy = ref(false)
+const praRows = ref([])
+const praTotal = computed(() => praRows.value.reduce((a, r) => a + Number(r.nominal || 0), 0))
+const praGabungan = computed(
+  () => praRows.value.filter((r) => Array.isArray(r.komponen) && r.komponen.length).length
+)
+const praDiskon = computed(
+  () => praRows.value.filter((r) => Number(r.diskon_persen || 0) > 0).length
+)
+async function pratinjauGenerate() {
+  if (praBusy.value || generating.value) return
+  praBusy.value = true
+  try {
+    const rows = await autoGenerate(true)
+    praRows.value = Array.isArray(rows) ? rows : []
+    praOpen.value = true
+  } catch (e) {
+    toast.error('Gagal menghitung pratinjau: ' + (e?.message || e))
+  } finally {
+    praBusy.value = false
+  }
+}
 /** Kandidat target: jenis LAIN di daftar (tak boleh menempel ke diri sendiri). */
 const jenisLainOpsi = computed(() =>
   (jenisList.value || [])
@@ -4168,9 +4305,15 @@ async function imporJenis(ev) {
 // Generate tagihan utk jenis ber-auto_generate=true (default: Syahriyah)
 // utk semua santri aktif, nominal pakai 3-lapis lookup
 // (nominal_per_kelas → nominal_per_lembaga → nominal_default).
-async function autoGenerate() {
+// Kyai 3-4 Agu: `dryRun` = PRATINJAU. Sengaja jalur kode yang SAMA PERSIS dengan generate
+//   (bukan fungsi hitung kedua) supaya angka yang Kyai periksa di pratinjau benar-benar
+//   yang akan ditulis. Uang riil sejak 1 Agu — pratinjau yang bisa melenceng dari
+//   kenyataan lebih berbahaya daripada tak ada pratinjau.
+//   dryRun mengembalikan array baris rencana; mode normal menulis & mengembalikan undefined.
+async function autoGenerate(dryRun = false) {
   if (generating.value) return
   if (
+    !dryRun &&
     !confirm(
       `Generate tagihan untuk ${gedungScoped.value ? `santri ${myGedung.value}` : 'semua santri aktif'}?\n\nJenis "bulanan" → periode bulan ini. Jenis "tahunan" → tahun ajaran berjalan. Tagihan duplikat (periode sama) di-skip.`
     )
@@ -4186,7 +4329,7 @@ async function autoGenerate() {
     if (jenisAuto.length === 0) {
       toast.warning('Tidak ada jenis "bulanan" / "tahunan" untuk di-generate.')
       generating.value = false
-      return
+      return dryRun ? [] : undefined
     }
     // Periode target dihitung DULU utk membatasi fetch tagihan (D1 audit).
     const now = new Date()
@@ -4226,72 +4369,59 @@ async function autoGenerate() {
     let created = 0,
       skipped = 0,
       errCount = 0
+    const rencana = []
     for (const j of jenisAuto) {
       const tahunan = j.frekuensi === 'tahunan'
       const periode = tahunan ? periodeTahun : periodeBulan
       const jt = tahunan ? jtTahun : jtBulan
-      const wl = Array.isArray(j.lembaga_only) ? j.lembaga_only.filter(Boolean) : []
       for (const sx of santriAktif) {
-        // whitelist gating (lembaga)
-        if (wl.length > 0) {
-          if (!(wl.includes(sx.lembaga) || wl.includes(sx.lembaga_sekolah))) continue
-        }
-        // v.1.2.6: whitelist status santri (non-mukim/ma'had/fullday) — kosong = semua
-        if (!matchStatusOnly(sx, j.status_only)) continue
-        // v.1.2.x: whitelist jenis kelamin (Putra/Putri) — kosong = semua
-        if (!matchJenisKelamin(sx, j.jk_only)) continue
-        // Kyai 4 Agu: whitelist shift ngaji (pagi/sore) — kosong = semua; santri yang
-        //   shift_ngaji-nya belum diisi dianggap ikut KEDUANYA (jangan sampai tagihan hilang)
-        if (!matchShiftNgaji(sx, j.shift_only)) continue
         const dupKey = `${String(sx.id)}__${(j.label || '').toLowerCase()}__${periode}`
         if (existing.has(dupKey)) {
           skipped++
           continue
         }
-        // v.95.0626: 4-lapis lookup — per-SANTRI dulu (override), lalu per-kelas, per-lembaga, default
-        let nominal = Number((j.nominal_per_santri || {})[String(sx.id)] || 0)
-        const perK = j.nominal_per_kelas || {}
-        if (nominal === 0)
-          for (const [lemb, ks] of [
-            [sx.lembaga, sx.kelas],
-            [sx.lembaga_sekolah, sx.kelas_sekolah]
-          ]) {
-            if (!lemb) continue
-            const inner = perK[lemb] || {}
-            const v = Number(inner[ks] || 0)
-            if (v > 0) {
-              nominal = v
-              break
-            }
-          }
-        if (nominal === 0) {
-          const perL = j.nominal_per_lembaga || {}
-          nominal =
-            Number(perL[sx.lembaga] || perL[sx.lembaga_sekolah] || 0) ||
-            Number(j.nominal_default || 0)
-        }
-        if (nominal <= 0) {
+        // Kyai 3-4 Agu: SEMUA aturan pindah ke utils/syahriyah.hitungTagihan —
+        //   whitelist (lembaga/status/JK/shift), 4-lapis nominal LAMA, paket, diskon anak
+        //   guru, dan pelipatan jenis ngaji ke tagihan sekolah/fullday. Sengaja satu sumber:
+        //   dulu rumus ini disalin di generate manual, cron, generate khusus, dan POS —
+        //   empat salinan yang gampang menyimpang. null = santri tak ditagih jenis ini
+        //   (tak berlaku / nominal 0 / sudah jadi komponen jenis lain).
+        const h = hitungTagihan(j, sx, jenisAuto)
+        if (!h) {
           skipped++
           continue
         }
+        const idPeriode = tahunan
+          ? `TA${taStart}`
+          : `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}`
+        const id = `tagihan_${sx.id}_${j.id}_${idPeriode}`
+        const payload = {
+          id,
+          santri_id: String(sx.id),
+          santri_nama: sx.nama || '',
+          kategori: j.label || j.id || 'Tagihan',
+          periode,
+          nominal: h.nominal,
+          terbayar: 0,
+          status: 'belum',
+          jatuh_tempo: jt,
+          sumber: 'auto_generate',
+          created_at: serverTimestamp()
+        }
+        // Field tambahan HANYA bila relevan — supaya bentuk baris tagihan biasa tetap
+        //   sama persis seperti sebelumnya (tak ada kejutan di pembaca lama).
+        if (h.komponen.length) payload.komponen = h.komponen
+        if (h.diskon_persen > 0) {
+          payload.nominal_bruto = h.nominal_bruto
+          payload.diskon_persen = h.diskon_persen
+          payload.diskon_nominal = h.diskon_nominal
+        }
+        if (dryRun) {
+          rencana.push(payload)
+          continue
+        }
         try {
-          const idPeriode = tahunan
-            ? `TA${taStart}`
-            : `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}`
-          const id = `tagihan_${sx.id}_${j.id}_${idPeriode}`
-          await setOne('keuangan_tagihan', id, {
-            id,
-            santri_id: String(sx.id),
-            santri_nama: sx.nama || '',
-            kategori: j.label || j.id || 'Tagihan',
-            periode,
-            nominal,
-            terbayar: 0,
-            status: 'belum',
-            jatuh_tempo: jt,
-            sumber: 'auto_generate',
-            created_at: serverTimestamp()
-          })
+          await setOne('keuangan_tagihan', id, payload)
           created++
         } catch (e) {
           errCount++
@@ -4299,6 +4429,7 @@ async function autoGenerate() {
         }
       }
     }
+    if (dryRun) return rencana
     toast.success(
       `Auto-generate: ${created} dibuat, ${skipped} skip${errCount ? `, ${errCount} gagal` : ''}`
     )

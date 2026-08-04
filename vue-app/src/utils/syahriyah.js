@@ -27,7 +27,7 @@
 //      termasuk pencocokan lembaga yang case-SENSITIVE (lihat catatan di fungsinya).
 //   2. Jumlah komponen WAJIB tepat sama dengan nominal tagihan, sampai rupiah terakhir —
 //      karena itu porsi jenis target dihitung sebagai SISA, bukan dikalikan sendiri.
-import { matchStatusOnly, matchJenisKelamin } from './statusSantri'
+import { matchStatusOnly, matchJenisKelamin, matchShiftNgaji } from './statusSantri'
 
 /** Angka > 0 saja; selain itu 0 (cermin `Number(x || 0)` di kode lama). */
 function num(v) {
@@ -74,7 +74,14 @@ export function jenisBerlakuUntuk(jenis, santri) {
   const wl = Array.isArray(jenis.lembaga_only) ? jenis.lembaga_only.filter(Boolean) : []
   if (wl.length > 0 && !(wl.includes(santri.lembaga) || wl.includes(santri.lembaga_sekolah)))
     return false
-  return matchStatusOnly(santri, jenis.status_only) && matchJenisKelamin(santri, jenis.jk_only)
+  // Shift ngaji ikut di sini (bukan hanya di pemanggil): kalau tidak, `gabungTargetFor` bisa
+  // melipat jenis ngaji yang shift-nya TAK cocok untuk santri itu — nominal ngaji masuk ke
+  // tagihan sekolah padahal jenisnya tak berlaku baginya.
+  return (
+    matchStatusOnly(santri, jenis.status_only) &&
+    matchJenisKelamin(santri, jenis.jk_only) &&
+    matchShiftNgaji(santri, jenis.shift_only)
+  )
 }
 
 /**
