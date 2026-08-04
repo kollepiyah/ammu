@@ -3,23 +3,54 @@
 Semua perubahan penting Portal Mambaul Ulum tercatat di sini.
 
 Format: [Keep a Changelog](https://keepachangelog.com/id/1.1.0/)
-Versioning: `v.{nomor-urut}.{MMDDtahunmu}` (mis: `v.108.0527`)
+Versioning: semver `v.MAJOR.MINOR.PATCH` sejak v.1.1.x (mis: `v.1.2.7`); versionCode Android
+naik satu tiap rilis. Entri lama memakai skema lama `v.{nomor-urut}.{MMDDtahunmu}` (mis: `v.108.0527`).
 
 ---
 
 ## [Unreleased]
 
-### Syahriyah gabungan + paket + diskon anak guru — SUDAH di `main`, BELUM di-deploy
+### Planned
+
+- Capacitor Android first build + sideload APK
+- Capacitor iOS setup
+- Tauri Desktop scaffold
+- Phase 1 palette migration: `bg-blue-600/700` action button → `bg-teal-600/700` (~62 occurrences)
+- DOMPurify integration untuk template literal innerHTML yang inject user data
+- Console.log cleanup (37 occurrences di production)
+
+---
+
+## [v.1.2.7] — 2026-08-04 — Syahriyah gabungan + kas per lembaga + laporan PDF harian
+
+Dua blok pekerjaan: **syahriyah gabungan** (3–4 Agu) dan **kas per lembaga + laporan harian**
+(4 Agu), plus tiga perbaikan bug yang dilaporkan Kyai.
+
+⚠️ **URUTAN DEPLOY — tiga langkah, jangan ada yang dilewat:**
+
+1. `supabase db push` — satu migrasi baru `20260804120000_santri_upd_pj_ptpt.sql` (kebijakan
+   RLS saja: tanpa perubahan skema, tanpa menyentuh baris data). Tanpa ini akun PJ PTPT tetap
+   ditolak saat meluluskan santri.
+2. `supabase functions deploy auto-generate-tagihan` — **kalau belum diredeploy sejak
+   syahriyah gabungan masuk.** Tanpa itu cron harian memakai rumus lama dan hasilnya berbeda
+   dari tombol Generate. Tak ada perubahan edge baru di blok kas per lembaga.
+3. Deploy web **dari direktori utama** (worktree tak punya `vue-app/.env.local`).
+
+Sesudahnya: rebuild AAB **vc127** + Electron **1.2.7**. Electron 1.2.7 > 1.2.6, jadi PC yang
+sudah pasang 1.2.6 kali ini **ditawari auto-update** (tak perlu pasang NSIS manual seperti
+rilis lalu).
+
+**Yang perlu Kyai isi setelah deploy:** kolom **"Masuk Kas Lembaga"** di Pengaturan Keuangan →
+Jenis Pembayaran, dan `gabung_ke`/paket/diskon anak guru — sebelum diisi, kedua mekanisme
+sudah hidup tapi nominal & penggolongan kasnya belum berubah.
+
+### Syahriyah gabungan + paket + diskon anak guru
 
 Aturan syahriyah di lapangan: anak yang **sekolah + ngaji** di sini, syahriyah ngajinya
 **sudah termasuk** di syahriyah sekolah (santri **fullday** sama polanya dengan ngaji sore) —
 sebelum ini ia ditagih **dua kali**. Contoh Kyai: Ahmad (TPQ Jilid 5 + SDI I) bayar 200.000
 termasuk ngaji 90.000; Zaidun (PTPT Kelas 3 + SDI II) juga 200.000 tapi komponen ngajinya
 100.000. **TANPA migrasi DB** (semua field baru di ekor jsonb).
-
-⚠️ **Deploy WAJIB dua-duanya:** web **DAN**
-`supabase functions deploy auto-generate-tagihan` — tanpa itu cron memakai logika lama dan
-hasilnya berbeda dari tombol Generate.
 
 #### Added (Baru)
 
@@ -60,10 +91,6 @@ hasilnya berbeda dari tombol Generate.
 - **Generate Tagihan Khusus kini membaca paket santri** (dulu hanya 3 lapis nominal).
 
 ### Kas per lembaga + laporan PDF harian + perbaikan Migrasi Lembaga & pita Electron
-
-⚠️ **Deploy: web + `supabase db push`** (satu migrasi baru, `20260804120000_santri_upd_pj_ptpt.sql`
-— hanya kebijakan RLS, tanpa perubahan skema & tanpa menyentuh baris data). Tidak ada edge
-function baru yang perlu di-redeploy oleh bagian ini.
 
 #### Added (Baru)
 
@@ -108,16 +135,6 @@ function baru yang perlu di-redeploy oleh bagian ini.
   santri ybs, dan **guru pengampu** — sementara hak PJ diturunkan dari field lain
   (`santri.pj_ptpt`). Ditambah kebijakan `santri_upd_pj_ptpt` yang mencerminkan gerbang UI.
   Karena itu Tolak/Belum Lulus selalu jalan; hanya LULUS yang gagal.
-
-### Planned
-
-- Capacitor Android first build + sideload APK
-- Capacitor iOS setup
-- Tauri Desktop scaffold
-- Initial unit tests (vitest)
-- Phase 1 palette migration: `bg-blue-600/700` action button → `bg-teal-600/700` (~62 occurrences)
-- DOMPurify integration untuk template literal innerHTML yang inject user data
-- Console.log cleanup (37 occurrences di production)
 
 ---
 
