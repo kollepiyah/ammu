@@ -13,6 +13,7 @@ import {
   nominalDasar,
   nominalGabungan,
   paketNominal,
+  pecahProporsional,
   syaratGabungTerpenuhi
 } from '../../vue-app/src/utils/syahriyah.js'
 
@@ -412,5 +413,87 @@ describe('pagar keamanan', () => {
     expect(hitungTagihan(jSekolah(), null, [])).toBeNull()
     expect(nominalDasar(null, null)).toBe(0)
     expect(jenisTergabung(null, null).size).toBe(0)
+  })
+})
+
+// ---------------------------------------------------------------------------------------
+// pecahProporsional — dipakai POS saat menulis baris Buku Induk (K1). Invarian TUNGGAL yang
+// dijaga di sini: JUMLAH BARIS = UANG YANG DITERIMA, tepat sampai rupiah terakhir. Kalau ini
+// bocor, buku kas per lembaga melenceng tiap transaksi — uang riil sejak 1 Agu 2026.
+// ---------------------------------------------------------------------------------------
+describe('pecahProporsional (pemecahan Buku Induk)', () => {
+  const komp = [
+    { jenis_id: 'sekolah', label: 'Syahriyah Sekolah', nominal: 110000, pos: '' },
+    { jenis_id: 'ngaji', label: 'Syahriyah Ngaji', nominal: 90000, pos: '' }
+  ]
+
+  it('bayar penuh → komponen apa adanya', () => {
+    const r = pecahProporsional(komp, 200000)
+    expect(r.map((x) => x.nominal)).toEqual([110000, 90000])
+    expect(r[1].label).toBe('Syahriyah Ngaji')
+  })
+
+  it('bayar sebagian → proporsional, jumlah TEPAT sama dengan yang dibayar', () => {
+    const r = pecahProporsional(komp, 50000)
+    expect(r.reduce((s, x) => s + x.nominal, 0)).toBe(50000)
+    expect(r[1].nominal).toBe(22500) // 90/200 dari 50.000
+    expect(r[0].nominal).toBe(27500)
+  })
+
+  it('angka ganjil apa pun tetap berjumlah tepat (uji pembulatan menyeluruh)', () => {
+    const aneh = [
+      { label: 'A', nominal: 33333 },
+      { label: 'B', nominal: 33333 },
+      { label: 'C', nominal: 33334 }
+    ]
+    for (const bayar of [1, 7, 99, 12345, 99999, 100000, 199999]) {
+      const r = pecahProporsional(aneh, bayar)
+      expect(r.reduce((s, x) => s + x.nominal, 0)).toBe(bayar)
+      expect(r.every((x) => x.nominal >= 0)).toBe(true)
+    }
+  })
+
+  it('tanpa pemecahan (0/1 komponen) atau nominal <= 0 → [] (pemanggil pakai jalur lama)', () => {
+    expect(pecahProporsional([], 200000)).toEqual([])
+    expect(pecahProporsional([komp[0]], 200000)).toEqual([])
+    expect(pecahProporsional(komp, 0)).toEqual([])
+    expect(pecahProporsional(komp, -5)).toEqual([])
+    expect(pecahProporsional(null, 200000)).toEqual([])
+    expect(pecahProporsional(undefined, undefined)).toEqual([])
+  })
+
+  it('komponen bernominal 0 semua → [] (jangan bagi nol)', () => {
+    expect(
+      pecahProporsional(
+        [
+          { label: 'A', nominal: 0 },
+          { label: 'B', nominal: 0 }
+        ],
+        5000
+      )
+    ).toEqual([])
+  })
+
+  it('tak mengubah objek komponen asli', () => {
+    const asli = JSON.parse(JSON.stringify(komp))
+    pecahProporsional(komp, 12345)
+    expect(komp).toEqual(asli)
+  })
+
+  it('rantai nyata: hitungTagihan → pecahProporsional selalu seimbang', () => {
+    // Diskon anak guru + pembulatan ganjil = kombinasi paling rawan.
+    const s = jSekolah()
+    s.diskon_anak_guru = 37
+    s.nominal_per_lembaga = { SDI: 199999 }
+    const n = jNgaji()
+    n.gabung_ke = ['syahriyah_sekolah']
+    n.gabung_syarat = 'punya_sekolah'
+    n.nominal_per_lembaga = { TPQ: 89999 }
+    const h = hitungTagihan(s, ahmad(), [s, n])
+    expect(h.komponen.reduce((a, k) => a + k.nominal, 0)).toBe(h.nominal)
+    for (const bayar of [1, h.nominal - 1, h.nominal]) {
+      const r = pecahProporsional(h.komponen, bayar)
+      expect(r.reduce((a, k) => a + k.nominal, 0)).toBe(bayar)
+    }
   })
 })

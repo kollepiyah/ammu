@@ -306,6 +306,35 @@ export function hitungTagihan(jenis, santri, jenisList) {
 }
 
 /**
+ * Pecah `jumlah` mengikuti proporsi `komponen` — dipakai saat uang yang BENAR-BENAR diterima
+ * di POS berbeda dari nominal tagihan (bayar sebagian, atau tagihan sudah dibayar separuh).
+ *
+ * Entri PERTAMA (porsi jenis target) menerima SISA, persis seperti `hitungTagihan`, supaya
+ * jumlah baris Buku Induk SELALU tepat sama dengan uang yang diterima sampai rupiah terakhir.
+ * ⚠️ Jangan diganti menjadi `Math.round()` untuk semua entri — pembulatan bisa membuat kas
+ * melenceng beberapa rupiah tiap transaksi, dan ini uang riil sejak 1 Agu 2026.
+ *
+ * @returns Array komponen dengan `nominal` terskala; `[]` = tak perlu dipecah (pemanggil
+ *          menulis satu baris seperti jalur lama).
+ */
+export function pecahProporsional(komponen, jumlah) {
+  const daftar = Array.isArray(komponen) ? komponen.filter(Boolean) : []
+  const total = Math.round(Number(jumlah) || 0)
+  if (daftar.length < 2 || total <= 0) return []
+  const dasar = daftar.reduce((s, k) => s + num(k.nominal), 0)
+  if (dasar <= 0) return []
+  const out = daftar.map((k) => ({ ...k, nominal: 0 }))
+  let sisa = total
+  for (let i = 1; i < out.length; i++) {
+    const v = Math.max(0, Math.min(sisa, Math.round((num(daftar[i].nominal) * total) / dasar)))
+    out[i].nominal = v
+    sisa -= v
+  }
+  out[0].nominal = sisa
+  return out
+}
+
+/**
  * Daftar id jenis yang HARUS DILEWATI saat generate untuk santri ini (karena menempel ke
  * jenis lain). Disediakan terpisah supaya pemanggil bisa menyaring lebih dulu tanpa
  * menghitung nominal dua kali.

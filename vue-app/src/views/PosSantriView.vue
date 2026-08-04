@@ -212,6 +212,9 @@ import { useToast } from '@/composables/useToast'
 import { getOne, queryColl, setOne, updateOne, serverTimestamp } from '@/services/db'
 import { sortSantri } from '@/utils/santriSort'
 import { sisaTagihan } from '@/utils/tagihan'
+// K1: pemecahan komponen (sekolah+ngaji) jadi beberapa baris Buku Induk — rumusnya di
+//   utils/syahriyah.js yang diuji unit, jangan disalin ke sini.
+import { pecahProporsional } from '@/utils/syahriyah'
 // v.1.2.6: nomor struk anti-kembar + penanda transaksi unik (lihat utils/trxStruk.js)
 import { nomorStrukBerikutnya, buatTrxUid } from '@/utils/trxStruk'
 import { todayJakarta } from '@/utils/format'
@@ -526,39 +529,62 @@ async function handleSimpan(payload) {
       if (lbl && j?.pos) posByLabel[lbl] = String(j.pos)
     }
     const tabWajibItems = [] // item pos 'tabungan_wajib' -> picu push ke wali (lihat setelah writes)
+    let barisMasuk = 0 // jumlah BARIS buku induk (bisa > jumlah item krn tagihan gabungan)
     for (const [itemIdx, item] of payload.items.entries()) {
-      // audit B1: id WAJIB unik per item. Dulu `pos_${Date.now()}_${rand(0..999)}` —
-      //   dalam 1 keranjang loop sinkron → Date.now() SAMA, hanya random pembeda →
-      //   tabrakan (ulang tahun) → INSERT PK dobel gagal → Promise.all reject SETELAH
-      //   sebagian tertulis = commit keuangan PARSIAL. Index item = pembeda deterministik.
-      const id = `pos_${trxId}_${itemIdx}_${Math.random().toString(36).slice(2, 7)}`
-      const docData = {
-        id,
-        tanggal,
-        tipe: 'masuk',
-        kategori: item.jenis,
-        nominal: item.nominal,
-        keterangan: `${item.jenis} — ${payload.santri_nama} (${payload.santri_nis || payload.santri_id})${item.keterangan ? ' — ' + item.keterangan : ''}`,
-        sumber: 'pos_santri',
-        trx_id: trxId,
-        trx_uid: trxUid,
-        metode: payload.metode || 'Tunai',
-        santri_id: payload.santri_id,
-        santri_nama: payload.santri_nama,
-        operator: op,
-        wali: waliNama,
-        createdAt: serverTimestamp()
-      }
       // tag pos: utamakan pos eksplisit dari tagihan (generate khusus), fallback dari jenis
       const _pos = item.pos || posByLabel[item.jenis] || ''
-      if (_pos) docData.pos = _pos
-      // v.1.2.x: penanda periode utk matriks POS mewarnai sel bayar-muka (tanpa baris tagihan)
-      if (item.periode_kode) docData.periode_kode = item.periode_kode
-      // Tabungan Wajib (dana kelulusan): wali diberi tahu. Pos lain tidak — utk syahriyah dsb
-      // walinya justru sedang di depan kasir, push cuma jadi berisik.
-      if (_pos === 'tabungan_wajib') tabWajibItems.push(item)
-      writes.push(setOne('keuangan_buku_induk', id, docData))
-      histori.value.unshift(docData)
+      // K1 (Kyai): tagihan gabungan (sekolah sudah termasuk ngaji) dicatat DIPECAH di Buku
+      //   Induk — wali cuma lihat 1 tagihan, tapi kasnya jadi 2 baris supaya laporan per
+      //   lembaga & Buku Kas per gedung tetap benar. Uang yang dipecah = yang BENAR-BENAR
+      //   diterima (bisa < nominal tagihan kalau bayar sebagian), dan `pecahProporsional`
+      //   menjamin jumlah baris tepat sama dengan uang itu sampai rupiah terakhir.
+      const pecahan = pecahProporsional(item.komponen, item.nominal)
+      const barisItem = pecahan.length
+        ? pecahan.map((k) => ({
+            kategori: String(k.label || item.jenis),
+            nominal: Number(k.nominal || 0),
+            pos: String(k.pos || '') || _pos,
+            // jejak: baris ini bagian dari tagihan jenis apa (utk audit & rekap gabungan)
+            induk_jenis: item.jenis
+          }))
+        : [{ kategori: item.jenis, nominal: Number(item.nominal || 0), pos: _pos, induk_jenis: '' }]
+      for (const [kompIdx, baris] of barisItem.entries()) {
+        // Baris bernominal 0 (mis. komponen ngaji tergerus pembayaran sebagian) jangan
+        // ditulis — cuma jadi sampah di buku kas.
+        if (baris.nominal <= 0) continue
+        // audit B1: id WAJIB unik per BARIS. Dulu `pos_${Date.now()}_${rand(0..999)}` —
+        //   dalam 1 keranjang loop sinkron → Date.now() SAMA, hanya random pembeda →
+        //   tabrakan (ulang tahun) → INSERT PK dobel gagal → Promise.all reject SETELAH
+        //   sebagian tertulis = commit keuangan PARSIAL. Index = pembeda deterministik.
+        const id = `pos_${trxId}_${itemIdx}_${kompIdx}_${Math.random().toString(36).slice(2, 7)}`
+        const docData = {
+          id,
+          tanggal,
+          tipe: 'masuk',
+          kategori: baris.kategori,
+          nominal: baris.nominal,
+          keterangan: `${baris.kategori} — ${payload.santri_nama} (${payload.santri_nis || payload.santri_id})${item.keterangan ? ' — ' + item.keterangan : ''}${baris.induk_jenis && baris.kategori !== baris.induk_jenis ? ' — bagian dari ' + baris.induk_jenis : ''}`,
+          sumber: 'pos_santri',
+          trx_id: trxId,
+          trx_uid: trxUid,
+          metode: payload.metode || 'Tunai',
+          santri_id: payload.santri_id,
+          santri_nama: payload.santri_nama,
+          operator: op,
+          wali: waliNama,
+          createdAt: serverTimestamp()
+        }
+        if (baris.pos) docData.pos = baris.pos
+        // v.1.2.x: penanda periode utk matriks POS mewarnai sel bayar-muka (tanpa baris tagihan)
+        if (item.periode_kode) docData.periode_kode = item.periode_kode
+        // Tabungan Wajib (dana kelulusan): wali diberi tahu. Pos lain tidak — utk syahriyah dsb
+        // walinya justru sedang di depan kasir, push cuma jadi berisik.
+        if (baris.pos === 'tabungan_wajib' && !tabWajibItems.includes(item))
+          tabWajibItems.push(item)
+        writes.push(setOne('keuangan_buku_induk', id, docData))
+        histori.value.unshift(docData)
+        barisMasuk++
+      }
       totalMasuk += Number(item.nominal || 0)
       // v.21.87.0527: tagihan → lunas penuh atau partial (bayar sebagian)
       if (item.tagihan_id) {
@@ -624,7 +650,7 @@ async function handleSimpan(payload) {
     if (histori.value.length > 5) histori.value = histori.value.slice(0, 5)
     // Update ringkasan harian
     todayStats.value = {
-      count: todayStats.value.count + payload.items.length,
+      count: todayStats.value.count + barisMasuk, // BARIS, sepakat dengan hitungan dari DB
       total: todayStats.value.total + totalMasuk
     }
     const parts = []
@@ -656,7 +682,10 @@ async function handleSimpan(payload) {
       items: payload.items.map((i) => ({
         jenis: i.jenis,
         nominal: Number(i.nominal),
-        keterangan: i.keterangan || ''
+        // K1: di struk tetap SATU baris (wali membayar satu tagihan), rinciannya menempel di
+        //   keterangan — semua pencetak struk (PDF, slip, ESC/P) sudah menampilkan keterangan
+        //   dalam tanda kurung, jadi tak ada renderer yang perlu diubah.
+        keterangan: [i.keterangan || '', rincianKomponen(i)].filter(Boolean).join(' — ')
       })),
       total: _total,
       bayar: Number(payload.total_bayar || 0),
@@ -673,6 +702,19 @@ async function handleSimpan(payload) {
 
 function fmtRp(n) {
   return 'Rp ' + new Intl.NumberFormat('id-ID').format(Math.round(n || 0))
+}
+
+/**
+ * Teks rincian utk struk tagihan gabungan: "termasuk Syahriyah Qiraati Pagi Rp 90.000".
+ * Komponen ke-0 = porsi jenis induk (sekolah) — tak perlu disebut, karena label barisnya
+ * sudah jenis itu sendiri. '' bila bukan tagihan gabungan.
+ */
+function rincianKomponen(item) {
+  const k = Array.isArray(item?.komponen) ? item.komponen : []
+  if (k.length < 2) return ''
+  const ikut = k.slice(1).filter((x) => Number(x?.nominal) > 0)
+  if (!ikut.length) return ''
+  return 'termasuk ' + ikut.map((x) => `${x.label} ${fmtRp(x.nominal)}`).join(', ')
 }
 
 // v.21.88.0527: cetak struk transaksi terakhir

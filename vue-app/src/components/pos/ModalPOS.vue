@@ -10,7 +10,9 @@
 import { ref, computed, watch } from 'vue'
 import { useSettingsStore } from '@/stores/settings'
 // v.1.2.6: filter jenis per status santri · v.1.2.x: + filter jenis kelamin (Putra/Putri)
-import { matchStatusOnly, matchJenisKelamin, matchShiftNgaji } from '@/utils/statusSantri'
+// Kyai 3-4 Agu: seluruh aturan (whitelist, lapis nominal, paket, diskon, pelipatan) di
+//   utils/syahriyah.js — POS memakai sumber yang SAMA dengan generate.
+import { hitungTagihan, jenisBerlakuUntuk, jenisTergabung } from '@/utils/syahriyah'
 import { terbayarDari } from '@/utils/tagihan'
 import { todayJakarta } from '@/utils/format'
 
@@ -95,41 +97,36 @@ const DEFAULT_PRESET = [
   { label: 'Sumbangan Wajib', nominal_default: 0, frekuensi: 'tahunan' },
   { label: 'Lainnya', nominal_default: 0, frekuensi: 'manual' }
 ]
-const presetList = computed(() => {
+// Kyai 3-4 Agu: daftar jenis UTUH (tak dipangkas) — dibutuhkan resolver untuk mendeteksi
+//   pelipatan & lapis nominal. Dulu presetList memangkas objeknya jadi 6 field sehingga
+//   `nominal_per_santri`, paket, diskon, dan gabung MUSTAHIL terbaca di POS — itu akar
+//   perbedaan nominal antara sel POS dan tagihan hasil generate.
+const jenisSemua = computed(() => {
   const fromSetting = settings.settings?.keuTagihanJenis
-  const santriLemb = String(props.santri?.lembaga || '').trim()
-  const santriLembSekolah = String(props.santri?.lembaga_sekolah || '').trim()
-  if (Array.isArray(fromSetting) && fromSetting.length > 0) {
-    return fromSetting
-      .filter((j) => {
-        const lbl = String(j.label || j.nama || j.id || '')
-          .toLowerCase()
-          .trim()
-        if (!lbl || lbl === 'tabungan') return false
-        if (!matchStatusOnly(props.santri, j.status_only)) return false
-        if (!matchJenisKelamin(props.santri, j.jk_only)) return false // v.1.2.x: Putra/Putri
-        // Kyai 4 Agu: shift ngaji (pagi/sore) — kosong = semua. Santri yang shift_ngaji-nya
-        //   belum diisi dianggap ikut KEDUANYA, jadi selnya tetap muncul (tak ada yang hilang
-        //   dari matriks POS sebelum data dikoreksi guru kelas).
-        if (!matchShiftNgaji(props.santri, j.shift_only)) return false
-        const wl = Array.isArray(j.lembaga_only) ? j.lembaga_only.filter(Boolean) : []
-        if (wl.length === 0) return true
-        return wl.includes(santriLemb) || wl.includes(santriLembSekolah)
-      })
-      .map((j) => ({
-        label: j.label || j.nama || j.id || '-',
-        frekuensi: j.frekuensi || (j.auto_generate ? 'bulanan' : 'manual'),
-        pos: j.pos || '',
-        nominal_default: Number(j.nominal_default || j.nominal || 0) || 0,
-        nominal_per_lembaga:
-          j.nominal_per_lembaga && typeof j.nominal_per_lembaga === 'object'
-            ? j.nominal_per_lembaga
-            : {},
-        nominal_per_kelas:
-          j.nominal_per_kelas && typeof j.nominal_per_kelas === 'object' ? j.nominal_per_kelas : {}
-      }))
-  }
-  return DEFAULT_PRESET
+  return Array.isArray(fromSetting) && fromSetting.length > 0 ? fromSetting : []
+})
+const presetList = computed(() => {
+  if (!jenisSemua.value.length) return DEFAULT_PRESET
+  // Jenis yang MENEMPEL ke jenis lain untuk santri ini tak boleh tampil sebagai baris/sel
+  //   sendiri — nominalnya sudah termasuk di tagihan targetnya (Kyai: "200rb itu sudah
+  //   termasuk, baik untuk TPQ 90rb atau PTPT 100rb").
+  const tergabung = jenisTergabung(jenisSemua.value, props.santri)
+  return jenisSemua.value
+    .filter((j) => {
+      const lbl = String(j.label || j.nama || j.id || '')
+        .toLowerCase()
+        .trim()
+      if (!lbl || lbl === 'tabungan') return false
+      if (tergabung.has(String(j.id || ''))) return false
+      // Seluruh whitelist (lembaga/status/JK/shift) dijalankan resolver — satu sumber,
+      //   supaya POS tak pernah beda pendapat dengan generate.
+      return jenisBerlakuUntuk(j, props.santri)
+    })
+    .map((j) => ({
+      label: j.label || j.nama || j.id || '-',
+      frekuensi: j.frekuensi || (j.auto_generate ? 'bulanan' : 'manual'),
+      pos: j.pos || ''
+    }))
 })
 // Scope jenis ikut filter presetList (lembaga_only + status_only + jk_only, kosong = semua).
 const jenisBulanan = computed(() => presetList.value.filter((j) => j.frekuensi === 'bulanan'))
@@ -175,32 +172,41 @@ function periodeKodeOf(t) {
   return ''
 }
 
-// tarif 3-lapis: per_kelas → per_lembaga → default
+// tarif resmi santri ini untuk 1 jenis (resolver: per_santri → paket → kombinasi →
+//   per_kelas → per_lembaga → default, lalu diskon anak guru)
 function lookupNominal(label) {
-  const match = presetList.value.find((p) => p.label === label)
-  if (!match) return 0
-  const lembagaKey = props.santri?.lembaga || ''
-  const lembagaSekolahKey = props.santri?.lembaga_sekolah || ''
-  const kelasKey = String(props.santri?.kelas || '')
-  const kelasSekolahKey = String(props.santri?.kelas_sekolah || '')
-  const perK = match.nominal_per_kelas || {}
-  let lookup = 0
-  for (const [lemb, kelasKey1, kelasKey2] of [
-    [lembagaKey, kelasKey, kelasSekolahKey],
-    [lembagaSekolahKey, kelasSekolahKey, kelasKey]
-  ]) {
-    if (!lemb) continue
-    const inner = perK[lemb] || {}
-    const v = Number(inner[kelasKey1] || inner[kelasKey2] || 0)
-    if (v > 0) {
-      lookup = v
-      break
-    }
+  // Kyai 3-4 Agu: SATU sumber dengan generate — dulu di sini rumusnya cuma 3 lapis dan
+  //   `nominal_per_santri` tak terbaca sama sekali, sehingga sel sintesis POS bisa berbeda
+  //   dari tagihan yang di-generate untuk santri yang sama. Kini memakai resolver, jadi
+  //   paket, diskon anak guru, tarif kombinasi, dan pelipatan ikut terhitung.
+  if (!jenisSemua.value.length) {
+    const d = DEFAULT_PRESET.find((p) => p.label === label)
+    return Number(d?.nominal_default || 0)
   }
-  if (lookup > 0) return lookup
-  const perL = match.nominal_per_lembaga || {}
-  const override = Number(perL[lembagaKey] || perL[lembagaSekolahKey] || 0)
-  return override > 0 ? override : Number(match.nominal_default || 0)
+  const j = jenisSemua.value.find((x) => String(x.label || x.nama || x.id || '') === String(label))
+  if (!j) return 0
+  const h = hitungTagihan(j, props.santri, jenisSemua.value)
+  return h ? Number(h.nominal || 0) : 0
+}
+
+/**
+ * Rincian komponen untuk 1 sel — dipakai struk ("sudah termasuk ngaji ...") dan pemecahan
+ * Buku Induk (K1). Dua sumber, urutannya penting:
+ *   1. tagihan NYATA → pakai jejak `data.komponen` yang tersimpan saat tagihan terbit.
+ *      JANGAN dihitung ulang: nominal tagihan bisa sudah disunting manual sesudah terbit,
+ *      dan konfigurasi jenis bisa berubah — rincian harus setia pada tagihan itu.
+ *   2. sel sintesis (belum ada tagihan) → dari resolver.
+ * Kembalian [] = tak ada pemecahan, jalur lama (satu baris Buku Induk) berlaku.
+ */
+function komponenOf(label, tg) {
+  const dariTagihan = tg && Array.isArray(tg.komponen) ? tg.komponen : null
+  if (dariTagihan) return dariTagihan.filter((k) => k && Number(k.nominal) >= 0)
+  if (tg) return [] // tagihan lama tanpa jejak komponen → jangan mengarang
+  if (!jenisSemua.value.length) return []
+  const j = jenisSemua.value.find((x) => String(x.label || x.nama || x.id || '') === String(label))
+  if (!j) return []
+  const h = hitungTagihan(j, props.santri, jenisSemua.value)
+  return h && Array.isArray(h.komponen) ? h.komponen : []
 }
 
 function cellStatus(tariff, paid) {
@@ -273,7 +279,8 @@ const matrix = computed(() => {
         sisa: Math.max(0, tariff - paid),
         status: pre ? 'pre' : cellStatus(tariff, paid),
         tagId,
-        pos: tg?.pos || posOf(j.label)
+        pos: tg?.pos || posOf(j.label),
+        komponen: komponenOf(j.label, tg)
       }
     })
     rows.push({ jenis: j.label, cells })
@@ -321,7 +328,8 @@ const nonbulananRows = computed(() => {
       sisa: Math.max(0, tariff - paid),
       status: cellStatus(tariff, paid),
       tagId,
-      pos: tg?.pos || posOf(j.label)
+      pos: tg?.pos || posOf(j.label),
+      komponen: komponenOf(j.label, tg)
     })
   }
   // orphan: tagihan belum/partial T.A. berjalan yg jenisnya tak terdaftar (jangan sampai tersembunyi)
@@ -344,7 +352,8 @@ const nonbulananRows = computed(() => {
       sisa: Math.max(0, tariff - paid),
       status: cellStatus(tariff, paid),
       tagId: t.id,
-      pos: t.pos || ''
+      pos: t.pos || '',
+      komponen: Array.isArray(t.komponen) ? t.komponen : []
     })
   }
   return rows
@@ -372,7 +381,8 @@ const tunggakanLama = computed(() => {
       sisa: Math.max(0, tariff - paid),
       status: cellStatus(tariff, paid),
       tagId: t.id,
-      pos: t.pos || ''
+      pos: t.pos || '',
+      komponen: Array.isArray(t.komponen) ? t.komponen : []
     })
   }
   out.sort((a, b) => a.kode.localeCompare(b.kode))
@@ -403,6 +413,9 @@ function toggleCell(d) {
     dibayar_lama: Number(d.paid || 0),
     pos: d.pos || '',
     periode_kode: d.kode || '',
+    // K1: rincian sekolah+ngaji ikut ke keranjang → PosSantriView memecahnya jadi beberapa
+    //   baris Buku Induk, dan struk bisa menulis "sudah termasuk ngaji ...".
+    komponen: Array.isArray(d.komponen) ? d.komponen : [],
     manual: false
   })
 }
@@ -417,6 +430,7 @@ function addManual(j) {
     dibayar_lama: 0,
     pos: j.pos || posOf(j.label),
     periode_kode: '',
+    komponen: komponenOf(j.label, null),
     manual: true
   })
 }
@@ -494,7 +508,8 @@ function simpan() {
       nominal_penuh: Number(c.nominal_penuh || 0),
       dibayar_lama: Number(c.dibayar_lama || 0),
       pos: c.pos || '',
-      periode_kode: c.periode_kode || ''
+      periode_kode: c.periode_kode || '',
+      komponen: Array.isArray(c.komponen) ? c.komponen : []
     })),
     total_tagihan: total.value,
     total_bayar: isTunai.value ? bayar.value : total.value,
@@ -712,6 +727,17 @@ function onBackdrop(e) {
                           placeholder="keterangan (opsional)"
                         />
                         <div v-else class="ci-k">{{ c.keterangan || '—' }}</div>
+                        <!-- K1: kasir harus melihat bahwa 1 sel ini mencakup ngaji, supaya tak
+                             mencari-cari sel ngaji yang (memang) tak ada lagi -->
+                        <div v-if="(c.komponen || []).length > 1" class="ci-komp">
+                          <i class="fas fa-layer-group"></i> termasuk
+                          {{
+                            c.komponen
+                              .slice(1)
+                              .map((k) => k.label + ' ' + fmtRp(k.nominal))
+                              .join(' · ')
+                          }}
+                        </div>
                       </div>
                       <input v-model.number="c.nominal" type="number" class="ci-nom" />
                       <button
@@ -1378,6 +1404,15 @@ td.jns {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.ci-komp {
+  font-size: 0.62rem;
+  color: #0f766e;
+  line-height: 1.3;
+  margin-top: 2px;
+}
+:global(.dark) .ci-komp {
+  color: #5eead4;
 }
 .ci-ket-inp {
   font-size: 0.64rem;
