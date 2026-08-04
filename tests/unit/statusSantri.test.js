@@ -8,7 +8,8 @@ import {
   matchJenisKelamin,
   JK_OPTS,
   matchShiftNgaji,
-  SHIFT_NGAJI_OPTS
+  SHIFT_NGAJI_OPTS,
+  statusTinggalDariPsb
 } from '@/utils/statusSantri'
 
 const nonMukim = { id: 1, is_mukim: false, is_fullday: false }
@@ -138,5 +139,56 @@ describe('matchShiftNgaji — whitelist shift ngaji pada jenis pembayaran', () =
 
   it('SHIFT_NGAJI_OPTS memuat pagi & sore', () => {
     expect(SHIFT_NGAJI_OPTS.map((o) => o.key)).toEqual(['pagi', 'sore'])
+  })
+})
+
+// Konversi PSB→santri: dulu status tinggal TAK disalin, jadi semua santri hasil PSB jatuh
+// 'non_mukim' → whitelist status_only & syarat gabung 'fullday' salah sasaran (uang).
+describe('statusTinggalDariPsb', () => {
+  it('flag dari formulir PSB dipakai apa adanya', () => {
+    expect(statusTinggalDariPsb({ is_mukim: true, is_fullday: false })).toEqual({
+      is_mukim: true,
+      is_fullday: false
+    })
+    expect(statusTinggalDariPsb({ is_mukim: false, is_fullday: true })).toEqual({
+      is_mukim: false,
+      is_fullday: true
+    })
+  })
+
+  it('flag menang atas tipe_santri (jangan menebak kalau sudah ada jawabannya)', () => {
+    expect(statusTinggalDariPsb({ is_mukim: false, tipe_santri: 'mahad' }).is_mukim).toBe(false)
+    expect(statusTinggalDariPsb({ is_fullday: false, tipe_santri: 'fullday' }).is_fullday).toBe(
+      false
+    )
+  })
+
+  it('baris PSB lama tanpa flag → turunkan dari tipe_santri', () => {
+    expect(statusTinggalDariPsb({ tipe_santri: 'mahad' })).toEqual({
+      is_mukim: true,
+      is_fullday: false
+    })
+    expect(statusTinggalDariPsb({ tipe_santri: 'FULLDAY' })).toEqual({
+      is_mukim: false,
+      is_fullday: true
+    })
+    expect(statusTinggalDariPsb({ tipe_santri: 'pp' })).toEqual({
+      is_mukim: false,
+      is_fullday: false
+    })
+  })
+
+  it('kosong/null/aneh → non-mukim, tak melempar', () => {
+    expect(statusTinggalDariPsb({})).toEqual({ is_mukim: false, is_fullday: false })
+    expect(statusTinggalDariPsb(null)).toEqual({ is_mukim: false, is_fullday: false })
+    expect(statusTinggalDariPsb({ is_mukim: null, tipe_santri: 'mahad' }).is_mukim).toBe(true)
+    expect(statusTinggalDariPsb({ is_mukim: 'ya' }).is_mukim).toBe(false) // harus boolean true
+  })
+
+  it('hasilnya langsung dipahami matchStatusOnly (rantai nyata)', () => {
+    const s = statusTinggalDariPsb({ tipe_santri: 'fullday' })
+    expect(matchStatusOnly(s, ['fullday'])).toBe(true)
+    expect(matchStatusOnly(s, ['non_mukim'])).toBe(false)
+    expect(matchStatusOnly(statusTinggalDariPsb({ tipe_santri: 'pp' }), ['non_mukim'])).toBe(true)
   })
 })

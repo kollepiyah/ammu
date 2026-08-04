@@ -285,6 +285,7 @@ import { RouterLink, useRoute } from 'vue-router'
 import { subscribeDoc, updateOne, addOne, getAll } from '@/services/db'
 import { provisionAkunSenyap } from '@/services/authSupabase' // K1-b: akun login ikut lahir
 import { nextNisForNew } from '@/utils/nisGenerator' // v.100 Batch14: NIS PSB = append (lanjut NNNN)
+import { statusTinggalDariPsb } from '@/utils/statusSantri' // Kyai 3-4 Agu: mahad/fullday ikut terbawa
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
@@ -568,6 +569,11 @@ async function convertToSantri() {
         pendidikan: p.pendidikan_ibu || '',
         telp: p.telp_ibu || p.hp_ibu || ''
       },
+      // Kyai 3-4 Agu: STATUS TINGGAL wajib ikut — dulu tak disalin, jadi SEMUA santri hasil
+      //   PSB jatuh 'non_mukim' padahal formulir PSB sudah menyimpan flag-nya. Aturannya
+      //   (+ alasan kenapa ini menyetir uang) di utils/statusSantri.statusTinggalDariPsb.
+      ...statusTinggalDariPsb(p),
+      tipe_santri: p.tipe_santri || '', // jejak pilihan asli di formulir PSB
       aktif: true,
       psb_id: docId.value,
       audit: {

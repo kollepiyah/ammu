@@ -72,6 +72,34 @@ export function matchShiftNgaji(s, shiftOnly) {
 }
 
 /**
+ * Status tinggal (`is_mukim`/`is_fullday`) dari satu baris pendaftaran PSB.
+ *
+ * Kyai 3-4 Agu 2026: formulir PSB sudah menurunkan kedua flag ini dari pilihan
+ * `tipe_santri` (`mahad|pp|fullday`) dan menyimpannya di baris pendaftaran, TAPI konversi
+ * PSB→santri dulu tak menyalinnya sama sekali — jadi SEMUA santri hasil PSB jatuh
+ * 'non_mukim'. Itu menyetir uang: whitelist `status_only` pada jenis pembayaran dan syarat
+ * penggabungan 'fullday' (syahriyah ngaji sore sudah termasuk di syahriyah fullday)
+ * dua-duanya bergantung pada flag ini.
+ *
+ * Flag eksplisit selalu menang; `tipe_santri` hanya CADANGAN untuk baris PSB lama yang
+ * belum punya flag-nya. Nilai selain 'mahad'/'fullday' (termasuk 'pp') → non-mukim.
+ *
+ * @param {Object} p - baris psb_pendaftaran (sudah diratakan `_flatten`).
+ * @returns {{is_mukim: boolean, is_fullday: boolean}}
+ */
+export function statusTinggalDariPsb(p) {
+  const tipe = String((p && p.tipe_santri) || '')
+    .trim()
+    .toLowerCase()
+  const punyaMukim = p && p.is_mukim !== undefined && p.is_mukim !== null
+  const punyaFullday = p && p.is_fullday !== undefined && p.is_fullday !== null
+  return {
+    is_mukim: punyaMukim ? p.is_mukim === true : tipe === 'mahad',
+    is_fullday: punyaFullday ? p.is_fullday === true : tipe === 'fullday'
+  }
+}
+
+/**
  * Apakah santri `s` cocok dengan whitelist status `statusOnly`?
  *   - whitelist kosong / bukan array → true (berlaku untuk SEMUA status).
  *   - antar-status bersifat OR (santri masuk bila cocok SALAH SATU status terpilih).
