@@ -1788,13 +1788,13 @@ async function simpanPengaturanRekap() {
               <b>Level → Pra PTPT</b>, <b>Juz (utuh) → PTPT</b>, <b>Pra PTPT → Pra PTPT</b>,
               <b>Jilid/KPI → TPQ</b> tapi lembaga tak cocok — saran bisa DIUBAH per baris; (B)
               <b>Lembaga Sekolah berisi nama lembaga ngaji/asrama</b> (mis. "TPQ Pagi") →
-              dikosongkan; (C) lembaga TPQ <b>Pagi</b> tapi sekolah TK (bentrok jam pagi) → cek
-              manual (default tidak dicentang). Nilai lama di-backup ke audit_log.
+              dikosongkan; (C) lembaga ngaji <b>pagi</b> tapi sekolahnya juga pagi (bentrok jam) →
+              cek manual (default tidak dicentang). Nilai lama di-backup ke audit_log.
             </p>
             <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
-              Aturan (B) membaca <b>Tab Lembaga/Divisi</b>: yang bertipe <b>Formal</b> dihitung
-              sekolah sah dan TIDAK diutak-utik — jadi sekolah yang Anda tambah sendiri (mis. "Kelas
-              Baca") aman.
+              Aturan (B) &amp; (C) membaca <b>Tab Lembaga/Divisi</b>: yang bertipe <b>Formal</b>
+              dihitung sekolah sah dan TIDAK diutak-utik — jadi sekolah yang Anda tambah sendiri
+              (mis. "Kelas Baca") aman.
             </p>
           </div>
           <span
@@ -1833,7 +1833,7 @@ async function simpanPengaturanRekap() {
           class="mt-2 text-xs text-amber-800 dark:text-amber-200 font-bold"
         >
           <i class="fas fa-triangle-exclamation mr-1"></i>Daftar Lembaga/Divisi belum termuat —
-          aturan (B) dimatikan sementara supaya tidak salah mengosongkan sekolah yang sah.
+          aturan (B) &amp; (C) dimatikan sementara supaya tidak salah mengosongkan sekolah yang sah.
         </div>
         <div
           v-if="lfixFindings && lfixFindings.length === 0"

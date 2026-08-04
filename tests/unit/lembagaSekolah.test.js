@@ -239,6 +239,91 @@ describe('scanLembagaFix Rule B — jangan kosongkan sekolah yang SAH', () => {
   })
 })
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Rule C (bentrok jam pagi) dulu mengunci DUA nama di kode: /tpq\s*pagi/ × 'tk'.
+// v.1.2.6 melepas kuncinya, TAPI patch-nya mengosongkan lembaga_sekolah — jadi
+// syarat mutlaknya: untuk data yang ada sekarang hasilnya PERSIS sama dengan versi
+// lama. Master Kyai (terverifikasi 4 Agu) tak menyimpan `shift` sama sekali, jadi jam
+// masuk memang tak bisa diturunkan dari data; "TK itu pagi" tetap fakta lapangan.
+// ─────────────────────────────────────────────────────────────────────────────
+describe('scanLembagaFix Rule C — bentrok jam pagi', () => {
+  // Bentuk NYATA master 4 Agu 2026: hanya {lembaga, tipe} — tanpa group/shift.
+  const MASTER_4AGU = [
+    { lembaga: 'TPQ Pagi', tipe: 'Qiraati' },
+    { lembaga: 'TPQ Sore', tipe: 'Qiraati' },
+    { lembaga: 'Pra PTPT' },
+    { lembaga: 'PTPT', tipe: 'Qiraati' },
+    { lembaga: 'SDI', tipe: 'Formal' },
+    { lembaga: 'PKBM', tipe: 'Formal' },
+    { lembaga: 'TK', tipe: 'Formal' },
+    { lembaga: 'PPPH', tipe: 'Qiraati' },
+    { lembaga: 'Kelas Baca', tipe: 'Formal' }
+  ]
+  const ruleC = (santri, master = MASTER_4AGU) =>
+    scanLembagaFix(santri, master).filter((f) => f.type === 'tpq_tk')
+
+  it('KUNCI: TPQ Pagi + TK tetap tertangkap, dan tetap default TIDAK dicentang', () => {
+    const out = ruleC([{ id: '1', nama: 'A', lembaga: 'TPQ Pagi', lembaga_sekolah: 'TK' }])
+    expect(out).toHaveLength(1)
+    expect(out[0].defaultOn).toBe(false)
+    expect(out[0].patch).toEqual({ lembaga_sekolah: '', kelas_sekolah: '' })
+  })
+
+  it('TPQ SORE + TK tetap WAJAR (tak diflag)', () => {
+    expect(ruleC([{ id: '1', nama: 'A', lembaga: 'TPQ Sore', lembaga_sekolah: 'TK' }])).toEqual([])
+  })
+
+  it('TIDAK meluas: sekolah pagi lain (SDI/PKBM/Kelas Baca) tak ikut jadi temuan', () => {
+    // Ini yang menjaga agar perubahan tak menambah saran PENGOSONGAN pada data nyata.
+    const out = ruleC([
+      { id: '1', nama: 'A', lembaga: 'TPQ Pagi', lembaga_sekolah: 'SDI' },
+      { id: '2', nama: 'B', lembaga: 'TPQ Pagi', lembaga_sekolah: 'PKBM' },
+      { id: '3', nama: 'C', lembaga: 'TPQ Pagi', lembaga_sekolah: 'Kelas Baca' }
+    ])
+    expect(out).toEqual([])
+  })
+
+  it('lepas dari kunci nama: lembaga ngaji pagi BARU ikut terbaca', () => {
+    const master = [...MASTER_4AGU, { lembaga: 'Qiraati Pagi', tipe: 'Qiraati' }]
+    const out = ruleC(
+      [{ id: '1', nama: 'A', lembaga: 'Qiraati Pagi', lembaga_sekolah: 'TK' }],
+      master
+    )
+    expect(out).toHaveLength(1)
+  })
+
+  it('sekolah yang kebetulan bernama "…pagi" BUKAN sisi ngaji', () => {
+    // Sisi ngaji wajib bertipe Qiraati menurut master — bukan sekadar mengandung "pagi".
+    const master = [...MASTER_4AGU, { lembaga: 'Kelas Pagi', tipe: 'Formal' }]
+    const out = ruleC(
+      [{ id: '1', nama: 'A', lembaga: 'Kelas Pagi', lembaga_sekolah: 'TK' }],
+      master
+    )
+    expect(out).toEqual([])
+  })
+
+  it('sisi sekolah wajib sekolah formal MENURUT master', () => {
+    // Kyai mengubah tipe TK jadi Qiraati → `tipe` menang atas konstanta, jadi TK tak
+    // lagi terbaca sekolah dan Rule C diam. Ini yang membuktikan gerbangnya master,
+    // bukan daftar nama. (Menghapus TK dari master TIDAK mematikannya — groupOfLembaga
+    // memang sengaja jatuh ke konstanta LEMBAGA_GROUPS, lihat tes "3." di atas.)
+    const master = MASTER_4AGU.map((l) => (l.lembaga === 'TK' ? { ...l, tipe: 'Qiraati' } : l))
+    const out = ruleC([{ id: '1', nama: 'A', lembaga: 'TPQ Pagi', lembaga_sekolah: 'TK' }], master)
+    expect(out).toEqual([])
+  })
+
+  it('master belum termuat → Rule C ikut DIAM (patch-nya mengosongkan data)', () => {
+    const santri = [{ id: '1', nama: 'A', lembaga: 'TPQ Pagi', lembaga_sekolah: 'TK' }]
+    expect(ruleC(santri, [])).toEqual([])
+    expect(scanLembagaFix(santri).filter((f) => f.type === 'tpq_tk')).toEqual([])
+  })
+
+  it('ejaan berantakan tetap cocok (data impor)', () => {
+    const out = ruleC([{ id: '1', nama: 'A', lembaga: '  tpq   PAGI ', lembaga_sekolah: ' tk ' }])
+    expect(out).toHaveLength(1)
+  })
+})
+
 describe('groupOfLembaga — bentuk data & masukan aneh', () => {
   it('baris master boleh {nama} maupun {lembaga}', () => {
     expect(groupOfLembaga('SMK', [{ nama: 'SMK', tipe: 'Formal' }])).toBe('sekolah')

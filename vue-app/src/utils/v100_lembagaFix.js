@@ -25,9 +25,32 @@ function low(v) {
 function isTpqFamily(lmb) {
   return low(lmb).startsWith('tpq')
 }
-// TPQ PAGI saja (ngaji pagi) — bentrok jam dgn sekolah TK (juga pagi).
-function isTpqPagi(lmb) {
-  return /tpq\s*pagi/.test(low(lmb))
+
+// ── Rule C: bentrok jam PAGI antara lembaga ngaji dan sekolah ────────────────
+// v.1.2.6: dulu `/tpq\s*pagi/` × `ls === 'tk'` — dua nama dikunci di kode. Master
+//   Kyai TIDAK menyimpan `shift` sama sekali (terverifikasi 4 Agu: barisnya cuma
+//   {lembaga, tipe, kelas, …}), jadi jam masuk lembaga MEMANG tak ada di data dan
+//   tak bisa diturunkan dari sana. Yang bisa dilepas dari kunci nama:
+//     - sisi NGAJI  : cukup "lembaga qiraati yang namanya menyebut pagi" — lembaga
+//                     ngaji pagi baru (mis. "Qiraati Pagi") ikut terbaca, tapi
+//                     sekolah yang kebetulan bernama "…pagi" TIDAK (harus qiraati).
+//     - sisi SEKOLAH: wajib sekolah formal MENURUT MASTER (isSekolahLembaga), lalu
+//                     dicocokkan ke daftar jenjang pagi di bawah.
+//   SEKOLAH_PAGI itu FAKTA LAPANGAN dari Kyai ("TK itu pagi"), bukan tebakan yang
+//   bisa digantikan data — karena itu ia daftar eksplisit, dan sengaja TIDAK
+//   digeneralisasi jadi "semua sekolah formal": itu akan menambah temuan baru yang
+//   patch-nya MENGOSONGKAN lembaga_sekolah. Untuk data 4 Agu 2026 hasilnya PERSIS
+//   sama dengan versi lama (dijaga tes) — perubahan ini murni melepas kunci nama.
+const SEKOLAH_PAGI = ['tk']
+
+function isNgajiPagi(lmb, lembagaList) {
+  const n = low(lmb)
+  if (!n || !/\bpagi\b/.test(n)) return false
+  return groupOfLembaga(lmb, lembagaList) === 'qiraati'
+}
+function isSekolahPagi(lmb, lembagaList) {
+  if (!isSekolahLembaga(lmb, lembagaList)) return false
+  return SEKOLAH_PAGI.includes(low(lmb))
 }
 
 // Tebak lembaga Qiraati yang BENAR dari string kelas. '' = tidak bisa menebak.
@@ -110,14 +133,16 @@ export function scanLembagaFix(santriList = [], lembagaList = null) {
       }
     }
 
-    // ── Rule C (cek manual): TPQ PAGI tapi sekolah TK ──
+    // ── Rule C (cek manual): ngaji PAGI tapi sekolahnya juga pagi ──
     // kyai: santri TPQ Pagi (ngaji pagi) tidak mungkin TK (sekolah pagi) — bentrok jam.
     //   TPQ SORE + TK itu WAJAR (TK pagi, ngaji sore) → JANGAN diflag.
-    if (isTpqPagi(s.lembaga) && ls === 'tk') {
+    //   v.1.2.6: kedua sisi lewat helper di atas; ikut mati kalau master belum termuat
+    //   (isSekolahPagi butuh master) supaya tak menyarankan pengosongan tanpa dasar.
+    if (masterSiap && isNgajiPagi(s.lembaga, lembagaList) && isSekolahPagi(ls, lembagaList)) {
       findings.push({
         ...base,
         type: 'tpq_tk',
-        alasan: `Lembaga ${s.lembaga} (ngaji pagi) tapi sekolah TK — bentrok jam pagi, cek manual`,
+        alasan: `Lembaga ${s.lembaga} (ngaji pagi) tapi sekolah ${s.lembaga_sekolah} (juga pagi) — bentrok jam, cek manual`,
         patch: { lembaga_sekolah: '', kelas_sekolah: '' },
         defaultOn: false
       })
