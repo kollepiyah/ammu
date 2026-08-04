@@ -235,6 +235,21 @@
                     class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)]"
                   />
                 </div>
+                <!-- v.1.2.6 (Kyai): kas per lembaga. Kategori kas manual itu teks bebas
+                     (tak ada jenis pembayaran), jadi lembaganya ditunjuk di sini —
+                     mis. beli papan tulis SDI dibebankan ke kas SDI. -->
+                <div>
+                  <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1"
+                    >Masuk Kas Lembaga</label
+                  >
+                  <select
+                    v-model="inputForm.lembaga"
+                    class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)]"
+                  >
+                    <option value="">Kas Induk / Yayasan</option>
+                    <option v-for="l in lembagaOpsi" :key="`kas_${l}`" :value="l">{{ l }}</option>
+                  </select>
+                </div>
                 <div>
                   <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1"
                     >Keterangan *</label
@@ -650,6 +665,7 @@ import { definePageActions } from '@/composables/useRibbonContext'
 // v.91.0626: deleteOne = backup audit_log dulu. serverTimestamp = shim ISO (db.js).
 import {
   subscribeColl,
+  subscribeDoc,
   setOne,
   updateOne,
   deleteOne,
@@ -898,6 +914,7 @@ const inputForm = reactive({
   tipe: 'masuk',
   metode: 'Tunai', // v.1.2.6: cara bayar kas manual
   kategori: '',
+  lembaga: '', // v.1.2.6: kas lembaga tujuan ('' = Kas Induk/Yayasan)
   keterangan: '',
   nominal: 0
 })
@@ -909,6 +926,7 @@ function bukaModalInput() {
   inputForm.tipe = 'masuk'
   inputForm.metode = 'Tunai'
   inputForm.kategori = ''
+  inputForm.lembaga = ''
   inputForm.keterangan = ''
   inputForm.nominal = 0
   modalInputOpen.value = true
@@ -942,6 +960,7 @@ function bukaEditBuku(b) {
   // v.1.2.6: cara bayar — baris lama tanpa field metode disimpulkan dari sumber
   inputForm.metode = metodeTransaksi(b)
   inputForm.kategori = b.kategori || ''
+  inputForm.lembaga = b.lembaga || ''
   inputForm.keterangan = b.keterangan || ''
   inputForm.nominal = Number(b.nominal || b.masuk || b.keluar || 0)
   modalInputOpen.value = true
@@ -965,6 +984,9 @@ async function simpanInputManual() {
         tipe: inputForm.tipe,
         metode: inputForm.metode || 'Tunai',
         kategori: inputForm.kategori.trim() || 'Manual',
+        // v.1.2.6: kas lembaga. '' = Kas Induk — sengaja DITULIS (bukan dilewati) supaya
+        //   koreksi bisa memindahkan baris kembali ke Kas Induk.
+        lembaga: String(inputForm.lembaga || '').trim(),
         keterangan: inputForm.keterangan.trim(),
         nominal: Number(inputForm.nominal) || 0
       }
@@ -982,6 +1004,8 @@ async function simpanInputManual() {
         tipe: inputForm.tipe,
         metode: inputForm.metode || 'Tunai',
         kategori: inputForm.kategori.trim() || 'Manual',
+        // v.1.2.6 (Kyai): kas lembaga tujuan; '' = Kas Induk/Yayasan
+        lembaga: String(inputForm.lembaga || '').trim(),
         keterangan: inputForm.keterangan.trim(),
         nominal: Number(inputForm.nominal) || 0,
         sumber: 'manual',
@@ -1181,16 +1205,29 @@ const periodeSlug = computed(() => {
 // v.1.2.6: subtotal tunai vs transfer atas baris yang sedang tampil (dasar laporan harian)
 const rekapMetode = computed(() => ringkasMetode(filteredBuku.value))
 
+// v.1.2.6 (Kyai): daftar lembaga untuk pilihan "Masuk Kas Lembaga" pada kas manual.
+//   subscribeDoc langsung (1 baris master) — useLembaga() ikut memuat guru + santri
+//   PENUH, beban yang tak ada gunanya di halaman ini.
+const lembagaRaw = ref([])
+let unsubLembaga = null
+const lembagaOpsi = computed(() =>
+  (lembagaRaw.value || []).map((l) => String(l?.lembaga || l?.nama || '').trim()).filter(Boolean)
+)
+
 onMounted(() => {
   unsub = subscribeColl('keuangan_buku_induk', (docs) => {
     bukuRaw.value = docs
     loading.value = false
   })
+  unsubLembaga = subscribeDoc('master', 'lembaga', (doc) => {
+    lembagaRaw.value = Array.isArray(doc?.list) ? doc.list : []
+  })
 })
 onUnmounted(() => {
-  if (unsub) {
+  for (const fn of [unsub, unsubLembaga]) {
+    if (!fn) continue
     try {
-      unsub()
+      fn()
     } catch (e) {}
   }
 })

@@ -1727,6 +1727,32 @@
               </select>
             </div>
           </div>
+          <!-- Kyai 4 Agu: kas lembaga — uang jenis ini masuk buku kas lembaga mana.
+               BEDA dari "Hanya untuk lembaga ini" di Tarif Khusus (itu penyaring siapa
+               yang DITAGIH); yang ini menentukan kasnya. -->
+          <div>
+            <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
+              >Masuk Kas Lembaga</label
+            >
+            <select
+              v-model="dlgJenis.kas_lembaga"
+              class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
+            >
+              <option value="">Kas Induk / belum ditentukan</option>
+              <option
+                v-for="lemb in lembagaRaw || []"
+                :key="`dlg_kas_${lemb.lembaga}`"
+                :value="lemb.lembaga"
+              >
+                {{ lemb.lembaga }}
+              </option>
+            </select>
+            <p class="text-[10px] text-[var(--text-secondary)] mt-1 italic">
+              <i class="fas fa-info-circle mr-1"></i>Dipakai laporan kas per lembaga. Dibiarkan
+              kosong: kalau "Hanya untuk lembaga ini" berisi <b>tepat satu</b> lembaga, kas ikut
+              lembaga itu — selain itu masuk Kas Induk.
+            </p>
+          </div>
           <div>
             <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
               >Nominal Default (Rp) — 0 = variabel</label
@@ -3225,7 +3251,10 @@ function loadFromSettings() {
     }
   }
   const taNow = taBerjalan.value
-  if (!nextByTA[taNow]) nextByTA[taNow] = arr // migrasi dari keuTagihanJenis (global) lama
+  // Migrasi dari keuTagihanJenis (global) lama. Lewat normalizeJenisRaw supaya jalur ini
+  //   tak lagi menjatuhkan field yang lahir belakangan — pembangun `arr` di atas warisan
+  //   v.21 dan tak pernah ikut ditambahi shift_only/gabung_ke/paket/kas_lembaga.
+  if (!nextByTA[taNow]) nextByTA[taNow] = arr.map(normalizeJenisRaw)
   jenisByTA.value = nextByTA
   taAktif.value = taNow
   jenisList.value = nextByTA[taNow]
@@ -3862,6 +3891,9 @@ function serializeJenisList(list) {
         status_only: wlStatus,
         jk_only: wlJk,
         shift_only: wlShift,
+        // Kyai 4 Agu: kas lembaga — uang jenis ini masuk buku kas lembaga mana.
+        //   BEDA dari lembaga_only (itu penyaring "siapa yang ditagih").
+        kas_lembaga: String(t.kas_lembaga || '').trim(),
         gabung_ke: gabungKe,
         gabung_syarat: gabungSyarat,
         paket,
@@ -4044,6 +4076,7 @@ function openJenisBaru() {
     status_only: [], // v.1.2.6: whitelist status santri (kosong = semua)
     jk_only: [], // v.1.2.x: whitelist jenis kelamin (kosong = semua)
     shift_only: [], // Kyai 4 Agu: whitelist shift ngaji pagi/sore (kosong = semua)
+    kas_lembaga: '', // Kyai 4 Agu: buku kas lembaga tujuan (kosong = Kas Induk)
     gabung_ke: [], // Kyai 3-4 Agu: kosong = jenis ini ditagih sendiri
     gabung_syarat: 'punya_sekolah',
     nominal_per_kelas: {},
@@ -4096,6 +4129,7 @@ function normalizeJenisRaw(t) {
       nominal_per_kelas: {},
       nominal_per_santri: {},
       shift_only: [],
+      kas_lembaga: '', // Kyai 4 Agu: buku kas lembaga tujuan (kosong = Kas Induk)
       gabung_ke: [],
       gabung_syarat: 'punya_sekolah',
       paket: [],
@@ -4119,6 +4153,7 @@ function normalizeJenisRaw(t) {
     status_only: Array.isArray(t.status_only) ? [...t.status_only] : [], // v.1.2.6
     jk_only: Array.isArray(t.jk_only) ? [...t.jk_only] : [], // v.1.2.x
     shift_only: Array.isArray(t.shift_only) ? [...t.shift_only] : [], // Kyai 4 Agu
+    kas_lembaga: String(t.kas_lembaga || '').trim(), // Kyai 4 Agu: buku kas tujuan
     // Kyai 3-4 Agu: penggabungan (daftar kandidat target + syaratnya)
     gabung_ke: Array.isArray(t.gabung_ke)
       ? [...t.gabung_ke]

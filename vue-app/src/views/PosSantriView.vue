@@ -215,6 +215,8 @@ import { sisaTagihan } from '@/utils/tagihan'
 // K1: pemecahan komponen (sekolah+ngaji) jadi beberapa baris Buku Induk — rumusnya di
 //   utils/syahriyah.js yang diuji unit, jangan disalin ke sini.
 import { pecahProporsional } from '@/utils/syahriyah'
+// Kyai 4 Agu: kas per lembaga — resolver tunggal di utils/kasLembaga (jangan disalin ke sini)
+import { petaKasLembaga, kasLembagaBaris } from '@/utils/kasLembaga'
 // v.1.2.6: nomor struk anti-kembar + penanda transaksi unik (lihat utils/trxStruk.js)
 import { nomorStrukBerikutnya, buatTrxUid } from '@/utils/trxStruk'
 import { todayJakarta } from '@/utils/format'
@@ -528,6 +530,10 @@ async function handleSimpan(payload) {
       const lbl = String(j?.label || j?.nama || j?.id || '').trim()
       if (lbl && j?.pos) posByLabel[lbl] = String(j.pos)
     }
+    // Kyai 4 Agu: kas per lembaga "sesuai label pembayaran". Ditulis di baris supaya
+    //   laporan bulan lalu tak bergeser kalau konfigurasi jenis diubah belakangan.
+    //   Baris pecahan K1 dapat lembaga KOMPONENNYA sendiri, bukan lembaga tagihan induk.
+    const petaKas = petaKasLembaga(settingsStore.settings?.keuTagihanJenis || [])
     const tabWajibItems = [] // item pos 'tabungan_wajib' -> picu push ke wali (lihat setelah writes)
     let barisMasuk = 0 // jumlah BARIS buku induk (bisa > jumlah item krn tagihan gabungan)
     for (const [itemIdx, item] of payload.items.entries()) {
@@ -575,6 +581,11 @@ async function handleSimpan(payload) {
           createdAt: serverTimestamp()
         }
         if (baris.pos) docData.pos = baris.pos
+        const kasLemb = kasLembagaBaris(
+          { kategori: baris.kategori, induk_jenis: baris.induk_jenis },
+          petaKas
+        )
+        if (kasLemb) docData.lembaga = kasLemb
         // v.1.2.x: penanda periode utk matriks POS mewarnai sel bayar-muka (tanpa baris tagihan)
         if (item.periode_kode) docData.periode_kode = item.periode_kode
         // Tabungan Wajib (dana kelulusan): wali diberi tahu. Pos lain tidak — utk syahriyah dsb
