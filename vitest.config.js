@@ -5,7 +5,13 @@ export default defineConfig({
   // yang memakai `@/...` tak bisa diimpor dari tests/.
   resolve: {
     alias: {
-      '@': fileURLToPath(new URL('./vue-app/src', import.meta.url))
+      '@': fileURLToPath(new URL('./vue-app/src', import.meta.url)),
+      // Vue terpasang di vue-app/node_modules, bukan di root — tanpa alias ini berkas
+      // tes di tests/ tak bisa `import { ref } from 'vue'` (modul app bisa karena
+      // resolusinya relatif ke vue-app/src). Runtime-only: tes tak mengompilasi template.
+      vue: fileURLToPath(
+        new URL('./vue-app/node_modules/vue/dist/vue.runtime.esm-bundler.js', import.meta.url)
+      )
     }
   },
   test: {
