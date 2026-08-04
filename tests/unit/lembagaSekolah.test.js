@@ -15,6 +15,7 @@ import {
   DEFAULT_LEMBAGA_SEED
 } from '@/composables/useLembaga'
 import { LEMBAGA_KENAIKAN_SEKOLAH } from '@/utils/kenaikan'
+import { scanLembagaFix } from '@/utils/v100_lembagaFix'
 
 // Bentuk baris master/lembaga yang nyata di lapangan:
 //   - baris SEED lama  -> punya `group`, sering TANPA `tipe`
@@ -135,6 +136,106 @@ describe('sekolahTierList — pengganti konstanta kenaikan sekolah', () => {
   it('master kosong → daftar kosong (pemanggil yang pasang fallback konstanta)', () => {
     expect(sekolahTierList([])).toEqual([])
     expect(sekolahTierList(null)).toEqual([])
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Migrasi Lembaga (Salah Impor) — Rule B ikut memakai penilaian yang sama.
+//
+// Kyai 4 Agu 2026: layar "Migrasi Lembaga" menampilkan 34 temuan
+//   'Lembaga sekolah "Kelas Baca" bukan TK/SDI/PKBM → dikosongkan'
+// dengan tombol Terapkan(34) siap ditekan. "Kelas Baca" itu sekolah SAH yang Kyai
+// daftarkan sendiri (tipe Formal) — menekannya akan menghapus lembaga_sekolah DAN
+// kelas_sekolah 34 santri. Akarnya daftar nama hardcoded v.100, kelas bug yang
+// SAMA dengan keluhan 22 Jul di atas; v100_lembagaFix.js cuma terlewat ikut pindah.
+// ─────────────────────────────────────────────────────────────────────────────
+describe('scanLembagaFix Rule B — jangan kosongkan sekolah yang SAH', () => {
+  const MASTER_NYATA = [
+    { lembaga: 'TPQ Pagi', tipe: 'Qiraati', group: 'qiraati' },
+    { lembaga: 'TPQ Sore', tipe: 'Qiraati', group: 'qiraati' },
+    { lembaga: 'PTPT', tipe: 'Qiraati', group: 'qiraati' },
+    { lembaga: 'TK', tipe: 'Formal', group: 'sekolah' },
+    { lembaga: 'SDI', tipe: 'Formal', group: 'sekolah' },
+    { lembaga: 'PKBM', tipe: 'Formal', group: 'sekolah' },
+    { lembaga: "Ma'had", group: 'mahad' },
+    // ↓ sekolah tambahan Kyai — TANPA `group`, cuma `tipe` (bentuk nyata master 4 Agu)
+    { lembaga: 'Kelas Baca', tipe: 'Formal' }
+  ]
+  const ruleB = (santri, master) =>
+    scanLembagaFix(santri, master).filter((f) => f.type === 'sekolah_invalid')
+
+  it('KUNCI: "Kelas Baca" bertipe Formal BUKAN temuan', () => {
+    const out = ruleB([{ id: '1', nama: 'Ahmad', lembaga_sekolah: 'Kelas Baca' }], MASTER_NYATA)
+    expect(out).toEqual([])
+  })
+
+  it('pencocokan abai huruf besar/kecil & spasi (data impor tak seragam)', () => {
+    const out = ruleB(
+      [
+        { id: '1', nama: 'A', lembaga_sekolah: 'kelas baca' },
+        { id: '2', nama: 'B', lembaga_sekolah: '  KELAS BACA ' }
+      ],
+      MASTER_NYATA
+    )
+    expect(out).toEqual([])
+  })
+
+  it('maksud aslinya tetap jalan: nilai NGAJI di kolom sekolah tetap tertangkap', () => {
+    const out = ruleB(
+      [
+        { id: '1', nama: 'A', lembaga_sekolah: 'TPQ Pagi' },
+        { id: '2', nama: 'B', lembaga_sekolah: "Ma'had" }
+      ],
+      MASTER_NYATA
+    )
+    expect(out.map((f) => f.id)).toEqual(['1', '2'])
+    expect(out[0].patch).toEqual({ lembaga_sekolah: '', kelas_sekolah: '' })
+  })
+
+  it('sekolah lama (TK/SDI/PKBM) tetap aman', () => {
+    const out = ruleB(
+      [
+        { id: '1', nama: 'A', lembaga_sekolah: 'TK' },
+        { id: '2', nama: 'B', lembaga_sekolah: 'SDI' },
+        { id: '3', nama: 'C', lembaga_sekolah: 'PKBM' },
+        { id: '4', nama: 'D', lembaga_sekolah: 'SMP' } // alias sub-tier PKBM
+      ],
+      MASTER_NYATA
+    )
+    expect(out).toEqual([])
+  })
+
+  it('master belum termuat → NOL temuan, bukan jatuh ke daftar nama lama', () => {
+    const santri = [
+      { id: '1', nama: 'A', lembaga_sekolah: 'Kelas Baca' },
+      { id: '2', nama: 'B', lembaga_sekolah: 'TPQ Pagi' }
+    ]
+    expect(ruleB(santri, [])).toEqual([])
+    expect(ruleB(santri, null)).toEqual([])
+    expect(scanLembagaFix(santri).filter((f) => f.type === 'sekolah_invalid')).toEqual([])
+  })
+
+  it('nama tak dikenal DIBIARKAN (bisa sekolah yang belum didaftarkan)', () => {
+    // Lebih baik satu typo lolos daripada satu sekolah sah dikosongkan.
+    const out = ruleB([{ id: '1', nama: 'A', lembaga_sekolah: 'SMK Entah' }], MASTER_NYATA)
+    expect(out).toEqual([])
+  })
+
+  it('santri non-aktif & lembaga_sekolah kosong tidak ikut discan', () => {
+    const out = ruleB(
+      [
+        { id: '1', nama: 'A', lembaga_sekolah: 'TPQ Pagi', aktif: false },
+        { id: '2', nama: 'B', lembaga_sekolah: '' }
+      ],
+      MASTER_NYATA
+    )
+    expect(out).toEqual([])
+  })
+
+  it('Rule A (kelas ↔ lembaga) tidak terpengaruh gerbang master', () => {
+    const out = scanLembagaFix([{ id: '1', nama: 'A', kelas: 'Level 3', lembaga: 'PTPT' }], [])
+    expect(out.map((f) => f.type)).toEqual(['kelas_lembaga'])
+    expect(out[0].saranLembaga).toBe('Pra PTPT')
   })
 })
 
