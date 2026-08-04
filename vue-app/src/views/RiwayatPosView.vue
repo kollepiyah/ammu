@@ -8,6 +8,10 @@ import { queryColl, deleteOne } from '@/services/db'
 import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
+// Kyai 4 Agu: "antara admin gedung wetan dan kulon masih bisa lihat semuanya" — halaman
+//   ini memang SATU-SATUNYA view keuangan yang tak pernah dipasangi scope gedung
+//   (Buku Induk & Uang Pos sudah sejak v.111).
+import { useGedungScope } from '@/composables/useGedungScope'
 import { cetakStrukPdf, cetakStrukSlipPdf, fmtRpStruk } from '@/utils/strukBuilder'
 import { buildStrukSlipEscpBase64 } from '@/utils/escpImage'
 import { printRaw, getDefaultPrinter } from '@/composables/useDesktopPrint'
@@ -31,6 +35,10 @@ const router = useRouter()
 const auth = useAuthStore()
 const settingsStore = useSettingsStore()
 const toast = useToast()
+// Scope Gedung — sama seperti Buku Induk: baris POS selalu ber-santri_id, jadi ia ikut
+//   gedung SANTRI-nya (allowRow). Disaring di satu tempat (entriesScoped) supaya SEMUA
+//   turunannya ikut: daftar struk, rekap per lembaga, laporan PDF, dan tombol hapus.
+const { scoped: gedungScoped, myGedung, allowRow } = useGedungScope()
 
 const isAdminKeu = computed(() => {
   const rs = auth.sesiAktif?.role_sistem || ''
@@ -272,9 +280,15 @@ function extractPeriode(ket) {
 //   Dulu murni `trx_id`: nomor struk yang kembar (bug counter lokal, lihat utils/trxStruk.js)
 //   membuat transaksi dua santri berbeda menyatu jadi satu struk — item dobel, lintas
 //   lembaga, total membengkak. Kunci ber-santri memisahkannya lagi, termasuk data lama.
+// Baris yang BOLEH dilihat akun ini. Satu-satunya gerbang gedung di halaman ini —
+//   jangan menyaring di tempat lain lagi, nanti ada jalur yang terlewat.
+const entriesScoped = computed(() =>
+  gedungScoped.value ? entries.value.filter(allowRow) : entries.value
+)
+
 const transaksi = computed(() => {
   const groups = {}
-  for (const e of entries.value) {
+  for (const e of entriesScoped.value) {
     const key = kunciTransaksi(e)
     if (!groups[key]) {
       const sm = santriMap.value[e.santri_id] || {}
@@ -312,19 +326,16 @@ const transaksi = computed(() => {
   const pakai = {}
   for (const t of list) pakai[t.trx_id] = (pakai[t.trx_id] || 0) + 1
   for (const t of list) t.nomorKembar = pakai[t.trx_id] > 1
-  // filter tahun / bulan / hari
-  list = list.filter((t) => {
-    const tg = String(t.tanggal || '')
-    if (filterYear.value && tg.slice(0, 4) !== String(filterYear.value)) return false
-    if (filterMonth.value > 0 && tg.slice(5, 7) !== String(filterMonth.value).padStart(2, '0'))
-      return false
-    if (filterDay.value > 0 && tg.slice(8, 10) !== String(filterDay.value).padStart(2, '0'))
-      return false
-    return true
-  })
-  // search nama
-  const kw = search.value.trim().toLowerCase()
-  if (kw) list = list.filter((t) => String(t.santri_nama).toLowerCase().includes(kw))
+  // Kyai 4 Agu: "totalnya itu bisa disesuaikan dg filter?" — dulu daftar ini menyaring
+  //   tanggal & nama SENDIRI dan sama sekali tak melihat filter LEMBAGA, jadi memilih
+  //   "TPQ" mengubah jumlah baris kas tapi tidak jumlah transaksi & totalnya.
+  //   Sekarang penyaringnya SATU: transaksi ditampilkan bila punya minimal satu baris
+  //   yang lolos `barisLaporan` (tanggal + nama + lembaga). Salinan aturan tanggal/nama
+  //   di sini dibuang — dua salinan cepat menyimpang.
+  //   Objek transaksinya tetap memuat SELURUH barisnya (ids/items/total), karena struk
+  //   cetak-ulang harus utuh; yang disaring hanya "tampil atau tidak".
+  const lolos = new Set(barisLaporan.value.map((b) => kunciTransaksi(b)))
+  list = list.filter((t) => lolos.has(t.key))
   // urut terbaru
   return list.sort((a, b) => {
     const ta = tsEpoch(a.createdAt)
@@ -334,14 +345,20 @@ const transaksi = computed(() => {
   })
 })
 
-const totalTampil = computed(() => transaksi.value.reduce((s, t) => s + t.total, 0))
+// Total = jumlah BARIS KAS yang tersaring, bukan jumlah total transaksi. Bedanya nyata
+//   saat filter lembaga aktif: satu transaksi bisa berisi komponen dua lembaga (pemecahan
+//   K1), dan yang Kyai cocokkan adalah uang kas lembaga itu — angka ini juga sama dengan
+//   TOTAL di PDF-nya. Tanpa filter lembaga, nilainya identik dengan jumlah transaksi.
+const totalTampil = computed(() =>
+  barisLaporan.value.reduce((n, b) => n + (Number(b.nominal) || 0), 0)
+)
 
 // ── v.1.2.6 (Kyai): laporan PDF harian per lembaga + berkas terpisah tunai/transfer ──
 // Laporannya dibangun dari BARIS kas (bukan transaksi) karena satu transaksi bisa
 //   berisi komponen dari dua lembaga (pemecahan tagihan gabungan K1) — dijumlahkan
 //   per transaksi, uangnya tak bisa dipilah per kas lembaga.
 const barisPeriode = computed(() =>
-  entries.value.filter((e) => {
+  entriesScoped.value.filter((e) => {
     const tg = String(e.tanggal || '')
     if (filterYear.value && tg.slice(0, 4) !== String(filterYear.value)) return false
     if (filterMonth.value > 0 && tg.slice(5, 7) !== String(filterMonth.value).padStart(2, '0'))
@@ -542,6 +559,9 @@ function fmtTgl(t) {
           </h2>
           <p class="text-xs text-[var(--text-secondary)] mt-0.5">
             Cetak ulang struk pembayaran santri.
+            <template v-if="gedungScoped">
+              · Hanya gedung <b>{{ myGedung }}</b>
+            </template>
           </p>
         </div>
         <button
@@ -645,7 +665,8 @@ function fmtTgl(t) {
             · {{ labelPeriode() }}
           </span>
           <span class="text-[10px] text-[var(--text-tertiary)] font-bold">
-            <i class="fas fa-database mr-1"></i>{{ entries.length }} baris termuat dari database
+            <i class="fas fa-database mr-1"></i>{{ entriesScoped.length }} baris termuat dari
+            database
           </span>
         </div>
       </div>
@@ -669,7 +690,8 @@ function fmtTgl(t) {
             >{{ transaksi.length }} transaksi</span
           >
           <span class="text-xs font-black text-emerald-600"
-            >Total: {{ fmtRpStruk(totalTampil) }}</span
+            >Total{{ labelLembagaAktif ? ` kas ${labelLembagaAktif}` : '' }}:
+            {{ fmtRpStruk(totalTampil) }}</span
           >
         </div>
 

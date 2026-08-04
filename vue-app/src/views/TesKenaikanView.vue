@@ -1355,7 +1355,11 @@ const tabs = computed(() => {
       id: 'antrian',
       label: 'Antrian Tes',
       icon: 'fa-clipboard-check',
-      badge: antrian.value.length || 0
+      // Kyai 4 Agu: angka di tab wajib SAMA dengan yang terlihat di daftarnya. Dulu
+      //   `antrian` MENTAH, sementara daftarnya memakai `antrianView` (tersaring
+      //   lembaga/jenis/nama) — menyaring ke TPQ menyisakan 3 kartu tapi tab tetap 40.
+      //   Tab 'Status Ajuan' memang tetap dari `myAjuan`: daftarnya juga tak tersaring.
+      badge: antrianView.value.length || 0
     })
     out.push({ id: 'riwayat', label: 'Riwayat', icon: 'fa-history' })
     out.push({ id: 'rekap', label: 'Rekap', icon: 'fa-chart-pie' }) // v.100d Fase 5
