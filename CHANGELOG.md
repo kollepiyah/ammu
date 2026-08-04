@@ -59,6 +59,47 @@ hasilnya berbeda dari tombol Generate.
 - **Cron mengisi kolom riil `terbayar`** (bukan hanya `data.bayar` legacy).
 - **Generate Tagihan Khusus kini membaca paket santri** (dulu hanya 3 lapis nominal).
 
+### Kas per lembaga + laporan PDF harian + perbaikan Migrasi Lembaga & pita Electron
+
+⚠️ **Deploy: web + `supabase db push`** (satu migrasi baru, `20260804120000_santri_upd_pj_ptpt.sql`
+— hanya kebijakan RLS, tanpa perubahan skema & tanpa menyentuh baris data). Tidak ada edge
+function baru yang perlu di-redeploy oleh bagian ini.
+
+#### Added (Baru)
+
+- **Kas per lembaga.** Jenis pembayaran punya pilihan **"Masuk Kas Lembaga"**; Buku Induk,
+  Uang Kegiatan/Uang Buku, dan Tabungan masing-masing dapat penyaring **Lembaga** + kartu
+  saldo/masuk/keluar per lembaga (klik kartu = saring). Penentunya **label pembayaran**, jadi
+  satu tagihan gabungan yang dipecah per komponen jatuh ke kas masing-masing lembaga.
+  Kas manual menunjuk lembaganya sendiri di form; tabungan ikut lembaga santri.
+  **Nol mutasi data** — baris lama diturunkan saat dibaca, bukan ditulis ulang.
+- **Laporan PDF harian per lembaga** untuk POS · Buku Induk · Uang Buku · Uang Kegiatan,
+  plus **berkas TERPISAH untuk Tunai dan Transfer** (kebutuhan pengecekan manual harian).
+  Judul & nama berkas ikut tanggal + lembaga + metode. Tanpa pustaka baru (jsPDF lazy).
+- **Filter harian** di Uang Kegiatan/Uang Buku (dulu hanya tahun/bulan) + pilihan
+  **Cara Bayar** pada input manualnya — tanpa itu semua entri manual tersimpul "Tunai"
+  sehingga PDF Transfer selalu kosong.
+
+#### Fixed (Perbaikan)
+
+- 🔴 **Migrasi Lembaga (Salah Impor) tak lagi mengosongkan sekolah yang SAH.** Aturan (B)
+  memakai daftar nama hardcoded warisan v.100 (`tk/sdi/pkbm/smp/sma`), sehingga sekolah
+  tambahan **"Kelas Baca"** (tipe Formal) muncul sebagai **34 temuan siap dikosongkan** —
+  menekan Terapkan akan menghapus `lembaga_sekolah` **dan** `kelas_sekolah` 34 santri.
+  Sekarang menilai lewat `isSekolahLembaga` (baca `tipe:'Formal'` dari master). Kalau daftar
+  master belum termuat, aturan (B) menghasilkan **nol** temuan — bukan jatuh ke daftar lama.
+  Nama yang tak dikenal juga dibiarkan: satu typo lolos lebih baik daripada satu sekolah hilang.
+- **Electron: tombol aksi halaman kadang tidak muncul** (Input Manual/Transaksi di Buku Induk,
+  Tabungan, Uang Pos, Tagihan). Pita "Aksi Halaman" dilayani satu singleton, dan `onUnmounted`
+  Vue berjalan **sesudah** `setup` halaman baru — jadi pindah halaman = halaman baru mendaftar,
+  lalu halaman lama menghapusnya. Kini hanya pendaftar terakhir yang boleh mengosongkan.
+  Halaman pertama yang dibuka memang selalu aman; yang kena adalah pindah antar halaman.
+- **PJ PTPT bisa memproses kelulusan santri tes.** Tombol LULUS menulis baris `santri`
+  (kenaikan) sebelum menulis `tes_kenaikan`, dan UPDATE `santri` hanya terbuka untuk admin,
+  santri ybs, dan **guru pengampu** — sementara hak PJ diturunkan dari field lain
+  (`santri.pj_ptpt`). Ditambah kebijakan `santri_upd_pj_ptpt` yang mencerminkan gerbang UI.
+  Karena itu Tolak/Belum Lulus selalu jalan; hanya LULUS yang gagal.
+
 ### Planned
 
 - Capacitor Android first build + sideload APK
