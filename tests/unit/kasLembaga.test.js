@@ -14,7 +14,10 @@ import {
   petaKasLembaga,
   kasLembagaBaris,
   kasLembagaTabungan,
-  petaLembagaSantri
+  petaLembagaSantri,
+  arahNominal,
+  ringkasKasLembaga,
+  ringkasTabunganLembaga
 } from '@/utils/kasLembaga'
 
 const JENIS = [
@@ -110,6 +113,71 @@ describe('kasLembagaBaris — baris keuangan_buku_induk', () => {
   })
 })
 
+describe('arahNominal — cermin `stats` BukuIndukView', () => {
+  it('tipe menentukan arah, nominal jadi cadangan kolom arah', () => {
+    expect(arahNominal({ tipe: 'masuk', nominal: 5000 })).toEqual({ masuk: 5000, keluar: 0 })
+    expect(arahNominal({ tipe: 'keluar', nominal: 5000 })).toEqual({ masuk: 0, keluar: 5000 })
+  })
+
+  it('kolom masuk/keluar terpisah dipakai kalau ada (baris lama)', () => {
+    expect(arahNominal({ masuk: 3000, nominal: 9999 })).toEqual({ masuk: 3000, keluar: 0 })
+    expect(arahNominal({ keluar: 2000, nominal: 9999 })).toEqual({ masuk: 0, keluar: 2000 })
+  })
+
+  it('baris tanpa arah & masukan aneh → nol, tidak melempar', () => {
+    expect(arahNominal({ nominal: 1000 })).toEqual({ masuk: 0, keluar: 0 })
+    expect(arahNominal(null)).toEqual({ masuk: 0, keluar: 0 })
+    expect(arahNominal({ tipe: 'masuk', nominal: 'abc' })).toEqual({ masuk: 0, keluar: 0 })
+  })
+})
+
+describe('ringkasKasLembaga', () => {
+  const peta = petaKasLembaga(JENIS)
+  const resolver = (r) => kasLembagaBaris(r, peta)
+  const rows = [
+    { tipe: 'masuk', nominal: 200000, kategori: 'Syahriyah SDI' },
+    { tipe: 'masuk', nominal: 90000, kategori: 'Syahriyah TPQ Pagi' },
+    { tipe: 'keluar', nominal: 50000, lembaga: 'SDI', kategori: 'Beli papan tulis' },
+    { tipe: 'masuk', nominal: 25000, kategori: 'Infaq' } // tak berlembaga → Kas Induk
+  ]
+
+  it('menjumlah masuk/keluar/saldo per lembaga', () => {
+    const out = ringkasKasLembaga(rows, resolver)
+    const sdi = out.find((x) => x.lembaga === 'SDI')
+    expect(sdi).toMatchObject({ masuk: 200000, keluar: 50000, saldo: 150000, jumlah: 2 })
+    expect(out.find((x) => x.lembaga === 'TPQ Pagi')).toMatchObject({ masuk: 90000, saldo: 90000 })
+  })
+
+  it('KUNCI: Kas Induk selalu di URUTAN TERAKHIR (keranjang sisa, bukan lembaga)', () => {
+    const out = ringkasKasLembaga(rows, resolver)
+    expect(out[out.length - 1].lembaga).toBe('')
+    expect(out[out.length - 1].masuk).toBe(25000)
+  })
+
+  it('lembaga berurut nama (locale id)', () => {
+    const out = ringkasKasLembaga(rows, resolver).filter((x) => x.kunci)
+    expect(out.map((x) => x.lembaga)).toEqual(['SDI', 'TPQ Pagi'])
+  })
+
+  it('nama beda huruf besar/kecil dihitung SATU lembaga', () => {
+    const out = ringkasKasLembaga(
+      [
+        { tipe: 'masuk', nominal: 1000, lembaga: 'Kelas Baca' },
+        { tipe: 'masuk', nominal: 2000, lembaga: 'kelas  baca' }
+      ],
+      resolver
+    )
+    expect(out).toHaveLength(1)
+    expect(out[0].masuk).toBe(3000)
+  })
+
+  it('daftar kosong / resolver hilang tidak melempar', () => {
+    expect(ringkasKasLembaga([], resolver)).toEqual([])
+    expect(ringkasKasLembaga(null, resolver)).toEqual([])
+    expect(ringkasKasLembaga(rows)).toHaveLength(1) // semua jatuh ke Kas Induk
+  })
+})
+
 describe('kasLembagaTabungan — ikut lembaga santri', () => {
   const santri = [
     { id: 's1', lembaga: 'TPQ Pagi', lembaga_sekolah: 'SDI' },
@@ -142,5 +210,51 @@ describe('kasLembagaTabungan — ikut lembaga santri', () => {
     expect(petaLembagaSantri(null).size).toBe(0)
     expect(kasLembagaTabungan(null, peta)).toBe('')
     expect(kasLembagaTabungan({ santri_id: 's1' })).toBe('')
+  })
+})
+
+describe('ringkasTabunganLembaga — setor/tarik per lembaga', () => {
+  const peta = petaLembagaSantri([
+    { id: 's1', lembaga: 'TPQ Pagi' },
+    { id: 's2', lembaga: 'TPQ Pagi' },
+    { id: 's3', lembaga: '', lembaga_sekolah: 'SDI' }
+  ])
+  const mutasi = [
+    { santri_id: 's1', jenis: 'setor', nominal: 100000 },
+    { santri_id: 's2', jenis: 'setor', nominal: 50000 },
+    { santri_id: 's1', jenis: 'tarik', nominal: 30000 },
+    { santri_id: 's3', jenis: 'setor', nominal: 20000 },
+    { santri_id: 'hantu', jenis: 'setor', nominal: 7000 } // santri tak dikenal
+  ]
+
+  it('setor = masuk, tarik = keluar, saldo = setor − tarik', () => {
+    const out = ringkasTabunganLembaga(mutasi, peta)
+    expect(out.find((x) => x.lembaga === 'TPQ Pagi')).toMatchObject({
+      masuk: 150000,
+      keluar: 30000,
+      saldo: 120000,
+      jumlah: 3
+    })
+    expect(out.find((x) => x.lembaga === 'SDI')).toMatchObject({ saldo: 20000 })
+  })
+
+  it('santri tak dikenal jatuh ke Kas Induk di urutan terakhir', () => {
+    const out = ringkasTabunganLembaga(mutasi, peta)
+    expect(out[out.length - 1]).toMatchObject({ lembaga: '', saldo: 7000 })
+  })
+
+  it('jenis selain setor dihitung TARIK (jangan diam-diam jadi masuk)', () => {
+    const out = ringkasTabunganLembaga([{ santri_id: 's1', jenis: '', nominal: 5000 }], peta)
+    expect(out[0]).toMatchObject({ masuk: 0, keluar: 5000, saldo: -5000 })
+  })
+
+  it('bidang santriId (camelCase, data lama) ikut terbaca', () => {
+    const out = ringkasTabunganLembaga([{ santriId: 's1', jenis: 'setor', nominal: 1000 }], peta)
+    expect(out[0]).toMatchObject({ lembaga: 'TPQ Pagi', saldo: 1000 })
+  })
+
+  it('masukan aneh tidak melempar', () => {
+    expect(ringkasTabunganLembaga(null, peta)).toEqual([])
+    expect(ringkasTabunganLembaga([], peta)).toEqual([])
   })
 })

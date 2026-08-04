@@ -130,6 +130,20 @@
                     class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)]"
                   />
                 </div>
+                <!-- v.1.2.6 (Kyai): kas per lembaga. Kategori pos ini teks bebas, jadi
+                     lembaganya ditunjuk di sini (mis. beli buku SDI → kas SDI). -->
+                <div>
+                  <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1"
+                    >Masuk Kas Lembaga</label
+                  >
+                  <select
+                    v-model="inputForm.lembaga"
+                    class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)]"
+                  >
+                    <option value="">Kas Induk / Yayasan</option>
+                    <option v-for="l in lembagaOpsi" :key="`kas_${l}`" :value="l">{{ l }}</option>
+                  </select>
+                </div>
                 <div>
                   <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1"
                     >Keterangan *</label
@@ -182,7 +196,7 @@
       <div
         class="bg-[var(--bg-card)] rounded-2xl p-3 md:p-4 border border-[var(--border-subtle)] shadow-sm"
       >
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
           <select
             v-model.number="selectedYear"
             class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-cyan-500 outline-none"
@@ -195,6 +209,30 @@
           >
             <option :value="0">Semua bulan</option>
             <option v-for="(b, i) in BULAN" :key="b" :value="i + 1">{{ b }}</option>
+          </select>
+          <!-- v.1.2.6 (Kyai): filter HARIAN — dasar laporan kas harian per pos. -->
+          <select
+            v-model.number="selectedDay"
+            :disabled="selectedMonth === 0"
+            :title="selectedMonth === 0 ? 'Pilih bulan dulu' : 'Filter per tanggal'"
+            class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-cyan-500 outline-none disabled:opacity-50"
+          >
+            <option :value="0">Semua tgl</option>
+            <option v-for="d in 31" :key="d" :value="d">{{ d }}</option>
+          </select>
+          <!-- v.1.2.6 (Kyai): filter kas lembaga -->
+          <select
+            v-model="filterLembaga"
+            class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-cyan-500 outline-none"
+          >
+            <option value="">Semua lembaga</option>
+            <option
+              v-for="o in rekapLembaga"
+              :key="`fl_${o.kunci || 'induk'}`"
+              :value="o.kunci || KAS_INDUK"
+            >
+              {{ o.lembaga || 'Kas Induk' }} ({{ o.jumlah }})
+            </option>
           </select>
           <select
             v-model="filterTipe"
@@ -210,6 +248,38 @@
             placeholder="Cari keterangan..."
             class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-cyan-500 outline-none"
           />
+        </div>
+        <!-- v.1.2.6 (Kyai): kas tiap lembaga sendiri-sendiri. Klik = saring ke lembaga itu. -->
+        <div v-if="rekapLembaga.length > 1" class="mt-3">
+          <p class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1.5">
+            <i class="fas fa-sitemap mr-1"></i>{{ pageTitle }} per lembaga
+          </p>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+            <button
+              v-for="o in rekapLembaga"
+              :key="`kl_${o.kunci || 'induk'}`"
+              type="button"
+              :class="[
+                'text-left p-2.5 rounded-xl border transition',
+                filterLembaga === (o.kunci || KAS_INDUK)
+                  ? 'border-cyan-500 bg-cyan-50 dark:bg-cyan-900/30'
+                  : 'border-[var(--border-subtle)] bg-[var(--bg-card-elevated)] hover:border-cyan-300'
+              ]"
+              @click="
+                filterLembaga = filterLembaga === (o.kunci || KAS_INDUK) ? '' : o.kunci || KAS_INDUK
+              "
+            >
+              <p class="text-[11px] font-black text-[var(--text-primary)] truncate">
+                {{ o.lembaga || 'Kas Induk / Yayasan' }}
+              </p>
+              <p class="text-sm font-black text-cyan-700 dark:text-cyan-300 mt-0.5">
+                {{ fmtRp(o.saldo) }}
+              </p>
+              <p class="text-[10px] text-[var(--text-secondary)] mt-0.5">
+                masuk {{ fmtRp(o.masuk) }} · keluar {{ fmtRp(o.keluar) }} · {{ o.jumlah }} trx
+              </p>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -326,14 +396,23 @@ import { ref, computed, onMounted, onUnmounted, reactive } from 'vue'
 import { useRoute } from 'vue-router'
 import { useDesktopShell } from '@/composables/useDesktopShell'
 import { definePageActions } from '@/composables/useRibbonContext'
-import { subscribeColl, setOne, deleteOne, serverTimestamp } from '@/services/db'
+import { subscribeColl, subscribeDoc, setOne, deleteOne, serverTimestamp } from '@/services/db'
 import { useAuthStore } from '@/stores/auth'
 import { useGedungScope } from '@/composables/useGedungScope'
 import { useToast } from '@/composables/useToast'
 import { fmtRp, formatTanggal as formatTgl } from '@/utils/format'
 import { isSuperAdmin } from '@/utils/roleScope'
+import { useSettingsStore } from '@/stores/settings'
+// v.1.2.6 (Kyai): kas per lembaga — resolver & rekap di utils/kasLembaga (sumber tunggal)
+import {
+  petaKasLembaga,
+  kasLembagaBaris,
+  ringkasKasLembaga,
+  kunciLembaga
+} from '@/utils/kasLembaga'
 
 const route = useRoute()
+const settingsStore = useSettingsStore()
 const toast = useToast()
 const auth = useAuthStore()
 const isAdmin = computed(() => isSuperAdmin(auth.sesiAktif))
@@ -374,7 +453,11 @@ let unsub = null
 
 const selectedYear = ref(new Date().getFullYear())
 const selectedMonth = ref(new Date().getMonth() + 1) // 0 = semua bulan
+const selectedDay = ref(0) // v.1.2.6: 0 = semua tanggal (laporan harian)
 const filterTipe = ref('')
+// v.1.2.6: kas lembaga. Nilainya KUNCI ternormalisasi (kunciLembaga), bukan nama
+//   mentah — sekolah kustom ditulis campur ("Kelas Baca"). '' = semua lembaga.
+const filterLembaga = ref('')
 const search = ref('')
 
 const modalInputOpen = ref(false)
@@ -383,6 +466,7 @@ const inputForm = reactive({
   tanggal: new Date().toISOString().slice(0, 10),
   tipe: 'masuk',
   kategori: '',
+  lembaga: '', // v.1.2.6: kas lembaga tujuan ('' = Kas Induk/Yayasan)
   keterangan: '',
   nominal: 0
 })
@@ -397,15 +481,29 @@ const isFullAccess = computed(() => {
   )
 })
 
-const filtered = computed(() => {
+// v.1.2.6 (Kyai): kas per lembaga — resolver tunggal di utils/kasLembaga. Baris LAMA
+//   tanpa tag `lembaga` diturunkan dari kategorinya; tak ada data yang ditulis ulang.
+const petaKas = computed(() => petaKasLembaga(settingsStore.settings?.keuTagihanJenis || []))
+function kasLembagaDari(b) {
+  return kasLembagaBaris(b, petaKas.value)
+}
+// Sentinel "Kas Induk": kuncinya '' dan itu sudah dipakai "Semua lembaga".
+const KAS_INDUK = '__induk__'
+
+// Semua penyaring KECUALI lembaga — dasar rekap & opsi filter lembaga, supaya
+//   pilihannya tak lenyap begitu satu lembaga dipilih.
+const tanpaLembaga = computed(() => {
   // Hanya baris ber-pos ini
   let list = bukuRaw.value.filter((b) => String(b.pos || '') === posKey.value)
   // Scope Gedung (ikut Buku Induk)
   if (gedungScoped.value) list = list.filter(allowRow)
-  // Tahun / bulan
+  // Tahun / bulan (+ v.1.2.6: tanggal, utk laporan harian)
   if (selectedMonth.value > 0) {
     const ym = `${selectedYear.value}-${String(selectedMonth.value).padStart(2, '0')}`
-    list = list.filter((b) => String(b.tanggal || '').substring(0, 7) === ym)
+    const tgl = selectedDay.value > 0 ? `${ym}-${String(selectedDay.value).padStart(2, '0')}` : ''
+    list = tgl
+      ? list.filter((b) => String(b.tanggal || '').substring(0, 10) === tgl)
+      : list.filter((b) => String(b.tanggal || '').substring(0, 7) === ym)
   } else {
     list = list.filter((b) => String(b.tanggal || '').startsWith(String(selectedYear.value)))
   }
@@ -430,10 +528,24 @@ const filtered = computed(() => {
           .includes(kw)
     )
   }
-  return list.sort(
-    (a, b) =>
-      (b.tanggal || '').localeCompare(a.tanggal || '') || (b.id || '').localeCompare(a.id || '')
-  )
+  return list
+})
+
+// Rekap kas per lembaga — kartu ringkasan + daftar opsi filter lembaga.
+const rekapLembaga = computed(() => ringkasKasLembaga(tanpaLembaga.value, kasLembagaDari))
+
+const filtered = computed(() => {
+  let list = tanpaLembaga.value
+  if (filterLembaga.value) {
+    const target = filterLembaga.value === KAS_INDUK ? '' : filterLembaga.value
+    list = list.filter((b) => kunciLembaga(kasLembagaDari(b)) === target)
+  }
+  return list
+    .slice()
+    .sort(
+      (a, b) =>
+        (b.tanggal || '').localeCompare(a.tanggal || '') || (b.id || '').localeCompare(a.id || '')
+    )
 })
 
 const stats = computed(() => {
@@ -453,13 +565,16 @@ const years = computed(() => {
 
 function getBulanLabel(m) {
   if (m === 0) return 'Sepanjang tahun'
-  return BULAN[m - 1] || '-'
+  const b = BULAN[m - 1] || '-'
+  // v.1.2.6: tanggal ikut tampil kalau filter harian dipakai
+  return selectedDay.value > 0 ? `${selectedDay.value} ${b}` : b
 }
 
 function bukaModalInput() {
   inputForm.tanggal = new Date().toISOString().slice(0, 10)
   inputForm.tipe = 'masuk'
   inputForm.kategori = ''
+  inputForm.lembaga = ''
   inputForm.keterangan = ''
   inputForm.nominal = 0
   modalInputOpen.value = true
@@ -482,6 +597,8 @@ async function simpanInputManual() {
       tanggal: inputForm.tanggal,
       tipe: inputForm.tipe,
       kategori: inputForm.kategori.trim() || pageTitle.value,
+      // v.1.2.6 (Kyai): kas lembaga tujuan; '' = Kas Induk/Yayasan
+      lembaga: String(inputForm.lembaga || '').trim(),
       keterangan: inputForm.keterangan.trim(),
       nominal: Number(inputForm.nominal) || 0,
       sumber: 'manual',
@@ -521,16 +638,28 @@ async function hapusRow(b) {
   }
 }
 
+// v.1.2.6 (Kyai): daftar lembaga untuk pilihan "Masuk Kas Lembaga". subscribeDoc
+//   langsung (1 baris master) — useLembaga() ikut memuat guru + santri penuh.
+const lembagaRaw = ref([])
+let unsubLembaga = null
+const lembagaOpsi = computed(() =>
+  (lembagaRaw.value || []).map((l) => String(l?.lembaga || l?.nama || '').trim()).filter(Boolean)
+)
+
 onMounted(() => {
   unsub = subscribeColl('keuangan_buku_induk', (docs) => {
     bukuRaw.value = docs
     loading.value = false
   })
+  unsubLembaga = subscribeDoc('master', 'lembaga', (doc) => {
+    lembagaRaw.value = Array.isArray(doc?.list) ? doc.list : []
+  })
 })
 onUnmounted(() => {
-  if (unsub) {
+  for (const fn of [unsub, unsubLembaga]) {
+    if (!fn) continue
     try {
-      unsub()
+      fn()
     } catch (e) {}
   }
 })

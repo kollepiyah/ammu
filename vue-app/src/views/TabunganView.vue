@@ -505,6 +505,21 @@
             <option :value="0">Semua tgl</option>
             <option v-for="d in 31" :key="d" :value="d">{{ d }}</option>
           </select>
+          <!-- v.1.2.6 (Kyai): kas per lembaga. Tabungan tak punya label pembayaran, jadi
+               lembaganya ikut lembaga SANTRI (ngaji dulu, sekolah sbg cadangan). -->
+          <select
+            v-model="mutFilterLembaga"
+            class="text-[11px] px-2 py-1 rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)] outline-none"
+          >
+            <option value="">Semua lembaga</option>
+            <option
+              v-for="o in rekapLembagaTab"
+              :key="`tfl_${o.kunci || 'induk'}`"
+              :value="o.kunci || KAS_INDUK"
+            >
+              {{ o.lembaga || 'Tanpa lembaga' }} ({{ o.jumlah }})
+            </option>
+          </select>
           <span class="text-[10px] text-[var(--text-tertiary)] font-bold">
             {{ mutasiFiltered.length }} / {{ mutasiSource.length }} mutasi
           </span>
@@ -514,6 +529,44 @@
             @click="hapusMutasiTerpilih"
           >
             <i class="fas fa-trash mr-1"></i>Hapus Terpilih ({{ selectedMutasi.size }})
+          </button>
+        </div>
+      </div>
+      <!-- v.1.2.6 (Kyai): kas tabungan tiap lembaga sendiri-sendiri. Ikut tanggal yang
+           aktif, TIDAK ikut filter lembaga — jadi tetap utuh sambil menyaring satu
+           lembaga. Klik kartu = saring ke lembaga itu. -->
+      <div
+        v-if="rekapLembagaTab.length > 1"
+        class="px-4 md:px-5 py-3 border-b border-[var(--border-subtle)]"
+      >
+        <p class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1.5">
+          <i class="fas fa-sitemap mr-1"></i>{{ pageTitle }} per lembaga
+        </p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+          <button
+            v-for="o in rekapLembagaTab"
+            :key="`tkl_${o.kunci || 'induk'}`"
+            type="button"
+            :class="[
+              'text-left p-2.5 rounded-xl border transition',
+              mutFilterLembaga === (o.kunci || KAS_INDUK)
+                ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/30'
+                : 'border-[var(--border-subtle)] bg-[var(--bg-card-elevated)] hover:border-emerald-300'
+            ]"
+            @click="
+              mutFilterLembaga =
+                mutFilterLembaga === (o.kunci || KAS_INDUK) ? '' : o.kunci || KAS_INDUK
+            "
+          >
+            <p class="text-[11px] font-black text-[var(--text-primary)] truncate">
+              {{ o.lembaga || 'Tanpa lembaga' }}
+            </p>
+            <p class="text-sm font-black text-emerald-700 dark:text-emerald-300 mt-0.5">
+              {{ fmtRp(o.saldo) }}
+            </p>
+            <p class="text-[10px] text-[var(--text-secondary)] mt-0.5">
+              setor {{ fmtRp(o.masuk) }} · tarik {{ fmtRp(o.keluar) }} · {{ o.jumlah }} mutasi
+            </p>
           </button>
         </div>
       </div>
@@ -866,6 +919,13 @@ import { useConfirm } from '@/composables/useConfirm'
 import { useKeuangan } from '@/composables/useKeuangan'
 import { useGedungScope } from '@/composables/useGedungScope'
 import { fmtRp, fmtTgl } from '@/utils/format'
+// v.1.2.6 (Kyai): kas per lembaga — resolver & rekap di utils/kasLembaga (sumber tunggal)
+import {
+  petaLembagaSantri,
+  kasLembagaTabungan,
+  ringkasTabunganLembaga,
+  kunciLembaga
+} from '@/utils/kasLembaga'
 import { cetakSlipTabunganPdf, exportRekapTabunganPdf } from '@/utils/strukBuilder'
 import { buildSlipTabunganEscpBase64 } from '@/utils/escpImage'
 import { isElectron, printRaw, getDefaultPrinter } from '@/composables/useDesktopPrint' // v.96.0626: cetak struk setor/tarik gaya POS (ESC/P grafis raster)
@@ -916,7 +976,18 @@ const mutYears = computed(() => {
   ys.add(new Date().getFullYear())
   return [...ys].sort((a, b) => b - a)
 })
-const mutasiFiltered = computed(() =>
+// v.1.2.6 (Kyai): kas per lembaga. Tabungan tak punya label pembayaran → ikut lembaga
+//   SANTRI (keputusan Kyai 4 Agu). Resolver & rekapnya di utils/kasLembaga.
+//   KAS_INDUK = sentinel "tanpa lembaga": kuncinya '' dan itu dipakai "Semua lembaga".
+const KAS_INDUK = '__induk__'
+const mutFilterLembaga = ref('')
+const petaSantriLembaga = computed(() => petaLembagaSantri(santriRaw.value || []))
+function lembagaMutasi(m) {
+  return kasLembagaTabungan(m, petaSantriLembaga.value)
+}
+
+// Semua penyaring KECUALI lembaga — dasar rekap & opsi filter lembaga.
+const mutasiTanpaLembaga = computed(() =>
   mutasiSource.value
     .filter((m) => allowSantri(m.santri_id || m.santriId))
     .filter((m) => {
@@ -931,9 +1002,21 @@ const mutasiFiltered = computed(() =>
         return false
       return true
     })
-    .slice()
-    .sort((a, b) => String(b.tanggal || '').localeCompare(String(a.tanggal || '')))
 )
+
+// Rekap tabungan per lembaga — kartu ringkasan + daftar opsi filter lembaga.
+const rekapLembagaTab = computed(() =>
+  ringkasTabunganLembaga(mutasiTanpaLembaga.value, petaSantriLembaga.value)
+)
+
+const mutasiFiltered = computed(() => {
+  let list = mutasiTanpaLembaga.value
+  if (mutFilterLembaga.value) {
+    const target = mutFilterLembaga.value === KAS_INDUK ? '' : mutFilterLembaga.value
+    list = list.filter((m) => kunciLembaga(lembagaMutasi(m)) === target)
+  }
+  return list.slice().sort((a, b) => String(b.tanggal || '').localeCompare(String(a.tanggal || '')))
+})
 const auth = useAuthStore()
 const settings = useSettingsStore()
 const toast = useToast()

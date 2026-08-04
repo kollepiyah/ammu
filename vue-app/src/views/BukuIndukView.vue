@@ -139,6 +139,40 @@
             </p>
           </div>
         </div>
+        <!-- v.1.2.6 (Kyai): kas tiap lembaga sendiri-sendiri. Ikut tanggal & cara bayar
+             yang aktif, TIDAK ikut filter lembaga — jadi tetap terlihat utuh sambil
+             menyaring satu lembaga. Klik baris = saring ke lembaga itu. -->
+        <div v-if="rekapLembaga.length > 1" class="mt-3">
+          <p class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1.5">
+            <i class="fas fa-sitemap mr-1"></i>Kas per lembaga · {{ periodeLabel }}
+          </p>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+            <button
+              v-for="o in rekapLembaga"
+              :key="`kl_${o.kunci || 'induk'}`"
+              type="button"
+              :class="[
+                'text-left p-2.5 rounded-xl border transition',
+                filterLembaga === (o.kunci || KAS_INDUK)
+                  ? 'border-cyan-500 bg-cyan-50 dark:bg-cyan-900/30'
+                  : 'border-[var(--border-subtle)] bg-[var(--bg-card-elevated)] hover:border-cyan-300'
+              ]"
+              @click="
+                filterLembaga = filterLembaga === (o.kunci || KAS_INDUK) ? '' : o.kunci || KAS_INDUK
+              "
+            >
+              <p class="text-[11px] font-black text-[var(--text-primary)] truncate">
+                {{ o.lembaga || 'Kas Induk / Yayasan' }}
+              </p>
+              <p class="text-sm font-black text-cyan-700 dark:text-cyan-300 mt-0.5">
+                {{ fmtRp(o.saldo) }}
+              </p>
+              <p class="text-[10px] text-[var(--text-secondary)] mt-0.5">
+                masuk {{ fmtRp(o.masuk) }} · keluar {{ fmtRp(o.keluar) }} · {{ o.jumlah }} trx
+              </p>
+            </button>
+          </div>
+        </div>
       </div>
 
       <!-- v.72.16.0526: Input Manual Modal -->
@@ -353,7 +387,9 @@
       <div
         class="bg-[var(--bg-card)] rounded-2xl p-3 md:p-4 border border-[var(--border-subtle)] shadow-sm"
       >
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
+        <!-- v.1.2.6: 7 penyaring (tahun/bulan/tgl/lembaga/tipe/cara bayar/cari) — 2 baris di
+             lg, satu baris penuh mulai xl. -->
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-2">
           <select
             v-model.number="selectedYear"
             class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-cyan-500 outline-none"
@@ -385,6 +421,22 @@
             <option value="">Semua tipe</option>
             <option value="masuk">Pemasukan</option>
             <option value="keluar">Pengeluaran</option>
+          </select>
+          <!-- v.1.2.6 (Kyai): filter kas lembaga. Opsinya dari lembaga yang BENAR-BENAR
+               punya baris di periode ini + Kas Induk — bukan seluruh master, supaya
+               tak penuh pilihan yang selalu kosong. -->
+          <select
+            v-model="filterLembaga"
+            class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-cyan-500 outline-none"
+          >
+            <option value="">Semua lembaga</option>
+            <option
+              v-for="o in opsiKasLembaga"
+              :key="`fl_${o.kunci || 'induk'}`"
+              :value="o.kunci || KAS_INDUK"
+            >
+              {{ o.lembaga || 'Kas Induk' }} ({{ o.jumlah }})
+            </option>
           </select>
           <!-- v.1.2.6: filter cara bayar (tunai/transfer) -->
           <select
@@ -681,6 +733,13 @@ import { useGoogleSheet } from '@/composables/useGoogleSheet' // v.100 Batch12: 
 import { fmtRp, formatTanggal as formatTgl, todayJakarta } from '@/utils/format'
 // v.1.2.6: cara bayar (tunai/transfer) utk kolom + filter + subtotal laporan harian
 import { metodeTransaksi, ringkasMetode, METODE_OPTS } from '@/utils/metodeBayar'
+// v.1.2.6 (Kyai): kas per lembaga — resolver & rekap di utils/kasLembaga (sumber tunggal)
+import {
+  petaKasLembaga,
+  kasLembagaBaris,
+  ringkasKasLembaga,
+  kunciLembaga
+} from '@/utils/kasLembaga'
 import { buildListPdf, buildKopFromSettings } from '@/utils/pdfBuilder'
 import { isSuperAdmin } from '@/utils/roleScope'
 import { writeAuditLog } from '@/utils/auditLog'
@@ -799,6 +858,10 @@ const selectedMonth = ref(new Date().getMonth() + 1) // 0 = semua bulan
 const selectedDay = ref(0)
 const filterMetode = ref('')
 const filterTipe = ref('')
+// v.1.2.6 (Kyai): filter kas lembaga. Nilainya KUNCI ternormalisasi (kunciLembaga),
+//   bukan nama mentah — sekolah kustom ditulis campur ("Kelas Baca") dan pernah
+//   membuat filter lembaga kosong tanpa suara. '' = semua lembaga.
+const filterLembaga = ref('')
 const search = ref('')
 
 // pintasan: set filter ke tanggal hari ini (WIB)
@@ -1082,7 +1145,20 @@ const isFullAccess = computed(() => {
   )
 })
 
-const filteredBuku = computed(() => {
+// v.1.2.6 (Kyai): kas per lembaga. Peta jenis → lembaga; resolvernya di
+//   utils/kasLembaga (sumber tunggal, dipakai POS juga). Baris LAMA tak punya tag
+//   `lembaga` dan diturunkan di sini — tak ada data yang ditulis ulang.
+const petaKas = computed(() => petaKasLembaga(settingsStore.settings?.keuTagihanJenis || []))
+function kasLembagaDari(b) {
+  return kasLembagaBaris(b, petaKas.value)
+}
+
+// KAS_INDUK: sentinel nilai filter untuk "Kas Induk". Kunci lembaganya '' dan itu
+//   sudah dipakai "Semua lembaga", jadi Kas Induk butuh nilai sendiri.
+const KAS_INDUK = '__induk__'
+
+// Baris dalam periode & scope gedung, SEBELUM penyaring lembaga/tipe/cara bayar/cari.
+const bukuPeriode = computed(() => {
   // v.21.96.0527: Defensive — exclude residu tabungan dari buku induk.
   let list = bukuRaw.value.filter((b) => {
     const kat = String(b.kategori || '').toLowerCase()
@@ -1102,6 +1178,14 @@ const filteredBuku = computed(() => {
   } else {
     list = list.filter((b) => String(b.tanggal || '').startsWith(String(selectedYear.value)))
   }
+  return list
+})
+
+// Semua penyaring KECUALI lembaga. Rekap & opsi filter lembaga dihitung dari sini,
+//   supaya pilihannya tak lenyap begitu satu lembaga dipilih — tapi tetap ikut
+//   tanggal & cara bayar (itulah gunanya: "tunai per lembaga hari ini").
+const bukuTanpaLembaga = computed(() => {
+  let list = bukuPeriode.value
   // v.1.2.6: cara bayar
   if (filterMetode.value) {
     list = list.filter((b) => metodeTransaksi(b) === filterMetode.value)
@@ -1130,10 +1214,26 @@ const filteredBuku = computed(() => {
           .includes(kw)
     )
   }
-  return list.sort(
-    (a, b) =>
-      (b.tanggal || '').localeCompare(a.tanggal || '') || (b.id || '').localeCompare(a.id || '')
-  )
+  return list
+})
+
+// Rekap kas per lembaga — dipakai kartu ringkasan DAN daftar opsi filter lembaga.
+const rekapLembaga = computed(() => ringkasKasLembaga(bukuTanpaLembaga.value, kasLembagaDari))
+const opsiKasLembaga = computed(() => rekapLembaga.value)
+
+const filteredBuku = computed(() => {
+  let list = bukuTanpaLembaga.value
+  // v.1.2.6: kas lembaga (kunci ternormalisasi di KEDUA sisi)
+  if (filterLembaga.value) {
+    const target = filterLembaga.value === KAS_INDUK ? '' : filterLembaga.value
+    list = list.filter((b) => kunciLembaga(kasLembagaDari(b)) === target)
+  }
+  return list
+    .slice()
+    .sort(
+      (a, b) =>
+        (b.tanggal || '').localeCompare(a.tanggal || '') || (b.id || '').localeCompare(a.id || '')
+    )
 })
 
 const stats = computed(() => {

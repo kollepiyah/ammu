@@ -96,6 +96,61 @@ export function kasLembagaTabungan(row, petaSantri) {
   return m.get(String(row.santri_id ?? '')) || ''
 }
 
+/** Masuk/keluar satu baris kas. Cermin PERSIS `stats` di BukuIndukView: `tipe`
+ *  yang menentukan arah, nominalnya dari kolom arah itu dengan cadangan `nominal`
+ *  (baris lama tak selalu punya masuk/keluar terpisah). */
+export function arahNominal(row) {
+  const masuk =
+    row?.tipe === 'masuk' || Number(row?.masuk) > 0 ? Number(row?.masuk || row?.nominal) || 0 : 0
+  const keluar =
+    row?.tipe === 'keluar' || Number(row?.keluar) > 0 ? Number(row?.keluar || row?.nominal) || 0 : 0
+  return { masuk, keluar }
+}
+
+/**
+ * Rekap kas per lembaga atas sekumpulan baris.
+ *
+ * @param {Array} rows baris kas (sudah tersaring periode/metode oleh pemanggil)
+ * @param {Function} resolver (row) => nama lembaga ('' = Kas Induk)
+ * @returns {Array<{lembaga,kunci,masuk,keluar,saldo,jumlah}>} lembaga berurut nama
+ *   (locale id), Kas Induk SELALU paling akhir — ia keranjang sisa, bukan lembaga.
+ */
+export function ringkasKasLembaga(rows = [], resolver) {
+  const fn = typeof resolver === 'function' ? resolver : () => ''
+  const per = new Map()
+  for (const r of Array.isArray(rows) ? rows : []) {
+    const nama = String(fn(r) || '').trim()
+    const kunci = kunciLembaga(nama)
+    if (!per.has(kunci)) per.set(kunci, { lembaga: nama, kunci, masuk: 0, keluar: 0, jumlah: 0 })
+    const agg = per.get(kunci)
+    const { masuk, keluar } = arahNominal(r)
+    agg.masuk += masuk
+    agg.keluar += keluar
+    agg.jumlah += 1
+  }
+  return [...per.values()]
+    .map((a) => ({ ...a, saldo: a.masuk - a.keluar }))
+    .sort((a, b) => {
+      if (!a.kunci !== !b.kunci) return a.kunci ? -1 : 1
+      return a.lembaga.localeCompare(b.lembaga, 'id')
+    })
+}
+
+/**
+ * Rekap tabungan per lembaga dari baris MUTASI (`jenis` = 'setor' | 'tarik').
+ *   setor = masuk, tarik = keluar → `saldo` hasilnya = setor − tarik.
+ * Bentuk keluarannya sama dengan ringkasKasLembaga supaya kartu & filter di
+ *   TabunganView bisa memakai komponen yang sama dengan Buku Induk.
+ */
+export function ringkasTabunganLembaga(mutasi = [], petaSantri) {
+  const rows = (Array.isArray(mutasi) ? mutasi : []).map((m) => ({
+    tipe: String(m?.jenis || '').toLowerCase() === 'setor' ? 'masuk' : 'keluar',
+    nominal: Number(m?.nominal) || 0,
+    santri_id: m?.santri_id ?? m?.santriId
+  }))
+  return ringkasKasLembaga(rows, (r) => kasLembagaTabungan(r, petaSantri))
+}
+
 /** Peta santri_id -> lembaga (ngaji, cadangan sekolah) untuk kasLembagaTabungan. */
 export function petaLembagaSantri(santriList = []) {
   const m = new Map()
