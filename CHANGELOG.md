@@ -144,6 +144,17 @@ termasuk ngaji 90.000; Zaidun (PTPT Kelas 3 + SDI II) juga 200.000 tapi komponen
   bertipe Qiraati yang namanya menyebut "pagi"; sisi sekolah wajib sekolah formal menurut
   master. Hasil untuk data sekarang **persis sama** — daftar jenjang pagi sengaja tidak
   digeneralisasi ke semua sekolah formal, karena patch-nya mengosongkan data.
+- 🔴 **Scope Gedung bolong di Riwayat POS.** Halaman ini satu-satunya view keuangan yang
+  tak pernah dipasangi scope gedung (Buku Induk & Uang Pos sudah sejak v.111) — admin
+  gedung bisa melihat, **menghapus**, dan mencetak PDF transaksi gedung lain. Kini
+  disaring di satu tempat sehingga daftar struk, rekap per lembaga, laporan PDF, tombol
+  hapus, dan angka "baris termuat" semuanya ikut; subjudulnya menyebut "Hanya gedung X".
+- **Hitungan & total mengikuti penyaring yang aktif.** Di Riwayat POS, jumlah transaksi
+  dan totalnya dulu tak melihat filter lembaga (memilih TPQ mengubah jumlah baris kas
+  saja). Total kini = jumlah baris kas yang tersaring, dan labelnya menyebut kasnya
+  ("Total kas TPQ") — satu transaksi bisa berisi komponen dua lembaga, jadi total
+  transaksi ≠ total kas satu lembaga. Badge tab **Antrian Tes** juga ikut penyaring
+  (dulu dari daftar mentah, jadi 3 kartu terlihat tapi tab menulis 40).
 - **PJ PTPT bisa memproses kelulusan santri tes.** Tombol LULUS menulis baris `santri`
   (kenaikan) sebelum menulis `tes_kenaikan`, dan UPDATE `santri` hanya terbuka untuk admin,
   santri ybs, dan **guru pengampu** — sementara hak PJ diturunkan dari field lain
