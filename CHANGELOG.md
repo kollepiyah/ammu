@@ -94,6 +94,15 @@ function baru yang perlu di-redeploy oleh bagian ini.
   Vue berjalan **sesudah** `setup` halaman baru — jadi pindah halaman = halaman baru mendaftar,
   lalu halaman lama menghapusnya. Kini hanya pendaftar terakhir yang boleh mengosongkan.
   Halaman pertama yang dibuka memang selalu aman; yang kena adalah pindah antar halaman.
+- **Laporan POS lengkap per periode.** Halaman Riwayat POS dulu memuat "400 baris
+  terakhir" tanpa filter tanggal, sehingga laporan periode lama diam-diam tak lengkap.
+  Kini yang dimuat adalah **periode terpilih** dari database, tanpa batas baris; rentangnya
+  eksklusif di batas atas supaya baris yang `tanggal`-nya menyimpan jam ikut terambil.
+  Default bulan = **bulan berjalan** (dulu "semua bulan") agar bukaan pertama tetap ringan.
+- **Aturan (C) Migrasi Lembaga lepas dari nama yang dikunci** — sisi ngaji = lembaga
+  bertipe Qiraati yang namanya menyebut "pagi"; sisi sekolah wajib sekolah formal menurut
+  master. Hasil untuk data sekarang **persis sama** — daftar jenjang pagi sengaja tidak
+  digeneralisasi ke semua sekolah formal, karena patch-nya mengosongkan data.
 - **PJ PTPT bisa memproses kelulusan santri tes.** Tombol LULUS menulis baris `santri`
   (kenaikan) sebelum menulis `tes_kenaikan`, dan UPDATE `santri` hanya terbuka untuk admin,
   santri ybs, dan **guru pengampu** — sementara hak PJ diturunkan dari field lain
