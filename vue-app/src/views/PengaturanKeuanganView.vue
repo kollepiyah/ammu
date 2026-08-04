@@ -2506,7 +2506,7 @@ import { useLembaga, isSekolahLembaga } from '@/composables/useLembaga'
 import { HARI_AKTIF_DEFAULT } from '@/utils/bebanMengajar' // v.1.2.1: penyebut prorata JP
 // v.1.2.6: whitelist status santri (non-mukim/ma'had/fullday) utk targeting jenis syahriyah
 // Kyai 3-4 Agu: syarat penggabungan syahriyah (sumber tunggal di utils/syahriyah.js)
-import { GABUNG_SYARAT, hitungTagihan } from '@/utils/syahriyah'
+import { GABUNG_SYARAT, hitungTagihan, nominalDasar, paketNominal } from '@/utils/syahriyah'
 // Hanya OPSI yang dipakai di sini (daftar centang). Matcher-nya tak lagi dipanggil langsung:
 //   seluruh aturan berlaku/tidak sudah dijalankan hitungTagihan() di utils/syahriyah.js.
 import { STATUS_SANTRI_OPTS, JK_OPTS, SHIFT_NGAJI_OPTS } from '@/utils/statusSantri'
@@ -4615,22 +4615,17 @@ function _genNominalUntuk(sx) {
   if (genPakaiNominalJenis.value && genJenisId.value) {
     const j = jenisList.value.find((x) => x.id === genJenisId.value)
     if (j) {
-      // v.95.0626: per-santri override dulu
+      // Kyai 3-4 Agu: lapis nominal dari utils/syahriyah (bukan salinan 3-lapis lagi), jadi
+      //   PAKET pun terbaca di jalur ini. Urutannya sama dengan hitungTagihan:
+      //   per_santri > paket > per_kelas > per_lembaga > default.
+      // SENGAJA TANPA whitelist, TANPA pelipatan, dan TANPA diskon anak guru:
+      //   - target di jalur ini dicentang MANUAL oleh admin → jangan diam-diam melewatinya;
+      //   - tagihan khusus (infaq/iuran sekali jalan) tak boleh menempel ke jenis lain;
+      //   - diskon `diskon_anak_guru` itu aturan syahriyah, bukan aturan infaq.
       const perS = Number((j.nominal_per_santri || {})[String(sx.id)] || 0)
       if (perS > 0) return perS
-      const perK = j.nominal_per_kelas || {}
-      for (const [lemb, ks] of [
-        [sx.lembaga, sx.kelas],
-        [sx.lembaga_sekolah, sx.kelas_sekolah]
-      ]) {
-        if (!lemb) continue
-        const inner = perK[lemb] || {}
-        const v = Number(inner[ks] || 0)
-        if (v > 0) return v
-      }
-      const perL = j.nominal_per_lembaga || {}
-      const vl = Number(perL[sx.lembaga] || perL[sx.lembaga_sekolah] || 0)
-      if (vl > 0) return vl
+      const v = paketNominal(j, sx) || nominalDasar(j, sx)
+      if (v > 0) return v
     }
   }
   return Number(genNominal.value || 0)
