@@ -106,6 +106,20 @@ termasuk ngaji 90.000; Zaidun (PTPT Kelas 3 + SDI II) juga 200.000 tapi komponen
 - **Filter harian** di Uang Kegiatan/Uang Buku (dulu hanya tahun/bulan) + pilihan
   **Cara Bayar** pada input manualnya — tanpa itu semua entri manual tersimpul "Tunai"
   sehingga PDF Transfer selalu kosong.
+- **Kas TPQ / Fullday / Ma'had bisa dipilih.** Pilihan "Masuk Kas Lembaga" dulu hanya
+  dari master/lembaga, dan di master tidak ada baris **TPQ** payung, **Fullday**, maupun
+  **Ma'had** (dua terakhir itu status santri, bukan lembaga) — ketiga kas itu mustahil
+  dipilih. Kini tersedia, dengan keterangan cakupan (TPQ = TPQ Pagi/Sore, Pra PTPT, PTPT,
+  PPPH). Beberapa lembaga boleh **berbagi satu kas** — mis. Kelas Baca diarahkan ke kas
+  TPQ Pagi; itu setelan, bukan kode.
+- **Syarat penggabungan "Santri Ma'had"** + **"ikut jenis tujuan"** pada jenis pembayaran.
+  Aturan Kyai "syahriyah pondok sudah termasuk Syahriyah Qiraati Pagi & Sore" sebelumnya
+  tak bisa dinyatakan: syarat yang ada hanya sekolah & fullday, sedangkan santri Ma'had
+  bisa bukan keduanya — jadi ngajinya tetap terbit sendiri di samping Syahriyah Pondok,
+  alias **tertagih dua kali**. Pilihan "ikut jenis tujuan" ada karena satu jenis ngaji
+  kadang harus menempel ke sekolah untuk santri sekolah DAN ke Syahriyah Pondok untuk
+  santri mukim, sementara syaratnya cuma bisa satu nilai. Nominal **belum berubah** sampai
+  Kyai mengisi setelan penggabungannya.
 
 #### Fixed (Perbaikan)
 
