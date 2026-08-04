@@ -17,7 +17,9 @@ import {
   petaLembagaSantri,
   arahNominal,
   ringkasKasLembaga,
-  ringkasTabunganLembaga
+  ringkasTabunganLembaga,
+  opsiKasLembaga,
+  KAS_LEMBAGA_EKSTRA
 } from '@/utils/kasLembaga'
 
 const JENIS = [
@@ -256,5 +258,83 @@ describe('ringkasTabunganLembaga — setor/tarik per lembaga', () => {
   it('masukan aneh tidak melempar', () => {
     expect(ringkasTabunganLembaga(null, peta)).toEqual([])
     expect(ringkasTabunganLembaga([], peta)).toEqual([])
+  })
+})
+
+// Kyai 4 Agu 2026 (lanjutan): "ini belum ada, untuk lembaga TPQ (TPQ mencakup TPQ Pagi/
+// TPQ Sore/Pra PTPT/PTPT/PPPH), Fullday, dan Ma'had (Uang Makan, Syahriyah Pondok)" —
+// plus "kelas baca jadi satu dg TPQ Pagi".
+//
+// Akarnya: pilihan "Masuk Kas Lembaga" diambil dari master/lembaga, dan di master Kyai
+// (terverifikasi REST 4 Agu) TIDAK ADA baris "TPQ" payung, tidak ada "Fullday", dan tidak
+// ada "Ma'had" — dua yang terakhir itu STATUS santri, bukan lembaga. Jadi ketiga kas itu
+// mustahil dipilih, bukan sekadar belum diisi.
+describe('opsiKasLembaga — pilihan kas termasuk yang BUKAN baris master', () => {
+  const MASTER_4AGU = [
+    { lembaga: 'TPQ Pagi', tipe: 'Qiraati' },
+    { lembaga: 'TPQ Sore', tipe: 'Qiraati' },
+    { lembaga: 'PTPT', tipe: 'Qiraati' },
+    { lembaga: 'SDI', tipe: 'Formal' },
+    { lembaga: 'TK', tipe: 'Formal' },
+    { lembaga: 'Kelas Baca', tipe: 'Formal' }
+  ]
+  const nama = (list) => list.map((o) => o.nama)
+
+  it("KUNCI: TPQ, Fullday, dan Ma'had bisa dipilih walau bukan baris master", () => {
+    const out = nama(opsiKasLembaga(MASTER_4AGU))
+    expect(out).toContain('TPQ')
+    expect(out).toContain('Fullday')
+    expect(out).toContain("Ma'had")
+  })
+
+  it('baris master tetap ada semua, dan urut master dulu', () => {
+    const out = nama(opsiKasLembaga(MASTER_4AGU))
+    expect(out.slice(0, 6)).toEqual(['TPQ Pagi', 'TPQ Sore', 'PTPT', 'SDI', 'TK', 'Kelas Baca'])
+  })
+
+  it('"Kelas Baca jadi satu dg TPQ Pagi" bisa dinyatakan — dua-duanya ada sbg pilihan', () => {
+    // Penyatuannya lewat setelan: jenis Kelas Baca diarahkan ke kas 'TPQ Pagi'.
+    // Yang perlu dijamin kode cuma: kedua nama itu tersedia untuk dipilih.
+    const out = nama(opsiKasLembaga(MASTER_4AGU))
+    expect(out).toContain('Kelas Baca')
+    expect(out).toContain('TPQ Pagi')
+  })
+
+  it('kas ekstra membawa keterangan (dipakai UI utk menjelaskan cakupan TPQ)', () => {
+    const tpq = opsiKasLembaga(MASTER_4AGU).find((o) => o.nama === 'TPQ')
+    expect(tpq.ket).toMatch(/Pra PTPT/)
+    expect(KAS_LEMBAGA_EKSTRA.map((e) => e.nama)).toEqual(['TPQ', 'Fullday', "Ma'had"])
+  })
+
+  it('master yang sudah memuat nama kas ekstra tidak menggandakannya', () => {
+    const out = nama(opsiKasLembaga([...MASTER_4AGU, { lembaga: "Ma'had", tipe: 'Qiraati' }]))
+    expect(out.filter((n) => n === "Ma'had")).toHaveLength(1)
+  })
+
+  it('nama beda huruf besar/kecil dihitung sama (tak menggandakan)', () => {
+    const out = nama(opsiKasLembaga([{ lembaga: 'fullday' }]))
+    expect(out.filter((n) => n.toLowerCase() === 'fullday')).toHaveLength(1)
+  })
+
+  it('KUNCI: nilai yang SEDANG dipakai selalu disertakan walau tak dikenal', () => {
+    // Tanpa ini <select> yang nilainya di luar daftar tampil kosong lalu MENGHAPUS
+    // setelan Kyai tanpa suara saat disimpan (nilai bisa masuk lewat impor/SQL).
+    const out = nama(opsiKasLembaga(MASTER_4AGU, 'Kas Lama Entah'))
+    expect(out).toContain('Kas Lama Entah')
+  })
+
+  it('nilai terpakai yang sudah ada di daftar tidak digandakan', () => {
+    const out = nama(opsiKasLembaga(MASTER_4AGU, 'SDI'))
+    expect(out.filter((n) => n === 'SDI')).toHaveLength(1)
+  })
+
+  it('master kosong / null tetap memberi kas ekstra, tidak melempar', () => {
+    expect(nama(opsiKasLembaga([]))).toEqual(['TPQ', 'Fullday', "Ma'had"])
+    expect(nama(opsiKasLembaga(null))).toEqual(['TPQ', 'Fullday', "Ma'had"])
+    expect(nama(opsiKasLembaga([null, {}, { lembaga: '  ' }]))).toEqual([
+      'TPQ',
+      'Fullday',
+      "Ma'had"
+    ])
   })
 })

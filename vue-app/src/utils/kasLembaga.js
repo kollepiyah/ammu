@@ -34,6 +34,56 @@ export function kunciJenis(v) {
 }
 
 /**
+ * Kas yang BUKAN baris master/lembaga.
+ *
+ * Kyai 4 Agu 2026: "belum ada, untuk lembaga TPQ (TPQ mencakup TPQ Pagi/TPQ Sore/
+ *   Pra PTPT/PTPT/PPPH), Fullday, dan Ma'had (Uang Makan, Syahriyah Pondok)".
+ *   Ketiganya memang TAK BISA dipilih sebelum ini: pilihan "Masuk Kas Lembaga" diambil
+ *   dari master/lembaga, dan di master (terverifikasi 4 Agu) tidak ada baris "TPQ"
+ *   payung, tidak ada "Fullday", dan **tidak ada "Ma'had"** — Fullday & Ma'had itu
+ *   STATUS santri (`is_fullday`/`is_mukim`), bukan lembaga, sedangkan "TPQ" payung
+ *   hanya ada sebagai konsep di LEMBAGA_GROUPS.
+ *
+ * ⚠️ Ini daftar PILIHAN yang ditawarkan, BUKAN logika deteksi. Bedanya penting: daftar
+ *   nama untuk MEMUTUSKAN sesuatu ("ini sekolah?") sudah dibuang dari v100_lembagaFix
+ *   karena membuat sekolah sah "Kelas Baca" hendak dikosongkan. Daftar di sini cuma
+ *   menambah opsi — tak pernah menolak, mengubah, atau menghapus apa pun, dan Kyai
+ *   tetap bisa memilih baris master mana saja. Menambah kas baru = tambah satu entri.
+ */
+export const KAS_LEMBAGA_EKSTRA = [
+  { nama: 'TPQ', ket: 'Gabungan TPQ Pagi/Sore, Pra PTPT, PTPT, PPPH' },
+  { nama: 'Fullday', ket: 'Program fullday (status santri, bukan lembaga)' },
+  { nama: "Ma'had", ket: 'Asrama — uang makan & syahriyah pondok' }
+]
+
+/**
+ * Daftar pilihan "Masuk Kas Lembaga": nama dari master + kas ekstra di atas.
+ *
+ * @param {Array} lembagaList baris master/lembaga
+ * @param {string} terpakai nilai yang SEDANG dipakai. Disertakan walau tak dikenal —
+ *   tanpa ini `<select>` yang nilainya di luar daftar tampil kosong lalu MENGHAPUS
+ *   setelan Kyai tanpa suara saat disimpan (mis. nilai masuk lewat impor/SQL).
+ * @returns {Array<{nama, ket}>} urut: master dulu (apa adanya), lalu kas ekstra.
+ */
+export function opsiKasLembaga(lembagaList, terpakai = '') {
+  const out = []
+  const sudah = new Set()
+  const tambah = (nama, ket) => {
+    const n = String(nama || '').trim()
+    const k = kunciLembaga(n)
+    if (!n || sudah.has(k)) return
+    sudah.add(k)
+    out.push({ nama: n, ket: ket || '' })
+  }
+  for (const l of Array.isArray(lembagaList) ? lembagaList : []) {
+    tambah(l?.lembaga || l?.nama)
+  }
+  for (const e of KAS_LEMBAGA_EKSTRA) tambah(e.nama, e.ket)
+  tambah(terpakai, 'setelan lama')
+  return out
+}
+
+/**
  * Peta label jenis pembayaran -> nama lembaga kas.
  *
  * `kas_lembaga` kosong TAPI `lembaga_only` tepat satu -> pakai yang satu itu.

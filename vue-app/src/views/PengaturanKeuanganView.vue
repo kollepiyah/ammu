@@ -1740,17 +1740,19 @@
             >
               <option value="">Kas Induk / belum ditentukan</option>
               <option
-                v-for="lemb in lembagaRaw || []"
-                :key="`dlg_kas_${lemb.lembaga}`"
-                :value="lemb.lembaga"
+                v-for="o in opsiKas"
+                :key="`dlg_kas_${o.nama}`"
+                :value="o.nama"
+                :title="o.ket"
               >
-                {{ lemb.lembaga }}
+                {{ o.nama }}{{ o.ket ? ` — ${o.ket}` : '' }}
               </option>
             </select>
             <p class="text-[10px] text-[var(--text-secondary)] mt-1 italic">
               <i class="fas fa-info-circle mr-1"></i>Dipakai laporan kas per lembaga. Dibiarkan
               kosong: kalau "Hanya untuk lembaga ini" berisi <b>tepat satu</b> lembaga, kas ikut
-              lembaga itu — selain itu masuk Kas Induk.
+              lembaga itu — selain itu masuk Kas Induk. Beberapa lembaga boleh BERBAGI satu kas
+              (mis. Kelas Baca diarahkan ke <b>TPQ Pagi</b>) — cukup pilih kas yang sama.
             </p>
           </div>
           <div>
@@ -2536,6 +2538,8 @@ import { GABUNG_SYARAT, hitungTagihan, nominalDasar, paketNominal } from '@/util
 // Hanya OPSI yang dipakai di sini (daftar centang). Matcher-nya tak lagi dipanggil langsung:
 //   seluruh aturan berlaku/tidak sudah dijalankan hitungTagihan() di utils/syahriyah.js.
 import { STATUS_SANTRI_OPTS, JK_OPTS, SHIFT_NGAJI_OPTS } from '@/utils/statusSantri'
+// Kyai 4 Agu: pilihan kas = master + kas bukan-lembaga (TPQ payung, Fullday, Ma'had)
+import { opsiKasLembaga } from '@/utils/kasLembaga'
 import { useToast } from '@/composables/useToast'
 import { useExcel } from '@/composables/useExcel'
 import { useGedungScope } from '@/composables/useGedungScope'
@@ -2962,6 +2966,10 @@ const dlgOpen = ref(false)
 const dlgIsNew = ref(false)
 const dlgIdx = ref(-1)
 const dlgJenis = ref(null)
+// Kyai 4 Agu: pilihan "Masuk Kas Lembaga" = baris master + kas yang BUKAN lembaga
+//   (TPQ payung, Fullday, Ma'had) — lihat utils/kasLembaga. Nilai yang sedang dipakai
+//   ikut disertakan supaya setelan lama tak lenyap saat disimpan.
+const opsiKas = computed(() => opsiKasLembaga(lembagaRaw.value, dlgJenis.value?.kas_lembaga || ''))
 const dlgTarif = ref(false)
 // Kyai 3 Agu: paket nominal pilihan (santri boleh ambil di atas standar) + diskon anak
 //   guru/pegawai. Dua-duanya BERDIRI SENDIRI, tak menyentuh penggabungan syahriyah.

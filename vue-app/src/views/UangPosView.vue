@@ -194,7 +194,14 @@
                     class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)]"
                   >
                     <option value="">Kas Induk / Yayasan</option>
-                    <option v-for="l in lembagaOpsi" :key="`kas_${l}`" :value="l">{{ l }}</option>
+                    <option
+                      v-for="o in lembagaOpsi"
+                      :key="`kas_${o.nama}`"
+                      :value="o.nama"
+                      :title="o.ket"
+                    >
+                      {{ o.nama }}{{ o.ket ? ` — ${o.ket}` : '' }}
+                    </option>
                   </select>
                 </div>
                 <div>
@@ -463,6 +470,7 @@ import { metodeTransaksi, METODE_OPTS } from '@/utils/metodeBayar'
 // v.1.2.6 (Kyai): kas per lembaga — resolver & rekap di utils/kasLembaga (sumber tunggal)
 import {
   petaKasLembaga,
+  opsiKasLembaga,
   kasLembagaBaris,
   ringkasKasLembaga,
   arahNominal,
@@ -802,9 +810,9 @@ async function hapusRow(b) {
 //   langsung (1 baris master) — useLembaga() ikut memuat guru + santri penuh.
 const lembagaRaw = ref([])
 let unsubLembaga = null
-const lembagaOpsi = computed(() =>
-  (lembagaRaw.value || []).map((l) => String(l?.lembaga || l?.nama || '').trim()).filter(Boolean)
-)
+// Kyai 4 Agu: pilihan kas = baris master + kas yang BUKAN lembaga (TPQ payung, Fullday,
+//   Ma'had) — sumber tunggal di utils/kasLembaga, sama dengan dialog Jenis Pembayaran.
+const lembagaOpsi = computed(() => opsiKasLembaga(lembagaRaw.value, inputForm.lembaga || ''))
 
 onMounted(() => {
   unsub = subscribeColl('keuangan_buku_induk', (docs) => {
