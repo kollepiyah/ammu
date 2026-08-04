@@ -1,7 +1,7 @@
 <script setup>
 // v.21.88.0527: Riwayat Transaksi POS Santri — group per transaksi (trx_id), filter tanggal + cari,
 // cetak ulang struk (PDF ber-KOP + dot-matrix).
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useCollectionsStore } from '@/stores/collections' // P5b: santri/guru dari store terpusat
 import { useRouter } from 'vue-router'
 import { queryColl, deleteOne } from '@/services/db'
@@ -166,8 +166,12 @@ const BULAN = [
   'Desember'
 ]
 const filterYear = ref(new Date().getFullYear())
-const filterMonth = ref(0) // 0 = semua bulan
-const filterDay = ref(0) // 0 = semua tanggal
+// v.1.2.6 (Kyai): default = BULAN BERJALAN, bukan "semua bulan". Halaman ini kini
+//   memuat PERIODE TERPILIH dari database (bukan "400 terakhir"), jadi defaultnya harus
+//   satu bulan supaya bukaan pertama tetap ringan. "Semua bulan" tetap ada sebagai
+//   pilihan sadar — jumlah baris yang termuat ditampilkan di bawah penyaring.
+const filterMonth = ref(new Date().getMonth() + 1)
+const filterDay = ref(0) // 0 = semua tanggal (disaring di klien, tanpa query ulang)
 // v.1.2.6 (Kyai): kas per lembaga. Nilainya KUNCI ternormalisasi (kunciLembaga);
 //   KAS_INDUK sentinel karena kunci Kas Induk '' sudah dipakai "Semua lembaga".
 const KAS_INDUK = '__induk__'
@@ -176,38 +180,73 @@ const petaKas = computed(() => petaKasLembaga(settingsStore.settings?.keuTagihan
 function kasLembagaDari(b) {
   return kasLembagaBaris(b, petaKas.value)
 }
+// v.1.2.6: daftar tahun TIDAK lagi diturunkan dari `entries` — entries sekarang berisi
+//   satu periode saja, jadi menurunkannya dari situ akan menghilangkan pilihan tahun
+//   lain begitu satu tahun dipilih (dan mengunci Kyai di tahun itu).
 const years = computed(() => {
-  const ys = new Set()
-  for (const e of entries.value) {
-    const y = String(e.tanggal || '').slice(0, 4)
-    if (/^\d{4}$/.test(y)) ys.add(Number(y))
-  }
-  ys.add(new Date().getFullYear())
+  const now = new Date().getFullYear()
+  const ys = new Set([now - 2, now - 1, now, now + 1, filterYear.value])
   return [...ys].sort((a, b) => b - a)
 })
 
-onMounted(async () => {
+// v.1.2.6 (Kyai): halaman ini dulu memuat "400 baris terakhir" TANPA filter tanggal,
+//   sehingga laporan uang untuk periode lama diam-diam tidak lengkap. Sekarang yang
+//   dimuat adalah PERIODE TERPILIH — batas 400 dihapus, dan laporan PDF-nya lengkap.
+//   Rentang dibaca sebagai [dari, sampai) supaya baris yang `tanggal`-nya menyimpan
+//   waktu ('2026-08-04T07:00') ikut terambil; batas atas inklusif akan membuangnya.
+//   TANGGAL (hari) disaring di KLIEN — mengubah hari tak perlu query ulang.
+//   Kolom `tanggal` & `sumber` dua-duanya ber-index (migrasi 20260622090200).
+function _pad(n) {
+  return String(n).padStart(2, '0')
+}
+function rentangPeriode() {
+  const y = filterYear.value
+  if (filterMonth.value > 0) {
+    const m = filterMonth.value
+    const dari = `${y}-${_pad(m)}-01`
+    const sampai = m === 12 ? `${y + 1}-01-01` : `${y}-${_pad(m + 1)}-01`
+    return { dari, sampai }
+  }
+  return { dari: `${y}-01-01`, sampai: `${y + 1}-01-01` }
+}
+
+async function muatPeriode() {
   if (!isAdminKeu.value) {
     loading.value = false
     return
   }
+  const { dari, sampai } = rentangPeriode()
+  loading.value = true
   try {
     entries.value = await queryColl(
       'keuangan_buku_induk',
-      [['sumber', '==', 'pos_santri']],
-      [['createdAt', 'desc']],
-      400
+      [
+        ['sumber', '==', 'pos_santri'],
+        ['tanggal', '>=', dari],
+        ['tanggal', '<', sampai]
+      ],
+      [['tanggal', 'desc']],
+      0
     )
-    // AUDIT AGU 2026 (P5b): santri & guru dari store TERPUSAT (subscribe sekali per
-    //   sesi + live) — dulu getAll penuh KEDUANYA setiap kali Riwayat dibuka
-    //   (santri 539 baris ≈ 41 kB gzip + guru ≈ 9 kB). Peta di bawah kini computed,
-    //   jadi ikut menyesuaikan sendiri saat datanya berubah.
-    collections.ensure('santri', 'guru')
   } catch (e) {
     toast.error('Gagal memuat riwayat: ' + (e.message || e))
   } finally {
     loading.value = false
   }
+}
+
+// Ganti tahun/bulan = ganti rentang query. Hari TIDAK ikut (disaring di klien).
+watch([filterYear, filterMonth], () => {
+  muatPeriode()
+})
+
+onMounted(() => {
+  // AUDIT AGU 2026 (P5b): santri & guru dari store TERPUSAT (subscribe sekali per
+  //   sesi + live) — dulu getAll penuh KEDUANYA setiap kali Riwayat dibuka
+  //   (santri 539 baris ≈ 41 kB gzip + guru ≈ 9 kB). Peta di bawah kini computed,
+  //   jadi ikut menyesuaikan sendiri saat datanya berubah.
+  if (isAdminKeu.value) collections.ensure('santri', 'guru')
+  muatPeriode()
 })
 
 // v.F6e: epoch dari createdAt — Supabase simpan ISO string (shim serverTimestamp),
@@ -334,13 +373,6 @@ const barisLaporan = computed(() => {
   return barisPeriode.value.filter((b) => kunciLembaga(kasLembagaDari(b)) === target)
 })
 
-// Riwayat POS hanya memuat 400 baris terakhir (queryColl di onMounted) — batas itu
-//   sengaja dipertahankan demi kecepatan muat. Tapi laporan UANG tak boleh diam-diam
-//   terpotong: kalau batasnya kena, katakan, dan tunjuk sumber yang lengkap (Buku Induk
-//   berlangganan seluruh baris).
-const POS_LIMIT = 400
-const mungkinTerpotong = computed(() => entries.value.length >= POS_LIMIT)
-
 function labelPeriode() {
   if (!filterMonth.value) return `Tahun ${filterYear.value}`
   const b = `${BULAN[filterMonth.value - 1]} ${filterYear.value}`
@@ -432,11 +464,6 @@ async function cetakLaporanPos(metodeOnly = '') {
       filename: `${slug}.pdf`
     })
     toast.success(metodeOnly ? `PDF POS ${metodeOnly} berhasil dibuat` : 'PDF POS berhasil dibuat')
-    if (mungkinTerpotong.value) {
-      toast.warning(
-        `Riwayat POS memuat ${POS_LIMIT} baris terakhir saja — untuk periode lama pakai laporan Buku Induk yang lengkap.`
-      )
-    }
   } catch (e) {
     toast.error('Gagal cetak: ' + (e?.message || e))
   }
@@ -617,13 +644,8 @@ function fmtTgl(t) {
             <template v-if="labelLembagaAktif"> · {{ labelLembagaAktif }}</template>
             · {{ labelPeriode() }}
           </span>
-          <span
-            v-if="mungkinTerpotong"
-            class="text-[10px] font-bold text-amber-700 dark:text-amber-300"
-            title="Batas ini menjaga kecepatan muat halaman"
-          >
-            <i class="fas fa-triangle-exclamation mr-1"></i>hanya 400 baris terakhir — periode lama
-            pakai laporan Buku Induk
+          <span class="text-[10px] text-[var(--text-tertiary)] font-bold">
+            <i class="fas fa-database mr-1"></i>{{ entries.length }} baris termuat dari database
           </span>
         </div>
       </div>
