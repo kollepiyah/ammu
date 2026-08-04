@@ -56,6 +56,21 @@ export function parseShiftNgaji(v) {
   return 'pagi_sore'
 }
 
+// Kyai 4 Agu 2026: mode penggabungan syahriyah per santri (K2) dari sel impor.
+//   'auto' (default) = ikuti aturan otomatis · 'pisah' = jangan digabung ·
+//   'gabung' = paksa gabung. Nilai tak dikenal → '' supaya jatuh ke 'auto' di resolver,
+//   BUKAN dipaksa jadi 'gabung'/'pisah' — salah tebak di sini menggeser uang.
+export function parseGabungSyahriyah(v) {
+  const s = String(v || '')
+    .toLowerCase()
+    .trim()
+  if (!s) return ''
+  if (s.includes('pisah') || s.includes('sendiri') || s === 'no') return 'pisah'
+  if (s.includes('gabung') || s === 'ya' || s === 'yes') return 'gabung'
+  if (s.includes('auto') || s.includes('otomatis')) return 'auto'
+  return ''
+}
+
 // Khusus aktif — default TRUE kalau ambigu/kosong.
 export function parseAktif(v) {
   if (v === true) return true
@@ -527,6 +542,19 @@ export const SANTRI_FIELDS = [
     exp: (s) => s.paket_syahriyah || '',
     imp: (d, v) => {
       d.paket_syahriyah = _s(v)
+    }
+  },
+  {
+    // K2: pengecualian MANUAL atas aturan otomatis penggabungan syahriyah ngaji ke
+    //   syahriyah sekolah/fullday. Kosong = 'auto' (ikuti aturan); 'pisah' = tetap dua
+    //   tagihan; 'gabung' = paksa satu tagihan walau syarat otomatis tak terpenuhi.
+    header: 'Gabung Syahriyah (auto/gabung/pisah)',
+    width: 20,
+    aliases: ['Gabung Syahriyah', 'syahriyah_gabung'],
+    note: "kosong = auto. 'pisah' = jangan digabung, 'gabung' = paksa gabung",
+    exp: (s) => s.syahriyah_gabung || '',
+    imp: (d, v) => {
+      d.syahriyah_gabung = parseGabungSyahriyah(v)
     }
   },
   {

@@ -148,6 +148,22 @@
                   : (t.kategori || '-') + ' · ' + (t.periode || '-') + ' · ' + fmtTgl(t.jatuh_tempo)
               }}
             </p>
+            <!-- K1: tagihan gabungan tampil SATU kartu; rinciannya di sini supaya wali tak
+                 bertanya-tanya kenapa syahriyah ngajinya tak ada tagihan sendiri. -->
+            <p
+              v-if="rincianGabung(t)"
+              class="text-[10px] font-semibold text-teal-700 dark:text-teal-300 mt-0.5"
+            >
+              <i class="fas fa-layer-group mr-1"></i>{{ rincianGabung(t) }}
+            </p>
+            <p
+              v-if="Number(t.diskon_nominal) > 0"
+              class="text-[10px] text-amber-700 dark:text-amber-300"
+            >
+              <i class="fas fa-tag mr-1"></i>Diskon {{ t.diskon_persen }}% ({{
+                fmtRp(t.diskon_nominal)
+              }}) dari {{ fmtRp(t.nominal_bruto) }}
+            </p>
           </div>
           <div class="text-right">
             <p class="text-sm font-black" :class="statusText(t)">{{ fmtRp(getSisa(t)) }}</p>
@@ -397,6 +413,19 @@ function waTagihan(t) {
 
 function getSisa(t) {
   return sisaTagihan(t)
+}
+
+/**
+ * K1: teks rincian tagihan gabungan, mis. "termasuk Syahriyah Qiraati Pagi Rp 90.000".
+ * Komponen ke-0 = porsi jenis induk (label kartu ini), jadi tak perlu diulang. '' bila
+ * tagihan biasa — kartu tetap seperti sebelumnya.
+ */
+function rincianGabung(t) {
+  const k = Array.isArray(t?.komponen) ? t.komponen : []
+  if (k.length < 2) return ''
+  const ikut = k.slice(1).filter((x) => Number(x?.nominal) > 0)
+  if (!ikut.length) return ''
+  return 'termasuk ' + ikut.map((x) => `${x.label} ${fmtRp(x.nominal)}`).join(', ')
 }
 
 function statusBg(t) {

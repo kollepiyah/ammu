@@ -46,6 +46,8 @@ function emptyForm() {
     // Kyai 3 Agu: penanda keuangan manual — diskon anak guru + paket nominal pilihan.
     anak_guru: false,
     paket_syahriyah: '',
+    // K2: '' = auto (ikut aturan) | 'gabung' | 'pisah'
+    syahriyah_gabung: '',
     catatan_riwayat_pribadi: '',
     aktif: true,
     tgl_keluar: '',
@@ -310,6 +312,7 @@ export function useSantriForm() {
         is_fullday: !!s.is_fullday,
         anak_guru: !!s.anak_guru,
         paket_syahriyah: s.paket_syahriyah || '',
+        syahriyah_gabung: s.syahriyah_gabung || '',
         catatan_riwayat_pribadi: s.catatan_riwayat_pribadi || '',
         aktif: s.aktif !== false,
         tgl_keluar: s.tgl_keluar || '',
@@ -417,6 +420,7 @@ export function useSantriForm() {
         is_fullday: !!f.is_fullday,
         anak_guru: !!f.anak_guru,
         paket_syahriyah: f.paket_syahriyah || '',
+        syahriyah_gabung: f.syahriyah_gabung || '',
         catatan_riwayat_pribadi: f.catatan_riwayat_pribadi || '',
         tgl_keluar: f.aktif === false ? f.tgl_keluar || '' : '',
         alasan_keluar: f.aktif === false ? f.alasan_keluar || '' : '',

@@ -7,7 +7,12 @@
 //   2. `mergeOne` (db.js `_deepMerge`) mengganti PRIMITIF — jadi '' menang atas nilai lama.
 // Aturan sekarang: sel kosong → field dilewati; sel terisi → tetap menimpa.
 import { describe, it, expect } from 'vitest'
-import { applyImportFields, selKosong, petakanNomorIdentitas } from '@/services/santriFields'
+import {
+  applyImportFields,
+  parseGabungSyahriyah,
+  petakanNomorIdentitas,
+  selKosong
+} from '@/services/santriFields'
 
 // Cermin `_pick` milik SantriView.onImportSantri (alias + fallback lowercase).
 function pick(row, ...aliases) {
@@ -151,5 +156,31 @@ describe('petakanNomorIdentitas', () => {
     // Penjaga arah pemetaan — kalau tertukar, nomor pondok jadi NIS Dinas.
     const out = petakanNomorIdentitas({ 'No. Induk': '03.00472' }, pick)
     expect(out.nis_sekolah).toBe('')
+  })
+})
+
+// K2: pengecualian manual atas penggabungan syahriyah. Salah tebak di sini MENGGESER UANG
+// (satu tagihan vs dua), jadi nilai tak dikenal WAJIB jatuh ke '' = auto, bukan ke salah satu.
+describe('parseGabungSyahriyah', () => {
+  it("varian 'pisah' & 'gabung' dikenali", () => {
+    for (const v of ['pisah', 'Pisah', 'PISAH', 'sendiri', 'no', 'jangan dipisah?pisah'])
+      expect(parseGabungSyahriyah(v)).toBe('pisah')
+    for (const v of ['gabung', 'Gabung', 'digabung', 'ya', 'yes'])
+      expect(parseGabungSyahriyah(v)).toBe('gabung')
+    for (const v of ['auto', 'Otomatis', 'AUTO']) expect(parseGabungSyahriyah(v)).toBe('auto')
+  })
+
+  it("kosong & nilai aneh → '' (auto), TIDAK menebak", () => {
+    for (const v of ['', '   ', null, undefined, 'entah', '1', 'true', 0])
+      expect(parseGabungSyahriyah(v)).toBe('')
+  })
+
+  it('lewat registry impor: kolom ada → terisi, kolom tak ada → tak muncul di payload', () => {
+    const p1 = applyImportFields({}, { 'Gabung Syahriyah (auto/gabung/pisah)': 'pisah' }, pick)
+    expect(p1.syahriyah_gabung).toBe('pisah')
+    const p2 = applyImportFields({}, { syahriyah_gabung: 'gabung' }, pick) // alias
+    expect(p2.syahriyah_gabung).toBe('gabung')
+    const p3 = applyImportFields({}, { 'Nama Santri': 'Fulan' }, pick)
+    expect('syahriyah_gabung' in p3).toBe(false)
   })
 })

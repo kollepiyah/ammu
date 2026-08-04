@@ -196,6 +196,24 @@
               Besaran diskonnya diatur per jenis pembayaran (persen).
             </p>
           </div>
+          <!-- K2: pengecualian manual atas aturan otomatis penggabungan syahriyah ngaji -->
+          <div>
+            <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase"
+              >Gabung Syahriyah Ngaji</label
+            >
+            <select
+              v-model="form.syahriyah_gabung"
+              class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none"
+            >
+              <option value="">Otomatis (ikut aturan)</option>
+              <option value="gabung">Selalu digabung</option>
+              <option value="pisah">Jangan digabung</option>
+            </select>
+            <p class="text-[10px] text-[var(--text-tertiary)] mt-1">
+              Untuk santri yang syahriyah ngajinya sudah termasuk di syahriyah sekolah/fullday. Ubah
+              hanya bila hasil otomatisnya keliru.
+            </p>
+          </div>
           <div>
             <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase"
               >Nama Panggilan</label
