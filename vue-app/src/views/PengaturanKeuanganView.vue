@@ -1649,6 +1649,91 @@
               = sekali per tahun ajaran · Manual = hanya saat ditagih/dibayar.
             </p>
           </div>
+          <!-- Kyai 3-4 Agu: Penggabungan syahriyah (collapsible).
+               "200rb itu sudah termasuk, baik untuk TPQ (90rb) atau PTPT (100rb)" — jenis
+               ngaji tak ditagih sendiri; nominalnya jadi KOMPONEN di dalam tagihan sekolah/
+               fullday, lalu dipecah kembali per lembaga di Buku Induk saat dibayar. -->
+          <div class="border-t border-[var(--border-subtle)] pt-3">
+            <button
+              type="button"
+              class="w-full flex items-center justify-between text-left"
+              @click="dlgGabung = !dlgGabung"
+            >
+              <span class="text-xs font-black text-[var(--text-primary)]">
+                <i class="fas fa-object-group text-indigo-500 mr-1.5"></i>Digabung ke jenis lain
+                <span
+                  v-if="(dlgJenis.gabung_ke || []).length"
+                  class="ml-1 text-[10px] font-bold text-indigo-600"
+                  >({{ (dlgJenis.gabung_ke || []).length }} kandidat)</span
+                >
+              </span>
+              <i
+                :class="[
+                  'fas',
+                  dlgGabung ? 'fa-chevron-up' : 'fa-chevron-down',
+                  'text-[var(--text-secondary)]'
+                ]"
+              ></i>
+            </button>
+            <div v-if="dlgGabung" class="mt-3 space-y-3">
+              <p class="text-[10px] text-[var(--text-secondary)] italic">
+                Pakai ini di jenis <b>ngaji</b>: nominalnya tidak ditagih sendiri, melainkan
+                <b>sudah termasuk</b> di dalam tagihan yang dipilih di bawah. Kosongkan kalau jenis
+                ini ditagih tersendiri.
+              </p>
+              <div>
+                <p class="text-[10px] text-[var(--text-secondary)] italic mb-1">
+                  <i class="fas fa-arrow-right mr-1"></i>Termasuk di dalam jenis ini (boleh pilih
+                  beberapa — yang dipakai adalah yang cocok untuk santrinya):
+                </p>
+                <p
+                  v-if="!jenisLainOpsi.length"
+                  class="text-[10px] text-[var(--text-tertiary)] italic"
+                >
+                  Belum ada jenis lain untuk dipilih.
+                </p>
+                <div class="flex flex-wrap gap-1.5">
+                  <label
+                    v-for="opt in jenisLainOpsi"
+                    :key="`dlg_gk_${opt.id}`"
+                    class="inline-flex items-center gap-1 text-[10px] font-bold cursor-pointer bg-[var(--bg-card-elevated)] px-2 py-1 rounded border border-[var(--border-default)]"
+                  >
+                    <input
+                      type="checkbox"
+                      :checked="
+                        Array.isArray(dlgJenis.gabung_ke) && dlgJenis.gabung_ke.includes(opt.id)
+                      "
+                      class="w-3 h-3 accent-indigo-600"
+                      @change="toggleGabungKe(dlgJenis, opt.id)"
+                    />
+                    {{ opt.label }}
+                  </label>
+                </div>
+                <p class="text-[10px] text-[var(--text-tertiary)] mt-1">
+                  Sisi sekolah ada beberapa jenis (SD / TK / PKBM / Kelas Baca) — centang semua yang
+                  mungkin, sistem memilih yang berlaku untuk tiap santri.
+                </p>
+              </div>
+              <div v-if="(dlgJenis.gabung_ke || []).length">
+                <p class="text-[10px] text-[var(--text-secondary)] italic mb-1">
+                  <i class="fas fa-question-circle mr-1"></i>Digabung untuk santri yang:
+                </p>
+                <select
+                  v-model="dlgJenis.gabung_syarat"
+                  class="w-full px-2 py-1.5 text-xs rounded-lg border border-[var(--border-default)] bg-white dark:bg-slate-900"
+                >
+                  <option v-for="sy in GABUNG_SYARAT" :key="sy.key" :value="sy.key">
+                    {{ sy.label }}{{ sy.saran ? ' — disarankan' : '' }}
+                  </option>
+                </select>
+                <p class="text-[10px] text-[var(--text-tertiary)] mt-1">
+                  Santri yang tak memenuhi syarat ini tetap ditagih jenis ngajinya
+                  <b>tersendiri</b> — jadi tak ada pemasukan yang hilang.
+                </p>
+              </div>
+            </div>
+          </div>
+
           <!-- Kyai 3 Agu: Paket nominal pilihan + diskon anak guru (collapsible).
                Sengaja SEKSI SENDIRI, bukan digabung ke "Tarif Khusus": ini bukan tarif
                per lembaga/kelas/santri, melainkan pilihan yang menempel ke DATA SANTRI. -->
@@ -2302,6 +2387,8 @@ import { useGuru } from '@/composables/useGuru'
 import { useLembaga, isSekolahLembaga } from '@/composables/useLembaga'
 import { HARI_AKTIF_DEFAULT } from '@/utils/bebanMengajar' // v.1.2.1: penyebut prorata JP
 // v.1.2.6: whitelist status santri (non-mukim/ma'had/fullday) utk targeting jenis syahriyah
+// Kyai 3-4 Agu: syarat penggabungan syahriyah (sumber tunggal di utils/syahriyah.js)
+import { GABUNG_SYARAT } from '@/utils/syahriyah'
 import {
   STATUS_SANTRI_OPTS,
   JK_OPTS,
@@ -2740,6 +2827,26 @@ const dlgTarif = ref(false)
 // Kyai 3 Agu: paket nominal pilihan (santri boleh ambil di atas standar) + diskon anak
 //   guru/pegawai. Dua-duanya BERDIRI SENDIRI, tak menyentuh penggabungan syahriyah.
 const dlgPaket = ref(false)
+// Kyai 3-4 Agu: penggabungan syahriyah. "200rb itu sudah termasuk, baik untuk TPQ (90rb)
+//   atau PTPT (100rb)" — jenis ngaji tak ditagih sendiri, nominalnya jadi KOMPONEN di dalam
+//   tagihan sekolah/fullday, dan saat dibayar dipecah kembali per lembaga di Buku Induk.
+const dlgGabung = ref(false)
+/** Kandidat target: jenis LAIN di daftar (tak boleh menempel ke diri sendiri). */
+const jenisLainOpsi = computed(() =>
+  (jenisList.value || [])
+    .filter(
+      (j) =>
+        String(j?.label || '').trim() && String(j?.id || '') !== String(dlgJenis.value?.id || '')
+    )
+    .map((j) => ({ id: String(j.id || ''), label: String(j.label || '') }))
+)
+function toggleGabungKe(jenis, id) {
+  if (!jenis) return
+  if (!Array.isArray(jenis.gabung_ke)) jenis.gabung_ke = []
+  const i = jenis.gabung_ke.indexOf(id)
+  if (i >= 0) jenis.gabung_ke.splice(i, 1)
+  else jenis.gabung_ke.push(id)
+}
 function tambahPaket(j) {
   if (!j) return
   if (!Array.isArray(j.paket)) j.paket = []
@@ -3598,6 +3705,15 @@ function serializeJenisList(list) {
       // Diskon anak guru/pegawai (persen, 0 = tak ada). Dibatasi 0..100 di sini juga supaya
       //   angka aneh dari impor/ketik tak lolos ke perhitungan uang.
       const diskonAnakGuru = Math.min(100, Math.max(0, Number(t.diskon_anak_guru || 0) || 0))
+      // Kyai 3-4 Agu: penggabungan. `gabung_ke` = daftar KANDIDAT target (sisi sekolah ada
+      //   4 jenis: SD/TK/PKBM/Kelas Baca) — resolver memilih yang berlaku untuk si santri.
+      //   Terima bentuk string lama supaya konfigurasi manual/impor tak patah.
+      const gabungKe = (Array.isArray(t.gabung_ke) ? t.gabung_ke : t.gabung_ke ? [t.gabung_ke] : [])
+        .map((x) => String(x || '').trim())
+        .filter(Boolean)
+      const gabungSyarat = GABUNG_SYARAT.some((x) => x.key === t.gabung_syarat)
+        ? t.gabung_syarat
+        : 'punya_sekolah'
       return {
         id: t.id || slugId(t.label),
         label: String(t.label || '').trim(),
@@ -3609,6 +3725,8 @@ function serializeJenisList(list) {
         status_only: wlStatus,
         jk_only: wlJk,
         shift_only: wlShift,
+        gabung_ke: gabungKe,
+        gabung_syarat: gabungSyarat,
         paket,
         diskon_anak_guru: diskonAnakGuru,
         frekuensi,
@@ -3789,6 +3907,8 @@ function openJenisBaru() {
     status_only: [], // v.1.2.6: whitelist status santri (kosong = semua)
     jk_only: [], // v.1.2.x: whitelist jenis kelamin (kosong = semua)
     shift_only: [], // Kyai 4 Agu: whitelist shift ngaji pagi/sore (kosong = semua)
+    gabung_ke: [], // Kyai 3-4 Agu: kosong = jenis ini ditagih sendiri
+    gabung_syarat: 'punya_sekolah',
     nominal_per_kelas: {},
     nominal_per_santri: {},
     paket: [], // Kyai 3 Agu: paket nominal pilihan (kosong = tak ada pilihan)
@@ -3799,6 +3919,7 @@ function openJenisBaru() {
   }
   dlgTarif.value = false
   dlgPaket.value = false
+  dlgGabung.value = false
   loadSantriAktif() // muat santri utk picker Tarif Khusus per-santri
   dlgOpen.value = true
 }
@@ -3838,6 +3959,8 @@ function normalizeJenisRaw(t) {
       nominal_per_kelas: {},
       nominal_per_santri: {},
       shift_only: [],
+      gabung_ke: [],
+      gabung_syarat: 'punya_sekolah',
       paket: [],
       diskon_anak_guru: 0,
       frekuensi: 'manual',
@@ -3859,6 +3982,13 @@ function normalizeJenisRaw(t) {
     status_only: Array.isArray(t.status_only) ? [...t.status_only] : [], // v.1.2.6
     jk_only: Array.isArray(t.jk_only) ? [...t.jk_only] : [], // v.1.2.x
     shift_only: Array.isArray(t.shift_only) ? [...t.shift_only] : [], // Kyai 4 Agu
+    // Kyai 3-4 Agu: penggabungan (daftar kandidat target + syaratnya)
+    gabung_ke: Array.isArray(t.gabung_ke)
+      ? [...t.gabung_ke]
+      : t.gabung_ke
+        ? [String(t.gabung_ke)]
+        : [],
+    gabung_syarat: t.gabung_syarat || 'punya_sekolah',
     nominal_per_kelas:
       t.nominal_per_kelas && typeof t.nominal_per_kelas === 'object'
         ? JSON.parse(JSON.stringify(t.nominal_per_kelas))
