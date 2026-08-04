@@ -9,6 +9,11 @@
 // DEPLOY: supabase functions deploy auto-generate-tagihan --no-verify-jwt
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { handlePreflight, json } from '../_shared/cors.ts'
+// Kyai 3-4 Agu: rumus nominal TIDAK lagi disalin di sini. `syahriyah.ts` adalah cermin
+//   `vue-app/src/utils/syahriyah.js`, dan `tests/unit/syahriyahMirrorEdge.test.js`
+//   memaksa keduanya menghasilkan angka yang sama. Sebelum ini cron punya rumus 4-lapis
+//   sendiri → cron dan tombol Generate bisa menerbitkan nominal berbeda.
+import { hitungTagihan } from './syahriyah.ts'
 
 const BULAN = [
   'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
@@ -48,10 +53,18 @@ Deno.serve(async (req) => {
   if (s.keu_auto_generate_cron === false) {
     return json({ ok: true, skipped: 'kill-switch OFF' })
   }
-  const jenisAuto = (Array.isArray(s.keuTagihanJenis) ? s.keuTagihanJenis : []).filter(
-    // deno-lint-ignore no-explicit-any
-    (j: any) => j && j.auto_generate && String(j.label || '').trim()
+  const jenisSemua = Array.isArray(s.keuTagihanJenis) ? s.keuTagihanJenis : []
+  // KONTEKS resolver: jenis bulanan + tahunan — SAMA dengan daftar yang dipakai tombol
+  //   Generate manual (`jenisAuto` di PengaturanKeuanganView). Keputusan "menempel ke jenis
+  //   lain" HARUS memakai daftar yang sama, kalau tidak cron & tombol bisa melipat berbeda.
+  // deno-lint-ignore no-explicit-any
+  const jenisKonteks = jenisSemua.filter((j: any) =>
+    j && String(j.label || '').trim() && (j.frekuensi === 'bulanan' || j.frekuensi === 'tahunan')
   )
+  // Yang DITERBITKAN cron tetap hanya jenis ber-`auto_generate` (= frekuensi bulanan).
+  //   Jenis tahunan sengaja TIDAK diterbitkan otomatis — itu keputusan Kyai lewat tombol.
+  // deno-lint-ignore no-explicit-any
+  const jenisAuto = jenisSemua.filter((j: any) => j && j.auto_generate && String(j.label || '').trim())
   if (jenisAuto.length === 0) return json({ ok: true, skipped: 'tidak ada jenis auto_generate' })
   const jtDay = String(s.keu_jatuh_tempo || 10).padStart(2, '0')
 
@@ -61,7 +74,14 @@ Deno.serve(async (req) => {
   //   dari luar, dan kalau salah SELURUH query santri gagal -> cron tak menerbitkan tagihan
   //   sama sekali. Muatannya ~600 kB sekali sehari di sisi server — murah untuk kepastian.
   const { data: santriRows } = await db.from('santri').select('id, nama, lembaga, kelas, lembaga_sekolah, kelas_sekolah, is_mukim, is_fullday, jk, aktif, data')
-  const santriAktif = (santriRows || []).filter((x) => x.aktif !== false)
+  // Ratakan ekor jsonb ke atas — CERMIN `_flatten()` di services/db.js (`{...tail, ...cols}`,
+  // kolom riil menang). Resolver menerima santri bentuk-app, jadi `shift_ngaji`, `anak_guru`,
+  // `paket_syahriyah`, dan `syahriyah_gabung` (semuanya tinggal di `data`) terbaca apa adanya
+  // tanpa gerbang whitelist salinan tangan seperti dulu.
+  const santriAktif = (santriRows || [])
+    .filter((x) => x.aktif !== false)
+    // deno-lint-ignore no-explicit-any
+    .map((x: any) => ({ ...(x.data || {}), ...x }))
 
   // 3) Periode bulan berjalan (Asia/Jakarta)
   const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Jakarta' }))
@@ -79,76 +99,39 @@ Deno.serve(async (req) => {
   const rowsToInsert: any[] = []
 
   for (const j of jenisAuto as Array<Record<string, unknown>>) {
-    const wl = Array.isArray(j.lembaga_only) ? (j.lembaga_only as string[]).filter(Boolean) : []
-    // v.1.2.6: whitelist STATUS santri (cermin utils/statusSantri.matchStatusOnly).
-    const wlStatus = Array.isArray(j.status_only) ? (j.status_only as string[]).filter(Boolean) : []
-    // v.1.2.x: whitelist JENIS KELAMIN (cermin utils/statusSantri.matchJenisKelamin). L=Putra, P=Putri.
-    const wlJk = Array.isArray(j.jk_only) ? (j.jk_only as string[]).filter(Boolean) : []
-    // Kyai 4 Agu: whitelist shift ngaji (pagi/sore)
-    const wlShift = Array.isArray(j.shift_only) ? (j.shift_only as string[]).filter(Boolean) : []
     for (const sx of santriAktif) {
-      if (wl.length > 0 && !(wl.includes(sx.lembaga) || wl.includes(sx.lembaga_sekolah))) continue
-      // status: kosong = semua; antar-status OR. mahad=is_mukim, fullday=is_fullday,
-      //   non_mukim = bukan mukim & bukan fullday.
-      if (wlStatus.length > 0) {
-        const mukim = !!sx.is_mukim, fullday = !!sx.is_fullday
-        const ok = wlStatus.some((st) =>
-          st === 'mahad' ? mukim : st === 'fullday' ? fullday : st === 'non_mukim' ? !mukim && !fullday : false
-        )
-        if (!ok) continue
-      }
-      // v.1.2.x: jenis kelamin — kosong = semua; cocokkan ke sx.jk (L/P)
-      if (
-        wlJk.length > 0 &&
-        !wlJk.map((x) => String(x).toUpperCase()).includes(String(sx.jk || '').toUpperCase())
-      )
-        continue
-      // Kyai 4 Agu: shift ngaji (pagi/sore) — "syahriyah pagi untuk ngaji pagi, sore untuk
-      //   sore". CERMIN matchShiftNgaji() di vue-app/src/utils/statusSantri.js — kalau salah
-      //   satu diubah, SINKRONKAN keduanya. shift_ngaji KOSONG/ambigu = ikut KEDUANYA (baru
-      //   30% santri terisi; menganggapnya "tak cocok" akan menghilangkan tagihan ngaji 70%
-      //   santri). `shift_ngaji` dibaca dari ekor jsonb `data`.
-      if (wlShift.length > 0) {
-        const rawShift = String((sx.data || {}).shift_ngaji || '').toLowerCase()
-        const adaPagi = rawShift.includes('pagi')
-        const adaSore = rawShift.includes('sore')
-        if (adaPagi || adaSore) {
-          const ok = wlShift.some((x) => {
-            const k = String(x).toLowerCase()
-            return (k === 'pagi' && adaPagi) || (k === 'sore' && adaSore)
-          })
-          if (!ok) continue
-        }
-      }
       const dupKey = `${String(sx.id)}__${String(j.label || '').toLowerCase()}`
       if (existing.has(dupKey)) { skipped++; continue }
 
-      // 4-lapis: per-santri -> per-kelas -> per-lembaga -> default
-      let nominal = Number((j.nominal_per_santri as Record<string, unknown>)?.[String(sx.id)] || 0)
-      if (nominal === 0) {
-        const perK = (j.nominal_per_kelas || {}) as Record<string, Record<string, unknown>>
-        for (const [lemb, ks] of [[sx.lembaga, sx.kelas], [sx.lembaga_sekolah, sx.kelas_sekolah]]) {
-          if (!lemb) continue
-          const v = Number((perK[lemb] || {})[ks as string] || 0)
-          if (v > 0) { nominal = v; break }
-        }
-      }
-      if (nominal === 0) {
-        const perL = (j.nominal_per_lembaga || {}) as Record<string, unknown>
-        nominal = Number(perL[sx.lembaga] || perL[sx.lembaga_sekolah] || 0) || Number(j.nominal_default || 0)
-      }
-      if (nominal <= 0) { skipped++; continue }
+      // SATU rumus dengan tombol Generate: whitelist (lembaga/status/JK/shift), lapis nominal
+      //   (per santri -> paket -> tarif kombinasi -> per kelas -> per lembaga -> default),
+      //   diskon anak guru, dan pelipatan jenis ngaji ke tagihan sekolah/fullday.
+      //   null = santri tak ditagih jenis ini (tak berlaku / nominal 0 / jadi komponen jenis lain).
+      const h = hitungTagihan(j, sx, jenisKonteks)
+      if (!h) { skipped++; continue }
 
       const id = `tagihan_${sx.id}_${j.id}_${ym}`
+      // Ekor jsonb: `bayar` dipertahankan (dibaca utils/tagihan.terbayarDari untuk baris lama).
+      //   Jejak gabungan hanya ditulis bila memang ada — supaya baris tagihan biasa bentuknya
+      //   TIDAK berubah sedikit pun dibanding sebelum resolver ini ada.
+      // deno-lint-ignore no-explicit-any
+      const tail: Record<string, any> = { santri_nama: sx.nama || '', bayar: 0, jatuh_tempo: jt, sumber: 'auto_generate' }
+      if (h.komponen.length) tail.komponen = h.komponen
+      if (h.diskon_persen > 0) {
+        tail.nominal_bruto = h.nominal_bruto
+        tail.diskon_persen = h.diskon_persen
+        tail.diskon_nominal = h.diskon_nominal
+      }
       rowsToInsert.push({
         id,
         santri_id: String(sx.id),
         kategori: j.label || j.id || 'Tagihan',
         periode,
-        nominal,
+        nominal: h.nominal,
         status: 'belum',
-        // santri_nama/bayar/jatuh_tempo/sumber -> data jsonb (mirror split db.js)
-        data: { santri_nama: sx.nama || '', bayar: 0, jatuh_tempo: jt, sumber: 'auto_generate' }
+        // terbayar = kolom RIIL (audit 29 Jul); `bayar` di ekor hanya utk pembaca legacy
+        terbayar: 0,
+        data: tail
       })
       existing.add(dupKey)
       created++
