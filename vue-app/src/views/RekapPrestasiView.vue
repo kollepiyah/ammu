@@ -759,7 +759,7 @@
                   >
                     {{ s.nama }}
                     <span
-                      v-if="isGuruMode && !canEditPrestasi(s)"
+                      v-if="!canEditPrestasi(s)"
                       class="ml-1 text-[8px] font-black px-1.5 py-0.5 rounded bg-cyan-100 text-cyan-700 align-middle"
                       title="Santri kelas sekolah Anda — prestasi qiraati hanya dapat dilihat"
                       >SEKOLAH</span
@@ -870,7 +870,7 @@
                   >
                 </p>
                 <span
-                  v-if="isGuruMode && !canEditPrestasi(s)"
+                  v-if="!canEditPrestasi(s)"
                   class="text-[8px] font-black px-1.5 py-0.5 rounded bg-cyan-100 text-cyan-700 flex-shrink-0"
                   title="Santri kelas sekolah Anda — prestasi qiraati hanya dapat dilihat"
                   >SEKOLAH</span
@@ -1106,9 +1106,8 @@ import { buildListPdf } from '@/utils/pdfBuilder'
 import { muassisDataUrlSync } from '@/utils/kopMuassis' // v.100: baris-1 KOP print = gambar muassis
 import { useAuthStore } from '@/stores/auth'
 import { useRouter } from 'vue-router' // v.100c-fix: pilihKategori('diniyah') pakai router.push (sebelumnya undefined → ReferenceError)
-import { isFullFilterRole, isKepalaLembaga, isSuperAdmin } from '@/utils/roleScope'
-import { ownsSekolah, deteksiTipeGuru } from '@/utils/guruScope' // v.100b: guru sekolah lihat prestasi qiraati santri kelasnya (read-only); v.100d: deteksiTipeGuru utk toggle kategori guru dual
-import { lembagaScopeMatches } from '@/composables/useLembaga'
+import { isFullFilterRole, isSuperAdmin } from '@/utils/roleScope'
+import { ownsSekolah, deteksiTipeGuru, scopeQiraati } from '@/utils/guruScope' // v.100b: guru sekolah lihat prestasi qiraati santri kelasnya (read-only); v.100d: deteksiTipeGuru utk toggle kategori guru dual; v.1.2.8: scopeQiraati = scope kepala per-sisi
 import { sortSantri } from '@/utils/santriSort'
 import { useMobileShell } from '@/composables/useMobileShell'
 
@@ -1211,12 +1210,10 @@ const router = useRouter()
 const { isMobile } = useMobileShell()
 const isFullFilter = computed(() => isFullFilterRole(auth.sesiAktif))
 const isGuruMode = computed(() => !isFullFilter.value)
-// v.86.0526: Kepala/PJ (role guru, bukan admin) discope ke lembaganya.
-const kepalaScope = computed(() => {
-  const s = auth.sesiAktif
-  if (!s || s.role === 'admin' || s.id === 'admin') return null
-  return isKepalaLembaga(s) ? s.lembaga || null : null
-})
+// v.1.2.8 (Kyai 5 Agu 2026): scope kepala PER-SISI — sumber tunggal di utils/guruScope.
+//   Menutup bug "Kepala SDI yang juga guru ngaji PTPT melihat SEMUA santri SDI di rekap
+//   prestasi PTPT"; alasan lengkapnya ada di komentar scopeQiraati.
+const qs = computed(() => scopeQiraati(auth.sesiAktif))
 function _lowS(v) {
   return String(v || '')
     .toLowerCase()
@@ -1231,9 +1228,11 @@ function ownNgaji(s) {
 function ownSekolah(s) {
   return ownsSekolah(s, auth.sesiAktif?.guru || auth.sesiAktif?.nama)
 }
-// Boleh edit prestasi? admin/kepala = ya; guru = hanya santri NGAJI ampuannya (sekolah = read-only).
+// Boleh edit prestasi? admin penuh = ya. Kepala = lembaga NGAJI yang ia pimpin + santri
+//   ngaji ampuannya (kepala SEKOLAH tak dapat kuasa atas nilai qiraati). Guru = santri
+//   NGAJI ampuannya saja; santri kelas sekolahnya read-only.
 function canEditPrestasi(s) {
-  return !isGuruMode.value || ownNgaji(s)
+  return qs.value.edit(s)
 }
 // v.100d: filter kategori utk guru DUAL (mengampu ngaji DAN wali kelas sekolah) → ekspor terpisah
 const filterTipe = ref('all') // 'all' | 'qiraati' | 'sekolah'
@@ -1316,21 +1315,18 @@ function lembagaMatch(s, filter) {
 
 const filteredSantri = computed(() => {
   let list = santriQiraati.value
-  // Guru mode: santri ngaji ampuan (editable) + santri kelas sekolahnya (read-only, lihat prestasi qiraati)
-  if (isGuruMode.value) {
-    list = list.filter((s) => ownNgaji(s) || ownSekolah(s))
-    // v.100d: guru DUAL pisah kategori → ekspor terpisah. qiraati=ngaji (editable); sekolah=read-only (badge "SEKOLAH")
-    if (filterTipe.value === 'qiraati') list = list.filter((s) => ownNgaji(s))
-    else if (filterTipe.value === 'sekolah')
-      list = list.filter((s) => ownSekolah(s) && !ownNgaji(s))
+  // Satu penyaring untuk semua non-admin: guru = santri ngaji ampuan (editable) + santri
+  //   kelas sekolahnya (read-only); kepala = itu semua PLUS lembaga ngaji yang ia pimpin.
+  if (!qs.value.adminPenuh) {
+    list = list.filter((s) => qs.value.lihat(s))
+    // v.100d: guru DUAL pisah kategori → ekspor terpisah. qiraati=ngaji (editable);
+    //   sekolah=read-only (badge "SEKOLAH"). Toggle ini hanya muncul untuk guru.
+    if (isGuruMode.value) {
+      if (filterTipe.value === 'qiraati') list = list.filter((s) => ownNgaji(s))
+      else if (filterTipe.value === 'sekolah')
+        list = list.filter((s) => ownSekolah(s) && !ownNgaji(s))
+    }
   }
-  // v.86.0526: Kepala/PJ → hanya santri lembaganya (block lintas-lembaga)
-  if (kepalaScope.value)
-    list = list.filter(
-      (s) =>
-        lembagaScopeMatches(kepalaScope.value, s.lembaga) ||
-        lembagaScopeMatches(kepalaScope.value, s.lembaga_sekolah)
-    )
   if (filterLembaga.value) list = list.filter((s) => lembagaMatch(s, filterLembaga.value))
   if (filterKelas.value) list = list.filter((s) => String(s.kelas || '') === filterKelas.value)
   const kw = search.value.trim().toLowerCase()

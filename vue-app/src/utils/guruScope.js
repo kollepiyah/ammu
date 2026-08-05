@@ -47,6 +47,50 @@ export function ownsSekolah(s, nama) {
   return arr.some((g) => _lower(g) === gn)
 }
 
+/**
+ * v.1.2.8 — Scope layar QIRAATI (rekap prestasi & sejenisnya) untuk satu sesi.
+ * Return { adminPenuh, kepala, lihat(santri), edit(santri) }.
+ *
+ * BUG yang ditutup (Kyai, 5 Agu 2026): akun "Kepala SDI" yang juga guru ngaji PTPT
+ * melihat SELURUH santri SDI di rekap prestasi PTPT — mestinya cuma kelas ampuannya.
+ * Dua sebab bertumpuk di RekapPrestasiView:
+ *   1) isFullFilterRole() menganggap SETIAP kepala sebagai admin-penuh, sehingga
+ *      penyaring "santri ampuan" (ownsNgaji/ownsSekolah) tak pernah dijalankan;
+ *   2) penyaring kepala memakai `sesi.lembaga`, yaitu lembaga tempat ia MENGAJAR
+ *      ngaji — bukan lembaga yang ia PIMPIN. Untuk kepala sekolah keduanya beda:
+ *      yang dipimpin ada di jabatan ("Kepala SDI"), lihat headsLembaga.
+ *
+ * Sisi yang benar di layar qiraati: kewenangan PENUH hanya milik kepala lembaga
+ * NGAJI-nya (headsLembaga vs santri.lembaga). Kepala SEKOLAH tetap boleh MELIHAT
+ * santri kelas sekolahnya (read-only, fitur v.100b) tapi tak berkuasa atas nilai
+ * qiraati — wilayahnya di Rekap Diniyah.
+ *
+ * admin_keuangan SENGAJA tidak dihitung admin penuh: rekap akademik bukan
+ * wilayahnya, dan ia tak punya santri ampuan sehingga daftarnya kosong.
+ */
+export function scopeQiraati(sesi) {
+  const nama = sesi?.guru || sesi?.nama || ''
+  const adminPenuh =
+    !!sesi && (sesi.id === 'admin' || ['super_admin', 'admin'].includes(sesi.role_sistem))
+  const jab = `${_lower(sesi?.jabatan)} ${_lower(sesi?.jabatan_tambahan)}`
+  const kepala = !adminPenuh && /(^|\s)(kepala|pj|pengasuh)(\s|$)/.test(jab)
+  const pimpinNgaji = (s) => headsLembaga(sesi, s?.lembaga)
+  return {
+    adminPenuh,
+    kepala,
+    lihat(s) {
+      if (adminPenuh) return true
+      if (kepala && pimpinNgaji(s)) return true
+      return ownsNgaji(s, nama) || ownsSekolah(s, nama)
+    },
+    edit(s) {
+      if (adminPenuh) return true
+      if (kepala && pimpinNgaji(s)) return true
+      return ownsNgaji(s, nama)
+    }
+  }
+}
+
 // Tipe guru dari daftar santri: { qiraati:bool, sekolah:bool }. dual = keduanya true.
 export function deteksiTipeGuru(santriList, nama) {
   const gn = _lower(nama)
