@@ -6,56 +6,73 @@
 @tailwind utilities;
 
 /* v.103: util untuk section scroll-samping (snap-carousel) — sembunyikan scrollbar */
-.hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-.hide-scrollbar::-webkit-scrollbar { display: none; }
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* v.1.2.8 (Kyai 5 Agu 2026: "tampilannya seperti terlalu zoom" di HP low-end).
+ * Pasangan web dari kunci textZoom di MainActivity: browser mobile MENAIKKAN ukuran
+ * teks sendiri (auto text inflation Chrome + skala font sistem), dan karena tata letak
+ * Ammu berbasis teks, pembesaran itu mendorong tinggi baris & memaksa pembungkusan —
+ * terbaca sebagai "ke-zoom", bukan "font lebih besar".
+ * Yang dinetralkan HANYA inflasi teks otomatis; zoom pinch pengguna & Ukuran Tampilan
+ * (density) perangkat TIDAK disentuh — keduanya preferensi sah yang harus dihormati. */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
 
 :root {
   /* === LIGHT MODE — Teal + Ivory === */
-  --bg-page: #FFFFFF;
-  --bg-card: #FFFFFF;
-  --bg-card-elevated: #F8FAFC;
+  --bg-page: #ffffff;
+  --bg-card: #ffffff;
+  --bg-card-elevated: #f8fafc;
   --bg-overlay: rgba(15, 23, 42, 0.5);
-  --bg-sidebar: #F0FDFA;
-  --bg-input: #FFFFFF;
-  --bg-hover: #F0FDFA;
-  --bg-muted: #F1F5F9;
+  --bg-sidebar: #f0fdfa;
+  --bg-input: #ffffff;
+  --bg-hover: #f0fdfa;
+  --bg-muted: #f1f5f9;
 
-  --border-subtle: #E2E8F0;
-  --border-default: #CBD5DC;
-  --border-strong: #94A3B8;
+  --border-subtle: #e2e8f0;
+  --border-default: #cbd5dc;
+  --border-strong: #94a3b8;
 
-  --text-primary: #0F172A;
+  --text-primary: #0f172a;
   --text-secondary: #475569;
-  --text-tertiary: #94A3B8;
-  --text-inverse: #FFFFFF;
-  --text-on-primary: #FFFFFF;
-  --text-on-accent: #FFFFFF;
+  --text-tertiary: #94a3b8;
+  --text-inverse: #ffffff;
+  --text-on-primary: #ffffff;
+  --text-on-accent: #ffffff;
 
-  --color-primary: #0F766E;
-  --color-primary-hover: #115E59;
-  --color-primary-soft: #CCFBF1;
-  --color-primary-soft-hover: #99F6E4;
+  --color-primary: #0f766e;
+  --color-primary-hover: #115e59;
+  --color-primary-soft: #ccfbf1;
+  --color-primary-soft-hover: #99f6e4;
 
-  --color-accent: #14B8A6;
-  --color-accent-hover: #0D9488;
-  --color-accent-soft: #CCFBF1;
-  --color-accent-soft-hover: #99F6E4;
+  --color-accent: #14b8a6;
+  --color-accent-hover: #0d9488;
+  --color-accent-soft: #ccfbf1;
+  --color-accent-soft-hover: #99f6e4;
 
   --color-success: #059669;
-  --color-success-soft: #D1FAE5;
-  --color-success-text: #064E3B;
+  --color-success-soft: #d1fae5;
+  --color-success-text: #064e3b;
 
-  --color-warning: #D97706;
-  --color-warning-soft: #FEF3C7;
-  --color-warning-text: #78350F;
+  --color-warning: #d97706;
+  --color-warning-soft: #fef3c7;
+  --color-warning-text: #78350f;
 
-  --color-danger: #DC2626;
-  --color-danger-soft: #FEE2E2;
-  --color-danger-text: #7F1D1D;
+  --color-danger: #dc2626;
+  --color-danger-soft: #fee2e2;
+  --color-danger-text: #7f1d1d;
 
-  --color-info: #2563EB;
-  --color-info-soft: #DBEAFE;
-  --color-info-text: #1E3A8A;
+  --color-info: #2563eb;
+  --color-info-soft: #dbeafe;
+  --color-info-text: #1e3a8a;
 
   --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
   --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08);
@@ -69,62 +86,66 @@
 
 .dark {
   /* === DARK MODE — Slate familiar === */
-  --bg-page: #0F172A;
-  --bg-card: #1E293B;
+  --bg-page: #0f172a;
+  --bg-card: #1e293b;
   --bg-card-elevated: #334155;
   --bg-overlay: rgba(0, 0, 0, 0.7);
-  --bg-sidebar: #1E293B;
-  --bg-input: #1E293B;
+  --bg-sidebar: #1e293b;
+  --bg-input: #1e293b;
   --bg-hover: #334155;
   --bg-muted: #334155;
 
   --border-subtle: #334155;
   --border-default: #475569;
-  --border-strong: #64748B;
+  --border-strong: #64748b;
 
-  --text-primary: #F1F5F9;
-  --text-secondary: #94A3B8;
-  --text-tertiary: #64748B;
-  --text-inverse: #0F172A;
-  --text-on-primary: #FFFFFF;
-  --text-on-accent: #0F172A;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-tertiary: #64748b;
+  --text-inverse: #0f172a;
+  --text-on-primary: #ffffff;
+  --text-on-accent: #0f172a;
 
-  --color-primary: #115E59;
-  --color-primary-hover: #134E4A;
-  --color-primary-soft: #134E4A;
-  --color-primary-soft-hover: #115E59;
+  --color-primary: #115e59;
+  --color-primary-hover: #134e4a;
+  --color-primary-soft: #134e4a;
+  --color-primary-soft-hover: #115e59;
 
-  --color-accent: #155E75;
-  --color-accent-hover: #164E63;
-  --color-accent-soft: #134E4A;
-  --color-accent-soft-hover: #115E59;
+  --color-accent: #155e75;
+  --color-accent-hover: #164e63;
+  --color-accent-soft: #134e4a;
+  --color-accent-soft-hover: #115e59;
 
-  --color-success: #34D399;
-  --color-success-soft: #064E3B;
-  --color-success-text: #6EE7B7;
+  --color-success: #34d399;
+  --color-success-soft: #064e3b;
+  --color-success-text: #6ee7b7;
 
-  --color-warning: #FBBF24;
-  --color-warning-soft: #78350F;
-  --color-warning-text: #FCD34D;
+  --color-warning: #fbbf24;
+  --color-warning-soft: #78350f;
+  --color-warning-text: #fcd34d;
 
-  --color-danger: #F87171;
-  --color-danger-soft: #7F1D1D;
-  --color-danger-text: #FCA5A5;
+  --color-danger: #f87171;
+  --color-danger-soft: #7f1d1d;
+  --color-danger-text: #fca5a5;
 
-  --color-info: #60A5FA;
-  --color-info-soft: #1E3A8A;
-  --color-info-text: #93C5FD;
+  --color-info: #60a5fa;
+  --color-info-soft: #1e3a8a;
+  --color-info-text: #93c5fd;
 
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.30);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.40);
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.50);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
 }
 
-body, html, #app {
+body,
+html,
+#app {
   font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
   background: var(--bg-page);
   color: inherit;
-  transition: background-color 0.2s ease, color 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
 }
 
 :where(h1, h2, h3, h4, h5, h6) {
@@ -140,8 +161,13 @@ body, html, #app {
   border-radius: var(--radius-sm);
 }
 
-.custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
-.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background-color: var(--border-default);
   border-radius: var(--radius-sm);
@@ -158,10 +184,22 @@ body, html, #app {
 }
 
 @media print {
-  body * { visibility: hidden; }
-  .print-area, .print-area * { visibility: visible; }
-  .print-area { position: absolute; left: 0; top: 0; width: 100%; }
-  .no-print { display: none !important; }
+  body * {
+    visibility: hidden;
+  }
+  .print-area,
+  .print-area * {
+    visibility: visible;
+  }
+  .print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+  .no-print {
+    display: none !important;
+  }
 }
 
 /* v.85.0526: Safe-area-inset — fix Android/iOS overlap dengan status bar + nav bar di notched devices.
@@ -186,13 +224,24 @@ body, html, #app {
 }
 
 /* Native feel di mobile */
-img { -webkit-touch-callout: none; -webkit-user-drag: none; }
-html { -webkit-overflow-scrolling: touch; }
-button, [role="button"] { min-height: 36px; }
+img {
+  -webkit-touch-callout: none;
+  -webkit-user-drag: none;
+}
+html {
+  -webkit-overflow-scrolling: touch;
+}
+button,
+[role='button'] {
+  min-height: 36px;
+}
 
 /* Hide scrollbar di mobile (cleaner native feel) */
 @media (max-width: 768px) {
-  ::-webkit-scrollbar { width: 0; height: 0; }
+  ::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+  }
 }
 
 /* ====================================================================
@@ -228,12 +277,21 @@ button, [role="button"] { min-height: 36px; }
    Form dikecualikan (:has input/label/select/textarea) supaya tak rusak. */
 @media (min-width: 1024px) {
   /* grid 2-kolom: kartu lebih besar (chooser/ringkasan/panel) */
-  main .grid.md\:grid-cols-2:not(.no-densify):not(:has(input)):not(:has(label)):not(:has(select)):not(:has(textarea)) {
+  main
+    .grid.md\:grid-cols-2:not(.no-densify):not(:has(input)):not(:has(label)):not(:has(select)):not(
+      :has(textarea)
+    ) {
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   }
   /* grid 3-kolom: kartu lebih kecil (daftar santri/guru, POS, dll) */
-  main .grid.md\:grid-cols-3:not(.no-densify):not(:has(input)):not(:has(label)):not(:has(select)):not(:has(textarea)),
-  main .grid.lg\:grid-cols-3:not(.no-densify):not(:has(input)):not(:has(label)):not(:has(select)):not(:has(textarea)) {
+  main
+    .grid.md\:grid-cols-3:not(.no-densify):not(:has(input)):not(:has(label)):not(:has(select)):not(
+      :has(textarea)
+    ),
+  main
+    .grid.lg\:grid-cols-3:not(.no-densify):not(:has(input)):not(:has(label)):not(:has(select)):not(
+      :has(textarea)
+    ) {
     grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
   }
 }
