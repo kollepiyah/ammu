@@ -1,0 +1,24 @@
+{
+  "_catatan": [
+    "Sumber tunggal 'versi terbaru' untuk pemberitahuan pembaruan di aplikasi Android.",
+    "Berkas ini ikut ter-deploy bersama web (vue-app/public -> hosting), jadi selalu",
+    "seusia web yang sedang tayang. Aplikasi Android membandingkan versionCode di sini",
+    "dengan versionCode dirinya sendiri; kalau di sini lebih besar, muncul tawaran unduh.",
+    "",
+    "WAJIB diperbarui bersama bump versi (lihat daftar titik versi di CHANGELOG).",
+    "",
+    "apkUrl HARUS berisi APK 'Signed, universal APK' yang DIUNDUH DARI PLAY CONSOLE",
+    "(App bundle explorer -> Downloads). APK hasil build lokal ditandatangani kunci",
+    "yang BERBEDA dari kunci Play, sehingga tak bisa dipasang menimpa aplikasi yang",
+    "sudah ada dari Play Store (galat 'App not installed') — pengguna harus uninstall",
+    "lebih dulu dan kehilangan sesi/data lokalnya."
+  ],
+  "android": {
+    "versionCode": 127,
+    "versionName": "v.1.2.7",
+    "apkUrl": "https://github.com/kollepiyah/ammu/releases/latest/download/AmmuOnline.apk",
+    "halamanRilis": "https://github.com/kollepiyah/ammu/releases/latest",
+    "wajib": false,
+    "catatan": ""
+  }
+}

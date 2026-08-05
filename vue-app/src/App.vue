@@ -23,6 +23,8 @@ import ToastStack from '@/components/ui/ToastStack.vue'
 // v.95.0626: FCM push — daftarkan saat user login (native saja)
 import { useAuthStore } from '@/stores/auth'
 import { usePushNotifications } from '@/composables/usePushNotifications'
+// v.1.2.8: tawaran unduh pembaruan APK (aplikasi Android saja)
+import { useAndroidUpdate } from '@/composables/useAndroidUpdate'
 
 // v.20.74.1.0526: BUGFIX — App.vue jangan panggil ui.initDarkFromStorage/auth.bindLiveSesi/settings.bindSettings.
 // main.js sudah handle init. App.vue cuma watch theme color + appTitle.
@@ -140,6 +142,17 @@ async function setupNativeIntegration() {
 }
 
 onMounted(setupNativeIntegration)
+
+// v.1.2.8: tawarkan pembaruan APK di aplikasi Android (Kyai: "supaya tidak nunggu lama
+//   dari playstore"). Sengaja ditunda beberapa detik supaya tak berebut dengan boot, dan
+//   diam-diam gagal kalau jaringan/berkasnya tak ada. Lihat useAndroidUpdate.
+onMounted(() => {
+  try {
+    useAndroidUpdate().cekOtomatis()
+  } catch (e) {
+    /* cek pembaruan tak boleh mengganggu app */
+  }
+})
 
 // --- Pengaturan printer: dipasang saat diminta saja (P8b) --------------------
 // Pembukanya = event window 'ammu:open-printer-settings' (PosSantriView +
