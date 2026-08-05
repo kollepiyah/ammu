@@ -19,7 +19,20 @@
 // Play, jadi tak bisa memasang menimpa aplikasi dari Play ("App not installed").
 import { useUiStore } from '@/stores/ui'
 
-const SUMBER = '/app-version.json'
+// Di WEB, berkasnya sepanggung dengan halaman → path relatif sudah benar.
+const SUMBER_RELATIF = '/app-version.json'
+// Di APLIKASI NATIVE, Capacitor menyajikan bundel LOKAL di https://localhost
+// (capacitor.config: androidScheme 'https', TANPA server.url). Jadi
+// fetch('/app-version.json') di dalam APK membaca berkas yang DIBUNDEL BERSAMA APK ITU —
+// versinya selalu sama dengan dirinya sendiri, sehingga pembaruan TAK AKAN PERNAH
+// terdeteksi dan fiturnya mati tanpa satu pun galat. Native karena itu wajib menembak
+// hosting. (Domain sengaja hardcode: kalau ikut origin, ia jadi https://localhost lagi.)
+const SUMBER_HOSTING = 'https://ammuonline.web.app/app-version.json'
+
+/** Sumber berkas versi. `native` = berjalan di dalam aplikasi (bukan peramban). */
+export function sumberVersi(native) {
+  return native ? SUMBER_HOSTING : SUMBER_RELATIF
+}
 // Ditanya sekali per versi. Kalau pengguna memilih "Nanti", jangan diganggu lagi untuk
 // versi ITU — tapi versi berikutnya tetap ditawarkan.
 const KUNCI_TOLAK = 'ammu_lewati_versi_android'
@@ -72,7 +85,7 @@ async function versiTerpasang() {
 async function versiTerbaru() {
   // cache-bust: tanpa ini WebView bisa menyajikan salinan lama dari cache HTTP/SW dan
   // pembaruan tak pernah terlihat.
-  const url = `${SUMBER}?t=${Date.now()}`
+  const url = `${sumberVersi(nativeAndroid())}?t=${Date.now()}`
   const res = await fetch(url, { cache: 'no-store' })
   if (!res.ok) throw new Error(`app-version.json: HTTP ${res.status}`)
   const j = await res.json()

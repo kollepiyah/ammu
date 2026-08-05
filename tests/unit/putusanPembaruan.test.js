@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { putusanPembaruan } from '@/composables/useAndroidUpdate'
+import { putusanPembaruan, sumberVersi } from '@/composables/useAndroidUpdate'
 
 // Kyai (5 Agu 2026): "di web ada tautan link download android (apk). jika ada update
 // baru, supaya tidak nunggu lama dari playstore ... bisa langsung ada notif unduh
@@ -78,5 +78,23 @@ describe('putusanPembaruan', () => {
 
   it('kiniCode tak dikenal (0) tetap menawarkan — lebih baik ditawari daripada tertinggal', () => {
     expect(putusanPembaruan({ kiniCode: 0, baru: baru(128) })).toBe('tawarkan')
+  })
+})
+
+// Jebakan yang mematikan seluruh fitur tanpa satu pun galat: Capacitor menyajikan bundel
+// LOKAL di https://localhost (capacitor.config punya androidScheme 'https' TANPA
+// server.url), jadi di dalam APK fetch('/app-version.json') membaca berkas yang DIBUNDEL
+// BERSAMA APK ITU. versionCode-nya selalu sama dengan dirinya sendiri -> putusan selalu
+// 'terbaru' -> tak ada pembaruan yang pernah ditawarkan. Native WAJIB menembak hosting.
+describe('sumberVersi', () => {
+  it('aplikasi native menembak HOSTING (bukan bundel lokalnya sendiri)', () => {
+    const url = sumberVersi(true)
+    expect(url).toMatch(/^https:\/\//)
+    expect(url).not.toMatch(/localhost/)
+    expect(url.endsWith('/app-version.json')).toBe(true)
+  })
+
+  it('web memakai path relatif (sepanggung dengan halaman)', () => {
+    expect(sumberVersi(false)).toBe('/app-version.json')
   })
 })
