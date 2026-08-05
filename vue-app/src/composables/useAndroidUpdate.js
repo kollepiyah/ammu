@@ -27,11 +27,28 @@ const SUMBER_RELATIF = '/app-version.json'
 // versinya selalu sama dengan dirinya sendiri, sehingga pembaruan TAK AKAN PERNAH
 // terdeteksi dan fiturnya mati tanpa satu pun galat. Native karena itu wajib menembak
 // hosting. (Domain sengaja hardcode: kalau ikut origin, ia jadi https://localhost lagi.)
+//
+// KARENA ITU pembacaannya LINTAS-ORIGIN (https://localhost -> ammuonline.web.app), dan
+// CapacitorHttp tidak diaktifkan di capacitor.config, jadi fetch di sini tunduk CORS
+// persis seperti di peramban. Hosting WAJIB mengirim Access-Control-Allow-Origin untuk
+// /app-version.json — aturannya ada di firebase.json (headers hosting target `main`).
+// Tanpa header itu WebView menolak respons, fetch melempar, dan seluruh fitur ini mati
+// tanpa satu pun galat yang terlihat pengguna. Jangan hapus aturan header itu.
 const SUMBER_HOSTING = 'https://ammuonline.web.app/app-version.json'
 
 /** Sumber berkas versi. `native` = berjalan di dalam aplikasi (bukan peramban). */
 export function sumberVersi(native) {
   return native ? SUMBER_HOSTING : SUMBER_RELATIF
+}
+
+/**
+ * apkUrl hanya boleh https. Berkas versinya memang milik sendiri, tapi ia menentukan
+ * URL yang dibuka aplikasi — kalau hosting/berkasnya pernah disusupi, `javascript:` di
+ * sini berarti eksekusi kode di dalam WebView, dan `http:` berarti APK yang bisa
+ * ditukar di jalan. Pagar semurah ini tak perlu menunggu kejadian.
+ */
+export function apkUrlSah(url) {
+  return /^https:\/\/[^\s]+$/i.test(String(url || ''))
 }
 // Ditanya sekali per versi. Kalau pengguna memilih "Nanti", jangan diganggu lagi untuk
 // versi ITU — tapi versi berikutnya tetap ditawarkan.
@@ -50,7 +67,7 @@ const KUNCI_TOLAK = 'ammu_lewati_versi_android'
  */
 export function putusanPembaruan({ kiniCode = 0, baru = {}, dilewatiCode = null, manual = false }) {
   const kode = Number(baru.versionCode ?? baru.code ?? 0)
-  if (!kode || !baru.apkUrl) return 'belum-siap'
+  if (!kode || !apkUrlSah(baru.apkUrl)) return 'belum-siap'
   if (kode <= Number(kiniCode || 0)) return 'terbaru'
   // Pemeriksaan manual selalu menawarkan: pengguna memang sengaja menekan tombolnya.
   // Pembaruan `wajib` juga tak bisa dibungkam.
@@ -101,6 +118,9 @@ async function versiTerbaru() {
 }
 
 function bukaDiLuar(url) {
+  // Lapis kedua: `cek()` sudah menyaring lewat putusanPembaruan, tapi fungsi ini yang
+  // benar-benar membuka URL — jadi ia memeriksa sendiri, tak menitipkan ke pemanggil.
+  if (!apkUrlSah(url)) return
   // Capacitor meneruskan URL non-app ke browser sistem, jadi unduhan tak terjebak di
   // dalam WebView (yang tak punya UI unduhan).
   try {

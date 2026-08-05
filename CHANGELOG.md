@@ -80,9 +80,11 @@ sudah menunjuk `releases/latest/download/AmmuOnline.apk` dan sudah berisi vc128.
 - **Tampilan "terlalu zoom" di HP low-end.** HP itu disetel Ukuran Font besar, dan WebView
   menurunkan skala font sistem ke halaman — karena tata letak Ammu berbasis teks,
   pembesaran itu mendorong tinggi baris & memaksa pembungkusan, sehingga terbaca sebagai
-  "ke-zoom". `MainActivity` kini mengunci `textZoom` 100% dan CSS memakai
-  `text-size-adjust: 100%`. Ukuran Tampilan (density) perangkat & zoom pinch **tidak**
-  disentuh — itu preferensi sah seluruh perangkat.
+  "ke-zoom". `MainActivity` kini **membatasi** `textZoom` di 115% (bukan mengunci 100%:
+  yang menaikkan ukuran font sering justru orang yang membutuhkan teks besar — batas ini
+  menahan tata letak tetap utuh sambil tetap memberi sebagian pembesaran yang diminta),
+  dan CSS memakai `text-size-adjust: 100%`. Ukuran Tampilan (density) perangkat & zoom
+  pinch **tidak** disentuh — itu preferensi sah seluruh perangkat.
 - **Auto-update Electron.** `win.publisherName` dibuang (lihat peringatan di atas) dan
   `artifactName` kini memuat versi, supaya cache & blockmap rilis lama tak bertabrakan.
   Status "sudah versi terbaru" di PC berversi skema lama (110.0.626) tak lagi ditelan apa
@@ -90,6 +92,31 @@ sudah menunjuk `releases/latest/download/AmmuOnline.apk` dan sudah berisi vc128.
   sekarang ia diberi tahu dan diarahkan memasang manual.
 - **Tanggal mutasi tabungan/uang saku** ikut pindah ke WIB — setoran subuh dulu tercatat di
   tanggal sebelumnya, yang langsung merusak laporan harian dan penomoran No. Bukti.
+
+#### Susulan — ditemukan sesudah deploy pertama 5 Agu (perlu **deploy web ulang**)
+
+- **Pemberitahuan pembaruan APK sebenarnya belum jalan sama sekali.** Di dalam APK,
+  halaman disajikan Capacitor dari `https://localhost`, jadi pembacaan
+  `app-version.json` di hosting itu **lintas-origin** — dan hosting tak mengirim
+  `Access-Control-Allow-Origin` (diuji langsung: header itu memang tak ada, dan
+  `CapacitorHttp` tidak diaktifkan sehingga `fetch` tunduk CORS seperti peramban biasa).
+  WebView menolak responsnya, `fetch` melempar, lalu galatnya ditelan pemeriksaan
+  otomatis — fitur mati tanpa jejak. `firebase.json` kini mengirim
+  `Access-Control-Allow-Origin: *` + `Cache-Control: no-cache` untuk `/app-version.json`.
+  **Cukup deploy hosting** — APK vc128 yang sudah dibangun langsung ikut hidup.
+- **`apkUrl` wajib `https://`.** Berkas versinya milik sendiri, tapi ia menentukan URL yang
+  dibuka aplikasi: kalau berkas itu pernah disusupi, `javascript:` berarti eksekusi kode di
+  dalam WebView dan `http:` berarti APK yang bisa ditukar di jalan.
+- **Rebuild Electron gagal total** sesudah 1.2.8 rilis: catatan `publisherName` dititipkan
+  sebagai kunci di dalam `build.win`, dan electron-builder 24 menolak properti tak dikenal
+  (`ValidationError`) sebelum build mulai. Catatannya dipindah ke root `package.json` yang
+  tak ikut divalidasi.
+- **Tanggal transaksi keuangan & absensi guru pakai WIB.** Pola UTC yang sama masih tersisa
+  di Tagihan (tanggal bayar, cek jatuh tempo), Pembayaran, Pembayaran Pending (baris Buku
+  Induk), Hutang/Piutang, Uang Pos, **jalur impor mutasi Tabungan** (terlewat waktu
+  setor/tarik diperbaiki), dan `AbsensiGuru.saveHarian()` — yang terakhir menaruh absen
+  shift subuh di tanggal kemarin sehingga menggeser hitungan bisyaroh. Penjaga regresi
+  `tests/unit/tanggalTransaksiWib.test.js` menjaga 10 berkas itu tak kembali ke pola UTC.
 
 ### Added (Baru)
 

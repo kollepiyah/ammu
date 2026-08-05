@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { putusanPembaruan, sumberVersi } from '@/composables/useAndroidUpdate'
+import { putusanPembaruan, sumberVersi, apkUrlSah } from '@/composables/useAndroidUpdate'
 
 // Kyai (5 Agu 2026): "di web ada tautan link download android (apk). jika ada update
 // baru, supaya tidak nunggu lama dari playstore ... bisa langsung ada notif unduh
@@ -34,6 +34,14 @@ describe('putusanPembaruan', () => {
 
   it('apkUrl kosong -> belum-siap (jangan tawarkan tautan hampa)', () => {
     expect(putusanPembaruan({ kiniCode: 127, baru: baru(128, { apkUrl: '' }) })).toBe('belum-siap')
+  })
+
+  it('apkUrl bukan https -> belum-siap, walau versinya lebih baru', () => {
+    for (const url of ['javascript:alert(1)', 'http://contoh.test/a.apk', '/lokal/a.apk']) {
+      expect(putusanPembaruan({ kiniCode: 127, baru: baru(128, { apkUrl: url }) })).toBe(
+        'belum-siap'
+      )
+    }
   })
 
   it('versionCode kosong/0 -> belum-siap', () => {
@@ -96,5 +104,26 @@ describe('sumberVersi', () => {
 
   it('web memakai path relatif (sepanggung dengan halaman)', () => {
     expect(sumberVersi(false)).toBe('/app-version.json')
+  })
+})
+
+// apkUrl menentukan URL yang DIBUKA aplikasi. Berkas versinya memang milik sendiri, tapi
+// kalau hosting/berkasnya pernah disusupi, `javascript:` di sini = eksekusi kode di dalam
+// WebView dan `http:` = APK yang bisa ditukar di jalan.
+describe('apkUrlSah', () => {
+  it('https diterima', () => {
+    expect(apkUrlSah('https://github.com/kollepiyah/ammu/releases/latest/download/A.apk')).toBe(
+      true
+    )
+  })
+
+  it('javascript:, http:, path relatif, dan kosong ditolak', () => {
+    for (const url of ['javascript:alert(1)', 'http://contoh.test/a.apk', '/a.apk', '', null]) {
+      expect(apkUrlSah(url)).toBe(false)
+    }
+  })
+
+  it('https berhuruf besar tetap diterima (skema tak peka huruf)', () => {
+    expect(apkUrlSah('HTTPS://contoh.test/a.apk')).toBe(true)
   })
 })

@@ -27,7 +27,7 @@ public class MainActivity extends BridgeActivity {
     registerPlugin(WidgetBridgePlugin.class);
     super.onCreate(savedInstanceState);
 
-    kunciSkalaTeks();
+    batasiSkalaTeks();
 
     splashScreen.setKeepOnScreenCondition(() -> keepSplash);
     new Handler(Looper.getMainLooper()).postDelayed(() -> keepSplash = false, 450L);
@@ -48,8 +48,11 @@ public class MainActivity extends BridgeActivity {
     });
   }
 
+  /** Batas atas skala teks. Di atas ini tata letak Ammu mulai pecah. */
+  private static final int TEXT_ZOOM_MAKS = 115;
+
   /**
-   * v.1.2.8 — Kunci skala teks WebView ke 100%.
+   * v.1.2.8 — Batasi skala teks WebView, bukan mengunci mati.
    *
    * GEJALA (Kyai, 5 Agu 2026): "di beberapa HP low end ... tampilannya seperti terlalu
    * zoom". HP itu memang disetel Ukuran Font besar — lazim di HP low-end supaya layar
@@ -61,17 +64,27 @@ public class MainActivity extends BridgeActivity {
    * mendorong tinggi baris & memaksa pembungkusan — hasilnya terbaca sebagai "ke-zoom",
    * bukan sebagai "font lebih besar".
    *
-   * Ini SENGAJA hanya menetralkan skala font sistem, bukan Ukuran Tampilan (density):
-   * yang kedua memang seharusnya dihormati — itu preferensi seluruh perangkat, dan
-   * melawannya berarti membuat app satu-satunya yang kecil di HP tsb.
+   * KENAPA DIBATASI, BUKAN DIKUNCI 100%: mengunci berarti membuang preferensi ukuran
+   * font sistem sepenuhnya — dan yang menaikkannya sering justru orang yang MEMBUTUHKAN
+   * teks besar (mata lelah, penglihatan menurun). Ammu jadi satu-satunya app yang tak
+   * mau membesar di HP itu. Batas 115% menahan tata letak tetap utuh sambil tetap
+   * memberi sebagian pembesaran yang diminta pengguna; di bawah 100% tak diutak-atik
+   * sama sekali (pengguna yang mengecilkan font memang ingin muat lebih banyak).
+   *
+   * Ini tetap TIDAK menyentuh Ukuran Tampilan (density): itu preferensi seluruh
+   * perangkat dan memang seharusnya dihormati apa adanya.
    *
    * Bukan refleksi (API langsung), jadi tak perlu keep-rule R8.
    */
-  private void kunciSkalaTeks() {
+  private void batasiSkalaTeks() {
     try {
       if (getBridge() == null || getBridge().getWebView() == null) return;
       WebSettings ws = getBridge().getWebView().getSettings();
-      if (ws != null) ws.setTextZoom(100);
+      if (ws == null) return;
+      // fontScale sistem: 1.0 = normal, 1.15-1.30 = "Besar"/"Sangat besar".
+      float skala = getResources().getConfiguration().fontScale;
+      int persen = Math.round(skala * 100f);
+      if (persen > TEXT_ZOOM_MAKS) ws.setTextZoom(TEXT_ZOOM_MAKS);
     } catch (Exception e) {
       // Jangan sampai penyesuaian kosmetik menggagalkan start-up app.
     }
