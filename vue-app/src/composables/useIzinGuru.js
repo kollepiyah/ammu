@@ -6,19 +6,12 @@ import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
 import { isSuperAdmin, isAdminBiasa, isAdminKeuangan, isKepalaLembaga } from '@/utils/roleScope'
 import { lembagaScopeMatches } from '@/composables/useLembaga'
+// Rentang tanggal inklusif (YYYY-MM-DD), dibatasi 60 hari. SUMBER TUNGGAL di
+// utils/format — versi lokal yang lama memakai toISOString() pada Date tengah malam
+// LOKAL, jadi tanggalnya mundur 1 hari di WIB (lihat komentar rentangTanggal).
+import { rentangTanggal } from '@/utils/format'
 
-// Rentang tanggal inklusif (YYYY-MM-DD). Dibatasi 60 hari (guard).
-function dateRange(start, end) {
-  if (!start) return []
-  const s = new Date(start + 'T00:00:00')
-  const e = new Date((end || start) + 'T00:00:00')
-  if (isNaN(s.getTime()) || isNaN(e.getTime()) || e < s) return [start]
-  const out = []
-  for (let d = new Date(s); d <= e && out.length < 60; d.setDate(d.getDate() + 1)) {
-    out.push(d.toISOString().slice(0, 10))
-  }
-  return out
-}
+const dateRange = (start, end) => rentangTanggal(start, end, 60)
 
 export function useIzinGuru() {
   const auth = useAuthStore()
@@ -130,9 +123,12 @@ export function useIzinGuru() {
     })
   }
 
-  // Penyetuju: setujui → tulis absensi_shift_guru per tanggal × shift.
-  //   `existingAbsensi` = daftar dok absensi (utk lewati hari yg sudah Hadir/Terlambat). Return {written, skipped}.
-  async function setujui(a, existingAbsensi = []) {
+  // Tulis absensi_shift_guru per tanggal × shift dari 1 pengajuan. Dipakai `setujui`
+  //   DAN `terapkanUlang` (pemulihan data yg kena bug tanggal mundur).
+  //   `existingAbsensi` = daftar dok absensi (utk lewati hari yg sudah Hadir/Terlambat).
+  //   `periode` ikut ditulis: kolom riil di absensi_shift_guru (index guru_id+periode) —
+  //   dulu tak diisi jalur izin, jadi baris izin luput dari query berbasis periode.
+  async function tulisAbsensi(a, existingAbsensi = []) {
     const dates = dateRange(a.tgl_mulai, a.tgl_selesai)
     const shifts = Array.isArray(a.shifts) && a.shifts.length ? a.shifts : ['pagi', 'sore']
     const exById = new Map((existingAbsensi || []).map((x) => [String(x.id), x]))
@@ -150,6 +146,7 @@ export function useIzinGuru() {
         await mergeOne('absensi_shift_guru', docId, {
           id: docId,
           guru_id: String(a.guru_id),
+          periode: String(tgl).slice(0, 7),
           guru_nama: a.guru_nama || '',
           tanggal: tgl,
           shift: sh,
@@ -162,13 +159,32 @@ export function useIzinGuru() {
         written++
       }
     }
+    return { written, skipped }
+  }
+
+  // Penyetuju: setujui → tulis absensi_shift_guru per tanggal × shift. Return {written, skipped}.
+  async function setujui(a, existingAbsensi = []) {
+    const r = await tulisAbsensi(a, existingAbsensi)
     await updateOne('izin_guru', a.id, {
       status: 'disetujui',
       penyetuju: myNama.value,
       tgl_putus: new Date().toISOString(),
-      n_absensi: written
+      n_absensi: r.written
     })
-    return { written, skipped }
+    return r
+  }
+
+  // Pemulihan: terapkan ULANG pengajuan yang SUDAH disetujui ke absensi, tanpa
+  //   mengubah status/penyetuju. Perlu karena bug tanggal-mundur (s/d 5 Agu 2026)
+  //   membuat sebagian pengajuan disetujui tapi barisnya menempel di hari yang salah
+  //   — atau tak tertulis sama sekali karena hari sebelumnya sudah "hadir" (dilewati).
+  async function terapkanUlang(a, existingAbsensi = []) {
+    const r = await tulisAbsensi(a, existingAbsensi)
+    await updateOne('izin_guru', a.id, {
+      n_absensi: r.written,
+      tgl_terap_ulang: new Date().toISOString()
+    })
+    return r
   }
 
   onMounted(() => {
@@ -197,6 +213,7 @@ export function useIzinGuru() {
     ajukan,
     batal,
     tolak,
-    setujui
+    setujui,
+    terapkanUlang
   }
 }

@@ -338,6 +338,42 @@
           </div>
         </div>
       </div>
+
+      <!-- Pemulihan: pengajuan sudah disetujui tapi belum ada baris absensi yang tertulis
+           (korban bug tanggal-mundur s/d 5 Agu 2026). Blok ini hilang sendiri kalau kosong. -->
+      <div
+        v-if="izinPerluTerap.length"
+        class="mt-3 pt-3 border-t border-dashed border-amber-400/60"
+      >
+        <p class="text-[11px] font-black text-amber-700 dark:text-amber-500 mb-2">
+          <i class="fas fa-triangle-exclamation mr-1"></i>Sudah disetujui, absensinya belum terisi
+          ({{ izinPerluTerap.length }})
+        </p>
+        <div class="space-y-2">
+          <div
+            v-for="a in izinPerluTerap"
+            :key="'terap-' + a.id"
+            class="flex items-center justify-between gap-3 bg-amber-50 dark:bg-amber-950/30 rounded-xl p-2.5 border border-amber-200 dark:border-amber-900"
+          >
+            <div class="min-w-0">
+              <p class="text-[13px] font-bold text-[var(--text-primary)] truncate">
+                {{ a.guru_nama }}
+              </p>
+              <p class="text-[10px] text-[var(--text-secondary)]">
+                {{ jenisIzinLabel(a.jenis) }} · {{ rangeLabel(a) }} · Shift
+                {{ shiftsLabel(a.shifts) }}
+              </p>
+            </div>
+            <button
+              :disabled="izinBusyId === a.id"
+              class="text-[10px] font-black bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white px-2.5 py-1.5 rounded-lg flex-shrink-0"
+              @click="terapkanUlangIzin(a)"
+            >
+              <i class="fas fa-rotate-right mr-1"></i>Terapkan
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Riwayat Slip Bisyaroh -->
@@ -757,7 +793,7 @@ import { ref, computed, onMounted, onUnmounted, reactive } from 'vue'
 import { subscribeColl, getOne, mergeOne, serverTimestamp } from '@/services/db'
 import { uploadBase64 } from '@/services/storage'
 import { useAuthStore } from '@/stores/auth'
-import { fmtRp, hitungLamaMengajar } from '@/utils/format'
+import { fmtRp, hitungLamaMengajar, todayJakarta } from '@/utils/format'
 // v.21.110.0527: catatan supervisi
 import { useToast } from '@/composables/useToast'
 import { isKepalaLembaga } from '@/utils/roleScope'
@@ -893,7 +929,9 @@ const kehadiran = computed(() => {
     const shifts = [...shiftsForGuru(g, s)]
     const liburGlobal = new Set(Array.isArray(s.hariLibur) ? s.hariLibur.map(String) : [])
     const liburMap = buildLiburScope(kegiatanRaw.value)
-    const todayIso = new Date().toISOString().slice(0, 10)
+    // WIB: toISOString() memakai UTC → jam 00:00–06:59 "hari ini" terbaca hari
+    //   SEBELUMNYA, jadi slot hari ini luput dihitung (Alpa hilang/telat muncul).
+    const todayIso = todayJakarta()
     const y = tahunIni
     const mo = now.getMonth() + 1
     const days = new Date(y, mo, 0).getDate()
@@ -1150,14 +1188,26 @@ async function kirimRespon(s) {
 const {
   myIzin,
   antrian: izinAntrian,
+  riwayat: izinRiwayat,
   isApprover: izinIsApprover,
   cutiKategori,
   kuotaCuti,
   ajukan: ajukanIzin,
   batal: batalIzinReq,
   tolak: tolakIzinReq,
-  setujui: setujuiIzinReq
+  setujui: setujuiIzinReq,
+  terapkanUlang: terapkanUlangReq
 } = useIzinGuru()
+
+// Pemulihan bug tanggal-mundur (s/d 5 Agu 2026): pengajuan berstatus DISETUJUI tapi
+//   nol baris absensi tertulis (n_absensi 0 / belum ada) — barisnya jatuh ke hari yang
+//   salah, atau dilewati karena hari sebelumnya sudah "hadir". Daftar ini muncul hanya
+//   bila memang ada korbannya, dan hilang sendiri setelah diterapkan ulang.
+const izinPerluTerap = computed(() =>
+  (izinRiwayat.value || []).filter(
+    (a) => a.status === 'disetujui' && Number(a.n_absensi || 0) === 0
+  )
+)
 
 const izinFormOpen = ref(false)
 const izinForm = reactive({
@@ -1175,7 +1225,8 @@ const izinBusy = ref(false)
 const izinBusyId = ref(null)
 
 function openIzinForm() {
-  const t = new Date().toISOString().slice(0, 10)
+  // WIB, bukan UTC — kalau tidak, form yang dibuka dini hari terisi tanggal KEMARIN.
+  const t = todayJakarta()
   izinForm.jenis = 'izin'
   izinForm.kategori = ''
   izinForm.tgl_mulai = t
@@ -1311,6 +1362,24 @@ async function setujuiIzin(a) {
     toast.success(
       `Disetujui — ${r.written} absensi terisi${r.skipped ? `, ${r.skipped} dilewati (sudah hadir)` : ''}.`
     )
+  } catch (e) {
+    toast.error('Gagal: ' + (e.message || e))
+  } finally {
+    izinBusyId.value = null
+  }
+}
+async function terapkanUlangIzin(a) {
+  izinBusyId.value = a.id
+  try {
+    const r = await terapkanUlangReq(a, absensiGuru.value)
+    if (r.written)
+      toast.success(
+        `${r.written} absensi terisi${r.skipped ? `, ${r.skipped} dilewati (sudah hadir)` : ''}.`
+      )
+    else
+      toast.info(
+        `Tak ada yang perlu diisi — ${r.skipped} hari sudah tercatat hadir/terlambat pada shift itu.`
+      )
   } catch (e) {
     toast.error('Gagal: ' + (e.message || e))
   } finally {

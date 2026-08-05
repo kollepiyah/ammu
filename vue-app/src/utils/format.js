@@ -86,6 +86,45 @@ export function todayJakarta(d = new Date()) {
   return `${p.year}-${p.month}-${p.day}`
 }
 
+/**
+ * Deret tanggal KALENDER 'YYYY-MM-DD' dari `start` s/d `end` (INKLUSIF).
+ *
+ * Kenapa ada: pola lama `for (d = new Date(start + 'T00:00:00'); ...) out.push(
+ * d.toISOString().slice(0,10))` bikin tanggal MUNDUR 1 HARI di WIB — `new Date(
+ * '2026-08-04T00:00:00')` = tengah malam LOKAL = 2026-08-03T17:00:00Z, lalu
+ * toISOString() membacanya sebagai UTC. Akibat nyatanya (Kyai, 5 Agu 2026): izin
+ * tanggal 4 Agu menulis baris absensi ke 3 Agu; karena 3 Agu sudah ada baris
+ * "hadir", penulisan malah dilewati → hari 4 Agu tetap ALPA & kolom Izin 0.
+ *
+ * Di sini tanggal masuk & keluar sama-sama string KALENDER (dari date picker,
+ * tanpa jam/zona), jadi iterasinya di UTC murni + dibaca pakai getUTC* — tak
+ * pernah menyentuh zona lokal sama sekali, jadi bebas dari pergeseran itu.
+ *
+ * `maxHari` = guard supaya rentang keliru (mis. salah ketik tahun) tak meledak.
+ * Input tak valid → []; `end` < `start` → hanya [start].
+ */
+export function rentangTanggal(start, end, maxHari = 60) {
+  const isTgl = (v) => /^\d{4}-\d{2}-\d{2}$/.test(v)
+  const s = String(start || '').slice(0, 10)
+  if (!isTgl(s)) return []
+  const e0 = String(end || '').slice(0, 10)
+  const e = isTgl(e0) ? e0 : s
+  if (e < s) return [s]
+  const out = []
+  const d = new Date(s + 'T00:00:00Z')
+  const last = new Date(e + 'T00:00:00Z')
+  if (isNaN(d.getTime()) || isNaN(last.getTime())) return []
+  while (d <= last && out.length < maxHari) {
+    out.push(
+      `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(
+        d.getUTCDate()
+      ).padStart(2, '0')}`
+    )
+    d.setUTCDate(d.getUTCDate() + 1)
+  }
+  return out
+}
+
 /** Ambil angka dari string '21 (PTPT-A)' → 21. */
 export function extractNumber(s) {
   if (s == null) return 0
