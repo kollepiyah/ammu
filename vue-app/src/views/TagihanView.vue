@@ -311,6 +311,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
 import { fmtRp, fmtTgl, todayJakarta, waLink } from '@/utils/format'
+import { mulaiTagihKode, bolehTerbitPeriode, pesanTolakPeriode } from '@/utils/periodeTagihan'
 import { pesanTagihan } from '@/utils/pesanWa' // v.1.2.6: teks WA tagihan otomatis
 import { useSettingsStore } from '@/stores/settings'
 import { terbayarDari, sisaTagihan, statusTagihan } from '@/utils/tagihan'
@@ -570,6 +571,14 @@ async function simpanModal() {
     if (modalMode.value === 'new') {
       if (!modalSantriId.value || !modalNominal.value) {
         toast.warning('Lengkapi data')
+        return
+      }
+      // Gerbang "Mulai Tagih di AMMU" (Kyai 5 Agu 2026): periode di sini diketik BEBAS,
+      //   jadi tagihan bulan sebelum pesantren memakai AMMU bisa lahir dari sini dan
+      //   langsung tampak sebagai tunggakan wali.
+      const _mulai = mulaiTagihKode(settingsStore.settings || {})
+      if (!bolehTerbitPeriode(modalPeriode.value, _mulai)) {
+        toast.warning(pesanTolakPeriode(modalPeriode.value, _mulai))
         return
       }
       const id = `tagihan_${modalSantriId.value}_${Date.now()}`

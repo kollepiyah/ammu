@@ -67,6 +67,15 @@ Deno.serve(async (req) => {
   const jenisAuto = jenisSemua.filter((j: any) => j && j.auto_generate && String(j.label || '').trim())
   if (jenisAuto.length === 0) return json({ ok: true, skipped: 'tidak ada jenis auto_generate' })
   const jtDay = String(s.keu_jatuh_tempo || 10).padStart(2, '0')
+  // Gerbang "Mulai Tagih di AMMU" (Kyai 5 Agu 2026) — cermin utils/periodeTagihan.js.
+  //   Cron memang selalu menerbitkan bulan BERJALAN, jadi gerbang ini praktis hanya
+  //   menggigit bila cron sempat jalan sebelum pesantren mulai memakai AMMU. Tetap
+  //   dipasang: jalur otomatis yang tak dijaga adalah jalur yang paling sulit ditelusuri
+  //   belakangan. Setelan kosong = gerbang mati (jangan menebak batas lalu berhenti
+  //   menagih sama sekali).
+  const mulaiTagih = String(s.keuMulaiTagih || '').match(/^\d{4}-\d{2}$/)
+    ? String(s.keuMulaiTagih)
+    : ''
 
   // 2) Santri aktif (v.1.2.6: + is_mukim/is_fullday utk whitelist status)
   // Kyai 4 Agu: `data` (ekor jsonb) ikut di-select karena `shift_ngaji` tinggal di situ.
@@ -88,6 +97,10 @@ Deno.serve(async (req) => {
   const periode = `${BULAN[now.getMonth()]} ${now.getFullYear()}`
   const ym = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}`
   const jt = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${jtDay}`
+  const kodeBulan = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+  if (mulaiTagih && kodeBulan < mulaiTagih) {
+    return json({ ok: true, skipped: `bulan ${kodeBulan} lebih awal dari keuMulaiTagih ${mulaiTagih}` })
+  }
 
   // 4) Dedup: baca tagihan periode ini (key santri_id__kategori_lower)
   const existing = new Set<string>()

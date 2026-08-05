@@ -2586,6 +2586,8 @@ import { STATUS_SANTRI_OPTS, JK_OPTS, SHIFT_NGAJI_OPTS } from '@/utils/statusSan
 // Kyai 4 Agu: pilihan kas = master + kas bukan-lembaga (TPQ payung, Fullday, Ma'had)
 import { opsiKasLembaga } from '@/utils/kasLembaga'
 import { normalisasiPotongan } from '@/utils/potonganPos'
+// Gerbang "Mulai Tagih di AMMU" — dipakai Generate & Generate Khusus.
+import { mulaiTagihKode, bolehTerbitPeriode, pesanTolakPeriode } from '@/utils/periodeTagihan'
 import { useToast } from '@/composables/useToast'
 import { useExcel } from '@/composables/useExcel'
 import { useGedungScope } from '@/composables/useGedungScope'
@@ -4472,6 +4474,15 @@ async function autoGenerate(dryRun = false) {
       skipped = 0,
       errCount = 0
     const rencana = []
+    // Gerbang "Mulai Tagih di AMMU" (Kyai 5 Agu 2026) — tagihan bulan SEBELUM pesantren
+    //   mulai memakai AMMU tak boleh lahir; wali langsung melihatnya sebagai tunggakan.
+    //   Periode tahunan tak ikut dinilai (gerbangnya soal bulan).
+    const _mulaiKode = mulaiTagihKode(settingsStore.settings || {})
+    if (!bolehTerbitPeriode(periodeBulan, _mulaiKode)) {
+      toast.warning(pesanTolakPeriode(periodeBulan, _mulaiKode))
+      generating.value = false
+      return dryRun ? [] : undefined
+    }
     for (const j of jenisAuto) {
       const tahunan = j.frekuensi === 'tahunan'
       const periode = tahunan ? periodeTahun : periodeBulan
@@ -4737,6 +4748,14 @@ async function doGenKhusus() {
   const periode = String(genPeriode.value || '').trim()
   if (!periode) {
     toast.warning('Isi periode/label dulu.')
+    return
+  }
+  // Gerbang "Mulai Tagih di AMMU" (Kyai 5 Agu 2026) — di jalur inilah periode dipilih
+  //   BEBAS, jadi ia yang paling mungkin menerbitkan bulan lampau tanpa disadari.
+  //   Diperiksa sebelum konfirmasi & sebelum query, supaya tak ada kerja sia-sia.
+  const _mulaiKhusus = mulaiTagihKode(settingsStore.settings || {})
+  if (!bolehTerbitPeriode(periode, _mulaiKhusus)) {
+    toast.warning(pesanTolakPeriode(periode, _mulaiKhusus))
     return
   }
   const targets = genTargetSantri.value
