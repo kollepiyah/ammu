@@ -445,6 +445,19 @@
             <option value="masuk">Pemasukan</option>
             <option value="keluar">Pengeluaran</option>
           </select>
+          <!-- Kyai 5 Agu 2026: "Pos yg lain (tabungan wajib, uang buku, uang kegiatan) itu
+               terpisah pencatatannya dari buku induk. atau dibuat filter pos saja, biar
+               ekspor pdf laporannya mudah." Filter ini menyaring SEMUA yang mengalir dari
+               daftar tersaring: kartu ringkasan, saldo, PDF, Excel, dan Google Sheet.
+               "Kas Umum" = baris tanpa tag pos, yaitu buku induk murni. -->
+          <select
+            v-model="filterPos"
+            class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-cyan-500 outline-none"
+          >
+            <option v-for="o in opsiPos" :key="`fp_${o.key || 'all'}`" :value="o.key">
+              {{ o.label }}
+            </option>
+          </select>
           <!-- v.1.2.6 (Kyai): filter kas lembaga. Opsinya dari lembaga yang BENAR-BENAR
                punya baris di periode ini + Kas Induk — bukan seluruh master, supaya
                tak penuh pilihan yang selalu kosong. -->
@@ -765,6 +778,8 @@ import {
   kunciLembaga
 } from '@/utils/kasLembaga'
 import { buildListPdf, buildKopFromSettings } from '@/utils/pdfBuilder'
+// Pos dana (Uang Kegiatan/Buku/Tabungan Wajib) — sumber tunggal aturan & labelnya.
+import { cocokPos, opsiFilterPos, labelFilterPos } from '@/utils/posDana'
 import { isSuperAdmin } from '@/utils/roleScope'
 import { writeAuditLog } from '@/utils/auditLog'
 // v.21.103.0527: reprint struk dari BukuInduk untuk record sumber pos_santri
@@ -886,6 +901,19 @@ const filterTipe = ref('')
 //   bukan nama mentah — sekolah kustom ditulis campur ("Kelas Baca") dan pernah
 //   membuat filter lembaga kosong tanpa suara. '' = semua lembaga.
 const filterLembaga = ref('')
+// '' = semua pos. POS_UMUM = hanya baris tanpa tag (buku induk murni).
+const filterPos = ref('')
+const opsiPos = computed(() => opsiFilterPos(bukuPeriode.value))
+// Penanda pos untuk judul & nama berkas ekspor — tanpa ini laporan "Uang Kegiatan" dan
+//   laporan kas umum bulan yang sama terbit dengan nama yang sama persis.
+function judulPosSuffix() {
+  const l = labelFilterPos(filterPos.value)
+  return l ? ` — ${l}` : ''
+}
+function slugPosBerkas() {
+  const l = labelFilterPos(filterPos.value)
+  return l ? '_' + l.toLowerCase().replace(/[^a-z0-9]+/g, '_') : ''
+}
 const search = ref('')
 
 // pintasan: set filter ke tanggal hari ini (WIB)
@@ -1151,10 +1179,17 @@ async function cetakLaporan(metodeOnly = '') {
     //   lembaga kas yang disaring, dan metode kalau ini berkas Tunai/Transfer.
     const periode = periodeLabel.value
     const bagian = [periode]
+    // Pos ikut disebut di judul & nama berkas: laporan "Uang Kegiatan" dan laporan kas
+    //   umum bulan yang sama akan bernama sama persis kalau tidak dibedakan di sini.
+    const labelPosAktif = labelFilterPos(filterPos.value)
+    if (labelPosAktif) bagian.push(labelPosAktif)
     if (labelLembagaAktif.value) bagian.push(labelLembagaAktif.value)
     if (metodeOnly) bagian.push(metodeOnly.toUpperCase())
     const judul = bagian.join(' — ')
     const slugMetode = metodeOnly ? `-${metodeOnly.toLowerCase()}` : ''
+    const slugPos = labelPosAktif
+      ? '-' + labelPosAktif.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+      : ''
     const slugLemb = labelLembagaAktif.value
       ? '-' + labelLembagaAktif.value.toLowerCase().replace(/[^a-z0-9]+/g, '-')
       : ''
@@ -1175,7 +1210,7 @@ async function cetakLaporan(metodeOnly = '') {
         { key: 'saldo', header: 'Saldo', width: 30 }
       ],
       rows,
-      filename: `buku-induk-${periodeSlug.value}${slugLemb}${slugMetode}.pdf`
+      filename: `buku-induk-${periodeSlug.value}${slugPos}${slugLemb}${slugMetode}.pdf`
     })
     toast.success(
       metodeOnly ? `PDF buku induk ${metodeOnly} berhasil dibuat` : 'PDF buku induk berhasil dibuat'
@@ -1236,6 +1271,12 @@ const bukuPeriode = computed(() => {
 //   tanggal & cara bayar (itulah gunanya: "tunai per lembaga hari ini").
 const bukuTanpaLembaga = computed(() => {
   let list = bukuPeriode.value
+  // Pos dana (Kyai 5 Agu 2026) — disaring PALING AWAL supaya kartu rekap lembaga, saldo,
+  //   dan seluruh ekspor ikut terbatas pada pos yang dipilih. "Kas Umum" = buku induk
+  //   murni, tanpa dana terikat (Uang Kegiatan/Buku/Tabungan Wajib).
+  if (filterPos.value) {
+    list = list.filter((b) => cocokPos(b, filterPos.value))
+  }
   // v.1.2.6: cara bayar
   if (filterMetode.value) {
     list = list.filter((b) => metodeTransaksi(b) === filterMetode.value)
@@ -1457,7 +1498,7 @@ async function exportBukuIndukExcel() {
     const s = settingsStore.settings || {}
     await exportStyled(rows, {
       // v.1.2.6: nama berkas & subjudul ikut periode yang difilter (harian/bulanan/tahunan)
-      filename: `buku_induk_${periodeSlug.value}.xlsx`,
+      filename: `buku_induk_${periodeSlug.value}${slugPosBerkas()}.xlsx`,
       sheetName: 'Buku Induk',
       kop: [
         s.kopLine1 || '',
@@ -1465,7 +1506,7 @@ async function exportBukuIndukExcel() {
         s.kopLine3 || '',
         s.kopLine4 || ''
       ],
-      subtitle: `Buku Induk Keuangan — ${periodeLabel.value} — ${filteredBuku.value.length} transaksi`,
+      subtitle: `Buku Induk Keuangan${judulPosSuffix()} — ${periodeLabel.value} — ${filteredBuku.value.length} transaksi`,
       columns: [
         { key: 'no', header: 'No', width: 5 },
         { key: 'tanggal', header: 'Tanggal', width: 12 },
@@ -1507,7 +1548,7 @@ async function kirimBukuGsheet() {
         s.kopLine3 || '',
         s.kopLine4 || ''
       ].filter(Boolean),
-      subtitle: `Buku Induk Keuangan — ${periodeLabel.value} — ${filteredBuku.value.length} transaksi`,
+      subtitle: `Buku Induk Keuangan${judulPosSuffix()} — ${periodeLabel.value} — ${filteredBuku.value.length} transaksi`,
       columns: [
         { key: 'no', header: 'No', width: 5 },
         { key: 'tanggal', header: 'Tanggal', width: 12 },
