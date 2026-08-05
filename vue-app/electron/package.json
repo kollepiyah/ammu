@@ -5,6 +5,7 @@
   "author": "Pondok Pesantren Mambaul Ulum",
   "main": "build/index.js",
   "license": "UNLICENSED",
+  "_catatan_publisherName": "JANGAN kembalikan `publisherName` ke build.win selama installer belum ditandatangani (belum ada certificateFile/cscLink). electron-builder menuliskannya ke app-update.yml, dan NsisUpdater lalu MEMVERIFIKASI tanda tangan Authenticode installer yang baru diunduh lewat PowerShell Get-AuthenticodeSignature. Installer kita tidak bersertifikat -> Status NotSigned -> update DITOLAK ('is not signed by the application owner'). Itulah sebab 'auto-update tidak bisa di beberapa PC' (Kyai, 5 Agu 2026): di PC yang PowerShell-nya diblok/bermasalah, verifikasi DILEWATI dan update justru jalan — jadi gagalnya tampak acak. Kalau nanti sertifikat code-signing dibeli, publisherName boleh (dan sebaiknya) dipasang kembali. Catatan ini sengaja di ROOT package.json, BUKAN di dalam `build` — electron-builder 24 menolak properti tak dikenal di dalam `build` (ValidationError).",
   "scripts": {
     "build": "tsc",
     "electron:start-live": "node ./live-runner.js",
@@ -47,8 +48,7 @@
           ]
         }
       ],
-      "icon": "assets/appIcon.ico",
-      "_catatan_publisherName": "JANGAN kembalikan `publisherName` selama installer belum ditandatangani (belum ada certificateFile/cscLink). electron-builder menuliskannya ke app-update.yml, dan NsisUpdater lalu MEMVERIFIKASI tanda tangan Authenticode installer yang baru diunduh lewat PowerShell Get-AuthenticodeSignature. Installer kita tidak bersertifikat -> Status NotSigned -> update DITOLAK ('is not signed by the application owner'). Itulah sebab 'auto-update tidak bisa di beberapa PC' (Kyai, 5 Agu 2026): di PC yang PowerShell-nya diblok/bermasalah, verifikasi DILEWATI dan update justru jalan — jadi gagalnya tampak acak. Kalau nanti sertifikat code-signing dibeli, publisherName boleh (dan sebaiknya) dipasang kembali."
+      "icon": "assets/appIcon.ico"
     },
     "nsis": {
       "artifactName": "AmmuOnline-Setup-${version}.${ext}",
