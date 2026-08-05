@@ -473,8 +473,13 @@
     </template>
 
     <!-- v.21.100.0527: SEMUA MUTASI panel — super_admin edit/hapus + bulk -->
+    <!-- v.1.2.8 (Kyai 5 Agu 2026: "di tabungan belum ada ekspor PDF harian untuk admin
+         keuangan"): panel ini dulu super_admin-saja, padahal SELURUH kontrol tanggal
+         harian + rekap per lembaga hidup di dalamnya — jadi admin keuangan tak punya
+         jalan sama sekali ke laporan harian. Panelnya kini terbuka untuk admin keuangan
+         (baca + cetak); ubah/hapus mutasi TETAP super_admin. -->
     <div
-      v-if="isFullAccess && isAdmin"
+      v-if="isFullAccess && bolehSemuaMutasi"
       class="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)] shadow-sm overflow-hidden"
     >
       <div
@@ -482,7 +487,9 @@
       >
         <h3 class="text-sm font-black text-[var(--text-primary)] uppercase tracking-widest">
           <i class="fas fa-list-check text-emerald-600 mr-2"></i>Semua Mutasi
-          <span class="text-[10px] text-[var(--text-tertiary)] font-bold ml-1">(super admin)</span>
+          <span v-if="!isAdmin" class="text-[10px] text-[var(--text-tertiary)] font-bold ml-1"
+            >(lihat &amp; cetak)</span
+          >
         </h3>
         <div class="flex items-center gap-2 flex-wrap">
           <select
@@ -523,6 +530,23 @@
           <span class="text-[10px] text-[var(--text-tertiary)] font-bold">
             {{ mutasiFiltered.length }} / {{ mutasiSource.length }} mutasi
           </span>
+          <!-- Laporan mengikuti filter yang sedang aktif (tahun/bulan/tanggal/lembaga),
+               jadi "harian" = pilih tanggalnya lalu cetak. Tombol Hari Ini = jalan cepat. -->
+          <button
+            class="text-[11px] font-black bg-[var(--bg-muted)] text-[var(--text-primary)] border border-[var(--border-subtle)] px-3 py-1.5 rounded-lg"
+            title="Setel filter ke tanggal hari ini (WIB)"
+            @click="setFilterHariIni"
+          >
+            <i class="fas fa-calendar-day mr-1"></i>Hari Ini
+          </button>
+          <button
+            class="text-[11px] font-black bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900 px-3 py-1.5 rounded-lg disabled:opacity-50"
+            :disabled="pdfMutasiBusy"
+            title="Cetak PDF laporan sesuai filter aktif"
+            @click="cetakLaporanMutasi"
+          >
+            <i class="fas fa-file-pdf mr-1" :class="{ 'fa-spin': pdfMutasiBusy }"></i>PDF Laporan
+          </button>
           <button
             v-if="selectedMutasi.size > 0"
             class="text-[11px] font-black bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-lg"
@@ -598,7 +622,9 @@
               class="border-t border-[var(--border-subtle)] hover:bg-slate-50 dark:hover:bg-slate-900/30"
             >
               <td class="px-3 py-2 text-center">
+                <!-- Pilih-untuk-hapus hanya bermakna bagi yang boleh menghapus. -->
                 <input
+                  v-if="isAdmin"
                   type="checkbox"
                   :checked="selectedMutasi.has(String(m.id))"
                   class="w-4 h-4 accent-emerald-600"
@@ -647,7 +673,11 @@
                 >
                   <i class="fas fa-receipt"></i>
                 </button>
+                <!-- Ubah/hapus mutasi = super_admin. Admin keuangan cukup lihat & cetak
+                     (koreksi catatan uang tetap kewenangan tertinggi, sejalan dgn CRUD
+                     keuangan lain). -->
                 <button
+                  v-if="isAdmin"
                   class="text-[10px] text-cyan-600 hover:bg-cyan-50 px-1.5 py-1 rounded mr-1"
                   title="Edit"
                   @click="openEditMutasi(m)"
@@ -655,6 +685,7 @@
                   <i class="fas fa-edit"></i>
                 </button>
                 <button
+                  v-if="isAdmin"
                   class="text-[10px] text-rose-600 hover:bg-rose-50 px-1.5 py-1 rounded"
                   title="Hapus"
                   @click="hapusMutasi(m)"
@@ -908,7 +939,7 @@ import { useDesktopShell } from '@/composables/useDesktopShell'
 import { definePageActions } from '@/composables/useRibbonContext'
 // v.91.0626: deleteOne = backup audit_log dulu. serverTimestamp = shim ISO string (db.js).
 import { subscribeColl, setOne, updateOne, deleteOne, serverTimestamp } from '@/services/db'
-import { isSuperAdmin } from '@/utils/roleScope'
+import { isSuperAdmin, isAdminKeuangan } from '@/utils/roleScope'
 import { writeAuditLog } from '@/utils/auditLog'
 import { sortSantri } from '@/utils/santriSort'
 import { useAuthStore } from '@/stores/auth'
@@ -918,12 +949,14 @@ import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
 import { useKeuangan } from '@/composables/useKeuangan'
 import { useGedungScope } from '@/composables/useGedungScope'
-import { fmtRp, fmtTgl } from '@/utils/format'
+import { fmtRp, fmtTgl, todayJakarta } from '@/utils/format'
 // v.1.2.6 (Kyai): kas per lembaga — resolver & rekap di utils/kasLembaga (sumber tunggal)
 import {
   petaLembagaSantri,
   kasLembagaTabungan,
   ringkasTabunganLembaga,
+  ringkasSetorTarik,
+  mutasiSetor,
   kunciLembaga
 } from '@/utils/kasLembaga'
 import { cetakSlipTabunganPdf, exportRekapTabunganPdf } from '@/utils/strukBuilder'
@@ -1023,6 +1056,12 @@ const toast = useToast()
 const confirmDlg = useConfirm()
 // v.21.100.0527: super_admin only — edit/hapus mutasi tabungan
 const isAdmin = computed(() => isSuperAdmin(auth.sesiAktif))
+// v.1.2.8: admin keuangan boleh MEMBUKA panel Semua Mutasi (baca + cetak laporan).
+//   Dulu panel itu super_admin-saja, dan karena seluruh kontrol tanggal harian hidup di
+//   dalamnya, admin keuangan tak punya jalan sama sekali ke laporan harian.
+//   isAdminKeuangan() WAJIB diperiksa terpisah: peran ini ber-role 'admin' di sesi,
+//   jadi tak bisa dibedakan dari admin biasa lewat `role` saja.
+const bolehSemuaMutasi = computed(() => isAdmin.value || isAdminKeuangan(auth.sesiAktif))
 
 // Role flags
 const isSantri = computed(() => auth.sesiAktif?.role === 'santri')
@@ -1455,7 +1494,11 @@ async function simpanMutasi() {
       toast.success('Mutasi diperbarui')
     } else {
       const id = `mutasi_${modalSantriId.value}_${Date.now()}`
-      const tanggal = new Date().toISOString().slice(0, 10)
+      // v.1.2.8: WIB, bukan UTC. toISOString() memundurkan tanggal 1 hari untuk transaksi
+      //   00:00-06:59 WIB — setoran subuh akan tercatat di tanggal SEBELUMNYA, dan itu
+      //   langsung merusak laporan harian di bawah (juga penomoran No. Bukti ddmmyy-nya).
+      //   Sama seperti POS, yang sudah pakai helper ini sejak audit Agu 2026.
+      const tanggal = todayJakarta()
       const opName = auth.sesiAktif?.nama || auth.sesiAktif?.guru || 'Admin'
       // v.96.0626: No. Transaksi rapi — TB-NNNddmmyy (tabungan) / US-NNNddmmyy (uang saku), mirror POS MU-
       const dtp = tanggal.split('-')
@@ -1551,6 +1594,129 @@ async function cetakSlipLangsung(m) {
     toast.error('Gagal cetak: ' + (e.message || e))
   }
 }
+// ─── v.1.2.8 · Laporan PDF mutasi (Kyai: "ekspor PDF harian untuk admin keuangan") ───
+//
+// Bedanya dengan exportPdf() di bawah: itu rekap SALDO per santri dan mengabaikan filter
+// tanggal. Yang dibutuhkan admin keuangan adalah daftar TRANSAKSI pada satu hari untuk
+// dicocokkan dengan uang di kas — jadi laporan ini mengikuti filter yang sedang aktif
+// (tahun/bulan/tanggal/lembaga) dan menutup dengan subtotal setor/tarik + saldo bersih.
+//
+// Polanya sengaja meniru RiwayatPosView.cetakLaporanPos: buildListPdf + kop dari
+// pengaturan, supaya laporan keuangan Ammu tetap satu wajah.
+const pdfMutasiBusy = ref(false)
+
+function labelPeriodeMutasi() {
+  const th = String(mutFilterYear.value)
+  if (!mutFilterMonth.value) return th
+  const bl = `${BULAN_TAB[mutFilterMonth.value - 1]} ${th}`
+  return mutFilterDay.value ? `${mutFilterDay.value} ${bl}` : bl
+}
+
+function labelLembagaMutasi() {
+  if (!mutFilterLembaga.value) return ''
+  if (mutFilterLembaga.value === KAS_INDUK) return 'Kas Induk'
+  const o = rekapLembagaTab.value.find((x) => x.kunci === mutFilterLembaga.value)
+  return o?.lembaga || ''
+}
+
+// Setel filter ke HARI INI (WIB). Jalan cepat: tanpa ini admin keuangan harus memilih
+//   tahun+bulan+tanggal satu per satu tiap kali menutup kas harian.
+function setFilterHariIni() {
+  const iso = todayJakarta()
+  const [y, m, d] = iso.split('-').map(Number)
+  mutFilterYear.value = y
+  mutFilterMonth.value = m
+  mutFilterDay.value = d
+}
+
+async function cetakLaporanMutasi() {
+  if (pdfMutasiBusy.value) return
+  const list = mutasiFiltered.value || []
+  if (!list.length) {
+    toast.warning('Tidak ada mutasi pada filter ini.')
+    return
+  }
+  pdfMutasiBusy.value = true
+  try {
+    // Urut NAIK (kronologis) — laporan kas dibaca dari awal hari ke akhir hari, beda dari
+    // tabel di layar yang menaruh yang terbaru di atas.
+    const urut = [...list].sort(
+      (a, b) =>
+        String(a.tanggal || '').localeCompare(String(b.tanggal || '')) ||
+        String(a.no_bukti || '').localeCompare(String(b.no_bukti || ''))
+    )
+    // Subtotal & penggolongan setor/tarik lewat helper bersama — konvensinya HARUS sama
+    //   dengan kartu rekap per lembaga di atas ('setor' = masuk, selain itu keluar).
+    //   Kalau berbeda, satu layar bisa menampilkan dua angka untuk hari yang sama.
+    const { setor, tarik } = ringkasSetorTarik(urut)
+    const rows = urut.map((m, i) => {
+      const nom = Number(m.nominal || 0)
+      const isSetor = mutasiSetor(m)
+      return {
+        no: i + 1,
+        tanggal: m.tanggal ? fmtTgl(m.tanggal) : '',
+        bukti: m.no_bukti || '',
+        santri: m.nama_cache || getNamaSantri(m.santri_id) || '-',
+        lembaga: lembagaMutasi(m) || 'Kas Induk',
+        setor: isSetor ? fmtRp(nom) : '',
+        tarik: isSetor ? '' : fmtRp(nom),
+        catatan: m.catatan || ''
+      }
+    })
+    const barisJumlah = (label, kolomSetor, kolomTarik) => ({
+      no: '',
+      tanggal: '',
+      bukti: '',
+      santri: label,
+      lembaga: '',
+      setor: kolomSetor,
+      tarik: kolomTarik,
+      catatan: ''
+    })
+    rows.push(barisJumlah(`JUMLAH (${urut.length} mutasi)`, fmtRp(setor), fmtRp(tarik)))
+    rows.push(barisJumlah('SALDO BERSIH', fmtRp(setor - tarik), ''))
+
+    const bagian = [labelPeriodeMutasi()]
+    const lbl = labelLembagaMutasi()
+    if (lbl) bagian.push(lbl)
+    const slug = [
+      isUangSaku.value ? 'uang-saku' : 'tabungan',
+      String(mutFilterYear.value),
+      mutFilterMonth.value ? String(mutFilterMonth.value).padStart(2, '0') : '',
+      mutFilterDay.value ? String(mutFilterDay.value).padStart(2, '0') : '',
+      lbl.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+    ]
+      .filter(Boolean)
+      .join('-')
+
+    const { buildListPdf, buildKopFromSettings } = await import('@/utils/pdfBuilder')
+    await buildListPdf({
+      kind: 'umum',
+      orientation: 'l',
+      format: 'a4',
+      kop: buildKopFromSettings(settings.settings || {}),
+      title: `MUTASI ${pageTitle.value.toUpperCase()} — ${bagian.join(' — ')}`,
+      columns: [
+        { key: 'no', header: 'No', width: 10 },
+        { key: 'tanggal', header: 'Tanggal', width: 26 },
+        { key: 'bukti', header: 'No. Bukti', width: 26 },
+        { key: 'santri', header: 'Santri', width: 56 },
+        { key: 'lembaga', header: 'Kas Lembaga', width: 30 },
+        { key: 'setor', header: 'Setor', width: 28 },
+        { key: 'tarik', header: 'Tarik', width: 28 },
+        { key: 'catatan', header: 'Catatan', width: 44 }
+      ],
+      rows,
+      filename: `${slug}.pdf`
+    })
+    toast.success('PDF laporan berhasil dibuat')
+  } catch (e) {
+    toast.error('Gagal cetak: ' + (e?.message || e))
+  } finally {
+    pdfMutasiBusy.value = false
+  }
+}
+
 async function exportPdf() {
   const items = filteredItems.value || []
   if (!items.length) {

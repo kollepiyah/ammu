@@ -201,6 +201,35 @@ export function ringkasTabunganLembaga(mutasi = [], petaSantri) {
   return ringkasKasLembaga(rows, (r) => kasLembagaTabungan(r, petaSantri))
 }
 
+/**
+ * v.1.2.8 — Ringkas mutasi tabungan/uang saku jadi { setor, tarik, saldo, jumlah }.
+ * Dipakai laporan PDF mutasi (TabunganView).
+ *
+ * WAJIB memakai konvensi yang SAMA dengan ringkasTabunganLembaga di atas: 'setor' =
+ * masuk, SELAIN ITU keluar. Kalau di sini dibalik menjadi "'tarik' = keluar, selain
+ * itu masuk", baris berjenis kosong/salah ketik akan dihitung MASUK di PDF tapi KELUAR
+ * di kartu rekap per lembaga — dua angka berbeda untuk hari yang sama, di satu layar,
+ * tanpa satu pun galat. Itu jenis selisih yang paling mahal dicari di kas.
+ */
+export function ringkasSetorTarik(mutasi = []) {
+  let setor = 0
+  let tarik = 0
+  let jumlah = 0
+  for (const m of Array.isArray(mutasi) ? mutasi : []) {
+    if (!m) continue
+    const nominal = Number(m.nominal) || 0
+    if (String(m.jenis || '').toLowerCase() === 'setor') setor += nominal
+    else tarik += nominal
+    jumlah++
+  }
+  return { setor, tarik, saldo: setor - tarik, jumlah }
+}
+
+/** Apakah baris mutasi ini SETORAN? Sumber tunggal supaya laporan & rekap tak berselisih. */
+export function mutasiSetor(m) {
+  return String(m?.jenis || '').toLowerCase() === 'setor'
+}
+
 /** Peta santri_id -> lembaga (ngaji, cadangan sekolah) untuk kasLembagaTabungan. */
 export function petaLembagaSantri(santriList = []) {
   const m = new Map()
