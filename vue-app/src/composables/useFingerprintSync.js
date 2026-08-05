@@ -22,6 +22,50 @@ function splitTs(ts) {
   return { date: m[1], hhmm: m[2] + ':' + m[3], full: String(ts).trim() }
 }
 
+/**
+ * Diagnosa "absen guru X tidak masuk" (Kyai, 5 Agu 2026).
+ *
+ * Scan yang tak jatuh di window shift mana pun dibuang dari pass MASUK. Selama itu
+ * cuma dihitung sebagai angka `luar`, tak ada cara tahu guru mana yang absennya
+ * hilang. Fungsi ini menyaring kasus yang BENAR-BENAR bermasalah: (pin, tanggal)
+ * yang punya scan di luar window TAPI nol baris masuk — sebab tanpa baris masuk,
+ * jam_pulang pun tak punya tempat menempel, jadi harinya kosong sama sekali.
+ *
+ * (pin, tanggal) yang punya baris masuk TIDAK dilaporkan: di sana scan "di luar
+ * window" itu normal — itu ceklok pulang.
+ *
+ * @param {object} luarPer  pin|date -> { nama, guru, date, times[] }
+ * @param {string[]} aggKeys kunci pass masuk, bentuk 'pin|date|shift'
+ * @param {(guru:object)=>string[]} shiftsOf resolver shift milik guru
+ * @param {number} batas maksimal baris yang dikembalikan
+ * @returns {{ daftar: object[], lebih: number }}
+ */
+export function hitungScanTanpaAbsen(luarPer, aggKeys, shiftsOf, batas = 100) {
+  const adaMasuk = new Set()
+  for (const key of aggKeys || []) {
+    const p = String(key).split('|')
+    if (p.length >= 2) adaMasuk.add(p[0] + '|' + p[1])
+  }
+  const daftar = Object.keys(luarPer || {})
+    .filter((lk) => !adaMasuk.has(lk))
+    .map((lk) => {
+      const v = luarPer[lk]
+      const shiftGuru = [...(shiftsOf(v.guru) || [])]
+      return {
+        nama: v.nama,
+        tanggal: v.date,
+        jam: [...v.times].sort(),
+        shiftGuru,
+        // Shift kosong = sebabnya PASTI konfigurasi guru, bukan jam mesin.
+        sebab: shiftGuru.length ? 'jam di luar window shift' : 'guru belum punya shift'
+      }
+    })
+    .sort(
+      (a, b) => String(a.tanggal).localeCompare(String(b.tanggal)) || a.nama.localeCompare(b.nama)
+    )
+  return { daftar: daftar.slice(0, batas), lebih: Math.max(0, daftar.length - batas) }
+}
+
 export function useFingerprintSync() {
   const settingsStore = useSettingsStore()
 
@@ -62,6 +106,10 @@ export function useFingerprintSync() {
     const pulangScans = {} // pin|date -> { g, date, times:[hhmm] }
     const takKenal = new Set()
     let luar = 0
+    // Diagnosa "absen guru X tidak masuk" (Kyai, 5 Agu 2026): scan yang tak jatuh di
+    //   window shift mana pun dulu cuma jadi ANGKA `luar`, jadi tak ada cara tahu guru
+    //   mana yang absennya hilang & kenapa. Sekarang dicatat per (pin, tanggal).
+    const luarPer = {} // pin|date -> { nama, guru, date, times:[hhmm] }
     const catatKandidatPulang = (pin, g, date, hhmm) => {
       const pk = pin + '|' + date
       if (!pulangScans[pk]) pulangScans[pk] = { g, date, times: [] }
@@ -79,6 +127,10 @@ export function useFingerprintSync() {
       const sh = deriveShift(parts.hhmm, g, settings)
       if (!sh) {
         luar++
+        const lk = pin + '|' + parts.date
+        if (!luarPer[lk])
+          luarPer[lk] = { nama: g.nama || pin, guru: g, date: parts.date, times: [] }
+        luarPer[lk].times.push(parts.hhmm)
         catatKandidatPulang(pin, g, parts.date, parts.hhmm)
         continue
       }
@@ -167,6 +219,15 @@ export function useFingerprintSync() {
       }
     }
 
+    // Diagnosa: guru yang PUNYA scan tapi NOL baris masuk pada tanggal itu — sebab
+    // tersering shift guru kosong/salah ("Perbaiki Shift") atau jam mesin melenceng
+    // dari window shift. Logikanya di hitungScanTanpaAbsen (murni, ada tesnya).
+    const { daftar: luarGuru, lebih: luarGuruLebih } = hitungScanTanpaAbsen(
+      luarPer,
+      Object.keys(agg),
+      (g) => shiftsForGuru(g, settings)
+    )
+
     return {
       scan: scans.length,
       kandidat: Object.keys(agg).length,
@@ -176,6 +237,8 @@ export function useFingerprintSync() {
       skipSame,
       takKenal: [...takKenal],
       luar,
+      luarGuru,
+      luarGuruLebih,
       rows
     }
   }

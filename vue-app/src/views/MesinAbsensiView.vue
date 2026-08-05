@@ -134,6 +134,46 @@
             <code>{{ store.lastResult.takKenal.join(', ') }}</code>
           </p>
 
+          <!-- Guru yang scan-nya terbaca tapi TAK jadi baris absen sama sekali hari itu.
+               Inilah bentuk nyata keluhan "absen guru X tidak masuk" — sebelumnya hanya
+               tersembunyi di angka "luar jam shift". -->
+          <div v-if="(store.lastResult.luarGuru || []).length" class="fp-hilang">
+            <p class="fp-hilang-head">
+              <RibbonIcon name="info" :size="14" />
+              Scan terbaca tapi TIDAK jadi absen ({{ store.lastResult.luarGuru.length }})
+            </p>
+            <div class="fp-table-wrap">
+              <table class="rb-table">
+                <thead>
+                  <tr>
+                    <th>Nama</th>
+                    <th>Tanggal</th>
+                    <th>Jam scan</th>
+                    <th>Shift guru</th>
+                    <th>Sebab</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(r, i) in store.lastResult.luarGuru" :key="'lg' + i">
+                    <td>{{ r.nama }}</td>
+                    <td>{{ r.tanggal }}</td>
+                    <td>{{ r.jam.join(', ') }}</td>
+                    <td>{{ r.shiftGuru.length ? r.shiftGuru.join(', ') : '— kosong —' }}</td>
+                    <td>{{ r.sebab }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p v-if="store.lastResult.luarGuruLebih" class="fp-takkenal">
+              …dan {{ store.lastResult.luarGuruLebih }} baris lain (dipotong).
+            </p>
+            <p class="fp-takkenal">
+              Shift kosong → betulkan shift pegawai di Data Guru (atau tombol
+              <b>Perbaiki Shift</b>). Shift ada tapi jam di luar window → cocokkan jam mesin dengan
+              jam mulai/selesai shift di Pengaturan.
+            </p>
+          </div>
+
           <!-- Rincian baris yang ditulis -->
           <div v-if="(store.lastResult.rows || []).length" class="fp-table-wrap">
             <table class="rb-table">
@@ -230,11 +270,14 @@ async function syncNow() {
     toast.error('Sinkron gagal: ' + store.lastError)
   } else if (res) {
     const tk = (res.takKenal || []).length
+    const lg = (res.luarGuru || []).length
     toast.success(
       `Sinkron selesai — ${res.written} ditulis` +
         (res.pulangWritten ? ` · ${res.pulangWritten} pulang` : '') +
         ` dari ${res.scan} scan` +
-        (tk ? ` · ${tk} PIN tak dikenal` : '')
+        (tk ? ` · ${tk} PIN tak dikenal` : '') +
+        // Angka ini yang menjawab "kok absen si X tak masuk" — rinciannya di tabel bawah.
+        (lg ? ` · ${lg} scan tak jadi absen` : '')
     )
   }
 }
@@ -475,6 +518,27 @@ function fmtWaktu(iso) {
   align-items: center;
   gap: 6px;
   flex-wrap: wrap;
+}
+/* Blok diagnosa "scan terbaca tapi tak jadi absen" — diberi bingkai amber supaya
+   terbaca sebagai hal yang perlu ditindak, bukan sekadar statistik. */
+.fp-hilang {
+  margin-top: 14px;
+  padding: 11px 13px;
+  border: 1px solid color-mix(in srgb, #b45309 34%, transparent);
+  background: color-mix(in srgb, #b45309 8%, transparent);
+  border-radius: 9px;
+}
+.fp-hilang-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #b45309;
+}
+.fp-hilang .fp-table-wrap {
+  margin-top: 10px;
+  max-height: 240px;
 }
 .fp-result {
   display: flex;
