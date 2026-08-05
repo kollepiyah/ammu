@@ -1683,10 +1683,6 @@
                 {{ praGabungan }}
               </p>
             </div>
-            <div class="bg-[var(--bg-card-elevated)] rounded-xl p-3">
-              <p class="text-[10px] text-[var(--text-secondary)] uppercase font-bold">Diskon</p>
-              <p class="text-lg font-black text-amber-700 dark:text-amber-300">{{ praDiskon }}</p>
-            </div>
           </div>
           <p v-if="!praRows.length" class="text-center text-xs text-[var(--text-tertiary)] py-8">
             Tak ada tagihan baru yang akan dibuat (semua sudah ada, atau tak ada yang cocok).
@@ -1697,8 +1693,6 @@
                 <tr class="text-left text-[var(--text-secondary)] uppercase">
                   <th class="py-1.5 pr-2">Santri</th>
                   <th class="py-1.5 pr-2">Kategori</th>
-                  <th class="py-1.5 pr-2 text-right">Bruto</th>
-                  <th class="py-1.5 pr-2 text-right">Diskon</th>
                   <th class="py-1.5 pr-2 text-right">Ditagih</th>
                   <th class="py-1.5">Rincian komponen</th>
                 </tr>
@@ -1713,12 +1707,6 @@
                     {{ r.santri_nama || r.santri_id }}
                   </td>
                   <td class="py-1.5 pr-2 text-[var(--text-secondary)]">{{ r.kategori }}</td>
-                  <td class="py-1.5 pr-2 text-right">
-                    {{ r.nominal_bruto ? fmtRp(r.nominal_bruto) : '—' }}
-                  </td>
-                  <td class="py-1.5 pr-2 text-right text-amber-700 dark:text-amber-300">
-                    {{ r.diskon_persen ? r.diskon_persen + '%' : '—' }}
-                  </td>
                   <td class="py-1.5 pr-2 text-right font-black text-[var(--text-primary)]">
                     {{ fmtRp(r.nominal) }}
                   </td>
@@ -1950,7 +1938,7 @@
             </div>
           </div>
 
-          <!-- Kyai 3 Agu: Paket nominal pilihan + diskon anak guru (collapsible).
+          <!-- Kyai 3 Agu: Paket nominal pilihan (collapsible). Diskon anak guru DICABUT 5 Agu.
                Sengaja SEKSI SENDIRI, bukan digabung ke "Tarif Khusus": ini bukan tarif
                per lembaga/kelas/santri, melainkan pilihan yang menempel ke DATA SANTRI. -->
           <div class="border-t border-[var(--border-subtle)] pt-3">
@@ -1960,8 +1948,7 @@
               @click="dlgPaket = !dlgPaket"
             >
               <span class="text-xs font-black text-[var(--text-primary)]">
-                <i class="fas fa-tags text-amber-500 mr-1.5"></i>Paket pilihan &amp; diskon anak
-                guru
+                <i class="fas fa-tags text-amber-500 mr-1.5"></i>Paket nominal pilihan
                 <span
                   v-if="paketDiskonInfo(dlgJenis)"
                   class="ml-1 text-[10px] font-bold text-amber-600"
@@ -1977,28 +1964,16 @@
               ></i>
             </button>
             <div v-if="dlgPaket" class="mt-3 space-y-3">
-              <!-- Diskon anak guru/pegawai -->
-              <div>
-                <p class="text-[10px] text-[var(--text-secondary)] italic mb-1">
-                  <i class="fas fa-percent mr-1"></i>Diskon untuk santri bertanda
-                  <b>anak guru/pegawai</b> (0 = tak ada diskon):
-                </p>
-                <div class="flex items-center gap-2">
-                  <input
-                    v-model.number="dlgJenis.diskon_anak_guru"
-                    type="number"
-                    min="0"
-                    max="100"
-                    placeholder="0"
-                    class="w-24 px-2 py-1.5 text-xs rounded-lg border border-[var(--border-default)] bg-white dark:bg-slate-900"
-                  />
-                  <span class="text-xs font-black text-[var(--text-secondary)]">%</span>
-                </div>
-                <p class="text-[10px] text-[var(--text-tertiary)] mt-1">
-                  Penandanya diisi <b>manual</b> di data santri — bukan dicocokkan otomatis dari
-                  nama ayah, supaya diskon tak pernah diberikan/dicabut tanpa disadari.
-                </p>
-              </div>
+              <!-- Diskon anak guru DICABUT (Kyai, 5 Agu 2026): potongan pindah sepenuhnya ke
+                   POS, dipilih kasir per baris transaksi. Daftarnya diatur di tab Kategori. -->
+              <p
+                class="text-[10px] text-[var(--text-secondary)] bg-[var(--bg-card-elevated)] border border-[var(--border-subtle)] rounded-lg px-2 py-1.5"
+              >
+                <i class="fas fa-circle-info text-teal-600 mr-1"></i>Potongan/diskon tidak lagi
+                diatur di sini. Tagihan selalu terbit <b>penuh</b>; potongannya dipilih kasir
+                <b>per baris</b> saat menerima pembayaran di POS. Daftar potongan diatur di tab
+                <b>Kategori</b>.
+              </p>
               <!-- Paket nominal pilihan -->
               <div>
                 <p class="text-[10px] text-[var(--text-secondary)] italic mb-1">
@@ -3042,8 +3017,8 @@ const dlgJenis = ref(null)
 //   ikut disertakan supaya setelan lama tak lenyap saat disimpan.
 const opsiKas = computed(() => opsiKasLembaga(lembagaRaw.value, dlgJenis.value?.kas_lembaga || ''))
 const dlgTarif = ref(false)
-// Kyai 3 Agu: paket nominal pilihan (santri boleh ambil di atas standar) + diskon anak
-//   guru/pegawai. Dua-duanya BERDIRI SENDIRI, tak menyentuh penggabungan syahriyah.
+// Kyai 3 Agu: paket nominal pilihan (santri boleh ambil di atas standar) — BERDIRI SENDIRI,
+//   tak menyentuh penggabungan syahriyah. Diskon anak guru dicabut 5 Agu (pindah ke POS).
 const dlgPaket = ref(false)
 // Kyai 3-4 Agu: penggabungan syahriyah. "200rb itu sudah termasuk, baik untuk TPQ (90rb)
 //   atau PTPT (100rb)" — jenis ngaji tak ditagih sendiri, nominalnya jadi KOMPONEN di dalam
@@ -3056,9 +3031,6 @@ const praRows = ref([])
 const praTotal = computed(() => praRows.value.reduce((a, r) => a + Number(r.nominal || 0), 0))
 const praGabungan = computed(
   () => praRows.value.filter((r) => Array.isArray(r.komponen) && r.komponen.length).length
-)
-const praDiskon = computed(
-  () => praRows.value.filter((r) => Number(r.diskon_persen || 0) > 0).length
 )
 async function pratinjauGenerate() {
   if (praBusy.value || generating.value) return
@@ -3106,8 +3078,6 @@ function paketDiskonInfo(j) {
     String(p?.label || '').trim()
   ).length
   if (n) bits.push(`${n} paket`)
-  const d = Number(j.diskon_anak_guru || 0) || 0
-  if (d > 0) bits.push(`diskon ${d}%`)
   return bits.join(' · ')
 }
 // v.1.1.x: jenis pembayaran per Tahun Ajaran (Braja "Daftar Jenis Biaya per Tahun Pelajaran")
@@ -3970,7 +3940,6 @@ function serializeJenisList(list) {
         .filter((p) => p.label && p.nominal > 0)
       // Diskon anak guru/pegawai (persen, 0 = tak ada). Dibatasi 0..100 di sini juga supaya
       //   angka aneh dari impor/ketik tak lolos ke perhitungan uang.
-      const diskonAnakGuru = Math.min(100, Math.max(0, Number(t.diskon_anak_guru || 0) || 0))
       // Kyai 3-4 Agu: penggabungan. `gabung_ke` = daftar KANDIDAT target (sisi sekolah ada
       //   4 jenis: SD/TK/PKBM/Kelas Baca) — resolver memilih yang berlaku untuk si santri.
       //   Terima bentuk string lama supaya konfigurasi manual/impor tak patah.
@@ -3997,7 +3966,6 @@ function serializeJenisList(list) {
         gabung_ke: gabungKe,
         gabung_syarat: gabungSyarat,
         paket,
-        diskon_anak_guru: diskonAnakGuru,
         frekuensi,
         auto_generate: frekuensi === 'bulanan',
         pos: t.pos || ''
@@ -4184,7 +4152,6 @@ function openJenisBaru() {
     nominal_per_kelas: {},
     nominal_per_santri: {},
     paket: [], // Kyai 3 Agu: paket nominal pilihan (kosong = tak ada pilihan)
-    diskon_anak_guru: 0, // persen untuk santri bertanda anak guru/pegawai (0 = tak ada)
     frekuensi: 'manual',
     pos: '',
     _expanded: false
@@ -4235,7 +4202,6 @@ function normalizeJenisRaw(t) {
       gabung_ke: [],
       gabung_syarat: 'punya_sekolah',
       paket: [],
-      diskon_anak_guru: 0,
       frekuensi: 'manual',
       auto_generate: false,
       pos: '',
@@ -4271,10 +4237,9 @@ function normalizeJenisRaw(t) {
       t.nominal_per_santri && typeof t.nominal_per_santri === 'object'
         ? { ...t.nominal_per_santri }
         : {},
-    // Kyai 3 Agu: paket nominal pilihan + diskon anak guru. Deep-copy paket supaya edit di
+    // Kyai 3 Agu: paket nominal pilihan. Deep-copy paket supaya edit di
     //   dialog (yang bekerja atas salinan) tak menyentuh daftar aslinya sebelum disimpan.
     paket: Array.isArray(t.paket) ? JSON.parse(JSON.stringify(t.paket)) : [],
-    diskon_anak_guru: Number(t.diskon_anak_guru || 0) || 0,
     frekuensi,
     auto_generate: frekuensi === 'bulanan',
     pos: t.pos || '',
@@ -4518,8 +4483,8 @@ async function autoGenerate(dryRun = false) {
           continue
         }
         // Kyai 3-4 Agu: SEMUA aturan pindah ke utils/syahriyah.hitungTagihan —
-        //   whitelist (lembaga/status/JK/shift), 4-lapis nominal LAMA, paket, diskon anak
-        //   guru, dan pelipatan jenis ngaji ke tagihan sekolah/fullday. Sengaja satu sumber:
+        //   whitelist (lembaga/status/JK/shift), 4-lapis nominal LAMA, paket, dan pelipatan
+        //   jenis ngaji ke tagihan sekolah/fullday. Sengaja satu sumber:
         //   dulu rumus ini disalin di generate manual, cron, generate khusus, dan POS —
         //   empat salinan yang gampang menyimpang. null = santri tak ditagih jenis ini
         //   (tak berlaku / nominal 0 / sudah jadi komponen jenis lain).
@@ -4548,11 +4513,6 @@ async function autoGenerate(dryRun = false) {
         // Field tambahan HANYA bila relevan — supaya bentuk baris tagihan biasa tetap
         //   sama persis seperti sebelumnya (tak ada kejutan di pembaca lama).
         if (h.komponen.length) payload.komponen = h.komponen
-        if (h.diskon_persen > 0) {
-          payload.nominal_bruto = h.nominal_bruto
-          payload.diskon_persen = h.diskon_persen
-          payload.diskon_nominal = h.diskon_nominal
-        }
         if (dryRun) {
           rencana.push(payload)
           continue
@@ -4755,10 +4715,9 @@ function _genNominalUntuk(sx) {
       // Kyai 3-4 Agu: lapis nominal dari utils/syahriyah (bukan salinan 3-lapis lagi), jadi
       //   PAKET pun terbaca di jalur ini. Urutannya sama dengan hitungTagihan:
       //   per_santri > paket > per_kelas > per_lembaga > default.
-      // SENGAJA TANPA whitelist, TANPA pelipatan, dan TANPA diskon anak guru:
+      // SENGAJA TANPA whitelist dan TANPA pelipatan:
       //   - target di jalur ini dicentang MANUAL oleh admin → jangan diam-diam melewatinya;
       //   - tagihan khusus (infaq/iuran sekali jalan) tak boleh menempel ke jenis lain;
-      //   - diskon `diskon_anak_guru` itu aturan syahriyah, bukan aturan infaq.
       const perS = Number((j.nominal_per_santri || {})[String(sx.id)] || 0)
       if (perS > 0) return perS
       const v = paketNominal(j, sx) || nominalDasar(j, sx)

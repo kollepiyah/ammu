@@ -105,7 +105,8 @@ Deno.serve(async (req) => {
 
       // SATU rumus dengan tombol Generate: whitelist (lembaga/status/JK/shift), lapis nominal
       //   (per santri -> paket -> tarif kombinasi -> per kelas -> per lembaga -> default),
-      //   diskon anak guru, dan pelipatan jenis ngaji ke tagihan sekolah/fullday.
+      //   dan pelipatan jenis ngaji ke tagihan sekolah/fullday. TANPA diskon: sejak 5 Agu 2026
+      //   potongan dipilih kasir di POS, tagihan selalu terbit penuh.
       //   null = santri tak ditagih jenis ini (tak berlaku / nominal 0 / jadi komponen jenis lain).
       const h = hitungTagihan(j, sx, jenisKonteks)
       if (!h) { skipped++; continue }
@@ -117,11 +118,6 @@ Deno.serve(async (req) => {
       // deno-lint-ignore no-explicit-any
       const tail: Record<string, any> = { santri_nama: sx.nama || '', bayar: 0, jatuh_tempo: jt, sumber: 'auto_generate' }
       if (h.komponen.length) tail.komponen = h.komponen
-      if (h.diskon_persen > 0) {
-        tail.nominal_bruto = h.nominal_bruto
-        tail.diskon_persen = h.diskon_persen
-        tail.diskon_nominal = h.diskon_nominal
-      }
       rowsToInsert.push({
         id,
         santri_id: String(sx.id),

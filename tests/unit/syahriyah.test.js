@@ -146,47 +146,38 @@ describe('urutan lapis nominal', () => {
   })
 })
 
-describe('diskon anak guru (K4) dihitung dari TOTAL (K6)', () => {
-  it('50% pada 200rb: total 100.000 dan komponen tetap berjumlah tepat 100.000', () => {
+// K4/K6 DICABUT (Kyai, 5 Agu 2026): "potongan diskon syahriyah (per item) jangan di data
+// santri dan jenis syahriyah. tapi di POS saja". Tagihan kini SELALU terbit penuh; potongan
+// dipilih kasir per baris (utils/potonganPos + tests/unit/potonganPos.test.js).
+//
+// Blok ini sengaja DIPERTAHANKAN sebagai penjaga pencabutan: kalau `diskon_anak_guru`
+// diam-diam dihidupkan lagi di resolver, tagihan santri anak guru akan berubah nominalnya
+// tanpa ada yang menyadari sampai wali protes.
+describe('diskon anak guru sudah DICABUT dari resolver', () => {
+  it('penanda anak_guru + diskon_anak_guru 50% TIDAK lagi memotong tagihan', () => {
     const s = jSekolah()
     s.diskon_anak_guru = 50
     const list = [s, jNgaji()]
     const r = hitungTagihan(s, ahmad({ anak_guru: true }), list)
-    expect(r.nominal).toBe(100000)
-    expect(r.nominal_bruto).toBe(200000)
-    expect(r.diskon_nominal).toBe(100000)
-    expect(r.komponen.map((k) => k.nominal)).toEqual([55000, 45000])
-    expect(jumlahKomponen(r)).toBe(100000)
+    expect(r.nominal).toBe(200000) // penuh, bukan 100.000
+    expect(r.komponen.map((k) => k.nominal)).toEqual([110000, 90000])
+    expect(jumlahKomponen(r)).toBe(200000)
   })
 
-  it('tanpa penanda anak_guru -> tak ada diskon (penanda MANUAL, bukan tebakan)', () => {
-    const s = jSekolah()
-    s.diskon_anak_guru = 50
-    const list = [s, jNgaji()]
-    expect(hitungTagihan(s, ahmad(), list).nominal).toBe(200000)
-    expect(hitungTagihan(s, ahmad({ anak_guru: 'ya' }), list).nominal).toBe(200000) // harus true
-  })
-
-  it('angka ganjil: jumlah komponen tetap PERSIS sama dengan nominal (uji pembulatan)', () => {
-    const s = jSekolah()
-    s.nominal_per_lembaga = { SDI: 199999 }
-    s.diskon_anak_guru = 33
-    const n = jNgaji()
-    n.nominal_per_lembaga = { 'TPQ Pagi': 89999 }
-    const list = [s, n]
-    const r = hitungTagihan(s, ahmad({ anak_guru: true }), list)
-    expect(jumlahKomponen(r)).toBe(r.nominal)
-    expect(r.komponen.every((k) => k.nominal >= 0)).toBe(true)
-    expect(r.nominal).toBeLessThan(r.nominal_bruto)
-  })
-
-  it('diskon 100% -> nominal 0 tapi komponen tetap konsisten', () => {
+  it('diskon 100% pun tak berpengaruh — tagihan tetap penuh', () => {
     const s = jSekolah()
     s.diskon_anak_guru = 100
     const list = [s, jNgaji()]
-    const r = hitungTagihan(s, ahmad({ anak_guru: true }), list)
-    expect(r.nominal).toBe(0)
-    expect(jumlahKomponen(r)).toBe(0)
+    expect(hitungTagihan(s, ahmad({ anak_guru: true }), list).nominal).toBe(200000)
+  })
+
+  it('hasil tak lagi membawa field diskon — pembaca lama tak boleh menemukannya', () => {
+    const s = jSekolah()
+    s.diskon_anak_guru = 50
+    const r = hitungTagihan(s, ahmad({ anak_guru: true }), [s, jNgaji()])
+    expect(r.diskon_persen).toBeUndefined()
+    expect(r.diskon_nominal).toBeUndefined()
+    expect(r.nominal_bruto).toBeUndefined()
   })
 })
 
@@ -481,7 +472,9 @@ describe('pecahProporsional (pemecahan Buku Induk)', () => {
   })
 
   it('rantai nyata: hitungTagihan → pecahProporsional selalu seimbang', () => {
-    // Diskon anak guru + pembulatan ganjil = kombinasi paling rawan.
+    // Pembulatan angka ganjil = kombinasi paling rawan. `diskon_anak_guru` sengaja tetap
+    //   dipasang meski sudah dicabut: kalau ia diam-diam dihidupkan lagi, keseimbangan
+    //   komponen di sini yang pertama pecah.
     const s = jSekolah()
     s.diskon_anak_guru = 37
     s.nominal_per_lembaga = { SDI: 199999 }

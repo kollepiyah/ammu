@@ -182,20 +182,6 @@
               Kosong = tarif biasa. Pilihannya diatur di Pengaturan Keuangan → Jenis Pembayaran.
             </p>
           </div>
-          <div>
-            <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase"
-              >Anak Guru/Pegawai</label
-            >
-            <label
-              class="flex items-center gap-2 px-3 py-2 rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 cursor-pointer"
-            >
-              <input v-model="form.anak_guru" type="checkbox" class="w-4 h-4 accent-teal-600" />
-              <span class="text-sm text-[var(--text-primary)]">Dapat diskon syahriyah</span>
-            </label>
-            <p class="text-[10px] text-[var(--text-tertiary)] mt-1">
-              Besaran diskonnya diatur per jenis pembayaran (persen).
-            </p>
-          </div>
           <!-- K2: pengecualian manual atas aturan otomatis penggabungan syahriyah ngaji -->
           <div>
             <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase"

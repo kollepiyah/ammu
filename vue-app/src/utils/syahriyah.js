@@ -12,9 +12,11 @@
 //      supaya laporan per lembaga & Buku Kas per gedung tetap akurat.
 //   K2 penentu gabungan OTOMATIS dari data, bisa dikecualikan manual per santri.
 //   K3 nominal pilihan pendaftaran = PAKET bernama, tetap boleh nominal bebas per santri.
-//   K4 diskon anak guru = PERSEN, penandanya MANUAL (bukan cocok-nama otomatis).
+//   K4 DICABUT 5 Agu 2026 — dulu "diskon anak guru = PERSEN, penanda MANUAL di santri".
+//      Kyai: potongan pindah SEPENUHNYA ke POS, dipilih kasir per baris transaksi
+//      (utils/potonganPos). Tagihan dari sini SELALU terbit penuh.
 //   K5 total boleh berbeda per PASANGAN (lembaga sekolah x lembaga ngaji).
-//   K6 diskon dihitung dari TOTAL, lalu dipecah proporsional ke komponen.
+//   K6 DICABUT bersama K4 (dulu: diskon dihitung dari total lalu dipecah proporsional).
 //
 // MURNI (tanpa I/O) — supaya (a) bisa diuji unit, (b) bisa dicerminkan ke edge function Deno
 // (pola `hiview-absen/shiftDerive.ts` mencerminkan `utils/shiftDerive.js`). Ada TIGA jalur
@@ -252,22 +254,11 @@ export function gabungTargetFor(jenis, santri, jenisList) {
   return null
 }
 
-/** Persen diskon yang berlaku (K4): hanya untuk santri bertanda `anak_guru`. */
-export function diskonPersen(jenisTarget, santri) {
-  if (santri?.anak_guru !== true) return 0
-  const p = Number(jenisTarget?.diskon_anak_guru)
-  if (!Number.isFinite(p) || p <= 0) return 0
-  return Math.min(100, p)
-}
-
 /**
  * Hitung SATU tagihan untuk (jenis, santri). Ini fungsi yang dipakai semua pemanggil.
  *
  * @returns {null | {
- *   nominal: number,            // yang ditagih (sesudah diskon) — pakai ini untuk baris tagihan
- *   nominal_bruto: number,      // sebelum diskon
- *   diskon_persen: number,
- *   diskon_nominal: number,
+ *   nominal: number,            // yang ditagih — pakai ini untuk baris tagihan
  *   gabungan: boolean,
  *   komponen: Array<{jenis_id, label, nominal, pos}>  // KOSONG bila tak ada pemecahan
  * }}
@@ -294,15 +285,17 @@ export function hitungTagihan(jenis, santri, jenisList) {
   if (!bruto) bruto = nominalDasar(jenis, santri)
   if (bruto <= 0) return null
 
-  // Diskon dihitung dari TOTAL (K6), lalu dipecah proporsional di bawah.
-  const persen = diskonPersen(jenis, santri)
-  const neto = persen ? Math.round((bruto * (100 - persen)) / 100) : bruto
+  // Kyai (5 Agu 2026): TAGIHAN TERBIT PENUH. Diskon tidak lagi lahir di sini — potongan
+  //   kini dipilih kasir per baris di POS (utils/potonganPos), sebab diskon otomatis
+  //   membutuhkan dua tempat yang harus cocok (penanda `anak_guru` di santri x persen
+  //   `diskon_anak_guru` di jenis) dan diam-diam ikut ke cron bulanan, sehingga nominal
+  //   tagihan bisa berbeda dari yang Kyai setel tanpa jejak yang terlihat.
+  //   Tagihan LAMA yang sudah menyimpan diskon_persen/diskon_nominal di jsonb-nya tidak
+  //   disentuh — TagihanView masih menampilkannya apa adanya.
+  const neto = bruto
 
   const hasil = {
     nominal: neto,
-    nominal_bruto: bruto,
-    diskon_persen: persen,
-    diskon_nominal: bruto - neto,
     gabungan: nempel.length > 0,
     komponen: []
   }

@@ -65,7 +65,10 @@ describe('cermin edge (Deno) sepakat dengan utils/syahriyah.js', () => {
     ])
   })
 
-  it('paket, tarif kombinasi, diskon anak guru: angka identik', () => {
+  // `diskon_anak_guru` + `anak_guru` sengaja tetap diuji meski sudah DICABUT (5 Agu 2026):
+  //   yang dijaga sekarang adalah KEDUA sisi sama-sama mengabaikannya. Kalau salah satu
+  //   sisi menghidupkannya lagi, cron dan tombol Generate akan menagih angka berbeda.
+  it('paket, tarif kombinasi, penanda diskon lama: angka identik', () => {
     const s = jSekolah()
     s.paket = [{ id: 'peduli', label: 'Peduli', nominal: 250000 }]
     s.nominal_gabungan = { SDI: { PTPT: 225000 }, '*': { '*': 205000 } }

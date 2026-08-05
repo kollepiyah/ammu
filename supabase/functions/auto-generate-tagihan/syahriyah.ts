@@ -12,7 +12,7 @@
 //
 // Alasan keberadaan cermin ini (Kyai, 3-4 Agu 2026): dulu rumus nominal disalin sendiri di
 // cron, jadi cron dan tombol Generate bisa menerbitkan nominal BERBEDA untuk santri yang
-// sama. Sekarang keduanya menjalankan aturan yang sama: paket, diskon anak guru, tarif
+// sama. Sekarang keduanya menjalankan aturan yang sama: paket, tarif
 // kombinasi, dan pelipatan syahriyah ngaji ke syahriyah sekolah/fullday.
 
 // deno-lint-ignore no-explicit-any
@@ -26,9 +26,6 @@ export interface Komponen {
 }
 export interface HasilTagihan {
   nominal: number
-  nominal_bruto: number
-  diskon_persen: number
-  diskon_nominal: number
   gabungan: boolean
   komponen: Komponen[]
 }
@@ -189,13 +186,6 @@ export function gabungTargetFor(jenis: Any, santri: Any, jenisList: Any): Any {
   return null
 }
 
-export function diskonPersen(jenisTarget: Any, santri: Any): number {
-  if (santri?.anak_guru !== true) return 0
-  const p = Number(jenisTarget?.diskon_anak_guru)
-  if (!Number.isFinite(p) || p <= 0) return 0
-  return Math.min(100, p)
-}
-
 /** Porsi jenis target = SISA (bukan dihitung ulang) supaya jumlah komponen SELALU = nominal. */
 export function hitungTagihan(jenis: Any, santri: Any, jenisList: Any): HasilTagihan | null {
   if (!jenisBerlakuUntuk(jenis, santri)) return null
@@ -212,14 +202,13 @@ export function hitungTagihan(jenis: Any, santri: Any, jenisList: Any): HasilTag
   if (!bruto) bruto = nominalDasar(jenis, santri)
   if (bruto <= 0) return null
 
-  const persen = diskonPersen(jenis, santri)
-  const neto = persen ? Math.round((bruto * (100 - persen)) / 100) : bruto
+  // Kyai (5 Agu 2026): cron pun menerbitkan tagihan PENUH — diskon anak guru dicabut,
+  //   potongan kini dipilih kasir per baris di POS. Cermin dari utils/syahriyah.js;
+  //   kalau salah satu sisi diubah tanpa yang lain, cron & app akan menagih beda angka.
+  const neto = bruto
 
   const hasil: HasilTagihan = {
     nominal: neto,
-    nominal_bruto: bruto,
-    diskon_persen: persen,
-    diskon_nominal: bruto - neto,
     gabungan: nempel.length > 0,
     komponen: []
   }
