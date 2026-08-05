@@ -790,7 +790,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, reactive } from 'vue'
 // v.F6e: adapter Supabase (serverTimestamp = shim ISO string).
-import { subscribeColl, getOne, mergeOne, serverTimestamp } from '@/services/db'
+import { subscribeColl, queryColl, getOne, mergeOne, serverTimestamp } from '@/services/db'
 import { uploadBase64 } from '@/services/storage'
 import { useAuthStore } from '@/stores/auth'
 import { fmtRp, hitungLamaMengajar, todayJakarta } from '@/utils/format'
@@ -1062,12 +1062,30 @@ function openSlip(g) {
 }
 
 onMounted(async () => {
-  unsubSlip = subscribeColl('keuangan_gaji', (docs) => {
-    slipRaw.value = docs || []
-  })
-  unsubAbsensi = subscribeColl('absensi_shift_guru', (docs) => {
-    absensiGuru.value = docs || []
-  })
+  // v.1.2.8 PERF (HP low-end): dua tabel di bawah dulu ditarik PENUH — seluruh slip
+  //   bisyaroh dan seluruh absensi shift SEMUA guru — padahal halaman ini cuma
+  //   menampilkan milik yang login (slipMine & kehadiran/tren memfilter guru_id
+  //   sesudahnya). Filternya sekarang di server, lewat kolom riil `guru_id`.
+  //   CATATAN: absensiGuru karenanya BUKAN lagi sumber sah untuk guru LAIN — jalur
+  //   persetujuan izin mengambil absensi guru pengaju secara terpisah (lihat
+  //   ambilAbsensiGuru), sebab kalau ia diberi daftar kosong, penjaga "sudah hadir"
+  //   tak jalan dan baris HADIR guru lain bisa tertimpa menjadi izin.
+  const meId = String(auth.sesiAktif?.id || '')
+  const milikku = [['guru_id', '==', meId]]
+  unsubSlip = subscribeColl(
+    'keuangan_gaji',
+    (docs) => {
+      slipRaw.value = docs || []
+    },
+    milikku
+  )
+  unsubAbsensi = subscribeColl(
+    'absensi_shift_guru',
+    (docs) => {
+      absensiGuru.value = docs || []
+    },
+    milikku
+  )
   // v.21.110.0527: subscribe supervisi
   unsubSupervisi = subscribeColl('supervisi_catatan', (docs) => {
     supervisiRaw.value = docs || []
@@ -1355,10 +1373,25 @@ async function batalIzin(a) {
     toast.error('Gagal: ' + (e.message || e))
   }
 }
+// Absensi milik GURU PENGAJU (bukan yang login). Wajib diambil terpisah: langganan
+//   `absensiGuru` kini disaring ke guru yang login, dan tanpa daftar yang benar
+//   penjaga "hari ini sudah hadir" tak jalan — baris HADIR guru pengaju akan
+//   tertimpa menjadi izin. Satu query kecil per persetujuan, bukan tabel penuh.
+async function ambilAbsensiGuru(guruId) {
+  const id = String(guruId || '')
+  if (!id) return []
+  if (id === String(auth.sesiAktif?.id || '')) return absensiGuru.value
+  try {
+    return await queryColl('absensi_shift_guru', [['guru_id', '==', id]])
+  } catch (e) {
+    // Gagal ambil = JANGAN lanjut menulis; lebih baik batal daripada menimpa "hadir".
+    throw new Error('Gagal membaca absensi guru tsb: ' + (e.message || e))
+  }
+}
 async function setujuiIzin(a) {
   izinBusyId.value = a.id
   try {
-    const r = await setujuiIzinReq(a, absensiGuru.value)
+    const r = await setujuiIzinReq(a, await ambilAbsensiGuru(a.guru_id))
     toast.success(
       `Disetujui — ${r.written} absensi terisi${r.skipped ? `, ${r.skipped} dilewati (sudah hadir)` : ''}.`
     )
@@ -1371,7 +1404,7 @@ async function setujuiIzin(a) {
 async function terapkanUlangIzin(a) {
   izinBusyId.value = a.id
   try {
-    const r = await terapkanUlangReq(a, absensiGuru.value)
+    const r = await terapkanUlangReq(a, await ambilAbsensiGuru(a.guru_id))
     if (r.written)
       toast.success(
         `${r.written} absensi terisi${r.skipped ? `, ${r.skipped} dilewati (sudah hadir)` : ''}.`

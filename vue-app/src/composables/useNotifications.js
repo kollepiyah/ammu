@@ -596,24 +596,35 @@ export function useNotifications() {
         baru
       )
     )
-    if (role.value === 'santri' || role.value === 'admin') {
+    // v.1.2.8 PERF (HP low-end): keempat tabel di bawah HANYA dibaca oleh notifikasi
+    //   role 'santri' (getPembayaran/getTagihan/getKenaikan/getPrestasi semuanya
+    //   `return []` untuk role lain) dan SELALU disaring `santri_id === me`. Jadi:
+    //     - role 'admin' TIDAK perlu berlangganan sama sekali — dulu ikut, dan itu
+    //       berarti setiap admin membuka halaman apa pun menarik 30 hari buku induk +
+    //       tagihan SELURUH pondok tanpa satu pun barisnya dipakai;
+    //     - role 'santri' menyaring santri_id DI SERVER, bukan setelah semuanya
+    //       diunduh. Wali/santri di HP low-end dulu menarik transaksi semua santri.
+    //   Kalau nanti admin memang butuh notifikasi keuangan, tambahkan langganan
+    //   TERPISAH yang sadar-scope — jangan pulihkan yang penuh ini.
+    if (role.value === 'santri' && userId.value) {
+      const milikku = [...baru, ['santri_id', '==', userId.value]]
       _unsubs.push(
         subscribeColl(
           'keuangan_buku_induk',
           (docs) => {
             bukuIndukRaw.value = docs || []
           },
-          baru
+          milikku
         )
       )
-      // v.87.0526: tagihan baru + event kenaikan (untuk wali/santri; admin lihat semua)
+      // v.87.0526: tagihan baru + event kenaikan (untuk wali/santri)
       _unsubs.push(
         subscribeColl(
           'keuangan_tagihan',
           (docs) => {
             tagihanRaw.value = docs || []
           },
-          baru
+          milikku
         )
       )
       _unsubs.push(
@@ -622,7 +633,7 @@ export function useNotifications() {
           (docs) => {
             kenaikanRaw.value = docs || []
           },
-          baru
+          milikku
         )
       )
       _unsubs.push(
@@ -631,18 +642,20 @@ export function useNotifications() {
           (docs) => {
             prestasiRaw.value = docs || []
           },
-          baru
+          milikku
         )
       )
     }
-    if (role.value === 'guru' || role.value === 'admin') {
+    // Slip bisyaroh: getBisyaroh() juga role 'guru' saja + filter guru_id sendiri.
+    //   Admin dulu ikut berlangganan seluruh tabel gaji tanpa memakainya.
+    if (role.value === 'guru' && userId.value) {
       _unsubs.push(
         subscribeColl(
           'keuangan_gaji',
           (docs) => {
             slipRaw.value = docs || []
           },
-          baru
+          [...baru, ['guru_id', '==', userId.value]]
         )
       )
     }

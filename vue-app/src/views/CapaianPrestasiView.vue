@@ -374,9 +374,17 @@ function formatTanggal(t) {
 }
 
 onMounted(() => {
-  unsubRekap = subscribeColl('rekap_prestasi', (data) => {
-    rekapPrestasi.value = data
-  })
+  // v.1.2.8 PERF (HP low-end): halaman ini hanya menampilkan rekap SANTRI YANG LOGIN
+  //   (rekapSantri memfilter santri_id sesudahnya), tapi dulu menarik rekap_prestasi
+  //   SELURUH pondok lebih dulu. Saring di server lewat kolom riil `santri_id`.
+  const id = santriId.value
+  unsubRekap = subscribeColl(
+    'rekap_prestasi',
+    (data) => {
+      rekapPrestasi.value = data || []
+    },
+    id ? [['santri_id', '==', id]] : []
+  )
 })
 
 onUnmounted(() => {
