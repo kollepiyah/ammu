@@ -21,6 +21,119 @@ naik satu tiap rilis. Entri lama memakai skema lama `v.{nomor-urut}.{MMDDtahunmu
 
 ---
 
+## [v.1.2.8] — 2026-08-05 — Enam laporan Kyai: izin, absensi, scope rekap, HP low-end, pembaruan APK/Electron, PDF tabungan
+
+Rilis **perbaikan** dari enam laporan Kyai (5 Agu 2026), plus satu permintaan tambahan.
+**TANPA migrasi DB** dan **tanpa edge function baru** — seluruhnya frontend + konfigurasi
+build.
+
+⚠️ **URUTAN DEPLOY:**
+
+1. Deploy web **dari direktori utama** (worktree tak punya `vue-app/.env.local`).
+2. Rebuild **AAB vc128** — wajib, karena perbaikan "tampilan terlalu zoom" ada di kode
+   native (`MainActivity`), bukan di bundle web.
+3. Rebuild **Electron 1.2.8** (`npm run electron:release`).
+
+⚠️ **ELECTRON — tiap PC perlu SATU KALI pasang manual.** Akar "auto-update tak bisa di
+beberapa PC" adalah `win.publisherName` di config: electron-builder menuliskannya ke
+`app-update.yml`, lalu electron-updater memverifikasi tanda tangan Authenticode installer
+dan menolak berkas yang tak bersertifikat. PC yang sekarang terpasang membawa
+`app-update.yml` LAMA di dalam dirinya, jadi ia masih akan menolak sekali lagi — sesudah
+1.2.8 terpasang manual, auto-update jalan permanen. Kalau updater di PC itu gagal, kini ia
+menampilkan sebabnya + tombol "Buka Halaman Unduhan".
+
+**Yang perlu Kyai kerjakan setelah rilis (untuk pembaruan APK di luar Play):** unduh
+**"Signed, universal APK"** dari Play Console → App bundle explorer → Downloads, unggah ke
+rilis GitHub sebagai `AmmuOnline.apk`. **Wajib APK dari Play Console, bukan build lokal** —
+build lokal ditandatangani kunci berbeda dari kunci Play, jadi tak bisa dipasang menimpa
+aplikasi yang sudah ada dari Play ("App not installed"). `vue-app/public/app-version.json`
+sudah menunjuk `releases/latest/download/AmmuOnline.apk` dan sudah berisi vc128.
+
+### Fixed (Perbaikan)
+
+- **Perizinan yang disetujui tak lagi luput dari absensi.** Izin 4 Agu berstatus
+  "Disetujui" tapi kolom IZIN tetap 0 dan hari itu tetap ALPA. Akarnya bukan absensinya,
+  tapi deret tanggalnya: pola `new Date(tgl + 'T00:00:00')` + `toISOString()` memundurkan
+  tanggal **satu hari** di WIB, jadi baris ditulis ke 3 Agu — dan karena 3 Agu sudah punya
+  baris "hadir", penulisannya justru **dilewati**, sehingga tak ada baris izin sama sekali.
+  Sumber tunggal baru `rentangTanggal()` bekerja pada string kalender + iterasi UTC murni,
+  jadi zona lokal tak pernah ikut campur. Baris izin kini juga mengisi kolom `periode`.
+  **Pemulihan data:** panel **"Sudah disetujui, absensinya belum terisi"** di Persetujuan
+  Perizinan — menyaring pengajuan yang kena bug ini dan hilang sendiri setelah diterapkan.
+- **"Hari ini" tak lagi mundur sebelum jam 07.00 WIB** di penghitung Alpa dan tanggal
+  default form pengajuan (keduanya masih memakai UTC).
+- **Guru yang absennya hilang sekarang bisa ditunjuk namanya.** Sinkron fingerprint
+  membuang scan yang tak jatuh di window shift dan hanya melaporkannya sebagai satu angka
+  "luar jam shift" — padahal angka itu campur aduk: mayoritas normal (ceklok pulang),
+  sebagian kecil justru absen yang hilang total. Panel Mesin Absensi kini punya tabel
+  **"Scan terbaca tapi TIDAK jadi absen"** (nama · tanggal · jam scan · shift guru · sebab)
+  yang hanya memuat hari **tanpa satu pun baris masuk**, dengan sebabnya dibedakan: shift
+  guru kosong (konfigurasi → "Perbaiki Shift") vs jam di luar window shift.
+- **Rekap Prestasi: Kepala SDI yang juga guru ngaji PTPT tak lagi melihat semua santri.**
+  Dua sebab bertumpuk: `isFullFilterRole` memperlakukan setiap kepala sebagai admin-penuh
+  (sehingga penyaring "santri ampuan" tak pernah jalan), dan penyaringnya memakai
+  `sesi.lembaga` — untuk kepala sekolah itu kolom yang salah, sebab `lembaga` = tempat ia
+  **mengajar** ngaji sedang yang ia **pimpin** disebut jabatannya. Sumber tunggal baru
+  `scopeQiraati()`: kuasa penuh hanya di lembaga **ngaji** yang dipimpin; kepala sekolah
+  tetap boleh melihat santri kelas sekolahnya tapi read-only (nilai qiraati bukan
+  wilayahnya). Data Santri sudah memakai pola ini sejak v.1.2.3.
+- **Tampilan "terlalu zoom" di HP low-end.** HP itu disetel Ukuran Font besar, dan WebView
+  menurunkan skala font sistem ke halaman — karena tata letak Ammu berbasis teks,
+  pembesaran itu mendorong tinggi baris & memaksa pembungkusan, sehingga terbaca sebagai
+  "ke-zoom". `MainActivity` kini mengunci `textZoom` 100% dan CSS memakai
+  `text-size-adjust: 100%`. Ukuran Tampilan (density) perangkat & zoom pinch **tidak**
+  disentuh — itu preferensi sah seluruh perangkat.
+- **Auto-update Electron.** `win.publisherName` dibuang (lihat peringatan di atas) dan
+  `artifactName` kini memuat versi, supaya cache & blockmap rilis lama tak bertabrakan.
+  Status "sudah versi terbaru" di PC berversi skema lama (110.0.626) tak lagi ditelan apa
+  adanya: semver menilai 110 > 1.2.x sehingga PC itu **tak akan pernah** ditawari update —
+  sekarang ia diberi tahu dan diarahkan memasang manual.
+- **Tanggal mutasi tabungan/uang saku** ikut pindah ke WIB — setoran subuh dulu tercatat di
+  tanggal sebelumnya, yang langsung merusak laporan harian dan penomoran No. Bukti.
+
+### Added (Baru)
+
+- **Laporan PDF mutasi Tabungan / Uang Saku** (Kyai: "belum ada ekspor PDF harian untuk
+  admin keuangan"). Mengikuti filter aktif (tahun/bulan/tanggal/lembaga), urut kronologis,
+  ditutup baris JUMLAH + SALDO BERSIH; kolom No · Tanggal · No. Bukti · Santri · Kas
+  Lembaga · Setor · Tarik · Catatan. Tombol **"Hari Ini"** menyetel filter ke tanggal WIB
+  sekali klik. Yang sudah ada sebelumnya (`exportPdf`) adalah rekap **saldo** per santri
+  dan mengabaikan tanggal — bukan yang dibutuhkan untuk tutup kas harian.
+- **Panel "Semua Mutasi" terbuka untuk admin keuangan** (baca + cetak). Sebelumnya
+  super_admin-saja, dan karena seluruh kontrol tanggal harian hidup di dalamnya, admin
+  keuangan tak punya jalan sama sekali ke laporan harian. **Ubah/hapus mutasi tetap
+  super_admin.**
+- **Pembaruan APK di luar Play Store** — `public/app-version.json` sebagai sumber "versi
+  terbaru" (ikut ter-deploy bersama web, jadi selalu seusia web yang tayang) + tawaran
+  unduh otomatis di aplikasi Android (~6 detik sesudah app dibuka) + blok **"Aplikasi
+  Android"** di Bantuan → Tentang: **Unduh APK** di web, **Cek Pembaruan** di aplikasi.
+  Pilihan "Lewati versi ini" disimpan per-versionCode, jadi versi berikutnya tetap
+  ditawarkan. Ini **bukan** auto-update seperti Electron: Android tak mengizinkan aplikasi
+  non-sistem memasang APK sendiri — yang hilang adalah penantian peninjauan Play.
+
+### Performance
+
+- **Langganan data disaring di server.** `subscribeColl` sudah menerima parameter penyaring
+  sejak awal, tapi dari 78 pemanggilannya **nol** yang memakainya — semuanya menarik tabel
+  penuh lalu menyaring di klien, jadi halaman pribadi mengunduh data seluruh pondok demi
+  menampilkan satu orang. Yang disaring sekarang: Profil guru (`absensi_shift_guru` +
+  `keuangan_gaji` → `guru_id`), Capaian anak (`rekap_prestasi` → `santri_id`), dan
+  notifikasi (buku induk / tagihan / kenaikan / prestasi → `santri_id`; slip → `guru_id`).
+  Peran **admin** berhenti berlangganan lima tabel besar yang datanya tak pernah dipakai
+  (fungsi notifikasinya memang `return []` untuk non-santri/non-guru).
+- Jalur persetujuan izin kini mengambil absensi guru pengaju lewat satu query kecil, bukan
+  dari langganan tabel penuh — dan **melempar** kalau query itu gagal, sebab tanpa daftar
+  yang benar penjaga "sudah hadir" akan lolos dan menimpa baris hadir guru lain.
+
+### Tests
+
+580 → **591 tes** (11 berkas baru/diperbarui): `rentangTanggal` (zona WIB dipaksa aktif +
+bukti pola lama memang mundur), `scanTanpaAbsen`, `scopeQiraati`, `subscribeCollFilter`,
+`putusanPembaruan`, `versiSkemaLama`, `ringkasSetorTarik` (termasuk penjaga eksplisit bahwa
+total PDF == total kartu rekap per lembaga, bahkan untuk baris berjenis cacat).
+
+---
+
 ## [v.1.2.7] — 2026-08-04 — Syahriyah gabungan + kas per lembaga + laporan PDF harian
 
 Dua blok pekerjaan: **syahriyah gabungan** (3–4 Agu) dan **kas per lembaga + laporan harian**
