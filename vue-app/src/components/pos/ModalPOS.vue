@@ -15,6 +15,7 @@ import { useSettingsStore } from '@/stores/settings'
 import { hitungTagihan, jenisBerlakuUntuk, jenisTergabung } from '@/utils/syahriyah'
 import { terbayarDari } from '@/utils/tagihan'
 import { todayJakarta } from '@/utils/format'
+import { potonganAktif, terapkanPotongan } from '@/utils/potonganPos'
 
 const settings = useSettingsStore()
 
@@ -408,6 +409,12 @@ function toggleCell(d) {
     jenis: d.jenis,
     keterangan: d.ket || '',
     nominal: Number(d.sisa || 0),
+    // bruto = nominal SEBELUM potongan. Disimpan terpisah karena `nominal` boleh diubah
+    //   kasir (bayar sebagian), sedang potongan selalu dihitung dari bruto baris ini.
+    bruto: Number(d.sisa || 0),
+    potongan_id: '',
+    potongan_label: '',
+    potongan_nominal: 0,
     tagihan_id: d.tagId || null,
     nominal_penuh: Number(d.tariff || 0),
     dibayar_lama: Number(d.paid || 0),
@@ -425,6 +432,10 @@ function addManual(j) {
     jenis: j.label,
     keterangan: '',
     nominal: lookupNominal(j.label) || 0,
+    bruto: lookupNominal(j.label) || 0,
+    potongan_id: '',
+    potongan_label: '',
+    potongan_nominal: 0,
     tagihan_id: null,
     nominal_penuh: 0,
     dibayar_lama: 0,
@@ -437,6 +448,44 @@ function addManual(j) {
 function removeCart(key) {
   const i = cart.value.findIndex((c) => c.key === key)
   if (i >= 0) cart.value.splice(i, 1)
+}
+
+// ── Potongan per BARIS (Kyai 5 Agu 2026) ─────────────────────────────────────
+// "potongan diskon syahriyah (per item) jangan di data santri dan jenis syahriyah. tapi
+// di POS saja setiap transaksi tinggal pilih diskon/potongannya" + "per jenis ya bukan
+// total". Daftar pilihannya dari Pengaturan Keuangan; nominalnya masih boleh disesuaikan
+// kasir untuk kasus khusus.
+const potonganList = computed(() => potonganAktif(settings.settings?.keuPotonganPos))
+
+/** Setel nominal yang dibayar = bruto - potongan. Dipanggil tiap potongan berubah. */
+function _segarkanNominal(c) {
+  const pot = Math.min(Math.max(0, Number(c.potongan_nominal || 0)), Number(c.bruto || 0))
+  c.potongan_nominal = pot
+  c.nominal = Math.max(0, Number(c.bruto || 0) - pot)
+}
+
+function pilihPotongan(c, id) {
+  c.potongan_id = id || ''
+  if (!id) {
+    c.potongan_label = ''
+    c.potongan_nominal = 0
+    _segarkanNominal(c)
+    return
+  }
+  const p = potonganList.value.find((x) => x.id === id)
+  if (!p) return
+  const hasil = terapkanPotongan(c.bruto, p)
+  c.potongan_label = hasil.label
+  c.potongan_nominal = hasil.potongan
+  _segarkanNominal(c)
+}
+
+/** Kasir mengetik sendiri nominal potongannya (kasus khusus di luar daftar). */
+function ubahPotonganManual(c) {
+  // Label tetap ada supaya struk & Buku Induk tak mencatat potongan tanpa keterangan.
+  if (!c.potongan_label) c.potongan_label = 'Potongan'
+  c.potongan_id = ''
+  _segarkanNominal(c)
 }
 
 // ---- metode / uang diterima / kembalian ----
@@ -488,8 +537,14 @@ function simpan() {
     alert('Keranjang kosong — klik tagihan yang mau dibayar dulu')
     return
   }
-  if (cart.value.some((c) => !c.nominal || c.nominal <= 0)) {
-    alert('Nominal tiap item harus > 0')
+  // Nominal 0 SAH bila ditutup potongan penuh (pembebasan) — yang dilarang cuma baris
+  //   yang benar-benar hampa: tanpa uang dan tanpa potongan.
+  if (cart.value.some((c) => Number(c.nominal || 0) <= 0 && Number(c.potongan_nominal || 0) <= 0)) {
+    alert('Nominal tiap item harus > 0 (atau diberi potongan)')
+    return
+  }
+  if (cart.value.some((c) => Number(c.nominal || 0) < 0)) {
+    alert('Nominal item tidak boleh minus')
     return
   }
   if (isTunai.value && bayar.value < total.value) {
@@ -503,6 +558,11 @@ function simpan() {
     items: cart.value.map((c) => ({
       jenis: c.jenis,
       nominal: Number(c.nominal),
+      // Potongan ikut supaya PosSantriView bisa melunasi tagihan (potongan menutup sisa)
+      //   dan mencatat jejaknya di Buku Induk + struk.
+      nominal_bruto: Number(c.bruto || c.nominal || 0),
+      potongan_nominal: Number(c.potongan_nominal || 0),
+      potongan_label: c.potongan_nominal > 0 ? c.potongan_label || 'Potongan' : '',
       keterangan: c.keterangan || '',
       tagihan_id: c.tagihan_id || null,
       nominal_penuh: Number(c.nominal_penuh || 0),
@@ -737,6 +797,38 @@ function onBackdrop(e) {
                               .map((k) => k.label + ' ' + fmtRp(k.nominal))
                               .join(' · ')
                           }}
+                        </div>
+                        <!-- Potongan PER BARIS (per jenis), bukan untuk seluruh transaksi.
+                             Daftar dari Pengaturan Keuangan; nominalnya masih bisa diubah
+                             kasir untuk kasus khusus. -->
+                        <div class="ci-pot">
+                          <select
+                            :value="c.potongan_id"
+                            class="ci-pot-sel"
+                            title="Potongan untuk baris ini"
+                            @change="pilihPotongan(c, $event.target.value)"
+                          >
+                            <option value="">Tanpa potongan</option>
+                            <option v-for="p in potonganList" :key="p.id" :value="p.id">
+                              {{ p.label }} ({{
+                                p.tipe === 'persen' ? p.nilai + '%' : fmtRp(p.nilai)
+                              }})
+                            </option>
+                          </select>
+                          <input
+                            v-model.number="c.potongan_nominal"
+                            type="number"
+                            min="0"
+                            :max="c.bruto"
+                            class="ci-pot-nom"
+                            title="Nominal potongan (boleh disesuaikan)"
+                            @input="ubahPotonganManual(c)"
+                          />
+                        </div>
+                        <div v-if="c.potongan_nominal > 0" class="ci-pot-info">
+                          <i class="fas fa-scissors"></i>
+                          {{ c.potongan_label || 'Potongan' }} {{ fmtRp(c.potongan_nominal) }} dari
+                          {{ fmtRp(c.bruto) }}
                         </div>
                       </div>
                       <input v-model.number="c.nominal" type="number" class="ci-nom" />
@@ -1413,6 +1505,44 @@ td.jns {
 }
 :global(.dark) .ci-komp {
   color: #5eead4;
+}
+/* Potongan per baris — sengaja bergaya redup: ia pendamping nominal, bukan saingannya. */
+.ci-pot {
+  display: flex;
+  gap: 4px;
+  margin-top: 3px;
+}
+.ci-pot-sel {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.62rem;
+  font-weight: 700;
+  padding: 2px 4px;
+  border: 1px solid var(--border-default, #cbd5dc);
+  border-radius: 6px;
+  background: var(--bg-card, #fff);
+  color: var(--text-primary, #0f172a);
+}
+.ci-pot-nom {
+  width: 68px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-align: right;
+  padding: 2px 4px;
+  border: 1px solid var(--border-default, #cbd5dc);
+  border-radius: 6px;
+  background: var(--bg-card, #fff);
+  color: var(--text-primary, #0f172a);
+}
+.ci-pot-info {
+  font-size: 0.62rem;
+  color: #be123c;
+  line-height: 1.3;
+  margin-top: 2px;
+  font-weight: 700;
+}
+:global(.dark) .ci-pot-info {
+  color: #fda4af;
 }
 .ci-ket-inp {
   font-size: 0.64rem;

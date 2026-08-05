@@ -22,7 +22,10 @@ const KEUANGAN_KEYS = [
   'keuBisyarohJenis',
   'bebanMengajar',
   'master_tunjangan',
-  'master_potongan'
+  'master_potongan',
+  // Potongan POS (per baris transaksi santri). Finance-only sama seperti kunci lain di
+  //   sini — jangan pindah ke general/web yang anon-readable.
+  'keuPotonganPos'
 ]
 const DEFAULT_SETTINGS = {
   // v.20.74.4.0526: Branding default "Ammu Online" (was "Portal MU" — kyai req)

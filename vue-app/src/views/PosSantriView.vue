@@ -220,6 +220,7 @@ import { petaKasLembaga, kasLembagaBaris } from '@/utils/kasLembaga'
 // v.1.2.6: nomor struk anti-kembar + penanda transaksi unik (lihat utils/trxStruk.js)
 import { nomorStrukBerikutnya, buatTrxUid } from '@/utils/trxStruk'
 import { todayJakarta } from '@/utils/format'
+import { lunasDenganPotongan } from '@/utils/potonganPos'
 import { cetakStrukPdf, cetakStrukSlipPdf, buildStrukHtml } from '@/utils/strukBuilder'
 import { buildStrukSlipEscpBase64 } from '@/utils/escpImage'
 import {
@@ -580,6 +581,15 @@ async function handleSimpan(payload) {
           wali: waliNama,
           createdAt: serverTimestamp()
         }
+        // Jejak potongan (Kyai 5 Agu 2026). `nominal` baris tetap UANG RIIL yang diterima —
+        //   pecahProporsional sudah memecah dari nominal neto — jadi laporan kas tak berubah.
+        //   Potongannya dicatat sekali di baris PERTAMA item saja; kalau ditempel ke semua
+        //   baris pecahan, rekap akan menjumlahkannya berkali-kali.
+        if (kompIdx === 0 && Number(item.potongan_nominal || 0) > 0) {
+          docData.potongan_nominal = Number(item.potongan_nominal)
+          docData.potongan_label = String(item.potongan_label || 'Potongan')
+          docData.keterangan += ` — potongan ${docData.potongan_label} ${fmtRp(docData.potongan_nominal)}`
+        }
         if (baris.pos) docData.pos = baris.pos
         const kasLemb = kasLembagaBaris(
           { kategori: baris.kategori, induk_jenis: baris.induk_jenis },
@@ -600,8 +610,12 @@ async function handleSimpan(payload) {
       // v.21.87.0527: tagihan → lunas penuh atau partial (bayar sebagian)
       if (item.tagihan_id) {
         const penuh = Number(item.nominal_penuh || 0)
+        const potongan = Number(item.potongan_nominal || 0)
         const newDibayar = Number(item.dibayar_lama || 0) + Number(item.nominal || 0)
-        const isLunas = penuh <= 0 || newDibayar >= penuh - 0.5
+        // Potongan IKUT menutup tagihan (keputusan Kyai 5 Agu 2026): tagihan 300rb dengan
+        //   potongan 150rb + uang 150rb = LUNAS. Tanpa ini tiap potongan melahirkan
+        //   tunggakan palsu yang mengejar santri di daftar tagihan & laporan.
+        const isLunas = lunasDenganPotongan(penuh, item.dibayar_lama, item.nominal, potongan)
         const upd = isLunas
           ? {
               status: 'lunas',
@@ -616,6 +630,12 @@ async function handleSimpan(payload) {
               dibayar_via: 'pos_santri',
               operator_pelunasan: op
             }
+        // Jejak di tagihan: tanpa ini "lunas" dengan uang < nominal tampak seperti selisih
+        //   kas yang tak bisa dijelaskan saat diperiksa belakangan.
+        if (potongan > 0) {
+          upd.potongan_nominal = potongan
+          upd.potongan_label = String(item.potongan_label || 'Potongan')
+        }
         if (isLunas) lunasCount++
         else partialCount++
         writes.push(
@@ -696,7 +716,11 @@ async function handleSimpan(payload) {
         // K1: di struk tetap SATU baris (wali membayar satu tagihan), rinciannya menempel di
         //   keterangan — semua pencetak struk (PDF, slip, ESC/P) sudah menampilkan keterangan
         //   dalam tanda kurung, jadi tak ada renderer yang perlu diubah.
-        keterangan: [i.keterangan || '', rincianKomponen(i)].filter(Boolean).join(' — ')
+        // Potongan ikut lewat jalur yang sama: wali berhak melihat bahwa nominalnya sudah
+        //   dipotong, dan berapa dari berapa — tanpa itu struk tampak seperti salah tarif.
+        keterangan: [i.keterangan || '', rincianKomponen(i), rincianPotongan(i)]
+          .filter(Boolean)
+          .join(' — ')
       })),
       total: _total,
       bayar: Number(payload.total_bayar || 0),
@@ -726,6 +750,19 @@ function rincianKomponen(item) {
   const ikut = k.slice(1).filter((x) => Number(x?.nominal) > 0)
   if (!ikut.length) return ''
   return 'termasuk ' + ikut.map((x) => `${x.label} ${fmtRp(x.nominal)}`).join(', ')
+}
+
+/**
+ * Teks potongan untuk struk: "potongan Anak Guru Rp 150.000 dari Rp 300.000".
+ * Menyebut brutonya penting — tanpa itu wali melihat angka yang lebih kecil dari tarif
+ * yang ia tahu, dan struk justru menimbulkan pertanyaan.
+ */
+function rincianPotongan(item) {
+  const pot = Number(item?.potongan_nominal || 0)
+  if (pot <= 0) return ''
+  const bruto = Number(item?.nominal_bruto || 0)
+  const label = String(item?.potongan_label || 'Potongan')
+  return `potongan ${label} ${fmtRp(pot)}` + (bruto > 0 ? ` dari ${fmtRp(bruto)}` : '')
 }
 
 // v.21.88.0527: cetak struk transaksi terakhir

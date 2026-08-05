@@ -1444,6 +1444,76 @@
       </div>
     </div>
 
+    <!-- Potongan POS — Kyai 5 Agu 2026: "potongan diskon syahriyah (per item) jangan di data
+         santri dan jenis syahriyah, tapi di POS saja setiap transaksi tinggal pilih
+         diskon/potongannya". Daftar di sini = pilihan siap pakai bagi kasir; angkanya masih
+         boleh disesuaikan per transaksi untuk kasus khusus. -->
+    <div
+      v-show="activeTab === 'kategori'"
+      class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
+    >
+      <h3
+        class="text-xs md:text-sm font-black text-[var(--text-primary)] uppercase tracking-widest mb-1 border-b border-[var(--border-subtle)] pb-2"
+      >
+        <i class="fas fa-scissors text-rose-600 mr-1"></i>Potongan POS
+      </h3>
+      <p class="text-[11px] text-[var(--text-secondary)] mb-3">
+        Dipakai kasir saat menerima pembayaran, dipilih <b>per baris</b> (per jenis), bukan untuk
+        seluruh transaksi. Potongan ikut menutup tagihan — tagihan tak menyisakan tunggakan.
+      </p>
+      <div class="space-y-1.5 mb-2">
+        <div
+          v-for="(p, idx) in form.keuPotonganPos"
+          :key="idx"
+          class="flex items-center gap-2 bg-rose-50 dark:bg-rose-900/20 px-3 py-2 rounded-lg flex-wrap"
+        >
+          <input
+            v-model="p.label"
+            type="text"
+            placeholder="Nama potongan (mis. Anak Guru)"
+            class="flex-1 min-w-[140px] bg-transparent text-xs font-bold text-[var(--text-primary)] outline-none"
+          />
+          <select
+            v-model="p.tipe"
+            class="text-[11px] font-bold px-2 py-1 rounded border border-[var(--border-default)] bg-[var(--bg-card)] text-[var(--text-primary)]"
+          >
+            <option value="persen">Persen (%)</option>
+            <option value="nominal">Nominal (Rp)</option>
+          </select>
+          <input
+            v-model.number="p.nilai"
+            type="number"
+            min="0"
+            :max="p.tipe === 'persen' ? 100 : undefined"
+            class="w-24 text-xs font-bold px-2 py-1 rounded border border-[var(--border-default)] bg-[var(--bg-card)] text-[var(--text-primary)] text-right"
+          />
+          <label class="text-[11px] font-bold text-[var(--text-secondary)] flex items-center gap-1">
+            <input v-model="p.aktif" type="checkbox" class="accent-emerald-600" />Aktif
+          </label>
+          <button
+            class="text-rose-600 hover:bg-rose-100 dark:hover:bg-rose-900/40 px-2 rounded text-xs"
+            title="Hapus potongan"
+            @click="hapusPotonganPos(idx)"
+          >
+            <i class="fas fa-trash"></i>
+          </button>
+        </div>
+        <p
+          v-if="!form.keuPotonganPos.length"
+          class="text-[11px] text-[var(--text-tertiary)] italic"
+        >
+          Belum ada potongan. Selama daftar ini kosong, kasir tetap bisa mengisi potongan manual di
+          POS.
+        </p>
+      </div>
+      <button
+        class="bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-bold px-3 py-2 rounded-lg text-xs"
+        @click="tambahPotonganPos"
+      >
+        <i class="fas fa-plus mr-1"></i>Tambah Potongan
+      </button>
+    </div>
+
     <!-- Bank -->
     <div
       v-show="activeTab === 'bank'"
@@ -2540,6 +2610,7 @@ import { GABUNG_SYARAT, hitungTagihan, nominalDasar, paketNominal } from '@/util
 import { STATUS_SANTRI_OPTS, JK_OPTS, SHIFT_NGAJI_OPTS } from '@/utils/statusSantri'
 // Kyai 4 Agu: pilihan kas = master + kas bukan-lembaga (TPQ payung, Fullday, Ma'had)
 import { opsiKasLembaga } from '@/utils/kasLembaga'
+import { normalisasiPotongan } from '@/utils/potonganPos'
 import { useToast } from '@/composables/useToast'
 import { useExcel } from '@/composables/useExcel'
 import { useGedungScope } from '@/composables/useGedungScope'
@@ -3083,7 +3154,8 @@ const form = reactive({
   keu_kategori_keluar: [],
   keu_tabungan_kategori: [], // {id,label,nominal_default} -> settings.keuTabunganKategori
   master_tunjangan: [],
-  master_potongan: [],
+  master_potongan: [], // potongan BISYAROH guru — beda dari keuPotonganPos di bawah
+  keuPotonganPos: [], // potongan POS per baris transaksi santri {id,label,tipe,nilai,aktif}
   bank_nama: '',
   bank_nomor: '',
   bank_atasnama: '',
@@ -3301,6 +3373,8 @@ function loadFromSettings() {
     ? s.master_tunjangan.map(_mapMaster)
     : []
   form.master_potongan = Array.isArray(s.master_potongan) ? s.master_potongan.map(_mapMaster) : []
+  // Dinormalisasi supaya baris cacat dari settings tak sampai ke daftar pilihan kasir.
+  form.keuPotonganPos = normalisasiPotongan(s.keuPotonganPos)
   form.bank_nama = s.bank_nama || ''
   form.bank_nomor = s.bank_nomor || ''
   form.bank_atasnama = s.bank_atasnama || ''
@@ -3505,6 +3579,24 @@ function masterScopeLabel(item) {
 
 function removeMaster(kind, idx) {
   ;(kind === 'tunjangan' ? form.master_tunjangan : form.master_potongan).splice(idx, 1)
+}
+
+// ── Potongan POS (per baris transaksi santri) ────────────────────────────────
+// Baris baru sengaja lahir AKTIF dengan tipe persen: bentuk yang paling sering dipakai
+//   (mis. "Anak Guru 50%"), dan nilai 0 membuatnya belum muncul di POS sampai diisi.
+function tambahPotonganPos() {
+  form.keuPotonganPos.push({
+    // id harus UNIK & stabil: POS memilih potongan lewat id, dan id kembar membuat baris
+    //   keranjang mengambil potongan yang salah.
+    id: 'pot_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+    label: '',
+    tipe: 'persen',
+    nilai: 0,
+    aktif: true
+  })
+}
+function hapusPotonganPos(idx) {
+  form.keuPotonganPos.splice(idx, 1)
 }
 
 // v.1.1.9: dialog Tambah/Ubah Tunjangan/Potongan (ganti edit inline yg field nama-nya
@@ -3976,6 +4068,7 @@ async function simpan() {
           nominal: t.nominal || 0,
           guru_ids: Array.isArray(t.guru_ids) ? t.guru_ids.map(String) : []
         })),
+      keuPotonganPos: normalisasiPotongan(form.keuPotonganPos),
       bank_nama: form.bank_nama.trim(),
       bank_nomor: form.bank_nomor.trim(),
       bank_atasnama: form.bank_atasnama.trim(),
@@ -3994,7 +4087,8 @@ async function simpan() {
       'keuBisyarohJenis',
       'bebanMengajar',
       'master_tunjangan',
-      'master_potongan'
+      'master_potongan',
+      'keuPotonganPos'
     ]
     const pub = { ...payload }
     const keu = {}
