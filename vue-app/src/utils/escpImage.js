@@ -12,6 +12,7 @@
 //   Hasil cetak TIDAK gepeng (aspect benar).
 import { buildKopFromSettings } from './strukBuilder'
 import { terbilangRupiah } from './terbilang'
+import { namaWaliSantri } from './santriIdentitas'
 import { muassisImageSync, MUASSIS_RATIO } from './kopMuassis' // v.100: baris-1 KOP = gambar muassis
 
 const mm2pt = (mm) => (mm * 72) / 25.4
@@ -26,9 +27,17 @@ function fmtTgl(t) {
   try {
     const d = new Date(t)
     if (!isNaN(d)) {
-      return String(d.getDate()).padStart(2, '0') + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + d.getFullYear()
+      return (
+        String(d.getDate()).padStart(2, '0') +
+        '-' +
+        String(d.getMonth() + 1).padStart(2, '0') +
+        '-' +
+        d.getFullYear()
+      )
     }
-  } catch (e) { /* ignore */ }
+  } catch (e) {
+    /* ignore */
+  }
   return String(t)
 }
 function kelasFull(trx) {
@@ -56,7 +65,9 @@ function drawSlip(ctx, p) {
     else if (align === 'center') xx = x - w / 2
     ctx.fillText(String(t), xx, yy)
   }
-  const hr = (yy) => { ctx.fillRect(L, yy, R - L, 1.4) }
+  const hr = (yy) => {
+    ctx.fillRect(L, yy, R - L, 1.4)
+  }
   const topBase = mm2pt(p.topMm != null ? p.topMm : 2)
 
   let y = topBase
@@ -68,10 +79,17 @@ function drawSlip(ctx, p) {
     ctx.drawImage(muImg, L, y + 2, mh * MUASSIS_RATIO, mh)
     y += 2 + mh
   } else {
-    y += 14; text(p.kop.line1 || '', L, y, 15, true)
+    y += 14
+    text(p.kop.line1 || '', L, y, 15, true)
   }
-  if (p.kop.line2) { y += 13.5; text(p.kop.line2, L, y, 11, true) }
-  for (const ln of [p.kop.line3, p.kop.line4, p.kop.line5].filter(Boolean)) { y += 11; text(ln, L, y, 8.5, false) }
+  if (p.kop.line2) {
+    y += 13.5
+    text(p.kop.line2, L, y, 11, true)
+  }
+  for (const ln of [p.kop.line3, p.kop.line4, p.kop.line5].filter(Boolean)) {
+    y += 11
+    text(ln, L, y, 8.5, false)
+  }
   // ── Kotak BUKTI kanan-atas (sejajar atas KOP) ──
   ctx.font = 'bold 10px Arial'
   const bw = ctx.measureText(p.boxLabel).width + mm2pt(4)
@@ -82,7 +100,9 @@ function drawSlip(ctx, p) {
   ctx.strokeRect(bx, by, bw, bh)
   text(p.boxLabel, bx + bw / 2, by + bh / 2 + 3.5, 10, true, 'center')
 
-  y += mm2pt(2.6); hr(y); y += mm2pt(1.8)
+  y += mm2pt(2.6)
+  hr(y)
+  y += mm2pt(1.8)
   // ── Info 2 kolom (label flush-kiri, nilai sejajar; titik dua rata) ──
   const labW = mm2pt(24)
   const rows = Math.max(p.infoLeft.length, p.infoRight.length)
@@ -101,15 +121,20 @@ function drawSlip(ctx, p) {
     }
   }
   y = iy + (rows - 1) * rh
-  y += mm2pt(2.4); hr(y); y += mm2pt(2)
+  y += mm2pt(2.4)
+  hr(y)
+  y += mm2pt(2)
   // ── Rincian (nama flush-kiri, nominal flush-kanan) ──
-  y += 12; if (p.midHeader) text(p.midHeader, L, y, 11, false)
+  y += 12
+  if (p.midHeader) text(p.midHeader, L, y, 11, false)
   for (const it of p.items) {
     y += mm2pt(5.4)
     text(it.name, L + mm2pt(2), y, 11, false)
     if (it.amount) text(it.amount, R, y, 11, false, 'right')
   }
-  y += mm2pt(2.6); hr(y); y += mm2pt(2)
+  y += mm2pt(2.6)
+  hr(y)
+  y += mm2pt(2)
   // ── Footer: ttd kiri + total kanan (label flush-kiri, nilai flush-kanan) ──
   const c1 = L + mm2pt(20)
   const c2 = p.Wpt / 2 - mm2pt(8)
@@ -141,30 +166,30 @@ function encodeEscpBase64(ctx, w, usedH, slipHmm) {
     const lum = 0.299 * img[i] + 0.587 * img[i + 1] + 0.114 * img[i + 2]
     mono[p] = lum < 140 ? 1 : 0
   }
-  const ESC = 0x1B
+  const ESC = 0x1b
   const bytes = []
-  bytes.push(ESC, 0x40)                 // ESC @ : init
-  bytes.push(ESC, 0x33, 24)             // ESC 3 24 : line spacing 24/216" = 8/72"
-  const nL = w & 0xFF
-  const nH = (w >> 8) & 0xFF
+  bytes.push(ESC, 0x40) // ESC @ : init
+  bytes.push(ESC, 0x33, 24) // ESC 3 24 : line spacing 24/216" = 8/72"
+  const nL = w & 0xff
+  const nH = (w >> 8) & 0xff
   let lines = 0
   for (let y = 0; y < usedH; y += 8) {
-    bytes.push(ESC, 0x2A, 0x01, nL, nH) // ESC * 1 nL nH : bit-image 120dpi
+    bytes.push(ESC, 0x2a, 0x01, nL, nH) // ESC * 1 nL nH : bit-image 120dpi
     for (let x = 0; x < w; x++) {
       let b = 0
       for (let k = 0; k < 8; k++) {
         const yy = y + k
-        if (yy < usedH && mono[yy * w + x]) b |= (0x80 >> k)
+        if (yy < usedH && mono[yy * w + x]) b |= 0x80 >> k
       }
       bytes.push(b)
     }
-    bytes.push(0x0D, 0x0A)              // CR LF : maju 1 strip (8/72")
+    bytes.push(0x0d, 0x0a) // CR LF : maju 1 strip (8/72")
     lines++
   }
   // maju ke batas slip berikutnya (tanpa form-feed driver) supaya slip tdk nyambung
   const slipLines = Math.round((slipHmm / 25.4) * 9) // 9 baris/inch @ 8/72"
-  for (let i = lines; i < slipLines; i++) bytes.push(0x0A)
-  bytes.push(ESC, 0x40)                 // reset
+  for (let i = lines; i < slipLines; i++) bytes.push(0x0a)
+  bytes.push(ESC, 0x40) // reset
 
   // bytes -> binary string -> base64 (chunked, hindari stack overflow)
   let bin = ''
@@ -178,8 +203,8 @@ function encodeEscpBase64(ctx, w, usedH, slipHmm) {
 function renderEscp(data, settings) {
   const dpiH = 120
   const fullMm = Math.min(num(settings.posStrukSlipW, 120, 260, 220), 200) // batas lebar cetak 9-pin (~8")
-  const leftMm = num(settings.posStrukLeftMm, 0, 60, 0)                     // geser kanan
-  const topMm = num(settings.posStrukTopMm, 0, 60, 2)                       // margin atas
+  const leftMm = num(settings.posStrukLeftMm, 0, 60, 0) // geser kanan
+  const topMm = num(settings.posStrukTopMm, 0, 60, 2) // margin atas
   const slipH = num(settings.posStrukSlipH, 60, 230, 140)
   // v.96.0626: konten MENYUSUT saat digeser kanan -> geser benar-benar terlihat & tak terpotong di kanan
   const Wpt = mm2pt(Math.max(110, fullMm - leftMm))
@@ -205,7 +230,7 @@ function renderEscp(data, settings) {
 function posData(trx, settings) {
   const kop = buildKopFromSettings(settings)
   const items = (Array.isArray(trx.items) ? trx.items : []).map((it, i) => ({
-    name: (i + 1) + '. ' + ((it.jenis || '-') + (it.keterangan ? ' (' + it.keterangan + ')' : '')),
+    name: i + 1 + '. ' + ((it.jenis || '-') + (it.keterangan ? ' (' + it.keterangan + ')' : '')),
     amount: 'Rp. ' + fmtNum(it.nominal)
   }))
   if (!items.length) items.push({ name: '-', amount: '' })
@@ -215,8 +240,17 @@ function posData(trx, settings) {
   return {
     kop,
     boxLabel: 'BUKTI PEMBAYARAN',
-    infoLeft: [['Diterima dari', trx.santri_nama || '-'], ['No. Induk', trx.santri_nis || '-'], ['Kelas', kelasFull(trx)], ['Terbilang', trx.terbilang || terbilangRupiah(trx.total)]],
-    infoRight: [['Tgl. Bayar', fmtTgl(trx.tanggal)], ['No. Transaksi', trx.no_struk || '-'], ['Metode', trx.metode || 'TUNAI']],
+    infoLeft: [
+      ['Diterima dari', trx.santri_nama || '-'],
+      ['No. Induk', trx.santri_nis || '-'],
+      ['Kelas', kelasFull(trx)],
+      ['Terbilang', trx.terbilang || terbilangRupiah(trx.total)]
+    ],
+    infoRight: [
+      ['Tgl. Bayar', fmtTgl(trx.tanggal)],
+      ['No. Transaksi', trx.no_struk || '-'],
+      ['Metode', trx.metode || 'TUNAI']
+    ],
     midHeader: 'Dengan rincian pembayaran sebagai berikut :',
     items,
     totals,
@@ -232,19 +266,34 @@ function tabData(mut, settings, { saldo = null, santri = {}, label = 'TABUNGAN' 
   const isUS = String(label).toUpperCase().includes('SAKU')
   const nama = mut.nama_cache || santri.nama || '-'
   const nis = santri.nis || mut.santri_nis || '-'
-  const kelas = [santri.lembaga_sekolah, santri.kelas_sekolah].filter(Boolean).join(' ') || [santri.lembaga, santri.kelas].filter(Boolean).join(' ') || '-'
+  const kelas =
+    [santri.lembaga_sekolah, santri.kelas_sekolah].filter(Boolean).join(' ') ||
+    [santri.lembaga, santri.kelas].filter(Boolean).join(' ') ||
+    '-'
   const petugas = mut.operator || mut.petugas || '-'
   // v.96.0626: nasabah — setor = nama walisantri; tarik = nama santri
-  const waliName = santri.wali || santri.nama_wali || santri.nama_ayah || (santri.ayah && santri.ayah.nama) || ''
-  const nasabah = isSetor ? waliName : (santri.nama || nama)
-  const ket = (isSetor ? 'Setoran ' : 'Penarikan ') + (isUS ? 'uang saku' : 'tabungan') + (mut.catatan ? ' (' + mut.catatan + ')' : '')
+  const waliName = namaWaliSantri(santri)
+  const nasabah = isSetor ? waliName : santri.nama || nama
+  const ket =
+    (isSetor ? 'Setoran ' : 'Penarikan ') +
+    (isUS ? 'uang saku' : 'tabungan') +
+    (mut.catatan ? ' (' + mut.catatan + ')' : '')
   const totals = [['Jumlah Rp.', fmtNum(mut.nominal), true]]
   if (saldo != null) totals.push(['Saldo Akhir Rp.', fmtNum(saldo), false])
   return {
     kop,
     boxLabel: 'BUKTI ' + (isSetor ? 'SETOR ' : 'TARIK ') + label,
-    infoLeft: [['Diterima dari', nama], ['No. Induk', nis], ['Kelas', kelas], ['Terbilang', terbilangRupiah(mut.nominal)]],
-    infoRight: [['Tanggal', fmtTgl(mut.tanggal)], ['No. Transaksi', mut.no_bukti || mut.id || '-'], ['Metode', 'TUNAI']],
+    infoLeft: [
+      ['Diterima dari', nama],
+      ['No. Induk', nis],
+      ['Kelas', kelas],
+      ['Terbilang', terbilangRupiah(mut.nominal)]
+    ],
+    infoRight: [
+      ['Tanggal', fmtTgl(mut.tanggal)],
+      ['No. Transaksi', mut.no_bukti || mut.id || '-'],
+      ['Metode', 'TUNAI']
+    ],
     midHeader: 'Dengan rincian sebagai berikut :',
     items: [{ name: '1. ' + ket, amount: 'Rp. ' + fmtNum(mut.nominal) }],
     totals,

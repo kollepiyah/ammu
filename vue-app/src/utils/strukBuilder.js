@@ -3,6 +3,7 @@
 import { createPdf, drawKopLetterhead, drawTitle, drawTable, savePdf } from './pdfBuilder'
 import { imageToDataURL } from '@/services/pdf'
 import { terbilangRupiah } from './terbilang'
+import { namaWaliSantri } from './santriIdentitas'
 import { muassisDataUrl, muassisDataUrlSync, MUASSIS_RATIO } from './kopMuassis' // v.100: baris-1 KOP = gambar muassis
 
 export function fmtRpStruk(n) {
@@ -706,8 +707,7 @@ export async function cetakSlipTabunganPdf(
     '-'
   const petugas = mut.operator || mut.petugas || '-'
   // v.96.0626: nasabah — setor = nama walisantri; tarik = nama santri
-  const waliName =
-    santri.wali || santri.nama_wali || santri.nama_ayah || (santri.ayah && santri.ayah.nama) || ''
+  const waliName = namaWaliSantri(santri)
   const nasabah = isSetor ? waliName : santri.nama || nama
   const terb = terbilangRupiah(mut.nominal)
   const tglFmt = formatTglDdMmYyyy(mut.tanggal)
@@ -911,8 +911,7 @@ export function buildSlipTabunganHtml(
     '-'
   const petugas = mut.operator || mut.petugas || '-'
   // v.96.0626: nasabah — setor = nama walisantri; tarik = nama santri
-  const waliName =
-    santri.wali || santri.nama_wali || santri.nama_ayah || (santri.ayah && santri.ayah.nama) || ''
+  const waliName = namaWaliSantri(santri)
   const nasabah = isSetor ? waliName : santri.nama || nama
   const ket =
     (isSetor ? 'Setoran ' : 'Penarikan ') +
