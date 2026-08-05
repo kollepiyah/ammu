@@ -2588,6 +2588,8 @@ import { opsiKasLembaga } from '@/utils/kasLembaga'
 import { normalisasiPotongan } from '@/utils/potonganPos'
 // Gerbang "Mulai Tagih di AMMU" — dipakai Generate & Generate Khusus.
 import { mulaiTagihKode, bolehTerbitPeriode, pesanTolakPeriode } from '@/utils/periodeTagihan'
+// Pola id tagihan otomatis = kontrak dengan cron; lihat catatan di utils/tagihanId.js.
+import { kodeBulan, idTagihanAuto } from '@/utils/tagihanId'
 import { useToast } from '@/composables/useToast'
 import { useExcel } from '@/composables/useExcel'
 import { useGedungScope } from '@/composables/useGedungScope'
@@ -4466,9 +4468,19 @@ async function autoGenerate(dryRun = false) {
       ['periode', 'in', [periodeBulan, periodeTahun]]
     ])
     const existing = new Set()
+    // Kunci KEDUA: id baris yang sudah ada (Kyai 5 Agu 2026, "kalau saya klik ulang
+    //   generate apakah duplikat?"). Dedup di atas memakai NAMA jenis, sedangkan `id`
+    //   memakai ID jenis — kalau nama sebuah jenis pernah diganti setelah tagihannya
+    //   terbit, keduanya tak lagi sejalan: dedup meleset, lalu `setOne` (yang MENIMPA
+    //   seluruh baris) menulis ulang dengan terbayar 0 & status 'belum'. Tagihan yang
+    //   sudah dibayar akan kembali tampak menunggak dan bisa tertagih dua kali.
+    //   Cron tak kena karena memakai upsert ignoreDuplicates; jalur inilah yang perlu
+    //   pagar sendiri.
+    const existingIds = new Set()
     for (const t of tagihanAll) {
       const key = `${String(t.santri_id)}__${(t.kategori || t.jenis || '').toLowerCase()}__${t.periode || ''}`
       existing.add(key)
+      if (t.id) existingIds.add(String(t.id))
     }
     let created = 0,
       skipped = 0,
@@ -4504,10 +4516,15 @@ async function autoGenerate(dryRun = false) {
           skipped++
           continue
         }
-        const idPeriode = tahunan
-          ? `TA${taStart}`
-          : `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}`
-        const id = `tagihan_${sx.id}_${j.id}_${idPeriode}`
+        const idPeriode = tahunan ? `TA${taStart}` : kodeBulan(now)
+        const id = idTagihanAuto(sx.id, j.id, idPeriode)
+        // Baris dengan id ini sudah ada -> JANGAN ditulis ulang. Diperiksa juga pada
+        //   dryRun supaya pratinjau memperlihatkan kenyataan, bukan rencana yang lebih
+        //   besar daripada yang benar-benar akan terjadi.
+        if (existingIds.has(id)) {
+          skipped++
+          continue
+        }
         const payload = {
           id,
           santri_id: String(sx.id),
@@ -4784,10 +4801,14 @@ async function doGenKhusus() {
     //   jsonb; membuang kolom `data` bisa membuat kunci berbeda -> tagihan DOBEL.
     const tagihanAll = await queryColl('keuangan_tagihan', [['periode', '==', periode]])
     const existing = new Set()
+    // Pagar kedua, alasan sama dengan autoGenerate: `setOne` MENIMPA seluruh baris, jadi
+    //   baris yang lolos dedup tapi ber-id sama akan kehilangan catatan pembayarannya.
+    const existingIds = new Set()
     for (const t of tagihanAll) {
       existing.add(
         `${String(t.santri_id)}__${(t.kategori || t.jenis || '').toLowerCase()}__${t.periode || ''}`
       )
+      if (t.id) existingIds.add(String(t.id))
     }
     const katLower = kategori.toLowerCase()
     const katSlug = slugId(kategori)
@@ -4806,8 +4827,12 @@ async function doGenKhusus() {
         skipped++
         continue
       }
+      const id = `tagihan_${sx.id}_${katSlug}_${perSlug}`
+      if (existingIds.has(id)) {
+        skipped++
+        continue
+      }
       try {
-        const id = `tagihan_${sx.id}_${katSlug}_${perSlug}`
         await setOne('keuangan_tagihan', id, {
           id,
           santri_id: String(sx.id),
