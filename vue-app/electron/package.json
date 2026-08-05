@@ -11,8 +11,8 @@
     "electron:start": "npm run build && electron .",
     "electron:pack": "npm run build && electron-builder build --dir",
     "electron:make": "npm run build && electron-builder build --win nsis",
-    "electron:make:win7": "npm run build && electron-builder build --win nsis --config.electronVersion=22.3.27 --config.nsis.artifactName=AmmuOnline-Setup-Win7.${ext}",
-    "electron:publish:win7": "npm run build && electron-builder build --win nsis --publish always --config.electronVersion=22.3.27 --config.nsis.artifactName=AmmuOnline-Setup-Win7.${ext} --config.nsis.differentialPackage=false",
+    "electron:make:win7": "npm run build && electron-builder build --win nsis --config.electronVersion=22.3.27 --config.nsis.artifactName=AmmuOnline-Setup-Win7-${version}.${ext}",
+    "electron:publish:win7": "npm run build && electron-builder build --win nsis --publish always --config.electronVersion=22.3.27 --config.nsis.artifactName=AmmuOnline-Setup-Win7-${version}.${ext} --config.nsis.differentialPackage=false",
     "electron:publish": "npm run build && electron-builder build --win nsis --publish always"
   },
   "build": {
@@ -48,10 +48,10 @@
         }
       ],
       "icon": "assets/appIcon.ico",
-      "publisherName": "Pondok Pesantren Mambaul Ulum"
+      "_catatan_publisherName": "JANGAN kembalikan `publisherName` selama installer belum ditandatangani (belum ada certificateFile/cscLink). electron-builder menuliskannya ke app-update.yml, dan NsisUpdater lalu MEMVERIFIKASI tanda tangan Authenticode installer yang baru diunduh lewat PowerShell Get-AuthenticodeSignature. Installer kita tidak bersertifikat -> Status NotSigned -> update DITOLAK ('is not signed by the application owner'). Itulah sebab 'auto-update tidak bisa di beberapa PC' (Kyai, 5 Agu 2026): di PC yang PowerShell-nya diblok/bermasalah, verifikasi DILEWATI dan update justru jalan — jadi gagalnya tampak acak. Kalau nanti sertifikat code-signing dibeli, publisherName boleh (dan sebaiknya) dipasang kembali."
     },
     "nsis": {
-      "artifactName": "AmmuOnline-Setup.${ext}",
+      "artifactName": "AmmuOnline-Setup-${version}.${ext}",
       "oneClick": false,
       "perMachine": false,
       "allowElevation": true,

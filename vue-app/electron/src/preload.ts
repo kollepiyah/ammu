@@ -50,6 +50,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   checkUpdate: () => ipcRenderer.invoke('update:check'),
   downloadUpdate: () => ipcRenderer.invoke('update:download'),
   installUpdate: () => ipcRenderer.invoke('update:install'),
+  // v.1.2.8: versi terpasang + versi Electron, untuk pesan diagnosa saat update gagal
+  updateInfo: () => ipcRenderer.invoke('update:info'),
   onUpdateStatus: (cb: (s: any) => void) => ipcRenderer.on('update:status', (_e, s) => cb(s)),
   onUpdateProgress: (cb: (p: any) => void) => ipcRenderer.on('update:progress', (_e, p) => cb(p)),
 

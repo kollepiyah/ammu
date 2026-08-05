@@ -298,6 +298,28 @@ ipcMain.handle('update:install', () => {
   try { autoUpdater.quitAndInstall() } catch (e) { /* ignore */ }
   return { ok: true }
 })
+// v.1.2.8 — Diagnosa "auto-update tidak bisa di beberapa PC" (Kyai, 5 Agu 2026).
+//   UI dulu hanya bisa bilang "Gagal memeriksa pembaruan" tanpa satu pun keterangan,
+//   jadi PC yang bermasalah tak bisa dibedakan dari PC yang jaringannya sedang mati.
+//   Yang paling menentukan justru dua angka di bawah:
+//     - `version`  : PC yang masih memakai skema versi LAMA (mis. 110.0.626) tak akan
+//                    PERNAH ditawari update, sebab semver menilai 110 > 1.2.x. Satu-
+//                    satunya jalan keluarnya = pasang manual sekali.
+//     - `electron` : build Win7 memakai Electron 22; kalau ia mengambil installer
+//                    Electron 27 (yang tak jalan di Win7/8), pemasangannya gagal.
+ipcMain.handle('update:info', () => {
+  try {
+    return {
+      ok: true,
+      version: app.getVersion(),
+      electron: process.versions.electron,
+      platform: `${process.platform} ${process.getSystemVersion?.() || ''}`.trim(),
+      isPackaged: app.isPackaged
+    }
+  } catch (e: any) {
+    return { ok: false, error: e?.message || String(e) }
+  }
+})
 
 // ─── IPC: Native Print ─────────────────────────────────────────────────────────
 //
