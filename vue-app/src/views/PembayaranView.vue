@@ -673,7 +673,7 @@ import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
 import { useWaliChildren } from '@/composables/useWaliChildren'
 import { uploadBase64 } from '@/services/storage'
-import { fmtRp, fmtTgl } from '@/utils/format'
+import { fmtRp, fmtTgl, todayJakarta } from '@/utils/format'
 import { sisaTagihan } from '@/utils/tagihan'
 import ReceiptModal from '@/components/ReceiptModal.vue'
 import { buildReceiptStrukHtml } from '@/utils/receiptHtml'
@@ -890,7 +890,9 @@ async function batalIntent(i) {
   }
 }
 
-const todayISO = computed(() => new Date().toISOString().slice(0, 10))
+// WIB, bukan UTC: dipakai sebagai tanggal simpan pembayaran sekaligus batas `:max`
+// input tanggal — toISOString() memundurkannya sehari untuk transaksi 00:00–06:59 WIB.
+const todayISO = computed(() => todayJakarta())
 
 function getNamaSantri(id) {
   const s = santriList.value.find((x) => String(x.id) === String(id))

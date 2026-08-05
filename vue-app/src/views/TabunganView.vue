@@ -1809,7 +1809,8 @@ async function importXlsx(e) {
           kategori: 'impor',
           nominal,
           catatan: String(r.Catatan || r.catatan || 'impor xlsx'),
-          tanggal: new Date().toISOString().slice(0, 10),
+          // WIB, bukan UTC — jalur impor ini terlewat saat setor/tarik diperbaiki di v.1.2.8.
+          tanggal: todayJakarta(),
           createdAt: serverTimestamp()
         })
       )

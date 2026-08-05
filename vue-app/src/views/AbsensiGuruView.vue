@@ -1064,6 +1064,7 @@
 import { ref, computed, watch } from 'vue'
 import { setOne, updateOne, deleteOne, mergeOne, getOne } from '@/services/db'
 import { isSuperAdmin } from '@/utils/roleScope'
+import { todayJakarta } from '@/utils/format'
 import { useAuthStore } from '@/stores/auth'
 import { useAbsensi } from '@/composables/useAbsensi'
 import { useExcel } from '@/composables/useExcel'
@@ -1619,7 +1620,9 @@ const savingHarian = ref(false)
 const hasAnyHadir = computed(() => Object.keys(harianForm.value).some((k) => harianForm.value[k]))
 
 async function saveHarian() {
-  const today = new Date().toISOString().slice(0, 10)
+  // WIB, bukan UTC: shift subuh disimpan sebelum 07:00 WIB, dan toISOString()
+  // menaruhnya di tanggal kemarin — absensi (lalu bisyaroh/bonus) jadi meleset sehari.
+  const today = todayJakarta()
   const writes = []
   for (const g of guruAktif.value) {
     // v.1.1.9: iterasi shift MILIK guru (ikut master), bukan lagi 5 shift hardcoded.
@@ -1817,7 +1820,7 @@ function isHariLibur(d, lembaga) {
 // Kelompok (broad) dari master lembaga (getLembagaBroadGroup).
 // =====================================================
 const rekapMode = ref('mingguan')
-const rekapAnchor = ref(new Date().toISOString().slice(0, 10)) // tanggal acuan mingguan
+const rekapAnchor = ref(todayJakarta()) // tanggal acuan mingguan (WIB)
 const KELOMPOK_ORDER = ['qiraati', 'sekolah', 'mahad', 'non-lembaga', 'lainnya']
 const KELOMPOK_LABEL = {
   qiraati: 'Qiraati',
@@ -1861,7 +1864,7 @@ function kelompokKeyOf(lembaga) {
 const rekapUnitData = computed(() => {
   const idx = indexAbsensiHarian(absensi.value || [])
   const range = tanggalRentang(rekapPeriode.value.start, rekapPeriode.value.end)
-  const today = new Date().toISOString().slice(0, 10)
+  const today = todayJakarta()
   const s = settingsStore.settings || {}
   const km = new Map() // kelompokKey -> Map(lembaga -> {lembaga, rows, sub})
   for (const g of guruAktif.value) {
@@ -2155,7 +2158,7 @@ function cellText(guruId, shift, d) {
   const a = getAbsensiCell(guruId, shift, d)
   if (!a) {
     // kosong & hari sudah lewat = alpha; hari depan = belum terjadi (kosong)
-    const today = new Date().toISOString().slice(0, 10)
+    const today = todayJakarta()
     return isoDateOf(d) <= today ? 'A' : ''
   }
   const s = String(a.status || 'hadir').toLowerCase()
@@ -2170,7 +2173,7 @@ function cellClass(guruId, shift, d) {
   if (isHariLibur(d, lembagaCell(guruId, shift))) return 'bg-rose-200 text-rose-800'
   const a = getAbsensiCell(guruId, shift, d)
   if (!a) {
-    const today = new Date().toISOString().slice(0, 10)
+    const today = todayJakarta()
     return isoDateOf(d) <= today
       ? 'bg-rose-100 text-rose-700'
       : 'bg-[var(--bg-card-elevated)] text-[var(--text-tertiary)]'
@@ -2187,7 +2190,7 @@ function cellTitle(guruId, shift, d) {
   if (isHariLibur(d, lembagaCell(guruId, shift))) return iso + ' — Libur'
   const a = getAbsensiCell(guruId, shift, d)
   if (!a) {
-    const today = new Date().toISOString().slice(0, 10)
+    const today = todayJakarta()
     return iso + (iso <= today ? ' — Alpha' : ' — (belum)') + ' [' + shiftLabel(shift) + ']'
   }
   const st = String(a.status || 'hadir').toLowerCase()
@@ -2222,7 +2225,7 @@ function countStatus(guruId, shift, statuses) {
 
 // Alpha = hari kerja (non-libur utk lembaga shift ini) yg sudah lewat tanpa record.
 function countAlpha(guruId, shift) {
-  const today = new Date().toISOString().slice(0, 10)
+  const today = todayJakarta()
   const lem = lembagaCell(guruId, shift)
   let n = 0
   for (let d = 1; d <= daysInMonth.value; d++) {

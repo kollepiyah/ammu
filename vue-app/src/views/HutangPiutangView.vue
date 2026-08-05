@@ -181,7 +181,7 @@ import { definePageActions } from '@/composables/useRibbonContext'
 import { subscribeColl, setOne, mergeOne, deleteOne, serverTimestamp } from '@/services/db'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
-import { fmtRp } from '@/utils/format'
+import { fmtRp, todayJakarta } from '@/utils/format'
 // v.21.104.0527: gating super_admin utk hapus record hutang/piutang
 import { useAuthStore } from '@/stores/auth'
 import { isSuperAdmin } from '@/utils/roleScope'
@@ -225,7 +225,7 @@ function openModal() {
   modalJenis.value = 'hutang'
   modalPihak.value = ''
   modalNominal.value = 0
-  modalTanggal.value = new Date().toISOString().slice(0, 10)
+  modalTanggal.value = todayJakarta()
   modalCatatan.value = ''
   modalOpen.value = true
 }

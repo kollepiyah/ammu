@@ -460,7 +460,7 @@ import { subscribeColl, subscribeDoc, setOne, deleteOne, serverTimestamp } from 
 import { useAuthStore } from '@/stores/auth'
 import { useGedungScope } from '@/composables/useGedungScope'
 import { useToast } from '@/composables/useToast'
-import { fmtRp, formatTanggal as formatTgl } from '@/utils/format'
+import { fmtRp, formatTanggal as formatTgl, todayJakarta } from '@/utils/format'
 import { isSuperAdmin } from '@/utils/roleScope'
 import { useSettingsStore } from '@/stores/settings'
 // v.1.2.6 (Kyai): laporan PDF harian per lembaga + berkas terpisah tunai/transfer.
@@ -529,7 +529,8 @@ const search = ref('')
 const modalInputOpen = ref(false)
 const savingInput = ref(false)
 const inputForm = reactive({
-  tanggal: new Date().toISOString().slice(0, 10),
+  // WIB, bukan UTC — transaksi dini hari tak lagi tercatat di tanggal kemarin.
+  tanggal: todayJakarta(),
   tipe: 'masuk',
   metode: 'Tunai', // v.1.2.6: cara bayar (dasar PDF tunai vs transfer)
   kategori: '',
@@ -737,7 +738,7 @@ function getBulanLabel(m) {
 }
 
 function bukaModalInput() {
-  inputForm.tanggal = new Date().toISOString().slice(0, 10)
+  inputForm.tanggal = todayJakarta()
   inputForm.tipe = 'masuk'
   inputForm.metode = 'Tunai'
   inputForm.kategori = ''

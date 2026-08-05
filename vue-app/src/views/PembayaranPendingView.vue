@@ -277,7 +277,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
 import { useGedungScope } from '@/composables/useGedungScope'
-import { fmtRp, fmtTgl } from '@/utils/format'
+import { fmtRp, fmtTgl, todayJakarta } from '@/utils/format'
 import { terbayarDari, sisaTagihan, statusTagihan } from '@/utils/tagihan'
 
 const auth = useAuthStore()
@@ -433,9 +433,8 @@ async function verifyTransfer(p) {
     const buId = `bi_trf_${p.id}`
     // FIX: penuhi rule keuangan_buku_induk — WAJIB tipe (masuk/keluar) + keterangan (string) + nominal number
     // + tanggal 'YYYY-MM-DD'. Sebelumnya field ini tak diisi + sumber 'transfer_verified' belum di-allow -> write ditolak.
-    const tglBI = /^\d{4}-\d{2}-\d{2}$/.test(String(p.tanggal || ''))
-      ? p.tanggal
-      : new Date().toISOString().slice(0, 10)
+    // WIB, bukan UTC — baris Buku Induk yang dibuat 00:00–06:59 WIB tak lagi mundur sehari.
+    const tglBI = /^\d{4}-\d{2}-\d{2}$/.test(String(p.tanggal || '')) ? p.tanggal : todayJakarta()
     await setOne('keuangan_buku_induk', buId, {
       id: buId,
       tipe: 'masuk',

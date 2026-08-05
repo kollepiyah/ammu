@@ -310,7 +310,7 @@ import { subscribeColl, setOne, mergeOne, deleteOne, serverTimestamp } from '@/s
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
-import { fmtRp, fmtTgl, waLink } from '@/utils/format'
+import { fmtRp, fmtTgl, todayJakarta, waLink } from '@/utils/format'
 import { pesanTagihan } from '@/utils/pesanWa' // v.1.2.6: teks WA tagihan otomatis
 import { useSettingsStore } from '@/stores/settings'
 import { terbayarDari, sisaTagihan, statusTagihan } from '@/utils/tagihan'
@@ -455,7 +455,7 @@ function statusBadge(t) {
       cls: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
     }
   const jt = String(t.jatuh_tempo || '').slice(0, 10)
-  const today = new Date().toISOString().slice(0, 10)
+  const today = todayJakarta()
   if (jt && jt < today)
     return {
       key: 'nunggak',
@@ -553,7 +553,7 @@ function openModalNew() {
   modalKategori.value = ''
   modalPeriode.value = ''
   modalNominal.value = 0
-  modalJatuhTempo.value = new Date().toISOString().slice(0, 10)
+  modalJatuhTempo.value = todayJakarta()
   modalOpen.value = true
 }
 function openBayar(t) {
@@ -605,7 +605,9 @@ async function simpanModal() {
         santri_nama: t.santri_nama,
         nominal: Number(modalBayarNominal.value),
         catatan: modalCatatan.value,
-        tanggal: new Date().toISOString().slice(0, 10),
+        // WIB, bukan UTC: toISOString() memundurkan tanggal sehari untuk pembayaran
+        // yang dicatat 00:00–06:59 WIB, sehingga uang masuk ke laporan hari kemarin.
+        tanggal: todayJakarta(),
         createdAt: serverTimestamp()
       })
       toast.success('Pembayaran tersimpan')
