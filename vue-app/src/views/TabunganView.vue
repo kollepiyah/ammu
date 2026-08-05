@@ -195,281 +195,308 @@
         </div>
       </div>
 
-      <!-- Search -->
+      <!-- Kyai, 5 Agu 2026: "mutasi tabungan jadikan sub menu saja supaya tidak
+           scroll ke bawah dulu jauh"): Semua Mutasi dulu duduk DI BAWAH seluruh daftar
+           santri, jadi menutup kas harian berarti menggulir melewati ratusan baris tiap
+           kali. Kini dua area itu jadi tab — polanya sama dengan Pengaturan Keuangan.
+           Tab hanya muncul bagi yang memang boleh membuka panel mutasi. -->
       <div
-        class="bg-[var(--bg-card)] rounded-2xl p-3 md:p-4 border border-[var(--border-subtle)] shadow-sm"
+        v-if="bolehSemuaMutasi"
+        class="flex gap-1.5 overflow-x-auto hide-scrollbar -mx-1 px-1 pb-0.5"
       >
-        <div class="relative">
-          <i
-            class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] text-sm"
-          ></i>
-          <input
-            v-model="search"
-            type="text"
-            placeholder="Cari nama..."
-            class="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-emerald-500 outline-none"
-          />
-        </div>
-      </div>
-
-      <!-- Empty / loading states -->
-      <div v-if="loading" class="bg-[var(--bg-card)] rounded-2xl p-10 text-center">
-        <i class="fas fa-spinner fa-spin text-emerald-500 text-3xl mb-3"></i>
-        <p class="text-sm text-[var(--text-secondary)] font-bold">Memuat...</p>
-      </div>
-      <div
-        v-else-if="filteredItems.length === 0"
-        class="bg-[var(--bg-card)] rounded-2xl p-10 border border-dashed border-[var(--border-default)] text-center"
-      >
-        <i class="fas fa-wallet text-[var(--text-tertiary)] text-4xl mb-3"></i>
-        <p class="text-sm font-bold text-slate-700 dark:text-[var(--text-tertiary)]">
-          Tidak ada {{ pageTitle.toLowerCase() }}
-        </p>
-      </div>
-
-      <!-- Orphan banner -->
-      <div
-        v-if="orphanStats.count > 0"
-        class="bg-rose-50 border border-rose-200 rounded-xl p-3 mb-2"
-      >
-        <div class="flex items-center justify-between gap-2 flex-wrap">
-          <p class="text-xs font-bold text-rose-800">
-            <i class="fas fa-exclamation-triangle mr-1"></i>
-            {{ orphanStats.count }} mutasi orphan (santri_id tidak ada di koleksi santri) &mdash;
-            {{ fmtRp(orphanStats.totalSaldo) }}
-          </p>
-          <div class="flex gap-1.5 flex-wrap">
-            <button
-              class="text-[11px] font-bold text-rose-700 bg-[var(--bg-card)] border border-rose-300 px-2 py-1 rounded hover:bg-rose-100 cursor-pointer"
-              @click="dumpOrphan"
-            >
-              <i class="fas fa-terminal mr-1"></i>Dump console
-            </button>
-            <button
-              v-if="isFullAccess"
-              :disabled="orphanCleaning"
-              class="text-[11px] font-bold text-white bg-rose-600 hover:bg-rose-700 disabled:opacity-50 px-2 py-1 rounded cursor-pointer"
-              @click="cleanupOrphan"
-            >
-              <i :class="['fas', orphanCleaning ? 'fa-spinner fa-spin' : 'fa-broom', 'mr-1']"></i>
-              {{ orphanCleaning ? 'Membersihkan...' : 'Hapus Mutasi Orphan' }}
-            </button>
-          </div>
-        </div>
-        <p class="text-[10px] text-rose-600 mt-1.5">
-          <i class="fas fa-info-circle mr-1"></i>
-          Mutasi orphan = transaksi yang santri-nya sudah dihapus dari data santri. "Hapus Mutasi
-          Orphan" akan menghapus permanen seluruh record `{{ COLL }}` dengan santri_id tersebut.
-        </p>
-      </div>
-
-      <!-- List santri -->
-      <div v-if="!loading && filteredItems.length > 0" class="space-y-2">
-        <div
-          v-for="t in filteredItems"
-          :key="t.santri_id"
+        <button
+          v-for="tb in TAB_ADMIN"
+          :key="tb.id"
+          type="button"
           :class="[
-            'rounded-xl p-3 border shadow-sm cursor-pointer transition bg-[var(--bg-card)]',
-            selectedSantriId === String(t.santri_id)
-              ? 'border-emerald-500 ring-2 ring-emerald-400'
-              : 'border-emerald-200 dark:border-emerald-700 hover:border-emerald-400'
+            'shrink-0 h-9 px-3.5 inline-flex items-center gap-1.5 rounded-xl text-xs font-bold transition',
+            tabAdmin === tb.id
+              ? 'bg-[var(--color-primary)] text-white shadow-sm'
+              : 'bg-[var(--bg-card)] text-[var(--text-secondary)] border border-[var(--border-subtle)] hover:bg-[var(--bg-card-elevated)]'
           ]"
-          @click="selectSantri(t.santri_id)"
+          @click="tabAdmin = tb.id"
         >
-          <div class="flex items-center gap-3">
-            <div
-              class="flex-shrink-0 w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 flex items-center justify-center"
-            >
-              <i class="fas fa-user-graduate"></i>
-            </div>
-            <div class="flex-1 min-w-0">
-              <p class="text-sm font-bold text-[var(--text-primary)] truncate">
-                {{
-                  getNamaSantri(t.santri_id) !== '(unknown)'
-                    ? getNamaSantri(t.santri_id)
-                    : t.nama_cache || `(orphan ID: ${t.santri_id})`
-                }}
-              </p>
-              <p class="text-[10px] text-[var(--text-secondary)]">
-                {{ t.terakhir_update ? `Update: ${fmtTgl(t.terakhir_update)}` : '' }}
-              </p>
-            </div>
-            <p class="text-base font-black text-emerald-700 dark:text-emerald-400 mr-2">
-              {{ fmtRp(t.saldo) }}
-            </p>
-            <div class="flex gap-1">
-              <button
-                class="bg-emerald-100 hover:bg-emerald-200 text-emerald-700 text-[10px] font-black px-2 py-1 rounded"
-                title="Setor"
-                @click.stop="openModal(t.santri_id, 'setor')"
-              >
-                <i class="fas fa-plus"></i>
-              </button>
-              <button
-                class="bg-rose-100 hover:bg-rose-200 text-rose-700 text-[10px] font-black px-2 py-1 rounded"
-                title="Tarik"
-                @click.stop="openModal(t.santri_id, 'tarik')"
-              >
-                <i class="fas fa-minus"></i>
-              </button>
-            </div>
-          </div>
-        </div>
+          <i :class="['fas', tb.icon]"></i>{{ tb.t }}
+        </button>
       </div>
 
-      <!-- v.1.1.x: Buku Besar per santri (master-detail gaya Braja) -->
-      <div
-        v-if="selectedSantriId && selectedSantri"
-        class="bg-[var(--bg-card)] rounded-2xl border border-emerald-200 dark:border-emerald-700 shadow-sm overflow-hidden"
-      >
+      <template v-if="tabSaldoAktif">
+        <!-- Search -->
         <div
-          class="px-4 md:px-5 py-3 border-b border-[var(--border-subtle)] flex items-center justify-between flex-wrap gap-2"
+          class="bg-[var(--bg-card)] rounded-2xl p-3 md:p-4 border border-[var(--border-subtle)] shadow-sm"
         >
-          <div class="flex items-center gap-3">
-            <div
-              class="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 flex items-center justify-center"
-            >
-              <i class="fas fa-book"></i>
+          <div class="relative">
+            <i
+              class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] text-sm"
+            ></i>
+            <input
+              v-model="search"
+              type="text"
+              placeholder="Cari nama..."
+              class="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-emerald-500 outline-none"
+            />
+          </div>
+        </div>
+
+        <!-- Empty / loading states -->
+        <div v-if="loading" class="bg-[var(--bg-card)] rounded-2xl p-10 text-center">
+          <i class="fas fa-spinner fa-spin text-emerald-500 text-3xl mb-3"></i>
+          <p class="text-sm text-[var(--text-secondary)] font-bold">Memuat...</p>
+        </div>
+        <div
+          v-else-if="filteredItems.length === 0"
+          class="bg-[var(--bg-card)] rounded-2xl p-10 border border-dashed border-[var(--border-default)] text-center"
+        >
+          <i class="fas fa-wallet text-[var(--text-tertiary)] text-4xl mb-3"></i>
+          <p class="text-sm font-bold text-slate-700 dark:text-[var(--text-tertiary)]">
+            Tidak ada {{ pageTitle.toLowerCase() }}
+          </p>
+        </div>
+
+        <!-- Orphan banner -->
+        <div
+          v-if="orphanStats.count > 0"
+          class="bg-rose-50 border border-rose-200 rounded-xl p-3 mb-2"
+        >
+          <div class="flex items-center justify-between gap-2 flex-wrap">
+            <p class="text-xs font-bold text-rose-800">
+              <i class="fas fa-exclamation-triangle mr-1"></i>
+              {{ orphanStats.count }} mutasi orphan (santri_id tidak ada di koleksi santri) &mdash;
+              {{ fmtRp(orphanStats.totalSaldo) }}
+            </p>
+            <div class="flex gap-1.5 flex-wrap">
+              <button
+                class="text-[11px] font-bold text-rose-700 bg-[var(--bg-card)] border border-rose-300 px-2 py-1 rounded hover:bg-rose-100 cursor-pointer"
+                @click="dumpOrphan"
+              >
+                <i class="fas fa-terminal mr-1"></i>Dump console
+              </button>
+              <button
+                v-if="isFullAccess"
+                :disabled="orphanCleaning"
+                class="text-[11px] font-bold text-white bg-rose-600 hover:bg-rose-700 disabled:opacity-50 px-2 py-1 rounded cursor-pointer"
+                @click="cleanupOrphan"
+              >
+                <i :class="['fas', orphanCleaning ? 'fa-spinner fa-spin' : 'fa-broom', 'mr-1']"></i>
+                {{ orphanCleaning ? 'Membersihkan...' : 'Hapus Mutasi Orphan' }}
+              </button>
             </div>
-            <div>
-              <h3 class="text-sm font-black text-[var(--text-primary)]">
-                {{
-                  getNamaSantri(selectedSantriId) !== '(unknown)'
-                    ? getNamaSantri(selectedSantriId)
-                    : selectedSantri.nama
-                }}
-              </h3>
-              <p class="text-[10px] text-[var(--text-secondary)]">
-                <span v-if="selectedSantri.nis">NIS {{ selectedSantri.nis }} · </span
-                >{{ selectedSantri.lembaga || ''
-                }}<span v-if="selectedSantri.kelas"> / {{ selectedSantri.kelas }}</span>
+          </div>
+          <p class="text-[10px] text-rose-600 mt-1.5">
+            <i class="fas fa-info-circle mr-1"></i>
+            Mutasi orphan = transaksi yang santri-nya sudah dihapus dari data santri. "Hapus Mutasi
+            Orphan" akan menghapus permanen seluruh record `{{ COLL }}` dengan santri_id tersebut.
+          </p>
+        </div>
+
+        <!-- List santri -->
+        <div v-if="!loading && filteredItems.length > 0" class="space-y-2">
+          <div
+            v-for="t in filteredItems"
+            :key="t.santri_id"
+            :class="[
+              'rounded-xl p-3 border shadow-sm cursor-pointer transition bg-[var(--bg-card)]',
+              selectedSantriId === String(t.santri_id)
+                ? 'border-emerald-500 ring-2 ring-emerald-400'
+                : 'border-emerald-200 dark:border-emerald-700 hover:border-emerald-400'
+            ]"
+            @click="selectSantri(t.santri_id)"
+          >
+            <div class="flex items-center gap-3">
+              <div
+                class="flex-shrink-0 w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 flex items-center justify-center"
+              >
+                <i class="fas fa-user-graduate"></i>
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-bold text-[var(--text-primary)] truncate">
+                  {{
+                    getNamaSantri(t.santri_id) !== '(unknown)'
+                      ? getNamaSantri(t.santri_id)
+                      : t.nama_cache || `(orphan ID: ${t.santri_id})`
+                  }}
+                </p>
+                <p class="text-[10px] text-[var(--text-secondary)]">
+                  {{ t.terakhir_update ? `Update: ${fmtTgl(t.terakhir_update)}` : '' }}
+                </p>
+              </div>
+              <p class="text-base font-black text-emerald-700 dark:text-emerald-400 mr-2">
+                {{ fmtRp(t.saldo) }}
               </p>
+              <div class="flex gap-1">
+                <button
+                  class="bg-emerald-100 hover:bg-emerald-200 text-emerald-700 text-[10px] font-black px-2 py-1 rounded"
+                  title="Setor"
+                  @click.stop="openModal(t.santri_id, 'setor')"
+                >
+                  <i class="fas fa-plus"></i>
+                </button>
+                <button
+                  class="bg-rose-100 hover:bg-rose-200 text-rose-700 text-[10px] font-black px-2 py-1 rounded"
+                  title="Tarik"
+                  @click.stop="openModal(t.santri_id, 'tarik')"
+                >
+                  <i class="fas fa-minus"></i>
+                </button>
+              </div>
             </div>
-          </div>
-          <div class="flex items-center gap-2 flex-wrap">
-            <div
-              class="px-3 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-700 text-xs"
-            >
-              <span class="text-[10px] text-[var(--text-secondary)] font-bold mr-1">Saldo</span>
-              <span class="text-emerald-700 dark:text-emerald-300 font-black">{{
-                fmtRp(ledgerTotals.saldo)
-              }}</span>
-            </div>
-            <button
-              class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black px-3 py-1.5 rounded-lg"
-              @click="openModal(selectedSantriId, 'setor')"
-            >
-              <i class="fas fa-plus mr-1"></i>Setor
-            </button>
-            <button
-              class="bg-rose-600 hover:bg-rose-700 text-white text-xs font-black px-3 py-1.5 rounded-lg"
-              @click="openModal(selectedSantriId, 'tarik')"
-            >
-              <i class="fas fa-minus mr-1"></i>Tarik
-            </button>
-            <button
-              class="text-[var(--text-tertiary)] hover:text-[var(--text-primary)] px-2 py-1.5"
-              title="Tutup"
-              @click="selectedSantriId = ''"
-            >
-              <i class="fas fa-times"></i>
-            </button>
           </div>
         </div>
+
+        <!-- v.1.1.x: Buku Besar per santri (master-detail gaya Braja) -->
         <div
-          v-if="ledgerMutasi.length === 0"
-          class="p-8 text-center text-xs text-[var(--text-tertiary)] italic"
+          v-if="selectedSantriId && selectedSantri"
+          class="bg-[var(--bg-card)] rounded-2xl border border-emerald-200 dark:border-emerald-700 shadow-sm overflow-hidden"
         >
-          Belum ada transaksi {{ pageTitle.toLowerCase() }} untuk santri ini.
-        </div>
-        <div v-else class="overflow-x-auto">
-          <table class="w-full text-sm min-w-[680px]">
-            <thead
-              class="bg-[var(--bg-card-elevated)] text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-wider"
-            >
-              <tr>
-                <th class="px-3 py-2 text-left w-10">No</th>
-                <th class="px-3 py-2 text-left">Tanggal</th>
-                <th class="px-3 py-2 text-left">Keterangan</th>
-                <th class="px-3 py-2 text-left">Petugas</th>
-                <th class="px-3 py-2 text-right">Setoran</th>
-                <th class="px-3 py-2 text-right">Penarikan</th>
-                <th class="px-3 py-2 text-right">Saldo</th>
-                <th class="px-3 py-2 w-12"></th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr
-                v-for="m in ledgerMutasi"
-                :key="m.id"
-                class="border-t border-[var(--border-subtle)] hover:bg-slate-50 dark:hover:bg-slate-900/30"
+          <div
+            class="px-4 md:px-5 py-3 border-b border-[var(--border-subtle)] flex items-center justify-between flex-wrap gap-2"
+          >
+            <div class="flex items-center gap-3">
+              <div
+                class="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 flex items-center justify-center"
               >
-                <td class="px-3 py-2 text-[var(--text-tertiary)]">{{ m._no }}</td>
-                <td class="px-3 py-2 text-[11px] text-[var(--text-secondary)] whitespace-nowrap">
-                  {{ fmtTgl(m.tanggal) }}
-                </td>
-                <td class="px-3 py-2 text-[11px]">
-                  <span
-                    :class="[
-                      'inline-block text-[9px] font-black uppercase px-1.5 py-0.5 rounded mr-1',
-                      m._setor ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'
-                    ]"
-                    >{{ m._setor ? 'Setor' : 'Tarik' }}</span
-                  >
-                  <span class="text-[var(--text-secondary)]">{{
-                    m.catatan || m.kategori || '-'
-                  }}</span>
-                </td>
-                <td class="px-3 py-2 text-[11px] text-[var(--text-secondary)] whitespace-nowrap">
-                  {{ m.operator || '-' }}
-                </td>
-                <td class="px-3 py-2 text-right font-black text-emerald-700 whitespace-nowrap">
-                  {{ m._setor ? fmtRp(m._setor) : '—' }}
-                </td>
-                <td class="px-3 py-2 text-right font-black text-rose-700 whitespace-nowrap">
-                  {{ m._tarik ? fmtRp(m._tarik) : '—' }}
-                </td>
-                <td
-                  class="px-3 py-2 text-right font-bold text-[var(--text-primary)] whitespace-nowrap"
-                >
-                  {{ fmtRp(m._saldo) }}
-                </td>
-                <td class="px-3 py-2 text-right whitespace-nowrap">
-                  <button
-                    class="text-[10px] text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 px-1.5 py-1 rounded"
-                    title="Cetak slip"
-                    @click="cetakSlip(m)"
-                  >
-                    <i class="fas fa-receipt"></i>
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-            <tfoot>
-              <tr
-                class="border-t-2 border-[var(--border-default)] bg-[var(--bg-card-elevated)] font-black"
+                <i class="fas fa-book"></i>
+              </div>
+              <div>
+                <h3 class="text-sm font-black text-[var(--text-primary)]">
+                  {{
+                    getNamaSantri(selectedSantriId) !== '(unknown)'
+                      ? getNamaSantri(selectedSantriId)
+                      : selectedSantri.nama
+                  }}
+                </h3>
+                <p class="text-[10px] text-[var(--text-secondary)]">
+                  <span v-if="selectedSantri.nis">NIS {{ selectedSantri.nis }} · </span
+                  >{{ selectedSantri.lembaga || ''
+                  }}<span v-if="selectedSantri.kelas"> / {{ selectedSantri.kelas }}</span>
+                </p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 flex-wrap">
+              <div
+                class="px-3 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-700 text-xs"
               >
-                <td
-                  colspan="4"
-                  class="px-3 py-2.5 text-right text-[11px] uppercase text-[var(--text-secondary)]"
+                <span class="text-[10px] text-[var(--text-secondary)] font-bold mr-1">Saldo</span>
+                <span class="text-emerald-700 dark:text-emerald-300 font-black">{{
+                  fmtRp(ledgerTotals.saldo)
+                }}</span>
+              </div>
+              <button
+                class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black px-3 py-1.5 rounded-lg"
+                @click="openModal(selectedSantriId, 'setor')"
+              >
+                <i class="fas fa-plus mr-1"></i>Setor
+              </button>
+              <button
+                class="bg-rose-600 hover:bg-rose-700 text-white text-xs font-black px-3 py-1.5 rounded-lg"
+                @click="openModal(selectedSantriId, 'tarik')"
+              >
+                <i class="fas fa-minus mr-1"></i>Tarik
+              </button>
+              <button
+                class="text-[var(--text-tertiary)] hover:text-[var(--text-primary)] px-2 py-1.5"
+                title="Tutup"
+                @click="selectedSantriId = ''"
+              >
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+          </div>
+          <div
+            v-if="ledgerMutasi.length === 0"
+            class="p-8 text-center text-xs text-[var(--text-tertiary)] italic"
+          >
+            Belum ada transaksi {{ pageTitle.toLowerCase() }} untuk santri ini.
+          </div>
+          <div v-else class="overflow-x-auto">
+            <table class="w-full text-sm min-w-[680px]">
+              <thead
+                class="bg-[var(--bg-card-elevated)] text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-wider"
+              >
+                <tr>
+                  <th class="px-3 py-2 text-left w-10">No</th>
+                  <th class="px-3 py-2 text-left">Tanggal</th>
+                  <th class="px-3 py-2 text-left">Keterangan</th>
+                  <th class="px-3 py-2 text-left">Petugas</th>
+                  <th class="px-3 py-2 text-right">Setoran</th>
+                  <th class="px-3 py-2 text-right">Penarikan</th>
+                  <th class="px-3 py-2 text-right">Saldo</th>
+                  <th class="px-3 py-2 w-12"></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="m in ledgerMutasi"
+                  :key="m.id"
+                  class="border-t border-[var(--border-subtle)] hover:bg-slate-50 dark:hover:bg-slate-900/30"
                 >
-                  Total
-                </td>
-                <td class="px-3 py-2.5 text-right text-emerald-700 whitespace-nowrap">
-                  {{ fmtRp(ledgerTotals.setor) }}
-                </td>
-                <td class="px-3 py-2.5 text-right text-rose-700 whitespace-nowrap">
-                  {{ fmtRp(ledgerTotals.tarik) }}
-                </td>
-                <td class="px-3 py-2.5 text-right text-emerald-700 whitespace-nowrap">
-                  {{ fmtRp(ledgerTotals.saldo) }}
-                </td>
-                <td></td>
-              </tr>
-            </tfoot>
-          </table>
+                  <td class="px-3 py-2 text-[var(--text-tertiary)]">{{ m._no }}</td>
+                  <td class="px-3 py-2 text-[11px] text-[var(--text-secondary)] whitespace-nowrap">
+                    {{ fmtTgl(m.tanggal) }}
+                  </td>
+                  <td class="px-3 py-2 text-[11px]">
+                    <span
+                      :class="[
+                        'inline-block text-[9px] font-black uppercase px-1.5 py-0.5 rounded mr-1',
+                        m._setor ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'
+                      ]"
+                      >{{ m._setor ? 'Setor' : 'Tarik' }}</span
+                    >
+                    <span class="text-[var(--text-secondary)]">{{
+                      m.catatan || m.kategori || '-'
+                    }}</span>
+                  </td>
+                  <td class="px-3 py-2 text-[11px] text-[var(--text-secondary)] whitespace-nowrap">
+                    {{ m.operator || '-' }}
+                  </td>
+                  <td class="px-3 py-2 text-right font-black text-emerald-700 whitespace-nowrap">
+                    {{ m._setor ? fmtRp(m._setor) : '—' }}
+                  </td>
+                  <td class="px-3 py-2 text-right font-black text-rose-700 whitespace-nowrap">
+                    {{ m._tarik ? fmtRp(m._tarik) : '—' }}
+                  </td>
+                  <td
+                    class="px-3 py-2 text-right font-bold text-[var(--text-primary)] whitespace-nowrap"
+                  >
+                    {{ fmtRp(m._saldo) }}
+                  </td>
+                  <td class="px-3 py-2 text-right whitespace-nowrap">
+                    <button
+                      class="text-[10px] text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 px-1.5 py-1 rounded"
+                      title="Cetak slip"
+                      @click="cetakSlip(m)"
+                    >
+                      <i class="fas fa-receipt"></i>
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+              <tfoot>
+                <tr
+                  class="border-t-2 border-[var(--border-default)] bg-[var(--bg-card-elevated)] font-black"
+                >
+                  <td
+                    colspan="4"
+                    class="px-3 py-2.5 text-right text-[11px] uppercase text-[var(--text-secondary)]"
+                  >
+                    Total
+                  </td>
+                  <td class="px-3 py-2.5 text-right text-emerald-700 whitespace-nowrap">
+                    {{ fmtRp(ledgerTotals.setor) }}
+                  </td>
+                  <td class="px-3 py-2.5 text-right text-rose-700 whitespace-nowrap">
+                    {{ fmtRp(ledgerTotals.tarik) }}
+                  </td>
+                  <td class="px-3 py-2.5 text-right text-emerald-700 whitespace-nowrap">
+                    {{ fmtRp(ledgerTotals.saldo) }}
+                  </td>
+                  <td></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
         </div>
-      </div>
+      </template>
     </template>
 
     <!-- v.21.100.0527: SEMUA MUTASI panel — super_admin edit/hapus + bulk -->
@@ -479,7 +506,7 @@
          jalan sama sekali ke laporan harian. Panelnya kini terbuka untuk admin keuangan
          (baca + cetak); ubah/hapus mutasi TETAP super_admin. -->
     <div
-      v-if="isFullAccess && bolehSemuaMutasi"
+      v-if="isFullAccess && bolehSemuaMutasi && tabAdmin === 'mutasi'"
       class="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)] shadow-sm overflow-hidden"
     >
       <div
@@ -1062,6 +1089,18 @@ const isAdmin = computed(() => isSuperAdmin(auth.sesiAktif))
 //   isAdminKeuangan() WAJIB diperiksa terpisah: peran ini ber-role 'admin' di sesi,
 //   jadi tak bisa dibedakan dari admin biasa lewat `role` saja.
 const bolehSemuaMutasi = computed(() => isAdmin.value || isAdminKeuangan(auth.sesiAktif))
+
+// Kyai (5 Agu 2026): Saldo Santri vs Semua Mutasi jadi dua tab, bukan dua blok yang
+//   bertumpuk — panel mutasi dulu duduk di bawah seluruh daftar santri, jadi menutup kas
+//   harian berarti menggulir jauh tiap kali. Polanya sama dengan Pengaturan Keuangan.
+const TAB_ADMIN = [
+  { id: 'saldo', t: 'Saldo Santri', icon: 'fa-users' },
+  { id: 'mutasi', t: 'Semua Mutasi', icon: 'fa-list-check' }
+]
+const tabAdmin = ref('saldo')
+// Yang tak boleh membuka panel mutasi TIDAK melihat tab sama sekali, jadi tampilannya
+//   harus tetap seperti dulu — bukan layar kosong karena tab tersangkut di 'mutasi'.
+const tabSaldoAktif = computed(() => !bolehSemuaMutasi.value || tabAdmin.value === 'saldo')
 
 // Role flags
 const isSantri = computed(() => auth.sesiAktif?.role === 'santri')
