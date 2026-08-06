@@ -117,12 +117,35 @@
               {{ fmtRp(stats.pengeluaran) }}
             </p>
           </div>
+          <!-- Kartu ini dulu berlabel "Saldo Akhir" padahal isinya masuk − keluar PERIODE
+               INI saja — salah satu sebab "total saldonya tidak jelas". Sekarang namanya
+               jujur, dan saldo akhir yang sesungguhnya ditampilkan di bawahnya. -->
           <div class="p-3 rounded-xl border-l-4 bg-cyan-50 border-cyan-500">
-            <p class="text-[10px] font-bold uppercase text-cyan-700">Saldo Akhir</p>
+            <p class="text-[10px] font-bold uppercase text-cyan-700">Selisih Periode</p>
             <p class="text-base md:text-lg font-black mt-1 text-cyan-800">
               {{ fmtRp(stats.saldo) }}
             </p>
+            <p class="text-[9px] text-cyan-700/80 mt-0.5">masuk &minus; keluar</p>
           </div>
+        </div>
+        <!-- Saldo kas menurut penyaring yang sedang aktif — angka yang sama persis dengan
+             baris SALDO AWAL/TOTAL di PDF & Excel, jadi layar dan kertas tak bisa beda. -->
+        <div
+          class="mt-2 rounded-xl border border-cyan-200 dark:border-cyan-800 bg-cyan-50/60 dark:bg-cyan-900/20 px-3 py-2 flex flex-wrap items-baseline gap-x-4 gap-y-1"
+        >
+          <span class="text-[10px] font-bold uppercase text-cyan-800 dark:text-cyan-300">
+            Saldo awal
+            <b class="font-mono font-black ml-1">{{ fmtRp(saldoAwalPeriode) }}</b>
+          </span>
+          <span class="text-[10px] font-bold uppercase text-cyan-800 dark:text-cyan-300">
+            Saldo akhir
+            <b class="font-mono font-black ml-1">{{ fmtRp(saldoAkhirPeriode) }}</b>
+          </span>
+          <span class="text-[10px] text-[var(--text-secondary)]">
+            {{
+              adaPenyaringKas ? 'mengikuti penyaring yang aktif' : 'seluruh kas, tanpa penyaring'
+            }}
+          </span>
         </div>
         <!-- v.1.2.6: pisah uang laci vs rekening — inti laporan kas harian -->
         <div class="grid grid-cols-2 gap-2 md:gap-3 mt-2">
@@ -780,6 +803,9 @@ import {
 import { buildListPdf, buildKopFromSettings } from '@/utils/pdfBuilder'
 // Pos dana (Uang Kegiatan/Buku/Tabungan Wajib) — sumber tunggal aturan & labelnya.
 import { cocokPos, opsiFilterPos, labelFilterPos } from '@/utils/posDana'
+// Saldo berjalan & susunan baris laporan — dipisah ke util murni supaya bisa diuji
+//   (kolom Saldo yang lepas dari filter adalah keluhan Kyai 6 Agu 2026).
+import { petaSaldoBerjalan, saldoAwalSebelum, bangunBarisLaporan } from '@/utils/bukuIndukLaporan'
 import { isSuperAdmin } from '@/utils/roleScope'
 import { writeAuditLog } from '@/utils/auditLog'
 // v.21.103.0527: reprint struk dari BukuInduk untuk record sumber pos_santri
@@ -1165,7 +1191,7 @@ async function cetakLaporan(metodeOnly = '') {
       return
     }
     // v.1.2.6 (D): pakai buildExportRows (saldo berjalan + baris TOTAL) lalu format Rp utk PDF.
-    const rows = buildExportRows(list).map((r) => ({
+    const rows = buildExportRows(list, { metodeOnly }).map((r) => ({
       no: r.no,
       tanggal: r.tanggal ? formatTgl(r.tanggal) : '',
       keterangan: r.keterangan,
@@ -1242,8 +1268,11 @@ function kasLembagaDari(b) {
 //   sudah dipakai "Semua lembaga", jadi Kas Induk butuh nilai sendiri.
 const KAS_INDUK = '__induk__'
 
-// Baris dalam periode & scope gedung, SEBELUM penyaring lembaga/tipe/cara bayar/cari.
-const bukuPeriode = computed(() => {
+// Ledger sah dalam scope gedung, TANPA batas periode. Jadi basis dua hal sekaligus:
+//   baris yang tampil (setelah dibatasi periode) dan saldo berjalan (yang justru harus
+//   kumulatif sejak transaksi pertama). Dulu keduanya menyalin penyaring masing-masing,
+//   dan di situlah kolom Saldo lepas dari filter yang sedang aktif.
+const ledgerScope = computed(() => {
   // v.21.96.0527: Defensive — exclude residu tabungan dari buku induk.
   let list = bukuRaw.value.filter((b) => {
     const kat = String(b.kategori || '').toLowerCase()
@@ -1253,6 +1282,48 @@ const bukuPeriode = computed(() => {
   })
   // v.111: scope Gedung — admin keuangan ber-gedung hanya lihat baris gedungnya (Buku Kas)
   if (gedungScoped.value) list = list.filter(allowRow)
+  return list
+})
+
+// Penyaring NON-periode & NON-lembaga: pos, cara bayar, tipe, pencarian.
+function lolosPenyaringUmum(b) {
+  // Pos dana (Kyai 5 Agu 2026) — disaring PALING AWAL supaya kartu rekap lembaga, saldo,
+  //   dan seluruh ekspor ikut terbatas pada pos yang dipilih. "Kas Umum" = buku induk
+  //   murni, tanpa dana terikat (Uang Kegiatan/Buku/Tabungan Wajib).
+  if (filterPos.value && !cocokPos(b, filterPos.value)) return false
+  // v.1.2.6: cara bayar
+  if (filterMetode.value && metodeTransaksi(b) !== filterMetode.value) return false
+  // Tipe
+  if (filterTipe.value === 'masuk' && !(b.tipe === 'masuk' || Number(b.masuk) > 0)) return false
+  if (filterTipe.value === 'keluar' && !(b.tipe === 'keluar' || Number(b.keluar) > 0)) return false
+  // Search
+  const kw = search.value.trim().toLowerCase()
+  if (kw) {
+    const cocok =
+      String(b.keterangan || '')
+        .toLowerCase()
+        .includes(kw) ||
+      String(b.kategori || '')
+        .toLowerCase()
+        .includes(kw) ||
+      String(b.ref_id || '')
+        .toLowerCase()
+        .includes(kw)
+    if (!cocok) return false
+  }
+  return true
+}
+
+// Penyaring lembaga (kunci ternormalisasi di KEDUA sisi). Kosong = semua lembaga.
+function lolosPenyaringLembaga(b) {
+  if (!filterLembaga.value) return true
+  const target = filterLembaga.value === KAS_INDUK ? '' : filterLembaga.value
+  return kunciLembaga(kasLembagaDari(b)) === target
+}
+
+// Baris dalam periode & scope gedung, SEBELUM penyaring lembaga/tipe/cara bayar/cari.
+const bukuPeriode = computed(() => {
+  let list = ledgerScope.value
   // Filter by year/month (+ v.1.2.6: tanggal, utk laporan harian)
   if (selectedMonth.value > 0) {
     const ym = `${selectedYear.value}-${String(selectedMonth.value).padStart(2, '0')}`
@@ -1269,44 +1340,7 @@ const bukuPeriode = computed(() => {
 // Semua penyaring KECUALI lembaga. Rekap & opsi filter lembaga dihitung dari sini,
 //   supaya pilihannya tak lenyap begitu satu lembaga dipilih — tapi tetap ikut
 //   tanggal & cara bayar (itulah gunanya: "tunai per lembaga hari ini").
-const bukuTanpaLembaga = computed(() => {
-  let list = bukuPeriode.value
-  // Pos dana (Kyai 5 Agu 2026) — disaring PALING AWAL supaya kartu rekap lembaga, saldo,
-  //   dan seluruh ekspor ikut terbatas pada pos yang dipilih. "Kas Umum" = buku induk
-  //   murni, tanpa dana terikat (Uang Kegiatan/Buku/Tabungan Wajib).
-  if (filterPos.value) {
-    list = list.filter((b) => cocokPos(b, filterPos.value))
-  }
-  // v.1.2.6: cara bayar
-  if (filterMetode.value) {
-    list = list.filter((b) => metodeTransaksi(b) === filterMetode.value)
-  }
-  // Tipe
-  if (filterTipe.value) {
-    list = list.filter((b) => {
-      if (filterTipe.value === 'masuk') return b.tipe === 'masuk' || Number(b.masuk) > 0
-      if (filterTipe.value === 'keluar') return b.tipe === 'keluar' || Number(b.keluar) > 0
-      return true
-    })
-  }
-  // Search
-  const kw = search.value.trim().toLowerCase()
-  if (kw) {
-    list = list.filter(
-      (b) =>
-        String(b.keterangan || '')
-          .toLowerCase()
-          .includes(kw) ||
-        String(b.kategori || '')
-          .toLowerCase()
-          .includes(kw) ||
-        String(b.ref_id || '')
-          .toLowerCase()
-          .includes(kw)
-    )
-  }
-  return list
-})
+const bukuTanpaLembaga = computed(() => bukuPeriode.value.filter(lolosPenyaringUmum))
 
 // Rekap kas per lembaga — dipakai kartu ringkasan DAN daftar opsi filter lembaga.
 const rekapLembaga = computed(() => ringkasKasLembaga(bukuTanpaLembaga.value, kasLembagaDari))
@@ -1318,20 +1352,15 @@ const labelLembagaAktif = computed(() => {
   return hit?.lembaga || ''
 })
 
-const filteredBuku = computed(() => {
-  let list = bukuTanpaLembaga.value
-  // v.1.2.6: kas lembaga (kunci ternormalisasi di KEDUA sisi)
-  if (filterLembaga.value) {
-    const target = filterLembaga.value === KAS_INDUK ? '' : filterLembaga.value
-    list = list.filter((b) => kunciLembaga(kasLembagaDari(b)) === target)
-  }
-  return list
+const filteredBuku = computed(() =>
+  bukuTanpaLembaga.value
+    .filter(lolosPenyaringLembaga)
     .slice()
     .sort(
       (a, b) =>
         (b.tanggal || '').localeCompare(a.tanggal || '') || (b.id || '').localeCompare(a.id || '')
     )
-})
+)
 
 const stats = computed(() => {
   let masuk = 0,
@@ -1347,37 +1376,42 @@ const stats = computed(() => {
   return { pemasukan: masuk, pengeluaran: keluar, saldo: masuk - keluar }
 })
 
-// v.1.2.6: saldo BERJALAN all-time per record (kolom Saldo + ekspor). Basis = ledger riil
-//   (tanpa residu/tabungan) dalam scope Gedung, urut kronologis naik. Filter-independent:
-//   nilai = saldo kumulatif setelah transaksi itu, apa pun filter bulan/tipe yang aktif.
-const saldoMap = computed(() => {
-  let base = bukuRaw.value.filter((b) => {
-    const kat = String(b.kategori || '').toLowerCase()
-    const sumber = String(b.sumber || '').toLowerCase()
-    if (kat === 'tabungan' || sumber === 'tabungan' || sumber.includes('tabungan')) return false
-    return /^\d{4}-\d{2}/.test(String(b.tanggal || '').trim())
-  })
-  if (gedungScoped.value) base = base.filter(allowRow)
-  base = base
-    .slice()
-    .sort(
-      (a, b) =>
-        (a.tanggal || '').localeCompare(b.tanggal || '') || (a.id || '').localeCompare(b.id || '')
-    )
-  const map = new Map()
-  let saldo = 0
-  for (const b of base) {
-    const masuk = b.tipe === 'masuk' || Number(b.masuk) > 0 ? Number(b.masuk || b.nominal) || 0 : 0
-    const keluar =
-      b.tipe === 'keluar' || Number(b.keluar) > 0 ? Number(b.keluar || b.nominal) || 0 : 0
-    saldo += masuk - keluar
-    map.set(String(b.id), saldo)
-  }
-  return map
-})
+// Ledger dasar KOLOM SALDO — Kyai, 6 Agu 2026: "info saldo sesuai filter yg diekspor,
+//   saldo total jika diekspor semuanya tanpa filter."
+//
+//   Semua penyaring ikut (pos, lembaga, cara bayar, tipe, pencarian, scope gedung)
+//   KECUALI periode: yang dibatasi periode adalah baris yang tampil, sedangkan saldo
+//   tetap kumulatif sejak transaksi pertama — itulah yang bikin baris SALDO AWAL punya
+//   arti. Tanpa penyaring apa pun, hasilnya sama persis dengan saldo total yang lama.
+const ledgerSaldo = computed(() =>
+  ledgerScope.value
+    .filter((b) => /^\d{4}-\d{2}/.test(String(b.tanggal || '').trim()))
+    .filter(lolosPenyaringUmum)
+    .filter(lolosPenyaringLembaga)
+)
+const saldoMap = computed(() => petaSaldoBerjalan(ledgerSaldo.value))
 function saldoOf(b) {
   return saldoMap.value.get(String(b.id)) ?? 0
 }
+// Saldo sebelum periode yang sedang dilihat — dipakai baris SALDO AWAL di ekspor.
+const saldoAwalPeriode = computed(() => saldoAwalSebelum(ledgerSaldo.value, periodeSlug.value))
+// Saldo akhir = saldo awal + mutasi periode. Sengaja dihitung dari stats (bukan dari
+//   baris terakhir peta saldo) supaya angkanya pasti bertemu dengan kartu Masuk/Keluar.
+const saldoAkhirPeriode = computed(() => saldoAwalPeriode.value + stats.value.saldo)
+// Ada penyaring kas yang aktif? Menentukan kalimat penjelas di kartu saldo — "seluruh kas"
+//   vs "mengikuti penyaring". Periode TIDAK dihitung sebagai penyaring di sini: ia memang
+//   selalu ada, dan yang dibatasinya cuma baris yang tampil.
+const adaPenyaringKas = computed(
+  () =>
+    !!(
+      filterPos.value ||
+      filterLembaga.value ||
+      filterMetode.value ||
+      filterTipe.value ||
+      search.value.trim() ||
+      gedungScoped.value
+    )
+)
 
 const years = computed(() => {
   const now = new Date().getFullYear()
@@ -1429,63 +1463,25 @@ onUnmounted(() => {
   }
 })
 
-// v.1.2.6 (D): baris ekspor buku induk — saldo BERJALAN per baris (saldoOf) + baris TOTAL
-//   (jumlah masuk/keluar & net periode) di akhir. Dipakai Excel + Google Sheet.
+// Baris ekspor buku induk — dipakai bersama PDF, Excel, dan Google Sheet. Susunannya
+//   SALDO AWAL → transaksi kronologis NAIK → SUBTOTAL cara bayar → TOTAL (kolom saldonya
+//   = saldo akhir), lihat utils/bukuIndukLaporan.
 //   v.1.2.6 (Kyai): `listIn` opsional supaya cetak TUNAI / TRANSFER bisa memakai
 //   pembangun yang sama (satu bentuk laporan, bukan dua yang bisa berbeda diam-diam).
-function buildExportRows(listIn) {
+//   `metodeOnly` ikut menyaring ledger dasar saldo: tanpa itu, berkas TUNAI akan
+//   memakai saldo awal yang masih mengandung transfer dan angkanya tak akan bertemu.
+function buildExportRows(listIn, { metodeOnly = '' } = {}) {
   const list = listIn || filteredBuku.value || []
-  let totMasuk = 0,
-    totKeluar = 0
-  const rows = list.map((b, i) => {
-    const masuk = Number(b.masuk || (b.tipe === 'masuk' ? b.nominal : 0) || 0)
-    const keluar = Number(b.keluar || (b.tipe === 'keluar' ? b.nominal : 0) || 0)
-    totMasuk += masuk
-    totKeluar += keluar
-    return {
-      no: i + 1,
-      tanggal: b.tanggal || '',
-      no_struk: b.no_struk || b.trx_id || '',
-      keterangan: b.keterangan || b.deskripsi || '',
-      kategori: b.kategori || '',
-      tipe: b.tipe || (Number(b.masuk) > 0 ? 'Masuk' : 'Keluar'),
-      // v.1.2.6: cara bayar — kasir perlu memisahkan uang laci dari uang rekening
-      metode: metodeTransaksi(b),
-      masuk,
-      keluar,
-      saldo: saldoOf(b)
-    }
+  const ledger = metodeOnly
+    ? ledgerSaldo.value.filter((b) => metodeTransaksi(b) === metodeOnly)
+    : ledgerSaldo.value
+  return bangunBarisLaporan(list, {
+    saldoAwal: metodeOnly ? saldoAwalSebelum(ledger, periodeSlug.value) : saldoAwalPeriode.value,
+    labelPeriode: periodeLabel.value,
+    metodeOf: metodeTransaksi,
+    metodeOpts: METODE_OPTS,
+    ringkasMetodeOf: ringkasMetode
   })
-  // v.1.2.6: subtotal per cara bayar SEBELUM baris TOTAL — inti laporan harian kas.
-  const rk = ringkasMetode(list)
-  for (const m of METODE_OPTS) {
-    if (rk[m].masuk === 0 && rk[m].keluar === 0) continue
-    rows.push({
-      no: '',
-      tanggal: '',
-      no_struk: '',
-      keterangan: `SUBTOTAL ${m.toUpperCase()}`,
-      kategori: '',
-      tipe: '',
-      metode: m,
-      masuk: rk[m].masuk,
-      keluar: rk[m].keluar,
-      saldo: rk[m].masuk - rk[m].keluar
-    })
-  }
-  rows.push({
-    no: '',
-    tanggal: '',
-    no_struk: '',
-    keterangan: `TOTAL (${list.length} transaksi)`,
-    kategori: '',
-    tipe: '',
-    metode: '',
-    masuk: totMasuk,
-    keluar: totKeluar,
-    saldo: totMasuk - totKeluar
-  })
-  return rows
 }
 
 // v.21+: Export Excel Buku Induk Keuangan (kolom: no, tanggal, no_struk, keterangan, kategori, tipe, masuk, keluar, saldo)
