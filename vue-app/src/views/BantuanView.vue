@@ -484,7 +484,7 @@ const auth = useAuthStore()
 const isSuperAdmin = computed(() => auth.sesiAktif?.role_sistem === 'super_admin')
 
 // v.99: kontak admin dari settings (editable/ACF) — fallback ke default.
-// v.1.2.10 (Kyai, 6 Agu 2026): Author = nama PROYEK, bukan nama orang — sejalan
+// v.1.3.0 (Kyai, 6 Agu 2026): Author = nama PROYEK, bukan nama orang — sejalan
 //   dengan "Powered By Bakafrawi Project" di layar login. Baris Organization jadi
 //   kembar karenanya, jadi ia hanya ditampilkan bila memang BERBEDA dari Author
 //   (mis. lembaga lain mengisi adminNama/adminOrg sendiri lewat Pengaturan Web).
@@ -583,7 +583,7 @@ const introText = computed(() =>
 const lembagaName = computed(
   () => settings.settings?.namaLembaga || 'Pondok Pesantren Mambaul Ulum'
 )
-const version = computed(() => settings.settings?.appVersion || 'v.1.2.9')
+const version = computed(() => settings.settings?.appVersion || 'v.1.3.0')
 const logoSrc = computed(() => settings.settings?.logoUrl || '/logo.png')
 
 const sections = [
@@ -827,6 +827,15 @@ async function resetFaq() {
 //   berubah di layar mereka, bukan nama fungsi. Cukup beberapa rilis terakhir —
 //   riwayat lengkap ada di CHANGELOG.md untuk pengembang.
 const rilis = [
+  {
+    versi: 'v.1.3.0',
+    tgl: 'Agustus 2026',
+    items: [
+      'Simulasi Plafon Bisyaroh — coba nominal sebelum diputuskan, tak ada yang disimpan.',
+      'Input Absensi Harian bisa memilih tanggal, termasuk hari yang sudah lewat (super admin).',
+      'Kolom Saldo di Buku Induk tak lagi menabrak kolom Keluar.'
+    ]
+  },
   {
     versi: 'v.1.2.9',
     tgl: 'Agustus 2026',

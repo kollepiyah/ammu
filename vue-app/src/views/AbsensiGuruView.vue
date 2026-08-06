@@ -1866,7 +1866,7 @@ const harianForm = ref({})
 const savingHarian = ref(false)
 const hasAnyHadir = computed(() => Object.keys(harianForm.value).some((k) => harianForm.value[k]))
 
-// v.1.2.10 (Kyai, 6 Agu 2026: "belum bisa input absen manual hari yang sudah
+// v.1.3.0 (Kyai, 6 Agu 2026: "belum bisa input absen manual hari yang sudah
 //   terlewat"). Dulu tanggalnya todayJakarta() mati, jadi mengoreksi hari lampau
 //   harus memutar lewat tab Impor Fingerprint + berkas Excel. Mundur dibatasi
 //   super_admin, sejalan dengan kebijakan hapus absen (canHapusAbsen).

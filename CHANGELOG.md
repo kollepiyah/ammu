@@ -10,9 +10,28 @@ naik satu tiap rilis. Entri lama memakai skema lama `v.{nomor-urut}.{MMDDtahunmu
 
 ## [Unreleased]
 
+### Planned
+
+- Capacitor Android first build + sideload APK
+- Capacitor iOS setup
+- Tauri Desktop scaffold
+- Phase 1 palette migration: `bg-blue-600/700` action button → `bg-teal-600/700` (~62 occurrences)
+- DOMPurify integration untuk template literal innerHTML yang inject user data
+- Console.log cleanup (37 occurrences di production)
+
+---
+
+## [v.1.3.0] — 2026-08-07 — Simulasi plafon bisyaroh + Input Harian bisa pilih tanggal
+
+Naik **MINOR**, bukan patch: dua kemampuan baru, bukan sekadar perbaikan.
+
+⚠️ **TANPA migrasi DB, TANPA edge function** — cukup deploy web dari **direktori utama**.
+Lalu **AAB vc130** dan **Electron 1.3.0** bila perbaikan ini perlu sampai ke HP dan PC:
+aplikasi Android memuat bundel webnya sendiri, jadi deploy web saja tak menjangkaunya.
+
 ### Added (Baru)
 
-- **Simulasi Plafon Bisyaroh** di halaman Bisyaroh. Nominal bisyaroh sedang ditinjau
+- **Simulasi Plafon Bisyaroh** — sub-tab tersendiri di halaman Bisyaroh. Nominal bisyaroh sedang ditinjau
   ulang, dan sebelumnya tak ada cara melihat dampak biayanya selain menyimpan setelan
   lalu menerbitkan slip — yaitu mengubah data sungguhan hanya untuk bertanya "kalau
   tarifnya sekian, sebulan keluar berapa?". Kini tarif bisa diketik sementara di layar
@@ -35,15 +54,6 @@ naik satu tiap rilis. Entri lama memakai skema lama `v.{nomor-urut}.{MMDDtahunmu
   yang keterangannya akan hilang. Kalau pemeriksaan itu sendiri gagal, penyimpanan
   **dibatalkan**, bukan diteruskan. Penjagaan seketat ini karena baris absensi memberi
   makan bisyaroh: menimpa izin yang sudah disetujui bukan salah tampilan, tapi salah uang.
-
-### Planned
-
-- Capacitor Android first build + sideload APK
-- Capacitor iOS setup
-- Tauri Desktop scaffold
-- Phase 1 palette migration: `bg-blue-600/700` action button → `bg-teal-600/700` (~62 occurrences)
-- DOMPurify integration untuk template literal innerHTML yang inject user data
-- Console.log cleanup (37 occurrences di production)
 
 ---
 

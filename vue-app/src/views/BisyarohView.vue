@@ -81,7 +81,7 @@
           >
             <i class="fas fa-users mr-1"></i>Bulk Generate
           </button>
-          <!-- v.1.2.10: sub-tab sendiri, bukan lipatan di dalam Bulk Generate. Alasannya
+          <!-- v.1.3.0: sub-tab sendiri, bukan lipatan di dalam Bulk Generate. Alasannya
                ditemukan seketika: begitu dipasang, hal pertama yang ditanyakan Kyai adalah
                "simulasinya di mana?". Alat rundingan tak boleh dua klik dalam, apalagi
                berdampingan dengan tombol yang MENERBITKAN slip. -->
@@ -470,7 +470,7 @@
           v-else
           class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
         >
-          <!-- v.1.2.10: SIMULASI PLAFON — coba-coba nominal tanpa menyimpan apa pun. -->
+          <!-- v.1.3.0: SIMULASI PLAFON — coba-coba nominal tanpa menyimpan apa pun. -->
           <div class="rounded-xl border border-amber-300/60 bg-amber-50/60 dark:bg-amber-900/20">
             <p
               class="px-3 py-2 text-sm font-black text-amber-900 dark:text-amber-200 border-b border-amber-300/40"
@@ -894,7 +894,7 @@ import { shiftLabelOf, shiftList } from '@/utils/shiftMaster'
 import { materialisasiHadirIkut } from '@/utils/absensiMaterialize'
 import { guruAktifSaja } from '@/utils/guruScope' // v.1.2.0: sumber tunggal penyaring status guru
 import { jpByLembagaForGuru, jpPerHariForGuru, jpDiajarPeriode } from '@/utils/bebanMengajar'
-// v.1.2.10: simulasi plafon bisyaroh (hadir penuh) — memakai ulang barisBisyaroh.
+// v.1.3.0: simulasi plafon bisyaroh (hadir penuh) — memakai ulang barisBisyaroh.
 import {
   hariEfektif,
   tanggalBulanPenuh,
@@ -1534,7 +1534,7 @@ function tanggalHadirSekolah(guruId, periode, shiftIds) {
   return out
 }
 
-// ── v.1.2.10 · SIMULASI PLAFON BISYAROH ────────────────────────────────────────
+// ── v.1.3.0 · SIMULASI PLAFON BISYAROH ────────────────────────────────────────
 // Kyai (6 Agu 2026): "saya hanya ingin membuat perhitungan sebelum memutuskan isi
 //   nominal bisyaroh, karena dari yayasan ada perubahan." Jadi ini alat coba-coba:
 //   nominal diketik sementara, TAK ADA yang disimpan dan tak ada slip yang terbit.

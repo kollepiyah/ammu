@@ -733,7 +733,7 @@
               </span>
               <span v-else class="text-[var(--text-tertiary)]">—</span>
             </div>
-            <!-- v.1.2.6: Saldo berjalan. v.1.2.10 (Kyai, 6 Agu 2026): tombol aksi
+            <!-- v.1.2.6: Saldo berjalan. v.1.3.0 (Kyai, 6 Agu 2026): tombol aksi
                  DIPINDAH ke kolomnya sendiri. Dulu angka saldo + sampai 4 tombol berdesakan
                  dalam 150px, dan karena angkanya `whitespace-nowrap` ia meluber ke KIRI
                  menimpa kolom Keluar — terbaca sebagai "Rp 370.000" bertindih
