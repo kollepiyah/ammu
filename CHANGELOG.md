@@ -10,6 +10,23 @@ naik satu tiap rilis. Entri lama memakai skema lama `v.{nomor-urut}.{MMDDtahunmu
 
 ## [Unreleased]
 
+### Added (Baru)
+
+- **Input Absensi Harian bisa memilih tanggal.** Formnya dulu terkunci di hari ini
+  (`todayJakarta()` mati, tanpa pemilih tanggal), jadi satu-satunya cara mengoreksi hari
+  yang sudah lewat adalah memutar lewat tab Impor Fingerprint dengan berkas Excel — tak
+  wajar untuk pekerjaan sesering ini. Kini ada pemilih tanggal dengan batas atas hari
+  ini; **mengisi masa depan ditolak untuk siapa pun** (absennya belum terjadi), dan
+  **mundur ke hari lampau dibatasi super admin**, sejalan dengan kebijakan hapus absen.
+  Saat tanggal lampau dipilih muncul spanduk peringatan supaya tak ada yang mengisi
+  kemarin sambil mengira sedang mengisi hari ini.
+  ⚠️ Simpanan harian menimpa penuh baris yang sudah ada, jadi sebelum menulis baris
+  tanggal itu diambil dulu dari database dan tabrakannya dirinci di konfirmasi (nama,
+  shift, status & jam lama) — dengan peringatan lebih keras bila ada **izin/sakit/cuti**
+  yang keterangannya akan hilang. Kalau pemeriksaan itu sendiri gagal, penyimpanan
+  **dibatalkan**, bukan diteruskan. Penjagaan seketat ini karena baris absensi memberi
+  makan bisyaroh: menimpa izin yang sudah disetujui bukan salah tampilan, tapi salah uang.
+
 ### Planned
 
 - Capacitor Android first build + sideload APK
