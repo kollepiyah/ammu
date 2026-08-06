@@ -176,3 +176,10 @@ splash.duplicate-bak.png           # duplikat splash.png
 # rilis GitHub (app-version.json menunjuk ke sana). Biner ~6 MB, bukan sumber.
 *.apk
 *.aab
+
+# Keluaran tsc Electron — SELALU diregenerasi `npm run build` (tsc) sebelum
+# electron-builder mengemas (lihat skrip electron:publish / electron:make), jadi
+# melacaknya tak menambah apa pun. Yang ia tambahkan justru derau: pre-commit
+# memprettier-kan berkas ini, tsc menulisnya ulang tanpa format itu, dan `git status`
+# kotor terus-menerus padahal isinya identik.
+vue-app/electron/build/
