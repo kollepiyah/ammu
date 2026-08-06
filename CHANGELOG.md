@@ -10,6 +10,68 @@ naik satu tiap rilis. Entri lama memakai skema lama `v.{nomor-urut}.{MMDDtahunmu
 
 ## [Unreleased]
 
+### Tiga laporan Kyai (6 Agu 2026)
+
+⚠️ **URUTAN DEPLOY** (ada migrasi DB + edge function):
+
+1. `supabase db push` — tabel jejak `hiview_scan_log`.
+2. `supabase functions deploy hiview-absen --no-verify-jwt`.
+3. Deploy web **dari direktori utama** (worktree tak punya `vue-app/.env.local`).
+
+Setelah itu Kyai perlu **mengisi toleransi scan** di Pengaturan → Master Shift (defaultnya
+0 = perilaku lama, jadi tak ada yang berubah sampai diisi).
+
+#### Fixed (Perbaikan)
+
+- **Guru yang sudah scan tapi absennya tak masuk.** `deriveShift` hanya menerima scan yang
+  jatuh **persis** di `mulai`..`selesai`. Dengan window nyata pagi 06:00–12:00, guru yang
+  ceklok 05:45 (datang lebih awal) atau 17:30 (jauh setelah shift sore bubar) **tidak jadi
+  baris absen sama sekali** — hilang diam-diam sebagai angka "luar jam shift", lalu ikut
+  hilang dari bonus kehadiran. Master Shift kini punya dua angka per shift: **boleh scan
+  lebih awal** (menit sebelum `mulai`, tetap dihitung *hadir*) dan **masih masuk setelah
+  selesai** (menit sesudah `selesai`, dihitung *terlambat*). Derivasinya jadi dua lintasan —
+  window inti dulu, toleransi belakangan — sehingga menyetel toleransi **tak pernah**
+  memindahkan absen yang selama ini sudah benar. Dialognya memperlihatkan window efektif
+  dan memperingatkan bila window melar sampai menyentuh jam shift lain. Cermin Deno
+  (mesin HiView) ikut diubah, dijaga tes pembanding 43.200 titik jam.
+  *Batas:* `fp_sync.py` (jalur Revo lama) tak mengenal dua angka ini — jalur itu wajib
+  lewat sync Ammu Desktop.
+- **Kolom Saldo di laporan buku induk tak sesuai filter.** Di laporan harian "kas umum ·
+  SDI · TUNAI" 3 Agu, 14 transaksi semuanya *masuk* tapi kolom Saldo justru **menurun**
+  dari Rp 6.230.000 ke Rp 2.130.000 sementara TOTAL bilang Rp 2.290.000. Sebabnya: baris
+  dicetak terbaru→terlama sedangkan saldo diakumulasi kronologis naik, dan saldonya diambil
+  dari **seluruh** ledger (semua lembaga, semua pos, tunai + transfer) tanpa ikut penyaring.
+  Saldo berjalan kini dihitung dari ledger yang sudah tersaring tapi tak dibatasi periode —
+  tanpa penyaring hasilnya sama persis dengan angka lama, dengan penyaring selisih antar
+  baris sama dengan nominal barisnya. Laporan bersusun **SALDO AWAL → transaksi kronologis
+  naik → SUBTOTAL cara bayar → TOTAL** (kolom saldonya = saldo akhir). Kartu "Saldo Akhir"
+  di layar ternyata berisi masuk − keluar periode saja; namanya dijujurkan jadi **"Selisih
+  Periode"**, dan saldo awal/akhir sesungguhnya tampil di barisnya sendiri memakai angka
+  yang sama dengan PDF.
+
+#### Added (Baru)
+
+- **Tab "Jejak Mesin" di Absensi Guru.** Edge `hiview-absen` membuang event di banyak titik
+  dan setiap pembuangan hanya jadi `console.log` yang tak bisa dibuka siapa pun di
+  pesantren — dari layar absensi, "mesin tak mengirim" dan "server menolak" terlihat sama
+  persis. Tabel `hiview_scan_log` kini merekam tiap scan + hasil keputusannya (`diterima` /
+  `pulang` / `luar_window` / `pin_tak_dikenal` / `izin_sakit` / `duplikat` / `bukan_absen` /
+  `waktu_tak_terbaca`). Tanggal yang **kosong sama sekali** = mesin memang tak mengirim,
+  jadi yang diperiksa jaringan mesin, bukan data guru. Menulis jejak tak pernah boleh
+  menggagalkan absennya; heartbeat mesin sengaja tak dicatat. RLS: baca = staf, hapus =
+  super_admin, tanpa policy tulis sama sekali (hanya edge yang boleh mengisi).
+- **Uang Saku: semua santri ma'had langsung tampil.** Daftar saldo dulu lahir sepenuhnya
+  dari mutasi, jadi santri yang belum pernah setor tak punya baris — satu-satunya jalan
+  menyetorkan uangnya lewat tombol Input Mutasi lalu mengetik namanya. Kini daftarnya
+  di-seed dari santri ma'had (kriteria sama persis dengan dropdown modal) dengan tombol
+  Setor/Tarik di tiap baris. Urutannya nama A–Z khusus mode uang saku supaya posisinya
+  tetap; saldo Rp 0 diredupkan.
+- **Tandai ulang Pos Dana untuk transaksi lama.** Filter Pos lahir 5 Agu, jadi transaksi
+  sebelumnya tak bertag dan Tabungan Wajib/Uang Buku lama ikut terbaca sebagai Kas Umum
+  (terlihat di berkas 3 Agu itu juga). Banner super_admin di Buku Induk merinci per pos
+  sebelum dijalankan, memakai jalur penandaan yang sama dengan POS, dan hanya menyentuh
+  baris yang belum bertag.
+
 ### Planned
 
 - Capacitor Android first build + sideload APK
