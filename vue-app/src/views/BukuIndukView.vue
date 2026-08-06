@@ -629,8 +629,8 @@
           :class="[
             'hidden md:grid gap-2 px-4 py-2 bg-slate-50 dark:bg-slate-700 text-[10px] uppercase font-bold text-[var(--text-secondary)] tracking-wider border-b border-[var(--border-subtle)]',
             isAdmin
-              ? 'md:grid-cols-[32px_88px_1fr_96px_96px_150px]'
-              : 'md:grid-cols-[88px_1fr_96px_96px_150px]'
+              ? 'md:grid-cols-[32px_88px_minmax(0,1fr)_120px_120px_132px_auto]'
+              : 'md:grid-cols-[88px_minmax(0,1fr)_120px_120px_132px_auto]'
           ]"
         >
           <span v-if="isAdmin" class="text-center">
@@ -647,6 +647,7 @@
           <span class="text-right">Masuk</span>
           <span class="text-right">Keluar</span>
           <span class="text-right">Saldo</span>
+          <span aria-hidden="true"></span>
         </div>
         <div class="divide-y divide-slate-100 dark:divide-slate-700">
           <div
@@ -655,8 +656,8 @@
             :class="[
               'px-4 py-2.5 md:grid gap-2 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition',
               isAdmin
-                ? 'md:grid-cols-[32px_88px_1fr_96px_96px_150px]'
-                : 'md:grid-cols-[88px_1fr_96px_96px_150px]'
+                ? 'md:grid-cols-[32px_88px_minmax(0,1fr)_120px_120px_132px_auto]'
+                : 'md:grid-cols-[88px_minmax(0,1fr)_120px_120px_132px_auto]'
             ]"
           >
             <span
@@ -714,7 +715,7 @@
               >
               <span
                 v-if="b.tipe === 'masuk' || Number(b.masuk) > 0"
-                class="text-sm font-black text-emerald-700"
+                class="text-sm font-black text-emerald-700 whitespace-nowrap"
               >
                 {{ fmtRp(b.masuk || b.nominal) }}
               </span>
@@ -726,20 +727,27 @@
               >
               <span
                 v-if="b.tipe === 'keluar' || Number(b.keluar) > 0"
-                class="text-sm font-black text-rose-700"
+                class="text-sm font-black text-rose-700 whitespace-nowrap"
               >
                 {{ fmtRp(b.keluar || b.nominal) }}
               </span>
               <span v-else class="text-[var(--text-tertiary)]">—</span>
             </div>
-            <!-- v.1.2.6: Saldo berjalan + tombol aksi (struk/edit/hapus) -->
-            <div class="mt-1 md:mt-0 md:text-right flex items-center md:justify-end gap-2">
+            <!-- v.1.2.6: Saldo berjalan. v.1.2.10 (Kyai, 6 Agu 2026): tombol aksi
+                 DIPINDAH ke kolomnya sendiri. Dulu angka saldo + sampai 4 tombol berdesakan
+                 dalam 150px, dan karena angkanya `whitespace-nowrap` ia meluber ke KIRI
+                 menimpa kolom Keluar — terbaca sebagai "Rp 370.000" bertindih
+                 "Rp -14.759.000". Saldo bisa MINUS + berdigit banyak, jadi kolomnya memang
+                 tak boleh berbagi tempat dengan tombol. -->
+            <div class="mt-1 md:mt-0 md:text-right">
               <span class="md:hidden text-[10px] text-[var(--text-tertiary)] font-bold mr-1"
                 >Saldo:</span
               >
               <span class="text-sm font-bold text-cyan-700 dark:text-cyan-400 whitespace-nowrap">
                 {{ fmtRp(saldoOf(b)) }}
               </span>
+            </div>
+            <div class="mt-1 md:mt-0 flex items-center md:justify-end gap-1 shrink-0">
               <button
                 v-if="b.sumber === 'pos_santri' && b.trx_id"
                 type="button"
