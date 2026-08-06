@@ -273,7 +273,10 @@
             <span class="text-[var(--text-secondary)]">Kontak</span
             ><span class="font-semibold">WA: {{ AUTHOR.wa }}</span>
           </div>
-          <div class="flex justify-between border-b border-[var(--border-subtle)] py-2">
+          <div
+            v-if="AUTHOR.org && AUTHOR.org !== AUTHOR.nama"
+            class="flex justify-between border-b border-[var(--border-subtle)] py-2"
+          >
             <span class="text-[var(--text-secondary)]">Organization</span
             ><span class="font-semibold">{{ AUTHOR.org }}</span>
           </div>
@@ -388,7 +391,12 @@
             </div>
             <div>
               <div class="text-base font-black text-[var(--text-primary)]">{{ AUTHOR.nama }}</div>
-              <div class="text-xs text-[var(--text-secondary)]">{{ AUTHOR.org }}</div>
+              <div
+                v-if="AUTHOR.org && AUTHOR.org !== AUTHOR.nama"
+                class="text-xs text-[var(--text-secondary)]"
+              >
+                {{ AUTHOR.org }}
+              </div>
             </div>
           </div>
           <a
@@ -476,7 +484,11 @@ const auth = useAuthStore()
 const isSuperAdmin = computed(() => auth.sesiAktif?.role_sistem === 'super_admin')
 
 // v.99: kontak admin dari settings (editable/ACF) — fallback ke default.
-const DEFAULT_AUTHOR = { nama: 'Rahman Fanani', wa: '085331172477', org: 'Bakafrawi Project' }
+// v.1.2.10 (Kyai, 6 Agu 2026): Author = nama PROYEK, bukan nama orang — sejalan
+//   dengan "Powered By Bakafrawi Project" di layar login. Baris Organization jadi
+//   kembar karenanya, jadi ia hanya ditampilkan bila memang BERBEDA dari Author
+//   (mis. lembaga lain mengisi adminNama/adminOrg sendiri lewat Pengaturan Web).
+const DEFAULT_AUTHOR = { nama: 'Bakafrawi Project', wa: '085331172477', org: 'Bakafrawi Project' }
 const AUTHOR = computed(() => ({
   nama: settings.settings?.adminNama || DEFAULT_AUTHOR.nama,
   wa: settings.settings?.adminWa || DEFAULT_AUTHOR.wa,
@@ -809,31 +821,49 @@ async function resetFaq() {
   }
 }
 
+// ⚠️ DAFTAR MANUAL — tidak terhubung ke CHANGELOG.md, jadi ia TIDAK ikut naik saat
+//   versi dibump. Sempat tertinggal jauh (isinya berhenti di v.98 Juni 2026 sementara
+//   aplikasi sudah v.1.2.9). Kalau menambah rilis, tulis untuk PEMBACA PONDOK: apa yang
+//   berubah di layar mereka, bukan nama fungsi. Cukup beberapa rilis terakhir —
+//   riwayat lengkap ada di CHANGELOG.md untuk pengembang.
 const rilis = [
   {
-    versi: 'v.98',
-    tgl: 'Juni 2026',
+    versi: 'v.1.2.9',
+    tgl: 'Agustus 2026',
     items: [
-      'Antarmuka desktop bergaya Ribbon (Office/Windows 11).',
-      'Dasbor Home: statistik pendidikan + keuangan.',
-      'Tema gelap konsisten (palet slate).',
-      'Filter lembaga (Qiraati + Sekolah) jadi dropdown di Data Santri & Guru.',
-      'Pusat Bantuan kini tersedia di web & Android.',
-      'Perapian tanda tangan rapor & info kontak admin.'
+      'Toleransi scan per shift — guru yang datang lebih awal tak lagi terbaca alpa.',
+      'Tab "Jejak Mesin" di Absensi Guru: bukti scan sampai atau tidak ke server.',
+      'Kolom Saldo di laporan Buku Induk kini mengikuti penyaring yang diekspor.',
+      "Uang Saku menampilkan seluruh santri ma'had, tanpa lewat Input Mutasi dulu.",
+      'Login tak lagi gagal karena salah memilih tab Santri/Wali vs Guru/Pegawai.',
+      'Tombol unduh aplikasi Desktop diperbaiki (sempat membuka halaman kosong).'
     ]
   },
   {
-    versi: 'v.97',
-    tgl: 'Juni 2026',
-    items: ['Bisyaroh metode BMT/Cash + ekspor Laporan BMT.', 'Integrasi VA BMT PETA (kerangka).']
+    versi: 'v.1.2.8',
+    tgl: 'Agustus 2026',
+    items: [
+      'Perizinan yang disetujui tak lagi luput dari absensi.',
+      'Tampilan tak lagi terlihat "ke-zoom" di HP dengan ukuran font besar.',
+      'Pembaruan aplikasi Android bisa diunduh langsung tanpa menunggu Play Store.',
+      'Ekspor PDF harian untuk Tabungan.'
+    ]
   },
   {
-    versi: 'v.95',
-    tgl: 'Juni 2026',
+    versi: 'v.1.2.7',
+    tgl: 'Agustus 2026',
     items: [
-      'Generate tagihan khusus/infaq.',
-      'FCM push notification (Android).',
-      'Struk dot-matrix 9.5×11 (ESC/P raster).'
+      'Syahriyah gabungan: ngaji menempel ke syahriyah sekolah/pondok, tak tertagih dua kali.',
+      'Kas per lembaga di Buku Induk, Uang Pos, dan Tabungan.',
+      'Laporan PDF harian per lembaga, berkas tunai dan transfer terpisah.'
+    ]
+  },
+  {
+    versi: 'v.1.2.6',
+    tgl: 'Juli 2026',
+    items: [
+      "Jenis pembayaran bisa ditargetkan ke status santri (Non-mukim / Ma'had / Fullday).",
+      'Admin keuangan yang merangkap guru kini melihat kelasnya sendiri di menu Pendidikan.'
     ]
   }
 ]
