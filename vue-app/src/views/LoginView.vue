@@ -6,6 +6,7 @@ import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
 import { loginWithGoogle } from '@/services/authSupabase'
 import loginBg from '@/assets/loginBg.js'
+import { HALAMAN_RILIS, urlApk, urlInstallerDesktop, urlInstallerWin7 } from '@/utils/unduhan'
 
 // v.86.0526: full match legacy login — Google + Ingat Saya + Lupa Sandi + Copyright luar card
 const router = useRouter()
@@ -29,29 +30,20 @@ const bgStyle = computed(() => {
   return `background: url('${bg}') center/cover no-repeat;`
 })
 
-// v.21.115.0528: URL download app native (Android/iOS/Desktop)
-// Bisa di-override dari Pengaturan Web (settings.downloadAndroid, downloadIos, downloadDesktop)
-// Default ke GitHub Releases latest — admin tinggal ganti owner/repo
-const downloadAndroidUrl = computed(
-  () =>
-    settings.settings?.downloadAndroid ||
-    'https://github.com/kollepiyah/ammu/releases/latest/download/AmmuOnline.apk'
-)
-const downloadIosUrl = computed(
-  () =>
-    settings.settings?.downloadIos ||
-    'https://github.com/kollepiyah/ammu/releases/latest/download/AmmuOnline.ipa'
-)
+// v.21.115.0528: URL download app native (Android/Desktop)
+// Bisa di-override dari Pengaturan Web (settings.downloadAndroid, downloadDesktop)
+// Default ke GitHub Releases latest — lihat utils/unduhan.js
+// v.1.2.9: nama berkas installer memuat versi sejak `8d8acbe`, jadi tak boleh
+//   diketik manual lagi. `downloadIos` DIBUANG — cuma dideklarasikan, tak pernah
+//   dipakai di template, dan AmmuOnline.ipa tak pernah ada di satu rilis pun.
+const APP_VERSION = typeof __APP_VERSION__ === 'string' ? __APP_VERSION__ : ''
+const downloadAndroidUrl = computed(() => settings.settings?.downloadAndroid || urlApk())
 const downloadDesktopUrl = computed(
-  () =>
-    settings.settings?.downloadDesktop ||
-    'https://github.com/kollepiyah/ammu/releases/latest/download/AmmuOnline-Setup.exe'
+  () => settings.settings?.downloadDesktop || urlInstallerDesktop(APP_VERSION) || HALAMAN_RILIS
 )
 // v.95.0626: installer khusus Windows 7 (Electron 22)
 const downloadDesktopWin7Url = computed(
-  () =>
-    settings.settings?.downloadDesktopWin7 ||
-    'https://github.com/kollepiyah/ammu/releases/latest/download/AmmuOnline-Setup-Win7.exe'
+  () => settings.settings?.downloadDesktopWin7 || urlInstallerWin7(APP_VERSION) || HALAMAN_RILIS
 )
 const showDesktopMenu = ref(false)
 
@@ -511,7 +503,9 @@ function bukaWaAdmin() {
       <p class="text-[11px] text-white/90 font-bold uppercase tracking-wider drop-shadow">
         © {{ new Date().getFullYear() }} Pondok Pesantren Mambaul Ulum
       </p>
-      <p class="text-[11px] text-white/80 font-bold tracking-widest mt-1 drop-shadow">v.1.2.8</p>
+      <p class="text-[11px] text-white/80 font-bold tracking-widest mt-1 drop-shadow">
+        v.{{ APP_VERSION }}
+      </p>
     </div>
   </div>
 </template>

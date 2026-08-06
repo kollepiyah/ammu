@@ -1,6 +1,14 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { fileURLToPath, URL } from 'node:url'
+import { readFileSync } from 'node:fs'
+
+// v.1.2.9: versi app tersedia di kode sebagai __APP_VERSION__ — dulu diketik ulang
+//   sebagai teks di LoginView, dan nama berkas installer di URL unduhan ikut
+//   ditebak manual. Satu sumber = satu titik bump yang berkurang.
+const pkg = JSON.parse(
+  readFileSync(fileURLToPath(new URL('./package.json', import.meta.url)), 'utf8')
+)
 
 // Vue 3 SPA — Portal MU full migration
 // Dev: npm run dev  → http://localhost:5174
@@ -10,6 +18,9 @@ export default defineConfig({
   // ammuonline.web.app/ → public/vue/ → base path '/' (SPA at root)
   // Legacy site (portal-mambaul-ulum.web.app) tidak include vue/ lagi (ignored)
   base: '/',
+  define: {
+    __APP_VERSION__: JSON.stringify(pkg.version)
+  },
   plugins: [vue()],
   resolve: {
     alias: {

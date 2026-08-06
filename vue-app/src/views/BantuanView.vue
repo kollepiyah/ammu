@@ -465,6 +465,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
 import { useDesktopShell } from '@/composables/useDesktopShell'
 import { useAndroidUpdate } from '@/composables/useAndroidUpdate'
+import { urlApk } from '@/utils/unduhan'
 
 const route = useRoute()
 const router = useRouter()
@@ -540,7 +541,8 @@ const isAndroid = (() => {
 //   sama dengan feed pembaruan desktop; sumber versinya /app-version.json (ikut deploy
 //   web). Di aplikasi Android tombolnya jadi "Cek Pembaruan" (lebih tepat daripada
 //   mengunduh buta — app tahu versinya sendiri).
-const APK_URL = 'https://github.com/kollepiyah/ammu/releases/latest/download/AmmuOnline.apk'
+// v.1.2.9: satu sumber nama berkas rilis — lihat utils/unduhan.js
+const APK_URL = urlApk()
 const APK_RILIS_URL = 'https://github.com/kollepiyah/ammu/releases'
 const androidUpdate = useAndroidUpdate()
 const bisaCekApk = androidUpdate.tersedia()

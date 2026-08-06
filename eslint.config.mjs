@@ -61,7 +61,9 @@ export default [
       globals: {
         ...globals.browser,
         ...globals.node,
-        ...globals.es2021
+        ...globals.es2021,
+        // v.1.2.9: disuntik Vite (`define`) dari vue-app/package.json.
+        __APP_VERSION__: 'readonly'
       }
     },
     rules: {
