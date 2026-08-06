@@ -170,3 +170,9 @@ vue-app/src.minimal-backup-v21.32/ # cadangan src v21.32
 backup-live/                       # cadangan berkas live lama
 tmp_patch_bi.py                    # skrip patch sekali-pakai
 splash.duplicate-bak.png           # duplikat splash.png
+
+# === 6 Agu 2026: artefak rilis Android — JANGAN masuk repo =====================
+# AmmuOnline.apk = "Signed, universal APK" unduhan Play Console, dipakai untuk
+# rilis GitHub (app-version.json menunjuk ke sana). Biner ~6 MB, bukan sumber.
+*.apk
+*.aab

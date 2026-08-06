@@ -30,6 +30,8 @@ electron_1.contextBridge.exposeInMainWorld('electronAPI', {
   checkUpdate: () => electron_1.ipcRenderer.invoke('update:check'),
   downloadUpdate: () => electron_1.ipcRenderer.invoke('update:download'),
   installUpdate: () => electron_1.ipcRenderer.invoke('update:install'),
+  // v.1.2.8: versi terpasang + versi Electron, untuk pesan diagnosa saat update gagal
+  updateInfo: () => electron_1.ipcRenderer.invoke('update:info'),
   onUpdateStatus: (cb) => electron_1.ipcRenderer.on('update:status', (_e, s) => cb(s)),
   onUpdateProgress: (cb) => electron_1.ipcRenderer.on('update:progress', (_e, p) => cb(p)),
   // Fingerprint sync (Fase 1): baca att_log dari Fingerspot Personnel (MySQL throwaway read-only)
