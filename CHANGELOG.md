@@ -12,6 +12,15 @@ naik satu tiap rilis. Entri lama memakai skema lama `v.{nomor-urut}.{MMDDtahunmu
 
 ### Added (Baru)
 
+- **Simulasi Plafon Bisyaroh** di halaman Bisyaroh. Nominal bisyaroh sedang ditinjau
+  ulang, dan sebelumnya tak ada cara melihat dampak biayanya selain menyimpan setelan
+  lalu menerbitkan slip — yaitu mengubah data sungguhan hanya untuk bertanya "kalau
+  tarifnya sekian, sebulan keluar berapa?". Kini tarif bisa diketik sementara di layar
+  dan totalnya langsung terlihat per jenis maupun keseluruhan, **tanpa menulis apa pun**
+  — tak ke Pengaturan, tak ke slip. Andaiannya **hadir penuh** (semua guru hadir dan
+  tepat waktu di tiap hari efektif), jadi angkanya **plafon**: batas atas untuk menyusun
+  anggaran, bukan tebakan realisasi. Perhitungannya memakai ulang mesin yang sama dengan
+  slip sungguhan, supaya aturan scope dan cara hitung tak pernah berpisah diam-diam.
 - **Input Absensi Harian bisa memilih tanggal.** Formnya dulu terkunci di hari ini
   (`todayJakarta()` mati, tanpa pemilih tanggal), jadi satu-satunya cara mengoreksi hari
   yang sudah lewat adalah memutar lewat tab Impor Fingerprint dengan berkas Excel — tak
