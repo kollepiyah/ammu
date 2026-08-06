@@ -184,9 +184,26 @@ Saat isi IARC questionnaire di Play Console, jawaban template:
 Tempel PERSIS teks di bawah ini. **Bahasa Inggris** — reviewer Google bukan penutur
 bahasa Indonesia, dan label tab "Santri/Wali" vs "Guru/Pegawai" tak bermakna bagi mereka.
 
-> ⚠️ **Kolom ini dibatasi 500 karakter.** Teks di bawah = **355 karakter**, muat dengan
-> lega. Kalau nanti diedit, hitung ulang — versi panjang bergaya langkah 1-5 pernah
-> tembus 724 karakter dan ditolak kolomnya.
+> ⚠️ **Kolom ini dibatasi 500 karakter.** Kalau diedit, hitung ulang — versi panjang
+> bergaya langkah 1-5 pernah tembus 724 karakter dan ditolak kolomnya.
+
+> 🔴 **PILIH TEKS SESUAI BUILD YANG SEDANG DITINJAU.** Sejak **vc129** aplikasi menerima
+> akun ini di **tab mana pun** (cadangan lintas-jalur di `resolveLoginLintasJalur`,
+> `services/authSupabase.js` + `tests/unit/loginLintasJalur.test.js`). Selama yang
+> ditinjau masih **vc128 ke bawah**, syarat tab MASIH berlaku — pakai teks lama.
+
+**Untuk build vc129 ke atas** (218 karakter):
+
+```
+Username: demoplay
+Password: 1234
+
+Type exactly as shown - no "@", no domain, no phone number. Either tab on the login screen works. Then tap "MASUK" (Sign in).
+
+Full super-admin access to all features. Internet connection required.
+```
+
+**Untuk build vc128 ke bawah** (355 karakter) — tab WAJIB disebut:
 
 ```
 IMPORTANT: the login screen has two tabs. You MUST tap the RIGHT tab "Guru/Pegawai" (Staff). The LEFT tab "Santri/Wali" will NOT accept this account.
@@ -197,19 +214,6 @@ Password: 1234
 Type it exactly as shown - do NOT add "@" or a domain, and do NOT use a phone number. Then tap "MASUK" (Sign in).
 
 Full super-admin access. Internet connection required.
-```
-
-Kalau perlu lebih pendek lagi (mis. harus menambah keterangan lain), versi **295 karakter**:
-
-```
-The login screen has TWO TABS. Tap the RIGHT tab "Guru/Pegawai" (Staff). The LEFT tab "Santri/Wali" will NOT accept this account.
-
-Username: demoplay
-Password: 1234
-
-Type exactly as shown - no "@", no domain, no phone number. Then tap "MASUK" (Sign in).
-
-Full super-admin access to all features.
 ```
 
 ### Kenapa 3× ditolak "Kredensial login salah"
@@ -235,6 +239,15 @@ Yang gagal adalah **cara reviewer mengetikkannya**. Hasil uji tiap skenario:
 jadi tampil di **kiri**. Reviewer wajar mencoba tab pertama yang terlihat, gagal, lalu
 menyimpulkan kredensialnya salah — persis kalimat penolakan Google.
 
+> **Ditutup di vc129 (6 Agu 2026).** Menulis instruksi tab ternyata tak cukup: penolakan
+> berulang lagi 6 Agu meski teks di atas sudah terpasang dan sudah dikirim untuk
+> ditinjau. Wajar — pemeriksa otomatis Play membaca kolom username/sandi, bukan kolom
+> instruksi. Sejak vc129 tab yang keliru **tak lagi mematikan login**: kalau jalur
+> terpilih tak menemukan apa pun, aplikasi mengulang tanpa penyaring jalur. Pemisahan
+> WA-ganda (alasan tab ini ada) tetap utuh karena kasus itu selalu ketemu di jalur
+> terpilih. Diverifikasi ke server: `resolve_login('demoplay','santri')` = `null`
+> sedangkan `resolve_login('demoplay', null)` = akun guru yang benar.
+
 **Tersangka kedua = format nomor WA.** Kalau nomor ditulis rapi ala internasional
 (`+62 857-1047-7372`), reviewer mengetiknya apa adanya dan PASTI gagal — sistem hanya
 menerima `085710477372`. Karena itu instruksi di atas **sengaja tidak menyebut nomor WA
@@ -247,6 +260,9 @@ sama sekali**; cukup username `demoplay`.
 - Kalau DB Supabase di-reset, **seed ulang** akun ini (guru row + auth signUp + profile
   super_admin), lalu uji login sebelum submit.
 - Kalau nanti tab login diubah urutan/labelnya, **teks di atas wajib ikut diperbarui**.
+- Kalau cadangan lintas-jalur dicabut, **kembalikan teks versi vc128** — instruksi yang
+  menjanjikan "either tab works" pada build yang tak mendukungnya lebih buruk daripada
+  tak ada instruksi sama sekali.
 
 ---
 

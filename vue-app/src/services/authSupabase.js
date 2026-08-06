@@ -55,12 +55,40 @@ function _isInvalidCred(error) {
 }
 
 /**
+ * Resolusi login dengan CADANGAN lintas-jalur (v.1.2.9).
+ *
+ * LATAR: sejak v.111 layar login punya dua tab, dan tab yang dipilih dikirim
+ *   sebagai `p_source` — gunanya memisahkan satu nomor WA yang dipakai guru yang
+ *   SEKALIGUS wali santri. Efek sampingnya: memilih tab yang keliru bukan sekadar
+ *   merepotkan, tapi menghasilkan "tidak ditemukan" untuk akun yang jelas ADA.
+ *   Itu yang berulang kali dibaca peninjau Google Play sebagai "kredensial salah"
+ *   (lihat PLAYSTORE-LISTING.md §9), dan pemeriksa otomatis memang tak membaca
+ *   instruksi tab yang kita tulis di kolom Detail login.
+ *
+ * ATURAN: cadangan HANYA dipakai ketika jalur terpilih tak menemukan APA PUN.
+ *   Kalau jalur terpilih menemukan sesuatu, hasilnya dipakai apa adanya — jadi
+ *   pemisahan WA-ganda yang jadi alasan tab itu ada tetap utuh, karena kasus itu
+ *   selalu ketemu di jalur terpilih.
+ *
+ * BUKAN kelonggaran hak: identitas & peran tetap dibangun server-side dari
+ *   `profiles` (buildSesi), bukan dari tab yang diklik. Memakai `p_source: null`
+ *   pun tak membuka apa-apa — anon memang boleh memanggil resolve_login begitu.
+ *
+ * `resolver` disuntikkan supaya keputusannya bisa diuji tanpa jaringan.
+ */
+export async function resolveLoginLintasJalur(input, source = null, resolver = resolveLogin) {
+  const utama = await resolver(input, source)
+  if (utama || !source) return utama
+  return (await resolver(input, null)) || null
+}
+
+/**
  * loginUnified — resolve -> signIn -> (lazy) signUp. Return { source, user, session }.
  * Lempar error kode 'auth/not-found' | 'auth/inactive' | 'auth/wrong-password'.
  */
 export async function loginUnified(input, password, source = null) {
   _ensure()
-  const info = await resolveLogin(input, source)
+  const info = await resolveLoginLintasJalur(input, source)
   if (!info) {
     const e = new Error(
       source === 'santri'
