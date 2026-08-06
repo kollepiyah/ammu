@@ -550,6 +550,35 @@
         </button>
       </div>
 
+      <!-- Kyai 6 Agu 2026: transaksi sebelum fitur Pos (5 Agu) tak bertag, jadi Tabungan
+           Wajib & Uang Buku lama ikut terbaca sebagai Kas Umum. Banner ini hilang sendiri
+           begitu tak ada lagi yang perlu ditandai. -->
+      <div
+        v-if="isAdmin && kandidatRetagPos.length > 0"
+        class="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-2xl px-4 py-3 flex items-center justify-between gap-2 flex-wrap"
+      >
+        <div>
+          <p class="text-xs font-bold text-indigo-800 dark:text-indigo-300">
+            <i class="fas fa-tags mr-1"></i>{{ kandidatRetagPos.length }} transaksi lama belum
+            bertag Pos Dana — ikut terhitung sebagai Kas Umum
+          </p>
+          <p class="text-[10px] text-indigo-700/80 dark:text-indigo-400 mt-0.5">
+            <span v-for="(r, i) in ringkasRetagPos" :key="r.pos">
+              <span v-if="i">&nbsp;·&nbsp;</span>{{ r.label }}: {{ r.jumlah }}
+            </span>
+          </p>
+        </div>
+        <button
+          type="button"
+          :disabled="retagBerjalan"
+          class="text-[11px] font-black bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white px-3 py-1.5 rounded-lg"
+          @click="tandaiUlangPos"
+        >
+          <i :class="['fas mr-1', retagBerjalan ? 'fa-spinner fa-spin' : 'fa-tags']"></i>
+          {{ retagBerjalan ? 'Menandai…' : 'Tandai ulang pos' }}
+        </button>
+      </div>
+
       <!-- Loading -->
       <div v-if="loading" class="bg-[var(--bg-card)] rounded-2xl p-10 text-center">
         <i class="fas fa-spinner fa-spin text-cyan-500 text-3xl mb-3"></i>
@@ -779,6 +808,7 @@ import {
   subscribeDoc,
   setOne,
   updateOne,
+  mergeOne,
   deleteOne,
   queryColl,
   serverTimestamp
@@ -802,10 +832,16 @@ import {
 } from '@/utils/kasLembaga'
 import { buildListPdf, buildKopFromSettings } from '@/utils/pdfBuilder'
 // Pos dana (Uang Kegiatan/Buku/Tabungan Wajib) — sumber tunggal aturan & labelnya.
-import { cocokPos, opsiFilterPos, labelFilterPos } from '@/utils/posDana'
+import { cocokPos, opsiFilterPos, labelFilterPos, posDari, labelPos } from '@/utils/posDana'
 // Saldo berjalan & susunan baris laporan — dipisah ke util murni supaya bisa diuji
 //   (kolom Saldo yang lepas dari filter adalah keluhan Kyai 6 Agu 2026).
-import { petaSaldoBerjalan, saldoAwalSebelum, bangunBarisLaporan } from '@/utils/bukuIndukLaporan'
+import {
+  petaSaldoBerjalan,
+  saldoAwalSebelum,
+  bangunBarisLaporan,
+  nominalMasuk,
+  nominalKeluar
+} from '@/utils/bukuIndukLaporan'
 import { isSuperAdmin } from '@/utils/roleScope'
 import { writeAuditLog } from '@/utils/auditLog'
 // v.21.103.0527: reprint struk dari BukuInduk untuk record sumber pos_santri
@@ -1050,6 +1086,103 @@ async function bersihkanResidu() {
   if (fail > 0) toast.warning(`${ok} residu dihapus, ${fail} gagal — cek console`)
   else toast.success(`${ok} entri residu dibersihkan`)
 }
+// ── Tandai ulang Pos Dana untuk transaksi lama (Kyai, 6 Agu 2026) ────────────
+// Filter Pos baru lahir 5 Agu, sedangkan transaksi sebelum itu ditulis tanpa tag `pos`.
+// Akibatnya baris Tabungan Wajib/Uang Buku/Uang Kegiatan yang lama ikut terbaca sebagai
+// "Kas Umum" — laporan kas umum jadi tercampur dana terikat, persis yang terlihat di
+// berkas 3 Agu yang Kyai kirim.
+//
+// Penandaan memakai jalur yang SAMA dengan POS: kategori baris dicocokkan ke label jenis
+// pembayaran, lalu pos jenis itu yang dipakai. Jadi hasilnya tak bisa berbeda dari yang
+// ditulis kasir hari ini. Baris yang SUDAH bertag tak pernah disentuh.
+const petaPosJenis = computed(() => {
+  const peta = new Map()
+  for (const j of settingsStore.settings?.keuTagihanJenis || []) {
+    const label = String(j?.label || '')
+      .trim()
+      .toLowerCase()
+    const pos = String(j?.pos || '').trim()
+    if (label && pos) peta.set(label, pos)
+  }
+  return peta
+})
+
+// Baris tanpa tag pos yang kategorinya cocok dengan jenis ber-pos → kandidat.
+const kandidatRetagPos = computed(() => {
+  if (!isAdmin.value || petaPosJenis.value.size === 0) return []
+  const out = []
+  for (const b of bukuRaw.value) {
+    if (posDari(b)) continue
+    const kat = String(b.kategori || '')
+      .trim()
+      .toLowerCase()
+    const pos = kat && petaPosJenis.value.get(kat)
+    if (pos) out.push({ baris: b, pos })
+  }
+  return out
+})
+
+// Rincian per pos untuk pratinjau — Kyai harus tahu APA yang akan berubah sebelum
+// menyetujui, bukan cuma jumlah barisnya.
+const ringkasRetagPos = computed(() => {
+  const per = new Map()
+  for (const { baris, pos } of kandidatRetagPos.value) {
+    if (!per.has(pos)) per.set(pos, { pos, label: labelPos(pos), jumlah: 0, nominal: 0 })
+    const r = per.get(pos)
+    r.jumlah++
+    r.nominal += nominalMasuk(baris) - nominalKeluar(baris)
+  }
+  return [...per.values()].sort((a, b) => b.jumlah - a.jumlah)
+})
+
+const retagBerjalan = ref(false)
+async function tandaiUlangPos() {
+  if (!isAdmin.value || retagBerjalan.value) return
+  const kandidat = kandidatRetagPos.value
+  if (!kandidat.length) {
+    toast.info('Tidak ada transaksi lama yang perlu ditandai.')
+    return
+  }
+  const rincian = ringkasRetagPos.value
+    .map((r) => `  • ${r.label}: ${r.jumlah} baris (${fmtRp(r.nominal)})`)
+    .join('\n')
+  if (
+    !confirm(
+      `Tandai ulang Pos Dana untuk ${kandidat.length} transaksi lama?\n\n${rincian}\n\n` +
+        'Baris yang sudah punya pos TIDAK disentuh, dan nominalnya tak diubah sama sekali — ' +
+        'yang ditambahkan hanya tag pos, supaya laporan Kas Umum tak lagi tercampur dana terikat.'
+    )
+  )
+    return
+  retagBerjalan.value = true
+  let ok = 0
+  let fail = 0
+  try {
+    for (const { baris, pos } of kandidat) {
+      try {
+        // mergeOne, BUKAN setOne: setOne menimpa seluruh baris tanpa merge dan akan
+        // membuang kolom lain (nominal, keterangan, trx_id) dari transaksi keuangan riil.
+        await mergeOne('keuangan_buku_induk', String(baris.id), { pos })
+        ok++
+      } catch (e) {
+        fail++
+        console.warn('[tandaiUlangPos]', baris.id, e.message)
+      }
+    }
+    await writeAuditLog({
+      operator: auth.sesiAktif?.nama || auth.sesiAktif?.guru || 'Admin',
+      action: 'retag_pos_dana',
+      target: 'keuangan_buku_induk',
+      ids: kandidat.map(({ baris }) => String(baris.id)),
+      detail: { ok, fail, per_pos: ringkasRetagPos.value }
+    })
+    if (fail > 0) toast.warning(`${ok} transaksi ditandai, ${fail} gagal — cek console`)
+    else toast.success(`${ok} transaksi lama kini bertag pos`)
+  } finally {
+    retagBerjalan.value = false
+  }
+}
+
 const inputForm = reactive({
   tanggal: todayJakarta(),
   tipe: 'masuk',
