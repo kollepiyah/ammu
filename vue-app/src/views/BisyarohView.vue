@@ -315,6 +315,105 @@
           v-else
           class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm space-y-3"
         >
+          <!-- v.1.2.10: SIMULASI PLAFON — coba-coba nominal tanpa menyimpan apa pun. -->
+          <details
+            class="rounded-xl border border-amber-300/60 bg-amber-50/60 dark:bg-amber-900/20"
+          >
+            <summary
+              class="cursor-pointer select-none px-3 py-2 text-sm font-black text-amber-900 dark:text-amber-200"
+            >
+              <i class="fas fa-calculator mr-2"></i>Simulasi Plafon Bisyaroh
+              <span class="font-bold text-[11px]">— coba nominal, tak ada yang disimpan</span>
+            </summary>
+            <div class="px-3 pb-3 space-y-3">
+              <p class="text-[11px] text-amber-900/90 dark:text-amber-200/90 leading-relaxed">
+                Andaian: <b>semua guru hadir penuh &amp; tepat waktu</b> di tiap hari efektif
+                (Senin–Sabtu, di luar libur) sepanjang
+                <b>{{ BULAN_NAMES[bulan - 1] }} {{ tahun }}</b
+                >. Jadi angkanya <b>plafon</b> — biaya tertinggi yang mungkin; realisasi hampir
+                selalu lebih rendah. Ubah nominal di bawah untuk melihat dampaknya; menutup halaman
+                mengembalikan semuanya.
+              </p>
+              <div class="overflow-x-auto">
+                <table class="w-full text-xs">
+                  <thead class="text-[10px] uppercase text-[var(--text-secondary)]">
+                    <tr class="border-b border-amber-300/50">
+                      <th class="text-left py-1.5">Jenis</th>
+                      <th class="text-right py-1.5">Guru</th>
+                      <th class="text-right py-1.5">Pengali</th>
+                      <th class="text-right py-1.5">Nominal</th>
+                      <th class="text-right py-1.5">Subtotal / bulan</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr
+                      v-for="j in simJenisAsli"
+                      :key="'sim-' + j.id"
+                      class="border-b border-amber-200/40"
+                    >
+                      <td class="py-1.5 pr-2">
+                        <span class="font-bold text-[var(--text-primary)]">{{ j.label }}</span>
+                        <span class="ml-1 text-[10px] text-[var(--text-tertiary)]">{{
+                          hitunganLabel(j.hitungan)
+                        }}</span>
+                      </td>
+                      <td class="text-right tabular-nums">
+                        {{ simBaris(j.id)?.guru ?? 0 }}
+                      </td>
+                      <td class="text-right tabular-nums">
+                        {{ j.hitungan === 'flat' ? '—' : (simBaris(j.id)?.qty ?? 0) }}
+                      </td>
+                      <td class="text-right">
+                        <input
+                          v-model="simNominal[j.id]"
+                          type="number"
+                          min="0"
+                          step="500"
+                          :placeholder="String(j.nominal || 0)"
+                          class="w-28 px-2 py-1 text-right rounded border border-amber-300 bg-white dark:bg-slate-800 text-[var(--text-primary)] outline-none"
+                        />
+                      </td>
+                      <td class="text-right font-black tabular-nums whitespace-nowrap">
+                        {{ fmtRp(simBaris(j.id)?.subtotal ?? 0) }}
+                      </td>
+                    </tr>
+                  </tbody>
+                  <tfoot>
+                    <tr class="border-t-2 border-amber-400">
+                      <td class="py-2 font-black text-[var(--text-primary)]">
+                        TOTAL PLAFON / BULAN
+                      </td>
+                      <td class="text-right text-[10px] text-[var(--text-secondary)]">
+                        {{ simHasil.guruKena }} guru
+                      </td>
+                      <td></td>
+                      <td></td>
+                      <td
+                        class="text-right text-base font-black text-amber-900 dark:text-amber-200 whitespace-nowrap"
+                      >
+                        {{ fmtRp(simHasil.total) }}
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+              <div class="flex items-center justify-between gap-2 flex-wrap">
+                <p class="text-[10px] text-[var(--text-tertiary)] italic">
+                  <i class="fas fa-circle-info mr-1"></i>Jenis bernominal 0 tak dihitung — belum
+                  diisi bukan berarti gratis.
+                </p>
+                <button
+                  v-if="simAdaUbahan"
+                  type="button"
+                  class="text-[11px] font-bold px-3 py-1.5 rounded-lg bg-amber-200 dark:bg-amber-800 text-amber-900 dark:text-amber-100"
+                  @click="simReset"
+                >
+                  <i class="fas fa-rotate-left mr-1"></i>Kembalikan ke nominal tersimpan
+                </button>
+              </div>
+            </div>
+          </details>
+
           <p class="text-sm font-black text-[var(--text-primary)]">
             <i class="fas fa-users text-emerald-600 mr-2"></i>Bulk Generate Slip Bisyaroh
           </p>
@@ -768,13 +867,21 @@ import {
   jenisBisyarohList,
   barisBisyaroh,
   refsUntukScope,
-  ringkasSlip
+  ringkasSlip,
+  HITUNGAN_OPTIONS
 } from '@/utils/bisyarohScope'
 import { shiftsForGuru } from '@/utils/shiftDerive'
 import { shiftLabelOf, shiftList } from '@/utils/shiftMaster'
 import { materialisasiHadirIkut } from '@/utils/absensiMaterialize'
 import { guruAktifSaja } from '@/utils/guruScope' // v.1.2.0: sumber tunggal penyaring status guru
 import { jpByLembagaForGuru, jpPerHariForGuru, jpDiajarPeriode } from '@/utils/bebanMengajar'
+// v.1.2.10: simulasi plafon bisyaroh (hadir penuh) — memakai ulang barisBisyaroh.
+import {
+  hariEfektif,
+  tanggalBulanPenuh,
+  simulasiBisyaroh,
+  terapkanNominal
+} from '@/utils/simulasiBisyaroh'
 import { buildLiburScope, liburKenaLembaga } from '@/utils/liburScope' // v.1.2.3: libur per lembaga
 import { tanggalRentang } from '@/utils/absensiRekap'
 import { useKegiatan } from '@/composables/useKegiatan'
@@ -1406,6 +1513,96 @@ function tanggalHadirSekolah(guruId, periode, shiftIds) {
     out.add(tgl.slice(0, 10))
   }
   return out
+}
+
+// ── v.1.2.10 · SIMULASI PLAFON BISYAROH ────────────────────────────────────────
+// Kyai (6 Agu 2026): "saya hanya ingin membuat perhitungan sebelum memutuskan isi
+//   nominal bisyaroh, karena dari yayasan ada perubahan." Jadi ini alat coba-coba:
+//   nominal diketik sementara, TAK ADA yang disimpan dan tak ada slip yang terbit.
+//
+// Andaian (pilihan Kyai): setiap guru hadir di SETIAP hari efektif shift-nya dan
+//   selalu tepat waktu → hasilnya PLAFON, biaya tertinggi yang mungkin. Realisasi
+//   hampir selalu lebih rendah; angka ini untuk menyusun anggaran, bukan menebak.
+const simNominal = ref({}) // { [jenis_id]: nominal coba-coba } — hidup di layar saja
+const simPeriode = computed(() => `${tahun.value}-${String(bulan.value).padStart(2, '0')}`)
+
+// Kembar `ctxGuru`, tapi kuantitasnya dari HARI EFEKTIF, bukan dari absensi.
+function ctxGuruPenuh(g, periode) {
+  const s = settingsStore.settings || {}
+  const tgls = tanggalBulanPenuh(periode) // bulan PENUH, bukan sampai hari ini
+  const shiftIds = shiftsForGuru(g, s)
+
+  // Hadir penuh per shift = hari efektif menurut libur lembaga shift itu.
+  const hadirPerShift = {}
+  for (const sh of shiftIds) {
+    const daftar = shiftList(s).find((x) => String(x.id) === String(sh))
+    const lem = (Array.isArray(daftar?.lembaga) ? daftar.lembaga : [])[0] || ''
+    hadirPerShift[String(sh).toLowerCase()] = hariEfektif(tgls, liburSetPeriode(lem))
+  }
+
+  const bebanJP = jpByLembagaForGuru(s, g.id)
+  const jpDiajarByLembaga = {}
+  for (const lem of Object.keys(bebanJP)) {
+    const libur = liburSetPeriode(lem)
+    // hadirSet = SEMUA hari efektif (bukan dari absensi) — itulah arti "hadir penuh".
+    const hadirSet = new Set(
+      tgls.filter((t) => !libur.has(t) && new Date(t + 'T00:00:00Z').getUTCDay() !== 0)
+    )
+    jpDiajarByLembaga[lem] = jpDiajarPeriode({
+      jpPerHari: jpPerHariForGuru(s, g.id, lem),
+      tanggalList: tgls,
+      hadirSet,
+      liburSet: libur
+    })
+  }
+
+  return {
+    refs: refsUntukScope(
+      deriveGuruLembagaRefs(g, {
+        jabatanItems: jabatanItems.value,
+        lembagaList: lembagaRaw.value
+      }),
+      g
+    ),
+    guruId: String(g.id),
+    shiftIds,
+    hadirPerShift,
+    hadirTepatPerShift: hadirPerShift, // hadir penuh = semuanya tepat waktu
+    bebanJPByLembaga: bebanJP,
+    jpDiajarByLembaga
+  }
+}
+
+const simHasil = computed(() => {
+  const jenis = terapkanNominal(jenisBisyarohList(settingsStore.settings || {}), simNominal.value)
+  const daftarGuru = guruAktifSaja(guruRaw.value)
+  return simulasiBisyaroh(
+    jenis,
+    daftarGuru.map((g) => ctxGuruPenuh(g, simPeriode.value))
+  )
+})
+const simJenisAsli = computed(() => jenisBisyarohList(settingsStore.settings || {}))
+const simPeta = computed(() => {
+  const m = {}
+  for (const r of simHasil.value.perJenis) m[r.jenis_id] = r
+  return m
+})
+/** Baris hasil simulasi utk 1 jenis — null bila jenisnya tak mengenai siapa pun. */
+function simBaris(id) {
+  return simPeta.value[String(id)] || null
+}
+/** Label cara hitung, dari sumber yang sama dengan editor Jenis Bisyaroh. */
+function hitunganLabel(h) {
+  return HITUNGAN_OPTIONS.find((o) => o.value === h)?.label || 'Flat / bulan'
+}
+const simAdaUbahan = computed(() =>
+  simJenisAsli.value.some((j) => {
+    const v = simNominal.value[j.id]
+    return v !== undefined && v !== '' && Number(v) !== Number(j.nominal || 0)
+  })
+)
+function simReset() {
+  simNominal.value = {}
 }
 
 // v.1.1.9: konteks pencocokan scope 1 guru — tempat tugas + shift + kehadiran.
