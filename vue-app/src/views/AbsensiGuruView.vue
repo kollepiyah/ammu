@@ -707,17 +707,35 @@
         v-if="tabMode === 'harian'"
         class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
       >
-        <h3 class="text-sm font-black text-[var(--text-primary)] mb-3">
-          <i class="fas fa-calendar-check text-teal-600 mr-2"></i>
-          Input Absensi Harian &mdash;
-          {{
-            new Date().toLocaleDateString('id-ID', {
-              day: '2-digit',
-              month: 'long',
-              year: 'numeric'
-            })
-          }}
-        </h3>
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+          <h3 class="text-sm font-black text-[var(--text-primary)]">
+            <i class="fas fa-calendar-check text-teal-600 mr-2"></i>
+            Input Absensi Harian
+          </h3>
+          <div class="flex items-center gap-2">
+            <label class="text-[11px] font-bold text-[var(--text-secondary)]">Tanggal</label>
+            <input
+              v-model="tglHarian"
+              type="date"
+              :max="maksTglHarian"
+              :disabled="!bolehMundurTanggal"
+              :title="
+                bolehMundurTanggal
+                  ? 'Boleh mundur ke hari yang sudah lewat'
+                  : 'Hanya super admin yang boleh mengisi tanggal yang sudah lewat'
+              "
+              class="px-2 py-1 text-xs rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)] disabled:opacity-60 outline-none"
+            />
+          </div>
+        </div>
+        <p
+          v-if="harianTglLampau"
+          class="text-[11px] font-bold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/30 border border-amber-300/50 rounded-lg px-3 py-2 mb-3"
+        >
+          <i class="fas fa-triangle-exclamation mr-1"></i>
+          Mengisi tanggal yang sudah lewat ({{ formatTgl(tglHarian) }}). Baris yang sudah ada akan
+          ditimpa &mdash; nanti dikonfirmasi dulu sebelum disimpan.
+        </p>
         <p class="text-xs text-[var(--text-secondary)] mb-4">
           Centang yang hadir per shift. Kolom muncul sesuai tipe &amp; shift: guru → shift mengajar
           (+ Sekolah bila ada), pegawai → Peg. Pagi/Sore, dual-role → keduanya. Submit untuk simpan
@@ -819,7 +837,13 @@
             @click="saveHarian"
           >
             <i :class="['fas', savingHarian ? 'fa-spinner fa-spin' : 'fa-save']"></i>
-            {{ savingHarian ? 'Menyimpan...' : 'Simpan Absensi Hari Ini' }}
+            {{
+              savingHarian
+                ? 'Menyimpan...'
+                : harianTglLampau
+                  ? 'Simpan Absensi ' + formatTgl(tglHarian)
+                  : 'Simpan Absensi Hari Ini'
+            }}
           </button>
         </div>
       </div>
@@ -1217,6 +1241,7 @@
 import { ref, computed, watch } from 'vue'
 import { setOne, updateOne, deleteOne, mergeOne, getOne, queryColl } from '@/services/db'
 import { isSuperAdmin } from '@/utils/roleScope'
+import { alasanTolakTanggal, deteksiTimpa, adaKeteranganTertimpa } from '@/utils/absenHarian'
 import { todayJakarta } from '@/utils/format'
 import { useAuthStore } from '@/stores/auth'
 import { useAbsensi } from '@/composables/useAbsensi'
@@ -1841,10 +1866,24 @@ const harianForm = ref({})
 const savingHarian = ref(false)
 const hasAnyHadir = computed(() => Object.keys(harianForm.value).some((k) => harianForm.value[k]))
 
+// v.1.2.10 (Kyai, 6 Agu 2026: "belum bisa input absen manual hari yang sudah
+//   terlewat"). Dulu tanggalnya todayJakarta() mati, jadi mengoreksi hari lampau
+//   harus memutar lewat tab Impor Fingerprint + berkas Excel. Mundur dibatasi
+//   super_admin, sejalan dengan kebijakan hapus absen (canHapusAbsen).
+const tglHarian = ref(todayJakarta())
+const maksTglHarian = todayJakarta()
+const bolehMundurTanggal = computed(() => isSuperAdmin(authStore.sesiAktif || {}))
+const harianTglLampau = computed(() => tglHarian.value < maksTglHarian)
+
 async function saveHarian() {
   // WIB, bukan UTC: shift subuh disimpan sebelum 07:00 WIB, dan toISOString()
   // menaruhnya di tanggal kemarin — absensi (lalu bisyaroh/bonus) jadi meleset sehari.
-  const today = todayJakarta()
+  const today = tglHarian.value
+  const tolak = alasanTolakTanggal(today, maksTglHarian, bolehMundurTanggal.value)
+  if (tolak) {
+    toast.error(tolak)
+    return
+  }
   const writes = []
   for (const g of guruAktif.value) {
     // v.1.1.9: iterasi shift MILIK guru (ikut master), bukan lagi 5 shift hardcoded.
@@ -1876,10 +1915,40 @@ async function saveHarian() {
     toast.warning('Tidak ada centang hadir — tidak ada yang disimpan')
     return
   }
+  // Simpanan harian memakai setOne = TIMPA PENUH. Tanya dulu kalau ada baris yang
+  // sudah berdiri di tanggal itu — izin/sakit/cuti yang tertimpa berarti keterangan
+  // yang sudah disetujui hilang tanpa jejak.
+  try {
+    const adaDb = await queryColl('absensi_shift_guru', [['tanggal', '==', today]], [], 1000)
+    const timpa = deteksiTimpa(writes, adaDb)
+    if (timpa.length) {
+      const rinci = timpa
+        .slice(0, 12)
+        .map(
+          (t) =>
+            `• ${t.nama} — ${shiftLabel(t.shift)} (${t.statusLama}${t.jamLama ? ' ' + t.jamLama : ''})`
+        )
+        .join('\n')
+      const sisa = timpa.length > 12 ? `\n…dan ${timpa.length - 12} lagi` : ''
+      const keras = adaKeteranganTertimpa(timpa)
+        ? '\n\n⚠️ Di antaranya ada IZIN/SAKIT/CUTI — keterangannya akan HILANG.'
+        : ''
+      if (
+        !confirm(
+          `${timpa.length} baris absen di ${formatTgl(today)} akan DITIMPA:\n\n${rinci}${sisa}${keras}\n\nLanjutkan?`
+        )
+      )
+        return
+    }
+  } catch (e) {
+    // Gagal memeriksa ≠ boleh menimpa diam-diam.
+    toast.error('Gagal memeriksa absen yang sudah ada: ' + (e.message || e))
+    return
+  }
   savingHarian.value = true
   try {
     for (const w of writes) await setOne('absensi_shift_guru', w.id, w)
-    toast.success(`${writes.length} absensi tersimpan untuk ${today}`)
+    toast.success(`${writes.length} absensi tersimpan untuk ${formatTgl(today)}`)
     harianForm.value = {}
   } catch (e) {
     toast.error('Gagal: ' + (e.message || e))
