@@ -14,9 +14,22 @@ export interface ShiftItem {
   mulai: string
   terlambat: string
   selesai: string
+  // Toleransi scan (menit) di luar window inti — lihat catatan di shiftMaster.js.
+  // WAJIB diport: mesin HiView menderivasi shift lewat file ini.
+  toleransi_awal: number
+  toleransi_telat: number
   urutan: number
   fallback: string
   bawaan: boolean
+}
+
+export const MAKS_TOLERANSI_MENIT = 720
+
+// Menit toleransi: bilangan bulat 0..MAKS_TOLERANSI_MENIT; kosong/aneh -> 0.
+export function normToleransi(v: unknown): number {
+  const n = Math.floor(Number(v))
+  if (!Number.isFinite(n) || n <= 0) return 0
+  return Math.min(n, MAKS_TOLERANSI_MENIT)
 }
 
 // Normalisasi 'H:MM' / 'HH.MM' -> 'HH:MM' (zero-pad). null bila tak valid.
@@ -85,6 +98,8 @@ export function normalizeShift(raw: any): ShiftItem {
     mulai: normHHMM(r.mulai) || '',
     terlambat: normHHMM(r.terlambat) || '',
     selesai: normHHMM(r.selesai) || '',
+    toleransi_awal: normToleransi(r.toleransi_awal),
+    toleransi_telat: normToleransi(r.toleransi_telat),
     urutan: Number(r.urutan) > 0 ? Number(r.urutan) : 99,
     fallback: bawaan ? def!.fallback || '' : '',
     bawaan

@@ -588,10 +588,22 @@
               <td class="px-3 py-2 text-[var(--text-secondary)] text-xs">
                 {{ sh.untuk === 'pegawai' ? 'Pegawai' : 'Guru' }}
               </td>
-              <td class="px-3 py-2 font-mono text-xs">{{ sh.mulai || '—' }}</td>
+              <td class="px-3 py-2 font-mono text-xs">
+                {{ sh.mulai || '—' }}
+                <span
+                  v-if="sh.toleransi_awal"
+                  class="block text-[9px] text-teal-600 dark:text-teal-400 italic font-sans"
+                  >boleh &minus;{{ sh.toleransi_awal }} mnt</span
+                >
+              </td>
               <td class="px-3 py-2 font-mono text-xs">{{ sh.terlambat || '—' }}</td>
               <td class="px-3 py-2 font-mono text-xs">
                 {{ sh.selesai || '—' }}
+                <span
+                  v-if="sh.toleransi_telat"
+                  class="block text-[9px] text-teal-600 dark:text-teal-400 italic font-sans"
+                  >masih masuk +{{ sh.toleransi_telat }} mnt</span
+                >
                 <span
                   v-if="!sh.mulai && !sh.terlambat && sh.fallback"
                   class="block text-[9px] text-[var(--text-tertiary)] italic font-sans"
@@ -722,6 +734,54 @@
           <p v-if="dlgShift.fallback" class="text-[10px] text-[var(--text-tertiary)] italic">
             Kosongkan Mulai &amp; Terlambat &rarr; ikut jam shift
             <b>{{ dlgShift.fallback }}</b> (perilaku lama).
+          </p>
+          <!-- Kyai, 6 Agu 2026: scan di luar Mulai..Selesai dulu HILANG tanpa jadi absen —
+               guru yang ceklok kepagian atau jauh setelah shift bubar tak tercatat sama
+               sekali. Dua angka ini melebarkan window itu; 0 = persis seperti dulu. -->
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
+                >Boleh Scan Lebih Awal</label
+              >
+              <div class="flex items-center gap-1.5">
+                <input
+                  v-model.number="dlgShift.toleransi_awal"
+                  type="number"
+                  min="0"
+                  :max="MAKS_TOLERANSI_MENIT"
+                  step="5"
+                  class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)] font-bold"
+                />
+                <em class="text-[10px] text-[var(--text-tertiary)] not-italic shrink-0">menit</em>
+              </div>
+            </div>
+            <div>
+              <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
+                >Masih Masuk Setelah Selesai</label
+              >
+              <div class="flex items-center gap-1.5">
+                <input
+                  v-model.number="dlgShift.toleransi_telat"
+                  type="number"
+                  min="0"
+                  :max="MAKS_TOLERANSI_MENIT"
+                  step="5"
+                  class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)] font-bold"
+                />
+                <em class="text-[10px] text-[var(--text-tertiary)] not-italic shrink-0">menit</em>
+              </div>
+            </div>
+          </div>
+          <p class="text-[10px] text-[var(--text-tertiary)] italic">
+            Window scan efektif jadi <b class="font-mono">{{ windowEfektifLabel }}</b
+            >. Isi <b>0</b> untuk perilaku lama (hanya jam Mulai&ndash;Selesai yang dihitung).
+            Datang lebih awal tetap <b>hadir</b>; scan setelah Selesai dihitung <b>terlambat</b>.
+          </p>
+          <p
+            v-if="peringatanToleransi"
+            class="text-[10px] font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg px-2.5 py-1.5"
+          >
+            <i class="fas fa-triangle-exclamation mr-1"></i>{{ peringatanToleransi }}
           </p>
           <div>
             <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
@@ -1511,7 +1571,9 @@ import {
   normalizeShift,
   slugShiftId,
   shiftMasterToLegacy,
-  SHIFT_UNTUK_OPTIONS
+  SHIFT_UNTUK_OPTIONS,
+  MAKS_TOLERANSI_MENIT,
+  normToleransi
 } from '@/utils/shiftMaster'
 import { toAuthPassword } from '@/services/authSupabase'
 import {
@@ -2227,6 +2289,58 @@ const shiftLainOptions = computed(() =>
 function shiftLabelById(id) {
   return (form.value.shiftMaster || []).find((s) => s.id === id)?.label || id
 }
+
+// ── Toleransi scan (Kyai, 6 Agu 2026) ────────────────────────────────────────
+// Menit ⇄ 'HH:MM' lokal dialog. Dipakai memperlihatkan window EFEKTIF sebelum
+// disimpan, supaya Kyai tak perlu menghitung di kepala.
+function _menit(hhmm) {
+  const s = String(hhmm || '')
+  if (!/^\d{1,2}:\d{2}$/.test(s)) return null
+  return Number(s.slice(0, s.indexOf(':'))) * 60 + Number(s.slice(s.indexOf(':') + 1))
+}
+function _jam(menit) {
+  const j = Math.max(0, Math.min(23 * 60 + 59, menit))
+  const p = (n) => String(n).padStart(2, '0')
+  return p(Math.floor(j / 60)) + ':' + p(j % 60)
+}
+// Window efektif shift yang sedang diedit: [mulai − toleransi_awal, selesai + toleransi_telat].
+const windowEfektif = computed(() => {
+  const sh = dlgShift.value
+  const m = _menit(sh?.mulai)
+  const s = _menit(sh?.selesai)
+  if (m == null || s == null) return null
+  return {
+    dari: Math.max(0, m - normToleransi(sh.toleransi_awal)),
+    sampai: Math.min(23 * 60 + 59, s + normToleransi(sh.toleransi_telat))
+  }
+})
+const windowEfektifLabel = computed(() => {
+  const w = windowEfektif.value
+  return w ? `${_jam(w.dari)}–${_jam(w.sampai)}` : 'belum ada jam Mulai/Selesai'
+})
+// Window yang melar sampai menyentuh window INTI shift lain itu risiko nyata: scan
+// PULANG dari shift itu bisa terbaca sebagai jam MASUK shift ini. deriveShift memang
+// mendahulukan window inti, tapi peringatan ini mencegah Kyai menyetel angka yang
+// mustahil benar sejak awal.
+const peringatanToleransi = computed(() => {
+  const w = windowEfektif.value
+  const sh = dlgShift.value
+  if (!w || !sh) return ''
+  if (!normToleransi(sh.toleransi_awal) && !normToleransi(sh.toleransi_telat)) return ''
+  const bentrok = []
+  for (const lain of form.value.shiftMaster || []) {
+    if (!lain?.id || lain.id === sh.id) continue
+    const lm = _menit(lain.mulai)
+    const ls = _menit(lain.selesai)
+    if (lm == null || ls == null) continue
+    if (w.dari <= ls && lm <= w.sampai) bentrok.push(lain.label || lain.id)
+  }
+  if (!bentrok.length) return ''
+  return (
+    `Window ${windowEfektifLabel.value} menyentuh jam shift ${bentrok.join(', ')}. ` +
+    'Scan pulang dari shift itu bisa terbaca sebagai jam masuk shift ini — perpendek toleransinya.'
+  )
+})
 
 function openShiftBaru() {
   dlgShiftIsNew.value = true

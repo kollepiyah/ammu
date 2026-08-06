@@ -12,6 +12,18 @@
 //
 // Semua fungsi PURE — `settings` di-pass eksplisit (bukan baca store).
 
+// Batas atas toleransi scan (menit). 12 jam — cukup untuk shift terpanjang, sekaligus
+// menjaring salah ketik ("600" niatnya 60) sebelum window melar menelan shift lain.
+export const MAKS_TOLERANSI_MENIT = 720
+
+// Menit toleransi: bilangan bulat 0..MAKS_TOLERANSI_MENIT. Nilai kosong/aneh → 0
+// (= perilaku lama, window persis mulai..selesai).
+export function normToleransi(v) {
+  const n = Math.floor(Number(v))
+  if (!Number.isFinite(n) || n <= 0) return 0
+  return Math.min(n, MAKS_TOLERANSI_MENIT)
+}
+
 // Normalisasi 'H:MM' / 'HH.MM' → 'HH:MM' (zero-pad). null bila tak valid.
 // Format 'HH:MM' 24-jam zero-pad bisa dibandingkan langsung secara leksikal.
 export function normHHMM(v) {
@@ -108,6 +120,18 @@ export function normalizeShift(raw) {
     mulai: normHHMM(r.mulai) || '',
     terlambat: normHHMM(r.terlambat) || '',
     selesai: normHHMM(r.selesai) || '',
+    // Toleransi scan (menit) — Kyai, 6 Agu 2026. Window masuk dulu HANYA mulai..selesai,
+    // jadi guru yang ceklok sebelum shift dibuka (datang kepagian) atau jauh setelah shift
+    // bubar HILANG DIAM-DIAM: tak jadi absen, tak ada jejaknya. Dua angka ini melebarkan
+    // window itu, dan defaultnya 0 supaya perilaku lama tak berubah sampai Kyai mengisinya.
+    //   toleransi_awal  = boleh scan berapa menit SEBELUM `mulai` (tetap 'hadir')
+    //   toleransi_telat = masih dihitung masuk berapa menit SETELAH `selesai` ('terlambat')
+    // APP-ONLY? TIDAK — port Deno shiftMaster.ts WAJIB membawanya (mesin HiView memakainya).
+    // Yang TIDAK ikut: fp_sync.py (replika Python di luar repo, jalur Revo lama) — ia hanya
+    // membaca setting-key legacy dan tak punya padanan untuk dua angka ini. Jalur Revo karena
+    // itu WAJIB lewat sync Ammu Desktop kalau toleransi mau berlaku.
+    toleransi_awal: normToleransi(r.toleransi_awal),
+    toleransi_telat: normToleransi(r.toleransi_telat),
     // jam pulang default (opsional) utk prefill/isi-massal absen pulang — tak nge-gate hadir.
     pulang_default: normHHMM(r.pulang_default) || '',
     hadir_ikut: [...new Set(hadirIkut)],

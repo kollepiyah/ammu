@@ -53,19 +53,45 @@ function shiftsForGuruLegacy(g: GuruLike, list: ShiftItem[]): Set<string> {
   return set
 }
 
+interface WindowShift {
+  mulai: string
+  terlambat: string
+  selesai: string
+  tolAwal: number
+  tolTelat: number
+}
+
 // Window jam 1 shift dari daftar master yang sudah dinormalisasi.
-function windowFrom(
-  id: string,
-  list: ShiftItem[]
-): { mulai: string; terlambat: string; selesai: string } {
+// Toleransi ikut sumber jamnya: shift yang menumpang jam fallback juga menumpang
+// toleransinya, supaya "Pegawai Pagi" tak perlu disetel dua kali.
+function windowFrom(id: string, list: ShiftItem[]): WindowShift {
+  const kosong: WindowShift = { mulai: '', terlambat: '', selesai: '', tolAwal: 0, tolTelat: 0 }
   const sh = list.find((x) => x.id === String(id || ''))
-  if (!sh) return { mulai: '', terlambat: '', selesai: '' }
+  if (!sh) return kosong
+  const pakai = (x: ShiftItem): WindowShift => ({
+    mulai: x.mulai,
+    terlambat: x.terlambat,
+    selesai: x.selesai,
+    tolAwal: x.toleransi_awal || 0,
+    tolTelat: x.toleransi_telat || 0
+  })
   // Jam dikosongkan → ikut shift fallback (pegawai → jam guru pagi/sore).
   if (!sh.mulai && !sh.terlambat && sh.fallback) {
     const f = list.find((x) => x.id === sh.fallback)
-    if (f) return { mulai: f.mulai, terlambat: f.terlambat, selesai: f.selesai }
+    if (f) return pakai(f)
   }
-  return { mulai: sh.mulai, terlambat: sh.terlambat, selesai: sh.selesai }
+  return pakai(sh)
+}
+
+// Geser 'HH:MM' sebanyak n menit, DIJEPIT di 00:00..23:59. Sengaja tak melipat ke
+// hari lain: scan 23:40 tak boleh tiba-tiba jadi shift pagi keesokan harinya.
+function geserHHMM(hhmm: string, menit: number): string {
+  const t = normHHMM(hhmm)
+  if (!t) return ''
+  const total = Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5)) + Number(menit || 0)
+  const jepit = Math.max(0, Math.min(23 * 60 + 59, total))
+  const p = (n: number) => String(n).padStart(2, '0')
+  return p(Math.floor(jepit / 60)) + ':' + p(jepit % 60)
 }
 
 // Window jam shift dari settings; jam pegawai kosong → fallback ke jam guru.
@@ -84,15 +110,30 @@ export function shiftBatas(shift: string, settings: SettingsLike): string {
 
 // Derive shift utk jam scan 'HH:MM' + guru + settings. return id shift atau
 // null (di luar semua window milik guru). Overlap → menang `urutan` terkecil.
+//
+// DUA LINTASAN (Kyai, 6 Agu 2026). Lintasan 1 = window INTI `mulai..selesai`, persis
+// perilaku lama; lintasan 2 baru mencoba window yang dilebarkan toleransi. Urutannya
+// penting: selama sebuah scan masih jatuh di window inti shift mana pun, toleransi
+// shift lain TIDAK boleh merebutnya — jadi menyetel toleransi tak pernah memindahkan
+// absen yang selama ini sudah benar.
 export function deriveShift(hhmm: string, g: GuruLike, settings: SettingsLike): string | null {
   const t = normHHMM(hhmm)
   if (!t) return null
   const list = shiftList(settings) // sudah terurut `urutan`
   const milik = shiftsForGuru(g, settings)
+  const punyaWindow: { id: string; w: WindowShift }[] = []
   for (const sh of list) {
     if (!milik.has(sh.id)) continue
     const w = windowFrom(sh.id, list)
-    if (w.mulai && w.selesai && w.mulai <= t && t <= w.selesai) return sh.id
+    if (!w.mulai || !w.selesai) continue
+    if (w.mulai <= t && t <= w.selesai) return sh.id
+    punyaWindow.push({ id: sh.id, w })
+  }
+  for (const { id, w } of punyaWindow) {
+    if (!w.tolAwal && !w.tolTelat) continue
+    const dari = w.tolAwal ? geserHHMM(w.mulai, -w.tolAwal) : w.mulai
+    const sampai = w.tolTelat ? geserHHMM(w.selesai, w.tolTelat) : w.selesai
+    if (dari <= t && t <= sampai) return id
   }
   return null
 }
