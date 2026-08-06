@@ -320,7 +320,16 @@
                   {{ t.terakhir_update ? `Update: ${fmtTgl(t.terakhir_update)}` : '' }}
                 </p>
               </div>
-              <p class="text-base font-black text-emerald-700 dark:text-emerald-400 mr-2">
+              <!-- Saldo 0 diredupkan: di Uang Saku seluruh santri ma'had ikut tampil,
+                   jadi yang benar-benar punya uang harus tetap menonjol. -->
+              <p
+                :class="[
+                  'text-base font-black mr-2',
+                  Number(t.saldo) || 0
+                    ? 'text-emerald-700 dark:text-emerald-400'
+                    : 'text-[var(--text-tertiary)] font-bold'
+                ]"
+              >
                 {{ fmtRp(t.saldo) }}
               </p>
               <div class="flex gap-1">
@@ -1164,6 +1173,27 @@ onUnmounted(() => {
 // =================== ADMIN MODE — aggregate per santri ===================
 const search = ref('')
 
+// Kyai (6 Agu 2026): "untuk uang saku, apakah bisa di halaman langsung muncul semua nama
+//   santri ma'had? jadi admin keuangan tidak perlu mencet dulu di tombol input mutasi."
+//   Daftar ini dulu lahir SEPENUHNYA dari mutasi, jadi santri yang belum pernah setor
+//   sekali pun tak punya baris — satu-satunya jalan menyetorkan uangnya lewat tombol
+//   Input Mutasi lalu mengetik namanya. Sekarang daftarnya di-seed dari santri ma'had,
+//   dan mutasi hanya mengisi saldonya.
+//   Kriterianya SENGAJA sama persis dengan dropdown modal (santriOptions) — kalau beda,
+//   akan ada santri yang bisa dipilih di modal tapi tak pernah muncul di daftar.
+const santriSeedUangSaku = computed(() => {
+  if (!isUangSaku.value) return []
+  return (santriRaw.value || [])
+    .filter((s) => s.aktif !== false && s.is_mukim === true)
+    .filter((s) => allowSantri(s.id))
+})
+
+// Nama tampil satu baris agregat — dipakai pencarian & pengurutan.
+function namaBaris(t) {
+  const n = getNamaSantri(t.santri_id)
+  return n !== '(unknown)' ? n : t.nama_cache || ''
+}
+
 const aggregated = computed(() => {
   const map = {}
   for (const t of mutasiSource.value) {
@@ -1179,6 +1209,13 @@ const aggregated = computed(() => {
     const tgl = String(t.tanggal || '')
     if (tgl && tgl > map[sid].terakhir_update) map[sid].terakhir_update = tgl
   }
+  // Santri ma'had yang belum punya mutasi ditambahkan bersaldo 0. Sengaja SESUDAH
+  // loop di atas dan hanya bila belum ada, supaya tak menimpa saldo yang sudah terhitung.
+  for (const s of santriSeedUangSaku.value) {
+    const sid = String(s.id || '')
+    if (!sid || map[sid]) continue
+    map[sid] = { santri_id: sid, saldo: 0, terakhir_update: '', nama_cache: s.nama || '' }
+  }
   // v.111: scope Gedung — hanya santri gedung admin (tak ter-scope → semua)
   return Object.values(map).filter((t) => allowSantri(t.santri_id))
 })
@@ -1187,9 +1224,13 @@ const filteredItems = computed(() => {
   const kw = search.value.trim().toLowerCase()
   let list = [...aggregated.value]
   if (kw) {
-    list = list.filter((t) =>
-      (getNamaSantri(t.santri_id) || t.nama_cache || '').toLowerCase().includes(kw)
-    )
+    list = list.filter((t) => namaBaris(t).toLowerCase().includes(kw))
+  }
+  // Uang saku menampilkan SELURUH santri ma'had, jadi daftarnya panjang dan posisinya
+  // harus tetap: urut nama A–Z supaya bisa dipindai mata. Urut saldo (dipakai Tabungan)
+  // akan membuat baris melompat-lompat setiap kali ada setoran.
+  if (isUangSaku.value) {
+    return list.sort((a, b) => namaBaris(a).localeCompare(namaBaris(b), 'id'))
   }
   return list.sort((a, b) => (Number(b.saldo) || 0) - (Number(a.saldo) || 0))
 })
