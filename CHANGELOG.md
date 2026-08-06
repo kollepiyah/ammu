@@ -72,6 +72,49 @@ Setelah itu Kyai perlu **mengisi toleransi scan** di Pengaturan → Master Shift
   sebelum dijalankan, memakai jalur penandaan yang sama dengan POS, dan hanya menyentuh
   baris yang belum bertag.
 
+### Tolakan Play berulang + unduhan Desktop 404 (6 Agu 2026)
+
+Keduanya **murni frontend** — tanpa migrasi DB, tanpa edge function. Ikut deploy web
+bersama batch di atas. ⚠️ Perbaikan login baru menolong peninjau Play setelah **AAB
+baru diunggah**; yang sedang ditinjau sekarang masih vc128.
+
+#### Fixed (Perbaikan)
+
+- **Update Play ditolak berulang "Kredensial login salah".** Isian Detail login sudah
+  benar dan sudah dikirim untuk ditinjau, tapi tetap ditolak. Rantai akunnya diuji
+  langsung ke server dan seluruhnya hijau (`resolve_login` ketemu & aktif → sandi
+  diterima HTTP 200 → profil super_admin → baris guru Aktif), begitu pula bundel di
+  dalam APK Play-signed vc128: URL + anon key Supabase tertanam, dan login
+  `demoplay`/`1234` berhasil sampai dashboard. Yang tersisa cuma jalan masuknya —
+  layar login mengirim tab terpilih sebagai penyaring, sehingga **tab yang keliru
+  menghasilkan "tidak ditemukan" untuk akun yang jelas ada**
+  (`resolve_login('demoplay','santri')` = kosong). Instruksi tab di kolom Detail login
+  sudah dipasang sejak 23 Juli dan tetap ditolak — wajar, pemeriksa otomatis Play
+  membaca kolom username/sandi, bukan kolom instruksi. Kini kalau jalur terpilih tak
+  menemukan apa pun, aplikasi **mengulang tanpa penyaring jalur**. Cadangan itu tak
+  pernah menimpa hasil yang ketemu, jadi pemisahan satu nomor WA milik guru yang
+  sekaligus wali santri — alasan tab ini ada — tetap utuh. Peran tetap dibangun
+  server-side dari `profiles`, bukan dari tab yang diklik.
+- **Tombol unduh Desktop membuka halaman GitHub 404.** Sejak v.1.2.8 nama installer
+  memuat versi (`AmmuOnline-Setup-1.2.8.exe`) supaya cache updater & blockmap rilis
+  lama tak bertabrakan, tapi tautan di layar login masih menunjuk nama tanpa versi
+  yang sejak itu tak pernah ada. Ironisnya inilah pintu "pasang manual sekali" yang
+  dijanjikan perbaikan auto-update 5 Agu — dan justru pintu itu yang mati.
+  Auto-update sendiri tak terdampak (updater membaca `latest.yml`). Nama berkas kini
+  dirangkai dari versi app, dijaga tes yang membandingkannya dengan pola
+  `artifactName` nyata di konfigurasi electron-builder. Setelan
+  `downloadDesktop`/`downloadDesktopWin7` di Pengaturan Web tetap menang, jadi Kyai
+  bisa membetulkan tanpa rilis ulang.
+
+#### Housekeeping
+
+- Versi app disuntik saat build (`__APP_VERSION__` dari `vue-app/package.json`) —
+  satu titik bump manual berkurang: teks versi di footer login dulu diketik ulang.
+- `downloadIos` dibuang: cuma dideklarasikan, tak pernah dipakai, dan `AmmuOnline.ipa`
+  tak pernah ada di satu rilis pun.
+- `.gitignore` mengabaikan `*.apk`/`*.aab` — `AmmuOnline.apk` (~6 MB) tergeletak di
+  akar repo tanpa penjaga.
+
 ### Planned
 
 - Capacitor Android first build + sideload APK
