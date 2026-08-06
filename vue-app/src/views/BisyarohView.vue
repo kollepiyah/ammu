@@ -81,6 +81,21 @@
           >
             <i class="fas fa-users mr-1"></i>Bulk Generate
           </button>
+          <!-- v.1.2.10: sub-tab sendiri, bukan lipatan di dalam Bulk Generate. Alasannya
+               ditemukan seketika: begitu dipasang, hal pertama yang ditanyakan Kyai adalah
+               "simulasinya di mana?". Alat rundingan tak boleh dua klik dalam, apalagi
+               berdampingan dengan tombol yang MENERBITKAN slip. -->
+          <button
+            :class="[
+              'flex-1 px-4 py-2 text-xs font-black uppercase tracking-wider rounded-lg transition cursor-pointer',
+              subTab === 'simulasi'
+                ? 'bg-amber-600 text-white'
+                : 'text-[var(--text-secondary)] hover:bg-amber-50'
+            ]"
+            @click="subTab = 'simulasi'"
+          >
+            <i class="fas fa-calculator mr-1"></i>Simulasi
+          </button>
         </div>
 
         <!-- SUB-TAB: SINGLE (Per Guru) -->
@@ -312,108 +327,9 @@
 
         <!-- SUB-TAB: BULK -->
         <div
-          v-else
+          v-else-if="subTab === 'bulk'"
           class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm space-y-3"
         >
-          <!-- v.1.2.10: SIMULASI PLAFON — coba-coba nominal tanpa menyimpan apa pun. -->
-          <details
-            class="rounded-xl border border-amber-300/60 bg-amber-50/60 dark:bg-amber-900/20"
-          >
-            <summary
-              class="cursor-pointer select-none px-3 py-2 text-sm font-black text-amber-900 dark:text-amber-200"
-            >
-              <i class="fas fa-calculator mr-2"></i>Simulasi Plafon Bisyaroh
-              <span class="font-bold text-[11px]">— coba nominal, tak ada yang disimpan</span>
-            </summary>
-            <div class="px-3 pb-3 space-y-3">
-              <p class="text-[11px] text-amber-900/90 dark:text-amber-200/90 leading-relaxed">
-                Andaian: <b>semua guru hadir penuh &amp; tepat waktu</b> di tiap hari efektif
-                (Senin–Sabtu, di luar libur) sepanjang
-                <b>{{ BULAN_NAMES[bulan - 1] }} {{ tahun }}</b
-                >. Jadi angkanya <b>plafon</b> — biaya tertinggi yang mungkin; realisasi hampir
-                selalu lebih rendah. Ubah nominal di bawah untuk melihat dampaknya; menutup halaman
-                mengembalikan semuanya.
-              </p>
-              <div class="overflow-x-auto">
-                <table class="w-full text-xs">
-                  <thead class="text-[10px] uppercase text-[var(--text-secondary)]">
-                    <tr class="border-b border-amber-300/50">
-                      <th class="text-left py-1.5">Jenis</th>
-                      <th class="text-right py-1.5">Guru</th>
-                      <th class="text-right py-1.5">Pengali</th>
-                      <th class="text-right py-1.5">Nominal</th>
-                      <th class="text-right py-1.5">Subtotal / bulan</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr
-                      v-for="j in simJenisAsli"
-                      :key="'sim-' + j.id"
-                      class="border-b border-amber-200/40"
-                    >
-                      <td class="py-1.5 pr-2">
-                        <span class="font-bold text-[var(--text-primary)]">{{ j.label }}</span>
-                        <span class="ml-1 text-[10px] text-[var(--text-tertiary)]">{{
-                          hitunganLabel(j.hitungan)
-                        }}</span>
-                      </td>
-                      <td class="text-right tabular-nums">
-                        {{ simBaris(j.id)?.guru ?? 0 }}
-                      </td>
-                      <td class="text-right tabular-nums">
-                        {{ j.hitungan === 'flat' ? '—' : (simBaris(j.id)?.qty ?? 0) }}
-                      </td>
-                      <td class="text-right">
-                        <input
-                          v-model="simNominal[j.id]"
-                          type="number"
-                          min="0"
-                          step="500"
-                          :placeholder="String(j.nominal || 0)"
-                          class="w-28 px-2 py-1 text-right rounded border border-amber-300 bg-white dark:bg-slate-800 text-[var(--text-primary)] outline-none"
-                        />
-                      </td>
-                      <td class="text-right font-black tabular-nums whitespace-nowrap">
-                        {{ fmtRp(simBaris(j.id)?.subtotal ?? 0) }}
-                      </td>
-                    </tr>
-                  </tbody>
-                  <tfoot>
-                    <tr class="border-t-2 border-amber-400">
-                      <td class="py-2 font-black text-[var(--text-primary)]">
-                        TOTAL PLAFON / BULAN
-                      </td>
-                      <td class="text-right text-[10px] text-[var(--text-secondary)]">
-                        {{ simHasil.guruKena }} guru
-                      </td>
-                      <td></td>
-                      <td></td>
-                      <td
-                        class="text-right text-base font-black text-amber-900 dark:text-amber-200 whitespace-nowrap"
-                      >
-                        {{ fmtRp(simHasil.total) }}
-                      </td>
-                    </tr>
-                  </tfoot>
-                </table>
-              </div>
-              <div class="flex items-center justify-between gap-2 flex-wrap">
-                <p class="text-[10px] text-[var(--text-tertiary)] italic">
-                  <i class="fas fa-circle-info mr-1"></i>Jenis bernominal 0 tak dihitung — belum
-                  diisi bukan berarti gratis.
-                </p>
-                <button
-                  v-if="simAdaUbahan"
-                  type="button"
-                  class="text-[11px] font-bold px-3 py-1.5 rounded-lg bg-amber-200 dark:bg-amber-800 text-amber-900 dark:text-amber-100"
-                  @click="simReset"
-                >
-                  <i class="fas fa-rotate-left mr-1"></i>Kembalikan ke nominal tersimpan
-                </button>
-              </div>
-            </div>
-          </details>
-
           <p class="text-sm font-black text-[var(--text-primary)]">
             <i class="fas fa-users text-emerald-600 mr-2"></i>Bulk Generate Slip Bisyaroh
           </p>
@@ -545,6 +461,109 @@
                   @change="imporBulanan"
                 />
               </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- SUB-TAB: SIMULASI (tak menulis apa pun) -->
+        <div
+          v-else
+          class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
+        >
+          <!-- v.1.2.10: SIMULASI PLAFON — coba-coba nominal tanpa menyimpan apa pun. -->
+          <div class="rounded-xl border border-amber-300/60 bg-amber-50/60 dark:bg-amber-900/20">
+            <p
+              class="px-3 py-2 text-sm font-black text-amber-900 dark:text-amber-200 border-b border-amber-300/40"
+            >
+              <i class="fas fa-calculator mr-2"></i>Simulasi Plafon Bisyaroh
+              <span class="font-bold text-[11px]">— coba nominal, tak ada yang disimpan</span>
+            </p>
+            <div class="px-3 pb-3 space-y-3">
+              <p class="text-[11px] text-amber-900/90 dark:text-amber-200/90 leading-relaxed">
+                Andaian: <b>semua guru hadir penuh &amp; tepat waktu</b> di tiap hari efektif
+                (Senin–Sabtu, di luar libur) sepanjang
+                <b>{{ BULAN_NAMES[bulan - 1] }} {{ tahun }}</b
+                >. Jadi angkanya <b>plafon</b> — biaya tertinggi yang mungkin; realisasi hampir
+                selalu lebih rendah. Ubah nominal di bawah untuk melihat dampaknya; menutup halaman
+                mengembalikan semuanya.
+              </p>
+              <div class="overflow-x-auto">
+                <table class="w-full text-xs">
+                  <thead class="text-[10px] uppercase text-[var(--text-secondary)]">
+                    <tr class="border-b border-amber-300/50">
+                      <th class="text-left py-1.5">Jenis</th>
+                      <th class="text-right py-1.5">Guru</th>
+                      <th class="text-right py-1.5">Pengali</th>
+                      <th class="text-right py-1.5">Nominal</th>
+                      <th class="text-right py-1.5">Subtotal / bulan</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr
+                      v-for="j in simJenisAsli"
+                      :key="'sim-' + j.id"
+                      class="border-b border-amber-200/40"
+                    >
+                      <td class="py-1.5 pr-2">
+                        <span class="font-bold text-[var(--text-primary)]">{{ j.label }}</span>
+                        <span class="ml-1 text-[10px] text-[var(--text-tertiary)]">{{
+                          hitunganLabel(j.hitungan)
+                        }}</span>
+                      </td>
+                      <td class="text-right tabular-nums">
+                        {{ simBaris(j.id)?.guru ?? 0 }}
+                      </td>
+                      <td class="text-right tabular-nums">
+                        {{ j.hitungan === 'flat' ? '—' : (simBaris(j.id)?.qty ?? 0) }}
+                      </td>
+                      <td class="text-right">
+                        <input
+                          v-model="simNominal[j.id]"
+                          type="number"
+                          min="0"
+                          step="500"
+                          :placeholder="String(j.nominal || 0)"
+                          class="w-28 px-2 py-1 text-right rounded border border-amber-300 bg-white dark:bg-slate-800 text-[var(--text-primary)] outline-none"
+                        />
+                      </td>
+                      <td class="text-right font-black tabular-nums whitespace-nowrap">
+                        {{ fmtRp(simBaris(j.id)?.subtotal ?? 0) }}
+                      </td>
+                    </tr>
+                  </tbody>
+                  <tfoot>
+                    <tr class="border-t-2 border-amber-400">
+                      <td class="py-2 font-black text-[var(--text-primary)]">
+                        TOTAL PLAFON / BULAN
+                      </td>
+                      <td class="text-right text-[10px] text-[var(--text-secondary)]">
+                        {{ simHasil.guruKena }} guru
+                      </td>
+                      <td></td>
+                      <td></td>
+                      <td
+                        class="text-right text-base font-black text-amber-900 dark:text-amber-200 whitespace-nowrap"
+                      >
+                        {{ fmtRp(simHasil.total) }}
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+              <div class="flex items-center justify-between gap-2 flex-wrap">
+                <p class="text-[10px] text-[var(--text-tertiary)] italic">
+                  <i class="fas fa-circle-info mr-1"></i>Jenis bernominal 0 tak dihitung — belum
+                  diisi bukan berarti gratis.
+                </p>
+                <button
+                  v-if="simAdaUbahan"
+                  type="button"
+                  class="text-[11px] font-bold px-3 py-1.5 rounded-lg bg-amber-200 dark:bg-amber-800 text-amber-900 dark:text-amber-100"
+                  @click="simReset"
+                >
+                  <i class="fas fa-rotate-left mr-1"></i>Kembalikan ke nominal tersimpan
+                </button>
+              </div>
             </div>
           </div>
         </div>
