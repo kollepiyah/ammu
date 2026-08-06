@@ -97,6 +97,10 @@ const COLS = {
   absensi: ['santri_id', 'tanggal', 'lembaga', 'kelas', 'status'],
   absensi_guru: ['guru_id', 'tanggal'],
   absensi_shift_guru: ['guru_id', 'periode'],
+  // Jejak scan mesin HiView — ditulis edge function (service-role), dibaca panel
+  // diagnosa di Absensi Guru. Tanpa baris ini, `tanggal`/`hasil` akan dicari di
+  // dalam jsonb dan filter per-hari tak akan pernah cocok.
+  hiview_scan_log: ['tanggal', 'employee_no', 'guru_id', 'hasil'],
   absensi_kegiatan: [],
   absensi_santri_sekolah: ['santri_id', 'tanggal'],
   absensi_santri_sekolah_bulanan: ['santri_id', 'periode', 'sakit', 'izin', 'alpa', 'hadir'],

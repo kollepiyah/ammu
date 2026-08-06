@@ -104,7 +104,7 @@
       </div>
 
       <!-- Tabs -->
-      <div class="grid grid-cols-2 md:grid-cols-5 gap-2 md:gap-3">
+      <div class="grid grid-cols-2 md:grid-cols-6 gap-2 md:gap-3">
         <button
           :class="[
             'group relative overflow-hidden bg-gradient-to-br from-teal-500 dark:from-teal-700 to-teal-700 dark:to-teal-900 rounded-xl p-2.5 md:p-3 text-left text-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col gap-1 cursor-pointer',
@@ -176,6 +176,159 @@
             Per lembaga, mingguan/bulanan
           </p>
         </button>
+        <!-- Kyai, 6 Agu 2026: "guru sudah scan tapi datanya tidak terkirim". Tanpa tab ini,
+             scan yang ditolak mesin/edge tak meninggalkan bekas apa pun yang bisa dibuka
+             dari aplikasi — "tidak terkirim" jadi mustahil dibedakan dari "ditolak". -->
+        <button
+          :class="[
+            'group relative overflow-hidden bg-gradient-to-br from-amber-500 dark:from-amber-700 to-amber-700 dark:to-amber-900 rounded-xl p-2.5 md:p-3 text-left text-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col gap-1 cursor-pointer',
+            tabMode === 'jejak' ? 'ring-2 ring-white/70 ring-offset-1 ring-offset-cyan-50' : ''
+          ]"
+          @click="bukaJejak"
+        >
+          <i class="fas fa-satellite-dish text-base md:text-lg drop-shadow"></i>
+          <h3 class="text-[11px] md:text-xs font-black leading-tight drop-shadow-sm">
+            Jejak Mesin
+          </h3>
+          <p class="hidden md:block text-[10px] text-white/85 font-medium leading-snug">
+            Scan HiView masuk atau ditolak
+          </p>
+        </button>
+      </div>
+
+      <!-- TAB: Jejak Mesin (HiView) -->
+      <div
+        v-if="tabMode === 'jejak'"
+        class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
+      >
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+          <div>
+            <h3 class="text-sm md:text-base font-black text-[var(--text-primary)]">
+              <i class="fas fa-satellite-dish text-amber-600 mr-2"></i>Jejak Scan Mesin HiView
+            </h3>
+            <p class="text-xs text-[var(--text-secondary)] mt-0.5">
+              Semua scan yang sampai ke server — termasuk yang <strong>ditolak</strong> dan
+              sebabnya.
+            </p>
+          </div>
+          <div class="flex items-center gap-2">
+            <input
+              v-model="jejakTanggal"
+              type="date"
+              class="px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-amber-500 outline-none"
+              @change="muatJejak"
+            />
+            <button
+              :disabled="jejakLoading"
+              class="h-9 px-3 inline-flex items-center gap-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white text-xs font-bold"
+              @click="muatJejak"
+            >
+              <i :class="['fas', jejakLoading ? 'fa-spinner fa-spin' : 'fa-rotate']"></i>Muat Ulang
+            </button>
+          </div>
+        </div>
+
+        <div v-if="jejakLoading" class="py-10 text-center">
+          <i class="fas fa-spinner fa-spin text-amber-500 text-2xl"></i>
+        </div>
+        <div v-else-if="jejakError" class="rounded-xl bg-rose-50 border border-rose-200 p-3">
+          <p class="text-xs font-bold text-rose-800">
+            <i class="fas fa-triangle-exclamation mr-1"></i>{{ jejakError }}
+          </p>
+        </div>
+        <template v-else>
+          <!-- Ringkasan: angka "ditolak" yang bukan nol = daftar kerja, bukan sekadar statistik. -->
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3">
+            <div
+              v-for="k in jejakRingkas"
+              :key="k.hasil"
+              :class="[
+                'rounded-xl px-3 py-2 border',
+                k.buruk
+                  ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-300 dark:border-amber-700'
+                  : 'bg-[var(--bg-card-elevated)] border-[var(--border-subtle)]'
+              ]"
+            >
+              <p
+                :class="[
+                  'text-lg font-black leading-none',
+                  k.buruk ? 'text-amber-700 dark:text-amber-400' : 'text-[var(--text-primary)]'
+                ]"
+              >
+                {{ k.jumlah }}
+              </p>
+              <p class="text-[10px] text-[var(--text-secondary)] mt-1">{{ k.label }}</p>
+            </div>
+          </div>
+
+          <div
+            v-if="!jejakRows.length"
+            class="rounded-xl border border-dashed border-[var(--border-default)] p-8 text-center"
+          >
+            <i class="fas fa-inbox text-[var(--text-tertiary)] text-3xl mb-2"></i>
+            <p class="text-sm font-bold text-[var(--text-primary)]">
+              Tidak ada scan yang sampai pada tanggal ini
+            </p>
+            <p class="text-[11px] text-[var(--text-secondary)] mt-1">
+              Kalau guru mengaku sudah scan, berarti mesin tidak berhasil mengirim — periksa
+              jaringan mesin &amp; setelan HTTP Listening, bukan data guru di aplikasi.
+            </p>
+          </div>
+          <div v-else class="overflow-x-auto">
+            <table class="w-full text-sm min-w-[680px]">
+              <thead>
+                <tr
+                  class="bg-[var(--bg-card-elevated)] text-[10px] uppercase tracking-wider text-[var(--text-secondary)]"
+                >
+                  <th class="text-left px-3 py-2.5 font-black">Jam</th>
+                  <th class="text-left px-3 py-2.5 font-black">Nama / PIN</th>
+                  <th class="text-left px-3 py-2.5 font-black">Hasil</th>
+                  <th class="text-left px-3 py-2.5 font-black">Shift</th>
+                  <th class="text-left px-3 py-2.5 font-black">Keterangan</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-[var(--border-subtle)]">
+                <tr
+                  v-for="r in jejakRows"
+                  :key="r.id"
+                  class="hover:bg-[var(--bg-card-elevated)] transition"
+                >
+                  <td class="px-3 py-2 font-mono text-xs whitespace-nowrap">{{ r.jam || '—' }}</td>
+                  <td class="px-3 py-2">
+                    <span class="font-bold text-[var(--text-primary)]">{{
+                      r.guru_nama || '(tak dikenal)'
+                    }}</span>
+                    <span class="block text-[10px] text-[var(--text-tertiary)]"
+                      >PIN {{ r.employee_no || '—' }}</span
+                    >
+                  </td>
+                  <td class="px-3 py-2">
+                    <span
+                      :class="[
+                        'inline-block text-[10px] font-black px-2 py-0.5 rounded uppercase',
+                        HASIL_META[r.hasil]?.buruk
+                          ? 'bg-amber-100 text-amber-800'
+                          : 'bg-emerald-100 text-emerald-800'
+                      ]"
+                      >{{ HASIL_META[r.hasil]?.label || r.hasil }}</span
+                    >
+                  </td>
+                  <td class="px-3 py-2 text-xs text-[var(--text-secondary)]">
+                    {{ r.shift || '—' }}
+                  </td>
+                  <td class="px-3 py-2 text-[11px] text-[var(--text-secondary)]">
+                    {{ r.catatan || '—' }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </template>
+
+        <p class="text-[10px] text-[var(--text-tertiary)] italic mt-3">
+          Jejak ini khusus mesin <b>HiView</b> (push langsung ke server). Mesin Fingerspot Revo
+          punya diagnosanya sendiri di Ammu Desktop &rarr; Mesin Absensi.
+        </p>
       </div>
 
       <!-- TAB: Impor Fingerprint -->
@@ -1050,7 +1203,7 @@
       </div>
 
       <p
-        v-if="tabMode !== 'rekapunit'"
+        v-if="tabMode !== 'rekapunit' && tabMode !== 'jejak'"
         class="text-center text-[10px] text-[var(--text-tertiary)] pt-2"
       >
         <i class="fas fa-circle-info mr-1"></i>
@@ -1062,7 +1215,7 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
-import { setOne, updateOne, deleteOne, mergeOne, getOne } from '@/services/db'
+import { setOne, updateOne, deleteOne, mergeOne, getOne, queryColl } from '@/services/db'
 import { isSuperAdmin } from '@/utils/roleScope'
 import { todayJakarta } from '@/utils/format'
 import { useAuthStore } from '@/stores/auth'
@@ -1279,6 +1432,75 @@ const tabMode = ref('harian')
 const lastImportFileName = ref('')
 const importing = ref(false)
 const importResult = ref({ ok: 0, error: 0, errors: [] })
+
+// =====================================================
+// JEJAK SCAN MESIN HIVIEW (Kyai, 6 Agu 2026)
+// =====================================================
+// "Guru sudah scan tapi datanya tidak terkirim, padahal ID finger sudah benar."
+// Selama scan yang ditolak tak meninggalkan bekas, keluhan itu tak bisa dijawab:
+// mesin tak mengirim, edge menolak, dan tertulis-tapi-salah-shift tampak sama saja
+// dari layar absensi. Tabel hiview_scan_log merekam ketiganya; panel ini membacanya.
+//
+// `buruk: true` = perlu ditindak Kyai. Hanya itu yang disorot — kalau semua baris
+// diberi warna, tak ada yang menonjol dan panelnya kembali jadi sekadar statistik.
+const HASIL_META = {
+  diterima: { label: 'Jadi absen', buruk: false },
+  pulang: { label: 'Jam pulang', buruk: false },
+  duplikat: { label: 'Scan ulang', buruk: false },
+  izin_sakit: { label: 'Izin/sakit', buruk: false },
+  luar_window: { label: 'Di luar jam shift', buruk: true },
+  pin_tak_dikenal: { label: 'PIN tak dikenal', buruk: true },
+  waktu_tak_terbaca: { label: 'Waktu tak terbaca', buruk: true },
+  bukan_absen: { label: 'Bukan event absen', buruk: true }
+}
+const jejakTanggal = ref(todayJakarta())
+const jejakRows = ref([])
+const jejakLoading = ref(false)
+const jejakError = ref('')
+
+const jejakRingkas = computed(() => {
+  const hitung = {}
+  for (const r of jejakRows.value) {
+    const h = String(r.hasil || 'lain')
+    hitung[h] = (hitung[h] || 0) + 1
+  }
+  // Yang perlu ditindak didahulukan; sisanya urut jumlah terbanyak.
+  return Object.keys(hitung)
+    .map((h) => ({
+      hasil: h,
+      jumlah: hitung[h],
+      label: HASIL_META[h]?.label || h,
+      buruk: !!HASIL_META[h]?.buruk
+    }))
+    .sort((a, b) => Number(b.buruk) - Number(a.buruk) || b.jumlah - a.jumlah)
+})
+
+async function muatJejak() {
+  const tgl = String(jejakTanggal.value || '').slice(0, 10)
+  if (!tgl) return
+  jejakLoading.value = true
+  jejakError.value = ''
+  try {
+    const rows = await queryColl('hiview_scan_log', [['tanggal', '==', tgl]], [], 1000)
+    // Jam disimpan di ekor jsonb, jadi urutkan di sini (bukan lewat order kolom).
+    jejakRows.value = rows.sort((a, b) => String(b.jam || '').localeCompare(String(a.jam || '')))
+  } catch (e) {
+    // Tabel belum ada = migrasi belum dijalankan. Katakan apa adanya, jangan
+    // biarkan terbaca sebagai "mesin tak mengirim apa-apa".
+    const pesan = String(e?.message || e)
+    jejakError.value = /does not exist|schema cache|relation/i.test(pesan)
+      ? 'Tabel jejak belum ada di database — jalankan `supabase db push` dulu.'
+      : 'Gagal memuat jejak: ' + pesan
+    jejakRows.value = []
+  } finally {
+    jejakLoading.value = false
+  }
+}
+
+function bukaJejak() {
+  tabMode.value = 'jejak'
+  if (!jejakRows.value.length && !jejakError.value) muatJejak()
+}
 
 // =====================================================
 // IMPOR FINGERPRINT

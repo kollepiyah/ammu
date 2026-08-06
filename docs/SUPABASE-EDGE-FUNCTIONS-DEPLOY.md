@@ -277,9 +277,25 @@ retry-storm. Hanya `401/405/500` yg sengaja non-OK.
 (Configuration → Platform Attendance / menu Time and Attendance → OFF) & **ISUP** (Network → Device
 Access → ISUP → Enable OFF) bila menunjuk server tak valid.
 
-### d. Uji & diagnosa (dashboard, BUKAN CLI)
-> CLI `supabase` v2.x **tidak punya** `functions logs`. Pakai **Dashboard → Edge Functions →
-> hiview-absen → Invocations / Logs**.
+### d. Uji & diagnosa
+
+**Cara utama (sejak 6 Agu 2026): di dalam aplikasi — Absensi Guru → tab "Jejak Mesin".**
+Setiap scan yang sampai ke server tercatat di tabel `hiview_scan_log`, lengkap dengan
+hasilnya (`diterima` / `pulang` / `luar_window` / `pin_tak_dikenal` / `izin_sakit` /
+`duplikat` / `bukan_absen` / `waktu_tak_terbaca`). Ini yang memisahkan tiga hal yang
+dulu tampak sama persis dari layar absensi:
+
+| Yang terlihat di tab Jejak | Artinya |
+|---|---|
+| tanggal itu **kosong sama sekali** | mesin tidak berhasil mengirim → periksa jaringan & HTTP Listening, bukan data guru |
+| ada baris, hasil **`luar_window`** | scan sampai tapi jamnya di luar shift → setel *toleransi scan* di Pengaturan → Master Shift, atau betulkan shift guru |
+| ada baris, hasil **`pin_tak_dikenal`** | `employeeNo` mesin ≠ `guru.id_fingerprint` |
+
+Tabelnya lahir dari migrasi `20260806120000_hiview_scan_log.sql` — **`supabase db push`
+dulu**, kalau belum, tab Jejak akan bilang tabelnya belum ada.
+
+> Cara lama (masih berguna untuk galat 401/5xx): CLI `supabase` v2.x **tidak punya**
+> `functions logs`. Pakai **Dashboard → Edge Functions → hiview-absen → Invocations / Logs**.
 1. `GET` URL fungsi → `{ok:true,service:"hiview-absen"}` (health, tanpa auth).
 2. Scan 1 guru ter-enroll → buka **Invocations**: `401`=secret salah/kepotong (lihat ⚠️ §b),
    `200`=OK. TLS mesin→`*.supabase.co` (Cloudflare) **terbukti jalan** 24 Jun — relay TIDAK perlu.

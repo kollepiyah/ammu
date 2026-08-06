@@ -124,6 +124,74 @@ function toWib(dt: string): { date: string; hhmm: string } | null {
   return m ? { date: m[1], hhmm: `${m[2]}:${m[3]}` } : null
 }
 
+// ── JEJAK SCAN (Kyai, 6 Agu 2026) ────────────────────────────────────────────
+// "Guru sudah scan tapi datanya tidak terkirim" tak bisa ditelusuri selama setiap
+// pembuangan event hanya jadi console.log yang tak bisa dibuka siapa pun di pesantren.
+// Tiap event yang membawa AccessControllerEvent karena itu ditulis apa adanya ke
+// hiview_scan_log — termasuk, dan terutama, yang DITOLAK.
+//
+// Menulis jejak TIDAK BOLEH mengubah nasib absennya: seluruh badan fungsi ini
+// dibungkus try/catch dan pemanggilnya tak pernah menunggu hasilnya untuk memutuskan
+// balasan ke mesin. Log rusak lebih baik daripada absen hilang.
+type HasilScan =
+  | 'diterima' // jadi baris absen masuk
+  | 'pulang' // ditempel sbg jam_pulang
+  | 'luar_window' // di luar jam shift & tak ada baris masuk utk ditempeli
+  | 'pin_tak_dikenal' // employeeNo tak ada di guru.id_fingerprint
+  | 'izin_sakit' // baris hari itu izin/sakit, sengaja tak ditimpa
+  | 'duplikat' // scan ulang di window yang sama, jam tak lebih awal
+  | 'bukan_absen' // event orang tapi tanpa employeeNo / bukan autentikasi
+  | 'waktu_tak_terbaca'
+
+// Id idempoten: mesin yang me-retry event yang sama menimpa barisnya sendiri,
+// bukan menambah baris baru. Detik ikut dibawa supaya dua scan dalam satu menit
+// tak saling menimpa.
+function idJejak(empNo: string, dt: string): string {
+  const digit = String(dt || '').replace(/\D/g, '')
+  const kunci = digit ? digit.slice(0, 14) : new Date().toISOString().replace(/\D/g, '')
+  return `hv_${empNo || 'x'}_${kunci}`
+}
+
+// deno-lint-ignore no-explicit-any
+async function catatJejak(
+  db: any,
+  j: {
+    empNo: string
+    dateTime: string
+    hasil: HasilScan
+    tanggal?: string
+    jam?: string
+    guruId?: string
+    guruNama?: string
+    shift?: string
+    status?: string
+    catatan?: string
+  }
+) {
+  try {
+    await db.from('hiview_scan_log').upsert(
+      {
+        id: idJejak(j.empNo, j.dateTime),
+        tanggal: j.tanggal || '',
+        employee_no: j.empNo || '',
+        guru_id: j.guruId || null,
+        hasil: j.hasil,
+        data: {
+          jam: j.jam || '',
+          guru_nama: j.guruNama || '',
+          shift: j.shift || '',
+          status: j.status || '',
+          catatan: j.catatan || '',
+          dateTime_mesin: j.dateTime || ''
+        }
+      },
+      { onConflict: 'id' }
+    )
+  } catch (e) {
+    console.error('[hiview] gagal catat jejak:', (e as Error)?.message || e)
+  }
+}
+
 // Baris guru -> bentuk flat (kolom riil + ekor `data` jsonb), cermin db.js _flatten.
 // deno-lint-ignore no-explicit-any
 function flattenGuru(row: any): any {
@@ -149,11 +217,21 @@ async function fetchSettings(db: any): Promise<Record<string, unknown>> {
 // sudah bubar — pulang lebih awal pun tercatat. jam_pulang = MAX (idempoten). HANYA MENCATAT
 // — tak mengubah status/hadir. Gagal = log saja (jangan bikin mesin retry-storm); pemanggil
 // tetap balas isapiOk.
+// Mengembalikan daftar shift yang benar-benar menerima jam_pulang — dipakai pemanggil
+// untuk membedakan "tercatat sebagai pulang" dari "hilang begitu saja" di jejak scan.
 // deno-lint-ignore no-explicit-any
-async function catatPulang(db: any, guru: any, settings: any, t: { date: string; hhmm: string }) {
+async function catatPulang(
+  db: any,
+  // deno-lint-ignore no-explicit-any
+  guru: any,
+  // deno-lint-ignore no-explicit-any
+  settings: any,
+  t: { date: string; hhmm: string }
+): Promise<string[]> {
+  const tercatat: string[] = []
   try {
     const milik = shiftsForGuru(guru, settings)
-    if (!milik || milik.size === 0) return
+    if (!milik || milik.size === 0) return tercatat
     const { data: rows } = await db
       .from('absensi_shift_guru')
       .select('*')
@@ -174,7 +252,7 @@ async function catatPulang(db: any, guru: any, settings: any, t: { date: string;
     const targets = pilihShiftPulang(t.hhmm, barisMasuk, settings)
     if (!targets.length) {
       console.log(`[hiview] pulang: tak ada shift cocok ${guru.nama} jam=${t.hhmm}`)
-      return
+      return tercatat
     }
     for (const sh of targets) {
       const target = rowByShift[sh]
@@ -187,11 +265,13 @@ async function catatPulang(db: any, guru: any, settings: any, t: { date: string;
         .update({ data: { ...cur, jam_pulang: t.hhmm } })
         .eq('id', target.id)
       if (error) throw error
+      tercatat.push(sh)
       console.log(`[hiview] PULANG ${guru.nama} ${t.date} ${t.hhmm} → ${sh}`)
     }
   } catch (e) {
     console.error('[hiview] pulang error:', (e as Error)?.message || e)
   }
+  return tercatat
 }
 
 Deno.serve(async (req) => {
@@ -223,24 +303,35 @@ Deno.serve(async (req) => {
   const empNo = String(ace?.employeeNoString ?? ace?.employeeNo ?? '').trim()
   const dateTime = String(ev?.dateTime || ace?.time || ace?.dateTime || '').trim()
 
+  // Client dibuat SEBELUM cabang-cabang penolakan: pencatat jejak memerlukannya, dan
+  // justru event yang ditolak itulah yang paling perlu meninggalkan jejak.
+  const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
+
   // Hanya event autentikasi orang (major 5 + ada employeeNo). Sisanya diabaikan
   // (isapiOk: balas statusCode 1 supaya mesin tak retry-storm & tak tampil "gagal").
   if (!ace || major !== 5 || !empNo) {
     const reason = !ace ? 'no-event' : major !== 5 ? `major=${major}` : 'no-employee'
     console.log(`[hiview] diabaikan reason=${reason}`)
+    // Event TANPA AccessControllerEvent (heartbeat mesin, keep-alive) sengaja tak
+    // dicatat — jumlahnya jauh melebihi scan orang dan akan menenggelamkan jejaknya.
+    if (ace) {
+      await catatJejak(db, { empNo, dateTime, hasil: 'bukan_absen', catatan: reason })
+    }
     return isapiOk(req)
   }
   const t = toWib(dateTime)
   if (!t) {
     console.log(`[hiview] bad-datetime: ${dateTime}`)
+    await catatJejak(db, {
+      empNo,
+      dateTime,
+      hasil: 'waktu_tak_terbaca',
+      catatan: `dateTime mesin: ${dateTime || '(kosong)'}`
+    })
     return isapiOk(req)
   }
 
   try {
-    const db = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    )
     const { data: gRow } = await db
       .from('guru')
       .select('*')
@@ -249,14 +340,36 @@ Deno.serve(async (req) => {
     const guru = flattenGuru(gRow)
     if (!guru) {
       console.log(`[hiview] employeeNo ${empNo} tak terdaftar (guru.id_fingerprint)`)
+      await catatJejak(db, {
+        empNo,
+        dateTime,
+        tanggal: t.date,
+        jam: t.hhmm,
+        hasil: 'pin_tak_dikenal',
+        catatan: 'tak ada guru dengan id_fingerprint ini'
+      })
       return isapiOk(req)
     }
+    const jejakGuru = { guruId: String(guru.id), guruNama: String(guru.nama || '') }
 
     const settings = await fetchSettings(db)
     const shift = deriveShift(t.hhmm, guru, settings)
     if (!shift) {
       // Di luar window masuk → coba catat sebagai absen pulang (scan ke-2).
-      await catatPulang(db, guru, settings, t)
+      const pulang = await catatPulang(db, guru, settings, t)
+      await catatJejak(db, {
+        empNo,
+        dateTime,
+        tanggal: t.date,
+        jam: t.hhmm,
+        ...jejakGuru,
+        hasil: pulang.length ? 'pulang' : 'luar_window',
+        shift: pulang.join(', '),
+        catatan: pulang.length
+          ? 'dicatat sebagai jam pulang'
+          : 'jam scan di luar window shift & tak ada baris masuk hari ini — ' +
+            'cek shift guru, atau setel toleransi scan di Master Shift'
+      })
       return isapiOk(req)
     }
     const status = statusFor(t.hhmm, shift, settings)
@@ -272,6 +385,17 @@ Deno.serve(async (req) => {
       const exst = String(ex.status || '').toLowerCase()
       if (exst === 'izin' || exst === 'sakit') {
         console.log(`[hiview] skip izin/sakit ${docId}`)
+        await catatJejak(db, {
+          empNo,
+          dateTime,
+          tanggal: t.date,
+          jam: t.hhmm,
+          ...jejakGuru,
+          hasil: 'izin_sakit',
+          shift,
+          status: exst,
+          catatan: 'baris hari ini berstatus izin/sakit — sengaja tak ditimpa scan'
+        })
         return isapiOk(req)
       }
       const exjam = String(ex.jam || '')
@@ -281,7 +405,19 @@ Deno.serve(async (req) => {
       // langsung dibuang → baris tetap "belum pulang". (Kyai, 22 Jul 2026)
       if (exjam && exjam <= t.hhmm) {
         console.log(`[hiview] scan-ke-2 dalam window ${docId} existing=${exjam} → coba pulang`)
-        await catatPulang(db, guru, settings, t)
+        const pulang = await catatPulang(db, guru, settings, t)
+        await catatJejak(db, {
+          empNo,
+          dateTime,
+          tanggal: t.date,
+          jam: t.hhmm,
+          ...jejakGuru,
+          hasil: pulang.length ? 'pulang' : 'duplikat',
+          shift: pulang.length ? pulang.join(', ') : shift,
+          catatan: pulang.length
+            ? 'dicatat sebagai jam pulang'
+            : `sudah ada jam masuk ${exjam} & jeda belum cukup untuk dihitung pulang`
+        })
         return isapiOk(req)
       }
     }
@@ -304,6 +440,16 @@ Deno.serve(async (req) => {
       if (error) throw error
     }
     console.log(`[hiview] ${guru.nama} ${t.date} ${t.hhmm} ${shift}/${status}`)
+    await catatJejak(db, {
+      empNo,
+      dateTime,
+      tanggal: t.date,
+      jam: t.hhmm,
+      ...jejakGuru,
+      hasil: 'diterima',
+      shift,
+      status
+    })
     return isapiOk(req)
   } catch (e) {
     // 500 -> beri kesempatan mesin retry (error transien DB/jaringan).
