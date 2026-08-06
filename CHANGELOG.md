@@ -10,16 +10,40 @@ naik satu tiap rilis. Entri lama memakai skema lama `v.{nomor-urut}.{MMDDtahunmu
 
 ## [Unreleased]
 
-### Tiga laporan Kyai (6 Agu 2026)
+### Planned
 
-⚠️ **URUTAN DEPLOY** (ada migrasi DB + edge function):
+- Capacitor Android first build + sideload APK
+- Capacitor iOS setup
+- Tauri Desktop scaffold
+- Phase 1 palette migration: `bg-blue-600/700` action button → `bg-teal-600/700` (~62 occurrences)
+- DOMPurify integration untuk template literal innerHTML yang inject user data
+- Console.log cleanup (37 occurrences di production)
+
+---
+
+## [v.1.2.9] — 2026-08-06 — Tiga laporan Kyai + tolakan Play berulang + unduhan Desktop
+
+⚠️ **URUTAN DEPLOY — tiga langkah, jangan ada yang dilewat:**
 
 1. `supabase db push` — tabel jejak `hiview_scan_log`.
 2. `supabase functions deploy hiview-absen --no-verify-jwt`.
 3. Deploy web **dari direktori utama** (worktree tak punya `vue-app/.env.local`).
 
-Setelah itu Kyai perlu **mengisi toleransi scan** di Pengaturan → Master Shift (defaultnya
-0 = perilaku lama, jadi tak ada yang berubah sampai diisi).
+Lalu **AAB vc129** dan **Electron 1.2.9** (`npm run electron:release`).
+
+⚠️ **AAB vc129 WAJIB kalau mau penolakan Play berhenti.** Perbaikan login lintas-tab ada
+di bundel web yang ikut AAB; yang sedang ditinjau Google sekarang masih vc128, jadi
+deploy web saja tak mengubah apa pun di Play. Sesudah AAB naik, ganti teks **Detail
+login** ke versi vc129+ di `PLAYSTORE-LISTING.md` §9 ("either tab works").
+
+⚠️ **Electron: tiap PC masih perlu SATU KALI pasang manual** (`app-update.yml` lama di
+dalam pemasangan yang ada masih memverifikasi tanda tangan). Tautan unduhnya baru benar
+mulai rilis ini.
+
+Setelah deploy Kyai perlu **mengisi toleransi scan** di Pengaturan → Master Shift
+(defaultnya 0 = perilaku lama, jadi tak ada yang berubah sampai diisi).
+
+### Tiga laporan Kyai (6 Agu 2026)
 
 #### Fixed (Perbaikan)
 
@@ -114,15 +138,6 @@ baru diunggah**; yang sedang ditinjau sekarang masih vc128.
   tak pernah ada di satu rilis pun.
 - `.gitignore` mengabaikan `*.apk`/`*.aab` — `AmmuOnline.apk` (~6 MB) tergeletak di
   akar repo tanpa penjaga.
-
-### Planned
-
-- Capacitor Android first build + sideload APK
-- Capacitor iOS setup
-- Tauri Desktop scaffold
-- Phase 1 palette migration: `bg-blue-600/700` action button → `bg-teal-600/700` (~62 occurrences)
-- DOMPurify integration untuk template literal innerHTML yang inject user data
-- Console.log cleanup (37 occurrences di production)
 
 ---
 

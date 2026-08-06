@@ -144,7 +144,7 @@ async function initSentry() {
     window.Sentry.init({
       dsn,
       tracesSampleRate: 0.1,
-      release: 'portal-mu@1.2.8',
+      release: 'portal-mu@1.2.9',
       environment: window.location.hostname.includes('localhost') ? 'dev' : 'prod'
     })
 
