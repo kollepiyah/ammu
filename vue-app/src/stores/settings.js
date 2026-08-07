@@ -20,6 +20,9 @@ const KEUANGAN_KEYS = [
   'keuTagihanJenisByTA',
   'keu_jenis_tagihan',
   'keuBisyarohJenis',
+  // Jenis Tunjangan ber-scope (Kyai 7 Agu 2026) — menggantikan master_tunjangan yang
+  //   cuma {nama, nominal, guru_ids}. Sensitif sama seperti tarif bisyaroh.
+  'keuTunjanganJenis',
   'bebanMengajar',
   'master_tunjangan',
   'master_potongan',

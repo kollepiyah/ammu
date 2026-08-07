@@ -457,11 +457,21 @@
                   </span>
                 </div>
                 <!-- Tugas duration -->
-                <p v-if="g.tanggal_tugas" class="text-[10px] text-[var(--text-secondary)] mt-1.5">
-                  <i class="fas fa-clock mr-1"></i>{{ hitungLamaMengajar(g.tanggal_tugas) }}
+                <!-- Kyai 7 Agu 2026: masa pengabdian dari "Tgl. Tugas" (`tanggal_mengabdi`).
+                     `tanggal_tugas` kini "Tgl. Syahadah" — sengaja TIDAK dipakai sbg cadangan:
+                     menebak masa kerja dari tanggal syahadah = tunjangan atas angka karangan. -->
+                <p
+                  v-if="g.tanggal_mengabdi"
+                  class="text-[10px] text-[var(--text-secondary)] mt-1.5"
+                >
+                  <i class="fas fa-clock mr-1"></i>{{ hitungLamaMengajar(g.tanggal_mengabdi) }}
                   <span class="text-[var(--text-tertiary)]"
-                    >· sejak {{ formatTanggal(g.tanggal_tugas) }}</span
+                    >· sejak {{ formatTanggal(g.tanggal_mengabdi) }}</span
                   >
+                </p>
+                <p v-if="g.tanggal_tugas" class="text-[10px] text-[var(--text-tertiary)] mt-0.5">
+                  <i class="fas fa-certificate mr-1"></i>Syahadah
+                  {{ formatTanggal(g.tanggal_tugas) }}
                 </p>
                 <!-- WA + username -->
                 <div
@@ -865,6 +875,7 @@ function _buildExcelRows(list) {
     lembaga: g.lembaga || '',
     lembaga_sekolah: g.lembaga_sekolah || '',
     tanggal_tugas: g.tanggal_tugas || '',
+    tanggal_mengabdi: g.tanggal_mengabdi || '',
     nig: g.nig || g.ekgq || g.no_ekgq || g.no_syahadah || '',
     rek_bmt: g.rek_bmt || g.no_rek_bmt || '', // v.1.1.9: fallback field lama
     pendidikan: g.pendidikan_terakhir || '',
@@ -888,7 +899,10 @@ const _excelColumns = [
   { key: 'jabatan_tambahan', header: 'Jabatan Tambahan', width: 16 },
   { key: 'lembaga', header: 'Lembaga', width: 14 },
   { key: 'lembaga_sekolah', header: 'Lembaga Sekolah', width: 14 },
-  { key: 'tanggal_tugas', header: 'Tanggal Tugas (DD/MM/YYYY)', width: 14 },
+  // Kyai 7 Agu 2026: judul kolom lama DIPERTAHANKAN supaya berkas impor lama tetap
+  //   mendarat di field yang benar; yang berubah cuma label di layar ("Tgl. Syahadah").
+  { key: 'tanggal_tugas', header: 'Tgl Syahadah (DD/MM/YYYY)', width: 16 },
+  { key: 'tanggal_mengabdi', header: 'Tgl Tugas/Mengabdi (DD/MM/YYYY)', width: 18 },
   { key: 'nig', header: 'NIG', width: 12 },
   { key: 'rek_bmt', header: 'No Rek BMT', width: 18 },
   { key: 'pendidikan', header: 'Pendidikan Terakhir', width: 16 },
@@ -1347,10 +1361,35 @@ async function onImportGuru(e) {
       put('jabatan_tambahan', _pick(r, 'Jabatan Tambahan', 'jabatan_tambahan'))
       put('lembaga', _pick(r, 'Lembaga', 'lembaga'))
       put('lembaga_sekolah', _pick(r, 'Lembaga Sekolah', 'lembaga_sekolah'))
+      // "Tgl Tugas" polos SENGAJA tetap memetakan ke `tanggal_tugas` (kini Tgl. Syahadah):
+      //   itulah judul di semua berkas impor lama, dan memindahkannya diam-diam ke field
+      //   masa pengabdian akan menerbitkan tunjangan atas tanggal yang keliru.
       put(
         'tanggal_tugas',
         _parseTglGuru(
-          _pick(r, 'Tanggal Tugas (DD/MM/YYYY)', 'Tgl Tugas', 'Tanggal Tugas', 'tanggal_tugas')
+          _pick(
+            r,
+            'Tgl Syahadah (DD/MM/YYYY)',
+            'Tgl Syahadah',
+            'Tanggal Syahadah',
+            'Tanggal Tugas (DD/MM/YYYY)',
+            'Tgl Tugas',
+            'Tanggal Tugas',
+            'tanggal_tugas'
+          )
+        )
+      )
+      put(
+        'tanggal_mengabdi',
+        _parseTglGuru(
+          _pick(
+            r,
+            'Tgl Tugas/Mengabdi (DD/MM/YYYY)',
+            'Tgl Tugas/Mengabdi',
+            'Tgl Mengabdi',
+            'Tanggal Mengabdi',
+            'tanggal_mengabdi'
+          )
         )
       )
       put('nig', _pick(r, 'NIG', 'No Syahadah', 'EKGQ', 'ekgq', 'nig'))

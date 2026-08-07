@@ -27,7 +27,11 @@ function emptyForm() {
     jabatan_tambahan: '',
     lembaga: '',
     lembaga_sekolah: '',
+    // Kyai 7 Agu 2026: `tanggal_tugas` kini berlabel "Tgl. Syahadah" (kuncinya sengaja
+    //   tetap — NIG diturunkan darinya). `tanggal_mengabdi` = field baru "Tgl. Tugas",
+    //   satu-satunya dasar masa pengabdian & tunjangannya.
     tanggal_tugas: '',
+    tanggal_mengabdi: '',
     no_nig: '',
     // v.97.0626: nomor rekening BMT guru (tujuan pencairan bisyaroh via BMT)
     rek_bmt: '',
@@ -459,6 +463,7 @@ export function useGuruForm() {
         lembaga: g.lembaga || '',
         lembaga_sekolah: g.lembaga_sekolah || '',
         tanggal_tugas: g.tanggal_tugas || '',
+        tanggal_mengabdi: g.tanggal_mengabdi || '',
         // v.100 Batch11: EKGQ → NIG (Nomor Induk Guru). Field baru `nig`, fallback baca data lama.
         no_nig: g.nig || g.ekgq || g.no_ekgq || g.no_syahadah || '',
         wa: g.wa || '',
@@ -570,6 +575,7 @@ export function useGuruForm() {
         lembaga: butuhLembaga.value ? f.lembaga : '',
         lembaga_sekolah: butuhLembaga.value ? f.lembaga_sekolah : '',
         tanggal_tugas: f.tanggal_tugas || '',
+        tanggal_mengabdi: f.tanggal_mengabdi || '',
         nig: f.no_nig || '', // v.100 Batch11: Nomor Induk Guru (dulu ekgq)
         wa: normalizeWA(f.wa), // v.99: auto leading-0
         username: defaultUsername,

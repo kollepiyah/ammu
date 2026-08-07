@@ -247,15 +247,35 @@
               di slip bisyaroh. Tak dicentang = tidak diabsen di shift itu.
             </p>
           </div>
+          <!-- Kyai 7 Agu 2026: field lama `tanggal_tugas` DIGANTI NAMANYA jadi "Tgl. Syahadah"
+               (kuncinya sengaja tetap — NIG diturunkan darinya). Masa pengabdian dihitung dari
+               field BARU di sebelahnya, yang diisi Kyai sendiri. -->
           <div>
             <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase"
-              >Tanggal Tugas</label
+              >Tgl. Syahadah</label
             >
             <input
               v-model="form.tanggal_tugas"
               type="date"
               class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-cyan-500 outline-none cursor-pointer"
             />
+            <p class="text-[10px] text-[var(--text-tertiary)] italic mt-1">
+              Dasar penomoran NIG — jangan diubah tanpa perlu.
+              <b>Boleh kosong</b> untuk yang belum bersyahadah (NIG-nya tak terbit otomatis).
+            </p>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase"
+              >Tgl. Tugas</label
+            >
+            <input
+              v-model="form.tanggal_mengabdi"
+              type="date"
+              class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-cyan-500 outline-none cursor-pointer"
+            />
+            <p class="text-[10px] text-[var(--text-tertiary)] italic mt-1">
+              Awal mengabdi — dasar tunjangan pengabdian. Kosong = tunjangan itu tak terbit.
+            </p>
           </div>
         </div>
       </div>

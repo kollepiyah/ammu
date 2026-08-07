@@ -1025,7 +1025,11 @@ import {
   barisBisyaroh,
   refsUntukScope,
   ringkasSlip,
-  HITUNGAN_OPTIONS
+  HITUNGAN_OPTIONS,
+  // Kyai 7 Agu 2026: tunjangan ber-scope (jabatan/lembaga/shift/orang) + masa pengabdian.
+  jenisTunjanganList,
+  barisTunjangan,
+  tahunPengabdian
 } from '@/utils/bisyarohScope'
 import { shiftsForGuru } from '@/utils/shiftDerive'
 import { shiftLabelOf, shiftList } from '@/utils/shiftMaster'
@@ -1684,6 +1688,31 @@ function tanggalHadirSekolah(guruId, periode, shiftIds) {
 const simNominal = ref({}) // { [jenis_id]: nominal coba-coba } — hidup di layar saja
 const simPeriode = computed(() => `${tahun.value}-${String(bulan.value).padStart(2, '0')}`)
 
+// Hari EFEKTIF per shift guru (Senin–Sabtu di luar libur lembaga shift itu).
+//   Dipakai dua-duanya: simulasi hadir-penuh, dan penyebut tunjangan berprestasi
+//   ("100% tepat waktu" = hadir tepat ÷ hari efektif) — satu rumus, jangan disalin.
+function efektifPerShiftGuru(g, tgls) {
+  const s = settingsStore.settings || {}
+  const out = {}
+  for (const sh of shiftsForGuru(g, s)) {
+    const daftar = shiftList(s).find((x) => String(x.id) === String(sh))
+    const lem = (Array.isArray(daftar?.lembaga) ? daftar.lembaga : [])[0] || ''
+    out[String(sh).toLowerCase()] = hariEfektif(tgls, liburSetPeriode(lem))
+  }
+  return out
+}
+
+// Akhir bulan periode 'YYYY-MM' → 'YYYY-MM-DD'. Titik ukur masa pengabdian: sengaja akhir
+//   bulan (bukan hari ini) supaya slip yang digenerate ulang bulan depan tak berubah angka.
+function akhirBulanPeriode(periode) {
+  const [y, m] = String(periode || '')
+    .split('-')
+    .map(Number)
+  if (!y || !m) return ''
+  const akhir = new Date(Date.UTC(y, m, 0)).getUTCDate()
+  return `${y}-${String(m).padStart(2, '0')}-${String(akhir).padStart(2, '0')}`
+}
+
 // Kembar `ctxGuru`, tapi kuantitasnya dari HARI EFEKTIF, bukan dari absensi.
 function ctxGuruPenuh(g, periode) {
   const s = settingsStore.settings || {}
@@ -1691,12 +1720,7 @@ function ctxGuruPenuh(g, periode) {
   const shiftIds = shiftsForGuru(g, s)
 
   // Hadir penuh per shift = hari efektif menurut libur lembaga shift itu.
-  const hadirPerShift = {}
-  for (const sh of shiftIds) {
-    const daftar = shiftList(s).find((x) => String(x.id) === String(sh))
-    const lem = (Array.isArray(daftar?.lembaga) ? daftar.lembaga : [])[0] || ''
-    hadirPerShift[String(sh).toLowerCase()] = hariEfektif(tgls, liburSetPeriode(lem))
-  }
+  const hadirPerShift = efektifPerShiftGuru(g, tgls)
 
   const bebanJP = jpByLembagaForGuru(s, g.id)
   const jpDiajarByLembaga = {}
@@ -1727,6 +1751,10 @@ function ctxGuruPenuh(g, periode) {
     shiftIds,
     hadirPerShift,
     hadirTepatPerShift: hadirPerShift, // hadir penuh = semuanya tepat waktu
+    // Andaian hadir penuh membuat tunjangan berprestasi SELALU lolos — memang itu arti
+    //   plafon: biaya tertinggi yang mungkin bila semua orang sempurna sebulan itu.
+    efektifPerShift: hadirPerShift,
+    tahunPengabdian: tahunPengabdian(g.tanggal_mengabdi, akhirBulanPeriode(periode)),
     bebanJPByLembaga: bebanJP,
     jpDiajarByLembaga
   }
@@ -1826,6 +1854,11 @@ function ctxGuru(g, periode) {
     shiftIds: shiftsForGuru(g, s),
     hadirPerShift: hadirPerShiftGuru(g.id, periode),
     hadirTepatPerShift: hadirTepatPerShiftGuru(g.id, periode), // v.1.2.3: utk per_tepat
+    // Kyai 7 Agu: penyebut tunjangan berprestasi + titik ukur masa pengabdian.
+    //   Hari efektif dipotong "s/d hari ini" (tanggalPeriode) sama seperti sisa slip,
+    //   supaya bulan berjalan tak dinilai atas hari yang belum terjadi.
+    efektifPerShift: efektifPerShiftGuru(g, tgls),
+    tahunPengabdian: tahunPengabdian(g.tanggal_mengabdi, akhirBulanPeriode(periode)),
     // per_jp (bisyaroh sekolah, opsi C): JP mingguan (info) + JP benar-benar diajar.
     bebanJPByLembaga: bebanJP,
     jpDiajarByLembaga
@@ -1863,6 +1896,17 @@ function buildLineItemsFromGuru(g, periode) {
 }
 
 // v.95.0626: master tunjangan/potongan yg berlaku utk guru g (scope guru_ids; kosong = semua)
+/**
+ * Baris TUNJANGAN 1 guru — daftar `keuTunjanganJenis` lewat mesin scope yang sama dengan
+ * Jenis Bisyaroh (Kyai 7 Agu 2026). Selama daftar barunya belum pernah disimpan, isinya
+ * diturunkan dari `master_tunjangan` lama, jadi slip tak berubah sebelum Kyai menyentuh
+ * Pengaturan. Masa pengabdian dibaca dari field `tanggal_mengabdi` ("Tgl. Tugas") — BUKAN
+ * `tanggal_tugas`, yang kini berlabel "Tgl. Syahadah" dan tetap jadi dasar NIG.
+ */
+function barisTunjanganGuru(g, periode) {
+  return barisTunjangan(jenisTunjanganList(settingsStore.settings || {}), ctxGuru(g, periode))
+}
+
 function applicableMaster(key, g) {
   const sset = settingsStore.settings || {}
   const arr = Array.isArray(sset[key]) ? sset[key] : []
@@ -1899,16 +1943,9 @@ function pilihGuru(g) {
   //   itu lahir dari model per-guru yang sudah dihapus, jadi menyalinnya balik = memanen
   //   nominal yang tak punya jenis. Riwayat slip lamanya sendiri tetap utuh.
   const items = buildLineItemsFromGuru(g, periode)
-  // master tunjangan/potongan per-guru (scope guru_ids) — sengaja TIDAK dilebur ke Jenis
-  // Bisyaroh (keputusan Kyai), jadi tetap ditambahkan di sini.
-  for (const t of applicableMaster('master_tunjangan', g)) {
-    items.push({
-      kategori: 'tunjangan',
-      lembaga: '-',
-      label: t.nama || 'Tunjangan',
-      nominal: Number(t.nominal) || 0
-    })
-  }
+  // Tunjangan: daftar sendiri (bukan dilebur ke Jenis Bisyaroh — keputusan Kyai), tapi
+  // sejak 7 Agu 2026 memakai MESIN SCOPE yang sama. Lihat barisTunjanganGuru.
+  items.push(...barisTunjanganGuru(g, periode))
   const potonganAuto = applicableMaster('master_potongan', g).reduce(
     (s, p) => s + (Number(p.nominal) || 0),
     0
@@ -2149,14 +2186,7 @@ function buildSlipPayload(g, periode, seq, extra = {}) {
     label: p.nama || 'Potongan',
     nominal: Number(p.nominal) || 0
   }))
-  for (const t of applicableMaster('master_tunjangan', g)) {
-    lineItems.push({
-      kategori: 'tunjangan',
-      lembaga: '-',
-      label: t.nama || 'Tunjangan',
-      nominal: Number(t.nominal) || 0
-    })
-  }
+  lineItems.push(...barisTunjanganGuru(g, periode))
   for (const t of extra.tunjanganExtra || []) {
     if (Number(t.nominal) > 0)
       lineItems.push({

@@ -31,7 +31,7 @@
       <div class="bg-gradient-to-br from-teal-600 to-teal-800 rounded-2xl p-4 text-white shadow-sm">
         <p class="text-[10px] uppercase font-black text-white/85">Lama Mengabdi</p>
         <p class="text-2xl font-black mt-1 !text-white">{{ lamaMengajar }}</p>
-        <p class="text-[10px] text-white/80 mt-1">Sejak {{ guru?.tanggal_tugas || '-' }}</p>
+        <p class="text-[10px] text-white/80 mt-1">Sejak {{ guru?.tanggal_mengabdi || '-' }}</p>
       </div>
     </div>
 
@@ -869,7 +869,9 @@ const NAMA_BULAN = [
 ]
 const bulanLabel = `${NAMA_BULAN[now.getMonth()]} ${tahunIni}`
 
-const lamaMengajar = computed(() => hitungLamaMengajar(guru.value?.tanggal_tugas))
+// Kyai 7 Agu 2026: masa pengabdian dari "Tgl. Tugas" (`tanggal_mengabdi`) — bukan
+//   `tanggal_tugas` yang kini berlabel "Tgl. Syahadah".
+const lamaMengajar = computed(() => hitungLamaMengajar(guru.value?.tanggal_mengabdi))
 
 // === Bisyaroh ===
 const slipMine = computed(() =>

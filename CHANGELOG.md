@@ -10,15 +10,16 @@ naik satu tiap rilis. Entri lama memakai skema lama `v.{nomor-urut}.{MMDDtahunmu
 
 ## [Unreleased]
 
-⚠️ **URUTAN DEPLOY — dua langkah:**
+⚠️ **Rilis berikutnya WAJIB naik versi ke `v.1.3.1` / `vc131`.** Label v.1.3.0/vc130 sudah
+terpakai untuk dua isi berbeda: bundel bump `74e6274`, lalu rebuild 7 Agu yang membawa tiga
+commit sesudahnya. Electron 1.3.0 sudah terbit di GitHub, jadi membangun ulang dengan versi
+sama tak akan ditawarkan sebagai pembaruan, dan Play menolak versionCode kembar.
 
-1. `supabase db push` — migrasi `20260807170000` (strip ulang kunci keuangan dari
-   `settings/general` & `/web`). Aman: ia **tidak** menggabungkan apa pun ke row `keuangan`,
-   dan sebuah kunci hanya dibuang bila row `keuangan` memang sudah memilikinya.
-2. Deploy web **dari direktori utama** (worktree tak punya `vue-app/.env.local`).
+✅ **Sudah dijalankan Kyai 7 Agu 2026** (`supabase db push` migrasi `20260807170000`, deploy
+web, rebuild AAB & Electron): semua entri di bawah sampai bagian "config keuangan…".
 
-Tanpa edge function baru. Bila `auto-generate-tagihan` belum pernah di-redeploy sejak
-29 Jul, redeploy sekalian — versi lawasnya membaca jenis dari `general` yang kini dikosongkan.
+⏳ **Belum ter-deploy — Jenis Tunjangan + field Tgl. Tugas.** TANPA migrasi DB, TANPA edge:
+cukup deploy web dari **direktori utama**, lalu AAB & Electron bila perlu sampai ke HP dan PC.
 
 ### Added (Baru)
 
@@ -32,6 +33,29 @@ Tanpa edge function baru. Bila `auto-generate-tagihan` belum pernah di-redeploy 
   cocok** dengan jabatan/lembaga/shift orang tersebut. Jumlah seluruh baris per orang
   **selalu sama persis** dengan total per jenis (dijaga tes): keduanya membaca satu mesin
   yang sama, bukan dua hitungan yang kebetulan mirip.
+
+- **Tunjangan bisyaroh kini punya kategori, seperti Jenis Bisyaroh.** Model lamanya cuma
+  nama + nominal + daftar orang, jadi tiap kategori harus diketik per guru dan diperbarui
+  tangan tiap tahun bertambah. Kartu baru **Jenis Tunjangan** memakai mesin scope yang sama
+  dengan Jenis Bisyaroh (jabatan × lembaga × shift × orang) — nominal ditentukan **jabatan
+  dan lembaga**, bukan diketik per orang — ditambah dua cara hitung dan satu syarat baru:
+  - **Tunjangan jabatan** — mis. "Tunjangan Kepala Lembaga": flat, scope jabatan.
+  - **× tahun pengabdian** — nominal dikali jumlah tahun penuh mengabdi, terbit **tiap
+    bulan** dan naik sendiri saat tahunnya bertambah, tanpa disunting.
+  - **Minimal masa pengabdian** — isi 5 untuk "khusus yang mengabdi di atas 5 tahun".
+    Berlaku untuk **semua** cara hitung, bukan cuma yang kelipatan.
+  - **Bila tepat waktu ≥ ambang** — tunjangan berprestasi. Dinilai dari hadir **tepat waktu
+    ÷ hari efektif**, jadi izin/sakit/cuti ikut memotong; ambangnya bisa diturunkan dari
+    100% kalau terasa terlalu keras.
+    Bonus tepat waktu memang **masuk tunjangan** sekarang (keputusan Kyai), bukan pos bonus
+    tersendiri. Selama daftar barunya belum pernah disimpan, isinya diturunkan otomatis dari
+    Master Tunjangan lama — **slip tak berubah sedikit pun** sebelum Kyai menyentuh Pengaturan.
+- **Data guru: "Tanggal Tugas" lama kini bernama "Tgl. Syahadah", dan ada field baru
+  "Tgl. Tugas".** Yang lama tetap jadi dasar penomoran NIG (kuncinya sengaja tak diubah
+  supaya berkas impor lama tetap mendarat di tempat yang benar) dan **boleh kosong** untuk
+  yang belum bersyahadah. Yang baru = awal mengabdi, satu-satunya dasar masa pengabdian dan
+  tunjangannya; **kosong berarti tunjangan pengabdian tak terbit** — masa kerja tidak pernah
+  ditebak dari tanggal syahadah, sebab menebaknya berarti menerbitkan uang atas angka karangan.
 
 ### Fixed (Perbaikan)
 

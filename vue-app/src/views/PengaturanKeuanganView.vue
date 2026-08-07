@@ -1196,17 +1196,335 @@
       </div>
     </div>
 
-    <!-- v.1.1.9: Master Tunjangan & Potongan — tabel + dialog (ganti layout inline lama
+    <!-- Kyai 7 Agu 2026: JENIS TUNJANGAN ber-scope — "dimiripkan pengaturan bisyaroh".
+         Menggantikan Master Tunjangan lama yang cuma nama+nominal+daftar orang. -->
+    <div
+      v-show="secVisible('bisyaroh')"
+      class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
+    >
+      <div class="flex items-center justify-between gap-2 mb-2 flex-wrap">
+        <h3
+          class="text-xs md:text-sm font-black text-[var(--text-primary)] uppercase tracking-widest"
+        >
+          <i class="fas fa-plus-circle text-emerald-600 mr-1"></i>Jenis Tunjangan
+        </h3>
+        <button
+          type="button"
+          class="inline-flex items-center gap-1.5 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-bold px-4 py-2 rounded-lg text-xs"
+          @click="openJenisTunjanganBaru"
+        >
+          <i class="fas fa-plus"></i>Tambah Tunjangan
+        </button>
+      </div>
+      <p class="text-[10px] text-[var(--text-tertiary)] italic mb-2">
+        Bentuknya sama dengan Jenis Bisyaroh: nominal ditentukan <b>jabatan &amp; lembaga</b>, bukan
+        diketik per orang. Tiap jenis yang cocok = satu baris tunjangan di slip, semuanya
+        dijumlahkan. Tunjangan pengabdian membaca <b>Tgl. Tugas</b> di data guru — yang kosong tak
+        terbit.
+      </p>
+      <div class="border border-[var(--border-subtle)] rounded-xl overflow-hidden overflow-x-auto">
+        <table class="w-full text-sm min-w-[560px]">
+          <thead>
+            <tr
+              class="bg-[var(--bg-card-elevated)] text-[10px] uppercase tracking-wider text-[var(--text-secondary)]"
+            >
+              <th class="text-left px-3 py-2.5 font-black w-10">No</th>
+              <th class="text-left px-3 py-2.5 font-black">Nama</th>
+              <th class="text-left px-3 py-2.5 font-black">Cara Hitung &amp; Syarat</th>
+              <th class="text-right px-3 py-2.5 font-black">Nominal</th>
+              <th class="text-left px-3 py-2.5 font-black">Berlaku</th>
+              <th class="text-center px-3 py-2.5 font-black w-20">Aksi</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-[var(--border-subtle)]">
+            <tr
+              v-for="(j, idx) in jenisTunjanganListRef"
+              :key="'tj-' + j.id + idx"
+              class="hover:bg-[var(--bg-card-elevated)] transition"
+              :class="{ 'opacity-50': j.aktif === false }"
+            >
+              <td class="px-3 py-2 text-[var(--text-tertiary)]">{{ idx + 1 }}</td>
+              <td class="px-3 py-2 font-bold text-[var(--text-primary)]">
+                {{ j.label }}
+                <span v-if="j.aktif === false" class="text-[9px] font-black text-rose-500"
+                  >NONAKTIF</span
+                >
+              </td>
+              <td class="px-3 py-2 text-[11px] text-[var(--text-secondary)]">
+                {{ tunjanganCaraLabel(j) }}
+              </td>
+              <td class="px-3 py-2 text-right font-bold text-emerald-700 dark:text-emerald-300">
+                Rp {{ Number(j.nominal || 0).toLocaleString('id-ID') }}
+              </td>
+              <td class="px-3 py-2 text-[11px] text-[var(--text-secondary)]">
+                {{ tunjanganScopeLabel(j) }}
+              </td>
+              <td class="px-3 py-2">
+                <div class="flex items-center justify-center gap-1">
+                  <button
+                    type="button"
+                    class="w-7 h-7 rounded-lg border border-[var(--border-default)] text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/30 flex items-center justify-center"
+                    title="Ubah"
+                    @click="openJenisTunjanganDialog(j, idx)"
+                  >
+                    <i class="fas fa-pen text-xs"></i>
+                  </button>
+                  <button
+                    type="button"
+                    class="w-7 h-7 rounded-lg border border-[var(--border-default)] text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 flex items-center justify-center"
+                    title="Hapus"
+                    @click="hapusJenisTunjangan(idx)"
+                  >
+                    <i class="fas fa-trash text-xs"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            <tr v-if="jenisTunjanganListRef.length === 0">
+              <td colspan="6" class="text-center text-[var(--text-tertiary)] italic py-5">
+                Belum ada. Klik "Tambah Tunjangan" — mis. "Tunjangan Kepala Lembaga", "Tunjangan
+                Pengabdian", atau "Tunjangan Berprestasi".
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Dialog Tambah/Ubah Jenis Tunjangan -->
+    <div
+      v-if="dlgTjOpen && dlgTj"
+      class="fixed inset-0 z-50 bg-slate-900/60 flex items-center justify-center p-4"
+      @click.self="dlgTjOpen = false"
+    >
+      <div
+        class="bg-[var(--bg-card)] rounded-2xl shadow-2xl max-w-xl w-full max-h-[90vh] overflow-y-auto"
+      >
+        <div
+          class="flex items-center justify-between px-5 py-4 border-b border-[var(--border-subtle)]"
+        >
+          <h3 class="text-base font-black">
+            <i class="fas fa-plus-circle text-emerald-600 mr-1.5"></i
+            >{{ dlgTjIsNew ? 'Tambah' : 'Ubah' }} Tunjangan
+          </h3>
+          <button
+            class="text-[var(--text-secondary)] hover:text-rose-500 p-1"
+            aria-label="Tutup"
+            @click="dlgTjOpen = false"
+          >
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="p-5 space-y-3">
+          <div>
+            <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
+              >Nama Tunjangan</label
+            >
+            <input
+              v-model="dlgTj.label"
+              type="text"
+              placeholder="mis. Tunjangan Kepala Lembaga"
+              class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)] font-bold"
+            />
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
+                >Cara Hitung</label
+              >
+              <div class="grid grid-cols-2 gap-1.5">
+                <button
+                  v-for="o in HITUNGAN_TUNJANGAN_OPTIONS"
+                  :key="o.value"
+                  type="button"
+                  :class="[
+                    'py-2 rounded-lg text-[11px] font-bold border transition',
+                    dlgTj.hitungan === o.value
+                      ? 'bg-emerald-600 text-white border-emerald-600'
+                      : 'border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-elevated)]'
+                  ]"
+                  @click="dlgTj.hitungan = o.value"
+                >
+                  {{ o.label }}
+                </button>
+              </div>
+            </div>
+            <div>
+              <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
+                >Nominal (Rp)</label
+              >
+              <input
+                v-model.number="dlgTj.nominal"
+                type="number"
+                min="0"
+                class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)] font-bold text-right"
+              />
+              <p class="text-[10px] text-[var(--text-tertiary)] italic mt-1">
+                {{
+                  dlgTj.hitungan === 'per_tahun_pengabdian'
+                    ? 'Nominal PER TAHUN mengabdi — dikalikan tahunnya tiap bulan.'
+                    : 'Nominal per bulan.'
+                }}
+              </p>
+            </div>
+          </div>
+          <p class="text-[10px] text-[var(--text-secondary)] italic">
+            <i class="fas fa-info-circle mr-1"></i>
+            {{ HITUNGAN_TUNJANGAN_OPTIONS.find((o) => o.value === dlgTj.hitungan)?.hint || '' }}
+          </p>
+
+          <div
+            class="border-t border-[var(--border-subtle)] pt-3 grid grid-cols-1 sm:grid-cols-2 gap-3"
+          >
+            <div>
+              <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
+                >Minimal Masa Pengabdian (tahun)</label
+              >
+              <input
+                v-model.number="dlgTj.syarat.masa_min_tahun"
+                type="number"
+                min="0"
+                max="60"
+                class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)] font-bold text-right"
+              />
+              <p class="text-[10px] text-[var(--text-tertiary)] italic mt-1">
+                0 = tanpa syarat. Isi 5 untuk "khusus yang mengabdi di atas 5 tahun". Guru yang
+                <b>Tgl. Tugas</b>-nya kosong tidak lolos.
+              </p>
+            </div>
+            <div v-if="dlgTj.hitungan === 'flat_prestasi'">
+              <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
+                >Ambang Tepat Waktu (%)</label
+              >
+              <input
+                v-model.number="dlgTj.syarat.persen_tepat_min"
+                type="number"
+                min="1"
+                max="100"
+                class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)] font-bold text-right"
+              />
+              <p class="text-[10px] text-[var(--text-tertiary)] italic mt-1">
+                100 = harus hadir tepat waktu di SEMUA hari efektif bulan itu. Izin/sakit/cuti ikut
+                memotong.
+              </p>
+            </div>
+          </div>
+
+          <div class="border-t border-[var(--border-subtle)] pt-3 space-y-3">
+            <p class="text-[10px] font-black text-[var(--text-secondary)] uppercase">
+              Berlaku Untuk — kosongkan = semua
+            </p>
+            <div>
+              <label class="text-[10px] font-bold text-[var(--text-secondary)] mb-1 block"
+                >Jabatan</label
+              >
+              <div class="flex flex-wrap gap-1">
+                <button
+                  v-for="j in jabatanScopeOptions"
+                  :key="'tj-j-' + j"
+                  type="button"
+                  :class="chipCls(dlgTj.scope.jabatan.includes(j))"
+                  @click="toggleScopeTj('jabatan', j)"
+                >
+                  {{ j }}
+                </button>
+              </div>
+            </div>
+            <div>
+              <label class="text-[10px] font-bold text-[var(--text-secondary)] mb-1 block"
+                >Lembaga / Unit</label
+              >
+              <div class="flex flex-wrap gap-1">
+                <button
+                  v-for="l in lembagaScopeOptions"
+                  :key="'tj-l-' + l"
+                  type="button"
+                  :class="chipCls(dlgTj.scope.lembaga.includes(l))"
+                  @click="toggleScopeTj('lembaga', l)"
+                >
+                  {{ l }}
+                </button>
+              </div>
+            </div>
+            <div>
+              <label class="text-[10px] font-bold text-[var(--text-secondary)] mb-1 block"
+                >Shift</label
+              >
+              <div class="flex flex-wrap gap-1">
+                <button
+                  v-for="sh in shiftScopeOptions"
+                  :key="'tj-s-' + sh.id"
+                  type="button"
+                  :class="chipCls(dlgTj.scope.shift.includes(sh.id))"
+                  @click="toggleScopeTj('shift', sh.id)"
+                >
+                  {{ sh.label }}
+                </button>
+              </div>
+            </div>
+            <div>
+              <label class="flex items-center gap-2 text-[11px] font-bold cursor-pointer">
+                <input
+                  type="checkbox"
+                  :checked="dlgTjPilihGuru"
+                  class="w-4 h-4 accent-emerald-600"
+                  @change="setPilihGuruTj($event.target.checked)"
+                />
+                Batasi ke orang tertentu ({{ dlgTj.scope.guru_ids.length }} dipilih)
+              </label>
+              <div v-if="dlgTjPilihGuru" class="mt-2 space-y-2">
+                <input
+                  v-model="dlgTjGuruSearch"
+                  type="text"
+                  placeholder="Cari nama..."
+                  class="w-full px-3 py-1.5 text-xs rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)]"
+                />
+                <div
+                  class="max-h-40 overflow-y-auto border border-[var(--border-subtle)] rounded-lg p-2 flex flex-wrap gap-1"
+                >
+                  <button
+                    v-for="g in dlgTjGuruCari"
+                    :key="'tj-g-' + g.id"
+                    type="button"
+                    :class="chipCls(dlgTj.scope.guru_ids.map(String).includes(String(g.id)))"
+                    @click="toggleGuruTj(g.id)"
+                  >
+                    {{ g.nama }}
+                  </button>
+                </div>
+              </div>
+            </div>
+            <label class="flex items-center gap-2 text-[11px] font-bold cursor-pointer">
+              <input v-model="dlgTj.aktif" type="checkbox" class="w-4 h-4 accent-emerald-600" />
+              Aktif (nonaktif = tak terbit di slip, tapi tak terhapus)
+            </label>
+          </div>
+        </div>
+        <div
+          class="flex items-center justify-end gap-2 px-5 py-4 border-t border-[var(--border-subtle)]"
+        >
+          <button
+            type="button"
+            class="px-4 py-2 rounded-lg text-xs font-bold border border-[var(--border-default)] text-[var(--text-secondary)]"
+            @click="dlgTjOpen = false"
+          >
+            Batal
+          </button>
+          <button
+            type="button"
+            class="px-4 py-2 rounded-lg text-xs font-black bg-emerald-600 hover:bg-emerald-700 text-white"
+            @click="simpanJenisTunjangan"
+          >
+            Simpan
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- v.1.1.9: Master Potongan — tabel + dialog (ganti layout inline lama
          yang field nama-nya transparan/tak kelihatan & pemilih guru sesak). -->
     <div
       v-for="cfg in [
-        {
-          kind: 'tunjangan',
-          list: form.master_tunjangan,
-          judul: 'Master Tunjangan',
-          ikon: 'fa-plus-circle text-emerald-600',
-          nomCls: 'text-emerald-700 dark:text-emerald-300'
-        },
         {
           kind: 'potongan',
           list: form.master_potongan,
@@ -1228,16 +1546,14 @@
         <div class="flex items-center gap-1.5 flex-wrap">
           <!-- Template & Impor mencakup Tunjangan + Potongan sekaligus → tampil sekali (di kartu Tunjangan) -->
           <button
-            v-if="cfg.kind === 'tunjangan'"
             type="button"
             class="inline-flex items-center gap-1.5 text-[10px] font-bold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-900/30 px-2.5 py-2 rounded-lg hover:bg-teal-100 dark:hover:bg-teal-900/50"
-            title="Unduh Excel Tunjangan + Potongan (berisi data saat ini)"
+            title="Unduh Excel Potongan (berisi data saat ini)"
             @click="unduhTemplateMasterTP"
           >
             <i class="fas fa-file-excel"></i>Template
           </button>
           <label
-            v-if="cfg.kind === 'tunjangan'"
             class="inline-flex items-center gap-1.5 text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/30 px-2.5 py-2 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-900/50 cursor-pointer"
           >
             <i class="fas fa-file-import"></i>{{ imporMasterBusy ? 'Impor…' : 'Impor' }}
@@ -1259,9 +1575,8 @@
         </div>
       </div>
       <p class="text-[10px] text-[var(--text-tertiary)] italic mb-2">
-        Otomatis terisi di slip bisyaroh guru sesuai scope.<span v-if="cfg.kind === 'tunjangan'">
-          Template &amp; Impor di sini mencakup Tunjangan + Potongan sekaligus.</span
-        >
+        Otomatis memotong slip bisyaroh guru sesuai scope. Tunjangan kini punya kartunya sendiri di
+        atas (ber-scope seperti Jenis Bisyaroh).
       </p>
       <div class="border border-[var(--border-subtle)] rounded-xl overflow-hidden overflow-x-auto">
         <table class="w-full text-sm min-w-[480px]">
@@ -2597,7 +2912,11 @@ import {
   normalizeJenisBisyaroh,
   slugJenisId,
   cekTumpangTindih,
-  HITUNGAN_OPTIONS
+  HITUNGAN_OPTIONS,
+  // Kyai 7 Agu 2026: Jenis Tunjangan ber-scope (ganti master_tunjangan)
+  jenisTunjanganList as bacaJenisTunjangan,
+  normalizeJenisTunjangan,
+  HITUNGAN_TUNJANGAN_OPTIONS
 } from '@/utils/bisyarohScope'
 import { shiftList, shiftLabelOf } from '@/utils/shiftMaster'
 import { namaLembaga } from '@/utils/jabatanUnit'
@@ -2839,6 +3158,116 @@ function hapusJenisBisyaroh(idx) {
   if (!confirm(`Hapus Jenis Bisyaroh "${j.label}"?\n\nSlip yang sudah digenerate tidak berubah.`))
     return
   jenisBisyarohList.value.splice(idx, 1)
+}
+
+// ══ Kyai 7 Agu 2026: JENIS TUNJANGAN ber-scope (settings.keuTunjanganJenis) ═══
+// Menggantikan `master_tunjangan` yang cuma {nama, nominal, guru_ids}: tak bisa menyasar
+//   jabatan ("Tunjangan Kepala Lembaga"), tak kenal masa kerja (pengabdian kelipatan /
+//   khusus di atas 5 tahun), tak kenal kedisiplinan (berprestasi 100% tepat waktu).
+// Mesin & bentuk dialognya SAMA dengan Jenis Bisyaroh — permintaan Kyai "dimiripkan
+//   pengaturan bisyaroh" — hanya ditambah kotak Syarat.
+const jenisTunjanganListRef = ref([])
+const dlgTjOpen = ref(false)
+const dlgTjIsNew = ref(false)
+const dlgTjIdx = ref(-1)
+const dlgTj = ref(null)
+const dlgTjPilihGuru = ref(false)
+const dlgTjGuruSearch = ref('')
+const dlgTjGuruCari = computed(() => {
+  const kw = String(dlgTjGuruSearch.value || '')
+    .trim()
+    .toLowerCase()
+  let list = (guruRaw.value || []).filter(
+    (g) => String(g.status || 'Aktif').toLowerCase() === 'aktif'
+  )
+  if (kw)
+    list = list.filter((g) =>
+      String(g.nama || '')
+        .toLowerCase()
+        .includes(kw)
+    )
+  return list.sort((a, b) => String(a.nama || '').localeCompare(String(b.nama || ''))).slice(0, 80)
+})
+function toggleScopeTj(kunci, nilai) {
+  const cur = [...(dlgTj.value.scope[kunci] || [])]
+  const i = cur.indexOf(nilai)
+  if (i >= 0) cur.splice(i, 1)
+  else cur.push(nilai)
+  dlgTj.value.scope[kunci] = cur
+}
+/** Matikan pembatasan per-orang = KOSONGKAN daftarnya, jangan cuma menyembunyikan —
+ *  daftar tersembunyi yang masih terisi tetap menyaring saat disimpan. */
+function setPilihGuruTj(nyala) {
+  dlgTjPilihGuru.value = !!nyala
+  if (!nyala && dlgTj.value) dlgTj.value.scope.guru_ids = []
+}
+function toggleGuruTj(guruId) {
+  const sid = String(guruId)
+  const cur = (dlgTj.value.scope.guru_ids || []).map(String)
+  const i = cur.indexOf(sid)
+  if (i >= 0) cur.splice(i, 1)
+  else cur.push(sid)
+  dlgTj.value.scope.guru_ids = cur
+}
+function openJenisTunjanganBaru() {
+  dlgTjIsNew.value = true
+  dlgTjIdx.value = -1
+  dlgTj.value = normalizeJenisTunjangan({ label: '', hitungan: 'flat', nominal: 0, aktif: true })
+  dlgTjPilihGuru.value = false
+  dlgTjGuruSearch.value = ''
+  dlgTjOpen.value = true
+}
+function openJenisTunjanganDialog(j, idx) {
+  dlgTjIsNew.value = false
+  dlgTjIdx.value = idx
+  dlgTj.value = normalizeJenisTunjangan(JSON.parse(JSON.stringify(j)))
+  dlgTjPilihGuru.value = (dlgTj.value.scope.guru_ids || []).length > 0
+  dlgTjGuruSearch.value = ''
+  dlgTjOpen.value = true
+}
+function simpanJenisTunjangan() {
+  const j = dlgTj.value
+  if (!j) return
+  if (!String(j.label || '').trim()) {
+    toast.warning('Nama tunjangan wajib diisi')
+    return
+  }
+  const next = normalizeJenisTunjangan(j)
+  const bentrok = jenisTunjanganListRef.value.some(
+    (x, i) => x.id === next.id && i !== dlgTjIdx.value
+  )
+  if (bentrok) {
+    toast.warning(`Sudah ada tunjangan dengan nama serupa (${next.id})`)
+    return
+  }
+  if (dlgTjIsNew.value) jenisTunjanganListRef.value.push(next)
+  else jenisTunjanganListRef.value.splice(dlgTjIdx.value, 1, next)
+  dlgTjOpen.value = false
+  toast.info('Tersimpan di layar — klik "Simpan Semua" agar berlaku.')
+}
+function hapusJenisTunjangan(idx) {
+  const j = jenisTunjanganListRef.value[idx]
+  if (!j) return
+  if (!confirm(`Hapus tunjangan "${j.label}"?\n\nSlip yang sudah digenerate tidak berubah.`)) return
+  jenisTunjanganListRef.value.splice(idx, 1)
+}
+/** Label ringkas cara hitung + syarat, untuk kolom tabel. */
+function tunjanganCaraLabel(j) {
+  const h = HITUNGAN_TUNJANGAN_OPTIONS.find((o) => o.value === j.hitungan)?.label || 'Flat / bulan'
+  const s = []
+  if (Number(j.syarat?.masa_min_tahun) > 0) s.push(`min ${j.syarat.masa_min_tahun} th mengabdi`)
+  if (j.hitungan === 'flat_prestasi') s.push(`tepat waktu ≥ ${j.syarat?.persen_tepat_min ?? 100}%`)
+  return s.length ? `${h} · ${s.join(' · ')}` : h
+}
+/** Scope ringkas — sejajar `masterScopeLabel` pada kartu Potongan. */
+function tunjanganScopeLabel(j) {
+  const s = j.scope || {}
+  const bits = []
+  if (s.jabatan?.length) bits.push(s.jabatan.join(', '))
+  if (s.lembaga?.length) bits.push(s.lembaga.join(', '))
+  if (s.shift?.length) bits.push(`shift ${s.shift.join('+')}`)
+  if (s.guru_ids?.length) bits.push(`${s.guru_ids.length} orang`)
+  return bits.length ? bits.join(' · ') : 'Semua guru/pegawai'
 }
 
 // ==== v.1.1.x: Beban Mengajar Sekolah — dasar bisyaroh per_jp ====
@@ -3181,6 +3610,10 @@ function loadFromSettings() {
   // v.1.1.9: Jenis Bisyaroh. Belum ada → [] (SENGAJA tak di-seed dari tarif lama:
   //   jangan memunculkan nominal yang tak pernah Kyai setujui di tabel baru).
   jenisBisyarohList.value = bacaJenisBisyaroh(s)
+  // Kyai 7 Agu 2026: Jenis Tunjangan. Selama kunci barunya belum pernah disimpan, isinya
+  //   diturunkan dari `master_tunjangan` lama supaya tak ada tunjangan yang hilang diam-diam
+  //   saat halaman ini pertama kali dibuka sesudah pembaruan.
+  jenisTunjanganListRef.value = bacaJenisTunjangan(s)
   // v.1.2.1: bentuk baru { guru_id, lembaga, jp_minggu }. Baris bentuk LAMA
   //   ({ jp per pertemuan, hari[] }) dibaca-mundur jadi jp_minggu = jp × jumlah hari,
   //   sama persis dengan cara lama menghitungnya — jadi angkanya tak berubah.
@@ -3848,14 +4281,10 @@ function _guruNamaByIds(ids) {
     .join(', ')
 }
 function unduhTemplateMasterTP() {
+  // Kyai 7 Agu 2026: tunjangan pindah ke Jenis Tunjangan ber-scope, yang tak muat di
+  //   Excel 4 kolom ini (jabatan/lembaga/shift/syarat). Jadi template ini POTONGAN saja —
+  //   mengekspornya setengah jadi lalu mengimpornya balik akan memangkas scope diam-diam.
   const rows = []
-  for (const t of form.master_tunjangan)
-    rows.push({
-      tipe: 'tunjangan',
-      nama: t.nama,
-      nominal: Number(t.nominal || 0),
-      guru: _guruNamaByIds(t.guru_ids)
-    })
   for (const p of form.master_potongan)
     rows.push({
       tipe: 'potongan',
@@ -3864,10 +4293,12 @@ function unduhTemplateMasterTP() {
       guru: _guruNamaByIds(p.guru_ids)
     })
   if (rows.length === 0)
-    rows.push(
-      { tipe: 'tunjangan', nama: 'Contoh: Transport', nominal: 100000, guru: 'Semua' },
-      { tipe: 'potongan', nama: 'Contoh: Kasbon', nominal: 50000, guru: 'Nama Guru A, Nama Guru B' }
-    )
+    rows.push({
+      tipe: 'potongan',
+      nama: 'Contoh: Kasbon',
+      nominal: 50000,
+      guru: 'Nama Guru A, Nama Guru B'
+    })
   exportSimple(rows, {
     filename: 'tunjangan_potongan.xlsx',
     sheetName: 'Tunjangan & Potongan',
@@ -3932,11 +4363,18 @@ async function imporMasterTP(ev) {
       }
       return out
     }
-    form.master_tunjangan = mergeByNama(form.master_tunjangan, incTunj)
     form.master_potongan = mergeByNama(form.master_potongan, incPot)
+    // Baris `tipe: tunjangan` di berkas lama SENGAJA diabaikan, bukan diam-diam ditelan:
+    //   tunjangan kini ber-scope (jabatan/lembaga/shift/syarat) dan Excel 4 kolom ini tak
+    //   memuatnya — menerimanya berarti membuat tunjangan tanpa scope yang tampak sah.
     toast.success(
-      `${incTunj.length} tunjangan + ${incPot.length} potongan diimpor${miss ? `, ${miss} nama guru tak cocok` : ''}. Klik "Simpan Semua".`
+      `${incPot.length} potongan diimpor${miss ? `, ${miss} nama guru tak cocok` : ''}. Klik "Simpan Semua".`
     )
+    if (incTunj.length > 0) {
+      toast.warning(
+        `${incTunj.length} baris "tunjangan" dilewati — tunjangan kini diatur di kartu Jenis Tunjangan (ber-scope), bukan lewat Excel ini.`
+      )
+    }
   } catch (e) {
     toast.error('Gagal impor: ' + (e.message || e))
   } finally {
@@ -4118,6 +4556,9 @@ async function simpan() {
       //   map pokok per guru. Tarif & map lama SENGAJA TIDAK ditulis lagi (Kyai:
       //   "hapus total") — BisyarohView kini menghitung dari daftar ini.
       keuBisyarohJenis: jenisBisyarohList.value.map(normalizeJenisBisyaroh),
+      // Kyai 7 Agu 2026: Jenis Tunjangan ber-scope. `master_tunjangan` lama sengaja TIDAK
+      //   ditulis lagi — sekali kunci ini tersimpan, ia yang jadi sumber tunggal.
+      keuTunjanganJenis: jenisTunjanganListRef.value.map(normalizeJenisTunjangan),
       // v.1.2.1: master beban mengajar (dasar bisyaroh sekolah per_jp) — JP per MINGGU
       //   per guru per sekolah. Kolom mapel & hari dibuang.
       bebanMengajar: bebanMengajarList.value
@@ -4170,6 +4611,7 @@ async function simpan() {
       'keuTagihanJenisByTA',
       'keu_jenis_tagihan',
       'keuBisyarohJenis',
+      'keuTunjanganJenis',
       'bebanMengajar',
       'master_tunjangan',
       'master_potongan',

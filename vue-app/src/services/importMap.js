@@ -224,7 +224,15 @@ export function mapGuruRow(r) {
     id_fingerprint: pick(r, 'ID Fingerprint'),
     data: {
       tgl_lahir: parseDate(pick(r, 'Tgl Lahir (DD/MM/YYYY)', 'Tgl Lahir')),
-      tanggal_tugas: parseDate(pick(r, 'Tanggal Tugas (DD/MM/YYYY)', 'Tanggal Tugas')),
+      // Kyai 7 Agu 2026: `tanggal_tugas` kini berlabel "Tgl. Syahadah" (dasar NIG); judul
+      //   kolom lama dipertahankan supaya berkas impor lama tetap mendarat di sana.
+      tanggal_tugas: parseDate(
+        pick(r, 'Tgl Syahadah (DD/MM/YYYY)', 'Tanggal Tugas (DD/MM/YYYY)', 'Tanggal Tugas')
+      ),
+      // Field baru "Tgl. Tugas" = awal mengabdi, dasar tunjangan pengabdian.
+      tanggal_mengabdi: parseDate(
+        pick(r, 'Tgl Tugas/Mengabdi (DD/MM/YYYY)', 'Tgl Mengabdi', 'Tanggal Mengabdi')
+      ),
       nig: pick(r, 'NIG'),
       // v.1.1.9: samakan ke `rek_bmt` (dulu `no_rek_bmt` → tak terbaca ekspor BMT & form guru)
       rek_bmt: pick(r, 'No Rek BMT'),

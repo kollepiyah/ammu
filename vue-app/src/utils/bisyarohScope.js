@@ -161,6 +161,45 @@ function jumlahShiftCocok(j, shiftIds) {
   return n
 }
 
+/**
+ * Hitung qty/tarif/nominal untuk cara hitung DASAR (flat, per_hadir, per_tepat, per_jp,
+ * per_shift). Dipakai bersama oleh `barisBisyaroh` dan `barisTunjangan` — satu rumus, dua
+ * daftar. Jangan disalin: cermin yang berpisah diam-diam adalah kelas bug yang sudah
+ * berkali-kali menggigit di repo ini.
+ */
+function hitungDasar(j, ctx, ref) {
+  if (j.hitungan === 'per_hadir' || j.hitungan === 'per_tepat') {
+    // per_tepat = hanya hadir TEPAT WAKTU (buang terlambat) → sumber hadir berbeda.
+    const src = j.hitungan === 'per_tepat' ? ctx?.hadirTepatPerShift : ctx?.hadirPerShift
+    const qty = hadirUntuk(j, src)
+    return { hitungan: j.hitungan, qty, tarif: j.nominal, nominal: qty * j.nominal }
+  }
+  if (j.hitungan === 'per_jp') {
+    // Bayar per JP yang BENAR-BENAR diajar bulan itu = JP mingguan (Beban Mengajar)
+    //   disebar rata ke hari aktif lembaga × kehadiran harian. Hari di luar hari
+    //   aktif tak menghukum.
+    const lem = canonLembaga(ref?.lembaga || '')
+    const info = ctx?.jpDiajarByLembaga?.[lem] || {}
+    const qty = Number(info.diajar) || 0
+    return {
+      hitungan: 'per_jp',
+      qty,
+      terjadwal: Number(info.terjadwal) || 0,
+      tarif: j.nominal,
+      // v.1.2.1: JP kini hasil pembagian (jp_minggu ÷ hari aktif) sehingga kerap
+      //   pecahan — pembulatan ditahan sampai UJUNG, ke rupiah utuh. Hanya cabang
+      //   per_jp yang bisa pecahan; per_hadir & per_shift qty-nya selalu bulat.
+      nominal: Math.round(qty * j.nominal)
+    }
+  }
+  if (j.hitungan === 'per_shift') {
+    // Pokok per shift: nominal × jumlah shift guru yg cocok (pagi+sore = 2×).
+    const qty = jumlahShiftCocok(j, ctx?.shiftIds)
+    return { hitungan: 'per_shift', qty, tarif: j.nominal, nominal: qty * j.nominal }
+  }
+  return { hitungan: 'flat', qty: 1, tarif: j.nominal, nominal: j.nominal }
+}
+
 // Baris slip bisyaroh utk 1 guru. Tiap jenis yang cocok = 1 baris.
 //   ctx = { refs, shiftIds, hadirPerShift: { pagi: 20, ... } }
 // return [{ jenis_id, kategori, lembaga, label, nominal, hitungan, qty, tarif }]
@@ -184,67 +223,209 @@ export function barisBisyaroh(jenisList, ctx) {
               : ref?.group === 'non-lembaga'
                 ? 'admin'
                 : 'ngaji'
-    if (j.hitungan === 'per_hadir' || j.hitungan === 'per_tepat') {
-      // per_tepat = hanya hadir TEPAT WAKTU (buang terlambat) → sumber hadir berbeda.
-      const src = j.hitungan === 'per_tepat' ? ctx?.hadirTepatPerShift : ctx?.hadirPerShift
-      const qty = hadirUntuk(j, src)
-      out.push({
-        jenis_id: j.id,
-        kategori,
-        lembaga,
-        label: j.label,
-        hitungan: j.hitungan,
-        qty,
-        tarif: j.nominal,
-        nominal: qty * j.nominal
-      })
-    } else if (j.hitungan === 'per_jp') {
-      // Bayar per JP yang BENAR-BENAR diajar bulan itu = JP mingguan (Beban Mengajar)
-      //   disebar rata ke hari aktif lembaga × kehadiran harian. Hari di luar hari
-      //   aktif tak menghukum.
-      const lem = canonLembaga(ref?.lembaga || '')
-      const info = ctx?.jpDiajarByLembaga?.[lem] || {}
-      const qty = Number(info.diajar) || 0
-      const terjadwal = Number(info.terjadwal) || 0
-      out.push({
-        jenis_id: j.id,
-        kategori,
-        lembaga,
-        label: j.label,
-        hitungan: 'per_jp',
-        qty,
-        terjadwal,
-        tarif: j.nominal,
-        // v.1.2.1: JP kini hasil pembagian (jp_minggu ÷ hari aktif) sehingga kerap
-        //   pecahan — pembulatan ditahan sampai UJUNG, ke rupiah utuh. Hanya cabang
-        //   per_jp yang bisa pecahan; per_hadir & per_shift qty-nya selalu bulat.
-        nominal: Math.round(qty * j.nominal)
-      })
-    } else if (j.hitungan === 'per_shift') {
-      // Pokok per shift: nominal × jumlah shift guru yg cocok (pagi+sore = 2×).
-      const qty = jumlahShiftCocok(j, ctx?.shiftIds)
-      out.push({
-        jenis_id: j.id,
-        kategori,
-        lembaga,
-        label: j.label,
-        hitungan: 'per_shift',
-        qty,
-        tarif: j.nominal,
-        nominal: qty * j.nominal
-      })
-    } else {
-      out.push({
-        jenis_id: j.id,
-        kategori,
-        lembaga,
-        label: j.label,
+    out.push({
+      jenis_id: j.id,
+      kategori,
+      lembaga,
+      label: j.label,
+      ...hitungDasar(j, ctx, ref)
+    })
+  }
+  return out
+}
+
+// ═══ JENIS TUNJANGAN (settings.keuTunjanganJenis) ════════════════════════════
+//
+// PERMINTAAN KYAI (7 Agu 2026): tunjangan perlu KATEGORI seperti bisyaroh —
+//   "tunjangan Kepala Lembaga", "tunjangan pengabdian (per tahun, kelipatan)",
+//   "tunjangan khusus yang mengabdi di atas 5 tahun", "tunjangan berprestasi
+//   (100% tepat waktu)" — "intinya dimiripkan pengaturan bisyaroh".
+//
+// Model lamanya `master_tunjangan` = {nama, nominal, guru_ids} saja: tak bisa menyasar
+// jabatan/lembaga, tak kenal masa kerja, tak kenal kedisiplinan. Jadi tiap kategori harus
+// ditulis tangan per orang dan diperbarui manual tiap tahun bertambah.
+//
+// Daftar ini memakai MESIN YANG SAMA dengan Jenis Bisyaroh (scope + `hitungDasar`), plus:
+//   - `syarat.masa_min_tahun`  gerbang masa pengabdian (dipakai SEMUA cara hitung)
+//   - `per_tahun_pengabdian`   nominal × tahun mengabdi (kelipatan), terbit tiap bulan
+//   - `flat_prestasi`          flat, hanya bila persen tepat waktu ≥ ambang
+// Semua barisnya berkategori 'tunjangan' — termasuk yang `per_tepat`, sebab Kyai memutuskan
+// bonus tepat waktu memang masuk tunjangan, bukan pos bonus tersendiri.
+export const HITUNGAN_TUNJANGAN_OPTIONS = [
+  { value: 'flat', label: 'Flat / bulan', hint: 'Sekali per bulan bila cocok scope & syarat' },
+  {
+    value: 'per_tahun_pengabdian',
+    label: '× tahun pengabdian',
+    hint: 'Nominal × jumlah tahun penuh sejak Tanggal Tugas — terbit tiap bulan, naik sendiri saat tahunnya bertambah'
+  },
+  {
+    value: 'flat_prestasi',
+    label: 'Bila tepat waktu ≥ ambang',
+    hint: 'Flat, hanya bila persen hadir TEPAT WAKTU terhadap hari efektif mencapai ambang (default 100%)'
+  },
+  {
+    value: 'per_tepat',
+    label: '× tepat waktu',
+    hint: 'Dikali jumlah hadir TEPAT WAKTU saja (status hadir, BUKAN terlambat)'
+  },
+  {
+    value: 'per_hadir',
+    label: '× kehadiran',
+    hint: 'Dikali jumlah hadir shift dari absensi (hadir + terlambat)'
+  },
+  {
+    value: 'per_shift',
+    label: '× Shift',
+    hint: 'Nominal × jumlah shift guru yang cocok (mengajar pagi+sore = 2×)'
+  }
+]
+const _HITUNGAN_TUNJANGAN = HITUNGAN_TUNJANGAN_OPTIONS.map((o) => o.value)
+
+/** Bilangan bulat 0..batas; selain itu `fallback`. */
+function _int(v, fallback, batas = Infinity) {
+  const n = Math.floor(Number(v))
+  if (!Number.isFinite(n) || n < 0) return fallback
+  return Math.min(n, batas)
+}
+
+export function normalizeJenisTunjangan(raw) {
+  const r = raw || {}
+  const s = r.scope || {}
+  const y = r.syarat || {}
+  const id = slugJenisId(r.id || r.label || '')
+  return {
+    id,
+    label: String(r.label || '').trim() || id,
+    hitungan: _HITUNGAN_TUNJANGAN.includes(r.hitungan) ? r.hitungan : 'flat',
+    nominal: Number(r.nominal) > 0 ? Number(r.nominal) : 0,
+    scope: {
+      jabatan: _arr(s.jabatan),
+      lembaga: _arr(s.lembaga),
+      shift: _arr(s.shift),
+      guru_ids: _arr(s.guru_ids)
+    },
+    syarat: {
+      // 0 = tanpa syarat masa kerja. Untuk "khusus yang mengabdi di atas 5 tahun" → 5.
+      masa_min_tahun: _int(y.masa_min_tahun, 0, 60),
+      // Ambang tunjangan berprestasi. Default 100 = harus sempurna sebulan itu.
+      persen_tepat_min: _int(y.persen_tepat_min, 100, 100)
+    },
+    aktif: r.aktif !== false
+  }
+}
+
+/**
+ * Daftar Jenis Tunjangan dari settings.
+ *
+ * Selama kunci baru BELUM pernah disimpan, isinya diturunkan dari `master_tunjangan` lama
+ * (nama → label, guru_ids → scope, flat) supaya slip tak berubah sedikit pun sebelum Kyai
+ * menyentuh Pengaturan. Kunci baru yang ADA tapi kosong `[]` dihormati apa adanya — itu
+ * berarti Kyai memang menghapus semuanya, bukan belum bermigrasi.
+ */
+export function jenisTunjanganList(settings) {
+  const s = settings || {}
+  const raw = s.keuTunjanganJenis
+  if (Array.isArray(raw)) return raw.map(normalizeJenisTunjangan).filter((j) => j.id)
+  const lama = Array.isArray(s.master_tunjangan) ? s.master_tunjangan : []
+  return lama
+    .map((t) =>
+      normalizeJenisTunjangan({
+        label: t?.nama,
+        nominal: t?.nominal,
         hitungan: 'flat',
+        scope: { guru_ids: t?.guru_ids }
+      })
+    )
+    .filter((j) => j.id)
+}
+
+/**
+ * Tahun PENUH pengabdian pada akhir periode slip. `null` = tak bisa dinilai.
+ *
+ * Sengaja dihitung dari komponen tanggal, bukan selisih milidetik: `new Date('YYYY-MM-DD')`
+ * itu tengah malam UTC, dan di WIB pembandingannya bisa mundur sehari — kelas bug yang
+ * sudah pernah membuat perizinan "tidak masuk". Guru tanpa Tanggal Tugas mengembalikan
+ * `null`, dan pemanggil WAJIB memperlakukannya sebagai TIDAK memenuhi syarat: menebak masa
+ * kerja berarti menerbitkan uang atas data yang tak ada.
+ *
+ * @param {string} tanggalTugas 'YYYY-MM-DD' (boleh berekor jam, diabaikan)
+ * @param {string} sampai       'YYYY-MM-DD' — biasanya akhir bulan periode slip
+ */
+export function tahunPengabdian(tanggalTugas, sampai) {
+  const a = String(tanggalTugas || '').match(/^(\d{4})-(\d{2})-(\d{2})/)
+  const b = String(sampai || '').match(/^(\d{4})-(\d{2})-(\d{2})/)
+  if (!a || !b) return null
+  const [, ay, am, ad] = a.map(Number)
+  const [, by, bm, bd] = b.map(Number)
+  let th = by - ay
+  if (bm < am || (bm === am && bd < ad)) th-- // ulang tahun tugas belum lewat
+  return th < 0 ? null : th // tanggal tugas di masa depan = data keliru, jangan dibayar
+}
+
+/**
+ * Persen hadir TEPAT WAKTU terhadap hari efektif, untuk shift yang cocok scope jenis ini.
+ * `null` = tak bisa dinilai (tak ada hari efektif) → pemanggil WAJIB menganggap tak lolos.
+ */
+export function persenTepatWaktu(j, ctx) {
+  let tepat = 0
+  let efektif = 0
+  for (const [sh, cnt] of Object.entries(ctx?.efektifPerShift || {})) {
+    if (!cocokKriteria(j?.scope?.shift, sh)) continue
+    efektif += Number(cnt) || 0
+    tepat += Number((ctx?.hadirTepatPerShift || {})[sh]) || 0
+  }
+  if (efektif <= 0) return null
+  return Math.min(100, (tepat / efektif) * 100)
+}
+
+/**
+ * Baris TUNJANGAN untuk 1 guru. Bentuk kembaliannya sama dengan `barisBisyaroh`
+ * (siap jadi line item slip), hanya `kategori`-nya selalu 'tunjangan'.
+ *
+ * ctx = ctx `barisBisyaroh` + { tahunPengabdian: number|null, efektifPerShift: {shift: n} }
+ */
+export function barisTunjangan(jenisList, ctx) {
+  const out = []
+  const refs = ctx?.refs || []
+  const th = Number.isFinite(ctx?.tahunPengabdian) ? ctx.tahunPengabdian : null
+  for (const j of jenisList || []) {
+    if (!jenisKenaGuru(j, ctx)) continue
+    // Gerbang masa pengabdian — berlaku untuk SEMUA cara hitung, jadi "khusus di atas
+    //   5 tahun" bisa dipasang pada tunjangan bentuk apa pun, bukan cuma yang kelipatan.
+    const min = Number(j.syarat?.masa_min_tahun) || 0
+    if (min > 0 && (th === null || th < min)) continue
+
+    const ref = refPencocok(j, refs)
+    const lembaga = ref?.lembaga || '-'
+    const dasar = { jenis_id: j.id, kategori: 'tunjangan', lembaga, label: j.label }
+
+    if (j.hitungan === 'per_tahun_pengabdian') {
+      if (th === null) continue // tanpa Tanggal Tugas → tak dibayar, jangan menebak
+      out.push({
+        ...dasar,
+        hitungan: j.hitungan,
+        qty: th,
+        tarif: j.nominal,
+        nominal: th * j.nominal
+      })
+      continue
+    }
+    if (j.hitungan === 'flat_prestasi') {
+      const persen = persenTepatWaktu(j, ctx)
+      const ambang = Number(j.syarat?.persen_tepat_min) || 100
+      if (persen === null || persen + 1e-9 < ambang) continue
+      out.push({
+        ...dasar,
+        hitungan: j.hitungan,
         qty: 1,
+        persen: Math.round(persen * 10) / 10,
+        ambang,
         tarif: j.nominal,
         nominal: j.nominal
       })
+      continue
     }
+    out.push({ ...dasar, ...hitungDasar(j, ctx, ref) })
   }
   return out
 }
