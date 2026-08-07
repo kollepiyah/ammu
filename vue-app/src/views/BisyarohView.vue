@@ -475,7 +475,7 @@
             <p
               class="px-3 py-2 text-sm font-black text-amber-900 dark:text-amber-200 border-b border-amber-300/40"
             >
-              <i class="fas fa-calculator mr-2"></i>Simulasi Plafon Bisyaroh
+              <i class="fas fa-calculator mr-2"></i>Simulasi Plafon Bisyaroh &amp; Tunjangan
               <span class="font-bold text-[11px]">— coba nominal, tak ada yang disimpan</span>
             </p>
             <div class="px-3 pb-3 space-y-3">
@@ -484,8 +484,10 @@
                 (Senin–Sabtu, di luar libur) sepanjang
                 <b>{{ BULAN_NAMES[bulan - 1] }} {{ tahun }}</b
                 >. Jadi angkanya <b>plafon</b> — biaya tertinggi yang mungkin; realisasi hampir
-                selalu lebih rendah. Ubah nominal di bawah untuk melihat dampaknya; menutup halaman
-                mengembalikan semuanya.
+                selalu lebih rendah. <b>Jenis Tunjangan ikut dihitung</b>; karena andaiannya hadir
+                penuh, tunjangan berprestasi selalu dianggap lolos dan tunjangan pengabdian memakai
+                masa kerja dari <b>Tgl. Tugas</b> (yang kosong tak terhitung). Ubah nominal di bawah
+                untuk melihat dampaknya; menutup halaman mengembalikan semuanya.
               </p>
               <div class="overflow-x-auto">
                 <table class="w-full text-xs">
@@ -501,24 +503,31 @@
                   <tbody>
                     <tr
                       v-for="j in simJenisAsli"
-                      :key="'sim-' + j.id"
+                      :key="'sim-' + simKey(j)"
                       class="border-b border-amber-200/40"
                     >
                       <td class="py-1.5 pr-2">
                         <span class="font-bold text-[var(--text-primary)]">{{ j.label }}</span>
+                        <!-- Kyai 7 Agu: tunjangan ikut plafon; dibedakan lencana supaya
+                             terbaca sekali jalan tanpa memecah tabelnya. -->
+                        <span
+                          v-if="j.kel === 'tunjangan'"
+                          class="ml-1 text-[9px] font-black px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200"
+                          >TUNJANGAN</span
+                        >
                         <span class="ml-1 text-[10px] text-[var(--text-tertiary)]">{{
                           hitunganLabel(j.hitungan)
                         }}</span>
                       </td>
                       <td class="text-right tabular-nums">
-                        {{ simBaris(j.id)?.guru ?? 0 }}
+                        {{ simBaris(j)?.guru ?? 0 }}
                       </td>
                       <td class="text-right tabular-nums">
-                        {{ j.hitungan === 'flat' ? '—' : (simBaris(j.id)?.qty ?? 0) }}
+                        {{ j.hitungan === 'flat' ? '—' : (simBaris(j)?.qty ?? 0) }}
                       </td>
                       <td class="text-right">
                         <input
-                          v-model="simNominal[j.id]"
+                          v-model="simNominal[simKey(j)]"
                           type="number"
                           min="0"
                           step="500"
@@ -527,7 +536,7 @@
                         />
                       </td>
                       <td class="text-right font-black tabular-nums whitespace-nowrap">
-                        {{ fmtRp(simBaris(j.id)?.subtotal ?? 0) }}
+                        {{ fmtRp(simBaris(j)?.subtotal ?? 0) }}
                       </td>
                     </tr>
                   </tbody>
@@ -1029,7 +1038,8 @@ import {
   // Kyai 7 Agu 2026: tunjangan ber-scope (jabatan/lembaga/shift/orang) + masa pengabdian.
   jenisTunjanganList,
   barisTunjangan,
-  tahunPengabdian
+  tahunPengabdian,
+  HITUNGAN_TUNJANGAN_OPTIONS
 } from '@/utils/bisyarohScope'
 import { shiftsForGuru } from '@/utils/shiftDerive'
 import { shiftLabelOf, shiftList } from '@/utils/shiftMaster'
@@ -1766,28 +1776,57 @@ function ctxGuruPenuh(g, periode) {
 const simCtxList = computed(() =>
   guruAktifSaja(guruRaw.value).map((g) => ctxGuruPenuh(g, simPeriode.value))
 )
+// Nominal coba-coba disimpan per (kelompok, id): Jenis Bisyaroh & Jenis Tunjangan itu dua
+//   daftar terpisah, jadi id yang sama di keduanya wajar dan tak boleh saling menimpa.
 const simJenisPakai = computed(() =>
-  terapkanNominal(jenisBisyarohList(settingsStore.settings || {}), simNominal.value)
+  terapkanNominal(jenisBisyarohList(settingsStore.settings || {}), simNominalUntuk('bisyaroh'))
 )
+const simTunjanganPakai = computed(() =>
+  terapkanNominal(jenisTunjanganList(settingsStore.settings || {}), simNominalUntuk('tunjangan'))
+)
+function simNominalUntuk(kelompok) {
+  const out = {}
+  for (const [k, v] of Object.entries(simNominal.value || {})) {
+    const [kel, ...sisa] = k.split(':')
+    if (kel === kelompok) out[sisa.join(':')] = v
+  }
+  return out
+}
 
-const simHasil = computed(() => simulasiBisyaroh(simJenisPakai.value, simCtxList.value))
-const simJenisAsli = computed(() => jenisBisyarohList(settingsStore.settings || {}))
+const simHasil = computed(() =>
+  simulasiBisyaroh(simJenisPakai.value, simCtxList.value, simTunjanganPakai.value)
+)
+// Kyai 7 Agu 2026: tunjangan IKUT simulasi. Tampil di tabel yang sama supaya total plafon
+//   terbaca sekali jalan — dibedakan lencana, bukan tabel terpisah.
+const simJenisAsli = computed(() => [
+  ...jenisBisyarohList(settingsStore.settings || {}).map((j) => ({ ...j, kel: 'bisyaroh' })),
+  ...jenisTunjanganList(settingsStore.settings || {}).map((j) => ({ ...j, kel: 'tunjangan' }))
+])
 const simPeta = computed(() => {
   const m = {}
-  for (const r of simHasil.value.perJenis) m[r.jenis_id] = r
+  for (const r of simHasil.value.perJenis)
+    m[`${r.kategori === 'tunjangan' ? 't' : 'b'}:${r.jenis_id}`] = r
   return m
 })
 /** Baris hasil simulasi utk 1 jenis — null bila jenisnya tak mengenai siapa pun. */
-function simBaris(id) {
-  return simPeta.value[String(id)] || null
+function simBaris(j) {
+  return simPeta.value[`${j.kel === 'tunjangan' ? 't' : 'b'}:${j.id}`] || null
+}
+/** Kunci nominal coba-coba, dipisah per kelompok. */
+function simKey(j) {
+  return `${j.kel}:${j.id}`
 }
 /** Label cara hitung, dari sumber yang sama dengan editor Jenis Bisyaroh. */
 function hitunganLabel(h) {
-  return HITUNGAN_OPTIONS.find((o) => o.value === h)?.label || 'Flat / bulan'
+  return (
+    HITUNGAN_OPTIONS.find((o) => o.value === h)?.label ||
+    HITUNGAN_TUNJANGAN_OPTIONS.find((o) => o.value === h)?.label ||
+    'Flat / bulan'
+  )
 }
 const simAdaUbahan = computed(() =>
   simJenisAsli.value.some((j) => {
-    const v = simNominal.value[j.id]
+    const v = simNominal.value[simKey(j)]
     return v !== undefined && v !== '' && Number(v) !== Number(j.nominal || 0)
   })
 )
@@ -1802,7 +1841,9 @@ const simCariGuru = ref('')
 const simSembunyiNol = ref(false)
 const simBuka = ref(new Set()) // guruId yang rinciannya sedang dibentangkan
 
-const simPerGuru = computed(() => simulasiPerGuru(simJenisPakai.value, simCtxList.value))
+const simPerGuru = computed(() =>
+  simulasiPerGuru(simJenisPakai.value, simCtxList.value, simTunjanganPakai.value)
+)
 const simPerGuruTampil = computed(() => {
   const q = simCariGuru.value.trim().toLowerCase()
   return simPerGuru.value.filter((g) => {

@@ -10,6 +10,24 @@ naik satu tiap rilis. Entri lama memakai skema lama `v.{nomor-urut}.{MMDDtahunmu
 
 ## [Unreleased]
 
+⚠️ **Perubahan kode di bawah lahir SESUDAH artefak v.1.3.1 dibangun Kyai.** Rilis berikutnya
+WAJIB `v.1.3.2` / `vc132` — jangan membangun ulang vc131, itu mengulang jebakan "satu label
+versi, dua isi".
+
+### Fixed (Perbaikan)
+
+- **Tunjangan akhirnya ikut dihitung di Simulasi Plafon.** Kyai: "tunjangan kok gak masuk di
+  simulasi ya?" — memang tidak, dan itu cacat sejak tunjangan pindah ke daftarnya sendiri.
+  Plafon yang tak menghitung tunjangan bukan sekadar kurang lengkap: ia **mengecilkan**
+  anggaran, padahal alat itu dipakai justru untuk memutuskan nominal — dan sejak bonus tepat
+  waktu ikut pindah ke tunjangan, selisihnya makin jauh. Sekarang Jenis Tunjangan tampil di
+  tabel yang sama (berlencana **TUNJANGAN**), nominalnya bisa dicoba-coba seperti jenis
+  bisyaroh, dan ikut masuk rincian per guru/pegawai. Karena andaiannya hadir penuh, tunjangan
+  berprestasi selalu dianggap lolos — itu memang arti plafon.
+  ⚠️ Nominal coba-coba kini berkunci **kelompok + id**: dua daftar terpisah boleh punya id
+  yang sama ("bonus_tepat_waktu" di keduanya wajar), dan tanpa itu keduanya menyatu jadi satu
+  baris dengan subtotal bercampur.
+
 ### Planned
 
 - **Tujuan pembaruan Android ikut data, bukan teks tetap** (v.1.3.2). `apkUrl` di

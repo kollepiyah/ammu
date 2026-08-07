@@ -17,7 +17,33 @@
 // menyalin rumusnya ke sini: cermin yang berpisah diam-diam adalah kelas bug yang
 // sudah berkali-kali menggigit di repo ini.
 
-import { barisBisyaroh } from './bisyarohScope'
+import { barisBisyaroh, barisTunjangan } from './bisyarohScope'
+
+/**
+ * Semua baris slip 1 guru yang ikut plafon: Jenis Bisyaroh + Jenis Tunjangan.
+ *
+ * Kyai (7 Agu 2026): "tunjangan kok gak masuk di simulasi ya?" — memang tak masuk, dan itu
+ * cacat sejak tunjangan pindah ke daftarnya sendiri. Plafon yang tak menghitung tunjangan
+ * bukan sekadar kurang lengkap: ia MENGECILKAN anggaran, padahal alat ini dipakai justru
+ * untuk memutuskan nominal. Sejak bonus tepat waktu ikut pindah ke tunjangan, angkanya
+ * makin jauh dari kenyataan.
+ */
+function barisSemua(jenisList, tunjanganList, ctx) {
+  return [
+    ...(barisBisyaroh(jenisList || [], ctx) || []),
+    ...(barisTunjangan(tunjanganList || [], ctx) || [])
+  ]
+}
+
+/**
+ * Kunci pengelompokan per jenis. DIBERI AWALAN kelompoknya: id Jenis Bisyaroh dan Jenis
+ * Tunjangan hidup di dua daftar terpisah, jadi keduanya boleh punya id yang sama persis
+ * ("bonus_tepat_waktu" di dua tempat itu wajar) — tanpa awalan, dua jenis berbeda akan
+ * menyatu jadi satu baris dan subtotalnya bercampur.
+ */
+function kunciJenis(b) {
+  return `${b.kategori === 'tunjangan' ? 't' : 'b'}:${b.jenis_id}`
+}
 
 /** Ahad libur, Senin–Sabtu efektif — sama dengan aturan absensi & bisyaroh per_jp. */
 export function hariEfektif(tanggalList, liburSet) {
@@ -56,20 +82,21 @@ export function tanggalBulanPenuh(periode) {
  * view, sebab ia butuh master shift/libur/beban mengajar). Util ini sengaja tak tahu
  * dari mana angkanya datang — itu yang membuatnya bisa diuji tanpa DOM & tanpa DB.
  *
- * @returns { perJenis: [{jenis_id,label,hitungan,tarif,guru,qty,subtotal}], total, guruKena }
+ * @returns { perJenis: [{jenis_id,kategori,label,hitungan,tarif,guru,qty,subtotal}], total, guruKena }
  */
-export function simulasiBisyaroh(jenisList, ctxList) {
+export function simulasiBisyaroh(jenisList, ctxList, tunjanganList) {
   const perJenis = new Map()
   const guruKena = new Set()
   for (const ctx of ctxList || []) {
-    for (const b of barisBisyaroh(jenisList || [], ctx) || []) {
+    for (const b of barisSemua(jenisList, tunjanganList, ctx)) {
       const nominal = Number(b.nominal) || 0
       if (nominal <= 0) continue
-      const k = String(b.jenis_id)
+      const k = kunciJenis(b)
       if (!perJenis.has(k)) {
         perJenis.set(k, {
-          jenis_id: k,
-          label: b.label || k,
+          jenis_id: String(b.jenis_id),
+          kategori: b.kategori === 'tunjangan' ? 'tunjangan' : 'bisyaroh',
+          label: b.label || String(b.jenis_id),
           hitungan: b.hitungan || 'flat',
           tarif: Number(b.tarif) || 0,
           guru: 0,
@@ -111,16 +138,17 @@ export function simulasiBisyaroh(jenisList, ctxList) {
  * @returns [{ guruId, nama, baris: [{jenis_id,label,hitungan,tarif,qty,nominal}], total }]
  *          terurut dari yang terbesar.
  */
-export function simulasiPerGuru(jenisList, ctxList) {
+export function simulasiPerGuru(jenisList, ctxList, tunjanganList) {
   const out = []
   for (const ctx of ctxList || []) {
     const baris = []
     let total = 0
-    for (const b of barisBisyaroh(jenisList || [], ctx) || []) {
+    for (const b of barisSemua(jenisList, tunjanganList, ctx)) {
       const nominal = Number(b.nominal) || 0
       if (nominal <= 0) continue // sejajar simulasiBisyaroh: nominal 0 tak dihitung
       baris.push({
         jenis_id: String(b.jenis_id),
+        kategori: b.kategori === 'tunjangan' ? 'tunjangan' : 'bisyaroh',
         label: b.label || String(b.jenis_id),
         hitungan: b.hitungan || 'flat',
         tarif: Number(b.tarif) || 0,

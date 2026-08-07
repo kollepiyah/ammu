@@ -174,3 +174,57 @@ describe('terapkanNominal', () => {
     expect(terapkanNominal(JENIS, { pokok: 1234.6 })[0].nominal).toBe(1235)
   })
 })
+
+// Kyai 7 Agu 2026: "tunjangan kok gak masuk di simulasi ya?" — plafon yang tak menghitung
+// tunjangan MENGECILKAN anggaran, padahal alat ini dipakai untuk memutuskan nominal.
+describe('simulasi ikut menghitung Jenis Tunjangan', () => {
+  const TUNJANGAN = [
+    { id: 'kepala', label: 'Tunjangan Kepala', aktif: true, hitungan: 'flat', nominal: 300000 },
+    {
+      id: 'pengabdian',
+      label: 'Pengabdian',
+      aktif: true,
+      hitungan: 'per_tahun_pengabdian',
+      nominal: 10000
+    }
+  ]
+  const ctxT = (guruId, hadir, th) => ({
+    ...ctx(guruId, hadir),
+    nama: guruId,
+    efektifPerShift: { pagi: hadir },
+    tahunPengabdian: th
+  })
+
+  it('per jenis: baris tunjangan ikut, bertanda kategori', () => {
+    const r = simulasiBisyaroh(JENIS, [ctxT('g1', 26, 7)], TUNJANGAN)
+    const kepala = r.perJenis.find((x) => x.jenis_id === 'kepala')
+    const pengabdian = r.perJenis.find((x) => x.jenis_id === 'pengabdian')
+    expect(kepala).toMatchObject({ kategori: 'tunjangan', subtotal: 300000 })
+    expect(pengabdian).toMatchObject({ qty: 7, subtotal: 70000 })
+    // 500.000 pokok + 78.000 bonus + 300.000 + 70.000
+    expect(r.total).toBe(948000)
+  })
+
+  it('daftar tunjangan dihilangkan -> hasil kembali seperti sebelum fitur ini', () => {
+    expect(simulasiBisyaroh(JENIS, [ctxT('g1', 26, 7)]).total).toBe(578000)
+  })
+
+  it('per orang: tunjangan masuk & totalnya tetap sama dengan per jenis', () => {
+    const list = [ctxT('g1', 26, 7), ctxT('g2', 20, 3)]
+    const perOrang = simulasiPerGuru(JENIS, list, TUNJANGAN)
+    expect(perOrang[0].baris.some((b) => b.kategori === 'tunjangan')).toBe(true)
+    expect(perOrang.reduce((a, g) => a + g.total, 0)).toBe(
+      simulasiBisyaroh(JENIS, list, TUNJANGAN).total
+    )
+  })
+
+  it('id kembar di dua daftar TIDAK menyatu jadi satu baris', () => {
+    const sama = [
+      { id: 'pokok', label: 'Tunjangan Pokok', aktif: true, hitungan: 'flat', nominal: 1000 }
+    ]
+    const r = simulasiBisyaroh(JENIS, [ctxT('g1', 26, 7)], sama)
+    const pokok = r.perJenis.filter((x) => x.jenis_id === 'pokok')
+    expect(pokok).toHaveLength(2)
+    expect(pokok.map((x) => x.kategori).sort()).toEqual(['bisyaroh', 'tunjangan'])
+  })
+})
