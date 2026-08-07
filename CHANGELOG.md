@@ -10,7 +10,15 @@ naik satu tiap rilis. Entri lama memakai skema lama `v.{nomor-urut}.{MMDDtahunmu
 
 ## [Unreleased]
 
-⚠️ **TANPA migrasi DB, TANPA edge function** — cukup deploy web dari **direktori utama**.
+⚠️ **URUTAN DEPLOY — dua langkah:**
+
+1. `supabase db push` — migrasi `20260807170000` (strip ulang kunci keuangan dari
+   `settings/general` & `/web`). Aman: ia **tidak** menggabungkan apa pun ke row `keuangan`,
+   dan sebuah kunci hanya dibuang bila row `keuangan` memang sudah memilikinya.
+2. Deploy web **dari direktori utama** (worktree tak punya `vue-app/.env.local`).
+
+Tanpa edge function baru. Bila `auto-generate-tagihan` belum pernah di-redeploy sejak
+29 Jul, redeploy sekalian — versi lawasnya membaca jenis dari `general` yang kini dikosongkan.
 
 ### Added (Baru)
 
@@ -40,6 +48,40 @@ naik satu tiap rilis. Entri lama memakai skema lama `v.{nomor-urut}.{MMDDtahunmu
   **"di luar daftar"**. Bulan lain sengaja dibiarkan kosong, **tidak** disintesis — jenis
   itu memang tak punya tarif yang berlaku untuk santri ini, dan mengarang sel merah baru
   sama saja menerbitkan tagihan di layar.
+
+### Security (Keamanan)
+
+- **Config keuangan tak bisa lagi bocor — atau tertimpa — lewat salinan di row publik.**
+  Migrasi 29 Jul memindahkan tarif syahriyah/bisyaroh, beban mengajar, tunjangan &
+  potongan ke `settings/keuangan` (hanya super admin / admin keuangan) lalu menghapusnya
+  dari `settings/general` & `/web` yang **terbaca tanpa login**. Diperiksa 7 Agu 2026:
+  kunci-kunci itu **ada lagi** di `general` — berisi setelan **bawaan kosong**, sidik jari
+  aplikasi lawas yang tak kenal row `keuangan`: layarnya menampilkan fallback, lalu satu
+  klik "Simpan Semua" menerbitkannya sebagai config. Tiga lapis perbaikan:
+  - **Migrasi `20260807170000`** membuang kunci itu lagi dari `general`/`web` — dan
+    **tidak** menggabungkan isinya ke `keuangan` seperti migrasi 29 Jul, sebab kali ini
+    yang dibawa `general` adalah default kosong yang justru akan menimpa config asli.
+  - **Store membuang** kunci keuangan dari data `general`/`web` sebelum di-merge, bukan
+    sekadar mengalahkannya lewat urutan. Sebelumnya, sekali saja row `keuangan` gagal atau
+    telat terbaca, POS & Bisyaroh memakai daftar jenis **default** — tarif salah di layar
+    kasir, dan itu uang riil. Kini row `keuangan` satu-satunya sumber; peran yang tak
+    berhak membacanya mendapat kunci **absen**, bukan salinan basi.
+  - **Menyimpan hal lain tak lagi menulis ulang config keuangan.** `save()` di store dulu
+    menyetor seluruh salinan di memori, jadi menyimpan logo dari perangkat yang snapshot-nya
+    basi bisa memundurkan jenis pembayaran tanpa jejak; kini hanya kunci yang benar-benar
+    disunting yang ditulis.
+
+### Fixed (Perbaikan) — Pengaturan Keuangan
+
+- **Pengaturan Keuangan menolak menyimpan kalau config di server tak terbaca.** Halaman ini
+  menyimpan SELURUH daftar jenis sekaligus, jadi bila ia terhidrasi saat row `keuangan`
+  gagal terbaca (sesi kedaluwarsa, jaringan, peran, atau aplikasi lawas), yang tampil adalah
+  fallback bawaan — dan "Simpan Semua" menerbitkannya sebagai config sungguhan. Sekarang ada
+  **spanduk merah di puncak halaman** (muncul sebelum ada yang sempat disunting) dan
+  `simpan()` memeriksa ulang ke server tepat sebelum menulis, lalu **membatalkan** bila:
+  server tak terbaca; halaman dimuat tanpa config; atau server memuat jenis yang **tak
+  pernah tampil** di layar ini — pertanda perangkat lain menyimpan lebih dulu, dan
+  menyimpan akan menghapus jenis itu tanpa Kyai pernah melihatnya.
 
 ### Planned
 

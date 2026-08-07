@@ -27,6 +27,33 @@ const KEUANGAN_KEYS = [
   //   sini — jangan pindah ke general/web yang anon-readable.
   'keuPotonganPos'
 ]
+
+/**
+ * Buang kunci keuangan dari data general/web sebelum di-merge (Kyai, 7 Agu 2026).
+ *
+ * Migrasi 29 Jul sudah menghapus kunci ini dari general/web, dan kode di bawah dulu
+ * MENGANDALKAN itu ("kunci keuangan tak ada di general lagi"). Diperiksa 7 Agu 2026 lewat
+ * anon REST: kunci-kunci itu ADA LAGI di general, berisi DEFAULT KOSONG — klien lawas yang
+ * tak kenal row `keuangan` menerbitkannya kembali saat "Simpan Semua". Selama salinan itu
+ * ikut ter-merge, satu urutan yang meleset saja (kunci `keuangan` terbaca belakangan, atau
+ * gagal terbaca sesaat) sudah cukup untuk membuat POS & Bisyaroh memakai daftar jenis
+ * DEFAULT — tarif salah di layar kasir, dan itu uang riil.
+ *
+ * Sesudah ini row `keuangan` adalah SATU-SATUNYA sumber kunci tersebut. Peran yang tak
+ * boleh membacanya mendapat kunci ABSEN (perilaku yang memang dirancang A1), bukan
+ * salinan publik yang basi.
+ */
+function tanpaKunciKeuangan(data) {
+  if (!data || typeof data !== 'object') return data
+  let salin = null
+  for (const k of KEUANGAN_KEYS) {
+    if (k in data) {
+      if (!salin) salin = { ...data }
+      delete salin[k]
+    }
+  }
+  return salin || data
+}
 const DEFAULT_SETTINGS = {
   // v.20.74.4.0526: Branding default "Ammu Online" (was "Portal MU" — kyai req)
   txtAppName: 'Ammu Online',
@@ -63,6 +90,11 @@ export const useSettingsStore = defineStore('settings', () => {
   // true HANYA setelah settings sekali berhasil dibaca dari DB. Selama false,
   // `settings` masih DEFAULT_SETTINGS — bukan nilai asli — jadi HARAM ditulis balik (lihat save()).
   const isLoaded = ref(false)
+  // true bila row `settings/keuangan` BENAR-BENAR terbaca (bukan null). Sejak kunci
+  //   keuangan cuma bersumber dari row itu, false berarti seluruh config keuangan di layar
+  //   ini KOSONG — bukan "memang belum diisi". Pengaturan Keuangan memakainya untuk menolak
+  //   menyimpan, supaya layar kosong tak menimpa config yang sungguhan.
+  const keuanganTerbaca = ref(false)
   let unsubscribe = null
 
   // Getters
@@ -118,14 +150,17 @@ export const useSettingsStore = defineStore('settings', () => {
         // A1: null utk anon/peran non-keuangan (RLS filter → maybeSingle null, BUKAN error)
         getOne('settings', SETTINGS_DOC_ID_KEUANGAN)
       ])
-      // Merge: DEFAULT < vueData < legacyData < keuData (keuangan menang utk kuncinya sendiri)
+      // Merge: DEFAULT < vueData < legacyData < keuData. Kunci keuangan DIBUANG dari
+      //   vueData/legacyData — bukan sekadar kalah urutan — supaya salinan basi di row
+      //   publik tak pernah bisa dipakai walau row `keuangan` gagal/terlambat terbaca.
       settings.value = {
         ...DEFAULT_SETTINGS,
-        ...(vueData || {}),
-        ...(legacyData || {}),
+        ...(tanpaKunciKeuangan(vueData) || {}),
+        ...(tanpaKunciKeuangan(legacyData) || {}),
         ...(keuData || {})
       }
       _lastKeuData = keuData || null
+      keuanganTerbaca.value = !!keuData
       isLoaded.value = true
     } catch (e) {
       // Regex diperluas: kode 'unavailable' itu istilah Firestore & tak pernah cocok dgn error
@@ -152,16 +187,23 @@ export const useSettingsStore = defineStore('settings', () => {
     // v.61.0526: subscribe ke kedua doc — general (legacy) + web (Vue PoC)
     if (!unsubscribe) {
       unsubscribe = subscribeDoc('settings', SETTINGS_DOC_ID_VUE, (data) => {
-        if (data) settings.value = { ...settings.value, ...data, ...(_lastLegacyData || {}) }
+        if (data)
+          settings.value = {
+            ...settings.value,
+            ...tanpaKunciKeuangan(data),
+            ...(_lastLegacyData || {})
+          }
       })
     }
     if (!unsubscribeGeneral) {
       unsubscribeGeneral = subscribeDoc('settings', SETTINGS_DOC_ID_LEGACY, (data) => {
         if (data) {
-          _lastLegacyData = data
-          // Legacy data overrides Vue (legacy = source of truth); kunci keuangan
-          // (tak ada di general lagi) dipertahankan dari _lastKeuData.
-          settings.value = { ...settings.value, ...data, ...(_lastKeuData || {}) }
+          // Kunci keuangan dibuang di sini, bukan ditimpa balik oleh _lastKeuData:
+          //   kalau row `keuangan` belum/tak terbaca (_lastKeuData null), menimpa balik
+          //   tak terjadi dan salinan basi general-lah yang menang. Itu jalur nyata —
+          //   lihat catatan di `tanpaKunciKeuangan`.
+          _lastLegacyData = tanpaKunciKeuangan(data)
+          settings.value = { ...settings.value, ..._lastLegacyData, ...(_lastKeuData || {}) }
         }
       })
     }
@@ -170,6 +212,7 @@ export const useSettingsStore = defineStore('settings', () => {
       unsubscribeKeuangan = subscribeDoc('settings', SETTINGS_DOC_ID_KEUANGAN, (data) => {
         if (data) {
           _lastKeuData = data
+          keuanganTerbaca.value = true
           settings.value = { ...settings.value, ...data }
         }
       })
@@ -213,7 +256,14 @@ export const useSettingsStore = defineStore('settings', () => {
       const pub = { ...merged }
       const keu = {}
       for (const k of KEUANGAN_KEYS) {
-        if (k in merged) keu[k] = merged[k]
+        // Yang ditulis ke row `keuangan` hanya kunci yang MEMANG ada di `patch` — bukan
+        //   salinan di memori. Dulu dari `merged`, sehingga menyimpan hal tak terkait
+        //   (branding, KKM rapor) ikut menuliskan ULANG seluruh config keuangan dari
+        //   snapshot yang bisa saja sudah basi — perangkat lain menyunting jenis, halaman
+        //   ini menyimpan logo, jenis itu mundur tanpa jejak. Tak ada pemanggil `save()`
+        //   yang mengirim kunci keuangan (Pengaturan Keuangan menulis sendiri), jadi ini
+        //   murni menutup jalur kecelakaan.
+        if (k in patch) keu[k] = patch[k]
         delete pub[k]
       }
       // v.21.105.0527: save ke KEDUA doc.
@@ -239,12 +289,14 @@ export const useSettingsStore = defineStore('settings', () => {
 
   function reset() {
     settings.value = { ...DEFAULT_SETTINGS }
+    keuanganTerbaca.value = false
   }
 
   return {
     settings,
     isLoading,
     isLoaded,
+    keuanganTerbaca,
     error,
     kopLines,
     load,

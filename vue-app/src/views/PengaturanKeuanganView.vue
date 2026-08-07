@@ -12,6 +12,26 @@
       </p>
     </div>
 
+    <!-- Kyai 7 Agu 2026: config keuangan hanya bersumber dari row `settings/keuangan`.
+         Bila row itu tak terbaca, seluruh daftar di bawah adalah setelan BAWAAN, bukan
+         setelan pesantren — dan menyimpannya akan menimpa yang tersimpan. Peringatannya
+         dipasang di atas, sebelum ada yang sempat disunting; `simpan()` juga menolak. -->
+    <div
+      v-if="settingsStore.isLoaded && !settingsStore.keuanganTerbaca"
+      class="rounded-2xl border-2 border-rose-400 bg-rose-50 dark:bg-rose-900/25 p-4"
+    >
+      <p class="text-sm font-black text-rose-800 dark:text-rose-200">
+        <i class="fas fa-triangle-exclamation mr-2"></i>Config keuangan TIDAK terbaca dari server
+      </p>
+      <p class="text-xs text-rose-800/90 dark:text-rose-200/90 mt-1 leading-relaxed">
+        Yang tampil di halaman ini adalah <b>setelan bawaan</b>, bukan setelan pesantren — jenis
+        pembayaran, tarif, dan jenis bisyaroh bisa tampak kosong atau salah.
+        <b>Jangan menyimpan.</b> Muat ulang halaman; kalau masih begini, keluar lalu masuk lagi
+        (sesi bisa kedaluwarsa tanpa pemberitahuan). Penyimpanan sudah dikunci supaya config yang
+        tersimpan tak tertimpa.
+      </p>
+    </div>
+
     <!-- v.110.0626: Tab navigasi — pecah 7 area jadi 5 tab, tampil 1 per tab (anti-bingung). -->
     <div class="flex gap-1.5 overflow-x-auto hide-scrollbar -mx-1 px-1 pb-0.5">
       <button
@@ -2562,7 +2582,15 @@
 import { ref, reactive, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 // v.F6e: adapter Supabase (serverTimestamp = shim ISO string).
-import { getAll, queryColl, setOne, mergeOne, serverTimestamp, subscribeDoc } from '@/services/db'
+import {
+  getAll,
+  getOne,
+  queryColl,
+  setOne,
+  mergeOne,
+  serverTimestamp,
+  subscribeDoc
+} from '@/services/db'
 // v.1.1.9: Jenis Bisyaroh ber-scope (ganti 5 tarif shift global + map pokok per guru)
 import {
   jenisBisyarohList as bacaJenisBisyaroh,
@@ -3356,6 +3384,40 @@ function loadFromSettings() {
   form.bmt_aktif = s.bmt_aktif === true
   form.bmt_nama = s.bmt_nama || ''
   form.bmt_va_prefix = s.bmt_va_prefix || ''
+
+  hidrasiKeu.value = sidikJariKeu(s) // Kyai 7 Agu: bekal penjaga simpan (lihat simpan())
+}
+
+// ── Penjaga anti-timpa config keuangan (Kyai, 7 Agu 2026) ────────────────────
+// Layar ini menyimpan SELURUH daftar jenis pembayaran & bisyaroh sekaligus. Kalau ia
+// terhidrasi saat row `settings/keuangan` tak terbaca (sesi zombie, jaringan, peran, atau
+// aplikasi lawas yang tak kenal row itu), yang tampil adalah fallback hardcoded — dan satu
+// klik "Simpan Semua" menerbitkan fallback itu sebagai config sungguhan. Itu bukan teori:
+// 7 Agu 2026 salinan default persis begitu ditemukan sudah tertulis di settings/general.
+//
+// Dua lapis penjagaan, dua kegagalan yang berbeda:
+//   1. `keuanganTerbaca` — row-nya memang tak pernah terbaca sejak halaman dimuat.
+//   2. sidik jari — row-nya terbaca, TAPI isinya kini memuat jenis yang layar ini tak
+//      pernah lihat (perangkat lain menyimpan lebih dulu, atau hidrasinya basi). Menyimpan
+//      akan MENGHAPUS jenis itu tanpa Kyai pernah melihatnya.
+const hidrasiKeu = ref(null)
+
+/** Kumpulan id jenis (pembayaran semua T.A. + bisyaroh) di satu objek settings. */
+function sidikJariKeu(s) {
+  const ids = new Set()
+  const serap = (arr, awalan) => {
+    for (const j of Array.isArray(arr) ? arr : []) {
+      const id = String(j?.id || j?.label || '').trim()
+      if (id) ids.add(awalan + id.toLowerCase())
+    }
+  }
+  serap(s?.keuTagihanJenis, 'bayar:')
+  const byTA = s?.keuTagihanJenisByTA
+  if (byTA && typeof byTA === 'object') {
+    for (const [ta, list] of Object.entries(byTA)) serap(list, `bayar:${ta}:`)
+  }
+  serap(s?.keuBisyarohJenis, 'bisyaroh:')
+  return ids
 }
 
 onMounted(async () => {
@@ -3977,9 +4039,60 @@ function serializeJenisList(list) {
     })
 }
 
+/**
+ * Boleh menulis kunci keuangan sekarang? Dijalankan TEPAT sebelum menulis.
+ *
+ * Membaca ulang row `settings/keuangan` dari server (bukan dari store) — justru kegagalan
+ * membaca itulah yang hendak dideteksi, dan store bisa saja sudah lama basi.
+ * @returns {Promise<string>} '' = boleh; selain itu = alasan penolakan (siap ditampilkan).
+ */
+async function alasanTolakSimpanKeu() {
+  let server = null
+  try {
+    server = await getOne('settings', 'keuangan')
+  } catch (e) {
+    return (
+      'Config keuangan di server tidak bisa dibaca (' +
+      (e?.message || e) +
+      '). Simpan dibatalkan supaya isi layar ini tidak menimpa data yang tersimpan. ' +
+      'Coba logout lalu login lagi, periksa koneksi, dan buka ulang halaman ini.'
+    )
+  }
+  // Server kosong / row belum ada → tak ada yang bisa hilang; menyimpan justru membuatnya.
+  const idsServer = sidikJariKeu(server || {})
+  if (idsServer.size === 0) return ''
+  if (!settingsStore.keuanganTerbaca) {
+    return (
+      'Halaman ini dimuat TANPA config keuangan dari server, jadi yang tampil adalah ' +
+      'setelan bawaan — bukan setelan pesantren. Menyimpannya akan menghapus config yang ' +
+      'tersimpan. Muat ulang halaman (atau logout–login) sampai daftarnya terisi benar.'
+    )
+  }
+  const dilihat = hidrasiKeu.value || new Set()
+  const hilang = [...idsServer].filter((id) => !dilihat.has(id))
+  if (hilang.length) {
+    return (
+      `Di server ada ${hilang.length} jenis yang tak pernah tampil di layar ini ` +
+      `(mis. ${hilang
+        .slice(0, 3)
+        .map((x) => x.split(':').pop())
+        .join(', ')}). ` +
+      'Kemungkinan tersimpan dari perangkat lain sesudah halaman ini dibuka. Simpan ' +
+      'dibatalkan supaya jenis itu tak terhapus — muat ulang halaman dulu, lalu ulangi suntingan.'
+    )
+  }
+  return ''
+}
+
 async function simpan() {
   saving.value = true
   try {
+    // Kyai 7 Agu: jangan pernah menimpa config keuangan dengan layar yang tak terhidrasi.
+    const tolak = await alasanTolakSimpanKeu()
+    if (tolak) {
+      toast.error(tolak)
+      return
+    }
     // v.1.1.x: serialize semua Tahun Ajaran; global keuTagihanJenis = TA berjalan (konsumen lama tak berubah)
     const byTA = {}
     for (const [ta, list] of Object.entries(jenisByTA.value)) {

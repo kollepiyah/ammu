@@ -11,7 +11,10 @@ export default defineConfig({
       // resolusinya relatif ke vue-app/src). Runtime-only: tes tak mengompilasi template.
       vue: fileURLToPath(
         new URL('./vue-app/node_modules/vue/dist/vue.runtime.esm-bundler.js', import.meta.url)
-      )
+      ),
+      // Sama ceritanya dengan `vue` di atas — pinia juga hanya ada di vue-app/node_modules,
+      // jadi tes yang menguji store (mis. settingsKeuanganMerge) tak bisa mengimpornya.
+      pinia: fileURLToPath(new URL('./vue-app/node_modules/pinia/dist/pinia.mjs', import.meta.url))
     }
   },
   test: {
