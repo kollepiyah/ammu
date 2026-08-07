@@ -7,7 +7,13 @@ import { useAuthStore } from '@/stores/auth'
 // v.21.10.0526: Import lembaga helpers
 import { getLembagaGroup, LEMBAGA_GROUPS } from './useLembaga'
 // v.1.1.9: unit tugas per jabatan (master/jabatan) — ganti tebakan regex lama
-import { unitsOfJabatan, namaLembaga, pecahJabatan, jabatanUntukUnit } from '@/utils/jabatanUnit'
+import {
+  unitsOfJabatan,
+  namaLembaga,
+  pecahJabatan,
+  jabatanUntukUnit,
+  kepalaUntukUnit
+} from '@/utils/jabatanUnit'
 // v.110: sortGuru — urutan Qiraati→Sekolah→Pegawai→nama A–Z (sumber tunggal)
 import { sortGuru } from '@/utils/santriSort'
 
@@ -72,35 +78,41 @@ export function deriveGuruLembagaRefs(g, opts = {}) {
     })
   }
 
-  // Lembaga utama (ngaji).
-  if (g.lembaga) {
-    const extra = {
-      shift: g.shift || null,
-      kelas_diajar: Array.isArray(g.kelas_diajar) ? g.kelas_diajar : []
+  /**
+   * Pasang tempat tugas di satu lembaga.
+   *
+   * Kyai 7 Agu 2026, keputusan final setelah tiga putaran:
+   *   - di lembaga yang ia PIMPIN → bacaannya HANYA Kepala. Bacaan 'Guru' dicabut supaya
+   *     pokok guru tak ikut terbit ("harusnya kan hanya pokok kepala dan JPnya"). Jam
+   *     mengajarnya tetap dibayar lewat per-JP, yang lembaganya datang dari Beban Mengajar
+   *     dan tak butuh bacaan 'Guru' sama sekali.
+   *   - di lembaga LAIN (mis. kepala sekolah yang juga mengaji) → bacaan lama TETAP, plus
+   *     'Guru' ditambahkan supaya pokok guru NGAJI-nya terbit. Pilihan eksplisit Kyai.
+   *   - gelar ber-unit yang BUKAN kepala (Wali Kelas terikat SDI & PKBM di master Kyai)
+   *     hanya DITAMBAHKAN — kalau ia ikut mencabut 'Guru', tiap wali kelas kehilangan pokok
+   *     gurunya.
+   */
+  const pasangRef = (lembaga, bacaanLama, extra) => {
+    if (!lembaga) return
+    const kepala = kepalaUntukUnit(jabatanItems, semuaJabatan, lembaga)
+    if (kepala) {
+      tambah(lembaga, kepala, extra)
+      return
     }
-    tambah(g.lembaga, g.jabatan || 'Guru', extra) // bacaan LAMA — jangan diambil
-    // "kepala yg juga guru ngaji, bisyaroh ngajinya tidak terbaca": gelar yang unitnya di
-    //   tempat LAIN (mis. "Kepala PKBM" di lembaga ngaji PTPT) membuat jenis ngaji ber-scope
-    //   jabatan "Guru" meleset. Bacaan 'Guru' ditambahkan HANYA bila memang tak ada
-    //   jabatannya yang memangku lembaga ini — kepala DI lembaganya sendiri tak ikut
-    //   ditambahi, supaya pokok kepala & pokok guru tak sama-sama terbit.
-    if (!jabatanUntukUnit(jabatanItems, semuaJabatan, g.lembaga)) tambah(g.lembaga, 'Guru', extra)
+    tambah(lembaga, bacaanLama, extra)
+    const gelar = jabatanUntukUnit(jabatanItems, semuaJabatan, lembaga)
+    if (gelar) tambah(lembaga, gelar, extra)
+    else tambah(lembaga, 'Guru', extra)
   }
 
-  // Lembaga sekolah (kalau beda dari lembaga utama).
+  pasangRef(g.lembaga, g.jabatan || 'Guru', {
+    shift: g.shift || null,
+    kelas_diajar: Array.isArray(g.kelas_diajar) ? g.kelas_diajar : []
+  })
   if (g.lembaga_sekolah && g.lembaga_sekolah !== g.lembaga) {
-    const extra = {
+    pasangRef(g.lembaga_sekolah, g.jabatan_sekolah || 'Guru', {
       kelas_diajar: Array.isArray(g.kelas_diajar_sekolah) ? g.kelas_diajar_sekolah : []
-    }
-    tambah(g.lembaga_sekolah, g.jabatan_sekolah || 'Guru', extra) // bacaan LAMA
-    // "Kepala PKBM tapi terbacanya sebagai guru": `jabatan_sekolah` tak pernah diisi di mana
-    //   pun, jadi bacaan di atas selalu 'Guru'. Gelar yang MEMANGKU unit ini ditambahkan
-    //   sebagai bacaan kedua supaya jenis/tunjangan ber-scope Kepala ikut mengenainya.
-    tambah(
-      g.lembaga_sekolah,
-      jabatanUntukUnit(jabatanItems, semuaJabatan, g.lembaga_sekolah),
-      extra
-    )
+    })
   }
 
   // Tiap jabatan berjangkar di unitnya sendiri (master/jabatan units[]).

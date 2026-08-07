@@ -37,9 +37,26 @@ describe('deriveGuruLembagaRefs', () => {
     expect(punya(rs, 'PKBM', 'Kepala PKBM')).toBe(true)
   })
 
-  it('(c) …TAPI bacaan "Guru" di sekolahnya TETAP ADA — pokok guru tak boleh lenyap', () => {
+  it('(d) di lembaga yang ia PIMPIN: HANYA Kepala — pokok guru tak boleh ikut terbit', () => {
+    // Kyai: "kalau kepala kenapa masih dapat bisyaroh pokok guru. harusnya kan hanya pokok
+    //   kepala dan JPnya". Jam mengajarnya tetap dibayar lewat per-JP (lembaganya dari
+    //   Beban Mengajar), jadi bacaan 'Guru' di sini memang tak diperlukan.
     const rs = refs({ jabatan: 'Kepala PKBM', lembaga: 'PTPT', lembaga_sekolah: 'PKBM' })
-    expect(punya(rs, 'PKBM', 'Guru')).toBe(true)
+    expect(punya(rs, 'PKBM', 'Kepala PKBM')).toBe(true)
+    expect(punya(rs, 'PKBM', 'Guru')).toBe(false)
+  })
+
+  it('WALI KELAS ber-unit TIDAK mencabut bacaan Guru — pokok gurunya harus utuh', () => {
+    // Di master Kyai "Wali Kelas" terikat unit SDI & PKBM. Kalau aturan kepala dipukul rata
+    //   ke semua gelar ber-unit, tiap wali kelas kehilangan pokok gurunya.
+    const rs = refs({ jabatan: 'Guru', jabatan_tambahan: 'Wali Kelas', lembaga_sekolah: 'SDI' })
+    expect(punya(rs, 'SDI', 'Guru')).toBe(true)
+    expect(punya(rs, 'SDI', 'Wali Kelas')).toBe(true)
+  })
+
+  it('kepala di lembaga LAIN tetap dapat bacaan Guru — pokok guru ngajinya terbit', () => {
+    const rs = refs({ jabatan: 'Kepala PKBM', lembaga: 'PTPT', lembaga_sekolah: 'PKBM' })
+    expect(punya(rs, 'PTPT', 'Guru')).toBe(true)
   })
 
   it('(b) kepala yang juga guru ngaji: dapat bacaan "Guru" di lembaga ngajinya', () => {
@@ -70,6 +87,12 @@ describe('deriveGuruLembagaRefs', () => {
     expect(punya(rs, 'PKBM', 'Kepala PKBM')).toBe(true)
     expect(punya(rs, 'Yayasan', 'Pengasuh')).toBe(true)
     expect(punya(rs, 'PTPT', 'Guru')).toBe(true)
+  })
+
+  it('kepala yang jabatannya TAMBAHAN pun tak dapat pokok guru di lembaganya', () => {
+    const rs = refs({ jabatan: 'Guru', jabatan_tambahan: 'Kepala SDI', lembaga_sekolah: 'SDI' })
+    expect(punya(rs, 'SDI', 'Kepala SDI')).toBe(true)
+    expect(punya(rs, 'SDI', 'Guru')).toBe(false)
   })
 
   it('tak ada ref kembar (lembaga+jabatan sama) walau datangnya dari dua jalur', () => {

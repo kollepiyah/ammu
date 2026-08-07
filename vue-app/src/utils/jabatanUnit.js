@@ -102,6 +102,24 @@ export function jabatanUntukUnit(jabatanItems, namaJabatanList, unit) {
   return ''
 }
 
+/**
+ * Gelar KEPALA yang memangku unit ini — '' bila orang ini bukan kepala di sana.
+ *
+ * Kyai 7 Agu 2026: "kalau kepala kenapa masih dapat bisyaroh pokok guru. harusnya kan hanya
+ * pokok kepala dan JPnya". Jadi di lembaga yang ia PIMPIN, bacaannya cuma Kepala — bacaan
+ * 'Guru' dicabut supaya pokok guru tak ikut terbit.
+ *
+ * ⚠️ Disaring ke kata "kepala", BUKAN sekadar "gelar yang memangku unit". Di master jabatan
+ * Kyai, **Wali Kelas** juga terikat unit (SDI & PKBM) — kalau aturannya dipukul rata, tiap
+ * wali kelas kehilangan pokok gurunya, persis regresi yang baru saja dikeluhkan.
+ * "PJ ..." sengaja TIDAK ikut: PJ Administrasi memangku empat lembaga ngaji sekaligus dan
+ * orangnya tetap guru biasa di sana.
+ */
+export function kepalaUntukUnit(jabatanItems, namaJabatanList, unit) {
+  const kepala = (namaJabatanList || []).filter((n) => /kepala/i.test(String(n || '')))
+  return jabatanUntukUnit(jabatanItems, kepala, unit)
+}
+
 // Gabungan unit dari jabatan utama + jabatan tambahan. Salah satunya global
 // (units kosong) → hasilnya ikut global: jangan batasi pilihan lembaga.
 export function unitsOfGuru(jabatanItems, jabatanUtama, jabatanTambahan) {

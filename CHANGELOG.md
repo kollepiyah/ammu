@@ -31,8 +31,16 @@ naik satu tiap rilis. Entri lama memakai skema lama `v.{nomor-urut}.{MMDDtahunmu
      master jabatan Kyai **14 dari 15 jabatan terikat unit**, jadi mengganti bacaan memutus
      banyak jenis sekaligus.
 
+  4. _"kalau kepala kenapa masih dapat bisyaroh pokok guru"_ — di lembaga yang ia **pimpin**,
+     bacaan "Guru" memang harus dicabut. Jam mengajarnya tetap dibayar lewat **per JP**
+     (lembaganya datang dari Beban Mengajar), jadi bacaan itu tak diperlukan di sana.
+
   Aturannya sekarang: bacaan jabatan di sebuah lembaga hanya **ditambah**, tak pernah
-  diganti. Bacaan lama tetap utuh; yang kurang ditambahkan — gelar yang **memangku unit
+  diganti — **kecuali** di lembaga yang orang itu **pimpin sebagai Kepala**, yang dibaca
+  Kepala saja. Penyaringnya sengaja kata **"kepala"**, bukan "gelar apa pun yang terikat
+  unit": di master jabatan Kyai **Wali Kelas** juga terikat SDI & PKBM, dan aturan yang
+  dipukul rata akan mencabut pokok guru tiap wali kelas. "PJ …" juga tak ikut — PJ
+  Administrasi memangku empat lembaga ngaji sekaligus sementara orangnya guru biasa di sana. Bacaan lama tetap utuh; yang kurang ditambahkan — gelar yang **memangku unit
   itu** di lembaga sekolah, dan bacaan **"Guru"** di lembaga ngaji bagi orang yang gelarnya
   milik unit lain. Kepala **di lembaganya sendiri** sengaja **tidak** ditambahi bacaan
   "Guru", supaya pokok kepala dan pokok guru tak sama-sama terbit untuk orang yang sama.
