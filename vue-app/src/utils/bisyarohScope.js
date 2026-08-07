@@ -236,10 +236,65 @@ function hitungDasar(j, ctx, ref) {
 // Baris slip bisyaroh utk 1 guru. Tiap jenis yang cocok = 1 baris.
 //   ctx = { refs, shiftIds, hadirPerShift: { pagi: 20, ... } }
 // return [{ jenis_id, kategori, lembaga, label, nominal, hitungan, qty, tarif }]
+/**
+ * Baris jenis ber-hitungan per JP (`per_jp` & `per_jp_bulanan`) — jalur TERSENDIRI.
+ *
+ * Kyai (7 Agu 2026): "ada Kepala SDI yg juga punya jam mengajar di PKBM, gimana caranya
+ *   biar sesuai". Dulu lembaga tempat mengajar hanya bisa datang dari `refs`, yang
+ *   diturunkan dari Lembaga utama + Lembaga sekolah (SATU slot) + Jabatan Tambahan. Kepala
+ *   SDI yang juga mengajar di PKBM karena itu tak punya ref PKBM, sehingga jenis ber-scope
+ *   PKBM tak mengenainya — jam mengajarnya tak terbayar, dan satu-satunya jalan keluar
+ *   adalah MENGARANG jabatan tambahan hanya supaya lembaganya muncul.
+ *
+ * Untuk bayaran per JP, bukti mengajar yang sebenarnya ada di menu **Beban Mengajar**:
+ * kalau ada baris (guru, lembaga, jp_minggu), ia memang mengajar di sana. Jadi lembaga
+ * di sini diambil dari situ, bukan dari jabatan.
+ *
+ * Konsekuensi lain yang disengaja (pilihan Kyai): SATU BARIS PER LEMBAGA. Jenis ber-scope
+ * lembaga kosong yang mengenai guru dua sekolah kini menerbitkan dua baris — masing-masing
+ * memakai JP lembaganya sendiri. Dulu hanya lembaga pertama yang terbayar dan sisanya
+ * hilang tanpa jejak.
+ *
+ * `jabatan` tetap menyaring, tapi dicocokkan ke ref MANA PUN — bukan lagi harus satu ref
+ * dengan lembaganya, sebab lembaganya kini memang tak berasal dari ref.
+ */
+function barisPerJp(j, ctx, refs) {
+  const s = j.scope || {}
+  if (s.guru_ids && s.guru_ids.length > 0) {
+    if (!s.guru_ids.map(String).includes(String(ctx?.guruId ?? ''))) return []
+  }
+  if (s.shift && s.shift.length > 0) {
+    const punya = ctx?.shiftIds || new Set()
+    if (!s.shift.some((sh) => punya.has(String(sh)))) return []
+  }
+  if (s.jabatan && s.jabatan.length > 0) {
+    if (!refs.some((r) => cocokKriteria(s.jabatan, r.jabatan_di_sini))) return []
+  }
+  const out = []
+  for (const [lem, jpm] of Object.entries(ctx?.bebanJPByLembaga || {})) {
+    if (!(Number(jpm) > 0)) continue
+    if (!cocokKriteria(s.lembaga, lem)) continue
+    out.push({
+      jenis_id: j.id,
+      kategori: 'sekolah',
+      lembaga: lem,
+      label: j.label,
+      ...hitungDasar(j, ctx, { lembaga: lem })
+    })
+  }
+  return out
+}
+
 export function barisBisyaroh(jenisList, ctx) {
   const out = []
   const refs = ctx?.refs || []
   for (const j of jenisList || []) {
+    // Jenis per-JP punya jalur sendiri: lembaganya dari Beban Mengajar, dan boleh
+    //   menerbitkan lebih dari satu baris (satu per lembaga yang diajar).
+    if (j && j.aktif !== false && (j.hitungan === 'per_jp' || j.hitungan === 'per_jp_bulanan')) {
+      out.push(...barisPerJp(j, ctx, refs))
+      continue
+    }
     if (!jenisKenaGuru(j, ctx)) continue
     const ref = refPencocok(j, refs)
     const lembaga = ref?.lembaga || '-'

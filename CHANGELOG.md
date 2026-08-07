@@ -29,6 +29,19 @@ versi, dua isi".
 
 ### Fixed (Perbaikan)
 
+- **Jam mengajar di lembaga kedua akhirnya terbayar.** Kyai: "ada Kepala SDI yg juga punya
+  jam mengajar di PKBM, gimana caranya biar sesuai". Dulu lembaga tempat mengajar hanya bisa
+  datang dari **tempat tugas** — Lembaga utama, Lembaga sekolah (satu slot), dan Jabatan
+  Tambahan — jadi Kepala SDI yang juga mengajar di PKBM tak punya "tempat tugas" PKBM, dan
+  jenis bisyaroh ber-scope PKBM tak mengenainya sama sekali. Satu-satunya jalan keluar adalah
+  **mengarang jabatan tambahan** hanya supaya lembaganya muncul. Untuk bayaran per JP, bukti
+  mengajar yang sebenarnya ada di menu **Beban Mengajar**: kalau ada baris (guru, lembaga,
+  JP/minggu), ia memang mengajar di sana — dan itulah yang sekarang dipakai.
+  Sekalian: jenis per JP yang scope lembaganya dikosongkan kini menerbitkan **satu baris per
+  lembaga** yang diajar, masing-masing dengan JP lembaganya sendiri. Dulu hanya lembaga
+  pertama yang terbayar dan sisanya hilang tanpa jejak. Scope **jabatan** tetap menyaring,
+  hanya tak lagi wajib seiring-ref dengan lembaganya — sebab lembaganya memang tak lagi
+  berasal dari ref.
 - **Tunjangan akhirnya ikut dihitung di Simulasi Plafon.** Kyai: "tunjangan kok gak masuk di
   simulasi ya?" — memang tidak, dan itu cacat sejak tunjangan pindah ke daftarnya sendiri.
   Plafon yang tak menghitung tunjangan bukan sekadar kurang lengkap: ia **mengecilkan**
