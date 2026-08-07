@@ -14,6 +14,19 @@ naik satu tiap rilis. Entri lama memakai skema lama `v.{nomor-urut}.{MMDDtahunmu
 WAJIB `v.1.3.2` / `vc132` — jangan membangun ulang vc131, itu mengulang jebakan "satu label
 versi, dua isi".
 
+### Added (Baru)
+
+- **Cara hitung bisyaroh sekolah baru: "× JP/minggu (bulanan)".** Kyai, membaca simulasi:
+  "ini rumus JPnya kok gk sesuai ya" — dan memang tarifnya selama ini diperlakukan **per JP
+  per pertemuan**. Dengan `× JP diajar`, 30 JP/minggu × Rp 20.000 keluar **Rp 2.400.000**
+  sebulan: JP mingguan disebar ke hari aktif lalu dikalikan tiap hari guru masuk, sehingga di
+  bulan berisi 24 hari efektif hasilnya tepat 4× lipat. Yang dimaksud Rp 600.000. Cara hitung
+  baru memakai **JP mingguan apa adanya** sebagai pengali, dan kehadiran tetap memotong —
+  lewat **prorata** (JP diajar ÷ JP terjadwal), jadi yang masuk penuh dapat utuh dan yang
+  bolong dipotong sesuai porsinya. Guru tanpa jadwal di lembaga itu dapat **nol**, bukan
+  utuh. Cara hitung lama **tidak diubah dan tidak dihapus**: slip yang sudah terbit tak boleh
+  berubah sendiri, jadi Kyai yang memindahkan jenisnya lewat Pengaturan.
+
 ### Fixed (Perbaikan)
 
 - **Tunjangan akhirnya ikut dihitung di Simulasi Plafon.** Kyai: "tunjangan kok gak masuk di

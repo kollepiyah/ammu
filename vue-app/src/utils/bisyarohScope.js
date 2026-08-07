@@ -37,7 +37,12 @@ export const HITUNGAN_OPTIONS = [
   {
     value: 'per_jp',
     label: '× JP diajar',
-    hint: 'Tarif × JP yang BENAR-BENAR diajar bulan itu (JP/minggu disebar ke hari aktif × kehadiran)'
+    hint: 'Tarif × JP yang BENAR-BENAR diajar bulan itu (JP/minggu disebar ke hari aktif × kehadiran). Tarif = per JP per PERTEMUAN.'
+  },
+  {
+    value: 'per_jp_bulanan',
+    label: '× JP/minggu (bulanan)',
+    hint: 'Tarif = per JP per BULAN. Nominal = JP/minggu × tarif, lalu dipotong prorata kehadiran (hadir 90% → 90% nominal).'
   },
   {
     value: 'per_shift',
@@ -68,7 +73,9 @@ export function normalizeJenisBisyaroh(raw) {
   return {
     id,
     label: String(r.label || '').trim() || id,
-    hitungan: ['per_hadir', 'per_tepat', 'per_jp', 'per_shift'].includes(r.hitungan)
+    hitungan: ['per_hadir', 'per_tepat', 'per_jp', 'per_jp_bulanan', 'per_shift'].includes(
+      r.hitungan
+    )
       ? r.hitungan
       : 'flat',
     nominal: Number(r.nominal) > 0 ? Number(r.nominal) : 0,
@@ -192,6 +199,32 @@ function hitungDasar(j, ctx, ref) {
       nominal: Math.round(qty * j.nominal)
     }
   }
+  if (j.hitungan === 'per_jp_bulanan') {
+    // Kyai 7 Agu 2026: "rumus JPnya kok gak sesuai ya" — tarifnya memang dimaksudkan
+    //   PER JP PER BULAN, bukan per pertemuan. Dengan `per_jp`, 30 JP/minggu × Rp 20.000
+    //   jadi Rp 2.400.000 sebulan (JP disebar ke hari aktif lalu dikali tiap hari masuk);
+    //   yang dimaksud Rp 600.000. Pengalinya karena itu JP MINGGUAN apa adanya.
+    //
+    //   Kehadiran tetap memotong — lewat PRORATA (JP diajar ÷ JP terjadwal), bukan dengan
+    //   mengalikan hari, supaya guru yang masuk penuh dapat utuh dan yang bolong dipotong
+    //   sesuai porsinya. Terjadwal 0 (tak ada beban di lembaga itu) → 0, bukan utuh:
+    //   membayar penuh atas jadwal yang tak ada = uang keluar tanpa dasar.
+    const lem = canonLembaga(ref?.lembaga || '')
+    const jpm = Number(ctx?.bebanJPByLembaga?.[lem]) || 0
+    const info = ctx?.jpDiajarByLembaga?.[lem] || {}
+    const terjadwal = Number(info.terjadwal) || 0
+    const diajar = Number(info.diajar) || 0
+    const prorata = terjadwal > 0 ? diajar / terjadwal : 0
+    return {
+      hitungan: 'per_jp_bulanan',
+      qty: jpm,
+      terjadwal,
+      diajar,
+      prorata: Math.round(prorata * 1000) / 1000,
+      tarif: j.nominal,
+      nominal: Math.round(jpm * j.nominal * prorata)
+    }
+  }
   if (j.hitungan === 'per_shift') {
     // Pokok per shift: nominal × jumlah shift guru yg cocok (pagi+sore = 2×).
     const qty = jumlahShiftCocok(j, ctx?.shiftIds)
@@ -214,7 +247,7 @@ export function barisBisyaroh(jenisList, ctx) {
     const kategori =
       j.hitungan === 'per_hadir' || j.hitungan === 'per_tepat'
         ? 'bonus'
-        : j.hitungan === 'per_jp'
+        : j.hitungan === 'per_jp' || j.hitungan === 'per_jp_bulanan'
           ? 'sekolah'
           : ref?.group === 'sekolah'
             ? 'sekolah'

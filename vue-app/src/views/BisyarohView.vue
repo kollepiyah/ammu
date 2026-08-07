@@ -1863,7 +1863,14 @@ function simToggleGuru(id) {
 function simRincianQty(b) {
   if (b.hitungan === 'flat') return fmtRp(b.tarif)
   const qty = b.hitungan === 'per_jp' ? Math.round(b.qty * 10) / 10 : b.qty
-  return `${qty} × ${fmtRp(b.tarif)}`
+  const dasar = `${qty} × ${fmtRp(b.tarif)}`
+  // per_jp_bulanan: pengalinya JP MINGGUAN, potongannya lewat prorata kehadiran. Tanpa
+  //   menampilkan prorata, "30 × Rp 20.000" tak akan cocok dengan nominal saat ada bolong —
+  //   pembaca akan mengira salah hitung.
+  if (b.hitungan === 'per_jp_bulanan' && Number(b.prorata) < 1) {
+    return `${dasar} × ${Math.round((Number(b.prorata) || 0) * 100)}%`
+  }
+  return dasar
 }
 
 // v.1.1.9: konteks pencocokan scope 1 guru — tempat tugas + shift + kehadiran.

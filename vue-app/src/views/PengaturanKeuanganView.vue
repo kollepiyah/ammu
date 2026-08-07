@@ -651,10 +651,12 @@
                 : dlgJb.hitungan === 'per_tepat'
                   ? 'Dikali jumlah hadir TEPAT WAKTU saja (status hadir, BUKAN terlambat). Untuk Bonus Tepat Waktu — yang terlambat tak dapat untuk shift itu.'
                   : dlgJb.hitungan === 'per_jp'
-                    ? 'Bisyaroh sekolah = JP guru di lembaga (menu Beban Mengajar) × nominal (tarif/JP) × persen kehadiran sekolah (prorata). Isi scope lembaga.'
-                    : dlgJb.hitungan === 'per_shift'
-                      ? 'Nominal × JUMLAH shift guru yang cocok. Mengajar pagi + sore (scope Pagi,Sore) = 2× nominal. Cocok utk bisyaroh pokok per shift.'
-                      : 'Dibayar sekali per bulan bila cocok scope.'
+                    ? 'Tarif = per JP per PERTEMUAN. JP mingguan disebar ke hari aktif lembaga, lalu dikalikan tiap hari guru masuk — di bulan berisi 24 hari efektif hasilnya ±4× JP mingguan. Isi scope lembaga.'
+                    : dlgJb.hitungan === 'per_jp_bulanan'
+                      ? 'Tarif = per JP per BULAN. Nominal = JP/minggu (menu Beban Mengajar) × tarif, lalu dipotong prorata kehadiran (hadir 90% → 90% nominal). Mis. 30 JP/minggu × Rp 20.000 = Rp 600.000/bulan. Isi scope lembaga.'
+                      : dlgJb.hitungan === 'per_shift'
+                        ? 'Nominal × JUMLAH shift guru yang cocok. Mengajar pagi + sore (scope Pagi,Sore) = 2× nominal. Cocok utk bisyaroh pokok per shift.'
+                        : 'Dibayar sekali per bulan bila cocok scope.'
             }}
           </p>
           <div class="border-t border-[var(--border-subtle)] pt-3 space-y-3">
