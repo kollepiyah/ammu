@@ -102,6 +102,30 @@ export function jabatanUntukUnit(jabatanItems, namaJabatanList, unit) {
   return ''
 }
 
+/**
+ * Jabatan seseorang DI SATU lembaga tertentu — aturan tunggal untuk semua tempat tugas.
+ *
+ * Kyai 7 Agu 2026, dua keluhan yang ternyata bersaudara:
+ *   (a) "Kepala PKBM tapi di simulasi terbacanya sebagai guru" — ref lembaga SEKOLAH
+ *       dulu dicap `jabatan_sekolah || 'Guru'`, dan `jabatan_sekolah` tak pernah diisi.
+ *   (b) "kepala yg juga guru ngaji, bisyaroh ngajinya tidak terbaca" — kebalikannya: ref
+ *       lembaga NGAJI dicap `g.jabatan` apa adanya, jadi "Kepala PKBM" ikut tertempel di
+ *       PTPT dan jenis ngaji ber-scope jabatan "Guru" meleset.
+ *
+ * Satu aturan menutup keduanya, dan urutannya penting:
+ *   1. jabatan yang MEMANGKU unit itu (mis. "Kepala PKBM" di PKBM) — itu jabatannya di sana;
+ *   2. kalau tak ada, jabatan utama yang GLOBAL (units kosong, mis. "Wali Kelas") tetap
+ *      berlaku di mana pun ia bertugas;
+ *   3. selain itu 'Guru' — gelar yang terikat unit LAIN tak ikut pindah ke sini.
+ */
+export function jabatanDiUnit(jabatanItems, jabatanUtama, jabatanTambahan, unit) {
+  const utama = String(jabatanUtama || '').trim()
+  const memangku = jabatanUntukUnit(jabatanItems, [utama, ...pecahJabatan(jabatanTambahan)], unit)
+  if (memangku) return memangku
+  if (utama && unitsOfJabatan(jabatanItems, utama).length === 0) return utama
+  return 'Guru'
+}
+
 // Gabungan unit dari jabatan utama + jabatan tambahan. Salah satunya global
 // (units kosong) → hasilnya ikut global: jangan batasi pilihan lembaga.
 export function unitsOfGuru(jabatanItems, jabatanUtama, jabatanTambahan) {

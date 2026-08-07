@@ -15,6 +15,16 @@ naik satu tiap rilis. Entri lama memakai skema lama `v.{nomor-urut}.{MMDDtahunmu
 
 ### Fixed (Perbaikan)
 
+- **Bisyaroh ngaji seorang kepala tak lagi hilang.** Kyai: "kepala yg juga guru ngaji,
+  bisyaroh ngajinya tidak terbaca di simulasi" — kebalikan dari keluhan di bawah, dan
+  akarnya bersaudara. Tempat tugas di lembaga **ngaji** dicap `g.jabatan` **apa adanya**,
+  jadi gelar seperti "Kepala PKBM" ikut tertempel di PTPT; Jenis Bisyaroh ngaji yang di-scope
+  jabatan **"Guru"** karena itu meleset, dan bisyaroh ngajinya lenyap dari slip.
+  Sekarang **satu aturan** berlaku untuk semua tempat tugas: jabatan yang **memangku unit
+  itu** dipakai di sana; jabatan **global** (tanpa unit, mis. Wali Kelas) tetap berlaku di
+  mana pun; selain itu **"Guru"** — gelar yang terikat unit lain tak ikut pindah. Supaya
+  gelarnya tak hilang, tiap jabatan kini juga **berjangkar di unitnya sendiri**, jadi kepala
+  yang lembaga sekolahnya kosong tetap diakui kepala (tunjangan kepala aman).
 - **Kepala sekolah tak lagi terbaca "Guru" di lembaganya sendiri.** Kyai: "Siti Churiyah
   Kepala PKBM tapi di simulasi terbacanya sebagai guru". Tempat tugas di lembaga **sekolah**
   selama ini diberi jabatan `jabatan_sekolah || 'Guru'` — dan `jabatan_sekolah` **tak pernah

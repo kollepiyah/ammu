@@ -3,7 +3,12 @@
 // jabatan. Beberapa jabatan kini disimpan dipisah koma di kolom yang sama: nilai lama yang
 // cuma satu nama tetap terbaca apa adanya, jadi tak ada data yang perlu dimigrasi.
 import { describe, it, expect } from 'vitest'
-import { pecahJabatan, unitsOfGuru, jabatanUntukUnit } from '../../vue-app/src/utils/jabatanUnit.js'
+import {
+  pecahJabatan,
+  unitsOfGuru,
+  jabatanUntukUnit,
+  jabatanDiUnit
+} from '../../vue-app/src/utils/jabatanUnit.js'
 
 describe('pecahJabatan', () => {
   it('nilai LAMA (satu nama) terbaca apa adanya', () => {
@@ -86,5 +91,45 @@ describe('jabatanUntukUnit', () => {
     expect(jabatanUntukUnit(items, [], 'PKBM')).toBe('')
     expect(jabatanUntukUnit(items, ['Kepala PKBM'], '')).toBe('')
     expect(jabatanUntukUnit(null, null, null)).toBe('')
+  })
+})
+
+// Kyai 7 Agu 2026 (keluhan kedua): "kepala yg juga guru ngaji, bisyaroh ngajinya tidak
+// terbaca di simulasi". Kebalikan dari keluhan pertama: lembaga NGAJI dulu dicap
+// `g.jabatan` apa adanya, jadi "Kepala PKBM" ikut tertempel di PTPT dan jenis ngaji
+// ber-scope jabatan "Guru" meleset.
+describe('jabatanDiUnit — satu aturan untuk semua tempat tugas', () => {
+  const items = [
+    { nama: 'Kepala PKBM', units: ['PKBM'] },
+    { nama: 'Kepala SDI', units: ['SDI'] },
+    { nama: 'Guru', units: [] },
+    { nama: 'Wali Kelas', units: [] }
+  ]
+
+  it('di unit yang dipangkunya: tetap Kepala', () => {
+    expect(jabatanDiUnit(items, 'Kepala PKBM', '', 'PKBM')).toBe('Kepala PKBM')
+  })
+
+  it('di lembaga NGAJI-nya: jadi Guru, gelar unit lain tak ikut pindah', () => {
+    // Inilah akar "bisyaroh ngaji kepala tidak terbaca".
+    expect(jabatanDiUnit(items, 'Kepala PKBM', '', 'PTPT')).toBe('Guru')
+  })
+
+  it('jabatan GLOBAL (tanpa unit) tetap berlaku di mana pun', () => {
+    expect(jabatanDiUnit(items, 'Wali Kelas', '', 'PTPT')).toBe('Wali Kelas')
+    expect(jabatanDiUnit(items, 'Guru', '', 'TPQ Pagi')).toBe('Guru')
+  })
+
+  it('jabatan tambahan yang memangku unit itu menang atas jabatan utama', () => {
+    expect(jabatanDiUnit(items, 'Kepala SDI', 'Kepala PKBM', 'PKBM')).toBe('Kepala PKBM')
+  })
+
+  it('jabatan tak dikenal master dianggap global — jangan diam-diam jadi Guru', () => {
+    // Kalau master jabatan belum lengkap, gelar yang Kyai ketik tetap dihormati.
+    expect(jabatanDiUnit(items, 'Pengasuh', '', 'PTPT')).toBe('Pengasuh')
+  })
+
+  it('tanpa jabatan sama sekali -> Guru', () => {
+    expect(jabatanDiUnit(items, '', '', 'PTPT')).toBe('Guru')
   })
 })

@@ -7,7 +7,7 @@ import { useAuthStore } from '@/stores/auth'
 // v.21.10.0526: Import lembaga helpers
 import { getLembagaGroup, LEMBAGA_GROUPS } from './useLembaga'
 // v.1.1.9: unit tugas per jabatan (master/jabatan) — ganti tebakan regex lama
-import { unitsOfJabatan, namaLembaga, pecahJabatan, jabatanUntukUnit } from '@/utils/jabatanUnit'
+import { unitsOfJabatan, namaLembaga, pecahJabatan, jabatanDiUnit } from '@/utils/jabatanUnit'
 // v.110: sortGuru — urutan Qiraati→Sekolah→Pegawai→nama A–Z (sumber tunggal)
 import { sortGuru } from '@/utils/santriSort'
 
@@ -51,7 +51,10 @@ function deriveGuruLembagaRefs(g, opts = {}) {
       group: groupOfLembaga(g.lembaga, lembagaList),
       lembaga: g.lembaga,
       shift: g.shift || null,
-      jabatan_di_sini: g.jabatan || 'Guru',
+      // Kyai 7 Agu 2026: dulu `g.jabatan` apa adanya, jadi "Kepala PKBM" ikut tertempel di
+      //   lembaga NGAJI-nya dan jenis ngaji ber-scope jabatan "Guru" meleset — bisyaroh
+      //   ngaji kepala hilang dari slip. Aturannya kini satu untuk semua tempat tugas.
+      jabatan_di_sini: jabatanDiUnit(jabatanItems, g.jabatan, g.jabatan_tambahan, g.lembaga),
       kelas_diajar: Array.isArray(g.kelas_diajar) ? g.kelas_diajar : []
     })
   }
@@ -66,12 +69,7 @@ function deriveGuruLembagaRefs(g, opts = {}) {
       //   "Kepala PKBM" → units ["PKBM"]); 'Guru' tinggal jaring terakhir.
       jabatan_di_sini:
         g.jabatan_sekolah ||
-        jabatanUntukUnit(
-          jabatanItems,
-          [g.jabatan, ...pecahJabatan(g.jabatan_tambahan)],
-          g.lembaga_sekolah
-        ) ||
-        'Guru',
+        jabatanDiUnit(jabatanItems, g.jabatan, g.jabatan_tambahan, g.lembaga_sekolah),
       kelas_diajar: Array.isArray(g.kelas_diajar_sekolah) ? g.kelas_diajar_sekolah : []
     })
   }
@@ -82,7 +80,11 @@ function deriveGuruLembagaRefs(g, opts = {}) {
   //   (2) unit tak lagi ditebak regex (/admin|supervisi|pj/→Yayasan dst) tapi diambil
   //       dari units[] jabatan yang Kyai atur sendiri.
   // Kyai 7 Agu 2026: beberapa jabatan tambahan (dipisah koma) — lihat `pecahJabatan`.
-  const jtList = pecahJabatan(g.jabatan_tambahan)
+  //   Jabatan UTAMA ikut di sini: sejak jabatan tak lagi dicap ke lembaga yang bukan
+  //   unitnya, gelar seperti "Kepala PKBM" perlu jangkarnya sendiri di PKBM — kalau tidak,
+  //   kepala yang lembaga sekolahnya kosong kehilangan jabatannya sama sekali dan tunjangan
+  //   kepala ikut lenyap.
+  const jtList = pecahJabatan([g.jabatan, ...pecahJabatan(g.jabatan_tambahan)].join(', '))
   for (const jt of jtList) {
     const nama = jt.trim()
     if (refs.some((r) => r.jabatan_di_sini === nama)) continue
