@@ -76,6 +76,32 @@ export function pecahJabatan(v) {
   return out
 }
 
+/**
+ * Jabatan yang MEMANGKU unit/lembaga tertentu, dari jabatan-jabatan milik guru ini.
+ *
+ * Kyai 7 Agu 2026: "siti churiyah Kepala PKBM tapi di simulasi terbacanya sebagai guru".
+ * Akarnya: tempat tugas di lembaga SEKOLAH diberi jabatan `g.jabatan_sekolah || 'Guru'` —
+ * dan `jabatan_sekolah` TIDAK PERNAH diisi di mana pun (satu-satunya kemunculannya di
+ * seluruh kode adalah pembacanya sendiri). Jadi semua kepala sekolah terbaca "Guru" di
+ * lembaganya sendiri, dan jenis/tunjangan ber-scope jabatan Kepala tak pernah mengenainya.
+ *
+ * Jawabannya sudah ada di master jabatan: "Kepala PKBM" punya units ["PKBM"]. Jadi kalau
+ * salah satu jabatan orang ini memangku unit tsb, ITU jabatannya di sana — bukan 'Guru'.
+ * Yang tak memangku unit itu tetap jatuh ke fallback pemanggil.
+ *
+ * @returns {string} nama jabatan, atau '' bila tak ada yang memangku unit itu.
+ */
+export function jabatanUntukUnit(jabatanItems, namaJabatanList, unit) {
+  const u = _key(unit)
+  if (!u) return ''
+  for (const nama of namaJabatanList || []) {
+    const n = String(nama || '').trim()
+    if (!n) continue
+    if (unitsOfJabatan(jabatanItems, n).some((x) => _key(x) === u)) return n
+  }
+  return ''
+}
+
 // Gabungan unit dari jabatan utama + jabatan tambahan. Salah satunya global
 // (units kosong) → hasilnya ikut global: jangan batasi pilihan lembaga.
 export function unitsOfGuru(jabatanItems, jabatanUtama, jabatanTambahan) {

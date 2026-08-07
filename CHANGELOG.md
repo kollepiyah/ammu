@@ -10,6 +10,25 @@ naik satu tiap rilis. Entri lama memakai skema lama `v.{nomor-urut}.{MMDDtahunmu
 
 ## [Unreleased]
 
+⚠️ **Perubahan di bawah lahir SESUDAH v.1.3.2 dibangun & di-deploy.** Rilis berikutnya
+`v.1.3.3` / `vc133`.
+
+### Fixed (Perbaikan)
+
+- **Kepala sekolah tak lagi terbaca "Guru" di lembaganya sendiri.** Kyai: "Siti Churiyah
+  Kepala PKBM tapi di simulasi terbacanya sebagai guru". Tempat tugas di lembaga **sekolah**
+  selama ini diberi jabatan `jabatan_sekolah || 'Guru'` — dan `jabatan_sekolah` **tak pernah
+  diisi di mana pun**; satu-satunya kemunculannya di seluruh kode adalah pembacanya sendiri.
+  Jadi fallback-nya selalu menang: **setiap** kepala sekolah terbaca "Guru" di lembaganya,
+  dan Jenis Bisyaroh maupun Tunjangan ber-scope jabatan Kepala tak pernah mengenainya.
+  Jawabannya sebenarnya sudah ada di Master Jabatan — "Kepala PKBM" memangku unit `PKBM` —
+  jadi jabatan yang **memangku unit itu** kini yang dipakai; 'Guru' tinggal jaring terakhir.
+  Jabatan tambahan ikut diperiksa, dan jabatan yang tak memangku unit itu tetap tak diakui:
+  Kepala SDI yang kebetulan mengajar di PKBM bukan kepala **di sana**.
+  ⚠️ Karena itu jenis yang di-scope jabatan **"Guru" + lembaga sekolah** kini tak lagi
+  mengenai kepalanya. Untuk bisyaroh mengajar, biarkan scope jabatannya **kosong** dan
+  saring lewat lembaga saja — jamnya toh sudah datang dari Beban Mengajar.
+
 ### Planned
 
 - **Tujuan pembaruan Android ikut data, bukan teks tetap** (v.1.3.2). `apkUrl` di

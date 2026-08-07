@@ -7,7 +7,7 @@ import { useAuthStore } from '@/stores/auth'
 // v.21.10.0526: Import lembaga helpers
 import { getLembagaGroup, LEMBAGA_GROUPS } from './useLembaga'
 // v.1.1.9: unit tugas per jabatan (master/jabatan) — ganti tebakan regex lama
-import { unitsOfJabatan, namaLembaga, pecahJabatan } from '@/utils/jabatanUnit'
+import { unitsOfJabatan, namaLembaga, pecahJabatan, jabatanUntukUnit } from '@/utils/jabatanUnit'
 // v.110: sortGuru — urutan Qiraati→Sekolah→Pegawai→nama A–Z (sumber tunggal)
 import { sortGuru } from '@/utils/santriSort'
 
@@ -60,7 +60,18 @@ function deriveGuruLembagaRefs(g, opts = {}) {
     refs.push({
       group: groupOfLembaga(g.lembaga_sekolah, lembagaList),
       lembaga: g.lembaga_sekolah,
-      jabatan_di_sini: g.jabatan_sekolah || 'Guru',
+      // Kyai 7 Agu 2026: `jabatan_sekolah` tak pernah diisi di mana pun, jadi baris ini
+      //   dulu SELALU jatuh ke 'Guru' — kepala sekolah pun terbaca guru di lembaganya
+      //   sendiri. Sekarang jabatan yang MEMANGKU unit itu yang dipakai (master jabatan:
+      //   "Kepala PKBM" → units ["PKBM"]); 'Guru' tinggal jaring terakhir.
+      jabatan_di_sini:
+        g.jabatan_sekolah ||
+        jabatanUntukUnit(
+          jabatanItems,
+          [g.jabatan, ...pecahJabatan(g.jabatan_tambahan)],
+          g.lembaga_sekolah
+        ) ||
+        'Guru',
       kelas_diajar: Array.isArray(g.kelas_diajar_sekolah) ? g.kelas_diajar_sekolah : []
     })
   }
