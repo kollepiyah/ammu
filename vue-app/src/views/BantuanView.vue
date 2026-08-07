@@ -583,7 +583,7 @@ const introText = computed(() =>
 const lembagaName = computed(
   () => settings.settings?.namaLembaga || 'Pondok Pesantren Mambaul Ulum'
 )
-const version = computed(() => settings.settings?.appVersion || 'v.1.3.1')
+const version = computed(() => settings.settings?.appVersion || 'v.1.3.2')
 const logoSrc = computed(() => settings.settings?.logoUrl || '/logo.png')
 
 const sections = [
@@ -827,6 +827,16 @@ async function resetFaq() {
 //   berubah di layar mereka, bukan nama fungsi. Cukup beberapa rilis terakhir —
 //   riwayat lengkap ada di CHANGELOG.md untuk pengembang.
 const rilis = [
+  {
+    versi: 'v.1.3.2',
+    tgl: 'Agustus 2026',
+    items: [
+      'Bisyaroh sekolah bisa dihitung per JP per BULAN (JP/minggu × tarif, dipotong sesuai kehadiran) — pilih cara hitung "× JP/minggu (bulanan)" di Jenis Bisyaroh.',
+      'Guru yang mengajar di lebih dari satu sekolah kini terbayar untuk semuanya; cukup tambahkan barisnya di menu Beban Mengajar.',
+      'Jabatan Tambahan boleh lebih dari satu, jadi yang merangkap tiga jabatan tertampung.',
+      'Simulasi Plafon kini ikut menghitung tunjangan.'
+    ]
+  },
   {
     versi: 'v.1.3.1',
     tgl: 'Agustus 2026',

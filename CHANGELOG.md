@@ -10,9 +10,37 @@ naik satu tiap rilis. Entri lama memakai skema lama `v.{nomor-urut}.{MMDDtahunmu
 
 ## [Unreleased]
 
-⚠️ **Perubahan kode di bawah lahir SESUDAH artefak v.1.3.1 dibangun Kyai.** Rilis berikutnya
-WAJIB `v.1.3.2` / `vc132` — jangan membangun ulang vc131, itu mengulang jebakan "satu label
-versi, dua isi".
+### Planned
+
+- **Tujuan pembaruan Android ikut data, bukan teks tetap** (v.1.3.2). `apkUrl` di
+  `public/app-version.json` sudah boleh diarahkan ke
+  `https://play.google.com/store/apps/details?id=app.ammu.id` tanpa menyentuh kode — Capacitor
+  meneruskannya ke browser sistem dan Android membukanya di aplikasi Play. Yang belum ikut
+  pindah cuma **kalimat dialognya**, yang masih berbunyi "Berkas akan diunduh lewat peramban…"
+  (`composables/useAndroidUpdate.js`). Kenali tujuan Play lalu ganti teks + label tombol jadi
+  "Buka Play Store", supaya perpindahan APK ↔ Play selamanya cukup menyunting JSON.
+  ⚠️ `apkUrlSah()` menolak selain `https://`, jadi `market://` bukan pilihan.
+- Capacitor Android first build + sideload APK
+- Capacitor iOS setup
+- Tauri Desktop scaffold
+- Phase 1 palette migration: `bg-blue-600/700` action button → `bg-teal-600/700` (~62 occurrences)
+- DOMPurify integration untuk template literal innerHTML yang inject user data
+- Console.log cleanup (37 occurrences di production)
+
+---
+
+## [v.1.3.2] — 2026-08-07 — Bisyaroh sekolah per JP per bulan + tugas lintas-lembaga
+
+⚠️ **TANPA migrasi DB, TANPA edge function** — cukup deploy web dari **direktori utama**,
+lalu **AAB vc132** dan **Electron 1.3.2** bila perlu sampai ke HP dan PC. Untuk Android,
+unggah `AmmuOnline.apk` ke rilis GitHub **lebih dulu**, baru deploy web: `app-version.json`
+yang tayang langsung menawarkan vc132, dan berkas yang belum ada akan berujung 404 di HP.
+
+⚠️ **Setelah deploy, Kyai perlu menyetel dua hal** — perubahan di bawah tak mengubah nominal
+apa pun dengan sendirinya:
+
+1. Jenis bisyaroh sekolah dipindah ke cara hitung **"× JP/minggu (bulanan)"**.
+2. Guru yang mengajar di lembaga kedua diberi barisnya di menu **Beban Mengajar**.
 
 ### Added (Baru)
 
@@ -60,25 +88,6 @@ versi, dua isi".
   ⚠️ Nominal coba-coba kini berkunci **kelompok + id**: dua daftar terpisah boleh punya id
   yang sama ("bonus_tepat_waktu" di keduanya wajar), dan tanpa itu keduanya menyatu jadi satu
   baris dengan subtotal bercampur.
-
-### Planned
-
-- **Tujuan pembaruan Android ikut data, bukan teks tetap** (v.1.3.2). `apkUrl` di
-  `public/app-version.json` sudah boleh diarahkan ke
-  `https://play.google.com/store/apps/details?id=app.ammu.id` tanpa menyentuh kode — Capacitor
-  meneruskannya ke browser sistem dan Android membukanya di aplikasi Play. Yang belum ikut
-  pindah cuma **kalimat dialognya**, yang masih berbunyi "Berkas akan diunduh lewat peramban…"
-  (`composables/useAndroidUpdate.js`). Kenali tujuan Play lalu ganti teks + label tombol jadi
-  "Buka Play Store", supaya perpindahan APK ↔ Play selamanya cukup menyunting JSON.
-  ⚠️ `apkUrlSah()` menolak selain `https://`, jadi `market://` bukan pilihan.
-- Capacitor Android first build + sideload APK
-- Capacitor iOS setup
-- Tauri Desktop scaffold
-- Phase 1 palette migration: `bg-blue-600/700` action button → `bg-teal-600/700` (~62 occurrences)
-- DOMPurify integration untuk template literal innerHTML yang inject user data
-- Console.log cleanup (37 occurrences di production)
-
----
 
 ## [v.1.3.1] — 2026-08-07 — Tunjangan berkategori + rincian simulasi per orang
 
