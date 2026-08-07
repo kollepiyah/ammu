@@ -286,6 +286,65 @@ const matrix = computed(() => {
     })
     rows.push({ jenis: j.label, cells })
   }
+  rows.push(...orphanBulananRows.value)
+  return rows
+})
+
+/**
+ * Baris matriks untuk tagihan BULANAN yang jenisnya tak ada lagi di daftar aktif.
+ *
+ * Kyai (7 Agu 2026): "syahriyah yang sudah diatur bulanan tapi di POS munculnya non
+ *   bulanan". Akarnya bukan setelan frekuensi, melainkan penggolongan di layar ini: baris
+ *   `orphan` di `nonbulananRows` menampung SEMUA tagihan yang jenisnya tak dikenali —
+ *   termasuk yang periodenya jelas-jelas satu BULAN. Jenis bisa hilang dari daftar aktif
+ *   tanpa tagihannya ikut hilang: ia dibuat MENEMPEL ke jenis lain (`gabung_ke`, mis.
+ *   Syahriyah Qiraati Pagi kini termasuk di Syahriyah Pondok), whitelist-nya
+ *   (lembaga/status/JK/shift) tak lagi memuat santri ini, atau labelnya diganti — sementara
+ *   tagihan yang sudah terbit tetap memakai nama lama. Semuanya lalu tampil di bawah judul
+ *   "Nonbulanan", bertentangan dengan Pengaturan yang jelas menulis "Auto · bulanan".
+ *
+ * Di sini periodenya yang menentukan, bukan terdaftar atau tidaknya jenis itu: periode
+ * berupa bulan T.A. berjalan → masuk matriks, di kolom bulannya sendiri. Bulan lain
+ * dibiarkan kosong (`na`), TIDAK disintesis — jenis ini memang tak punya tarif berlaku
+ * untuk santri ini, dan mengarang sel merah baru sama saja menerbitkan tagihan di layar.
+ */
+const orphanBulananRows = computed(() => {
+  const taKodes = new Set(ta.value.months.map((m) => m.kode))
+  const byJenis = new Map() // kategori (apa adanya) -> Map(kode -> tagihan)
+  for (const t of props.allTagihan || []) {
+    const jk = tagJenis(t)
+    if (!jk || jenisSet.value.has(jk)) continue // jenis masih terdaftar → sudah tertangani
+    const pk = periodeKodeOf(t)
+    if (!pk || !taKodes.has(pk)) continue // tanpa bulan / di luar T.A. → bukan urusan matriks
+    const label = t.kategori || t.jenis_label || 'Tagihan'
+    if (!byJenis.has(jk)) byJenis.set(jk, { label, per: new Map() })
+    byJenis.get(jk).per.set(pk, t)
+  }
+  const rows = []
+  for (const [jk, { label, per }] of byJenis) {
+    const cells = ta.value.months.map((mo) => {
+      const tg = per.get(mo.kode)
+      if (!tg) return { key: 'ox_' + jk + '_' + mo.kode, na: true }
+      const tariff = Number(tg.nominal || 0)
+      const paid = terbayarDari(tg)
+      return {
+        key: 'ox_' + jk + '_' + mo.kode,
+        na: false,
+        pre: false,
+        jenis: label,
+        ket: String(tg.periode || mo.full),
+        kode: mo.kode,
+        tariff,
+        paid,
+        sisa: Math.max(0, tariff - paid),
+        status: cellStatus(tariff, paid),
+        tagId: tg.id,
+        pos: tg.pos || '',
+        komponen: Array.isArray(tg.komponen) ? tg.komponen : []
+      }
+    })
+    rows.push({ jenis: label, luar: true, cells })
+  }
   return rows
 })
 
@@ -335,11 +394,15 @@ const nonbulananRows = computed(() => {
   }
   // orphan: tagihan belum/partial T.A. berjalan yg jenisnya tak terdaftar (jangan sampai tersembunyi)
   const startK = ta.value.startKode
+  const bulananKodes = new Set(ta.value.months.map((m) => m.kode))
   for (const t of props.allTagihan || []) {
     const st = String(t.status || 'belum').toLowerCase()
     if (st !== 'belum' && st !== 'partial') continue
     const pk = periodeKodeOf(t)
     if (pk && pk < startK) continue // itu tunggakan lama
+    // Periodenya satu BULAN T.A. berjalan → sudah jadi baris matriks (orphanBulananRows).
+    //   Tanpa penjagaan ini ia tampil dua kali dan bisa masuk keranjang dua kali pula.
+    if (pk && bulananKodes.has(pk)) continue
     if (jenisSet.value.has(tagJenis(t))) continue
     const tariff = Number(t.nominal || 0)
     const paid = terbayarDari(t)
@@ -667,7 +730,18 @@ function onBackdrop(e) {
                       </thead>
                       <tbody>
                         <tr v-for="row in matrix" :key="row.jenis">
-                          <td class="jns">{{ row.jenis }}</td>
+                          <td class="jns">
+                            {{ row.jenis }}
+                            <!-- Jenisnya tak ada lagi di daftar aktif (menempel ke jenis lain,
+                                 whitelist berubah, atau labelnya diganti) — tagihannya tetap
+                                 nyata, jadi bulan lain sengaja kosong, bukan tarif hilang. -->
+                            <span
+                              v-if="row.luar"
+                              class="tag-luar"
+                              title="Jenis ini tak ada di daftar jenis pembayaran yang berlaku untuk santri ini — tagihannya sudah terbit lebih dulu. Bulan lain kosong karena tarifnya tak berlaku, bukan karena hilang."
+                              >di luar daftar</span
+                            >
+                          </td>
                           <td v-for="c in row.cells" :key="c.key" class="mxcell">
                             <div v-if="c.na" class="cell na">–</div>
                             <div
@@ -1188,6 +1262,24 @@ td.jns {
   font-weight: 800;
   white-space: nowrap;
   padding-right: 6px;
+}
+/* Penanda jenis yang tak lagi terdaftar tapi tagihannya sudah terbit. */
+.tag-luar {
+  margin-left: 4px;
+  font-size: 0.55rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: #fef3c7;
+  color: #92400e;
+  vertical-align: middle;
+}
+:global(.dark) .tag-luar,
+.dark-mode .tag-luar {
+  background: #78350f;
+  color: #fde68a;
 }
 .mxcell {
   padding: 0;

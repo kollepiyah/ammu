@@ -25,6 +25,22 @@ naik satu tiap rilis. Entri lama memakai skema lama `v.{nomor-urut}.{MMDDtahunmu
   **selalu sama persis** dengan total per jenis (dijaga tes): keduanya membaca satu mesin
   yang sama, bukan dua hitungan yang kebetulan mirip.
 
+### Fixed (Perbaikan)
+
+- **POS: tagihan bulanan tak lagi terdampar di daftar "Nonbulanan".** Kyai: "syahriyah
+  yang sudah diatur bulanan tapi di POS munculnya non bulanan". Setelan frekuensinya tak
+  salah — penggolongan di layar POS-lah yang salah: tagihan yang **jenisnya tak ada lagi
+  di daftar aktif** semuanya ditumpuk ke bagian "Nonbulanan", termasuk yang periodenya
+  jelas-jelas satu bulan. Jenis bisa hilang dari daftar aktif tanpa tagihannya ikut
+  hilang — ia dibuat **menempel** ke jenis lain (mis. Syahriyah Qiraati Pagi kini termasuk
+  di Syahriyah Pondok), **whitelist**-nya (lembaga/status/JK/shift) tak lagi memuat santri
+  itu, atau **labelnya diganti** sementara tagihan lama tetap memakai nama lama. Kini yang
+  menentukan adalah **periodenya**, bukan terdaftar atau tidaknya jenis itu: periode berupa
+  bulan T.A. berjalan → masuk matriks Bulanan di kolom bulannya sendiri, bertanda
+  **"di luar daftar"**. Bulan lain sengaja dibiarkan kosong, **tidak** disintesis — jenis
+  itu memang tak punya tarif yang berlaku untuk santri ini, dan mengarang sel merah baru
+  sama saja menerbitkan tagihan di layar.
+
 ### Planned
 
 - Capacitor Android first build + sideload APK
@@ -103,16 +119,16 @@ Setelah deploy Kyai perlu **mengisi toleransi scan** di Pengaturan → Master Sh
   ceklok 05:45 (datang lebih awal) atau 17:30 (jauh setelah shift sore bubar) **tidak jadi
   baris absen sama sekali** — hilang diam-diam sebagai angka "luar jam shift", lalu ikut
   hilang dari bonus kehadiran. Master Shift kini punya dua angka per shift: **boleh scan
-  lebih awal** (menit sebelum `mulai`, tetap dihitung *hadir*) dan **masih masuk setelah
-  selesai** (menit sesudah `selesai`, dihitung *terlambat*). Derivasinya jadi dua lintasan —
+  lebih awal** (menit sebelum `mulai`, tetap dihitung _hadir_) dan **masih masuk setelah
+  selesai** (menit sesudah `selesai`, dihitung _terlambat_). Derivasinya jadi dua lintasan —
   window inti dulu, toleransi belakangan — sehingga menyetel toleransi **tak pernah**
   memindahkan absen yang selama ini sudah benar. Dialognya memperlihatkan window efektif
   dan memperingatkan bila window melar sampai menyentuh jam shift lain. Cermin Deno
   (mesin HiView) ikut diubah, dijaga tes pembanding 43.200 titik jam.
-  *Batas:* `fp_sync.py` (jalur Revo lama) tak mengenal dua angka ini — jalur itu wajib
+  _Batas:_ `fp_sync.py` (jalur Revo lama) tak mengenal dua angka ini — jalur itu wajib
   lewat sync Ammu Desktop.
 - **Kolom Saldo di laporan buku induk tak sesuai filter.** Di laporan harian "kas umum ·
-  SDI · TUNAI" 3 Agu, 14 transaksi semuanya *masuk* tapi kolom Saldo justru **menurun**
+  SDI · TUNAI" 3 Agu, 14 transaksi semuanya _masuk_ tapi kolom Saldo justru **menurun**
   dari Rp 6.230.000 ke Rp 2.130.000 sementara TOTAL bilang Rp 2.290.000. Sebabnya: baris
   dicetak terbaru→terlama sedangkan saldo diakumulasi kronologis naik, dan saldonya diambil
   dari **seluruh** ledger (semua lembaga, semua pos, tunai + transfer) tanpa ikut penyaring.
@@ -611,9 +627,9 @@ di-redeploy (`supabase functions deploy hiview-absen --no-verify-jwt`).
 - **Santri yang menamatkan jenjang terakhir naik ke lembaga berikutnya.** Rantai qiraati
   TPQ Pagi/Sore → Pra PTPT → PTPT → PPPH. Syaratnya dua, bukan satu: kelas asalnya jenjang
   terakhir lembaga itu **dan** target tesnya item terakhir jenjang itu — jadi `Level 3 Juz`
-  + `Khotam IX` pindah ke PTPT, sedangkan `Level 3 Juz` + `Khotam V` tetap di Pra PTPT.
-  Dialog Lulus & Naikkan kini punya pilihan **Lembaga tujuan** (bisa dikoreksi), penegasan
-  saat berpindah lembaga, dan pilihan **PJ PTPT** saat tujuannya PTPT.
+  - `Khotam IX` pindah ke PTPT, sedangkan `Level 3 Juz` + `Khotam V` tetap di Pra PTPT.
+    Dialog Lulus & Naikkan kini punya pilihan **Lembaga tujuan** (bisa dikoreksi), penegasan
+    saat berpindah lembaga, dan pilihan **PJ PTPT** saat tujuannya PTPT.
 - **Penugasan glondongan menyembunyikan penyimak yang masih bertugas.** Guru yang masih
   memegang blok ber-status "ditugaskan" tak lagi muncul di dropdown penugasan, lengkap
   dengan keterangan berapa nama yang disembunyikan. Tombol "tampilkan semua guru PTPT"
