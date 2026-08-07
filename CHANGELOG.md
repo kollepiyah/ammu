@@ -12,6 +12,14 @@ naik satu tiap rilis. Entri lama memakai skema lama `v.{nomor-urut}.{MMDDtahunmu
 
 ### Planned
 
+- **Tujuan pembaruan Android ikut data, bukan teks tetap** (v.1.3.2). `apkUrl` di
+  `public/app-version.json` sudah boleh diarahkan ke
+  `https://play.google.com/store/apps/details?id=app.ammu.id` tanpa menyentuh kode — Capacitor
+  meneruskannya ke browser sistem dan Android membukanya di aplikasi Play. Yang belum ikut
+  pindah cuma **kalimat dialognya**, yang masih berbunyi "Berkas akan diunduh lewat peramban…"
+  (`composables/useAndroidUpdate.js`). Kenali tujuan Play lalu ganti teks + label tombol jadi
+  "Buka Play Store", supaya perpindahan APK ↔ Play selamanya cukup menyunting JSON.
+  ⚠️ `apkUrlSah()` menolak selain `https://`, jadi `market://` bukan pilihan.
 - Capacitor Android first build + sideload APK
 - Capacitor iOS setup
 - Tauri Desktop scaffold
