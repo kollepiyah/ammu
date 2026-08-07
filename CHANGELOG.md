@@ -15,29 +15,34 @@ naik satu tiap rilis. Entri lama memakai skema lama `v.{nomor-urut}.{MMDDtahunmu
 
 ### Fixed (Perbaikan)
 
-- **Bisyaroh ngaji seorang kepala tak lagi hilang.** Kyai: "kepala yg juga guru ngaji,
-  bisyaroh ngajinya tidak terbaca di simulasi" — kebalikan dari keluhan di bawah, dan
-  akarnya bersaudara. Tempat tugas di lembaga **ngaji** dicap `g.jabatan` **apa adanya**,
-  jadi gelar seperti "Kepala PKBM" ikut tertempel di PTPT; Jenis Bisyaroh ngaji yang di-scope
-  jabatan **"Guru"** karena itu meleset, dan bisyaroh ngajinya lenyap dari slip.
-  Sekarang **satu aturan** berlaku untuk semua tempat tugas: jabatan yang **memangku unit
-  itu** dipakai di sana; jabatan **global** (tanpa unit, mis. Wali Kelas) tetap berlaku di
-  mana pun; selain itu **"Guru"** — gelar yang terikat unit lain tak ikut pindah. Supaya
-  gelarnya tak hilang, tiap jabatan kini juga **berjangkar di unitnya sendiri**, jadi kepala
-  yang lembaga sekolahnya kosong tetap diakui kepala (tunjangan kepala aman).
-- **Kepala sekolah tak lagi terbaca "Guru" di lembaganya sendiri.** Kyai: "Siti Churiyah
-  Kepala PKBM tapi di simulasi terbacanya sebagai guru". Tempat tugas di lembaga **sekolah**
-  selama ini diberi jabatan `jabatan_sekolah || 'Guru'` — dan `jabatan_sekolah` **tak pernah
-  diisi di mana pun**; satu-satunya kemunculannya di seluruh kode adalah pembacanya sendiri.
-  Jadi fallback-nya selalu menang: **setiap** kepala sekolah terbaca "Guru" di lembaganya,
-  dan Jenis Bisyaroh maupun Tunjangan ber-scope jabatan Kepala tak pernah mengenainya.
-  Jawabannya sebenarnya sudah ada di Master Jabatan — "Kepala PKBM" memangku unit `PKBM` —
-  jadi jabatan yang **memangku unit itu** kini yang dipakai; 'Guru' tinggal jaring terakhir.
-  Jabatan tambahan ikut diperiksa, dan jabatan yang tak memangku unit itu tetap tak diakui:
-  Kepala SDI yang kebetulan mengajar di PKBM bukan kepala **di sana**.
-  ⚠️ Karena itu jenis yang di-scope jabatan **"Guru" + lembaga sekolah** kini tak lagi
-  mengenai kepalanya. Untuk bisyaroh mengajar, biarkan scope jabatannya **kosong** dan
-  saring lewat lembaga saja — jamnya toh sudah datang dari Beban Mengajar.
+- **Tempat tugas guru: satu aturan, dan aturannya MENAMBAH — bukan mengganti.** Tiga
+  keluhan Kyai berurutan bermuara ke satu tempat yang sama:
+  1. _"Kepala PKBM tapi di simulasi terbacanya sebagai guru"_ — tempat tugas di lembaga
+     **sekolah** diberi jabatan `jabatan_sekolah || 'Guru'`, dan `jabatan_sekolah` **tak
+     pernah diisi di mana pun**; satu-satunya kemunculannya di seluruh kode adalah
+     pembacanya sendiri. Jadi **setiap** kepala sekolah terbaca "Guru" di lembaganya, dan
+     jenis/tunjangan ber-scope jabatan Kepala tak pernah mengenainya.
+  2. _"kepala yg juga guru ngaji, bisyaroh ngajinya tidak terbaca"_ — kebalikannya: lembaga
+     **ngaji** dicap `jabatan` apa adanya, jadi gelar seperti "Kepala PKBM" ikut tertempel di
+     PTPT dan jenis ngaji ber-scope jabatan **"Guru"** meleset.
+  3. _"kok tambah rancu, bisyaroh pokok yg tadinya ada sekarang gk ada"_ — akibat dua
+     perbaikan di atas yang sempat **mengganti** bacaan jabatan: begitu kepala berhenti
+     terbaca "Guru" di sekolahnya, **"Bisyaroh Pokok Guru SDI" yang flat ikut lenyap**. Di
+     master jabatan Kyai **14 dari 15 jabatan terikat unit**, jadi mengganti bacaan memutus
+     banyak jenis sekaligus.
+
+  Aturannya sekarang: bacaan jabatan di sebuah lembaga hanya **ditambah**, tak pernah
+  diganti. Bacaan lama tetap utuh; yang kurang ditambahkan — gelar yang **memangku unit
+  itu** di lembaga sekolah, dan bacaan **"Guru"** di lembaga ngaji bagi orang yang gelarnya
+  milik unit lain. Kepala **di lembaganya sendiri** sengaja **tidak** ditambahi bacaan
+  "Guru", supaya pokok kepala dan pokok guru tak sama-sama terbit untuk orang yang sama.
+  Tiap gelar juga **berjangkar di unitnya sendiri**, jadi kepala yang lembaga sekolahnya
+  kosong tetap diakui kepala.
+
+  Menambah aman karena **satu jenis menerbitkan paling banyak satu baris** betapa pun banyak
+  tempat tugas yang cocok — jadi ref tambahan tak pernah bisa membayar dobel. Penurunan
+  tempat tugas ini kini punya tesnya sendiri (`tests/unit/guruLembagaRefs.test.js`), memakai
+  master jabatan Kyai sebagai contoh.
 
 ### Planned
 

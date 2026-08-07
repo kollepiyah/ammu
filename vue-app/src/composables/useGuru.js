@@ -7,7 +7,7 @@ import { useAuthStore } from '@/stores/auth'
 // v.21.10.0526: Import lembaga helpers
 import { getLembagaGroup, LEMBAGA_GROUPS } from './useLembaga'
 // v.1.1.9: unit tugas per jabatan (master/jabatan) — ganti tebakan regex lama
-import { unitsOfJabatan, namaLembaga, pecahJabatan, jabatanDiUnit } from '@/utils/jabatanUnit'
+import { unitsOfJabatan, namaLembaga, pecahJabatan, jabatanUntukUnit } from '@/utils/jabatanUnit'
 // v.110: sortGuru — urutan Qiraati→Sekolah→Pegawai→nama A–Z (sumber tunggal)
 import { sortGuru } from '@/utils/santriSort'
 
@@ -40,62 +40,76 @@ function groupOfLembaga(nama, lembagaList) {
 // 1 guru bisa multi-lembaga (mis: Admin Yayasan + Guru TPQ) → tiap ref = 1 tempat tugas
 // = 1 baris pokok di slip bisyaroh.
 // opts.jabatanItems = master/jabatan items[] (unit per jabatan); opts.lembagaList = master/lembaga.list.
-function deriveGuruLembagaRefs(g, opts = {}) {
+// Diekspor supaya bisa diuji langsung: penurunan tempat tugas ini menyetir SIAPA yang
+//   kena jenis bisyaroh & tunjangan mana — salah di sini berarti salah uang.
+export function deriveGuruLembagaRefs(g, opts = {}) {
   if (Array.isArray(g.lembaga_refs) && g.lembaga_refs.length > 0) return g.lembaga_refs
   const jabatanItems = opts.jabatanItems || []
   const lembagaList = opts.lembagaList || []
   const refs = []
-  // Primary lembaga
+  const semuaJabatan = [String(g.jabatan || '').trim(), ...pecahJabatan(g.jabatan_tambahan)].filter(
+    Boolean
+  )
+
+  // Kyai 7 Agu 2026 — PELAJARAN MAHAL: bacaan jabatan di sebuah lembaga hanya boleh
+  //   DITAMBAH, tak pernah DIGANTI. Percobaan sebelumnya mengganti bacaan lembaga sekolah
+  //   dari 'Guru' menjadi "Kepala SDI", dan seketika "Bisyaroh Pokok Guru SDI" (flat) lenyap
+  //   dari kepala yang selama ini menerimanya. Di master jabatan Kyai, 14 dari 15 jabatan
+  //   terikat unit — jadi mengganti bacaan berarti memutus banyak jenis sekaligus.
+  //   Menambah aman: satu jenis menerbitkan PALING BANYAK SATU baris betapa pun banyak ref
+  //   yang cocok (jenisKenaGuru boolean + refPencocok ambil yang pertama), jadi ref
+  //   tambahan tak pernah bisa membayar dobel.
+  const tambah = (lembaga, jabatan, extra = {}) => {
+    const nama = String(jabatan || '').trim()
+    const lem = String(lembaga || '')
+    if (!nama) return
+    if (refs.some((r) => r.lembaga === lem && r.jabatan_di_sini === nama)) return
+    refs.push({
+      group: groupOfLembaga(lem, lembagaList),
+      lembaga: lem,
+      jabatan_di_sini: nama,
+      ...extra
+    })
+  }
+
+  // Lembaga utama (ngaji).
   if (g.lembaga) {
-    refs.push({
-      group: groupOfLembaga(g.lembaga, lembagaList),
-      lembaga: g.lembaga,
+    const extra = {
       shift: g.shift || null,
-      // Kyai 7 Agu 2026: dulu `g.jabatan` apa adanya, jadi "Kepala PKBM" ikut tertempel di
-      //   lembaga NGAJI-nya dan jenis ngaji ber-scope jabatan "Guru" meleset — bisyaroh
-      //   ngaji kepala hilang dari slip. Aturannya kini satu untuk semua tempat tugas.
-      jabatan_di_sini: jabatanDiUnit(jabatanItems, g.jabatan, g.jabatan_tambahan, g.lembaga),
       kelas_diajar: Array.isArray(g.kelas_diajar) ? g.kelas_diajar : []
-    })
-  }
-  // Lembaga sekolah (kalau beda dari lembaga utama)
-  if (g.lembaga_sekolah && g.lembaga_sekolah !== g.lembaga) {
-    refs.push({
-      group: groupOfLembaga(g.lembaga_sekolah, lembagaList),
-      lembaga: g.lembaga_sekolah,
-      // Kyai 7 Agu 2026: `jabatan_sekolah` tak pernah diisi di mana pun, jadi baris ini
-      //   dulu SELALU jatuh ke 'Guru' — kepala sekolah pun terbaca guru di lembaganya
-      //   sendiri. Sekarang jabatan yang MEMANGKU unit itu yang dipakai (master jabatan:
-      //   "Kepala PKBM" → units ["PKBM"]); 'Guru' tinggal jaring terakhir.
-      jabatan_di_sini:
-        g.jabatan_sekolah ||
-        jabatanDiUnit(jabatanItems, g.jabatan, g.jabatan_tambahan, g.lembaga_sekolah),
-      kelas_diajar: Array.isArray(g.kelas_diajar_sekolah) ? g.kelas_diajar_sekolah : []
-    })
-  }
-  // Jabatan tambahan → unit dari master/jabatan.
-  // v.1.1.9: dua perbaikan sekaligus —
-  //   (1) form guru menyimpan jabatan_tambahan sebagai STRING, tapi blok lama dijaga
-  //       Array.isArray() sehingga TAK PERNAH jalan (heuristiknya dead code);
-  //   (2) unit tak lagi ditebak regex (/admin|supervisi|pj/→Yayasan dst) tapi diambil
-  //       dari units[] jabatan yang Kyai atur sendiri.
-  // Kyai 7 Agu 2026: beberapa jabatan tambahan (dipisah koma) — lihat `pecahJabatan`.
-  //   Jabatan UTAMA ikut di sini: sejak jabatan tak lagi dicap ke lembaga yang bukan
-  //   unitnya, gelar seperti "Kepala PKBM" perlu jangkarnya sendiri di PKBM — kalau tidak,
-  //   kepala yang lembaga sekolahnya kosong kehilangan jabatannya sama sekali dan tunjangan
-  //   kepala ikut lenyap.
-  const jtList = pecahJabatan([g.jabatan, ...pecahJabatan(g.jabatan_tambahan)].join(', '))
-  for (const jt of jtList) {
-    const nama = jt.trim()
-    if (refs.some((r) => r.jabatan_di_sini === nama)) continue
-    for (const unit of unitsOfJabatan(jabatanItems, nama)) {
-      if (refs.some((r) => r.lembaga === unit && r.jabatan_di_sini === nama)) continue
-      refs.push({
-        group: groupOfLembaga(unit, lembagaList),
-        lembaga: unit,
-        jabatan_di_sini: nama
-      })
     }
+    tambah(g.lembaga, g.jabatan || 'Guru', extra) // bacaan LAMA — jangan diambil
+    // "kepala yg juga guru ngaji, bisyaroh ngajinya tidak terbaca": gelar yang unitnya di
+    //   tempat LAIN (mis. "Kepala PKBM" di lembaga ngaji PTPT) membuat jenis ngaji ber-scope
+    //   jabatan "Guru" meleset. Bacaan 'Guru' ditambahkan HANYA bila memang tak ada
+    //   jabatannya yang memangku lembaga ini — kepala DI lembaganya sendiri tak ikut
+    //   ditambahi, supaya pokok kepala & pokok guru tak sama-sama terbit.
+    if (!jabatanUntukUnit(jabatanItems, semuaJabatan, g.lembaga)) tambah(g.lembaga, 'Guru', extra)
+  }
+
+  // Lembaga sekolah (kalau beda dari lembaga utama).
+  if (g.lembaga_sekolah && g.lembaga_sekolah !== g.lembaga) {
+    const extra = {
+      kelas_diajar: Array.isArray(g.kelas_diajar_sekolah) ? g.kelas_diajar_sekolah : []
+    }
+    tambah(g.lembaga_sekolah, g.jabatan_sekolah || 'Guru', extra) // bacaan LAMA
+    // "Kepala PKBM tapi terbacanya sebagai guru": `jabatan_sekolah` tak pernah diisi di mana
+    //   pun, jadi bacaan di atas selalu 'Guru'. Gelar yang MEMANGKU unit ini ditambahkan
+    //   sebagai bacaan kedua supaya jenis/tunjangan ber-scope Kepala ikut mengenainya.
+    tambah(
+      g.lembaga_sekolah,
+      jabatanUntukUnit(jabatanItems, semuaJabatan, g.lembaga_sekolah),
+      extra
+    )
+  }
+
+  // Tiap jabatan berjangkar di unitnya sendiri (master/jabatan units[]).
+  // v.1.1.9: unit tak lagi ditebak regex (/admin|supervisi|pj/→Yayasan dst) tapi diambil
+  //   dari units[] jabatan yang Kyai atur sendiri.
+  // Kyai 7 Agu 2026: jabatan UTAMA ikut dijangkarkan (dulu hanya tambahan), supaya kepala
+  //   yang lembaga sekolahnya kosong tetap diakui kepala di unitnya.
+  for (const nama of semuaJabatan) {
+    for (const unit of unitsOfJabatan(jabatanItems, nama)) tambah(unit, nama)
   }
   return refs
 }
