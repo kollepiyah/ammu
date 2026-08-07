@@ -583,7 +583,7 @@ const introText = computed(() =>
 const lembagaName = computed(
   () => settings.settings?.namaLembaga || 'Pondok Pesantren Mambaul Ulum'
 )
-const version = computed(() => settings.settings?.appVersion || 'v.1.3.0')
+const version = computed(() => settings.settings?.appVersion || 'v.1.3.1')
 const logoSrc = computed(() => settings.settings?.logoUrl || '/logo.png')
 
 const sections = [
@@ -827,6 +827,16 @@ async function resetFaq() {
 //   berubah di layar mereka, bukan nama fungsi. Cukup beberapa rilis terakhir —
 //   riwayat lengkap ada di CHANGELOG.md untuk pengembang.
 const rilis = [
+  {
+    versi: 'v.1.3.1',
+    tgl: 'Agustus 2026',
+    items: [
+      'Tunjangan bisyaroh kini berkategori seperti Jenis Bisyaroh: tunjangan jabatan (mis. Kepala Lembaga), tunjangan pengabdian yang dikali tahun mengabdi, tunjangan khusus masa kerja tertentu, dan tunjangan berprestasi bagi yang tepat waktu.',
+      'Data guru: "Tanggal Tugas" kini bernama "Tgl. Syahadah" dan boleh dikosongkan; ada field baru "Tgl. Tugas" sebagai dasar masa pengabdian.',
+      'Simulasi Plafon Bisyaroh kini juga merinci per guru/pegawai.',
+      'POS: tagihan bulanan tak lagi terdampar di daftar Nonbulanan.'
+    ]
+  },
   {
     versi: 'v.1.3.0',
     tgl: 'Agustus 2026',

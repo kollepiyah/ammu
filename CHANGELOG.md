@@ -10,16 +10,30 @@ naik satu tiap rilis. Entri lama memakai skema lama `v.{nomor-urut}.{MMDDtahunmu
 
 ## [Unreleased]
 
-⚠️ **Rilis berikutnya WAJIB naik versi ke `v.1.3.1` / `vc131`.** Label v.1.3.0/vc130 sudah
-terpakai untuk dua isi berbeda: bundel bump `74e6274`, lalu rebuild 7 Agu yang membawa tiga
-commit sesudahnya. Electron 1.3.0 sudah terbit di GitHub, jadi membangun ulang dengan versi
-sama tak akan ditawarkan sebagai pembaruan, dan Play menolak versionCode kembar.
+### Planned
 
-✅ **Sudah dijalankan Kyai 7 Agu 2026** (`supabase db push` migrasi `20260807170000`, deploy
-web, rebuild AAB & Electron): semua entri di bawah sampai bagian "config keuangan…".
+- Capacitor Android first build + sideload APK
+- Capacitor iOS setup
+- Tauri Desktop scaffold
+- Phase 1 palette migration: `bg-blue-600/700` action button → `bg-teal-600/700` (~62 occurrences)
+- DOMPurify integration untuk template literal innerHTML yang inject user data
+- Console.log cleanup (37 occurrences di production)
 
-⏳ **Belum ter-deploy — Jenis Tunjangan + field Tgl. Tugas.** TANPA migrasi DB, TANPA edge:
-cukup deploy web dari **direktori utama**, lalu AAB & Electron bila perlu sampai ke HP dan PC.
+---
+
+## [v.1.3.1] — 2026-08-07 — Tunjangan berkategori + rincian simulasi per orang
+
+⚠️ **TANPA migrasi DB, TANPA edge function** — cukup deploy web dari **direktori utama**,
+lalu **AAB vc131** dan **Electron 1.3.1** bila perbaikan ini perlu sampai ke HP dan PC.
+
+⚠️ **Kenapa langsung 1.3.1 dan bukan membangun ulang 1.3.0:** label v.1.3.0/vc130 sudah
+terpakai untuk dua isi berbeda — bundel bump `74e6274`, lalu rebuild 7 Agu yang membawa tiga
+commit sesudahnya. Electron 1.3.0 sudah terbit di GitHub sehingga versi yang sama tak akan
+ditawarkan sebagai pembaruan, dan Play menolak versionCode kembar.
+
+✅ Tiga entri pertama di bawah (**simulasi per orang**, **POS Nonbulanan**, **config
+keuangan**) sudah ikut terbang di rebuild 7 Agu itu — dicatat di sini supaya punya nomor
+versi, bukan karena baru.
 
 ### Added (Baru)
 
@@ -106,17 +120,6 @@ cukup deploy web dari **direktori utama**, lalu AAB & Electron bila perlu sampai
   server tak terbaca; halaman dimuat tanpa config; atau server memuat jenis yang **tak
   pernah tampil** di layar ini — pertanda perangkat lain menyimpan lebih dulu, dan
   menyimpan akan menghapus jenis itu tanpa Kyai pernah melihatnya.
-
-### Planned
-
-- Capacitor Android first build + sideload APK
-- Capacitor iOS setup
-- Tauri Desktop scaffold
-- Phase 1 palette migration: `bg-blue-600/700` action button → `bg-teal-600/700` (~62 occurrences)
-- DOMPurify integration untuk template literal innerHTML yang inject user data
-- Console.log cleanup (37 occurrences di production)
-
----
 
 ## [v.1.3.0] — 2026-08-07 — Simulasi plafon bisyaroh + Input Harian bisa pilih tanggal
 

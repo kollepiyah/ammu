@@ -14,8 +14,8 @@
     "lebih dulu dan kehilangan sesi/data lokalnya."
   ],
   "android": {
-    "versionCode": 130,
-    "versionName": "v.1.3.0",
+    "versionCode": 131,
+    "versionName": "v.1.3.1",
     "apkUrl": "https://github.com/kollepiyah/ammu/releases/latest/download/AmmuOnline.apk",
     "halamanRilis": "https://github.com/kollepiyah/ammu/releases/latest",
     "wajib": false,
