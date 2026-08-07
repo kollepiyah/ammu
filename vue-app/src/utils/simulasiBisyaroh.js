@@ -93,6 +93,53 @@ export function simulasiBisyaroh(jenisList, ctxList) {
 }
 
 /**
+ * Sama seperti `simulasiBisyaroh`, tapi dipilah PER ORANG, bukan per jenis.
+ *
+ * PERMINTAAN KYAI (7 Agu 2026): "simulasi bisyaroh itu juga bisa menghitung simulasi
+ *   bisyaroh per guru/pegawai". Total plafon menjawab "sebulan keluar berapa"; yang ini
+ *   menjawab "kalau tarifnya sekian, si Fulan terima berapa" — pertanyaan yang selalu
+ *   muncul begitu nominal calon mulai dibandingkan dengan yang sekarang.
+ *
+ * Memakai `barisBisyaroh` yang SAMA dengan slip sungguhan dan dengan `simulasiBisyaroh`,
+ * jadi jumlah seluruh `total` di sini SELALU sama dengan `simulasiBisyaroh(...).total`.
+ * Jangan menghitung ulang dari hasil per-jenis: pembulatan per_jp terjadi per baris, dan
+ * membaginya balik ke guru akan meleset beberapa rupiah.
+ *
+ * Guru yang TAK kena jenis apa pun tetap dikembalikan (total 0) — "siapa yang tidak dapat
+ * apa-apa" itu justru temuan yang dicari saat menyusun tarif, bukan sampah yang disaring.
+ *
+ * @returns [{ guruId, nama, baris: [{jenis_id,label,hitungan,tarif,qty,nominal}], total }]
+ *          terurut dari yang terbesar.
+ */
+export function simulasiPerGuru(jenisList, ctxList) {
+  const out = []
+  for (const ctx of ctxList || []) {
+    const baris = []
+    let total = 0
+    for (const b of barisBisyaroh(jenisList || [], ctx) || []) {
+      const nominal = Number(b.nominal) || 0
+      if (nominal <= 0) continue // sejajar simulasiBisyaroh: nominal 0 tak dihitung
+      baris.push({
+        jenis_id: String(b.jenis_id),
+        label: b.label || String(b.jenis_id),
+        hitungan: b.hitungan || 'flat',
+        tarif: Number(b.tarif) || 0,
+        qty: Number(b.qty) || 0,
+        nominal
+      })
+      total += nominal
+    }
+    out.push({
+      guruId: String(ctx?.guruId ?? ''),
+      nama: String(ctx?.nama ?? ''),
+      baris,
+      total
+    })
+  }
+  return out.sort((a, b) => b.total - a.total || a.nama.localeCompare(b.nama))
+}
+
+/**
  * Salin daftar jenis dengan nominal DIGANTI dari `override` (id -> nominal).
  *
  * Dipakai supaya Kyai bisa mengetik tarif calon tanpa menyimpannya ke Pengaturan.

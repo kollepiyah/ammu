@@ -3,6 +3,7 @@ import {
   hariEfektif,
   tanggalBulanPenuh,
   simulasiBisyaroh,
+  simulasiPerGuru,
   terapkanNominal
 } from '../../vue-app/src/utils/simulasiBisyaroh.js'
 
@@ -105,6 +106,47 @@ describe('simulasiBisyaroh', () => {
   it('jenis non-aktif tidak ikut', () => {
     const mati = [{ ...JENIS[0], aktif: false }]
     expect(simulasiBisyaroh(mati, [ctx('g1', 26)]).total).toBe(0)
+  })
+})
+
+describe('simulasiPerGuru', () => {
+  const namai = (guruId, nama, hadir) => ({ ...ctx(guruId, hadir), nama })
+
+  it('memerinci tiap orang + total per orang', () => {
+    const r = simulasiPerGuru(JENIS, [namai('g1', 'Ahmad', 26)])
+    expect(r).toHaveLength(1)
+    expect(r[0]).toMatchObject({ guruId: 'g1', nama: 'Ahmad', total: 578000 })
+    expect(r[0].baris.map((b) => b.jenis_id)).toEqual(['pokok', 'bonus'])
+    expect(r[0].baris[1]).toMatchObject({ hitungan: 'per_tepat', qty: 26, tarif: 3000 })
+  })
+
+  it('jumlah semua orang PERSIS sama dengan total per jenis — dua tampilan satu angka', () => {
+    const ctxs = [namai('g1', 'Ahmad', 26), namai('g2', 'Budi', 20), namai('g3', 'Cak', 0)]
+    const perOrang = simulasiPerGuru(JENIS, ctxs).reduce((a, g) => a + g.total, 0)
+    expect(perOrang).toBe(simulasiBisyaroh(JENIS, ctxs).total)
+  })
+
+  it('terurut dari penerima terbesar', () => {
+    const r = simulasiPerGuru(JENIS, [namai('g1', 'Ahmad', 10), namai('g2', 'Budi', 26)])
+    expect(r.map((g) => g.guruId)).toEqual(['g2', 'g1'])
+  })
+
+  it('guru yang tak kena jenis apa pun tetap muncul dengan total 0', () => {
+    const r = simulasiPerGuru(JENIS, [
+      namai('g1', 'Ahmad', 26),
+      { ...namai('g2', 'Budi', 26), refs: [] } // tanpa ref -> tak kena jenis mana pun
+    ])
+    expect(r.at(-1)).toMatchObject({ guruId: 'g2', total: 0, baris: [] })
+  })
+
+  it('tanpa guru -> array kosong, bukan melempar', () => {
+    expect(simulasiPerGuru(JENIS, [])).toEqual([])
+    expect(simulasiPerGuru(JENIS, null)).toEqual([])
+  })
+
+  it('ikut nominal coba-coba, bukan nominal tersimpan', () => {
+    const jenis = terapkanNominal(JENIS, { pokok: 600000 })
+    expect(simulasiPerGuru(jenis, [namai('g1', 'Ahmad', 0)])[0].total).toBe(600000)
   })
 })
 

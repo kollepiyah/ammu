@@ -10,6 +10,21 @@ naik satu tiap rilis. Entri lama memakai skema lama `v.{nomor-urut}.{MMDDtahunmu
 
 ## [Unreleased]
 
+⚠️ **TANPA migrasi DB, TANPA edge function** — cukup deploy web dari **direktori utama**.
+
+### Added (Baru)
+
+- **Simulasi Plafon Bisyaroh kini merinci per guru/pegawai.** Total plafon menjawab
+  "sebulan keluar berapa"; begitu tarif calon diketik, pertanyaan berikutnya selalu
+  "kalau segitu, si Fulan terima berapa?" — dan angka itulah yang dibawa ke rundingan,
+  bukan totalnya. Tabel kedua di sub-tab Simulasi memakai nominal coba-coba yang sama:
+  tiap baris bisa dibentangkan untuk melihat jenis yang mengenainya beserta pengali
+  (mis. `26 × Rp 3.000`), bisa dicari per nama, dan yang bernilai Rp 0 bisa disembunyikan
+  — meski daftar itu sendiri berguna, sebab nol berarti **tak ada jenis bisyaroh yang
+  cocok** dengan jabatan/lembaga/shift orang tersebut. Jumlah seluruh baris per orang
+  **selalu sama persis** dengan total per jenis (dijaga tes): keduanya membaca satu mesin
+  yang sama, bukan dua hitungan yang kebetulan mirip.
+
 ### Planned
 
 - Capacitor Android first build + sideload APK

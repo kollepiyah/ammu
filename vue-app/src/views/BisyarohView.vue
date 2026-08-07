@@ -566,6 +566,144 @@
               </div>
             </div>
           </div>
+
+          <!-- Kyai 7 Agu: rincian PER ORANG — nominal calon di atas langsung terbawa. -->
+          <div
+            class="mt-4 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-card-elevated)]"
+          >
+            <div
+              class="px-3 py-2 border-b border-[var(--border-subtle)] flex items-center justify-between gap-2 flex-wrap"
+            >
+              <p class="text-sm font-black text-[var(--text-primary)]">
+                <i class="fas fa-user-check mr-2 text-emerald-600"></i>Rincian per Guru/Pegawai
+                <span class="font-bold text-[11px] text-[var(--text-tertiary)]"
+                  >— dengan nominal yang sedang dicoba di atas</span
+                >
+              </p>
+              <div class="flex items-center gap-2 flex-wrap">
+                <input
+                  v-model="simCariGuru"
+                  type="text"
+                  placeholder="Cari nama..."
+                  class="text-xs px-3 py-1.5 border border-[var(--border-default)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)]"
+                />
+                <label
+                  class="flex items-center gap-1 text-[11px] font-bold text-[var(--text-secondary)] cursor-pointer"
+                >
+                  <input
+                    v-model="simSembunyiNol"
+                    type="checkbox"
+                    class="w-4 h-4 accent-emerald-600"
+                  />
+                  Sembunyikan yang Rp 0 ({{ simGuruNol }})
+                </label>
+              </div>
+            </div>
+            <div class="px-3 pb-3">
+              <div class="overflow-x-auto">
+                <table class="w-full text-xs">
+                  <thead class="text-[10px] uppercase text-[var(--text-secondary)]">
+                    <tr class="border-b border-[var(--border-subtle)]">
+                      <th class="text-left py-1.5 w-8">#</th>
+                      <th class="text-left py-1.5">Nama</th>
+                      <th class="text-left py-1.5">Jenis yang kena</th>
+                      <th class="text-right py-1.5">Terima / bulan</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <template v-for="(g, i) in simPerGuruTampil" :key="'simg-' + g.guruId">
+                      <tr
+                        class="border-b border-[var(--border-subtle)] cursor-pointer hover:bg-[var(--bg-card)]"
+                        @click="simToggleGuru(g.guruId)"
+                      >
+                        <td class="py-1.5 text-[var(--text-tertiary)] tabular-nums">{{ i + 1 }}</td>
+                        <td class="py-1.5 pr-2 font-bold text-[var(--text-primary)]">
+                          <i
+                            :class="[
+                              'fas mr-1.5 text-[9px] text-[var(--text-tertiary)]',
+                              simBuka.has(g.guruId) ? 'fa-chevron-down' : 'fa-chevron-right'
+                            ]"
+                          ></i>
+                          {{ getNamaGuruGelar(g.nama) || '(tanpa nama)' }}
+                        </td>
+                        <td class="py-1.5 pr-2 text-[10px] text-[var(--text-secondary)]">
+                          {{
+                            g.baris.length
+                              ? g.baris.map((b) => b.label).join(' · ')
+                              : 'tak kena jenis apa pun'
+                          }}
+                        </td>
+                        <td
+                          class="py-1.5 text-right font-black tabular-nums whitespace-nowrap"
+                          :class="
+                            g.total > 0
+                              ? 'text-[var(--text-primary)]'
+                              : 'text-[var(--text-tertiary)]'
+                          "
+                        >
+                          {{ fmtRp(g.total) }}
+                        </td>
+                      </tr>
+                      <tr v-if="simBuka.has(g.guruId)" :key="'simd-' + g.guruId">
+                        <td></td>
+                        <td colspan="3" class="pb-2">
+                          <table class="w-full text-[11px]">
+                            <tr
+                              v-for="b in g.baris"
+                              :key="g.guruId + '-' + b.jenis_id"
+                              class="text-[var(--text-secondary)]"
+                            >
+                              <td class="py-0.5 pr-2">{{ b.label }}</td>
+                              <td class="py-0.5 pr-2 text-[10px] text-[var(--text-tertiary)]">
+                                {{ hitunganLabel(b.hitungan) }}
+                              </td>
+                              <td class="py-0.5 pr-2 text-right tabular-nums">
+                                {{ simRincianQty(b) }}
+                              </td>
+                              <td class="py-0.5 text-right tabular-nums font-bold">
+                                {{ fmtRp(b.nominal) }}
+                              </td>
+                            </tr>
+                            <tr v-if="!g.baris.length">
+                              <td class="py-0.5 text-[10px] italic text-[var(--text-tertiary)]">
+                                Tak ada jenis bisyaroh yang cocok dengan jabatan/lembaga/shift-nya.
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                    </template>
+                    <tr v-if="!simPerGuruTampil.length">
+                      <td
+                        colspan="4"
+                        class="py-4 text-center text-[var(--text-tertiary)] text-[11px]"
+                      >
+                        Tak ada guru/pegawai yang cocok dengan pencarian.
+                      </td>
+                    </tr>
+                  </tbody>
+                  <tfoot>
+                    <tr class="border-t-2 border-[var(--border-default)]">
+                      <td></td>
+                      <td class="py-2 font-black text-[var(--text-primary)]">
+                        {{ simPerGuruTampil.length }} orang
+                      </td>
+                      <td class="text-right text-[10px] text-[var(--text-secondary)] pr-2">
+                        Total yang tampil
+                      </td>
+                      <td class="py-2 text-right text-sm font-black tabular-nums whitespace-nowrap">
+                        {{ fmtRp(simPerGuruTotal) }}
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+              <p class="mt-2 text-[10px] text-[var(--text-tertiary)] italic">
+                <i class="fas fa-circle-info mr-1"></i>Klik baris untuk melihat perinciannya. Angka
+                ini plafon (hadir penuh) — slip sungguhan mengikuti absensi nyata.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -899,6 +1037,7 @@ import {
   hariEfektif,
   tanggalBulanPenuh,
   simulasiBisyaroh,
+  simulasiPerGuru,
   terapkanNominal
 } from '@/utils/simulasiBisyaroh'
 import { buildLiburScope, liburKenaLembaga } from '@/utils/liburScope' // v.1.2.3: libur per lembaga
@@ -1584,6 +1723,7 @@ function ctxGuruPenuh(g, periode) {
       g
     ),
     guruId: String(g.id),
+    nama: String(g.nama || ''), // dipakai rincian per orang
     shiftIds,
     hadirPerShift,
     hadirTepatPerShift: hadirPerShift, // hadir penuh = semuanya tepat waktu
@@ -1592,14 +1732,17 @@ function ctxGuruPenuh(g, periode) {
   }
 }
 
-const simHasil = computed(() => {
-  const jenis = terapkanNominal(jenisBisyarohList(settingsStore.settings || {}), simNominal.value)
-  const daftarGuru = guruAktifSaja(guruRaw.value)
-  return simulasiBisyaroh(
-    jenis,
-    daftarGuru.map((g) => ctxGuruPenuh(g, simPeriode.value))
-  )
-})
+// Konteks hadir-penuh SEMUA guru — dibangun SEKALI lalu dipakai dua tampilan (per jenis &
+//   per orang). Sengaja tak ikut `simNominal`: mengetik tarif tak boleh memicu penghitungan
+//   ulang hari efektif × libur × beban JP untuk ratusan guru di tiap ketukan tombol.
+const simCtxList = computed(() =>
+  guruAktifSaja(guruRaw.value).map((g) => ctxGuruPenuh(g, simPeriode.value))
+)
+const simJenisPakai = computed(() =>
+  terapkanNominal(jenisBisyarohList(settingsStore.settings || {}), simNominal.value)
+)
+
+const simHasil = computed(() => simulasiBisyaroh(simJenisPakai.value, simCtxList.value))
 const simJenisAsli = computed(() => jenisBisyarohList(settingsStore.settings || {}))
 const simPeta = computed(() => {
   const m = {}
@@ -1622,6 +1765,36 @@ const simAdaUbahan = computed(() =>
 )
 function simReset() {
   simNominal.value = {}
+}
+
+// ── Rincian PER ORANG (Kyai 7 Agu 2026) ──────────────────────────────────────
+// Total plafon menjawab "sebulan keluar berapa"; ini menjawab "si Fulan terima berapa" —
+//   pertanyaan yang selalu menyusul begitu tarif calon dibandingkan dengan yang berjalan.
+const simCariGuru = ref('')
+const simSembunyiNol = ref(false)
+const simBuka = ref(new Set()) // guruId yang rinciannya sedang dibentangkan
+
+const simPerGuru = computed(() => simulasiPerGuru(simJenisPakai.value, simCtxList.value))
+const simPerGuruTampil = computed(() => {
+  const q = simCariGuru.value.trim().toLowerCase()
+  return simPerGuru.value.filter((g) => {
+    if (simSembunyiNol.value && g.total <= 0) return false
+    return !q || g.nama.toLowerCase().includes(q)
+  })
+})
+// Total baris yang SEDANG tampil — supaya angka di kaki tabel tak berbohong saat difilter.
+const simPerGuruTotal = computed(() => simPerGuruTampil.value.reduce((a, g) => a + g.total, 0))
+const simGuruNol = computed(() => simPerGuru.value.filter((g) => g.total <= 0).length)
+function simToggleGuru(id) {
+  const s = simBuka.value
+  if (s.has(id)) s.delete(id)
+  else s.add(id)
+}
+/** "26 × Rp 3.000" untuk jenis berpengali; flat cukup nominalnya saja. */
+function simRincianQty(b) {
+  if (b.hitungan === 'flat') return fmtRp(b.tarif)
+  const qty = b.hitungan === 'per_jp' ? Math.round(b.qty * 10) / 10 : b.qty
+  return `${qty} × ${fmtRp(b.tarif)}`
 }
 
 // v.1.1.9: konteks pencocokan scope 1 guru — tempat tugas + shift + kehadiran.
