@@ -55,10 +55,31 @@ export function unitsOfJabatan(jabatanItems, namaJabatan) {
   return normalizeUnits(it?.units)
 }
 
+/**
+ * Daftar nama jabatan dari nilai yang bentuknya bisa macam-macam.
+ *
+ * Kyai 7 Agu 2026: "ada yg punya 3 jabatan". Kolom `jabatan_tambahan` di tabel guru
+ * bertipe TEKS dan form lamanya cuma satu `<select>`, jadi maksimal 2 jabatan. Daripada
+ * memindah kolom (menyentuh impor, ekspor, dan semua pembaca lama), beberapa jabatan
+ * disimpan DIPISAH KOMA di kolom yang sama — nilai lama yang cuma satu nama tetap terbaca
+ * apa adanya, jadi tak ada data yang perlu dimigrasi.
+ * Array juga diterima: beberapa pembaca lama sudah mengirimnya begitu.
+ */
+export function pecahJabatan(v) {
+  const mentah = Array.isArray(v) ? v : String(v ?? '').split(',')
+  const out = []
+  for (const x of mentah) {
+    const nama = String(x ?? '').trim()
+    if (!nama) continue
+    if (!out.some((y) => _key(y) === _key(nama))) out.push(nama)
+  }
+  return out
+}
+
 // Gabungan unit dari jabatan utama + jabatan tambahan. Salah satunya global
 // (units kosong) → hasilnya ikut global: jangan batasi pilihan lembaga.
 export function unitsOfGuru(jabatanItems, jabatanUtama, jabatanTambahan) {
-  const nama = [jabatanUtama, jabatanTambahan].map((x) => String(x || '').trim()).filter(Boolean)
+  const nama = [String(jabatanUtama || '').trim(), ...pecahJabatan(jabatanTambahan)].filter(Boolean)
   if (nama.length === 0) return []
   const per = nama.map((n) => unitsOfJabatan(jabatanItems, n))
   if (per.some((u) => u.length === 0)) return []

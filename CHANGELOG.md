@@ -29,6 +29,13 @@ versi, dua isi".
 
 ### Fixed (Perbaikan)
 
+- **Jabatan Tambahan kini boleh lebih dari satu.** Kyai: "ada yg punya 3 jabatan" — dulu
+  formnya satu dropdown, jadi seorang guru maksimal punya **dua** jabatan, dan slot itu kerap
+  habis hanya untuk memunculkan lembaga tempat ia mengajar. Sekarang dipilih dengan klik
+  (boleh beberapa), dan **tiap jabatan membawa unit/lembaganya sendiri** — jadi tunjangan
+  berbasis jabatan serta scope Jenis Bisyaroh ikut mengenai semuanya. Disimpan **dipisah
+  koma di kolom yang sama**, sehingga data lama yang berisi satu nama tetap terbaca apa
+  adanya: tak ada migrasi, tak ada yang perlu diisi ulang.
 - **Jam mengajar di lembaga kedua akhirnya terbayar.** Kyai: "ada Kepala SDI yg juga punya
   jam mengajar di PKBM, gimana caranya biar sesuai". Dulu lembaga tempat mengajar hanya bisa
   datang dari **tempat tugas** — Lembaga utama, Lembaga sekolah (satu slot), dan Jabatan

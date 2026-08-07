@@ -7,7 +7,7 @@ import { useAuthStore } from '@/stores/auth'
 // v.21.10.0526: Import lembaga helpers
 import { getLembagaGroup, LEMBAGA_GROUPS } from './useLembaga'
 // v.1.1.9: unit tugas per jabatan (master/jabatan) — ganti tebakan regex lama
-import { unitsOfJabatan, namaLembaga } from '@/utils/jabatanUnit'
+import { unitsOfJabatan, namaLembaga, pecahJabatan } from '@/utils/jabatanUnit'
 // v.110: sortGuru — urutan Qiraati→Sekolah→Pegawai→nama A–Z (sumber tunggal)
 import { sortGuru } from '@/utils/santriSort'
 
@@ -70,10 +70,8 @@ function deriveGuruLembagaRefs(g, opts = {}) {
   //       Array.isArray() sehingga TAK PERNAH jalan (heuristiknya dead code);
   //   (2) unit tak lagi ditebak regex (/admin|supervisi|pj/→Yayasan dst) tapi diambil
   //       dari units[] jabatan yang Kyai atur sendiri.
-  const jtRaw = g.jabatan_tambahan
-  const jtList = (Array.isArray(jtRaw) ? jtRaw : [jtRaw]).filter(
-    (x) => typeof x === 'string' && x.trim()
-  )
+  // Kyai 7 Agu 2026: beberapa jabatan tambahan (dipisah koma) — lihat `pecahJabatan`.
+  const jtList = pecahJabatan(g.jabatan_tambahan)
   for (const jt of jtList) {
     const nama = jt.trim()
     if (refs.some((r) => r.jabatan_di_sini === nama)) continue

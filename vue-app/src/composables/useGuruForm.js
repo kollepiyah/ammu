@@ -13,7 +13,7 @@ import { gedungList } from '@/utils/gedung'
 import { shiftsForGuru } from '@/utils/shiftDerive'
 import { shiftList, shiftIdsToLegacy } from '@/utils/shiftMaster'
 // v.1.1.9: unit tugas dari master/jabatan (ganti tebakan regex lama)
-import { unitsOfGuru, fieldForUnit, namaLembaga } from '@/utils/jabatanUnit'
+import { unitsOfGuru, fieldForUnit, namaLembaga, pecahJabatan } from '@/utils/jabatanUnit'
 import { isSekolahLembaga } from '@/composables/useLembaga' // v.1.2.1: sumber tunggal deteksi sekolah
 
 function emptyForm() {
@@ -358,13 +358,12 @@ export function useGuruForm() {
   const isPengajar = computed(() => {
     const tipe = String(form.value.tipe_pegawai || '').toLowerCase()
     if (tipe === 'guru' || tipe === 'pegawai_guru') return true
-    const jt = String(form.value.jabatan_tambahan || '').trim()
-    if (
-      jt &&
-      (JABATAN_GURU_GROUP.some((n) => n.toLowerCase() === jt.toLowerCase()) || /guru/i.test(jt))
+    // Kyai 7 Agu 2026: jabatan tambahan kini boleh lebih dari satu — cukup SALAH SATU
+    //   bergrup guru untuk membuatnya pengajar.
+    return pecahJabatan(form.value.jabatan_tambahan).some(
+      (jt) =>
+        JABATAN_GURU_GROUP.some((n) => n.toLowerCase() === jt.toLowerCase()) || /guru/i.test(jt)
     )
-      return true
-    return false
   })
   // Butuh lembaga bila: jabatan utama butuh lembaga, ATAU orangnya mengajar (dual-role / jabatan tambahan guru).
   const butuhLembaga = computed(
@@ -503,9 +502,10 @@ export function useGuruForm() {
     const f = form.value
     if (!String(f.nama || '').trim()) return 'Nama wajib diisi'
     if (!f.jabatan) return 'Jabatan wajib dipilih'
-    if (f.jabatan_tambahan && f.jabatan_tambahan === f.jabatan) {
-      return 'Jabatan tambahan harus berbeda dari jabatan utama'
-    }
+    const jtSama = pecahJabatan(f.jabatan_tambahan).find(
+      (x) => x.toLowerCase() === String(f.jabatan || '').toLowerCase()
+    )
+    if (jtSama) return `Jabatan tambahan "${jtSama}" sama dengan jabatan utama — pilih yang lain`
     // v.1.2.3: lembaga (Qiraati/Sekolah) hanya WAJIB utk PENGAJAR (isPengajar) — bukan
     //   butuhLembaga. Bug lama: pegawai murni yang jabatannya ber-unit lembaga (mis. Admin
     //   Keuangan → Yayasan) bikin butuhLembaga=true, padahal picker lembaga disembunyikan

@@ -93,19 +93,36 @@
             <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase"
               >Jabatan Tambahan</label
             >
-            <select
-              v-model="form.jabatan_tambahan"
-              class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-cyan-500 outline-none"
+            <!-- Kyai 7 Agu 2026: "ada yg punya 3 jabatan" — dulu satu dropdown, jadi
+                 maksimal 2 jabatan. Klik untuk memilih beberapa; disimpan dipisah koma di
+                 kolom yang sama supaya data lama tetap terbaca apa adanya. -->
+            <div
+              class="flex flex-wrap gap-1.5 p-2 rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] max-h-40 overflow-y-auto"
             >
-              <option value="">-- Tidak ada --</option>
-              <option
+              <button
                 v-for="j in jabatanOptionsFiltered.filter((x) => x !== form.jabatan)"
-                :key="j"
-                :value="j"
+                :key="'jt-' + j"
+                type="button"
+                :class="[
+                  'text-[11px] font-bold px-2.5 py-1 rounded-full border transition',
+                  jabatanTambahanList.includes(j)
+                    ? 'bg-cyan-600 text-white border-cyan-600'
+                    : 'border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-[var(--bg-card)]'
+                ]"
+                @click="toggleJabatanTambahan(j)"
               >
                 {{ j }}
-              </option>
-            </select>
+              </button>
+              <span
+                v-if="jabatanOptionsFiltered.filter((x) => x !== form.jabatan).length === 0"
+                class="text-[11px] italic text-[var(--text-tertiary)]"
+                >Tak ada pilihan lain.</span
+              >
+            </div>
+            <p class="text-[10px] text-[var(--text-tertiary)] italic mt-1">
+              Boleh lebih dari satu — tiap jabatan membawa unit/lembaganya sendiri.
+              {{ jabatanTambahanList.length ? jabatanTambahanList.length + ' dipilih.' : '' }}
+            </p>
           </div>
           <!-- v.21.18.0526: Tipe Pegawai — Guru / Pegawai / Pegawai+Guru -->
           <div class="md:col-span-2">
@@ -432,6 +449,7 @@
 
 <script setup>
 import { onMounted, watch, computed } from 'vue'
+import { pecahJabatan } from '@/utils/jabatanUnit'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
 import {
   useGuruForm,
@@ -469,6 +487,17 @@ const {
 
 // v.1.1.9: jabatan menentukan unit tugas → lembaga terisi/dibatasi otomatis.
 watch(() => [form.value.jabatan, form.value.jabatan_tambahan], syncUnitKeJabatan)
+
+// Kyai 7 Agu 2026: jabatan tambahan boleh banyak. Nilainya tetap SATU string dipisah koma
+//   (kolomnya bertipe teks, dan bentuk itu terbaca oleh data lama tanpa migrasi apa pun).
+const jabatanTambahanList = computed(() => pecahJabatan(form.value.jabatan_tambahan))
+function toggleJabatanTambahan(nama) {
+  const cur = pecahJabatan(form.value.jabatan_tambahan)
+  const i = cur.findIndex((x) => x.toLowerCase() === String(nama).toLowerCase())
+  if (i >= 0) cur.splice(i, 1)
+  else cur.push(nama)
+  form.value.jabatan_tambahan = cur.join(', ')
+}
 
 // v.99: show/butuh lembaga dari JABATAN (master/jabatan tipe_lembaga) — bukan tipe_pegawai
 const isJabatanNoLembaga = computed(() => !butuhLembaga.value)
