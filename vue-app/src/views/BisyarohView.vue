@@ -478,6 +478,18 @@
               <i class="fas fa-calculator mr-2"></i>Simulasi Plafon Bisyaroh &amp; Tunjangan
               <span class="font-bold text-[11px]">— coba nominal, tak ada yang disimpan</span>
             </p>
+            <div class="px-3 pt-2">
+              <button
+                type="button"
+                :disabled="simExporting || !simHasil.perJenis.length"
+                class="text-[10px] font-black bg-cyan-600 hover:bg-cyan-700 disabled:opacity-50 text-white px-2.5 py-1.5 rounded-lg inline-flex items-center gap-1"
+                title="Ekspor PDF: rekap per jenis + rincian per guru/pegawai, memakai nominal yang sedang dicoba"
+                @click="exportSimulasiPdf"
+              >
+                <i :class="['fas', simExporting ? 'fa-spinner fa-spin' : 'fa-file-pdf']"></i>Ekspor
+                PDF Simulasi
+              </button>
+            </div>
             <div class="px-3 pb-3 space-y-3">
               <p class="text-[11px] text-amber-900/90 dark:text-amber-200/90 leading-relaxed">
                 Andaian: <b>semua guru hadir penuh &amp; tepat waktu</b> di tiap hari efektif
@@ -1859,6 +1871,32 @@ function simToggleGuru(id) {
   if (s.has(id)) s.delete(id)
   else s.add(id)
 }
+// Kyai 7 Agu 2026: ekspor PDF simulasi — angka yang dibawa ke rundingan.
+const simExporting = ref(false)
+async function exportSimulasiPdf() {
+  if (!simHasil.value.perJenis.length) {
+    toast.warning('Belum ada jenis yang mengenai siapa pun — tak ada yang bisa diekspor.')
+    return
+  }
+  simExporting.value = true
+  try {
+    // Yang diekspor PERSIS yang tampil, termasuk nominal coba-coba — bukan nominal
+    //   tersimpan. Kalau berbeda, berkasnya jadi jebakan: dibawa rapat sebagai
+    //   "hasil simulasi" padahal angkanya bukan yang barusan dilihat di layar.
+    const { exportSimulasiBisyarohPdf } = await import('@/utils/strukBuilder')
+    await exportSimulasiBisyarohPdf(
+      simHasil.value,
+      simPerGuruTampil.value,
+      settingsStore.settings || {},
+      `${BULAN_NAMES[bulan.value - 1]} ${tahun.value}`
+    )
+  } catch (e) {
+    toast.error('Gagal membuat PDF: ' + (e?.message || e))
+  } finally {
+    simExporting.value = false
+  }
+}
+
 /** "26 × Rp 3.000" untuk jenis berpengali; flat cukup nominalnya saja. */
 function simRincianQty(b) {
   if (b.hitungan === 'flat') return fmtRp(b.tarif)

@@ -1,6 +1,14 @@
 // v.21.90.0527: Struk pembayaran POS — PDF A5 ber-KOP + dot-matrix teks fixed-width.
 // Wide (80 col, 9.5" continuous form Epson LX-310): mirror struk Yayasan. Narrow (32/42) kompak.
-import { createPdf, drawKopLetterhead, drawTitle, drawTable, savePdf } from './pdfBuilder'
+import {
+  createPdf,
+  drawKopLetterhead,
+  drawTitle,
+  drawTable,
+  lastTableY,
+  savePdf
+} from './pdfBuilder'
+import { HITUNGAN_OPTIONS, HITUNGAN_TUNJANGAN_OPTIONS } from './bisyarohScope'
 import { imageToDataURL } from '@/services/pdf'
 import { terbilangRupiah } from './terbilang'
 import { namaWaliSantri } from './santriIdentitas'
@@ -615,6 +623,178 @@ export async function exportRekapBisyarohPdf(slips = [], settings = {}, periodeL
 
   const safe = String(periodeLabel || 'semua').replace(/\s+/g, '_')
   savePdf(doc, 'rekap_bisyaroh_' + safe + '.pdf', { preview: true })
+  return doc
+}
+
+/**
+ * PDF Simulasi Plafon Bisyaroh & Tunjangan (Kyai 7 Agu 2026).
+ *
+ * Dua tabel dalam satu berkas: rekap PER JENIS lalu rincian PER ORANG — persis yang
+ * tampil di layar, supaya angka yang dibawa ke rundingan sama dengan yang dilihat.
+ *
+ * ⚠️ Judul & catatan kaki SENGAJA menyebut "PLAFON" dan andaiannya. Berkas ini akan
+ * beredar lepas dari layarnya; tanpa penanda itu, angka batas-atas gampang terbaca sebagai
+ * tagihan bulan berjalan.
+ */
+export async function exportSimulasiBisyarohPdf(
+  hasil = {},
+  perGuru = [],
+  settings = {},
+  periodeLabel = ''
+) {
+  const kop = buildKopFromSettings(settings)
+  const doc = await createPdf({ kind: 'umum', orientation: 'l', format: 'F4' })
+  let y = await drawKopLetterhead(doc, kop, { y: 10 })
+  drawTitle(
+    doc,
+    'SIMULASI PLAFON BISYAROH & TUNJANGAN' + (periodeLabel ? ' — ' + periodeLabel : ''),
+    {
+      y: y + 7,
+      size: 13
+    }
+  )
+  y += 14
+
+  const perJenis = Array.isArray(hasil.perJenis) ? hasil.perJenis : []
+  const caraLabel = (h) =>
+    HITUNGAN_OPTIONS.find((o) => o.value === h)?.label ||
+    HITUNGAN_TUNJANGAN_OPTIONS.find((o) => o.value === h)?.label ||
+    'Flat / bulan'
+
+  const bodyJenis = perJenis.map((r, i) => [
+    String(i + 1),
+    r.label || '-',
+    r.kategori === 'tunjangan' ? 'Tunjangan' : 'Bisyaroh',
+    caraLabel(r.hitungan),
+    String(r.guru ?? 0),
+    r.hitungan === 'flat' ? '—' : String(Math.round((Number(r.qty) || 0) * 10) / 10),
+    fmtRpStruk(r.tarif),
+    fmtRpStruk(r.subtotal)
+  ])
+  bodyJenis.push([
+    '',
+    'TOTAL PLAFON / BULAN',
+    '',
+    '',
+    String(hasil.guruKena ?? 0) + ' guru',
+    '',
+    '',
+    fmtRpStruk(hasil.total)
+  ])
+  drawTable(doc, {
+    startY: y,
+    head: [['No', 'Jenis', 'Kelompok', 'Cara Hitung', 'Guru', 'Pengali', 'Nominal', 'Subtotal']],
+    body: bodyJenis,
+    columnStyles: {
+      0: { halign: 'center', cellWidth: 10 },
+      4: { halign: 'center' },
+      5: { halign: 'right' },
+      6: { halign: 'right' },
+      7: { halign: 'right', fontStyle: 'bold' }
+    },
+    styles: { fontSize: 8, cellPadding: 1.5 }
+  })
+
+  const daftar = Array.isArray(perGuru) ? perGuru : []
+  if (daftar.length) {
+    const y2 = lastTableY(doc) + 8
+    drawTitle(doc, 'RINCIAN PER GURU / PEGAWAI', { y: y2, size: 11 })
+    const bodyGuru = daftar.map((g, i) => [
+      String(i + 1),
+      g.nama || '(tanpa nama)',
+      (g.baris || []).map((b) => b.label).join(' · ') || 'tak kena jenis apa pun',
+      fmtRpStruk(g.total)
+    ])
+    bodyGuru.push([
+      '',
+      'TOTAL (' + daftar.length + ' orang)',
+      '',
+      fmtRpStruk(daftar.reduce((a, g) => a + (Number(g.total) || 0), 0))
+    ])
+    drawTable(doc, {
+      startY: y2 + 4,
+      head: [['No', 'Nama', 'Jenis yang Kena', 'Terima / Bulan']],
+      body: bodyGuru,
+      columnStyles: {
+        0: { halign: 'center', cellWidth: 10 },
+        1: { cellWidth: 55 },
+        3: { halign: 'right', fontStyle: 'bold', cellWidth: 32 }
+      },
+      styles: { fontSize: 8, cellPadding: 1.5 }
+    })
+  }
+
+  const yAkhir = lastTableY(doc) + 6
+  doc.setFontSize(7)
+  doc.text(
+    'Angka PLAFON: andaian semua guru hadir penuh & tepat waktu di tiap hari efektif. ' +
+      'Realisasi hampir selalu lebih rendah. Berkas ini bahan rundingan, BUKAN slip.',
+    12,
+    yAkhir
+  )
+
+  const safe = String(periodeLabel || 'simulasi').replace(/\s+/g, '_')
+  savePdf(doc, 'simulasi_bisyaroh_' + safe + '.pdf', { preview: true })
+  return doc
+}
+
+/**
+ * PDF Simulasi Pemasukan Bulanan (Kyai 7 Agu 2026) — pasangan PDF simulasi bisyaroh.
+ *
+ * ⚠️ Judul & catatan kaki menyebut dua batasannya sekaligus: HANYA jenis bulanan, dan
+ * andaian SEMUA santri membayar penuh. Berkas ini beredar lepas dari layarnya; tanpa
+ * penanda itu, angka perkiraan gampang terbaca sebagai pemasukan yang sudah pasti.
+ */
+export async function exportSimulasiPemasukanPdf(hasil = {}, settings = {}, taLabel = '') {
+  const kop = buildKopFromSettings(settings)
+  const doc = await createPdf({ kind: 'umum', orientation: 'p', format: 'F4' })
+  let y = await drawKopLetterhead(doc, kop, { y: 10 })
+  drawTitle(doc, 'SIMULASI PEMASUKAN BULANAN' + (taLabel ? ' — T.A. ' + taLabel : ''), {
+    y: y + 7,
+    size: 13
+  })
+  y += 14
+
+  const perJenis = Array.isArray(hasil.perJenis) ? hasil.perJenis : []
+  const body = perJenis.map((r, i) => [
+    String(i + 1),
+    r.label || '-',
+    String(r.santri ?? 0),
+    fmtRpStruk(r.rata),
+    fmtRpStruk(r.subtotal)
+  ])
+  body.push([
+    '',
+    'TOTAL / BULAN',
+    String(hasil.santriKena ?? 0) + ' / ' + String(hasil.santriTotal ?? 0),
+    '',
+    fmtRpStruk(hasil.total)
+  ])
+
+  drawTable(doc, {
+    startY: y,
+    head: [['No', 'Jenis Pembayaran', 'Santri', 'Rata-rata', 'Subtotal / bulan']],
+    body,
+    columnStyles: {
+      0: { halign: 'center', cellWidth: 10 },
+      2: { halign: 'center', cellWidth: 22 },
+      3: { halign: 'right', cellWidth: 32 },
+      4: { halign: 'right', fontStyle: 'bold', cellWidth: 38 }
+    },
+    styles: { fontSize: 9, cellPadding: 1.8 }
+  })
+
+  const yAkhir = lastTableY(doc) + 6
+  doc.setFontSize(7)
+  doc.text(
+    'PERKIRAAN: andaian seluruh santri aktif membayar penuh. Jenis TAHUNAN & MANUAL tidak ' +
+      'dihitung — angka ini pemasukan yang berulang tiap bulan saja.',
+    12,
+    yAkhir
+  )
+
+  const safe = String(taLabel || 'simulasi').replace(/[^0-9A-Za-z]+/g, '_')
+  savePdf(doc, 'simulasi_pemasukan_' + safe + '.pdf', { preview: true })
   return doc
 }
 

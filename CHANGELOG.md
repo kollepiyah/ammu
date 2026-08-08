@@ -13,6 +13,26 @@ naik satu tiap rilis. Entri lama memakai skema lama `v.{nomor-urut}.{MMDDtahunmu
 ⚠️ **Perubahan di bawah lahir SESUDAH v.1.3.2 dibangun & di-deploy.** Rilis berikutnya
 `v.1.3.3` / `vc133`.
 
+### Added (Baru)
+
+- **Ekspor PDF Simulasi Bisyaroh.** Satu berkas berisi dua tabel — rekap **per jenis** lalu
+  rincian **per guru/pegawai** — persis yang tampil di layar, termasuk **nominal coba-coba**
+  yang sedang diketik. Kalau yang diekspor nominal tersimpan, berkasnya justru jadi jebakan:
+  dibawa ke rapat sebagai "hasil simulasi" padahal angkanya bukan yang barusan dilihat.
+  Judul dan catatan kakinya menyebut **PLAFON** beserta andaiannya, sebab berkas ini akan
+  beredar lepas dari layarnya dan angka batas-atas gampang terbaca sebagai tagihan berjalan.
+- **Simulasi Pemasukan Bulanan** (Pengaturan Keuangan → Tagihan). Pasangan dari simulasi
+  plafon bisyaroh: yang itu memperkirakan uang **keluar** sebulan, ini uang **masuk**.
+  **Hanya jenis bulanan** — yang tahunan (Daftar Ulang, Seragam) dan manual (infaq
+  insidental) sengaja tak dihitung, sebab memasukkannya membuat angka bulanan tampak jauh
+  lebih besar dari yang benar-benar masuk tiap bulan, dan kekeliruan itu baru ketahuan saat
+  kas tekor. Memakai **tarif yang sedang tampil di layar**, jadi Kyai bisa mengubah nominal
+  lalu Hitung Ulang tanpa menyimpan apa pun. Perhitungannya lewat `hitungTagihan` — mesin
+  yang sama dengan Generate Tagihan & POS — jadi paket, tarif per santri/kelas/lembaga, dan
+  **pelipatan** (jenis yang menempel ke jenis lain) ikut terhitung tanpa ada yang dobel.
+  Penyaring santrinya pun sama dengan Generate (aktif + scope gedung), supaya simulasi tak
+  menjanjikan pemasukan dari santri yang takkan pernah ditagih. Ada ekspor PDF-nya juga.
+
 ### Fixed (Perbaikan)
 
 - **Tempat tugas guru: satu aturan, dan aturannya MENAMBAH — bukan mengganti.** Tiga

@@ -138,6 +138,110 @@
           </label>
         </div>
 
+        <!-- Kyai 7 Agu 2026: simulasi PEMASUKAN bulanan — pasangan simulasi plafon bisyaroh
+             (yang itu uang keluar, ini uang masuk). HANYA jenis bulanan. -->
+        <div
+          class="mt-4 rounded-xl border border-emerald-300/60 bg-emerald-50/60 dark:bg-emerald-900/20"
+        >
+          <div
+            class="px-3 py-2 border-b border-emerald-300/40 flex items-center justify-between gap-2 flex-wrap"
+          >
+            <p class="text-sm font-black text-emerald-900 dark:text-emerald-200">
+              <i class="fas fa-arrow-trend-up mr-2"></i>Simulasi Pemasukan Bulanan
+              <span class="font-bold text-[11px]">— hanya jenis bulanan</span>
+            </p>
+            <div class="flex items-center gap-1.5">
+              <button
+                type="button"
+                :disabled="simPemasukanBusy"
+                class="text-[10px] font-black bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white px-2.5 py-1.5 rounded-lg inline-flex items-center gap-1"
+                @click="hitungSimulasiPemasukan"
+              >
+                <i :class="['fas', simPemasukanBusy ? 'fa-spinner fa-spin' : 'fa-calculator']"></i>
+                {{ simPemasukan ? 'Hitung Ulang' : 'Hitung' }}
+              </button>
+              <button
+                v-if="simPemasukan && simPemasukan.perJenis.length"
+                type="button"
+                :disabled="simPemasukanExporting"
+                class="text-[10px] font-black bg-cyan-600 hover:bg-cyan-700 disabled:opacity-50 text-white px-2.5 py-1.5 rounded-lg inline-flex items-center gap-1"
+                @click="exportSimulasiPemasukanPdf"
+              >
+                <i
+                  :class="['fas', simPemasukanExporting ? 'fa-spinner fa-spin' : 'fa-file-pdf']"
+                ></i>
+                PDF
+              </button>
+            </div>
+          </div>
+          <div class="px-3 pb-3 pt-2">
+            <p
+              class="text-[11px] text-emerald-900/90 dark:text-emerald-200/90 leading-relaxed mb-2"
+            >
+              Perkiraan uang <b>masuk sebulan</b> bila semua santri aktif membayar penuh. Memakai
+              <b>tarif yang sedang tampil di layar ini</b> (belum tentu yang tersimpan), jadi Kyai
+              bisa mengubah nominal lalu Hitung Ulang. Jenis
+              <b>tahunan &amp; manual tidak dihitung</b> — memasukkannya membuat angka bulanan
+              tampak jauh lebih besar dari yang benar-benar masuk tiap bulan.
+            </p>
+            <div v-if="simPemasukan" class="overflow-x-auto">
+              <table class="w-full text-xs">
+                <thead class="text-[10px] uppercase text-[var(--text-secondary)]">
+                  <tr class="border-b border-emerald-300/50">
+                    <th class="text-left py-1.5">Jenis</th>
+                    <th class="text-right py-1.5">Santri</th>
+                    <th class="text-right py-1.5">Rata-rata</th>
+                    <th class="text-right py-1.5">Subtotal / bulan</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    v-for="r in simPemasukan.perJenis"
+                    :key="'sp-' + r.jenis_id"
+                    class="border-b border-emerald-200/40"
+                  >
+                    <td class="py-1.5 pr-2 font-bold text-[var(--text-primary)]">{{ r.label }}</td>
+                    <td class="text-right tabular-nums">{{ r.santri }}</td>
+                    <td class="text-right tabular-nums whitespace-nowrap">
+                      Rp {{ Number(r.rata || 0).toLocaleString('id-ID') }}
+                    </td>
+                    <td class="text-right font-black tabular-nums whitespace-nowrap">
+                      Rp {{ Number(r.subtotal || 0).toLocaleString('id-ID') }}
+                    </td>
+                  </tr>
+                  <tr v-if="!simPemasukan.perJenis.length">
+                    <td
+                      colspan="4"
+                      class="py-4 text-center text-[var(--text-tertiary)] text-[11px]"
+                    >
+                      Tak ada jenis bulanan yang mengenai santri mana pun.
+                    </td>
+                  </tr>
+                </tbody>
+                <tfoot>
+                  <tr class="border-t-2 border-emerald-400">
+                    <td class="py-2 font-black text-[var(--text-primary)]">TOTAL / BULAN</td>
+                    <td class="text-right text-[10px] text-[var(--text-secondary)]">
+                      {{ simPemasukan.santriKena }} / {{ simPemasukan.santriTotal }}
+                    </td>
+                    <td></td>
+                    <td
+                      class="text-right text-base font-black text-emerald-900 dark:text-emerald-200 whitespace-nowrap"
+                    >
+                      Rp {{ Number(simPemasukan.total || 0).toLocaleString('id-ID') }}
+                    </td>
+                  </tr>
+                </tfoot>
+              </table>
+              <p class="text-[10px] text-[var(--text-tertiary)] italic mt-2">
+                <i class="fas fa-circle-info mr-1"></i>{{ simPemasukan.santriKena }} dari
+                {{ simPemasukan.santriTotal }} santri aktif kena tagihan bulanan. Yang tak kena
+                biasanya karena whitelist lembaga/status jenisnya, atau tarifnya masih 0.
+              </p>
+            </div>
+          </div>
+        </div>
+
         <!-- v.94.0626: Generate Tagihan Khusus (infaq/iuran sekali-jalan, target fleksibel) -->
         <div class="mt-3">
           <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block">
@@ -2935,6 +3039,8 @@ import { STATUS_SANTRI_OPTS, JK_OPTS, SHIFT_NGAJI_OPTS } from '@/utils/statusSan
 // Kyai 4 Agu: pilihan kas = master + kas bukan-lembaga (TPQ payung, Fullday, Ma'had)
 import { opsiKasLembaga } from '@/utils/kasLembaga'
 import { normalisasiPotongan } from '@/utils/potonganPos'
+// Kyai 7 Agu 2026: simulasi pemasukan bulanan (hanya jenis bulanan)
+import { simulasiPemasukan as hitungPemasukan } from '@/utils/simulasiPemasukan'
 // Gerbang "Mulai Tagih di AMMU" — dipakai Generate & Generate Khusus.
 import { mulaiTagihKode, bolehTerbitPeriode, pesanTolakPeriode } from '@/utils/periodeTagihan'
 // Pola id tagihan otomatis = kontrak dengan cron; lihat catatan di utils/tagihanId.js.
@@ -3160,6 +3266,41 @@ function hapusJenisBisyaroh(idx) {
   if (!confirm(`Hapus Jenis Bisyaroh "${j.label}"?\n\nSlip yang sudah digenerate tidak berubah.`))
     return
   jenisBisyarohList.value.splice(idx, 1)
+}
+
+// ── Kyai 7 Agu 2026: Simulasi PEMASUKAN bulanan syahriyah ────────────────────
+// Pasangan simulasi plafon bisyaroh: yang itu uang KELUAR sebulan, ini uang MASUK.
+// Dihitung ON DEMAND (tombol), bukan otomatis: butuh SELURUH baris santri, dan tak semua
+// yang membuka Pengaturan sedang memerlukannya.
+const simPemasukanBusy = ref(false)
+const simPemasukanExporting = ref(false)
+const simPemasukan = ref(null)
+async function hitungSimulasiPemasukan() {
+  simPemasukanBusy.value = true
+  try {
+    // Penyaring santri SAMA dengan Generate Tagihan (aktif + scope gedung) — kalau berbeda,
+    //   simulasi menjanjikan pemasukan dari santri yang tak akan pernah ditagih.
+    const santri = (await getAll('santri')).filter((x) => x.aktif !== false && _inMyGedung(x))
+    // Tarif yang dipakai = yang SEDANG TAMPIL di layar (jenisList), bukan yang tersimpan,
+    //   supaya Kyai bisa mengubah nominal lalu Hitung Ulang tanpa menyimpan apa pun dulu.
+    simPemasukan.value = hitungPemasukan(serializeJenisList(jenisList.value), santri)
+  } catch (e) {
+    toast.error('Gagal menghitung: ' + (e?.message || e))
+  } finally {
+    simPemasukanBusy.value = false
+  }
+}
+async function exportSimulasiPemasukanPdf() {
+  if (!simPemasukan.value?.perJenis?.length) return
+  simPemasukanExporting.value = true
+  try {
+    const { exportSimulasiPemasukanPdf: buat } = await import('@/utils/strukBuilder')
+    await buat(simPemasukan.value, settingsStore.settings || {}, taAktif.value)
+  } catch (e) {
+    toast.error('Gagal membuat PDF: ' + (e?.message || e))
+  } finally {
+    simPemasukanExporting.value = false
+  }
 }
 
 // ══ Kyai 7 Agu 2026: JENIS TUNJANGAN ber-scope (settings.keuTunjanganJenis) ═══
