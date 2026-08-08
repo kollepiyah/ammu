@@ -124,7 +124,75 @@ describe('simulasiPemasukan', () => {
       perJenis: [],
       total: 0,
       santriKena: 0,
-      santriTotal: 0
+      santriTotal: 0,
+      tagihanGabungan: 0,
+      nilaiMenempel: 0
     })
+  })
+})
+
+// Kyai 8 Agu 2026: "untuk tagihan santri yg digabung, mis: syahriyah TK-SD-PKBM gabung
+// dengan qiraati pagi, Pondok-Fullday gabung qiraati sore. apakah sudah dihitung?"
+// Sudah — tapi dari layar tak kelihatan, jadi jumlah tagihan gabungan & nilai komponen yang
+// menempel ikut dilaporkan supaya bisa dipastikan dengan mata.
+describe('penanda tagihan gabungan', () => {
+  const JENIS_GABUNG = [
+    {
+      id: 'sd',
+      label: 'Syahriyah Sekolah SD',
+      frekuensi: 'bulanan',
+      nominal_default: 200000,
+      lembaga_only: ['SDI'] // hanya yang bersekolah di SDI — seperti setelan nyata
+    },
+    {
+      id: 'pagi',
+      label: 'Syahriyah Qiraati Pagi',
+      frekuensi: 'bulanan',
+      nominal_default: 90000,
+      gabung_ke: ['sd'],
+      gabung_syarat: 'punya_sekolah'
+    }
+  ]
+  const punyaSekolah = { id: 'a', lembaga: 'TPQ Pagi', lembaga_sekolah: 'SDI', aktif: true }
+  const tanpaSekolah = { id: 'b', lembaga: 'TPQ Pagi', aktif: true }
+
+  it('santri bersekolah: satu tagihan gabungan, komponen ngaji terlaporkan', () => {
+    const r = simulasiPemasukan(JENIS_GABUNG, [punyaSekolah])
+    expect(r.total).toBe(200000) // BUKAN 290.000
+    expect(r.tagihanGabungan).toBe(1)
+    expect(r.nilaiMenempel).toBe(90000) // sudah TERMASUK di 200.000, bukan tambahan
+    expect(r.perJenis.map((x) => x.jenis_id)).toEqual(['sd'])
+  })
+
+  it('santri tanpa sekolah: ngajinya ditagih sendiri, bukan gabungan', () => {
+    const r = simulasiPemasukan(JENIS_GABUNG, [tanpaSekolah])
+    expect(r.total).toBe(90000)
+    expect(r.tagihanGabungan).toBe(0)
+    expect(r.perJenis.map((x) => x.jenis_id)).toEqual(['pagi'])
+  })
+
+  it('campuran: dua jenis sama-sama muncul, dan itu WAJAR', () => {
+    // Inilah yang Kyai lihat di layar — Qiraati Pagi tetap punya baris sendiri untuk santri
+    //   yang tak bersekolah. Munculnya dua baris bukan berarti gabungannya gagal.
+    const r = simulasiPemasukan(JENIS_GABUNG, [punyaSekolah, tanpaSekolah])
+    expect(r.total).toBe(290000) // 200.000 (gabungan) + 90.000 (berdiri sendiri)
+    expect(r.tagihanGabungan).toBe(1)
+    expect(r.perJenis.find((x) => x.jenis_id === 'sd')).toMatchObject({
+      santri: 1,
+      gabungan: 1,
+      nilaiMenempel: 90000
+    })
+    expect(r.perJenis.find((x) => x.jenis_id === 'pagi')).toMatchObject({
+      santri: 1,
+      gabungan: 0,
+      nilaiMenempel: 0
+    })
+  })
+
+  it('gabung_ke BELUM disetel -> nol gabungan & total membengkak (gejala yang dicari)', () => {
+    const belumSetel = JENIS_GABUNG.map((j) => ({ ...j, gabung_ke: [] }))
+    const r = simulasiPemasukan(belumSetel, [punyaSekolah])
+    expect(r.tagihanGabungan).toBe(0)
+    expect(r.total).toBe(290000) // dua jenis ditagih sendiri-sendiri
   })
 })

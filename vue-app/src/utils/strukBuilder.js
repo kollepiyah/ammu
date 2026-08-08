@@ -760,6 +760,7 @@ export async function exportSimulasiPemasukanPdf(hasil = {}, settings = {}, taLa
     String(i + 1),
     r.label || '-',
     String(r.santri ?? 0),
+    r.gabungan ? String(r.gabungan) + ' (' + fmtRpStruk(r.nilaiMenempel) + ')' : '—',
     fmtRpStruk(r.rata),
     fmtRpStruk(r.subtotal)
   ])
@@ -767,28 +768,32 @@ export async function exportSimulasiPemasukanPdf(hasil = {}, settings = {}, taLa
     '',
     'TOTAL / BULAN',
     String(hasil.santriKena ?? 0) + ' / ' + String(hasil.santriTotal ?? 0),
+    String(hasil.tagihanGabungan ?? 0),
     '',
     fmtRpStruk(hasil.total)
   ])
 
   drawTable(doc, {
     startY: y,
-    head: [['No', 'Jenis Pembayaran', 'Santri', 'Rata-rata', 'Subtotal / bulan']],
+    head: [['No', 'Jenis Pembayaran', 'Santri', 'Gabungan', 'Rata-rata', 'Subtotal / bulan']],
     body,
     columnStyles: {
       0: { halign: 'center', cellWidth: 10 },
-      2: { halign: 'center', cellWidth: 22 },
-      3: { halign: 'right', cellWidth: 32 },
-      4: { halign: 'right', fontStyle: 'bold', cellWidth: 38 }
+      2: { halign: 'center', cellWidth: 18 },
+      3: { halign: 'center', cellWidth: 32 },
+      4: { halign: 'right', cellWidth: 28 },
+      5: { halign: 'right', fontStyle: 'bold', cellWidth: 34 }
     },
-    styles: { fontSize: 9, cellPadding: 1.8 }
+    styles: { fontSize: 8, cellPadding: 1.6 }
   })
 
   const yAkhir = lastTableY(doc) + 6
   doc.setFontSize(7)
   doc.text(
     'PERKIRAAN: andaian seluruh santri aktif membayar penuh. Jenis TAHUNAN & MANUAL tidak ' +
-      'dihitung — angka ini pemasukan yang berulang tiap bulan saja.',
+      'dihitung — angka ini pemasukan yang berulang tiap bulan saja. Kolom Gabungan = ' +
+      'tagihan yang sudah memuat komponen jenis lain (nilainya sudah ikut di subtotal, ' +
+      'jenis yang menempel tidak dihitung lagi sebagai baris sendiri).',
     12,
     yAkhir
   )

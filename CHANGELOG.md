@@ -43,6 +43,18 @@ kelas** (harus tak berubah sama sekali), dan seorang **guru biasa** (juga tak be
 
 ### Added (Baru)
 
+- **Simulasi Pemasukan menampilkan tagihan GABUNGAN.** Kyai: _"untuk tagihan santri yg
+  digabung, mis: syahriyah TK-SD-PKBM gabung dengan qiraati pagi ... apakah sudah
+  dihitung?"_ Sudah sejak awal — jenis yang menempel mengembalikan `null` sehingga tak
+  pernah dihitung sebagai baris sendiri. Tapi dari layar itu **tak kelihatan**, dan "sudah
+  benar" yang tak bisa dilihat sama tak menenangkannya dengan "belum benar". Kini ada kolom
+  **Gabungan**: berapa tagihan yang isinya lebih dari satu jenis, beserta **nilai komponen
+  yang menempel** di dalamnya — nilai itu **sudah termasuk** di subtotal, bukan tambahan.
+  Kalau angkanya **nol** padahal semestinya ada, muncul peringatan bahwa **Gabung ke** pada
+  jenis ngajinya belum disetel. Perlu diingat: satu jenis ngaji tetap bisa punya barisnya
+  sendiri untuk santri yang **tak** bersekolah — dua baris muncul bersamaan itu wajar, bukan
+  tanda gabungannya gagal.
+
 - **Ekspor PDF Simulasi Bisyaroh.** Satu berkas berisi dua tabel — rekap **per jenis** lalu
   rincian **per guru/pegawai** — persis yang tampil di layar, termasuk **nominal coba-coba**
   yang sedang diketik. Kalau yang diekspor nominal tersimpan, berkasnya justru jadi jebakan:

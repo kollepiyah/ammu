@@ -190,6 +190,7 @@
                   <tr class="border-b border-emerald-300/50">
                     <th class="text-left py-1.5">Jenis</th>
                     <th class="text-right py-1.5">Santri</th>
+                    <th class="text-right py-1.5">Gabungan</th>
                     <th class="text-right py-1.5">Rata-rata</th>
                     <th class="text-right py-1.5">Subtotal / bulan</th>
                   </tr>
@@ -203,6 +204,21 @@
                     <td class="py-1.5 pr-2 font-bold text-[var(--text-primary)]">{{ r.label }}</td>
                     <td class="text-right tabular-nums">{{ r.santri }}</td>
                     <td class="text-right tabular-nums whitespace-nowrap">
+                      <span
+                        v-if="r.gabungan"
+                        :title="
+                          'Termasuk komponen jenis lain senilai Rp ' +
+                          Number(r.nilaiMenempel).toLocaleString('id-ID')
+                        "
+                      >
+                        {{ r.gabungan }} ·
+                        <span class="text-[10px] text-[var(--text-tertiary)]"
+                          >Rp {{ Number(r.nilaiMenempel || 0).toLocaleString('id-ID') }}</span
+                        >
+                      </span>
+                      <span v-else class="text-[var(--text-tertiary)]">—</span>
+                    </td>
+                    <td class="text-right tabular-nums whitespace-nowrap">
                       Rp {{ Number(r.rata || 0).toLocaleString('id-ID') }}
                     </td>
                     <td class="text-right font-black tabular-nums whitespace-nowrap">
@@ -211,7 +227,7 @@
                   </tr>
                   <tr v-if="!simPemasukan.perJenis.length">
                     <td
-                      colspan="4"
+                      colspan="5"
                       class="py-4 text-center text-[var(--text-tertiary)] text-[11px]"
                     >
                       Tak ada jenis bulanan yang mengenai santri mana pun.
@@ -224,6 +240,9 @@
                     <td class="text-right text-[10px] text-[var(--text-secondary)]">
                       {{ simPemasukan.santriKena }} / {{ simPemasukan.santriTotal }}
                     </td>
+                    <td class="text-right text-[10px] text-[var(--text-secondary)]">
+                      {{ simPemasukan.tagihanGabungan }}
+                    </td>
                     <td></td>
                     <td
                       class="text-right text-base font-black text-emerald-900 dark:text-emerald-200 whitespace-nowrap"
@@ -233,6 +252,23 @@
                   </tr>
                 </tfoot>
               </table>
+              <p
+                v-if="simPemasukan.tagihanGabungan"
+                class="text-[10px] text-emerald-800 dark:text-emerald-200 italic mt-2"
+              >
+                <i class="fas fa-object-group mr-1"></i
+                ><b>{{ simPemasukan.tagihanGabungan }} tagihan gabungan</b> — di dalamnya sudah
+                termasuk komponen jenis lain (mis. ngaji yang menempel ke syahriyah sekolah) senilai
+                <b>Rp {{ Number(simPemasukan.nilaiMenempel).toLocaleString('id-ID') }}</b
+                >. Nilai itu <b>sudah ikut</b> di total, dan jenis yang menempel
+                <b>tidak dihitung lagi</b> sebagai baris sendiri — jadi tak ada yang dobel.
+              </p>
+              <p v-else class="text-[10px] text-amber-800 dark:text-amber-200 italic mt-2">
+                <i class="fas fa-triangle-exclamation mr-1"></i>Tak ada satu pun tagihan gabungan.
+                Kalau semestinya ada (mis. Qiraati Pagi menempel ke Syahriyah Sekolah), berarti
+                <b>Gabung ke</b> pada jenis ngajinya belum disetel — tiap jenis masih ditagih
+                sendiri-sendiri dan totalnya lebih besar dari semestinya.
+              </p>
               <p class="text-[10px] text-[var(--text-tertiary)] italic mt-2">
                 <i class="fas fa-circle-info mr-1"></i>{{ simPemasukan.santriKena }} dari
                 {{ simPemasukan.santriTotal }} santri aktif kena tagihan bulanan. Yang tak kena

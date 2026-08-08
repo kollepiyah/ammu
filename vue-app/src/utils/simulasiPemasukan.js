@@ -40,8 +40,9 @@ export function santriAktifSaja(santriList) {
  * hanya jenis bulanan — jenis yang menempel tak pernah dihitung sendiri (nominalnya sudah
  * termasuk di jenis tujuannya), jadi tak ada yang terhitung dua kali.
  *
- * @returns {{ perJenis: Array<{jenis_id,label,santri,subtotal,rata}>, total:number,
- *             santriKena:number, santriTotal:number }}
+ * @returns {{ perJenis: Array<{jenis_id,label,santri,subtotal,rata,gabungan,nilaiMenempel}>,
+ *             total:number, santriKena:number, santriTotal:number,
+ *             tagihanGabungan:number, nilaiMenempel:number }}
  */
 export function simulasiPemasukan(jenisList, santriList) {
   const semua = Array.isArray(jenisList) ? jenisList : []
@@ -58,11 +59,32 @@ export function simulasiPemasukan(jenisList, santriList) {
       if (nominal <= 0) continue
       const k = String(j.id || j.label || '')
       if (!perJenis.has(k)) {
-        perJenis.set(k, { jenis_id: k, label: j.label || k, santri: 0, subtotal: 0, rata: 0 })
+        perJenis.set(k, {
+          jenis_id: k,
+          label: j.label || k,
+          santri: 0,
+          subtotal: 0,
+          rata: 0,
+          // Kyai 8 Agu 2026: "tagihan santri yg digabung ... apakah sudah dihitung?" Sudah —
+          //   jenis yang menempel mengembalikan null sehingga tak pernah dihitung sendiri.
+          //   Tapi dari layar itu TAK KELIHATAN, dan "sudah benar" yang tak bisa dilihat sama
+          //   tak menenangkannya dengan "belum benar". Dua angka ini membuatnya kasat mata:
+          //   berapa santri yang tagihannya gabungan, dan berapa nilai komponen yang menempel
+          //   di dalamnya. Kalau `gabungan` NOL padahal Kyai merasa sudah menyetel gabungan,
+          //   berarti `gabung_ke`/`gabung_syarat`-nya yang belum kena.
+          gabungan: 0,
+          nilaiMenempel: 0
+        })
       }
       const r = perJenis.get(k)
       r.santri++
       r.subtotal += nominal
+      // komponen[0] = porsi jenis ini sendiri; sisanya jenis lain yang menempel padanya.
+      const komp = Array.isArray(h.komponen) ? h.komponen : []
+      if (komp.length > 1) {
+        r.gabungan++
+        r.nilaiMenempel += komp.slice(1).reduce((a, c) => a + (Number(c.nominal) || 0), 0)
+      }
       kena.add(String(s.id ?? ''))
     }
   }
@@ -75,6 +97,11 @@ export function simulasiPemasukan(jenisList, santriList) {
     perJenis: baris,
     total: baris.reduce((a, r) => a + r.subtotal, 0),
     santriKena: kena.size,
-    santriTotal: santri.length
+    santriTotal: santri.length,
+    // Ringkasan gabungan: berapa tagihan yang isinya lebih dari satu jenis, dan berapa nilai
+    //   komponen menempel di dalamnya. Nilai itu SUDAH termasuk di `total` — ia bukan
+    //   tambahan, melainkan bukti bahwa ia tak terhitung dua kali.
+    tagihanGabungan: baris.reduce((a, r) => a + r.gabungan, 0),
+    nilaiMenempel: baris.reduce((a, r) => a + r.nilaiMenempel, 0)
   }
 }
