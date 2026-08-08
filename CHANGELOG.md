@@ -43,6 +43,16 @@ kelas** (harus tak berubah sama sekali), dan seorang **guru biasa** (juga tak be
 
 ### Added (Baru)
 
+- **Generate Tagihan Khusus kini menampilkan pratinjau sasaran.** Kyai: tagihan _Maulid
+  Nabi_ terlanjur terbit ke lembaga yang salah — dan sesudah terbit **sasarannya tak bisa
+  disunting**, sebab tiap baris berdiri sendiri dan tak lagi ingat batch-nya; satu-satunya
+  jalan pulang adalah menghapus lalu generate ulang. Karena itu penjagaannya dipindah ke
+  depan: sebelum menekan Generate kini terlihat **sebaran per lembaga (ngaji / sekolah)**
+  beserta jumlah santri dan nilainya, **total rupiah**, peringatan bila ada santri
+  bernominal **Rp 0**, dan **30 nama pertama** untuk dicocokkan. Angka "N santri" saja tak
+  cukup — 77 santri terasa masuk akal baik saat sasarannya benar maupun saat keliru.
+  Kotak konfirmasinya pun ikut menyebut total, sebaran, dan peringatan bahwa sasaran tak
+  bisa disunting sesudah terbit.
 - **Rapikan Tagihan Gabungan** (Pengaturan Keuangan → Tagihan). Kyai: _"tagihan qiraati pagi
   yg sudah digabung dengan syahriyah TK-SDI-PKBM ... kenapa tadi saya cek akun santri,
   tagihannya masih muncul sebagai belum bayar?"_ Sebabnya: penggabungan hanya mengatur

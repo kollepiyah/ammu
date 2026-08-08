@@ -3173,12 +3173,60 @@
           <p class="text-[10px] text-emerald-600 mt-1">{{ genSantriSel.length }} santri dipilih</p>
         </div>
 
-        <!-- Preview + actions -->
+        <!-- Pratinjau sasaran (Kyai 8 Agu 2026): sesudah terbit, sasaran TAK bisa disunting -->
         <div
-          class="mt-2 mb-3 text-xs bg-emerald-50 dark:bg-emerald-900/20 text-emerald-800 dark:text-emerald-300 rounded-lg px-3 py-2"
+          class="mt-2 mb-3 text-xs bg-emerald-50 dark:bg-emerald-900/20 text-emerald-800 dark:text-emerald-300 rounded-lg px-3 py-2 space-y-2"
         >
-          <i class="fas fa-users mr-1"></i>Akan dibuat untuk <b>{{ genTargetCount }}</b> santri
-          aktif.
+          <p>
+            <i class="fas fa-users mr-1"></i>Akan dibuat untuk <b>{{ genTargetCount }}</b> santri
+            aktif · total
+            <b>Rp {{ genPratinjau.total.toLocaleString('id-ID') }}</b>
+          </p>
+          <div v-if="genPratinjau.perLembaga.length" class="space-y-0.5">
+            <p class="text-[10px] font-black uppercase opacity-80">
+              Sebaran lembaga (ngaji / sekolah)
+            </p>
+            <div
+              v-for="r in genPratinjau.perLembaga"
+              :key="r.lembaga"
+              class="flex items-center justify-between gap-2 text-[11px]"
+            >
+              <span>{{ r.lembaga }}</span>
+              <span class="tabular-nums whitespace-nowrap">
+                {{ r.jumlah }} santri · Rp {{ r.nominal.toLocaleString('id-ID') }}
+              </span>
+            </div>
+          </div>
+          <p
+            v-if="genPratinjau.nolNominal"
+            class="text-[11px] font-bold text-amber-700 dark:text-amber-300"
+          >
+            <i class="fas fa-triangle-exclamation mr-1"></i>{{ genPratinjau.nolNominal }} santri
+            bernominal Rp 0 — tagihannya tetap terbit tapi tak menagih apa pun.
+          </p>
+          <details v-if="genPratinjau.baris.length">
+            <summary class="cursor-pointer text-[11px] font-bold">
+              Lihat 30 nama pertama — pastikan sasarannya benar
+            </summary>
+            <ul class="mt-1 space-y-0.5 text-[10px]">
+              <li
+                v-for="b in genPratinjau.baris.slice(0, 30)"
+                :key="b.id"
+                class="flex items-center justify-between gap-2"
+              >
+                <span
+                  >{{ b.nama }} <span class="opacity-70">· {{ b.lembaga }}</span></span
+                >
+                <span class="tabular-nums whitespace-nowrap"
+                  >Rp {{ b.nominal.toLocaleString('id-ID') }}</span
+                >
+              </li>
+            </ul>
+          </details>
+          <p class="text-[10px] italic opacity-80">
+            Sesudah terbit, sasaran <b>tidak bisa disunting</b> — perbaikannya hanya lewat hapus
+            lalu generate ulang. Periksa sebarannya dulu.
+          </p>
         </div>
         <div class="flex gap-2">
           <button
@@ -5718,6 +5766,40 @@ const genTargetSantri = computed(() => {
 })
 const genTargetCount = computed(() => genTargetSantri.value.length)
 
+/**
+ * Pratinjau sasaran sebelum tagihan benar-benar terbit (Kyai, 8 Agu 2026).
+ *
+ * Latar: tagihan "Maulid Nabi" terlanjur terbit ke lembaga yang salah, dan sesudah terbit
+ * sasarannya TAK BISA disunting — tiap baris berdiri sendiri, tak lagi ingat batch-nya.
+ * Satu-satunya jalan pulang adalah menghapus lalu generate ulang. Karena itu penjagaannya
+ * harus di depan: sebaran per lembaga + nilainya + contoh nama, dilihat SEBELUM menekan
+ * Generate. Angka "N santri" saja tak cukup — 77 santri terasa masuk akal baik saat
+ * sasarannya benar maupun saat keliru.
+ */
+const genPratinjau = computed(() => {
+  const baris = genTargetSantri.value.map((sx) => ({
+    id: String(sx.id),
+    nama: sx.nama || String(sx.id),
+    // Pasangan lembaga NGAJI / SEKOLAH sengaja ditampilkan dua-duanya: sasaran yang keliru
+    //   hampir selalu ketahuan dari pasangan yang janggal, bukan dari salah satunya saja.
+    lembaga: `${sx.lembaga || '-'} / ${sx.lembaga_sekolah || '-'}`,
+    nominal: Number(_genNominalUntuk(sx)) || 0
+  }))
+  const peta = new Map()
+  for (const b of baris) {
+    if (!peta.has(b.lembaga)) peta.set(b.lembaga, { lembaga: b.lembaga, jumlah: 0, nominal: 0 })
+    const r = peta.get(b.lembaga)
+    r.jumlah++
+    r.nominal += b.nominal
+  }
+  return {
+    baris,
+    perLembaga: [...peta.values()].sort((a, b) => b.jumlah - a.jumlah),
+    total: baris.reduce((a, b) => a + b.nominal, 0),
+    nolNominal: baris.filter((b) => b.nominal <= 0).length
+  }
+})
+
 // nominal per santri (flat, atau ikut pengaturan jenis bila diminta)
 function _genNominalUntuk(sx) {
   if (genPakaiNominalJenis.value && genJenisId.value) {
@@ -5767,9 +5849,21 @@ async function doGenKhusus() {
     toast.warning('Nominal harus lebih dari 0.')
     return
   }
+  const _pra = genPratinjau.value
+  const _sebaran = _pra.perLembaga
+    .slice(0, 6)
+    .map((r) => `  • ${r.lembaga}: ${r.jumlah} santri`)
+    .join('\n')
   if (
     !confirm(
-      `Generate tagihan "${kategori}" (${periode}) untuk ${targets.length} santri?\n\nTagihan yang sudah ada (santri + kategori + periode sama) akan di-skip.`
+      `Generate tagihan "${kategori}" (${periode}) untuk ${targets.length} santri?\n\n` +
+        `Total: Rp ${_pra.total.toLocaleString('id-ID')}\n` +
+        `Sebaran lembaga (ngaji / sekolah):\n${_sebaran}` +
+        (_pra.perLembaga.length > 6
+          ? `\n  • …dan ${_pra.perLembaga.length - 6} lembaga lain`
+          : '') +
+        '\n\nSesudah terbit, sasaran TIDAK bisa disunting — perbaikannya hanya lewat hapus ' +
+        'lalu generate ulang.\n\nTagihan yang sudah ada (santri + kategori + periode sama) akan di-skip.'
     )
   )
     return
