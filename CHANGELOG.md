@@ -59,6 +59,14 @@ kelas** (harus tak berubah sama sekali), dan seorang **guru biasa** (juga tak be
   ⚠️ **Tidak** ditandai "lunas": uangnya memang tak pernah masuk lewat baris itu, dan
   menandainya lunas akan memunculkan pemasukan hantu di Buku Induk. Tagihannya dihapus —
   ia memang tak seharusnya pernah ada.
+  Kelompok keempat menyusul dari temuan Kyai berikutnya (kasus Zaydan): **Jenisnya tak
+  berlaku** — tagihan yang jenisnya masih terdaftar tetapi **whitelist**-nya
+  (lembaga/status/JK/shift) tak lagi memuat santri itu, mis. tagihan _Qiraati Pagi_ pada
+  santri yang ngajinya _Sore_. Itulah yang di POS bertanda **"di luar daftar"**. Ini bukan
+  kasus gabungan sehingga pemilahan pertama melewatinya, dan tagihannya menggantung
+  selamanya sebagai tunggakan yang tak pernah bisa dibayar benar. Punya tombol hapusnya
+  **sendiri**, sebab sebagian bisa saja tagihan **sah dari masa lalu** — santri pindah
+  lembaga/shift sesudah tagihannya terbit.
 
 - **Simulasi Pemasukan menampilkan tagihan GABUNGAN.** Kyai: _"untuk tagihan santri yg
   digabung, mis: syahriyah TK-SD-PKBM gabung dengan qiraati pagi ... apakah sudah

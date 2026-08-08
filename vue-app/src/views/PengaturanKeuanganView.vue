@@ -176,7 +176,7 @@
               sekolah/pondoknya. Periksa dulu, baru hapus.
             </p>
             <div v-if="rapiHasil" class="mt-2 space-y-2">
-              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <div class="grid grid-cols-1 sm:grid-cols-4 gap-2">
                 <div class="rounded-lg bg-white/70 dark:bg-slate-800/60 p-2">
                   <p
                     class="text-[10px] font-black text-emerald-700 dark:text-emerald-300 uppercase"
@@ -203,6 +203,18 @@
                   </p>
                 </div>
                 <div class="rounded-lg bg-white/70 dark:bg-slate-800/60 p-2">
+                  <p class="text-[10px] font-black text-orange-700 dark:text-orange-300 uppercase">
+                    Jenisnya tak berlaku
+                  </p>
+                  <p class="text-lg font-black text-[var(--text-primary)]">
+                    {{ rapiHasil.takBerlaku.length }}
+                  </p>
+                  <p class="text-[10px] text-[var(--text-tertiary)]">
+                    Rp {{ totalRapi(rapiHasil.takBerlaku).toLocaleString('id-ID') }} · di POS
+                    bertanda "di luar daftar"
+                  </p>
+                </div>
+                <div class="rounded-lg bg-white/70 dark:bg-slate-800/60 p-2">
                   <p class="text-[10px] font-black text-amber-700 dark:text-amber-300 uppercase">
                     Perlu diperbaiki dulu
                   </p>
@@ -224,6 +236,38 @@
                 masih tarif lama. Perbaiki tagihan tujuannya dulu (hapus lalu Generate ulang bulan
                 itu), baru periksa lagi.
               </div>
+              <div
+                v-if="rapiHasil.takBerlaku.length"
+                class="text-[10px] text-orange-900 dark:text-orange-200 bg-orange-100/70 dark:bg-orange-900/40 rounded-lg p-2 space-y-1"
+              >
+                <p>
+                  <i class="fas fa-circle-question mr-1"></i><b>Jenisnya tak berlaku</b> = tagihan
+                  yang jenisnya masih ada, tapi <b>whitelist</b>-nya (lembaga/status/JK/shift) tak
+                  lagi memuat santri itu — mis. tagihan <i>Qiraati Pagi</i> pada santri yang
+                  ngajinya <i>Sore</i>. Sebagian bisa saja tagihan <b>sah dari masa lalu</b> bila
+                  santrinya pindah lembaga/shift sesudah tagihan terbit, jadi periksa contohnya
+                  dulu.
+                </p>
+                <button
+                  v-if="bolehHapusTagihan"
+                  type="button"
+                  :disabled="rapiHapusBusy"
+                  class="text-[10px] font-black bg-orange-600 hover:bg-orange-700 disabled:opacity-50 text-white px-2.5 py-1 rounded-lg inline-flex items-center gap-1"
+                  @click="hapusTagihanTakBerlaku"
+                >
+                  <i class="fas fa-trash"></i>Hapus {{ rapiHasil.takBerlaku.length }} tagihan ini
+                </button>
+                <details>
+                  <summary class="cursor-pointer font-bold">Lihat 20 contoh</summary>
+                  <ul class="mt-1 space-y-0.5">
+                    <li v-for="e in rapiHasil.takBerlaku.slice(0, 20)" :key="e.tagihan.id">
+                      {{ e.santri.nama || e.santri.id }} · {{ e.tagihan.kategori }} ·
+                      {{ e.tagihan.periode }} · Rp
+                      {{ Number(e.tagihan.nominal || 0).toLocaleString('id-ID') }}
+                    </li>
+                  </ul>
+                </details>
+              </div>
               <details v-if="rapiHasil.aman.length" class="text-[11px]">
                 <summary class="cursor-pointer font-bold text-[var(--text-secondary)]">
                   Lihat 20 contoh yang akan dihapus
@@ -241,7 +285,8 @@
                 v-if="
                   !rapiHasil.aman.length &&
                   !rapiHasil.adaBayar.length &&
-                  !rapiHasil.targetBelumSiap.length
+                  !rapiHasil.targetBelumSiap.length &&
+                  !rapiHasil.takBerlaku.length
                 "
                 class="text-[11px] font-bold text-emerald-800 dark:text-emerald-200"
               >
@@ -3462,15 +3507,25 @@ async function periksaTagihanGabungan() {
   }
 }
 
+async function hapusTagihanTakBerlaku() {
+  // Dipisah dari kelompok "aman" karena alasannya beda: yang ini bukan tagihan kembar,
+  //   melainkan tagihan yang jenisnya tak berlaku lagi untuk santri itu. Sebagian bisa saja
+  //   sah dari masa lalu (santri pindah lembaga/shift SESUDAH tagihannya terbit), jadi
+  //   Kyai melihat isinya dulu dan memutuskan sendiri.
+  await hapusKelompok(rapiHasil.value?.takBerlaku || [], 'tak berlaku lagi')
+}
+
 async function hapusTagihanGabungan() {
-  const daftar = rapiHasil.value?.aman || []
+  await hapusKelompok(rapiHasil.value?.aman || [], 'sudah termasuk di tagihan lain')
+}
+
+async function hapusKelompok(daftar, sebab) {
   if (!daftar.length || !bolehHapusTagihan.value) return
   const nilai = totalNominal(daftar).toLocaleString('id-ID')
   if (
     !confirm(
       `Hapus ${daftar.length} tagihan senilai Rp ${nilai}?\n\n` +
-        'Semuanya BELUM dibayar dan nominalnya sudah termasuk di tagihan syahriyah ' +
-        'sekolah/pondok masing-masing santri.\n\nTidak bisa di-undo.'
+        `Semuanya BELUM dibayar, alasan: ${sebab}.\n\nTidak bisa di-undo.`
     )
   )
     return
@@ -3490,7 +3545,7 @@ async function hapusTagihanGabungan() {
     operator: _auth.sesiAktif?.nama || _auth.sesiAktif?.guru || 'Admin',
     action: 'bulk_delete',
     target: 'keuangan_tagihan',
-    detail: `rapikan tagihan gabungan: ${ok} dihapus, ${gagal} gagal`
+    detail: `rapikan tagihan (${sebab}): ${ok} dihapus, ${gagal} gagal`
   })
   rapiHapusBusy.value = false
   if (gagal) toast.warning(`${ok} tagihan dihapus, ${gagal} gagal.`)

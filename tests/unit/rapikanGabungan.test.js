@@ -107,14 +107,14 @@ describe('pilahTagihanGabungan', () => {
   it('gabung_ke belum disetel -> tak ada yang dipilah (jangan menghapus apa pun)', () => {
     const belum = JENIS.map((j) => ({ ...j, gabung_ke: [] }))
     const r = pilahTagihanGabungan([tagPagi(), tagSdGabung()], SANTRI, belum)
-    expect(r).toEqual({ aman: [], adaBayar: [], targetBelumSiap: [] })
+    expect(r).toEqual({ aman: [], adaBayar: [], targetBelumSiap: [], takBerlaku: [] })
   })
 
   it('santri atau jenis tak dikenal dilewati diam-diam, bukan dihapus', () => {
     const asing = tag({ id: 'tx', santri_id: 'entah', kategori: 'Syahriyah Qiraati Pagi' })
     const jenisAsing = tag({ id: 'ty', kategori: 'Iuran Kegiatan' })
     const r = pilahTagihanGabungan([asing, jenisAsing], SANTRI, JENIS)
-    expect(r).toEqual({ aman: [], adaBayar: [], targetBelumSiap: [] })
+    expect(r).toEqual({ aman: [], adaBayar: [], targetBelumSiap: [], takBerlaku: [] })
   })
 
   it('komponen boleh tersimpan di jsonb `data` (baris lawas)', () => {
@@ -132,8 +132,61 @@ describe('pilahTagihanGabungan', () => {
     expect(pilahTagihanGabungan(null, null, null)).toEqual({
       aman: [],
       adaBayar: [],
-      targetBelumSiap: []
+      targetBelumSiap: [],
+      takBerlaku: []
     })
     expect(totalNominal(null)).toBe(0)
+  })
+})
+
+// Kyai 8 Agu 2026, kasus Zaydan: santri TK yang ngajinya SORE, tapi punya tagihan
+// "Syahriyah Qiraati Pagi" Rp 100.000. Jenisnya masih terdaftar — hanya TAK BERLAKU
+// untuknya (whitelist shift). Di POS ia bertanda "DI LUAR DAFTAR". Ini BUKAN kasus
+// gabungan, jadi dulu terlewat sama sekali dan menggantung selamanya sebagai tunggakan.
+describe('tagihan yang jenisnya tak berlaku lagi', () => {
+  const JENIS_SHIFT = [
+    {
+      id: 'pagi',
+      label: 'Syahriyah Qiraati Pagi',
+      frekuensi: 'bulanan',
+      nominal_default: 90000,
+      shift_only: ['pagi']
+    },
+    {
+      id: 'sore',
+      label: 'Syahriyah Qiraati Sore',
+      frekuensi: 'bulanan',
+      nominal_default: 90000,
+      shift_only: ['sore']
+    }
+  ]
+  const zaydan = { id: 'z', nama: 'Zaydan', lembaga: 'Pra PTPT', shift_ngaji: 'sore', aktif: true }
+  const tagPagiZaydan = (o = {}) =>
+    tag({
+      id: 'tz',
+      santri_id: 'z',
+      kategori: 'Syahriyah Qiraati Pagi',
+      nominal: 100000,
+      ...o
+    })
+
+  it('masuk kelompoknya SENDIRI, bukan "aman" — penghapusannya keputusan terpisah', () => {
+    const r = pilahTagihanGabungan([tagPagiZaydan()], [zaydan], JENIS_SHIFT)
+    expect(r.aman).toEqual([])
+    expect(r.takBerlaku.map((e) => e.tagihan.id)).toEqual(['tz'])
+    expect(r.takBerlaku[0].alasan).toMatch(/tak berlaku/i)
+    expect(totalNominal(r.takBerlaku)).toBe(100000)
+  })
+
+  it('yang SUDAH dibayar tetap tak disentuh', () => {
+    const r = pilahTagihanGabungan([tagPagiZaydan({ terbayar: 100000 })], [zaydan], JENIS_SHIFT)
+    expect(r.takBerlaku).toEqual([])
+    expect(r.adaBayar).toHaveLength(1)
+  })
+
+  it('jenis yang MEMANG berlaku tak ikut terpilah', () => {
+    const tagSore = tag({ id: 'ts2', santri_id: 'z', kategori: 'Syahriyah Qiraati Sore' })
+    const r = pilahTagihanGabungan([tagSore], [zaydan], JENIS_SHIFT)
+    expect(r.takBerlaku).toEqual([])
   })
 })

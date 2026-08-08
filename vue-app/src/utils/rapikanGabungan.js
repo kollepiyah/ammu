@@ -23,7 +23,7 @@
 //
 // MURNI (tanpa I/O) supaya bisa diuji: keputusan yang menyentuh ratusan baris uang tak boleh
 // hanya diverifikasi lewat klik.
-import { gabungTargetFor } from './syahriyah'
+import { gabungTargetFor, jenisBerlakuUntuk } from './syahriyah'
 
 const teks = (v) => String(v ?? '').trim()
 const kunci = (v) => teks(v).toLowerCase()
@@ -59,13 +59,14 @@ function jenisDariTagihan(t, jenisList) {
  * @returns {{
  *   aman: Array,            // boleh dihapus: belum dibayar & tagihan tujuannya sudah memuat komponennya
  *   adaBayar: Array,        // JANGAN disentuh: sudah ada uang masuk
- *   targetBelumSiap: Array  // tagihan tujuannya belum memuat komponen ngaji (atau belum ada)
+ *   targetBelumSiap: Array, // tagihan tujuannya belum memuat komponen ngaji (atau belum ada)
+ *   takBerlaku: Array       // jenisnya tak berlaku lagi utk santri ini (whitelist), belum dibayar
  * }} tiap entri: { tagihan, santri, jenis, target, alasan }
  */
 export function pilahTagihanGabungan(tagihanList, santriList, jenisList) {
   const santriById = new Map((santriList || []).map((s) => [String(s?.id ?? ''), s]))
   const jenis = Array.isArray(jenisList) ? jenisList : []
-  const out = { aman: [], adaBayar: [], targetBelumSiap: [] }
+  const out = { aman: [], adaBayar: [], targetBelumSiap: [], takBerlaku: [] }
 
   // Indeks tagihan per (santri, periode) supaya pasangan targetnya bisa dicari cepat.
   const perSantriPeriode = new Map()
@@ -79,7 +80,30 @@ export function pilahTagihanGabungan(tagihanList, santriList, jenisList) {
     const s = santriById.get(String(t?.santri_id ?? ''))
     if (!s) continue // santri tak ditemukan → jangan sentuh apa pun
     const j = jenisDariTagihan(t, jenis)
-    if (!j) continue // jenisnya tak dikenal → di luar urusan gabungan
+    if (!j) continue // jenisnya tak dikenal sama sekali → mungkin label lama, jangan ditebak
+
+    // Kyai 8 Agu 2026 (kasus Zaydan): tagihan "Syahriyah Qiraati Pagi" Rp 100.000 pada santri
+    //   TK yang ngajinya SORE. Jenisnya masih terdaftar, hanya TAK BERLAKU untuknya —
+    //   whitelist lembaga/status/JK/shift menutupnya. Itulah yang di POS bertanda "DI LUAR
+    //   DAFTAR". Ini BUKAN kasus gabungan, jadi pemilahan gabungan melewatinya dan tagihannya
+    //   menggantung selamanya sebagai tunggakan yang tak pernah bisa dibayar benar.
+    //
+    //   Dipisahkan ke kelompoknya SENDIRI, bukan digabung ke "aman": sebagian bisa saja
+    //   tagihan sah dari masa lalu (santri pindah lembaga/shift sesudah tagihannya terbit),
+    //   jadi penghapusannya harus keputusan tersendiri yang Kyai lihat dulu isinya.
+    if (!jenisBerlakuUntuk(j, s)) {
+      const e = { tagihan: t, santri: s, jenis: j, target: null }
+      if (sudahAdaBayar(t)) {
+        out.adaBayar.push({ ...e, alasan: 'Sudah ada pembayaran — jangan dihapus' })
+      } else {
+        out.takBerlaku.push({
+          ...e,
+          alasan: `Jenis "${j.label}" tak berlaku untuk santri ini (whitelist lembaga/status/JK/shift)`
+        })
+      }
+      continue
+    }
+
     const target = gabungTargetFor(j, s, jenis)
     if (!target) continue // jenis ini memang berdiri sendiri untuk santri ini
 
