@@ -71,6 +71,35 @@ export function matchShiftNgaji(s, shiftOnly) {
   })
 }
 
+// Kyai 8 Agu 2026: "bisa ndak dibuat filter untuk semua santri ngaji yg tidak sekolah
+//   disini?" — sasaran yang sering dipakai: santri ngaji MURNI (tak bersekolah di lembaga
+//   pondok) versus yang juga bersekolah di sini.
+export const SEKOLAH_SINI_OPTS = [
+  { key: '', label: 'Semua santri' },
+  { key: 'punya', label: 'Sekolah di sini' },
+  { key: 'tanpa', label: 'TIDAK sekolah di sini' }
+]
+
+/**
+ * Apakah santri `s` cocok dengan saringan "sekolah di sini"?
+ *   '' / nilai asing → true (tidak menyaring, sejajar whitelist lain yang kosong)
+ *   'punya'          → `lembaga_sekolah` terisi
+ *   'tanpa'          → `lembaga_sekolah` kosong
+ *
+ * Penanda tunggalnya `lembaga_sekolah`, dan itu memang dasarnya: field inilah yang dipakai
+ * seluruh aplikasi untuk menyatakan "bersekolah di lembaga pondok" (syarat gabungan
+ * `punya_sekolah` pun membacanya). Menambah penanda kedua berarti dua sumber kebenaran yang
+ * bisa berselisih diam-diam.
+ */
+export function matchSekolahSini(s, sekolahOnly) {
+  const k = String(sekolahOnly ?? '')
+    .trim()
+    .toLowerCase()
+  if (k !== 'punya' && k !== 'tanpa') return true
+  const sekolah = String((s && s.lembaga_sekolah) || '').trim()
+  return k === 'punya' ? !!sekolah : !sekolah
+}
+
 /**
  * Status tinggal (`is_mukim`/`is_fullday`) dari satu baris pendaftaran PSB.
  *

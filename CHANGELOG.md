@@ -31,14 +31,36 @@ naik satu tiap rilis. Entri lama memakai skema lama `v.{nomor-urut}.{MMDDtahunmu
 
 ## [v.1.3.4] — 2026-08-08 — Merapikan tagihan menggantung + pratinjau sasaran
 
-⚠️ **TANPA migrasi DB, TANPA edge function** — deploy web dari **direktori utama**, lalu
-**AAB vc134** dan **Electron 1.3.4**. Untuk Android, unggah `AmmuOnline.apk` ke rilis GitHub
+⚠️ **URUTAN DEPLOY — dua langkah:**
+
+1. `supabase functions deploy auto-generate-tagihan` — **WAJIB**, cermin whitelist berubah.
+2. Deploy web dari **direktori utama**, lalu **AAB vc134** dan **Electron 1.3.4**.
+
+TANPA migrasi DB. Untuk Android, unggah `AmmuOnline.apk` ke rilis GitHub
 **lebih dulu**, baru deploy web.
 
 📄 Teks ringkas untuk badan rilis GitHub ada di **`RELEASE-NOTES.md`** — catatan di bawah
 ini terlalu rinci untuk dibaca publik.
 
 ### Added (Baru)
+
+- **Saringan "sekolah di lembaga pondok".** Kyai: _"bisa ndak dibuat filter untuk semua santri
+  ngaji yg tidak sekolah disini?"_ Bisa, dan kini ada di **dua** tempat: pilihan sasaran di
+  **Generate Tagihan Khusus** (Semua / Sekolah di sini / TIDAK sekolah di sini — berlaku di
+  atas cara pilih mana pun), dan sebagai **whitelist permanen** pada Jenis Pembayaran
+  sehingga **cron bulanan ikut patuh**, bukan cuma tombol Generate.
+  Penandanya field **Lembaga Sekolah** di data santri — satu sumber, sama dengan yang dibaca
+  syarat penggabungan; penanda kedua hanya akan jadi dua kebenaran yang berselisih diam-diam.
+  **Kosong = tidak menyaring**, jadi seluruh jenis yang sudah ada berperilaku persis seperti
+  sebelumnya — tak ada satu pun yang perlu disunting.
+  ⚠️ **Jangan dipasang pada jenis yang sudah punya "Gabung ke".** Penggabungan menuntut
+  jenisnya _berlaku_ untuk santri itu, jadi menyaringnya "tidak sekolah di sini" justru
+  **mematikan penggabungan** bagi santri yang bersekolah — komponen ngajinya hilang dari
+  pemecahan Buku Induk, bukan sekadar tak ditagih. Dialognya memperingatkan sendiri saat
+  keduanya dipasang bersamaan, dan ada tes yang mengunci perilaku itu.
+  ⚠️ **Wajib `supabase functions deploy auto-generate-tagihan`** — aturan whitelist dicerminkan
+  di edge; tanpa redeploy, tombol Generate sudah patuh sementara cron malam hari belum, dan
+  selisihnya baru ketahuan berhari-hari kemudian.
 
 - **Rapikan Tagihan Gabungan** (Pengaturan Keuangan → Tagihan). Kyai: _"tagihan qiraati pagi
   yg sudah digabung dengan syahriyah TK-SDI-PKBM ... kenapa tadi saya cek akun santri,

@@ -69,8 +69,24 @@ export function matchStatusOnly(s: Any, statusOnly: unknown): boolean {
   const mukim = !!(s && s.is_mukim)
   const fullday = !!(s && s.is_fullday)
   return wl.some((st) =>
-    st === 'mahad' ? mukim : st === 'fullday' ? fullday : st === 'non_mukim' ? !mukim && !fullday : false
+    st === 'mahad'
+      ? mukim
+      : st === 'fullday'
+        ? fullday
+        : st === 'non_mukim'
+          ? !mukim && !fullday
+          : false
   )
+}
+
+/** Kyai 8 Agu 2026: saringan "sekolah di sini". '' = tidak menyaring. */
+export function matchSekolahSini(s: Any, sekolahOnly: unknown): boolean {
+  const k = String(sekolahOnly ?? '')
+    .trim()
+    .toLowerCase()
+  if (k !== 'punya' && k !== 'tanpa') return true
+  const sekolah = String((s && s.lembaga_sekolah) || '').trim()
+  return k === 'punya' ? !!sekolah : !sekolah
 }
 
 // ---- cermin utils/syahriyah.js -------------------------------------------------------
@@ -82,7 +98,8 @@ export function jenisBerlakuUntuk(jenis: Any, santri: Any): boolean {
   return (
     matchStatusOnly(santri, jenis.status_only) &&
     matchJenisKelamin(santri, jenis.jk_only) &&
-    matchShiftNgaji(santri, jenis.shift_only)
+    matchShiftNgaji(santri, jenis.shift_only) &&
+    matchSekolahSini(santri, jenis.sekolah_only)
   )
 }
 

@@ -9,6 +9,9 @@ Rinciannya untuk pengembang ada di `CHANGELOG.md` — jangan disalin ke sana, te
 
 **Keuangan**
 
+- **Saringan "sekolah di lembaga pondok"** — menyasar santri ngaji yang **tidak** bersekolah
+  di sini (atau sebaliknya), baik saat membuat Tagihan Khusus maupun sebagai setelan tetap
+  pada Jenis Pembayaran. Jenis yang sudah ada tidak berubah.
 - **Rapikan Tagihan Gabungan** (Pengaturan Keuangan → Tagihan). Menemukan tagihan ngaji yang
   nominalnya sudah termasuk di syahriyah sekolah/pondok tetapi masih tercatat _belum bayar_,
   lalu menghapusnya setelah diperiksa. Yang sudah ada pembayarannya tidak disentuh.

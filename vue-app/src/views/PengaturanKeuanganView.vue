@@ -2777,6 +2777,42 @@
                   datanya. Aman: tak ada tagihan yang hilang di tengah jalan.
                 </p>
               </div>
+              <!-- Kyai 8 Agu 2026: saringan "sekolah di sini" — sasaran yang paling sering
+                   dipakai: santri ngaji MURNI vs yang juga bersekolah di lembaga pondok. -->
+              <div>
+                <p class="text-[10px] text-[var(--text-secondary)] italic mb-1">
+                  <i class="fas fa-school mr-1"></i>Sekolah di lembaga pondok:
+                </p>
+                <div class="flex flex-wrap gap-1.5">
+                  <button
+                    v-for="o in SEKOLAH_SINI_OPTS"
+                    :key="`dlg_sk_${o.key}`"
+                    type="button"
+                    :class="[
+                      'text-[10px] font-bold px-2.5 py-1 rounded border transition',
+                      (dlgJenis.sekolah_only || '') === o.key
+                        ? 'bg-teal-600 text-white border-teal-600'
+                        : 'border-[var(--border-default)] text-[var(--text-secondary)] bg-[var(--bg-card-elevated)]'
+                    ]"
+                    @click="dlgJenis.sekolah_only = o.key"
+                  >
+                    {{ o.label }}
+                  </button>
+                </div>
+                <p
+                  v-if="dlgJenis.sekolah_only && (dlgJenis.gabung_ke || []).length"
+                  class="text-[10px] font-bold text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-900/30 rounded p-1.5 mt-1"
+                >
+                  <i class="fas fa-triangle-exclamation mr-1"></i>Jenis ini punya
+                  <b>"Gabung ke"</b>. Saringan ini akan <b>mematikan penggabungannya</b> untuk
+                  santri yang tersaring — komponen ngajinya hilang dari pemecahan Buku Induk, bukan
+                  sekadar tak ditagih. Pilih salah satu cara saja, jangan dua-duanya.
+                </p>
+                <p v-else class="text-[10px] text-[var(--text-tertiary)] mt-1">
+                  Penanda yang dibaca <b>Lembaga Sekolah</b> di data santri. Kosong = semua santri,
+                  dan itulah keadaan semua jenis yang sudah ada — tak perlu disunting.
+                </p>
+              </div>
               <!-- 1c) v.1.2.x (Kyai): Whitelist JENIS KELAMIN (Putra/Putri) -->
               <div>
                 <p class="text-[10px] text-[var(--text-secondary)] italic mb-1">
@@ -3095,6 +3131,28 @@
         </div>
 
         <!-- Picker lembaga + kelas -->
+        <!-- Kyai 8 Agu 2026: saringan tambahan yang berlaku untuk SEMUA cara pilih di atas -->
+        <div class="mb-2">
+          <p class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1">
+            Saring: sekolah di lembaga pondok
+          </p>
+          <div class="flex flex-wrap gap-1.5">
+            <button
+              v-for="o in SEKOLAH_SINI_OPTS"
+              :key="`gen_sk_${o.key}`"
+              type="button"
+              :class="[
+                'text-[11px] font-bold px-3 py-1.5 rounded-lg border transition',
+                genSekolahFilter === o.key
+                  ? 'bg-teal-600 text-white border-teal-600'
+                  : 'border-[var(--border-default)] text-[var(--text-secondary)] bg-[var(--bg-card-elevated)]'
+              ]"
+              @click="genSekolahFilter = o.key"
+            >
+              {{ o.label }}
+            </button>
+          </div>
+        </div>
         <div v-if="genScope === 'lembaga'" class="mb-2 space-y-2">
           <div>
             <p class="text-[10px] text-[var(--text-secondary)] italic mb-1">
@@ -3285,12 +3343,18 @@ import { HARI_AKTIF_DEFAULT } from '@/utils/bebanMengajar' // v.1.2.1: penyebut 
 import { GABUNG_SYARAT, hitungTagihan, nominalDasar, paketNominal } from '@/utils/syahriyah'
 // Hanya OPSI yang dipakai di sini (daftar centang). Matcher-nya tak lagi dipanggil langsung:
 //   seluruh aturan berlaku/tidak sudah dijalankan hitungTagihan() di utils/syahriyah.js.
-import { STATUS_SANTRI_OPTS, JK_OPTS, SHIFT_NGAJI_OPTS } from '@/utils/statusSantri'
+import {
+  STATUS_SANTRI_OPTS,
+  JK_OPTS,
+  SHIFT_NGAJI_OPTS,
+  SEKOLAH_SINI_OPTS
+} from '@/utils/statusSantri'
 // Kyai 4 Agu: pilihan kas = master + kas bukan-lembaga (TPQ payung, Fullday, Ma'had)
 import { opsiKasLembaga } from '@/utils/kasLembaga'
 import { normalisasiPotongan } from '@/utils/potonganPos'
 // Kyai 7 Agu 2026: simulasi pemasukan bulanan (hanya jenis bulanan)
 import { simulasiPemasukan as hitungPemasukan } from '@/utils/simulasiPemasukan'
+import { matchSekolahSini } from '@/utils/statusSantri'
 // Kyai 8 Agu 2026: merapikan tagihan ngaji yang kini menempel ke jenis lain
 import { pilahTagihanGabungan, totalNominal } from '@/utils/rapikanGabungan'
 import { writeAuditLog } from '@/utils/auditLog'
@@ -4903,6 +4967,7 @@ function serializeJenisList(list) {
       const wlShift = Array.isArray(t.shift_only)
         ? t.shift_only.filter((x) => String(x || '').trim())
         : []
+      const wlSekolah = ['punya', 'tanpa'].includes(t.sekolah_only) ? t.sekolah_only : ''
       const frekuensi = t.frekuensi || (t.auto_generate ? 'bulanan' : 'manual')
       // Kyai 3 Agu: paket nominal pilihan. Label WAJIB & nominal > 0 — entri setengah jadi
       //   dibuang supaya tak ada paket "hantu" yang bisa dipilih di data santri.
@@ -4940,6 +5005,7 @@ function serializeJenisList(list) {
         status_only: wlStatus,
         jk_only: wlJk,
         shift_only: wlShift,
+        sekolah_only: wlSekolah,
         // Kyai 4 Agu: kas lembaga — uang jenis ini masuk buku kas lembaga mana.
         //   BEDA dari lembaga_only (itu penyaring "siapa yang ditagih").
         kas_lembaga: String(t.kas_lembaga || '').trim(),
@@ -5255,7 +5321,9 @@ function normalizeJenisRaw(t) {
     lembaga_only: Array.isArray(t.lembaga_only) ? [...t.lembaga_only] : [],
     status_only: Array.isArray(t.status_only) ? [...t.status_only] : [], // v.1.2.6
     jk_only: Array.isArray(t.jk_only) ? [...t.jk_only] : [], // v.1.2.x
-    shift_only: Array.isArray(t.shift_only) ? [...t.shift_only] : [], // Kyai 4 Agu
+    shift_only: Array.isArray(t.shift_only) ? [...t.shift_only] : [],
+    // Kyai 8 Agu 2026: '' | 'punya' | 'tanpa' — kosong = tidak menyaring.
+    sekolah_only: ['punya', 'tanpa'].includes(t.sekolah_only) ? t.sekolah_only : '', // Kyai 4 Agu
     kas_lembaga: String(t.kas_lembaga || '').trim(), // Kyai 4 Agu: buku kas tujuan
     // Kyai 3-4 Agu: penggabungan (daftar kandidat target + syaratnya)
     gabung_ke: Array.isArray(t.gabung_ke)
@@ -5648,6 +5716,7 @@ async function openGenKhusus() {
   genPakaiNominalJenis.value = false
   genScope.value = 'all'
   genLembagaSel.value = []
+  genSekolahFilter.value = ''
   genKelasSel.value = []
   genSantriSel.value = []
   genSantriSearch.value = ''
@@ -5746,8 +5815,12 @@ const genSantriFiltered = computed(() => {
 })
 
 // santri target sesuai scope (dipakai preview + generate)
+// Kyai 8 Agu 2026: saringan "sekolah di sini" untuk sasaran Generate Khusus. Murni di
+//   layar — tak menyentuh mesin tagihan, jadi tak ada risiko ke jenis mana pun.
+const genSekolahFilter = ref('')
 const genTargetSantri = computed(() => {
-  const all = genSantriAktif.value
+  const saring = (list) => list.filter((s) => matchSekolahSini(s, genSekolahFilter.value))
+  const all = saring(genSantriAktif.value)
   if (genScope.value === 'all') return all
   if (genScope.value === 'santri') {
     const sel = new Set(genSantriSel.value.map(String))
