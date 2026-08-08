@@ -76,12 +76,36 @@ describe('pilahTagihanGabungan', () => {
     expect(r.adaBayar.map((e) => e.tagihan.id)).toEqual(['tp'])
   })
 
-  it('TARGET BELUM SIAP: tagihan sekolah terbit sebelum digabung (tanpa komponen)', () => {
-    // Menghapus tagihan ngajinya di sini = menghapus pemasukan yang SAH.
+  it('TARGET BELUM SIAP: nominal tagihan sekolah masih TARIF LAMA', () => {
+    // 110.000 < tarif gabungan 200.000 → porsi ngajinya belum masuk. Menghapus tagihan
+    //   ngajinya di sini = menghapus pemasukan yang SAH.
     const sdLama = tag({ id: 'ts', kategori: 'Syahriyah Sekolah SD', nominal: 110000 })
     const r = pilahTagihanGabungan([tagPagi(), sdLama], SANTRI, JENIS)
     expect(r.aman).toEqual([])
-    expect(r.targetBelumSiap[0].alasan).toMatch(/belum memuat komponen/i)
+    expect(r.targetBelumSiap[0].alasan).toMatch(/di bawah tarif gabungan/i)
+  })
+
+  it('AMAN walau TANPA jejak komponen, asal nominalnya sudah setara tarif gabungan', () => {
+    // Kyai 8 Agu: "qiraati pagi masih ada, padahal seharusnya dia sudah lunas" — tagihan
+    //   sekolahnya terbit SEBELUM gabungan disetel (tanpa `komponen`) tapi nominalnya sudah
+    //   tarif gabungan dan sudah dibayar lunas. Menahannya terlalu ketat.
+    const sdTanpaJejak = tag({
+      id: 'ts',
+      kategori: 'Syahriyah Sekolah SD',
+      nominal: 200000,
+      status: 'lunas',
+      terbayar: 200000
+    })
+    const r = pilahTagihanGabungan([tagPagi(), sdTanpaJejak], SANTRI, JENIS)
+    expect(r.aman.map((e) => e.tagihan.id)).toEqual(['tp'])
+    expect(r.aman[0].alasan).toMatch(/sudah setara/i)
+    expect(r.targetBelumSiap).toEqual([])
+  })
+
+  it('nominal LEBIH dari tarif gabungan (ada pembulatan/penyesuaian) tetap aman', () => {
+    const sdLebih = tag({ id: 'ts', kategori: 'Syahriyah Sekolah SD', nominal: 250000 })
+    const r = pilahTagihanGabungan([tagPagi(), sdLebih], SANTRI, JENIS)
+    expect(r.aman).toHaveLength(1)
   })
 
   it('TARGET BELUM SIAP: tagihan sekolah periode itu belum ada sama sekali', () => {

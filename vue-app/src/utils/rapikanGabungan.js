@@ -23,7 +23,7 @@
 //
 // MURNI (tanpa I/O) supaya bisa diuji: keputusan yang menyentuh ratusan baris uang tak boleh
 // hanya diverifikasi lewat klik.
-import { gabungTargetFor, jenisBerlakuUntuk } from './syahriyah'
+import { gabungTargetFor, jenisBerlakuUntuk, hitungTagihan } from './syahriyah'
 
 const teks = (v) => String(v ?? '').trim()
 const kunci = (v) => teks(v).toLowerCase()
@@ -132,13 +132,39 @@ export function pilahTagihanGabungan(tagihanList, santriList, jenisList) {
         ...entri,
         alasan: `Tagihan "${target.label}" periode itu belum ada`
       })
-    } else if (!termuat) {
-      out.targetBelumSiap.push({
+      continue
+    }
+    if (termuat) {
+      out.aman.push({ ...entri, alasan: `Sudah termasuk di "${target.label}"` })
+      continue
+    }
+
+    // Kyai 8 Agu 2026: "yg fullday tadi bisa dihapus, tapi qiraati pagi masih ada, padahal
+    //   seharusnya dia sudah lunas." Bedanya JEJAK KOMPONEN: tagihan yang terbit SESUDAH
+    //   gabungan disetel membawa `komponen`, yang terbit sebelumnya tidak — walau nominalnya
+    //   sudah tarif gabungan dan santrinya sudah membayar lunas.
+    //
+    //   Menahan semua yang tanpa jejak terlalu ketat. Yang benar-benar berbahaya hanyalah
+    //   tagihan tujuan yang nominalnya MASIH TARIF LAMA (belum memuat porsi ngaji) — di situ
+    //   menghapus tagihan ngajinya berarti kehilangan pemasukan yang sah. Jadi pembandingnya
+    //   angka: kalau nominal tagihan tujuan SUDAH setara tarif gabungan yang berlaku
+    //   sekarang, porsi ngajinya jelas sudah di dalamnya.
+    const nominalTarget = Number(barisTarget?.nominal) || 0
+    const seharusnya = Number(hitungTagihan(target, s, jenis)?.nominal) || 0
+    if (seharusnya > 0 && nominalTarget >= seharusnya) {
+      out.aman.push({
         ...entri,
-        alasan: `Tagihan "${target.label}" belum memuat komponen ini (terbit sebelum digabung)`
+        alasan:
+          `Nominal "${target.label}" (Rp ${nominalTarget.toLocaleString('id-ID')}) sudah setara ` +
+          'tarif gabungannya — porsi ngaji ada di dalamnya'
       })
     } else {
-      out.aman.push({ ...entri, alasan: `Sudah termasuk di "${target.label}"` })
+      out.targetBelumSiap.push({
+        ...entri,
+        alasan:
+          `Tagihan "${target.label}" masih Rp ${nominalTarget.toLocaleString('id-ID')}, ` +
+          `di bawah tarif gabungan Rp ${seharusnya.toLocaleString('id-ID')} — perbaiki dulu`
+      })
     }
   }
   return out

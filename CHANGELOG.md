@@ -52,9 +52,12 @@ kelas** (harus tak berubah sama sekali), dan seorang **guru biasa** (juga tak be
   Alat ini **memeriksa dulu, menghapus belakangan**, dan memilah jadi tiga:
   **Aman dihapus** (belum dibayar **dan** tagihan tujuannya sudah memuat komponennya),
   **Sudah ada bayar** (tak disentuh — menghapusnya menghilangkan jejak uang yang benar-benar
-  diterima), dan **Perlu diperbaiki dulu** (tagihan tujuannya terbit sebelum digabung
-  sehingga nominalnya masih tarif lama — menghapus di situ berarti menghilangkan pemasukan
-  yang **sah**). Yang dihapus hanya kelompok pertama, hanya oleh **super admin**, dengan
+  diterima), dan **Perlu diperbaiki dulu** (nominal tagihan tujuannya masih **di bawah**
+  tarif gabungan yang berlaku — menghapus di situ berarti menghilangkan pemasukan yang
+  **sah**). Penentu kelompok ketiga itu **angka**, bukan ada-tidaknya jejak komponen:
+  tagihan yang terbit sebelum gabungan disetel memang tak menyimpan jejak, tapi bila
+  nominalnya sudah setara tarif gabungan — apalagi sudah **lunas** — porsi ngajinya jelas
+  ada di dalamnya dan tagihan ngajinya boleh dihapus. Yang dihapus hanya kelompok pertama, hanya oleh **super admin**, dengan
   jumlah dan nilainya terlihat lebih dulu serta tercatat di audit log.
   ⚠️ **Tidak** ditandai "lunas": uangnya memang tak pernah masuk lewat baris itu, dan
   menandainya lunas akan memunculkan pemasukan hantu di Buku Induk. Tagihannya dihapus —
