@@ -43,6 +43,23 @@ kelas** (harus tak berubah sama sekali), dan seorang **guru biasa** (juga tak be
 
 ### Added (Baru)
 
+- **Rapikan Tagihan Gabungan** (Pengaturan Keuangan → Tagihan). Kyai: _"tagihan qiraati pagi
+  yg sudah digabung dengan syahriyah TK-SDI-PKBM ... kenapa tadi saya cek akun santri,
+  tagihannya masih muncul sebagai belum bayar?"_ Sebabnya: penggabungan hanya mengatur
+  tagihan yang **akan** terbit. Tagihan ngaji yang terlanjur terbit **sebelum** "Gabung ke"
+  disetel tetap duduk di database, dan wali melihatnya sebagai tunggakan yang tak mungkin ia
+  bayar dua kali.
+  Alat ini **memeriksa dulu, menghapus belakangan**, dan memilah jadi tiga:
+  **Aman dihapus** (belum dibayar **dan** tagihan tujuannya sudah memuat komponennya),
+  **Sudah ada bayar** (tak disentuh — menghapusnya menghilangkan jejak uang yang benar-benar
+  diterima), dan **Perlu diperbaiki dulu** (tagihan tujuannya terbit sebelum digabung
+  sehingga nominalnya masih tarif lama — menghapus di situ berarti menghilangkan pemasukan
+  yang **sah**). Yang dihapus hanya kelompok pertama, hanya oleh **super admin**, dengan
+  jumlah dan nilainya terlihat lebih dulu serta tercatat di audit log.
+  ⚠️ **Tidak** ditandai "lunas": uangnya memang tak pernah masuk lewat baris itu, dan
+  menandainya lunas akan memunculkan pemasukan hantu di Buku Induk. Tagihannya dihapus —
+  ia memang tak seharusnya pernah ada.
+
 - **Simulasi Pemasukan menampilkan tagihan GABUNGAN.** Kyai: _"untuk tagihan santri yg
   digabung, mis: syahriyah TK-SD-PKBM gabung dengan qiraati pagi ... apakah sudah
   dihitung?"_ Sudah sejak awal — jenis yang menempel mengembalikan `null` sehingga tak
