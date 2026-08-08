@@ -583,7 +583,7 @@ const introText = computed(() =>
 const lembagaName = computed(
   () => settings.settings?.namaLembaga || 'Pondok Pesantren Mambaul Ulum'
 )
-const version = computed(() => settings.settings?.appVersion || 'v.1.3.3')
+const version = computed(() => settings.settings?.appVersion || 'v.1.3.4')
 const logoSrc = computed(() => settings.settings?.logoUrl || '/logo.png')
 
 const sections = [
@@ -827,6 +827,15 @@ async function resetFaq() {
 //   berubah di layar mereka, bukan nama fungsi. Cukup beberapa rilis terakhir —
 //   riwayat lengkap ada di CHANGELOG.md untuk pengembang.
 const rilis = [
+  {
+    versi: 'v.1.3.4',
+    tgl: 'Agustus 2026',
+    items: [
+      'Alat "Rapikan Tagihan Gabungan" di Pengaturan Keuangan: menemukan tagihan ngaji yang sudah termasuk di syahriyah sekolah/pondok tapi masih tercatat belum bayar, lalu menghapusnya setelah diperiksa.',
+      'Generate Tagihan Khusus menampilkan pratinjau sasaran — sebaran per lembaga, total rupiah, dan daftar nama — sebelum tagihan benar-benar terbit.',
+      'Simulasi Pemasukan menampilkan berapa tagihan yang digabung beserta nilai komponen di dalamnya.'
+    ]
+  },
   {
     versi: 'v.1.3.3',
     tgl: 'Agustus 2026',

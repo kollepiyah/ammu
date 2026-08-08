@@ -29,30 +29,17 @@ naik satu tiap rilis. Entri lama memakai skema lama `v.{nomor-urut}.{MMDDtahunmu
 
 ---
 
-## [v.1.3.3] — 2026-08-08 — Hak kepala lembaga + dua simulasi
+## [v.1.3.4] — 2026-08-08 — Merapikan tagihan menggantung + pratinjau sasaran
 
-⚠️ **TANPA migrasi DB, TANPA edge function** — cukup deploy web dari **direktori utama**,
-lalu **AAB vc133** dan **Electron 1.3.3**. Untuk Android, unggah `AmmuOnline.apk` ke rilis
-GitHub **lebih dulu**, baru deploy web: `app-version.json` yang tayang langsung menawarkan
-vc133, dan berkas yang belum ada berujung 404 di HP.
+⚠️ **TANPA migrasi DB, TANPA edge function** — deploy web dari **direktori utama**, lalu
+**AAB vc134** dan **Electron 1.3.4**. Untuk Android, unggah `AmmuOnline.apk` ke rilis GitHub
+**lebih dulu**, baru deploy web.
 
-⚠️ **Nominal slip bisa BERUBAH untuk para kepala** — itu memang maksudnya. Sesudah deploy,
-buka Simulasi dan cocokkan tiga orang sebelum menerbitkan slip: seorang **kepala** (pokok
-guru di lembaga yang ia pimpin harus hilang, pokok guru ngaji tetap ada), seorang **wali
-kelas** (harus tak berubah sama sekali), dan seorang **guru biasa** (juga tak berubah).
+📄 Teks ringkas untuk badan rilis GitHub ada di **`RELEASE-NOTES.md`** — catatan di bawah
+ini terlalu rinci untuk dibaca publik.
 
 ### Added (Baru)
 
-- **Generate Tagihan Khusus kini menampilkan pratinjau sasaran.** Kyai: tagihan _Maulid
-  Nabi_ terlanjur terbit ke lembaga yang salah — dan sesudah terbit **sasarannya tak bisa
-  disunting**, sebab tiap baris berdiri sendiri dan tak lagi ingat batch-nya; satu-satunya
-  jalan pulang adalah menghapus lalu generate ulang. Karena itu penjagaannya dipindah ke
-  depan: sebelum menekan Generate kini terlihat **sebaran per lembaga (ngaji / sekolah)**
-  beserta jumlah santri dan nilainya, **total rupiah**, peringatan bila ada santri
-  bernominal **Rp 0**, dan **30 nama pertama** untuk dicocokkan. Angka "N santri" saja tak
-  cukup — 77 santri terasa masuk akal baik saat sasarannya benar maupun saat keliru.
-  Kotak konfirmasinya pun ikut menyebut total, sebaran, dan peringatan bahwa sasaran tak
-  bisa disunting sesudah terbit.
 - **Rapikan Tagihan Gabungan** (Pengaturan Keuangan → Tagihan). Kyai: _"tagihan qiraati pagi
   yg sudah digabung dengan syahriyah TK-SDI-PKBM ... kenapa tadi saya cek akun santri,
   tagihannya masih muncul sebagai belum bayar?"_ Sebabnya: penggabungan hanya mengatur
@@ -80,6 +67,31 @@ kelas** (harus tak berubah sama sekali), dan seorang **guru biasa** (juga tak be
   selamanya sebagai tunggakan yang tak pernah bisa dibayar benar. Punya tombol hapusnya
   **sendiri**, sebab sebagian bisa saja tagihan **sah dari masa lalu** — santri pindah
   lembaga/shift sesudah tagihannya terbit.
+
+- **Generate Tagihan Khusus kini menampilkan pratinjau sasaran.** Kyai: tagihan _Maulid
+  Nabi_ terlanjur terbit ke lembaga yang salah — dan sesudah terbit **sasarannya tak bisa
+  disunting**, sebab tiap baris berdiri sendiri dan tak lagi ingat batch-nya; satu-satunya
+  jalan pulang adalah menghapus lalu generate ulang. Karena itu penjagaannya dipindah ke
+  depan: sebelum menekan Generate kini terlihat **sebaran per lembaga (ngaji / sekolah)**
+  beserta jumlah santri dan nilainya, **total rupiah**, peringatan bila ada santri
+  bernominal **Rp 0**, dan **30 nama pertama** untuk dicocokkan. Angka "N santri" saja tak
+  cukup — 77 santri terasa masuk akal baik saat sasarannya benar maupun saat keliru.
+  Kotak konfirmasinya pun ikut menyebut total, sebaran, dan peringatan bahwa sasaran tak
+  bisa disunting sesudah terbit.
+
+## [v.1.3.3] — 2026-08-08 — Hak kepala lembaga + dua simulasi
+
+⚠️ **TANPA migrasi DB, TANPA edge function** — cukup deploy web dari **direktori utama**,
+lalu **AAB vc133** dan **Electron 1.3.3**. Untuk Android, unggah `AmmuOnline.apk` ke rilis
+GitHub **lebih dulu**, baru deploy web: `app-version.json` yang tayang langsung menawarkan
+vc133, dan berkas yang belum ada berujung 404 di HP.
+
+⚠️ **Nominal slip bisa BERUBAH untuk para kepala** — itu memang maksudnya. Sesudah deploy,
+buka Simulasi dan cocokkan tiga orang sebelum menerbitkan slip: seorang **kepala** (pokok
+guru di lembaga yang ia pimpin harus hilang, pokok guru ngaji tetap ada), seorang **wali
+kelas** (harus tak berubah sama sekali), dan seorang **guru biasa** (juga tak berubah).
+
+### Added (Baru)
 
 - **Simulasi Pemasukan menampilkan tagihan GABUNGAN.** Kyai: _"untuk tagihan santri yg
   digabung, mis: syahriyah TK-SD-PKBM gabung dengan qiraati pagi ... apakah sudah
