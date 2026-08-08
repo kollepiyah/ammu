@@ -1,6 +1,6 @@
 {
   "name": "portal-mambaul-ulum",
-  "version": "1.3.2",
+  "version": "1.3.3",
   "private": true,
   "description": "Portal Mambaul Ulum - legacy HTML5 + Vue 3 widgets + Capacitor wrap",
   "scripts": {

@@ -583,7 +583,7 @@ const introText = computed(() =>
 const lembagaName = computed(
   () => settings.settings?.namaLembaga || 'Pondok Pesantren Mambaul Ulum'
 )
-const version = computed(() => settings.settings?.appVersion || 'v.1.3.2')
+const version = computed(() => settings.settings?.appVersion || 'v.1.3.3')
 const logoSrc = computed(() => settings.settings?.logoUrl || '/logo.png')
 
 const sections = [
@@ -827,6 +827,16 @@ async function resetFaq() {
 //   berubah di layar mereka, bukan nama fungsi. Cukup beberapa rilis terakhir —
 //   riwayat lengkap ada di CHANGELOG.md untuk pengembang.
 const rilis = [
+  {
+    versi: 'v.1.3.3',
+    tgl: 'Agustus 2026',
+    items: [
+      'Kepala lembaga tak lagi menerima bisyaroh pokok guru di lembaga yang ia pimpin; jam mengajarnya tetap dibayar per JP.',
+      'Kepala yang juga mengaji tetap menerima bisyaroh pokok guru di lembaga ngajinya.',
+      'Simulasi Bisyaroh bisa diekspor ke PDF — rekap per jenis sekaligus rincian per orang.',
+      'Simulasi Pemasukan Bulanan di Pengaturan Keuangan: perkiraan uang masuk sebulan dari jenis bulanan saja.'
+    ]
+  },
   {
     versi: 'v.1.3.2',
     tgl: 'Agustus 2026',

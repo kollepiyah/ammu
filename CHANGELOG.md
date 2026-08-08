@@ -10,8 +10,36 @@ naik satu tiap rilis. Entri lama memakai skema lama `v.{nomor-urut}.{MMDDtahunmu
 
 ## [Unreleased]
 
-⚠️ **Perubahan di bawah lahir SESUDAH v.1.3.2 dibangun & di-deploy.** Rilis berikutnya
-`v.1.3.3` / `vc133`.
+### Planned
+
+- **Tujuan pembaruan Android ikut data, bukan teks tetap** (v.1.3.2). `apkUrl` di
+  `public/app-version.json` sudah boleh diarahkan ke
+  `https://play.google.com/store/apps/details?id=app.ammu.id` tanpa menyentuh kode — Capacitor
+  meneruskannya ke browser sistem dan Android membukanya di aplikasi Play. Yang belum ikut
+  pindah cuma **kalimat dialognya**, yang masih berbunyi "Berkas akan diunduh lewat peramban…"
+  (`composables/useAndroidUpdate.js`). Kenali tujuan Play lalu ganti teks + label tombol jadi
+  "Buka Play Store", supaya perpindahan APK ↔ Play selamanya cukup menyunting JSON.
+  ⚠️ `apkUrlSah()` menolak selain `https://`, jadi `market://` bukan pilihan.
+- Capacitor Android first build + sideload APK
+- Capacitor iOS setup
+- Tauri Desktop scaffold
+- Phase 1 palette migration: `bg-blue-600/700` action button → `bg-teal-600/700` (~62 occurrences)
+- DOMPurify integration untuk template literal innerHTML yang inject user data
+- Console.log cleanup (37 occurrences di production)
+
+---
+
+## [v.1.3.3] — 2026-08-08 — Hak kepala lembaga + dua simulasi
+
+⚠️ **TANPA migrasi DB, TANPA edge function** — cukup deploy web dari **direktori utama**,
+lalu **AAB vc133** dan **Electron 1.3.3**. Untuk Android, unggah `AmmuOnline.apk` ke rilis
+GitHub **lebih dulu**, baru deploy web: `app-version.json` yang tayang langsung menawarkan
+vc133, dan berkas yang belum ada berujung 404 di HP.
+
+⚠️ **Nominal slip bisa BERUBAH untuk para kepala** — itu memang maksudnya. Sesudah deploy,
+buka Simulasi dan cocokkan tiga orang sebelum menerbitkan slip: seorang **kepala** (pokok
+guru di lembaga yang ia pimpin harus hilang, pokok guru ngaji tetap ada), seorang **wali
+kelas** (harus tak berubah sama sekali), dan seorang **guru biasa** (juga tak berubah).
 
 ### Added (Baru)
 
@@ -71,25 +99,6 @@ naik satu tiap rilis. Entri lama memakai skema lama `v.{nomor-urut}.{MMDDtahunmu
   tempat tugas yang cocok — jadi ref tambahan tak pernah bisa membayar dobel. Penurunan
   tempat tugas ini kini punya tesnya sendiri (`tests/unit/guruLembagaRefs.test.js`), memakai
   master jabatan Kyai sebagai contoh.
-
-### Planned
-
-- **Tujuan pembaruan Android ikut data, bukan teks tetap** (v.1.3.2). `apkUrl` di
-  `public/app-version.json` sudah boleh diarahkan ke
-  `https://play.google.com/store/apps/details?id=app.ammu.id` tanpa menyentuh kode — Capacitor
-  meneruskannya ke browser sistem dan Android membukanya di aplikasi Play. Yang belum ikut
-  pindah cuma **kalimat dialognya**, yang masih berbunyi "Berkas akan diunduh lewat peramban…"
-  (`composables/useAndroidUpdate.js`). Kenali tujuan Play lalu ganti teks + label tombol jadi
-  "Buka Play Store", supaya perpindahan APK ↔ Play selamanya cukup menyunting JSON.
-  ⚠️ `apkUrlSah()` menolak selain `https://`, jadi `market://` bukan pilihan.
-- Capacitor Android first build + sideload APK
-- Capacitor iOS setup
-- Tauri Desktop scaffold
-- Phase 1 palette migration: `bg-blue-600/700` action button → `bg-teal-600/700` (~62 occurrences)
-- DOMPurify integration untuk template literal innerHTML yang inject user data
-- Console.log cleanup (37 occurrences di production)
-
----
 
 ## [v.1.3.2] — 2026-08-07 — Bisyaroh sekolah per JP per bulan + tugas lintas-lembaga
 
