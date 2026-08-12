@@ -51,6 +51,10 @@ const RiwayatSantriView = () => import('@/views/RiwayatSantriView.vue')
 const NaikKelasView = () => import('@/views/NaikKelasView.vue')
 // v.100: Tes Kenaikan Qiraati (guru ajukan → kepala/PJ uji → lulus = siap naik)
 const TesKenaikanView = () => import('@/views/TesKenaikanView.vue')
+// Tes Sekolah — sisi "Sekolah" dari menu Tes Kenaikan (materi sekolah diuji guru
+// tertentu; hasilnya catatan, TIDAK masuk rapor). Menunya tetap satu: pindah sisi
+// lewat saklar TesModeSwitch di kepala kedua halaman.
+const TesSekolahView = () => import('@/views/TesSekolahView.vue')
 // v.111: Glondongan PTPT (muroja'ah kumulatif — koordinator tugaskan, penguji nilai; tak ke rapor)
 const GlondonganView = () => import('@/views/GlondonganView.vue')
 const CeremonialView = () => import('@/views/CeremonialView.vue')
@@ -282,6 +286,12 @@ const routes = [
         path: 'tes-kenaikan',
         name: 'tes-kenaikan',
         component: TesKenaikanView,
+        meta: { noSantri: true }
+      },
+      {
+        path: 'tes-sekolah',
+        name: 'tes-sekolah',
+        component: TesSekolahView,
         meta: { noSantri: true }
       },
       // v.111: Glondongan PTPT

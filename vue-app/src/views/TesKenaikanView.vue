@@ -14,6 +14,10 @@
       </p>
     </div>
 
+    <!-- Saklar Qiraati | Sekolah. Sisi "Sekolah" hanya muncul untuk yang berhak
+         (admin, guru penguji, atau wali kelas sekolah) — lihat TesModeSwitch. -->
+    <TesModeSwitch aktif="qiraati" />
+
     <!-- Tabs -->
     <div class="flex gap-1.5 flex-wrap">
       <button
@@ -920,6 +924,7 @@ import { isPjLembaga } from '@/utils/glondongan' // v.1.2.2: kandidat PJ PTPT
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
 import { useDesktopShell } from '@/composables/useDesktopShell'
+import TesModeSwitch from '@/components/TesModeSwitch.vue'
 import {
   isEligibleForTes,
   tesJenisOptions,
