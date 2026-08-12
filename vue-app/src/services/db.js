@@ -123,7 +123,8 @@ const COLS = {
     'penguji_id',
     'periode'
   ],
-  // Tes Sekolah — 1 baris = 1 ajuan tes (santri × materi). Nilainya TAK ke rapor.
+  // Tes Sekolah — 1 baris = 1 ajuan tes (santri × materi). Tak menyentuh rapor_semester
+  //   (Ammu tak punya rapor sekolah; nilainya diinput wali kelas di luar aplikasi).
   //   data jsonb ekor: { nama_cache, kelas_sekolah, materi_nama_cache, pengaju_id,
   //   pengaju_nama, penguji_nama, tgl_ajuan, tgl_hasil, nilai, lulus, catatan }
   tes_sekolah: ['santri_id', 'materi_id', 'lembaga_sekolah', 'status', 'penguji_id', 'periode'],

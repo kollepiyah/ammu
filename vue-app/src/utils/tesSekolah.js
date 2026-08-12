@@ -2,7 +2,8 @@
 // Tes Sekolah — logika murni (tanpa DB, tanpa Vue) supaya bisa diuji sendiri.
 //
 // Bedanya dengan Tes Kenaikan (Qiraati): pengujinya GURU TERTENTU yang ditunjuk
-// admin per materi — bukan kepala sekolah — dan nilainya TIDAK masuk rapor.
+// admin per materi — bukan kepala sekolah. Hasilnya jadi catatan di Ammu; nilai rapor
+// SEKOLAH diinput wali kelas di luar aplikasi (Ammu hanya punya rapor Qiraati & Diniyah).
 //
 // Materi tes disimpan di master key='materi_tes':
 //   { items: [{ id, nama, aktif, lembaga_sekolah, kelas[], penguji[], nilai_maks,

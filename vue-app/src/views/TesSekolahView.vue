@@ -4,9 +4,10 @@
 // Materi sekolah yang perlu diuji GURU TERTENTU (ditunjuk admin per materi), bukan
 //   kepala sekolah. Wali kelas mengajukan, penguji menilai.
 //
-// TIDAK MASUK RAPOR — sengaja tak ada satu pun sentuhan ke `rapor_semester` di sini
-//   maupun di useTesSekolah. Hasilnya tampil sebagai CATATAN di akun santri
-//   (CapaianPrestasiView) dan di tab Riwayat halaman ini untuk guru kelasnya.
+// TAK ADA rapor sekolah di Ammu — fitur rapor di sini hanya Qiraati & Diniyah. Nilai
+//   tes ini memang masuk rapor SEKOLAH, tapi diinput wali kelas di luar aplikasi.
+//   Karena itu tak ada satu pun sentuhan ke `rapor_semester`: hasilnya tampil sebagai
+//   CATATAN di akun santri (CapaianPrestasiView) dan di tab Riwayat halaman ini.
 import { ref, computed } from 'vue'
 import { useTesSekolah } from '@/composables/useTesSekolah'
 import { useToast } from '@/composables/useToast'
@@ -27,8 +28,10 @@ const {
   ajuanSaya,
   riwayat,
   santriBisaDiajukan,
+  materiSaya,
+  santriUntukMateri,
   adaAjuanTerbuka,
-  ajukan,
+  ajukanBatch,
   beriNilai,
   hapus
 } = useTesSekolah()
@@ -62,43 +65,82 @@ const tabAktif = computed(() =>
 )
 
 // ---- Ajukan ---------------------------------------------------------------------
-const pilihSantriId = ref('')
+// Bentuknya sengaja MENIRU tab Ajukan Qiraati (Kyai, 12 Agu): daftar santri bercentang
+//   + kotak cari, bukan dropdown satu-satu. Materi dipilih SEKALI di atas sebagai
+//   KONTEKS — sama peran dengan pemilih lembaga di Qiraati — supaya tak perlu memilih
+//   "santri ini tesnya apa" berulang kali. Kalau cuma ada satu materi, ia terpilih
+//   sendiri dan pemilihnya tak pernah mengganggu.
+const search = ref('')
 const pilihMateriId = ref('')
 const pilihPengujiId = ref('')
+const dicentang = ref({}) // { [santriId]: true }
 const mengajukan = ref(false)
 
-const santriTerpilih = computed(
-  () => santriBisaDiajukan.value.find((x) => String(x.santri.id) === pilihSantriId.value) || null
-)
-const materiTersedia = computed(() => santriTerpilih.value?.materi || [])
-const materiTerpilih = computed(
-  () => materiTersedia.value.find((m) => String(m.id) === pilihMateriId.value) || null
-)
+const materiTerpilih = computed(() => {
+  const list = materiSaya.value
+  if (list.length === 0) return null
+  return list.find((m) => String(m.id) === pilihMateriId.value) || list[0]
+})
 const pengujiTersedia = computed(() => materiTerpilih.value?.penguji || [])
+
+// Penguji tunggal dipakai apa adanya; daftar ajukan() yang memvalidasi ulang.
+const pengujiDipakai = computed(
+  () => pilihPengujiId.value || (pengujiTersedia.value.length === 1 ? pengujiTersedia.value[0] : '')
+)
 
 function namaPenguji(id) {
   return scope.value.gid === String(id) ? 'Saya' : id
 }
 
-// Ganti santri -> materi & penguji yang sudah dipilih jadi tak relevan (materi terikat
-//   lembaga/kelas santri). Fungsi tersendiri, bukan dua pernyataan di dalam @change:
-//   ekspresi template Vue tak menerima pernyataan berbaris-baris.
-function onGantiSantri() {
-  pilihMateriId.value = ''
+const santriEligible = computed(() => {
+  const q = search.value.trim().toLowerCase()
+  return santriUntukMateri(materiTerpilih.value).filter((s) => {
+    if (!q) return true
+    return (
+      String(s.nama || '')
+        .toLowerCase()
+        .includes(q) ||
+      String(s.nis || '')
+        .toLowerCase()
+        .includes(q)
+    )
+  })
+})
+
+const jumlahCentang = computed(
+  () => santriEligible.value.filter((s) => dicentang.value[s.id]).length
+)
+
+function sudahDiajukan(s) {
+  return materiTerpilih.value ? adaAjuanTerbuka(s.id, materiTerpilih.value.id) : false
+}
+function toggle(s) {
+  if (sudahDiajukan(s)) return
+  dicentang.value = { ...dicentang.value, [s.id]: !dicentang.value[s.id] }
+}
+
+// Ganti materi -> centangan lama tak relevan (daftar santrinya berubah). Fungsi
+//   tersendiri, bukan dua pernyataan di dalam @change: ekspresi template Vue tak
+//   menerima pernyataan berbaris-baris.
+function onGantiMateri() {
+  dicentang.value = {}
   pilihPengujiId.value = ''
 }
 
 async function kirimAjuan() {
-  if (!santriTerpilih.value || !materiTerpilih.value) {
-    toast.warning('Pilih santri & materi dulu')
-    return
-  }
+  const materi = materiTerpilih.value
+  if (!materi) return toast.warning('Belum ada materi tes yang berlaku')
+  if (!pengujiDipakai.value) return toast.warning('Pilih guru penguji dulu')
+  const daftar = santriEligible.value.filter((s) => dicentang.value[s.id] && !sudahDiajukan(s))
+  if (daftar.length === 0) return toast.warning('Centang santri dulu')
+
   mengajukan.value = true
   try {
-    await ajukan(santriTerpilih.value.santri, materiTerpilih.value, pilihPengujiId.value)
-    toast.success(`Ajuan "${materiTerpilih.value.nama}" terkirim`)
-    pilihMateriId.value = ''
-    pilihPengujiId.value = ''
+    const { ok, gagal } = await ajukanBatch(daftar, materi, pengujiDipakai.value)
+    if (ok > 0) toast.success(`${ok} ajuan "${materi.nama}" terkirim`)
+    // Kegagalan sebagian dilaporkan apa adanya — jangan diam-diam ditelan.
+    if (gagal.length > 0) toast.error(`${gagal.length} gagal — ${gagal[0]}`)
+    dicentang.value = {}
   } catch (e) {
     toast.error(e?.message || 'Gagal mengajukan')
   } finally {
@@ -156,8 +198,9 @@ async function hapusBaris(b) {
         <i class="fas fa-school text-teal-500 mr-2" aria-hidden="true"></i>Tes Sekolah
       </h1>
       <p class="text-xs text-[var(--text-secondary)] mt-0.5">
-        Wali kelas mengajukan, <b>guru penguji</b> yang menilai. Hasilnya <b>tidak masuk rapor</b> —
-        hanya catatan di akun santri dan guru kelasnya.
+        Wali kelas mengajukan, <b>guru penguji</b> yang menilai. Hasilnya jadi <b>catatan</b> di
+        akun santri dan guru kelasnya — nilai rapor sekolah tetap diinput wali kelas di luar
+        aplikasi ini.
       </p>
     </div>
 
@@ -201,82 +244,122 @@ async function hapusBaris(b) {
     </div>
 
     <!-- ============ TAB: AJUKAN ============ -->
-    <div
-      v-if="tabAktif === 'ajukan'"
-      class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm space-y-3"
-    >
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <div>
-          <label for="ts-santri" class="block text-[10px] font-bold uppercase tracking-wider mb-1">
-            Santri
-          </label>
-          <select
-            id="ts-santri"
-            v-model="pilihSantriId"
-            class="w-full px-3 py-2 rounded-lg bg-[var(--bg-card-elevated)] border border-[var(--border-default)] text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-200 focus:outline-none transition"
-            @change="onGantiSantri"
-          >
-            <option value="">— pilih santri —</option>
-            <option v-for="x in santriBisaDiajukan" :key="x.santri.id" :value="String(x.santri.id)">
-              {{ x.santri.nama }} · {{ x.santri.kelas_sekolah || '-' }}
-            </option>
-          </select>
-        </div>
-        <div>
-          <label for="ts-materi" class="block text-[10px] font-bold uppercase tracking-wider mb-1">
-            Materi
-          </label>
-          <select
-            id="ts-materi"
-            v-model="pilihMateriId"
-            :disabled="!santriTerpilih"
-            class="w-full px-3 py-2 rounded-lg bg-[var(--bg-card-elevated)] border border-[var(--border-default)] text-sm disabled:opacity-50 focus:border-teal-500 focus:ring-2 focus:ring-teal-200 focus:outline-none transition"
-            @change="pilihPengujiId = ''"
-          >
-            <option value="">— pilih materi —</option>
-            <option
-              v-for="m in materiTersedia"
-              :key="m.id"
-              :value="String(m.id)"
-              :disabled="adaAjuanTerbuka(pilihSantriId, m.id)"
-            >
-              {{ m.nama }}
-              {{ adaAjuanTerbuka(pilihSantriId, m.id) ? '(sudah diajukan)' : '' }}
-            </option>
-          </select>
-        </div>
-      </div>
-
-      <div v-if="pengujiTersedia.length > 1">
-        <label for="ts-penguji" class="block text-[10px] font-bold uppercase tracking-wider mb-1">
-          Guru Penguji
-        </label>
-        <select
-          id="ts-penguji"
-          v-model="pilihPengujiId"
-          class="w-full px-3 py-2 rounded-lg bg-[var(--bg-card-elevated)] border border-[var(--border-default)] text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-200 focus:outline-none transition"
-        >
-          <option value="">— pilih penguji —</option>
-          <option v-for="p in pengujiTersedia" :key="p" :value="String(p)">
-            {{ namaPenguji(p) }}
-          </option>
-        </select>
-      </div>
-
-      <p v-if="materiTerpilih" class="text-xs text-[var(--text-secondary)]">
-        Nilai maksimal <b>{{ materiTerpilih.nilai_maks }}</b
-        >, lulus bila &ge; <b>{{ materiTerpilih.nilai_min_lulus }}</b
-        >.
-      </p>
-
-      <button
-        type="button"
-        :disabled="mengajukan || !materiTerpilih"
-        class="bg-teal-600 hover:bg-teal-700 active:bg-teal-800 active:scale-[0.98] focus:ring-2 focus:ring-teal-400 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold px-5 py-2.5 rounded-xl text-sm transition-all duration-150 cursor-pointer"
-        @click="kirimAjuan"
+    <div v-if="tabAktif === 'ajukan'" class="space-y-3">
+      <div
+        class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm space-y-3"
       >
-        <i class="fas fa-paper-plane mr-1.5" aria-hidden="true"></i>Ajukan Tes
-      </button>
+        <div class="flex gap-2">
+          <div class="relative flex-1">
+            <i
+              class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] text-sm"
+              aria-hidden="true"
+            ></i>
+            <input
+              v-model="search"
+              type="text"
+              aria-label="Cari santri"
+              placeholder="Cari nama / No. Induk santri..."
+              class="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-teal-500 outline-none"
+            />
+          </div>
+          <select
+            v-if="materiSaya.length > 1"
+            v-model="pilihMateriId"
+            aria-label="Materi tes"
+            class="px-2.5 py-2.5 text-xs rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-teal-500 outline-none"
+            @change="onGantiMateri"
+          >
+            <option v-for="m in materiSaya" :key="m.id" :value="String(m.id)">{{ m.nama }}</option>
+          </select>
+        </div>
+
+        <!-- Penguji: tetap dropdown (Kyai). Disembunyikan kalau materinya cuma punya
+             satu penguji — pilihan tunggal yang tak pernah diganti hanya menambah langkah. -->
+        <div v-if="pengujiTersedia.length > 1" class="flex items-center gap-2">
+          <label for="ts-penguji" class="text-[10px] font-black uppercase tracking-wider shrink-0">
+            Penguji
+          </label>
+          <select
+            id="ts-penguji"
+            v-model="pilihPengujiId"
+            class="flex-1 px-2.5 py-2 text-xs rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none"
+          >
+            <option value="">— pilih penguji —</option>
+            <option v-for="p in pengujiTersedia" :key="p" :value="String(p)">
+              {{ namaPenguji(p) }}
+            </option>
+          </select>
+        </div>
+
+        <p class="text-[11px] text-[var(--text-tertiary)] font-bold">
+          <template v-if="materiTerpilih">
+            <b class="text-teal-600">{{ materiTerpilih.nama }}</b> — nilai maks
+            {{ materiTerpilih.nilai_maks }}, lulus &ge; {{ materiTerpilih.nilai_min_lulus }}.
+          </template>
+          {{ santriEligible.length }} santri bisa diajukan. Tercentang:
+          <b class="text-teal-600">{{ jumlahCentang }}</b>
+        </p>
+      </div>
+
+      <div
+        v-if="santriEligible.length === 0"
+        class="bg-[var(--bg-card)] rounded-2xl p-10 border border-dashed border-[var(--border-default)] text-center"
+      >
+        <i
+          class="fas fa-user-slash text-[var(--text-tertiary)] text-3xl mb-2"
+          aria-hidden="true"
+        ></i>
+        <p class="text-sm text-[var(--text-secondary)] italic">
+          Tidak ada santri kelas Anda yang cocok dengan materi ini.
+        </p>
+      </div>
+
+      <div
+        v-else
+        class="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)] shadow-sm overflow-hidden"
+      >
+        <div class="max-h-[55vh] overflow-y-auto divide-y divide-[var(--border-subtle)]">
+          <label
+            v-for="s in santriEligible"
+            :key="s.id"
+            class="flex items-start gap-3 p-3 md:p-3.5 cursor-pointer hover:bg-[var(--bg-card-elevated)] transition-colors duration-150"
+          >
+            <input
+              type="checkbox"
+              :checked="!!dicentang[s.id]"
+              :disabled="sudahDiajukan(s)"
+              class="mt-1 w-4 h-4 accent-teal-600 flex-shrink-0 disabled:opacity-40"
+              @change="toggle(s)"
+            />
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-bold text-[var(--text-primary)] truncate">{{ s.nama }}</p>
+              <p class="text-[11px] text-[var(--text-secondary)]">
+                {{ s.lembaga_sekolah || '-'
+                }}<span v-if="s.kelas_sekolah"> · {{ s.kelas_sekolah }}</span>
+              </p>
+              <p v-if="sudahDiajukan(s)" class="text-[10px] text-amber-600 font-bold mt-0.5">
+                <i class="fas fa-hourglass-half mr-1" aria-hidden="true"></i>Sudah ada ajuan
+                menunggu tes
+              </p>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <div v-if="jumlahCentang > 0" class="sticky bottom-3 flex justify-end">
+        <button
+          type="button"
+          :disabled="mengajukan"
+          class="px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 active:bg-teal-800 active:scale-[0.98] focus:ring-2 focus:ring-teal-400 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-black shadow-lg transition-all duration-150 cursor-pointer"
+          @click="kirimAjuan"
+        >
+          <i
+            :class="['fas', mengajukan ? 'fa-spinner fa-spin' : 'fa-paper-plane', 'mr-1.5']"
+            aria-hidden="true"
+          ></i>
+          Ajukan Tes ({{ jumlahCentang }})
+        </button>
+      </div>
     </div>
 
     <!-- ============ TAB: AJUAN SAYA ============ -->

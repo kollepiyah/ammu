@@ -205,7 +205,7 @@
         </div>
       </div>
 
-      <!-- Catatan Tes Sekolah — hasil tes materi sekolah (di luar rapor).
+      <!-- Catatan Tes Sekolah — hasil tes materi sekolah.
            Blok ini hanya muncul kalau memang ada hasilnya: santri di lembaga yang
            tak punya materi tes tak perlu melihat kotak kosong. -->
       <div
@@ -425,7 +425,8 @@ function formatTanggal(t) {
 }
 
 // Catatan Tes Sekolah — hasil tes materi sekolah yang diuji guru tertentu.
-//   SENGAJA tidak masuk rapor: inilah muaranya bagi santri/wali. Hanya yang sudah
+//   Ammu tak punya rapor sekolah (rapor di sini hanya Qiraati & Diniyah), jadi INILAH
+//   muara hasilnya bagi santri/wali di dalam aplikasi. Hanya yang sudah
 //   dinilai (status 'selesai') yang ditampilkan — ajuan yang masih mengantre bukan
 //   informasi untuk santri.
 const tesSekolah = ref([])

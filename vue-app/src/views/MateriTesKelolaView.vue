@@ -213,8 +213,8 @@ async function hapus(idx) {
       <h3 class="text-lg md:text-xl font-bold text-[var(--text-primary)]">Materi Tes Sekolah</h3>
       <p class="text-xs text-[var(--text-secondary)] mt-1 leading-relaxed">
         Materi sekolah yang perlu diuji oleh <b>guru tertentu</b>, bukan kepala sekolah. Wali kelas
-        mengajukan santrinya, guru penguji yang menilai. Nilainya <b>tidak masuk rapor</b> — hanya
-        jadi catatan di akun santri dan guru kelasnya.
+        mengajukan santrinya, guru penguji yang menilai. Hasilnya jadi <b>catatan</b> di akun santri
+        dan guru kelasnya; nilai rapor sekolah tetap diinput wali kelas di luar aplikasi.
       </p>
     </div>
 

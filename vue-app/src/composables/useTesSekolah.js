@@ -1,10 +1,12 @@
 // useTesSekolah — koleksi `tes_sekolah` (real-time) + materi dari master + scope peran.
 //
 // Alurnya: wali kelas sekolah MENGAJUKAN santrinya -> guru penguji MENILAI antrean.
-// Nilainya TAK MASUK RAPOR. Karena itu composable ini SENGAJA tidak menyentuh
-//   `rapor_semester` sama sekali — bandingkan TesKenaikanView yang memanggil
-//   buildTesRaporFeed + mergeOne('rapor_semester') sesudah konfirmasi lulus.
-//   Kalau suatu saat tes ini diminta masuk rapor, itu penambahan sadar, bukan warisan.
+// TAK ADA rapor sekolah di Ammu — fitur rapor di sini hanya Qiraati & Diniyah. Nilai
+//   tes ini memang masuk rapor SEKOLAH, tapi diinput wali kelas di luar aplikasi.
+//   Karena itu composable ini SENGAJA tidak menyentuh `rapor_semester` sama sekali —
+//   bandingkan TesKenaikanView yang memanggil buildTesRaporFeed + mergeOne(
+//   'rapor_semester') sesudah konfirmasi lulus. Kalau kelak Ammu punya rapor sekolah,
+//   menyambungkannya jadi penambahan sadar, bukan warisan yang tak sengaja.
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { subscribeColl, subscribeDoc, addOne, updateOne, deleteOne } from '@/services/db'
 import { useAuthStore } from '@/stores/auth'
@@ -52,6 +54,46 @@ export function useTesSekolah() {
       .map((s) => ({ santri: s, materi: materiUntukSantri(materiRaw.value, s) }))
       .filter((x) => x.materi.length > 0)
   )
+
+  /**
+   * Materi yang relevan untuk SAYA — yaitu yang berlaku untuk minimal satu santri
+   * ampuan. Dipakai sebagai KONTEKS di layar Ajukan (mirip pemilih lembaga di Tes
+   * Kenaikan), supaya materi tak perlu dipilih satu-satu per santri.
+   */
+  const materiSaya = computed(() => {
+    const pakai = new Map()
+    for (const x of santriBisaDiajukan.value) {
+      for (const m of x.materi) if (!pakai.has(m.id)) pakai.set(m.id, m)
+    }
+    return [...pakai.values()]
+  })
+
+  /** Santri ampuan yang materi ini berlaku untuknya. */
+  function santriUntukMateri(materi) {
+    if (!materi) return []
+    return santriBisaDiajukan.value
+      .filter((x) => x.materi.some((m) => m.id === materi.id))
+      .map((x) => x.santri)
+  }
+
+  /**
+   * Ajukan BANYAK santri sekaligus untuk satu materi.
+   * Kegagalan satu santri tak menggagalkan sisanya — dilaporkan sebagai hitungan,
+   * sebab satu ajuan gagal (mis. ditolak RLS) tak boleh membatalkan 30 yang berhasil.
+   */
+  async function ajukanBatch(daftarSantri, materi, pengujiId = '') {
+    let ok = 0
+    const gagal = []
+    for (const s of daftarSantri || []) {
+      try {
+        await ajukan(s, materi, pengujiId)
+        ok++
+      } catch (e) {
+        gagal.push(`${s?.nama || s?.id}: ${e?.message || e}`)
+      }
+    }
+    return { ok, gagal }
+  }
 
   /** Lengkapi baris mentah dengan objek santri & materi-nya (untuk tampilan). */
   function hias(b) {
@@ -178,8 +220,11 @@ export function useTesSekolah() {
     ajuanSaya,
     riwayat,
     santriBisaDiajukan,
+    materiSaya,
+    santriUntukMateri,
     adaAjuanTerbuka,
     ajukan,
+    ajukanBatch,
     beriNilai,
     hapus
   }
