@@ -36,6 +36,28 @@ Rinciannya untuk pengembang ada di `CHANGELOG.md` — jangan disalin ke sana, te
   yang ada.
 - **Desktop**: jalankan `AmmuOnline-Setup-1.3.5.exe`. Windows 7 memakai berkas `Win7`.
 
+### Catatan rilis Play Console (What's new) — 489/500 karakter
+
+Salin PERSIS blok di bawah ke Play Console → Release → **What's new** (id-ID). Batas Play
+500 karakter; teks di atas terlalu panjang untuk ditempel apa adanya. Tanpa "Tautkan
+Google" & celah keamanan auth — dua-duanya tak berarti bagi pengguna awam.
+
+```
+Baru: Tes Sekolah
+
+• Menu Tes Kenaikan kini punya dua sisi: Qiraati dan Sekolah.
+• Wali kelas cukup mencentang santrinya lalu mengajukan sekaligus.
+• Guru penguji memberi nilai, status lulus, dan catatan.
+• Hasilnya muncul di Capaian Prestasi santri.
+
+Perbaikan
+
+• Login dengan Google kini berfungsi di Android.
+• Tombol "Kelola daftar shift" tak lagi kembali ke Beranda.
+• Tanggal kenaikan & mutasi tak lagi mundur sehari bila diproses dini hari.
+• Pengaturan Keuangan lebih cepat dibuka.
+```
+
 ---
 
 ## v.1.3.4 — Agustus 2026
