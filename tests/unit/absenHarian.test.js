@@ -2,7 +2,10 @@ import { describe, it, expect } from 'vitest'
 import {
   alasanTolakTanggal,
   deteksiTimpa,
-  adaKeteranganTertimpa
+  adaKeteranganTertimpa,
+  payloadPerbaikanAbsen,
+  idAbsenShift,
+  STATUS_TANPA_JAM
 } from '../../vue-app/src/utils/absenHarian.js'
 
 const HARI_INI = '2026-08-06'
@@ -97,5 +100,58 @@ describe('adaKeteranganTertimpa', () => {
     )
     expect(adaKeteranganTertimpa([])).toBe(false)
     expect(adaKeteranganTertimpa(null)).toBe(false)
+  })
+})
+
+// Kyai 12 Agu 2026: perbaiki absen langsung dari matriks, TANPA isi jam.
+describe('payloadPerbaikanAbsen', () => {
+  const dasar = { guruId: 'g1', guruNama: 'Ustadz Ali', iso: '2026-08-06', shift: 'pagi' }
+  const STAMP = '2026-08-12T10:00:00.000Z'
+
+  it('hadir/terlambat MENJAGA jam yang sudah ada', () => {
+    const lama = { jam: '06:58', jam_pulang: '12:10' }
+    for (const status of ['hadir', 'terlambat']) {
+      const p = payloadPerbaikanAbsen({ ...dasar, status, lama }, STAMP)
+      expect(p).toMatchObject({ status, jam: '06:58', jam_pulang: '12:10' })
+    }
+  })
+
+  it('izin/sakit/cuti/alpa MENGOSONGKAN jam — baris tak boleh berkata dua hal', () => {
+    const lama = { jam: '06:58', jam_pulang: '12:10' }
+    for (const status of STATUS_TANPA_JAM) {
+      const p = payloadPerbaikanAbsen({ ...dasar, status, lama }, STAMP)
+      expect(p).toMatchObject({ status, jam: '', jam_pulang: '' })
+    }
+  })
+
+  it('baris belum ada (alpa tanpa data) tetap menghasilkan muatan lengkap', () => {
+    const p = payloadPerbaikanAbsen({ ...dasar, status: 'izin', lama: null }, STAMP)
+    expect(p).toMatchObject({
+      guru_id: 'g1',
+      guru_nama: 'Ustadz Ali',
+      tanggal: '2026-08-06',
+      shift: 'pagi',
+      status: 'izin',
+      jam: '',
+      source: 'manual_perbaikan',
+      imported_at: STAMP
+    })
+  })
+
+  it('status ditulis huruf kecil, apa pun masukannya', () => {
+    expect(payloadPerbaikanAbsen({ ...dasar, status: 'HADIR' }, STAMP).status).toBe('hadir')
+  })
+
+  it('status tak dikenal DITOLAK, bukan disimpan diam-diam', () => {
+    expect(() => payloadPerbaikanAbsen({ ...dasar, status: 'libur' }, STAMP)).toThrow(
+      /tak dikenal/i
+    )
+    expect(() => payloadPerbaikanAbsen({ ...dasar, status: '' }, STAMP)).toThrow()
+  })
+})
+
+describe('idAbsenShift', () => {
+  it('satu baris per (guru, tanggal, shift) — cermin saveHarian', () => {
+    expect(idAbsenShift('g1', '2026-08-06', 'pagi')).toBe('shift_g1_2026-08-06_pagi')
   })
 })

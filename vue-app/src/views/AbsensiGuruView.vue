@@ -668,14 +668,26 @@
                   :key="row.g.id + '_' + row.shift + '_' + d"
                   class="p-0.5 text-center border-l border-[var(--border-subtle)] relative"
                 >
-                  <span
+                  <!-- Kyai 12 Agu 2026: klik sel = perbaiki statusnya, tanpa isi jam. -->
+                  <button
+                    type="button"
                     :class="[
                       cellClass(row.g.id, row.shift, d),
-                      'inline-block w-5 h-5 leading-5 rounded text-[9px] font-bold'
+                      'inline-block w-5 h-5 leading-5 rounded text-[9px] font-bold cursor-pointer hover:ring-2 hover:ring-teal-500 focus:ring-2 focus:ring-teal-500 focus:outline-none transition'
                     ]"
-                    :title="cellTitle(row.g.id, row.shift, d)"
-                    >{{ cellText(row.g.id, row.shift, d) }}</span
+                    :title="cellTitle(row.g.id, row.shift, d) + ' — klik untuk perbaiki'"
+                    :aria-label="
+                      'Perbaiki absen ' +
+                      row.g.nama +
+                      ' ' +
+                      isoDateOf(d) +
+                      ' ' +
+                      shiftLabel(row.shift)
+                    "
+                    @click="bukaPerbaiki(row, d)"
                   >
+                    {{ cellText(row.g.id, row.shift, d) }}
+                  </button>
                   <span
                     v-if="pulangPending(row.g.id, row.shift, d)"
                     class="absolute top-0.5 right-1 w-1.5 h-1.5 rounded-full bg-amber-400 ring-1 ring-white dark:ring-slate-800"
@@ -699,6 +711,62 @@
           </table>
         </div>
       </div>
+
+      <!-- DIALOG: perbaiki status absen 1 sel (tanpa jam) -->
+      <dialog
+        ref="dlgPerbaiki"
+        class="mu-modal-card backdrop:bg-black/40 rounded-2xl p-0 w-[92vw] max-w-sm"
+        aria-labelledby="judul-perbaiki"
+        @close="perbaikiSel = null"
+      >
+        <div v-if="perbaikiSel" class="p-5 space-y-3">
+          <div>
+            <h3 id="judul-perbaiki" class="text-sm font-black text-[var(--text-primary)]">
+              Perbaiki Absen
+            </h3>
+            <p class="text-[11px] text-[var(--text-secondary)] mt-0.5">
+              <b>{{ perbaikiSel.guruNama }}</b> · {{ formatTgl(perbaikiSel.iso) }} ·
+              {{ shiftLabel(perbaikiSel.shift) }}
+            </p>
+            <p class="text-[11px] text-[var(--text-tertiary)] mt-1">
+              Sekarang:
+              <b>{{
+                perbaikiSel.aktif ? perbaikiSel.aktif.status || 'hadir' : 'Alpa (tanpa data)'
+              }}</b>
+              <span v-if="perbaikiSel.aktif?.jam"> · masuk {{ perbaikiSel.aktif.jam }}</span>
+            </p>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <button
+              v-for="s in STATUS_PERBAIKAN"
+              :key="s.v"
+              type="button"
+              :disabled="perbaikiBusy"
+              :class="[
+                s.kelas,
+                'text-white font-bold px-3 py-2.5 rounded-xl text-xs active:scale-[0.98] focus:ring-2 focus:ring-offset-1 focus:ring-teal-400 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-150 cursor-pointer'
+              ]"
+              @click="simpanPerbaikan(s.v)"
+            >
+              <i :class="['fas', s.ikon, 'mr-1.5']" aria-hidden="true"></i>{{ s.label }}
+            </button>
+          </div>
+
+          <p class="text-[10px] text-[var(--text-tertiary)] leading-relaxed">
+            Jam masuk/pulang tak perlu diisi. Untuk <b>Hadir</b>/<b>Terlambat</b> jam yang sudah ada
+            tetap dijaga; untuk <b>Izin/Sakit/Cuti/Alpa</b> jamnya dikosongkan.
+          </p>
+
+          <button
+            type="button"
+            class="w-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-[var(--text-primary)] font-bold px-4 py-2 rounded-xl border border-[var(--border-default)] text-xs active:scale-[0.98] focus:ring-2 focus:ring-slate-400 focus:outline-none transition-all duration-150 cursor-pointer"
+            @click="tutupPerbaiki"
+          >
+            Batal
+          </button>
+        </div>
+      </dialog>
 
       <!-- v.21.114.0528: Modal Kelola Hari Libur dihapus — pindah ke Kalender Kegiatan (kyai req) -->
 
@@ -1241,7 +1309,13 @@
 import { ref, computed, watch } from 'vue'
 import { setOne, updateOne, deleteOne, mergeOne, getOne, queryColl } from '@/services/db'
 import { isSuperAdmin } from '@/utils/roleScope'
-import { alasanTolakTanggal, deteksiTimpa, adaKeteranganTertimpa } from '@/utils/absenHarian'
+import {
+  alasanTolakTanggal,
+  deteksiTimpa,
+  adaKeteranganTertimpa,
+  idAbsenShift,
+  payloadPerbaikanAbsen
+} from '@/utils/absenHarian'
 import { todayJakarta } from '@/utils/format'
 import { useAuthStore } from '@/stores/auth'
 import { useAbsensi } from '@/composables/useAbsensi'
@@ -1834,6 +1908,7 @@ function sourceLabel(src) {
   if (s === 'fingerprint_import') return 'Impor FP'
   if (s === 'hiview') return 'HiView'
   if (s === 'manual_harian') return 'Input manual'
+  if (s === 'manual_perbaikan') return 'Perbaikan manual'
   if (s === 'pengajuan_guru') return 'Izin/Pengajuan'
   // v.1.2.1: perjelas — baris sekolah yang OTOMATIS terisi dari scan ngaji pagi guru
   //   gabungan (jam masuknya = jam scan ngaji, bukan jam masuk sekolah).
@@ -2444,6 +2519,93 @@ function getAbsensiCell(guruId, shift, d) {
   return absensiByGuruShiftDay.value[guruId + '_' + shift + '_' + d] || null
 }
 
+// =====================================================
+// PERBAIKI ABSEN LANGSUNG DARI MATRIKS (Kyai 12 Agu 2026)
+//   "perbaiki absensi lewat sini saja biar lebih cepat. tidak perlu input jam."
+//
+// Klik sel -> pilih status. TANPA jam: yang dikoreksi memang statusnya, dan menuntut
+//   jam untuk sekadar membetulkan "A" jadi "I" hanya memperlambat tanpa menambah
+//   ketelitian. Jam yang SUDAH ada tetap dijaga (lihat simpanPerbaikan).
+// =====================================================
+const STATUS_PERBAIKAN = [
+  { v: 'hadir', label: 'Hadir', ikon: 'fa-check', kelas: 'bg-emerald-600 hover:bg-emerald-700' },
+  { v: 'terlambat', label: 'Terlambat', ikon: 'fa-clock', kelas: 'bg-cyan-600 hover:bg-cyan-700' },
+  { v: 'izin', label: 'Izin', ikon: 'fa-envelope', kelas: 'bg-sky-600 hover:bg-sky-700' },
+  {
+    v: 'sakit',
+    label: 'Sakit',
+    ikon: 'fa-briefcase-medical',
+    kelas: 'bg-sky-600 hover:bg-sky-700'
+  },
+  { v: 'cuti', label: 'Cuti', ikon: 'fa-plane', kelas: 'bg-violet-600 hover:bg-violet-700' },
+  { v: 'alpa', label: 'Alpa', ikon: 'fa-xmark', kelas: 'bg-rose-600 hover:bg-rose-700' }
+]
+const perbaikiSel = ref(null) // { guruId, guruNama, shift, hari, iso, aktif }
+const perbaikiBusy = ref(false)
+const dlgPerbaiki = ref(null)
+
+function bukaPerbaiki(row, d) {
+  const lem = lembagaCell(row.g.id, row.shift)
+  const iso = isoDateOf(d)
+  // Hari libur: statusnya turun dari KALENDER, bukan dari baris absen. Menulis baris di
+  //   sini tak akan mengubah tampilan sel (cellText mendahulukan libur) — jadi menolak
+  //   lebih jujur daripada menyimpan diam-diam sesuatu yang tak terlihat.
+  if (isHariLibur(d, lem)) {
+    toast.warning('Tanggal ini libur. Ubah dulu di Kalender kalau memang hari kerja.')
+    return
+  }
+  if (iso > todayJakarta()) {
+    toast.warning('Belum bisa: tanggalnya belum lewat.')
+    return
+  }
+  perbaikiSel.value = {
+    guruId: row.g.id,
+    guruNama: row.g.nama || '',
+    shift: row.shift,
+    hari: d,
+    iso,
+    aktif: getAbsensiCell(row.g.id, row.shift, d)
+  }
+  dlgPerbaiki.value?.showModal?.()
+}
+
+function tutupPerbaiki() {
+  dlgPerbaiki.value?.close?.()
+  perbaikiSel.value = null
+}
+
+async function simpanPerbaikan(status) {
+  const sel = perbaikiSel.value
+  if (!sel || perbaikiBusy.value) return
+  perbaikiBusy.value = true
+  try {
+    // mergeOne, BUKAN setOne: setOne menimpa penuh dan akan membuang jam/jam_pulang
+    //   yang sudah benar hanya karena statusnya dibetulkan. mergeOne juga sanggup
+    //   MEMBUAT baris bila hari itu memang belum ada datanya (kasus A -> I).
+    await mergeOne(
+      'absensi_shift_guru',
+      idAbsenShift(sel.guruId, sel.iso, sel.shift),
+      payloadPerbaikanAbsen(
+        {
+          guruId: sel.guruId,
+          guruNama: sel.guruNama,
+          iso: sel.iso,
+          shift: sel.shift,
+          status,
+          lama: sel.aktif
+        },
+        new Date().toISOString()
+      )
+    )
+    toast.success(`${sel.guruNama} ${formatTgl(sel.iso)} → ${status}`)
+    tutupPerbaiki()
+  } catch (e) {
+    toast.error('Gagal menyimpan: ' + (e.message || e))
+  } finally {
+    perbaikiBusy.value = false
+  }
+}
+
 function cellText(guruId, shift, d) {
   if (isHariLibur(d, lembagaCell(guruId, shift))) return 'L'
   const a = getAbsensiCell(guruId, shift, d)
@@ -2457,6 +2619,10 @@ function cellText(guruId, shift, d) {
   if (s === 'izin') return 'I'
   if (s === 'sakit') return 'S'
   if (s === 'cuti') return 'C'
+  // Alpa TERCATAT (dari perbaikan manual) — beda dengan alpa karena baris tak ada.
+  //   Tanpa cabang ini ia jatuh ke 'H' di bawah: guru yang justru ditandai alpa akan
+  //   tampil HADIR. Status 'alpa' sendiri sudah dikenali PersonalView & StatistikView.
+  if (s === 'alpa' || s === 'alpha') return 'A'
   return 'H'
 }
 
@@ -2473,6 +2639,7 @@ function cellClass(guruId, shift, d) {
   if (s === 'terlambat') return 'bg-cyan-200 text-cyan-800'
   if (s === 'izin' || s === 'sakit') return 'bg-cyan-200 text-cyan-800'
   if (s === 'cuti') return 'bg-violet-200 text-violet-800'
+  if (s === 'alpa' || s === 'alpha') return 'bg-rose-100 text-rose-700'
   return 'bg-emerald-200 text-emerald-800'
 }
 
@@ -2522,7 +2689,12 @@ function countAlpha(guruId, shift) {
   for (let d = 1; d <= daysInMonth.value; d++) {
     if (isHariLibur(d, lem)) continue
     if (isoDateOf(d) > today) continue
-    if (!getAbsensiCell(guruId, shift, d)) n++
+    const a = getAbsensiCell(guruId, shift, d)
+    // Dua bentuk alpa, dan keduanya harus terhitung SEKALI: tak ada baris sama sekali,
+    //   ATAU baris ber-status 'alpa' hasil perbaikan manual. Sehari hanya punya satu
+    //   baris, jadi cabang if/else ini tak mungkin menghitung ganda.
+    if (!a) n++
+    else if (['alpa', 'alpha'].includes(String(a.status || '').toLowerCase())) n++
   }
   return n
 }

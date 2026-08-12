@@ -56,3 +56,46 @@ const STATUS_BERKETERANGAN = new Set(['izin', 'sakit', 'cuti'])
 export function adaKeteranganTertimpa(timpa) {
   return (timpa || []).some((t) => STATUS_BERKETERANGAN.has(String(t.statusLama).toLowerCase()))
 }
+
+// ── Perbaikan status dari matriks bulanan (Kyai 12 Agu 2026) ─────────────────
+// "perbaiki absensi lewat sini saja biar lebih cepat. tidak perlu input jam."
+//
+// Dipisah dari view karena aturannya halus dan mahal kalau salah: baris absensi
+// memberi makan bisyaroh. Yang dijaga di sini dua hal —
+//   1. jam yang SUDAH benar tak boleh hilang hanya karena statusnya dibetulkan;
+//   2. status "tidak masuk" tak boleh menyisakan jam, supaya satu baris tak
+//      berkata dua hal sekaligus ("izin, tapi scan 06:58").
+
+/** Status yang berarti guru TIDAK masuk — jamnya wajib kosong. */
+export const STATUS_TANPA_JAM = ['izin', 'sakit', 'cuti', 'alpa']
+
+/** Status yang boleh dipilih saat memperbaiki satu sel. */
+export const STATUS_PERBAIKAN_VALID = ['hadir', 'terlambat', ...STATUS_TANPA_JAM]
+
+/** Id baris absensi — SATU baris per (guru, tanggal, shift). */
+export function idAbsenShift(guruId, iso, shift) {
+  return `shift_${guruId}_${iso}_${shift}`
+}
+
+/**
+ * Muatan tulis untuk memperbaiki status satu sel.
+ * @param {object} p { guruId, guruNama, iso, shift, status, lama }
+ *   `lama` = baris yang sudah ada (boleh null).
+ * @param {string} stamp ISO timestamp (disuntik supaya bisa diuji deterministik).
+ */
+export function payloadPerbaikanAbsen(p, stamp) {
+  const status = String(p?.status || '').toLowerCase()
+  if (!STATUS_PERBAIKAN_VALID.includes(status)) throw new Error(`Status tak dikenal: ${p?.status}`)
+  const tanpaJam = STATUS_TANPA_JAM.includes(status)
+  return {
+    guru_id: p.guruId,
+    guru_nama: p.guruNama || '',
+    tanggal: p.iso,
+    shift: p.shift,
+    status,
+    jam: tanpaJam ? '' : p.lama?.jam || '',
+    jam_pulang: tanpaJam ? '' : p.lama?.jam_pulang || '',
+    source: 'manual_perbaikan',
+    imported_at: stamp
+  }
+}
