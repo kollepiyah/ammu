@@ -222,7 +222,7 @@
             <div class="flex items-center justify-between gap-2 flex-wrap">
               <label class="block text-xs font-bold text-indigo-600 uppercase">Shift Tugas</label>
               <RouterLink
-                to="/pengaturan?section=shift"
+                to="/pengaturan-web?section=shift"
                 class="text-[10px] font-bold text-teal-600 hover:underline"
               >
                 <i class="fas fa-cog mr-1"></i>Kelola daftar shift

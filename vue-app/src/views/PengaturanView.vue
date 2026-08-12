@@ -1759,7 +1759,9 @@ const tabs = [
     gradient: 'from-emerald-500 dark:from-emerald-700 to-emerald-700 dark:to-emerald-900'
   }
   // Note: section "rekapDiniyah" & "raporSchema" tetap render dari kartu di template
-  // (akses via routing /pengaturan?section=rekapDiniyah / ?section=raporSchema)
+  // (akses via routing /pengaturan-web?section=rekapDiniyah / ?section=raporSchema)
+  // CATATAN: path-nya `/pengaturan-web`, BUKAN `/pengaturan` — route `/pengaturan` tak
+  // pernah ada, jadi tautan ke sana jatuh ke catch-all router dan mendarat di Beranda.
 ]
 
 // ============================================================
