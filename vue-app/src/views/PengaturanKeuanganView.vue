@@ -3372,6 +3372,25 @@ import { useGedungScope } from '@/composables/useGedungScope'
 const { scoped: gedungScoped, myGedung } = useGedungScope()
 const _inMyGedung = (x) => !gedungScoped.value || String(x.gedung || '').trim() === myGedung.value
 
+/**
+ * Santri aktif dalam scope gedung admin — sumber tunggal untuk keempat layar yang
+ * membutuhkannya (simulasi pemasukan, picker override, generate rutin, dialog generate).
+ *
+ * AUDIT AGU 2026 (perf): dulu keempatnya memanggil getAll('santri') — SELURUH tabel
+ *   ditarik ke memori JS lalu disaring di klien. Di HP kelas bawah itu terasa sebagai
+ *   jeda panjang sebelum satu baris pun tampil. `aktif` adalah kolom RIIL ber-index
+ *   (santri_aktif_idx) dan `not null default true`, jadi penyaringnya aman dipindah ke
+ *   server: TAK ADA baris ber-aktif NULL yang bisa ikut terbuang — itulah sebabnya
+ *   `== true` di sini setara persis dengan `x.aktif !== false` yang lama.
+ *
+ * `gedung` TETAP disaring di klien: field itu tinggal di dalam `data` jsonb, dan
+ *   `gedungScoped` bergantung peran yang login (super_admin melihat semua gedung).
+ */
+async function ambilSantriAktifScoped() {
+  const rows = await queryColl('santri', [['aktif', '==', true]])
+  return rows.filter(_inMyGedung)
+}
+
 const settingsStore = useSettingsStore()
 const { guruRaw } = useGuru()
 const { lembagaRaw } = useLembaga()
@@ -3608,6 +3627,15 @@ function totalRapi(daftar) {
 async function periksaTagihanGabungan() {
   rapiBusy.value = true
   try {
+    // SENGAJA getAll penuh, JANGAN dipersempit (audit Agu 2026 sudah menimbangnya):
+    //   pilahTagihanGabungan mengindeks SELURUH tagihan per (santri, periode) untuk
+    //   mencari pasangan targetnya, dan ia memeriksa tagihan yang SUDAH DIBAYAR juga —
+    //   itulah isi kelompok `adaBayar` yang menahan penghapusan. Menyaring lebih dulu
+    //   (mis. hanya yang belum dibayar, atau hanya periode berjalan) akan membuat
+    //   pasangan hilang dari indeks, dan tagihan sah bisa ikut masuk daftar "aman
+    //   dihapus". Ini uang sungguhan — lambat sedikit jauh lebih murah daripada salah.
+    //   Lagipula ini alat pemeriksaan sesekali yang Kyai jalankan sendiri, bukan jalur
+    //   panas yang dimuat tiap kali halaman dibuka.
     const [tagihan, santri] = await Promise.all([getAll('keuangan_tagihan'), getAll('santri')])
     // Dinilai dengan jenis yang SEDANG TAMPIL: kalau Kyai baru menyetel `gabung_ke` dan
     //   belum menyimpan, hasil periksa ini sudah memakai aturan barunya.
@@ -3677,7 +3705,7 @@ async function hitungSimulasiPemasukan() {
   try {
     // Penyaring santri SAMA dengan Generate Tagihan (aktif + scope gedung) — kalau berbeda,
     //   simulasi menjanjikan pemasukan dari santri yang tak akan pernah ditagih.
-    const santri = (await getAll('santri')).filter((x) => x.aktif !== false && _inMyGedung(x))
+    const santri = await ambilSantriAktifScoped()
     // Tarif yang dipakai = yang SEDANG TAMPIL di layar (jenisList), bukan yang tersimpan,
     //   supaya Kyai bisa mengubah nominal lalu Hitung Ulang tanpa menyimpan apa pun dulu.
     simPemasukan.value = hitungPemasukan(serializeJenisList(jenisList.value), santri)
@@ -4534,9 +4562,7 @@ function overrideSantriCount(jenis) {
 async function loadSantriAktif() {
   if (genSantriAktif.value.length > 0) return
   try {
-    genSantriAktif.value = (await getAll('santri')).filter(
-      (x) => x.aktif !== false && _inMyGedung(x)
-    )
+    genSantriAktif.value = await ambilSantriAktifScoped()
   } catch (e) {
     toast.error('Gagal memuat data santri: ' + (e.message || e))
   }
@@ -5559,7 +5585,7 @@ async function autoGenerate(dryRun = false) {
     const jtBulan = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(form.keu_jatuh_tempo || 10).padStart(2, '0')}`
     const jtTahun = `${taStart}-12-${String(form.keu_jatuh_tempo || 10).padStart(2, '0')}`
     // Fetch santri aktif (v.111: ke-scope ke gedung admin keuangan)
-    const santriAktif = (await getAll('santri')).filter((x) => x.aktif !== false && _inMyGedung(x))
+    const santriAktif = await ambilSantriAktifScoped()
     // D1 (audit): fetch tagihan existing HANYA utk periode yang akan digenerate
     //   (dulu getAll seluruh riwayat → lambat saat data menumpuk). Cermin edge
     //   auto-generate-tagihan yang sudah membatasi .eq('periode', ...).
@@ -5726,9 +5752,7 @@ async function openGenKhusus() {
   genOpen.value = true
   // muat santri aktif sekali (untuk preview & picker individual)
   try {
-    genSantriAktif.value = (await getAll('santri')).filter(
-      (x) => x.aktif !== false && _inMyGedung(x)
-    )
+    genSantriAktif.value = await ambilSantriAktifScoped()
   } catch (e) {
     toast.error('Gagal memuat data santri: ' + (e.message || e))
   }
