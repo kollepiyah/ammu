@@ -205,6 +205,57 @@
         </div>
       </div>
 
+      <!-- Catatan Tes Sekolah — hasil tes materi sekolah (di luar rapor).
+           Blok ini hanya muncul kalau memang ada hasilnya: santri di lembaga yang
+           tak punya materi tes tak perlu melihat kotak kosong. -->
+      <div
+        v-if="tesSekolahList.length > 0"
+        class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
+      >
+        <h3
+          class="text-sm font-black text-[var(--text-primary)] uppercase tracking-widest mb-3 pb-2 border-b border-[var(--border-subtle)] flex items-center gap-2"
+        >
+          <i class="fas fa-school text-indigo-600" aria-hidden="true"></i>Catatan Tes Sekolah
+        </h3>
+        <div class="space-y-2.5">
+          <div
+            v-for="t in tesSekolahList"
+            :key="t.id"
+            :class="[
+              'rounded-xl p-3 border-l-4',
+              t.lulus ? 'bg-emerald-50 border-emerald-500' : 'bg-amber-50 border-amber-500'
+            ]"
+          >
+            <div class="flex items-center justify-between gap-2 mb-1">
+              <p class="text-xs font-black text-[var(--text-primary)]">
+                <i class="fas fa-clipboard-check mr-1 text-indigo-600" aria-hidden="true"></i>
+                {{ t.materi_nama_cache || 'Tes' }}
+              </p>
+              <span class="text-xs font-black whitespace-nowrap">
+                {{ t.nilai }}
+                <span
+                  :class="[
+                    'ml-1 text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded',
+                    t.lulus ? 'text-emerald-700 bg-emerald-100' : 'text-amber-700 bg-amber-100'
+                  ]"
+                >
+                  {{ t.lulus ? 'Lulus' : 'Belum' }}
+                </span>
+              </span>
+            </div>
+            <p class="text-[11px] text-[var(--text-secondary)]">
+              {{ formatTanggal(t.tgl_hasil) }} · penguji {{ t.penguji_nama || '-' }}
+            </p>
+            <p
+              v-if="t.catatan"
+              class="text-xs text-[var(--text-primary)] whitespace-pre-line leading-relaxed mt-1"
+            >
+              {{ t.catatan }}
+            </p>
+          </div>
+        </div>
+      </div>
+
       <!-- Kartu Kenaikan -->
       <div
         class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
@@ -373,6 +424,19 @@ function formatTanggal(t) {
   }
 }
 
+// Catatan Tes Sekolah — hasil tes materi sekolah yang diuji guru tertentu.
+//   SENGAJA tidak masuk rapor: inilah muaranya bagi santri/wali. Hanya yang sudah
+//   dinilai (status 'selesai') yang ditampilkan — ajuan yang masih mengantre bukan
+//   informasi untuk santri.
+const tesSekolah = ref([])
+let unsubTes = null
+
+const tesSekolahList = computed(() =>
+  tesSekolah.value
+    .filter((t) => t.status === 'selesai')
+    .sort((a, b) => String(b.tgl_hasil || '').localeCompare(String(a.tgl_hasil || '')))
+)
+
 onMounted(() => {
   // v.1.2.8 PERF (HP low-end): halaman ini hanya menampilkan rekap SANTRI YANG LOGIN
   //   (rekapSantri memfilter santri_id sesudahnya), tapi dulu menarik rekap_prestasi
@@ -385,12 +449,21 @@ onMounted(() => {
     },
     id ? [['santri_id', '==', id]] : []
   )
+  // Disaring di server dengan alasan yang sama seperti rekap_prestasi di atas.
+  unsubTes = subscribeColl(
+    'tes_sekolah',
+    (data) => {
+      tesSekolah.value = data || []
+    },
+    id ? [['santri_id', '==', id]] : []
+  )
 })
 
 onUnmounted(() => {
-  if (unsubRekap) {
+  for (const un of [unsubRekap, unsubTes]) {
+    if (!un) continue
     try {
-      unsubRekap()
+      un()
     } catch {
       /* noop */
     }
