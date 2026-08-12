@@ -1100,7 +1100,7 @@ import { useConfirm } from '@/composables/useConfirm'
 import { useExcel } from '@/composables/useExcel'
 import { useGoogleSheet } from '@/composables/useGoogleSheet' // v.100 Batch12: ekspor ke Google Sheet
 import { useSettingsStore } from '@/stores/settings'
-import { extractNumber, getNamaGuruGelar } from '@/utils/format'
+import { extractNumber, getNamaGuruGelar, todayJakarta } from '@/utils/format'
 import { bestNameMatch, fuzzyKey, simRatio } from '@/utils/fuzzyMatch' // v.100 Batch12/14: cocokkan nama mirip + scope guru (impor Google Form)
 import { buildListPdf } from '@/utils/pdfBuilder'
 import { muassisDataUrlSync } from '@/utils/kopMuassis' // v.100: baris-1 KOP print = gambar muassis
@@ -1527,7 +1527,9 @@ async function simpanRekap() {
       if (Object.keys(payload).length === 0) continue
       promises.push(updateOne('santri', String(id), payload))
       // v.87.0526: event notif prestasi (1 per santri / bulan berjalan) -> Notif Center wali.
-      const _periode = new Date().toISOString().slice(0, 7)
+      // Bulan WIB, bukan UTC: `_periode` ikut jadi ID dokumen (`np_<id>_<periode>`), jadi
+      //   tanggal 1 pukul 00:00–06:59 WIB akan menimpa notif BULAN SEBELUMNYA kalau dihitung UTC.
+      const _periode = todayJakarta().slice(0, 7)
       const _npId = `np_${id}_${_periode}`
       promises.push(
         mergeOne('notif_prestasi', _npId, {
@@ -1882,7 +1884,8 @@ async function confirmImportRekap() {
   }
   importingRekap.value = true
   importRekapProgress.value = { i: 0, total: items.length }
-  const _periode = new Date().toISOString().slice(0, 7)
+  // Bulan WIB — lihat catatan di simpanRekap: _periode ikut jadi ID dokumen notif.
+  const _periode = todayJakarta().slice(0, 7)
   let ok = 0,
     fail = 0
   try {

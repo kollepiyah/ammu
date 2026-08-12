@@ -1439,7 +1439,7 @@ import {
   writeKenaikan,
   resolveKenaikanSchemaPath
 } from '@/utils/promosiKenaikan' // v.100d: logika naik bersama
-import { juzNum } from '@/utils/format' // v.100e: normalisasi tampilan juz (anti dobel "Juz JUZ n")
+import { juzNum, todayJakarta } from '@/utils/format' // v.100e: normalisasi tampilan juz (anti dobel "Juz JUZ n")
 import { ownsNgaji, ownsSekolah, deteksiTipeGuru, guruAktifSaja } from '@/utils/guruScope' // v.100b: scope guru qiraati/sekolah
 // v.1.1.9: 1 kelas Qiraati = sepasang guru (pagi & sore) — dropdown menampilkan 2 nama.
 import {
@@ -1585,7 +1585,7 @@ watch(
 // ────────── v.99: MUTASI (keluar) santri — sub-menu Kenaikan/Mutasi. Pola: kategori → lembaga → list → keluarkan ──────────
 const mutasiKategori = ref('') // '' | 'qiraati' | 'sekolah'
 const mutasiLembaga = ref('')
-const mutasiTgl = ref(new Date().toISOString().slice(0, 10))
+const mutasiTgl = ref(todayJakarta())
 const mutasiAlasan = ref('')
 const mutasiAlasanLain = ref('')
 const mutasiSearch = ref('')
@@ -1665,7 +1665,7 @@ async function keluarkanSantri(s) {
   try {
     await mergeOne('santri', String(s.id), {
       aktif: false,
-      tgl_keluar: mutasiTgl.value || new Date().toISOString().slice(0, 10),
+      tgl_keluar: mutasiTgl.value || todayJakarta(),
       alasan_keluar: alasan
     })
     s.aktif = false
@@ -2360,7 +2360,7 @@ function toggleNoteForm(kelasId) {
   noteDraft.value = {
     ...noteDraft.value,
     [kelasId]: {
-      tanggal: new Date().toISOString().slice(0, 10),
+      tanggal: todayJakarta(),
       itemId: defaultItemId,
       tipe: 'catatan',
       text: ''
@@ -2693,7 +2693,7 @@ function openFormKenaikan(s) {
       if (lmbSek === 'PKBM') lmbSek = getPkbmSubTier(s.kelas_sekolah || s.kelas) || 'SMP'
     }
     formData.value = {
-      tanggal: new Date().toISOString().slice(0, 10),
+      tanggal: todayJakarta(),
       kelas_sekolah: s.kelas_sekolah || '',
       lembaga: lmbSek, // TK/SDI/SMP/SMA (kunci kartu_kenaikan sekolah)
       kelas: s.kelas_sekolah || '', // kelas sekolah saat ini (pilih kelas baru utk naik)
@@ -2741,7 +2741,7 @@ function openFormKenaikan(s) {
   const pagiLama = String(s.guru_pagi || '').trim()
   const soreLama = String(s.guru_sore || '').trim()
   formData.value = {
-    tanggal: new Date().toISOString().slice(0, 10),
+    tanggal: todayJakarta(),
     kelas_sekolah: s.kelas_sekolah || '',
     lembaga: matched, // auto-fill current lembaga
     kelas: resolvedKelas, // auto-fill current kelas (PTPT/Pra PTPT normalized)
@@ -2774,7 +2774,7 @@ async function saveFormKenaikanSekolah() {
   }
   savingForm.value = true
   try {
-    const today = new Date().toISOString().slice(0, 10)
+    const today = todayJakarta()
     const todayId = new Date().toLocaleDateString('id-ID')
     const payload = { kelas_sekolah: kls }
     // Guru wali kelas baru (non-destruktif: taruh di depan, pertahankan guru sekolah lain)
