@@ -25,7 +25,64 @@ naik satu tiap rilis. Entri lama memakai skema lama `v.{nomor-urut}.{MMDDtahunmu
 - Tauri Desktop scaffold
 - Phase 1 palette migration: `bg-blue-600/700` action button → `bg-teal-600/700` (~62 occurrences)
 - DOMPurify integration untuk template literal innerHTML yang inject user data
-- Console.log cleanup (37 occurrences di production)
+
+---
+
+## [v.1.3.5] — 2026-08-12 — Tes Sekolah + login Google Android + tambalan audit
+
+⚠️ **URUTAN DEPLOY:**
+
+1. `supabase db push` — **dua migrasi baru** (`20260812120000` keamanan auth,
+   `20260812130000` tabel `tes_sekolah`). _Sudah dijalankan 12 Agu._
+2. **Supabase Dashboard → Auth → URL Configuration → Redirect URLs**: tambahkan
+   `app.ammu.id://auth-callback`. **WAJIB**, kalau tidak login Google Android tetap mati.
+3. Deploy web dari **direktori utama**, lalu **AAB vc135** dan **Electron 1.3.5**.
+
+Untuk Android, unggah `AmmuOnline.apk` ke rilis GitHub **lebih dulu**, baru deploy web.
+
+📄 Teks ringkas untuk badan rilis GitHub ada di **`RELEASE-NOTES.md`**.
+
+### Added (Baru)
+
+- **Tes Sekolah** — menu Tes Kenaikan kini punya dua sisi, `Qiraati | Sekolah`. Materi
+  sekolah yang perlu diuji **guru tertentu** (ditunjuk admin per materi, bukan kepala
+  sekolah). Wali kelas mengajukan santrinya lewat daftar bercentang persis seperti tab
+  Ajukan Qiraati; guru penguji menilai antreannya. Hasil = nilai + Lulus/Belum + catatan.
+  Saklar "Sekolah" **hanya muncul** untuk admin, guru penguji, atau wali kelas sekolah.
+- **Master Materi Tes** — Master Data › Lembaga › Materi Tes (super_admin). Materi diikat
+  ke lembaga sekolah + kelas, punya daftar penguji, nilai maksimal, dan batas lulus.
+  **Daftarnya mulai kosong** — sebelum diisi, tak ada yang bisa diajukan.
+- **Catatan Tes Sekolah di akun santri** — blok baru di Capaian Prestasi.
+  Ammu tak punya rapor sekolah (rapor di sini hanya Qiraati & Diniyah), jadi inilah muara
+  hasilnya di dalam aplikasi; nilai rapor sekolah tetap diinput wali kelas di luar app.
+
+### Fixed (Perbaikan)
+
+- 🔴 **Celah pengambilalihan akun lewat login Google.** `handle_new_user` mencocokkan
+  local-part email ke `guru.username`/WA/NIS — pada login Google local-part itu
+  dikendalikan penyerang, sehingga `<username-guru>@gmail.com` langsung mendapat akun guru
+  tersebut. Pencocokan kini hanya untuk email internal `@ammu.local`.
+- **Login Google mati di Android** (jalan di web/PWA). Dua sebab: `redirectTo` jadi
+  `https://localhost/` yang hanya berarti di dalam WebView, dan Google menolak alur consent
+  di WebView tertanam. Kini memakai deep link `app.ammu.id://auth-callback` + intent-filter
+  baru, halaman izin dibuka di browser sistem, kodenya masuk lewat `appUrlOpen`.
+- **Login Google gagal senyap.** Akun tak tertaut dipulangkan ke `/login` tanpa satu pun
+  pesan. Kini muncul peringatan tegas; sesi Supabase yatim ikut dibuang. Tombol "Tautkan
+  Google" di Profil yang selalu berbunyi "terhubung: undefined" juga dibenahi.
+- **Tombol "Kelola daftar shift"** di form guru melempar ke Beranda — `to="/pengaturan"`
+  tak pernah cocok route mana pun (yang benar `/pengaturan-web`), jadi jatuh ke catch-all.
+- **Tanggal mundur sehari di WIB.** `tgl_naik` + kartu kenaikan + baris riwayat dan
+  `tgl_keluar` mutasi memakai `toISOString()`; kenaikan yang diproses 00:00–06:59 WIB
+  tercatat mundur. Periode notif prestasi juga — dan periode itu ikut jadi ID dokumen,
+  jadi rekap tanggal 1 dini hari menimpa notif bulan sebelumnya.
+
+### Changed (Berubah)
+
+- **Pengaturan Keuangan lebih ringan.** Empat layar menarik SELURUH tabel `santri` lalu
+  menyaring di klien; kini disaring di server (`aktif` kolom riil ber-index). Terasa di HP
+  kelas bawah. `periksaTagihanGabungan` sengaja tetap menarik penuh — ia mengindeks seluruh
+  tagihan dan ikut memeriksa yang sudah dibayar.
+- Console.log cleanup (37 occurrences) — selesai, dicoret dari Unreleased.
 
 ---
 

@@ -5,6 +5,39 @@ Rinciannya untuk pengembang ada di `CHANGELOG.md` — jangan disalin ke sana, te
 
 ---
 
+## v.1.3.5 — Agustus 2026
+
+**Baru: Tes Sekolah**
+
+- Menu **Tes Kenaikan** kini punya dua sisi: **Qiraati** dan **Sekolah**. Sisi Sekolah untuk
+  materi sekolah yang perlu diuji **guru tertentu** — bukan kepala sekolah.
+- **Wali kelas** mencentang santrinya lalu mengajukan sekaligus, sama seperti tab Ajukan
+  Qiraati. **Guru penguji** yang ditunjuk menilai antreannya: nilai angka, lulus/belum, dan
+  catatan.
+- Hasilnya tampil di **Capaian Prestasi** santri dan di riwayat guru kelasnya. Nilai rapor
+  sekolah tetap diinput wali kelas seperti biasa di luar aplikasi.
+- Materi tesnya ditambah admin di **Master Data › Lembaga › Materi Tes**. Selama daftar itu
+  masih kosong, sisi Sekolah belum bisa dipakai.
+
+**Perbaikan**
+
+- **Login Google di Android sekarang jalan.** Sebelumnya hanya bisa di web; di aplikasi
+  Android halaman izin Google tak pernah bisa kembali ke aplikasi.
+- Kalau akun Google belum ditautkan, layar login kini **menjelaskan sebabnya** — dulu diam
+  saja dan seolah tidak terjadi apa-apa. Tombol **Tautkan Akun Google** di Profil juga
+  diperbaiki.
+- Tombol **"Kelola daftar shift"** di form data guru tak lagi melempar ke Beranda.
+- **Tanggal kenaikan & mutasi tak lagi mundur sehari** bila diproses dini hari.
+- **Pengaturan Keuangan lebih ringan dibuka**, terasa di HP kelas bawah.
+
+**Cara memasang**
+
+- **Android**: unduh `AmmuOnline.apk` di bawah, buka berkasnya, lalu pasang menimpa aplikasi
+  yang ada.
+- **Desktop**: jalankan `AmmuOnline-Setup-1.3.5.exe`. Windows 7 memakai berkas `Win7`.
+
+---
+
 ## v.1.3.4 — Agustus 2026
 
 **Keuangan**

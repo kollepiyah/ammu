@@ -583,7 +583,7 @@ const introText = computed(() =>
 const lembagaName = computed(
   () => settings.settings?.namaLembaga || 'Pondok Pesantren Mambaul Ulum'
 )
-const version = computed(() => settings.settings?.appVersion || 'v.1.3.4')
+const version = computed(() => settings.settings?.appVersion || 'v.1.3.5')
 const logoSrc = computed(() => settings.settings?.logoUrl || '/logo.png')
 
 const sections = [
@@ -828,7 +828,7 @@ async function resetFaq() {
 //   riwayat lengkap ada di CHANGELOG.md untuk pengembang.
 const rilis = [
   {
-    versi: 'v.1.3.4',
+    versi: 'v.1.3.5',
     tgl: 'Agustus 2026',
     items: [
       'Alat "Rapikan Tagihan Gabungan" di Pengaturan Keuangan: menemukan tagihan ngaji yang sudah termasuk di syahriyah sekolah/pondok tapi masih tercatat belum bayar, lalu menghapusnya setelah diperiksa.',
