@@ -18,20 +18,73 @@
 // sudah berkali-kali menggigit di repo ini.
 
 import { barisBisyaroh, barisTunjangan } from './bisyarohScope'
+import { PTPT_JUZ_PER_KELAS } from './glondongan'
 
 /**
- * Semua baris slip 1 guru yang ikut plafon: Jenis Bisyaroh + Jenis Tunjangan.
+ * Id semu untuk baris glondongan. Sengaja berpagar garis bawah ganda supaya tak mungkin
+ * bertabrakan dengan id Jenis Bisyaroh yang diketik Kyai sendiri di Pengaturan.
+ */
+export const GLONDONGAN_JENIS_ID = '__glondongan__'
+
+/** Andaian bawaan: tiap penyimak menyimak 3 blok sebulan (Kyai, 12 Agu 2026). */
+export const GLONDONGAN_BLOK_DEFAULT = 3
+
+/**
+ * Baris glondongan PTPT untuk 1 guru — ANDAIAN, bukan data.
+ *
+ * Kyai (12 Agu 2026): "kenapa bisyaroh glondongan tidak masuk di simulasi?"
+ * Sebabnya: glondongan lahir dari PERISTIWA (baris `tes_glondongan` yang benar-benar
+ * dinilai), sedangkan simulasi ini bertumpu pada ANDAIAN (semua hadir penuh). Tak ada
+ * kuantitas hadir-penuh yang bisa diturunkan untuknya — jadi selama ini ia jatuh dari
+ * plafon, dan plafonnya MENGECIL. Persis cacat yang sama dengan tunjangan dulu.
+ *
+ * Andaiannya kini dinyatakan terang-terangan: tiap penyimak menyimak `blokPerGuru` blok
+ * sebulan. Bayarannya per JUZ (`keu_glondongan_per_juz`), dan 1 blok = satu kelas PTPT =
+ * PTPT_JUZ_PER_KELAS juz — konstanta itu DIIMPOR, bukan disalin, supaya kalau pembagian
+ * kelas PTPT berubah simulasi ikut berubah sendiri.
+ *
+ * Hanya guru yang terdaftar sebagai **penyimak** yang kena. Menerapkannya ke semua guru
+ * akan menggelembungkan plafon berlipat-lipat, dan justru alat inilah yang dipakai Kyai
+ * memutuskan nominal — salah di sini berbuah salah anggaran.
+ *
+ * @param {object} ctx konteks guru (butuh `guruId`)
+ * @param {object} opsi { tarifPerJuz, blokPerGuru, penyimakIds:Set|Array }
+ */
+function barisGlondongan(ctx, opsi) {
+  if (!opsi) return []
+  const tarif = Number(opsi.tarifPerJuz) || 0
+  const blok = Number(opsi.blokPerGuru)
+  if (tarif <= 0 || !Number.isFinite(blok) || blok <= 0) return []
+  const ids = opsi.penyimakIds instanceof Set ? opsi.penyimakIds : new Set(opsi.penyimakIds || [])
+  if (!ids.has(String(ctx?.guruId ?? ''))) return []
+  const juz = blok * PTPT_JUZ_PER_KELAS
+  return [
+    {
+      jenis_id: GLONDONGAN_JENIS_ID,
+      kategori: 'bisyaroh',
+      label: 'Glondongan PTPT',
+      hitungan: 'per_juz',
+      tarif,
+      qty: juz,
+      nominal: juz * tarif
+    }
+  ]
+}
+
+/**
+ * Semua baris slip 1 guru yang ikut plafon: Jenis Bisyaroh + Jenis Tunjangan + Glondongan.
  *
  * Kyai (7 Agu 2026): "tunjangan kok gak masuk di simulasi ya?" — memang tak masuk, dan itu
  * cacat sejak tunjangan pindah ke daftarnya sendiri. Plafon yang tak menghitung tunjangan
  * bukan sekadar kurang lengkap: ia MENGECILKAN anggaran, padahal alat ini dipakai justru
  * untuk memutuskan nominal. Sejak bonus tepat waktu ikut pindah ke tunjangan, angkanya
- * makin jauh dari kenyataan.
+ * makin jauh dari kenyataan. Glondongan menyusul dengan alasan yang sama (12 Agu 2026).
  */
-function barisSemua(jenisList, tunjanganList, ctx) {
+function barisSemua(jenisList, tunjanganList, ctx, opsiGlondongan) {
   return [
     ...(barisBisyaroh(jenisList || [], ctx) || []),
-    ...(barisTunjangan(tunjanganList || [], ctx) || [])
+    ...(barisTunjangan(tunjanganList || [], ctx) || []),
+    ...barisGlondongan(ctx, opsiGlondongan)
   ]
 }
 
@@ -84,11 +137,11 @@ export function tanggalBulanPenuh(periode) {
  *
  * @returns { perJenis: [{jenis_id,kategori,label,hitungan,tarif,guru,qty,subtotal}], total, guruKena }
  */
-export function simulasiBisyaroh(jenisList, ctxList, tunjanganList) {
+export function simulasiBisyaroh(jenisList, ctxList, tunjanganList, opsiGlondongan) {
   const perJenis = new Map()
   const guruKena = new Set()
   for (const ctx of ctxList || []) {
-    for (const b of barisSemua(jenisList, tunjanganList, ctx)) {
+    for (const b of barisSemua(jenisList, tunjanganList, ctx, opsiGlondongan)) {
       const nominal = Number(b.nominal) || 0
       if (nominal <= 0) continue
       const k = kunciJenis(b)
@@ -138,12 +191,12 @@ export function simulasiBisyaroh(jenisList, ctxList, tunjanganList) {
  * @returns [{ guruId, nama, baris: [{jenis_id,label,hitungan,tarif,qty,nominal}], total }]
  *          terurut dari yang terbesar.
  */
-export function simulasiPerGuru(jenisList, ctxList, tunjanganList) {
+export function simulasiPerGuru(jenisList, ctxList, tunjanganList, opsiGlondongan) {
   const out = []
   for (const ctx of ctxList || []) {
     const baris = []
     let total = 0
-    for (const b of barisSemua(jenisList, tunjanganList, ctx)) {
+    for (const b of barisSemua(jenisList, tunjanganList, ctx, opsiGlondongan)) {
       const nominal = Number(b.nominal) || 0
       if (nominal <= 0) continue // sejajar simulasiBisyaroh: nominal 0 tak dihitung
       baris.push({

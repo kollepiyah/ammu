@@ -4,8 +4,11 @@ import {
   tanggalBulanPenuh,
   simulasiBisyaroh,
   simulasiPerGuru,
-  terapkanNominal
+  terapkanNominal,
+  GLONDONGAN_JENIS_ID,
+  GLONDONGAN_BLOK_DEFAULT
 } from '../../vue-app/src/utils/simulasiBisyaroh.js'
+import { PTPT_JUZ_PER_KELAS } from '../../vue-app/src/utils/glondongan.js'
 
 describe('tanggalBulanPenuh', () => {
   it('bulan penuh, TIDAK dipotong sampai hari ini', () => {
@@ -216,6 +219,65 @@ describe('simulasi ikut menghitung Jenis Tunjangan', () => {
     expect(perOrang.reduce((a, g) => a + g.total, 0)).toBe(
       simulasiBisyaroh(JENIS, list, TUNJANGAN).total
     )
+  })
+
+  // Kyai 12 Agu 2026: "kenapa bisyaroh glondongan tidak masuk di simulasi?"
+  // Glondongan lahir dari peristiwa, bukan andaian hadir-penuh, jadi kuantitasnya
+  // harus diandaikan terang-terangan: N blok/bulan tiap PENYIMAK TERDAFTAR.
+  describe('glondongan PTPT', () => {
+    const OPSI = (over = {}) => ({
+      tarifPerJuz: 10000,
+      blokPerGuru: GLONDONGAN_BLOK_DEFAULT,
+      penyimakIds: new Set(['g1']),
+      ...over
+    })
+
+    it('hanya kena PENYIMAK terdaftar, bukan semua guru', () => {
+      const r = simulasiBisyaroh(JENIS, [ctxT('g1', 26, 7), ctxT('g2', 26, 7)], null, OPSI())
+      const g = r.perJenis.find((x) => x.jenis_id === GLONDONGAN_JENIS_ID)
+      expect(g.guru).toBe(1)
+    })
+
+    it('1 blok = PTPT_JUZ_PER_KELAS juz, dibayar per juz', () => {
+      const r = simulasiBisyaroh(JENIS, [ctxT('g1', 26, 7)], null, OPSI())
+      const g = r.perJenis.find((x) => x.jenis_id === GLONDONGAN_JENIS_ID)
+      const juz = GLONDONGAN_BLOK_DEFAULT * PTPT_JUZ_PER_KELAS
+      expect(g).toMatchObject({ kategori: 'bisyaroh', hitungan: 'per_juz', qty: juz })
+      expect(g.subtotal).toBe(juz * 10000)
+    })
+
+    it('tarif 0 / blok 0 / tanpa opsi -> tak ada baris sama sekali', () => {
+      const ctxs = [ctxT('g1', 26, 7)]
+      const adaBaris = (opsi) =>
+        simulasiBisyaroh(JENIS, ctxs, null, opsi).perJenis.some(
+          (x) => x.jenis_id === GLONDONGAN_JENIS_ID
+        )
+      expect(adaBaris(OPSI({ tarifPerJuz: 0 }))).toBe(false)
+      expect(adaBaris(OPSI({ blokPerGuru: 0 }))).toBe(false)
+      expect(adaBaris(OPSI({ penyimakIds: new Set() }))).toBe(false)
+      expect(adaBaris(undefined)).toBe(false)
+    })
+
+    it('penyimakIds boleh array, dan id dicocokkan sebagai TEKS', () => {
+      // id Supabase = teks; ctx.guruId bisa datang sebagai angka dari baris guru lama.
+      const r = simulasiBisyaroh(JENIS, [ctxT(7, 26, 7)], null, OPSI({ penyimakIds: ['7'] }))
+      expect(r.perJenis.some((x) => x.jenis_id === GLONDONGAN_JENIS_ID)).toBe(true)
+    })
+
+    it('per orang tetap sejumlah per jenis sesudah glondongan ikut', () => {
+      const list = [ctxT('g1', 26, 7), ctxT('g2', 20, 3)]
+      const perOrang = simulasiPerGuru(JENIS, list, TUNJANGAN, OPSI())
+      expect(perOrang.reduce((a, g) => a + g.total, 0)).toBe(
+        simulasiBisyaroh(JENIS, list, TUNJANGAN, OPSI()).total
+      )
+    })
+
+    it('tanpa opsi, hasilnya PERSIS seperti sebelum fitur ini', () => {
+      const list = [ctxT('g1', 26, 7)]
+      expect(simulasiBisyaroh(JENIS, list, TUNJANGAN).total).toBe(
+        simulasiBisyaroh(JENIS, list, TUNJANGAN, undefined).total
+      )
+    })
   })
 
   it('id kembar di dua daftar TIDAK menyatu jadi satu baris', () => {

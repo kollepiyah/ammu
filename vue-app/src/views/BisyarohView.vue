@@ -501,6 +501,29 @@
                 masa kerja dari <b>Tgl. Tugas</b> (yang kosong tak terhitung). Ubah nominal di bawah
                 untuk melihat dampaknya; menutup halaman mengembalikan semuanya.
               </p>
+
+              <!-- Kyai 12 Agu 2026: glondongan ikut plafon. Ia tak punya kuantitas
+                   hadir-penuh (lahir dari peristiwa, bukan andaian), jadi andaiannya
+                   dinyatakan terang-terangan di sini dan bisa diubah. -->
+              <div
+                v-if="simPenyimakIds.size > 0"
+                class="flex flex-wrap items-center gap-2 text-[11px] text-amber-900/90 dark:text-amber-200/90"
+              >
+                <label for="sim-glond-blok" class="font-black">Glondongan PTPT:</label>
+                <input
+                  id="sim-glond-blok"
+                  v-model.number="simGlondonganBlok"
+                  type="number"
+                  min="0"
+                  max="30"
+                  class="w-16 px-2 py-1 rounded-lg border border-amber-300/60 bg-[var(--bg-card)] text-right font-bold focus:ring-2 focus:ring-amber-500 outline-none"
+                />
+                <span>
+                  blok/bulan tiap penyimak · 1 blok = {{ PTPT_JUZ_PER_KELAS }} juz →
+                  <b>{{ (Number(simGlondonganBlok) || 0) * PTPT_JUZ_PER_KELAS }} juz</b> ×
+                  {{ simPenyimakIds.size }} penyimak terdaftar
+                </span>
+              </div>
               <div class="overflow-x-auto">
                 <table class="w-full text-xs">
                   <thead class="text-[10px] uppercase text-[var(--text-secondary)]">
@@ -1064,7 +1087,9 @@ import {
   tanggalBulanPenuh,
   simulasiBisyaroh,
   simulasiPerGuru,
-  terapkanNominal
+  terapkanNominal,
+  GLONDONGAN_JENIS_ID,
+  GLONDONGAN_BLOK_DEFAULT
 } from '@/utils/simulasiBisyaroh'
 import { buildLiburScope, liburKenaLembaga } from '@/utils/liburScope' // v.1.2.3: libur per lembaga
 import { tanggalRentang } from '@/utils/absensiRekap'
@@ -1079,7 +1104,7 @@ import { useToast } from '@/composables/useToast'
 import { useGoogleSheet } from '@/composables/useGoogleSheet' // v.100 Batch12: ekspor ke Google Sheet
 import { useExcel } from '@/composables/useExcel'
 import { fmtRp, getNamaGuruGelar } from '@/utils/format'
-import { periodeBulan } from '@/utils/glondongan' // v.111: bisyaroh tes glondongan PTPT
+import { periodeBulan, getPenyimakGlondongan, PTPT_JUZ_PER_KELAS } from '@/utils/glondongan' // v.111: bisyaroh tes glondongan PTPT
 import ReceiptModal from '@/components/ReceiptModal.vue'
 import { buildSlipBisyarohHtml } from '@/utils/receiptHtml'
 import { cetakSlipBisyarohPdf, exportRekapBisyarohPdf } from '@/utils/strukBuilder'
@@ -1805,15 +1830,60 @@ function simNominalUntuk(kelompok) {
   return out
 }
 
+// ── Glondongan PTPT di simulasi (Kyai 12 Agu 2026) ───────────────────────────
+// Glondongan lahir dari PERISTIWA (baris tes_glondongan yang benar-benar dinilai),
+//   sedangkan simulasi bertumpu pada ANDAIAN. Karena itu ia tak punya kuantitas
+//   hadir-penuh dan selama ini jatuh dari plafon — persis cacat tunjangan dulu.
+//   Andaiannya kini dinyatakan terang: tiap penyimak menyimak N blok sebulan.
+const simGlondonganBlok = ref(GLONDONGAN_BLOK_DEFAULT)
+// Hanya guru yang TERDAFTAR sebagai penyimak yang kena. Kalau diterapkan ke semua guru,
+//   plafonnya menggelembung berlipat — dan alat inilah yang dipakai memutuskan nominal.
+const simPenyimakIds = computed(() => {
+  const peta = getPenyimakGlondongan(lembagaRaw.value)
+  return new Set([...(peta.mahad || []), ...(peta.nonmahad || [])].map(String))
+})
+// Tarif per juz boleh ikut dicoba-coba seperti jenis lain (kunci `bisyaroh:__glondongan__`).
+const simGlondonganTarif = computed(() => {
+  const coba = simNominal.value[`bisyaroh:${GLONDONGAN_JENIS_ID}`]
+  if (coba !== undefined && coba !== '') return Math.max(0, Number(coba) || 0)
+  return Number(settingsStore.settings?.keu_glondongan_per_juz) || 0
+})
+const simOpsiGlondongan = computed(() => ({
+  tarifPerJuz: simGlondonganTarif.value,
+  blokPerGuru: Number(simGlondonganBlok.value) || 0,
+  penyimakIds: simPenyimakIds.value
+}))
+
 const simHasil = computed(() =>
-  simulasiBisyaroh(simJenisPakai.value, simCtxList.value, simTunjanganPakai.value)
+  simulasiBisyaroh(
+    simJenisPakai.value,
+    simCtxList.value,
+    simTunjanganPakai.value,
+    simOpsiGlondongan.value
+  )
 )
 // Kyai 7 Agu 2026: tunjangan IKUT simulasi. Tampil di tabel yang sama supaya total plafon
 //   terbaca sekali jalan — dibedakan lencana, bukan tabel terpisah.
-const simJenisAsli = computed(() => [
-  ...jenisBisyarohList(settingsStore.settings || {}).map((j) => ({ ...j, kel: 'bisyaroh' })),
-  ...jenisTunjanganList(settingsStore.settings || {}).map((j) => ({ ...j, kel: 'tunjangan' }))
-])
+const simJenisAsli = computed(() => {
+  const out = [
+    ...jenisBisyarohList(settingsStore.settings || {}).map((j) => ({ ...j, kel: 'bisyaroh' })),
+    ...jenisTunjanganList(settingsStore.settings || {}).map((j) => ({ ...j, kel: 'tunjangan' }))
+  ]
+  // Jenis SEMU untuk glondongan supaya ia muncul sebagai baris biasa di tabel yang sama —
+  //   kalau ditaruh di kartu terpisah, jumlah baris tabel tak lagi sama dengan total plafon.
+  //   Ditampilkan hanya bila ada penyimak terdaftar; tanpa itu barisnya selalu 0 dan cuma
+  //   menambah kebingungan.
+  if (simPenyimakIds.value.size > 0) {
+    out.push({
+      id: GLONDONGAN_JENIS_ID,
+      kel: 'bisyaroh',
+      label: 'Glondongan PTPT',
+      hitungan: 'per_juz',
+      nominal: Number(settingsStore.settings?.keu_glondongan_per_juz) || 0
+    })
+  }
+  return out
+})
 const simPeta = computed(() => {
   const m = {}
   for (const r of simHasil.value.perJenis)
@@ -1830,6 +1900,10 @@ function simKey(j) {
 }
 /** Label cara hitung, dari sumber yang sama dengan editor Jenis Bisyaroh. */
 function hitunganLabel(h) {
+  // 'per_juz' bukan pilihan Jenis Bisyaroh — ia milik glondongan, yang tarifnya di
+  //   Pengaturan Keuangan, bukan di daftar jenis. Tanpa cabang ini labelnya jatuh ke
+  //   'Flat / bulan' dan pembaca menyangka bayarannya sekali sebulan.
+  if (h === 'per_juz') return '× juz disimak'
   return (
     HITUNGAN_OPTIONS.find((o) => o.value === h)?.label ||
     HITUNGAN_TUNJANGAN_OPTIONS.find((o) => o.value === h)?.label ||
@@ -1854,7 +1928,12 @@ const simSembunyiNol = ref(false)
 const simBuka = ref(new Set()) // guruId yang rinciannya sedang dibentangkan
 
 const simPerGuru = computed(() =>
-  simulasiPerGuru(simJenisPakai.value, simCtxList.value, simTunjanganPakai.value)
+  simulasiPerGuru(
+    simJenisPakai.value,
+    simCtxList.value,
+    simTunjanganPakai.value,
+    simOpsiGlondongan.value
+  )
 )
 const simPerGuruTampil = computed(() => {
   const q = simCariGuru.value.trim().toLowerCase()
