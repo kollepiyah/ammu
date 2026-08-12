@@ -11,6 +11,7 @@ import LembagaView from './LembagaView.vue'
 // v.21.85.0527: KelasView read-only diganti KelasGuruView (assign santri↔guru) + JabatanKelolaView (ACF)
 import KelasGuruView from './KelasGuruView.vue'
 import JabatanKelolaView from './JabatanKelolaView.vue'
+import MateriTesKelolaView from './MateriTesKelolaView.vue'
 import FieldSchemaView from './FieldSchemaView.vue'
 import GuruView from './GuruView.vue'
 import SantriView from './SantriView.vue'
@@ -966,6 +967,18 @@ async function simpanPengaturanRekap() {
         >
           <i class="fas fa-id-badge mr-1"></i>Jabatan
         </button>
+        <!-- Materi Tes Sekolah — materi yang diuji guru tertentu, di luar rapor -->
+        <button
+          :class="[
+            'px-3 py-1.5 text-xs font-bold rounded-lg border transition cursor-pointer',
+            lembagaSubTab === 'materi-tes'
+              ? 'bg-cyan-500 text-white border-cyan-600'
+              : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-cyan-50'
+          ]"
+          @click="lembagaSubTab = 'materi-tes'"
+        >
+          <i class="fas fa-clipboard-list mr-1"></i>Materi Tes
+        </button>
       </div>
       <div
         class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden"
@@ -976,7 +989,9 @@ async function simpanPengaturanRekap() {
               ? KelasGuruView
               : lembagaSubTab === 'jabatan'
                 ? JabatanKelolaView
-                : LembagaView
+                : lembagaSubTab === 'materi-tes'
+                  ? MateriTesKelolaView
+                  : LembagaView
           "
           :key="lembagaSubTab"
         />

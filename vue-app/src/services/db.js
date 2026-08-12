@@ -123,6 +123,10 @@ const COLS = {
     'penguji_id',
     'periode'
   ],
+  // Tes Sekolah — 1 baris = 1 ajuan tes (santri × materi). Nilainya TAK ke rapor.
+  //   data jsonb ekor: { nama_cache, kelas_sekolah, materi_nama_cache, pengaju_id,
+  //   pengaju_nama, penguji_nama, tgl_ajuan, tgl_hasil, nilai, lulus, catatan }
+  tes_sekolah: ['santri_id', 'materi_id', 'lembaga_sekolah', 'status', 'penguji_id', 'periode'],
   // Ceremonial PTPT — 1 baris = 1 SESI. data jsonb ekor:
   //   { judul, jam_selesai, tempat, catatan, peserta:[{santri_id,nama,kelas,juz,ajuan_id,tgl_lulus_pj}],
   //     penyimak_guru:[{id,nama}], penyimak_santri:[{id,nama}], dibuat_oleh, tgl_buat }
@@ -176,6 +180,7 @@ const REALTIME = new Set([
   'riwayat_kenaikan',
   'tes_kenaikan',
   'tes_glondongan',
+  'tes_sekolah',
   'ceremonial_ptpt',
   'user_notif_state',
   'kritik_saran',
