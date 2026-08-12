@@ -22,6 +22,27 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
+            <!-- v.1.3.5: jalan pulang login Google di Android.
+                 Google MENOLAK alur consent di WebView tertanam, jadi halaman izinnya
+                 dibuka di BROWSER SISTEM (lihat _bukaOAuth di authSupabase.js). Tanpa
+                 intent-filter ini, browser itu tak punya cara mengembalikan pengguna ke
+                 app: Supabase memulangkan ke `https://localhost/` yang hanya berarti di
+                 dalam WebView Capacitor, sehingga alurnya mentok di halaman galat.
+                 Itulah sebabnya login Google jalan di web/PWA tapi mati di Android.
+
+                 launchMode MainActivity = singleTask (di atas), jadi tautan ini masuk ke
+                 instance yang SUDAH berjalan dan sampai ke JS sebagai `appUrlOpen` —
+                 bukan membuka app kedua yang kehilangan code_verifier PKCE.
+
+                 ⚠️ Skema ini WAJIB juga terdaftar di Supabase → Auth → URL Configuration
+                 → Redirect URLs sebagai `app.ammu.id://auth-callback`. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="app.ammu.id" android:host="auth-callback" />
+            </intent-filter>
+
         </activity>
 
         <provider

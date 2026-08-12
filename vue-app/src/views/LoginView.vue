@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore, ambilSebabGoogleGagal } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
@@ -22,7 +22,21 @@ onMounted(() => {
     settings.load().catch(() => {})
   }
   bacaSebabGoogleGagal()
+  window.addEventListener('ammu-google-gagal', bacaSebabGoogleGagal)
 })
+onUnmounted(() => {
+  window.removeEventListener('ammu-google-gagal', bacaSebabGoogleGagal)
+})
+
+// Balik OAuth di ANDROID datang lewat deep link, TANPA muat ulang halaman — layar
+//   masih diam di /login walau sesinya sudah jadi. Di web hal ini tak pernah terlihat
+//   karena halamannya dimuat ulang dan guard router yang mengurus. Pantau sesinya.
+watch(
+  () => auth.isLoggedIn,
+  (masuk) => {
+    if (masuk) router.replace(route.query.redirect || '/dashboard')
+  }
+)
 
 // --- Kenapa login Google memulangkan saya ke sini? ---------------------------------
 // Sebelumnya kegagalannya SENYAP: putaran OAuth berhasil, tapi profilnya tak punya

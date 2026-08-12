@@ -93,6 +93,14 @@ function _tandaiGoogleGagal(sebab, detail = '') {
   } catch (e) {
     /* mode privat / storage penuh — pesannya hilang, alurnya tak boleh ikut mati */
   }
+  // Di web penanda ini selalu ditulis SEBELUM LoginView di-mount (balik OAuth = muat
+  //   ulang halaman), jadi cukup dibaca di onMounted. Di Android tidak: deep link tiba
+  //   saat layar login sudah lama terpasang. Event ini yang memberi tahu layarnya.
+  try {
+    window.dispatchEvent(new CustomEvent('ammu-google-gagal'))
+  } catch (e) {
+    /* ignore */
+  }
 }
 
 /** Ambil sebab gagal login Google SEKALI (langsung dihapus). null = tak ada. */
@@ -365,6 +373,35 @@ export const useAuthStore = defineStore('auth', () => {
     } catch (e) {
       console.warn('[auth.initAuth] OAuth code exchange gagal:', e?.message || e)
       _tandaiGoogleGagal('tukar-kode', e?.message || '')
+    }
+
+    // Step 0b (ANDROID/iOS): jalan pulang lewat DEEP LINK, bukan alamat halaman.
+    //   Di app native, Google dibuka di browser sistem dan memulangkan ke
+    //   `app.ammu.id://auth-callback?code=...`. Tautan itu TIDAK mengubah
+    //   window.location app, jadi Step 0 di atas tak akan pernah melihatnya — kodenya
+    //   datang lewat event `appUrlOpen` dari Capacitor.
+    //   Berbeda dengan web, di sini TAK ADA muat ulang halaman: sesudah sesi terbentuk
+    //   layar masih diam di /login, karena itu LoginView memantau isLoggedIn.
+    if (authSupabase.isNativeApp()) {
+      try {
+        const { App } = await import('@capacitor/app')
+        App.addListener('appUrlOpen', async ({ url } = {}) => {
+          if (!url || !url.includes('code=')) return
+          try {
+            // URL skema kustom tak bisa diurai URLSearchParams langsung — ambil query-nya.
+            const code = new URLSearchParams(url.split('?')[1] || '').get('code')
+            if (!code) return
+            _baruBalikOAuth = true
+            await authSupabase.exchangeOAuthCode(code)
+            // onAuthChange yang membangun sesinya (pendengarnya sudah dipasang di Step 2).
+          } catch (e) {
+            console.warn('[auth.appUrlOpen] tukar kode gagal:', e?.message || e)
+            _tandaiGoogleGagal('tukar-kode', e?.message || '')
+          }
+        })
+      } catch (e) {
+        console.warn('[auth.initAuth] @capacitor/app tak tersedia:', e?.message || e)
+      }
     }
     // Step 1: restore cepat dari localStorage (sync)
     restoreAdminSesiFromStorage()

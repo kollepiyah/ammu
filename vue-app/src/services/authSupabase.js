@@ -388,11 +388,59 @@ export async function provisionAkunSenyap(target = {}) {
 // CATATAN: login via Google HANYA berhasil untuk user yang sudah MENAUTKAN Google
 //   (akun Supabase-nya punya guru_id/santri_id di profiles). Google fresh tanpa tautan
 //   → buildSesi null → gagal (memang by design: tautkan dulu dari Profil).
+/**
+ * Alamat kembali sesudah Google.
+ *
+ * ANDROID/iOS ≠ WEB. Di app native halaman disajikan dari `https://localhost`
+ * (androidScheme:'https'), sehingga `origin + pathname` menghasilkan
+ * `https://localhost/` — alamat yang hanya berarti DI DALAM WebView Capacitor.
+ * Browser sistem yang menerima pengalihan balik dari Google tak punya server di
+ * sana, jadi alurnya mentok di halaman galat dan pengguna tak pernah kembali ke
+ * app. Inilah sebabnya login Google jalan di web/PWA tapi mati di Android.
+ *
+ * Di native yang dipakai DEEP LINK skema kustom, yang ditangkap intent-filter
+ * MainActivity (AndroidManifest) lalu sampai ke app sebagai `appUrlOpen`.
+ *
+ * ⚠️ Alamat ini WAJIB terdaftar di Supabase → Auth → URL Configuration →
+ * Redirect URLs. Kalau tidak, Supabase mengabaikannya dan memulangkan ke Site URL.
+ */
+export const OAUTH_DEEP_LINK = 'app.ammu.id://auth-callback'
+
+export function isNativeApp() {
+  try {
+    return !!window.Capacitor?.isNativePlatform?.()
+  } catch {
+    return false
+  }
+}
+
 function _googleRedirect() {
+  if (isNativeApp()) return OAUTH_DEEP_LINK
   try {
     return window.location.origin + window.location.pathname
   } catch {
     return undefined
+  }
+}
+
+/**
+ * Buka halaman izin Google.
+ *
+ * Di native JANGAN biarkan supabase-js mengalihkan sendiri: pengalihan itu terjadi
+ * di dalam WebView, dan Google MENOLAK alur consent di WebView tertanam
+ * (`disallowed_useragent`). Karena itu `skipBrowserRedirect` dipakai untuk sekadar
+ * MENGAMBIL URL-nya, lalu URL itu dibuka lewat navigasi biasa — Capacitor melihat
+ * host di luar aplikasi dan melemparkannya ke BROWSER SISTEM, yang justru diterima
+ * Google. Halaman app-nya sendiri tidak ikut berpindah.
+ */
+async function _bukaOAuth(fn) {
+  const native = isNativeApp()
+  const { data, error } = await fn(native)
+  if (error) throw error
+  if (native) {
+    const url = data?.url
+    if (!url) throw new Error('Supabase tak memberi URL Google. Coba lagi.')
+    window.location.href = url
   }
 }
 
@@ -420,22 +468,25 @@ export async function exchangeOAuthCode(code) {
 
 export async function loginWithGoogle() {
   _ensure()
-  const { error } = await supabase.auth.signInWithOAuth({
-    provider: 'google',
-    options: { redirectTo: _googleRedirect() }
-  })
-  if (error) throw error
-  // Browser redirect ke Google; tak ada nilai balik (sesi dibangun saat kembali).
+  await _bukaOAuth((native) =>
+    supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: _googleRedirect(), skipBrowserRedirect: native }
+    })
+  )
+  // Web: browser sudah berpindah ke Google. Native: browser sistem yang terbuka.
+  // Dua-duanya tak punya nilai balik — sesi dibangun saat kembali.
 }
 
 export async function linkGoogleAccount() {
   _ensure()
   // Manual linking — WAJIB diaktifkan di Supabase: Auth → (Advanced) Allow manual linking.
-  const { error } = await supabase.auth.linkIdentity({
-    provider: 'google',
-    options: { redirectTo: _googleRedirect() }
-  })
-  if (error) throw error
+  await _bukaOAuth((native) =>
+    supabase.auth.linkIdentity({
+      provider: 'google',
+      options: { redirectTo: _googleRedirect(), skipBrowserRedirect: native }
+    })
+  )
   return {} // redirect; tautan aktif saat kembali.
 }
 
