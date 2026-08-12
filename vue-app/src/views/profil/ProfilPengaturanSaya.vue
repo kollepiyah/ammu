@@ -662,24 +662,28 @@ function googleColl() {
   return props.role === 'santri' ? 'santri' : 'guru'
 }
 
+// v.1.3.5 — linkGoogleAccount() TAK menerima parameter dan TAK mengembalikan data:
+//   ia me-REDIRECT ke Google (supabase.auth.linkIdentity), dan tautannya baru aktif
+//   saat kembali — initAuth Step 0 menukar ?code lalu buildSesi menyalin alamatnya ke
+//   linked_email. Kode lama memanggilnya dengan (coll, entityId) lalu membaca
+//   `res.email`, sehingga toast-nya selalu berbunyi "Akun Google terhubung: undefined"
+//   PADAHAL belum terhubung apa-apa — halamannya bahkan langsung berpindah ke Google.
+//   Cacat kembarnya sudah dibuang dari ProfilGuru.vue di v.1.2.2.
 async function onLinkGoogle() {
   if (googleBusy.value) return
-  if (!props.entityId) {
-    toast.error('Entity ID kosong, tidak bisa link.')
-    return
-  }
   googleBusy.value = true
   try {
-    const coll = googleColl()
-    const res = await linkGoogleAccount(coll, String(props.entityId))
-    toast.success('Akun Google terhubung: ' + (res.email || res.uid))
-    closeModal()
-    emit('updated')
+    await linkGoogleAccount()
+    // Sukses = browser berpindah ke Google. Tak ada yang perlu ditutup atau di-emit:
+    // halaman ini akan dimuat ulang dari nol sesudahnya.
   } catch (e) {
     const msg = String(e?.message || e || '')
     if (msg.includes('popup-closed-by-user') || msg.includes('cancelled-popup')) return
     if (msg.includes('sudah dipakai')) {
       toast.warning(msg)
+    } else if (/manual linking|not enabled|disabled/i.test(msg)) {
+      // linkIdentity menuntut Auth › Advanced › "Allow manual linking" ON di Supabase.
+      toast.error('Penautan akun belum diaktifkan di server. Hubungi admin sistem.')
     } else {
       toast.error('Gagal connect Google: ' + msg)
     }

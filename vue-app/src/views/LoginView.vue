@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
+import { useAuthStore, ambilSebabGoogleGagal } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
 import { loginWithGoogle } from '@/services/authSupabase'
@@ -21,7 +21,31 @@ onMounted(() => {
   if (!settings.settings?.bgImage) {
     settings.load().catch(() => {})
   }
+  bacaSebabGoogleGagal()
 })
+
+// --- Kenapa login Google memulangkan saya ke sini? ---------------------------------
+// Sebelumnya kegagalannya SENYAP: putaran OAuth berhasil, tapi profilnya tak punya
+//   guru_id/santri_id sehingga buildSesi() null dan guard router memulangkan ke /login
+//   tanpa satu pun pesan. Sebabnya kini dititipkan initAuth lewat sessionStorage
+//   (lihat stores/auth.js) dan ditampilkan di sini sebagai peringatan menetap —
+//   bukan toast, sebab pesannya memuat langkah yang perlu dibaca pelan-pelan.
+const googleGagal = ref(null)
+function bacaSebabGoogleGagal() {
+  const g = ambilSebabGoogleGagal()
+  if (!g) return
+  if (g.sebab === 'belum-tertaut') {
+    googleGagal.value = {
+      judul: 'Akun Google ini belum ditautkan',
+      pesan: `${g.detail ? `${g.detail} ` : ''}belum terhubung ke data guru/santri mana pun. Masuk dulu dengan username/WA/NIS + kata sandi, lalu buka Profil › Pengaturan › Tautkan Akun Google. Sesudah tertaut, tombol Google bisa dipakai.`
+    }
+  } else {
+    googleGagal.value = {
+      judul: 'Login Google gagal',
+      pesan: g.detail || 'Coba lagi, atau masuk dengan username/WA/NIS + kata sandi.'
+    }
+  }
+}
 // Field name fallback: bgImage (Vue settings), bg_login (legacy), bg_img, bgUrl
 // v.21.114.0528: drop teal solid overlay → bg image full visible + backdrop-blur overlay separate
 const bgStyle = computed(() => {
@@ -105,25 +129,18 @@ async function handleLogin() {
   }
 }
 
+// loginWithGoogle() me-REDIRECT ke Google dan tak pernah mengembalikan apa pun —
+//   sesi dibangun saat kembali, di initAuth Step 0. Jadi tak ada `cred.user` untuk
+//   ditunggu di sini; yang bisa gagal di titik ini hanya permintaan redirect-nya
+//   sendiri (mis. provider Google belum diaktifkan di dashboard Supabase).
 async function handleGoogleLogin() {
   if (isSubmitting.value) return
   isSubmitting.value = true
   try {
-    const cred = await loginWithGoogle()
-    if (cred?.user) {
-      await auth.loadSesiFromUser(cred.user)
-      toast.success('Login Google berhasil')
-      const redirect = route.query.redirect || '/dashboard'
-      router.push(redirect)
-    }
+    await loginWithGoogle()
+    // Sukses = browser berpindah ke Google. Baris di bawah ini praktis tak terjangkau.
   } catch (e) {
-    const msg = e?.message || 'Login Google gagal'
-    if (e?.code === 'auth/popup-closed-by-user' || e?.code === 'auth/cancelled-popup-request') {
-      // Silently ignore — user closed popup
-    } else {
-      toast.error(msg)
-    }
-  } finally {
+    toast.error(e?.message || 'Login Google gagal')
     isSubmitting.value = false
   }
 }
@@ -185,6 +202,26 @@ function bukaWaAdmin() {
 
       <!-- Form -->
       <div class="px-6 pb-2 space-y-3">
+        <!-- Sebab gagalnya login Google (dititipkan initAuth lintas redirect) -->
+        <div
+          v-if="googleGagal"
+          role="alert"
+          class="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-100 rounded-xl p-3 text-xs space-y-1"
+        >
+          <p class="font-bold flex items-start gap-1.5">
+            <i class="fas fa-triangle-exclamation mt-0.5" aria-hidden="true"></i>
+            <span>{{ googleGagal.judul }}</span>
+          </p>
+          <p class="leading-relaxed">{{ googleGagal.pesan }}</p>
+          <button
+            type="button"
+            class="text-[10px] font-bold uppercase tracking-wider underline hover:no-underline cursor-pointer"
+            @click="googleGagal = null"
+          >
+            Tutup
+          </button>
+        </div>
+
         <!-- Login dengan Google -->
         <button
           type="button"
