@@ -583,7 +583,7 @@ const introText = computed(() =>
 const lembagaName = computed(
   () => settings.settings?.namaLembaga || 'Pondok Pesantren Mambaul Ulum'
 )
-const version = computed(() => settings.settings?.appVersion || 'v.1.3.5')
+const version = computed(() => settings.settings?.appVersion || 'v.1.3.6')
 const logoSrc = computed(() => settings.settings?.logoUrl || '/logo.png')
 
 const sections = [
@@ -827,6 +827,15 @@ async function resetFaq() {
 //   berubah di layar mereka, bukan nama fungsi. Cukup beberapa rilis terakhir —
 //   riwayat lengkap ada di CHANGELOG.md untuk pengembang.
 const rilis = [
+  {
+    versi: 'v.1.3.6',
+    tgl: 'Agustus 2026',
+    items: [
+      'Admin keuangan yang memegang satu gedung kini melihat angka gedungnya saja di Laporan Keuangan, Tagihan, Pembayaran, dan grafik Arus Kas — sebelumnya ikut terhitung uang seluruh pondok sehingga saldonya tampak minus.',
+      'Bisyaroh guru tetap dikelola terpusat dan diberi keterangan "semua gedung" agar tidak dikira angka satu gedung.',
+      'Cetak laporan harian Buku Induk kini berisi transaksi hari itu saja dan dimulai dari nol, jadi angkanya langsung cocok dengan uang yang disetorkan hari itu. Laporan bulanan dan tahunan tetap berjalan kumulatif seperti biasa.'
+    ]
+  },
   {
     versi: 'v.1.3.5',
     tgl: 'Agustus 2026',

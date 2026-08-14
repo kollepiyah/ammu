@@ -28,6 +28,44 @@ naik satu tiap rilis. Entri lama memakai skema lama `v.{nomor-urut}.{MMDDtahunmu
 
 ---
 
+## [v.1.3.6] — 2026-08-14 — Scope gedung admin keuangan + laporan harian mulai nol
+
+⚠️ **URUTAN DEPLOY:** frontend murni — **tanpa migrasi DB, tanpa edge function**. Deploy web
+dari **direktori utama** (butuh `vue-app/.env.local`), lalu **AAB vc136** dan **Electron 1.3.6**.
+_Web sudah di-deploy Kyai 14 Agu sebelum bump ini; artefak Android/Electron menyusul._
+
+### Fixed
+
+- **Laporan Keuangan admin ber-gedung tak lagi minus.** Pemasukan sudah ter-scope gedung sejak
+  v.111, tetapi pengeluarannya diambil dari **seluruh slip bisyaroh** — dan bisyaroh memang
+  global tanpa dimensi gedung — sehingga Saldo Bersih selalu defisit. Untuk admin ber-gedung,
+  pengeluaran kini dihitung dari baris **KELUAR di Buku Kas gedungnya** (buku induk ter-scope,
+  tabungan dikecualikan); baris bisyaroh tak bertag gedung sehingga otomatis tak ikut.
+  `keuangan_gaji` tak dilanggani sama sekali saat ter-scope. Super_admin tak berubah.
+- **Grafik Arus Kas** (`AdminStatsCharts`) melanggani `keuangan_buku_induk` mentah; kini
+  disaring `allowRow` seperti Buku Kas.
+- **Tagihan & Pembayaran** ikut scope gedung: daftar santri, tagihan, pending transfer, dan
+  riwayat pembayaran disaring lewat computed di atas ref mentah, jadi tak ada titik baca yang
+  terlewat. Sesi tak ter-scope (super_admin, santri, wali) tak berubah.
+- **Kartu Slip Bisyaroh** di kedua dasbor kini berketerangan "semua gedung"; angkanya sengaja
+  tetap global karena bisyaroh dikelola pusat.
+
+### Changed
+
+- **Laporan harian Buku Induk = setoran hari itu.** Saat satu tanggal dipilih, ekspor melewatkan
+  baris SALDO AWAL dan memulai saldo berjalan dari **nol**, sehingga baris TOTAL = masuk − keluar
+  hari itu dan cocok dengan uang yang disetorkan. Berlaku untuk PDF, Excel, dan Google Sheet
+  sekaligus (ketiganya lewat `buildExportRows`). Periode bulanan/tahunan **tidak berubah** — tetap
+  kumulatif sesuai keputusan 6 Agu. Judul PDF berawalan "SETORAN HARIAN"; layar mode harian
+  menampilkan "Setoran hari ini" dan menandai saldo kumulatif sebagai info yang tidak tercetak.
+
+⚠️ **Prasyarat yang mudah terlupa:** scope gedung hanya hidup bila **akun admin punya field
+Gedung** (Guru → "Gedung (scope Buku Kas)", hanya untuk `role_sistem=admin_keuangan`) **dan
+santri punya field Gedung**. Bila kosong, `isGedungScoped` false → pengguna melihat semua gedung,
+dengan gejala yang persis sama dengan bug di atas.
+
+---
+
 ## [v.1.3.5] — 2026-08-12 — Tes Sekolah + login Google Android + tambalan audit
 
 ⚠️ **URUTAN DEPLOY:**
