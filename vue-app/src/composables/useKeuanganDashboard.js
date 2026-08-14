@@ -6,15 +6,46 @@ import { computed } from 'vue'
 import { useKeuangan } from './useKeuangan'
 import { fmtRp } from '@/utils/format'
 
-const NAMA_BULAN_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des']
-const PALETTE = ['#f43f5e', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#14b8a6', '#06b6d4', '#84cc16', '#f97316']
+const NAMA_BULAN_SHORT = [
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'Mei',
+  'Jun',
+  'Jul',
+  'Agu',
+  'Sep',
+  'Okt',
+  'Nov',
+  'Des'
+]
+const PALETTE = [
+  '#f43f5e',
+  '#f59e0b',
+  '#10b981',
+  '#3b82f6',
+  '#8b5cf6',
+  '#ec4899',
+  '#14b8a6',
+  '#06b6d4',
+  '#84cc16',
+  '#f97316'
+]
 
 function ymOf(val) {
   if (!val) return null
   if (typeof val === 'object') {
-    if (typeof val.toDate === 'function') { const d = val.toDate(); return { year: d.getFullYear(), month: d.getMonth() } }
-    if (typeof val.seconds === 'number') { const d = new Date(val.seconds * 1000); return { year: d.getFullYear(), month: d.getMonth() } }
-    if (val instanceof Date && !isNaN(val)) return { year: val.getFullYear(), month: val.getMonth() }
+    if (typeof val.toDate === 'function') {
+      const d = val.toDate()
+      return { year: d.getFullYear(), month: d.getMonth() }
+    }
+    if (typeof val.seconds === 'number') {
+      const d = new Date(val.seconds * 1000)
+      return { year: d.getFullYear(), month: d.getMonth() }
+    }
+    if (val instanceof Date && !isNaN(val))
+      return { year: val.getFullYear(), month: val.getMonth() }
     return null
   }
   const s = String(val).trim()
@@ -30,12 +61,16 @@ function isTabungan(t) {
   return sumber.includes('tabungan') || String(t.kategori || '').toLowerCase() === 'tabungan'
 }
 function arusOf(t) {
-  const tipe = String(t.tipe ?? t.type ?? t.jenis ?? '').toLowerCase().trim()
+  const tipe = String(t.tipe ?? t.type ?? t.jenis ?? '')
+    .toLowerCase()
+    .trim()
   const nominal = Number(t.nominal) || 0
   const masukF = Number(t.masuk) || 0
   const keluarF = Number(t.keluar) || 0
-  if (['masuk', 'in', 'income', 'pemasukan'].includes(tipe)) return { masuk: nominal || masukF, keluar: 0 }
-  if (['keluar', 'out', 'expense', 'pengeluaran'].includes(tipe)) return { masuk: 0, keluar: nominal || keluarF }
+  if (['masuk', 'in', 'income', 'pemasukan'].includes(tipe))
+    return { masuk: nominal || masukF, keluar: 0 }
+  if (['keluar', 'out', 'expense', 'pengeluaran'].includes(tipe))
+    return { masuk: 0, keluar: nominal || keluarF }
   return { masuk: masukF, keluar: keluarF }
 }
 function fmtTgl(val) {
@@ -49,7 +84,8 @@ function fmtTgl(val) {
 }
 
 export function useKeuanganDashboard() {
-  const { tabunganSantri, gaji, bukuInduk, stats, isFullAccess } = useKeuangan()
+  const { tabunganSantri, gaji, bukuInduk, stats, isFullAccess, gedungScoped, myGedung } =
+    useKeuangan()
 
   const bukuIndukValid = computed(() =>
     (bukuInduk.value || []).filter((b) => {
@@ -65,7 +101,11 @@ export function useKeuanganDashboard() {
     const arr = []
     for (let i = 11; i >= 0; i--) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
-      arr.push({ year: d.getFullYear(), month: d.getMonth(), label: NAMA_BULAN_SHORT[d.getMonth()] + ' ' + String(d.getFullYear()).slice(-2) })
+      arr.push({
+        year: d.getFullYear(),
+        month: d.getMonth(),
+        label: NAMA_BULAN_SHORT[d.getMonth()] + ' ' + String(d.getFullYear()).slice(-2)
+      })
     }
     return arr
   })
@@ -125,20 +165,34 @@ export function useKeuanganDashboard() {
     const w = 600 - 60
     const step = data.length > 1 ? w / (data.length - 1) : w
     const yZero = 195 - (-min / range) * 180
-    const points = data.map((d, i) => ({ x: 55 + i * step, y: 195 - ((d.saldo - min) / range) * 180, label: d.label }))
+    const points = data.map((d, i) => ({
+      x: 55 + i * step,
+      y: 195 - ((d.saldo - min) / range) * 180,
+      label: d.label
+    }))
     const pathPoints = points.map((p) => `${p.x},${p.y}`).join(' ')
     const fillPoints = `${points[0]?.x || 55},${yZero} ${pathPoints} ${points[points.length - 1]?.x || 595},${yZero}`
     return { points, pathPoints, fillPoints, last: data[data.length - 1]?.saldo || 0, yZero }
   })
 
   const saldoGrid = computed(() => {
-    const cums = monthlyData.value.reduce((acc, m) => { acc.push(acc[acc.length - 1] + m.masuk - m.keluar); return acc }, [0])
+    const cums = monthlyData.value.reduce(
+      (acc, m) => {
+        acc.push(acc[acc.length - 1] + m.masuk - m.keluar)
+        return acc
+      },
+      [0]
+    )
     const min = Math.min(0, ...cums)
     const max = Math.max(0, ...cums)
     const range = max - min || 1
     const steps = 4
     const arr = []
-    for (let i = 0; i <= steps; i++) arr.push({ y: 15 + i * 45, label: 'Rp ' + Math.round((max - (range / steps) * i) / 1000) + 'k' })
+    for (let i = 0; i <= steps; i++)
+      arr.push({
+        y: 15 + i * 45,
+        label: 'Rp ' + Math.round((max - (range / steps) * i) / 1000) + 'k'
+      })
     return arr
   })
 
@@ -157,7 +211,11 @@ export function useKeuanganDashboard() {
       total += keluar
     }
     return Object.entries(groups)
-      .map(([nama, val]) => ({ nama, total: val, pct: total ? Math.round((val / total) * 100) : 0 }))
+      .map(([nama, val]) => ({
+        nama,
+        total: val,
+        pct: total ? Math.round((val / total) * 100) : 0
+      }))
       .sort((a, b) => b.total - a.total)
   })
   const totalKategori = computed(() => kategoriBulanIni.value.reduce((s, k) => s + k.total, 0))
@@ -183,7 +241,9 @@ export function useKeuanganDashboard() {
   })
 
   const transaksiTerakhir = computed(() => {
-    const arr = (bukuInduk.value || []).filter((t) => !isTabungan(t) && /^\d{4}-\d{2}/.test(String(t.tanggal || '').trim()))
+    const arr = (bukuInduk.value || []).filter(
+      (t) => !isTabungan(t) && /^\d{4}-\d{2}/.test(String(t.tanggal || '').trim())
+    )
     return arr
       .slice()
       .sort((a, b) => String(b.tanggal).localeCompare(String(a.tanggal)))
@@ -205,6 +265,8 @@ export function useKeuanganDashboard() {
     gaji,
     stats,
     isFullAccess,
+    gedungScoped,
+    myGedung,
     bukuIndukValid,
     monthlyData,
     bar12,

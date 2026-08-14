@@ -25,19 +25,24 @@ export function useKeuangan() {
 
   // v.111: scope Gedung — admin keuangan ber-gedung hanya lihat tagihan/tabungan/buku-induk
   //   gedungnya. GAJI/BISYAROH TIDAK ter-scope (keputusan kyai: bisyaroh global).
-  const { scoped: _gedungScoped, allowSantri: _allowSantri, allowRow: _allowRow } = useGedungScope()
+  const {
+    scoped: gedungScoped,
+    myGedung,
+    allowSantri: _allowSantri,
+    allowRow: _allowRow
+  } = useGedungScope()
   const tagihan = computed(() =>
-    _gedungScoped.value
+    gedungScoped.value
       ? _tagihanRaw.value.filter((t) => _allowSantri(t.santri_id))
       : _tagihanRaw.value
   )
   const tabunganSantri = computed(() =>
-    _gedungScoped.value
+    gedungScoped.value
       ? _tabunganRaw.value.filter((t) => _allowSantri(t.santri_id))
       : _tabunganRaw.value
   )
   const bukuInduk = computed(() =>
-    _gedungScoped.value ? (_bukuIndukRaw.value || []).filter(_allowRow) : _bukuIndukRaw.value
+    gedungScoped.value ? (_bukuIndukRaw.value || []).filter(_allowRow) : _bukuIndukRaw.value
   )
 
   const isFullAccess = computed(() => {
@@ -128,6 +133,9 @@ export function useKeuangan() {
     error,
     stats,
     isFullAccess,
+    // v.1.3.6: dipakai dasbor untuk menandai angka mana yang lintas gedung (bisyaroh).
+    gedungScoped,
+    myGedung,
     getNamaSantri,
     getNamaGuru
   }
