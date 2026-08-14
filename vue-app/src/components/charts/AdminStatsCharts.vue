@@ -196,6 +196,7 @@ import {
   Filler
 } from 'chart.js'
 import { subscribeColl, getAll } from '@/services/db'
+import { useGedungScope } from '@/composables/useGedungScope'
 
 ChartJS.register(
   Title,
@@ -232,6 +233,9 @@ const RANGE_DAYS = { '30d': 30, '90d': 90 }
 const isMonthly = computed(() => range.value === '1y')
 const bucketUnit = computed(() => (isMonthly.value ? 'bulan' : 'hari'))
 const rangeLabel = computed(() => RANGES.find((r) => r.id === range.value)?.label || '')
+
+// v.1.3.6: scope Gedung untuk grafik Arus Kas (grafik lain tak menyentuh uang).
+const { scoped: gedungScoped, allowRow } = useGedungScope()
 
 // ---- Data sources ----------------------------------------------------------
 const absensiGuru = ref([])
@@ -416,12 +420,16 @@ const chartKehadiran = computed(() => {
 })
 
 // ---- Perkembangan Arus Kas -------------------------------------------------
+// v.1.3.6 (Kyai, 14 Agu 2026): admin keuangan ber-gedung melihat grafik arus kas SELURUH
+//   induk — angkanya bukan miliknya. Kini disaring dengan allowRow, sama seperti Buku Kas:
+//   baris ber-santri ikut gedung santrinya, baris manual ikut tag gedungnya.
 const chartKas = computed(() => {
   const bk = buckets.value
   const idx = bucketIndex.value
   const masuk = new Array(bk.length).fill(0)
   const keluar = new Array(bk.length).fill(0)
-  for (const b of bukuInduk.value) {
+  const sumberKas = gedungScoped.value ? bukuInduk.value.filter(allowRow) : bukuInduk.value
+  for (const b of sumberKas) {
     const kat = String(b.kategori || '').toLowerCase()
     const sumber = String(b.sumber || '').toLowerCase()
     if (kat === 'tabungan' || sumber.includes('tabungan')) continue
