@@ -129,23 +129,41 @@
           </div>
         </div>
         <!-- Saldo kas menurut penyaring yang sedang aktif — angka yang sama persis dengan
-             baris SALDO AWAL/TOTAL di PDF & Excel, jadi layar dan kertas tak bisa beda. -->
+             baris SALDO AWAL/TOTAL di PDF & Excel, jadi layar dan kertas tak bisa beda.
+             v.1.3.6: pada mode harian yang dicetak adalah setoran hari itu (mulai nol),
+             jadi layar pun menonjolkan angka itu; saldo kumulatif tetap ditampilkan
+             sebagai info, dengan keterangan bahwa ia tidak ikut tercetak. -->
         <div
           class="mt-2 rounded-xl border border-cyan-200 dark:border-cyan-800 bg-cyan-50/60 dark:bg-cyan-900/20 px-3 py-2 flex flex-wrap items-baseline gap-x-4 gap-y-1"
         >
-          <span class="text-[10px] font-bold uppercase text-cyan-800 dark:text-cyan-300">
-            Saldo awal
-            <b class="font-mono font-black ml-1">{{ fmtRp(saldoAwalPeriode) }}</b>
-          </span>
-          <span class="text-[10px] font-bold uppercase text-cyan-800 dark:text-cyan-300">
-            Saldo akhir
-            <b class="font-mono font-black ml-1">{{ fmtRp(saldoAkhirPeriode) }}</b>
-          </span>
-          <span class="text-[10px] text-[var(--text-secondary)]">
-            {{
-              adaPenyaringKas ? 'mengikuti penyaring yang aktif' : 'seluruh kas, tanpa penyaring'
-            }}
-          </span>
+          <template v-if="modeHarian">
+            <span class="text-[10px] font-bold uppercase text-cyan-800 dark:text-cyan-300">
+              Setoran hari ini
+              <b class="font-mono font-black ml-1">{{ fmtRp(stats.saldo) }}</b>
+            </span>
+            <span class="text-[10px] font-bold uppercase text-[var(--text-secondary)]">
+              Saldo kas kumulatif
+              <b class="font-mono font-black ml-1">{{ fmtRp(saldoAkhirPeriode) }}</b>
+            </span>
+            <span class="text-[10px] text-[var(--text-secondary)]">
+              laporan harian dicetak mulai nol — hanya transaksi hari itu
+            </span>
+          </template>
+          <template v-else>
+            <span class="text-[10px] font-bold uppercase text-cyan-800 dark:text-cyan-300">
+              Saldo awal
+              <b class="font-mono font-black ml-1">{{ fmtRp(saldoAwalPeriode) }}</b>
+            </span>
+            <span class="text-[10px] font-bold uppercase text-cyan-800 dark:text-cyan-300">
+              Saldo akhir
+              <b class="font-mono font-black ml-1">{{ fmtRp(saldoAkhirPeriode) }}</b>
+            </span>
+            <span class="text-[10px] text-[var(--text-secondary)]">
+              {{
+                adaPenyaringKas ? 'mengikuti penyaring yang aktif' : 'seluruh kas, tanpa penyaring'
+              }}
+            </span>
+          </template>
         </div>
         <!-- v.1.2.6: pisah uang laci vs rekening — inti laporan kas harian -->
         <div class="grid grid-cols-2 gap-2 md:gap-3 mt-2">
@@ -1352,7 +1370,9 @@ async function cetakLaporan(metodeOnly = '') {
     if (labelPosAktif) bagian.push(labelPosAktif)
     if (labelLembagaAktif.value) bagian.push(labelLembagaAktif.value)
     if (metodeOnly) bagian.push(metodeOnly.toUpperCase())
-    const judul = bagian.join(' — ')
+    // v.1.3.6: tegaskan bahwa berkas harian berisi setoran hari itu (kolom Saldo mulai
+    //   nol), supaya tak dibaca sebagai posisi kas kumulatif.
+    const judul = (modeHarian.value ? 'SETORAN HARIAN — ' : '') + bagian.join(' — ')
     const slugMetode = metodeOnly ? `-${metodeOnly.toLowerCase()}` : ''
     const slugPos = labelPosAktif
       ? '-' + labelPosAktif.toLowerCase().replace(/[^a-z0-9]+/g, '-')
@@ -1566,6 +1586,11 @@ const periodeLabel = computed(() => {
   const bulan = `${BULAN[selectedMonth.value - 1]} ${selectedYear.value}`
   return selectedDay.value > 0 ? `${selectedDay.value} ${bulan}` : bulan
 })
+// v.1.3.6: satu tanggal terpilih = laporan setoran harian (lihat buildExportRows).
+const modeHarian = computed(() => selectedMonth.value > 0 && selectedDay.value > 0)
+// Judul berkas Excel/Sheet — harian dibedakan supaya kolom Saldo yang mulai nol tak
+//   dibaca sebagai posisi kas kumulatif.
+const judulLaporan = computed(() => (modeHarian.value ? 'Setoran Harian' : 'Buku Induk Keuangan'))
 // nama berkas ekspor: buku-induk-2026-08-03 / 2026-08 / 2026
 const periodeSlug = computed(() => {
   const y = String(selectedYear.value)
@@ -1611,12 +1636,18 @@ onUnmounted(() => {
 //   pembangun yang sama (satu bentuk laporan, bukan dua yang bisa berbeda diam-diam).
 //   `metodeOnly` ikut menyaring ledger dasar saldo: tanpa itu, berkas TUNAI akan
 //   memakai saldo awal yang masih mengandung transfer dan angkanya tak akan bertemu.
+//   v.1.3.6 (Kyai, 14 Agu 2026): laporan HARIAN adalah bukti SETORAN hari itu — yang
+//   dicocokkan dengan uang yang disetor, bukan posisi kas sejak dulu. Maka pada mode
+//   harian baris SALDO AWAL ditiadakan dan saldo berjalan mulai dari nol, sehingga baris
+//   TOTAL = masuk − keluar hari itu saja. Periode bulanan/tahunan tetap memakai saldo
+//   awal (keputusan 6 Agu) supaya laporan kas tetap bisa ditelusuri kumulatif.
 function buildExportRows(listIn, { metodeOnly = '' } = {}) {
   const list = listIn || filteredBuku.value || []
   const ledger = metodeOnly
     ? ledgerSaldo.value.filter((b) => metodeTransaksi(b) === metodeOnly)
     : ledgerSaldo.value
   return bangunBarisLaporan(list, {
+    pakaiSaldoAwal: !modeHarian.value,
     saldoAwal: metodeOnly ? saldoAwalSebelum(ledger, periodeSlug.value) : saldoAwalPeriode.value,
     labelPeriode: periodeLabel.value,
     metodeOf: metodeTransaksi,
@@ -1643,7 +1674,7 @@ async function exportBukuIndukExcel() {
         s.kopLine3 || '',
         s.kopLine4 || ''
       ],
-      subtitle: `Buku Induk Keuangan${judulPosSuffix()} — ${periodeLabel.value} — ${filteredBuku.value.length} transaksi`,
+      subtitle: `${judulLaporan.value}${judulPosSuffix()} — ${periodeLabel.value} — ${filteredBuku.value.length} transaksi`,
       columns: [
         { key: 'no', header: 'No', width: 5 },
         { key: 'tanggal', header: 'Tanggal', width: 12 },
@@ -1685,7 +1716,7 @@ async function kirimBukuGsheet() {
         s.kopLine3 || '',
         s.kopLine4 || ''
       ].filter(Boolean),
-      subtitle: `Buku Induk Keuangan${judulPosSuffix()} — ${periodeLabel.value} — ${filteredBuku.value.length} transaksi`,
+      subtitle: `${judulLaporan.value}${judulPosSuffix()} — ${periodeLabel.value} — ${filteredBuku.value.length} transaksi`,
       columns: [
         { key: 'no', header: 'No', width: 5 },
         { key: 'tanggal', header: 'Tanggal', width: 12 },
