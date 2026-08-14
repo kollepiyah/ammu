@@ -317,12 +317,17 @@ import { useSettingsStore } from '@/stores/settings'
 import { terbayarDari, sisaTagihan, statusTagihan } from '@/utils/tagihan'
 import { isSuperAdmin } from '@/utils/roleScope'
 import { writeAuditLog } from '@/utils/auditLog'
+import { useGedungScope } from '@/composables/useGedungScope'
 
 const auth = useAuthStore()
 const toast = useToast()
 const confirmDlg = useConfirm()
+// v.1.3.6: scope Gedung — admin keuangan ber-gedung hanya mengurus tagihan santri
+//   gedungnya (pola sama dgn PosSantriView/TabunganView).
+const { allowSantri } = useGedungScope()
 const tagihanRaw = ref([])
-const santriList = ref([])
+const santriRaw = ref([])
+const santriList = computed(() => santriRaw.value.filter((s) => allowSantri(s.id)))
 const santriMap = computed(() => {
   const m = new Map()
   for (const s of santriList.value) m.set(String(s.id), s)
@@ -501,7 +506,9 @@ const baseTagihan = computed(() => {
     const myId = String(auth.sesiAktif?.id || '')
     arr = arr.filter((t) => String(t.santri_id) === myId)
   }
-  return arr
+  // v.1.3.6: scope Gedung untuk admin keuangan ber-gedung (tak berpengaruh utk santri/wali
+  //   maupun super_admin — allowSantri mengembalikan true bila sesi tak ter-scope).
+  return arr.filter((t) => allowSantri(t.santri_id))
 })
 
 const filteredItems = computed(() => {
@@ -651,7 +658,7 @@ onMounted(() => {
     loading.value = false
   })
   unsubSantri = subscribeColl('santri', (docs) => {
-    santriList.value = docs
+    santriRaw.value = docs
   })
 })
 onUnmounted(() => {

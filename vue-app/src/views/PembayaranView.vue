@@ -672,6 +672,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
 import { useWaliChildren } from '@/composables/useWaliChildren'
+import { useGedungScope } from '@/composables/useGedungScope'
 import { uploadBase64 } from '@/services/storage'
 import { fmtRp, fmtTgl, todayJakarta } from '@/utils/format'
 import { sisaTagihan } from '@/utils/tagihan'
@@ -703,10 +704,18 @@ const auth = useAuthStore()
 const settings = useSettingsStore()
 const toast = useToast()
 
-const pembayaranRaw = ref([])
-const santriList = ref([])
-const tagihanRaw = ref([])
-const pendingRaw = ref([])
+// v.1.3.6: scope Gedung — admin keuangan ber-gedung hanya melihat santri, tagihan, dan
+//   riwayat pembayaran gedungnya. Sesi tak ter-scope (super_admin, santri, wali) tak
+//   terpengaruh: allowSantri/allowRow mengembalikan true.
+const { allowSantri, allowRow } = useGedungScope()
+const _pembayaranAll = ref([])
+const _santriAll = ref([])
+const _tagihanAll = ref([])
+const _pendingAll = ref([])
+const pembayaranRaw = computed(() => _pembayaranAll.value.filter(allowRow))
+const santriList = computed(() => _santriAll.value.filter((s) => allowSantri(s.id)))
+const tagihanRaw = computed(() => _tagihanAll.value.filter((t) => allowSantri(t.santri_id)))
+const pendingRaw = computed(() => _pendingAll.value.filter((p) => allowSantri(p.santri_id)))
 const loading = ref(true)
 const search = ref('')
 const filterBulan = ref(0)
@@ -1193,20 +1202,20 @@ function lanjutBayar() {
 onMounted(() => {
   // Pembayaran tunai POS + transfer yg sudah verified
   unsubBayar = subscribeColl('keuangan_buku_induk', (docs) => {
-    pembayaranRaw.value = (docs || []).filter(
+    _pembayaranAll.value = (docs || []).filter(
       (r) => r.sumber === 'pos_santri' || r.sumber === 'transfer_verified'
     )
     loading.value = false
   })
   unsubSantri = subscribeColl('santri', (docs) => {
-    santriList.value = docs
+    _santriAll.value = docs
   })
   unsubTagihan = subscribeColl('keuangan_tagihan', (docs) => {
-    tagihanRaw.value = docs || []
+    _tagihanAll.value = docs || []
   })
   // Pending transfer (untuk santri lihat sendiri, admin lihat semua di view lain)
   unsubPending = subscribeColl('pembayaran_transfer_pending', (docs) => {
-    pendingRaw.value = docs || []
+    _pendingAll.value = docs || []
   })
   // Niat-bayar VA (keranjang) — status flip 'terbayar' tampil realtime
   unsubIntent = subscribeColl('keuangan_va_intent', (docs) => {
