@@ -3,9 +3,11 @@
     <div class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm">
       <h1 class="text-base md:text-lg font-black">
         <i class="fas fa-chart-line text-cyan-500 mr-2"></i>Laporan Keuangan
+        <span v-if="gedungScoped" class="text-cyan-600">— {{ myGedung }}</span>
       </h1>
       <p class="text-xs text-[var(--text-secondary)] mt-0.5">
         Ringkasan pemasukan + pengeluaran per periode
+        <template v-if="gedungScoped"> — hanya kas gedung Anda</template>
       </p>
     </div>
 
@@ -36,7 +38,10 @@
       <div class="bg-rose-50 rounded-2xl p-4 border-2 border-rose-200">
         <p class="text-[10px] uppercase font-black text-rose-700">Pengeluaran</p>
         <p class="text-2xl font-black text-rose-800 mt-1">{{ fmtRp(totalPengeluaran) }}</p>
-        <p class="text-[10px] text-rose-600 mt-1">{{ bisyarohList.length }} slip bisyaroh</p>
+        <p class="text-[10px] text-rose-600 mt-1">
+          <template v-if="gedungScoped">{{ pengeluaranKasList.length }} transaksi keluar</template>
+          <template v-else>{{ bisyarohList.length }} slip bisyaroh</template>
+        </p>
       </div>
       <div
         :class="[
@@ -91,8 +96,20 @@
           <i class="fas fa-arrow-up mr-1"></i>Pengeluaran
         </h3>
         <div class="space-y-1 text-xs">
-          <div class="flex justify-between">
+          <!-- v.1.3.6: admin ber-gedung memakai kas gedungnya; bisyaroh (global, tanpa
+               gedung) sengaja TIDAK ikut supaya saldo tidak minus. -->
+          <div v-if="gedungScoped" class="flex justify-between">
+            <span>Pengeluaran Kas {{ myGedung }}</span
+            ><b class="text-rose-700">{{ fmtRp(sumPengeluaranKas) }}</b>
+          </div>
+          <div v-else class="flex justify-between">
             <span>Slip Bisyaroh Guru</span><b class="text-rose-700">{{ fmtRp(sumBisyaroh) }}</b>
+          </div>
+          <div
+            v-if="gedungScoped"
+            class="flex justify-between text-[10px] text-[var(--text-tertiary)] italic"
+          >
+            <span>Bisyaroh guru</span><span>dikelola pusat</span>
           </div>
           <!-- v.21.104.0527: tabungan tidak masuk pengeluaran (selaras Buku Induk) -->
           <div class="flex justify-between text-[10px] text-[var(--text-tertiary)] italic">
@@ -114,7 +131,8 @@ import { useGedungScope } from '@/composables/useGedungScope'
 import { fmtRp } from '@/utils/format'
 
 // v.111: scope Gedung — pemasukan & tabungan ke-scope; bisyaroh TIDAK (global).
-const { allowSantri, allowRow } = useGedungScope()
+// v.1.3.6: `scoped` dipakai untuk mengganti dasar pengeluaran (lihat pengeluaranKasList).
+const { allowSantri, allowRow, scoped: gedungScoped, myGedung } = useGedungScope()
 
 const NAMA_BULAN = [
   'Januari',
@@ -130,7 +148,7 @@ const NAMA_BULAN = [
   'November',
   'Desember'
 ]
-const pembayaranRaw = ref([])
+const bukuIndukRaw = ref([])
 const tabunganRaw = ref([])
 const bisyarohRaw = ref([])
 const filterBulan = ref(0)
@@ -148,9 +166,26 @@ function matchPeriode(dateStr) {
 }
 
 const pembayaranList = computed(() =>
-  pembayaranRaw.value
+  bukuIndukRaw.value
+    .filter((r) => r.sumber === 'pos_santri')
     .filter(allowRow) // v.111: scope Gedung
     .filter((p) => matchPeriode(p.tanggal || p.createdAt || p.created_at))
+)
+
+// v.1.3.6 (Kyai, 14 Agu 2026): pengeluaran untuk admin ber-gedung diambil dari baris
+//   KELUAR di Buku Kas gedungnya, BUKAN dari slip bisyaroh. Sebelumnya pemasukan
+//   ter-scope tapi pengeluaran = bisyaroh SEMUA guru (bisyaroh global, tanpa gedung),
+//   sehingga Saldo Bersih admin gedung selalu minus. Baris bisyaroh di buku induk tak
+//   bertag gedung -> otomatis tak ikut ke sini. Super_admin tetap memakai slip bisyaroh.
+const pengeluaranKasList = computed(() =>
+  bukuIndukRaw.value.filter((b) => {
+    if (!allowRow(b)) return false
+    if (String(b.tipe || '').toLowerCase() !== 'keluar') return false
+    const kat = String(b.kategori || '').toLowerCase()
+    const sumber = String(b.sumber || '').toLowerCase()
+    if (kat === 'tabungan' || sumber.includes('tabungan')) return false
+    return matchPeriode(b.tanggal || b.createdAt || b.created_at)
+  })
 )
 const setorList = computed(() =>
   tabunganRaw.value.filter(
@@ -186,25 +221,36 @@ const sumTarik = computed(() => tarikList.value.reduce((s, m) => s + (Number(m.n
 const sumBisyaroh = computed(() =>
   bisyarohList.value.reduce((s, g) => s + (Number(g.take_home) || 0), 0)
 )
+const sumPengeluaranKas = computed(() =>
+  pengeluaranKasList.value.reduce((s, b) => s + (Number(b.nominal) || 0), 0)
+)
 
 // v.21.104.0527: tabungan dikeluarkan dari pemasukan/pengeluaran (selaras Buku Induk).
 const totalPemasukan = computed(() => sumPembayaran.value)
-const totalPengeluaran = computed(() => sumBisyaroh.value)
+// v.1.3.6: admin ber-gedung -> pengeluaran kas gedungnya; selain itu (super_admin) -> bisyaroh.
+const totalPengeluaran = computed(() =>
+  gedungScoped.value ? sumPengeluaranKas.value : sumBisyaroh.value
+)
 const saldoBersih = computed(() => totalPemasukan.value - totalPengeluaran.value)
 
 onMounted(() => {
   // v.21.104.0527: SSOT = keuangan_buku_induk filter sumber=pos_santri.
   // Sebelumnya baca keuangan_pembayaran yang hanya ditulis TagihanView, sehingga
   // tagihan yg dibayar lewat POS tidak ikut terhitung.
+  // v.1.3.6: simpan buku induk UTUH (bukan hanya pos_santri) — pemasukan disaring di
+  //   pembayaranList, pengeluaran gedung di pengeluaranKasList.
   unsubP = subscribeColl('keuangan_buku_induk', (docs) => {
-    pembayaranRaw.value = (docs || []).filter((r) => r.sumber === 'pos_santri')
+    bukuIndukRaw.value = docs || []
   })
   unsubT = subscribeColl('keuangan_tabungan_santri', (docs) => {
     tabunganRaw.value = docs
   })
-  unsubB = subscribeColl('keuangan_gaji', (docs) => {
-    bisyarohRaw.value = docs
-  })
+  // Admin ber-gedung tak memakai slip bisyaroh sama sekali → tak perlu dilanggani.
+  if (!gedungScoped.value) {
+    unsubB = subscribeColl('keuangan_gaji', (docs) => {
+      bisyarohRaw.value = docs
+    })
+  }
 })
 onUnmounted(() => {
   if (unsubP) {
