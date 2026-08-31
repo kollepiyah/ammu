@@ -392,8 +392,8 @@
             <p class="text-xs text-emerald-800">
               <i class="fas fa-info-circle mr-1"></i>Target:
               <b>{{ bulkTargets.length }} guru</b> akan di-generate slip-nya. Nominal dari
-              <b>Jenis Bisyaroh</b> ber-scope + master tunjangan/potongan (Pengaturan Keuangan).
-              Yang sudah punya slip periode ini akan di-OVERWRITE.
+              <b>Jenis Bisyaroh</b>, <b>Jenis Tunjangan</b>, dan <b>Jenis Potongan</b> — semuanya
+              ber-scope (Pengaturan Keuangan). Yang sudah punya slip periode ini akan di-OVERWRITE.
             </p>
           </div>
           <button
@@ -1074,7 +1074,10 @@ import {
   jenisTunjanganList,
   barisTunjangan,
   tahunPengabdian,
-  HITUNGAN_TUNJANGAN_OPTIONS
+  HITUNGAN_TUNJANGAN_OPTIONS,
+  // Kyai 31 Agu 2026: potongan ikut ber-scope (jabatan/lembaga/shift/jenis kelamin/orang).
+  jenisPotonganList,
+  barisPotongan
 } from '@/utils/bisyarohScope'
 import { shiftsForGuru } from '@/utils/shiftDerive'
 import { shiftLabelOf, shiftList } from '@/utils/shiftMaster'
@@ -1795,6 +1798,7 @@ function ctxGuruPenuh(g, periode) {
     ),
     guruId: String(g.id),
     nama: String(g.nama || ''), // dipakai rincian per orang
+    jk: g.jk || '', // scope jenis kelamin — simulasi harus memakai gerbang yang sama
     shiftIds,
     hadirPerShift,
     hadirTepatPerShift: hadirPerShift, // hadir penuh = semuanya tepat waktu
@@ -2016,6 +2020,9 @@ function ctxGuru(g, periode) {
       g
     ),
     guruId: String(g.id),
+    // Kyai 31 Agu 2026: scope jenis kelamin. Guru tanpa `jk` tak akan lolos scope yang
+    //   menyaringnya — lihat cocokJk() di utils/bisyarohScope.
+    jk: g.jk || '',
     shiftIds: shiftsForGuru(g, s),
     hadirPerShift: hadirPerShiftGuru(g.id, periode),
     hadirTepatPerShift: hadirTepatPerShiftGuru(g.id, periode), // v.1.2.3: utk per_tepat
@@ -2072,14 +2079,15 @@ function barisTunjanganGuru(g, periode) {
   return barisTunjangan(jenisTunjanganList(settingsStore.settings || {}), ctxGuru(g, periode))
 }
 
-function applicableMaster(key, g) {
-  const sset = settingsStore.settings || {}
-  const arr = Array.isArray(sset[key]) ? sset[key] : []
-  const gid = String(g.id)
-  return arr.filter((m) => {
-    const ids = Array.isArray(m.guru_ids) ? m.guru_ids.map(String) : []
-    return ids.length === 0 || ids.includes(gid)
-  })
+/**
+ * Baris POTONGAN 1 guru — daftar `keuPotonganJenis` lewat mesin scope yang sama dengan
+ * Jenis Bisyaroh & Tunjangan (Kyai 31 Agu 2026: "untuk potongan tambahkan filter seperti
+ * jenis bisyaroh dan tunjangan. dan tambahkan filter laki2 atau perempuan"). Selama daftar
+ * barunya belum pernah disimpan, isinya diturunkan dari `master_potongan` lama, jadi slip
+ * tak berubah sebelum Kyai menyentuh Pengaturan.
+ */
+function barisPotonganGuru(g, periode) {
+  return barisPotongan(jenisPotonganList(settingsStore.settings || {}), ctxGuru(g, periode))
 }
 
 function pilihGuru(g) {
@@ -2111,7 +2119,7 @@ function pilihGuru(g) {
   // Tunjangan: daftar sendiri (bukan dilebur ke Jenis Bisyaroh — keputusan Kyai), tapi
   // sejak 7 Agu 2026 memakai MESIN SCOPE yang sama. Lihat barisTunjanganGuru.
   items.push(...barisTunjanganGuru(g, periode))
-  const potonganAuto = applicableMaster('master_potongan', g).reduce(
+  const potonganAuto = barisPotonganGuru(g, periode).reduce(
     (s, p) => s + (Number(p.nominal) || 0),
     0
   )
@@ -2347,8 +2355,8 @@ const bulkTargets = computed(() => {
 function buildSlipPayload(g, periode, seq, extra = {}) {
   const settings = settingsStore.settings || {}
   const lineItems = buildLineItemsFromGuru(g, periode)
-  const ptList = applicableMaster('master_potongan', g).map((p) => ({
-    label: p.nama || 'Potongan',
+  const ptList = barisPotonganGuru(g, periode).map((p) => ({
+    label: p.label || 'Potongan',
     nominal: Number(p.nominal) || 0
   }))
   lineItems.push(...barisTunjanganGuru(g, periode))

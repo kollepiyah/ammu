@@ -747,7 +747,7 @@
         </div>
       </div>
       <div class="border border-[var(--border-subtle)] rounded-xl overflow-hidden overflow-x-auto">
-        <table class="w-full text-sm min-w-[720px]">
+        <table class="w-full text-sm min-w-[800px]">
           <thead>
             <tr
               class="bg-[var(--bg-card-elevated)] text-[10px] uppercase tracking-wider text-[var(--text-secondary)]"
@@ -758,6 +758,7 @@
               <th class="text-left px-3 py-2.5 font-black">Jabatan</th>
               <th class="text-left px-3 py-2.5 font-black">Lembaga</th>
               <th class="text-left px-3 py-2.5 font-black">Shift</th>
+              <th class="text-left px-3 py-2.5 font-black">L/P</th>
               <th class="text-right px-3 py-2.5 font-black">Nominal</th>
               <th class="text-center px-3 py-2.5 font-black w-20">Aksi</th>
             </tr>
@@ -812,6 +813,9 @@
               <td class="px-3 py-2 text-[11px] text-[var(--text-secondary)]">
                 {{ scopeText(j.scope.shift.map(shiftLabelById)) }}
               </td>
+              <td class="px-3 py-2 text-[11px] text-[var(--text-secondary)]">
+                {{ labelJk(j.scope.jk) }}
+              </td>
               <td class="px-3 py-2 text-right font-bold text-[var(--text-primary)]">
                 Rp {{ Number(j.nominal).toLocaleString('id-ID') }}
               </td>
@@ -837,7 +841,7 @@
               </td>
             </tr>
             <tr v-if="jenisBisyarohList.length === 0">
-              <td colspan="8" class="text-center text-[var(--text-tertiary)] italic py-6">
+              <td colspan="9" class="text-center text-[var(--text-tertiary)] italic py-6">
                 Belum ada Jenis Bisyaroh. Klik "Tambah Jenis Bisyaroh" — mis. "Bisyaroh Pokok Guru
                 PTPT" (Flat, jabatan Guru + lembaga PTPT) atau "Bonus Kehadiran Pagi" (× hadir,
                 shift Pagi).
@@ -1015,6 +1019,26 @@
                   {{ s.label }}
                 </button>
               </div>
+            </div>
+            <div>
+              <label class="text-[10px] font-bold text-[var(--text-secondary)] mb-1 block"
+                >Jenis Kelamin</label
+              >
+              <div class="flex flex-wrap gap-1">
+                <button
+                  v-for="k in JK_SCOPE_OPTIONS"
+                  :key="'jb-jk-' + k.value"
+                  type="button"
+                  :class="chipCls((dlgJb.scope.jk || []).includes(k.value))"
+                  @click="toggleScope('jk', k.value)"
+                >
+                  {{ k.label }}
+                </button>
+              </div>
+              <p class="text-[10px] text-[var(--text-tertiary)] italic mt-1">
+                Kosong = semua. Guru yang kolom L/P-nya belum diisi TIDAK ikut saat penyaring ini
+                dipakai.
+              </p>
             </div>
             <div>
               <label class="text-[10px] font-bold text-[var(--text-secondary)] mb-1 block"
@@ -1564,7 +1588,7 @@
                 Rp {{ Number(j.nominal || 0).toLocaleString('id-ID') }}
               </td>
               <td class="px-3 py-2 text-[11px] text-[var(--text-secondary)]">
-                {{ tunjanganScopeLabel(j) }}
+                {{ scopeLabel(j) }}
               </td>
               <td class="px-3 py-2">
                 <div class="flex items-center justify-center gap-1">
@@ -1770,6 +1794,26 @@
               </div>
             </div>
             <div>
+              <label class="text-[10px] font-bold text-[var(--text-secondary)] mb-1 block"
+                >Jenis Kelamin</label
+              >
+              <div class="flex flex-wrap gap-1">
+                <button
+                  v-for="k in JK_SCOPE_OPTIONS"
+                  :key="'tj-jk-' + k.value"
+                  type="button"
+                  :class="chipCls((dlgTj.scope.jk || []).includes(k.value))"
+                  @click="toggleScopeTj('jk', k.value)"
+                >
+                  {{ k.label }}
+                </button>
+              </div>
+              <p class="text-[10px] text-[var(--text-tertiary)] italic mt-1">
+                Kosong = semua. Guru yang kolom L/P-nya belum diisi TIDAK ikut saat penyaring ini
+                dipakai.
+              </p>
+            </div>
+            <div>
               <label class="flex items-center gap-2 text-[11px] font-bold cursor-pointer">
                 <input
                   type="checkbox"
@@ -1828,65 +1872,57 @@
       </div>
     </div>
 
-    <!-- v.1.1.9: Master Potongan — tabel + dialog (ganti layout inline lama
-         yang field nama-nya transparan/tak kelihatan & pemilih guru sesak). -->
+    <!-- Kyai 31 Agu 2026: JENIS POTONGAN ber-scope — "untuk potongan tambahkan filter
+         seperti jenis bisyaroh dan tunjangan. dan tambahkan filter laki2 atau perempuan".
+         Menggantikan Master Potongan lama yang cuma nama + nominal + daftar centang orang. -->
     <div
-      v-for="cfg in [
-        {
-          kind: 'potongan',
-          list: form.master_potongan,
-          judul: 'Master Potongan',
-          ikon: 'fa-minus-circle text-rose-600',
-          nomCls: 'text-rose-700 dark:text-rose-300'
-        }
-      ]"
       v-show="secVisible('bisyaroh')"
-      :key="cfg.kind"
       class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
     >
       <div class="flex items-center justify-between gap-2 mb-2 flex-wrap">
         <h3
           class="text-xs md:text-sm font-black text-[var(--text-primary)] uppercase tracking-widest"
         >
-          <i :class="['fas mr-1', cfg.ikon]"></i>{{ cfg.judul }}
+          <i class="fas fa-minus-circle text-rose-600 mr-1"></i>Jenis Potongan
         </h3>
         <div class="flex items-center gap-1.5 flex-wrap">
-          <!-- Template & Impor mencakup Tunjangan + Potongan sekaligus → tampil sekali (di kartu Tunjangan) -->
           <button
             type="button"
             class="inline-flex items-center gap-1.5 text-[10px] font-bold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-900/30 px-2.5 py-2 rounded-lg hover:bg-teal-100 dark:hover:bg-teal-900/50"
-            title="Unduh Excel Potongan (berisi data saat ini)"
-            @click="unduhTemplateMasterTP"
+            title="Unduh Excel Jenis Potongan (berisi data saat ini)"
+            @click="unduhTemplateJenisPotongan"
           >
             <i class="fas fa-file-excel"></i>Template
           </button>
           <label
             class="inline-flex items-center gap-1.5 text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/30 px-2.5 py-2 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-900/50 cursor-pointer"
           >
-            <i class="fas fa-file-import"></i>{{ imporMasterBusy ? 'Impor…' : 'Impor' }}
+            <i class="fas fa-file-import"></i>{{ imporPotonganBusy ? 'Impor…' : 'Impor' }}
             <input
               type="file"
               accept=".xlsx,.xls"
               class="hidden"
-              :disabled="imporMasterBusy"
-              @change="imporMasterTP"
+              :disabled="imporPotonganBusy"
+              @change="imporJenisPotongan"
             />
           </label>
           <button
             type="button"
             class="inline-flex items-center gap-1.5 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-bold px-4 py-2 rounded-lg text-xs"
-            @click="openMasterBaru(cfg.kind)"
+            @click="openJenisPotonganBaru"
           >
-            <i class="fas fa-plus"></i>Tambah
+            <i class="fas fa-plus"></i>Tambah Potongan
           </button>
         </div>
       </div>
       <p class="text-[10px] text-[var(--text-tertiary)] italic mb-2">
-        Otomatis memotong slip bisyaroh guru sesuai scope. Tunjangan kini punya kartunya sendiri di
-        atas (ber-scope seperti Jenis Bisyaroh).
+        Otomatis memotong slip bisyaroh guru yang cocok scope-nya. Penyaringnya sama dengan Jenis
+        Bisyaroh &amp; Tunjangan — <b>jabatan, lembaga, shift, jenis kelamin</b>, atau orang
+        tertentu — jadi "Potongan Seragam Putri" cukup satu baris ber-scope Perempuan. Nominalnya
+        flat per bulan; tiap jenis yang cocok dijumlahkan.
       </p>
       <div class="border border-[var(--border-subtle)] rounded-xl overflow-hidden overflow-x-auto">
-        <table class="w-full text-sm min-w-[480px]">
+        <table class="w-full text-sm min-w-[520px]">
           <thead>
             <tr
               class="bg-[var(--bg-card-elevated)] text-[10px] uppercase tracking-wider text-[var(--text-secondary)]"
@@ -1900,19 +1936,23 @@
           </thead>
           <tbody class="divide-y divide-[var(--border-subtle)]">
             <tr
-              v-for="(item, idx) in cfg.list"
-              :key="idx"
+              v-for="(j, idx) in jenisPotonganListRef"
+              :key="'pt-' + j.id + idx"
               class="hover:bg-[var(--bg-card-elevated)] transition"
+              :class="{ 'opacity-50': j.aktif === false }"
             >
               <td class="px-3 py-2 text-[var(--text-tertiary)]">{{ idx + 1 }}</td>
               <td class="px-3 py-2 font-bold text-[var(--text-primary)]">
-                {{ item.nama || '(tanpa nama)' }}
+                {{ j.label }}
+                <span v-if="j.aktif === false" class="text-[9px] font-black text-rose-500"
+                  >NONAKTIF</span
+                >
               </td>
-              <td :class="['px-3 py-2 text-right font-bold', cfg.nomCls]">
-                Rp {{ Number(item.nominal || 0).toLocaleString('id-ID') }}
+              <td class="px-3 py-2 text-right font-bold text-rose-700 dark:text-rose-300">
+                Rp {{ Number(j.nominal || 0).toLocaleString('id-ID') }}
               </td>
               <td class="px-3 py-2 text-[11px] text-[var(--text-secondary)]">
-                {{ masterScopeLabel(item) }}
+                {{ scopeLabel(j) }}
               </td>
               <td class="px-3 py-2">
                 <div class="flex items-center justify-center gap-1">
@@ -1920,7 +1960,7 @@
                     type="button"
                     class="w-7 h-7 rounded-lg border border-[var(--border-default)] text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/30 flex items-center justify-center"
                     title="Ubah"
-                    @click="openMasterDialog(cfg.kind, item, idx)"
+                    @click="openJenisPotonganDialog(j, idx)"
                   >
                     <i class="fas fa-pen text-xs"></i>
                   </button>
@@ -1928,16 +1968,17 @@
                     type="button"
                     class="w-7 h-7 rounded-lg border border-[var(--border-default)] text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 flex items-center justify-center"
                     title="Hapus"
-                    @click="removeMaster(cfg.kind, idx)"
+                    @click="hapusJenisPotongan(idx)"
                   >
                     <i class="fas fa-trash text-xs"></i>
                   </button>
                 </div>
               </td>
             </tr>
-            <tr v-if="cfg.list.length === 0">
+            <tr v-if="jenisPotonganListRef.length === 0">
               <td colspan="5" class="text-center text-[var(--text-tertiary)] italic py-5">
-                Belum ada. Klik "Tambah".
+                Belum ada. Klik "Tambah Potongan" — mis. "Kasbon", "Iuran Koperasi", atau "Seragam
+                Putri".
               </td>
             </tr>
           </tbody>
@@ -1945,142 +1986,185 @@
       </div>
     </div>
 
-    <!-- Dialog Tambah/Ubah Tunjangan/Potongan -->
+    <!-- Dialog Tambah/Ubah Jenis Potongan -->
     <div
-      v-if="dlgMasterOpen && dlgMaster"
+      v-if="dlgPtOpen && dlgPt"
       class="fixed inset-0 z-50 bg-slate-900/60 flex items-center justify-center p-4"
-      @click.self="dlgMasterOpen = false"
+      @click.self="dlgPtOpen = false"
     >
       <div
-        class="bg-[var(--bg-card)] rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto"
+        class="bg-[var(--bg-card)] rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto"
       >
         <div
           class="flex items-center justify-between px-5 py-4 border-b border-[var(--border-subtle)]"
         >
           <h3 class="text-base font-black">
-            <i
-              :class="[
-                'fas mr-1.5',
-                dlgMasterKind === 'tunjangan'
-                  ? 'fa-plus-circle text-emerald-600'
-                  : 'fa-minus-circle text-rose-600'
-              ]"
-            ></i
-            >{{ dlgMasterIsNew ? 'Tambah' : 'Ubah' }}
-            {{ dlgMasterKind === 'tunjangan' ? 'Tunjangan' : 'Potongan' }}
+            <i class="fas fa-minus-circle text-rose-600 mr-1.5"></i
+            >{{ dlgPtIsNew ? 'Tambah' : 'Ubah' }} Jenis Potongan
           </h3>
           <button
             class="text-[var(--text-secondary)] hover:text-rose-500 p-1"
             aria-label="Tutup"
-            @click="dlgMasterOpen = false"
+            @click="dlgPtOpen = false"
           >
             <i class="fas fa-times"></i>
           </button>
         </div>
         <div class="p-5 space-y-3">
-          <div>
-            <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
-              >Nama {{ dlgMasterKind === 'tunjangan' ? 'Tunjangan' : 'Potongan' }}</label
-            >
-            <input
-              v-model="dlgMaster.nama"
-              type="text"
-              :placeholder="
-                dlgMasterKind === 'tunjangan' ? 'mis. Tunjangan Transport' : 'mis. Kasbon'
-              "
-              class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)] font-bold"
-            />
-          </div>
-          <div>
-            <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
-              >Nominal (Rp)</label
-            >
-            <input
-              v-model.number="dlgMaster.nominal"
-              type="number"
-              min="0"
-              class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)] font-bold text-right"
-            />
-          </div>
-          <div class="border-t border-[var(--border-subtle)] pt-3">
-            <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1.5 block"
-              >Berlaku Untuk</label
-            >
-            <div class="grid grid-cols-2 gap-1.5 mb-2">
-              <button
-                type="button"
-                :class="[
-                  'py-2 rounded-lg text-xs font-bold border transition',
-                  dlgMaster.guru_ids.length === 0
-                    ? 'bg-teal-600 text-white border-teal-600'
-                    : 'border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-elevated)]'
-                ]"
-                @click="dlgMaster.guru_ids = []"
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
+                >Nama Potongan</label
               >
-                Semua guru/pegawai
-              </button>
-              <button
-                type="button"
-                :class="[
-                  'py-2 rounded-lg text-xs font-bold border transition',
-                  dlgMaster.guru_ids.length > 0
-                    ? 'bg-teal-600 text-white border-teal-600'
-                    : 'border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-elevated)]'
-                ]"
-                @click="dlgMasterPilih = true"
-              >
-                Guru tertentu ({{ dlgMaster.guru_ids.length }})
-              </button>
-            </div>
-            <div v-if="dlgMaster.guru_ids.length > 0 || dlgMasterPilih">
               <input
-                v-model="dlgMasterSearch"
+                v-model="dlgPt.label"
                 type="text"
-                placeholder="Cari nama guru/pegawai…"
-                class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)] mb-1.5"
+                placeholder="mis. Kasbon"
+                class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)] font-bold"
               />
-              <div
-                class="max-h-52 overflow-y-auto space-y-0.5 border border-[var(--border-subtle)] rounded-lg p-1.5"
+            </div>
+            <div>
+              <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
+                >Nominal (Rp)</label
               >
-                <label
-                  v-for="g in dlgMasterGuruCari"
-                  :key="g.id"
-                  class="flex items-center gap-2 text-xs cursor-pointer px-2 py-1.5 rounded hover:bg-[var(--bg-card-elevated)]"
-                >
-                  <input
-                    type="checkbox"
-                    :checked="dlgMaster.guru_ids.map(String).includes(String(g.id))"
-                    class="w-4 h-4 accent-teal-600"
-                    @change="toggleGuruDlg(g.id)"
-                  />
-                  <span class="font-bold text-[var(--text-primary)] truncate">{{ g.nama }}</span>
-                  <span class="text-[10px] text-[var(--text-tertiary)] ml-auto">{{
-                    g.lembaga || g.lembaga_sekolah || '-'
-                  }}</span>
-                </label>
-              </div>
+              <input
+                v-model.number="dlgPt.nominal"
+                type="number"
+                min="0"
+                class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)] font-bold text-right"
+              />
               <p class="text-[10px] text-[var(--text-tertiary)] italic mt-1">
-                Kosongkan semua centang = kembali ke "Semua guru/pegawai".
+                Dipotong sekali per bulan bila scope-nya cocok.
               </p>
             </div>
           </div>
+
+          <div class="border-t border-[var(--border-subtle)] pt-3 space-y-3">
+            <p class="text-[10px] font-black text-[var(--text-secondary)] uppercase">
+              Berlaku Untuk — kosongkan = semua
+            </p>
+            <div>
+              <label class="text-[10px] font-bold text-[var(--text-secondary)] mb-1 block"
+                >Jabatan</label
+              >
+              <div class="flex flex-wrap gap-1">
+                <button
+                  v-for="j in jabatanScopeOptions"
+                  :key="'pt-j-' + j"
+                  type="button"
+                  :class="chipCls(dlgPt.scope.jabatan.includes(j))"
+                  @click="toggleScopePt('jabatan', j)"
+                >
+                  {{ j }}
+                </button>
+              </div>
+            </div>
+            <div>
+              <label class="text-[10px] font-bold text-[var(--text-secondary)] mb-1 block"
+                >Lembaga / Unit</label
+              >
+              <div class="flex flex-wrap gap-1">
+                <button
+                  v-for="l in lembagaScopeOptions"
+                  :key="'pt-l-' + l"
+                  type="button"
+                  :class="chipCls(dlgPt.scope.lembaga.includes(l))"
+                  @click="toggleScopePt('lembaga', l)"
+                >
+                  {{ l }}
+                </button>
+              </div>
+            </div>
+            <div>
+              <label class="text-[10px] font-bold text-[var(--text-secondary)] mb-1 block"
+                >Shift</label
+              >
+              <div class="flex flex-wrap gap-1">
+                <button
+                  v-for="sh in shiftScopeOptions"
+                  :key="'pt-s-' + sh.id"
+                  type="button"
+                  :class="chipCls(dlgPt.scope.shift.includes(sh.id))"
+                  @click="toggleScopePt('shift', sh.id)"
+                >
+                  {{ sh.label }}
+                </button>
+              </div>
+            </div>
+            <div>
+              <label class="text-[10px] font-bold text-[var(--text-secondary)] mb-1 block"
+                >Jenis Kelamin</label
+              >
+              <div class="flex flex-wrap gap-1">
+                <button
+                  v-for="k in JK_SCOPE_OPTIONS"
+                  :key="'pt-jk-' + k.value"
+                  type="button"
+                  :class="chipCls((dlgPt.scope.jk || []).includes(k.value))"
+                  @click="toggleScopePt('jk', k.value)"
+                >
+                  {{ k.label }}
+                </button>
+              </div>
+              <p class="text-[10px] text-[var(--text-tertiary)] italic mt-1">
+                Kosong = semua. Guru yang kolom L/P-nya belum diisi TIDAK ikut saat penyaring ini
+                dipakai.
+              </p>
+            </div>
+            <div>
+              <label class="flex items-center gap-2 text-[11px] font-bold cursor-pointer">
+                <input
+                  type="checkbox"
+                  :checked="dlgPtPilihGuru"
+                  class="w-4 h-4 accent-rose-600"
+                  @change="setPilihGuruPt($event.target.checked)"
+                />
+                Batasi ke orang tertentu ({{ dlgPt.scope.guru_ids.length }} dipilih)
+              </label>
+              <div v-if="dlgPtPilihGuru" class="mt-2 space-y-2">
+                <input
+                  v-model="dlgPtGuruSearch"
+                  type="text"
+                  placeholder="Cari nama..."
+                  class="w-full px-3 py-1.5 text-xs rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)]"
+                />
+                <div
+                  class="max-h-40 overflow-y-auto border border-[var(--border-subtle)] rounded-lg p-2 flex flex-wrap gap-1"
+                >
+                  <button
+                    v-for="g in dlgPtGuruCari"
+                    :key="'pt-g-' + g.id"
+                    type="button"
+                    :class="chipCls(dlgPt.scope.guru_ids.map(String).includes(String(g.id)))"
+                    @click="toggleGuruPt(g.id)"
+                  >
+                    {{ g.nama }}
+                  </button>
+                </div>
+              </div>
+            </div>
+            <label class="flex items-center gap-2 text-[11px] font-bold cursor-pointer">
+              <input v-model="dlgPt.aktif" type="checkbox" class="w-4 h-4 accent-rose-600" />
+              Aktif (nonaktif = tak memotong slip, tapi tak terhapus)
+            </label>
+          </div>
         </div>
         <div
-          class="flex justify-end gap-2 px-5 py-3 border-t border-[var(--border-subtle)] bg-[var(--bg-card-elevated)] rounded-b-2xl"
+          class="flex items-center justify-end gap-2 px-5 py-4 border-t border-[var(--border-subtle)]"
         >
           <button
             type="button"
-            class="px-4 py-2 text-xs font-bold rounded-lg border border-[var(--border-default)] text-[var(--text-secondary)]"
-            @click="dlgMasterOpen = false"
+            class="px-4 py-2 rounded-lg text-xs font-bold border border-[var(--border-default)] text-[var(--text-secondary)]"
+            @click="dlgPtOpen = false"
           >
             Batal
           </button>
           <button
             type="button"
-            class="px-4 py-2 text-xs font-black rounded-lg bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white"
-            @click="simpanMaster"
+            class="px-4 py-2 rounded-lg text-xs font-black bg-rose-600 hover:bg-rose-700 text-white"
+            @click="simpanJenisPotongan"
           >
-            <i class="fas fa-check mr-1"></i>Terapkan
+            Simpan
           </button>
         </div>
       </div>
@@ -3330,7 +3414,12 @@ import {
   // Kyai 7 Agu 2026: Jenis Tunjangan ber-scope (ganti master_tunjangan)
   jenisTunjanganList as bacaJenisTunjangan,
   normalizeJenisTunjangan,
-  HITUNGAN_TUNJANGAN_OPTIONS
+  HITUNGAN_TUNJANGAN_OPTIONS,
+  // Kyai 31 Agu 2026: Jenis Potongan ber-scope (ganti master_potongan) + ringkasan scope
+  //   bersama supaya tiga tabel jenis tak menerangkan scope dengan kata yang berbeda.
+  jenisPotonganList as bacaJenisPotongan,
+  normalizeJenisPotongan,
+  ringkasScope
 } from '@/utils/bisyarohScope'
 import { shiftList, shiftLabelOf } from '@/utils/shiftMaster'
 import { namaLembaga } from '@/utils/jabatanUnit'
@@ -3496,6 +3585,16 @@ const dlgJbIdx = ref(-1)
 const dlgJb = ref(null)
 
 const scopeText = (arr) => (!arr || arr.length === 0 ? '—' : arr.join(', '))
+// Kyai 31 Agu 2026: penyaring laki-laki / perempuan pada scope jenis bisyaroh, tunjangan,
+//   dan potongan. Nilainya 'L'/'P' — sama dengan kolom `jk` di data guru.
+const JK_SCOPE_OPTIONS = [
+  { value: 'L', label: 'Laki-laki' },
+  { value: 'P', label: 'Perempuan' }
+]
+const labelJk = (arr) =>
+  !arr || arr.length === 0
+    ? '—'
+    : arr.map((k) => (k === 'P' ? 'Perempuan' : 'Laki-laki')).join(', ')
 const chipCls = (aktif) =>
   [
     'px-2 py-1 rounded-md text-[11px] font-bold border transition',
@@ -3827,15 +3926,232 @@ function tunjanganCaraLabel(j) {
   if (j.hitungan === 'flat_prestasi') s.push(`tepat waktu ≥ ${j.syarat?.persen_tepat_min ?? 100}%`)
   return s.length ? `${h} · ${s.join(' · ')}` : h
 }
-/** Scope ringkas — sejajar `masterScopeLabel` pada kartu Potongan. */
-function tunjanganScopeLabel(j) {
-  const s = j.scope || {}
-  const bits = []
-  if (s.jabatan?.length) bits.push(s.jabatan.join(', '))
-  if (s.lembaga?.length) bits.push(s.lembaga.join(', '))
-  if (s.shift?.length) bits.push(`shift ${s.shift.join('+')}`)
-  if (s.guru_ids?.length) bits.push(`${s.guru_ids.length} orang`)
-  return bits.length ? bits.join(' · ') : 'Semua guru/pegawai'
+/** Scope ringkas kolom "Berlaku" — satu kalimat untuk Jenis Tunjangan & Jenis Potongan. */
+function scopeLabel(j) {
+  return ringkasScope(j?.scope, shiftLabelById)
+}
+
+// ══ Kyai 31 Agu 2026: JENIS POTONGAN ber-scope (settings.keuPotonganJenis) ═══
+// "untuk potongan tambahkan filter seperti jenis bisyaroh dan tunjangan. dan tambahkan
+//  filter laki2 atau perempuan."
+// Menggantikan `master_potongan` yang cuma {nama, nominal, guru_ids} — satu-satunya cara
+//   menyasar sekelompok orang dulu adalah mencentang mereka satu per satu, dan daftar itu
+//   basi tiap ada guru masuk/keluar. Mesin & bentuk dialognya SAMA dengan Jenis Tunjangan,
+//   hanya tanpa kotak Cara Hitung & Syarat (potongan selalu flat per bulan).
+const jenisPotonganListRef = ref([])
+const dlgPtOpen = ref(false)
+const dlgPtIsNew = ref(false)
+const dlgPtIdx = ref(-1)
+const dlgPt = ref(null)
+const dlgPtPilihGuru = ref(false)
+const dlgPtGuruSearch = ref('')
+const dlgPtGuruCari = computed(() => {
+  const kw = String(dlgPtGuruSearch.value || '')
+    .trim()
+    .toLowerCase()
+  let list = (guruRaw.value || []).filter(
+    (g) => String(g.status || 'Aktif').toLowerCase() === 'aktif'
+  )
+  if (kw)
+    list = list.filter((g) =>
+      String(g.nama || '')
+        .toLowerCase()
+        .includes(kw)
+    )
+  return list.sort((a, b) => String(a.nama || '').localeCompare(String(b.nama || ''))).slice(0, 80)
+})
+function toggleScopePt(kunci, nilai) {
+  const cur = [...(dlgPt.value.scope[kunci] || [])]
+  const i = cur.indexOf(nilai)
+  if (i >= 0) cur.splice(i, 1)
+  else cur.push(nilai)
+  dlgPt.value.scope[kunci] = cur
+}
+/** Matikan pembatasan per-orang = KOSONGKAN daftarnya (lihat setPilihGuruTj). */
+function setPilihGuruPt(nyala) {
+  dlgPtPilihGuru.value = !!nyala
+  if (!nyala && dlgPt.value) dlgPt.value.scope.guru_ids = []
+}
+function toggleGuruPt(guruId) {
+  const sid = String(guruId)
+  const cur = (dlgPt.value.scope.guru_ids || []).map(String)
+  const i = cur.indexOf(sid)
+  if (i >= 0) cur.splice(i, 1)
+  else cur.push(sid)
+  dlgPt.value.scope.guru_ids = cur
+}
+function openJenisPotonganBaru() {
+  dlgPtIsNew.value = true
+  dlgPtIdx.value = -1
+  dlgPt.value = normalizeJenisPotongan({ label: '', nominal: 0, aktif: true })
+  dlgPtPilihGuru.value = false
+  dlgPtGuruSearch.value = ''
+  dlgPtOpen.value = true
+}
+function openJenisPotonganDialog(j, idx) {
+  dlgPtIsNew.value = false
+  dlgPtIdx.value = idx
+  dlgPt.value = normalizeJenisPotongan(JSON.parse(JSON.stringify(j)))
+  dlgPtPilihGuru.value = (dlgPt.value.scope.guru_ids || []).length > 0
+  dlgPtGuruSearch.value = ''
+  dlgPtOpen.value = true
+}
+function simpanJenisPotongan() {
+  const j = dlgPt.value
+  if (!j) return
+  if (!String(j.label || '').trim()) {
+    toast.warning('Nama potongan wajib diisi')
+    return
+  }
+  const next = normalizeJenisPotongan(j)
+  const bentrok = jenisPotonganListRef.value.some(
+    (x, i) => x.id === next.id && i !== dlgPtIdx.value
+  )
+  if (bentrok) {
+    toast.warning(`Sudah ada potongan dengan nama serupa (${next.id})`)
+    return
+  }
+  if (dlgPtIsNew.value) jenisPotonganListRef.value.push(next)
+  else jenisPotonganListRef.value.splice(dlgPtIdx.value, 1, next)
+  dlgPtOpen.value = false
+  toast.info('Tersimpan di layar — klik "Simpan Semua" agar berlaku.')
+}
+function hapusJenisPotongan(idx) {
+  const j = jenisPotonganListRef.value[idx]
+  if (!j) return
+  if (!confirm(`Hapus potongan "${j.label}"?\n\nSlip yang sudah digenerate tidak berubah.`)) return
+  jenisPotonganListRef.value.splice(idx, 1)
+}
+
+// ── Excel Jenis Potongan (template = juga berfungsi sebagai ekspor). Kolomnya lengkap
+//   dengan scope: Excel 4 kolom lama akan MEMANGKAS scope diam-diam kalau diimpor balik,
+//   kesalahan yang sudah pernah terjadi pada tunjangan (7 Agu). ──
+const imporPotonganBusy = ref(false)
+
+function unduhTemplateJenisPotongan() {
+  const rows = jenisPotonganListRef.value.map((j) => ({
+    nama: j.label,
+    nominal: Number(j.nominal || 0),
+    jabatan: (j.scope.jabatan || []).join(', '),
+    lembaga: (j.scope.lembaga || []).join(', '),
+    shift: (j.scope.shift || []).map(shiftLabelById).join(', '),
+    jk: (j.scope.jk || []).join(', '),
+    guru: _guruNamaByIds(j.scope.guru_ids),
+    aktif: j.aktif === false ? 'tidak' : 'ya'
+  }))
+  if (rows.length === 0)
+    rows.push(
+      {
+        nama: 'Contoh: Kasbon',
+        nominal: 50000,
+        jabatan: '',
+        lembaga: '',
+        shift: '',
+        jk: '',
+        guru: 'Nama Guru A, Nama Guru B',
+        aktif: 'ya'
+      },
+      {
+        nama: 'Contoh: Seragam Putri',
+        nominal: 25000,
+        jabatan: '',
+        lembaga: '',
+        shift: '',
+        jk: 'P',
+        guru: 'Semua',
+        aktif: 'ya'
+      }
+    )
+  exportSimple(rows, {
+    filename: 'jenis_potongan.xlsx',
+    sheetName: 'Jenis Potongan',
+    title: 'Jenis Potongan — Ammu (scope dikosongkan = berlaku semua)',
+    columns: [
+      { key: 'nama', header: 'Nama', width: 30 },
+      { key: 'nominal', header: 'Nominal', width: 14 },
+      { key: 'jabatan', header: 'Jabatan (pisah koma)', width: 24 },
+      { key: 'lembaga', header: 'Lembaga (pisah koma)', width: 24 },
+      { key: 'shift', header: 'Shift (pisah koma)', width: 20 },
+      { key: 'jk', header: 'Jenis Kelamin (L/P, kosong=semua)', width: 28 },
+      { key: 'guru', header: 'Guru (Semua / nama pisah koma)', width: 38 },
+      { key: 'aktif', header: 'Aktif (ya/tidak)', width: 14 }
+    ]
+  })
+}
+
+async function imporJenisPotongan(ev) {
+  const file = ev.target.files?.[0]
+  if (!file) return
+  imporPotonganBusy.value = true
+  try {
+    const rows = await importFile(file)
+    if (!rows.length) {
+      toast.warning('File kosong / tidak ada data')
+      return
+    }
+    // shift: terima label ATAU id (sama seperti impor Jenis Bisyaroh)
+    const shiftMap = {}
+    for (const sh of shiftScopeOptions.value) {
+      shiftMap[String(sh.label).toLowerCase()] = sh.id
+      shiftMap[String(sh.id).toLowerCase()] = sh.id
+    }
+    const guruByNama = {}
+    for (const g of guruRaw.value || [])
+      guruByNama[
+        String(g.nama || '')
+          .trim()
+          .toLowerCase()
+      ] = String(g.id)
+    const next = [...jenisPotonganListRef.value]
+    let imported = 0
+    let miss = 0
+    for (const r of rows) {
+      const nama = String(pickCol(r, ['nama', 'label', 'jenis']) || '').trim()
+      if (!nama || /^contoh:/i.test(nama)) continue
+      const shift = csvArr(pickCol(r, ['shift (pisah koma)', 'shift']))
+        .map((x) => shiftMap[x.toLowerCase()] || slugJenisId(x))
+        .filter(Boolean)
+      // Nama guru yang tak dikenali DIHITUNG, bukan didiamkan: potongan yang gagal
+      //   menyasar orangnya berarti uang yang tak terpotong tanpa ada yang tahu.
+      const guruStr = String(pickCol(r, ['guru (semua / nama pisah koma)', 'guru']) || '').trim()
+      const guru_ids = []
+      if (guruStr && guruStr.toLowerCase() !== 'semua') {
+        for (const nm of csvArr(guruStr)) {
+          const id = guruByNama[nm.toLowerCase()]
+          if (id) guru_ids.push(id)
+          else miss++
+        }
+      }
+      const aktifStr = String(pickCol(r, ['aktif (ya/tidak)', 'aktif']) || 'ya').toLowerCase()
+      const entry = normalizeJenisPotongan({
+        id: slugJenisId(nama),
+        label: nama,
+        nominal: parseRp(pickCol(r, ['nominal', 'tarif'])),
+        scope: {
+          jabatan: csvArr(pickCol(r, ['jabatan (pisah koma)', 'jabatan'])),
+          lembaga: csvArr(pickCol(r, ['lembaga (pisah koma)', 'lembaga'])),
+          shift,
+          jk: csvArr(pickCol(r, ['jenis kelamin (l/p, kosong=semua)', 'jenis kelamin', 'jk'])),
+          guru_ids: [...new Set(guru_ids)]
+        },
+        aktif: !['tidak', 'no', 'nonaktif', '0', 'n'].includes(aktifStr)
+      })
+      if (!entry.id) continue
+      const i = next.findIndex((x) => x.id === entry.id)
+      if (i >= 0) next[i] = entry
+      else next.push(entry)
+      imported++
+    }
+    jenisPotonganListRef.value = next
+    toast.success(
+      `${imported} jenis potongan diimpor${miss ? `, ${miss} nama guru tak cocok` : ''}. Cek lalu klik "Simpan Semua".`
+    )
+  } catch (e) {
+    toast.error('Gagal impor: ' + (e.message || e))
+  } finally {
+    imporPotonganBusy.value = false
+    ev.target.value = ''
+  }
 }
 
 // ==== v.1.1.x: Beban Mengajar Sekolah — dasar bisyaroh per_jp ====
@@ -4182,6 +4498,10 @@ function loadFromSettings() {
   //   diturunkan dari `master_tunjangan` lama supaya tak ada tunjangan yang hilang diam-diam
   //   saat halaman ini pertama kali dibuka sesudah pembaruan.
   jenisTunjanganListRef.value = bacaJenisTunjangan(s)
+  // Kyai 31 Agu 2026: Jenis Potongan. Pola sama — selama `keuPotonganJenis` belum pernah
+  //   disimpan, isinya diturunkan dari `master_potongan` lama supaya tak ada potongan yang
+  //   diam-diam berhenti berlaku begitu halaman ini dibuka sesudah pembaruan.
+  jenisPotonganListRef.value = bacaJenisPotongan(s)
   // v.1.2.1: bentuk baru { guru_id, lembaga, jp_minggu }. Baris bentuk LAMA
   //   ({ jp per pertemuan, hari[] }) dibaca-mundur jadi jp_minggu = jp × jumlah hari,
   //   sama persis dengan cara lama menghitungnya — jadi angkanya tak berubah.
@@ -4607,15 +4927,6 @@ function removeTabunganKat(idx) {
   form.keu_tabungan_kategori.splice(idx, 1)
 }
 
-function masterScopeLabel(item) {
-  const n = Array.isArray(item.guru_ids) ? item.guru_ids.length : 0
-  return n === 0 ? 'Semua guru/pegawai' : n + ' guru dipilih'
-}
-
-function removeMaster(kind, idx) {
-  ;(kind === 'tunjangan' ? form.master_tunjangan : form.master_potongan).splice(idx, 1)
-}
-
 // ── Potongan POS (per baris transaksi santri) ────────────────────────────────
 // Baris baru sengaja lahir AKTIF dengan tipe persen: bentuk yang paling sering dipakai
 //   (mis. "Anak Guru 50%"), dan nilai 0 membuatnya belum muncul di POS sampai diisi.
@@ -4634,82 +4945,6 @@ function hapusPotonganPos(idx) {
   form.keuPotonganPos.splice(idx, 1)
 }
 
-// v.1.1.9: dialog Tambah/Ubah Tunjangan/Potongan (ganti edit inline yg field nama-nya
-//   tak kelihatan & pemilih guru sesak).
-const dlgMasterOpen = ref(false)
-const dlgMasterKind = ref('tunjangan')
-const dlgMasterIdx = ref(-1)
-const dlgMasterIsNew = ref(false)
-const dlgMaster = ref(null)
-const dlgMasterSearch = ref('')
-const dlgMasterPilih = ref(false) // buka daftar guru walau belum ada yg dipilih
-
-const dlgMasterGuruCari = computed(() => {
-  const kw = String(dlgMasterSearch.value || '')
-    .trim()
-    .toLowerCase()
-  let list = (guruRaw.value || []).filter(
-    (g) => String(g.status || 'Aktif').toLowerCase() === 'aktif'
-  )
-  if (kw)
-    list = list.filter((g) =>
-      String(g.nama || '')
-        .toLowerCase()
-        .includes(kw)
-    )
-  return list.sort((a, b) => String(a.nama || '').localeCompare(String(b.nama || ''))).slice(0, 80)
-})
-
-function openMasterBaru(kind) {
-  dlgMasterKind.value = kind
-  dlgMasterIsNew.value = true
-  dlgMasterIdx.value = -1
-  dlgMaster.value = { nama: '', nominal: 0, guru_ids: [] }
-  dlgMasterSearch.value = ''
-  dlgMasterPilih.value = false
-  dlgMasterOpen.value = true
-}
-function openMasterDialog(kind, item, idx) {
-  dlgMasterKind.value = kind
-  dlgMasterIsNew.value = false
-  dlgMasterIdx.value = idx
-  dlgMaster.value = {
-    nama: item.nama || '',
-    nominal: Number(item.nominal) || 0,
-    guru_ids: Array.isArray(item.guru_ids) ? item.guru_ids.map(String) : []
-  }
-  dlgMasterSearch.value = ''
-  dlgMasterPilih.value = false
-  dlgMasterOpen.value = true
-}
-function toggleGuruDlg(guruId) {
-  const sid = String(guruId)
-  const cur = dlgMaster.value.guru_ids.map(String)
-  const i = cur.indexOf(sid)
-  if (i >= 0) cur.splice(i, 1)
-  else cur.push(sid)
-  dlgMaster.value.guru_ids = cur
-}
-function simpanMaster() {
-  const m = dlgMaster.value
-  if (!m) return
-  const nama = String(m.nama || '').trim()
-  if (!nama) {
-    toast.warning('Nama wajib diisi')
-    return
-  }
-  const entry = {
-    nama,
-    nominal: Number(m.nominal) || 0,
-    guru_ids: [...new Set(m.guru_ids.map(String))]
-  }
-  const list = dlgMasterKind.value === 'tunjangan' ? form.master_tunjangan : form.master_potongan
-  if (dlgMasterIsNew.value) list.push(entry)
-  else list.splice(dlgMasterIdx.value, 1, entry)
-  dlgMasterOpen.value = false
-  toast.info('Perubahan siap — klik "Simpan Semua" untuk menyimpan permanen.')
-}
-
 // ── v.1.1.9: Excel Jenis Bisyaroh + Tunjangan/Potongan (template = juga berfungsi
 //   sebagai ekspor karena berisi data saat ini; impor MENGGABUNG by nama/id, tak
 //   menghapus yang tak ada di file). ──
@@ -4719,7 +4954,6 @@ const csvArr = (v) =>
     .map((x) => x.trim())
     .filter(Boolean)
 const imporJenisBsyBusy = ref(false)
-const imporMasterBusy = ref(false)
 
 function unduhTemplateJenisBisyaroh() {
   const rows = jenisBisyarohList.value.map((j) => ({
@@ -4729,6 +4963,7 @@ function unduhTemplateJenisBisyaroh() {
     jabatan: (j.scope.jabatan || []).join(', '),
     lembaga: (j.scope.lembaga || []).join(', '),
     shift: (j.scope.shift || []).map(shiftLabelById).join(', '),
+    jk: (j.scope.jk || []).join(', '),
     aktif: j.aktif === false ? 'tidak' : 'ya'
   }))
   if (rows.length === 0)
@@ -4740,6 +4975,7 @@ function unduhTemplateJenisBisyaroh() {
         jabatan: 'Guru',
         lembaga: 'PTPT',
         shift: '',
+        jk: '',
         aktif: 'ya'
       },
       {
@@ -4749,6 +4985,7 @@ function unduhTemplateJenisBisyaroh() {
         jabatan: '',
         lembaga: '',
         shift: 'Pagi',
+        jk: '',
         aktif: 'ya'
       }
     )
@@ -4763,6 +5000,7 @@ function unduhTemplateJenisBisyaroh() {
       { key: 'jabatan', header: 'Jabatan (pisah koma)', width: 24 },
       { key: 'lembaga', header: 'Lembaga (pisah koma)', width: 24 },
       { key: 'shift', header: 'Shift (pisah koma)', width: 20 },
+      { key: 'jk', header: 'Jenis Kelamin (L/P, kosong=semua)', width: 28 },
       { key: 'aktif', header: 'Aktif (ya/tidak)', width: 14 }
     ]
   })
@@ -4820,7 +5058,8 @@ async function imporJenisBisyaroh(ev) {
         scope: {
           jabatan: csvArr(pickCol(r, ['jabatan (pisah koma)', 'jabatan'])),
           lembaga: csvArr(pickCol(r, ['lembaga (pisah koma)', 'lembaga'])),
-          shift
+          shift,
+          jk: csvArr(pickCol(r, ['jenis kelamin (l/p, kosong=semua)', 'jenis kelamin', 'jk']))
         },
         aktif: !['tidak', 'no', 'nonaktif', '0', 'n'].includes(aktifStr)
       })
@@ -4846,109 +5085,6 @@ function _guruNamaByIds(ids) {
     .map((id) => (guruRaw.value || []).find((g) => String(g.id) === String(id))?.nama || id)
     .join(', ')
 }
-function unduhTemplateMasterTP() {
-  // Kyai 7 Agu 2026: tunjangan pindah ke Jenis Tunjangan ber-scope, yang tak muat di
-  //   Excel 4 kolom ini (jabatan/lembaga/shift/syarat). Jadi template ini POTONGAN saja —
-  //   mengekspornya setengah jadi lalu mengimpornya balik akan memangkas scope diam-diam.
-  const rows = []
-  for (const p of form.master_potongan)
-    rows.push({
-      tipe: 'potongan',
-      nama: p.nama,
-      nominal: Number(p.nominal || 0),
-      guru: _guruNamaByIds(p.guru_ids)
-    })
-  if (rows.length === 0)
-    rows.push({
-      tipe: 'potongan',
-      nama: 'Contoh: Kasbon',
-      nominal: 50000,
-      guru: 'Nama Guru A, Nama Guru B'
-    })
-  exportSimple(rows, {
-    filename: 'tunjangan_potongan.xlsx',
-    sheetName: 'Tunjangan & Potongan',
-    title: 'Tunjangan & Potongan — Ammu (Guru: "Semua" atau nama pisah koma)',
-    columns: [
-      { key: 'tipe', header: 'Tipe (tunjangan/potongan)', width: 24 },
-      { key: 'nama', header: 'Nama', width: 28 },
-      { key: 'nominal', header: 'Nominal', width: 14 },
-      { key: 'guru', header: 'Guru (Semua / nama pisah koma)', width: 38 }
-    ]
-  })
-}
-async function imporMasterTP(ev) {
-  const file = ev.target.files?.[0]
-  if (!file) return
-  imporMasterBusy.value = true
-  try {
-    const rows = await importFile(file)
-    if (!rows.length) {
-      toast.warning('File kosong / tidak ada data')
-      return
-    }
-    const guruByNama = {}
-    for (const g of guruRaw.value || [])
-      guruByNama[
-        String(g.nama || '')
-          .trim()
-          .toLowerCase()
-      ] = String(g.id)
-    const incTunj = []
-    const incPot = []
-    let miss = 0
-    for (const r of rows) {
-      const nama = String(pickCol(r, ['nama']) || '').trim()
-      if (!nama || /^contoh:/i.test(nama)) continue
-      const isPot = String(pickCol(r, ['tipe (tunjangan/potongan)', 'tipe']) || 'tunjangan')
-        .toLowerCase()
-        .includes('poton')
-      const nominal = parseRp(pickCol(r, ['nominal']))
-      const guruStr = String(pickCol(r, ['guru (semua / nama pisah koma)', 'guru']) || '').trim()
-      const guru_ids = []
-      if (guruStr && guruStr.toLowerCase() !== 'semua') {
-        for (const nm of csvArr(guruStr)) {
-          const id = guruByNama[nm.toLowerCase()]
-          if (id) guru_ids.push(id)
-          else miss++
-        }
-      }
-      ;(isPot ? incPot : incTunj).push({ nama, nominal, guru_ids: [...new Set(guru_ids)] })
-    }
-    const mergeByNama = (existing, incoming) => {
-      const out = existing.map((x) => ({ ...x }))
-      for (const e of incoming) {
-        const i = out.findIndex(
-          (x) =>
-            String(x.nama || '')
-              .trim()
-              .toLowerCase() === e.nama.toLowerCase()
-        )
-        if (i >= 0) out[i] = e
-        else out.push(e)
-      }
-      return out
-    }
-    form.master_potongan = mergeByNama(form.master_potongan, incPot)
-    // Baris `tipe: tunjangan` di berkas lama SENGAJA diabaikan, bukan diam-diam ditelan:
-    //   tunjangan kini ber-scope (jabatan/lembaga/shift/syarat) dan Excel 4 kolom ini tak
-    //   memuatnya — menerimanya berarti membuat tunjangan tanpa scope yang tampak sah.
-    toast.success(
-      `${incPot.length} potongan diimpor${miss ? `, ${miss} nama guru tak cocok` : ''}. Klik "Simpan Semua".`
-    )
-    if (incTunj.length > 0) {
-      toast.warning(
-        `${incTunj.length} baris "tunjangan" dilewati — tunjangan kini diatur di kartu Jenis Tunjangan (ber-scope), bukan lewat Excel ini.`
-      )
-    }
-  } catch (e) {
-    toast.error('Gagal impor: ' + (e.message || e))
-  } finally {
-    imporMasterBusy.value = false
-    ev.target.value = ''
-  }
-}
-
 // v.1.1.x: serialize satu daftar jenis (dipakai per Tahun Ajaran saat Simpan Semua)
 function serializeJenisList(list) {
   return (list || [])
@@ -5127,6 +5263,10 @@ async function simpan() {
       // Kyai 7 Agu 2026: Jenis Tunjangan ber-scope. `master_tunjangan` lama sengaja TIDAK
       //   ditulis lagi — sekali kunci ini tersimpan, ia yang jadi sumber tunggal.
       keuTunjanganJenis: jenisTunjanganListRef.value.map(normalizeJenisTunjangan),
+      // Kyai 31 Agu 2026: Jenis Potongan ber-scope. `master_potongan` lama tetap ditulis
+      //   apa adanya (round-trip) sebagai cadangan versi lama, tapi kunci inilah yang
+      //   dibaca BisyarohView sekali ia tersimpan.
+      keuPotonganJenis: jenisPotonganListRef.value.map(normalizeJenisPotongan),
       // v.1.2.1: master beban mengajar (dasar bisyaroh sekolah per_jp) — JP per MINGGU
       //   per guru per sekolah. Kolom mapel & hari dibuang.
       bebanMengajar: bebanMengajarList.value
@@ -5180,6 +5320,7 @@ async function simpan() {
       'keu_jenis_tagihan',
       'keuBisyarohJenis',
       'keuTunjanganJenis',
+      'keuPotonganJenis',
       'bebanMengajar',
       'master_tunjangan',
       'master_potongan',

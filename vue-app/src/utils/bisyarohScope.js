@@ -66,6 +66,34 @@ export function slugJenisId(v) {
 
 const _arr = (v) => (Array.isArray(v) ? v.map((x) => String(x || '').trim()).filter(Boolean) : [])
 
+// Jenis kelamin — Kyai 31 Agu 2026: "tambahkan filter laki2 atau perempuan". Data guru
+//   menyimpan 'L'/'P', tapi impor Excel diketik manusia ("Laki-laki", "pria", "P"). Semua
+//   diringkas ke 'L'/'P'; yang tak dikenali dibuang supaya scope tak pernah menyaring
+//   berdasarkan nilai sampah yang mustahil cocok.
+export function kanonJk(v) {
+  const k = _key(v)
+  if (!k) return ''
+  if (k.startsWith('l') || k.startsWith('pria')) return 'L'
+  if (k.startsWith('p') || k.startsWith('w')) return 'P'
+  return ''
+}
+const _arrJk = (v) => [...new Set(_arr(v).map(kanonJk).filter(Boolean))]
+
+/** Bagian scope yang SAMA untuk Jenis Bisyaroh, Tunjangan, dan Potongan. */
+function normalizeScope(s) {
+  const raw = s || {}
+  return {
+    jabatan: _arr(raw.jabatan),
+    lembaga: _arr(raw.lembaga),
+    shift: _arr(raw.shift),
+    // 'L' | 'P'. Kosong = tak menyaring (berlaku semua). Dua-duanya diisi juga = semua,
+    //   tapi biarkan apa adanya supaya niat Kyai tetap terbaca di tabel.
+    jk: _arrJk(raw.jk),
+    // guru_ids: batasi ke orang tertentu (kosong = semua). Filter AND dgn scope lain.
+    guru_ids: _arr(raw.guru_ids)
+  }
+}
+
 export function normalizeJenisBisyaroh(raw) {
   const r = raw || {}
   const s = r.scope || {}
@@ -79,13 +107,7 @@ export function normalizeJenisBisyaroh(raw) {
       ? r.hitungan
       : 'flat',
     nominal: Number(r.nominal) > 0 ? Number(r.nominal) : 0,
-    scope: {
-      jabatan: _arr(s.jabatan),
-      lembaga: _arr(s.lembaga),
-      shift: _arr(s.shift),
-      // guru_ids: batasi ke orang tertentu (kosong = semua). Filter AND dgn scope lain.
-      guru_ids: _arr(s.guru_ids)
-    },
+    scope: normalizeScope(s),
     aktif: r.aktif !== false
   }
 }
@@ -115,6 +137,16 @@ export function refsUntukScope(refs, guru) {
   return [{ lembaga: '', jabatan_di_sini: String(guru?.jabatan || ''), group: '' }]
 }
 
+// Gerbang jenis kelamin. Kosong = tak menyaring. Guru yang jk-nya kosong/tak terbaca
+//   TIDAK lolos saat scope jk diisi: menebak jenis kelamin berarti menerbitkan (atau
+//   memotong) uang atas data yang tak ada.
+function cocokJk(scope, ctx) {
+  const daftar = scope?.jk || []
+  if (daftar.length === 0) return true
+  const jk = kanonJk(ctx?.jk)
+  return !!jk && daftar.includes(jk)
+}
+
 // Apakah jenis ini kena ke guru? shiftIds = Set shift milik guru (shiftsForGuru).
 export function jenisKenaGuru(j, ctx) {
   if (!j || j.aktif === false) return false
@@ -123,6 +155,7 @@ export function jenisKenaGuru(j, ctx) {
   if (s.guru_ids && s.guru_ids.length > 0) {
     if (!s.guru_ids.map(String).includes(String(ctx?.guruId ?? ''))) return false
   }
+  if (!cocokJk(s, ctx)) return false
   const refs = ctx?.refs || []
   // jabatan & lembaga harus cocok pada SATU tempat tugas yang sama.
   const adaRef = refs.some(
@@ -263,6 +296,7 @@ function barisPerJp(j, ctx, refs) {
   if (s.guru_ids && s.guru_ids.length > 0) {
     if (!s.guru_ids.map(String).includes(String(ctx?.guruId ?? ''))) return []
   }
+  if (!cocokJk(s, ctx)) return []
   if (s.shift && s.shift.length > 0) {
     const punya = ctx?.shiftIds || new Set()
     if (!s.shift.some((sh) => punya.has(String(sh)))) return []
@@ -386,12 +420,7 @@ export function normalizeJenisTunjangan(raw) {
     label: String(r.label || '').trim() || id,
     hitungan: _HITUNGAN_TUNJANGAN.includes(r.hitungan) ? r.hitungan : 'flat',
     nominal: Number(r.nominal) > 0 ? Number(r.nominal) : 0,
-    scope: {
-      jabatan: _arr(s.jabatan),
-      lembaga: _arr(s.lembaga),
-      shift: _arr(s.shift),
-      guru_ids: _arr(s.guru_ids)
-    },
+    scope: normalizeScope(s),
     syarat: {
       // 0 = tanpa syarat masa kerja. Untuk "khusus yang mengabdi di atas 5 tahun" → 5.
       masa_min_tahun: _int(y.masa_min_tahun, 0, 60),
@@ -516,6 +545,105 @@ export function barisTunjangan(jenisList, ctx) {
     out.push({ ...dasar, ...hitungDasar(j, ctx, ref) })
   }
   return out
+}
+
+// ═══ JENIS POTONGAN (settings.keuPotonganJenis) ══════════════════════════════
+//
+// PERMINTAAN KYAI (31 Agu 2026): "untuk potongan tambahkan filter seperti jenis bisyaroh
+//   dan tunjangan. dan tambahkan filter laki2 atau perempuan."
+//
+// Model lamanya `master_potongan` = {nama, nominal, guru_ids} — sama persis dengan model
+// tunjangan sebelum 7 Agu: satu-satunya cara menyasar sekelompok orang adalah mencentang
+// mereka satu per satu, dan daftar centang itu jadi basi tiap ada guru masuk/keluar.
+// Sekarang potongan memakai MESIN SCOPE yang sama (jabatan, lembaga, shift, jenis kelamin,
+// guru tertentu) — satu baris "Potongan Seragam Putri" cukup ber-scope jk 'P'.
+//
+// SENGAJA hanya `flat`: potongan yang berkelipatan kehadiran belum pernah Kyai minta, dan
+// cara hitung berkelipatan pada sisi PENGURANG adalah bentuk kesalahan yang paling mahal
+// (salah scope sedikit → bisyaroh seseorang habis). Kalau nanti dibutuhkan, mesinnya sudah
+// ada di `hitungDasar` dan tinggal dibukakan pilihannya.
+export function normalizeJenisPotongan(raw) {
+  const r = raw || {}
+  const id = slugJenisId(r.id || r.label || r.nama || '')
+  return {
+    id,
+    label: String(r.label || r.nama || '').trim() || id,
+    nominal: Number(r.nominal) > 0 ? Number(r.nominal) : 0,
+    scope: normalizeScope(r.scope),
+    aktif: r.aktif !== false
+  }
+}
+
+/**
+ * Daftar Jenis Potongan dari settings.
+ *
+ * Selama kunci barunya BELUM pernah disimpan, isinya diturunkan dari `master_potongan`
+ * lama (nama → label, guru_ids → scope) supaya slip tak berubah sedikit pun sebelum Kyai
+ * menyentuh Pengaturan — pola yang sama dengan `jenisTunjanganList`. Kunci baru yang ADA
+ * tapi kosong `[]` dihormati apa adanya: itu berarti Kyai memang menghapus semuanya.
+ */
+export function jenisPotonganList(settings) {
+  const s = settings || {}
+  const raw = s.keuPotonganJenis
+  if (Array.isArray(raw)) return raw.map(normalizeJenisPotongan).filter((j) => j.id)
+  const lama = Array.isArray(s.master_potongan) ? s.master_potongan : []
+  return lama
+    .map((p) =>
+      normalizeJenisPotongan({
+        label: p?.nama,
+        nominal: p?.nominal,
+        scope: { guru_ids: p?.guru_ids }
+      })
+    )
+    .filter((j) => j.id)
+}
+
+/**
+ * Baris POTONGAN untuk 1 guru. Bentuknya sama dengan `barisBisyaroh`/`barisTunjangan`
+ * (siap jadi line item), `kategori`-nya selalu 'potongan'. Nominalnya POSITIF — ia
+ * pengurang, dan tanda minusnya urusan penjumlah slip, bukan daftar ini.
+ */
+export function barisPotongan(jenisList, ctx) {
+  const out = []
+  const refs = ctx?.refs || []
+  for (const j of jenisList || []) {
+    if (!jenisKenaGuru(j, ctx)) continue
+    const ref = refPencocok(j, refs)
+    out.push({
+      jenis_id: j.id,
+      kategori: 'potongan',
+      lembaga: ref?.lembaga || '-',
+      label: j.label,
+      hitungan: 'flat',
+      qty: 1,
+      tarif: j.nominal,
+      nominal: j.nominal
+    })
+  }
+  return out
+}
+
+/** Total potongan 1 guru — dipakai form slip yang cuma butuh angkanya. */
+export function totalPotongan(jenisList, ctx) {
+  return barisPotongan(jenisList, ctx).reduce((s, p) => s + (Number(p.nominal) || 0), 0)
+}
+
+/**
+ * Ringkasan scope untuk kolom "Berlaku" — dipakai kartu Jenis Bisyaroh, Tunjangan, DAN
+ * Potongan supaya tiga tabel itu tak pernah menerangkan scope dengan kata yang berbeda.
+ *
+ * @param {object} scope j.scope
+ * @param {(id:string)=>string} [shiftLabel] penerjemah id shift → label manusia
+ */
+export function ringkasScope(scope, shiftLabel = (x) => x) {
+  const s = scope || {}
+  const bits = []
+  if (s.jabatan?.length) bits.push(s.jabatan.join(', '))
+  if (s.lembaga?.length) bits.push(s.lembaga.join(', '))
+  if (s.shift?.length) bits.push(`shift ${s.shift.map(shiftLabel).join('+')}`)
+  if (s.jk?.length) bits.push(s.jk.map((k) => (k === 'P' ? 'Perempuan' : 'Laki-laki')).join(' + '))
+  if (s.guru_ids?.length) bits.push(`${s.guru_ids.length} orang`)
+  return bits.length ? bits.join(' · ') : 'Semua guru/pegawai'
 }
 
 // Ringkasan slip dari line_items. Field ringkas (bisyaroh_pokok/sekolah/tambahan,
