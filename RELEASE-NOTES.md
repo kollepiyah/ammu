@@ -5,6 +5,116 @@ Rinciannya untuk pengembang ada di `CHANGELOG.md` — jangan disalin ke sana, te
 
 ---
 
+## v.1.3.7 — Agustus 2026
+
+**Perbaikan**
+
+- **Guru yang mengajar di sekolah sekaligus mengaji tak lagi tercatat alpa saat sekolahnya
+  libur.** Sebelumnya, kalau sekolah libur tapi ngaji tetap masuk, kolom sekolah guru itu
+  tetap dihitung tidak hadir.
+  ⚠️ Syaratnya liburnya ditandai untuk **Sekolah** di Kalender Kegiatan, dan shift sekolahnya
+  sudah dikenali — lewat kolom **Lembaga Sekolah** di data guru, atau kolom **Khusus Lembaga**
+  di Pengaturan › Master Shift.
+- **Angka kehadiran di halaman Personal** kini dihitung dengan aturan yang sama persis dengan
+  rekap Absensi Guru — dulu keduanya bisa berbeda.
+- **Total pada ekspor Buku Induk hanya menghitung periode yang difilter.** Dulu laporan
+  bulanan/tahunan memakai saldo kumulatif, jadi baris TOTAL bisa minus gara-gara transaksi
+  di luar periode. Posisi kas kumulatifnya tidak hilang — ia turun jadi dua baris keterangan
+  "SALDO KAS SEBELUM/SETELAH" di bawah TOTAL. Berlaku untuk PDF, Excel, dan Google Sheet.
+- **Usia masuk santri** dihitung dari selisih tanggal lahir ke tanggal masuk. Sebelumnya
+  santri yang masuk bulan Januari selalu berbunyi "0 bln".
+- **Akun guru: daftar santri tak lagi kosong** di Input Nilai, Rekap Diniyah, dan Absensi
+  Santri — termasuk untuk wali kelas sekolah dan kepala/PJ lembaga.
+- **Rekap prestasi bulanan mulai kosong tiap bulan.** Sebelumnya membuka bulan baru langsung
+  menampilkan angka bulan lalu sebagai isian — sekali disimpan, angka itu resmi jadi angka
+  bulan ini. Angka bulan lalu kini tampil abu-abu sebagai petunjuk saja dan tidak ikut
+  tersimpan. **Juz dan Kelas tidak ikut dikosongkan** (itu keadaan berjalan santri).
+  ⚠️ Bulan-bulan lampau yang dulu belum tercatat per bulan akan tampak kosong di tabel;
+  angkanya tidak hilang — tetap ada di data santri dan di submenu Riwayat.
+- **Akun guru bisa menyimpan Input Bulanan.** Sesudah daftar santrinya muncul, sebagian guru —
+  kepala/PJ lembaga, dan wali kelas dengan data lama — masih ditolak saat menekan Simpan.
+  Izin di server kini disamakan dengan yang tampil di layar.
+
+**Baru**
+
+- **Pratinjau slip bisyaroh sebelum di-generate.** Di Bulk Generate ada tombol
+  **"Tinjau Dulu"**: angka sungguhan bulan yang dipilih — bisyaroh, tunjangan, glondongan, dan
+  **potongan** — lengkap dengan rincian per guru dan rekap potongan per jenis. Tidak ada slip
+  yang tersimpan sampai tombol Generate ditekan. Yang perlu diperiksa ditandai sendiri: slip
+  yang **sudah dicairkan**, potongan yang **menghabiskan** bisyaroh, guru yang **tak dapat
+  apa-apa**, dan slip yang **nominalnya berubah** dari yang tersimpan.
+- **Nilai glondongan bisa disimpan dulu.** Tombolnya kini dua: **Simpan** (nilai tersimpan,
+  blok tetap ada di daftar tugas dan bisa dilanjutkan kapan saja) dan **Selesai** (nilai
+  dikirim, blok ditutup, giliran blok berikutnya terbuka). Blok yang masih setengah jalan
+  diberi tanda "Tersimpan, belum dikirim".
+- **Nomor WA wali santri** kini tampil di kartu tugas guru penyimak glondongan, lengkap dengan
+  tombol WhatsApp berisi pesan siap kirim — tak perlu lagi lewat guru kelas.
+- **Jenis Potongan bisa disasarkan**, sama seperti Jenis Bisyaroh & Tunjangan: per jabatan,
+  lembaga, shift, atau guru tertentu — tak perlu lagi mencentang orang satu per satu.
+- **Penyaring laki-laki/perempuan** pada Jenis Bisyaroh, Tunjangan, dan Potongan, sehingga
+  "Potongan Seragam Putri" cukup satu baris.
+  ⚠️ Penyaring ini membaca kolom **JK** di data guru. Guru yang kolom itu masih kosong tidak
+  akan terkena — sengaja, supaya tak ada uang terbit atau terpotong atas data yang tak ada.
+
+**Cara memasang**
+
+- **Android**: unduh `AmmuOnline.apk` di bawah, buka berkasnya, lalu pasang menimpa aplikasi
+  yang ada.
+- **Desktop**: jalankan `AmmuOnline-Setup-1.3.7.exe`. Windows 7 memakai berkas `Win7`.
+
+### Catatan rilis Play Console (What's new) — 488/500 karakter
+
+```
+Perbaikan
+
+• Rekap prestasi bulanan mulai kosong tiap bulan; angka bulan lalu hanya jadi petunjuk abu-abu.
+• Guru yang mengajar di sekolah sekaligus mengaji tak lagi tercatat alpa saat sekolahnya libur.
+• Akun guru: daftar santri tak lagi kosong dan sudah bisa disimpan di Input Nilai.
+• Total ekspor Buku Induk hanya menghitung periode yang difilter.
+
+Baru
+
+• Pratinjau slip bisyaroh sebelum di-generate, lengkap potongannya.
+• Nilai glondongan bisa disimpan dulu, lalu ditandai Selesai.
+```
+
+---
+
+## v.1.3.6 — Agustus 2026
+
+**Perbaikan**
+
+- **Laporan Keuangan untuk admin yang dibatasi per gedung tak lagi selalu minus.**
+  Pemasukannya sudah mengikuti gedung, tapi pengeluarannya diambil dari seluruh slip
+  bisyaroh — yang memang dikelola pusat dan tak punya dimensi gedung. Pengeluaran kini
+  dihitung dari baris KELUAR di Buku Kas gedung itu sendiri.
+- **Grafik Arus Kas, Tagihan, dan Pembayaran** ikut mengikuti gedung admin — daftar santri,
+  tagihan, transfer pending, dan riwayat pembayaran semuanya tersaring.
+- **Laporan harian Buku Induk = setoran hari itu.** Saat satu tanggal dipilih, saldo mulai
+  dari nol sehingga baris TOTAL cocok dengan uang yang benar-benar disetorkan.
+
+**Cara memasang**
+
+- **Android**: unduh `AmmuOnline.apk` di bawah, buka berkasnya, lalu pasang menimpa aplikasi
+  yang ada.
+- **Desktop**: jalankan `AmmuOnline-Setup-1.3.6.exe`. Windows 7 memakai berkas `Win7`.
+
+⚠️ **Prasyarat:** scope gedung hanya hidup bila akun admin punya field **Gedung**
+(Guru → "Gedung (scope Buku Kas)", khusus admin keuangan) **dan** santri punya field Gedung.
+Bila kosong, pengguna melihat semua gedung.
+
+### Catatan rilis Play Console (What's new) — 343/500 karakter
+
+```
+Perbaikan
+
+• Laporan Keuangan untuk admin yang dibatasi per gedung tak lagi selalu minus; pengeluaran kini diambil dari Buku Kas gedungnya sendiri.
+• Grafik Arus Kas, Tagihan, dan Pembayaran ikut mengikuti gedung admin.
+• Laporan harian Buku Induk kini menampilkan setoran hari itu saja, sehingga baris Total cocok dengan uang yang disetorkan.
+```
+
+---
+
 ## v.1.3.5 — Agustus 2026
 
 **Baru: Tes Sekolah**

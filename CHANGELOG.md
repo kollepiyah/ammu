@@ -28,18 +28,91 @@ naik satu tiap rilis. Entri lama memakai skema lama `v.{nomor-urut}.{MMDDtahunmu
 
 ---
 
-## [v.1.3.7] — 2026-08-31 — Total ekspor ikut filter + potongan ber-scope + tambalan akun guru
+## [v.1.3.7] — 2026-08-31 — Total ekspor ikut filter + potongan ber-scope + libur sekolah + glondongan
 
-⚠️ **URUTAN DEPLOY:** frontend murni — **tanpa migrasi DB, tanpa edge function**. Deploy web
-dari **direktori utama** (butuh `vue-app/.env.local`), lalu **AAB vc137** dan **Electron 1.3.7**.
+⚠️ **URUTAN DEPLOY — dua langkah:**
+
+1. `npx supabase db push` — **satu migrasi baru** (`20260831120000_santri_upd_kepala_lembaga`,
+   hak simpan akun guru). **WAJIB DULUAN**: tanpa ini kepala/PJ lembaga tetap bertemu pesan
+   "ditolak RLS" walau webnya sudah baru. Tanpa edge function.
+2. Deploy web dari **direktori utama** (butuh `vue-app/.env.local`), lalu **AAB vc137** dan
+   **Electron 1.3.7**.
 
 ⚠️ **Prasyarat yang mudah terlupa:** penyaring **L/P** pada Jenis Bisyaroh/Tunjangan/Potongan
 membaca kolom **JK** di data guru. Guru yang kolom itu masih kosong TIDAK akan terkena jenis
 yang memakai penyaring tsb — sengaja, supaya tak ada uang terbit atau terpotong atas data yang
 tak ada. Periksa Data Guru sebelum memakai penyaring ini.
 
+⚠️ **Prasyarat kedua:** perbaikan libur absensi di bawah membaca "shift ini milik lembaga apa"
+dari kolom **"Khusus Lembaga"** shift (Pengaturan › Master Shift) atau dari field **Lembaga
+Sekolah** guru. Shift sekolah **buatan sendiri** (id-nya bukan `sekolah`) yang kolom "Khusus
+Lembaga"-nya masih kosong tetap tak dikenali sebagai shift sekolah — tak ada satu pun data yang
+menyebutnya begitu. Isi salah satu dari keduanya sebelum menyimpulkan perbaikannya tak jalan.
+
 ### Fixed
 
+- **Rekap prestasi bulanan tak lagi membawa angka bulan lalu** (v.1.3.7). Kyai, 31 Agu 2026:
+  "kenapa tidak tereset setiap bulan, bulan agustus masih terinput rekapan bulan lalu. harusnya
+  kosong." Angka prestasi hidup di dua tempat dengan arti berbeda: `santri.prestasi_awal/akhir/
+total` — SATU set per santri, tanpa dimensi bulan, isinya "angka terakhir yang pernah
+  disimpan" — dan `riwayat_prestasi` (`rp_<santriId>_<YYYY-MM>`), snapshot per bulan yang sudah
+  ada sejak v.100d tapi **tak pernah dibaca balik**. Kedua layar bulanan mengisi dirinya dari
+  yang pertama, jadi memilih bulan lain tak mengubah apa pun — dan angka bulan lalu muncul
+  sebagai **isian**, bukan sekadar tampilan: sekali ditekan Simpan, angka Juli resmi jadi angka
+  Agustus. Statistik "sudah dinilai" ikut berbohong, bulan yang belum disentuh siapa pun
+  terhitung sudah dinilai. Sekarang sumbernya snapshot bulan terpilih (`utils/prestasiBulanan`);
+  belum ada → **kosong**. Yang **tidak** ikut dikosongkan: **Juz & Kelas** — itu keadaan
+  berjalan, bukan ukuran bulanan; santri tak kembali ke Juz 1 tiap tanggal 1. Sebagai ganti
+  angka yang hilang dari kotak isian, angka bulan lalu tampil sebagai **placeholder abu-abu**
+  (untuk PTPT, "Awal" memakai "Akhir" bulan lalu) — petunjuk yang tak ikut tersimpan dan tak
+  ikut dihitung. Dua penjaga menyertainya: menyunting bulan **lampau** tak lagi mencerminkan
+  angkanya ke baris santri (mengoreksi Juni di bulan Agustus tak boleh memundurkan angka
+  berjalan), dan Input Bulanan hanya mencerminkan isian yang **tidak kosong** — sejak formnya
+  mulai kosong tiap bulan, menyimpan perubahan catatan saja akan menghapus angka terakhir
+  santri kalau kolom prestasinya ikut ditulis apa adanya. **Input Bulanan kini ikut menulis
+  snapshot bulanannya** — dulu ia hanya menimpa baris santri, sehingga angka yang diinput guru
+  di sana tak pernah menjadi milik bulan mana pun; itulah sebabnya ia otomatis "muncul lagi"
+  bulan berikutnya. ⚠️ Bulan-bulan lampau yang snapshot-nya memang tak pernah tertulis akan
+  tampak kosong di grid; angkanya tak hilang — ia tetap ada di baris santri dan di submenu
+  Riwayat.
+- **Akun guru: pesan galat "ditolak RLS" saat menyimpan Input Bulanan** (v.1.3.7). Lanjutan
+  langsung dari tambalan "daftar santri kosong" di bawah, dan sekaligus akibatnya: tambalan itu
+  melebarkan **apa yang terlihat**, tapi **apa yang boleh disimpan** tertinggal di database.
+  Input Bulanan menulis LANGSUNG ke tabel `santri`, sedangkan UPDATE tabel itu hanya punya
+  `santri_upd_manage` (admin), `santri_upd_self`, `santri_upd_pengampu`, dan `santri_upd_pj_ptpt`.
+  Dua celah yang tersisa dan dua-duanya berakhir sebagai galat di layar guru: **(1) kepala/PJ
+  lembaga** — `headsLembaga()` membuat mereka melihat santri lembaganya, sementara
+  `auth_is_pengampu` tak mengenal jabatan sama sekali; **(2) `guru_sekolah` yang tersimpan
+  sebagai TEKS tunggal** (baris lama) — diterima `ownsSekolah()` di UI, dibuang policy-nya yang
+  hanya mengenal larik. Yang kedua murni bug: aturannya memang sama, SQL-nya saja yang gagal
+  pada data lama. Ditanyakan ke Kyai 31 Agu 2026 dan diputuskan **melebarkan izin DB** (bukan
+  menyembunyikan lagi daftarnya), mengikuti pola `santri_upd_pj_ptpt` 4 Agu: kebijakan baru
+  MENCERMINKAN gerbang UI. ⚠️ Grainnya **baris, bukan kolom** — sama seperti seluruh kebijakan
+  santri lain — jadi kepala/PJ lembaga secara teknis bisa menyunting field santri lembaganya
+  yang lain (mis. lewat Kenaikan), bukan cuma kolom Input Bulanan. Peta "lembaga → kelompok"
+  yang mau tak mau tersalin ke SQL dijaga `tests/unit/lembagaKelompokCermin.test.js`: menambah
+  lembaga di `LEMBAGA_GROUPS` tanpa menyunting migrasinya membuat tes MERAH, bukan membuat
+  seorang kepala lembaga bertemu "ditolak RLS" berbulan-bulan kemudian.
+- **Guru "sekolah + ngaji" tak lagi dituduh alpa saat sekolahnya libur** (v.1.3.7). Kyai,
+  31 Agu 2026: "guru yg ngajar sekolah dan ngaji, padahal sekolahnya libur, tapi ngajinya masuk.
+  tapi guru itu di absensi bulanannya masih terhitung absen sekolahnya." Libur kalender sudah
+  ber-scope lembaga sejak v.1.2.3, dan form Kalender Kegiatan sendiri menjanjikan _"pilih mis.
+  'Sekolah' bila sekolah libur tapi ngaji tetap masuk"_. Yang belum benar sisi seberangnya:
+  pertanyaan "sel absensi (guru × shift) ini milik lembaga apa?" dijawab **tebakan hardcoded** di
+  dalam view — `shift === 'sekolah' ? lembaga_sekolah || lembaga : lembaga || lembaga_sekolah`.
+  Tebakan itu meleset dua arah dan dua-duanya diam: (a) guru yang field **Lembaga Sekolah**-nya
+  kosong membuat shift SEKOLAH-nya memakai lembaga **NGAJI**, sehingga libur sekolah tak
+  mengenainya (→ alpa palsu, keluhan Kyai) sementara libur ngaji justru membebaskannya (→ alpa
+  yang malah hilang); (b) shift sekolah **buatan sendiri** (mis. "SDI Pagi") tak pernah dikenali
+  sebagai shift sekolah sama sekali. Aturannya kini satu, di `utils/lembagaShift`, dan sumbernya
+  **deklarasi** bukan tebakan: kolom "Khusus Lembaga" milik shift — field yang sama yang sudah
+  dipakai BisyarohView memilih shift kehadiran per lembaga. Saling-jatuh antar-field dibuang:
+  shift sekolah tak boleh meminjam lembaga ngaji, dan sebaliknya. Bila sekolah persisnya memang
+  belum terdata, sel itu turun ke label kelompok **"Sekolah"** — libur yang ditandai "Sekolah"
+  tetap mengenainya, libur yang ditandai khusus "SDI" tidak (menebak sekolah mana = membebaskan
+  atau meng-alpa-kan orang atas data yang tak ada). Salinan aturan yang sama di **Personal**
+  (KPI kehadiran pribadi guru) ikut disatukan ke sumber itu — dulu ia salah dengan cara persis
+  sama, jadi angka Alpa di dua layar bisa berbeda dari sebab yang sama.
 - **Ekspor Buku Induk: baris TOTAL hanya periode yang difilter** (v.1.3.7). Kyai, 31 Agu 2026:
   "pastikan hasil ekspor nominal totalnya hanya hari itu (atau sesuai yg difilter), bukan diambil
   dari semua buku induk yg akhirnya terhitung minus." Tambalan 6 Agu (saldo ikut penyaring) dan
@@ -74,6 +147,46 @@ tak ada. Periksa Data Guru sebelum memakai penyaring ini.
 
 ### Added
 
+- **Pratinjau slip bisyaroh sebelum di-generate** (v.1.3.7). Kyai: "untuk bisyaroh saya ingin
+  ada simulasi/review per bulan, misal bulan ini dan sudah tertera potongannya dll. sebelum
+  generate slip agar bisa koreksi." Sub-tab **Simulasi** yang sudah ada menjawab pertanyaan
+  lain — ia alat coba-coba TARIF dengan andaian semua hadir penuh, untuk menyusun anggaran.
+  Yang ini kebalikannya: angka **sungguhan** bulan terpilih (kehadiran, tunjangan, glondongan,
+  potongan apa adanya), muncul sebagai tombol **"Tinjau Dulu"** tepat di atas tombol Generate.
+  Sumber angkanya `buildSlipPayload` — fungsi yang SAMA yang dipakai Generate — jadi yang
+  ditinjau memang yang akan tersimpan; tak satu baris pun ditulis ke `keuangan_gaji`. Tiap guru
+  bisa dibentangkan untuk melihat rincian line item & potongannya, dan ada **rekap potongan per
+  jenis** (berapa orang kena, berapa totalnya, siapa saja) — bentuk tercepat melihat scope yang
+  meleset, yang justru alasan Potongan sengaja ditahan flat 31 Agu 2026. Empat penanda otomatis,
+  terurut dari yang menyangkut uang yang sudah keluar: **Sudah dicairkan** (generate ulang
+  mengubah nominal yang sudah dibayar sementara catatan kas keluar di Buku Induk tetap angka
+  lama), **Potongan ≥ bisyaroh**, **Tak dapat bisyaroh** (biasanya scope belum cocok atau kolom
+  JK masih kosong), dan **Nominal berubah** beserta selisihnya terhadap slip tersimpan.
+  Pratinjau ditandai basi begitu periodenya berganti, dan dibuang setelah Generate benar-benar
+  dijalankan.
+- **Nilai glondongan bisa disimpan dulu, "Selesai" jadi tombol tersendiri** (v.1.3.7). Kyai:
+  "input nilai glondongan ada fitur simpan (artinya tidak langsung terkirim) jadi tambah tombol
+  baru misal 'Selesai' yg berarti sudah diinput semua." Satu-satunya tombol sebelumnya adalah
+  **"Simpan & Selesai"** — sekali diklik, baris langsung berstatus `selesai`. Padahal satu blok
+  glondongan = 5 juz × 4 aspek yang disimak beberapa kali duduk; penyimak yang baru menilai dua
+  juz tak punya tempat menaruh angkanya selain kertas, dan hilang begitu aplikasi tertutup.
+  Sekarang **Simpan** menulis angka & catatan apa adanya **tanpa menyentuh status** (blok tetap
+  di "Tugas Menilai Saya", diberi chip _"Tersimpan, belum dikirim"_), dan **Selesai** yang
+  menutup blok. Draft tak bisa bocor jadi apa pun: gerbang PJ, Rekap Penyimak, dan bisyaroh
+  glondongan semuanya mensyaratkan status `selesai`, sedangkan "penyimak sedang sibuk"
+  mensyaratkan `ditugaskan` — ketiganya diuji (`tests/unit/draftGlondongan.test.js`). Menekan
+  **Selesai** saat masih ada juz yang belum lengkap tetap boleh, tapi memunculkan konfirmasi yang
+  menyebut juz mana — sebab sesudah itu blok keluar dari daftar tugas dan giliran blok berikutnya
+  terbuka.
+- **No WA wali santri di kartu tugas penyimak glondongan** (v.1.3.7). Kyai: "no wa wali muncul di
+  guru penyimak glondongan." Ini melunasi sisa permintaan 21 Jul 2026 — _"no WA penyimak, guru
+  kelas, dan santri"_ — yang dulu dikerjakan dua pertiganya saja. Selama ini penyimak yang mau
+  menjadwalkan simakan harus menitip pesan lewat guru kelas, padahal yang mengantar santri datang
+  adalah walinya. Tombol WA-nya membawa teks siap-pakai (`pesanWaliGlondongan` di
+  `utils/pesanWa`, satu tempat kalau Kyai mau mengubah wording). Barisnya tetap tampil walau
+  nomornya kosong, berbunyi "(no WA wali belum diisi)" — supaya yang terbaca "data walinya belum
+  diisi", bukan "fiturnya tak jalan". Nomor cadangan `wa_2` sengaja tak ikut: seluruh aplikasi
+  (tagihan, tes, prestasi) hanya memakai `wa`.
 - **Jenis Potongan ber-scope + penyaring laki-laki/perempuan** (v.1.3.7). Kyai: "untuk potongan
   tambahkan filter seperti jenis bisyaroh dan tunjangan. dan tambahkan filter laki2 atau
   perempuan." `master_potongan` lama hanya {nama, nominal, guru_ids} — satu-satunya cara menyasar
