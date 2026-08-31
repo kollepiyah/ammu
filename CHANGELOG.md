@@ -28,6 +28,72 @@ naik satu tiap rilis. Entri lama memakai skema lama `v.{nomor-urut}.{MMDDtahunmu
 
 ---
 
+## [v.1.3.7] — 2026-08-31 — Total ekspor ikut filter + potongan ber-scope + tambalan akun guru
+
+⚠️ **URUTAN DEPLOY:** frontend murni — **tanpa migrasi DB, tanpa edge function**. Deploy web
+dari **direktori utama** (butuh `vue-app/.env.local`), lalu **AAB vc137** dan **Electron 1.3.7**.
+
+⚠️ **Prasyarat yang mudah terlupa:** penyaring **L/P** pada Jenis Bisyaroh/Tunjangan/Potongan
+membaca kolom **JK** di data guru. Guru yang kolom itu masih kosong TIDAK akan terkena jenis
+yang memakai penyaring tsb — sengaja, supaya tak ada uang terbit atau terpotong atas data yang
+tak ada. Periksa Data Guru sebelum memakai penyaring ini.
+
+### Fixed
+
+- **Ekspor Buku Induk: baris TOTAL hanya periode yang difilter** (v.1.3.7). Kyai, 31 Agu 2026:
+  "pastikan hasil ekspor nominal totalnya hanya hari itu (atau sesuai yg difilter), bukan diambil
+  dari semua buku induk yg akhirnya terhitung minus." Tambalan 6 Agu (saldo ikut penyaring) dan
+  14 Agu (harian mulai nol) masih menyisakan periode **bulanan/tahunan** memakai SALDO AWAL
+  kumulatif, sehingga baris TOTAL bisa minus gara-gara transaksi di luar periode. Sekarang satu
+  aturan untuk semua periode: kolom Saldo selalu **mulai nol** pada baris pertama yang tercetak,
+  dan baris TOTAL = masuk − keluar periode itu. Posisi kas kumulatif tidak dibuang — ia turun jadi
+  dua baris keterangan di bawah TOTAL (`INFO — SALDO KAS SEBELUM/SETELAH <periode>`), dihitung dari
+  ledger tersaring tanpa batas periode, jadi janji 6 Agu ("saldo total jika diekspor semuanya tanpa
+  filter") tetap terpenuhi. Berlaku serentak untuk PDF, Excel, dan Google Sheet — ketiganya lewat
+  `buildExportRows`. Kartu saldo di layar disusun ulang mengikuti urutan baca kertasnya.
+- **"Usia Masuk" santri salah hitung** (v.1.3.7). Kyai: "perhitungan usia masuk tidak sesuai jika
+  dihitung dari tgl lahir (tidak akurat)." `composables/useSantriForm.js` menyimpan salinan rumus
+  umurnya sendiri, dan salinan itu mengisi bulan dengan **bulan tanggal acuan apa adanya**
+  (`m = r.getMonth()`) alih-alih selisih bulan, tanpa koreksi tanggal — santri lahir 20 Nov 2015
+  yang masuk 5 Jul 2020 tercatat "5 thn 6 bln", padahal 4th 7bln; tanggal masuk bulan Januari
+  selalu berbunyi "0 bln". Salinan itu dihapus; form kini memakai `utils/usia` (`usiaKini` /
+  `usiaPada`), satu-satunya rumus umur di aplikasi — bebas geser zona waktu dan menerima format
+  lama `DD/MM/YYYY`. Kolom usia di **Input Bulanan** juga dihitung hidup dari `tgl_lahir`, bukan
+  dari kolom `usia` simpanan yang membeku di tahun santri terakhir disunting.
+- **Akun guru: daftar santri kosong di Input Nilai & Absensi** (v.1.3.7). Aturan "santri ampuan
+  guru" ternyata disalin di empat berkas dan salinannya sudah berpisah diam-diam:
+  **Input Bulanan** tak pernah memeriksa `guru_sekolah[]` (wali kelas sekolah melihat daftar
+  kosong), tak mengenali kepala/PJ lembaga, memakai `sesi.nama` saja alih-alih
+  `sesi.guru || sesi.nama`, dan sisanya mencocokkan `guru_id`/`guru_pagi_id`/`guru_sore_id` —
+  field yang memang tak pernah ada di baris santri; **Rekap Diniyah** memakai `Array.includes`
+  yang peka huruf besar dan hanya jalan bila `guru_sekolah` berbentuk larik; **Absensi Santri**
+  menganggap `guru_sekolah` selalu larik, sehingga baris lama yang menyimpannya sebagai teks
+  tunggal ikut hilang. Ketiganya kini memakai `utils/guruScope` (`ownsNgaji`, `ownsSekolah`,
+  `headsLembaga`) — sumber tunggal yang sama dengan `useSantri` dan policy RLS
+  `santri_upd_pengampu`, sehingga "yang kelihatan = yang boleh disimpan".
+
+### Added
+
+- **Jenis Potongan ber-scope + penyaring laki-laki/perempuan** (v.1.3.7). Kyai: "untuk potongan
+  tambahkan filter seperti jenis bisyaroh dan tunjangan. dan tambahkan filter laki2 atau
+  perempuan." `master_potongan` lama hanya {nama, nominal, guru_ids} — satu-satunya cara menyasar
+  sekelompok orang adalah mencentang mereka satu per satu, dan daftar centang itu basi tiap ada
+  guru masuk/keluar. Potongan kini memakai **mesin scope yang sama** dengan Jenis Bisyaroh &
+  Tunjangan (jabatan, lembaga, shift, guru tertentu) di kunci baru `settings.keuPotonganJenis`,
+  lengkap dengan kartu, dialog, dan Excel Template/Impor sendiri (kolom scope ikut, supaya impor
+  balik tak memangkasnya diam-diam). Sengaja **flat per bulan saja**: potongan berkelipatan belum
+  pernah diminta, dan salah scope pada sisi pengurang adalah kesalahan yang paling mahal.
+  Selama kunci baru belum pernah disimpan, isinya diturunkan dari `master_potongan` lama sehingga
+  slip tak berubah sebelum Pengaturan disentuh.
+- **Penyaring jenis kelamin (L/P) pada scope jenis bisyaroh, tunjangan, dan potongan** (v.1.3.7).
+  Kriteria `scope.jk` baru: kosong = tak menyaring; `['P']` = perempuan saja. Di-AND dengan
+  kriteria lain, jadi "Potongan Seragam Putri" cukup satu baris. Guru yang kolom L/P-nya belum
+  diisi **tidak** ikut saat penyaring ini dipakai — menebak jenis kelamin berarti memotong atau
+  membayar uang atas data yang tak ada. Ikut tercetak di kolom tabel Jenis Bisyaroh dan di
+  Excel Template/Impor kedua daftar.
+
+---
+
 ## [v.1.3.6] — 2026-08-14 — Scope gedung admin keuangan + laporan harian mulai nol
 
 ⚠️ **URUTAN DEPLOY:** frontend murni — **tanpa migrasi DB, tanpa edge function**. Deploy web

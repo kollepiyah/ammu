@@ -583,7 +583,7 @@ const introText = computed(() =>
 const lembagaName = computed(
   () => settings.settings?.namaLembaga || 'Pondok Pesantren Mambaul Ulum'
 )
-const version = computed(() => settings.settings?.appVersion || 'v.1.3.6')
+const version = computed(() => settings.settings?.appVersion || 'v.1.3.7')
 const logoSrc = computed(() => settings.settings?.logoUrl || '/logo.png')
 
 const sections = [
@@ -827,6 +827,17 @@ async function resetFaq() {
 //   berubah di layar mereka, bukan nama fungsi. Cukup beberapa rilis terakhir —
 //   riwayat lengkap ada di CHANGELOG.md untuk pengembang.
 const rilis = [
+  {
+    versi: 'v.1.3.7',
+    tgl: 'Agustus 2026',
+    items: [
+      'Cetak laporan Buku Induk: baris TOTAL kini berisi uang masuk dikurangi uang keluar pada periode yang disaring saja — harian, bulanan, maupun tahunan. Posisi kas keseluruhan tetap ikut tercetak, tapi sebagai dua baris keterangan di bawah TOTAL, jadi angka total tak lagi ikut minus gara-gara transaksi di luar periode.',
+      'Potongan bisyaroh kini punya penyaring lengkap seperti Jenis Bisyaroh dan Tunjangan — jabatan, lembaga, shift, laki-laki/perempuan, atau orang tertentu. Satu baris "Potongan Seragam Putri" sudah cukup, tak perlu lagi mencentang nama satu per satu.',
+      'Penyaring laki-laki/perempuan juga tersedia di Jenis Bisyaroh dan Jenis Tunjangan. Guru yang kolom L/P-nya belum diisi tidak akan terkena jenis yang memakai penyaring ini — mohon dilengkapi lebih dulu di Data Guru.',
+      '"Usia Masuk" santri diperbaiki. Perhitungan lama keliru membaca bulan tanggal masuk, sehingga hampir selalu meleset; kini dihitung benar dari tanggal lahir ke tanggal masuk.',
+      'Akun guru: daftar santri yang sebelumnya kosong di Input Nilai Bulanan, Rekap Diniyah, dan Absensi Santri kini tampil. Wali kelas sekolah dan kepala lembaga paling terdampak.'
+    ]
+  },
   {
     versi: 'v.1.3.6',
     tgl: 'Agustus 2026',
