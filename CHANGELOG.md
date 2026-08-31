@@ -147,6 +147,27 @@ total` — SATU set per santri, tanpa dimensi bulan, isinya "angka terakhir yang
 
 ### Added
 
+- **Impor Tunjangan/Potongan bulanan kini ditinjau dulu, dan pratinjau berhenti salah
+  menamai potongan impor** (v.1.3.7). Kyai, 31 Agu 2026: "impor potongan juga ada pratinjau
+  dulu. dan itu perbaiki saya input potongan tapi dihitung tunjangan." **Potongannya sebenarnya
+  sudah benar** — dibuktikan angkanya sendiri: slip tersimpan lebih KECIL persis sebesar
+  nominal impor (Hj. Nujumun Nada Rp1.403.000 → Rp1.043.000 atas potongan Rp360.000). Yang
+  salah pratinjau yang baru dipasang di atas: ia menghitung ulang **tanpa** penyesuaian
+  bulanan, lalu melaporkan bedanya sebagai _"Nominal berubah **+**Rp360.000"_ — tanda plus
+  yang wajar dibaca "potongan saya jadi tambahan". Sekarang pratinjau MENGENALI penyesuaian
+  per bulan yang menempel di slip tersimpan (baris impor baru ikut ditandai `sumber:'bulanan'`;
+  baris lama dikenali lewat label yang bukan milik jenis ber-scope), dan menamainya apa
+  adanya: **"Penyesuaian bulanan akan hilang · potongan Rp360.000"**, plus rincian per baris
+  saat dibentangkan dan satu spanduk ringkas di atas daftar. Ini sekaligus mengungkap bahaya
+  yang selama ini tak terlihat: **Bulk Generate memang menghapus penyesuaian bulanan** karena
+  ia menghitung ulang dari jenis ber-scope saja — kalau slip di-generate ulang, potongan hasil
+  impor lenyap dan take home naik kembali. Sisa selisih yang BUKAN karena penyesuaian tetap
+  dinamai "Nominal berubah", jadi dua sebab yang berbeda tak lagi tercampur. **Impor Excel-nya
+  sendiri kini bertahap**: tombolnya berbunyi "Impor (tinjau dulu)" — berkas dibaca &
+  dihitung, hasilnya tampil per guru (nominal yang Kyai ketik, take home hasilnya, dan siapa
+  yang namanya tak cocok), baru tombol **Terapkan**. `confirm()` bawaan peramban yang cuma
+  menyebut jumlah baris diganti; pratinjau & penerapan memakai satu fungsi `extraImpor` yang
+  sama supaya keduanya mustahil menghitung beda.
 - **Pratinjau slip bisyaroh sebelum di-generate** (v.1.3.7). Kyai: "untuk bisyaroh saya ingin
   ada simulasi/review per bulan, misal bulan ini dan sudah tertera potongannya dll. sebelum
   generate slip agar bisa koreksi." Sub-tab **Simulasi** yang sudah ada menjawab pertanyaan

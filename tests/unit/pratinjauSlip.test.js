@@ -6,7 +6,12 @@
 // adalah pekerjaannya yang sebenarnya: memilah angkanya dan MENANDAI yang perlu dilihat
 // manusia sebelum uang terbit.
 import { describe, it, expect } from 'vitest'
-import { barisPratinjau, ringkasPratinjau, rekapPotongan } from '@/utils/pratinjauSlip'
+import {
+  barisPratinjau,
+  ringkasPratinjau,
+  rekapPotongan,
+  penyesuaianTersimpan
+} from '@/utils/pratinjauSlip'
 
 // Payload seperti keluaran buildSlipPayload: bisyaroh 800rb + tunjangan 200rb +
 // glondongan 150rb = 1.15jt, potongan 50rb → take home 1.1jt.
@@ -160,5 +165,125 @@ describe('rekapPotongan — bentuk tercepat melihat scope yang meleset', () => {
     expect(rek[1]).toMatchObject({ label: 'Kas Guru', guru: 2, total: 100000 })
     // Nama ikut supaya "kenapa dia kena?" bisa dijawab tanpa membuka satu per satu.
     expect(rek[0].nama).toEqual(['Ust. B'])
+  })
+})
+
+// ---------------------------------------------------------------------------
+// v.1.3.7 (Kyai, 31 Agu 2026): "saya input potongan tapi dihitung tunjangan."
+//
+// Angkanya sendiri membuktikan potongannya SUDAH dikurangkan dengan benar: slip yang
+// tersimpan lebih KECIL persis sebesar nominal impor. Yang salah pratinjaunya -- ia
+// menghitung ulang TANPA penyesuaian bulanan lalu melaporkan bedanya sebagai
+// "Nominal berubah +Rp360.000". Tanda plus itulah yang terbaca "potongan jadi tambahan".
+//
+// Angka di bawah diambil apa adanya dari layar yang Kyai kirim.
+// ---------------------------------------------------------------------------
+const SCOPE = {
+  potongan: new Set(['Kerudung Maulid', 'Sambang Bayi Bu Alfiz']),
+  tunjangan: new Set(['Tunjangan Jabatan'])
+}
+
+// Pratinjau Hj. Nujumun Nada: bisyaroh 1.060.000 + tunjangan 386.000 - potongan 43.000
+const payloadNada = () => ({
+  guru_id: 'g9',
+  guru_nama: 'Hj. Nujumun Nada',
+  lembaga: 'PTPT',
+  line_items: [
+    { kategori: 'ngaji', label: 'Bisyaroh Pagi', nominal: 1060000 },
+    { kategori: 'tunjangan', label: 'Tunjangan Jabatan', nominal: 386000 }
+  ],
+  bonus_glondongan: { total: 0 },
+  potongan_list: [
+    { label: 'Kerudung Maulid', nominal: 28000 },
+    { label: 'Sambang Bayi Bu Alfiz', nominal: 15000 }
+  ],
+  total_pemasukan: 1446000,
+  total_potongan: 43000,
+  take_home: 1403000
+})
+
+// Slip tersimpan hasil Impor Excel: potongan bulanan 360.000 -> take home 1.043.000
+const slipNadaTersimpan = () => ({
+  take_home: 1043000,
+  line_items: [
+    { kategori: 'ngaji', label: 'Bisyaroh Pagi', nominal: 1060000 },
+    { kategori: 'tunjangan', label: 'Tunjangan Jabatan', nominal: 386000 }
+  ],
+  potongan_list: [
+    { label: 'Kerudung Maulid', nominal: 28000 },
+    { label: 'Sambang Bayi Bu Alfiz', nominal: 15000 },
+    { label: 'Kas', nominal: 360000, sumber: 'bulanan' }
+  ]
+})
+
+describe('penyesuaianTersimpan', () => {
+  it('mengenali potongan bulanan & tidak ikut menghitung potongan ber-scope', () => {
+    const p = penyesuaianTersimpan(slipNadaTersimpan(), SCOPE)
+    expect(p.potongan).toEqual([{ label: 'Kas', nominal: 360000 }])
+    expect(p.totalPotongan).toBe(360000)
+    expect(p.totalTunjangan).toBe(0)
+    expect(p.netto).toBe(-360000) // menurunkan take home slip tersimpan
+  })
+
+  it('baris lama tanpa tanda `sumber` tetap dikenali lewat label', () => {
+    const slip = slipNadaTersimpan()
+    delete slip.potongan_list[2].sumber
+    expect(penyesuaianTersimpan(slip, SCOPE).totalPotongan).toBe(360000)
+  })
+
+  it('tanda `sumber` menang walau labelnya kebetulan sama dengan jenis ber-scope', () => {
+    const slip = slipNadaTersimpan()
+    slip.potongan_list[2] = { label: 'Kerudung Maulid', nominal: 50000, sumber: 'bulanan' }
+    expect(penyesuaianTersimpan(slip, SCOPE).totalPotongan).toBe(50000)
+  })
+
+  it('tanpa slip lama = tak ada penyesuaian', () => {
+    expect(penyesuaianTersimpan(null, SCOPE).netto).toBe(0)
+  })
+})
+
+describe('regresi Kyai 31 Agu 2026 - potongan impor bukan "nominal berubah +"', () => {
+  it('ditandai "penyesuaian_hilang", BUKAN "berubah"', () => {
+    const lama = slipNadaTersimpan()
+    const b = barisPratinjau(payloadNada(), lama, penyesuaianTersimpan(lama, SCOPE))
+    expect(b.peringatan).toContain('penyesuaian_hilang')
+    expect(b.peringatan).not.toContain('berubah')
+    // Seluruh selisih terjelaskan oleh penyesuaian -> tak ada sisa yang perlu dinamai.
+    expect(b.selisih).toBe(360000)
+    expect(b.selisihLain).toBe(0)
+    // Yang ditampilkan ke Kyai: potongan 360.000 yang akan LENYAP, bukan "+Rp360.000".
+    expect(b.penyesuaian.totalPotongan).toBe(360000)
+  })
+
+  it('perubahan tarif di luar penyesuaian tetap dinamai "berubah", sisa selisihnya saja', () => {
+    const lama = slipNadaTersimpan()
+    lama.take_home = 1003000 // 40.000 lebih rendah krn tarif bulan lalu memang beda
+    const b = barisPratinjau(payloadNada(), lama, penyesuaianTersimpan(lama, SCOPE))
+    expect(b.peringatan).toContain('penyesuaian_hilang')
+    expect(b.peringatan).toContain('berubah')
+    expect(b.selisih).toBe(400000)
+    expect(b.selisihLain).toBe(40000) // 400.000 - 360.000 penyesuaian
+  })
+
+  it('slip tanpa penyesuaian bulanan tak pernah kena penanda itu', () => {
+    const b = barisPratinjau(
+      payloadNada(),
+      { take_home: 1403000 },
+      penyesuaianTersimpan({ take_home: 1403000 }, SCOPE)
+    )
+    expect(b.peringatan).not.toContain('penyesuaian_hilang')
+    expect(b.selisihLain).toBe(0)
+  })
+
+  it('ringkasan menghitung berapa slip & berapa rupiah penyesuaian yang akan lenyap', () => {
+    const lama = slipNadaTersimpan()
+    const rows = [
+      barisPratinjau(payloadNada(), lama, penyesuaianTersimpan(lama, SCOPE)),
+      barisPratinjau(payloadNada(), null, penyesuaianTersimpan(null, SCOPE))
+    ]
+    const r = ringkasPratinjau(rows)
+    expect(r.penyesuaianHilang).toBe(1)
+    expect(r.penyesuaianPotongan).toBe(360000)
+    expect(r.penyesuaianTunjangan).toBe(0)
   })
 })

@@ -37,6 +37,12 @@ Rinciannya untuk pengembang ada di `CHANGELOG.md` — jangan disalin ke sana, te
 
 **Baru**
 
+- **Impor Tunjangan/Potongan bulanan ditinjau dulu.** Tombolnya kini "Impor (tinjau dulu)":
+  berkasnya dibaca dan dihitung lebih dahulu — tampil nominal per guru, take home hasilnya,
+  dan baris yang namanya tak cocok — baru ditekan **Terapkan**.
+  ⚠️ Perlu diketahui: **Bulk Generate menghapus penyesuaian bulanan hasil impor**, karena ia
+  menghitung ulang dari Jenis Bisyaroh/Tunjangan/Potongan saja. Pratinjau kini
+  memperingatkannya. Kalau slip di-generate ulang, impor kembali berkas bulanannya.
 - **Pratinjau slip bisyaroh sebelum di-generate.** Di Bulk Generate ada tombol
   **"Tinjau Dulu"**: angka sungguhan bulan yang dipilih — bisyaroh, tunjangan, glondongan, dan
   **potongan** — lengkap dengan rincian per guru dan rekap potongan per jenis. Tidak ada slip
