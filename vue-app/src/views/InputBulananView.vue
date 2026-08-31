@@ -147,10 +147,13 @@
                   class="p-2 font-bold text-[var(--text-primary)] border-b border-[var(--border-subtle)] whitespace-nowrap leading-tight"
                 >
                   {{ s.nama }}
+                  <!-- v.1.3.7: usia dihitung SAAT INI dari tgl_lahir. Kolom `usia` di
+                       baris santri hanyalah cetakan saat terakhir disimpan — santri yang
+                       tak pernah disunting akan terus tampil seusia tahun pendaftarannya. -->
                   <span
-                    v-if="s.usia"
+                    v-if="usiaKini(s.tgl_lahir)"
                     class="block text-[9px] font-bold text-[var(--text-secondary)] bg-[var(--bg-muted)] px-1 rounded mt-0.5 w-fit"
-                    >{{ s.usia }}</span
+                    >{{ usiaKini(s.tgl_lahir) }}</span
                   >
                 </td>
                 <td class="p-2 text-center font-bold border-b border-[var(--border-subtle)]">
@@ -307,7 +310,10 @@
               <p class="text-sm font-bold text-[var(--text-primary)] truncate">
                 {{ s.nama }}
                 <span class="text-[10px] font-bold text-[var(--text-secondary)]"
-                  >{{ s.jk }}<template v-if="s.usia"> &middot; {{ s.usia }}</template></span
+                  >{{ s.jk
+                  }}<template v-if="usiaKini(s.tgl_lahir)">
+                    &middot; {{ usiaKini(s.tgl_lahir) }}</template
+                  ></span
                 >
               </p>
               <button
@@ -504,6 +510,8 @@ import { useAuthStore } from '@/stores/auth'
 import { useSantri } from '@/composables/useSantri'
 import { useLembaga } from '@/composables/useLembaga'
 import { sortSantri } from '@/utils/santriSort'
+import { usiaKini } from '@/utils/usia' // usia tampil dihitung hidup, bukan dari kolom simpanan
+import { ownsNgaji, ownsSekolah, headsLembaga } from '@/utils/guruScope' // sumber tunggal "santri ampuan guru"
 import { useGuru } from '@/composables/useGuru'
 import { useToast } from '@/composables/useToast'
 import { useMobileShell } from '@/composables/useMobileShell'
@@ -593,22 +601,28 @@ const filteredSantri = computed(() => {
     )
   }
 
-  // Guru scope — show only santri assigned to this guru
+  // Guru scope — hanya santri ampuan guru yang login.
+  // v.1.3.7 (Kyai 31 Agu 2026, "eror di akun guru"): penyaring di sini dulu ditulis
+  //   sendiri dan sudah berpisah dari aturan induknya di useSantri:
+  //     • `guru_sekolah[]` tak pernah diperiksa → WALI KELAS SEKOLAH melihat daftar
+  //       KOSONG, padahal santri yang sama muncul di Data Santri & Rekap Prestasi;
+  //     • kepala/PJ lembaga tak dikenali → ia pun kosong;
+  //     • nama diambil dari `sesi.nama` saja, bukan `sesi.guru || sesi.nama`;
+  //     • sisanya mencocokkan `guru_id`/`guru_pagi_id`/`guru_sore_id` — field yang tak
+  //       pernah ada di baris santri (pengampu disimpan sebagai NAMA), jadi cabang itu
+  //       tak pernah bernilai benar.
+  //   Sekarang memakai utils/guruScope, sumber tunggal yang sama dengan useSantri dan
+  //   policy RLS santri_upd_pengampu — "yang kelihatan = yang boleh disimpan".
   if (isGuruScoped.value) {
-    const myId = String(auth.sesiAktif?.id || '').toLowerCase()
-    const myNama = String(auth.sesiAktif?.nama || '')
-      .toLowerCase()
-      .trim()
-    list = list.filter((s) => {
-      const namaGuru = [s.guru, s.guru_pagi, s.guru_sore]
-        .flat()
-        .filter(Boolean)
-        .map((g) => String(g).toLowerCase().trim())
-      const idGuru = [s.guru_id, s.guru_pagi_id, s.guru_sore_id]
-        .filter(Boolean)
-        .map((g) => String(g).toLowerCase())
-      return namaGuru.includes(myNama) || idGuru.includes(myId)
-    })
+    const sesi = auth.sesiAktif
+    const myNama = sesi?.guru || sesi?.nama || ''
+    list = list.filter(
+      (s) =>
+        ownsNgaji(s, myNama) ||
+        ownsSekolah(s, myNama) ||
+        headsLembaga(sesi, s.lembaga) ||
+        headsLembaga(sesi, s.lembaga_sekolah)
+    )
   }
 
   // Lembaga filter — special handling untuk TPQ shift-variant

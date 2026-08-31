@@ -241,6 +241,7 @@ import { useToast } from '@/composables/useToast'
 import { useMobileShell } from '@/composables/useMobileShell'
 import { useSantri } from '@/composables/useSantri'
 import { sortSantri } from '@/utils/santriSort'
+import { ownsSekolah } from '@/utils/guruScope' // sumber tunggal "santri ampuan guru"
 // v.90.0626: util jenjang Diniyah (SDI/SMP/SMA) — sumber tunggal, samakan dg RaporView
 import {
   diniyahJenjang,
@@ -367,16 +368,23 @@ const isGuruBiasa = computed(() => {
   const s = auth.sesiAktif
   return s?.role === 'guru' && s?.role_sistem !== 'super_admin' && s?.id !== 'admin'
 })
-const myNama = computed(() => auth.sesiAktif?.nama || '')
+// v.1.3.7 (Kyai 31 Agu 2026, "eror di akun guru"): dulu `auth.sesiAktif?.nama` saja.
+//   Sesi guru membawa DUA nama — `guru` (nama di baris guru, yang dipakai baris santri)
+//   dan `nama` (nama tampilan sesi). Layar lain memakai `guru || nama`; di sini hanya
+//   `nama`, jadi guru yang keduanya berbeda melihat daftar KOSONG tanpa pesan apa pun.
+const myNama = computed(() => auth.sesiAktif?.guru || auth.sesiAktif?.nama || '')
 
 const filteredSantri = computed(() => {
   let list = santriRaw.value.filter(
     (s) => s.aktif !== false && s.lembaga_sekolah && DINIYAH_LEMBAGA.includes(s.lembaga_sekolah)
   )
   if (isGuruBiasa.value) {
-    list = list.filter(
-      (s) => Array.isArray(s.guru_sekolah) && s.guru_sekolah.includes(myNama.value)
-    )
+    // Sebab kedua daftar kosong: pencocokan dulu `Array.includes` — PERSIS huruf demi
+    //   huruf, dan hanya bila `guru_sekolah` berbentuk larik. Nama yang tersimpan dengan
+    //   beda kapital/spasi, atau baris lama yang menyimpannya sebagai teks tunggal, tak
+    //   pernah cocok. ownsSekolah menangani keduanya — sumber tunggal yang sama dengan
+    //   useSantri, RLS santri_upd_pengampu, dan layar rekap lain.
+    list = list.filter((s) => ownsSekolah(s, myNama.value))
   }
   if (filterJenjang.value) {
     list = list.filter(

@@ -460,6 +460,7 @@ import { subscribeColl, mergeOne, serverTimestamp } from '@/services/db'
 import { useToast } from '@/composables/useToast'
 import { useAuthStore } from '@/stores/auth'
 import { isFullFilterRole, isKepalaLembaga } from '@/utils/roleScope'
+import { ownsNgaji, ownsSekolah } from '@/utils/guruScope' // sumber tunggal "santri ampuan guru"
 import { lembagaScopeMatches } from '@/composables/useLembaga'
 import { sortSantri } from '@/utils/santriSort'
 
@@ -488,17 +489,15 @@ function _low(v) {
     .toLowerCase()
     .trim()
 }
-// Guru ownership
+// Guru ownership — v.1.3.7: diteruskan ke utils/guruScope, sumber tunggal yang sama
+//   dengan useSantri & RekapDiniyah. Salinan lokal yang lama menganggap `guru_sekolah`
+//   selalu larik, sehingga baris lama yang menyimpannya sebagai teks tunggal membuat
+//   guru sekolah kehilangan seluruh santrinya di layar Absensi.
 function ownNgaji(s) {
-  const gn = guruName.value
-  if (!gn) return false
-  return _low(s.guru_pagi) === gn || _low(s.guru_sore) === gn || _low(s.guru) === gn
+  return ownsNgaji(s, guruName.value)
 }
 function ownSekolah(s) {
-  const gn = guruName.value
-  if (!gn) return false
-  const arr = Array.isArray(s.guru_sekolah) ? s.guru_sekolah.map(_low) : []
-  return arr.includes(gn)
+  return ownsSekolah(s, guruName.value)
 }
 // Inclusive lembaga matcher (handle TPQ split/single + PPPH/P3H legacy)
 function matchNgajiLembaga(s, lmb) {
