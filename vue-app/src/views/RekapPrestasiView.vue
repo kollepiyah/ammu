@@ -324,6 +324,16 @@
               Rekap bulanan prestasi santri Qiraati. Total: {{ filteredSantri.length }} santri ·
               Periode: <b class="text-cyan-700">{{ bulan }} {{ tahun }}</b>
             </p>
+            <!-- v.1.3.7 (Kyai 31 Agu 2026): tiap bulan mulai kosong. Keterangan ini perlu
+                 karena perubahannya justru terlihat sebagai "data hilang" bagi yang terbiasa
+                 melihat angka bulan lalu sudah terisi di sana. -->
+            <p
+              v-if="mode === 'bulanan'"
+              class="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5"
+            >
+              <i class="fas fa-circle-info mr-1"></i>Tiap bulan mulai <b>kosong</b>; angka abu-abu
+              di kotak isian hanya <b>petunjuk bulan lalu</b>, tidak ikut tersimpan.
+            </p>
           </div>
           <!-- View mode toggle -->
           <div class="flex gap-1 bg-slate-100 p-1 rounded-xl">
@@ -793,6 +803,7 @@
                     <input
                       type="text"
                       :value="getEdit(s.id, 'awal')"
+                      :placeholder="petunjukLalu(s.id, 'awal')"
                       :readonly="!canEditPrestasi(s)"
                       :class="[
                         'w-full text-center border-2 rounded-lg p-1.5 text-[11px] font-black shadow-sm focus:border-teal-500 outline-none',
@@ -807,6 +818,7 @@
                     <input
                       type="text"
                       :value="getEdit(s.id, 'akhir')"
+                      :placeholder="petunjukLalu(s.id, 'akhir')"
                       :readonly="!canEditPrestasi(s)"
                       :class="[
                         'w-full text-center border-2 rounded-lg p-1.5 text-[11px] font-black shadow-sm focus:border-teal-500 outline-none',
@@ -832,6 +844,7 @@
                       v-else
                       type="text"
                       :value="getEdit(s.id, 'total')"
+                      :placeholder="petunjukLalu(s.id, 'total')"
                       :readonly="!canEditPrestasi(s)"
                       :class="[
                         'w-full text-center font-black text-[11px] p-1.5 rounded-lg border-2 shadow-sm focus:border-teal-500 outline-none',
@@ -907,6 +920,7 @@
                     type="text"
                     inputmode="numeric"
                     :value="getEdit(s.id, 'awal')"
+                    :placeholder="petunjukLalu(s.id, 'awal')"
                     :readonly="!canEditPrestasi(s)"
                     :class="[
                       'w-full text-center font-black text-sm p-2 rounded-lg border-2 outline-none focus:border-teal-500',
@@ -926,6 +940,7 @@
                     type="text"
                     inputmode="numeric"
                     :value="getEdit(s.id, 'akhir')"
+                    :placeholder="petunjukLalu(s.id, 'akhir')"
                     :readonly="!canEditPrestasi(s)"
                     :class="[
                       'w-full text-center font-black text-sm p-2 rounded-lg border-2 outline-none focus:border-teal-500',
@@ -956,6 +971,7 @@
                     type="text"
                     inputmode="numeric"
                     :value="getEdit(s.id, 'total')"
+                    :placeholder="petunjukLalu(s.id, 'total')"
                     :readonly="!canEditPrestasi(s)"
                     :class="[
                       'w-full text-center font-black text-sm p-2 rounded-lg border-2 outline-none focus:border-teal-500',
@@ -1109,6 +1125,15 @@ import { useRouter } from 'vue-router' // v.100c-fix: pilihKategori('diniyah') p
 import { isFullFilterRole, isSuperAdmin } from '@/utils/roleScope'
 import { ownsSekolah, deteksiTipeGuru, scopeQiraati } from '@/utils/guruScope' // v.100b: guru sekolah lihat prestasi qiraati santri kelasnya (read-only); v.100d: deteksiTipeGuru utk toggle kategori guru dual; v.1.2.8: scopeQiraati = scope kepala per-sisi
 import { sortSantri } from '@/utils/santriSort'
+// v.1.3.7: angka prestasi MILIK BULAN — sumber tunggal, dipakai juga InputBulananView.
+import {
+  petaPrestasiPeriode,
+  periodeSebelumnya,
+  nilaiPrestasiBulan,
+  petunjukBulanLalu,
+  payloadRiwayatPrestasi,
+  sudahDinilaiBulan
+} from '@/utils/prestasiBulanan'
 import { useMobileShell } from '@/composables/useMobileShell'
 
 // v.1.2.3: rekap prestasi bulanan HANYA untuk PTPT & PPPH (TPQ Pagi/Sore/Pra PTPT tak
@@ -1374,10 +1399,16 @@ const stats = computed(() => {
     const n = Array.isArray(s.riwayat) ? s.riwayat.length : 0
     totalKenaikan += n
     if (n > 0) santriDgnRiwayat++
-    const tot = getEdit(s.id, 'total') || s.prestasi_total
-    const aw = getEdit(s.id, 'awal') || s.prestasi_awal
-    const ak = getEdit(s.id, 'akhir') || s.prestasi_akhir
-    if (tot || aw || ak) sudahDinilai++
+    // v.1.3.7: TANPA jatuh ke `s.prestasi_*`. Jatuh itu membuat bulan yang belum
+    //   disentuh siapa pun terhitung "sudah dinilai" — angka bulan lalu yang menjawab.
+    if (
+      sudahDinilaiBulan({
+        awal: getEdit(s.id, 'awal'),
+        akhir: getEdit(s.id, 'akhir'),
+        total: getEdit(s.id, 'total')
+      })
+    )
+      sudahDinilai++
     else belumDinilai++
   }
   const avg =
@@ -1397,9 +1428,10 @@ const rankingPerLembaga = computed(() => {
       bagus = 0,
       dinilai = 0
     const scored = list.map((s) => {
-      const aw = extractNumber(getEdit(s.id, 'awal') || s.prestasi_awal)
-      const ak = extractNumber(getEdit(s.id, 'akhir') || s.prestasi_akhir)
-      const rawTot = getEdit(s.id, 'total') || s.prestasi_total || ''
+      // v.1.3.7: ranking bulan terpilih dihitung dari angka BULAN ITU saja (lihat stats).
+      const aw = extractNumber(getEdit(s.id, 'awal'))
+      const ak = extractNumber(getEdit(s.id, 'akhir'))
+      const rawTot = getEdit(s.id, 'total') || ''
       const computed = isPTPT ? Math.max(0, ak - aw) : extractNumber(rawTot)
       if (rawTot || aw || ak) dinilai++
       if (isPTPT) {
@@ -1456,38 +1488,59 @@ function countRiwayat(s) {
 function toggleExpand(id) {
   expandedId.value = expandedId.value === id ? null : id
 }
+// v.1.3.7 (Kyai 31 Agu 2026): "kenapa tidak tereset setiap bulan, bulan agustus masih
+//   terinput rekapan bulan lalu. harusnya kosong."
+//   Grid ini dulu mengisi dirinya dari BARIS SANTRI (`s.prestasi_awal` dst) — satu-satunya
+//   set angka yang tak punya dimensi bulan. Akibatnya memilih bulan lain tak mengubah apa
+//   pun, dan angka bulan lalu muncul sebagai ISIAN: sekali disimpan, ia resmi jadi angka
+//   bulan ini. Sekarang sumbernya SNAPSHOT bulan terpilih (`riwayat_prestasi`, sudah
+//   ditulis sejak v.100d tapi tak pernah dibaca balik). Aturannya di utils/prestasiBulanan.
+const petaPrestasiBulan = computed(() =>
+  petaPrestasiPeriode(riwayatPrestasiRaw.value, periodeSel.value)
+)
+const petaPrestasiBulanLalu = computed(() =>
+  petaPrestasiPeriode(riwayatPrestasiRaw.value, periodeSebelumnya(periodeSel.value))
+)
+function nilaiBulan(id) {
+  const s = santriRaw.value.find((x) => String(x.id) === String(id))
+  return nilaiPrestasiBulan(petaPrestasiBulan.value.get(String(id)) || null, s || {})
+}
+/** Angka bulan lalu — PLACEHOLDER saja (tak ikut tersimpan & tak ikut dihitung). */
+function petunjukLalu(id, field) {
+  const s = santriRaw.value.find((x) => String(x.id) === String(id))
+  if (!s) return ''
+  return petunjukBulanLalu(petaPrestasiBulanLalu.value.get(String(id)) || null, s)[field] || ''
+}
 function getEdit(id, field) {
   const e = edits[id]
   if (e && e[field] !== undefined) return e[field]
-  const s = santriRaw.value.find((x) => String(x.id) === String(id))
-  if (!s) return ''
-  if (field === 'awal') return s.prestasi_awal || ''
-  if (field === 'akhir') return s.prestasi_akhir || ''
-  if (field === 'total') return s.prestasi_total || ''
-  if (field === 'juz') return s.juz || ''
-  return ''
+  return nilaiBulan(id)[field] || ''
 }
 function setEdit(id, field, val) {
   if (!edits[id]) edits[id] = {}
   edits[id][field] = val
 }
 function getJuzNum(s) {
+  // v.1.3.7: juz = keadaan BERJALAN, bukan ukuran bulanan — snapshot bulan itu dulu
+  //   (kalau memang mencatatnya), baru juz santri sekarang. Sengaja TIDAK dikosongkan
+  //   seperti awal/akhir: santri tak kembali ke Juz 1 setiap tanggal 1.
   const cur = edits[s.id]?.juz
-  const raw = cur !== undefined ? cur : s.juz || ''
+  const raw = cur !== undefined ? cur : getEdit(s.id, 'juz')
   return extractNumber(raw) || ''
 }
 function setJuz(id, val) {
   setEdit(id, 'juz', val ? `JUZ ${val}` : '-')
 }
 function computedTotal(s) {
-  const aw = extractNumber(getEdit(s.id, 'awal') || s.prestasi_awal)
-  const ak = extractNumber(getEdit(s.id, 'akhir') || s.prestasi_akhir)
+  // v.1.3.7: hanya angka BULAN TERPILIH — lihat catatan di getEdit.
+  const aw = extractNumber(getEdit(s.id, 'awal'))
+  const ak = extractNumber(getEdit(s.id, 'akhir'))
   const tot = Math.max(0, ak - aw)
   return tot > 0 ? `${tot} Hal` : ''
 }
 function warnaPTPT(s) {
-  const aw = extractNumber(getEdit(s.id, 'awal') || s.prestasi_awal)
-  const ak = extractNumber(getEdit(s.id, 'akhir') || s.prestasi_akhir)
+  const aw = extractNumber(getEdit(s.id, 'awal'))
+  const ak = extractNumber(getEdit(s.id, 'akhir'))
   const tot = Math.max(0, ak - aw)
   if (tot > 0 && tot < 5) return 'bg-rose-100 text-rose-900 border-rose-400'
   if (tot >= 5 && tot < 10) return 'bg-cyan-100 text-cyan-900 border-cyan-400'
@@ -1516,8 +1569,10 @@ async function simpanRekap() {
       if (e.akhir !== undefined) payload.prestasi_akhir = e.akhir
       if (s.lembaga === 'PTPT') {
         // Auto-compute PTPT total
-        const aw = extractNumber(e.awal ?? s.prestasi_awal)
-        const ak = extractNumber(e.akhir ?? s.prestasi_akhir)
+        // v.1.3.7: pembanding = angka BULAN TERPILIH (getEdit), bukan baris santri —
+        //   kalau tidak, total bulan baru dihitung dari akhir bulan lalu.
+        const aw = extractNumber(e.awal ?? getEdit(id, 'awal'))
+        const ak = extractNumber(e.akhir ?? getEdit(id, 'akhir'))
         const tot = Math.max(0, ak - aw)
         payload.prestasi_total = tot > 0 ? `${tot} Hal` : ''
         if (e.juz !== undefined) payload.juz = e.juz
@@ -1525,7 +1580,14 @@ async function simpanRekap() {
         if (e.total !== undefined) payload.prestasi_total = e.total
       }
       if (Object.keys(payload).length === 0) continue
-      promises.push(updateOne('santri', String(id), payload))
+      // v.1.3.7: baris santri = "angka TERAKHIR yang pernah disimpan" (dibaca Data Santri,
+      //   profil, ekspor). Karena grid kini bisa membuka bulan mana pun, mencerminkan
+      //   suntingan bulan LAMA ke sana akan memundurkan angka berjalan santri — mengoreksi
+      //   Juni di bulan Agustus tak boleh mengubah "sekarang". Bulan lampau cukup mengubah
+      //   snapshot bulannya sendiri.
+      if (periodeSel.value >= todayJakarta().slice(0, 7)) {
+        promises.push(updateOne('santri', String(id), payload))
+      }
       // v.87.0526: event notif prestasi (1 per santri / bulan berjalan) -> Notif Center wali.
       // Bulan WIB, bukan UTC: `_periode` ikut jadi ID dokumen (`np_<id>_<periode>`), jadi
       //   tanggal 1 pukul 00:00–06:59 WIB akan menimpa notif BULAN SEBELUMNYA kalau dihitung UTC.
@@ -1541,33 +1603,27 @@ async function simpanRekap() {
           createdAt: new Date().toISOString()
         })
       )
-      // v.100d: snapshot prestasi BULANAN (periode = bulan/tahun terpilih) → submenu Riwayat
-      const _rpAwal = e.awal !== undefined ? e.awal : s.prestasi_awal || ''
-      const _rpAkhir = e.akhir !== undefined ? e.akhir : s.prestasi_akhir || ''
+      // v.100d: snapshot prestasi BULANAN (periode = bulan/tahun terpilih) → submenu Riwayat.
+      // v.1.3.7: nilai yang tak disunting diambil dari SNAPSHOT BULAN ITU (getEdit), bukan
+      //   dari baris santri. Dulu jatuh ke baris santri, jadi menyimpan satu kolom saja
+      //   sudah cukup untuk menyalin angka bulan lalu ke bulan ini — persis gejala yang
+      //   Kyai laporkan, tapi versi permanennya (tersimpan, bukan cuma tampil).
       const _rpTotal =
         s.lembaga === 'PTPT'
           ? payload.prestasi_total || ''
           : e.total !== undefined
             ? e.total
-            : s.prestasi_total || ''
-      const _rpJuz = s.lembaga === 'PTPT' ? (e.juz !== undefined ? e.juz : s.juz || '') : ''
-      const _rpId = `rp_${id}_${periodeSel.value}`
-      promises.push(
-        mergeOne('riwayat_prestasi', _rpId, {
-          id: _rpId,
-          santri_id: String(id),
-          santri_nama: s.nama || '',
-          lembaga: s.lembaga || '',
-          kelas: s.kelas || '',
-          periode: periodeSel.value,
-          bulan_label: bulanLabelSel.value,
-          awal: String(_rpAwal || ''),
-          akhir: String(_rpAkhir || ''),
-          total: String(_rpTotal || ''),
-          juz: String(_rpJuz || ''),
-          updatedAt: new Date().toISOString()
-        })
-      )
+            : getEdit(id, 'total')
+      const _rpBaris = payloadRiwayatPrestasi({
+        santri: s,
+        periode: periodeSel.value,
+        bulanLabel: bulanLabelSel.value,
+        awal: e.awal !== undefined ? e.awal : getEdit(id, 'awal'),
+        akhir: e.akhir !== undefined ? e.akhir : getEdit(id, 'akhir'),
+        total: _rpTotal,
+        juz: s.lembaga === 'PTPT' ? (e.juz !== undefined ? e.juz : getEdit(id, 'juz')) : ''
+      })
+      promises.push(mergeOne('riwayat_prestasi', _rpBaris.id, _rpBaris))
     }
     await Promise.all(promises)
     // clear local edits (snapshot will refresh)
