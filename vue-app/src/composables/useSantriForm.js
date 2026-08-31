@@ -11,6 +11,9 @@ import { nextNisForNew } from '@/utils/nisGenerator' // v.111: santri baru = No.
 import { namaLembaga } from '@/utils/jabatanUnit'
 import { isSekolahLembaga } from '@/composables/useLembaga' // v.1.2.1: sumber tunggal deteksi sekolah
 import { shiftNgajiOf } from '@/utils/kelasHitung' // v.1.2.4: shift ngaji santri (pagi/sore/pagi_sore)
+// v.1.3.7 (Kyai 31 Agu 2026): usia & usia masuk WAJIB lewat utils/usia — dua salinan
+//   lokal di berkas ini pernah menerbitkan "Usia Masuk" yang salah (lihat catatan di bawah).
+import { usiaKini, usiaPada } from '@/utils/usia'
 
 function emptyForm() {
   return {
@@ -93,8 +96,8 @@ export function useSantriForm() {
   let unsubGuru = null
 
   // Computed: usia + usia masuk derived dari tgl_lahir + tgl_masuk
-  const usia = computed(() => calcAge(form.value.tgl_lahir))
-  const usiaMasuk = computed(() => calcAgeAt(form.value.tgl_lahir, form.value.tgl_masuk))
+  const usia = computed(() => usiaKini(form.value.tgl_lahir))
+  const usiaMasuk = computed(() => usiaPada(form.value.tgl_lahir, form.value.tgl_masuk))
 
   // Cascade: kelas list per lembaga
   const kelasOptions = computed(() => {
@@ -542,34 +545,4 @@ export function useSantriForm() {
     validate,
     save
   }
-}
-
-// Helper: hitung usia dari tgl_lahir
-function calcAge(tglLahir) {
-  if (!tglLahir) return ''
-  const d = new Date(tglLahir)
-  if (isNaN(d.getTime())) return ''
-  const now = new Date()
-  let y = now.getFullYear() - d.getFullYear()
-  let m = now.getMonth() - d.getMonth()
-  let day = now.getDate() - d.getDate()
-  if (day < 0) m--
-  if (m < 0) {
-    y--
-    m += 12
-  }
-  return `${y} thn ${m} bln`
-}
-function calcAgeAt(tglLahir, tglRef) {
-  if (!tglLahir || !tglRef) return ''
-  const d = new Date(tglLahir)
-  const r = new Date(tglRef)
-  if (isNaN(d.getTime()) || isNaN(r.getTime())) return ''
-  let y = r.getFullYear() - d.getFullYear()
-  let m = r.getMonth()
-  if (m < 0) {
-    y--
-    m += 12
-  }
-  return `${y} thn ${m} bln`
 }

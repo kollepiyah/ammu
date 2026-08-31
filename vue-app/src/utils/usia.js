@@ -4,6 +4,13 @@
 // Parser manual per-komponen (bukan new Date(str)) supaya bebas geser timezone &
 // menerima dua format: ISO 'YYYY-MM-DD' (simpanan internal) + 'DD/MM/YYYY' (data lama).
 // Semua fungsi PURE; input kosong/invalid → '' (pemanggil pakai v-if / sel kosong).
+//
+// SATU-SATUNYA tempat umur boleh dihitung. Kyai (31 Agu 2026): "perhitungan usia masuk
+// tidak sesuai jika dihitung dari tgl lahir (tidak akurat)". Penyebabnya salinan kedua di
+// composables/useSantriForm.js: rumusnya mengambil BULAN tanggal acuan apa adanya
+// (`m = r.getMonth()`) alih-alih SELISIH bulan, dan tak pernah mengoreksi tanggal — jadi
+// santri lahir 20 Nov 2015 yang masuk 5 Jul 2020 tercatat "5 thn 6 bln", padahal 4th 7bln.
+// Salinan itu sudah dihapus; jangan menulis rumus umur baru di mana pun.
 
 // 'YYYY-MM-DD' atau 'DD/MM/YYYY' → { y, m, d } (m,d 1-based). null bila tak valid.
 function parseTgl(tgl) {
