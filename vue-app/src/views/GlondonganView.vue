@@ -11,7 +11,8 @@ import { useConfirm } from '@/composables/useConfirm'
 // Aspek nilai PTPT (sama persis dg tes PJ): Tahfizh, Istimror, Fashohah, Tajwid (0..90).
 import { tesAspekFlat, clampNilaiTes, TES_NILAI_MAX } from '@/utils/tesKenaikan'
 import { waLink, BULAN_ID } from '@/utils/format' // v.1.1.9: tautan kontak penyimak / guru kelas
-import { pesanGlondongan, pesanKontakGlondongan } from '@/utils/pesanWa' // v.1.2.6: teks WA otomatis
+// v.1.3.7: pesanWaliGlondongan — teks WA penyimak → wali santri.
+import { pesanGlondongan, pesanKontakGlondongan, pesanWaliGlondongan } from '@/utils/pesanWa'
 import { jsPDFFromCDN } from '@/services/pdf' // v.1.2.1: ekspor PDF rekap
 import { isGuruAktif } from '@/utils/guruScope' // v.1.2.0: sumber tunggal penyaring status guru
 import {
@@ -53,6 +54,7 @@ const {
   tugaskan,
   batalTugas,
   tugasNilaiSaya,
+  simpanDraft, // v.1.3.7: simpan sementara, belum "terkirim"
   simpanNilai,
   savePeran,
   // v.1.1.9: hapus baris (super_admin). Sudah ada di composable sejak v.111 tapi
@@ -252,6 +254,26 @@ function penyimakBaris(row) {
   const g = byId || guruDariNama(row?.penguji_nama)
   return { nama: row?.penguji_nama || g?.nama || '—', wa: g?.wa || '' }
 }
+/**
+ * v.1.3.7 (Kyai 31 Agu 2026): "no wa wali muncul di guru penyimak glondongan."
+ *
+ * Ini melunasi sisa permintaan 21 Jul 2026 — "no WA penyimak, guru kelas, dan santri" —
+ * yang waktu itu cuma dikerjakan dua pertiganya (lihat komentar kontak di atas). Selama
+ * ini penyimak yang mau menjadwalkan simakan harus menitip pesan lewat guru kelas dulu,
+ * padahal yang mengantar santri datang adalah walinya.
+ *
+ * Sumber nomornya field `wa` di baris santri = "No WA Wali" (lihat services/santriFields).
+ * Nomor kedua `wa_2` SENGAJA tak ikut: seluruh aplikasi (tagihan, tes, prestasi) hanya
+ * memakai `wa`, dan memunculkan nomor cadangan di satu layar saja hanya akan bikin Kyai
+ * mengira nomor itu dipakai di tempat lain juga.
+ *
+ * @returns {{nama:string, wa:string}} nama wali ('' bila tak terdata) + no WA.
+ */
+function waliSantri(santriId) {
+  const s = santriById.value.get(String(santriId))
+  if (!s) return { nama: '', wa: '' }
+  return { nama: String(s.nama_wali || s.wali || '').trim(), wa: String(s.wa || '').trim() }
+}
 
 // v.1.1.9: baris yatim = ajuan tesnya sudah dihapus. Sejak cascade dipasang tak akan
 //   ada yang baru; tombol ini untuk membersihkan sisa penghapusan LAMA. Baris yatim
@@ -380,22 +402,78 @@ function toggleNilai(row) {
   }
 }
 
-async function saveNilai(row) {
-  const d = drafts.value[row.id]
-  if (!d) return
+// v.1.3.7: bentuk objek nilai yang dikirim ke DB — SATU tempat, dipakai tombol
+//   "Simpan" maupun "Selesai". Sebelumnya rumus ini hanya ada di dalam saveNilai;
+//   menyalinnya ke tombol kedua persis kelas bug "cermin yang berpisah" yang berkali-kali
+//   menggigit repo ini (aturan sama ditulis dua kali lalu menyimpang diam-diam).
+function bangunNilai(row, d) {
   const nilai = {}
   for (const j of row.juz || []) {
     const per = {}
     for (const a of PTPT_ASPEK) {
-      const v = clampNilaiTes(d.nilai?.[j]?.[a.key])
+      const v = clampNilaiTes(d?.nilai?.[j]?.[a.key])
       if (v !== null) per[a.key] = v
     }
     if (Object.keys(per).length) nilai[j] = per
   }
+  return nilai
+}
+
+// Juz yang aspeknya belum terisi PENUH — dasar peringatan sebelum "Selesai".
+//   Dihitung dari nilai yang AKAN dikirim (bangunNilai), bukan dari isi kotak input,
+//   supaya angka di luar 0–90 yang dibuang clampNilaiTes ikut terhitung "belum".
+function juzBelumLengkap(row) {
+  const nilai = bangunNilai(row, drafts.value[row.id])
+  return (row.juz || []).filter((j) => PTPT_ASPEK.some((a) => nilai[j]?.[a.key] == null))
+}
+
+// Baris ini sudah pernah disimpan sementara? (ada angka tapi belum 'selesai')
+function punyaDraft(row) {
+  if (String(row?.status || '') === 'selesai') return false
+  if (row?.tgl_draft) return true
+  return !!(row?.nilai && Object.keys(row.nilai).length)
+}
+
+// Tombol "Simpan" — menyimpan pekerjaan setengah jalan TANPA menutup blok.
+const savingDraftId = ref('')
+async function saveDraft(row) {
+  const d = drafts.value[row.id]
+  if (!d) return
+  savingDraftId.value = row.id
+  try {
+    await simpanDraft(row.id, bangunNilai(row, d), d.catatan)
+    toast.success('Tersimpan sementara — belum dikirim, bisa dilanjutkan nanti')
+    // Kartu SENGAJA dibiarkan terbuka: menyimpan bukan tanda selesai menilai.
+  } catch (e) {
+    toast.error('Gagal menyimpan sementara: ' + (e.message || e))
+  } finally {
+    savingDraftId.value = ''
+  }
+}
+
+// Tombol "Selesai" — nilai dikirim & blok ditutup (membuka giliran blok berikutnya).
+async function saveNilai(row) {
+  const d = drafts.value[row.id]
+  if (!d) return
+  // Kyai: "Selesai" berarti SUDAH DIINPUT SEMUA. Blok yang masih bolong tetap boleh
+  //   ditutup (kadang satu juz memang tak sempat disimak), tapi harus disadari — sekali
+  //   'selesai', baris hilang dari daftar tugas & giliran blok berikutnya terbuka.
+  const kurang = juzBelumLengkap(row)
+  if (kurang.length) {
+    const ok = await confirmDlg({
+      title: 'Selesaikan blok ini?',
+      message:
+        `<b>${kurang.length} juz</b> belum terisi lengkap (Juz ${kurang.join(', ')}).` +
+        '<br><br>Setelah ditandai selesai, blok ini keluar dari daftar tugas Anda dan giliran blok berikutnya terbuka.' +
+        '<br><br>Kalau masih mau dilanjutkan, pakai tombol <b>Simpan</b>.',
+      confirmText: 'Ya, selesai'
+    })
+    if (!ok) return
+  }
   savingNilaiId.value = row.id
   try {
-    await simpanNilai(row.id, nilai, d.catatan)
-    toast.success('Nilai tersimpan — blok selesai')
+    await simpanNilai(row.id, bangunNilai(row, d), d.catatan)
+    toast.success('Nilai terkirim — blok selesai')
     openId.value = ''
   } catch (e) {
     toast.error('Gagal simpan nilai: ' + (e.message || e))
@@ -1186,6 +1264,14 @@ async function exportRekapBisyarohPdf() {
                 >
                 Kelas {{ row.kelas_asal }} · {{ juzLabel(row) }}
                 <span class="text-[var(--text-tertiary)]">· tes Juz {{ row.juz_target }}</span>
+                <!-- v.1.3.7: penanda ada nilai tersimpan tapi BELUM dikirim. Tanpa ini
+                     penyimak tak bisa membedakan blok yang belum disentuh dari blok yang
+                     tinggal dilanjutkan — dan draft memang tak mengubah status baris. -->
+                <span
+                  v-if="punyaDraft(row)"
+                  class="ml-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300"
+                  ><i class="fas fa-floppy-disk mr-0.5"></i>Tersimpan, belum dikirim</span
+                >
               </p>
               <!-- v.1.1.9: guru kelas santri + WA, supaya penyimak bisa koordinasi -->
               <p
@@ -1221,6 +1307,39 @@ async function exportRekapBisyarohPdf() {
                     <i class="fab fa-whatsapp"></i>
                   </a>
                 </span>
+              </p>
+              <!-- v.1.3.7 (Kyai 31 Agu 2026): no WA WALI santri — penyimak menjadwalkan
+                   simakan langsung ke rumah, tak lagi lewat guru kelas. Barisnya tetap
+                   tampil walau nomornya kosong supaya Kyai tahu data walinya yang belum
+                   diisi, bukan mengira fiturnya tak jalan. -->
+              <p class="text-[10px] mt-0.5 flex items-center gap-1 flex-wrap" @click.stop>
+                <span class="text-[var(--text-tertiary)]">Wali:</span>
+                <b v-if="waliSantri(row.santri_id).nama" class="text-[var(--text-secondary)]">{{
+                  waliSantri(row.santri_id).nama
+                }}</b>
+                <a
+                  v-if="waLink(waliSantri(row.santri_id).wa)"
+                  :href="
+                    waLink(
+                      waliSantri(row.santri_id).wa,
+                      pesanWaliGlondongan({
+                        santri: row.nama_cache,
+                        juz: juzLabel(row),
+                        penyimak: myNama,
+                        pondok: pondokWa
+                      })
+                    )
+                  "
+                  target="_blank"
+                  rel="noopener"
+                  class="px-1 py-0.5 rounded font-bold bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-300"
+                  :aria-label="`WhatsApp wali ${row.nama_cache}`"
+                >
+                  <i class="fab fa-whatsapp mr-1"></i>{{ waliSantri(row.santri_id).wa }}
+                </a>
+                <span v-else class="italic text-[var(--text-tertiary)]"
+                  >(no WA wali belum diisi)</span
+                >
               </p>
             </div>
             <i
@@ -1275,15 +1394,41 @@ async function exportRekapBisyarohPdf() {
               class="w-full mt-2 px-2.5 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-input)] text-[var(--text-primary)]"
             ></textarea>
 
-            <button
-              type="button"
-              :disabled="savingNilaiId === row.id"
-              class="w-full mt-2 bg-teal-600 hover:bg-teal-700 text-white font-bold py-2.5 rounded-xl disabled:opacity-50 flex items-center justify-center gap-2"
-              @click="saveNilai(row)"
-            >
-              <i :class="['fas', savingNilaiId === row.id ? 'fa-spinner fa-spin' : 'fa-check']"></i>
-              {{ savingNilaiId === row.id ? 'Menyimpan…' : 'Simpan & Selesai' }}
-            </button>
+            <!-- v.1.3.7 (Kyai 31 Agu 2026): DUA tombol. "Simpan" = tabung dulu, blok tetap
+                 di daftar tugas; "Selesai" = kirim & tutup blok. Dulu cuma ada satu tombol
+                 "Simpan & Selesai", jadi penyimak yang baru menilai 2 dari 5 juz tak punya
+                 tempat menaruh angkanya selain kertas. -->
+            <div class="grid grid-cols-2 gap-2 mt-2">
+              <button
+                type="button"
+                :disabled="savingDraftId === row.id || savingNilaiId === row.id"
+                class="bg-[var(--bg-card)] border border-teal-600 text-teal-700 dark:text-teal-300 font-bold py-2.5 rounded-xl disabled:opacity-50 flex items-center justify-center gap-2"
+                @click="saveDraft(row)"
+              >
+                <i
+                  :class="[
+                    'fas',
+                    savingDraftId === row.id ? 'fa-spinner fa-spin' : 'fa-floppy-disk'
+                  ]"
+                ></i>
+                {{ savingDraftId === row.id ? 'Menyimpan…' : 'Simpan' }}
+              </button>
+              <button
+                type="button"
+                :disabled="savingDraftId === row.id || savingNilaiId === row.id"
+                class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-2.5 rounded-xl disabled:opacity-50 flex items-center justify-center gap-2"
+                @click="saveNilai(row)"
+              >
+                <i
+                  :class="['fas', savingNilaiId === row.id ? 'fa-spinner fa-spin' : 'fa-check']"
+                ></i>
+                {{ savingNilaiId === row.id ? 'Mengirim…' : 'Selesai' }}
+              </button>
+            </div>
+            <p class="text-[10px] text-[var(--text-tertiary)] mt-1.5 text-center">
+              <b>Simpan</b> = disimpan sementara, blok tetap di daftar tugas · <b>Selesai</b> =
+              nilai dikirim, blok ditutup.
+            </p>
           </div>
         </li>
       </ul>

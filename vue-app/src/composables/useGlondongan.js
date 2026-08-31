@@ -265,7 +265,40 @@ export function useGlondongan() {
       tgl_tugas: ''
     })
   }
+  /**
+   * v.1.3.7 (Kyai 31 Agu 2026): "input nilai glondongan ada fitur simpan (artinya tidak
+   * langsung terkirim) jadi tambah tombol baru misal 'Selesai' yg berarti sudah diinput
+   * semua."
+   *
+   * Sebelum ini satu-satunya tombol adalah "Simpan & Selesai": begitu diklik, baris
+   * langsung berstatus 'selesai'. Padahal satu blok glondongan = 5 juz × 4 aspek yang
+   * disimak beberapa kali duduk; penyimak yang baru menilai 2 juz tak punya tempat
+   * menaruh angka itu selain kertas — dan kalau aplikasi tertutup, hilang.
+   *
+   * simpanDraft menulis angka & catatan APA ADANYA tanpa menyentuh `status`, jadi:
+   *   - baris tetap 'ditugaskan' → tetap muncul di "Tugas Menilai Saya" (bisa dilanjut),
+   *   - gerbangGlondongan tetap MENGUNCI PJ (ia hanya mengakui 'selesai'),
+   *   - rekap penyimak & bisyaroh tetap TIDAK menghitungnya (syaratnya juga 'selesai'),
+   *   - hitungTugasAktif tetap menganggap penyimaknya sibuk (syaratnya 'ditugaskan').
+   * Artinya draft tak bisa bocor jadi uang atau membuka kunci apa pun — ia murni tempat
+   * menyimpan pekerjaan setengah jalan.
+   *
+   * `tgl_draft` dipakai UI untuk memberi tahu "tersimpan sementara, belum dikirim".
+   * `tgl_nilai` SENGAJA tak diisi di sini: itu tanggal PENILAIAN, dan rekap bulanan
+   * memakainya untuk menentukan bulan capaian penyimak.
+   */
+  async function simpanDraft(id, nilai, catatan = '') {
+    await updateOne('tes_glondongan', id, {
+      nilai: nilai && typeof nilai === 'object' ? nilai : {},
+      catatan: String(catatan || ''),
+      draft_oleh: myNama.value,
+      tgl_draft: new Date().toISOString()
+    })
+  }
+
   // Simpan nilai per juz + catatan -> 'selesai'. nilai = { <juz>: { aspekKey: 0..90 } }.
+  //   v.1.3.7: ini tombol "Selesai" — tetap ikut menulis nilai supaya sekali klik cukup
+  //   bagi penyimak yang mengisi sekali duduk (tak wajib menekan Simpan dulu).
   async function simpanNilai(id, nilai, catatan = '') {
     await updateOne('tes_glondongan', id, {
       nilai: nilai && typeof nilai === 'object' ? nilai : {},
@@ -387,6 +420,7 @@ export function useGlondongan() {
     rowsByAjuan,
     tugaskan,
     batalTugas,
+    simpanDraft, // v.1.3.7: simpan sementara (status tak berubah)
     simpanNilai,
     canCrud,
     hapus,

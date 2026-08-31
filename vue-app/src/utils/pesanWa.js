@@ -44,6 +44,26 @@ export function pesanKontakGlondongan({ guru, santri, juz, pondok } = {}) {
   )
 }
 
+/**
+ * Kontak WALI santri terkait glondongan → dikirim guru PENYIMAK ke wali.
+ *
+ * v.1.3.7 (Kyai 31 Agu 2026): "no wa wali muncul di guru penyimak glondongan."
+ * Melengkapi permintaan 21 Jul 2026 yang berbunyi "no WA penyimak, guru kelas, dan
+ * santri" — dua yang pertama sudah terpasang sejak v.1.1.9, nomor walinya tak pernah
+ * ikut. Penyimak yang mau menjadwalkan simakan harus lewat guru kelas dulu, padahal
+ * yang mengantar santri ke rumah/musholla penyimak adalah walinya.
+ */
+export function pesanWaliGlondongan({ santri, juz, penyimak, pondok } = {}) {
+  return (
+    `${SALAM}\n` +
+    `Bapak/Ibu wali Ananda *${santri || '-'}*, terkait jadwal simakan glondongan` +
+    `${juz ? ' *' + juz + '*' : ''}` +
+    `${penyimak ? ' bersama Ustadz/Ustadzah *' + penyimak + '*' : ''}. ` +
+    `Mohon Ananda dapat dipersiapkan. Terima kasih.` +
+    _ttd(pondok)
+  )
+}
+
 /** Jadwal menyimak Ceremonial PTPT → guru penyimak. */
 export function pesanCeremonial({ guru, tanggal, jam, tempat, jumlah, pondok } = {}) {
   const waktu = [tanggal, jam].filter(Boolean).join(' ')
