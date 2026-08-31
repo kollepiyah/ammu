@@ -396,9 +396,218 @@
               ber-scope (Pengaturan Keuangan). Yang sudah punya slip periode ini akan di-OVERWRITE.
             </p>
           </div>
+          <!-- v.1.3.7 (Kyai 31 Agu 2026): "review per bulan … sudah tertera potongannya dll.
+               sebelum generate slip agar bisa koreksi". Angkanya dari buildSlipPayload —
+               fungsi yang SAMA dengan tombol Generate di bawah, jadi yang ditinjau memang
+               yang akan tersimpan. Tak ada satu baris pun yang ditulis di sini. -->
+          <button
+            :disabled="pratinjauBusy || bulkTargets.length === 0"
+            class="w-full mt-3 bg-[var(--bg-card)] border-2 border-emerald-600 text-emerald-700 dark:text-emerald-300 text-sm font-black py-3 rounded-xl disabled:opacity-50 cursor-pointer transition"
+            @click="jalankanPratinjau"
+          >
+            <i
+              :class="['fas', pratinjauBusy ? 'fa-spinner fa-spin' : 'fa-magnifying-glass', 'mr-2']"
+            ></i>
+            {{
+              pratinjauBusy
+                ? 'Menghitung…'
+                : `Tinjau Dulu ${bulkTargets.length} Slip (${periodeAktif})`
+            }}
+          </button>
+
+          <div v-if="pratinjauRows.length" class="mt-3 space-y-2">
+            <p
+              v-if="pratinjauBasi"
+              class="text-[11px] font-bold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 rounded-lg p-2"
+            >
+              <i class="fas fa-triangle-exclamation mr-1"></i>Pratinjau ini dibuat untuk periode
+              <b>{{ pratinjauPeriode }}</b
+              >, sedangkan yang dipilih sekarang <b>{{ periodeAktif }}</b
+              >. Tinjau ulang sebelum generate.
+            </p>
+
+            <!-- Ringkasan -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+              <div
+                class="bg-[var(--bg-card-elevated)] rounded-xl p-2 border border-[var(--border-subtle)]"
+              >
+                <p class="text-[9px] uppercase font-black text-[var(--text-secondary)]">
+                  Pemasukan
+                </p>
+                <p class="text-sm font-black text-[var(--text-primary)]">
+                  {{ fmtRp(pratinjauRingkas.pemasukan) }}
+                </p>
+              </div>
+              <div class="bg-rose-50 dark:bg-rose-900/20 rounded-xl p-2 border border-rose-200">
+                <p class="text-[9px] uppercase font-black text-rose-700 dark:text-rose-300">
+                  Potongan · {{ pratinjauRingkas.kenaPotongan }} guru
+                </p>
+                <p class="text-sm font-black text-rose-700 dark:text-rose-300">
+                  {{ fmtRp(pratinjauRingkas.potongan) }}
+                </p>
+              </div>
+              <div
+                class="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-2 border border-emerald-200"
+              >
+                <p class="text-[9px] uppercase font-black text-emerald-700 dark:text-emerald-300">
+                  Take Home
+                </p>
+                <p class="text-sm font-black text-emerald-700 dark:text-emerald-300">
+                  {{ fmtRp(pratinjauRingkas.takeHome) }}
+                </p>
+              </div>
+              <div
+                :class="[
+                  'rounded-xl p-2 border',
+                  pratinjauRingkas.perluDilihat
+                    ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200'
+                    : 'bg-[var(--bg-card-elevated)] border-[var(--border-subtle)]'
+                ]"
+              >
+                <p class="text-[9px] uppercase font-black text-[var(--text-secondary)]">
+                  Perlu dilihat
+                </p>
+                <p class="text-sm font-black text-[var(--text-primary)]">
+                  {{ pratinjauRingkas.perluDilihat }} guru
+                </p>
+                <p class="text-[9px] text-[var(--text-tertiary)]">
+                  {{ pratinjauRingkas.akanDitimpa }} slip ditimpa
+                  <span v-if="pratinjauRingkas.sudahCair" class="text-rose-600 font-bold"
+                    >· {{ pratinjauRingkas.sudahCair }} sudah cair</span
+                  >
+                </p>
+              </div>
+            </div>
+
+            <!-- Rekap potongan per jenis: bentuk tercepat melihat scope yang meleset -->
+            <div
+              v-if="pratinjauPotongan.length"
+              class="bg-[var(--bg-card-elevated)] rounded-xl p-2 border border-[var(--border-subtle)]"
+            >
+              <p class="text-[10px] font-black text-[var(--text-secondary)] uppercase mb-1">
+                <i class="fas fa-scissors mr-1"></i>Potongan yang akan terbit
+              </p>
+              <p
+                v-for="p in pratinjauPotongan"
+                :key="p.label"
+                class="text-[11px] text-[var(--text-primary)] flex justify-between gap-2 py-0.5 border-t border-[var(--border-subtle)] first:border-0"
+                :title="p.nama.join(', ')"
+              >
+                <span class="truncate"
+                  >{{ p.label }}
+                  <span class="text-[var(--text-tertiary)]">· {{ p.guru }} guru</span></span
+                >
+                <b class="text-rose-700 dark:text-rose-300 whitespace-nowrap">{{
+                  fmtRp(p.total)
+                }}</b>
+              </p>
+            </div>
+
+            <label class="flex items-center gap-2 text-[11px] text-[var(--text-secondary)]">
+              <input v-model="pratinjauHanyaPerlu" type="checkbox" class="accent-emerald-600" />
+              Tampilkan hanya yang perlu dilihat
+            </label>
+
+            <!-- Daftar per guru -->
+            <ul class="space-y-1 max-h-96 overflow-y-auto">
+              <li
+                v-for="b in pratinjauTampil"
+                :key="b.guruId"
+                class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-card-elevated)] overflow-hidden"
+              >
+                <button
+                  type="button"
+                  class="w-full flex items-center justify-between gap-2 p-2 text-left"
+                  @click="pratinjauToggle(b.guruId)"
+                >
+                  <div class="min-w-0">
+                    <p class="text-xs font-bold text-[var(--text-primary)] truncate">
+                      {{ b.nama }}
+                      <span class="text-[10px] font-normal text-[var(--text-tertiary)]"
+                        >· {{ b.lembaga || '-' }}</span
+                      >
+                    </p>
+                    <p class="text-[10px] text-[var(--text-secondary)]">
+                      Bisyaroh {{ fmtRp(b.bisyaroh) }}
+                      <span v-if="b.tunjangan">· Tunjangan {{ fmtRp(b.tunjangan) }}</span>
+                      <span v-if="b.glondongan">· Glondongan {{ fmtRp(b.glondongan) }}</span>
+                      <span v-if="b.potongan" class="text-rose-600 font-bold"
+                        >· Potongan −{{ fmtRp(b.potongan) }}</span
+                      >
+                    </p>
+                    <p v-if="b.peringatan.length" class="mt-0.5 flex flex-wrap gap-1">
+                      <span
+                        v-for="k in b.peringatan"
+                        :key="k"
+                        :title="peringatanInfo(k).pesan"
+                        :class="[
+                          'px-1.5 py-0.5 rounded text-[9px] font-black',
+                          k === 'cair' || k === 'potongan_melebihi'
+                            ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300'
+                            : 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
+                        ]"
+                        >{{ peringatanInfo(k).label
+                        }}<span v-if="k === 'berubah'">
+                          {{ b.selisih > 0 ? '+' : '' }}{{ fmtRp(b.selisih) }}</span
+                        ></span
+                      >
+                    </p>
+                  </div>
+                  <div class="text-right shrink-0">
+                    <p
+                      :class="[
+                        'text-sm font-black',
+                        b.takeHome > 0
+                          ? 'text-emerald-700 dark:text-emerald-300'
+                          : 'text-rose-700 dark:text-rose-300'
+                      ]"
+                    >
+                      {{ fmtRp(b.takeHome) }}
+                    </p>
+                    <i
+                      :class="[
+                        'fas text-[10px] text-[var(--text-tertiary)]',
+                        pratinjauBuka.has(b.guruId) ? 'fa-chevron-up' : 'fa-chevron-down'
+                      ]"
+                    ></i>
+                  </div>
+                </button>
+                <div
+                  v-if="pratinjauBuka.has(b.guruId)"
+                  class="px-3 pb-2 text-[11px] border-t border-[var(--border-subtle)] pt-1.5"
+                >
+                  <p
+                    v-for="(li, i) in b.lineItems"
+                    :key="'li' + i"
+                    class="flex justify-between gap-2 py-0.5"
+                  >
+                    <span class="truncate text-[var(--text-secondary)]">{{ li.label }}</span>
+                    <b class="text-[var(--text-primary)] whitespace-nowrap">{{
+                      fmtRp(li.nominal)
+                    }}</b>
+                  </p>
+                  <p
+                    v-for="(p, i) in b.potonganList"
+                    :key="'pt' + i"
+                    class="flex justify-between gap-2 py-0.5 text-rose-700 dark:text-rose-300"
+                  >
+                    <span class="truncate">{{ p.label }}</span>
+                    <b class="whitespace-nowrap">−{{ fmtRp(p.nominal) }}</b>
+                  </p>
+                  <p
+                    v-if="!b.lineItems.length && !b.potonganList.length"
+                    class="italic text-[var(--text-tertiary)] py-0.5"
+                  >
+                    Tak ada satu pun jenis yang mengenai orang ini.
+                  </p>
+                </div>
+              </li>
+            </ul>
+          </div>
+
           <button
             :disabled="bulkRunning || bulkTargets.length === 0"
-            class="w-full bg-gradient-to-r from-emerald-600 dark:from-emerald-800 to-teal-600 dark:to-teal-800 hover:from-emerald-700 dark:from-emerald-900 hover:to-teal-700 dark:to-teal-900 text-white text-sm font-black py-3 rounded-xl shadow-md disabled:opacity-50 cursor-pointer transition"
+            class="w-full mt-3 bg-gradient-to-r from-emerald-600 dark:from-emerald-800 to-teal-600 dark:to-teal-800 hover:from-emerald-700 dark:from-emerald-900 hover:to-teal-700 dark:to-teal-900 text-white text-sm font-black py-3 rounded-xl shadow-md disabled:opacity-50 cursor-pointer transition"
             @click="bulkGenerate"
           >
             <i :class="['fas', bulkRunning ? 'fa-spinner fa-spin' : 'fa-bolt', 'mr-2']"></i>
@@ -1094,6 +1303,9 @@ import {
   GLONDONGAN_JENIS_ID,
   GLONDONGAN_BLOK_DEFAULT
 } from '@/utils/simulasiBisyaroh'
+// v.1.3.7: pratinjau slip sebelum generate (Kyai 31 Agu 2026) — angka SUNGGUHAN
+//   bulan terpilih, bukan coba-coba tarif seperti sub-tab Simulasi di atas.
+import { barisPratinjau, ringkasPratinjau, rekapPotongan, PERINGATAN } from '@/utils/pratinjauSlip'
 import { buildLiburScope, liburKenaLembaga } from '@/utils/liburScope' // v.1.2.3: libur per lembaga
 import { tanggalRentang } from '@/utils/absensiRekap'
 import { useKegiatan } from '@/composables/useKegiatan'
@@ -2406,6 +2618,73 @@ function buildSlipPayload(g, periode, seq, extra = {}) {
   }
 }
 
+// ─── Pratinjau slip sebelum generate (Kyai, 31 Agu 2026) ──────────────────
+// "saya ingin ada simulasi/review per bulan, misal bulan ini dan sudah tertera potongannya
+//  dll. sebelum generate slip agar bisa koreksi."
+//
+// BEDA dari sub-tab "Simulasi": simulasi itu coba-coba TARIF dengan andaian hadir penuh
+// (alat anggaran). Ini angka SUNGGUHAN bulan terpilih — kehadiran, tunjangan, glondongan,
+// dan potongan apa adanya. Sumbernya `buildSlipPayload`, fungsi yang SAMA yang dipakai
+// tombol Generate di bawahnya, jadi yang ditinjau memang yang akan tersimpan. Tak ada satu
+// baris pun yang ditulis ke `keuangan_gaji` di sini.
+const pratinjauRows = ref([])
+const pratinjauPeriode = ref('') // periode saat pratinjau dibuat — utk mendeteksi basi
+const pratinjauBusy = ref(false)
+const pratinjauBuka = ref(new Set()) // guruId yang rinciannya dibentangkan
+const pratinjauHanyaPerlu = ref(false) // saring: hanya yang berperingatan
+const periodeAktif = computed(() => `${tahun.value}-${String(bulan.value).padStart(2, '0')}`)
+// Pratinjau basi begitu periode / daftar target berubah — angka lama di layar yang
+//   tampak masih sah adalah cara paling mudah salah memutuskan.
+const pratinjauBasi = computed(
+  () => pratinjauRows.value.length > 0 && pratinjauPeriode.value !== periodeAktif.value
+)
+const pratinjauTampil = computed(() =>
+  pratinjauHanyaPerlu.value
+    ? pratinjauRows.value.filter((b) => b.peringatan.length > 0)
+    : pratinjauRows.value
+)
+const pratinjauRingkas = computed(() => ringkasPratinjau(pratinjauRows.value))
+const pratinjauPotongan = computed(() => rekapPotongan(pratinjauRows.value))
+
+async function jalankanPratinjau() {
+  if (pratinjauBusy.value || bulkTargets.value.length === 0) return
+  pratinjauBusy.value = true
+  try {
+    const periode = periodeAktif.value
+    // Sama seperti bulkGenerate: pastikan "hadir sekolah" guru gabungan sudah
+    //   materialisasi dulu, kalau tidak angka bonus kehadiran di pratinjau bisa lebih
+    //   kecil daripada yang nanti tersimpan. Idempoten & create-only, dan layar ini
+    //   memang sudah menjalankannya otomatis tiap periode berganti.
+    await materialisasiGabunganPeriode(periode)
+    const rows = []
+    for (const g of bulkTargets.value) {
+      const payload = buildSlipPayload(g, periode, rows.length, { via: 'pratinjau' })
+      const lama =
+        gaji.value.find((x) => String(x.guru_id) === String(g.id) && x.periode === periode) || null
+      rows.push(barisPratinjau(payload, lama))
+    }
+    rows.sort(
+      (a, b) => b.peringatan.length - a.peringatan.length || a.nama.localeCompare(b.nama, 'id')
+    )
+    pratinjauRows.value = rows
+    pratinjauPeriode.value = periode
+    pratinjauBuka.value = new Set()
+  } catch (e) {
+    toast.error('Gagal menyusun pratinjau: ' + (e.message || e))
+  } finally {
+    pratinjauBusy.value = false
+  }
+}
+function pratinjauToggle(id) {
+  const s = new Set(pratinjauBuka.value)
+  if (s.has(id)) s.delete(id)
+  else s.add(id)
+  pratinjauBuka.value = s
+}
+function peringatanInfo(kode) {
+  return PERINGATAN[kode] || { label: kode, pesan: '' }
+}
+
 async function bulkGenerate() {
   if (
     !confirm(
@@ -2432,6 +2711,10 @@ async function bulkGenerate() {
       }
       bulkDone.value++
     }
+    // Pratinjau menggambarkan keadaan SEBELUM generate; sesudah ini ia tak lagi
+    //   menggambarkan apa pun, jadi dibuang daripada menyesatkan.
+    pratinjauRows.value = []
+    pratinjauPeriode.value = ''
     toast.success(`Bulk generate selesai: ${bulkDone.value}/${bulkTargets.value.length} slip`)
   } catch (e) {
     toast.error('Bulk generate gagal: ' + (e.message || e))
