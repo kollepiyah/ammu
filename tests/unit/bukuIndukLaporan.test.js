@@ -6,6 +6,10 @@
 // Rp 6.230.000 ke Rp 2.130.000, sedangkan baris TOTAL bilang Rp 2.290.000. Tes di bawah
 // mengunci dua hal yang menyebabkannya: urutan cetak yang terbalik dari arah akumulasi,
 // dan saldo yang diambil dari ledger penuh alih-alih dari ledger yang tersaring.
+//
+// Kyai (31 Agu 2026): "pastikan hasil ekspor nominal totalnya hanya hari itu (atau sesuai
+// yg difilter), bukan diambil dari semua buku induk yg akhirnya terhitung minus." Sejak
+// itu baris TOTAL = mutasi periode, dan posisi kas kumulatif jadi dua baris INFO di bawah.
 import { describe, it, expect } from 'vitest'
 import {
   petaSaldoBerjalan,
@@ -135,6 +139,9 @@ describe('bangunBarisLaporan', () => {
     ringkasMetodeOf,
     ...extra
   })
+  const cariBaris = (rows, awalan) =>
+    rows.find((r) => String(r.keterangan).startsWith(awalan)) || null
+  const barisTotal = (rows) => cariBaris(rows, 'TOTAL')
 
   // Bentuk mini dari berkas yang Kyai lampirkan: semua masuk, tunai, satu hari.
   const HARIAN = [
@@ -143,20 +150,40 @@ describe('bangunBarisLaporan', () => {
     masuk('h3', '2026-08-03', 200000)
   ]
 
-  it('baris pertama SALDO AWAL, baris terakhir TOTAL', () => {
+  it('baris pertama = transaksi ke-1, bukan lagi SALDO AWAL', () => {
     const rows = bangunBarisLaporan(HARIAN, opsi({ saldoAwal: 750000 }))
-    expect(rows[0].keterangan).toBe('SALDO AWAL (sebelum 3 Agustus 2026)')
-    expect(rows[0].saldo).toBe(750000)
-    expect(rows[rows.length - 1].keterangan).toBe('TOTAL (3 transaksi)')
+    expect(rows[0].no).toBe(1)
+    expect(rows[0].saldo).toBe(200000) // saldo berjalan mulai NOL
+    expect(cariBaris(rows, 'SALDO AWAL')).toBeNull()
   })
 
-  it('SALDO AWAL + masuk − keluar = saldo di baris TOTAL', () => {
+  it('KUNCI 31 Agu: TOTAL = masuk − keluar periode, tak tersentuh saldo di luar periode', () => {
     const campur = [...HARIAN, keluar('h4', '2026-08-03', 100000)]
-    const rows = bangunBarisLaporan(campur, opsi({ saldoAwal: 750000 }))
-    const total = rows[rows.length - 1]
+    // Saldo kas sebelumnya MINUS besar — dulu inilah yang membuat baris TOTAL ikut minus.
+    const rows = bangunBarisLaporan(campur, opsi({ saldoAwal: -9000000 }))
+    const total = barisTotal(rows)
     expect(total.masuk).toBe(430000)
     expect(total.keluar).toBe(100000)
-    expect(total.saldo).toBe(750000 + 430000 - 100000)
+    expect(total.saldo).toBe(330000)
+    expect(total.saldo).toBeGreaterThan(0)
+  })
+
+  it('posisi kas kumulatif turun jadi dua baris INFO di bawah TOTAL', () => {
+    const rows = bangunBarisLaporan(HARIAN, opsi({ saldoAwal: 750000 }))
+    const sebelum = rows.at(-2)
+    const sesudah = rows.at(-1)
+    expect(sebelum.keterangan).toBe('INFO — SALDO KAS SEBELUM 3 Agustus 2026')
+    expect(sebelum.saldo).toBe(750000)
+    expect(sesudah.keterangan).toBe('INFO — SALDO KAS SETELAH 3 Agustus 2026')
+    expect(sesudah.saldo).toBe(750000 + 430000)
+    // Baris INFO tak boleh membawa nominal — ia keterangan, bukan mutasi.
+    for (const r of [sebelum, sesudah]) {
+      expect(r.masuk).toBe(0)
+      expect(r.keluar).toBe(0)
+      expect(r._info).toBe(true)
+    }
+    // …dan TOTAL berdiri sebelum keduanya.
+    expect(rows.at(-3).keterangan).toBe('TOTAL (3 transaksi)')
   })
 
   it('transaksi dicetak kronologis NAIK walau masukannya terbalik', () => {
@@ -171,6 +198,12 @@ describe('bangunBarisLaporan', () => {
     const saldo = rows.map((r) => r.saldo)
     expect(saldo).toEqual([200000, 230000, 430000])
     for (let i = 1; i < saldo.length; i++) expect(saldo[i]).toBeGreaterThan(saldo[i - 1])
+  })
+
+  it('saldo berjalan mulai nol berapa pun saldo kas sebelumnya', () => {
+    const a = bangunBarisLaporan(HARIAN, opsi({ saldoAwal: 0 })).filter((r) => !r._ringkas)
+    const b = bangunBarisLaporan(HARIAN, opsi({ saldoAwal: 5000000 })).filter((r) => !r._ringkas)
+    expect(b.map((r) => r.saldo)).toEqual(a.map((r) => r.saldo))
   })
 
   it('SUBTOTAL per cara bayar muncul hanya untuk metode yang ada isinya', () => {
@@ -194,31 +227,41 @@ describe('bangunBarisLaporan', () => {
     expect(sub.map((r) => r.keterangan)).toEqual(['SUBTOTAL TUNAI', 'SUBTOTAL TRANSFER'])
   })
 
-  it('pakaiSaldoAwal:false → tanpa baris awal, saldo mulai dari 0', () => {
-    const rows = bangunBarisLaporan(HARIAN, opsi({ saldoAwal: 750000, pakaiSaldoAwal: false }))
-    expect(rows[0].no).toBe(1)
-    expect(rows[0].saldo).toBe(200000)
-    expect(rows[rows.length - 1].saldo).toBe(430000)
+  it('infoSaldoKas:false → laporan berhenti di baris TOTAL', () => {
+    const rows = bangunBarisLaporan(HARIAN, opsi({ saldoAwal: 750000, infoSaldoKas: false }))
+    expect(rows.some((r) => String(r.keterangan).startsWith('INFO'))).toBe(false)
+    expect(rows.at(-1).keterangan).toBe('TOTAL (3 transaksi)')
+    expect(rows.at(-1).saldo).toBe(430000)
   })
 
-  it('daftar kosong tetap menghasilkan SALDO AWAL + TOTAL 0 transaksi', () => {
+  it('daftar kosong: TOTAL 0 transaksi, dan INFO memperlihatkan kas tak bergerak', () => {
     const rows = bangunBarisLaporan([], opsi({ saldoAwal: 120000 }))
-    expect(rows).toHaveLength(2)
-    expect(rows[1].keterangan).toBe('TOTAL (0 transaksi)')
-    expect(rows[1].saldo).toBe(120000) // saldo tak berubah karena tak ada mutasi
+    expect(rows).toHaveLength(3)
+    expect(rows[0].keterangan).toBe('TOTAL (0 transaksi)')
+    expect(rows[0].saldo).toBe(0) // tak ada mutasi = total nol, BUKAN saldo kas
+    expect(rows[1].saldo).toBe(120000)
+    expect(rows[2].saldo).toBe(120000)
+  })
+
+  it('tanpa labelPeriode, baris INFO tetap terbaca', () => {
+    const rows = bangunBarisLaporan(HARIAN, { saldoAwal: 0 })
+    expect(rows.at(-2).keterangan).toBe('INFO — SALDO KAS SEBELUM PERIODE INI')
+    expect(rows.at(-1).keterangan).toBe('INFO — SALDO KAS SETELAH PERIODE INI')
   })
 
   it('tanpa ringkasMetodeOf, laporan tetap sah (hanya tanpa subtotal)', () => {
     const rows = bangunBarisLaporan(HARIAN, { saldoAwal: 0 })
     expect(rows.some((r) => String(r.keterangan).startsWith('SUBTOTAL'))).toBe(false)
-    expect(rows[rows.length - 1].saldo).toBe(430000)
+    expect(barisTotal(rows).saldo).toBe(430000)
   })
 })
 
 describe('laporan tersaring ⇄ peta saldo layar tetap bertemu', () => {
-  // Penjaga silang: angka di kolom Saldo layar (petaSaldoBerjalan atas ledger tersaring)
-  // harus sama dengan saldo baris terakhir laporan. Kalau dua jalur ini menyimpang,
-  // Kyai akan melihat angka berbeda di layar dan di PDF untuk penyaring yang sama.
+  // Penjaga silang: angka posisi kas di layar (petaSaldoBerjalan atas ledger tersaring)
+  // harus sama dengan baris INFO "SALDO KAS SETELAH" di ekspor. Kalau dua jalur ini
+  // menyimpang, Kyai akan melihat angka berbeda di layar dan di kertas untuk penyaring
+  // yang sama. Baris TOTAL sengaja TIDAK ikut dibandingkan: sejak 31 Agu ia memang cuma
+  // mutasi periode.
   const ledgerTersaring = [
     masuk('p1', '2026-07-31', 500000),
     masuk('p2', '2026-08-03', 200000),
@@ -226,14 +269,14 @@ describe('laporan tersaring ⇄ peta saldo layar tetap bertemu', () => {
   ]
   const periode = ledgerTersaring.filter((b) => b.tanggal.startsWith('2026-08-03'))
 
-  it('saldo baris terakhir laporan = saldo peta untuk transaksi terakhir', () => {
+  it('baris INFO "SALDO KAS SETELAH" = saldo peta untuk transaksi terakhir', () => {
     const rows = bangunBarisLaporan(periode, {
       saldoAwal: saldoAwalSebelum(ledgerTersaring, '2026-08-03'),
       labelPeriode: '3 Agustus 2026'
     })
     const peta = petaSaldoBerjalan(ledgerTersaring)
-    const barisTerakhir = rows.filter((r) => !r._ringkas).at(-1)
-    expect(barisTerakhir.saldo).toBe(peta.get('p3'))
-    expect(rows.at(-1).saldo).toBe(peta.get('p3')) // TOTAL = saldo akhir
+    expect(rows.at(-1).saldo).toBe(peta.get('p3'))
+    // …sementara TOTAL tetap mutasi hari itu saja.
+    expect(rows.at(-3).saldo).toBe(150000)
   })
 })

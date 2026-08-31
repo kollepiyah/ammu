@@ -128,42 +128,33 @@
             <p class="text-[9px] text-cyan-700/80 mt-0.5">masuk &minus; keluar</p>
           </div>
         </div>
-        <!-- Saldo kas menurut penyaring yang sedang aktif — angka yang sama persis dengan
-             baris SALDO AWAL/TOTAL di PDF & Excel, jadi layar dan kertas tak bisa beda.
-             v.1.3.6: pada mode harian yang dicetak adalah setoran hari itu (mulai nol),
-             jadi layar pun menonjolkan angka itu; saldo kumulatif tetap ditampilkan
-             sebagai info, dengan keterangan bahwa ia tidak ikut tercetak. -->
+        <!-- v.1.3.7 (Kyai 31 Agu 2026): satu aturan untuk semua periode — yang DICETAK
+             adalah mutasi periode yang difilter (baris TOTAL = masuk − keluar, saldo
+             berjalan mulai nol), sedangkan posisi kas kumulatif turun jadi keterangan.
+             Strip ini menyusun ulang urutan bacanya persis seperti kertasnya, supaya
+             layar dan PDF tak bisa berbeda. -->
         <div
           class="mt-2 rounded-xl border border-cyan-200 dark:border-cyan-800 bg-cyan-50/60 dark:bg-cyan-900/20 px-3 py-2 flex flex-wrap items-baseline gap-x-4 gap-y-1"
         >
-          <template v-if="modeHarian">
-            <span class="text-[10px] font-bold uppercase text-cyan-800 dark:text-cyan-300">
-              Setoran hari ini
-              <b class="font-mono font-black ml-1">{{ fmtRp(stats.saldo) }}</b>
-            </span>
-            <span class="text-[10px] font-bold uppercase text-[var(--text-secondary)]">
-              Saldo kas kumulatif
-              <b class="font-mono font-black ml-1">{{ fmtRp(saldoAkhirPeriode) }}</b>
-            </span>
-            <span class="text-[10px] text-[var(--text-secondary)]">
-              laporan harian dicetak mulai nol — hanya transaksi hari itu
-            </span>
-          </template>
-          <template v-else>
-            <span class="text-[10px] font-bold uppercase text-cyan-800 dark:text-cyan-300">
-              Saldo awal
-              <b class="font-mono font-black ml-1">{{ fmtRp(saldoAwalPeriode) }}</b>
-            </span>
-            <span class="text-[10px] font-bold uppercase text-cyan-800 dark:text-cyan-300">
-              Saldo akhir
-              <b class="font-mono font-black ml-1">{{ fmtRp(saldoAkhirPeriode) }}</b>
-            </span>
-            <span class="text-[10px] text-[var(--text-secondary)]">
-              {{
-                adaPenyaringKas ? 'mengikuti penyaring yang aktif' : 'seluruh kas, tanpa penyaring'
-              }}
-            </span>
-          </template>
+          <span class="text-[10px] font-bold uppercase text-cyan-800 dark:text-cyan-300">
+            {{ modeHarian ? 'Setoran hari ini' : 'Mutasi periode ini' }} (dicetak)
+            <b class="font-mono font-black ml-1">{{ fmtRp(stats.saldo) }}</b>
+          </span>
+          <span class="text-[10px] font-bold uppercase text-[var(--text-secondary)]">
+            Saldo kas sebelum
+            <b class="font-mono font-black ml-1">{{ fmtRp(saldoAwalPeriode) }}</b>
+          </span>
+          <span class="text-[10px] font-bold uppercase text-[var(--text-secondary)]">
+            Saldo kas setelah
+            <b class="font-mono font-black ml-1">{{ fmtRp(saldoAkhirPeriode) }}</b>
+          </span>
+          <span class="text-[10px] text-[var(--text-secondary)]">
+            baris TOTAL di ekspor = mutasi periode ini; saldo kas tercetak sebagai keterangan
+            &mdash;
+            {{
+              adaPenyaringKas ? 'mengikuti penyaring yang aktif' : 'seluruh kas, tanpa penyaring'
+            }}
+          </span>
         </div>
         <!-- v.1.2.6: pisah uang laci vs rekening — inti laporan kas harian -->
         <div class="grid grid-cols-2 gap-2 md:gap-3 mt-2">
@@ -1634,20 +1625,19 @@ onUnmounted(() => {
 //   = saldo akhir), lihat utils/bukuIndukLaporan.
 //   v.1.2.6 (Kyai): `listIn` opsional supaya cetak TUNAI / TRANSFER bisa memakai
 //   pembangun yang sama (satu bentuk laporan, bukan dua yang bisa berbeda diam-diam).
-//   `metodeOnly` ikut menyaring ledger dasar saldo: tanpa itu, berkas TUNAI akan
-//   memakai saldo awal yang masih mengandung transfer dan angkanya tak akan bertemu.
-//   v.1.3.6 (Kyai, 14 Agu 2026): laporan HARIAN adalah bukti SETORAN hari itu — yang
-//   dicocokkan dengan uang yang disetor, bukan posisi kas sejak dulu. Maka pada mode
-//   harian baris SALDO AWAL ditiadakan dan saldo berjalan mulai dari nol, sehingga baris
-//   TOTAL = masuk − keluar hari itu saja. Periode bulanan/tahunan tetap memakai saldo
-//   awal (keputusan 6 Agu) supaya laporan kas tetap bisa ditelusuri kumulatif.
+//   `metodeOnly` ikut menyaring ledger dasar saldo: tanpa itu, baris INFO berkas TUNAI
+//   akan memakai saldo yang masih mengandung transfer dan angkanya tak akan bertemu.
+//   v.1.3.7 (Kyai, 31 Agu 2026): "nominal totalnya hanya hari itu (atau sesuai yg
+//   difilter), bukan diambil dari semua buku induk yg akhirnya terhitung minus." Maka
+//   SEMUA periode — harian, bulanan, tahunan — dicetak dengan saldo berjalan mulai nol
+//   dan baris TOTAL = masuk − keluar periode itu. Posisi kas kumulatif tetap ikut, tapi
+//   sebagai dua baris INFO di bawah TOTAL (lihat utils/bukuIndukLaporan).
 function buildExportRows(listIn, { metodeOnly = '' } = {}) {
   const list = listIn || filteredBuku.value || []
   const ledger = metodeOnly
     ? ledgerSaldo.value.filter((b) => metodeTransaksi(b) === metodeOnly)
     : ledgerSaldo.value
   return bangunBarisLaporan(list, {
-    pakaiSaldoAwal: !modeHarian.value,
     saldoAwal: metodeOnly ? saldoAwalSebelum(ledger, periodeSlug.value) : saldoAwalPeriode.value,
     labelPeriode: periodeLabel.value,
     metodeOf: metodeTransaksi,

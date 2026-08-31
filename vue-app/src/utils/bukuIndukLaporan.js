@@ -12,16 +12,22 @@
 //      dan tak ikut penyaring, jadi selisih antar baris (330rb, 880rb) tak ada
 //      hubungannya dengan nominal baris yang tercetak.
 //
-// Keputusan Kyai: "info saldo sesuai filter yg diekspor, saldo total jika diekspor
-// semuanya tanpa filter." Maka saldo berjalan dihitung dari ledger yang SUDAH DISARING
-// (pos, lembaga, cara bayar, tipe, pencarian, scope gedung) tapi TIDAK dibatasi periode —
-// sehingga:
-//   • tanpa penyaring apa pun → angkanya = saldo kas total, persis seperti dulu;
-//   • dengan penyaring        → saldo kas untuk irisan itu saja, dan selisih antar baris
-//                               sama dengan nominal barisnya.
-// Periode sengaja tak ikut menyaring basis: yang dibatasi periode adalah baris yang
-// TERCETAK, sedangkan saldo tetap kumulatif sejak transaksi pertama. Itulah yang membuat
-// baris SALDO AWAL bermakna.
+// Keputusan Kyai (31 Agu 2026), setelah tambalan 6 & 14 Agu masih menyisakan angka minus:
+//   "pastikan hasil ekspor nominal totalnya hanya hari itu (atau sesuai yg difilter),
+//    bukan diambil dari semua buku induk yg akhirnya terhitung minus."
+//
+// Maka SATU aturan untuk semua periode — harian, bulanan, tahunan:
+//   • kolom Saldo selalu MULAI NOL pada baris pertama yang tercetak, jadi ia saldo
+//     berjalan periode itu dan selisih antar baris persis sama dengan nominal barisnya;
+//   • baris TOTAL = masuk − keluar periode yang difilter. Inilah "nominal total" yang
+//     dicocokkan dengan uang setoran, dan ia TAK BISA lagi ikut minus gara-gara transaksi
+//     di luar periode;
+//   • posisi kas kumulatif tidak dibuang, tapi turun ke dua baris INFO di bawah TOTAL
+//     (SALDO KAS SEBELUM / SETELAH periode) yang dihitung dari ledger tersaring TANPA
+//     batas periode. Ia keterangan, bukan bagian dari total.
+//
+// Dengan begitu "saldo total jika diekspor semuanya tanpa filter" (keputusan 6 Agu) tetap
+// terpenuhi: tanpa penyaring, baris INFO "SETELAH" itu memang saldo kas seluruhnya.
 //
 // Semua fungsi PURE — tak menyentuh store, tanggal sistem, atau DOM.
 
@@ -85,19 +91,23 @@ export function saldoAwalSebelum(ledger, dariTanggal) {
  * Baris-baris laporan Buku Induk — dipakai bersama oleh PDF, Excel, dan Google Sheet
  * supaya tak ada dua bentuk laporan yang bisa berbeda diam-diam.
  *
- * Susunannya mengikuti buku kas yang lazim, sehingga angkanya bisa ditelusuri dari atas
- * ke bawah: SALDO AWAL → transaksi kronologis naik → SUBTOTAL per cara bayar → TOTAL,
- * dan pada baris TOTAL kolom Saldo berisi SALDO AKHIR (= saldo awal + masuk − keluar),
- * bukan sekadar selisih periode.
+ * Susunannya bisa ditelusuri dari atas ke bawah:
+ *   transaksi kronologis naik (saldo berjalan MULAI NOL)
+ *   → SUBTOTAL per cara bayar
+ *   → TOTAL  (masuk, keluar, dan pada kolom Saldo: masuk − keluar periode ini)
+ *   → INFO SALDO KAS SEBELUM / SETELAH periode  (opsional, sekadar keterangan)
+ *
+ * Baris INFO sengaja DI BAWAH total dan berlabel sendiri: posisi kas kumulatif tak boleh
+ * lagi bercampur ke angka yang dicocokkan dengan uang setoran (keputusan Kyai 31 Agu 2026).
  *
  * @param {object[]} list baris yang tercetak (sudah tersaring + terbatas periode)
  * @param {object} opts
- * @param {number} [opts.saldoAwal=0] saldo sebelum periode, dari saldoAwalSebelum()
- * @param {string} [opts.labelPeriode=''] mis. '3 Agustus 2026' — untuk keterangan baris awal
+ * @param {number} [opts.saldoAwal=0] saldo kas sebelum periode, dari saldoAwalSebelum()
+ * @param {string} [opts.labelPeriode=''] mis. '3 Agustus 2026' — dipakai baris INFO
  * @param {(b:object)=>string} [opts.metodeOf] resolver cara bayar
  * @param {string[]} [opts.metodeOpts=[]] daftar cara bayar untuk baris SUBTOTAL
  * @param {(l:object[])=>object} [opts.ringkasMetodeOf] rekap {metode:{masuk,keluar}}
- * @param {boolean} [opts.pakaiSaldoAwal=true] false = tanpa baris SALDO AWAL (saldo mulai 0)
+ * @param {boolean} [opts.infoSaldoKas=true] false = tanpa dua baris INFO saldo kas
  */
 export function bangunBarisLaporan(list, opts = {}) {
   const {
@@ -106,31 +116,34 @@ export function bangunBarisLaporan(list, opts = {}) {
     metodeOf = () => '',
     metodeOpts = [],
     ringkasMetodeOf = null,
-    pakaiSaldoAwal = true
+    infoSaldoKas = true
   } = opts
   const urut = [...(list || [])].sort(kronologis)
-  const awal = pakaiSaldoAwal ? Number(saldoAwal) || 0 : 0
   const rows = []
-
-  if (pakaiSaldoAwal) {
-    rows.push({
-      no: '',
-      tanggal: '',
-      no_struk: '',
-      keterangan: labelPeriode ? `SALDO AWAL (sebelum ${labelPeriode})` : 'SALDO AWAL',
-      kategori: '',
-      tipe: '',
-      metode: '',
-      masuk: 0,
-      keluar: 0,
-      saldo: awal,
-      _ringkas: true
-    })
-  }
+  const barisRingkas = (
+    keterangan,
+    { masuk = 0, keluar = 0, saldo = 0, metode = '', info = false } = {}
+  ) => ({
+    no: '',
+    tanggal: '',
+    no_struk: '',
+    keterangan,
+    kategori: '',
+    tipe: '',
+    metode,
+    masuk,
+    keluar,
+    saldo,
+    _ringkas: true,
+    // `_info` = keterangan posisi kas, BUKAN bagian dari total periode. Konsumen boleh
+    //   memberinya gaya sendiri; yang penting ia tak pernah ikut dijumlahkan.
+    _info: info
+  })
 
   let totMasuk = 0
   let totKeluar = 0
-  let berjalan = awal
+  // Saldo berjalan periode ini — sengaja mulai NOL, bukan dari saldo kas kumulatif.
+  let berjalan = 0
   urut.forEach((b, i) => {
     const masuk = nominalMasuk(b)
     const keluar = nominalKeluar(b)
@@ -154,42 +167,45 @@ export function bangunBarisLaporan(list, opts = {}) {
   })
 
   // Subtotal per cara bayar SEBELUM baris TOTAL — inti laporan harian kas. Kolom saldo
-  // di baris ini SENGAJA net per cara bayar (bukan saldo berjalan): yang dicocokkan
-  // dengan uang laci adalah selisih masuk-keluar hari itu.
+  // di baris ini net per cara bayar: yang dicocokkan dengan uang laci adalah selisih
+  // masuk-keluar periode itu.
   const rk = ringkasMetodeOf ? ringkasMetodeOf(urut) : null
   if (rk) {
     for (const m of metodeOpts) {
       const r = rk[m]
       if (!r || (r.masuk === 0 && r.keluar === 0)) continue
-      rows.push({
-        no: '',
-        tanggal: '',
-        no_struk: '',
-        keterangan: `SUBTOTAL ${String(m).toUpperCase()}`,
-        kategori: '',
-        tipe: '',
-        metode: m,
-        masuk: r.masuk,
-        keluar: r.keluar,
-        saldo: r.masuk - r.keluar,
-        _ringkas: true
-      })
+      rows.push(
+        barisRingkas(`SUBTOTAL ${String(m).toUpperCase()}`, {
+          metode: m,
+          masuk: r.masuk,
+          keluar: r.keluar,
+          saldo: r.masuk - r.keluar
+        })
+      )
     }
   }
 
-  rows.push({
-    no: '',
-    tanggal: '',
-    no_struk: '',
-    keterangan: `TOTAL (${urut.length} transaksi)`,
-    kategori: '',
-    tipe: '',
-    metode: '',
-    masuk: totMasuk,
-    keluar: totKeluar,
-    // SALDO AKHIR, bukan net periode — supaya SALDO AWAL + masuk − keluar bertemu di sini.
-    saldo: berjalan,
-    _ringkas: true
-  })
+  rows.push(
+    barisRingkas(`TOTAL (${urut.length} transaksi)`, {
+      masuk: totMasuk,
+      keluar: totKeluar,
+      // Selisih periode yang difilter — BUKAN posisi kas sejak transaksi pertama.
+      saldo: totMasuk - totKeluar
+    })
+  )
+
+  // Keterangan posisi kas. Dihitung dari ledger tersaring tanpa batas periode, jadi ia
+  // menjawab "kas irisan ini ada berapa" tanpa pernah menyentuh baris TOTAL di atas.
+  if (infoSaldoKas) {
+    const awal = Number(saldoAwal) || 0
+    const suffix = labelPeriode ? ` ${labelPeriode}` : ' PERIODE INI'
+    rows.push(barisRingkas(`INFO — SALDO KAS SEBELUM${suffix}`, { saldo: awal, info: true }))
+    rows.push(
+      barisRingkas(`INFO — SALDO KAS SETELAH${suffix}`, {
+        saldo: awal + totMasuk - totKeluar,
+        info: true
+      })
+    )
+  }
   return rows
 }
