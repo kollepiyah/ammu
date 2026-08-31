@@ -1329,7 +1329,9 @@ import { shiftsForGuru, shiftBatas as shiftBatasOf, deriveShift } from '@/utils/
 import { shiftList, shiftLabelOf, shiftById } from '@/utils/shiftMaster'
 import { materialisasiHadirIkut } from '@/utils/absensiMaterialize'
 import { guruAktifSaja } from '@/utils/guruScope' // v.1.2.0: sumber tunggal penyaring status guru
-import { getLembagaBroadGroup, canonLembaga } from '@/composables/useLembaga'
+// v.1.3.7: canonLembaga tak lagi dipanggil di sini — normalisasinya pindah ke
+//   utils/lembagaShift bersama aturan "shift ini milik lembaga apa".
+import { getLembagaBroadGroup } from '@/composables/useLembaga'
 import {
   indexAbsensiHarian,
   hitungSel,
@@ -1342,6 +1344,8 @@ import {
 } from '@/utils/absensiRekap'
 import { jsPDFFromCDN } from '@/services/pdf'
 import { buildLiburScope, liburKenaLembaga } from '@/utils/liburScope' // v.1.2.3: libur per lembaga
+// v.1.3.7: "shift ini milik lembaga apa" — sumber tunggal, dipakai juga PersonalView.
+import { lembagaKalenderShift, lembagaLabelShift } from '@/utils/lembagaShift'
 // v.21.114.0528: pakai kegiatan composable utk derive hari libur dari event multi-day
 import { useKegiatan } from '@/composables/useKegiatan'
 
@@ -2213,15 +2217,17 @@ const rekapPeriode = computed(() => {
   const { start, end } = rentangBulan(selectedYear.value, selectedMonth.value)
   return { start, end, label: `${getBulanLabel(selectedMonth.value)} ${selectedYear.value}` }
 })
+// v.1.3.7: dua pertanyaan berbeda, dua fungsi berbeda (lihat utils/lembagaShift).
+//   lembagaOfShift  = JUDUL kelompok baris rekap — boleh menebak, tak menentukan apa pun.
+//   lembagaCell     = lembaga yang KALENDERNYA dipakai menilai libur — tak boleh menebak.
+// Sampai v.1.3.7 keduanya dijawab satu tebakan hardcoded, dan tebakan itulah yang membuat
+//   guru "sekolah + ngaji" tercatat alpa di hari sekolahnya libur (keluhan Kyai 31 Agu 2026).
 function lembagaOfShift(g, shift) {
-  const sh = String(shift).toLowerCase()
-  const raw = sh === 'sekolah' ? g.lembaga_sekolah || g.lembaga : g.lembaga || g.lembaga_sekolah
-  return canonLembaga(raw || '') || '(Tanpa Lembaga)'
+  return lembagaLabelShift(g, shift, settingsStore.settings || {})
 }
-// v.1.2.3: lembaga sebuah sel matrix (guruId + shift) — utk cek libur per lembaga.
 function lembagaCell(guruId, shift) {
   const g = (guruRaw.value || []).find((x) => String(x.id) === String(guruId))
-  return g ? lembagaOfShift(g, shift) : ''
+  return g ? lembagaKalenderShift(g, shift, settingsStore.settings || {}) : ''
 }
 function kelompokKeyOf(lembaga) {
   return getLembagaBroadGroup(lembaga) || 'lainnya'
@@ -2235,9 +2241,12 @@ const rekapUnitData = computed(() => {
   const km = new Map() // kelompokKey -> Map(lembaga -> {lembaga, rows, sub})
   for (const g of guruAktif.value) {
     for (const shift of shiftsForGuru(g, s)) {
-      const lembaga = lembagaOfShift(g, shift)
+      const lembaga = lembagaOfShift(g, shift) // judul kelompok
       // v.1.2.3: hari kerja PER LEMBAGA shift ini — libur sekolah tak meng-alpa-kan ngaji.
-      const kerja = range.filter((iso) => !isLiburIso(iso, lembaga))
+      // v.1.3.7: yang dipakai menyaring libur WAJIB lembaga kalender, bukan judul di atas —
+      //   judul boleh hasil tebakan (mis. lembaga ngaji dipinjam saat lembaga_sekolah kosong),
+      //   dan meminjam lembaga milik shift lain persis penyebab alpa palsu itu.
+      const kerja = range.filter((iso) => !isLiburIso(iso, lembagaKalenderShift(g, shift, s)))
       const sel = hitungSel(idx, g.id, shift, kerja, today)
       if (sel.total === 0) continue // tak ada aktivitas & bukan hari kerja lewat → lewati
       const kk = kelompokKeyOf(lembaga)

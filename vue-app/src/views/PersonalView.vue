@@ -803,7 +803,8 @@ import { useSettingsStore } from '@/stores/settings'
 import { shiftsForGuru } from '@/utils/shiftDerive'
 import { shiftLabelOf } from '@/utils/shiftMaster'
 import { buildLiburScope, liburKenaLembaga } from '@/utils/liburScope' // v.1.2.3: alpa hormati libur per lembaga
-import { canonLembaga } from '@/composables/useLembaga'
+// v.1.3.7: sumber tunggal "shift ini milik lembaga apa" (dulu disalin inline di sini).
+import { lembagaKalenderShift } from '@/utils/lembagaShift'
 // v.1.2.3: grafik kehadiran per bulan (KPI pribadi)
 import { Line } from 'vue-chartjs'
 import {
@@ -945,9 +946,13 @@ const kehadiran = computed(() => {
       if (liburGlobal.has(iso)) continue // libur manual pondok (semua lembaga)
       for (const sh of shifts) {
         const key = String(sh).toLowerCase()
-        const lem =
-          key === 'sekolah' ? g.lembaga_sekolah || g.lembaga : g.lembaga || g.lembaga_sekolah
-        if (liburKenaLembaga(liburMap, iso, canonLembaga(lem || ''))) continue // libur lembaga shift
+        // v.1.3.7: dulu di sini ada SALINAN aturan "shift ini milik lembaga apa" yang
+        //   identik dengan salinan di AbsensiGuruView — dan salah dengan cara yang sama:
+        //   shift sekolah tanpa `lembaga_sekolah` memakai lembaga NGAJI, jadi libur
+        //   sekolah tak mengenainya dan hari itu jadi alpa (Kyai, 31 Agu 2026). Sekarang
+        //   satu sumber: utils/lembagaShift, yang membaca kolom "Khusus Lembaga" shift.
+        const lem = lembagaKalenderShift(g, key, s)
+        if (liburKenaLembaga(liburMap, iso, lem)) continue // libur lembaga shift
         if (!filled.has(iso + '|' + key)) alpa++
       }
     }
