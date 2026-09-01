@@ -183,3 +183,12 @@ splash.duplicate-bak.png           # duplikat splash.png
 # memprettier-kan berkas ini, tsc menulisnya ulang tanpa format itu, dan `git status`
 # kotor terus-menerus padahal isinya identik.
 vue-app/electron/build/
+
+# === 1 Sep 2026: berkas kerja Claude Code =====================================
+# .claude/worktrees/ berisi SALINAN PENUH repo ini (satu direktori per worktree).
+# Tanpa baris ini, sekali `git add -A` saja tiga salinan repo ikut ter-commit.
+# settings.local.json = setelan per-mesin (izin tool), bukan milik repo.
+# Yang SENGAJA tetap dilacak: .claude/launch.json — konfigurasi server dev
+# (`npm run dev` di vue-app, port 5174) yang berguna dipakai ulang siapa pun.
+.claude/worktrees/
+.claude/settings.local.json
