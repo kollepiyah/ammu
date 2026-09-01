@@ -263,6 +263,61 @@
               <i class="fas fa-info-circle mr-1"></i>Menentukan kolom absensi &amp; bonus kehadiran
               di slip bisyaroh. Tak dicentang = tidak diabsen di shift itu.
             </p>
+
+            <!-- v.1.3.8 (Kyai 1 Sep 2026): jadwal HARI per shift. Guru yang tak masuk
+                 tiap hari dulu dialpakan di hari yang bukan jadwalnya, dan JP-nya ikut
+                 dibagi hari lembaga sehingga bisyarohnya terpotong. -->
+            <div
+              v-if="(form.shift_ids || []).length > 0"
+              class="pt-2 mt-1 border-t border-[var(--border-subtle)] space-y-2"
+            >
+              <label class="block text-xs font-bold text-indigo-600 uppercase">Jadwal Hari</label>
+              <div
+                v-for="s in shiftOptions.filter((x) => (form.shift_ids || []).includes(x.id))"
+                :key="'jd-' + s.id"
+                class="bg-[var(--bg-card)] rounded-lg p-2.5 border border-[var(--border-subtle)]"
+              >
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                  <span class="text-xs font-bold text-[var(--text-primary)]">{{ s.label }}</span>
+                  <label
+                    class="inline-flex items-center gap-1.5 text-[10px] font-bold cursor-pointer text-[var(--text-secondary)]"
+                  >
+                    <input
+                      type="checkbox"
+                      class="w-3.5 h-3.5 accent-indigo-600"
+                      :checked="jadwalKhususAktif(s.id)"
+                      @change="toggleJadwalKhusus(s.id)"
+                    />
+                    Hari tertentu saja
+                  </label>
+                </div>
+                <div v-if="jadwalKhususAktif(s.id)" class="flex flex-wrap gap-1 mt-2">
+                  <button
+                    v-for="(hl, d) in HARI_LABELS"
+                    :key="'jd-' + s.id + '-' + d"
+                    type="button"
+                    :class="[
+                      'px-2.5 py-1.5 rounded-lg text-[11px] font-bold border transition',
+                      hariShiftAktif(s.id, d)
+                        ? 'bg-indigo-600 text-white border-indigo-600'
+                        : 'border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-elevated)]'
+                    ]"
+                    @click="toggleHariShift(s.id, d)"
+                  >
+                    {{ hl.slice(0, 3) }}
+                  </button>
+                </div>
+                <p class="text-[10px] text-[var(--text-tertiary)] italic mt-1.5">
+                  {{ ringkasJadwal(s.id) }}
+                </p>
+              </div>
+              <p class="text-[10px] text-[var(--text-secondary)] italic">
+                <i class="fas fa-info-circle mr-1"></i>Biarkan mati bila guru masuk tiap hari kerja
+                lembaga &mdash; itu perilaku lama, tak ada yang berubah. Nyalakan hanya untuk guru
+                paruh-waktu: hari yang tidak dicentang <b>tidak dihitung alpa</b>, dan JP/minggu-nya
+                dibagi ke hari itu saja (bukan ke seluruh hari sekolah).
+              </p>
+            </div>
           </div>
           <!-- Kyai 7 Agu 2026: field lama `tanggal_tugas` DIGANTI NAMANYA jadi "Tgl. Syahadah"
                (kuncinya sengaja tetap — NIG diturunkan darinya). Masa pengabdian dihitung dari
@@ -476,6 +531,13 @@ const {
   shiftOptions,
   toggleShift,
   syncShiftIdsKeTipe,
+  // v.1.3.8: jadwal hari mengajar per shift
+  HARI_LABELS,
+  jadwalKhususAktif,
+  toggleJadwalKhusus,
+  hariShiftAktif,
+  toggleHariShift,
+  ringkasJadwal,
   unitsJabatan,
   jabatanPunyaUnit,
   unitTerpilih,

@@ -95,11 +95,33 @@ export function hariAktifOf(settings, lembaga) {
  *
  * Nilainya boleh PECAHAN (mis. 25 JP ÷ 6 hari = 4,1667). Pembulatan sengaja ditahan
  * sampai ujung (rupiah), supaya tak ada rugi/lebih yang menumpuk tiap hari.
+ *
+ * v.1.3.8 (Kyai, 1 Sep 2026) — `hariGuru`: hari mengajar KHUSUS guru ini di lembaga
+ * tsb (dari utils/jadwalGuru), menggantikan hari aktif lembaga sebagai PEMBAGI.
+ * Sebelum ini guru 12 JP yang hanya masuk 3 hari dibagi 6 → 2 JP/hari × 3 hari hadir
+ * = 6 JP, dibayar SEPARUH. Kyai menegaskan jp_minggu yang sudah diisi memang JP
+ * sepekan yang sebenarnya, jadi yang keliru cuma pembaginya: 12 ÷ 3 = 4 JP/hari × 3
+ * hari = 12 JP, utuh.
+ *
+ * Bila hari guru dan hari aktif lembaga sama-sama ada, yang dipakai IRISANNYA —
+ * sekolah yang libur Jumat tak boleh membayar JP hari Jumat hanya karena jadwal guru
+ * menyebut Jumat. Irisan kosong (data saling bertentangan) → jatuh ke hari guru, bukan
+ * ke nol: menihilkan bisyaroh diam-diam jauh lebih berbahaya daripada sedikit lebih.
+ *
+ * @param {number[]|null} [hariGuru] hari 0..6; null/kosong = ikut hari aktif lembaga.
  */
-export function jpPerHariForGuru(settings, guruId, lembaga) {
+export function jpPerHariForGuru(settings, guruId, lembaga, hariGuru = null) {
   const lem = canonLembaga(lembaga || '')
   const jpm = jpByLembagaForGuru(settings, guruId)[lem || '-'] || 0
-  const hari = hariAktifOf(settings, lem) || HARI_AKTIF_DEFAULT
+  const lembagaHari = hariAktifOf(settings, lem) || HARI_AKTIF_DEFAULT
+  const guruHari = Array.isArray(hariGuru)
+    ? [...new Set(hariGuru.map(Number).filter((n) => Number.isInteger(n) && n >= 0 && n <= 6))]
+    : []
+  let hari = lembagaHari
+  if (guruHari.length) {
+    const irisan = guruHari.filter((d) => lembagaHari.includes(d))
+    hari = irisan.length ? irisan : guruHari
+  }
   const out = {}
   if (!(jpm > 0) || !hari.length) return out
   const per = jpm / hari.length

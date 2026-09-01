@@ -1489,6 +1489,8 @@ import { shiftLabelOf, shiftList } from '@/utils/shiftMaster'
 import { materialisasiHadirIkut } from '@/utils/absensiMaterialize'
 import { guruAktifSaja } from '@/utils/guruScope' // v.1.2.0: sumber tunggal penyaring status guru
 import { jpByLembagaForGuru, jpPerHariForGuru, jpDiajarPeriode } from '@/utils/bebanMengajar'
+// v.1.3.8: jadwal hari per guru — PEMBAGI JP & penyebut hari efektif (Kyai, 1 Sep 2026).
+import { hariGuruLembaga, guruMasukPada } from '@/utils/jadwalGuru'
 // v.1.3.0: simulasi plafon bisyaroh (hadir penuh) — memakai ulang barisBisyaroh.
 import {
   hariEfektif,
@@ -2161,7 +2163,12 @@ function efektifPerShiftGuru(g, tgls) {
   for (const sh of shiftsForGuru(g, s)) {
     const daftar = shiftList(s).find((x) => String(x.id) === String(sh))
     const lem = (Array.isArray(daftar?.lembaga) ? daftar.lembaga : [])[0] || ''
-    out[String(sh).toLowerCase()] = hariEfektif(tgls, liburSetPeriode(lem))
+    // v.1.3.8: hari efektif = hari efektif LEMBAGA yang juga jadwal mengajar guru ini.
+    //   Ini penyebut "100% tepat waktu" (flat_ambang). Tanpa penyaringan ini guru yang
+    //   mengajar 3 hari/pekan mentok di ±50% dan bonus tepat waktunya TAK PERNAH cair —
+    //   bukan karena dia telat, tapi karena disuruh hadir di hari yang bukan jadwalnya.
+    const jadwalnya = tgls.filter((t) => guruMasukPada(g, sh, t))
+    out[String(sh).toLowerCase()] = hariEfektif(jadwalnya, liburSetPeriode(lem))
   }
   return out
 }
@@ -2195,7 +2202,9 @@ function ctxGuruPenuh(g, periode) {
       tgls.filter((t) => !libur.has(t) && new Date(t + 'T00:00:00Z').getUTCDay() !== 0)
     )
     jpDiajarByLembaga[lem] = jpDiajarPeriode({
-      jpPerHari: jpPerHariForGuru(s, g.id, lem),
+      // v.1.3.8: pembagi sama dengan slip sungguhan — kalau simulasi memakai pembagi lain,
+      //   plafon yang Kyai pakai menyusun anggaran tak lagi seatap dengan yang dibayar.
+      jpPerHari: jpPerHariForGuru(s, g.id, lem, hariGuruLembaga(g, lem, s)),
       tanggalList: tgls,
       hadirSet,
       liburSet: libur
@@ -2419,7 +2428,10 @@ function ctxGuru(g, periode) {
     // Kehadiran diambil dari shift yang ber-scope lembaga ini (fallback 'sekolah').
     //   v.1.2.3: libur PER LEMBAGA — libur sekolah tak memotong JP lembaga lain.
     jpDiajarByLembaga[lem] = jpDiajarPeriode({
-      jpPerHari: jpPerHariForGuru(s, g.id, lem),
+      // v.1.3.8: PEMBAGI = hari mengajar guru ini di lembaga tsb bila diatur. Guru 12 JP
+      //   yang masuk 3 hari dulu dibagi 6 → 2 JP/hari × 3 hari hadir = 6 JP (separuh).
+      //   Kini 12 ÷ 3 = 4 JP/hari × 3 hari = 12 JP, utuh.
+      jpPerHari: jpPerHariForGuru(s, g.id, lem, hariGuruLembaga(g, lem, s)),
       tanggalList: tgls,
       hadirSet: tanggalHadirSekolah(g.id, periode, shiftIdsUntukLembaga(lem)),
       liburSet: liburSetPeriode(lem)

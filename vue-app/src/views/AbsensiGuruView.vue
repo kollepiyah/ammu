@@ -1291,6 +1291,11 @@
             A=Alpha &middot; Blm Plg=hadir tanpa absen pulang. Hari efektif Senin–Sabtu; Ahad/Minggu
             &amp; hari libur kalender dikecualikan.
           </p>
+          <!-- v.1.3.8: dua sebab sel bisa kosong, dan Kyai perlu bisa membedakannya. -->
+          <p class="text-[10px] text-[var(--text-tertiary)] italic mt-1">
+            L=Libur lembaga &middot; &ldquo;&middot;&rdquo;=bukan hari mengajarnya (jadwal guru
+            diatur di Form Guru &rsaquo; Jadwal Hari) &mdash; keduanya tidak dihitung alpa.
+          </p>
         </div>
       </div>
 
@@ -1346,6 +1351,8 @@ import { jsPDFFromCDN } from '@/services/pdf'
 import { buildLiburScope, liburKenaLembaga } from '@/utils/liburScope' // v.1.2.3: libur per lembaga
 // v.1.3.7: "shift ini milik lembaga apa" — sumber tunggal, dipakai juga PersonalView.
 import { lembagaKalenderShift, lembagaLabelShift } from '@/utils/lembagaShift'
+// v.1.3.8: "tanggal ini jadwal mengajarnya atau bukan" — guru paruh-waktu tak lagi dialpakan.
+import { guruMasukPada, tanggalBukanJadwal } from '@/utils/jadwalGuru'
 // v.21.114.0528: pakai kegiatan composable utk derive hari libur dari event multi-day
 import { useKegiatan } from '@/composables/useKegiatan'
 
@@ -2225,9 +2232,27 @@ const rekapPeriode = computed(() => {
 function lembagaOfShift(g, shift) {
   return lembagaLabelShift(g, shift, settingsStore.settings || {})
 }
+// Peta id → baris guru. Matriks bulanan memanggil ini per SEL (guru × shift × 31 hari),
+//   jadi pencarian linear yang dulu dipakai lembagaCell berlipat begitu jadwal ikut
+//   ditanyakan tiap sel. Satu Map menghapus lipatannya.
+const guruById = computed(() => {
+  const m = new Map()
+  for (const g of guruRaw.value || []) m.set(String(g.id), g)
+  return m
+})
+function guruRow(guruId) {
+  return guruById.value.get(String(guruId)) || null
+}
 function lembagaCell(guruId, shift) {
-  const g = (guruRaw.value || []).find((x) => String(x.id) === String(guruId))
+  const g = guruRow(guruId)
   return g ? lembagaKalenderShift(g, shift, settingsStore.settings || {}) : ''
+}
+// v.1.3.8: sel matriks yang jatuh di luar jadwal mengajar guru ini. Dibedakan dari
+//   libur (huruf 'L', merah) supaya Kyai bisa melihat SEBAB sel itu kosong: libur
+//   lembaga, atau memang bukan harinya guru tsb.
+function bukanJadwalCell(guruId, shift, d) {
+  const g = guruRow(guruId)
+  return g ? !guruMasukPada(g, shift, isoDateOf(d)) : false
 }
 function kelompokKeyOf(lembaga) {
   return getLembagaBroadGroup(lembaga) || 'lainnya'
@@ -2247,7 +2272,9 @@ const rekapUnitData = computed(() => {
       //   judul boleh hasil tebakan (mis. lembaga ngaji dipinjam saat lembaga_sekolah kosong),
       //   dan meminjam lembaga milik shift lain persis penyebab alpa palsu itu.
       const kerja = range.filter((iso) => !isLiburIso(iso, lembagaKalenderShift(g, shift, s)))
-      const sel = hitungSel(idx, g.id, shift, kerja, today)
+      // v.1.3.8: hari di luar jadwal guru ini tetap DIHITUNG (kalau ternyata ada barisnya,
+      //   guru itu memang datang), tapi tak boleh jadi alpa saat kosong.
+      const sel = hitungSel(idx, g.id, shift, kerja, today, tanggalBukanJadwal(g, shift, kerja))
       if (sel.total === 0) continue // tak ada aktivitas & bukan hari kerja lewat → lewati
       const kk = kelompokKeyOf(lembaga)
       if (!km.has(kk)) km.set(kk, new Map())
@@ -2620,6 +2647,8 @@ function cellText(guruId, shift, d) {
   const a = getAbsensiCell(guruId, shift, d)
   if (!a) {
     // kosong & hari sudah lewat = alpha; hari depan = belum terjadi (kosong)
+    // v.1.3.8: kecuali memang bukan jadwalnya — titik, bukan 'A'.
+    if (bukanJadwalCell(guruId, shift, d)) return '·'
     const today = todayJakarta()
     return isoDateOf(d) <= today ? 'A' : ''
   }
@@ -2639,6 +2668,11 @@ function cellClass(guruId, shift, d) {
   if (isHariLibur(d, lembagaCell(guruId, shift))) return 'bg-rose-200 text-rose-800'
   const a = getAbsensiCell(guruId, shift, d)
   if (!a) {
+    // v.1.3.8: bukan jadwalnya → abu-abu netral, sengaja TIDAK merah. Warna merah di
+    //   kolom ini selama ini berarti "ada yang salah"; hari yang memang bukan jadwal
+    //   guru tak boleh terlihat begitu.
+    if (bukanJadwalCell(guruId, shift, d))
+      return 'bg-[var(--bg-card-elevated)] text-[var(--text-tertiary)] opacity-60'
     const today = todayJakarta()
     return isoDateOf(d) <= today
       ? 'bg-rose-100 text-rose-700'
@@ -2657,6 +2691,8 @@ function cellTitle(guruId, shift, d) {
   if (isHariLibur(d, lembagaCell(guruId, shift))) return iso + ' — Libur'
   const a = getAbsensiCell(guruId, shift, d)
   if (!a) {
+    if (bukanJadwalCell(guruId, shift, d))
+      return iso + ' — Bukan jadwal mengajarnya [' + shiftLabel(shift) + ']'
     const today = todayJakarta()
     return iso + (iso <= today ? ' — Alpha' : ' — (belum)') + ' [' + shiftLabel(shift) + ']'
   }
@@ -2691,6 +2727,9 @@ function countStatus(guruId, shift, statuses) {
 }
 
 // Alpha = hari kerja (non-libur utk lembaga shift ini) yg sudah lewat tanpa record.
+// v.1.3.8: hari di luar jadwal guru dilewati saat KOSONG — tapi baris 'alpa' yang
+//   ditandai Kyai sendiri di hari seperti itu tetap dihitung (itu penilaian manusia,
+//   bukan simpulan sistem dari sel kosong).
 function countAlpha(guruId, shift) {
   const today = todayJakarta()
   const lem = lembagaCell(guruId, shift)
@@ -2699,6 +2738,7 @@ function countAlpha(guruId, shift) {
     if (isHariLibur(d, lem)) continue
     if (isoDateOf(d) > today) continue
     const a = getAbsensiCell(guruId, shift, d)
+    if (!a && bukanJadwalCell(guruId, shift, d)) continue
     // Dua bentuk alpa, dan keduanya harus terhitung SEKALI: tak ada baris sama sekali,
     //   ATAU baris ber-status 'alpa' hasil perbaikan manual. Sehari hanya punya satu
     //   baris, jadi cabang if/else ini tak mungkin menghitung ganda.

@@ -803,6 +803,7 @@ import { useSettingsStore } from '@/stores/settings'
 import { shiftsForGuru } from '@/utils/shiftDerive'
 import { shiftLabelOf } from '@/utils/shiftMaster'
 import { buildLiburScope, liburKenaLembaga } from '@/utils/liburScope' // v.1.2.3: alpa hormati libur per lembaga
+import { guruMasukPada } from '@/utils/jadwalGuru' // v.1.3.8: alpa hormati jadwal mengajar guru
 // v.1.3.7: sumber tunggal "shift ini milik lembaga apa" (dulu disalin inline di sini).
 import { lembagaKalenderShift } from '@/utils/lembagaShift'
 // v.1.2.3: grafik kehadiran per bulan (KPI pribadi)
@@ -953,6 +954,9 @@ const kehadiran = computed(() => {
         //   satu sumber: utils/lembagaShift, yang membaca kolom "Khusus Lembaga" shift.
         const lem = lembagaKalenderShift(g, key, s)
         if (liburKenaLembaga(liburMap, iso, lem)) continue // libur lembaga shift
+        // v.1.3.8: hari yang memang bukan jadwal mengajarnya bukan alpa (Kyai, 1 Sep 2026).
+        //   Guru 3 hari/pekan sebelumnya melihat ±12 alpa di kartunya sendiri tiap bulan.
+        if (!guruMasukPada(g, key, iso)) continue
         if (!filled.has(iso + '|' + key)) alpa++
       }
     }

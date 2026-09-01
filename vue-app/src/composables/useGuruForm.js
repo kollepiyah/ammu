@@ -15,6 +15,18 @@ import { shiftList, shiftIdsToLegacy } from '@/utils/shiftMaster'
 // v.1.1.9: unit tugas dari master/jabatan (ganti tebakan regex lama)
 import { unitsOfGuru, fieldForUnit, namaLembaga, pecahJabatan } from '@/utils/jabatanUnit'
 import { isSekolahLembaga } from '@/composables/useLembaga' // v.1.2.1: sumber tunggal deteksi sekolah
+// v.1.3.8: jadwal hari mengajar per shift (Kyai, 1 Sep 2026 — alpa palsu guru paruh-waktu).
+import { jadwalMap, normHariList, HARI_LABELS } from '@/utils/jadwalGuru'
+
+/** Buang jadwal milik shift yang tak lagi dicentang + normalkan isinya. */
+function bersihkanJadwal(peta, shiftIds) {
+  const boleh = new Set((Array.isArray(shiftIds) ? shiftIds : []).map(String))
+  const out = {}
+  for (const [id, hari] of Object.entries(jadwalMap({ hari_shift: peta }))) {
+    if (boleh.has(id)) out[id] = hari
+  }
+  return out
+}
 
 function emptyForm() {
   return {
@@ -43,6 +55,9 @@ function emptyForm() {
     //   Menggantikan pasangan shift/shift_pegawai yang artinya berganti-ganti tergantung
     //   tipe_pegawai. Keduanya masih DITULIS sbg cermin (lihat save) demi fp_sync.py.
     shift_ids: [],
+    // v.1.3.8: hari mengajar per shift — { [shiftId]: [1,3,5] }, 0=Ahad … 6=Sabtu.
+    //   Kosong = ikut hari kerja lembaga (perilaku sebelum 1 Sep 2026). Lihat utils/jadwalGuru.
+    hari_shift: {},
     role_sistem: 'user',
     // v.111: gedung yang dikelola (khusus admin_keuangan → scope Buku Kas + akademik)
     gedung: '',
@@ -424,6 +439,58 @@ export function useGuruForm() {
     form.value.shift_ids = cur
   }
 
+  // ── v.1.3.8 · JADWAL HARI PER SHIFT ─────────────────────────────────────────
+  // Kyai (1 Sep 2026): "guru yg mengajarnya tidak full senin-sabtu terhitung punya
+  //   alpa banyak". Dua keadaan yang sengaja dibuat EKSPLISIT, bukan ditebak dari
+  //   isi daftar: "ikut hari kerja lembaga" (tak ada kunci) vs "hari tertentu"
+  //   (ada kunci berisi hari). Tanpa pemisahan itu, daftar yang kebetulan berisi
+  //   6 hari tak bisa dibedakan dari yang belum pernah diatur — dan bedanya nyata
+  //   begitu hari aktif lembaga diubah.
+  function jadwalKhususAktif(shiftId) {
+    return Array.isArray(form.value.hari_shift?.[String(shiftId)])
+  }
+
+  /** Nyalakan/matikan jadwal khusus untuk 1 shift. Menyala = di-seed Senin–Sabtu,
+   *  jadi Kyai tinggal MEMATIKAN hari yang tak diajar (lebih sedikit klik, dan
+   *  keadaan awalnya sama dengan perilaku lama = tak ada yang berubah tak sengaja). */
+  function toggleJadwalKhusus(shiftId) {
+    const id = String(shiftId)
+    const peta = { ...(form.value.hari_shift || {}) }
+    if (Array.isArray(peta[id])) delete peta[id]
+    else peta[id] = [1, 2, 3, 4, 5, 6]
+    form.value.hari_shift = peta
+  }
+
+  function hariShiftAktif(shiftId, d) {
+    const arr = form.value.hari_shift?.[String(shiftId)]
+    return Array.isArray(arr) && arr.includes(Number(d))
+  }
+
+  function toggleHariShift(shiftId, d) {
+    const id = String(shiftId)
+    const hari = Number(d)
+    const peta = { ...(form.value.hari_shift || {}) }
+    const cur = normHariList(peta[id])
+    const i = cur.indexOf(hari)
+    if (i >= 0) cur.splice(i, 1)
+    else cur.push(hari)
+    // Nol hari = guru tak pernah masuk — hampir pasti salah klik, dan akibatnya senyap
+    //   (bisyaroh per_jp jadi nol). Ditahan di sini, sama seperti Hari Aktif Sekolah.
+    if (!cur.length)
+      return toast.warning('Minimal satu hari — matikan "hari tertentu" bila ingin ikut lembaga')
+    peta[id] = normHariList(cur)
+    form.value.hari_shift = peta
+  }
+
+  /** Ringkasan siap tampil, mis. "Senin, Rabu, Jumat" atau "Tiap hari kerja". */
+  function ringkasJadwal(shiftId) {
+    const arr = form.value.hari_shift?.[String(shiftId)]
+    if (!Array.isArray(arr) || !arr.length) return 'Tiap hari kerja lembaga'
+    return normHariList(arr)
+      .map((d) => HARI_LABELS[d])
+      .join(', ')
+  }
+
   // Ganti tipe pegawai → buang shift yang tak lagi ditawarkan (mis. guru→pegawai:
   //   shift mengajar gugur). Dulu ini `form.shift = ''` yang justru MENGOSONGKAN input
   //   shift kerja pegawai yang baru mau diisi → tersimpan '' → pembaca legacy
@@ -486,6 +553,9 @@ export function useGuruForm() {
           Array.isArray(g.shift_ids) && g.shift_ids.length > 0
             ? g.shift_ids.map(String)
             : [...shiftsForGuru(g, settings.settings || {})],
+        // v.1.3.8: jadwal hari per shift. Dinormalisasi saat dibaca supaya nilai sampah
+        //   dari impor lama tak ikut tersimpan balik.
+        hari_shift: jadwalMap(g),
         role_sistem: g.role_sistem || 'user',
         gedung: g.gedung || '',
         custom_fields: g.custom_fields || {}
@@ -590,6 +660,10 @@ export function useGuruForm() {
         //   kosong ditafsirkan pembaca legacy jadi 'pagi_sore' → bonus 2 shift).
         shift_ids: [...(f.shift_ids || [])],
         ...shiftIdsToLegacy(f.shift_ids, f.tipe_pegawai),
+        // v.1.3.8: jadwal hari hanya untuk shift yang MASIH dicentang — kalau tidak,
+        //   shift yang di-uncheck meninggalkan jadwal yatim yang diam-diam hidup lagi
+        //   saat shift itu dicentang ulang berbulan-bulan kemudian.
+        hari_shift: bersihkanJadwal(f.hari_shift, f.shift_ids),
         role_sistem: isSuperAdmin.value ? f.role_sistem : 'user',
         // v.111: gedung hanya bermakna utk admin_keuangan; selain itu kosongkan
         gedung: isSuperAdmin.value && f.role_sistem === 'admin_keuangan' ? f.gedung || '' : '',
@@ -694,6 +768,13 @@ export function useGuruForm() {
     shiftOptions,
     toggleShift,
     syncShiftIdsKeTipe,
+    // v.1.3.8: jadwal hari per shift
+    HARI_LABELS,
+    jadwalKhususAktif,
+    toggleJadwalKhusus,
+    hariShiftAktif,
+    toggleHariShift,
+    ringkasJadwal,
     ROLE_SISTEM_OPTIONS,
     JABATAN_GURU_GROUP,
     JABATAN_PEGAWAI_GROUP,

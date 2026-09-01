@@ -72,7 +72,14 @@ export function indexAbsensiHarian(rows) {
 
 // Hitung 1 sel rekap (guru,shift) atas tanggalKerja (sudah non-libur).
 // Alpha = tanggalKerja <= today yang tak ada record. belumPulang = hadir/terlambat tanpa jam_pulang.
-export function hitungSel(index, guruId, shift, tanggalKerja, todayIso) {
+//
+// v.1.3.8 `bukanJadwal` (Set of ISO) = hari yang bukan jadwal mengajar guru ini
+// (utils/jadwalGuru). Hari seperti itu boleh KOSONG tanpa jadi alpa — itulah inti
+// perbaikan 1 Sep 2026. Yang sengaja TIDAK dilakukan: membuang tanggalnya dari daftar.
+// Guru yang tetap datang di luar jadwal punya baris absensi sungguhan, dan baris itu
+// harus tetap terhitung hadir — kalau tanggalnya dibuang, kehadiran itu lenyap dan
+// bisyaroh `× kehadiran`-nya ikut hilang. Jadi: yang digugurkan hanya HUKUMANNYA.
+export function hitungSel(index, guruId, shift, tanggalKerja, todayIso, bukanJadwal = null) {
   let H = 0,
     T = 0,
     I = 0,
@@ -82,10 +89,11 @@ export function hitungSel(index, guruId, shift, tanggalKerja, todayIso) {
     belumPulang = 0
   const gid = String(guruId)
   const sh = String(shift).toLowerCase()
+  const lepas = bukanJadwal instanceof Set ? bukanJadwal : new Set(bukanJadwal || [])
   for (const iso of tanggalKerja) {
     const a = index.get(gid + '|' + sh + '|' + iso)
     if (!a) {
-      if (iso <= todayIso) A++
+      if (iso <= todayIso && !lepas.has(iso)) A++
       continue
     }
     const st = String(a.status || 'hadir').toLowerCase()
