@@ -12,11 +12,17 @@
       class="bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl p-5 md:p-6 text-white shadow-lg"
     >
       <p class="text-[10px] font-black uppercase tracking-widest opacity-90">
-        <i class="fas fa-user-clock mr-1"></i>Guru Belum Input Data Santri
+        <i class="fas fa-user-clock mr-1"></i>Guru Belum Isi Rekap Prestasi
       </p>
       <h2 class="text-xl md:text-2xl font-black mt-1">Periode {{ periodeLabel }}</h2>
       <p class="text-xs md:text-sm font-medium mt-1 opacity-90">
-        {{ guruBelumInput.length }} guru &middot; {{ totalSantriBelum }} santri belum diinput
+        {{ guruBelumInput.length }} guru &middot; {{ totalSantriBelum }} santri belum dinilai
+      </p>
+      <!-- v.1.3.8: rekap diisi untuk bulan LALU, batas tanggal 5 (Kyai, 1 Sep 2026). -->
+      <p v-if="batasLabel" class="text-[11px] font-bold mt-2 opacity-95">
+        <i class="fas fa-clock mr-1"></i>PTPT &amp; PPPH &mdash;
+        <span v-if="rekapSudahTerlambat">sudah lewat batas ({{ batasLabel }})</span>
+        <span v-else>batas pengisian {{ batasLabel }}</span>
       </p>
     </div>
 
@@ -35,7 +41,7 @@
     >
       <i class="fas fa-circle-check text-emerald-500 text-4xl mb-2"></i>
       <p class="text-sm font-bold text-emerald-700 dark:text-emerald-300">
-        Semua guru sudah input bulan ini 🎉
+        Semua guru sudah mengisi rekap {{ periodeLabel }} 🎉
       </p>
     </div>
 
@@ -99,7 +105,8 @@ import { useRouter } from 'vue-router'
 import { useStatistikScope } from '@/composables/useStatistikScope'
 
 const router = useRouter()
-const { isAdminMode, guruBelumInput, periodeKeyNow } = useStatistikScope()
+const { isAdminMode, guruBelumInput, periodeRekap, batasRekapNow, rekapSudahTerlambat } =
+  useStatistikScope()
 
 const open = ref({})
 function toggle(guru) {
@@ -122,9 +129,14 @@ const NAMA_BULAN = [
   'November',
   'Desember'
 ]
+// v.1.3.8: yang ditagih adalah rekap bulan LALU (Kyai, 1 Sep 2026) — bukan bulan berjalan.
 const periodeLabel = computed(() => {
-  const m = String(periodeKeyNow.value).match(/^(\d{4})_(\d{2})$/)
-  return m ? `${NAMA_BULAN[parseInt(m[2]) - 1]} ${m[1]}` : periodeKeyNow.value
+  const m = String(periodeRekap.value).match(/^(\d{4})-(\d{2})$/)
+  return m ? `${NAMA_BULAN[parseInt(m[2]) - 1]} ${m[1]}` : periodeRekap.value
+})
+const batasLabel = computed(() => {
+  const m = String(batasRekapNow.value).match(/^(\d{4})-(\d{2})-(\d{2})$/)
+  return m ? `${parseInt(m[3])} ${NAMA_BULAN[parseInt(m[2]) - 1]} ${m[1]}` : ''
 })
 
 function goSantri(id) {

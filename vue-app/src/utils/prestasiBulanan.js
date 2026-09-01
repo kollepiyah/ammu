@@ -154,3 +154,64 @@ export function payloadRiwayatPrestasi({
 export function sudahDinilaiBulan(nilai) {
   return !!(_teks(nilai?.awal) || _teks(nilai?.akhir) || _teks(nilai?.total))
 }
+
+// ── v.1.3.8 · SIKLUS PENGISIAN & LEMBAGA YANG TERKENA ────────────────────────
+//
+// Kyai, 1 Sep 2026: "rekap prestasi itu adalah hasil dari bulan lalu, dan mengisinya
+// adalah bulan lalu. misal sekarang september yg diisi adalah bulan agustus. nanti akhir
+// september mengisi rekap prestasi september, dan maksimal pengisian adalah paling lambat
+// tgl 5 setiap awal bulan."
+//
+// Ini menyingkap dua kekeliruan di kartu dasbor "Guru Belum Input", yang keduanya membuat
+// angkanya nyaris tak berarti:
+//   1. Ia menagih BULAN BERJALAN. Tiap tanggal 1, seluruh guru serentak dinyatakan "belum
+//      input" untuk bulan yang memang belum boleh diisi siapa pun — sementara pekerjaan
+//      yang benar-benar jatuh tempo (bulan LALU, batas tanggal 5) tak terpantau sama sekali.
+//   2. Ia mencakup SEMUA lembaga ngaji, padahal rekap prestasi bulanan hanya milik PTPT &
+//      PPPH sejak v.1.2.3 — TPQ Pagi/Sore & Pra PTPT ikut tertagih tanpa dasar.
+
+/** Lembaga yang punya rekap prestasi bulanan. Sumber tunggal — dibaca RekapPrestasiView
+ *  (daftar tombol + penyaring) DAN kartu dasbor, supaya keduanya tak bisa berbeda. */
+export const LEMBAGA_PRESTASI_BULANAN = ['PTPT', 'PPPH']
+
+/** Batas akhir pengisian: tanggal 5 pada bulan BERIKUTNYA dari periode yang diisi. */
+export const TGL_BATAS_REKAP = 5
+
+const _lkey = (v) =>
+  String(v == null ? '' : v)
+    .trim()
+    .toLowerCase()
+
+export function punyaPrestasiBulanan(lembaga) {
+  const k = _lkey(lembaga)
+  return !!k && LEMBAGA_PRESTASI_BULANAN.some((l) => _lkey(l) === k)
+}
+
+/**
+ * Periode yang SEDANG dikerjakan pada tanggal `todayIso` = bulan LALU.
+ * '2026-09-01' -> '2026-08'. Berlaku sepanjang bulan berjalan, bukan hanya s/d tgl 5:
+ * lewat batas bukan berarti sasarannya berpindah, hanya berarti TERLAMBAT.
+ */
+export function periodeRekapBerjalan(todayIso) {
+  const bulanIni = String(todayIso || '').slice(0, 7)
+  return /^\d{4}-\d{2}$/.test(bulanIni) ? periodeSebelumnya(bulanIni) : ''
+}
+
+/** Tanggal jatuh tempo periode itu ('2026-08' -> '2026-09-05'). '' bila periode tak sah. */
+export function batasRekap(periode) {
+  const m = /^(\d{4})-(\d{2})$/.exec(String(periode || ''))
+  if (!m) return ''
+  const y = Number(m[1])
+  const b = Number(m[2])
+  if (b < 1 || b > 12) return ''
+  const ny = b === 12 ? y + 1 : y
+  const nb = b === 12 ? 1 : b + 1
+  return `${ny}-${String(nb).padStart(2, '0')}-${String(TGL_BATAS_REKAP).padStart(2, '0')}`
+}
+
+/** Sudah lewat batas? Dipakai kartu dasbor membedakan "belum jatuh tempo" dari "telat". */
+export function rekapTerlambat(periode, todayIso) {
+  const batas = batasRekap(periode)
+  const hari = String(todayIso || '').slice(0, 10)
+  return !!batas && /^\d{4}-\d{2}-\d{2}$/.test(hari) && hari > batas
+}

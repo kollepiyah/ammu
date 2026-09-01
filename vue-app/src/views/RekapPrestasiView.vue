@@ -1132,13 +1132,17 @@ import {
   nilaiPrestasiBulan,
   petunjukBulanLalu,
   payloadRiwayatPrestasi,
-  sudahDinilaiBulan
+  sudahDinilaiBulan,
+  LEMBAGA_PRESTASI_BULANAN
 } from '@/utils/prestasiBulanan'
 import { useMobileShell } from '@/composables/useMobileShell'
 
 // v.1.2.3: rekap prestasi bulanan HANYA untuk PTPT & PPPH (TPQ Pagi/Sore/Pra PTPT tak
 //   perlu prestasi bulanan — Kyai). Menyetir tombol lembaga, filter, scope santri, & ekspor.
-const LEMBAGA_QIRAATI = ['PTPT', 'PPPH']
+// v.1.3.8: daftarnya naik ke utils/prestasiBulanan — kartu dasbor "Guru Belum Input" kini
+//   memakai daftar yang SAMA, dan dua salinan yang bisa berbeda persis itu yang dulu bikin
+//   guru TPQ/Pra PTPT tertagih rekap yang tak pernah jadi kewajiban mereka.
+const LEMBAGA_QIRAATI = LEMBAGA_PRESTASI_BULANAN
 const BULAN_LIST = [
   'Januari',
   'Februari',

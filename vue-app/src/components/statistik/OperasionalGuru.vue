@@ -1,7 +1,7 @@
 <template>
   <!-- ============================================================
        Alert operasional (admin/kepala) — dipindah dari StatistikView (v.103).
-       Guru Belum Input bulan ini + Kelas Overload (rasio guru:santri).
+       Guru Belum Input (rekap prestasi bulan LALU, PTPT & PPPH) + Kelas Overload.
        Sumber: Firestore-realtime (useStatistikScope). Tujuan: Laporan tab Pegawai.
        ============================================================ -->
   <div v-if="isAdminMode" class="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -26,6 +26,17 @@
         </p>
         <p class="text-[11px] text-[var(--text-secondary)] mt-0.5">
           {{ totalSantriBelumInput }} santri belum diinput &middot; klik untuk detail
+        </p>
+        <!-- v.1.3.8: batas tgl 5 — sebelum jatuh tempo ini wajar, sesudahnya telat. -->
+        <p
+          v-if="batasLabel"
+          :class="[
+            'text-[10px] font-bold mt-0.5',
+            rekapSudahTerlambat ? 'text-rose-600 dark:text-rose-400' : 'text-[var(--text-tertiary)]'
+          ]"
+        >
+          <i class="fas fa-clock mr-1"></i>PTPT &middot; PPPH &mdash;
+          {{ rekapSudahTerlambat ? 'lewat batas' : 'batas' }} {{ batasLabel }}
         </p>
       </div>
       <i class="fas fa-chevron-right text-[var(--text-tertiary)]"></i>
@@ -92,7 +103,8 @@ const auth = useAuthStore()
 const isAdminMode = computed(() => isFullFilterRole(auth.sesiAktif))
 
 // v.95.0626: kartu Guru Belum Input + Kelas Overload (data ter-scope)
-const { guruBelumInput, kelasOverload, periodeKeyNow } = useStatistikScope()
+const { guruBelumInput, kelasOverload, periodeRekap, batasRekapNow, rekapSudahTerlambat } =
+  useStatistikScope()
 
 const _NAMA_BULAN_STAT = [
   'Januari',
@@ -108,9 +120,15 @@ const _NAMA_BULAN_STAT = [
   'November',
   'Desember'
 ]
+// v.1.3.8: periode yang DITAGIH = bulan lalu ('YYYY-MM'), bukan lagi bulan berjalan.
 const periodeLabel = computed(() => {
-  const m = String(periodeKeyNow.value).match(/^(\d{4})_(\d{2})$/)
-  return m ? `${_NAMA_BULAN_STAT[parseInt(m[2]) - 1]} ${m[1]}` : periodeKeyNow.value
+  const m = String(periodeRekap.value).match(/^(\d{4})-(\d{2})$/)
+  return m ? `${_NAMA_BULAN_STAT[parseInt(m[2]) - 1]} ${m[1]}` : periodeRekap.value
+})
+// Batas pengisian: tanggal 5 bulan berikutnya (Kyai, 1 Sep 2026).
+const batasLabel = computed(() => {
+  const m = String(batasRekapNow.value).match(/^(\d{4})-(\d{2})-(\d{2})$/)
+  return m ? `${parseInt(m[3])} ${_NAMA_BULAN_STAT[parseInt(m[2]) - 1]}` : ''
 })
 const totalSantriBelumInput = computed(() =>
   guruBelumInput.value.reduce((sum, g) => sum + g.jml, 0)

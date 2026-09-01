@@ -20,6 +20,17 @@ Rinciannya untuk pengembang ada di `CHANGELOG.md` — jangan disalin ke sana, te
 
 **Perbaikan**
 
+- **Kartu "Guru Belum Input" di dasbor kini menagih bulan yang benar.** Dulu ia menagih bulan
+  yang sedang berjalan, sehingga setiap tanggal 1 semua guru serentak muncul sebagai "belum
+  input" untuk bulan yang memang belum waktunya diisi. Sekarang yang ditagih adalah **rekap
+  bulan lalu** — sesuai cara pengisiannya — lengkap dengan **batas tanggal 5**, dan tulisannya
+  berubah merah bila sudah lewat batas.
+  Dua hal ikut dibetulkan: kartu itu kini **hanya menghitung PTPT & PPPH** (rekap prestasi
+  bulanan memang hanya untuk keduanya, jadi guru TPQ Pagi/Sore & Pra PTPT tak lagi tertagih),
+  dan guru yang mengisi lewat menu **Rekap Prestasi** akhirnya terbaca sudah mengisi —
+  sebelumnya mereka tetap tercantum "belum input" selamanya karena menu itu tak meninggalkan
+  penanda yang dicari kartu tersebut. Namanya juga diperjelas jadi
+  **"Guru Belum Isi Rekap Prestasi"**.
 - **Guru yang tidak mengajar setiap hari tak lagi menumpuk Alpa.** Sebelumnya "hari kerja"
   selalu berarti hari kerja lembaga, sehingga guru yang hanya masuk tiga hari sepekan tercatat
   alpa di hari yang memang bukan jadwalnya — sekitar 12 alpa palsu tiap bulan, di Rekap Unit,

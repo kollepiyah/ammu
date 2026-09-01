@@ -20,8 +20,17 @@ export const useCollectionsStore = defineStore('collections', () => {
   const santri = ref([])
   const guru = ref([])
   const bukuInduk = ref([])
+  // v.1.3.8: snapshot prestasi bulanan. Dipusatkan di sini karena pembacanya kini LEBIH
+  //   dari satu — kartu dasbor "Guru Belum Input" ikut memakainya untuk tahu bulan yang
+  //   jatuh tempo sudah dinilai atau belum, dan itu tak bisa dijawab dari baris santri.
+  const riwayatPrestasi = ref([])
   const loaded = ref({})
-  const _refByName = { santri, guru, keuangan_buku_induk: bukuInduk }
+  const _refByName = {
+    santri,
+    guru,
+    keuangan_buku_induk: bukuInduk,
+    riwayat_prestasi: riwayatPrestasi
+  }
   const _started = {}
 
   function _subscribe(name) {
@@ -71,6 +80,7 @@ export const useCollectionsStore = defineStore('collections', () => {
     santri.value = []
     guru.value = []
     bukuInduk.value = []
+    riwayatPrestasi.value = []
     loaded.value = {}
   }
 
@@ -78,5 +88,15 @@ export const useCollectionsStore = defineStore('collections', () => {
     return !!loaded.value[name]
   }
 
-  return { santri, guru, bukuInduk, loaded, ensure, reloadActive, clear, isLoaded }
+  return {
+    santri,
+    guru,
+    bukuInduk,
+    riwayatPrestasi,
+    loaded,
+    ensure,
+    reloadActive,
+    clear,
+    isLoaded
+  }
 })

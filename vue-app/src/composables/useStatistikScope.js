@@ -2,26 +2,41 @@
 //   - admin / super_admin (full): lihat SEMUA santri.
 //   - Kepala / PJ / Pengasuh: hanya se-lembaga-nya (via lembagaScopeMatches).
 //   Dipakai oleh StatistikView + GuruBelumInputView (+ kartu Kelas Overload).
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useSantri } from '@/composables/useSantri'
+import { useCollectionsStore } from '@/stores/collections'
+import { storeToRefs } from 'pinia'
 import { lembagaScopeMatches } from '@/composables/useLembaga'
 import { isFullFilterRole } from '@/utils/roleScope'
+import { todayJakarta } from '@/utils/format'
+// v.1.3.8: siklus & cakupan rekap prestasi — sumber tunggal, dipakai juga RekapPrestasiView.
+import {
+  periodeRekapBerjalan,
+  batasRekap,
+  rekapTerlambat,
+  punyaPrestasiBulanan,
+  petaPrestasiPeriode,
+  sudahDinilaiBulan
+} from '@/utils/prestasiBulanan'
 
 // Rasio Guru:Santri per lembaga (1 guru mengampu N santri). Lembaga sekolah = tanpa rasio.
 export const RASIO_GURU_SANTRI = {
   'tpq pagi': 5,
   'tpq sore': 10,
   'pra ptpt': 5,
-  'ptpt': 10,
-  'ppph': 10
+  ptpt: 10,
+  ppph: 10
 }
 
 // Ambang status PPPH/PTPT dari selisih (akhir - awal).
 export function statusFromSelisih(diff, lembaga) {
   const d = Number(diff) || 0
   if (d <= 0) return null
-  const isPPPH = String(lembaga || '').trim().toLowerCase() === 'ppph'
+  const isPPPH =
+    String(lembaga || '')
+      .trim()
+      .toLowerCase() === 'ppph'
   if (isPPPH) {
     // v.95.0626 (kyai): PPPH hadits — Kurang <5, Cukup 5-20, Bagus >20
     if (d < 5) return 'kurang'
@@ -37,6 +52,11 @@ export function statusFromSelisih(diff, lembaga) {
 export function useStatistikScope() {
   const auth = useAuthStore()
   const { santriRaw } = useSantri()
+  // v.1.3.8: snapshot prestasi bulanan lewat store terpusat (idempotent — beberapa
+  //   komponen memanggil composable ini, tapi langganannya tetap satu per sesi).
+  const _coll = useCollectionsStore()
+  const { riwayatPrestasi } = storeToRefs(_coll)
+  onMounted(() => _coll.ensure('riwayat_prestasi'))
 
   // admin/super_admin/kepala-PJ boleh lihat dashboard statistik
   const isAdminMode = computed(() => isFullFilterRole(auth.sesiAktif))
@@ -70,29 +90,50 @@ export function useStatistikScope() {
     )
   })
 
-  // periode bulan berjalan — format match InputBulananView (`YYYY_MM`)
-  const periodeKeyNow = computed(() => {
-    const d = new Date()
-    return `${d.getFullYear()}_${String(d.getMonth() + 1).padStart(2, '0')}`
-  })
+  // v.1.3.8 (Kyai, 1 Sep 2026): periode yang SEDANG dikerjakan = bulan LALU, batas tgl 5.
+  //   Dulu di sini bulan BERJALAN — tiap tanggal 1 seluruh guru serentak dinyatakan "belum
+  //   input" untuk bulan yang memang belum boleh diisi siapa pun, sementara pekerjaan yang
+  //   sungguh jatuh tempo (bulan lalu) tak terpantau. Aturannya di utils/prestasiBulanan.
+  const periodeRekap = computed(() => periodeRekapBerjalan(todayJakarta())) // 'YYYY-MM'
+  const batasRekapNow = computed(() => batasRekap(periodeRekap.value)) // 'YYYY-MM-DD'
+  const rekapSudahTerlambat = computed(() => rekapTerlambat(periodeRekap.value, todayJakarta()))
 
   const _guruNgaji = (s) => [
-    ...new Set([s.guru_pagi, s.guru_sore, s.guru].map((g) => String(g || '').trim()).filter(Boolean))
+    ...new Set(
+      [s.guru_pagi, s.guru_sore, s.guru].map((g) => String(g || '').trim()).filter(Boolean)
+    )
   ]
 
-  // Guru yang BELUM input data santri bulan ini (per rekap = catatan_bulanan[periodeKey]).
-  //   Hanya santri ngaji (punya lembaga ngaji + guru ngaji). 1 guru -> daftar santri belum diinput.
+  // Guru yang BELUM mengisi rekap prestasi untuk periode yang jatuh tempo.
+  //
+  // v.1.3.8, tiga koreksi sekaligus (Kyai, 1 Sep 2026):
+  //   · periodenya bulan LALU, bukan bulan berjalan (lihat periodeRekap di atas);
+  //   · hanya PTPT & PPPH — rekap prestasi bulanan memang cuma milik keduanya sejak
+  //     v.1.2.3, jadi menagih guru TPQ/Pra PTPT tak pernah ada dasarnya;
+  //   · penandanya SNAPSHOT `riwayat_prestasi`, bukan lagi `catatan_bulanan` semata.
+  //     Ini yang paling menyesatkan: RekapPrestasiView — layar yang justru dipakai PTPT
+  //     & PPPH — tak pernah menulis `catatan_bulanan`, sehingga guru yang sudah rapi
+  //     mengisi di sana tetap tercantum "belum input" selamanya.
+  //
+  // `catatan_bulanan` tetap diterima sebagai penanda KEDUA, bukan karena setara, tapi
+  // karena Input Bulanan baru mulai menulis snapshot di v.1.3.8: bulan-bulan yang diisi
+  // sebelum itu hanya punya jejak `catatan_bulanan`, dan menagih ulang pekerjaan yang
+  // sudah dikerjakan lebih buruk daripada melewatkan satu-dua yang belum.
   const guruBelumInput = computed(() => {
-    const pk = periodeKeyNow.value
+    const periode = periodeRekap.value
+    if (!periode) return []
+    const pk = periode.replace('-', '_') // `catatan_bulanan` memakai 'YYYY_MM'
+    const snap = petaPrestasiPeriode(riwayatPrestasi.value, periode)
     const m = new Map()
     for (const s of scopedSantriAktif.value) {
-      if (!s.lembaga) continue // hanya ngaji (Input Bulanan = data ngaji)
+      if (!punyaPrestasiBulanan(s.lembaga)) continue
       const gurus = _guruNgaji(s)
       if (gurus.length === 0) continue
       const sudah =
-        s.catatan_bulanan &&
-        typeof s.catatan_bulanan === 'object' &&
-        Object.prototype.hasOwnProperty.call(s.catatan_bulanan, pk)
+        sudahDinilaiBulan(snap.get(String(s.id))) ||
+        (s.catatan_bulanan &&
+          typeof s.catatan_bulanan === 'object' &&
+          Object.prototype.hasOwnProperty.call(s.catatan_bulanan, pk))
       if (sudah) continue
       for (const g of gurus) {
         if (!m.has(g)) m.set(g, { guru: g, santri: [] })
@@ -135,7 +176,9 @@ export function useStatistikScope() {
     isFullAdmin,
     scopedSantriAktif,
     scopedSantriAll,
-    periodeKeyNow,
+    periodeRekap,
+    batasRekapNow,
+    rekapSudahTerlambat,
     guruBelumInput,
     kelasOverload
   }

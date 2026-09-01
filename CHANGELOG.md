@@ -44,6 +44,36 @@ Buka **Bisyaroh › Pratinjau** sebelum Bulk Generate supaya selisihnya terlihat
 
 ### Fixed
 
+- **Kartu "Guru Belum Input" menagih bulan yang benar, lembaga yang benar, lewat penanda yang
+  benar** (v.1.3.8). Kyai, 1 Sep 2026: "dashbor guru yg belum input/rekap data masih pakai yg
+  lama (TPQ-Pra PTPT) masih terbaca. harusnya rekap prestasi hanya untuk PTPT dan PPPH" —
+  lalu, yang menyingkap masalah sebenarnya: "rekap prestasi itu adalah hasil dari bulan lalu,
+  dan mengisinya adalah bulan lalu. misal sekarang september yg diisi adalah bulan agustus …
+  maksimal pengisian paling lambat tgl 5 setiap awal bulan."
+
+  Kartu itu ternyata salah di **tiga** lapis sekaligus, dan gabungannya membuat angkanya
+  nyaris tak bermakna:
+
+  1. **Periodenya bulan BERJALAN.** Tiap tanggal 1, seluruh guru serentak dinyatakan "belum
+     input" untuk bulan yang memang belum boleh diisi siapa pun — sementara pekerjaan yang
+     sungguh jatuh tempo (bulan lalu, batas tanggal 5) tak terpantau sama sekali.
+  2. **Cakupannya semua lembaga ngaji.** Rekap prestasi bulanan hanya milik PTPT & PPPH sejak
+     v.1.2.3, jadi guru TPQ Pagi/Sore & Pra PTPT ikut tertagih tanpa dasar.
+  3. **Penandanya `catatan_bulanan`** — yang hanya ditulis Input Bulanan. RekapPrestasiView,
+     justru layar yang dipakai PTPT & PPPH, **tak pernah menulisnya**; guru yang sudah rapi
+     mengisi di sana tetap tercantum "belum input" selamanya.
+
+  Sekarang: periode = bulan lalu, cakupan = PTPT & PPPH, penanda = snapshot
+  `riwayat_prestasi` (`catatan_bulanan` tetap diterima sebagai penanda kedua — Input Bulanan
+  baru menulis snapshot sejak v.1.3.8, dan menagih ulang pekerjaan yang sudah dikerjakan lebih
+  buruk daripada melewatkan satu-dua yang belum). Kartu & halaman detailnya kini menampilkan
+  batas "5 September" dan berubah merah bila lewat. Daftar `['PTPT','PPPH']` naik ke
+  `utils/prestasiBulanan` supaya RekapPrestasiView dan kartu dasbor memakai satu daftar yang
+  sama — dua salinan yang bisa berbeda persis itulah asal keluhan pertama Kyai.
+
+  Judulnya ikut diperbaiki jadi **"Guru Belum Isi Rekap Prestasi"**; "Belum Input Data Santri"
+  membuatnya tertukar dengan Input Bulanan, yang cakupannya memang lain.
+
 - **Guru yang tak mengajar tiap hari tak lagi dianggap alpa — dan bisyarohnya tak lagi
   terpotong** (v.1.3.8). Kyai, 1 Sep 2026: "di satu lembaga ada guru yang masuk tiap hari dan
   ada yang cuma 3 hari, saat ini tidak ada tempat mengaturnya. Jadi guru yg mengajarnya tidak
