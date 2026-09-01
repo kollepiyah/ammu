@@ -5,6 +5,39 @@ Rinciannya untuk pengembang ada di `CHANGELOG.md` — jangan disalin ke sana, te
 
 ---
 
+## v.1.3.8 — September 2026
+
+**Baru**
+
+- **Jadwal Hari mengajar per guru.** Di **Data Guru › sunting guru**, di bawah "Shift Tugas",
+  kini ada **Jadwal Hari**. Untuk guru yang tidak masuk penuh Senin–Sabtu, nyalakan
+  **"Hari tertentu saja"** pada shift yang bersangkutan lalu matikan hari yang tidak diajar.
+  Diatur **per shift**, jadi guru yang sekolahnya tiap hari sedangkan ngajinya hanya tiga hari
+  bisa punya dua jadwal berbeda.
+
+  Guru yang memang masuk tiap hari **tidak perlu disentuh sama sekali** — biarkan mati, dan
+  tak ada satu angka pun miliknya yang berubah.
+
+**Perbaikan**
+
+- **Guru yang tidak mengajar setiap hari tak lagi menumpuk Alpa.** Sebelumnya "hari kerja"
+  selalu berarti hari kerja lembaga, sehingga guru yang hanya masuk tiga hari sepekan tercatat
+  alpa di hari yang memang bukan jadwalnya — sekitar 12 alpa palsu tiap bulan, di Rekap Unit,
+  matriks bulanan, ekspor Excel/PDF, dan di kartu kehadirannya sendiri di menu Personal.
+  Di matriks bulanan, hari yang bukan jadwal guru kini bertanda titik abu-abu (`·`), berbeda
+  dari `L` yang berarti libur lembaga.
+- **Bisyaroh guru paruh-waktu tak lagi terpotong.** Masalah yang sama diam-diam ikut memotong
+  uang: JP per minggu dibagi ke seluruh hari sekolah, sehingga guru 12 JP yang masuk tiga hari
+  hanya dibayar 6 JP — separuh. Bonus tepat waktu pun tak pernah cair, karena kehadirannya
+  selalu diukur terhadap hari sekolah penuh sehingga ambang 100% mustahil tercapai.
+  ⚠️ **Setelah Jadwal Hari diisi, slip guru paruh-waktu akan naik** — JP per minggu yang sudah
+  diatur memang jumlah yang benar, yang keliru selama ini hanya pembaginya. Buka
+  **Bisyaroh › Tinjau Dulu** sebelum Bulk Generate untuk melihat selisihnya.
+
+Rilis ini juga membawa seluruh perbaikan **v.1.3.7** di bawah, yang belum sempat tayang.
+
+---
+
 ## v.1.3.7 — Agustus 2026
 
 **Perbaikan**

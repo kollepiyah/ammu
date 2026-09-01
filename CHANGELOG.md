@@ -28,6 +28,59 @@ naik satu tiap rilis. Entri lama memakai skema lama `v.{nomor-urut}.{MMDDtahunmu
 
 ---
 
+## [v.1.3.8] — 2026-09-01 — Jadwal hari mengajar per guru (alpa palsu + bisyaroh guru paruh-waktu)
+
+⚠️ **URUTAN DEPLOY:** frontend murni — **tak ada migrasi DB, tak ada edge function**. Field
+barunya (`guru.data.hari_shift`) menumpang kolom `data` jsonb yang sudah ada. Deploy web dari
+**direktori utama** (butuh `vue-app/.env.local`), lalu **AAB vc138** dan **Electron 1.3.8**.
+
+⚠️ Rilis ini **memuat juga gelombang kedua v.1.3.7** yang belum sempat tayang (pratinjau slip
+bisyaroh, rekap prestasi bulanan, glondongan simpan/selesai, libur ber-lembaga di absensi).
+Prasyarat kolom **"Khusus Lembaga"** dan penyaring **L/P** di catatan v.1.3.7 di bawah karena
+itu **tetap berlaku** — baca dua peringatan itu sebelum menyimpulkan ada yang tak jalan.
+
+⚠️ **Nominal slip guru paruh-waktu akan NAIK** begitu Jadwal Hari-nya diisi (lihat di bawah).
+Buka **Bisyaroh › Pratinjau** sebelum Bulk Generate supaya selisihnya terlihat lebih dulu.
+
+### Fixed
+
+- **Guru yang tak mengajar tiap hari tak lagi dianggap alpa — dan bisyarohnya tak lagi
+  terpotong** (v.1.3.8). Kyai, 1 Sep 2026: "di satu lembaga ada guru yang masuk tiap hari dan
+  ada yang cuma 3 hari, saat ini tidak ada tempat mengaturnya. Jadi guru yg mengajarnya tidak
+  full senin-sabtu terhitung punya alpa banyak." Benar: pertanyaan "tanggal ini hari kerja bagi
+  guru ini?" selama ini dijawab **tanpa menengok gurunya sama sekali** — hanya Ahad + Kalender
+  Kegiatan — sehingga "hari kerja" selalu berarti hari kerja LEMBAGA. Guru 3 hari/pekan karena
+  itu memanen ±12 alpa palsu tiap bulan di Rekap Unit, matriks bulanan, ekspor Excel/PDF, dan
+  di kartu kehadirannya sendiri (menu Personal).
+
+  Yang tak terlihat dari layar absensi: **penyebut uang memakai definisi yang sama**, jadi tiga
+  cara hitung ikut meleset. (1) `× JP diajar` — JP/minggu dibagi ke hari aktif lembaga, guru 12
+  JP yang masuk 3 hari dihitung 2 JP × 3 hari = 6 JP, **dibayar separuh**. (2) `JP bulanan
+  prorata` — penyebut "JP terjadwal" kebanyakan. (3) `Bonus tepat waktu` (flat ber-ambang) —
+  persen hadir diukur terhadap hari efektif lembaga, guru 3 hari mentok ±50% sehingga ambang
+  100% **tak pernah tercapai dan bonusnya tak pernah cair**. Yang sejak dulu aman: `× kehadiran`,
+  `× tepat waktu`, dan `per shift` — ketiganya menghitung baris hadir yang benar-benar ada.
+
+  Sekarang ada **Form Guru › Jadwal Hari**: per shift yang dicentang, nyalakan "Hari tertentu
+  saja" lalu matikan hari yang tak diajar. Per SHIFT, bukan per guru — guru yang sekolahnya
+  Senin–Sabtu tapi ngajinya 3 hari butuh dua jadwal berbeda, dan absensi memang dihitung per
+  (guru × shift). Tersimpan di `guru.data.hari_shift` (tanpa migrasi). Satu fungsi murni baru,
+  `utils/jadwalGuru`, dipakai bersama enam titik penghitung tadi supaya definisi "hari kerja
+  guru ini" cuma ada di satu tempat.
+
+  ⚠️ **Nominal slip guru paruh-waktu akan NAIK** setelah jadwalnya diisi — Kyai menegaskan
+  JP/minggu yang sudah diatur memang JP sepekan yang sebenarnya, jadi yang selama ini keliru
+  hanyalah pembaginya: 12 ÷ 3 hari = 4 JP/hari × 3 hari hadir = 12 JP utuh, bukan 6.
+
+  Yang **sengaja tidak berubah**: guru tanpa jadwal khusus (mayoritas, yang memang full
+  Senin–Sabtu) tak bergeser satu angka pun — daftar hari yang kosong dibaca "belum diatur",
+  bukan "tak pernah masuk". Hari di luar jadwal yang ternyata **ada** baris absensinya tetap
+  dihitung hadir: yang digugurkan hanya hukumannya, bukan tanggalnya, supaya guru yang datang
+  di luar jadwal tak kehilangan bisyaroh `× kehadiran`-nya. Di matriks bulanan hari seperti itu
+  bertanda `·` abu-abu, dibedakan dari `L` (libur lembaga).
+
+---
+
 ## [v.1.3.7] — 2026-08-31 — Total ekspor ikut filter + potongan ber-scope + libur sekolah + glondongan
 
 ⚠️ **URUTAN DEPLOY — dua langkah:**
