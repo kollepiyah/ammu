@@ -174,6 +174,9 @@ export function sudahDinilaiBulan(nilai) {
  *  (daftar tombol + penyaring) DAN kartu dasbor, supaya keduanya tak bisa berbeda. */
 export const LEMBAGA_PRESTASI_BULANAN = ['PTPT', 'PPPH']
 
+/** Jendela pengisian DIBUKA tanggal 29 pada bulan yang dinilai sendiri. */
+export const TGL_BUKA_REKAP = 29
+
 /** Batas akhir pengisian: tanggal 5 pada bulan BERIKUTNYA dari periode yang diisi. */
 export const TGL_BATAS_REKAP = 5
 
@@ -187,14 +190,44 @@ export function punyaPrestasiBulanan(lembaga) {
   return !!k && LEMBAGA_PRESTASI_BULANAN.some((l) => _lkey(l) === k)
 }
 
+/** Hari dalam bulan (1..12). Dipakai menjepit tanggal buka di bulan pendek. */
+function _hariDalamBulan(tahun, bulan) {
+  return new Date(tahun, bulan, 0).getDate()
+}
+
 /**
- * Periode yang SEDANG dikerjakan pada tanggal `todayIso` = bulan LALU.
- * '2026-09-01' -> '2026-08'. Berlaku sepanjang bulan berjalan, bukan hanya s/d tgl 5:
- * lewat batas bukan berarti sasarannya berpindah, hanya berarti TERLAMBAT.
+ * Tanggal jendela pengisian DIBUKA untuk bulan itu — TGL_BUKA_REKAP, dijepit ke hari
+ * terakhir bulan tsb. Februari 28 hari tak punya tanggal 29, dan tanpa penjepitan ini
+ * jendela Februari tak akan pernah terbuka: rekapnya diam-diam terlewat setahun sekali.
+ */
+export function tglBukaRekap(tahun, bulan) {
+  return Math.min(TGL_BUKA_REKAP, _hariDalamBulan(tahun, bulan))
+}
+
+/**
+ * Periode yang SEDANG dikerjakan pada tanggal `todayIso`.
+ *
+ * Kyai (2 Sep 2026): "rekap prestasi itu diisi akhir bulan sampai tgl 5 awal bulan. tapi
+ * datanya berasal dari bulan sebelumnya. misal sekarang tgl 2 september, guru mengisi rekap
+ * mulai tgl 29 agustus-5 sept, isinya data dari agustus."
+ *
+ * Jadi jendelanya MENYEBERANGI pergantian bulan: 29 Agu s/d 5 Sep, isinya Agustus.
+ *   tanggal >= 29  -> bulan BERJALAN (jendelanya baru dibuka; 29 Agu = mengisi Agustus)
+ *   tanggal 1..28  -> bulan LALU     (2 Sep = masih mengisi Agustus)
+ *
+ * Sasaran TIDAK berpindah begitu lewat tanggal 5 — 10 Sep tetap Agustus, hanya berstatus
+ * TERLAMBAT. Memindahkan sasaran di tanggal 6 akan menyembunyikan pekerjaan yang justru
+ * belum selesai, persis kebalikan dari guna kartu ini.
  */
 export function periodeRekapBerjalan(todayIso) {
-  const bulanIni = String(todayIso || '').slice(0, 7)
-  return /^\d{4}-\d{2}$/.test(bulanIni) ? periodeSebelumnya(bulanIni) : ''
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(todayIso || '').slice(0, 10))
+  if (!m) return ''
+  const y = Number(m[1])
+  const b = Number(m[2])
+  const d = Number(m[3])
+  if (b < 1 || b > 12) return ''
+  const bulanIni = periodePrestasi(b, y)
+  return d >= tglBukaRekap(y, b) ? bulanIni : periodeSebelumnya(bulanIni)
 }
 
 /** Tanggal jatuh tempo periode itu ('2026-08' -> '2026-09-05'). '' bila periode tak sah. */

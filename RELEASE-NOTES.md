@@ -9,6 +9,10 @@ Rinciannya untuk pengembang ada di `CHANGELOG.md` — jangan disalin ke sana, te
 
 **Baru**
 
+- **Daftar guru yang belum mengisi rekap bisa diekspor PDF.** Di halaman *Guru Belum Isi Rekap
+  Prestasi* ada tombol **Ekspor PDF** — berkop pondok, lengkap dengan periode dan batas
+  waktunya, berisi daftar guru beserta santri yang belum dinilai. Siap dibagikan lewat WA
+  tanpa perlu menyalin nama satu per satu.
 - **Jadwal Hari mengajar per guru.** Di **Data Guru › sunting guru**, di bawah "Shift Tugas",
   kini ada **Jadwal Hari**. Untuk guru yang tidak masuk penuh Senin–Sabtu, nyalakan
   **"Hari tertentu saja"** pada shift yang bersangkutan lalu matikan hari yang tidak diajar.
@@ -31,6 +35,9 @@ Rinciannya untuk pengembang ada di `CHANGELOG.md` — jangan disalin ke sana, te
   sebelumnya mereka tetap tercantum "belum input" selamanya karena menu itu tak meninggalkan
   penanda yang dicari kartu tersebut. Namanya juga diperjelas jadi
   **"Guru Belum Isi Rekap Prestasi"**.
+  Jendela pengisiannya mengikuti kebiasaan yang berlaku: **mulai tanggal 29** bulan yang
+  dinilai sampai **tanggal 5** bulan berikutnya — jadi tanggal 29–31 Agustus sudah terhitung
+  mengisi Agustus, dan sepanjang September yang ditagih tetap Agustus.
 - **Guru yang tidak mengajar setiap hari tak lagi menumpuk Alpa.** Sebelumnya "hari kerja"
   selalu berarti hari kerja lembaga, sehingga guru yang hanya masuk tiga hari sepekan tercatat
   alpa di hari yang memang bukan jadwalnya — sekitar 12 alpa palsu tiap bulan, di Rekap Unit,

@@ -74,6 +74,24 @@ Buka **Bisyaroh › Pratinjau** sebelum Bulk Generate supaya selisihnya terlihat
   Judulnya ikut diperbaiki jadi **"Guru Belum Isi Rekap Prestasi"**; "Belum Input Data Santri"
   membuatnya tertukar dengan Input Bulanan, yang cakupannya memang lain.
 
+  **Susulan 2 Sep 2026** — Kyai memperjelas ujung AWAL jendelanya: "rekap prestasi itu diisi
+  akhir bulan sampai tgl 5 awal bulan … guru mengisi rekap mulai tgl 29 agustus-5 sept, isinya
+  data dari agustus." Jendelanya karena itu MENYEBERANGI pergantian bulan, dan aturan
+  "selalu bulan lalu" salah di ujung itu: tanggal 29–31 Agustus yang dikerjakan **Agustus**,
+  bukan Juli. Sekarang: tanggal ≥ 29 → bulan berjalan, tanggal 1–28 → bulan lalu. Tanggal
+  bukanya dijepit ke hari terakhir bulan — tanpa itu **Februari 28 hari tak pernah membuka
+  jendelanya** dan rekapnya diam-diam terlewat setahun sekali.
+
+### Added
+
+- **Ekspor PDF daftar guru yang belum mengisi rekap** (v.1.3.8). Kyai, 2 Sep 2026: "untuk guru
+  yg belum input/rekap data bisa saya ekspor pdf, untuk dishare siapa saja yg belum isi data."
+  Tombol **Ekspor PDF** di halaman Guru Belum Isi Rekap Prestasi, berkop resmi pondok, memuat
+  periode + tenggat di judulnya. Isinya **satu baris per santri** (No, Guru, Santri, Lembaga,
+  Kelas), bukan satu baris per guru: yang ditanya penerima pesan selalu "santri saya yang
+  mana", dan daftar nama di dalam satu sel akan terpotong begitu jumlahnya belasan. Nama guru
+  sengaja diulang tiap baris supaya potongan tangkapan layar mana pun tetap terbaca sendiri.
+
 - **Guru yang tak mengajar tiap hari tak lagi dianggap alpa — dan bisyarohnya tak lagi
   terpotong** (v.1.3.8). Kyai, 1 Sep 2026: "di satu lembaga ada guru yang masuk tiap hari dan
   ada yang cuma 3 hari, saat ini tidak ada tempat mengaturnya. Jadi guru yg mengajarnya tidak
