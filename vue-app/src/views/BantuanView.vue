@@ -583,7 +583,7 @@ const introText = computed(() =>
 const lembagaName = computed(
   () => settings.settings?.namaLembaga || 'Pondok Pesantren Mambaul Ulum'
 )
-const version = computed(() => settings.settings?.appVersion || 'v.1.3.8')
+const version = computed(() => settings.settings?.appVersion || 'v.1.3.9')
 const logoSrc = computed(() => settings.settings?.logoUrl || '/logo.png')
 
 const sections = [
@@ -828,7 +828,7 @@ async function resetFaq() {
 //   riwayat lengkap ada di CHANGELOG.md untuk pengembang.
 const rilis = [
   {
-    versi: 'v.1.3.8',
+    versi: 'v.1.3.9',
     tgl: 'Agustus 2026',
     items: [
       'Cetak laporan Buku Induk: baris TOTAL kini berisi uang masuk dikurangi uang keluar pada periode yang disaring saja — harian, bulanan, maupun tahunan. Posisi kas keseluruhan tetap ikut tercetak, tapi sebagai dua baris keterangan di bawah TOTAL, jadi angka total tak lagi ikut minus gara-gara transaksi di luar periode.',

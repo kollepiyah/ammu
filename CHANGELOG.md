@@ -28,6 +28,25 @@ naik satu tiap rilis. Entri lama memakai skema lama `v.{nomor-urut}.{MMDDtahunmu
 
 ---
 
+## [v.1.3.9] — 2026-09-02 — Penerbitan ulang artefak (isi sama dengan v.1.3.8)
+
+**TIDAK ADA perubahan fungsional.** Ini kenaikan versi murni supaya artefak native bisa
+diunggah ulang membawa kode web terbaru: **AAB vc139** dan **Electron 1.3.9**. Seluruh isinya
+sudah diuraikan di v.1.3.8 di bawah — jangan dicari perubahan baru di sini, memang tak ada.
+
+⚠️ **Tanpa migrasi DB, tanpa edge function.** Migrasi `20260902120000_arsip_prestasi_bulanan`
+sudah dijalankan pada v.1.3.8 (2 Sep) dan **tidak perlu diulang**.
+
+⚠️ Yang perlu diperiksa sekali, dan tak ikut naik versi: **jadwal pg_cron
+`arsip-prestasi-bulanan`**. Ia dipasang manual, bukan lewat migrasi — kalau terlewat, fungsi
+arsip tanggal 25 ada tapi tak pernah jalan, dan baru ketahuan sebulan kemudian.
+Cek: `select jobname, schedule, active from cron.job where jobname = 'arsip-prestasi-bulanan';`
+
+Komentar kode untuk pekerjaan 1–2 Sep sengaja TETAP ber-tag `v.1.3.8` — itu versi saat
+pekerjaannya benar-benar dilakukan, dan menggesernya akan mengaburkan jejaknya.
+
+---
+
 ## [v.1.3.8] — 2026-09-01 — Jadwal hari mengajar per guru (alpa palsu + bisyaroh guru paruh-waktu)
 
 ⚠️ **URUTAN DEPLOY — dua langkah** (berubah 2 Sep: rilis ini TAK lagi frontend murni):

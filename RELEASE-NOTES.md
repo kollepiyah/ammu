@@ -5,6 +5,13 @@ Rinciannya untuk pengembang ada di `CHANGELOG.md` — jangan disalin ke sana, te
 
 ---
 
+## v.1.3.9 — September 2026
+
+Penerbitan ulang aplikasi Android & Desktop agar membawa pembaruan v.1.3.8 di bawah.
+**Tidak ada fitur atau perbaikan baru** — isinya sama persis dengan v.1.3.8.
+
+---
+
 ## v.1.3.8 — September 2026
 
 **Baru**
