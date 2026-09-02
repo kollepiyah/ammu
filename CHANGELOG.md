@@ -30,9 +30,19 @@ naik satu tiap rilis. Entri lama memakai skema lama `v.{nomor-urut}.{MMDDtahunmu
 
 ## [v.1.3.8] — 2026-09-01 — Jadwal hari mengajar per guru (alpa palsu + bisyaroh guru paruh-waktu)
 
-⚠️ **URUTAN DEPLOY:** frontend murni — **tak ada migrasi DB, tak ada edge function**. Field
-barunya (`guru.data.hari_shift`) menumpang kolom `data` jsonb yang sudah ada. Deploy web dari
-**direktori utama** (butuh `vue-app/.env.local`), lalu **AAB vc138** dan **Electron 1.3.8**.
+⚠️ **URUTAN DEPLOY — dua langkah** (berubah 2 Sep: rilis ini TAK lagi frontend murni):
+
+1. `npx supabase db push` — **satu migrasi baru** (`20260902120000_arsip_prestasi_bulanan`,
+   fungsi arsip+kosongkan prestasi tanggal 25). Tanpa edge function.
+2. Deploy web dari **direktori utama** (butuh `vue-app/.env.local`), lalu **AAB vc138** dan
+   **Electron 1.3.8**.
+
+⚠️ **Jadwal cron-nya TIDAK ikut migrasi** — dipasang manual sekali lewat SQL Editor, sama
+seperti `cleanup-audit-log-daily`. Perintahnya di `docs/SUPABASE-EDGE-FUNCTIONS-DEPLOY.md`.
+Tanpa langkah itu fungsinya ada tapi tak pernah jalan.
+
+Field `guru.data.hari_shift` (jadwal hari mengajar) tetap tanpa migrasi — menumpang kolom
+`data` jsonb yang sudah ada.
 
 ⚠️ Rilis ini **memuat juga gelombang kedua v.1.3.7** yang belum sempat tayang (pratinjau slip
 bisyaroh, rekap prestasi bulanan, glondongan simpan/selesai, libur ber-lembaga di absensi).
@@ -94,6 +104,34 @@ Buka **Bisyaroh › Pratinjau** sebelum Bulk Generate supaya selisihnya terlihat
   pasangannya.
 
 ### Added
+
+- **Papan peringkat prestasi dikosongkan otomatis tiap tanggal 25** (v.1.3.8). Kyai, 2 Sep 2026:
+  "untuk top rangking prestasi santri setiap tgl 25 setiap bulan dikosongi bisa ya, tapi riwayat
+  yg bulan lalu tetap ada" — lalu, memilih cara kerjanya: "otomatis dari server saja yg penting
+  data bulan lalu masuk riwayat. ini khusus rekap prestasi ya."
+
+  Fungsi DB `arsip_prestasi_bulanan()` + jadwal pg_cron. **Di server, bukan di aplikasi**: kalau
+  dijalankan aplikasi, ia hanya terjadi bila ada yang KEBETULAN membuka aplikasi pada tanggal 25
+  — dan siapa pun yang membukanya bisa memicu penghapusan massal.
+
+  Urutannya tak boleh dibalik, dan itulah inti keamanannya: **(1) arsip** angka baris santri ke
+  `riwayat_prestasi` bulan lalu (riwayat yang sudah berangka TIDAK PERNAH ditimpa), lalu
+  **(2) kosongkan — hanya untuk santri yang bulan lalunya sudah ada di riwayat.** Syarat pada
+  langkah 2 itu yang membuat janji Kyai bukan sekadar harapan: santri yang gagal terarsip tidak
+  ikut dikosongkan, angkanya tetap utuh untuk dibereskan manusia. Hasilnya dicatat ke
+  `audit_log`, dan `tersisa_tak_dikosongkan` melaporkan berapa yang sengaja dilewati.
+
+  Cakupan **PTPT & PPPH** saja (arti "khusus rekap prestasi"), dan hanya santri **aktif** —
+  angka alumni adalah catatan sejarah, bukan papan peringkat yang perlu direset.
+
+  Syarat "tanggal 25" dijaga **di dalam fungsinya** memakai tanggal WIB, bukan di ekspresi cron;
+  cron Supabase berjalan UTC, dan beda 7 jam itu akan jadi salah-hari yang senyap. Batas jujur
+  yang perlu diketahui: baris santri tak menyimpan bulan, jadi bulan sasaran **diturunkan** (=
+  bulan lalu) — benar untuk angka siklus kemarin, bisa meleset untuk angka basi. Karena itu
+  baris hasilnya ditandai `"sumber": "arsip_otomatis"` dan tak pernah menyamar sebagai isian guru.
+
+  Mematikan: `select cron.unschedule('arsip-prestasi-bulanan');`
+  Uji tanpa menunggu tanggal 25: `select public.arsip_prestasi_bulanan(true);`
 
 - **Penambalan riwayat bulanan** (v.1.3.8). Kyai berencana mengosongkan angka prestasi di data
   santri tiap tanggal 25, lalu bertanya: "riwayat yg bulan lalu masih ada kan ya?" Jawabannya

@@ -9,6 +9,11 @@ Rinciannya untuk pengembang ada di `CHANGELOG.md` — jangan disalin ke sana, te
 
 **Baru**
 
+- **Papan peringkat prestasi mulai bersih tiap tanggal 25.** Angka prestasi santri PTPT & PPPH
+  dikosongkan otomatis dari server setiap tanggal 25, supaya peringkat bulan baru tidak terbawa
+  angka bulan lalu. **Riwayat bulanannya tetap ada** dan bisa dibuka kapan saja lewat pemilih
+  bulan di Rekap Prestasi — angkanya diarsipkan lebih dulu, dan santri yang riwayatnya belum
+  tersimpan sengaja TIDAK ikut dikosongkan.
 - **Guru yang mengajar berpasangan tak lagi dipisah di daftar.** Satu kelas yang dipegang dua
   guru dulu muncul dua kali dengan daftar santri yang sama, sehingga jumlah "guru belum input"
   terlihat lebih banyak dari kenyataannya. Kini tampil satu baris, mis. *"Nur Faizah & Nur Fais

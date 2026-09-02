@@ -109,7 +109,34 @@ $$);
 select cron.schedule('cleanup-audit-log-daily', '0 19 * * *', $$
   select public.cleanup_audit_log();
 $$);
+
+-- arsip_prestasi_bulanan — SQL murni, tanpa http (v.1.3.8, Kyai 2 Sep 2026).
+-- Tanggal 25 tiap bulan: angka prestasi PTPT & PPPH diarsipkan ke riwayat bulan lalu,
+-- lalu dikosongkan dari data santri supaya papan peringkat mulai bersih.
+--
+-- Sengaja dijadwalkan HARIAN 18:00 UTC (= 01:00 WIB besoknya); syarat "tanggal 25"
+-- dijaga DI DALAM fungsinya, memakai tanggal WIB. Kalau syaratnya ditaruh di ekspresi
+-- cron (`0 18 24 * *`), beda 7 jam UTC↔WIB jadi salah-hari yang senyap dan baru
+-- ketahuan sebulan kemudian.
+select cron.schedule('arsip-prestasi-bulanan', '0 18 * * *', $$
+  select public.arsip_prestasi_bulanan();
+$$);
 ```
+
+**Uji coba tanpa menunggu tanggal 25** (aman — tak mengosongkan apa pun yang riwayatnya
+belum tersimpan):
+
+```sql
+select public.arsip_prestasi_bulanan(true);
+-- -> {"dijalankan":true,"periode":"2026-08","diarsip":N,"dikosongkan":N,
+--     "tersisa_tak_dikosongkan":N}
+```
+
+`tersisa_tak_dikosongkan` > 0 artinya ada santri yang angkanya TIDAK ikut dikosongkan
+karena riwayat bulan lalunya tak ada — itu disengaja, angkanya diselamatkan. Cari mereka
+lewat **Rekap Prestasi › Periksa Riwayat Bulanan** (kolom "terancam hilang").
+
+Mematikan: `select cron.unschedule('arsip-prestasi-bulanan');`
 
 Cek jadwal: `select jobname, schedule, active from cron.job;`
 Lihat run: `select * from cron.job_run_details order by start_time desc limit 20;`
