@@ -82,7 +82,34 @@ Buka **Bisyaroh › Pratinjau** sebelum Bulk Generate supaya selisihnya terlihat
   bukanya dijepit ke hari terakhir bulan — tanpa itu **Februari 28 hari tak pernah membuka
   jendelanya** dan rekapnya diam-diam terlewat setahun sekali.
 
+- **Daftar "belum isi rekap" tak lagi memecah guru sepasang** (v.1.3.8). Kyai, 2 Sep 2026:
+  "untuk guru yg sepasang jangan dipisah daftarnya." Daftarnya dulu satu baris per NAMA, jadi
+  satu kelas berpasangan muncul **dua kali dengan daftar santri yang sama persis** — terbaca
+  seolah dua guru berbeda yang lalai, dan jumlahnya ikut dobel. Di data sungguhan angkanya
+  turun dari *27 guru · 186 santri* menjadi *19 guru · 120 santri*. Pengelompokannya
+  diturunkan dari `utils/pasanganGuru` — sumber yang sama dengan dropdown kenaikan kelas,
+  termasuk asumsi "field `guru` lama = guru pagi" — supaya tak jadi salinan aturan ketiga.
+  Label daftar sengaja TANPA akhiran "(pagi)"/"(sore)" seperti di dropdown: PTPT & PPPH satu
+  guru per santri, jadi akhiran itu akan muncul di hampir semua baris tanpa pernah ada
+  pasangannya.
+
 ### Added
+
+- **Penambalan riwayat bulanan** (v.1.3.8). Kyai berencana mengosongkan angka prestasi di data
+  santri tiap tanggal 25, lalu bertanya: "riwayat yg bulan lalu masih ada kan ya?" Jawabannya
+  aman **hanya** untuk bulan yang sudah bersnapshot — dan Input Bulanan tak pernah menulis
+  snapshot sampai v.1.3.8. Tombol **Periksa Riwayat Bulanan** (super admin, di Rekap Prestasi)
+  memeriksa seluruh santri lebih dulu: berapa yang sudah aman, berapa yang angkanya akan hilang
+  selamanya, dan berapa yang bisa ditambal otomatis. Tak ada yang tersimpan sampai Terapkan
+  ditekan, dan riwayat yang sudah berangka tak pernah ditimpa.
+
+  Rancangan pertamanya **keliru dan data sungguhan yang membetulkannya**: ia memakai
+  `catatan_bulanan` sebagai satu-satunya penentu bulan, sehingga 237 santri dilaporkan "tak ada
+  bulannya" — padahal `RekapPrestasiView` menulis `riwayat_prestasi` **tanpa** menulis
+  `catatan_bulanan`, jadi justru merekalah yang riwayatnya paling lengkap. Pertanyaan yang
+  ditanyakan diperbaiki dari "angka ini milik bulan apa" menjadi "kalau kolom ini dikosongkan,
+  ada yang hilang selamanya atau tidak". Hasil sesungguhnya: **233 sudah aman, 4 terancam,
+  0 perlu ditambal.**
 
 - **Ekspor PDF daftar guru yang belum mengisi rekap** (v.1.3.8). Kyai, 2 Sep 2026: "untuk guru
   yg belum input/rekap data bisa saya ekspor pdf, untuk dishare siapa saja yg belum isi data."

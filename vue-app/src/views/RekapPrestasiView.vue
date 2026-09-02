@@ -176,6 +176,24 @@
           </p>
         </div>
       </div>
+      <!-- v.1.3.8 (Kyai, 2 Sep 2026): penambalan riwayat. InputBulananView tak pernah menulis
+           snapshot bulanan sampai v.1.3.8, jadi bulan yang diisi lewat layar itu hidup HANYA
+           di baris santri. Wajib ditambal SEBELUM angka di data santri boleh dikosongkan. -->
+      <div v-if="canCrud" class="mb-4">
+        <button
+          type="button"
+          class="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-lg border border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 transition cursor-pointer"
+          :class="tambalBusy ? 'opacity-50 pointer-events-none' : ''"
+          @click="bukaTambal"
+        >
+          <i :class="['fas', tambalBusy ? 'fa-spinner fa-spin' : 'fa-notes-medical']"></i>
+          Periksa Riwayat Bulanan
+        </button>
+        <p class="text-[11px] text-slate-500 mt-1.5">
+          Mencari bulan yang angkanya hanya ada di data santri dan belum punya riwayat sendiri.
+          Memeriksa dulu &mdash; tak ada yang tersimpan sampai Kyai menekan Terapkan.
+        </p>
+      </div>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
         <button
           class="group relative overflow-hidden bg-gradient-to-br from-emerald-500 dark:from-emerald-700 to-teal-700 dark:to-teal-900 hover:from-emerald-600 dark:from-emerald-800 hover:to-teal-800 rounded-2xl p-5 text-left text-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
@@ -1106,6 +1124,126 @@
       </div>
     </div>
   </div>
+  <!-- ===== v.1.3.8 · DIALOG PENAMBALAN RIWAYAT BULANAN ===== -->
+  <div
+    v-if="tambal"
+    class="fixed inset-0 z-50 bg-slate-900/60 flex items-center justify-center p-4"
+    @click.self="tambal = null"
+  >
+    <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col">
+      <div class="px-5 py-4 border-b border-slate-200">
+        <h3 class="text-sm font-black text-slate-800 uppercase tracking-widest">
+          <i class="fas fa-notes-medical text-amber-600 mr-1"></i>Penambalan Riwayat Bulanan
+        </h3>
+        <p class="text-[11px] text-slate-500 mt-1">
+          Menyalin angka yang kini hanya ada di data santri ke riwayat bulan yang bersangkutan,
+          supaya tak ikut hilang saat data santri dikosongkan.
+        </p>
+      </div>
+
+      <div class="px-5 py-4 overflow-y-auto space-y-4">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-center">
+          <div class="rounded-xl border border-amber-200 bg-amber-50 p-2.5">
+            <p class="text-lg font-black text-amber-700">{{ tambal.siap.length }}</p>
+            <p class="text-[10px] font-bold text-amber-700 uppercase">akan ditambal</p>
+          </div>
+          <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-2.5">
+            <p class="text-lg font-black text-emerald-700">{{ tambal.sudah }}</p>
+            <p class="text-[10px] font-bold text-emerald-700 uppercase">sudah aman</p>
+          </div>
+          <div class="rounded-xl border border-rose-200 bg-rose-50 p-2.5">
+            <p class="text-lg font-black text-rose-700">{{ tambal.beresiko.length }}</p>
+            <p class="text-[10px] font-bold text-rose-700 uppercase">terancam hilang</p>
+          </div>
+          <div class="rounded-xl border border-slate-200 bg-slate-50 p-2.5">
+            <p class="text-lg font-black text-slate-600">{{ tambal.kosong }}</p>
+            <p class="text-[10px] font-bold text-slate-600 uppercase">tanpa angka</p>
+          </div>
+        </div>
+
+        <div v-if="tambalSebaran.length" class="text-[11px] text-slate-600">
+          <b>Sebaran bulan:</b>
+          <span v-for="p in tambalSebaran" :key="p.periode" class="ml-1">
+            {{ labelPeriodeTambal(p.periode) }} ({{ p.jml }})<span
+              v-if="p !== tambalSebaran[tambalSebaran.length - 1]"
+              >,</span
+            >
+          </span>
+        </div>
+
+        <!-- Yang TAK bisa ditambal wajib terlihat, bukan disembunyikan di balik angka. -->
+        <div
+          v-if="tambal.beresiko.length"
+          class="rounded-xl border border-rose-200 bg-rose-50 p-3 text-[11px] text-rose-800"
+        >
+          <p class="font-bold">
+            <i class="fas fa-triangle-exclamation mr-1"></i>{{ tambal.beresiko.length }} santri
+            punya angka TANPA riwayat sama sekali
+          </p>
+          <p class="mt-1">
+            Angkanya TIDAK ditambal otomatis — bulannya tak diketahui, dan menaruhnya di bulan yang
+            salah lebih berbahaya daripada membiarkannya. Angka mereka akan HILANG bila data santri
+            dikosongkan; isi bulannya lewat Rekap Prestasi lebih dulu:
+            <span class="font-bold">{{ tambalBeresikoNama }}</span>
+          </p>
+        </div>
+
+        <div v-if="tambal.siap.length" class="border border-slate-200 rounded-xl overflow-hidden">
+          <table class="w-full text-[11px]">
+            <thead class="bg-slate-50 text-slate-500 uppercase text-[9px]">
+              <tr>
+                <th class="text-left px-2 py-1.5 font-black">Santri</th>
+                <th class="text-left px-2 py-1.5 font-black">Lembaga</th>
+                <th class="text-left px-2 py-1.5 font-black">Bulan</th>
+                <th class="text-right px-2 py-1.5 font-black">Awal</th>
+                <th class="text-right px-2 py-1.5 font-black">Akhir</th>
+                <th class="text-right px-2 py-1.5 font-black">Total</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              <tr v-for="r in tambal.siap.slice(0, 50)" :key="r.id">
+                <td class="px-2 py-1 font-bold text-slate-700">{{ r.santri.nama }}</td>
+                <td class="px-2 py-1 text-slate-500">{{ r.santri.lembaga }}</td>
+                <td class="px-2 py-1 text-slate-500">{{ labelPeriodeTambal(r.periode) }}</td>
+                <td class="px-2 py-1 text-right font-mono">{{ r.awal || '-' }}</td>
+                <td class="px-2 py-1 text-right font-mono">{{ r.akhir || '-' }}</td>
+                <td class="px-2 py-1 text-right font-mono">{{ r.total || '-' }}</td>
+              </tr>
+            </tbody>
+          </table>
+          <p
+            v-if="tambal.siap.length > 50"
+            class="text-[10px] text-slate-400 italic px-2 py-1.5 bg-slate-50"
+          >
+            &hellip; dan {{ tambal.siap.length - 50 }} baris lagi (semuanya ikut ditambal).
+          </p>
+        </div>
+        <p v-else class="text-xs text-slate-500 italic text-center py-4">
+          Tak ada lubang riwayat &mdash; semua angka sudah punya bulannya sendiri.
+        </p>
+      </div>
+
+      <div class="px-5 py-4 border-t border-slate-200 flex items-center justify-end gap-2">
+        <button
+          type="button"
+          class="px-4 py-2 text-xs font-bold rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50 cursor-pointer"
+          @click="tambal = null"
+        >
+          Tutup
+        </button>
+        <button
+          v-if="tambal.siap.length"
+          type="button"
+          class="px-4 py-2 text-xs font-black rounded-lg bg-amber-600 hover:bg-amber-700 text-white cursor-pointer"
+          :class="tambalBusy ? 'opacity-50 pointer-events-none' : ''"
+          @click="terapkanTambal"
+        >
+          <i :class="['fas', tambalBusy ? 'fa-spinner fa-spin' : 'fa-check', 'mr-1']"></i>
+          Terapkan ({{ tambal.siap.length }})
+        </button>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
@@ -1135,6 +1273,9 @@ import {
   sudahDinilaiBulan,
   LEMBAGA_PRESTASI_BULANAN
 } from '@/utils/prestasiBulanan'
+// v.1.3.8 (Kyai, 2 Sep 2026): menambal riwayat bulanan yang tak pernah tertulis, SEBELUM
+//   angka di data santri boleh dikosongkan tiap tanggal 25.
+import { analisaTambal, labelPeriode as labelPeriodeTambal } from '@/utils/tambalRiwayatPrestasi'
 import { useMobileShell } from '@/composables/useMobileShell'
 
 // v.1.2.3: rekap prestasi bulanan HANYA untuk PTPT & PPPH (TPQ Pagi/Sore/Pra PTPT tak
@@ -1218,6 +1359,77 @@ async function saveEditPrestasi() {
     toast.error('Gagal simpan koreksi: ' + (err.message || err))
   }
 }
+// ── v.1.3.8 · PENAMBALAN RIWAYAT BULANAN ────────────────────────────────────
+// Kyai berencana mengosongkan angka prestasi di data santri tiap tanggal 25. Itu aman
+// HANYA bila tiap bulan sudah punya salinannya sendiri — dan InputBulananView tak pernah
+// menulis snapshot sampai v.1.3.8, jadi banyak bulan hidup hanya di baris santri.
+// Aturannya (murni & teruji) di utils/tambalRiwayatPrestasi; di sini cuma IO + tampilan.
+const tambal = ref(null)
+const tambalBusy = ref(false)
+
+function bukaTambal() {
+  if (tambalBusy.value) return
+  tambal.value = analisaTambal(santriRaw.value, riwayatPrestasiRaw.value)
+}
+const tambalSebaran = computed(() =>
+  Object.entries(tambal.value?.periode || {})
+    .map(([periode, jml]) => ({ periode, jml }))
+    .sort((a, b) => String(b.periode).localeCompare(String(a.periode)))
+)
+const tambalBeresikoNama = computed(() => {
+  const n = (tambal.value?.beresiko || []).map((s) => s.nama || '(tanpa nama)')
+  return n.length > 8 ? `${n.slice(0, 8).join(', ')}, dan ${n.length - 8} lainnya` : n.join(', ')
+})
+
+async function terapkanTambal() {
+  const daftar = tambal.value?.siap || []
+  if (!daftar.length || tambalBusy.value) return
+  const ok = await confirmDlg({
+    title: `Tambal ${daftar.length} riwayat bulanan?`,
+    message:
+      'Angka yang kini hanya ada di data santri disalin ke riwayat bulan masing-masing. ' +
+      'Data santri TIDAK diubah, dan riwayat yang sudah berangka tidak ditimpa.',
+    confirmText: 'Terapkan'
+  })
+  if (!ok) return
+  tambalBusy.value = true
+  let sukses = 0
+  const gagal = []
+  try {
+    for (const r of daftar) {
+      try {
+        // Bentuk baris DITURUNKAN dari payloadRiwayatPrestasi — sumber yang sama dengan
+        // dua penulis lain, supaya baris tambalan tak berbeda bentuk dari baris asli.
+        await mergeOne(
+          'riwayat_prestasi',
+          r.id,
+          payloadRiwayatPrestasi({
+            santri: r.santri,
+            periode: r.periode,
+            bulanLabel: labelPeriodeTambal(r.periode),
+            awal: r.awal,
+            akhir: r.akhir,
+            total: r.total,
+            juz: r.juz
+          })
+        )
+        sukses++
+      } catch (e) {
+        gagal.push(`${r.santri.nama || r.santri.id}: ${e.message || e}`)
+      }
+    }
+    if (gagal.length) {
+      toast.error(`${sukses} tertambal, ${gagal.length} gagal — ${gagal[0]}`)
+    } else {
+      toast.success(`${sukses} riwayat bulanan tertambal.`)
+    }
+    // Hitung ulang dari data terbaru supaya angkanya tak berbohong sesudah diterapkan.
+    tambal.value = analisaTambal(santriRaw.value, riwayatPrestasiRaw.value)
+  } finally {
+    tambalBusy.value = false
+  }
+}
+
 async function hapusPrestasi(r) {
   const ok = await confirmDlg({
     title: `Hapus prestasi ${r.bulan_label || r.periode}?`,

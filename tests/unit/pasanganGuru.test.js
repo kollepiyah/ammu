@@ -6,7 +6,14 @@
 // sedangkan guru_pagi/guru_sore dibiarkan nilai lama — padahal kelasKeyQiraati dan
 // semua filter ampuan membaca pasangan itu duluan, jadi "pindah guru" tak berefek.
 import { describe, it, expect } from 'vitest'
-import { pasanganQiraati, labelPasangan, cariPasangan } from '@/utils/pasanganGuru'
+import {
+  pasanganQiraati,
+  labelPasangan,
+  cariPasangan,
+  pasanganSantri,
+  kunciPasangan,
+  labelPasanganRingkas
+} from '@/utils/pasanganGuru'
 import { buildKenaikanQiraatiPayload } from '@/utils/promosiKenaikan'
 
 const S = (o) => ({ aktif: true, lembaga: 'TPQ', ...o })
@@ -155,5 +162,61 @@ describe('buildKenaikanQiraatiPayload — pasangan guru ikut tersimpan (temuan C
     const last = payload.riwayat[payload.riwayat.length - 1]
     expect(last.guru).toBe('Bu Mazidatur & Bu Lilik Masudah')
     expect(last.keterangan).toContain('Bu Mazidatur & Bu Lilik Masudah')
+  })
+})
+
+// Kyai (2 Sep 2026): "untuk guru yg sepasang jangan dipisah daftarnya."
+//
+// Daftar "Guru Belum Isi Rekap Prestasi" dulu satu baris per NAMA guru, jadi satu kelas
+// berpasangan muncul dua kali dengan daftar santri yang sama persis — terbaca seolah dua
+// guru berbeda yang lalai, dan jumlah "guru belum input" ikut terhitung dobel.
+describe('pengelompokan daftar per pasangan (v.1.3.8)', () => {
+  it('pasangan yang sama menghasilkan kunci yang sama → satu baris, bukan dua', () => {
+    const a = pasanganSantri({ guru_pagi: 'Bu Mazidatur', guru_sore: 'Bu Lilik Masudah' })
+    const b = pasanganSantri({ guru_pagi: 'bu mazidatur', guru_sore: 'BU LILIK MASUDAH' })
+    expect(kunciPasangan(a)).toBe(kunciPasangan(b))
+  })
+
+  it('pagi & sore TERBALIK dianggap pasangan BERBEDA — urutannya memang bermakna', () => {
+    const a = pasanganSantri({ guru_pagi: 'Bu A', guru_sore: 'Bu B' })
+    const b = pasanganSantri({ guru_pagi: 'Bu B', guru_sore: 'Bu A' })
+    expect(kunciPasangan(a)).not.toBe(kunciPasangan(b))
+  })
+
+  it('field `guru` lama dibaca sebagai guru PAGI — asumsi sama dgn pasanganQiraati', () => {
+    expect(pasanganSantri({ guru: 'Ust. Khusnul' })).toEqual({
+      guru_pagi: 'Ust. Khusnul',
+      guru_sore: ''
+    })
+    // Tapi kalau sore terisi, `guru` lama TIDAK boleh merebut kolom pagi.
+    expect(pasanganSantri({ guru: 'Ust. Lama', guru_sore: 'Bu Sore' })).toEqual({
+      guru_pagi: '',
+      guru_sore: 'Bu Sore'
+    })
+  })
+
+  it('santri tanpa guru sama sekali → kunci kosong (tak ada yang bisa ditagih)', () => {
+    expect(kunciPasangan(pasanganSantri({}))).toBe('')
+    expect(kunciPasangan(pasanganSantri({ guru: '   ' }))).toBe('')
+  })
+
+  it('pagi & sore orang yang SAMA → satu kunci, label tak mendobel namanya', () => {
+    const p = pasanganSantri({ guru_pagi: 'Bu Nur', guru_sore: 'Bu Nur' })
+    expect(kunciPasangan(p)).toBe('bu nur')
+    expect(labelPasanganRingkas(p)).toBe('Bu Nur')
+  })
+
+  it('labelPasanganRingkas: tunggal TANPA akhiran "(pagi)" — beda dari dropdown', () => {
+    // PTPT & PPPH satu guru per santri; akhiran "(pagi)" akan muncul di hampir semua
+    // baris tanpa pernah ada sore-nya, dan itu menyesatkan di daftar tagihan.
+    const p = pasanganSantri({ guru: 'Ust. Khusnul' })
+    expect(labelPasanganRingkas(p)).toBe('Ust. Khusnul')
+    expect(labelPasangan(p)).toBe('Ust. Khusnul (pagi)') // dropdown tetap seperti dulu
+  })
+
+  it('berpasangan → "A & B"', () => {
+    expect(labelPasanganRingkas({ guru_pagi: 'Bu Mazidatur', guru_sore: 'Bu Lilik Masudah' })).toBe(
+      'Bu Mazidatur & Bu Lilik Masudah'
+    )
   })
 })

@@ -9,6 +9,14 @@ Rinciannya untuk pengembang ada di `CHANGELOG.md` — jangan disalin ke sana, te
 
 **Baru**
 
+- **Guru yang mengajar berpasangan tak lagi dipisah di daftar.** Satu kelas yang dipegang dua
+  guru dulu muncul dua kali dengan daftar santri yang sama, sehingga jumlah "guru belum input"
+  terlihat lebih banyak dari kenyataannya. Kini tampil satu baris, mis. *"Nur Faizah & Nur Fais
+  Zalillah"*.
+- **Pemeriksa riwayat bulanan (super admin).** Di menu Rekap Prestasi ada tombol **Periksa
+  Riwayat Bulanan** — memeriksa santri mana yang angka prestasinya belum punya riwayat bulanan
+  sendiri, jadi ketahuan lebih dulu apa yang akan hilang bila data santri dikosongkan. Hanya
+  memeriksa; tak ada yang tersimpan sampai tombol Terapkan ditekan.
 - **Daftar guru yang belum mengisi rekap bisa diekspor PDF.** Di halaman *Guru Belum Isi Rekap
   Prestasi* ada tombol **Ekspor PDF** — berkop pondok, lengkap dengan periode dan batas
   waktunya, berisi daftar guru beserta santri yang belum dinilai. Siap dibagikan lewat WA

@@ -124,3 +124,50 @@ export function partnerSore(peta, guruPagi) {
 export function partnerPagi(peta, guruSore) {
   return _top(peta?.sore2pagi?.get(bersih(guruSore)))
 }
+
+// ── v.1.3.8: pengelompokan daftar per PASANGAN, bukan per nama guru ──────────
+//
+// Kyai (2 Sep 2026): "untuk guru yg sepasang jangan dipisah daftarnya."
+//
+// Daftar "Guru Belum Isi Rekap Prestasi" dulu membuat SATU BARIS PER NAMA, jadi satu
+// kelas berpasangan muncul dua kali dengan daftar santri yang sama persis — terbaca
+// seolah dua guru yang berbeda-beda lalai, padahal itu satu tanggung jawab bersama,
+// dan jumlah "guru belum input" ikut terhitung dobel.
+
+/**
+ * Pasangan guru pengampu SATU santri, memakai fallback field lama yang sama dengan
+ * `pasanganQiraati` — `guru` lama dianggap guru PAGI bila pagi & sore dua-duanya kosong.
+ * Menyalin asumsi ini alih-alih memakainya ulang pernah membuat data lama tampil
+ * sebagai "kelas tanpa guru"; karena itu diturunkan di satu tempat saja.
+ */
+export function pasanganSantri(s) {
+  const sore = bersih(s?.guru_sore)
+  const tunggal = bersih(s?.guru)
+  return {
+    guru_pagi: bersih(s?.guru_pagi) || (!sore && tunggal ? tunggal : ''),
+    guru_sore: sore
+  }
+}
+
+/** Kunci pengelompokan yang stabil & tak peka huruf besar/kecil. '' bila tanpa guru. */
+export function kunciPasangan(p) {
+  const pagi = norm(p?.guru_pagi)
+  const sore = norm(p?.guru_sore)
+  if (!pagi && !sore) return ''
+  return pagi === sore ? pagi : `${pagi}|${sore}`
+}
+
+/**
+ * Label untuk DAFTAR: "Bu A & Bu B", atau nama tunggal apa adanya.
+ *
+ * Beda dari `labelPasangan` (dropdown) yang menambahkan akhiran "(pagi)"/"(sore)" pada
+ * pasangan sebelah. Di daftar tagihan akhiran itu justru menyesatkan: lembaga seperti
+ * PTPT & PPPH memakai satu guru per santri, sehingga hampir semua barisnya akan
+ * berakhiran "(pagi)" tanpa pernah ada sore-nya.
+ */
+export function labelPasanganRingkas(p) {
+  const pagi = bersih(p?.guru_pagi)
+  const sore = bersih(p?.guru_sore)
+  if (pagi && sore) return norm(pagi) === norm(sore) ? pagi : `${pagi} & ${sore}`
+  return pagi || sore || ''
+}

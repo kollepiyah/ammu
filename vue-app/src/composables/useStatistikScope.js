@@ -19,6 +19,8 @@ import {
   petaPrestasiPeriode,
   sudahDinilaiBulan
 } from '@/utils/prestasiBulanan'
+// v.1.3.8 (Kyai, 2 Sep 2026): "untuk guru yg sepasang jangan dipisah daftarnya."
+import { pasanganSantri, kunciPasangan, labelPasanganRingkas } from '@/utils/pasanganGuru'
 
 // Rasio Guru:Santri per lembaga (1 guru mengampu N santri). Lembaga sekolah = tanpa rasio.
 export const RASIO_GURU_SANTRI = {
@@ -127,23 +129,25 @@ export function useStatistikScope() {
     const m = new Map()
     for (const s of scopedSantriAktif.value) {
       if (!punyaPrestasiBulanan(s.lembaga)) continue
-      const gurus = _guruNgaji(s)
-      if (gurus.length === 0) continue
+      // v.1.3.8: SATU baris per PASANGAN, bukan per nama guru. Dulu satu kelas
+      //   berpasangan muncul dua kali dengan daftar santri yang sama persis — terbaca
+      //   seolah dua guru berbeda yang lalai, dan jumlah "guru belum input" dobel.
+      const pasangan = pasanganSantri(s)
+      const key = kunciPasangan(pasangan)
+      if (!key) continue // santri tanpa guru sama sekali — tak ada yang bisa ditagih
       const sudah =
         sudahDinilaiBulan(snap.get(String(s.id))) ||
         (s.catatan_bulanan &&
           typeof s.catatan_bulanan === 'object' &&
           Object.prototype.hasOwnProperty.call(s.catatan_bulanan, pk))
       if (sudah) continue
-      for (const g of gurus) {
-        if (!m.has(g)) m.set(g, { guru: g, santri: [] })
-        m.get(g).santri.push({
-          id: String(s.id),
-          nama: s.nama || '(tanpa nama)',
-          lembaga: s.lembaga || '',
-          kelas: s.kelas || ''
-        })
-      }
+      if (!m.has(key)) m.set(key, { guru: labelPasanganRingkas(pasangan), santri: [] })
+      m.get(key).santri.push({
+        id: String(s.id),
+        nama: s.nama || '(tanpa nama)',
+        lembaga: s.lembaga || '',
+        kelas: s.kelas || ''
+      })
     }
     return [...m.values()]
       .filter((x) => x.santri.length > 0)
