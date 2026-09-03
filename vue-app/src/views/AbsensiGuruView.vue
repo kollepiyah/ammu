@@ -633,9 +633,21 @@
               </tr>
             </thead>
             <tbody>
+              <!-- v.1.4.0 — v-memo pada BARIS, bukan pada sel.
+                   Selama objek baris ini masih yang itu juga, Vue melewati seluruh
+                   subpohonnya (nama, shift, 31 sel, 4 kolom rekap) tanpa di-diff sama
+                   sekali. Itulah yang membuat buka/tutup dialog perbaikan — dan tombol
+                   yang berubah jadi "Menyimpan…" — tak lagi menyeret ulang ribuan sel;
+                   baris hanya berganti identitas bila absensi/guru/kalender/bulan memang
+                   berubah. Semua yang dirujuk di dalam <tr> berasal dari `row`, jadi tak
+                   ada yang bisa basi di belakang memo ini.
+                   ⚠ v-memo WAJIB duduk di elemen v-for terluar: dipasang di <td> sebelah
+                   dalam, Vue memakai SATU slot cache untuk seluruh baris dan hasilnya
+                   bisa tertukar antar-guru. -->
               <tr
-                v-for="row in rekapRows"
-                :key="'r' + row.g.id + '_' + row.shift"
+                v-for="row in matriksBulanan"
+                :key="row.key"
+                v-memo="[row]"
                 class="border-b border-[var(--border-subtle)] hover:bg-slate-50 dark:hover:bg-slate-700/30"
               >
                 <td
@@ -655,7 +667,7 @@
                 <td class="p-1.5 text-center border-l border-[var(--border-subtle)]">
                   <span
                     class="inline-block px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-700 text-[9px] font-black text-slate-700 dark:text-slate-200 whitespace-nowrap"
-                    >{{ shiftLabel(row.shift) }}</span
+                    >{{ row.labelShift }}</span
                   >
                 </td>
                 <td
@@ -663,48 +675,45 @@
                 >
                   {{ row.g.fingerprint_id || row.g.fp_id || row.g.id_fingerprint || '-' }}
                 </td>
+                <!-- Sel sudah jadi (teks/warna/tooltip) dari `matriksBulanan` — tak ada
+                     lagi turunan apa pun di dalam template. -->
                 <td
-                  v-for="d in daysInMonth"
-                  :key="row.g.id + '_' + row.shift + '_' + d"
+                  v-for="sel in row.sel"
+                  :key="sel.d"
                   class="p-0.5 text-center border-l border-[var(--border-subtle)] relative"
                 >
                   <!-- Kyai 12 Agu 2026: klik sel = perbaiki statusnya, tanpa isi jam. -->
                   <button
                     type="button"
                     :class="[
-                      cellClass(row.g.id, row.shift, d),
+                      sel.kelas,
                       'inline-block w-5 h-5 leading-5 rounded text-[9px] font-bold cursor-pointer hover:ring-2 hover:ring-teal-500 focus:ring-2 focus:ring-teal-500 focus:outline-none transition'
                     ]"
-                    :title="cellTitle(row.g.id, row.shift, d) + ' — klik untuk perbaiki'"
+                    :title="sel.judul + ' — klik untuk perbaiki'"
                     :aria-label="
-                      'Perbaiki absen ' +
-                      row.g.nama +
-                      ' ' +
-                      isoDateOf(d) +
-                      ' ' +
-                      shiftLabel(row.shift)
+                      'Perbaiki absen ' + row.g.nama + ' ' + sel.iso + ' ' + row.labelShift
                     "
-                    @click="bukaPerbaiki(row, d)"
+                    @click="bukaPerbaiki(row, sel)"
                   >
-                    {{ cellText(row.g.id, row.shift, d) }}
+                    {{ sel.teks }}
                   </button>
                   <span
-                    v-if="pulangPending(row.g.id, row.shift, d)"
+                    v-if="sel.pulangPending"
                     class="absolute top-0.5 right-1 w-1.5 h-1.5 rounded-full bg-amber-400 ring-1 ring-white dark:ring-slate-800"
                     title="Belum absen pulang"
                   ></span>
                 </td>
                 <td class="p-1 text-center font-black text-emerald-700 bg-emerald-50/50">
-                  {{ countStatus(row.g.id, row.shift, ['hadir']) }}
+                  {{ row.H }}
                 </td>
                 <td class="p-1 text-center font-black text-cyan-700 bg-cyan-50/50">
-                  {{ countStatus(row.g.id, row.shift, ['terlambat']) }}
+                  {{ row.T }}
                 </td>
                 <td class="p-1 text-center font-black text-cyan-700 bg-cyan-50/50">
-                  {{ countStatus(row.g.id, row.shift, ['izin', 'sakit', 'cuti']) }}
+                  {{ row.ISC }}
                 </td>
                 <td class="p-1 text-center font-black text-rose-700 bg-rose-50/50">
-                  {{ countAlpha(row.g.id, row.shift) }}
+                  {{ row.A }}
                 </td>
               </tr>
             </tbody>
@@ -1311,7 +1320,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { setOne, updateOne, deleteOne, mergeOne, getOne, queryColl } from '@/services/db'
 import { isSuperAdmin } from '@/utils/roleScope'
 import {
@@ -1333,6 +1342,8 @@ import { useSettingsStore } from '@/stores/settings'
 import { shiftsForGuru, shiftBatas as shiftBatasOf, deriveShift } from '@/utils/shiftDerive'
 import { shiftList, shiftLabelOf, shiftById } from '@/utils/shiftMaster'
 import { materialisasiHadirIkut } from '@/utils/absensiMaterialize'
+// v.1.4.0: perakit sel matriks bulanan (murni + tes). Lihat `matriksBulanan`.
+import { bangunMatriksBulanan } from '@/utils/absensiMatriks'
 import { guruAktifSaja } from '@/utils/guruScope' // v.1.2.0: sumber tunggal penyaring status guru
 // v.1.3.7: canonLembaga tak lagi dipanggil di sini — normalisasinya pindah ke
 //   utils/lembagaShift bersama aturan "shift ini milik lembaga apa".
@@ -1344,6 +1355,7 @@ import {
   rentangBulan,
   tanggalRentang,
   geserMinggu,
+  gabungRentang,
   selKosong,
   tambahSel
 } from '@/utils/absensiRekap'
@@ -1371,7 +1383,13 @@ const {
   getNamaGuru,
   getBulanLabel,
   BULAN
-} = useAbsensi()
+} = useAbsensi({
+  // v.1.4.0: hanya tarik rentang tanggal yang benar-benar hidup di layar ini — lihat
+  //   `jendelaAbsensi` di bawah dan alasan lengkapnya di composables/useAbsensi.
+  //   Getter, bukan nilai: `jendelaAbsensi` baru lahir jauh di bawah, dan isinya baru
+  //   dibaca sesudah komponen ter-mount.
+  jendela: () => jendelaAbsensi.value
+})
 
 const { importFile, exportSimple } = useExcel()
 // v.100 Batch12: kirim Rekap Absensi Guru ke Google Sheet (hybrid, mirip PDF)
@@ -1678,6 +1696,7 @@ async function handleImportFingerprint(ev) {
           guru_id: guru.id,
           guru_nama: guru.nama,
           tanggal: tanggal,
+          periode: String(tanggal).slice(0, 7), // v.1.4.0: kolom riil — lihat absenHarian
           jam: jam || '',
           shift: shift,
           status: status,
@@ -1987,6 +2006,7 @@ async function saveHarian() {
         guru_id: g.id,
         guru_nama: g.nama,
         tanggal: today,
+        periode: String(today).slice(0, 7), // v.1.4.0: kolom riil — lihat utils/absenHarian
         jam: jam || '',
         // jam_pulang hanya dicatat (tak memengaruhi status hadir).
         jam_pulang: jamPulang,
@@ -2224,6 +2244,18 @@ const rekapPeriode = computed(() => {
   const { start, end } = rentangBulan(selectedYear.value, selectedMonth.value)
   return { start, end, label: `${getBulanLabel(selectedMonth.value)} ${selectedYear.value}` }
 })
+// v.1.4.0: rentang tanggal yang perlu DITARIK dari server. Dua periode hidup bersama di
+//   layar ini — matriks bulan terpilih dan rekap per-lembaga yang bisa berjalan mingguan
+//   dengan anchor sendiri — dan minggunya boleh jatuh di bulan lain. Rentang mingguan
+//   ikut disertakan walau modenya sedang 'bulanan', supaya berpindah mode tak perlu
+//   menarik data lagi. Kalau ini keliru menyempit, rekap mingguan diam-diam jadi NOL.
+const jendelaAbsensi = computed(() =>
+  gabungRentang(
+    rentangBulan(selectedYear.value, selectedMonth.value),
+    rentangMinggu(rekapAnchor.value)
+  )
+)
+
 // v.1.3.7: dua pertanyaan berbeda, dua fungsi berbeda (lihat utils/lembagaShift).
 //   lembagaOfShift  = JUDUL kelompok baris rekap — boleh menebak, tak menentukan apa pun.
 //   lembagaCell     = lembaga yang KALENDERNYA dipakai menilai libur — tak boleh menebak.
@@ -2232,28 +2264,10 @@ const rekapPeriode = computed(() => {
 function lembagaOfShift(g, shift) {
   return lembagaLabelShift(g, shift, settingsStore.settings || {})
 }
-// Peta id → baris guru. Matriks bulanan memanggil ini per SEL (guru × shift × 31 hari),
-//   jadi pencarian linear yang dulu dipakai lembagaCell berlipat begitu jadwal ikut
-//   ditanyakan tiap sel. Satu Map menghapus lipatannya.
-const guruById = computed(() => {
-  const m = new Map()
-  for (const g of guruRaw.value || []) m.set(String(g.id), g)
-  return m
-})
-function guruRow(guruId) {
-  return guruById.value.get(String(guruId)) || null
-}
-function lembagaCell(guruId, shift) {
-  const g = guruRow(guruId)
-  return g ? lembagaKalenderShift(g, shift, settingsStore.settings || {}) : ''
-}
-// v.1.3.8: sel matriks yang jatuh di luar jadwal mengajar guru ini. Dibedakan dari
-//   libur (huruf 'L', merah) supaya Kyai bisa melihat SEBAB sel itu kosong: libur
-//   lembaga, atau memang bukan harinya guru tsb.
-function bukanJadwalCell(guruId, shift, d) {
-  const g = guruRow(guruId)
-  return g ? !guruMasukPada(g, shift, isoDateOf(d)) : false
-}
+// v.1.4.0: peta id→guru dan pembungkus per-sel (guruById/lembagaCell/bukanJadwalCell)
+//   DIHAPUS. Ketiganya lahir hanya karena matriks bertanya per SEL; sejak perakitannya
+//   pindah ke utils/absensiMatriks, penanyanya sudah memegang baris gurunya sendiri dan
+//   lembaga kalender cukup ditanya sekali per BARIS. Lihat `matriksBulanan` di bawah.
 function kelompokKeyOf(lembaga) {
   return getLembagaBroadGroup(lembaga) || 'lainnya'
 }
@@ -2556,6 +2570,59 @@ function getAbsensiCell(guruId, shift, d) {
 }
 
 // =====================================================
+// MATRIKS BULANAN — dirakit SEKALI, bukan per sel saat render (v.1.4.0)
+//   Kyai, 3 Sep 2026: "akses edit rekap absen bulanan guru terasa lambat ketika saya
+//   edit manual."
+//
+// Dulu template memanggil cellText/cellClass/cellTitle/pulangPending + countStatus × 3
+//   + countAlpha — tujuh fungsi, tiap-tiap menurunkan ULANG lembaga kalender (yang
+//   memanggil shiftList → normalisasi + sort seluruh master shift), libur, dan jadwal
+//   guru. Fungsi di dalam template tak bisa di-cache Vue: ia jalan lagi tiap komponen
+//   render, termasuk render yang tak menyentuh matriks sama sekali (dialog perbaikan
+//   dibuka, tombol jadi "Menyimpan…", dialog ditutup). Satu perbaikan manual = empat
+//   kali merender ulang ≈200 rb turunan.
+//
+// Sekarang: satu computed. Ia hanya dihitung ulang bila SUMBERNYA berubah (absensi,
+//   guru, settings, kalender, bulan) — bukan saat dialog dibuka-tutup — dan tiap sel
+//   membawa teks/warna/tooltip/penanda yang sudah jadi. Aturannya sendiri pindah ke
+//   utils/absensiMatriks (murni + tes), jadi layar, Excel, dan PDF membaca satu sumber.
+// "Hari ini" harus REAKTIF sejak matriksnya jadi computed. Dulu todayJakarta() ikut
+//   dipanggil tiap render, jadi pergantian hari terbawa sendirinya; kalau sekarang
+//   dibiarkan sebagai panggilan biasa, layar yang ditinggal terbuka melewati tengah malam
+//   akan menahan tanggal kemarin — sel hari yang baru lewat tak berhuruf 'A' dan, lebih
+//   mengganggu, tak bisa diklik untuk diperbaiki.
+//   Sengaja BUKAN useClock (berdetak tiap detik = matriks dirakit ulang tiap detik).
+//   Menetapkan nilai yang SAMA ke sebuah ref tidak memicu apa pun di Vue, jadi denyut
+//   semenit sekali ini hanya benar-benar menyentuh matriks satu kali dalam sehari.
+const hariIniWib = ref(todayJakarta())
+let denyutHari = null
+onMounted(() => {
+  denyutHari = setInterval(() => {
+    hariIniWib.value = todayJakarta()
+  }, 60000)
+})
+onUnmounted(() => {
+  if (denyutHari) clearInterval(denyutHari)
+  denyutHari = null
+})
+
+const matriksBulanan = computed(() =>
+  bangunMatriksBulanan({
+    baris: rekapRows.value,
+    hari: daysInMonth.value,
+    hariIni: hariIniWib.value,
+    isoOf: isoDateOf,
+    absenOf: getAbsensiCell,
+    // Sekali per BARIS. Ini pertanyaan "lembaga mana yang KALENDERNYA berlaku" — tak
+    //   boleh menebak (v.1.3.7), dan tak bergantung tanggal.
+    lembagaOf: (g, shift) => lembagaKalenderShift(g, shift, settingsStore.settings || {}),
+    liburOf: isLiburIso,
+    masukOf: guruMasukPada,
+    labelShiftOf: shiftLabel
+  })
+)
+
+// =====================================================
 // PERBAIKI ABSEN LANGSUNG DARI MATRIKS (Kyai 12 Agu 2026)
 //   "perbaiki absensi lewat sini saja biar lebih cepat. tidak perlu input jam."
 //
@@ -2580,17 +2647,19 @@ const perbaikiSel = ref(null) // { guruId, guruNama, shift, hari, iso, aktif }
 const perbaikiBusy = ref(false)
 const dlgPerbaiki = ref(null)
 
-function bukaPerbaiki(row, d) {
-  const lem = lembagaCell(row.g.id, row.shift)
-  const iso = isoDateOf(d)
+// v.1.4.0: menerima SEL yang sudah dirakit matriksBulanan, bukan menurunkan ulang
+//   libur/tanggal/lembaga di sini. Dua penolakan di bawah sengaja tetap memakai penanda
+//   milik sel itu (`libur`, `lampau`) — kalau alasannya diturunkan lagi secara terpisah,
+//   suatu saat sel bisa terlihat bisa-diklik sementara penolakannya bilang sebaliknya.
+function bukaPerbaiki(row, sel) {
   // Hari libur: statusnya turun dari KALENDER, bukan dari baris absen. Menulis baris di
-  //   sini tak akan mengubah tampilan sel (cellText mendahulukan libur) — jadi menolak
+  //   sini tak akan mengubah tampilan sel (huruf 'L' mendahulukan libur) — jadi menolak
   //   lebih jujur daripada menyimpan diam-diam sesuatu yang tak terlihat.
-  if (isHariLibur(d, lem)) {
+  if (sel.libur) {
     toast.warning('Tanggal ini libur. Ubah dulu di Kalender kalau memang hari kerja.')
     return
   }
-  if (iso > todayJakarta()) {
+  if (!sel.lampau) {
     toast.warning('Belum bisa: tanggalnya belum lewat.')
     return
   }
@@ -2598,9 +2667,9 @@ function bukaPerbaiki(row, d) {
     guruId: row.g.id,
     guruNama: row.g.nama || '',
     shift: row.shift,
-    hari: d,
-    iso,
-    aktif: getAbsensiCell(row.g.id, row.shift, d)
+    hari: sel.d,
+    iso: sel.iso,
+    aktif: getAbsensiCell(row.g.id, row.shift, sel.d)
   }
   dlgPerbaiki.value?.showModal?.()
 }
@@ -2642,111 +2711,12 @@ async function simpanPerbaikan(status) {
   }
 }
 
-function cellText(guruId, shift, d) {
-  if (isHariLibur(d, lembagaCell(guruId, shift))) return 'L'
-  const a = getAbsensiCell(guruId, shift, d)
-  if (!a) {
-    // kosong & hari sudah lewat = alpha; hari depan = belum terjadi (kosong)
-    // v.1.3.8: kecuali memang bukan jadwalnya — titik, bukan 'A'.
-    if (bukanJadwalCell(guruId, shift, d)) return '·'
-    const today = todayJakarta()
-    return isoDateOf(d) <= today ? 'A' : ''
-  }
-  const s = String(a.status || 'hadir').toLowerCase()
-  if (s === 'terlambat') return 'T'
-  if (s === 'izin') return 'I'
-  if (s === 'sakit') return 'S'
-  if (s === 'cuti') return 'C'
-  // Alpa TERCATAT (dari perbaikan manual) — beda dengan alpa karena baris tak ada.
-  //   Tanpa cabang ini ia jatuh ke 'H' di bawah: guru yang justru ditandai alpa akan
-  //   tampil HADIR. Status 'alpa' sendiri sudah dikenali PersonalView & StatistikView.
-  if (s === 'alpa' || s === 'alpha') return 'A'
-  return 'H'
-}
-
-function cellClass(guruId, shift, d) {
-  if (isHariLibur(d, lembagaCell(guruId, shift))) return 'bg-rose-200 text-rose-800'
-  const a = getAbsensiCell(guruId, shift, d)
-  if (!a) {
-    // v.1.3.8: bukan jadwalnya → abu-abu netral, sengaja TIDAK merah. Warna merah di
-    //   kolom ini selama ini berarti "ada yang salah"; hari yang memang bukan jadwal
-    //   guru tak boleh terlihat begitu.
-    if (bukanJadwalCell(guruId, shift, d))
-      return 'bg-[var(--bg-card-elevated)] text-[var(--text-tertiary)] opacity-60'
-    const today = todayJakarta()
-    return isoDateOf(d) <= today
-      ? 'bg-rose-100 text-rose-700'
-      : 'bg-[var(--bg-card-elevated)] text-[var(--text-tertiary)]'
-  }
-  const s = String(a.status || 'hadir').toLowerCase()
-  if (s === 'terlambat') return 'bg-cyan-200 text-cyan-800'
-  if (s === 'izin' || s === 'sakit') return 'bg-cyan-200 text-cyan-800'
-  if (s === 'cuti') return 'bg-violet-200 text-violet-800'
-  if (s === 'alpa' || s === 'alpha') return 'bg-rose-100 text-rose-700'
-  return 'bg-emerald-200 text-emerald-800'
-}
-
-function cellTitle(guruId, shift, d) {
-  const iso = isoDateOf(d)
-  if (isHariLibur(d, lembagaCell(guruId, shift))) return iso + ' — Libur'
-  const a = getAbsensiCell(guruId, shift, d)
-  if (!a) {
-    if (bukanJadwalCell(guruId, shift, d))
-      return iso + ' — Bukan jadwal mengajarnya [' + shiftLabel(shift) + ']'
-    const today = todayJakarta()
-    return iso + (iso <= today ? ' — Alpha' : ' — (belum)') + ' [' + shiftLabel(shift) + ']'
-  }
-  const st = String(a.status || 'hadir').toLowerCase()
-  const perluPulang = st === 'hadir' || st === 'terlambat'
-  const pulangTxt = perluPulang
-    ? a.jam_pulang
-      ? ' · pulang ' + a.jam_pulang
-      : ' · belum pulang'
-    : ''
-  return `${iso} — ${a.status || 'hadir'}${a.jam ? ' (' + a.jam + ')' : ''}${pulangTxt} [${shiftLabel(shift)}]`
-}
-
-// Baris hadir/terlambat yg belum ada jam_pulang → penanda "belum pulang" (info, tak nge-gate).
-function pulangPending(guruId, shift, d) {
-  const a = getAbsensiCell(guruId, shift, d)
-  if (!a) return false
-  const s = String(a.status || 'hadir').toLowerCase()
-  if (s !== 'hadir' && s !== 'terlambat') return false
-  return !String(a.jam_pulang || '').trim()
-}
-
-function countStatus(guruId, shift, statuses) {
-  const lem = lembagaCell(guruId, shift)
-  let n = 0
-  for (let d = 1; d <= daysInMonth.value; d++) {
-    if (isHariLibur(d, lem)) continue
-    const a = getAbsensiCell(guruId, shift, d)
-    if (a && statuses.includes(String(a.status || 'hadir').toLowerCase())) n++
-  }
-  return n
-}
-
-// Alpha = hari kerja (non-libur utk lembaga shift ini) yg sudah lewat tanpa record.
-// v.1.3.8: hari di luar jadwal guru dilewati saat KOSONG — tapi baris 'alpa' yang
-//   ditandai Kyai sendiri di hari seperti itu tetap dihitung (itu penilaian manusia,
-//   bukan simpulan sistem dari sel kosong).
-function countAlpha(guruId, shift) {
-  const today = todayJakarta()
-  const lem = lembagaCell(guruId, shift)
-  let n = 0
-  for (let d = 1; d <= daysInMonth.value; d++) {
-    if (isHariLibur(d, lem)) continue
-    if (isoDateOf(d) > today) continue
-    const a = getAbsensiCell(guruId, shift, d)
-    if (!a && bukanJadwalCell(guruId, shift, d)) continue
-    // Dua bentuk alpa, dan keduanya harus terhitung SEKALI: tak ada baris sama sekali,
-    //   ATAU baris ber-status 'alpa' hasil perbaikan manual. Sehari hanya punya satu
-    //   baris, jadi cabang if/else ini tak mungkin menghitung ganda.
-    if (!a) n++
-    else if (['alpa', 'alpha'].includes(String(a.status || '').toLowerCase())) n++
-  }
-  return n
-}
+// v.1.4.0: cellText / cellClass / cellTitle / pulangPending / countStatus / countAlpha
+//   DIHAPUS dari sini. Ketujuh pemanggilan itu masing-masing memutuskan sendiri
+//   "libur? bukan jadwal? sudah lewat?" — tiga salinan aturan yang sama, dan huruf sel
+//   sempat bisa berselisih dengan kolom rekap di baris yang sama. Sekarang satu tempat:
+//   utils/absensiMatriks (murni + tests/unit/absensiMatriks.test.js), dirakit oleh
+//   `matriksBulanan` di atas.
 
 // =====================================================
 // EXPORT EXCEL
@@ -2765,13 +2735,21 @@ function buildRekapExport() {
   columns.push({ key: 'T', header: 'T', width: 5 })
   columns.push({ key: 'IS', header: 'I/S/C', width: 5 })
   columns.push({ key: 'A', header: 'A', width: 5 })
-  const rows = rekapRows.value.map(({ g, shift }) => {
-    const r = { nama: g.nama, shift: shiftLabel(shift), lembaga: g.lembaga || g.unit || '-' }
-    for (let d = 1; d <= days; d++) r['d' + d] = cellText(g.id, shift, d)
-    r.H = countStatus(g.id, shift, ['hadir'])
-    r.T = countStatus(g.id, shift, ['terlambat'])
-    r.IS = countStatus(g.id, shift, ['izin', 'sakit', 'cuti'])
-    r.A = countAlpha(g.id, shift)
+  // v.1.4.0: dibaca dari matriks yang SAMA dengan yang tampil di layar. Dulu ekspor
+  //   memanggil ulang cellText/countStatus/countAlpha — hasilnya memang sama, tapi ia
+  //   jalur kedua yang harus diingat tiap kali aturannya berubah. Sekarang mustahil
+  //   berselisih: Excel, Google Sheet, PDF, dan layar membaca satu larik.
+  const rows = matriksBulanan.value.map((m) => {
+    const r = {
+      nama: m.g.nama,
+      shift: m.labelShift,
+      lembaga: m.g.lembaga || m.g.unit || '-'
+    }
+    for (let d = 1; d <= days; d++) r['d' + d] = m.sel[d - 1]?.teks ?? ''
+    r.H = m.H
+    r.T = m.T
+    r.IS = m.ISC
+    r.A = m.A
     return r
   })
   return { columns, rows }

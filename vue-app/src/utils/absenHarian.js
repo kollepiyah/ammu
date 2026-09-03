@@ -91,6 +91,13 @@ export function payloadPerbaikanAbsen(p, stamp) {
     guru_id: p.guruId,
     guru_nama: p.guruNama || '',
     tanggal: p.iso,
+    // v.1.4.0: `periode` ('YYYY-MM') adalah kolom RIIL di absensi_shift_guru dan bagian
+    //   dari index (guru_id, periode) — tapi jalur ini tak pernah mengisinya, begitu pula
+    //   input harian dan impor Excel fingerprint. Akibatnya index itu tak bisa dipercaya:
+    //   query per bulan yang memakainya akan MEMBUANG baris tanpa suara. Diisi di sini
+    //   supaya baris baru tak menambah lubangnya lagi. Baris LAMA masih kosong — lihat
+    //   catatan backfill di CHANGELOG v.1.4.0.
+    periode: String(p.iso || '').slice(0, 7),
     shift: p.shift,
     status,
     jam: tanpaJam ? '' : p.lama?.jam || '',

@@ -1,7 +1,24 @@
 // useAbsensi — list absensi shift guru (koleksi absensi_shift_guru) realtime
 // Phase 5.16/17 (v.39.0526). v.110: sumber dibetulkan absensi -> absensi_shift_guru
 // (view tulis ke absensi_shift_guru; fingerprint/izin/manual semua ke sana) + filterStatus.
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+//
+// v.1.4.0 (Kyai, 3 Sep 2026: "akses edit rekap absen bulanan guru terasa lambat ketika
+// saya edit manual"): langganan kini BER-JENDELA TANGGAL. Sebelumnya `subscribeColl`
+// dipanggil tanpa penyaring sama sekali — artinya SELURUH riwayat absensi sejak tabel
+// ini lahir ditarik ulang, 1.000 baris per permintaan secara berurutan, SETIAP KALI ada
+// satu baris berubah di mana pun (realtime memang menarik ulang set penuh; lihat
+// RT_DEBOUNCE_MS di services/db). Menyimpan satu perbaikan manual karena itu membayar
+// puluhan bolak-balik jaringan untuk data bulan-bulan yang tak sedang dilihat siapa pun.
+//
+// Jendelanya disuntik pemanggil (`opts.jendela`, sebuah getter) karena hanya view yang
+// tahu periode apa saja yang sedang hidup di layarnya. Tak diberi = perilaku lama persis
+// (tanpa penyaring), supaya pemanggil lain tak ikut berubah diam-diam.
+//
+// ⚠ Penyaringnya memakai `tanggal` yang tinggal di dalam kolom `data` jsonb. Kolom RIIL
+// `periode` sengaja TIDAK dipakai walau ia terindeks (guru_id, periode): tiga jalur tulis
+// — perbaikan manual, input harian, dan impor Excel fingerprint — tak pernah mengisinya,
+// jadi menyaring dengannya akan MEMBUANG baris tanpa suara. Lihat CHANGELOG v.1.4.0.
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { subscribeColl } from '@/services/db'
 import { useCollectionsStore } from '@/stores/collections'
@@ -22,10 +39,20 @@ const BULAN = [
   'Desember'
 ]
 
-export function useAbsensi() {
+/**
+ * @param {object} [opts]
+ * @param {() => ({start:string, end:string}|null)} [opts.jendela] rentang ISO yang perlu
+ *   ditarik. Dipanggil ulang setiap kali sumbernya berubah (bulan/minggu digeser).
+ */
+export function useAbsensi(opts = {}) {
   const auth = useAuthStore()
   const collections = useCollectionsStore()
-  collections.ensure('guru', 'santri')
+  // v.1.4.0: 'santri' TIDAK lagi di-ensure di sini. Layar absensi guru tak menyentuh
+  //   satu baris santri pun, tapi ensure ini membuat siapa pun yang membuka Absensi Guru
+  //   lebih dulu ikut menarik SELURUH tabel santri (tabel terbesar di aplikasi) sebelum
+  //   layarnya sempat tampil. `santriRaw` tetap diekspor dan tetap terisi begitu layar
+  //   lain yang memang butuh me-ensure-nya — store-nya memang dipakai bersama.
+  collections.ensure('guru')
   const { guru: guruRaw, santri: santriRaw } = storeToRefs(collections)
   const absensi = ref([])
   const loading = ref(true)
@@ -105,16 +132,66 @@ export function useAbsensi() {
     return BULAN[m - 1] || '-'
   }
 
-  onMounted(() => {
-    unsubs.push(
-      subscribeColl('absensi_shift_guru', (docs) => {
+  // Langganan absensi dipasang ulang saat jendelanya bergeser. Data LAMA sengaja tidak
+  // dikosongkan dulu supaya tak ada kedipan kosong sebelum data baru tiba — pola yang
+  // sama dengan `reloadActive()` di stores/collections.
+  let lepasAbsensi = null
+  const jendela = opts.jendela ? computed(() => opts.jendela()) : null
+
+  function pasangLangganan() {
+    if (lepasAbsensi) {
+      try {
+        lepasAbsensi()
+      } catch (e) {
+        /* noop */
+      }
+      lepasAbsensi = null
+    }
+    const w = jendela ? jendela.value : null
+    const filters =
+      w && w.start && w.end
+        ? [
+            ['tanggal', '>=', w.start],
+            ['tanggal', '<=', w.end]
+          ]
+        : []
+    lepasAbsensi = subscribeColl(
+      'absensi_shift_guru',
+      (docs) => {
         absensi.value = docs
         loading.value = false
-      })
+      },
+      filters
     )
+  }
+
+  onMounted(() => {
+    pasangLangganan()
+    if (jendela) {
+      unsubs.push(
+        watch(
+          () => {
+            const w = jendela.value
+            // Dibandingkan sebagai STRING: computed-nya membuat objek baru tiap kali
+            // sumbernya disentuh, jadi membandingkan objeknya akan memasang ulang
+            // langganan walau rentangnya tak bergeser sedikit pun.
+            return w ? `${w.start}..${w.end}` : ''
+          },
+          () => pasangLangganan()
+        )
+      )
+    }
   })
 
   onUnmounted(() => {
+    if (lepasAbsensi) {
+      try {
+        lepasAbsensi()
+      } catch (e) {
+        /* noop */
+      }
+      lepasAbsensi = null
+    }
     for (const u of unsubs) {
       if (u) {
         try {

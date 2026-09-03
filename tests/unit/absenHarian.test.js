@@ -124,6 +124,16 @@ describe('payloadPerbaikanAbsen', () => {
     }
   })
 
+  // v.1.4.0: `periode` adalah kolom RIIL (bagian index guru_id+periode). Sampai 3 Sep 2026
+  //   jalur ini tak pernah mengisinya, sehingga index-nya bolong dan query per bulan yang
+  //   memakainya akan membuang baris tanpa suara. Kalau tes ini merah lagi, lubang itu
+  //   kembali terbuka.
+  it('mengisi periode YYYY-MM dari tanggalnya', () => {
+    const p = payloadPerbaikanAbsen({ ...dasar, status: 'izin', lama: null }, STAMP)
+    expect(p.periode).toBe('2026-08')
+    expect(p.periode).toBe(p.tanggal.slice(0, 7))
+  })
+
   it('baris belum ada (alpa tanpa data) tetap menghasilkan muatan lengkap', () => {
     const p = payloadPerbaikanAbsen({ ...dasar, status: 'izin', lama: null }, STAMP)
     expect(p).toMatchObject({

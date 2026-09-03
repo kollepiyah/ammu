@@ -41,6 +41,28 @@ export function rentangBulan(year, month) {
   return { start: isoOf(year, month, 1), end: isoOf(year, month, last) }
 }
 
+// Rentang terkecil yang MEMUAT semua rentang yang diberikan (v.1.4.0).
+//
+// Dipakai memutuskan seberapa lebar jendela absensi yang perlu DITARIK dari server.
+// Layar ini punya dua periode yang hidup berdampingan: matriks bulanan (bulan terpilih)
+// dan rekap per-lembaga yang bisa berjalan MINGGUAN dengan anchor sendiri — dan minggu
+// itu boleh berada di bulan lain sama sekali. Menarik hanya bulan terpilih akan membuat
+// rekap mingguan diam-diam menampilkan nol.
+//
+// Perbandingan ISO 'YYYY-MM-DD' cukup leksikografis; tak perlu Date (dan karena itu tak
+// bisa tergelincir zona waktu). null bila tak ada satu pun rentang yang sah — pemanggil
+// menerjemahkannya sebagai "tanpa penyaring" (perilaku lama: seluruh tabel).
+export function gabungRentang(...rentang) {
+  let start = null
+  let end = null
+  for (const r of rentang) {
+    if (!r || !r.start || !r.end) continue
+    if (start === null || r.start < start) start = r.start
+    if (end === null || r.end > end) end = r.end
+  }
+  return start && end ? { start, end } : null
+}
+
 // Geser anchor n minggu (utk tombol prev/next).
 export function geserMinggu(anchorIso, n) {
   const [y, m, d] = String(anchorIso).split('-').map(Number)
