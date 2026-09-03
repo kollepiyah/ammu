@@ -24,7 +24,6 @@ import ToastStack from '@/components/ui/ToastStack.vue'
 import { useAuthStore } from '@/stores/auth'
 import { usePushNotifications } from '@/composables/usePushNotifications'
 // v.1.2.8: tawaran unduh pembaruan APK (aplikasi Android saja)
-import { useAndroidUpdate } from '@/composables/useAndroidUpdate'
 
 // v.20.74.1.0526: BUGFIX — App.vue jangan panggil ui.initDarkFromStorage/auth.bindLiveSesi/settings.bindSettings.
 // main.js sudah handle init. App.vue cuma watch theme color + appTitle.
@@ -143,16 +142,19 @@ async function setupNativeIntegration() {
 
 onMounted(setupNativeIntegration)
 
-// v.1.2.8: tawarkan pembaruan APK di aplikasi Android (Kyai: "supaya tidak nunggu lama
-//   dari playstore"). Sengaja ditunda beberapa detik supaya tak berebut dengan boot, dan
-//   diam-diam gagal kalau jaringan/berkasnya tak ada. Lihat useAndroidUpdate.
-onMounted(() => {
-  try {
-    useAndroidUpdate().cekOtomatis()
-  } catch (e) {
-    /* cek pembaruan tak boleh mengganggu app */
-  }
-})
+// v.1.4.0 (Kyai, 3 Sep 2026): "matikan notif pembaruan untuk android, cukup update via
+//   playstore saja." Cek otomatis saat app dibuka DIHAPUS dari sini.
+//
+//   Fitur ini lahir v.1.2.8 karena peninjauan Play makan waktu berhari-hari sedangkan
+//   perbaikan sering perlu hari itu juga — jalannya menawarkan APK dari GitHub Releases.
+//   Sekarang jalur itu ditutup: satu-satunya pembaruan Android adalah Play Store, yang
+//   sudah punya pemberitahuannya sendiri. Menawarkan APK di samping Play Store juga
+//   menyimpan jebakan lama: APK yang salah tanda tangan tak bisa memasang menimpa
+//   aplikasi dari Play ("App not installed"), dan pengguna baru tahu setelah mengunduh.
+//
+//   composables/useAndroidUpdate.js sengaja TIDAK dihapus — mesinnya utuh dan teruji,
+//   tinggal dipanggil lagi kalau suatu hari Play kembali terlalu lambat. Yang dicabut
+//   cuma pemanggilnya. Lihat juga vue-app/public/app-version.json.
 
 // --- Pengaturan printer: dipasang saat diminta saja (P8b) --------------------
 // Pembukanya = event window 'ammu:open-printer-settings' (PosSantriView +

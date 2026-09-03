@@ -44,7 +44,16 @@ function unduhanRilis(namaBerkas) {
   return `${REPO}/releases/latest/download/${namaBerkas}`
 }
 
-/** APK Android — namanya TANPA versi (Kyai unggah manual dari Play Console). */
+// v.1.4.0 (Kyai, 3 Sep 2026): "matikan notif pembaruan untuk android, cukup update via
+//   playstore saja." Sejak itu Play Store adalah SATU-SATUNYA jalur pembaruan Android;
+//   `app.ammu.id` = applicationId di vue-app/android/app/build.gradle & capacitor.config.
+//   Ditaruh di sini, bukan di dalam view, supaya id aplikasi tak tersalin ke banyak tempat.
+export const URL_PLAYSTORE = 'https://play.google.com/store/apps/details?id=app.ammu.id'
+
+/** APK Android — namanya TANPA versi (Kyai unggah manual dari Play Console).
+ *  ⚠ Sejak v.1.4.0 ini BUKAN lagi jalur pembaruan — hanya tautan pasang di layar
+ *  login (yang masih bisa Kyai timpa lewat setelan `downloadAndroid`). Pembaruan
+ *  aplikasi yang sudah terpasang: Play Store, lihat URL_PLAYSTORE. */
 export function urlApk() {
   return unduhanRilis('AmmuOnline.apk')
 }

@@ -1,5 +1,17 @@
 // useAndroidUpdate — pemberitahuan pembaruan IN-APP untuk aplikasi ANDROID.
 //
+// ⚠️ DIPARKIR SEJAK v.1.4.0 — TIDAK DIPANGGIL DARI MANA PUN.
+//    Kyai, 3 Sep 2026: "matikan notif pembaruan untuk android, cukup update via playstore
+//    saja." Cek otomatis dicabut dari App.vue dan tombol "Cek Pembaruan" di BantuanView
+//    diganti tautan Play Store. Berkas ini sengaja TIDAK dihapus: mesinnya utuh dan
+//    teruji (tests/unit/putusanPembaruan.test.js), jadi kalau suatu hari peninjauan Play
+//    kembali terlalu lama, menghidupkannya cukup memanggil `cekOtomatis()` lagi.
+//    Sebelum itu, baca dulu syarat tanda tangan APK di bawah — itu yang paling sering
+//    membuat jalur ini gagal diam-diam.
+//    Sisi datanya ada di vue-app/public/app-version.json: `apkUrl` sengaja DIKOSONGKAN
+//    supaya aplikasi vc139 ke bawah yang masih membawa cek otomatis berhenti menawarkan
+//    apa pun (putusan 'belum-siap' = diam pada cek otomatis).
+//
 // Kenapa ada (Kyai, 5 Agu 2026): "di web ada tautan link download android (apk). jika
 // ada update baru, supaya tidak nunggu lama dari playstore ... bisa langsung ada notif
 // unduh pembaruan untuk android (seperti di electron)". Peninjauan Play memakan waktu
