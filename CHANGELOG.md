@@ -12,19 +12,158 @@ naik satu tiap rilis. Entri lama memakai skema lama `v.{nomor-urut}.{MMDDtahunmu
 
 ### Planned
 
-- **Tujuan pembaruan Android ikut data, bukan teks tetap** (v.1.3.2). `apkUrl` di
-  `public/app-version.json` sudah boleh diarahkan ke
-  `https://play.google.com/store/apps/details?id=app.ammu.id` tanpa menyentuh kode — Capacitor
-  meneruskannya ke browser sistem dan Android membukanya di aplikasi Play. Yang belum ikut
-  pindah cuma **kalimat dialognya**, yang masih berbunyi "Berkas akan diunduh lewat peramban…"
-  (`composables/useAndroidUpdate.js`). Kenali tujuan Play lalu ganti teks + label tombol jadi
-  "Buka Play Store", supaya perpindahan APK ↔ Play selamanya cukup menyunting JSON.
-  ⚠️ `apkUrlSah()` menolak selain `https://`, jadi `market://` bukan pilihan.
 - Capacitor Android first build + sideload APK
 - Capacitor iOS setup
 - Tauri Desktop scaffold
 - Phase 1 palette migration: `bg-blue-600/700` action button → `bg-teal-600/700` (~62 occurrences)
 - DOMPurify integration untuk template literal innerHTML yang inject user data
+
+---
+
+## [v.1.4.0] — 2026-09-03 — Rekap absen bulanan yang ringan + pembaruan Android lewat Play saja
+
+⚠️ **URUTAN DEPLOY — frontend murni.** Tanpa migrasi DB, tanpa edge function. Deploy web dari
+direktori utama (butuh `vue-app/.env.local`), lalu **AAB vc140** dan **Electron 1.4.0**.
+
+⚠️ **AAB vc139 masih ditinjau Play saat rilis ini dikerjakan.** Nomor versi dinaikkan ke 1.4.0
+atas keputusan Kyai (3 Sep 2026). Kalau vc140 diunggah sebelum vc139 selesai ditinjau, rilis
+yang sedang berjalan itu harus dibatalkan lebih dulu di Play Console — Play tak memproses dua
+rilis produksi sekaligus.
+
+⚠️ **`public/app-version.json` sekarang bermuatan `apkUrl` KOSONG, dan itu disengaja.** Ia
+satu-satunya rem untuk aplikasi **vc139 ke bawah** yang masih membawa cek-pembaruan-otomatis di
+dalam dirinya: `putusanPembaruan()` menilai muatan tanpa apkUrl sebagai `belum-siap`, dan cek
+otomatis memang diam untuk putusan itu. Mengisinya lagi = notifikasi APK hidup kembali di semua
+HP yang belum sempat memperbarui lewat Play. `versionCode`/`versionName`-nya TETAP dinaikkan
+bersama rilis supaya berkas itu tak berbohong tentang versi web yang sedang tayang.
+
+### Changed
+
+- **Pemberitahuan pembaruan Android dihentikan — Play Store jadi satu-satunya jalur**
+  (v.1.4.0). Kyai, 3 Sep 2026: *"matikan notif pembaruan untuk android, cukup update via
+  playstore saja."*
+
+  Yang dicabut:
+  - `App.vue` — `useAndroidUpdate().cekOtomatis()` di `onMounted` **dihapus**. Tak ada lagi
+    dialog yang muncul sendiri beberapa detik sesudah aplikasi dibuka.
+  - `BantuanView.vue` — tombol **Cek Pembaruan** / **Unduh APK** / **Semua versi** (GitHub
+    Releases) diganti satu tautan **Buka Play Store**. Teksnya ikut berubah: tak lagi
+    menjanjikan "tanpa menunggu peninjauan Play".
+  - `utils/unduhan.js` — `URL_PLAYSTORE` baru (`app.ammu.id`, cermin `applicationId` di
+    `vue-app/android/app/build.gradle`), supaya id aplikasi tak tersalin ke dalam view.
+
+  `composables/useAndroidUpdate.js` **sengaja TIDAK dihapus**: mesinnya utuh dan masih dijaga
+  `tests/unit/putusanPembaruan.test.js`, jadi kalau suatu hari peninjauan Play kembali terlalu
+  lama, menghidupkannya cukup memanggil `cekOtomatis()` lagi. Yang dibuang hanya pemanggilnya.
+  Berkasnya kini berkepala peringatan "DIPARKIR SEJAK v.1.4.0".
+
+  **Kenapa jalur APK ditutup, bukan sekadar diarahkan ke Play** (rencana lama di [Unreleased]
+  yang kini tersalip): APK di luar Play ditandatangani kunci yang berbeda dari kunci Play,
+  sehingga tak bisa dipasang menimpa aplikasi yang sudah ada — dan itu baru ketahuan setelah
+  berkasnya selesai diunduh. Berdampingan dengan Play, jalur itu lebih sering menjebak daripada
+  menolong.
+
+  ⚠️ Yang **TIDAK** ikut berubah: tautan unduh Android di **layar login**
+  (`LoginView` → `urlApk()`, masih APK GitHub). Itu tautan **pasang**, bukan **pembaruan**, dan
+  Kyai sudah bisa menimpanya tanpa rilis lewat setelan `downloadAndroid` di Pengaturan Web.
+  Kalau kelak ingin ikut pindah, ganti fallback-nya jadi `URL_PLAYSTORE`.
+
+### Fixed
+
+- **Rekap absen bulanan guru tak lagi tersendat saat diperbaiki manual** (v.1.4.0). Kyai,
+  3 Sep 2026: *"akses edit rekap absen bulanan guru terasa lambat ketika saya edit manual."*
+
+  **Dua sebab yang berdiri sendiri, dua-duanya ditutup.**
+
+  **(1) Matriksnya dirakit ulang tiap render, bukan tiap data berubah.** Template memanggil
+  tujuh fungsi per baris — `cellText`, `cellClass`, `cellTitle`, `pulangPending`, `countStatus`
+  ×3, `countAlpha` — dan masing-masing menurunkan ULANG tiga hal yang sama untuk sel yang
+  sama: lembaga kalender (`lembagaKalenderShift` → `shiftById` → `shiftList`, yang me-map,
+  menormalisasi, **dan mengurutkan** seluruh master shift **tiap kali dipanggil**), libur, dan
+  jadwal mengajar. Fungsi di dalam template tak bisa di-cache Vue: ia jalan lagi setiap
+  komponen render — termasuk render yang tak menyentuh matriks sama sekali. Satu perbaikan
+  manual memicu **empat** render (dialog dibuka → tombol jadi "Menyimpan…" → data masuk →
+  dialog ditutup), jadi biayanya dibayar empat kali.
+
+  Diukur pada 120 guru × 30 hari (≈200 baris, 6.000 sel): **117 ms** turunan JS per render →
+  **6,3 ms** bila diturunkan sekali. Itu baru sisi JS, belum diff DOM 6.000 sel.
+
+  Sekarang: satu computed `matriksBulanan` memakai **`utils/absensiMatriks`** (murni + 20 tes)
+  yang memutuskan sekali per sel lalu memakai keputusan itu untuk teks, warna, tooltip, **dan**
+  kolom H/T/I-S-C/A. Barisnya diberi **`v-memo="[row]"`**, jadi selama objek barisnya tak
+  berganti Vue melewati seluruh subpohonnya — buka/tutup dialog tak lagi menyeret ribuan sel.
+  ⚠️ `v-memo` **wajib** duduk di elemen `v-for` **terluar**; dipasang di `<td>` sebelah dalam,
+  Vue memakai satu slot cache untuk seluruh baris dan hasilnya bisa tertukar antar-guru
+  (`vue/valid-v-memo` menangkap ini).
+
+  Efek samping yang menyenangkan: tiga salinan aturan "libur? bukan jadwal? sudah lewat?" yang
+  dulu tersebar di `cellText`/`cellClass`/`cellTitle` jadi satu. Huruf sel dan kolom rekap kini
+  **mustahil** berselisih — begitu juga ekspor Excel/Sheet/PDF, yang kini membaca larik yang
+  sama, bukan memanggil ulang fungsi selnya.
+
+  **Dibuktikan setara, bukan diasumsikan.** Keluaran matriks baru dibandingkan sel demi sel
+  dengan salinan persis fungsi lama pada 150 guru × 30 hari (**6.300 sel**, memakai utils
+  asli: `lembagaKalenderShift`, `guruMasukPada`, `liburScope`, termasuk guru tanpa lembaga,
+  shift buatan sendiri, dan jadwal hari kosong). Hasil: **teks 0 beda, warna 0 beda, tooltip
+  0 beda, kolom H/T/I-S-C/A 0 beda**, dan `bisaPerbaiki` persis sama dengan dua penolakan
+  lama (libur / belum lewat).
+
+  Satu-satunya selisih — **242 sel, semuanya sel LIBUR** — diubah dengan sengaja: penanda
+  oranye "belum absen pulang". Dulu `pulangPending` tak pernah menengok libur, jadi titik itu
+  tetap menempel di sel yang bertulis 'L' dan bertooltip "Libur" — penanda yang membantah sel
+  yang ditempelinya. Sekarang ia mengikuti selnya. Tak ada keterangan yang hilang: baris di
+  hari libur memang sudah tak tampil di matriks sejak v.1.2.3. Dikunci
+  `tests/unit/absensiMatriks.test.js`.
+
+  "Hari ini" ikut jadi reaktif (`hariIniWib`, denyut 60 detik). Dulu `todayJakarta()` terbawa
+  tiap render; sebagai computed ia akan menahan tanggal kemarin pada layar yang ditinggal
+  terbuka melewati tengah malam — sel hari yang baru lewat tak berhuruf 'A' dan tak bisa
+  diklik. Sengaja **bukan** `useClock` (berdetak tiap detik = matriks dirakit ulang tiap
+  detik); menetapkan nilai yang sama ke ref tak memicu apa pun, jadi denyut ini benar-benar
+  menyentuh matriks satu kali sehari.
+
+  **(2) Setiap penyimpanan menarik ulang SELURUH tabel absensi.** `useAbsensi` memanggil
+  `subscribeColl('absensi_shift_guru', …)` **tanpa penyaring**. Realtime di repo ini memang
+  menarik ulang set penuh tiap ada perubahan (cermin `onSnapshot`; lihat `RT_DEBOUNCE_MS`), dan
+  `_pageAll` mengambilnya **1.000 baris per permintaan, berurutan**. Dengan ±200 baris per
+  hari-kerja, satu bulan ≈5.000 baris — riwayat sejak Mei 2026 karena itu puluhan ribu baris,
+  alias puluhan bolak-balik jaringan **setiap kali satu sel dibetulkan**, di **semua** perangkat
+  yang sedang membuka halaman itu.
+
+  `useAbsensi` sekarang menerima **jendela tanggal** (`opts.jendela`, sebuah getter). Tak diberi
+  = perilaku lama persis, jadi pemanggil lain tak berubah diam-diam. `AbsensiGuruView` memberi
+  gabungan **bulan terpilih ∪ minggu rekap** lewat `gabungRentang()` baru di
+  `utils/absensiRekap` (+ 9 tes) — rentang mingguan ikut disertakan walau modenya sedang
+  'bulanan', supaya berpindah mode tak perlu menarik data lagi.
+  ⚠️ Kalau jendela ini keliru menyempit, **rekap per-lembaga mingguan diam-diam jadi NOL**:
+  tak ada galat, tak ada baris merah, cuma angka yang salah. Itulah yang dijaga
+  `tests/unit/gabungRentang.test.js`.
+
+  `useAbsensi` juga berhenti mem-`ensure('santri')`. Layar absensi guru tak menyentuh satu baris
+  santri pun, tapi ensure itu membuat siapa pun yang membuka Absensi Guru lebih dulu ikut
+  menarik SELURUH tabel santri sebelum layarnya sempat tampil.
+
+- **Kolom `periode` di `absensi_shift_guru` tak lagi bolong pada tiga jalur tulis** (v.1.4.0).
+  `periode` ('YYYY-MM') adalah kolom **riil** dan bagian dari index `(guru_id, periode)`, tapi
+  hanya diisi oleh sinkron fingerprint, izin, materialisasi gabungan, dan rederive shift.
+  **Tidak** diisi oleh: perbaikan manual (`payloadPerbaikanAbsen`), Input Harian (`saveHarian`),
+  dan impor Excel fingerprint. Ketiganya kini mengisinya.
+
+  Ini ditemukan justru karena index itu tampak seperti jalan pintas yang benar untuk jendela
+  bulanan di atas — dan bukan: menyaring dengan `periode` akan **MEMBUANG baris tanpa suara**.
+  Karena itu jendelanya memakai `tanggal` (di dalam `data` jsonb) sampai baris lama ditambal.
+
+  ⚠️ **Baris LAMA masih kosong.** Backfill sekali jalan (aman, idempoten, tak menyentuh angka
+  apa pun) — jalankan lewat SQL Editor kalau suatu saat index itu mau dipakai:
+
+  ```sql
+  update public.absensi_shift_guru
+     set periode = substring(data->>'tanggal' from 1 for 7)
+   where periode is null
+     and data->>'tanggal' ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$';
+  ```
+
+  Sengaja **tidak** dijadikan migrasi supaya rilis ini tetap frontend murni.
 
 ---
 

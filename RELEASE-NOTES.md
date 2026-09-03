@@ -5,6 +5,41 @@ Rinciannya untuk pengembang ada di `CHANGELOG.md` — jangan disalin ke sana, te
 
 ---
 
+## v.1.4.0 — September 2026
+
+**Perbaikan**
+
+- **Rekap absen bulanan guru jauh lebih ringan.** Membuka halamannya dan membetulkan absen
+  dengan klik tak lagi tersendat — paling terasa di HP dan PC yang lebih tua, dan di bulan
+  yang gurunya banyak. Dua hal yang diperbaiki: tampilan matriksnya kini dirakit **sekali**
+  lalu dipakai ulang (sebelumnya seluruh isi tabel dihitung ulang tiap kali dialog perbaikan
+  dibuka atau ditutup), dan aplikasi kini hanya menarik **bulan yang sedang dilihat** dari
+  server — sebelumnya seluruh riwayat absensi sejak awal ikut ditarik ulang setiap kali ada
+  satu baris absen berubah, di semua perangkat yang sedang membuka halaman itu.
+
+  Angka-angkanya **tidak berubah sama sekali** — huruf di setiap sel, kolom H/T/I-S-C/A,
+  serta hasil ekspor Excel dan PDF tetap persis seperti sebelumnya; ini sudah dibandingkan
+  satu per satu pada 6.300 kotak. Satu hal kecil yang memang dirapikan: titik oranye
+  "belum absen pulang" tak lagi muncul di kotak hari **libur**, yang isinya memang sudah
+  bertulis **L**.
+
+**Berubah**
+
+- **Pemberitahuan "pembaruan tersedia" di aplikasi Android dihentikan.** Sejak v.1.2.8
+  aplikasi menawarkan unduh APK langsung supaya tak menunggu peninjauan Play Store. Mulai
+  sekarang pembaruan **sepenuhnya lewat Google Play Store**, seperti aplikasi lain di ponsel:
+  tak ada lagi dialog yang muncul sendiri saat aplikasi dibuka, dan tombol *Cek Pembaruan* di
+  halaman Bantuan diganti tautan **Buka Play Store**.
+
+  Alasannya bukan cuma menyederhanakan: APK yang diunduh di luar Play ditandatangani kunci
+  yang berbeda, sehingga tidak bisa dipasang menimpa aplikasi yang sudah ada dari Play Store —
+  dan itu baru ketahuan setelah berkasnya selesai diunduh.
+
+  Ponsel yang masih memakai versi lama akan berhenti menampilkan tawaran itu dengan sendirinya
+  setelah web diperbarui, tanpa perlu memasang apa pun lebih dulu.
+
+---
+
 ## v.1.3.9 — September 2026
 
 Penerbitan ulang aplikasi Android & Desktop agar membawa pembaruan v.1.3.8 di bawah.
