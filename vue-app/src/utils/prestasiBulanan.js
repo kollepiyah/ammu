@@ -155,29 +155,41 @@ export function sudahDinilaiBulan(nilai) {
   return !!(_teks(nilai?.awal) || _teks(nilai?.akhir) || _teks(nilai?.total))
 }
 
-// ── v.1.3.8 · SIKLUS PENGISIAN & LEMBAGA YANG TERKENA ────────────────────────
+// ── v.1.4.1 · SIKLUS PENGISIAN & LEMBAGA YANG TERKENA ────────────────────────
 //
-// Kyai, 1 Sep 2026: "rekap prestasi itu adalah hasil dari bulan lalu, dan mengisinya
-// adalah bulan lalu. misal sekarang september yg diisi adalah bulan agustus. nanti akhir
-// september mengisi rekap prestasi september, dan maksimal pengisian adalah paling lambat
-// tgl 5 setiap awal bulan."
+// Kyai, 4 Sep 2026 — menutup ambiguitas yang tersisa dari v.1.3.8: *"rekap prestasi
+// bulanan, Bulan September. Isinya adalah rekapan dari awal agustus sampai akhir agustus.
+// guru mengisinya dari akhir bulan sampai batasnya tgl 5 september. di filter saya
+// membukanya di September, bukan di agustus. di agustus harusnya data bulan lalu (bulan
+// agustus, rekap dari Juli)."*
 //
-// Ini menyingkap dua kekeliruan di kartu dasbor "Guru Belum Input", yang keduanya membuat
-// angkanya nyaris tak berarti:
-//   1. Ia menagih BULAN BERJALAN. Tiap tanggal 1, seluruh guru serentak dinyatakan "belum
-//      input" untuk bulan yang memang belum boleh diisi siapa pun — sementara pekerjaan
-//      yang benar-benar jatuh tempo (bulan LALU, batas tanggal 5) tak terpantau sama sekali.
-//   2. Ia mencakup SEMUA lembaga ngaji, padahal rekap prestasi bulanan hanya milik PTPT &
-//      PPPH sejak v.1.2.3 — TPQ Pagi/Sore & Pra PTPT ikut tertagih tanpa dasar.
+// PENAMAAN PERIODE — di sinilah satu-satunya sumber kekeliruannya, jadi ditulis eksplisit:
+//
+//     periode  = BULAN LAPORAN (bulan saat rekap itu dikerjakan & diberi nama)
+//     isinya   = capaian bulan SEBELUMNYA
+//
+//   'Rekap September 2026' → dikerjakan 29 Agu s/d 5 Sep, isinya capaian Agustus.
+//   'Rekap Agustus 2026'   → dikerjakan 29 Jul s/d 5 Agu, isinya capaian Juli.
+//
+// v.1.3.8 memakai penamaan KEBALIKANNYA (periode = bulan data), dan itulah bug yang tak
+// kelihatan: RekapPrestasiView sejak v.100d menulis snapshot ber-periode BULAN LAPORAN
+// (nilai dropdown di layar — 'September'), sedangkan kartu dasbor "Guru Belum Input"
+// mencari bulan DATA ('Agustus') lewat periodeRekapBerjalan(). Dua bucket berbeda untuk
+// satu pekerjaan yang sama: guru yang sudah rapi mengisi rekap September tetap tercantum
+// "belum input", dan tak ada satu pun layar yang menunjukkan sebabnya.
+//
+// Yang berubah hanya DUA fungsi di bawah — keduanya bergeser satu bulan ke depan supaya
+// sepakat dengan apa yang SUDAH tertulis di DB sejak v.100d. Bentuk baris snapshot,
+// id-nya, dan seluruh data yang sudah tersimpan TIDAK tersentuh: tak ada migrasi data.
 
 /** Lembaga yang punya rekap prestasi bulanan. Sumber tunggal — dibaca RekapPrestasiView
  *  (daftar tombol + penyaring) DAN kartu dasbor, supaya keduanya tak bisa berbeda. */
 export const LEMBAGA_PRESTASI_BULANAN = ['PTPT', 'PPPH']
 
-/** Jendela pengisian DIBUKA tanggal 29 pada bulan yang dinilai sendiri. */
+/** Jendela pengisian DIBUKA tanggal 29 pada bulan SEBELUM bulan laporan. */
 export const TGL_BUKA_REKAP = 29
 
-/** Batas akhir pengisian: tanggal 5 pada bulan BERIKUTNYA dari periode yang diisi. */
+/** Batas akhir pengisian: tanggal 5 pada bulan laporan itu sendiri. */
 export const TGL_BATAS_REKAP = 5
 
 const _lkey = (v) =>
@@ -196,28 +208,50 @@ function _hariDalamBulan(tahun, bulan) {
 }
 
 /**
- * Tanggal jendela pengisian DIBUKA untuk bulan itu — TGL_BUKA_REKAP, dijepit ke hari
+ * Tanggal jendela pengisian DIBUKA di bulan itu — TGL_BUKA_REKAP, dijepit ke hari
  * terakhir bulan tsb. Februari 28 hari tak punya tanggal 29, dan tanpa penjepitan ini
- * jendela Februari tak akan pernah terbuka: rekapnya diam-diam terlewat setahun sekali.
+ * jendela yang seharusnya dibuka Februari tak akan pernah terbuka: rekapnya diam-diam
+ * terlewat setahun sekali.
+ *
+ * CATATAN ARGUMEN: yang di-pass adalah bulan tempat jendelanya DIBUKA (bulan sebelum
+ * bulan laporan), bukan bulan laporannya. Untuk tanggal buka sebuah periode laporan,
+ * pakai `tglBukaRekapPeriode`.
  */
 export function tglBukaRekap(tahun, bulan) {
   return Math.min(TGL_BUKA_REKAP, _hariDalamBulan(tahun, bulan))
 }
 
+/** Periode sesudah `periode` ('2026-12' → '2027-01'). '' bila periode tak sah. */
+export function periodeBerikutnya(periode) {
+  const m = /^(\d{4})-(\d{2})$/.exec(String(periode || ''))
+  if (!m) return ''
+  const y = Number(m[1])
+  const b = Number(m[2])
+  if (b < 1 || b > 12) return ''
+  return b === 12 ? periodePrestasi(1, y + 1) : periodePrestasi(b + 1, y)
+}
+
 /**
- * Periode yang SEDANG dikerjakan pada tanggal `todayIso`.
+ * Bulan DATA sebuah periode laporan ('2026-09' → '2026-08').
  *
- * Kyai (2 Sep 2026): "rekap prestasi itu diisi akhir bulan sampai tgl 5 awal bulan. tapi
- * datanya berasal dari bulan sebelumnya. misal sekarang tgl 2 september, guru mengisi rekap
- * mulai tgl 29 agustus-5 sept, isinya data dari agustus."
+ * Dipisah jadi fungsinya sendiri walau isinya cuma `periodeSebelumnya`, karena yang
+ * dipertaruhkan bukan aritmetikanya melainkan ARTINYA: tiap layar yang menyebut "Rekap
+ * September" wajib bisa menerangkan bahwa angkanya milik Agustus, dan satu-satunya cara
+ * menjaga kalimat itu tak menyimpang adalah menyediakan namanya di sini.
+ */
+export function periodeDataRekap(periode) {
+  return periodeSebelumnya(periode)
+}
+
+/**
+ * Periode LAPORAN yang SEDANG dikerjakan pada tanggal `todayIso`.
  *
- * Jadi jendelanya MENYEBERANGI pergantian bulan: 29 Agu s/d 5 Sep, isinya Agustus.
- *   tanggal >= 29  -> bulan BERJALAN (jendelanya baru dibuka; 29 Agu = mengisi Agustus)
- *   tanggal 1..28  -> bulan LALU     (2 Sep = masih mengisi Agustus)
+ *   tanggal >= 29  -> bulan BERIKUTNYA (29 Agu = mulai mengerjakan rekap SEPTEMBER)
+ *   tanggal 1..28  -> bulan BERJALAN   (2 Sep = masih rekap September)
  *
- * Sasaran TIDAK berpindah begitu lewat tanggal 5 — 10 Sep tetap Agustus, hanya berstatus
- * TERLAMBAT. Memindahkan sasaran di tanggal 6 akan menyembunyikan pekerjaan yang justru
- * belum selesai, persis kebalikan dari guna kartu ini.
+ * Sasaran TIDAK berpindah begitu lewat tanggal 5 — 10 Sep tetap rekap September, hanya
+ * berstatus TERLAMBAT. Memindahkan sasaran di tanggal 6 akan menyembunyikan pekerjaan
+ * yang justru belum selesai, persis kebalikan dari guna kartu dasbor ini.
  */
 export function periodeRekapBerjalan(todayIso) {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(todayIso || '').slice(0, 10))
@@ -227,19 +261,27 @@ export function periodeRekapBerjalan(todayIso) {
   const d = Number(m[3])
   if (b < 1 || b > 12) return ''
   const bulanIni = periodePrestasi(b, y)
-  return d >= tglBukaRekap(y, b) ? bulanIni : periodeSebelumnya(bulanIni)
+  return d >= tglBukaRekap(y, b) ? periodeBerikutnya(bulanIni) : bulanIni
 }
 
-/** Tanggal jatuh tempo periode itu ('2026-08' -> '2026-09-05'). '' bila periode tak sah. */
+/**
+ * Tanggal jendela periode laporan itu DIBUKA ('2026-09' → '2026-08-29').
+ * Dijepit ke hari terakhir bulan pembuka: rekap Maret dibuka 28 Feb di tahun biasa.
+ */
+export function tglBukaRekapPeriode(periode) {
+  const sebelum = periodeSebelumnya(periode)
+  const m = /^(\d{4})-(\d{2})$/.exec(sebelum)
+  if (!m) return ''
+  return `${sebelum}-${String(tglBukaRekap(Number(m[1]), Number(m[2]))).padStart(2, '0')}`
+}
+
+/** Tanggal jatuh tempo periode laporan itu ('2026-09' -> '2026-09-05'). '' bila tak sah. */
 export function batasRekap(periode) {
   const m = /^(\d{4})-(\d{2})$/.exec(String(periode || ''))
   if (!m) return ''
-  const y = Number(m[1])
   const b = Number(m[2])
   if (b < 1 || b > 12) return ''
-  const ny = b === 12 ? y + 1 : y
-  const nb = b === 12 ? 1 : b + 1
-  return `${ny}-${String(nb).padStart(2, '0')}-${String(TGL_BATAS_REKAP).padStart(2, '0')}`
+  return `${m[1]}-${m[2]}-${String(TGL_BATAS_REKAP).padStart(2, '0')}`
 }
 
 /** Sudah lewat batas? Dipakai kartu dasbor membedakan "belum jatuh tempo" dari "telat". */
@@ -247,4 +289,95 @@ export function rekapTerlambat(periode, todayIso) {
   const batas = batasRekap(periode)
   const hari = String(todayIso || '').slice(0, 10)
   return !!batas && /^\d{4}-\d{2}-\d{2}$/.test(hari) && hari > batas
+}
+
+const NAMA_BULAN_REKAP = [
+  'Januari',
+  'Februari',
+  'Maret',
+  'April',
+  'Mei',
+  'Juni',
+  'Juli',
+  'Agustus',
+  'September',
+  'Oktober',
+  'November',
+  'Desember'
+]
+
+/** 'September 2026' dari '2026-09'. String apa adanya bila periodenya tak sah. */
+export function labelBulanPeriode(periode) {
+  const m = /^(\d{4})-(\d{2})$/.exec(String(periode || ''))
+  if (!m) return String(periode || '')
+  const b = Number(m[2])
+  if (b < 1 || b > 12) return String(periode || '')
+  return `${NAMA_BULAN_REKAP[b - 1]} ${m[1]}`
+}
+
+/**
+ * Kalimat lengkap yang dipakai tiap layar penyebut periode rekap:
+ * 'September 2026 (data Agustus 2026)'. Ada supaya nama bulan tak pernah lagi muncul
+ * sendirian tanpa bulan datanya — itulah yang Kyai sebut "masih ambigu".
+ */
+export function labelPeriodeRekap(periode) {
+  const lap = labelBulanPeriode(periode)
+  if (!/^\d{4}-\d{2}$/.test(String(periode || ''))) return lap
+  return `${lap} (data ${labelBulanPeriode(periodeDataRekap(periode))})`
+}
+
+// ── v.1.4.1 · DETEKSI SNAPSHOT YANG MENDARAT DI BULAN SEBELAH ────────────────
+//
+// Kyai, 4 Sep 2026: *"guru2 katanya banyak yg sudah isi, tapi di rekap kok banyak yg belum
+// diisi."*
+//
+// Sampai v.1.4.0, dropdown bulan di RekapPrestasiView terbuka pada BULAN KALENDER
+// (`_now.getMonth()`). Padahal jendela pengisian menyeberangi pergantian bulan: guru yang
+// membuka layar tanggal **29–31 Agustus** melihat "Agustus" dan menyimpan ke '2026-08',
+// sedangkan rekan yang membuka **1–5 September** melihat "September" dan menyimpan ke
+// '2026-09'. **Satu pekerjaan yang sama, dua bucket** — semata karena hari keberapa ia
+// sempat membukanya. Yang membuka layar di bulan September lalu melihat separuh daftarnya
+// kosong tak punya cara apa pun menebak ke mana isian rekannya pergi.
+//
+// Fungsi ini menghitung berapa yang tersangkut di bucket sebelah, dan menghitungnya dengan
+// pembeda yang benar: **kapan barisnya DITULIS**, bukan sekadar "ada isian di bulan lalu".
+// Tanpa pembeda itu angkanya tak berarti apa-apa — siklus bulan lalu yang berjalan normal
+// pun meninggalkan isian di periode sebelumnya untuk hampir semua santri.
+//
+// Baris periode P-1 yang `updatedAt`-nya jatuh pada atau sesudah tanggal jendela P dibuka
+// (29 bulan P-1) hanya bisa lahir dari sesi pengisian siklus P.
+//
+// Fungsi ini TIDAK memindahkan apa pun. Memindahkannya perlu keputusan Kyai: bucket P-1
+// juga menampung rekap P-1 yang sah, dan menebak-nebak di sana berarti menimpa pekerjaan
+// yang benar dengan pekerjaan yang lain.
+
+/**
+ * Baris snapshot periode SEBELUMNYA yang sebenarnya milik siklus `periode`.
+ *
+ * @param {Array}  rows    baris `riwayat_prestasi` mentah.
+ * @param {string} periode periode laporan yang sedang dibuka ('2026-09').
+ * @param {Set|Array} [idSantri] batasi ke santri tertentu (mis. yang sedang tampil).
+ * @returns {{ jumlah:number, periodeSebelum:string, sejak:string, santriIds:string[] }}
+ */
+export function snapshotSalahJendela(rows, periode, idSantri) {
+  const sebelum = periodeSebelumnya(periode)
+  const sejak = tglBukaRekapPeriode(periode) // '2026-08-29'
+  const kosong = { jumlah: 0, periodeSebelum: sebelum, sejak, santriIds: [] }
+  if (!sebelum || !sejak) return kosong
+  const batas = idSantri ? new Set([...idSantri].map((x) => String(x))) : null
+  const ids = new Set()
+  for (const r of rows || []) {
+    if (String(r?.periode || '') !== sebelum) continue
+    const sid = String(r?.santri_id ?? '')
+    if (!sid) continue
+    if (batas && !batas.has(sid)) continue
+    if (!sudahDinilaiBulan(r)) continue
+    // `updatedAt` ISO UTC; dibandingkan sebagai teks tanggalnya saja (10 huruf pertama).
+    // Baris tanpa updatedAt TIDAK dihitung: tanpa waktu tulis, tak ada dasar menuduhnya
+    // salah bucket — dan menuduh berarti mengusulkan pemindahan yang bisa keliru.
+    const hari = String(r?.updatedAt || '').slice(0, 10)
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(hari)) continue
+    if (hari >= sejak) ids.add(sid)
+  }
+  return { jumlah: ids.size, periodeSebelum: sebelum, sejak, santriIds: [...ids] }
 }

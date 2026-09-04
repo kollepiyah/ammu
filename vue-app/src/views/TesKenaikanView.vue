@@ -835,19 +835,86 @@
                 <b>PJ PTPT</b> di lembaga PTPT.
               </p>
             </div>
+            <!-- v.1.4.1 (Kyai): 1 kelas Qiraati = SEPASANG guru (pagi & sore), jadi yang dipilih
+                 KELASNYA — dua nama sekaligus, bukan satu-satu. Cermin NaikKelasView. -->
             <div>
-              <label
-                class="block text-[10px] font-black uppercase text-[var(--text-secondary)] mb-1"
-                >Guru berikutnya (bila pindah kelas)</label
-              >
-              <input
-                v-model="naikForm.guru"
-                list="guru-naik-list"
-                class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none"
-              />
-              <datalist id="guru-naik-list">
-                <option v-for="g in guruOptionsFor(naikForm.lembaga)" :key="g" :value="g"></option>
-              </datalist>
+              <div class="flex items-center justify-between gap-2 mb-1">
+                <label class="block text-[10px] font-black uppercase text-[var(--text-secondary)]">
+                  Guru / kelas berikutnya <span class="text-rose-600">*</span>
+                </label>
+                <button
+                  type="button"
+                  class="text-[10px] font-bold text-cyan-700 dark:text-cyan-300 hover:underline"
+                  @click="guruManual = !guruManual"
+                >
+                  {{ guruManual ? '← Pilih dari daftar kelas' : 'Atur sendiri…' }}
+                </button>
+              </div>
+
+              <!-- Mode daftar: 1 baris = 1 kelas (pasangan gurunya sekaligus) -->
+              <template v-if="!guruManual">
+                <select
+                  v-model="pasanganKey"
+                  :class="[
+                    'w-full px-3 py-2 text-sm rounded-xl border bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none',
+                    guruBelumDiisi ? 'border-rose-400' : 'border-[var(--border-default)]'
+                  ]"
+                >
+                  <option value="">— pilih kelas/guru —</option>
+                  <option v-for="p in pasanganOptions" :key="p.key" :value="p.key">
+                    {{ labelPasanganOpt(p) }} · {{ p.jumlah }} santri
+                  </option>
+                </select>
+                <p
+                  v-if="pasanganOptions.length === 0"
+                  class="text-[10px] italic text-amber-600 dark:text-amber-400 mt-1"
+                >
+                  <i class="fas fa-triangle-exclamation mr-1"></i>Belum ada kelas berguru di
+                  {{ naikForm.lembaga || 'lembaga ini' }} — pakai <b>Atur sendiri</b>.
+                </p>
+              </template>
+
+              <!-- Mode manual: pagi & sore terpisah, pasangannya terisi otomatis -->
+              <div v-else class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="block text-[10px] font-bold text-[var(--text-secondary)] mb-0.5"
+                    >Guru Pagi</label
+                  >
+                  <select
+                    v-model="naikForm.guru_pagi"
+                    class="w-full px-2 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none"
+                    @change="autoIsiPasanganSore"
+                  >
+                    <option value="">— kosong —</option>
+                    <option v-for="g in guruOptionsFor(naikForm.lembaga)" :key="g" :value="g">
+                      {{ g }}
+                    </option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-[10px] font-bold text-[var(--text-secondary)] mb-0.5"
+                    >Guru Sore</label
+                  >
+                  <select
+                    v-model="naikForm.guru_sore"
+                    class="w-full px-2 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none"
+                    @change="autoIsiPasanganPagi"
+                  >
+                    <option value="">— kosong —</option>
+                    <option v-for="g in guruOptionsFor(naikForm.lembaga)" :key="g" :value="g">
+                      {{ g }}
+                    </option>
+                  </select>
+                </div>
+              </div>
+
+              <p v-if="!guruBelumDiisi" class="text-[10px] text-[var(--text-secondary)] mt-1">
+                Akan disimpan: <b>{{ pasanganTerpilihLabel }}</b>
+              </p>
+              <p v-else class="text-[10px] font-bold text-rose-600 dark:text-rose-400 mt-1">
+                <i class="fas fa-circle-exclamation mr-1"></i>Wajib diisi — kenaikan tak bisa
+                disimpan tanpa guru.
+              </p>
             </div>
             <!-- v.1.2.5 (Kyai): tanggal lulus & naik — sinkron dgn field di kartu antrian.
                  Menyetir cap kartu kenaikan, riwayat, tgl_naik, tgl_hasil & PERIODE RAPOR. -->
@@ -882,8 +949,11 @@
             Batal
           </button>
           <button
-            :disabled="naikBusy || !lulusSantri"
-            class="px-4 py-2 text-xs font-black rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-50"
+            :disabled="naikBusy || !lulusSantri || guruBelumDiisi || !naikForm.kelas"
+            :title="
+              guruBelumDiisi ? 'Pilih guru/kelas tujuannya dulu' : 'Luluskan & naikkan santri ini'
+            "
+            class="px-4 py-2 text-xs font-black rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
             @click="submitLulus"
           >
             <i :class="['fas', naikBusy ? 'fa-spinner fa-spin' : 'fa-check', 'mr-1']"></i>Lulus
@@ -914,12 +984,24 @@ import { useSettingsStore } from '@/stores/settings'
 import { useLembaga } from '@/composables/useLembaga' // v.1.2.2: master/lembaga (daftar jenjang)
 // v.1.2.2 (Kyai 22 Jul): jenjang terakhir sebuah lembaga → naik ke lembaga berikutnya.
 import {
-  jenjangLembaga,
+  jenjangLembagaLabel,
   indexJenjang,
   itemJenjang,
+  labelJenjang,
   tujuanNaikLembaga,
   RANTAI_QIRAATI
 } from '@/utils/jenjangQiraati'
+// v.1.4.1 (Kyai 4 Sep 2026): "di field pilih guru harusnya gurunya sudah berpasangan
+//   seperti field yg lain, jadi bukan satu2." Mesin pasangannya SUDAH ada & dipakai
+//   NaikKelasView sejak v.1.1.9 — layar ini saja yang belum ikut.
+import {
+  pasanganQiraati,
+  cariPasangan,
+  labelPasanganRingkas,
+  petaPasangan,
+  partnerSore,
+  partnerPagi
+} from '@/utils/pasanganGuru'
 import { isPjLembaga } from '@/utils/glondongan' // v.1.2.2: kandidat PJ PTPT
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
@@ -944,7 +1026,8 @@ const settingsStore = useSettingsStore()
 
 // v.1.2.2: daftar jenjang & rantai lembaga qiraati dibaca dari master/lembaga.
 const { lembagaRaw } = useLembaga()
-const { santri, search, guruRaw } = useSantri()
+// santriRaw (bukan `santri`) — daftar pasangan tak boleh menyusut mengikuti kotak cari.
+const { santri, santriRaw, search, guruRaw } = useSantri()
 const {
   ajuanRaw, // v.1.1.9: sumber riwayat lulus utk masa tempuh (jangan pakai `riwayat` yg sudah discope UI)
   diluarAmpuan, // v.1.1.9: ajuan PTPT di luar ampuan PJ — dipakai pesan di bawah
@@ -1524,10 +1607,15 @@ const naikForm = reactive({
   kelas: '',
   juz: '',
   khotam_ke: '',
+  // v.1.4.1: pasangan guru Qiraati (1 kelas = guru pagi + guru sore). `guru` tinggal
+  //   CERMIN field lama supaya data lama tetap terbaca — yang menentukan pasangannya.
   guru: '',
+  guru_pagi: '',
+  guru_sore: '',
   pj_ptpt: '',
   pindah: false // v.1.2.2: tujuannya lembaga BERIKUTNYA (bukan naik di lembaga sendiri)
 })
+const guruManual = ref(false) // true = atur guru pagi & sore sendiri
 const naikBusy = ref(false)
 const KHOTAM_ROMAWI = ['I', 'II', 'III', 'IV', 'V'] // cadangan bila kartu belum punya item
 
@@ -1535,8 +1623,10 @@ const KHOTAM_ROMAWI = ['I', 'II', 'III', 'IV', 'V'] // cadangan bila kartu belum
 //   sungguhan tertulis ('Level ½ Juz' … 'Level 3 Juz', PTPT '1'..'6'). Daftar hardcoded
 //   lama sudah tak cocok dengan data, itulah sebabnya dropdown ini tampil KOSONG.
 //   utils/jenjangQiraati tetap menyimpan daftar lama sebagai cadangan.
+//   v.1.4.1: labelnya dikanonikkan — master PTPT menyimpan angka telanjang '1'..'6',
+//   dan itulah salah satu dari dua ejaan yang bikin daftar kelas PTPT tampak tak konsisten.
 function canonKelasOptions(lembaga) {
-  return jenjangLembaga(lembaga, lembagaRaw.value)
+  return jenjangLembagaLabel(lembaga, lembagaRaw.value)
 }
 // Pilihan khotam mengikuti kartu kenaikan jenjang terpilih (Level 3 Juz → I..XI);
 // dulu dipatok I..V sehingga khotam di atasnya tak pernah bisa dipilih.
@@ -1572,6 +1662,11 @@ function onLembagaTujuanChange() {
   naikForm.juz = naikForm.lembaga === 'PTPT' ? '1' : ''
   naikForm.khotam_ke = ''
   naikForm.pindah = naikForm.lembaga !== (lulusFor.value?.lembaga || '')
+  // Pindah lembaga = pindah kelas & guru. Membiarkan pasangan lama terpilih akan
+  //   menyimpan guru dari lembaga yang sudah ditinggalkan.
+  naikForm.guru_pagi = ''
+  naikForm.guru_sore = ''
+  guruManual.value = false
 }
 function juzOptionsNaik() {
   const m = String(naikForm.kelas || '').match(/(\d+)/)
@@ -1588,6 +1683,64 @@ function guruOptionsFor(lembaga) {
     .map((g) => g.nama)
     .filter(Boolean)
 }
+
+// ── v.1.4.1 · PASANGAN GURU DI MODAL NAIK ────────────────────────────────────
+//
+// Kyai (4 Sep 2026): "jika PJ/kepala/superadmin menaikkan, jika kelasnya pindah, di field
+//   pilih guru harusnya gurunya sudah berpasangan seperti field yg lain, jadi bukan satu2.
+//   dan buat tidak bisa disimpan jika nama guru belum diisi."
+//
+// Yang diperbaiki bukan cuma bentuk isiannya. Kotak teks lama hanya mengisi `naikForm.guru`
+// — field TUNGGAL pra-v.1.1.9 — sedangkan `guru_pagi`/`guru_sore` dibiarkan nilai LAMA.
+// Padahal seluruh penyaring ampuan, statistik kelas, dan daftar rekap membaca pasangannya
+// duluan. Akibatnya "pindah guru" lewat Tes Kenaikan praktis tak berefek: santri tetap
+// terhitung di kelas guru lama, dan di Rekap Prestasi ia tampil tanpa nama guru. Itu bug
+// yang SAMA persis dengan yang ditutup di NaikKelasView pada v.1.1.9 — layar ini terlewat.
+const pasanganOptions = computed(() =>
+  pasanganQiraati(santriRaw.value, { lembaga: naikForm.lembaga })
+)
+const pasanganKey = computed({
+  get() {
+    const p = pasanganOptions.value.find(
+      (x) =>
+        x.guru_pagi === (naikForm.guru_pagi || '') && x.guru_sore === (naikForm.guru_sore || '')
+    )
+    return p ? p.key : ''
+  },
+  set(key) {
+    const p = cariPasangan(pasanganOptions.value, key)
+    naikForm.guru_pagi = p ? p.guru_pagi : ''
+    naikForm.guru_sore = p ? p.guru_sore : ''
+  }
+})
+// Label DAFTAR (tanpa akhiran "(pagi)"): di PTPT & PPPH satu santri memang satu guru, jadi
+//   akhiran itu akan menempel di hampir semua baris tanpa pernah ada sore-nya.
+function labelPasanganOpt(p) {
+  return labelPasanganRingkas(p)
+}
+const pasanganTerpilihLabel = computed(() =>
+  labelPasanganRingkas({ guru_pagi: naikForm.guru_pagi, guru_sore: naikForm.guru_sore })
+)
+// Peta co-occurrence pagi↔sore dari SELURUH santri — memilih satu guru mengisi pasangannya.
+const petaPasanganGuru = computed(() => petaPasangan(santriRaw.value))
+function autoIsiPasanganSore() {
+  const pagi = String(naikForm.guru_pagi || '').trim()
+  if (pagi && !String(naikForm.guru_sore || '').trim()) {
+    const p = partnerSore(petaPasanganGuru.value, pagi)
+    if (p) naikForm.guru_sore = p
+  }
+}
+function autoIsiPasanganPagi() {
+  const sore = String(naikForm.guru_sore || '').trim()
+  if (sore && !String(naikForm.guru_pagi || '').trim()) {
+    const p = partnerPagi(petaPasanganGuru.value, sore)
+    if (p) naikForm.guru_pagi = p
+  }
+}
+/** Gerbang simpan: kenaikan tanpa guru = santri yatim di daftar mana pun. */
+const guruBelumDiisi = computed(
+  () => !String(naikForm.guru_pagi || '').trim() && !String(naikForm.guru_sore || '').trim()
+)
 // Tebakan tujuan dari target tes (Kepala bisa koreksi via dropdown).
 function prefillNaik(a) {
   const ctx = { lembagaList: lembagaRaw.value, settings: settings.value }
@@ -1654,8 +1807,11 @@ async function openLulus(a) {
   naikForm.juz = ''
   naikForm.khotam_ke = ''
   naikForm.guru = ''
+  naikForm.guru_pagi = ''
+  naikForm.guru_sore = ''
   naikForm.pj_ptpt = ''
   naikForm.pindah = false
+  guruManual.value = false
   try {
     const s = await getOne('santri', String(a.santri_id))
     lulusSantri.value = s
@@ -1666,13 +1822,18 @@ async function openLulus(a) {
     naikForm.khotam_ke = pre.khotam
     naikForm.pindah = !!pre.pindah
     // Pindah lembaga = pindah kelas & guru; jangan bawa guru lama sebagai tebakan.
-    naikForm.guru = pre.pindah
-      ? ''
-      : s
-        ? Array.isArray(s.guru)
-          ? s.guru[0] || ''
-          : s.guru || ''
-        : ''
+    //   v.1.4.1: yang dibawa PASANGANNYA (pagi+sore), memakai fallback field lama yang
+    //   sama dengan pasanganQiraati — `guru` tunggal dianggap guru PAGI.
+    if (pre.pindah || !s) {
+      naikForm.guru_pagi = ''
+      naikForm.guru_sore = ''
+    } else {
+      const soreLama = String(s.guru_sore || '').trim()
+      const guruLama = Array.isArray(s.guru) ? s.guru[0] || '' : s.guru || ''
+      naikForm.guru_pagi =
+        String(s.guru_pagi || '').trim() || (!soreLama && guruLama ? String(guruLama).trim() : '')
+      naikForm.guru_sore = soreLama
+    }
     naikForm.pj_ptpt = String(s?.pj_ptpt || '').trim()
   } catch (e) {
     toast.error('Gagal memuat data santri: ' + (e.message || e))
@@ -1699,6 +1860,13 @@ async function submitLulus() {
     toast.warning('Pilih kelas tujuan dulu.')
     return
   }
+  // v.1.4.1 (Kyai): "buat tidak bisa disimpan jika nama guru belum diisi." Santri yang
+  //   naik tanpa guru hilang dari daftar ampuan siapa pun — tak muncul di rekap prestasi,
+  //   tak tertagih ke guru mana pun, dan baru ketahuan berbulan-bulan kemudian.
+  if (guruBelumDiisi.value) {
+    toast.warning('Pilih guru/kelas tujuannya dulu — kenaikan tak bisa disimpan tanpa guru.')
+    return
+  }
   naikBusy.value = true
   try {
     // v.1.2.5: tanggal lulus/naik pilihan (default hari ini). Satu sumber untuk cap
@@ -1709,7 +1877,11 @@ async function submitLulus() {
       kelas: naikForm.kelas,
       juz: naikForm.lembaga === 'PTPT' ? naikForm.juz : '',
       khotam_ke: naikForm.lembaga === 'Pra PTPT' ? naikForm.khotam_ke : '',
-      guru: naikForm.guru || '',
+      // v.1.4.1: pasangan ikut tersimpan — tanpa ini guru_pagi/guru_sore tetap nilai LAMA
+      //   dan santri terus terhitung di kelas guru sebelumnya (lihat catatan di atas).
+      guru_pagi: naikForm.guru_pagi || '',
+      guru_sore: naikForm.guru_sore || '',
+      guru: naikForm.guru_pagi || naikForm.guru_sore || '',
       // v.1.2.2: label PJ hanya relevan di PTPT (santri yang baru masuk PTPT).
       pj_ptpt: naikForm.lembaga === 'PTPT' ? naikForm.pj_ptpt || '' : '',
       kelas_sekolah: s.kelas_sekolah || '',
@@ -1769,19 +1941,12 @@ async function submitLulus() {
 }
 
 // ----- helpers UI -----
-// v.1.2.3: tampilkan kelas Pra PTPT dengan nama master ('Level ½ Juz'..'Level 3 Juz').
-//   Data lama yang tersimpan bare ('Level 5') dipetakan lewat INDEX ke label master;
-//   lembaga lain / label yang sudah benar dibiarkan apa adanya.
+// v.1.4.1: aturannya PINDAH ke utils/jenjangQiraati (labelJenjang) supaya PTPT ikut
+//   dirapikan juga — dulu fungsi lokal ini hanya mengurus Pra PTPT, jadi kelas PTPT tetap
+//   tampil sebagai angka telanjang '1'..'6' di layar ini. Nama lamanya dipertahankan
+//   sebagai pembungkus tipis supaya tak ada satu pun pemanggil di template yang terlewat.
 function labelKelasPra(lembaga, kelas) {
-  const lmb = String(lembaga || '').trim()
-  const k = String(kelas || '').trim()
-  if (lmb !== 'Pra PTPT' || !k) return k
-  const list = jenjangLembaga('Pra PTPT', lembagaRaw.value)
-  if (!list.length) return k
-  const i = indexJenjang(list, k)
-  if (i >= 0) return list[i]
-  const m = k.match(/(\d+)/)
-  return (m && list[parseInt(m[1], 10) - 1]) || k
+  return labelJenjang(lembaga, kelas, lembagaRaw.value)
 }
 function statusLabel(s) {
   return STATUS_LABEL[s] || s

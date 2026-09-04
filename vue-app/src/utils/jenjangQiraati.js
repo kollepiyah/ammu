@@ -172,3 +172,95 @@ export function tujuanNaikLembaga(ajuan, ctx = {}) {
   const list = jenjangLembaga(lembaga, ctx.lembagaList)
   return { lembaga, kelas: list[0] || '' }
 }
+
+// ── v.1.4.1 · LABEL JENJANG YANG DITAMPILKAN ────────────────────────────────
+//
+// Kyai, 4 Sep 2026: *"kelas/jilid di PTPT tidak konsisten, ada yg 1-6 ada yg kelas 1-kelas
+// 6. yg benar Kelas 1-6."*
+//
+// Sebabnya dua sumber label yang dua-duanya sah dan dua-duanya dipakai menulis:
+//   · `master/lembaga.kelas_list` PTPT berisi ANGKA TELANJANG '1'..'6' — itulah yang
+//     mendarat di `santri.kelas` tiap kali kenaikan diproses lewat dropdown Master Data;
+//   · `JENJANG_CADANGAN.ptpt` (dan kartu kenaikan) memakai 'Kelas 1'..'Kelas 6' — itulah
+//     yang mendarat lewat NaikKelasView, impor, dan data lama.
+// Dua-duanya menunjuk jenjang yang SAMA (`indexJenjang` memang sengaja menyamakan
+// 'Kelas 3' ≡ '3'), jadi tak ada yang rusak secara logika — yang rusak cuma yang terbaca
+// Kyai: satu daftar memuat dua ejaan untuk satu kelas.
+//
+// Aturannya: **angka telanjang bukan sebuah label.** Kalau label master hanya angka,
+// dipakai label daftar cadangan pada INDEX yang sama — untuk PTPT itu tepat 'Kelas N'.
+// Lembaga yang label masternya memang bernama ('Level ½ Juz' di Pra PTPT) TIDAK tersentuh:
+// master tetap menang di sana, persis seperti sebelumnya.
+//
+// Ini fungsi TAMPILAN sekaligus fungsi TULIS: kenaikan menyimpan hasilnya supaya data baru
+// tak menambah ejaan ketiga. Baris lama tak diubah — tak perlu, karena setiap pembacanya
+// lewat sini.
+
+const _angkaTelanjang = (v) => /^\d+$/.test(String(v ?? '').trim())
+
+// Kapitalkan kata penanda di depan supaya 'kelas 1' / 'KELAS 1' tak tampil apa adanya.
+// Hanya dipakai untuk nilai yang TIDAK ketemu di daftar jenjang mana pun (label dari
+// daftar sudah rapi dari sananya).
+function _rapikanAwalan(label) {
+  return String(label ?? '')
+    .trim()
+    .replace(
+      /^(kelas|jilid|level|juz|khotam)\b/i,
+      (m) => m[0].toUpperCase() + m.slice(1).toLowerCase()
+    )
+}
+
+/**
+ * Label KANONIK sebuah jenjang — satu ejaan untuk satu kelas, di semua layar & ekspor.
+ *
+ * @param {string} lembaga      nama lembaga ('PTPT', 'Pra PTPT', …).
+ * @param {string} kelas        nilai mentah dari data ('3', 'Kelas 3', 'Level 5', …).
+ * @param {Array}  [lembagaList] master/lembaga; boleh kosong (jatuh ke JENJANG_CADANGAN).
+ * @returns {string} '' bila kelasnya kosong; nilai mentah yang sudah dirapikan bila
+ *   jenjangnya tak dikenali (sengaja — mengarang label untuk kelas asing lebih berbahaya
+ *   daripada menampilkan apa adanya).
+ */
+export function labelJenjang(lembaga, kelas, lembagaList) {
+  const raw = String(kelas ?? '').trim()
+  if (!raw) return ''
+  const list = jenjangLembaga(lembaga, lembagaList)
+  const cadangan = JENJANG_CADANGAN[_norm(lembaga)] || []
+  let i = indexJenjang(list, raw)
+  // 'Level N' lama → POSISI ke-N. Data Pra PTPT & PPPH menyimpan 'Level 5' sedangkan
+  // masternya kini bernama 'Level 3 Juz'; keduanya jenjang yang sama, dan hanya nomor
+  // urutnya yang menghubungkan. Sengaja DIBATASI ke penanda 'Level' — di TPQ nomor
+  // seperti itu bukan posisi ('Jilid 2A' adalah jilid ke-4), jadi menggeneralkannya akan
+  // memindahkan santri TPQ ke jilid yang salah. (Dulu aturan ini hidup sebagai
+  // `labelKelasPra` di dalam TesKenaikanView — satu-satunya layar yang memakainya.)
+  if (i < 0) {
+    const m = /^level\s*(\d+)$/i.exec(raw)
+    const n = m ? parseInt(m[1], 10) : 0
+    if (n >= 1 && n <= list.length) i = n - 1
+  }
+  let label = i >= 0 ? String(list[i]).trim() : raw
+  if (_angkaTelanjang(label)) {
+    // Index dicari ulang di cadangan bila daftar master tak memuat kelasnya sama sekali.
+    const j = i >= 0 ? i : indexJenjang(cadangan, raw)
+    if (j >= 0 && cadangan[j]) label = String(cadangan[j]).trim()
+  }
+  return i >= 0 && !_angkaTelanjang(String(list[i] ?? '').trim()) ? label : _rapikanAwalan(label)
+}
+
+/**
+ * Daftar jenjang sebuah lembaga dengan label yang SUDAH kanonik — dipakai dropdown
+ * kelas & filter, supaya pilihan yang dilihat Kyai sama persis dengan yang tersimpan.
+ */
+export function jenjangLembagaLabel(lembaga, lembagaList) {
+  return jenjangLembaga(lembaga, lembagaList).map((k) => labelJenjang(lembaga, k, lembagaList))
+}
+
+/**
+ * Dua nilai kelas ini menunjuk jenjang yang sama? ('3' ≡ 'Kelas 3' ≡ 'kelas 3').
+ * Dipakai penyaring "Semua kelas" di Rekap Prestasi: tanpa ini, memilih 'Kelas 1'
+ * membuang santri yang kelasnya tersimpan sebagai '1' — separuh daftar hilang diam-diam.
+ */
+export function kelasSama(a, b) {
+  const ia = _inti(a)
+  const ib = _inti(b)
+  return !!ia && ia === ib
+}

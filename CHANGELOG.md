@@ -20,6 +20,313 @@ naik satu tiap rilis. Entri lama memakai skema lama `v.{nomor-urut}.{MMDDtahunmu
 
 ---
 
+## [v.1.4.1 — belum dirilis] — 2026-09-04 — Satu ejaan kelas, satu nama bulan, dan guru yang tak lagi hilang
+
+⚠️ **URUTAN DEPLOY — TIDAK frontend-murni.** `npx supabase db push` **wajib duluan**
+(`20260904120000_arsip_prestasi_periode_laporan.sql`), baru deploy web, lalu AAB & Electron.
+Migrasinya menyentuh fungsi arsip tanggal 25; kalau web tayang lebih dulu, arsip bulan itu
+mendarat di bucket periode yang lama.
+
+⚠️ **Titik versi SENGAJA tetap `1.4.0`** — keputusan Kyai, 4 Sep 2026: _"versi tetap 1.4.0
+dulu saja, karena belum naik ke play."_ Kelima berkas versi + 8 label UI TIDAK disentuh; entri
+ini murni catatan pekerjaannya. Naikkan ke `1.4.1` (lihat daftar TITIK VERSI di catatan
+v.1.4.0) hanya kalau Kyai sudah siap mengunggahnya ke Play.
+
+### Fixed
+
+- **Kelas PTPT tak lagi punya dua ejaan** (v.1.4.1). Kyai, 4 Sep 2026: _"kelas/jilid di PTPT
+  tidak konsisten, ada yg 1-6 ada yg kelas 1-kelas 6. yg benar Kelas 1-6."_
+
+  Sebabnya dua sumber label yang dua-duanya sah dan dua-duanya dipakai menulis:
+  `master/lembaga.kelas_list` PTPT berisi **angka telanjang** `'1'..'6'` (itu yang mendarat di
+  `santri.kelas` lewat dropdown Master Data & Tes Kenaikan), sedangkan `JENJANG_CADANGAN.ptpt`
+  dan kartu kenaikan memakai `'Kelas 1'..'Kelas 6'` (itu yang mendarat lewat NaikKelasView,
+  impor, dan data lama). Secara logika tak ada yang rusak — `indexJenjang` memang sengaja
+  menyamakan `'Kelas 3' ≡ '3'` — yang rusak justru yang terbaca Kyai: satu daftar memuat dua
+  ejaan untuk satu kelas.
+
+  Aturannya sekarang di `utils/jenjangQiraati.labelJenjang()`: **angka telanjang bukan sebuah
+  label**; kalau label master hanya angka, dipakai label daftar cadangan pada INDEX yang sama.
+  Lembaga yang label masternya memang bernama (`'Level ½ Juz'` di Pra PTPT) **tidak tersentuh**
+  — master tetap menang di sana. `labelKelasPra` yang dulu hidup di dalam `TesKenaikanView`
+  ikut pindah ke sini, jadi PTPT sekalian ikut dirapikan (dulu fungsi lokal itu hanya mengurus
+  Pra PTPT). Dikunci `tests/unit/labelJenjang.test.js`.
+
+  Penyaring kelas di Rekap Prestasi ikut diperbaiki: dulu membandingkan string **persis**, jadi
+  memilih `Kelas 1` diam-diam membuang santri yang kelasnya tersimpan sebagai `1` — separuh
+  daftar hilang tanpa pesan apa pun. Kini lewat `kelasSama()`.
+
+  Baris lama **tidak** diubah dan memang tak perlu: setiap pembacanya kini lewat `labelJenjang`.
+  Kenaikan menyimpan bentuk kanoniknya, jadi data baru tak menambah ejaan ketiga.
+
+- **Nama guru kosong di Rekap Prestasi** (v.1.4.1). Kyai, 4 Sep 2026: _"di menu rekap prestasi,
+  nama guru kosong padahal semua santri PTPT sudah punya guru. dan di rekap kelompokkan per
+  guru."_
+
+  Layar itu membaca `santri.guru` — field **tunggal** peninggalan sebelum ada pasangan
+  pagi/sore. Sejak v.1.1.9 pengampu yang sebenarnya tersimpan di `guru_pagi`/`guru_sore`, dan
+  `guru` cuma cermin yang boleh ketinggalan; di PTPT ia memang sering kosong. Jadi bukan
+  datanya yang hilang — **pembacanya menengok kolom yang salah**.
+
+  Pengelompokannya juga berantakan karena sebab yang berdiri sendiri: grup lama dibentuk
+  **run-length** atas daftar yang diurut lembaga→kelas→usia. Karena guru tak pernah ikut
+  mengurutkan, satu guru pecah jadi belasan grup dan judulnya berulang-ulang — persis yang
+  tampak di tangkapan layar Kyai. Sekarang santri dikumpulkan ke petanya dulu, baru grupnya
+  diurutkan (lembaga → kelas terendah yang diampu → nama guru), dan santri **tanpa** guru
+  dikumpulkan jadi satu kelompok di paling bawah — bukan dibuang: justru merekalah yang paling
+  perlu terlihat.
+
+  Aturannya di `utils/rekapPrestasiTabel` (murni + 30 tes). "Siapa pengampu satu santri" TIDAK
+  ditulis ulang di sana — diambil dari `pasanganSantri`/`labelPasanganRingkas`, yang sudah jadi
+  sumber tunggal sejak kartu dasbor "Guru Belum Input". Cetak HTML ikut memakai judul & urutan
+  yang sama, jadi kertas dan layar tak bisa berbeda.
+
+- **Kenaikan lewat Tes Kenaikan tak lagi meninggalkan guru lama** (v.1.4.1). Kyai, 4 Sep 2026:
+  _"jika PJ/kepala/superadmin menaikkan, jika kelasnya pindah, di field pilih guru harusnya
+  gurunya sudah berpasangan seperti field yg lain, jadi bukan satu2. dan buat tidak bisa
+  disimpan jika nama guru belum diisi."_
+
+  Yang diperbaiki bukan cuma bentuk isiannya. Kotak teks lama hanya mengisi `naikForm.guru` —
+  field tunggal itu lagi — sedangkan `guru_pagi`/`guru_sore` dibiarkan **nilai lama**. Padahal
+  seluruh penyaring ampuan, statistik kelas, dan daftar rekap membaca pasangannya duluan.
+  Akibatnya "pindah guru" lewat layar ini praktis **tak berefek**: santri tetap terhitung di
+  kelas guru lama, dan di Rekap Prestasi ia tampil tanpa nama guru. Ini bug yang **sama persis**
+  dengan yang sudah ditutup di NaikKelasView pada v.1.1.9 — layar ini terlewat.
+
+  Sekarang: pemilih **pasangan** (satu baris = satu kelas, dua nama sekaligus) + mode "Atur
+  sendiri" yang mengisi pasangan otomatis dari peta co-occurrence pagi↔sore — cermin
+  NaikKelasView, memakai `utils/pasanganGuru` yang sama. Pasangannya ikut tersimpan
+  (`buildKenaikanQiraatiPayload` sudah mendukungnya sejak v.1.1.9, cuma tak pernah diberi).
+
+  Tombol **Lulus & Naikkan terkunci** selama guru belum dipilih, dan pindah lembaga tujuan
+  mengosongkan pilihan guru (membiarkannya berarti menyimpan guru dari lembaga yang sudah
+  ditinggalkan). Santri yang naik tanpa guru hilang dari daftar ampuan siapa pun — tak muncul
+  di rekap, tak tertagih ke siapa pun, dan baru ketahuan berbulan-bulan kemudian.
+
+- **Pencarian di Data Santri/Guru tak lagi hilang sesudah menyimpan** (v.1.4.1). Kyai, 4 Sep
+  2026: _"jika setelah tulis nama kemudian cari, lalu edit data, setelah simpan selalu reset
+  halamannya. maksudnya namanya tadi hilang, dan tergeser ke bawah, jadi kalau ingin ketik nama
+  lain masih perlu scroll keatas."_
+
+  **Tiga sebab, tiga-tiganya ditutup.**
+  1. **Alamat kembalinya dikarang ulang.** Daftar sudah menyimpan penyaringnya di query URL
+     sejak v.107 (`?q=ahmad&lembaga=PTPT`), tapi tombol Simpan memanggil
+     `router.push('/master-data?tab=santri')` — alamat kosong tanpa satu pun penyaring tadi.
+     Form kini dititipi `?kembali=<fullPath daftar>` dan memakainya. Nilainya **divalidasi**
+     (`utils/navKembali`): hanya jalur internal yang diterima, karena `kembali` datang dari URL
+     dan tanpa penjagaan tombol Simpan bisa dipakai melempar penggunanya ke situs orang.
+  2. **`tab` ikut terhapus.** Daftar Santri/Guru juga tayang **di dalam** Master Data, dan
+     penulisan query-nya merakit ulang dari nol — jadi `tab=santri` hilang tiap kali kotak cari
+     diketik, dan Master Data melompat ke tab lain.
+  3. **Tak pernah ada `scrollBehavior`.** Halaman berikutnya terbuka pada posisi gulir halaman
+     sebelumnya. Yang digulir `<main id="app-scroll">` di AppLayout, **bukan** window: root
+     aplikasi `h-screen + overflow-hidden`, jadi `scrollBehavior` bawaan yang menggulir window
+     tak akan berpengaruh apa pun. Perubahan **query saja** sengaja tidak menggulir — kalau
+     ikut, layar melompat ke atas di setiap huruf yang diketik.
+
+- **Rekap Prestasi & kartu dasbor tak lagi menunjuk bulan yang berbeda** (v.1.4.1). Kyai, 4 Sep
+  2026: _"rekap prestasi bulanan, Bulan September. Isinya adalah rekapan dari awal agustus
+  sampai akhir agustus … di filter saya membukanya di September, bukan di agustus. di agustus
+  harusnya data bulan lalu (bulan agustus, rekap dari Juli)."_
+
+  Penamaan yang berlaku sekarang, ditulis eksplisit karena inilah satu-satunya sumber
+  kekeliruannya:
+
+  > **`periode` = BULAN LAPORAN** (bulan saat rekap dikerjakan & diberi nama) —
+  > **isinya capaian bulan SEBELUMNYA.**
+
+  v.1.3.8 memakai penamaan **kebalikannya**, dan itulah bug yang tak kelihatan:
+  RekapPrestasiView sejak v.100d menulis snapshot ber-periode bulan laporan (`'2026-09'`, nilai
+  dropdown di layarnya), sedangkan kartu dasbor "Guru Belum Input" mencari bulan **data**
+  (`'2026-08'`) lewat `periodeRekapBerjalan()`. **Dua bucket berbeda untuk satu pekerjaan yang
+  sama**: guru yang sudah rapi mengisi tetap tercantum "belum input", dan tak ada satu pun layar
+  yang menunjukkan sebabnya.
+
+  Yang bergeser hanya `periodeRekapBerjalan()` & `batasRekap()` — keduanya maju satu bulan
+  supaya sepakat dengan apa yang **sudah** tertulis di DB sejak v.100d. **Tak ada migrasi
+  data.** Batasnya kini tanggal 5 di bulan laporan itu sendiri (rekap September → 5 September),
+  jendelanya dibuka tanggal 29 bulan sebelumnya, dan penjepitan bulan pendek tetap ada (rekap
+  Maret dibuka 28 Feb di tahun biasa).
+
+  Sekalian: nama bulan **tak boleh lagi tampil sendirian**. `labelPeriodeRekap()` selalu
+  menyebut bulan datanya — _"September 2026 (data Agustus 2026)"_ — dan dipakai kartu dasbor,
+  halaman Guru Belum Input, serta PDF-nya. Layar Rekap Prestasi juga membuka diri pada periode
+  laporan yang sedang jadi giliran; dulu `_now.getMonth()` polos: benar sepanjang tanggal 1–28,
+  tapi salah justru di hari-hari jendela baru dibuka (29–31), ketika layar itu paling dibutuhkan.
+
+  **Sisi server ikut digeser** (`20260904120000_arsip_prestasi_periode_laporan.sql`). Fungsi
+  arsip tanggal 25 mengarsipkan ke `bulan lalu`; padahal angka yang menempel di baris santri
+  pada 25 September adalah isi rekap **September**. Akibatnya angka Agustus tercatat sebagai
+  angka Juli, sementara papan peringkat tetap dikosongkan — jejaknya ada, di bulan yang keliru.
+  Baris riwayat lama **dibiarkan apa adanya**: memindahkannya berarti menebak bulan yang
+  dimaksud penulisnya, dan tebakan itu tak bisa dibatalkan.
+
+- **Angka rekap tak lagi terbawa saat ganti bulan** (v.1.4.1). Suntingan yang belum tersimpan
+  di grid Rekap Prestasi milik **satu periode saja**, tapi `edits` tak pernah dikosongkan waktu
+  dropdown bulan dipindah. Karena `getEdit` mengutamakan `edits`, angka bulan lama menutupi
+  snapshot bulan yang baru dibuka **dan ikut tersimpan ke sana** begitu Simpan ditekan. Kelas
+  bug yang sama dengan v.1.3.7, versi lokalnya.
+
+- **Angka dasbor tak lagi bertengkar dengan angka Rekap Prestasi** (v.1.4.1). Kyai, 4 Sep
+  2026: _"coba cek, di dasbor dg yg di rekap beda. guru2 katanya banyak yg sudah isi, tapi di
+  rekap kok banyak yg belum diisi."_ — dasbor **241/297 dinilai**, Rekap September
+  **74/297**.
+
+  Keduanya "benar", tapi menjawab pertanyaan yang **berbeda**, dan tak satu pun menyebutkan
+  pertanyaannya:
+
+  |                                  | sumbernya                               | artinya                           |
+  | -------------------------------- | --------------------------------------- | --------------------------------- |
+  | Kartu **Top Santri PTPT & PPPH** | `santri.prestasi_awal/akhir`            | pernah dinilai **kapan pun**      |
+  | **Rekap Prestasi**               | snapshot `riwayat_prestasi` periode itu | sudah dinilai **untuk rekap ini** |
+
+  Baris santri hanya menyimpan SATU set angka tanpa dimensi bulan, dan ia tak pernah kosong
+  sendiri — hanya fungsi arsip tanggal 25 yang mengosongkannya (dan jadwal pg_cron-nya
+  dipasang manual; kalau belum, ia tak pernah kosong sama sekali). Jadi angkanya
+  **akumulatif**: santri yang diisi Juni masih terhitung "dinilai" di September, selamanya.
+  Ini persis kelas bug v.1.3.7 — dulu ditutup di RekapPrestasiView, tapi **tak pernah sampai
+  ke kartu dasbor**.
+
+  Sekarang `DistribusiPrestasi` (jumlah dinilai, band Kurang/Cukup/Bagus, Top 5, dan
+  ekspor PDF/Excel-nya) membaca snapshot **periode rekap berjalan** lewat
+  `useStatistikScope.nilaiRekapSantri()` — sumber yang sama dengan Rekap Prestasi dan kartu
+  "Guru Belum Input". Judul kartunya kini **mencantumkan periodenya**; tanpa itu
+  "241/297 dinilai" tak punya cara dibaca selain "bulan ini".
+
+- **Isian rekap yang tersangkut di bucket bulan sebelah kini terlihat** (v.1.4.1). Bagian
+  kedua dari keluhan yang sama — _"guru2 katanya banyak yg sudah isi"_ — dan ini **bukan**
+  soal dasbor.
+
+  Sampai v.1.4.0, dropdown bulan di Rekap Prestasi terbuka pada **bulan kalender**
+  (`_now.getMonth()`). Padahal jendela pengisian menyeberangi pergantian bulan: guru yang
+  membuka layar **29–31 Agustus** melihat "Agustus" dan menyimpan ke `'2026-08'`, sedangkan
+  rekannya yang membuka **1–5 September** melihat "September" dan menyimpan ke `'2026-09'`.
+  **Satu pekerjaan yang sama, dua bucket** — semata karena hari keberapa ia sempat
+  membukanya. Yang membuka di bulan September lalu melihat separuh daftarnya kosong tak punya
+  cara apa pun menebak ke mana isian rekannya pergi.
+
+  `snapshotSalahJendela()` menghitungnya, dan menghitungnya dengan pembeda yang benar:
+  **kapan barisnya DITULIS** (`updatedAt` ≥ tanggal jendela dibuka), bukan sekadar "ada
+  isian di bulan lalu" — tanpa pembeda itu, siklus bulan lalu yang berjalan normal pun ikut
+  terhitung dan angkanya tak berarti apa-apa. Baris tanpa `updatedAt` **tidak** dituduh.
+
+  Hasilnya tampil sebagai spanduk kuning di layar Rekap Prestasi, lengkap dengan sejak
+  tanggal berapa dan ke bucket mana. ⚠️ **Sengaja hanya dilaporkan, tidak dipindah otomatis**:
+  bucket sebelah juga menampung rekap bulan itu yang sah, dan memindahkannya berarti berisiko
+  menimpa pekerjaan yang benar dengan pekerjaan yang lain. Keputusan memindah ada di Kyai.
+
+  Default dropdown-nya sendiri sudah diperbaiki (lihat butir periode di atas), jadi siklus
+  berikutnya tak akan terpecah lagi.
+
+- **Isian yang tersangkut kini bisa DIPINDAHKAN, dengan pratinjau** (v.1.4.1). Kyai, 4 Sep
+  2026, menegaskan aturannya: _"guru yg mengisi dari tgl 29 agustus - september itu adalah
+  data september."_ Jadi baris yang tersangkut di bucket Agustus memang milik rekap
+  September, dan harus pindah.
+
+  `utils/pindahJendelaRekap.rencanaPindahJendela()` menyusun rencananya — **murni, tak
+  menulis apa pun** (pola yang sama dengan `tambalRiwayatPrestasi`, dan alasannya sama:
+  ini menyentuh riwayat yang sudah tersimpan). Tombol **"Tinjau & pindahkan"** di spanduk
+  kuning membuka pratinjau berisi jumlah, daftar santri, angkanya, dan tanggal tulisnya;
+  tak ada satu baris pun berubah sebelum tombol konfirmasi ditekan. Hanya super_admin.
+
+  **Tiga penjaga yang membuat rencananya tak bisa merusak:**
+  1. pembedanya **waktu tulis** (`updatedAt` ≥ 29 bulan sebelumnya), bukan "ada isian di
+     bulan lalu" — tanpa ini seluruh rekap Agustus yang sah ikut terbawa;
+  2. baris **tanpa `updatedAt`** tak pernah ikut — tanpa waktu tulis tak ada dasar
+     menuduhnya salah bucket;
+  3. baris tujuan yang **sudah berangka tak pernah ditimpa** — dilaporkan sebagai _bentrok_
+     supaya Kyai tahu, bukan diselesaikan diam-diam.
+
+  Penerapannya **tulis dulu, baru hapus**. Urutan itu penting: kalau penulisan gagal, baris
+  asal masih utuh dan tak ada angka yang lenyap. Penghapusannya lewat `deleteOne`, yang
+  menyalin baris ke `audit_log` lebih dulu (v.91.0626) — jadi pemindahan ini bisa
+  ditelusuri. `santri.prestasi_*` **tidak** disentuh.
+
+  ⚠️ **Satu hal yang tak bisa dipulihkan, dan disampaikan apa adanya:** santri yang punya
+  rekap Agustus sah (diisi 29 Jul–5 Agu) LALU diisi lagi 29–31 Agustus sudah kehilangan
+  angka pertamanya saat itu juga — id barisnya sama, jadi isian kedua menimpanya. Yang
+  tersisa memang hanya angka siklus September. Memindahkannya tak menghilangkan apa pun yang
+  masih ada, tapi rekap Agustus santri itu akan kosong sesudahnya.
+
+- **Tooltip grafik tak pernah muncul di HP** (v.1.4.1). Kyai, 4 Sep 2026: _"saat diklik dari
+  hp kok gk muncul keterangannya ya, kalau di pc muncul."_
+
+  Sebabnya **bukan** touch event yang hilang — Chart.js v4 sudah mendengarkan `touchstart` &
+  `touchmove` secara bawaan. Yang menghalangi setelan bawaan `interaction.intersect` =
+  **true**: tooltip hanya muncul kalau titik sentuh jatuh **persis di dalam** batang/titiknya.
+
+  Di layar PC itu tak terasa — kursor mouse setajam 1 piksel. Di HP tidak: ujung jari
+  mendarat sebagai satu titik yang meleset beberapa piksel, batangnya sempit (10 kategori
+  dalam ±340 px), dan yang nilainya 1–2 **tingginya cuma beberapa piksel**. Jadi justru
+  batang terkecil — yang paling perlu dibaca angkanya — yang paling mustahil disentuh.
+
+  `utils/chartSentuh.opsiChart()`: `intersect: false` + `mode: 'index'` (doughnut/pie pakai
+  `'nearest'`), plus tooltip berfont 12 px dengan padding lebih lega supaya terbaca di
+  genggaman. Menyentuh **di mana saja pada kolomnya** sudah cukup, dan tooltipnya sekalian
+  menampilkan seluruh dataset kolom itu (Lulus + Belum Lulus sekaligus). Di PC juga terasa
+  lebih enak — tak perlu lagi membidik batang setipis rambut.
+
+  Dipasang di **semua** grafik: `AdminStatsCharts` (3), `TrenCapaianChart`, `LaporanView`
+  (4), `PersonalView`. Setelan pemanggil selalu menang, jadi `callbacks` format Rupiah di
+  grafik arus kas tetap utuh — itu yang paling gampang ikut terhapus, dan itu yang dikunci
+  tesnya. `tests/unit/chartSentuh.test.js` juga **membaca keempat berkas** dan menolak kalau
+  ada objek opsi yang tak lewat `opsiChart` — grafik ke-5 tak bisa lahir tanpa setelan ini.
+
+- **Kelas PTPT terbelah dua batang di grafik & KPI dasbor** (v.1.4.1). Terlihat di tangkapan
+  layar Kyai: satu kartu **PTPT** dengan sumbu X memuat `1 2 3 4 5 6` **dan**
+  `Kelas 1 … Kelas 4` sekaligus — dua ejaan untuk lembaga yang sama, jadi satu kelas
+  terhitung sebagai dua batang terpisah.
+
+  Perbaikan label `labelJenjang` sebelumnya baru menyentuh Rekap Prestasi & Tes Kenaikan;
+  dasbor terlewat. Kini ikut: **Kenaikan Tes per Lembaga** (kelas dikanonikkan sebelum jadi
+  kunci, lalu diurut `kelasRank` — bukan alfabet, supaya 'Kelas 10' tak nyelip sesudah
+  'Kelas 1'), **Rincian Kelas** di KPI Jumlah Kelas, dan kolom Kelas/Juz pada ekspor
+  PDF/Excel **Top Santri**.
+
+- **Kop PDF Rekap Prestasi selama ini kosong** (v.1.4.1, ketemu sambil jalan). Kop-nya dirakit
+  dengan kunci `{title,name,address,contact}` sedangkan `drawKopLetterhead` membaca
+  `{line1..line5}` — jadi seluruh baris kop tak pernah tergambar; yang tampil hanya gambar
+  muassis. Kini memakai `buildKopFromSettings()`, bentuk yang sudah dipakai ekspor lain.
+
+### Added
+
+- **Ekspor PDF Rekap Prestasi bisa dipisah per PJ PTPT** (v.1.4.1). Kyai, 4 Sep 2026: _"untuk
+  ekspor PDF rekap prestasi bulanan, saya ingin bisa dipisah per PJ PTPT. dan format tabelnya
+  ekspornya berisi: No, Nama Santri, Kelas PTPT, Juz, Awal Bulan, Akhir Bulan, Total Capaian,
+  Nama Guru. dan diurutkan dari yg terbanyak total capaiannya kemudian dari juz yg tertinggi."_
+
+  Penyaring **PJ PTPT** baru di layar (PJ efektif diturunkan dari guru pengajarnya lewat peta
+  `pj_guru`, sama seperti Data Santri — bukan label per-santri yang harus dirawat manual).
+  Dibiarkan **"Semua PJ"**, PDF-nya sendiri yang dipisah: satu berkas, satu **bagian per PJ**,
+  tiap bagian mulai di halaman baru dengan kop, judul PJ, dan **penomoran yang mulai dari 1
+  lagi** — jadi tiap PJ tinggal mencabut halamannya. Memilih satu PJ menghasilkan berkas berisi
+  PJ itu saja.
+
+  Kolom & urutannya tidak ditulis di dalam view: dua-duanya dari `utils/rekapPrestasiTabel`,
+  supaya PDF, cetak, dan layar mustahil berselisih. Pembanding terakhirnya nama A–Z — bukan
+  hiasan: tanpa itu, dua santri yang total & juz-nya sama bertukar posisi tiap kali daftar
+  dirakit ulang, dan PDF yang dicetak dua kali di hari yang sama jadi tak sama isinya.
+
+  ⚠️ **Grid isian sengaja TIDAK ikut diurut capaian** (`kelompokPerGuru(rows, { urut: 'tetap' })`).
+  Kalau ikut, baris melompat sendiri tiap kali sebuah angka diketik — santri yang sedang diisi
+  pindah tempat di tengah pengetikan. Urutan capaian itu permintaan untuk **ekspor**, bukan
+  untuk mengisi.
+
+### Catatan teknis
+
+- Util baru: `utils/rekapPrestasiTabel.js`, `utils/navKembali.js`,
+  `utils/pindahJendelaRekap.js`, `utils/chartSentuh.js`; tambahan di
+  `utils/jenjangQiraati.js` (`labelJenjang`, `jenjangLembagaLabel`, `kelasSama`) dan
+  `utils/prestasiBulanan.js` (`periodeBerikutnya`, `periodeDataRekap`, `tglBukaRekapPeriode`,
+  `labelBulanPeriode`, `labelPeriodeRekap`).
+- Tes baru: `rekapPrestasiTabel` (30), `labelJenjang` (17), `navKembali` (12),
+  `snapshotSalahJendela` (11), `pindahJendelaRekap` (13), `chartSentuh` (12);
+  `rekapPrestasiSiklus` ditulis ulang (33). Total suite **1.255 tes, 88 berkas — hijau**.
+- `usePjGuru()` kini ikut membagikan `lembagaList`. Dokumennya sudah dilangganani di sana, jadi
+  pemanggil yang butuh `kelas_list` tak perlu membuka langganan **kedua** ke dokumen yang sama.
+
+---
+
 ## [v.1.4.0] — 2026-09-03 — Rekap absen bulanan yang ringan + pembaruan Android lewat Play saja
 
 ⚠️ **URUTAN DEPLOY — frontend murni.** Tanpa migrasi DB, tanpa edge function. Deploy web dari
@@ -40,8 +347,8 @@ bersama rilis supaya berkas itu tak berbohong tentang versi web yang sedang taya
 ### Changed
 
 - **Pemberitahuan pembaruan Android dihentikan — Play Store jadi satu-satunya jalur**
-  (v.1.4.0). Kyai, 3 Sep 2026: *"matikan notif pembaruan untuk android, cukup update via
-  playstore saja."*
+  (v.1.4.0). Kyai, 3 Sep 2026: _"matikan notif pembaruan untuk android, cukup update via
+  playstore saja."_
 
   Yang dicabut:
   - `App.vue` — `useAndroidUpdate().cekOtomatis()` di `onMounted` **dihapus**. Tak ada lagi
@@ -71,7 +378,7 @@ bersama rilis supaya berkas itu tak berbohong tentang versi web yang sedang taya
 ### Fixed
 
 - **Rekap absen bulanan guru tak lagi tersendat saat diperbaiki manual** (v.1.4.0). Kyai,
-  3 Sep 2026: *"akses edit rekap absen bulanan guru terasa lambat ketika saya edit manual."*
+  3 Sep 2026: _"akses edit rekap absen bulanan guru terasa lambat ketika saya edit manual."_
 
   **Dua sebab yang berdiri sendiri, dua-duanya ditutup.**
 
@@ -221,7 +528,6 @@ Buka **Bisyaroh › Pratinjau** sebelum Bulk Generate supaya selisihnya terlihat
 
   Kartu itu ternyata salah di **tiga** lapis sekaligus, dan gabungannya membuat angkanya
   nyaris tak bermakna:
-
   1. **Periodenya bulan BERJALAN.** Tiap tanggal 1, seluruh guru serentak dinyatakan "belum
      input" untuk bulan yang memang belum boleh diisi siapa pun — sementara pekerjaan yang
      sungguh jatuh tempo (bulan lalu, batas tanggal 5) tak terpantau sama sekali.
@@ -254,7 +560,7 @@ Buka **Bisyaroh › Pratinjau** sebelum Bulk Generate supaya selisihnya terlihat
   "untuk guru yg sepasang jangan dipisah daftarnya." Daftarnya dulu satu baris per NAMA, jadi
   satu kelas berpasangan muncul **dua kali dengan daftar santri yang sama persis** — terbaca
   seolah dua guru berbeda yang lalai, dan jumlahnya ikut dobel. Di data sungguhan angkanya
-  turun dari *27 guru · 186 santri* menjadi *19 guru · 120 santri*. Pengelompokannya
+  turun dari _27 guru · 186 santri_ menjadi _19 guru · 120 santri_. Pengelompokannya
   diturunkan dari `utils/pasanganGuru` — sumber yang sama dengan dropdown kenaikan kelas,
   termasuk asumsi "field `guru` lama = guru pagi" — supaya tak jadi salinan aturan ketiga.
   Label daftar sengaja TANPA akhiran "(pagi)"/"(sore)" seperti di dropdown: PTPT & PPPH satu
@@ -327,7 +633,7 @@ Buka **Bisyaroh › Pratinjau** sebelum Bulk Generate supaya selisihnya terlihat
   Yang tak terlihat dari layar absensi: **penyebut uang memakai definisi yang sama**, jadi tiga
   cara hitung ikut meleset. (1) `× JP diajar` — JP/minggu dibagi ke hari aktif lembaga, guru 12
   JP yang masuk 3 hari dihitung 2 JP × 3 hari = 6 JP, **dibayar separuh**. (2) `JP bulanan
-  prorata` — penyebut "JP terjadwal" kebanyakan. (3) `Bonus tepat waktu` (flat ber-ambang) —
+prorata` — penyebut "JP terjadwal" kebanyakan. (3) `Bonus tepat waktu` (flat ber-ambang) —
   persen hadir diukur terhadap hari efektif lembaga, guru 3 hari mentok ±50% sehingga ambang
   100% **tak pernah tercapai dan bonusnya tak pernah cair**. Yang sejak dulu aman: `× kehadiran`,
   `× tepat waktu`, dan `per shift` — ketiganya menghitung baris hadir yang benar-benar ada.

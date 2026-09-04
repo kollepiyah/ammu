@@ -202,6 +202,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { Bar, Doughnut, Line } from 'vue-chartjs'
+import { opsiChart, MODE_LINGKARAN } from '@/utils/chartSentuh'
 import {
   Chart as ChartJS,
   Title,
@@ -454,8 +455,9 @@ watch(
   }
 )
 
-// chart options
-const optBar = {
+// chart options — v.1.4.1 (Kyai): semuanya lewat opsiChart supaya tooltipnya bisa dibuka
+//   dengan jari, bukan cuma kursor. Lihat catatan panjang di utils/chartSentuh.
+const optBar = opsiChart({
   responsive: true,
   maintainAspectRatio: false,
   plugins: { legend: { display: false } },
@@ -463,14 +465,18 @@ const optBar = {
     x: { ticks: { font: { size: 9 } } },
     y: { beginAtZero: true, ticks: { font: { size: 9 }, precision: 0 } }
   }
-}
-const optDoughnut = {
-  responsive: true,
-  maintainAspectRatio: false,
-  plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 12 } } }
-}
+})
+// Doughnut memakai MODE_LINGKARAN — 'index' tak punya arti di grafik lingkaran.
+const optDoughnut = opsiChart(
+  {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 12 } } }
+  },
+  { mode: MODE_LINGKARAN }
+)
 // v.103: absensi per-bulan jadi multi-line (bukan stacked bar lagi)
-const optLineCount = {
+const optLineCount = opsiChart({
   responsive: true,
   maintainAspectRatio: false,
   plugins: { legend: { position: 'bottom', labels: { font: { size: 10 }, boxWidth: 10 } } },
@@ -482,8 +488,8 @@ const optLineCount = {
       grid: { color: 'rgba(136,135,128,0.15)' }
     }
   }
-}
-const optCurrency = {
+})
+const optCurrency = opsiChart({
   responsive: true,
   maintainAspectRatio: false,
   plugins: {
@@ -505,5 +511,5 @@ const optCurrency = {
       }
     }
   }
-}
+})
 </script>

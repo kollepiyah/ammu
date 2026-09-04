@@ -123,7 +123,7 @@
                   />
                 </label>
                 <router-link
-                  to="/guru/new?from=master"
+                  :to="{ path: '/guru/new', query: queryDaftar }"
                   class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-xs font-bold transition"
                 >
                   <i class="fas fa-plus"></i>Tambah Guru
@@ -517,7 +517,7 @@
                     >{{ isGuruAktif(g) ? 'Non-aktifkan' : 'Aktifkan' }}
                   </button>
                   <router-link
-                    :to="`/guru/${g.id}/edit?from=master`"
+                    :to="{ path: `/guru/${g.id}/edit`, query: queryDaftar }"
                     class="text-[10px] text-teal-700 dark:text-teal-300 hover:underline font-bold"
                   >
                     <i class="fas fa-edit mr-1"></i>Edit
@@ -591,6 +591,8 @@ import { sortLembagaNames } from '@/utils/santriSort' // v.100 Batch10: urutan c
 import { shiftsForGuru } from '@/utils/shiftDerive'
 import { shiftLabelOf, shiftList, shiftIdsFromNomor, shiftNomorFromIds } from '@/utils/shiftMaster'
 import { isGuruAktif } from '@/utils/guruScope' // v.1.2.0: sumber tunggal penyaring status guru
+// v.1.4.1: bawa alamat daftar (beserta pencarian & penyaringnya) ke form, lalu kembali ke situ.
+import { queryDariDaftar } from '@/utils/navKembali'
 
 const {
   guru,
@@ -641,12 +643,20 @@ watch([search, filterLembaga, filterJabatan, filterStatus], () => {
   if (_syncingQuery) return
   const q = {}
   if (_route.query.tipe) q.tipe = _route.query.tipe // jaga pita Data Guru/Pegawai
+  // v.1.4.1: daftar ini juga tayang di dalam Master Data — `tab` wajib ikut dipertahankan,
+  //   kalau tidak Master Data melompat ke tab lain tiap kali kotak cari diketik.
+  if (_route.query.tab) q.tab = _route.query.tab
+  if (_route.query.sub) q.sub = _route.query.sub
   if (search.value) q.q = search.value
   if (filterLembaga.value) q.lembaga = filterLembaga.value
   if (filterJabatan.value) q.jabatan = filterJabatan.value
   if (filterStatus.value && filterStatus.value !== 'aktif') q.status = filterStatus.value
   router.replace({ query: q }).catch(() => {})
 })
+// Alamat daftar SEKARANG (sudah memuat q/lembaga/jabatan/status/tipe/tab) — dititipkan ke
+//   form supaya sesudah Simpan ia kembali ke daftar yang sama, bukan ke daftar kosong.
+const queryDaftar = computed(() => queryDariDaftar(_route.fullPath))
+
 // v.1.1.9: label shift utk kartu guru — dari MASTER lewat shiftsForGuru (sumber tunggal),
 //   bukan lagi g.shift mentah. g.shift kini sekadar cermin utk fp_sync dan bisa berisi
 //   'kosong' (penanda "tak ada shift") yang tak layak dipajang.
@@ -836,7 +846,7 @@ definePageActions(() => {
       label: 'Tambah Guru',
       icon: 'plus',
       primary: true,
-      on: () => router.push('/guru/new?from=master')
+      on: () => router.push({ path: '/guru/new', query: queryDaftar.value })
     })
     acts.push({ label: 'Template', icon: 'download', on: downloadTemplateGuru })
     acts.push({

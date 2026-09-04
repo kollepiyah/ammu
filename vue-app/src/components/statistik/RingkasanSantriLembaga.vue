@@ -181,6 +181,11 @@ import { useConfirm } from '@/composables/useConfirm'
 import { isFullFilterRole } from '@/utils/roleScope'
 import { useStatistikScope } from '@/composables/useStatistikScope'
 import { hitungKelas, hitungKelasLembaga } from '@/utils/kelasHitung'
+// v.1.4.1 (Kyai): label kelas kanonik — daftar ini dulu memuat DUA ejaan untuk kelas PTPT
+//   yang sama ('1' & 'Kelas 1'), jadi satu rombel bisa muncul sebagai dua baris berbeda.
+//   lembagaList dipinjam dari usePjGuru (dokumennya sudah dilangganani di sana).
+import { labelJenjang } from '@/utils/jenjangQiraati'
+import { usePjGuru } from '@/composables/usePjGuru'
 
 // v.103: section = 'all' (default) | 'kpi' (KPI + diagnostik) | 'lembaga' (grid + bar).
 //   Dipakai LaporanView utk menaruh KPI di ATAS chart & breakdown lembaga di BAWAH chart.
@@ -227,6 +232,7 @@ const lembagaCount = computed(() => {
 // v.1.1.9: kelas = 1 ROMBEL per (pasangan) guru — guru_pagi+guru_sore sepasang = 1 kelas.
 //   Dulu tiap guru dihitung sendiri sehingga 1 rombel pagi+sore terhitung 2.
 //   Definisi tunggal di utils/kelasHitung.js.
+const { lembagaList: lembagaMasterKpi } = usePjGuru()
 const kelasCount = computed(() => hitungKelas(scopedSantriAll.value))
 
 const totalSantriDisplay = computed(() => santriAktif.value)
@@ -252,7 +258,7 @@ const kelasDetail = computed(() => {
     const addK = (guru, lemb, kelas, jenis) => {
       const g = String(guru || '').trim(),
         l = String(lemb || '').trim(),
-        k = String(kelas || '').trim()
+        k = labelJenjang(lemb, kelas, lembagaMasterKpi.value)
       if (!g || !l || !k) return
       const key = g.toLowerCase() + '|' + l.toLowerCase() + '|' + k.toLowerCase()
       if (!m.has(key)) m.set(key, { guru: g, lembaga: l, kelas: k, jenis, ids: new Set() })

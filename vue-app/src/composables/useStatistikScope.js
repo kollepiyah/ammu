@@ -92,13 +92,62 @@ export function useStatistikScope() {
     )
   })
 
-  // v.1.3.8 (Kyai, 1 Sep 2026): periode yang SEDANG dikerjakan = bulan LALU, batas tgl 5.
-  //   Dulu di sini bulan BERJALAN — tiap tanggal 1 seluruh guru serentak dinyatakan "belum
-  //   input" untuk bulan yang memang belum boleh diisi siapa pun, sementara pekerjaan yang
-  //   sungguh jatuh tempo (bulan lalu) tak terpantau. Aturannya di utils/prestasiBulanan.
+  // v.1.4.1 (Kyai, 4 Sep 2026): periode = BULAN LAPORAN ('September'), isinya capaian
+  //   bulan sebelumnya ('Agustus'), batas tanggal 5 di bulan laporan itu sendiri.
+  //
+  //   Sampai v.1.4.0 kartu ini memakai penamaan KEBALIKANNYA, dan itulah sebabnya angkanya
+  //   nyaris selalu salah: RekapPrestasiView menulis snapshot ber-periode '2026-09' (nilai
+  //   dropdown di layarnya), sedangkan di sini yang dicari '2026-08'. Bucket-nya beda, jadi
+  //   guru yang sudah rapi mengisi tetap tercantum "belum input". Aturannya — dan nama
+  //   periodenya — sekarang satu, di utils/prestasiBulanan.
   const periodeRekap = computed(() => periodeRekapBerjalan(todayJakarta())) // 'YYYY-MM'
   const batasRekapNow = computed(() => batasRekap(periodeRekap.value)) // 'YYYY-MM-DD'
   const rekapSudahTerlambat = computed(() => rekapTerlambat(periodeRekap.value, todayJakarta()))
+
+  // ── v.1.4.1 · SNAPSHOT PERIODE BERJALAN, dibagikan ke SEMUA kartu prestasi ──
+  //
+  // Kyai, 4 Sep 2026: "di dasbor dg yg di rekap beda. guru2 katanya banyak yg sudah isi,
+  //   tapi di rekap kok banyak yg belum diisi."
+  //
+  // Sebabnya kedua layar menghitung dari sumber yang BERBEDA:
+  //   · kartu "Top Santri PTPT & PPPH" membaca `santri.prestasi_awal/akhir` — SATU set
+  //     angka per santri, TANPA dimensi bulan. Isinya "angka terakhir yang pernah
+  //     disimpan", dan ia tak pernah kosong sendiri (hanya fungsi arsip tanggal 25 yang
+  //     mengosongkannya). Jadi angkanya AKUMULATIF: santri yang diisi Juni masih terhitung
+  //     "dinilai" di September, selamanya.
+  //   · Rekap Prestasi membaca snapshot BULANAN `riwayat_prestasi`, sejak v.1.3.7.
+  //
+  // Karena itu 241/297 dan 74/297 dua-duanya "benar" — hanya saja yang satu menjawab
+  // "pernah dinilai kapan pun" dan yang satu "sudah dinilai untuk rekap ini". Yang dipajang
+  // berdampingan tanpa keterangan bulan cuma bikin dua layar tampak bertengkar.
+  //
+  // Ini persis kelas bug v.1.3.7 ("angka bulan lalu menyamar jadi angka bulan ini") yang
+  // dulu ditutup di RekapPrestasiView tapi TAK PERNAH sampai ke kartu dasbor.
+  const petaPrestasiRekap = computed(() =>
+    petaPrestasiPeriode(riwayatPrestasi.value, periodeRekap.value)
+  )
+
+  /**
+   * Angka prestasi santri untuk periode rekap yang SEDANG berjalan.
+   * Kosong = belum dinilai untuk rekap ini (bukan "tak punya angka sama sekali").
+   */
+  function nilaiRekapSantri(s) {
+    const snap = petaPrestasiRekap.value.get(String(s?.id ?? '')) || null
+    const num = (v) => {
+      const m = String(v || '').match(/\d+/)
+      return m ? parseInt(m[0], 10) : 0
+    }
+    const awal = num(snap?.awal)
+    const akhir = num(snap?.akhir)
+    return {
+      snap,
+      awal,
+      akhir,
+      // PTPT/PPPH: capaian = akhir − awal, cermin persis grid Rekap Prestasi.
+      selisih: Math.max(0, akhir - awal),
+      dinilai: sudahDinilaiBulan(snap)
+    }
+  }
 
   const _guruNgaji = (s) => [
     ...new Set(
@@ -183,6 +232,8 @@ export function useStatistikScope() {
     periodeRekap,
     batasRekapNow,
     rekapSudahTerlambat,
+    petaPrestasiRekap,
+    nilaiRekapSantri,
     guruBelumInput,
     kelasOverload
   }

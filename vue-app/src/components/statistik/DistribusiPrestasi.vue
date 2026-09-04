@@ -40,8 +40,11 @@
           >
             {{ lem.nama }}
           </h3>
-          <p class="text-[10px] text-[var(--text-secondary)] font-bold">
+          <!-- v.1.4.1: periodenya WAJIB tertulis. Tanpa itu "241/297 dinilai" terbaca
+               sebagai angka bulan ini, padahal dulu ia akumulasi lintas bulan. -->
+          <p class="text-[10px] text-[var(--text-secondary)] font-bold text-right">
             {{ lem.dinilai }}/{{ lem.total }} dinilai
+            <span class="block font-normal opacity-80">{{ periodeLabelPrestasi }}</span>
           </p>
         </div>
 
@@ -152,6 +155,8 @@ import { buildListPdf, buildKopFromSettings } from '@/utils/pdfBuilder'
 import { juzNum, todayJakarta } from '@/utils/format'
 import { isFullFilterRole } from '@/utils/roleScope'
 import { useStatistikScope, statusFromSelisih } from '@/composables/useStatistikScope'
+import { labelPeriodeRekap } from '@/utils/prestasiBulanan'
+import { labelJenjang } from '@/utils/jenjangQiraati'
 // KOP per lembaga (Master Data -> Lembaga -> Pengaturan), sumber yang sama dengan rapor.
 import { useLembaga } from '@/composables/useLembaga'
 import { namaWaliSantri, alamatSantri } from '@/utils/santriIdentitas'
@@ -161,15 +166,15 @@ const auth = useAuthStore()
 const settings = useSettingsStore()
 const toast = useToast()
 const { exportStyled } = useExcel()
-const { scopedSantriAktif } = useStatistikScope()
+// v.1.4.1: angka prestasi diambil dari SNAPSHOT periode rekap berjalan — sumber yang
+//   sama dengan layar Rekap Prestasi & kartu "Guru Belum Input". Lihat catatan panjang di
+//   useStatistikScope: kartu ini dulu membaca baris santri yang tak punya dimensi bulan,
+//   jadi angkanya akumulatif dan selalu jauh lebih besar dari yang tampil di Rekap.
+const { scopedSantriAktif, periodeRekap, nilaiRekapSantri } = useStatistikScope()
+const periodeLabelPrestasi = computed(() => labelPeriodeRekap(periodeRekap.value))
 const { lembagaRaw } = useLembaga()
 
 const isAdminMode = computed(() => isFullFilterRole(auth.sesiAktif))
-
-function parseNum(value) {
-  const m = String(value || '').match(/\d+/)
-  return m ? parseInt(m[0]) : 0
-}
 
 function goSantriDetail(id) {
   if (id) router.push(`/statistik/santri/${id}`)
@@ -190,10 +195,10 @@ const lembagaPrestasi = computed(() => {
           .trim()
           .toLowerCase() === low
     )
-    const dinilai = list.filter((s) => parseNum(s.prestasi_akhir) > 0).length
+    const dinilai = list.filter((s) => nilaiRekapSantri(s).dinilai).length
     const unit = nama === 'PPPH' ? 'Hadits' : 'Hal'
     const top5 = list
-      .map((s) => ({ s, val: parseNum(s.prestasi_akhir) - parseNum(s.prestasi_awal) }))
+      .map((s) => ({ s, val: nilaiRekapSantri(s).selisih }))
       .filter((x) => x.val > 0)
       .sort((a, b) => b.val - a.val)
       .slice(0, 5)
@@ -202,7 +207,7 @@ const lembagaPrestasi = computed(() => {
       cukup = 0,
       bagus = 0
     for (const s of list) {
-      const st = statusFromSelisih(parseNum(s.prestasi_akhir) - parseNum(s.prestasi_awal), nama)
+      const st = statusFromSelisih(nilaiRekapSantri(s).selisih, nama)
       if (st === 'kurang') kurang++
       else if (st === 'cukup') cukup++
       else if (st === 'bagus') bagus++
@@ -255,8 +260,8 @@ function _rowsLembaga(nama, noAwal = 0) {
           .trim()
           .toLowerCase() === low
     )
-    .map((s) => ({ s, val: parseNum(s.prestasi_akhir) - parseNum(s.prestasi_awal) }))
-    .filter((x) => parseNum(x.s.prestasi_akhir) > 0)
+    .map((s) => ({ s, val: nilaiRekapSantri(s).selisih, _n: nilaiRekapSantri(s) }))
+    .filter((x) => x._n.dinilai)
     .sort((a, b) => b.val - a.val)
     .map(({ s, val }) => {
       const juz = s.juz && String(s.juz) !== '-' ? ` (Juz ${juzNum(s.juz)})` : ''
@@ -269,7 +274,8 @@ function _rowsLembaga(nama, noAwal = 0) {
         alamat: alamatSantri(s),
         lembaga: nama,
         total: `${val} ${unit}`,
-        kelas_juz: `${s.kelas || '-'}${juz}`,
+        // v.1.4.1: label kelas kanonik ('Kelas 3', bukan '3') — cermin layar & Rekap.
+        kelas_juz: `${labelJenjang(s.lembaga, s.kelas, lembagaRaw.value) || '-'}${juz}`,
         usia: usiaTahun(s.tgl_lahir),
         kelas_sekolah:
           [s.lembaga_sekolah, s.kelas_sekolah]

@@ -766,6 +766,8 @@ import { onMounted, watch, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useSantriForm } from '@/composables/useSantriForm'
 import { definePageSave } from '@/composables/useRibbonContext'
+// v.1.4.1: alamat daftar yang dititipkan lewat ?kembali= (divalidasi — lihat utils-nya).
+import { targetKembali } from '@/utils/navKembali'
 import MultiSelectGuruPengajar from '@/components/form/MultiSelectGuruPengajar.vue'
 import MultiSelectGuruSekolah from '@/components/form/MultiSelectGuruSekolah.vue'
 
@@ -855,16 +857,21 @@ watch(
 // v.21.23.0526: cancelTarget computed — snapshot saat mount (sebelum query terhapus)
 // Pakai object form router.push agar query reliable di hash mode
 const fromMaster = computed(() => route.query.from === 'master')
-const cancelTarget = computed(() =>
-  fromMaster.value ? { path: '/master-data', query: { tab: 'santri' } } : '/santri'
+// v.1.4.1 (Kyai): kembali ke DAFTAR YANG TADI — lengkap dengan kata pencarian & penyaringnya.
+//   Tanpa `?kembali=`, alamat lama tetap dipakai (perilaku sebelumnya, tak berubah).
+const targetDaftar = computed(() =>
+  targetKembali(
+    route.query,
+    fromMaster.value ? { path: '/master-data', query: { tab: 'santri' } } : '/santri'
+  )
 )
+const cancelTarget = targetDaftar
 
 async function onSubmit() {
   const ok = await save()
   if (ok) {
     // v.21.23.0526: object form lebih reliable untuk hash mode + query
-    if (fromMaster.value) router.push({ path: '/master-data', query: { tab: 'santri' } })
-    else router.push('/santri')
+    router.push(targetDaftar.value)
   }
 }
 

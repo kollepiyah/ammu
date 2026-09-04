@@ -197,6 +197,17 @@ import {
 } from 'chart.js'
 import { subscribeColl, getAll } from '@/services/db'
 import { useGedungScope } from '@/composables/useGedungScope'
+// v.1.4.1 (Kyai): tooltip yang bisa dibuka dengan jari — lihat catatan panjang di utils-nya.
+import { opsiChart } from '@/utils/chartSentuh'
+// v.1.4.1 (Kyai): label kelas PTPT kanonik — sumbu X grafik ini dulu memuat DUA ejaan
+//   untuk lembaga yang sama ('1'..'6' dan 'Kelas 1'..'Kelas 4'), jadi satu kelas terbelah
+//   jadi dua batang. lembagaList dipinjam dari usePjGuru: dokumennya sudah dilangganani di
+//   sana, jadi tak ada langganan kedua ke master/lembaga.
+import { labelJenjang } from '@/utils/jenjangQiraati'
+import { kelasRank } from '@/utils/santriSort'
+import { usePjGuru } from '@/composables/usePjGuru'
+
+const { lembagaList: lembagaMasterChart } = usePjGuru()
 
 ChartJS.register(
   Title,
@@ -506,7 +517,10 @@ const tesByLembaga = computed(() => {
     const d = toDate(t.tgl_hasil || t.tgl_uji || t.tgl)
     if (d && d < ws) continue
     const lemb = String(t.lembaga || '').trim() || '(Lainnya)'
-    const kelas = String(t.kelas_asal || t.kelas || '').trim() || '-'
+    // v.1.4.1: dikanonikkan DULU, baru dijadikan kunci — kalau tidak, '1' dan 'Kelas 1'
+    //   jadi dua batang terpisah untuk kelas yang sama (persis yang Kyai lihat: sumbu X
+    //   memuat 1..6 DAN Kelas 1..Kelas 4 pada kartu PTPT yang sama).
+    const kelas = labelJenjang(lemb, t.kelas_asal || t.kelas, lembagaMasterChart.value) || '-'
     if (!byLemb[lemb]) byLemb[lemb] = {}
     if (!byLemb[lemb][kelas]) byLemb[lemb][kelas] = { lulus: 0, belum: 0 }
     if (st === 'lulus') byLemb[lemb][kelas].lulus++
@@ -514,8 +528,10 @@ const tesByLembaga = computed(() => {
   }
   const out = []
   for (const [lemb, kelasMap] of Object.entries(byLemb)) {
-    const kelasKeys = Object.keys(kelasMap).sort((a, b) =>
-      a.localeCompare(b, undefined, { numeric: true })
+    // Urut jenjang, bukan alfabet: 'Kelas 10' harus sesudah 'Kelas 9', dan 'KPI'/
+    //   'Persiapan Khotaman' sesudah jilid — kelasRank sudah jadi sumber tunggalnya.
+    const kelasKeys = Object.keys(kelasMap).sort(
+      (a, b) => kelasRank(a) - kelasRank(b) || a.localeCompare(b, 'id', { numeric: true })
     )
     if (!kelasKeys.length) continue
     const lulusTotal = kelasKeys.reduce((s, k) => s + kelasMap[k].lulus, 0)
@@ -550,7 +566,7 @@ const xScale = {
   ticks: { autoSkip: true, maxTicksLimit: 12, maxRotation: 0, font: { size: 9 } },
   grid: { display: false }
 }
-const optLine = {
+const optLine = opsiChart({
   responsive: true,
   maintainAspectRatio: false,
   plugins: { legend: { display: false } },
@@ -562,8 +578,8 @@ const optLine = {
       grid: { color: 'rgba(136,135,128,0.15)' }
     }
   }
-}
-const optLineCurrency = {
+})
+const optLineCurrency = opsiChart({
   responsive: true,
   maintainAspectRatio: false,
   plugins: {
@@ -586,8 +602,8 @@ const optLineCurrency = {
       grid: { color: 'rgba(136,135,128,0.15)' }
     }
   }
-}
-const optTesStacked = {
+})
+const optTesStacked = opsiChart({
   responsive: true,
   maintainAspectRatio: false,
   plugins: { legend: { position: 'bottom', labels: { font: { size: 10 }, boxWidth: 10 } } },
@@ -595,5 +611,5 @@ const optTesStacked = {
     x: { stacked: true, ticks: { font: { size: 9 } }, grid: { display: false } },
     y: { stacked: true, beginAtZero: true, ticks: { font: { size: 9 }, precision: 0 } }
   }
-}
+})
 </script>

@@ -24,5 +24,8 @@ function _ensure() {
 export function usePjGuru() {
   _ensure()
   const pjGuru = computed(() => getPjGuru(_lembagaList.value))
-  return { pjGuru }
+  // v.1.4.1: daftar master/lembaga ikut dibagikan. Doc-nya sudah dilangganani di sini,
+  //   jadi pemanggil yang butuh `kelas_list` (label jenjang kanonik di Rekap Prestasi)
+  //   tak perlu membuka langganan KEDUA ke dokumen yang sama.
+  return { pjGuru, lembagaList: _lembagaList }
 }

@@ -464,7 +464,28 @@ const routes = [
 
 export const router = createRouter({
   history: createWebHashHistory(),
-  routes
+  routes,
+  // v.1.4.1 (Kyai, 4 Sep 2026): "…dan tergeser ke bawah, jadi kalau ingin ketik nama lain
+  //   masih perlu scroll keatas." Sesudah Simpan, daftar terbuka pada posisi gulir HALAMAN
+  //   SEBELUMNYA — aplikasi ini tak pernah punya scrollBehavior sama sekali, jadi tak ada
+  //   yang mengembalikannya ke atas.
+  //
+  //   Yang digulir <main id="app-scroll"> di AppLayout, BUKAN window: root aplikasi
+  //   h-screen + overflow-hidden, jadi window-nya memang tak pernah bergulir dan
+  //   scrollBehavior bawaan ({ top: 0 }) tak akan berpengaruh apa pun.
+  //
+  //   ⚠ Perubahan QUERY SAJA sengaja tidak menggulir. Daftar Santri/Guru menulis
+  //   penyaringnya ke URL tiap kali kotak cari diketik (router.replace sejak v.107); kalau
+  //   itu ikut menggulir, layar melompat ke atas di SETIAP huruf yang diketik.
+  scrollBehavior(to, from) {
+    if (to.path === from.path) return false
+    const el = typeof document !== 'undefined' && document.getElementById('app-scroll')
+    if (el) {
+      el.scrollTop = 0
+      return false
+    }
+    return { top: 0 }
+  }
 })
 
 // Guard: protect non-public routes

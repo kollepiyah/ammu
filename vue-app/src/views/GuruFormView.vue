@@ -505,6 +505,8 @@
 <script setup>
 import { onMounted, watch, computed } from 'vue'
 import { pecahJabatan } from '@/utils/jabatanUnit'
+// v.1.4.1: alamat daftar yang dititipkan lewat ?kembali= (divalidasi — lihat utils-nya).
+import { targetKembali } from '@/utils/navKembali'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
 import {
   useGuruForm,
@@ -599,15 +601,20 @@ watch(
 
 // v.21.23.0526: object form router.push lebih reliable di hash mode + query
 const fromMaster = computed(() => route.query.from === 'master')
-const cancelTarget = computed(() =>
-  fromMaster.value ? { path: '/master-data', query: { tab: 'guru' } } : '/guru'
+// v.1.4.1 (Kyai): kembali ke DAFTAR YANG TADI — lengkap dengan kata pencarian & penyaringnya.
+//   Tanpa `?kembali=`, alamat lama tetap dipakai (perilaku sebelumnya, tak berubah).
+const targetDaftar = computed(() =>
+  targetKembali(
+    route.query,
+    fromMaster.value ? { path: '/master-data', query: { tab: 'guru' } } : '/guru'
+  )
 )
+const cancelTarget = targetDaftar
 
 async function onSubmit() {
   const ok = await save()
   if (ok) {
-    if (fromMaster.value) router.push({ path: '/master-data', query: { tab: 'guru' } })
-    else router.push('/guru')
+    router.push(targetDaftar.value)
   }
 }
 </script>

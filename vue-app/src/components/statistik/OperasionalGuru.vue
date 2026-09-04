@@ -103,6 +103,8 @@ const auth = useAuthStore()
 const isAdminMode = computed(() => isFullFilterRole(auth.sesiAktif))
 
 // v.95.0626: kartu Guru Belum Input + Kelas Overload (data ter-scope)
+import { labelPeriodeRekap } from '@/utils/prestasiBulanan'
+
 const { guruBelumInput, kelasOverload, periodeRekap, batasRekapNow, rekapSudahTerlambat } =
   useStatistikScope()
 
@@ -121,10 +123,9 @@ const _NAMA_BULAN_STAT = [
   'Desember'
 ]
 // v.1.3.8: periode yang DITAGIH = bulan lalu ('YYYY-MM'), bukan lagi bulan berjalan.
-const periodeLabel = computed(() => {
-  const m = String(periodeRekap.value).match(/^(\d{4})-(\d{2})$/)
-  return m ? `${_NAMA_BULAN_STAT[parseInt(m[2]) - 1]} ${m[1]}` : periodeRekap.value
-})
+// v.1.4.1: sama dengan GuruBelumInputView — nama bulan tak pernah tampil tanpa bulan
+//   datanya, supaya kartu ini & layar Rekap Prestasi jelas membicarakan satu pekerjaan.
+const periodeLabel = computed(() => labelPeriodeRekap(periodeRekap.value))
 // Batas pengisian: tanggal 5 bulan berikutnya (Kyai, 1 Sep 2026).
 const batasLabel = computed(() => {
   const m = String(batasRekapNow.value).match(/^(\d{4})-(\d{2})-(\d{2})$/)

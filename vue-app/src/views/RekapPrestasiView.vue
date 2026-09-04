@@ -1,5 +1,129 @@
 <template>
   <div class="p-3 md:p-5 max-w-7xl mx-auto space-y-4">
+    <!-- v.1.4.1: Pratinjau pemindahan isian ke bucket bulan yang benar (Kyai, 4 Sep 2026).
+         Tak ada yang ditulis sampai tombol di bawah ditekan. -->
+    <div
+      v-if="pindahRencana"
+      class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4"
+    >
+      <div
+        class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-3xl w-full max-h-[88vh] flex flex-col"
+      >
+        <div
+          class="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between"
+        >
+          <h3 class="text-base font-black text-slate-800 dark:text-slate-100">
+            <i class="fas fa-right-left text-amber-600 mr-2"></i>Pindahkan ke Rekap {{ bulan }}
+            {{ tahun }}
+          </h3>
+          <button class="text-slate-400 hover:text-rose-600 text-xl" @click="pindahRencana = null">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="p-4 overflow-auto flex-1 text-xs space-y-3">
+          <p class="text-[11px] text-slate-600 dark:text-slate-300">
+            Isian di <b>Rekap {{ labelBulanPeriode(pindahRencana.periodeDari) }}</b> yang ditulis
+            pada/sesudah <b>{{ pindahRencana.sejak }}</b> — yaitu sesudah jendela Rekap
+            {{ bulan }} dibuka. Menurut aturan Kyai, angka itu capaian
+            <b>{{ bulanDataLabel }}</b> dan tempatnya di Rekap {{ bulan }}.
+          </p>
+          <p
+            v-if="penyaringAktif.length"
+            class="text-[11px] rounded-lg border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20 p-2 text-amber-900 dark:text-amber-200"
+          >
+            <i class="fas fa-filter mr-1"></i><b>Penyaring masih aktif:</b>
+            {{ penyaringAktif.join(' · ') }}. Rencana di bawah HANYA mencakup daftar yang sedang
+            tampil — kosongkan penyaringnya dulu bila ingin memindahkan semua lembaga sekaligus.
+          </p>
+          <div class="grid grid-cols-2 gap-2">
+            <div
+              class="bg-emerald-50 dark:bg-emerald-900/20 rounded p-2 border border-emerald-200 dark:border-emerald-800"
+            >
+              <p class="text-[10px] text-emerald-700 dark:text-emerald-300 font-bold uppercase">
+                Dipindah
+              </p>
+              <p class="text-2xl font-black text-emerald-700 dark:text-emerald-300">
+                {{ pindahRencana.pindah.length }}
+              </p>
+            </div>
+            <div
+              class="bg-amber-50 dark:bg-amber-900/20 rounded p-2 border border-amber-200 dark:border-amber-800"
+            >
+              <p class="text-[10px] text-amber-700 dark:text-amber-300 font-bold uppercase">
+                Dilewati (tujuan sudah terisi)
+              </p>
+              <p class="text-2xl font-black text-amber-700 dark:text-amber-300">
+                {{ pindahRencana.bentrok.length }}
+              </p>
+            </div>
+          </div>
+          <p
+            v-if="pindahRencana.bentrok.length"
+            class="text-[11px] text-amber-700 dark:text-amber-300"
+          >
+            <i class="fas fa-circle-info mr-1"></i>Santri yang tujuannya SUDAH berangka tidak
+            ditimpa — angka Rekap {{ bulan }} yang menang. Barisnya tetap di
+            {{ labelBulanPeriode(pindahRencana.periodeDari) }}, silakan periksa manual.
+          </p>
+          <table
+            v-if="pindahRencana.pindah.length"
+            class="w-full border border-slate-200 dark:border-slate-700"
+          >
+            <thead class="bg-slate-100 dark:bg-slate-700/50">
+              <tr>
+                <th class="px-2 py-1 text-left">#</th>
+                <th class="px-2 py-1 text-left">Nama Santri</th>
+                <th class="px-2 py-1 text-left">Kelas</th>
+                <th class="px-2 py-1 text-left">Awal</th>
+                <th class="px-2 py-1 text-left">Akhir</th>
+                <th class="px-2 py-1 text-left">Ditulis</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="(p, i) in pindahRencana.pindah.slice(0, 100)"
+                :key="p.santriId"
+                class="border-t border-slate-200 dark:border-slate-700"
+              >
+                <td class="px-2 py-1">{{ i + 1 }}</td>
+                <td class="px-2 py-1 font-bold text-slate-700 dark:text-slate-200">
+                  {{ p.nama }}
+                </td>
+                <td class="px-2 py-1">{{ p.kelas || '-' }}</td>
+                <td class="px-2 py-1">{{ p.awal || '-' }}</td>
+                <td class="px-2 py-1">{{ p.akhir || '-' }}</td>
+                <td class="px-2 py-1 text-slate-400">{{ String(p.updatedAt).slice(0, 10) }}</td>
+              </tr>
+            </tbody>
+          </table>
+          <p v-if="pindahRencana.pindah.length > 100" class="text-[10px] italic text-slate-500">
+            …dan {{ pindahRencana.pindah.length - 100 }} baris lagi (semua diproses saat konfirmasi)
+          </p>
+          <p v-if="!pindahRencana.pindah.length" class="text-[11px] italic text-slate-500">
+            Tak ada yang perlu dipindah.
+          </p>
+        </div>
+        <div
+          class="p-4 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-2 items-center"
+        >
+          <button
+            class="px-4 py-2 text-xs font-bold rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-200"
+            @click="pindahRencana = null"
+          >
+            Batal
+          </button>
+          <button
+            :disabled="pindahBusy || !pindahRencana.pindah.length"
+            class="px-4 py-2 text-xs font-black rounded-lg bg-amber-600 hover:bg-amber-700 text-white disabled:opacity-50"
+            @click="terapkanPindah"
+          >
+            <i :class="['fas', pindahBusy ? 'fa-spinner fa-spin' : 'fa-right-left', 'mr-1']"></i>
+            Pindahkan {{ pindahRencana.pindah.length }} baris
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- v.100 Batch12: Preview impor Rekap Prestasi (review dulu: Baru/Update/Lewati/Tak ditemukan) -->
     <div
       v-if="importRekapPreview"
@@ -340,7 +464,8 @@
             </h1>
             <p class="text-[11px] text-slate-500 dark:text-slate-400">
               Rekap bulanan prestasi santri Qiraati. Total: {{ filteredSantri.length }} santri ·
-              Periode: <b class="text-cyan-700">{{ bulan }} {{ tahun }}</b>
+              Rekap: <b class="text-cyan-700">{{ bulan }} {{ tahun }}</b> · berisi capaian
+              <b class="text-cyan-700">{{ bulanDataLabel }}</b>
             </p>
             <!-- v.1.3.7 (Kyai 31 Agu 2026): tiap bulan mulai kosong. Keterangan ini perlu
                  karena perubahannya justru terlihat sebagai "data hilang" bagi yang terbiasa
@@ -349,8 +474,10 @@
               v-if="mode === 'bulanan'"
               class="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5"
             >
-              <i class="fas fa-circle-info mr-1"></i>Tiap bulan mulai <b>kosong</b>; angka abu-abu
-              di kotak isian hanya <b>petunjuk bulan lalu</b>, tidak ikut tersimpan.
+              <i class="fas fa-circle-info mr-1"></i><b>Rekap {{ bulan }}</b> diisi tgl 29
+              {{ bulanDataLabel }} s/d 5 {{ bulan }}, isinya capaian <b>{{ bulanDataLabel }}</b
+              >. Tiap rekap mulai <b>kosong</b>; angka abu-abu di kotak isian hanya
+              <b>petunjuk rekap sebelumnya</b>, tidak ikut tersimpan.
             </p>
           </div>
           <!-- View mode toggle -->
@@ -402,6 +529,16 @@
         >
           <option value="">Semua kelas</option>
           <option v-for="k in uniqueKelas" :key="k" :value="k">{{ k }}</option>
+        </select>
+        <!-- v.1.4.1 (Kyai): pisah rekap per PJ PTPT. Dibiarkan '' → PDF-nya sendiri yang
+             DIPISAH jadi satu bagian per PJ (satu berkas, halaman terpisah per PJ). -->
+        <select
+          v-if="pjOptions.length > 1"
+          v-model="filterPj"
+          class="px-3 py-2 text-sm rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-teal-500 outline-none"
+        >
+          <option value="">Semua PJ (PDF dipisah per PJ)</option>
+          <option v-for="p in pjOptions" :key="p" :value="p">PJ {{ p }}</option>
         </select>
         <input
           v-model="search"
@@ -467,6 +604,38 @@
           <p class="text-2xl font-black text-teal-700">{{ stats.sudahDinilai }}</p>
           <p class="text-[10px] uppercase text-slate-500">Sudah Dinilai</p>
         </div>
+      </div>
+
+      <!-- v.1.4.1 (Kyai): "guru2 katanya banyak yg sudah isi, tapi di rekap kok banyak yg
+           belum diisi." Isian yang tersangkut di bucket bulan sebelah — akibat dropdown
+           lama yang terbuka pada bulan kalender, bukan pada periode rekap yang berjalan. -->
+      <div
+        v-if="mode === 'bulanan' && tersangkutBulanSebelah.jumlah > 0"
+        class="bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 rounded-2xl p-3 text-[11px] text-amber-900 dark:text-amber-200"
+      >
+        <p class="font-black">
+          <i class="fas fa-triangle-exclamation mr-1"></i>{{ tersangkutBulanSebelah.jumlah }} santri
+          isiannya tersimpan di
+          <b>Rekap {{ labelBulanPeriode(tersangkutBulanSebelah.periodeSebelum) }}</b
+          >, bukan di Rekap {{ bulan }}.
+        </p>
+        <p class="mt-1 opacity-90">
+          Semuanya ditulis pada/sesudah
+          <b>{{ tersangkutBulanSebelah.sejak }}</b> — yaitu sesudah jendela Rekap
+          {{ bulan }} dibuka, jadi isinya memang capaian {{ bulanDataLabel }}. Versi lama membuka
+          dropdown ini pada bulan kalender, sehingga guru yang mengisi tanggal 29–31 tersimpan ke
+          bulan sebelumnya. Buka filter
+          <b>{{ labelBulanPeriode(tersangkutBulanSebelah.periodeSebelum) }}</b> untuk melihat
+          angkanya.
+        </p>
+        <button
+          v-if="canCrud"
+          class="mt-2 px-3 py-1.5 text-[11px] font-black rounded-lg bg-amber-600 hover:bg-amber-700 text-white disabled:opacity-50"
+          :disabled="pindahBusy"
+          @click="bukaPindah"
+        >
+          <i class="fas fa-right-left mr-1"></i>Tinjau &amp; pindahkan ke Rekap {{ bulan }}
+        </button>
       </div>
 
       <!-- ACTION BAR (Export/Print/Simpan) -->
@@ -776,8 +945,8 @@
                     :colspan="hasPTPT ? 7 : 6"
                     class="p-2 border border-slate-300 font-black text-slate-800 uppercase tracking-wider text-[10px]"
                   >
-                    LEMBAGA: {{ grp.lembaga }} | KELAS: {{ grp.kelas }} | GURU:
-                    {{ grp.guru || '-' }}
+                    GURU: {{ grp.guru || '— belum ada guru —' }} | {{ grp.lembaga }} | KELAS:
+                    {{ grp.kelas || '-' }} | {{ grp.jumlah }} santri
                   </td>
                 </tr>
                 <tr v-for="s in grp.santri" :key="s.id" class="hover:bg-cyan-50/30">
@@ -797,7 +966,7 @@
                     {{ s.jk || '-' }}
                   </td>
                   <td class="p-2 border border-slate-300 text-center text-[10px]">
-                    {{ s.lembaga }} - {{ s.kelas || '-' }}
+                    {{ s.lembaga }} - {{ kelasLabel(s) || '-' }}
                   </td>
                   <td v-if="hasPTPT" class="p-1 border border-slate-300 bg-rose-50/40">
                     <input
@@ -885,8 +1054,9 @@
             <p
               class="text-[11px] font-black text-slate-700 dark:text-slate-200 uppercase tracking-wider px-1 pt-1"
             >
-              <i class="fas fa-layer-group mr-1.5 text-cyan-600"></i>{{ grp.lembaga }} ·
-              {{ grp.kelas || '-' }}<template v-if="grp.guru"> · {{ grp.guru }}</template>
+              <i class="fas fa-layer-group mr-1.5 text-cyan-600"></i
+              >{{ grp.guru || '— belum ada guru —' }} · {{ grp.lembaga }} {{ grp.kelas || '-' }} ·
+              {{ grp.jumlah }} santri
             </p>
             <div
               v-for="s in grp.santri"
@@ -897,7 +1067,7 @@
                 <p class="text-sm font-bold text-slate-800 dark:text-white truncate min-w-0">
                   {{ s.nama }}
                   <span class="text-[10px] font-bold text-slate-500"
-                    >{{ s.jk || '-' }} · {{ s.lembaga }} {{ s.kelas || '-' }}</span
+                    >{{ s.jk || '-' }} · {{ s.lembaga }} {{ kelasLabel(s) || '-' }}</span
                   >
                 </p>
                 <span
@@ -1254,15 +1424,22 @@ import { useConfirm } from '@/composables/useConfirm'
 import { useExcel } from '@/composables/useExcel'
 import { useGoogleSheet } from '@/composables/useGoogleSheet' // v.100 Batch12: ekspor ke Google Sheet
 import { useSettingsStore } from '@/stores/settings'
-import { extractNumber, getNamaGuruGelar, todayJakarta } from '@/utils/format'
+import { extractNumber, todayJakarta } from '@/utils/format'
 import { bestNameMatch, fuzzyKey, simRatio } from '@/utils/fuzzyMatch' // v.100 Batch12/14: cocokkan nama mirip + scope guru (impor Google Form)
-import { buildListPdf } from '@/utils/pdfBuilder'
+import {
+  createPdf,
+  drawKopLetterhead,
+  drawTitle,
+  drawTable,
+  savePdf,
+  buildKopFromSettings
+} from '@/utils/pdfBuilder'
 import { muassisDataUrlSync } from '@/utils/kopMuassis' // v.100: baris-1 KOP print = gambar muassis
 import { useAuthStore } from '@/stores/auth'
 import { useRouter } from 'vue-router' // v.100c-fix: pilihKategori('diniyah') pakai router.push (sebelumnya undefined → ReferenceError)
 import { isFullFilterRole, isSuperAdmin } from '@/utils/roleScope'
 import { ownsSekolah, deteksiTipeGuru, scopeQiraati } from '@/utils/guruScope' // v.100b: guru sekolah lihat prestasi qiraati santri kelasnya (read-only); v.100d: deteksiTipeGuru utk toggle kategori guru dual; v.1.2.8: scopeQiraati = scope kepala per-sisi
-import { sortSantri } from '@/utils/santriSort'
+import { sortSantri, kelasRank } from '@/utils/santriSort'
 // v.1.3.7: angka prestasi MILIK BULAN — sumber tunggal, dipakai juga InputBulananView.
 import {
   petaPrestasiPeriode,
@@ -1271,8 +1448,33 @@ import {
   petunjukBulanLalu,
   payloadRiwayatPrestasi,
   sudahDinilaiBulan,
-  LEMBAGA_PRESTASI_BULANAN
+  LEMBAGA_PRESTASI_BULANAN,
+  // v.1.4.1 (Kyai 4 Sep 2026): periode = BULAN LAPORAN, isinya capaian bulan sebelumnya.
+  periodeRekapBerjalan,
+  periodeDataRekap,
+  labelBulanPeriode,
+  snapshotSalahJendela
 } from '@/utils/prestasiBulanan'
+// v.1.4.1: label kelas kanonik ('Kelas 1', bukan '1') + pembanding kelas yang toleran.
+import { labelJenjang, kelasSama } from '@/utils/jenjangQiraati'
+// v.1.4.1: bentuk tabel rekap (baris, urutan, kelompok per guru, pisah per PJ) — PURE.
+import {
+  KOLOM_REKAP_PRESTASI,
+  TANPA_PJ,
+  barisRekapPrestasi,
+  urutkanRekapPrestasi,
+  kelompokPerGuru,
+  kelompokPerPj,
+  daftarPj,
+  barisCetak,
+  guruSantri
+} from '@/utils/rekapPrestasiTabel'
+// v.1.4.1 (Kyai, 4 Sep 2026): "guru yg mengisi dari tgl 29 agustus - september itu adalah
+//   data september." Rencana pemindahannya MURNI + 13 tes; layar ini hanya menampilkan &
+//   menerapkan sesudah Kyai menekan konfirmasi.
+import { rencanaPindahJendela } from '@/utils/pindahJendelaRekap'
+import { usePjGuru } from '@/composables/usePjGuru'
+import { buatPetaPjSantri } from '@/utils/glondongan'
 // v.1.3.8 (Kyai, 2 Sep 2026): menambal riwayat bulanan yang tak pernah tertulis, SEBELUM
 //   angka di data santri boleh dikosongkan tiap tanggal 25.
 import { analisaTambal, labelPeriode as labelPeriodeTambal } from '@/utils/tambalRiwayatPrestasi'
@@ -1484,10 +1686,19 @@ const isDualGuru = computed(
   () => isGuruMode.value && tipeGuru.value.qiraati && tipeGuru.value.sekolah
 )
 const filterKelas = ref('')
+// v.1.4.1 (Kyai): penyaring PJ PTPT — '' = semua PJ (PDF-nya lalu DIPISAH per PJ).
+const filterPj = ref('')
 const expandedId = ref(null)
 const mode = ref('bulanan')
-const bulan = ref(BULAN_LIST[_now.getMonth()])
-const tahun = ref(_now.getFullYear())
+// v.1.4.1 (Kyai, 4 Sep 2026): "di filter saya membukanya di September, bukan di agustus."
+//   Layar dibuka pada periode LAPORAN yang sedang jadi giliran — 29 Agu s/d 28 Sep itu
+//   September. Dulu `_now.getMonth()` polos: benar sepanjang tanggal 1–28, tapi salah
+//   justru di hari-hari jendela baru dibuka (29–31), ketika layar ini paling dibutuhkan.
+const _periodeAwal =
+  periodeRekapBerjalan(todayJakarta()) ||
+  `${_now.getFullYear()}-${String(_now.getMonth() + 1).padStart(2, '0')}`
+const bulan = ref(BULAN_LIST[Number(_periodeAwal.slice(5, 7)) - 1] || BULAN_LIST[_now.getMonth()])
+const tahun = ref(Number(_periodeAwal.slice(0, 4)) || _now.getFullYear())
 // v.100d: periode utk riwayat prestasi bulanan = bulan+tahun TERPILIH di filter (YYYY-MM)
 const periodeSel = computed(() => {
   const mi = BULAN_LIST.indexOf(bulan.value)
@@ -1495,6 +1706,9 @@ const periodeSel = computed(() => {
   return `${tahun.value}-${mm}`
 })
 const bulanLabelSel = computed(() => `${bulan.value} ${tahun.value}`)
+// Bulan yang angkanya SEDANG diisi. Nama bulan laporan tak pernah lagi tampil sendirian:
+//   "Rekap September" tanpa keterangan itulah yang Kyai sebut masih ambigu.
+const bulanDataLabel = computed(() => labelBulanPeriode(periodeDataRekap(periodeSel.value)))
 
 // v.21.84.0527: 3-layer flow — landing → sub-landing → input (match live UX)
 const viewStep = ref('landing') // 'landing' | 'sub-qiraati' | 'sub-diniyah' | 'input'
@@ -1530,6 +1744,14 @@ function backToSub() {
 
 // edits state (Awal/Akhir/Total/Juz per santri)
 const edits = reactive({})
+// v.1.4.1 (Kyai, 4 Sep 2026 — "ganti bulan/filter, angka lama ikut terbawa"): suntingan
+//   yang belum tersimpan MILIK satu periode saja. Tanpa ini, angka yang diketik untuk
+//   September masih menempel waktu dropdown dipindah ke Oktober — dan karena getEdit
+//   mengutamakan `edits`, angka itu menutupi snapshot bulan yang baru dibuka lalu ikut
+//   tersimpan ke sana begitu Simpan ditekan. Persis kelas bug v.1.3.7, versi lokalnya.
+watch(periodeSel, () => {
+  for (const id of Object.keys(edits)) delete edits[id]
+})
 let unsubSantri = null
 let unsubGuru = null
 let unsubRiwayatP = null // v.100d
@@ -1569,7 +1791,12 @@ const filteredSantri = computed(() => {
     }
   }
   if (filterLembaga.value) list = list.filter((s) => lembagaMatch(s, filterLembaga.value))
-  if (filterKelas.value) list = list.filter((s) => String(s.kelas || '') === filterKelas.value)
+  // v.1.4.1: dicocokkan lewat kelasSama — data PTPT memuat DUA ejaan untuk satu kelas
+  //   ('1' dan 'Kelas 1'), jadi pembandingan string persis membuang separuh daftar diam-diam.
+  if (filterKelas.value) list = list.filter((s) => kelasSama(s.kelas, filterKelas.value))
+  // v.1.4.1 (Kyai): rekap bisa dipisah per PJ PTPT — penyaringnya menyetir layar & ekspor.
+  if (filterPj.value)
+    list = list.filter((s) => petaPjSantri.value.get(String(s.id)) === filterPj.value)
   const kw = search.value.trim().toLowerCase()
   if (kw)
     list = list.filter((s) =>
@@ -1580,30 +1807,85 @@ const filteredSantri = computed(() => {
   return sortSantri(list, { lembagaField: 'lembaga', kelasField: 'kelas' })
 })
 
+// Pilihan kelas memakai label KANONIK, jadi '1' & 'Kelas 1' tak lagi jadi dua baris
+//   dropdown untuk kelas yang sama (itulah "kelas/jilid PTPT tidak konsisten" yang dilihat
+//   Kyai). Diurut lewat kelasRank supaya Kelas 10 tak nyelip sesudah Kelas 1.
 const uniqueKelas = computed(() => {
   const set = new Set()
-  for (const s of santriQiraati.value) if (s.kelas) set.add(s.kelas)
-  return [...set].sort()
+  for (const s of santriQiraati.value) {
+    const k = labelJenjang(s.lembaga, s.kelas, lembagaMaster.value)
+    if (k) set.add(k)
+  }
+  return [...set].sort((a, b) => kelasRank(a) - kelasRank(b) || a.localeCompare(b, 'id'))
 })
 
 const hasPTPT = computed(() => filteredSantri.value.some((s) => s.lembaga === 'PTPT'))
 
-// Group untuk bulanan table (by lembaga + kelas + guru)
-const groupedBulanan = computed(() => {
-  const groups = []
-  let last = null
-  for (const s of filteredSantri.value) {
-    const key = `${s.lembaga}::${s.kelas}::${s.guru}`
-    if (!last || last.key !== key) {
-      const g = guruRaw.value.find((x) => x.nama === s.guru)
-      const guruName = g ? getNamaGuruGelar(g.nama, g.jk) : s.guru || ''
-      last = { key, lembaga: s.lembaga, kelas: s.kelas, guru: guruName, santri: [] }
-      groups.push(last)
-    }
-    last.santri.push(s)
-  }
-  return groups
-})
+// ── v.1.4.1 · PJ efektif + baris rekap + kelompok per GURU ───────────────────
+//
+// Kyai (4 Sep 2026): "nama guru kosong padahal semua santri PTPT sudah punya guru. dan di
+//   rekap kelompokkan per guru."
+//
+// Dua sebab yang berdiri sendiri, dua-duanya di blok lama ini:
+//   (1) nama guru diambil dari `s.guru` — field TUNGGAL pra-v.1.1.9 yang di PTPT memang
+//       sering kosong, sementara pengampu sebenarnya ada di `guru_pagi`/`guru_sore`;
+//   (2) grupnya RUN-LENGTH atas daftar yang diurut lembaga→kelas→usia. Karena guru tak
+//       pernah ikut mengurutkan, satu guru pecah jadi belasan grup dan judulnya berulang.
+// Aturannya kini di utils/rekapPrestasiTabel (murni + tes).
+const { pjGuru, lembagaList: lembagaMaster } = usePjGuru()
+const petaPjSantri = computed(() => buatPetaPjSantri(santriRaw.value, guruRaw.value, pjGuru.value))
+// Diturunkan dari peta PJ langsung, bukan dari baris rekap: dropdown-nya tak boleh ikut
+//   menyusut waktu sebuah PJ dipilih (kalau tidak, PJ lain hilang & tak bisa dipilih lagi).
+const pjOptions = computed(() =>
+  daftarPj(santriQiraati.value.map((s) => ({ pj: petaPjSantri.value.get(String(s.id)) || '' })))
+)
+
+/**
+ * Baris untuk MENGELOMPOKKAN — sengaja TANPA `nilai`, jadi tak bergantung pada `edits`.
+ *
+ * Pengelompokan cuma butuh id/nama/lembaga/kelas/guru; angka bulanan tak ikut menentukan
+ * apa pun di sini. Kalau ia membaca `edits`, SETIAP huruf yang diketik di satu kotak isian
+ * akan merakit ulang ~300 baris lalu mengelompokkannya lagi — biaya yang persis sama dengan
+ * yang baru dibuang dari matriks absensi di v.1.4.0.
+ */
+const barisGrup = computed(() =>
+  filteredSantri.value.map((s) => barisRekapPrestasi(s, { lembagaList: lembagaMaster.value }))
+)
+
+/**
+ * Baris rekap LENGKAP dengan angka bulan terpilih (termasuk suntingan yang belum tersimpan).
+ * Hanya dibaca saat EKSPOR ditekan — bukan saat render — jadi ketergantungannya pada
+ * `edits` tak membebani pengetikan.
+ */
+const barisRekap = computed(() =>
+  filteredSantri.value.map((s) =>
+    barisRekapPrestasi(s, {
+      nilai: nilaiTampil(s.id),
+      lembagaList: lembagaMaster.value,
+      pj: petaPjSantri.value.get(String(s.id)) || ''
+    })
+  )
+)
+
+const petaSantriId = computed(() => new Map(filteredSantri.value.map((s) => [String(s.id), s])))
+
+// Grid isian: kelompok per guru, tapi urutan baris di dalamnya TETAP (lihat catatan di
+//   kelompokPerGuru) — kalau diurut capaian, barisnya melompat sambil diketik.
+const groupedBulanan = computed(() =>
+  kelompokPerGuru(barisGrup.value, { urut: 'tetap' }).map((g) => ({
+    key: g.key,
+    lembaga: g.lembaga,
+    kelas: g.kelas,
+    guru: g.guru,
+    jumlah: g.jumlah,
+    santri: g.rows.map((r) => petaSantriId.value.get(r.id)).filter(Boolean)
+  }))
+)
+
+/** Label kelas kanonik satu santri — dipakai sel tabel, kartu HP, dan cetak. */
+function kelasLabel(s) {
+  return labelJenjang(s?.lembaga, s?.kelas, lembagaMaster.value)
+}
 
 // Stats: count kenaikan + status dinilai
 const stats = computed(() => {
@@ -1717,6 +1999,104 @@ const petaPrestasiBulan = computed(() =>
 const petaPrestasiBulanLalu = computed(() =>
   petaPrestasiPeriode(riwayatPrestasiRaw.value, periodeSebelumnya(periodeSel.value))
 )
+
+// v.1.4.1 (Kyai, 4 Sep 2026): "guru2 katanya banyak yg sudah isi, tapi di rekap kok banyak
+//   yg belum diisi." Sampai v.1.4.0 dropdown ini terbuka pada BULAN KALENDER, sedangkan
+//   jendela pengisian menyeberangi pergantian bulan — yang mengisi 29–31 menyimpan ke bulan
+//   sebelumnya, yang mengisi tgl 1–5 menyimpan ke bulan ini. Isian yang tersangkut di bucket
+//   sebelah dilacak lewat WAKTU TULIS-nya (lihat snapshotSalahJendela), bukan lewat "ada
+//   isian di bulan lalu" — kalau tidak, siklus bulan lalu yang normal pun ikut terhitung.
+//   Sengaja hanya DILAPORKAN, tidak dipindah otomatis: bucket sebelah juga menampung rekap
+//   yang sah, dan memindahkannya adalah keputusan Kyai.
+const tersangkutBulanSebelah = computed(() =>
+  snapshotSalahJendela(
+    riwayatPrestasiRaw.value,
+    periodeSel.value,
+    filteredSantri.value.map((s) => String(s.id))
+  )
+)
+
+// ── Pemindahan ke bucket yang benar — PRATINJAU DULU, tak ada yang ditulis sebelum
+//    Kyai menekan konfirmasi. Pola & alasannya sama dengan dialog "Tambal" di atas.
+const pindahRencana = ref(null)
+const pindahBusy = ref(false)
+// v.1.4.1: rencana pemindahan mengikuti daftar yang SEDANG TAMPIL — itu yang membuat
+//   angkanya cocok dengan spanduk di atasnya. Konsekuensinya jadi jebakan kalau tak
+//   disebutkan: Kyai bilang "pindahkan semua" sementara penyaring lembaga masih di PTPT,
+//   lalu PPPH tak ikut terpindah dan tak ada yang memberi tahu. Karena itu penyaring yang
+//   aktif DITULIS di dialognya.
+const penyaringAktif = computed(() => {
+  const p = []
+  if (filterLembaga.value) p.push(`lembaga ${filterLembaga.value}`)
+  if (filterKelas.value) p.push(`kelas ${filterKelas.value}`)
+  if (filterPj.value) p.push(`PJ ${filterPj.value}`)
+  if (String(search.value || '').trim()) p.push(`pencarian "${search.value.trim()}"`)
+  if (isGuruMode.value && filterTipe.value !== 'all') p.push(`kategori ${filterTipe.value}`)
+  return p
+})
+function bukaPindah() {
+  if (pindahBusy.value) return
+  pindahRencana.value = rencanaPindahJendela(riwayatPrestasiRaw.value, periodeSel.value, {
+    santriList: santriRaw.value,
+    idSantri: filteredSantri.value.map((s) => String(s.id))
+  })
+}
+async function terapkanPindah() {
+  const daftar = pindahRencana.value?.pindah || []
+  if (!daftar.length || pindahBusy.value) return
+  const ok = await confirmDlg({
+    title: `Pindahkan ${daftar.length} isian ke Rekap ${bulan.value}?`,
+    message:
+      `Angka yang tersimpan di Rekap ${labelBulanPeriode(pindahRencana.value.periodeDari)} ` +
+      `sejak ${pindahRencana.value.sejak} dipindahkan ke Rekap ${bulan.value} ${tahun.value}. ` +
+      'Baris asalnya dihapus (tersalin dulu ke audit_log), data santri TIDAK diubah, dan ' +
+      'baris tujuan yang sudah berangka tidak ditimpa.',
+    confirmText: 'Pindahkan'
+  })
+  if (!ok) return
+  pindahBusy.value = true
+  let sukses = 0
+  const gagal = []
+  try {
+    for (const it of daftar) {
+      try {
+        // TULIS DULU, baru hapus. Urutannya penting: kalau tulisnya gagal, baris asal masih
+        // utuh dan tak ada angka yang lenyap. Kebalikannya menghilangkan data begitu satu
+        // permintaan gagal di tengah daftar.
+        const rp = payloadRiwayatPrestasi({
+          santri: it.santri || {
+            id: it.santriId,
+            nama: it.nama,
+            lembaga: it.lembaga,
+            kelas: it.kelas
+          },
+          periode: pindahRencana.value.periodeKe,
+          bulanLabel: bulanLabelSel.value,
+          awal: it.awal,
+          akhir: it.akhir,
+          total: it.total,
+          juz: it.juz
+        })
+        await mergeOne('riwayat_prestasi', rp.id, rp)
+        // deleteOne menyalin baris ke audit_log dulu (v.91.0626) — jadi pemindahan ini
+        // masih bisa ditelusuri kalau suatu saat Kyai ingin memeriksanya.
+        if (it.dariId && it.dariId !== rp.id) {
+          await deleteOne('riwayat_prestasi', it.dariId, {
+            alasan: `pindah jendela rekap ${pindahRencana.value.periodeDari} → ${pindahRencana.value.periodeKe}`
+          })
+        }
+        sukses++
+      } catch (e) {
+        gagal.push(`${it.nama}: ${e.message || e}`)
+      }
+    }
+    if (gagal.length) toast.error(`${sukses} dipindah, ${gagal.length} gagal — ${gagal[0]}`)
+    else toast.success(`${sukses} isian dipindahkan ke Rekap ${bulan.value} ${tahun.value}.`)
+    pindahRencana.value = null
+  } finally {
+    pindahBusy.value = false
+  }
+}
 function nilaiBulan(id) {
   const s = santriRaw.value.find((x) => String(x.id) === String(id))
   return nilaiPrestasiBulan(petaPrestasiBulan.value.get(String(id)) || null, s || {})
@@ -1726,6 +2106,15 @@ function petunjukLalu(id, field) {
   const s = santriRaw.value.find((x) => String(x.id) === String(id))
   if (!s) return ''
   return petunjukBulanLalu(petaPrestasiBulanLalu.value.get(String(id)) || null, s)[field] || ''
+}
+/** Empat angka bulan terpilih sekaligus (termasuk suntingan yang belum tersimpan). */
+function nilaiTampil(id) {
+  return {
+    awal: getEdit(id, 'awal'),
+    akhir: getEdit(id, 'akhir'),
+    total: getEdit(id, 'total'),
+    juz: getEdit(id, 'juz')
+  }
 }
 function getEdit(id, field) {
   const e = edits[id]
@@ -2207,59 +2596,92 @@ async function confirmImportRekap() {
   }
 }
 
-// EXPORT PDF
+// ── EXPORT PDF ───────────────────────────────────────────────────────────────
+//
+// Kyai (4 Sep 2026): "untuk ekspor PDF rekap prestasi bulanan, saya ingin bisa dipisah per
+//   PJ PTPT. dan format tabelnya ekspornya berisi: No, Nama Santri, Kelas PTPT, Juz, Awal
+//   Bulan, Akhir Bulan, Total Capaian, Nama Guru. dan diurutkan dari yg terbanyak total
+//   capaiannya kemudian dari juz yg tertinggi."
+//
+// Kolom & urutannya TIDAK ditulis di sini — dua-duanya dari utils/rekapPrestasiTabel,
+//   supaya PDF, cetak, dan layar mustahil berselisih.
+//
+// "Dipisah per PJ" = SATU berkas, satu BAGIAN per PJ, tiap bagian mulai di halaman baru
+//   dengan kop, judul PJ, dan penomoran yang mulai dari 1 lagi — jadi tiap PJ tinggal
+//   mencabut halamannya. Memilih satu PJ di penyaring menghasilkan berkas berisi PJ itu saja.
+//
+// ⚠ Sekalian diperbaiki: kop PDF ini dulu dirakit dengan kunci {title,name,address,contact}
+//   sedangkan drawKopLetterhead membaca {line1..line5} — jadi seluruh baris kop-nya SELAMA
+//   INI kosong (yang tampil hanya gambar muassis). buildKopFromSettings adalah bentuk yang
+//   benar dan sudah dipakai ekspor lain.
+function bagianEkspor() {
+  const rows = barisRekap.value
+  if (!rows.length) return []
+  // PJ tertentu terpilih → satu bagian saja (penyaring sudah menyaring barisnya).
+  if (filterPj.value) return [{ pj: filterPj.value, rows: urutkanRekapPrestasi(rows) }]
+  // Tak ada peta PJ sama sekali (mis. lembaga PPPH) → jangan paksakan bagian palsu.
+  const perPj = kelompokPerPj(rows)
+  if (perPj.length === 1 && perPj[0].pj === TANPA_PJ) {
+    return [{ pj: '', rows: perPj[0].rows }]
+  }
+  return perPj
+}
+
 async function exportPdf() {
   if (busy.value) return
+  const bagian = bagianEkspor()
+  if (!bagian.length) {
+    toast.warning('Tak ada santri untuk diekspor.')
+    return
+  }
   busy.value = true
   try {
-    const judul = `REKAPITULASI PRESTASI QIRAATI BULAN ${String(bulan.value).toUpperCase()} ${tahun.value}`
-    const columns = [
-      { key: 'no', header: 'No', width: 30 },
-      { key: 'nama', header: 'Nama Santri', width: 140 },
-      { key: 'jk', header: 'L/P', width: 30 },
-      { key: 'lembaga_kelas', header: 'Lembaga/Kls', width: 120 }
-    ]
-    if (hasPTPT.value) columns.push({ key: 'juz', header: 'Juz', width: 60 })
-    columns.push({ key: 'awal', header: 'Awal', width: 70 })
-    columns.push({ key: 'akhir', header: 'Akhir', width: 70 })
-    columns.push({ key: 'total', header: 'Total', width: 70 })
+    const judul = `REKAPITULASI PRESTASI QIRAATI — REKAP ${String(bulan.value).toUpperCase()} ${tahun.value}`
+    const subJudul = `Capaian bulan ${bulanDataLabel.value}${
+      filterLembaga.value ? ' · ' + filterLembaga.value : ''
+    }`
+    const kop = buildKopFromSettings(settings.savedSettings || {})
+    const doc = await createPdf({ kind: 'umum', orientation: 'l', format: 'F4' })
+    const head = [KOLOM_REKAP_PRESTASI.map((c) => c.header)]
+    const availW = doc.internal.pageSize.getWidth() - 24
+    const sumW = KOLOM_REKAP_PRESTASI.reduce((s, c) => s + c.lebar, 0)
+    const skala = sumW > 0 ? availW / sumW : 1
+    const columnStyles = KOLOM_REKAP_PRESTASI.reduce((acc, c, i) => {
+      acc[i] = { cellWidth: Math.round(c.lebar * skala * 100) / 100 }
+      return acc
+    }, {})
 
-    let no = 1
-    const rows = filteredSantri.value.map((s) => {
-      const aw = getEdit(s.id, 'awal') || s.prestasi_awal || ''
-      const ak = getEdit(s.id, 'akhir') || s.prestasi_akhir || ''
-      const tot =
-        s.lembaga === 'PTPT' ? computedTotal(s) : getEdit(s.id, 'total') || s.prestasi_total || ''
-      const jz = s.lembaga === 'PTPT' ? getEdit(s.id, 'juz') || s.juz || '-' : '-'
-      return {
-        no: no++,
-        nama: s.nama,
-        jk: s.jk || '-',
-        lembaga_kelas: `${s.lembaga} - ${s.kelas || '-'}`,
-        juz: jz,
-        awal: aw,
-        akhir: ak,
-        total: tot
+    let pertama = true
+    for (const b of bagian) {
+      if (!pertama) doc.addPage()
+      pertama = false
+      let y = await drawKopLetterhead(doc, kop, { y: 10 })
+      drawTitle(doc, judul, { y: y + 8, size: 12 })
+      y += 12
+      drawTitle(doc, subJudul, { y: y + 4, size: 9 })
+      y += 6
+      if (b.pj) {
+        drawTitle(doc, `PJ PTPT: ${b.pj} · ${b.rows.length} santri`, { y: y + 5, size: 10 })
+        y += 7
       }
-    })
-
-    const set = settings.savedSettings || {}
-    const kop = {
-      title: set.kopLine1 || set.txtAppName || '',
-      name: set.kopLine2 || '',
-      address: set.kopLine3 || '',
-      contact: set.kopLine4 || ''
+      drawTable(doc, {
+        startY: y + 4,
+        head,
+        body: barisCetak(b.rows).map((r) =>
+          KOLOM_REKAP_PRESTASI.map((c) => String(r[c.key] ?? ''))
+        ),
+        tableWidth: availW,
+        columnStyles
+      })
     }
-    await buildListPdf({
-      kind: 'umum',
-      orientation: 'l',
-      kop,
-      title: judul,
-      columns,
-      rows,
-      filename: `REKAP_PRESTASI_${bulan.value}_${tahun.value}.pdf`
-    })
-    toast.success('PDF berhasil di-generate.')
+
+    const namaPj = filterPj.value ? '_' + filterPj.value.replace(/\s+/g, '_') : ''
+    await savePdf(doc, `REKAP_PRESTASI_${bulan.value}_${tahun.value}${namaPj}.pdf`)
+    toast.success(
+      bagian.length > 1
+        ? `PDF dibuat — ${bagian.length} bagian, dipisah per PJ.`
+        : 'PDF berhasil di-generate.'
+    )
   } catch (e) {
     toast.error('Gagal export PDF: ' + (e.message || e))
   }
@@ -2396,21 +2818,25 @@ function cetakHTML() {
   let no = 1
   let lastKey = ''
   let bodyRows = ''
-  for (const s of filteredSantri.value) {
+  // Urutan cetak = urutan grup di layar (per guru), supaya kertas & layar sama isinya.
+  const urutanCetak = groupedBulanan.value.flatMap((g) => g.santri)
+  for (const s of urutanCetak) {
     const aw = getEdit(s.id, 'awal') || s.prestasi_awal || ''
     const ak = getEdit(s.id, 'akhir') || s.prestasi_akhir || ''
     const tot =
       s.lembaga === 'PTPT' ? computedTotal(s) : getEdit(s.id, 'total') || s.prestasi_total || ''
     const jz = s.lembaga === 'PTPT' ? getEdit(s.id, 'juz') || s.juz || '-' : '-'
-    const g = guruRaw.value.find((x) => x.nama === s.guru)
-    const guruName = g ? getNamaGuruGelar(g.nama, g.jk) : s.guru || '-'
-    const key = `${s.lembaga}::${s.kelas}::${s.guru}`
+    // v.1.4.1: nama guru dari PASANGAN (guru_pagi/sore), bukan `s.guru` yang di PTPT
+    //   memang sering kosong — cermin persis judul grup di layar.
+    const guruName = guruSantri(s) || '—'
+    const kls = kelasLabel(s) || '-'
+    const key = `${s.lembaga}::${kls}::${guruName}`
     if (key !== lastKey) {
       lastKey = key
       const cols = hasPTPT.value ? 8 : 7
-      bodyRows += `<tr style="background:#e2e8f0;"><td colspan="${cols}" style="padding:6px;font-weight:900;text-transform:uppercase;">LEMBAGA: ${s.lembaga} | KELAS: ${s.kelas || '-'} | GURU: ${guruName}</td></tr>`
+      bodyRows += `<tr style="background:#e2e8f0;"><td colspan="${cols}" style="padding:6px;font-weight:900;text-transform:uppercase;">GURU: ${guruName} | ${s.lembaga} | KELAS: ${kls}</td></tr>`
     }
-    bodyRows += `<tr><td>${no++}</td><td style="text-align:left;">${s.nama}</td><td>${s.jk || '-'}</td><td>${s.lembaga} - ${s.kelas || '-'}</td>${hasPTPT.value ? `<td>${jz}</td>` : ''}<td>${aw}</td><td>${ak}</td><td>${tot}</td></tr>`
+    bodyRows += `<tr><td>${no++}</td><td style="text-align:left;">${s.nama}</td><td>${s.jk || '-'}</td><td>${s.lembaga} - ${kls}</td>${hasPTPT.value ? `<td>${jz}</td>` : ''}<td>${aw}</td><td>${ak}</td><td>${tot}</td></tr>`
   }
   const head = `<tr><th>No</th><th>Nama Santri</th><th>L/P</th><th>Lembaga/Kelas</th>${hasPTPT.value ? '<th>Juz</th>' : ''}<th>Awal</th><th>Akhir</th><th>Total</th></tr>`
   const html = `<html><head><title>${judul}</title><style>

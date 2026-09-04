@@ -40,6 +40,7 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
 import { Line } from 'vue-chartjs'
+import { opsiChart } from '@/utils/chartSentuh'
 import {
   Chart as ChartJS,
   Title,
@@ -170,7 +171,8 @@ const deltaCls = computed(() =>
 )
 const deltaIcon = computed(() => (deltaUp.value ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down'))
 
-const chartOptions = {
+// v.1.4.1 (Kyai): tooltip yang bisa dibuka dengan jari — lihat utils/chartSentuh.
+const chartOptions = opsiChart({
   responsive: true,
   maintainAspectRatio: false,
   plugins: { legend: { display: false } },
@@ -182,5 +184,5 @@ const chartOptions = {
       grid: { color: 'rgba(136,135,128,0.15)' }
     }
   }
-}
+})
 </script>

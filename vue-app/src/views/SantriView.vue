@@ -83,7 +83,7 @@
             />
           </label>
           <router-link
-            to="/santri/new?from=master"
+            :to="{ path: '/santri/new', query: queryDaftar }"
             class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-xs font-bold transition"
           >
             <i class="fas fa-plus"></i>Tambah Santri
@@ -541,7 +541,7 @@
                   >{{ s.aktif === false ? 'Aktifkan' : 'Non-aktifkan' }}
                 </button>
                 <router-link
-                  :to="`/santri/${s.id}/edit?from=master`"
+                  :to="{ path: `/santri/${s.id}/edit`, query: queryDaftar }"
                   class="text-[10px] text-teal-700 dark:text-teal-300 hover:underline font-bold"
                 >
                   <i class="fas fa-edit mr-1"></i>Edit
@@ -615,6 +615,8 @@ import {
   petakanNomorIdentitas
 } from '@/services/santriFields'
 import { resetUserPassword, provisionAkunSenyap } from '@/services/authSupabase' // reset sandi + buat akun login (Edge Function)
+// v.1.4.1: bawa alamat daftar (beserta pencarian & penyaringnya) ke form, lalu kembali ke situ.
+import { queryDariDaftar } from '@/utils/navKembali'
 import { planAppendNis, applyNisChanges } from '@/utils/nisGenerator' // v.111: auto-NIS pasca impor = APPEND (No. Induk lama tetap; baru lanjut nomor)
 
 const exporting = ref(false)
@@ -671,12 +673,21 @@ watch(() => route.query, syncFiltersFromQuery)
 watch([search, filterLembaga, filterMukim, filterStatus], () => {
   if (_syncingQuery) return
   const q = {}
+  // v.1.4.1: kunci milik HALAMAN INDUK dipertahankan. Daftar ini juga tayang di dalam
+  //   Master Data (`/master-data?tab=santri`); query ditulis ulang dari nol, jadi `tab`
+  //   ikut terhapus tiap kali kotak cari diketik dan Master Data melompat ke tab lain.
+  if (route.query.tab) q.tab = route.query.tab
+  if (route.query.sub) q.sub = route.query.sub
   if (search.value) q.q = search.value
   if (filterLembaga.value) q.lembaga = filterLembaga.value
   if (filterMukim.value) q.tempat = filterMukim.value
   if (filterStatus.value && filterStatus.value !== 'aktif') q.status = filterStatus.value
   router.replace({ query: q }).catch(() => {})
 })
+// Alamat daftar SEKARANG (sudah memuat q/lembaga/status/tab) — dititipkan ke form supaya
+//   sesudah Simpan ia kembali ke daftar yang sama, bukan ke daftar kosong.
+const queryDaftar = computed(() => queryDariDaftar(route.fullPath))
+
 // v.1.2.4: ganti lembaga → reset filter Kelas-Guru (kunci rombel jadi tak relevan)
 watch(filterLembaga, () => {
   filterKelasGuru.value = ''
@@ -760,7 +771,7 @@ definePageActions(() => {
       label: 'Tambah Santri',
       icon: 'plus',
       primary: true,
-      on: () => router.push('/santri/new?from=master')
+      on: () => router.push({ path: '/santri/new', query: queryDaftar.value })
     })
     acts.push({ label: 'Template', icon: 'download', on: downloadTemplateSantri })
     acts.push({

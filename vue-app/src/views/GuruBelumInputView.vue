@@ -119,6 +119,7 @@ import { useStatistikScope } from '@/composables/useStatistikScope'
 import { buildListPdf, buildKopFromSettings } from '@/utils/pdfBuilder'
 import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
+import { labelPeriodeRekap } from '@/utils/prestasiBulanan'
 
 const router = useRouter()
 const settingsStore = useSettingsStore()
@@ -147,11 +148,10 @@ const NAMA_BULAN = [
   'November',
   'Desember'
 ]
-// v.1.3.8: yang ditagih adalah rekap bulan LALU (Kyai, 1 Sep 2026) — bukan bulan berjalan.
-const periodeLabel = computed(() => {
-  const m = String(periodeRekap.value).match(/^(\d{4})-(\d{2})$/)
-  return m ? `${NAMA_BULAN[parseInt(m[2]) - 1]} ${m[1]}` : periodeRekap.value
-})
+// v.1.4.1: label periode SELALU menyebut bulan datanya — 'September 2026 (data Agustus
+//   2026)'. Nama bulan yang berdiri sendiri di sini persis yang bikin Kyai ragu layar ini
+//   dan Rekap Prestasi sedang membicarakan pekerjaan yang sama atau bukan.
+const periodeLabel = computed(() => labelPeriodeRekap(periodeRekap.value))
 const batasLabel = computed(() => {
   const m = String(batasRekapNow.value).match(/^(\d{4})-(\d{2})-(\d{2})$/)
   return m ? `${parseInt(m[3])} ${NAMA_BULAN[parseInt(m[2]) - 1]} ${m[1]}` : ''

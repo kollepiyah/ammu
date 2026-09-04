@@ -808,6 +808,7 @@ import { guruMasukPada } from '@/utils/jadwalGuru' // v.1.3.8: alpa hormati jadw
 import { lembagaKalenderShift } from '@/utils/lembagaShift'
 // v.1.2.3: grafik kehadiran per bulan (KPI pribadi)
 import { Line } from 'vue-chartjs'
+import { opsiChart } from '@/utils/chartSentuh'
 import {
   Chart as ChartJS,
   Title,
@@ -1042,7 +1043,8 @@ const trenChartData = computed(() => {
   }
 })
 
-const trenChartOptions = {
+// v.1.4.1 (Kyai): tooltip yang bisa dibuka dengan jari — lihat utils/chartSentuh.
+const trenChartOptions = opsiChart({
   responsive: true,
   maintainAspectRatio: false,
   plugins: { legend: { display: true, labels: { boxWidth: 10, font: { size: 10 } } } },
@@ -1058,7 +1060,7 @@ const trenChartOptions = {
       grid: { color: 'rgba(136,135,128,0.15)' }
     }
   }
-}
+})
 
 // === Detail slip modal ===
 const slipOpen = ref(false)
