@@ -151,7 +151,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
 import { useExcel } from '@/composables/useExcel'
-import { buildListPdf, buildKopFromSettings } from '@/utils/pdfBuilder'
+import { buildListPdf, buildKopLembaga } from '@/utils/pdfBuilder'
 import { juzNum, todayJakarta } from '@/utils/format'
 import { isFullFilterRole } from '@/utils/roleScope'
 import { useStatistikScope, statusFromSelisih } from '@/composables/useStatistikScope'
@@ -291,28 +291,12 @@ function _rowsLembaga(nama, noAwal = 0) {
  * KOP milik LEMBAGA (Master Data -> Lembaga -> Pengaturan), jatuh ke KOP pondok bila
  * lembaganya belum punya. Rapor sudah memakai pola ini; ekspor ini dulu langsung memanggil
  * buildKopFromSettings() sehingga KOP PTPT/PPPH tak pernah terpakai (Kyai, 5 Agu 2026).
+ *
+ * v.1.4.1: aturannya PINDAH ke utils/pdfBuilder.buildKopLembaga — Rekap Prestasi kini
+ * memakainya juga, dan salinan ketiga adalah salinan yang mulai menyimpang.
  */
 function _kopLembaga(nama) {
-  const ss = settings.settings || {}
-  const dasar = buildKopFromSettings(ss)
-  const low = String(nama || '')
-    .trim()
-    .toLowerCase()
-  const l =
-    (lembagaRaw.value || []).find(
-      (x) =>
-        String(x.lembaga || '')
-          .trim()
-          .toLowerCase() === low
-    ) || {}
-  return {
-    logoUrl: l.kop_logo || dasar.logoUrl,
-    line1: l.kop_line1 || dasar.line1,
-    line2: l.kop_line2 || dasar.line2,
-    line3: l.kop_line3 || dasar.line3,
-    line4: l.kop_line4 || dasar.line4,
-    line5: dasar.line5
-  }
+  return buildKopLembaga(settings.settings || {}, lembagaRaw.value, nama)
 }
 const _TOP_COLS = [
   { key: 'no', header: 'No', width: 5 },

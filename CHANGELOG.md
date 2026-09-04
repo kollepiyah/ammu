@@ -293,10 +293,28 @@ v.1.4.0) hanya kalau Kyai sudah siap mengunggahnya ke Play.
   v-if/v-else-if antar-mode tetap utuh; dengan `v-if` polos, daftar peringkat akan ikut
   tampil bersamaan dengan pesan "Tidak ada santri Qiraati yang cocok".
 
-- **Kop PDF Rekap Prestasi selama ini kosong** (v.1.4.1, ketemu sambil jalan). Kop-nya dirakit
-  dengan kunci `{title,name,address,contact}` sedangkan `drawKopLetterhead` membaca
-  `{line1..line5}` — jadi seluruh baris kop tak pernah tergambar; yang tampil hanya gambar
-  muassis. Kini memakai `buildKopFromSettings()`, bentuk yang sudah dipakai ekspor lain.
+- **Kop ekspor Rekap Prestasi tak pernah benar** (v.1.4.1). Kyai, 4 Sep 2026: *"sudah oke,
+  tinggal kopnya saja."* **Dua** kesalahan sekaligus, dan yang pertama menutupi yang kedua.
+
+  1. Keempat ekspor layar ini (PDF, Excel, Google Sheet, Cetak) membaca
+     `settings.savedSettings` — nama store aplikasi **HTML legacy**. Di store Pinia ia tak
+     pernah ada (`stores/settings.js` baris 1 menyebutnya begitu), jadi hasilnya selalu
+     `undefined` lalu jatuh ke `{}`. Kop yang tercetak karena itu SELALU teks cadangan
+     bawaan `buildKopFromSettings`: tanpa logo, tanpa alamat, tanpa kontak — dan itu tak
+     pernah tampak sebagai galat, hanya sebagai kop yang "kurang lengkap".
+  2. Rekap Prestasi itu dokumen **per lembaga** (judulnya pun menyebut PTPT), jadi kop-nya
+     milik lembaga itu, bukan kop pondok. Keluhan yang **persis sama** sudah Kyai
+     sampaikan 5 Agu 2026 untuk ekspor Top Santri.
+
+  `utils/pdfBuilder.buildKopLembaga()` kini jadi sumber tunggal aturan itu — `kop_logo` /
+  `kop_line1..4` di baris `master/lembaga`, jatuh ke kop pondok **per-field** bila
+  lembaganya belum mengisi. Per-field, bukan per-objek: PPPH yang hanya mengisi satu baris
+  tak boleh membuat alamat & kontaknya raib. `DistribusiPrestasi` ikut memakainya (salinan
+  lokalnya dibuang) supaya tak lahir salinan keempat. Dikunci
+  `tests/unit/kopLembaga.test.js`.
+
+  ⚠️ `line5` sengaja TIDAK bisa di-override lembaga — tak ada field-nya di master, dan
+  mengarangnya membuat baris kop terakhir berubah arti tergantung lembaga.
 
 ### Added
 
@@ -326,12 +344,14 @@ v.1.4.0) hanya kalau Kyai sudah siap mengunggahnya ke Play.
 
 - Util baru: `utils/rekapPrestasiTabel.js`, `utils/navKembali.js`,
   `utils/pindahJendelaRekap.js`, `utils/chartSentuh.js`; tambahan di
-  `utils/jenjangQiraati.js` (`labelJenjang`, `jenjangLembagaLabel`, `kelasSama`) dan
+  `utils/jenjangQiraati.js` (`labelJenjang`, `jenjangLembagaLabel`, `kelasSama`),
   `utils/prestasiBulanan.js` (`periodeBerikutnya`, `periodeDataRekap`, `tglBukaRekapPeriode`,
-  `labelBulanPeriode`, `labelPeriodeRekap`).
+  `labelBulanPeriode`, `labelPeriodeRekap`, `snapshotSalahJendela`), dan
+  `utils/pdfBuilder.js` (`buildKopLembaga`).
 - Tes baru: `rekapPrestasiTabel` (30), `labelJenjang` (17), `navKembali` (12),
-  `snapshotSalahJendela` (11), `pindahJendelaRekap` (13), `chartSentuh` (12);
-  `rekapPrestasiSiklus` ditulis ulang (33). Total suite **1.255 tes, 88 berkas — hijau**.
+  `snapshotSalahJendela` (11), `pindahJendelaRekap` (13), `chartSentuh` (12),
+  `kopLembaga` (11); `rekapPrestasiSiklus` ditulis ulang (33). Total suite
+  **1.266 tes, 89 berkas — hijau**.
 - `usePjGuru()` kini ikut membagikan `lembagaList`. Dokumennya sudah dilangganani di sana, jadi
   pemanggil yang butuh `kelas_list` tak perlu membuka langganan **kedua** ke dokumen yang sama.
 

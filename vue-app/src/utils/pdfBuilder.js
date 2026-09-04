@@ -31,6 +31,49 @@ export function buildKopFromSettings(s = {}) {
   }
 }
 
+/**
+ * v.1.4.1 — KOP milik LEMBAGA, jatuh ke KOP pondok bila lembaganya belum punya.
+ *
+ * Kyai sudah pernah mengeluhkan ini pada 5 Agu 2026 untuk ekspor Top Santri ("KOP PTPT/PPPH
+ * tak pernah terpakai"), lalu 4 Sep 2026 untuk Rekap Prestasi ("sudah oke, tinggal kopnya
+ * saja"). Aturannya sama, dan sampai sekarang tersalin di tiga tempat — rapor,
+ * DistribusiPrestasi, dan (baru) RekapPrestasiView. Diangkat ke sini supaya tak lahir
+ * salinan keempat yang menyimpang diam-diam.
+ *
+ * KOP per-lembaga diatur di Master Data → Lembaga → Pengaturan, tersimpan sebagai
+ * `kop_logo` / `kop_line1..4` di baris `master/lembaga`.
+ *
+ * `line5` sengaja TIDAK bisa di-override lembaga: tak ada field-nya di master, dan
+ * mengarangnya berarti baris kop terakhir berubah arti tergantung lembaga.
+ *
+ * @param {object} settings  isi store settings (BUKAN `savedSettings` — nama itu milik
+ *   aplikasi HTML legacy dan di store Pinia tak pernah ada).
+ * @param {Array}  lembagaList  `master/lembaga`.list
+ * @param {string} namaLembaga  '' / tak ketemu → KOP pondok apa adanya.
+ */
+export function buildKopLembaga(settings = {}, lembagaList = [], namaLembaga = '') {
+  const dasar = buildKopFromSettings(settings || {})
+  const low = String(namaLembaga || '')
+    .trim()
+    .toLowerCase()
+  if (!low) return dasar
+  const l =
+    (Array.isArray(lembagaList) ? lembagaList : []).find(
+      (x) =>
+        String(x?.lembaga || x?.nama || '')
+          .trim()
+          .toLowerCase() === low
+    ) || {}
+  return {
+    logoUrl: l.kop_logo || dasar.logoUrl,
+    line1: l.kop_line1 || dasar.line1,
+    line2: l.kop_line2 || dasar.line2,
+    line3: l.kop_line3 || dasar.line3,
+    line4: l.kop_line4 || dasar.line4,
+    line5: dasar.line5
+  }
+}
+
 const FONT_MAP = {
   rapor: 'times',
   umum: 'helvetica',
@@ -90,7 +133,9 @@ export async function drawKopLetterhead(doc, kop = {}, opts = {}) {
   if (muassis) {
     const muH = 9
     const muW = muH * MUASSIS_RATIO // ≈ 81mm
-    try { doc.addImage(muassis, 'PNG', textX, y + 0.5, muW, muH, undefined, 'FAST') } catch (_e) {}
+    try {
+      doc.addImage(muassis, 'PNG', textX, y + 0.5, muW, muH, undefined, 'FAST')
+    } catch (_e) {}
     off = 3 // gambar bawah y+9.5 → L2 baseline y+16 (rapat, gap visual <1mm)
   } else if (kop.line1) {
     doc.setFontSize(11)
@@ -115,16 +160,24 @@ export async function drawKopLetterhead(doc, kop = {}, opts = {}) {
   let hasLogo = false
   const contentBottom = subLines.length
     ? yy - 4 + 1.5
-    : kop.line3 ? y + 19 + off + 1.5 : kop.line2 ? y + 13 + off + 1.5 : y + 10.5
+    : kop.line3
+      ? y + 19 + off + 1.5
+      : kop.line2
+        ? y + 13 + off + 1.5
+        : y + 10.5
   if (kop.logoUrl) {
     try {
-      const dataUrl = kop.logoUrl.startsWith('data:') ? kop.logoUrl : await imageToDataURL(kop.logoUrl)
+      const dataUrl = kop.logoUrl.startsWith('data:')
+        ? kop.logoUrl
+        : await imageToDataURL(kop.logoUrl)
       if (dataUrl) {
         const logoY = startY + Math.max(0, (contentBottom - startY - LOGO_SIZE) / 2)
         doc.addImage(dataUrl, 'PNG', 12, logoY, LOGO_SIZE, LOGO_SIZE, undefined, 'FAST')
         hasLogo = true
       }
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }
 
   // Pastikan KOP setidaknya setinggi logo
@@ -163,10 +216,13 @@ export function drawSignature(doc, opts = {}) {
   }
   if (opts.ttdImg) {
     try {
-      const ttdW = 28, ttdH = 14
+      const ttdW = 28,
+        ttdH = 14
       const ix = align === 'right' ? x - ttdW : x
       doc.addImage(opts.ttdImg, 'PNG', ix, y + 8, ttdW, ttdH, undefined, 'FAST')
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }
   doc.setFont(font, 'bold')
   if (opts.nama) {
@@ -191,8 +247,23 @@ export function drawTable(doc, opts = {}) {
   const font = doc._fontMU || 'helvetica'
   const merged = {
     theme: 'grid',
-    styles: { font, fontSize: 9, cellPadding: 1.5, textColor: 20, lineColor: 80, lineWidth: 0.1, ...(opts.styles || {}) },
-    headStyles: { font, fontStyle: 'bold', fillColor: [16, 122, 87], textColor: 255, halign: 'center', ...(opts.headStyles || {}) },
+    styles: {
+      font,
+      fontSize: 9,
+      cellPadding: 1.5,
+      textColor: 20,
+      lineColor: 80,
+      lineWidth: 0.1,
+      ...(opts.styles || {})
+    },
+    headStyles: {
+      font,
+      fontStyle: 'bold',
+      fillColor: [16, 122, 87],
+      textColor: 255,
+      halign: 'center',
+      ...(opts.headStyles || {})
+    },
     bodyStyles: { ...(opts.bodyStyles || {}) },
     alternateRowStyles: { fillColor: [245, 248, 246], ...(opts.alternateRowStyles || {}) },
     margin: { left: 12, right: 12, ...(opts.margin || {}) },
@@ -269,10 +340,12 @@ export async function buildListPdf({
   }
   // Convert columns to autotable head/body
   const head = [columns.map((c) => c.header || c.label || c.key)]
-  const body = rows.map((r) => columns.map((c) => {
-    const v = typeof c.format === 'function' ? c.format(r[c.key], r) : r[c.key]
-    return v == null ? '' : String(v)
-  }))
+  const body = rows.map((r) =>
+    columns.map((c) => {
+      const v = typeof c.format === 'function' ? c.format(r[c.key], r) : r[c.key]
+      return v == null ? '' : String(v)
+    })
+  )
   // v.93.0626: skala lebar kolom supaya tabel SAMA LEBAR dgn KOP (pageW-24) & center (margin default 12/12).
   const _availW = doc.internal.pageSize.getWidth() - 24
   const _sumW = columns.reduce((s, c) => s + (Number(c.width) || 0), 0)
@@ -282,7 +355,10 @@ export async function buildListPdf({
     head,
     body,
     tableWidth: _availW,
-    columnStyles: columns.reduce((acc, c, i) => { if (c.width) acc[i] = { cellWidth: Math.round(Number(c.width) * _scale * 100) / 100 }; return acc }, {})
+    columnStyles: columns.reduce((acc, c, i) => {
+      if (c.width) acc[i] = { cellWidth: Math.round(Number(c.width) * _scale * 100) / 100 }
+      return acc
+    }, {})
   })
   if (signature) {
     drawSignature(doc, signature)

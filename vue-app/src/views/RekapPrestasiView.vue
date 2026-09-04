@@ -1489,7 +1489,7 @@ import {
   drawTitle,
   drawTable,
   savePdf,
-  buildKopFromSettings
+  buildKopLembaga
 } from '@/utils/pdfBuilder'
 import { muassisDataUrlSync } from '@/utils/kopMuassis' // v.100: baris-1 KOP print = gambar muassis
 import { useAuthStore } from '@/stores/auth'
@@ -1766,6 +1766,31 @@ const bulanLabelSel = computed(() => `${bulan.value} ${tahun.value}`)
 // Bulan yang angkanya SEDANG diisi. Nama bulan laporan tak pernah lagi tampil sendirian:
 //   "Rekap September" tanpa keterangan itulah yang Kyai sebut masih ambigu.
 const bulanDataLabel = computed(() => labelBulanPeriode(periodeDataRekap(periodeSel.value)))
+
+// ── v.1.4.1 · KOP ekspor. Kyai, 4 Sep 2026: "sudah oke, tinggal kopnya saja."
+//
+// DUA hal yang salah sekaligus, dan yang pertama menutupi yang kedua:
+//
+//   1. Keempat ekspor layar ini membaca `settings.savedSettings` — nama store aplikasi
+//      HTML LEGACY. Di store Pinia ia tak pernah ada, jadi hasilnya selalu `undefined` lalu
+//      jatuh ke `{}`. Akibatnya kop yang tercetak SELALU teks cadangan bawaan
+//      buildKopFromSettings: tanpa logo, tanpa alamat, tanpa kontak — dan itu tak pernah
+//      terlihat sebagai galat, cuma sebagai kop yang "kurang lengkap".
+//   2. Rekap Prestasi adalah dokumen PER LEMBAGA (judulnya pun menyebut PTPT), jadi
+//      KOP-nya milik lembaga itu — bukan kop pondok. Keluhan yang persis sama sudah pernah
+//      Kyai sampaikan 5 Agu 2026 untuk ekspor Top Santri.
+//
+// Aturannya di utils/pdfBuilder.buildKopLembaga (sumber tunggal, dipakai bersama
+// DistribusiPrestasi). Tanpa penyaring lembaga ("Semua lembaga") ia jatuh ke kop pondok —
+// memang benar begitu: berkasnya lintas lembaga.
+const kopEkspor = computed(() =>
+  buildKopLembaga(settings.settings || {}, lembagaMaster.value, filterLembaga.value)
+)
+/** Empat baris kop untuk ekspor yang memakai larik teks (Excel, Google Sheet, cetak HTML). */
+const kopBaris = computed(() => {
+  const k = kopEkspor.value
+  return [k.line1, k.line2, k.line3, k.line4].map((x) => String(x || ''))
+})
 
 // v.21.84.0527: 3-layer flow — landing → sub-landing → input (match live UX)
 const viewStep = ref('landing') // 'landing' | 'sub-qiraati' | 'sub-diniyah' | 'input'
@@ -2697,7 +2722,7 @@ async function exportPdf() {
     const subJudul = `Capaian bulan ${bulanDataLabel.value}${
       filterLembaga.value ? ' · ' + filterLembaga.value : ''
     }`
-    const kop = buildKopFromSettings(settings.savedSettings || {})
+    const kop = kopEkspor.value
     const doc = await createPdf({ kind: 'umum', orientation: 'l', format: 'F4' })
     const head = [KOLOM_REKAP_PRESTASI.map((c) => c.header)]
     const availW = doc.internal.pageSize.getWidth() - 24
@@ -2750,7 +2775,6 @@ async function exportExcel() {
   if (busy.value) return
   busy.value = true
   try {
-    const set = settings.savedSettings || {}
     const judul = `REKAPITULASI PRESTASI QIRAATI BULAN ${String(bulan.value).toUpperCase()} ${tahun.value}`
     const columns = [
       { key: 'no', header: 'No', width: 6 },
@@ -2782,12 +2806,8 @@ async function exportExcel() {
       }
     })
 
-    const kopLines = [
-      set.kopLine1 || set.txtAppName || '',
-      set.kopLine2 || '',
-      set.kopLine3 || '',
-      set.kopLine4 || ''
-    ]
+    // v.1.4.1: kop LEMBAGA, dan dibaca dari store yang benar — lihat catatan di kopEkspor.
+    const kopLines = kopBaris.value
     await exportStyled(rows, {
       filename: `REKAP_PRESTASI_${bulan.value}_${tahun.value}.xlsx`,
       sheetName: 'Rekap Prestasi',
@@ -2811,7 +2831,6 @@ async function kirimRekapGsheet() {
   }
   busy.value = true
   try {
-    const set = settings.savedSettings || {}
     const judul = `REKAPITULASI PRESTASI QIRAATI BULAN ${String(bulan.value).toUpperCase()} ${tahun.value}`
     const columns = [
       { key: 'no', header: 'No', width: 6 },
@@ -2841,12 +2860,8 @@ async function kirimRekapGsheet() {
         total: tot
       }
     })
-    const kopLines = [
-      set.kopLine1 || set.txtAppName || '',
-      set.kopLine2 || '',
-      set.kopLine3 || '',
-      set.kopLine4 || ''
-    ].filter(Boolean)
+    // v.1.4.1: kop LEMBAGA, dan dibaca dari store yang benar — lihat catatan di kopEkspor.
+    const kopLines = kopBaris.value.filter(Boolean)
     const { url } = await sendToSheet({
       rows,
       title: `Rekap Prestasi ${bulan.value} ${tahun.value}`,
@@ -2870,7 +2885,8 @@ async function kirimRekapGsheet() {
 
 // CETAK HTML (print preview newwindow)
 function cetakHTML() {
-  const set = settings.savedSettings || {}
+  // v.1.4.1: kop LEMBAGA, sumber yang sama dengan PDF & Excel — lihat catatan di kopEkspor.
+  const barisKop = kopBaris.value
   const judul = `REKAPITULASI PRESTASI QIRAATI BULAN ${String(bulan.value).toUpperCase()} ${tahun.value}`
   let no = 1
   let lastKey = ''
@@ -2909,11 +2925,11 @@ function cetakHTML() {
     ${
       muassisDataUrlSync()
         ? `<img src="${muassisDataUrlSync()}" alt="" style="height:30px;display:block;margin:0 auto 2px;" />`
-        : `<p style="font-weight:bold;">${set.kopLine1 || set.txtAppName || ''}</p>`
+        : `<p style="font-weight:bold;">${barisKop[0]}</p>`
     }
-    <h1 style="margin:2px 0;font-size:16px;font-weight:900;">${set.kopLine2 || ''}</h1>
-    <p>${set.kopLine3 || ''}</p>
-    <p>${set.kopLine4 || ''}</p>
+    <h1 style="margin:2px 0;font-size:16px;font-weight:900;">${barisKop[1]}</h1>
+    <p>${barisKop[2]}</p>
+    <p>${barisKop[3]}</p>
     <h2>${judul}</h2>
     <p>Dicetak: ${new Date().toLocaleString('id-ID')}</p>
   </div>
