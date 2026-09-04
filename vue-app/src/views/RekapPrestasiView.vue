@@ -1177,59 +1177,116 @@
       </div>
 
       <!-- ============= MODE 3: RANKING (top 5 per lembaga) ============= -->
-      <div v-else-if="mode === 'ranking'" class="grid grid-cols-1 lg:grid-cols-2 gap-3">
+      <template v-else-if="mode === 'ranking'">
+        <!-- v.1.4.1 (Kyai, 4 Sep 2026): "di halaman ini belum ada tombol ekspor pdf."
+             Tab Ranking dulu tak punya ekspor sama sekali — padahal justru DI SINI ekspornya
+             paling masuk akal: PDF-nya memang sudah diurut capaian terbanyak lalu juz
+             tertinggi (permintaan Kyai), jadi berkasnya persis daftar peringkat yang sedang
+             dilihat, hanya lengkap sampai santri terakhir. Fungsinya DIPAKAI ULANG apa
+             adanya, bukan disalin — kartu di layar & berkas cetak tak boleh bisa berbeda. -->
         <div
-          v-for="lmb in rankingPerLembaga"
-          :key="lmb.lembaga"
-          class="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-200 shadow-sm"
+          class="bg-white dark:bg-slate-800 rounded-2xl p-3 md:p-4 border border-slate-200 dark:border-slate-700 shadow-sm flex flex-wrap items-center justify-between gap-2"
         >
-          <div class="flex items-center justify-between border-b border-slate-100 pb-2 mb-3">
-            <h3 class="font-black text-sm text-slate-800 uppercase tracking-wider">
-              {{ lmb.lembaga }}
-            </h3>
-            <span class="text-[10px] font-bold text-slate-500"
-              >{{ lmb.dinilai }}/{{ lmb.total }} dinilai</span
-            >
+          <div class="text-[11px] text-slate-500">
+            <i class="fas fa-info-circle mr-1 text-cyan-500"></i>
+            Berkas ekspor memuat <b>seluruh santri</b> (bukan cuma Top 5), urut
+            <b>capaian terbanyak</b> lalu <b>juz tertinggi</b>.
+            <template v-if="!filterPj && pjOptions.length > 1">
+              PDF-nya <b>dipisah per PJ PTPT</b>.
+            </template>
           </div>
-          <!-- PTPT histogram -->
-          <div v-if="lmb.isPTPT" class="grid grid-cols-3 gap-2 mb-3">
-            <div class="bg-rose-50 border border-rose-200 rounded-lg p-2 text-center">
-              <p class="text-[9px] font-bold text-rose-700 uppercase">Kurang</p>
-              <p class="text-lg font-black text-rose-800">{{ lmb.kurang }}</p>
-              <p class="text-[8px] text-rose-600">&lt;5 hal</p>
-            </div>
-            <div class="bg-cyan-50 border border-cyan-200 rounded-lg p-2 text-center">
-              <p class="text-[9px] font-bold text-cyan-700 uppercase">Cukup</p>
-              <p class="text-lg font-black text-cyan-800">{{ lmb.cukup }}</p>
-              <p class="text-[8px] text-cyan-600">5-9 hal</p>
-            </div>
-            <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-2 text-center">
-              <p class="text-[9px] font-bold text-emerald-700 uppercase">Bagus</p>
-              <p class="text-lg font-black text-emerald-800">{{ lmb.bagus }}</p>
-              <p class="text-[8px] text-emerald-600">&ge;10 hal</p>
-            </div>
-          </div>
-          <p class="text-[10px] font-black text-slate-600 uppercase mb-2">
-            <i class="fas fa-medal text-cyan-500 mr-1"></i>Top 5 Prestasi Tertinggi
-          </p>
-          <ol v-if="lmb.top5.length > 0" class="space-y-1">
-            <li
-              v-for="(t, idx) in lmb.top5"
-              :key="t.id || idx"
-              class="flex justify-between items-center bg-slate-50 px-3 py-2 rounded-lg border border-slate-200 text-xs"
+          <div
+            class="flex flex-nowrap md:flex-wrap items-center gap-2 overflow-x-auto md:overflow-visible hide-scrollbar [&>*]:shrink-0 md:[&>*]:shrink w-full md:w-auto -mx-1 px-1 md:mx-0 md:px-0"
+          >
+            <button
+              aria-label="Cetak peringkat"
+              class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold transition cursor-pointer"
+              @click="cetakHTML()"
             >
-              <span class="font-bold text-slate-800 truncate">
-                <span class="inline-block w-5 text-cyan-600 font-black">{{ idx + 1 }}.</span
-                >{{ t.nama }}
-              </span>
-              <span :class="['font-black whitespace-nowrap ml-2', t.color]">{{ t.display }}</span>
-            </li>
-          </ol>
-          <p v-else class="text-xs text-slate-400 italic text-center py-3">
-            Belum ada data prestasi.
-          </p>
+              <i class="fas fa-print"></i>Cetak
+            </button>
+            <button
+              :disabled="busy"
+              aria-label="Ekspor peringkat PDF"
+              class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer"
+              @click="exportPdf()"
+            >
+              <i class="fas fa-file-pdf"></i>PDF
+            </button>
+            <button
+              :disabled="busy"
+              aria-label="Ekspor peringkat Excel"
+              class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer"
+              @click="exportExcel()"
+            >
+              <i class="fas fa-file-excel"></i>Excel
+            </button>
+            <button
+              v-if="gsheetConfigured()"
+              :disabled="busy"
+              aria-label="Kirim peringkat ke Google Sheet"
+              class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer"
+              @click="kirimRekapGsheet()"
+            >
+              <i class="fas fa-table"></i>Google Sheet
+            </button>
+          </div>
         </div>
-      </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
+          <div
+            v-for="lmb in rankingPerLembaga"
+            :key="lmb.lembaga"
+            class="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-200 shadow-sm"
+          >
+            <div class="flex items-center justify-between border-b border-slate-100 pb-2 mb-3">
+              <h3 class="font-black text-sm text-slate-800 uppercase tracking-wider">
+                {{ lmb.lembaga }}
+              </h3>
+              <span class="text-[10px] font-bold text-slate-500"
+                >{{ lmb.dinilai }}/{{ lmb.total }} dinilai</span
+              >
+            </div>
+            <!-- PTPT histogram -->
+            <div v-if="lmb.isPTPT" class="grid grid-cols-3 gap-2 mb-3">
+              <div class="bg-rose-50 border border-rose-200 rounded-lg p-2 text-center">
+                <p class="text-[9px] font-bold text-rose-700 uppercase">Kurang</p>
+                <p class="text-lg font-black text-rose-800">{{ lmb.kurang }}</p>
+                <p class="text-[8px] text-rose-600">&lt;5 hal</p>
+              </div>
+              <div class="bg-cyan-50 border border-cyan-200 rounded-lg p-2 text-center">
+                <p class="text-[9px] font-bold text-cyan-700 uppercase">Cukup</p>
+                <p class="text-lg font-black text-cyan-800">{{ lmb.cukup }}</p>
+                <p class="text-[8px] text-cyan-600">5-9 hal</p>
+              </div>
+              <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-2 text-center">
+                <p class="text-[9px] font-bold text-emerald-700 uppercase">Bagus</p>
+                <p class="text-lg font-black text-emerald-800">{{ lmb.bagus }}</p>
+                <p class="text-[8px] text-emerald-600">&ge;10 hal</p>
+              </div>
+            </div>
+            <p class="text-[10px] font-black text-slate-600 uppercase mb-2">
+              <i class="fas fa-medal text-cyan-500 mr-1"></i>Top 5 Prestasi Tertinggi
+            </p>
+            <ol v-if="lmb.top5.length > 0" class="space-y-1">
+              <li
+                v-for="(t, idx) in lmb.top5"
+                :key="t.id || idx"
+                class="flex justify-between items-center bg-slate-50 px-3 py-2 rounded-lg border border-slate-200 text-xs"
+              >
+                <span class="font-bold text-slate-800 truncate">
+                  <span class="inline-block w-5 text-cyan-600 font-black">{{ idx + 1 }}.</span
+                  >{{ t.nama }}
+                </span>
+                <span :class="['font-black whitespace-nowrap ml-2', t.color]">{{ t.display }}</span>
+              </li>
+            </ol>
+            <p v-else class="text-xs text-slate-400 italic text-center py-3">
+              Belum ada data prestasi.
+            </p>
+          </div>
+        </div>
+      </template>
     </template>
   </div>
   <!-- v.107: modal koreksi prestasi bulanan (super_admin) -->

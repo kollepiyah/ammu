@@ -283,6 +283,16 @@ v.1.4.0) hanya kalau Kyai sudah siap mengunggahnya ke Play.
   'Kelas 1'), **Rincian Kelas** di KPI Jumlah Kelas, dan kolom Kelas/Juz pada ekspor
   PDF/Excel **Top Santri**.
 
+- **Tab Ranking tak punya tombol ekspor sama sekali** (v.1.4.1). Kyai, 4 Sep 2026: *"di
+  halaman ini belum ada tombol ekspor pdf."* Cetak/PDF/Excel/Google Sheet dulu hanya ada di
+  tab Input Bulanan — padahal justru di tab Ranking ekspornya paling masuk akal: PDF-nya
+  memang sudah diurut capaian terbanyak lalu juz tertinggi, jadi berkasnya persis daftar
+  peringkat yang sedang dilihat, hanya lengkap sampai santri terakhir (bukan cuma Top 5).
+  Fungsinya DIPAKAI ULANG apa adanya, bukan disalin — kartu di layar dan berkas cetak tak
+  boleh bisa berbeda isinya. Bloknya dibungkus `<template v-else-if>` supaya rantai
+  v-if/v-else-if antar-mode tetap utuh; dengan `v-if` polos, daftar peringkat akan ikut
+  tampil bersamaan dengan pesan "Tidak ada santri Qiraati yang cocok".
+
 - **Kop PDF Rekap Prestasi selama ini kosong** (v.1.4.1, ketemu sambil jalan). Kop-nya dirakit
   dengan kunci `{title,name,address,contact}` sedangkan `drawKopLetterhead` membaca
   `{line1..line5}` — jadi seluruh baris kop tak pernah tergambar; yang tampil hanya gambar
