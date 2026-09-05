@@ -1,129 +1,5 @@
 <template>
   <div class="p-3 md:p-5 max-w-7xl mx-auto space-y-4">
-    <!-- v.1.4.1: Pratinjau pemindahan isian ke bucket bulan yang benar (Kyai, 4 Sep 2026).
-         Tak ada yang ditulis sampai tombol di bawah ditekan. -->
-    <div
-      v-if="pindahRencana"
-      class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4"
-    >
-      <div
-        class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-3xl w-full max-h-[88vh] flex flex-col"
-      >
-        <div
-          class="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between"
-        >
-          <h3 class="text-base font-black text-slate-800 dark:text-slate-100">
-            <i class="fas fa-right-left text-amber-600 mr-2"></i>Pindahkan ke Rekap {{ bulan }}
-            {{ tahun }}
-          </h3>
-          <button class="text-slate-400 hover:text-rose-600 text-xl" @click="pindahRencana = null">
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
-        <div class="p-4 overflow-auto flex-1 text-xs space-y-3">
-          <p class="text-[11px] text-slate-600 dark:text-slate-300">
-            Isian di <b>Rekap {{ labelBulanPeriode(pindahRencana.periodeDari) }}</b> yang ditulis
-            pada/sesudah <b>{{ pindahRencana.sejak }}</b> — yaitu sesudah jendela Rekap
-            {{ bulan }} dibuka. Menurut aturan Kyai, angka itu capaian
-            <b>{{ bulanDataLabel }}</b> dan tempatnya di Rekap {{ bulan }}.
-          </p>
-          <p
-            v-if="penyaringAktif.length"
-            class="text-[11px] rounded-lg border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20 p-2 text-amber-900 dark:text-amber-200"
-          >
-            <i class="fas fa-filter mr-1"></i><b>Penyaring masih aktif:</b>
-            {{ penyaringAktif.join(' · ') }}. Rencana di bawah HANYA mencakup daftar yang sedang
-            tampil — kosongkan penyaringnya dulu bila ingin memindahkan semua lembaga sekaligus.
-          </p>
-          <div class="grid grid-cols-2 gap-2">
-            <div
-              class="bg-emerald-50 dark:bg-emerald-900/20 rounded p-2 border border-emerald-200 dark:border-emerald-800"
-            >
-              <p class="text-[10px] text-emerald-700 dark:text-emerald-300 font-bold uppercase">
-                Dipindah
-              </p>
-              <p class="text-2xl font-black text-emerald-700 dark:text-emerald-300">
-                {{ pindahRencana.pindah.length }}
-              </p>
-            </div>
-            <div
-              class="bg-amber-50 dark:bg-amber-900/20 rounded p-2 border border-amber-200 dark:border-amber-800"
-            >
-              <p class="text-[10px] text-amber-700 dark:text-amber-300 font-bold uppercase">
-                Dilewati (tujuan sudah terisi)
-              </p>
-              <p class="text-2xl font-black text-amber-700 dark:text-amber-300">
-                {{ pindahRencana.bentrok.length }}
-              </p>
-            </div>
-          </div>
-          <p
-            v-if="pindahRencana.bentrok.length"
-            class="text-[11px] text-amber-700 dark:text-amber-300"
-          >
-            <i class="fas fa-circle-info mr-1"></i>Santri yang tujuannya SUDAH berangka tidak
-            ditimpa — angka Rekap {{ bulan }} yang menang. Barisnya tetap di
-            {{ labelBulanPeriode(pindahRencana.periodeDari) }}, silakan periksa manual.
-          </p>
-          <table
-            v-if="pindahRencana.pindah.length"
-            class="w-full border border-slate-200 dark:border-slate-700"
-          >
-            <thead class="bg-slate-100 dark:bg-slate-700/50">
-              <tr>
-                <th class="px-2 py-1 text-left">#</th>
-                <th class="px-2 py-1 text-left">Nama Santri</th>
-                <th class="px-2 py-1 text-left">Kelas</th>
-                <th class="px-2 py-1 text-left">Awal</th>
-                <th class="px-2 py-1 text-left">Akhir</th>
-                <th class="px-2 py-1 text-left">Ditulis</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr
-                v-for="(p, i) in pindahRencana.pindah.slice(0, 100)"
-                :key="p.santriId"
-                class="border-t border-slate-200 dark:border-slate-700"
-              >
-                <td class="px-2 py-1">{{ i + 1 }}</td>
-                <td class="px-2 py-1 font-bold text-slate-700 dark:text-slate-200">
-                  {{ p.nama }}
-                </td>
-                <td class="px-2 py-1">{{ p.kelas || '-' }}</td>
-                <td class="px-2 py-1">{{ p.awal || '-' }}</td>
-                <td class="px-2 py-1">{{ p.akhir || '-' }}</td>
-                <td class="px-2 py-1 text-slate-400">{{ String(p.updatedAt).slice(0, 10) }}</td>
-              </tr>
-            </tbody>
-          </table>
-          <p v-if="pindahRencana.pindah.length > 100" class="text-[10px] italic text-slate-500">
-            …dan {{ pindahRencana.pindah.length - 100 }} baris lagi (semua diproses saat konfirmasi)
-          </p>
-          <p v-if="!pindahRencana.pindah.length" class="text-[11px] italic text-slate-500">
-            Tak ada yang perlu dipindah.
-          </p>
-        </div>
-        <div
-          class="p-4 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-2 items-center"
-        >
-          <button
-            class="px-4 py-2 text-xs font-bold rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-200"
-            @click="pindahRencana = null"
-          >
-            Batal
-          </button>
-          <button
-            :disabled="pindahBusy || !pindahRencana.pindah.length"
-            class="px-4 py-2 text-xs font-black rounded-lg bg-amber-600 hover:bg-amber-700 text-white disabled:opacity-50"
-            @click="terapkanPindah"
-          >
-            <i :class="['fas', pindahBusy ? 'fa-spinner fa-spin' : 'fa-right-left', 'mr-1']"></i>
-            Pindahkan {{ pindahRencana.pindah.length }} baris
-          </button>
-        </div>
-      </div>
-    </div>
-
     <!-- v.100 Batch12: Preview impor Rekap Prestasi (review dulu: Baru/Update/Lewati/Tak ditemukan) -->
     <div
       v-if="importRekapPreview"
@@ -628,14 +504,6 @@
           <b>{{ labelBulanPeriode(tersangkutBulanSebelah.periodeSebelum) }}</b> untuk melihat
           angkanya.
         </p>
-        <button
-          v-if="canCrud"
-          class="mt-2 px-3 py-1.5 text-[11px] font-black rounded-lg bg-amber-600 hover:bg-amber-700 text-white disabled:opacity-50"
-          :disabled="pindahBusy"
-          @click="bukaPindah"
-        >
-          <i class="fas fa-right-left mr-1"></i>Tinjau &amp; pindahkan ke Rekap {{ bulan }}
-        </button>
       </div>
 
       <!-- ACTION BAR (Export/Print/Simpan) -->
@@ -1529,7 +1397,6 @@ import {
 // v.1.4.1 (Kyai, 4 Sep 2026): "guru yg mengisi dari tgl 29 agustus - september itu adalah
 //   data september." Rencana pemindahannya MURNI + 13 tes; layar ini hanya menampilkan &
 //   menerapkan sesudah Kyai menekan konfirmasi.
-import { rencanaPindahJendela } from '@/utils/pindahJendelaRekap'
 import { usePjGuru } from '@/composables/usePjGuru'
 import { buatPetaPjSantri } from '@/utils/glondongan'
 // v.1.3.8 (Kyai, 2 Sep 2026): menambal riwayat bulanan yang tak pernah tertulis, SEBELUM
@@ -2090,6 +1957,13 @@ const petaPrestasiBulanLalu = computed(() =>
 //   isian di bulan lalu" — kalau tidak, siklus bulan lalu yang normal pun ikut terhitung.
 //   Sengaja hanya DILAPORKAN, tidak dipindah otomatis: bucket sebelah juga menampung rekap
 //   yang sah, dan memindahkannya adalah keputusan Kyai.
+//
+// v.1.4.2 — Kyai, 5 Sep 2026: "di rekap yg tombol pindahkan nilai hapus saja, yg penting
+//   perhitungan sudah sesuai." Tombol "Tinjau & pindahkan", dialog pratinjaunya, dan
+//   utils/pindahJendelaRekap DIHAPUS. Spanduk ini SENGAJA tetap: sesudah dropdown periode
+//   dibetulkan pada v.1.4.1, isian baru mendarat di bucket yang benar dengan sendirinya —
+//   yang tersisa cuma peninggalan versi lama, dan Kyai cukup diberi tahu di mana angkanya
+//   berada (buka filter bulan sebelahnya) tanpa disodori tombol yang memindahkan data.
 const tersangkutBulanSebelah = computed(() =>
   snapshotSalahJendela(
     riwayatPrestasiRaw.value,
@@ -2098,87 +1972,6 @@ const tersangkutBulanSebelah = computed(() =>
   )
 )
 
-// ── Pemindahan ke bucket yang benar — PRATINJAU DULU, tak ada yang ditulis sebelum
-//    Kyai menekan konfirmasi. Pola & alasannya sama dengan dialog "Tambal" di atas.
-const pindahRencana = ref(null)
-const pindahBusy = ref(false)
-// v.1.4.1: rencana pemindahan mengikuti daftar yang SEDANG TAMPIL — itu yang membuat
-//   angkanya cocok dengan spanduk di atasnya. Konsekuensinya jadi jebakan kalau tak
-//   disebutkan: Kyai bilang "pindahkan semua" sementara penyaring lembaga masih di PTPT,
-//   lalu PPPH tak ikut terpindah dan tak ada yang memberi tahu. Karena itu penyaring yang
-//   aktif DITULIS di dialognya.
-const penyaringAktif = computed(() => {
-  const p = []
-  if (filterLembaga.value) p.push(`lembaga ${filterLembaga.value}`)
-  if (filterKelas.value) p.push(`kelas ${filterKelas.value}`)
-  if (filterPj.value) p.push(`PJ ${filterPj.value}`)
-  if (String(search.value || '').trim()) p.push(`pencarian "${search.value.trim()}"`)
-  if (isGuruMode.value && filterTipe.value !== 'all') p.push(`kategori ${filterTipe.value}`)
-  return p
-})
-function bukaPindah() {
-  if (pindahBusy.value) return
-  pindahRencana.value = rencanaPindahJendela(riwayatPrestasiRaw.value, periodeSel.value, {
-    santriList: santriRaw.value,
-    idSantri: filteredSantri.value.map((s) => String(s.id))
-  })
-}
-async function terapkanPindah() {
-  const daftar = pindahRencana.value?.pindah || []
-  if (!daftar.length || pindahBusy.value) return
-  const ok = await confirmDlg({
-    title: `Pindahkan ${daftar.length} isian ke Rekap ${bulan.value}?`,
-    message:
-      `Angka yang tersimpan di Rekap ${labelBulanPeriode(pindahRencana.value.periodeDari)} ` +
-      `sejak ${pindahRencana.value.sejak} dipindahkan ke Rekap ${bulan.value} ${tahun.value}. ` +
-      'Baris asalnya dihapus (tersalin dulu ke audit_log), data santri TIDAK diubah, dan ' +
-      'baris tujuan yang sudah berangka tidak ditimpa.',
-    confirmText: 'Pindahkan'
-  })
-  if (!ok) return
-  pindahBusy.value = true
-  let sukses = 0
-  const gagal = []
-  try {
-    for (const it of daftar) {
-      try {
-        // TULIS DULU, baru hapus. Urutannya penting: kalau tulisnya gagal, baris asal masih
-        // utuh dan tak ada angka yang lenyap. Kebalikannya menghilangkan data begitu satu
-        // permintaan gagal di tengah daftar.
-        const rp = payloadRiwayatPrestasi({
-          santri: it.santri || {
-            id: it.santriId,
-            nama: it.nama,
-            lembaga: it.lembaga,
-            kelas: it.kelas
-          },
-          periode: pindahRencana.value.periodeKe,
-          bulanLabel: bulanLabelSel.value,
-          awal: it.awal,
-          akhir: it.akhir,
-          total: it.total,
-          juz: it.juz
-        })
-        await mergeOne('riwayat_prestasi', rp.id, rp)
-        // deleteOne menyalin baris ke audit_log dulu (v.91.0626) — jadi pemindahan ini
-        // masih bisa ditelusuri kalau suatu saat Kyai ingin memeriksanya.
-        if (it.dariId && it.dariId !== rp.id) {
-          await deleteOne('riwayat_prestasi', it.dariId, {
-            alasan: `pindah jendela rekap ${pindahRencana.value.periodeDari} → ${pindahRencana.value.periodeKe}`
-          })
-        }
-        sukses++
-      } catch (e) {
-        gagal.push(`${it.nama}: ${e.message || e}`)
-      }
-    }
-    if (gagal.length) toast.error(`${sukses} dipindah, ${gagal.length} gagal — ${gagal[0]}`)
-    else toast.success(`${sukses} isian dipindahkan ke Rekap ${bulan.value} ${tahun.value}.`)
-    pindahRencana.value = null
-  } finally {
-    pindahBusy.value = false
-  }
-}
 function nilaiBulan(id) {
   const s = santriRaw.value.find((x) => String(x.id) === String(id))
   return nilaiPrestasiBulan(petaPrestasiBulan.value.get(String(id)) || null, s || {})

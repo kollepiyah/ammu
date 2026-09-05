@@ -309,3 +309,50 @@ describe('hariGuruLembaga — jembatan shift → lembaga', () => {
     expect(hariGuruLembaga(g3, 'PTPT', s2)).toBeNull()
   })
 })
+
+// ── v.1.4.2 — Kyai, 5 Sep 2026: "shift yg belum dimulai jangan dihitung alpa" ────────
+//
+// Parameter ke-7 `hitungSel` diperlakukan persis seperti `bukanJadwal` di atasnya: yang
+// digugurkan HUKUMANNYA, bukan tanggalnya. Kalau suatu saat tanggalnya yang dibuang,
+// guru yang sempat scan lebih awal (toleransi awal) kehilangan kehadirannya — dan
+// bisyaroh "× kehadiran"-nya ikut hilang tanpa jejak.
+describe('hitungSel — shift yang belum dimulai (v.1.4.2)', () => {
+  const HARI_INI = '2026-01-09' // Jumat; Sabtu 10 & Ahad 11 belum lewat
+  const idxKosong = indexAbsensiHarian([])
+
+  it('tanpa penanda: hari ini ikut terhitung alpa (perilaku lama)', () => {
+    const sel = hitungSel(idxKosong, 'g1', 'sore', SENIN_SABTU, HARI_INI)
+    expect(sel.A).toBe(5) // Sen–Jum
+  })
+
+  it('dengan penanda: HARI INI saja yang tertahan, kemarin tetap alpa', () => {
+    const sel = hitungSel(idxKosong, 'g1', 'sore', SENIN_SABTU, HARI_INI, null, true)
+    expect(sel.A).toBe(4) // Sen–Kam; Jumat menunggu shift Sore dibuka
+    expect(sel.total).toBe(4)
+  })
+
+  it('baris yang SUDAH ada hari ini tetap terhitung — tanggalnya tak dibuang', () => {
+    const idx = indexAbsensiHarian([
+      { guru_id: 'g1', shift: 'sore', tanggal: HARI_INI, status: 'hadir', jam_pulang: '17:00' }
+    ])
+    const sel = hitungSel(idx, 'g1', 'sore', SENIN_SABTU, HARI_INI, null, true)
+    expect(sel.H).toBe(1)
+    expect(sel.A).toBe(4)
+    expect(sel.total).toBe(5)
+  })
+
+  it('bergandengan dengan jadwal hari: dua pembebasan tak saling menghapus', () => {
+    // Guru Senin/Rabu/Jumat, shift Sore belum dibuka pada hari Jumat ini.
+    const g = { id: 'g1', hari_shift: { sore: [1, 3, 5] } }
+    const sel = hitungSel(
+      idxKosong,
+      'g1',
+      'sore',
+      SENIN_SABTU,
+      HARI_INI,
+      tanggalBukanJadwal(g, 'sore', SENIN_SABTU),
+      true
+    )
+    expect(sel.A).toBe(2) // Senin & Rabu saja
+  })
+})

@@ -9,6 +9,8 @@ import {
   savePdf
 } from './pdfBuilder'
 import { HITUNGAN_OPTIONS, HITUNGAN_TUNJANGAN_OPTIONS } from './bisyarohScope'
+// v.1.4.2: jendela absensi slip (25 → 24) — SATU sumber dengan yang dipakai menghitung.
+import { labelPeriodeBisyaroh } from './periodeBisyaroh'
 import { imageToDataURL } from '@/services/pdf'
 import { terbilangRupiah } from './terbilang'
 import { namaWaliSantri } from './santriIdentitas'
@@ -464,6 +466,10 @@ export async function cetakSlipBisyarohPdf(slip = {}, settings = {}, { preview =
   ]
   const rightRows = [
     ['Periode', fmtPer(slip.periode)],
+    // v.1.4.2: rentang absensi yang dipakai menghitung slip ini (Kyai, 5 Sep 2026 —
+    //   tgl 25 bulan sebelumnya s/d 24 bulan periode). Sengaja ikut di KERTAS, bukan
+    //   cuma di layar admin: inilah lembar yang dipegang gurunya saat bertanya.
+    ['Absensi', labelPeriodeBisyaroh(slip.periode) || '-'],
     ['No. Slip', slip.no_bukti || slip.id || '-']
   ]
   const yStart = y

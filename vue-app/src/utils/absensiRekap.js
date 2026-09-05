@@ -101,7 +101,22 @@ export function indexAbsensiHarian(rows) {
 // Guru yang tetap datang di luar jadwal punya baris absensi sungguhan, dan baris itu
 // harus tetap terhitung hadir — kalau tanggalnya dibuang, kehadiran itu lenyap dan
 // bisyaroh `× kehadiran`-nya ikut hilang. Jadi: yang digugurkan hanya HUKUMANNYA.
-export function hitungSel(index, guruId, shift, tanggalKerja, todayIso, bukanJadwal = null) {
+//
+// v.1.4.2 `belumMulaiHariIni` (Kyai, 5 Sep 2026: "shift yg belum dimulai jangan dihitung
+// alpa") = shift ini belum dibuka pada jam sekarang. Hanya mengenai HARI INI — tanggal
+// kemarin tetap alpa berapa pun jamnya. Perlakuannya sengaja sama persis dengan
+// `bukanJadwal`: yang digugurkan HUKUMANNYA, bukan tanggalnya, jadi guru yang sudah
+// terlanjur scan lebih awal (toleransi awal) tetap terhitung hadir hari itu.
+// Aturan jamnya sendiri di utils/shiftBerjalan — jangan disalin ke sini.
+export function hitungSel(
+  index,
+  guruId,
+  shift,
+  tanggalKerja,
+  todayIso,
+  bukanJadwal = null,
+  belumMulaiHariIni = false
+) {
   let H = 0,
     T = 0,
     I = 0,
@@ -115,7 +130,8 @@ export function hitungSel(index, guruId, shift, tanggalKerja, todayIso, bukanJad
   for (const iso of tanggalKerja) {
     const a = index.get(gid + '|' + sh + '|' + iso)
     if (!a) {
-      if (iso <= todayIso && !lepas.has(iso)) A++
+      const belumDibuka = belumMulaiHariIni && iso === String(todayIso)
+      if (iso <= todayIso && !lepas.has(iso) && !belumDibuka) A++
       continue
     }
     const st = String(a.status || 'hadir').toLowerCase()

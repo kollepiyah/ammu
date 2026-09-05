@@ -63,12 +63,22 @@ function statusAlpa(a) {
  * Satu sel matriks — semua yang dibutuhkan tampilan sudah jadi, tak ada lagi turunan
  * saat render.
  *
+ * `lampau`   = tanggalnya sudah lewat (≤ hari ini). Ini yang menentukan sel boleh
+ *              DIKLIK untuk diperbaiki — menandai izin di hari yang sedang berjalan
+ *              tetap masuk akal walau shift-nya belum dibuka.
+ * `bolehAlpa` = sel KOSONG di sini sudah pantas disebut alpa. v.1.4.2 (Kyai, 5 Sep 2026:
+ *              "shift yg belum dimulai jangan dihitung alpa") memisahkannya dari
+ *              `lampau`: hari ini sudah "lampau" sejak pukul 00:00, tapi shift Sore baru
+ *              dibuka pukul 15:00. Bila tak diberikan, ia mengikuti `lampau` = perilaku
+ *              lama, supaya pemanggil yang belum tahu jam tidak berubah diam-diam.
+ *
  * @returns {{d:number, iso:string, teks:string, kelas:string, judul:string,
- *   libur:boolean, bukanJadwal:boolean, lampau:boolean, ada:boolean,
+ *   libur:boolean, bukanJadwal:boolean, lampau:boolean, bolehAlpa:boolean, ada:boolean,
  *   pulangPending:boolean, bisaPerbaiki:boolean}}
  */
-export function bangunSel({ d, iso, absen, libur, bukanJadwal, lampau, labelShift }) {
+export function bangunSel({ d, iso, absen, libur, bukanJadwal, lampau, bolehAlpa, labelShift }) {
   const a = absen || null
+  const alpaBoleh = bolehAlpa === undefined ? !!lampau : !!bolehAlpa
   if (libur) {
     return {
       d,
@@ -79,6 +89,7 @@ export function bangunSel({ d, iso, absen, libur, bukanJadwal, lampau, labelShif
       libur: true,
       bukanJadwal: false,
       lampau,
+      bolehAlpa: alpaBoleh,
       ada: !!a,
       pulangPending: false,
       // Hari libur: statusnya turun dari KALENDER, bukan dari baris absen. Menulis baris
@@ -88,13 +99,19 @@ export function bangunSel({ d, iso, absen, libur, bukanJadwal, lampau, labelShif
     }
   }
   if (!a) {
-    // Kosong & hari sudah lewat = alpa; hari depan = belum terjadi (kosong).
+    // Kosong & slotnya sudah lewat = alpa; belum terjadi = kosong.
     // v.1.3.8: kecuali memang bukan jadwalnya — titik, bukan 'A'.
-    const teks = bukanJadwal ? '·' : lampau ? 'A' : ''
-    const kelas = bukanJadwal ? KELAS_BUKAN_JADWAL : lampau ? KELAS_ALPA : KELAS_BELUM
+    // v.1.4.2: "sudah lewat" kini menghitung JAM juga (lihat catatan `bolehAlpa` di atas),
+    //   jadi shift yang belum dibuka tampil kosong seperti hari depan — bukan 'A' merah.
+    const teks = bukanJadwal ? '·' : alpaBoleh ? 'A' : ''
+    const kelas = bukanJadwal ? KELAS_BUKAN_JADWAL : alpaBoleh ? KELAS_ALPA : KELAS_BELUM
     const judul = bukanJadwal
       ? iso + ' — Bukan jadwal mengajarnya [' + labelShift + ']'
-      : iso + (lampau ? ' — Alpha' : ' — (belum)') + ' [' + labelShift + ']'
+      : iso +
+        (alpaBoleh ? ' — Alpha' : lampau ? ' — (shift belum dimulai)' : ' — (belum)') +
+        ' [' +
+        labelShift +
+        ']'
     return {
       d,
       iso,
@@ -104,6 +121,7 @@ export function bangunSel({ d, iso, absen, libur, bukanJadwal, lampau, labelShif
       libur: false,
       bukanJadwal,
       lampau,
+      bolehAlpa: alpaBoleh,
       ada: false,
       pulangPending: false,
       bisaPerbaiki: lampau
@@ -129,6 +147,7 @@ export function bangunSel({ d, iso, absen, libur, bukanJadwal, lampau, labelShif
     libur: false,
     bukanJadwal,
     lampau,
+    bolehAlpa: alpaBoleh,
     ada: true,
     pulangPending,
     bisaPerbaiki: lampau
@@ -142,10 +161,15 @@ export function bangunSel({ d, iso, absen, libur, bukanJadwal, lampau, labelShif
  *
  * · H / T / I-S-C  = baris yang MEMANG ADA di hari non-libur. Hari depan & hari di luar
  *   jadwal tidak dikecualikan — kalau barisnya ada, gurunya memang tercatat.
- * · A = dua bentuk alpa, dan keduanya terhitung SEKALI: tak ada baris sama sekali di hari
+ * · A = dua bentuk alpa, dan keduanya terhitung SEKALI: tak ada baris sama sekali di slot
  *   kerja yang sudah lewat, ATAU baris ber-status 'alpa' hasil perbaikan manual. Hari di
  *   luar jadwal dilewati saat KOSONG — tapi 'alpa' yang Kyai tandai sendiri di hari
  *   seperti itu tetap dihitung (itu penilaian manusia, bukan simpulan sistem).
+ *
+ *   v.1.4.2: sel KOSONG memakai `bolehAlpa` (tanggal + jam), sedangkan 'alpa' TERTULIS
+ *   tetap memakai `lampau`. Bedanya disengaja: yang pertama simpulan sistem dan tak boleh
+ *   mendahului jam shift; yang kedua sudah diketik manusia, dan menahannya sampai shift
+ *   dibuka berarti angka A di layar berselisih dengan huruf 'A' di baris yang sama.
  */
 export function rekapBaris(sel, absenSel) {
   let H = 0
@@ -161,11 +185,10 @@ export function rekapBaris(sel, absenSel) {
       if (st === 'hadir') H++
       else if (st === 'terlambat') T++
       else if (st === 'izin' || st === 'sakit' || st === 'cuti') ISC++
+      if (s.lampau && statusAlpa(a)) A++
+      continue
     }
-    if (!s.lampau) continue
-    if (!a) {
-      if (!s.bukanJadwal) A++
-    } else if (statusAlpa(a)) A++
+    if (s.bolehAlpa && !s.bukanJadwal) A++
   }
   return { H, T, ISC, A }
 }
@@ -186,9 +209,23 @@ export function rekapBaris(sel, absenSel) {
  * @param {(iso:string, lembaga:string)=>boolean} p.liburOf
  * @param {(guru:object, shift:string, iso:string)=>boolean} p.masukOf jadwal mengajar
  * @param {(shift:string)=>string} p.labelShiftOf
+ * @param {(shift:string)=>boolean} [p.belumMulaiOf] shift ini belum dibuka pada jam
+ *   sekarang (v.1.4.2). Ditanya SEKALI per baris — jawabannya soal jam, tak bergantung
+ *   tanggal. Tak diberikan → seluruh hari ini dianggap sudah berjalan (perilaku lama).
  */
 export function bangunMatriksBulanan(p) {
-  const { baris, hari, hariIni, isoOf, absenOf, lembagaOf, liburOf, masukOf, labelShiftOf } = p
+  const {
+    baris,
+    hari,
+    hariIni,
+    isoOf,
+    absenOf,
+    lembagaOf,
+    liburOf,
+    masukOf,
+    labelShiftOf,
+    belumMulaiOf
+  } = p
   // ISO per hari diturunkan sekali, bukan per sel × 4 pembaca seperti dulu.
   const iso = []
   for (let d = 1; d <= hari; d++) iso[d] = isoOf(d)
@@ -198,12 +235,15 @@ export function bangunMatriksBulanan(p) {
     const g = row.g
     const labelShift = labelShiftOf(row.shift)
     const lembaga = lembagaOf(g, row.shift) // sekali per baris — tak bergantung tanggal
+    // v.1.4.2: soal JAM, jadi cukup sekali per baris juga (shift-nya tetap sepanjang baris).
+    const belumMulai = typeof belumMulaiOf === 'function' ? !!belumMulaiOf(row.shift) : false
     const sel = []
     const absenSel = []
     for (let d = 1; d <= hari; d++) {
       const t = iso[d]
       const absen = absenOf(g.id, row.shift, d)
       absenSel.push(absen)
+      const lampau = t <= hariIni
       sel.push(
         bangunSel({
           d,
@@ -211,7 +251,9 @@ export function bangunMatriksBulanan(p) {
           absen,
           libur: liburOf(t, lembaga),
           bukanJadwal: !masukOf(g, row.shift, t),
-          lampau: t <= hariIni,
+          lampau,
+          // Hanya HARI INI yang bisa tertahan jam; tanggal kemarin tetap alpa.
+          bolehAlpa: lampau && !(belumMulai && t === hariIni),
           labelShift
         })
       )

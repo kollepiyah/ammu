@@ -20,6 +20,116 @@ naik satu tiap rilis. Entri lama memakai skema lama `v.{nomor-urut}.{MMDDtahunmu
 
 ---
 
+## [v.1.4.2 — belum dirilis] — 2026-09-05 — Bisyaroh tutup buku tanggal 24, dan shift yang belum dibuka tak lagi merah
+
+⚠️ **Belum dirilis, dan MENUMPUK di atas v.1.4.1 yang juga belum dirilis.** Titik versi
+tetap `1.4.0` (keputusan Kyai, 4 Sep 2026 — belum naik ke Play). Kedua entri ini akan
+terbit bersama; urutan deploy v.1.4.1 tetap berlaku (`npx supabase db push` DULUAN,
+baru web). v.1.4.2 sendiri **frontend murni** — tak ada migrasi baru.
+
+### Changed
+
+- **Bisyaroh dihitung dari absensi tgl 25 s/d 24, bukan lagi bulan kalender** (v.1.4.2).
+  Kyai, 5 Sep 2026: _"perhitungan bisyaroh dari absen dihitung dari tgl 25 sebelumnya
+  – 24 bulan berikutnya (mis: 25 Agustus – 24 September untuk bisyaroh September,
+  terbitnya bisyaroh 1–2 Oktober)."_
+
+  Alasannya jelas begitu tanggal terbitnya disebut: slip keluar tanggal 1–2, sedangkan
+  absensi bulan berjalan baru lengkap di akhir bulan. Menutup buku tanggal 24 memberi
+  jeda ±6 hari untuk merapikan absen sebelum uangnya dihitung. Hari 25–akhir bulan tidak
+  hilang — ia jadi pembuka jendela bulan BERIKUTNYA.
+
+  Yang menarik, sampai sekarang **"periode" dipakai untuk dua hal sekaligus** dan
+  keduanya kebetulan sama: nama bulan slip (`'2026-09'`) DAN penyaring baris absensi
+  (`tanggal.startsWith('2026-09')`). Karena kebetulan itu, penyaringnya tercecer jadi
+  **empat salinan** di dalam `BisyarohView` — hadir per shift, hadir tepat waktu, hadir
+  sekolah (dasar JP), dan daftar hari efektif. Menggeser jendelanya berarti keempatnya
+  harus bergeser BERSAMAAN; kalau satu tertinggal, slip membayar bonus atas jendela yang
+  berbeda dari yang dipakai menghitung JP-nya, dan selisihnya tak muncul di layar mana pun.
+
+  Karena itu aturannya dipindah utuh ke `utils/periodeBisyaroh` (murni + 26 tes) dan
+  keempat pembaca tadi kini memanggilnya. `periode` sendiri TIDAK berubah bentuk —
+  tetap `'YYYY-MM'`, karena id slip, riwayat, penyaring, dan Impor Excel bulanan
+  semuanya bergantung padanya. Yang berubah cuma: tanggal absensi mana yang boleh
+  dibaca slip itu.
+
+  Ikut bergeser dengan sengaja: **materialisasi "hadir sekolah" guru gabungan** (kalau
+  ia tertinggal di bulan kalender, baris tanggal 25–31 bulan sebelumnya tak pernah
+  dibuat dan bonus di pratinjau lebih kecil dari yang akhirnya tersimpan) dan
+  **simulasi plafon** (kalau plafon dihitung atas bulan kalender sementara yang dibayar
+  jendela 25→24, anggaran yang Kyai susun tak lagi seatap dengan tagihannya — jumlah
+  hari efektifnya memang bisa berbeda: bisyaroh Maret hanya 28 hari, September 31).
+
+  Yang sengaja **TIDAK** ikut bergeser: **titik ukur masa pengabdian** tetap akhir bulan
+  kalender. Jendela 25→24 itu aturan tentang absensi — kapan kehadiran ditutup bukunya.
+  Masa pengabdian bukan kehadiran: ia menjawab "bulan apa yang sedang dibayar", dan bulan
+  yang dibayar tetap bulan penuh. Menariknya ke tanggal 24 akan menunda tunjangan guru
+  yang genap setahun pada tanggal 25–31 selama sebulan, tanpa ada yang meminta.
+
+  Sekalian dibetulkan satu bug diam yang tersangkut di fungsi yang sama: pembatas "s/d
+  hari ini" memakai `new Date().toISOString()` = **UTC**, yang memundurkan tanggal pukul
+  00:00–06:59 WIB. Slip yang dibuka dini hari kehilangan satu hari kerja penuh dari
+  penyebut "100% tepat waktu" dan dari JP yang diajar. Kini `todayJakarta()`.
+
+  Rentangnya **ditulis di layar dan di kertas**: dua spanduk di halaman Bisyaroh (Per Guru
+  & Bulk) dan satu baris baru **"Absensi: 25 Agu – 24 Sep 2026"** di slip HTML maupun PDF.
+  "Periode September" yang bonus kehadirannya menghitung akhir Agustus akan terbaca
+  sebagai salah hitung oleh guru yang menerimanya — jawabannya tak boleh cuma ada di
+  dalam kode.
+
+### Fixed
+
+- **Shift yang belum dimulai tak lagi dihitung alpa** (v.1.4.2). Kyai, 5 Sep 2026:
+  _"shift yg belum dimulai jangan dihitung alpa."_
+
+  Alpa selama ini disimpulkan dari perbandingan **TANGGAL** saja (`iso <= hariIni`).
+  Tanggal tak punya jam, jadi begitu hari ini dimulai, SELURUH shift hari itu langsung
+  dianggap "sudah lewat" — termasuk shift Sore yang baru buka pukul 15:30. Akibatnya tiap
+  pagi rekap absen menampilkan sebaris `A` merah untuk shift yang belum sempat dijalani
+  siapa pun, dan angkanya baru betul sesudah maghrib.
+
+  Bukan sekadar salah tampil: kolom A yang sama dibaca **Excel, PDF, dan kartu "kehadiran
+  saya" milik guru** — jadi guru melihat dirinya alpa atas shift yang belum dimulai.
+
+  Aturannya sekarang di `utils/shiftBerjalan` (murni + 18 tes): tanggal lampau tetap boleh
+  alpa, tanggal depan tetap tidak, dan **HARI INI baru boleh alpa sesudah jam MULAI shift**.
+  Batasnya sengaja `mulai`, bukan `selesai` — yang dikeluhkan Kyai adalah shift yang belum
+  dimulai; sesudah shift berjalan, sel kosong memang pantas merah dan akan terhapus sendiri
+  begitu scan-nya masuk. Shift yang jam mulainya belum diatur berperilaku persis seperti
+  sebelumnya: menebak jam untuk shift tanpa jam = membebaskan alpa yang seharusnya ada.
+
+  Ada **tiga** tempat yang masing-masing menyimpulkan alpa sendiri (rekap per lembaga,
+  matriks bulanan, kartu guru di Personal) — persis kelas bug "cermin yang berpisah" yang
+  berulang di repo ini. Ketiganya kini memanggil satu predikat yang sama, jadi kartu guru
+  mustahil berselisih dengan layar admin. Perlakuannya dibuat identik dengan pembebasan
+  jadwal hari (v.1.3.8): yang digugurkan **HUKUMANNYA, bukan tanggalnya** — guru yang
+  terlanjur scan lebih awal (toleransi awal) tetap terhitung hadir. Dan `'alpa'` yang
+  **ditandai Kyai sendiri** tetap dihitung walau shift belum dibuka: itu penilaian manusia,
+  bukan simpulan sistem, dan menahannya akan membuat huruf `A` di sel berselisih dengan
+  angka di kolom A pada baris yang sama.
+
+  Kinerja dijaga: yang didenyutkan semenit sekali di `AbsensiGuruView` bukan jam mentah,
+  melainkan **kunci daftar shift yang belum dibuka** (`'sore|pegawai_sore'`). Menetapkan
+  nilai yang sama ke sebuah ref tak memicu apa pun di Vue, jadi matriks 6.000 sel hanya
+  dirakit ulang pada saat sebuah shift memang dibuka — beberapa kali sehari, bukan 1.440.
+
+### Removed
+
+- **Tombol "Tinjau & pindahkan ke Rekap" di Rekap Prestasi** (v.1.4.2). Kyai, 5 Sep 2026:
+  _"di rekap yg tombol pindahkan nilai hapus saja, yg penting perhitungan sudah sesuai."_
+
+  Tombol, dialog pratinjaunya, dan `utils/pindahJendelaRekap` (+ tesnya) dihapus. Alat itu
+  lahir v.1.4.1 untuk membereskan isian yang tersangkut di bucket bulan sebelah; sesudah
+  dropdown periodenya dibetulkan pada versi yang sama, isian BARU mendarat di bucket yang
+  benar dengan sendirinya — yang tersisa cuma peninggalan versi lama, dan Kyai sudah
+  menjalankan pemindahannya sekali pada 4 Sep 2026.
+
+  Spanduk peringatannya **sengaja tetap ada**: ia masih menjawab "kenapa rekap saya terlihat
+  kosong" dan menunjuk ke filter bulan mana yang harus dibuka. Yang hilang cuma tombol yang
+  memindahkan data.
+
+---
+
 ## [v.1.4.1 — belum dirilis] — 2026-09-04 — Satu ejaan kelas, satu nama bulan, dan guru yang tak lagi hilang
 
 ⚠️ **URUTAN DEPLOY — TIDAK frontend-murni.** `npx supabase db push` **wajib duluan**

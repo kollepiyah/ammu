@@ -804,6 +804,8 @@ import { shiftsForGuru } from '@/utils/shiftDerive'
 import { shiftLabelOf } from '@/utils/shiftMaster'
 import { buildLiburScope, liburKenaLembaga } from '@/utils/liburScope' // v.1.2.3: alpa hormati libur per lembaga
 import { guruMasukPada } from '@/utils/jadwalGuru' // v.1.3.8: alpa hormati jadwal mengajar guru
+// v.1.4.2: alpa juga hormati JAM — shift yang belum dibuka belum boleh dinilai (Kyai, 5 Sep 2026).
+import { jamJakarta, jamMulaiShift, slotBolehAlpa } from '@/utils/shiftBerjalan'
 // v.1.3.7: sumber tunggal "shift ini milik lembaga apa" (dulu disalin inline di sini).
 import { lembagaKalenderShift } from '@/utils/lembagaShift'
 // v.1.2.3: grafik kehadiran per bulan (KPI pribadi)
@@ -937,6 +939,13 @@ const kehadiran = computed(() => {
     // WIB: toISOString() memakai UTC → jam 00:00–06:59 "hari ini" terbaca hari
     //   SEBELUMNYA, jadi slot hari ini luput dihitung (Alpa hilang/telat muncul).
     const todayIso = todayJakarta()
+    // v.1.4.2 (Kyai, 5 Sep 2026: "shift yg belum dimulai jangan dihitung alpa"). Guru yang
+    //   membuka kartunya pagi hari melihat shift Sore-nya sendiri sudah merah — padahal
+    //   shift itu baru dibuka sore. Jam mulai tiap shift diturunkan SEKALI di sini: di
+    //   dalam loop (31 hari × n shift) tiap panggilan akan me-map + mengurut ulang seluruh
+    //   master shift, persis pemborosan yang dibereskan di matriks bulanan pada v.1.4.0.
+    const jamKini = jamJakarta()
+    const jamMulai = new Map(shifts.map((sh) => [String(sh).toLowerCase(), jamMulaiShift(sh, s)]))
     const y = tahunIni
     const mo = now.getMonth() + 1
     const days = new Date(y, mo, 0).getDate()
@@ -958,6 +967,10 @@ const kehadiran = computed(() => {
         // v.1.3.8: hari yang memang bukan jadwal mengajarnya bukan alpa (Kyai, 1 Sep 2026).
         //   Guru 3 hari/pekan sebelumnya melihat ±12 alpa di kartunya sendiri tiap bulan.
         if (!guruMasukPada(g, key, iso)) continue
+        // v.1.4.2: slot hari ini yang shift-nya belum dibuka belum pantas dinilai.
+        //   Aturannya di utils/shiftBerjalan — sama persis dengan yang dipakai rekap
+        //   bulanan & matriks, supaya kartu guru tak pernah berselisih dengan layar admin.
+        if (!slotBolehAlpa(iso, todayIso, jamKini, jamMulai.get(key) || '')) continue
         if (!filled.has(iso + '|' + key)) alpa++
       }
     }

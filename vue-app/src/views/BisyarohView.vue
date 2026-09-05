@@ -170,6 +170,18 @@
             </div>
           </div>
 
+          <!-- v.1.4.2: rentang absensi yang SEDANG dihitung ditulis apa adanya. "Bisyaroh
+               September" yang isinya sebagian Agustus adalah hal pertama yang akan
+               ditanyakan guru saat menerima slipnya — jangan sampai jawabannya cuma ada
+               di dalam kode. -->
+          <p
+            class="text-[11px] rounded-lg border border-cyan-200 dark:border-cyan-800 bg-cyan-50 dark:bg-cyan-900/20 px-3 py-2 text-cyan-800 dark:text-cyan-200"
+          >
+            <i class="fas fa-calendar-week mr-1"></i>Absensi yang dihitung:
+            <b>{{ jendelaPeriodeLabel }}</b> — bisyaroh {{ BULAN_NAMES[bulan - 1] }}
+            {{ tahun }} memakai kehadiran tanggal 25 bulan sebelumnya s/d 24 bulan ini.
+          </p>
+
           <!-- Daftar guru -->
           <div>
             <p
@@ -252,7 +264,8 @@
                 class="bg-cyan-50 dark:bg-cyan-900/20 rounded-lg px-3 py-2 border border-cyan-200"
               >
                 <p class="text-xs font-black text-cyan-800 mb-1">
-                  <i class="fas fa-calendar-check mr-1"></i>Kehadiran periode ini
+                  <i class="fas fa-calendar-check mr-1"></i>Kehadiran
+                  <span class="font-bold">{{ jendelaPeriodeLabel }}</span>
                 </p>
                 <div class="flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-cyan-700">
                   <span v-for="r in rincianHadir" :key="r.shift">
@@ -394,6 +407,13 @@
               <b>{{ bulkTargets.length }} guru</b> akan di-generate slip-nya. Nominal dari
               <b>Jenis Bisyaroh</b>, <b>Jenis Tunjangan</b>, dan <b>Jenis Potongan</b> — semuanya
               ber-scope (Pengaturan Keuangan). Yang sudah punya slip periode ini akan di-OVERWRITE.
+            </p>
+            <!-- v.1.4.2: jendela absensinya ditulis juga di sini — tombol Generate di bawah
+                 menulis slip untuk RATUSAN guru sekaligus, jadi rentang yang dipakai tak
+                 boleh cuma diketahui dari layar sebelah. -->
+            <p class="text-[11px] text-emerald-700 mt-1">
+              <i class="fas fa-calendar-week mr-1"></i>Absensi yang dihitung:
+              <b>{{ jendelaPeriodeLabel }}</b> (tgl 25 bulan sebelumnya s/d 24 bulan ini).
             </p>
           </div>
           <!-- v.1.3.7 (Kyai 31 Agu 2026): "review per bulan … sudah tertera potongannya dll.
@@ -1494,7 +1514,8 @@ import { hariGuruLembaga, guruMasukPada } from '@/utils/jadwalGuru'
 // v.1.3.0: simulasi plafon bisyaroh (hadir penuh) — memakai ulang barisBisyaroh.
 import {
   hariEfektif,
-  tanggalBulanPenuh,
+  // v.1.4.2: `tanggalBulanPenuh` tak dipakai lagi di sini — jendela slip bukan bulan
+  //   kalender. Fungsinya tetap hidup di utils/simulasiBisyaroh (masih ada tesnya).
   simulasiBisyaroh,
   simulasiPerGuru,
   terapkanNominal,
@@ -1511,7 +1532,17 @@ import {
   PERINGATAN
 } from '@/utils/pratinjauSlip'
 import { buildLiburScope, liburKenaLembaga } from '@/utils/liburScope' // v.1.2.3: libur per lembaga
-import { tanggalRentang } from '@/utils/absensiRekap'
+// v.1.4.2 (Kyai, 5 Sep 2026): jendela absensi slip = tgl 25 bulan sebelumnya s/d tgl 24
+//   bulan periode. SATU sumber untuk keempat pembaca absensi di layar ini — hadir per
+//   shift, hadir tepat waktu, hadir sekolah (JP), dan daftar hari efektif. Kalau salah
+//   satunya memakai rentang sendiri, slip membayar bonus atas jendela yang berbeda dari
+//   yang dipakai menghitung JP-nya, dan selisihnya tak terlihat di layar mana pun.
+import {
+  penyaringPeriodeBisyaroh,
+  tanggalPeriodeBisyaroh,
+  tanggalPeriodeSampai,
+  labelPeriodeBisyaroh
+} from '@/utils/periodeBisyaroh'
 import { useKegiatan } from '@/composables/useKegiatan'
 import { useAuthStore } from '@/stores/auth'
 import { isSuperAdmin } from '@/utils/roleScope'
@@ -1522,7 +1553,7 @@ import { useGuru } from '@/composables/useGuru'
 import { useToast } from '@/composables/useToast'
 import { useGoogleSheet } from '@/composables/useGoogleSheet' // v.100 Batch12: ekspor ke Google Sheet
 import { useExcel } from '@/composables/useExcel'
-import { fmtRp, getNamaGuruGelar } from '@/utils/format'
+import { fmtRp, getNamaGuruGelar, todayJakarta } from '@/utils/format'
 import { periodeBulan, getPenyimakGlondongan, PTPT_JUZ_PER_KELAS } from '@/utils/glondongan' // v.111: bisyaroh tes glondongan PTPT
 import ReceiptModal from '@/components/ReceiptModal.vue'
 import { buildSlipBisyarohHtml } from '@/utils/receiptHtml'
@@ -1987,6 +2018,13 @@ const now = new Date()
 const bulan = ref(now.getMonth() + 1)
 const tahun = ref(now.getFullYear())
 
+// v.1.4.2: label rentang absensi yang sedang dihitung, mis. "25 Agu – 24 Sep 2026".
+//   Ditampilkan di dua tempat (Per Guru & Bulk) — nama bulan slip saja tak cukup
+//   memberi tahu tanggal berapa kehadirannya ditutup buku.
+const jendelaPeriodeLabel = computed(() =>
+  labelPeriodeBisyaroh(`${tahun.value}-${String(bulan.value).padStart(2, '0')}`)
+)
+
 // ─── Tab state ────────────────────────────────────────────────────────────
 const mainTab = ref('generate')
 
@@ -2061,12 +2099,15 @@ const form = ref({ line_items: [], total_potongan: 0 })
 
 // v.1.1.9: hitung SEMUA hadir per shift utk 1 guru pada 1 periode ('YYYY-MM').
 //   Dulu 5 shift di-hardcode; kini apa pun shift-nya (termasuk shift buatan Kyai).
+// v.1.4.2: penyaring tanggalnya bukan lagi `startsWith(periode)` (= bulan kalender)
+//   melainkan jendela 25→24 dari utils/periodeBisyaroh.
 function hadirPerShiftGuru(guruId, periode) {
   const out = {}
   const gid = String(guruId)
+  const dalamJendela = penyaringPeriodeBisyaroh(periode)
   for (const a of absensiShift.value || []) {
     if (String(a.guru_id) !== gid) continue
-    if (!String(a.tanggal || '').startsWith(periode)) continue
+    if (!dalamJendela(a.tanggal)) continue
     const st = String(a.status || '').toLowerCase()
     if (st !== 'hadir' && st !== 'terlambat') continue
     const sh = String(a.shift || '').toLowerCase()
@@ -2081,9 +2122,10 @@ function hadirPerShiftGuru(guruId, periode) {
 function hadirTepatPerShiftGuru(guruId, periode) {
   const out = {}
   const gid = String(guruId)
+  const dalamJendela = penyaringPeriodeBisyaroh(periode)
   for (const a of absensiShift.value || []) {
     if (String(a.guru_id) !== gid) continue
-    if (!String(a.tanggal || '').startsWith(periode)) continue
+    if (!dalamJendela(a.tanggal)) continue
     if (String(a.status || '').toLowerCase() !== 'hadir') continue // tepat waktu saja
     const sh = String(a.shift || '').toLowerCase()
     if (!sh) continue
@@ -2093,13 +2135,13 @@ function hadirTepatPerShiftGuru(guruId, periode) {
 }
 
 // v.1.1.x OPSI C — bisyaroh sekolah = tarif × JP yang BENAR-BENAR diajar.
-//   Tanggal periode s/d hari ini (slip bulan berjalan tak menghitung hari depan).
+//   Tanggal jendela periode s/d hari ini (slip bulan berjalan tak menghitung hari depan).
+// v.1.4.2: jendelanya 25→24, bukan lagi tanggal 1 s/d akhir bulan. Sekalian membetulkan
+//   pembatas "hari ini": dulu `new Date().toISOString()` = UTC, yang memundurkan tanggal
+//   pukul 00:00–06:59 WIB — slip yang dibuka dini hari kehilangan satu hari kerja penuh
+//   dari penyebut "100% tepat waktu" dan dari JP yang diajar.
 function tanggalPeriode(periode) {
-  const [y, m] = String(periode).split('-').map(Number)
-  if (!y || !m) return []
-  const akhir = `${y}-${String(m).padStart(2, '0')}-${String(new Date(y, m, 0).getDate()).padStart(2, '0')}`
-  const today = new Date().toISOString().slice(0, 10)
-  return tanggalRentang(`${periode}-01`, today < akhir ? today : akhir)
+  return tanggalPeriodeSampai(periode, todayJakarta())
 }
 // Libur = tanggal libur manual + event kalender. Jumat SENGAJA tidak dianggap libur di sini:
 //   jadwal mengajar per hari sudah menentukan guru mengajar hari apa saja (sekolah bisa Sen–Sab).
@@ -2130,6 +2172,7 @@ function shiftIdsUntukLembaga(lembaga) {
 function tanggalHadirSekolah(guruId, periode, shiftIds) {
   const gid = String(guruId)
   const ids = new Set((shiftIds && shiftIds.length ? shiftIds : ['sekolah']).map(String))
+  const dalamJendela = penyaringPeriodeBisyaroh(periode) // v.1.4.2: jendela 25→24
   const out = new Set()
   for (const a of absensiShift.value || []) {
     if (String(a.guru_id) !== gid) continue
@@ -2137,7 +2180,7 @@ function tanggalHadirSekolah(guruId, periode, shiftIds) {
     const st = String(a.status || '').toLowerCase()
     if (st !== 'hadir' && st !== 'terlambat') continue // izin/sakit/cuti/alpa → JP hangus
     const tgl = String(a.tanggal || '')
-    if (!tgl.startsWith(periode)) continue
+    if (!dalamJendela(tgl)) continue
     out.add(tgl.slice(0, 10))
   }
   return out
@@ -2175,6 +2218,11 @@ function efektifPerShiftGuru(g, tgls) {
 
 // Akhir bulan periode 'YYYY-MM' → 'YYYY-MM-DD'. Titik ukur masa pengabdian: sengaja akhir
 //   bulan (bukan hari ini) supaya slip yang digenerate ulang bulan depan tak berubah angka.
+// v.1.4.2: sengaja TETAP akhir bulan kalender, TIDAK ikut bergeser ke tgl 24. Jendela 25→24
+//   itu aturan tentang ABSENSI — kapan kehadiran ditutup bukunya. Masa pengabdian bukan
+//   kehadiran: ia menjawab "bulan apa yang sedang dibayar", dan bulan yang dibayar tetap
+//   bulan penuh. Menariknya ke tgl 24 akan menunda tunjangan guru yang genap setahun pada
+//   tgl 25–31 selama sebulan, tanpa ada yang meminta.
 function akhirBulanPeriode(periode) {
   const [y, m] = String(periode || '')
     .split('-')
@@ -2187,7 +2235,11 @@ function akhirBulanPeriode(periode) {
 // Kembar `ctxGuru`, tapi kuantitasnya dari HARI EFEKTIF, bukan dari absensi.
 function ctxGuruPenuh(g, periode) {
   const s = settingsStore.settings || {}
-  const tgls = tanggalBulanPenuh(periode) // bulan PENUH, bukan sampai hari ini
+  // v.1.4.2: jendela PENUH 25→24, bukan sampai hari ini — simulasi memang tentang periode
+  //   utuh. Ikut bergeser bersama slip sungguhan dengan sengaja: kalau plafon dihitung atas
+  //   bulan kalender sementara yang dibayar jendela 25→24, anggaran yang Kyai susun tak lagi
+  //   seatap dengan tagihannya (jumlah hari efektifnya memang bisa berbeda).
+  const tgls = tanggalPeriodeBisyaroh(periode)
   const shiftIds = shiftsForGuru(g, s)
 
   // Hadir penuh per shift = hari efektif menurut libur lembaga shift itu.
@@ -2582,9 +2634,12 @@ async function materialisasiGabunganPeriode(periode) {
   if (_gabunganBusy.value) return 0
   _gabunganBusy.value = true
   try {
-    const rows = (absensiShift.value || []).filter(
-      (a) => String(a.tanggal || '').slice(0, 7) === periode
-    )
+    // v.1.4.2: materialisasi harus mencakup JENDELA slip (25→24), bukan bulan kalender.
+    //   Kalau ia tertinggal di bulan kalender, baris "hadir sekolah" tanggal 25–31 bulan
+    //   sebelumnya tak pernah dibuat saat periode ini dibuka — dan bonus kehadiran guru
+    //   gabungan di pratinjau lebih kecil daripada yang akhirnya tersimpan.
+    const dalamJendela = penyaringPeriodeBisyaroh(periode)
+    const rows = (absensiShift.value || []).filter((a) => dalamJendela(a.tanggal))
     const guruAktifList = guruAktifSaja(guruRaw.value)
     return await materialisasiHadirIkut(guruAktifList, rows, settingsStore.settings || {}, setOne)
   } catch {

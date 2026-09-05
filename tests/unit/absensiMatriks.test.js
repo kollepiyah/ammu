@@ -307,3 +307,95 @@ describe('bangunMatriksBulanan — bentuk & biaya', () => {
     expect(matriks({ baris: undefined }).rows).toEqual([])
   })
 })
+
+// ── v.1.4.2 — Kyai, 5 Sep 2026: "shift yg belum dimulai jangan dihitung alpa" ────────
+//
+// Yang dijaga di sini bukan sekadar huruf di layar. Kolom A yang sama dibaca Excel, PDF,
+// dan kartu "kehadiran saya" milik guru — jadi kalau blok ini jebol, guru kembali melihat
+// dirinya alpa atas shift yang belum sempat dijalani siapa pun.
+describe('shift yang belum dimulai (v.1.4.2)', () => {
+  // 20 Sep 2026 = Ahad (libur), jadi HARI_INI dipindah ke 18 Sep (Jumat) supaya sel hari
+  // ini benar-benar hari kerja. Baris B (Sen/Rab/Jum) tetap masuk pada hari itu.
+  const HARI_KERJA_INI = '2026-09-18'
+
+  function matriksJam({ belumMulaiOf } = {}) {
+    return bangunMatriksBulanan({
+      baris: BARIS_A,
+      hari: 30,
+      hariIni: HARI_KERJA_INI,
+      isoOf,
+      absenOf: () => null, // tak ada satu pun baris absen → semuanya calon alpa
+      lembagaOf: (g) => g.lembaga,
+      liburOf: (iso) => dow(iso) === 0,
+      masukOf: () => true,
+      labelShiftOf: () => 'Sore',
+      belumMulaiOf
+    })
+  }
+
+  it('shift yang belum dibuka: sel HARI INI kosong, bukan "A"', () => {
+    const row = matriksJam({ belumMulaiOf: () => true })[0]
+    const sel = row.sel[17] // tanggal 18
+    expect(sel.iso).toBe(HARI_KERJA_INI)
+    expect(sel.teks).toBe('')
+    expect(sel.bolehAlpa).toBe(false)
+    // Tanggalnya tetap "lampau" — menandai izin hari ini harus tetap bisa diklik.
+    expect(sel.lampau).toBe(true)
+    expect(sel.bisaPerbaiki).toBe(true)
+    expect(sel.judul).toContain('shift belum dimulai')
+  })
+
+  it('hanya HARI INI yang tertahan — kemarin tetap alpa', () => {
+    const row = matriksJam({ belumMulaiOf: () => true })[0]
+    expect(row.sel[16].teks).toBe('A') // 17 Sep, Kamis
+    expect(row.sel[16].bolehAlpa).toBe(true)
+  })
+
+  it('kolom A ikut berkurang tepat satu — huruf & angka tak boleh berselisih', () => {
+    const berjalan = matriksJam({ belumMulaiOf: () => false })[0]
+    const tertahan = matriksJam({ belumMulaiOf: () => true })[0]
+    expect(tertahan.A).toBe(berjalan.A - 1)
+    // Dan angkanya memang sebanyak huruf 'A' yang tampak di baris itu.
+    expect(tertahan.A).toBe(tertahan.sel.filter((s) => s.teks === 'A').length)
+  })
+
+  it('tanpa belumMulaiOf, perilakunya persis seperti sebelum v.1.4.2', () => {
+    const lama = matriksJam()[0]
+    const eksplisit = matriksJam({ belumMulaiOf: () => false })[0]
+    expect(lama.A).toBe(eksplisit.A)
+    expect(lama.sel[17].teks).toBe('A')
+  })
+
+  it('bangunSel tanpa bolehAlpa mengikuti lampau (pemanggil lama tak berubah diam-diam)', () => {
+    const s = bangunSel({
+      d: 1,
+      iso: '2026-09-01',
+      absen: null,
+      libur: false,
+      bukanJadwal: false,
+      lampau: true,
+      labelShift: 'Pagi'
+    })
+    expect(s.bolehAlpa).toBe(true)
+    expect(s.teks).toBe('A')
+  })
+
+  it("'alpa' yang DITANDAI manusia tetap terhitung walau shift belum dibuka", () => {
+    // Penilaian Kyai bukan simpulan sistem — dan kalau ia ditahan, huruf 'A' di sel akan
+    // berselisih dengan angka 0 di kolom A pada baris yang sama.
+    const rows = bangunMatriksBulanan({
+      baris: BARIS_A,
+      hari: 30,
+      hariIni: HARI_KERJA_INI,
+      isoOf,
+      absenOf: (gid, shift, d) => (d === 18 ? { status: 'alpa' } : null),
+      lembagaOf: (g) => g.lembaga,
+      liburOf: (iso) => dow(iso) === 0,
+      masukOf: () => true,
+      labelShiftOf: () => 'Sore',
+      belumMulaiOf: () => true
+    })
+    expect(rows[0].sel[17].teks).toBe('A')
+    expect(rows[0].A).toBe(rows[0].sel.filter((s) => s.teks === 'A').length)
+  })
+})
