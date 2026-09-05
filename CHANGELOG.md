@@ -252,9 +252,21 @@ urutannya terhadap deploy web bebas. Sisanya frontend murni.
   benar dengan sendirinya — yang tersisa cuma peninggalan versi lama, dan Kyai sudah
   menjalankan pemindahannya sekali pada 4 Sep 2026.
 
-  Spanduk peringatannya **sengaja tetap ada**: ia masih menjawab "kenapa rekap saya terlihat
-  kosong" dan menunjuk ke filter bulan mana yang harus dibuka. Yang hilang cuma tombol yang
-  memindahkan data.
+- **Spanduk "N santri isiannya tersimpan di Rekap <bulan lalu>"** (v.1.4.2). Kyai, 5 Sep
+  2026, menyusul permintaan di atas: _"ini sekalian hilangkan."_
+
+  Spanduk itu lahir v.1.4.1 untuk satu keadaan yang **sudah lewat**. Sampai v.1.4.0 dropdown
+  periode terbuka pada BULAN KALENDER sedangkan jendela pengisian menyeberangi pergantian
+  bulan, jadi guru yang mengisi tanggal 29–31 menyimpan ke bulan sebelumnya. Dropdown-nya
+  sudah dibetulkan di v.1.4.1 — isian BARU mendarat di bucket yang benar dengan sendirinya —
+  dan pemindahan peninggalan lamanya sudah Kyai jalankan 4 Sep 2026. Yang tersisa hanyalah
+  spanduk yang mengabarkan kejadian lama, muncul lagi tiap siklus, dan sesudah tombolnya
+  dihapus tak ada lagi yang bisa dilakukan atasnya.
+
+  `snapshotSalahJendela` (utils/prestasiBulanan) + tesnya ikut dihapus — tak ada lagi
+  pembacanya. Kalau suatu saat keluhan "guru sudah isi tapi di rekap kosong" muncul lagi,
+  **jangan membangun ulang spanduknya lebih dulu**: periksa apakah ada yang masih mengisi
+  lewat jalur lama. Spanduk itu gejala, bukan sebabnya.
 
 ---
 

@@ -482,30 +482,6 @@
         </div>
       </div>
 
-      <!-- v.1.4.1 (Kyai): "guru2 katanya banyak yg sudah isi, tapi di rekap kok banyak yg
-           belum diisi." Isian yang tersangkut di bucket bulan sebelah — akibat dropdown
-           lama yang terbuka pada bulan kalender, bukan pada periode rekap yang berjalan. -->
-      <div
-        v-if="mode === 'bulanan' && tersangkutBulanSebelah.jumlah > 0"
-        class="bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 rounded-2xl p-3 text-[11px] text-amber-900 dark:text-amber-200"
-      >
-        <p class="font-black">
-          <i class="fas fa-triangle-exclamation mr-1"></i>{{ tersangkutBulanSebelah.jumlah }} santri
-          isiannya tersimpan di
-          <b>Rekap {{ labelBulanPeriode(tersangkutBulanSebelah.periodeSebelum) }}</b
-          >, bukan di Rekap {{ bulan }}.
-        </p>
-        <p class="mt-1 opacity-90">
-          Semuanya ditulis pada/sesudah
-          <b>{{ tersangkutBulanSebelah.sejak }}</b> — yaitu sesudah jendela Rekap
-          {{ bulan }} dibuka, jadi isinya memang capaian {{ bulanDataLabel }}. Versi lama membuka
-          dropdown ini pada bulan kalender, sehingga guru yang mengisi tanggal 29–31 tersimpan ke
-          bulan sebelumnya. Buka filter
-          <b>{{ labelBulanPeriode(tersangkutBulanSebelah.periodeSebelum) }}</b> untuk melihat
-          angkanya.
-        </p>
-      </div>
-
       <!-- ACTION BAR (Export/Print/Simpan) -->
       <div
         v-if="mode === 'bulanan'"
@@ -1377,8 +1353,7 @@ import {
   // v.1.4.1 (Kyai 4 Sep 2026): periode = BULAN LAPORAN, isinya capaian bulan sebelumnya.
   periodeRekapBerjalan,
   periodeDataRekap,
-  labelBulanPeriode,
-  snapshotSalahJendela
+  labelBulanPeriode
 } from '@/utils/prestasiBulanan'
 // v.1.4.1: label kelas kanonik ('Kelas 1', bukan '1') + pembanding kelas yang toleran.
 import { labelJenjang, kelasSama } from '@/utils/jenjangQiraati'
@@ -1949,28 +1924,22 @@ const petaPrestasiBulanLalu = computed(() =>
   petaPrestasiPeriode(riwayatPrestasiRaw.value, periodeSebelumnya(periodeSel.value))
 )
 
-// v.1.4.1 (Kyai, 4 Sep 2026): "guru2 katanya banyak yg sudah isi, tapi di rekap kok banyak
-//   yg belum diisi." Sampai v.1.4.0 dropdown ini terbuka pada BULAN KALENDER, sedangkan
-//   jendela pengisian menyeberangi pergantian bulan — yang mengisi 29–31 menyimpan ke bulan
-//   sebelumnya, yang mengisi tgl 1–5 menyimpan ke bulan ini. Isian yang tersangkut di bucket
-//   sebelah dilacak lewat WAKTU TULIS-nya (lihat snapshotSalahJendela), bukan lewat "ada
-//   isian di bulan lalu" — kalau tidak, siklus bulan lalu yang normal pun ikut terhitung.
-//   Sengaja hanya DILAPORKAN, tidak dipindah otomatis: bucket sebelah juga menampung rekap
-//   yang sah, dan memindahkannya adalah keputusan Kyai.
+// v.1.4.2 — Kyai, 5 Sep 2026: spanduk "N santri isiannya tersimpan di Rekap <bulan lalu>"
+//   DIHAPUS, menyusul tombol "Tinjau & pindahkan" pada permintaan sebelumnya di hari yang
+//   sama. Beserta itu `snapshotSalahJendela` (utils/prestasiBulanan) dan tesnya ikut hilang
+//   — tak ada lagi pembacanya.
 //
-// v.1.4.2 — Kyai, 5 Sep 2026: "di rekap yg tombol pindahkan nilai hapus saja, yg penting
-//   perhitungan sudah sesuai." Tombol "Tinjau & pindahkan", dialog pratinjaunya, dan
-//   utils/pindahJendelaRekap DIHAPUS. Spanduk ini SENGAJA tetap: sesudah dropdown periode
-//   dibetulkan pada v.1.4.1, isian baru mendarat di bucket yang benar dengan sendirinya —
-//   yang tersisa cuma peninggalan versi lama, dan Kyai cukup diberi tahu di mana angkanya
-//   berada (buka filter bulan sebelahnya) tanpa disodori tombol yang memindahkan data.
-const tersangkutBulanSebelah = computed(() =>
-  snapshotSalahJendela(
-    riwayatPrestasiRaw.value,
-    periodeSel.value,
-    filteredSantri.value.map((s) => String(s.id))
-  )
-)
+//   Kenapa boleh hilang: spanduk itu lahir v.1.4.1 untuk satu keadaan yang SUDAH lewat.
+//   Sampai v.1.4.0 dropdown periode terbuka pada BULAN KALENDER sedangkan jendela pengisian
+//   menyeberangi pergantian bulan, jadi guru yang mengisi tanggal 29–31 menyimpan ke bulan
+//   sebelumnya. Dropdown-nya sudah dibetulkan di v.1.4.1: isian BARU mendarat di bucket yang
+//   benar dengan sendirinya, dan pemindahan peninggalan lamanya sudah dijalankan Kyai
+//   4 Sep 2026. Yang tersisa cuma spanduk yang mengabarkan kejadian lama, muncul lagi tiap
+//   siklus dan tak ada yang bisa dilakukan atasnya.
+//
+//   KALAU SUATU SAAT MUNCUL LAGI keluhan "guru sudah isi tapi di rekap kosong": jangan
+//   membangun ulang spanduknya lebih dulu. Periksa dulu apakah ADA yang masih mengisi lewat
+//   jalur lama — sebab spanduk itu gejala, bukan sebabnya.
 
 function nilaiBulan(id) {
   const s = santriRaw.value.find((x) => String(x.id) === String(id))
