@@ -113,6 +113,93 @@ baru web). v.1.4.2 sendiri **frontend murni** — tak ada migrasi baru.
   nilai yang sama ke sebuah ref tak memicu apa pun di Vue, jadi matriks 6.000 sel hanya
   dirakit ulang pada saat sebuah shift memang dibuka — beberapa kali sehari, bukan 1.440.
 
+### Fixed — keuangan
+
+- **Riwayat dan Tagihan tak lagi bercerita dua hal berbeda** (v.1.4.2). Kyai, 5 Sep 2026:
+  _"di riwayat keuangan ada tagihan yg sudah di bayar, tapi di tagihan santri itu masih
+  ada"_ dan _"ada yg belum bayar tapi di riwayat tertulis di bayar."_
+
+  Bukan satu bug, melainkan bentuk penyimpanannya. Uang santri hidup di **dua tabel yang
+  ditulis terpisah dan tanpa transaksi bersama**: `keuangan_buku_induk` (yang tampil di
+  Riwayat) dan `keuangan_tagihan` (yang tampil di Tagihan). Setiap jalur pembayaran
+  menulis keduanya berurutan, dan tiap kali langkah kedua gagal — atau tak pernah ada —
+  keduanya berpisah tanpa satu pun pesan. **Empat pabriknya ditutup:**
+
+  1. **Bayar di muka melahirkan tunggakan palsu.** Membayar bulan yang tagihannya belum
+     terbit memang SENGAJA tak membuat baris tagihan (aturan Kyai: yang sudah lunas jangan
+     masuk daftar tagihan) — pembayarannya cukup duduk di Buku Induk dengan `periode_kode`.
+     Tapi ketika bulan itu tiba, generator melahirkan tagihannya dengan `terbayar: 0`: ia
+     hanya memeriksa tagihan KEMBAR, tak pernah menengok Buku Induk. Uang sudah diterima,
+     tagihannya terbit lagi. **Inilah yang paling mungkin Kyai lihat.** Kedua generator
+     (bulanan otomatis & Generate Khusus) kini membuka tagihan baru dengan angka yang sudah
+     tercatat — termasuk di pratinjau, supaya yang ditinjau memang yang akan terbit.
+  2. **Update tagihan gagal diam-diam.** Di verifikasi transfer, baris Buku Induk ditulis
+     DULUAN dan update tagihannya menyusul di `try` yang cuma `console.warn` — pesan yang
+     tak pernah dibaca siapa pun. Sekarang jadi toast merah yang menyebut sebabnya dan ke
+     mana harus membetulkannya, dan sebabnya ikut ditempel di baris transfer.
+  3. **Transfer yang DITOLAK meninggalkan uangnya di Riwayat.** Verifikasi menulis baris
+     `bi_trf_*` lebih dulu dan menetapkan status 'verified' TERAKHIR — urutan itu disengaja
+     supaya bisa diulang bila ada write yang ditolak. Sisi buruknya: verifikasi yang
+     berhenti di tengah meninggalkan baris yang sudah lahir, dan penolakan tak pernah
+     membersihkannya. Uang yang tak pernah sah tetap duduk di Riwayat — **persis "belum
+     bayar tapi di riwayat tertulis dibayar"**. Penolakan kini menghapusnya (disalin ke
+     `audit_log` dulu).
+  4. **Pembayaran gabungan tak bisa dicocokkan kembali.** Tagihan gabungan dipecah di Buku
+     Induk memakai label KOMPONEN ('SPP Sekolah', 'Ngaji'), bukan nama tagihan induknya —
+     jadi tak ada cara jujur menautkannya kembali ke tagihan 'Syahriyah'. Baris POS kini
+     membawa `tagihan_id` + `induk_jenis`; baris LAMA masih terbaca lewat pola tetap
+     `— bagian dari <induk>` di keterangannya.
+
+  **Alat baru: Pengaturan Keuangan › Tagihan → "Cek Riwayat vs Tagihan".** Membandingkan
+  rupiah yang Buku Induk catat untuk tiap (santri × jenis × periode) dengan yang diakui
+  tagihannya, lalu memilah temuannya:
+
+  | Kelompok | Artinya |
+  |---|---|
+  | Kurang tercatat | uang ADA di Riwayat, tagihan belum mengakuinya → tunggakan palsu |
+  | Lebih tercatat | tagihan mengaku terbayar, uangnya TAK ADA di Riwayat |
+  | Status meleset | kolom `status` ≠ sisa hasil hitung |
+  | Transfer yatim | baris `bi_trf_*` yang transfernya ditolak/hilang |
+  | Bayar di muka | sah, tapi calon tunggakan palsu bulan depan |
+
+  "Kurang tercatat" dan "Status meleset" bisa dibetulkan sekali tekan (super admin, dengan
+  konfirmasi + `audit_log`); yang ditulis HANYA `terbayar` + `status` — nominal tagihan tak
+  disentuh dan tak ada uang baru yang dicatat. **"Lebih tercatat" sengaja TIDAK ditambal
+  otomatis**: menurunkan angka terbayar berarti menagih ulang orang yang mungkin sudah
+  membayar lewat jalur lama. Aturannya di `utils/cocokBayarTagihan` (murni + 28 tes).
+
+  **"Status meleset" perlu disebut sendiri** karena ia sudah lama ada dan tak kelihatan:
+  daftar tunggakan POS dan notifikasi wali menyaring lewat KOLOM `status`, sedangkan layar
+  Tagihan & Pembayaran menghitung SISA dari `terbayar`. Selama keduanya berselisih, satu
+  layar bilang lunas sementara layar lain menagih — dan tak ada yang salah menurut kodenya
+  masing-masing.
+
+- **Uang Saku & Tabungan akhirnya punya cara bayar** (v.1.4.2). Kyai, 5 Sep 2026: _"uang
+  buku dan uang saku tidak ada keterangan transfer/tunai untuk ekspor pdf."_
+
+  Benar, dan lebih dalam dari sekadar kolom PDF: mutasi Tabungan/Uang Saku **tak pernah
+  punya field `metode` sama sekali** — Buku Induk, POS, dan pos dana sudah sejak v.1.2.6.
+  Sekarang ada pemilih Cara Bayar di form mutasi (baru & edit), badge di daftar layar, dan
+  kolom **Cara Bayar** + baris SUBTOTAL TUNAI/TRANSFER di PDF laporan mutasi. Baris LAMA
+  tanpa field itu tetap disimpulkan 'Tunai' oleh `utils/metodeBayar` — sama persis dengan
+  Buku Induk, jadi tak ada laporan lama yang berubah artinya.
+
+  Untuk **Uang Buku** (dan Uang Kegiatan / Tabungan Wajib) PDF-nya sebenarnya SUDAH memuat
+  kolom Cara Bayar sejak v.1.2.6 — yang tak ada adalah penandanya **di layar**, jadi tak
+  bisa dicocokkan dengan laci tanpa mencetak dulu. Badge-nya ditambahkan.
+
+### Diketahui, belum ditutup
+
+- **Pembayaran VA BMT menulis ke tempat yang salah.** RPC `apply_bmt_payment` mencatat
+  pelunasan ke ekor jsonb `data.bayar` dan TIDAK pernah menyentuh kolom riil `terbayar`,
+  sementara `utils/tagihan.terbayarDari` memakai kolom itu lebih dulu (jsonb hanya jaring
+  pengaman saat kolomnya 0). Akibatnya, tagihan yang sudah pernah dibayar sebagian lewat
+  POS lalu dilunasi lewat VA akan **menyembunyikan pembayaran VA-nya**; cabang waterfall-nya
+  bahkan menghitung sisa dari jsonb saja, jadi bisa mengalokasikan uang ke tagihan yang
+  sudah lunas. **Belum diperbaiki karena butuh migrasi Supabase**, dan VA BMT masih
+  bergantung `settings.bmt_aktif` yang belum dinyalakan. Jangan menyalakan VA sebelum RPC-nya
+  dibetulkan. Alat "Cek Riwayat vs Tagihan" sudah bisa memperlihatkan akibatnya bila terjadi.
+
 ### Removed
 
 - **Tombol "Tinjau & pindahkan ke Rekap" di Rekap Prestasi** (v.1.4.2). Kyai, 5 Sep 2026:

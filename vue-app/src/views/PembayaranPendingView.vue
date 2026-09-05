@@ -431,6 +431,7 @@ async function verifyTransfer(p) {
     // v.95.0626b: URUTAN DIBALIK — tulis buku induk + tagihan DULU, status 'verified' di-set TERAKHIR.
     // Kalau ada write yang ditolak rules, status TIDAK terlanjur 'verified' (transfer tetap di Pending, bisa diulang).
     const buId = `bi_trf_${p.id}`
+    let tagihanErr = '' // v.1.4.2: kegagalan update tagihan — dilaporkan, tak ditelan
     // FIX: penuhi rule keuangan_buku_induk — WAJIB tipe (masuk/keluar) + keterangan (string) + nominal number
     // + tanggal 'YYYY-MM-DD'. Sebelumnya field ini tak diisi + sumber 'transfer_verified' belum di-allow -> write ditolak.
     // WIB, bukan UTC — baris Buku Induk yang dibuat 00:00–06:59 WIB tak lagi mundur sehari.
@@ -475,7 +476,14 @@ async function verifyTransfer(p) {
           })
         }
       } catch (e) {
+        // v.1.4.2 (Kyai 5 Sep 2026: "di riwayat sudah dibayar tapi di tagihan masih ada").
+        //   Ini persis jalannya: baris buku induk SUDAH ditulis di atas, lalu update
+        //   tagihan ditolak (RLS / baris hilang) dan dulu hanya jadi console.warn — yang
+        //   tak pernah dibaca siapa pun. Uangnya masuk Riwayat, tagihannya tetap berdiri,
+        //   dan tak ada yang tahu sampai wali protes. Sekarang: toast, dan sebabnya ikut
+        //   ditempel di baris pending supaya masih bisa ditelusuri besok.
         console.warn('[verifyTransfer] update tagihan gagal:', e?.message)
+        tagihanErr = e?.message || String(e)
       }
     }
     // TERAKHIR: set status pending -> verified (setelah ledger + tagihan beres)
@@ -483,9 +491,18 @@ async function verifyTransfer(p) {
       ...p,
       status: 'verified',
       verified_at: new Date().toISOString(),
-      verified_by: auth.sesiAktif?.nama || 'Admin'
+      verified_by: auth.sesiAktif?.nama || 'Admin',
+      ...(tagihanErr ? { tagihan_update_error: tagihanErr } : {})
     })
-    toast.success('Transfer ' + p.santri_nama + ' di-verifikasi')
+    if (tagihanErr) {
+      toast.error(
+        'Uang MASUK buku induk, tapi tagihannya GAGAL diperbarui: ' +
+          tagihanErr +
+          ' — tagihan ini akan tetap tampak belum lunas. Betulkan lewat Pengaturan Keuangan › Cek Riwayat vs Tagihan.'
+      )
+    } else {
+      toast.success('Transfer ' + p.santri_nama + ' di-verifikasi')
+    }
   } catch (e) {
     toast.error('Gagal verifikasi: ' + (e?.message || e))
   } finally {
@@ -501,6 +518,21 @@ async function rejectTransfer(p) {
   }
   busyIds.value.add(p.id)
   try {
+    // v.1.4.2 (Kyai 5 Sep 2026: "ada yg belum bayar tapi di riwayat tertulis di bayar").
+    //   verifyTransfer menulis baris buku induk DULUAN, status 'verified' TERAKHIR — urutan
+    //   itu disengaja supaya transfer bisa diulang bila ada write yang ditolak. Sisi
+    //   buruknya: sebuah verifikasi yang berhenti di tengah meninggalkan baris `bi_trf_*`
+    //   yang sudah lahir, dan penolakan dulu tak pernah membersihkannya. Uang yang tak
+    //   pernah sah tetap duduk di Riwayat. deleteOne menyalin ke audit_log dulu, jadi
+    //   jejaknya tak hilang. Baris yang memang tak pernah ada → diabaikan.
+    try {
+      await deleteOne('keuangan_buku_induk', `bi_trf_${p.id}`, {
+        sesi: auth.sesiAktif,
+        alasan: `transfer ditolak: ${alasan.trim()}`
+      })
+    } catch (er) {
+      console.warn('[rejectTransfer] bersihkan buku induk:', er?.message)
+    }
     await setOne('pembayaran_transfer_pending', p.id, {
       ...p,
       status: 'rejected',

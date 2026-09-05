@@ -303,6 +303,200 @@
           </div>
         </div>
 
+        <!-- Kyai 5 Sep 2026: "di riwayat keuangan ada tagihan yg sudah di bayar, tapi di
+             tagihan santri itu masih ada" + "ada yg belum bayar tapi di riwayat tertulis
+             di bayar". Uang santri dicatat di DUA tabel yang ditulis terpisah — buku induk
+             (Riwayat) dan keuangan_tagihan — dan tak ada transaksi yang mengikat keduanya.
+             Alat ini membandingkan angkanya, lalu Kyai yang memutuskan. Sama seperti
+             Rapikan di atas: PERIKSA dulu, tulis belakangan. -->
+        <div class="mt-4 rounded-xl border border-cyan-300/60 bg-cyan-50/60 dark:bg-cyan-900/20">
+          <div
+            class="px-3 py-2 border-b border-cyan-300/40 flex items-center justify-between gap-2 flex-wrap"
+          >
+            <p class="text-sm font-black text-cyan-900 dark:text-cyan-200">
+              <i class="fas fa-scale-balanced mr-2"></i>Cek Riwayat vs Tagihan
+            </p>
+            <button
+              :disabled="cocokBusy"
+              class="px-3 py-1.5 text-[11px] font-black rounded-lg bg-cyan-600 hover:bg-cyan-700 text-white disabled:opacity-50"
+              @click="periksaCocokBayar"
+            >
+              <i
+                :class="['fas', cocokBusy ? 'fa-spinner fa-spin' : 'fa-magnifying-glass', 'mr-1']"
+              ></i>
+              {{ cocokHasil ? 'Periksa Ulang' : 'Periksa' }}
+            </button>
+          </div>
+          <div class="p-3 space-y-2">
+            <p class="text-[11px] text-cyan-900/80 dark:text-cyan-200/80">
+              Membandingkan uang yang tercatat di <b>Buku Induk</b> dengan yang diakui
+              <b>tagihan</b> untuk tiap (santri × jenis × periode). Tak ada yang ditulis sampai
+              tombol perbaikan ditekan.
+            </p>
+
+            <div v-if="cocokHasil" class="space-y-2">
+              <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                <div
+                  class="rounded-lg bg-[var(--bg-card)] border border-rose-200 dark:border-rose-800 p-2"
+                >
+                  <p class="text-[9px] uppercase font-bold text-rose-700">Kurang tercatat</p>
+                  <p class="text-xl font-black text-rose-700">
+                    {{ cocokHasil.ringkas.kurangTercatat }}
+                  </p>
+                  <p class="text-[10px] text-[var(--text-secondary)]">
+                    Rp {{ rp(cocokHasil.ringkas.kurangTercatatRp) }} · sudah dibayar, tagihannya
+                    masih berdiri
+                  </p>
+                </div>
+                <div
+                  class="rounded-lg bg-[var(--bg-card)] border border-amber-200 dark:border-amber-800 p-2"
+                >
+                  <p class="text-[9px] uppercase font-bold text-amber-700">Lebih tercatat</p>
+                  <p class="text-xl font-black text-amber-700">
+                    {{ cocokHasil.ringkas.lebihTercatat }}
+                  </p>
+                  <p class="text-[10px] text-[var(--text-secondary)]">
+                    Rp {{ rp(cocokHasil.ringkas.lebihTercatatRp) }} · tagihan mengaku terbayar,
+                    uangnya tak ada di riwayat
+                  </p>
+                </div>
+                <div
+                  class="rounded-lg bg-[var(--bg-card)] border border-violet-200 dark:border-violet-800 p-2"
+                >
+                  <p class="text-[9px] uppercase font-bold text-violet-700">Status meleset</p>
+                  <p class="text-xl font-black text-violet-700">
+                    {{ cocokHasil.ringkas.statusMeleset }}
+                  </p>
+                  <p class="text-[10px] text-[var(--text-secondary)]">
+                    kolom status ≠ sisa hasil hitung (POS &amp; notifikasi memakai kolom)
+                  </p>
+                </div>
+                <div
+                  class="rounded-lg bg-[var(--bg-card)] border border-slate-200 dark:border-slate-700 p-2"
+                >
+                  <p class="text-[9px] uppercase font-bold text-slate-600">Bayar di muka</p>
+                  <p class="text-xl font-black text-slate-700 dark:text-slate-200">
+                    {{ cocokHasil.ringkas.bayarTanpaTagihan }}
+                  </p>
+                  <p class="text-[10px] text-[var(--text-secondary)]">
+                    Rp {{ rp(cocokHasil.ringkas.bayarTanpaTagihanRp) }} · belum bertagihan — normal,
+                    tapi awasi saat generate
+                  </p>
+                </div>
+              </div>
+
+              <p
+                v-if="cocokHasil.ringkas.transferYatim"
+                class="text-[11px] rounded-lg border border-rose-300 dark:border-rose-700 bg-rose-50 dark:bg-rose-900/20 p-2 text-rose-900 dark:text-rose-200"
+              >
+                <i class="fas fa-triangle-exclamation mr-1"></i>
+                <b>{{ cocokHasil.ringkas.transferYatim }} baris transfer yatim</b> senilai Rp
+                {{ rp(cocokHasil.ringkas.transferYatimRp) }} — uang di Riwayat dari transfer yang
+                TIDAK berstatus terverifikasi (ditolak atau sudah dihapus). Periksa di Verifikasi
+                Pembayaran, lalu hapus barisnya dari Buku Induk.
+                <span class="block mt-1 opacity-80">{{ ringkasYatim }}</span>
+              </p>
+
+              <div
+                v-if="cocokHasil.kurangTercatat.length"
+                class="rounded-lg border border-rose-200 dark:border-rose-800 p-2 space-y-1"
+              >
+                <div class="flex items-center justify-between gap-2 flex-wrap">
+                  <p class="text-[11px] font-black text-rose-800 dark:text-rose-300">
+                    Tagihan yang uangnya SUDAH masuk tapi belum diakui
+                  </p>
+                  <button
+                    v-if="bolehHapusTagihan"
+                    :disabled="cocokTambalBusy"
+                    class="px-3 py-1.5 text-[10px] font-black rounded-lg bg-rose-600 hover:bg-rose-700 text-white disabled:opacity-50"
+                    @click="tambalKurangTercatat"
+                  >
+                    <i
+                      :class="[
+                        'fas',
+                        cocokTambalBusy ? 'fa-spinner fa-spin' : 'fa-wand-magic-sparkles',
+                        'mr-1'
+                      ]"
+                    ></i>
+                    Akui {{ cocokHasil.kurangTercatat.length }} pembayaran
+                  </button>
+                </div>
+                <ul class="text-[11px] list-disc pl-4 text-[var(--text-secondary)]">
+                  <li v-for="t in cocokHasil.kurangTercatat.slice(0, 25)" :key="t.tagihan.id">
+                    <b>{{ t.nama || t.santriId }}</b> — {{ t.jenis }} {{ t.periode }}: tagihan
+                    mengakui Rp {{ rp(t.terbayar) }} dari Rp {{ rp(t.nominal) }}, riwayat mencatat
+                    Rp {{ rp(t.diRiwayat) }}
+                  </li>
+                </ul>
+                <p v-if="cocokHasil.kurangTercatat.length > 25" class="text-[10px] italic">
+                  …dan {{ cocokHasil.kurangTercatat.length - 25 }} lagi (semua ikut diproses)
+                </p>
+              </div>
+
+              <details v-if="cocokHasil.lebihTercatat.length" class="text-[11px]">
+                <summary class="cursor-pointer font-bold text-amber-800 dark:text-amber-300">
+                  {{ cocokHasil.lebihTercatat.length }} tagihan mengaku terbayar melebihi riwayat —
+                  periksa manual
+                </summary>
+                <ul class="list-disc pl-4 mt-1 text-[var(--text-secondary)]">
+                  <li v-for="t in cocokHasil.lebihTercatat.slice(0, 25)" :key="t.tagihan.id">
+                    <b>{{ t.nama || t.santriId }}</b> — {{ t.jenis }} {{ t.periode }}: tagihan Rp
+                    {{ rp(t.terbayar) }}, riwayat hanya Rp {{ rp(t.diRiwayat) }}
+                  </li>
+                </ul>
+                <p class="mt-1 italic opacity-80">
+                  TIDAK ditambal otomatis: menurunkan angka terbayar = menagih ulang orang yang
+                  mungkin sudah membayar lewat jalur lama.
+                </p>
+              </details>
+
+              <div
+                v-if="cocokHasil.statusMeleset.length"
+                class="rounded-lg border border-violet-200 dark:border-violet-800 p-2 space-y-1"
+              >
+                <div class="flex items-center justify-between gap-2 flex-wrap">
+                  <p class="text-[11px] font-black text-violet-800 dark:text-violet-300">
+                    Kolom status tak sesuai sisa
+                  </p>
+                  <button
+                    v-if="bolehHapusTagihan"
+                    :disabled="cocokTambalBusy"
+                    class="px-3 py-1.5 text-[10px] font-black rounded-lg bg-violet-600 hover:bg-violet-700 text-white disabled:opacity-50"
+                    @click="selaraskanStatusTagihan"
+                  >
+                    <i class="fas fa-arrows-rotate mr-1"></i>Selaraskan
+                    {{ cocokHasil.statusMeleset.length }}
+                  </button>
+                </div>
+                <ul class="text-[11px] list-disc pl-4 text-[var(--text-secondary)]">
+                  <li v-for="t in cocokHasil.statusMeleset.slice(0, 15)" :key="t.tagihan.id">
+                    <b>{{ t.nama || t.santriId }}</b> — kolom "{{ t.statusKolom }}", hitungan "{{
+                      t.statusHitung
+                    }}" (Rp {{ rp(t.terbayar) }} / Rp {{ rp(t.nominal) }})
+                  </li>
+                </ul>
+              </div>
+
+              <p
+                v-if="
+                  !cocokHasil.kurangTercatat.length &&
+                  !cocokHasil.lebihTercatat.length &&
+                  !cocokHasil.statusMeleset.length &&
+                  !cocokHasil.transferYatim.length
+                "
+                class="text-[11px] font-bold text-emerald-800 dark:text-emerald-200"
+              >
+                <i class="fas fa-check-circle mr-1"></i>Cocok —
+                {{ cocokHasil.ringkas.tagihanDiperiksa }} tagihan diperiksa, tak ada selisih antara
+                Riwayat dan Tagihan.
+              </p>
+              <p v-if="!bolehHapusTagihan" class="text-[10px] italic text-[var(--text-tertiary)]">
+                Perbaikan hanya bisa dilakukan super admin.
+              </p>
+            </div>
+          </div>
+        </div>
+
         <!-- Kyai 7 Agu 2026: simulasi PEMASUKAN bulanan — pasangan simulasi plafon bisyaroh
              (yang itu uang keluar, ini uang masuk). HANYA jenis bulanan. -->
         <div
@@ -3400,6 +3594,7 @@ import {
   queryColl,
   setOne,
   mergeOne,
+  updateOne,
   deleteOne,
   serverTimestamp,
   subscribeDoc
@@ -3446,6 +3641,18 @@ import { simulasiPemasukan as hitungPemasukan } from '@/utils/simulasiPemasukan'
 import { matchSekolahSini } from '@/utils/statusSantri'
 // Kyai 8 Agu 2026: merapikan tagihan ngaji yang kini menempel ke jenis lain
 import { pilahTagihanGabungan, totalNominal } from '@/utils/rapikanGabungan'
+// v.1.4.2 (Kyai 5 Sep 2026): pencocokan Buku Induk ⇄ keuangan_tagihan — murni + 27 tes.
+import {
+  periksaKecocokanBayar,
+  payloadTambalKurang,
+  payloadSelaraskanStatus,
+  petaBayarPerSel,
+  kodePeriodeBaris,
+  kunciSel,
+  jenisTagihan,
+  SUMBER_BAYAR_SANTRI
+} from '@/utils/cocokBayarTagihan'
+import { statusTagihan as statusTagihanUtil } from '@/utils/tagihan'
 import { writeAuditLog } from '@/utils/auditLog'
 import { useAuthStore } from '@/stores/auth'
 import { isSuperAdmin } from '@/utils/roleScope'
@@ -3790,6 +3997,184 @@ async function hapusKelompok(daftar, sebab) {
   if (gagal) toast.warning(`${ok} tagihan dihapus, ${gagal} gagal.`)
   else toast.success(`${ok} tagihan dihapus.`)
   await periksaTagihanGabungan()
+}
+
+// ── Kyai 5 Sep 2026: tagihan baru HARUS mengakui uang yang sudah masuk ──────
+//
+// "di riwayat keuangan ada tagihan yg sudah di bayar, tapi di tagihan santri itu masih
+//  ada." Inilah pabriknya. Bayar di muka SENGAJA tak membuat baris tagihan (aturan Kyai:
+// yang sudah lunas jangan masuk daftar tagihan) — pembayarannya cukup duduk di Buku Induk
+// dengan `periode_kode`. Tapi ketika bulan itu tiba dan tagihannya digenerate, ia lahir
+// dengan `terbayar: 0`: generator hanya memeriksa tagihan KEMBAR, tak pernah menengok
+// Buku Induk. Uang sudah diterima, tunggakannya terbit lagi.
+//
+// Sekarang tiap tagihan baru dibuka dengan angka yang sudah tercatat di Buku Induk untuk
+// (santri × jenis × periode) yang sama. HANYA berlaku untuk tagihan yang BARU dibuat —
+// baris yang sudah ada tak pernah disentuh generator, dan memang tak boleh.
+//
+// Query-nya lewat kolom RIIL `sumber` lalu disaring di klien: `periode_kode` tinggal di
+// ekor jsonb, dan kalau penyaringan sisi-server untuk ekor itu suatu saat berubah, yang
+// terjadi bukan error melainkan DIAM — tagihan lahir dengan 0 lagi dan tak ada yang tahu.
+// Gagal baca → kembali ke perilaku lama (terbayar 0) + peringatan, JANGAN membatalkan
+// generate: tagihan yang tak terbit sama sekali lebih merugikan.
+async function petaPrabayar(kodePeriodeList) {
+  const kodes = new Set((kodePeriodeList || []).filter(Boolean))
+  if (!kodes.size) return new Map()
+  try {
+    const rows = await queryColl('keuangan_buku_induk', [['sumber', 'in', SUMBER_BAYAR_SANTRI]])
+    return petaBayarPerSel(rows.filter((b) => kodes.has(kodePeriodeBaris(b))))
+  } catch (e) {
+    console.warn('[petaPrabayar] gagal baca buku induk:', e?.message)
+    toast.warning('Pembayaran di muka tak bisa dibaca — tagihan baru dibuat dengan terbayar 0.')
+    return new Map()
+  }
+}
+
+/** Terapkan pembayaran di muka ke payload tagihan yang BARU akan ditulis. */
+function terapkanPrabayar(payload, peta) {
+  if (!peta || !peta.size) return payload
+  const kode = kodePeriodeBaris(payload)
+  if (!kode) return payload
+  const bayar = peta.get(kunciSel(payload.santri_id, jenisTagihan(payload), kode))
+  if (!bayar || bayar.total <= 0) return payload
+  // Tak pernah melebihi nominal: kelebihan bayar bukan urusan generator, dan menuliskannya
+  //   membuat tagihan tampak "lebih" di laporan.
+  payload.terbayar = Math.min(bayar.total, payload.nominal || bayar.total)
+  payload.status = statusTagihanUtil(payload.nominal, payload.terbayar)
+  payload.prabayar_dari = bayar.baris.map((b) => b.id).filter(Boolean)
+  return payload
+}
+
+// ── Kyai 5 Sep 2026: Cek Riwayat vs Tagihan ─────────────────────────────────
+// "di riwayat keuangan ada tagihan yg sudah di bayar, tapi di tagihan santri itu masih
+//  ada" + "ada yg belum bayar tapi di riwayat tertulis di bayar."
+//
+// Sebabnya bukan satu bug, melainkan bentuk penyimpanannya: uang santri hidup di DUA
+// tabel yang ditulis TERPISAH dan tanpa transaksi bersama (buku induk = Riwayat,
+// keuangan_tagihan = Tagihan). Empat jalur yang bisa memutus keduanya diuraikan di
+// utils/cocokBayarTagihan. Yang bisa dilakukan layar ini: membandingkan ANGKANYA, dan
+// memberi Kyai daftar barisnya sebelum satu rupiah pun ditulis.
+//
+// SENGAJA getAll penuh, alasannya sama dengan periksaTagihanGabungan di atas: pencocokan
+// ini mengindeks SELURUH buku induk per (santri × jenis × periode), termasuk baris tahun
+// lalu — bayar di muka bisa mendahului tagihannya berbulan-bulan. Menyempitkan query akan
+// membuat pembayaran yang sah hilang dari indeks, dan tagihan yang sudah lunas ikut
+// dilaporkan sebagai selisih. Ini alat sesekali yang Kyai jalankan sendiri, bukan jalur
+// panas yang dimuat tiap halaman dibuka.
+const cocokBusy = ref(false)
+const cocokTambalBusy = ref(false)
+const cocokHasil = ref(null)
+
+function rp(n) {
+  return Number(n || 0).toLocaleString('id-ID')
+}
+const ringkasYatim = computed(() =>
+  (cocokHasil.value?.transferYatim || [])
+    .slice(0, 5)
+    .map((x) => `${x.nama || x.santriId} (${x.refStatus})`)
+    .join(' · ')
+)
+
+async function periksaCocokBayar() {
+  if (cocokBusy.value) return
+  cocokBusy.value = true
+  try {
+    const [tagihan, buku, santri, pending] = await Promise.all([
+      getAll('keuangan_tagihan'),
+      getAll('keuangan_buku_induk'),
+      getAll('santri'),
+      // Transfer pending boleh gagal dibaca (izin) — pemeriksaan lain tetap jalan, dan
+      //   utilnya memang melewati kelompok "transfer yatim" bila daftarnya tak diberikan.
+      getAll('pembayaran_transfer_pending').catch(() => null)
+    ])
+    cocokHasil.value = periksaKecocokanBayar(tagihan, buku, {
+      transferPending: pending,
+      namaSantri: new Map((santri || []).map((s) => [String(s.id), s.nama || '']))
+    })
+  } catch (e) {
+    toast.error('Gagal memeriksa: ' + (e?.message || e))
+  } finally {
+    cocokBusy.value = false
+  }
+}
+
+/** Akui pembayaran yang sudah ada di Buku Induk ke tagihannya.
+ *  Yang ditulis HANYA `terbayar` + `status` + jejak rekonsiliasi — nominal tagihan tak
+ *  disentuh dan tak ada baris buku induk yang dibuat: uangnya memang sudah tercatat. */
+async function tambalKurangTercatat() {
+  const daftar = cocokHasil.value?.kurangTercatat || []
+  if (!daftar.length || cocokTambalBusy.value || !bolehHapusTagihan.value) return
+  const nilai = daftar.reduce((s, t) => s + Number(t.selisih || 0), 0)
+  if (
+    !confirm(
+      `Akui ${daftar.length} pembayaran senilai Rp ${rp(nilai)} ke tagihannya?\n\n` +
+        'Yang diubah hanya kolom "terbayar" + status pada tagihan tsb, mengikuti uang yang ' +
+        'SUDAH tercatat di Buku Induk. Tidak ada uang baru yang dicatat dan nominal tagihan ' +
+        'tidak berubah.\n\nPeriksa dulu daftarnya di layar — sesudah ditulis tak ada undo.'
+    )
+  )
+    return
+  cocokTambalBusy.value = true
+  const stamp = new Date().toISOString()
+  let ok = 0
+  let gagal = 0
+  for (const t of daftar) {
+    try {
+      await updateOne('keuangan_tagihan', String(t.tagihan.id), payloadTambalKurang(t, stamp))
+      ok++
+    } catch (e) {
+      gagal++
+      console.warn('[cocokBayar] tambal gagal', t.tagihan.id, e?.message)
+    }
+  }
+  await writeAuditLog({
+    operator: _auth.sesiAktif?.nama || _auth.sesiAktif?.guru || 'Admin',
+    action: 'bulk_update',
+    target: 'keuangan_tagihan',
+    detail: `rekonsiliasi riwayat→tagihan: ${ok} diakui (Rp ${rp(nilai)}), ${gagal} gagal`
+  })
+  cocokTambalBusy.value = false
+  if (gagal) toast.warning(`${ok} tagihan diperbarui, ${gagal} gagal — cek console.`)
+  else toast.success(`${ok} pembayaran diakui ke tagihannya.`)
+  await periksaCocokBayar()
+}
+
+/** Selaraskan KOLOM status dengan sisa hasil hitung. Tak menyentuh angka uang sama sekali
+ *  — hanya membuat POS/notifikasi (yang menyaring lewat kolom) sepakat dengan layar
+ *  Tagihan (yang menghitung sisa). */
+async function selaraskanStatusTagihan() {
+  const daftar = cocokHasil.value?.statusMeleset || []
+  if (!daftar.length || cocokTambalBusy.value || !bolehHapusTagihan.value) return
+  if (
+    !confirm(
+      `Selaraskan status ${daftar.length} tagihan dengan sisa hasil hitung?\n\n` +
+        'Tidak ada angka uang yang diubah — hanya label status (belum/partial/lunas) ' +
+        'supaya POS, notifikasi, dan layar Tagihan tak lagi berselisih.'
+    )
+  )
+    return
+  cocokTambalBusy.value = true
+  let ok = 0
+  let gagal = 0
+  for (const t of daftar) {
+    try {
+      await updateOne('keuangan_tagihan', String(t.tagihan.id), payloadSelaraskanStatus(t))
+      ok++
+    } catch (e) {
+      gagal++
+      console.warn('[cocokBayar] status gagal', t.tagihan.id, e?.message)
+    }
+  }
+  await writeAuditLog({
+    operator: _auth.sesiAktif?.nama || _auth.sesiAktif?.guru || 'Admin',
+    action: 'bulk_update',
+    target: 'keuangan_tagihan',
+    detail: `selaraskan kolom status: ${ok} diperbarui, ${gagal} gagal`
+  })
+  cocokTambalBusy.value = false
+  if (gagal) toast.warning(`${ok} status diperbarui, ${gagal} gagal — cek console.`)
+  else toast.success(`${ok} status diselaraskan.`)
+  await periksaCocokBayar()
 }
 
 // ── Kyai 7 Agu 2026: Simulasi PEMASUKAN bulanan syahriyah ────────────────────
@@ -5761,6 +6146,15 @@ async function autoGenerate(dryRun = false) {
       generating.value = false
       return dryRun ? [] : undefined
     }
+    // v.1.4.2: dibaca SEKALI untuk seluruh putaran (bulanan + tahunan), bukan per santri.
+    //   Kodenya DITURUNKAN dari periode yang sama dengan yang ditulis ke tagihan — jangan
+    //   memakai `kodeBulan()` di sini: itu 'YYYYMM' (potongan id), sedangkan kunci
+    //   pencocokan berbentuk 'YYYY-MM' / 'TA####'. Salah bentuk = tak pernah cocok, dan
+    //   diam-diam: tagihan tetap lahir dengan terbayar 0 tanpa satu pun galat.
+    const _prabayar = await petaPrabayar([
+      kodePeriodeBaris({ periode: periodeBulan }),
+      kodePeriodeBaris({ periode: periodeTahun })
+    ])
     for (const j of jenisAuto) {
       const tahunan = j.frekuensi === 'tahunan'
       const periode = tahunan ? periodeTahun : periodeBulan
@@ -5807,6 +6201,11 @@ async function autoGenerate(dryRun = false) {
         // Field tambahan HANYA bila relevan — supaya bentuk baris tagihan biasa tetap
         //   sama persis seperti sebelumnya (tak ada kejutan di pembaca lama).
         if (h.komponen.length) payload.komponen = h.komponen
+        // v.1.4.2: akui uang yang SUDAH masuk untuk periode ini (bayar di muka).
+        //   Ikut di dryRun supaya pratinjau memperlihatkan angka yang sebenarnya akan
+        //   terbit — pratinjau yang lebih besar dari kenyataan adalah cara termudah
+        //   salah memutuskan.
+        terapkanPrabayar(payload, _prabayar)
         if (dryRun) {
           rencana.push(payload)
           continue
@@ -6128,6 +6527,8 @@ async function doGenKhusus() {
     const katLower = kategori.toLowerCase()
     const katSlug = slugId(kategori)
     const perSlug = slugId(periode)
+    // v.1.4.2: pembayaran di muka untuk periode ini — dibaca sekali, bukan per santri.
+    const _prabayarKhusus = await petaPrabayar([kodePeriodeBaris({ periode })])
     let created = 0,
       skipped = 0,
       errCount = 0
@@ -6148,20 +6549,27 @@ async function doGenKhusus() {
         continue
       }
       try {
-        await setOne('keuangan_tagihan', id, {
-          id,
-          santri_id: String(sx.id),
-          santri_nama: sx.nama || '',
-          kategori,
-          periode,
-          nominal,
-          terbayar: 0,
-          status: 'belum',
-          pos: genPos.value || '',
-          jatuh_tempo: genJatuhTempo.value || '',
-          sumber: 'generate_khusus',
-          created_at: serverTimestamp()
-        })
+        // v.1.4.2: dibuka dengan uang yang SUDAH masuk untuk (santri × jenis × periode)
+        //   ini — lihat petaPrabayar. Tanpa ini, santri yang membayar di muka menerima
+        //   tagihannya kembali sebagai tunggakan.
+        const payloadKhusus = terapkanPrabayar(
+          {
+            id,
+            santri_id: String(sx.id),
+            santri_nama: sx.nama || '',
+            kategori,
+            periode,
+            nominal,
+            terbayar: 0,
+            status: 'belum',
+            pos: genPos.value || '',
+            jatuh_tempo: genJatuhTempo.value || '',
+            sumber: 'generate_khusus',
+            created_at: serverTimestamp()
+          },
+          _prabayarKhusus
+        )
+        await setOne('keuangan_tagihan', id, payloadKhusus)
         created++
       } catch (e) {
         errCount++

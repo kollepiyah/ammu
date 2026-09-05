@@ -401,6 +401,25 @@
                 >
                   {{ b.kategori }}
                 </span>
+                <!-- v.1.4.2 (Kyai 5 Sep 2026): cara bayar tak pernah tampil di layar ini,
+                     padahal PDF-nya sudah memisahkan Tunai/Transfer. Jadi Uang Buku &
+                     Uang Kegiatan tak bisa dicocokkan dengan laci tanpa mencetak dulu. -->
+                <span
+                  :class="[
+                    'ml-1 px-1.5 py-0.5 rounded font-black',
+                    metodeTransaksi(b) === 'Transfer'
+                      ? 'bg-sky-100 text-sky-700'
+                      : 'bg-emerald-100 text-emerald-700'
+                  ]"
+                >
+                  <i
+                    :class="[
+                      'fas',
+                      metodeTransaksi(b) === 'Transfer' ? 'fa-building-columns' : 'fa-money-bill'
+                    ]"
+                  ></i>
+                  {{ metodeTransaksi(b) }}
+                </span>
                 <span
                   v-if="b.sumber === 'pos_santri'"
                   class="ml-1 text-emerald-600 font-bold"

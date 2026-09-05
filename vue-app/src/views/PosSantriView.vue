@@ -591,6 +591,17 @@ async function handleSimpan(payload) {
           docData.keterangan += ` — potongan ${docData.potongan_label} ${fmtRp(docData.potongan_nominal)}`
         }
         if (baris.pos) docData.pos = baris.pos
+        // v.1.4.2 (Kyai 5 Sep 2026): dua jejak yang membuat baris ini bisa DICOCOKKAN
+        //   kembali dengan tagihannya. Tanpa keduanya, "riwayat vs tagihan" hanya bisa
+        //   ditebak dari teks keterangan:
+        //     tagihan_id  — baris ini melunasi tagihan yang mana (kosong = bayar di muka,
+        //                   memang belum ada tagihannya)
+        //     induk_jenis — tagihan gabungan dipecah memakai label KOMPONEN ('SPP Sekolah',
+        //                   'Ngaji'), jadi tanpa nama induknya pembayaran gabungan tak akan
+        //                   pernah cocok dengan tagihan 'Syahriyah'-nya.
+        //   Lihat utils/cocokBayarTagihan; baris LAMA masih dibaca lewat keterangan.
+        if (item.tagihan_id) docData.tagihan_id = String(item.tagihan_id)
+        if (baris.induk_jenis) docData.induk_jenis = baris.induk_jenis
         const kasLemb = kasLembagaBaris(
           { kategori: baris.kategori, induk_jenis: baris.induk_jenis },
           petaKas
