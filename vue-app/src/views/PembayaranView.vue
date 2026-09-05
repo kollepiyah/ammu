@@ -131,10 +131,18 @@
               </p>
               <p class="text-[10px] text-[var(--text-secondary)]">
                 {{ fmtTgl(p.tanggal) }} · {{ p.catatan || '-' }}
-                <span v-if="p.sumber === 'transfer_verified'" class="ml-1 text-cyan-700 font-bold"
-                  >[Transfer]</span
+                <!-- v.1.4.2: label cara bayar dulu diturunkan di sini sendiri — `sumber`
+                     'transfer_verified' = Transfer, SELAIN ITU "[Tunai]". Kasir POS yang
+                     memilih Transfer, dan pembayaran VA BMT, karena itu tercetak "Tunai"
+                     di riwayat wali. Sekarang lewat utils/metodeBayar, sumber yang sama
+                     dengan Buku Induk & laporan PDF. -->
+                <span
+                  :class="[
+                    'ml-1 font-bold',
+                    metodeTransaksi(p) === 'Transfer' ? 'text-cyan-700' : 'text-emerald-700'
+                  ]"
+                  >[{{ metodeTransaksi(p) }}]</span
                 >
-                <span v-else class="ml-1 text-emerald-700 font-bold">[Tunai]</span>
               </p>
             </div>
             <div class="text-right">
@@ -668,6 +676,8 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { subscribeColl, setOne, updateOne } from '@/services/db'
+// v.1.4.2: cara bayar disimpulkan satu tempat (Buku Induk, POS, pos dana, riwayat wali).
+import { metodeTransaksi } from '@/utils/metodeBayar'
 import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'

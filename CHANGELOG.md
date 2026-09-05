@@ -188,6 +188,12 @@ baru web). v.1.4.2 sendiri **frontend murni** — tak ada migrasi baru.
   kolom Cara Bayar sejak v.1.2.6 — yang tak ada adalah penandanya **di layar**, jadi tak
   bisa dicocokkan dengan laci tanpa mencetak dulu. Badge-nya ditambahkan.
 
+  Ketemu satu lagi sambil memeriksa: **Riwayat pembayaran wali menulis "[Tunai]" untuk apa
+  pun yang bukan `transfer_verified`** — label itu diturunkan sendiri di dalam template,
+  bukan lewat `utils/metodeBayar`. Jadi transaksi POS yang kasirnya memilih **Transfer**,
+  dan pembayaran VA BMT, tercetak "Tunai" di layar yang dibaca wali. Kini lewat sumber yang
+  sama dengan Buku Induk dan laporan PDF.
+
 ### Diketahui, belum ditutup
 
 - **Pembayaran VA BMT menulis ke tempat yang salah.** RPC `apply_bmt_payment` mencatat
