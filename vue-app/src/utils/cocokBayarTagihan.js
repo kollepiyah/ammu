@@ -102,6 +102,53 @@ export function jenisBarisBuku(b) {
   return jenisKunci(b?.kategori || b?.jenis)
 }
 
+/**
+ * Alokasi EKSPLISIT sebuah baris buku induk → [{ tagihanId, nominal }].
+ *
+ * Dua bentuk, dua penulis:
+ *   · `tagihan_id`  — POS Santri (v.1.4.2): satu baris melunasi satu tagihan.
+ *   · `alokasi[]`   — RPC VA BMT (v.1.4.2): SATU transfer bisa melunasi beberapa tagihan
+ *                     sekaligus, jadi rinciannya disimpan per tagihan.
+ *
+ * Baris yang punya alokasi eksplisit TIDAK ikut dijumlahkan lewat (santri × jenis ×
+ * periode) — kalau ikut, uangnya terhitung DUA KALI dan tagihan yang sehat akan
+ * dilaporkan sebagai "lebih tercatat".
+ *
+ * Kenapa ini penting untuk VA: baris `bmt_va` tak punya `kategori` maupun `periode_kode`
+ * sama sekali, jadi tanpa jalur ini ia tak masuk hitungan mana pun — dan tagihan yang
+ * separuh dibayar POS lalu dilunasi VA akan tampak "lebih tercatat" padahal benar.
+ */
+export function alokasiEksplisit(b) {
+  const out = []
+  const langsung = String(b?.tagihan_id || '').trim()
+  if (langsung) out.push({ tagihanId: langsung, nominal: Number(b?.nominal || 0) })
+  const rinci = Array.isArray(b?.alokasi) ? b.alokasi : b?.data?.alokasi
+  for (const a of Array.isArray(rinci) ? rinci : []) {
+    const id = String(a?.tagihan_id || '').trim()
+    const nom = Number(a?.nominal || 0)
+    if (id && nom > 0) out.push({ tagihanId: id, nominal: nom })
+  }
+  return out
+}
+
+/** Peta tagihan_id → { total, baris[] } dari alokasi eksplisit. */
+export function petaBayarPerTagihan(bukuInduk, sumberSah = SUMBER_BAYAR_SANTRI) {
+  const sah = new Set(sumberSah.map(String))
+  const peta = new Map()
+  for (const b of bukuInduk || []) {
+    if (!b) continue
+    if (!sah.has(String(b.sumber || ''))) continue
+    if (String(b.tipe || 'masuk') !== 'masuk') continue
+    for (const a of alokasiEksplisit(b)) {
+      const ada = peta.get(a.tagihanId) || { total: 0, baris: [] }
+      ada.total += a.nominal
+      if (!ada.baris.includes(b)) ada.baris.push(b)
+      peta.set(a.tagihanId, ada)
+    }
+  }
+  return peta
+}
+
 /** Kunci sel: satu (santri × jenis × periode). */
 export function kunciSel(santriId, jenis, kode) {
   return `${String(santriId ?? '')}|${jenisKunci(jenis)}|${String(kode ?? '')}`
@@ -121,6 +168,9 @@ export function petaBayarPerSel(bukuInduk, sumberSah = SUMBER_BAYAR_SANTRI) {
     if (!b) continue
     if (!sah.has(String(b.sumber || ''))) continue
     if (String(b.tipe || 'masuk') !== 'masuk') continue
+    // Sudah tertaut ke tagihan tertentu → dihitung di petaBayarPerTagihan, bukan di sini.
+    //   Menghitungnya dua kali membuat tagihan sehat dilaporkan "lebih tercatat".
+    if (alokasiEksplisit(b).length) continue
     const sid = String(b.santri_id ?? b?.data?.santri_id ?? '')
     if (!sid) continue
     const kode = kodePeriodeBaris(b)
@@ -154,6 +204,7 @@ const AMBANG = 0.5
  */
 export function periksaKecocokanBayar(tagihanList, bukuInduk, opsi = {}) {
   const peta = petaBayarPerSel(bukuInduk)
+  const petaId = petaBayarPerTagihan(bukuInduk)
   const nama = (id) => {
     const n = opsi.namaSantri
     if (!n) return ''
@@ -190,13 +241,18 @@ export function periksaKecocokanBayar(tagihanList, bukuInduk, opsi = {}) {
       })
     }
 
-    if (!sid || !kode) continue
-    const k = kunciSel(sid, jenisTagihan(t), kode)
-    const bayar = peta.get(k)
-    if (!bayar) continue
-    terpakai.add(k)
+    // Uang untuk tagihan ini datang lewat DUA jalur yang tak boleh bertumpuk: alokasi
+    //   eksplisit (POS ber-`tagihan_id`, VA BMT ber-`alokasi[]`) dan bucket
+    //   (santri × jenis × periode) untuk baris lama yang tak menyebut tagihannya.
+    const lewatId = petaId.get(String(t.id || ''))
+    const k = sid && kode ? kunciSel(sid, jenisTagihan(t), kode) : ''
+    const lewatSel = k ? peta.get(k) : null
+    if (!lewatId && !lewatSel) continue
+    if (k && lewatSel) terpakai.add(k)
+    const diRiwayat = (lewatId?.total || 0) + (lewatSel?.total || 0)
+    const barisSemua = [...(lewatId?.baris || []), ...(lewatSel?.baris || [])]
 
-    const selisih = bayar.total - terbayar
+    const selisih = diRiwayat - terbayar
     const temuan = {
       tagihan: t,
       santriId: sid,
@@ -206,13 +262,13 @@ export function periksaKecocokanBayar(tagihanList, bukuInduk, opsi = {}) {
       kode,
       nominal,
       terbayar,
-      diRiwayat: bayar.total,
+      diRiwayat,
       selisih: Math.abs(selisih),
-      barisBuku: bayar.baris.map((b) => b.id).filter(Boolean),
+      barisBuku: barisSemua.map((b) => b.id).filter(Boolean),
       // Angka yang SEHARUSNYA tercatat bila temuan ini ditambal. Tak pernah melebihi
       //   nominal tagihan: kelebihan bayar bukan urusan alat ini dan menuliskannya akan
       //   membuat tagihan tampak "lebih" di laporan.
-      usulTerbayar: Math.min(Math.max(terbayar, bayar.total), nominal || bayar.total)
+      usulTerbayar: Math.min(Math.max(terbayar, diRiwayat), nominal || diRiwayat)
     }
     if (selisih > AMBANG) kurangTercatat.push(temuan)
     else if (selisih < -AMBANG) lebihTercatat.push(temuan)

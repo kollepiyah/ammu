@@ -19,7 +19,9 @@ import {
   jenisBarisBuku,
   jenisTagihan,
   payloadTambalKurang,
-  payloadSelaraskanStatus
+  payloadSelaraskanStatus,
+  alokasiEksplisit,
+  petaBayarPerTagihan
 } from '@/utils/cocokBayarTagihan'
 
 const tg = (o) => ({
@@ -293,5 +295,76 @@ describe('ringkasan', () => {
     const h = periksaKecocokanBayar(null, null)
     expect(h.ringkas.kurangTercatat).toBe(0)
     expect(h.bayarTanpaTagihan).toEqual([])
+  })
+})
+
+describe('alokasi EKSPLISIT — POS ber-tagihan_id & VA BMT ber-alokasi[]', () => {
+  // Sejak v.1.4.2 sebuah baris buku induk boleh menyebut sendiri tagihan yang dilunasinya.
+  // Dua penulisnya beda bentuk: POS satu tagihan per baris, VA BMT bisa beberapa sekaligus.
+  it('membaca kedua bentuk', () => {
+    expect(alokasiEksplisit({ tagihan_id: 't1', nominal: 90000 })).toEqual([
+      { tagihanId: 't1', nominal: 90000 }
+    ])
+    expect(
+      alokasiEksplisit({
+        nominal: 300000,
+        alokasi: [
+          { tagihan_id: 't1', nominal: 100000 },
+          { tagihan_id: 't2', nominal: 200000 }
+        ]
+      })
+    ).toEqual([
+      { tagihanId: 't1', nominal: 100000 },
+      { tagihanId: 't2', nominal: 200000 }
+    ])
+    expect(alokasiEksplisit({ kategori: 'Syahriyah' })).toEqual([])
+  })
+
+  it('baris ber-alokasi TIDAK dihitung dua kali lewat bucket periode', () => {
+    // Kalau ikut terhitung di dua jalur, tagihan yang SEHAT akan dilaporkan
+    // "lebih tercatat" — persis positif palsu yang paling mahal di alat ini.
+    const buku = [bi({ id: 'p1', tagihan_id: 'tagihan_1_syahriyah_2026-10' })]
+    expect(petaBayarPerSel(buku).size).toBe(0)
+    expect(petaBayarPerTagihan(buku).get('tagihan_1_syahriyah_2026-10').total).toBe(150000)
+    const h = periksaKecocokanBayar([tg({ terbayar: 150000, status: 'lunas' })], buku)
+    expect(h.kurangTercatat).toEqual([])
+    expect(h.lebihTercatat).toEqual([])
+  })
+
+  it('pembayaran VA BMT terlihat walau barisnya tanpa kategori & periode', () => {
+    // Baris `bmt_va` memang tak punya keduanya. Tanpa jalur alokasi ia tak masuk hitungan
+    // mana pun, dan tagihan yang separuh dibayar POS lalu dilunasi VA akan tampak
+    // "lebih tercatat" padahal benar.
+    const buku = [
+      bi({ id: 'pos1', nominal: 50000 }),
+      {
+        id: 'bi_bmt_r9',
+        sumber: 'bmt_va',
+        tipe: 'masuk',
+        santri_id: '1',
+        nominal: 100000,
+        alokasi: [{ tagihan_id: 'tagihan_1_syahriyah_2026-10', nominal: 100000 }]
+      }
+    ]
+    const h = periksaKecocokanBayar([tg({ terbayar: 150000, status: 'lunas' })], buku)
+    expect(h.lebihTercatat).toEqual([])
+    expect(h.kurangTercatat).toEqual([])
+  })
+
+  it('VA yang tak sampai ke tagihan tetap terdeteksi kurang tercatat', () => {
+    const buku = [
+      {
+        id: 'bi_bmt_r9',
+        sumber: 'bmt_va',
+        tipe: 'masuk',
+        santri_id: '1',
+        nominal: 150000,
+        alokasi: [{ tagihan_id: 'tagihan_1_syahriyah_2026-10', nominal: 150000 }]
+      }
+    ]
+    const h = periksaKecocokanBayar([tg()], buku)
+    expect(h.kurangTercatat).toHaveLength(1)
+    expect(h.kurangTercatat[0].diRiwayat).toBe(150000)
+    expect(h.kurangTercatat[0].barisBuku).toEqual(['bi_bmt_r9'])
   })
 })

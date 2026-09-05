@@ -24,8 +24,12 @@ naik satu tiap rilis. Entri lama memakai skema lama `v.{nomor-urut}.{MMDDtahunmu
 
 ⚠️ **Belum dirilis, dan MENUMPUK di atas v.1.4.1 yang juga belum dirilis.** Titik versi
 tetap `1.4.0` (keputusan Kyai, 4 Sep 2026 — belum naik ke Play). Kedua entri ini akan
-terbit bersama; urutan deploy v.1.4.1 tetap berlaku (`npx supabase db push` DULUAN,
-baru web). v.1.4.2 sendiri **frontend murni** — tak ada migrasi baru.
+terbit bersama, dan **`npx supabase db push` tetap DULUAN, baru web** — urutan v.1.4.1
+(`20260904120000_arsip_prestasi_periode_laporan.sql`) masih berlaku, plus satu migrasi baru
+milik v.1.4.2: `20260905120000_bmt_alokasi_utuh.sql`.
+
+Migrasi v.1.4.2 itu **frontend-agnostik** — tak ada kode app yang bergantung padanya, jadi
+urutannya terhadap deploy web bebas. Sisanya frontend murni.
 
 ### Changed
 
@@ -194,17 +198,48 @@ baru web). v.1.4.2 sendiri **frontend murni** — tak ada migrasi baru.
   dan pembayaran VA BMT, tercetak "Tunai" di layar yang dibaca wali. Kini lewat sumber yang
   sama dengan Buku Induk dan laporan PDF.
 
-### Diketahui, belum ditutup
+### Fixed — VA BMT
 
-- **Pembayaran VA BMT menulis ke tempat yang salah.** RPC `apply_bmt_payment` mencatat
-  pelunasan ke ekor jsonb `data.bayar` dan TIDAK pernah menyentuh kolom riil `terbayar`,
-  sementara `utils/tagihan.terbayarDari` memakai kolom itu lebih dulu (jsonb hanya jaring
-  pengaman saat kolomnya 0). Akibatnya, tagihan yang sudah pernah dibayar sebagian lewat
-  POS lalu dilunasi lewat VA akan **menyembunyikan pembayaran VA-nya**; cabang waterfall-nya
-  bahkan menghitung sisa dari jsonb saja, jadi bisa mengalokasikan uang ke tagihan yang
-  sudah lunas. **Belum diperbaiki karena butuh migrasi Supabase**, dan VA BMT masih
-  bergantung `settings.bmt_aktif` yang belum dinyalakan. Jangan menyalakan VA sebelum RPC-nya
-  dibetulkan. Alat "Cek Riwayat vs Tagihan" sudah bisa memperlihatkan akibatnya bila terjadi.
+- **Tak ada lagi rupiah VA yang bisa hilang** (v.1.4.2, migrasi
+  `20260905120000_bmt_alokasi_utuh.sql`).
+
+  **Koreksi catatan sebelumnya di entri ini:** sempat tertulis bahwa RPC
+  `apply_bmt_payment` menulis pelunasan ke ekor jsonb `data.bayar` dan tak pernah menyentuh
+  kolom `terbayar`. **Itu keliru** — yang terbaca adalah versi lama
+  (`20260629110000_bmt_va_uangsaku.sql`); migrasi `20260715120000_tagihan_terbayar_backfill.sql`
+  sudah menulis ulang fungsi itu memakai kolom riil sejak 15 Jul 2026. Peringatan "jangan
+  menyalakan VA BMT" karena itu **dicabut**.
+
+  Memeriksanya ulang memunculkan tiga lubang yang memang masih ada, dan ketiganya berakhir
+  pada satu akibat yang sama: **uang MASUK ke buku induk tapi tidak diterima siapa pun.**
+
+  1. **Item keranjang menunjuk tagihan yang sudah tidak ada.** Keranjang VA dibuat wali,
+     lalu tagihannya dihapus atau di-generate ulang (id-nya berubah) sebelum uangnya
+     datang — bisa berhari-hari, karena dananya menunggu di rekening BMT. `UPDATE`-nya
+     cocok 0 baris, tapi totalnya tetap ditambah seolah berhasil: tak masuk tagihan mana
+     pun, tak masuk uang saku, dan hasil RPC-nya melaporkan angka yang tak terjadi.
+  2. **Jumlah item < total keranjang.** Cabang keranjang tak punya penadah sisa seperti
+     cabang waterfall punya, jadi selisih berapa pun langsung lenyap. `total` dan `items`
+     dikirim klien sebagai dua field terpisah — RPC tak boleh mempercayai aritmetika klien
+     untuk urusan uang.
+  3. **Waterfall menyaring lewat LABEL `status`, bukan angka.** Tagihan yang labelnya
+     terlanjur `lunas` padahal `terbayar < nominal` (persis kelas bug "status meleset" yang
+     ditemukan hari ini) akan dilewati, dan uangnya lari ke uang saku sementara
+     tunggakannya masih berdiri.
+
+  Sekarang fungsinya memberi **tiga jaminan**: (a) `tagihan + uang_saku` selalu berjumlah
+  tepat `p_nominal` — sisa yang tak tersalur ke tagihan SELALU ditadah uang saku, di kedua
+  cabang; (b) tiap item dijepit ke sisa yang belum teralokasi, jadi keranjang cacat tak
+  bisa menciptakan uang; (c) yang dilaporkan hanya baris yang BENAR-BENAR berubah
+  (`GET DIAGNOSTICS`), dan rincian alokasi per tagihan ikut disimpan di baris buku induk
+  (`data.alokasi`) — tanpa itu satu baris VA yang melunasi tiga tagihan tak bisa ditelusuri.
+
+  Uang saku dipilih sebagai penadah karena ia satu-satunya kantong santri yang bisa ditarik
+  atau dipakai membayar kemudian. Membiarkan sisanya menguap berarti wali membayar sesuatu
+  yang tak pernah diterima siapa pun, dan tak ada satu layar pun yang akan menunjukkannya.
+
+  Idempotensinya tidak berubah: guard `keuangan_va_inbox.ref` (primary key) dan
+  `applied_transfer_refs` per tagihan tetap seperti semula.
 
 ### Removed
 
