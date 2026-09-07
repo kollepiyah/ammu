@@ -102,7 +102,7 @@ export function indexAbsensiHarian(rows) {
 // harus tetap terhitung hadir — kalau tanggalnya dibuang, kehadiran itu lenyap dan
 // bisyaroh `× kehadiran`-nya ikut hilang. Jadi: yang digugurkan hanya HUKUMANNYA.
 //
-// v.1.4.2 `belumMulaiHariIni` (Kyai, 5 Sep 2026: "shift yg belum dimulai jangan dihitung
+// v.1.4.1 `belumMulaiHariIni` (Kyai, 5 Sep 2026: "shift yg belum dimulai jangan dihitung
 // alpa") = shift ini belum dibuka pada jam sekarang. Hanya mengenai HARI INI — tanggal
 // kemarin tetap alpa berapa pun jamnya. Perlakuannya sengaja sama persis dengan
 // `bukanJadwal`: yang digugurkan HUKUMANNYA, bukan tanggalnya, jadi guru yang sudah

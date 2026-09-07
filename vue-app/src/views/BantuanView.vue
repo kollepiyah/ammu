@@ -555,7 +555,7 @@ const introText = computed(() =>
 const lembagaName = computed(
   () => settings.settings?.namaLembaga || 'Pondok Pesantren Mambaul Ulum'
 )
-const version = computed(() => settings.settings?.appVersion || 'v.1.4.0')
+const version = computed(() => settings.settings?.appVersion || 'v.1.4.1')
 const logoSrc = computed(() => settings.settings?.logoUrl || '/logo.png')
 
 const sections = [
@@ -800,7 +800,7 @@ async function resetFaq() {
 //   riwayat lengkap ada di CHANGELOG.md untuk pengembang.
 const rilis = [
   {
-    versi: 'v.1.4.0',
+    versi: 'v.1.4.1',
     tgl: 'September 2026',
     items: [
       'Rekap absen bulanan guru jauh lebih ringan — membuka halamannya dan membetulkan absen dengan klik tak lagi tersendat, terutama di HP dan PC yang lebih tua.',

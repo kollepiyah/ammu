@@ -2,7 +2,7 @@
 //   preview di dalam app (ReceiptModal). Bukan untuk cetak; tombol cetak tidak ada.
 //   buildReceiptStrukHtml -> bukti pembayaran santri. buildSlipBisyarohHtml -> slip gaji guru.
 import { terbilangRupiah } from './terbilang'
-// v.1.4.2: jendela absensi slip (25 → 24) — SATU sumber dengan yang dipakai menghitung.
+// v.1.4.1: jendela absensi slip (25 → 24) — SATU sumber dengan yang dipakai menghitung.
 import { labelPeriodeBisyaroh } from './periodeBisyaroh'
 import { muassisDataUrlSync, MUASSIS_URL } from '@/utils/kopMuassis' // v.100: baris-1 KOP = gambar muassis
 
@@ -256,7 +256,7 @@ export function buildSlipBisyarohHtml(slip = {}, s = {}) {
     '</table></td>' +
     '<td style="vertical-align:top;"><table style="border-collapse:collapse;">' +
     infoRow('Periode', fmtPeriode(slip.periode)) +
-    // v.1.4.2 (Kyai, 5 Sep 2026): jendela absensi slip = tgl 25 bulan sebelumnya s/d 24
+    // v.1.4.1 (Kyai, 5 Sep 2026): jendela absensi slip = tgl 25 bulan sebelumnya s/d 24
     //   bulan periode. Ditulis di slip yang DITERIMA GURU, bukan cuma di layar admin:
     //   tanpa baris ini, "Periode September" yang bonus kehadirannya menghitung akhir
     //   Agustus akan terbaca sebagai salah hitung oleh orang yang menerimanya.

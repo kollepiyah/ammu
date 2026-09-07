@@ -73,7 +73,7 @@ export function slotBolehAlpa(iso, hariIni, jamKini, jamMulai) {
   if (t < h) return true
   if (t > h) return false
   const mulai = normHHMM(jamMulai)
-  if (!mulai) return true // jam shift belum diatur → seperti sebelum v.1.4.2
+  if (!mulai) return true // jam shift belum diatur → seperti sebelum v.1.4.1
   const kini = normHHMM(jamKini)
   if (!kini) return true // jam tak terbaca → jangan menghapus alpa yang sah
   return kini >= mulai

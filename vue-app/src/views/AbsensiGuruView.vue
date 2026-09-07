@@ -1365,7 +1365,7 @@ import { buildLiburScope, liburKenaLembaga } from '@/utils/liburScope' // v.1.2.
 import { lembagaKalenderShift, lembagaLabelShift } from '@/utils/lembagaShift'
 // v.1.3.8: "tanggal ini jadwal mengajarnya atau bukan" — guru paruh-waktu tak lagi dialpakan.
 import { guruMasukPada, tanggalBukanJadwal } from '@/utils/jadwalGuru'
-// v.1.4.2: "shift ini sudah dimulai belum" (Kyai, 5 Sep 2026) — sumber tunggal aturan jamnya.
+// v.1.4.1: "shift ini sudah dimulai belum" (Kyai, 5 Sep 2026) — sumber tunggal aturan jamnya.
 import { jamJakarta, kunciBelumMulai, setDariKunci } from '@/utils/shiftBerjalan'
 // v.21.114.0528: pakai kegiatan composable utk derive hari libur dari event multi-day
 import { useKegiatan } from '@/composables/useKegiatan'
@@ -2290,7 +2290,7 @@ const rekapUnitData = computed(() => {
       const kerja = range.filter((iso) => !isLiburIso(iso, lembagaKalenderShift(g, shift, s)))
       // v.1.3.8: hari di luar jadwal guru ini tetap DIHITUNG (kalau ternyata ada barisnya,
       //   guru itu memang datang), tapi tak boleh jadi alpa saat kosong.
-      // v.1.4.2: begitu pula shift yang JAM MULAI-nya belum tiba hari ini — rekap pagi hari
+      // v.1.4.1: begitu pula shift yang JAM MULAI-nya belum tiba hari ini — rekap pagi hari
       //   tak lagi mengalpakan seisi shift Sore (Kyai, 5 Sep 2026).
       const sel = hitungSel(
         idx,
@@ -2608,7 +2608,7 @@ function getAbsensiCell(guruId, shift, d) {
 //   semenit sekali ini hanya benar-benar menyentuh matriks satu kali dalam sehari.
 const hariIniWib = ref(todayJakarta())
 
-// v.1.4.2 (Kyai, 5 Sep 2026: "shift yg belum dimulai jangan dihitung alpa"). Ikut denyut
+// v.1.4.1 (Kyai, 5 Sep 2026: "shift yg belum dimulai jangan dihitung alpa"). Ikut denyut
 //   yang SAMA, dan dengan alasan yang sama: yang disimpan bukan jam mentah melainkan
 //   KUNCI daftar shift yang belum dibuka ('sore|pegawai_sore'). Jam mentah berubah tiap
 //   menit → matriks 6.000 sel dirakit ulang 1.440 kali sehari; kunci ini hanya berubah

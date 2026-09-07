@@ -1924,7 +1924,7 @@ const petaPrestasiBulanLalu = computed(() =>
   petaPrestasiPeriode(riwayatPrestasiRaw.value, periodeSebelumnya(periodeSel.value))
 )
 
-// v.1.4.2 — Kyai, 5 Sep 2026: spanduk "N santri isiannya tersimpan di Rekap <bulan lalu>"
+// v.1.4.1 — Kyai, 5 Sep 2026: spanduk "N santri isiannya tersimpan di Rekap <bulan lalu>"
 //   DIHAPUS, menyusul tombol "Tinjau & pindahkan" pada permintaan sebelumnya di hari yang
 //   sama. Beserta itu `snapshotSalahJendela` (utils/prestasiBulanan) dan tesnya ikut hilang
 //   — tak ada lagi pembacanya.

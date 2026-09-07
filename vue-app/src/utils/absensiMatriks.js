@@ -66,7 +66,7 @@ function statusAlpa(a) {
  * `lampau`   = tanggalnya sudah lewat (≤ hari ini). Ini yang menentukan sel boleh
  *              DIKLIK untuk diperbaiki — menandai izin di hari yang sedang berjalan
  *              tetap masuk akal walau shift-nya belum dibuka.
- * `bolehAlpa` = sel KOSONG di sini sudah pantas disebut alpa. v.1.4.2 (Kyai, 5 Sep 2026:
+ * `bolehAlpa` = sel KOSONG di sini sudah pantas disebut alpa. v.1.4.1 (Kyai, 5 Sep 2026:
  *              "shift yg belum dimulai jangan dihitung alpa") memisahkannya dari
  *              `lampau`: hari ini sudah "lampau" sejak pukul 00:00, tapi shift Sore baru
  *              dibuka pukul 15:00. Bila tak diberikan, ia mengikuti `lampau` = perilaku
@@ -101,7 +101,7 @@ export function bangunSel({ d, iso, absen, libur, bukanJadwal, lampau, bolehAlpa
   if (!a) {
     // Kosong & slotnya sudah lewat = alpa; belum terjadi = kosong.
     // v.1.3.8: kecuali memang bukan jadwalnya — titik, bukan 'A'.
-    // v.1.4.2: "sudah lewat" kini menghitung JAM juga (lihat catatan `bolehAlpa` di atas),
+    // v.1.4.1: "sudah lewat" kini menghitung JAM juga (lihat catatan `bolehAlpa` di atas),
     //   jadi shift yang belum dibuka tampil kosong seperti hari depan — bukan 'A' merah.
     const teks = bukanJadwal ? '·' : alpaBoleh ? 'A' : ''
     const kelas = bukanJadwal ? KELAS_BUKAN_JADWAL : alpaBoleh ? KELAS_ALPA : KELAS_BELUM
@@ -166,7 +166,7 @@ export function bangunSel({ d, iso, absen, libur, bukanJadwal, lampau, bolehAlpa
  *   luar jadwal dilewati saat KOSONG — tapi 'alpa' yang Kyai tandai sendiri di hari
  *   seperti itu tetap dihitung (itu penilaian manusia, bukan simpulan sistem).
  *
- *   v.1.4.2: sel KOSONG memakai `bolehAlpa` (tanggal + jam), sedangkan 'alpa' TERTULIS
+ *   v.1.4.1: sel KOSONG memakai `bolehAlpa` (tanggal + jam), sedangkan 'alpa' TERTULIS
  *   tetap memakai `lampau`. Bedanya disengaja: yang pertama simpulan sistem dan tak boleh
  *   mendahului jam shift; yang kedua sudah diketik manusia, dan menahannya sampai shift
  *   dibuka berarti angka A di layar berselisih dengan huruf 'A' di baris yang sama.
@@ -210,7 +210,7 @@ export function rekapBaris(sel, absenSel) {
  * @param {(guru:object, shift:string, iso:string)=>boolean} p.masukOf jadwal mengajar
  * @param {(shift:string)=>string} p.labelShiftOf
  * @param {(shift:string)=>boolean} [p.belumMulaiOf] shift ini belum dibuka pada jam
- *   sekarang (v.1.4.2). Ditanya SEKALI per baris — jawabannya soal jam, tak bergantung
+ *   sekarang (v.1.4.1). Ditanya SEKALI per baris — jawabannya soal jam, tak bergantung
  *   tanggal. Tak diberikan → seluruh hari ini dianggap sudah berjalan (perilaku lama).
  */
 export function bangunMatriksBulanan(p) {
@@ -235,7 +235,7 @@ export function bangunMatriksBulanan(p) {
     const g = row.g
     const labelShift = labelShiftOf(row.shift)
     const lembaga = lembagaOf(g, row.shift) // sekali per baris — tak bergantung tanggal
-    // v.1.4.2: soal JAM, jadi cukup sekali per baris juga (shift-nya tetap sepanjang baris).
+    // v.1.4.1: soal JAM, jadi cukup sekali per baris juga (shift-nya tetap sepanjang baris).
     const belumMulai = typeof belumMulaiOf === 'function' ? !!belumMulaiOf(row.shift) : false
     const sel = []
     const absenSel = []

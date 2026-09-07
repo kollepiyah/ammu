@@ -20,16 +20,25 @@ naik satu tiap rilis. Entri lama memakai skema lama `v.{nomor-urut}.{MMDDtahunmu
 
 ---
 
-## [v.1.4.3 — belum dirilis] — 2026-09-07 — Bukti pembayaran berhenti berbohong "TUNAI"
+## [v.1.4.1] — 2026-09-07 — Bukti pembayaran berhenti berbohong "TUNAI"
 
-⚠️ **Frontend murni.** Tak ada migrasi baru. Menumpuk di atas v.1.4.1 & v.1.4.2 yang
-migrasinya MASIH belum di-`supabase db push`.
+**DIRILIS 7 Sep 2026** — web (`ammuonline.web.app`) dan, lewat pembungkus Capacitor yang
+menunjuk URL yang sama, aplikasi Android. `versionCode` 141 / `versionName` `v.1.4.1`.
+Kedua migrasi Supabase-nya sudah ter-apply (`20260904120000_arsip_prestasi_periode_laporan.sql`
+dan `20260905120000_bmt_alokasi_utuh.sql`, diperiksa lewat `supabase migration list --linked`).
 
-### Konteks: kenapa keluhannya tetap sama sesudah v.1.4.2 tayang
+⚠️ **SATU rilis, tiga gelombang kerja.** Pekerjaan 4, 5, dan 7 September sempat ditulis
+sebagai v.1.4.1 / v.1.4.2 / v.1.4.3 karena titik versinya ditahan di `1.4.0` menunggu Play.
+Keputusan Kyai, 7 Sep 2026: _"naikkan saja di 1.4.1"_ — **satu nomor untuk ketiganya**.
+v.1.4.2 dan v.1.4.3 karena itu **tidak pernah ada**; penandanya di komentar kode dan judul
+tes sudah dilebur jadi `v.1.4.1` (77 penanda di 25 berkas). Catatan ketiga gelombang
+dibiarkan terpisah di bawah ini — isinya tak diubah, hanya nomor dan status rilisnya.
+
+### Konteks: kenapa keluhannya tetap sama sesudah gelombang 2 tayang
 
 Admin keuangan mengulang keluhan yang sama (Kyai, 7 Sep 2026). Yang perlu dipisah:
 
-**Web v.1.4.2 SUDAH tayang** sejak 5 Sep 2026 pk. 16.25 (`assets/index-CVlTMiGe.js` di
+**Web gelombang 2 SUDAH tayang** sejak 5 Sep 2026 pk. 16.25 (`assets/index-CVlTMiGe.js` di
 `ammuonline.web.app` — dan Android memuat URL yang sama lewat Capacitor, jadi tak perlu
 rilis Play). Yang belum: `git push` (5 commit menumpuk di `main` lokal) dan karena itu
 kedua migrasi Supabase juga belum ter-apply.
@@ -37,7 +46,7 @@ kedua migrasi Supabase juga belum ter-apply.
 Jadi keluhannya bertahan karena **dua sebab yang berbeda**, bukan karena perbaikannya
 tak sampai:
 
-1. **Perbaikan v.1.4.2 menutup PABRIKnya, bukan barang yang sudah terlanjur cacat.**
+1. **Perbaikan gelombang 2 menutup PABRIKnya, bukan barang yang sudah terlanjur cacat.**
    Empat jalur yang membuat Riwayat & Tagihan berpisah memang sudah ditutup, tapi baris
    yang SUDAH berselisih sebelum 5 Sep tetap berselisih — tak ada yang membetulkannya
    sendiri. Nama-nama yang disebut admin (Amira Fatimatuz Zahra, Nafatin Niswah, Akifah
@@ -45,16 +54,16 @@ tak sampai:
    dijalankan: **Pengaturan Keuangan › Tagihan › "Cek Riwayat vs Tagihan"**.
    "Riwayat sudah bayar tapi tagihan belum lunas" = **Kurang tercatat** (bisa ditambal
    sekali tekan). "Tagihan lunas tapi di riwayat pos belum ada" = **Lunas tanpa jejak**,
-   daftar yang BARU ADA di rilis ini — sampai v.1.4.2 alatnya diam untuk keadaan itu
+   daftar yang BARU ADA di rilis ini — sampai gelombang 2 alatnya diam untuk keadaan itu
    (lihat bulir terakhir di bawah).
 
-2. **Keluhan soal struk memang BELUM PERNAH diperbaiki.** v.1.4.2 menambah cara bayar di
+2. **Keluhan soal struk memang BELUM PERNAH diperbaiki.** Gelombang 2 menambah cara bayar di
    layar, di daftar riwayat wali, dan di PDF laporan mutasi — tapi tak satu pun menyentuh
    BUKTI yang dicetak. Itu isi rilis ini.
 
 ### Fixed
 
-- **Struk cetak-ulang tak lagi berubah jadi "TUNAI"** (v.1.4.3). Admin keuangan:
+- **Struk cetak-ulang tak lagi berubah jadi "TUNAI"** (v.1.4.1). Admin keuangan:
   _"bukti transaksi anak yg transfer kalo diprint yg ke2 kali ini jadi bukti pembayaran
   tunai."_
 
@@ -70,23 +79,23 @@ tak sampai:
   halaman itu sudah benar sejak v.1.2.6. Layar bilang "Transfer", kertas bilang "TUNAI",
   dan keduanya membaca baris yang sama.
 
-- **Bukti setor/tarik Uang Saku & Tabungan tak lagi selalu "TUNAI"** (v.1.4.3). Admin
+- **Bukti setor/tarik Uang Saku & Tabungan tak lagi selalu "TUNAI"** (v.1.4.1). Admin
   keuangan: _"transaksi uang saku yg transfer, di buktinya tercatat TUNAi."_
 
   Di sini bahkan tak ada cadangan yang bisa disalahkan: ketiga pencetak slip tabungan
   **menuliskan `'TUNAI'` sebagai teks tetap** — `cetakSlipTabunganPdf`,
   `buildSlipTabunganHtml`, dan `tabData` di `escpImage` (jalur cetak-LANGSUNG ESC/P, yang
   justru paling sering dipakai kasir). Wajar untuk kode yang lahir sebelum mutasi tabungan
-  punya field `metode` sama sekali — field itu baru ada di v.1.4.2, dan slipnya tak ikut
+  punya field `metode` sama sekali — field itu baru ada di gelombang 2, dan slipnya tak ikut
   menyusul. Ketiganya kini memanggil `utils/metodeBayar`.
 
-- **Kwitansi yang diunduh WALI ikut berbohong** (v.1.4.3, ketemu sambil memeriksa).
-  v.1.4.2 membetulkan label `[Tunai]`/`[Transfer]` di daftar Riwayat wali, tapi
+- **Kwitansi yang diunduh WALI ikut berbohong** (v.1.4.1, ketemu sambil memeriksa).
+  Gelombang 2 membetulkan label `[Tunai]`/`[Transfer]` di daftar Riwayat wali, tapi
   `buildTrxFromGroup()` — yang merakit bukti untuk dilihat & diunduh — masih menyimpulkan
   sendiri: `sumber === 'transfer_verified' ? 'TRANSFER' : 'TUNAI'`. Layar wali betul,
   kwitansinya tidak. Persis pola yang sama dengan dua di atas.
 
-- **VA BMT disimpulkan "Tunai" di SELURUH aplikasi — ejaan `sumber` terbalik** (v.1.4.3).
+- **VA BMT disimpulkan "Tunai" di SELURUH aplikasi — ejaan `sumber` terbalik** (v.1.4.1).
   Ini yang paling perlu diingat. `utils/metodeBayar` menyimpulkan transfer dari daftar
   `sumber`, dan daftarnya memuat `'va_bmt'`. Nilai yang **benar-benar ditulis** RPC
   `apply_bmt_payment` ke kolom `sumber` adalah **`'bmt_va'`** (huruf terbalik —
@@ -94,7 +103,7 @@ tak sampai:
   yang benar). Ejaan yang salah tak pernah cocok dengan satu baris pun, jadi tiap
   pembayaran VA BMT jatuh ke default 'Tunai': badge Uang Saku, badge Buku Induk, kolom
   Cara Bayar di PDF laporan, subtotal TUNAI/TRANSFER laporan harian — **dan perbaikan
-  label riwayat wali v.1.4.2 yang justru mengaku membetulkan VA BMT**.
+  label riwayat wali gelombang 2 yang justru mengaku membetulkan VA BMT**.
 
   Lolos dari 28 tes hijau karena tesnya sendiri mengabadikan ejaan yang salah
   (`expect(metodeTransaksi({ sumber: 'va_bmt' })).toBe('Transfer')`) — tes yang menjaga
@@ -103,7 +112,7 @@ tak sampai:
   memindah risiko ke penulis lain yang belum ketahuan.
 
 - **"Cek Riwayat vs Tagihan" tak lagi diam untuk keluhan yang mendorongnya dibuat**
-  (v.1.4.3, daftar baru `lunasTanpaJejak`). Admin keuangan: _"ada Amira Fatimatuz Zahra dan
+  (v.1.4.1, daftar baru `lunasTanpaJejak`). Admin keuangan: _"ada Amira Fatimatuz Zahra dan
   Nafatin Niswah, yg ditagihkan sudah tercatat lunas tapi di riwayat pos blm ada."_
 
   Diperiksa sebelum admin membukanya — dan bagus begitu, karena **alatnya akan menampilkan
@@ -126,24 +135,17 @@ tak sampai:
 
 ---
 
-## [v.1.4.2 — belum dirilis] — 2026-09-05 — Bisyaroh tutup buku tanggal 24, dan shift yang belum dibuka tak lagi merah
+## [v.1.4.1 · gelombang 2] — 2026-09-05 — Bisyaroh tutup buku tanggal 24, dan shift yang belum dibuka tak lagi merah
 
-⚠️ **KOREKSI 7 Sep 2026: web-nya SUDAH TAYANG** sejak 5 Sep 2026 pk. 16.25 (deploy
-Firebase langsung; `git push`-nya yang gagal, sehingga commitnya menumpuk di `main` lokal
-dan kedua migrasi Supabase belum ter-apply). Yang di bawah ini ditulis sebelum itu.
-
-⚠️ **Belum dirilis, dan MENUMPUK di atas v.1.4.1 yang juga belum dirilis.** Titik versi
-tetap `1.4.0` (keputusan Kyai, 4 Sep 2026 — belum naik ke Play). Kedua entri ini akan
-terbit bersama, dan **`npx supabase db push` tetap DULUAN, baru web** — urutan v.1.4.1
-(`20260904120000_arsip_prestasi_periode_laporan.sql`) masih berlaku, plus satu migrasi baru
-milik v.1.4.2: `20260905120000_bmt_alokasi_utuh.sql`.
-
-Migrasi v.1.4.2 itu **frontend-agnostik** — tak ada kode app yang bergantung padanya, jadi
-urutannya terhadap deploy web bebas. Sisanya frontend murni.
+Bagian dari rilis **v.1.4.1** di atas. Web-nya sempat tayang sendiri pada 5 Sep 2026
+pk. 16.25 — deploy Firebase dijalankan terpisah sementara `git push`-nya gagal, sehingga
+selama dua hari kode ini melayani pesantren **mendahului** migrasinya. Keduanya menyusul
+7 Sep. Migrasi `20260905120000_bmt_alokasi_utuh.sql` sendiri frontend-agnostik — tak ada
+kode app yang bergantung padanya — jadi urutannya terhadap deploy web memang bebas.
 
 ### Changed
 
-- **Bisyaroh dihitung dari absensi tgl 25 s/d 24, bukan lagi bulan kalender** (v.1.4.2).
+- **Bisyaroh dihitung dari absensi tgl 25 s/d 24, bukan lagi bulan kalender** (v.1.4.1).
   Kyai, 5 Sep 2026: _"perhitungan bisyaroh dari absen dihitung dari tgl 25 sebelumnya
   – 24 bulan berikutnya (mis: 25 Agustus – 24 September untuk bisyaroh September,
   terbitnya bisyaroh 1–2 Oktober)."_
@@ -193,7 +195,7 @@ urutannya terhadap deploy web bebas. Sisanya frontend murni.
 
 ### Fixed
 
-- **Shift yang belum dimulai tak lagi dihitung alpa** (v.1.4.2). Kyai, 5 Sep 2026:
+- **Shift yang belum dimulai tak lagi dihitung alpa** (v.1.4.1). Kyai, 5 Sep 2026:
   _"shift yg belum dimulai jangan dihitung alpa."_
 
   Alpa selama ini disimpulkan dari perbandingan **TANGGAL** saja (`iso <= hariIni`).
@@ -229,7 +231,7 @@ urutannya terhadap deploy web bebas. Sisanya frontend murni.
 
 ### Fixed — keuangan
 
-- **Riwayat dan Tagihan tak lagi bercerita dua hal berbeda** (v.1.4.2). Kyai, 5 Sep 2026:
+- **Riwayat dan Tagihan tak lagi bercerita dua hal berbeda** (v.1.4.1). Kyai, 5 Sep 2026:
   _"di riwayat keuangan ada tagihan yg sudah di bayar, tapi di tagihan santri itu masih
   ada"_ dan _"ada yg belum bayar tapi di riwayat tertulis di bayar."_
 
@@ -288,7 +290,7 @@ urutannya terhadap deploy web bebas. Sisanya frontend murni.
   layar bilang lunas sementara layar lain menagih — dan tak ada yang salah menurut kodenya
   masing-masing.
 
-- **Uang Saku & Tabungan akhirnya punya cara bayar** (v.1.4.2). Kyai, 5 Sep 2026: _"uang
+- **Uang Saku & Tabungan akhirnya punya cara bayar** (v.1.4.1). Kyai, 5 Sep 2026: _"uang
   buku dan uang saku tidak ada keterangan transfer/tunai untuk ekspor pdf."_
 
   Benar, dan lebih dalam dari sekadar kolom PDF: mutasi Tabungan/Uang Saku **tak pernah
@@ -310,7 +312,7 @@ urutannya terhadap deploy web bebas. Sisanya frontend murni.
 
 ### Fixed — VA BMT
 
-- **Tak ada lagi rupiah VA yang bisa hilang** (v.1.4.2, migrasi
+- **Tak ada lagi rupiah VA yang bisa hilang** (v.1.4.1, migrasi
   `20260905120000_bmt_alokasi_utuh.sql`).
 
   **Koreksi catatan sebelumnya di entri ini:** sempat tertulis bahwa RPC
@@ -353,7 +355,7 @@ urutannya terhadap deploy web bebas. Sisanya frontend murni.
 
 ### Removed
 
-- **Tombol "Tinjau & pindahkan ke Rekap" di Rekap Prestasi** (v.1.4.2). Kyai, 5 Sep 2026:
+- **Tombol "Tinjau & pindahkan ke Rekap" di Rekap Prestasi** (v.1.4.1). Kyai, 5 Sep 2026:
   _"di rekap yg tombol pindahkan nilai hapus saja, yg penting perhitungan sudah sesuai."_
 
   Tombol, dialog pratinjaunya, dan `utils/pindahJendelaRekap` (+ tesnya) dihapus. Alat itu
@@ -362,7 +364,7 @@ urutannya terhadap deploy web bebas. Sisanya frontend murni.
   benar dengan sendirinya — yang tersisa cuma peninggalan versi lama, dan Kyai sudah
   menjalankan pemindahannya sekali pada 4 Sep 2026.
 
-- **Spanduk "N santri isiannya tersimpan di Rekap <bulan lalu>"** (v.1.4.2). Kyai, 5 Sep
+- **Spanduk "N santri isiannya tersimpan di Rekap <bulan lalu>"** (v.1.4.1). Kyai, 5 Sep
   2026, menyusul permintaan di atas: _"ini sekalian hilangkan."_
 
   Spanduk itu lahir v.1.4.1 untuk satu keadaan yang **sudah lewat**. Sampai v.1.4.0 dropdown
@@ -380,17 +382,17 @@ urutannya terhadap deploy web bebas. Sisanya frontend murni.
 
 ---
 
-## [v.1.4.1 — belum dirilis] — 2026-09-04 — Satu ejaan kelas, satu nama bulan, dan guru yang tak lagi hilang
+## [v.1.4.1 · gelombang 1] — 2026-09-04 — Satu ejaan kelas, satu nama bulan, dan guru yang tak lagi hilang
 
 ⚠️ **URUTAN DEPLOY — TIDAK frontend-murni.** `npx supabase db push` **wajib duluan**
 (`20260904120000_arsip_prestasi_periode_laporan.sql`), baru deploy web, lalu AAB & Electron.
 Migrasinya menyentuh fungsi arsip tanggal 25; kalau web tayang lebih dulu, arsip bulan itu
 mendarat di bucket periode yang lama.
 
-⚠️ **Titik versi SENGAJA tetap `1.4.0`** — keputusan Kyai, 4 Sep 2026: _"versi tetap 1.4.0
-dulu saja, karena belum naik ke play."_ Kelima berkas versi + 8 label UI TIDAK disentuh; entri
-ini murni catatan pekerjaannya. Naikkan ke `1.4.1` (lihat daftar TITIK VERSI di catatan
-v.1.4.0) hanya kalau Kyai sudah siap mengunggahnya ke Play.
+⚠️ **Titik versinya sempat ditahan di `1.4.0`** — keputusan Kyai, 4 Sep 2026: _"versi tetap
+1.4.0 dulu saja, karena belum naik ke play."_ Ditahan sampai 7 Sep 2026, lalu dinaikkan ke
+`1.4.1` sekaligus untuk ketiga gelombang. Titik versinya (4 berkas + 8 label UI) ada di
+catatan v.1.4.0.
 
 ### Fixed
 

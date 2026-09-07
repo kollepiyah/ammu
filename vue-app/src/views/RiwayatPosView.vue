@@ -304,7 +304,7 @@ const transaksi = computed(() => {
         kelas_sekolah: sm.kelas_sekolah || '',
         tanggal: e.tanggal || '',
         operator: e.operator || '-',
-        // v.1.4.3 (keluhan admin keuangan, 7 Sep 2026): cara bayar ikut dibawa ke kelompok
+        // v.1.4.1 (keluhan admin keuangan, 7 Sep 2026): cara bayar ikut dibawa ke kelompok
         //   transaksi. Tanpa ini cetak ULANG dari halaman ini kehilangan `metode`, dan
         //   SEMUA pencetak struk (PDF, slip, ESC/P, teks lebar) jatuh ke default 'TUNAI' —
         //   transfer yang dicetak kedua kali berubah jadi bukti pembayaran tunai.
@@ -504,7 +504,7 @@ function toTrx(t) {
     lembaga_sekolah: t.lembaga_sekolah || '',
     kelas_sekolah: t.kelas_sekolah || '',
     operator: t.operator,
-    // v.1.4.3: cara bayar — pencetak struk membacanya sebagai `trx.metode`.
+    // v.1.4.1: cara bayar — pencetak struk membacanya sebagai `trx.metode`.
     metode: t.metode || 'TUNAI',
     // v.94.0626: penyetor (wali) utk reprint struk
     penyetor: t.penyetor || '',

@@ -308,12 +308,12 @@ describe('bangunMatriksBulanan — bentuk & biaya', () => {
   })
 })
 
-// ── v.1.4.2 — Kyai, 5 Sep 2026: "shift yg belum dimulai jangan dihitung alpa" ────────
+// ── v.1.4.1 — Kyai, 5 Sep 2026: "shift yg belum dimulai jangan dihitung alpa" ────────
 //
 // Yang dijaga di sini bukan sekadar huruf di layar. Kolom A yang sama dibaca Excel, PDF,
 // dan kartu "kehadiran saya" milik guru — jadi kalau blok ini jebol, guru kembali melihat
 // dirinya alpa atas shift yang belum sempat dijalani siapa pun.
-describe('shift yang belum dimulai (v.1.4.2)', () => {
+describe('shift yang belum dimulai (v.1.4.1)', () => {
   // 20 Sep 2026 = Ahad (libur), jadi HARI_INI dipindah ke 18 Sep (Jumat) supaya sel hari
   // ini benar-benar hari kerja. Baris B (Sen/Rab/Jum) tetap masuk pada hari itu.
   const HARI_KERJA_INI = '2026-09-18'
@@ -359,7 +359,7 @@ describe('shift yang belum dimulai (v.1.4.2)', () => {
     expect(tertahan.A).toBe(tertahan.sel.filter((s) => s.teks === 'A').length)
   })
 
-  it('tanpa belumMulaiOf, perilakunya persis seperti sebelum v.1.4.2', () => {
+  it('tanpa belumMulaiOf, perilakunya persis seperti sebelum v.1.4.1', () => {
     const lama = matriksJam()[0]
     const eksplisit = matriksJam({ belumMulaiOf: () => false })[0]
     expect(lama.A).toBe(eksplisit.A)

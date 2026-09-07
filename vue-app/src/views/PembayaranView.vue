@@ -131,7 +131,7 @@
               </p>
               <p class="text-[10px] text-[var(--text-secondary)]">
                 {{ fmtTgl(p.tanggal) }} · {{ p.catatan || '-' }}
-                <!-- v.1.4.2: label cara bayar dulu diturunkan di sini sendiri — `sumber`
+                <!-- v.1.4.1: label cara bayar dulu diturunkan di sini sendiri — `sumber`
                      'transfer_verified' = Transfer, SELAIN ITU "[Tunai]". Kasir POS yang
                      memilih Transfer, dan pembayaran VA BMT, karena itu tercetak "Tunai"
                      di riwayat wali. Sekarang lewat utils/metodeBayar, sumber yang sama
@@ -676,7 +676,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { subscribeColl, setOne, updateOne } from '@/services/db'
-// v.1.4.2: cara bayar disimpulkan satu tempat (Buku Induk, POS, pos dana, riwayat wali).
+// v.1.4.1: cara bayar disimpulkan satu tempat (Buku Induk, POS, pos dana, riwayat wali).
 import { metodeTransaksi } from '@/utils/metodeBayar'
 import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
@@ -953,8 +953,8 @@ function buildTrxFromGroup(p) {
     kelas_sekolah: s.kelas_sekolah || '',
     operator: p.operator || 'Administrator',
     penyetor: p.wali || '',
-    // v.1.4.3: dulu disimpulkan di sini sendiri — `sumber` 'transfer_verified' = Transfer,
-    //   SELAIN ITU 'TUNAI'. v.1.4.2 membetulkan label di daftar riwayat tapi MELEWATI
+    // v.1.4.1: dulu disimpulkan di sini sendiri — `sumber` 'transfer_verified' = Transfer,
+    //   SELAIN ITU 'TUNAI'. v.1.4.1 membetulkan label di daftar riwayat tapi MELEWATI
     //   pembangun bukti ini, jadi pembayaran POS-transfer dan VA BMT tetap tercetak
     //   "TUNAI" di kwitansi yang diunduh wali. Sekarang satu sumber dengan layarnya.
     metode: metodeTransaksi(p).toUpperCase(),

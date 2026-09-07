@@ -195,7 +195,7 @@ describe('lebihTercatat — "tagihan mengaku terbayar, uangnya tak ada di riwaya
   it('tagihan tanpa satu pun baris buku induk TIDAK dilaporkan di sini', () => {
     // Sengaja: tagihan lunas tanpa jejak bisa saja dibayar lewat jalur lama sebelum buku
     // induk dipakai. Menuangkannya ke daftar yang sama akan menenggelamkan selisih rupiah
-    // yang benar-benar perlu diperiksa. v.1.4.3: ia tak lagi HILANG, cuma pindah ke
+    // yang benar-benar perlu diperiksa. v.1.4.1: ia tak lagi HILANG, cuma pindah ke
     // daftarnya sendiri — lihat blok `lunasTanpaJejak` di bawah.
     const h = periksaKecocokanBayar([tg({ terbayar: 150000, status: 'lunas' })], [])
     expect(h.lebihTercatat).toEqual([])
@@ -203,10 +203,10 @@ describe('lebihTercatat — "tagihan mengaku terbayar, uangnya tak ada di riwaya
   })
 })
 
-// v.1.4.3 — admin keuangan, 7 Sep 2026: "ada Amira Fatimatuz Zahra dan Nafatin Niswah, yg
+// v.1.4.1 — admin keuangan, 7 Sep 2026: "ada Amira Fatimatuz Zahra dan Nafatin Niswah, yg
 // ditagihkan sudah tercatat lunas tapi di riwayat pos blm ada."
 //
-// Sampai v.1.4.2 alat ini DIAM untuk keluhan itu: `continue` melewati tagihan yang tak punya
+// Sampai v.1.4.1 alat ini DIAM untuk keluhan itu: `continue` melewati tagihan yang tak punya
 // baris buku induk, dan `statusMeleset` tak menangkapnya karena kolom `status` dan sisa hasil
 // hitung sama-sama bilang lunas. Admin membuka layarnya dan menemukannya kosong.
 describe('lunasTanpaJejak — "ditagihkan lunas tapi di riwayat pos belum ada"', () => {
@@ -367,7 +367,7 @@ describe('ringkasan', () => {
 })
 
 describe('alokasi EKSPLISIT — POS ber-tagihan_id & VA BMT ber-alokasi[]', () => {
-  // Sejak v.1.4.2 sebuah baris buku induk boleh menyebut sendiri tagihan yang dilunasinya.
+  // Sejak v.1.4.1 sebuah baris buku induk boleh menyebut sendiri tagihan yang dilunasinya.
   // Dua penulisnya beda bentuk: POS satu tagihan per baris, VA BMT bisa beberapa sekaligus.
   it('membaca kedua bentuk', () => {
     expect(alokasiEksplisit({ tagihan_id: 't1', nominal: 90000 })).toEqual([

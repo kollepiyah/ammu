@@ -591,7 +591,7 @@ async function handleSimpan(payload) {
           docData.keterangan += ` — potongan ${docData.potongan_label} ${fmtRp(docData.potongan_nominal)}`
         }
         if (baris.pos) docData.pos = baris.pos
-        // v.1.4.2 (Kyai 5 Sep 2026): dua jejak yang membuat baris ini bisa DICOCOKKAN
+        // v.1.4.1 (Kyai 5 Sep 2026): dua jejak yang membuat baris ini bisa DICOCOKKAN
         //   kembali dengan tagihannya. Tanpa keduanya, "riwayat vs tagihan" hanya bisa
         //   ditebak dari teks keterangan:
         //     tagihan_id  — baris ini melunasi tagihan yang mana (kosong = bayar di muka,

@@ -9,9 +9,9 @@ import {
   savePdf
 } from './pdfBuilder'
 import { HITUNGAN_OPTIONS, HITUNGAN_TUNJANGAN_OPTIONS } from './bisyarohScope'
-// v.1.4.2: jendela absensi slip (25 → 24) — SATU sumber dengan yang dipakai menghitung.
+// v.1.4.1: jendela absensi slip (25 → 24) — SATU sumber dengan yang dipakai menghitung.
 import { labelPeriodeBisyaroh } from './periodeBisyaroh'
-// v.1.4.3: cara bayar slip tabungan/uang saku — satu simpulan dengan Buku Induk & POS.
+// v.1.4.1: cara bayar slip tabungan/uang saku — satu simpulan dengan Buku Induk & POS.
 import { metodeTransaksi } from './metodeBayar'
 import { imageToDataURL } from '@/services/pdf'
 import { terbilangRupiah } from './terbilang'
@@ -468,7 +468,7 @@ export async function cetakSlipBisyarohPdf(slip = {}, settings = {}, { preview =
   ]
   const rightRows = [
     ['Periode', fmtPer(slip.periode)],
-    // v.1.4.2: rentang absensi yang dipakai menghitung slip ini (Kyai, 5 Sep 2026 —
+    // v.1.4.1: rentang absensi yang dipakai menghitung slip ini (Kyai, 5 Sep 2026 —
     //   tgl 25 bulan sebelumnya s/d 24 bulan periode). Sengaja ikut di KERTAS, bukan
     //   cuma di layar admin: inilah lembar yang dipegang gurunya saat bertanya.
     ['Absensi', labelPeriodeBisyaroh(slip.periode) || '-'],
@@ -913,9 +913,9 @@ export async function cetakSlipTabunganPdf(
   const rightRows = [
     ['Tanggal', tglFmt],
     ['No. Transaksi', mut.no_bukti || mut.id || '-'],
-    // v.1.4.3 (keluhan admin keuangan, 7 Sep 2026: "transaksi uang saku yg transfer, di
+    // v.1.4.1 (keluhan admin keuangan, 7 Sep 2026: "transaksi uang saku yg transfer, di
     //   buktinya tercatat TUNAI"). Dulu HARDCODE 'TUNAI' — slip tabungan/uang saku lahir
-    //   sebelum mutasi punya field `metode` (baru ada v.1.4.2), dan tak pernah menyusul.
+    //   sebelum mutasi punya field `metode` (baru ada v.1.4.1), dan tak pernah menyusul.
     ['Metode', metodeTransaksi(mut).toUpperCase()]
   ]
   const yStart = y
@@ -1140,7 +1140,7 @@ export function buildSlipTabunganHtml(
     infoRight: [
       ['Tanggal', formatTglDdMmYyyy(mut.tanggal)],
       ['No. Transaksi', mut.no_bukti || mut.id || '-'],
-      // v.1.4.3: lihat catatan di cetakSlipTabunganPdf — dulu hardcode 'TUNAI'.
+      // v.1.4.1: lihat catatan di cetakSlipTabunganPdf — dulu hardcode 'TUNAI'.
       ['Metode', metodeTransaksi(mut).toUpperCase()]
     ],
     midHtml,

@@ -106,8 +106,8 @@ export function jenisBarisBuku(b) {
  * Alokasi EKSPLISIT sebuah baris buku induk → [{ tagihanId, nominal }].
  *
  * Dua bentuk, dua penulis:
- *   · `tagihan_id`  — POS Santri (v.1.4.2): satu baris melunasi satu tagihan.
- *   · `alokasi[]`   — RPC VA BMT (v.1.4.2): SATU transfer bisa melunasi beberapa tagihan
+ *   · `tagihan_id`  — POS Santri (v.1.4.1): satu baris melunasi satu tagihan.
+ *   · `alokasi[]`   — RPC VA BMT (v.1.4.1): SATU transfer bisa melunasi beberapa tagihan
  *                     sekaligus, jadi rinciannya disimpan per tagihan.
  *
  * Baris yang punya alokasi eksplisit TIDAK ikut dijumlahkan lewat (santri × jenis ×
@@ -254,7 +254,7 @@ export function periksaKecocokanBayar(tagihanList, bukuInduk, opsi = {}) {
       //   keuangan berhak melihatnya — itulah keluhan 7 Sep 2026: "yg ditagihkan sudah
       //   tercatat lunas tapi di riwayat pos blm ada".
       //
-      //   v.1.4.3: sampai v.1.4.2 keadaan ini ditelan `continue` tanpa suara, dan
+      //   v.1.4.1: sampai v.1.4.1 keadaan ini ditelan `continue` tanpa suara, dan
       //   `statusMeleset` pun tak menangkapnya — kolom `status` dan sisa hasil hitung
       //   sama-sama bilang lunas, jadi menurut kodenya sendiri tak ada yang salah.
       //   Alatnya diam persis untuk keluhan yang mendorongnya dibuat.

@@ -401,7 +401,7 @@
                 >
                   {{ b.kategori }}
                 </span>
-                <!-- v.1.4.2 (Kyai 5 Sep 2026): cara bayar tak pernah tampil di layar ini,
+                <!-- v.1.4.1 (Kyai 5 Sep 2026): cara bayar tak pernah tampil di layar ini,
                      padahal PDF-nya sudah memisahkan Tunai/Transfer. Jadi Uang Buku &
                      Uang Kegiatan tak bisa dicocokkan dengan laci tanpa mencetak dulu. -->
                 <span

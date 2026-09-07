@@ -699,7 +699,7 @@
                 {{ fmtRp(m.nominal) }}
               </td>
               <td class="px-3 py-2 text-[11px] text-[var(--text-secondary)] truncate max-w-[200px]">
-                <!-- v.1.4.2: cara bayar ikut terlihat di layar, bukan cuma di PDF —
+                <!-- v.1.4.1: cara bayar ikut terlihat di layar, bukan cuma di PDF —
                      mencocokkan kas harian dimulai dari sini. -->
                 <span
                   :class="[
@@ -888,7 +888,7 @@
             <p class="text-[10px] mt-1 text-[var(--text-secondary)]">{{ fmtRp(modalNominal) }}</p>
           </div>
 
-          <!-- v.1.4.2 (Kyai 5 Sep 2026): "uang buku dan uang saku tidak ada keterangan
+          <!-- v.1.4.1 (Kyai 5 Sep 2026): "uang buku dan uang saku tidak ada keterangan
                transfer/tunai untuk ekspor pdf". Tabungan & Uang Saku memang belum pernah
                punya field ini sama sekali — Buku Induk, POS, dan pos dana sudah. Tanpa
                ini laporan hariannya tak bisa dicocokkan dengan uang di laci. -->
@@ -1048,7 +1048,7 @@ import {
   mutasiSetor,
   kunciLembaga
 } from '@/utils/kasLembaga'
-// v.1.4.2 (Kyai 5 Sep 2026): Tabungan & Uang Saku belum pernah punya cara bayar. Aturan
+// v.1.4.1 (Kyai 5 Sep 2026): Tabungan & Uang Saku belum pernah punya cara bayar. Aturan
 //   simpulannya dipakai bersama Buku Induk & pos dana — satu sumber, jangan disalin.
 import { metodeTransaksi, METODE_OPTS } from '@/utils/metodeBayar'
 import { cetakSlipTabunganPdf, exportRekapTabunganPdf } from '@/utils/strukBuilder'
@@ -1414,7 +1414,7 @@ const modalJenis = ref('setor')
 const modalKategori = ref('umum')
 const modalNominal = ref(0)
 const modalCatatan = ref('')
-// v.1.4.2: cara bayar mutasi. Default 'Tunai' — sama dengan simpulan metodeBayar.js untuk
+// v.1.4.1: cara bayar mutasi. Default 'Tunai' — sama dengan simpulan metodeBayar.js untuk
 //   baris LAMA yang tak punya field ini, jadi laporan lama tak berubah artinya.
 const modalMetode = ref('Tunai')
 const saving = ref(false)
@@ -1794,7 +1794,7 @@ async function cetakLaporanMutasi() {
     //   dengan kartu rekap per lembaga di atas ('setor' = masuk, selain itu keluar).
     //   Kalau berbeda, satu layar bisa menampilkan dua angka untuk hari yang sama.
     const { setor, tarik } = ringkasSetorTarik(urut)
-    // v.1.4.2 (Kyai 5 Sep 2026): kolom Cara Bayar + subtotalnya. Laporan ini dipakai
+    // v.1.4.1 (Kyai 5 Sep 2026): kolom Cara Bayar + subtotalnya. Laporan ini dipakai
     //   menutup kas harian; tanpa memisahkan uang laci dari uang rekening, angkanya tak
     //   bisa dicocokkan dengan apa pun. Baris LAMA tak punya field `metode` dan disimpulkan
     //   'Tunai' oleh metodeBayar.js — sama persis dengan Buku Induk & pos dana, jadi tak

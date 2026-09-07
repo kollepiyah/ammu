@@ -310,13 +310,13 @@ describe('hariGuruLembaga — jembatan shift → lembaga', () => {
   })
 })
 
-// ── v.1.4.2 — Kyai, 5 Sep 2026: "shift yg belum dimulai jangan dihitung alpa" ────────
+// ── v.1.4.1 — Kyai, 5 Sep 2026: "shift yg belum dimulai jangan dihitung alpa" ────────
 //
 // Parameter ke-7 `hitungSel` diperlakukan persis seperti `bukanJadwal` di atasnya: yang
 // digugurkan HUKUMANNYA, bukan tanggalnya. Kalau suatu saat tanggalnya yang dibuang,
 // guru yang sempat scan lebih awal (toleransi awal) kehilangan kehadirannya — dan
 // bisyaroh "× kehadiran"-nya ikut hilang tanpa jejak.
-describe('hitungSel — shift yang belum dimulai (v.1.4.2)', () => {
+describe('hitungSel — shift yang belum dimulai (v.1.4.1)', () => {
   const HARI_INI = '2026-01-09' // Jumat; Sabtu 10 & Ahad 11 belum lewat
   const idxKosong = indexAbsensiHarian([])
 

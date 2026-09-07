@@ -20,7 +20,7 @@ describe('metodeTransaksi — tunai vs transfer', () => {
     expect(metodeTransaksi({ sumber: 'va_bmt' })).toBe('Transfer')
   })
 
-  // v.1.4.3: 'bmt_va' adalah ejaan yang BENAR-BENAR ditulis RPC apply_bmt_payment ke kolom
+  // v.1.4.1: 'bmt_va' adalah ejaan yang BENAR-BENAR ditulis RPC apply_bmt_payment ke kolom
   //   `sumber`. Tes lama hanya menjaga ejaan terbaliknya ('va_bmt') — yang tak pernah ada
   //   satu baris pun di basis data — sehingga bug "VA BMT tercetak Tunai" lolos dari 28 tes
   //   yang semuanya hijau. Kalau baris ini dihapus, bug itu bisa kembali tanpa ketahuan.
@@ -32,7 +32,7 @@ describe('metodeTransaksi — tunai vs transfer', () => {
   // Slip tabungan/uang saku memanggil metodeTransaksi(mut) dengan baris MUTASI, bukan
   //   baris buku induk. Bentuknya beda (nominal/jenis/no_bukti), tapi dua field yang
   //   dibaca simpulan ini — `metode` & `sumber` — sama, dan default 'Tunai' untuk mutasi
-  //   lama tanpa `metode` memang yang diinginkan (v.1.4.2).
+  //   lama tanpa `metode` memang yang diinginkan (v.1.4.1).
   it('baris mutasi tabungan: metode eksplisit, VA BMT, dan baris lama', () => {
     expect(metodeTransaksi({ jenis: 'setor', nominal: 50000, metode: 'Transfer' })).toBe(
       'Transfer'

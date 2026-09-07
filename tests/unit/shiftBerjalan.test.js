@@ -94,7 +94,7 @@ describe('slotBolehAlpa', () => {
     expect(slotBolehAlpa(HARI_INI, HARI_INI, '15:29', '15:30')).toBe(false)
   })
 
-  it('shift tanpa jam mulai berperilaku seperti sebelum v.1.4.2', () => {
+  it('shift tanpa jam mulai berperilaku seperti sebelum v.1.4.1', () => {
     expect(slotBolehAlpa(HARI_INI, HARI_INI, '00:05', '')).toBe(true)
   })
 

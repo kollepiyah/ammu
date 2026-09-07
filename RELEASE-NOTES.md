@@ -5,6 +5,57 @@ Rinciannya untuk pengembang ada di `CHANGELOG.md` — jangan disalin ke sana, te
 
 ---
 
+## v.1.4.1 — September 2026
+
+**Perbaikan**
+
+- **Bukti pembayaran transfer tak lagi tercetak "TUNAI".** Sebelumnya struk yang dicetak
+  untuk kedua kalinya selalu berbunyi tunai walau uangnya masuk lewat transfer — begitu
+  juga bukti setor/tarik Uang Saku dan Tabungan, serta kwitansi yang diunduh wali.
+  Pembayaran lewat VA BMT bahkan tercatat tunai di seluruh aplikasi. Semuanya kini
+  membaca cara bayar dari satu sumber yang sama dengan yang tampil di layar.
+
+- **Riwayat dan Tagihan tak lagi bercerita dua hal berbeda.** Empat jalur yang membuat
+  "sudah bayar tapi tagihannya tetap keluar" — dan sebaliknya — sudah ditutup. Untuk
+  catatan lama yang terlanjur berselisih tersedia alat baru di **Pengaturan Keuangan ›
+  Tagihan › "Cek Riwayat vs Tagihan"**: ia membandingkan rupiah per santri per bulan,
+  memilah temuannya, dan membetulkan yang aman dibetulkan dengan sekali tekan.
+
+- **Uang Saku & Tabungan akhirnya punya keterangan cara bayar** — di layar maupun di PDF
+  laporan mutasi, lengkap dengan subtotal tunai dan transfer.
+
+- **Shift yang belum dimulai tak lagi dihitung alpa.** Rekap absen pagi hari tak lagi
+  menampilkan deretan A merah untuk shift sore yang belum sempat dijalani siapa pun —
+  termasuk di kartu kehadiran yang dilihat guru sendiri.
+
+- **Kelas PTPT kembali satu ejaan** (Kelas 1–6). Penyaring kelas di Rekap Prestasi ikut
+  dibetulkan: memilih satu kelas tak lagi diam-diam membuang separuh daftarnya.
+
+- **Nama guru tak lagi kosong di Rekap Prestasi**, dan kenaikan lewat Tes Kenaikan tak
+  lagi meninggalkan guru lama menempel di santri yang sudah pindah kelas.
+
+- **Angka dasbor dan Rekap Prestasi tak lagi bertengkar** — keduanya kini menunjuk bulan
+  yang sama, dan angka yang belum tersimpan tak terbawa saat berganti bulan.
+
+- **Pencarian di Data Santri dan Data Guru tak lagi hilang sesudah menyimpan.**
+
+- **Tooltip grafik kini muncul di HP** (sebelumnya hanya bisa dilihat dari komputer), dan
+  kelas PTPT tak lagi terbelah jadi dua batang di grafik maupun KPI dasbor.
+
+- **Ekspor Rekap Prestasi dilengkapi**: tombol ekspor di tab Ranking, kop surat yang benar
+  per lembaga, dan PDF yang bisa dipisah per PJ PTPT.
+
+**Perubahan**
+
+- **Bisyaroh kini dihitung dari absensi tanggal 25 bulan sebelumnya sampai tanggal 24
+  bulan berjalan** — bukan lagi bulan kalender penuh. Slip terbit tanggal 1–2, sedangkan
+  absensi bulan berjalan baru lengkap di akhir bulan; menutup buku tanggal 24 memberi
+  jeda sekitar enam hari untuk merapikan absen sebelum uangnya dihitung. Hari 25 sampai
+  akhir bulan tidak hilang — ia menjadi pembuka jendela bulan berikutnya. Rentang yang
+  dipakai ditulis di slipnya, di layar maupun di kertas.
+
+---
+
 ## v.1.4.0 — September 2026
 
 **Perbaikan**

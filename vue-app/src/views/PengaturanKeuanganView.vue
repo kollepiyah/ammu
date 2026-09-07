@@ -360,7 +360,7 @@
                     uangnya tak ada di riwayat
                   </p>
                 </div>
-                <!-- v.1.4.3 (keluhan admin keuangan, 7 Sep 2026): "yg ditagihkan sudah
+                <!-- v.1.4.1 (keluhan admin keuangan, 7 Sep 2026): "yg ditagihkan sudah
                      tercatat lunas tapi di riwayat pos blm ada". Dipisah dari "Lebih
                      tercatat" karena artinya beda — di sini tak ada jejak SAMA SEKALI,
                      dan sebagian besar kemungkinan pembayaran jalur lama yang sah. -->
@@ -3681,7 +3681,7 @@ import { simulasiPemasukan as hitungPemasukan } from '@/utils/simulasiPemasukan'
 import { matchSekolahSini } from '@/utils/statusSantri'
 // Kyai 8 Agu 2026: merapikan tagihan ngaji yang kini menempel ke jenis lain
 import { pilahTagihanGabungan, totalNominal } from '@/utils/rapikanGabungan'
-// v.1.4.2 (Kyai 5 Sep 2026): pencocokan Buku Induk ⇄ keuangan_tagihan — murni + 27 tes.
+// v.1.4.1 (Kyai 5 Sep 2026): pencocokan Buku Induk ⇄ keuangan_tagihan — murni + 27 tes.
 import {
   periksaKecocokanBayar,
   payloadTambalKurang,
@@ -6186,7 +6186,7 @@ async function autoGenerate(dryRun = false) {
       generating.value = false
       return dryRun ? [] : undefined
     }
-    // v.1.4.2: dibaca SEKALI untuk seluruh putaran (bulanan + tahunan), bukan per santri.
+    // v.1.4.1: dibaca SEKALI untuk seluruh putaran (bulanan + tahunan), bukan per santri.
     //   Kodenya DITURUNKAN dari periode yang sama dengan yang ditulis ke tagihan — jangan
     //   memakai `kodeBulan()` di sini: itu 'YYYYMM' (potongan id), sedangkan kunci
     //   pencocokan berbentuk 'YYYY-MM' / 'TA####'. Salah bentuk = tak pernah cocok, dan
@@ -6241,7 +6241,7 @@ async function autoGenerate(dryRun = false) {
         // Field tambahan HANYA bila relevan — supaya bentuk baris tagihan biasa tetap
         //   sama persis seperti sebelumnya (tak ada kejutan di pembaca lama).
         if (h.komponen.length) payload.komponen = h.komponen
-        // v.1.4.2: akui uang yang SUDAH masuk untuk periode ini (bayar di muka).
+        // v.1.4.1: akui uang yang SUDAH masuk untuk periode ini (bayar di muka).
         //   Ikut di dryRun supaya pratinjau memperlihatkan angka yang sebenarnya akan
         //   terbit — pratinjau yang lebih besar dari kenyataan adalah cara termudah
         //   salah memutuskan.
@@ -6567,7 +6567,7 @@ async function doGenKhusus() {
     const katLower = kategori.toLowerCase()
     const katSlug = slugId(kategori)
     const perSlug = slugId(periode)
-    // v.1.4.2: pembayaran di muka untuk periode ini — dibaca sekali, bukan per santri.
+    // v.1.4.1: pembayaran di muka untuk periode ini — dibaca sekali, bukan per santri.
     const _prabayarKhusus = await petaPrabayar([kodePeriodeBaris({ periode })])
     let created = 0,
       skipped = 0,
@@ -6589,7 +6589,7 @@ async function doGenKhusus() {
         continue
       }
       try {
-        // v.1.4.2: dibuka dengan uang yang SUDAH masuk untuk (santri × jenis × periode)
+        // v.1.4.1: dibuka dengan uang yang SUDAH masuk untuk (santri × jenis × periode)
         //   ini — lihat petaPrabayar. Tanpa ini, santri yang membayar di muka menerima
         //   tagihannya kembali sebagai tunggakan.
         const payloadKhusus = terapkanPrabayar(

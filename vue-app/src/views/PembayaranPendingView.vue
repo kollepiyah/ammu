@@ -431,7 +431,7 @@ async function verifyTransfer(p) {
     // v.95.0626b: URUTAN DIBALIK — tulis buku induk + tagihan DULU, status 'verified' di-set TERAKHIR.
     // Kalau ada write yang ditolak rules, status TIDAK terlanjur 'verified' (transfer tetap di Pending, bisa diulang).
     const buId = `bi_trf_${p.id}`
-    let tagihanErr = '' // v.1.4.2: kegagalan update tagihan — dilaporkan, tak ditelan
+    let tagihanErr = '' // v.1.4.1: kegagalan update tagihan — dilaporkan, tak ditelan
     // FIX: penuhi rule keuangan_buku_induk — WAJIB tipe (masuk/keluar) + keterangan (string) + nominal number
     // + tanggal 'YYYY-MM-DD'. Sebelumnya field ini tak diisi + sumber 'transfer_verified' belum di-allow -> write ditolak.
     // WIB, bukan UTC — baris Buku Induk yang dibuat 00:00–06:59 WIB tak lagi mundur sehari.
@@ -476,7 +476,7 @@ async function verifyTransfer(p) {
           })
         }
       } catch (e) {
-        // v.1.4.2 (Kyai 5 Sep 2026: "di riwayat sudah dibayar tapi di tagihan masih ada").
+        // v.1.4.1 (Kyai 5 Sep 2026: "di riwayat sudah dibayar tapi di tagihan masih ada").
         //   Ini persis jalannya: baris buku induk SUDAH ditulis di atas, lalu update
         //   tagihan ditolak (RLS / baris hilang) dan dulu hanya jadi console.warn — yang
         //   tak pernah dibaca siapa pun. Uangnya masuk Riwayat, tagihannya tetap berdiri,
@@ -518,7 +518,7 @@ async function rejectTransfer(p) {
   }
   busyIds.value.add(p.id)
   try {
-    // v.1.4.2 (Kyai 5 Sep 2026: "ada yg belum bayar tapi di riwayat tertulis di bayar").
+    // v.1.4.1 (Kyai 5 Sep 2026: "ada yg belum bayar tapi di riwayat tertulis di bayar").
     //   verifyTransfer menulis baris buku induk DULUAN, status 'verified' TERAKHIR — urutan
     //   itu disengaja supaya transfer bisa diulang bila ada write yang ditolak. Sisi
     //   buruknya: sebuah verifikasi yang berhenti di tengah meninggalkan baris `bi_trf_*`

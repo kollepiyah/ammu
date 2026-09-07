@@ -912,7 +912,7 @@ async function cetakUlangStruk(b, mode = 'pdf') {
       lembaga: '',
       kelas: '',
       operator: first.operator || '-',
-      // v.1.4.3: cara bayar ikut dicetak. Badge di DAFTAR halaman ini sudah memakai
+      // v.1.4.1: cara bayar ikut dicetak. Badge di DAFTAR halaman ini sudah memakai
       //   metodeTransaksi sejak v.1.2.6, tapi struk cetak-ulangnya tidak — jadi layar
       //   bilang "Transfer" sementara kertas yang dipegang wali bilang "TUNAI".
       metode: metodeTransaksi(first).toUpperCase(),
