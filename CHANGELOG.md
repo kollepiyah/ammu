@@ -44,9 +44,9 @@ tak sampai:
    Nuris Sholihah, tagihan buku) adalah baris lama. Alatnya sudah ada dan menunggu
    dijalankan: **Pengaturan Keuangan › Tagihan › "Cek Riwayat vs Tagihan"**.
    "Riwayat sudah bayar tapi tagihan belum lunas" = **Kurang tercatat** (bisa ditambal
-   sekali tekan). "Tagihan lunas tapi di riwayat pos belum ada" = **Lebih tercatat** —
-   sengaja TIDAK ditambal otomatis, karena menurunkan `terbayar` berarti menagih ulang
-   orang yang mungkin memang sudah membayar; yang ini harus diputuskan orang.
+   sekali tekan). "Tagihan lunas tapi di riwayat pos belum ada" = **Lunas tanpa jejak**,
+   daftar yang BARU ADA di rilis ini — sampai v.1.4.2 alatnya diam untuk keadaan itu
+   (lihat bulir terakhir di bawah).
 
 2. **Keluhan soal struk memang BELUM PERNAH diperbaiki.** v.1.4.2 menambah cara bayar di
    layar, di daftar riwayat wali, dan di PDF laporan mutasi — tapi tak satu pun menyentuh
@@ -101,6 +101,28 @@ tak sampai:
   nilai yang tak pernah ada. Sekarang ada tes untuk `'bmt_va'`; jangan dihapus. Ejaan
   terbaliknya ditahan sebagai alias: ia tak cocok dengan apa pun, jadi mencabutnya hanya
   memindah risiko ke penulis lain yang belum ketahuan.
+
+- **"Cek Riwayat vs Tagihan" tak lagi diam untuk keluhan yang mendorongnya dibuat**
+  (v.1.4.3, daftar baru `lunasTanpaJejak`). Admin keuangan: _"ada Amira Fatimatuz Zahra dan
+  Nafatin Niswah, yg ditagihkan sudah tercatat lunas tapi di riwayat pos blm ada."_
+
+  Diperiksa sebelum admin membukanya — dan bagus begitu, karena **alatnya akan menampilkan
+  layar kosong untuk dua nama itu**. `periksaKecocokanBayar` melewati (`continue`) tiap
+  tagihan yang tak punya satu pun baris buku induk, sehingga tagihan yang MENGAKU terbayar
+  tanpa jejak apa pun tak pernah sampai ke perbandingan selisih. `statusMeleset` juga tak
+  menangkapnya: kolom `status` dan sisa hasil hitung sama-sama bilang lunas, jadi menurut
+  kodenya sendiri tak ada yang salah. Bentuk "lebih tercatat" yang paling parah justru
+  satu-satunya yang tak terlihat.
+
+  `continue` itu **disengaja**, dan alasannya sah — tesnya menuliskannya: tagihan yang belum
+  dibayar adalah keadaan normal, dan yang lunas tanpa jejak bisa saja dibayar lewat jalur
+  lama sebelum Buku Induk dipakai; menuangkan semuanya ke `lebihTercatat` akan
+  menenggelamkan selisih rupiah yang benar-benar perlu ditambal. Karena itu yang ditambah
+  **daftar terpisah**, bukan pelonggaran gerbangnya: `lebihTercatat` tetap bersih, dan
+  "Lunas tanpa jejak" berdiri sendiri sebagai daftar rujukan — dengan penanda
+  `takBisaDicocokkan` untuk baris yang periode/jenisnya memang tak terbaca, supaya
+  "pencocokannya tak pernah punya kesempatan" tak salah dibaca sebagai "uangnya hilang".
+  Tidak ditambal otomatis, dan tidak masuk hitungan "Cocok".
 
 ---
 

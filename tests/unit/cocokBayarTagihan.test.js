@@ -193,12 +193,80 @@ describe('lebihTercatat — "tagihan mengaku terbayar, uangnya tak ada di riwaya
   })
 
   it('tagihan tanpa satu pun baris buku induk TIDAK dilaporkan di sini', () => {
-    // Sengaja: tagihan yang belum dibayar sama sekali adalah keadaan normal, dan tagihan
-    // lunas tanpa jejak bisa saja dibayar lewat jalur lama sebelum buku induk dipakai.
-    // Melaporkannya akan menenggelamkan temuan yang benar-benar perlu diperiksa.
+    // Sengaja: tagihan lunas tanpa jejak bisa saja dibayar lewat jalur lama sebelum buku
+    // induk dipakai. Menuangkannya ke daftar yang sama akan menenggelamkan selisih rupiah
+    // yang benar-benar perlu diperiksa. v.1.4.3: ia tak lagi HILANG, cuma pindah ke
+    // daftarnya sendiri — lihat blok `lunasTanpaJejak` di bawah.
     const h = periksaKecocokanBayar([tg({ terbayar: 150000, status: 'lunas' })], [])
     expect(h.lebihTercatat).toEqual([])
     expect(h.kurangTercatat).toEqual([])
+  })
+})
+
+// v.1.4.3 — admin keuangan, 7 Sep 2026: "ada Amira Fatimatuz Zahra dan Nafatin Niswah, yg
+// ditagihkan sudah tercatat lunas tapi di riwayat pos blm ada."
+//
+// Sampai v.1.4.2 alat ini DIAM untuk keluhan itu: `continue` melewati tagihan yang tak punya
+// baris buku induk, dan `statusMeleset` tak menangkapnya karena kolom `status` dan sisa hasil
+// hitung sama-sama bilang lunas. Admin membuka layarnya dan menemukannya kosong.
+describe('lunasTanpaJejak — "ditagihkan lunas tapi di riwayat pos belum ada"', () => {
+  it('tagihan yang mengaku terbayar tanpa satu pun baris Riwayat masuk daftar sendiri', () => {
+    const h = periksaKecocokanBayar([tg({ terbayar: 150000, status: 'lunas' })], [], {
+      namaSantri: { 1: 'Ahmad' }
+    })
+    expect(h.lunasTanpaJejak).toHaveLength(1)
+    const t = h.lunasTanpaJejak[0]
+    expect(t.nama).toBe('Ahmad')
+    expect(t.terbayar).toBe(150000)
+    expect(t.takBisaDicocokkan).toBe(false)
+    // TIDAK boleh bocor ke dua daftar yang lain — artinya beda dan penanganannya beda.
+    expect(h.lebihTercatat).toEqual([])
+    expect(h.kurangTercatat).toEqual([])
+  })
+
+  it('tagihan yang memang BELUM dibayar tak disebut di mana pun', () => {
+    // Ini keadaan normal untuk hampir semua tagihan. Melaporkannya = kebisingan murni.
+    const h = periksaKecocokanBayar([tg({ terbayar: 0, status: 'belum' })], [])
+    expect(h.lunasTanpaJejak).toEqual([])
+    expect(h.lebihTercatat).toEqual([])
+    expect(h.kurangTercatat).toEqual([])
+  })
+
+  it('cicilan sebagian tanpa jejak pun ikut terdaftar', () => {
+    const h = periksaKecocokanBayar([tg({ terbayar: 50000, status: 'partial' })], [])
+    expect(h.lunasTanpaJejak).toHaveLength(1)
+    expect(h.lunasTanpaJejak[0].terbayar).toBe(50000)
+  })
+
+  it('tagihan yang periodenya tak terbaca ditandai, bukan disamakan dengan uang hilang', () => {
+    // Tanpa periode, pencocokannya tak pernah punya kesempatan — membacanya sebagai
+    // "uangnya tak ada" akan menuduh tanpa dasar.
+    const h = periksaKecocokanBayar(
+      [tg({ terbayar: 150000, status: 'lunas', periode: '', jatuh_tempo: '' })],
+      []
+    )
+    expect(h.lunasTanpaJejak).toHaveLength(1)
+    expect(h.lunasTanpaJejak[0].takBisaDicocokkan).toBe(true)
+  })
+
+  it('tagihan yang jejaknya ADA tetap dinilai lewat selisih, bukan masuk daftar ini', () => {
+    const sehat = periksaKecocokanBayar([tg({ terbayar: 150000, status: 'lunas' })], [bi()])
+    expect(sehat.lunasTanpaJejak).toEqual([])
+    const kurang = periksaKecocokanBayar([tg({ terbayar: 150000 })], [bi({ nominal: 50000 })])
+    expect(kurang.lunasTanpaJejak).toEqual([])
+    expect(kurang.lebihTercatat).toHaveLength(1)
+  })
+
+  it('ringkasannya menjumlahkan rupiah yang diakui tagihan', () => {
+    const h = periksaKecocokanBayar(
+      [
+        tg({ id: 't1', terbayar: 150000, status: 'lunas' }),
+        tg({ id: 't2', santri_id: '2', terbayar: 50000, status: 'partial' })
+      ],
+      []
+    )
+    expect(h.ringkas.lunasTanpaJejak).toBe(2)
+    expect(h.ringkas.lunasTanpaJejakRp).toBe(200000)
   })
 })
 

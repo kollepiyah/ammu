@@ -360,6 +360,22 @@
                     uangnya tak ada di riwayat
                   </p>
                 </div>
+                <!-- v.1.4.3 (keluhan admin keuangan, 7 Sep 2026): "yg ditagihkan sudah
+                     tercatat lunas tapi di riwayat pos blm ada". Dipisah dari "Lebih
+                     tercatat" karena artinya beda — di sini tak ada jejak SAMA SEKALI,
+                     dan sebagian besar kemungkinan pembayaran jalur lama yang sah. -->
+                <div
+                  class="rounded-lg bg-[var(--bg-card)] border border-orange-200 dark:border-orange-800 p-2"
+                >
+                  <p class="text-[9px] uppercase font-bold text-orange-700">Lunas tanpa jejak</p>
+                  <p class="text-xl font-black text-orange-700">
+                    {{ cocokHasil.ringkas.lunasTanpaJejak }}
+                  </p>
+                  <p class="text-[10px] text-[var(--text-secondary)]">
+                    Rp {{ rp(cocokHasil.ringkas.lunasTanpaJejakRp) }} · tagihan lunas, tak ada
+                    barisnya di Riwayat
+                  </p>
+                </div>
                 <div
                   class="rounded-lg bg-[var(--bg-card)] border border-violet-200 dark:border-violet-800 p-2"
                 >
@@ -447,6 +463,30 @@
                 <p class="mt-1 italic opacity-80">
                   TIDAK ditambal otomatis: menurunkan angka terbayar = menagih ulang orang yang
                   mungkin sudah membayar lewat jalur lama.
+                </p>
+              </details>
+
+              <details v-if="cocokHasil.lunasTanpaJejak.length" class="text-[11px]">
+                <summary class="cursor-pointer font-bold text-orange-800 dark:text-orange-300">
+                  {{ cocokHasil.lunasTanpaJejak.length }} tagihan lunas yang tak punya baris di
+                  Riwayat — daftar rujukan
+                </summary>
+                <ul class="list-disc pl-4 mt-1 text-[var(--text-secondary)]">
+                  <li v-for="t in cocokHasil.lunasTanpaJejak.slice(0, 25)" :key="t.tagihan.id">
+                    <b>{{ t.nama || t.santriId }}</b> — {{ t.jenis }} {{ t.periode }}: tercatat
+                    terbayar Rp {{ rp(t.terbayar) }}, tak ada barisnya di Riwayat
+                    <span
+                      v-if="t.takBisaDicocokkan"
+                      class="ml-1 px-1 rounded bg-slate-200 dark:bg-slate-700 text-[9px] font-bold"
+                      >periode/jenis tak terbaca</span
+                    >
+                  </li>
+                </ul>
+                <p class="mt-1 italic opacity-80">
+                  Bukan otomatis berarti salah: pembayaran lewat jalur lama, sebelum Buku Induk
+                  dipakai, memang tak meninggalkan baris di Riwayat. Dipisah dari "Lebih tercatat"
+                  supaya tak menenggelamkannya. TIDAK ditambal otomatis — pakai daftar ini saat ada
+                  yang bertanya "kenapa nama ini lunas padahal tak ada di riwayat".
                 </p>
               </details>
 

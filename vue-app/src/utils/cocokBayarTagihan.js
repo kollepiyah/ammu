@@ -200,7 +200,7 @@ const AMBANG = 0.5
  * @param {Map|object} [opsi.namaSantri] id → nama, untuk melabeli temuan.
  *
  * @returns {{kurangTercatat:Array, lebihTercatat:Array, statusMeleset:Array,
- *   transferYatim:Array, bayarTanpaTagihan:Array, ringkas:object}}
+ *   transferYatim:Array, bayarTanpaTagihan:Array, lunasTanpaJejak:Array, ringkas:object}}
  */
 export function periksaKecocokanBayar(tagihanList, bukuInduk, opsi = {}) {
   const peta = petaBayarPerSel(bukuInduk)
@@ -214,6 +214,7 @@ export function periksaKecocokanBayar(tagihanList, bukuInduk, opsi = {}) {
   const kurangTercatat = []
   const lebihTercatat = []
   const statusMeleset = []
+  const lunasTanpaJejak = []
   const terpakai = new Set()
 
   for (const t of tagihanList || []) {
@@ -247,7 +248,40 @@ export function periksaKecocokanBayar(tagihanList, bukuInduk, opsi = {}) {
     const lewatId = petaId.get(String(t.id || ''))
     const k = sid && kode ? kunciSel(sid, jenisTagihan(t), kode) : ''
     const lewatSel = k ? peta.get(k) : null
-    if (!lewatId && !lewatSel) continue
+    if (!lewatId && !lewatSel) {
+      // Tagihan tanpa SATU PUN baris di Riwayat. Untuk yang belum dibayar ini keadaan
+      //   normal dan tak perlu disebut. Tapi kalau ia MENGAKU sudah terbayar, admin
+      //   keuangan berhak melihatnya — itulah keluhan 7 Sep 2026: "yg ditagihkan sudah
+      //   tercatat lunas tapi di riwayat pos blm ada".
+      //
+      //   v.1.4.3: sampai v.1.4.2 keadaan ini ditelan `continue` tanpa suara, dan
+      //   `statusMeleset` pun tak menangkapnya — kolom `status` dan sisa hasil hitung
+      //   sama-sama bilang lunas, jadi menurut kodenya sendiri tak ada yang salah.
+      //   Alatnya diam persis untuk keluhan yang mendorongnya dibuat.
+      //
+      //   Sengaja DIPISAH dari `lebihTercatat`, bukan digabung: sebagian besar temuan di
+      //   sini kemungkinan sah — pembayaran lewat jalur lama sebelum buku induk dipakai —
+      //   dan menuangkannya ke daftar yang sama akan menenggelamkan selisih rupiah yang
+      //   benar-benar perlu diperiksa. Dipisah, ia jadi daftar rujukan saat ada yang
+      //   bertanya "kenapa nama ini lunas padahal tak ada di riwayat", tanpa mengganggu
+      //   alur menambal yang sudah ada.
+      if (terbayar > AMBANG) {
+        lunasTanpaJejak.push({
+          tagihan: t,
+          santriId: sid,
+          nama: t.santri_nama || nama(sid),
+          jenis: t.kategori || t.jenis || '',
+          periode: t.periode || kode,
+          kode,
+          nominal,
+          terbayar,
+          // '' berarti periode/jenisnya sendiri tak bisa dibaca — pencocokannya memang
+          //   tak pernah punya kesempatan, jadi jangan dibaca sebagai "uang hilang".
+          takBisaDicocokkan: !k
+        })
+      }
+      continue
+    }
     if (k && lewatSel) terpakai.add(k)
     const diRiwayat = (lewatId?.total || 0) + (lewatSel?.total || 0)
     const barisSemua = [...(lewatId?.baris || []), ...(lewatSel?.baris || [])]
@@ -325,6 +359,7 @@ export function periksaKecocokanBayar(tagihanList, bukuInduk, opsi = {}) {
     statusMeleset,
     transferYatim,
     bayarTanpaTagihan,
+    lunasTanpaJejak,
     ringkas: {
       tagihanDiperiksa: (tagihanList || []).length,
       barisBukuDipakai: peta.size,
@@ -336,7 +371,9 @@ export function periksaKecocokanBayar(tagihanList, bukuInduk, opsi = {}) {
       transferYatim: transferYatim.length,
       transferYatimRp: jumlahRp(transferYatim, 'nominal'),
       bayarTanpaTagihan: bayarTanpaTagihan.length,
-      bayarTanpaTagihanRp: jumlahRp(bayarTanpaTagihan, 'diRiwayat')
+      bayarTanpaTagihanRp: jumlahRp(bayarTanpaTagihan, 'diRiwayat'),
+      lunasTanpaJejak: lunasTanpaJejak.length,
+      lunasTanpaJejakRp: jumlahRp(lunasTanpaJejak, 'terbayar')
     }
   }
 }
