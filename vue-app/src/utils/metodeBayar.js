@@ -9,8 +9,16 @@
 
 export const METODE_OPTS = ['Tunai', 'Transfer']
 
-// sumber yang PASTI non-tunai walau field `metode` kosong (baris lama)
-const SUMBER_TRANSFER = ['transfer_verified', 'bmt', 'va_bmt', 'va']
+// sumber yang PASTI non-tunai walau field `metode` kosong (baris lama).
+//
+// v.1.4.3: 'bmt_va' adalah nilai yang BENAR-BENAR ditulis RPC `apply_bmt_payment` ke kolom
+//   `sumber` (supabase/migrations/20260905120000_bmt_alokasi_utuh.sql:211) dan yang dibaca
+//   `utils/cocokBayarTagihan`. Sampai v.1.4.2 daftar ini hanya memuat ejaan TERBALIKnya,
+//   'va_bmt', sehingga SETIAP baris VA BMT disimpulkan 'Tunai' — termasuk oleh perbaikan
+//   label riwayat wali v.1.4.2 yang justru mengaku membetulkan VA BMT. Ejaan terbalik
+//   tetap ditahan sebagai alias: ia tak pernah cocok dengan apa pun, jadi tak ada
+//   ruginya, dan mencabutnya cuma memindah risiko ke penulis lain yang belum ketahuan.
+const SUMBER_TRANSFER = ['transfer_verified', 'bmt_va', 'bmt', 'va_bmt', 'va']
 
 /** 'Tunai' | 'Transfer' untuk satu baris keuangan_buku_induk.
  *

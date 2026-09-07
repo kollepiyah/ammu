@@ -11,6 +11,8 @@
 //   sehingga 1 unit logis = 1 titik (pt = 1/72") -> 1px vertikal, di-stretch horizontal otomatis.
 //   Hasil cetak TIDAK gepeng (aspect benar).
 import { buildKopFromSettings } from './strukBuilder'
+// v.1.4.3: cara bayar slip tabungan/uang saku — satu simpulan dengan PDF & HTML-nya.
+import { metodeTransaksi } from './metodeBayar'
 import { terbilangRupiah } from './terbilang'
 import { namaWaliSantri } from './santriIdentitas'
 import { muassisImageSync, MUASSIS_RATIO } from './kopMuassis' // v.100: baris-1 KOP = gambar muassis
@@ -292,7 +294,9 @@ function tabData(mut, settings, { saldo = null, santri = {}, label = 'TABUNGAN' 
     infoRight: [
       ['Tanggal', fmtTgl(mut.tanggal)],
       ['No. Transaksi', mut.no_bukti || mut.id || '-'],
-      ['Metode', 'TUNAI']
+      // v.1.4.3: dulu hardcode 'TUNAI'. Jalur cetak-LANGSUNG (ESC/P) ini yang dipakai
+      //   kasir sehari-hari, jadi memperbaiki PDF-nya saja tak akan terlihat di laci.
+      ['Metode', metodeTransaksi(mut).toUpperCase()]
     ],
     midHeader: 'Dengan rincian sebagai berikut :',
     items: [{ name: '1. ' + ket, amount: 'Rp. ' + fmtNum(mut.nominal) }],

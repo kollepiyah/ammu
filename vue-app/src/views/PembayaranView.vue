@@ -953,7 +953,11 @@ function buildTrxFromGroup(p) {
     kelas_sekolah: s.kelas_sekolah || '',
     operator: p.operator || 'Administrator',
     penyetor: p.wali || '',
-    metode: p.sumber === 'transfer_verified' ? 'TRANSFER' : 'TUNAI',
+    // v.1.4.3: dulu disimpulkan di sini sendiri — `sumber` 'transfer_verified' = Transfer,
+    //   SELAIN ITU 'TUNAI'. v.1.4.2 membetulkan label di daftar riwayat tapi MELEWATI
+    //   pembangun bukti ini, jadi pembayaran POS-transfer dan VA BMT tetap tercetak
+    //   "TUNAI" di kwitansi yang diunduh wali. Sekarang satu sumber dengan layarnya.
+    metode: metodeTransaksi(p).toUpperCase(),
     status_siswa: s.aktif === false ? 'Tidak Aktif' : 'Aktif',
     items: rows.map((r) => ({
       jenis: r.kategori || 'Tagihan',

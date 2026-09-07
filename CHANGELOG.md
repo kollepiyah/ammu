@@ -20,7 +20,95 @@ naik satu tiap rilis. Entri lama memakai skema lama `v.{nomor-urut}.{MMDDtahunmu
 
 ---
 
+## [v.1.4.3 — belum dirilis] — 2026-09-07 — Bukti pembayaran berhenti berbohong "TUNAI"
+
+⚠️ **Frontend murni.** Tak ada migrasi baru. Menumpuk di atas v.1.4.1 & v.1.4.2 yang
+migrasinya MASIH belum di-`supabase db push`.
+
+### Konteks: kenapa keluhannya tetap sama sesudah v.1.4.2 tayang
+
+Admin keuangan mengulang keluhan yang sama (Kyai, 7 Sep 2026). Yang perlu dipisah:
+
+**Web v.1.4.2 SUDAH tayang** sejak 5 Sep 2026 pk. 16.25 (`assets/index-CVlTMiGe.js` di
+`ammuonline.web.app` — dan Android memuat URL yang sama lewat Capacitor, jadi tak perlu
+rilis Play). Yang belum: `git push` (5 commit menumpuk di `main` lokal) dan karena itu
+kedua migrasi Supabase juga belum ter-apply.
+
+Jadi keluhannya bertahan karena **dua sebab yang berbeda**, bukan karena perbaikannya
+tak sampai:
+
+1. **Perbaikan v.1.4.2 menutup PABRIKnya, bukan barang yang sudah terlanjur cacat.**
+   Empat jalur yang membuat Riwayat & Tagihan berpisah memang sudah ditutup, tapi baris
+   yang SUDAH berselisih sebelum 5 Sep tetap berselisih — tak ada yang membetulkannya
+   sendiri. Nama-nama yang disebut admin (Amira Fatimatuz Zahra, Nafatin Niswah, Akifah
+   Nuris Sholihah, tagihan buku) adalah baris lama. Alatnya sudah ada dan menunggu
+   dijalankan: **Pengaturan Keuangan › Tagihan › "Cek Riwayat vs Tagihan"**.
+   "Riwayat sudah bayar tapi tagihan belum lunas" = **Kurang tercatat** (bisa ditambal
+   sekali tekan). "Tagihan lunas tapi di riwayat pos belum ada" = **Lebih tercatat** —
+   sengaja TIDAK ditambal otomatis, karena menurunkan `terbayar` berarti menagih ulang
+   orang yang mungkin memang sudah membayar; yang ini harus diputuskan orang.
+
+2. **Keluhan soal struk memang BELUM PERNAH diperbaiki.** v.1.4.2 menambah cara bayar di
+   layar, di daftar riwayat wali, dan di PDF laporan mutasi — tapi tak satu pun menyentuh
+   BUKTI yang dicetak. Itu isi rilis ini.
+
+### Fixed
+
+- **Struk cetak-ulang tak lagi berubah jadi "TUNAI"** (v.1.4.3). Admin keuangan:
+  _"bukti transaksi anak yg transfer kalo diprint yg ke2 kali ini jadi bukti pembayaran
+  tunai."_
+
+  Persis begitu, dan sebabnya bukan di pencetaknya. Semua pembangun struk membaca
+  `trx.metode` dengan cadangan `|| 'TUNAI'`. Cetakan PERTAMA berangkat dari objek yang
+  dirakit `PosSantriView` sesaat sesudah transaksi — di sana `metode` ada. Cetakan KEDUA
+  dirakit ulang dari baris buku induk yang tersimpan, dan **dua perakit itu lupa membawa
+  `metode`**: `toTrx()` di `RiwayatPosView` dan `cetakUlangStruk()` di `BukuIndukView`.
+  Field yang hilang jatuh ke cadangan, dan cadangannya berbunyi "TUNAI" — bukan "—", jadi
+  tak ada yang terlihat salah.
+
+  Yang membuatnya sulit dipercaya oleh yang melihat: badge cara bayar **di daftar** kedua
+  halaman itu sudah benar sejak v.1.2.6. Layar bilang "Transfer", kertas bilang "TUNAI",
+  dan keduanya membaca baris yang sama.
+
+- **Bukti setor/tarik Uang Saku & Tabungan tak lagi selalu "TUNAI"** (v.1.4.3). Admin
+  keuangan: _"transaksi uang saku yg transfer, di buktinya tercatat TUNAi."_
+
+  Di sini bahkan tak ada cadangan yang bisa disalahkan: ketiga pencetak slip tabungan
+  **menuliskan `'TUNAI'` sebagai teks tetap** — `cetakSlipTabunganPdf`,
+  `buildSlipTabunganHtml`, dan `tabData` di `escpImage` (jalur cetak-LANGSUNG ESC/P, yang
+  justru paling sering dipakai kasir). Wajar untuk kode yang lahir sebelum mutasi tabungan
+  punya field `metode` sama sekali — field itu baru ada di v.1.4.2, dan slipnya tak ikut
+  menyusul. Ketiganya kini memanggil `utils/metodeBayar`.
+
+- **Kwitansi yang diunduh WALI ikut berbohong** (v.1.4.3, ketemu sambil memeriksa).
+  v.1.4.2 membetulkan label `[Tunai]`/`[Transfer]` di daftar Riwayat wali, tapi
+  `buildTrxFromGroup()` — yang merakit bukti untuk dilihat & diunduh — masih menyimpulkan
+  sendiri: `sumber === 'transfer_verified' ? 'TRANSFER' : 'TUNAI'`. Layar wali betul,
+  kwitansinya tidak. Persis pola yang sama dengan dua di atas.
+
+- **VA BMT disimpulkan "Tunai" di SELURUH aplikasi — ejaan `sumber` terbalik** (v.1.4.3).
+  Ini yang paling perlu diingat. `utils/metodeBayar` menyimpulkan transfer dari daftar
+  `sumber`, dan daftarnya memuat `'va_bmt'`. Nilai yang **benar-benar ditulis** RPC
+  `apply_bmt_payment` ke kolom `sumber` adalah **`'bmt_va'`** (huruf terbalik —
+  `20260905120000_bmt_alokasi_utuh.sql:211`; `utils/cocokBayarTagihan` sudah memakai ejaan
+  yang benar). Ejaan yang salah tak pernah cocok dengan satu baris pun, jadi tiap
+  pembayaran VA BMT jatuh ke default 'Tunai': badge Uang Saku, badge Buku Induk, kolom
+  Cara Bayar di PDF laporan, subtotal TUNAI/TRANSFER laporan harian — **dan perbaikan
+  label riwayat wali v.1.4.2 yang justru mengaku membetulkan VA BMT**.
+
+  Lolos dari 28 tes hijau karena tesnya sendiri mengabadikan ejaan yang salah
+  (`expect(metodeTransaksi({ sumber: 'va_bmt' })).toBe('Transfer')`) — tes yang menjaga
+  nilai yang tak pernah ada. Sekarang ada tes untuk `'bmt_va'`; jangan dihapus. Ejaan
+  terbaliknya ditahan sebagai alias: ia tak cocok dengan apa pun, jadi mencabutnya hanya
+  memindah risiko ke penulis lain yang belum ketahuan.
+
+---
+
 ## [v.1.4.2 — belum dirilis] — 2026-09-05 — Bisyaroh tutup buku tanggal 24, dan shift yang belum dibuka tak lagi merah
+
+⚠️ **KOREKSI 7 Sep 2026: web-nya SUDAH TAYANG** sejak 5 Sep 2026 pk. 16.25 (deploy
+Firebase langsung; `git push`-nya yang gagal, sehingga commitnya menumpuk di `main` lokal
+dan kedua migrasi Supabase belum ter-apply). Yang di bawah ini ditulis sebelum itu.
 
 ⚠️ **Belum dirilis, dan MENUMPUK di atas v.1.4.1 yang juga belum dirilis.** Titik versi
 tetap `1.4.0` (keputusan Kyai, 4 Sep 2026 — belum naik ke Play). Kedua entri ini akan
