@@ -555,7 +555,7 @@ const introText = computed(() =>
 const lembagaName = computed(
   () => settings.settings?.namaLembaga || 'Pondok Pesantren Mambaul Ulum'
 )
-const version = computed(() => settings.settings?.appVersion || 'v.1.4.1')
+const version = computed(() => settings.settings?.appVersion || 'v.1.4.2')
 const logoSrc = computed(() => settings.settings?.logoUrl || '/logo.png')
 
 const sections = [
@@ -799,6 +799,16 @@ async function resetFaq() {
 //   berubah di layar mereka, bukan nama fungsi. Cukup beberapa rilis terakhir —
 //   riwayat lengkap ada di CHANGELOG.md untuk pengembang.
 const rilis = [
+  {
+    versi: 'v.1.4.2',
+    tgl: 'September 2026',
+    items: [
+      'Riwayat perizinan guru kini bisa dilihat per orang. Kepala, PJ, dan admin punya daftar baru di halaman Personal yang mengumpulkan seluruh pengajuan izin, sakit, dan cuti setiap guru — lengkap dengan pencarian nama, penyaring tahun, dan jumlah hari yang sudah disetujui. Sebelumnya yang tampil hanya pengajuan yang sedang menunggu, jadi begitu diputus riwayatnya hilang dari layar.',
+      'Lampiran pengajuan bisa dibuka ulang kapan pun. Surat dokter atau surat keterangan yang dilampirkan guru tak lagi hanya bisa dilihat sekali waktu hendak disetujui.',
+      'Izin yang dibatalkan sendiri tak lagi tertulis "Ditolak". Guru yang menarik pengajuannya sendiri dulu melihat tulisan merah "Ditolak" seolah pimpinan yang menolaknya; sekarang berbunyi "Dibatalkan". Pengajuan lama ikut terbaca benar dengan sendirinya.',
+      'Daftar "Sudah disetujui, absensinya belum terisi" bisa dibersihkan. Ada nama yang menetap di sana walau absensinya sebenarnya sudah benar dan tak bisa dikeluarkan dengan cara apa pun; kini tersedia tombol "Abaikan" untuk menutupnya tanpa mengubah absensi.'
+    ]
+  },
   {
     versi: 'v.1.4.1',
     tgl: 'September 2026',
