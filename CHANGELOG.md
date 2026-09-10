@@ -10,8 +10,22 @@ naik satu tiap rilis. Entri lama memakai skema lama `v.{nomor-urut}.{MMDDtahunmu
 
 ## [Unreleased]
 
-Penanda di kode & tes: `v.1.4.2`. Nomor versi `package.json` dan `versionCode` Android
-**belum** dinaikkan — itu langkah rilis, bukan langkah pekerjaan ini.
+### Planned
+
+- Capacitor Android first build + sideload APK
+- Capacitor iOS setup
+- Tauri Desktop scaffold
+- Phase 1 palette migration: `bg-blue-600/700` action button → `bg-teal-600/700` (~62 occurrences)
+- DOMPurify integration untuk template literal innerHTML yang inject user data
+
+---
+
+## [v.1.4.2] — 2026-09-10 — Riwayat izin per orang, dan "Dibatalkan" berhenti menyamar jadi "Ditolak"
+
+**SIAP RILIS** — `versionCode` 142 / `versionName` `v.1.4.2`. **Tak ada migrasi Supabase**
+pada rilis ini: status `'dibatalkan'` hanya nilai baru di kolom `status` yang sudah ada
+(tabel `izin_guru` tak punya CHECK constraint), dan tak ada tabel/kolom yang bertambah.
+Jadi urutannya cukup **deploy web → rebuild Android**, tanpa `supabase db push`.
 
 ### Added
 
@@ -44,14 +58,6 @@ Penanda di kode & tes: `v.1.4.2`. Nomor versi `package.json` dan `versionCode` A
   tanggal-mundurnya sendiri beres). Kini `tgl_terap_ulang` ikut menyaring — sekali sudah
   diperiksa manusia, barisnya keluar — dan ada tombol **Abaikan** yang menutup satu baris
   tanpa menyentuh absensi. Panelnya tetap hilang sendiri begitu kosong.
-
-### Planned
-
-- Capacitor Android first build + sideload APK
-- Capacitor iOS setup
-- Tauri Desktop scaffold
-- Phase 1 palette migration: `bg-blue-600/700` action button → `bg-teal-600/700` (~62 occurrences)
-- DOMPurify integration untuk template literal innerHTML yang inject user data
 
 ---
 
