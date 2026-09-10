@@ -60,6 +60,11 @@ export function useIzinGuru() {
   const riwayat = computed(() =>
     sortNewest(izinRaw.value.filter((a) => a.status !== 'diajukan' && inScope(a)))
   )
+  // v.1.4.2: SEMUA pengajuan se-scope, status apa pun (termasuk milik sendiri dan yang
+  //   masih menunggu) — bahan "Rekap Riwayat Izin per Orang". `riwayat` sengaja tak
+  //   dipakai di sana: rekap per orang yang membuang baris 'diajukan' akan menyembunyikan
+  //   justru pengajuan yang sedang ditunggu keputusannya.
+  const semua = computed(() => sortNewest(izinRaw.value.filter((a) => inScope(a))))
 
   // Guru ajukan izin/sakit/cuti. payload: { jenis, kategori?, keterangan, tgl_mulai,
   //   tgl_selesai, shifts[], lampiran_url? }. kategori hanya relevan untuk jenis 'cuti'.
@@ -105,9 +110,13 @@ export function useIzinGuru() {
   }
 
   // Pengaju: batalkan selagi masih 'diajukan'.
+  // v.1.4.2: statusnya 'dibatalkan', BUKAN 'ditolak'. Sampai v.1.4.1 batal-sendiri
+  //   ditulis sebagai 'ditolak' sehingga layar guru melabelinya merah "Ditolak" —
+  //   seolah atasan yang menolak. Baris lama tetap terbaca benar lewat
+  //   utils/izinStatus (status 'ditolak' + catatan "Dibatalkan…"), jadi tak ada migrasi.
   async function batal(id) {
     await updateOne('izin_guru', id, {
-      status: 'ditolak',
+      status: 'dibatalkan',
       catatan_putus: 'Dibatalkan pengaju',
       tgl_putus: new Date().toISOString()
     })
@@ -182,9 +191,23 @@ export function useIzinGuru() {
     const r = await tulisAbsensi(a, existingAbsensi)
     await updateOne('izin_guru', a.id, {
       n_absensi: r.written,
+      terap_ulang_skipped: r.skipped,
       tgl_terap_ulang: new Date().toISOString()
     })
     return r
+  }
+
+  // v.1.4.2: singkirkan satu baris dari panel pemulihan tanpa menulis absensi apa pun.
+  //   Perlu karena panel itu menyaring lewat `n_absensi === 0` — proksi, bukan keadaan
+  //   sebenarnya. Pengajuan yang semua harinya SUDAH tercatat hadir tak pernah menambah
+  //   n_absensi, jadi ia tersangkut di sana selamanya dan tombol Terapkan tak bisa
+  //   membebaskannya. `tgl_terap_ulang` = penanda "sudah diperiksa manusia".
+  async function abaikanTerap(a) {
+    await updateOne('izin_guru', a.id, {
+      terap_diabaikan: true,
+      terap_diabaikan_oleh: myNama.value,
+      tgl_terap_ulang: new Date().toISOString()
+    })
   }
 
   onMounted(() => {
@@ -205,6 +228,7 @@ export function useIzinGuru() {
     myIzin,
     antrian,
     riwayat,
+    semua,
     isApprover,
     isAdmin,
     isKepala,
@@ -214,6 +238,7 @@ export function useIzinGuru() {
     batal,
     tolak,
     setujui,
-    terapkanUlang
+    terapkanUlang,
+    abaikanTerap
   }
 }

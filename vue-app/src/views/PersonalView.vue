@@ -243,11 +243,8 @@
           </div>
           <div class="flex flex-col items-end gap-1 flex-shrink-0">
             <span
-              :class="[
-                'text-[10px] font-black px-2 py-0.5 rounded-full',
-                statusIzinClass(a.status)
-              ]"
-              >{{ statusIzinLabel(a.status) }}</span
+              :class="['text-[10px] font-black px-2 py-0.5 rounded-full', kelasStatusIzin(a)]"
+              >{{ labelStatusIzin(a) }}</span
             >
             <button
               v-if="a.status === 'diajukan'"
@@ -364,13 +361,164 @@
                 {{ shiftsLabel(a.shifts) }}
               </p>
             </div>
-            <button
-              :disabled="izinBusyId === a.id"
-              class="text-[10px] font-black bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white px-2.5 py-1.5 rounded-lg flex-shrink-0"
-              @click="terapkanUlangIzin(a)"
+            <div class="flex items-center gap-1.5 flex-shrink-0">
+              <button
+                :disabled="izinBusyId === a.id"
+                class="text-[10px] font-black bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white px-2.5 py-1.5 rounded-lg"
+                @click="terapkanUlangIzin(a)"
+              >
+                <i class="fas fa-rotate-right mr-1"></i>Terapkan
+              </button>
+              <!-- v.1.4.2: jalan keluar untuk baris yang absensinya sebenarnya sudah
+                   benar — tanpa ini ia tak pernah bisa hilang dari panel. -->
+              <button
+                :disabled="izinBusyId === a.id"
+                title="Tutup baris ini tanpa mengubah absensi"
+                class="text-[10px] font-bold text-[var(--text-secondary)] hover:text-rose-600 disabled:opacity-50 px-2 py-1.5 rounded-lg border border-[var(--border-subtle)]"
+                @click="abaikanTerapIzin(a)"
+              >
+                <i class="fas fa-xmark mr-1"></i>Abaikan
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- v.1.4.2: Rekap Riwayat Izin per Orang (Kepala/PJ/admin).
+         Antrian di atas hanya menampilkan yang MENUNGGU; sesudah diputus, pengajuan
+         beserta lampirannya dulu lenyap dari layar. Di sini riwayatnya dikelompokkan
+         per orang dan lampirannya tetap bisa dibuka ulang kapan pun. -->
+    <div
+      v-if="izinIsApprover"
+      class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
+    >
+      <div
+        class="flex items-center justify-between gap-2 mb-3 border-b border-[var(--border-subtle)] pb-2"
+      >
+        <h3
+          class="text-xs md:text-sm font-black text-[var(--text-primary)] uppercase tracking-widest"
+        >
+          <i class="fas fa-clock-rotate-left text-teal-600 mr-2"></i>Rekap Riwayat Izin per Orang
+        </h3>
+        <span class="text-[10px] font-bold text-[var(--text-tertiary)] flex-shrink-0"
+          >{{ rekapIzin.length }} orang</span
+        >
+      </div>
+
+      <div class="flex flex-wrap gap-2 mb-3">
+        <div class="relative flex-1 min-w-[150px]">
+          <i
+            class="fas fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-[11px] text-[var(--text-tertiary)]"
+          ></i>
+          <input
+            v-model="rekapIzinCari"
+            type="search"
+            placeholder="Cari nama…"
+            class="w-full pl-8 pr-3 py-2 text-xs rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] outline-none focus:ring-2 focus:ring-teal-500"
+          />
+        </div>
+        <select
+          v-model="rekapIzinTahun"
+          class="px-3 py-2 text-xs font-bold rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] outline-none focus:ring-2 focus:ring-teal-500"
+        >
+          <option value="">Semua tahun</option>
+          <option v-for="t in rekapIzinTahunOpsi" :key="t" :value="t">{{ t }}</option>
+        </select>
+      </div>
+
+      <div
+        v-if="!rekapIzin.length"
+        class="text-[11px] text-[var(--text-tertiary)] italic text-center py-3"
+      >
+        {{
+          rekapIzinDisaring
+            ? 'Tak ada yang cocok dengan penyaring ini.'
+            : 'Belum ada riwayat pengajuan izin / sakit / cuti.'
+        }}
+      </div>
+
+      <div v-else class="space-y-2">
+        <div
+          v-for="g in rekapIzin"
+          :key="g.id"
+          class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-card-elevated)] overflow-hidden"
+        >
+          <button
+            class="w-full flex items-center justify-between gap-3 p-2.5 text-left cursor-pointer"
+            :aria-expanded="!!rekapIzinBuka[g.id]"
+            @click="toggleRekapIzin(g.id)"
+          >
+            <div class="min-w-0">
+              <p class="text-[13px] font-bold text-[var(--text-primary)] truncate">
+                {{ g.nama
+                }}<span class="text-[10px] font-normal text-[var(--text-secondary)]">
+                  · {{ g.lembaga || '-' }}</span
+                >
+              </p>
+              <p class="text-[10px] text-[var(--text-secondary)]">
+                {{ ringkasJenisIzin(g) }} · <b>{{ g.totalHari }}</b> hari disetujui
+                <span v-if="g.menunggu" class="text-amber-600 font-bold">
+                  · {{ g.menunggu }} menunggu</span
+                >
+                <span v-if="g.lampiran" class="text-[var(--text-tertiary)]">
+                  · <i class="fas fa-paperclip"></i> {{ g.lampiran }}</span
+                >
+              </p>
+            </div>
+            <i
+              class="fas text-[11px] text-[var(--text-tertiary)] flex-shrink-0"
+              :class="rekapIzinBuka[g.id] ? 'fa-chevron-up' : 'fa-chevron-down'"
+            ></i>
+          </button>
+
+          <div
+            v-if="rekapIzinBuka[g.id]"
+            class="border-t border-[var(--border-subtle)] divide-y divide-[var(--border-subtle)]"
+          >
+            <div
+              v-for="a in g.items"
+              :key="'rk-' + a.id"
+              class="p-2.5 flex items-start justify-between gap-3"
             >
-              <i class="fas fa-rotate-right mr-1"></i>Terapkan
-            </button>
+              <div class="min-w-0">
+                <p class="text-[12px] font-bold text-[var(--text-primary)]">
+                  {{ jenisIzinLabel(a.jenis)
+                  }}<span v-if="a.jenis === 'cuti' && a.kategori" class="text-violet-600">
+                    ({{ cutiKatNama(a.kategori) }})</span
+                  >
+                  · {{ rangeLabel(a) }}
+                </p>
+                <p class="text-[10px] text-[var(--text-secondary)]">
+                  Shift {{ shiftsLabel(a.shifts)
+                  }}<span v-if="a.penyetuju"> · oleh {{ a.penyetuju }}</span>
+                </p>
+                <p v-if="a.keterangan" class="text-[10px] text-[var(--text-tertiary)] italic">
+                  {{ a.keterangan }}
+                </p>
+                <p v-if="a.catatan_putus" class="text-[10px] text-[var(--text-tertiary)] italic">
+                  {{ a.catatan_putus }}
+                </p>
+                <a
+                  v-if="a.lampiran_url"
+                  :href="a.lampiran_url"
+                  target="_blank"
+                  rel="noopener"
+                  class="inline-flex items-center gap-1 mt-1 text-[10px] font-bold text-cyan-600 hover:underline"
+                  ><i class="fas fa-paperclip"></i>Lihat lampiran</a
+                >
+                <span v-else class="text-[10px] text-[var(--text-tertiary)] italic"
+                  >Tanpa lampiran</span
+                >
+              </div>
+              <span
+                :class="[
+                  'text-[10px] font-black px-2 py-0.5 rounded-full flex-shrink-0',
+                  kelasStatusIzin(a)
+                ]"
+                >{{ labelStatusIzin(a) }}</span
+              >
+            </div>
           </div>
         </div>
       </div>
@@ -793,7 +941,15 @@ import { ref, computed, onMounted, onUnmounted, reactive } from 'vue'
 import { subscribeColl, queryColl, getOne, mergeOne, serverTimestamp } from '@/services/db'
 import { uploadBase64 } from '@/services/storage'
 import { useAuthStore } from '@/stores/auth'
-import { fmtRp, hitungLamaMengajar, todayJakarta } from '@/utils/format'
+import { fmtRp, hitungLamaMengajar, todayJakarta, rentangTanggal } from '@/utils/format'
+// v.1.4.2: satu tempat untuk label/warna status izin + rekap riwayat per orang.
+import {
+  statusIzin,
+  labelStatusIzin,
+  kelasStatusIzin,
+  rekapIzinPerOrang,
+  tahunIzinTersedia
+} from '@/utils/izinStatus'
 // v.21.110.0527: catatan supervisi
 import { useToast } from '@/composables/useToast'
 import { isKepalaLembaga } from '@/utils/roleScope'
@@ -1233,6 +1389,7 @@ const {
   myIzin,
   antrian: izinAntrian,
   riwayat: izinRiwayat,
+  semua: izinSemua,
   isApprover: izinIsApprover,
   cutiKategori,
   kuotaCuti,
@@ -1240,16 +1397,24 @@ const {
   batal: batalIzinReq,
   tolak: tolakIzinReq,
   setujui: setujuiIzinReq,
-  terapkanUlang: terapkanUlangReq
+  terapkanUlang: terapkanUlangReq,
+  abaikanTerap: abaikanTerapReq
 } = useIzinGuru()
 
 // Pemulihan bug tanggal-mundur (s/d 5 Agu 2026): pengajuan berstatus DISETUJUI tapi
 //   nol baris absensi tertulis (n_absensi 0 / belum ada) — barisnya jatuh ke hari yang
 //   salah, atau dilewati karena hari sebelumnya sudah "hadir". Daftar ini muncul hanya
 //   bila memang ada korbannya, dan hilang sendiri setelah diterapkan ulang.
+//
+// v.1.4.2 — `tgl_terap_ulang` ikut menyaring. Penyaringnya memakai `n_absensi === 0`,
+//   dan itu PROKSI, bukan keadaan sebenarnya: pengajuan yang semua harinya sudah
+//   tercatat hadir tak pernah menulis baris baru, jadi n_absensi-nya tetap 0 sesudah
+//   Terapkan ditekan — barisnya tersangkut di panel selamanya dan tak bisa dibersihkan
+//   (kasus nyata: satu nama tertinggal di sana sesudah bug-nya sendiri lama beres).
+//   Sekali sudah diperiksa manusia — lewat Terapkan atau Abaikan — baris itu keluar.
 const izinPerluTerap = computed(() =>
   (izinRiwayat.value || []).filter(
-    (a) => a.status === 'disetujui' && Number(a.n_absensi || 0) === 0
+    (a) => statusIzin(a) === 'disetujui' && Number(a.n_absensi || 0) === 0 && !a.tgl_terap_ulang
   )
 )
 
@@ -1437,8 +1602,22 @@ async function terapkanUlangIzin(a) {
       )
     else
       toast.info(
-        `Tak ada yang perlu diisi — ${r.skipped} hari sudah tercatat hadir/terlambat pada shift itu.`
+        `Tak ada yang perlu diisi — ${r.skipped} hari sudah tercatat hadir/terlambat pada shift itu. Baris ini ditutup.`
       )
+  } catch (e) {
+    toast.error('Gagal: ' + (e.message || e))
+  } finally {
+    izinBusyId.value = null
+  }
+}
+// v.1.4.2: tutup satu baris panel pemulihan tanpa menyentuh absensi — untuk pengajuan
+//   yang sebenarnya tak bermasalah tapi tak bisa keluar sendiri (lihat izinPerluTerap).
+async function abaikanTerapIzin(a) {
+  if (!confirm(`Tutup baris "${a.guru_nama}" dari daftar ini? Absensi tidak diubah.`)) return
+  izinBusyId.value = a.id
+  try {
+    await abaikanTerapReq(a)
+    toast.success('Baris ditutup dari daftar pemulihan.')
   } catch (e) {
     toast.error('Gagal: ' + (e.message || e))
   } finally {
@@ -1459,14 +1638,9 @@ async function tolakIzin(a) {
 function jenisIzinLabel(j) {
   return j === 'sakit' ? 'Sakit' : j === 'cuti' ? 'Cuti' : 'Izin'
 }
-function statusIzinClass(s) {
-  if (s === 'disetujui') return 'bg-emerald-100 text-emerald-700'
-  if (s === 'ditolak') return 'bg-rose-100 text-rose-700'
-  return 'bg-amber-100 text-amber-700'
-}
-function statusIzinLabel(s) {
-  return s === 'disetujui' ? 'Disetujui' : s === 'ditolak' ? 'Ditolak' : 'Menunggu'
-}
+// v.1.4.2: label & warna status pindah ke utils/izinStatus — dipakai template lewat
+//   labelStatusIzin(a)/kelasStatusIzin(a) (menerima RECORD, bukan string status, supaya
+//   baris lama "ditolak + Dibatalkan pengaju" tetap terbaca sebagai Dibatalkan).
 function shiftsLabel(arr) {
   return (Array.isArray(arr) ? arr : [])
     .map((x) => String(x).charAt(0).toUpperCase() + String(x).slice(1))
@@ -1476,5 +1650,33 @@ function rangeLabel(a) {
   return a.tgl_selesai && a.tgl_selesai !== a.tgl_mulai
     ? `${a.tgl_mulai} – ${a.tgl_selesai}`
     : a.tgl_mulai
+}
+
+// ===== v.1.4.2: Rekap riwayat izin per orang (penyetuju) =====
+// Sumbernya `izinSemua` (se-scope, status apa pun) — bukan `izinRiwayat`, supaya
+//   pengajuan yang masih menunggu ikut kelihatan di kartu orangnya.
+const rekapIzinCari = ref('')
+const rekapIzinTahun = ref('')
+const rekapIzinBuka = reactive({})
+function toggleRekapIzin(id) {
+  rekapIzinBuka[id] = !rekapIzinBuka[id]
+}
+const rekapIzinTahunOpsi = computed(() => tahunIzinTersedia(izinSemua.value))
+const rekapIzin = computed(() =>
+  rekapIzinPerOrang(izinSemua.value, {
+    cari: rekapIzinCari.value,
+    tahun: rekapIzinTahun.value,
+    // Satu pengajuan bisa berhari-hari; pakai deret tanggal yang sama dengan penulis
+    // absensi (rentangTanggal, batas 60 hari) supaya angka rekap = angka absensi.
+    hitungHari: (a) => rentangTanggal(a.tgl_mulai, a.tgl_selesai, 60).length || 1
+  })
+)
+const rekapIzinDisaring = computed(() => !!(rekapIzinCari.value.trim() || rekapIzinTahun.value))
+function ringkasJenisIzin(g) {
+  const p = []
+  if (g.n.izin) p.push(`Izin ${g.n.izin}`)
+  if (g.n.sakit) p.push(`Sakit ${g.n.sakit}`)
+  if (g.n.cuti) p.push(`Cuti ${g.n.cuti}`)
+  return p.join(' · ')
 }
 </script>

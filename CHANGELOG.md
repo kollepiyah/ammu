@@ -10,6 +10,41 @@ naik satu tiap rilis. Entri lama memakai skema lama `v.{nomor-urut}.{MMDDtahunmu
 
 ## [Unreleased]
 
+Penanda di kode & tes: `v.1.4.2`. Nomor versi `package.json` dan `versionCode` Android
+**belum** dinaikkan — itu langkah rilis, bukan langkah pekerjaan ini.
+
+### Added
+
+- **Rekap Riwayat Izin per Orang** di halaman Personal (Kepala/PJ/admin). Antrian
+  persetujuan hanya memuat yang MENUNGGU; begitu sebuah pengajuan diputus, ia — beserta
+  lampirannya — lenyap dari layar, padahal justru sesudah diputus orang bertanya "bulan
+  lalu dia izin berapa kali?" dan "mana surat dokternya?". Kartu baru mengelompokkan
+  seluruh pengajuan se-scope **per orang** (bisa dibuka-tutup), dengan pencarian nama +
+  penyaring tahun, ringkasan `Izin n · Sakit n · Cuti n` + total **hari disetujui**, dan
+  **"Lihat lampiran"** di tiap baris sehingga berkasnya bisa dibuka ulang kapan pun.
+  Jumlah hari memakai `rentangTanggal()` yang sama dengan penulis absensi, jadi angka
+  rekap tak pernah berselisih dengan angka absensi; hari hanya dihitung dari pengajuan
+  **disetujui** — yang ditolak/dibatalkan tak pernah jadi baris absensi.
+- Sumber tunggal `utils/izinStatus.js` (label, warna, status kanonik, rekap per orang),
+  dengan `tests/unit/izinStatus.test.js`.
+
+### Fixed
+
+- **Pengajuan yang ditarik sendiri tak lagi dilabeli "Ditolak".** `batal()` menyimpan
+  `status:'ditolak'` + catatan "Dibatalkan pengaju", jadi guru yang membatalkan izinnya
+  sendiri melihat lencana **merah "Ditolak"** — seolah atasannya yang menolak. Status
+  `'dibatalkan'` kini berdiri sendiri, berwarna netral (slate), dan **baris lama tetap
+  terbaca benar** lewat `statusIzin()` (status 'ditolak' + catatan "Dibatalkan…" →
+  Dibatalkan), jadi tidak ada migrasi data.
+- **Baris yang tersangkut selamanya di panel "Sudah disetujui, absensinya belum terisi".**
+  Panel pemulihan itu menyaring lewat `n_absensi === 0` — proksi, bukan keadaan
+  sebenarnya. Pengajuan yang semua harinya SUDAH tercatat hadir tak pernah menulis baris
+  baru, jadi `n_absensi`-nya tetap 0 sesudah **Terapkan** ditekan dan namanya menetap di
+  sana walau datanya tak bermasalah (satu nama memang tertinggal begitu, jauh sesudah bug
+  tanggal-mundurnya sendiri beres). Kini `tgl_terap_ulang` ikut menyaring — sekali sudah
+  diperiksa manusia, barisnya keluar — dan ada tombol **Abaikan** yang menutup satu baris
+  tanpa menyentuh absensi. Panelnya tetap hilang sendiri begitu kosong.
+
 ### Planned
 
 - Capacitor Android first build + sideload APK
