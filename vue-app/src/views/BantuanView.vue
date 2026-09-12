@@ -555,7 +555,7 @@ const introText = computed(() =>
 const lembagaName = computed(
   () => settings.settings?.namaLembaga || 'Pondok Pesantren Mambaul Ulum'
 )
-const version = computed(() => settings.settings?.appVersion || 'v.1.4.2')
+const version = computed(() => settings.settings?.appVersion || 'v.1.4.3')
 const logoSrc = computed(() => settings.settings?.logoUrl || '/logo.png')
 
 const sections = [
@@ -799,6 +799,14 @@ async function resetFaq() {
 //   berubah di layar mereka, bukan nama fungsi. Cukup beberapa rilis terakhir —
 //   riwayat lengkap ada di CHANGELOG.md untuk pengembang.
 const rilis = [
+  {
+    versi: 'v.1.4.3',
+    tgl: 'September 2026',
+    items: [
+      'Penyaring dan kata pencarian tidak hilang lagi sesudah mengedit. Di Data Santri dan Data Guru, memilih penyaring lalu menekan Edit dan Simpan dulu selalu mengembalikan daftar ke "tampil semua", sehingga nama yang sedang dikerjakan harus dicari ulang. Sekarang daftar kembali persis seperti sebelum diedit — termasuk penyaring Gedung, PJ PTPT, Kelas-Guru, dan sub-tab Qiraati/Sekolah yang sebelumnya memang tak pernah tersimpan. Tombol "Kelola" juga membawa penyaringnya, tidak lagi membuka daftar kosong.',
+      'Data tidak lagi diam-diam basi sesudah HP atau laptop ditinggal. Sambungan langsung ke server memang terputus saat perangkat tidur, berpindah WiFi, atau aplikasi lama di latar belakang — dan dulu tak ada yang menyambungkannya kembali, sehingga layar tampak normal tapi isinya beku sampai aplikasi dimuat ulang. Kini sambungannya dipasang ulang sendiri dan data disegarkan begitu aplikasi dipakai lagi.'
+    ]
+  },
   {
     versi: 'v.1.4.2',
     tgl: 'September 2026',

@@ -20,6 +20,93 @@ naik satu tiap rilis. Entri lama memakai skema lama `v.{nomor-urut}.{MMDDtahunmu
 
 ---
 
+## [v.1.4.3] — 2026-09-12 — Penyaring yang berhenti lupa, dan langganan realtime yang menyembuhkan diri
+
+**SIAP RILIS** — `versionCode` 143 / `versionName` `v.1.4.3`. **Tak ada migrasi Supabase**
+pada rilis ini — seluruhnya frontend. Urutannya cukup **deploy web → rebuild Android**.
+
+Nomor baru (bukan dilebur seperti v.1.4.2) karena v.1.4.2 **sudah tayang** sore itu juga;
+pekerjaan sesudah sebuah versi sampai ke pengguna wajib punya nomornya sendiri, kalau tidak
+dua kode yang berbeda akan sama-sama mengaku `v.1.4.2`.
+
+Dua laporan Kyai, 12 Sep 2026, sesudah v.1.4.2 tayang:
+
+> _"saat saya pilih filter di data santri, atau ketik nama santri lalu edit dan simpan
+> selalu kembali ke semula (tampil semua) harusnya masih tetap di filter itu"_
+>
+> _"banyak beberapa kurang stabil dalam pemakaian. audit!"_
+
+### Fixed
+
+- **Penyaring Data Santri/Guru berhenti lupa sesudah Simpan.** Ini keluhan yang KEDUA
+  kalinya (yang pertama 4 Sep 2026, ditutup sebagian oleh `utils/navKembali.js` di
+  v.1.4.1). Dua sebab sisanya:
+  - **Hanya EMPAT dari delapan penyaring yang pernah ditulis ke URL.** State penyaring
+    hidup di dalam composable, jadi ia mati setiap kali komponennya di-unmount — dan URL
+    satu-satunya tempat yang selamat. `q`/`lembaga`/`tempat`/`status` ada di sana, tetapi
+    **Gedung, PJ PTPT, Kelas-Guru, dan sub-tab Qiraati/Sekolah tidak** — jadi memilih
+    salah satunya lalu berpindah halaman apa pun memang selalu berakhir "tampil semua".
+  - **Tombol "Kelola" membuang seluruh penyaring.** Ia menunjuk alamat karangan
+    `/master-data?tab=santri`. Karena tombol **Edit hanya ada di Master Data**, setiap
+    perjalanan "cari → Kelola → edit" PASTI melewati daftar kosong. Kini tombol dan aksi
+    pitanya membawa query yang sedang aktif.
+
+  Aturannya pindah ke `utils/filterQuery.js`: satu `spec` dipakai untuk MEMBACA dan
+  MENULIS, sehingga penyaring baru yang lupa didaftarkan akan langsung terasa. Dipasang di
+  `SantriView`, `GuruView`, dan `PosSantriView`.
+- **Penjaga `_syncingQuery` yang tak pernah menjaga.** Polanya
+  `_syncingQuery = true; search.value = …; _syncingQuery = false` — padahal watcher Vue
+  bawaan ber-`flush: 'pre'` ANTRE, tak berjalan saat itu juga. Saat callback-nya akhirnya
+  jalan, benderanya sudah `false`, jadi tulis-balik yang hendak dicegah tetap terjadi.
+  Penjaganya diganti **perbandingan hasil** (`queryBerubah`) yang bebas balapan waktu.
+  Akibat nyatanya sebelum ini: setiap pemulihan penyaring menulis ulang URL sekali lagi,
+  dan kunci milik halaman induk bisa ikut terhapus.
+- **Penyaring Kelas-Guru tak lagi terhapus oleh pemulihannya sendiri.** Watcher
+  "ganti lembaga → kosongkan rombel" ikut menyala saat lembaga dipulihkan dari URL, dan
+  karena ia berjalan SESUDAH pemulihan selesai, rombel yang baru saja dipulihkan langsung
+  terhapus lagi. Kini hanya dikosongkan bila rombelnya memang milik lembaga LAIN.
+
+### Changed — hasil audit "kurang stabil dalam pemakaian"
+
+- **Langganan realtime kini menyembuhkan diri.** Temuan yang paling menjelaskan rasa
+  "kurang stabil", dan paling diam-diam: `subscribeColl`/`subscribeDoc` menarik data
+  SEKALI lalu bersandar sepenuhnya pada channel realtime, yang dipasang dengan
+  `.subscribe()` **tanpa callback status** — jadi ketika channel-nya mati, tak ada satu pun
+  yang tahu. Channel realtime memang mati secara rutin dan wajar: perangkat tidur, aplikasi
+  lama di latar (WebView Android & Electron memutus WebSocket menganggur), jaringan
+  berpindah WiFi↔seluler, token diperbarui, atau server memutus channel yang menganggur.
+  Akibatnya bagi pemakai: **daftar tampak normal tapi isinya beku** di keadaan terakhir
+  sebelum perangkatnya tidur — pembayaran baru tak muncul, absensi operator lain tak
+  kelihatan — dan satu-satunya obat adalah memuat ulang aplikasi. Tanpa pesan galat, jadi
+  tak ada yang bisa ditunjuk saat melapor. Sekarang: status channel dipantau,
+  `CHANNEL_ERROR`/`TIMED_OUT`/`CLOSED` memasang ulang dengan jeda menaik (1s→60s) supaya
+  jaringan buruk tak dihujani percobaan, data ditarik sekali begitu tersambung LAGI (event
+  selagi mati tak pernah dikirim ulang server), dan satu pendengar global
+  (`visibilitychange` + `online`) menyegarkan seluruh langganan begitu perangkat dipakai
+  lagi — dengan jeda 5 detik supaya bolak-balik jendela tak menarik tabel berulang.
+  Keduanya lewat `fetchGabung` yang sama, jadi penggabungan 400 ms hasil audit Agu 2026
+  tetap berlaku: badai bangun-tidur pun tetap SATU tarikan per koleksi.
+
+### Added
+
+- `tests/unit/filterQuery.test.js` (21 tes) — termasuk uji **bolak-balik**: URL → penyaring
+  → URL wajib identik, sebab satu putaran yang tak stabil saja sudah cukup membuat
+  penyaring "lupa sendiri".
+- `tests/unit/dbRealtimePulih.test.js` (11 tes) — channel yang putus benar-benar dipasang
+  ulang, jedanya menaik, tarikan-ulang hanya pada sambungan KEDUA, dan langganan yang sudah
+  dilepas tak ikut disegarkan. Total 1.412 tes hijau.
+
+### Catatan audit — yang DIPERIKSA dan ternyata sehat
+
+Supaya tak diperiksa ulang sesi depan: langganan realtime **tidak bocor** (seluruh view
+membersihkan `unsub` di `onUnmounted`, termasuk yang membersihkannya lewat perulangan);
+`stores/collections.js` idempoten dan sudah punya jalur `reloadActive()`/`clear()` saat auth
+berubah; `_pageAll` menarik **seluruh** baris 1.000-an per halaman tanpa batas diam-diam
+(jadi "data hilang" bukan dari sana); `initAuth` punya pemulihan sesi zombie + batas waktu
+3 detik; dan POS sudah punya penjaga simpan-ganda (`posSaving` + `buatTrxUid`).
+
+---
+
 ## [v.1.4.2] — 2026-09-12 — Rekap izin per orang, dan tiga gerbang DB yang lebih sempit daripada layarnya
 
 **SIAP RILIS** — `versionCode` 142 / `versionName` `v.1.4.2`. **ADA MIGRASI SUPABASE** (dua

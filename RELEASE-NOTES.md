@@ -5,6 +5,27 @@ Rinciannya untuk pengembang ada di `CHANGELOG.md` — jangan disalin ke sana, te
 
 ---
 
+## v.1.4.3 — September 2026
+
+**Perbaikan**
+
+- **Penyaring dan kata pencarian tidak hilang lagi sesudah mengedit.** Di Data Santri dan
+  Data Guru, memilih penyaring — atau mengetik nama — lalu menekan **Edit** dan **Simpan**
+  dulu selalu mengembalikan daftar ke "tampil semua", sehingga nama yang sedang dikerjakan
+  harus dicari ulang dari atas. Sekarang daftarnya kembali persis seperti sebelum diedit,
+  termasuk penyaring **Gedung**, **PJ PTPT**, **Kelas-Guru**, dan sub-tab
+  **Qiraati/Sekolah** yang sebelumnya memang tak pernah tersimpan sama sekali. Tombol
+  **Kelola** juga ikut membawa penyaringnya, tidak lagi membuka daftar kosong.
+- **Data tidak lagi diam-diam basi sesudah HP atau laptop ditinggal.** Sambungan langsung
+  ke server memang terputus ketika perangkat tidur, berpindah WiFi, atau aplikasi lama
+  berada di latar belakang — dan sebelumnya tak ada yang menyambungkannya kembali. Layar
+  tetap tampak normal, tetapi isinya beku di keadaan terakhir: pembayaran yang baru masuk
+  tak muncul, absensi yang baru disimpan operator lain tak kelihatan, dan satu-satunya obat
+  adalah menutup lalu membuka aplikasi. Kini sambungannya dipasang ulang sendiri, dan data
+  disegarkan begitu aplikasi dipakai lagi.
+
+---
+
 ## v.1.4.2 — September 2026
 
 **Baru**
