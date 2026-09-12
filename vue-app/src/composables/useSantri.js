@@ -6,7 +6,7 @@ import { useAuthStore } from '@/stores/auth'
 // v.21.10.0526: Import LEMBAGA_GROUPS helpers untuk lembaga_refs derivation + lembagaScopeMatches scoping
 import { getLembagaGroup, getPkbmSubTier } from './useLembaga'
 // v.21.86.0527: Sort konsisten lembaga→kelas→nama (berlaku di semua halaman via composable)
-import { sortSantri } from '@/utils/santriSort'
+import { sortSantri, kelasRank } from '@/utils/santriSort'
 // v.111: scope Gedung (akademik per gedung + filter Pra PTPT/PTPT)
 import { isGedungScoped, gedungOf } from '@/utils/gedung'
 // v.1.2.1: scope PJ PTPT — santri ampuan diturunkan dari guru pengajar (peta pj_guru)
@@ -69,8 +69,9 @@ export function useSantri() {
   const search = ref('')
   const filterLembaga = ref('')
   const filterKelas = ref('')
-  // v.1.2.4: filter per KELAS-GURU (rombel pasangan) — nilai = `${lembaga}|${kunciRombel}`
-  const filterKelasGuru = ref('')
+  // v.1.2.4: filter per KELAS-GURU (rombel pasangan) — nilai = `${lembaga}|${kunciRombel}`.
+  // v.1.4.3: LARIK (bisa dicentang lebih dari satu), bukan lagi satu nilai.
+  const filterKelasGuru = ref([])
   const filterMukim = ref('')
   // v.21.12.0526: + filterStatus (aktif/tidak_aktif/all)
   const filterStatus = ref('aktif')
@@ -135,8 +136,12 @@ export function useSantri() {
     )
   })
 
-  // Filter santri menurut role + UI filters
-  const santri = computed(() => {
+  // v.1.4.3: scope PERAN + GEDUNG dipecah jadi computed sendiri. Ia dibutuhkan DUA
+  //   pemakai sekarang — daftar santri DAN daftar opsi penyaring Kelas/Jilid — dan
+  //   menyalin blok peran sepanjang ini ke tempat kedua adalah cara paling pasti
+  //   membuat opsi penyaring memuat kelas yang santrinya sendiri tak boleh dilihat.
+  //   Isinya dipindah apa adanya; tak ada aturan yang berubah.
+  const santriScope = computed(() => {
     // v.21.12.0526: drop blanket aktif filter — handle via filterStatus below (supaya "Tidak Aktif" bisa dilihat)
     let list = santriRaw.value.filter((s) => !!s)
 
@@ -211,6 +216,57 @@ export function useSantri() {
       const myG = gedungOf(auth.sesiAktif)
       list = list.filter((s) => String(s.gedung || '').trim() === myG)
     }
+    return list
+  })
+
+  // Cocok dengan penyaring Lembaga? Dipisah supaya daftar santri dan daftar opsi
+  //   Kelas/Jilid memakai aturan yang SAMA PERSIS — termasuk cabang SMP/SMA yang
+  //   sebenarnya sub-jenjang PKBM dan diturunkan dari kelas, bukan dari lembaga.
+  function cocokLembaga(s, fl) {
+    if (!fl) return true
+    if (fl === 'SMP' || fl === 'SMA') {
+      const isPkbm =
+        String(s.lembaga_sekolah || '').toUpperCase() === 'PKBM' ||
+        String(s.lembaga || '').toUpperCase() === 'PKBM'
+      return isPkbm && getPkbmSubTier(String(s.kelas_sekolah || s.kelas || '').toUpperCase()) === fl
+    }
+    return s.lembaga === fl || s.lembaga_sekolah === fl
+  }
+
+  // v.1.4.3 (Kyai: "sekalian saya ingin tambah filter kelas/jilid/level").
+  //   Opsinya DITURUNKAN dari data, bukan daftar tetap: penamaan kelas di Ammu memang
+  //   berbeda-beda per lembaga (Jilid 1-6 di TPQ, "Level 3 Juz" di Pra PTPT, angka Romawi
+  //   di sekolah), dan daftar tetap pasti ketinggalan tiap kali lembaga menata ulang.
+  //
+  //   SATU daftar datar, bukan dua kelompok ngaji/sekolah — sebab `filterKelas` sendiri
+  //   mencocokkan ke `kelas` ATAU `kelas_sekolah`. Memisahkannya jadi dua kelompok akan
+  //   menjanjikan ketelitian yang tak dipunyai penyaringnya.
+  //
+  //   Dihitung dari `santriScope` (peran + gedung) lalu dipersempit lembaga terpilih —
+  //   jadi opsinya tak pernah memuat kelas yang santrinya sendiri tak boleh dilihat.
+  //   Santri non-aktif dilewati supaya kelas yang sudah kosong tak menghantui daftar.
+  const kelasOptions = computed(() => {
+    const fl = filterLembaga.value
+    const hitung = new Map()
+    for (const s of santriScope.value) {
+      if (s.aktif === false) continue
+      if (!cocokLembaga(s, fl)) continue
+      for (const v of [s.kelas, s.kelas_sekolah]) {
+        const k = String(v || '').trim()
+        if (!k) continue
+        hitung.set(k, (hitung.get(k) || 0) + 1)
+      }
+    }
+    return [...hitung.entries()]
+      .map(([nilai, jumlah]) => ({ nilai, jumlah }))
+      .sort(
+        (a, b) => kelasRank(a.nilai) - kelasRank(b.nilai) || a.nilai.localeCompare(b.nilai, 'id')
+      )
+  })
+
+  // Filter santri menurut role + UI filters
+  const santri = computed(() => {
+    let list = santriScope.value
 
     // Search filter
     const kw = search.value.trim().toLowerCase()
@@ -233,18 +289,7 @@ export function useSantri() {
     // v.99: SMP/SMA = sub-jenjang PKBM (turunan kelas). Pilihan filter "SMP"/"SMA" → santri PKBM per jenjang.
     if (filterLembaga.value) {
       const fl = filterLembaga.value
-      if (fl === 'SMP' || fl === 'SMA') {
-        list = list.filter((s) => {
-          const isPkbm =
-            String(s.lembaga_sekolah || '').toUpperCase() === 'PKBM' ||
-            String(s.lembaga || '').toUpperCase() === 'PKBM'
-          return (
-            isPkbm && getPkbmSubTier(String(s.kelas_sekolah || s.kelas || '').toUpperCase()) === fl
-          )
-        })
-      } else {
-        list = list.filter((s) => s.lembaga === fl || s.lembaga_sekolah === fl)
-      }
+      list = list.filter((s) => cocokLembaga(s, fl))
     }
 
     // Kelas filter
@@ -254,10 +299,14 @@ export function useSantri() {
       )
     }
 
-    // v.1.2.4: filter per KELAS-GURU (rombel pasangan)
-    if (filterKelasGuru.value) {
+    // v.1.2.4: filter per KELAS-GURU (rombel pasangan).
+    // v.1.4.3 (Kyai): BANYAK rombel sekaligus — "bisa centang, jadi bisa tampil kelas
+    //   dari beberapa guru". Satu pilihan tunggal memaksa membuka-tutup penyaring
+    //   berkali-kali hanya untuk membandingkan dua kelas yang bersebelahan.
+    if (filterKelasGuru.value.length) {
       const idToOpt = rombelIndex.value.idToOpt
-      list = list.filter((s) => idToOpt.get(String(s.id)) === filterKelasGuru.value)
+      const dipilih = new Set(filterKelasGuru.value.map(String))
+      list = list.filter((s) => dipilih.has(idToOpt.get(String(s.id))))
     }
 
     // v.111: filter Gedung (manual) + PJ PTPT — pisah Pra PTPT/PTPT yang tercampur
@@ -333,6 +382,7 @@ export function useSantri() {
     search,
     filterLembaga,
     filterKelas,
+    kelasOptions, // v.1.4.3: opsi dropdown Kelas/Jilid/Level (diturunkan dari data)
     filterKelasGuru, // v.1.2.4: filter rombel pasangan guru
     kelasGuruOptions, // v.1.2.4: opsi dropdown Kelas-Guru
     filterMukim,

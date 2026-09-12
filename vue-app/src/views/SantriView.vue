@@ -316,17 +316,32 @@
           <option v-for="p in pjPtptOptions" :key="p" :value="p">PJ: {{ p }}</option>
         </select>
       </div>
-      <!-- v.1.2.4: filter per KELAS-GURU (rombel pasangan) — pantau per kelas guru -->
-      <div v-if="isFullAccess && kelasGuruOptions.length" class="mt-2">
+      <!-- v.1.4.3 (Kyai): penyaring Kelas / Jilid / Level. Opsinya diturunkan dari data
+           santri yang boleh dilihat akun ini, bukan daftar tetap — penamaan kelas memang
+           beda-beda per lembaga dan berubah tiap penataan ulang. -->
+      <div v-if="kelasOptions.length" class="mt-2">
         <select
-          v-model="filterKelasGuru"
+          v-model="filterKelas"
           class="w-full px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none"
         >
-          <option value="">Semua kelas (guru)</option>
-          <option v-for="k in kelasGuruOptions" :key="k.optKey" :value="k.optKey">
-            {{ filterLembaga ? '' : k.lembaga + ' — ' }}{{ k.label }} · {{ k.jumlah }} santri
+          <option value="">Semua kelas / jilid / level</option>
+          <option v-for="k in kelasOptions" :key="k.nilai" :value="k.nilai">
+            {{ k.nilai }} · {{ k.jumlah }} santri
           </option>
         </select>
+      </div>
+      <!-- v.1.2.4: filter per KELAS-GURU (rombel pasangan) — pantau per kelas guru.
+           v.1.4.3 (Kyai): bisa dicentang lebih dari satu, "jadi bisa tampil kelas dari
+           beberapa guru" — membandingkan dua rombel tak lagi berarti buka-tutup penyaring. -->
+      <div v-if="isFullAccess && kelasGuruOptions.length" class="mt-2">
+        <MultiSelectFilter
+          v-model="filterKelasGuru"
+          :options="opsiKelasGuru"
+          label="kelas"
+          semua-label="Semua kelas (guru)"
+          placeholder-cari="Cari nama guru…"
+          kosong-label="Belum ada rombel pada lembaga ini."
+        />
       </div>
       <!-- v.1.2.0: sub-tab Qiraati / Sekolah — muncul hanya bila akun ini memang
            menaungi KEDUA sisi (mis. kepala lembaga sekolah yang juga guru qiraati). -->
@@ -381,13 +396,9 @@
     <EmptyState
       v-else-if="santri.length === 0"
       icon="fa-user-slash"
-      :title="
-        search || filterLembaga || filterMukim || filterKelasGuru
-          ? 'Tidak ada santri yang cocok'
-          : 'Belum ada santri'
-      "
+      :title="adaPenyaring ? 'Tidak ada santri yang cocok' : 'Belum ada santri'"
       :description="
-        search || filterLembaga || filterMukim || filterKelasGuru
+        adaPenyaring
           ? 'Coba ubah filter atau kata kunci pencarian'
           : isFullAccess
             ? 'Tambah santri pertama di Master Data'
@@ -560,7 +571,11 @@
     </div>
 
     <p class="text-center text-[10px] text-slate-400 dark:text-[var(--text-secondary)] pt-2">
-      <i class="fas fa-circle-info mr-1"></i>Menampilkan {{ santri.length }} santri · v.74.0526
+      <i class="fas fa-circle-info mr-1"></i>Menampilkan {{ santri.length }} santri<span
+        v-if="versiApp"
+      >
+        · {{ versiApp }}</span
+      >
     </p>
 
     <!-- v.1.2.1 (Kyai): dialog edit kelas santri utk guru (perbaiki impor salah).
@@ -598,12 +613,17 @@ import { useGoogleSheet } from '@/composables/useGoogleSheet'
 import { buildListPdf, buildKopFromSettings } from '@/utils/pdfBuilder'
 import { useToast } from '@/composables/useToast'
 import { useSettingsStore } from '@/stores/settings'
+// v.1.4.3: SATU sumber nomor versi (lihat utils/appVersion.js) — label yang diketik
+//   tangan di layar sudah terbukti membeku (kaki Data Santri tertinggal di v.74.0526).
+import { labelVersi } from '@/utils/appVersion'
 import { useConfirm } from '@/composables/useConfirm'
 // v.21.115.0528: skeleton loader
 import SkeletonCard from '@/components/layout/SkeletonCard.vue'
 import EmptyState from '@/components/layout/EmptyState.vue' // v.91.0626
 import PageHeader from '@/components/layout/PageHeader.vue' // v.91.0626
 import EditKelasSantriDialog from '@/components/form/EditKelasSantriDialog.vue' // v.1.2.1: edit kelas oleh guru
+// v.1.4.3: penyaring Kelas-Guru bisa dicentang lebih dari satu.
+import MultiSelectFilter from '@/components/form/MultiSelectFilter.vue'
 // v.91.0626: deleteOne = backup ke audit_log dulu. serverTimestamp = shim ISO (db.js).
 import { mergeOne, addOne, deleteOne, getAll, serverTimestamp } from '@/services/db'
 // v.111: registry field santri = sumber tunggal template/ekspor/impor (auto-detect field baru)
@@ -636,6 +656,7 @@ const sendingGsheet = ref(false)
 const toast = useToast()
 const confirmDlg = useConfirm()
 const settingsStore = useSettingsStore()
+const versiApp = computed(() => labelVersi(settingsStore.settings))
 const authStore = useAuthStore() // v.100 Batch14: atribusi user utk audit_log generate NIS
 
 const {
@@ -645,6 +666,8 @@ const {
   loading,
   search,
   filterLembaga,
+  filterKelas, // v.1.4.3: penyaring Kelas/Jilid/Level
+  kelasOptions,
   filterKelasGuru,
   kelasGuruOptions,
   filterMukim,
@@ -689,7 +712,9 @@ const SPEC_FILTER = [
   { kunci: 'status', bawaan: 'aktif' },
   { kunci: 'gedung' },
   { kunci: 'pj' },
-  { kunci: 'kelasguru' },
+  { kunci: 'kelas' },
+  // Boleh lebih dari satu — disimpan dipisah koma (lihat `daftar` di utils/filterQuery.js).
+  { kunci: 'kelasguru', daftar: true },
   { kunci: 'sisi', bawaan: 'qiraati' }
 ]
 // Kunci milik halaman induk (Master Data `?tab=`, sub-tabnya `?sub=`).
@@ -701,9 +726,22 @@ const refFilter = {
   status: filterStatus,
   gedung: filterGedung,
   pj: filterPjPtpt,
+  kelas: filterKelas,
   kelasguru: filterKelasGuru,
   sisi: sisiTab
 }
+// v.1.4.3: "ada penyaring aktif?" dihitung dari refFilter, bukan dari daftar yang
+//   diketik ulang di template. Daftar lama cuma menyebut empat penyaring — jadi layar
+//   kosong karena penyaring Gedung/PJ/Kelas berbunyi "Belum ada santri", seolah datanya
+//   yang tak ada. Ia juga LANGSUNG salah begitu `filterKelasGuru` jadi larik: larik
+//   kosong itu truthy, sehingga kalimatnya akan selalu "Tidak ada santri yang cocok".
+const adaPenyaring = computed(() =>
+  SPEC_FILTER.some((f) => {
+    const v = refFilter[f.kunci]?.value
+    if (Array.isArray(v)) return v.length > 0
+    return String(v ?? '') !== String(f.bawaan ?? '')
+  })
+)
 function syncFiltersFromQuery() {
   const nilai = bacaFilterQuery(route.query, SPEC_FILTER)
   for (const [k, r] of Object.entries(refFilter)) r.value = nilai[k]
@@ -722,6 +760,14 @@ const queryDaftar = computed(() => queryDariDaftar(route.fullPath))
 // v.1.4.3: tombol/aksi "Kelola" membawa penyaring yang sedang aktif. Sebelumnya ia
 //   menunjuk alamat karangan '/master-data?tab=santri' — dan karena tombol Edit HANYA ada
 //   di Master Data, setiap perjalanan "cari → Kelola → edit" pasti melewati daftar kosong.
+// Label opsi Kelas-Guru — nama lembaga hanya disebut saat penyaring Lembaga belum
+//   dipilih, persis seperti <option> yang digantikan.
+const opsiKelasGuru = computed(() =>
+  kelasGuruOptions.value.map((k) => ({
+    nilai: k.optKey,
+    label: `${filterLembaga.value ? '' : k.lembaga + ' — '}${k.label} · ${k.jumlah} santri`
+  }))
+)
 const alamatKelola = computed(() =>
   alamatBawaFilter('/master-data', route.query, { tab: 'santri' })
 )
@@ -733,10 +779,12 @@ const alamatKelola = computed(() =>
 //   terhapus lagi. Lembaga kosong ("Semua") sengaja tidak menghapus: rombelnya tetap
 //   menyaring dengan benar dan tetap muncul di dropdown.
 watch(filterLembaga, (l) => {
-  const cur = String(filterKelasGuru.value || '')
-  if (!cur || !l) return
-  const lembagaRombel = cur.split('|')[0] // optKey = `${lembaga_huruf_kecil}|${kunciRombel}`
-  if (lembagaRombel !== String(l).toLowerCase()) filterKelasGuru.value = ''
+  const cur = filterKelasGuru.value
+  if (!Array.isArray(cur) || !cur.length || !l) return
+  const lem = String(l).toLowerCase()
+  // optKey = `${lembaga_huruf_kecil}|${kunciRombel}` — sisakan yang memang milik lembaga ini.
+  const sisa = cur.filter((k) => String(k).split('|')[0] === lem)
+  if (sisa.length !== cur.length) filterKelasGuru.value = sisa
 })
 
 // ── v.1.2.0 (Kyai 21 Jul): pisah Qiraati / Sekolah pakai SUB-TAB, bukan dua section

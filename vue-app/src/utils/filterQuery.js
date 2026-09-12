@@ -47,7 +47,19 @@ export function bacaFilterQuery(query, spec) {
   for (const f of spec || []) {
     const raw = query ? query[f.kunci] : undefined
     const v = Array.isArray(raw) ? raw[0] : raw
-    out[f.kunci] = v != null && v !== '' ? String(v) : String(f.bawaan ?? '')
+    const teks = v != null ? String(v) : ''
+    // v.1.4.3: penyaring yang boleh dicentang LEBIH DARI SATU (mis. Kelas-Guru) disimpan
+    //   sebagai satu kunci dipisah koma. Nilainya sendiri tak pernah memuat koma —
+    //   `${lembaga}|${kunciRombel}` — jadi pemisah ini aman; potongan kosong dibuang
+    //   supaya URL tempelan seperti `?kelasguru=,,` tak menghasilkan penyaring hantu.
+    if (f.daftar) {
+      out[f.kunci] = teks
+        .split(',')
+        .map((x) => x.trim())
+        .filter(Boolean)
+      continue
+    }
+    out[f.kunci] = teks !== '' ? teks : String(f.bawaan ?? '')
   }
   return out
 }
@@ -72,6 +84,12 @@ export function tulisFilterQuery(nilai, spec, queryLama = {}, kekal = []) {
     if (v != null && v !== '') q[k] = String(v)
   }
   for (const f of spec || []) {
+    if (f.daftar) {
+      const arr = Array.isArray(nilai?.[f.kunci]) ? nilai[f.kunci] : []
+      const bersih = arr.map((x) => String(x).trim()).filter(Boolean)
+      if (bersih.length) q[f.kunci] = bersih.join(',')
+      continue
+    }
     const v = String(nilai?.[f.kunci] ?? '')
     if (v && v !== String(f.bawaan ?? '')) q[f.kunci] = v
   }

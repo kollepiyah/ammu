@@ -102,6 +102,46 @@ describe('bolak-balik: URL → penyaring → URL harus stabil', () => {
   }
 })
 
+describe('penyaring yang boleh dicentang lebih dari satu (`daftar`)', () => {
+  // Kyai, 12 Sep 2026: "filter kelas (nama guru) … bisa centang, jadi bisa tampil kelas
+  // dari beberapa guru". Nilainya `${lembaga}|${kunciRombel}`, dipisah koma di URL.
+  const SPEC = [{ kunci: 'kelasguru', daftar: true }, { kunci: 'q' }]
+
+  it('kosong = larik kosong, bukan [""]', () => {
+    expect(bacaFilterQuery({}, SPEC).kelasguru).toEqual([])
+    expect(bacaFilterQuery({ kelasguru: '' }, SPEC).kelasguru).toEqual([])
+  })
+
+  it('membaca beberapa nilai sekaligus', () => {
+    expect(bacaFilterQuery({ kelasguru: 'ptpt|r1,ptpt|r2' }, SPEC).kelasguru).toEqual([
+      'ptpt|r1',
+      'ptpt|r2'
+    ])
+  })
+
+  it('potongan kosong dibuang — URL tempelan tak melahirkan penyaring hantu', () => {
+    expect(bacaFilterQuery({ kelasguru: ',,ptpt|r1, ,' }, SPEC).kelasguru).toEqual(['ptpt|r1'])
+  })
+
+  it('menulis kembali sebagai satu kunci dipisah koma', () => {
+    expect(tulisFilterQuery({ kelasguru: ['a|1', 'b|2'] }, SPEC)).toEqual({ kelasguru: 'a|1,b|2' })
+  })
+
+  it('larik kosong TIDAK ditulis ke URL', () => {
+    expect(tulisFilterQuery({ kelasguru: [] }, SPEC)).toEqual({})
+    expect(tulisFilterQuery({}, SPEC)).toEqual({})
+  })
+
+  it('bolak-balik tetap stabil — ini yang menjaga penyaring tak lupa sesudah Simpan', () => {
+    for (const awal of [{}, { kelasguru: 'a|1' }, { kelasguru: 'a|1,b|2', q: 'siti' }]) {
+      const nilai = bacaFilterQuery(awal, SPEC)
+      const akhir = tulisFilterQuery(nilai, SPEC, awal)
+      expect(akhir).toEqual(awal)
+      expect(queryBerubah(awal, akhir)).toBe(false)
+    }
+  })
+})
+
 describe('queryBerubah — pengganti bendera _syncingQuery', () => {
   it('false untuk isi yang sama walau urutan kunci beda', () => {
     expect(queryBerubah({ a: '1', b: '2' }, { b: '2', a: '1' })).toBe(false)
