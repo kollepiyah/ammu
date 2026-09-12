@@ -96,9 +96,9 @@
               </button>
               <router-link
                 v-if="!isMasterMode"
-                to="/master-data?tab=guru"
+                :to="alamatKelola"
                 class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold transition"
-                title="CRUD guru di Master Data"
+                title="CRUD guru di Master Data (penyaring ikut terbawa)"
               >
                 <i class="fas fa-edit"></i>Kelola
               </router-link>
@@ -593,6 +593,13 @@ import { shiftLabelOf, shiftList, shiftIdsFromNomor, shiftNomorFromIds } from '@
 import { isGuruAktif } from '@/utils/guruScope' // v.1.2.0: sumber tunggal penyaring status guru
 // v.1.4.1: bawa alamat daftar (beserta pencarian & penyaringnya) ke form, lalu kembali ke situ.
 import { queryDariDaftar } from '@/utils/navKembali'
+// v.1.4.3: penyaring ⇄ URL + alamat "Kelola" yang membawa penyaring.
+import {
+  bacaFilterQuery,
+  tulisFilterQuery,
+  queryBerubah,
+  alamatBawaFilter
+} from '@/utils/filterQuery'
 
 const {
   guru,
@@ -628,34 +635,40 @@ onUnmounted(() => {
 //   Baca saat mount + saat berubah (dukung global-search ?q= + pita ?tipe=). Tulis saat filter berubah.
 const _route = useRoute()
 const router = useRouter()
-let _syncingQuery = false
+// v.1.4.3: pola yang sama dengan SantriView — penyaring ⇄ URL lewat satu `spec`, dan
+//   tulis-balik dijaga PERBANDINGAN hasil, bukan bendera `_syncingQuery` yang selalu
+//   kalah cepat dari antrean watcher (`flush: 'pre'`). Lihat utils/filterQuery.js.
+const SPEC_FILTER = [
+  { kunci: 'q' },
+  { kunci: 'lembaga' },
+  { kunci: 'jabatan' },
+  { kunci: 'status', bawaan: 'aktif' }
+]
+// `tipe` = pita Data Guru vs Data Pegawai; `tab`/`sub` = Master Data sebagai halaman induk.
+const KEKAL_FILTER = ['tipe', 'tab', 'sub']
+const refFilter = {
+  q: search,
+  lembaga: filterLembaga,
+  jabatan: filterJabatan,
+  status: filterStatus
+}
 function syncFiltersFromQuery() {
-  _syncingQuery = true
-  search.value = _route.query.q != null ? String(_route.query.q) : ''
-  filterLembaga.value = _route.query.lembaga != null ? String(_route.query.lembaga) : ''
-  filterJabatan.value = _route.query.jabatan != null ? String(_route.query.jabatan) : ''
-  filterStatus.value = _route.query.status != null ? String(_route.query.status) : 'aktif'
-  _syncingQuery = false
+  const nilai = bacaFilterQuery(_route.query, SPEC_FILTER)
+  for (const [k, r] of Object.entries(refFilter)) r.value = nilai[k]
 }
 syncFiltersFromQuery()
 watch(() => _route.query, syncFiltersFromQuery)
-watch([search, filterLembaga, filterJabatan, filterStatus], () => {
-  if (_syncingQuery) return
-  const q = {}
-  if (_route.query.tipe) q.tipe = _route.query.tipe // jaga pita Data Guru/Pegawai
-  // v.1.4.1: daftar ini juga tayang di dalam Master Data — `tab` wajib ikut dipertahankan,
-  //   kalau tidak Master Data melompat ke tab lain tiap kali kotak cari diketik.
-  if (_route.query.tab) q.tab = _route.query.tab
-  if (_route.query.sub) q.sub = _route.query.sub
-  if (search.value) q.q = search.value
-  if (filterLembaga.value) q.lembaga = filterLembaga.value
-  if (filterJabatan.value) q.jabatan = filterJabatan.value
-  if (filterStatus.value && filterStatus.value !== 'aktif') q.status = filterStatus.value
-  router.replace({ query: q }).catch(() => {})
+watch(Object.values(refFilter), () => {
+  const nilai = {}
+  for (const [k, r] of Object.entries(refFilter)) nilai[k] = r.value
+  const q = tulisFilterQuery(nilai, SPEC_FILTER, _route.query, KEKAL_FILTER)
+  if (queryBerubah(_route.query, q)) router.replace({ query: q }).catch(() => {})
 })
 // Alamat daftar SEKARANG (sudah memuat q/lembaga/jabatan/status/tipe/tab) — dititipkan ke
 //   form supaya sesudah Simpan ia kembali ke daftar yang sama, bukan ke daftar kosong.
 const queryDaftar = computed(() => queryDariDaftar(_route.fullPath))
+// v.1.4.3: "Kelola" membawa penyaring yang sedang aktif (lihat SantriView utk sebabnya).
+const alamatKelola = computed(() => alamatBawaFilter('/master-data', _route.query, { tab: 'guru' }))
 
 // v.1.1.9: label shift utk kartu guru — dari MASTER lewat shiftsForGuru (sumber tunggal),
 //   bukan lagi g.shift mentah. g.shift kini sekadar cermin utk fp_sync dan bisa berisi
@@ -860,7 +873,7 @@ definePageActions(() => {
       label: 'Kelola',
       icon: 'edit',
       primary: true,
-      on: () => router.push('/master-data?tab=guru')
+      on: () => router.push(alamatKelola.value)
     })
   }
   return acts

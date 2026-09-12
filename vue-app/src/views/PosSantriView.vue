@@ -211,6 +211,8 @@ import { useToast } from '@/composables/useToast'
 // v.F6e: adapter Supabase (serverTimestamp = shim ISO string).
 import { getOne, queryColl, setOne, updateOne, serverTimestamp } from '@/services/db'
 import { sortSantri } from '@/utils/santriSort'
+// v.1.4.3: penyaring ⇄ URL lewat sumber tunggal (lihat utils/filterQuery.js).
+import { bacaFilterQuery, tulisFilterQuery, queryBerubah } from '@/utils/filterQuery'
 import { sisaTagihan } from '@/utils/tagihan'
 // K1: pemecahan komponen (sekolah+ngaji) jadi beberapa baris Buku Induk — rumusnya di
 //   utils/syahriyah.js yang diuji unit, jangan disalin ke sini.
@@ -266,25 +268,37 @@ const filterTunggakan = ref(false)
 // v.107: filter <-> URL query — pertahankan filter saat kembali (mis. dari Riwayat POS).
 const _route = useRoute()
 const _router = useRouter()
-let _syncingQuery = false
+// v.1.4.3: pindah ke utils/filterQuery — bendera `_syncingQuery` yang lama tak pernah
+//   benar-benar menjaga (watcher Vue ber-`flush: 'pre'` ANTRE, jadi benderanya sudah
+//   kembali false saat callback-nya jalan). Penjaganya kini perbandingan hasil.
+//   `tunggakan` disimpan sebagai '1'/'' supaya tetap satu jenis nilai dengan yang lain.
+const SPEC_FILTER = [
+  { kunci: 'q' },
+  { kunci: 'lembaga' },
+  { kunci: 'sekolah' },
+  { kunci: 'tunggakan' }
+]
 function syncFiltersFromQuery() {
-  _syncingQuery = true
-  search.value = _route.query.q != null ? String(_route.query.q) : ''
-  filterLembaga.value = _route.query.lembaga != null ? String(_route.query.lembaga) : ''
-  filterSekolah.value = _route.query.sekolah != null ? String(_route.query.sekolah) : ''
-  filterTunggakan.value = _route.query.tunggakan === '1'
-  _syncingQuery = false
+  const nilai = bacaFilterQuery(_route.query, SPEC_FILTER)
+  search.value = nilai.q
+  filterLembaga.value = nilai.lembaga
+  filterSekolah.value = nilai.sekolah
+  filterTunggakan.value = nilai.tunggakan === '1'
 }
 syncFiltersFromQuery()
 watch(() => _route.query, syncFiltersFromQuery)
 watch([search, filterLembaga, filterSekolah, filterTunggakan], () => {
-  if (_syncingQuery) return
-  const q = {}
-  if (search.value) q.q = search.value
-  if (filterLembaga.value) q.lembaga = filterLembaga.value
-  if (filterSekolah.value) q.sekolah = filterSekolah.value
-  if (filterTunggakan.value) q.tunggakan = '1'
-  _router.replace({ query: q }).catch(() => {})
+  const q = tulisFilterQuery(
+    {
+      q: search.value,
+      lembaga: filterLembaga.value,
+      sekolah: filterSekolah.value,
+      tunggakan: filterTunggakan.value ? '1' : ''
+    },
+    SPEC_FILTER,
+    _route.query
+  )
+  if (queryBerubah(_route.query, q)) _router.replace({ query: q }).catch(() => {})
 })
 // v.1.2.x: matriks POS gaya Braja — kirim SEMUA tagihan santri + pembayaran POS (utk warna sel)
 const allTagihan = ref([])

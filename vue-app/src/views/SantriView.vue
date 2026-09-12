@@ -55,9 +55,9 @@
         <!-- View mode: tombol Kelola -->
         <router-link
           v-if="isFullAccess && !isMasterMode"
-          to="/master-data?tab=santri"
+          :to="alamatKelola"
           class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-slate-200 hover:bg-slate-300 text-[var(--text-primary)] text-xs font-bold transition"
-          title="CRUD santri di Master Data"
+          title="CRUD santri di Master Data (penyaring ikut terbawa)"
         >
           <i class="fas fa-edit"></i>Kelola
         </router-link>
@@ -617,6 +617,13 @@ import {
 import { resetUserPassword, provisionAkunSenyap } from '@/services/authSupabase' // reset sandi + buat akun login (Edge Function)
 // v.1.4.1: bawa alamat daftar (beserta pencarian & penyaringnya) ke form, lalu kembali ke situ.
 import { queryDariDaftar } from '@/utils/navKembali'
+// v.1.4.3: penyaring ⇄ URL (SELURUHNYA) + alamat "Kelola" yang membawa penyaring.
+import {
+  bacaFilterQuery,
+  tulisFilterQuery,
+  queryBerubah,
+  alamatBawaFilter
+} from '@/utils/filterQuery'
 import { planAppendNis, applyNisChanges } from '@/utils/nisGenerator' // v.111: auto-NIS pasca impor = APPEND (No. Induk lama tetap; baru lanjut nomor)
 
 const exporting = ref(false)
@@ -657,40 +664,79 @@ const pjPtptOptions = pjPtptDistinct
 // v.107: filter <-> URL query — pertahankan filter saat "back" dari halaman detail/profil.
 //   Baca query saat mount + saat berubah (dukung global-search header ?q= + pita ?tempat=).
 //   Tulis query (router.replace) saat filter berubah -> URL daftar membawa filter -> back memulihkannya.
+//
+// v.1.4.3 (Kyai, 12 Sep): "pilih filter … lalu edit dan simpan selalu kembali ke semula
+//   (tampil semua)". Dua sebab yang tersisa, keduanya ditutup di sini — rinciannya
+//   (termasuk kenapa penjaga `_syncingQuery` lama tak pernah menjaga) ada di
+//   utils/filterQuery.js:
+//     1. hanya EMPAT dari delapan penyaring yang ditulis ke URL; Gedung, PJ PTPT,
+//        Kelas-Guru, dan sub-tab Qiraati/Sekolah hilang di setiap perpindahan halaman.
+//     2. tulis-balik ke URL kini dijaga PERBANDINGAN hasil, bukan bendera yang kalah cepat
+//        dari antrean watcher.
 const route = useRoute()
 const router = useRouter()
-let _syncingQuery = false
+// Sub-tab Qiraati/Sekolah (akun guru). Dideklarasikan DI SINI — bukan lagi di dekat
+//   `jumlahSisi` di bawah — karena ia kini ikut disimpan ke URL bersama penyaring lain,
+//   dan `const` di `<script setup>` tidak ter-hoist: dipakai sebelum dideklarasikan =
+//   ReferenceError saat halaman dibuka.
+const sisiTab = ref('qiraati')
+// Satu daftar untuk dibaca DAN ditulis — penyaring baru yang lupa didaftarkan di sini
+// akan langsung terasa sebagai penyaring yang "lupa sendiri" sesudah Simpan.
+const SPEC_FILTER = [
+  { kunci: 'q' },
+  { kunci: 'lembaga' },
+  { kunci: 'tempat' },
+  { kunci: 'status', bawaan: 'aktif' },
+  { kunci: 'gedung' },
+  { kunci: 'pj' },
+  { kunci: 'kelasguru' },
+  { kunci: 'sisi', bawaan: 'qiraati' }
+]
+// Kunci milik halaman induk (Master Data `?tab=`, sub-tabnya `?sub=`).
+const KEKAL_FILTER = ['tab', 'sub']
+const refFilter = {
+  q: search,
+  lembaga: filterLembaga,
+  tempat: filterMukim,
+  status: filterStatus,
+  gedung: filterGedung,
+  pj: filterPjPtpt,
+  kelasguru: filterKelasGuru,
+  sisi: sisiTab
+}
 function syncFiltersFromQuery() {
-  _syncingQuery = true
-  search.value = route.query.q != null ? String(route.query.q) : ''
-  filterLembaga.value = route.query.lembaga != null ? String(route.query.lembaga) : ''
-  filterMukim.value = route.query.tempat != null ? String(route.query.tempat) : ''
-  filterStatus.value = route.query.status != null ? String(route.query.status) : 'aktif'
-  _syncingQuery = false
+  const nilai = bacaFilterQuery(route.query, SPEC_FILTER)
+  for (const [k, r] of Object.entries(refFilter)) r.value = nilai[k]
 }
 syncFiltersFromQuery()
 watch(() => route.query, syncFiltersFromQuery)
-watch([search, filterLembaga, filterMukim, filterStatus], () => {
-  if (_syncingQuery) return
-  const q = {}
-  // v.1.4.1: kunci milik HALAMAN INDUK dipertahankan. Daftar ini juga tayang di dalam
-  //   Master Data (`/master-data?tab=santri`); query ditulis ulang dari nol, jadi `tab`
-  //   ikut terhapus tiap kali kotak cari diketik dan Master Data melompat ke tab lain.
-  if (route.query.tab) q.tab = route.query.tab
-  if (route.query.sub) q.sub = route.query.sub
-  if (search.value) q.q = search.value
-  if (filterLembaga.value) q.lembaga = filterLembaga.value
-  if (filterMukim.value) q.tempat = filterMukim.value
-  if (filterStatus.value && filterStatus.value !== 'aktif') q.status = filterStatus.value
-  router.replace({ query: q }).catch(() => {})
+watch(Object.values(refFilter), () => {
+  const nilai = {}
+  for (const [k, r] of Object.entries(refFilter)) nilai[k] = r.value
+  const q = tulisFilterQuery(nilai, SPEC_FILTER, route.query, KEKAL_FILTER)
+  if (queryBerubah(route.query, q)) router.replace({ query: q }).catch(() => {})
 })
-// Alamat daftar SEKARANG (sudah memuat q/lembaga/status/tab) — dititipkan ke form supaya
+// Alamat daftar SEKARANG (sudah memuat SELURUH penyaring + tab) — dititipkan ke form supaya
 //   sesudah Simpan ia kembali ke daftar yang sama, bukan ke daftar kosong.
 const queryDaftar = computed(() => queryDariDaftar(route.fullPath))
+// v.1.4.3: tombol/aksi "Kelola" membawa penyaring yang sedang aktif. Sebelumnya ia
+//   menunjuk alamat karangan '/master-data?tab=santri' — dan karena tombol Edit HANYA ada
+//   di Master Data, setiap perjalanan "cari → Kelola → edit" pasti melewati daftar kosong.
+const alamatKelola = computed(() =>
+  alamatBawaFilter('/master-data', route.query, { tab: 'santri' })
+)
 
-// v.1.2.4: ganti lembaga → reset filter Kelas-Guru (kunci rombel jadi tak relevan)
-watch(filterLembaga, () => {
-  filterKelasGuru.value = ''
+// v.1.2.4: ganti lembaga → reset filter Kelas-Guru (kunci rombel jadi tak relevan).
+// v.1.4.3: dipersempit ke "rombel milik lembaga LAIN". Versi lama mengosongkannya pada
+//   SETIAP perubahan lembaga, termasuk saat penyaring dipulihkan dari URL — dan karena
+//   watcher berjalan sesudah sync selesai, rombel yang baru saja dipulihkan langsung
+//   terhapus lagi. Lembaga kosong ("Semua") sengaja tidak menghapus: rombelnya tetap
+//   menyaring dengan benar dan tetap muncul di dropdown.
+watch(filterLembaga, (l) => {
+  const cur = String(filterKelasGuru.value || '')
+  if (!cur || !l) return
+  const lembagaRombel = cur.split('|')[0] // optKey = `${lembaga_huruf_kecil}|${kunciRombel}`
+  if (lembagaRombel !== String(l).toLowerCase()) filterKelasGuru.value = ''
 })
 
 // ── v.1.2.0 (Kyai 21 Jul): pisah Qiraati / Sekolah pakai SUB-TAB, bukan dua section
@@ -717,7 +763,6 @@ function sisiSekolah(s) {
   return ownsSekolah(s, myNamaGuru.value) || headsLembaga(authStore.sesiAktif, s.lembaga_sekolah)
 }
 
-const sisiTab = ref('qiraati')
 // Hitung dari SELURUH santri dalam scope (santriRaw), bukan hasil pencarian — kalau
 //   tidak, sub-tab akan muncul-hilang mengikuti kata kunci.
 const jumlahSisi = computed(() => {
@@ -785,7 +830,7 @@ definePageActions(() => {
       label: 'Kelola',
       icon: 'edit',
       primary: true,
-      on: () => router.push('/master-data?tab=santri')
+      on: () => router.push(alamatKelola.value)
     })
   }
   return acts

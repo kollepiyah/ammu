@@ -565,16 +565,133 @@ export async function deleteOne(collectionName, id, opts = {}) {
  *  <0,5 detik; angka uang tak tersentuh (ini murni jalur BACA). */
 const RT_DEBOUNCE_MS = 400
 
+// ---- v.1.4.3 · langganan realtime yang MENYEMBUHKAN DIRI --------------------
+//
+// AUDIT 12 Sep 2026, menjawab laporan Kyai "banyak beberapa kurang stabil dalam
+// pemakaian". Ini temuan yang paling menjelaskan rasa itu, dan diam-diam:
+//
+//   `subscribeColl` menarik data SEKALI, lalu bersandar sepenuhnya pada channel
+//   realtime untuk pembaruan berikutnya. Channel itu dipasang dengan `.subscribe()`
+//   TANPA callback status — jadi ketika ia mati, tak ada satu pun yang tahu.
+//
+// Channel realtime MEMANG mati secara rutin, bukan karena kerusakan:
+//   · HP/laptop tidur atau aplikasi ditinggal di latar (WebView Android & Electron
+//     memutus WebSocket yang menganggur),
+//   · jaringan berpindah (WiFi pondok ↔ data seluler),
+//   · token Supabase diperbarui, dan
+//   · server memutus channel yang menganggur terlalu lama.
+//
+// Akibatnya bagi pemakai: daftar tampak NORMAL tapi isinya beku di keadaan terakhir
+// sebelum perangkatnya tidur. Pembayaran yang baru masuk tak muncul, absensi yang
+// baru disimpan operator lain tak kelihatan, dan satu-satunya obat adalah memuat
+// ulang aplikasi. Tak ada pesan galat — persis bentuk "kurang stabil" yang sulit
+// dilaporkan karena tak ada yang bisa ditunjuk.
+//
+// PERBAIKANNYA dua lapis:
+//   1. Status channel dipantau. `CHANNEL_ERROR` / `TIMED_OUT` / `CLOSED` -> pasang
+//      ulang dengan jeda menaik (1s, 3s, 8s, 20s, 60s) supaya jaringan yang sedang
+//      buruk tidak dihujani percobaan. Begitu tersambung LAGI, data ditarik sekali:
+//      event yang terjadi selagi channel mati tak pernah dikirim ulang oleh server.
+//   2. Perangkat kembali dipakai -> data disegarkan. Satu pendengar global untuk
+//      SELURUH langganan (`visibilitychange` + `online`), bukan satu per langganan.
+//
+// Kedua lapis memakai `fetchGabung` yang sama, jadi penggabungan 400 ms hasil audit
+// Agu 2026 tetap berlaku: badai event maupun badai bangun-tidur sama-sama menjadi
+// SATU tarikan per koleksi.
+const RT_ULANG_MS = [1000, 3000, 8000, 20000, 60000]
+// Jangan menarik ulang koleksi yang BARU SAJA ditarik — tanpa ini, berpindah jendela
+// bolak-balik (kebiasaan wajar saat menyalin data) menarik setiap tabel tiap kali.
+const RT_JEDA_SEGAR_MS = 5000
+
+const _penyegar = new Set()
+let _pendengarTerpasang = false
+function _pasangPendengarGlobal() {
+  if (_pendengarTerpasang) return
+  if (typeof window === 'undefined' || typeof document === 'undefined') return
+  _pendengarTerpasang = true
+  const segarkan = () => {
+    for (const f of [..._penyegar]) {
+      try {
+        f()
+      } catch {
+        /* satu langganan gagal tak boleh menghentikan yang lain */
+      }
+    }
+  }
+  window.addEventListener('online', segarkan)
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) segarkan()
+  })
+}
+
+/** Pasang channel realtime yang memasang ulang dirinya saat putus.
+ *  @param {string} namaDasar prefix nama channel (keunikan ditambahkan di sini).
+ *  @param {(ch:any)=>any} daftarkan pasang `.on(...)` yang sesuai, kembalikan channel.
+ *  @param {()=>void} fetchGabung penarik data ber-debounce milik langganan itu.
+ *  @returns {()=>void} pelepas. */
+function _pasangChannelTahanPutus(namaDasar, daftarkan, fetchGabung) {
+  let ch = null
+  let lepas = false
+  let percobaan = 0
+  let timerUlang = null
+  let pernahTersambung = false
+
+  const buang = () => {
+    if (!ch) return
+    try {
+      supabase.removeChannel(ch)
+    } catch {
+      /* noop */
+    }
+    ch = null
+  }
+  const jadwalUlang = () => {
+    if (lepas || timerUlang) return
+    const jeda = RT_ULANG_MS[Math.min(percobaan, RT_ULANG_MS.length - 1)]
+    percobaan++
+    timerUlang = setTimeout(() => {
+      timerUlang = null
+      if (lepas) return
+      buang()
+      pasang()
+    }, jeda)
+  }
+  const pasang = () => {
+    if (lepas) return
+    const dasar = supabase.channel(`${namaDasar}-${Math.random().toString(36).slice(2, 8)}`)
+    ch = daftarkan(dasar).subscribe((status) => {
+      if (lepas) return
+      if (status === 'SUBSCRIBED') {
+        percobaan = 0
+        // Hanya pada sambungan ULANG — tarikan pertama sudah dilakukan pemanggil.
+        if (pernahTersambung) fetchGabung()
+        pernahTersambung = true
+        return
+      }
+      if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') jadwalUlang()
+    })
+  }
+  pasang()
+  return () => {
+    lepas = true
+    if (timerUlang) clearTimeout(timerUlang)
+    buang()
+  }
+}
+
 /** Subscribe collection — return unsubscribe function.
  *  Whitelist realtime -> channel postgres_changes (refetch penuh tiap perubahan,
  *  cermin onSnapshot kirim seluruh set) tapi DIGABUNG lewat RT_DEBOUNCE_MS.
  *  Non-whitelist -> fetch sekali + no-op. */
 export function subscribeColl(collectionName, callback, filters = [], orders = []) {
   _ensure()
-  const fetchAll = () =>
-    queryColl(collectionName, filters, orders)
+  let terakhirTarik = 0
+  const fetchAll = () => {
+    terakhirTarik = Date.now()
+    return queryColl(collectionName, filters, orders)
       .then(callback)
       .catch((err) => console.error(`[subscribeColl] ${collectionName} error:`, err))
+  }
 
   if (!REALTIME.has(collectionName)) {
     fetchAll()
@@ -591,18 +708,29 @@ export function subscribeColl(collectionName, callback, filters = [], orders = [
       if (!lepas) fetchAll()
     }, RT_DEBOUNCE_MS)
   }
-  const ch = supabase
-    .channel(`rt-${collectionName}-${Math.random().toString(36).slice(2, 8)}`)
-    .on('postgres_changes', { event: '*', schema: 'public', table: collectionName }, fetchGabung)
-    .subscribe()
+  // Dipakai pendengar global (kembali online / jendela dipakai lagi).
+  const segarkanBilaPerlu = () => {
+    if (lepas) return
+    if (Date.now() - terakhirTarik < RT_JEDA_SEGAR_MS) return
+    fetchGabung()
+  }
+  _pasangPendengarGlobal()
+  _penyegar.add(segarkanBilaPerlu)
+  const lepasChannel = _pasangChannelTahanPutus(
+    `rt-${collectionName}`,
+    (ch) =>
+      ch.on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: collectionName },
+        fetchGabung
+      ),
+    fetchGabung
+  )
   return () => {
     lepas = true
+    _penyegar.delete(segarkanBilaPerlu)
     if (timer) clearTimeout(timer) // jangan tarik data untuk komponen yang sudah dilepas
-    try {
-      supabase.removeChannel(ch)
-    } catch {
-      /* noop */
-    }
+    lepasChannel()
   }
 }
 
@@ -610,10 +738,13 @@ export function subscribeColl(collectionName, callback, filters = [], orders = [
 export function subscribeDoc(collectionName, id, callback) {
   _ensure()
   const { pk } = _cfg(collectionName)
-  const fetchOne = () =>
-    getOne(collectionName, id)
+  let terakhirTarik = 0
+  const fetchOne = () => {
+    terakhirTarik = Date.now()
+    return getOne(collectionName, id)
       .then(callback)
       .catch((err) => console.error(`[subscribeDoc] ${collectionName}/${id} error:`, err))
+  }
 
   if (!REALTIME.has(collectionName)) {
     fetchOne()
@@ -632,22 +763,30 @@ export function subscribeDoc(collectionName, id, callback) {
       if (!lepas) fetchOne()
     }, RT_DEBOUNCE_MS)
   }
-  const ch = supabase
-    .channel(`rt-${collectionName}-${id}-${Math.random().toString(36).slice(2, 8)}`)
-    .on(
-      'postgres_changes',
-      { event: '*', schema: 'public', table: collectionName, filter: `${pk}=eq.${id}` },
-      fetchGabung
-    )
-    .subscribe()
+  // v.1.4.3: sama seperti subscribeColl — `settings` yang beku sesudah perangkat tidur
+  //   ikut membekukan kop, shift, jenis bisyaroh, dan kategori cuti di seluruh layar.
+  const segarkanBilaPerlu = () => {
+    if (lepas) return
+    if (Date.now() - terakhirTarik < RT_JEDA_SEGAR_MS) return
+    fetchGabung()
+  }
+  _pasangPendengarGlobal()
+  _penyegar.add(segarkanBilaPerlu)
+  const lepasChannel = _pasangChannelTahanPutus(
+    `rt-${collectionName}-${id}`,
+    (ch) =>
+      ch.on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: collectionName, filter: `${pk}=eq.${id}` },
+        fetchGabung
+      ),
+    fetchGabung
+  )
   return () => {
     lepas = true
+    _penyegar.delete(segarkanBilaPerlu)
     if (timer) clearTimeout(timer)
-    try {
-      supabase.removeChannel(ch)
-    } catch {
-      /* noop */
-    }
+    lepasChannel()
   }
 }
 
@@ -670,5 +809,9 @@ export const _internal = {
   cfg: _cfg,
   COLS,
   SPECIAL,
-  REALTIME
+  REALTIME,
+  // v.1.4.3: knob pemulihan realtime — dibaca tes regresi, bukan API aplikasi.
+  RT_DEBOUNCE_MS,
+  RT_ULANG_MS,
+  RT_JEDA_SEGAR_MS
 }
