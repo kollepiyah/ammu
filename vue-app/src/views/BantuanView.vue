@@ -456,7 +456,7 @@ import { ref, computed, watch, reactive } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { mergeOne } from '@/services/db'
 import { useSettingsStore } from '@/stores/settings'
-// v.1.4.3: SATU sumber nomor versi (lihat utils/appVersion.js) — label yang diketik
+// v.1.4.2: SATU sumber nomor versi (lihat utils/appVersion.js) — label yang diketik
 //   tangan di layar sudah terbukti membeku (kaki Data Santri tertinggal di v.74.0526).
 import { labelVersi } from '@/utils/appVersion'
 import { useAuthStore } from '@/stores/auth'
@@ -803,20 +803,14 @@ async function resetFaq() {
 //   riwayat lengkap ada di CHANGELOG.md untuk pengembang.
 const rilis = [
   {
-    versi: 'v.1.4.3',
+    versi: 'v.1.4.2',
     tgl: 'September 2026',
     items: [
       'Penyaring dan kata pencarian tidak hilang lagi sesudah mengedit. Di Data Santri dan Data Guru, memilih penyaring lalu menekan Edit dan Simpan dulu selalu mengembalikan daftar ke "tampil semua", sehingga nama yang sedang dikerjakan harus dicari ulang. Sekarang daftar kembali persis seperti sebelum diedit — termasuk penyaring Gedung, PJ PTPT, Kelas-Guru, dan sub-tab Qiraati/Sekolah yang sebelumnya memang tak pernah tersimpan. Tombol "Kelola" juga membawa penyaringnya, tidak lagi membuka daftar kosong.',
       'Data tidak lagi diam-diam basi sesudah HP atau laptop ditinggal. Sambungan langsung ke server memang terputus saat perangkat tidur, berpindah WiFi, atau aplikasi lama di latar belakang — dan dulu tak ada yang menyambungkannya kembali, sehingga layar tampak normal tapi isinya beku sampai aplikasi dimuat ulang. Kini sambungannya dipasang ulang sendiri dan data disegarkan begitu aplikasi dipakai lagi.',
       'Penyaring baru di Data Santri: Kelas / Jilid / Level. Pilihannya mengikuti data yang ada — Jilid 1–6, Level 3 Juz, kelas Romawi sekolah — dan menyempit sendiri mengikuti lembaga yang sedang dipilih.',
       'Penyaring Kelas (nama guru) kini bisa dicentang lebih dari satu, jadi kelas dari beberapa guru bisa ditampilkan sekaligus tanpa membuka-tutup penyaring.',
-      'Nomor versi di kaki layar tidak lagi tertinggal. Kaki daftar Data Santri sempat menampilkan versi Mei 2026 karena nomornya diketik terpisah di tiap halaman; sekarang semuanya membaca satu sumber yang ikut naik sendiri tiap rilis.'
-    ]
-  },
-  {
-    versi: 'v.1.4.2',
-    tgl: 'September 2026',
-    items: [
+      'Nomor versi di kaki layar tidak lagi tertinggal. Kaki daftar Data Santri sempat menampilkan versi Mei 2026 karena nomornya diketik terpisah di tiap halaman; sekarang semuanya membaca satu sumber yang ikut naik sendiri tiap rilis.',
       'Pengajuan Izin / Sakit / Cuti yang "selalu gagal" kini bisa dikirim. Pegawai kantor — yang akunnya berperan admin keuangan — selalu ditolak saat menekan Kirim, sejak menu perizinan itu ada. Sebabnya bukan isian yang salah, melainkan hak akses yang tertinggal; sekarang setiap pegawai yang punya shift boleh mengajukan, dan staf kantor juga bisa ikut menyetujui.',
       'Lampiran surat dokter bisa diunggah. Melampirkan foto atau PDF pada pengajuan izin dulu selalu menggagalkan pengirimannya kecuali yang mengirim seorang admin. Lampiran lama tetap bisa dibuka seperti biasa.',
       'Tanggapan atas Catatan Supervisi bisa dikirim. Kotak tanggapan beserta tombol "Tandai Diproses" dan "Tandai Selesai" tampil untuk orang yang dicatat, tetapi setiap kali ditekan selalu gagal. Catatan dan penilaiannya sendiri tetap tak bisa diubah oleh yang bersangkutan — hanya tanggapan dan statusnya.',

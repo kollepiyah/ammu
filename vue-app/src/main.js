@@ -145,7 +145,7 @@ async function initSentry() {
     window.Sentry.init({
       dsn,
       tracesSampleRate: 0.1,
-      // v.1.4.3: dari __APP_VERSION__ (package.json), bukan diketik ulang. Tag rilis Sentry
+      // v.1.4.2: dari __APP_VERSION__ (package.json), bukan diketik ulang. Tag rilis Sentry
       //   yang salah tak pernah kelihatan di layar — ia cuma membuat galat produksi
       //   dikelompokkan ke versi yang keliru, dan baru ketahuan saat ditelusuri.
       release: `portal-mu@${APP_VERSION_RAW || 'dev'}`,

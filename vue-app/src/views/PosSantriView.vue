@@ -211,7 +211,7 @@ import { useToast } from '@/composables/useToast'
 // v.F6e: adapter Supabase (serverTimestamp = shim ISO string).
 import { getOne, queryColl, setOne, updateOne, serverTimestamp } from '@/services/db'
 import { sortSantri } from '@/utils/santriSort'
-// v.1.4.3: penyaring ⇄ URL lewat sumber tunggal (lihat utils/filterQuery.js).
+// v.1.4.2: penyaring ⇄ URL lewat sumber tunggal (lihat utils/filterQuery.js).
 import { bacaFilterQuery, tulisFilterQuery, queryBerubah } from '@/utils/filterQuery'
 import { sisaTagihan } from '@/utils/tagihan'
 // K1: pemecahan komponen (sekolah+ngaji) jadi beberapa baris Buku Induk — rumusnya di
@@ -268,7 +268,7 @@ const filterTunggakan = ref(false)
 // v.107: filter <-> URL query — pertahankan filter saat kembali (mis. dari Riwayat POS).
 const _route = useRoute()
 const _router = useRouter()
-// v.1.4.3: pindah ke utils/filterQuery — bendera `_syncingQuery` yang lama tak pernah
+// v.1.4.2: pindah ke utils/filterQuery — bendera `_syncingQuery` yang lama tak pernah
 //   benar-benar menjaga (watcher Vue ber-`flush: 'pre'` ANTRE, jadi benderanya sudah
 //   kembali false saat callback-nya jalan). Penjaganya kini perbandingan hasil.
 //   `tunggakan` disimpan sebagai '1'/'' supaya tetap satu jenis nilai dengan yang lain.

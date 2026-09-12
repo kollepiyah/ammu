@@ -70,7 +70,7 @@ export function useSantri() {
   const filterLembaga = ref('')
   const filterKelas = ref('')
   // v.1.2.4: filter per KELAS-GURU (rombel pasangan) — nilai = `${lembaga}|${kunciRombel}`.
-  // v.1.4.3: LARIK (bisa dicentang lebih dari satu), bukan lagi satu nilai.
+  // v.1.4.2: LARIK (bisa dicentang lebih dari satu), bukan lagi satu nilai.
   const filterKelasGuru = ref([])
   const filterMukim = ref('')
   // v.21.12.0526: + filterStatus (aktif/tidak_aktif/all)
@@ -136,7 +136,7 @@ export function useSantri() {
     )
   })
 
-  // v.1.4.3: scope PERAN + GEDUNG dipecah jadi computed sendiri. Ia dibutuhkan DUA
+  // v.1.4.2: scope PERAN + GEDUNG dipecah jadi computed sendiri. Ia dibutuhkan DUA
   //   pemakai sekarang — daftar santri DAN daftar opsi penyaring Kelas/Jilid — dan
   //   menyalin blok peran sepanjang ini ke tempat kedua adalah cara paling pasti
   //   membuat opsi penyaring memuat kelas yang santrinya sendiri tak boleh dilihat.
@@ -233,7 +233,7 @@ export function useSantri() {
     return s.lembaga === fl || s.lembaga_sekolah === fl
   }
 
-  // v.1.4.3 (Kyai: "sekalian saya ingin tambah filter kelas/jilid/level").
+  // v.1.4.2 (Kyai: "sekalian saya ingin tambah filter kelas/jilid/level").
   //   Opsinya DITURUNKAN dari data, bukan daftar tetap: penamaan kelas di Ammu memang
   //   berbeda-beda per lembaga (Jilid 1-6 di TPQ, "Level 3 Juz" di Pra PTPT, angka Romawi
   //   di sekolah), dan daftar tetap pasti ketinggalan tiap kali lembaga menata ulang.
@@ -300,7 +300,7 @@ export function useSantri() {
     }
 
     // v.1.2.4: filter per KELAS-GURU (rombel pasangan).
-    // v.1.4.3 (Kyai): BANYAK rombel sekaligus — "bisa centang, jadi bisa tampil kelas
+    // v.1.4.2 (Kyai): BANYAK rombel sekaligus — "bisa centang, jadi bisa tampil kelas
     //   dari beberapa guru". Satu pilihan tunggal memaksa membuka-tutup penyaring
     //   berkali-kali hanya untuk membandingkan dua kelas yang bersebelahan.
     if (filterKelasGuru.value.length) {
@@ -382,7 +382,7 @@ export function useSantri() {
     search,
     filterLembaga,
     filterKelas,
-    kelasOptions, // v.1.4.3: opsi dropdown Kelas/Jilid/Level (diturunkan dari data)
+    kelasOptions, // v.1.4.2: opsi dropdown Kelas/Jilid/Level (diturunkan dari data)
     filterKelasGuru, // v.1.2.4: filter rombel pasangan guru
     kelasGuruOptions, // v.1.2.4: opsi dropdown Kelas-Guru
     filterMukim,

@@ -23,8 +23,8 @@
     "pengguna harus uninstall lebih dulu dan kehilangan sesi/data lokalnya."
   ],
   "android": {
-    "versionCode": 143,
-    "versionName": "v.1.4.3",
+    "versionCode": 142,
+    "versionName": "v.1.4.2",
     "apkUrl": "",
     "halamanRilis": "https://play.google.com/store/apps/details?id=app.ammu.id",
     "wajib": false,

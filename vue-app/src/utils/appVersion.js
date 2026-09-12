@@ -25,17 +25,17 @@
 // yang belum dideklarasikan aman, tidak melempar ReferenceError).
 const _mentah = typeof __APP_VERSION__ === 'string' ? __APP_VERSION__ : ''
 
-/** Versi build TANPA awalan, mis. `1.4.3`. Kosong bila tak disuntik (tes/SSR). */
+/** Versi build TANPA awalan, mis. `1.4.2`. Kosong bila tak disuntik (tes/SSR). */
 export const APP_VERSION_RAW = _mentah
 
-/** Versi siap tampil, mis. `v.1.4.3`. Kosong bila tak disuntik — pemanggil boleh
+/** Versi siap tampil, mis. `v.1.4.2`. Kosong bila tak disuntik — pemanggil boleh
  *  menyembunyikan labelnya dengan `v-if` daripada memajang "v." yang menggantung. */
 export const APP_VERSION = _mentah ? `v.${_mentah}` : ''
 
 /**
  * Label versi untuk ditampilkan, dengan `settings.appVersion` sebagai penimpa.
  * @param {object} settings isi `settingsStore.settings` (boleh null).
- * @returns {string} mis. `v.1.4.3`
+ * @returns {string} mis. `v.1.4.2`
  */
 export function labelVersi(settings) {
   const dariDb = String(settings?.appVersion || '').trim()

@@ -316,7 +316,7 @@
           <option v-for="p in pjPtptOptions" :key="p" :value="p">PJ: {{ p }}</option>
         </select>
       </div>
-      <!-- v.1.4.3 (Kyai): penyaring Kelas / Jilid / Level. Opsinya diturunkan dari data
+      <!-- v.1.4.2 (Kyai): penyaring Kelas / Jilid / Level. Opsinya diturunkan dari data
            santri yang boleh dilihat akun ini, bukan daftar tetap — penamaan kelas memang
            beda-beda per lembaga dan berubah tiap penataan ulang. -->
       <div v-if="kelasOptions.length" class="mt-2">
@@ -331,7 +331,7 @@
         </select>
       </div>
       <!-- v.1.2.4: filter per KELAS-GURU (rombel pasangan) — pantau per kelas guru.
-           v.1.4.3 (Kyai): bisa dicentang lebih dari satu, "jadi bisa tampil kelas dari
+           v.1.4.2 (Kyai): bisa dicentang lebih dari satu, "jadi bisa tampil kelas dari
            beberapa guru" — membandingkan dua rombel tak lagi berarti buka-tutup penyaring. -->
       <div v-if="isFullAccess && kelasGuruOptions.length" class="mt-2">
         <MultiSelectFilter
@@ -613,7 +613,7 @@ import { useGoogleSheet } from '@/composables/useGoogleSheet'
 import { buildListPdf, buildKopFromSettings } from '@/utils/pdfBuilder'
 import { useToast } from '@/composables/useToast'
 import { useSettingsStore } from '@/stores/settings'
-// v.1.4.3: SATU sumber nomor versi (lihat utils/appVersion.js) — label yang diketik
+// v.1.4.2: SATU sumber nomor versi (lihat utils/appVersion.js) — label yang diketik
 //   tangan di layar sudah terbukti membeku (kaki Data Santri tertinggal di v.74.0526).
 import { labelVersi } from '@/utils/appVersion'
 import { useConfirm } from '@/composables/useConfirm'
@@ -622,7 +622,7 @@ import SkeletonCard from '@/components/layout/SkeletonCard.vue'
 import EmptyState from '@/components/layout/EmptyState.vue' // v.91.0626
 import PageHeader from '@/components/layout/PageHeader.vue' // v.91.0626
 import EditKelasSantriDialog from '@/components/form/EditKelasSantriDialog.vue' // v.1.2.1: edit kelas oleh guru
-// v.1.4.3: penyaring Kelas-Guru bisa dicentang lebih dari satu.
+// v.1.4.2: penyaring Kelas-Guru bisa dicentang lebih dari satu.
 import MultiSelectFilter from '@/components/form/MultiSelectFilter.vue'
 // v.91.0626: deleteOne = backup ke audit_log dulu. serverTimestamp = shim ISO (db.js).
 import { mergeOne, addOne, deleteOne, getAll, serverTimestamp } from '@/services/db'
@@ -637,7 +637,7 @@ import {
 import { resetUserPassword, provisionAkunSenyap } from '@/services/authSupabase' // reset sandi + buat akun login (Edge Function)
 // v.1.4.1: bawa alamat daftar (beserta pencarian & penyaringnya) ke form, lalu kembali ke situ.
 import { queryDariDaftar } from '@/utils/navKembali'
-// v.1.4.3: penyaring ⇄ URL (SELURUHNYA) + alamat "Kelola" yang membawa penyaring.
+// v.1.4.2: penyaring ⇄ URL (SELURUHNYA) + alamat "Kelola" yang membawa penyaring.
 import {
   bacaFilterQuery,
   tulisFilterQuery,
@@ -666,7 +666,7 @@ const {
   loading,
   search,
   filterLembaga,
-  filterKelas, // v.1.4.3: penyaring Kelas/Jilid/Level
+  filterKelas, // v.1.4.2: penyaring Kelas/Jilid/Level
   kelasOptions,
   filterKelasGuru,
   kelasGuruOptions,
@@ -688,7 +688,7 @@ const pjPtptOptions = pjPtptDistinct
 //   Baca query saat mount + saat berubah (dukung global-search header ?q= + pita ?tempat=).
 //   Tulis query (router.replace) saat filter berubah -> URL daftar membawa filter -> back memulihkannya.
 //
-// v.1.4.3 (Kyai, 12 Sep): "pilih filter … lalu edit dan simpan selalu kembali ke semula
+// v.1.4.2 (Kyai, 12 Sep): "pilih filter … lalu edit dan simpan selalu kembali ke semula
 //   (tampil semua)". Dua sebab yang tersisa, keduanya ditutup di sini — rinciannya
 //   (termasuk kenapa penjaga `_syncingQuery` lama tak pernah menjaga) ada di
 //   utils/filterQuery.js:
@@ -730,7 +730,7 @@ const refFilter = {
   kelasguru: filterKelasGuru,
   sisi: sisiTab
 }
-// v.1.4.3: "ada penyaring aktif?" dihitung dari refFilter, bukan dari daftar yang
+// v.1.4.2: "ada penyaring aktif?" dihitung dari refFilter, bukan dari daftar yang
 //   diketik ulang di template. Daftar lama cuma menyebut empat penyaring — jadi layar
 //   kosong karena penyaring Gedung/PJ/Kelas berbunyi "Belum ada santri", seolah datanya
 //   yang tak ada. Ia juga LANGSUNG salah begitu `filterKelasGuru` jadi larik: larik
@@ -757,7 +757,7 @@ watch(Object.values(refFilter), () => {
 // Alamat daftar SEKARANG (sudah memuat SELURUH penyaring + tab) — dititipkan ke form supaya
 //   sesudah Simpan ia kembali ke daftar yang sama, bukan ke daftar kosong.
 const queryDaftar = computed(() => queryDariDaftar(route.fullPath))
-// v.1.4.3: tombol/aksi "Kelola" membawa penyaring yang sedang aktif. Sebelumnya ia
+// v.1.4.2: tombol/aksi "Kelola" membawa penyaring yang sedang aktif. Sebelumnya ia
 //   menunjuk alamat karangan '/master-data?tab=santri' — dan karena tombol Edit HANYA ada
 //   di Master Data, setiap perjalanan "cari → Kelola → edit" pasti melewati daftar kosong.
 // Label opsi Kelas-Guru — nama lembaga hanya disebut saat penyaring Lembaga belum
@@ -773,7 +773,7 @@ const alamatKelola = computed(() =>
 )
 
 // v.1.2.4: ganti lembaga → reset filter Kelas-Guru (kunci rombel jadi tak relevan).
-// v.1.4.3: dipersempit ke "rombel milik lembaga LAIN". Versi lama mengosongkannya pada
+// v.1.4.2: dipersempit ke "rombel milik lembaga LAIN". Versi lama mengosongkannya pada
 //   SETIAP perubahan lembaga, termasuk saat penyaring dipulihkan dari URL — dan karena
 //   watcher berjalan sesudah sync selesai, rombel yang baru saja dipulihkan langsung
 //   terhapus lagi. Lembaga kosong ("Semua") sengaja tidak menghapus: rombelnya tetap

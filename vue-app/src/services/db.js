@@ -565,7 +565,7 @@ export async function deleteOne(collectionName, id, opts = {}) {
  *  <0,5 detik; angka uang tak tersentuh (ini murni jalur BACA). */
 const RT_DEBOUNCE_MS = 400
 
-// ---- v.1.4.3 · langganan realtime yang MENYEMBUHKAN DIRI --------------------
+// ---- v.1.4.2 · langganan realtime yang MENYEMBUHKAN DIRI --------------------
 //
 // AUDIT 12 Sep 2026, menjawab laporan Kyai "banyak beberapa kurang stabil dalam
 // pemakaian". Ini temuan yang paling menjelaskan rasa itu, dan diam-diam:
@@ -763,7 +763,7 @@ export function subscribeDoc(collectionName, id, callback) {
       if (!lepas) fetchOne()
     }, RT_DEBOUNCE_MS)
   }
-  // v.1.4.3: sama seperti subscribeColl — `settings` yang beku sesudah perangkat tidur
+  // v.1.4.2: sama seperti subscribeColl — `settings` yang beku sesudah perangkat tidur
   //   ikut membekukan kop, shift, jenis bisyaroh, dan kategori cuti di seluruh layar.
   const segarkanBilaPerlu = () => {
     if (lepas) return
@@ -810,7 +810,7 @@ export const _internal = {
   COLS,
   SPECIAL,
   REALTIME,
-  // v.1.4.3: knob pemulihan realtime — dibaca tes regresi, bukan API aplikasi.
+  // v.1.4.2: knob pemulihan realtime — dibaca tes regresi, bukan API aplikasi.
   RT_DEBOUNCE_MS,
   RT_ULANG_MS,
   RT_JEDA_SEGAR_MS

@@ -5,7 +5,18 @@ Rinciannya untuk pengembang ada di `CHANGELOG.md` — jangan disalin ke sana, te
 
 ---
 
-## v.1.4.3 — September 2026
+## v.1.4.2 — September 2026
+
+**Baru**
+
+- **Rekap Riwayat Izin per Orang.** Di halaman Personal, Kepala/PJ/admin kini punya kartu
+  yang mengumpulkan seluruh pengajuan izin, sakit, dan cuti **dikelompokkan per guru** —
+  lengkap dengan pencarian nama, penyaring tahun, dan hitungan hari yang sudah disetujui.
+  Sebelumnya daftar persetujuan hanya memuat yang sedang menunggu, jadi begitu sebuah
+  pengajuan diputus, riwayatnya lenyap dari layar.
+- **Lampiran bisa dibuka ulang.** Surat dokter atau surat keterangan yang dilampirkan saat
+  mengajukan kini tetap bisa dilihat kapan pun lewat rekap itu, bukan cuma sekali waktu
+  hendak disetujui.
 
 **Perbaikan**
 
@@ -31,24 +42,6 @@ Rinciannya untuk pengembang ada di `CHANGELOG.md` — jangan disalin ke sana, te
   tak muncul, absensi yang baru disimpan operator lain tak kelihatan, dan satu-satunya obat
   adalah menutup lalu membuka aplikasi. Kini sambungannya dipasang ulang sendiri, dan data
   disegarkan begitu aplikasi dipakai lagi.
-
----
-
-## v.1.4.2 — September 2026
-
-**Baru**
-
-- **Rekap Riwayat Izin per Orang.** Di halaman Personal, Kepala/PJ/admin kini punya kartu
-  yang mengumpulkan seluruh pengajuan izin, sakit, dan cuti **dikelompokkan per guru** —
-  lengkap dengan pencarian nama, penyaring tahun, dan hitungan hari yang sudah disetujui.
-  Sebelumnya daftar persetujuan hanya memuat yang sedang menunggu, jadi begitu sebuah
-  pengajuan diputus, riwayatnya lenyap dari layar.
-- **Lampiran bisa dibuka ulang.** Surat dokter atau surat keterangan yang dilampirkan saat
-  mengajukan kini tetap bisa dilihat kapan pun lewat rekap itu, bukan cuma sekali waktu
-  hendak disetujui.
-
-**Perbaikan**
-
 - **Pengajuan Izin / Sakit / Cuti yang "selalu gagal" kini bisa dikirim.** Pegawai kantor —
   yang akunnya berperan *admin keuangan* — selalu ditolak begitu menekan **Kirim**, sejak
   menu perizinan itu ada. Sebabnya bukan isian yang salah melainkan hak akses yang

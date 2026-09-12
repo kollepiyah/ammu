@@ -593,7 +593,7 @@ import { shiftLabelOf, shiftList, shiftIdsFromNomor, shiftNomorFromIds } from '@
 import { isGuruAktif } from '@/utils/guruScope' // v.1.2.0: sumber tunggal penyaring status guru
 // v.1.4.1: bawa alamat daftar (beserta pencarian & penyaringnya) ke form, lalu kembali ke situ.
 import { queryDariDaftar } from '@/utils/navKembali'
-// v.1.4.3: penyaring ⇄ URL + alamat "Kelola" yang membawa penyaring.
+// v.1.4.2: penyaring ⇄ URL + alamat "Kelola" yang membawa penyaring.
 import {
   bacaFilterQuery,
   tulisFilterQuery,
@@ -635,7 +635,7 @@ onUnmounted(() => {
 //   Baca saat mount + saat berubah (dukung global-search ?q= + pita ?tipe=). Tulis saat filter berubah.
 const _route = useRoute()
 const router = useRouter()
-// v.1.4.3: pola yang sama dengan SantriView — penyaring ⇄ URL lewat satu `spec`, dan
+// v.1.4.2: pola yang sama dengan SantriView — penyaring ⇄ URL lewat satu `spec`, dan
 //   tulis-balik dijaga PERBANDINGAN hasil, bukan bendera `_syncingQuery` yang selalu
 //   kalah cepat dari antrean watcher (`flush: 'pre'`). Lihat utils/filterQuery.js.
 const SPEC_FILTER = [
@@ -667,7 +667,7 @@ watch(Object.values(refFilter), () => {
 // Alamat daftar SEKARANG (sudah memuat q/lembaga/jabatan/status/tipe/tab) — dititipkan ke
 //   form supaya sesudah Simpan ia kembali ke daftar yang sama, bukan ke daftar kosong.
 const queryDaftar = computed(() => queryDariDaftar(_route.fullPath))
-// v.1.4.3: "Kelola" membawa penyaring yang sedang aktif (lihat SantriView utk sebabnya).
+// v.1.4.2: "Kelola" membawa penyaring yang sedang aktif (lihat SantriView utk sebabnya).
 const alamatKelola = computed(() => alamatBawaFilter('/master-data', _route.query, { tab: 'guru' }))
 
 // v.1.1.9: label shift utk kartu guru — dari MASTER lewat shiftsForGuru (sumber tunggal),

@@ -123,7 +123,7 @@
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useSettingsStore } from '@/stores/settings'
-// v.1.4.3: SATU sumber nomor versi (lihat utils/appVersion.js) — label yang diketik
+// v.1.4.2: SATU sumber nomor versi (lihat utils/appVersion.js) — label yang diketik
 //   tangan di layar sudah terbukti membeku (kaki Data Santri tertinggal di v.74.0526).
 import { labelVersi } from '@/utils/appVersion'
 import { useUiStore } from '@/stores/ui'

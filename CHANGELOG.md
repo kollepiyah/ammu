@@ -20,16 +20,27 @@ naik satu tiap rilis. Entri lama memakai skema lama `v.{nomor-urut}.{MMDDtahunmu
 
 ---
 
-## [v.1.4.3] — 2026-09-12 — Penyaring yang berhenti lupa, dan langganan realtime yang menyembuhkan diri
+## [v.1.4.2] — 2026-09-12 — Penyaring yang berhenti lupa, dan langganan realtime yang menyembuhkan diri
 
-**SIAP RILIS** — `versionCode` 143 / `versionName` `v.1.4.3`. **Tak ada migrasi Supabase**
-pada rilis ini — seluruhnya frontend. Urutannya cukup **deploy web → rebuild Android**.
+**SIAP RILIS** — `versionCode` 142 / `versionName` `v.1.4.2`. Migrasi Supabase gelombang 2
+(dua berkas) **sudah ter-apply** lewat integrasi GitHub→Supabase saat push 12 Sep; jadi
+`db push` tak perlu lagi — cukup **deploy web → rebuild Android**.
 
-Nomor baru (bukan dilebur seperti v.1.4.2) karena v.1.4.2 **sudah tayang** sore itu juga;
-pekerjaan sesudah sebuah versi sampai ke pengguna wajib punya nomornya sendiri, kalau tidak
-dua kode yang berbeda akan sama-sama mengaku `v.1.4.2`.
+⚠️ **SATU rilis, TIGA gelombang kerja** (10 Sep · 12 Sep pagi · 12 Sep sore), semuanya di
+bawah satu nomor. Keputusan Kyai diulang dua kali pada 12 Sep 2026: _"versinya biarkan di
+1.4.2, semua. web/electron/aab"_ lalu, sesudah saya sempat memotong v.1.4.3, _"versi
+biarkan di 1.4.2 — semua web/aab/electron"_. **v.1.4.3 karena itu tidak pernah ada**;
+penandanya di komentar kode dan tes sudah dilebur jadi `v.1.4.2`. Catatan gelombang 1 & 2
+dibiarkan terpisah di bawah — isinya tak diubah, hanya nomor dan status rilisnya.
 
-Dua laporan Kyai, 12 Sep 2026, sesudah v.1.4.2 tayang:
+⚠️ **Akibat yang harus diketahui, karena web v.1.4.2 SUDAH tayang lebih dulu (gelombang 1+2
+tanpa gelombang 3):** label versi tak bisa lagi membedakan keduanya. Kalau kelak ada
+laporan "sudah diperbaiki tapi masih terjadi", jangan percaya nomor versi di layar —
+periksa perilakunya langsung. Untuk Android ada batas yang lebih keras: **`versionCode`
+142 hanya boleh dipakai ulang kalau vc142 BELUM pernah diunggah ke Play**; kalau sudah,
+Play akan menolak AAB-nya dan versionCode wajib naik (versionName boleh tetap `v.1.4.2`).
+
+Dua laporan Kyai, 12 Sep 2026 sore, sesudah v.1.4.2 gelombang 1+2 tayang:
 
 > _"saat saya pilih filter di data santri, atau ketik nama santri lalu edit dan simpan
 > selalu kembali ke semula (tampil semua) harusnya masih tetap di filter itu"_
@@ -136,23 +147,16 @@ berubah; `_pageAll` menarik **seluruh** baris 1.000-an per halaman tanpa batas d
 
 ---
 
-## [v.1.4.2] — 2026-09-12 — Rekap izin per orang, dan tiga gerbang DB yang lebih sempit daripada layarnya
+## [v.1.4.2 · gelombang 2] — 2026-09-12 — Tiga gerbang DB yang lebih sempit daripada layarnya
 
-**SIAP RILIS** — `versionCode` 142 / `versionName` `v.1.4.2`. **ADA MIGRASI SUPABASE** (dua
-berkas), jadi urutannya **`npx supabase db push` → deploy web → rebuild Android**.
+⚠️ Gelombang ini **SUDAH TAYANG** (deploy web 12 Sep sore) dan kedua migrasinya sudah
+ter-apply. Catatan di bawah berlaku untuk gelombang ini saja — urutan rilis yang berlaku
+ada di blok v.1.4.2 paling atas.
 
-⚠️ **SATU rilis, dua gelombang kerja.** Pekerjaan 12 September sempat ditulis sebagai
-v.1.4.3. Keputusan Kyai, 12 Sep 2026: _"versinya biarkan di 1.4.2, semua. web/electron/aab"_
-— sah, sebab v.1.4.2 yang dipotong 10 September **belum sempat tayang sama sekali**
-(belum deploy, belum rebuild), jadi tak ada yang perlu dibedakan nomornya. **v.1.4.3 karena
-itu tidak pernah ada**; penandanya di komentar kode, migrasi, dan tes sudah dilebur jadi
-`v.1.4.2`. Catatan gelombang 1 dibiarkan terpisah di bawah ini — isinya tak diubah, hanya
-status rilisnya.
-
-⚠️ **Catatan migrasi di blok gelombang 1 SUDAH BASI.** Blok itu menulis "Tak ada migrasi
-Supabase pada rilis ini … tanpa `supabase db push`". Benar untuk gelombang itu sendiri,
-**tidak lagi benar untuk rilis ini**: gelombang 2 membawa dua migrasi. Yang berlaku adalah
-urutan di paragraf pertama.
+**Dibawa gelombang ini:** dua migrasi Supabase
+(`20260912120000_izin_guru_staff_write.sql`, `20260912130000_supervisi_respon_target.sql`),
+keduanya diterapkan otomatis oleh integrasi GitHub→Supabase saat push — diperiksa lewat
+`npx supabase migration list --linked`.
 
 Berangkat dari satu keluhan yang diteruskan Kyai 12 Sep 2026, disertai tangkapan layar:
 

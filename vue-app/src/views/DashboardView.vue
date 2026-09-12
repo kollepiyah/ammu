@@ -1,6 +1,6 @@
 <script setup>
 import { useRouter } from 'vue-router'
-// v.1.4.3: SATU sumber nomor versi — lihat utils/appVersion.js.
+// v.1.4.2: SATU sumber nomor versi — lihat utils/appVersion.js.
 import { APP_VERSION } from '@/utils/appVersion'
 import { useAuthStore } from '@/stores/auth'
 import { computed } from 'vue'

@@ -312,7 +312,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-// v.1.4.3: SATU sumber nomor versi — lihat utils/appVersion.js.
+// v.1.4.2: SATU sumber nomor versi — lihat utils/appVersion.js.
 import { APP_VERSION } from '@/utils/appVersion'
 import { RouterLink, useRoute } from 'vue-router'
 import { subscribeColl, updateOne, deleteOne, subscribeDoc, mergeOne } from '@/services/db'

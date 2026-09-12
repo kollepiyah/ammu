@@ -48,7 +48,7 @@ export function bacaFilterQuery(query, spec) {
     const raw = query ? query[f.kunci] : undefined
     const v = Array.isArray(raw) ? raw[0] : raw
     const teks = v != null ? String(v) : ''
-    // v.1.4.3: penyaring yang boleh dicentang LEBIH DARI SATU (mis. Kelas-Guru) disimpan
+    // v.1.4.2: penyaring yang boleh dicentang LEBIH DARI SATU (mis. Kelas-Guru) disimpan
     //   sebagai satu kunci dipisah koma. Nilainya sendiri tak pernah memuat koma —
     //   `${lembaga}|${kunciRombel}` — jadi pemisah ini aman; potongan kosong dibuang
     //   supaya URL tempelan seperti `?kelasguru=,,` tak menghasilkan penyaring hantu.
