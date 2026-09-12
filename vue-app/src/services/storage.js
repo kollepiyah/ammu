@@ -4,14 +4,15 @@
 // Bucket dirutekan dari prefix path (3 bucket Supabase: photo/branding/psb, semua Public).
 // CATATAN Kyai: bila bikin bucket baru (mis. bukti transfer privat), sesuaikan _bucketFor.
 import { BUCKET, uploadFile as sbUploadFile, deleteFile as sbDeleteFile } from './supabaseStorage'
+// v.1.4.2: aturan rutenya pindah ke utils/bucketStorage.js (PURE + bertes). Ia
+// sempat menyimpang diam-diam karena tak terjangkau tes — `izin_lampiran/` jatuh
+// ke default `branding` yang hanya admin boleh tulis, sehingga lampiran surat
+// dokter milik guru selalu ditolak RLS. Lihat komentar lengkap di util-nya.
+import { bucketUntukPath } from '@/utils/bucketStorage'
 
-/** Rute prefix path -> bucket Supabase. */
+/** Rute prefix path -> bucket Supabase. BUCKET tetap jadi sumber tunggal NAMA-nya. */
 function _bucketFor(path) {
-  const p = String(path || '')
-  if (/^(profil_foto|tanda_tangan|beranda_post|posts?|foto)\b/.test(p)) return BUCKET.photo
-  if (/^(pembayaran_transfer|psb|lembaga\/|dokumen)\b/.test(p)) return BUCKET.psb
-  // lembaga_logos, app_logos, bg_rapor, branding, logo, kop, dll -> branding (default)
-  return BUCKET.branding
+  return BUCKET[bucketUntukPath(path)]
 }
 
 /** dataURL/base64 -> Blob (contentType eksplisit). */

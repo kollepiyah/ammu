@@ -953,6 +953,8 @@ import {
 // v.21.110.0527: catatan supervisi
 import { useToast } from '@/composables/useToast'
 import { isKepalaLembaga } from '@/utils/roleScope'
+// v.1.4.2: galat DB → kalimat yang bisa ditindaklanjuti penggunanya (lihat galatSimpan).
+import { pesanGalatDb } from '@/utils/pesanGalatDb'
 import { useDesktopShell } from '@/composables/useDesktopShell'
 import { useIzinGuru } from '@/composables/useIzinGuru' // v.100d: izin/sakit mandiri
 import { useSettingsStore } from '@/stores/settings'
@@ -1008,6 +1010,15 @@ let unsubAbsensi = null
 let unsubKegiatan = null
 // v.21.110.0527
 const toast = useToast()
+// v.1.4.2: satu pintu untuk galat penyimpanan di halaman ini. Sebelumnya tiap catch
+//   menulis `toast.error('Gagal: ' + e.message)`, sehingga seorang guru membaca
+//   `new row violates row-level security policy for table "izin_guru"` — kalimat
+//   Postgres yang bagi dia berarti "aplikasi rusak", padahal artinya "peran akun
+//   Anda tak berhak". Keluhan 12 Sep 2026 sampai ke Kyai tanpa petunjuk itu.
+//   `peran` ikut dikirim supaya satu tangkapan layar cukup untuk mendiagnosis.
+function galatSimpan(e, aksi) {
+  toast.error(pesanGalatDb(e, { aksi, peran: auth.sesiAktif?.role_sistem }))
+}
 const supervisiRaw = ref([])
 const responText = reactive({})
 let unsubSupervisi = null
@@ -1363,7 +1374,7 @@ async function updateSupervisiStatus(s, newStatus) {
     })
     toast.success(newStatus === 'selesai' ? 'Catatan ditandai selesai' : 'Status diperbarui')
   } catch (e) {
-    toast.error('Gagal: ' + (e.message || e))
+    galatSimpan(e, 'memperbarui status catatan supervisi')
   }
 }
 
@@ -1380,7 +1391,7 @@ async function kirimRespon(s) {
     responText[s.id] = ''
     toast.success('Tanggapan terkirim')
   } catch (e) {
-    toast.error('Gagal: ' + (e.message || e))
+    galatSimpan(e, 'mengirim tanggapan catatan supervisi')
   }
 }
 
@@ -1550,7 +1561,7 @@ async function submitIzin() {
     toast.success('Pengajuan terkirim, menunggu persetujuan.')
     izinFormOpen.value = false
   } catch (e) {
-    toast.error('Gagal: ' + (e.message || e))
+    galatSimpan(e, 'mengirim pengajuan izin/sakit/cuti')
   } finally {
     izinBusy.value = false
   }
@@ -1561,7 +1572,7 @@ async function batalIzin(a) {
     await batalIzinReq(a.id)
     toast.success('Pengajuan dibatalkan.')
   } catch (e) {
-    toast.error('Gagal: ' + (e.message || e))
+    galatSimpan(e, 'membatalkan pengajuan')
   }
 }
 // Absensi milik GURU PENGAJU (bukan yang login). Wajib diambil terpisah: langganan
@@ -1587,7 +1598,7 @@ async function setujuiIzin(a) {
       `Disetujui — ${r.written} absensi terisi${r.skipped ? `, ${r.skipped} dilewati (sudah hadir)` : ''}.`
     )
   } catch (e) {
-    toast.error('Gagal: ' + (e.message || e))
+    galatSimpan(e, 'menyetujui pengajuan')
   } finally {
     izinBusyId.value = null
   }
@@ -1605,7 +1616,7 @@ async function terapkanUlangIzin(a) {
         `Tak ada yang perlu diisi — ${r.skipped} hari sudah tercatat hadir/terlambat pada shift itu. Baris ini ditutup.`
       )
   } catch (e) {
-    toast.error('Gagal: ' + (e.message || e))
+    galatSimpan(e, 'menerapkan ulang absensi pengajuan')
   } finally {
     izinBusyId.value = null
   }
@@ -1619,7 +1630,7 @@ async function abaikanTerapIzin(a) {
     await abaikanTerapReq(a)
     toast.success('Baris ditutup dari daftar pemulihan.')
   } catch (e) {
-    toast.error('Gagal: ' + (e.message || e))
+    galatSimpan(e, 'menutup baris dari daftar pemulihan')
   } finally {
     izinBusyId.value = null
   }
@@ -1630,7 +1641,7 @@ async function tolakIzin(a) {
     await tolakIzinReq(a)
     toast.success('Pengajuan ditolak.')
   } catch (e) {
-    toast.error('Gagal: ' + (e.message || e))
+    galatSimpan(e, 'menolak pengajuan')
   } finally {
     izinBusyId.value = null
   }
