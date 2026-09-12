@@ -1,11 +1,16 @@
 <script setup>
 import { useRouter } from 'vue-router'
+// v.1.4.3: SATU sumber nomor versi — lihat utils/appVersion.js.
+import { APP_VERSION } from '@/utils/appVersion'
 import { useAuthStore } from '@/stores/auth'
 import { computed } from 'vue'
 import DashboardGreeting from '@/components/dashboard/DashboardGreeting.vue'
 import DashboardJamHijri from '@/components/dashboard/DashboardJamHijri.vue'
 import DashboardKalender from '@/components/dashboard/DashboardKalender.vue'
 import DashboardPosts from '@/components/dashboard/DashboardPosts.vue'
+
+// Label versi di kaki layar — dulu diketik tangan di sini dan ikut membeku.
+const versiApp = APP_VERSION
 // v.21.17.0526: AdminStatsCharts DIHAPUS dari beranda — sudah ada di menu /statistik (kyai req)
 
 const router = useRouter()
@@ -49,7 +54,7 @@ const isAdmin = computed(() => auth.isAdmin || auth.sesiAktif?.role === 'admin')
     <DashboardPosts />
 
     <p class="text-center text-[10px] text-slate-400 dark:text-[var(--text-secondary)] pt-2">
-      <i class="fas fa-circle-info mr-1"></i>Portal MU · v.1.4.3
+      <i class="fas fa-circle-info mr-1"></i>Portal MU <span v-if="versiApp">· {{ versiApp }}</span>
     </p>
   </div>
 </template>

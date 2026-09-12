@@ -103,8 +103,11 @@
       <p class="text-[9px] text-slate-500 dark:text-slate-400 font-bold tracking-widest uppercase">
         © 2026 Mambaul Ulum
       </p>
-      <p class="text-[9px] text-teal-600 dark:text-teal-400 font-bold tracking-widest mt-0.5">
-        v.1.4.3
+      <p
+        v-if="versiApp"
+        class="text-[9px] text-teal-600 dark:text-teal-400 font-bold tracking-widest mt-0.5"
+      >
+        {{ versiApp }}
       </p>
     </div>
   </aside>
@@ -120,12 +123,16 @@
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useSettingsStore } from '@/stores/settings'
+// v.1.4.3: SATU sumber nomor versi (lihat utils/appVersion.js) — label yang diketik
+//   tangan di layar sudah terbukti membeku (kaki Data Santri tertinggal di v.74.0526).
+import { labelVersi } from '@/utils/appVersion'
 import { useUiStore } from '@/stores/ui'
 import { useMenus } from '@/composables/useMenus'
 import { useToast } from '@/composables/useToast'
 import { masehiToHijri, getKalibrasi } from '@/utils/hijri'
 
 const settings = useSettingsStore()
+const versiApp = computed(() => labelVersi(settings.settings))
 const ui = useUiStore()
 const route = useRoute()
 const router = useRouter()

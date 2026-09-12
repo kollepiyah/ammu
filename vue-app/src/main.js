@@ -38,6 +38,7 @@ auth.initAuth()
 
 // v.21.24c.0526: STATIC import settings — fix race dengan view init.
 import { useSettingsStore } from './stores/settings'
+import { APP_VERSION_RAW } from '@/utils/appVersion'
 const settingsStore = useSettingsStore(pinia)
 settingsStore
   .load()
@@ -144,7 +145,10 @@ async function initSentry() {
     window.Sentry.init({
       dsn,
       tracesSampleRate: 0.1,
-      release: 'portal-mu@1.4.3',
+      // v.1.4.3: dari __APP_VERSION__ (package.json), bukan diketik ulang. Tag rilis Sentry
+      //   yang salah tak pernah kelihatan di layar — ia cuma membuat galat produksi
+      //   dikelompokkan ke versi yang keliru, dan baru ketahuan saat ditelusuri.
+      release: `portal-mu@${APP_VERSION_RAW || 'dev'}`,
       environment: window.location.hostname.includes('localhost') ? 'dev' : 'prod'
     })
 
