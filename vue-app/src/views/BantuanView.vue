@@ -456,6 +456,9 @@ import { ref, computed, watch, reactive } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { mergeOne } from '@/services/db'
 import { useSettingsStore } from '@/stores/settings'
+// v.1.4.3: SATU sumber nomor versi (lihat utils/appVersion.js) — label yang diketik
+//   tangan di layar sudah terbukti membeku (kaki Data Santri tertinggal di v.74.0526).
+import { labelVersi } from '@/utils/appVersion'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
 import { useDesktopShell } from '@/composables/useDesktopShell'
@@ -555,7 +558,7 @@ const introText = computed(() =>
 const lembagaName = computed(
   () => settings.settings?.namaLembaga || 'Pondok Pesantren Mambaul Ulum'
 )
-const version = computed(() => settings.settings?.appVersion || 'v.1.4.3')
+const version = computed(() => labelVersi(settings.settings))
 const logoSrc = computed(() => settings.settings?.logoUrl || '/logo.png')
 
 const sections = [
@@ -804,7 +807,10 @@ const rilis = [
     tgl: 'September 2026',
     items: [
       'Penyaring dan kata pencarian tidak hilang lagi sesudah mengedit. Di Data Santri dan Data Guru, memilih penyaring lalu menekan Edit dan Simpan dulu selalu mengembalikan daftar ke "tampil semua", sehingga nama yang sedang dikerjakan harus dicari ulang. Sekarang daftar kembali persis seperti sebelum diedit — termasuk penyaring Gedung, PJ PTPT, Kelas-Guru, dan sub-tab Qiraati/Sekolah yang sebelumnya memang tak pernah tersimpan. Tombol "Kelola" juga membawa penyaringnya, tidak lagi membuka daftar kosong.',
-      'Data tidak lagi diam-diam basi sesudah HP atau laptop ditinggal. Sambungan langsung ke server memang terputus saat perangkat tidur, berpindah WiFi, atau aplikasi lama di latar belakang — dan dulu tak ada yang menyambungkannya kembali, sehingga layar tampak normal tapi isinya beku sampai aplikasi dimuat ulang. Kini sambungannya dipasang ulang sendiri dan data disegarkan begitu aplikasi dipakai lagi.'
+      'Data tidak lagi diam-diam basi sesudah HP atau laptop ditinggal. Sambungan langsung ke server memang terputus saat perangkat tidur, berpindah WiFi, atau aplikasi lama di latar belakang — dan dulu tak ada yang menyambungkannya kembali, sehingga layar tampak normal tapi isinya beku sampai aplikasi dimuat ulang. Kini sambungannya dipasang ulang sendiri dan data disegarkan begitu aplikasi dipakai lagi.',
+      'Penyaring baru di Data Santri: Kelas / Jilid / Level. Pilihannya mengikuti data yang ada — Jilid 1–6, Level 3 Juz, kelas Romawi sekolah — dan menyempit sendiri mengikuti lembaga yang sedang dipilih.',
+      'Penyaring Kelas (nama guru) kini bisa dicentang lebih dari satu, jadi kelas dari beberapa guru bisa ditampilkan sekaligus tanpa membuka-tutup penyaring.',
+      'Nomor versi di kaki layar tidak lagi tertinggal. Kaki daftar Data Santri sempat menampilkan versi Mei 2026 karena nomornya diketik terpisah di tiap halaman; sekarang semuanya membaca satu sumber yang ikut naik sendiri tiap rilis.'
     ]
   },
   {

@@ -66,6 +66,21 @@ Dua laporan Kyai, 12 Sep 2026, sesudah v.1.4.2 tayang:
   karena ia berjalan SESUDAH pemulihan selesai, rombel yang baru saja dipulihkan langsung
   terhapus lagi. Kini hanya dikosongkan bila rombelnya memang milik lembaga LAIN.
 
+- **Nomor versi di layar berhenti membeku.** Kyai, 12 Sep 2026: _"halaman data santri dan
+  halaman lain banyak yg masih tertulis versi lama"_ — kaki daftar Data Santri memang masih
+  berbunyi **v.74.0526**, nomor dari Mei, empat bulan tertinggal. Sebabnya bukan lupa
+  sekali melainkan bentuknya: nomor diketik sebagai TEKS di enam layar, dan yang
+  menyamakannya cuma ritual manual "naikkan 12 titik versi" — layar yang tak masuk daftar
+  ritual (Data Santri salah satunya) membeku selamanya. `__APP_VERSION__` yang disuntik
+  Vite dari `package.json` sudah ada sejak v.1.2.9 tapi hanya dipakai LoginView; kini
+  seluruh layar membacanya lewat `utils/appVersion.js`. `settings.appVersion` tetap menang
+  bila diisi — yang berubah cuma cadangannya, dari teks mati jadi versi build berjalan.
+  **Titik versi berkurang dari 12 jadi 6.**
+- **"Belum ada santri" tak lagi muncul saat daftarnya sebenarnya tersaring.** Kalimat empty
+  state menghitung penyaring dari daftar yang diketik ulang di template dan hanya menyebut
+  empat dari delapan — jadi layar kosong akibat penyaring Gedung/PJ/Kelas berbunyi "Belum
+  ada santri", seolah datanya yang tak ada. Kini diturunkan dari `SPEC_FILTER`.
+
 ### Changed — hasil audit "kurang stabil dalam pemakaian"
 
 - **Langganan realtime kini menyembuhkan diri.** Temuan yang paling menjelaskan rasa
@@ -89,12 +104,26 @@ Dua laporan Kyai, 12 Sep 2026, sesudah v.1.4.2 tayang:
 
 ### Added
 
-- `tests/unit/filterQuery.test.js` (21 tes) — termasuk uji **bolak-balik**: URL → penyaring
+- **Penyaring Kelas / Jilid / Level** di Data Santri. Opsinya **diturunkan dari data**,
+  bukan daftar tetap: penamaan kelas di Ammu memang berbeda-beda per lembaga (Jilid 1–6 di
+  TPQ, "Level 3 Juz" di Pra PTPT, angka Romawi di sekolah) dan berubah tiap penataan ulang,
+  jadi daftar tetap pasti ketinggalan. Satu daftar datar — bukan dua kelompok ngaji/sekolah
+  — karena `filterKelas` sendiri mencocokkan ke `kelas` **atau** `kelas_sekolah`; memisahkan
+  keduanya akan menjanjikan ketelitian yang tak dipunyai penyaringnya. Urutannya memakai
+  `kelasRank()` yang sama dengan pengurut daftar, jadi "Jilid 10" tak mendahului "Jilid 2".
+- **Penyaring Kelas-Guru kini bisa dicentang lebih dari satu** (Kyai: _"bisa centang, jadi
+  bisa tampil kelas dari beberapa guru"_). Dengan satu pilihan tunggal, membandingkan dua
+  rombel yang bersebelahan berarti membuka-tutup penyaring berkali-kali. Komponen barunya
+  `MultiSelectFilter.vue` sengaja GENERIK — repo ini sudah punya dua MultiSelect yang mirip
+  tapi terikat ke guru+shift, dan yang ketiga tak perlu jadi kembaran lagi. Nilainya
+  disimpan di URL sebagai satu kunci dipisah koma (`utils/filterQuery.js` menerima
+  `{ daftar: true }`), jadi ia ikut bertahan sesudah Simpan seperti penyaring lain.
+- `tests/unit/filterQuery.test.js` (27 tes) — termasuk uji **bolak-balik**: URL → penyaring
   → URL wajib identik, sebab satu putaran yang tak stabil saja sudah cukup membuat
   penyaring "lupa sendiri".
 - `tests/unit/dbRealtimePulih.test.js` (11 tes) — channel yang putus benar-benar dipasang
   ulang, jedanya menaik, tarikan-ulang hanya pada sambungan KEDUA, dan langganan yang sudah
-  dilepas tak ikut disegarkan. Total 1.412 tes hijau.
+  dilepas tak ikut disegarkan. Total 1.418 tes hijau.
 
 ### Catatan audit — yang DIPERIKSA dan ternyata sehat
 

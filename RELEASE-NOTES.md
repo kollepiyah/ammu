@@ -16,6 +16,14 @@ Rinciannya untuk pengembang ada di `CHANGELOG.md` — jangan disalin ke sana, te
   termasuk penyaring **Gedung**, **PJ PTPT**, **Kelas-Guru**, dan sub-tab
   **Qiraati/Sekolah** yang sebelumnya memang tak pernah tersimpan sama sekali. Tombol
   **Kelola** juga ikut membawa penyaringnya, tidak lagi membuka daftar kosong.
+- **Penyaring baru: Kelas / Jilid / Level** di Data Santri. Pilihannya mengikuti data yang
+  memang ada — Jilid 1–6, "Level 3 Juz", kelas Romawi sekolah — dan menyempit sendiri
+  mengikuti lembaga yang sedang dipilih.
+- **Penyaring Kelas (nama guru) kini bisa dicentang lebih dari satu**, jadi kelas dari
+  beberapa guru bisa ditampilkan sekaligus tanpa membuka-tutup penyaring berkali-kali.
+- **Nomor versi di kaki layar tidak lagi tertinggal.** Kaki daftar Data Santri sempat
+  menampilkan versi Mei 2026 karena nomornya diketik terpisah di tiap halaman; sekarang
+  semua layar membaca satu sumber yang ikut naik sendiri tiap rilis.
 - **Data tidak lagi diam-diam basi sesudah HP atau laptop ditinggal.** Sambungan langsung
   ke server memang terputus ketika perangkat tidur, berpindah WiFi, atau aplikasi lama
   berada di latar belakang — dan sebelumnya tak ada yang menyambungkannya kembali. Layar
