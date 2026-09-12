@@ -803,6 +803,10 @@ const rilis = [
     versi: 'v.1.4.2',
     tgl: 'September 2026',
     items: [
+      'Pengajuan Izin / Sakit / Cuti yang "selalu gagal" kini bisa dikirim. Pegawai kantor — yang akunnya berperan admin keuangan — selalu ditolak saat menekan Kirim, sejak menu perizinan itu ada. Sebabnya bukan isian yang salah, melainkan hak akses yang tertinggal; sekarang setiap pegawai yang punya shift boleh mengajukan, dan staf kantor juga bisa ikut menyetujui.',
+      'Lampiran surat dokter bisa diunggah. Melampirkan foto atau PDF pada pengajuan izin dulu selalu menggagalkan pengirimannya kecuali yang mengirim seorang admin. Lampiran lama tetap bisa dibuka seperti biasa.',
+      'Tanggapan atas Catatan Supervisi bisa dikirim. Kotak tanggapan beserta tombol "Tandai Diproses" dan "Tandai Selesai" tampil untuk orang yang dicatat, tetapi setiap kali ditekan selalu gagal. Catatan dan penilaiannya sendiri tetap tak bisa diubah oleh yang bersangkutan — hanya tanggapan dan statusnya.',
+      'Pesan gagal tak lagi berbahasa mesin. Kalimat seperti "new row violates row-level security policy" berganti menjadi keterangan yang bisa dibaca: apakah ini soal hak akses, sesi yang kedaluwarsa, atau sambungan internet yang putus — sehingga jelas apakah perlu lapor ke admin atau cukup dicoba lagi.',
       'Riwayat perizinan guru kini bisa dilihat per orang. Kepala, PJ, dan admin punya daftar baru di halaman Personal yang mengumpulkan seluruh pengajuan izin, sakit, dan cuti setiap guru — lengkap dengan pencarian nama, penyaring tahun, dan jumlah hari yang sudah disetujui. Sebelumnya yang tampil hanya pengajuan yang sedang menunggu, jadi begitu diputus riwayatnya hilang dari layar.',
       'Lampiran pengajuan bisa dibuka ulang kapan pun. Surat dokter atau surat keterangan yang dilampirkan guru tak lagi hanya bisa dilihat sekali waktu hendak disetujui.',
       'Izin yang dibatalkan sendiri tak lagi tertulis "Ditolak". Guru yang menarik pengajuannya sendiri dulu melihat tulisan merah "Ditolak" seolah pimpinan yang menolaknya; sekarang berbunyi "Dibatalkan". Pengajuan lama ikut terbaca benar dengan sendirinya.',

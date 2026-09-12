@@ -20,7 +20,116 @@ naik satu tiap rilis. Entri lama memakai skema lama `v.{nomor-urut}.{MMDDtahunmu
 
 ---
 
-## [v.1.4.2] — 2026-09-10 — Riwayat izin per orang, dan "Dibatalkan" berhenti menyamar jadi "Ditolak"
+## [v.1.4.2] — 2026-09-12 — Rekap izin per orang, dan tiga gerbang DB yang lebih sempit daripada layarnya
+
+**SIAP RILIS** — `versionCode` 142 / `versionName` `v.1.4.2`. **ADA MIGRASI SUPABASE** (dua
+berkas), jadi urutannya **`npx supabase db push` → deploy web → rebuild Android**.
+
+⚠️ **SATU rilis, dua gelombang kerja.** Pekerjaan 12 September sempat ditulis sebagai
+v.1.4.3. Keputusan Kyai, 12 Sep 2026: _"versinya biarkan di 1.4.2, semua. web/electron/aab"_
+— sah, sebab v.1.4.2 yang dipotong 10 September **belum sempat tayang sama sekali**
+(belum deploy, belum rebuild), jadi tak ada yang perlu dibedakan nomornya. **v.1.4.3 karena
+itu tidak pernah ada**; penandanya di komentar kode, migrasi, dan tes sudah dilebur jadi
+`v.1.4.2`. Catatan gelombang 1 dibiarkan terpisah di bawah ini — isinya tak diubah, hanya
+status rilisnya.
+
+⚠️ **Catatan migrasi di blok gelombang 1 SUDAH BASI.** Blok itu menulis "Tak ada migrasi
+Supabase pada rilis ini … tanpa `supabase db push`". Benar untuk gelombang itu sendiri,
+**tidak lagi benar untuk rilis ini**: gelombang 2 membawa dua migrasi. Yang berlaku adalah
+urutan di paragraf pertama.
+
+Berangkat dari satu keluhan yang diteruskan Kyai 12 Sep 2026, disertai tangkapan layar:
+
+> _"Maaf gus, setiap kali saya mencoba mengunakan izin di aplikasi selalu gagal. Knp geh?"_
+
+Formulirnya terisi benar — jenis, tanggal, shift **Pegawai Pagi**, keterangan "sakit" —
+tetapi toast merahnya berbunyi `new row violates row-level security policy for table
+"izin_guru"`. Bukan salah isian, bukan jaringan: **barisnya ditolak RLS sebelum sempat
+tersimpan**. Karena penolakannya berbasis PERAN dan bukan data, ia terjadi pada setiap
+percobaan orang yang sama — persis "selalu gagal" yang dikeluhkan.
+
+Menyisir halaman Personal seluruhnya menemukan **tiga** gerbang basis data yang lebih
+sempit daripada apa yang layarnya tawarkan. Ketiganya kelas bug yang sama dengan laporan
+Kyai 31 Agu 2026 (Input Bulanan) dan 23 Jul 2026 (sinkron Fingerspot): yang TERLIHAT sudah
+dilebarkan, yang BOLEH DISIMPAN tertinggal.
+
+### Fixed
+
+- **Staf kantor tak pernah bisa mengajukan izin.** `izin_guru` ikut "Archetype B" di
+  `20260622090500_profiles_rls.sql` — satu loop yang memasang kebijakan sama untuk selusin
+  tabel akademik, dengan syarat tulis `auth_can_akademik()` = `super_admin | admin | guru`.
+  Peran **`admin_keuangan`** — yang dipakai pegawai kantor — tak ada di daftar itu, jadi
+  setiap INSERT-nya ditolak. Sejak fitur perizinan lahir (v.100d), tanpa pernah ketahuan,
+  sebab yang mengetesnya selalu super_admin/admin yang lolos gerbangnya. Perizinan & Cuti
+  memang bukan fitur akademik: ia tak menyentuh rapor, nilai, tes kenaikan, atau rekap
+  prestasi — isinya "saya tidak masuk hari ini", kebutuhan setiap orang yang punya shift,
+  termasuk pemilik shift `pegawai_pagi`/`pegawai_sore`. Migrasi
+  `20260912120000_izin_guru_staff_write.sql` menukar syarat tulis tabel INI ke
+  `auth_is_staff()`; selisih kedua helper persis `admin_keuangan`, jadi tak ada peran lain
+  yang ikut kebagian, dan `auth_can_akademik()` sendiri **sengaja tidak dilebarkan**.
+  Pola & alasannya identik dengan `20260723130000_absensi_shift_guru_staff_write.sql`.
+  Ikut sembuh di arah sebaliknya: `isApprover` memuat `isAdminKeuangan`, jadi staf
+  keuangan selama ini **melihat** antrian persetujuan beserta tombol Setujui/Tolak yang
+  setiap kali ditekan selalu gagal.
+- **Melampirkan surat dokter selalu menggagalkan pengajuan.** `izin_lampiran/` tak cocok
+  baris rute mana pun di `services/storage.js`, sehingga jatuh ke **default `branding`** —
+  satu-satunya bucket yang policy INSERT-nya menuntut `auth_can_manage()` (super_admin/
+  admin). Jadi lampiran hanya bisa diunggah oleh admin, dan pengunggah lain ditolak dengan
+  kalimat yang justru menyesatkan: storage-api membalas `new row violates row-level
+  security policy` — bunyi yang sama dengan penolakan tabel, sehingga terbaca seolah
+  pengajuannya yang bermasalah. Rutenya kini `psb`, bucket DOKUMEN yang sudah terbukti
+  menerima PDF dari pengguna biasa. Lampiran LAMA tetap terbaca: yang tersimpan di baris
+  izin adalah URL penuh, dan `branding` boleh dibaca semua akun yang login — tak ada
+  migrasi berkas. Aturan rutenya dipindah ke `utils/bucketStorage.js` (PURE + bertes);
+  sebagai fungsi privat ia tak terjangkau tes, dan di situlah ia menyimpang diam-diam.
+- **Orang yang disupervisi tak bisa menjawab catatan tentang dirinya.** Kartu "Catatan
+  Supervisi" menampilkan kotak tanggapan + tombol Tandai Diproses / Tandai Selesai / Kirim
+  Tanggapan kepada setiap guru yang dicatat, tetapi `supervisi_upd` menuntut
+  `auth_can_supervisi()` = super_admin **atau** pemegang jabatan Direktur/Supervisor. Yang
+  disupervisi justru bukan supervisor — itulah definisinya — jadi ketiga tombol itu selalu
+  berakhir "tak ada baris yang berubah (kemungkinan ditolak RLS)". Belum dilaporkan siapa
+  pun; ditemukan saat menyisir. Migrasi `20260912130000_supervisi_respon_target.sql`
+  menambah kebijakan `supervisi_upd_target` untuk PENERIMA catatan, **plus** trigger
+  `guard_supervisi_respon_target` yang mempersempit grain-nya ke KOLOM: hanya `status`,
+  `respon_target`, `responded_at`, `updatedAt` yang boleh berubah. Lapis kedua itu bukan
+  hiasan — RLS Postgres hanya bisa berkata "boleh menyentuh baris ini", dan tanpa trigger,
+  guru yang ditegur bisa lewat REST menyunting `judul`/`catatan` teguran itu sendiri.
+  Berbeda dengan keputusan 31 Agu 2026 pada tabel `santri` (grain BARIS diterima), di sana
+  pelakunya kepala lembaga yang menyunting data ORANG LAIN yang memang wewenangnya.
+
+### Changed
+
+- **Pesan gagal berhenti berbahasa Postgres.** Sumber tunggal `utils/pesanGalatDb.js`
+  menerjemahkan galat penyimpanan jadi kalimat yang bisa ditindaklanjuti, dan halaman
+  Personal memakainya di kedelapan `catch`-nya lewat satu pintu `galatSimpan()`. Penolakan
+  RLS kini berbunyi _"Akses ditolak — akun Anda belum diizinkan mengirim pengajuan
+  izin/sakit/cuti. Peran akun Anda: admin_keuangan. Tunjukkan pesan ini ke admin.
+  [izin_guru]"_. Sesi kedaluwarsa disuruh login ulang, jaringan putus disuruh coba lagi,
+  dan galat yang tak dikenali **diteruskan apa adanya** — menyembunyikannya = membuat Kyai
+  buta. Inilah yang membuat keluhan ini menempuh perjalanan sia-sia: bagi guru,
+  `new row violates row-level security policy` terbaca sebagai "aplikasi rusak", bukan
+  sebagai "peran akun Anda tak berhak" — kebutaan yang sudah dicatat 23 Jul 2026 dan
+  terulang lagi.
+
+### Added
+
+- Tiga penjaga cermin baru (**+34 tes**, total 1.380):
+  `tests/unit/izinTulisCermin.test.js` membandingkan peran yang diberi tombol izin di layar
+  (diturunkan dari `utils/roleScope`, cermin ekspresi `isApprover`) dengan daftar peran di
+  dalam `auth_is_staff()` yang dibaca langsung dari migrasinya — melebarkan gerbang UI
+  tanpa menyunting SQL kini MERAH, bukan keluhan berbulan-bulan kemudian.
+  `tests/unit/bucketStorage.test.js` memastikan tak satu pun prefix yang diunggah pengguna
+  biasa dirutekan ke bucket admin-only, dengan daftar bucket itu dibaca dari migrasi storage
+  policy. `tests/unit/pesanGalatDb.test.js` menjaga janji "RLS tak boleh sampai ke layar
+  sebagai kalimat Postgres".
+
+---
+
+## [v.1.4.2 · gelombang 1] — 2026-09-10 — Riwayat izin per orang, dan "Dibatalkan" berhenti menyamar jadi "Ditolak"
+
+⚠️ Gelombang ini **dilebur ke v.1.4.2** di atas dan belum pernah tayang sendirian. Catatan
+rilis di bawah berlaku untuk gelombang ini saja — **bukan** untuk v.1.4.2 sebagaimana ia
+akhirnya dirilis, yang MEMBAWA dua migrasi.
 
 **SIAP RILIS** — `versionCode` 142 / `versionName` `v.1.4.2`. **Tak ada migrasi Supabase**
 pada rilis ini: status `'dibatalkan'` hanya nilai baru di kolom `status` yang sudah ada
