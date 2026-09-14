@@ -20,21 +20,89 @@ naik satu tiap rilis. Entri lama memakai skema lama `v.{nomor-urut}.{MMDDtahunmu
 
 ---
 
-## [v.1.4.3] — 2026-09-14 — Audit keuangan: cron tak lagi menagih ulang bayar di muka, tabungan tak lagi bisa terhapus lewat santri yang dihapus, dan tombol perapih yang tugasnya selesai dicabut
+## [v.1.4.3] — 2026-09-14 — Kas tunggal: satu saldo kas yayasan, kartu per lembaga menampilkan pemasukan, dan "Kas Induk" menjadi "Umum / Yayasan"
 
-**SIAP RILIS** — `versionCode` 143 / `versionName` `v.1.4.3`. **SATU rilis, DUA gelombang** (14 Sep
-2026 pagi & siang): v.1.4.3 belum pernah tayang, jadi gelombang 2 dilebur ke nomor yang sama.
-**Tanpa migrasi Supabase** (`db push` tak perlu), tetapi **ada perubahan edge function**. Urutannya:
+**SIAP RILIS** — `versionCode` 143 / `versionName` `v.1.4.3`. **SATU rilis, TIGA gelombang** (14 Sep
+2026 pagi, siang, sore): v.1.4.3 belum pernah tayang, jadi gelombang 2 dan 3 dilebur ke nomor yang
+sama. **Tanpa migrasi Supabase** (`db push` tak perlu), tetapi **ada perubahan edge function**
+(gelombang 2). Urutannya:
 
 1. `supabase functions deploy auto-generate-tagihan --no-verify-jwt` — cron harian baru mengakui
    bayar di muka sesudah ini. Tanpa redeploy, tombol Generate sudah patuh sementara cron belum.
 2. **Deploy web → rebuild AAB → rilis Electron.** Rilis Electron bukan formalitas: admin keuangan
    bekerja di Electron, dan Electron memuat salinan asetnya sendiri (`loadFile`), jadi tanpa rilis
-   Electron tak satu pun perbaikan di dua gelombang ini sampai ke meja kasir.
+   Electron tak satu pun perbaikan di tiga gelombang ini sampai ke meja kasir.
 
 Nomor baru, BUKAN dilebur ke v.1.4.2: v.1.4.2 lengkap — ketiga gelombangnya — sudah tayang di web
 sejak deploy 12 Sep 2026 pk. 22.18 (bundel `index-DGlb5NId.js` di server identik dengan build
 lokal dan memuat penyaring gelombang 3).
+
+Kyai, 14 Sep 2026, tentang Kas Induk/Yayasan yang kosong padahal pengeluaran diambil dari sana:
+
+> _"kalau bisyaroh dibebankan ke lembaga pasti ada lembaga yg minus, karena setiap unit itu saling
+> mensubsidi satu sama lain. kalau selama ini secara operasional itu kas tunggal, dan jika lembaga
+> membutuhkan baru mengajukan ke yayasan"_
+
+lalu, atas usulan menyesuaikan tampilannya: _"iya saya terima usulannya yg kas induk"_.
+
+"Kas Induk kosong" ternyata **artefak tampilan**, bukan uang yang hilang. Pemasukan diberi label
+lembaga menurut jenis pembayarannya (v.1.2.6), sedangkan pencairan bisyaroh dan pengeluaran
+operasional ditulis tanpa label — lalu kartu "Kas per lembaga" menampilkan **saldo** tiap label.
+Kartu lembaga tampak kaya, kartu "Kas Induk / Yayasan" menampung seluruh pengeluaran dan terbaca
+kosong atau minus, padahal semuanya satu kas yang sama. **Tak ada data yang diubah** — yang berubah
+hanya cara membacanya.
+
+### Changed
+
+- **Satu saldo: saldo kas yayasan** (Buku Induk). "Saldo kas sebelum/setelah" kini berlabel **saldo
+  kas yayasan** dan **tak lagi ikut penyaring lembaga**; penyaring pos, cara bayar, tipe, pencarian,
+  dan gedung tetap berlaku seperti janji 6 Agu. Tanpa penyaring lembaga, angka layar dan laporan
+  identik dengan sebelumnya. Saat satu lembaga disaring:
+  - kolom **Saldo** di tabel menampilkan "—": saldo khusus lembaga tidak ada, dan saldo yayasan per
+    baris akan melompat di antara baris yang tampil (persis keluhan 6 Agu);
+  - PDF / Excel / Google Sheet lembaga itu **berhenti di baris TOTAL**, tanpa dua baris INFO saldo
+    (`infoSaldoKas: false`). Saldo yayasan pun tak bisa ditaruh di sana — SEBELUM + TOTAL satu
+    lembaga ≠ SETELAH. Strip saldo di layar mengatakannya, jadi layar dan kertas tetap tak berselisih.
+- **Kartu per lembaga menampilkan pemasukan, bukan saldo** (Buku Induk; Uang Kegiatan/Uang
+  Buku/Tabungan Wajib). Judulnya "Pemasukan per lembaga"; pengeluaran berlabel tampil sebagai
+  keterangan kecil bila ada. Klik kartu tetap menyaring lembaga itu, dan penyaring serta PDF per
+  lembaga tetap ada.
+- **"Kas Induk" menjadi "Umum / Yayasan"** di kartu, penyaring, judul & nama berkas PDF
+  (`…-umum-yayasan.pdf`), Input Manual, dan dialog Jenis Pembayaran — satu sumber:
+  `utils/kasLembaga` (`LABEL_KAS_UMUM`, `labelKasLembaga`). Pilihan "Masuk Kas Lembaga" menjadi
+  **"Dicatat untuk Lembaga"** dan kolom PDF "Kas Lembaga" menjadi "Lembaga" — nama lamanya
+  menyiratkan kas terpisah. Nilai tersimpan (`lembaga`, `kas_lembaga`) dan nilai penyaring
+  (`__induk__`) tidak berubah.
+- **Kartu "Saldo Pos" menjadi "Selisih Periode"** (Uang Kegiatan/Uang Buku/Tabungan Wajib). Isinya
+  memang masuk − keluar periode dan penyaring yang aktif — kasus yang sama dengan "Saldo Akhir" Buku
+  Induk yang diganti namanya di v.1.3.7; saat disaring per lembaga, nama lamanya terbaca "saldo
+  lembaga".
+- Kartu Total Masuk/Keluar Buku Induk dan pos dana dihitung lewat `utils/kasLembaga.jumlahKas`,
+  rumus yang sama dengan kartu per lembaga — bukan lagi salinan tangan.
+
+### Fixed
+
+- **PDF mutasi Tabungan/Uang Saku menulis "Kas Induk"** untuk santri tanpa lembaga, sementara kartu
+  dan penyaring di layar yang sama menulis "Tanpa lembaga". Tabungan itu titipan santri, bukan kas
+  yayasan, jadi keduanya kini "Tanpa lembaga". Kartu tabungan per lembaga tetap menampilkan saldo —
+  untuk titipan, itu sah.
+
+### Added
+
+- `tests/unit/kasTunggal.test.js` (9): label satu sumber, `jumlahKas`, dan kunci kas tunggal —
+  jumlah seluruh kartu per lembaga selalu bertemu dengan kas yayasan, termasuk contoh "saldo" Umum /
+  Yayasan yang minus padahal kasnya surplus. **Total 1.532 tes hijau.**
+
+### Belum dikerjakan
+
+- **Alur "Pengajuan dana lembaga"** (ajukan → setujui → keluar berlabel lembaga), opsional: supaya
+  besar subsidi per unit terlihat tanpa menyebutnya "minus". Menunggu Kyai.
+
+---
+
+## [v.1.4.3 · gelombang 2] — 2026-09-14 — Audit keuangan: cron tak lagi menagih ulang bayar di muka, tabungan tak lagi bisa terhapus lewat santri yang dihapus, dan tombol perapih yang tugasnya selesai dicabut
+
+Status rilis & urutan deploy: lihat bagian **v.1.4.3** di atas.
 
 Kyai, 14 Sep 2026 siang, sesudah gelombang 1:
 
@@ -120,8 +188,8 @@ Dicabut hanya yang bisa dipastikan dari kode, tanpa perlu melihat isi data produ
   berubah).
 - **Kas Induk / Yayasan** — Kyai: operasionalnya **kas tunggal**, lembaga mengajukan kebutuhan ke
   yayasan, dan bisyaroh tak dibebankan per lembaga karena unit saling mensubsidi. Usulan menyesuaikan
-  tampilan "kas per lembaga" (pemasukan per lembaga + satu saldo kas yayasan) menunggu persetujuan;
-  belum ada kode.
+  tampilan "kas per lembaga" (pemasukan per lembaga + satu saldo kas yayasan) **disetujui sore
+  harinya dan dikerjakan di gelombang 3** — lihat v.1.4.3 di atas.
 
 ---
 

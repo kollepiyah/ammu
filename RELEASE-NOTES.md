@@ -49,6 +49,18 @@ Rinciannya untuk pengembang ada di `CHANGELOG.md` — jangan disalin ke sana, te
   menghapus santri yang masih punya riwayat keuangan, dan tabungan "orphan" yang masih bersaldo tak
   bisa dihapus.
 
+**Tampilan kas: kas tunggal**
+
+- **Buku Induk menampilkan satu saldo: saldo kas yayasan.** Saldonya tak lagi dipecah per lembaga,
+  karena kasnya memang satu. Kartu "Kas Induk / Yayasan" yang dulu tampak kosong atau minus — sebab
+  seluruh bisyaroh dan pengeluaran operasional tercatat di sana — kini tidak ada lagi.
+- **Kartu per lembaga menampilkan pemasukan**, di Buku Induk maupun Uang Kegiatan/Uang Buku/Tabungan
+  Wajib. Penyaring dan laporan PDF per lembaga tetap ada; laporan satu lembaga berisi transaksi dan
+  totalnya, tanpa baris saldo.
+- **"Kas Induk" berganti nama menjadi "Umum / Yayasan"**, dan pilihan "Masuk Kas Lembaga" menjadi
+  "Dicatat untuk Lembaga". Kartu "Saldo Pos" di Uang Kegiatan/Uang Buku/Tabungan Wajib menjadi
+  "Selisih Periode", sesuai isinya. Tidak ada data yang diubah.
+
 **Dicabut**
 
 - Tombol perapih yang tugasnya sudah selesai: "Bersihkan residu" (Buku Induk), "Bersihkan" baris
