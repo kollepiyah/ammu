@@ -2805,18 +2805,20 @@
               </select>
             </div>
           </div>
-          <!-- Kyai 4 Agu: kas lembaga — uang jenis ini masuk buku kas lembaga mana.
+          <!-- Kyai 4 Agu: lembaga — uang jenis ini dicatat untuk lembaga mana di laporan.
                BEDA dari "Hanya untuk lembaga ini" di Tarif Khusus (itu penyaring siapa
-               yang DITAGIH); yang ini menentukan kasnya. -->
+               yang DITAGIH); yang ini menentukan label laporannya.
+               v.1.4.3 (Kyai 14 Sep 2026, KAS TUNGGAL): label, bukan kas terpisah — uangnya
+               tetap satu kas yayasan. Nama lama "Masuk Kas Lembaga" menyiratkan sebaliknya. -->
           <div>
             <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
-              >Masuk Kas Lembaga</label
+              >Dicatat untuk Lembaga</label
             >
             <select
               v-model="dlgJenis.kas_lembaga"
               class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
             >
-              <option value="">Kas Induk / belum ditentukan</option>
+              <option value="">{{ LABEL_KAS_UMUM }} (belum ditentukan)</option>
               <option
                 v-for="o in opsiKas"
                 :key="`dlg_kas_${o.nama}`"
@@ -2827,10 +2829,11 @@
               </option>
             </select>
             <p class="text-[10px] text-[var(--text-secondary)] mt-1 italic">
-              <i class="fas fa-info-circle mr-1"></i>Dipakai laporan kas per lembaga. Dibiarkan
-              kosong: kalau "Hanya untuk lembaga ini" berisi <b>tepat satu</b> lembaga, kas ikut
-              lembaga itu — selain itu masuk Kas Induk. Beberapa lembaga boleh BERBAGI satu kas
-              (mis. Kelas Baca diarahkan ke <b>TPQ Pagi</b>) — cukup pilih kas yang sama.
+              <i class="fas fa-info-circle mr-1"></i>Dipakai laporan pemasukan per lembaga — kasnya
+              tetap satu, kas yayasan. Dibiarkan kosong: kalau "Hanya untuk lembaga ini" berisi
+              <b>tepat satu</b> lembaga, uangnya dicatat untuk lembaga itu — selain itu tercatat
+              sebagai {{ LABEL_KAS_UMUM }}. Beberapa lembaga boleh BERBAGI satu label (mis. Kelas
+              Baca dicatat ke <b>TPQ Pagi</b>) — cukup pilih lembaga yang sama.
             </p>
           </div>
           <div>
@@ -3734,7 +3737,7 @@ import {
   SEKOLAH_SINI_OPTS
 } from '@/utils/statusSantri'
 // Kyai 4 Agu: pilihan kas = master + kas bukan-lembaga (TPQ payung, Fullday, Ma'had)
-import { opsiKasLembaga } from '@/utils/kasLembaga'
+import { opsiKasLembaga, LABEL_KAS_UMUM } from '@/utils/kasLembaga'
 import { normalisasiPotongan } from '@/utils/potonganPos'
 // Kyai 7 Agu 2026: simulasi pemasukan bulanan (hanya jenis bulanan)
 import { simulasiPemasukan as hitungPemasukan } from '@/utils/simulasiPemasukan'
@@ -4924,7 +4927,7 @@ const dlgOpen = ref(false)
 const dlgIsNew = ref(false)
 const dlgIdx = ref(-1)
 const dlgJenis = ref(null)
-// Kyai 4 Agu: pilihan "Masuk Kas Lembaga" = baris master + kas yang BUKAN lembaga
+// Kyai 4 Agu: pilihan "Dicatat untuk Lembaga" = baris master + kas yang BUKAN lembaga
 //   (TPQ payung, Fullday, Ma'had) — lihat utils/kasLembaga. Nilai yang sedang dipakai
 //   ikut disertakan supaya setelan lama tak lenyap saat disimpan.
 const opsiKas = computed(() => opsiKasLembaga(lembagaRaw.value, dlgJenis.value?.kas_lembaga || ''))
@@ -5735,7 +5738,7 @@ function serializeJenisList(list) {
         jk_only: wlJk,
         shift_only: wlShift,
         sekolah_only: wlSekolah,
-        // Kyai 4 Agu: kas lembaga — uang jenis ini masuk buku kas lembaga mana.
+        // Kyai 4 Agu: lembaga — uang jenis ini dicatat untuk lembaga mana (kas tunggal).
         //   BEDA dari lembaga_only (itu penyaring "siapa yang ditagih").
         kas_lembaga: String(t.kas_lembaga || '').trim(),
         gabung_ke: gabungKe,
@@ -5981,7 +5984,7 @@ function openJenisBaru() {
     status_only: [], // v.1.2.6: whitelist status santri (kosong = semua)
     jk_only: [], // v.1.2.x: whitelist jenis kelamin (kosong = semua)
     shift_only: [], // Kyai 4 Agu: whitelist shift ngaji pagi/sore (kosong = semua)
-    kas_lembaga: '', // Kyai 4 Agu: buku kas lembaga tujuan (kosong = Kas Induk)
+    kas_lembaga: '', // Kyai 4 Agu: label lembaga di laporan (kosong = Umum / Yayasan)
     gabung_ke: [], // Kyai 3-4 Agu: kosong = jenis ini ditagih sendiri
     gabung_syarat: 'punya_sekolah',
     nominal_per_kelas: {},
@@ -6033,7 +6036,7 @@ function normalizeJenisRaw(t) {
       nominal_per_kelas: {},
       nominal_per_santri: {},
       shift_only: [],
-      kas_lembaga: '', // Kyai 4 Agu: buku kas lembaga tujuan (kosong = Kas Induk)
+      kas_lembaga: '', // Kyai 4 Agu: label lembaga di laporan (kosong = Umum / Yayasan)
       gabung_ke: [],
       gabung_syarat: 'punya_sekolah',
       paket: [],

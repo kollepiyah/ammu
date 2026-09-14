@@ -31,7 +31,10 @@ import {
   petaKasLembaga,
   kasLembagaBaris,
   ringkasKasLembaga,
-  kunciLembaga
+  kunciLembaga,
+  // v.1.4.3 (Kyai 14 Sep 2026): kas tunggal — baris tanpa label bernama "Umum / Yayasan"
+  labelKasLembaga,
+  LABEL_KAS_UMUM
 } from '@/utils/kasLembaga'
 
 const router = useRouter()
@@ -179,8 +182,9 @@ const filterYear = ref(new Date().getFullYear())
 //   pilihan sadar — jumlah baris yang termuat ditampilkan di bawah penyaring.
 const filterMonth = ref(new Date().getMonth() + 1)
 const filterDay = ref(0) // 0 = semua tanggal (disaring di klien, tanpa query ulang)
-// v.1.2.6 (Kyai): kas per lembaga. Nilainya KUNCI ternormalisasi (kunciLembaga);
-//   KAS_INDUK sentinel karena kunci Kas Induk '' sudah dipakai "Semua lembaga".
+// v.1.2.6 (Kyai): penyaring lembaga — label sumber dana; sejak v.1.4.3 kasnya tunggal.
+//   Nilainya KUNCI ternormalisasi (kunciLembaga); KAS_INDUK = sentinel baris tanpa label
+//   ("Umum / Yayasan", dulu "Kas Induk") karena kuncinya '' sudah dipakai "Semua lembaga".
 const KAS_INDUK = '__induk__'
 const filterLembaga = ref('')
 const petaKas = computed(() => petaKasLembaga(settingsStore.settings?.keuTagihanJenis || []))
@@ -381,7 +385,7 @@ const barisPeriode = computed(() =>
 const rekapLembaga = computed(() => ringkasKasLembaga(barisPeriode.value, kasLembagaDari))
 const labelLembagaAktif = computed(() => {
   if (!filterLembaga.value) return ''
-  if (filterLembaga.value === KAS_INDUK) return 'Kas Induk'
+  if (filterLembaga.value === KAS_INDUK) return LABEL_KAS_UMUM
   return rekapLembaga.value.find((o) => o.kunci === filterLembaga.value)?.lembaga || ''
 })
 const barisLaporan = computed(() => {
@@ -427,7 +431,7 @@ async function cetakLaporanPos(metodeOnly = '') {
         struk: b.trx_id || '',
         santri: b.santri_nama || sm.nama || '-',
         jenis: b.kategori || '',
-        lembaga: kasLembagaDari(b) || 'Kas Induk',
+        lembaga: labelKasLembaga(kasLembagaDari(b)),
         metode: met,
         nominal: fmtRp(nom)
       }
@@ -473,7 +477,7 @@ async function cetakLaporanPos(metodeOnly = '') {
         { key: 'struk', header: 'No Struk', width: 26 },
         { key: 'santri', header: 'Santri', width: 56 },
         { key: 'jenis', header: 'Jenis', width: 44 },
-        { key: 'lembaga', header: 'Kas Lembaga', width: 30 },
+        { key: 'lembaga', header: 'Lembaga', width: 30 },
         { key: 'metode', header: 'Cara Bayar', width: 24 },
         { key: 'nominal', header: 'Nominal', width: 32 }
       ],
@@ -601,7 +605,7 @@ function fmtTgl(t) {
             <option :value="0">Semua tgl</option>
             <option v-for="d in 31" :key="d" :value="d">{{ d }}</option>
           </select>
-          <!-- v.1.2.6 (Kyai): kas lembaga — menyetir isi PDF laporan, bukan daftar struk
+          <!-- v.1.2.6 (Kyai): lembaga — menyetir isi PDF laporan, bukan daftar struk
                di bawah (satu transaksi bisa berisi komponen dua lembaga). -->
           <select
             v-model="filterLembaga"
@@ -613,7 +617,7 @@ function fmtTgl(t) {
               :key="`pfl_${o.kunci || 'induk'}`"
               :value="o.kunci || KAS_INDUK"
             >
-              {{ o.lembaga || 'Kas Induk' }} ({{ o.jumlah }})
+              {{ labelKasLembaga(o.lembaga) }} ({{ o.jumlah }})
             </option>
           </select>
         </div>
@@ -672,7 +676,7 @@ function fmtTgl(t) {
             >{{ transaksi.length }} transaksi</span
           >
           <span class="text-xs font-black text-emerald-600"
-            >Total{{ labelLembagaAktif ? ` kas ${labelLembagaAktif}` : '' }}:
+            >Total{{ labelLembagaAktif ? ` ${labelLembagaAktif}` : '' }}:
             {{ fmtRpStruk(totalTampil) }}</span
           >
         </div>

@@ -132,7 +132,13 @@
              adalah mutasi periode yang difilter (baris TOTAL = masuk − keluar, saldo
              berjalan mulai nol), sedangkan posisi kas kumulatif turun jadi keterangan.
              Strip ini menyusun ulang urutan bacanya persis seperti kertasnya, supaya
-             layar dan PDF tak bisa berbeda. -->
+             layar dan PDF tak bisa berbeda.
+             v.1.4.3 (Kyai 14 Sep 2026, KAS TUNGGAL): saldo di sini SATU untuk kas yayasan
+             dan tak ikut penyaring lembaga — lembaga itu label sumber dana, bukan kas
+             sendiri. Saldo "per lembaga" dulu membuat Umum / Yayasan, penampung bisyaroh &
+             operasional, terbaca minus padahal uangnya ada. Laporan yang disaring per
+             lembaga karena itu berhenti di baris TOTAL (tanpa baris INFO saldo), dan kalimat
+             terakhir strip ini mengatakannya — layar dan kertas tetap tak berselisih. -->
         <div
           class="mt-2 rounded-xl border border-cyan-200 dark:border-cyan-800 bg-cyan-50/60 dark:bg-cyan-900/20 px-3 py-2 flex flex-wrap items-baseline gap-x-4 gap-y-1"
         >
@@ -141,19 +147,28 @@
             <b class="font-mono font-black ml-1">{{ fmtRp(stats.saldo) }}</b>
           </span>
           <span class="text-[10px] font-bold uppercase text-[var(--text-secondary)]">
-            Saldo kas sebelum
+            Saldo kas yayasan sebelum
             <b class="font-mono font-black ml-1">{{ fmtRp(saldoAwalPeriode) }}</b>
           </span>
           <span class="text-[10px] font-bold uppercase text-[var(--text-secondary)]">
-            Saldo kas setelah
+            Saldo kas yayasan setelah
             <b class="font-mono font-black ml-1">{{ fmtRp(saldoAkhirPeriode) }}</b>
           </span>
           <span class="text-[10px] text-[var(--text-secondary)]">
-            baris TOTAL di ekspor = mutasi periode ini; saldo kas tercetak sebagai keterangan
-            &mdash;
-            {{
-              adaPenyaringKas ? 'mengikuti penyaring yang aktif' : 'seluruh kas, tanpa penyaring'
-            }}
+            <template v-if="filterLembaga">
+              kas tunggal: saldo tidak dipecah per lembaga, jadi laporan
+              {{ labelLembagaAktif }} berhenti di baris TOTAL &mdash;
+              {{
+                adaPenyaringKas ? 'saldo mengikuti penyaring lain yang aktif' : 'saldo seluruh kas'
+              }}
+            </template>
+            <template v-else>
+              baris TOTAL di ekspor = mutasi periode ini; saldo kas tercetak sebagai keterangan
+              &mdash;
+              {{
+                adaPenyaringKas ? 'mengikuti penyaring yang aktif' : 'seluruh kas, tanpa penyaring'
+              }}
+            </template>
           </span>
         </div>
         <!-- v.1.2.6: pisah uang laci vs rekening — inti laporan kas harian -->
@@ -187,18 +202,28 @@
             </p>
           </div>
         </div>
-        <!-- v.1.2.6 (Kyai): kas tiap lembaga sendiri-sendiri. Ikut tanggal & cara bayar
-             yang aktif, TIDAK ikut filter lembaga — jadi tetap terlihat utuh sambil
-             menyaring satu lembaga. Klik baris = saring ke lembaga itu. -->
+        <!-- v.1.2.6 (Kyai): rekap tiap lembaga. Ikut tanggal & cara bayar yang aktif, TIDAK
+             ikut filter lembaga — jadi tetap terlihat utuh sambil menyaring satu lembaga.
+             Klik kartu = saring ke lembaga itu.
+             v.1.4.3 (Kyai 14 Sep 2026, KAS TUNGGAL): angka besarnya PEMASUKAN, bukan saldo.
+             Dulu tiap kartu menampilkan saldo lembaganya, sehingga "Kas Induk / Yayasan" —
+             penampung semua pengeluaran tanpa label, termasuk seluruh bisyaroh — terbaca
+             kosong/minus seolah yayasan tak punya uang. Kasnya satu; saldonya di strip atas. -->
         <div v-if="rekapLembaga.length > 1" class="mt-3">
-          <p class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1.5">
-            <i class="fas fa-sitemap mr-1"></i>Kas per lembaga · {{ periodeLabel }}
-          </p>
+          <div class="flex flex-wrap items-baseline justify-between gap-x-3 mb-1.5">
+            <p class="text-[10px] font-bold text-[var(--text-secondary)] uppercase">
+              <i class="fas fa-sitemap mr-1"></i>Pemasukan per lembaga · {{ periodeLabel }}
+            </p>
+            <p class="text-[10px] text-[var(--text-secondary)]">
+              kas tunggal &mdash; saldonya satu: saldo kas yayasan di atas
+            </p>
+          </div>
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
             <button
               v-for="o in rekapLembaga"
               :key="`kl_${o.kunci || 'induk'}`"
               type="button"
+              :title="o.kunci ? null : 'Tanpa label lembaga — termasuk bisyaroh & operasional'"
               :class="[
                 'text-left p-2.5 rounded-xl border transition',
                 filterLembaga === (o.kunci || KAS_INDUK)
@@ -210,13 +235,15 @@
               "
             >
               <p class="text-[11px] font-black text-[var(--text-primary)] truncate">
-                {{ o.lembaga || 'Kas Induk / Yayasan' }}
+                {{ labelKasLembaga(o.lembaga) }}
               </p>
-              <p class="text-sm font-black text-cyan-700 dark:text-cyan-300 mt-0.5">
-                {{ fmtRp(o.saldo) }}
+              <p class="text-sm font-black text-emerald-700 dark:text-emerald-300 mt-0.5">
+                {{ fmtRp(o.masuk) }}
+                <span class="text-[10px] font-bold text-[var(--text-secondary)]">masuk</span>
               </p>
               <p class="text-[10px] text-[var(--text-secondary)] mt-0.5">
-                masuk {{ fmtRp(o.masuk) }} · keluar {{ fmtRp(o.keluar) }} · {{ o.jumlah }} trx
+                <template v-if="o.keluar > 0">keluar {{ fmtRp(o.keluar) }} · </template
+                >{{ o.jumlah }} trx
               </p>
             </button>
           </div>
@@ -317,18 +344,20 @@
                     class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)]"
                   />
                 </div>
-                <!-- v.1.2.6 (Kyai): kas per lembaga. Kategori kas manual itu teks bebas
-                     (tak ada jenis pembayaran), jadi lembaganya ditunjuk di sini —
-                     mis. beli papan tulis SDI dibebankan ke kas SDI. -->
+                <!-- v.1.2.6 (Kyai): lembaga baris kas manual. Kategori kas manual itu teks
+                     bebas (tak ada jenis pembayaran), jadi lembaganya ditunjuk di sini — mis.
+                     beli papan tulis SDI dicatat untuk SDI. v.1.4.3 (Kyai 14 Sep 2026, kas
+                     tunggal): ini LABEL laporan, bukan kas terpisah — uangnya tetap satu kas
+                     yayasan, jadi labelnya tak lagi berbunyi "Masuk Kas Lembaga". -->
                 <div>
                   <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1"
-                    >Masuk Kas Lembaga</label
+                    >Dicatat untuk Lembaga</label
                   >
                   <select
                     v-model="inputForm.lembaga"
                     class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)]"
                   >
-                    <option value="">Kas Induk / Yayasan</option>
+                    <option value="">{{ LABEL_KAS_UMUM }}</option>
                     <option
                       v-for="o in lembagaOpsi"
                       :key="`kas_${o.nama}`"
@@ -526,9 +555,9 @@
               {{ o.label }}
             </option>
           </select>
-          <!-- v.1.2.6 (Kyai): filter kas lembaga. Opsinya dari lembaga yang BENAR-BENAR
-               punya baris di periode ini + Kas Induk — bukan seluruh master, supaya
-               tak penuh pilihan yang selalu kosong. -->
+          <!-- v.1.2.6 (Kyai): filter lembaga. Opsinya dari lembaga yang BENAR-BENAR punya
+               baris di periode ini + Umum / Yayasan — bukan seluruh master, supaya tak
+               penuh pilihan yang selalu kosong. -->
           <select
             v-model="filterLembaga"
             class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-cyan-500 outline-none"
@@ -539,7 +568,7 @@
               :key="`fl_${o.kunci || 'induk'}`"
               :value="o.kunci || KAS_INDUK"
             >
-              {{ o.lembaga || 'Kas Induk' }} ({{ o.jumlah }})
+              {{ labelKasLembaga(o.lembaga) }} ({{ o.jumlah }})
             </option>
           </select>
           <!-- v.1.2.6: filter cara bayar (tunai/transfer) -->
@@ -810,13 +839,22 @@
                  dalam 150px, dan karena angkanya `whitespace-nowrap` ia meluber ke KIRI
                  menimpa kolom Keluar — terbaca sebagai "Rp 370.000" bertindih
                  "Rp -14.759.000". Saldo bisa MINUS + berdigit banyak, jadi kolomnya memang
-                 tak boleh berbagi tempat dengan tombol. -->
+                 tak boleh berbagi tempat dengan tombol.
+                 v.1.4.3 (Kyai 14 Sep 2026, kas tunggal): saat disaring per lembaga kolom ini
+                 dikosongkan. Saldo khusus lembaga tidak ada, sedangkan saldo kas yayasan per
+                 baris akan melompat-lompat di antara baris yang tampil — selisihnya tak lagi
+                 sama dengan nominal barisnya, persis yang dikeluhkan Kyai 6 Agu 2026. -->
             <div class="mt-1 md:mt-0 md:text-right">
               <span class="md:hidden text-[10px] text-[var(--text-tertiary)] font-bold mr-1"
                 >Saldo:</span
               >
-              <span class="text-sm font-bold text-cyan-700 dark:text-cyan-400 whitespace-nowrap">
-                {{ fmtRp(saldoOf(b)) }}
+              <span
+                class="text-sm font-bold text-cyan-700 dark:text-cyan-400 whitespace-nowrap"
+                :title="
+                  filterLembaga ? 'Kas tunggal: saldo hanya ada untuk seluruh kas yayasan' : null
+                "
+              >
+                {{ filterLembaga ? '—' : fmtRp(saldoOf(b)) }}
               </span>
             </div>
             <div class="mt-1 md:mt-0 flex items-center md:justify-end gap-1 shrink-0">
@@ -917,7 +955,11 @@ import {
   opsiKasLembaga,
   kasLembagaBaris,
   ringkasKasLembaga,
-  kunciLembaga
+  kunciLembaga,
+  // v.1.4.3 (Kyai 14 Sep 2026): kas tunggal — satu label "Umum / Yayasan" & jumlah satu kas
+  jumlahKas,
+  labelKasLembaga,
+  LABEL_KAS_UMUM
 } from '@/utils/kasLembaga'
 import { buildListPdf, buildKopFromSettings } from '@/utils/pdfBuilder'
 // Pos dana (Uang Kegiatan/Buku/Tabungan Wajib) — sumber tunggal aturan & labelnya.
@@ -1237,7 +1279,7 @@ const inputForm = reactive({
   tipe: 'masuk',
   metode: 'Tunai', // v.1.2.6: cara bayar kas manual
   kategori: '',
-  lembaga: '', // v.1.2.6: kas lembaga tujuan ('' = Kas Induk/Yayasan)
+  lembaga: '', // v.1.2.6: label lembaga baris ('' = Umum / Yayasan)
   keterangan: '',
   nominal: 0
 })
@@ -1307,8 +1349,8 @@ async function simpanInputManual() {
         tipe: inputForm.tipe,
         metode: inputForm.metode || 'Tunai',
         kategori: inputForm.kategori.trim() || 'Manual',
-        // v.1.2.6: kas lembaga. '' = Kas Induk — sengaja DITULIS (bukan dilewati) supaya
-        //   koreksi bisa memindahkan baris kembali ke Kas Induk.
+        // v.1.2.6: label lembaga. '' = Umum / Yayasan — sengaja DITULIS (bukan dilewati)
+        //   supaya koreksi bisa mengembalikan baris ke Umum / Yayasan.
         lembaga: String(inputForm.lembaga || '').trim(),
         keterangan: inputForm.keterangan.trim(),
         nominal: Number(inputForm.nominal) || 0
@@ -1327,7 +1369,7 @@ async function simpanInputManual() {
         tipe: inputForm.tipe,
         metode: inputForm.metode || 'Tunai',
         kategori: inputForm.kategori.trim() || 'Manual',
-        // v.1.2.6 (Kyai): kas lembaga tujuan; '' = Kas Induk/Yayasan
+        // v.1.2.6 (Kyai): label lembaga baris; '' = Umum / Yayasan
         lembaga: String(inputForm.lembaga || '').trim(),
         keterangan: inputForm.keterangan.trim(),
         nominal: Number(inputForm.nominal) || 0,
@@ -1448,8 +1490,9 @@ function kasLembagaDari(b) {
   return kasLembagaBaris(b, petaKas.value)
 }
 
-// KAS_INDUK: sentinel nilai filter untuk "Kas Induk". Kunci lembaganya '' dan itu
-//   sudah dipakai "Semua lembaga", jadi Kas Induk butuh nilai sendiri.
+// KAS_INDUK: sentinel nilai filter untuk baris tanpa label lembaga — "Umum / Yayasan",
+//   dulu berlabel "Kas Induk". Kuncinya '' dan itu sudah dipakai "Semua lembaga", jadi ia
+//   butuh nilai sendiri.
 const KAS_INDUK = '__induk__'
 
 // Ledger sah dalam scope gedung, TANPA batas periode. Jadi basis dua hal sekaligus:
@@ -1522,7 +1565,7 @@ const rekapLembaga = computed(() => ringkasKasLembaga(bukuTanpaLembaga.value, ka
 // Nama lembaga yang sedang disaring — judul & nama berkas laporan. '' = semua lembaga.
 const labelLembagaAktif = computed(() => {
   if (!filterLembaga.value) return ''
-  if (filterLembaga.value === KAS_INDUK) return 'Kas Induk'
+  if (filterLembaga.value === KAS_INDUK) return LABEL_KAS_UMUM
   const hit = rekapLembaga.value.find((o) => o.kunci === filterLembaga.value)
   return hit?.lembaga || ''
 })
@@ -1537,32 +1580,31 @@ const filteredBuku = computed(() =>
     )
 )
 
+// Kartu Total Masuk/Keluar/Selisih — ikut SEMUA penyaring, termasuk lembaga. Rumusnya
+//   jumlahKas (arahNominal), sama dengan kartu per lembaga dan saldo kas yayasan: dulu rumus
+//   yang sama disalin di sini, dan salinan adalah awal dari dua angka yang berbeda.
 const stats = computed(() => {
-  let masuk = 0,
-    keluar = 0
-  for (const b of filteredBuku.value) {
-    if (b.tipe === 'masuk' || Number(b.masuk) > 0) {
-      masuk += Number(b.masuk || b.nominal) || 0
-    }
-    if (b.tipe === 'keluar' || Number(b.keluar) > 0) {
-      keluar += Number(b.keluar || b.nominal) || 0
-    }
-  }
-  return { pemasukan: masuk, pengeluaran: keluar, saldo: masuk - keluar }
+  const j = jumlahKas(filteredBuku.value)
+  return { pemasukan: j.masuk, pengeluaran: j.keluar, saldo: j.selisih }
 })
 
 // Ledger dasar KOLOM SALDO — Kyai, 6 Agu 2026: "info saldo sesuai filter yg diekspor,
 //   saldo total jika diekspor semuanya tanpa filter."
 //
-//   Semua penyaring ikut (pos, lembaga, cara bayar, tipe, pencarian, scope gedung)
-//   KECUALI periode: yang dibatasi periode adalah baris yang tampil, sedangkan saldo
-//   tetap kumulatif sejak transaksi pertama — itulah yang bikin baris SALDO AWAL punya
-//   arti. Tanpa penyaring apa pun, hasilnya sama persis dengan saldo total yang lama.
+//   Penyaring pos, cara bayar, tipe, pencarian, dan scope gedung ikut; periode TIDAK: yang
+//   dibatasi periode adalah baris yang tampil, sedangkan saldo tetap kumulatif sejak
+//   transaksi pertama — itulah yang bikin baris SALDO AWAL punya arti. Tanpa penyaring apa
+//   pun, hasilnya sama persis dengan saldo total yang lama.
+//
+//   v.1.4.3 (Kyai 14 Sep 2026, KAS TUNGGAL): penyaring LEMBAGA juga tidak ikut. Janji 6 Agu
+//   dibuat ketika tiap lembaga masih dianggap punya kas sendiri; kini kasnya satu, dan saldo
+//   "per lembaga" cuma selisih baris berlabel — untuk Umum / Yayasan, penampung seluruh
+//   bisyaroh, angkanya minus. Tanpa penyaring lembaga ledger ini identik dengan sebelumnya,
+//   jadi laporan yang tak disaring per lembaga tak berubah satu rupiah pun.
 const ledgerSaldo = computed(() =>
   ledgerScope.value
     .filter((b) => /^\d{4}-\d{2}/.test(String(b.tanggal || '').trim()))
     .filter(lolosPenyaringUmum)
-    .filter(lolosPenyaringLembaga)
 )
 const saldoMap = computed(() => petaSaldoBerjalan(ledgerSaldo.value))
 function saldoOf(b) {
@@ -1572,17 +1614,20 @@ function saldoOf(b) {
 // v.1.4.3: `periode.awal` — untuk pilihan bulanan/tahunan bentuknya tetap 'YYYY-MM'/'YYYY'
 //   seperti slug lama, jadi saldo awal laporan yang sudah pernah dicetak tak bergeser.
 const saldoAwalPeriode = computed(() => saldoAwalSebelum(ledgerSaldo.value, periode.value.awal))
-// Saldo akhir = saldo awal + mutasi periode. Sengaja dihitung dari stats (bukan dari
-//   baris terakhir peta saldo) supaya angkanya pasti bertemu dengan kartu Masuk/Keluar.
-const saldoAkhirPeriode = computed(() => saldoAwalPeriode.value + stats.value.saldo)
-// Ada penyaring kas yang aktif? Menentukan kalimat penjelas di kartu saldo — "seluruh kas"
-//   vs "mengikuti penyaring". Periode TIDAK dihitung sebagai penyaring di sini: ia memang
-//   selalu ada, dan yang dibatasinya cuma baris yang tampil.
+// Saldo akhir = saldo awal + mutasi periode KAS YAYASAN, bukan baris terakhir peta saldo.
+//   Mutasinya dari baris periode TANPA penyaring lembaga: tanpa penyaring lembaga ia sama
+//   dengan kartu Masuk/Keluar, dan dengan penyaring lembaga ia tetap mutasi seluruh kas.
+//   Dulu diambil dari `stats`, yang ikut penyaring lembaga: saldo awal yayasan + mutasi
+//   satu lembaga — angka yang tak berarti apa-apa.
+const mutasiKasYayasan = computed(() => jumlahKas(bukuTanpaLembaga.value))
+const saldoAkhirPeriode = computed(() => saldoAwalPeriode.value + mutasiKasYayasan.value.selisih)
+// Ada penyaring yang ikut membatasi SALDO? Menentukan kalimat penjelas di strip saldo —
+//   "seluruh kas" vs "mengikuti penyaring". Periode TIDAK dihitung (ia selalu ada dan hanya
+//   membatasi baris yang tampil), dan sejak v.1.4.3 lembaga juga tidak — kas tunggal.
 const adaPenyaringKas = computed(
   () =>
     !!(
       filterPos.value ||
-      filterLembaga.value ||
       filterMetode.value ||
       filterTipe.value ||
       search.value.trim() ||
@@ -1659,7 +1704,11 @@ function buildExportRows(listIn, { metodeOnly = '' } = {}) {
     labelPeriode: periodeLabel.value,
     metodeOf: metodeTransaksi,
     metodeOpts: METODE_OPTS,
-    ringkasMetodeOf: ringkasMetode
+    ringkasMetodeOf: ringkasMetode,
+    // v.1.4.3 (Kyai 14 Sep 2026, kas tunggal): laporan satu lembaga berhenti di TOTAL. Baris
+    //   INFO-nya dulu "saldo kas" lembaga itu — angka yang tak ada kalau kasnya satu — dan
+    //   saldo yayasan pun tak bisa ditaruh di sana: SEBELUM + TOTAL lembaga ≠ SETELAH.
+    infoSaldoKas: !filterLembaga.value
   })
 }
 

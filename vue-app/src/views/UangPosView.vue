@@ -77,11 +77,16 @@
               {{ fmtRp(stats.pengeluaran) }}
             </p>
           </div>
+          <!-- v.1.4.3 (Kyai 14 Sep 2026, kas tunggal): dulu berlabel "Saldo Pos" padahal isinya
+               masuk − keluar periode & penyaring yang aktif — kasus yang sama dengan kartu
+               "Saldo Akhir" Buku Induk yang diganti namanya di v.1.3.7. Saat disaring per
+               lembaga, label lama itu terbaca "saldo lembaga": angka yang tak ada. -->
           <div class="bg-cyan-50 border-l-4 border-cyan-500 p-3 rounded-xl">
-            <p class="text-[10px] font-bold text-cyan-700 uppercase">Saldo Pos</p>
+            <p class="text-[10px] font-bold text-cyan-700 uppercase">Selisih Periode</p>
             <p class="text-base md:text-lg font-black text-cyan-800 mt-1">
               {{ fmtRp(stats.saldo) }}
             </p>
+            <p class="text-[9px] text-cyan-700/80 mt-0.5">masuk &minus; keluar</p>
           </div>
         </div>
       </div>
@@ -183,17 +188,19 @@
                     </button>
                   </div>
                 </div>
-                <!-- v.1.2.6 (Kyai): kas per lembaga. Kategori pos ini teks bebas, jadi
-                     lembaganya ditunjuk di sini (mis. beli buku SDI → kas SDI). -->
+                <!-- v.1.2.6 (Kyai): lembaga baris pos. Kategori pos ini teks bebas, jadi
+                     lembaganya ditunjuk di sini (mis. beli buku SDI → dicatat untuk SDI).
+                     v.1.4.3 (Kyai 14 Sep 2026, kas tunggal): LABEL laporan, bukan kas sendiri —
+                     karena itu tak lagi berbunyi "Masuk Kas Lembaga". -->
                 <div>
                   <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1"
-                    >Masuk Kas Lembaga</label
+                    >Dicatat untuk Lembaga</label
                   >
                   <select
                     v-model="inputForm.lembaga"
                     class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)]"
                   >
-                    <option value="">Kas Induk / Yayasan</option>
+                    <option value="">{{ LABEL_KAS_UMUM }}</option>
                     <option
                       v-for="o in lembagaOpsi"
                       :key="`kas_${o.nama}`"
@@ -280,7 +287,7 @@
             <option :value="0">Semua tgl</option>
             <option v-for="d in 31" :key="d" :value="d">{{ d }}</option>
           </select>
-          <!-- v.1.2.6 (Kyai): filter kas lembaga -->
+          <!-- v.1.2.6 (Kyai): filter lembaga -->
           <select
             v-model="filterLembaga"
             class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-cyan-500 outline-none"
@@ -291,7 +298,7 @@
               :key="`fl_${o.kunci || 'induk'}`"
               :value="o.kunci || KAS_INDUK"
             >
-              {{ o.lembaga || 'Kas Induk' }} ({{ o.jumlah }})
+              {{ labelKasLembaga(o.lembaga) }} ({{ o.jumlah }})
             </option>
           </select>
           <select
@@ -309,16 +316,19 @@
             class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-cyan-500 outline-none"
           />
         </div>
-        <!-- v.1.2.6 (Kyai): kas tiap lembaga sendiri-sendiri. Klik = saring ke lembaga itu. -->
+        <!-- v.1.2.6 (Kyai): rekap tiap lembaga. Klik = saring ke lembaga itu.
+             v.1.4.3 (Kyai 14 Sep 2026, KAS TUNGGAL): angka besarnya PEMASUKAN, bukan saldo —
+             lembaga itu label sumber dana, kasnya satu (lihat catatan di BukuIndukView). -->
         <div v-if="rekapLembaga.length > 1" class="mt-3">
           <p class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1.5">
-            <i class="fas fa-sitemap mr-1"></i>{{ pageTitle }} per lembaga
+            <i class="fas fa-sitemap mr-1"></i>Pemasukan {{ pageTitle }} per lembaga
           </p>
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
             <button
               v-for="o in rekapLembaga"
               :key="`kl_${o.kunci || 'induk'}`"
               type="button"
+              :title="o.kunci ? null : 'Tanpa label lembaga'"
               :class="[
                 'text-left p-2.5 rounded-xl border transition',
                 filterLembaga === (o.kunci || KAS_INDUK)
@@ -330,13 +340,15 @@
               "
             >
               <p class="text-[11px] font-black text-[var(--text-primary)] truncate">
-                {{ o.lembaga || 'Kas Induk / Yayasan' }}
+                {{ labelKasLembaga(o.lembaga) }}
               </p>
-              <p class="text-sm font-black text-cyan-700 dark:text-cyan-300 mt-0.5">
-                {{ fmtRp(o.saldo) }}
+              <p class="text-sm font-black text-emerald-700 dark:text-emerald-300 mt-0.5">
+                {{ fmtRp(o.masuk) }}
+                <span class="text-[10px] font-bold text-[var(--text-secondary)]">masuk</span>
               </p>
               <p class="text-[10px] text-[var(--text-secondary)] mt-0.5">
-                masuk {{ fmtRp(o.masuk) }} · keluar {{ fmtRp(o.keluar) }} · {{ o.jumlah }} trx
+                <template v-if="o.keluar > 0">keluar {{ fmtRp(o.keluar) }} · </template
+                >{{ o.jumlah }} trx
               </p>
             </button>
           </div>
@@ -545,7 +557,11 @@ import {
   kasLembagaBaris,
   ringkasKasLembaga,
   arahNominal,
-  kunciLembaga
+  kunciLembaga,
+  // v.1.4.3 (Kyai 14 Sep 2026): kas tunggal — satu label "Umum / Yayasan" & jumlah satu kas
+  jumlahKas,
+  labelKasLembaga,
+  LABEL_KAS_UMUM
 } from '@/utils/kasLembaga'
 
 const route = useRoute()
@@ -605,7 +621,7 @@ const inputForm = reactive({
   tipe: 'masuk',
   metode: 'Tunai', // v.1.2.6: cara bayar (dasar PDF tunai vs transfer)
   kategori: '',
-  lembaga: '', // v.1.2.6: kas lembaga tujuan ('' = Kas Induk/Yayasan)
+  lembaga: '', // v.1.2.6: label lembaga baris ('' = Umum / Yayasan)
   keterangan: '',
   nominal: 0
 })
@@ -626,7 +642,8 @@ const petaKas = computed(() => petaKasLembaga(settingsStore.settings?.keuTagihan
 function kasLembagaDari(b) {
   return kasLembagaBaris(b, petaKas.value)
 }
-// Sentinel "Kas Induk": kuncinya '' dan itu sudah dipakai "Semua lembaga".
+// Sentinel baris tanpa label lembaga ("Umum / Yayasan", dulu "Kas Induk"): kuncinya '' dan
+//   itu sudah dipakai "Semua lembaga".
 const KAS_INDUK = '__induk__'
 
 // Semua penyaring KECUALI lembaga — dasar rekap & opsi filter lembaga, supaya
@@ -675,7 +692,7 @@ const rekapLembaga = computed(() => ringkasKasLembaga(tanpaLembaga.value, kasLem
 // Nama lembaga yang sedang disaring — judul & nama berkas laporan. '' = semua lembaga.
 const labelLembagaAktif = computed(() => {
   if (!filterLembaga.value) return ''
-  if (filterLembaga.value === KAS_INDUK) return 'Kas Induk'
+  if (filterLembaga.value === KAS_INDUK) return LABEL_KAS_UMUM
   return rekapLembaga.value.find((o) => o.kunci === filterLembaga.value)?.lembaga || ''
 })
 
@@ -693,14 +710,10 @@ const filtered = computed(() => {
     )
 })
 
+// Rumusnya jumlahKas — sama dengan kartu per lembaga di bawah, bukan salinan tangan.
 const stats = computed(() => {
-  let masuk = 0,
-    keluar = 0
-  for (const b of filtered.value) {
-    if (b.tipe === 'masuk' || Number(b.masuk) > 0) masuk += Number(b.masuk || b.nominal) || 0
-    if (b.tipe === 'keluar' || Number(b.keluar) > 0) keluar += Number(b.keluar || b.nominal) || 0
-  }
-  return { pemasukan: masuk, pengeluaran: keluar, saldo: masuk - keluar }
+  const j = jumlahKas(filtered.value)
+  return { pemasukan: j.masuk, pengeluaran: j.keluar, saldo: j.selisih }
 })
 
 const years = computed(() => {
@@ -741,7 +754,7 @@ async function cetakLaporan(metodeOnly = '') {
         tanggal: b.tanggal ? formatTgl(b.tanggal) : '',
         keterangan: b.keterangan || '',
         kategori: b.kategori || '',
-        lembaga: kasLembagaDari(b) || 'Kas Induk',
+        lembaga: labelKasLembaga(kasLembagaDari(b)),
         metode: met,
         masuk: masuk ? fmtRp(masuk) : '',
         keluar: keluar ? fmtRp(keluar) : ''
@@ -787,7 +800,7 @@ async function cetakLaporan(metodeOnly = '') {
         { key: 'tanggal', header: 'Tanggal', width: 26 },
         { key: 'keterangan', header: 'Keterangan', width: 66 },
         { key: 'kategori', header: 'Kategori', width: 32 },
-        { key: 'lembaga', header: 'Kas Lembaga', width: 30 },
+        { key: 'lembaga', header: 'Lembaga', width: 30 },
         { key: 'metode', header: 'Cara Bayar', width: 24 },
         { key: 'masuk', header: 'Masuk', width: 30 },
         { key: 'keluar', header: 'Keluar', width: 30 }
@@ -837,7 +850,7 @@ async function simpanInputManual() {
       tipe: inputForm.tipe,
       metode: inputForm.metode || 'Tunai',
       kategori: inputForm.kategori.trim() || pageTitle.value,
-      // v.1.2.6 (Kyai): kas lembaga tujuan; '' = Kas Induk/Yayasan
+      // v.1.2.6 (Kyai): label lembaga baris; '' = Umum / Yayasan
       lembaga: String(inputForm.lembaga || '').trim(),
       keterangan: inputForm.keterangan.trim(),
       nominal: Number(inputForm.nominal) || 0,

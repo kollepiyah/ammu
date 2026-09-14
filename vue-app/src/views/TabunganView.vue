@@ -1780,9 +1780,13 @@ function labelPeriodeMutasi() {
   return mutFilterDay.value ? `${mutFilterDay.value} ${bl}` : bl
 }
 
+// Tabungan & uang saku = titipan santri, bukan kas yayasan: mutasi santri tanpa lembaga
+//   berlabel "Tanpa lembaga", sama dengan kartu & penyaring di layar ini. PDF-nya dulu
+//   menulis "Kas Induk" — keliru sejak awal, dan kini juga bertabrakan dengan kas tunggal
+//   (v.1.4.3), yang menamai baris kas tanpa label "Umum / Yayasan".
 function labelLembagaMutasi() {
   if (!mutFilterLembaga.value) return ''
-  if (mutFilterLembaga.value === KAS_INDUK) return 'Kas Induk'
+  if (mutFilterLembaga.value === KAS_INDUK) return 'Tanpa lembaga'
   const o = rekapLembagaTab.value.find((x) => x.kunci === mutFilterLembaga.value)
   return o?.lembaga || ''
 }
@@ -1833,7 +1837,7 @@ async function cetakLaporanMutasi() {
         tanggal: m.tanggal ? fmtTgl(m.tanggal) : '',
         bukti: m.no_bukti || '',
         santri: m.nama_cache || getNamaSantri(m.santri_id) || '-',
-        lembaga: lembagaMutasi(m) || 'Kas Induk',
+        lembaga: lembagaMutasi(m) || 'Tanpa lembaga',
         metode: met,
         setor: isSetor ? fmtRp(nom) : '',
         tarik: isSetor ? '' : fmtRp(nom),
@@ -1884,7 +1888,7 @@ async function cetakLaporanMutasi() {
         { key: 'tanggal', header: 'Tanggal', width: 26 },
         { key: 'bukti', header: 'No. Bukti', width: 26 },
         { key: 'santri', header: 'Santri', width: 52 },
-        { key: 'lembaga', header: 'Kas Lembaga', width: 28 },
+        { key: 'lembaga', header: 'Lembaga', width: 28 },
         { key: 'metode', header: 'Cara Bayar', width: 24 },
         { key: 'setor', header: 'Setor', width: 26 },
         { key: 'tarik', header: 'Tarik', width: 26 },

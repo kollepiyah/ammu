@@ -816,6 +816,8 @@ const rilis = [
       'Tombol Bayar di halaman Tagihan kini membuka POS untuk santri itu, sehingga pembayarannya tercatat di Buku Induk dan struknya bisa dicetak.',
       'Tagihan yang sudah dibayar tak bisa dihapus langsung — hapus dulu transaksi pembayarannya. Slip bisyaroh yang sudah dicairkan, bila dihapus, ikut menghapus catatan kas keluarnya.',
       'Santri yang masih punya tabungan, tagihan, atau riwayat pembayaran tak bisa dihapus; non-aktifkan saja supaya riwayatnya tetap utuh. Transfer yang sudah diverifikasi juga tak bisa dihapus.',
+      'Kas tunggal: Buku Induk menampilkan satu saldo kas yayasan, tidak lagi dipecah per lembaga. Kartu per lembaga di Buku Induk dan Uang Kegiatan/Uang Buku/Tabungan Wajib kini menampilkan pemasukan, sehingga kartu "Kas Induk / Yayasan" yang dulu tampak kosong atau minus — tempat seluruh bisyaroh dan pengeluaran operasional tercatat — tidak ada lagi. Penyaring dan laporan PDF per lembaga tetap ada.',
+      '"Kas Induk" berganti nama menjadi "Umum / Yayasan", dan pilihan "Masuk Kas Lembaga" menjadi "Dicatat untuk Lembaga". Kartu "Saldo Pos" di Uang Kegiatan/Uang Buku/Tabungan Wajib menjadi "Selisih Periode", sesuai isinya.',
       'Beberapa tombol perapih yang tugasnya sudah selesai dicabut: Bersihkan residu (Buku Induk), Bersihkan baris glondongan yatim, Dump console (Tabungan), dan Hapus riwayat scan (Mesin Absensi).'
     ]
   },

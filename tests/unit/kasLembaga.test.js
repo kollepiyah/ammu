@@ -56,7 +56,7 @@ describe('petaKasLembaga', () => {
     expect(petaKasLembaga(JENIS).get('uang buku kelas baca')).toBe('Kelas Baca')
   })
 
-  it('whitelist >1 atau tanpa penanda → tidak masuk peta (jadi Kas Induk)', () => {
+  it('whitelist >1 atau tanpa penanda → tidak masuk peta (jadi Umum / Yayasan)', () => {
     const p = petaKasLembaga(JENIS)
     expect(p.has('uang kegiatan')).toBe(false)
     expect(p.has('infaq')).toBe(false)
@@ -102,7 +102,7 @@ describe('kasLembagaBaris — baris keuangan_buku_induk', () => {
     expect(kasLembagaBaris({ kategori: 'syahriyah  sdi' }, peta)).toBe('SDI')
   })
 
-  it('tak bisa ditentukan → "" (Kas Induk), bukan menebak', () => {
+  it('tak bisa ditentukan → "" (Umum / Yayasan), bukan menebak', () => {
     expect(kasLembagaBaris({ kategori: 'Infaq' }, peta)).toBe('')
     expect(kasLembagaBaris({ kategori: 'Uang Kegiatan' }, peta)).toBe('')
     expect(kasLembagaBaris({}, peta)).toBe('')
@@ -140,7 +140,7 @@ describe('ringkasKasLembaga', () => {
     { tipe: 'masuk', nominal: 200000, kategori: 'Syahriyah SDI' },
     { tipe: 'masuk', nominal: 90000, kategori: 'Syahriyah TPQ Pagi' },
     { tipe: 'keluar', nominal: 50000, lembaga: 'SDI', kategori: 'Beli papan tulis' },
-    { tipe: 'masuk', nominal: 25000, kategori: 'Infaq' } // tak berlembaga → Kas Induk
+    { tipe: 'masuk', nominal: 25000, kategori: 'Infaq' } // tak berlembaga → Umum / Yayasan
   ]
 
   it('menjumlah masuk/keluar/saldo per lembaga', () => {
@@ -150,7 +150,7 @@ describe('ringkasKasLembaga', () => {
     expect(out.find((x) => x.lembaga === 'TPQ Pagi')).toMatchObject({ masuk: 90000, saldo: 90000 })
   })
 
-  it('KUNCI: Kas Induk selalu di URUTAN TERAKHIR (keranjang sisa, bukan lembaga)', () => {
+  it('KUNCI: Umum / Yayasan selalu di URUTAN TERAKHIR (keranjang sisa, bukan lembaga)', () => {
     const out = ringkasKasLembaga(rows, resolver)
     expect(out[out.length - 1].lembaga).toBe('')
     expect(out[out.length - 1].masuk).toBe(25000)
@@ -176,7 +176,7 @@ describe('ringkasKasLembaga', () => {
   it('daftar kosong / resolver hilang tidak melempar', () => {
     expect(ringkasKasLembaga([], resolver)).toEqual([])
     expect(ringkasKasLembaga(null, resolver)).toEqual([])
-    expect(ringkasKasLembaga(rows)).toHaveLength(1) // semua jatuh ke Kas Induk
+    expect(ringkasKasLembaga(rows)).toHaveLength(1) // semua jatuh ke Umum / Yayasan
   })
 })
 
