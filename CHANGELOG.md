@@ -20,6 +20,137 @@ naik satu tiap rilis. Entri lama memakai skema lama `v.{nomor-urut}.{MMDDtahunmu
 
 ---
 
+## [v.1.4.3] — 2026-09-14 — Transaksi yang dihapus tak lagi meninggalkan tagihan "lunas", cetak ulang struk di semua layar keuangan, dan rentang tanggal di Buku Induk
+
+**SIAP RILIS** — `versionCode` 143 / `versionName` `v.1.4.3`. **Tanpa migrasi Supabase dan tanpa
+edge function**, jadi `db push` tak perlu. Urutannya: **deploy web → rebuild AAB → rilis
+Electron**. Yang terakhir bukan formalitas: admin keuangan bekerja di Electron, dan Electron
+memuat salinan asetnya sendiri (`loadFile`), jadi tanpa rilis Electron tak satu pun perbaikan di
+bawah sampai ke meja kasir.
+
+Nomor baru, BUKAN dilebur ke v.1.4.2: v.1.4.2 lengkap — ketiga gelombangnya — sudah tayang di web
+sejak deploy 12 Sep 2026 pk. 22.18 (bundel `index-DGlb5NId.js` di server identik dengan build
+lokal dan memuat penyaring gelombang 3).
+
+Lima laporan admin keuangan yang diteruskan Kyai, 14 Sep 2026:
+
+> 1. _"riwayat transaksi yg dibatalkan/dihapus oleh admin karena kekeliruan input admin, tapi di
+>    POS santrinya terbaca lunas. padahal tadi sudah dihapus"_
+> 2. _"untuk yg cek riwayat vs tagihan masih diproses cek oleh admin keu"_
+> 3. _"di menu POS santri, saya ingin bisa ditampilkan semua santri. tidak seperti sekarang hanya
+>    50 santri (electron)"_
+> 4. _"di buku induk, saya ingin filter tanggal bisa difilter dati tanggal ini ke tanggal itu"_
+> 5. _"di uang saku dan POS dan yg lain, saya ingin admin keu bisa print ulang struk."_
+
+Nomor 2 sengaja tak disentuh — alatnya sedang dijalankan admin keuangan atas data nyata.
+
+### Fixed
+
+- **Menghapus transaksi kini mengembalikan tagihannya** (laporan 1). Uang santri dicatat di dua
+  tabel: baris uang di `keuangan_buku_induk`, pengakuan lunas di `keuangan_tagihan`. Membayar di
+  POS menulis keduanya; menghapus — dari Riwayat POS, Buku Induk (satu maupun terpilih), dan Uang
+  Kegiatan/Buku/Tabungan Wajib — hanya menghapus yang pertama. Dialognya bahkan menulis
+  terang-terangan _"Tagihan yg ter-lunaskan TIDAK otomatis di-revert"_. Matriks POS membaca
+  `terbayar` dari tagihan, jadi selnya tetap hijau untuk uang yang sudah tak ada di mana pun: wali
+  tak ditagih lagi, kas tak pernah menerimanya, dan tak satu layar pun berbunyi. Semua jalur hapus
+  baris uang kini lewat satu pintu, `services/hapusBarisKas`, dengan aturan angka di
+  `utils/batalBayarTagihan` (murni):
+  - **Tautan baris → tagihan** dicari dari yang paling pasti: `tagihan_id` (POS sejak v.1.4.1),
+    `alokasi[]` (VA BMT), `applied_transfer_refs` (verifikasi transfer), `prabayar_dari` (tagihan
+    yang lahir sesudah bayar di muka), lalu sel santri × jenis induk × periode untuk baris POS
+    lama — **hanya bila tepat satu tagihan cocok**. Lebih dari satu dilaporkan sebagai ambigu dan
+    tak ditebak.
+  - **`terbayar` tak pernah diturunkan di bawah uang yang MASIH tercatat** untuk tagihan itu.
+    Inilah yang membuat merapikan baris kembar aman: dua baris untuk satu pembayaran, yang satu
+    dihapus, tagihannya tetap lunas.
+  - **Tagihan dikembalikan DULU, barisnya dihapus sesudahnya.** Tagihan yang gagal dikembalikan
+    membuat barisnya TIDAK dihapus, jadi bisa diulang; jejak `batal_baris` di tagihan mencegah
+    pengurangan kedua bila penghapusan diulang sesudah koneksi putus di tengah jalan.
+  - Dialog konfirmasi kini **menyebut tagihan mana yang akan kembali menagih**, dari berapa ke
+    berapa, sebelum OK ditekan. `tanggal_lunas`, potongan milik transaksi itu, dan ref transfernya
+    di `applied_transfer_refs` ikut dicabut; ekor jsonb lama `bayar`/`dibayar` ikut disamakan supaya
+    `terbayarDari()` tak jatuh ke angka lama saat kolomnya nol.
+- **Menolak transfer tak lagi meninggalkan tagihan yang mengaku lunas.** Verifikasi yang terhenti
+  di tengah bisa sudah menaikkan tagihannya sebelum status `verified` ditulis, sementara penolakan
+  dulu hanya menghapus baris `bi_trf_*`. Kini lewat pintu yang sama; bila tagihannya gagal
+  dikembalikan, penolakan dibatalkan dan transfer tetap di Pending.
+- **POS mencatat berapa yang PASTI ditambahkan tiap baris ke tagihannya** (`tagihan_tambah`, ekor
+  jsonb — tanpa migrasi). Uang di baris tak selalu sama dengan itu: potongan ikut menutup tagihan
+  (Kyai 5 Agu 2026), dan pembulatan kasir dijepit ke nominal tagihan. Rumus pelunasannya pindah
+  dari `PosSantriView` ke `pelunasanItem()` — identik, dijaga tes cermin — supaya sisi bayar dan
+  sisi hapus membaca angka yang sama. Baris lama ditaksir uang + potongan, lalu dijepit aturan di
+  atas.
+- **"Transaksi Terakhir" di POS tak lagi memuat transaksi yang gagal disimpan.** Barisnya dulu
+  dimasukkan di dalam perulangan, sebelum `await Promise.all(writes)`; kini sesudahnya — penting,
+  karena daftar itu sekarang punya tombol cetak ulang.
+- **Struk cetak ulang tak lagi menulis "bagian dari Syahriyah" di kolom periode.** Pembaca lama
+  mengambil potongan keterangan TERAKHIR apa adanya, sehingga pecahan tagihan gabungan (K1)
+  tercetak dengan nama induknya sebagai periode. Kini `periode_kode` dibaca lebih dulu, dan ekor
+  "bagian dari …" / "potongan …" dilewati.
+- **Struk cetak ulang dari Buku Induk kini lengkap.** Buku Induk merakit struknya sendiri tanpa
+  NIS, kelas, periode, dan tanda tangan petugas — kertas yang berbeda dari Riwayat POS untuk
+  transaksi yang sama — dan hanya untuk baris POS.
+- **Slip Tabungan/Uang Saku yang dicetak ulang mencetak saldo SAAT itu**, bukan saldo hari ini.
+  Slip setoran 3 Agustus yang dicetak ulang September dulu menulis saldo September. Saldonya kini
+  `saldoSetelahMutasi()`, dengan pembanding urutan (`bandingMutasi`) yang sama dengan buku besar
+  santri di layar.
+- **Tombol "Struk" di Riwayat POS tak lagi galat di web** ("Electron raw print API tidak
+  tersedia") — di luar Electron ia membuka slip PDF — dan di Electron kini mengikuti setelan kertas
+  seperti "Cetak Langsung" di POS, bukan selalu ESC/P mentah.
+
+### Added
+
+- **Pemulihan untuk penghapusan SEBELUM v.1.4.3** — Pengaturan Keuangan › Tagihan › Cek Riwayat vs
+  Tagihan kini juga menampilkan _"N tagihan masih mengaku terbayar padahal transaksinya sudah
+  dihapus"_, lengkap dengan nomor struk, nominal, siapa yang menghapus dan kapan, serta tombol
+  **Kembalikan** (super admin). Sumbernya salinan `audit_log` yang selalu ditulis `deleteOne`
+  sebelum menghapus; baris yang sudah dipulihkan dilewati, rencananya dihitung ulang dari data segar
+  tepat sebelum menulis, dan aturannya persis aturan jalur hapus. `audit_log` hanya terbaca super
+  admin/admin (`auth_can_manage`), jadi bagi peran lain bagian ini tak tampil.
+- **POS Santri menampilkan semua santri** (laporan 3). Batas `slice(0, 50)` lahir di v.21, saat
+  daftar santri masih diunduh penuh setiap halaman dibuka; sejak audit Agu 2026 datanya dari store
+  terpusat yang sudah memuat semuanya — yang dibatasi tinggal yang digambar, jadi santri ke-51 dst.
+  hanya bisa dibuka dengan mengetik namanya. Kartunya memakai `content-visibility` supaya ±600 kartu
+  tetap ringan, dan jumlahnya tampil di bawah daftar (header yang biasa menyebutnya disembunyikan di
+  Electron).
+- **Rentang tanggal di Buku Induk** (laporan 4) — pilihan "Per bulan / Rentang tanggal" di bawah
+  penyaring. Periode di Buku Induk menyetir lima hal: baris yang tampil, saldo kas sebelum periode,
+  judul laporan, nama berkas ekspor, dan mode "Setoran Harian"; kelimanya kini turun dari satu objek
+  (`utils/periodeKas`). Pilihan bulanan menyaring baris yang persis sama dengan sebelumnya, dan
+  `awal`-nya tetap `'YYYY-MM'`/`'YYYY'` sehingga saldo awal laporan lama tak bergeser. Rentang tahan
+  urutan terbalik dan ujung yang kosong; berkasnya bernama `buku-induk-2026-08-25_sd_2026-09-10`.
+- **Cetak ulang struk di mana pun transaksinya terlihat** (laporan 5):
+  - **POS Santri** — "Transaksi Terakhir" kini per transaksi (dulu per baris buku induk) dengan
+    tombol PDF & Struk, plus tautan ke Riwayat POS yang juga tampil di Electron;
+  - **Tabungan & Uang Saku** — cetak ulang langsung ke printer di buku besar santri dan di Semua
+    Mutasi (Electron), di samping slip PDF yang sudah ada;
+  - **Buku Induk** — untuk SEMUA pembayaran santri (POS, transfer, VA BMT), bukan POS saja;
+  - **Uang Kegiatan / Uang Buku / Tabungan Wajib** — sebelumnya tak punya tombol cetak apa pun.
+    Pembayaran santri mencetak struk transaksinya utuh; kas manual mencetak bukti kas. Tombolnya di
+    kolom sendiri — tombol yang berbagi kolom dengan nominal meluber menimpa angka (Buku Induk
+    v.1.3.0).
+- Tes baru: `batalBayarTagihan.test.js` (52), `periodeKas.test.js` (14), `trxDariBaris.test.js`
+  (13), `saldoSetelahMutasi.test.js` (6). **Total 1.503 tes hijau.**
+
+### Changed
+
+- **Satu perakit struk cetak ulang** — `utils/trxStruk.trxDariBaris` (+ `barisSeTransaksi`,
+  `periodeDariBaris`). Riwayat POS, Buku Induk, POS, dan Uang POS memakainya; `metode` disimpulkan
+  di satu tempat, jadi perakit baru tak bisa lagi lupa membawanya lalu mencetak "TUNAI" untuk
+  transfer (v.1.4.1).
+- **Satu pintu cetak** — `composables/useCetakStruk` (PDF, slip PDF, cetak langsung sesuai
+  `posStrukPaper`), dipakai layar sukses POS dan semua tombol cetak ulang.
+
+### Catatan — yang sengaja BELUM disentuh
+
+- **Mengedit nominal baris POS di Buku Induk** (super admin) masih tak menyesuaikan tagihannya.
+  Belum pernah dilaporkan; untuk salah input, hapus lalu input ulang lewat POS.
+- **Kwitansi wali** (`PembayaranView.buildTrxFromGroup`) masih merakit struknya sendiri.
+- **Kas Induk / Yayasan** — Kyai membuka diskusi alokasi pemasukan ke kas induk (usul 80% dari tiap
+  transaksi). Belum ada perubahan kode; kebijakannya menunggu keputusan Kyai.
+
+---
+
 ## [v.1.4.2] — 2026-09-12 — Penyaring yang berhenti lupa, dan langganan realtime yang menyembuhkan diri
 
 **SIAP RILIS** — `versionCode` 142 / `versionName` `v.1.4.2`. Migrasi Supabase gelombang 2

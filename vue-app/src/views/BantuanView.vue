@@ -803,6 +803,18 @@ async function resetFaq() {
 //   riwayat lengkap ada di CHANGELOG.md untuk pengembang.
 const rilis = [
   {
+    versi: 'v.1.4.3',
+    tgl: 'September 2026',
+    items: [
+      'Menghapus transaksi yang salah input kini ikut mengembalikan tagihannya. Dulu transaksi yang dihapus dari Riwayat POS, Buku Induk, atau Uang Kegiatan/Uang Buku hanya hilang catatan uangnya, sementara tagihan santri tetap terbaca lunas di POS. Sebelum menghapus, layar kini menyebut tagihan mana saja yang akan kembali ditagih.',
+      'Tagihan dari transaksi yang terlanjur dihapus sebelum pembaruan ini bisa dipulihkan super admin lewat Pengaturan Keuangan › Tagihan › Cek Riwayat vs Tagihan.',
+      'POS Santri menampilkan semua santri, tidak lagi hanya 50 nama pertama.',
+      'Struk bisa dicetak ulang dari halaman POS (daftar Transaksi Terakhir), Riwayat POS, Buku Induk, Uang Kegiatan/Uang Buku/Tabungan Wajib, serta Tabungan dan Uang Saku — di aplikasi Desktop bisa langsung ke printer.',
+      'Slip Tabungan dan Uang Saku yang dicetak ulang menampilkan saldo pada saat transaksi itu, bukan saldo hari ini.',
+      'Buku Induk bisa disaring dari tanggal ke tanggal lewat pilihan "Rentang tanggal". Judul laporan, nama berkas, dan saldo awalnya ikut rentang yang dipilih.'
+    ]
+  },
+  {
     versi: 'v.1.4.2',
     tgl: 'September 2026',
     items: [

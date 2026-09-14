@@ -5,6 +5,34 @@ Rinciannya untuk pengembang ada di `CHANGELOG.md` — jangan disalin ke sana, te
 
 ---
 
+## v.1.4.3 — September 2026
+
+**Perbaikan**
+
+- **Transaksi yang dihapus tak lagi membuat tagihan tetap "lunas".** Menghapus transaksi yang
+  salah input — dari Riwayat POS, Buku Induk, Uang Kegiatan/Uang Buku, atau saat menolak transfer —
+  dulu hanya menghapus catatan uangnya, sehingga tagihan santri tetap terbaca lunas di POS.
+  Sekarang tagihannya ikut kembali seperti sebelum dibayar, dan sebelum menghapus layar menyebut
+  tagihan mana saja yang akan kembali ditagih. Tagihan yang masih dibayar oleh transaksi lain
+  tidak ikut diturunkan.
+- **Tagihan dari transaksi yang terlanjur dihapus sebelum pembaruan ini bisa dipulihkan** lewat
+  Pengaturan Keuangan › Tagihan › Cek Riwayat vs Tagihan (khusus super admin).
+- **Slip Tabungan dan Uang Saku yang dicetak ulang menampilkan saldo pada saat transaksi itu**,
+  bukan saldo hari ini.
+- **Struk yang dicetak ulang dari Buku Induk kini lengkap** — No. Induk, kelas, periode, dan tanda
+  tangan petugas, sama dengan struk dari Riwayat POS.
+
+**Baru**
+
+- **POS Santri menampilkan semua santri**, tidak lagi hanya 50 nama pertama.
+- **Struk bisa dicetak ulang di mana pun transaksinya terlihat**: daftar Transaksi Terakhir di
+  halaman POS, Riwayat POS, Buku Induk, Uang Kegiatan/Uang Buku/Tabungan Wajib, serta Tabungan dan
+  Uang Saku — di aplikasi Desktop bisa langsung ke printer.
+- **Buku Induk bisa disaring dari tanggal ke tanggal.** Pilih "Rentang tanggal" di bawah
+  penyaring; judul laporan, nama berkas, dan saldo awalnya ikut rentang yang dipilih.
+
+---
+
 ## v.1.4.2 — September 2026
 
 **Baru**
