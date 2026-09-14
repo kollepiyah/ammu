@@ -811,7 +811,12 @@ const rilis = [
       'POS Santri menampilkan semua santri, tidak lagi hanya 50 nama pertama.',
       'Struk bisa dicetak ulang dari halaman POS (daftar Transaksi Terakhir), Riwayat POS, Buku Induk, Uang Kegiatan/Uang Buku/Tabungan Wajib, serta Tabungan dan Uang Saku — di aplikasi Desktop bisa langsung ke printer.',
       'Slip Tabungan dan Uang Saku yang dicetak ulang menampilkan saldo pada saat transaksi itu, bukan saldo hari ini.',
-      'Buku Induk bisa disaring dari tanggal ke tanggal lewat pilihan "Rentang tanggal". Judul laporan, nama berkas, dan saldo awalnya ikut rentang yang dipilih.'
+      'Buku Induk bisa disaring dari tanggal ke tanggal lewat pilihan "Rentang tanggal". Judul laporan, nama berkas, dan saldo awalnya ikut rentang yang dipilih.',
+      'Tagihan bulanan yang terbit otomatis tak lagi menagih ulang pembayaran di muka. Santri yang sudah membayar bulan depan lewat POS kini menerima tagihan bulan itu dalam keadaan lunas.',
+      'Tombol Bayar di halaman Tagihan kini membuka POS untuk santri itu, sehingga pembayarannya tercatat di Buku Induk dan struknya bisa dicetak.',
+      'Tagihan yang sudah dibayar tak bisa dihapus langsung — hapus dulu transaksi pembayarannya. Slip bisyaroh yang sudah dicairkan, bila dihapus, ikut menghapus catatan kas keluarnya.',
+      'Santri yang masih punya tabungan, tagihan, atau riwayat pembayaran tak bisa dihapus; non-aktifkan saja supaya riwayatnya tetap utuh. Transfer yang sudah diverifikasi juga tak bisa dihapus.',
+      'Beberapa tombol perapih yang tugasnya sudah selesai dicabut: Bersihkan residu (Buku Induk), Bersihkan baris glondongan yatim, Dump console (Tabungan), dan Hapus riwayat scan (Mesin Absensi).'
     ]
   },
   {

@@ -31,6 +31,29 @@ Rinciannya untuk pengembang ada di `CHANGELOG.md` — jangan disalin ke sana, te
 - **Buku Induk bisa disaring dari tanggal ke tanggal.** Pilih "Rentang tanggal" di bawah
   penyaring; judul laporan, nama berkas, dan saldo awalnya ikut rentang yang dipilih.
 
+**Perbaikan lanjutan (audit keuangan)**
+
+- **Tagihan bulanan yang terbit otomatis tak lagi menagih ulang pembayaran di muka.** Santri yang
+  sudah membayar bulan depan lewat POS dulu tetap menerima tagihan bulan itu sebagai tunggakan
+  begitu sistem menerbitkannya di awal bulan. Sekarang tagihannya langsung terbit lunas.
+- **Tombol Bayar di halaman Tagihan membuka POS** untuk santri itu, sehingga pembayarannya tercatat
+  di Buku Induk, bisa memilih tunai/transfer, dan struknya bisa dicetak. Sebelumnya pembayaran lewat
+  tombol itu tidak masuk kas sama sekali.
+- **Tagihan yang sudah dibayar tak bisa dihapus langsung.** Hapus dulu transaksi pembayarannya;
+  tagihannya kembali belum lunas dan baru bisa dihapus.
+- **Menghapus slip bisyaroh yang sudah dicairkan ikut menghapus catatan kas keluarnya**, dengan
+  peringatan yang jelas sebelumnya.
+- **Transfer yang sudah diverifikasi tak bisa lagi dihapus** dari halaman Verifikasi Pembayaran.
+- **Santri yang masih punya tabungan, uang saku, tagihan, atau riwayat pembayaran tak bisa
+  dihapus** — non-aktifkan saja, riwayatnya tetap utuh. Menggabung data santri kembar juga tak lagi
+  menghapus santri yang masih punya riwayat keuangan, dan tabungan "orphan" yang masih bersaldo tak
+  bisa dihapus.
+
+**Dicabut**
+
+- Tombol perapih yang tugasnya sudah selesai: "Bersihkan residu" (Buku Induk), "Bersihkan" baris
+  glondongan yatim, "Dump console" (Tabungan), dan "Hapus riwayat scan" (Mesin Absensi).
+
 ---
 
 ## v.1.4.2 — September 2026

@@ -20,17 +20,114 @@ naik satu tiap rilis. Entri lama memakai skema lama `v.{nomor-urut}.{MMDDtahunmu
 
 ---
 
-## [v.1.4.3] — 2026-09-14 — Transaksi yang dihapus tak lagi meninggalkan tagihan "lunas", cetak ulang struk di semua layar keuangan, dan rentang tanggal di Buku Induk
+## [v.1.4.3] — 2026-09-14 — Audit keuangan: cron tak lagi menagih ulang bayar di muka, tabungan tak lagi bisa terhapus lewat santri yang dihapus, dan tombol perapih yang tugasnya selesai dicabut
 
-**SIAP RILIS** — `versionCode` 143 / `versionName` `v.1.4.3`. **Tanpa migrasi Supabase dan tanpa
-edge function**, jadi `db push` tak perlu. Urutannya: **deploy web → rebuild AAB → rilis
-Electron**. Yang terakhir bukan formalitas: admin keuangan bekerja di Electron, dan Electron
-memuat salinan asetnya sendiri (`loadFile`), jadi tanpa rilis Electron tak satu pun perbaikan di
-bawah sampai ke meja kasir.
+**SIAP RILIS** — `versionCode` 143 / `versionName` `v.1.4.3`. **SATU rilis, DUA gelombang** (14 Sep
+2026 pagi & siang): v.1.4.3 belum pernah tayang, jadi gelombang 2 dilebur ke nomor yang sama.
+**Tanpa migrasi Supabase** (`db push` tak perlu), tetapi **ada perubahan edge function**. Urutannya:
+
+1. `supabase functions deploy auto-generate-tagihan --no-verify-jwt` — cron harian baru mengakui
+   bayar di muka sesudah ini. Tanpa redeploy, tombol Generate sudah patuh sementara cron belum.
+2. **Deploy web → rebuild AAB → rilis Electron.** Rilis Electron bukan formalitas: admin keuangan
+   bekerja di Electron, dan Electron memuat salinan asetnya sendiri (`loadFile`), jadi tanpa rilis
+   Electron tak satu pun perbaikan di dua gelombang ini sampai ke meja kasir.
 
 Nomor baru, BUKAN dilebur ke v.1.4.2: v.1.4.2 lengkap — ketiga gelombangnya — sudah tayang di web
 sejak deploy 12 Sep 2026 pk. 22.18 (bundel `index-DGlb5NId.js` di server identik dengan build
 lokal dan memuat penyaring gelombang 3).
+
+Kyai, 14 Sep 2026 siang, sesudah gelombang 1:
+
+> _"sekaligus audit yg lain, dan tombol2 yg digunakan untuk merapikan, jika sudah selesai dihapus
+> aja bisa?"_
+
+Audit dijalankan atas seluruh jalur uang — tagihan, POS, Buku Induk, tabungan, bisyaroh, transfer,
+cron — dan seluruh tombol perapih di aplikasi. Kelas temuannya satu dengan laporan gelombang 1:
+**dua catatan untuk satu uang, dan jalur yang hanya menulis atau menghapus salah satunya.**
+
+### Fixed
+
+- **Cron tagihan bulanan tak lagi menagih ulang santri yang sudah membayar di muka.** Sejak v.1.4.1
+  tombol Generate membuka tagihan baru dengan uang yang sudah masuk untuk (santri × jenis ×
+  periode) itu, tetapi aturannya hidup di dalam `PengaturanKeuanganView`, sehingga cron harian
+  (`auto-generate-tagihan`) tetap menerbitkan `terbayar: 0`. Setiap awal bulan, santri yang sudah
+  membayar bulan itu menerima tagihannya sebagai tunggakan, dan "Cek Riwayat vs Tagihan" menemukan
+  "kurang tercatat" baru — pabrik selisih yang tak pernah berhenti, persis di alat yang sedang
+  dijalankan admin keuangan (laporan no. 2). Aturannya pindah ke `utils/cocokBayarTagihan`
+  (`petaPrabayarPeriode`, `terapkanPrabayar`), dicerminkan ke Deno di
+  `auto-generate-tagihan/prabayar.ts`, dan `tests/unit/prabayarMirrorEdge.test.js` menuntut
+  keduanya identik (kasus tertulis + sapuan acak 400 baris). Cron membaca buku induk
+  **berhalaman** — PostgREST memotong hasil di 1.000 baris tanpa galat.
+- **Tombol "Bayar" di halaman Tagihan kini membuka POS untuk santri itu.** Modal bayar lama
+  menaikkan `terbayar` dan menulis log `keuangan_pembayaran` — tabel yang tak dibaca laporan mana
+  pun lagi — tanpa satu baris pun di Buku Induk: uangnya tak masuk kas, tanpa struk, tanpa cara
+  bayar, dan "Cek Riwayat vs Tagihan" melihatnya sebagai lunas tanpa jejak. POS membuka modal
+  santrinya sendiri lewat `?bayar=<id>`, lalu membuang parameternya dari URL.
+- **Tagihan yang sudah dibayar tak bisa dihapus langsung** (satu maupun terpilih). Baris
+  pembayarannya tetap menunjuk tagihan itu dan tak dihitung sebagai bayar di muka, jadi generate
+  berikutnya menerbitkannya lagi dengan terbayar 0. Jalurnya kini: hapus transaksi pembayarannya
+  (tagihan kembali belum lunas, gelombang 1), baru tagihannya — `utils/tagihan.tagihanSudahDibayar`.
+- **Menghapus slip bisyaroh yang sudah dicairkan ikut menghapus kas keluarnya.** Pencairan menulis
+  `gaji_<slipId>` ke Buku Induk; menghapus slipnya dulu meninggalkan pengeluaran tanpa slip yang tak
+  bisa dibereskan dari layar mana pun. Baris kasnya dihapus lebih dulu lewat `hapusBarisKas`, dan
+  dialognya menjelaskan kapan JANGAN melakukannya: kalau uangnya sudah diterima guru, simpan ulang
+  slipnya saja — pencairan ulang menimpa catatan kas yang sama.
+- **Transfer yang sudah diverifikasi tak bisa dihapus dari Verifikasi Pembayaran.** Record itu bukti
+  asal-usul baris `bi_trf_*`; tanpa record, "Cek Riwayat vs Tagihan" melaporkan barisnya sebagai
+  "transfer yatim" dan menyarankan menghapusnya — yang sejak gelombang 1 ikut mengembalikan tagihan,
+  sehingga wali yang sudah membayar ditagih lagi.
+- **Tabungan tak lagi bisa terhapus lewat santri yang dihapus.** Rantainya: santri dihapus (Data
+  Santri) atau digabung sebagai duplikat (Master Data) → hanya baris `santri` yang hilang → tabungan,
+  uang saku, tagihan, dan riwayat bayarnya kehilangan pemilik → Tabungan menampilkan "mutasi orphan"
+  dengan tombol **"Hapus Mutasi Orphan"** — terbuka untuk admin keuangan — yang membuang semuanya
+  permanen, termasuk saldo titipan yang masih harus dikembalikan. Ditutup di tiga tempat:
+  - santri yang masih punya riwayat keuangan **tak bisa dihapus**, cukup dinon-aktifkan
+    (`services/rujukanSantri.muatRujukanKeuangan` + `utils/rujukanKeuanganSantri`; gagal membaca =
+    tidak dihapus);
+  - **gabung duplikat** menyisihkan duplikat yang punya riwayat keuangan SEBELUM memilih primer dan
+    menyalin field, lalu melaporkannya;
+  - orphan yang **masih bersaldo tak pernah ditawarkan untuk dihapus**; yang bersaldo nol boleh
+    dibersihkan, oleh super admin saja.
+
+### Removed — tombol perapih yang tugasnya selesai
+
+Dicabut hanya yang bisa dipastikan dari kode, tanpa perlu melihat isi data produksi:
+
+- **"Bersihkan residu"** (Buku Induk, v.108). Residu — baris berkategori tabungan atau tanpa tanggal
+  valid — sudah dibuang oleh semua pembacanya (ledger, Dashboard Keuangan sejak v.108, Laporan),
+  jadi sisa yang belum dibersihkan tak mengubah angka mana pun.
+- **"Bersihkan" baris glondongan yatim** (v.1.1.9). Sejak cascade tak ada yang baru, dan `rows` sudah
+  menyembunyikan sisanya dari tampilan dan bisyaroh.
+- **"Dump console"** (Tabungan) — alat pengembang di layar admin.
+- **"Hapus riwayat scan"** (Mesin Absensi) — reset UJI COBA yang menghapus SELURUH absensi hasil
+  sinkron sidik jari, dasar hitung bisyaroh; sinkron Fingerspot sudah dipakai sungguhan sejak Juli
+  2026.
+
+### Added
+
+- Tes baru: `prabayarMirrorEdge.test.js` (9), `rujukanKeuanganSantri.test.js` (8),
+  `tagihanSudahDibayar.test.js` (3). **Total 1.523 tes hijau.**
+
+### Catatan — menunggu keputusan Kyai
+
+- **Tombol perapih yang nasibnya bergantung pada isi data** (tak bisa dipastikan dari sesi ini —
+  tak ada akses baca data produksi): "Analisis Data Duplikat" dan "Migrasi Lembaga (Salah Impor)" di
+  Master Data, "Bersihkan guru invalid" di Statistik, dan "Periksa Riwayat Bulanan" di Rekap
+  Prestasi.
+- **Tetap dipertahankan** karena masalahnya bisa muncul lagi: "Cek Riwayat vs Tagihan" (+ pemulihan
+  transaksi terhapus), "Rapikan Tagihan Gabungan" (tiap setelan gabung berubah), "Tandai ulang pos"
+  (tiap jenis diberi pos belakangan; tampil hanya bila perlu), dan "Perbaiki Shift" (tiap shift guru
+  berubah).
+- **Kas Induk / Yayasan** — Kyai: operasionalnya **kas tunggal**, lembaga mengajukan kebutuhan ke
+  yayasan, dan bisyaroh tak dibebankan per lembaga karena unit saling mensubsidi. Usulan menyesuaikan
+  tampilan "kas per lembaga" (pemasukan per lembaga + satu saldo kas yayasan) menunggu persetujuan;
+  belum ada kode.
+
+---
+
+## [v.1.4.3 · gelombang 1] — 2026-09-14 — Transaksi yang dihapus tak lagi meninggalkan tagihan "lunas", cetak ulang struk di semua layar keuangan, dan rentang tanggal di Buku Induk
+
+Status rilis & urutan deploy: lihat bagian **v.1.4.3** di atas.
 
 Lima laporan admin keuangan yang diteruskan Kyai, 14 Sep 2026:
 
