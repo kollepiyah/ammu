@@ -34,8 +34,6 @@ import { useSettingsStore } from '@/stores/settings'
 const {
   loaded,
   rows, // v.1.1.9: baris glondongan TANPA yang yatim (ajuannya sudah dihapus)
-  barisYatim,
-  bersihkanYatim,
   sesi,
   myNama,
   antrianTugas,
@@ -275,33 +273,10 @@ function waliSantri(santriId) {
   return { nama: String(s.nama_wali || s.wali || '').trim(), wa: String(s.wa || '').trim() }
 }
 
-// v.1.1.9: baris yatim = ajuan tesnya sudah dihapus. Sejak cascade dipasang tak akan
-//   ada yang baru; tombol ini untuk membersihkan sisa penghapusan LAMA. Baris yatim
-//   sudah otomatis tak tampil & tak ikut Rekap Bisyaroh — ini sekadar merapikan DB.
-const bersihBusy = ref(false)
-async function bersihkanYatimKlik() {
-  const n = barisYatim.value.length
-  if (!n) return
-  const ok = await confirmDlg({
-    title: 'Bersihkan baris glondongan yatim?',
-    message:
-      `<b>${n} baris</b> glondongan tak lagi punya ajuan tes (tesnya sudah dihapus).` +
-      '<br><br>Baris ini sudah tidak tampil & tidak ikut dihitung bisyaroh. Menghapusnya hanya merapikan data.' +
-      '<br><br>Tidak bisa di-undo.',
-    confirmText: 'Bersihkan',
-    danger: true
-  })
-  if (!ok) return
-  bersihBusy.value = true
-  try {
-    const n2 = await bersihkanYatim()
-    toast.success(`${n2} baris yatim dibersihkan`)
-  } catch (e) {
-    toast.error('Gagal membersihkan: ' + (e.message || e))
-  } finally {
-    bersihBusy.value = false
-  }
-}
+// v.1.4.3 (Kyai 14 Sep 2026: "tombol2 yg digunakan untuk merapikan, jika sudah selesai dihapus
+//   aja"): tombol "Bersihkan" baris glondongan yatim (v.1.1.9) dicabut. Sejak cascade dipasang
+//   tak ada baris yatim baru, dan sisa lamanya sudah tak tampil serta tak ikut Rekap Bisyaroh
+//   (`rows` di useGlondongan membuangnya) — menghapusnya hanya merapikan DB.
 
 // Konteks peran (ditampilkan di header Penugasan).
 const scopeLabel = computed(() => {
@@ -1539,25 +1514,6 @@ async function exportRekapBisyarohPdf() {
       <p class="text-xs text-[var(--text-secondary)] mb-3">
         Dua daftar terpisah. Satu guru boleh masuk keduanya.
       </p>
-
-      <!-- v.1.1.9: sisa baris yatim dari penghapusan tes sebelum cascade dipasang -->
-      <div
-        v-if="barisYatim.length"
-        class="mb-3 rounded-xl border border-amber-300 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-700 px-3 py-2 flex items-center justify-between gap-2 flex-wrap"
-      >
-        <span class="text-[11px] text-amber-800 dark:text-amber-200">
-          <i class="fas fa-broom mr-1"></i><b>{{ barisYatim.length }} baris</b> glondongan tak punya
-          ajuan tes lagi (tesnya sudah dihapus). Sudah disembunyikan &amp; tak dihitung bisyaroh.
-        </span>
-        <button
-          type="button"
-          :disabled="bersihBusy"
-          class="shrink-0 px-2.5 py-1.5 text-[11px] font-bold rounded-lg bg-amber-600 hover:bg-amber-700 text-white disabled:opacity-50"
-          @click="bersihkanYatimKlik"
-        >
-          <i :class="['fas mr-1', bersihBusy ? 'fa-spinner fa-spin' : 'fa-broom']"></i>Bersihkan
-        </button>
-      </div>
 
       <div
         v-if="guruPtpt.length === 0"

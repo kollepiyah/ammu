@@ -13,6 +13,9 @@
 //   (deleteOne sudah mem-backup ke audit_log → bisa di-recover). Idempotent.
 // v.F6e: deleteOne sudah mem-backup ke audit_log (db.js).
 import { mergeOne, deleteOne } from '@/services/db'
+// v.1.4.3 (Kyai 14 Sep 2026, audit): duplikat santri yang punya riwayat keuangan tak dihapus
+import { muatRujukanKeuangan } from '@/services/rujukanSantri'
+import { pesanRujukanKeuangan } from '@/utils/rujukanKeuanganSantri'
 
 function norm(v) {
   // v.100 Batch8: collapse spasi ganda/dalam supaya "Ahmad  Fauzi" == "Ahmad Fauzi"
@@ -233,16 +236,43 @@ export function scanDedupe({ santriList = [], guruList = [] } = {}) {
 //   sinyal/konflik identitas (kasus nyata kyai: NIS dobel hasil impor berulang utk orang sama,
 //   auto-Migrate sengaja menolak krn NIS beda = konflik keras). Tetap aman: primer = record
 //   terlengkap, field kosong diisi dari duplikat, sisanya dihapus via deleteOne (backup audit_log).
+// v.1.4.3 (Kyai 14 Sep 2026, audit): duplikat santri yang masih punya riwayat keuangan TIDAK ikut
+//   digabung-hapus. Gabung hanya menyalin field identitas ke record primer; tabungan, uang saku,
+//   tagihan, dan riwayat bayar duplikat tetap memakai id LAMA-nya. Menghapus duplikat itu membuat
+//   semuanya tanpa pemilik — dan Tabungan dulu menawarkan "Hapus Mutasi Orphan" yang membuangnya
+//   permanen. Duplikat seperti itu dilaporkan, tidak disentuh sama sekali.
+async function _tahanKeuangan(coll, kandidat) {
+  const tahan = new Map()
+  if (coll !== 'santri') return tahan
+  const list = (kandidat || []).filter((x) => x && x.id != null)
+  if (!list.length) return tahan
+  const peta = await muatRujukanKeuangan(list.map((x) => x.id))
+  for (const x of list) {
+    const r = peta.get(String(x.id))
+    if (r?.ada) tahan.set(String(x.id), pesanRujukanKeuangan(x.nama, r))
+  }
+  return tahan
+}
+
 export async function mergeGroupManual(coll, items, opts = {}) {
   const { onProgress } = opts
-  const list = (items || []).filter((x) => x && x.id)
+  let list = (items || []).filter((x) => x && x.id)
   if (list.length < 2) return { ok: 0, fail: 0, total: 0, errors: ['grup < 2 record valid'] }
+  // v.1.4.3: disisihkan SEBELUM memilih primer & menyalin field. Kalau belakangan, No. Induk dsb.
+  //   milik duplikat yang ditahan sudah terlanjur tersalin ke primer, dan dua record hidup
+  //   dengan identitas yang sama.
+  const tahan = await _tahanKeuangan(coll, planGroup(list).dups)
+  const errors = [...tahan.entries()].map(([id, pesan]) => `${coll}/${id} tidak digabung: ${pesan}`)
+  list = list.filter((x) => !tahan.has(String(x.id)))
+  if (list.length < 2) {
+    return { ok: 0, fail: tahan.size, total: 0, errors, primaryId: list[0]?.id, removedIds: [] }
+  }
   const { primary, dups, patch } = planGroup(list)
   const total = dups.length + (Object.keys(patch).length ? 1 : 0)
   let i = 0
   let ok = 0
-  let fail = 0
-  const errors = []
+  let fail = tahan.size
+  const removedIds = []
   if (Object.keys(patch).length) {
     try {
       await mergeOne(coll, String(primary.id), { ...patch, id: primary.id, nama: primary.nama })
@@ -258,6 +288,7 @@ export async function mergeGroupManual(coll, items, opts = {}) {
     try {
       await deleteOne(coll, String(d.id))
       ok++
+      removedIds.push(d.id)
     } catch (e) {
       fail++
       errors.push(`${coll}/${d.id} delete: ${e.message || e}`)
@@ -265,22 +296,43 @@ export async function mergeGroupManual(coll, items, opts = {}) {
     i++
     onProgress && onProgress(i, total)
   }
-  return { ok, fail, total, errors, primaryId: primary.id, removedIds: dups.map((d) => d.id) }
+  return { ok, fail, total, errors, primaryId: primary.id, removedIds }
 }
 
 // Execute. opts: { onProgress?(i,total), dryRun? }
 export async function runDedupe({ santriList = [], guruList = [] } = {}, opts = {}) {
   const { onProgress, dryRun = false } = opts
   const plan = buildPlan({ santriList, guruList })
-  const all = [
+  let all = [
     ...plan.santri.map((p) => ({ coll: 'santri', ...p })),
     ...plan.guru.map((p) => ({ coll: 'guru', ...p }))
   ]
+  const errors = []
+  let fail = 0
+  if (!dryRun) {
+    // v.1.4.3: SATU kali baca riwayat keuangan untuk semua duplikat santri (lihat _tahanKeuangan).
+    //   Grup yang kehilangan duplikatnya disusun ulang dari yang tersisa.
+    const tahan = await _tahanKeuangan(
+      'santri',
+      plan.santri.flatMap((p) => p.dups)
+    )
+    if (tahan.size) {
+      for (const [id, pesan] of tahan) errors.push(`santri/${id} tidak digabung: ${pesan}`)
+      fail += tahan.size
+      all = all
+        .map((p) => {
+          if (p.coll !== 'santri') return p
+          const sisa = p.dups.filter((d) => !tahan.has(String(d.id)))
+          if (sisa.length === p.dups.length) return p
+          if (!sisa.length) return null
+          return { coll: 'santri', ...planGroup([p.primary, ...sisa]) }
+        })
+        .filter(Boolean)
+    }
+  }
   const total = all.reduce((n, p) => n + p.dups.length + (Object.keys(p.patch).length ? 1 : 0), 0)
   let i = 0
   let ok = 0
-  let fail = 0
-  const errors = []
   if (dryRun) return { dryRun: true, ok: 0, fail: 0, total, errors }
 
   for (const p of all) {

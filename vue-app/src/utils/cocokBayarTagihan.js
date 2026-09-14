@@ -400,3 +400,41 @@ export function payloadTambalKurang(temuan, stamp) {
 export function payloadSelaraskanStatus(temuan) {
   return { status: temuan?.statusHitung || 'belum' }
 }
+
+// ── Pembayaran di muka untuk tagihan yang BARU diterbitkan ───────────────────
+//
+// Kyai 5 Sep 2026: "di riwayat keuangan ada tagihan yg sudah di bayar, tapi di tagihan santri
+// itu masih ada." Bayar di muka SENGAJA tak membuat baris tagihan (aturan Kyai: yang sudah
+// lunas jangan masuk daftar tagihan); ketika bulannya tiba dan tagihannya diterbitkan, ia
+// wajib dibuka dengan uang yang sudah tercatat untuk (santri × jenis × periode) itu.
+//
+// v.1.4.3 (Kyai 14 Sep 2026, audit): dua fungsi ini dulu hidup di dalam PengaturanKeuanganView,
+// sehingga hanya tombol Generate yang mematuhinya — cron harian (edge function) tetap
+// menerbitkan `terbayar: 0`. Dipindah ke sini supaya bisa dicerminkan ke
+// `supabase/functions/auto-generate-tagihan/prabayar.ts` dan dijaga
+// `tests/unit/prabayarMirrorEdge.test.js`. KALAU DIUBAH, UBAH CERMINNYA JUGA.
+
+/** Peta pembayaran di muka untuk periode-periode tertentu ('YYYY-MM' / 'TA2026'). */
+export function petaPrabayarPeriode(bukuInduk, kodePeriode) {
+  const kodes = new Set((kodePeriode || []).filter(Boolean))
+  if (!kodes.size) return new Map()
+  return petaBayarPerSel((bukuInduk || []).filter((b) => kodes.has(kodePeriodeBaris(b))))
+}
+
+/**
+ * Buka payload tagihan BARU dengan uang yang sudah masuk. Mengubah `payload` di tempat dan
+ * mengembalikannya. Tak pernah melebihi nominal: kelebihan bayar bukan urusan generator, dan
+ * menuliskannya membuat tagihan tampak "lebih" di laporan. Baris yang sudah ada tak pernah
+ * disentuh — pemanggil hanya memberikan payload yang akan DITULIS BARU.
+ */
+export function terapkanPrabayar(payload, peta) {
+  if (!payload || !peta || !peta.size) return payload
+  const kode = kodePeriodeBaris(payload)
+  if (!kode) return payload
+  const bayar = peta.get(kunciSel(payload.santri_id, jenisTagihan(payload), kode))
+  if (!bayar || bayar.total <= 0) return payload
+  payload.terbayar = Math.min(bayar.total, payload.nominal || bayar.total)
+  payload.status = statusTagihan(payload.nominal, payload.terbayar)
+  payload.prabayar_dari = bayar.baris.map((b) => b.id).filter(Boolean)
+  return payload
+}

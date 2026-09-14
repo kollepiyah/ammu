@@ -187,15 +187,19 @@
           >
             <i class="fab fa-whatsapp"></i>
           </a>
-          <!-- v.21.115.0528: bayar=isFullAccess (admin keuangan boleh), delete=isAdmin saja (super_admin) — konsisten dengan bulk delete -->
+          <!-- v.21.115.0528: bayar=isFullAccess (admin keuangan boleh), delete=isAdmin saja (super_admin).
+               v.1.4.3 (Kyai 14 Sep 2026, audit): "Bayar" kini membuka POS untuk santri ini. Modal
+               bayar yang lama menaikkan `terbayar` tanpa menulis Buku Induk — uangnya tak masuk
+               kas, tanpa struk, tanpa cara bayar — sehingga "Cek Riwayat vs Tagihan" melihatnya
+               sebagai lunas tanpa jejak. -->
           <button
-            v-if="isFullAccess"
-            aria-label="Bayar tagihan"
-            title="Bayar"
+            v-if="isFullAccess && getSisa(t) > 0"
+            aria-label="Bayar lewat POS"
+            title="Bayar lewat POS (tercatat di Buku Induk, bisa cetak struk)"
             class="text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 p-2 rounded transition"
-            @click="openBayar(t)"
+            @click="bayarDiPos(t)"
           >
-            <i class="fas fa-money-bill-wave"></i>
+            <i class="fas fa-cash-register"></i>
           </button>
           <button
             v-if="isAdmin"
@@ -228,10 +232,9 @@
     >
       <div class="bg-[var(--bg-card)] rounded-2xl shadow-2xl max-w-md w-full p-5">
         <h3 class="text-base font-black mb-3">
-          <i class="fas fa-file-invoice text-cyan-500 mr-1"></i
-          >{{ modalMode === 'bayar' ? 'Bayar Tagihan' : 'Tambah Tagihan' }}
+          <i class="fas fa-file-invoice text-cyan-500 mr-1"></i>Tambah Tagihan
         </h3>
-        <div v-if="modalMode === 'new'" class="space-y-2">
+        <div class="space-y-2">
           <select
             v-model="modalSantriId"
             class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)]"
@@ -261,25 +264,6 @@
             class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)]"
           />
         </div>
-        <div v-else class="space-y-2">
-          <p class="text-xs">
-            Tagihan: <b>{{ modalTagihan?.santri_nama }}</b> ({{ modalTagihan?.kategori }})
-          </p>
-          <p class="text-xs">
-            Sisa: <b class="text-rose-700">{{ fmtRp(getSisa(modalTagihan || {})) }}</b>
-          </p>
-          <input
-            v-model.number="modalBayarNominal"
-            type="number"
-            min="0"
-            class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] text-right font-bold"
-          />
-          <input
-            v-model="modalCatatan"
-            type="text"
-            class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)]"
-          />
-        </div>
         <div class="mt-4 flex gap-2">
           <button
             class="flex-1 px-4 py-2 bg-slate-200 hover:bg-slate-300 text-[var(--text-primary)] font-bold rounded-xl text-sm"
@@ -306,7 +290,7 @@ import { useRouter } from 'vue-router'
 import { useDesktopShell } from '@/composables/useDesktopShell'
 import { definePageActions } from '@/composables/useRibbonContext'
 // v.91.0626: deleteOne = backup audit_log dulu. serverTimestamp = shim ISO string (db.js).
-import { subscribeColl, setOne, mergeOne, deleteOne, serverTimestamp } from '@/services/db'
+import { subscribeColl, setOne, deleteOne, serverTimestamp } from '@/services/db'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
@@ -314,7 +298,7 @@ import { fmtRp, fmtTgl, todayJakarta, waLink } from '@/utils/format'
 import { mulaiTagihKode, bolehTerbitPeriode, pesanTolakPeriode } from '@/utils/periodeTagihan'
 import { pesanTagihan } from '@/utils/pesanWa' // v.1.2.6: teks WA tagihan otomatis
 import { useSettingsStore } from '@/stores/settings'
-import { terbayarDari, sisaTagihan, statusTagihan } from '@/utils/tagihan'
+import { terbayarDari, sisaTagihan, tagihanSudahDibayar } from '@/utils/tagihan'
 import { isSuperAdmin } from '@/utils/roleScope'
 import { writeAuditLog } from '@/utils/auditLog'
 import { useGedungScope } from '@/composables/useGedungScope'
@@ -368,9 +352,23 @@ function toggleSemuaTagihan() {
 }
 async function hapusTagihanTerpilih() {
   if (!isAdmin.value) return
-  const ids = Array.from(selectedTagihan.value)
-  if (ids.length === 0) return
-  if (!confirm(`Hapus ${ids.length} tagihan terpilih?\n\nTidak bisa di-undo.`)) return
+  const terpilih = Array.from(selectedTagihan.value)
+  if (terpilih.length === 0) return
+  // v.1.4.3 (Kyai 14 Sep 2026, audit): tagihan yang SUDAH dibayar dilewati — lihat
+  //   utils/tagihan.tagihanSudahDibayar.
+  const perId = new Map(tagihanRaw.value.map((t) => [String(t.id), t]))
+  const dibayar = terpilih.filter((id) => tagihanSudahDibayar(perId.get(String(id))))
+  const ids = terpilih.filter((id) => !dibayar.includes(id))
+  if (ids.length === 0) {
+    toast.warning(
+      `${dibayar.length} tagihan terpilih sudah dibayar — hapus dulu transaksi pembayarannya di Riwayat POS atau Buku Induk, baru tagihannya.`
+    )
+    return
+  }
+  const lewati = dibayar.length
+    ? `\n\n${dibayar.length} tagihan yang sudah dibayar DILEWATI — hapus dulu transaksi pembayarannya.`
+    : ''
+  if (!confirm(`Hapus ${ids.length} tagihan terpilih?${lewati}\n\nTidak bisa di-undo.`)) return
   let ok = 0,
     fail = 0
   for (const id of ids) {
@@ -544,19 +542,14 @@ const stats = computed(() => ({
 }))
 
 const modalOpen = ref(false)
-const modalMode = ref('new')
-const modalTagihan = ref(null)
 const modalSantriId = ref('')
 const modalKategori = ref('')
 const modalPeriode = ref('')
 const modalNominal = ref(0)
 const modalJatuhTempo = ref('')
-const modalBayarNominal = ref(0)
-const modalCatatan = ref('')
 const saving = ref(false)
 
 function openModalNew() {
-  modalMode.value = 'new'
   modalSantriId.value = ''
   modalKategori.value = ''
   modalPeriode.value = ''
@@ -564,70 +557,45 @@ function openModalNew() {
   modalJatuhTempo.value = todayJakarta()
   modalOpen.value = true
 }
-function openBayar(t) {
-  modalMode.value = 'bayar'
-  modalTagihan.value = t
-  modalBayarNominal.value = getSisa(t)
-  modalCatatan.value = ''
-  modalOpen.value = true
+// v.1.4.3 (Kyai 14 Sep 2026, audit): bayar lewat POS — satu-satunya jalur kasir yang menulis
+//   Buku Induk, tagihan, struk, dan cara bayar sekaligus. PosSantriView membuka modal santri
+//   ini sendiri lewat `?bayar=<id>`. Modal bayar lama di halaman ini (terbayar naik, Buku Induk
+//   tidak, log `keuangan_pembayaran` yang tak dibaca siapa pun lagi) dicabut.
+function bayarDiPos(t) {
+  router.push({ path: '/pos-santri', query: { bayar: String(t.santri_id || '') } })
 }
 
 async function simpanModal() {
   saving.value = true
   try {
-    if (modalMode.value === 'new') {
-      if (!modalSantriId.value || !modalNominal.value) {
-        toast.warning('Lengkapi data')
-        return
-      }
-      // Gerbang "Mulai Tagih di AMMU" (Kyai 5 Agu 2026): periode di sini diketik BEBAS,
-      //   jadi tagihan bulan sebelum pesantren memakai AMMU bisa lahir dari sini dan
-      //   langsung tampak sebagai tunggakan wali.
-      const _mulai = mulaiTagihKode(settingsStore.settings || {})
-      if (!bolehTerbitPeriode(modalPeriode.value, _mulai)) {
-        toast.warning(pesanTolakPeriode(modalPeriode.value, _mulai))
-        return
-      }
-      const id = `tagihan_${modalSantriId.value}_${Date.now()}`
-      const santri = santriMap.value.get(String(modalSantriId.value))
-      await setOne('keuangan_tagihan', id, {
-        id,
-        santri_id: modalSantriId.value,
-        santri_nama: santri?.nama || '',
-        kategori: modalKategori.value,
-        periode: modalPeriode.value,
-        nominal: Number(modalNominal.value),
-        terbayar: 0,
-        // v.21.104.0527: set status supaya POS deteksi sbg tunggakan
-        status: 'belum',
-        jatuh_tempo: modalJatuhTempo.value,
-        createdAt: serverTimestamp()
-      })
-      toast.success('Tagihan tersimpan')
-    } else {
-      const t = modalTagihan.value
-      const newBayar = terbayarDari(t) + Number(modalBayarNominal.value || 0)
-      // v.21.104.0527: update status sesuai sisa supaya POS akurat
-      const statusBaru = statusTagihan(t.nominal, newBayar)
-      await mergeOne('keuangan_tagihan', String(t.id), {
-        terbayar: newBayar,
-        status: statusBaru,
-        _last_bayar_at: serverTimestamp()
-      })
-      // Tulis ke keuangan_pembayaran log
-      await setOne('keuangan_pembayaran', `pay_${t.id}_${Date.now()}`, {
-        tagihan_id: t.id,
-        santri_id: t.santri_id,
-        santri_nama: t.santri_nama,
-        nominal: Number(modalBayarNominal.value),
-        catatan: modalCatatan.value,
-        // WIB, bukan UTC: toISOString() memundurkan tanggal sehari untuk pembayaran
-        // yang dicatat 00:00–06:59 WIB, sehingga uang masuk ke laporan hari kemarin.
-        tanggal: todayJakarta(),
-        createdAt: serverTimestamp()
-      })
-      toast.success('Pembayaran tersimpan')
+    if (!modalSantriId.value || !modalNominal.value) {
+      toast.warning('Lengkapi data')
+      return
     }
+    // Gerbang "Mulai Tagih di AMMU" (Kyai 5 Agu 2026): periode di sini diketik BEBAS,
+    //   jadi tagihan bulan sebelum pesantren memakai AMMU bisa lahir dari sini dan
+    //   langsung tampak sebagai tunggakan wali.
+    const _mulai = mulaiTagihKode(settingsStore.settings || {})
+    if (!bolehTerbitPeriode(modalPeriode.value, _mulai)) {
+      toast.warning(pesanTolakPeriode(modalPeriode.value, _mulai))
+      return
+    }
+    const id = `tagihan_${modalSantriId.value}_${Date.now()}`
+    const santri = santriMap.value.get(String(modalSantriId.value))
+    await setOne('keuangan_tagihan', id, {
+      id,
+      santri_id: modalSantriId.value,
+      santri_nama: santri?.nama || '',
+      kategori: modalKategori.value,
+      periode: modalPeriode.value,
+      nominal: Number(modalNominal.value),
+      terbayar: 0,
+      // v.21.104.0527: set status supaya POS deteksi sbg tunggakan
+      status: 'belum',
+      jatuh_tempo: modalJatuhTempo.value,
+      createdAt: serverTimestamp()
+    })
+    toast.success('Tagihan tersimpan')
     modalOpen.value = false
   } catch (e) {
     toast.error('Gagal: ' + (e?.message || e))
@@ -636,7 +604,16 @@ async function simpanModal() {
   }
 }
 
+// v.1.4.3 (Kyai 14 Sep 2026, audit): tagihan yang SUDAH dibayar tak bisa dihapus langsung — lihat
+//   utils/tagihan.tagihanSudahDibayar. Jalurnya: hapus transaksi pembayarannya (tagihan kembali
+//   belum lunas), baru tagihannya.
 async function deleteTagihan(t) {
+  if (tagihanSudahDibayar(t)) {
+    toast.warning(
+      `Tagihan ini sudah dibayar ${fmtRp(terbayarDari(t))}. Hapus dulu transaksi pembayarannya di Riwayat POS atau Buku Induk — tagihannya akan kembali belum lunas — baru tagihannya bisa dihapus.`
+    )
+    return
+  }
   const ok = await confirmDlg({
     title: 'Hapus tagihan?',
     message: `Hapus tagihan ${t.santri_nama}?`,

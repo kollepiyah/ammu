@@ -104,22 +104,9 @@ export function useGlondongan() {
     if (!ids) return rowsRaw.value
     return rowsRaw.value.filter((r) => !r.ajuan_id || ids.has(String(r.ajuan_id)))
   })
-  const barisYatim = computed(() => {
-    const ids = ajuanIds.value
-    if (!ids) return []
-    return rowsRaw.value.filter((r) => r.ajuan_id && !ids.has(String(r.ajuan_id)))
-  })
-
-  // super_admin: buang baris yatim yang terlanjur ada (dari penghapusan tes sebelum
-  //   cascade dipasang). Mengembalikan jumlah yang berhasil dihapus.
-  async function bersihkanYatim() {
-    let n = 0
-    for (const r of barisYatim.value) {
-      await deleteOne('tes_glondongan', r.id, { alasan: 'Baris glondongan yatim (ajuan tak ada)' })
-      n++
-    }
-    return n
-  }
+  // v.1.4.3: `barisYatim` + `bersihkanYatim` (tombol "Bersihkan" di Glondongan, v.1.1.9) dicabut
+  //   atas permintaan Kyai merapikan tombol perapih yang tugasnya selesai. Sejak cascade tak ada
+  //   baris yatim baru, dan `rows` di atas tetap membuang sisa lamanya dari tampilan & bisyaroh.
 
   // v.1.1.9: blok dikerjakan BERURUTAN dari kelas asal terkecil (Kyai 21 Jul).
   //   Aturannya di utils/glondongan.isBarisTerbuka — dihitung dari RUMUS, bukan dari
@@ -396,8 +383,6 @@ export function useGlondongan() {
     loaded,
     rowsRaw, // mentah (termasuk yatim) — pemakai UI sebaiknya pakai `rows`
     rows, // v.1.1.9: sudah dibuang baris yatimnya
-    barisYatim,
-    bersihkanYatim,
     sesi,
     myId,
     myNama,

@@ -617,6 +617,9 @@ import { useSettingsStore } from '@/stores/settings'
 //   tangan di layar sudah terbukti membeku (kaki Data Santri tertinggal di v.74.0526).
 import { labelVersi } from '@/utils/appVersion'
 import { useConfirm } from '@/composables/useConfirm'
+// v.1.4.3 (Kyai 14 Sep 2026, audit): santri yang masih punya riwayat keuangan tak bisa dihapus
+import { muatRujukanKeuangan } from '@/services/rujukanSantri'
+import { pesanRujukanKeuangan } from '@/utils/rujukanKeuanganSantri'
 // v.21.115.0528: skeleton loader
 import SkeletonCard from '@/components/layout/SkeletonCard.vue'
 import EmptyState from '@/components/layout/EmptyState.vue' // v.91.0626
@@ -932,7 +935,40 @@ function clearSelection() {
   selected.value = new Set()
 }
 
+// v.1.4.3 (Kyai 14 Sep 2026, audit): santri yang masih punya riwayat keuangan — tabungan, uang
+//   saku, tagihan, atau transaksi di Buku Induk — TIDAK bisa dihapus. Menghapus baris santri tak
+//   ikut menghapus semua itu: tabungannya lalu muncul sebagai "orphan" di Tabungan (yang dulu
+//   menawarkan untuk membuangnya permanen), dan riwayat bayarnya tak bisa lagi ditelusuri ke
+//   siapa pun. Santri yang keluar cukup dinon-aktifkan. Gagal membaca riwayatnya = TIDAK dihapus:
+//   penjaga yang ragu harus menolak, bukan meloloskan.
+async function cekBolehHapusSantri(daftar) {
+  const peta = await muatRujukanKeuangan(daftar.map((s) => s.id))
+  const tertahan = []
+  const bebas = []
+  for (const s of daftar) {
+    const r = peta.get(String(s.id))
+    if (r?.ada) tertahan.push({ s, pesan: pesanRujukanKeuangan(s.nama, r) })
+    else bebas.push(s)
+  }
+  return { tertahan, bebas }
+}
+
 async function deleteSantri(s) {
+  try {
+    const { tertahan } = await cekBolehHapusSantri([s])
+    if (tertahan.length) {
+      toast.warning(
+        `${tertahan[0].pesan} Santri seperti ini tak bisa dihapus — non-aktifkan saja, riwayatnya tetap utuh.`
+      )
+      return
+    }
+  } catch (e) {
+    toast.error(
+      'Riwayat keuangan santri ini tak bisa diperiksa, jadi santri TIDAK dihapus: ' +
+        (e?.message || e)
+    )
+    return
+  }
   const ok = await confirmDlg({
     title: `Hapus ${s.nama}?`,
     message: `Santri "${s.nama}" (No. Induk: ${s.nis || '-'}) akan dihapus permanen. Aksi ini tidak bisa di-undo.`,
@@ -982,11 +1018,41 @@ async function toggleAktifSantri(s) {
 }
 
 async function bulkDelete() {
-  const ids = [...selected.value]
-  if (ids.length === 0) return
+  const terpilih = [...selected.value]
+  if (terpilih.length === 0) return
+  // v.1.4.3: santri yang masih punya riwayat keuangan DILEWATI — lihat cekBolehHapusSantri.
+  const perId = new Map((santri.value || []).map((x) => [String(x.id), x]))
+  let ids = []
+  let lewati = ''
+  bulkSaving.value = true
+  try {
+    const daftar = terpilih.map((id) => perId.get(String(id)) || { id, nama: String(id) })
+    const { tertahan, bebas } = await cekBolehHapusSantri(daftar)
+    ids = bebas.map((x) => x.id)
+    if (tertahan.length) {
+      const nama = tertahan
+        .slice(0, 5)
+        .map((t) => t.s.nama)
+        .join(', ')
+      lewati = ` ${tertahan.length} santri DILEWATI karena masih punya riwayat keuangan (non-aktifkan saja): ${nama}${tertahan.length > 5 ? ', …' : ''}.`
+    }
+  } catch (e) {
+    toast.error(
+      'Riwayat keuangan tak bisa diperiksa, jadi tak ada santri yang dihapus: ' + (e?.message || e)
+    )
+    return
+  } finally {
+    bulkSaving.value = false
+  }
+  if (!ids.length) {
+    toast.warning(
+      'Semua santri terpilih masih punya riwayat keuangan — tak ada yang dihapus. Non-aktifkan saja.'
+    )
+    return
+  }
   const ok = await confirmDlg({
     title: `Hapus ${ids.length} santri?`,
-    message: `${ids.length} santri akan dihapus PERMANEN. Aksi ini tidak bisa di-undo. Lanjutkan?`,
+    message: `${ids.length} santri akan dihapus PERMANEN. Aksi ini tidak bisa di-undo.${lewati} Lanjutkan?`,
     confirmText: 'Hapus Semua',
     danger: true
   })

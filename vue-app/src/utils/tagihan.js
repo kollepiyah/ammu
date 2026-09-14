@@ -33,6 +33,17 @@ export function sisaTagihan(t) {
   return Math.max(0, Number(t?.nominal || 0) - terbayarDari(t))
 }
 
+/** Tagihan ini sudah menerima uang (atau potongan)?
+ *
+ *  v.1.4.3 (Kyai 14 Sep 2026, audit): tagihan seperti ini tak boleh dihapus langsung. Baris
+ *  pembayarannya di Buku Induk tetap menunjuk tagihan itu, dan uang yang tertaut ke tagihan
+ *  tak dihitung sebagai bayar di muka — jadi begitu tagihannya hilang, generate berikutnya
+ *  menerbitkannya lagi dengan terbayar 0 dan wali ditagih untuk uang yang sudah diterima.
+ *  Jalurnya: hapus transaksi pembayarannya dulu (tagihan kembali belum lunas), baru tagihannya. */
+export function tagihanSudahDibayar(t) {
+  return terbayarDari(t) > 0.5
+}
+
 /** Status tagihan dari nominal vs terbayar. Toleransi 0.5 = cermin ambang lama di
  *  PosSantriView/PembayaranPendingView (nominal bigint, tapi input bisa pecahan). */
 export function statusTagihan(nominal, terbayar) {

@@ -172,7 +172,10 @@
           >
             <i class="fas fa-eye mr-1"></i>Lihat Bukti
           </button>
+          <!-- v.1.4.3 (Kyai 14 Sep 2026, audit): transfer TERVERIFIKASI tak bisa dihapus dari
+               sini — lihat hapusTransfer. -->
           <button
+            v-if="p.status !== 'verified'"
             class="ml-auto px-3 py-1.5 text-xs font-bold bg-rose-50 dark:bg-rose-900/30 hover:bg-rose-100 text-rose-600 rounded-lg cursor-pointer"
             @click="hapusTransfer(p)"
           >
@@ -360,7 +363,19 @@ function openBukti(p) {
 }
 
 // ===== v.95.0626c: CRUD record transfer (hapus + edit/link tagihan) =====
+// v.1.4.3 (Kyai 14 Sep 2026, audit): record transfer yang sudah TERVERIFIKASI adalah bukti uang
+//   yang sudah masuk Buku Induk (dan mungkin sudah melunasi tagihan). Menghapusnya membuat baris
+//   `bi_trf_*` kehilangan asal-usulnya; "Cek Riwayat vs Tagihan" lalu melaporkannya sebagai
+//   "transfer yatim" — uang yang tak pernah sah — dan menyarankan menghapusnya, padahal sejak
+//   v.1.4.3 menghapus baris itu ikut mengembalikan tagihannya: wali yang sudah membayar ditagih
+//   lagi. Kalau verifikasinya memang keliru, yang dihapus baris transfernya di Buku Induk.
 async function hapusTransfer(p) {
+  if (p?.status === 'verified') {
+    toast.warning(
+      'Transfer yang sudah diverifikasi tak bisa dihapus. Kalau verifikasinya keliru, hapus baris transfernya di Buku Induk — tagihannya ikut kembali.'
+    )
+    return
+  }
   const ok = await confirm({
     title: 'Hapus record transfer?',
     message: `${p.santri_nama} · ${fmtRp(p.nominal)} (${p.kategori || 'Transfer'})\nStatus: ${p.status || 'pending'}\n\nRecord transfer ini dihapus permanen (tidak menghapus catatan buku induk yang sudah dibuat).`,

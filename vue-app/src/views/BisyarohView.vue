@@ -1482,11 +1482,14 @@ import { definePageActions } from '@/composables/useRibbonContext'
 import {
   subscribeColl,
   subscribeDoc,
+  getOne,
   setOne,
   mergeOne,
   deleteOne,
   serverTimestamp
 } from '@/services/db'
+// v.1.4.3: kas keluar milik slip yang dihapus ikut dihapus lewat pintu tunggal hapus baris uang
+import { hapusBarisKas } from '@/services/hapusBarisKas'
 import { useLembaga, canonLembaga } from '@/composables/useLembaga'
 // v.1.1.9: engine Jenis Bisyaroh + label shift dari master
 import {
@@ -1696,19 +1699,48 @@ async function exportRekap() {
   }
 }
 
+// v.1.4.3 (Kyai 14 Sep 2026, audit): slip yang SUDAH DICAIRKAN punya pasangan kas keluar di
+//   Buku Induk (`gaji_<slipId>`, lihat cairkanTerpilih). Dulu slipnya dihapus sendirian dan kas
+//   keluarnya tertinggal tanpa slip: pengeluaran yang tak bisa lagi ditelusuri ke guru mana pun,
+//   dan tak ada layar yang bisa membereskannya. Kini keduanya dihapus bersama, BARIS KAS DULU —
+//   kalau dibalik dan penghapusan kas gagal, slipnya sudah hilang dari layar ini dan kas
+//   keluarnya tak bisa lagi dibereskan dari sini.
+function _slipCair(slip) {
+  return String(slip?.status_cair || '') === 'cair'
+}
+async function _hapusKasSlip(slip) {
+  if (!_slipCair(slip)) return true
+  const baris = await getOne('keuangan_buku_induk', String(slip.buku_induk_id || `gaji_${slip.id}`))
+  if (!baris) return true
+  const hasil = await hapusBarisKas([baris], {
+    sesi: auth.sesiAktif,
+    alasan: `hapus slip bisyaroh ${slip.id}`
+  })
+  return !!hasil && hasil.barisOk === 1
+}
+const PESAN_SLIP_CAIR =
+  'Catatan kas keluarnya di Buku Induk ikut dihapus — lakukan hanya bila uangnya TIDAK jadi ' +
+  'dikeluarkan. Kalau uangnya sudah diterima guru dan slipnya cuma salah hitung, perbaiki lalu ' +
+  'simpan ulang slipnya saja: pencairan ulang menimpa catatan kas yang sama.'
+
 async function hapusSlip(slip) {
   if (!isAdmin.value) return
   const label =
     getNamaGuruGelar(slip.guru_nama || guruNamaById(slip.guru_id)) + ' / ' + slip.periode
+  const cair = _slipCair(slip) ? `\n\n⚠ Slip ini SUDAH DICAIRKAN. ${PESAN_SLIP_CAIR}` : ''
   if (
     !confirm(
-      `Hapus PERMANEN slip bisyaroh:\n${label}\nTotal: ${fmtRp(slip.take_home || 0)}\n\nTidak bisa di-undo.`
+      `Hapus PERMANEN slip bisyaroh:\n${label}\nTotal: ${fmtRp(slip.take_home || 0)}${cair}\n\nTidak bisa di-undo.`
     )
   )
     return
   try {
+    if (!(await _hapusKasSlip(slip))) {
+      toast.error('Catatan kas keluar slip ini gagal dihapus — slip TIDAK dihapus. Coba lagi.')
+      return
+    }
     await deleteOne('keuangan_gaji', slip.id)
-    toast.success('Slip dihapus')
+    toast.success(_slipCair(slip) ? 'Slip & catatan kas keluarnya dihapus' : 'Slip dihapus')
   } catch (e) {
     toast.error('Gagal hapus: ' + (e.message || e))
   }
@@ -1734,11 +1766,21 @@ async function hapusSlipTerpilih() {
   if (!isAdmin.value) return
   const ids = Array.from(selectedSlip.value)
   if (ids.length === 0) return
-  if (!confirm(`Hapus ${ids.length} slip bisyaroh terpilih?\n\nTidak bisa di-undo.`)) return
+  // v.1.4.3: slip yang sudah cair ikut membawa kas keluarnya — lihat _hapusKasSlip.
+  const perId = new Map((gaji.value || []).map((s) => [String(s.id), s]))
+  const nCair = ids.filter((id) => _slipCair(perId.get(String(id)))).length
+  const cair = nCair ? `\n\n⚠ ${nCair} di antaranya SUDAH DICAIRKAN. ${PESAN_SLIP_CAIR}` : ''
+  if (!confirm(`Hapus ${ids.length} slip bisyaroh terpilih?${cair}\n\nTidak bisa di-undo.`)) return
   let ok = 0,
     fail = 0
   for (const id of ids) {
     try {
+      const slip = perId.get(String(id))
+      if (slip && !(await _hapusKasSlip(slip))) {
+        fail++
+        console.warn('[bulkHapusSlip] kas keluar gagal dihapus, slip dibiarkan:', id)
+        continue
+      }
       await deleteOne('keuangan_gaji', id)
       ok++
     } catch (e) {

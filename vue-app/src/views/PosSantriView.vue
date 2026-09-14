@@ -365,6 +365,33 @@ const isAdminKeu = computed(() => {
   return auth.sesiAktif?.role === 'admin' || ['admin', 'admin_keuangan', 'super_admin'].includes(rs)
 })
 
+// v.1.4.3 (Kyai 14 Sep 2026, audit): tombol "Bayar" di halaman Tagihan kini membuka POS untuk
+//   santri itu (`?bayar=<id>`) — modal bayar lama di sana menaikkan `terbayar` tanpa Buku Induk,
+//   tanpa struk, tanpa cara bayar. Parameternya dipakai SEKALI lalu dibuang dari URL, supaya
+//   kembali ke halaman ini tak membuka modalnya lagi. Santri dicari di store penuh (bukan hanya
+//   yang aktif): tunggakan santri yang sudah keluar pun tetap harus bisa dibayar.
+const _bayarTertunda = ref(String(_route.query.bayar || ''))
+watch(
+  () => [_bayarTertunda.value, memuat.value],
+  ([sid, sibuk]) => {
+    if (!sid || sibuk || !isAdminKeu.value) return
+    _bayarTertunda.value = ''
+    const { bayar: _dipakai, ...sisa } = _route.query
+    _router.replace({ query: sisa }).catch(() => {})
+    const s = (collections.santri || []).find((x) => String(x.id) === sid)
+    if (!s) {
+      toast.warning('Santri pemilik tagihan itu tak ditemukan di data santri.')
+      return
+    }
+    if (!allowSantri(s.id)) {
+      toast.warning('Santri itu di luar gedung Anda.')
+      return
+    }
+    openModal(s)
+  },
+  { immediate: true }
+)
+
 onMounted(async () => {
   if (!isAdminKeu.value) {
     toast.error('Akses ditolak — hanya admin keuangan yang bisa pakai POS Santri')

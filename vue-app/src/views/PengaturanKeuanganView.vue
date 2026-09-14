@@ -3746,13 +3746,12 @@ import {
   periksaKecocokanBayar,
   payloadTambalKurang,
   payloadSelaraskanStatus,
-  petaBayarPerSel,
   kodePeriodeBaris,
-  kunciSel,
-  jenisTagihan,
-  SUMBER_BAYAR_SANTRI
+  SUMBER_BAYAR_SANTRI,
+  // v.1.4.3: aturan bayar-di-muka untuk tagihan baru — dicerminkan ke cron (prabayar.ts)
+  petaPrabayarPeriode,
+  terapkanPrabayar
 } from '@/utils/cocokBayarTagihan'
-import { statusTagihan as statusTagihanUtil } from '@/utils/tagihan'
 // v.1.4.3 (Kyai 14 Sep 2026): transaksi yang terlanjur dihapus SEBELUM v.1.4.3 tanpa
 //   mengembalikan tagihannya — dibaca lagi dari salinan audit_log.
 import { rencanaBatalBayar, barisDariAuditHapus } from '@/utils/batalBayarTagihan'
@@ -4121,31 +4120,19 @@ async function hapusKelompok(daftar, sebab) {
 // Gagal baca → kembali ke perilaku lama (terbayar 0) + peringatan, JANGAN membatalkan
 // generate: tagihan yang tak terbit sama sekali lebih merugikan.
 async function petaPrabayar(kodePeriodeList) {
-  const kodes = new Set((kodePeriodeList || []).filter(Boolean))
-  if (!kodes.size) return new Map()
+  if (!(kodePeriodeList || []).some(Boolean)) return new Map()
   try {
     const rows = await queryColl('keuangan_buku_induk', [['sumber', 'in', SUMBER_BAYAR_SANTRI]])
-    return petaBayarPerSel(rows.filter((b) => kodes.has(kodePeriodeBaris(b))))
+    // v.1.4.3 (Kyai 14 Sep 2026, audit): penyaring & penerapannya (`terapkanPrabayar`) pindah
+    //   ke utils/cocokBayarTagihan. Selama hidup di view ini hanya tombol Generate yang
+    //   mematuhinya — cron harian tetap menerbitkan terbayar 0, jadi santri yang membayar di
+    //   muka ditagih ulang tiap awal bulan. Kini cron memakai cerminnya (prabayar.ts).
+    return petaPrabayarPeriode(rows, kodePeriodeList)
   } catch (e) {
     console.warn('[petaPrabayar] gagal baca buku induk:', e?.message)
     toast.warning('Pembayaran di muka tak bisa dibaca — tagihan baru dibuat dengan terbayar 0.')
     return new Map()
   }
-}
-
-/** Terapkan pembayaran di muka ke payload tagihan yang BARU akan ditulis. */
-function terapkanPrabayar(payload, peta) {
-  if (!peta || !peta.size) return payload
-  const kode = kodePeriodeBaris(payload)
-  if (!kode) return payload
-  const bayar = peta.get(kunciSel(payload.santri_id, jenisTagihan(payload), kode))
-  if (!bayar || bayar.total <= 0) return payload
-  // Tak pernah melebihi nominal: kelebihan bayar bukan urusan generator, dan menuliskannya
-  //   membuat tagihan tampak "lebih" di laporan.
-  payload.terbayar = Math.min(bayar.total, payload.nominal || bayar.total)
-  payload.status = statusTagihanUtil(payload.nominal, payload.terbayar)
-  payload.prabayar_dari = bayar.baris.map((b) => b.id).filter(Boolean)
-  return payload
 }
 
 // ── Kyai 5 Sep 2026: Cek Riwayat vs Tagihan ─────────────────────────────────

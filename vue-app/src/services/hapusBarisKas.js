@@ -17,9 +17,10 @@
 //      tagihannya kembali aman diulang: `batal_baris` mencegah pengurangan kedua.
 //   4. Catat ke audit_log. deleteOne sendiri tetap menyalin tiap baris lebih dulu.
 //
-// Semua jalur hapus baris uang santri WAJIB lewat sini — Riwayat POS, Buku Induk, Uang
-// Kegiatan/Buku/Tabungan Wajib, dan penolakan transfer. Jalur yang memanggil deleteOne
-// langsung akan menghidupkan kembali bug yang dilaporkan Kyai.
+// Semua jalur hapus baris uang WAJIB lewat sini — Riwayat POS, Buku Induk, Uang
+// Kegiatan/Buku/Tabungan Wajib, penolakan transfer, dan kas keluar milik slip bisyaroh yang
+// sudah cair (gelombang 2, audit 14 Sep 2026). Jalur yang memanggil deleteOne langsung akan
+// menghidupkan kembali bug yang dilaporkan Kyai.
 
 import { getOne, queryColl, updateOne, deleteOne } from '@/services/db'
 import { writeAuditLog } from '@/utils/auditLog'

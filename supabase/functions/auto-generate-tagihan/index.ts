@@ -14,6 +14,10 @@ import { handlePreflight, json } from '../_shared/cors.ts'
 //   memaksa keduanya menghasilkan angka yang sama. Sebelum ini cron punya rumus 4-lapis
 //   sendiri → cron dan tombol Generate bisa menerbitkan nominal berbeda.
 import { hitungTagihan } from './syahriyah.ts'
+// v.1.4.3 (Kyai 14 Sep 2026, audit): tagihan baru dibuka dengan uang yang SUDAH masuk (bayar di
+//   muka) — sama dengan tombol Generate sejak v.1.4.1. `prabayar.ts` mencerminkan
+//   `vue-app/src/utils/cocokBayarTagihan.js`; `tests/unit/prabayarMirrorEdge.test.js` menjaganya.
+import { SUMBER_BAYAR_SANTRI, petaPrabayarPeriode, terapkanPrabayar } from './prabayar.ts'
 
 const BULAN = [
   'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
@@ -33,6 +37,37 @@ function cronAuthorized(req: Request): boolean {
   const h = req.headers.get('authorization') || ''
   if (h === `Bearer ${CRON_SECRET}` || h === CRON_SECRET) return true
   return (req.headers.get('x-cron-secret') || '') === CRON_SECRET
+}
+
+// v.1.4.3: pembayaran santri (POS/transfer/VA) dipetakan untuk bulan yang diterbitkan.
+//   BERHALAMAN: PostgREST memotong hasil di 1.000 baris TANPA galat, dan buku induk POS jauh
+//   melampaui itu — tanpa halaman, pembayaran di muka yang kebetulan di luar 1.000 pertama
+//   diam-diam tak diakui. Gagal baca → peta kosong (perilaku lama: terbayar 0) + log; JANGAN
+//   membatalkan cron — tagihan yang tak terbit sama sekali lebih merugikan. Sama dengan
+//   petaPrabayar() di PengaturanKeuanganView.
+// deno-lint-ignore no-explicit-any
+async function muatPrabayar(db: any, kodeBulan: string) {
+  try {
+    // deno-lint-ignore no-explicit-any
+    const rows: any[] = []
+    for (let dari = 0; ; dari += 1000) {
+      const { data, error } = await db
+        .from('keuangan_buku_induk')
+        .select('id, tipe, sumber, nominal, tanggal, keterangan, data')
+        .in('sumber', SUMBER_BAYAR_SANTRI)
+        .order('id', { ascending: true })
+        .range(dari, dari + 999)
+      if (error) throw error
+      // Ratakan ekor jsonb — CERMIN _flatten() di services/db.js (kolom riil menang).
+      // deno-lint-ignore no-explicit-any
+      for (const r of (data || []) as any[]) rows.push({ ...(r.data || {}), ...r })
+      if (!data || data.length < 1000) break
+    }
+    return petaPrabayarPeriode(rows, [kodeBulan])
+  } catch (e) {
+    console.warn('[auto-gen-tagihan] bayar di muka tak terbaca — tagihan terbit dengan terbayar 0:', (e as Error)?.message)
+    return new Map()
+  }
 }
 
 Deno.serve(async (req) => {
@@ -107,6 +142,9 @@ Deno.serve(async (req) => {
   const { data: tagPeriode } = await db.from('keuangan_tagihan').select('santri_id, kategori').eq('periode', periode)
   ;(tagPeriode || []).forEach((t) => existing.add(`${String(t.santri_id)}__${String(t.kategori || '').toLowerCase()}`))
 
+  // 4b) v.1.4.3: bayar di muka untuk bulan ini (lihat muatPrabayar).
+  const prabayar = await muatPrabayar(db, kodeBulan)
+
   let created = 0, skipped = 0, errCount = 0
   // deno-lint-ignore no-explicit-any
   const rowsToInsert: any[] = []
@@ -131,15 +169,22 @@ Deno.serve(async (req) => {
       // deno-lint-ignore no-explicit-any
       const tail: Record<string, any> = { santri_nama: sx.nama || '', bayar: 0, jatuh_tempo: jt, sumber: 'auto_generate' }
       if (h.komponen.length) tail.komponen = h.komponen
+      // v.1.4.3: dibuka dengan uang yang SUDAH masuk untuk santri × jenis × bulan ini. Payload
+      //   bentuk-app dipakai supaya pencocoknya persis versi .js tombol Generate.
+      const awal = terapkanPrabayar(
+        { santri_id: String(sx.id), kategori: j.label || j.id || 'Tagihan', periode, nominal: h.nominal, terbayar: 0, status: 'belum' },
+        prabayar
+      )
+      if (Array.isArray(awal.prabayar_dari) && awal.prabayar_dari.length) tail.prabayar_dari = awal.prabayar_dari
       rowsToInsert.push({
         id,
         santri_id: String(sx.id),
         kategori: j.label || j.id || 'Tagihan',
         periode,
         nominal: h.nominal,
-        status: 'belum',
+        status: awal.status,
         // terbayar = kolom RIIL (audit 29 Jul); `bayar` di ekor hanya utk pembaca legacy
-        terbayar: 0,
+        terbayar: awal.terbayar,
         data: tail
       })
       existing.add(dupKey)

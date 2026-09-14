@@ -11,7 +11,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useFingerprintSync } from '@/composables/useFingerprintSync'
-import { getAll, deleteOne } from '@/services/db'
 
 const LS_KEY = 'ammu_fp_sync_cfg'
 const DEFAULT_INTERVAL = 30 // menit (selaras jembatan Task Scheduler lama)
@@ -92,29 +91,9 @@ export const useFingerprintStore = defineStore('fingerprint', () => {
     }
   }
 
-  // Hapus SEMUA absensi hasil sinkron fingerprint (source 'fingerprint') — untuk reset uji coba.
-  // TIDAK menyentuh izin/sakit (source 'pengajuan_guru'), impor xlsx ('fingerprint_import'),
-  // atau input manual. Hanya super_admin (RLS delete = auth_is_super). Return jumlah dihapus.
-  async function hapusHasilScan() {
-    if (running.value) return 0
-    running.value = true
-    try {
-      const all = await getAll('absensi_shift_guru')
-      const target = (all || []).filter((r) => String(r.source || '') === 'fingerprint')
-      let deleted = 0
-      for (const r of target) {
-        await deleteOne('absensi_shift_guru', r.id, {
-          alasan: 'reset riwayat scan fingerprint (uji)'
-        })
-        deleted++
-      }
-      lastResult.value = null
-      lastError.value = null
-      return deleted
-    } finally {
-      running.value = false
-    }
-  }
+  // v.1.4.3 (Kyai 14 Sep 2026): `hapusHasilScan` — reset UJI COBA yang menghapus SELURUH absensi
+  //   hasil sinkron sidik jari (dasar hitung bisyaroh) — dicabut bersama tombolnya di Mesin
+  //   Absensi. Sinkron Fingerspot sudah dipakai sungguhan sejak Juli 2026.
 
   function stopScheduler() {
     if (_timer) {
@@ -168,7 +147,6 @@ export const useFingerprintStore = defineStore('fingerprint', () => {
     lastTrigger,
     available,
     runNow,
-    hapusHasilScan,
     startScheduler,
     stopScheduler,
     setPersonnelDir,
