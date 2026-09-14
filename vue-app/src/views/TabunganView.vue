@@ -472,10 +472,22 @@
                   <td class="px-3 py-2 text-right whitespace-nowrap">
                     <button
                       class="text-[10px] text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 px-1.5 py-1 rounded"
-                      title="Cetak slip"
+                      title="Cetak ulang slip (PDF)"
+                      aria-label="Cetak ulang slip (PDF)"
                       @click="cetakSlip(m)"
                     >
                       <i class="fas fa-receipt"></i>
+                    </button>
+                    <!-- v.1.4.3 (Kyai 14 Sep 2026: "admin keu bisa print ulang struk"): cetak
+                         langsung ke printer, sama dengan panel sesudah Simpan. -->
+                    <button
+                      v-if="isDesktop"
+                      class="text-[10px] text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/30 px-1.5 py-1 rounded"
+                      title="Cetak ulang langsung ke printer"
+                      aria-label="Cetak ulang langsung ke printer"
+                      @click="cetakSlipLangsung(m)"
+                    >
+                      <i class="fas fa-print"></i>
                     </button>
                   </td>
                 </tr>
@@ -722,10 +734,21 @@
               <td class="px-3 py-2 text-right whitespace-nowrap">
                 <button
                   class="text-[10px] text-emerald-600 hover:bg-emerald-50 px-1.5 py-1 rounded mr-1"
-                  title="Cetak slip"
+                  title="Cetak ulang slip (PDF)"
+                  aria-label="Cetak ulang slip (PDF)"
                   @click="cetakSlip(m)"
                 >
                   <i class="fas fa-receipt"></i>
+                </button>
+                <!-- v.1.4.3 (Kyai 14 Sep 2026): cetak ulang langsung ke printer -->
+                <button
+                  v-if="isDesktop"
+                  class="text-[10px] text-amber-600 hover:bg-amber-50 px-1.5 py-1 rounded mr-1"
+                  title="Cetak ulang langsung ke printer"
+                  aria-label="Cetak ulang langsung ke printer"
+                  @click="cetakSlipLangsung(m)"
+                >
+                  <i class="fas fa-print"></i>
                 </button>
                 <!-- Ubah/hapus mutasi = super_admin. Admin keuangan cukup lihat & cetak
                      (koreksi catatan uang tetap kewenangan tertinggi, sejalan dgn CRUD
@@ -1046,7 +1069,10 @@ import {
   ringkasTabunganLembaga,
   ringkasSetorTarik,
   mutasiSetor,
-  kunciLembaga
+  kunciLembaga,
+  // v.1.4.3: saldo di slip cetak ulang = saldo SESUDAH mutasi itu, urutan sama dgn buku besar
+  saldoSetelahMutasi,
+  bandingMutasi
 } from '@/utils/kasLembaga'
 // v.1.4.1 (Kyai 5 Sep 2026): Tabungan & Uang Saku belum pernah punya cara bayar. Aturan
 //   simpulannya dipakai bersama Buku Induk & pos dana — satu sumber, jangan disalin.
@@ -1319,12 +1345,10 @@ const ledgerMutasi = computed(() => {
   if (!sid) return []
   const list = (mutasiSource.value || [])
     .filter((m) => String(m.santri_id || m.santriId || '') === sid)
-    .sort((a, b) => {
-      const ta = String(a.tanggal || ''),
-        tb = String(b.tanggal || '')
-      if (ta !== tb) return ta < tb ? -1 : 1 // kronologis (saldo berjalan)
-      return String(a.createdAt || a.id || '') < String(b.createdAt || b.id || '') ? -1 : 1
-    })
+    // Kronologis (saldo berjalan). v.1.4.3: pembandingnya dipakai bersama slip cetak ulang
+    //   (saldoSetelahMutasi) — dua pengurut sendiri-sendiri bisa memberi saldo berbeda untuk
+    //   mutasi bertanggal sama di layar dan di kertas.
+    .sort(bandingMutasi)
   let saldo = 0
   return list.map((m, i) => {
     const nominal = Number(m.nominal) || 0
@@ -1694,10 +1718,6 @@ const { exportSimple, importFile } = useExcel()
 const importingTab = ref(false)
 const importInput = ref(null)
 
-function saldoSantriById(sid) {
-  const a = aggregated.value.find((x) => String(x.santri_id) === String(sid))
-  return a ? Number(a.saldo) || 0 : 0
-}
 // v.96.0626: cari objek santri (KOP slip butuh NIS/kelas). savedSantri dipakai utk transaksi yg baru disimpan.
 function slipSantriOf(m) {
   const sid = String(m?.santri_id || m?.santriId || '')
@@ -1706,7 +1726,10 @@ function slipSantriOf(m) {
 }
 function slipOpts(m) {
   return {
-    saldo: saldoSantriById(m.santri_id || m.santriId),
+    // v.1.4.3 (Kyai 14 Sep 2026: "print ulang struk"): saldo SESUDAH mutasi ini, bukan saldo
+    //   hari ini. Slip setoran 3 Agustus yang dicetak ulang September dulu mencetak saldo
+    //   September — tak lagi cocok dengan slip asli yang dipegang wali.
+    saldo: saldoSetelahMutasi(mutasiSource.value, m),
     santri: slipSantriOf(m),
     label: pageTitle.value.toUpperCase()
   }

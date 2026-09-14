@@ -4,7 +4,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useCollectionsStore } from '@/stores/collections' // P5b: santri/guru dari store terpusat
 import { useRouter } from 'vue-router'
-import { queryColl, deleteOne } from '@/services/db'
+import { queryColl } from '@/services/db'
 import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
@@ -12,13 +12,16 @@ import { useToast } from '@/composables/useToast'
 //   ini memang SATU-SATUNYA view keuangan yang tak pernah dipasangi scope gedung
 //   (Buku Induk & Uang Pos sudah sejak v.111).
 import { useGedungScope } from '@/composables/useGedungScope'
-import { cetakStrukPdf, cetakStrukSlipPdf, fmtRpStruk } from '@/utils/strukBuilder'
-import { buildStrukSlipEscpBase64 } from '@/utils/escpImage'
-import { printRaw, getDefaultPrinter } from '@/composables/useDesktopPrint'
+import { fmtRpStruk } from '@/utils/strukBuilder'
 import { isSuperAdmin } from '@/utils/roleScope'
-import { writeAuditLog } from '@/utils/auditLog'
 // v.1.2.6: kelompokkan per TRANSAKSI, bukan per nomor struk — nomor lama bisa kembar
-import { kunciTransaksi } from '@/utils/trxStruk'
+// v.1.4.3: struk cetak ulang dirakit di utils/trxStruk — satu perakit untuk semua layar
+import { kunciTransaksi, trxDariBaris, periodeDariBaris } from '@/utils/trxStruk'
+// v.1.4.3 (Kyai 14 Sep 2026): hapus transaksi ikut mengembalikan tagihannya, dan cetak
+//   ulang lewat satu pintu yang sama dengan layar sukses POS.
+import { hapusBarisKas } from '@/services/hapusBarisKas'
+import { ringkasRencanaBatal, pesanHasilHapus } from '@/utils/batalBayarTagihan'
+import { useCetakStruk } from '@/composables/useCetakStruk'
 // v.1.2.6 (Kyai): laporan PDF harian per lembaga + berkas terpisah tunai/transfer.
 //   Pakai pembangun yang sudah dipakai Buku Induk & struk — TIDAK menambah pustaka.
 import { buildListPdf, buildKopFromSettings } from '@/utils/pdfBuilder'
@@ -46,30 +49,47 @@ const isAdminKeu = computed(() => {
 })
 // v.21.98.0527: super_admin only — bisa hapus transaksi POS (cascade)
 const isAdmin = computed(() => isSuperAdmin(auth.sesiAktif))
+// v.1.4.3: cetak ulang lewat pintu yang sama dengan layar sukses POS
+const cetak = useCetakStruk()
+
+// v.1.4.3 (Kyai 14 Sep 2026, laporan admin keuangan): "riwayat transaksi yg dibatalkan/
+//   dihapus oleh admin karena kekeliruan input admin, tapi di POS santrinya terbaca lunas".
+//   Dialog lama terang-terangan berbunyi "Tagihan yg ter-lunaskan TIDAK otomatis
+//   di-revert" — yang dihapus memang cuma baris buku induk, sementara matriks POS membaca
+//   `terbayar` dari tagihan. Kini lewat services/hapusBarisKas: tagihan dikembalikan lebih
+//   dulu, dan dialognya menyebut tagihan mana yang akan kembali menagih SEBELUM OK ditekan.
+//   Baris yang dihapus tetap milik TRANSAKSI terpilih saja (t.ids), bukan semua baris
+//   se-trx_id: nomor struk lama bisa kembar dengan transaksi santri lain (v.1.2.6).
+async function hapusTransaksi(daftar) {
+  const ids = new Set(daftar.flatMap((t) => (t.ids || []).map(String)))
+  const rows = entries.value.filter((e) => ids.has(String(e.id)))
+  if (!rows.length) return false
+  const t0 = daftar[0]
+  const judul =
+    daftar.length === 1
+      ? `Hapus PERMANEN transaksi POS ini?\n\nNo: ${t0.trx_id}\nSantri: ${t0.santri_nama}\nTotal: ${fmtRpStruk(t0.total)}\n${rows.length} baris di buku induk akan dihapus.`
+      : `Hapus ${daftar.length} transaksi POS terpilih (${rows.length} baris di buku induk)?`
+  const hasil = await hapusBarisKas(rows, {
+    sesi: auth.sesiAktif,
+    alasan: 'hapus transaksi dari Riwayat POS',
+    konfirmasi: (rencana) =>
+      confirm(
+        [judul, ringkasRencanaBatal(rencana), 'Tidak bisa di-undo.'].filter(Boolean).join('\n\n')
+      )
+  })
+  if (!hasil) return false
+  entries.value = entries.value.filter((e) => !hasil.idTerhapus.has(String(e.id)))
+  const pesan = pesanHasilHapus(hasil)
+  toast[pesan.tipe](pesan.teks)
+  return true
+}
 
 async function hapusTrx(t) {
   if (!isAdmin.value) return
-  if (
-    !confirm(
-      `Hapus PERMANEN seluruh transaksi POS ini?\n\nNo: ${t.trx_id}\nSantri: ${t.santri_nama}\nTotal: ${fmtRpStruk(t.total)}\n\nSemua ${t.items.length} record di buku induk akan dihapus. Tagihan yg ter-lunaskan TIDAK otomatis di-revert.`
-    )
-  )
-    return
   try {
-    // v.1.2.6: hapus baris milik TRANSAKSI ini saja (t.ids), bukan semua baris se-trx_id —
-    //   nomor struk lama bisa kembar dgn transaksi santri lain.
-    const idSet = new Set((t.ids || []).map(String))
-    for (const id of idSet) {
-      try {
-        await deleteOne('keuangan_buku_induk', id, { sesi: auth.sesiAktif })
-      } catch (er) {
-        console.warn('[hapusTrx] fail', id, er.message)
-      }
-    }
-    entries.value = entries.value.filter((e) => !idSet.has(String(e.id)))
-    toast.success(`Transaksi ${t.trx_id} dihapus (${idSet.size} record)`)
+    await hapusTransaksi([t])
   } catch (e) {
-    toast.error('Gagal hapus: ' + (e.message || e))
+    toast.error('Gagal hapus: ' + (e?.message || e))
   }
 }
 
@@ -89,46 +109,19 @@ function toggleSemuaTrx() {
     selectedTrx.value = new Set(transaksi.value.map((t) => String(t.key)))
   }
 }
+// v.1.4.3: lewat hapusTransaksi → services/hapusBarisKas (tagihan ikut dikembalikan; audit
+//   ditulis layanannya, termasuk tagihan mana yang berubah). Id baris tetap diambil dari
+//   transaksi terpilih, bukan dari trx_id yang bisa kembar (v.1.2.6).
 async function hapusTrxTerpilih() {
   if (!isAdmin.value) return
-  const keys = Array.from(selectedTrx.value)
-  if (keys.length === 0) return
-  const tgt = transaksi.value.filter((t) => keys.includes(String(t.key)))
-  const totalRec = tgt.reduce((a, t) => a + t.items.length, 0)
-  if (
-    !confirm(
-      `Hapus ${tgt.length} transaksi POS terpilih (${totalRec} record di buku induk)?\n\nTidak bisa di-undo. Tagihan TIDAK auto-revert.`
-    )
-  )
-    return
-  let ok = 0,
-    fail = 0
-  // v.1.2.6: id baris diambil dari transaksi terpilih (bukan dari trx_id — bisa kembar,
-  //   dulu ikut menghapus transaksi santri lain yang kebetulan senomor)
-  const trxIds = tgt.map((t) => t.trx_id)
-  const recIds = [...new Set(tgt.flatMap((t) => (t.ids || []).map(String)))]
-  for (const id of recIds) {
-    try {
-      await deleteOne('keuangan_buku_induk', String(id), { sesi: auth.sesiAktif })
-      ok++
-    } catch (e) {
-      fail++
-      console.warn('[bulkHapusTrx]', id, e.message)
-    }
+  const keys = new Set(Array.from(selectedTrx.value).map(String))
+  const tgt = transaksi.value.filter((t) => keys.has(String(t.key)))
+  if (!tgt.length) return
+  try {
+    if (await hapusTransaksi(tgt)) selectedTrx.value = new Set()
+  } catch (e) {
+    toast.error('Gagal hapus: ' + (e?.message || e))
   }
-  const hapusSet = new Set(recIds)
-  entries.value = entries.value.filter((e) => !hapusSet.has(String(e.id)))
-  selectedTrx.value = new Set()
-  // v.21.104.0527: audit log bulk delete transaksi POS
-  await writeAuditLog({
-    operator: auth.sesiAktif?.nama || auth.sesiAktif?.guru || 'Admin',
-    action: 'bulk_delete_trx',
-    target: 'keuangan_buku_induk',
-    ids: recIds.map(String),
-    detail: { trx_ids: trxIds, transaksi_count: tgt.length, record_ok: ok, record_fail: fail }
-  })
-  if (fail > 0) toast.warning(`${ok} record dihapus, ${fail} gagal — cek console`)
-  else toast.success(`${tgt.length} transaksi dihapus (${ok} record)`)
 }
 
 const loading = ref(true)
@@ -156,6 +149,12 @@ const guruTtdMap = computed(() => {
     if (g.nama && g.tanda_tangan) gm[g.nama] = g.tanda_tangan
   }
   return gm
+})
+// v.1.4.3: baris santri UTUH untuk struk cetak ulang (NIS, kelas, wali, status)
+const santriById = computed(() => {
+  const m = new Map()
+  for (const s of collections.santri || []) m.set(String(s.id), s)
+  return m
 })
 const search = ref('')
 // v.108: filter tahun / bulan / hari
@@ -266,15 +265,9 @@ function tsEpoch(c) {
   return Number.isNaN(t) ? 0 : t
 }
 
-// v.95.0626: ekstrak periode bersih dari keterangan buku induk verbose ("jenis — nama (nis) — periode")
-function extractPeriode(ket) {
-  const parts = String(ket || '').split(' — ')
-  if (parts.length >= 3) {
-    const last = parts[parts.length - 1].trim()
-    if (/^[A-Za-z]+\s+\d{4}$/.test(last) || (last && last.length <= 22)) return last
-  }
-  return ''
-}
+// v.95.0626: periode bersih dari keterangan verbose ("jenis — nama (nis) — periode").
+// v.1.4.3: pindah ke utils/trxStruk.periodeDariBaris — pembaca lama mengambil potongan
+//   TERAKHIR apa adanya, jadi pecahan tagihan gabungan tercetak "bagian dari Syahriyah".
 
 // v.1.2.6: group per TRANSAKSI via kunciTransaksi (trx_uid -> trx_id+santri_id -> fallback).
 //   Dulu murni `trx_id`: nomor struk yang kembar (bug counter lokal, lihat utils/trxStruk.js)
@@ -324,7 +317,7 @@ const transaksi = computed(() => {
     groups[key].items.push({
       jenis: e.kategori || 'Pembayaran',
       nominal: Number(e.nominal || 0),
-      keterangan: extractPeriode(e.keterangan)
+      keterangan: periodeDariBaris(e)
     })
     groups[key].total += Number(e.nominal || 0)
   }
@@ -493,50 +486,30 @@ async function cetakLaporanPos(metodeOnly = '') {
   }
 }
 
+// v.1.4.3: struk cetak ulang dirakit utils/trxStruk.trxDariBaris dari BARIS transaksinya —
+//   satu perakit untuk semua layar. Dulu toTrx di sini, cetakUlangStruk di Buku Induk, dan
+//   buildTrxFromGroup di kwitansi wali merakit sendiri-sendiri, dan hasilnya berbeda untuk
+//   transaksi yang sama (v.1.4.1: dua di antaranya sempat mencetak transfer sebagai TUNAI).
 function toTrx(t) {
-  return {
-    no_struk: t.trx_id,
-    tanggal: t.tanggal,
-    santri_nama: t.santri_nama,
-    santri_nis: t.santri_nis,
-    lembaga: t.lembaga,
-    kelas: t.kelas,
-    lembaga_sekolah: t.lembaga_sekolah || '',
-    kelas_sekolah: t.kelas_sekolah || '',
-    operator: t.operator,
-    // v.1.4.1: cara bayar — pencetak struk membacanya sebagai `trx.metode`.
-    metode: t.metode || 'TUNAI',
-    // v.94.0626: penyetor (wali) utk reprint struk
-    penyetor: t.penyetor || '',
-    // v.21.91.0527: TTD operator dari guru.tanda_tangan (untuk reprint struk PDF)
-    operator_ttd_url: guruTtdMap.value[t.operator] || '',
-    items: t.items,
-    total: t.total,
-    bayar: t.total,
-    kembali: 0
-  }
+  const ids = new Set((t.ids || []).map(String))
+  return trxDariBaris(
+    entries.value.filter((e) => ids.has(String(e.id))),
+    {
+      santri: santriById.value.get(String(t.santri_id)) || null,
+      // v.21.91.0527: TTD operator dari guru.tanda_tangan (untuk reprint struk PDF)
+      ttdUrl: guruTtdMap.value[t.operator] || ''
+    }
+  )
 }
 
-async function cetakPdf(t) {
-  try {
-    await cetakStrukPdf(toTrx(t), settingsStore.settings || {}, { preview: true })
-  } catch (e) {
-    toast.error('Gagal cetak PDF: ' + (e.message || e))
-  }
+function cetakPdf(t) {
+  return cetak.strukPdf(toTrx(t))
 }
-// v.96.0626: reprint 2-ply -> GRAFIS RASTER ESC/P (bypass driver, TANPA feed 5cm), SAMA dgn "Cetak Langsung" POS.
-async function cetakDot(t) {
-  try {
-    const s = settingsStore.settings || {}
-    const res = await printRaw({
-      base64: buildStrukSlipEscpBase64(toTrx(t), s),
-      deviceName: getDefaultPrinter() || undefined
-    })
-    if (res && res.ok === false) throw new Error(res.error || 'Print gagal')
-    toast.success('Struk dicetak ke printer')
-  } catch (e) {
-    toast.error('Gagal cetak: ' + (e.message || e))
-  }
+// v.96.0626: reprint 2-ply ESC/P grafis, SAMA dgn "Cetak Langsung" POS.
+// v.1.4.3: lewat useCetakStruk — kini ikut setelan kertas seperti Cetak Langsung di POS, dan
+//   di web membuka slip PDF (dulu selalu galat "Electron raw print API tidak tersedia").
+function cetakDot(t) {
+  return cetak.strukLangsung(toTrx(t))
 }
 
 function fmtTgl(t) {
@@ -792,8 +765,16 @@ function fmtTgl(t) {
                   </button>
                   <button
                     type="button"
-                    aria-label="Cetak struk dot-matrix"
-                    title="Cetak struk dot-matrix"
+                    :aria-label="
+                      cetak.bisaLangsung
+                        ? 'Cetak ulang langsung ke printer'
+                        : 'Buka struk dot-matrix (PDF)'
+                    "
+                    :title="
+                      cetak.bisaLangsung
+                        ? 'Cetak ulang langsung ke printer'
+                        : 'Buka struk dot-matrix (PDF)'
+                    "
                     class="text-[10px] font-bold text-slate-700 dark:text-slate-200 bg-[var(--bg-muted)] px-2 py-1 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition"
                     @click="cetakDot(t)"
                   >

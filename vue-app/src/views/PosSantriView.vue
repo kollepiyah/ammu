@@ -121,7 +121,7 @@
         <button
           v-for="s in filteredSantri"
           :key="s.id"
-          class="text-left p-3 rounded-xl border border-[var(--border-subtle)] hover:bg-teal-50 dark:hover:bg-teal-900/20 hover:border-teal-300 transition cursor-pointer flex items-center gap-2.5"
+          class="text-left p-3 rounded-xl border border-[var(--border-subtle)] hover:bg-teal-50 dark:hover:bg-teal-900/20 hover:border-teal-300 transition cursor-pointer flex items-center gap-2.5 [content-visibility:auto] [contain-intrinsic-size:auto_64px]"
           @click="openModal(s)"
         >
           <div
@@ -146,35 +146,76 @@
           <i class="fas fa-chevron-right text-[var(--text-tertiary)] text-xs"></i>
         </button>
       </div>
+      <!-- v.1.4.3 (Kyai 14 Sep 2026): semua santri tampil — lihat filteredSantri. Hitungannya
+           di sini karena header (yang juga menyebut jumlah) disembunyikan di Electron. -->
       <p
-        v-if="filteredSantri.length === 50"
+        v-if="filteredSantri.length > 0"
         class="text-center text-[10px] text-[var(--text-tertiary)] mt-3"
       >
-        Menampilkan 50 santri pertama — refine pencarian untuk lihat lainnya
+        {{ filteredSantri.length }} santri ditampilkan
       </p>
     </div>
 
-    <!-- Histori transaksi terakhir -->
+    <!-- Transaksi terakhir. v.1.4.3 (Kyai 14 Sep 2026: "admin keu bisa print ulang struk"):
+         per TRANSAKSI (dulu per baris buku induk), masing-masing dengan cetak ulang, plus
+         tautan ke Riwayat POS yang juga tampil di Electron. -->
     <div
-      v-if="isAdminKeu && histori.length > 0"
+      v-if="isAdminKeu && historiTrx.length > 0"
       class="bg-[var(--bg-card)] rounded-2xl p-3 md:p-4 border border-[var(--border-subtle)] shadow-sm"
     >
-      <h3 class="text-xs font-black text-[var(--text-primary)] uppercase tracking-widest mb-2">
-        <i class="fas fa-history text-cyan-600 mr-1"></i>Transaksi Terakhir
-      </h3>
+      <div class="flex items-center justify-between gap-2 mb-2 flex-wrap">
+        <h3 class="text-xs font-black text-[var(--text-primary)] uppercase tracking-widest">
+          <i class="fas fa-history text-cyan-600 mr-1"></i>Transaksi Terakhir
+        </h3>
+        <router-link
+          to="/pos-riwayat"
+          class="text-[11px] font-bold text-teal-700 dark:text-teal-300 hover:underline"
+        >
+          Semua riwayat &amp; cetak ulang <i class="fas fa-arrow-right ml-0.5"></i>
+        </router-link>
+      </div>
       <div class="space-y-1.5">
         <div
-          v-for="t in histori"
-          :key="t.id"
-          class="flex items-center justify-between p-2 rounded-lg bg-[var(--bg-card-elevated)] text-xs"
+          v-for="t in historiTrx"
+          :key="t.key"
+          class="flex items-center justify-between gap-2 p-2 rounded-lg bg-[var(--bg-card-elevated)] text-xs"
         >
           <div class="flex-1 min-w-0">
             <p class="font-bold truncate text-[var(--text-primary)]">{{ t.santri_nama }}</p>
             <p class="text-[10px] text-[var(--text-secondary)] truncate">
-              {{ t.kategori }} · {{ fmtTgl(t.tanggal) }}
+              {{ t.jenis || '—' }} · {{ fmtTgl(t.tanggal)
+              }}<span v-if="t.trx_id"> · {{ t.trx_id }}</span>
             </p>
           </div>
-          <span class="font-black text-emerald-600">{{ fmtRp(t.nominal) }}</span>
+          <span class="font-black text-emerald-600 whitespace-nowrap">{{ fmtRp(t.total) }}</span>
+          <div class="flex gap-1 flex-shrink-0">
+            <button
+              type="button"
+              class="text-[10px] font-bold text-cyan-700 dark:text-cyan-300 bg-cyan-50 dark:bg-cyan-900/30 px-2 py-1 rounded-lg hover:bg-cyan-100 dark:hover:bg-cyan-900/50"
+              title="Cetak ulang struk PDF ber-KOP"
+              aria-label="Cetak ulang struk PDF ber-KOP"
+              @click="cetak.cetakUlang(t.rows, 'pdf')"
+            >
+              <i class="fas fa-file-pdf mr-1"></i>PDF
+            </button>
+            <button
+              type="button"
+              class="text-[10px] font-bold text-slate-700 dark:text-slate-200 bg-[var(--bg-muted)] px-2 py-1 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600"
+              :title="
+                cetak.bisaLangsung
+                  ? 'Cetak ulang langsung ke printer'
+                  : 'Buka struk dot-matrix (PDF)'
+              "
+              :aria-label="
+                cetak.bisaLangsung
+                  ? 'Cetak ulang langsung ke printer'
+                  : 'Buka struk dot-matrix (PDF)'
+              "
+              @click="cetak.cetakUlang(t.rows, 'langsung')"
+            >
+              <i class="fas fa-print mr-1"></i>Struk
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -220,18 +261,14 @@ import { pecahProporsional } from '@/utils/syahriyah'
 // Kyai 4 Agu: kas per lembaga — resolver tunggal di utils/kasLembaga (jangan disalin ke sini)
 import { petaKasLembaga, kasLembagaBaris } from '@/utils/kasLembaga'
 // v.1.2.6: nomor struk anti-kembar + penanda transaksi unik (lihat utils/trxStruk.js)
-import { nomorStrukBerikutnya, buatTrxUid } from '@/utils/trxStruk'
+// v.1.4.3: + perakit struk cetak ulang — satu untuk POS, Riwayat POS, Buku Induk, Uang POS
+import { nomorStrukBerikutnya, buatTrxUid, kunciTransaksi } from '@/utils/trxStruk'
 import { todayJakarta } from '@/utils/format'
-import { lunasDenganPotongan } from '@/utils/potonganPos'
-import { cetakStrukPdf, cetakStrukSlipPdf, buildStrukHtml } from '@/utils/strukBuilder'
-import { buildStrukSlipEscpBase64 } from '@/utils/escpImage'
-import {
-  isElectron,
-  printStruk,
-  printRaw,
-  printPdf,
-  getDefaultPrinter
-} from '@/composables/useDesktopPrint'
+// v.1.4.3 (Kyai 14 Sep 2026): rumus pelunasan pindah ke util yang SAMA dengan sisi hapus,
+//   supaya menghapus transaksi mengembalikan tagihan tepat ke angka sebelum dibayar.
+import { pelunasanItem, bagiTambahTagihan } from '@/utils/batalBayarTagihan'
+import { isElectron } from '@/composables/useDesktopPrint'
+import { useCetakStruk } from '@/composables/useCetakStruk'
 import { terbilangRupiah } from '@/utils/terbilang'
 import { useSettingsStore } from '@/stores/settings'
 import { useGedungScope } from '@/composables/useGedungScope'
@@ -240,6 +277,8 @@ import ModalPOS from '@/components/pos/ModalPOS.vue'
 const auth = useAuthStore()
 const toast = useToast()
 const settingsStore = useSettingsStore()
+// v.1.4.3: satu pintu cetak struk — layar sukses di bawah DAN cetak ulang Transaksi Terakhir
+const cetak = useCetakStruk()
 // v.111: scope Gedung — admin keuangan ber-gedung hanya transaksi santri gedungnya
 const { allowSantri } = useGedungScope()
 
@@ -262,7 +301,9 @@ const filterLembaga = ref('')
 const filterSekolah = ref('') // v.110.0626: filter lembaga sekolah (formal) — terpisah dari lembaga ngaji
 const selectedSantri = ref(null)
 const modalOpen = ref(false)
-const histori = ref([])
+// v.1.4.3: BARIS buku induk POS terbaru (bukan 5 baris saja) — dikelompokkan jadi transaksi
+//   di historiTrx, supaya transaksi berbaris banyak tak terpotong di tengah saat dicetak ulang.
+const historiBaris = ref([])
 const tunggakanMap = ref({})
 const filterTunggakan = ref(false)
 // v.107: filter <-> URL query — pertahankan filter saat kembali (mis. dari Riwayat POS).
@@ -341,7 +382,7 @@ onMounted(async () => {
       [['createdAt', 'desc']],
       80
     )
-    histori.value = posTx.slice(0, 5)
+    historiBaris.value = posTx
     // v.1.2.6: tanggal WIB (todayJakarta), bukan toISOString() yang UTC — transaksi dini
     //   hari WIB (00:00–07:00) dulu dihitung ke tanggal kemarin.
     const hariIni = todayJakarta()
@@ -441,7 +482,36 @@ const filteredSantri = computed(() => {
       (a, b) => (tunggakanMap.value[b.id]?.total || 0) - (tunggakanMap.value[a.id]?.total || 0)
     )
   }
-  return list.slice(0, 50)
+  // v.1.4.3 (Kyai 14 Sep 2026): "di menu POS santri, saya ingin bisa ditampilkan semua
+  //   santri. tidak seperti sekarang hanya 50 santri". Batas 50 lahir di v.21, saat daftar
+  //   ini masih diunduh penuh setiap halaman dibuka. Sejak audit Agu 2026 datanya dari store
+  //   terpusat yang memang sudah memuat SEMUA santri — yang dibatasi tinggal yang DIGAMBAR,
+  //   sehingga santri ke-51 dst. hanya bisa diklik dengan mengetik namanya lebih dulu.
+  //   Kartunya memakai content-visibility, jadi ±600 kartu tetap ringan digulir di PC kasir.
+  return list
+})
+
+// v.1.4.3 (Kyai 14 Sep 2026: "admin keu bisa print ulang struk"): Transaksi Terakhir per
+//   TRANSAKSI. Begitu modal sukses ditutup, struk transaksi yang barusan tak punya jalan
+//   kembali dari layar ini — tautan "Riwayat" di header pun disembunyikan di Electron.
+//   Scope gedung sama dengan daftar santri di atas.
+const historiTrx = computed(() => {
+  const per = new Map()
+  for (const b of historiBaris.value) {
+    if (!b || !allowSantri(b.santri_id)) continue
+    const k = kunciTransaksi(b)
+    if (!per.has(k)) per.set(k, [])
+    per.get(k).push(b)
+  }
+  return [...per.entries()].slice(0, 5).map(([key, rows]) => ({
+    key,
+    rows,
+    santri_nama: rows[0].santri_nama || '-',
+    tanggal: rows[0].tanggal,
+    trx_id: rows[0].trx_id || '',
+    jenis: [...new Set(rows.map((r) => r.kategori).filter(Boolean))].join(', '),
+    total: rows.reduce((n, r) => n + Number(r.nominal || 0), 0)
+  }))
 })
 
 async function openModal(s) {
@@ -534,6 +604,7 @@ async function handleSimpan(payload) {
       (santriRef?.ayah && santriRef.ayah.nama) ||
       ''
     const writes = []
+    const barisBaru = [] // v.1.4.3: masuk Transaksi Terakhir SESUDAH tersimpan, lihat bawah
     let tagUpdErr = '' // v.95.0626: tangkap error update tagihan biar tidak gagal diam-diam (bug cicil)
     let lunasCount = 0
     let partialCount = 0
@@ -554,6 +625,10 @@ async function handleSimpan(payload) {
     for (const [itemIdx, item] of payload.items.entries()) {
       // tag pos: utamakan pos eksplisit dari tagihan (generate khusus), fallback dari jenis
       const _pos = item.pos || posByLabel[item.jenis] || ''
+      // v.1.4.3: akibat item ini pada tagihannya dihitung SEKALI, sebelum barisnya ditulis —
+      //   angka yang sama dipakai untuk memperbarui tagihan DAN dicatat di tiap baris
+      //   (`tagihan_tambah`), supaya menghapus transaksi ini kelak bisa mengembalikannya tepat.
+      const pelunasan = item.tagihan_id ? pelunasanItem(item) : null
       // K1 (Kyai): tagihan gabungan (sekolah sudah termasuk ngaji) dicatat DIPECAH di Buku
       //   Induk — wali cuma lihat 1 tagihan, tapi kasnya jadi 2 baris supaya laporan per
       //   lembaga & Buku Kas per gedung tetap benar. Uang yang dipecah = yang BENAR-BENAR
@@ -569,6 +644,15 @@ async function handleSimpan(payload) {
             induk_jenis: item.jenis
           }))
         : [{ kategori: item.jenis, nominal: Number(item.nominal || 0), pos: _pos, induk_jenis: '' }]
+      // v.1.4.3: tambahan ke `terbayar` dibagi ke baris yang BENAR-BENAR ditulis (baris
+      //   bernominal 0 dilewati di bawah) — lihat utils/batalBayarTagihan.bagiTambahTagihan.
+      const bagianTambah = pelunasan
+        ? bagiTambahTagihan(
+            barisItem.filter((x) => x.nominal > 0).map((x) => x.nominal),
+            pelunasan.tambah
+          )
+        : []
+      let urutTulis = 0
       for (const [kompIdx, baris] of barisItem.entries()) {
         // Baris bernominal 0 (mis. komponen ngaji tergerus pembayaran sebagian) jangan
         // ditulis — cuma jadi sampah di buku kas.
@@ -615,6 +699,11 @@ async function handleSimpan(payload) {
         //                   pernah cocok dengan tagihan 'Syahriyah'-nya.
         //   Lihat utils/cocokBayarTagihan; baris LAMA masih dibaca lewat keterangan.
         if (item.tagihan_id) docData.tagihan_id = String(item.tagihan_id)
+        // v.1.4.3 (Kyai 14 Sep 2026): angka PASTI yang ditambahkan baris ini ke `terbayar`
+        //   tagihannya. Uang di baris tak selalu sama — potongan ikut menutup tagihan, dan
+        //   pembulatan kasir dijepit ke nominal tagihan — padahal menghapus transaksi harus
+        //   mengembalikan tagihan tepat ke angka sebelum dibayar.
+        if (pelunasan) docData.tagihan_tambah = bagianTambah[urutTulis] ?? 0
         if (baris.induk_jenis) docData.induk_jenis = baris.induk_jenis
         const kasLemb = kasLembagaBaris(
           { kategori: baris.kategori, induk_jenis: baris.induk_jenis },
@@ -628,30 +717,31 @@ async function handleSimpan(payload) {
         if (baris.pos === 'tabungan_wajib' && !tabWajibItems.includes(item))
           tabWajibItems.push(item)
         writes.push(setOne('keuangan_buku_induk', id, docData))
-        histori.value.unshift(docData)
+        barisBaru.push(docData)
+        urutTulis++
         barisMasuk++
       }
       totalMasuk += Number(item.nominal || 0)
       // v.21.87.0527: tagihan → lunas penuh atau partial (bayar sebagian)
       if (item.tagihan_id) {
-        const penuh = Number(item.nominal_penuh || 0)
         const potongan = Number(item.potongan_nominal || 0)
-        const newDibayar = Number(item.dibayar_lama || 0) + Number(item.nominal || 0)
         // Potongan IKUT menutup tagihan (keputusan Kyai 5 Agu 2026): tagihan 300rb dengan
         //   potongan 150rb + uang 150rb = LUNAS. Tanpa ini tiap potongan melahirkan
         //   tunggakan palsu yang mengejar santri di daftar tagihan & laporan.
-        const isLunas = lunasDenganPotongan(penuh, item.dibayar_lama, item.nominal, potongan)
+        // v.1.4.3: rumusnya kini pelunasanItem() — persis rumus lama (dijaga tes cermin di
+        //   tests/unit/batalBayarTagihan.test.js), dipakai bersama sisi hapus.
+        const isLunas = pelunasan.lunas
         const upd = isLunas
           ? {
               status: 'lunas',
-              terbayar: penuh || newDibayar,
+              terbayar: pelunasan.terbayar,
               tanggal_lunas: tanggal,
               dibayar_via: 'pos_santri',
               operator_pelunasan: op
             }
           : {
               status: 'partial',
-              terbayar: newDibayar,
+              terbayar: pelunasan.terbayar,
               dibayar_via: 'pos_santri',
               operator_pelunasan: op
             }
@@ -703,7 +793,11 @@ async function handleSimpan(payload) {
     // v.95.0626: kalau update tagihan gagal (mis. dok tak ada / izin), beri tahu — jangan diam (bug cicil tetap 1jt)
     if (tagUpdErr)
       toast.error('Pembayaran tercatat, TAPI sisa tagihan GAGAL diperbarui: ' + tagUpdErr)
-    if (histori.value.length > 5) histori.value = histori.value.slice(0, 5)
+    // v.1.4.3: transaksi baru masuk Transaksi Terakhir SESUDAH `await Promise.all(writes)`.
+    //   Dulu dimasukkan di dalam perulangan, sebelum tersimpan — transaksi yang gagal disimpan
+    //   tetap tampil, dan kini tampilan itu punya tombol cetak ulang: kertas bukti untuk uang
+    //   yang tak pernah tercatat.
+    historiBaris.value = [...barisBaru, ...historiBaris.value].slice(0, 120)
     // Update ringkasan harian
     todayStats.value = {
       count: todayStats.value.count + barisMasuk, // BARIS, sepakat dengan hitungan dari DB
@@ -790,47 +884,18 @@ function rincianPotongan(item) {
   return `potongan ${label} ${fmtRp(pot)}` + (bruto > 0 ? ` dari ${fmtRp(bruto)}` : '')
 }
 
-// v.21.88.0527: cetak struk transaksi terakhir
-async function cetakLastPdf() {
-  if (!lastTrx.value) return
-  try {
-    await cetakStrukPdf(lastTrx.value, settingsStore.settings || {}, { preview: true })
-  } catch (e) {
-    toast.error('Gagal cetak PDF: ' + (e.message || e))
-  }
+// v.21.88.0527: cetak struk transaksi terakhir (layar sukses modal).
+// v.1.4.3: lewat useCetakStruk — satu pintu dengan semua tombol cetak ulang. Isinya tak
+//   berubah: PDF ber-KOP (v.21.88), slip PDF yang formatnya sama dengan cetak langsung
+//   (v.95.0626), dan cetak langsung ESC/P grafis mengikuti setelan kertas (v.96.0626).
+function cetakLastPdf() {
+  return cetak.strukPdf(lastTrx.value)
 }
-// v.95.0626: "Struk Print" -> buka PDF slip grafis (pratinjau, bisa cetak manual) — format SAMA dgn Cetak Langsung
-async function cetakLastDot() {
-  if (!lastTrx.value) return
-  try {
-    await cetakStrukSlipPdf(lastTrx.value, settingsStore.settings || {}, { preview: true })
-  } catch (e) {
-    toast.error('Gagal buka struk: ' + (e.message || e))
-  }
+function cetakLastDot() {
+  return cetak.strukSlip(lastTrx.value)
 }
-// v.07.0626: cetak langsung (silent) ke printer default Electron
-async function cetakLangsung() {
-  if (!lastTrx.value) return
-  try {
-    const s = settingsStore.settings || {}
-    const paper = String(s.posStrukPaper || '9.5')
-    const printerName = getDefaultPrinter()
-    if (paper === '9.5') {
-      // v.96.0626: cetak GRAFIS RASTER via ESC/P (bypass driver Windows -> TANPA feed 5cm, tetap Arial).
-      //   Slip dirender ke canvas lalu dikirim sbg bit-image ESC/P langsung ke printer (print:raw).
-      const res = await printRaw({
-        base64: buildStrukSlipEscpBase64(lastTrx.value, s),
-        deviceName: printerName || undefined
-      })
-      if (res && res.ok === false) throw new Error(res.error || 'Print gagal')
-    } else {
-      const html = buildStrukHtml(lastTrx.value, s)
-      await printStruk({ html, deviceName: printerName || undefined })
-    }
-    toast.success('Struk dikirim ke: ' + (printerName || 'printer default Windows'))
-  } catch (e) {
-    toast.error('Gagal cetak: ' + (e.message || e))
-  }
+function cetakLangsung() {
+  return cetak.strukLangsung(lastTrx.value)
 }
 // v.94.0626: buka modal Pengaturan Printer (PrinterSettingsModal global dengar event ini)
 function openPrinterSettings() {

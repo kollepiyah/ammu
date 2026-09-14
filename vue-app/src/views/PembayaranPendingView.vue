@@ -273,6 +273,8 @@ import { useDesktopShell } from '@/composables/useDesktopShell'
 // v.F6e: adapter Supabase. runTransaction → read-modify-write (getOne+updateOne);
 //   single-tenant + idempoten via applied_transfer_refs, atomicity penuh ditunda dbSafe.
 import { subscribeColl, setOne, deleteOne, getOne, queryColl, updateOne } from '@/services/db'
+// v.1.4.3: hapus baris uang lewat satu pintu — tagihan yang dinaikkannya ikut dikembalikan
+import { hapusBarisKas } from '@/services/hapusBarisKas'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
@@ -525,13 +527,29 @@ async function rejectTransfer(p) {
     //   yang sudah lahir, dan penolakan dulu tak pernah membersihkannya. Uang yang tak
     //   pernah sah tetap duduk di Riwayat. deleteOne menyalin ke audit_log dulu, jadi
     //   jejaknya tak hilang. Baris yang memang tak pernah ada → diabaikan.
-    try {
-      await deleteOne('keuangan_buku_induk', `bi_trf_${p.id}`, {
+    //
+    // v.1.4.3 (Kyai 14 Sep 2026): lewat services/hapusBarisKas, bukan deleteOne langsung.
+    //   Verifikasi yang berhenti di tengah bisa sudah MENAIKKAN tagihannya (update tagihan
+    //   ditulis sebelum status 'verified') — menolak transfer lalu hanya menghapus barisnya
+    //   meninggalkan tagihan yang mengaku lunas atas uang yang ditolak. Kalau tagihannya
+    //   gagal dikembalikan, penolakan DIBATALKAN: transfer tetap di Pending dan bisa diulang.
+    const barisTrf = await getOne('keuangan_buku_induk', `bi_trf_${p.id}`).catch(() => null)
+    if (barisTrf) {
+      const hasil = await hapusBarisKas([barisTrf], {
         sesi: auth.sesiAktif,
         alasan: `transfer ditolak: ${alasan.trim()}`
       })
-    } catch (er) {
-      console.warn('[rejectTransfer] bersihkan buku induk:', er?.message)
+      if (hasil?.tagihanGagal?.length) {
+        toast.error(
+          'Transfer BELUM ditolak: tagihannya gagal dikembalikan (' +
+            hasil.tagihanGagal[0].pesan +
+            '). Coba lagi.'
+        )
+        return
+      }
+      if (hasil?.barisGagal?.length) {
+        console.warn('[rejectTransfer] bersihkan buku induk:', hasil.barisGagal[0].pesan)
+      }
     }
     await setOne('pembayaran_transfer_pending', p.id, {
       ...p,

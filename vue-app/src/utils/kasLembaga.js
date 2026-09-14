@@ -230,6 +230,52 @@ export function mutasiSetor(m) {
   return String(m?.jenis || '').toLowerCase() === 'setor'
 }
 
+/**
+ * Urutan kronologis mutasi: tanggal, lalu waktu catat (atau id). SATU pembanding untuk
+ * buku besar santri di layar DAN saldo di slip cetak ulang — kalau keduanya mengurutkan
+ * sendiri-sendiri, mutasi bertanggal sama bisa punya saldo berbeda di layar dan di kertas.
+ */
+export function bandingMutasi(a, b) {
+  const ta = String(a?.tanggal || '')
+  const tb = String(b?.tanggal || '')
+  if (ta !== tb) return ta < tb ? -1 : 1
+  const ka = String(a?.createdAt || a?.id || '')
+  const kb = String(b?.createdAt || b?.id || '')
+  return ka === kb ? 0 : ka < kb ? -1 : 1
+}
+
+/**
+ * Saldo santri TEPAT SESUDAH mutasi `m` — yang pantas tercetak sebagai "Saldo Akhir" di
+ * slip setor/tarik.
+ *
+ * Kyai, 14 Sep 2026: "di uang saku dan POS dan yg lain, saya ingin admin keu bisa print
+ *   ulang struk." Slip Tabungan/Uang Saku dulu selalu mencetak saldo HARI INI, jadi slip
+ *   setoran 3 Agustus yang dicetak ulang pertengahan September menulis saldo September —
+ *   kertasnya tak cocok lagi dengan kertas yang dipegang wali. Konvensinya sama dengan
+ *   buku besar di layar (mutasiSetor: 'setor' = masuk, selain itu keluar).
+ *
+ * `m` yang belum ada di daftar (baru disimpan, langganan realtime belum tiba) dihitung
+ * pada tempatnya menurut tanggal — tanpa ini slip yang dicetak sesaat sesudah Simpan
+ * belum memuat setoran yang sedang dicetak itu sendiri.
+ */
+export function saldoSetelahMutasi(mutasiList, m) {
+  const sid = String(m?.santri_id ?? m?.santriId ?? '')
+  if (!sid) return 0
+  const idM = String(m?.id ?? '')
+  const milik = (Array.isArray(mutasiList) ? mutasiList : []).filter(
+    (x) => x && String(x.santri_id ?? x.santriId ?? '') === sid
+  )
+  const ada = idM && milik.some((x) => String(x.id) === idM)
+  const urut = (ada ? milik : [...milik, m]).slice().sort(bandingMutasi)
+  let saldo = 0
+  for (const x of urut) {
+    const nominal = Number(x.nominal) || 0
+    saldo += mutasiSetor(x) ? nominal : -nominal
+    if (x === m || (idM && String(x.id) === idM)) return saldo
+  }
+  return saldo
+}
+
 /** Peta santri_id -> lembaga (ngaji, cadangan sekolah) untuk kasLembagaTabungan. */
 export function petaLembagaSantri(santriList = []) {
   const m = new Map()

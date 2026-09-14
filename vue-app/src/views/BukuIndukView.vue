@@ -445,30 +445,66 @@
         <!-- v.1.2.6: 7 penyaring (tahun/bulan/tgl/lembaga/tipe/cara bayar/cari) — 2 baris di
              lg, satu baris penuh mulai xl. -->
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-2">
-          <select
-            v-model.number="selectedYear"
-            class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-cyan-500 outline-none"
-          >
-            <option v-for="y in years" :key="y" :value="y">{{ y }}</option>
-          </select>
-          <select
-            v-model.number="selectedMonth"
-            class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-cyan-500 outline-none"
-          >
-            <option :value="0">Semua bulan</option>
-            <option v-for="(b, i) in BULAN" :key="b" :value="i + 1">{{ b }}</option>
-          </select>
-          <!-- v.1.2.6: filter HARIAN — dasar laporan kas harian. Nonaktif kalau bulan
-               belum dipilih (tanggal tanpa bulan tak bermakna). -->
-          <select
-            v-model.number="selectedDay"
-            :disabled="selectedMonth === 0"
-            :title="selectedMonth === 0 ? 'Pilih bulan dulu' : 'Filter per tanggal'"
-            class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-cyan-500 outline-none disabled:opacity-50"
-          >
-            <option :value="0">Semua tgl</option>
-            <option v-for="d in 31" :key="d" :value="d">{{ d }}</option>
-          </select>
+          <!-- v.1.4.3 (Kyai 14 Sep 2026): "filter tanggal bisa difilter dari tanggal ini ke
+               tanggal itu". Dua cara memilih periode, SATU periode yang dibaca semua
+               turunannya — daftar, saldo, judul & nama berkas (lihat utils/periodeKas). -->
+          <template v-if="modePeriode === 'bulan'">
+            <select
+              v-model.number="selectedYear"
+              aria-label="Tahun"
+              class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-cyan-500 outline-none"
+            >
+              <option v-for="y in years" :key="y" :value="y">{{ y }}</option>
+            </select>
+            <select
+              v-model.number="selectedMonth"
+              aria-label="Bulan"
+              class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-cyan-500 outline-none"
+            >
+              <option :value="0">Semua bulan</option>
+              <option v-for="(b, i) in BULAN" :key="b" :value="i + 1">{{ b }}</option>
+            </select>
+            <!-- v.1.2.6: filter HARIAN — dasar laporan kas harian. Nonaktif kalau bulan
+                 belum dipilih (tanggal tanpa bulan tak bermakna). -->
+            <select
+              v-model.number="selectedDay"
+              aria-label="Tanggal"
+              :disabled="selectedMonth === 0"
+              :title="selectedMonth === 0 ? 'Pilih bulan dulu' : 'Filter per tanggal'"
+              class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-cyan-500 outline-none disabled:opacity-50"
+            >
+              <option :value="0">Semua tgl</option>
+              <option v-for="d in 31" :key="d" :value="d">{{ d }}</option>
+            </select>
+          </template>
+          <template v-else>
+            <label class="relative block">
+              <span
+                class="absolute left-3 top-1 text-[9px] font-bold uppercase text-[var(--text-tertiary)] pointer-events-none"
+                >Dari</span
+              >
+              <input
+                v-model="tglDari"
+                type="date"
+                :max="tglSampai || undefined"
+                aria-label="Dari tanggal"
+                class="w-full px-3 pt-4 pb-1 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-cyan-500 outline-none"
+              />
+            </label>
+            <label class="relative block">
+              <span
+                class="absolute left-3 top-1 text-[9px] font-bold uppercase text-[var(--text-tertiary)] pointer-events-none"
+                >Sampai</span
+              >
+              <input
+                v-model="tglSampai"
+                type="date"
+                :min="tglDari || undefined"
+                aria-label="Sampai tanggal"
+                class="w-full px-3 pt-4 pb-1 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-cyan-500 outline-none"
+              />
+            </label>
+          </template>
           <select
             v-model="filterTipe"
             class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-cyan-500 outline-none"
@@ -521,8 +557,41 @@
             class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-cyan-500 outline-none"
           />
         </div>
-        <!-- v.1.2.6: pintasan hari ini — laporan harian sekali klik -->
-        <div class="flex items-center gap-2 mt-2">
+        <!-- v.1.2.6: pintasan hari ini — laporan harian sekali klik.
+             v.1.4.3: + cara memilih periode (per bulan / rentang tanggal). -->
+        <div class="flex flex-wrap items-center gap-2 mt-2">
+          <div
+            class="inline-flex rounded-lg border border-[var(--border-default)] overflow-hidden"
+            role="group"
+            aria-label="Cara memilih periode"
+          >
+            <button
+              type="button"
+              :aria-pressed="modePeriode === 'bulan'"
+              :class="[
+                'text-[11px] font-bold px-2.5 py-1.5',
+                modePeriode === 'bulan'
+                  ? 'bg-cyan-600 text-white'
+                  : 'bg-[var(--bg-card)] text-[var(--text-secondary)] hover:bg-cyan-50 dark:hover:bg-cyan-900/30'
+              ]"
+              @click="pakaiModePeriode('bulan')"
+            >
+              <i class="fas fa-calendar mr-1"></i>Per bulan
+            </button>
+            <button
+              type="button"
+              :aria-pressed="modePeriode === 'rentang'"
+              :class="[
+                'text-[11px] font-bold px-2.5 py-1.5 border-l border-[var(--border-default)]',
+                modePeriode === 'rentang'
+                  ? 'bg-cyan-600 text-white'
+                  : 'bg-[var(--bg-card)] text-[var(--text-secondary)] hover:bg-cyan-50 dark:hover:bg-cyan-900/30'
+              ]"
+              @click="pakaiModePeriode('rentang')"
+            >
+              <i class="fas fa-calendar-week mr-1"></i>Rentang tanggal
+            </button>
+          </div>
           <button
             type="button"
             class="text-[11px] font-bold px-2.5 py-1.5 rounded-lg bg-cyan-50 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-300 hover:bg-cyan-100"
@@ -530,8 +599,14 @@
           >
             <i class="fas fa-calendar-day mr-1"></i>Hari ini
           </button>
+          <span
+            v-if="modePeriode === 'rentang'"
+            class="text-[11px] font-bold text-[var(--text-secondary)]"
+          >
+            <i class="fas fa-calendar-check mr-1 text-cyan-600"></i>{{ periodeLabel }}
+          </span>
           <button
-            v-if="selectedDay > 0"
+            v-if="modePeriode === 'bulan' && selectedDay > 0"
             type="button"
             class="text-[11px] font-bold px-2.5 py-1.5 rounded-lg bg-[var(--bg-muted)] text-[var(--text-secondary)] hover:bg-slate-200 dark:hover:bg-slate-600"
             @click="selectedDay = 0"
@@ -757,20 +832,31 @@
               </span>
             </div>
             <div class="mt-1 md:mt-0 flex items-center md:justify-end gap-1 shrink-0">
+              <!-- v.1.4.3: semua pembayaran santri (POS, transfer, VA BMT), bukan POS saja -->
               <button
-                v-if="b.sumber === 'pos_santri' && b.trx_id"
+                v-if="barisBayarSantri(b)"
                 type="button"
                 class="text-[10px] text-rose-600 hover:bg-rose-100 dark:hover:bg-rose-900/30 px-1.5 py-1 rounded"
                 title="Cetak ulang struk PDF"
+                aria-label="Cetak ulang struk PDF"
                 @click="cetakUlangStruk(b, 'pdf')"
               >
                 <i class="fas fa-file-pdf"></i>
               </button>
               <button
-                v-if="b.sumber === 'pos_santri' && b.trx_id"
+                v-if="barisBayarSantri(b)"
                 type="button"
                 class="text-[10px] text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-600 px-1.5 py-1 rounded"
-                title="Cetak ulang struk dot-matrix"
+                :title="
+                  cetak.bisaLangsung
+                    ? 'Cetak ulang langsung ke printer'
+                    : 'Buka struk dot-matrix (PDF)'
+                "
+                :aria-label="
+                  cetak.bisaLangsung
+                    ? 'Cetak ulang langsung ke printer'
+                    : 'Buka struk dot-matrix (PDF)'
+                "
                 @click="cetakUlangStruk(b, 'dot')"
               >
                 <i class="fas fa-print"></i>
@@ -827,7 +913,6 @@ import {
   updateOne,
   mergeOne,
   deleteOne,
-  queryColl,
   serverTimestamp
 } from '@/services/db'
 import { useAuthStore } from '@/stores/auth'
@@ -861,11 +946,17 @@ import {
 } from '@/utils/bukuIndukLaporan'
 import { isSuperAdmin } from '@/utils/roleScope'
 import { writeAuditLog } from '@/utils/auditLog'
-// v.21.103.0527: reprint struk dari BukuInduk untuk record sumber pos_santri
 // v.1.2.6: cetakStrukKasPdf = struk BUKTI KAS MASUK/KELUAR untuk transaksi manual
-import { cetakStrukPdf, cetakStrukSlipPdf, cetakStrukKasPdf } from '@/utils/strukBuilder'
+import { cetakStrukKasPdf } from '@/utils/strukBuilder'
 // v.1.2.6: satu struk = satu TRANSAKSI (nomor struk lama bisa kembar antar santri)
-import { kunciTransaksi } from '@/utils/trxStruk'
+import { barisSeTransaksi } from '@/utils/trxStruk'
+// v.1.4.3 (Kyai 14 Sep 2026) — tiga laporan admin keuangan, tiga pintu tunggal:
+//   cetak ulang struk (useCetakStruk), hapus baris uang yang ikut mengembalikan tagihan
+//   (services/hapusBarisKas), dan periode laporan termasuk rentang tanggal (utils/periodeKas).
+import { useCetakStruk } from '@/composables/useCetakStruk'
+import { hapusBarisKas } from '@/services/hapusBarisKas'
+import { ringkasRencanaBatal, pesanHasilHapus, barisBayarSantri } from '@/utils/batalBayarTagihan'
+import { periodeKas, dalamPeriode } from '@/utils/periodeKas'
 
 const toast = useToast()
 const auth = useAuthStore()
@@ -883,75 +974,46 @@ const pageTitle = computed(() =>
   gedungScoped.value ? `Buku Kas — ${myGedung.value}` : 'Buku Induk (General Ledger)'
 )
 
-// v.21.103.0527: reprint struk untuk record POS — group by trx_id
+// v.1.4.3 (Kyai 14 Sep 2026: "admin keu bisa print ulang struk"): cetak ulang lewat satu
+//   pintu (useCetakStruk) — struknya sama persis dengan Riwayat POS. Dulu Buku Induk merakit
+//   struknya sendiri tanpa NIS, kelas, periode, dan tanda tangan; hanya untuk baris POS
+//   (transfer & VA BMT tak bisa dicetak ulang); dan tombol "dot"-nya cuma membuka PDF.
+const cetak = useCetakStruk()
+
+// mode 'pdf' = Struk PDF ber-KOP; 'dot' = cetak langsung ke printer (Electron) / slip PDF (web).
+//   Barisnya diambil dari ledger yang sudah termuat, bukan query ulang per klik.
 async function cetakUlangStruk(b, mode = 'pdf') {
-  const trxId = b.trx_id || ''
-  if (!trxId) {
-    toast.warning('Record tidak punya trx_id — bukan dari POS Santri')
-    return
-  }
-  try {
-    // Fetch semua record dengan trx_id sama, lalu v.1.2.6: saring ke TRANSAKSI baris ini
-    //   saja (kunciTransaksi) — nomor struk lama bisa kembar dgn transaksi santri lain,
-    //   dulu ikut tercetak jadi satu struk gabungan.
-    const sekunci = kunciTransaksi(b)
-    const semua = await queryColl('keuangan_buku_induk', [['trx_id', '==', trxId]])
-    const items = semua.filter((e) => kunciTransaksi(e) === sekunci)
-    if (items.length === 0) {
-      toast.warning('Data transaksi tidak ditemukan')
-      return
-    }
-    // Bangun struktur trx
-    const first = items[0]
-    const trx = {
-      trx_id: trxId,
-      no_struk: first.no_struk || trxId,
-      tanggal: first.tanggal || '',
-      santri_nama: first.santri_nama || '-',
-      santri_nis: '',
-      lembaga: '',
-      kelas: '',
-      operator: first.operator || '-',
-      // v.1.4.1: cara bayar ikut dicetak. Badge di DAFTAR halaman ini sudah memakai
-      //   metodeTransaksi sejak v.1.2.6, tapi struk cetak-ulangnya tidak — jadi layar
-      //   bilang "Transfer" sementara kertas yang dipegang wali bilang "TUNAI".
-      metode: metodeTransaksi(first).toUpperCase(),
-      penyetor: first.wali || '',
-      items: items.map((e) => ({
-        jenis: e.kategori || 'Pembayaran',
-        nominal: Number(e.nominal || 0),
-        keterangan: ''
-      })),
-      total: items.reduce((sum, e) => sum + Number(e.nominal || 0), 0)
-    }
-    const sset = settingsStore.settings || {}
-    // v.95.0626: 2 mode -> 'dot' = struk print 2-ply (PDF slip grafis), selain itu = Struk PDF (F4)
-    if (mode === 'dot') {
-      await cetakStrukSlipPdf(trx, sset, { preview: true })
-    } else {
-      await cetakStrukPdf(trx, sset)
-    }
-    toast.success('Struk dicetak ulang')
-  } catch (e) {
-    console.error('[cetakUlangStruk]', e)
-    toast.error('Gagal cetak ulang: ' + (e.message || e))
-  }
+  await cetak.cetakUlang(barisSeTransaksi(b, bukuRaw.value), mode === 'dot' ? 'langsung' : 'pdf')
+}
+
+// v.1.4.3 (Kyai 14 Sep 2026, laporan admin keuangan: transaksi yang dihapus tetap "lunas"
+//   di POS). Hapus lewat services/hapusBarisKas — tagihan yang dinaikkan baris itu ikut
+//   dikembalikan, dan dialognya menyebut tagihan mana SEBELUM OK ditekan.
+async function hapusBaris(rows, judul) {
+  const hasil = await hapusBarisKas(rows, {
+    sesi: auth.sesiAktif,
+    alasan: 'hapus dari Buku Induk',
+    konfirmasi: (rencana) =>
+      confirm(
+        [judul, ringkasRencanaBatal(rencana), 'Tidak bisa di-undo.'].filter(Boolean).join('\n\n')
+      )
+  })
+  if (!hasil) return false
+  const pesan = pesanHasilHapus(hasil)
+  toast[pesan.tipe](pesan.teks)
+  return true
 }
 
 async function hapusBuku(b) {
   if (!isAdmin.value) return
   const label = b.keterangan || b.kategori || b.id
-  if (
-    !confirm(
-      `Hapus PERMANEN record buku induk:\n${label}\nNominal: ${fmtRp(b.nominal || 0)}\n\nTidak bisa di-undo.`
-    )
-  )
-    return
   try {
-    await deleteOne('keuangan_buku_induk', b.id)
-    toast.success('Record dihapus')
+    await hapusBaris(
+      [b],
+      `Hapus PERMANEN record buku induk:\n${label}\nNominal: ${fmtRp(b.nominal || 0)}`
+    )
   } catch (e) {
-    toast.error('Gagal hapus: ' + (e.message || e))
+    toast.error('Gagal hapus: ' + (e?.message || e))
   }
 }
 
@@ -978,6 +1040,24 @@ const selectedYear = ref(new Date().getFullYear())
 const selectedMonth = ref(new Date().getMonth() + 1) // 0 = semua bulan
 // v.1.2.6: filter harian (0 = semua tanggal) + cara bayar — untuk laporan kas harian
 const selectedDay = ref(0)
+// v.1.4.3 (Kyai 14 Sep 2026): "filter tanggal bisa difilter dari tanggal ini ke tanggal itu".
+//   'bulan' = tahun/bulan/tanggal seperti biasa; 'rentang' = dari–sampai, inklusif.
+//   SEMUA turunan periode (daftar, saldo awal, judul, nama berkas, mode harian) membaca
+//   `periode` di bawah — jangan lagi menghitung periode sendiri dari selectedYear/Month/Day:
+//   itu yang akan membuat daftar menampilkan rentang sementara judul PDF-nya masih bulan.
+const modePeriode = ref('bulan')
+const tglDari = ref('')
+const tglSampai = ref('')
+const periode = computed(() =>
+  periodeKas({
+    mode: modePeriode.value,
+    tahun: selectedYear.value,
+    bulan: selectedMonth.value,
+    hari: selectedDay.value,
+    dari: tglDari.value,
+    sampai: tglSampai.value
+  })
+)
 const filterMetode = ref('')
 const filterTipe = ref('')
 // v.1.2.6 (Kyai): filter kas lembaga. Nilainya KUNCI ternormalisasi (kunciLembaga),
@@ -999,12 +1079,29 @@ function slugPosBerkas() {
 }
 const search = ref('')
 
-// pintasan: set filter ke tanggal hari ini (WIB)
+// pintasan: set filter ke tanggal hari ini (WIB). v.1.4.3: di mode rentang, dari = sampai.
 function setHariIni() {
-  const [y, m, d] = todayJakarta().split('-')
+  const hariIni = todayJakarta()
+  if (modePeriode.value === 'rentang') {
+    tglDari.value = hariIni
+    tglSampai.value = hariIni
+    return
+  }
+  const [y, m, d] = hariIni.split('-')
   selectedYear.value = Number(y)
   selectedMonth.value = Number(m)
   selectedDay.value = Number(d)
+}
+// v.1.4.3: berpindah cara memilih periode TANPA melompat ke periode lain — rentang yang masih
+//   kosong diisi dari periode yang sedang dilihat, jadi isi layar baru berubah ketika
+//   tanggalnya benar-benar digeser.
+function pakaiModePeriode(mode) {
+  if (mode === modePeriode.value) return
+  if (mode === 'rentang' && !tglDari.value && !tglSampai.value) {
+    tglDari.value = periode.value.dari
+    tglSampai.value = periode.value.sampai
+  }
+  modePeriode.value = mode
 }
 // bulan diganti ke "semua bulan" -> tanggal ikut direset (kombinasi itu tak bermakna)
 watch(selectedMonth, (m) => {
@@ -1034,33 +1131,20 @@ function toggleSemuaBuku() {
     selectedBuku.value = new Set(filteredBuku.value.map((b) => String(b.id)))
   }
 }
+// v.1.4.3: lewat hapusBaris → services/hapusBarisKas (tagihan ikut dikembalikan; audit_log
+//   ditulis layanannya, termasuk tagihan mana yang berubah).
 async function hapusBukuTerpilih() {
   if (!isAdmin.value) return
-  const ids = Array.from(selectedBuku.value)
-  if (ids.length === 0) return
-  if (!confirm(`Hapus ${ids.length} record buku induk terpilih?\n\nTidak bisa di-undo.`)) return
-  let ok = 0,
-    fail = 0
-  for (const id of ids) {
-    try {
-      await deleteOne('keuangan_buku_induk', id)
-      ok++
-    } catch (e) {
-      fail++
-      console.warn('[bulkHapusBuku]', id, e.message)
+  const ids = new Set(Array.from(selectedBuku.value).map(String))
+  if (ids.size === 0) return
+  const rows = bukuRaw.value.filter((b) => ids.has(String(b.id)))
+  try {
+    if (await hapusBaris(rows, `Hapus ${rows.length} record buku induk terpilih?`)) {
+      selectedBuku.value = new Set()
     }
+  } catch (e) {
+    toast.error('Gagal hapus: ' + (e?.message || e))
   }
-  selectedBuku.value = new Set()
-  // v.21.104.0527: audit log bulk delete
-  await writeAuditLog({
-    operator: auth.sesiAktif?.nama || auth.sesiAktif?.guru || 'Admin',
-    action: 'bulk_delete',
-    target: 'keuangan_buku_induk',
-    ids,
-    detail: { ok, fail }
-  })
-  if (fail > 0) toast.warning(`${ok} dihapus, ${fail} gagal — cek console`)
-  else toast.success(`${ok} record dihapus`)
 }
 // v.108: residu = entri tabungan-residu ATAU tanpa tanggal valid (ke-hitung di dashboard tapi tdk tampil di ledger)
 const residuBuku = computed(() =>
@@ -1478,20 +1562,11 @@ function lolosPenyaringLembaga(b) {
 }
 
 // Baris dalam periode & scope gedung, SEBELUM penyaring lembaga/tipe/cara bayar/cari.
-const bukuPeriode = computed(() => {
-  let list = ledgerScope.value
-  // Filter by year/month (+ v.1.2.6: tanggal, utk laporan harian)
-  if (selectedMonth.value > 0) {
-    const ym = `${selectedYear.value}-${String(selectedMonth.value).padStart(2, '0')}`
-    const tgl = selectedDay.value > 0 ? `${ym}-${String(selectedDay.value).padStart(2, '0')}` : ''
-    list = tgl
-      ? list.filter((b) => String(b.tanggal || '').substring(0, 10) === tgl)
-      : list.filter((b) => String(b.tanggal || '').substring(0, 7) === ym)
-  } else {
-    list = list.filter((b) => String(b.tanggal || '').startsWith(String(selectedYear.value)))
-  }
-  return list
-})
+//   v.1.4.3: periodenya dari `periode` (bulan/tanggal ATAU rentang). Untuk pilihan bulanan
+//   hasilnya identik dengan penyaring lama — dijaga tests/unit/periodeKas.test.js.
+const bukuPeriode = computed(() =>
+  ledgerScope.value.filter((b) => dalamPeriode(b.tanggal, periode.value))
+)
 
 // Semua penyaring KECUALI lembaga. Rekap & opsi filter lembaga dihitung dari sini,
 //   supaya pilihannya tak lenyap begitu satu lembaga dipilih — tapi tetap ikut
@@ -1550,7 +1625,9 @@ function saldoOf(b) {
   return saldoMap.value.get(String(b.id)) ?? 0
 }
 // Saldo sebelum periode yang sedang dilihat — dipakai baris SALDO AWAL di ekspor.
-const saldoAwalPeriode = computed(() => saldoAwalSebelum(ledgerSaldo.value, periodeSlug.value))
+// v.1.4.3: `periode.awal` — untuk pilihan bulanan/tahunan bentuknya tetap 'YYYY-MM'/'YYYY'
+//   seperti slug lama, jadi saldo awal laporan yang sudah pernah dicetak tak bergeser.
+const saldoAwalPeriode = computed(() => saldoAwalSebelum(ledgerSaldo.value, periode.value.awal))
 // Saldo akhir = saldo awal + mutasi periode. Sengaja dihitung dari stats (bukan dari
 //   baris terakhir peta saldo) supaya angkanya pasti bertemu dengan kartu Masuk/Keluar.
 const saldoAkhirPeriode = computed(() => saldoAwalPeriode.value + stats.value.saldo)
@@ -1575,24 +1652,16 @@ const years = computed(() => {
 })
 
 // v.1.2.6: label periode aktif — dipakai header, judul PDF/Excel, & nama berkas.
-//   "3 Agustus 2026" | "Agustus 2026" | "Tahun 2026"
-const periodeLabel = computed(() => {
-  if (selectedMonth.value === 0) return `Tahun ${selectedYear.value}`
-  const bulan = `${BULAN[selectedMonth.value - 1]} ${selectedYear.value}`
-  return selectedDay.value > 0 ? `${selectedDay.value} ${bulan}` : bulan
-})
+//   "3 Agustus 2026" | "Agustus 2026" | "Tahun 2026" | v.1.4.3: "25 Agustus – 10 September 2026"
+const periodeLabel = computed(() => periode.value.label)
 // v.1.3.6: satu tanggal terpilih = laporan setoran harian (lihat buildExportRows).
-const modeHarian = computed(() => selectedMonth.value > 0 && selectedDay.value > 0)
+//   v.1.4.3: termasuk rentang yang dari = sampai.
+const modeHarian = computed(() => periode.value.harian)
 // Judul berkas Excel/Sheet — harian dibedakan supaya kolom Saldo yang mulai nol tak
 //   dibaca sebagai posisi kas kumulatif.
 const judulLaporan = computed(() => (modeHarian.value ? 'Setoran Harian' : 'Buku Induk Keuangan'))
-// nama berkas ekspor: buku-induk-2026-08-03 / 2026-08 / 2026
-const periodeSlug = computed(() => {
-  const y = String(selectedYear.value)
-  if (selectedMonth.value === 0) return y
-  const ym = `${y}-${String(selectedMonth.value).padStart(2, '0')}`
-  return selectedDay.value > 0 ? `${ym}-${String(selectedDay.value).padStart(2, '0')}` : ym
-})
+// nama berkas ekspor: buku-induk-2026-08-03 / 2026-08 / 2026 / 2026-08-25_sd_2026-09-10
+const periodeSlug = computed(() => periode.value.slug)
 
 // v.1.2.6: subtotal tunai vs transfer atas baris yang sedang tampil (dasar laporan harian)
 const rekapMetode = computed(() => ringkasMetode(filteredBuku.value))
@@ -1642,7 +1711,7 @@ function buildExportRows(listIn, { metodeOnly = '' } = {}) {
     ? ledgerSaldo.value.filter((b) => metodeTransaksi(b) === metodeOnly)
     : ledgerSaldo.value
   return bangunBarisLaporan(list, {
-    saldoAwal: metodeOnly ? saldoAwalSebelum(ledger, periodeSlug.value) : saldoAwalPeriode.value,
+    saldoAwal: metodeOnly ? saldoAwalSebelum(ledger, periode.value.awal) : saldoAwalPeriode.value,
     labelPeriode: periodeLabel.value,
     metodeOf: metodeTransaksi,
     metodeOpts: METODE_OPTS,

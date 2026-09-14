@@ -371,19 +371,20 @@
         <div
           :class="[
             'hidden md:grid gap-2 px-4 py-2 bg-slate-50 dark:bg-slate-700 text-[10px] uppercase font-bold text-[var(--text-secondary)] tracking-wider border-b border-[var(--border-subtle)]',
-            'md:grid-cols-[100px_1fr_120px_120px]'
+            'md:grid-cols-[100px_1fr_120px_120px_auto]'
           ]"
         >
           <span>Tanggal</span>
           <span>Keterangan</span>
           <span class="text-right">Masuk</span>
           <span class="text-right">Keluar</span>
+          <span aria-hidden="true"></span>
         </div>
         <div class="divide-y divide-slate-100 dark:divide-slate-700">
           <div
             v-for="b in filtered"
             :key="b.id"
-            class="px-4 py-2.5 md:grid gap-2 md:grid-cols-[100px_1fr_120px_120px] hover:bg-slate-50 dark:hover:bg-slate-700/30 transition"
+            class="px-4 py-2.5 md:grid gap-2 md:grid-cols-[100px_1fr_120px_120px_auto] hover:bg-slate-50 dark:hover:bg-slate-700/30 transition"
           >
             <span
               class="text-[11px] text-[var(--text-secondary)] font-bold whitespace-nowrap block md:inline"
@@ -437,7 +438,7 @@
               </span>
               <span v-else class="text-[var(--text-tertiary)]">—</span>
             </div>
-            <div class="md:text-right flex items-center md:justify-end gap-2">
+            <div class="md:text-right">
               <span
                 v-if="b.tipe === 'keluar' || Number(b.keluar) > 0"
                 class="text-sm font-black text-rose-700"
@@ -445,6 +446,50 @@
                 {{ fmtRp(b.keluar || b.nominal) }}
               </span>
               <span v-else class="text-[var(--text-tertiary)]">—</span>
+            </div>
+            <!-- v.1.4.3 (Kyai 14 Sep 2026: "admin keu bisa print ulang struk"): cetak ulang
+                 untuk semua admin keuangan; hapus tetap super admin. Kolomnya sendiri —
+                 tombol yang berbagi kolom dengan nominal meluber menimpa angkanya (pelajaran
+                 Buku Induk v.1.3.0). -->
+            <div class="mt-1 md:mt-0 flex items-center md:justify-end gap-1 shrink-0">
+              <template v-if="barisBayarSantri(b)">
+                <button
+                  type="button"
+                  class="text-[10px] text-rose-600 hover:bg-rose-100 dark:hover:bg-rose-900/30 px-1.5 py-1 rounded"
+                  title="Cetak ulang struk PDF"
+                  aria-label="Cetak ulang struk PDF"
+                  @click="cetakUlang(b, 'pdf')"
+                >
+                  <i class="fas fa-file-pdf"></i>
+                </button>
+                <button
+                  type="button"
+                  class="text-[10px] text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-600 px-1.5 py-1 rounded"
+                  :title="
+                    cetak.bisaLangsung
+                      ? 'Cetak ulang langsung ke printer'
+                      : 'Buka struk dot-matrix (PDF)'
+                  "
+                  :aria-label="
+                    cetak.bisaLangsung
+                      ? 'Cetak ulang langsung ke printer'
+                      : 'Buka struk dot-matrix (PDF)'
+                  "
+                  @click="cetakUlang(b, 'langsung')"
+                >
+                  <i class="fas fa-print"></i>
+                </button>
+              </template>
+              <button
+                v-else-if="b.sumber === 'manual'"
+                type="button"
+                class="text-[10px] text-emerald-600 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 px-1.5 py-1 rounded"
+                title="Cetak bukti kas"
+                aria-label="Cetak bukti kas"
+                @click="cetakBuktiKas(b)"
+              >
+                <i class="fas fa-receipt"></i>
+              </button>
               <button
                 v-if="isAdmin"
                 type="button"
@@ -475,7 +520,14 @@ import { ref, computed, onMounted, onUnmounted, reactive } from 'vue'
 import { useRoute } from 'vue-router'
 import { useDesktopShell } from '@/composables/useDesktopShell'
 import { definePageActions } from '@/composables/useRibbonContext'
-import { subscribeColl, subscribeDoc, setOne, deleteOne, serverTimestamp } from '@/services/db'
+import { subscribeColl, subscribeDoc, setOne, serverTimestamp } from '@/services/db'
+// v.1.4.3 (Kyai 14 Sep 2026): hapus baris uang lewat satu pintu — tagihannya ikut kembali.
+import { hapusBarisKas } from '@/services/hapusBarisKas'
+import { ringkasRencanaBatal, pesanHasilHapus, barisBayarSantri } from '@/utils/batalBayarTagihan'
+// v.1.4.3: cetak ulang — pembayaran santri → struk pembayaran, kas manual → bukti kas.
+import { useCetakStruk } from '@/composables/useCetakStruk'
+import { barisSeTransaksi } from '@/utils/trxStruk'
+import { cetakStrukKasPdf } from '@/utils/strukBuilder'
 import { useAuthStore } from '@/stores/auth'
 import { useGedungScope } from '@/composables/useGedungScope'
 import { useToast } from '@/composables/useToast'
@@ -809,20 +861,48 @@ async function simpanInputManual() {
   }
 }
 
+// v.1.4.3 (Kyai 14 Sep 2026, laporan admin keuangan: transaksi yang dihapus tetap "lunas"
+//   di POS). Lewat services/hapusBarisKas — pembayaran santri yang dihapus dari sini ikut
+//   mengembalikan tagihannya, dan dialognya menyebut tagihan mana SEBELUM OK ditekan.
 async function hapusRow(b) {
   if (!isAdmin.value) return
   const label = b.keterangan || b.kategori || b.id
-  if (
-    !confirm(
-      `Hapus PERMANEN record ${pageTitle.value}:\n${label}\nNominal: ${fmtRp(b.nominal || 0)}\n\nJuga terhapus dari Buku Induk. Tidak bisa di-undo.`
-    )
-  )
-    return
   try {
-    await deleteOne('keuangan_buku_induk', b.id)
-    toast.success('Record dihapus')
+    const hasil = await hapusBarisKas([b], {
+      sesi: auth.sesiAktif,
+      alasan: `hapus dari ${pageTitle.value}`,
+      konfirmasi: (rencana) =>
+        confirm(
+          [
+            `Hapus PERMANEN record ${pageTitle.value}:\n${label}\nNominal: ${fmtRp(b.nominal || 0)}\n\nJuga terhapus dari Buku Induk.`,
+            ringkasRencanaBatal(rencana),
+            'Tidak bisa di-undo.'
+          ]
+            .filter(Boolean)
+            .join('\n\n')
+        )
+    })
+    if (!hasil) return
+    const pesan = pesanHasilHapus(hasil)
+    toast[pesan.tipe](pesan.teks)
   } catch (e) {
-    toast.error('Gagal hapus: ' + (e.message || e))
+    toast.error('Gagal hapus: ' + (e?.message || e))
+  }
+}
+
+// v.1.4.3 (Kyai 14 Sep 2026: "admin keu bisa print ulang struk"): layar ini tak pernah punya
+//   tombol cetak apa pun, padahal isinya sebagian besar pembayaran POS (Uang Buku, Uang
+//   Kegiatan, Tabungan Wajib). Pembayaran santri → struk transaksinya UTUH (semua baris
+//   se-transaksi dari buku induk, bukan hanya baris pos ini); kas manual → bukti kas.
+const cetak = useCetakStruk()
+function cetakUlang(b, mode = 'pdf') {
+  return cetak.cetakUlang(barisSeTransaksi(b, bukuRaw.value), mode)
+}
+async function cetakBuktiKas(b) {
+  try {
+    await cetakStrukKasPdf(b, settingsStore.settings || {})
+  } catch (e) {
+    toast.error('Gagal cetak struk: ' + (e?.message || e))
   }
 }
 

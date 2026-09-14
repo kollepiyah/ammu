@@ -490,6 +490,65 @@
                 </p>
               </details>
 
+              <!-- v.1.4.3 (Kyai 14 Sep 2026, laporan admin keuangan: "di POS santrinya terbaca
+                   lunas. padahal tadi sudah dihapus"). Transaksi yang DIHAPUS sebelum v.1.4.3
+                   tak mengembalikan tagihannya; mulai v.1.4.3 penghapusan melakukannya sendiri.
+                   Dibaca dari salinan audit_log, jadi hanya tampil bagi yang boleh membacanya. -->
+              <div
+                v-if="batalTerlewat && batalTerlewat.rencana.length"
+                class="rounded-lg border border-rose-300 dark:border-rose-700 bg-rose-50/70 dark:bg-rose-900/20 p-2 space-y-1"
+              >
+                <div class="flex items-center justify-between gap-2 flex-wrap">
+                  <p class="text-[11px] font-black text-rose-800 dark:text-rose-300">
+                    <i class="fas fa-rotate-left mr-1"></i>{{ batalTerlewat.rencana.length }}
+                    tagihan masih mengaku terbayar padahal transaksinya sudah dihapus
+                  </p>
+                  <button
+                    v-if="bolehHapusTagihan"
+                    :disabled="batalBusy"
+                    class="px-3 py-1.5 text-[10px] font-black rounded-lg bg-rose-600 hover:bg-rose-700 text-white disabled:opacity-50"
+                    @click="kembalikanBatalTerlewat"
+                  >
+                    <i
+                      :class="['fas', batalBusy ? 'fa-spinner fa-spin' : 'fa-rotate-left', 'mr-1']"
+                    ></i>
+                    Kembalikan {{ batalTerlewat.rencana.length }} tagihan
+                  </button>
+                </div>
+                <ul class="text-[11px] list-disc pl-4 text-[var(--text-secondary)]">
+                  <li v-for="r in batalTerlewat.rencana.slice(0, 25)" :key="r.tagihanId">
+                    <b>{{ r.nama || r.santriId }}</b> — {{ r.jenis }} {{ r.periode }}: terbayar Rp
+                    {{ rp(r.terbayarLama) }} → Rp {{ rp(r.terbayarBaru) }} ({{ r.statusBaru }})
+                    <span class="opacity-80">
+                      · dihapus:
+                      <template v-for="(h, i) in r.barisHapus" :key="h.id"
+                        ><span v-if="i">, </span>{{ h.trx_id || h.id }} Rp {{ rp(h.nominal)
+                        }}{{ h._hapus.oleh ? ' oleh ' + h._hapus.oleh : ''
+                        }}{{
+                          h._hapus.waktu ? ' (' + h._hapus.waktu.slice(0, 10) + ')' : ''
+                        }}</template
+                      >
+                    </span>
+                  </li>
+                </ul>
+                <p v-if="batalTerlewat.rencana.length > 25" class="text-[10px] italic">
+                  …dan {{ batalTerlewat.rencana.length - 25 }} lagi (semua ikut diproses)
+                </p>
+                <p class="text-[10px] italic opacity-80">
+                  Mulai v.1.4.3 menghapus transaksi langsung mengembalikan tagihannya; daftar ini
+                  berisi penghapusan sebelum itu. Tagihan yang masih ditopang pembayaran lain tak
+                  diturunkan di bawah pembayaran itu. Kalau ada transaksi yang terhapus padahal
+                  uangnya memang diterima, input ulang lewat POS sesudahnya.
+                </p>
+              </div>
+              <p
+                v-if="batalTerlewat && batalTerlewat.ambigu.length"
+                class="text-[10px] italic text-[var(--text-tertiary)]"
+              >
+                {{ batalTerlewat.ambigu.length }} transaksi terhapus cocok dengan lebih dari satu
+                tagihan — tidak diubah, periksa manual.
+              </p>
+
               <div
                 v-if="cocokHasil.statusMeleset.length"
                 class="rounded-lg border border-violet-200 dark:border-violet-800 p-2 space-y-1"
@@ -522,7 +581,8 @@
                   !cocokHasil.kurangTercatat.length &&
                   !cocokHasil.lebihTercatat.length &&
                   !cocokHasil.statusMeleset.length &&
-                  !cocokHasil.transferYatim.length
+                  !cocokHasil.transferYatim.length &&
+                  !batalTerlewat?.rencana?.length
                 "
                 class="text-[11px] font-bold text-emerald-800 dark:text-emerald-200"
               >
@@ -3693,6 +3753,9 @@ import {
   SUMBER_BAYAR_SANTRI
 } from '@/utils/cocokBayarTagihan'
 import { statusTagihan as statusTagihanUtil } from '@/utils/tagihan'
+// v.1.4.3 (Kyai 14 Sep 2026): transaksi yang terlanjur dihapus SEBELUM v.1.4.3 tanpa
+//   mengembalikan tagihannya — dibaca lagi dari salinan audit_log.
+import { rencanaBatalBayar, barisDariAuditHapus } from '@/utils/batalBayarTagihan'
 import { writeAuditLog } from '@/utils/auditLog'
 import { useAuthStore } from '@/stores/auth'
 import { isSuperAdmin } from '@/utils/roleScope'
@@ -4115,6 +4178,42 @@ const ringkasYatim = computed(() =>
     .join(' · ')
 )
 
+// v.1.4.3 (Kyai 14 Sep 2026, laporan admin keuangan: "di POS santrinya terbaca lunas.
+//   padahal tadi sudah dihapus"). Mulai v.1.4.3 menghapus transaksi mengembalikan tagihannya
+//   sendiri (services/hapusBarisKas). Yang TERLANJUR dihapus sebelumnya dibaca lagi dari
+//   salinan audit_log — deleteOne selalu menyalin barisnya lebih dulu, lengkap dengan
+//   tagihan_id-nya. Aturan angkanya SAMA dengan jalur hapus (utils/batalBayarTagihan): tak
+//   pernah di bawah uang yang masih tercatat, jadi baris kembar yang dulu dirapikan tak
+//   menagih ulang siapa pun. audit_log hanya terbaca super admin/admin; bagi yang lain
+//   `batalTerlewat` = null dan bagiannya tak tampil.
+const batalTerlewat = ref(null)
+const batalBusy = ref(false)
+
+async function muatBatalTerlewat(tagihan, buku) {
+  const audit = await queryColl('audit_log', [
+    ['collection', '==', 'keuangan_buku_induk'],
+    ['aksi', '==', 'delete']
+  ]).catch(() => null)
+  if (!audit) return null
+  const terhapus = barisDariAuditHapus(
+    audit,
+    (buku || []).map((b) => String(b.id))
+  )
+  const hasil = rencanaBatalBayar({
+    dihapus: terhapus,
+    tersisa: buku,
+    tagihan,
+    stamp: new Date().toISOString(),
+    operator: _auth.sesiAktif?.nama || _auth.sesiAktif?.guru || 'Admin'
+  })
+  const perId = new Map(terhapus.map((b) => [String(b.id), b]))
+  hasil.rencana = hasil.rencana.map((r) => ({
+    ...r,
+    barisHapus: r.baris.map((id) => perId.get(String(id))).filter(Boolean)
+  }))
+  return hasil
+}
+
 async function periksaCocokBayar() {
   if (cocokBusy.value) return
   cocokBusy.value = true
@@ -4131,11 +4230,67 @@ async function periksaCocokBayar() {
       transferPending: pending,
       namaSantri: new Map((santri || []).map((s) => [String(s.id), s.nama || '']))
     })
+    batalTerlewat.value = await muatBatalTerlewat(tagihan, buku)
   } catch (e) {
     toast.error('Gagal memeriksa: ' + (e?.message || e))
   } finally {
     cocokBusy.value = false
   }
+}
+
+/** Kembalikan tagihan milik transaksi yang sudah terhapus. Rencana DIHITUNG ULANG dari data
+ *  segar tepat sebelum menulis — hasil pemeriksaan di layar bisa sudah berjam-jam umurnya,
+ *  dan kasir bisa sudah menerima pembayaran baru untuk tagihan yang sama. */
+async function kembalikanBatalTerlewat() {
+  const daftar = batalTerlewat.value?.rencana || []
+  if (!daftar.length || batalBusy.value || !bolehHapusTagihan.value) return
+  const nilai = daftar.reduce((s, r) => s + (r.terbayarLama - r.terbayarBaru), 0)
+  if (
+    !confirm(
+      `Kembalikan ${daftar.length} tagihan senilai Rp ${rp(nilai)} ke keadaan sebelum dibayar?\n\n` +
+        'Transaksi pembayarannya SUDAH dihapus dari Riwayat/Buku Induk, tapi tagihannya masih ' +
+        'mengaku terbayar — itulah yang membuat POS menampilkan "lunas". Yang diubah hanya ' +
+        'kolom terbayar + status; nominal tagihan tetap, dan tagihan yang masih ditopang ' +
+        'pembayaran lain tak diturunkan di bawah pembayaran itu.\n\n' +
+        'Kalau ternyata ada transaksi yang terhapus padahal uangnya memang diterima, input ulang ' +
+        'lewat POS sesudah ini.'
+    )
+  )
+    return
+  batalBusy.value = true
+  let ok = 0
+  let gagal = 0
+  try {
+    const [tagihan, buku] = await Promise.all([
+      getAll('keuangan_tagihan'),
+      getAll('keuangan_buku_induk')
+    ])
+    const rencana = (await muatBatalTerlewat(tagihan, buku))?.rencana || []
+    for (const r of rencana) {
+      try {
+        await updateOne('keuangan_tagihan', String(r.tagihanId), r.payload)
+        ok++
+      } catch (e) {
+        gagal++
+        console.warn('[batalTerlewat] gagal', r.tagihanId, e?.message)
+      }
+    }
+    await writeAuditLog({
+      operator: _auth.sesiAktif?.nama || _auth.sesiAktif?.guru || 'Admin',
+      action: 'bulk_update',
+      target: 'keuangan_tagihan',
+      ids: rencana.map((r) => String(r.tagihanId)),
+      detail: `kembalikan tagihan dari transaksi terhapus: ${ok} dikembalikan, ${gagal} gagal`
+    })
+  } catch (e) {
+    toast.error('Gagal mengembalikan tagihan: ' + (e?.message || e))
+    return
+  } finally {
+    batalBusy.value = false
+  }
+  if (gagal) toast.warning(`${ok} tagihan dikembalikan, ${gagal} gagal — cek console.`)
+  else toast.success(`${ok} tagihan dikembalikan ke keadaan sebelum dibayar.`)
+  await periksaCocokBayar()
 }
 
 /** Akui pembayaran yang sudah ada di Buku Induk ke tagihannya.
