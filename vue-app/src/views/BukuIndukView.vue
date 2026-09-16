@@ -104,6 +104,39 @@
             {{ periodeLabel }}
           </span>
         </div>
+        <!-- v.1.4.3 gelombang 4 (Kyai 16 Sep 2026): "mana total saldonya?" — sebelum ini kartu
+             ringkasan memuat ENAM angka, dan yang benar-benar total saldo (saldo kas
+             setelah periode) justru yang paling kecil: nomor tiga dalam sederet teks 10px.
+             Yang paling menonjol malah kartu cyan "Selisih Periode", yang BUKAN saldo —
+             hanya masuk dikurangi keluar pada periode yang sedang disaring. Lebih parah,
+             angka selisih itu tampil DUA KALI dengan dua nama berbeda (kartu + strip),
+             sehingga terbaca seolah dua angka yang berlainan.
+             Sekarang saldo kas yayasan berdiri sendiri sebagai angka terbesar, disebut
+             sekali, dan kartu masuk/keluar/selisih turun pangkat jadi rincian periode.
+             TIDAK ada rumus yang berubah — semata urutan baca. -->
+        <div
+          class="rounded-xl border-l-4 border-cyan-500 bg-cyan-50 dark:bg-cyan-900/20 px-3 py-2.5 mb-2 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1"
+        >
+          <div>
+            <p class="text-[10px] font-bold uppercase text-cyan-700 dark:text-cyan-300">
+              <i class="fas fa-wallet mr-1"></i>Saldo kas yayasan
+            </p>
+            <p
+              class="text-xl md:text-2xl font-black font-mono text-cyan-900 dark:text-cyan-100 mt-0.5"
+            >
+              {{ fmtRp(saldoAkhirPeriode) }}
+            </p>
+          </div>
+          <!-- Periode yang dipilih boleh periode lampau, jadi angka di atas TIDAK selalu
+               "saldo hari ini". Kalimat ini menyebut periodenya supaya tak disalahbaca. -->
+          <p class="text-[10px] text-cyan-800/80 dark:text-cyan-300/80 leading-snug">
+            posisi kas setelah {{ periodeLabel }}<br />
+            sebelumnya <b class="font-mono">{{ fmtRp(saldoAwalPeriode) }}</b> &middot;
+            {{
+              adaPenyaringKas ? 'mengikuti penyaring yang aktif' : 'seluruh kas, tanpa penyaring'
+            }}
+          </p>
+        </div>
         <div class="grid grid-cols-3 gap-2 md:gap-3">
           <div class="bg-emerald-50 border-l-4 border-emerald-500 p-3 rounded-xl">
             <p class="text-[10px] font-bold text-emerald-700 uppercase">Total Masuk</p>
@@ -117,57 +150,40 @@
               {{ fmtRp(stats.pengeluaran) }}
             </p>
           </div>
-          <!-- Kartu ini dulu berlabel "Saldo Akhir" padahal isinya masuk − keluar PERIODE
-               INI saja — salah satu sebab "total saldonya tidak jelas". Sekarang namanya
-               jujur, dan saldo akhir yang sesungguhnya ditampilkan di bawahnya. -->
-          <div class="p-3 rounded-xl border-l-4 bg-cyan-50 border-cyan-500">
-            <p class="text-[10px] font-bold uppercase text-cyan-700">Selisih Periode</p>
-            <p class="text-base md:text-lg font-black mt-1 text-cyan-800">
+          <!-- Sengaja NETRAL (bukan cyan): warna aksen milik saldo di atas. Kartu ini dulu
+               berlabel "Saldo Akhir" padahal isinya masuk - keluar PERIODE INI saja — sebab
+               asli keluhan "total saldonya tidak jelas". Sub-labelnya sekaligus memikul
+               keterangan "(dicetak)" yang dulu berdiri sendiri di strip bawah. -->
+          <div class="p-3 rounded-xl border-l-4 bg-slate-50 dark:bg-slate-800/40 border-slate-400">
+            <p class="text-[10px] font-bold uppercase text-slate-600 dark:text-slate-300">
+              Selisih Periode
+            </p>
+            <p class="text-base md:text-lg font-black mt-1 text-slate-800 dark:text-slate-100">
               {{ fmtRp(stats.saldo) }}
             </p>
-            <p class="text-[9px] text-cyan-700/80 mt-0.5">masuk &minus; keluar</p>
+            <p class="text-[9px] text-slate-600/80 dark:text-slate-400 mt-0.5">
+              masuk &minus; keluar &middot; yang dicetak
+            </p>
           </div>
         </div>
         <!-- v.1.3.7 (Kyai 31 Agu 2026): satu aturan untuk semua periode — yang DICETAK
-             adalah mutasi periode yang difilter (baris TOTAL = masuk − keluar, saldo
+             adalah mutasi periode yang difilter (baris TOTAL = masuk - keluar, saldo
              berjalan mulai nol), sedangkan posisi kas kumulatif turun jadi keterangan.
-             Strip ini menyusun ulang urutan bacanya persis seperti kertasnya, supaya
-             layar dan PDF tak bisa berbeda.
-             v.1.4.3 (Kyai 14 Sep 2026, KAS TUNGGAL): saldo di sini SATU untuk kas yayasan
-             dan tak ikut penyaring lembaga — lembaga itu label sumber dana, bukan kas
-             sendiri. Saldo "per lembaga" dulu membuat Umum / Yayasan, penampung bisyaroh &
-             operasional, terbaca minus padahal uangnya ada. Laporan yang disaring per
-             lembaga karena itu berhenti di baris TOTAL (tanpa baris INFO saldo), dan kalimat
-             terakhir strip ini mengatakannya — layar dan kertas tetap tak berselisih. -->
+             v.1.4.3 (Kyai 14 Sep 2026, KAS TUNGGAL): saldo SATU untuk kas yayasan dan tak
+             ikut penyaring lembaga — lembaga itu label sumber dana, bukan kas sendiri.
+             v.1.4.3 gelombang 4: angka-angkanya pindah ke atas; yang tersisa di sini murni keterangan
+             cetak, supaya layar dan kertas tetap tak berselisih. -->
         <div
-          class="mt-2 rounded-xl border border-cyan-200 dark:border-cyan-800 bg-cyan-50/60 dark:bg-cyan-900/20 px-3 py-2 flex flex-wrap items-baseline gap-x-4 gap-y-1"
+          class="mt-2 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-card-elevated)] px-3 py-1.5"
         >
-          <span class="text-[10px] font-bold uppercase text-cyan-800 dark:text-cyan-300">
-            {{ modeHarian ? 'Setoran hari ini' : 'Mutasi periode ini' }} (dicetak)
-            <b class="font-mono font-black ml-1">{{ fmtRp(stats.saldo) }}</b>
-          </span>
-          <span class="text-[10px] font-bold uppercase text-[var(--text-secondary)]">
-            Saldo kas yayasan sebelum
-            <b class="font-mono font-black ml-1">{{ fmtRp(saldoAwalPeriode) }}</b>
-          </span>
-          <span class="text-[10px] font-bold uppercase text-[var(--text-secondary)]">
-            Saldo kas yayasan setelah
-            <b class="font-mono font-black ml-1">{{ fmtRp(saldoAkhirPeriode) }}</b>
-          </span>
           <span class="text-[10px] text-[var(--text-secondary)]">
             <template v-if="filterLembaga">
               kas tunggal: saldo tidak dipecah per lembaga, jadi laporan
-              {{ labelLembagaAktif }} berhenti di baris TOTAL &mdash;
-              {{
-                adaPenyaringKas ? 'saldo mengikuti penyaring lain yang aktif' : 'saldo seluruh kas'
-              }}
+              {{ labelLembagaAktif }} berhenti di baris TOTAL &mdash; saldo di atas tetap seluruh
+              kas yayasan
             </template>
             <template v-else>
-              baris TOTAL di ekspor = mutasi periode ini; saldo kas tercetak sebagai keterangan
-              &mdash;
-              {{
-                adaPenyaringKas ? 'mengikuti penyaring yang aktif' : 'seluruh kas, tanpa penyaring'
-              }}
+              baris TOTAL di ekspor = selisih periode ini; saldo kas tercetak sebagai keterangan
             </template>
           </span>
         </div>

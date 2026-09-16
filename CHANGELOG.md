@@ -20,22 +20,50 @@ naik satu tiap rilis. Entri lama memakai skema lama `v.{nomor-urut}.{MMDDtahunmu
 
 ---
 
-## [v.1.4.3] — 2026-09-14 — Kas tunggal: satu saldo kas yayasan, kartu per lembaga menampilkan pemasukan, dan "Kas Induk" menjadi "Umum / Yayasan"
+## [v.1.4.3] — 2026-09-16 — Buku Induk: total saldo berhenti bersembunyi di antara lima angka lain
 
-**SIAP RILIS** — `versionCode` 143 / `versionName` `v.1.4.3`. **SATU rilis, TIGA gelombang** (14 Sep
-2026 pagi, siang, sore): v.1.4.3 belum pernah tayang, jadi gelombang 2 dan 3 dilebur ke nomor yang
-sama. **Tanpa migrasi Supabase** (`db push` tak perlu), tetapi **ada perubahan edge function**
-(gelombang 2). Urutannya:
+**SIAP RILIS** — `versionCode` 143 / `versionName` `v.1.4.3`. **SATU rilis, EMPAT gelombang** (14 Sep
+2026 pagi, siang, sore, lalu 16 Sep 2026): v.1.4.3 belum pernah tayang, jadi gelombang 2, 3, dan 4
+dilebur ke nomor yang sama. **Tanpa migrasi Supabase** (`db push` tak perlu), tetapi **ada perubahan
+edge function** (gelombang 2). Urutannya:
 
 1. `supabase functions deploy auto-generate-tagihan --no-verify-jwt` — cron harian baru mengakui
    bayar di muka sesudah ini. Tanpa redeploy, tombol Generate sudah patuh sementara cron belum.
 2. **Deploy web → rebuild AAB → rilis Electron.** Rilis Electron bukan formalitas: admin keuangan
    bekerja di Electron, dan Electron memuat salinan asetnya sendiri (`loadFile`), jadi tanpa rilis
-   Electron tak satu pun perbaikan di tiga gelombang ini sampai ke meja kasir.
+   Electron tak satu pun perbaikan di empat gelombang ini sampai ke meja kasir.
 
 Nomor baru, BUKAN dilebur ke v.1.4.2: v.1.4.2 lengkap — ketiga gelombangnya — sudah tayang di web
 sejak deploy 12 Sep 2026 pk. 22.18 (bundel `index-DGlb5NId.js` di server identik dengan build
 lokal dan memuat penyaring gelombang 3).
+
+Kyai, 16 Sep 2026: _"sekalian perbaiki saldo, di buku induk supaya tidak bingung mana total
+saldonya?"_
+
+Gelombang 3 membereskan **arti** saldo — satu kas yayasan, bukan saldo per lembaga. Yang tersisa
+ternyata **urutan bacanya**. Kartu ringkasan Buku Induk memuat enam angka, dan yang benar-benar
+total saldo, "Saldo kas yayasan setelah", justru yang paling kecil: nomor tiga dalam sederet teks
+10px. Yang paling menonjol malah kartu cyan "Selisih Periode" — bukan saldo, melainkan masuk
+dikurangi keluar pada periode yang sedang disaring. Angka selisih itu bahkan tampil **dua kali**
+dengan dua nama berbeda, di kartu dan lagi di strip bawah, sehingga terbaca seolah dua angka yang
+berlainan. **Tak ada rumus yang diubah**; yang berubah hanya mana yang lebih dulu dan lebih besar
+ditangkap mata.
+
+### Changed
+
+- **Saldo kas yayasan naik menjadi angka terbesar di Buku Induk**, berdiri sendiri di atas kartu
+  Masuk/Keluar/Selisih dan disebut **sekali** saja. Kartu "Selisih Periode" dibuat netral (abu-abu,
+  bukan cyan) supaya warna aksen menjadi milik saldo; sub-labelnya kini memikul keterangan "yang
+  dicetak" yang dulu berdiri sendiri sebagai angka kembar di strip bawah. Saldo awal turun jadi
+  konteks kecil di dalam kartu saldo, dan strip bawah menyusut jadi keterangan cetak saja.
+- **Kartu saldo menyebut periodenya** — "posisi kas setelah ‹periode›". Periode lampau bisa dipilih,
+  jadi angka itu tidak selalu berarti saldo hari ini, dan sebelumnya tak ada yang mengatakannya.
+
+Enam angka menjadi lima, masing-masing muncul sekali. `stats`, `saldoAwalPeriode`, dan
+`saldoAkhirPeriode` tidak disentuh; 1532 tes unit lolos tanpa satu pun disesuaikan — bukti bahwa
+yang berpindah memang cuma tata letaknya.
+
+## [v.1.4.3 · gelombang 3] — 2026-09-14 — Kas tunggal: satu saldo kas yayasan, kartu per lembaga menampilkan pemasukan, dan "Kas Induk" menjadi "Umum / Yayasan"
 
 Kyai, 14 Sep 2026, tentang Kas Induk/Yayasan yang kosong padahal pengeluaran diambil dari sana:
 

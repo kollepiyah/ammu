@@ -61,6 +61,19 @@ Rinciannya untuk pengembang ada di `CHANGELOG.md` — jangan disalin ke sana, te
   "Dicatat untuk Lembaga". Kartu "Saldo Pos" di Uang Kegiatan/Uang Buku/Tabungan Wajib menjadi
   "Selisih Periode", sesuai isinya. Tidak ada data yang diubah.
 
+**Tampilan saldo: satu angka yang jelas**
+
+- **Total saldo di Buku Induk tidak lagi tersamar di antara angka lain.** Dulu kartu ringkasan
+  memuat enam angka, dan yang paling besar serta berwarna justru "Selisih Periode" — masuk
+  dikurangi keluar pada periode yang sedang dilihat, bukan saldo. Saldo kas yayasan yang
+  sesungguhnya tercetak paling kecil di barisan bawah, sementara angka selisih tadi muncul dua kali
+  dengan dua nama berbeda sehingga terbaca seperti dua angka yang berlainan. Sekarang saldo kas
+  yayasan berdiri sendiri sebagai angka terbesar dan disebut sekali saja; masuk, keluar, dan selisih
+  turun menjadi rincian periode.
+- **Kartu saldo menyebut periodenya**, misalnya "posisi kas setelah Agustus 2026". Periode lampau
+  bisa dipilih, jadi angka itu tidak selalu berarti saldo hari ini. Tidak ada angka yang berubah —
+  hanya urutan bacanya.
+
 **Dicabut**
 
 - Tombol perapih yang tugasnya sudah selesai: "Bersihkan residu" (Buku Induk), "Bersihkan" baris
