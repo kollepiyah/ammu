@@ -74,6 +74,12 @@ Rinciannya untuk pengembang ada di `CHANGELOG.md` — jangan disalin ke sana, te
   bisa dipilih, jadi angka itu tidak selalu berarti saldo hari ini. Tidak ada angka yang berubah —
   hanya urutan bacanya.
 
+**Perangkat yang didukung**
+
+- **Minimum naik ke Android 7.0 (Nougat).** Android 6.0 tidak lagi didukung. Google Play kini
+  mensyaratkannya untuk perlindungan otomatis aplikasi, dan versi Android itu terbit tahun 2015.
+  Perangkat Android 7.0 ke atas tidak terpengaruh sama sekali.
+
 **Dicabut**
 
 - Tombol perapih yang tugasnya sudah selesai: "Bersihkan residu" (Buku Induk), "Bersihkan" baris

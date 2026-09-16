@@ -20,22 +20,50 @@ naik satu tiap rilis. Entri lama memakai skema lama `v.{nomor-urut}.{MMDDtahunmu
 
 ---
 
-## [v.1.4.3] — 2026-09-16 — Buku Induk: total saldo berhenti bersembunyi di antara lima angka lain
+## [v.1.4.3] — 2026-09-16 — minSdk naik ke 24: Play menolak AAB yang minimumnya masih Android 6
 
-**SIAP RILIS** — `versionCode` 143 / `versionName` `v.1.4.3`. **SATU rilis, EMPAT gelombang** (14 Sep
-2026 pagi, siang, sore, lalu 16 Sep 2026): v.1.4.3 belum pernah tayang, jadi gelombang 2, 3, dan 4
-dilebur ke nomor yang sama. **Tanpa migrasi Supabase** (`db push` tak perlu), tetapi **ada perubahan
-edge function** (gelombang 2). Urutannya:
+**SIAP RILIS** — `versionCode` 143 / `versionName` `v.1.4.3`. **SATU rilis, LIMA gelombang** (14 Sep
+2026 pagi, siang, sore, lalu 16 Sep 2026 dua kali): v.1.4.3 belum pernah tayang, jadi gelombang 2
+sampai 5 dilebur ke nomor yang sama. **Tanpa migrasi Supabase** (`db push` tak perlu), tetapi **ada
+perubahan edge function** (gelombang 2). Urutannya:
 
 1. `supabase functions deploy auto-generate-tagihan --no-verify-jwt` — cron harian baru mengakui
    bayar di muka sesudah ini. Tanpa redeploy, tombol Generate sudah patuh sementara cron belum.
 2. **Deploy web → rebuild AAB → rilis Electron.** Rilis Electron bukan formalitas: admin keuangan
    bekerja di Electron, dan Electron memuat salinan asetnya sendiri (`loadFile`), jadi tanpa rilis
-   Electron tak satu pun perbaikan di empat gelombang ini sampai ke meja kasir.
+   Electron tak satu pun perbaikan di lima gelombang ini sampai ke meja kasir.
 
 Nomor baru, BUKAN dilebur ke v.1.4.2: v.1.4.2 lengkap — ketiga gelombangnya — sudah tayang di web
 sejak deploy 12 Sep 2026 pk. 22.18 (bundel `index-DGlb5NId.js` di server identik dengan build
 lokal dan memuat penyaring gelombang 3).
+
+Play Console menolak unggahan AAB gelombang 4:
+
+> _"Perlindungan otomatis Google Play memerlukan versi SDK minimum 24 atau yang lebih tinggi. App
+> Bundle yang diupload memiliki versi SDK minimum 23."_
+
+`minSdkVersion = 23` di `vue-app/android/variables.gradle` ternyata **warisan Capacitor 7**.
+Capacitor 8 sendiri sudah memakai **24** sebagai default — baik `@capacitor/android`
+(`capacitor/build.gradle`) maupun `capacitor-cordova-android-plugins` sama-sama jatuh ke 24 bila
+properti itu tak diset. Jadi berkas inilah yang menahan proyek di bawah default kerangkanya
+sendiri, persis seperti `compileSdkVersion` yang tertahan di 35 pada v.1.2.1.
+
+### Changed
+
+- **`minSdkVersion` 23 → 24.** Dukungan **Android 6.0 (Marshmallow, rilis 2015) berakhir**;
+  minimum naik ke Android 7.0 Nougat. Ini syarat Perlindungan Otomatis Play, bukan pilihan gaya:
+  selama fitur itu menyala di Play Console, AAB dengan minimum 23 akan terus ditolak. Bila suatu
+  saat perangkat Android 6 harus dilayani lagi, jalannya adalah mematikan Perlindungan Otomatis di
+  Play Console — menurunkan angka ini sendirian hanya mengulang penolakan yang sama.
+
+### Catatan — yang sengaja BELUM disentuh
+
+- Penjagaan versi di widget kini mubazir tetapi dibiarkan: `Build.VERSION.SDK_INT >= 24`
+  (`JamHijriWidget.java`) dan empat `>= Build.VERSION_CODES.M` (API 23) di `JamHijriWidget.java`
+  serta `KalenderWidget.java` sekarang selalu benar. Tak ada yang rusak — hanya cabang mati yang
+  menunggu dirapikan tersendiri, di luar perbaikan rilis ini.
+
+## [v.1.4.3 · gelombang 4] — 2026-09-16 — Buku Induk: total saldo berhenti bersembunyi di antara lima angka lain
 
 Kyai, 16 Sep 2026: _"sekalian perbaiki saldo, di buku induk supaya tidak bingung mana total
 saldonya?"_

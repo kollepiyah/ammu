@@ -1,5 +1,14 @@
 ext {
-    minSdkVersion = 23
+    // v.1.4.3 gelombang 5: Play menolak unggahan AAB — "Perlindungan otomatis Google Play
+    //   memerlukan versi SDK minimum 24". Angka 23 ini warisan Capacitor 7; Capacitor 8
+    //   sendiri sudah memakai 24 sebagai default (@capacitor/android capacitor/build.gradle
+    //   dan capacitor-cordova-android-plugins keduanya jatuh ke 24 bila properti tak diset),
+    //   jadi 23 justru menahan proyek di bawah default kerangkanya sendiri.
+    //   Konsekuensinya: Android 6.0 (Marshmallow, rilis 2015) tak lagi didukung; minimum
+    //   naik ke Android 7.0 Nougat. Bila suatu saat perangkat Android 6 harus dilayani lagi,
+    //   jalan lain adalah mematikan Perlindungan Otomatis di Play Console, bukan menurunkan
+    //   angka ini sendirian — Play akan menolak unggahannya lagi.
+    minSdkVersion = 24
     // v.1.2.1: Play mewajibkan target Android 16 (API 36) — tenggat 31 Agu 2026.
     //   Capacitor 8.4.2 SUDAH default ke 36; berkas inilah yang menahannya di 35.
     //   Perubahan perilaku Android 16 yang menyala saat target 36, sudah dicek:
