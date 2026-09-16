@@ -68,7 +68,10 @@ try {
 
   log('Step 2: Run gradle bundleRelease (generate signed AAB)')
   // Windows: gradlew.bat, Linux/Mac: ./gradlew
-  const gradlew = process.platform === 'win32' ? 'gradlew.bat' : './gradlew'
+  // v.1.4.3: pakai '.\\gradlew.bat' — bukan 'gradlew.bat' polos. cmd.exe tidak mencari
+  //   direktori kerja saat NoDefaultCurrentDirectoryInExePath diset (mis. dipanggil dari
+  //   Git Bash atau sebagian terminal), sehingga skrip gagal 'is not recognized'.
+  const gradlew = process.platform === 'win32' ? '.\\gradlew.bat' : './gradlew'
   run(`${gradlew} bundleRelease`, { cwd: ANDROID_DIR })
 
   if (fs.existsSync(AAB_PATH)) {
