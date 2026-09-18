@@ -598,13 +598,30 @@ const RT_DEBOUNCE_MS = 400
 // Kedua lapis memakai `fetchGabung` yang sama, jadi penggabungan 400 ms hasil audit
 // Agu 2026 tetap berlaku: badai event maupun badai bangun-tidur sama-sama menjadi
 // SATU tarikan per koleksi.
+//
+// INSIDEN 14–17 Sep 2026 — egress 19,42 GB dari kuota 5 GB, proyek dibatasi Supabase,
+// tak seorang pun bisa login. Lapis 1 di atas membuat perulangan tanpa ujung:
+// `removeChannel(ch)` di realtime-js MENGABARKAN `CLOSED` ke callback channel yang kita
+// buang sendiri, dan kabar itu terbaca "putus lagi" -> pasang ulang -> SUBSCRIBED ->
+// tarik tabel PENUH -> buang -> CLOSED -> ... tiap ±1 detik, selamanya, untuk setiap
+// langganan di setiap perangkat yang pernah sekali saja putus. Penjaganya ada tiga:
+//   · kabar dari channel yang BUKAN channel aktif diabaikan (`ch !== kanal`),
+//   · jeda menaik baru kembali ke nol sesudah sambungan bertahan RT_STABIL_MS, jadi
+//     channel yang diterima lalu diputus server berulang-ulang tetap melambat, dan
+//   · lapis 2 hanya menyegarkan sesudah jendela benar-benar lama tersembunyi.
 const RT_ULANG_MS = [1000, 3000, 8000, 20000, 60000]
-// Jangan menarik ulang koleksi yang BARU SAJA ditarik — tanpa ini, berpindah jendela
-// bolak-balik (kebiasaan wajar saat menyalin data) menarik setiap tabel tiap kali.
-const RT_JEDA_SEGAR_MS = 5000
+const RT_STABIL_MS = 30000
+// Jangan menarik ulang koleksi yang BARU SAJA ditarik.
+const RT_JEDA_SEGAR_MS = 30000
+// Kembali ke jendela hanya menyegarkan bila jendela itu tersembunyi SELAMA ini. Minimize
+// dan pindah aplikasi di HP dilaporkan `hidden`, begitu pula (Chromium di Windows) jendela
+// yang tertutup penuh jendela lain — berpindah ke Excel dan kembali saat menyalin data
+// tak boleh menarik ulang setiap tabel. Perangkat yang tidur sungguhan melewati ini.
+const RT_SEGAR_SESUDAH_SEMBUNYI_MS = 60000
 
 const _penyegar = new Set()
 let _pendengarTerpasang = false
+let _tersembunyiSejak = 0
 function _pasangPendengarGlobal() {
   if (_pendengarTerpasang) return
   if (typeof window === 'undefined' || typeof document === 'undefined') return
@@ -620,7 +637,13 @@ function _pasangPendengarGlobal() {
   }
   window.addEventListener('online', segarkan)
   document.addEventListener('visibilitychange', () => {
-    if (!document.hidden) segarkan()
+    if (document.hidden) {
+      if (!_tersembunyiSejak) _tersembunyiSejak = Date.now()
+      return
+    }
+    const lama = _tersembunyiSejak ? Date.now() - _tersembunyiSejak : 0
+    _tersembunyiSejak = 0
+    if (lama >= RT_SEGAR_SESUDAH_SEMBUNYI_MS) segarkan()
   })
 }
 
@@ -635,15 +658,20 @@ function _pasangChannelTahanPutus(namaDasar, daftarkan, fetchGabung) {
   let percobaan = 0
   let timerUlang = null
   let pernahTersambung = false
+  let tersambungSejak = 0
 
   const buang = () => {
-    if (!ch) return
+    // `ch` dikosongkan SEBELUM removeChannel: CLOSED milik channel yang dibuang bisa
+    // datang SINKRON (soket sedang putus -> phoenix membalas `leave` seketika), dan saat
+    // itu ia sudah harus terbaca sebagai channel lama.
+    const lama = ch
+    ch = null
+    if (!lama) return
     try {
-      supabase.removeChannel(ch)
+      supabase.removeChannel(lama)
     } catch {
       /* noop */
     }
-    ch = null
   }
   const jadwalUlang = () => {
     if (lepas || timerUlang) return
@@ -658,17 +686,31 @@ function _pasangChannelTahanPutus(namaDasar, daftarkan, fetchGabung) {
   }
   const pasang = () => {
     if (lepas) return
-    const dasar = supabase.channel(`${namaDasar}-${Math.random().toString(36).slice(2, 8)}`)
-    ch = daftarkan(dasar).subscribe((status) => {
-      if (lepas) return
+    const kanal = daftarkan(
+      supabase.channel(`${namaDasar}-${Math.random().toString(36).slice(2, 8)}`)
+    )
+    ch = kanal
+    kanal.subscribe((status) => {
+      // Kabar dari channel yang sudah kita buang (removeChannel -> CLOSED) BUKAN tanda
+      // putus. Tanpa penjaga ini: insiden egress 14–17 Sep 2026.
+      if (lepas || ch !== kanal) return
       if (status === 'SUBSCRIBED') {
-        percobaan = 0
+        tersambungSejak = Date.now()
+        // Pulih sendiri (rejoin bawaan phoenix) -> pemasangan ulang tak perlu lagi.
+        if (timerUlang) {
+          clearTimeout(timerUlang)
+          timerUlang = null
+        }
         // Hanya pada sambungan ULANG — tarikan pertama sudah dilakukan pemanggil.
         if (pernahTersambung) fetchGabung()
         pernahTersambung = true
         return
       }
-      if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') jadwalUlang()
+      if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+        if (tersambungSejak && Date.now() - tersambungSejak >= RT_STABIL_MS) percobaan = 0
+        tersambungSejak = 0
+        jadwalUlang()
+      }
     })
   }
   pasang()
@@ -813,5 +855,7 @@ export const _internal = {
   // v.1.4.2: knob pemulihan realtime — dibaca tes regresi, bukan API aplikasi.
   RT_DEBOUNCE_MS,
   RT_ULANG_MS,
-  RT_JEDA_SEGAR_MS
+  RT_STABIL_MS,
+  RT_JEDA_SEGAR_MS,
+  RT_SEGAR_SESUDAH_SEMBUNYI_MS
 }

@@ -55,7 +55,7 @@ vi.mock('../../vue-app/src/services/supabase', () => ({
 }))
 
 const { subscribeColl, _internal } = await import('../../vue-app/src/services/db.js')
-const { RT_ULANG_MS, RT_JEDA_SEGAR_MS, RT_DEBOUNCE_MS } = _internal
+const { RT_ULANG_MS, RT_JEDA_SEGAR_MS, RT_DEBOUNCE_MS, RT_SEGAR_SESUDAH_SEMBUNYI_MS } = _internal
 
 /** Kirim status ke channel yang TERAKHIR dipasang. */
 function kirimStatus(s) {
@@ -139,6 +139,123 @@ describe('channel realtime yang putus dipasang ulang', () => {
   })
 })
 
+// ---------------------------------------------------------------------------
+// INSIDEN 14–17 Sep 2026: egress Supabase 19,42 GB dari kuota 5 GB, semua proyek
+// dibatasi ("Services restricted") dan tak seorang pun bisa login.
+//
+// Mock di atas memperlakukan `removeChannel` sebagai pencatat pasif. realtime-js
+// 2.108 TIDAK begitu: `removeChannel(ch)` -> `ch.unsubscribe()` -> phoenix `leave()`
+// memicu onClose hooks, dan `subscribe(cb)` mendaftarkan `cb('CLOSED')` di sana. Jadi
+// channel yang kita BUANG SENDIRI saat memasang ulang ikut mengabarkan CLOSED — dan
+// kode v.1.4.2 membacanya sebagai "putus lagi": pasang ulang -> SUBSCRIBED -> tarik
+// tabel PENUH -> buang -> CLOSED -> ... tiap ±1 detik, selamanya, untuk SETIAP
+// langganan, di setiap perangkat yang pernah sekali saja putus (HP tidur, WiFi ganti).
+//
+// Mock di bawah meniru perilaku pustaka yang sebenarnya (dibuktikan terhadap
+// realtime-js 2.108.2 terpasang: removeChannel -> callback menerima ["CLOSED"]).
+function makeSupabaseNyata({ rtt = 150, closedSinkron = false } = {}) {
+  const spy = { tarikan: 0, dibuat: 0, removed: 0, kanal: [] }
+  const b = {}
+  b.from = () => b
+  b.select = () => b
+  b.order = () => b
+  b.eq = () => b
+  b.limit = () => Promise.resolve({ data: [], error: null })
+  b.range = () => {
+    spy.tarikan++
+    return Promise.resolve({ data: [], error: null })
+  }
+  b.maybeSingle = () => {
+    spy.tarikan++
+    return Promise.resolve({ data: null, error: null })
+  }
+  b.channel = () => {
+    spy.dibuat++
+    const ch = { cb: null, dibuang: false }
+    ch.on = () => ch
+    ch.subscribe = (cb) => {
+      ch.cb = cb
+      // server menjawab join sesudah satu perjalanan pulang-pergi
+      setTimeout(() => !ch.dibuang && cb('SUBSCRIBED'), rtt)
+      return ch
+    }
+    spy.kanal.push(ch)
+    return ch
+  }
+  b.removeChannel = (ch) => {
+    spy.removed++
+    ch.dibuang = true
+    // Soket tersambung: CLOSED tiba saat server membalas `leave`. Soket putus:
+    // phoenix memicu 'ok' seketika (`!canPush()`), jadi CLOSED datang SINKRON.
+    if (closedSinkron) ch.cb?.('CLOSED')
+    else setTimeout(() => ch.cb?.('CLOSED'), rtt)
+    return Promise.resolve('ok')
+  }
+  return { b, spy }
+}
+
+describe('channel yang dibuang sendiri tak boleh memicu pemasangan ulang (insiden egress)', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+  })
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  /** Satu kali putus sungguhan, lalu biarkan aplikasi terbuka 10 menit. */
+  async function putusSekaliLalu10Menit(opsi) {
+    current = makeSupabaseNyata(opsi)
+    const unsub = subscribeColl('keuangan_buku_induk', () => {})
+    await vi.advanceTimersByTimeAsync(1000) // tersambung pertama kali
+    expect(current.spy.tarikan).toBe(1)
+
+    const [pertama] = current.spy.kanal
+    pertama.cb('CHANNEL_ERROR') // HP tidur / WiFi berpindah — SEKALI
+    await vi.advanceTimersByTimeAsync(10 * 60 * 1000)
+    const hasil = { ...current.spy }
+    unsub()
+    return hasil
+  }
+
+  it('satu putus = satu pasang ulang + satu tarikan susulan, bukan perulangan', async () => {
+    const s = await putusSekaliLalu10Menit()
+    expect(s.dibuat).toBe(2) // channel awal + satu pengganti
+    expect(s.tarikan).toBe(2) // tarikan awal + satu susulan sesudah tersambung lagi
+  })
+
+  it('tetap diam saat CLOSED datang SINKRON (soket sedang putus waktu dibuang)', async () => {
+    const s = await putusSekaliLalu10Menit({ closedSinkron: true })
+    expect(s.dibuat).toBe(2)
+    expect(s.tarikan).toBe(2)
+  })
+
+  it('CLOSED dari server pada channel yang MASIH dipakai tetap memasang ulang', async () => {
+    current = makeSupabaseNyata()
+    const unsub = subscribeColl('keuangan_buku_induk', () => {})
+    await vi.advanceTimersByTimeAsync(1000)
+    current.spy.kanal[0].cb('CLOSED') // server menutup channel — ini putus sungguhan
+    await vi.advanceTimersByTimeAsync(RT_ULANG_MS[0] + 1000)
+    unsub()
+    expect(current.spy.dibuat).toBe(2)
+  })
+
+  it('channel yang putus-sambung terus (server) tak menarik tabel lebih dari 2x per menit', async () => {
+    current = makeSupabaseNyata()
+    const unsub = subscribeColl('keuangan_buku_induk', () => {})
+    await vi.advanceTimersByTimeAsync(1000)
+    const awal = current.spy.tarikan
+    // Server menerima join lalu memutusnya lagi, berulang-ulang, selama 10 menit.
+    const putusin = setInterval(() => {
+      const aktif = current.spy.kanal.filter((k) => !k.dibuang)
+      for (const k of aktif) k.cb?.('CHANNEL_ERROR')
+    }, 500)
+    await vi.advanceTimersByTimeAsync(10 * 60 * 1000)
+    clearInterval(putusin)
+    unsub()
+    expect(current.spy.tarikan - awal).toBeLessThanOrEqual(20)
+  })
+})
+
 describe('perangkat dipakai lagi → data disegarkan', () => {
   beforeEach(() => {
     current = makeSupabase()
@@ -148,24 +265,74 @@ describe('perangkat dipakai lagi → data disegarkan', () => {
     vi.useRealTimers()
   })
 
-  const kembaliTerlihat = () => document.dispatchEvent(new Event('visibilitychange'))
+  // jsdom selalu `hidden === false`; tes ini perlu jendela yang bisa disembunyikan.
+  let tersembunyi = false
+  beforeEach(() => {
+    Object.defineProperty(document, 'hidden', { configurable: true, get: () => tersembunyi })
+  })
+  afterEach(() => {
+    tersembunyi = false
+    delete document.hidden
+  })
+  const ubahTerlihat = (sembunyi) => {
+    tersembunyi = sembunyi
+    document.dispatchEvent(new Event('visibilitychange'))
+  }
+  /** Minimize / pindah aplikasi / tertutup jendela lain selama `ms`, lalu kembali. */
+  const sembunyikanSelama = (ms) => {
+    ubahTerlihat(true)
+    vi.advanceTimersByTime(ms)
+    ubahTerlihat(false)
+  }
 
-  it('kembali ke jendela sesudah lama menganggur menarik data', () => {
+  it('kembali ke jendela sesudah lama tersembunyi menarik data', () => {
     const unsub = subscribeColl('keuangan_tagihan', () => {})
     expect(current.spy.tarikan).toBe(1)
 
-    vi.advanceTimersByTime(RT_JEDA_SEGAR_MS + 1000) // perangkat ditinggal
-    kembaliTerlihat()
+    sembunyikanSelama(RT_SEGAR_SESUDAH_SEMBUNYI_MS) // perangkat ditinggal
     vi.advanceTimersByTime(RT_DEBOUNCE_MS + 10)
     expect(current.spy.tarikan).toBe(2)
     unsub()
   })
 
-  it('bolak-balik jendela dengan cepat TIDAK menarik berulang', () => {
+  it('pindah ke Excel lalu kembali, berulang-ulang, TIDAK menarik tabel', () => {
+    // INSIDEN 14–17 Sep 2026: dulu tiap kembali terlihat (>5 detik sejak tarikan
+    // terakhir) menarik ulang SEMUA tabel yang dilanggani, betapa pun singkat jendelanya
+    // ditinggal — dan di PC kasir, pindah jendela bisa terjadi puluhan kali sehari.
     const unsub = subscribeColl('keuangan_tagihan', () => {})
-    for (let i = 0; i < 5; i++) kembaliTerlihat()
+    for (let i = 0; i < 20; i++) {
+      sembunyikanSelama(RT_SEGAR_SESUDAH_SEMBUNYI_MS / 2)
+      vi.advanceTimersByTime(RT_JEDA_SEGAR_MS) // bekerja di jendela Ammu sebentar
+    }
     vi.advanceTimersByTime(RT_DEBOUNCE_MS + 10)
-    expect(current.spy.tarikan).toBe(1) // masih di dalam jeda RT_JEDA_SEGAR_MS
+    expect(current.spy.tarikan).toBe(1)
+    unsub()
+  })
+
+  it('kabar "terlihat" beruntun tanpa pernah tersembunyi TIDAK menarik', () => {
+    const unsub = subscribeColl('keuangan_tagihan', () => {})
+    vi.advanceTimersByTime(RT_SEGAR_SESUDAH_SEMBUNYI_MS * 2)
+    for (let i = 0; i < 5; i++) ubahTerlihat(false)
+    vi.advanceTimersByTime(RT_DEBOUNCE_MS + 10)
+    expect(current.spy.tarikan).toBe(1)
+    unsub()
+  })
+
+  it('tiap sembunyi-lama = satu tarikan; kabar "online" sesaat sesudahnya tidak', () => {
+    const unsub = subscribeColl('keuangan_tagihan', () => {})
+    ubahTerlihat(true)
+    vi.advanceTimersByTime(RT_SEGAR_SESUDAH_SEMBUNYI_MS)
+    ubahTerlihat(false)
+    ubahTerlihat(true) // bolak-balik lagi seketika sesudahnya
+    vi.advanceTimersByTime(RT_SEGAR_SESUDAH_SEMBUNYI_MS)
+    ubahTerlihat(false)
+    vi.advanceTimersByTime(RT_DEBOUNCE_MS + 10)
+    expect(current.spy.tarikan).toBe(3) // awal + dua kali tersembunyi lama
+
+    // koleksi yang baru ditarik (< RT_JEDA_SEGAR_MS) tak ditarik lagi oleh pemicu lain
+    window.dispatchEvent(new Event('online'))
+    vi.advanceTimersByTime(RT_DEBOUNCE_MS + 10)
+    expect(current.spy.tarikan).toBe(3)
     unsub()
   })
 
@@ -181,16 +348,14 @@ describe('perangkat dipakai lagi → data disegarkan', () => {
   it('langganan yang sudah dilepas tak ikut disegarkan', () => {
     const unsub = subscribeColl('keuangan_tagihan', () => {})
     unsub()
-    vi.advanceTimersByTime(RT_JEDA_SEGAR_MS + 1000)
-    kembaliTerlihat()
+    sembunyikanSelama(RT_SEGAR_SESUDAH_SEMBUNYI_MS)
     vi.advanceTimersByTime(RT_DEBOUNCE_MS + 10)
     expect(current.spy.tarikan).toBe(1)
   })
 
   it('koleksi NON-realtime tidak mendaftar sebagai penyegar', () => {
     const unsub = subscribeColl('audit_log', () => {})
-    vi.advanceTimersByTime(RT_JEDA_SEGAR_MS + 1000)
-    kembaliTerlihat()
+    sembunyikanSelama(RT_SEGAR_SESUDAH_SEMBUNYI_MS)
     vi.advanceTimersByTime(RT_DEBOUNCE_MS + 10)
     expect(current.spy.tarikan).toBe(1)
     unsub()
