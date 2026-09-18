@@ -372,24 +372,28 @@ export async function getAll(collectionName) {
   return rows.map((r) => _flatten(collectionName, r))
 }
 
-/** Query: filter + order + limit.
- *  Contoh: queryColl('santri', [['lembaga','==','PTPT']], [['nama','asc']], 50) */
-export async function queryColl(collectionName, filters = [], orders = [], limitN = 0) {
-  _ensure()
+/** Baris MENTAH (bentuk DB, belum di-flatten). Jalur baca queryColl, dan juga salinan
+ *  lokal subscribeColl — yang butuh bentuk DB untuk menilai payload realtime. */
+async function _tarikMentah(collectionName, filters = [], orders = [], limitN = 0) {
   const build = () => {
     let q = supabase.from(collectionName).select('*')
     q = _applyFilters(q, collectionName, filters)
     q = _applyOrders(q, collectionName, orders)
     return q
   }
-  let rows
   if (limitN > 0) {
     const { data, error } = await build().limit(limitN)
     if (error) throw error
-    rows = data || []
-  } else {
-    rows = await _pageAll(build)
+    return data || []
   }
+  return _pageAll(build)
+}
+
+/** Query: filter + order + limit.
+ *  Contoh: queryColl('santri', [['lembaga','==','PTPT']], [['nama','asc']], 50) */
+export async function queryColl(collectionName, filters = [], orders = [], limitN = 0) {
+  _ensure()
+  const rows = await _tarikMentah(collectionName, filters, orders, limitN)
   return rows.map((r) => _flatten(collectionName, r))
 }
 
@@ -562,7 +566,12 @@ export async function deleteOne(collectionName, id, opts = {}) {
  *  yang berlangganan DAN setiap perangkat yang sedang online. Itu penyebab paling
  *  nyata "PC kasir terasa berat sesudah menyimpan". Kini event digabung: satu
  *  tarikan, sesaat sesudah event TERAKHIR. Efek ke pengguna cuma jeda tampil
- *  <0,5 detik; angka uang tak tersentuh (ini murni jalur BACA). */
+ *  <0,5 detik; angka uang tak tersentuh (ini murni jalur BACA).
+ *
+ *  v.1.4.4: event subscribeColl tak lagi memicu tarikan penuh sama sekali (lihat
+ *  "event realtime DITERAPKAN" di bawah). Jeda yang sama kini menggabungkan
+ *  PENERAPAN-nya — satu keranjang POS tetap satu kali callback, satu kali hitung
+ *  ulang layar — dan tetap menggabungkan tarikan penuh jalur pemulihan. */
 const RT_DEBOUNCE_MS = 400
 
 // ---- v.1.4.2 · langganan realtime yang MENYEMBUHKAN DIRI --------------------
@@ -721,35 +730,514 @@ function _pasangChannelTahanPutus(namaDasar, daftarkan, fetchGabung) {
   }
 }
 
-/** Subscribe collection — return unsubscribe function.
- *  Whitelist realtime -> channel postgres_changes (refetch penuh tiap perubahan,
- *  cermin onSnapshot kirim seluruh set) tapi DIGABUNG lewat RT_DEBOUNCE_MS.
+// ---- v.1.4.4 · event realtime DITERAPKAN, bukan ditarik ulang ----------------
+//
+// Sampai v.1.4.3, SETIAP event postgres_changes berakhir di tarikan tabel PENUH: satu
+// INSERT di keuangan_buku_induk membuat setiap perangkat yang berlangganan mengunduh
+// ulang seluruh buku induk — sekali per LANGGANAN, dan satu perangkat bisa punya
+// beberapa (store koleksi, Buku Induk, Laporan, Pembayaran, grafik dasbor). Penggabungan
+// 400 ms hanya memadatkan badai; satu baris baru tetap = N tabel utuh. Dengan egress
+// Free Plan 5 GB per siklus dan pemakaian normal ±0,05–0,2 GB/hari sebelum insiden
+// 14–17 Sep 2026, tak ada ruang untuk itu.
+//
+// Padahal payload event sudah MEMBAWA barisnya, dan bentuknya sama dengan jawaban
+// PostgREST: server Realtime membentuk `record` lewat `to_jsonb(nilai::tipe)`
+// (realtime.apply_rls), jadi timestamptz sama-sama "…T…+00:00" dan jsonb sama-sama objek.
+// Kini payload itu diterapkan langsung ke salinan lokal langganan, lewat `_flatten` yang
+// sama dengan jalur baca. Tarikan penuh TETAP dipakai untuk tarikan awal dan untuk
+// tarikan susulan sesudah tersambung ulang / perangkat dipakai lagi — event selagi putus
+// tak pernah dikirim ulang server, jadi di situ memang tak ada jalan lain.
+//
+// Payload TIDAK dipercaya begitu saja. Baris yang tak bisa dipastikan ditanyakan ke
+// server BERDASARKAN ID (`id=in.(…)` + penyaring pemanggil: satu permintaan kecil per
+// gelombang, bukan satu tabel):
+//   · UPDATE tanpa REPLICA IDENTITY FULL (tak satu tabel pun di sini memakainya)
+//     MEMBUANG kolom ber-TOAST yang tak ikut berubah — `data` jsonb yang besar, `foto`,
+//     `isi` pos. Menerapkannya apa adanya = field lenyap dari layar. Maka baris yang
+//     kolomnya kurang dibanding baris hasil tarikan -> ditanyakan.
+//   · `errors` terisi (mis. 413: baris > 1 MB, dikirim terpotong) -> ditanyakan.
+//   · Penyaring pemanggil dinilai di klien HANYA bila jawabannya pasti sama dengan
+//     jawaban Postgres (lihat `_cocokFilter`); selebihnya server yang memutuskan.
+// Tarikan penuh hanya untuk yang tak terbaca sama sekali: payload tanpa primary key
+// (post_reactions ber-PK gabungan), bentuk event yang tak dikenal, atau lebih dari
+// RT_TARIK_ID_MAKS baris yang harus ditanyakan dalam satu gelombang.
+//
+// RLS: untuk INSERT/UPDATE server Realtime hanya mengirim baris yang boleh DIBACA
+// pelanggan itu, jadi jalur ini tak membocorkan apa pun. DELETE tak bisa dinilai RLS
+// (barisnya sudah tiada), jadi dikirim ke semua pelanggan dengan primary key saja —
+// cukup untuk membuang barisnya bila ada, dan tak berbuat apa-apa bila tidak.
+// Batas yang TERSISA: baris yang berubah sampai pelanggan tak lagi boleh membacanya
+// tak mengirim event apa pun ke pelanggan itu. Dulu pun begitu, tapi tarikan penuh
+// dari event baris LAIN ikut menyapunya; kini ia bertahan sampai tarikan penuh
+// berikutnya (sambung ulang, `online`, kembali sesudah tersembunyi ≥ 60 detik, atau
+// layar dibuka lagi). RLS baca di skema ini bergantung pada peran dan kepemilikan
+// (santri_id, guru_id, pengirim) yang tak pernah berpindah, jadi ini jarang sekali.
+//
+// CELAH AWAL: tarikan awal berangkat bersamaan dengan pemasangan channel, dan perubahan
+// yang jatuh di antara snapshot tarikan itu dan aktifnya langganan di server tak pernah
+// menjadi event. Dulu celah ini tertambal oleh tarikan penuh event berikutnya. Supaya
+// tetap begitu, gelombang event PERTAMA sesudah tarikan awal ikut menarik baris yang
+// `updated_at`-nya sejak tarikan awal dimulai (trigger set_updated_at, migrasi F2 06) —
+// dihitung dengan jam SERVER dari `commit_timestamp`, bukan jam perangkat yang bisa
+// meleset. Sekali per langganan, dan hanya bila memang ada event. (keuangan_va_intent
+// tak dipasangi trigger itu: INSERT-nya tertambal karena default kolom now(), UPDATE-nya
+// di celah ini tidak.)
+
+/** Lebih dari ini baris yang harus ditanyakan dalam satu gelombang -> tarik penuh saja. */
+const RT_TARIK_ID_MAKS = 200
+/** Id per permintaan `id=in.(…)` — menjaga panjang URL tetap aman. */
+const RT_TARIK_ID_PER_PERMINTAAN = 100
+/** Kelonggaran penambal celah awal: updated_at = awal TRANSAKSI, bukan saat commit. */
+const RT_SUSUL_AWAL_MARGIN_MS = 120000
+
+async function _tarikMentahById(collectionName, filters, ids) {
+  const { pk } = _cfg(collectionName)
+  const out = []
+  for (let i = 0; i < ids.length; i += RT_TARIK_ID_PER_PERMINTAAN) {
+    const q = _applyFilters(supabase.from(collectionName).select('*'), collectionName, filters)
+    const { data, error } = await q.in(pk, ids.slice(i, i + RT_TARIK_ID_PER_PERMINTAAN))
+    if (error) throw error
+    if (data) out.push(...data)
+  }
+  return out
+}
+
+// ---- penilaian penyaring & urutan DI KLIEN (v.1.4.4) ---------------------------
+// Aturannya satu: menjawab HANYA bila jawabannya pasti sama dengan jawaban Postgres.
+// Selebihnya `undefined`, dan pemanggilnya bertanya ke server.
+
+const _WAKTU_RE =
+  /^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})(?::(\d{2})(?:\.(\d+))?)?(Z|[+-]\d{2}(?::?\d{2})?)$/i
+// Teks yang urutannya sama di collation APA PUN yang mungkin dipakai DB: angka dan tanda
+// baca tanggal ('YYYY-MM-DD', 'YYYY-MM', 'HH:MM'). Teks bebas (nama, keterangan) tidak —
+// collation linguistik mengurutkannya lain dari urutan titik-kode.
+const _TEKS_AMAN_RE = /^[0-9:.T -]*$/
+
+/** Timestamp BER-ZONA -> mikrodetik sejak epoch (bilangan bulat, presisi timestamptz).
+ *  Tanpa zona -> NaN: artinya bergantung TimeZone sesi, tak bisa dipastikan di sini. */
+function _mikrodetik(s) {
+  const m = typeof s === 'string' ? _WAKTU_RE.exec(s.trim()) : null
+  if (!m) return NaN
+  const [, th, bl, tg, jam, mnt, dtk, pecahan, zona] = m
+  let geserMenit = 0
+  if (zona.toUpperCase() !== 'Z') {
+    const angka = zona.slice(1).replace(':', '')
+    geserMenit =
+      (zona[0] === '-' ? -1 : 1) * (Number(angka.slice(0, 2)) * 60 + Number(angka.slice(2) || 0))
+  }
+  const ms = Date.UTC(+th, +bl - 1, +tg, +jam, +mnt, +(dtk || 0)) - geserMenit * 60000
+  return ms * 1000 + Number(((pecahan || '') + '000000').slice(0, 6))
+}
+
+function _punya(o, k) {
+  return o !== null && typeof o === 'object' && Object.prototype.hasOwnProperty.call(o, k)
+}
+function _ada(v) {
+  return v !== null && v !== undefined
+}
+
+/** Nilai `field` sebagaimana DILIHAT Postgres saat menyaring baris mentah `raw`.
+ *  j: 'teks' | 'angka' | 'bool' | 'waktu' | 'null' | 'x' (tak bisa dipastikan). */
+function _nilaiSaring(table, raw, field) {
+  const { json } = _cfg(table)
+  const ref = _colRef(table, field)
+  if (json && ref === `${json}->>${field}`) {
+    // `->>` selalu TEKS: angka & boolean JSON dibandingkan Postgres sebagai teks.
+    const v = _punya(raw[json], field) ? raw[json][field] : null
+    if (v === null) return { j: 'null' }
+    if (typeof v === 'string') return { j: 'teks', v }
+    if (typeof v === 'boolean') return { j: 'teks', v: String(v) }
+    if (Number.isSafeInteger(v)) return { j: 'teks', v: String(v) }
+    return { j: 'x' } // pecahan (1.50 vs 1.5) & objek: bentuk teksnya tak pasti
+  }
+  if (!_punya(raw, ref)) return { j: 'x' }
+  const v = raw[ref]
+  if (v === null) return { j: 'null' }
+  if (ref === 'created_at' || ref === 'updated_at') {
+    const us = _mikrodetik(v)
+    return Number.isNaN(us) ? { j: 'x' } : { j: 'waktu', v: us }
+  }
+  if (typeof v === 'string') return _WAKTU_RE.test(v) ? { j: 'x' } : { j: 'teks', v }
+  if (typeof v === 'number') return Number.isFinite(v) ? { j: 'angka', v } : { j: 'x' }
+  if (typeof v === 'boolean') return { j: 'bool', v }
+  return { j: 'x' }
+}
+
+// Nilai penyaring dikirim postgrest-js sebagai `${val}` lalu di-cast Postgres ke tipe
+// kolomnya. Tiga penerjemah ini hanya menerima bentuk yang cast-nya pasti.
+function _teksPenyaring(val) {
+  if (typeof val === 'string') return val
+  if (typeof val === 'boolean' || Number.isFinite(val)) return String(val)
+  return undefined
+}
+function _angkaPenyaring(val) {
+  if (Number.isFinite(val)) return val
+  if (typeof val === 'string' && /^\s*[+-]?\d+\s*$/.test(val) && Number.isSafeInteger(+val))
+    return +val
+  return undefined
+}
+function _boolPenyaring(val) {
+  if (typeof val === 'boolean') return val
+  const s = String(val).trim().toLowerCase()
+  if (['t', 'true', 'y', 'yes', 'on', '1'].includes(s)) return true
+  if (['f', 'false', 'n', 'no', 'off', '0'].includes(s)) return false
+  return undefined
+}
+
+/** -1 / 0 / 1 membandingkan nilai baris dengan nilai penyaring; undefined = tak pasti.
+ *  `samaSaja` = cukup tahu sama/tidak (==, !=, in) — teks bebas pun boleh. */
+function _bandingPenyaring(n, val, samaSaja) {
+  if (n.j === 'teks') {
+    const t = _teksPenyaring(val)
+    if (t === undefined) return undefined
+    if (n.v === t) return 0
+    if (samaSaja) return 1
+    if (!_TEKS_AMAN_RE.test(n.v) || !_TEKS_AMAN_RE.test(t)) return undefined
+    return n.v < t ? -1 : 1
+  }
+  let t
+  if (n.j === 'angka') t = _angkaPenyaring(val)
+  else if (n.j === 'bool') t = _boolPenyaring(val)
+  else if (n.j === 'waktu') t = _mikrodetik(val)
+  if (t === undefined || Number.isNaN(t)) return undefined
+  return n.v === t ? 0 : n.v < t ? -1 : 1
+}
+
+function _cocokSatu(n, op, val) {
+  if (n.j === 'x' || op === 'array-contains' || op === 'array-contains-any') return undefined
+  if (op === 'in' || op === 'not-in') {
+    if (!Array.isArray(val)) return undefined
+    // `x IN ()` = false dan `x NOT IN ()` = true — termasuk untuk NULL.
+    if (!val.length) return op === 'not-in'
+    if (n.j === 'null') return false
+    let ada = false
+    for (const x of val) {
+      if (x === null || x === undefined) return undefined
+      const c = _bandingPenyaring(n, x, true)
+      if (c === undefined) return undefined
+      if (c === 0) ada = true
+    }
+    return op === 'in' ? ada : !ada
+  }
+  // NULL tak pernah memenuhi =, <>, <, <=, >, >= (hasilnya NULL, dianggap tidak).
+  if (n.j === 'null') return false
+  const rentang = op === '<' || op === '<=' || op === '>' || op === '>='
+  const c = _bandingPenyaring(n, val, !rentang)
+  if (c === undefined) return undefined
+  if (op === '!=') return c !== 0
+  if (op === '<') return c < 0
+  if (op === '<=') return c <= 0
+  if (op === '>') return c > 0
+  if (op === '>=') return c >= 0
+  return c === 0 // '==' dan op tak dikenal (dijadikan eq oleh _applyFilters)
+}
+
+/** Apakah baris mentah `raw` lolos `filters`? true / false / undefined (tanya server). */
+function _cocokFilter(table, raw, filters) {
+  let pasti = true
+  for (const [field, op, val] of filters) {
+    const hasil = _cocokSatu(_nilaiSaring(table, raw, field), op, val)
+    if (hasil === false) return false
+    if (hasil === undefined) pasti = false
+  }
+  return pasti ? true : undefined
+}
+
+function _kunciUrut(table, raw, field) {
+  const { json } = _cfg(table)
+  const ref = _colRef(table, field)
+  if (json && ref === `${json}->>${field}`) {
+    const v = _punya(raw[json], field) ? raw[json][field] : null
+    if (v === null) return null
+    return typeof v === 'string' ? v : JSON.stringify(v) // `->>` = teks
+  }
+  const v = raw[ref]
+  if (v === null || v === undefined) return null
+  if (ref === 'created_at' || ref === 'updated_at') {
+    const us = _mikrodetik(v)
+    return Number.isNaN(us) ? String(v) : us
+  }
+  return typeof v === 'object' ? JSON.stringify(v) : v
+}
+
+/** Pembanding cermin ORDER BY Postgres untuk baris mentah. NULL = nilai terbesar
+ *  (default Postgres: ASC -> NULLS LAST, DESC -> NULLS FIRST). Teks: urutan titik-kode
+ *  (collation "C"); di collation linguistik, baris yang BERUBAH bisa mendarat sedikit
+ *  lain daripada tarikan penuh — baris lainnya tetap di urutan server. */
+function _bandingUrutan(table, orders, a, b) {
+  for (const [field, dir] of orders) {
+    const x = _kunciUrut(table, a, field)
+    const y = _kunciUrut(table, b, field)
+    let c = 0
+    if (x === null || y === null) c = x === y ? 0 : x === null ? 1 : -1
+    else if (typeof x === typeof y) c = x < y ? -1 : x > y ? 1 : 0
+    else c = String(x) < String(y) ? -1 : String(x) > String(y) ? 1 : 0
+    if (String(dir).toLowerCase() === 'desc') c = -c
+    if (c !== 0) return c
+  }
+  return 0
+}
+
+/** Sama isi, tak peduli urutan kunci (jsonb event & PostgREST berbeda urutan kolom). */
+function _samaNilai(a, b) {
+  if (a === b) return true
+  if (!a || !b || typeof a !== 'object' || typeof b !== 'object') return false
+  if (Array.isArray(a) !== Array.isArray(b)) return false
+  const ka = Object.keys(a)
+  if (ka.length !== Object.keys(b).length) return false
+  return ka.every((k) => _punya(b, k) && _samaNilai(a[k], b[k]))
+}
+
+function _eventDikenal(p) {
+  return (
+    !!p &&
+    typeof p === 'object' &&
+    (p.eventType === 'INSERT' || p.eventType === 'UPDATE' || p.eventType === 'DELETE')
+  )
+}
+
+/** Subscribe collection — return unsubscribe function. Callback SELALU menerima array
+ *  penuh berbentuk Firestore (cermin onSnapshot), array baru tiap kali.
+ *  Whitelist realtime -> tarikan penuh di awal & sesudah sambung ulang; event di
+ *  antaranya DITERAPKAN ke salinan lokal (v.1.4.4), digabung lewat RT_DEBOUNCE_MS.
  *  Non-whitelist -> fetch sekali + no-op. */
 export function subscribeColl(collectionName, callback, filters = [], orders = []) {
   _ensure()
-  let terakhirTarik = 0
-  const fetchAll = () => {
-    terakhirTarik = Date.now()
-    return queryColl(collectionName, filters, orders)
+  if (!REALTIME.has(collectionName)) {
+    queryColl(collectionName, filters, orders)
       .then(callback)
       .catch((err) => console.error(`[subscribeColl] ${collectionName} error:`, err))
-  }
-
-  if (!REALTIME.has(collectionName)) {
-    fetchAll()
     return () => {} // non-whitelist: tak ada channel
   }
-  fetchAll()
-  let timer = null
+
+  const { pk } = _cfg(collectionName)
+  const PENUH = 'penuh'
   let lepas = false
-  const fetchGabung = () => {
-    if (lepas) return
+  let timer = null
+  let terakhirTarik = 0
+  let perluPenuh = false // flush berikutnya = tarikan penuh (jalur pemulihan)
+  let antre = [] // event yang menunggu diterapkan: { p, tiba }
+  let sibuk = false // ada tarikan (penuh / per-id) yang sedang berjalan
+  let generasi = 0 // naik tiap tarikan penuh; hasil tarikan yang lebih tua dibuang
+  let salinan = null // { urutan: id[], baris: Map<id, {raw, doc}>, berkunci }
+  let templat = null // nama kolom baris hasil tarikan (urutan PostgREST)
+  let susulAwal = null // { mulai } selama celah awal belum ditambal
+
+  const kirim = () => {
+    try {
+      callback(salinan.urutan.map((id) => salinan.baris.get(id).doc))
+    } catch (err) {
+      console.error(`[subscribeColl] ${collectionName} error:`, err)
+    }
+  }
+
+  const keluarkan = (id) => {
+    const i = salinan.urutan.indexOf(id)
+    if (i >= 0) salinan.urutan.splice(i, 1)
+  }
+  const sisipkan = (id, raw) => {
+    const u = salinan.urutan
+    if (!orders.length) {
+      u.push(id) // tanpa urutan: baris baru di belakang, seperti urutan fisik tabel
+      return
+    }
+    // Sesudah baris terakhir yang tak lebih besar: yang setara tetap di urutan lamanya.
+    let lo = 0
+    let hi = u.length
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1
+      if (_bandingUrutan(collectionName, orders, salinan.baris.get(u[mid]).raw, raw) <= 0)
+        lo = mid + 1
+      else hi = mid
+    }
+    u.splice(lo, 0, id)
+  }
+  const pasangBaris = (id, mentah) => {
+    // Urutan kolom disamakan dengan PostgREST supaya dokumen dari event tak berbeda
+    // sedikit pun dari dokumen hasil tarikan (termasuk urutan Object.keys-nya).
+    let raw = mentah
+    if (templat) {
+      raw = {}
+      for (const k of templat) if (_punya(mentah, k)) raw[k] = mentah[k]
+      for (const k of Object.keys(mentah)) if (!_punya(raw, k)) raw[k] = mentah[k]
+    }
+    const lama = salinan.baris.get(id)
+    if (lama && _samaNilai(lama.raw, raw)) return false
+    salinan.baris.set(id, { raw, doc: _flatten(collectionName, raw) })
+    if (!lama) sisipkan(id, raw)
+    else if (orders.length && _bandingUrutan(collectionName, orders, lama.raw, raw) !== 0) {
+      keluarkan(id)
+      sisipkan(id, raw)
+    }
+    return true
+  }
+  const hapusBaris = (id) => {
+    if (!salinan.baris.delete(id)) return false
+    keluarkan(id)
+    return true
+  }
+  const lengkap = (raw) => {
+    const { json, cols } = _cfg(collectionName)
+    const wajib = templat || [pk, ...(json ? [json] : []), ...cols]
+    return wajib.every((k) => _punya(raw, k))
+  }
+
+  /** Satu event ke salinan. Hasil: berubah? (boolean) atau PENUH. `tanya` = id yang
+   *  harus ditanyakan ke server; event yang lebih baru untuk id yang sama menggantikannya. */
+  const terapkan = (p, tanya) => {
+    if (p.eventType === 'DELETE') {
+      if (!_ada(p.old?.[pk])) return PENUH
+      const id = String(p.old[pk])
+      tanya.delete(id)
+      return hapusBaris(id)
+    }
+    const raw = p.new
+    if (!_ada(raw?.[pk])) return PENUH
+    const id = String(raw[pk])
+    let berubah = false
+    const idLama = p.old?.[pk]
+    if (_ada(idLama) && String(idLama) !== id) {
+      // primary key berganti (nyaris tak pernah): baris ber-kunci lama ikut hilang
+      tanya.delete(String(idLama))
+      berubah = hapusBaris(String(idLama))
+    }
+    tanya.delete(id)
+    const galat = Array.isArray(p.errors) && p.errors.length > 0
+    const lolos = galat || !lengkap(raw) ? undefined : _cocokFilter(collectionName, raw, filters)
+    if (lolos === undefined) tanya.add(id)
+    else if (lolos ? pasangBaris(id, raw) : hapusBaris(id)) berubah = true
+    return berubah
+  }
+
+  const tarikPenuh = async (awal) => {
+    terakhirTarik = Date.now()
+    const gen = ++generasi
+    const mulai = Date.now()
+    antre = [] // event yang tiba sebelum saat ini sudah tercakup tarikan ini
+    sibuk = true
+    try {
+      const rows = await _tarikMentah(collectionName, filters, orders)
+      if (lepas || gen !== generasi) return
+      const baris = new Map()
+      const urutan = []
+      // Tanpa primary key (PK gabungan): event tak bisa diterapkan, selalu tarik penuh.
+      const berkunci = rows.every((raw) => _ada(raw?.[pk]))
+      rows.forEach((raw, i) => {
+        // Kunci ganda (baris bergeser antarhalaman _pageAll) dirapatkan jadi satu.
+        const id = berkunci ? String(raw[pk]) : `#${i}`
+        if (!baris.has(id)) urutan.push(id)
+        baris.set(id, { raw, doc: _flatten(collectionName, raw) })
+      })
+      salinan = { urutan, baris, berkunci }
+      if (rows.length) templat = Object.keys(rows[0])
+      susulAwal = awal ? { mulai } : null
+      kirim()
+    } catch (err) {
+      console.error(`[subscribeColl] ${collectionName} error:`, err)
+    } finally {
+      if (gen === generasi) {
+        sibuk = false
+        if (!lepas) proses()
+      }
+    }
+  }
+
+  const tarikPerId = async (ids, batasSusul, berubahAwal) => {
+    const gen = generasi
+    sibuk = true
+    let berubah = berubahAwal
+    try {
+      const [hasilId, hasilSusul] = await Promise.all([
+        ids.length ? _tarikMentahById(collectionName, filters, ids) : [],
+        batasSusul
+          ? _tarikMentah(collectionName, [...filters, ['updated_at', '>=', batasSusul]])
+          : []
+      ])
+      if (lepas || gen !== generasi) return
+      const dapat = new Map()
+      for (const raw of hasilId) if (_ada(raw?.[pk])) dapat.set(String(raw[pk]), raw)
+      // Id yang TAK kembali: terhapus, tak lolos penyaring lagi, atau tak terbaca RLS —
+      // ketiganya sama dengan jawaban tarikan penuh: tak ada di daftar.
+      for (const id of ids) {
+        if (dapat.has(id) ? pasangBaris(id, dapat.get(id)) : hapusBaris(id)) berubah = true
+      }
+      for (const raw of hasilSusul) {
+        if (_ada(raw?.[pk]) && pasangBaris(String(raw[pk]), raw)) berubah = true
+      }
+      if (berubah) kirim()
+    } catch (err) {
+      console.error(`[subscribeColl] ${collectionName} error:`, err)
+      if (lepas || gen !== generasi) return
+      if (berubah) kirim()
+      fetchGabung() // jaring pengaman: tarikan penuh sesudah jeda gabung
+    } finally {
+      if (gen === generasi) {
+        sibuk = false
+        if (!lepas) proses()
+      }
+    }
+  }
+
+  const proses = () => {
+    if (lepas || sibuk || perluPenuh || !antre.length) return
+    if (!salinan || !salinan.berkunci) {
+      tarikPenuh(false)
+      return
+    }
+    const gelombang = antre
+    antre = []
+    const tanya = new Set()
+    let berubah = false
+    for (const { p } of gelombang) {
+      const hasil = terapkan(p, tanya)
+      if (hasil === PENUH) {
+        tarikPenuh(false)
+        return
+      }
+      if (hasil) berubah = true
+    }
+    let batasSusul = null
+    if (susulAwal && (!templat || templat.includes('updated_at'))) {
+      // Jam SERVER saat tarikan awal dimulai = commit event pertama dikurangi selang (jam
+      // perangkat) antara mulai tarikan dan tibanya event itu. Jam perangkat yang meleset
+      // berjam-jam tak ikut terbawa; yang terpakai hanya selisihnya.
+      const [{ p, tiba }] = gelombang
+      const server = Date.parse(p.commit_timestamp)
+      const kini = Number.isNaN(server) ? tiba : server
+      const batas = kini - (tiba - susulAwal.mulai) - RT_SUSUL_AWAL_MARGIN_MS
+      batasSusul = new Date(batas).toISOString()
+    }
+    susulAwal = null
+    if (tanya.size > RT_TARIK_ID_MAKS) tarikPenuh(false)
+    else if (tanya.size || batasSusul) tarikPerId([...tanya], batasSusul, berubah)
+    else if (berubah) kirim()
+  }
+
+  const jadwal = () => {
     if (timer) clearTimeout(timer)
     timer = setTimeout(() => {
       timer = null
-      if (!lepas) fetchAll()
+      if (lepas) return
+      if (perluPenuh) {
+        perluPenuh = false
+        tarikPenuh(false)
+      } else proses()
     }, RT_DEBOUNCE_MS)
   }
+  // Tarikan penuh ber-debounce: jalur pemulihan (sambung ulang, online, jendela kembali).
+  const fetchGabung = () => {
+    if (lepas) return
+    perluPenuh = true
+    jadwal()
+  }
+  const terimaEvent = (payload) => {
+    if (lepas) return
+    if (_eventDikenal(payload)) antre.push({ p: payload, tiba: Date.now() })
+    else perluPenuh = true // bentuk tak dikenal: perilaku lama, tarik penuh
+    jadwal()
+  }
+
+  tarikPenuh(true)
   // Dipakai pendengar global (kembali online / jendela dipakai lagi).
   const segarkanBilaPerlu = () => {
     if (lepas) return
@@ -764,7 +1252,7 @@ export function subscribeColl(collectionName, callback, filters = [], orders = [
       ch.on(
         'postgres_changes',
         { event: '*', schema: 'public', table: collectionName },
-        fetchGabung
+        terimaEvent
       ),
     fetchGabung
   )
@@ -857,5 +1345,12 @@ export const _internal = {
   RT_ULANG_MS,
   RT_STABIL_MS,
   RT_JEDA_SEGAR_MS,
-  RT_SEGAR_SESUDAH_SEMBUNYI_MS
+  RT_SEGAR_SESUDAH_SEMBUNYI_MS,
+  // v.1.4.4: penerapan event realtime di klien.
+  RT_TARIK_ID_MAKS,
+  RT_TARIK_ID_PER_PERMINTAAN,
+  RT_SUSUL_AWAL_MARGIN_MS,
+  cocokFilter: _cocokFilter,
+  bandingUrutan: _bandingUrutan,
+  mikrodetik: _mikrodetik
 }
