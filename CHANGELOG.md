@@ -20,6 +20,119 @@ naik satu tiap rilis. Entri lama memakai skema lama `v.{nomor-urut}.{MMDDtahunmu
 
 ---
 
+## [v.1.4.4] — 2026-09-19 — Realtime berhenti menghabiskan kuota: perulangan pasang-ulang dihentikan, event diterapkan tanpa menarik ulang tabel
+
+**SIAP RILIS** — `versionCode` 144 / `versionName` `v.1.4.4`. **Tanpa migrasi Supabase, tanpa
+perubahan edge function.** Urutannya: **deploy web → rebuild AAB → rilis Electron.**
+
+Nomor baru, BUKAN gelombang v.1.4.3: Electron 1.4.3 sudah berstatus "Latest" di GitHub sejak
+16 Sep 2026 (PC yang memasangnya tak akan ditawari build bernomor sama — electron-updater hanya
+menawarkan versi yang lebih tinggi), dan AAB vc143 sudah diunggah ke Play.
+
+⚠️ **Perbaikan ini hanya bekerja di perangkat yang MEMASANGNYA.** Perulangan di bawah lahir di
+v.1.4.2; setiap perangkat yang masih menjalankan v.1.4.2 atau v.1.4.3 tetap membawanya, dan akan
+kembali membakar kuota begitu sambungannya putus sekali saja — termasuk sesudah siklus kuota
+berganti tanggal 21. Rilis Electron dan AAB karena itu bukan formalitas.
+
+### Fixed — insiden egress 14–17 Sep 2026
+
+Egress Supabase 19,42 GB dari kuota Free Plan 5 GB → proyek dibatasi ("Services restricted") →
+semua permintaan API, termasuk login, ditolak; tak seorang pun bisa masuk. Pembatasan hanya
+bisa dicabut dengan naik ke Pro atau menunggu siklus baru.
+
+Penyebabnya pemulihan realtime v.1.4.2 (`_pasangChannelTahanPutus` di `services/db.js`).
+`supabase.removeChannel(ch)` di realtime-js 2.108 **mengabarkan `CLOSED`** ke callback status
+channel yang dibuang, dan kode membacanya sebagai putus: pasang ulang → SUBSCRIBED → tarik tabel
+PENUH → buang → CLOSED → … tiap ±1 detik, selamanya, untuk setiap langganan di setiap perangkat
+yang pernah sekali saja putus. Tes lama tak melihatnya karena mock-nya memperlakukan
+`removeChannel` sebagai pencatat pasif.
+
+- **Kabar dari channel yang bukan channel aktif diabaikan** (`ch !== kanal`); `ch` dikosongkan
+  SEBELUM `removeChannel`, karena CLOSED milik channel yang dibuang bisa tiba sinkron (soket
+  sedang putus → phoenix membalas `leave` seketika).
+- **Jeda pasang-ulang baru kembali ke nol sesudah sambungan bertahan `RT_STABIL_MS` (30 s)** —
+  channel yang diterima lalu diputus server berulang-ulang tetap melambat. SUBSCRIBED hasil rejoin
+  bawaan phoenix membatalkan pemasangan ulang yang masih terjadwal.
+- **Kembali ke jendela hanya menyegarkan sesudah tersembunyi ≥ `RT_SEGAR_SESUDAH_SEMBUNYI_MS`
+  (60 s)**; `RT_JEDA_SEGAR_MS` naik 5 s → 30 s. Berpindah ke Excel lalu kembali tak lagi menarik
+  ulang setiap tabel.
+- Tes: `makeSupabaseNyata` di `tests/unit/dbRealtimePulih.test.js` meniru pustaka aslinya
+  (removeChannel → CLOSED, sinkron maupun tidak) dan menjalankan skenario 10 menit.
+
+### Changed — event realtime DITERAPKAN ke salinan lokal, bukan memicu tarikan tabel penuh
+
+Sampai v.1.4.3 SETIAP event `postgres_changes` di `subscribeColl` berakhir di `queryColl` →
+`_pageAll`: satu INSERT di `keuangan_buku_induk` = satu unduhan ulang seluruh buku induk **per
+langganan** (store koleksi, Buku Induk, Laporan Keuangan, Pembayaran, grafik dasbor …) di **setiap**
+perangkat yang online. Penggabungan 400 ms hanya memadatkan badai, tak mengubah hitungannya —
+padahal pemakaian normal sebelum insiden sudah ±0,05–0,2 GB/hari dari kuota 5 GB per siklus.
+
+Payload event sudah membawa barisnya, dan bentuknya sama dengan jawaban PostgREST: server
+Realtime membentuk `record` lewat `to_jsonb(nilai::tipe)` (`realtime.apply_rls`/`realtime.cast`),
+jadi timestamptz sama-sama `…T…+00:00` dan jsonb sama-sama objek. Kini:
+
+- **Tarikan penuh tetap** untuk tarikan awal dan tarikan susulan sesudah tersambung ulang /
+  `online` / jendela kembali — jalur pemulihan di atas tak diubah sedikit pun.
+- **Event di antaranya diterapkan** ke salinan lokal per langganan (baris mentah + dokumen hasil
+  `_flatten` yang sama dengan jalur baca), digabung lewat `RT_DEBOUNCE_MS` yang sama: satu
+  keranjang POS tetap SATU callback. INSERT/UPDATE yang utuh dan DELETE = **nol permintaan**.
+- **Yang tak pasti ditanyakan per id**, bukan per tabel (`id=in.(…)` + penyaring pemanggil, ≤ 100
+  id per permintaan; id yang tak kembali = dibuang, persis hasil tarikan penuh):
+  - UPDATE tanpa REPLICA IDENTITY FULL (tak ada tabel yang memakainya) **membuang kolom ber-TOAST
+    yang tak ikut berubah** — `data` jsonb besar, `foto`, `isi`. Baris yang kolomnya kurang
+    dibanding baris hasil tarikan tidak diterapkan apa adanya.
+  - `errors` terisi (mis. `Error 413: Payload Too Large`, record dikirim terpotong).
+  - Penyaring yang tak bisa dijawab PASTI di klien.
+- **Penyaring pemanggil dinilai di klien hanya bila jawabannya pasti sama dengan Postgres**
+  (`_cocokFilter`): NULL tak pernah memenuhi `=`/`<>`/`IN`/`NOT IN`; `->>` selalu teks (`'10' <
+  '9'`); bigint sebagai angka; boolean memakai ejaan cast Postgres; `created_at`/`updated_at`
+  dibandingkan sebagai waktu sampai mikrodetik lintas zona; rentang teks hanya untuk teks
+  bertanda baca tanggal (`'YYYY-MM-DD'`). Semua penyaring yang dipakai aplikasi hari ini
+  (`santri_id`/`guru_id`, jendela `tanggal` useAbsensi, batas `created_at` 30 hari) terjawab di
+  klien tanpa permintaan.
+- **`orders` tetap berlaku**: baris baru dan baris yang kunci urutnya berubah disisipkan lewat
+  pembanding cermin ORDER BY (NULLS LAST untuk ASC, NULLS FIRST untuk DESC); baris lain tetap di
+  urutan server.
+- **Tarikan penuh hanya untuk yang tak terbaca**: payload tanpa primary key (post_reactions ber-PK
+  gabungan), bentuk event tak dikenal, atau > `RT_TARIK_ID_MAKS` (200) baris yang harus ditanyakan
+  dalam satu gelombang. Pertanyaan per id yang gagal → satu tarikan penuh sesudah jeda gabung.
+- **Celah awal tetap tertambal.** Tarikan awal berangkat bersamaan dengan pemasangan channel;
+  perubahan di antara snapshot-nya dan aktifnya langganan tak pernah menjadi event. Dulu tarikan
+  penuh event berikutnya menyapunya. Kini gelombang event PERTAMA per langganan ikut menarik baris
+  ber-`updated_at` sejak tarikan awal dimulai — dihitung dengan jam SERVER (`commit_timestamp`),
+  bukan jam perangkat. Sekali per langganan, hanya bila ada event.
+- **Kontrak callback tetap**: array penuh berbentuk Firestore, array BARU tiap kali (store & view
+  menyimpannya ke `ref()`); baris yang tak berubah tetap objek yang sama; urutan kolom dokumen
+  dari event disamakan dengan PostgREST. Callback tak lagi dipanggil untuk gelombang yang tak
+  mengubah apa pun.
+- Sampingan yang ikut beres: hasil tarikan yang lebih TUA tak lagi menimpa yang lebih baru
+  (dulu callback dipanggil menurut urutan tiba), dan tarikan yang masih di jalan tak lagi
+  memanggil callback sesudah unsubscribe — dulu bisa mengisi lagi store koleksi yang baru
+  dikosongkan saat logout.
+
+Tes: `tests/unit/dbRealtimeInkremental.test.js` (38 kasus) dengan server tiruan — tabel di memori
+yang menjawab penyaring PostgREST, channel bergaya `makeSupabaseNyata`, payload berurutan kolom
+jsonb. Setiap penjaga di atas diuji-mutasi: mencabutnya membuat sedikitnya satu tes gagal.
+`dbRealtimeDebounce`, `dbRealtimePulih`, dan `subscribeCollFilter` lulus tanpa diubah.
+
+### Catatan — yang sengaja BELUM disentuh
+
+- **RLS keluar-jangkauan**: baris yang berubah sampai pelanggan tak lagi boleh membacanya tak
+  mengirim event apa pun ke pelanggan itu. Dulu tarikan penuh dari event baris LAIN ikut
+  menyapunya; kini ia bertahan sampai tarikan penuh berikutnya. RLS baca di skema ini bergantung
+  pada peran dan kepemilikan (santri_id, guru_id, pengirim) yang tak pernah berpindah.
+- **`keuangan_va_intent` tak dipasangi trigger `set_updated_at`** (loop F2 hanya mengenai tabel
+  lama), jadi UPDATE-nya yang jatuh tepat di celah awal tak tertambal. Satu migrasi kecil
+  menutupnya — sengaja tidak di rilis ini supaya tetap tanpa migrasi.
+- `subscribeDoc` masih menarik ulang satu baris per event — murah, dan barisnya (settings/master)
+  jarang berubah.
+- `_pageAll` memaginasi tanpa ORDER BY yang stabil (warisan); baris bisa bergeser antarhalaman
+  bila ada tulisan bersamaan. Kunci ganda kini dirapatkan, baris yang terlewat tidak.
+- Pembanding `orders` memakai urutan titik-kode untuk teks bebas; di collation linguistik baris
+  yang berubah bisa mendarat sedikit lain. Tak ada pemanggil yang mengirim `orders` hari ini.
+
+---
+
 ## [v.1.4.3] — 2026-09-16 — minSdk naik ke 24: Play menolak AAB yang minimumnya masih Android 6
 
 **SIAP RILIS** — `versionCode` 143 / `versionName` `v.1.4.3`. **SATU rilis, LIMA gelombang** (14 Sep

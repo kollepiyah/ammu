@@ -5,6 +5,31 @@ Rinciannya untuk pengembang ada di `CHANGELOG.md` — jangan disalin ke sana, te
 
 ---
 
+## v.1.4.4 — September 2026
+
+**Perbaikan**
+
+- **Aplikasi tak lagi menghabiskan kuota server saat sambungan internet putus-sambung.** Pada
+  14–17 September, sambungan langsung ke server yang terputus — HP tidur, WiFi berganti, aplikasi
+  lama di latar belakang — memicu pengunduhan data berulang-ulang tanpa henti, sampai kuota bulanan
+  server habis dan tak seorang pun bisa masuk. Sekarang satu kali putus hanya berarti satu kali
+  penyegaran data.
+- **Berpindah jendela tak lagi mengunduh ulang semua data.** Pindah ke Excel lalu kembali ke Ammu,
+  berapa kali pun, tidak memicu apa-apa; data baru disegarkan bila aplikasi ditinggal setidaknya
+  satu menit.
+
+**Lebih hemat dan lebih ringan**
+
+- **Perubahan dari perangkat lain tampil tanpa mengunduh ulang seluruh daftar.** Transaksi dari
+  kasir lain, absensi, atau data santri yang diubah operator lain dulu membuat setiap layar yang
+  sedang terbuka di setiap perangkat mengunduh ulang seluruh tabelnya. Kini yang dikirim hanya
+  baris yang berubah. Tampilannya sama seperti sebelumnya.
+
+Pembaruan ini **penting dipasang di semua perangkat**: perangkat yang masih memakai v.1.4.2 atau
+v.1.4.3 tetap membawa masalah pengunduhan berulang itu sampai diperbarui.
+
+---
+
 ## v.1.4.3 — September 2026
 
 **Perbaikan**

@@ -803,6 +803,15 @@ async function resetFaq() {
 //   riwayat lengkap ada di CHANGELOG.md untuk pengembang.
 const rilis = [
   {
+    versi: 'v.1.4.4',
+    tgl: 'September 2026',
+    items: [
+      'Aplikasi tak lagi menghabiskan kuota server saat sambungan internet putus-sambung. Pada 14–17 September, sambungan langsung ke server yang terputus (HP tidur, WiFi berganti) memicu pengunduhan data berulang-ulang tanpa henti, sampai kuota bulanan server habis dan tak seorang pun bisa masuk. Sekarang satu kali putus hanya berarti satu kali penyegaran data.',
+      'Berpindah jendela — misalnya ke Excel lalu kembali ke Ammu — tak lagi mengunduh ulang semua data. Data baru disegarkan bila aplikasi ditinggal setidaknya satu menit.',
+      'Perubahan dari perangkat lain — transaksi kasir lain, absensi, data santri — kini tampil tanpa mengunduh ulang seluruh daftar: yang dikirim hanya baris yang berubah. Tampilannya sama seperti sebelumnya, tetapi jauh lebih hemat kuota dan lebih ringan di HP maupun PC kasir.'
+    ]
+  },
+  {
     versi: 'v.1.4.3',
     tgl: 'September 2026',
     items: [
