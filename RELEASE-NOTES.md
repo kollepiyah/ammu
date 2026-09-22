@@ -11,8 +11,8 @@ Rinciannya untuk pengembang ada di `CHANGELOG.md` — jangan disalin ke sana, te
 
 - **Rekap Prestasi PTPT per kelas, lengkap dengan target PJ.** Setiap PJ bisa diberi target dan
   batas minimal halaman per bulan (Glondongan › Peran). Ekspor PDF Rekap Prestasi kini memisahkan
-  satu tabel untuk setiap kelas, diurutkan dari capaian terbanyak, dan menyebut berapa persen
-  santri di kelas itu yang memenuhi target dan batas minimalnya.
+  satu tabel untuk setiap kelas — santri di dalamnya diurutkan dari capaian terbanyak — dan
+  menyebut berapa persen santri di kelas itu yang memenuhi target dan batas minimalnya.
 
 **Perbaikan**
 

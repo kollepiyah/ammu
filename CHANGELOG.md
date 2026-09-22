@@ -29,11 +29,8 @@ rebuild AAB → rilis Electron.**
 Nomor baru, BUKAN gelombang v.1.4.4: Electron 1.4.4 sudah berstatus "Latest" di GitHub sejak
 19 Sep 2026 (electron-updater hanya menawarkan versi yang lebih tinggi).
 
-⚠️ **Gelombang 1 dikerjakan di checkout utama dan BELUM ter-commit** saat entri ini ditulis
-(`utils/pdfBuilder.js`, `utils/rekapPrestasiTabel.js`, `utils/rekapPrestasiPdf.js` (baru),
-`utils/glondongan.js`, `composables/useGlondongan.js`, `composables/usePjGuru.js`,
-`views/GlondonganView.vue`, `views/RekapPrestasiView.vue`, dan tesnya). Build yang dideploy harus
-memuat keduanya — periksa `git status` sebelum deploy.
+Gelombang 1 dikerjakan di checkout utama, jadi commit-nya menyusul SESUDAH commit rilis. Keduanya
+diuji bersama sebelum di-push (23 Sep 2026): 108 berkas / 1.638 tes lulus, `vite build` sukses.
 
 ### Latar — Firebase Storage lama mati
 
@@ -92,7 +89,7 @@ logo kiri dan teks KOP identik; tak ada permintaan ke Firebase.
   audit menunjukkan barisnya memang ada.
 - `vue-widgets` (bundle legacy) tak disaring.
 - `_muatLogoKop` di `pdfBuilder` (gelombang 1) dan `muatGambarPertama` kembar — satukan ke
-  `utils/muatGambarPdf` begitu gelombang 1 ter-commit.
+  `utils/muatGambarPdf` di rilis berikutnya.
 
 ---
 
@@ -114,9 +111,10 @@ master/lembaga PTPT (minimal di atas target dipotong ke target). Tes: `tests/uni
 
 ### Changed — PDF Rekap Prestasi: satu tabel per kelas, dengan persentase target
 
-Tiap bagian PJ kini berisi SATU TABEL PER KELAS (guru), diurutkan dari capaian terbanyak, dengan
-ringkasan persentase santri yang memenuhi target dan minimal PJ-nya (penyebutnya semua santri
-kelas itu; yang belum diisi disebut terpisah) dan kolom Keterangan berwarna per santri. Tata
+Tiap bagian PJ kini berisi SATU TABEL PER KELAS (guru) — kelas terendah dulu, santri di dalamnya
+urut capaian terbanyak — dengan ringkasan persentase santri yang memenuhi target dan minimal
+PJ-nya (penyebutnya semua santri kelas itu; yang belum diisi disebut terpisah) dan kolom
+Keterangan berwarna per santri. Tata
 letaknya di `utils/rekapPrestasiPdf.js` (baru), susunannya di `utils/rekapPrestasiTabel.js`.
 Tes: `tests/unit/rekapPrestasiTabel.test.js`.
 
