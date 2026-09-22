@@ -20,6 +20,108 @@ naik satu tiap rilis. Entri lama memakai skema lama `v.{nomor-urut}.{MMDDtahunmu
 
 ---
 
+## [v.1.4.5] — 2026-09-22 — Berkas di Firebase Storage lama tak lagi gagal diam-diam: rapor, avatar, struk, dan post jatuh ke cadangannya
+
+**SIAP RILIS** — `versionCode` 145 / `versionName` `v.1.4.5`. **SATU rilis, DUA gelombang** (keduanya
+22 Sep 2026). **Tanpa migrasi Supabase, tanpa perubahan edge function.** Urutannya: **deploy web →
+rebuild AAB → rilis Electron.**
+
+Nomor baru, BUKAN gelombang v.1.4.4: Electron 1.4.4 sudah berstatus "Latest" di GitHub sejak
+19 Sep 2026 (electron-updater hanya menawarkan versi yang lebih tinggi).
+
+⚠️ **Gelombang 1 dikerjakan di checkout utama dan BELUM ter-commit** saat entri ini ditulis
+(`utils/pdfBuilder.js`, `utils/rekapPrestasiTabel.js`, `utils/rekapPrestasiPdf.js` (baru),
+`utils/glondongan.js`, `composables/useGlondongan.js`, `composables/usePjGuru.js`,
+`views/GlondonganView.vue`, `views/RekapPrestasiView.vue`, dan tesnya). Build yang dideploy harus
+memuat keduanya — periksa `git status` sebelum deploy.
+
+### Latar — Firebase Storage lama mati
+
+Sejak 22 Sep 2026 setiap berkas di `firebasestorage.googleapis.com/v0/b/portal-mambaul-ulum…`
+dijawab **HTTP 402** ("billing account … disabled in state delinquent"). Migrasi Juni 2026 ke
+Supabase Storage menyalin berkas `settings` (logoKop, logoQiraati, bgImage, adminFoto — semuanya
+kini di bucket `branding`/`photo`), tetapi impor datanya menyalin URL lain APA ADANYA: `kop_logo`
+kedelapan lembaga di `master/lembaga` masih menunjuk Firebase dan berkasnya tak ada di Supabase.
+Foto santri/guru, tanda tangan, gambar post, lampiran izin, bukti transfer, dan dokumen PSB yang
+diunggah sebelum cutover kemungkinan bernasib sama — jumlahnya belum diketahui. Kueri audit
+READ-ONLY untuk SQL Editor: `docs/AUDIT-FIREBASE-STORAGE.sql` (per tabel/kolom/jalur jsonb, plus
+apakah berkasnya sudah ada di Supabase Storage). Rilis ini tidak mengubah data apa pun.
+
+Yang membuatnya diam-diam: rantai cadangan yang sudah ada — `kop_logo || logoKop || '/logo.png'`,
+`<img v-if="foto">` lalu ikon — berhenti di nilai pertama yang TIDAK KOSONG, bukan yang HIDUP.
+
+### Fixed — gelombang 2: URL berkas yang pasti mati dilompati, cadangan yang ada ikut bekerja
+
+- **`utils/urlBerkas.js` (baru)**: `berkasMati(url)` mengenali kedua bentuk bucket bawaan proyek
+  lama (`.firebasestorage.app` dan `.appspot.com`; Firebase proyek lain tidak dianggap mati);
+  `urlBerkas(url)` → `''` untuk URL mati/kosong/bukan teks; `pilihBerkas(...kandidat)` → kandidat
+  hidup pertama. **Dipasang di titik tampil & cetak, BUKAN di `services/db.js`**: di sana ia akan
+  ikut tersimpan ulang oleh form yang memuat lalu menyimpan barisnya, dan URL lama — satu-satunya
+  jejak nama berkas untuk pemulihan — hilang diam-diam.
+- **Rapor PDF** — `utils/muatGambarPdf.js` (baru) `muatGambarPertama(doc, kandidat)`: mencoba tiap
+  kandidat berurutan, melompati URL mati tanpa mengambilnya, dan menguji hasilnya dengan
+  `getImageProperties` (halaman galat/SVG lolos fetch tapi melempar di addImage); hasil per URL
+  disimpan di doc. Logo kanan KOP: `kop_logo` lembaga → logoKop → logoUrl → `/logo.png`; logo kiri
+  dan tanda tangan (tanda_tangan → ttd_url → ttd → ttd_b64) memakai jalur yang sama. TTD yang tak
+  termuat = ruang TTD basah, seperti guru yang belum mengunggah.
+- **Rapor di layar** (`RaporView`): logo kanan jatuh ke logo pondok, bukan ikon gambar rusak di
+  KOP yang ikut tercetak; logo kiri, latar rapor, dan TTD disaring sama.
+- **Struk** (`strukBuilder`): TTD kasir dari `guru.tanda_tangan` yang mati tak lagi diambil.
+- **Avatar**: daftar Santri & Guru, profil santri/guru/admin, Capaian Prestasi, kepala aplikasi,
+  sapaan Beranda, dan pita desktop — URL mati → ikon/inisial, bukan gambar rusak.
+- **Post**: galeri Ammu Channel, kartu post Beranda, dan thumbnail notifikasi menyaring gambar
+  mati. Form edit post sengaja tetap memuat URL aslinya (`imgsOf`), supaya menyunting post tak
+  menghapus jejaknya.
+- **Pengaturan Lembaga** (Master Data › Lembaga): logo KOP yang masih di Firebase diberi peringatan
+  merah "unggah ulang", dan pratinjaunya tak lagi ikon rusak — delapan lembaga perlu diunggah ulang.
+- **Profil › Pengaturan**: kartu Ganti Foto dan Tanda Tangan Digital berbunyi "… lama tak terbaca —
+  unggah ulang" bila berkas pemiliknya masih di Firebase; hanya pemiliknya yang bisa mengunggah
+  ulang tanda tangannya sendiri.
+
+Tes: `tests/unit/urlBerkas.test.js` (10) dan `tests/unit/muatGambarPdf.test.js` (6). Diverifikasi
+juga di dev server dengan PDF rapor sungguhan (data rekaan, URL logo asli): dengan `kop_logo`
+Firebase yang mati, kotak logo kanan terisi 0% di kode lama dan 55,6% (logo pondok) di kode baru;
+logo kiri dan teks KOP identik; tak ada permintaan ke Firebase.
+
+### Catatan — yang sengaja BELUM disentuh
+
+- **Data tidak ditulis ulang.** Pemulihan (tulis ulang URL untuk berkas yang ternyata sudah ada di
+  Supabase, unggah ulang untuk yang hilang) menunggu hasil kueri audit.
+- **Tautan berkas** — lampiran izin, bukti transfer (Pembayaran Pending), akta/KK (PPDB) — masih
+  membuka URL apa adanya. Gagalnya TERLIHAT (halaman galat Google), bukan diam-diam; ditangani bila
+  audit menunjukkan barisnya memang ada.
+- `vue-widgets` (bundle legacy) tak disaring.
+- `_muatLogoKop` di `pdfBuilder` (gelombang 1) dan `muatGambarPertama` kembar — satukan ke
+  `utils/muatGambarPdf` begitu gelombang 1 ter-commit.
+
+---
+
+## [v.1.4.5 · gelombang 1] — 2026-09-22 — Logo KOP PDF jatuh ke logo pondok; Rekap Prestasi per kelas dengan target per PJ
+
+### Fixed — logo KOP ekspor PDF
+
+Kyai: "prestasi PTPT, ekspor PDF tidak muncul logo KOP". `buildKopLembaga` kini membawa
+`logoCadangan` (logo pondok) bila lembaga punya logo sendiri, dan `drawKopLetterhead` memuat logo
+lembaga lalu cadangannya lewat `_muatLogoKop` (hasil per URL disimpan di doc). Ruang kiri kop hanya
+disisihkan bila ada logo yang benar-benar tergambar — dulu logo yang gagal meninggalkan celah
+kosong. Tes: `tests/unit/kopLogoCadangan.test.js`, `tests/unit/kopLembaga.test.js`.
+
+### Added — target prestasi bulanan per PJ PTPT
+
+Glondongan › Peran › Pembagian Santri per PJ: tiap PJ bisa diberi target dan batas minimal
+(halaman per bulan), disimpan sebagai `pj_target = { [pjGuruId]: { target, minimal } }` di
+master/lembaga PTPT (minimal di atas target dipotong ke target). Tes: `tests/unit/pjGuru.test.js`.
+
+### Changed — PDF Rekap Prestasi: satu tabel per kelas, dengan persentase target
+
+Tiap bagian PJ kini berisi SATU TABEL PER KELAS (guru), diurutkan dari capaian terbanyak, dengan
+ringkasan persentase santri yang memenuhi target dan minimal PJ-nya (penyebutnya semua santri
+kelas itu; yang belum diisi disebut terpisah) dan kolom Keterangan berwarna per santri. Tata
+letaknya di `utils/rekapPrestasiPdf.js` (baru), susunannya di `utils/rekapPrestasiTabel.js`.
+Tes: `tests/unit/rekapPrestasiTabel.test.js`.
+
+---
+
 ## [v.1.4.4] — 2026-09-19 — Realtime berhenti menghabiskan kuota: perulangan pasang-ulang dihentikan, event diterapkan tanpa menarik ulang tabel
 
 **SIAP RILIS** — `versionCode` 144 / `versionName` `v.1.4.4`. **Tanpa migrasi Supabase, tanpa

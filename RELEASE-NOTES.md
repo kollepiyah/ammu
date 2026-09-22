@@ -5,6 +5,29 @@ Rinciannya untuk pengembang ada di `CHANGELOG.md` — jangan disalin ke sana, te
 
 ---
 
+## v.1.4.5 — September 2026
+
+**Baru**
+
+- **Rekap Prestasi PTPT per kelas, lengkap dengan target PJ.** Setiap PJ bisa diberi target dan
+  batas minimal halaman per bulan (Glondongan › Peran). Ekspor PDF Rekap Prestasi kini memisahkan
+  satu tabel untuk setiap kelas, diurutkan dari capaian terbanyak, dan menyebut berapa persen
+  santri di kelas itu yang memenuhi target dan batas minimalnya.
+
+**Perbaikan**
+
+- **Logo KOP kembali muncul di ekspor PDF dan rapor.** Logo lembaga yang tersimpan di server
+  penyimpanan lama tak bisa diambil lagi; selama logonya belum diunggah ulang, PDF dan rapor kini
+  memakai logo pondok, bukan kosong.
+- **Foto, tanda tangan, dan gambar post lama tak lagi tampil sebagai gambar rusak.** Berkas yang
+  diunggah sebelum Juni 2026 dan masih tersimpan di server lama diganti ikon atau inisial; tanda
+  tangan yang tak terbaca menyisakan ruang untuk tanda tangan basah di rapor dan struk.
+- **Pemberitahuan untuk mengunggah ulang.** Pengaturan Lembaga memberi tanda merah pada logo KOP
+  yang perlu diunggah ulang, dan halaman Profil memberi tahu guru bila foto atau tanda tangan
+  digitalnya perlu diunggah ulang.
+
+---
+
 ## v.1.4.4 — September 2026
 
 **Perbaikan**

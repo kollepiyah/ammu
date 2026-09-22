@@ -803,6 +803,16 @@ async function resetFaq() {
 //   riwayat lengkap ada di CHANGELOG.md untuk pengembang.
 const rilis = [
   {
+    versi: 'v.1.4.5',
+    tgl: 'September 2026',
+    items: [
+      'Rekap Prestasi PTPT per kelas, lengkap dengan target PJ. Setiap PJ bisa diberi target dan batas minimal halaman per bulan di Glondongan › Peran. Ekspor PDF Rekap Prestasi kini memisahkan satu tabel untuk setiap kelas, diurutkan dari capaian terbanyak, dan menyebut berapa persen santri kelas itu yang memenuhi target dan batas minimalnya.',
+      'Logo KOP kembali muncul di ekspor PDF dan rapor. Logo lembaga yang tersimpan di server penyimpanan lama tak bisa diambil lagi; selama logonya belum diunggah ulang, PDF dan rapor memakai logo pondok, bukan kosong.',
+      'Foto, tanda tangan, dan gambar post lama tak lagi tampil sebagai gambar rusak. Berkas yang diunggah sebelum Juni 2026 dan masih tersimpan di server lama diganti ikon atau inisial; tanda tangan yang tak terbaca menyisakan ruang untuk tanda tangan basah di rapor dan struk.',
+      'Pengaturan Lembaga memberi tanda merah pada logo KOP yang perlu diunggah ulang, dan halaman Profil memberi tahu guru bila foto atau tanda tangan digitalnya perlu diunggah ulang.'
+    ]
+  },
+  {
     versi: 'v.1.4.4',
     tgl: 'September 2026',
     items: [
