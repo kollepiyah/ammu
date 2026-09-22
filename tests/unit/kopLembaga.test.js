@@ -58,6 +58,20 @@ describe('buildKopLembaga — lembaga menang bila punya kop sendiri', () => {
     expect(buildKopLembaga(SETTINGS, LEMBAGA, 'TPQ Pagi')).toEqual(buildKopFromSettings(SETTINGS))
   })
 
+  // v.1.4.5 (Kyai 22 Sep 2026): "prestasi PTPT, ekspor PDF tidak muncul logo KOP" — kop_logo
+  // lembaga masih menunjuk Firebase Storage lama yang kini menjawab 402. Logo pondok
+  // dibawa sebagai cadangan; drawKopLetterhead memakainya bila logo lembaga gagal dimuat.
+  it('KUNCI: logo lembaga membawa logo pondok sebagai cadangan', () => {
+    const k = buildKopLembaga(SETTINGS, LEMBAGA, 'PTPT')
+    expect(k.logoUrl).toBe('logo-ptpt.png')
+    expect(k.logoCadangan).toBe('logo-pondok.png')
+  })
+
+  it('tanpa logo lembaga sendiri → tak ada cadangan (logo utamanya sudah logo pondok)', () => {
+    expect(buildKopLembaga(SETTINGS, LEMBAGA, 'PPPH')).not.toHaveProperty('logoCadangan')
+    expect(buildKopLembaga({}, LEMBAGA, 'PTPT')).not.toHaveProperty('logoCadangan')
+  })
+
   it('line5 tak bisa di-override lembaga — tak ada field-nya di master', () => {
     expect(buildKopLembaga(SETTINGS, LEMBAGA, 'PTPT').line5).toBe('ammu.id')
   })

@@ -46,6 +46,12 @@ export function buildKopFromSettings(s = {}) {
  * `line5` sengaja TIDAK bisa di-override lembaga: tak ada field-nya di master, dan
  * mengarangnya berarti baris kop terakhir berubah arti tergantung lembaga.
  *
+ * v.1.4.5 — `logoCadangan` = logo pondok, dipakai drawKopLetterhead bila logo lembaga GAGAL
+ * dimuat. Kyai, 22 Sep 2026: "prestasi PTPT, ekspor PDF tidak muncul logo KOP". Sebabnya
+ * bukan kode: `kop_logo` seluruh lembaga masih menunjuk Firebase Storage lama, yang sejak
+ * akun penagihannya nonaktif menjawab 402 untuk tiap berkas — sementara logo pondok sudah
+ * pindah ke Supabase. Logo lembaga tetap menang selama berkasnya bisa diambil.
+ *
  * @param {object} settings  isi store settings (BUKAN `savedSettings` — nama itu milik
  *   aplikasi HTML legacy dan di store Pinia tak pernah ada).
  * @param {Array}  lembagaList  `master/lembaga`.list
@@ -64,8 +70,12 @@ export function buildKopLembaga(settings = {}, lembagaList = [], namaLembaga = '
           .trim()
           .toLowerCase() === low
     ) || {}
+  const logoUrl = l.kop_logo || dasar.logoUrl
   return {
-    logoUrl: l.kop_logo || dasar.logoUrl,
+    logoUrl,
+    // Hanya bila memang ada cadangan yang BERBEDA — kop lembaga tanpa logo sendiri tetap
+    // identik dengan kop pondok.
+    ...(logoUrl !== dasar.logoUrl && dasar.logoUrl ? { logoCadangan: dasar.logoUrl } : {}),
     line1: l.kop_line1 || dasar.line1,
     line2: l.kop_line2 || dasar.line2,
     line3: l.kop_line3 || dasar.line3,
@@ -104,12 +114,43 @@ export async function createPdf({ kind = 'umum', orientation = 'p', format = 'F4
 }
 
 /**
+ * v.1.4.5 — muat logo KOP: coba tiap URL berurutan, kembalikan data URL gambar pertama
+ * yang benar-benar bisa DIGAMBAR jsPDF (null bila tak satu pun).
+ *
+ * Diuji lewat getImageProperties, bukan cuma "fetch berhasil": jawaban 200 berisi halaman
+ * galat, SVG, atau berkas rusak lolos fetch tapi melempar di addImage — dan dulu lemparan
+ * itu ditelan diam-diam sesudah ruang logonya terlanjur disisihkan.
+ * Hasil per URL disimpan di doc, jadi PDF bersisi banyak bagian (satu per PJ) tak mengambil
+ * logo yang sama berulang-ulang — termasuk URL mati yang tiap percobaannya sia-sia.
+ */
+async function _muatLogoKop(doc, urls) {
+  if (!doc._logoKopMU) doc._logoKopMU = new Map()
+  const cache = doc._logoKopMU
+  for (const u of urls) {
+    const url = String(u || '')
+    if (!url) continue
+    if (!cache.has(url)) {
+      let data = null
+      try {
+        data = url.startsWith('data:') ? url : await imageToDataURL(url)
+        if (data && typeof doc.getImageProperties === 'function') doc.getImageProperties(data)
+      } catch {
+        data = null
+      }
+      cache.set(url, data && /^data:image\//i.test(data) ? data : null)
+    }
+    if (cache.get(url)) return cache.get(url)
+  }
+  return null
+}
+
+/**
  * Letterhead/KOP block. Optional logo (URL or data URL).
  * v.21.92.0527: KOP rata kiri — logo kiri, teks judul mulai di sebelah kanan logo,
  * sesuai contoh struk Yayasan. Berlaku utk semua PDF kecuali rapor/kartu kenaikan/
  * rekap prestasi (yg pakai KOP per-lembaga sendiri).
  * @param {any} doc
- * @param {object} kop  { logoUrl, line1, line2, line3, line4, line5 }
+ * @param {object} kop  { logoUrl, logoCadangan, line1, line2, line3, line4, line5 }
  * @param {object} [opts] { y, withLine }
  * @returns {Promise<number>} y position after the kop
  */
@@ -125,8 +166,12 @@ export async function drawKopLetterhead(doc, kop = {}, opts = {}) {
   // v.100b: L1 = GAMBAR kaligrafi muassis (tinggi 9mm, file ter-crop) RAPAT ke L2 (off 3mm);
   //   teks digambar DULU supaya tinggi blok diketahui → logo dicenter vertikal terhadap blok.
   //   Fallback (gambar gagal) = teks kop.line1, off=0 (layout lama persis).
+  // v.1.4.5: logo DIMUAT lebih dulu (lembaga, lalu cadangan pondok). Ruang kirinya hanya
+  //   disisihkan bila ada logo yang benar-benar tergambar — dulu cukup `kop.logoUrl` tak
+  //   kosong, jadi logo yang gagal meninggalkan celah kosong di kiri kop (PDF PTPT).
   const subLines = [kop.line4, kop.line5].filter(Boolean)
-  const textX = kop.logoUrl ? 12 + LOGO_SIZE + 6 : 12
+  const logoData = await _muatLogoKop(doc, [kop.logoUrl, kop.logoCadangan])
+  const textX = logoData ? 12 + LOGO_SIZE + 6 : 12
   doc.setFont(font, 'bold')
   let off = 0
   const muassis = await muassisDataUrl()
@@ -165,16 +210,11 @@ export async function drawKopLetterhead(doc, kop = {}, opts = {}) {
       : kop.line2
         ? y + 13 + off + 1.5
         : y + 10.5
-  if (kop.logoUrl) {
+  if (logoData) {
     try {
-      const dataUrl = kop.logoUrl.startsWith('data:')
-        ? kop.logoUrl
-        : await imageToDataURL(kop.logoUrl)
-      if (dataUrl) {
-        const logoY = startY + Math.max(0, (contentBottom - startY - LOGO_SIZE) / 2)
-        doc.addImage(dataUrl, 'PNG', 12, logoY, LOGO_SIZE, LOGO_SIZE, undefined, 'FAST')
-        hasLogo = true
-      }
+      const logoY = startY + Math.max(0, (contentBottom - startY - LOGO_SIZE) / 2)
+      doc.addImage(logoData, 'PNG', 12, logoY, LOGO_SIZE, LOGO_SIZE, undefined, 'FAST')
+      hasLogo = true
     } catch {
       /* ignore */
     }
