@@ -45,6 +45,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
 import { useGuru } from '@/composables/useGuru'
 import { getNamaGuruGelar } from '@/utils/format'
+import { urlBerkas } from '@/utils/urlBerkas' // v.1.4.5: URL Firebase lama (402) → ikon
 const { guruRaw } = useGuru()
 
 const auth = useAuthStore()
@@ -56,13 +57,13 @@ const fotoUrl = computed(() => {
   // v.20.77: fallback foto dari guru record kalau sesi.foto kosong (admin-promoted-guru)
   const s = auth.sesiAktif
   if (!s) return ''
-  if (s.foto) return s.foto
+  if (urlBerkas(s.foto)) return urlBerkas(s.foto)
   // Admin built-in: foto disimpan di settings/web.adminFoto
-  if (s.id === 'admin') return settings.settings?.adminFoto || ''
+  if (s.id === 'admin') return urlBerkas(settings.settings?.adminFoto)
   const gid = s.id || s.guru_id
   if (gid && guruRaw.value?.length) {
     const g = guruRaw.value.find((x) => String(x.id) === String(gid))
-    return g?.foto || ''
+    return urlBerkas(g?.foto)
   }
   return ''
 })

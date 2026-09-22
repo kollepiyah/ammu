@@ -398,7 +398,12 @@
               <div
                 class="flex-shrink-0 w-12 h-12 md:w-14 md:h-14 rounded-full bg-gradient-to-br from-teal-100 to-emerald-100 dark:from-teal-700 dark:to-emerald-700 border-2 border-white dark:border-slate-700 flex items-center justify-center overflow-hidden"
               >
-                <img v-if="g.foto" :src="g.foto" alt="Foto" class="w-full h-full object-cover" />
+                <img
+                  v-if="urlBerkas(g.foto)"
+                  :src="urlBerkas(g.foto)"
+                  alt="Foto"
+                  class="w-full h-full object-cover"
+                />
                 <i v-else class="fas fa-chalkboard-teacher text-teal-500 dark:text-teal-200"></i>
               </div>
               <!-- Info -->
@@ -557,6 +562,7 @@ import { useToast as _useToastGuruExp } from '@/composables/useToast'
 import { useGoogleSheet } from '@/composables/useGoogleSheet' // v.100 Batch12: ekspor ke Google Sheet
 import { buildListPdf, buildKopFromSettings } from '@/utils/pdfBuilder'
 import { useGuru } from '@/composables/useGuru'
+import { urlBerkas } from '@/utils/urlBerkas' // v.1.4.5: URL Firebase lama (402) → ikon
 import { useConfirm } from '@/composables/useConfirm'
 // v.21.115.0528: skeleton loader
 import SkeletonCard from '@/components/layout/SkeletonCard.vue'

@@ -1293,6 +1293,7 @@ import { useAuthStore } from '@/stores/auth'
 import UiActionCard from '@/components/ui/UiActionCard.vue'
 import { generateRaporPdf } from '@/utils/raporPdf'
 import { MUASSIS_URL } from '@/utils/kopMuassis' // v.100: baris-1 KOP = gambar muassis
+import { pilihBerkas, urlBerkas } from '@/utils/urlBerkas'
 // v.90.0626: util jenjang Diniyah (SDI/SMP/SMA) — sumber tunggal, samakan dg Rekap Diniyah
 import { kelasJenjang, mapelDiniyahFor, diniyahJenjang, jenjangFromKelas } from '@/utils/jenjang'
 import { predikatQiraati, predikatDiniyah } from '@/utils/predikat'
@@ -1770,11 +1771,13 @@ const arStyleMd = {
   fontSize: '15px'
 }
 
+// v.1.4.5: pilihBerkas melompati URL yang pasti mati (Firebase Storage lama, 402) —
+//   rantai `||` biasa berhenti di URL mati itu dan menampilkan ikon gambar rusak di KOP.
 const logoKiri = computed(() => {
   const s = settingsStore.settings || {}
   return kategori.value === 'diniyah'
-    ? s.logoKop || s.logoUrl || '/logo.png'
-    : s.logoQiraati || '/logo.png'
+    ? pilihBerkas(s.logoKop, s.logoUrl, '/logo.png')
+    : pilihBerkas(s.logoQiraati, '/logo.png')
 })
 
 const logoKanan = computed(() => {
@@ -1793,10 +1796,11 @@ const logoKanan = computed(() => {
           .toLowerCase()
           .trim() === lnorm
     ) || {}
-  return (
-    lmbObj.kop_logo ||
-    settingsStore.settings?.logoKop ||
-    settingsStore.settings?.logoUrl ||
+  // v.1.4.5: kop_logo kedelapan lembaga masih menunjuk Firebase lama → logo pondok.
+  return pilihBerkas(
+    lmbObj.kop_logo,
+    settingsStore.settings?.logoKop,
+    settingsStore.settings?.logoUrl,
     '/logo.png'
   )
 })
@@ -1809,23 +1813,24 @@ function titleCase(s) {
 
 const bgRapor = computed(() => {
   const s = settingsStore.settings || {}
-  return kategori.value === 'diniyah' ? s.bgRaporDiniyah || '' : s.bgRaporTPQ || ''
+  return urlBerkas(kategori.value === 'diniyah' ? s.bgRaporDiniyah : s.bgRaporTPQ)
 })
 
 // ===== Tanda tangan (fallback chain: tanda_tangan -> ttd_url -> ttd) =====
+// v.1.4.5: TTD yang masih di Firebase lama (402) dilompati — kosong = ruang TTD basah.
 const ttdGuru = computed(() => {
   const nama = namaGuru.value
   if (!nama || nama === '-') return ''
   const g = (guruRaw.value || []).find(
     (x) => String(x.nama || '').toLowerCase() === String(nama).toLowerCase()
   )
-  return g?.tanda_tangan || g?.ttd_url || g?.ttd || ''
+  return pilihBerkas(g?.tanda_tangan, g?.ttd_url, g?.ttd)
 })
 
 const ttdKepala = computed(() => {
   const nk = namaKepala.value
   const g = nk ? (guruRaw.value || []).find((x) => x.nama === nk) : null
-  return g?.tanda_tangan || g?.ttd_url || g?.ttd || ''
+  return pilihBerkas(g?.tanda_tangan, g?.ttd_url, g?.ttd)
 })
 
 // ===== Schema fields untuk Pra PTPT =====

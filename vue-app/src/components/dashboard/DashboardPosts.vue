@@ -96,6 +96,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { subscribeColl } from '@/services/db'
 import { useSettingsStore } from '@/stores/settings'
+import { pilihBerkas, urlBerkas } from '@/utils/urlBerkas'
 import { fmtDateTime } from '@/utils/format'
 
 const settings = useSettingsStore()
@@ -106,20 +107,17 @@ let unsubscribe = null
 
 const channelName = computed(() => settings.settings?.namaChannel || 'Ammu Channel')
 
+// v.1.4.5: gambar di Firebase Storage lama (402) tak dihitung — sama dengan galeri PostsView.
 function firstImage(p) {
   if (Array.isArray(p.gambar_urls) && p.gambar_urls.length > 0) {
-    const first = p.gambar_urls.find(Boolean)
+    const first = p.gambar_urls.map(urlBerkas).find(Boolean)
     if (first) return first
   }
-  if (p.gambar_url) return p.gambar_url
-  if (p.gambar) return p.gambar
-  if (p.foto) return p.foto
-  return ''
+  return pilihBerkas(p.gambar_url, p.gambar, p.foto)
 }
 function imageCount(p) {
-  if (Array.isArray(p.gambar_urls)) return p.gambar_urls.filter(Boolean).length
-  if (p.gambar_url || p.gambar || p.foto) return 1
-  return 0
+  if (Array.isArray(p.gambar_urls)) return p.gambar_urls.map(urlBerkas).filter(Boolean).length
+  return pilihBerkas(p.gambar_url, p.gambar, p.foto) ? 1 : 0
 }
 
 function goToPosts(postId) {

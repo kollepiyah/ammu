@@ -203,6 +203,7 @@ import { useSettingsStore } from '@/stores/settings'
 import { useConfirm } from '@/composables/useConfirm'
 import { useToast } from '@/composables/useToast'
 import { getNamaGuruGelar } from '@/utils/format'
+import { urlBerkas } from '@/utils/urlBerkas' // v.1.4.5: URL Firebase lama (402) → ikon
 // v.21.111.0527: Notif Center bell
 import AppNotifBell from '@/components/layout/AppNotifBell.vue'
 // v.86.0526: Wali multi-anak picker
@@ -287,9 +288,9 @@ const namaUser = computed(() => {
 const fotoUrl = computed(() => {
   const s = auth.sesiAktif
   if (!s) return ''
-  if (s.foto) return s.foto
+  if (urlBerkas(s.foto)) return urlBerkas(s.foto)
   // Admin built-in: foto disimpan di settings/web.adminFoto (tak ada di sesiAktif)
-  if (s.id === 'admin') return settings.settings?.adminFoto || ''
+  if (s.id === 'admin') return urlBerkas(settings.settings?.adminFoto)
   return ''
 })
 

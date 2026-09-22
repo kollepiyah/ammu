@@ -25,8 +25,8 @@
             class="w-20 h-20 md:w-24 md:h-24 rounded-full bg-[var(--bg-card)]/20 border-4 border-white/80 flex items-center justify-center overflow-hidden shadow-2xl flex-shrink-0 backdrop-blur-sm"
           >
             <img
-              v-if="santri.foto"
-              :src="santri.foto"
+              v-if="urlBerkas(santri.foto)"
+              :src="urlBerkas(santri.foto)"
               class="w-full h-full object-cover"
               alt="Foto"
             />
@@ -318,6 +318,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
 import { subscribeColl } from '@/services/db'
 import { useSantri } from '@/composables/useSantri'
+import { urlBerkas } from '@/utils/urlBerkas' // v.1.4.5: URL Firebase lama (402) → ikon
 import TrenCapaianChart from '@/components/charts/TrenCapaianChart.vue' // v.100c: Opsi A — tren capaian
 import { juzNum } from '@/utils/format' // v.100e: normalisasi tampilan juz (anti dobel "Juz JUZ n")
 

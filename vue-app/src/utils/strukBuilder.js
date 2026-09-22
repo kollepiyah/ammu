@@ -14,6 +14,7 @@ import { labelPeriodeBisyaroh } from './periodeBisyaroh'
 // v.1.4.1: cara bayar slip tabungan/uang saku — satu simpulan dengan Buku Induk & POS.
 import { metodeTransaksi } from './metodeBayar'
 import { imageToDataURL } from '@/services/pdf'
+import { urlBerkas } from './urlBerkas'
 import { terbilangRupiah } from './terbilang'
 import { namaWaliSantri } from './santriIdentitas'
 import { muassisDataUrl, muassisDataUrlSync, MUASSIS_RATIO } from './kopMuassis' // v.100: baris-1 KOP = gambar muassis
@@ -143,11 +144,13 @@ export async function cetakStrukPdf(trx, settings = {}, { preview = true } = {})
   doc.text('Penyetor,', left + 8, ty)
   doc.text('Penerima,', pageW / 2 + 12, ty)
   // v.21.91.0527: TTD operator (kasir) auto dari guru.tanda_tangan bila ada
-  if (trx.operator_ttd_url) {
+  // v.1.4.5: TTD yang masih di Firebase Storage lama (402) dilewati tanpa diambil.
+  const ttdOperator = urlBerkas(trx.operator_ttd_url)
+  if (ttdOperator) {
     try {
-      const dataUrl = String(trx.operator_ttd_url).startsWith('data:')
-        ? trx.operator_ttd_url
-        : await imageToDataURL(trx.operator_ttd_url)
+      const dataUrl = ttdOperator.startsWith('data:')
+        ? ttdOperator
+        : await imageToDataURL(ttdOperator)
       if (dataUrl) doc.addImage(dataUrl, 'PNG', pageW / 2 + 14, ty + 2, 28, 14, undefined, 'FAST')
     } catch (e) {
       /* ignore — fallback nama saja */
@@ -331,11 +334,10 @@ export async function cetakStrukSlipPdf(trx, settings = {}, { preview = false } 
   rowR('Pembayaran Rp.', fmtNum(trx.bayar))
   rowR('Kembali Rp.', fmtNum(trx.kembali))
   doc.setFont(font, 'normal')
-  if (trx.operator_ttd_url) {
+  const ttdOperator = urlBerkas(trx.operator_ttd_url) // v.1.4.5: lewati TTD di Firebase lama
+  if (ttdOperator) {
     try {
-      const d = String(trx.operator_ttd_url).startsWith('data:')
-        ? trx.operator_ttd_url
-        : await imageToDataURL(trx.operator_ttd_url)
+      const d = ttdOperator.startsWith('data:') ? ttdOperator : await imageToDataURL(ttdOperator)
       if (d) doc.addImage(d, 'PNG', c2 - 13, y + 1, 24, 11, undefined, 'FAST')
     } catch (e) {
       /* ignore */

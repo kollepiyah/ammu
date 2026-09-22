@@ -15,7 +15,11 @@
           <div
             class="w-24 h-24 md:w-28 md:h-28 bg-[var(--bg-card)]/20 border-4 border-white/80 rounded-full flex items-center justify-center overflow-hidden shadow-2xl flex-shrink-0"
           >
-            <img v-if="santri?.foto" :src="santri.foto" class="w-full h-full object-cover" />
+            <img
+              v-if="urlBerkas(santri?.foto)"
+              :src="urlBerkas(santri?.foto)"
+              class="w-full h-full object-cover"
+            />
             <i v-else class="fas fa-user-graduate text-white/70 text-4xl"></i>
           </div>
           <div class="flex-1 text-center md:text-left text-white">
@@ -501,6 +505,7 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { mergeOne } from '@/services/db'
+import { urlBerkas } from '@/utils/urlBerkas' // v.1.4.5: URL Firebase lama (402) → ikon
 import { useToast } from '@/composables/useToast'
 import ProfilPengaturanSaya from './ProfilPengaturanSaya.vue'
 import { juzNum } from '@/utils/format' // v.100e: normalisasi tampilan juz (anti dobel "Juz JUZ n")

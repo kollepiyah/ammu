@@ -28,8 +28,8 @@
             class="w-28 h-28 md:w-32 md:h-32 bg-[var(--bg-card)]/20 border-4 border-white/80 rounded-full flex items-center justify-center overflow-hidden shadow-2xl flex-shrink-0 backdrop-blur-sm"
           >
             <img
-              v-if="guru?.foto"
-              :src="guru.foto"
+              v-if="urlBerkas(guru?.foto)"
+              :src="urlBerkas(guru?.foto)"
               class="w-full h-full object-cover"
               alt="Foto Profil"
             />
@@ -452,6 +452,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { updateOne } from '@/services/db'
+import { urlBerkas } from '@/utils/urlBerkas' // v.1.4.5: URL Firebase lama (402) → ikon
 import { getNamaGuruGelar, formatTanggal, hitungLamaMengajar } from '@/utils/format'
 import ProfilPengaturanSaya from './ProfilPengaturanSaya.vue'
 import { useToast } from '@/composables/useToast'

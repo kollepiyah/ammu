@@ -432,7 +432,12 @@
             <div
               class="flex-shrink-0 w-12 h-12 md:w-14 md:h-14 rounded-full bg-gradient-to-br from-cyan-100 to-cyan-100 dark:from-cyan-700 dark:to-cyan-700 border-2 border-white dark:border-slate-700 flex items-center justify-center overflow-hidden"
             >
-              <img v-if="s.foto" :src="s.foto" alt="Foto" class="w-full h-full object-cover" />
+              <img
+                v-if="urlBerkas(s.foto)"
+                :src="urlBerkas(s.foto)"
+                alt="Foto"
+                class="w-full h-full object-cover"
+              />
               <i v-else class="fas fa-user-graduate text-cyan-500 dark:text-cyan-200"></i>
             </div>
             <div class="flex-1 min-w-0">
@@ -599,6 +604,7 @@ import { getPkbmSubTier, canonLembaga } from '@/composables/useLembaga' // v.99:
 import { sortLembagaNames } from '@/utils/santriSort' // v.100 Batch10: urutan canonical dropdown lembaga
 import { gedungList } from '@/utils/gedung' // v.111: filter Gedung (pisah Pra PTPT per gedung)
 import { useAuthStore } from '@/stores/auth'
+import { urlBerkas } from '@/utils/urlBerkas' // v.1.4.5: URL Firebase lama (402) → ikon
 import { ownsNgaji, ownsSekolah, headsLembaga } from '@/utils/guruScope' // v.100b/1.2.3: pisah santri qiraati/sekolah + kepala lembaga per-sisi
 
 // v.21.17c.0526: mode prop — 'view' (sidebar, default) atau 'master' (di Master Data tab, full CRUD)

@@ -20,6 +20,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { subscribeColl, subscribeDoc, mergeOne } from '@/services/db'
 import { useAuthStore } from '@/stores/auth'
+import { urlBerkas } from '@/utils/urlBerkas'
 import { isKepalaLembaga, isSuperAdmin } from '@/utils/roleScope'
 import { lembagaScopeMatches } from '@/composables/useLembaga' // v.100: scope kepala utk notif tes kenaikan
 import { kegiatanKenaLembaga } from '@/composables/useKegiatan' // v.1.2.4: scope lembaga agenda
@@ -189,10 +190,12 @@ export function useNotifications() {
       icon: 'fa-bullhorn',
       color: 'teal',
       // v.71.0526: thumbnail image untuk notif post (1 image pertama kalau ada)
-      thumbnail:
+      // v.1.4.5: thumbnail di Firebase Storage lama (402) → tanpa thumbnail, tanpa request.
+      thumbnail: urlBerkas(
         Array.isArray(p.gambar_urls) && p.gambar_urls.length > 0
           ? p.gambar_urls[0]
           : p.thumbnail || p.image_url || ''
+      )
     }))
   }
 

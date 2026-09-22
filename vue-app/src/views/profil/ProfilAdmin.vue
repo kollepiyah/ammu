@@ -58,7 +58,9 @@
       <!-- Body content (Identitas + Informasi + Pengaturan Profil) -->
       <div class="p-6 md:p-8">
         <!-- v.103 mobile: kartu detail jadi scroll-samping (snap-carousel); grid di desktop -->
-        <div class="flex md:grid md:grid-cols-2 gap-4 overflow-x-auto md:overflow-visible snap-x snap-mandatory -mx-6 px-6 md:mx-0 md:px-0 pb-2 hide-scrollbar">
+        <div
+          class="flex md:grid md:grid-cols-2 gap-4 overflow-x-auto md:overflow-visible snap-x snap-mandatory -mx-6 px-6 md:mx-0 md:px-0 pb-2 hide-scrollbar"
+        >
           <div
             class="snap-center shrink-0 w-[85%] md:w-auto bg-[var(--bg-card-elevated)] p-5 rounded-2xl border border-[var(--border-subtle)]"
           >
@@ -128,9 +130,10 @@
 // Admin built-in profil — minimal, mostly informational
 import { computed } from 'vue'
 import { useSettingsStore } from '@/stores/settings'
+import { urlBerkas } from '@/utils/urlBerkas' // v.1.4.5: URL Firebase lama (402) → ikon
 import ProfilPengaturanSaya from './ProfilPengaturanSaya.vue'
 
 // v.100f: foto admin disimpan di settings/web.adminFoto (admin tak punya dok guru/santri)
 const settings = useSettingsStore()
-const adminFoto = computed(() => settings.settings?.adminFoto || '')
+const adminFoto = computed(() => urlBerkas(settings.settings?.adminFoto))
 </script>

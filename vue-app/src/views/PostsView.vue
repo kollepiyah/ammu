@@ -50,7 +50,7 @@
         :isi="p.isi || ''"
         :tanggal="p.tanggal || ''"
         :author="p.pengirim_nama || channelName"
-        :gambar_urls="imgsOf(p)"
+        :gambar_urls="imgsTampil(p)"
         :post-id="isAdmin ? p.id : ''"
         @edit="editPost(p)"
         @delete="deletePost(p)"
@@ -204,6 +204,7 @@ import { useConfirm } from '@/composables/useConfirm'
 import { useDesktopShell } from '@/composables/useDesktopShell'
 import { definePageActions } from '@/composables/useRibbonContext'
 import PostCard from '@/components/posts/PostCard.vue'
+import { urlBerkas } from '@/utils/urlBerkas'
 import ReactionBar from '@/components/posts/ReactionBar.vue'
 
 const auth = useAuthStore()
@@ -245,6 +246,14 @@ function imgsOf(p) {
   if (p.gambar) return [p.gambar]
   if (p.foto) return [p.foto]
   return []
+}
+
+// v.1.4.5: yang DITAMPILKAN di galeri — gambar yang masih di Firebase Storage lama (402)
+//   disaring supaya tak muncul ikon gambar rusak. imgsOf sendiri sengaja utuh: ia juga
+//   mengisi form edit, dan menyaringnya di sana berarti URL lama diam-diam terhapus saat
+//   post disimpan ulang — padahal URL itu jejak untuk memulihkan berkasnya.
+function imgsTampil(p) {
+  return imgsOf(p).map(urlBerkas).filter(Boolean)
 }
 
 // === Modal Create/Edit Post ===

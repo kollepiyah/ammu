@@ -294,6 +294,7 @@ import { linkGoogleAccount, unlinkGoogleAccount } from '@/services/authSupabase'
 import { toAuthPassword } from '@/services/authSupabase'
 import { supabase } from '@/services/supabase'
 import { uploadBase64, deleteFile } from '@/services/storage'
+import { berkasMati } from '@/utils/urlBerkas'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
 import { useAuthStore } from '@/stores/auth'
@@ -316,6 +317,9 @@ const confirmDlg = useConfirm()
 const activeModal = ref(null)
 const busy = ref(false)
 
+// v.1.4.5: foto/TTD yang masih di Firebase Storage lama (402 sejak 22 Sep 2026) tak bisa
+//   ditampilkan — rapor mencetak ruang TTD kosong. Kartunya memberi tahu pemiliknya, satu-
+//   satunya orang yang bisa mengunggah ulang tanda tangannya sendiri.
 const items = computed(() => {
   return [
     {
@@ -331,7 +335,9 @@ const items = computed(() => {
       icon: 'fa-camera',
       color: 'emerald',
       title: 'Ganti Foto Profil',
-      desc: 'Upload foto baru',
+      desc: berkasMati(props.entity?.foto)
+        ? 'Foto lama tak terbaca — unggah ulang'
+        : 'Upload foto baru',
       roles: ['admin', 'guru', 'santri']
     },
     {
@@ -365,7 +371,9 @@ const items = computed(() => {
       icon: 'fa-signature',
       color: 'rose',
       title: 'Tanda Tangan Digital',
-      desc: 'Upload PNG transparan untuk rapor',
+      desc: berkasMati(props.entity?.tanda_tangan)
+        ? 'TTD lama tak terbaca — unggah ulang'
+        : 'Upload PNG transparan untuk rapor',
       roles: ['guru']
     },
     {

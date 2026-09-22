@@ -912,12 +912,23 @@
         <p class="text-[11px] text-emerald-700 mb-2">
           Kosong = pakai Logo Kop dari Pengaturan Web.
         </p>
+        <!-- v.1.4.5: kop_logo kedelapan lembaga masih menunjuk Firebase Storage lama yang
+             kini menjawab 402. Tanpa tanda ini pratinjaunya cuma ikon rusak, dan tak ada
+             yang memberi tahu bahwa rapor/PDF diam-diam memakai logo pondok. -->
+        <p
+          v-if="berkasMati(pengaturanForm.kop_logo)"
+          class="text-[11px] font-bold text-rose-600 dark:text-rose-400 mb-2"
+        >
+          <i class="fas fa-triangle-exclamation mr-1"></i>Berkas logo ini ada di server lama
+          (Firebase) yang sudah tidak melayani — rapor &amp; PDF sementara memakai logo pondok.
+          Unggah ulang logonya, lalu SIMPAN PENGATURAN.
+        </p>
         <div class="flex items-center gap-3">
           <div
             class="w-20 h-20 rounded bg-[var(--bg-card)] border border-emerald-300 flex items-center justify-center overflow-hidden"
           >
             <img
-              v-if="pengaturanForm.kop_logo"
+              v-if="urlBerkas(pengaturanForm.kop_logo)"
               :src="pengaturanForm.kop_logo"
               class="w-full h-full object-contain"
             />
@@ -1149,6 +1160,7 @@ import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
 import { uploadBase64 } from '@/services/storage'
+import { berkasMati, urlBerkas } from '@/utils/urlBerkas'
 import { setOne, mergeOne } from '@/services/db'
 import UiActionCard from '@/components/ui/UiActionCard.vue'
 

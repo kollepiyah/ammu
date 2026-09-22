@@ -6,6 +6,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
 import { useGuru } from '@/composables/useGuru'
 import { getNamaGuruGelar } from '@/utils/format'
+import { urlBerkas } from '@/utils/urlBerkas'
 
 const ROLE_LABELS = { admin: 'Administrator', guru: 'Guru/Pegawai', santri: 'Santri/Wali' }
 
@@ -30,13 +31,14 @@ export function useRibbonUser() {
   const fotoUrl = computed(() => {
     const s = auth.sesiAktif
     if (!s) return ''
-    if (s.foto) return s.foto
+    // v.1.4.5: URL Firebase Storage lama (402) dianggap kosong → inisial, bukan gambar rusak.
+    if (urlBerkas(s.foto)) return urlBerkas(s.foto)
     // Admin built-in: foto disimpan di settings/web.adminFoto (tak punya dok guru/santri)
-    if (s.id === 'admin') return settings.settings?.adminFoto || ''
+    if (s.id === 'admin') return urlBerkas(settings.settings?.adminFoto)
     const gid = s.id || s.guru_id
     if (gid && guruRaw.value?.length) {
       const g = guruRaw.value.find((x) => String(x.id) === String(gid))
-      return g?.foto || ''
+      return urlBerkas(g?.foto)
     }
     return ''
   })

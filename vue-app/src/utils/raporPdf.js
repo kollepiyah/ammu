@@ -3,10 +3,11 @@
 // v.21.42: Major overhaul for visual parity, KOP refinement, dynamic PTPT sizing, and 3-block signatures.
 
 import { createPdf, drawTable, savePdf } from './pdfBuilder'
-import { imageToDataURL } from '@/services/pdf'
 import { muassisDataUrl, MUASSIS_RATIO } from './kopMuassis' // v.100: baris-1 KOP = gambar muassis
 import { predikatQiraati, predikatDiniyah, PREDIKAT_AR } from './predikat'
 import { namaWaliSantri } from './santriIdentitas'
+// v.1.4.5: logo KOP & TTD dimuat dari daftar kandidat — yang mati/gagal diganti berikutnya
+import { muatGambarPertama } from './muatGambarPdf'
 
 // ============================================================
 // Helpers
@@ -188,36 +189,45 @@ async function drawKopRapor(doc, settings, lembaga, lembagaOverride = null, isDi
   const logoY = startY + (_kopBottom - startY - LOGO_SZ) / 2
 
   // Logo kiri: Diniyah pakai LOGO PONDOK (sama dgn KOP umum), Qiraati pakai logoQiraati.
-  const pondokLogo =
-    settings.logoKop || settings.kop_logo || settings.kopLogo || settings.logoUrl || '/logo.png'
-  const leftUrl = isDiniyah ? pondokLogo : settings.logoQiraati || pondokLogo
-  if (leftUrl) {
+  // v.1.4.5: urutan kandidatnya sama dengan rantai `||` lama, tapi yang gagal dimuat kini
+  //   digantikan kandidat berikutnya (lihat utils/muatGambarPdf).
+  const pondokLogo = [
+    settings.logoKop,
+    settings.kop_logo,
+    settings.kopLogo,
+    settings.logoUrl,
+    '/logo.png'
+  ]
+  const leftData = await muatGambarPertama(
+    doc,
+    isDiniyah ? pondokLogo : [settings.logoQiraati, ...pondokLogo]
+  )
+  if (leftData) {
     try {
-      const dataUrl = leftUrl.startsWith('data:') ? leftUrl : await imageToDataURL(leftUrl)
-      if (dataUrl) doc.addImage(dataUrl, 'PNG', 15, logoY, LOGO_SZ, LOGO_SZ, undefined, 'FAST')
+      doc.addImage(leftData, 'PNG', 15, logoY, LOGO_SZ, LOGO_SZ, undefined, 'FAST')
     } catch (_e) {}
   }
 
-  // Logo kanan (MU / Pesantren) — v.21.51: cek per-lembaga override dulu
-  const rightUrl =
-    (lembagaOverride && lembagaOverride.kop_logo) ||
-    settings.logoKop ||
-    settings.logoUrl ||
+  // Logo kanan (MU / Pesantren) — v.21.51: cek per-lembaga override dulu.
+  // v.1.4.5: logo lembaga yang mati (kop_logo masih di Firebase lama) → logo pondok.
+  const rightData = await muatGambarPertama(doc, [
+    lembagaOverride && lembagaOverride.kop_logo,
+    settings.logoKop,
+    settings.logoUrl,
     '/logo.png'
-  if (rightUrl) {
+  ])
+  if (rightData) {
     try {
-      const dataUrl = rightUrl.startsWith('data:') ? rightUrl : await imageToDataURL(rightUrl)
-      if (dataUrl)
-        doc.addImage(
-          dataUrl,
-          'PNG',
-          pageW - 15 - LOGO_SZ,
-          logoY,
-          LOGO_SZ,
-          LOGO_SZ,
-          undefined,
-          'FAST'
-        )
+      doc.addImage(
+        rightData,
+        'PNG',
+        pageW - 15 - LOGO_SZ,
+        logoY,
+        LOGO_SZ,
+        LOGO_SZ,
+        undefined,
+        'FAST'
+      )
     } catch (_e) {}
   }
 
@@ -529,15 +539,10 @@ async function drawSignBlocks(
   const nameY = labelY + 26 // v.21.47: relax kembali ke +26 (kompak terlalu agresif)
 
   // Tanda tangan digital — auto-fill dari akun guru (field tanda_tangan/ttd_url/ttd/ttd_b64).
-  const _resolveTtd = async (g) => {
-    const src = g?.tanda_tangan || g?.ttd_url || g?.ttd || g?.ttd_b64 || ''
-    if (!src) return ''
-    try {
-      return src.startsWith('data:') ? src : await imageToDataURL(src)
-    } catch (_e) {
-      return ''
-    }
-  }
+  // v.1.4.5: TTD yang tak bisa dimuat (mis. masih di Firebase lama) → field berikutnya,
+  //   lalu kosong: ruangnya tetap tersedia untuk tanda tangan basah.
+  const _resolveTtd = (g) =>
+    g ? muatGambarPertama(doc, [g.tanda_tangan, g.ttd_url, g.ttd, g.ttd_b64]) : null
   const guruTtdImg = await _resolveTtd(guruKelas)
   const kepalaTtdImg = await _resolveTtd(kepalaGuru)
   if (guruTtdImg) {
