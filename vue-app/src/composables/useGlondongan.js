@@ -19,6 +19,8 @@ import {
   kategoriMukim,
   buatScopePj,
   getPjGuru,
+  getPjTarget,
+  bersihkanPetaTargetPj,
   isBarisTerbuka,
   isPjLembaga,
   KATEGORI_GLONDONGAN,
@@ -64,6 +66,8 @@ export function useGlondongan() {
   const { santriRaw, guruRaw } = useSantri()
   // v.1.2.1: peta pembagian santri per PJ ({ [pjGuruId]: [guruId] }) dari master/lembaga.
   const pjGuru = computed(() => getPjGuru(lembagaList.value))
+  // v.1.4.5: target prestasi bulanan per PJ ({ [pjGuruId]: { target, minimal } }).
+  const pjTarget = computed(() => getPjTarget(lembagaList.value))
   // v.1.2.1: PJ efektif santri kini DITURUNKAN dari guru pengajarnya via pjGuru
   //   (label pj_ptpt jadi cadangan). Peta kosong → jatuh mulus ke perilaku label lama.
   const isAmpuanSaya = computed(() =>
@@ -338,7 +342,9 @@ export function useGlondongan() {
   //   `penyimak` boleh dihilangkan (undefined) → daftar penyimak tidak disentuh.
   //   v.1.2.1: + `pjGuru` — peta { [pjGuruId]: [guruId,…] } pembagian santri per PJ.
   //   undefined → tidak disentuh, sama seperti penyimak.
-  async function savePeran({ koordinator, penyimak, pjGuru } = {}) {
+  //   v.1.4.5: + `pjTarget` — peta { [pjGuruId]: { target, minimal } } halaman per bulan,
+  //   dibaca Rekap Prestasi. undefined → tidak disentuh.
+  async function savePeran({ koordinator, penyimak, pjGuru, pjTarget } = {}) {
     const m = await getOne('master', 'lembaga')
     const list = Array.isArray(m?.list) ? m.list.slice() : []
     const idx = list.findIndex((l) => (l.lembaga || l.nama) === PTPT_LEMBAGA)
@@ -350,6 +356,7 @@ export function useGlondongan() {
     }
     if (penyimak) patch.penyimak_glondongan = _bersihkanPeran(penyimak)
     if (pjGuru) patch.pj_guru = _bersihkanPjGuru(pjGuru)
+    if (pjTarget) patch.pj_target = bersihkanPetaTargetPj(pjTarget)
     if (idx >= 0) list[idx] = { ...list[idx], ...patch }
     else list.push({ lembaga: PTPT_LEMBAGA, ...patch })
     await mergeOne('master', 'lembaga', { list })
@@ -393,6 +400,7 @@ export function useGlondongan() {
     koordinatorGlondongan,
     penyimakGlondongan, // v.1.1.9: daftar penyimak per kategori
     pjGuru, // v.1.2.1: peta { [pjGuruId]: [guruId] } pembagian santri per PJ
+    pjTarget, // v.1.4.5: peta { [pjGuruId]: { target, minimal } } halaman per bulan
     bolehMenyimak,
     canAssign,
     canAssignAny,

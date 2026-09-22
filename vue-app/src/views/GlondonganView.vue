@@ -45,6 +45,7 @@ const {
   koordinatorGlondongan,
   penyimakGlondongan, // v.1.1.9: daftar penyimak per kategori
   pjGuru, // v.1.2.1: peta pembagian santri per PJ
+  pjTarget, // v.1.4.5: target prestasi bulanan per PJ
   bolehMenyimak,
   isPjPtpt,
   isAmpuanSaya, // v.1.1.9: scope PJ — hanya santri ampuannya
@@ -609,13 +610,42 @@ function toggleGuruPj(pjId, guruId) {
   pjGuruDraft.value = draft
 }
 
+// ── v.1.4.5: Target prestasi bulanan per PJ (Kyai 22 Sep 2026) — dibaca ekspor PDF Rekap
+//    Prestasi: tiap tabel kelas diberi persentase santri yang memenuhi target & minimal.
+//    Draft { [pjId]: { target, minimal } } berupa teks isian; dibersihkan saat disimpan.
+const pjTargetDraft = ref({})
+watch(
+  pjTarget,
+  (m) => {
+    const out = {}
+    for (const [k, t] of Object.entries(m || {})) {
+      out[k] = { target: String(t.target), minimal: t.minimal ? String(t.minimal) : '' }
+    }
+    pjTargetDraft.value = out
+  },
+  { immediate: true, deep: true }
+)
+function isiTargetPj(pjId, field, nilai) {
+  const key = String(pjId)
+  const lama = pjTargetDraft.value[key] || { target: '', minimal: '' }
+  pjTargetDraft.value = { ...pjTargetDraft.value, [key]: { ...lama, [field]: nilai } }
+}
+// Minimal di atas target akan dipotong ke target saat disimpan — beri tahu sebelum itu.
+function minimalMelebihiTarget(pjId) {
+  const t = pjTargetDraft.value[String(pjId)]
+  return (
+    !!t && Number(t.minimal) > 0 && Number(t.target) > 0 && Number(t.minimal) > Number(t.target)
+  )
+}
+
 async function savePeranSemua() {
   savingKoor.value = true
   try {
     await savePeran({
       koordinator: barisKePeran(koorRows.value),
       penyimak: barisKePeran(penyimakRows.value),
-      pjGuru: pjGuruDraft.value
+      pjGuru: pjGuruDraft.value,
+      pjTarget: pjTargetDraft.value
     })
     toast.success('Peran glondongan tersimpan')
   } catch (e) {
@@ -1606,7 +1636,8 @@ async function exportRekapBisyarohPdf() {
           </div>
           <p class="text-[10px] text-[var(--text-tertiary)] mb-2">
             Centang guru di bawah tiap PJ. Santri otomatis ikut PJ dari guru pengajarnya (Pagi/Sore)
-            — tak perlu diisi satu-satu. Satu guru hanya boleh di bawah satu PJ.
+            — tak perlu diisi satu-satu. Satu guru hanya boleh di bawah satu PJ. Target prestasi
+            (halaman per bulan) dipakai PDF Rekap Prestasi; kosongkan bila tak ada target.
           </p>
 
           <div
@@ -1631,6 +1662,46 @@ async function exportRekapBisyarohPdf() {
                 <span class="text-sm font-bold text-[var(--text-primary)]">{{ pj.nama }}</span>
                 <span class="text-[10px] text-[var(--text-tertiary)] ml-auto"
                   >{{ (pjGuruDraft[String(pj.id)] || []).length }} guru</span
+                >
+              </div>
+              <!-- v.1.4.5 (Kyai 22 Sep 2026): target prestasi bulanan PJ ini — dipakai PDF
+                   Rekap Prestasi untuk menghitung % santri tiap kelas yang memenuhi target. -->
+              <div
+                class="flex flex-wrap items-center gap-x-2 gap-y-1 mb-2 text-[11px] text-[var(--text-secondary)]"
+              >
+                <span class="font-bold"
+                  ><i class="fas fa-bullseye mr-1 text-violet-500"></i>Target prestasi/bulan</span
+                >
+                <label class="inline-flex items-center gap-1">
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    inputmode="numeric"
+                    placeholder="—"
+                    :aria-label="`Target halaman per bulan PJ ${pj.nama}`"
+                    class="w-16 px-2 py-1 rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)] text-[var(--text-primary)] text-xs text-center"
+                    :value="pjTargetDraft[String(pj.id)]?.target || ''"
+                    @input="isiTargetPj(pj.id, 'target', $event.target.value)"
+                  />hal
+                </label>
+                <label class="inline-flex items-center gap-1">
+                  minimal
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    inputmode="numeric"
+                    placeholder="—"
+                    :aria-label="`Minimal halaman per bulan PJ ${pj.nama}`"
+                    class="w-16 px-2 py-1 rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)] text-[var(--text-primary)] text-xs text-center"
+                    :value="pjTargetDraft[String(pj.id)]?.minimal || ''"
+                    @input="isiTargetPj(pj.id, 'minimal', $event.target.value)"
+                  />hal
+                </label>
+                <span v-if="minimalMelebihiTarget(pj.id)" class="text-amber-600 dark:text-amber-400"
+                  ><i class="fas fa-triangle-exclamation mr-1"></i>Minimal melebihi target — saat
+                  disimpan disamakan dengan target.</span
                 >
               </div>
               <div class="flex flex-wrap gap-1.5">

@@ -5,7 +5,17 @@
 // santri DITURUNKAN dari guru pengajarnya (guru_pagi/sore/guru): guru itu di bawah PJ
 // mana. Kalau gurunya tak ada di peta, jatuh ke label lama santri.pj_ptpt.
 import { describe, it, expect } from 'vitest'
-import { getPjGuru, isPjLembaga, buatPetaPjSantri, buatScopePj } from '@/utils/glondongan'
+import {
+  getPjGuru,
+  isPjLembaga,
+  buatPetaPjSantri,
+  buatScopePj,
+  bersihkanTargetPj,
+  bersihkanPetaTargetPj,
+  getPjTarget,
+  petaTargetPjNama,
+  targetPj
+} from '@/utils/glondongan'
 
 // Guru: dua PJ (g-syar, g-anwar) + empat pengajar.
 const GURU = [
@@ -155,5 +165,75 @@ describe('buatScopePj — pakai peta pj_guru (mode baru) tanpa merusak mode lama
     const scope = buatScopePj(SANTRI, 'Anwar')
     expect(scope('s4')).toBe(true) // label 'Anwar'
     expect(scope('s3')).toBe(false) // tak berlabel
+  })
+})
+
+// v.1.4.5 · Kyai (22 Sep 2026): "Target setiap PJ berbeda. PJ Syarifatun nur aini,
+// targetnya adalah 1 bulan 40 halaman, minimal 20 halaman. target PJ Hj. Nujumun Nada
+// adalah 20 halaman, minimal 10 halaman." Disimpan sebagai pj_target di master/lembaga
+// PTPT, berkunci id guru PJ — sama dengan pj_guru.
+describe('target prestasi per PJ (pj_target)', () => {
+  const GURU_T = [
+    { id: 'g-syar', nama: 'Syarifatun Nur Aini' },
+    { id: 'g-nada', nama: 'Hj. Nujumun Nada' },
+    { id: 'g-evi', nama: 'Evi Juni Sulistyowati, S.E.' }
+  ]
+  const LEMBAGA_T = [
+    { lembaga: 'SDI', pj_target: { 'g-evi': { target: 99, minimal: 1 } } }, // lembaga lain
+    {
+      lembaga: 'PTPT',
+      pj_target: {
+        'g-syar': { target: 40, minimal: 20 },
+        'g-nada': { target: '20', minimal: '10' }, // dari <input> → teks
+        'g-evi': { target: '', minimal: 5 } // target kosong = tak diatur
+      }
+    }
+  ]
+
+  it('getPjTarget membaca PTPT saja, angka teks jadi bilangan, yang tak sah dibuang', () => {
+    expect(getPjTarget(LEMBAGA_T)).toEqual({
+      'g-syar': { target: 40, minimal: 20 },
+      'g-nada': { target: 20, minimal: 10 }
+    })
+  })
+
+  it('peta kosong / tak ada PTPT → {}', () => {
+    expect(getPjTarget([])).toEqual({})
+    expect(getPjTarget([{ lembaga: 'PTPT' }])).toEqual({})
+  })
+
+  it('KUNCI: minimal di atas target dipotong ke target', () => {
+    expect(bersihkanTargetPj({ target: 20, minimal: 35 })).toEqual({ target: 20, minimal: 20 })
+  })
+
+  it('minimal kosong/negatif = 0 (tak ada batas minimal); pecahan dibulatkan ke bawah', () => {
+    expect(bersihkanTargetPj({ target: 40 })).toEqual({ target: 40, minimal: 0 })
+    expect(bersihkanTargetPj({ target: 40, minimal: -3 })).toEqual({ target: 40, minimal: 0 })
+    expect(bersihkanTargetPj({ target: 40.9, minimal: 19.6 })).toEqual({ target: 40, minimal: 19 })
+  })
+
+  it('target 0 / kosong / bukan angka → null (PJ tanpa target)', () => {
+    expect(bersihkanTargetPj({ target: 0, minimal: 10 })).toBeNull()
+    expect(bersihkanTargetPj({ target: 'abc' })).toBeNull()
+    expect(bersihkanTargetPj(null)).toBeNull()
+  })
+
+  it('bersihkanPetaTargetPj membuang kunci kosong', () => {
+    expect(bersihkanPetaTargetPj({ '': { target: 5 }, ' g-x ': { target: 5 } })).toEqual({
+      'g-x': { target: 5, minimal: 0 }
+    })
+  })
+
+  it('KUNCI: dicari lewat NAMA PJ (baris rekap membawa nama), toleran spasi & huruf besar', () => {
+    const peta = petaTargetPjNama(getPjTarget(LEMBAGA_T), GURU_T)
+    expect(targetPj('Syarifatun Nur Aini', peta)).toEqual({ target: 40, minimal: 20 })
+    expect(targetPj('  hj. nujumun   NADA ', peta)).toEqual({ target: 20, minimal: 10 })
+  })
+
+  it('PJ tanpa target / nama tak dikenal / id PJ tak ada di daftar guru → null', () => {
+    const peta = petaTargetPjNama({ 'g-hilang': { target: 30 } }, GURU_T)
+    expect(peta.size).toBe(0)
+    expect(targetPj('Evi Juni Sulistyowati, S.E.', peta)).toBeNull()
+    expect(targetPj('', peta)).toBeNull()
   })
 })

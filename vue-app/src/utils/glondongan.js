@@ -231,6 +231,79 @@ export function getPjGuru(lembagaList) {
   return out
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Target prestasi bulanan per PJ PTPT — v.1.4.5. Kyai (22 Sep 2026): "Target setiap PJ
+//   berbeda. PJ Syarifatun nur aini, targetnya adalah 1 bulan 40 halaman, minimal 20
+//   halaman. target PJ Hj. Nujumun Nada adalah 20 halaman, minimal 10 halaman."
+//
+//   Disimpan berdampingan dengan `pj_guru` di master/lembaga PTPT sebagai
+//   `pj_target = { [pjGuruId]: { target, minimal } }` (halaman per bulan), diatur di tab
+//   Peran Glondongan tempat PJ-nya sendiri dibentuk. Kuncinya id guru PJ, sama seperti
+//   pj_guru — nama PJ boleh disunting tanpa targetnya ikut hilang.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Jumlah halaman yang sah: bilangan bulat > 0; selain itu 0 (= tak diatur). */
+function _halaman(v) {
+  const n = Math.floor(Number(v))
+  return Number.isFinite(n) && n > 0 ? n : 0
+}
+
+/**
+ * Satu target yang sudah dibersihkan, atau null bila target-nya tak diatur.
+ * `minimal` dipotong ke `target`: minimal di atas target membuat santri yang "memenuhi
+ * minimal" justru lebih rajin dari yang "tercapai", dan ringkasannya jadi tak terbaca.
+ * `minimal` 0 = tak ada batas minimal (hanya tercapai / belum tercapai).
+ */
+export function bersihkanTargetPj(t) {
+  const target = _halaman(t?.target)
+  if (!target) return null
+  return { target, minimal: Math.min(_halaman(t?.minimal), target) }
+}
+
+/** Bersihkan seluruh peta { [pjGuruId]: {target, minimal} } — entri tak sah dibuang. */
+export function bersihkanPetaTargetPj(map) {
+  const out = {}
+  for (const [pjId, t] of Object.entries(map || {})) {
+    const key = String(pjId || '').trim()
+    const bersih = bersihkanTargetPj(t)
+    if (key && bersih) out[key] = bersih
+  }
+  return out
+}
+
+/** Peta target per PJ dari master/lembaga PTPT. */
+export function getPjTarget(lembagaList) {
+  const o = _ptptObj(lembagaList)
+  return bersihkanPetaTargetPj(o && o.pj_target)
+}
+
+/**
+ * Peta NAMA PJ (dinormalkan) → { target, minimal }.
+ *
+ * Baris rekap membawa NAMA PJ, bukan id-nya (buatPetaPjSantri menurunkannya lewat guru,
+ * dengan label `santri.pj_ptpt` sebagai cadangan), jadi target dicari lewat nama dan id PJ
+ * diterjemahkan lewat daftar guru — cara yang sama dengan buatPetaPjSantri.
+ */
+export function petaTargetPjNama(pjTargetMap, guruList) {
+  const idKeNama = new Map()
+  for (const g of guruList || []) {
+    const id = String(g?.id ?? '').trim()
+    if (id) idKeNama.set(id, String(g?.nama || ''))
+  }
+  const out = new Map()
+  for (const [pjId, t] of Object.entries(bersihkanPetaTargetPj(pjTargetMap))) {
+    const nama = _normNama(idKeNama.get(pjId))
+    if (nama) out.set(nama, t)
+  }
+  return out
+}
+
+/** Target satu PJ menurut namanya — null bila belum diatur. */
+export function targetPj(namaPj, petaNama) {
+  if (!namaPj || !petaNama) return null
+  return petaNama.get(_normNama(namaPj)) || null
+}
+
 /**
  * Orang ini PJ/Kepala LEMBAGA tsb?
  *

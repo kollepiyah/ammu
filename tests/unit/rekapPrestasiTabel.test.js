@@ -22,7 +22,18 @@ import {
   kelompokPerGuru,
   kelompokPerPj,
   daftarPj,
-  barisCetak
+  barisCetak,
+  sudahDiisi,
+  statusCapaian,
+  labelStatus,
+  ringkasanCapaian,
+  fmtAngka,
+  teksTarget,
+  teksRingkasan,
+  teksRingkasanPj,
+  labelKelasKelompok,
+  judulKelompok,
+  susunBagianEkspor
 } from '@/utils/rekapPrestasiTabel'
 
 const MASTER = [{ lembaga: 'PTPT', kelas_list: ['1', '2', '3', '4', '5', '6'] }]
@@ -284,5 +295,265 @@ describe('barisCetak — penomoran & kolom', () => {
     // Tiap kolom harus punya pasangan key-nya di barisCetak, kalau tidak selnya kosong.
     const contoh = barisCetak([{ nama: 'X' }])[0]
     for (const c of KOLOM_REKAP_PRESTASI) expect(contoh).toHaveProperty(c.key)
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// v.1.4.5 · Kyai, 22 Sep 2026: tabel terpisah PER KELAS (guru), urut capaian terbanyak,
+// dengan "berapa persen santri kelas tersebut memenuhi target"; target tiap PJ berbeda —
+// Syarifatun Nur Aini 40 hal (minimal 20), Hj. Nujumun Nada 20 hal (minimal 10).
+// ─────────────────────────────────────────────────────────────────────────────
+
+const T_SYAR = { target: 40, minimal: 20 }
+const T_NADA = { target: 20, minimal: 10 }
+
+/** Baris PTPT dengan awal/akhir → total = akhir − awal. */
+const baris = (id, nama, awal, akhir, extra = {}) =>
+  barisRekapPrestasi(
+    santri({
+      id,
+      nama,
+      kelas: extra.kelas || '1',
+      juz: extra.juz || '1',
+      guru_pagi: extra.guru ?? 'Bu Dewi',
+      prestasi_awal: awal,
+      prestasi_akhir: akhir
+    }),
+    { lembagaList: MASTER, pj: extra.pj || '' }
+  )
+
+describe('statusCapaian — satu santri terhadap target PJ-nya', () => {
+  it('KUNCI: batas target & minimal INKLUSIF (tepat 40 = tercapai, tepat 20 = minimal)', () => {
+    expect(statusCapaian(baris('1', 'A', '100', '140'), T_SYAR)).toBe('tercapai')
+    expect(statusCapaian(baris('2', 'B', '100', '139'), T_SYAR)).toBe('minimal')
+    expect(statusCapaian(baris('3', 'C', '100', '120'), T_SYAR)).toBe('minimal')
+    expect(statusCapaian(baris('4', 'D', '100', '119'), T_SYAR)).toBe('kurang')
+  })
+
+  it('target berbeda per PJ: 22 hal tercapai untuk Nujumun Nada, cuma minimal untuk Syarifatun', () => {
+    const r = baris('5', 'E', '103', '125')
+    expect(statusCapaian(r, T_NADA)).toBe('tercapai')
+    expect(statusCapaian(r, T_SYAR)).toBe('minimal')
+  })
+
+  it('angka belum diisi = "kosong", BUKAN "kurang" — data kosong tak boleh terbaca malas', () => {
+    expect(statusCapaian(baris('6', 'F', '', ''), T_SYAR)).toBe('kosong')
+    expect(statusCapaian(baris('7', 'G', '100', ''), T_SYAR)).toBe('kosong')
+  })
+
+  it('diisi tapi tak bergerak (akhir = awal) = kurang, bukan kosong', () => {
+    expect(statusCapaian(baris('8', 'H', '50', '50'), T_SYAR)).toBe('kurang')
+  })
+
+  it('tanpa target → status kosong-string (tabel tanpa kolom keterangan)', () => {
+    expect(statusCapaian(baris('9', 'I', '1', '99'), null)).toBe('')
+    expect(statusCapaian(baris('9', 'I', '1', '99'), { target: 0, minimal: 0 })).toBe('')
+  })
+
+  it('tanpa batas minimal: di bawah target = "Belum tercapai", bukan "Di bawah minimal"', () => {
+    const tanpaMin = { target: 30, minimal: 0 }
+    const st = statusCapaian(baris('10', 'J', '100', '125'), tanpaMin)
+    expect(st).toBe('kurang')
+    expect(labelStatus(st, tanpaMin)).toBe('Belum tercapai')
+    expect(labelStatus('kurang', T_SYAR)).toBe('Di bawah minimal')
+  })
+
+  it('lembaga non-PTPT dianggap terisi bila totalnya diketik', () => {
+    expect(sudahDiisi({ lembaga: 'PPPH', total: '7 Bab' })).toBe(true)
+    expect(sudahDiisi({ lembaga: 'PPPH', total: '' })).toBe(false)
+  })
+})
+
+describe('ringkasanCapaian — persentase santri yang memenuhi target', () => {
+  // 5 santri: 45 (tercapai), 40 (tercapai), 25 (minimal), 10 (kurang), kosong.
+  const rows = [
+    baris('1', 'A', '100', '145'),
+    baris('2', 'B', '100', '140'),
+    baris('3', 'C', '100', '125'),
+    baris('4', 'D', '100', '110'),
+    baris('5', 'E', '', '')
+  ]
+
+  it('KUNCI: penyebutnya SEMUA santri kelas itu, termasuk yang belum diisi', () => {
+    const r = ringkasanCapaian(rows, T_SYAR)
+    expect(r.jumlah).toBe(5)
+    expect(r.capaiTarget).toBe(2)
+    expect(r.persenTarget).toBeCloseTo(40)
+    expect(r.belumDiisi).toBe(1)
+  })
+
+  it('"memenuhi minimal" MENCAKUP yang sudah tercapai', () => {
+    const r = ringkasanCapaian(rows, T_SYAR)
+    expect(r.capaiMinimal).toBe(3)
+    expect(r.persenMinimal).toBeCloseTo(60)
+  })
+
+  it('rata-rata = Σ halaman / jumlah santri, dan persennya terhadap target', () => {
+    const r = ringkasanCapaian(rows, T_SYAR)
+    expect(r.totalHal).toBe(120)
+    expect(r.rataRata).toBeCloseTo(24)
+    expect(r.persenRataTarget).toBeCloseTo(60)
+  })
+
+  it('tanpa batas minimal → angka minimal null (tak dicetak)', () => {
+    const r = ringkasanCapaian(rows, { target: 40, minimal: 0 })
+    expect(r.capaiMinimal).toBeNull()
+    expect(r.persenMinimal).toBeNull()
+  })
+
+  it('kelompok kosong tak membagi dengan nol', () => {
+    const r = ringkasanCapaian([], T_SYAR)
+    expect(r.persenTarget).toBe(0)
+    expect(r.rataRata).toBe(0)
+  })
+})
+
+describe('teks ringkasan — siap cetak di PDF', () => {
+  const rows = [
+    baris('1', 'A', '100', '145'),
+    baris('2', 'B', '100', '125'),
+    baris('3', 'C', '', '')
+  ]
+
+  it('persen memakai koma desimal Indonesia, paling banyak satu angka', () => {
+    expect(fmtAngka(66.6666)).toBe('66,7')
+    expect(fmtAngka(40)).toBe('40')
+  })
+
+  it('baris utama menyebut target, jumlah, dan persentasenya', () => {
+    const { utama } = teksRingkasan(ringkasanCapaian(rows, T_SYAR), T_SYAR)
+    expect(utama).toBe('Memenuhi target 40 hal: 1 dari 3 santri — 33,3%')
+  })
+
+  it('baris rinci: minimal, rata-rata, dan jumlah yang belum diisi', () => {
+    const { rinci } = teksRingkasan(ringkasanCapaian(rows, T_SYAR), T_SYAR)
+    expect(rinci).toContain('Memenuhi minimal 20 hal: 2 dari 3 santri (66,7%)')
+    expect(rinci).toContain('Rata-rata capaian: 23,3 hal (58,3% dari target)')
+    expect(rinci).toContain('Belum diisi: 1 santri')
+  })
+
+  it("KUNCI: tak ada simbol '≥' — font standar jsPDF mencetaknya sebagai huruf acak", () => {
+    const rk = ringkasanCapaian(rows, T_SYAR)
+    const { utama, rinci } = teksRingkasan(rk, T_SYAR)
+    for (const t of [utama, rinci, teksTarget(T_SYAR), teksRingkasanPj(rk, T_SYAR)]) {
+      expect(t).not.toMatch(/[≥≤]/)
+    }
+  })
+
+  it('teks target PJ', () => {
+    expect(teksTarget(T_SYAR)).toBe('Target 40 hal/bulan · minimal 20 hal')
+    expect(teksTarget({ target: 30, minimal: 0 })).toBe('Target 30 hal/bulan')
+    expect(teksTarget(null)).toBe('')
+  })
+})
+
+describe('labelKelasKelompok & judulKelompok', () => {
+  it('satu kelas → apa adanya', () => {
+    expect(labelKelasKelompok([baris('1', 'A', '', '', { kelas: '2' })])).toBe('Kelas 2')
+  })
+
+  it('rombel campur jenjang → semua kelasnya disebut, urut naik', () => {
+    const rows = [
+      baris('1', 'A', '', '', { kelas: '3' }),
+      baris('2', 'B', '', '', { kelas: '1' }),
+      baris('3', 'C', '', '', { kelas: '1' })
+    ]
+    expect(labelKelasKelompok(rows)).toBe('Kelas 1 & 3')
+    rows.push(baris('4', 'D', '', '', { kelas: '2' }))
+    expect(labelKelasKelompok(rows)).toBe('Kelas 1, 2 & 3')
+  })
+
+  it('judul tabel: kelas — guru (jumlah santri)', () => {
+    expect(
+      judulKelompok({ kelasLabel: 'Kelas 1 & 2', guru: 'Dewi Musrifah, S.Pd.', jumlah: 5 })
+    ).toBe('Kelas 1 & 2 — Dewi Musrifah, S.Pd. (5 santri)')
+    expect(judulKelompok({ kelasLabel: '', guru: '', jumlah: 2 })).toBe('Tanpa guru (2 santri)')
+  })
+})
+
+describe('susunBagianEkspor — bagian per PJ → tabel per kelas (guru)', () => {
+  const rows = [
+    baris('1', 'Kecil', '100', '105', { guru: 'Bu Siti', pj: 'Syarifatun Nur Aini' }),
+    baris('2', 'Besar', '100', '150', { guru: 'Bu Siti', pj: 'Syarifatun Nur Aini' }),
+    baris('3', 'Kelas3', '200', '230', { guru: 'Bu Aizza', kelas: '3', pj: 'Syarifatun Nur Aini' }),
+    baris('4', 'Nada1', '10', '32', { guru: 'Bu Farah', pj: 'Hj. Nujumun Nada' }),
+    baris('5', 'Yatim', '1', '2', { guru: 'Bu Lain' }) // tanpa PJ
+  ]
+  const targetUntuk = (pj) =>
+    ({ 'Syarifatun Nur Aini': T_SYAR, 'Hj. Nujumun Nada': T_NADA })[pj] || null
+
+  it('KUNCI: tiap PJ memakai TARGETNYA SENDIRI', () => {
+    const b = susunBagianEkspor(rows, { targetUntuk })
+    expect(b.find((x) => x.pj === 'Syarifatun Nur Aini').target).toEqual(T_SYAR)
+    expect(b.find((x) => x.pj === 'Hj. Nujumun Nada').target).toEqual(T_NADA)
+    // 22 hal: tercapai di bawah Nujumun Nada (target 20).
+    expect(b.find((x) => x.pj === 'Hj. Nujumun Nada').grup[0].ringkasan.capaiTarget).toBe(1)
+  })
+
+  it('KUNCI: satu tabel per guru, kelas terendah duluan, isi urut capaian terbanyak', () => {
+    const syar = susunBagianEkspor(rows, { targetUntuk }).find(
+      (x) => x.pj === 'Syarifatun Nur Aini'
+    )
+    expect(syar.grup.map((g) => g.guru)).toEqual(['Bu Siti', 'Bu Aizza'])
+    expect(syar.grup[0].rows.map((r) => r.nama)).toEqual(['Besar', 'Kecil'])
+    expect(syar.grup[1].kelasLabel).toBe('Kelas 3')
+  })
+
+  it('ringkasan per kelas DAN per PJ', () => {
+    const syar = susunBagianEkspor(rows, { targetUntuk }).find(
+      (x) => x.pj === 'Syarifatun Nur Aini'
+    )
+    expect(syar.grup[0].ringkasan).toMatchObject({ jumlah: 2, capaiTarget: 1, persenTarget: 50 })
+    expect(syar.ringkasan).toMatchObject({ jumlah: 3, capaiTarget: 1 })
+  })
+
+  it('bagian Tanpa PJ tetap ada, tanpa target & tanpa ringkasan', () => {
+    const akhir = susunBagianEkspor(rows, { targetUntuk }).at(-1)
+    expect(akhir.pj).toBe(TANPA_PJ)
+    expect(akhir.target).toBeNull()
+    expect(akhir.grup[0].ringkasan).toBeNull()
+  })
+
+  it('PJ yang targetnya belum diatur → tabel tetap per kelas, tanpa ringkasan', () => {
+    const b = susunBagianEkspor(rows, { targetUntuk: () => null })
+    expect(b[0].target).toBeNull()
+    expect(b[0].grup.length).toBeGreaterThan(0)
+    expect(b[0].grup.every((g) => g.ringkasan === null)).toBe(true)
+  })
+
+  it('penyaring PJ terpilih → satu bagian saja', () => {
+    const b = susunBagianEkspor(rows.slice(0, 3), {
+      pjTerpilih: 'Syarifatun Nur Aini',
+      targetUntuk
+    })
+    expect(b).toHaveLength(1)
+    expect(b[0].target).toEqual(T_SYAR)
+  })
+
+  it('tanpa peta PJ sama sekali (mis. PPPH) → satu bagian tanpa judul PJ', () => {
+    const b = susunBagianEkspor([rows[4]], { targetUntuk })
+    expect(b).toHaveLength(1)
+    expect(b[0].pj).toBe('')
+  })
+
+  it('daftar kosong → tak ada bagian', () => {
+    expect(susunBagianEkspor([], { targetUntuk })).toEqual([])
+  })
+})
+
+describe('barisCetak dengan target — kolom Keterangan', () => {
+  it('membawa keterangan + status (untuk warna sel), nomor tetap mulai 1', () => {
+    const out = barisCetak([baris('1', 'A', '100', '145'), baris('2', 'B', '', '')], {
+      target: T_SYAR
+    })
+    expect(out.map((r) => r.no)).toEqual([1, 2])
+    expect(out[0]).toMatchObject({ status: 'tercapai', keterangan: 'Tercapai' })
+    expect(out[1]).toMatchObject({ status: 'kosong', keterangan: 'Belum diisi' })
+  })
+
+  it('tanpa target → bentuk lama persis (tanpa keterangan)', () => {
+    const r = barisCetak([baris('1', 'A', '100', '145')])[0]
+    expect(r).not.toHaveProperty('keterangan')
+    expect(r).not.toHaveProperty('status')
   })
 })

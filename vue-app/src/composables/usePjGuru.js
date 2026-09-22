@@ -7,7 +7,7 @@
 //   modul (satu listener se-sesi) — bukan per-pemanggil — supaya tak ada 20 channel.
 import { ref, computed } from 'vue'
 import { subscribeDoc } from '@/services/db'
-import { getPjGuru } from '@/utils/glondongan'
+import { getPjGuru, getPjTarget } from '@/utils/glondongan'
 
 const _lembagaList = ref([])
 let _started = false
@@ -24,8 +24,11 @@ function _ensure() {
 export function usePjGuru() {
   _ensure()
   const pjGuru = computed(() => getPjGuru(_lembagaList.value))
+  // v.1.4.5: target prestasi bulanan per PJ — tinggal di dokumen yang sama, jadi ikut
+  //   dibagikan dari langganan ini (dibaca ekspor Rekap Prestasi).
+  const pjTarget = computed(() => getPjTarget(_lembagaList.value))
   // v.1.4.1: daftar master/lembaga ikut dibagikan. Doc-nya sudah dilangganani di sini,
   //   jadi pemanggil yang butuh `kelas_list` (label jenjang kanonik di Rekap Prestasi)
   //   tak perlu membuka langganan KEDUA ke dokumen yang sama.
-  return { pjGuru, lembagaList: _lembagaList }
+  return { pjGuru, pjTarget, lembagaList: _lembagaList }
 }

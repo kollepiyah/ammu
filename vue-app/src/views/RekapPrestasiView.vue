@@ -422,6 +422,22 @@
           placeholder="Cari nama..."
           class="px-3 py-2 text-sm rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-teal-500 outline-none col-span-2 md:col-span-1"
         />
+        <!-- v.1.4.5 (Kyai 22 Sep 2026): target per PJ yang dipakai ringkasan PDF — terlihat
+             SEBELUM ekspor, jadi PJ yang targetnya belum diatur ketahuan di sini, bukan di kertas. -->
+        <div
+          v-if="infoTargetPj.length"
+          class="col-span-2 md:col-span-5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500 dark:text-slate-400"
+        >
+          <span class="font-bold"
+            ><i class="fas fa-bullseye mr-1 text-cyan-500"></i>Target PDF:</span
+          >
+          <span v-for="t in infoTargetPj" :key="'tgt-' + t.pj">
+            PJ {{ t.pj }} —
+            <b v-if="t.teks" class="text-slate-700 dark:text-slate-200">{{ t.teks }}</b>
+            <i v-else class="text-amber-600 dark:text-amber-400">belum diatur</i>
+          </span>
+          <span class="italic">(atur di Glondongan → Peran → Pembagian Santri per PJ)</span>
+        </div>
       </div>
 
       <!-- v.100d: FILTER KATEGORI SANTRI (guru DUAL saja) — Qiraati ngaji vs Sekolah read-only → ekspor terpisah -->
@@ -1034,10 +1050,11 @@
           <div class="text-[11px] text-slate-500">
             <i class="fas fa-info-circle mr-1 text-cyan-500"></i>
             Berkas ekspor memuat <b>seluruh santri</b> (bukan cuma Top 5), urut
-            <b>capaian terbanyak</b> lalu <b>juz tertinggi</b>.
-            <template v-if="!filterPj && pjOptions.length > 1">
-              PDF-nya <b>dipisah per PJ PTPT</b>.
-            </template>
+            <b>capaian terbanyak</b> lalu <b>juz tertinggi</b>. PDF-nya
+            <b>satu tabel per kelas (guru)</b> dengan persentase santri yang memenuhi target
+            PJ<template v-if="!filterPj && pjOptions.length > 1"
+              >, <b>dipisah per PJ PTPT</b></template
+            >.
           </div>
           <div
             class="flex flex-nowrap md:flex-wrap items-center gap-2 overflow-x-auto md:overflow-visible hide-scrollbar [&>*]:shrink-0 md:[&>*]:shrink w-full md:w-auto -mx-1 px-1 md:mx-0 md:px-0"
@@ -1327,14 +1344,9 @@ import { useGoogleSheet } from '@/composables/useGoogleSheet' // v.100 Batch12: 
 import { useSettingsStore } from '@/stores/settings'
 import { extractNumber, todayJakarta } from '@/utils/format'
 import { bestNameMatch, fuzzyKey, simRatio } from '@/utils/fuzzyMatch' // v.100 Batch12/14: cocokkan nama mirip + scope guru (impor Google Form)
-import {
-  createPdf,
-  drawKopLetterhead,
-  drawTitle,
-  drawTable,
-  savePdf,
-  buildKopLembaga
-} from '@/utils/pdfBuilder'
+import { createPdf, savePdf, buildKopLembaga } from '@/utils/pdfBuilder'
+// v.1.4.5: tata letak PDF rekap (tabel per kelas + ringkasan target) — dipisah dari layar.
+import { gambarRekapPrestasi } from '@/utils/rekapPrestasiPdf'
 import { muassisDataUrlSync } from '@/utils/kopMuassis' // v.100: baris-1 KOP print = gambar muassis
 import { useAuthStore } from '@/stores/auth'
 import { useRouter } from 'vue-router' // v.100c-fix: pilihKategori('diniyah') pakai router.push (sebelumnya undefined → ReferenceError)
@@ -1359,21 +1371,19 @@ import {
 import { labelJenjang, kelasSama } from '@/utils/jenjangQiraati'
 // v.1.4.1: bentuk tabel rekap (baris, urutan, kelompok per guru, pisah per PJ) — PURE.
 import {
-  KOLOM_REKAP_PRESTASI,
-  TANPA_PJ,
   barisRekapPrestasi,
-  urutkanRekapPrestasi,
   kelompokPerGuru,
-  kelompokPerPj,
   daftarPj,
-  barisCetak,
-  guruSantri
+  guruSantri,
+  // v.1.4.5: bagian per PJ → tabel per kelas (guru) + ringkasan target PJ.
+  susunBagianEkspor,
+  teksTarget
 } from '@/utils/rekapPrestasiTabel'
 // v.1.4.1 (Kyai, 4 Sep 2026): "guru yg mengisi dari tgl 29 agustus - september itu adalah
 //   data september." Rencana pemindahannya MURNI + 13 tes; layar ini hanya menampilkan &
 //   menerapkan sesudah Kyai menekan konfirmasi.
 import { usePjGuru } from '@/composables/usePjGuru'
-import { buatPetaPjSantri } from '@/utils/glondongan'
+import { buatPetaPjSantri, petaTargetPjNama, targetPj } from '@/utils/glondongan'
 // v.1.3.8 (Kyai, 2 Sep 2026): menambal riwayat bulanan yang tak pernah tertulis, SEBELUM
 //   angka di data santri boleh dikosongkan tiap tanggal 25.
 import { analisaTambal, labelPeriode as labelPeriodeTambal } from '@/utils/tambalRiwayatPrestasi'
@@ -1756,13 +1766,22 @@ const hasPTPT = computed(() => filteredSantri.value.some((s) => s.lembaga === 'P
 //   (2) grupnya RUN-LENGTH atas daftar yang diurut lembaga→kelas→usia. Karena guru tak
 //       pernah ikut mengurutkan, satu guru pecah jadi belasan grup dan judulnya berulang.
 // Aturannya kini di utils/rekapPrestasiTabel (murni + tes).
-const { pjGuru, lembagaList: lembagaMaster } = usePjGuru()
+const { pjGuru, pjTarget, lembagaList: lembagaMaster } = usePjGuru()
 const petaPjSantri = computed(() => buatPetaPjSantri(santriRaw.value, guruRaw.value, pjGuru.value))
+// v.1.4.5 (Kyai 22 Sep 2026): "Target setiap PJ berbeda" — diatur di Glondongan → Peran →
+//   Pembagian Santri per PJ. Dicari lewat NAMA PJ, sama seperti peta PJ santri di atas.
+const petaTargetNama = computed(() => petaTargetPjNama(pjTarget.value, guruRaw.value))
+const targetUntukPj = (namaPj) => targetPj(namaPj, petaTargetNama.value)
 // Diturunkan dari peta PJ langsung, bukan dari baris rekap: dropdown-nya tak boleh ikut
 //   menyusut waktu sebuah PJ dipilih (kalau tidak, PJ lain hilang & tak bisa dipilih lagi).
 const pjOptions = computed(() =>
   daftarPj(santriQiraati.value.map((s) => ({ pj: petaPjSantri.value.get(String(s.id)) || '' })))
 )
+/** Keterangan target di bawah penyaring: PJ terpilih, atau semua PJ yang ada. */
+const infoTargetPj = computed(() => {
+  const daftar = filterPj.value ? [filterPj.value] : pjOptions.value
+  return daftar.map((pj) => ({ pj, teks: teksTarget(targetUntukPj(pj)) }))
+})
 
 /**
  * Baris untuk MENGELOMPOKKAN — sengaja TANPA `nilai`, jadi tak bergantung pada `edits`.
@@ -2458,22 +2477,16 @@ async function confirmImportRekap() {
 //   sedangkan drawKopLetterhead membaca {line1..line5} — jadi seluruh baris kop-nya SELAMA
 //   INI kosong (yang tampil hanya gambar muassis). buildKopFromSettings adalah bentuk yang
 //   benar dan sudah dipakai ekspor lain.
-function bagianEkspor() {
-  const rows = barisRekap.value
-  if (!rows.length) return []
-  // PJ tertentu terpilih → satu bagian saja (penyaring sudah menyaring barisnya).
-  if (filterPj.value) return [{ pj: filterPj.value, rows: urutkanRekapPrestasi(rows) }]
-  // Tak ada peta PJ sama sekali (mis. lembaga PPPH) → jangan paksakan bagian palsu.
-  const perPj = kelompokPerPj(rows)
-  if (perPj.length === 1 && perPj[0].pj === TANPA_PJ) {
-    return [{ pj: '', rows: perPj[0].rows }]
-  }
-  return perPj
-}
-
+//
+// v.1.4.5 (Kyai 22 Sep 2026): di dalam tiap bagian PJ, SATU TABEL PER KELAS (guru), urut
+//   capaian terbanyak, dengan persentase santri yang memenuhi target PJ-nya. Susunannya di
+//   rekapPrestasiTabel.susunBagianEkspor, tata letaknya di utils/rekapPrestasiPdf.
 async function exportPdf() {
   if (busy.value) return
-  const bagian = bagianEkspor()
+  const bagian = susunBagianEkspor(barisRekap.value, {
+    pjTerpilih: filterPj.value,
+    targetUntuk: targetUntukPj
+  })
   if (!bagian.length) {
     toast.warning('Tak ada santri untuk diekspor.')
     return
@@ -2484,40 +2497,8 @@ async function exportPdf() {
     const subJudul = `Capaian bulan ${bulanDataLabel.value}${
       filterLembaga.value ? ' · ' + filterLembaga.value : ''
     }`
-    const kop = kopEkspor.value
     const doc = await createPdf({ kind: 'umum', orientation: 'l', format: 'F4' })
-    const head = [KOLOM_REKAP_PRESTASI.map((c) => c.header)]
-    const availW = doc.internal.pageSize.getWidth() - 24
-    const sumW = KOLOM_REKAP_PRESTASI.reduce((s, c) => s + c.lebar, 0)
-    const skala = sumW > 0 ? availW / sumW : 1
-    const columnStyles = KOLOM_REKAP_PRESTASI.reduce((acc, c, i) => {
-      acc[i] = { cellWidth: Math.round(c.lebar * skala * 100) / 100 }
-      return acc
-    }, {})
-
-    let pertama = true
-    for (const b of bagian) {
-      if (!pertama) doc.addPage()
-      pertama = false
-      let y = await drawKopLetterhead(doc, kop, { y: 10 })
-      drawTitle(doc, judul, { y: y + 8, size: 12 })
-      y += 12
-      drawTitle(doc, subJudul, { y: y + 4, size: 9 })
-      y += 6
-      if (b.pj) {
-        drawTitle(doc, `PJ PTPT: ${b.pj} · ${b.rows.length} santri`, { y: y + 5, size: 10 })
-        y += 7
-      }
-      drawTable(doc, {
-        startY: y + 4,
-        head,
-        body: barisCetak(b.rows).map((r) =>
-          KOLOM_REKAP_PRESTASI.map((c) => String(r[c.key] ?? ''))
-        ),
-        tableWidth: availW,
-        columnStyles
-      })
-    }
+    await gambarRekapPrestasi(doc, { kop: kopEkspor.value, judul, subJudul, bagian })
 
     const namaPj = filterPj.value ? '_' + filterPj.value.replace(/\s+/g, '_') : ''
     await savePdf(doc, `REKAP_PRESTASI_${bulan.value}_${tahun.value}${namaPj}.pdf`)
