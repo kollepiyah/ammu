@@ -16,6 +16,10 @@ Rinciannya untuk pengembang ada di `CHANGELOG.md` — jangan disalin ke sana, te
 
 **Perbaikan**
 
+- **Daftar ajuan Tes Kenaikan kembali berisi kelas sendiri.** Kepala sekolah — misalnya Kepala SDI
+  yang juga mengajar ngaji di PTPT — sebelumnya menerima seluruh santri sekolahnya dari semua kelas
+  ngaji, sehingga kelas yang benar-benar ia ajar tenggelam. Kini yang tampil hanya santri kelas
+  ngajinya. Kepala TPQ dan PTPT tetap melihat seluruh santri lembaganya seperti biasa.
 - **Logo KOP kembali muncul di ekspor PDF dan rapor.** Logo lembaga yang tersimpan di server
   penyimpanan lama tak bisa diambil lagi; selama logonya belum diunggah ulang, PDF dan rapor kini
   memakai logo pondok, bukan kosong.

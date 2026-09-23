@@ -20,17 +20,53 @@ naik satu tiap rilis. Entri lama memakai skema lama `v.{nomor-urut}.{MMDDtahunmu
 
 ---
 
-## [v.1.4.5] — 2026-09-22 — Berkas di Firebase Storage lama tak lagi gagal diam-diam: rapor, avatar, struk, dan post jatuh ke cadangannya
+## [v.1.4.5] — 2026-09-23 — Daftar ajuan tes kembali ke kelas ngajinya: kepala sekolah tak lagi kebanjiran santri sekolahnya
 
-**SIAP RILIS** — `versionCode` 145 / `versionName` `v.1.4.5`. **SATU rilis, DUA gelombang** (keduanya
-22 Sep 2026). **Tanpa migrasi Supabase, tanpa perubahan edge function.** Urutannya: **deploy web →
+**SIAP RILIS** — `versionCode` 145 / `versionName` `v.1.4.5`. **SATU rilis, TIGA gelombang** (22–23
+Sep 2026). **Tanpa migrasi Supabase, tanpa perubahan edge function.** Urutannya: **deploy web →
 rebuild AAB → rilis Electron.**
+
+⚠️ Web sudah ter-deploy 23 Sep dengan gelombang 1–2 saja, jadi gelombang 3 di bawah menuntut
+**deploy web ULANG**. AAB belum diunggah ke Play dan Electron belum dirilis, jadi `versionCode` 145
+masih utuh dan nomornya tak perlu naik.
 
 Nomor baru, BUKAN gelombang v.1.4.4: Electron 1.4.4 sudah berstatus "Latest" di GitHub sejak
 19 Sep 2026 (electron-updater hanya menawarkan versi yang lebih tinggi).
 
-Gelombang 1 dikerjakan di checkout utama, jadi commit-nya menyusul SESUDAH commit rilis. Keduanya
-diuji bersama sebelum di-push (23 Sep 2026): 108 berkas / 1.638 tes lulus, `vite build` sukses.
+Gelombang 1 dikerjakan di checkout utama, jadi commit-nya menyusul sesudah commit rilis; gelombang 3
+menyusul sehari kemudian. Ketiganya diuji bersama: 109 berkas / 1.648 tes lulus, `vite build` sukses.
+
+### Fixed — daftar Ajukan Tes Kenaikan ikut scope Qiraati, bukan seluruh santri yang terbaca
+
+Kyai, 23 Sep 2026: _"untuk kepala SDI dan kepala lain di status ajuan tes itu muncul semua santri
+SDI (lembaganya), orangnya bingung. Saya ingin dibuat jadi muncul santri kelasnya; kepala SDI juga
+guru PTPT."_
+
+Dua lapis bertumpuk — bentuk yang sama dengan bug yang ditutup v.1.2.8 di Rekap Prestasi:
+
+- `useSantri` memberi seorang kepala GABUNGAN: kelas ampuannya PLUS seluruh santri lembaga yang
+  jabatannya pimpin (untuk kepala SEKOLAH lewat `lembaga_sekolah`). Itu benar untuk layar DATA.
+- `TesKenaikanView` lalu membuang penyaring ampuan itu untuk siapa pun yang berstatus penguji
+  (`if (!isPenguji) … ownsNgaji`) — dan kepala SELALU penguji. Hasilnya ratusan santri SDI dari
+  semua kelas ngaji membanjiri daftar ajuan QIRAATI, sementara kelas PTPT yang benar-benar ia ajar
+  tenggelam di antaranya.
+
+Aturannya kini `utils/tesKenaikan.santriBisaDiajukanTes` di atas `scopeQiraati(...).edit` — satu
+sumber dengan Rekap Prestasi: admin penuh melihat semua, kepala lembaga NGAJI tetap se-lembaganya,
+selebihnya (termasuk kepala sekolah) hanya santri yang ia ajar ngaji. Tab Ajukan juga dihitung dari
+scope itu, jadi kepala sekolah yang tak mengajar ngaji tak lagi disuguhi tab kosong.
+
+Tes: `tests/unit/tesKenaikanAjukanScope.test.js` (10 kasus), termasuk kasus "peran yang TIDAK boleh
+berubah" (kepala lembaga ngaji, guru biasa, admin) dan penjaga cermin bahwa layarnya tak lagi
+memutuskan scope sendiri.
+
+**Catatan:** ini gerbang TAMPILAN. RLS `tes_kenaikan` (archetype B) hanya menuntut
+`auth_can_akademik()` untuk INSERT — pembatasan per-santri memang tak pernah ada di server, dan
+rilis ini tidak mengubahnya.
+
+---
+
+## [v.1.4.5 · gelombang 2] — 2026-09-22 — Berkas di Firebase Storage lama tak lagi gagal diam-diam: rapor, avatar, struk, dan post jatuh ke cadangannya
 
 ### Latar — Firebase Storage lama mati
 
