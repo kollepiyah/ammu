@@ -7,6 +7,8 @@
 //     - PPPH      : Naik Level (Arba'in→Riyadhus→Bukhari→Muslim).
 //   Opsi target diturunkan dari schema kartu kenaikan (utils/kenaikan.js) → tak hardcode ganda.
 import { getKartuKenaikanSchema } from './kenaikan'
+// v.1.4.5: scope Qiraati dipakai bersama Rekap Prestasi — lihat santriBisaDiajukanTes.
+import { scopeQiraati } from './guruScope'
 
 // v.100d: Lembaga NGAJI yang ikut fitur tes. Pra PTPT KINI IKUT (tes per khotam, kyai 14 Jun).
 export const TES_LEMBAGA = ['TPQ Pagi', 'TPQ Sore', 'Pra PTPT', 'PTPT', 'PPPH']
@@ -15,6 +17,34 @@ export const TES_LEMBAGA = ['TPQ Pagi', 'TPQ Sore', 'Pra PTPT', 'PTPT', 'PPPH']
 export function isEligibleForTes(s) {
   if (!s || s.aktif === false) return false
   return TES_LEMBAGA.includes(String(s.lembaga || '').trim())
+}
+
+/**
+ * v.1.4.5 — Santri yang boleh SAYA ajukan tes-nya: layak tes DAN masuk scope Qiraati saya.
+ *
+ * Kyai, 23 Sep 2026: _"untuk kepala SDI dan kepala lain, di status ajuan tes itu muncul
+ * semua santri SDI (lembaganya), orangnya bingung. Saya ingin dibuat jadi muncul santri
+ * kelasnya; kepala SDI juga guru PTPT."_
+ *
+ * Sebabnya dua lapis yang bertumpuk — persis bentuk bug yang ditutup v.1.2.8 di Rekap
+ * Prestasi. `useSantri` memberi seorang kepala GABUNGAN: kelas ampuannya PLUS seluruh
+ * santri lembaga yang jabatannya pimpin (untuk Kepala SDI: lewat `lembaga_sekolah`), dan
+ * itu memang benar untuk layar DATA. Lalu layar tes membuang penyaring ampuannya untuk
+ * siapa pun yang berstatus penguji (`if (!isPenguji) … ownsNgaji`) — sedang kepala selalu
+ * penguji. Hasilnya: ratusan santri SDI dari semua kelas ngaji membanjiri daftar ajuan
+ * Qiraati, dan kelas PTPT yang benar-benar ia ajar tenggelam di antaranya.
+ *
+ * Aturannya memakai `scopeQiraati(...).edit` supaya satu sumber dengan Rekap Prestasi:
+ * admin penuh melihat semua; kepala lembaga NGAJI tetap se-lembaganya; selebihnya —
+ * termasuk kepala SEKOLAH — hanya santri yang ia ajar ngaji (`ownsNgaji`). Kepala sekolah
+ * memang tak berkuasa atas nilai Qiraati; wilayahnya Rekap Diniyah & Tes Sekolah.
+ *
+ * @param {Array}  santriList daftar santri (sudah ter-scope peran oleh useSantri)
+ * @param {object} sesi       auth.sesiAktif
+ */
+export function santriBisaDiajukanTes(santriList, sesi) {
+  const scope = scopeQiraati(sesi)
+  return (santriList || []).filter((s) => isEligibleForTes(s) && scope.edit(s))
 }
 
 // Jenis ajuan yang tersedia untuk satu lembaga. [] = lembaga tak ikut tes.

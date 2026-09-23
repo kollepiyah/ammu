@@ -970,7 +970,7 @@ import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import { useSantri } from '@/composables/useSantri'
 import { useTesKenaikan } from '@/composables/useTesKenaikan'
 import { useAuthStore } from '@/stores/auth' // v.100d: nama guru utk scope ngaji-only
-import { ownsNgaji, guruAktifSaja } from '@/utils/guruScope' // v.100d
+import { guruAktifSaja } from '@/utils/guruScope'
 import { getOne, mergeOne, subscribeColl } from '@/services/db' // v.100d: muat dokumen santri penuh utk auto-naik
 import { buildKenaikanQiraatiPayload, writeKenaikan } from '@/utils/promosiKenaikan' // v.100d
 import { buildTesRaporFeed, currentRaporPeriode } from '@/utils/tesRaporFeed' // v.100d Fase 3: nilai tes → rapor
@@ -1008,7 +1008,7 @@ import { useConfirm } from '@/composables/useConfirm'
 import { useDesktopShell } from '@/composables/useDesktopShell'
 import TesModeSwitch from '@/components/TesModeSwitch.vue'
 import {
-  isEligibleForTes,
+  santriBisaDiajukanTes,
   tesJenisOptions,
   tesTargetOptions,
   tesTargetDefault,
@@ -1208,7 +1208,6 @@ const settings = computed(() => settingsStore.settings || {})
 const pondokWa = computed(() => settings.value.kopLine2 || 'Pondok Pesantren Mambaul Ulum')
 
 const auth = useAuthStore()
-const myGuruNama = computed(() => String(auth.sesiAktif?.guru || auth.sesiAktif?.nama || '').trim())
 
 // v.100d: filter UI (Lembaga/Jenis/Cari) — berguna utk Kepala/PJ & admin lintas-lembaga.
 const fLembaga = ref('')
@@ -1417,16 +1416,21 @@ async function cetakRekapHasil() {
 
 // Santri yang boleh diajukan (ter-scope per role oleh useSantri).
 //   v.100d: guru biasa (bukan penguji) DIBATASI ke santri NGAJI ampuannya (bukan wali kelas sekolah).
+//   v.1.4.5 (Kyai 23 Sep 2026): penyaring itu dulu DILEWATI untuk setiap penguji — dan kepala
+//   selalu penguji — sehingga Kepala SDI yang juga guru ngaji PTPT menerima SELURUH santri SDI
+//   di daftar ajuan Qiraati, kelas PTPT-nya sendiri tenggelam. Aturannya kini di
+//   utils/tesKenaikan.santriBisaDiajukanTes (satu sumber dengan Rekap Prestasi).
+const santriDalamScope = computed(() => santriBisaDiajukanTes(santri.value, auth.sesiAktif))
 const santriEligible = computed(() => {
-  let list = (santri.value || []).filter((s) => isEligibleForTes(s))
-  if (!isPenguji.value) list = list.filter((s) => ownsNgaji(s, myGuruNama.value))
-  if (fLembaga.value) list = list.filter((s) => s.lembaga === fLembaga.value)
-  return list
+  const list = santriDalamScope.value
+  return fLembaga.value ? list.filter((s) => s.lembaga === fLembaga.value) : list
 })
 
 // ----- Tabs (adaptif role) -----
-// Tab Ajukan tampil bila ada santri dalam scope (guru→ampuan, kepala→se-lembaga) atau bukan penguji.
-const showAjukan = computed(() => (santri.value || []).length > 0 || !isPenguji.value)
+// Tab Ajukan tampil bila ada santri dalam scope (guru→ampuan, kepala lembaga ngaji→se-lembaga)
+//   atau bukan penguji. v.1.4.5: dihitung dari scope tes, bukan seluruh santri yang terbaca —
+//   kepala SEKOLAH tanpa kelas ngaji kini melihat tab Antrian saja, bukan tab Ajukan kosong.
+const showAjukan = computed(() => santriDalamScope.value.length > 0 || !isPenguji.value)
 const tabs = computed(() => {
   const out = []
   if (showAjukan.value) {
