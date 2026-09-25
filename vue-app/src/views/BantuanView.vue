@@ -803,6 +803,14 @@ async function resetFaq() {
 //   riwayat lengkap ada di CHANGELOG.md untuk pengembang.
 const rilis = [
   {
+    versi: 'v.1.4.6',
+    tgl: 'September 2026',
+    items: [
+      'Data guru bisa disimpan lagi setelah jabatan tambahannya dijadikan jabatan utama. Sebelumnya tombol Update Guru menolak dengan pesan "jabatan tambahan sama dengan jabatan utama", padahal di layar tak ada jabatan tambahan yang tercentang. Kini jabatan yang dobel dirapikan otomatis saat disimpan.',
+      'Jabatan yang tersimpan selalu tampak di form guru. Jabatan yang sudah dihapus atau diganti nama di Master Jabatan, atau yang tak sesuai tipe pegawai, dulu membuat pilihan Jabatan Utama tampil kosong sehingga data tak bisa disimpan, dan jabatan tambahan semacam itu tak terlihat sama sekali. Sekarang semuanya tampil dan bisa dilepas.'
+    ]
+  },
+  {
     versi: 'v.1.4.5',
     tgl: 'September 2026',
     items: [

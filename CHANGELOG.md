@@ -20,6 +20,87 @@ naik satu tiap rilis. Entri lama memakai skema lama `v.{nomor-urut}.{MMDDtahunmu
 
 ---
 
+## [v.1.4.6] — 2026-09-26 — Form guru tak lagi menolak simpan karena centang jabatan tambahan yang tak terlihat
+
+**SIAP RILIS** — `versionCode` 146 / `versionName` `v.1.4.6`. **Tanpa migrasi Supabase, tanpa
+perubahan edge function.** Urutannya: **deploy web → rebuild AAB → rilis Electron.**
+
+Nomor baru, BUKAN gelombang v.1.4.5: Electron 1.4.5 sudah berstatus "Latest" di GitHub sejak
+23 Sep 2026 (tag `v1.4.5` = `9eaba48`, jadi ketiga gelombangnya sudah ikut), dan AAB vc145 sedang
+ditinjau Play (26 Sep 2026) — `versionCode` itu sudah hangus.
+
+### Fixed — "Jabatan tambahan … sama dengan jabatan utama" padahal tak ada yang tercentang
+
+Ditemukan 26 Sep 2026: "Update Guru" ditolak _"Jabatan tambahan "Kepala SDI" sama dengan jabatan
+utama — pilih yang lain"_, padahal di layar tak satu chip Jabatan Tambahan pun menyala.
+
+Akarnya di `GuruFormView`: chip tambahan disaring `jabatanOptionsFiltered.filter((x) => x !==
+form.jabatan)` — jabatan utama disembunyikan dari chip, tapi centangnya di `form.jabatan_tambahan`
+tidak ikut dilepas. `validate()` lalu menolak, dan tak ada chip untuk melepasnya. Dua jalan masuk:
+
+1. X dicentang sebagai tambahan, lalu X dijadikan jabatan utama ("naik jabatan": Guru + tambahan
+   Kepala SDI → Kepala SDI).
+2. Guru hasil impor Excel yang kolom Jabatan dan Jabatan Tambahan-nya berisi nama yang sama —
+   guru itu tak bisa disunting sama sekali, mengganti nomor WA pun ditolak.
+
+Jalan keluarnya selama ini tak mungkin ditebak: ganti jabatan utama ke yang lain, lepas chip-nya,
+lalu kembalikan.
+
+Kerabatnya di form yang sama, ikut ditutup:
+
+- **Jabatan Utama di luar pilihan** (disaring tipe pegawai — mis. "Bendahara" pada tipe Guru —,
+  dihapus/diganti nama di Master Jabatan, atau beda huruf karena `importMap.titleCase` mengubah
+  "Kepala SDI" → "Kepala Sdi") membuat `<select required>` tampil kosong, dan browser menahan simpan
+  dengan balon kecil — lagi-lagi guru tak bisa disimpan tanpa mengganti jabatannya.
+- **Jabatan tambahan tersimpan di luar pilihan** (sebab yang sama) tak punya chip: tak terlihat,
+  tak bisa dilepas, tapi tetap terhitung "N dipilih".
+- Tanda tercentang dinilai `includes` (peka huruf) sedangkan `toggleJabatanTambahan` tidak: "Pj
+  Ptpt" tampak tak tercentang di chip "PJ PTPT", dan mengekliknya malah MELEPAS centang yang tak
+  terlihat itu.
+
+Aturannya kini satu — **yang tersimpan harus terlihat** — lewat tiga fungsi di `utils/jabatanUnit.js`:
+
+- `tanpaJabatanUtama(tambahan, utama)` → `jabatanTambahanEfektif` di `useGuruForm`: sumber hitungan
+  "N dipilih", `isPengajar`, `unitsJabatan`, dan nilai yang DISIMPAN. Kembaran jabatan utama dibuang
+  saat simpan — tak ada yang hilang, karena semua pembaca (`deriveGuruLembagaRefs`, `unitsOfGuru`,
+  cek scope) menggabungkan utama + tambahan. Tolakan di `validate()` dicabut. Pembuangan terjadi saat
+  SIMPAN, bukan saat jabatan utama diganti: kembali ke jabatan lama sebelum menyimpan memulihkan
+  centang tambahannya.
+- `opsiJabatanTambahan(opsi, utama, tambahan)` → chip = pilihan selain jabatan utama + jabatan
+  tersimpan yang tak ada di pilihan.
+- `opsiJabatanUtama(opsi, utama)` → nilai tersimpan ikut jadi `<option>` bila tak ada di pilihan
+  (dicocokkan persis, seperti `<select>` sendiri).
+
+Tes: `tests/unit/formGuruJabatan.test.js` (22 kasus) — fungsi pembantu, skenario `useGuruForm`
+sungguhan di atas DB tiruan (6 di antaranya GAGAL di kode lama dengan pesan persis keluhan di atas),
+dan penjaga cermin `GuruFormView`. Diuji juga di peramban: form dipasang di dev server dengan data
+master produksi (baca anon) dan semua tulisan Supabase dicegat di klien — alur naik jabatan lolos
+dengan payload `jabatan_tambahan: ''`, jabatan di luar master tetap tampil dan lolos `required`.
+Full suite 110 berkas / 1.670 tes lulus; `vite build` sukses.
+
+### Diperiksa, TIDAK diubah — pola serupa di layar lain
+
+Sapuan 26 Sep 2026 atas pola "nilai tersimpan tapi opsinya tak ditampilkan". Tak satu pun menahan
+simpan seperti form guru; yang ada kesan keliru di layar:
+
+- **Chip scope Jenis Bisyaroh / Tunjangan / Potongan** (Pengaturan Keuangan): opsinya dari master,
+  jadi jabatan/lembaga/shift yang dihapus atau diganti nama tetap tersimpan di scope tanpa chip.
+  Deretan chip tampak kosong ("kosongkan = semua") padahal scope-nya terbatas. Mesin bisyaroh tetap
+  mencocokkan nilai itu (`cocokKriteria`, tanpa memandang huruf), jadi tampilan ini sendiri tak
+  menggeser bayaran. Tanda tercentangnya juga `includes` peka huruf.
+- **Unit jabatan** (Master Data › Jabatan): lembaga yang dihapus/diganti nama tetap tersimpan
+  sebagai unit tanpa chip — dan jabatan ber-unit tunggal mengisikannya otomatis ke lembaga guru.
+- **Penguji materi tes** (Kelola Materi Tes): penguji yang dinonaktifkan tak tampil tapi tetap
+  tersimpan; syarat "minimal 1 penguji" lolos walau satu-satunya penguji sudah nonaktif.
+- **Form santri**: Lembaga Qiraati & Kelas ber-`required`; kelas yang diganti nama di master tampil
+  kosong dan simpan tertahan — tapi pulih dengan memilih kelas yang sah (bukan jalan buntu).
+- **Impor Supabase** (`importMap.mapGuruRow`): `titleCase` mengubah singkatan jabatan ("PJ PTPT" →
+  "Pj Ptpt") — sumber nilai beda-huruf di atas. Form guru kini menerimanya; pembaca lain sudah tak
+  peka huruf.
+- Aman: opsi libur di Kalender (konstanta), tipe Lembaga (opsi tetap), jadwal hari & izin per shift.
+
+---
+
 ## [v.1.4.5] — 2026-09-23 — Daftar ajuan tes kembali ke kelas ngajinya: kepala sekolah tak lagi kebanjiran santri sekolahnya
 
 **SIAP RILIS** — `versionCode` 145 / `versionName` `v.1.4.5`. **SATU rilis, TIGA gelombang** (22–23

@@ -5,6 +5,22 @@ Rinciannya untuk pengembang ada di `CHANGELOG.md` — jangan disalin ke sana, te
 
 ---
 
+## v.1.4.6 — September 2026
+
+**Perbaikan**
+
+- **Data guru bisa disimpan lagi setelah jabatan tambahannya dijadikan jabatan utama.** Misalnya
+  guru berjabatan tambahan Kepala SDI yang jabatan utamanya diganti menjadi Kepala SDI: tombol
+  Update Guru menolak dengan pesan "jabatan tambahan sama dengan jabatan utama", padahal di layar tak
+  ada jabatan tambahan yang tercentang. Hal yang sama menimpa guru hasil impor Excel yang kolom
+  Jabatan dan Jabatan Tambahan-nya sama. Kini jabatan yang dobel dirapikan otomatis saat disimpan.
+- **Jabatan yang tersimpan selalu tampak di form guru.** Jabatan yang sudah dihapus atau diganti
+  nama di Master Jabatan, atau yang tak sesuai tipe pegawai, dulu membuat pilihan Jabatan Utama
+  tampil kosong sehingga data tak bisa disimpan tanpa menggantinya, dan jabatan tambahan semacam itu
+  tak terlihat sama sekali. Sekarang semuanya tampil, jadi bisa dipertahankan atau dilepas.
+
+---
+
 ## v.1.4.5 — September 2026
 
 **Baru**
