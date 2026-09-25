@@ -76,6 +76,55 @@ export function pecahJabatan(v) {
   return out
 }
 
+// ── Pilihan jabatan di form guru ────────────────────────────────────────────
+// 26 Sep 2026: "Update Guru" ditolak "Jabatan tambahan … sama dengan jabatan utama" padahal
+// tak satu chip pun tampak tercentang.
+// Chip jabatan utama disembunyikan dari daftar tambahan, tapi centangnya tetap tersimpan —
+// tak terlihat, jadi tak bisa dilepas. Jalannya: pilih X sebagai tambahan lalu jadikan X
+// jabatan utama, atau buka guru hasil impor yang kedua kolomnya berisi nama yang sama.
+// Tiga fungsi di bawah menjaga satu aturan: apa pun yang TERSIMPAN harus TERLIHAT di form.
+
+/**
+ * Jabatan tambahan tanpa jabatan utama. Merangkap jabatan yang sama tak bermakna — semua
+ * pembaca menggabungkan utama + tambahan — jadi membuangnya tak menghilangkan apa pun.
+ */
+export function tanpaJabatanUtama(tambahan, utama) {
+  const u = _key(utama)
+  return pecahJabatan(tambahan).filter((x) => _key(x) !== u)
+}
+
+/**
+ * Chip Jabatan Tambahan: pilihan selain jabatan utama, DITAMBAH tiap jabatan tersimpan yang
+ * tak ada di pilihan (tipe pegawai diganti, jabatan dihapus/diganti nama di Master Jabatan,
+ * beda huruf besar-kecil dari impor) — supaya semuanya tampak dan bisa dilepas.
+ */
+export function opsiJabatanTambahan(opsi, utama, tambahan) {
+  const u = _key(utama)
+  const out = []
+  for (const x of Array.isArray(opsi) ? opsi : []) {
+    const nama = String(x ?? '').trim()
+    if (!nama || _key(nama) === u || out.some((y) => _key(y) === _key(nama))) continue
+    out.push(nama)
+  }
+  for (const j of tanpaJabatanUtama(tambahan, utama)) {
+    if (!out.some((y) => _key(y) === _key(j))) out.push(j)
+  }
+  return out
+}
+
+/**
+ * Pilihan `<select>` Jabatan Utama + nilai tersimpan bila tak ada di pilihan. Tanpa itu
+ * select-nya tampil KOSONG, dan karena ber-`required` browser menolak simpan dengan balon
+ * kecil — guru itu tak bisa disunting sama sekali tanpa mengganti jabatannya. Dicocokkan
+ * PERSIS (bukan abai huruf) karena `<select>` sendiri mencocokkan persis.
+ */
+export function opsiJabatanUtama(opsi, utama) {
+  const out = Array.isArray(opsi) ? [...opsi] : []
+  const u = utama == null ? '' : String(utama)
+  if (u.trim() && !out.includes(u)) out.unshift(u)
+  return out
+}
+
 /**
  * Jabatan yang MEMANGKU unit/lembaga tertentu, dari jabatan-jabatan milik guru ini.
  *

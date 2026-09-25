@@ -13,7 +13,14 @@ import { gedungList } from '@/utils/gedung'
 import { shiftsForGuru } from '@/utils/shiftDerive'
 import { shiftList, shiftIdsToLegacy } from '@/utils/shiftMaster'
 // v.1.1.9: unit tugas dari master/jabatan (ganti tebakan regex lama)
-import { unitsOfGuru, fieldForUnit, namaLembaga, pecahJabatan } from '@/utils/jabatanUnit'
+import {
+  unitsOfGuru,
+  fieldForUnit,
+  namaLembaga,
+  tanpaJabatanUtama,
+  opsiJabatanUtama,
+  opsiJabatanTambahan
+} from '@/utils/jabatanUnit'
 import { isSekolahLembaga } from '@/composables/useLembaga' // v.1.2.1: sumber tunggal deteksi sekolah
 // v.1.3.8: jadwal hari mengajar per shift (Kyai, 1 Sep 2026 — alpa palsu guru paruh-waktu).
 import { jadwalMap, normHariList, HARI_LABELS } from '@/utils/jadwalGuru'
@@ -189,12 +196,19 @@ export function useGuruForm() {
     return fromMaster.length > 0 ? fromMaster : SEKOLAH_FALLBACK
   })
 
+  // v.1.4.6: jabatan tambahan YANG BERLAKU = tanpa jabatan utama. Nilai mentahnya boleh
+  //   memuat jabatan utama (tambahan X lalu X dijadikan utama; impor lama) — chip-nya
+  //   tersembunyi, jadi semua yang dihitung & disimpan form memakai daftar ini, bukan mentahnya.
+  const jabatanTambahanEfektif = computed(() =>
+    tanpaJabatanUtama(form.value.jabatan_tambahan, form.value.jabatan)
+  )
+
   // ── v.1.1.9: Unit tugas dari master/jabatan (items[].units) ──────────────
   // Gabungan unit jabatan utama + tambahan. [] = GLOBAL (jabatan "Guru") → pakai
   // dropdown Qiraati/Sekolah seperti biasa. Ada isinya → lembaga guru dikunci/dibatasi
   // ke unit itu, menggantikan tebakan regex lama di useGuru.deriveGuruLembagaRefs.
   const unitsJabatan = computed(() =>
-    unitsOfGuru(jabatanItemsFromMaster.value, form.value.jabatan, form.value.jabatan_tambahan)
+    unitsOfGuru(jabatanItemsFromMaster.value, form.value.jabatan, jabatanTambahanEfektif.value)
   )
   const jabatanPunyaUnit = computed(() => unitsJabatan.value.length > 0)
 
@@ -351,6 +365,20 @@ export function useGuruForm() {
     return filtered.map((j) => j.nama)
   })
 
+  // v.1.4.6: yang TERSIMPAN harus TERLIHAT. Jabatan utama di luar pilihan (disaring tipe
+  //   pegawai, dihapus/diganti nama di Master Jabatan, beda huruf dari impor) ikut jadi
+  //   <option>; jabatan tambahan di luar pilihan ikut jadi chip supaya bisa dilepas.
+  const pilihanJabatanUtama = computed(() =>
+    opsiJabatanUtama(jabatanOptionsFiltered.value, form.value.jabatan)
+  )
+  const pilihanJabatanTambahan = computed(() =>
+    opsiJabatanTambahan(
+      jabatanOptionsFiltered.value,
+      form.value.jabatan,
+      form.value.jabatan_tambahan
+    )
+  )
+
   // v.99: BUTUH LEMBAGA dari master/jabatan items[].tipe_lembaga (kyai: "mana jabatan yg butuh lembaga dan tidak").
   //   Fallback: JABATAN_NO_LEMBAGA hardcoded → 'non-lembaga'; selain itu → 'lembaga'.
   const jabatanTipeLembaga = computed(() => {
@@ -375,7 +403,7 @@ export function useGuruForm() {
     if (tipe === 'guru' || tipe === 'pegawai_guru') return true
     // Kyai 7 Agu 2026: jabatan tambahan kini boleh lebih dari satu — cukup SALAH SATU
     //   bergrup guru untuk membuatnya pengajar.
-    return pecahJabatan(form.value.jabatan_tambahan).some(
+    return jabatanTambahanEfektif.value.some(
       (jt) =>
         JABATAN_GURU_GROUP.some((n) => n.toLowerCase() === jt.toLowerCase()) || /guru/i.test(jt)
     )
@@ -572,10 +600,10 @@ export function useGuruForm() {
     const f = form.value
     if (!String(f.nama || '').trim()) return 'Nama wajib diisi'
     if (!f.jabatan) return 'Jabatan wajib dipilih'
-    const jtSama = pecahJabatan(f.jabatan_tambahan).find(
-      (x) => x.toLowerCase() === String(f.jabatan || '').toLowerCase()
-    )
-    if (jtSama) return `Jabatan tambahan "${jtSama}" sama dengan jabatan utama — pilih yang lain`
+    // v.1.4.6: tolakan "Jabatan tambahan X sama dengan jabatan utama" DICABUT. Chip X
+    //   tersembunyi begitu X jadi jabatan utama, jadi penolakan itu menuntut melepas centang
+    //   yang tak terlihat — guru tak bisa disimpan sama sekali. Kembarannya kini dibuang
+    //   saat simpan (lihat jabatanTambahanEfektif); tak ada yang hilang karenanya.
     // v.1.2.3: lembaga (Qiraati/Sekolah) hanya WAJIB utk PENGAJAR (isPengajar) — bukan
     //   butuhLembaga. Bug lama: pegawai murni yang jabatannya ber-unit lembaga (mis. Admin
     //   Keuangan → Yayasan) bikin butuhLembaga=true, padahal picker lembaga disembunyikan
@@ -641,7 +669,7 @@ export function useGuruForm() {
         jk: f.jk,
         nik: String(f.nik || '').trim(),
         jabatan: f.jabatan,
-        jabatan_tambahan: f.jabatan_tambahan || '',
+        jabatan_tambahan: jabatanTambahanEfektif.value.join(', '),
         lembaga: butuhLembaga.value ? f.lembaga : '',
         lembaga_sekolah: butuhLembaga.value ? f.lembaga_sekolah : '',
         tanggal_tugas: f.tanggal_tugas || '',
@@ -786,6 +814,9 @@ export function useGuruForm() {
     syncUnitKeJabatan,
     jabatanOptionsDynamic,
     jabatanOptionsFiltered,
+    pilihanJabatanUtama,
+    pilihanJabatanTambahan,
+    jabatanTambahanEfektif,
     showLembagaSekolah,
     showLembagaQiraati,
     butuhLembaga,

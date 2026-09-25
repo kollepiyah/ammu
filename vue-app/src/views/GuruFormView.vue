@@ -86,7 +86,7 @@
               required
               class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-cyan-500 outline-none"
             >
-              <option v-for="j in jabatanOptionsFiltered" :key="j" :value="j">{{ j }}</option>
+              <option v-for="j in pilihanJabatanUtama" :key="j" :value="j">{{ j }}</option>
             </select>
           </div>
           <div>
@@ -99,13 +99,15 @@
             <div
               class="flex flex-wrap gap-1.5 p-2 rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] max-h-40 overflow-y-auto"
             >
+              <!-- v.1.4.6: daftarnya dari pilihanJabatanTambahan — jabatan tersimpan yang tak
+                   ada di pilihan ikut tampil (dulu tersembunyi tapi tetap tercentang). -->
               <button
-                v-for="j in jabatanOptionsFiltered.filter((x) => x !== form.jabatan)"
+                v-for="j in pilihanJabatanTambahan"
                 :key="'jt-' + j"
                 type="button"
                 :class="[
                   'text-[11px] font-bold px-2.5 py-1 rounded-full border transition',
-                  jabatanTambahanList.includes(j)
+                  tambahanDipilih(j)
                     ? 'bg-cyan-600 text-white border-cyan-600'
                     : 'border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-[var(--bg-card)]'
                 ]"
@@ -114,14 +116,14 @@
                 {{ j }}
               </button>
               <span
-                v-if="jabatanOptionsFiltered.filter((x) => x !== form.jabatan).length === 0"
+                v-if="pilihanJabatanTambahan.length === 0"
                 class="text-[11px] italic text-[var(--text-tertiary)]"
                 >Tak ada pilihan lain.</span
               >
             </div>
             <p class="text-[10px] text-[var(--text-tertiary)] italic mt-1">
               Boleh lebih dari satu — tiap jabatan membawa unit/lembaganya sendiri.
-              {{ jabatanTambahanList.length ? jabatanTambahanList.length + ' dipilih.' : '' }}
+              {{ jabatanTambahanEfektif.length ? jabatanTambahanEfektif.length + ' dipilih.' : '' }}
             </p>
           </div>
           <!-- v.21.18.0526: Tipe Pegawai — Guru / Pegawai / Pegawai+Guru -->
@@ -527,7 +529,9 @@ const {
   butuhLembaga,
   lembagaPondokOptions,
   lembagaSekolahOptions,
-  jabatanOptionsFiltered,
+  pilihanJabatanUtama,
+  pilihanJabatanTambahan,
+  jabatanTambahanEfektif,
   isSuperAdmin,
   gedungOptions,
   shiftOptions,
@@ -554,7 +558,13 @@ watch(() => [form.value.jabatan, form.value.jabatan_tambahan], syncUnitKeJabatan
 
 // Kyai 7 Agu 2026: jabatan tambahan boleh banyak. Nilainya tetap SATU string dipisah koma
 //   (kolomnya bertipe teks, dan bentuk itu terbaca oleh data lama tanpa migrasi apa pun).
-const jabatanTambahanList = computed(() => pecahJabatan(form.value.jabatan_tambahan))
+// v.1.4.6: tercentang atau tidak dinilai TANPA memandang huruf besar-kecil, sama seperti
+//   toggleJabatanTambahan — dulu "Pj Ptpt" hasil impor tampak tak tercentang di chip
+//   "PJ PTPT", dan mengekliknya malah MELEPAS centang yang tak terlihat itu.
+function tambahanDipilih(nama) {
+  const k = String(nama).toLowerCase()
+  return jabatanTambahanEfektif.value.some((x) => x.toLowerCase() === k)
+}
 function toggleJabatanTambahan(nama) {
   const cur = pecahJabatan(form.value.jabatan_tambahan)
   const i = cur.findIndex((x) => x.toLowerCase() === String(nama).toLowerCase())
