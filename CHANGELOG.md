@@ -20,14 +20,91 @@ naik satu tiap rilis. Entri lama memakai skema lama `v.{nomor-urut}.{MMDDtahunmu
 
 ---
 
-## [v.1.4.6] — 2026-09-26 — Form guru tak lagi menolak simpan karena centang jabatan tambahan yang tak terlihat
+## [v.1.4.6] — 2026-09-27 — Yang tersimpan kini terlihat di tiga layar lagi: scope bisyaroh/tunjangan/potongan, unit jabatan, dan penguji materi tes
 
-**SIAP RILIS** — `versionCode` 146 / `versionName` `v.1.4.6`. **Tanpa migrasi Supabase, tanpa
-perubahan edge function.** Urutannya: **deploy web → rebuild AAB → rilis Electron.**
+**SIAP RILIS** — `versionCode` 146 / `versionName` `v.1.4.6`. **SATU rilis, DUA gelombang** (26–27
+Sep 2026). **Tanpa migrasi Supabase, tanpa perubahan edge function.** Urutannya: **deploy web →
+rebuild AAB → rilis Electron.**
+
+Gelombang, bukan nomor baru: dicek 27 Sep 2026, v.1.4.6 belum tayang di jalur mana pun yang
+mengunci nomor — web di `ammuonline.web.app` masih melayani `app-version.json` versi 145 (terakhir
+diubah 23 Sep), Electron "Latest" di GitHub masih 1.4.5, dan AAB vc146 belum diunggah ke Play
+(Kyai). `versionCode` 146 masih utuh.
 
 Nomor baru, BUKAN gelombang v.1.4.5: Electron 1.4.5 sudah berstatus "Latest" di GitHub sejak
 23 Sep 2026 (tag `v1.4.5` = `9eaba48`, jadi ketiga gelombangnya sudah ikut), dan AAB vc145 sedang
 ditinjau Play (26 Sep 2026) — `versionCode` itu sudah hangus.
+
+Kedua gelombang diuji bersama: 111 berkas / 1.700 tes lulus, `vite build` sukses.
+
+### Fixed — nilai tersimpan yang sudah tak ada di master kini tampak, dan bisa dilepas
+
+Lanjutan sapuan gelombang 1 (lihat "Diperiksa, TIDAK diubah" di bawahnya): tiga layar membangun
+chip HANYA dari master, jadi nilai tersimpan yang sudah dihapus / diganti nama di master — atau guru
+yang sudah dinonaktifkan — tak punya chip. Tak terlihat, tak bisa dilepas, tapi tetap dibaca mesinnya.
+Aturannya kini sama dengan form guru — **yang tersimpan harus terlihat** — lewat satu berkas baru,
+`utils/pilihanTersimpan`, yang memutuskan tiga hal sekali untuk semua layar:
+
+1. **Chip = pilihan + nilai tersimpan di luar pilihan.** Yang di luar pilihan tampil kuning bergaris
+   putus dengan tanda _"· tak ada di master"_ (guru: _"Nama (Nonaktif)"_ / _"id (tak ada di data
+   guru)"_), dan hilang begitu dilepas. `Batal` di dialog tetap membatalkan pelepasan yang keliru.
+2. **Tercentang dinilai dengan pembanding MESIN yang membaca nilai itu**, bukan `includes` peka
+   huruf: nama abai huruf (`cocokKriteria`, `samaTeks`, `_key` di jabatanUnit), id persis.
+3. **Mengeklik chip melepas SEMUA kembarannya** menurut pembanding itu. Dulu toggle `indexOf` persis:
+   chip "PJ PTPT" yang (kini) menyala karena "Pj Ptpt" tersimpan akan MENAMBAH kembaran, bukan melepas.
+
+Per layar:
+
+- **Pengaturan Keuangan › Jenis Bisyaroh / Tunjangan / Potongan** — chip Jabatan, Lembaga, Shift.
+  Deretan yang dulu tampak kosong ("kosongkan = semua") padahal scope-nya terbatas kini menampilkan
+  nilainya. **Mesin bayar TIDAK diubah.** Pembandingnya mengikuti gerbang `jenisKenaGuru`: jabatan &
+  lembaga abai huruf, **shift persis** (`Set.has` atas id Master Shift — id-nya selalu slug huruf
+  kecil). Jadi scope shift "Pagi" tidak menyalakan chip id `pagi`; ia tampil sebagai nilai di luar
+  master, karena memang tak pernah mengenai siapa pun di mesin. Ikut ditutup di dialog yang sama:
+  **"Per Orang" / "Batasi ke orang tertentu"** — daftarnya hanya guru aktif, jadi orang yang sudah
+  nonaktif/terhapus tetap terhitung "(N)" tanpa bisa dilihat atau dilepas satu per satu; kini ia
+  tampil di atas daftar.
+- **Master Data › Jabatan** — chip Unit/Lembaga Tugas. Unit yang lembaganya sudah dihapus / diganti
+  nama tampil dan bisa dilepas (jabatan ber-unit tunggal terus mengisikannya ke lembaga guru).
+  "Belum ada lembaga di Master" kini hanya muncul bila memang tak ada chip sama sekali.
+- **Kelola Materi Tes** — chip Guru Penguji: penguji nonaktif tampil, dan **syarat "minimal 1
+  penguji" kini menghitung penguji yang masih AKTIF** — dulu materi yang satu-satunya pengujinya
+  sudah nonaktif tetap lolos simpan padahal tak seorang pun bisa menilainya. Tabel menandai materi
+  lama yang tak punya penguji aktif, dan nama penguji nonaktif tak lagi tampil sebagai id mentah.
+  Ditemukan saat mengerjakannya, di form yang sama: **chip Kelas** (kelas yang diganti nama di master
+  tak punya chip — dan bila lembaganya tak ketemu, form malah berkata _"materi akan berlaku untuk
+  semua santrinya"_ padahal kelas tersimpan tetap menyaring) dan **`<select>` Lembaga Sekolah**
+  (nilai di luar pilihan tampil "— pilih —" sementara form tetap menyimpan nilai lama; kini jadi
+  `<option>` bertanda "(tak ada di pilihan)").
+
+Selama data guru belum termuat, penguji / orang di scope tidak dinilai "tak ada di data guru" (semua
+akan tampak begitu), dan simpan materi ditunda dengan pesan "Data guru belum termuat".
+`opsiJabatanUtama` (gelombang 1) kini memakai `opsiSelectTersimpan` yang sama — satu aturan, bukan
+dua salinan.
+
+Tes: `tests/unit/pilihanTersimpan.test.js` (30 kasus) — fungsi pembantu, keselarasan dengan mesin
+bayar (`jenisKenaGuru`) dan mesin tes (`materiBerlakuUntuk`, `materiSayaSebagaiPenguji`), serta
+penjaga cermin ketiga view; kesepuluh asersi cermin GAGAL bila dijalankan pada view lama. Diuji juga
+di peramban: ketiga view dipasang di dev server dengan master produksi (baca anon), semua tulisan
+Supabase dicegat di klien, keadaan uji disuntikkan (daftar jenis & guru tak terbaca anon). Klik
+sungguhan melepas nilai di luar master dan kembaran beda huruf; simpan materi yang hanya berpenguji
+nonaktif ditolak tanpa satu tulisan pun, dan payload materi berpenguji aktif utuh.
+
+### Diperiksa, TIDAK diubah
+
+- **Dialog Beban Mengajar** (Pengaturan Keuangan): `<select>` Guru (guru aktif saja) dan Lembaga
+  (master) punya pola yang sama untuk nilai lama — tampil "— pilih —" tapi nilainya tetap tersimpan.
+  Tidak menahan simpan; di luar tiga layar gelombang ini.
+- **Mesin bayar sendiri** tetap bercampur untuk shift: gerbang `jenisKenaGuru` persis, sedangkan
+  `hadirUntuk` / `jumlahShiftCocok` abai huruf. Tidak diubah (bukan bagian perbaikan tampilan ini);
+  chip mengikuti gerbangnya karena gerbanglah yang memutuskan jenis itu kena atau tidak.
+- Data produksi yang terbaca anon (master jabatan, lembaga, shift, materi tes) tak memuat unit/kelas
+  di luar master. Daftar jenis bisyaroh/tunjangan/potongan dan data guru tak terbaca anon, jadi
+  nilai di luar master di sana baru akan tampak di layar sesudah deploy.
+
+---
+
+## [v.1.4.6 · gelombang 1] — 2026-09-26 — Form guru tak lagi menolak simpan karena centang jabatan tambahan yang tak terlihat
 
 ### Fixed — "Jabatan tambahan … sama dengan jabatan utama" padahal tak ada yang tercentang
 
@@ -81,7 +158,7 @@ Full suite 110 berkas / 1.670 tes lulus; `vite build` sukses.
 ### Diperiksa, TIDAK diubah — pola serupa di layar lain
 
 Sapuan 26 Sep 2026 atas pola "nilai tersimpan tapi opsinya tak ditampilkan". Tak satu pun menahan
-simpan seperti form guru; yang ada kesan keliru di layar:
+simpan seperti form guru; yang ada kesan keliru di layar (tiga butir pertama ditutup di gelombang 2):
 
 - **Chip scope Jenis Bisyaroh / Tunjangan / Potongan** (Pengaturan Keuangan): opsinya dari master,
   jadi jabatan/lembaga/shift yang dihapus atau diganti nama tetap tersimpan di scope tanpa chip.

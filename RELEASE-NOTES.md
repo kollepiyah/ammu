@@ -18,6 +18,16 @@ Rinciannya untuk pengembang ada di `CHANGELOG.md` — jangan disalin ke sana, te
   nama di Master Jabatan, atau yang tak sesuai tipe pegawai, dulu membuat pilihan Jabatan Utama
   tampil kosong sehingga data tak bisa disimpan tanpa menggantinya, dan jabatan tambahan semacam itu
   tak terlihat sama sekali. Sekarang semuanya tampil, jadi bisa dipertahankan atau dilepas.
+- **Batasan Jenis Bisyaroh, Tunjangan, dan Potongan tak lagi bersembunyi.** Jenis yang dibatasi ke
+  jabatan, lembaga, atau shift yang kemudian dihapus atau diganti nama dulu tampak "berlaku untuk
+  semua", padahal tetap terbatas. Kini pilihan lama itu tampil berwarna kuning dengan tanda "tak ada
+  di master" dan bisa dilepas; begitu pula orang yang sudah nonaktif di pilihan "Orang tertentu".
+  Tanda tercentang kini juga tak terkecoh beda huruf besar-kecil.
+- **Unit jabatan yang lembaganya sudah dihapus tetap tampak** di Master Data › Jabatan, dan bisa
+  dilepas.
+- **Materi Tes butuh minimal satu penguji yang masih aktif.** Penguji yang sudah nonaktif kini tampak
+  di form dan bisa dilepas; materi yang semua pengujinya sudah nonaktif ditandai di daftar. Kelas dan
+  lembaga yang sudah diganti nama juga tetap tampak.
 
 ---
 
